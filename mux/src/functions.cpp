@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.7 2003-01-31 23:23:19 jake Exp $
+// $Id: functions.cpp,v 1.8 2003-01-31 23:30:10 jake Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -58,6 +58,7 @@ XFUNCTION(fun_dec);
 XFUNCTION(fun_decrypt);
 XFUNCTION(fun_default);
 XFUNCTION(fun_die);
+XFUNCTION(fun_dumping);
 XFUNCTION(fun_edefault);
 XFUNCTION(fun_elements);
 XFUNCTION(fun_empty);
@@ -138,32 +139,6 @@ XFUNCTION(fun_remit);
 XFUNCTION(fun_set);
 XFUNCTION(fun_tel);
 #endif
-// In functions.cpp
-XFUNCTION(fun_accent);
-XFUNCTION(fun_art);
-XFUNCTION(fun_chr);
-XFUNCTION(fun_cmds);
-XFUNCTION(fun_connlast);
-XFUNCTION(fun_connleft);
-XFUNCTION(fun_connmax);
-XFUNCTION(fun_connnum);
-XFUNCTION(fun_conntotal);
-XFUNCTION(fun_digittime);
-XFUNCTION(fun_dumping);
-XFUNCTION(fun_exptime);
-XFUNCTION(fun_iabs);
-XFUNCTION(fun_iadd);
-XFUNCTION(fun_imul);
-XFUNCTION(fun_isign);
-XFUNCTION(fun_isub);
-XFUNCTION(fun_lattrcmds);
-XFUNCTION(fun_lcmds);
-XFUNCTION(fun_lflags);
-XFUNCTION(fun_ord);
-XFUNCTION(fun_singletime);
-XFUNCTION(fun_startsecs);
-XFUNCTION(fun_stripaccents);
-XFUNCTION(fun_writetime);
 // In netcommon.cpp
 XFUNCTION(fun_doing);
 XFUNCTION(fun_host);
@@ -8147,575 +8122,6 @@ FUNCTION(fun_wrap)
     free_lbuf(str);
 }
 
-/* ---------------------------------------------------------------------------
- * flist: List of existing functions in alphabetical order.
- */
-
-FUN flist[] =
-{
-    {"@@",       fun_null,           1, 1,  1, FN_NO_EVAL, CA_PUBLIC},
-    {"ABS",      fun_abs,      MAX_ARG, 1,  1,       0, CA_PUBLIC},
-    {"ACCENT",   fun_accent,   MAX_ARG, 2,  2,       0, CA_PUBLIC},
-    {"ACOS",     fun_acos,     MAX_ARG, 1,  2,       0, CA_PUBLIC},
-    {"ADD",      fun_add,      MAX_ARG, 1,  MAX_ARG, 0, CA_PUBLIC},
-    {"AFTER",    fun_after,    MAX_ARG, 1,  2,       0, CA_PUBLIC},
-    {"ALPHAMAX", fun_alphamax, MAX_ARG, 1,  MAX_ARG, 0, CA_PUBLIC},
-    {"ALPHAMIN", fun_alphamin, MAX_ARG, 1,  MAX_ARG, 0, CA_PUBLIC},
-    {"AND",      fun_and,      MAX_ARG, 0,  MAX_ARG, 0, CA_PUBLIC},
-    {"ANDBOOL",  fun_andbool,  MAX_ARG, 0,  MAX_ARG, 0, CA_PUBLIC},
-    {"ANDFLAGS", fun_andflags, MAX_ARG, 2,  2,       0, CA_PUBLIC},
-    {"ANSI",     fun_ansi,     MAX_ARG, 2,  MAX_ARG, 0, CA_PUBLIC},
-    {"APOSS",    fun_aposs,    MAX_ARG, 1,  1,       0, CA_PUBLIC},
-    {"ART",      fun_art,      MAX_ARG, 1,  1,       0, CA_PUBLIC},
-    {"ASIN",     fun_asin,     MAX_ARG, 1,  2,       0, CA_PUBLIC},
-    {"ATAN",     fun_atan,     MAX_ARG, 1,  2,       0, CA_PUBLIC},
-    {"ATTRCNT",  fun_attrcnt,  MAX_ARG, 1,  1,       0, CA_PUBLIC},
-    {"BAND",     fun_band,     MAX_ARG, 2,  2,       0, CA_PUBLIC},
-    {"BEEP",     fun_beep,     MAX_ARG, 0,  0,       0, CA_WIZARD},
-    {"BEFORE",   fun_before,   MAX_ARG, 1,  2,       0, CA_PUBLIC},
-    {"BITTYPE",  fun_bittype,  MAX_ARG, 0,  1,       0, CA_PUBLIC},
-    {"BNAND",    fun_bnand,    MAX_ARG, 2,  2,       0, CA_PUBLIC},
-    {"BOR",      fun_bor,      MAX_ARG, 2,  2,       0, CA_PUBLIC},
-    {"CAND",     fun_cand,     MAX_ARG, 0,  MAX_ARG, FN_NO_EVAL, CA_PUBLIC},
-    {"CANDBOOL", fun_candbool, MAX_ARG, 0,  MAX_ARG, FN_NO_EVAL, CA_PUBLIC},
-#ifdef WOD_REALMS
-    {"CANSEE",   fun_cansee,   MAX_ARG, 2,  3,       0, CA_PUBLIC},
-#endif
-    {"CAPSTR",   fun_capstr,   1,       1,  1,       0, CA_PUBLIC},
-    {"CASE",     fun_case,     MAX_ARG, 2,  MAX_ARG, FN_NO_EVAL, CA_PUBLIC},
-    {"CAT",      fun_cat,      MAX_ARG, 0,  MAX_ARG, 0, CA_PUBLIC},
-    {"CEIL",     fun_ceil,     MAX_ARG, 1,  1,       0, CA_PUBLIC},
-    {"CENTER",   fun_center,   MAX_ARG, 2,  3,       0, CA_PUBLIC},
-    {"CHANNELS", fun_channels, MAX_ARG, 0,  1,       0, CA_PUBLIC},
-    {"CHILDREN", fun_children, MAX_ARG, 1,  1,       0, CA_PUBLIC},
-    {"CHR",      fun_chr,      MAX_ARG, 1,  1,       0, CA_PUBLIC},
-    {"CMDS",     fun_cmds,     MAX_ARG, 1,  1,       0, CA_PUBLIC},
-    {"COLUMNS",  fun_columns,  MAX_ARG, 2,  4,       0, CA_PUBLIC},
-    {"COMALIAS", fun_comalias, MAX_ARG, 2,  2,       0, CA_PUBLIC},
-    {"COMP",     fun_comp,     MAX_ARG, 2,  2,       0, CA_PUBLIC},
-    {"COMTITLE", fun_comtitle, MAX_ARG, 2,  2,       0, CA_PUBLIC},
-    {"CON",      fun_con,      MAX_ARG, 1,  1,       0, CA_PUBLIC},
-    {"CONFIG",   fun_config,   MAX_ARG, 0,  1,       0, CA_PUBLIC},
-    {"CONN",     fun_conn,     MAX_ARG, 1,  1,       0, CA_PUBLIC},
-    {"CONNLAST", fun_connlast, MAX_ARG, 1,  1,       0, CA_PUBLIC},
-    {"CONNLEFT", fun_connleft, MAX_ARG, 1,  1,       0, CA_PUBLIC},
-    {"CONNMAX",  fun_connmax,  MAX_ARG, 1,  1,       0, CA_PUBLIC},
-    {"CONNNUM",  fun_connnum,  MAX_ARG, 1,  1,       0, CA_PUBLIC},
-    {"CONNRECORD", fun_connrecord, MAX_ARG, 0,  0,   0, CA_PUBLIC},
-    {"CONNTOTAL",fun_conntotal,MAX_ARG, 1,  1,       0, CA_PUBLIC},
-    {"CONTROLS", fun_controls, MAX_ARG, 2,  2,       0, CA_PUBLIC},
-    {"CONVSECS", fun_convsecs, MAX_ARG, 1,  3,       0, CA_PUBLIC},
-    {"CONVTIME", fun_convtime, MAX_ARG, 1,  3,       0, CA_PUBLIC},
-    {"COR",      fun_cor,      MAX_ARG, 0,  MAX_ARG, FN_NO_EVAL, CA_PUBLIC},
-    {"CORBOOL",  fun_corbool,  MAX_ARG, 0,  MAX_ARG, FN_NO_EVAL, CA_PUBLIC},
-    {"COS",      fun_cos,      MAX_ARG, 1,  2,       0, CA_PUBLIC},
-    {"CRC32",    fun_crc32,    MAX_ARG, 0,  MAX_ARG, 0, CA_PUBLIC},
-    {"CREATE",   fun_create,   MAX_ARG, 2,  3,       0, CA_PUBLIC},
-    {"CTIME",    fun_ctime,    MAX_ARG, 0,  1,       0, CA_PUBLIC},
-    {"CTU",      fun_ctu,      MAX_ARG, 3,  3,       0, CA_PUBLIC},
-    {"CWHO",     fun_cwho,     MAX_ARG, 1,  2,       0, CA_PUBLIC},
-    {"DEC",      fun_dec,      MAX_ARG, 0,  1,       0, CA_PUBLIC},
-    {"DECRYPT",  fun_decrypt,  MAX_ARG, 2,  2,       0, CA_PUBLIC},
-    {"DEFAULT",  fun_default,  MAX_ARG, 2,  2, FN_NO_EVAL, CA_PUBLIC},
-    {"DELETE",   fun_delete,   MAX_ARG, 3,  3,       0, CA_PUBLIC},
-    {"DIE",      fun_die,      MAX_ARG, 2,  2,       0, CA_PUBLIC},
-    {"DIGITTIME",fun_digittime,MAX_ARG, 1,  1,       0, CA_PUBLIC},
-    {"DIST2D",   fun_dist2d,   MAX_ARG, 4,  4,       0, CA_PUBLIC},
-    {"DIST3D",   fun_dist3d,   MAX_ARG, 6,  6,       0, CA_PUBLIC},
-    {"DOING",    fun_doing,    MAX_ARG, 1,  1,       0, CA_PUBLIC},
-    {"DUMPING",  fun_dumping,  MAX_ARG, 0,  0,       0, CA_PUBLIC},
-    {"E",        fun_e,        MAX_ARG, 0,  0,       0, CA_PUBLIC},
-    {"EDEFAULT", fun_edefault, MAX_ARG, 2,  2, FN_NO_EVAL, CA_PUBLIC},
-    {"EDIT",     fun_edit,     MAX_ARG, 3,  3,       0, CA_PUBLIC},
-    {"ELEMENTS", fun_elements, MAX_ARG, 2,  3,       0, CA_PUBLIC},
-    {"ELOCK",    fun_elock,    MAX_ARG, 2,  2,       0, CA_PUBLIC},
-    {"EMIT",     fun_emit,     MAX_ARG, 1,  1,       0, CA_PUBLIC},
-    {"EMPTY",    fun_empty,    MAX_ARG, 0,  1,       0, CA_PUBLIC},
-    {"ENCRYPT",  fun_encrypt,  MAX_ARG, 2,  2,       0, CA_PUBLIC},
-    {"EQ",       fun_eq,       MAX_ARG, 2,  2,       0, CA_PUBLIC},
-    {"ERROR",    fun_error,    1,       0,  1,       0, CA_PUBLIC},
-    {"ESCAPE",   fun_escape,   1,       1,  1,       0, CA_PUBLIC},
-    {"EVAL",     fun_eval,     MAX_ARG, 1,  2,       0, CA_PUBLIC},
-    {"EXIT",     fun_exit,     MAX_ARG, 1,  1,       0, CA_PUBLIC},
-    {"EXP",      fun_exp,      MAX_ARG, 1,  1,       0, CA_PUBLIC},
-    {"EXPTIME",  fun_exptime,  MAX_ARG, 1,  1,       0, CA_PUBLIC},
-    {"EXTRACT",  fun_extract,  MAX_ARG, 3,  4,       0, CA_PUBLIC},
-    {"FDIV",     fun_fdiv,     MAX_ARG, 2,  2,       0, CA_PUBLIC},
-    {"FILTER",   fun_filter,   MAX_ARG, 2,  3,       0, CA_PUBLIC},
-    {"FILTERBOOL", fun_filterbool, MAX_ARG, 2,  3,   0, CA_PUBLIC},
-    {"FINDABLE", fun_findable, MAX_ARG, 2,  2,       0, CA_PUBLIC},
-    {"FIRST",    fun_first,    MAX_ARG, 0,  2,       0, CA_PUBLIC},
-    {"FLAGS",    fun_flags,    MAX_ARG, 1,  1,       0, CA_PUBLIC},
-    {"FLOOR",    fun_floor,    MAX_ARG, 1,  1,       0, CA_PUBLIC},
-    {"FLOORDIV", fun_floordiv, MAX_ARG, 2,  2,       0, CA_PUBLIC},
-    {"FOLD",     fun_fold,     MAX_ARG, 2,  4,       0, CA_PUBLIC},
-    {"FOREACH",  fun_foreach,  MAX_ARG, 2,  4,       0, CA_PUBLIC},
-    {"FULLNAME", fun_fullname, MAX_ARG, 1,  1,       0, CA_PUBLIC},
-    {"GET",      fun_get,      MAX_ARG, 1,  1,       0, CA_PUBLIC},
-    {"GET_EVAL", fun_get_eval, MAX_ARG, 1,  1,       0, CA_PUBLIC},
-    {"GRAB",     fun_grab,     MAX_ARG, 2,  3,       0, CA_PUBLIC},
-    {"GREP",     fun_grep,     MAX_ARG, 3,  3,       0, CA_PUBLIC},
-    {"GREPI",    fun_grepi,    MAX_ARG, 3,  3,       0, CA_PUBLIC},
-    {"GT",       fun_gt,       MAX_ARG, 2,  2,       0, CA_PUBLIC},
-    {"GTE",      fun_gte,      MAX_ARG, 2,  2,       0, CA_PUBLIC},
-    {"HASATTR",  fun_hasattr,  MAX_ARG, 2,  2,       0, CA_PUBLIC},
-    {"HASATTRP", fun_hasattrp, MAX_ARG, 2,  2,       0, CA_PUBLIC},
-    {"HASFLAG",  fun_hasflag,  MAX_ARG, 2,  2,       0, CA_PUBLIC},
-    {"HASPOWER", fun_haspower, MAX_ARG, 2,  2,       0, CA_PUBLIC},
-    {"HASQUOTA", fun_hasquota, MAX_ARG, 2,  3,       0, CA_PUBLIC},
-    {"HASTYPE",  fun_hastype,  MAX_ARG, 2,  2,       0, CA_PUBLIC},
-    {"HOME",     fun_home,     MAX_ARG, 1,  1,       0, CA_PUBLIC},
-    {"HOST",     fun_host,     MAX_ARG, 1,  1,       0, CA_PUBLIC},
-    {"IABS",     fun_iabs,     MAX_ARG, 1,  1,       0, CA_PUBLIC},
-    {"IADD",     fun_iadd,     MAX_ARG, 0,  MAX_ARG, 0, CA_PUBLIC},
-    {"IDIV",     fun_idiv,     MAX_ARG, 2,  2,       0, CA_PUBLIC},
-    {"IDLE",     fun_idle,     MAX_ARG, 1,  1,       0, CA_PUBLIC},
-    {"IF",       fun_ifelse,   MAX_ARG, 2,  3, FN_NO_EVAL, CA_PUBLIC},
-    {"IFELSE",   fun_ifelse,   MAX_ARG, 3,  3, FN_NO_EVAL, CA_PUBLIC},
-    {"ILEV",     fun_ilev,     MAX_ARG, 0,  0,       0, CA_PUBLIC},
-    {"IMUL",     fun_imul,     MAX_ARG, 1,  MAX_ARG, 0, CA_PUBLIC},
-    {"INC",      fun_inc,      MAX_ARG, 0,  1,       0, CA_PUBLIC},
-    {"INDEX",    fun_index,    MAX_ARG, 4,  4,       0, CA_PUBLIC},
-    {"INSERT",   fun_insert,   MAX_ARG, 3,  4,       0, CA_PUBLIC},
-    {"INUM",     fun_inum,     MAX_ARG, 0,  1,       0, CA_PUBLIC},
-    {"INZONE",   fun_inzone,   MAX_ARG, 1,  1,       0, CA_PUBLIC},
-    {"ISDBREF",  fun_isdbref,  MAX_ARG, 1,  1,       0, CA_PUBLIC},
-    {"ISIGN",    fun_isign,    MAX_ARG, 1,  1,       0, CA_PUBLIC},
-    {"ISINT",    fun_isint,    MAX_ARG, 1,  1,       0, CA_PUBLIC},
-    {"ISNUM",    fun_isnum,    MAX_ARG, 1,  1,       0, CA_PUBLIC},
-    {"ISRAT",    fun_israt,    MAX_ARG, 1,  1,       0, CA_PUBLIC},
-    {"ISUB",     fun_isub,     MAX_ARG, 2,  2,       0, CA_PUBLIC},
-    {"ISWORD",   fun_isword,   MAX_ARG, 1,  1,       0, CA_PUBLIC},
-    {"ITEMIZE",  fun_itemize,  MAX_ARG, 1,  4,       0, CA_PUBLIC},
-    {"ITEMS",    fun_items,    MAX_ARG, 0,  1,       0, CA_PUBLIC},
-    {"ITER",     fun_iter,     MAX_ARG, 2,  4, FN_NO_EVAL, CA_PUBLIC},
-    {"ITEXT",    fun_itext,    MAX_ARG, 0,  1,       0, CA_PUBLIC},
-    {"LADD",     fun_ladd,     MAX_ARG, 0,  2,       0, CA_PUBLIC},
-    {"LAND",     fun_land,     MAX_ARG, 0,  2,       0, CA_PUBLIC},
-    {"LAST",     fun_last,     MAX_ARG, 0,  2,       0, CA_PUBLIC},
-    {"LATTR",    fun_lattr,    MAX_ARG, 1,  1,       0, CA_PUBLIC},
-    {"LATTRCMDS",fun_lattrcmds,MAX_ARG, 1,  1,       0, CA_PUBLIC},
-    {"LATTRP",   fun_lattrp,   MAX_ARG, 1,  1,       0, CA_PUBLIC},
-    {"LCMDS",    fun_lcmds,    MAX_ARG, 1,  3,       0, CA_PUBLIC},
-    {"LCON",     fun_lcon,     MAX_ARG, 1,  1,       0, CA_PUBLIC},
-    {"LCSTR",    fun_lcstr,    1,       1,  1,       0, CA_PUBLIC},
-    {"LDELETE",  fun_ldelete,  MAX_ARG, 2,  3,       0, CA_PUBLIC},
-    {"LEXITS",   fun_lexits,   MAX_ARG, 1,  1,       0, CA_PUBLIC},
-    {"LFLAGS",   fun_lflags,   MAX_ARG, 1,  1,       0, CA_PUBLIC},
-    {"LINK",     fun_link,     MAX_ARG, 2,  2,       0, CA_PUBLIC},
-    {"LIST",     fun_list,     MAX_ARG, 2,  3, FN_NO_EVAL, CA_PUBLIC},
-    {"LIT",      fun_lit,      1,       1,  1, FN_NO_EVAL, CA_PUBLIC},
-    {"LJUST",    fun_ljust,    MAX_ARG, 2,  3,       0, CA_PUBLIC},
-    {"LN",       fun_ln,       MAX_ARG, 1,  1,       0, CA_PUBLIC},
-    {"LNUM",     fun_lnum,     MAX_ARG, 0,  3,       0, CA_PUBLIC},
-    {"LOC",      fun_loc,      MAX_ARG, 1,  1,       0, CA_PUBLIC},
-    {"LOCALIZE", fun_localize, MAX_ARG, 1,  1, FN_NO_EVAL, CA_PUBLIC},
-    {"LOCATE",   fun_locate,   MAX_ARG, 3,  3,       0, CA_PUBLIC},
-    {"LOCK",     fun_lock,     MAX_ARG, 1,  1,       0, CA_PUBLIC},
-    {"LOG",      fun_log,      MAX_ARG, 1,  1,       0, CA_PUBLIC},
-    {"LOR",      fun_lor,      MAX_ARG, 0,  2,       0, CA_PUBLIC},
-    {"LPARENT",  fun_lparent,  MAX_ARG, 1,  1,       0, CA_PUBLIC},
-    {"LPORTS",   fun_lports,   MAX_ARG, 0,  0,       0, CA_WIZARD},
-    {"LPOS",     fun_lpos,     MAX_ARG, 2,  2,       0, CA_PUBLIC},
-    {"LRAND",    fun_lrand,    MAX_ARG, 3,  4,       0, CA_PUBLIC},
-    {"LROOMS",   fun_lrooms,   MAX_ARG, 1,  3,       0, CA_PUBLIC},
-    {"LSTACK",   fun_lstack,   MAX_ARG, 0,  1,       0, CA_PUBLIC},
-    {"LT",       fun_lt,       MAX_ARG, 2,  2,       0, CA_PUBLIC},
-    {"LTE",      fun_lte,      MAX_ARG, 2,  2,       0, CA_PUBLIC},
-    {"LWHO",     fun_lwho,     MAX_ARG, 0,  1,       0, CA_PUBLIC},
-    {"MAIL",     fun_mail,     MAX_ARG, 0,  2,       0, CA_PUBLIC},
-    {"MAILFROM", fun_mailfrom, MAX_ARG, 1,  2,       0, CA_PUBLIC},
-    {"MAP",      fun_map,      MAX_ARG, 2,  4,       0, CA_PUBLIC},
-    {"MATCH",    fun_match,    MAX_ARG, 2,  3,       0, CA_PUBLIC},
-    {"MATCHALL", fun_matchall, MAX_ARG, 2,  3,       0, CA_PUBLIC},
-    {"MAX",      fun_max,      MAX_ARG, 1,  MAX_ARG, 0, CA_PUBLIC},
-    {"MEMBER",   fun_member,   MAX_ARG, 2,  3,       0, CA_PUBLIC},
-    {"MERGE",    fun_merge,    MAX_ARG, 3,  3,       0, CA_PUBLIC},
-    {"MID",      fun_mid,      MAX_ARG, 3,  3,       0, CA_PUBLIC},
-    {"MIN",      fun_min,      MAX_ARG, 1,  MAX_ARG, 0, CA_PUBLIC},
-    {"MIX",      fun_mix,      MAX_ARG, 3,  12,      0, CA_PUBLIC},
-    {"MOD",      fun_mod,      MAX_ARG, 2,  2,       0, CA_PUBLIC},
-    {"MONEY",    fun_money,    MAX_ARG, 1,  1,       0, CA_PUBLIC},
-    {"MONIKER",  fun_moniker,  MAX_ARG, 0,  1,       0, CA_PUBLIC},
-    {"MOTD",     fun_motd,     MAX_ARG, 0,  0,       0, CA_PUBLIC},
-    {"MTIME",    fun_mtime,    MAX_ARG, 0,  1,       0, CA_PUBLIC},
-    {"MUDNAME",  fun_mudname,  MAX_ARG, 0,  0,       0, CA_PUBLIC},
-    {"MUL",      fun_mul,      MAX_ARG, 1,  MAX_ARG, 0, CA_PUBLIC},
-    {"MUNGE",    fun_munge,    MAX_ARG, 3,  4,       0, CA_PUBLIC},
-    {"NAME",     fun_name,     MAX_ARG, 1,  1,       0, CA_PUBLIC},
-    {"NEARBY",   fun_nearby,   MAX_ARG, 2,  2,       0, CA_PUBLIC},
-    {"NEQ",      fun_neq,      MAX_ARG, 2,  2,       0, CA_PUBLIC},
-    {"NEXT",     fun_next,     MAX_ARG, 1,  1,       0, CA_PUBLIC},
-    {"NOT",      fun_not,      MAX_ARG, 1,  1,       0, CA_PUBLIC},
-    {"NULL",     fun_null,     MAX_ARG, 1,  1,       0, CA_PUBLIC},
-    {"NUM",      fun_num,      MAX_ARG, 1,  1,       0, CA_PUBLIC},
-    {"OBJ",      fun_obj,      MAX_ARG, 1,  1,       0, CA_PUBLIC},
-    {"OBJEVAL",  fun_objeval,  MAX_ARG, 2,  2, FN_NO_EVAL, CA_PUBLIC},
-    {"OBJMEM",   fun_objmem,   MAX_ARG, 1,  1,       0, CA_PUBLIC},
-    {"OEMIT",    fun_oemit,    MAX_ARG, 2,  2,       0, CA_PUBLIC},
-    {"OR",       fun_or,       MAX_ARG, 0,  MAX_ARG, 0, CA_PUBLIC},
-    {"ORBOOL",   fun_orbool,   MAX_ARG, 0,  MAX_ARG, 0, CA_PUBLIC},
-    {"ORD",      fun_ord,      MAX_ARG, 1,  1,       0, CA_PUBLIC},
-    {"ORFLAGS",  fun_orflags,  MAX_ARG, 2,  2,       0, CA_PUBLIC},
-    {"OWNER",    fun_owner,    MAX_ARG, 1,  1,       0, CA_PUBLIC},
-    {"PACK",     fun_pack,     MAX_ARG, 1,  2,       0, CA_PUBLIC},
-    {"PARENT",   fun_parent,   MAX_ARG, 1,  1,       0, CA_PUBLIC},
-    {"PARSE",    fun_parse,    MAX_ARG, 2,  4, FN_NO_EVAL, CA_PUBLIC},
-    {"PEEK",     fun_peek,     MAX_ARG, 0,  2,       0, CA_PUBLIC},
-    {"PEMIT",    fun_pemit,    MAX_ARG, 2,  2,       0, CA_PUBLIC},
-    {"PFIND",    fun_pfind,    MAX_ARG, 1,  1,       0, CA_PUBLIC},
-    {"PI",       fun_pi,       MAX_ARG, 0,  0,       0, CA_PUBLIC},
-    {"PICKRAND", fun_pickrand, MAX_ARG, 0,  2,       0, CA_PUBLIC},
-    {"PLAYMEM",  fun_playmem,  MAX_ARG, 0,  1,       0, CA_PUBLIC},
-    {"PMATCH",   fun_pmatch,   MAX_ARG, 1,  1,       0, CA_PUBLIC},
-    {"POLL",     fun_poll,     MAX_ARG, 0,  0,       0, CA_PUBLIC},
-    {"POP",      fun_pop,      MAX_ARG, 0,  2,       0, CA_PUBLIC},
-    {"PORTS",    fun_ports,    MAX_ARG, 1,  1,       0, CA_PUBLIC},
-    {"POS",      fun_pos,      MAX_ARG, 2,  2,       0, CA_PUBLIC},
-    {"POSS",     fun_poss,     MAX_ARG, 1,  1,       0, CA_PUBLIC},
-    {"POWER",    fun_power,    MAX_ARG, 2,  2,       0, CA_PUBLIC},
-    {"PUSH",     fun_push,     MAX_ARG, 1,  2,       0, CA_PUBLIC},
-    {"R",        fun_r,        MAX_ARG, 1,  1,       0, CA_PUBLIC},
-    {"RAND",     fun_rand,     MAX_ARG, 1,  1,       0, CA_PUBLIC},
-    {"REGMATCH", fun_regmatch, MAX_ARG, 2,  3,       0, CA_PUBLIC},
-    {"REGMATCHI",fun_regmatchi,MAX_ARG, 2,  3,       0, CA_PUBLIC},
-    {"REGRAB",   fun_regrab,   MAX_ARG, 2,  3,       0, CA_PUBLIC},
-    {"REGRABALL",fun_regraball,MAX_ARG, 2,  3,       0, CA_PUBLIC},
-    {"REGRABALLI",fun_regraballi,MAX_ARG, 2,  3,       0, CA_PUBLIC},
-    {"REGRABI",  fun_regrabi,  MAX_ARG, 2,  3,       0, CA_PUBLIC},
-    {"REMAINDER",fun_remainder,MAX_ARG, 2,  2,       0, CA_PUBLIC},
-    {"REMIT",    fun_remit,    MAX_ARG, 2,  2,       0, CA_PUBLIC},
-    {"REMOVE",   fun_remove,   MAX_ARG, 2,  3,       0, CA_PUBLIC},
-    {"REPEAT",   fun_repeat,   MAX_ARG, 2,  2,       0, CA_PUBLIC},
-    {"REPLACE",  fun_replace,  MAX_ARG, 3,  4,       0, CA_PUBLIC},
-    {"REST",     fun_rest,     MAX_ARG, 0,  2,       0, CA_PUBLIC},
-    {"REVERSE",  fun_reverse,  1,       1,  1,       0, CA_PUBLIC},
-    {"REVWORDS", fun_revwords, MAX_ARG, 0,  MAX_ARG, 0, CA_PUBLIC},
-    {"RIGHT",    fun_right,    MAX_ARG, 2,  2,       0, CA_PUBLIC},
-    {"RJUST",    fun_rjust,    MAX_ARG, 2,  3,       0, CA_PUBLIC},
-    {"RLOC",     fun_rloc,     MAX_ARG, 2,  2,       0, CA_PUBLIC},
-    {"ROMAN",    fun_roman,    MAX_ARG, 1,  1,       0, CA_PUBLIC},
-    {"ROOM",     fun_room,     MAX_ARG, 1,  1,       0, CA_PUBLIC},
-    {"ROUND",    fun_round,    MAX_ARG, 2,  2,       0, CA_PUBLIC},
-    {"S",        fun_s,        1,       1,  1,       0, CA_PUBLIC},
-    {"SCRAMBLE", fun_scramble, MAX_ARG, 1,  1,       0, CA_PUBLIC},
-    {"SEARCH",   fun_search,   1,       0,  1,       0, CA_PUBLIC},
-    {"SECS",     fun_secs,     MAX_ARG, 0,  2,       0, CA_PUBLIC},
-    {"SECURE",   fun_secure,   1,       1,  1,       0, CA_PUBLIC},
-    {"SET",      fun_set,      MAX_ARG, 2,  2,       0, CA_PUBLIC},
-    {"SETDIFF",  fun_setdiff,  MAX_ARG, 2,  4,       0, CA_PUBLIC},
-    {"SETINTER", fun_setinter, MAX_ARG, 2,  4,       0, CA_PUBLIC},
-    {"SETQ",     fun_setq,     MAX_ARG, 2,  2,       0, CA_PUBLIC},
-    {"SETR",     fun_setr,     MAX_ARG, 2,  2,       0, CA_PUBLIC},
-    {"SETUNION", fun_setunion, MAX_ARG, 2,  4,       0, CA_PUBLIC},
-    {"SHL",      fun_shl,      MAX_ARG, 2,  2,       0, CA_PUBLIC},
-    {"SHR",      fun_shr,      MAX_ARG, 2,  2,       0, CA_PUBLIC},
-    {"SHUFFLE",  fun_shuffle,  MAX_ARG, 1,  2,       0, CA_PUBLIC},
-    {"SIGN",     fun_sign,     MAX_ARG, 1,  1,       0, CA_PUBLIC},
-    {"SIN",      fun_sin,      MAX_ARG, 1,  2,       0, CA_PUBLIC},
-    {"SINGLETIME", fun_singletime, MAX_ARG, 1, 1,    0, CA_PUBLIC},
-    {"SORT",     fun_sort,     MAX_ARG, 1,  4,       0, CA_PUBLIC},
-    {"SORTBY",   fun_sortby,   MAX_ARG, 2,  3,       0, CA_PUBLIC},
-    {"SPACE",    fun_space,    MAX_ARG, 0,  1,       0, CA_PUBLIC},
-    {"SPELLNUM", fun_spellnum, MAX_ARG, 1,  1,       0, CA_PUBLIC},
-    {"SPLICE",   fun_splice,   MAX_ARG, 3,  4,       0, CA_PUBLIC},
-    {"SQRT",     fun_sqrt,     MAX_ARG, 1,  1,       0, CA_PUBLIC},
-    {"SQUISH",   fun_squish,   MAX_ARG, 0,  2,       0, CA_PUBLIC},
-    {"STARTSECS",fun_startsecs,MAX_ARG, 0,  0,       0, CA_PUBLIC},
-    {"STARTTIME",fun_starttime,MAX_ARG, 0,  0,       0, CA_PUBLIC},
-    {"STATS",    fun_stats,    MAX_ARG, 0,  1,       0, CA_PUBLIC},
-    {"STRCAT",   fun_strcat,   MAX_ARG, 0,  MAX_ARG, 0, CA_PUBLIC},
-    {"STRIP",    fun_strip,    MAX_ARG, 1,  2,       0, CA_PUBLIC},
-    {"STRIPACCENTS", fun_stripaccents, MAX_ARG, 1, 1, 0, CA_PUBLIC},
-    {"STRIPANSI",fun_stripansi,MAX_ARG, 1,  1,       0, CA_PUBLIC},
-    {"STRLEN",   fun_strlen,   1,       0,  1,       0, CA_PUBLIC},
-    {"STRMATCH", fun_strmatch, MAX_ARG, 2,  2,       0, CA_PUBLIC},
-    {"STRTRUNC", fun_strtrunc, MAX_ARG, 2,  2,       0, CA_PUBLIC},
-    {"SUB",      fun_sub,      MAX_ARG, 2,  2,       0, CA_PUBLIC},
-    {"SUBEVAL",  fun_subeval,  MAX_ARG, 1,  1,       0, CA_PUBLIC},
-    {"SUBJ",     fun_subj,     MAX_ARG, 1,  1,       0, CA_PUBLIC},
-    {"SWITCH",   fun_switch,   MAX_ARG, 2,  MAX_ARG, FN_NO_EVAL, CA_PUBLIC},
-    {"T",        fun_t,        1,       0,  1,       0, CA_PUBLIC},
-    {"TABLE",    fun_table,    MAX_ARG, 1,  6,       0, CA_PUBLIC},
-    {"TAN",      fun_tan,      MAX_ARG, 1,  2,       0, CA_PUBLIC},
-    {"TEL",      fun_tel,      MAX_ARG, 2,  2,       0, CA_PUBLIC},
-    {"TIME",     fun_time,     MAX_ARG, 0,  2,       0, CA_PUBLIC},
-    {"TIMEFMT",  fun_timefmt,  MAX_ARG, 1,  2,       0, CA_PUBLIC},
-    {"TRANSLATE",fun_translate,MAX_ARG, 2,  2,       0, CA_PUBLIC},
-    {"TRIM",     fun_trim,     MAX_ARG, 1,  3,       0, CA_PUBLIC},
-    {"TRUNC",    fun_trunc,    MAX_ARG, 1,  1,       0, CA_PUBLIC},
-    {"TYPE",     fun_type,     MAX_ARG, 1,  1,       0, CA_PUBLIC},
-    {"U",        fun_u,        MAX_ARG, 1,  MAX_ARG, 0, CA_PUBLIC},
-    {"UCSTR",    fun_ucstr,    1,       1,  1,       0, CA_PUBLIC},
-    {"UDEFAULT", fun_udefault, MAX_ARG, 2,  MAX_ARG, FN_NO_EVAL, CA_PUBLIC},
-    {"ULOCAL",   fun_ulocal,   MAX_ARG, 1,  MAX_ARG, 0, CA_PUBLIC},
-    {"UNPACK",   fun_unpack,   MAX_ARG, 1,  2,       0, CA_PUBLIC},
-    {"V",        fun_v,        MAX_ARG, 1,  1,       0, CA_PUBLIC},
-    {"VADD",     fun_vadd,     MAX_ARG, 2,  4,       0, CA_PUBLIC},
-    {"VALID",    fun_valid,    MAX_ARG, 2,  2,       0, CA_PUBLIC},
-    {"VCROSS",   fun_vcross,   MAX_ARG, 2,  4,       0, CA_PUBLIC},
-    {"VDIM",     fun_vdim,     MAX_ARG, 0,  2,       0, CA_PUBLIC},
-    {"VDOT",     fun_vdot,     MAX_ARG, 2,  4,       0, CA_PUBLIC},
-    {"VERSION",  fun_version,  MAX_ARG, 0,  0,       0, CA_PUBLIC},
-    {"VISIBLE",  fun_visible,  MAX_ARG, 2,  2,       0, CA_PUBLIC},
-    {"VMAG",     fun_vmag,     MAX_ARG, 1,  2,       0, CA_PUBLIC},
-    {"VMUL",     fun_vmul,     MAX_ARG, 2,  4,       0, CA_PUBLIC},
-    {"VSUB",     fun_vsub,     MAX_ARG, 2,  4,       0, CA_PUBLIC},
-    {"VUNIT",    fun_vunit,    MAX_ARG, 1,  2,       0, CA_PUBLIC},
-    {"WHERE",    fun_where,    MAX_ARG, 1,  1,       0, CA_PUBLIC},
-    {"WORDPOS",  fun_wordpos,  MAX_ARG, 2,  3,       0, CA_PUBLIC},
-    {"WORDS",    fun_words,    MAX_ARG, 0,  2,       0, CA_PUBLIC},
-    {"WRAP",     fun_wrap,     MAX_ARG, 1,  6,       0, CA_PUBLIC},
-    {"WRITETIME",fun_writetime,MAX_ARG, 1,  1,       0, CA_PUBLIC},
-    {"XGET",     fun_xget,     MAX_ARG, 2,  2,       0, CA_PUBLIC},
-    {"XOR",      fun_xor,      MAX_ARG, 0,  MAX_ARG, 0, CA_PUBLIC},
-    {"ZFUN",     fun_zfun,     MAX_ARG, 2,  11,      0, CA_PUBLIC},
-    {"ZONE",     fun_zone,     MAX_ARG, 1,  1,       0, CA_PUBLIC},
-    {"ZWHO",     fun_zwho,     MAX_ARG, 1,  1,       0, CA_PUBLIC},
-    {NULL,       NULL,         MAX_ARG, 0,  0,       0, 0}
-};
-
-
-void init_functab(void)
-{
-    char *buff = alloc_sbuf("init_functab");
-    for (FUN *fp = flist; fp->name; fp++)
-    {
-        char *bp = buff;
-        safe_sb_str(fp->name, buff, &bp);
-        *bp = '\0';
-        mux_strlwr(buff);
-        hashaddLEN(buff, strlen(buff), (int *)fp, &mudstate.func_htab);
-    }
-    free_sbuf(buff);
-    ufun_head = NULL;
-}
-
-void do_function
-(
-    dbref executor,
-    dbref caller,
-    dbref enactor,
-    int   key,
-    int   nargs,
-    char *fname,
-    char *target
-)
-{
-    UFUN *ufp, *ufp2;
-    ATTR *ap;
-
-    if ((key & FN_LIST) || !fname || *fname == '\0')
-    {
-        notify(executor, tprintf("%-28s   %-8s  %-30s Flgs",
-            "Function Name", "DBref#", "Attribute"));
-        notify(executor, tprintf("%28s   %8s  %30s %4s",
-            "----------------------------", "--------",
-            "------------------------------", " -- "));
-
-        int count = 0;
-        for (ufp2 = ufun_head; ufp2; ufp2 = ufp2->next)
-        {
-            const char *pName = "(WARNING: Bad Attribute Number)";
-            ap = atr_num(ufp2->atr);
-            if (ap)
-            {
-                pName = ap->name;
-            }
-            notify(executor, tprintf("%-28.28s   #%-7d  %-30.30s  %c%c",
-                ufp2->name, ufp2->obj, pName, ((ufp2->flags & FN_PRIV) ? 'W' : '-'),
-                ((ufp2->flags & FN_PRES) ? 'p' : '-')));
-            count++;
-        }
-
-        notify(executor, tprintf("%28s   %8s  %30s %4s",
-            "----------------------------", "--------",
-            "------------------------------", " -- "));
-
-        notify(executor, tprintf("Total User-Defined Functions: %d", count));
-        return;
-    }
-
-    char *np, *bp;
-    int atr;
-    dbref obj;
-
-    // Make a local uppercase copy of the function name.
-    //
-    bp = np = alloc_sbuf("add_user_func");
-    safe_sb_str(fname, np, &bp);
-    *bp = '\0';
-    mux_strlwr(np);
-
-    // Verify that the function doesn't exist in the builtin table.
-    //
-    if (hashfindLEN(np, strlen(np), &mudstate.func_htab) != NULL)
-    {
-        notify_quiet(executor, "Function already defined in builtin function table.");
-        free_sbuf(np);
-        return;
-    }
-
-    // Make sure the target object exists.
-    //
-    if (!parse_attrib(executor, target, &obj, &atr))
-    {
-        notify_quiet(executor, NOMATCH_MESSAGE);
-        free_sbuf(np);
-        return;
-    }
-
-
-    // Make sure the attribute exists.
-    //
-    if (atr == NOTHING)
-    {
-        notify_quiet(executor, "No such attribute.");
-        free_sbuf(np);
-        return;
-    }
-
-    // Make sure attribute is readably by me.
-    //
-    ap = atr_num(atr);
-    if (!ap)
-    {
-        notify_quiet(executor, "No such attribute.");
-        free_sbuf(np);
-        return;
-    }
-    if (!See_attr(executor, obj, ap))
-    {
-        notify_quiet(executor, NOPERM_MESSAGE);
-        free_sbuf(np);
-        return;
-    }
-
-    // Privileged functions require you control the obj.
-    //
-    if ((key & FN_PRIV) && !Controls(executor, obj))
-    {
-        notify_quiet(executor, NOPERM_MESSAGE);
-        free_sbuf(np);
-        return;
-    }
-
-    // See if function already exists.  If so, redefine it.
-    //
-    ufp = (UFUN *) hashfindLEN(np, strlen(np), &mudstate.ufunc_htab);
-
-    if (!ufp)
-    {
-        ufp = (UFUN *) MEMALLOC(sizeof(UFUN));
-        (void)ISOUTOFMEMORY(ufp);
-        ufp->name = StringClone(np);
-        mux_strupr(ufp->name);
-        ufp->obj = obj;
-        ufp->atr = atr;
-        ufp->perms = CA_PUBLIC;
-        ufp->next = NULL;
-        if (!ufun_head)
-        {
-            ufun_head = ufp;
-        }
-        else
-        {
-            for (ufp2 = ufun_head; ufp2->next; ufp2 = ufp2->next)
-            {
-                // Nothing
-                ;
-            }
-            ufp2->next = ufp;
-        }
-        hashaddLEN(np, strlen(np), (int *)ufp, &mudstate.ufunc_htab);
-    }
-    ufp->obj = obj;
-    ufp->atr = atr;
-    ufp->flags = key;
-    free_sbuf(np);
-    if (!Quiet(executor))
-    {
-        notify_quiet(executor, tprintf("Function %s defined.", fname));
-    }
-}
-
-/* ---------------------------------------------------------------------------
- * list_functable: List available functions.
- */
-
-void list_functable(dbref player)
-{
-    char *buf = alloc_lbuf("list_functable");
-    char *bp = buf;
-    char *cp;
-    for (cp = (char *)"Functions:"; *cp; cp++)
-    {
-        *bp++ = *cp;
-    }
-    FUN *fp;
-    for (fp = flist; fp->name; fp++)
-    {
-        if (check_access(player, fp->perms))
-        {
-            *bp++ = ' ';
-            for (cp = fp->name; *cp; cp++)
-            {
-                *bp++ = *cp;
-            }
-        }
-    }
-    UFUN *ufp;
-    for (ufp = ufun_head; ufp; ufp = ufp->next)
-    {
-        if (check_access(player, ufp->perms))
-        {
-            *bp++ = ' ';
-            for (cp = ufp->name; *cp; cp++)
-            {
-                *bp++ = *cp;
-            }
-        }
-    }
-    *bp = '\0';
-    notify(player, buf);
-    free_lbuf(buf);
-}
-
-/* ---------------------------------------------------------------------------
- * cf_func_access: set access on functions
- */
-
-CF_HAND(cf_func_access)
-{
-    char *ap;
-    for (ap = str; *ap && !Tiny_IsSpace[(unsigned char)*ap]; ap++)
-    {
-        ; // Nothing.
-    }
-    if (*ap)
-    {
-        *ap++ = '\0';
-    }
-    FUN *fp;
-    for (fp = flist; fp->name; fp++)
-    {
-        if (!string_compare(fp->name, str))
-        {
-            return cf_modify_bits(&fp->perms, ap, pExtra, nExtra, player, cmd);
-        }
-    }
-    UFUN *ufp;
-    for (ufp = ufun_head; ufp; ufp = ufp->next)
-    {
-        if (!string_compare(ufp->name, str))
-        {
-            return cf_modify_bits(&ufp->perms, ap, pExtra, nExtra, player, cmd);
-        }
-    }
-    cf_log_notfound(player, cmd, "Function", str);
-    return -1;
-}
-
 /////////////////////////////////////////////////////////////////
 // Function : iadd(Arg[0], Arg[1],..,Arg[n])
 //
@@ -9596,4 +9002,573 @@ FUNCTION(fun_accent)
         p++;
         q++;
     }
+}
+
+/* ---------------------------------------------------------------------------
+ * flist: List of existing functions in alphabetical order.
+ */
+
+FUN flist[] =
+{
+    {"@@",       fun_null,           1, 1,  1, FN_NO_EVAL, CA_PUBLIC},
+    {"ABS",      fun_abs,      MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"ACCENT",   fun_accent,   MAX_ARG, 2,  2,       0, CA_PUBLIC},
+    {"ACOS",     fun_acos,     MAX_ARG, 1,  2,       0, CA_PUBLIC},
+    {"ADD",      fun_add,      MAX_ARG, 1,  MAX_ARG, 0, CA_PUBLIC},
+    {"AFTER",    fun_after,    MAX_ARG, 1,  2,       0, CA_PUBLIC},
+    {"ALPHAMAX", fun_alphamax, MAX_ARG, 1,  MAX_ARG, 0, CA_PUBLIC},
+    {"ALPHAMIN", fun_alphamin, MAX_ARG, 1,  MAX_ARG, 0, CA_PUBLIC},
+    {"AND",      fun_and,      MAX_ARG, 0,  MAX_ARG, 0, CA_PUBLIC},
+    {"ANDBOOL",  fun_andbool,  MAX_ARG, 0,  MAX_ARG, 0, CA_PUBLIC},
+    {"ANDFLAGS", fun_andflags, MAX_ARG, 2,  2,       0, CA_PUBLIC},
+    {"ANSI",     fun_ansi,     MAX_ARG, 2,  MAX_ARG, 0, CA_PUBLIC},
+    {"APOSS",    fun_aposs,    MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"ART",      fun_art,      MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"ASIN",     fun_asin,     MAX_ARG, 1,  2,       0, CA_PUBLIC},
+    {"ATAN",     fun_atan,     MAX_ARG, 1,  2,       0, CA_PUBLIC},
+    {"ATTRCNT",  fun_attrcnt,  MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"BAND",     fun_band,     MAX_ARG, 2,  2,       0, CA_PUBLIC},
+    {"BEEP",     fun_beep,     MAX_ARG, 0,  0,       0, CA_WIZARD},
+    {"BEFORE",   fun_before,   MAX_ARG, 1,  2,       0, CA_PUBLIC},
+    {"BITTYPE",  fun_bittype,  MAX_ARG, 0,  1,       0, CA_PUBLIC},
+    {"BNAND",    fun_bnand,    MAX_ARG, 2,  2,       0, CA_PUBLIC},
+    {"BOR",      fun_bor,      MAX_ARG, 2,  2,       0, CA_PUBLIC},
+    {"CAND",     fun_cand,     MAX_ARG, 0,  MAX_ARG, FN_NO_EVAL, CA_PUBLIC},
+    {"CANDBOOL", fun_candbool, MAX_ARG, 0,  MAX_ARG, FN_NO_EVAL, CA_PUBLIC},
+#ifdef WOD_REALMS
+    {"CANSEE",   fun_cansee,   MAX_ARG, 2,  3,       0, CA_PUBLIC},
+#endif
+    {"CAPSTR",   fun_capstr,   1,       1,  1,       0, CA_PUBLIC},
+    {"CASE",     fun_case,     MAX_ARG, 2,  MAX_ARG, FN_NO_EVAL, CA_PUBLIC},
+    {"CAT",      fun_cat,      MAX_ARG, 0,  MAX_ARG, 0, CA_PUBLIC},
+    {"CEIL",     fun_ceil,     MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"CENTER",   fun_center,   MAX_ARG, 2,  3,       0, CA_PUBLIC},
+    {"CHANNELS", fun_channels, MAX_ARG, 0,  1,       0, CA_PUBLIC},
+    {"CHILDREN", fun_children, MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"CHR",      fun_chr,      MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"CMDS",     fun_cmds,     MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"COLUMNS",  fun_columns,  MAX_ARG, 2,  4,       0, CA_PUBLIC},
+    {"COMALIAS", fun_comalias, MAX_ARG, 2,  2,       0, CA_PUBLIC},
+    {"COMP",     fun_comp,     MAX_ARG, 2,  2,       0, CA_PUBLIC},
+    {"COMTITLE", fun_comtitle, MAX_ARG, 2,  2,       0, CA_PUBLIC},
+    {"CON",      fun_con,      MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"CONFIG",   fun_config,   MAX_ARG, 0,  1,       0, CA_PUBLIC},
+    {"CONN",     fun_conn,     MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"CONNLAST", fun_connlast, MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"CONNLEFT", fun_connleft, MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"CONNMAX",  fun_connmax,  MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"CONNNUM",  fun_connnum,  MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"CONNRECORD", fun_connrecord, MAX_ARG, 0,  0,   0, CA_PUBLIC},
+    {"CONNTOTAL",fun_conntotal,MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"CONTROLS", fun_controls, MAX_ARG, 2,  2,       0, CA_PUBLIC},
+    {"CONVSECS", fun_convsecs, MAX_ARG, 1,  3,       0, CA_PUBLIC},
+    {"CONVTIME", fun_convtime, MAX_ARG, 1,  3,       0, CA_PUBLIC},
+    {"COR",      fun_cor,      MAX_ARG, 0,  MAX_ARG, FN_NO_EVAL, CA_PUBLIC},
+    {"CORBOOL",  fun_corbool,  MAX_ARG, 0,  MAX_ARG, FN_NO_EVAL, CA_PUBLIC},
+    {"COS",      fun_cos,      MAX_ARG, 1,  2,       0, CA_PUBLIC},
+    {"CRC32",    fun_crc32,    MAX_ARG, 0,  MAX_ARG, 0, CA_PUBLIC},
+    {"CREATE",   fun_create,   MAX_ARG, 2,  3,       0, CA_PUBLIC},
+    {"CTIME",    fun_ctime,    MAX_ARG, 0,  1,       0, CA_PUBLIC},
+    {"CTU",      fun_ctu,      MAX_ARG, 3,  3,       0, CA_PUBLIC},
+    {"CWHO",     fun_cwho,     MAX_ARG, 1,  2,       0, CA_PUBLIC},
+    {"DEC",      fun_dec,      MAX_ARG, 0,  1,       0, CA_PUBLIC},
+    {"DECRYPT",  fun_decrypt,  MAX_ARG, 2,  2,       0, CA_PUBLIC},
+    {"DEFAULT",  fun_default,  MAX_ARG, 2,  2, FN_NO_EVAL, CA_PUBLIC},
+    {"DELETE",   fun_delete,   MAX_ARG, 3,  3,       0, CA_PUBLIC},
+    {"DIE",      fun_die,      MAX_ARG, 2,  2,       0, CA_PUBLIC},
+    {"DIGITTIME",fun_digittime,MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"DIST2D",   fun_dist2d,   MAX_ARG, 4,  4,       0, CA_PUBLIC},
+    {"DIST3D",   fun_dist3d,   MAX_ARG, 6,  6,       0, CA_PUBLIC},
+    {"DOING",    fun_doing,    MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"DUMPING",  fun_dumping,  MAX_ARG, 0,  0,       0, CA_PUBLIC},
+    {"E",        fun_e,        MAX_ARG, 0,  0,       0, CA_PUBLIC},
+    {"EDEFAULT", fun_edefault, MAX_ARG, 2,  2, FN_NO_EVAL, CA_PUBLIC},
+    {"EDIT",     fun_edit,     MAX_ARG, 3,  3,       0, CA_PUBLIC},
+    {"ELEMENTS", fun_elements, MAX_ARG, 2,  3,       0, CA_PUBLIC},
+    {"ELOCK",    fun_elock,    MAX_ARG, 2,  2,       0, CA_PUBLIC},
+    {"EMIT",     fun_emit,     MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"EMPTY",    fun_empty,    MAX_ARG, 0,  1,       0, CA_PUBLIC},
+    {"ENCRYPT",  fun_encrypt,  MAX_ARG, 2,  2,       0, CA_PUBLIC},
+    {"EQ",       fun_eq,       MAX_ARG, 2,  2,       0, CA_PUBLIC},
+    {"ERROR",    fun_error,    1,       0,  1,       0, CA_PUBLIC},
+    {"ESCAPE",   fun_escape,   1,       1,  1,       0, CA_PUBLIC},
+    {"EVAL",     fun_eval,     MAX_ARG, 1,  2,       0, CA_PUBLIC},
+    {"EXIT",     fun_exit,     MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"EXP",      fun_exp,      MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"EXPTIME",  fun_exptime,  MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"EXTRACT",  fun_extract,  MAX_ARG, 3,  4,       0, CA_PUBLIC},
+    {"FDIV",     fun_fdiv,     MAX_ARG, 2,  2,       0, CA_PUBLIC},
+    {"FILTER",   fun_filter,   MAX_ARG, 2,  3,       0, CA_PUBLIC},
+    {"FILTERBOOL", fun_filterbool, MAX_ARG, 2,  3,   0, CA_PUBLIC},
+    {"FINDABLE", fun_findable, MAX_ARG, 2,  2,       0, CA_PUBLIC},
+    {"FIRST",    fun_first,    MAX_ARG, 0,  2,       0, CA_PUBLIC},
+    {"FLAGS",    fun_flags,    MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"FLOOR",    fun_floor,    MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"FLOORDIV", fun_floordiv, MAX_ARG, 2,  2,       0, CA_PUBLIC},
+    {"FOLD",     fun_fold,     MAX_ARG, 2,  4,       0, CA_PUBLIC},
+    {"FOREACH",  fun_foreach,  MAX_ARG, 2,  4,       0, CA_PUBLIC},
+    {"FULLNAME", fun_fullname, MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"GET",      fun_get,      MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"GET_EVAL", fun_get_eval, MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"GRAB",     fun_grab,     MAX_ARG, 2,  3,       0, CA_PUBLIC},
+    {"GREP",     fun_grep,     MAX_ARG, 3,  3,       0, CA_PUBLIC},
+    {"GREPI",    fun_grepi,    MAX_ARG, 3,  3,       0, CA_PUBLIC},
+    {"GT",       fun_gt,       MAX_ARG, 2,  2,       0, CA_PUBLIC},
+    {"GTE",      fun_gte,      MAX_ARG, 2,  2,       0, CA_PUBLIC},
+    {"HASATTR",  fun_hasattr,  MAX_ARG, 2,  2,       0, CA_PUBLIC},
+    {"HASATTRP", fun_hasattrp, MAX_ARG, 2,  2,       0, CA_PUBLIC},
+    {"HASFLAG",  fun_hasflag,  MAX_ARG, 2,  2,       0, CA_PUBLIC},
+    {"HASPOWER", fun_haspower, MAX_ARG, 2,  2,       0, CA_PUBLIC},
+    {"HASQUOTA", fun_hasquota, MAX_ARG, 2,  3,       0, CA_PUBLIC},
+    {"HASTYPE",  fun_hastype,  MAX_ARG, 2,  2,       0, CA_PUBLIC},
+    {"HOME",     fun_home,     MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"HOST",     fun_host,     MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"IABS",     fun_iabs,     MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"IADD",     fun_iadd,     MAX_ARG, 0,  MAX_ARG, 0, CA_PUBLIC},
+    {"IDIV",     fun_idiv,     MAX_ARG, 2,  2,       0, CA_PUBLIC},
+    {"IDLE",     fun_idle,     MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"IF",       fun_ifelse,   MAX_ARG, 2,  3, FN_NO_EVAL, CA_PUBLIC},
+    {"IFELSE",   fun_ifelse,   MAX_ARG, 3,  3, FN_NO_EVAL, CA_PUBLIC},
+    {"ILEV",     fun_ilev,     MAX_ARG, 0,  0,       0, CA_PUBLIC},
+    {"IMUL",     fun_imul,     MAX_ARG, 1,  MAX_ARG, 0, CA_PUBLIC},
+    {"INC",      fun_inc,      MAX_ARG, 0,  1,       0, CA_PUBLIC},
+    {"INDEX",    fun_index,    MAX_ARG, 4,  4,       0, CA_PUBLIC},
+    {"INSERT",   fun_insert,   MAX_ARG, 3,  4,       0, CA_PUBLIC},
+    {"INUM",     fun_inum,     MAX_ARG, 0,  1,       0, CA_PUBLIC},
+    {"INZONE",   fun_inzone,   MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"ISDBREF",  fun_isdbref,  MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"ISIGN",    fun_isign,    MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"ISINT",    fun_isint,    MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"ISNUM",    fun_isnum,    MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"ISRAT",    fun_israt,    MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"ISUB",     fun_isub,     MAX_ARG, 2,  2,       0, CA_PUBLIC},
+    {"ISWORD",   fun_isword,   MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"ITEMIZE",  fun_itemize,  MAX_ARG, 1,  4,       0, CA_PUBLIC},
+    {"ITEMS",    fun_items,    MAX_ARG, 0,  1,       0, CA_PUBLIC},
+    {"ITER",     fun_iter,     MAX_ARG, 2,  4, FN_NO_EVAL, CA_PUBLIC},
+    {"ITEXT",    fun_itext,    MAX_ARG, 0,  1,       0, CA_PUBLIC},
+    {"LADD",     fun_ladd,     MAX_ARG, 0,  2,       0, CA_PUBLIC},
+    {"LAND",     fun_land,     MAX_ARG, 0,  2,       0, CA_PUBLIC},
+    {"LAST",     fun_last,     MAX_ARG, 0,  2,       0, CA_PUBLIC},
+    {"LATTR",    fun_lattr,    MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"LATTRCMDS",fun_lattrcmds,MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"LATTRP",   fun_lattrp,   MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"LCMDS",    fun_lcmds,    MAX_ARG, 1,  3,       0, CA_PUBLIC},
+    {"LCON",     fun_lcon,     MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"LCSTR",    fun_lcstr,    1,       1,  1,       0, CA_PUBLIC},
+    {"LDELETE",  fun_ldelete,  MAX_ARG, 2,  3,       0, CA_PUBLIC},
+    {"LEXITS",   fun_lexits,   MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"LFLAGS",   fun_lflags,   MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"LINK",     fun_link,     MAX_ARG, 2,  2,       0, CA_PUBLIC},
+    {"LIST",     fun_list,     MAX_ARG, 2,  3, FN_NO_EVAL, CA_PUBLIC},
+    {"LIT",      fun_lit,      1,       1,  1, FN_NO_EVAL, CA_PUBLIC},
+    {"LJUST",    fun_ljust,    MAX_ARG, 2,  3,       0, CA_PUBLIC},
+    {"LN",       fun_ln,       MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"LNUM",     fun_lnum,     MAX_ARG, 0,  3,       0, CA_PUBLIC},
+    {"LOC",      fun_loc,      MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"LOCALIZE", fun_localize, MAX_ARG, 1,  1, FN_NO_EVAL, CA_PUBLIC},
+    {"LOCATE",   fun_locate,   MAX_ARG, 3,  3,       0, CA_PUBLIC},
+    {"LOCK",     fun_lock,     MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"LOG",      fun_log,      MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"LOR",      fun_lor,      MAX_ARG, 0,  2,       0, CA_PUBLIC},
+    {"LPARENT",  fun_lparent,  MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"LPORTS",   fun_lports,   MAX_ARG, 0,  0,       0, CA_WIZARD},
+    {"LPOS",     fun_lpos,     MAX_ARG, 2,  2,       0, CA_PUBLIC},
+    {"LRAND",    fun_lrand,    MAX_ARG, 3,  4,       0, CA_PUBLIC},
+    {"LROOMS",   fun_lrooms,   MAX_ARG, 1,  3,       0, CA_PUBLIC},
+    {"LSTACK",   fun_lstack,   MAX_ARG, 0,  1,       0, CA_PUBLIC},
+    {"LT",       fun_lt,       MAX_ARG, 2,  2,       0, CA_PUBLIC},
+    {"LTE",      fun_lte,      MAX_ARG, 2,  2,       0, CA_PUBLIC},
+    {"LWHO",     fun_lwho,     MAX_ARG, 0,  1,       0, CA_PUBLIC},
+    {"MAIL",     fun_mail,     MAX_ARG, 0,  2,       0, CA_PUBLIC},
+    {"MAILFROM", fun_mailfrom, MAX_ARG, 1,  2,       0, CA_PUBLIC},
+    {"MAP",      fun_map,      MAX_ARG, 2,  4,       0, CA_PUBLIC},
+    {"MATCH",    fun_match,    MAX_ARG, 2,  3,       0, CA_PUBLIC},
+    {"MATCHALL", fun_matchall, MAX_ARG, 2,  3,       0, CA_PUBLIC},
+    {"MAX",      fun_max,      MAX_ARG, 1,  MAX_ARG, 0, CA_PUBLIC},
+    {"MEMBER",   fun_member,   MAX_ARG, 2,  3,       0, CA_PUBLIC},
+    {"MERGE",    fun_merge,    MAX_ARG, 3,  3,       0, CA_PUBLIC},
+    {"MID",      fun_mid,      MAX_ARG, 3,  3,       0, CA_PUBLIC},
+    {"MIN",      fun_min,      MAX_ARG, 1,  MAX_ARG, 0, CA_PUBLIC},
+    {"MIX",      fun_mix,      MAX_ARG, 3,  12,      0, CA_PUBLIC},
+    {"MOD",      fun_mod,      MAX_ARG, 2,  2,       0, CA_PUBLIC},
+    {"MONEY",    fun_money,    MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"MONIKER",  fun_moniker,  MAX_ARG, 0,  1,       0, CA_PUBLIC},
+    {"MOTD",     fun_motd,     MAX_ARG, 0,  0,       0, CA_PUBLIC},
+    {"MTIME",    fun_mtime,    MAX_ARG, 0,  1,       0, CA_PUBLIC},
+    {"MUDNAME",  fun_mudname,  MAX_ARG, 0,  0,       0, CA_PUBLIC},
+    {"MUL",      fun_mul,      MAX_ARG, 1,  MAX_ARG, 0, CA_PUBLIC},
+    {"MUNGE",    fun_munge,    MAX_ARG, 3,  4,       0, CA_PUBLIC},
+    {"NAME",     fun_name,     MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"NEARBY",   fun_nearby,   MAX_ARG, 2,  2,       0, CA_PUBLIC},
+    {"NEQ",      fun_neq,      MAX_ARG, 2,  2,       0, CA_PUBLIC},
+    {"NEXT",     fun_next,     MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"NOT",      fun_not,      MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"NULL",     fun_null,     MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"NUM",      fun_num,      MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"OBJ",      fun_obj,      MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"OBJEVAL",  fun_objeval,  MAX_ARG, 2,  2, FN_NO_EVAL, CA_PUBLIC},
+    {"OBJMEM",   fun_objmem,   MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"OEMIT",    fun_oemit,    MAX_ARG, 2,  2,       0, CA_PUBLIC},
+    {"OR",       fun_or,       MAX_ARG, 0,  MAX_ARG, 0, CA_PUBLIC},
+    {"ORBOOL",   fun_orbool,   MAX_ARG, 0,  MAX_ARG, 0, CA_PUBLIC},
+    {"ORD",      fun_ord,      MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"ORFLAGS",  fun_orflags,  MAX_ARG, 2,  2,       0, CA_PUBLIC},
+    {"OWNER",    fun_owner,    MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"PACK",     fun_pack,     MAX_ARG, 1,  2,       0, CA_PUBLIC},
+    {"PARENT",   fun_parent,   MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"PARSE",    fun_parse,    MAX_ARG, 2,  4, FN_NO_EVAL, CA_PUBLIC},
+    {"PEEK",     fun_peek,     MAX_ARG, 0,  2,       0, CA_PUBLIC},
+    {"PEMIT",    fun_pemit,    MAX_ARG, 2,  2,       0, CA_PUBLIC},
+    {"PFIND",    fun_pfind,    MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"PI",       fun_pi,       MAX_ARG, 0,  0,       0, CA_PUBLIC},
+    {"PICKRAND", fun_pickrand, MAX_ARG, 0,  2,       0, CA_PUBLIC},
+    {"PLAYMEM",  fun_playmem,  MAX_ARG, 0,  1,       0, CA_PUBLIC},
+    {"PMATCH",   fun_pmatch,   MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"POLL",     fun_poll,     MAX_ARG, 0,  0,       0, CA_PUBLIC},
+    {"POP",      fun_pop,      MAX_ARG, 0,  2,       0, CA_PUBLIC},
+    {"PORTS",    fun_ports,    MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"POS",      fun_pos,      MAX_ARG, 2,  2,       0, CA_PUBLIC},
+    {"POSS",     fun_poss,     MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"POWER",    fun_power,    MAX_ARG, 2,  2,       0, CA_PUBLIC},
+    {"PUSH",     fun_push,     MAX_ARG, 1,  2,       0, CA_PUBLIC},
+    {"R",        fun_r,        MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"RAND",     fun_rand,     MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"REGMATCH", fun_regmatch, MAX_ARG, 2,  3,       0, CA_PUBLIC},
+    {"REGMATCHI",fun_regmatchi,MAX_ARG, 2,  3,       0, CA_PUBLIC},
+    {"REGRAB",   fun_regrab,   MAX_ARG, 2,  3,       0, CA_PUBLIC},
+    {"REGRABALL",fun_regraball,MAX_ARG, 2,  3,       0, CA_PUBLIC},
+    {"REGRABALLI",fun_regraballi,MAX_ARG, 2,  3,       0, CA_PUBLIC},
+    {"REGRABI",  fun_regrabi,  MAX_ARG, 2,  3,       0, CA_PUBLIC},
+    {"REMAINDER",fun_remainder,MAX_ARG, 2,  2,       0, CA_PUBLIC},
+    {"REMIT",    fun_remit,    MAX_ARG, 2,  2,       0, CA_PUBLIC},
+    {"REMOVE",   fun_remove,   MAX_ARG, 2,  3,       0, CA_PUBLIC},
+    {"REPEAT",   fun_repeat,   MAX_ARG, 2,  2,       0, CA_PUBLIC},
+    {"REPLACE",  fun_replace,  MAX_ARG, 3,  4,       0, CA_PUBLIC},
+    {"REST",     fun_rest,     MAX_ARG, 0,  2,       0, CA_PUBLIC},
+    {"REVERSE",  fun_reverse,  1,       1,  1,       0, CA_PUBLIC},
+    {"REVWORDS", fun_revwords, MAX_ARG, 0,  MAX_ARG, 0, CA_PUBLIC},
+    {"RIGHT",    fun_right,    MAX_ARG, 2,  2,       0, CA_PUBLIC},
+    {"RJUST",    fun_rjust,    MAX_ARG, 2,  3,       0, CA_PUBLIC},
+    {"RLOC",     fun_rloc,     MAX_ARG, 2,  2,       0, CA_PUBLIC},
+    {"ROMAN",    fun_roman,    MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"ROOM",     fun_room,     MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"ROUND",    fun_round,    MAX_ARG, 2,  2,       0, CA_PUBLIC},
+    {"S",        fun_s,        1,       1,  1,       0, CA_PUBLIC},
+    {"SCRAMBLE", fun_scramble, MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"SEARCH",   fun_search,   1,       0,  1,       0, CA_PUBLIC},
+    {"SECS",     fun_secs,     MAX_ARG, 0,  2,       0, CA_PUBLIC},
+    {"SECURE",   fun_secure,   1,       1,  1,       0, CA_PUBLIC},
+    {"SET",      fun_set,      MAX_ARG, 2,  2,       0, CA_PUBLIC},
+    {"SETDIFF",  fun_setdiff,  MAX_ARG, 2,  4,       0, CA_PUBLIC},
+    {"SETINTER", fun_setinter, MAX_ARG, 2,  4,       0, CA_PUBLIC},
+    {"SETQ",     fun_setq,     MAX_ARG, 2,  2,       0, CA_PUBLIC},
+    {"SETR",     fun_setr,     MAX_ARG, 2,  2,       0, CA_PUBLIC},
+    {"SETUNION", fun_setunion, MAX_ARG, 2,  4,       0, CA_PUBLIC},
+    {"SHL",      fun_shl,      MAX_ARG, 2,  2,       0, CA_PUBLIC},
+    {"SHR",      fun_shr,      MAX_ARG, 2,  2,       0, CA_PUBLIC},
+    {"SHUFFLE",  fun_shuffle,  MAX_ARG, 1,  2,       0, CA_PUBLIC},
+    {"SIGN",     fun_sign,     MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"SIN",      fun_sin,      MAX_ARG, 1,  2,       0, CA_PUBLIC},
+    {"SINGLETIME", fun_singletime, MAX_ARG, 1, 1,    0, CA_PUBLIC},
+    {"SORT",     fun_sort,     MAX_ARG, 1,  4,       0, CA_PUBLIC},
+    {"SORTBY",   fun_sortby,   MAX_ARG, 2,  3,       0, CA_PUBLIC},
+    {"SPACE",    fun_space,    MAX_ARG, 0,  1,       0, CA_PUBLIC},
+    {"SPELLNUM", fun_spellnum, MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"SPLICE",   fun_splice,   MAX_ARG, 3,  4,       0, CA_PUBLIC},
+    {"SQRT",     fun_sqrt,     MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"SQUISH",   fun_squish,   MAX_ARG, 0,  2,       0, CA_PUBLIC},
+    {"STARTSECS",fun_startsecs,MAX_ARG, 0,  0,       0, CA_PUBLIC},
+    {"STARTTIME",fun_starttime,MAX_ARG, 0,  0,       0, CA_PUBLIC},
+    {"STATS",    fun_stats,    MAX_ARG, 0,  1,       0, CA_PUBLIC},
+    {"STRCAT",   fun_strcat,   MAX_ARG, 0,  MAX_ARG, 0, CA_PUBLIC},
+    {"STRIP",    fun_strip,    MAX_ARG, 1,  2,       0, CA_PUBLIC},
+    {"STRIPACCENTS", fun_stripaccents, MAX_ARG, 1, 1, 0, CA_PUBLIC},
+    {"STRIPANSI",fun_stripansi,MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"STRLEN",   fun_strlen,   1,       0,  1,       0, CA_PUBLIC},
+    {"STRMATCH", fun_strmatch, MAX_ARG, 2,  2,       0, CA_PUBLIC},
+    {"STRTRUNC", fun_strtrunc, MAX_ARG, 2,  2,       0, CA_PUBLIC},
+    {"SUB",      fun_sub,      MAX_ARG, 2,  2,       0, CA_PUBLIC},
+    {"SUBEVAL",  fun_subeval,  MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"SUBJ",     fun_subj,     MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"SWITCH",   fun_switch,   MAX_ARG, 2,  MAX_ARG, FN_NO_EVAL, CA_PUBLIC},
+    {"T",        fun_t,        1,       0,  1,       0, CA_PUBLIC},
+    {"TABLE",    fun_table,    MAX_ARG, 1,  6,       0, CA_PUBLIC},
+    {"TAN",      fun_tan,      MAX_ARG, 1,  2,       0, CA_PUBLIC},
+    {"TEL",      fun_tel,      MAX_ARG, 2,  2,       0, CA_PUBLIC},
+    {"TIME",     fun_time,     MAX_ARG, 0,  2,       0, CA_PUBLIC},
+    {"TIMEFMT",  fun_timefmt,  MAX_ARG, 1,  2,       0, CA_PUBLIC},
+    {"TRANSLATE",fun_translate,MAX_ARG, 2,  2,       0, CA_PUBLIC},
+    {"TRIM",     fun_trim,     MAX_ARG, 1,  3,       0, CA_PUBLIC},
+    {"TRUNC",    fun_trunc,    MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"TYPE",     fun_type,     MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"U",        fun_u,        MAX_ARG, 1,  MAX_ARG, 0, CA_PUBLIC},
+    {"UCSTR",    fun_ucstr,    1,       1,  1,       0, CA_PUBLIC},
+    {"UDEFAULT", fun_udefault, MAX_ARG, 2,  MAX_ARG, FN_NO_EVAL, CA_PUBLIC},
+    {"ULOCAL",   fun_ulocal,   MAX_ARG, 1,  MAX_ARG, 0, CA_PUBLIC},
+    {"UNPACK",   fun_unpack,   MAX_ARG, 1,  2,       0, CA_PUBLIC},
+    {"V",        fun_v,        MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"VADD",     fun_vadd,     MAX_ARG, 2,  4,       0, CA_PUBLIC},
+    {"VALID",    fun_valid,    MAX_ARG, 2,  2,       0, CA_PUBLIC},
+    {"VCROSS",   fun_vcross,   MAX_ARG, 2,  4,       0, CA_PUBLIC},
+    {"VDIM",     fun_vdim,     MAX_ARG, 0,  2,       0, CA_PUBLIC},
+    {"VDOT",     fun_vdot,     MAX_ARG, 2,  4,       0, CA_PUBLIC},
+    {"VERSION",  fun_version,  MAX_ARG, 0,  0,       0, CA_PUBLIC},
+    {"VISIBLE",  fun_visible,  MAX_ARG, 2,  2,       0, CA_PUBLIC},
+    {"VMAG",     fun_vmag,     MAX_ARG, 1,  2,       0, CA_PUBLIC},
+    {"VMUL",     fun_vmul,     MAX_ARG, 2,  4,       0, CA_PUBLIC},
+    {"VSUB",     fun_vsub,     MAX_ARG, 2,  4,       0, CA_PUBLIC},
+    {"VUNIT",    fun_vunit,    MAX_ARG, 1,  2,       0, CA_PUBLIC},
+    {"WHERE",    fun_where,    MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"WORDPOS",  fun_wordpos,  MAX_ARG, 2,  3,       0, CA_PUBLIC},
+    {"WORDS",    fun_words,    MAX_ARG, 0,  2,       0, CA_PUBLIC},
+    {"WRAP",     fun_wrap,     MAX_ARG, 1,  6,       0, CA_PUBLIC},
+    {"WRITETIME",fun_writetime,MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"XGET",     fun_xget,     MAX_ARG, 2,  2,       0, CA_PUBLIC},
+    {"XOR",      fun_xor,      MAX_ARG, 0,  MAX_ARG, 0, CA_PUBLIC},
+    {"ZFUN",     fun_zfun,     MAX_ARG, 2,  11,      0, CA_PUBLIC},
+    {"ZONE",     fun_zone,     MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"ZWHO",     fun_zwho,     MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {NULL,       NULL,         MAX_ARG, 0,  0,       0, 0}
+};
+
+
+void init_functab(void)
+{
+    char *buff = alloc_sbuf("init_functab");
+    for (FUN *fp = flist; fp->name; fp++)
+    {
+        char *bp = buff;
+        safe_sb_str(fp->name, buff, &bp);
+        *bp = '\0';
+        mux_strlwr(buff);
+        hashaddLEN(buff, strlen(buff), (int *)fp, &mudstate.func_htab);
+    }
+    free_sbuf(buff);
+    ufun_head = NULL;
+}
+
+void do_function
+(
+    dbref executor,
+    dbref caller,
+    dbref enactor,
+    int   key,
+    int   nargs,
+    char *fname,
+    char *target
+)
+{
+    UFUN *ufp, *ufp2;
+    ATTR *ap;
+
+    if ((key & FN_LIST) || !fname || *fname == '\0')
+    {
+        notify(executor, tprintf("%-28s   %-8s  %-30s Flgs",
+            "Function Name", "DBref#", "Attribute"));
+        notify(executor, tprintf("%28s   %8s  %30s %4s",
+            "----------------------------", "--------",
+            "------------------------------", " -- "));
+
+        int count = 0;
+        for (ufp2 = ufun_head; ufp2; ufp2 = ufp2->next)
+        {
+            const char *pName = "(WARNING: Bad Attribute Number)";
+            ap = atr_num(ufp2->atr);
+            if (ap)
+            {
+                pName = ap->name;
+            }
+            notify(executor, tprintf("%-28.28s   #%-7d  %-30.30s  %c%c",
+                ufp2->name, ufp2->obj, pName, ((ufp2->flags & FN_PRIV) ? 'W' : '-'),
+                ((ufp2->flags & FN_PRES) ? 'p' : '-')));
+            count++;
+        }
+
+        notify(executor, tprintf("%28s   %8s  %30s %4s",
+            "----------------------------", "--------",
+            "------------------------------", " -- "));
+
+        notify(executor, tprintf("Total User-Defined Functions: %d", count));
+        return;
+    }
+
+    char *np, *bp;
+    int atr;
+    dbref obj;
+
+    // Make a local uppercase copy of the function name.
+    //
+    bp = np = alloc_sbuf("add_user_func");
+    safe_sb_str(fname, np, &bp);
+    *bp = '\0';
+    mux_strlwr(np);
+
+    // Verify that the function doesn't exist in the builtin table.
+    //
+    if (hashfindLEN(np, strlen(np), &mudstate.func_htab) != NULL)
+    {
+        notify_quiet(executor, "Function already defined in builtin function table.");
+        free_sbuf(np);
+        return;
+    }
+
+    // Make sure the target object exists.
+    //
+    if (!parse_attrib(executor, target, &obj, &atr))
+    {
+        notify_quiet(executor, NOMATCH_MESSAGE);
+        free_sbuf(np);
+        return;
+    }
+
+
+    // Make sure the attribute exists.
+    //
+    if (atr == NOTHING)
+    {
+        notify_quiet(executor, "No such attribute.");
+        free_sbuf(np);
+        return;
+    }
+
+    // Make sure attribute is readably by me.
+    //
+    ap = atr_num(atr);
+    if (!ap)
+    {
+        notify_quiet(executor, "No such attribute.");
+        free_sbuf(np);
+        return;
+    }
+    if (!See_attr(executor, obj, ap))
+    {
+        notify_quiet(executor, NOPERM_MESSAGE);
+        free_sbuf(np);
+        return;
+    }
+
+    // Privileged functions require you control the obj.
+    //
+    if ((key & FN_PRIV) && !Controls(executor, obj))
+    {
+        notify_quiet(executor, NOPERM_MESSAGE);
+        free_sbuf(np);
+        return;
+    }
+
+    // See if function already exists.  If so, redefine it.
+    //
+    ufp = (UFUN *) hashfindLEN(np, strlen(np), &mudstate.ufunc_htab);
+
+    if (!ufp)
+    {
+        ufp = (UFUN *) MEMALLOC(sizeof(UFUN));
+        (void)ISOUTOFMEMORY(ufp);
+        ufp->name = StringClone(np);
+        mux_strupr(ufp->name);
+        ufp->obj = obj;
+        ufp->atr = atr;
+        ufp->perms = CA_PUBLIC;
+        ufp->next = NULL;
+        if (!ufun_head)
+        {
+            ufun_head = ufp;
+        }
+        else
+        {
+            for (ufp2 = ufun_head; ufp2->next; ufp2 = ufp2->next)
+            {
+                // Nothing
+                ;
+            }
+            ufp2->next = ufp;
+        }
+        hashaddLEN(np, strlen(np), (int *)ufp, &mudstate.ufunc_htab);
+    }
+    ufp->obj = obj;
+    ufp->atr = atr;
+    ufp->flags = key;
+    free_sbuf(np);
+    if (!Quiet(executor))
+    {
+        notify_quiet(executor, tprintf("Function %s defined.", fname));
+    }
+}
+
+/* ---------------------------------------------------------------------------
+ * list_functable: List available functions.
+ */
+
+void list_functable(dbref player)
+{
+    char *buf = alloc_lbuf("list_functable");
+    char *bp = buf;
+    char *cp;
+    for (cp = (char *)"Functions:"; *cp; cp++)
+    {
+        *bp++ = *cp;
+    }
+    FUN *fp;
+    for (fp = flist; fp->name; fp++)
+    {
+        if (check_access(player, fp->perms))
+        {
+            *bp++ = ' ';
+            for (cp = fp->name; *cp; cp++)
+            {
+                *bp++ = *cp;
+            }
+        }
+    }
+    UFUN *ufp;
+    for (ufp = ufun_head; ufp; ufp = ufp->next)
+    {
+        if (check_access(player, ufp->perms))
+        {
+            *bp++ = ' ';
+            for (cp = ufp->name; *cp; cp++)
+            {
+                *bp++ = *cp;
+            }
+        }
+    }
+    *bp = '\0';
+    notify(player, buf);
+    free_lbuf(buf);
+}
+
+/* ---------------------------------------------------------------------------
+ * cf_func_access: set access on functions
+ */
+
+CF_HAND(cf_func_access)
+{
+    char *ap;
+    for (ap = str; *ap && !Tiny_IsSpace[(unsigned char)*ap]; ap++)
+    {
+        ; // Nothing.
+    }
+    if (*ap)
+    {
+        *ap++ = '\0';
+    }
+    FUN *fp;
+    for (fp = flist; fp->name; fp++)
+    {
+        if (!string_compare(fp->name, str))
+        {
+            return cf_modify_bits(&fp->perms, ap, pExtra, nExtra, player, cmd);
+        }
+    }
+    UFUN *ufp;
+    for (ufp = ufun_head; ufp; ufp = ufp->next)
+    {
+        if (!string_compare(ufp->name, str))
+        {
+            return cf_modify_bits(&ufp->perms, ap, pExtra, nExtra, player, cmd);
+        }
+    }
+    cf_log_notfound(player, cmd, "Function", str);
+    return -1;
 }
