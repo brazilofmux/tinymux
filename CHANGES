@@ -1,5 +1,5 @@
 TinyMUX 2.1:  CHANGES
-Last Update:  May 2002
+Last Update:  June 2002
 
 Major changes that may affect performance and require softcode tweaks:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -238,6 +238,10 @@ Bug Fixes:
  -- Fix edit(test,,a) --> 'testa'. Found by Ashen-Shugar.
  -- Work around what appears to be a compiler bug in GCC 3.0 and 3.1 that
     caused timefmt($z) to return a bogus number.
+ -- Bug #469 - hasattr/hasattrp would return 0 for visual attributes on 
+    non-visual objects.
+ -- Guests were not halted on disconnect. Patch from Zenty.
+ -- God was able to @chown itself to other players. Patch from Jake.
 
 Performance Enhancements:
 ~~~~~~~~~~~~~~~~~~~~~~~~
@@ -282,6 +286,7 @@ Cosmetic Changes:
  -- Remove unused sections of #ifdef'ed out code.
  -- @pcreate and @robot now report the created dbref.
  -- say command now emits 'You say, "..."' instead of 'You say "..."'.
+ -- Help for pmatch changed to reflect that the #-2 result was removed long ago.
 
 Miscellaneous:
 ~~~~~~~~~~~~~
