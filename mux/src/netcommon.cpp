@@ -1,6 +1,6 @@
 // netcommon.cpp
 //
-// $Id: netcommon.cpp,v 1.1 2003-01-22 19:58:26 sdennis Exp $
+// $Id: netcommon.cpp,v 1.2 2003-01-23 07:21:27 sdennis Exp $
 //
 // This file contains routines used by the networking code that do not
 // depend on the implementation of the networking code.  The network-specific
@@ -1624,7 +1624,7 @@ void do_doing(dbref executor, dbref caller, dbref enactor, int key, char *arg)
     static char *Empty = "";
     char *szValidDoing = Empty;
     BOOL bValidDoing;
-    int nValidDoing;
+    int nValidDoing = 0;
     if (arg)
     {
         szValidDoing = MakeCanonicalDoing(arg, &nValidDoing, &bValidDoing);
