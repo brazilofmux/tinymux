@@ -1,6 +1,6 @@
 // stringutil.cpp -- string utilities
 //
-// $Id: stringutil.cpp,v 1.13 2000-06-06 09:52:02 sdennis Exp $
+// $Id: stringutil.cpp,v 1.14 2000-06-09 09:20:37 sdennis Exp $
 //
 // MUX 2.0
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -237,6 +237,32 @@ char Tiny_IsAttributeNameCharacter[256] =
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0   // F
 };
 
+// Valid characters for an object name are all printable
+// characters except those from the set {=&|}.
+//
+char Tiny_IsObjectNameCharacter[256] =
+{
+//  0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F
+//
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // 0
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // 1
+    1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1,  // 2
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1,  // 3
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,  // 4
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,  // 5
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,  // 6
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 0,  // 7
+
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // 8
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // 9
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // A
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // B
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // C
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // D
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // E
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0   // F
+};
+
 char ANSI_TokenTerminatorTable[256] =
 {
 //  0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F
@@ -379,7 +405,7 @@ int ANSI_lex(int nString, const char *pString, int *nLengthToken0, int *nLengthT
     }
 }
 
-char *strip_ansi(const char *szString)
+char *strip_ansi(const char *szString, unsigned int *pnString)
 {
     static char Buffer[LBUF_SIZE];
     char *pBuffer = Buffer;
@@ -387,6 +413,10 @@ char *strip_ansi(const char *szString)
     const char *pString = szString;
     if (!pString)
     {
+        if (pnString)
+        {
+            *pnString = 0;
+        }
         *pBuffer = '\0';
         return Buffer;
     }
@@ -414,6 +444,10 @@ char *strip_ansi(const char *szString)
             nString -= nTokenLength0;
             pString += nTokenLength0;
         }
+    }
+    if (pnString)
+    {
+        *pnString = pBuffer - Buffer;
     }
     *pBuffer = '\0';
     return Buffer;

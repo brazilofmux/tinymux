@@ -1,6 +1,6 @@
 // stringutil.h -- string utilities
 //
-// $Id: stringutil.h,v 1.3 2000-06-06 09:52:02 sdennis Exp $
+// $Id: stringutil.h,v 1.4 2000-06-09 09:20:37 sdennis Exp $
 //
 // MUX 2.0
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -25,6 +25,7 @@ extern char Tiny_IsUpper[256];
 extern char Tiny_IsLower[256];
 extern char Tiny_IsSpace[256];
 extern char Tiny_IsAttributeNameCharacter[256];
+extern char Tiny_IsObjectNameCharacter[256];
 extern unsigned char Tiny_ToUpper[256];
 extern unsigned char Tiny_ToLower[256];
 int ANSI_lex(int nString, const char *pString, int *nLengthToken0, int *nLengthToken1);
@@ -75,7 +76,7 @@ void ANSI_String_Init(struct ANSI_Context *pContext, const char *szString, BOOL 
 void ANSI_String_Skip(struct ANSI_Context *pContext, int maxVisualWidth, int *pnVisualWidth);
 int ANSI_String_Copy(struct ANSI_Context *pContext, int nField, char *pField0, int maxVisualWidth, int *pnVisualWidth);
 int ANSI_TruncateToField(const char *szString, int nField, char *pField, int maxVisual, int *nVisualWidth, BOOL bNoBleed);
-extern char *strip_ansi(const char *);
+extern char *strip_ansi(const char *szString, unsigned int *pnString = 0);
 extern char *normal_to_white(const char *);
 extern char *   FDECL(munge_space, (char *));
 extern char *   FDECL(trim_spaces, (char *));
