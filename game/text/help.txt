@@ -4275,14 +4275,17 @@
  
 & ANSI2
 
-  The percent substitution %c<color code> can be used instead of ansi(), and
-  is more efficient. 
+  The percent substitution %x<color code> can be used instead of ansi(), and
+  is more efficient.
  
   For example, the equivalent to [ansi(rBf,Color!)] would be:
-  %cr%cB%cfColor!%cn
+  %xr%xB%xfColor!%xn
  
-  The %cn (to return to normal) is not necessary, but if it is not specified
+  The %xn (to return to normal) is not necessary, but if it is not specified
   the ansi color codes will continue to the end of the string.
+
+  %c<color code> is the same as %x<color code>. MUSH recognizes %x, but MUSH
+  does not recognize %c, and so for portability sake, %x is preferred.
 
   See also: ANSI  
  
@@ -5379,7 +5382,7 @@ files.
               message to be displayed or the action list to be run.
     %!      = Database number of the object holding the message or running
               the action list.
-    %c      = ANSI color codes. See 'help ansi()' for more information.
+    %x %c   = ANSI color codes. See 'help ansi()' for more information.
     %|      = A string piped from the previous command in a pipe.
  
   If the letter following the % is capitalized, the first letter of the
@@ -8574,7 +8577,7 @@ files.
   This function takes <string>, and converts all raw ANSI color codes and
   carriage returns to either MUX substitutions, or to spaces. If <type> is
   0 or 's', the raw codes are converted to spaces, if it is 1 or 'p', the
-  codes are converted to MUX %c and %r substitutions.
+  codes are converted to MUX %x and %r substitutions.
 
 & TRIM()
 
