@@ -1,6 +1,6 @@
 // rob.cpp -- Commands dealing with giving/taking/killing things or money.
 //
-// $Id: rob.cpp,v 1.1 2002-05-24 06:53:15 sdennis Exp $
+// $Id: rob.cpp,v 1.2 2002-06-04 00:47:28 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -14,8 +14,9 @@
 
 void do_kill
 (
-    dbref player,
-    dbref cause,
+    dbref executor,
+    dbref caller,
+    dbref enactor,
     int   key,
     int   nargs,
     char *what,
@@ -26,35 +27,37 @@ void do_kill
     char *buf1, *buf2;
     int cost;
 
-    init_match(player, what, TYPE_PLAYER);
+    init_match(executor, what, TYPE_PLAYER);
     match_neighbor();
     match_me();
     match_here();
-    if (Long_Fingers(player)) {
+    if (Long_Fingers(executor))
+    {
         match_player();
         match_absolute();
     }
     victim = match_result();
 
-    switch (victim) {
+    switch (victim)
+    {
     case NOTHING:
-        notify(player, "I don't see that player here.");
+        notify(executor, "I don't see that player here.");
         break;
     case AMBIGUOUS:
-        notify(player, "I don't know who you mean!");
+        notify(executor, "I don't know who you mean!");
         break;
     default:
         if ((Typeof(victim) != TYPE_PLAYER) &&
             (Typeof(victim) != TYPE_THING)) {
-            notify(player,
+            notify(executor,
                 "Sorry, you can only kill players and things.");
             break;
         }
-        if ((Haven(Location(victim)) && !Wizard(player)) ||
+        if ((Haven(Location(victim)) && !Wizard(executor)) ||
             (controls(victim, Location(victim)) &&
-             !controls(player, Location(victim))) ||
+             !controls(executor, Location(victim))) ||
             Unkillable(victim)) {
-            notify(player, "Sorry.");
+            notify(executor, "Sorry.");
             break;
         }
         /*
@@ -72,9 +75,9 @@ void do_kill
              * see if it works
              */
 
-            if (!payfor(player, cost))
+            if (!payfor(executor, cost))
             {
-                notify(player, tprintf("You don't have enough %s.", mudconf.many_coins));
+                notify(executor, tprintf("You don't have enough %s.", mudconf.many_coins));
                 return;
             }
         }
@@ -93,22 +96,22 @@ void do_kill
              * Failure: notify player and victim only
              */
 
-            notify(player, "Your murder attempt failed.");
+            notify(executor, "Your murder attempt failed.");
             buf1 = alloc_lbuf("do_kill.failed");
-            sprintf(buf1, "%s tried to kill you!", Name(player));
-            notify_with_cause_ooc(victim, player, buf1);
-            if (Suspect(player))
+            sprintf(buf1, "%s tried to kill you!", Name(executor));
+            notify_with_cause_ooc(victim, executor, buf1);
+            if (Suspect(executor))
             {
-                StringCopy(buf1, Name(player));
-                if (player == Owner(player))
+                StringCopy(buf1, Name(executor));
+                if (executor == Owner(executor))
                 {
                     raw_broadcast(WIZARD, "[Suspect] %s tried to kill %s(#%d).", buf1, Name(victim), victim);
                 }
                 else
                 {
                     buf2 = alloc_lbuf("do_kill.SUSP.failed");
-                    StringCopy(buf2, Name(Owner(player)));
-                    raw_broadcast(WIZARD, "[Suspect] %s <via %s(#%d)> tried to kill %s(#%d).", buf2, buf1, player, Name(victim), victim);
+                    StringCopy(buf2, Name(Owner(executor)));
+                    raw_broadcast(WIZARD, "[Suspect] %s <via %s(#%d)> tried to kill %s(#%d).", buf2, buf1, executor, Name(victim), victim);
                     free_lbuf(buf2);
                 }
             }
@@ -121,17 +124,17 @@ void do_kill
 
         buf1 = alloc_lbuf("do_kill.succ.1");
         buf2 = alloc_lbuf("do_kill.succ.2");
-        if (Suspect(player))
+        if (Suspect(executor))
         {
-            StringCopy(buf1, Name(player));
-            if (player == Owner(player))
+            StringCopy(buf1, Name(executor));
+            if (executor == Owner(executor))
             {
                 raw_broadcast(WIZARD, "[Suspect] %s killed %s(#%d).", buf1, Name(victim), victim);
             }
             else
             {
-                StringCopy(buf2, Name(Owner(player)));
-                raw_broadcast(WIZARD, "[Suspect] %s <via %s(#%d)> killed %s(#%d).", buf2, buf1, player, Name(victim), victim);
+                StringCopy(buf2, Name(Owner(executor)));
+                raw_broadcast(WIZARD, "[Suspect] %s <via %s(#%d)> killed %s(#%d).", buf2, buf1, executor, Name(victim), victim);
             }
         }
         sprintf(buf1, "You killed %s!", Name(victim));
@@ -142,14 +145,14 @@ void do_kill
                 if (!Quiet(victim))
                     notify(Owner(victim), "Halted.");
         }
-        did_it(player, victim, A_KILL, buf1, A_OKILL, buf2, A_AKILL, (char **)NULL, 0);
+        did_it(executor, victim, A_KILL, buf1, A_OKILL, buf2, A_AKILL, (char **)NULL, 0);
 
         /*
          * notify victim
          */
 
-        sprintf(buf1, "%s killed you!", Name(player));
-        notify_with_cause_ooc(victim, player, buf1);
+        sprintf(buf1, "%s killed you!", Name(executor));
+        notify_with_cause_ooc(victim, executor, buf1);
 
         /*
          * Pay off the bonus
@@ -378,8 +381,9 @@ static void give_money(dbref giver, dbref recipient, int key, int amount)
 
 void do_give
 (
-    dbref player,
-    dbref cause,
+    dbref executor,
+    dbref caller,
+    dbref enactor,
     int   key,
     int   nargs,
     char *who,
@@ -388,11 +392,11 @@ void do_give
 {
     // Check recipient.
     //
-    init_match(player, who, TYPE_PLAYER);
+    init_match(executor, who, TYPE_PLAYER);
     match_neighbor();
     match_possession();
     match_me();
-    if (Long_Fingers(player))
+    if (Long_Fingers(executor))
     {
         match_player();
         match_absolute();
@@ -401,34 +405,34 @@ void do_give
     switch (recipient)
     {
     case NOTHING:
-        notify(player, "Give to whom?");
+        notify(executor, "Give to whom?");
         return;
     case AMBIGUOUS:
-        notify(player, "I don't know who you mean!");
+        notify(executor, "I don't know who you mean!");
         return;
     }
 
     if (isGarbage(recipient))
     {
-        notify(player, "Garbage objects can't receive gifts.");
+        notify(executor, "Garbage objects can't receive gifts.");
         return;
     }
     if (isExit(recipient))
     {
-        notify(player, "You can't give anything to an exit.");
+        notify(executor, "You can't give anything to an exit.");
         return;
     }
     if (Guest(recipient))
     {
-        notify(player, "Guest really doesn't need money or anything.");
+        notify(executor, "Guest really doesn't need money or anything.");
         return;
     }
     if (is_rational(amnt))
     {
-        give_money(player, recipient, key, Tiny_atol(amnt));
+        give_money(executor, recipient, key, Tiny_atol(amnt));
     }
     else
     {
-        give_thing(player, recipient, key, amnt);
+        give_thing(executor, recipient, key, amnt);
     }
 }

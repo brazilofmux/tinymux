@@ -1,6 +1,6 @@
 // mudconf.h
 //
-// $Id: mudconf.h,v 1.1 2002-05-24 06:53:15 sdennis Exp $
+// $Id: mudconf.h,v 1.2 2002-06-04 00:47:28 sdennis Exp $
 //
 
 #ifndef __CONF_H
@@ -320,7 +320,7 @@ struct statedata
     int epoch;      /* Generation number for dumps */
     int generation; /* DB global generation number */
     dbref   curr_enactor;   /* Who initiated the current command */
-    dbref   curr_player;    /* Who is running the current command */
+    dbref   curr_executor;  /* Who is running the current command */
     int events_flag;    /* Flags for check_events */
     int shutdown_flag;  /* Should interface be shut down? */
     char    *debug_cmd;     // The command we are executing (if any).

@@ -1,6 +1,6 @@
 // walkdb.cpp -- Support for commands that walk the entire db.
 //
-// $Id: walkdb.cpp,v 1.2 2002-06-03 20:01:09 sdennis Exp $
+// $Id: walkdb.cpp,v 1.3 2002-06-04 00:47:28 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -16,14 +16,14 @@
 // Bind occurances of the universal var in ACTION to ARG, then run ACTION.
 // Cmds run in low-prio Q after a 1 sec delay for the first one.
 //
-static void bind_and_queue(dbref player, dbref cause, char *action,
-                           char *argstr, char *cargs[], int ncargs,
-                           int number)
+static void bind_and_queue(dbref executor, dbref caller, dbref enactor,
+                           char *action, char *argstr, char *cargs[],
+                           int ncargs, int number)
 {
     char *command = replace_tokens(action, argstr, Tiny_ltoa_t(number), NULL);
     CLinearTimeAbsolute lta;
-    wait_que(player, cause, FALSE, lta, NOTHING, 0, command, cargs,
-        ncargs, mudstate.global_regs);
+    wait_que(executor, CALLERQQQ, enactor, FALSE, lta, NOTHING, 0, command,
+        cargs, ncargs, mudstate.global_regs);
     free_lbuf(command);
 }
 
@@ -34,15 +34,15 @@ static void bind_and_queue(dbref player, dbref cause, char *action,
 // New switches added 12/92, /space (default) delimits list using spaces,
 // and /delimit allows specification of a delimiter.
 //
-void do_dolist(dbref player, dbref cause, int key, char *list, char *command,
-               char *cargs[], int ncargs)
+void do_dolist(dbref executor, dbref caller, dbref enactor, int key,
+               char *list, char *command, char *cargs[], int ncargs)
 {
     char *curr, *objstring, delimiter = ' ';
     int number = 0;
 
     if (!list || *list == '\0')
     {
-        notify(player, "That's terrific, but what should I do with the list?");
+        notify(executor, "That's terrific, but what should I do with the list?");
         return;
     }
     curr = list;
@@ -52,7 +52,7 @@ void do_dolist(dbref player, dbref cause, int key, char *list, char *command,
         char *tempstr = parse_to(&curr, ' ', EV_STRIP_CURLY);
         if (strlen(tempstr) > 1)
         {
-            notify(player, "The delimiter must be a single character!");
+            notify(executor, "The delimiter must be a single character!");
             return;
         }
         delimiter = *tempstr;
@@ -67,8 +67,8 @@ void do_dolist(dbref player, dbref cause, int key, char *list, char *command,
         {
             number++;
             objstring = parse_to(&curr, delimiter, EV_STRIP_CURLY);
-            bind_and_queue(player, cause, command, objstring, cargs, ncargs,
-                           number);
+            bind_and_queue(executor, CALLERQQQ, enactor, command, objstring,
+                cargs, ncargs, number);
         }
     }
     if (key == DOLIST_NOTIFY)
@@ -77,8 +77,8 @@ void do_dolist(dbref player, dbref cause, int key, char *list, char *command,
         tbuf = alloc_lbuf("dolist.notify_cmd");
         strcpy(tbuf, (char *) "@notify/quiet me");
         CLinearTimeAbsolute lta;
-        wait_que(player, cause, FALSE, lta, NOTHING, A_SEMAPHORE, tbuf, cargs,
-            ncargs, mudstate.global_regs);
+        wait_que(executor, CALLERQQQ, enactor, FALSE, lta, NOTHING, A_SEMAPHORE,
+            tbuf, cargs, ncargs, mudstate.global_regs);
         free_lbuf(tbuf);
     }
 }
@@ -86,30 +86,30 @@ void do_dolist(dbref player, dbref cause, int key, char *list, char *command,
 //
 // Regular @find command
 //
-void do_find(dbref player, dbref cause, int key, char *name)
+void do_find(dbref executor, dbref caller, dbref enactor, int key, char *name)
 {
     dbref i, low_bound, high_bound;
     char *buff;
 
-    if (!payfor(player, mudconf.searchcost))
+    if (!payfor(executor, mudconf.searchcost))
     {
         buff = tprintf("You don't have enough %s.", mudconf.many_coins);
-        notify_quiet(player, buff);
+        notify_quiet(executor, buff);
         return;
     }
     parse_range(&name, &low_bound, &high_bound);
     for (i = low_bound; i <= high_bound; i++)
     {
         if (  (Typeof(i) != TYPE_EXIT)
-           && controls(player, i)
+           && controls(executor, i)
            && (!*name || string_match(PureName(i), name)))
         {
-            buff = unparse_object(player, i, 0);
-            notify(player, buff);
+            buff = unparse_object(executor, i, 0);
+            notify(executor, buff);
             free_lbuf(buff);
         }
     }
-    notify(player, "***End of List***");
+    notify(executor, "***End of List***");
 }
 
 // ---------------------------------------------------------------------------
@@ -185,7 +185,7 @@ int get_stats(dbref player, dbref who, STATS *info)
 
 // Reworked by R'nice
 //
-void do_stats(dbref player, dbref cause, int key, char *name)
+void do_stats(dbref executor, dbref caller, dbref enactor, int key, char *name)
 {
     dbref owner;
     STATS statinfo;
@@ -200,7 +200,7 @@ void do_stats(dbref player, dbref cause, int key, char *name)
 
     case STAT_ME:
 
-        owner = Owner(player);
+        owner = Owner(executor);
         break;
 
     case STAT_PLAYER:
@@ -212,25 +212,25 @@ void do_stats(dbref player, dbref cause, int key, char *name)
             {
                 nNextFree = mudstate.db_top;
             }
-            notify(player, tprintf("The universe contains %d objects (next free is #%d).",
+            notify(executor, tprintf("The universe contains %d objects (next free is #%d).",
             mudstate.db_top, nNextFree));
             return;
         }
-        owner = lookup_player(player, name, 1);
+        owner = lookup_player(executor, name, 1);
         if (owner == NOTHING)
         {
-            notify(player, "Not found.");
+            notify(executor, "Not found.");
             return;
         }
         break;
 
     default:
 
-        notify(player, "Illegal combination of switches.");
+        notify(executor, "Illegal combination of switches.");
         return;
     }
 
-    if (!get_stats(player, owner, &statinfo))
+    if (!get_stats(executor, owner, &statinfo))
     {
         return;
     }
@@ -239,7 +239,7 @@ void do_stats(dbref player, dbref cause, int key, char *name)
                statinfo.s_total, statinfo.s_rooms, statinfo.s_exits,
                statinfo.s_things, statinfo.s_players,
                statinfo.s_garbage);
-    notify(player, buff);
+    notify(executor, buff);
 }
 
 int chown_all(dbref from_player, dbref to_player, dbref acting_player, int key)
@@ -318,8 +318,9 @@ int chown_all(dbref from_player, dbref to_player, dbref acting_player, int key)
 
 void do_chownall
 (
-    dbref player,
-    dbref cause,
+    dbref executor,
+    dbref caller,
+    dbref enactor,
     int   key,
     int   nargs,
     char *from,
@@ -329,7 +330,7 @@ void do_chownall
     int count;
     dbref victim, recipient;
 
-    init_match(player, from, TYPE_PLAYER);
+    init_match(executor, from, TYPE_PLAYER);
     match_neighbor();
     match_absolute();
     match_player();
@@ -340,7 +341,7 @@ void do_chownall
 
     if ((to != NULL) && *to)
     {
-        init_match(player, to, TYPE_PLAYER);
+        init_match(executor, to, TYPE_PLAYER);
         match_neighbor();
         match_absolute();
         match_player();
@@ -351,13 +352,13 @@ void do_chownall
     }
     else
     {
-        recipient = player;
+        recipient = executor;
     }
 
-    count = chown_all(victim, recipient, player, key);
-    if (!Quiet(player))
+    count = chown_all(victim, recipient, executor, key);
+    if (!Quiet(executor))
     {
-        notify(player, tprintf("%d objects @chowned.", count));
+        notify(executor, tprintf("%d objects @chowned.", count));
     }
 }
 
@@ -732,7 +733,7 @@ int search_setup(dbref player, char *searchfor, SEARCH *parm)
     return 1;
 }
 
-void search_perform(dbref player, dbref cause, SEARCH *parm)
+void search_perform(dbref executor, dbref caller, dbref enactor, SEARCH *parm)
 {
     POWER thing1powers, thing2powers;
     char *buff, *result, *bp, *str;
@@ -832,7 +833,7 @@ void search_perform(dbref player, dbref cause, SEARCH *parm)
             char *buff2 = replace_tokens(parm->s_rst_eval, buff, NULL, NULL);
             result = bp = alloc_lbuf("search_perform");
             str = buff2;
-            TinyExec(result, &bp, player, CALLERQQQ, cause,
+            TinyExec(result, &bp, executor, CALLERQQQ, enactor,
                 EV_FCHECK | EV_EVAL | EV_NOTRACE, &str, (char **)NULL, 0);
             *bp = '\0';
             free_lbuf(buff2);
@@ -889,7 +890,7 @@ static void search_mark(dbref player, int key)
     return;
 }
 
-void do_search(dbref player, dbref cause, int key, char *arg)
+void do_search(dbref executor, dbref caller, dbref enactor, int key, char *arg)
 {
     int flag, destitute;
     char *buff, *outbuf, *bp;
@@ -898,22 +899,22 @@ void do_search(dbref player, dbref cause, int key, char *arg)
 
     if ((key != SRCH_SEARCH) && (mudconf.control_flags & CF_DBCHECK))
     {
-        er_mark_disabled(player);
+        er_mark_disabled(executor);
         return;
     }
-    if (!search_setup(player, arg, &searchparm))
+    if (!search_setup(executor, arg, &searchparm))
     {
         return;
     }
     olist_push();
-    search_perform(player, cause, &searchparm);
+    search_perform(executor, CALLERQQQ, enactor, &searchparm);
     destitute = 1;
 
     // If we are doing a @mark command, handle that here.
     //
     if (key != SRCH_SEARCH)
     {
-        search_mark(player, key);
+        search_mark(executor, key);
         olist_pop();
         return;
     }
@@ -941,10 +942,10 @@ void do_search(dbref player, dbref cause, int key, char *arg)
             {
                 flag = 0;
                 destitute = 0;
-                notify(player, "\nROOMS:");
+                notify(executor, "\nROOMS:");
             }
-            buff = unparse_object(player, thing, 0);
-            notify(player, buff);
+            buff = unparse_object(executor, thing, 0);
+            notify(executor, buff);
             free_lbuf(buff);
             rcount++;
         }
@@ -966,29 +967,29 @@ void do_search(dbref player, dbref cause, int key, char *arg)
             {
                 flag = 0;
                 destitute = 0;
-                notify(player, "\nEXITS:");
+                notify(executor, "\nEXITS:");
             }
             from = Exits(thing);
             to = Location(thing);
 
             bp = outbuf;
-            buff = unparse_object(player, thing, 0);
+            buff = unparse_object(executor, thing, 0);
             safe_str(buff, outbuf, &bp);
             free_lbuf(buff);
 
             safe_str((char *)" [from ", outbuf, &bp);
-            buff = unparse_object(player, from, 0);
+            buff = unparse_object(executor, from, 0);
             safe_str(((from == NOTHING) ? "NOWHERE" : buff), outbuf, &bp);
             free_lbuf(buff);
 
             safe_str((char *)" to ", outbuf, &bp);
-            buff = unparse_object(player, to, 0);
+            buff = unparse_object(executor, to, 0);
             safe_str(((to == NOTHING) ? "NOWHERE" : buff), outbuf, &bp);
             free_lbuf(buff);
 
             safe_chr(']', outbuf, &bp);
             *bp = '\0';
-            notify(player, outbuf);
+            notify(executor, outbuf);
             ecount++;
         }
     }
@@ -1009,21 +1010,21 @@ void do_search(dbref player, dbref cause, int key, char *arg)
             {
                 flag = 0;
                 destitute = 0;
-                notify(player, "\nOBJECTS:");
+                notify(executor, "\nOBJECTS:");
             }
             bp = outbuf;
-            buff = unparse_object(player, thing, 0);
+            buff = unparse_object(executor, thing, 0);
             safe_str(buff, outbuf, &bp);
             free_lbuf(buff);
 
             safe_str((char *)" [owner: ", outbuf, &bp);
-            buff = unparse_object(player, Owner(thing), 0);
+            buff = unparse_object(executor, Owner(thing), 0);
             safe_str(buff, outbuf, &bp);
             free_lbuf(buff);
 
             safe_chr(']', outbuf, &bp);
             *bp = '\0';
-            notify(player, outbuf);
+            notify(executor, outbuf);
             tcount++;
         }
     }
@@ -1044,21 +1045,21 @@ void do_search(dbref player, dbref cause, int key, char *arg)
             {
                 flag = 0;
                 destitute = 0;
-                notify(player, "\nGARBAGE:");
+                notify(executor, "\nGARBAGE:");
             }
             bp = outbuf;
-            buff = unparse_object(player, thing, 0);
+            buff = unparse_object(executor, thing, 0);
             safe_str(buff, outbuf, &bp);
             free_lbuf(buff);
 
             safe_str((char *)" [owner: ", outbuf, &bp);
-            buff = unparse_object(player, Owner(thing), 0);
+            buff = unparse_object(executor, Owner(thing), 0);
             safe_str(buff, outbuf, &bp);
             free_lbuf(buff);
 
             safe_chr(']', outbuf, &bp);
             *bp = '\0';
-            notify(player, outbuf);
+            notify(executor, outbuf);
             gcount++;
         }
     }
@@ -1079,22 +1080,22 @@ void do_search(dbref player, dbref cause, int key, char *arg)
             {
                 flag = 0;
                 destitute = 0;
-                notify(player, "\nPLAYERS:");
+                notify(executor, "\nPLAYERS:");
             }
             bp = outbuf;
-            buff = unparse_object(player, thing, 0);
+            buff = unparse_object(executor, thing, 0);
             safe_str(buff, outbuf, &bp);
             free_lbuf(buff);
             if (searchparm.s_wizard)
             {
                 safe_str((char *)" [location: ", outbuf, &bp);
-                buff = unparse_object(player, Location(thing), 0);
+                buff = unparse_object(executor, Location(thing), 0);
                 safe_str(buff, outbuf, &bp);
                 free_lbuf(buff);
                 safe_chr(']', outbuf, &bp);
             }
             *bp = '\0';
-            notify(player, outbuf);
+            notify(executor, outbuf);
             pcount++;
         }
     }
@@ -1103,14 +1104,14 @@ void do_search(dbref player, dbref cause, int key, char *arg)
     //
     if (destitute)
     {
-        notify(player, "Nothing found.");
+        notify(executor, "Nothing found.");
     }
     else
     {
         sprintf(outbuf,
             "\nFound:  Rooms...%d  Exits...%d  Objects...%d  Players...%d  Garbage...%d",
             rcount, ecount, tcount, pcount, gcount);
-        notify(player, outbuf);
+        notify(executor, outbuf);
     }
     free_lbuf(outbuf);
     olist_pop();
@@ -1119,13 +1120,13 @@ void do_search(dbref player, dbref cause, int key, char *arg)
 // ---------------------------------------------------------------------------
 // do_markall: set or clear the mark bits of all objects in the db.
 //
-void do_markall(dbref player, dbref cause, int key)
+void do_markall(dbref executor, dbref caller, dbref enactor, int key)
 {
     int i;
 
     if (mudconf.control_flags & CF_DBCHECK)
     {
-        er_mark_disabled(player);
+        er_mark_disabled(executor);
         return;
     }
     if (key == MARK_SET)
@@ -1136,17 +1137,17 @@ void do_markall(dbref player, dbref cause, int key)
     {
         Unmark_all(i);
     }
-    if (!Quiet(player))
+    if (!Quiet(executor))
     {
-        notify(player, "Done.");
+        notify(executor, "Done.");
     }
 }
 
 // ---------------------------------------------------------------------------
 // do_apply_marked: Perform a command for each marked obj in the db.
 //
-void do_apply_marked( dbref player, dbref cause, int key, char *command,
-                      char *cargs[], int ncargs)
+void do_apply_marked( dbref executor, dbref caller, dbref enactor, int key,
+                      char *command, char *cargs[], int ncargs)
 {
     char *buff;
     int i;
@@ -1154,7 +1155,7 @@ void do_apply_marked( dbref player, dbref cause, int key, char *command,
 
     if (mudconf.control_flags & CF_DBCHECK)
     {
-        er_mark_disabled(player);
+        er_mark_disabled(executor);
         return;
     }
     buff = alloc_sbuf("do_apply_marked");
@@ -1165,13 +1166,14 @@ void do_apply_marked( dbref player, dbref cause, int key, char *command,
             buff[0] = '#';
             Tiny_ltoa(i, buff+1);
             number++;
-            bind_and_queue(player, cause, command, buff, cargs, ncargs, number);
+            bind_and_queue(executor, CALLERQQQ, enactor, command, buff,
+                cargs, ncargs, number);
         }
     }
     free_sbuf(buff);
-    if (!Quiet(player))
+    if (!Quiet(executor))
     {
-        notify(player, "Done.");
+        notify(executor, "Done.");
     }
 }
 

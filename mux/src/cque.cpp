@@ -1,6 +1,6 @@
 // cque.cpp -- commands and functions for manipulating the command queue.
 //
-// $Id: cque.cpp,v 1.1 2002-05-24 06:53:15 sdennis Exp $
+// $Id: cque.cpp,v 1.2 2002-06-04 00:47:27 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -90,12 +90,12 @@ CLinearTimeDelta GetProcessorUsage(void)
 // ---------------------------------------------------------------------------
 // add_to: Adjust an object's queue or semaphore count.
 //
-static int add_to(dbref player, int am, int attrnum)
+static int add_to(dbref executor, int am, int attrnum)
 {
     int aflags;
     dbref aowner;
 
-    char *atr_gotten = atr_get(player, attrnum, &aowner, &aflags);
+    char *atr_gotten = atr_get(executor, attrnum, &aowner, &aflags);
     int num = Tiny_atol(atr_gotten);
     free_lbuf(atr_gotten);
     num += am;
@@ -107,7 +107,7 @@ static int add_to(dbref player, int am, int attrnum)
     {
         nlen = Tiny_ltoa(num, buff);
     }
-    atr_add_raw_LEN(player, attrnum, buff, nlen);
+    atr_add_raw_LEN(executor, attrnum, buff, nlen);
     return num;
 }
 
@@ -117,16 +117,16 @@ static int add_to(dbref player, int am, int attrnum)
 void Task_RunQueueEntry(void *pEntry, int iUnused)
 {
     BQUE *point = (BQUE *)pEntry;
-    dbref player = point->player;
+    dbref executor = point->executor;
 
-    if ((player >= 0) && !Going(player))
+    if ((executor >= 0) && !Going(executor))
     {
-        giveto(player, mudconf.waitcost);
-        mudstate.curr_enactor = point->cause;
-        mudstate.curr_player = player;
-        a_Queue(Owner(player), -1);
-        point->player = NOTHING;
-        if (!Halted(player))
+        giveto(executor, mudconf.waitcost);
+        mudstate.curr_enactor = point->enactor;
+        mudstate.curr_executor = executor;
+        a_Queue(Owner(executor), -1);
+        point->executor = NOTHING;
+        if (!Halted(executor))
         {
             // Load scratch args.
             //
@@ -162,11 +162,12 @@ void Task_RunQueueEntry(void *pEntry, int iUnused)
                         mudstate.inpipe = 1;
                         mudstate.poutnew = alloc_lbuf("process_command.pipe");
                         mudstate.poutbufc = mudstate.poutnew;
-                        mudstate.poutobj = player;
+                        mudstate.poutobj = executor;
 
                         // No lag check on piped commands.
                         //
-                        process_command(player, point->cause, 0, cp, point->env, point->nargs);
+                        process_command(executor, CALLERQQQ, point->enactor,
+                            0, cp, point->env, point->nargs);
                         if (mudstate.pout)
                         {
                             free_lbuf(mudstate.pout);
@@ -183,14 +184,15 @@ void Task_RunQueueEntry(void *pEntry, int iUnused)
                     ltaBegin.GetUTC();
                     CLinearTimeDelta ltdUsageBegin = GetProcessorUsage();
 
-                    char *log_cmdbuf = process_command(player, point->cause, 0, cp, point->env, point->nargs);
+                    char *log_cmdbuf = process_command(executor, CALLERQQQ,
+                        point->enactor, 0, cp, point->env, point->nargs);
 
                     CLinearTimeAbsolute ltaEnd;
                     ltaEnd.GetUTC();
 
                     CLinearTimeDelta ltdUsageEnd = GetProcessorUsage();
                     CLinearTimeDelta ltd = ltdUsageEnd - ltdUsageBegin;
-                    db[player].cpu_time_used += ltd;
+                    db[executor].cpu_time_used += ltd;
 
                     if (mudstate.pout)
                     {
@@ -202,10 +204,10 @@ void Task_RunQueueEntry(void *pEntry, int iUnused)
                     if (ltd.ReturnSeconds() >= mudconf.max_cmdsecs)
                     {
                         STARTLOG(LOG_PROBLEMS, "CMD", "CPU");
-                        log_name_and_loc(player);
+                        log_name_and_loc(executor);
                         char *logbuf = alloc_lbuf("do_top.LOG.cpu");
                         long ms = ltd.ReturnMilliseconds();
-                        sprintf(logbuf, " queued command taking %ld.%02ld secs (enactor #%d): ", ms/100, ms%100, point->cause);
+                        sprintf(logbuf, " queued command taking %ld.%02ld secs (enactor #%d): ", ms/100, ms%100, point->enactor);
                         log_text(logbuf);
                         free_lbuf(logbuf);
                         log_text(log_cmdbuf);
@@ -231,9 +233,9 @@ void Task_RunQueueEntry(void *pEntry, int iUnused)
 //
 static int que_want(BQUE *entry, dbref ptarg, dbref otarg)
 {
-    if ((ptarg != NOTHING) && (ptarg != Owner(entry->player)))
+    if ((ptarg != NOTHING) && (ptarg != Owner(entry->executor)))
         return 0;
-    if ((otarg != NOTHING) && (otarg != entry->player))
+    if ((otarg != NOTHING) && (otarg != entry->executor))
         return 0;
     return 1;
 }
@@ -266,7 +268,7 @@ int CallBack_HaltQueue(PTASK_RECORD p)
         {
             // Accounting for pennies and queue quota.
             //
-            dbref dbOwner = point->player;
+            dbref dbOwner = point->executor;
             if (!isPlayer(dbOwner))
             {
                 dbOwner = Owner(dbOwner);
@@ -298,17 +300,17 @@ int CallBack_HaltQueue(PTASK_RECORD p)
 
 // ------------------------------------------------------------------
 //
-// halt_que: Remove all queued commands that match (player, object).
+// halt_que: Remove all queued commands that match (executor, object).
 //
-// (NOTHING,  NOTHING)  matches all queue entries.
-// (NOTHING,  <object>) matches only queue entries run from <object>.
-// (<player>, NOTHING)  matches only queue entries owned by <player>.
-// (<player>, <object>) matches only queue entries run from <objects>
-//                      and owned by <player>.
+// (NOTHING,  NOTHING)    matches all queue entries.
+// (NOTHING,  <object>)   matches only queue entries run from <object>.
+// (<executor>, NOTHING)  matches only queue entries owned by <executor>.
+// (<executor>, <object>) matches only queue entries run from <objects>
+//                        and owned by <executor>.
 //
-int halt_que(dbref player, dbref object)
+int halt_que(dbref executor, dbref object)
 {
-    Halt_Player_Target = player;
+    Halt_Player_Target = executor;
     Halt_Object_Target = object;
     Halt_Entries = 0;
     Halt_Player_Run    = NOTHING;
@@ -330,13 +332,13 @@ int halt_que(dbref player, dbref object)
 // ---------------------------------------------------------------------------
 // do_halt: Command interface to halt_que.
 //
-void do_halt(dbref player, dbref cause, int key, char *target)
+void do_halt(dbref executor, dbref caller, dbref enactor, int key, char *target)
 {
-    dbref player_targ, obj_targ;
+    dbref executor_targ, obj_targ;
 
-    if ((key & HALT_ALL) && !(Can_Halt(player)))
+    if ((key & HALT_ALL) && !(Can_Halt(executor)))
     {
-        notify(player, NOPERM_MESSAGE);
+        notify(executor, NOPERM_MESSAGE);
         return;
     }
 
@@ -347,26 +349,26 @@ void do_halt(dbref player, dbref cause, int key, char *target)
         obj_targ = NOTHING;
         if (key & HALT_ALL)
         {
-            player_targ = NOTHING;
+            executor_targ = NOTHING;
         }
         else
         {
-            player_targ = Owner(player);
-            if (!isPlayer(player))
+            executor_targ = Owner(executor);
+            if (!isPlayer(executor))
             {
-                obj_targ = player;
+                obj_targ = executor;
             }
         }
     }
     else
     {
-        if (Can_Halt(player))
+        if (Can_Halt(executor))
         {
-            obj_targ = match_thing(player, target);
+            obj_targ = match_thing(executor, target);
         }
         else
         {
-            obj_targ = match_controlled(player, target);
+            obj_targ = match_controlled(executor, target);
         }
         if (obj_targ == NOTHING)
         {
@@ -374,32 +376,32 @@ void do_halt(dbref player, dbref cause, int key, char *target)
         }
         if (key & HALT_ALL)
         {
-            notify(player, "Can't specify a target and /all");
+            notify(executor, "Can't specify a target and /all");
             return;
         }
         if (isPlayer(obj_targ))
         {
-            player_targ = obj_targ;
+            executor_targ = obj_targ;
             obj_targ = NOTHING;
         }
         else
         {
-            player_targ = NOTHING;
+            executor_targ = NOTHING;
         }
     }
 
-    int numhalted = halt_que(player_targ, obj_targ);
-    if (Quiet(player))
+    int numhalted = halt_que(executor_targ, obj_targ);
+    if (Quiet(executor))
     {
         return;
     }
     if (numhalted == 1)
     {
-        notify(Owner(player), "1 queue entries removed.");
+        notify(Owner(executor), "1 queue entries removed.");
     }
     else
     {
-        notify(Owner(player), tprintf("%d queue entries removed.", numhalted));
+        notify(Owner(executor), tprintf("%d queue entries removed.", numhalted));
     }
 }
 
@@ -427,8 +429,8 @@ int CallBack_NotifySemaphoreDrainOrAll(PTASK_RECORD p)
             {
                 // Discard the command
                 //
-                giveto(point->player, mudconf.waitcost);
-                a_Queue(Owner(point->player), -1);
+                giveto(point->executor, mudconf.waitcost);
+                a_Queue(Owner(point->executor), -1);
                 MEMFREE(point->text);
                 point->text = NULL;
                 free_qentry(point);
@@ -439,7 +441,7 @@ int CallBack_NotifySemaphoreDrainOrAll(PTASK_RECORD p)
                 // Allow the command to run. The priority may have been
                 // PRIORITY_SUSPEND, so we need to change it.
                 //
-                if (Typeof(point->cause) == TYPE_PLAYER)
+                if (Typeof(point->enactor) == TYPE_PLAYER)
                 {
                     p->iPriority = PRIORITY_PLAYER;
                 }
@@ -482,7 +484,7 @@ int CallBack_NotifySemaphoreFirstOrQuiet(PTASK_RECORD p)
             // Allow the command to run. The priority may have been
             // PRIORITY_SUSPEND, so we need to change it.
             //
-            if (Typeof(point->cause) == TYPE_PLAYER)
+            if (Typeof(point->enactor) == TYPE_PLAYER)
             {
                 p->iPriority = PRIORITY_PLAYER;
             }
@@ -550,8 +552,9 @@ int nfy_que(dbref sem, int attr, int key, int count)
 
 void do_notify
 (
-    dbref player,
-    dbref cause,
+    dbref executor,
+    dbref caller,
+    dbref enactor,
     int   key,
     int   nargs,
     char *what,
@@ -564,16 +567,16 @@ void do_notify
     char *obj;
 
     obj = parse_to(&what, '/', 0);
-    init_match(player, obj, NOTYPE);
+    init_match(executor, obj, NOTYPE);
     match_everything(0);
 
     if ((thing = noisy_match_result()) < 0)
     {
-        notify(player, "No match.");
+        notify(executor, "No match.");
     }
-    else if (!controls(player, thing) && !Link_ok(thing))
+    else if (!controls(executor, thing) && !Link_ok(thing))
     {
-        notify(player, NOPERM_MESSAGE);
+        notify(executor, NOPERM_MESSAGE);
     }
     else
     {
@@ -596,13 +599,13 @@ void do_notify
             //
             atr_pget_info(thing, ap->number, &aowner, &aflags);
 
-            if (Set_attr(player, thing, ap, aflags))
+            if (Set_attr(executor, thing, ap, aflags))
             {
                 attr = ap->number;
             }
             else
             {
-                notify_quiet(player, NOPERM_MESSAGE);
+                notify_quiet(executor, NOPERM_MESSAGE);
                 return;
             }
         }
@@ -618,16 +621,16 @@ void do_notify
         if (loccount > 0)
         {
             nfy_que(thing, attr, key, loccount);
-            if (  (!(Quiet(player) || Quiet(thing)))
+            if (  (!(Quiet(executor) || Quiet(thing)))
                && key != NFY_QUIET)
             {
                 if (key == NFY_DRAIN)
                 {
-                    notify_quiet(player, "Drained.");
+                    notify_quiet(executor, "Drained.");
                 }
                 else
                 {
-                    notify_quiet(player, "Notified.");
+                    notify_quiet(executor, "Notified.");
                 }
             }
         }
@@ -637,7 +640,8 @@ void do_notify
 // ---------------------------------------------------------------------------
 // setup_que: Set up a queue entry.
 //
-static BQUE *setup_que(dbref player, dbref cause, char *command, char *args[], int nargs, char *sargs[])
+static BQUE *setup_que(dbref executor, dbref caller, dbref enactor,
+                       char *command, char *args[], int nargs, char *sargs[])
 {
     int a;
     BQUE *tmp;
@@ -645,35 +649,35 @@ static BQUE *setup_que(dbref player, dbref cause, char *command, char *args[], i
 
     // Can we run commands at all?
     //
-    if (Halted(player))
+    if (Halted(executor))
         return NULL;
 
-    // Make sure player can afford to do it.
+    // Make sure executor can afford to do it.
     //
     a = mudconf.waitcost;
     if (mudconf.machinecost && RandomINT32(0, mudconf.machinecost-1) == 0)
     {
         a++;
     }
-    if (!payfor(player, a))
+    if (!payfor(executor, a))
     {
-        notify(Owner(player), "Not enough money to queue command.");
+        notify(Owner(executor), "Not enough money to queue command.");
         return NULL;
     }
 
     // Wizards and their objs may queue up to db_top+1 cmds. Players are
     // limited to QUEUE_QUOTA. -mnp
     //
-    a = QueueMax(Owner(player));
-    if (a_Queue(Owner(player), 1) > a)
+    a = QueueMax(Owner(executor));
+    if (a_Queue(Owner(executor), 1) > a)
     {
-        notify(Owner(player),
+        notify(Owner(executor),
             "Run away objects: too many commands queued.  Halted.");
-        halt_que(Owner(player), NOTHING);
+        halt_que(Owner(executor), NOTHING);
 
         // Halt also means no command execution allowed.
         //
-        s_Halted(player);
+        s_Halted(executor);
         return NULL;
     }
 
@@ -766,11 +770,11 @@ static BQUE *setup_que(dbref player, dbref cause, char *command, char *args[], i
 
     // Load the rest of the queue block.
     //
-    tmp->player = player;
+    tmp->executor = executor;
     tmp->IsTimed = FALSE;
     tmp->sem = NOTHING;
     tmp->attr = 0;
-    tmp->cause = cause;
+    tmp->enactor = enactor;
     tmp->nargs = nargs;
     return tmp;
 }
@@ -780,8 +784,9 @@ static BQUE *setup_que(dbref player, dbref cause, char *command, char *args[], i
 //
 void wait_que
 (
-    dbref player,
-    dbref cause,
+    dbref executor,
+    dbref caller,
+    dbref enactor,
     BOOL bTimed,
     CLinearTimeAbsolute &ltaWhen,
     dbref sem,
@@ -797,14 +802,14 @@ void wait_que
         return;
     }
 
-    BQUE *tmp = setup_que(player, cause, command, args, nargs, sargs);
+    BQUE *tmp = setup_que(executor, CALLERQQQ, enactor, command, args, nargs, sargs);
     if (!tmp)
     {
         return;
     }
 
     int iPriority;
-    if (Typeof(tmp->cause) == TYPE_PLAYER)
+    if (Typeof(tmp->enactor) == TYPE_PLAYER)
     {
         iPriority = PRIORITY_PLAYER;
     }
@@ -851,8 +856,9 @@ void wait_que
 //
 void do_wait
 (
-    dbref player,
-    dbref cause,
+    dbref executor,
+    dbref caller,
+    dbref enactor,
     int key,
     char *event,
     char *cmd,
@@ -877,7 +883,7 @@ void do_wait
             ltd.SetSecondsString(event);
             ltaWhen += ltd;
         }
-        wait_que(player, cause, TRUE, ltaWhen, NOTHING, 0, cmd,
+        wait_que(executor, CALLERQQQ, enactor, TRUE, ltaWhen, NOTHING, 0, cmd,
             cargs, ncargs, mudstate.global_regs);
         return;
     }
@@ -885,17 +891,17 @@ void do_wait
     // Semaphore wait with optional timeout.
     //
     char *what = parse_to(&event, '/', 0);
-    init_match(player, what, NOTYPE);
+    init_match(executor, what, NOTYPE);
     match_everything(0);
 
     dbref thing = noisy_match_result();
     if (!Good_obj(thing))
     {
-        notify(player, "No match.");
+        notify(executor, "No match.");
     }
-    else if (!controls(player, thing) && !Link_ok(thing))
+    else if (!controls(executor, thing) && !Link_ok(thing))
     {
-        notify(player, NOPERM_MESSAGE);
+        notify(executor, NOPERM_MESSAGE);
     }
     else
     {
@@ -927,7 +933,7 @@ void do_wait
                     attr = mkattr(event);
                     if (attr <= 0)
                     {
-                        notify_quiet(player, "Invalid attribute.");
+                        notify_quiet(executor, "Invalid attribute.");
                         return;
                     }
                     ap = atr_num(attr);
@@ -935,9 +941,9 @@ void do_wait
                 dbref aowner;
                 int   aflags;
                 atr_pget_info(thing, ap->number, &aowner, &aflags);
-                if (!Set_attr(player, thing, ap, aflags))
+                if (!Set_attr(executor, thing, ap, aflags))
                 {
-                    notify_quiet(player, NOPERM_MESSAGE);
+                    notify_quiet(executor, NOPERM_MESSAGE);
                     return;
                 }
             }
@@ -951,7 +957,7 @@ void do_wait
             thing = NOTHING;
             bTimed = FALSE;
         }
-        wait_que(player, cause, bTimed, ltaWhen, thing, attr,
+        wait_que(executor, CALLERQQQ, enactor, bTimed, ltaWhen, thing, attr,
             cmd, cargs, ncargs, mudstate.global_regs);
     }
 }
@@ -1024,7 +1030,7 @@ int CallBack_ShowDispatches(PTASK_RECORD p)
 
 void ShowPsLine(BQUE *tmp)
 {
-    char *bufp = unparse_object(Show_Player, tmp->player, 0);
+    char *bufp = unparse_object(Show_Player, tmp->executor, 0);
     if (tmp->IsTimed && (Good_obj(tmp->sem)))
     {
         CLinearTimeDelta ltd = tmp->waittime - Show_lsaNow;
@@ -1058,7 +1064,7 @@ void ShowPsLine(BQUE *tmp)
             }
         }
         *bp = '\0';
-        bp = unparse_object(Show_Player, tmp->cause, 0);
+        bp = unparse_object(Show_Player, tmp->enactor, 0);
         notify(Show_Player, tprintf("   Enactor: %s%s", bp, bufp));
         free_lbuf(bp);
     }
@@ -1118,18 +1124,18 @@ int CallBack_ShowSemaphore(PTASK_RECORD p)
 }
 
 // ---------------------------------------------------------------------------
-// do_ps: tell player what commands they have pending in the queue
+// do_ps: tell executor what commands they have pending in the queue
 //
-void do_ps(dbref player, dbref cause, int key, char *target)
+void do_ps(dbref executor, dbref caller, dbref enactor, int key, char *target)
 {
     char *bufp;
-    dbref player_targ, obj_targ;
+    dbref executor_targ, obj_targ;
 
     // Figure out what to list the queue for.
     //
-    if ((key & PS_ALL) && !(See_Queue(player)))
+    if ((key & PS_ALL) && !(See_Queue(executor)))
     {
-        notify(player, NOPERM_MESSAGE);
+        notify(executor, NOPERM_MESSAGE);
         return;
     }
     if (!target || !*target)
@@ -1137,31 +1143,31 @@ void do_ps(dbref player, dbref cause, int key, char *target)
         obj_targ = NOTHING;
         if (key & PS_ALL)
         {
-            player_targ = NOTHING;
+            executor_targ = NOTHING;
         }
         else
         {
-            player_targ = Owner(player);
-            if (Typeof(player) != TYPE_PLAYER)
-                obj_targ = player;
+            executor_targ = Owner(executor);
+            if (Typeof(executor) != TYPE_PLAYER)
+                obj_targ = executor;
         }
     }
     else
     {
-        player_targ = Owner(player);
-        obj_targ = match_controlled(player, target);
+        executor_targ = Owner(executor);
+        obj_targ = match_controlled(executor, target);
         if (obj_targ == NOTHING)
         {
             return;
         }
         if (key & PS_ALL)
         {
-            notify(player, "Can't specify a target and /all");
+            notify(executor, "Can't specify a target and /all");
             return;
         }
         if (Typeof(obj_targ) == TYPE_PLAYER)
         {
-            player_targ = obj_targ;
+            executor_targ = obj_targ;
             obj_targ = NOTHING;
         }
     }
@@ -1175,7 +1181,7 @@ void do_ps(dbref player, dbref cause, int key, char *target)
         break;
 
     default:
-        notify(player, "Illegal combination of switches.");
+        notify(executor, "Illegal combination of switches.");
         return;
     }
 
@@ -1185,17 +1191,17 @@ void do_ps(dbref player, dbref cause, int key, char *target)
     Shown_RunQueueEntry = 0;
     Total_SemaphoreTimeout = 0;
     Shown_SemaphoreTimeout = 0;
-    Show_Player_Target = player_targ;
+    Show_Player_Target = executor_targ;
     Show_Object_Target = obj_targ;
     Show_Key = key;
-    Show_Player = player;
+    Show_Player = executor;
     Show_bFirstLine = TRUE;
     scheduler.TraverseOrdered(CallBack_ShowWait);
     Show_bFirstLine = TRUE;
     scheduler.TraverseOrdered(CallBack_ShowSemaphore);
-    if (Wizard(player))
+    if (Wizard(executor))
     {
-        notify(player, "----- System Queue -----");
+        notify(executor, "----- System Queue -----");
         scheduler.TraverseOrdered(CallBack_ShowDispatches);
     }
 
@@ -1205,11 +1211,11 @@ void do_ps(dbref player, dbref cause, int key, char *target)
     sprintf(bufp, "Totals: Wait Queue...%d/%d  Semaphores...%d/%d",
         Shown_RunQueueEntry, Total_RunQueueEntry,
         Shown_SemaphoreTimeout, Total_SemaphoreTimeout);
-    notify(player, bufp);
-    if (Wizard(player))
+    notify(executor, bufp);
+    if (Wizard(executor))
     {
         sprintf(bufp, "        System Tasks.....%d", Total_SystemTasks);
-        notify(player, bufp);
+        notify(executor, bufp);
     }
     free_mbuf(bufp);
 }
@@ -1232,7 +1238,7 @@ int CallBack_Warp(PTASK_RECORD p)
 // ---------------------------------------------------------------------------
 // do_queue: Queue management
 //
-void do_queue(dbref player, dbref cause, int key, char *arg)
+void do_queue(dbref executor, dbref caller, dbref enactor, int key, char *arg)
 {
     int was_disabled;
 
@@ -1243,7 +1249,7 @@ void do_queue(dbref player, dbref cause, int key, char *arg)
         int save_minPriority = scheduler.GetMinPriority();
         if (save_minPriority <= PRIORITY_CF_DEQUEUE_DISABLED)
         {
-            notify(player, "Warning: automatic dequeueing is disabled.");
+            notify(executor, "Warning: automatic dequeueing is disabled.");
             scheduler.SetMinPriority(PRIORITY_CF_DEQUEUE_ENABLED);
         }
         CLinearTimeAbsolute lsaNow;
@@ -1252,9 +1258,9 @@ void do_queue(dbref player, dbref cause, int key, char *arg)
         int ncmds = scheduler.RunTasks(i);
         scheduler.SetMinPriority(save_minPriority);
 
-        if (!Quiet(player))
+        if (!Quiet(executor))
         {
-            notify(player, tprintf("%d commands processed.", ncmds));
+            notify(executor, tprintf("%d commands processed.", ncmds));
         }
     }
     else if (key == QUEUE_WARP)
@@ -1264,26 +1270,26 @@ void do_queue(dbref player, dbref cause, int key, char *arg)
         ltdWarp.SetSeconds(iWarp);
         if (scheduler.GetMinPriority() <= PRIORITY_CF_DEQUEUE_DISABLED)
         {
-            notify(player, "Warning: automatic dequeueing is disabled.");
+            notify(executor, "Warning: automatic dequeueing is disabled.");
         }
 
         scheduler.TraverseUnordered(CallBack_Warp);
 
-        if (Quiet(player))
+        if (Quiet(executor))
         {
             return;
         }
         if (iWarp > 0)
         {
-            notify(player, tprintf("WaitQ timer advanced %d seconds.", iWarp));
+            notify(executor, tprintf("WaitQ timer advanced %d seconds.", iWarp));
         }
         else if (iWarp < 0)
         {
-            notify(player, tprintf("WaitQ timer set back %d seconds.", iWarp));
+            notify(executor, tprintf("WaitQ timer set back %d seconds.", iWarp));
         }
         else
         {
-            notify(player, "Object queue appended to player queue.");
+            notify(executor, "Object queue appended to player queue.");
         }
     }
 }

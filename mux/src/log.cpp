@@ -1,6 +1,6 @@
 // log.cpp -- Logging routines.
 //
-// $Id: log.cpp,v 1.1 2002-05-24 06:53:15 sdennis Exp $
+// $Id: log.cpp,v 1.2 2002-06-04 00:47:27 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -255,8 +255,9 @@ void log_type_and_num(dbref thing)
 #ifndef STANDALONE
 void do_log
 (
-    dbref player,
-    dbref cause,
+    dbref executor,
+    dbref caller,
+    dbref enactor,
     int   key,
     int   nargs,
     char *whichlog,
@@ -326,7 +327,7 @@ void do_log
     if (!bValid)
     {
         if (pFullName) free_lbuf(pFullName);
-        notify(player, "Syntax: @log file=message");
+        notify(executor, "Syntax: @log file=message");
         return;
     }
 
@@ -338,7 +339,7 @@ void do_log
     }
     if (hFile == NULL)
     {
-        notify(player, "Not a valid log file.");
+        notify(executor, "Not a valid log file.");
         if (pFullName) free_lbuf(pFullName);
         return;
     }

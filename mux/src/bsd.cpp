@@ -1,6 +1,6 @@
 // bsd.cpp
 //
-// $Id: bsd.cpp,v 1.1 2002-05-24 06:53:14 sdennis Exp $
+// $Id: bsd.cpp,v 1.2 2002-06-04 00:47:27 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6 and Nick Gammon's NT IO Completion port
@@ -362,7 +362,7 @@ DWORD WINAPI SlaveProc(LPVOID lpParameter)
 }
 
 static BOOL bSlaveBooted = FALSE;
-void boot_slave(dbref, dbref, int)
+void boot_slave(dbref executor, dbref caller, dbref enactor, int)
 {
     int iSlave;
 
@@ -465,7 +465,7 @@ static int get_slave_result(void)
 
 #else // WIN32
 
-void boot_slave(dbref ref1, dbref ref2, int int3)
+void boot_slave(dbref executor, dbref caller, dbref enactor, int int3)
 {
     char *pFailedFunc = 0;
     int sv[2];
@@ -1324,7 +1324,7 @@ void shovechars(int nPorts, PortInfo aPorts[])
                     log_text("Bad slave descriptor ");
                     log_number(slave_socket);
                     ENDLOG;
-                    boot_slave(0, 0, 0);
+                    boot_slave(GOD, GOD, GOD, 0);
                 }
                 for (i = 0; i < nPorts; i++)
                 {
@@ -2697,7 +2697,7 @@ RETSIGTYPE DCL_CDECL sighandler(int sig)
         if (mudstate.bCanRestart)
         {
             log_signal(signames[sig]);
-            do_restart(GOD, GOD, 0);
+            do_restart(GOD, GOD, GOD, 0);
         }
         else
         {
@@ -2772,7 +2772,7 @@ RETSIGTYPE DCL_CDECL sighandler(int sig)
         check_panicking(sig);
         log_signal(signames[sig]);
         sprintf(buff, "Caught signal %s, exiting.", signames[sig]);
-        do_shutdown(GOD, GOD, 0, buff);
+        do_shutdown(GOD, GOD, GOD, 0, buff);
         break;
 
     case SIGILL:
@@ -3250,15 +3250,18 @@ void ProcessWindowsTCP(DWORD dwTimeout)
                 d->OutboundOverlapped.Offset = 0;
                 d->OutboundOverlapped.OffsetHigh = 0;
 
-                // We do allow more than one complete write request in the IO completion port queue. The reason is
-                // that if WriteFile returns TRUE, we -can- re-used the output_buffer -and- redundant queue entries
-                // just cause us to try to write more often. There is no possibility of corruption.
+                // We do allow more than one complete write request in the IO
+                // completion port queue. The reason is that if WriteFile
+                // returns TRUE, we -can- re-used the output_buffer -and-
+                // redundant queue entries just cause us to try to write more
+                // often. There is no possibility of corruption.
                 //
-                // It then becomes a trade off between the costs. I find that keeping the TCP/IP full of data is
-                // more important.
+                // It then becomes a trade off between the costs. I find that
+                // keeping the TCP/IP full of data is more important.
                 //
                 DWORD nWritten;
-                b = WriteFile((HANDLE) d->descriptor, d->output_buffer, nBytes, &nWritten, &d->OutboundOverlapped);
+                b = WriteFile((HANDLE) d->descriptor, d->output_buffer,
+                              nBytes, &nWritten, &d->OutboundOverlapped);
 
             } while (b);
 

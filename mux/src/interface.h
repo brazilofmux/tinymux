@@ -1,6 +1,6 @@
 // interface.h
 //
-// $Id: interface.h,v 1.1 2002-05-24 06:53:15 sdennis Exp $
+// $Id: interface.h,v 1.2 2002-06-04 00:47:27 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -85,7 +85,7 @@ typedef struct text_block
 
 typedef struct prog_data PROG;
 struct prog_data {
-    dbref wait_cause;
+    dbref wait_enactor;
     char *wait_regs[MAX_GLOBAL_REGS];
 };
 
@@ -131,7 +131,7 @@ struct descriptor_data
   char *raw_input_at;
   int quota;
   int wait_for_input;       /* Used by @prog */
-  dbref wait_cause;     /* Used by @prog */
+  dbref wait_enactor;       /* Used by @prog */
   PROG *program_data;
   struct descriptor_data *hashnext;
   struct descriptor_data *next;

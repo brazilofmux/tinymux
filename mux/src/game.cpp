@@ -1,6 +1,6 @@
 // game.cpp
 //
-// $Id: game.cpp,v 1.2 2002-06-03 20:01:09 sdennis Exp $
+// $Id: game.cpp,v 1.3 2002-06-04 00:47:27 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -32,8 +32,8 @@ extern void FDECL(close_sockets, (int emergency, char *message));
 extern void NDECL(init_version);
 extern void NDECL(init_logout_cmdtab);
 extern void FDECL(raw_notify, (dbref, const char *));
-extern void FDECL(do_dbck, (dbref, dbref, int));
-extern void boot_slave(dbref, dbref, int);
+extern void do_dbck(dbref executor, dbref caller, dbref enactor, int);
+extern void boot_slave(dbref executor, dbref caller, dbref enactor, int);
 
 void FDECL(fork_and_dump, (int));
 void NDECL(dump_database);
@@ -55,16 +55,16 @@ int corrupt = 0;
 // used to allocate storage for temporary stuff, cleared before command
 // execution
 //
-void do_dump(dbref player, dbref cause, int key)
+void do_dump(dbref executor, dbref caller, dbref enactor, int key)
 {
 #ifndef WIN32
     if (mudstate.dumping)
     {
-        notify(player, "Dumping in progress. Try again later.");
+        notify(executor, "Dumping in progress. Try again later.");
         return;
     }
 #endif
-    notify(player, "Dumping...");
+    notify(executor, "Dumping...");
     fork_and_dump(key);
 }
 
@@ -79,12 +79,12 @@ void NDECL(report)
     log_text(mudstate.debug_cmd);
     log_text((char *)"'");
     ENDLOG
-    if (Good_obj(mudstate.curr_player))
+    if (Good_obj(mudstate.curr_executor))
     {
         STARTLOG(LOG_BUGS, "BUG", "INFO")
         log_text((char *)"Player: ");
-        log_name_and_loc(mudstate.curr_player);
-        if ((mudstate.curr_enactor != mudstate.curr_player) && Good_obj(mudstate.curr_enactor))
+        log_name_and_loc(mudstate.curr_executor);
+        if ((mudstate.curr_enactor != mudstate.curr_executor) && Good_obj(mudstate.curr_enactor))
         {
             log_text((char *)" Enactor: ");
             log_name_and_loc(mudstate.curr_enactor);
@@ -246,8 +246,8 @@ static int atr_match1(dbref thing, dbref parent, dbref player, char type, char *
         {
             match = 1;
             CLinearTimeAbsolute lta;
-            wait_que(thing, player, FALSE, lta, NOTHING, 0, s, args,
-                10, mudstate.global_regs);
+            wait_que(thing, CALLERQQQ, player, FALSE, lta, NOTHING, 0, s,
+                args, 10, mudstate.global_regs);
             for (int i = 0; i < 10; i++)
             {
                 if (args[i])
@@ -512,7 +512,7 @@ void notify_check(dbref target, dbref sender, const char *msg, int key)
         if (  Nospoof(target)
            && target != sender
            && target != mudstate.curr_enactor
-           && target != mudstate.curr_player)
+           && target != mudstate.curr_executor)
         {
             // I'd really like to use tprintf here but I can't because the
             // caller may have.  notify(target, tprintf(...)) is quite common
@@ -1002,7 +1002,7 @@ static void report_timecheck
     }
 }
 
-void do_timecheck(dbref player, dbref cause, int key)
+void do_timecheck(dbref executor, dbref caller, dbref enactor, int key)
 {
     int yes_screen, yes_log, yes_clear;
 
@@ -1025,19 +1025,19 @@ void do_timecheck(dbref player, dbref cause, int key)
             yes_log = 1;
     }
 
-    report_timecheck(player, yes_screen, yes_log, yes_clear);
+    report_timecheck(executor, yes_screen, yes_log, yes_clear);
 }
 
-void do_shutdown(dbref player, dbref cause, int key, char *message)
+void do_shutdown(dbref executor, dbref caller, dbref enactor, int key, char *message)
 {
     int fd;
 
-    if (player != NOTHING)
+    if (executor != NOTHING)
     {
-        raw_broadcast(0, "GAME: Shutdown by %s", Name(Owner(player)));
+        raw_broadcast(0, "GAME: Shutdown by %s", Name(Owner(executor)));
         STARTLOG(LOG_ALWAYS, "WIZ", "SHTDN")
         log_text((char *)"Shutdown by ");
-        log_name(player);
+        log_name(executor);
         ENDLOG
     }
     else
@@ -1734,10 +1734,10 @@ int Hearer(dbref thing)
     return 0;
 }
 
-void do_readcache(dbref player, dbref cause, int key)
+void do_readcache(dbref executor, dbref caller, dbref enactor, int key)
 {
-    helpindex_load(player);
-    fcache_load(player);
+    helpindex_load(executor);
+    fcache_load(executor);
 }
 
 static void NDECL(process_preload)
@@ -2064,7 +2064,7 @@ int DCL_CDECL main(int argc, char *argv[])
 
     // Do a consistency check and set up the freelist
     //
-    do_dbck(NOTHING, NOTHING, 0);
+    do_dbck(NOTHING, NOTHING, NOTHING, 0);
 
     // Reset all the hash stats
     //
@@ -2110,7 +2110,7 @@ int DCL_CDECL main(int argc, char *argv[])
         }
     }
     SetupPorts(&nMainGamePorts, aMainGamePorts, &mudconf.ports);
-    boot_slave(0, 0, 0);
+    boot_slave(GOD, GOD, GOD, 0);
     init_timer();
 
 #ifdef WIN32

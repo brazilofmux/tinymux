@@ -1,6 +1,6 @@
 // conf.cpp -- Set up configuration information and static data.
 //
-// $Id: conf.cpp,v 1.1 2002-05-24 06:53:15 sdennis Exp $
+// $Id: conf.cpp,v 1.2 2002-06-04 00:47:27 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -256,7 +256,7 @@ void NDECL(cf_init)
     mudstate.logging = 0;
     mudstate.epoch = 0;
     mudstate.generation = 0;
-    mudstate.curr_player = NOTHING;
+    mudstate.curr_executor = NOTHING;
     mudstate.curr_enactor = NOTHING;
     mudstate.shutdown_flag = 0;
     mudstate.attr_next = A_USER_START;
@@ -1704,18 +1704,19 @@ void ValidateConfigurationDbrefs(void)
 //
 void do_admin
 (
-    dbref player,
-    dbref cause,
+    dbref executor,
+    dbref caller,
+    dbref enactor,
     int   extra,
     int   nargs,
     char *kw,
     char *value
 )
 {
-    int i = cf_set(kw, value, player);
-    if ((i >= 0) && !Quiet(player))
+    int i = cf_set(kw, value, executor);
+    if ((i >= 0) && !Quiet(executor))
     {
-        notify(player, "Set.");
+        notify(executor, "Set.");
     }
     ValidateConfigurationDbrefs();
 }

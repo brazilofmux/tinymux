@@ -1,6 +1,6 @@
 // externs.h -- Prototypes for externs not defined elsewhere.
 //
-// $Id: externs.h,v 1.3 2002-06-03 20:29:52 sdennis Exp $
+// $Id: externs.h,v 1.4 2002-06-04 00:47:27 sdennis Exp $
 //
 
 #ifndef EXTERNS_H
@@ -44,8 +44,8 @@ extern const char *time_format_2(int Seconds);
 /* From cque.cpp */
 extern int  FDECL(nfy_que, (dbref, int, int, int));
 extern int  FDECL(halt_que, (dbref, dbref));
-extern void wait_que(dbref, dbref, BOOL, CLinearTimeAbsolute&, dbref,
-                     int, char *, char *[],int, char *[]);
+extern void wait_que(dbref executor, dbref caller, dbref enactor, BOOL,
+    CLinearTimeAbsolute&, dbref, int, char *, char *[],int, char *[]);
 extern void NDECL(recover_queue_deposits);
 
 #ifdef WIN32 // WIN32
@@ -263,7 +263,8 @@ extern char *   FDECL(uncompress_str, (char *, const char *, int));
 /* From command.cpp */
 extern int  check_access(dbref player, int mask);
 extern void set_prefix_cmds(void);
-extern char *process_command(dbref, dbref, int, char *, char *[], int);
+extern char *process_command(dbref executor, dbref caller, dbref enactor, int,
+    char *, char *[], int);
 
 #define Protect(f) (cmdp->perms & f)
 
@@ -705,14 +706,16 @@ extern void do_pemit_single
     int chPoseType,
     char *message
 );
-extern void do_say(dbref player, dbref cause, int key, char *message);
+extern void do_say(dbref executor, dbref caller, dbref enactor, int key,
+                   char *message);
 
 extern int boot_off(dbref player, char *message);
 extern void do_mail_clear(dbref player, char *msglist);
 extern void do_mail_purge(dbref player);
 extern char *upcasestr(char *);
 extern void raw_notify_html(dbref player, const char *msg);
-extern void do_lock(dbref player, dbref cause, int key, int nargs, char *name, char *keytext);
+extern void do_lock(dbref executor, dbref caller, dbref enactor, int key,
+                    int nargs, char *name, char *keytext);
 extern void check_events(void);
 extern void list_system_resources(dbref player);
 

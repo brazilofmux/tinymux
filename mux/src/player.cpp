@@ -1,6 +1,6 @@
 // player.cpp
 //
-// $Id: player.cpp,v 1.1 2002-05-24 06:53:15 sdennis Exp $
+// $Id: player.cpp,v 1.2 2002-06-04 00:47:28 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -305,14 +305,14 @@ dbref create_player(char *name, char *password, dbref creator, int isrobot, int 
     {
         if (*mudconf.guests_channel)
         {
-            do_addcom(player, player, 0, 2, "g", mudconf.guests_channel);
+            do_addcom(player, CALLERQQQ, player, 0, 2, "g", mudconf.guests_channel);
         }
     }
     else
     {
         if (*mudconf.public_channel)
         {
-            do_addcom(player, player, 0, 2, "pub", mudconf.public_channel);
+            do_addcom(player, CALLERQQQ, player, 0, 2, "pub", mudconf.public_channel);
         }
     }
 
@@ -329,8 +329,9 @@ dbref create_player(char *name, char *password, dbref creator, int isrobot, int 
 
 void do_password
 (
-    dbref player,
-    dbref cause,
+    dbref executor,
+    dbref caller,
+    dbref enactor,
     int   key,
     int   nargs,
     char *oldpass,
@@ -339,19 +340,19 @@ void do_password
 {
     dbref aowner;
     int   aflags;
-    char *target = atr_get(player, A_PASS, &aowner, &aflags);
-    if (!*target || !check_pass(player, oldpass))
+    char *target = atr_get(executor, A_PASS, &aowner, &aflags);
+    if (!*target || !check_pass(executor, oldpass))
     {
-        notify(player, "Sorry.");
+        notify(executor, "Sorry.");
     }
-    else if (!ok_password(newpass, player))
+    else if (!ok_password(newpass, executor))
     {
         // Do nothing, notification is handled by ok_password()
     }
     else
     {
-        atr_add_raw(player, A_PASS, crypt(newpass, "XX"));
-        notify(player, "Password changed.");
+        atr_add_raw(executor, A_PASS, crypt(newpass, "XX"));
+        notify(executor, "Password changed.");
     }
     free_lbuf(target);
 }
@@ -369,7 +370,7 @@ static void disp_from_on(dbref player, char *dtm_str, char *host_str)
     }
 }
 
-void do_last(dbref player, dbref cause, int key, char *who)
+void do_last(dbref executor, dbref caller, dbref enactor, int key, char *who)
 {
     dbref target, aowner;
     LDATA login_info;
@@ -378,39 +379,39 @@ void do_last(dbref player, dbref cause, int key, char *who)
 
     if (!who || !*who)
     {
-        target = Owner(player);
+        target = Owner(executor);
     }
     else if (!(string_compare(who, "me")))
     {
-        target = Owner(player);
+        target = Owner(executor);
     }
     else
     {
-        target = lookup_player(player, who, 1);
+        target = lookup_player(executor, who, 1);
     }
 
     if (target == NOTHING)
     {
-        notify(player, "I couldn't find that player.");
+        notify(executor, "I couldn't find that player.");
     }
-    else if (!Controls(player, target))
+    else if (!Controls(executor, target))
     {
-        notify(player, NOPERM_MESSAGE);
+        notify(executor, NOPERM_MESSAGE);
     }
     else
     {
         atrbuf = atr_get(target, A_LOGINDATA, &aowner, &aflags);
         decrypt_logindata(atrbuf, &login_info);
 
-        notify(player, tprintf("Total successful connects: %d", login_info.tot_good));
+        notify(executor, tprintf("Total successful connects: %d", login_info.tot_good));
         for (i = 0; i < NUM_GOOD; i++)
         {
-            disp_from_on(player, login_info.good[i].host, login_info.good[i].dtm);
+            disp_from_on(executor, login_info.good[i].host, login_info.good[i].dtm);
         }
-        notify(player, tprintf("Total failed connects: %d", login_info.tot_bad));
+        notify(executor, tprintf("Total failed connects: %d", login_info.tot_bad));
         for (i = 0; i < NUM_BAD; i++)
         {
-            disp_from_on(player, login_info.bad[i].host, login_info.bad[i].dtm);
+            disp_from_on(executor, login_info.bad[i].host, login_info.bad[i].dtm);
         }
         free_lbuf(atrbuf);
     }

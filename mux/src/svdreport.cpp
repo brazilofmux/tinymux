@@ -1,6 +1,6 @@
 // svdreport.cpp -- Aggregate User Statistics module.
 //
-// $Id: svdreport.cpp,v 1.1 2002-05-24 06:53:16 sdennis Exp $
+// $Id: svdreport.cpp,v 1.2 2002-06-04 00:47:28 sdennis Exp $
 //
 // MUX 2.1
 // Copyright (C) 1998 through 2001 Solid Vertical Domains, Ltd. All
@@ -19,7 +19,7 @@
 #include "attrs.h"
 
 #define NPERIODS 24
-void do_report(dbref player, dbref cause, int extra)
+void do_report(dbref executor, dbref caller, dbref enactor, int extra)
 {
     char *buff = alloc_mbuf("do_report");
     int nBin[NPERIODS];
@@ -58,12 +58,12 @@ void do_report(dbref player, dbref cause, int extra)
     }
 
     int iHour, nSum = 0;
-    notify(player, "Day   Hours     Players  Total");
+    notify(executor, "Day   Hours     Players  Total");
     for (i = 0, iHour = 0; i < NPERIODS; i++, iHour += 8)
     {
         nSum += nBin[i];
         sprintf(buff, "%3d %03d - %03d: %6d %6d", iHour/24 + 1, iHour, iHour+8, nBin[i], nSum);
-        notify(player, buff);
+        notify(executor, buff);
     }
     free_mbuf(buff);
 }

@@ -1,6 +1,6 @@
 // quota.cpp -- Quota Management Commands.
 //
-// $Id: quota.cpp,v 1.1 2002-05-24 06:53:15 sdennis Exp $
+// $Id: quota.cpp,v 1.2 2002-06-04 00:47:28 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -151,22 +151,23 @@ static void show_quota(dbref player, dbref victim)
 
 void do_quota
 (
-    dbref player,
-    dbref cause,
+    dbref executor,
+    dbref caller,
+    dbref enactor,
     int   key,
     int   nargs,
     char *arg1,
     char *arg2
 )
 {
-    if (!(mudconf.quotas || Quota(player)))
+    if (!(mudconf.quotas || Quota(executor)))
     {
-        notify_quiet(player, "Quotas are not enabled.");
+        notify_quiet(executor, "Quotas are not enabled.");
         return;
     }
     if ((key & QUOTA_TOT) && (key & QUOTA_REM))
     {
-        notify_quiet(player, "Illegal combination of switches.");
+        notify_quiet(executor, "Illegal combination of switches.");
         return;
     }
 
@@ -190,7 +191,7 @@ void do_quota
         if (set)
         {
             STARTLOG(LOG_WIZARD, "WIZ", "QUOTA");
-            log_name(player);
+            log_name(executor);
             log_text((char *)" changed everyone's quota");
             ENDLOG;
         }
@@ -202,7 +203,7 @@ void do_quota
                 {
                     mung_quotas(i, key, value);
                 }
-                show_quota(player, i);
+                show_quota(executor, i);
             }
         }
         return;
@@ -212,30 +213,30 @@ void do_quota
     //
     if (!arg1 || *arg1 == '\0')
     {
-        who = Owner(player);
+        who = Owner(executor);
     }
     else
     {
-        who = lookup_player(player, arg1, 1);
+        who = lookup_player(executor, arg1, 1);
         if (!Good_obj(who))
         {
-            notify_quiet(player, "Not found.");
+            notify_quiet(executor, "Not found.");
             return;
         }
     }
 
     // Make sure we have permission to do it.
     //
-    if (!Quota(player))
+    if (!Quota(executor))
     {
         if (arg2 && *arg2)
         {
-            notify_quiet(player, NOPERM_MESSAGE);
+            notify_quiet(executor, NOPERM_MESSAGE);
             return;
         }
-        if (Owner(player) != who)
+        if (Owner(executor) != who)
         {
-            notify_quiet(player, NOPERM_MESSAGE);
+            notify_quiet(executor, NOPERM_MESSAGE);
             return;
         }
     }
@@ -252,13 +253,13 @@ void do_quota
     if (set)
     {
         STARTLOG(LOG_WIZARD, "WIZ", "QUOTA");
-        log_name(player);
+        log_name(executor);
         log_text((char *)" changed the quota of ");
         log_name(who);
         ENDLOG;
         mung_quotas(who, key, value);
     }
-    show_quota(player, who);
+    show_quota(executor, who);
 }
 
 FUNCTION(fun_hasquota)
@@ -272,7 +273,7 @@ FUNCTION(fun_hasquota)
 
     // Find out whose quota to show.
     //
-    dbref who = lookup_player(player, fargs[0], 1);
+    dbref who = lookup_player(executor, fargs[0], 1);
     if (!Good_obj(who))
     {
         safe_str("#-1 NOT FOUND", buff, bufc);
@@ -281,8 +282,8 @@ FUNCTION(fun_hasquota)
 
     // Make sure we have permission to do it.
     //
-    if (  Owner(player) != who
-       && !Quota(player))
+    if (  Owner(executor) != who
+       && !Quota(executor))
     {
         safe_str(NOPERM_MESSAGE, buff, bufc);
         return;

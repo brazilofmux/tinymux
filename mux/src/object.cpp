@@ -1,6 +1,6 @@
 // object.cpp -- Low-level object manipulation routines.
 //
-// $Id: object.cpp,v 1.1 2002-05-24 06:53:15 sdennis Exp $
+// $Id: object.cpp,v 1.2 2002-06-04 00:47:28 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -1652,7 +1652,7 @@ static NDECL(void check_floating)
  * * do_dbck: Perform a database consistency check and clean up damage.
  */
 
-void do_dbck(dbref player, dbref cause, int key)
+void do_dbck(dbref executor, dbref caller, dbref enactor, int key)
 {
     check_type = key;
     check_dead_refs();
@@ -1661,17 +1661,17 @@ void do_dbck(dbref player, dbref cause, int key)
     check_contents_chains();
     check_floating();
 #ifndef STANDALONE
-    if (player != NOTHING)
+    if (executor != NOTHING)
     {
         Guest.CleanUp();
     }
 #endif
     purge_going();
 #ifndef STANDALONE
-    if (  player != NOTHING
-       && !Quiet(player))
+    if (  executor != NOTHING
+       && !Quiet(executor))
     {
-        notify(player, "Done.");
+        notify(executor, "Done.");
     }
 #endif
 }

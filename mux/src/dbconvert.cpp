@@ -1,6 +1,6 @@
 // dbconvert.cpp -- Convert databases to various MUX formats.
 //
-// $Id: dbconvert.cpp,v 1.1 2002-05-24 06:53:15 sdennis Exp $ 
+// $Id: dbconvert.cpp,v 1.2 2002-06-04 00:47:27 sdennis Exp $ 
 //
 
 #include "copyright.h"
@@ -21,7 +21,7 @@
 #endif
 
 extern void NDECL(cf_init);
-extern void FDECL(do_dbck, (dbref, dbref, int));
+extern void do_dbck(dbref executor, dbref caller, dbref enactor, int);
 extern void NDECL(init_attrtab);
 
 /*
@@ -204,7 +204,9 @@ int DCL_CDECL main(int argc, char *argv[])
     info(db_format, db_flags, db_ver);
 
     if (do_check)
-        do_dbck(NOTHING, NOTHING, DBCK_FULL);
+    {
+        do_dbck(NOTHING, NOTHING, NOTHING, DBCK_FULL);
+    }
 
     if (do_write)
     {

@@ -1,6 +1,6 @@
 // vattr.cpp -- Manages the user-defined attributes.
 //
-// $Id: vattr.cpp,v 1.1 2002-05-24 06:53:16 sdennis Exp $
+// $Id: vattr.cpp,v 1.2 2002-06-04 00:47:28 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -105,9 +105,9 @@ extern int anum_alc_top;
 // There are five data structures which must remain mutually consistent: The attr_name_htab, vattr_name_htab,
 // the anum_table, the A_LIST for every object, and the attribute database.
 //
-void dbclean_CheckANHtoAT(dbref player)
+void dbclean_CheckANHtoAT(dbref executor)
 {
-    notify(player, "1. Checking (v)attr_name_htabs to anum_table mapping...");
+    notify(executor, "1. Checking (v)attr_name_htabs to anum_table mapping...");
 
     // This test traverses the attr_name_htab/vattr_name_htab and verifies that the corresponding anum_table
     // entry exists and is valid.
@@ -174,17 +174,17 @@ void dbclean_CheckANHtoAT(dbref player)
         }
     }
 
-    notify(player, tprintf("   Total Attributes: %d", nAttributes));
-    notify(player, tprintf("   Predefined: %d", nPredefined));
-    notify(player, tprintf("   User Defined: %d", nUserDefined));
-    notify(player, tprintf("   Index Out of Bounds: %d", nOutOfBounds));
-    notify(player, tprintf("   Inconsistent: %d", nInvalid));
-    notify(player, "   Done.");
+    notify(executor, tprintf("   Total Attributes: %d", nAttributes));
+    notify(executor, tprintf("   Predefined: %d", nPredefined));
+    notify(executor, tprintf("   User Defined: %d", nUserDefined));
+    notify(executor, tprintf("   Index Out of Bounds: %d", nOutOfBounds));
+    notify(executor, tprintf("   Inconsistent: %d", nInvalid));
+    notify(executor, "   Done.");
 }
 
-void dbclean_CheckATtoANH(dbref player)
+void dbclean_CheckATtoANH(dbref executor)
 {
-    notify(player, "2. Checking anum_table to vattr_name_htab mapping...");
+    notify(executor, "2. Checking anum_table to vattr_name_htab mapping...");
 
     // This test traverses the anum_table and verifies that the corresponding attr_name_htab and
     // vattr_name_htab entries exist and are valid.
@@ -244,17 +244,17 @@ void dbclean_CheckATtoANH(dbref player)
         }
     }
 
-    notify(player, tprintf("   Total Attributes: %d", nAttributes));
-    notify(player, tprintf("   Predefined: %d", nPredefined));
-    notify(player, tprintf("   User Defined: %d", nUserDefined));
-    notify(player, tprintf("   Empty: %d", nEmpty));
-    notify(player, tprintf("   Inconsistent: %d", nInvalid));
-    notify(player, "   Done.");
+    notify(executor, tprintf("   Total Attributes: %d", nAttributes));
+    notify(executor, tprintf("   Predefined: %d", nPredefined));
+    notify(executor, tprintf("   User Defined: %d", nUserDefined));
+    notify(executor, tprintf("   Empty: %d", nEmpty));
+    notify(executor, tprintf("   Inconsistent: %d", nInvalid));
+    notify(executor, "   Done.");
 }
 
-void dbclean_CheckALISTtoAT(dbref player)
+void dbclean_CheckALISTtoAT(dbref executor)
 {
-    notify(player, "3. Checking ALIST to anum_table mapping...");
+    notify(executor, "3. Checking ALIST to anum_table mapping...");
 
     // Traverse every attribute on every object and make sure that attribute is represented in the attribute table.
     //
@@ -315,15 +315,15 @@ void dbclean_CheckALISTtoAT(dbref player)
             }
         }
     }
-    notify(player, tprintf("   Invalid: %d", nInvalid));
-    notify(player, tprintf("   DANGLINGATTR-99999999 added: %d", nDangle));
-    notify(player, tprintf("   ALIST prunes: %d", nALIST));
+    notify(executor, tprintf("   Invalid: %d", nInvalid));
+    notify(executor, tprintf("   DANGLINGATTR-99999999 added: %d", nDangle));
+    notify(executor, tprintf("   ALIST prunes: %d", nALIST));
     atr_pop();
 }
 
-void dbclean_CheckALISTtoDB(dbref player)
+void dbclean_CheckALISTtoDB(dbref executor)
 {
-    notify(player, "4. Checking ALIST against attribute DB on disk...");
+    notify(executor, "4. Checking ALIST against attribute DB on disk...");
 
     // Traverse every attribute on every object and make sure that attribute is represented attribute database.
     //
@@ -358,17 +358,17 @@ void dbclean_CheckALISTtoDB(dbref player)
             }
         }
     }
-    notify(player, tprintf("   Invalid: %d", nInvalid));
-    notify(player, tprintf("   DB prunes: %d", nMissing));
+    notify(executor, tprintf("   Invalid: %d", nInvalid));
+    notify(executor, tprintf("   DB prunes: %d", nMissing));
     atr_pop();
 }
 
-void dbclean_IntegrityChecking(dbref player)
+void dbclean_IntegrityChecking(dbref executor)
 {
-    dbclean_CheckANHtoAT(player);
-    dbclean_CheckATtoANH(player);
-    dbclean_CheckALISTtoAT(player);
-    dbclean_CheckALISTtoDB(player);
+    dbclean_CheckANHtoAT(executor);
+    dbclean_CheckATtoANH(executor);
+    dbclean_CheckALISTtoAT(executor);
+    dbclean_CheckALISTtoDB(executor);
 }
 
 int dbclean_RemoveStaleAttributeNames(void)
@@ -604,12 +604,12 @@ void dbclean_RenumberAttributes(int cVAttributes)
     aMap = NULL;
 }
 
-void do_dbclean(dbref player, dbref cause, int key)
+void do_dbclean(dbref executor, dbref caller, dbref enactor, int key)
 {
 #ifndef WIN32
     if (mudstate.dumping)
     {
-        notify(player, "Dumping in progress. Try again later.");
+        notify(executor, "Dumping in progress. Try again later.");
         return;
     }
 #endif
@@ -619,16 +619,16 @@ void do_dbclean(dbref player, dbref cause, int key)
     al_store();
 #endif // MEMORY_BASED
 
-    notify(player, "Checking Integrity of the attribute data structures...");
-    dbclean_IntegrityChecking(player);
-    notify(player, "Removing stale attributes names...");
+    notify(executor, "Checking Integrity of the attribute data structures...");
+    dbclean_IntegrityChecking(executor);
+    notify(executor, "Removing stale attributes names...");
     int cVAttributes = dbclean_RemoveStaleAttributeNames();
-    notify(player, "Renumbering and compacting attribute numbers...");
+    notify(executor, "Renumbering and compacting attribute numbers...");
     dbclean_RenumberAttributes(cVAttributes);
-    notify(player, tprintf("Next Attribute number to allocate: %d", mudstate.attr_next));
-    notify(player, "Checking Integrity of the attribute data structures...");
-    dbclean_IntegrityChecking(player);
-    notify(player, "@dbclean completed..");
+    notify(executor, tprintf("Next Attribute number to allocate: %d", mudstate.attr_next));
+    notify(executor, "Checking Integrity of the attribute data structures...");
+    dbclean_IntegrityChecking(executor);
+    notify(executor, "@dbclean completed..");
 }
 #endif
 

@@ -1,6 +1,6 @@
 // predicates.cpp
 //
-// $Id: predicates.cpp,v 1.2 2002-06-03 20:01:09 sdennis Exp $
+// $Id: predicates.cpp,v 1.3 2002-06-04 00:47:28 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -523,7 +523,8 @@ void handle_ears(dbref thing, int could_hear, int can_hear)
 void do_switch
 (
     dbref player,
-    dbref cause,
+    dbref caller,
+    dbref enactor,
     int   key,
     char *expr,
     char *args[],
@@ -557,13 +558,13 @@ void do_switch
     {
         bp = buff;
         str = args[a];
-        TinyExec(buff, &bp, player, CALLERQQQ, cause, EV_FCHECK | EV_EVAL | EV_TOP,
+        TinyExec(buff, &bp, player, CALLERQQQ, enactor, EV_FCHECK | EV_EVAL | EV_TOP,
             &str, cargs, ncargs);
         *bp = '\0';
         if (wild_match(buff, expr))
         {
             char *tbuf = replace_tokens(args[a+1], NULL, NULL, expr);
-            wait_que(player, cause, FALSE, lta, NOTHING, 0,
+            wait_que(player, CALLERQQQ, enactor, FALSE, lta, NOTHING, 0,
                 tbuf, cargs, ncargs, mudstate.global_regs);
             free_lbuf(tbuf);
             if (key == SWITCH_ONE)
@@ -580,7 +581,7 @@ void do_switch
        && args[a])
     {
         char *tbuf = replace_tokens(args[a], NULL, NULL, expr);
-        wait_que(player, cause, FALSE, lta, NOTHING, 0, tbuf,
+        wait_que(player, CALLERQQQ, enactor, FALSE, lta, NOTHING, 0, tbuf,
             cargs, ncargs, mudstate.global_regs);
         free_lbuf(tbuf);
     }
@@ -589,7 +590,8 @@ void do_switch
 void do_addcommand
 (
     dbref player,
-    dbref cause,
+    dbref caller,
+    dbref enactor,
     int   key,
     int   nargs,
     char *name,
@@ -694,7 +696,8 @@ void do_addcommand
     notify(player, tprintf("%s added.", name));
 }
 
-void do_listcommands(dbref player, dbref cause, int key, char *name)
+void do_listcommands(dbref player, dbref caller, dbref enactor, int key,
+                     char *name)
 {
     CMDENT *old;
     ADDENT *nextp;
@@ -770,7 +773,8 @@ void do_listcommands(dbref player, dbref cause, int key, char *name)
 void do_delcommand
 (
     dbref player,
-    dbref cause,
+    dbref caller,
+    dbref enactor,
     int   key,
     int   nargs,
     char *name,
@@ -913,7 +917,7 @@ void handle_prog(DESC *d, char *message)
     }
     cmd = atr_get(d->player, A_PROGCMD, &aowner, &aflags);
     CLinearTimeAbsolute lta;
-    wait_que(d->program_data->wait_cause, d->player, FALSE, lta,
+    wait_que(d->program_data->wait_enactor, CALLERQQQ, d->player, FALSE, lta,
         NOTHING, 0, cmd, (char **)&message, 1,
         (char **)d->program_data->wait_regs);
 
@@ -945,7 +949,7 @@ void handle_prog(DESC *d, char *message)
     free_lbuf(cmd);
 }
 
-void do_quitprog(dbref player, dbref cause, int key, char *name)
+void do_quitprog(dbref player, dbref caller, dbref enactor, int key, char *name)
 {
     DESC *d;
     dbref doer;
@@ -1015,7 +1019,8 @@ void do_quitprog(dbref player, dbref cause, int key, char *name)
 void do_prog
 (
     dbref player,
-    dbref cause,
+    dbref caller,
+    dbref enactor,
     int   key,
     int   nargs,
     char *name,
@@ -1089,7 +1094,7 @@ void do_prog
         return;
     }
 
-    // Check to see if the cause already has an @prog input pending.
+    // Check to see if the enactor already has an @prog input pending.
     //
     DESC_ITER_PLAYER(doer, d)
     {
@@ -1102,7 +1107,7 @@ void do_prog
 
     program = (PROG *)MEMALLOC(sizeof(PROG));
     (void)ISOUTOFMEMORY(program);
-    program->wait_cause = player;
+    program->wait_enactor = player;
     for (i = 0; i < MAX_GLOBAL_REGS; i++)
     {
         program->wait_regs[i] = alloc_lbuf("prog_regs");
@@ -1125,7 +1130,7 @@ void do_prog
  * ---------------------------------------------------------------------------
  * * do_restart: Restarts the game.
  */
-void do_restart(dbref player, dbref cause, int key)
+void do_restart(dbref player, dbref caller, dbref enactor, int key)
 {
     BOOL bDenied = FALSE;
 #ifndef WIN32
@@ -1194,14 +1199,14 @@ extern SOCKET slave_socket;
 
 #ifdef WIN32
 
-void do_backup(dbref player, int cause, int key)
+void do_backup(dbref player, dbref caller, dbref enactor, int key)
 {
     notify(player, "This feature is not yet available on Win32-hosted MUX.");
 }
 
 #else // WIN32
 
-void do_backup(dbref player, int cause, int key)
+void do_backup(dbref player, dbref caller, dbref enactor, int key)
 {
 #ifndef WIN32
     if (mudstate.dumping)
@@ -1238,7 +1243,7 @@ void do_backup(dbref player, int cause, int key)
  * * do_comment: Implement the @@ (comment) command. Very cpu-intensive :-)
  */
 
-void do_comment(dbref player, dbref cause, int key)
+void do_comment(dbref player, dbref caller, dbref enactor, int key)
 {
 }
 
@@ -1553,7 +1558,7 @@ dbref where_room(dbref what)
     return NOTHING;
 }
 
-int locatable(dbref player, dbref it, dbref cause)
+int locatable(dbref player, dbref it, dbref enactor)
 {
     dbref loc_it, room_it;
     int findable_room;
@@ -1576,8 +1581,8 @@ int locatable(dbref player, dbref it, dbref cause)
         (loc_it == player) ||
         ((loc_it != NOTHING) &&
          (Examinable(player, loc_it) || loc_it == where_is(player))) ||
-        Wizard(cause) ||
-        (it == cause))
+        Wizard(enactor) ||
+        (it == enactor))
         return 1;
 
     room_it = where_room(it);
@@ -1836,7 +1841,7 @@ void did_it(dbref player, dbref thing, int what, const char *def, int owhat, con
             }
             free_lbuf(charges);
             CLinearTimeAbsolute lta;
-            wait_que(thing, player, FALSE, lta, NOTHING, 0, act,
+            wait_que(thing, CALLERQQQ, player, FALSE, lta, NOTHING, 0, act,
                 args, nargs, mudstate.global_regs);
         }
         free_lbuf(act);
@@ -1848,7 +1853,8 @@ void did_it(dbref player, dbref thing, int what, const char *def, int owhat, con
  * * do_verb: Command interface to did_it.
  */
 
-void do_verb(dbref player, dbref cause, int key, char *victim_str, char *args[], int nargs)
+void do_verb(dbref player, dbref caller, dbref enactor, int key,
+             char *victim_str, char *args[], int nargs)
 {
     dbref actor, victim;
     dbref aowner = NOTHING;
@@ -1890,7 +1896,7 @@ void do_verb(dbref player, dbref cause, int key, char *victim_str, char *args[],
     }
     else
     {
-        actor = cause;
+        actor = enactor;
     }
 
     // Check permissions.  There are two possibilities:
@@ -2035,7 +2041,7 @@ BOOL OutOfMemory(const char *SourceFile, unsigned int LineNo)
     }
     else
     {
-        do_restart(GOD, GOD, 0);
+        do_restart(GOD, GOD, GOD, 0);
     }
 #endif // STANDALONE
     return TRUE;
@@ -2057,7 +2063,7 @@ BOOL AssertionFailed(const char *SourceFile, unsigned int LineNo)
     }
     else
     {
-        do_restart(GOD, GOD, 0);
+        do_restart(GOD, GOD, GOD, 0);
     }
 #endif // STANDALONE
     return FALSE;

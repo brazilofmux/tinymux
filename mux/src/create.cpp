@@ -1,6 +1,6 @@
 // create.cpp -- Commands that create new objects.
 //
-// $Id: create.cpp,v 1.1 2002-05-24 06:53:15 sdennis Exp $
+// $Id: create.cpp,v 1.2 2002-06-04 00:47:27 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -122,7 +122,8 @@ static void open_exit(dbref player, dbref loc, char *direction, char *linkto)
     }
 }
 
-void do_open(dbref player, dbref cause, int key, char *direction, char *links[], int nlinks)
+void do_open(dbref executor, dbref caller, dbref enactor, int key,
+             char *direction, char *links[], int nlinks)
 {
     dbref loc, destnum;
     char *dest;
@@ -135,23 +136,23 @@ void do_open(dbref player, dbref cause, int key, char *direction, char *links[],
         dest = NULL;
 
     if (key == OPEN_INVENTORY)
-        loc = player;
+        loc = executor;
     else
-        loc = Location(player);
+        loc = Location(executor);
 
-    open_exit(player, loc, direction, dest);
+    open_exit(executor, loc, direction, dest);
 
 
     // Open the back link if we can.
     //
     if (nlinks >= 2)
     {
-        destnum = parse_linkable_room(player, dest);
+        destnum = parse_linkable_room(executor, dest);
         if (destnum != NOTHING)
         {
             char buff[12];
             Tiny_ltoa(loc, buff);
-            open_exit(player, destnum, links[1], buff);
+            open_exit(executor, destnum, links[1], buff);
         }
     }
 }
@@ -216,8 +217,9 @@ static void link_exit(dbref player, dbref exit, dbref dest)
 
 void do_link
 (
-    dbref player,
-    dbref cause,
+    dbref executor,
+    dbref caller,
+    dbref enactor,
     int   key,
     int   nargs,
     char *what,
@@ -229,7 +231,7 @@ void do_link
 
     // Find the thing to link
     //
-    init_match(player, what, TYPE_EXIT);
+    init_match(executor, what, TYPE_EXIT);
     match_everything(0);
     thing = noisy_match_result();
     if (thing == NOTHING)
@@ -239,7 +241,7 @@ void do_link
     //
     if (!where || !*where)
     {
-        do_unlink(player, cause, key, what);
+        do_unlink(executor, CALLERQQQ, enactor, key, what);
         return;
     }
     switch (Typeof(thing))
@@ -248,21 +250,21 @@ void do_link
 
         // Set destination
         //
-        room = parse_linkable_room(player, where);
+        room = parse_linkable_room(executor, where);
         if (room != NOTHING)
-            link_exit(player, thing, room);
+            link_exit(executor, thing, room);
         break;
     case TYPE_PLAYER:
     case TYPE_THING:
 
         // Set home.
         //
-        if (!Controls(player, thing))
+        if (!Controls(executor, thing))
         {
-            notify_quiet(player, NOPERM_MESSAGE);
+            notify_quiet(executor, NOPERM_MESSAGE);
             break;
         }
-        init_match(player, where, NOTYPE);
+        init_match(executor, where, NOTYPE);
         match_everything(MAT_NO_EXITS);
         room = noisy_match_result();
         if (!Good_obj(room))
@@ -271,24 +273,24 @@ void do_link
         }
         if (!Has_contents(room))
         {
-            notify_quiet(player, "Can't link to an exit.");
+            notify_quiet(executor, "Can't link to an exit.");
             break;
         }
-        if (  !can_set_home(player, thing, room)
-           || !could_doit(player, room, A_LLINK))
+        if (  !can_set_home(executor, thing, room)
+           || !could_doit(executor, room, A_LLINK))
         {
-            notify_quiet(player, NOPERM_MESSAGE);
+            notify_quiet(executor, NOPERM_MESSAGE);
         }
         else if (room == HOME)
         {
-            notify_quiet(player, "Can't set home to home.");
+            notify_quiet(executor, "Can't set home to home.");
         }
         else
         {
             s_Home(thing, room);
-            if (!Quiet(player))
+            if (!Quiet(executor))
             {
-                notify_quiet(player, "Home set.");
+                notify_quiet(executor, "Home set.");
             }
         }
         break;
@@ -297,12 +299,12 @@ void do_link
 
         // Set dropto.
         //
-        if (!Controls(player, thing))
+        if (!Controls(executor, thing))
         {
-            notify_quiet(player, NOPERM_MESSAGE);
+            notify_quiet(executor, NOPERM_MESSAGE);
             break;
         }
-        room = parse_linkable_room(player, where);
+        room = parse_linkable_room(executor, where);
         if (!(Good_obj(room) || (room == HOME)))
         {
             break;
@@ -310,27 +312,27 @@ void do_link
 
         if ((room != HOME) && !isRoom(room))
         {
-            notify_quiet(player, "That is not a room!");
+            notify_quiet(executor, "That is not a room!");
         }
         else if (  (room != HOME)
-                && (  (!controls(player, room) && !Link_ok(room))
-                   || !could_doit(player, room, A_LLINK)))
+                && (  (!controls(executor, room) && !Link_ok(room))
+                   || !could_doit(executor, room, A_LLINK)))
         {
-            notify_quiet(player, NOPERM_MESSAGE);
+            notify_quiet(executor, NOPERM_MESSAGE);
         }
         else
         {
             s_Dropto(thing, room);
-            if (!Quiet(player))
+            if (!Quiet(executor))
             {
-                notify_quiet(player, "Dropto set.");
+                notify_quiet(executor, "Dropto set.");
             }
         }
         break;
 
     case TYPE_GARBAGE:
 
-        notify_quiet(player, NOPERM_MESSAGE);
+        notify_quiet(executor, NOPERM_MESSAGE);
         break;
 
     default:
@@ -350,8 +352,9 @@ void do_link
 //
 void do_parent
 (
-    dbref player,
-    dbref cause,
+    dbref executor,
+    dbref caller,
+    dbref enactor,
     int   key,
     int   nargs,
     char *tname,
@@ -363,7 +366,7 @@ void do_parent
 
     // Get victim.
     //
-    init_match(player, tname, NOTYPE);
+    init_match(executor, tname, NOTYPE);
     match_everything(0);
     thing = noisy_match_result();
     if (thing == NOTHING)
@@ -373,9 +376,9 @@ void do_parent
 
     // Make sure we can do it.
     //
-    if (isGarbage(thing) || Going(thing) || !Controls(player, thing))
+    if (isGarbage(thing) || Going(thing) || !Controls(executor, thing))
     {
-        notify_quiet(player, NOPERM_MESSAGE);
+        notify_quiet(executor, NOPERM_MESSAGE);
         return;
     }
 
@@ -383,7 +386,7 @@ void do_parent
     //
     if (*pname)
     {
-        init_match(player, pname, Typeof(thing));
+        init_match(executor, pname, Typeof(thing));
         match_everything(0);
         parent = noisy_match_result();
         if (parent == NOTHING)
@@ -391,9 +394,9 @@ void do_parent
 
         // Make sure we have rights to set parent.
         //
-        if (!Parentable(player, parent))
+        if (!Parentable(executor, parent))
         {
-            notify_quiet(player, NOPERM_MESSAGE);
+            notify_quiet(executor, NOPERM_MESSAGE);
             return;
         }
 
@@ -403,7 +406,7 @@ void do_parent
         {
             if (curr == thing)
             {
-                notify_quiet(player, "You can't have yourself as a parent!");
+                notify_quiet(executor, "You can't have yourself as a parent!");
                 return;
             }
         }
@@ -414,19 +417,20 @@ void do_parent
     }
 
     s_Parent(thing, parent);
-    if (!Quiet(thing) && !Quiet(player))
+    if (!Quiet(thing) && !Quiet(executor))
     {
         if (parent == NOTHING)
-            notify_quiet(player, "Parent cleared.");
+            notify_quiet(executor, "Parent cleared.");
         else
-            notify_quiet(player, "Parent set.");
+            notify_quiet(executor, "Parent set.");
     }
 }
 
 // ---------------------------------------------------------------------------
 // do_dig: Create a new room.
 //
-void do_dig(dbref player, dbref cause, int key, char *name, char *args[], int nargs)
+void do_dig(dbref executor, dbref caller, dbref enactor, int key, char *name,
+            char *args[], int nargs)
 {
     dbref room;
     char *buff;
@@ -435,32 +439,32 @@ void do_dig(dbref player, dbref cause, int key, char *name, char *args[], int na
     //
     if (!name || !*name)
     {
-        notify_quiet(player, "Dig what?");
+        notify_quiet(executor, "Dig what?");
         return;
     }
-    room = create_obj(player, TYPE_ROOM, name, 0);
+    room = create_obj(executor, TYPE_ROOM, name, 0);
     if (room == NOTHING)
     {
         return;
     }
 
-    notify(player, tprintf("%s created with room number %d.", name, room));
+    notify(executor, tprintf("%s created with room number %d.", name, room));
 
     buff = alloc_sbuf("do_dig");
     if ((nargs >= 1) && args[0] && *args[0])
     {
         Tiny_ltoa(room, buff);
-        open_exit(player, Location(player), args[0], buff);
+        open_exit(executor, Location(executor), args[0], buff);
     }
     if ((nargs >= 2) && args[1] && *args[1])
     {
-        Tiny_ltoa(Location(player), buff);
-        open_exit(player, room, args[1], buff);
+        Tiny_ltoa(Location(executor), buff);
+        open_exit(executor, room, args[1], buff);
     }
     free_sbuf(buff);
     if (key == DIG_TELEPORT)
     {
-        (void)move_via_teleport(player, room, cause, 0);
+        (void)move_via_teleport(executor, room, enactor, 0);
     }
 }
 
@@ -469,8 +473,9 @@ void do_dig(dbref player, dbref cause, int key, char *name, char *args[], int na
 //
 void do_create
 (
-    dbref player,
-    dbref cause,
+    dbref executor,
+    dbref caller,
+    dbref enactor,
     int   key,
     int   nargs,
     char *name,
@@ -480,26 +485,26 @@ void do_create
     int cost = 0;
     if (!name || !*name)
     {
-        notify_quiet(player, "Create what?");
+        notify_quiet(executor, "Create what?");
         return;
     }
     else if (  nargs == 2
             && (cost = Tiny_atol(coststr)) < 0)
     {
-        notify_quiet(player, "You can't create an object for less than nothing!");
+        notify_quiet(executor, "You can't create an object for less than nothing!");
         return;
     }
-    dbref thing = create_obj(player, TYPE_THING, name, cost);
+    dbref thing = create_obj(executor, TYPE_THING, name, cost);
     if (thing == NOTHING)
     {
         return;
     }
 
-    move_via_generic(thing, player, NOTHING, 0);
-    s_Home(thing, new_home(player));
-    if (!Quiet(player))
+    move_via_generic(thing, executor, NOTHING, 0);
+    s_Home(thing, new_home(executor));
+    if (!Quiet(executor))
     {
-        notify(player, tprintf("%s created as object #%d", Name(thing), thing));
+        notify(executor, tprintf("%s created as object #%d", Name(thing), thing));
     }
 }
 
@@ -509,8 +514,9 @@ void do_create
 //
 void do_clone
 (
-    dbref player,
-    dbref cause,
+    dbref executor,
+    dbref caller,
+    dbref enactor,
     int   key,
     int   nargs,
     char *name,
@@ -521,15 +527,15 @@ void do_clone
     FLAG rmv_flags;
     int cost;
 
-    if ((key & CLONE_INVENTORY) || !Has_location(player))
-        loc = player;
+    if ((key & CLONE_INVENTORY) || !Has_location(executor))
+        loc = executor;
     else
-        loc = Location(player);
+        loc = Location(executor);
 
     if (!Good_obj(loc))
         return;
 
-    init_match(player, name, NOTYPE);
+    init_match(executor, name, NOTYPE);
     match_everything(0);
     thing = noisy_match_result();
     if ((thing == NOTHING) || (thing == AMBIGUOUS))
@@ -540,24 +546,24 @@ void do_clone
     // Let players clone things set VISUAL. It's easier than retyping
     // in all that data.
     //
-    if (!Examinable(player, thing))
+    if (!Examinable(executor, thing))
     {
-        notify_quiet(player, NOPERM_MESSAGE);
+        notify_quiet(executor, NOPERM_MESSAGE);
         return;
     }
     if (isPlayer(thing))
     {
-        notify_quiet(player, "You cannot clone players!");
+        notify_quiet(executor, "You cannot clone players!");
         return;
     }
 
     // You can only make a parent link to what you control.
     //
-    if (  !Controls(player, thing)
+    if (  !Controls(executor, thing)
        && !Parent_ok(thing)
        && (key & CLONE_PARENT))
     {
-        notify_quiet(player,
+        notify_quiet(executor,
               tprintf("You don't control %s, ignoring /parent.",
                   Name(thing)));
         key &= ~CLONE_PARENT;
@@ -565,7 +571,7 @@ void do_clone
 
     // Determine the cost of cloning
     //
-    new_owner = (key & CLONE_PRESERVE) ? Owner(thing) : Owner(player);
+    new_owner = (key & CLONE_PRESERVE) ? Owner(thing) : Owner(executor);
     if (key & CLONE_SET_COST)
     {
         cost = Tiny_atol(arg2);
@@ -589,9 +595,9 @@ void do_clone
             break;
         case TYPE_EXIT:
 
-            if (!Controls(player, loc))
+            if (!Controls(executor, loc))
             {
-                notify_quiet(player, NOPERM_MESSAGE);
+                notify_quiet(executor, NOPERM_MESSAGE);
                 return;
             }
             cost = mudconf.digcost;
@@ -626,7 +632,7 @@ void do_clone
     if (key & CLONE_PARENT)
         s_Parent(clone, thing);
     else
-        atr_cpy(player, clone, thing);
+        atr_cpy(executor, clone, thing);
 
     // Reset the name, since we cleared the attributes.
     //
@@ -639,7 +645,7 @@ void do_clone
     // Clear out problem flags from the original
     //
     rmv_flags = WIZARD;
-    if (!(key & CLONE_INHERIT) || (!Inherits(player)))
+    if (!(key & CLONE_INHERIT) || (!Inherits(executor)))
     {
         rmv_flags |= INHERIT | IMMORTAL;
     }
@@ -647,17 +653,17 @@ void do_clone
 
     // Tell creator about it
     //
-    if (!Quiet(player))
+    if (!Quiet(executor))
     {
         if (arg2 && *arg2)
         {
-            notify(player,
+            notify(executor,
              tprintf("%s cloned as %s, new copy is object #%d.",
                  Name(thing), arg2, clone));
         }
         else
         {
-            notify(player,
+            notify(executor,
                    tprintf("%s cloned, new copy is object #%d.",
                        Name(thing), clone));
         }
@@ -670,15 +676,15 @@ void do_clone
     {
     case TYPE_THING:
 
-        s_Home(clone, clone_home(player, thing));
-        move_via_generic(clone, loc, player, 0);
+        s_Home(clone, clone_home(executor, thing));
+        move_via_generic(clone, loc, executor, 0);
         break;
 
     case TYPE_ROOM:
 
         s_Dropto(clone, NOTHING);
         if (Dropto(thing) != NOTHING)
-            link_exit(player, clone, Dropto(thing));
+            link_exit(executor, clone, Dropto(thing));
         break;
 
     case TYPE_EXIT:
@@ -687,7 +693,7 @@ void do_clone
         s_Exits(clone, loc);
         s_Location(clone, NOTHING);
         if (Location(thing) != NOTHING)
-            link_exit(player, clone, Location(thing));
+            link_exit(executor, clone, Location(thing));
         break;
     }
 
@@ -699,13 +705,13 @@ void do_clone
         {
             s_Parent(clone, Parent(thing));
         }
-        did_it(player, clone, 0, NULL, 0, NULL, A_ACLONE,
+        did_it(executor, clone, 0, NULL, 0, NULL, A_ACLONE,
                (char **)NULL, 0);
     }
     else
     {
         if (  !(key & CLONE_PARENT)
-           && (Controls(player, thing) || Parent_ok(thing)))
+           && (Controls(executor, thing) || Parent_ok(thing)))
         {
             s_Parent(clone, Parent(thing));
         }
@@ -718,8 +724,9 @@ void do_clone
 //
 void do_pcreate
 (
-    dbref player,
-    dbref cause,
+    dbref executor,
+    dbref caller,
+    dbref enactor,
     int   key,
     int   nargs,
     char *name,
@@ -730,35 +737,35 @@ void do_pcreate
     dbref newplayer;
 
     isrobot = (key == PCRE_ROBOT) ? 1 : 0;
-    newplayer = create_player(name, pass, player, isrobot, 0);
+    newplayer = create_player(name, pass, executor, isrobot, 0);
     if (newplayer == NOTHING)
     {
-        notify_quiet(player, tprintf("Failure creating '%s'", name));
+        notify_quiet(executor, tprintf("Failure creating '%s'", name));
         return;
     }
     if (isrobot)
     {
-        move_object(newplayer, Location(player));
-        notify_quiet(player,
+        move_object(newplayer, Location(executor));
+        notify_quiet(executor,
             tprintf("New robot '%s' (#%d) created with password '%s'",
                 name, newplayer, pass));
-        notify_quiet(player, "Your robot has arrived.");
+        notify_quiet(executor, "Your robot has arrived.");
         STARTLOG(LOG_PCREATES, "CRE", "ROBOT");
         log_name(newplayer);
         log_text(" created by ");
-        log_name(player);
+        log_name(executor);
         ENDLOG;
     }
     else
     {
         move_object(newplayer, mudconf.start_room);
-        notify_quiet(player,
+        notify_quiet(executor,
                tprintf("New player '%s' (#%d) created with password '%s'",
                    name, newplayer, pass));
         STARTLOG(LOG_PCREATES | LOG_WIZARD, "WIZ", "PCREA");
         log_name(newplayer);
         log_text(" created by ");
-        log_name(player);
+        log_name(executor);
         ENDLOG;
 #ifdef GAME_DOOFERMUX
         // Added by D.Piper (del@doofer.org) 2000-APR
@@ -820,18 +827,18 @@ static int can_destroy_player(dbref player, dbref victim)
     return 1;
 }
 
-void do_destroy(dbref player, dbref cause, int key, char *what)
+void do_destroy(dbref executor, dbref caller, dbref enactor, int key, char *what)
 {
     // You can destroy anything you control.
     //
-    dbref thing = match_controlled_quiet(player, what);
+    dbref thing = match_controlled_quiet(executor, what);
 
     // If you own a location, you can destroy its exits.
     //
     if (  thing == NOTHING
-       && controls(player, Location(player)))
+       && controls(executor, Location(executor)))
     {
-        init_match(player, what, TYPE_EXIT);
+        init_match(executor, what, TYPE_EXIT);
         match_exit();
         thing = last_match_result();
     }
@@ -840,7 +847,7 @@ void do_destroy(dbref player, dbref cause, int key, char *what)
     //
     if (thing == NOTHING)
     {
-        init_match(player, what, TYPE_THING);
+        init_match(executor, what, TYPE_THING);
         match_possession();
         thing = last_match_result();
         if ( thing != NOTHING
@@ -852,18 +859,18 @@ void do_destroy(dbref player, dbref cause, int key, char *what)
 
     // Return an error if we didn't find anything to destroy.
     //
-    if (match_status(player, thing) == NOTHING)
+    if (match_status(executor, thing) == NOTHING)
     {
         return;
     }
 
     // Check SAFE and DESTROY_OK flags.
     //
-    if (  Safe(thing, player)
+    if (  Safe(thing, executor)
        && !(key & DEST_OVERRIDE)
        && !(isThing(thing) && Destroy_ok(thing)))
     {
-        notify_quiet(player, "Sorry, that object is protected.  Use @destroy/override to destroy it.");
+        notify_quiet(executor, "Sorry, that object is protected.  Use @destroy/override to destroy it.");
         return;
     }
 
@@ -871,7 +878,7 @@ void do_destroy(dbref player, dbref cause, int key, char *what)
     //
     if (!destroyable(thing))
     {
-        notify_quiet(player, "You can't destroy that!");
+        notify_quiet(executor, "You can't destroy that!");
         return;
     }
 
@@ -883,12 +890,12 @@ void do_destroy(dbref player, dbref cause, int key, char *what)
     {
     case TYPE_EXIT:
         NameOfType = "exit";
-        can_doit = can_destroy_exit(player, thing);
+        can_doit = can_destroy_exit(executor, thing);
         break;
 
     case TYPE_PLAYER:
         NameOfType = "player";
-        can_doit = can_destroy_player(player, thing);
+        can_doit = can_destroy_player(executor, thing);
         break;
 
     case TYPE_ROOM:
@@ -915,7 +922,7 @@ void do_destroy(dbref player, dbref cause, int key, char *what)
     {
         if (!mudconf.destroy_going_now)
         {
-            notify_quiet(player, tprintf("No sense beating a dead %s.", NameOfType));
+            notify_quiet(executor, tprintf("No sense beating a dead %s.", NameOfType));
             return;
         }
         key |= DEST_INSTANT;
@@ -934,11 +941,11 @@ void do_destroy(dbref player, dbref cause, int key, char *what)
         switch (Typeof(thing))
         {
         case TYPE_ROOM:
-            notify_all(thing, player, "The room shakes and begins to crumble.");
+            notify_all(thing, executor, "The room shakes and begins to crumble.");
             break;
 
         case TYPE_PLAYER:
-            atr_add_raw(thing, A_DESTROYER, Tiny_ltoa_t(player));
+            atr_add_raw(thing, A_DESTROYER, Tiny_ltoa_t(executor));
             p = atr_get_raw(thing, A_DESTROYER);
             if (!p)
             {
@@ -947,7 +954,7 @@ void do_destroy(dbref player, dbref cause, int key, char *what)
                 // take care of this more immediately.
                 //
                 bInstant = TRUE;
-                notify(player, "Player has a lot of attributes. Performing destruction immediately.");
+                notify(executor, "Player has a lot of attributes. Performing destruction immediately.");
                 break;
             }
 
@@ -955,12 +962,12 @@ void do_destroy(dbref player, dbref cause, int key, char *what)
 
         case TYPE_EXIT:
         case TYPE_THING:
-            notify(player, tprintf("The %s shakes and begins to crumble.",
+            notify(executor, tprintf("The %s shakes and begins to crumble.",
                 NameOfType));
             break;
 
         default:
-            notify(player, "Weird object type cannot be destroyed.");
+            notify(executor, "Weird object type cannot be destroyed.");
             return;
         }
 
@@ -979,28 +986,28 @@ void do_destroy(dbref player, dbref cause, int key, char *what)
     //
     if (  (  !bInstant
           || isPlayer(thing))
-       && !Quiet(player))
+       && !Quiet(executor))
     {
         if (  Good_owner(ThingOwner)
-           && Owner(player) != ThingOwner)
+           && Owner(executor) != ThingOwner)
         {
             if (ThingOwner == thing)
             {
-                notify(player, tprintf("Destroyed. %s(#%d)",
+                notify(executor, tprintf("Destroyed. %s(#%d)",
                     Name(thing), thing));
             }
             else
             {
                 char *tname = alloc_sbuf("destroy_obj");
                 strcpy(tname, Name(ThingOwner));
-                notify(player, tprintf("Destroyed. %s's %s(#%d)",
+                notify(executor, tprintf("Destroyed. %s's %s(#%d)",
                     tname, Name(thing), thing));
                 free_sbuf(tname);
             }
         }
         else if (!Quiet(thing))
         {
-            notify(player, "Destroyed.");
+            notify(executor, "Destroyed.");
         }
     }
 
@@ -1020,7 +1027,7 @@ void do_destroy(dbref player, dbref cause, int key, char *what)
         break;
 
     case TYPE_PLAYER:
-        destroy_player(player, thing);
+        destroy_player(executor, thing);
         break;
 
     case TYPE_ROOM:
@@ -1033,7 +1040,7 @@ void do_destroy(dbref player, dbref cause, int key, char *what)
         break;
 
     default:
-        notify(player, "Weird object type cannot be destroyed.");
+        notify(executor, "Weird object type cannot be destroyed.");
         break;
     }
 }

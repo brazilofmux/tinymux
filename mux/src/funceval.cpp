@@ -1,6 +1,6 @@
 // funceval.cpp -- MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.2 2002-06-03 20:01:09 sdennis Exp $
+// $Id: funceval.cpp,v 1.3 2002-06-04 00:47:27 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -50,8 +50,8 @@ FUNCTION(fun_cwho)
         return;
     }
     if (  !mudconf.have_comsys
-       || (  !Comm_All(player)
-          && player != ch->charge_who))
+       || (  !Comm_All(executor)
+          && executor != ch->charge_who))
     {
         safe_noperm(buff, bufc);
         return;
@@ -135,8 +135,8 @@ FUNCTION(fun_zone)
     if (!mudconf.have_zones) {
         return;
     }
-    it = match_thing(player, fargs[0]);
-    if (it == NOTHING || !Examinable(player, it)) {
+    it = match_thing(executor, fargs[0]);
+    if (it == NOTHING || !Examinable(executor, it)) {
         safe_nothing(buff, bufc);
         return;
     }
@@ -169,52 +169,52 @@ static int check_command(dbref player, char *name, char *buff, char **bufc)
 
 FUNCTION(fun_link)
 {
-    if (check_command(player, "@link", buff, bufc))
+    if (check_command(executor, "@link", buff, bufc))
         return;
-    do_link(player, cause, 0, 2, fargs[0], fargs[1]);
+    do_link(executor, CALLERQQQ, enactor, 0, 2, fargs[0], fargs[1]);
 }
 
 FUNCTION(fun_tel)
 {
-    if (check_command(player, "@teleport", buff, bufc))
+    if (check_command(executor, "@teleport", buff, bufc))
         return;
-    do_teleport(player, cause, 0, 2, fargs[0], fargs[1]);
+    do_teleport(executor, CALLERQQQ, enactor, 0, 2, fargs[0], fargs[1]);
 }
 
 FUNCTION(fun_pemit)
 {
-    if (check_command(player, "@pemit", buff, bufc))
+    if (check_command(executor, "@pemit", buff, bufc))
     {
         return;
     }
-    do_pemit_list(player, PEMIT_PEMIT, FALSE, 0, fargs[0], 0, fargs[1]);
+    do_pemit_list(executor, PEMIT_PEMIT, FALSE, 0, fargs[0], 0, fargs[1]);
 }
 
 FUNCTION(fun_oemit)
 {
-    if (check_command(player, "@oemit", buff, bufc))
+    if (check_command(executor, "@oemit", buff, bufc))
     {
         return;
     }
-    do_pemit_single(player, PEMIT_OEMIT, FALSE, 0, fargs[0], 0, fargs[1]);
+    do_pemit_single(executor, PEMIT_OEMIT, FALSE, 0, fargs[0], 0, fargs[1]);
 }
 
 FUNCTION(fun_emit)
 {
-    if (check_command(player, "@emit", buff, bufc))
+    if (check_command(executor, "@emit", buff, bufc))
     {
         return;
     }
-    do_say(player, player, SAY_EMIT, fargs[0]);
+    do_say(executor, CALLERQQQ, executor, SAY_EMIT, fargs[0]);
 }
 
 FUNCTION(fun_remit)
 {
-    if (check_command(player, "@pemit", buff, bufc))
+    if (check_command(executor, "@pemit", buff, bufc))
     {
         return;
     }
-    do_pemit_single(player, PEMIT_PEMIT, TRUE, 0, fargs[0], 0, fargs[1]);
+    do_pemit_single(executor, PEMIT_PEMIT, TRUE, 0, fargs[0], 0, fargs[1]);
 }
 
 // ------------------------------------------------------------------------
@@ -243,31 +243,31 @@ FUNCTION(fun_create)
     {
     case 'r':
 
-        if (check_command(player, "@dig", buff, bufc))
+        if (check_command(executor, "@dig", buff, bufc))
         {
             return;
         }
-        thing = create_obj(player, TYPE_ROOM, name, 0);
+        thing = create_obj(executor, TYPE_ROOM, name, 0);
         break;
 
     case 'e':
 
-        if (check_command(player, "@open", buff, bufc))
+        if (check_command(executor, "@open", buff, bufc))
         {
             return;
         }
-        thing = create_obj(player, TYPE_EXIT, name, 0);
+        thing = create_obj(executor, TYPE_EXIT, name, 0);
         if (thing != NOTHING)
         {
-            s_Exits(thing, player);
-            s_Next(thing, Exits(player));
-            s_Exits(player, thing);
+            s_Exits(thing, executor);
+            s_Next(thing, Exits(executor));
+            s_Exits(executor, thing);
         }
         break;
 
     default:
 
-        if (check_command(player, "@create", buff, bufc))
+        if (check_command(executor, "@create", buff, bufc))
         {
             return;
         }
@@ -284,11 +284,11 @@ FUNCTION(fun_create)
         {
             cost = mudconf.createmin;
         }
-        thing = create_obj(player, TYPE_THING, name, cost);
+        thing = create_obj(executor, TYPE_THING, name, cost);
         if (thing != NOTHING)
         {
-            move_via_generic(thing, player, NOTHING, 0);
-            s_Home(thing, new_home(player));
+            move_via_generic(thing, executor, NOTHING, 0);
+            s_Home(thing, new_home(executor));
         }
         break;
     }
@@ -344,14 +344,14 @@ FUNCTION(fun_set)
     int atr, atr2, aflags, clear, flagvalue, could_hear;
     ATTR *attr, *attr2;
 
-    if (check_command(player, "@set", buff, bufc))
+    if (check_command(executor, "@set", buff, bufc))
     {
         return;
     }
 
     // obj/attr form?
     //
-    if (parse_attrib(player, fargs[0], &thing, &atr))
+    if (parse_attrib(executor, fargs[0], &thing, &atr))
     {
         if (atr != NOTHING)
         {
@@ -373,7 +373,7 @@ FUNCTION(fun_set)
 
             // valid attribute flag?
             //
-            flagvalue = search_nametab(player, indiv_attraccess_nametab, fargs[1]);
+            flagvalue = search_nametab(executor, indiv_attraccess_nametab, fargs[1]);
             if (flagvalue < 0)
             {
                 safe_str("#-1 CAN NOT SET", buff, bufc);
@@ -391,7 +391,7 @@ FUNCTION(fun_set)
             // Can we write to attribute?
             //
             attr = atr_num(atr);
-            if (!attr || !Set_attr(player, thing, attr, aflags))
+            if (!attr || !Set_attr(executor, thing, attr, aflags))
             {
                 safe_noperm(buff, bufc);
                 return;
@@ -412,7 +412,7 @@ FUNCTION(fun_set)
 
     // Find thing.
     //
-    if ((thing = match_controlled(player, fargs[0])) == NOTHING)
+    if ((thing = match_controlled(executor, fargs[0])) == NOTHING)
     {
         safe_nothing(buff, bufc);
         return;
@@ -442,7 +442,7 @@ FUNCTION(fun_set)
             return;
         }
         atr_get_info(thing, atr, &aowner, &aflags);
-        if (!Set_attr(player, thing, attr, aflags))
+        if (!Set_attr(executor, thing, attr, aflags))
         {
             safe_noperm(buff, bufc);
             return;
@@ -454,7 +454,7 @@ FUNCTION(fun_set)
         if (*p == '_')
         {
             strcpy(buff2, p + 1);
-            if (  !parse_attrib(player, p + 1, &thing2, &atr2)
+            if (  !parse_attrib(executor, p + 1, &thing2, &atr2)
                || (atr2 == NOTHING))
             {
                 free_lbuf(buff2);
@@ -466,7 +466,7 @@ FUNCTION(fun_set)
             atr_pget_str(buff2, thing2, atr2, &aowner, &aflags);
 
             if (  !attr2
-               || !See_attr(player, thing2, attr2, aowner, aflags))
+               || !See_attr(executor, thing2, attr2, aowner, aflags))
             {
                 free_lbuf(buff2);
                 safe_noperm(buff, bufc);
@@ -476,14 +476,14 @@ FUNCTION(fun_set)
 
         // Set it.
         //
-        set_attr_internal(player, thing, atr, p, 0, buff, bufc);
+        set_attr_internal(executor, thing, atr, p, 0, buff, bufc);
         free_lbuf(buff2);
         return;
     }
 
     // Set/clear a flag.
     //
-    flag_set(thing, player, fargs[1], 0);
+    flag_set(thing, executor, fargs[1], 0);
 }
 #endif
 
@@ -629,20 +629,20 @@ void scan_zone
 
 FUNCTION(fun_zwho)
 {
-    scan_zone(player, fargs[0], TYPE_PLAYER, buff, bufc);
+    scan_zone(executor, fargs[0], TYPE_PLAYER, buff, bufc);
 }
 
 FUNCTION(fun_inzone)
 {
-    scan_zone(player, fargs[0], TYPE_ROOM, buff, bufc);
+    scan_zone(executor, fargs[0], TYPE_ROOM, buff, bufc);
 }
 
 // Borrowed from DarkZone
 //
 FUNCTION(fun_children)
 {
-    dbref it = match_thing(player, fargs[0]);
-    if (!(WizRoy(player) || Controls(player, it)))
+    dbref it = match_thing(executor, fargs[0]);
+    if (!(WizRoy(executor) || Controls(executor, it)))
     {
         safe_noperm(buff, bufc);
         return;
@@ -671,23 +671,23 @@ FUNCTION(fun_objeval)
     char *name = alloc_lbuf("fun_objeval");
     char *bp = name;
     char *str = fargs[0];
-    TinyExec(name, &bp, player, CALLERQQQ, cause,
+    TinyExec(name, &bp, executor, CALLERQQQ, enactor,
              EV_FCHECK | EV_STRIP_CURLY | EV_EVAL, &str, cargs, ncargs);
     *bp = '\0';
-    dbref obj = match_thing(player, name);
+    dbref obj = match_thing(executor, name);
 
-    if (!Controls(player, obj))
+    if (!Controls(executor, obj))
     {
         // The right circumstances were not met, so we are evaluating
-        // as the player who gave the command instead of the
+        // as the executor who gave the command instead of the
         // requested object.
         //
-        obj = player;
+        obj = executor;
     }
 
     mudstate.nObjEvalNest++;
     str = fargs[1];
-    TinyExec(buff, bufc, obj, CALLERQQQ, cause,
+    TinyExec(buff, bufc, obj, CALLERQQQ, enactor,
              EV_FCHECK | EV_STRIP_CURLY | EV_EVAL, &str, cargs, ncargs);
     free_lbuf(name);
     mudstate.nObjEvalNest--;
@@ -700,7 +700,7 @@ FUNCTION(fun_localize)
     save_global_regs("fun_localize", preserve, preserve_len);
 
     char *str = fargs[0];
-    TinyExec(buff, bufc, player, CALLERQQQ, cause,
+    TinyExec(buff, bufc, executor, CALLERQQQ, enactor,
         EV_FCHECK | EV_STRIP_CURLY | EV_EVAL, &str, cargs, ncargs);
 
     restore_global_regs("fun_localize", preserve, preserve_len);
@@ -749,7 +749,7 @@ FUNCTION(fun_zfun)
     dbref aowner;
     int aflags;
 
-    dbref zone = Zone(player);
+    dbref zone = Zone(executor);
 
     if (!mudconf.have_zones)
     {
@@ -772,14 +772,14 @@ FUNCTION(fun_zfun)
     }
     ATTR *attr = atr_num(attrib);
     char *tbuf1 = atr_pget(zone, attrib, &aowner, &aflags);
-    if (!attr || !See_attr(player, zone, (ATTR *) atr_num(attrib), aowner, aflags))
+    if (!attr || !See_attr(executor, zone, (ATTR *) atr_num(attrib), aowner, aflags))
     {
         safe_str("#-1 NO PERMISSION TO GET ATTRIBUTE", buff, bufc);
         free_lbuf(tbuf1);
         return;
     }
     char *str = tbuf1;
-    TinyExec(buff, bufc, zone, CALLERQQQ, player,
+    TinyExec(buff, bufc, zone, CALLERQQQ, executor,
              EV_EVAL | EV_STRIP_CURLY | EV_FCHECK, &str, &(fargs[1]), nfargs - 1);
     free_lbuf(tbuf1);
 }
@@ -813,7 +813,7 @@ FUNCTION(fun_columns)
     char *cp = curr;
     char *bp = curr;
     char *str = fargs[0];
-    TinyExec(curr, &bp, player, CALLERQQQ, cause,
+    TinyExec(curr, &bp, executor, CALLERQQQ, enactor,
              EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, cargs, ncargs);
     *bp = '\0';
     cp = trim_space_sep(cp, sep);
@@ -1078,8 +1078,8 @@ FUNCTION(fun_objmem)
 {
     dbref thing;
 
-    thing = match_thing(player, fargs[0]);
-    if (thing == NOTHING || !Examinable(player, thing))
+    thing = match_thing(executor, fargs[0]);
+    if (thing == NOTHING || !Examinable(executor, thing))
     {
         safe_noperm(buff, bufc);
         return;
@@ -1089,8 +1089,8 @@ FUNCTION(fun_objmem)
 
 FUNCTION(fun_playmem)
 {
-    dbref thing = match_thing(player, fargs[0]);
-    if (thing == NOTHING || !Examinable(player, thing))
+    dbref thing = match_thing(executor, fargs[0]);
+    if (thing == NOTHING || !Examinable(executor, thing))
     {
         safe_noperm(buff, bufc);
         return;
@@ -1210,12 +1210,12 @@ static int handle_flaglists(dbref player, char *name, char *fstr, int type)
 
 FUNCTION(fun_orflags)
 {
-    safe_ltoa(handle_flaglists(player, fargs[0], fargs[1], 0), buff, bufc);
+    safe_ltoa(handle_flaglists(executor, fargs[0], fargs[1], 0), buff, bufc);
 }
 
 FUNCTION(fun_andflags)
 {
-    safe_ltoa(handle_flaglists(player, fargs[0], fargs[1], 1), buff, bufc);
+    safe_ltoa(handle_flaglists(executor, fargs[0], fargs[1], 1), buff, bufc);
 }
 
 FUNCTION(fun_strtrunc)
@@ -1243,7 +1243,7 @@ FUNCTION(fun_ifelse)
     char *lbuff = alloc_lbuf("fun_ifelse");
     char *bp = lbuff;
     char *str = fargs[0];
-    TinyExec(lbuff, &bp, player, CALLERQQQ, cause,
+    TinyExec(lbuff, &bp, executor, CALLERQQQ, enactor,
         EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, cargs, ncargs);
     *bp = '\0';
 
@@ -1254,14 +1254,14 @@ FUNCTION(fun_ifelse)
         if (nfargs == 3)
         {
             str = fargs[2];
-            TinyExec(buff, bufc, player, CALLERQQQ, cause,
+            TinyExec(buff, bufc, executor, CALLERQQQ, enactor,
                 EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, cargs, ncargs);
         }
     }
     else
     {
         str = fargs[1];
-        TinyExec(buff, bufc, player, CALLERQQQ, cause,
+        TinyExec(buff, bufc, executor, CALLERQQQ, enactor,
             EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, cargs, ncargs);
     }
     free_lbuf(lbuff);
@@ -1295,10 +1295,10 @@ FUNCTION(fun_dec)
 //
 // This function can take one of three formats:
 //
-// 1. mail(num)         --> returns message <num> for privs.
-// 2. mail(player)      --> returns number of messages for <player>.
-// 3. mail(player, num) --> returns message <num> for <player>.
-// 4. mail()            --> returns number of messages for executor.
+// 1. mail(num)           --> returns message <num> for privs.
+// 2. mail(executor)      --> returns number of messages for <executor>.
+// 3. mail(executor, num) --> returns message <num> for <executor>.
+// 4. mail()              --> returns number of messages for executor.
 //
 FUNCTION(fun_mail)
 {
@@ -1312,7 +1312,7 @@ FUNCTION(fun_mail)
     //
     if (nfargs == 0 || !fargs[0] || !fargs[0][0])
     {
-        count_mail(player, 0, &rc, &uc, &cc);
+        count_mail(executor, 0, &rc, &uc, &cc);
         safe_ltoa(rc + uc, buff, bufc);
         return;
     }
@@ -1323,12 +1323,12 @@ FUNCTION(fun_mail)
             // Handle the case of wanting to count the number of
             // messages.
             //
-            playerask = lookup_player(player, fargs[0], 1);
+            playerask = lookup_player(executor, fargs[0], 1);
             if (playerask == NOTHING)
             {
                 safe_str("#-1 NO SUCH PLAYER", buff, bufc);
             }
-            else if (playerask == player || Wizard(player))
+            else if (playerask == executor || Wizard(executor))
             {
                 count_mail(playerask, 0, &rc, &uc, &cc);
                 safe_tprintf_str(buff, bufc, "%d %d %d", rc, uc, cc);
@@ -1341,20 +1341,20 @@ FUNCTION(fun_mail)
         }
         else
         {
-            playerask = player;
+            playerask = executor;
             num = Tiny_atol(fargs[0]);
         }
     }
     else // if (nfargs == 2)
     {
-        playerask = lookup_player(player, fargs[0], 1);
+        playerask = lookup_player(executor, fargs[0], 1);
         if (playerask == NOTHING)
         {
             safe_str("#-1 NO SUCH PLAYER", buff, bufc);
             return;
         }
-        else if (  (playerask == player && !mudstate.nObjEvalNest)
-                || God(player))
+        else if (  (playerask == executor && !mudstate.nObjEvalNest)
+                || God(executor))
         {
             num = Tiny_atol(fargs[1]);
         }
@@ -1392,9 +1392,9 @@ FUNCTION(fun_mail)
 // This function can take these formats:
 //
 //  1) mailfrom(<num>)
-//  2) mailfrom(<player>,<num>)
+//  2) mailfrom(<executor>,<num>)
 //
-// It returns the dbref of the player the mail is from.
+// It returns the dbref of the executor the mail is from.
 //
 FUNCTION(fun_mailfrom)
 {
@@ -1404,18 +1404,18 @@ FUNCTION(fun_mailfrom)
     dbref playerask;
     if (nfargs == 1)
     {
-        playerask = player;
+        playerask = executor;
         num = Tiny_atol(fargs[0]);
     }
     else // if (nfargs == 2)
     {
-        playerask = lookup_player(player, fargs[0], 1);
+        playerask = lookup_player(executor, fargs[0], 1);
         if (playerask == NOTHING)
         {
             safe_str("#-1 NO SUCH PLAYER", buff, bufc);
             return;
         }
-        if (playerask == player || Wizard(player))
+        if (playerask == executor || Wizard(executor))
         {
             num = Tiny_atol(fargs[1]);
         }
@@ -1455,11 +1455,11 @@ FUNCTION(fun_hasattr)
     ATTR *attr;
     char *tbuf;
 
-    thing = match_thing(player, fargs[0]);
+    thing = match_thing(executor, fargs[0]);
     if (thing == NOTHING) {
         safe_nomatch(buff, bufc);
         return;
-    } else if (!Examinable(player, thing)) {
+    } else if (!Examinable(executor, thing)) {
         safe_noperm(buff, bufc);
         return;
     }
@@ -1468,7 +1468,7 @@ FUNCTION(fun_hasattr)
     if (attr)
     {
         atr_get_info(thing, attr->number, &aowner, &aflags);
-        if (See_attr(player, thing, attr, aowner, aflags))
+        if (See_attr(executor, thing, attr, aowner, aflags))
         {
             tbuf = atr_get(thing, attr->number, &aowner, &aflags);
             if (*tbuf)
@@ -1488,11 +1488,11 @@ FUNCTION(fun_hasattrp)
     ATTR *attr;
     char *tbuf;
 
-    thing = match_thing(player, fargs[0]);
+    thing = match_thing(executor, fargs[0]);
     if (thing == NOTHING) {
         safe_nomatch(buff, bufc);
         return;
-    } else if (!Examinable(player, thing)) {
+    } else if (!Examinable(executor, thing)) {
         safe_noperm(buff, bufc);
         return;
     }
@@ -1501,7 +1501,7 @@ FUNCTION(fun_hasattrp)
     if (attr)
     {
         atr_pget_info(thing, attr->number, &aowner, &aflags);
-        if (See_attr(player, thing, attr, aowner, aflags))
+        if (See_attr(executor, thing, attr, aowner, aflags))
         {
             tbuf = atr_pget(thing, attr->number, &aowner, &aflags);
             if (*tbuf)
@@ -1534,7 +1534,7 @@ FUNCTION(fun_default)
 
     objname = bp = alloc_lbuf("fun_default");
     str = fargs[0];
-    TinyExec(objname, &bp, player, CALLERQQQ, cause,
+    TinyExec(objname, &bp, executor, CALLERQQQ, enactor,
              EV_EVAL | EV_STRIP_CURLY | EV_FCHECK, &str, cargs, ncargs);
     *bp = '\0';
 
@@ -1543,7 +1543,7 @@ FUNCTION(fun_default)
     //
     if (objname != NULL)
     {
-        if (  parse_attrib(player, objname, &thing, &attrib)
+        if (  parse_attrib(executor, objname, &thing, &attrib)
            && (attrib != NOTHING))
         {
             attr = atr_num(attrib);
@@ -1551,7 +1551,7 @@ FUNCTION(fun_default)
             {
                 atr_gotten = atr_pget(thing, attrib, &aowner, &aflags);
                 if (  *atr_gotten
-                   && check_read_perms(player, thing, attr, aowner, aflags, buff, bufc))
+                   && check_read_perms(executor, thing, attr, aowner, aflags, buff, bufc))
                 {
                     safe_str(atr_gotten, buff, bufc);
                     free_lbuf(atr_gotten);
@@ -1568,7 +1568,7 @@ FUNCTION(fun_default)
     // we go and evaluate the default.
     //
     str = fargs[1];
-    TinyExec(buff, bufc, player, CALLERQQQ, cause,
+    TinyExec(buff, bufc, executor, CALLERQQQ, enactor,
              EV_EVAL | EV_STRIP_CURLY | EV_FCHECK, &str, cargs, ncargs);
 }
 
@@ -1581,7 +1581,7 @@ FUNCTION(fun_edefault)
 
     objname = bp = alloc_lbuf("fun_edefault");
     str = fargs[0];
-    TinyExec(objname, &bp, player, CALLERQQQ, cause,
+    TinyExec(objname, &bp, executor, CALLERQQQ, enactor,
              EV_EVAL | EV_STRIP_CURLY | EV_FCHECK, &str, cargs, ncargs);
     *bp = '\0';
 
@@ -1590,7 +1590,7 @@ FUNCTION(fun_edefault)
     //
     if (objname != NULL)
     {
-        if (parse_attrib(player, objname, &thing, &attrib) &&
+        if (parse_attrib(executor, objname, &thing, &attrib) &&
             (attrib != NOTHING))
         {
             attr = atr_num(attrib);
@@ -1598,10 +1598,10 @@ FUNCTION(fun_edefault)
             {
                 atr_gotten = atr_pget(thing, attrib, &aowner, &aflags);
                 if (  *atr_gotten
-                   && check_read_perms(player, thing, attr, aowner, aflags, buff, bufc))
+                   && check_read_perms(executor, thing, attr, aowner, aflags, buff, bufc))
                 {
                     str = atr_gotten;
-                    TinyExec(buff, bufc, thing, CALLERQQQ, player,
+                    TinyExec(buff, bufc, thing, CALLERQQQ, executor,
                              EV_FIGNORE | EV_EVAL, &str, (char **)NULL, 0);
                     free_lbuf(atr_gotten);
                     free_lbuf(objname);
@@ -1617,7 +1617,7 @@ FUNCTION(fun_edefault)
     // we go and evaluate the default.
     //
     str = fargs[1];
-    TinyExec(buff, bufc, player, CALLERQQQ, cause,
+    TinyExec(buff, bufc, executor, CALLERQQQ, enactor,
              EV_EVAL | EV_STRIP_CURLY | EV_FCHECK, &str, cargs, ncargs);
 }
 
@@ -1630,7 +1630,7 @@ FUNCTION(fun_udefault)
 
     str = fargs[0];
     objname = bp = alloc_lbuf("fun_udefault");
-    TinyExec(objname, &bp, player, CALLERQQQ, cause,
+    TinyExec(objname, &bp, executor, CALLERQQQ, enactor,
              EV_EVAL | EV_STRIP_CURLY | EV_FCHECK, &str, cargs, ncargs);
     *bp = '\0';
 
@@ -1638,23 +1638,23 @@ FUNCTION(fun_udefault)
     // If so, we grab it and use it.
     //
     if (objname != NULL) {
-        if (parse_attrib(player, objname, &thing, &anum)) {
+        if (parse_attrib(executor, objname, &thing, &anum)) {
             if ((anum == NOTHING) || (!Good_obj(thing)))
                 ap = NULL;
             else
                 ap = atr_num(anum);
         } else {
-            thing = player;
+            thing = executor;
             ap = atr_str(objname);
         }
         if (ap) {
             atext = atr_pget(thing, ap->number, &aowner, &aflags);
             if (atext) {
                 if (*atext &&
-                    check_read_perms(player, thing, ap, aowner, aflags,
+                    check_read_perms(executor, thing, ap, aowner, aflags,
                              buff, bufc)) {
                     str = atext;
-                    TinyExec(buff, bufc, thing, CALLERQQQ, cause,
+                    TinyExec(buff, bufc, thing, CALLERQQQ, enactor,
                              EV_FCHECK | EV_EVAL, &str, &(fargs[2]), nfargs - 1);
                     free_lbuf(atext);
                     free_lbuf(objname);
@@ -1670,7 +1670,7 @@ FUNCTION(fun_udefault)
     // go and evaluate the default.
     //
     str = fargs[1];
-    TinyExec(buff, bufc, player, CALLERQQQ, cause,
+    TinyExec(buff, bufc, executor, CALLERQQQ, enactor,
              EV_EVAL | EV_STRIP_CURLY | EV_FCHECK, &str, cargs, ncargs);
 }
 
@@ -1680,8 +1680,8 @@ FUNCTION(fun_udefault)
  */
 FUNCTION(fun_findable)
 {
-    dbref obj = match_thing(player, fargs[0]);
-    dbref victim = match_thing(player, fargs[1]);
+    dbref obj = match_thing(executor, fargs[0]);
+    dbref victim = match_thing(executor, fargs[1]);
 
     if (obj == NOTHING)
         safe_str("#-1 ARG1 NOT FOUND", buff, bufc);
@@ -1732,14 +1732,14 @@ FUNCTION(fun_visible)
 {
     char ch = '0';
 
-    dbref it = match_thing(player, fargs[0]); 
+    dbref it = match_thing(executor, fargs[0]); 
     if (it != NOTHING)
     {
         dbref thing;
         int   atr = NOTHING;
-        if (!parse_attrib(player, fargs[1], &thing, &atr))
+        if (!parse_attrib(executor, fargs[1], &thing, &atr))
         {
-            thing = match_thing(player, fargs[1]);
+            thing = match_thing(executor, fargs[1]);
         }
         if (Good_obj(thing))
         {
@@ -1928,7 +1928,7 @@ FUNCTION(fun_pickrand)
 // sortby() code borrowed from TinyMUSH 2.2
 //
 static char ucomp_buff[LBUF_SIZE];
-static dbref ucomp_cause;
+static dbref ucomp_enactor;
 static dbref ucomp_player;
 
 static int u_comp(const void *s1, const void *s2)
@@ -1949,7 +1949,7 @@ static int u_comp(const void *s1, const void *s2)
     strcpy(tbuf, ucomp_buff);
     result = bp = alloc_lbuf("u_comp");
     str = tbuf;
-    TinyExec(result, &bp, ucomp_player, CALLERQQQ, ucomp_cause,
+    TinyExec(result, &bp, ucomp_player, CALLERQQQ, ucomp_enactor,
              EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, &(elems[0]), 2);
     *bp = '\0';
     if (!result)
@@ -2033,13 +2033,13 @@ FUNCTION(fun_sortby)
 
     varargs_preamble(3);
 
-    if (parse_attrib(player, fargs[0], &thing, &anum)) {
+    if (parse_attrib(executor, fargs[0], &thing, &anum)) {
         if ((anum == NOTHING) || !Good_obj(thing))
             ap = NULL;
         else
             ap = atr_num(anum);
     } else {
-        thing = player;
+        thing = executor;
         ap = atr_str(fargs[0]);
     }
 
@@ -2049,13 +2049,13 @@ FUNCTION(fun_sortby)
     atext = atr_pget(thing, ap->number, &aowner, &aflags);
     if (!atext) {
         return;
-    } else if (!*atext || !See_attr(player, thing, ap, aowner, aflags)) {
+    } else if (!*atext || !See_attr(executor, thing, ap, aowner, aflags)) {
         free_lbuf(atext);
         return;
     }
     strcpy(ucomp_buff, atext);
     ucomp_player = thing;
-    ucomp_cause = cause;
+    ucomp_enactor = enactor;
 
     list = alloc_lbuf("fun_sortby");
     strcpy(list, fargs[1]);
@@ -2154,14 +2154,14 @@ FUNCTION(fun_matchall)
 //
 FUNCTION(fun_ports)
 {
-    dbref target = lookup_player(player, fargs[0], 1);
+    dbref target = lookup_player(executor, fargs[0], 1);
     if (Good_obj(target))
     {
-        if (target == player || Wizard(player))
+        if (target == executor || Wizard(executor))
         {
             if (Connected(target))
             {
-                make_portlist(player, target, buff, bufc);
+                make_portlist(executor, target, buff, bufc);
             }
         }
         else
@@ -2192,7 +2192,7 @@ FUNCTION(fun_mix)
     dbref thing;
     ATTR  *ap;
     int   anum;
-    if (parse_attrib(player, fargs[0], &thing, &anum))
+    if (parse_attrib(executor, fargs[0], &thing, &anum))
     {
         if (  anum == NOTHING
            || !Good_obj(thing))
@@ -2206,7 +2206,7 @@ FUNCTION(fun_mix)
     }
     else
     {
-        thing = player;
+        thing = executor;
         ap = atr_str(fargs[0]);
     }
 
@@ -2223,7 +2223,7 @@ FUNCTION(fun_mix)
         return;
     }
     else if (  !*atext
-            || !See_attr(player, thing, ap, aowner, aflags))
+            || !See_attr(executor, thing, ap, aowner, aflags))
     {
         free_lbuf(atext);
         return;
@@ -2254,7 +2254,7 @@ FUNCTION(fun_mix)
         os[1] = split_token(&cp2, sep);
         strcpy(atextbuf, atext);
         str = atextbuf;
-        TinyExec(buff, bufc, player, CALLERQQQ, cause,
+        TinyExec(buff, bufc, executor, CALLERQQQ, enactor,
             EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, &(os[0]), 2);
     }
     free_lbuf(atext);
@@ -2282,7 +2282,7 @@ FUNCTION(fun_foreach)
         return;
     }
 
-    if (parse_attrib(player, fargs[0], &thing, &anum))
+    if (parse_attrib(executor, fargs[0], &thing, &anum))
     {
         if (  anum == NOTHING
            || !Good_obj(thing))
@@ -2296,7 +2296,7 @@ FUNCTION(fun_foreach)
     }
     else
     {
-        thing = player;
+        thing = executor;
         ap = atr_str(fargs[0]);
     }
 
@@ -2310,7 +2310,7 @@ FUNCTION(fun_foreach)
         return;
     }
     else if (  !*atext
-            || !See_attr(player, thing, ap, aowner, aflags))
+            || !See_attr(executor, thing, ap, aowner, aflags))
     {
         free_lbuf(atext);
         return;
@@ -2358,7 +2358,7 @@ FUNCTION(fun_foreach)
 
             strcpy(atextbuf, atext);
             str = atextbuf;
-            TinyExec(buff, bufc, thing, CALLERQQQ, player,
+            TinyExec(buff, bufc, thing, CALLERQQQ, executor,
                 EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, &bp, 1);
             prev = cbuf[0];
         }
@@ -2373,7 +2373,7 @@ FUNCTION(fun_foreach)
 
             strcpy(atextbuf, atext);
             str = atextbuf;
-            TinyExec(buff, bufc, thing, CALLERQQQ, player,
+            TinyExec(buff, bufc, thing, CALLERQQQ, executor,
                 EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, &bp, 1);
         }
     }
@@ -2399,7 +2399,7 @@ FUNCTION(fun_munge)
 
     // Find our object and attribute.
     //
-    if (parse_attrib(player, fargs[0], &thing, &anum))
+    if (parse_attrib(executor, fargs[0], &thing, &anum))
     {
         if ((anum == NOTHING) || !Good_obj(thing))
             ap = NULL;
@@ -2408,7 +2408,7 @@ FUNCTION(fun_munge)
     }
     else
     {
-        thing = player;
+        thing = executor;
         ap = atr_str(fargs[0]);
     }
 
@@ -2421,7 +2421,7 @@ FUNCTION(fun_munge)
     {
         return;
     }
-    else if (!*atext || !See_attr(player, thing, ap, aowner, aflags))
+    else if (!*atext || !See_attr(executor, thing, ap, aowner, aflags))
     {
         free_lbuf(atext);
         return;
@@ -2449,7 +2449,7 @@ FUNCTION(fun_munge)
     //
     bp = rlist = alloc_lbuf("fun_munge");
     str = atext;
-    TinyExec(rlist, &bp, player, CALLERQQQ, cause,
+    TinyExec(rlist, &bp, executor, CALLERQQQ, enactor,
              EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, &fargs[1], 1);
     *bp = '\0';
 
@@ -2508,7 +2508,7 @@ FUNCTION(fun_lrand)
 {
     char sep;
     if (!delim_check(fargs, nfargs, 4, &sep, buff, bufc, 0,
-        player, cause, cargs, ncargs, 1))
+        executor, CALLERQQQ, enactor, cargs, ncargs, 1))
     {
         return;
     }
@@ -2836,14 +2836,14 @@ FUNCTION(fun_grep)
 {
     char *tp;
 
-    dbref it = match_thing(player, fargs[0]);
+    dbref it = match_thing(executor, fargs[0]);
 
     if (it == NOTHING)
     {
         safe_nomatch(buff, bufc);
         return;
     }
-    else if (!(Examinable(player, it)))
+    else if (!(Examinable(executor, it)))
     {
         safe_noperm(buff, bufc);
         return;
@@ -2861,7 +2861,7 @@ FUNCTION(fun_grep)
         safe_str("#-1 INVALID GREP PATTERN", buff, bufc);
         return;
     }
-    tp = grep_util(player, it, fargs[1], fargs[2], strlen(fargs[2]), 0);
+    tp = grep_util(executor, it, fargs[1], fargs[2], strlen(fargs[2]), 0);
     safe_str(tp, buff, bufc);
     free_lbuf(tp);
 }
@@ -2870,12 +2870,12 @@ FUNCTION(fun_grepi)
 {
     char *tp;
 
-    dbref it = match_thing(player, fargs[0]);
+    dbref it = match_thing(executor, fargs[0]);
 
     if (it == NOTHING) {
         safe_nomatch(buff, bufc);
         return;
-    } else if (!(Examinable(player, it))) {
+    } else if (!(Examinable(executor, it))) {
         safe_noperm(buff, bufc);
         return;
     }
@@ -2890,7 +2890,7 @@ FUNCTION(fun_grepi)
         safe_str("#-1 INVALID GREP PATTERN", buff, bufc);
         return;
     }
-    tp = grep_util(player, it, fargs[1], fargs[2], strlen(fargs[2]), 1);
+    tp = grep_util(executor, it, fargs[1], fargs[2], strlen(fargs[2]), 1);
     safe_str(tp, buff, bufc);
     free_lbuf(tp);
 }
@@ -2963,7 +2963,7 @@ FUNCTION(fun_valid)
 //
 FUNCTION(fun_hastype)
 {
-    dbref it = match_thing(player, fargs[0]);
+    dbref it = match_thing(executor, fargs[0]);
 
     if (it == NOTHING)
     {
@@ -3017,13 +3017,13 @@ FUNCTION(fun_hastype)
 //
 FUNCTION(fun_lparent)
 {
-    dbref it = match_thing(player, fargs[0]);
+    dbref it = match_thing(executor, fargs[0]);
     if (!Good_obj(it))
     {
         safe_nomatch(buff, bufc);
         return;
     }
-    else if (!Examinable(player, it))
+    else if (!Examinable(executor, it))
     {
         safe_noperm(buff, bufc);
         return;
@@ -3042,7 +3042,7 @@ FUNCTION(fun_lparent)
 
     int iNestLevel = 1;
     while (  Good_obj(par)
-          && Examinable(player, it)
+          && Examinable(executor, it)
           && iNestLevel < mudconf.parent_nest_lim)
     {
         if (!DbrefToBuffer_Add(&pContext, par))
@@ -3077,14 +3077,14 @@ FUNCTION(fun_lstack)
 
     if (nfargs == 0 || !*fargs[0])
     {
-        doer = player;
+        doer = executor;
     }
     else
     {
-        doer = match_thing(player, fargs[0]);
+        doer = match_thing(executor, fargs[0]);
     }
 
-    if (!Controls(player, doer)) {
+    if (!Controls(executor, doer)) {
         safe_noperm(buff, bufc);
         return;
     }
@@ -3123,14 +3123,14 @@ FUNCTION(fun_empty)
 
     if (nfargs == 0 || !*fargs[0])
     {
-        doer = player;
+        doer = executor;
     }
     else
     {
-        doer = match_thing(player, fargs[0]);
+        doer = match_thing(executor, fargs[0]);
     }
 
-    if (!Controls(player, doer))
+    if (!Controls(executor, doer))
     {
         safe_noperm(buff, bufc);
         return;
@@ -3144,14 +3144,14 @@ FUNCTION(fun_items)
 
     if (nfargs == 0 || !*fargs[0])
     {
-        doer = player;
+        doer = executor;
     }
     else
     {
-        doer = match_thing(player, fargs[0]);
+        doer = match_thing(executor, fargs[0]);
     }
 
-    if (!Controls(player, doer))
+    if (!Controls(executor, doer))
     {
         safe_noperm(buff, bufc);
         return;
@@ -3167,14 +3167,14 @@ FUNCTION(fun_peek)
 
     if (nfargs <= 0 || !*fargs[0])
     {
-        doer = player;
+        doer = executor;
     }
     else
     {
-        doer = match_thing(player, fargs[0]);
+        doer = match_thing(executor, fargs[0]);
     }
 
-    if (!Controls(player, doer))
+    if (!Controls(executor, doer))
     {
         safe_noperm(buff, bufc);
         return;
@@ -3220,14 +3220,14 @@ FUNCTION(fun_pop)
 
     if (nfargs <= 0 || !*fargs[0])
     {
-        doer = player;
+        doer = executor;
     }
     else
     {
-        doer = match_thing(player, fargs[0]);
+        doer = match_thing(executor, fargs[0]);
     }
 
-    if (!Controls(player, doer))
+    if (!Controls(executor, doer))
     {
         safe_noperm(buff, bufc);
         return;
@@ -3288,16 +3288,16 @@ FUNCTION(fun_push)
 
     if (nfargs <= 1 || !*fargs[1])
     {
-        doer = player;
+        doer = executor;
         data = fargs[0];
     }
     else
     {
-        doer = match_thing(player, fargs[0]);
+        doer = match_thing(executor, fargs[0]);
         data = fargs[1];
     }
 
-    if (!Controls(player, doer))
+    if (!Controls(executor, doer))
     {
         safe_noperm(buff, bufc);
         return;
@@ -3335,7 +3335,7 @@ FUNCTION(fun_regmatch)
     {
         // Matching error.
         //
-        notify_quiet(player, (const char *) regexp_errbuf);
+        notify_quiet(executor, (const char *) regexp_errbuf);
         safe_chr('0', buff, bufc);
         return;
     }
@@ -3534,7 +3534,7 @@ BOOL CBitField::IsSet(unsigned int i)
 static void room_list
 (
     dbref player,
-    dbref cause,
+    dbref enactor,
     dbref room,
     CBitField &bfTraverse,
     CBitField &bfReport,
@@ -3549,7 +3549,7 @@ static void room_list
           || showall)
        && (  Examinable(player, room)
           || Location(player) == room
-          || room == cause))
+          || room == enactor))
     {
         bfReport.Set(room);
     }
@@ -3595,7 +3595,7 @@ static void room_list
                && !bfTraverse.IsSet(loc))
             {
                 bfTraverse.Set(loc);
-                room_list(player, cause, loc, bfTraverse, bfReport,
+                room_list(player, enactor, loc, bfTraverse, bfReport,
                     (level + 1), maxlevels, showall);
             }
         }
@@ -3604,7 +3604,7 @@ static void room_list
 
 FUNCTION(fun_lrooms)
 {
-    dbref room = match_thing(player, fargs[0]);
+    dbref room = match_thing(executor, fargs[0]);
     if (!Good_obj(room) || !isRoom(room))
     {
         safe_str("#-1 FIRST ARGUMENT MUST BE A ROOM", buff, bufc);
@@ -3643,7 +3643,7 @@ FUNCTION(fun_lrooms)
     bfTraverse.ClearAll();
 
     bfTraverse.Set(room);
-    room_list(player, cause, room, bfTraverse, bfReport, 0, N, B);
+    room_list(executor, enactor, room, bfTraverse, bfReport, 0, N, B);
     bfReport.Clear(room);
 
     DTB pContext;

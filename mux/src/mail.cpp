@@ -1,6 +1,6 @@
 // mail.cpp
 //
-// $Id: mail.cpp,v 1.2 2002-06-03 20:01:09 sdennis Exp $
+// $Id: mail.cpp,v 1.3 2002-06-04 00:47:28 sdennis Exp $
 //
 // This code was taken from Kalkin's DarkZone code, which was
 // originally taken from PennMUSH 1.50 p10, and has been heavily modified
@@ -1844,117 +1844,120 @@ void do_mail_stub(dbref player, char *arg1, char *arg2)
 
 void do_mail
 (
-    dbref player,
-    dbref cause,
+    dbref executor,
+    dbref caller,
+    dbref enactor,
     int   key,
     int   nargs,
     char *arg1,
     char *arg2
 )
 {
-    if (!mudconf.have_mailer) {
-        notify(player, "Mailer is disabled.");
+    if (!mudconf.have_mailer)
+    {
+        notify(executor, "Mailer is disabled.");
         return;
     }
 
     // HACK: Fix to allow @mail/quick from objects.
     //
     if (  (key & ~MAIL_QUOTE) != MAIL_QUICK
-       && !isPlayer(player))
+       && !isPlayer(executor))
     {
         return;
     }
 
-    switch (key & ~MAIL_QUOTE) {
+    switch (key & ~MAIL_QUOTE)
+    {
     case 0:
-        do_mail_stub(player, arg1, arg2);
+        do_mail_stub(executor, arg1, arg2);
         break;
     case MAIL_STATS:
-        do_mail_stats(player, arg1, 0);
+        do_mail_stats(executor, arg1, 0);
         break;
     case MAIL_DSTATS:
-        do_mail_stats(player, arg1, 1);
+        do_mail_stats(executor, arg1, 1);
         break;
     case MAIL_FSTATS:
-        do_mail_stats(player, arg1, 2);
+        do_mail_stats(executor, arg1, 2);
         break;
     case MAIL_DEBUG:
-        do_mail_debug(player, arg1, arg2);
+        do_mail_debug(executor, arg1, arg2);
         break;
     case MAIL_NUKE:
-        do_mail_nuke(player);
+        do_mail_nuke(executor);
         break;
     case MAIL_FOLDER:
-        do_mail_change_folder(player, arg1, arg2);
+        do_mail_change_folder(executor, arg1, arg2);
         break;
     case MAIL_LIST:
-        do_mail_list(player, arg1, 0);
+        do_mail_list(executor, arg1, 0);
         break;
     case MAIL_READ:
-        do_mail_read(player, arg1);
+        do_mail_read(executor, arg1);
         break;
     case MAIL_CLEAR:
-        do_mail_clear(player, arg1);
+        do_mail_clear(executor, arg1);
         break;
     case MAIL_UNCLEAR:
-        do_mail_unclear(player, arg1);
+        do_mail_unclear(executor, arg1);
         break;
     case MAIL_PURGE:
-        do_mail_purge(player);
+        do_mail_purge(executor);
         break;
     case MAIL_FILE:
-        do_mail_file(player, arg1, arg2);
+        do_mail_file(executor, arg1, arg2);
         break;
     case MAIL_TAG:
-        do_mail_tag(player, arg1);
+        do_mail_tag(executor, arg1);
         break;
     case MAIL_UNTAG:
-        do_mail_untag(player, arg1);
+        do_mail_untag(executor, arg1);
         break;
     case MAIL_FORWARD:
-        do_mail_fwd(player, arg1, arg2);
+        do_mail_fwd(executor, arg1, arg2);
         break;
     case MAIL_REPLY:
-        do_mail_reply(player, arg1, 0, key);
+        do_mail_reply(executor, arg1, 0, key);
         break;
     case MAIL_REPLYALL:
-        do_mail_reply(player, arg1, 1, key);
+        do_mail_reply(executor, arg1, 1, key);
         break;
     case MAIL_SEND:
-        do_expmail_stop(player, 0);
+        do_expmail_stop(executor, 0);
         break;
     case MAIL_EDIT:
-        do_edit_msg(player, arg1, arg2);
+        do_edit_msg(executor, arg1, arg2);
         break;
     case MAIL_URGENT:
-        do_expmail_stop(player, M_URGENT);
+        do_expmail_stop(executor, M_URGENT);
         break;
     case MAIL_ALIAS:
-        do_malias_create(player, arg1, arg2);
+        do_malias_create(executor, arg1, arg2);
         break;
     case MAIL_ALIST:
-        do_malias_list_all(player);
+        do_malias_list_all(executor);
         break;
     case MAIL_PROOF:
-        do_mail_proof(player);
+        do_mail_proof(executor);
         break;
     case MAIL_ABORT:
-        do_expmail_abort(player);
+        do_expmail_abort(executor);
         break;
     case MAIL_QUICK:
-        do_mail_quick(player, arg1, arg2);
+        do_mail_quick(executor, arg1, arg2);
         break;
     case MAIL_REVIEW:
-        do_mail_review(player, arg1, arg2);
+        do_mail_review(executor, arg1, arg2);
         break;
     case MAIL_RETRACT:
-        do_mail_retract(player, arg1, arg2);
+        do_mail_retract(executor, arg1, arg2);
         break;
     case MAIL_CC:
-        do_mail_cc(player, arg1);
+        do_mail_cc(executor, arg1);
         break;
     case MAIL_SAFE:
-        do_mail_safe(player, arg1);
+        do_mail_safe(executor, arg1);
         break;
     }
 }
@@ -2893,8 +2896,9 @@ void do_malias_switch(dbref player, char *a1, char *a2)
 
 void do_malias
 (
-    dbref player,
-    dbref cause,
+    dbref executor,
+    dbref caller,
+    dbref enactor,
     int   key,
     int   nargs,
     char *arg1,
@@ -2903,31 +2907,31 @@ void do_malias
 {
     if (!mudconf.have_mailer)
     {
-        notify(player, "Mailer is disabled.");
+        notify(executor, "Mailer is disabled.");
         return;
     }
     switch (key)
     {
     case 0:
-        do_malias_switch(player, arg1, arg2);
+        do_malias_switch(executor, arg1, arg2);
         break;
     case 1:
-        do_malias_desc(player, arg1, arg2);
+        do_malias_desc(executor, arg1, arg2);
         break;
     case 2:
-        do_malias_chown(player, arg1, arg2);
+        do_malias_chown(executor, arg1, arg2);
         break;
     case 3:
-        do_malias_add(player, arg1, arg2);
+        do_malias_add(executor, arg1, arg2);
         break;
     case 4:
-        do_malias_remove(player, arg1, arg2);
+        do_malias_remove(executor, arg1, arg2);
         break;
     case 5:
-        do_malias_delete(player, arg1);
+        do_malias_delete(executor, arg1);
         break;
     case 6:
-        do_malias_rename(player, arg1, arg2);
+        do_malias_rename(executor, arg1, arg2);
         break;
     case 7:
         /*
@@ -2935,10 +2939,10 @@ void do_malias
          */
         break;
     case 8:
-        do_malias_adminlist(player);
+        do_malias_adminlist(executor);
         break;
     case 9:
-        do_malias_status(player);
+        do_malias_status(executor);
     }
 }
 
@@ -3904,7 +3908,7 @@ void do_expmail_abort(dbref player)
     notify(player, "MAIL: Message aborted.");
 }
 
-void do_prepend(dbref player, dbref cause, int key, char *text)
+void do_prepend(dbref executor, dbref caller, dbref enactor, int key, char *text)
 {
     char *oldmsg, *newmsg, *bp, *attr;
     dbref aowner;
@@ -3915,9 +3919,9 @@ void do_prepend(dbref player, dbref cause, int key, char *text)
         return;
     }
 
-    if (Flags2(player) & PLAYER_MAILS)
+    if (Flags2(executor) & PLAYER_MAILS)
     {
-        oldmsg = atr_get(player, A_MAILMSG, &aowner, &aflags);
+        oldmsg = atr_get(executor, A_MAILMSG, &aowner, &aflags);
         if (*oldmsg)
         {
             bp = newmsg = alloc_lbuf("do_prepend");
@@ -3925,26 +3929,26 @@ void do_prepend(dbref player, dbref cause, int key, char *text)
             safe_chr(' ', newmsg, &bp);
             safe_str(oldmsg, newmsg, &bp);
             *bp = '\0';
-            atr_add_raw(player, A_MAILMSG, newmsg);
+            atr_add_raw(executor, A_MAILMSG, newmsg);
             free_lbuf(newmsg);
         }
         else
         {
-            atr_add_raw(player, A_MAILMSG, text + 1);
+            atr_add_raw(executor, A_MAILMSG, text + 1);
         }
 
         free_lbuf(oldmsg);
         int nLen;
-        attr = atr_get_raw_LEN(player, A_MAILMSG, &nLen);
-        notify(player, tprintf("%d/%d characters prepended.", nLen, LBUF_SIZE-1));
+        attr = atr_get_raw_LEN(executor, A_MAILMSG, &nLen);
+        notify(executor, tprintf("%d/%d characters prepended.", nLen, LBUF_SIZE-1));
     }
     else
     {
-        notify(player, "MAIL: No message in progress.");
+        notify(executor, "MAIL: No message in progress.");
     }
 }
 
-void do_postpend(dbref player, dbref cause, int key, char *text)
+void do_postpend(dbref executor, dbref caller, dbref enactor, int key, char *text)
 {
     char *oldmsg, *newmsg, *bp, *attr;
     dbref aowner;
@@ -3957,12 +3961,12 @@ void do_postpend(dbref player, dbref cause, int key, char *text)
 
     if ((*(text + 1) == '-') && !(*(text + 2)))
     {
-        do_expmail_stop(player, 0);
+        do_expmail_stop(executor, 0);
         return;
     }
-    if (Flags2(player) & PLAYER_MAILS)
+    if (Flags2(executor) & PLAYER_MAILS)
     {
-        oldmsg = atr_get(player, A_MAILMSG, &aowner, &aflags);
+        oldmsg = atr_get(executor, A_MAILMSG, &aowner, &aflags);
         if (*oldmsg)
         {
             bp = newmsg = alloc_lbuf("do_postpend");
@@ -3970,22 +3974,22 @@ void do_postpend(dbref player, dbref cause, int key, char *text)
             safe_chr(' ', newmsg, &bp);
             safe_str(text + 1, newmsg, &bp);
             *bp = '\0';
-            atr_add_raw(player, A_MAILMSG, newmsg);
+            atr_add_raw(executor, A_MAILMSG, newmsg);
             free_lbuf(newmsg);
         }
         else
         {
-            atr_add_raw(player, A_MAILMSG, text + 1);
+            atr_add_raw(executor, A_MAILMSG, text + 1);
         }
 
         free_lbuf(oldmsg);
         int nLen;
-        attr = atr_get_raw_LEN(player, A_MAILMSG, &nLen);
-        notify(player, tprintf("%d/%d characters added.", nLen, LBUF_SIZE-1));
+        attr = atr_get_raw_LEN(executor, A_MAILMSG, &nLen);
+        notify(executor, tprintf("%d/%d characters added.", nLen, LBUF_SIZE-1));
     }
     else
     {
-        notify(player, "MAIL: No message in progress.");
+        notify(executor, "MAIL: No message in progress.");
     }
 }
 

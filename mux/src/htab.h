@@ -1,6 +1,6 @@
 // htab.h - Structures and declarations needed for table hashing.
 //
-// $Id: htab.h,v 1.1 2002-05-24 06:53:15 sdennis Exp $
+// $Id: htab.h,v 1.2 2002-06-04 00:47:27 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -26,8 +26,9 @@ typedef struct bque BQUE;
 struct bque
 {
     CLinearTimeAbsolute waittime;   // time to run command
-    dbref   player;                 // player who will do command
-    dbref   cause;                  // player causing command (for %N)
+    dbref   executor;               // executor who will do command
+    dbref   caller;                 // caller.
+    dbref   enactor;                // enactor causing command (for %N)
     dbref   sem;                    // blocking semaphore
     int     attr;                   // blocking attribute
     int     nargs;                  // How many args I have

@@ -1,6 +1,6 @@
 // timer.cpp -- Mini-task scheduler for timed events.
 //
-// $Id: timer.cpp,v 1.1 2002-05-24 06:53:16 sdennis Exp $
+// $Id: timer.cpp,v 1.2 2002-06-04 00:47:28 sdennis Exp $
 //
 // MUX 2.1
 // Copyright (C) 1998 through 2001 Solid Vertical Domains, Ltd. All
@@ -37,7 +37,7 @@ void dispatch_FreeListReconstruction(void *pUnused, int iUnused)
     {
         char *cmdsave = mudstate.debug_cmd;
         mudstate.debug_cmd = (char *)"< dbck >";
-        do_dbck(NOTHING, NOTHING, 0);
+        do_dbck(NOTHING, CALLERQQQ, NOTHING, 0);
 #ifndef STANDALONE
         Guest.CleanUp();
 #endif
@@ -236,7 +236,7 @@ void init_timer(void)
  * * do_timewarp: Adjust various internal timers.
  */
 
-void do_timewarp(dbref player, dbref cause, int key, char *arg)
+void do_timewarp(dbref executor, dbref caller, dbref enactor, int key, char *arg)
 {
     int secs;
 
@@ -246,7 +246,7 @@ void do_timewarp(dbref player, dbref cause, int key, char *arg)
     //
     if ((key == 0) || (key & TWARP_QUEUE))
     {
-        do_queue(player, cause, QUEUE_WARP, arg);
+        do_queue(executor, CALLERQQQ, enactor, QUEUE_WARP, arg);
     }
 
     // Once these are adjusted, we need to Cancel and reschedule the task.

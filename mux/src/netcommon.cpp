@@ -1,6 +1,6 @@
 // netcommon.cpp
 //
-// $Id: netcommon.cpp,v 1.1 2002-05-24 06:53:15 sdennis Exp $
+// $Id: netcommon.cpp,v 1.2 2002-06-04 00:47:28 sdennis Exp $
 //
 // This file contains routines used by the networking code that do not
 // depend on the implementation of the networking code.  The network-specific
@@ -704,7 +704,7 @@ static void announce_connect(dbref player, DESC *d)
     CLinearTimeAbsolute lta;
     if (nLen)
     {
-        wait_que(player, player, FALSE, lta, NOTHING, 0, buf,
+        wait_que(player, CALLERQQQ, player, FALSE, lta, NOTHING, 0, buf,
             (char **)NULL, 0, NULL);
     }
     if (mudconf.master_room != NOTHING)
@@ -713,7 +713,7 @@ static void announce_connect(dbref player, DESC *d)
             &aflags, &nLen);
         if (nLen)
         {
-            wait_que(mudconf.master_room, player, FALSE, lta,
+            wait_que(mudconf.master_room, CALLERQQQ, player, FALSE, lta,
                 NOTHING, 0, buf, (char **)NULL, 0, NULL);
         }
         DOLIST(obj, Contents(mudconf.master_room))
@@ -721,7 +721,7 @@ static void announce_connect(dbref player, DESC *d)
             atr_pget_str_LEN(buf, obj, A_ACONNECT, &aowner, &aflags, &nLen);
             if (nLen)
             {
-                wait_que(obj, player, FALSE, lta, NOTHING, 0, buf,
+                wait_que(obj, CALLERQQQ, player, FALSE, lta, NOTHING, 0, buf,
                     (char **)NULL, 0, NULL);
             }
         }
@@ -739,7 +739,7 @@ static void announce_connect(dbref player, DESC *d)
             atr_pget_str_LEN(buf, zone, A_ACONNECT, &aowner, &aflags, &nLen);
             if (nLen)
             {
-                wait_que(zone, player, FALSE, lta, NOTHING, 0, buf,
+                wait_que(zone, CALLERQQQ, player, FALSE, lta, NOTHING, 0, buf,
                     (char **)NULL, 0, NULL);
             }
             break;
@@ -754,7 +754,7 @@ static void announce_connect(dbref player, DESC *d)
                     &nLen);
                 if (nLen)
                 {
-                    wait_que(obj, player, FALSE, lta, NOTHING, 0,
+                    wait_que(obj, CALLERQQQ, player, FALSE, lta, NOTHING, 0,
                         buf, (char **)NULL, 0, NULL);
                 }
             }
@@ -832,8 +832,8 @@ void announce_disconnect(dbref player, DESC *d, const char *reason)
         atr_pget_str_LEN(buf, player, A_ADISCONNECT, &aowner, &aflags, &nLen);
         if (nLen)
         {
-            wait_que(player, player, FALSE, lta, NOTHING, 0, buf, argv, 1,
-                NULL);
+            wait_que(player, CALLERQQQ, player, FALSE, lta, NOTHING, 0, buf,
+                argv, 1, NULL);
         }
         if (mudconf.master_room != NOTHING)
         {
@@ -841,8 +841,8 @@ void announce_disconnect(dbref player, DESC *d, const char *reason)
                 &aflags, &nLen);
             if (nLen)
             {
-                wait_que(mudconf.master_room, player, FALSE, lta, NOTHING, 0,
-                    buf, (char **)NULL, 0, NULL);
+                wait_que(mudconf.master_room, CALLERQQQ, player, FALSE, lta,
+                    NOTHING, 0, buf, (char **)NULL, 0, NULL);
             }
             DOLIST(obj, Contents(mudconf.master_room))
             {
@@ -850,8 +850,8 @@ void announce_disconnect(dbref player, DESC *d, const char *reason)
                     &nLen);
                 if (nLen)
                 {
-                    wait_que(obj, player, FALSE, lta, NOTHING, 0, buf,
-                        (char **)NULL, 0, NULL);
+                    wait_que(obj, CALLERQQQ, player, FALSE, lta, NOTHING, 0,
+                        buf, (char **)NULL, 0, NULL);
                 }
             }
         }
@@ -868,8 +868,8 @@ void announce_disconnect(dbref player, DESC *d, const char *reason)
                     &nLen);
                 if (nLen)
                 {
-                    wait_que(zone, player, FALSE, lta, NOTHING, 0, buf,
-                        (char **)NULL, 0, NULL);
+                    wait_que(zone, CALLERQQQ, player, FALSE, lta, NOTHING, 0,
+                        buf, (char **)NULL, 0, NULL);
                 }
                 break;
 
@@ -883,8 +883,8 @@ void announce_disconnect(dbref player, DESC *d, const char *reason)
                         &nLen);
                     if (nLen)
                     {
-                        wait_que(obj, player, FALSE, lta, NOTHING, 0, buf,
-                            (char **)NULL, 0, NULL);
+                        wait_que(obj, CALLERQQQ, player, FALSE, lta, NOTHING,
+                            0, buf, (char **)NULL, 0, NULL);
                     }
                 }
                 break;
@@ -1520,7 +1520,7 @@ char *MakeCanonicalDoing(char *pDoing, int *pnValidDoing, BOOL *pbValidDoing)
 // do_doing: Set the doing string that appears in the WHO report.
 // Idea from R'nice@TinyTIM.
 //
-void do_doing(dbref player, dbref cause, int key, char *arg)
+void do_doing(dbref executor, dbref caller, dbref enactor, int key, char *arg)
 {
     // Make sure there can be no embedded newlines from %r
     //
@@ -1542,28 +1542,28 @@ void do_doing(dbref player, dbref cause, int key, char *arg)
     {
         int foundany = 0;
         DESC *d;
-        DESC_ITER_PLAYER(player, d)
+        DESC_ITER_PLAYER(executor, d)
         {
             memcpy(d->doing, szValidDoing, nValidDoing+1);
             foundany = 1;
         }
         if (foundany)
         {
-            if (!Quiet(player))
+            if (!Quiet(executor))
             {
-                notify(player, "Set.");
+                notify(executor, "Set.");
             }
         }
         else
         {
-            notify(player, "Not connected.");
+            notify(executor, "Not connected.");
         }
     }
     else if (key == DOING_HEADER)
     {
-        if (!(Can_Poll(player)))
+        if (!(Can_Poll(executor)))
         {
-            notify(player, NOPERM_MESSAGE);
+            notify(executor, NOPERM_MESSAGE);
             return;
         }
         if (nValidDoing == 0)
@@ -1574,14 +1574,14 @@ void do_doing(dbref player, dbref cause, int key, char *arg)
         {
             memcpy(mudstate.doing_hdr, szValidDoing, nValidDoing+1);
         }
-        if (!Quiet(player))
+        if (!Quiet(executor))
         {
-            notify(player, "Set.");
+            notify(executor, "Set.");
         }
     }
     else // if (key == DOING_POLL)
     {
-        notify(player, tprintf("Poll: %s", mudstate.doing_hdr));
+        notify(executor, tprintf("Poll: %s", mudstate.doing_hdr));
     }
 }
 
@@ -2000,7 +2000,7 @@ int do_command(DESC *d, char *command, int first)
                 queue_string(d, d->output_prefix);
                 queue_write(d, "\r\n", 2);
             }
-            mudstate.curr_player = d->player;
+            mudstate.curr_executor = d->player;
             mudstate.curr_enactor = d->player;
             for (int i = 0; i < MAX_GLOBAL_REGS; i++)
             {
@@ -2011,7 +2011,7 @@ int do_command(DESC *d, char *command, int first)
             CLinearTimeAbsolute ltaBegin;
             ltaBegin.GetUTC();
 
-            char *log_cmdbuf = process_command(d->player, d->player,
+            char *log_cmdbuf = process_command(d->player, CALLERQQQ, d->player,
                 1, command, (char **)NULL, 0);
 
             CLinearTimeAbsolute ltaEnd;
@@ -2151,13 +2151,13 @@ int do_command(DESC *d, char *command, int first)
     return 1;
 }
 
-void logged_out1(dbref player, dbref cause, int key, char *arg)
+void logged_out1(dbref executor, dbref caller, dbref enactor, int key, char *arg)
 {
     CLinearTimeAbsolute lsaNow;
     lsaNow.GetUTC();
 
     DESC *d;
-    DESC_ITER_PLAYER(player, d)
+    DESC_ITER_PLAYER(executor, d)
     {
         CLinearTimeDelta ltdIdle = lsaNow - d->last_time;
         int idletime = ltdIdle.ReturnSeconds();
@@ -2215,9 +2215,9 @@ void logged_out1(dbref player, dbref cause, int key, char *arg)
     }
 }
 
-void logged_out0(dbref player, dbref cause, int key)
+void logged_out0(dbref executor, dbref caller, dbref enactor, int key)
 {
-    logged_out1(player, cause, key, "");
+    logged_out1(executor, CALLERQQQ, enactor, key, "");
 }
 
 void Task_ProcessCommand(void *arg_voidptr, int arg_iInteger)
@@ -2419,14 +2419,14 @@ dbref find_connected_name(dbref player, char *name)
 
 FUNCTION(fun_doing)
 {
-    dbref victim = lookup_player(player, fargs[0], 1);
+    dbref victim = lookup_player(executor, fargs[0], 1);
     if (victim == NOTHING)
     {
         safe_str("#-1 PLAYER DOES NOT EXIST", buff, bufc);
         return;
     }
 
-    if (!Wizard_Who(player) && Hidden(victim))
+    if (!Wizard_Who(executor) && Hidden(victim))
     {
         safe_str("#-1 NOT A CONNECTED PLAYER", buff, bufc);
         return;

@@ -1,6 +1,6 @@
 // help.cpp -- Commands for giving help.
 //
-// $Id: help.cpp,v 1.2 2002-06-03 20:01:09 sdennis Exp $
+// $Id: help.cpp,v 1.3 2002-06-04 00:47:27 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -257,28 +257,28 @@ void help_write(dbref player, char *topic, CHashTable *htab, char *filename, int
  * * do_help: display information from new-format news and help files
  */
 
-void do_help(dbref player, dbref cause, int key, char *message)
+void do_help(dbref executor, dbref caller, dbref enactor, int key, char *message)
 {
     char *buf;
 
     switch (key) {
     case HELP_HELP:
-        help_write(player, message, &mudstate.help_htab, mudconf.help_file, 0);
+        help_write(executor, message, &mudstate.help_htab, mudconf.help_file, 0);
         break;
     case HELP_NEWS:
-        help_write(player, message, &mudstate.news_htab, mudconf.news_file, 1);
+        help_write(executor, message, &mudstate.news_htab, mudconf.news_file, 1);
         break;
     case HELP_WIZHELP:
-        help_write(player, message, &mudstate.wizhelp_htab, mudconf.whelp_file, 0);
+        help_write(executor, message, &mudstate.wizhelp_htab, mudconf.whelp_file, 0);
         break;
     case HELP_PLUSHELP:
-        help_write(player, message, &mudstate.plushelp_htab, mudconf.plushelp_file, 1);
+        help_write(executor, message, &mudstate.plushelp_htab, mudconf.plushelp_file, 1);
         break;
     case HELP_STAFFHELP:
-        help_write(player, message, &mudstate.staffhelp_htab, mudconf.staffhelp_file, 1);
+        help_write(executor, message, &mudstate.staffhelp_htab, mudconf.staffhelp_file, 1);
         break;
     case HELP_WIZNEWS:
-        help_write(player, message, &mudstate.wiznews_htab, mudconf.wiznews_file, 0);
+        help_write(executor, message, &mudstate.wiznews_htab, mudconf.wiznews_file, 0);
         break;
     default:
         STARTLOG(LOG_BUGS, "BUG", "HELP")

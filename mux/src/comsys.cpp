@@ -1,6 +1,6 @@
 // comsys.cpp
 //
-// $Id: comsys.cpp,v 1.2 2002-06-03 20:01:09 sdennis Exp $
+// $Id: comsys.cpp,v 1.3 2002-06-04 00:47:27 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -1227,8 +1227,9 @@ struct comuser *select_user(struct channel *ch, dbref player)
 
 void do_addcom
 (
-    dbref player,
-    dbref cause,
+    dbref executor,
+    dbref caller,
+    dbref enactor,
     int   key,
     int   nargs,
     char *arg1,
@@ -1247,7 +1248,7 @@ void do_addcom
 
     if (!mudconf.have_comsys)
     {
-        raw_notify(player, "Comsys disabled.");
+        raw_notify(executor, "Comsys disabled.");
         return;
     }
     BOOL bValidAlias;
@@ -1255,13 +1256,13 @@ void do_addcom
     char *pValidAlias = MakeCanonicalComAlias(arg1, &nValidAlias, &bValidAlias);
     if (!bValidAlias)
     {
-        raw_notify(player, "You need to specify a valid alias.");
+        raw_notify(executor, "You need to specify a valid alias.");
         return;
     }
     s = arg2;
     if (!*s)
     {
-        raw_notify(player, "You need to specify a channel.");
+        raw_notify(executor, "You need to specify a channel.");
         return;
     }
     t = channel;
@@ -1294,18 +1295,18 @@ void do_addcom
     {
         int nVisualWidth;
         ANSI_TruncateToField(channel, sizeof(Buffer), Buffer, sizeof(Buffer), &nVisualWidth, ANSI_ENDGOAL_NORMAL);
-        raw_notify(player, tprintf("Channel %s does not exist yet.", Buffer));
+        raw_notify(executor, tprintf("Channel %s does not exist yet.", Buffer));
         return;
     }
-    if (!(do_test_access(player, CHANNEL_JOIN, ch)))
+    if (!(do_test_access(executor, CHANNEL_JOIN, ch)))
     {
-        raw_notify(player, "Sorry, this channel type does not allow you to join.");
+        raw_notify(executor, "Sorry, this channel type does not allow you to join.");
         return;
     }
-    c = get_comsys(player);
+    c = get_comsys(executor);
     if (c->numchannels >= MAX_ALIASES_PER_PLAYER)
     {
-        raw_notify(player, tprintf("Sorry, but you have reached the maximum number of aliases allowed."));
+        raw_notify(executor, tprintf("Sorry, but you have reached the maximum number of aliases allowed."));
         return;
     }
     for (j = 0; j < c->numchannels && (strcmp(pValidAlias, c->alias + j * 6) > 0); j++)
@@ -1316,7 +1317,7 @@ void do_addcom
     if (j < c->numchannels && !strcmp(pValidAlias, c->alias + j * 6))
     {
         char *p = tprintf("That alias is already in use for channel %s.", c->channels[j]);
-        raw_notify(player, p);
+        raw_notify(executor, p);
         return;
     }
     if (c->numchannels >= c->maxchannels)
@@ -1358,39 +1359,39 @@ void do_addcom
     *(c->alias + where * 6 + nValidAlias) = '\0';
     c->channels[where] = StringClone(channel);
 
-    if (!select_user(ch, player))
+    if (!select_user(ch, executor))
     {
-        do_joinchannel(player, ch);
+        do_joinchannel(executor, ch);
     }
     char *pValidatedTitleValue = RestrictTitleValue(title_tmp);
-    do_setnewtitle(player, ch, pValidatedTitleValue);
+    do_setnewtitle(executor, ch, pValidatedTitleValue);
 
     if (pValidatedTitleValue[0] == '\0')
     {
-        raw_notify(player, tprintf("Channel %s added with alias %s.", channel, pValidAlias));
+        raw_notify(executor, tprintf("Channel %s added with alias %s.", channel, pValidAlias));
     }
     else
     {
-        raw_notify(player, tprintf("Channel %s added with alias %s and title %s.", channel, pValidAlias, pValidatedTitleValue));
+        raw_notify(executor, tprintf("Channel %s added with alias %s and title %s.", channel, pValidAlias, pValidatedTitleValue));
     }
 }
 
-void do_delcom(dbref player, dbref cause, int key, char *arg1)
+void do_delcom(dbref executor, dbref caller, dbref enactor, int key, char *arg1)
 {
     int i;
     comsys_t *c;
 
     if (!mudconf.have_comsys)
     {
-        raw_notify(player, "Comsys disabled.");
+        raw_notify(executor, "Comsys disabled.");
         return;
     }
     if (!arg1)
     {
-        raw_notify(player, "Need an alias to delete.");
+        raw_notify(executor, "Need an alias to delete.");
         return;
     }
-    c = get_comsys(player);
+    c = get_comsys(executor);
 
     for (i = 0; i < c->numchannels; i++)
     {
@@ -1409,13 +1410,13 @@ void do_delcom(dbref player, dbref cause, int key, char *arg1)
             //
             if (found <= 1)
             {
-                do_delcomchannel(player, c->channels[i]);
-                raw_notify(player, tprintf("Channel %s deleted.", c->channels[i]));
+                do_delcomchannel(executor, c->channels[i]);
+                raw_notify(executor, tprintf("Channel %s deleted.", c->channels[i]));
                 MEMFREE(c->channels[i]);
             }
             else
             {
-                raw_notify(player, tprintf("Alias for channel %s deleted.",
+                raw_notify(executor, tprintf("Alias for channel %s deleted.",
                                            c->channels[i]));
             }
             
@@ -1430,7 +1431,7 @@ void do_delcom(dbref player, dbref cause, int key, char *arg1)
             return;
         }
     }
-    raw_notify(player, "Unable to find that alias.");
+    raw_notify(executor, "Unable to find that alias.");
 }
 
 void do_delcomchannel(dbref player, char *channel)
@@ -1485,23 +1486,23 @@ void do_delcomchannel(dbref player, char *channel)
     }
 }
 
-void do_createchannel(dbref player, dbref cause, int key, char *channel)
+void do_createchannel(dbref executor, dbref caller, dbref enactor, int key, char *channel)
 {
     struct channel *newchannel;
 
     if (select_channel(channel))
     {
-        raw_notify(player, tprintf("Channel %s already exists.", channel));
+        raw_notify(executor, tprintf("Channel %s already exists.", channel));
         return;
     }
     if (!*channel)
     {
-        raw_notify(player, "You must specify a channel to create.");
+        raw_notify(executor, "You must specify a channel to create.");
         return;
     }
-    if (!(Comm_All(player)))
+    if (!(Comm_All(executor)))
     {
-        raw_notify(player, "You do not have permission to do that.");
+        raw_notify(executor, "You do not have permission to do that.");
         return;
     }
     newchannel = (struct channel *)MEMALLOC(sizeof(struct channel));
@@ -1551,7 +1552,7 @@ void do_createchannel(dbref player, dbref cause, int key, char *channel)
     newchannel->temp1 = 0;
     newchannel->temp2 = 0;
     newchannel->charge = 0;
-    newchannel->charge_who = player;
+    newchannel->charge_who = executor;
     newchannel->amount_col = 0;
     newchannel->num_users = 0;
     newchannel->max_users = 0;
@@ -1566,29 +1567,29 @@ void do_createchannel(dbref player, dbref cause, int key, char *channel)
 
     // Report the channel creation using non-ANSI name.
     //
-    raw_notify(player, tprintf("Channel %s created.", newchannel->name));
+    raw_notify(executor, tprintf("Channel %s created.", newchannel->name));
 }
 
-void do_destroychannel(dbref player, dbref cause, int key, char *channel)
+void do_destroychannel(dbref executor, dbref caller, dbref enactor, int key, char *channel)
 {
     struct channel *ch;
     int j;
 
     if (!mudconf.have_comsys)
     {
-        raw_notify(player, "Comsys disabled.");
+        raw_notify(executor, "Comsys disabled.");
         return;
     }
     ch = (struct channel *)hashfindLEN(channel, strlen(channel), &mudstate.channel_htab);
 
     if (!ch)
     {
-        raw_notify(player, tprintf("Could not find channel %s.", channel));
+        raw_notify(executor, tprintf("Could not find channel %s.", channel));
         return;
     }
-    else if (!(Comm_All(player)) && (player != ch->charge_who))
+    else if (!(Comm_All(executor)) && (executor != ch->charge_who))
     {
-        raw_notify(player, "You do not have permission to do that. ");
+        raw_notify(executor, "You do not have permission to do that. ");
         return;
     }
     num_channels--;
@@ -1603,7 +1604,7 @@ void do_destroychannel(dbref player, dbref cause, int key, char *channel)
     ch->users = NULL;
     MEMFREE(ch);
     ch = NULL;
-    raw_notify(player, tprintf("Channel %s destroyed.", channel));
+    raw_notify(executor, tprintf("Channel %s destroyed.", channel));
 }
 
 #if 0
@@ -1732,8 +1733,9 @@ void do_listchannels(dbref player)
 
 void do_comtitle
 (
-    dbref player,
-    dbref cause,
+    dbref executor,
+    dbref caller,
+    dbref enactor,
     int   key,
     int   nargs,
     char *arg1,
@@ -1744,86 +1746,86 @@ void do_comtitle
 
     if (!mudconf.have_comsys)
     {
-        raw_notify(player, "Comsys disabled.");
+        raw_notify(executor, "Comsys disabled.");
         return;
     }
     if (!*arg1)
     {
-        raw_notify(player, "Need an alias to do comtitle.");
+        raw_notify(executor, "Need an alias to do comtitle.");
         return;
     }
-    strcpy(channel, get_channel_from_alias(player, arg1));
+    strcpy(channel, get_channel_from_alias(executor, arg1));
 
     if (channel[0] == '\0')
     {
-        raw_notify(player, "Unknown alias");
+        raw_notify(executor, "Unknown alias");
         return;
     }
     struct channel *ch = select_channel(channel);
     if (ch)
     {
-        if (select_user(ch, player))
+        if (select_user(ch, executor))
         {
             if (key == COMTITLE_OFF)
             {
                 if ((ch->type & CHANNEL_SPOOF) == 0)
                 {
-                    raw_notify(player, tprintf("Comtitles are now off for channel %s", channel));
-                    do_setcomtitlestatus(player, ch, FALSE);
+                    raw_notify(executor, tprintf("Comtitles are now off for channel %s", channel));
+                    do_setcomtitlestatus(executor, ch, FALSE);
                 }
                 else
                 {
-                    raw_notify(player, "You can not turn off comtitles on that channel.");
+                    raw_notify(executor, "You can not turn off comtitles on that channel.");
                 }
             }
             else if (key == COMTITLE_ON)
             {
-                raw_notify(player, tprintf("Comtitles are now on for channel %s", channel));
-                do_setcomtitlestatus(player, ch, TRUE);
+                raw_notify(executor, tprintf("Comtitles are now on for channel %s", channel));
+                do_setcomtitlestatus(executor, ch, TRUE);
             }
             else
             {
                 char *pValidatedTitleValue = RestrictTitleValue(arg2);
-                do_setnewtitle(player, ch, pValidatedTitleValue);
-                raw_notify(player, tprintf("Title set to '%s' on channel %s.",
+                do_setnewtitle(executor, ch, pValidatedTitleValue);
+                raw_notify(executor, tprintf("Title set to '%s' on channel %s.",
                     pValidatedTitleValue, channel));
             }
         }
     }
     else
     {
-        raw_notify(player, "Illegal comsys alias, please delete.");
+        raw_notify(executor, "Illegal comsys alias, please delete.");
     }
 }
 
-void do_comlist(dbref player, dbref cause, int key)
+void do_comlist(dbref executor, dbref caller, dbref enactor, int key)
 {
     comsys_t *c;
     int i;
 
     if (!mudconf.have_comsys)
     {
-        raw_notify(player, "Comsys disabled.");
+        raw_notify(executor, "Comsys disabled.");
         return;
     }
-    c = get_comsys(player);
+    c = get_comsys(executor);
 
-    raw_notify(player, "Alias     Channel            Status   Title");
+    raw_notify(executor, "Alias     Channel            Status   Title");
 
     for (i = 0; i < c->numchannels; i++)
     {
-        struct comuser *user = select_user(select_channel(c->channels[i]), player);
+        struct comuser *user = select_user(select_channel(c->channels[i]), executor);
         if (user)
         {
             char *p = tprintf("%-9.9s %-18.18s %s %s %s", c->alias + i * 6, c->channels[i], (user->bUserIsOn ? "on " : "off"), (user->ComTitleStatus ? "con " : "coff"), user->title);
-            raw_notify(player, p);
+            raw_notify(executor, p);
         }
         else
         {
-            raw_notify(player, tprintf("Bad Comsys Alias: %s for Channel: %s", c->alias + i * 6, c->channels[i]));
+            raw_notify(executor, tprintf("Bad Comsys Alias: %s for Channel: %s", c->alias + i * 6, c->channels[i]));
         }
     }
-    raw_notify(player, "-- End of comlist --");
+    raw_notify(executor, "-- End of comlist --");
 }
 
 void do_channelnuke(dbref player)
@@ -1852,49 +1854,49 @@ void do_channelnuke(dbref player)
     }
 }
 
-void do_clearcom(dbref player, dbref unused1, int unused2)
+void do_clearcom(dbref executor, dbref caller, dbref enactor, int unused2)
 {
     int i;
     comsys_t *c;
 
     if (!mudconf.have_comsys)
     {
-        raw_notify(player, "Comsys disabled.");
+        raw_notify(executor, "Comsys disabled.");
         return;
     }
-    c = get_comsys(player);
+    c = get_comsys(executor);
 
     for (i = (c->numchannels) - 1; i > -1; --i)
     {
-        do_delcom(player, player, 0, c->alias + i * 6);
+        do_delcom(executor, CALLERQQQ, executor, 0, c->alias + i * 6);
     }
 }
 
-void do_allcom(dbref player, dbref cause, int key, char *arg1)
+void do_allcom(dbref executor, dbref caller, dbref enactor, int key, char *arg1)
 {
     int i;
     comsys_t *c;
 
     if (!mudconf.have_comsys)
     {
-        raw_notify(player, "Comsys disabled.");
+        raw_notify(executor, "Comsys disabled.");
         return;
     }
-    c = get_comsys(player);
+    c = get_comsys(executor);
 
     if (  strcmp(arg1, "who") != 0
        && strcmp(arg1, "on")  != 0
        && strcmp(arg1, "off") != 0)
     {
-        raw_notify(player, "Only options available are: on, off and who.");
+        raw_notify(executor, "Only options available are: on, off and who.");
         return;
     }
     for (i = 0; i < c->numchannels; i++)
     {
-        do_processcom(player, c->channels[i], arg1);
+        do_processcom(executor, c->channels[i], arg1);
         if (strcmp(arg1, "who") == 0)
         {
-            raw_notify(player, "");
+            raw_notify(executor, "");
         }
     }
 }
@@ -1924,7 +1926,7 @@ void sort_users(struct channel *ch)
     }
 }
 
-void do_channelwho(dbref player, dbref cause, int key, char *arg1)
+void do_channelwho(dbref executor, dbref caller, dbref enactor, int key, char *arg1)
 {
     struct comuser *user;
     char channel[MAX_CHANNEL_LEN+1];
@@ -1937,7 +1939,7 @@ void do_channelwho(dbref player, dbref cause, int key, char *arg1)
 
     if (!mudconf.have_comsys)
     {
-        raw_notify(player, "Comsys disabled.");
+        raw_notify(executor, "Comsys disabled.");
         return;
     }
     s = arg1;
@@ -1955,30 +1957,30 @@ void do_channelwho(dbref player, dbref cause, int key, char *arg1)
     struct channel *ch = select_channel(channel);
     if (!ch)
     {
-        raw_notify(player, tprintf("Unknown channel %s.", channel));
+        raw_notify(executor, tprintf("Unknown channel %s.", channel));
         return;
     }
-    if (!((Comm_All(player)) || (player == ch->charge_who)))
+    if (!((Comm_All(executor)) || (executor == ch->charge_who)))
     {
-        raw_notify(player, "You do not have permission to do that. (Not owner or admin.)");
+        raw_notify(executor, "You do not have permission to do that. (Not owner or admin.)");
         return;
     }
-    raw_notify(player, tprintf("-- %s --", ch->name));
-    raw_notify(player, tprintf("%-29.29s %-6.6s %-6.6s", "Name", "Status", "Player"));
+    raw_notify(executor, tprintf("-- %s --", ch->name));
+    raw_notify(executor, tprintf("%-29.29s %-6.6s %-6.6s", "Name", "Status", "Player"));
     for (i = 0; i < ch->num_users; i++)
     {
         user = ch->users[i];
-        if ((flag || UNDEAD(user->who)) && (!Dark(user->who) || Wizard_Who(player)))
+        if ((flag || UNDEAD(user->who)) && (!Dark(user->who) || Wizard_Who(executor)))
         {
-            buff = unparse_object(player, user->who, 0);
+            buff = unparse_object(executor, user->who, 0);
             sprintf(temp, "%-29.29s %-6.6s %-6.6s", strip_ansi(buff),
                 user->bUserIsOn ? "on " : "off",
                 isPlayer(user->who) ? "yes" : "no ");
-            raw_notify(player, temp);
+            raw_notify(executor, temp);
             free_lbuf(buff);
         }
     }
-    raw_notify(player, tprintf("-- %s --", ch->name));
+    raw_notify(executor, tprintf("-- %s --", ch->name));
 }
 
 void do_comdisconnectraw_notify(dbref player, char *chan)
@@ -2104,8 +2106,9 @@ void do_comdisconnectchannel(dbref player, char *channel)
 
 void do_editchannel
 (
-    dbref player,
-    dbref cause,
+    dbref executor,
+    dbref caller,
+    dbref enactor,
     int   flag,
     int   nargs,
     char *arg1,
@@ -2117,18 +2120,18 @@ void do_editchannel
 
     if (!mudconf.have_comsys)
     {
-        raw_notify(player, "Comsys disabled.");
+        raw_notify(executor, "Comsys disabled.");
         return;
     }
     struct channel *ch = select_channel(arg1);
     if (!ch)
     {
-        raw_notify(player, tprintf("Unknown channel %s.", arg1));
+        raw_notify(executor, tprintf("Unknown channel %s.", arg1));
         return;
     }
-    if (!((Comm_All(player)) || (player == ch->charge_who)))
+    if (!((Comm_All(executor)) || (executor == ch->charge_who)))
     {
-        raw_notify(player, "You do not have permission to do that. (Not owner or Admin.)");
+        raw_notify(executor, "You do not have permission to do that. (Not owner or Admin.)");
         return;
     }
     s = arg2;
@@ -2141,22 +2144,22 @@ void do_editchannel
     {
     case 0:
         {
-            int who = lookup_player(player, arg2, 1);
+            int who = lookup_player(executor, arg2, 1);
             if (NOTHING == who)
             {
-                raw_notify(player, "Invalid player.");
+                raw_notify(executor, "Invalid player.");
             }
             else
             {
                 ch->charge_who = who;
-                raw_notify(player, "Set.");
+                raw_notify(executor, "Set.");
             }
         }
         break;
 
     case 1:
         ch->charge = Tiny_atol(arg2);
-        raw_notify(player, "Set.");
+        raw_notify(executor, "Set.");
         break;
 
     case 3:
@@ -2165,12 +2168,12 @@ void do_editchannel
             if (add_remove)
             {
                 ch->type |= (CHANNEL_PL_MULT * CHANNEL_JOIN);
-                raw_notify(player, "@cpflags: Set.");
+                raw_notify(executor, "@cpflags: Set.");
             }
             else
             {
                 ch->type &= ~(CHANNEL_PL_MULT * CHANNEL_JOIN);
-                raw_notify(player, "@cpflags: Cleared.");
+                raw_notify(executor, "@cpflags: Cleared.");
             }
         }
         else if (strcmp(s, "receive") == 0)
@@ -2178,12 +2181,12 @@ void do_editchannel
             if (add_remove)
             {
                 ch->type |= (CHANNEL_PL_MULT * CHANNEL_RECEIVE);
-                raw_notify(player, "@cpflags: Set.");
+                raw_notify(executor, "@cpflags: Set.");
             }
             else
             {
                 ch->type &= ~(CHANNEL_PL_MULT * CHANNEL_RECEIVE);
-                raw_notify(player, "@cpflags: Cleared.");
+                raw_notify(executor, "@cpflags: Cleared.");
             }
         }
         else if (strcmp(s, "transmit") == 0)
@@ -2191,17 +2194,17 @@ void do_editchannel
             if (add_remove)
             {
                 ch->type |= (CHANNEL_PL_MULT * CHANNEL_TRANSMIT);
-                raw_notify(player, "@cpflags: Set.");
+                raw_notify(executor, "@cpflags: Set.");
             }
             else
             {
                 ch->type &= ~(CHANNEL_PL_MULT * CHANNEL_TRANSMIT);
-                raw_notify(player, "@cpflags: Cleared.");
+                raw_notify(executor, "@cpflags: Cleared.");
             }
         }
         else
         {
-            raw_notify(player, "@cpflags: Unknown Flag.");
+            raw_notify(executor, "@cpflags: Unknown Flag.");
         }
         break;
 
@@ -2211,12 +2214,12 @@ void do_editchannel
             if (add_remove)
             {
                 ch->type |= (CHANNEL_OBJ_MULT * CHANNEL_JOIN);
-                raw_notify(player, "@coflags: Set.");
+                raw_notify(executor, "@coflags: Set.");
             }
             else
             {
                 ch->type &= ~(CHANNEL_OBJ_MULT * CHANNEL_JOIN);
-                raw_notify(player, "@coflags: Cleared.");
+                raw_notify(executor, "@coflags: Cleared.");
             }
         }
         else if (strcmp(s, "receive") == 0)
@@ -2224,12 +2227,12 @@ void do_editchannel
             if (add_remove)
             {
                 ch->type |= (CHANNEL_OBJ_MULT * CHANNEL_RECEIVE);
-                raw_notify(player, "@coflags: Set.");
+                raw_notify(executor, "@coflags: Set.");
             }
             else
             {
                 ch->type &= ~(CHANNEL_OBJ_MULT * CHANNEL_RECEIVE);
-                raw_notify(player, "@coflags: Cleared.");
+                raw_notify(executor, "@coflags: Cleared.");
             }
         }
         else if (strcmp(s, "transmit") == 0)
@@ -2237,17 +2240,17 @@ void do_editchannel
             if (add_remove)
             {
                 ch->type |= (CHANNEL_OBJ_MULT * CHANNEL_TRANSMIT);
-                raw_notify(player, "@coflags: Set.");
+                raw_notify(executor, "@coflags: Set.");
             }
             else
             {
                 ch->type &= ~(CHANNEL_OBJ_MULT * CHANNEL_TRANSMIT);
-                raw_notify(player, "@coflags: Cleared.");
+                raw_notify(executor, "@coflags: Cleared.");
             }
         }
         else
         {
-            raw_notify(player, "@coflags: Unknown Flag.");
+            raw_notify(executor, "@coflags: Unknown Flag.");
         }
         break;
     }
@@ -2341,8 +2344,9 @@ int do_comsystem(dbref who, char *cmd)
 
 void do_cemit
 (
-    dbref player,
-    dbref cause,
+    dbref executor,
+    dbref caller,
+    dbref enactor,
     int   key,
     int   nargs,
     char *chan,
@@ -2351,34 +2355,35 @@ void do_cemit
 {
     if (!mudconf.have_comsys)
     {
-        raw_notify(player, "Comsys disabled.");
+        raw_notify(executor, "Comsys disabled.");
         return;
     }
     struct channel *ch = select_channel(chan);
     if (!ch)
     {
-        raw_notify(player, tprintf("Channel %s does not exist.", chan));
+        raw_notify(executor, tprintf("Channel %s does not exist.", chan));
         return;
     }
-    if ((player != ch->charge_who) && (!Comm_All(player)))
+    if ((executor != ch->charge_who) && (!Comm_All(executor)))
     {
-        raw_notify(player, NOPERM_MESSAGE);
+        raw_notify(executor, NOPERM_MESSAGE);
         return;
     }
     if (key == CEMIT_NOHEADER)
     {
-        SendChannelMessage(player, ch, text, NULL, TRUE);
+        SendChannelMessage(executor, ch, text, NULL, TRUE);
     }
     else
     {
-        SendChannelMessage(player, ch, tprintf("%s %s", ch->header, text), NULL, TRUE);
+        SendChannelMessage(executor, ch, tprintf("%s %s", ch->header, text), NULL, TRUE);
     }
 }
 
 void do_chopen
 (
-    dbref player,
-    dbref cause,
+    dbref executor,
+    dbref caller,
+    dbref enactor,
     int   key,
     int   nargs,
     char *chan,
@@ -2387,12 +2392,12 @@ void do_chopen
 {
     if (!mudconf.have_comsys)
     {
-        raw_notify(player, "Comsys disabled.");
+        raw_notify(executor, "Comsys disabled.");
         return;
     }
     if (key == CSET_LIST)
     {
-        do_chanlist(player, NOTHING, 1);
+        do_chanlist(executor, CALLERQQQ, NOTHING, 1);
         return;
     }
 
@@ -2404,12 +2409,12 @@ void do_chopen
     if (!ch)
     {
         msg = tprintf("@cset: Channel %s does not exist.", chan);
-        raw_notify(player, msg);
+        raw_notify(executor, msg);
         return;
     }
-    if ((player != ch->charge_who) && (!Comm_All(player)))
+    if ((executor != ch->charge_who) && (!Comm_All(executor)))
     {
-        raw_notify(player, NOPERM_MESSAGE);
+        raw_notify(executor, NOPERM_MESSAGE);
         return;
     }
     switch (key)
@@ -2445,7 +2450,7 @@ void do_chopen
         break;
 
     case CSET_OBJECT:
-        init_match(player, value, NOTYPE);
+        init_match(executor, value, NOTYPE);
         match_everything(0);
         thing = match_result();
 
@@ -2456,24 +2461,25 @@ void do_chopen
         }
         else
         {
-            buff = unparse_object(player, thing, 0);
+            buff = unparse_object(executor, thing, 0);
             msg = tprintf("Channel %s is now using %s as channel object.", ch->name, buff);
             free_lbuf(buff);
         }
         break;
 
     case CSET_HEADER:
-        do_cheader(player, chan, value);
+        do_cheader(executor, chan, value);
         msg = "Set.";
         break;
     }
-    raw_notify(player, msg);
+    raw_notify(executor, msg);
 }
 
 void do_chboot
 (
-    dbref player,
-    dbref cause,
+    dbref executor,
+    dbref caller,
+    dbref enactor,
     int   key,
     int   nargs,
     char *channel,
@@ -2484,27 +2490,27 @@ void do_chboot
     //
     if (!mudconf.have_comsys)
     {
-        raw_notify(player, "Comsys disabled.");
+        raw_notify(executor, "Comsys disabled.");
         return;
     }
     struct channel *ch = select_channel(channel);
     if (!ch)
     {
-        raw_notify(player, "@cboot: Unknown channel.");
+        raw_notify(executor, "@cboot: Unknown channel.");
         return;
     }
-    struct comuser *user = select_user(ch, player);
+    struct comuser *user = select_user(ch, executor);
     if (!user)
     {
-        raw_notify(player, "@cboot: You are not on that channel.");
+        raw_notify(executor, "@cboot: You are not on that channel.");
         return;
     }
-    if (!(ch->charge_who == player) && !Comm_All(player))
+    if (!(ch->charge_who == executor) && !Comm_All(executor))
     {
-        raw_notify(player, "@cboot:  You can't do that!");
+        raw_notify(executor, "@cboot:  You can't do that!");
         return;
     }
-    dbref thing = match_thing(player, victim);
+    dbref thing = match_thing(executor, victim);
 
     if (thing == NOTHING)
     {
@@ -2513,7 +2519,7 @@ void do_chboot
     struct comuser *vu = select_user(ch, thing);
     if (!vu)
     {
-        raw_notify(player, tprintf("@cboot: %s in not on the channel.", Name(thing)));
+        raw_notify(executor, tprintf("@cboot: %s in not on the channel.", Name(thing)));
         return;
     }
 
@@ -2549,7 +2555,7 @@ void do_chboot
         free_lbuf(mess2nct);
     }
     *mnctp = '\0';
-    SendChannelMessage(player, ch, messNormal, messNoComtitle, FALSE);
+    SendChannelMessage(executor, ch, messNormal, messNoComtitle, FALSE);
     do_delcomchannel(thing, channel);
 }
 
@@ -2578,7 +2584,7 @@ void do_cheader(dbref player, char *channel, char *header)
     memcpy(ch->header, NewHeader_ANSI, nLen+1);
 }
 
-void do_chanlist(dbref player, dbref cause, int key)
+void do_chanlist(dbref executor, dbref caller, dbref enactor, int key)
 {
     dbref owner;
     struct channel *ch;
@@ -2589,14 +2595,14 @@ void do_chanlist(dbref player, dbref cause, int key)
 
     if (!mudconf.have_comsys)
     {
-        raw_notify(player, "Comsys disabled.");
+        raw_notify(executor, "Comsys disabled.");
         return;
     }
     flags = 0;
 
     if (key & CLIST_FULL)
     {
-        do_listchannels(player);
+        do_listchannels(executor);
         return;
     }
     temp = alloc_mbuf("do_chanlist_temp");
@@ -2604,18 +2610,18 @@ void do_chanlist(dbref player, dbref cause, int key)
 
     if (key & CLIST_HEADERS)
     {
-        raw_notify(player, "*** Channel       Owner           Header");
+        raw_notify(executor, "*** Channel       Owner           Header");
     }
     else
     {
-        raw_notify(player, "*** Channel       Owner           Description");
+        raw_notify(executor, "*** Channel       Owner           Description");
     }
 
     for (ch = (struct channel *)hash_firstentry(&mudstate.channel_htab);
          ch; ch = (struct channel *)hash_nextentry(&mudstate.channel_htab))
     {
-        if (Comm_All(player) || (ch->type & CHANNEL_PUBLIC) ||
-            ch->charge_who == player)
+        if (Comm_All(executor) || (ch->type & CHANNEL_PUBLIC) ||
+            ch->charge_who == executor)
         {
             char *pBuffer;
             if (key & CLIST_HEADERS)
@@ -2639,12 +2645,12 @@ void do_chanlist(dbref player, dbref cause, int key)
                 (ch->type & (CHANNEL_SPOOF)) ? 'S' : '-',
                 ch->name, Name(ch->charge_who), pBuffer);
 
-            raw_notify(player, temp);
+            raw_notify(executor, temp);
         }
     }
     free_mbuf(temp);
     free_mbuf(buf);
-    raw_notify(player, "-- End of list of Channels --");
+    raw_notify(executor, "-- End of list of Channels --");
 }
 
 // Returns a player's comtitle for a named channel.
@@ -2657,8 +2663,8 @@ FUNCTION(fun_comtitle)
         return;
     }
 
-    dbref victim = lookup_player(player, fargs[0], 1);
-    comsys_t *c = get_comsys(player);
+    dbref victim = lookup_player(executor, fargs[0], 1);
+    comsys_t *c = get_comsys(executor);
 
     if (victim == NOTHING)
     {
@@ -2677,7 +2683,7 @@ FUNCTION(fun_comtitle)
 
     int i;
     int onchannel = 0;
-    if (Wizard(player))
+    if (Wizard(executor))
     {
         onchannel = 1;
     }
@@ -2685,7 +2691,7 @@ FUNCTION(fun_comtitle)
     {
         for (i = 0; i < c->numchannels; i++)
         {
-            user = select_user(chn, player);
+            user = select_user(chn, executor);
             if (user)
             {
                 onchannel = 1;
@@ -2730,7 +2736,7 @@ FUNCTION(fun_comalias)
         return;
     }
 
-    dbref victim = lookup_player(player, fargs[0], 1);
+    dbref victim = lookup_player(executor, fargs[0], 1);
 
     if (victim == NOTHING)
     {
@@ -2748,10 +2754,10 @@ FUNCTION(fun_comalias)
     // Wizards can get the comalias for anyone. Players and objects can check
     // for themselves. Objects that Inherit can check for their owners.
     //
-    if (  !Wizard(player)
-       && player != victim
-       && (  Owner(player) != victim
-          || !Inherits(player)))
+    if (  !Wizard(executor)
+       && executor != victim
+       && (  Owner(executor) != victim
+          || !Inherits(executor)))
     {
         safe_noperm(buff, bufc);
         return;
@@ -2787,9 +2793,9 @@ FUNCTION(fun_channels)
          chn;
          chn = (struct channel *)hash_nextentry(&mudstate.channel_htab))
     {
-        if (  Comm_All(player)
+        if (  Comm_All(executor)
            || (chn->type & CHANNEL_PUBLIC)
-           || chn->charge_who == player)
+           || chn->charge_who == executor)
         {
             strcat(outbuff, chn->name);
             strcat(outbuff, " ");

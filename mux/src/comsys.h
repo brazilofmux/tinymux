@@ -1,6 +1,6 @@
 // comsys.h
 //
-// $Id: comsys.h,v 1.1 2002-05-24 06:53:15 sdennis Exp $
+// $Id: comsys.h,v 1.2 2002-06-04 00:47:27 sdennis Exp $
 //
 
 #ifndef __COMSYS_H__
@@ -96,12 +96,13 @@ void sort_users(struct channel *ch);
 void do_comconnectchannel(dbref player, char *channel, char *alias, int i);
 void do_comdisconnect(dbref player);
 void do_comconnect(dbref player);
-void do_clearcom(dbref player, dbref unused1, int unused2);
+void do_clearcom(dbref executor, dbref caller, dbref enactor, int unused2);
 void do_cheader(dbref player, char *channel, char *header);
 void do_addcom
 (
-    dbref player,
-    dbref cause,
+    dbref executor,
+    dbref caller,
+    dbref enactor,
     int   key,
     int   nargs,
     char *arg1,
@@ -135,7 +136,7 @@ char  *send_csdebug();
 int   do_comsystem(dbref who, char *cmd);
 char  *do_comdisconnectnotify();
 char  *do_comconnectnotify();
-void  do_chanlist(dbref player, dbref cause, int key);
+void  do_chanlist(dbref executor, dbref caller, dbref enactor, int key);
 
 #define CHANNEL_JOIN      0x1
 #define CHANNEL_TRANSMIT  0x2

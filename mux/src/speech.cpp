@@ -1,6 +1,6 @@
 // speech.cpp -- Commands which involve speaking.
 //
-// $Id: speech.cpp,v 1.2 2002-06-03 20:01:09 sdennis Exp $
+// $Id: speech.cpp,v 1.3 2002-06-04 00:47:28 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -93,20 +93,20 @@ static const char *announce_msg = "Announcement: ";
 static const char *broadcast_msg = "Broadcast: ";
 static const char *admin_msg = "Admin: ";
 
-void do_think(dbref player, dbref cause, int key, char *message)
+void do_think(dbref executor, dbref caller, dbref enactor, int key, char *message)
 {
     char *str, *buf, *bp;
 
     buf = bp = alloc_lbuf("do_think");
     str = message;
-    TinyExec(buf, &bp, player, CALLERQQQ, cause, EV_FCHECK | EV_EVAL | EV_TOP,
+    TinyExec(buf, &bp, executor, CALLERQQQ, enactor, EV_FCHECK | EV_EVAL | EV_TOP,
              &str, (char **)NULL, 0);
     *bp = '\0';
-    notify(player, buf);
+    notify(executor, buf);
     free_lbuf(buf);
 }
 
-void do_say(dbref player, dbref cause, int key, char *message)
+void do_say(dbref executor, dbref caller, dbref enactor, int key, char *message)
 {
     dbref loc;
     char *buf2, *bp;
@@ -146,7 +146,7 @@ void do_say(dbref player, dbref cause, int key, char *message)
      * Make sure speaker is somewhere if speaking in a place
      */
 
-    loc = where_is(player);
+    loc = where_is(executor);
     switch (key) {
     case SAY_SAY:
     case SAY_POSE:
@@ -154,7 +154,7 @@ void do_say(dbref player, dbref cause, int key, char *message)
     case SAY_EMIT:
         if (loc == NOTHING)
             return;
-        if (!sp_ok(player))
+        if (!sp_ok(executor))
             return;
     }
 
@@ -165,16 +165,16 @@ void do_say(dbref player, dbref cause, int key, char *message)
     switch (key)
     {
     case SAY_SAY:
-        notify_saypose(player, tprintf("You say, \"%s\"", message));
-        notify_except(loc, player, player, tprintf("%s says, \"%s\"", Name(player), message), MSG_SAYPOSE);
+        notify_saypose(executor, tprintf("You say, \"%s\"", message));
+        notify_except(loc, executor, executor, tprintf("%s says, \"%s\"", Name(executor), message), MSG_SAYPOSE);
         break;
 
     case SAY_POSE:
-        notify_all_from_inside_saypose(loc, player, tprintf("%s %s", Name(player), message));
+        notify_all_from_inside_saypose(loc, executor, tprintf("%s %s", Name(executor), message));
         break;
 
     case SAY_POSE_NOSPC:
-        notify_all_from_inside_saypose(loc, player, tprintf("%s%s", Name(player), message));
+        notify_all_from_inside_saypose(loc, executor, tprintf("%s%s", Name(executor), message));
         break;
 
     case SAY_EMIT:
@@ -182,11 +182,11 @@ void do_say(dbref player, dbref cause, int key, char *message)
         {
             if (say_flags & SAY_HTML)
             {
-                notify_all_from_inside_html(loc, player, message);
+                notify_all_from_inside_html(loc, executor, message);
             }
             else
             {
-                notify_all_from_inside(loc, player, message);
+                notify_all_from_inside(loc, executor, message);
             }
         }
         if (say_flags & SAY_ROOM)
@@ -206,7 +206,7 @@ void do_say(dbref player, dbref cause, int key, char *message)
             }
             if (Typeof(loc) == TYPE_ROOM)
             {
-                notify_all_from_inside(loc, player, message);
+                notify_all_from_inside(loc, executor, message);
             }
         }
         break;
@@ -216,11 +216,11 @@ void do_say(dbref player, dbref cause, int key, char *message)
         {
         case ':':
             message[0] = ' ';
-            say_shout(0, announce_msg, say_flags, player, message);
+            say_shout(0, announce_msg, say_flags, executor, message);
             break;
         case ';':
             message++;
-            say_shout(0, announce_msg, say_flags, player, message);
+            say_shout(0, announce_msg, say_flags, executor, message);
             break;
         case '"':
             message++;
@@ -231,11 +231,11 @@ void do_say(dbref player, dbref cause, int key, char *message)
             safe_str(message, buf2, &bp);
             safe_chr('"', buf2, &bp);
             *bp = '\0';
-            say_shout(0, announce_msg, say_flags, player, buf2);
+            say_shout(0, announce_msg, say_flags, executor, buf2);
             free_lbuf(buf2);
         }
         STARTLOG(LOG_SHOUTS, "WIZ", "SHOUT");
-        log_name(player);
+        log_name(executor);
         log_text(" shouts: ");
         log_text(message);
         ENDLOG;
@@ -245,12 +245,12 @@ void do_say(dbref player, dbref cause, int key, char *message)
         switch (*message) {
         case ':':
             message[0] = ' ';
-            say_shout(SHOUT_WIZARD, broadcast_msg, say_flags, player,
+            say_shout(SHOUT_WIZARD, broadcast_msg, say_flags, executor,
                   message);
             break;
         case ';':
             message++;
-            say_shout(SHOUT_WIZARD, broadcast_msg, say_flags, player,
+            say_shout(SHOUT_WIZARD, broadcast_msg, say_flags, executor,
                   message);
             break;
         case '"':
@@ -262,12 +262,12 @@ void do_say(dbref player, dbref cause, int key, char *message)
             safe_str(message, buf2, &bp);
             safe_chr('"', buf2, &bp);
             *bp = '\0';
-            say_shout(SHOUT_WIZARD, broadcast_msg, say_flags, player,
+            say_shout(SHOUT_WIZARD, broadcast_msg, say_flags, executor,
                   buf2);
             free_lbuf(buf2);
         }
         STARTLOG(LOG_SHOUTS, "WIZ", "BCAST");
-        log_name(player);
+        log_name(executor);
         log_text((char *)" broadcasts: '");
         log_text(message);
         log_text((char *)"'");
@@ -278,12 +278,12 @@ void do_say(dbref player, dbref cause, int key, char *message)
         switch (*message) {
         case ':':
             message[0] = ' ';
-            say_shout(SHOUT_ADMIN, admin_msg, say_flags, player,
+            say_shout(SHOUT_ADMIN, admin_msg, say_flags, executor,
                   message);
             break;
         case ';':
             message++;
-            say_shout(SHOUT_ADMIN, admin_msg, say_flags, player,
+            say_shout(SHOUT_ADMIN, admin_msg, say_flags, executor,
                   message);
             break;
         case '"':
@@ -295,12 +295,12 @@ void do_say(dbref player, dbref cause, int key, char *message)
             safe_str(message, buf2, &bp);
             safe_chr('"', buf2, &bp);
             *bp = '\0';
-            say_shout(SHOUT_ADMIN, admin_msg, say_flags, player,
+            say_shout(SHOUT_ADMIN, admin_msg, say_flags, executor,
                   buf2);
             free_lbuf(buf2);
         }
         STARTLOG(LOG_SHOUTS, "WIZ", "ASHOUT");
-        log_name(player);
+        log_name(executor);
         log_text(" yells: ");
         log_text(message);
         ENDLOG;
@@ -309,14 +309,14 @@ void do_say(dbref player, dbref cause, int key, char *message)
     case SAY_WALLPOSE:
         if (say_flags & SAY_NOTAG)
         {
-            wall_broadcast(0, player, tprintf("%s %s", Name(player), message));
+            wall_broadcast(0, executor, tprintf("%s %s", Name(executor), message));
         }
         else
         {
-            wall_broadcast(0, player, tprintf("Announcement: %s %s", Name(player), message));
+            wall_broadcast(0, executor, tprintf("Announcement: %s %s", Name(executor), message));
         }
         STARTLOG(LOG_SHOUTS, "WIZ", "SHOUT");
-        log_name(player);
+        log_name(executor);
         log_text(" WALLposes: ");
         log_text(message);
         ENDLOG;
@@ -325,14 +325,14 @@ void do_say(dbref player, dbref cause, int key, char *message)
     case SAY_WIZPOSE:
         if (say_flags & SAY_NOTAG)
         {
-            wall_broadcast(SHOUT_WIZARD, player, tprintf("%s %s", Name(player), message));
+            wall_broadcast(SHOUT_WIZARD, executor, tprintf("%s %s", Name(executor), message));
         }
         else
         {
-            wall_broadcast(SHOUT_WIZARD, player, tprintf("Broadcast: %s %s", Name(player), message));
+            wall_broadcast(SHOUT_WIZARD, executor, tprintf("Broadcast: %s %s", Name(executor), message));
         }
         STARTLOG(LOG_SHOUTS, "WIZ", "BCAST");
-        log_name(player);
+        log_name(executor);
         log_text(" WIZposes: ");
         log_text(message);
         ENDLOG;
@@ -341,14 +341,14 @@ void do_say(dbref player, dbref cause, int key, char *message)
     case SAY_WALLEMIT:
         if (say_flags & SAY_NOTAG)
         {
-            wall_broadcast(0, player, tprintf("%s", message));
+            wall_broadcast(0, executor, tprintf("%s", message));
         }
         else
         {
-            wall_broadcast(0, player, tprintf("Announcement: %s", message));
+            wall_broadcast(0, executor, tprintf("Announcement: %s", message));
         }
         STARTLOG(LOG_SHOUTS, "WIZ", "SHOUT");
-        log_name(player);
+        log_name(executor);
         log_text(" WALLemits: ");
         log_text(message);
         ENDLOG;
@@ -357,14 +357,14 @@ void do_say(dbref player, dbref cause, int key, char *message)
     case SAY_WIZEMIT:
         if (say_flags & SAY_NOTAG)
         {
-            wall_broadcast(SHOUT_WIZARD, player, tprintf("%s", message));
+            wall_broadcast(SHOUT_WIZARD, executor, tprintf("%s", message));
         }
         else
         {
-            wall_broadcast(SHOUT_WIZARD, player, tprintf("Broadcast: %s", message));
+            wall_broadcast(SHOUT_WIZARD, executor, tprintf("Broadcast: %s", message));
         }
         STARTLOG(LOG_SHOUTS, "WIZ", "BCAST");
-        log_name(player);
+        log_name(executor);
         log_text(" WIZemit: ");
         log_text(message);
         ENDLOG;
@@ -471,8 +471,9 @@ static int page_check(dbref player, dbref target)
 //
 void do_page
 (
-    dbref player,
-    dbref cause,
+    dbref executor,
+    dbref caller,
+    dbref enactor,
     int   key,
     int   nargs,
     char *arg1,
@@ -497,14 +498,14 @@ void do_page
         char *p;
         for (p = Tiny_StrTokParse(&tts); p; p = Tiny_StrTokParse(&tts))
         {
-            dbref target = lookup_player(player,p, 1);
+            dbref target = lookup_player(executor,p, 1);
             if (target != NOTHING)
             {
                 aPlayers[nPlayers++] = target;
             }
             else
             {
-                notify(player, tprintf("I don't recognize \"%s\".", p));
+                notify(executor, tprintf("I don't recognize \"%s\".", p));
             }
         }
         bModified = TRUE;
@@ -515,7 +516,7 @@ void do_page
         //
         dbref aowner;
         int   aflags;
-        char *pLastPage = atr_get(player, A_LASTPAGE, &aowner, &aflags);
+        char *pLastPage = atr_get(executor, A_LASTPAGE, &aowner, &aflags);
 
         TINY_STRTOK_STATE tts;
         Tiny_StrTokString(&tts, pLastPage);
@@ -531,7 +532,7 @@ void do_page
             }
             else
             {
-                notify(player, tprintf("I don't recognized #%d.", target));
+                notify(executor, tprintf("I don't recognized #%d.", target));
                 bModified = TRUE;
             }
         }
@@ -569,7 +570,7 @@ void do_page
         for (i = 0; i < nPlayers; i++)
         {
             if (  aPlayers[i] != NOTHING
-               && !page_check(player, aPlayers[i]))
+               && !page_check(executor, aPlayers[i]))
             {
                 aPlayers[i] = NOTHING;
                 bModified = TRUE;
@@ -597,7 +598,7 @@ void do_page
             }
         }
         IntegerToBuffer_Final(&itb);
-        atr_add_raw(player, A_LASTPAGE, pBuff);
+        atr_add_raw(executor, A_LASTPAGE, pBuff);
         free_lbuf(pBuff);
     }
 
@@ -608,11 +609,11 @@ void do_page
         if (  nargs == 1
            && arg1[0] == '\0')
         {
-            notify(player, "You have not paged anyone.");
+            notify(executor, "You have not paged anyone.");
         }
         else
         {
-            notify(player, "No one to page.");
+            notify(executor, "No one to page.");
         }
         return;
     }
@@ -653,7 +654,7 @@ void do_page
     if (  nargs == 1
        && arg1[0] == '\0')
     {
-        notify(player, tprintf("You last paged %s.", aFriendly));
+        notify(executor, tprintf("You last paged %s.", aFriendly));
         free_lbuf(aFriendly);
         return;
     }
@@ -687,12 +688,12 @@ void do_page
         if (nValid == 1)
         {
             safe_tprintf_str(omessage, &omp, "From afar, %s pages you.",
-                Name(player));
+                Name(executor));
         }
         else
         {
             safe_tprintf_str(omessage, &omp, "From afar, %s pages %s.",
-                Name(player), aFriendly);
+                Name(executor), aFriendly);
         }
         safe_tprintf_str(imessage, &imp, "You page %s.", aFriendly);
         break;
@@ -704,9 +705,9 @@ void do_page
         {
             safe_tprintf_str(omessage, &omp, "to %s: ", aFriendly);
         }
-        safe_tprintf_str(omessage, &omp, "%s %s", Name(player), pMessage);
+        safe_tprintf_str(omessage, &omp, "%s %s", Name(executor), pMessage);
         safe_tprintf_str(imessage, &imp, "Long distance to %s: %s %s",
-            aFriendly, Name(player), pMessage);
+            aFriendly, Name(executor), pMessage);
         break;
 
     case ';':
@@ -716,9 +717,9 @@ void do_page
         {
             safe_tprintf_str(omessage, &omp, "to %s: ", aFriendly);
         }
-        safe_tprintf_str(omessage, &omp, "%s%s", Name(player), pMessage);
+        safe_tprintf_str(omessage, &omp, "%s%s", Name(executor), pMessage);
         safe_tprintf_str(imessage, &imp, "Long distance to %s: %s%s",
-            aFriendly, Name(player), pMessage);
+            aFriendly, Name(executor), pMessage);
         break;
 
     case '"':
@@ -731,7 +732,7 @@ void do_page
         {
             safe_tprintf_str(omessage, &omp, "To %s, ", aFriendly);
         }
-        safe_tprintf_str(omessage, &omp, "%s pages: %s", Name(player),
+        safe_tprintf_str(omessage, &omp, "%s pages: %s", Name(executor),
             pMessage);
         safe_tprintf_str(imessage, &imp, "You paged %s with '%s'.",
             aFriendly, pMessage);
@@ -746,10 +747,10 @@ void do_page
         dbref target = aPlayers[i];
         if (target != NOTHING)
         {
-            notify_with_cause_ooc(target, player, omessage);
+            notify_with_cause_ooc(target, executor, omessage);
             if (fetch_idle(target) >= idle_timeout_val(target))
             {
-                page_return(player, target, "Idle", A_IDLE, NULL);
+                page_return(executor, target, "Idle", A_IDLE, NULL);
             }
         }
     }
@@ -757,7 +758,7 @@ void do_page
 
     // Send message to sender.
     //
-    notify(player, imessage);
+    notify(executor, imessage);
     free_lbuf(imessage);
 }
 
@@ -1037,8 +1038,9 @@ void do_pemit_list
 
 void do_pemit
 (
-    dbref player,
-    dbref cause,
+    dbref executor,
+    dbref caller,
+    dbref enactor,
     int   key,
     int   nargs,
     char *recipient,
@@ -1079,12 +1081,12 @@ void do_pemit
 
     if (bDoList)
     {
-        do_pemit_list(player, key, bDoContents, pemit_flags, recipient,
+        do_pemit_list(executor, key, bDoContents, pemit_flags, recipient,
             chPoseType, message);
     }
     else
     {
-        do_pemit_single(player, key, bDoContents, pemit_flags, recipient,
+        do_pemit_single(executor, key, bDoContents, pemit_flags, recipient,
             chPoseType, message);
     }
 }

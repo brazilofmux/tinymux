@@ -1,6 +1,6 @@
 // version.cpp -- Version information.
 //
-// $Id: version.cpp,v 1.1 2002-05-24 06:53:16 sdennis Exp $
+// $Id: version.cpp,v 1.2 2002-06-04 00:47:28 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -10,12 +10,12 @@
 
 #include "_build.h"
 
-void do_version(dbref player, dbref cause, int extra)
+void do_version(dbref executor, dbref caller, dbref enactor, int extra)
 {
-    notify(player, mudstate.version);
+    notify(executor, mudstate.version);
     char *buff = alloc_mbuf("do_version");
     sprintf(buff, "Build date: %s", MUX_BUILD_DATE);
-    notify(player, buff);
+    notify(executor, buff);
     free_mbuf(buff);
 }
 

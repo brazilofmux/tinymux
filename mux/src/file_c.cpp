@@ -1,6 +1,6 @@
 // file_c.cpp -- File cache management.
 //
-// $Id: file_c.cpp,v 1.1 2002-05-24 06:53:15 sdennis Exp $
+// $Id: file_c.cpp,v 1.2 2002-06-04 00:47:27 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -67,17 +67,17 @@ NAMETAB list_files[] =
     { NULL,              0,  0,          0}
 };
 
-void do_list_file(dbref player, dbref cause, int extra, char *arg)
+void do_list_file(dbref executor, dbref caller, dbref enactor, int extra, char *arg)
 {
     int flagvalue;
 
-    flagvalue = search_nametab(player, list_files, arg);
+    flagvalue = search_nametab(executor, list_files, arg);
     if (flagvalue < 0)
     {
-        display_nametab(player, list_files, "Unknown file.  Use one of:", 1);
+        display_nametab(executor, list_files, "Unknown file.  Use one of:", 1);
         return;
     }
-    fcache_send(player, flagvalue);
+    fcache_send(executor, flagvalue);
 }
 
 static FBLOCK *fcache_fill(FBLOCK *fp, char ch)

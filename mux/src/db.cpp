@@ -1,6 +1,6 @@
 // db.cpp
 //
-// $Id: db.cpp,v 1.1 2002-05-24 06:53:15 sdennis Exp $
+// $Id: db.cpp,v 1.2 2002-06-04 00:47:27 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -589,8 +589,9 @@ extern NAMETAB attraccess_nametab[];
 
 void do_attribute
 (
-    dbref player,
-    dbref cause,
+    dbref executor,
+    dbref caller,
+    dbref enactor,
     int   key,
     int   nargs,
     char *aname,
@@ -609,7 +610,7 @@ void do_attribute
     char *pName = MakeCanonicalAttributeName(aname, &nName, &bValid);
     if (!bValid || !(va = (VATTR *)vattr_find_LEN(pName, nName)))
     {
-        notify(player, "No such user-named attribute.");
+        notify(executor, "No such user-named attribute.");
         return;
     }
     switch (key)
@@ -637,7 +638,7 @@ void do_attribute
 
             // Set or clear the appropriate bit.
             //
-            f = search_nametab(player, attraccess_nametab, sp);
+            f = search_nametab(executor, attraccess_nametab, sp);
             if (f > 0)
             {
                 success = 1;
@@ -648,15 +649,15 @@ void do_attribute
             }
             else
             {
-                notify(player, tprintf("Unknown permission: %s.", sp));
+                notify(executor, tprintf("Unknown permission: %s.", sp));
             }
 
             // Get the next token.
             //
             sp = Tiny_StrTokParse(&tts);
         }
-        if (success && !Quiet(player))
-            notify(player, "Attribute access changed.");
+        if (success && !Quiet(executor))
+            notify(executor, "Attribute access changed.");
         break;
 
     case ATTRIB_RENAME:
@@ -674,14 +675,14 @@ void do_attribute
             va2 = atr_str(value);
             if (va2)
             {
-                notify(player, "An attribute with that name already exists.");
+                notify(executor, "An attribute with that name already exists.");
                 return;
             }
             pName = MakeCanonicalAttributeName(value, &nName, &bValid);
             if (!bValid || vattr_rename_LEN(OldName, nOldName, pName, nName) == NULL)
-                notify(player, "Attribute rename failed.");
+                notify(executor, "Attribute rename failed.");
             else
-                notify(player, "Attribute renamed.");
+                notify(executor, "Attribute renamed.");
         }
         break;
 
@@ -690,7 +691,7 @@ void do_attribute
         // Remove the attribute.
         //
         vattr_delete_LEN(pName, nName);
-        notify(player, "Attribute deleted.");
+        notify(executor, "Attribute deleted.");
         break;
     }
 }
@@ -701,15 +702,16 @@ void do_attribute
 
 void do_fixdb
 (
-    dbref player,
-    dbref cause,
+    dbref executor,
+    dbref caller,
+    dbref enactor,
     int   key,
     int   nargs,
     char *arg1,
     char *arg2
 )
 {
-    init_match(player, arg1, NOTYPE);
+    init_match(executor, arg1, NOTYPE);
     match_everything(0);
     dbref thing = noisy_match_result();
     if (thing == NOTHING)
@@ -725,7 +727,7 @@ void do_fixdb
     case FIXDB_CON:
     case FIXDB_EXITS:
     case FIXDB_NEXT:
-        init_match(player, arg2, NOTYPE);
+        init_match(executor, arg2, NOTYPE);
         match_everything(0);
         res = noisy_match_result();
         break;
@@ -740,43 +742,43 @@ void do_fixdb
     case FIXDB_OWNER:
 
         s_Owner(thing, res);
-        if (!Quiet(player))
-            notify(player, tprintf("Owner set to #%d", res));
+        if (!Quiet(executor))
+            notify(executor, tprintf("Owner set to #%d", res));
         break;
 
     case FIXDB_LOC:
 
         s_Location(thing, res);
-        if (!Quiet(player))
-            notify(player, tprintf("Location set to #%d", res));
+        if (!Quiet(executor))
+            notify(executor, tprintf("Location set to #%d", res));
         break;
 
     case FIXDB_CON:
 
         s_Contents(thing, res);
-        if (!Quiet(player))
-            notify(player, tprintf("Contents set to #%d", res));
+        if (!Quiet(executor))
+            notify(executor, tprintf("Contents set to #%d", res));
         break;
 
     case FIXDB_EXITS:
 
         s_Exits(thing, res);
-        if (!Quiet(player))
-            notify(player, tprintf("Exits set to #%d", res));
+        if (!Quiet(executor))
+            notify(executor, tprintf("Exits set to #%d", res));
         break;
 
     case FIXDB_NEXT:
 
         s_Next(thing, res);
-        if (!Quiet(player))
-            notify(player, tprintf("Next set to #%d", res));
+        if (!Quiet(executor))
+            notify(executor, tprintf("Next set to #%d", res));
         break;
 
     case FIXDB_PENNIES:
 
         s_Pennies(thing, res);
-        if (!Quiet(player))
-            notify(player, tprintf("Pennies set to %d", res));
+        if (!Quiet(executor))
+            notify(executor, tprintf("Pennies set to %d", res));
         break;
 
     case FIXDB_NAME:
@@ -785,13 +787,13 @@ void do_fixdb
         {
             if (!ValidatePlayerName(arg2))
             {
-                notify(player, "That's not a good name for a player.");
+                notify(executor, "That's not a good name for a player.");
                 return;
             }
             pValidName = arg2;
             if (lookup_player(NOTHING, pValidName, 0) != NOTHING)
             {
-                notify(player, "That name is already in use.");
+                notify(executor, "That name is already in use.");
                 return;
             }
             STARTLOG(LOG_SECURITY, "SEC", "CNAME");
@@ -799,7 +801,7 @@ void do_fixdb
             log_text(" renamed to ");
             log_text(pValidName);
             ENDLOG;
-            if (Suspect(player))
+            if (Suspect(executor))
             {
                 raw_broadcast(WIZARD, "[Suspect] %s renamed to %s",
                     Name(thing), pValidName);
@@ -815,14 +817,14 @@ void do_fixdb
             pValidName = MakeCanonicalObjectName(arg2, &nTmp, &bValid);
             if (!bValid)
             {
-                notify(player, "That is not a reasonable name.");
+                notify(executor, "That is not a reasonable name.");
                 return;
             }
             s_Name(thing, pValidName);
         }
-        if (!Quiet(player))
+        if (!Quiet(executor))
         {
-            notify(player, tprintf("Name set to %s", pValidName));
+            notify(executor, tprintf("Name set to %s", pValidName));
         }
         break;
     }
@@ -3120,7 +3122,7 @@ void ReleaseAllResources(dbref obj)
     if (mudconf.have_comsys)
     {
         do_comdisconnect(obj);
-        do_clearcom(obj, obj, 0);
+        do_clearcom(obj, CALLERQQQ, obj, 0);
         do_channelnuke(obj);
         del_comsys(obj);
     }

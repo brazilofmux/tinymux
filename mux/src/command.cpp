@@ -1,6 +1,6 @@
 // command.cpp -- command parser and support routines.
 //
-// $Id: command.cpp,v 1.2 2002-06-03 20:01:09 sdennis Exp $
+// $Id: command.cpp,v 1.3 2002-06-04 00:47:27 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -20,9 +20,9 @@
 
 extern void FDECL(list_cf_access, (dbref));
 extern void FDECL(list_siteinfo, (dbref));
-extern void logged_out0(dbref player, dbref cause, int key);
-extern void logged_out1(dbref player, dbref cause, int key, char *arg);
-extern void boot_slave(dbref, dbref, int);
+extern void logged_out0(dbref executor, dbref caller, dbref enactor, int key);
+extern void logged_out1(dbref executor, dbref caller, dbref enactor, int key, char *arg);
+extern void boot_slave(dbref executor, dbref caller, dbref enactor, int);
 extern void NDECL(vattr_clean_db);
 
 // Switch tables for the various commands.
@@ -872,8 +872,9 @@ int check_access(dbref player, int mask)
  * process_cmdent: Perform indicated command with passed args.
  */
 
-void process_cmdent(CMDENT *cmdp, char *switchp, dbref player, dbref cause, int interactive, char *arg,
-            char *unp_command, char *cargs[], int ncargs)
+void process_cmdent(CMDENT *cmdp, char *switchp, dbref executor, dbref caller,
+            dbref enactor, int interactive, char *arg, char *unp_command,
+            char *cargs[], int ncargs)
 {
     char *buf1, *buf2, tchar, *bp, *str, *buff, *s, *j, *new0;
     char *args[MAX_ARG];
@@ -885,32 +886,32 @@ void process_cmdent(CMDENT *cmdp, char *switchp, dbref player, dbref cause, int 
 
     // Perform object type checks.
     //
-    if (Invalid_Objtype(player))
+    if (Invalid_Objtype(executor))
     {
-        notify(player, "Command incompatible with enactor type.");
+        notify(executor, "Command incompatible with executor type.");
         return;
     }
 
     // Check if we have permission to execute the command.
     //
-    if (!check_access(player, cmdp->perms))
+    if (!check_access(executor, cmdp->perms))
     {
-        notify(player, NOPERM_MESSAGE);
+        notify(executor, NOPERM_MESSAGE);
         return;
     }
 
     // Check global flags
     //
-    if (  !Builder(player)
+    if (  !Builder(executor)
        && Protect(CA_GBL_BUILD)
        && !(mudconf.control_flags & CF_BUILD))
     {
-        notify(player, "Sorry, building is not allowed now.");
+        notify(executor, "Sorry, building is not allowed now.");
         return;
     }
     if (Protect(CA_GBL_INTERP) && !(mudconf.control_flags & CF_INTERP))
     {
-        notify(player, "Sorry, queueing and triggering are not allowed now.");
+        notify(executor, "Sorry, queueing and triggering are not allowed now.");
         return;
     }
     key = cmdp->extra & ~SW_MULTIPLE;
@@ -936,24 +937,24 @@ void process_cmdent(CMDENT *cmdp, char *switchp, dbref player, dbref cause, int 
             buf1 = (char *)strchr(switchp, '/');
             if (buf1)
                 *buf1++ = '\0';
-            xkey = search_nametab(player, cmdp->switches, switchp);
+            xkey = search_nametab(executor, cmdp->switches, switchp);
             if (xkey == -1)
             {
-                notify(player,
+                notify(executor,
                        tprintf("Unrecognized switch '%s' for command '%s'.",
                            switchp, cmdp->cmdname));
                 return;
             }
             else if (xkey == -2)
             {
-                notify(player, NOPERM_MESSAGE);
+                notify(executor, NOPERM_MESSAGE);
                 return;
             }
             else if (!(xkey & SW_MULTIPLE))
             {
                 if (i == 1)
                 {
-                    notify(player, "Illegal combination of switches.");
+                    notify(executor, "Illegal combination of switches.");
                     return;
                 }
                 i = 1;
@@ -969,7 +970,7 @@ void process_cmdent(CMDENT *cmdp, char *switchp, dbref player, dbref cause, int 
     }
     else if (switchp && !(cmdp->callseq & CS_ADDED))
     {
-        notify(player, tprintf("Command %s does not take switches.",
+        notify(executor, tprintf("Command %s does not take switches.",
             cmdp->cmdname));
         return;
     }
@@ -1013,7 +1014,7 @@ void process_cmdent(CMDENT *cmdp, char *switchp, dbref player, dbref cause, int 
     switch (cmdp->callseq & CS_NARG_MASK)
     {
     case CS_NO_ARGS: // <cmd>   (no args)
-        (*(((CMDENT_NO_ARG *)cmdp)->handler)) (player, cause, key);
+        (*(((CMDENT_NO_ARG *)cmdp)->handler))(executor, CALLERQQQ, enactor, key);
         break;
 
     case CS_ONE_ARG:    // <cmd> <arg>
@@ -1025,7 +1026,7 @@ void process_cmdent(CMDENT *cmdp, char *switchp, dbref player, dbref cause, int 
         //
         if (cmdp->callseq & CS_UNPARSE)
         {
-            (*(((CMDENT_ONE_ARG *)cmdp)->handler)) (player, unp_command);
+            (*(((CMDENT_ONE_ARG *)cmdp)->handler))(executor, unp_command);
             break;
         }
 #endif
@@ -1035,7 +1036,8 @@ void process_cmdent(CMDENT *cmdp, char *switchp, dbref player, dbref cause, int 
         {
             buf1 = bp = alloc_lbuf("process_cmdent");
             str = arg;
-            TinyExec(buf1, &bp, player, CALLERQQQ, cause, interp | EV_FCHECK | EV_TOP, &str, cargs, ncargs);
+            TinyExec(buf1, &bp, executor, CALLERQQQ, enactor,
+                     interp | EV_FCHECK | EV_TOP, &str, cargs, ncargs);
             *bp = '\0';
         }
         else
@@ -1048,7 +1050,8 @@ void process_cmdent(CMDENT *cmdp, char *switchp, dbref player, dbref cause, int 
         //
         if (cmdp->callseq & CS_CMDARG)
         {
-            (*(((CMDENT_ONE_ARG_CMDARG *)cmdp)->handler)) (player, cause, key, buf1, cargs, ncargs);
+            (*(((CMDENT_ONE_ARG_CMDARG *)cmdp)->handler))(executor, CALLERQQQ,
+                enactor, key, buf1, cargs, ncargs);
         }
         else
         {
@@ -1117,7 +1120,8 @@ void process_cmdent(CMDENT *cmdp, char *switchp, dbref player, dbref cause, int 
                     if (wild(buff + 1, new0, aargs, 10))
                     {
                         CLinearTimeAbsolute lta;
-                        wait_que(add->thing, player, FALSE, lta, NOTHING, 0, s, aargs, 10, mudstate.global_regs);
+                        wait_que(add->thing, CALLERQQQ, executor, FALSE, lta,
+                            NOTHING, 0, s, aargs, 10, mudstate.global_regs);
                         for (i = 0; i < 10; i++)
                         {
                             if (aargs[i])
@@ -1132,7 +1136,8 @@ void process_cmdent(CMDENT *cmdp, char *switchp, dbref player, dbref cause, int 
             }
             else
             {
-                (*(((CMDENT_ONE_ARG *)cmdp)->handler)) (player, cause, key, buf1);
+                (*(((CMDENT_ONE_ARG *)cmdp)->handler))(executor, caller,
+                    enactor, key, buf1);
             }
         }
 
@@ -1172,24 +1177,30 @@ void process_cmdent(CMDENT *cmdp, char *switchp, dbref player, dbref cause, int 
         }
         buf1 = bp = alloc_lbuf("process_cmdent.2");
         str = buf2;
-        TinyExec(buf1, &bp, player, CALLERQQQ, cause, EV_STRIP_CURLY | EV_FCHECK | EV_EVAL | EV_TOP, &str, cargs, ncargs);
+        TinyExec(buf1, &bp, executor, CALLERQQQ, enactor,
+            EV_STRIP_CURLY | EV_FCHECK | EV_EVAL | EV_TOP, &str, cargs,
+            ncargs);
         *bp = '\0';
 
         if (cmdp->callseq & CS_ARGV)
         {
             // Arg2 is ARGV style.  Go get the args.
             //
-            parse_arglist(player, CALLERQQQ, cause, arg, '\0', interp | EV_STRIP_LS | EV_STRIP_TS, args, MAX_ARG, cargs, ncargs, &nargs);
+            parse_arglist(executor, CALLERQQQ, enactor, arg, '\0',
+                interp | EV_STRIP_LS | EV_STRIP_TS, args, MAX_ARG, cargs,
+                ncargs, &nargs);
 
             // Call the correct command handler.
             //
             if (cmdp->callseq & CS_CMDARG)
             {
-                (*(((CMDENT_TWO_ARG_ARGV_CMDARG *)cmdp)->handler)) (player, cause, key, buf1, args, nargs, cargs, ncargs);
+                (*(((CMDENT_TWO_ARG_ARGV_CMDARG *)cmdp)->handler))(executor,
+                    CALLERQQQ, enactor, key, buf1, args, nargs, cargs, ncargs);
             }
             else
             {
-                (*(((CMDENT_TWO_ARG_ARGV *)cmdp)->handler)) (player, cause, key, buf1, args, nargs);
+                (*(((CMDENT_TWO_ARG_ARGV *)cmdp)->handler))(executor, CALLERQQQ,
+                    enactor, key, buf1, args, nargs);
             }
 
             // Free the argument buffers.
@@ -1207,7 +1218,8 @@ void process_cmdent(CMDENT *cmdp, char *switchp, dbref player, dbref cause, int 
             {
                 buf2 = bp = alloc_lbuf("process_cmdent.3");
                 str = arg;
-                TinyExec(buf2, &bp, player, CALLERQQQ, cause, interp | EV_FCHECK | EV_TOP, &str, cargs, ncargs);
+                TinyExec(buf2, &bp, executor, CALLERQQQ, enactor,
+                    interp | EV_FCHECK | EV_TOP, &str, cargs, ncargs);
                 *bp = '\0';
             }
             else if (cmdp->callseq & CS_UNPARSE)
@@ -1223,11 +1235,13 @@ void process_cmdent(CMDENT *cmdp, char *switchp, dbref player, dbref cause, int 
             //
             if (cmdp->callseq & CS_CMDARG)
             {
-                (*(((CMDENT_TWO_ARG_CMDARG *)cmdp)->handler)) (player, cause, key, buf1, buf2, cargs, ncargs);
+                (*(((CMDENT_TWO_ARG_CMDARG *)cmdp)->handler))(executor,
+                    CALLERQQQ, enactor, key, buf1, buf2, cargs, ncargs);
             }
             else
             {
-                (*(((CMDENT_TWO_ARG *)cmdp)->handler)) (player, cause, key, nargs2, buf1, buf2);
+                (*(((CMDENT_TWO_ARG *)cmdp)->handler))(executor, CALLERQQQ,
+                    enactor, key, nargs2, buf1, buf2);
             }
 
             // Free the buffer, if needed.
@@ -1251,8 +1265,9 @@ void process_cmdent(CMDENT *cmdp, char *switchp, dbref player, dbref cause, int 
 //
 char *process_command
 (
-    dbref player,
-    dbref cause,
+    dbref executor,
+    dbref caller,
+    dbref enactor,
     int   interactive,
     char *arg_command,
     char *args[],
@@ -1276,12 +1291,12 @@ char *process_command
 
     Tiny_Assert(pOriginalCommand);
 
-    if (!Good_obj(player))
+    if (!Good_obj(executor))
     {
         // We are using SpaceCompressCommand temporarily.
         //
         STARTLOG(LOG_BUGS, "CMD", "PLYR");
-        sprintf(SpaceCompressCommand, "Bad player in process_command: %d", player);
+        sprintf(SpaceCompressCommand, "Bad player in process_command: %d", executor);
         log_text(SpaceCompressCommand);
         ENDLOG;
         mudstate.debug_cmd = cmdsave;
@@ -1290,17 +1305,17 @@ char *process_command
 
     // Make sure player isn't going or halted.
     //
-    if (  Going(player)
-       || (Halted(player) && !((Typeof(player) == TYPE_PLAYER) && interactive)))
+    if (  Going(executor)
+       || (Halted(executor) && !((Typeof(executor) == TYPE_PLAYER) && interactive)))
     {
-        notify(Owner(player), tprintf("Attempt to execute command by halted object #%d", player));
+        notify(Owner(executor), tprintf("Attempt to execute command by halted object #%d", executor));
         mudstate.debug_cmd = cmdsave;
         return pOriginalCommand;
     }
-    if (Suspect(player) && (mudconf.log_options & LOG_SUSPECTCMDS))
+    if (Suspect(executor) && (mudconf.log_options & LOG_SUSPECTCMDS))
     {
         STARTLOG(LOG_SUSPECTCMDS, "CMD", "SUSP");
-        log_name_and_loc(player);
+        log_name_and_loc(executor);
         log_text(" entered: ");
         log_text(pOriginalCommand);
         ENDLOG;
@@ -1308,7 +1323,7 @@ char *process_command
     else
     {
         STARTLOG(LOG_ALLCOMMANDS, "CMD", "ALL");
-        log_name_and_loc(player);
+        log_name_and_loc(executor);
         log_text(" entered: ");
         log_text(pOriginalCommand);
         ENDLOG;
@@ -1321,9 +1336,9 @@ char *process_command
     mudstate.ntfy_nest_lev = 0;
     mudstate.lock_nest_lev = 0;
 
-    if (Verbose(player))
+    if (Verbose(executor))
     {
-        notify(Owner(player), tprintf("%s] %s", Name(player), pOriginalCommand));
+        notify(Owner(executor), tprintf("%s] %s", Name(executor), pOriginalCommand));
     }
 
     // Eat leading whitespace, and space-compress if configured.
@@ -1377,14 +1392,15 @@ char *process_command
     i = pCommand[0] & 0xff;
     if (i && (prefix_cmds[i] != NULL))
     {
-        process_cmdent(prefix_cmds[i], NULL, player, cause, interactive, pCommand, pCommand, args, nargs);
+        process_cmdent(prefix_cmds[i], NULL, executor, CALLERQQQ, enactor,
+            interactive, pCommand, pCommand, args, nargs);
         mudstate.debug_cmd = cmdsave;
         return preserve_cmd;
     }
 
     if (  mudconf.have_comsys
-       && !(Slave(player))
-       && !do_comsystem(player, pCommand))
+       && !(Slave(executor))
+       && !do_comsystem(executor, pCommand))
     {
         return preserve_cmd;
     }
@@ -1393,41 +1409,41 @@ char *process_command
     //
     if (string_compare(pCommand, "home") == 0)
     {
-        if (((Fixed(player)) || (Fixed(Owner(player)))) &&
-            !(WizRoy(player)))
+        if (((Fixed(executor)) || (Fixed(Owner(executor)))) &&
+            !(WizRoy(executor)))
         {
-            notify(player, mudconf.fixed_home_msg);
+            notify(executor, mudconf.fixed_home_msg);
             return preserve_cmd;
         }
-        do_move(player, cause, 0, "home");
+        do_move(executor, CALLERQQQ, enactor, 0, "home");
         mudstate.debug_cmd = cmdsave;
         return preserve_cmd;
     }
 
     // Only check for exits if we may use the goto command.
     //
-    if (check_access(player, goto_cmdp->perms))
+    if (check_access(executor, goto_cmdp->perms))
     {
         // Check for an exit name.
         //
-        init_match_check_keys(player, pCommand, TYPE_EXIT);
+        init_match_check_keys(executor, pCommand, TYPE_EXIT);
         match_exit_with_parents();
         exit = last_match_result();
         if (exit != NOTHING)
         {
-            move_exit(player, exit, 0, "You can't go that way.", 0);
+            move_exit(executor, exit, 0, "You can't go that way.", 0);
             mudstate.debug_cmd = cmdsave;
             return preserve_cmd;
         }
 
         // Check for an exit in the master room.
         //
-        init_match_check_keys(player, pCommand, TYPE_EXIT);
+        init_match_check_keys(executor, pCommand, TYPE_EXIT);
         match_master_exit();
         exit = last_match_result();
         if (exit != NOTHING)
         {
-            move_exit(player, exit, 1, NULL, 0);
+            move_exit(executor, exit, 1, NULL, 0);
             mudstate.debug_cmd = cmdsave;
             return preserve_cmd;
         }
@@ -1495,7 +1511,8 @@ char *process_command
                 arg++;
             }
         }
-        process_cmdent(cmdp, pSlash, player, cause, interactive, arg, pCommand, args, nargs);
+        process_cmdent(cmdp, pSlash, executor, CALLERQQQ, enactor, interactive,
+            arg, pCommand, args, nargs);
         mudstate.debug_cmd = cmdsave;
         return preserve_cmd;
     }
@@ -1508,23 +1525,24 @@ char *process_command
     //
     bp = LowerCaseCommand;
     str = pCommand;
-    TinyExec(LowerCaseCommand, &bp, player, CALLERQQQ, cause, EV_EVAL | EV_FCHECK | EV_STRIP_CURLY | EV_TOP, &str, args, nargs);
+    TinyExec(LowerCaseCommand, &bp, executor, CALLERQQQ, enactor,
+        EV_EVAL | EV_FCHECK | EV_STRIP_CURLY | EV_TOP, &str, args, nargs);
     *bp = '\0';
     succ = 0;
 
     // Idea for enter/leave aliases from R'nice@TinyTIM
     //
-    if (Has_location(player) && Good_obj(Location(player)))
+    if (Has_location(executor) && Good_obj(Location(executor)))
     {
         // Check for a leave alias.
         //
-        p = atr_pget(Location(player), A_LALIAS, &aowner, &aflags);
+        p = atr_pget(Location(executor), A_LALIAS, &aowner, &aflags);
         if (p && *p)
         {
             if (matches_exit_from_list(LowerCaseCommand, p))
             {
                 free_lbuf(p);
-                do_leave(player, player, 0);
+                do_leave(executor, CALLERQQQ, executor, 0);
                 return preserve_cmd;
             }
         }
@@ -1532,7 +1550,7 @@ char *process_command
 
         // Check for enter aliases.
         //
-        DOLIST(exit, Contents(Location(player)))
+        DOLIST(exit, Contents(Location(executor)))
         {
             p = atr_pget(exit, A_EALIAS, &aowner, &aflags);
             if (p && *p)
@@ -1540,7 +1558,7 @@ char *process_command
                 if (matches_exit_from_list(LowerCaseCommand, p))
                 {
                     free_lbuf(p);
-                    do_enter_internal(player, exit, 0);
+                    do_enter_internal(executor, exit, 0);
                     return preserve_cmd;
                 }
             }
@@ -1550,10 +1568,10 @@ char *process_command
 
     // Check for $-command matches on me.
     //
-    if (mudconf.match_mine && (!(No_Command(player))))
+    if (mudconf.match_mine && (!(No_Command(executor))))
     {
-        if (((Typeof(player) != TYPE_PLAYER) || mudconf.match_mine_pl)
-            && (atr_match(player, player, AMATCH_CMD, LowerCaseCommand, 1) > 0))
+        if (((Typeof(executor) != TYPE_PLAYER) || mudconf.match_mine_pl)
+            && (atr_match(executor, executor, AMATCH_CMD, LowerCaseCommand, 1) > 0))
         {
             succ++;
         }
@@ -1561,13 +1579,13 @@ char *process_command
 
     // Check for $-command matches on nearby things and on my room.
     //
-    if (Has_location(player))
+    if (Has_location(executor))
     {
-        succ += list_check(Contents(Location(player)), player, AMATCH_CMD, LowerCaseCommand, 1);
+        succ += list_check(Contents(Location(executor)), executor, AMATCH_CMD, LowerCaseCommand, 1);
 
-        if (!(No_Command(Location(player))))
+        if (!(No_Command(Location(executor))))
         {
-            if (atr_match(Location(player), player, AMATCH_CMD, LowerCaseCommand, 1) > 0)
+            if (atr_match(Location(executor), executor, AMATCH_CMD, LowerCaseCommand, 1) > 0)
             {
                 succ++;
             }
@@ -1576,9 +1594,9 @@ char *process_command
 
     // Check for $-command matches in my inventory.
     //
-    if (Has_contents(player))
+    if (Has_contents(executor))
     {
-        succ += list_check(Contents(player), player, AMATCH_CMD, LowerCaseCommand, 1);
+        succ += list_check(Contents(executor), executor, AMATCH_CMD, LowerCaseCommand, 1);
     }
 
     if (  !succ
@@ -1586,8 +1604,8 @@ char *process_command
     {
         // now do check on zones.
         //
-        dbref zone = Zone(player);
-        dbref loc = Location(player);
+        dbref zone = Zone(executor);
+        dbref loc = Location(executor);
         dbref zone_loc = NOTHING;
         if (  Good_obj(loc)
            && Good_obj(zone_loc = Zone(loc)))
@@ -1600,16 +1618,16 @@ char *process_command
                 {
                     // check parent room exits.
                     //
-                    init_match_check_keys(player, pCommand, TYPE_EXIT);
+                    init_match_check_keys(executor, pCommand, TYPE_EXIT);
                     match_zone_exit();
                     exit = last_match_result();
                     if (exit != NOTHING)
                     {
-                        move_exit(player, exit, 1, NULL, 0);
+                        move_exit(executor, exit, 1, NULL, 0);
                         mudstate.debug_cmd = cmdsave;
                         return preserve_cmd;
                     }
-                    succ += list_check(Contents(zone_loc), player,
+                    succ += list_check(Contents(zone_loc), executor,
                                AMATCH_CMD, LowerCaseCommand, 1);
 
                     // end of parent room checks.
@@ -1622,7 +1640,7 @@ char *process_command
                 //
                 if (!No_Command(zone_loc))
                 {
-                   succ += atr_match(zone_loc, player, AMATCH_CMD,
+                   succ += atr_match(zone_loc, executor, AMATCH_CMD,
                        LowerCaseCommand, 1);
                 }
             }
@@ -1639,7 +1657,7 @@ char *process_command
            && !No_Command(zone)
            && zone_loc != zone)
         {
-            succ += atr_match(zone, player, AMATCH_CMD, LowerCaseCommand, 1);
+            succ += atr_match(zone, executor, AMATCH_CMD, LowerCaseCommand, 1);
         }
     }
 
@@ -1651,10 +1669,10 @@ char *process_command
            && Has_contents(mudconf.master_room))
         {
             succ += list_check(Contents(mudconf.master_room),
-                       player, AMATCH_CMD, LowerCaseCommand, 0);
+                       executor, AMATCH_CMD, LowerCaseCommand, 0);
             if (!(No_Command(mudconf.master_room)))
             {
-                if (atr_match(mudconf.master_room, player, AMATCH_CMD, LowerCaseCommand, 0) > 0)
+                if (atr_match(mudconf.master_room, executor, AMATCH_CMD, LowerCaseCommand, 0) > 0)
                 {
                     succ++;
                 }
@@ -1668,9 +1686,9 @@ char *process_command
     {
         // We use LowerCaseCommand for another purpose.
         //
-        notify(player, "Huh?  (Type \"help\" for help.)");
+        notify(executor, "Huh?  (Type \"help\" for help.)");
         STARTLOG(LOG_BADCOMMANDS, "CMD", "BAD");
-        log_name_and_loc(player);
+        log_name_and_loc(executor);
         log_text(" entered: ");
         log_text(pCommand);
         ENDLOG;
@@ -3007,89 +3025,90 @@ extern NAMETAB enable_names[];
 extern NAMETAB logoptions_nametab[];
 extern NAMETAB logdata_nametab[];
 
-void do_list(dbref player, dbref cause, int extra, char *arg)
+void do_list(dbref executor, dbref caller, dbref enactor, int extra,
+             char *arg)
 {
-    int flagvalue = search_nametab(player, list_names, arg);
+    int flagvalue = search_nametab(executor, list_names, arg);
     switch (flagvalue)
     {
     case LIST_ALLOCATOR:
-        list_bufstats(player);
+        list_bufstats(executor);
         break;
     case LIST_BUFTRACE:
-        list_buftrace(player);
+        list_buftrace(executor);
         break;
     case LIST_ATTRIBUTES:
-        list_attrtable(player);
+        list_attrtable(executor);
         break;
     case LIST_COMMANDS:
-        list_cmdtable(player);
+        list_cmdtable(executor);
         break;
     case LIST_SWITCHES:
-        list_cmdswitches(player);
+        list_cmdswitches(executor);
         break;
     case LIST_COSTS:
-        list_costs(player);
+        list_costs(executor);
         break;
     case LIST_OPTIONS:
-        list_options(player);
+        list_options(executor);
         break;
     case LIST_HASHSTATS:
-        list_hashstats(player);
+        list_hashstats(executor);
         break;
     case LIST_SITEINFO:
-        list_siteinfo(player);
+        list_siteinfo(executor);
         break;
     case LIST_FLAGS:
-        display_flagtab(player);
+        display_flagtab(executor);
         break;
     case LIST_FUNCTIONS:
-        list_functable(player);
+        list_functable(executor);
         break;
     case LIST_GLOBALS:
-        interp_nametab(player, enable_names, mudconf.control_flags,
+        interp_nametab(executor, enable_names, mudconf.control_flags,
                 (char *)"Global parameters:", (char *)"enabled",
                    (char *)"disabled");
         break;
     case LIST_DF_FLAGS:
-        list_df_flags(player);
+        list_df_flags(executor);
         break;
     case LIST_PERMS:
-        list_cmdaccess(player);
+        list_cmdaccess(executor);
         break;
     case LIST_CONF_PERMS:
-        list_cf_access(player);
+        list_cf_access(executor);
         break;
     case LIST_POWERS:
-        display_powertab(player);
+        display_powertab(executor);
         break;
     case LIST_ATTRPERMS:
-        list_attraccess(player);
+        list_attraccess(executor);
         break;
     case LIST_VATTRS:
-        list_vattrs(player, NULL, 0);
+        list_vattrs(executor, NULL, 0);
         break;
     case LIST_LOGGING:
-        interp_nametab(player, logoptions_nametab, mudconf.log_options,
+        interp_nametab(executor, logoptions_nametab, mudconf.log_options,
                    (char *)"Events Logged:", (char *)"enabled",
                    (char *)"disabled");
-        interp_nametab(player, logdata_nametab, mudconf.log_info,
+        interp_nametab(executor, logdata_nametab, mudconf.log_info,
                    (char *)"Information Logged:", (char *)"yes",
                    (char *)"no");
         break;
     case LIST_DB_STATS:
-        list_db_stats(player);
+        list_db_stats(executor);
         break;
     case LIST_PROCESS:
-        list_process(player);
+        list_process(executor);
         break;
     case LIST_BADNAMES:
-        badname_list(player, "Disallowed names:");
+        badname_list(executor, "Disallowed names:");
         break;
     case LIST_RESOURCES:
-        list_system_resources(player);
+        list_system_resources(executor);
         break;
     case LIST_GUESTS:
-        Guest.ListAll(player);
+        Guest.ListAll(executor);
         break;
 
     default:
@@ -3100,20 +3119,20 @@ void do_list(dbref player, dbref cause, int extra, char *arg)
         char *s_sub_option = Tiny_StrTokParse(&tts);
         if (s_option)
         {
-            flagvalue = search_nametab(player, list_names, s_option);
+            flagvalue = search_nametab(executor, list_names, s_option);
         }
         if (flagvalue == LIST_VATTRS)
         {
-            list_vattrs(player, s_sub_option, 1);
+            list_vattrs(executor, s_sub_option, 1);
         }
         else
         {
-            display_nametab(player, list_names, "Unknown option.  Use one of:", 1);
+            display_nametab(executor, list_names, "Unknown option.  Use one of:", 1);
         }
     }
 }
 
-void do_break(dbref player, dbref cause, int key, char *arg1)
+void do_break(dbref executor, dbref caller, dbref enactor, int key, char *arg1)
 {
     extern int break_called;
     break_called = !!xlate(arg1);

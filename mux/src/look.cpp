@@ -1,6 +1,6 @@
 // look.cpp -- Commands which look at things.
 //
-// $Id: look.cpp,v 1.2 2002-06-03 20:01:09 sdennis Exp $
+// $Id: look.cpp,v 1.3 2002-06-04 00:47:27 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. The WOD_REALMS portion is original work.
@@ -1162,7 +1162,7 @@ void look_in(dbref player, dbref loc, int key)
     }
 }
 
-void do_look(dbref player, dbref cause, int key, char *name)
+void do_look(dbref executor, dbref caller, dbref enactor, int key, char *name)
 {
     dbref thing, loc, look_key;
 
@@ -1170,32 +1170,32 @@ void do_look(dbref player, dbref cause, int key, char *name)
     if (!mudconf.terse_look)
         look_key |= LK_OBEYTERSE;
 
-    loc = Location(player);
+    loc = Location(executor);
     if (!name || !*name) {
         thing = loc;
         if (Good_obj(thing)) {
             if (key & LOOK_OUTSIDE) {
                 if ((Typeof(thing) == TYPE_ROOM) ||
                     Opaque(thing)) {
-                    notify_quiet(player,
+                    notify_quiet(executor,
                         "You can't look outside.");
                     return;
                 }
                 thing = Location(thing);
             }
-            look_in(player, thing, look_key);
+            look_in(executor, thing, look_key);
         }
         return;
     }
 
     // Look for the target locally.
     //
-    thing = (key & LOOK_OUTSIDE) ? loc : player;
+    thing = (key & LOOK_OUTSIDE) ? loc : executor;
     init_match(thing, name, NOTYPE);
     match_exit_with_parents();
     match_neighbor();
     match_possession();
-    if (Long_Fingers(player)) {
+    if (Long_Fingers(executor)) {
         match_absolute();
         match_player();
     }
@@ -1208,9 +1208,9 @@ void do_look(dbref player, dbref cause, int key, char *name)
     //
     if (!Good_obj(thing))
     {
-        thing = match_status(player,
-            match_possessed(player,
-            ((key & LOOK_OUTSIDE) ? loc : player),
+        thing = match_status(executor,
+            match_possessed(executor,
+            ((key & LOOK_OUTSIDE) ? loc : executor),
             (char *)name, thing, 0));
     }
 
@@ -1222,35 +1222,35 @@ void do_look(dbref player, dbref cause, int key, char *name)
         {
         case TYPE_ROOM:
 
-            look_in(player, thing, look_key);
+            look_in(executor, thing, look_key);
             break;
 
         case TYPE_THING:
         case TYPE_PLAYER:
 
-            look_simple(player, thing, !mudconf.terse_look);
+            look_simple(executor, thing, !mudconf.terse_look);
             if (  !Opaque(thing)
                && (  mudconf.terse_contents
-                  || !Terse(player)))
+                  || !Terse(executor)))
             {
-                look_contents(player, thing, "Carrying:", CONTENTS_NESTED);
+                look_contents(executor, thing, "Carrying:", CONTENTS_NESTED);
             }
             break;
 
         case TYPE_EXIT:
 
-            look_simple(player, thing, !mudconf.terse_look);
+            look_simple(executor, thing, !mudconf.terse_look);
             if (  Transparent(thing)
                && Location(thing) != NOTHING)
             {
                 look_key &= ~LK_SHOWATTR;
-                look_in(player, Location(thing), look_key);
+                look_in(executor, Location(thing), look_key);
             }
             break;
 
         default:
 
-            look_simple(player, thing, !mudconf.terse_look);
+            look_simple(executor, thing, !mudconf.terse_look);
             break;
         }
     }
@@ -1426,7 +1426,7 @@ static void exam_wildattrs
     }
 }
 
-void do_examine(dbref player, dbref cause, int key, char *name)
+void do_examine(dbref executor, dbref caller, dbref enactor, int key, char *name)
 {
     dbref thing, content, exit, aowner, loc;
     char savec;
@@ -1436,7 +1436,7 @@ void do_examine(dbref player, dbref cause, int key, char *name)
 
     // This command is pointless if the player can't hear.
     //
-    if (!Hearer(player))
+    if (!Hearer(executor))
     {
         return;
     }
@@ -1446,7 +1446,7 @@ void do_examine(dbref player, dbref cause, int key, char *name)
     thing = NOTHING;
     if (!name || !*name)
     {
-        if ((thing = Location(player)) == NOTHING)
+        if ((thing = Location(executor)) == NOTHING)
         {
             return;
         }
@@ -1456,9 +1456,9 @@ void do_examine(dbref player, dbref cause, int key, char *name)
         // Check for obj/attr first.
         //
         olist_push();
-        if (parse_attrib_wild(player, name, &thing, do_parent, 1, 0))
+        if (parse_attrib_wild(executor, name, &thing, do_parent, 1, 0))
         {
-            exam_wildattrs(player, thing, do_parent);
+            exam_wildattrs(executor, thing, do_parent);
             olist_pop();
             return;
         }
@@ -1466,7 +1466,7 @@ void do_examine(dbref player, dbref cause, int key, char *name)
 
         // Look it up.
         //
-        init_match(player, name, NOTYPE);
+        init_match(executor, name, NOTYPE);
         match_everything(MAT_EXIT_PARENTS);
         thing = noisy_match_result();
         if (!Good_obj(thing))
@@ -1476,9 +1476,9 @@ void do_examine(dbref player, dbref cause, int key, char *name)
     }
 
 #ifdef WOD_REALMS
-    if (REALM_DO_HIDDEN_FROM_YOU == DoThingToThingVisibility(player, thing, ACTION_IS_STATIONARY))
+    if (REALM_DO_HIDDEN_FROM_YOU == DoThingToThingVisibility(executor, thing, ACTION_IS_STATIONARY))
     {
-        notify(player, NOMATCH_MESSAGE);
+        notify(executor, NOMATCH_MESSAGE);
         return;
     }
 #endif
@@ -1487,27 +1487,27 @@ void do_examine(dbref player, dbref cause, int key, char *name)
     //
     if (key & EXAM_DEBUG)
     {
-        if (!Examinable(player, thing))
+        if (!Examinable(executor, thing))
         {
-            notify_quiet(player, NOPERM_MESSAGE);
+            notify_quiet(executor, NOPERM_MESSAGE);
         }
         else
         {
-            debug_examine(player, thing);
+            debug_examine(executor, thing);
         }
         return;
     }
-    control = (Examinable(player, thing) || Link_exit(player, thing));
+    control = (Examinable(executor, thing) || Link_exit(executor, thing));
 
     if (control)
     {
-        buf2 = unparse_object(player, thing, 0);
-        notify(player, buf2);
+        buf2 = unparse_object(executor, thing, 0);
+        notify(executor, buf2);
         free_lbuf(buf2);
         if (mudconf.ex_flags)
         {
-            buf2 = flag_description(player, thing);
-            notify(player, buf2);
+            buf2 = flag_description(executor, thing);
+            notify(executor, buf2);
             free_mbuf(buf2);
         }
     }
@@ -1519,14 +1519,14 @@ void do_examine(dbref player, dbref cause, int key, char *name)
             {
                 buf2 = alloc_lbuf("do_examine.pub_name");
                 StringCopy(buf2, Name(thing));
-                notify(player,
+                notify(executor,
                     tprintf("%s is owned by %s",
                     buf2, Name(Owner(thing))));
                 free_lbuf(buf2);
             }
             else
             {
-                notify(player, tprintf("Owned by %s", Name(Owner(thing))));
+                notify(executor, tprintf("Owned by %s", Name(Owner(thing))));
             }
             return;
         }
@@ -1534,26 +1534,26 @@ void do_examine(dbref player, dbref cause, int key, char *name)
 
     temp = alloc_lbuf("do_examine.info");
 
-    if (control || mudconf.read_rem_desc || nearby(player, thing))
+    if (control || mudconf.read_rem_desc || nearby(executor, thing))
     {
         temp = atr_get_str(temp, thing, A_DESC, &aowner, &aflags);
         if (*temp)
         {
-            if (  Examinable(player, thing)
-               || (aowner == Owner(player)))
+            if (  Examinable(executor, thing)
+               || (aowner == Owner(executor)))
             {
-                view_atr(player, thing, atr_num(A_DESC), temp,
+                view_atr(executor, thing, atr_num(A_DESC), temp,
                     aowner, aflags, 1);
             }
             else
             {
-                show_desc(player, thing, 0);
+                show_desc(executor, thing, 0);
             }
         }
     }
     else
     {
-        notify(player, "<Too far away to get a good look>");
+        notify(executor, "<Too far away to get a good look>");
     }
 
     if (control)
@@ -1563,11 +1563,11 @@ void do_examine(dbref player, dbref cause, int key, char *name)
         savec = mudconf.many_coins[0];
         mudconf.many_coins[0] = Tiny_ToUpper[(unsigned char)mudconf.many_coins[0]];
         buf2 = atr_get(thing, A_LOCK, &aowner, &aflags);
-        pBoolExp = parse_boolexp(player, buf2, 1);
-        buf = unparse_boolexp(player, pBoolExp);
+        pBoolExp = parse_boolexp(executor, buf2, 1);
+        buf = unparse_boolexp(executor, pBoolExp);
         free_boolexp(pBoolExp);
         StringCopy(buf2, Name(Owner(thing)));
-        notify(player, tprintf("Owner: %s  Key: %s %s: %d", buf2, buf, mudconf.many_coins, Pennies(thing)));
+        notify(executor, tprintf("Owner: %s  Key: %s %s: %d", buf2, buf, mudconf.many_coins, Pennies(thing)));
         free_lbuf(buf2);
         mudconf.many_coins[0] = savec;
 
@@ -1575,8 +1575,8 @@ void do_examine(dbref player, dbref cause, int key, char *name)
         //
         if (mudconf.have_zones)
         {
-            buf2 = unparse_object(player, Zone(thing), 0);
-            notify(player, tprintf("Zone: %s", buf2));
+            buf2 = unparse_object(executor, Zone(thing), 0);
+            notify(executor, tprintf("Zone: %s", buf2));
             free_lbuf(buf2);
         }
 
@@ -1585,17 +1585,17 @@ void do_examine(dbref player, dbref cause, int key, char *name)
         loc = Parent(thing);
         if (loc != NOTHING)
         {
-            buf2 = unparse_object(player, loc, 0);
-            notify(player, tprintf("Parent: %s", buf2));
+            buf2 = unparse_object(executor, loc, 0);
+            notify(executor, tprintf("Parent: %s", buf2));
             free_lbuf(buf2);
         }
-        buf2 = power_description(player, thing);
-        notify(player, buf2);
+        buf2 = power_description(executor, thing);
+        notify(executor, buf2);
         free_mbuf(buf2);
     }
     if (!(key & EXAM_BRIEF))
     {
-        look_atrs(player, thing, do_parent);
+        look_atrs(executor, thing, do_parent);
     }
 
     // Show him interesting stuff
@@ -1607,21 +1607,21 @@ void do_examine(dbref player, dbref cause, int key, char *name)
         if (Contents(thing) != NOTHING)
         {
 #ifdef WOD_REALMS
-            if (isMatrix(player))
+            if (isMatrix(executor))
             {
-                notify(player, "|Icons|");
+                notify(executor, "|Icons|");
             }
             else
             {
-                notify(player, "Contents:");
+                notify(executor, "Contents:");
             }
 #else
-            notify(player, "Contents:");
+            notify(executor, "Contents:");
 #endif
             DOLIST(content, Contents(thing))
             {
-                buf2 = unparse_object(player, content, 0);
-                notify(player, buf2);
+                buf2 = unparse_object(executor, content, 0);
+                notify(executor, buf2);
                 free_lbuf(buf2);
             }
         }
@@ -1635,25 +1635,25 @@ void do_examine(dbref player, dbref cause, int key, char *name)
             //
             if (Exits(thing) != NOTHING)
             {
-                notify(player, "Exits:");
+                notify(executor, "Exits:");
                 DOLIST(exit, Exits(thing))
                 {
-                    buf2 = unparse_object(player, exit, 0);
-                    notify(player, buf2);
+                    buf2 = unparse_object(executor, exit, 0);
+                    notify(executor, buf2);
                     free_lbuf(buf2);
                 }
             }
             else
             {
-                notify(player, "No exits.");
+                notify(executor, "No exits.");
             }
 
             // print dropto if present
             //
             if (Dropto(thing) != NOTHING)
             {
-                buf2 = unparse_object(player, Dropto(thing), 0);
-                notify(player, tprintf("Dropped objects go to: %s", buf2));
+                buf2 = unparse_object(executor, Dropto(thing), 0);
+                notify(executor, tprintf("Dropped objects go to: %s", buf2));
                 free_lbuf(buf2);
             }
             break;
@@ -1665,43 +1665,43 @@ void do_examine(dbref player, dbref cause, int key, char *name)
             //
             if (Exits(thing) != NOTHING)
             {
-                notify(player, "Exits:");
+                notify(executor, "Exits:");
                 DOLIST(exit, Exits(thing))
                 {
-                    buf2 = unparse_object(player, exit, 0);
-                    notify(player, buf2);
+                    buf2 = unparse_object(executor, exit, 0);
+                    notify(executor, buf2);
                     free_lbuf(buf2);
                 }
             }
             else
             {
-                notify(player, "No exits.");
+                notify(executor, "No exits.");
             }
 
             // Print home
             //
             loc = Home(thing);
-            buf2 = unparse_object(player, loc, 0);
-            notify(player, tprintf("Home: %s", buf2));
+            buf2 = unparse_object(executor, loc, 0);
+            notify(executor, tprintf("Home: %s", buf2));
             free_lbuf(buf2);
 
             // print location if player can link to it
             //
             loc = Location(thing);
             if (   (Location(thing) != NOTHING)
-                && (  Examinable(player, loc)
-                   || Examinable(player, thing)
-                   || Linkable(player, loc)))
+                && (  Examinable(executor, loc)
+                   || Examinable(executor, thing)
+                   || Linkable(executor, loc)))
             {
-                buf2 = unparse_object(player, loc, 0);
-                notify(player, tprintf("Location: %s", buf2));
+                buf2 = unparse_object(executor, loc, 0);
+                notify(executor, tprintf("Location: %s", buf2));
                 free_lbuf(buf2);
             }
             break;
 
         case TYPE_EXIT:
-            buf2 = unparse_object(player, Exits(thing), 0);
-            notify(player, tprintf("Source: %s", buf2));
+            buf2 = unparse_object(executor, Exits(thing), 0);
+            notify(executor, tprintf("Source: %s", buf2));
             free_lbuf(buf2);
 
             // print destination.
@@ -1711,12 +1711,12 @@ void do_examine(dbref player, dbref cause, int key, char *name)
             case NOTHING:
                 // Special case. unparse_object() normally returns -1 as '*NOTHING*'.
                 //
-                notify(player, "Destination: *UNLINKED*");
+                notify(executor, "Destination: *UNLINKED*");
                 break;
 
             default:
-                buf2 = unparse_object(player, Location(thing), 0);
-                notify(player, tprintf("Destination: %s", buf2));
+                buf2 = unparse_object(executor, Location(thing), 0);
+                notify(executor, tprintf("Destination: %s", buf2));
                 free_lbuf(buf2);
                 break;
             }
@@ -1726,26 +1726,26 @@ void do_examine(dbref player, dbref cause, int key, char *name)
             break;
         }
     }
-    else if (!Opaque(thing) && nearby(player, thing))
+    else if (!Opaque(thing) && nearby(executor, thing))
     {
         if (Has_contents(thing))
         {
 #ifdef WOD_REALMS
-            if (isMatrix(player))
+            if (isMatrix(executor))
             {
-                look_contents(player, thing, "|Icons|", CONTENTS_REMOTE);
+                look_contents(executor, thing, "|Icons|", CONTENTS_REMOTE);
             }
             else
             {
-                look_contents(player, thing, "Contents:", CONTENTS_REMOTE);
+                look_contents(executor, thing, "Contents:", CONTENTS_REMOTE);
             }
 #else
-            look_contents(player, thing, "Contents:", CONTENTS_REMOTE);
+            look_contents(executor, thing, "Contents:", CONTENTS_REMOTE);
 #endif
         }
         if (!isExit(thing))
         {
-            look_exits(player, thing, "Obvious exits:");
+            look_exits(executor, thing, "Obvious exits:");
         }
     }
     free_lbuf(temp);
@@ -1756,49 +1756,49 @@ void do_examine(dbref player, dbref cause, int key, char *name)
         {
             buf2 = alloc_lbuf("do_examine.pub_name");
             StringCopy(buf2, Name(thing));
-            notify(player, tprintf("%s is owned by %s", buf2, Name(Owner(thing))));
+            notify(executor, tprintf("%s is owned by %s", buf2, Name(Owner(thing))));
             free_lbuf(buf2);
         }
         else
         {
-            notify(player, tprintf("Owned by %s", Name(Owner(thing))));
+            notify(executor, tprintf("Owned by %s", Name(Owner(thing))));
         }
     }
 }
 
-void do_score(dbref player, dbref cause, int key)
+void do_score(dbref executor, dbref caller, dbref enactor, int key)
 {
-    notify(player,
-        tprintf("You have %d %s.", Pennies(player),
-        (Pennies(player) == 1) ?
+    notify(executor,
+        tprintf("You have %d %s.", Pennies(executor),
+        (Pennies(executor) == 1) ?
         mudconf.one_coin : mudconf.many_coins));
 }
 
-void do_inventory(dbref player, dbref cause, int key)
+void do_inventory(dbref executor, dbref caller, dbref enactor, int key)
 {
     dbref thing;
     char *buff, *s, *e;
 
-    thing = Contents(player);
+    thing = Contents(executor);
     if (thing == NOTHING)
     {
-        notify(player, "You aren't carrying anything.");
+        notify(executor, "You aren't carrying anything.");
     }
     else
     {
-        notify(player, "You are carrying:");
+        notify(executor, "You are carrying:");
         DOLIST(thing, thing)
         {
-            buff = unparse_object(player, thing, 1);
-            notify(player, buff);
+            buff = unparse_object(executor, thing, 1);
+            notify(executor, buff);
             free_lbuf(buff);
         }
     }
 
-    thing = Exits(player);
+    thing = Exits(executor);
     if (thing != NOTHING)
     {
-        notify(player, "Exits:");
+        notify(executor, "Exits:");
         e = buff = alloc_lbuf("look_exits");
         DOLIST(thing, thing)
         {
@@ -1811,13 +1811,13 @@ void do_inventory(dbref player, dbref cause, int key)
             safe_str((char *)"  ", buff, &e);
         }
         *e = 0;
-        notify(player, buff);
+        notify(executor, buff);
         free_lbuf(buff);
     }
-    do_score(player, player, 0);
+    do_score(executor, CALLERQQQ, executor, 0);
 }
 
-void do_entrances(dbref player, dbref cause, int key, char *name)
+void do_entrances(dbref executor, dbref caller, dbref enactor, int key, char *name)
 {
     dbref thing, i, j;
     char *exit, *message;
@@ -1826,37 +1826,37 @@ void do_entrances(dbref player, dbref cause, int key, char *name)
 
     parse_range(&name, &low_bound, &high_bound);
     if (!name || !*name) {
-        if (Has_location(player))
-            thing = Location(player);
+        if (Has_location(executor))
+            thing = Location(executor);
         else
-            thing = player;
+            thing = executor;
         if (!Good_obj(thing))
             return;
     } else {
-        init_match(player, name, NOTYPE);
+        init_match(executor, name, NOTYPE);
         match_everything(MAT_EXIT_PARENTS);
         thing = noisy_match_result();
         if (!Good_obj(thing))
             return;
     }
 
-    if (!payfor(player, mudconf.searchcost)) {
-        notify(player,
+    if (!payfor(executor, mudconf.searchcost)) {
+        notify(executor,
             tprintf("You don't have enough %s.",
             mudconf.many_coins));
         return;
     }
     message = alloc_lbuf("do_entrances");
-    control_thing = Examinable(player, thing);
+    control_thing = Examinable(executor, thing);
     count = 0;
     for (i = low_bound; i <= high_bound; i++) {
-        if (control_thing || Examinable(player, i)) {
+        if (control_thing || Examinable(executor, i)) {
             switch (Typeof(i)) {
             case TYPE_EXIT:
                 if (Location(i) == thing) {
-                    exit = unparse_object(player,
+                    exit = unparse_object(executor,
                         Exits(i), 0);
-                    notify(player,
+                    notify(executor,
                         tprintf("%s (%s)",
                         exit, Name(i)));
                     free_lbuf(exit);
@@ -1865,8 +1865,8 @@ void do_entrances(dbref player, dbref cause, int key, char *name)
                 break;
             case TYPE_ROOM:
                 if (Dropto(i) == thing) {
-                    exit = unparse_object(player, i, 0);
-                    notify(player,
+                    exit = unparse_object(executor, i, 0);
+                    notify(executor,
                         tprintf("%s [dropto]", exit));
                     free_lbuf(exit);
                     count++;
@@ -1875,8 +1875,8 @@ void do_entrances(dbref player, dbref cause, int key, char *name)
             case TYPE_THING:
             case TYPE_PLAYER:
                 if (Home(i) == thing) {
-                    exit = unparse_object(player, i, 0);
-                    notify(player,
+                    exit = unparse_object(executor, i, 0);
+                    notify(executor,
                         tprintf("%s [home]", exit));
                     free_lbuf(exit);
                     count++;
@@ -1888,8 +1888,8 @@ void do_entrances(dbref player, dbref cause, int key, char *name)
             //
             if (Parent(i) == thing)
             {
-                exit = unparse_object(player, i, 0);
-                notify(player,
+                exit = unparse_object(executor, i, 0);
+                notify(executor,
                     tprintf("%s [parent]", exit));
                 free_lbuf(exit);
                 count++;
@@ -1906,8 +1906,8 @@ void do_entrances(dbref player, dbref cause, int key, char *name)
                 {
                     if (fp->data[j] != thing)
                         continue;
-                    exit = unparse_object(player, i, 0);
-                    notify(player,
+                    exit = unparse_object(executor, i, 0);
+                    notify(executor,
                         tprintf("%s [forward]", exit));
                     free_lbuf(exit);
                     count++;
@@ -1916,7 +1916,7 @@ void do_entrances(dbref player, dbref cause, int key, char *name)
         }
     }
     free_lbuf(message);
-    notify(player, tprintf("%d entrance%s found.", count,
+    notify(executor, tprintf("%d entrance%s found.", count,
         (count == 1) ? "" : "s"));
 }
 
@@ -2089,7 +2089,7 @@ static void sweep_check(dbref player, dbref what, int key, int is_loc)
     }
 }
 
-void do_sweep(dbref player, dbref cause, int key, char *where)
+void do_sweep(dbref executor, dbref caller, dbref enactor, int key, char *where)
 {
     dbref here, sweeploc;
     int where_key, what_key;
@@ -2099,13 +2099,13 @@ void do_sweep(dbref player, dbref cause, int key, char *where)
 
     if (where && *where)
     {
-        sweeploc = match_controlled(player, where);
+        sweeploc = match_controlled(executor, where);
         if (!Good_obj(sweeploc))
             return;
     }
     else
     {
-        sweeploc = player;
+        sweeploc = executor;
     }
 
     if (!where_key)
@@ -2119,28 +2119,28 @@ void do_sweep(dbref player, dbref cause, int key, char *where)
     //
     if (where_key & SWEEP_HERE)
     {
-        notify(player, "Sweeping location...");
+        notify(executor, "Sweeping location...");
         if (Has_location(sweeploc))
         {
             here = Location(sweeploc);
             if ((here == NOTHING) ||
                 (Dark(here) && !mudconf.sweep_dark &&
-                !Examinable(player, here)))
+                !Examinable(executor, here)))
             {
-                notify_quiet(player,
+                notify_quiet(executor,
                     "Sorry, it is dark here and you can't search for bugs");
-                sweep_check(player, sweeploc, what_key, 0);
+                sweep_check(executor, sweeploc, what_key, 0);
             }
             else
             {
-                sweep_check(player, here, what_key, 1);
+                sweep_check(executor, here, what_key, 1);
                 for (here = Contents(here); here != NOTHING; here = Next(here))
-                    sweep_check(player, here, what_key, 0);
+                    sweep_check(executor, here, what_key, 0);
             }
         }
         else
         {
-            sweep_check(player, sweeploc, what_key, 0);
+            sweep_check(executor, sweeploc, what_key, 0);
         }
     }
 
@@ -2148,29 +2148,29 @@ void do_sweep(dbref player, dbref cause, int key, char *where)
     //
     if ((where_key & SWEEP_EXITS) && Has_location(sweeploc))
     {
-        notify(player, "Sweeping exits...");
+        notify(executor, "Sweeping exits...");
         for (here = Exits(Location(sweeploc)); here != NOTHING; here = Next(here))
-            sweep_check(player, here, what_key, 0);
+            sweep_check(executor, here, what_key, 0);
     }
 
     // Check my inventory
     //
     if ((where_key & SWEEP_ME) && Has_contents(sweeploc))
     {
-        notify(player, "Sweeping inventory...");
+        notify(executor, "Sweeping inventory...");
         for (here = Contents(sweeploc); here != NOTHING; here = Next(here))
-            sweep_check(player, here, what_key, 0);
+            sweep_check(executor, here, what_key, 0);
     }
 
     // Check carried exits
     //
     if ((where_key & SWEEP_EXITS) && Has_exits(sweeploc))
     {
-        notify(player, "Sweeping carried exits...");
+        notify(executor, "Sweeping carried exits...");
         for (here = Exits(sweeploc); here != NOTHING; here = Next(here))
-            sweep_check(player, here, what_key, 0);
+            sweep_check(executor, here, what_key, 0);
     }
-    notify(player, "Sweep complete.");
+    notify(executor, "Sweep complete.");
 }
 
 /*
@@ -2183,8 +2183,9 @@ extern NAMETAB indiv_attraccess_nametab[];
 
 void do_decomp
 (
-    dbref player,
-    dbref cause,
+    dbref executor,
+    dbref caller,
+    dbref enactor,
     int   key,
     int   nargs,
     char *name,
@@ -2202,14 +2203,14 @@ void do_decomp
     // Check for obj/attr first.
     //
     olist_push();
-    if (parse_attrib_wild(player, name, &thing, 0, 1, 0))
+    if (parse_attrib_wild(executor, name, &thing, 0, 1, 0))
     {
         wild_decomp = 1;
     }
     else
     {
         wild_decomp = 0;
-        init_match(player, name, TYPE_THING);
+        init_match(executor, name, TYPE_THING);
         match_everything(MAT_EXIT_PARENTS);
         thing = noisy_match_result();
     }
@@ -2222,16 +2223,16 @@ void do_decomp
         return;
     }
 
-    if (!Examinable(player, thing))
+    if (!Examinable(executor, thing))
     {
-        notify_quiet(player,
+        notify_quiet(executor,
               "You can only decompile things you can examine.");
         olist_pop();
         return;
     }
 
     thingname = atr_get(thing, A_LOCK, &aowner, &aflags);
-    pBoolExp = parse_boolexp(player, thingname, 1);
+    pBoolExp = parse_boolexp(executor, thingname, 1);
 
     // Determine the name of the thing to use in reporting and then
     // report the command to make the thing.
@@ -2253,21 +2254,21 @@ void do_decomp
             case TYPE_THING:
                 strcpy(thingname, Name(thing));
                 val = OBJECT_DEPOSIT(Pennies(thing));
-                notify(player,
+                notify(executor,
                     tprintf("@create %s=%d", translate_string(thingname, 1),
                     val));
                 break;
 
             case TYPE_ROOM:
                 strcpy(thingname, "here");
-                notify(player,
+                notify(executor,
                     tprintf("@dig/teleport %s",
                     translate_string(Name(thing), 1)));
                 break;
 
             case TYPE_EXIT:
                 strcpy(thingname, Name(thing));
-                notify(player,
+                notify(executor,
                     tprintf("@open %s", translate_string(Name(thing), 1)));
                 for (got = thingname; *got; got++)
                 {
@@ -2280,7 +2281,7 @@ void do_decomp
                 break;
 
             case TYPE_PLAYER:
-                if (player == thing)
+                if (executor == thing)
                 {
                     strcpy(thingname, "me");
                 }
@@ -2304,8 +2305,8 @@ void do_decomp
     if (  !wild_decomp
        && pBoolExp != TRUE_BOOLEXP)
     {
-        notify(player, tprintf("@lock %s=%s", thingname,
-            unparse_boolexp_decompile(player, pBoolExp)));
+        notify(executor, tprintf("@lock %s=%s", thingname,
+            unparse_boolexp_decompile(executor, pBoolExp)));
     }
     free_boolexp(pBoolExp);
 
@@ -2333,35 +2334,35 @@ void do_decomp
         }
 
         got = atr_get(thing, ca, &aowner, &aflags);
-        if (Read_attr(player, thing, attr, aowner, aflags))
+        if (Read_attr(executor, thing, attr, aowner, aflags))
         {
             if (attr->flags & AF_IS_LOCK)
             {
-                pBoolExp = parse_boolexp(player, got, 1);
-                ltext = unparse_boolexp_decompile(player, pBoolExp);
+                pBoolExp = parse_boolexp(executor, got, 1);
+                ltext = unparse_boolexp_decompile(executor, pBoolExp);
                 free_boolexp(pBoolExp);
-                notify(player, tprintf("@lock/%s %s=%s", attr->name,
+                notify(executor, tprintf("@lock/%s %s=%s", attr->name,
                     thingname, ltext));
             }
             else
             {
                 strcpy(buff, attr->name);
-                notify(player, tprintf("%c%s %s=%s", ((ca < A_USER_START) ?
+                notify(executor, tprintf("%c%s %s=%s", ((ca < A_USER_START) ?
                     '@' : '&'), buff, thingname, got));
                 for (np = indiv_attraccess_nametab; np->name; np++)
                 {
                     if (  (aflags & np->flag)
-                       && check_access(player, np->perm)
+                       && check_access(executor, np->perm)
                        && (!(np->perm & CA_NO_DECOMP)))
                     {
-                        notify(player, tprintf("@set %s/%s = %s", thingname,
+                        notify(executor, tprintf("@set %s/%s = %s", thingname,
                             buff, np->name));
                     }
                 }
 
                 if (aflags & AF_LOCK)
                 {
-                    notify(player, tprintf("@lock %s/%s", thingname, buff));
+                    notify(executor, tprintf("@lock %s/%s", thingname, buff));
                 }
             }
         }
@@ -2371,8 +2372,8 @@ void do_decomp
 
     if (!wild_decomp)
     {
-        decompile_flags(player, thing, thingname);
-        decompile_powers(player, thing, thingname);
+        decompile_flags(executor, thing, thingname);
+        decompile_powers(executor, thing, thingname);
     }
 
     // If the object has a parent, report it.
@@ -2380,7 +2381,7 @@ void do_decomp
     if (  !wild_decomp
        && (Parent(thing) != NOTHING))
     {
-        notify(player, tprintf("@parent %s=#%d", thingname, Parent(thing)));
+        notify(executor, tprintf("@parent %s=#%d", thingname, Parent(thing)));
     }
 
     // If the object has a zone, report it.
@@ -2389,7 +2390,7 @@ void do_decomp
     if (  !wild_decomp
        && Good_obj(zone = Zone(thing)))
     {
-        notify(player, tprintf("@chzone %s=#%d", thingname, zone));
+        notify(executor, tprintf("@chzone %s=#%d", thingname, zone));
     }
 
     free_lbuf(thingname);
