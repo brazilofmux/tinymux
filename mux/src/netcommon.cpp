@@ -1,6 +1,6 @@
 // netcommon.cpp
 //
-// $Id: netcommon.cpp,v 1.43 2004-09-21 04:18:40 sdennis Exp $
+// $Id: netcommon.cpp,v 1.44 2005-04-02 04:42:38 sdennis Exp $
 //
 // This file contains routines used by the networking code that do not
 // depend on the implementation of the networking code.  The network-specific
@@ -1070,7 +1070,9 @@ void desc_reload(dbref player)
         {
             d->timeout = mux_atol(buf);
             if (d->timeout <= 0)
+            {
                 d->timeout = mudconf.idle_timeout;
+            }
         }
         free_lbuf(buf);
     }

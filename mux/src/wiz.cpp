@@ -1,6 +1,6 @@
 // wiz.cpp -- Wizard-only commands.
 //
-// $Id: wiz.cpp,v 1.13 2005-04-02 03:43:02 sdennis Exp $
+// $Id: wiz.cpp,v 1.14 2005-04-02 04:42:50 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -38,9 +38,7 @@ void do_teleport_single
     // Fail if we don't control the victim or the victim's location.
     //
     if (  !Controls(executor, victim)
-       && (  isExit(victim)
-          ?  !Controls(executor, Exits(victim))
-          :  !Controls(executor, Location(victim)))
+       && !Controls(executor, isExit(victim) ? Exits(victim) : Location(victim))
        && !Tel_Anything(executor))
     {
         notify_quiet(executor, NOPERM_MESSAGE);
