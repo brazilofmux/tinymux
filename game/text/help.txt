@@ -10766,14 +10766,16 @@ TIMEFMT()
   $c - Date and time             $t - Tab
   $C - Century                   $u - Day of Week (Sunday=7)
   $d - Day of the month          $U - Week of the year from 1st Sunday
-  $F - ISO8601 YMD               $w - Day of the week (Sunday=0)
-  $H - Hour of the 24-hour day   $W - Week of the year from 1rst Monday
-  $I - Hour of the 12-hour day   $x - Date
-  $j - Day of the year           $X - Time
-  $m - Month of the year         $y - Two-digit year
-  $M - Minutes after the hour    $Y - All-digit year
-  $n - Newline                   $z - Time zone offset
-  $p - AM/PM                     $$ - $ character
+  $F - ISO8601 YMD               $V - ISO8601 Week Number.
+  $g - Two-digit ISO8601 year    $w - Day of the week (Sunday=0)
+  $G - All-digit ISO8601 year    $W - Week of the year from 1st Monday
+  $H - Hour of the 24-hour day   $x - Date
+  $I - Hour of the 12-hour day   $X - Time
+  $j - Day of the year           $y - Two-digit year
+  $m - Month of the year         $Y - All-digit year
+  $M - Minutes after the hour    $z - Time zone offset
+  $n - Newline                   $$ - $ character
+  $p - AM/PM
 
   Example:
     > think timefmt($A\, the $dth day of $B.)
