@@ -1,6 +1,6 @@
 // db.c 
 //
-// $Id: db.cpp,v 1.8 2000-04-16 08:38:24 sdennis Exp $
+// $Id: db.cpp,v 1.9 2000-04-24 22:25:01 sdennis Exp $
 //
 // MUX 2.0
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -2189,17 +2189,6 @@ void atr_free(dbref thing)
     atr_pop();
     al_destroy(thing); // Just to be on the safe side.
 #endif // MEMORY_BASED
-}
-
-/*
- * garbage collect an attribute list 
- */
-
-void atr_collect(dbref thing)
-{
-    /*
-     * Nada.  gdbm takes care of us.  I hope ;-) 
-     */
 }
 
 /*
