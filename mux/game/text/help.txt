@@ -10282,20 +10282,19 @@ R()
 RAND()
 
   FUNCTION: rand(<num>)
+            rand(<lower>, <upper>)
 
-  Rand returns an integer between 0 and num-1.
+  In the first form, rand() returns an integer between 0 and num-1.  In the
+  second form, rand() returns an integer between <lower> and <upper>,
+  inclusively.
 
   Example:
     > say rand(10)
     You say "6"
     > say rand(10)
     You say "1"
-    > say rand(10)
-    You say "4"
-    > say rand(10)
-    You say "9"
-    > say rand(10)
-    You say "1"
+    > say rand(-1,2)
+    You say "0"
 
   Related Topics: die(), lrand(), pickrand(), shuffle()
 
