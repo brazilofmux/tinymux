@@ -1,6 +1,6 @@
 // flags.cpp - flag manipulation routines.
 //
-// $Id: flags.cpp,v 1.11 2001-06-28 10:51:41 sdennis Exp $
+// $Id: flags.cpp,v 1.12 2001-10-24 18:43:38 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -754,9 +754,7 @@ char *flag_description(dbref player, dbref target)
 
 char *unparse_object_numonly(dbref target)
 {
-    char *buf;
-
-    buf = alloc_lbuf("unparse_object_numonly");
+    char *buf = alloc_lbuf("unparse_object_numonly");
     if (target < 0)
     {
         strcpy(buf, aszSpecialDBRefNames[-target]);
@@ -767,7 +765,7 @@ char *unparse_object_numonly(dbref target)
     }
     else
     {
-        sprintf(buf, "%s(#%d)", Name(target), target);
+        sprintf(buf, "%.200s(#%d)", Name(target), target);
     }
     return buf;
 }
