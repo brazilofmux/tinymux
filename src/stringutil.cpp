@@ -1,6 +1,6 @@
 // stringutil.cpp -- string utilities.
 //
-// $Id: stringutil.cpp,v 1.79 2002-06-20 21:06:01 sdennis Exp $
+// $Id: stringutil.cpp,v 1.80 2002-07-18 07:10:39 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -1095,6 +1095,7 @@ void ANSI_String_Copy
                     }
                 }
                 pacOut->m_n += pField - pacOut->m_p;
+                pacOut->m_nMax -= pField - pacOut->m_p;
                 pacOut->m_p  = pField;
                 pacOut->m_vw += vw;
                 return;
@@ -1133,6 +1134,7 @@ void ANSI_String_Copy
         }
     }
     pacOut->m_n += pField - pacOut->m_p;
+    pacOut->m_nMax -= pField - pacOut->m_p;
     pacOut->m_p  = pField;
     pacOut->m_vw += vw;
 }
