@@ -1504,13 +1504,6 @@
   have enough free swap space to hold a second copy of the running game.
   See also: fork_vfork.
 
-& fork_vfork
-  Config parameter: fork_vfork <yes/no>.  Default: no
-  Indicates whether or not the vfork() system call should be used in place of
-  fork() when a database dump is to be performed.  This parameter is only
-  checked if the fork_dump parameter is set to yes.
-  See also: fork_dump.
-
 & full_file
   Config parameter: full_file <pathname>.  Default: text/full.txt
 
@@ -1625,21 +1618,10 @@
   Specifies whether or not the comsystem should be active.
   See also: comsys_database, have_macros.
  
-& have_macros
-  Config parameter: have_macros <yes/no>.  Default: yes
-  Specifies whether or not the macro system should be active.
-  See also: comsys_database, have_comsys.
- 
 & have_mailer
   Config parameter: have_mailer <yes/no>.  Default: yes
   Specifies whether @mail and mail aliases should be active.
   See also: mail_database
- 
-& have_plushelp
-  Config parameter: have_plushelp <yes/no>. Default: yes
-  This specifies whether the indexed +help file should be used.
-  It should be set to no if a softcoded +help command is present.
-  See also: plushelp_file, plushelp_index.
  
 & have_zones
   Config parameter: have_zones <yes/no>.  Default: yes
@@ -2128,12 +2110,6 @@
   Specifies the name of the file that is displayed to users after they QUIT
   but before the network connection is closed.
   See also: QUIT, @readcache.
-
-& quota_cost
-  Config parameter: quota_cost <amount>.  Default: 1
-  Indicates how much adding one object to the database charges against the
-  player's quota.
-  See also: @create, @destroy, @dig, @open, @quota, QUOTAS.
 
 & quotas
   Config parameter: quotas <yes/no>.  Default: no
