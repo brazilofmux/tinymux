@@ -1020,34 +1020,33 @@
   file, or given to the @admin command.  Type 'wizhelp <param>' for help on a
   particular parameter.
  
-  access  alias  attr_access  attr_alias  attr_cmd_access
-  bad_name  badsite_file  cache_depth  cache_trim  cache_width
-  check_interval  check_offset  clone_copies_cost  comsys_database
-  command_quota_increment  command_quota_max  compress_program  compression
-  concentrator_port  config_access  conn_timeout  connect_file
-  connect_reg_file  crash_database  create_max_cost  create_min_cost
-  dark_sleepers  default_home  dig_cost  down_file  down_motd_message
-  dump_interval  dump_message  dump_offset  earn_limit  examine_flags
-  examine_public_attrs  exit_flags  exit_quota  events_daily_hour
-  fascist_teleport  find_money_chance  fixed_home_message
-  fixed_tel_message  flag_alias  forbid_site  fork_dump  fork_vfork
-  full_file  full_motd_message  function_access  function_invocation_limit
-  function_recursion_limit  gdbm_database  good_name  guest_char_num
-  guest_file  guest_nuker  guest_prefix  guests_channel  have_comsys
-  have_macros  have_mailer  have_zones  help_file  help_index  hostnames
-  idle_interval  idle_timeout  idle_wiz_dark  include  indent_desc
-  initial_size  input_database  kill_guarantee_cost  kill_max_cost
-  kill_min_cost  list_access  link_cost  lock_recursion_limit  log
+  access  alias  allow_guest_from_registered_site  attr_access  attr_alias
+  attr_cmd_access  bad_name  badsite_file  check_interval  check_offset
+  clone_copies_cost  comsys_database  command_quota_increment
+  command_quota_max  compress_program  compression  concentrator_port
+  config_access  conn_timeout  connect_file  connect_reg_file  crash_database
+  create_max_cost  create_min_cost  dark_sleepers  default_home  dig_cost
+  down_file  down_motd_message  dump_interval  dump_message  dump_offset
+  earn_limit  examine_flags  examine_public_attrs  exit_flags  exit_quota
+  events_daily_hour  fascist_teleport  find_money_chance  fixed_home_message
+  fixed_tel_message  flag_access flag_alias  forbid_site  fork_dump
+  fork_vfork full_file  full_motd_message  function_access
+  function_invocation_limit  function_recursion_limit  game_dir_file
+  game_page_file  good_name  guest_char_num  guest_file  guest_nuker
+  guest_prefix  guests_channel  have_comsys  have_macros  have_mailer
+  have_zones  help_file  help_index  hostnames  idle_interval  idle_timeout
+  idle_wiz_dark  include  indent_desc  initial_size  input_database
+  kill_guarantee_cost  kill_max_cost  kill_min_cost  list_access  link_cost
+  lock_recursion_limit  log  log_options  logout_cmd_access  logout_cmd_alias
 { 'wizhelp config parameters2' for more }
 & CONFIG PARAMETERS2
-  log_options  logout_cmd_access  logout_cmd_alias  look_obey_terse
-  machine_command_cost  mail_database  mail_expiration  master_room
-  max_players  match_own_commands  money_name_plural  money_name_singular
-  motd_file  motd_message  mud_name  news_file  news_index  newuser_file
-  notify_recursion_limit  open_cost  output_database  output_limit  page_cost
-  paranoid_allocate  parent_recursion_limit  paycheck  pemit_any_object
-  pemit_far_players  permit_site  player_flags  player_listen 
-  player_match_own_commands  player_queue_limit  player_quota
+  look_obey_terse  machine_command_cost  mail_database  mail_expiration
+  master_room  max_players  match_own_commands  money_name_plural
+  money_name_singular  motd_file  motd_message  mud_name  news_file
+  news_index  newuser_file  notify_recursion_limit  open_cost  output_database
+  output_limit  page_cost  paranoid_allocate  parent_recursion_limit  paycheck
+  pemit_any_object  pemit_far_players  permit_site  player_flags
+  player_listen  player_match_own_commands  player_queue_limit  player_quota
   player_starting_home  player_starting_room  plushelp_file  plushelp_index
   port  postdump_message  public_channel  public_flags  queue_active_chunk
   queue_idle_chunk  quiet_look  quiet_whisper  quit_file  quotas
@@ -1065,6 +1064,7 @@
  
 & access
   Config parameter: access <command> <permlist>
+
   Modifies the permissions needed to execute the indicated command.
   Specifying a permission adds it to the list of permissions required; to
   remove a permission prefix it with a ! character.
@@ -1072,11 +1072,24 @@
 
 & alias
   Config parameter: alias <new> <old>.
+
   Defines the command <new> to be an alias of the command <old>.
-  See also:
+
+& allow_guest_from_registered_site
+  Config parameter: allow_guest_from_registered_site. Default: yes.
+
+  With this option turned off, guests are not permitted to connect from
+  sites which have been register_site'd.
+
+  Game which use register_site as a more surgical version of forbid_site
+  may be interested in turn this option off. However, game which are
+  register_only will probably want to leave this option as defaulted.
+
+  See also: register_site, SITE LISTS
 
 & attr_access
   Config parameter: attr_access <attr> [!]<privilege> [[!]<privilege>]...
+
   Changes the access rights to the named attribute.
  
   The following privileges may be used:
@@ -1088,10 +1101,12 @@
  
 & attr_alias
   Config parameter: attr_alias <alias> <attr>.
+
   Makes <alias> an alias for the attribute <attr>.
 
 & attr_cmd_access
   Config parameter: attr_cmd_access [!]<privilege> [[!]<privilege>]...
+
   Changes the access rights on all attribute-setting commands in parallel.
   Use this parameter to allow or deny access to the attribute-setting commands
   as a group.  This directive should normally be followed by access directives
@@ -1100,6 +1115,7 @@
 
 & bad_name
   Config parameter: bad_name <wildcarded-name>.
+
   Specifies that any name that matches <wildcarded-name> may not be used as a
   player name.  Attempts to create a player with a disallowed name (or to
   rename to a disallowed name) will be rejected.  Normally, words that
@@ -1108,151 +1124,177 @@
 
 & badsite_file
   Config parameter: badsite_file <path>.  Default: text/badsite.txt
+
   Specifies the name of the file that is sent to new net connections from
   sites that have been blocked from accessing the server.  The connection
   is closed immediately after the file is sent.
   See also: forbid_site, permit_site.
 
 & cache_depth
-  Config parameter: cache_depth <depth>.  Default: 10.
- 
-  Specifies the depth of the database cache.  Each bucket in the cache is
-  allowed to have this many entries before it will try to remove old entries.
-  See also: cache_width.
+  Config parameter: cache_depth <depth>.
+  
+  The cache in MUX 2.0 is handled differently and this option does not
+  apply.
 
 & cache_trim
   Config parameter: cache_trim <yes/no>.  Default: no.
  
-  When this parameter is 'yes', the cache will be periodically trimmed to
-  eliminate unused space. It is especially useful when your cache tends to
-  stretch because it cannot hold all the objects being accessed at once.
+  The cache in MUX 2.0 is handled differently and this option does not
+  apply.
  
 & cache_width
   Config parameter: cache_width <depth>.  Default: ??
  
-  Specifies the number of buckets in the database cache.  A hashing function
-  is used to assign objects or attributes to a particular bucket, where a 
-  linear search is performed.
+  The cache in MUX 2.0 is handled differently and this option does not
+  apply.
 
 & check_interval
   Config parameter: check_interval <secs>.  Default: 600.
+
   Specifies how often (in seconds) the database is to be automatically
   scanned for inconsistencies and purged of references to destroyed objects.
   Any inconsistencies found are either fixed or recorded in the log file.
+
   See also: check_offset, @dbck.
 
 & check_offset
   Config parameter: check_offset <secs>.  Default: 300.
+
   Specifies how long after startup the first automatic database check is
   to be performed.  Subsequent checks are performed every check_interval
   seconds.
+
   See also: check_interval, @dbck.
 
 & clone_copies_cost
   Config parameter: clone_copies_cost <yes/no>.  Default: NO
+
   Indicates whether or not @cloned objects inherit the cost of the original.
   If disabled, @cloned objects cost the same as a @create that doesn't specify
   the object cost.  The new owner is charged the correct amount in either
   case.
+
   See also: @clone.
 
 & comsys_database
   Config parameter: comsys_database <path>.  Default: comsys.db
+
   Specifies the file that comsystem and macro information is stored in.
   This database is loaded at startup if either have_comsys or have_macros
   are on.
+
   See also: have_comsys, have_macros.
- 
+
 & command_quota_increment
   Config parameter: command_quota_increment <amount>. Default: 1
+
   Specifies the number of commands by which the command quota for connected
   users each timeslice.  Each command a user types in (commands executed by
   machines do not count) decreases the quota by 1, and the user's commands are
   only executed if the quota is greater than zero.
+
   See also: command_quota_max, timeslice.
 
 & command_quota_max
   Config parameter: command_quota_max <amount>. Default: 100
+
   Specifies the maximum value for the command quota for connected users.
   A user's command quota is only increased if it is below this value.
   Each command a user types in (commands executed by machines do not count)
   decreases the quota by 1, and the user's commands are only executed if the
   quota is greater than zero.
+
   See also: command_quota_increment, timeslice.
 
 & compress_program
   Config parameter: compress_program <path>.  Default: gzip
+
   Specifies the program to be run to compress the database file when it is
   written.  If database file compression is enabled, database dumps are piped
   through this program on their way out to disk.
+
   See also: compresion, uncompress_program.
 
 & compression
   Config parameter: compress <yes/no>.  Default: no
+
   Indicates whether or not the database is to be compressed using the
   compress_program when it is written, and whether or not to check for a
   compressed database to uncompress at startup.  
+
   See also: compress_program, uncompress_program.
 
 & concentrator_port
-  Config parameter: concentrator_port <port number>.  Default: 6251
+  Config parameter: concentrator_port <port number>.  Default: 2861
+
   Specifies the port number that the MUX will expect the concentrator
   to use when it is active. This parameter is meaningless if you do not
   have concentrator support compiled into the server.
  
 & config_access
   Config parameter: config_access <param> [!]<privilege> [[!]<privilege>]...
+
   Changes the privileges needed to change the specified configuration
   parameter.  The value 'disabled' indicates that the parameter may only
   be specified in the configuration file at startup.  Setting privileges
   to anything other than disabled or god is meaningless unless the 
   restriction on the @admin command is weakened.
+
   See also: @admin, @list config_permissions, PERMISSIONS.
 
 & conn_timeout
   Config parameter: conn_timeout <num>.  Default: 60
+
   Specifies how many seconds a new network connection may remain open before
   connecting to a character before being automatically disconnected.
 
 & connect_file
   Config parameter: connect_file <path>.  Default: text/connect.txt
+
   Specifies the name of the file that a user sees immediately after connecting
   to the MUX if registration is not enabled.  This file normally contains
   help on how to connect to or create a character, as well as the WHO and QUIT
   commands.
+
   See also: connect_reg_file
 
 & connect_reg_file
   Config parameter: connect_reg_file <path>.  Default: text/register.txt
+
   Specifies the name of the file that a user sees immediately after connecting
   to the MUX if registration is enabled.  This file normally contains
   help on how to get a character (usually by sending e-mail to one of the
   wizards), how to connect to an existing character, as well as the WHO and
   QUIT commands.
+
   See also: connect_file
 
 & crash_database
-  Config parameter: crash_database <path>.  Default: none
+  Config parameter: crash_database <path>.  Default: <input db>.CRASH
+
   Specifies the name of the database file that should be written when MUX
-  detects an internal error and is about to crash.  Note that the database
-  may contain corrupted links of the error occurs in the middle of moving
-  links about.
-  Dumping a crash database is currently not implemented.
+  detects an internal error and is about to crash. The file is generated
+  in flatfile format with attribute values included.
 
 & create_max_cost
   Config directive: create_max_cost <amount>.  Default: 505
+
   Specifies the maximum amount of money that is used in calculating the value
   of a created object.  Specifying more than this amount of money in a @create
   command will cause the excess to be wasted.
+
   See also: create_min_cost, sacrifice_adjust, sacrifice_factor.
 
 & create_min_cost
   Config directive: create_min_cost <amount>.  Default: 10
+
   Specifies the minimum (and default) cost for creating an object.
+
   See also: create_max_cost, sacrifice_adjust, sacrifice_factor.
 
 & dark_sleepers
   Config directive: dark_sleepers <yes/no>.  Default: yes
+
   Indicates whether or not disconnected players are to be considered 'dark',
   so that they do not show up when a player looks in the room that they are
   in.  Disconnected players can still be found by examining the room or by
@@ -1260,44 +1302,57 @@
 
 & default_home
   Config directive: default_home <location>.  Default (player_starting_home)
+
   Sets the home location for objects which have an invalid home (whether
   because the home location was deleted, or is owned by another player and
   is not set ABODE) and the home of their owner is also invalid.  If this
   parameter is not set, the value of player_starting_home is used instead.
+
   See also: player_starting_home.
 
 & dig_cost
   Config parameter: dig_cost <amount>.  Default: 1
+
   Specifies how much the @dig command costs.
 
 & down_file
   Config parameter: down_file <pathname>.  Default: text/down.txt
+
   Specifies the name of the file that is displayed when players attempt to
   connect to a non-wizard character when logins are disabled.
+
   See also: @disable, down_motd_message.
 
 & down_motd_message
   Config parameter: down_motd_message <message>.  Default: text/down.txt
+
   Sets the message that is displayed when a player attempts to connect to a
   non-wizard character when logins are disabled.  This message is displayed
   in addition to the contents of the down.txt file.
+
   See also: @disable, down_motd_file.
 
 & dump_interval
   Config parameter: dump_interval <amount>.  Default: 3600
+
   Specifies the time in seconds between automatic database dumps.
+
   See also: dump_offset, output_database.
 
 & dump_message
   Config parameter: dump_message <message>.  Default: blank
+
   Sets the message that is sent to everyone before the database is being
   dumped to disk, whether automatically or via the @dump command.
+
   See also: @dump, postdump_message.
 
 & dump_offset
   Config parameter: dump_offset <amount>.  Default: 0
+
   Specifies the time in seconds between startup and the first database dump.
   If zero, the value of the dump_interval parameter is used.
+
   See also: dump_interval.
 
 & earn_limit
@@ -1373,6 +1428,26 @@
   Config parameter: flag_alias <alias> <flagname>.
   Defines <alias> as a synonym for the flag <flagname>.
 
+& flag_access
+  Config parameter: flag_access <flag name> <access>
+  
+  Changes who can set a flag. <access> can be:
+ 
+  any             - Anyone can set this flag.
+  god             - Only God can set this flag.
+  privileged      - Only God can set this flag on players, but non-robot
+                    players can set it on objects of other types, if
+                    they themselves have the flag.
+  restrict_player - Only Wizards can set this flag on players, but
+                    mortals can set the flag on objects of other types.
+  royalty         - Only Royalty, Wizards, and God can set this flag.
+  staff           - Only Staff, Royalty, Wizards, and God can set this flag.
+  wizard          - Only Wizards and God can set this flag.
+ 
+  There are some flags whose access permissions cannot be changed,
+  since they are handled in a special way. This includes the DARK,
+  and AUDIBLE flags.
+ 
 & forbid_site
   Config parameter: forbid_site <addr> <mask>.
   Indicates that connections are to be rejected from sites whose address
@@ -1444,11 +1519,35 @@
   a problem, but the u() function can be used to cause infinite recursion
   (unless blocked by a recursion limit)
 
+& game_dir_file
+  Config parameter: game_dir_file <path>.
+
+  This configuration option specifies the file name of the 'directory' portion
+  of the CHashFile attribute database. If this file is deleted, CHashFile will
+  automatically re-created it.
+
+  It is read into memory at startup and re-written during page splits in the
+  'pages' portion of the database.
+
+  See also: game_pag_file
+
+& game_pag_file
+  Config parameter: game_pag_file <path>.
+
+  This configuration option specifies the file name of the 'pages' portion of
+  the CHashFile attribute database. Unlike the 'directory' portion, this
+  portion cannot be replaced. Attribute values themselves are stored in this
+  file.
+
+  See also: game_dir_file
+
 & gdbm_database
-  Config parameter: gdbm_database <path>.  Default: none.
-  Specifies the name of the file that stores the text portion of the
-  database.  The text strings are stored in a binary format optimized for
-  fast retrieval and storage rather than access with programs such as more.
+  Config parameter: gdbm_database <path>.
+
+  MUX 2.0 maintains a database in a different way. This configuration
+  option is obsolete.
+
+  See also: game_dir_file and game_pag_file
 
 & good_name
   Config parameter: good_name <name>.
@@ -2345,7 +2444,7 @@
   guest.txt:      Displayed to whoever connects to the guest character
                   specifiedby the guest_character config parameter.
   motd.txt:       Displayed after someone connects to an existing character.
-  netmux.conf:   Configuration directives read at startup.
+  netmux.conf:    Configuration directives read at startup.
   news.indx:      Index for the news.txt file, produced by the mkindx program.
   news.txt:       File containing information displayed by the news command.
   newuser.txt:    Displayed after someone creates a new character or connects
@@ -2372,35 +2471,41 @@
  
   Access to many MUX features is controlled by a set of permissions, which
   can usually be changed via the configuration file or the @admin command.
-  This is a list of the valid permissions and their meanings.
-    god           - Only player #1 may use this feature.
-   +wizard        - Only wizards (players with their WIZARD bit set) may use
-                    this feature.
-   +builder       - Only builders (BUILDER power) may use this feature.
-   +immortals     - Only immortals (IMMORTAL bit) may use this feature.
-   +robot         - Only robots (ROBOT bit) may use this feature
-    no_haven      - Only players who are not set HAVEN may use this feature.
-    no_robot      - Robots may not use this feature.
-    no_slave      - Slave players (SLAVE bit) may not use this feature.
-    no_suspect    - Suspect players (SUSPECT bit) may not use this feature.
-    no_guest      - Guest players (guest_character config directive) may not
-                    use this feature.
-{ 'wizhelp permissions2' for more }
+  
+  In the following, 'WIZARD' means the WIZARD flag, but 'Wizard' means
+  Wizard-level authority. The latter can be achieved by being set WIZARD, or
+  set INHERIT with an owner that is set WIZARD, and of course #1 is always set
+  WIZARD.
+
+  This is a list of the valid permissions and their meanings:
+
+    builder       - Must be Wizard, ROYALTY, or have the BUILDER power.
+    dark          - Feature is not shown but is still available.
+    disabled      - No one can use this feature.
+    global_build  - Requires the BUILDER power, Wizard/ROYALTY, or for
+                    building to be allowed game-wide.
+    global_interp - Requires that global interpretation be turned on.
+    god           - Only #1 may use this feature.
+    head          - Must be set HEAD to use this feature.
+    immortal      - Must be set IMMORTAL or set INHERIT with IMMORTAL owner.
+
+{ 'wizhelp permissions2' for the rest of the list }
 & permissions2
-    global_build  - This feature may only be used when the global building
-                    flag is turned on.
-    global_interp - This feature may only be used when the global
-                    interpretation flag is turned on.
-    disabled      - Nobody may use this feature.
-    need_location - Only players and things may use this feature.
+
     need_contents - Only players, things, and rooms may use this feature.
+    need_location - Only players and things may use this feature.
     need_player   - Only players may use this feature.
- 
-  Restrictions are normally additive (meaning that you must be a member of all
-  required groups and not be a member of any excluded group).  The permissions
-  marked with a + are different, in that if more than one is required, then
-  being a member of any + group will grant access to the feature and skip
-  the remaining checks.
+    no_haven      - Non-Wizard players with owners set HAVEN may not use this
+                    feature.
+    no_robot      - Non-Wizard players set ROBOT may not use this feature.
+    no_slave      - Non-Wizard players with owners set SLAVE may not use this
+                    feature.
+    no_suspect    - Non-Wizard players with owners set SUSPECT may not use
+                    this feature.
+    no_guest      - Non-Wizards must not possess the GUEST power in order to
+                    use this feature.
+    robot         - Only players set ROBOT can use this feature.
+    wizard        - Only Wizards may use this feature.
 
 & SEARCH CRITERIA
   Topic: SEARCH CRITERIA
