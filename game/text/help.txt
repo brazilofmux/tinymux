@@ -307,13 +307,22 @@ ALIAS
 
   COMMAND: <channel alias> <on|off|who|message|:pose|;pose>
 
-  'on' allows you to turn an alias on.
-  'off' lets you temporarily leave that channel.
-  'who' shows you who is on that channel.
+  The channel alias allows you to both use the channel, and to turn it on
+  and off and check who is online. To determine what your aliases are, if
+  you have forgotten, see the help for 'comlist'.
+
+    'on'   allows you to turn an alias on.
+    'off'  lets you temporarily leave that channel.
+    'who'  shows you who is on that channel, which the channel name appended
+           to the bottom.
 
   You may send a message over the channel with <alias> <text>, where <text>
   is the message to be sent, or you can pose on a channel with
   <alias> :<text> or <alias> ;<text>
+
+  Example:
+    > pub Hello World!
+    [Public] Player say, "Hello World!"
 
   Related Topics: allcom, comlist, addcom, delcom.
 
