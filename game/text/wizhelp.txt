@@ -1477,7 +1477,7 @@ CONFIG PARAMETERS
   earn_limit  examine_flags  examine_public_attrs  exit_flags  exit_quota
   eval_comtitle  events_daily_hour  fascist_teleport  find_money_chance
   fixed_home_message  fixed_tel_message  flag_access  flag_alias  forbid_site
-  fork_dump fork_vfork full_file  full_motd_message  function_access
+  fork_dump  full_file  full_motd_message  function_access
   function_invocation_limit  function_recursion_limit  game_dir_file
   game_page_file  good_name  guest_char_num  guest_file  guest_nuker
   guest_prefix  guest_site  guests_channel  have_comsys  have_macros
@@ -1975,7 +1975,7 @@ FORK_DUMP
   the amount of time needed to perform the dump, it requires that the system
   have enough free swap space to hold a second copy of the running game.
 
-  Related Topics: fork_vfork.
+  Related Topics:
 
 & FULL_FILE
 FULL_FILE
