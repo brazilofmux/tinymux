@@ -1,6 +1,6 @@
 // htab.cpp - table hashing routines 
 //
-// $Id: htab.cpp,v 1.2 2000-10-25 04:29:23 sdennis Exp $
+// $Id: htab.cpp,v 1.3 2000-12-03 20:22:57 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -53,7 +53,7 @@ int *hashfindLEN(void *str, int nStr, CHashTable *htab)
 {
     if (str == NULL || nStr <= 0) return NULL;
 
-    unsigned long nHash = CRC32_ProcessBuffer(0, str, nStr);
+    unsigned long nHash = HASH_ProcessBuffer(0, str, nStr);
 
     HP_DIRINDEX iDir = HF_FIND_FIRST;
     iDir = htab->FindFirstKey(nHash);
@@ -84,7 +84,7 @@ int hashaddLEN(void *str, int nStr, int *hashdata, CHashTable *htab)
     //
     if (str == NULL || nStr <= 0) return -1;
 
-    unsigned long nHash = CRC32_ProcessBuffer(0, str, nStr);
+    unsigned long nHash = HASH_ProcessBuffer(0, str, nStr);
 
     HP_DIRINDEX iDir = htab->FindFirstKey(nHash);
     while (iDir != HF_FIND_END)
@@ -118,7 +118,7 @@ void hashdeleteLEN(void *str, int nStr, CHashTable *htab)
 {
     if (str == NULL || nStr <= 0) return;
 
-    unsigned long nHash = CRC32_ProcessBuffer(0, str, nStr);
+    unsigned long nHash = HASH_ProcessBuffer(0, str, nStr);
 
     HP_DIRINDEX iDir = htab->FindFirstKey(nHash);
     while (iDir != HF_FIND_END)
@@ -154,7 +154,7 @@ int hashreplLEN(void *str, int nStr, int *hashdata, CHashTable *htab)
 {
     if (str == NULL || nStr <= 0) return 0;
 
-    unsigned long nHash = CRC32_ProcessBuffer(0, str, nStr);
+    unsigned long nHash = HASH_ProcessBuffer(0, str, nStr);
 
     HP_DIRINDEX iDir = htab->FindFirstKey(nHash);
     while (iDir != HF_FIND_END)

@@ -1,6 +1,6 @@
 // svdhash.cpp -- CHashPage, CHashFile, CHashTable modules
 //
-// $Id: svdhash.cpp,v 1.15 2000-10-25 04:29:23 sdennis Exp $
+// $Id: svdhash.cpp,v 1.16 2000-12-03 20:22:57 sdennis Exp $
 //
 // MUX 2.1
 // Copyright (C) 1998 through 2000 Solid Vertical Domains, Ltd. All
@@ -102,106 +102,10 @@ static unsigned long CRC32_Table[256] =
     0xb40bbe37, 0xc30c8ea1, 0x5a05df1b, 0x2d02ef8d
 };
 
-#define CRC32_INITIAL 0xFFFFFFFFUL
+#define CRC32_INITIAL      0xFFFFFFFFUL
+//#define CRC32_VALID_RESULT 0x2144DF1CUL
 
-#if 1
-#ifdef WIN32
-
-// Proper CRC-32 routines.
-//
-// Visual C++ generates an inner loop that is 38 instructions per 16 data
-// bytes or 2.375 instructions per byte. Or, 13.62ns per byte on my
-// Pentium II 400. That's 73.41 MB/second.
-//
-#define CRC32_VALID_RESULT 0x2144DF1CUL
-
-unsigned long CRC32_ProcessBuffer
-(
-    unsigned long  ulCrc,
-    const void    *arg_pBuffer,
-    unsigned int   nBuffer
-)
-{
-    ulCrc = ~ulCrc;
-    unsigned char *pBuffer = (unsigned char *)arg_pBuffer;
-JustAfew:
-
-    if (nBuffer <= 8)
-    {
-        pBuffer -= 8 - nBuffer;
-        switch (nBuffer)
-        {
-        case 8: ulCrc ^= *(unsigned long *)(pBuffer + 0);
-                ulCrc  = CRC32_Table[(unsigned char)ulCrc] ^ (ulCrc >> 8);
-                ulCrc  = CRC32_Table[(unsigned char)ulCrc] ^ (ulCrc >> 8);
-                ulCrc  = CRC32_Table[(unsigned char)ulCrc] ^ (ulCrc >> 8);
-                ulCrc  = CRC32_Table[(unsigned char)ulCrc] ^ (ulCrc >> 8);
-                ulCrc ^= *(unsigned long *)(pBuffer + 4);
-                ulCrc  = CRC32_Table[(unsigned char)ulCrc] ^ (ulCrc >> 8);
-                ulCrc  = CRC32_Table[(unsigned char)ulCrc] ^ (ulCrc >> 8);
-                ulCrc  = CRC32_Table[(unsigned char)ulCrc] ^ (ulCrc >> 8);
-                ulCrc  = CRC32_Table[(unsigned char)ulCrc] ^ (ulCrc >> 8);
-                return ~ulCrc;
-
-        case 7: ulCrc  = CRC32_Table[pBuffer[1] ^ (unsigned char)ulCrc] ^ (ulCrc >> 8);
-        case 6: ulCrc  = CRC32_Table[pBuffer[2] ^ (unsigned char)ulCrc] ^ (ulCrc >> 8);
-        case 5: ulCrc  = CRC32_Table[pBuffer[3] ^ (unsigned char)ulCrc] ^ (ulCrc >> 8);
-        case 4: ulCrc ^= *(unsigned long *)(pBuffer + 4);
-                ulCrc  = CRC32_Table[(unsigned char)ulCrc] ^ (ulCrc >> 8);
-                ulCrc  = CRC32_Table[(unsigned char)ulCrc] ^ (ulCrc >> 8);
-                ulCrc  = CRC32_Table[(unsigned char)ulCrc] ^ (ulCrc >> 8);
-                ulCrc  = CRC32_Table[(unsigned char)ulCrc] ^ (ulCrc >> 8);
-                return ~ulCrc;
-
-        case 3: ulCrc  = CRC32_Table[pBuffer[5] ^ (unsigned char)ulCrc] ^ (ulCrc >> 8);
-        case 2: ulCrc  = CRC32_Table[pBuffer[6] ^ (unsigned char)ulCrc] ^ (ulCrc >> 8);
-        case 1: ulCrc  = CRC32_Table[pBuffer[7] ^ (unsigned char)ulCrc] ^ (ulCrc >> 8);
-        case 0: return ~ulCrc;
-        }
-    }
-
-    // We may need to do some alignment work up front, and at the end, so that
-    // the main loop is aligned and only has to worry about 8 byte at a time.
-    //
-    // The low-order two bits of pBuffer and nBuffer in total control the
-    // upfront work.
-    //
-    unsigned int nFront = (int)(pBuffer) & 3;
-    nBuffer -= nFront;
-    switch (nFront)
-    {
-    case 3:
-        ulCrc  = CRC32_Table[*pBuffer++ ^ (unsigned char)ulCrc] ^ (ulCrc >> 8);
-    case 2:
-        ulCrc  = CRC32_Table[*pBuffer++ ^ (unsigned char)ulCrc] ^ (ulCrc >> 8);
-    case 1:
-        ulCrc  = CRC32_Table[*pBuffer++ ^ (unsigned char)ulCrc] ^ (ulCrc >> 8);
-    }
-
-    int nMain = nBuffer >> 3;
-    while (nMain)
-    {
-        nMain--;
-        ulCrc ^= *(unsigned long *)pBuffer;
-        ulCrc  = CRC32_Table[(unsigned char)ulCrc] ^ (ulCrc >> 8);
-        ulCrc  = CRC32_Table[(unsigned char)ulCrc] ^ (ulCrc >> 8);
-        ulCrc  = CRC32_Table[(unsigned char)ulCrc] ^ (ulCrc >> 8);
-        ulCrc  = CRC32_Table[(unsigned char)ulCrc] ^ (ulCrc >> 8);
-        ulCrc ^= *(unsigned long *)(pBuffer + 4);
-        ulCrc  = CRC32_Table[(unsigned char)ulCrc] ^ (ulCrc >> 8);
-        ulCrc  = CRC32_Table[(unsigned char)ulCrc] ^ (ulCrc >> 8);
-        ulCrc  = CRC32_Table[(unsigned char)ulCrc] ^ (ulCrc >> 8);
-        ulCrc  = CRC32_Table[(unsigned char)ulCrc] ^ (ulCrc >> 8);
-        pBuffer += 8;
-    }
-
-    nBuffer &= 7;
-    goto JustAfew;
-}
-
-#else // WIN32
-
-// Portable CRC-32 routines. These slower routines are less compiler and
+// Portable CRC-32 routine. These slower routines are less compiler and
 // platform dependent and still get the job done.
 //
 unsigned long CRC32_ProcessBuffer
@@ -222,23 +126,32 @@ unsigned long CRC32_ProcessBuffer
     return ~ulCrc;
 }
 
-#endif // WIN32
-
-unsigned long CRC32_ProcessString(const void *szString)
+unsigned long CRC32_ProcessInteger(unsigned int nInteger)
 {
-    unsigned char *pBuffer = (unsigned char *)szString;
-    unsigned char ch;
     unsigned long ulCrc = CRC32_INITIAL;
-    ch = *pBuffer++;
-    while (ch)
-    {
-        ulCrc  = CRC32_Table[ch ^ (unsigned char)ulCrc] ^ (ulCrc >> 8);
-        ch = *pBuffer++;
-    }
+    ulCrc ^= nInteger;
+    ulCrc  = CRC32_Table[(unsigned char)ulCrc] ^ (ulCrc >> 8);
+    ulCrc  = CRC32_Table[(unsigned char)ulCrc] ^ (ulCrc >> 8);
+    ulCrc  = CRC32_Table[(unsigned char)ulCrc] ^ (ulCrc >> 8);
+    ulCrc  = CRC32_Table[(unsigned char)ulCrc] ^ (ulCrc >> 8);
     return ~ulCrc;
 }
 
-#else
+unsigned long CRC32_ProcessInteger2(unsigned int nInteger1, unsigned int nInteger2)
+{
+    unsigned long ulCrc = CRC32_INITIAL;
+    ulCrc ^= nInteger1;
+    ulCrc  = CRC32_Table[(unsigned char)ulCrc] ^ (ulCrc >> 8);
+    ulCrc  = CRC32_Table[(unsigned char)ulCrc] ^ (ulCrc >> 8);
+    ulCrc  = CRC32_Table[(unsigned char)ulCrc] ^ (ulCrc >> 8);
+    ulCrc  = CRC32_Table[(unsigned char)ulCrc] ^ (ulCrc >> 8);
+    ulCrc ^= nInteger2;
+    ulCrc  = CRC32_Table[(unsigned char)ulCrc] ^ (ulCrc >> 8);
+    ulCrc  = CRC32_Table[(unsigned char)ulCrc] ^ (ulCrc >> 8);
+    ulCrc  = CRC32_Table[(unsigned char)ulCrc] ^ (ulCrc >> 8);
+    ulCrc  = CRC32_Table[(unsigned char)ulCrc] ^ (ulCrc >> 8);
+    return ~ulCrc;
+}
 
 #define DO1(buf,i)  {s1 += buf[i]; s2 += s1;}
 #define DO2(buf,i)  DO1(buf,i); DO1(buf,i+1);
@@ -246,7 +159,7 @@ unsigned long CRC32_ProcessString(const void *szString)
 #define DO8(buf,i)  DO4(buf,i); DO4(buf,i+4);
 #define DO16(buf)   DO8(buf,0); DO8(buf,8);
 
-unsigned long CRC32_ProcessBuffer
+unsigned long HASH_ProcessBuffer
 (
     unsigned long ulHash,
     const void *arg_pBuffer,
@@ -368,41 +281,6 @@ unsigned long CRC32_ProcessBuffer
     ulHash  = CRC32_Table[(unsigned char)ulHash] ^ (ulHash >> 8);
     ulHash  = CRC32_Table[(unsigned char)ulHash] ^ (ulHash >> 8);
     return ~ulHash;
-}
-
-unsigned long CRC32_ProcessString(const void *szString)
-{
-    int nBuffer = strlen((char *)szString);
-    return CRC32_ProcessBuffer(0, szString, nBuffer);
-}
-
-#endif
-
-unsigned long CRC32_ProcessInteger(unsigned int nInteger)
-{
-    unsigned long ulCrc = CRC32_INITIAL;
-    ulCrc ^= nInteger;
-    ulCrc  = CRC32_Table[(unsigned char)ulCrc] ^ (ulCrc >> 8);
-    ulCrc  = CRC32_Table[(unsigned char)ulCrc] ^ (ulCrc >> 8);
-    ulCrc  = CRC32_Table[(unsigned char)ulCrc] ^ (ulCrc >> 8);
-    ulCrc  = CRC32_Table[(unsigned char)ulCrc] ^ (ulCrc >> 8);
-    return ~ulCrc;
-}
-
-unsigned long CRC32_ProcessInteger2(unsigned int nInteger1, unsigned int nInteger2)
-{
-    unsigned long ulCrc = CRC32_INITIAL;
-    ulCrc ^= nInteger1;
-    ulCrc  = CRC32_Table[(unsigned char)ulCrc] ^ (ulCrc >> 8);
-    ulCrc  = CRC32_Table[(unsigned char)ulCrc] ^ (ulCrc >> 8);
-    ulCrc  = CRC32_Table[(unsigned char)ulCrc] ^ (ulCrc >> 8);
-    ulCrc  = CRC32_Table[(unsigned char)ulCrc] ^ (ulCrc >> 8);
-    ulCrc ^= nInteger2;
-    ulCrc  = CRC32_Table[(unsigned char)ulCrc] ^ (ulCrc >> 8);
-    ulCrc  = CRC32_Table[(unsigned char)ulCrc] ^ (ulCrc >> 8);
-    ulCrc  = CRC32_Table[(unsigned char)ulCrc] ^ (ulCrc >> 8);
-    ulCrc  = CRC32_Table[(unsigned char)ulCrc] ^ (ulCrc >> 8);
-    return ~ulCrc;
 }
 
 #define NUMBER_OF_PRIMES 177
@@ -637,14 +515,14 @@ void CHashPage::Empty(HP_DIRINDEX arg_nDepth, unsigned long arg_nHashGroup, HP_D
 #ifdef HP_PROTECTION
 void CHashPage::Protect(void)
 {
-    unsigned long ul = CRC32_ProcessBuffer(0, m_pPage, m_nPageSize-sizeof(HP_TRAILER));
+    unsigned long ul = HASH_ProcessBuffer(0, m_pPage, m_nPageSize-sizeof(HP_TRAILER));
     m_pTrailer->m_crc32 = ul;
 }
 
 BOOL CHashPage::Validate(void)
 {
-    unsigned long ul = CRC32_ProcessBuffer(0, m_pPage, m_nPageSize);
-    if (ul != CRC32_VALID_RESULT)
+    unsigned long ul = HASH_ProcessBuffer(0, m_pPage, m_nPageSize-sizeof(HP_TRAILER));
+    if (ul != m_pTrailer->m_crc32)
     {
         return FALSE;
     }

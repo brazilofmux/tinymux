@@ -1,6 +1,6 @@
 // svdhash.h -- CHashPage, CHashFile, CHashTable modules
 //
-// $Id: svdhash.h,v 1.5 2000-10-25 04:29:23 sdennis Exp $
+// $Id: svdhash.h,v 1.6 2000-12-03 20:22:57 sdennis Exp $
 //
 // MUX 2.1
 // Copyright (C) 1998 through 2000 Solid Vertical Domains, Ltd. All
@@ -23,9 +23,19 @@ extern unsigned long CRC32_ProcessBuffer
     unsigned int   nBuffer
 );
 
-extern unsigned long CRC32_ProcessString(const void *szString);
 extern unsigned long CRC32_ProcessInteger(unsigned int nInteger);
-extern unsigned long CRC32_ProcessInteger2(unsigned int nInteger1, unsigned int nInteger2);
+extern unsigned long CRC32_ProcessInteger2
+(
+    unsigned int nInteger1,
+    unsigned int nInteger2
+);
+
+extern unsigned long HASH_ProcessBuffer
+(
+    unsigned long ulHash,
+    const void *arg_pBuffer,
+    unsigned int nBuffer
+);
 
 #ifdef STANDALONE
 #define HF_PAGES 650
