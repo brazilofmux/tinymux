@@ -1,5 +1,5 @@
 TinyMUX 2.1:  CHANGES
-Last Update:  March 2003
+Last Update:  April 2003
 
 Major changes that may affect performance and require softcode tweaks:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -349,6 +349,9 @@ Bug Fixes:
  -- Insurance in several places against character data with high-bit set.
     In an unpatched MUX 2.1, there is no way to get character data with a
     high-bit set, but we've added insurance against it anyway.
+ -- MakeCanonicalMailAlias() could return a result which was not
+    null-terminated.  Reported by Ita'istar@Tandoria. Introduced and fixed
+    by Brazil.  Related to the @malias command.
 
 
 Performance Enhancements:
