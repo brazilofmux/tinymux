@@ -154,6 +154,10 @@ Bug Fixes:
  -- Fixed bug with hastype(#123,ROOM) that was introduced in Build 29.
  -- @exitformat passed all exits into %0 if at least one of the exits was
     visible to the user.
+ -- Some operating systems can indicate from a select() call that input or
+    output is available and then later return an error on a particular recv()
+    or send() call to the same socket. BSD or systems which do not restart
+    system calls after a signal were mentioned as being affected.
 
 Performance Enhancements:
 ~~~~~~~~~~~~~~~~~~~~~~~~
