@@ -1,2 +1,2 @@
 @Echo Off
-..\bin\dbconvert tinymux x < tinymux.db.new > tinymux.flat
+..\bin\dbconvert %0 x < %1.db.new > %2.flat
