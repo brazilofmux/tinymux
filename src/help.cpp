@@ -1,9 +1,8 @@
-/*
- * help.c -- commands for giving help 
- */
-/*
- * $Id: help.cpp,v 1.9 2001-10-25 17:04:28 sdennis Exp $ 
- */
+//
+// help.cpp -- commands for giving help 
+//
+// $Id: help.cpp,v 1.10 2001-11-18 04:47:54 sdennis Exp $ 
+//
 
 #include "copyright.h"
 #include "autoconf.h"
