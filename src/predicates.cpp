@@ -416,8 +416,10 @@ int ok_name(const char *name)
     //
     for (cp = name; cp && *cp; cp++)
     {
-        if ((!isprint(*cp)) && (*cp != ESC_CHAR))
+        if (!Tiny_IsPrint[(unsigned char)*cp])
+        {
             return 0;
+        }
     }
 
     // Disallow trailing spaces.
@@ -510,7 +512,8 @@ int ok_password(const char *password, dbref player)
     
     for (scan = password; *scan; scan++)
     {
-        if (!(isprint(*scan) && !Tiny_IsSpace[(unsigned char)*scan]))
+        if (  !Tiny_IsPrint[(unsigned char)*scan]
+           || Tiny_IsSpace[(unsigned char)*scan])
         {
 #ifndef STANDALONE
             notify_quiet(player, "Illegal character in password.");

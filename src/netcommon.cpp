@@ -2,7 +2,7 @@
 * netcommon.c 
 */
 /*
-* $Id: netcommon.cpp,v 1.4 2000-04-12 21:10:19 sdennis Exp $ 
+* $Id: netcommon.cpp,v 1.5 2000-04-15 16:35:49 sdennis Exp $ 
 */
 
 /*
@@ -507,7 +507,9 @@ static void parse_connect(const char *msg, char *command, char *user, char *pass
         msg++;
     }
     p = command;
-    while (*msg && isascii(*msg) && !Tiny_IsSpace[(unsigned char)*msg])
+    while (  *msg
+          && Tiny_IsASCII[(unsigned char)*msg]
+          && !Tiny_IsSpace[(unsigned char)*msg])
     {
         *p++ = *msg++;
     }
@@ -549,7 +551,9 @@ static void parse_connect(const char *msg, char *command, char *user, char *pass
     }
     else
     {
-        while (*msg && isascii(*msg) && !Tiny_IsSpace[(unsigned char)*msg])
+        while (  *msg
+              && Tiny_IsASCII[(unsigned char)*msg]
+              && !Tiny_IsSpace[(unsigned char)*msg])
         {
             *p++ = *msg++;
         }
@@ -559,7 +563,9 @@ static void parse_connect(const char *msg, char *command, char *user, char *pass
             msg++;
         }
         p = pass;
-        while (*msg && isascii(*msg) && !Tiny_IsSpace[(unsigned char)*msg])
+        while (  *msg
+              && Tiny_IsASCII[(unsigned char)*msg]
+              && !Tiny_IsSpace[(unsigned char)*msg])
         {
             *p++ = *msg++;
         }
