@@ -1,6 +1,6 @@
 // predicates.cpp
 //
-// $Id: predicates.cpp,v 1.52 2003-01-31 06:34:20 sdennis Exp $
+// $Id: predicates.cpp,v 1.53 2003-02-05 16:04:25 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -788,13 +788,26 @@ void do_addcommand
     char *command
 )
 {
-    if (  nargs != 2
-       || name[0] == '\0')
+    // Validate command name.
+    //
+    char *pName = NULL;
+    if (1 <= nargs)
     {
-        notify(player, "Sorry.");
+        char *pStripped = strip_ansi(name);
+        pName = RemoveSetOfCharacters(pStripped, "\r\n\t ");
+        mux_strlwr(pName);
+    }
+    if (  !pName
+       || pName[0] == '\0'
+       || (  pName[0] == '_'
+          && pName[1] == '_'))
+    {
+        notify(player, "That is not a valid command name.");
         return;
     }
 
+    // Validate object/attribute.
+    //
     dbref thing;
     int atr;
     if (  !parse_attrib(player, command, &thing, &atr)
@@ -804,13 +817,11 @@ void do_addcommand
         return;
     }
 
-    // Let's make this case insensitive...
-    //
-    mux_strlwr(name);
-    char *pName = RemoveSetOfCharacters(name, "\r\n\t ");
-    CMDENT *old, *cmd;
+    CMDENT *old = (CMDENT *)hashfindLEN(pName, strlen(pName),
+        &mudstate.command_htab);
+
+    CMDENT *cmd;
     ADDENT *add, *nextp;
-    old = (CMDENT *)hashfindLEN(pName, strlen(pName), &mudstate.command_htab);
 
     if (  old
        && (old->callseq & CS_ADDED))
@@ -871,12 +882,14 @@ void do_addcommand
 
         hashaddLEN(pName, strlen(pName), (int *)cmd, &mudstate.command_htab);
 
-        if (old)
+        if (  old
+           && strcmp(pName, old->cmdname) == 0)
         {
             // Fix any aliases of this command.
             //
-            hashreplall((int *)old, (int *)cmd, &mudstate.command_htab);
             char *p = tprintf("__%s", pName);
+            hashdeleteLEN(p, strlen(p), &mudstate.command_htab);
+            hashreplall((int *)old, (int *)cmd, &mudstate.command_htab);
             hashaddLEN(p, strlen(p), (int *)old, &mudstate.command_htab);
         }
     }
@@ -884,7 +897,7 @@ void do_addcommand
     // We reset the one letter commands here so you can overload them.
     //
     set_prefix_cmds();
-    notify(player, tprintf("%s added.", pName));
+    notify(player, tprintf("Command %s added.", pName));
 }
 
 void do_listcommands(dbref player, dbref caller, dbref enactor, int key,
