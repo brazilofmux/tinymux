@@ -1,6 +1,6 @@
 // functions.cpp - MUX function handlers 
 //
-// $Id: functions.cpp,v 1.92 2001-09-14 22:39:17 sdennis Exp $
+// $Id: functions.cpp,v 1.93 2001-09-14 23:56:15 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -5433,7 +5433,8 @@ FUNCTION(fun_switch)
     //
     mbuff = bp = alloc_lbuf("fun_switch");
     str = fargs[0];
-    TinyExec(mbuff, &bp, 0, player, cause, EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, cargs, ncargs);
+    TinyExec(mbuff, &bp, 0, player, cause,
+        EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, cargs, ncargs);
     *bp = '\0';
 
     // Loop through the patterns looking for a match.
@@ -5442,13 +5443,15 @@ FUNCTION(fun_switch)
     {
         tbuff = bp = alloc_lbuf("fun_switch.2");
         str = fargs[i];
-        TinyExec(tbuff, &bp, 0, player, cause, EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, cargs, ncargs);
+        TinyExec(tbuff, &bp, 0, player, cause,
+            EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, cargs, ncargs);
         *bp = '\0';
-        if (quick_wild(tbuff, mbuff))
+        if (wild_match(tbuff, mbuff))
         {
             free_lbuf(tbuff);
             str = fargs[i+1];
-            TinyExec(buff, bufc, 0, player, cause, EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, cargs, ncargs);
+            TinyExec(buff, bufc, 0, player, cause,
+                EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, cargs, ncargs);
             free_lbuf(mbuff);
             return;
         }
@@ -5461,7 +5464,8 @@ FUNCTION(fun_switch)
     if ((i < nfargs) && fargs[i])
     {
         str = fargs[i];
-        TinyExec(buff, bufc, 0, player, cause, EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, cargs, ncargs);
+        TinyExec(buff, bufc, 0, player, cause,
+            EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, cargs, ncargs);
 
     }
     return;
