@@ -352,6 +352,34 @@
      pennies      - Sets the value or wealth of <object> to <value>
      rename       - Renames <object> to <value>
 
+& @FLAG
+@FLAG
+
+  Command: @flag[/<switch>] <oldflag>[=<newflag>]
+
+  This command either removes aliases of existing flags, or renames the
+  flag.  For example, if you rename CONNECTED to BOBTHEWIZ, then
+  whenever you reference the previous 'CONNECTED' flag, it will be seen
+  as 'BOBTHEWIZ' instead.  This does not effect the character of 'c'
+  for the flag, only the name of it.  This takes effect until the server
+  is shutdown or rebooted.  To make a permanent addition, you need to
+  use the 'flag_name' config parameter in the conf file.
+  The flag name must be no less than three characters, no greater than
+  15 characters, and can not be a previously existing flag name.  If
+  such a condition exists, it will return an error.
+
+  Switches:
+     /remove - used to remove a flag's alias.
+
+  Examples:
+    @flag/remove con (removes alias 'con' for 'connected')
+    @flag connect=bobthewiz (renames 'connected' to 'bobthewiz')
+
+  Note: the previous naming conventions are referenced automatically as
+        aliases for the flag unless specifically removed.
+
+  Related Topics: flag_name.
+
 & @FUNCTION
 @FUNCTION
 
@@ -433,6 +461,10 @@
          /clear     - When used in junction with any of the above switches, 
                       will clear the hook from being applied.
          /list      - This lists the current commands/attributes with hooks.
+         /fail      - Set up a FAIL hook on a command.  This will execute
+                      functionality if the command/attribute is blocked to
+                      the player by an @hook/permit or @icmd/disable.
+                      The attribute is 'af_<command> on the HOOK_OBJ.
 
 { 'wizhelp @hook2' for examples}
 
@@ -2084,6 +2116,16 @@ FLAG_ALIAS
   Defines <alias> as a synonym for the flag <flagname>.
 
   Related Topics: alias, function_alias.
+
+& FLAG_NAME
+FLAG_NAME
+
+  Config parameter: flag_name <newflagname> <oldflagname>
+
+  Redefines what the given flag is called.  This config parameter is only
+  useable within the conf file.  Use @flag to change them online.
+
+  Related Topics: @flag
 
 & FORBID_SITE
 FORBID_SITE
