@@ -241,6 +241,8 @@ Bug Fixes:
     Brazil.
  -- Exit names like ';foo' were effectively DARK exits. If set AUDIBLE, they
     were effectively listening devices that didn't show up on a @sweep.
+ -- Fixed behavior of read_remote_desc configuration option.  Bug introduced
+    by Jake.  Fixed by Brazil.
 
 
 
