@@ -1,6 +1,6 @@
 // stringutil.h -- string utilities
 //
-// $Id: stringutil.h,v 1.6 2000-06-12 18:17:47 sdennis Exp $
+// $Id: stringutil.h,v 1.7 2000-07-30 14:55:37 sdennis Exp $
 //
 // MUX 2.0
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -53,6 +53,7 @@ char *Tiny_i64toa_t(INT64 val);
 long Tiny_atol(const char *pString);
 INT64 Tiny_atoi64(const char *pString);
 
+#pragma pack(1)
 typedef struct
 {
     char bNormal;
@@ -64,6 +65,7 @@ typedef struct
     char iForeground;
     char iBackground;
 } ANSI_ColorState;
+#pragma pack()
 
 struct ANSI_Context
 {
