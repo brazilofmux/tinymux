@@ -435,6 +435,8 @@ Bug Fixes:
      ensure that returned dbrefs aren't truncated in the middle of the number.
  --  Missing type case in destroy_obj(). Thanks Jake
  --  Possible check_pennies() SIGSEGV bug. Thanks Jake.
+ --  Fix/extend the display of help so that blank lines in the help files
+     are displayed as blank lines.
 
 
 Performance Enhancements:
@@ -525,6 +527,7 @@ Performance Enhancements:
  --  Rewrote parse_msglist to avoid an extra buffer. The parse is no longer
      destructive.
  --  Improved speed of Tiny_atol and Tiny_atoi64 by 68%.
+
 
 Cosmetic Changes:
 ~~~~~~~~~~~~~~~~
