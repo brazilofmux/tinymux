@@ -1,6 +1,6 @@
 // comsys.cpp
 //
-// $Id: comsys.cpp,v 1.42 2002-09-19 03:00:25 sdennis Exp $
+// $Id: comsys.cpp,v 1.43 2002-09-19 03:27:29 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -1828,7 +1828,7 @@ void do_cleanupchannels(void)
                         {
                             char *mess = StartBuildChannelMessage(cuVictim->who,
                                 (ch->type & CHANNEL_SPOOF) != 0, ch->header, cuVictim->title,
-                                get_ansiname(cuVictim->who), ":is booted off the channel by the system.");
+                                AccentName(cuVictim->who), ":is booted off the channel by the system.");
                             do_comsend(ch, mess);
                             EndBuildChannelMessage(mess);
                         }

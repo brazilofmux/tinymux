@@ -2336,9 +2336,9 @@ Related Topics: @name.
   Examples:
     > @name object=99 Red Balloons
     Name set.
-    > @ansiname object=99 [ansi(hr,Red)] Baboons
+    > @nameaccent object=99 [ansi(hr,Red)] Baboons
     String entered must match name of target, '99 Red Balloons'.
-    > @ansiname object=99 [ansi(hr,Red)] Balloons
+    > @nameaccent object=99 [ansi(hr,Red)] Balloons
     Ansi string entered for 99 Red Balloons of '99 Red Balloons'.
 
   Related Topics: accent(), ansi(), chr(), @name, NOACCENT, ord(),

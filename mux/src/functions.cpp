@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.104 2002-09-19 03:00:25 sdennis Exp $
+// $Id: functions.cpp,v 1.105 2002-09-19 03:27:29 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -5389,28 +5389,6 @@ FUNCTION(fun_mtime)
     }
 }
 
-// ---------------------------------------------------------------------------
-// fun_ansiname: Return the value of an object's Ansiname attribute.
-// ---------------------------------------------------------------------------
-FUNCTION(fun_ansiname)
-{
-    dbref thing;
-    if (nfargs == 1)
-    {
-        thing = match_thing_quiet(executor, fargs[0]);
-    }
-    else
-    {
-        thing = executor;
-    }
-    if (!Good_obj(thing))
-    {
-        safe_match_result(thing, buff, bufc);
-        return;
-    }
-    safe_str(AccentName(thing), buff, bufc);
-}
-
 void ANSI_TransformTextWithTable
 (
     char *buff,
@@ -7979,7 +7957,6 @@ FUN flist[] =
     {"ANDBOOL",  fun_andbool,  MAX_ARG, 0,  MAX_ARG, 0, CA_PUBLIC},
     {"ANDFLAGS", fun_andflags, MAX_ARG, 2,  2,       0, CA_PUBLIC},
     {"ANSI",     fun_ansi,     MAX_ARG, 2,  MAX_ARG, 0, CA_PUBLIC},
-    {"ANSINAME", fun_ansiname, MAX_ARG, 0,  1,       0, CA_PUBLIC},
     {"APOSS",    fun_aposs,    MAX_ARG, 1,  1,       0, CA_PUBLIC},
     {"ART",      fun_art,      MAX_ARG, 1,  1,       0, CA_PUBLIC},
     {"ASIN",     fun_asin,     MAX_ARG, 1,  2,       0, CA_PUBLIC},

@@ -105,6 +105,7 @@ Feature Additions:
  -- Added STRIPACCENTS() from PennMUSH.
  -- Added NOACCENTS flag from PennMUSH.
  -- Added ACCENT() from PennMUSH.
+ -- Added @NAMEACCENT from PennMUSH with extension for ANSI color.
 
 Bug Fixes:
 ~~~~~~~~~
