@@ -1,6 +1,6 @@
 // timer.cpp -- Mini-task scheduler for timed events.
 //
-// $Id: timer.cpp,v 1.1 2000-04-11 07:14:48 sdennis Exp $
+// $Id: timer.cpp,v 1.2 2000-04-24 21:42:59 sdennis Exp $
 //
 // MUX 2.0
 // Copyright (C) 1998 through 2000 Solid Vertical Domains, Ltd. All
@@ -39,17 +39,7 @@ void dispatch_FreeListReconstruction(void *pUnused, int iUnused)
     {
         char *cmdsave = mudstate.debug_cmd;
         mudstate.debug_cmd = (char *)"< dbck >";
-#ifndef MEMORY_BASED
-        cache_reset(0);
-#endif /*
-        * MEMORY_BASED 
-        */
         do_dbck(NOTHING, NOTHING, 0);
-#ifndef MEMORY_BASED
-        cache_reset(0);
-#endif /*
-        * MEMORY_BASED 
-        */
         pcache_trim();
         pool_reset();
         mudstate.debug_cmd = cmdsave;
@@ -111,9 +101,6 @@ void dispatch_IdleCheck(void *pUnused, int iUnused)
     {
         char *cmdsave = mudstate.debug_cmd;
         mudstate.debug_cmd = (char *)"< idlecheck >";
-#ifndef MEMORY_BASED
-        cache_reset(0);
-#endif
         check_idle();
         mudstate.debug_cmd = cmdsave;
     }
