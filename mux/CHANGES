@@ -203,6 +203,12 @@ Bug Fixes:
  -- Fixed interaction of @hook/ignore and @hook/permit. Jake.
  -- Fixed two memcpy/strip-ansi idioms (one in pos() and one in @decomp).
     Found by Jake.  Bug introduced by Brazil.
+ -- Fixed vmul() SIGSEGV.  Reported by Alierak.  Bug from MUX 1.6.
+ -- Fixed unlikely SIGSEGV in function table initialization.  Brazil's bug.
+    Fixed by Brazil.  Reported by Kieran Boru.
+ -- OutOfMemory() and AssertionFailed() reversed sense of bCanRestart.
+    Reported by Alierak.  Brazil's bug.
+ -- Fixed convtime() SIGSEGV.  Reported by Alierak.  Brazil's bug.
 
 
 Performance Enhancements:
