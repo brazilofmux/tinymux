@@ -1,6 +1,6 @@
 // set.cpp -- Commands which set parameters.
 //
-// $Id: set.cpp,v 1.36 2003-03-17 00:24:44 sdennis Exp $
+// $Id: set.cpp,v 1.37 2003-04-23 17:35:30 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -428,42 +428,31 @@ void do_lock
     ATTR *ap;
     struct boolexp *okey;
 
-    if (parse_attrib(executor, name, &thing, &atr))
+    if (  parse_attrib(executor, name, &thing, &atr)
+       && atr != NOTHING)
     {
-        if (atr != NOTHING)
+        if (!atr_get_info(thing, atr, &aowner, &aflags))
         {
-            if (!atr_get_info(thing, atr, &aowner, &aflags))
-            {
-                notify_quiet(executor, "Attribute not present on object.");
-                return;
-            }
-            ap = atr_num(atr);
-
-            // You may lock an attribute if: you could write the
-            // attribute if it were stored on yourself --and-- you
-            // own the attribute or are a wizard as  long as you are
-            // not #1 and are trying to do something to #1.
-            //
-            if (  ap
-               && (  God(executor)
-                  || (  !God(thing)
-                     && bCanSetAttr(executor, executor, ap)
-                     && (  Wizard(executor)
-                        || (aowner == Owner(executor))))))
-            {
-                aflags |= AF_LOCK;
-                atr_set_flags(thing, atr, aflags);
-                if (!Quiet(executor) && !Quiet(thing))
-                {
-                    notify_quiet(executor, "Attribute locked.");
-                }
-            }
-            else
-            {
-                notify_quiet(executor, NOPERM_MESSAGE);
-            }
+            notify_quiet(executor, "Attribute not present on object.");
             return;
         }
+        ap = atr_num(atr);
+
+        if (bCanLockAttr(executor, thing, ap))
+        {
+            aflags |= AF_LOCK;
+            atr_set_flags(thing, atr, aflags);
+            if (  !Quiet(executor)
+               && !Quiet(thing))
+            {
+                notify_quiet(executor, "Attribute locked.");
+            }
+        }
+        else
+        {
+            notify_quiet(executor, NOPERM_MESSAGE);
+        }
+        return;
     }
     init_match(executor, name, NOTYPE);
     match_everything(MAT_EXIT_PARENTS);
@@ -525,7 +514,7 @@ void do_unlock(dbref executor, dbref caller, dbref enactor, int key, char *name)
     if (  parse_attrib(executor, name, &thing, &atr)
        && atr != NOTHING)
     {
-        // We have been asked to change the ownership of an attribute.
+        // We have been asked to unlock an attribute.
         //
         if (!atr_get_info(thing, atr, &aowner, &aflags))
         {
@@ -534,22 +523,11 @@ void do_unlock(dbref executor, dbref caller, dbref enactor, int key, char *name)
         }
         ap = atr_num(atr);
 
-        // You may unlock an attribute if: you could write the attribute
-        // if it were stored on yourself --and-- you own the attribute or
-        // are a wizard as long as you are not #1 and are trying to do
-        // something to #1.
-        //
-        if (  ap
-           && (  God(executor)
-              || (  !God(thing)
-                 && bCanSetAttr(executor, executor, ap)
-                 && (  Wizard(executor)
-                    || aowner == Owner(executor)))))
+        if (bCanLockAttr(executor, thing, ap))
         {
             aflags &= ~AF_LOCK;
             atr_set_flags(thing, atr, aflags);
-            if (  Owner(executor) != Owner(thing)
-               && !Quiet(executor)
+            if (  !Quiet(executor)
                && !Quiet(thing))
             {
                 notify_quiet(executor, "Attribute unlocked.");

@@ -1,6 +1,6 @@
 // externs.h -- Prototypes for externs not defined elsewhere.
 //
-// $Id: externs.h,v 1.65 2003-01-20 01:55:25 sdennis Exp $
+// $Id: externs.h,v 1.66 2003-04-23 17:35:30 sdennis Exp $
 //
 
 #ifndef EXTERNS_H
@@ -184,6 +184,7 @@ extern BOOL exit_displayable(dbref, dbref, int);
 extern void did_it(dbref, dbref, int, const char *, int, const char *, int, char *[], int);
 extern BOOL bCanReadAttr(dbref executor, dbref target, ATTR *tattr, BOOL bParentCheck);
 extern BOOL bCanSetAttr(dbref executor, dbref target, ATTR *tattr);
+extern BOOL bCanLockAttr(dbref executor, dbref target, ATTR *tattr);
 
 /* From set.cpp */
 extern BOOL parse_attrib(dbref, char *, dbref *, int *);
