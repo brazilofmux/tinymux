@@ -8,6 +8,7 @@ src/regexp.h
 src/macro.h
 src/complib.cpp
 src/c-radix.cpp
+src/mkindx.cpp
 src/radix.cpp
 src/radix.h
 src/phase1.awk
