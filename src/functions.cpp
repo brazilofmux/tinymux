@@ -1,6 +1,6 @@
 // functions.c - MUX function handlers 
 //
-// $Id: functions.cpp,v 1.5 2000-04-14 04:11:58 sdennis Exp $
+// $Id: functions.cpp,v 1.6 2000-04-14 04:18:17 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -5003,6 +5003,7 @@ FUNCTION(fun_locate)
 
 FUNCTION(fun_switch)
 {
+    int i;
     char *mbuff, *tbuff, *bp, *str;
 
     // If we don't have at least 2 args, return nothing.
@@ -5021,7 +5022,7 @@ FUNCTION(fun_switch)
 
     // Loop through the patterns looking for a match.
     //
-    for (int i = 1; (i < nfargs - 1) && fargs[i] && fargs[i + 1]; i += 2)
+    for (i = 1; (i < nfargs - 1) && fargs[i] && fargs[i + 1]; i += 2)
     {
         tbuff = bp = alloc_lbuf("fun_switch.2");
         str = fargs[i];
