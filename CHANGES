@@ -133,7 +133,7 @@ Bug Fixes:
  -- Re-work setunion, setinter, elements, and setdiff to handle lists more
     consistently.
  -- Fix potential unterminated buffer operation in setinter().
- -- In an unlikely senario, the timezone offset info can be off by less
+ -- In an unlikely scenario, the timezone offset info can be off by less
     than 1 second.
  -- Disallow GOD from changing player Aliases. From TM3.
  -- Alias, last, lastsite, mailcurf, mailflags, mailfolders, quota, rquota,
