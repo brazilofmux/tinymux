@@ -1,6 +1,6 @@
 // bsd.cpp
 //
-// $Id: bsd.cpp,v 1.26 2003-01-31 16:14:29 sdennis Exp $
+// $Id: bsd.cpp,v 1.27 2003-02-02 18:35:16 sdennis Exp $
 //
 // MUX 2.2
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -520,24 +520,29 @@ void boot_slave(dbref executor, dbref caller, dbref enactor, int)
 
     case 0:
 
-        // Child.
+        // Child.  The following calls to dup2() assume only the minimal
+        // dup2() functionality.  That is, the destination descriptor is
+        // always available for it, and sv[1] is never that descriptor.
+        // It is likely that the standard defined behavior of dup2()
+        // would handle the job by itself more directly, but a little
+        // extra code is low-cost insurance.
         //
         close(sv[0]);
         if (sv[1] != 0)
         {
             close(0);
+            if (dup2(sv[1], 0) == -1)
+            {
+                _exit(1);
+            }
         }
         if (sv[1] != 1)
         {
             close(1);
-        }
-        if (dup2(sv[1], 0) == -1)
-        {
-            _exit(1);
-        }
-        if (dup2(sv[1], 1) == -1)
-        {
-            _exit(1);
+            if (dup2(sv[1], 1) == -1)
+            {
+                _exit(1);
+            }
         }
         for (i = 3; i < maxfds; i++)
         {
