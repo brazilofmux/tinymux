@@ -6104,15 +6104,25 @@ We would like to thank the following people:
 
 & TIME()
 
-  Function: time()
+  Function: time([<zonename>])
  
-  Gives you the current time.
-  WARNING!  This is the time on the machine that the mud is running on, and
-  not where you are.
+  The optional <zonename> parameter may be "utc" or "local". If no
+  <zonename> is given, "local" is assumed.
+
+    local - Gives you the current local time string of the machine the
+            MUX is running on. This time is affected by the daylight
+            savings time (or 'summer') rules in force at the server's
+            location.
+
+    utc   - Gives you the time string for the UTC time zone.
  
   Example:
+
     > say time()
-    You say "Thu Dec 19 09:48:06 1991"
+    You say "Fri May 05 13:05:39 2000"
+    > say time(utc)
+    You say "Fri May 05 20:05:39 2000"
+
   See also: convsecs(), convtime(), secs().
 
 & RAND()
@@ -7109,21 +7119,37 @@ We would like to thank the following people:
   Example:
     > say starttime()
     You say "Sat Dec  7 00:09:13 1991
+
   See also: convtime().
 
 & SECS()
 
-  Function: secs()
- 
-  Returns the number of elapsed seconds since midnight, January 1, 1970.
-  This is an easy way to time things.
- 
+  Function: secs([<zonename>])
+
+  The optional <zonename> parameter may be "utc" or "local". If no
+  <zonename> is given, "utc" is assumed.
+  
+    local - Returns an integer which corresponds to the current local
+            time on the machine running the MUX. This integer is
+            affected by timezones and daylight savings time and is
+            therefore primarily useful in conjunction with
+            convsecs(..,raw).
+
+    utc   - Returns the number of seconds (not counting leap seconds)
+            since Jan 01 00:00:00 1970 UTC. This count of seconds is
+            not affected by timezone or daylight savings time and is
+            useful for calculating durations between two absolute
+            points in time.
+
   Example:
      > say secs()
-     You say "692636020"
+     You say "957557434"
      ... wait a bit ...
      > say secs()
-     You say "692636043"
+     You say "957557447"
+     > say secs(local)
+     You say "957532580"
+
   See also: convsecs(), convtime(), time().
 
 & WORDS()
@@ -7803,36 +7829,61 @@ We would like to thank the following people:
 
 & CONVSECS()
 
-  Function: convsecs(<seconds>)
+  Function: convsecs(<seconds> [, raw])
  
-  This function converts seconds to a time string, based on how many
-  seconds the number is after Jan 1, 1970.
- 
+  By default, this function converts an integer (representing a count
+  of seconds from Jan 01 00:00:00 1970 UTC) to a local time string --
+  where local time is the time at the machine running the MUX. This
+  conversion includes a timezone/daylight savings time conversion
+  between UTC and the local time zone.
+
+  With the optional 'raw' parameter, timezone and daylight savings
+  time conversions are not performed. When used this way, there is a
+  unique mapping between integer and time-string which may be used in
+  any timezone and perhaps useful in a fictional setting.
+
   Example:
     > say secs()
-    You say "709395750"
-    > say convsecs(709395750)
-    You say "Wed Jun 24 10:22:54 1992"
-  This function may also be called as secs2time().
+    You say "957558109"
+    > say secs(local)
+    You say "957532909"
+    > say convsecs(957558109)
+    You say "Fri May 05 13:21:49 2000"
+    > say convsecs(957532909, raw)
+    You say "Fri May 05 13:21:49 2000"
+
   See also: convtime(), secs(), time().
 
 & CONVTIME()
 
-  Function: convtime(<time string>)
+  Function: convtime(<time string> [, raw])
  
-  This functions converts a time string to the number of seconds since
-  Jan 1, 1970. A time string is of the format: Ddd MMM DD HH:MM:SS YYYY
-  where Ddd is the day of the week, MMM is the month, DD is the day
-  of the month, HH is the hour in 24-hour time, MM is the minutes,
-  SS is the seconds, and YYYY is the year.
-  If you supply an incorrectly formatted string, it will return -1.
- 
+  By default, this function converts a time string (of format
+  [Ddd] Mmm DD HH:MM:SS YYYY) into an integer which represents a
+  count of seconds since Jan 01 00:00:00 1970 UTC not including leap
+  secs. Where Ddd, if given, is the day of the week. Mmm is the month
+  name, DD is the day of the month, HH is the hour in 24-hour time,
+  MM is the minutes, SS is the seconds, and YYYY is the year.
+
+  Keep in mind that the year may not be exactly four characters and
+  it can also be negative. This server provides a proleptic Gregorian
+  calendar with a range of supported years between 27257 BC and
+  30826 AD. Year 0 is 1 BC, -1 is 2 BC, ..., so 27257 BC should be
+  given as -27256. This follows the astronomical conventions.
+
+  With the optional 'raw' parameter, timezone and daylight savings
+  time conversions are not performed. When used this way, there is a
+  unique mapping between integer and time-string which may be used in
+  any timezone and perhaps useful in a fictional setting.
+   
   Example:
     > say time()
     You say "Wed Jun 24 10:22:54 1992"
     > say convtime(Wed Jun 24 10:22:54 1992)
     You say "709395774"
-  This function may also be called as time2secs().
+    > say convtime(Wed Jun 24 10:22:54 1992, raw)
+    You say "709381374"
+
   See also: convsecs(), secs(), time().
 
 & SORT()
