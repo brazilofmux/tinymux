@@ -1,6 +1,6 @@
 // mudconf.h
 //
-// $Id: mudconf.h,v 1.16 2003-01-12 18:18:15 sdennis Exp $
+// $Id: mudconf.h,v 1.17 2003-09-07 22:25:57 sdennis Exp $
 //
 
 #ifndef __CONF_H
@@ -118,7 +118,7 @@ struct confdata
     int     timeslice;      /* How often do we bump people's cmd quotas? */
     int     cmd_quota_max;  /* Max commands at one time */
     int     cmd_quota_incr; /* Bump #cmds allowed by this each timeslice */
-    int     max_cmdsecs;    /* Threshhold for real time taken by command */
+    CLinearTimeDelta max_cmdsecs; /* Threshhold for real time taken by command */
     int     control_flags;  /* Global runtime control flags */
     int     func_nest_lim;  /* Max nesting of functions */
     int     func_invk_lim;  /* Max funcs invoked by a command */
