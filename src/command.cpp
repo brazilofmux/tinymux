@@ -1,6 +1,6 @@
 // command.cpp - command parser and support routines.
 // 
-// $Id: command.cpp,v 1.32 2001-02-10 23:58:24 sdennis Exp $
+// $Id: command.cpp,v 1.33 2001-03-30 19:04:14 zenty Exp $
 //
 
 #include "copyright.h"
@@ -831,6 +831,13 @@ int check_access(dbref player, int mask)
         else
             fail++;
     }
+    if ((succ == 0) && (mask & CA_UNINS))
+      {
+	if(Uninspected(player))
+	  succ++;
+	else
+	  fail++;
+      }
     if ((succ == 0) && (mask & CA_ROBOT))
     {
         if (Robot(player))
@@ -847,10 +854,11 @@ int check_access(dbref player, int mask)
     //
     if (  !Wizard(player)
        && (  ((mask & CA_NO_HAVEN)   && Player_haven(player))
-          || ((mask & CA_NO_ROBOT)   && Robot(player))
-          || ((mask & CA_NO_SLAVE)   && Slave(player))
-          || ((mask & CA_NO_SUSPECT) && Suspect(player))
-          || ((mask & CA_NO_GUEST)   && Guest(player))))
+	     || ((mask & CA_NO_ROBOT)   && Robot(player))
+	     || ((mask & CA_NO_SLAVE)   && Slave(player))
+	     || ((mask & CA_NO_SUSPECT) && Suspect(player))
+	     || ((mask & CA_NO_GUEST)   && Guest(player))
+	     || ((mask & CA_NO_UNINS)   && Uninspected(player))))
     {
         return 0;
     }
@@ -1828,9 +1836,11 @@ NAMETAB access_nametab[] =
     {(char *)"no_slave",      5, CA_PUBLIC, CA_NO_SLAVE},
     {(char *)"no_suspect",    5, CA_WIZARD, CA_NO_SUSPECT},
     {(char *)"no_guest",      5, CA_WIZARD, CA_NO_GUEST},
+    {(char *)"no_uninspected",5, CA_WIZARD, CA_NO_UNINS},
     {(char *)"robot",         2, CA_WIZARD, CA_ROBOT},
     {(char *)"staff",         4, CA_WIZARD, CA_STAFF},
     {(char *)"static",        4, CA_GOD,    CA_STATIC},
+    {(char *)"uninspected",   5, CA_WIZARD, CA_UNINS},
     {(char *)"wizard",        3, CA_WIZARD, CA_WIZARD},
     {NULL,                    0, 0,         0}
 };
