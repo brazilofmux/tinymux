@@ -1,6 +1,6 @@
 // svdhash.cpp -- CHashPage, CHashFile, CHashTable modules
 //
-// $Id: svdhash.cpp,v 1.16 2001-02-07 05:28:51 sdennis Exp $
+// $Id: svdhash.cpp,v 1.17 2001-02-09 04:17:57 sdennis Exp $
 //
 // MUX 2.0
 // Copyright (C) 1998 through 2000 Solid Vertical Domains, Ltd. All
@@ -114,8 +114,6 @@ static UINT32 CRC32_Table[256] =
 // bytes or 2.375 instructions per byte. Or, 13.62ns per byte on my
 // Pentium II 400. That's 73.41 MB/second.
 //
-#define CRC32_VALID_RESULT 0x2144DF1CUL
-
 UINT32 CRC32_ProcessBuffer
 (
     UINT32         ulCrc,
