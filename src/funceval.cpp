@@ -1,6 +1,6 @@
 // funceval.cpp - MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.63 2001-08-26 16:00:33 sdennis Exp $
+// $Id: funceval.cpp,v 1.64 2001-09-17 11:03:31 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -3256,6 +3256,109 @@ FUNCTION(fun_translate)
 }
 
 
+class CBitField
+{
+    unsigned int nBitsPer;
+    unsigned int nShift;
+    unsigned int nMask;
+    unsigned int nMaximum;
+    size_t  nInts;
+    UINT32 *pInts;
+    UINT32 *pMasks;
+
+public:
+    CBitField(unsigned int max);
+    ~CBitField(void);
+    void ClearAll(void);
+    void Set(unsigned int i);
+    void Clear(unsigned int i);
+    BOOL IsSet(unsigned int i);
+};
+
+CBitField::CBitField(unsigned int nMaximum_arg)
+{
+    nInts  = 0;
+    pInts  = NULL;
+    pMasks = NULL;
+    if (0 < nMaximum)
+    {
+        nMaximum = nMaximum_arg;
+        nBitsPer = sizeof(UINT32)*8;
+
+        // Calculate Shift
+        //
+        nShift = 0;
+        unsigned int i = 1;
+        while (i < nBitsPer)
+        {
+            nShift++;
+            i <<= 1;
+        }
+
+        // Calculate Mask
+        //
+        nMask = nBitsPer - 1;
+
+        // Allocate array of UINT32s.
+        //
+        nInts    = (nMaximum+nBitsPer-1) >> nShift;
+        pMasks   = (UINT32 *)MEMALLOC((nInts+nBitsPer)*sizeof(UINT32));
+        ISOUTOFMEMORY(pMasks);
+        pInts    = pMasks + nBitsPer;
+
+        // Calculate all possible single bits.
+        //
+        for (i = 0; i < nBitsPer; i++)
+        {
+            pMasks[i] = ((UINT32)1) << i;
+        }
+    }
+}
+
+CBitField::~CBitField(void)
+{
+    pInts  = NULL;
+    if (pMasks)
+    {
+        MEMFREE(pMasks);
+        pMasks = NULL;
+    }
+}
+
+void CBitField::ClearAll(void)
+{
+    memset(pInts, 0, nInts*sizeof(UINT32));
+}
+
+void CBitField::Set(unsigned int i)
+{
+    if (i < nMaximum)
+    {
+        pInts[i>>nShift] |= pMasks[i&nMask];
+    }
+}
+
+void CBitField::Clear(unsigned int i)
+{
+    if (i < nMaximum)
+    {
+        pInts[i>>nShift] &= ~pMasks[i&nMask];
+    }
+}
+
+BOOL CBitField::IsSet(unsigned int i)
+{
+    if (i < nMaximum)
+    {
+        if (pInts[i>>nShift] & pMasks[i&nMask])
+        {
+            return TRUE;
+        }
+    }
+    return FALSE;
+}
+
+
 // -------------------------------------------------------------------------
 // fun_lrooms:  Takes a dbref (room), an int (N), and an optional bool (B).
 //
@@ -3273,13 +3376,11 @@ static void room_list
     dbref player,
     dbref cause,
     dbref room,
-    dbref lastroom,
+    CBitField &bfTraverse,
+    CBitField &bfReport,
     int   level,
     int   maxlevels,
-    int   showall,
-    DTB   *pContext,
-    char  *buff,
-    char  **bufc
+    int   showall
 )
 {
     // Make sure the player can really see this room from their location.
@@ -3290,15 +3391,12 @@ static void room_list
           || Location(player) == room 
           || room == cause))
     {
-        if (!DbrefToBuffer_Add(pContext, room))
-        {
-            return;
-        }
+        bfReport.Set(room);
     }
 
     // If the Nth level has been reach, stop this branch in the recursion
     //
-    if (level == maxlevels)
+    if (level >= maxlevels)
     {
         return;
     }
@@ -3332,11 +3430,13 @@ static void room_list
         dbref thing;
         DOLIST(thing, Exits(parent))
         {
+            dbref loc = Location(thing);
             if (  exit_visible(thing, player, key)
-               && Location(thing) != lastroom)
+               && !bfTraverse.IsSet(loc))
             {
-                room_list(player, cause, Location(thing), room, (level + 1),
-                          maxlevels, showall, pContext, buff, bufc);
+                bfTraverse.Set(loc);
+                room_list(player, cause, loc, bfTraverse, bfReport,
+                    (level + 1), maxlevels, showall);
             }
         }
     }
@@ -3377,10 +3477,25 @@ FUNCTION(fun_lrooms)
         B = Tiny_atol(fargs[2]);
     }
 
+    CBitField bfReport(mudstate.db_top-1);
+    CBitField bfTraverse(mudstate.db_top-1);
+    bfReport.ClearAll();
+    bfTraverse.ClearAll();
+
+    bfTraverse.Set(room);
+    room_list(player, cause, room, bfTraverse, bfReport, 0, N, B);
+    bfReport.Clear(room);
+
     DTB pContext;
     DbrefToBuffer_Init(&pContext, buff, bufc);
-
-    room_list(player, cause, room, 0, 0, N, B, &pContext, buff, bufc);
-
+    dbref i;
+    DO_WHOLE_DB(i)
+    {
+        if (  bfReport.IsSet(i)
+           && !DbrefToBuffer_Add(&pContext, i))
+        {
+            break;
+        }
+    }
     DbrefToBuffer_Final(&pContext);
 }
