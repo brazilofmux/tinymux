@@ -1,5 +1,5 @@
 TinyMUX 2.2: INSTALL
-Last Update: June 2002
+Last Update: November 2002
 
 Please note that there are two sets of instructions included in this 
 file.  Please skip to 'Instructions for Existing Games' for how to 
@@ -23,8 +23,7 @@ Instructions for New Installations:
 ----> Within the Makefile, you can also enable:
       - Memory based database handling (as opposed to the default disk
             based handling. (see docs/MEMORY)
-      - Radix string compression. (see docs/COMPRESSION)
-          - Enable WOD REALMS. (see docs/REALMS)
+      - Enable WOD REALMS. (see docs/REALMS)
           
 3.  Run make depend, then make.  This will produce netmux, mkindx, slave,
     and dbconvert.
@@ -94,8 +93,7 @@ or upgrade.]
   --> Within the Makefile, you can also enable:
       - Memory based database handling (as opposed to the default disk
             based handling. (see docs/MEMORY)
-      - Radix string compression. (see docs/COMPRESSION)
-          - Enable WOD REALMS. (see docs/REALMS)
+      - Enable WOD REALMS. (see docs/REALMS)
           
 3.  Run make depend, then make.  This will produce netmux, mkindx, slave,
     and dbconvert.
