@@ -144,6 +144,7 @@ Feature Additions:
  --  GAGGED players no longer allowed to speak on channels.
  --  The WOD_REALMS option now shows up in INFO.
  --  Added LADD() from TinyMUSH 3.0.
+ --  Bug #704 - Added T() from PennMUSH. Thanks Raevnos.
 
 
 Bug Fixes:
