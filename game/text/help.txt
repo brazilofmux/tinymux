@@ -8509,7 +8509,7 @@ We would like to thank the following people:
     > say shuffle(foo bar baz gleep)
     You say "baz foo gleep bar"
  
-& SCRAMBLE
+& SCRAMBLE()
 
   Function:  scramble(<string>)
  
