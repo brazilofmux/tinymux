@@ -46,6 +46,8 @@
 #undef HAVE_USLEEP
 /* Define if nanosleep exists */
 #undef HAVE_NANOSLEEP
+/* Define if setitimer exists */
+#undef HAVE_SETITIMER
 /* Define if sys_siglist[] exists */
 #undef SYS_SIGLIST_DECLARED
 /* Define if sys_signame[] exists */
