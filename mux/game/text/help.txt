@@ -4824,7 +4824,7 @@ CONTROLS()
 & CONVSECS()
 CONVSECS()
 
-  FUNCTION: convsecs(<seconds> [, <zonename>])
+  FUNCTION: convsecs(<seconds> [, <zonename>][, <precision>])
 
   By default, this function converts an integer (representing a count
   of seconds from Jan 01 00:00:00 1970 UTC) to a local time string --
@@ -4843,6 +4843,9 @@ CONVSECS()
            may be useful for handling other timezones and fictional
            settings.
 
+  <precision> determines the number of fractional seconds shown.
+  By default, no fractional seconds are shown.
+
   Example:
     > say secs()
     You say "957558109"
@@ -4858,7 +4861,7 @@ CONVSECS()
 & CONVTIME()
 CONVTIME()
 
-  FUNCTION: convtime(<time string> [, <zonename>])
+  FUNCTION: convtime(<time string> [, <zonename>][, <precision>])
 
   By default, this function converts a time string (of format
   [Ddd] Mmm DD HH:MM:SS YYYY) into an integer which represents a
@@ -4886,6 +4889,9 @@ CONVTIME()
            between an integer and it's corresponding text-string which
            may be useful for handling other timezones and fictional
            settings.
+
+  <precision> determines the number of fractional seconds shown.
+  By default, no fractional seconds are shown.
 
   Examples:
     > say time()
@@ -5904,8 +5910,8 @@ FUNCTION CLASSES
                              WHERE ZFUN ZONE ZWHO
   Floating Point Conversion: FLOOR ROUND TRUNC
   Game Information:          CONFIG DUMPING MOTD MUDNAME POLL VERSION
-  Lists:                     COLUMNS EXTRACT ELEMENTS FOREACH FILTER FIRST
-                             FOLD GRAB ILEV INDEX INSERT ITER LADD LAST
+  Lists:                     COLUMNS EXTRACT ELEMENTS FOREACH FILTER FILTERBOOL
+                             FIRST FOLD GRAB ILEV INDEX INSERT ITER LADD LAST
                              LDELETE LIST LNUM LRAND MAP MATCH MATCHALL MEMBER
                              MIX MUNGE PARSE PICKRAND REMOVE REST REVWORDS
                              SETDIFF SETINTER SETUNION SHUFFLE SORT SORTBY
@@ -5930,7 +5936,7 @@ FUNCTION CLASSES (continued)
                              V VISIBLE XGET
   Player Information:        CONN CONNLAST CONNLEFT CONNMAX CONNNUM CONNRECORD
                              CONNTOTAL CTIME DOING FINDABLE HOST IDLE LWHO
-                             PLAYMEM PORTS
+                             LPORTS PLAYMEM PORTS
   Relational:                EQ GT GTE LT LTE MAX MIN NEQ
   Realms:                    CANSEE
   Side-Effect Functions:     EMIT LINK OEMIT PEMIT REMIT TEL
@@ -5965,48 +5971,48 @@ FUNCTION LIST
     DIE()       DIGITTIME() DIST2D()    DIST3D()    DOING()     DUMPING()
     E()         EDEFAULT()  EDIT()      ELEMENTS()  ELOCK()     EMIT()
     EMPTY()     ENCRYPT()   EQ()        ESCAPE()    EXIT()      EXP()
-    EXPTIME()   EXTRACT()   EVAL()      FDIV()      FILTER()    FINDABLE()
-    FIRST()     FLAGS()     FLOOR()     FLOORDIV()  FOLD()      FOREACH()
-    FULLNAME()  GET()       GET_EVAL()  GRAB()      GREP()      GREPI()
-    GT()        GTE()       HASATTR()   HASATTRP()  HASFLAG()   HASPOWER()
-    HASTYPE()   HOME()      HOST()      IABS()      IADD()      IDIV()
-    IDLE()      IFELSE()    ILEV()      IMUL()      INC()       INDEX()
-    INSERT()    INZONE()    ISDBREF()   ISIGN()     ISNUM()     ISUB()
-    ISWORD()    ITER()      ITEMS()     LADD()      LAST()      LATTR()
-    LATTRCMDS() LATTRP()    LCMDS()     LCON()      LCSTR()     LDELETE()
-    LEXITS()    LFLAGS()    LINK()      LIST()      LIT()       LJUST()
+    EXPTIME()   EXTRACT()   EVAL()      FDIV()      FILTER()    FILTERBOOL()
+    FINDABLE()  FIRST()     FLAGS()     FLOOR()     FLOORDIV()  FOLD()
+    FOREACH()   FULLNAME()  GET()       GET_EVAL()  GRAB()      GREP()
+    GREPI()     GT()        GTE()       HASATTR()   HASATTRP()  HASFLAG()
+    HASPOWER()  HASTYPE()   HOME()      HOST()      IABS()      IADD()
+    IDIV()      IDLE()      IFELSE()    ILEV()      IMUL()      INC()
+    INDEX()     INSERT()    INZONE()    ISDBREF()   ISIGN()     ISNUM()
+    ISUB()      ISWORD()    ITER()      ITEMS()     LADD()      LAST()
+    LATTR()     LATTRCMDS() LATTRP()    LCMDS()     LCON()      LCSTR()
+    LDELETE()   LEXITS()    LFLAGS()    LINK()      LIST()      LIT()
 
 ("help function list2" for more)
 
 & FUNCTION LIST2
 FUNCTION LIST (continued)
 
-    LN()        LNUM()      LOC()       LOCALIZE()  LOCATE()    LOCK()
-    LOG()       LPARENT()   LPOS()      LRAND()     LROOMS()    LSTACK()
-    LT()        LTE()       LWHO()      NULL()      MAIL()      MAILFROM()
-    MAP()       MATCH()     MATCHALL()  MAX()       MEMBER()    MERGE()
-    MID()       MIN()       MIX()       MOD()       MONEY()     MOTD()
-    MUDNAME()   MUL()       MUNGE()     NAME()      NEARBY()    NEQ()
-    NEXT()      NOT()       NUM()       OBJ()       OBJEVAL()   OBJMEM()
-    OEMIT()     OR()        ORFLAGS()   OWNER()     PACK()      PARENT()
-    PARSE()     PEEK()      PEMIT()     PFIND()     PI()        PICKRAND()
-    PLAYMEM()   PMATCH()    POLL()      POP()       PORTS()     POS()
-    POSS()      POWER()     PUSH()      R()         RAND()      REGRAB()
-    REGMATCH()  REMAINDER() REMIT()     REMOVE()    REPEAT()    REPLACE()
-    REST()      REVERSE()   REVWORDS()  RIGHT()     RJUST()     RLOC()
-    ROMAN()     ROOM()      ROUND()     S()         SCRAMBLE()  SEARCH()
-    SECS()      SECURE()    SET()       SETDIFF()   SETINTER()  SETQ()
-    SETR()      SETUNION()  SHL()       SHR()       SHUFFLE()   SIGN()
-    SIN()       SINGLETIME()SORT()      SORTBY()    SPACE()     SPELLNUM()
-    SPLICE()    SQRT()      SQUISH()    STARTSECS() STARTTIME() STATS()
-    STRCAT()    STRIPANSI() STRLEN()    STRMATCH()  STRTRUNC()  SUB()
-    SUBEVAL()   SUBJ()      SWITCH()    T()         TABLE()     TAN()
-    TEL()       TIME()      TIMEFMT()   TRANSLATE() TRIM()      TRUNC()
-    TYPE()      U()         UCSTR()     UDEFAULT()  ULOCAL()    UNPACK()
-    V()         VADD()      VALID()     VCROSS()    VDIM()      VDOT()
-    VERSION()   VISIBLE()   VMAG()      VMUL()      VSUB()      VUNIT()
-    WHERE()     WORDPOS()   WORDS()     WRITETIME() XGET()      XOR()
-    ZFUN()      ZONE()      ZWHO()
+    LJUST()     LN()        LNUM()      LOC()       LOCALIZE()  LOCATE()
+    LOCK()      LOG()       LPARENT()   LPORTS()    LPOS()      LRAND()
+    LROOMS()    LSTACK()    LT()        LTE()       LWHO()      NULL()
+    MAIL()      MAILFROM()  MAP()       MATCH()     MATCHALL()  MAX()
+    MEMBER()    MERGE()     MID()       MIN()       MIX()       MOD()
+    MONEY()     MOTD()      MUDNAME()   MUL()       MUNGE()     NAME()
+    NEARBY()    NEQ()       NEXT()      NOT()       NUM()       OBJ()
+    OBJEVAL()   OBJMEM()    OEMIT()     OR()        ORFLAGS()   OWNER()
+    PACK()      PARENT()    PARSE()     PEEK()      PEMIT()     PFIND()
+    PI()        PICKRAND()  PLAYMEM()   PMATCH()    POLL()      POP()
+    PORTS()     POS()       POSS()      POWER()     PUSH()      R()
+    RAND()      REGRAB()    REGMATCH()  REMAINDER() REMIT()     REMOVE()
+    REPEAT()    REPLACE()   REST()      REVERSE()   REVWORDS()  RIGHT()
+    RJUST()     RLOC()      ROMAN()     ROOM()      ROUND()     S()
+    SCRAMBLE()  SEARCH()    SECS()      SECURE()    SET()       SETDIFF()
+    SETINTER()  SETQ()      SETR()      SETUNION()  SHL()       SHR()
+    SHUFFLE()   SIGN()      SIN()       SINGLETIME()SORT()      SORTBY()
+    SPACE()     SPELLNUM()  SPLICE()    SQRT()      SQUISH()    STARTSECS()
+    STARTTIME() STATS()     STRCAT()    STRIPANSI() STRLEN()    STRMATCH()
+    STRTRUNC()  SUB()       SUBEVAL()   SUBJ()      SWITCH()    T()
+    TABLE()     TAN()       TEL()       TIME()      TIMEFMT()   TRANSLATE()
+    TRIM()      TRUNC()     TYPE()      U()         UCSTR()     UDEFAULT()
+    ULOCAL()    UNPACK()    V()         VADD()      VALID()     VCROSS()
+    VDIM()      VDOT()      VERSION()   VISIBLE()   VMAG()      VMUL()
+    VSUB()      VUNIT()     WHERE()     WORDPOS()   WORDS()     WRITETIME()
+    XGET()      XOR()       ZFUN()      ZONE()      ZWHO()
 
 & FUNCTIONS
 FUNCTIONS
@@ -9931,10 +9937,12 @@ SAFE
 & SAY
 SAY
 
-  COMMAND: say <message>
+  COMMAND:  say[/noeval] <message>
+            nsay <message>
+            "<message>
 
-  Says <message> out loud to everyone in your current room. You can also
-  use '"<message>'.
+  Says <message> out loud to everyone in your current room.
+  If you use say/noeval or nsay, the message is not evaluated.
 
   Related Topics: page, pose, whisper, :, ;, ".
 
@@ -10027,7 +10035,7 @@ SEARCH()
 & SECS()
 SECS()
 
-  FUNCTION: secs([<zonename>])
+  FUNCTION: secs([<zonename>][, <precision>])
 
   The optional <zonename> parameter may be "utc" or "local". If no
   <zonename> is given, "utc" is assumed.
@@ -10044,14 +10052,17 @@ SECS()
             useful for calculating durations between two absolute
             points in time.
 
+  <precision> determines the number of fractional seconds shown.
+  By default, no fractional seconds are shown.
+
   Example:
      > say secs()
      You say "957557434"
      ... wait a bit ...
      > say secs()
      You say "957557447"
-     > say secs(local)
-     You say "957532580"
+     > say secs(local,5)
+     You say "957532580.09348"
 
   Related Topics: convsecs(), convtime(), time().
 
@@ -11021,7 +11032,7 @@ THROW
 & TIME()
 TIME()
 
-  FUNCTION: time([<zonename>])
+  FUNCTION: time([<zonename>][, <precision>])
 
   The optional <zonename> parameter may be "utc" or "local". If no
   <zonename> is given, "local" is assumed.
@@ -11033,11 +11044,14 @@ TIME()
 
     utc   - Gives you the time string for the UTC time zone.
 
+  <precision> determines the number of fractional seconds shown.
+  By default, no fractional seconds are shown.
+
   Example:
     > say time()
     You say "Fri May 05 13:05:39 2000"
-    > say time(utc)
-    You say "Fri May 05 20:05:39 2000"
+    > say time(utc,3)
+    You say "Fri May 05 20:05:39.667 2000"
 
   Related Topics: convsecs(), convtime(), secs().
 
