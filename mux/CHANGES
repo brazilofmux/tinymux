@@ -273,6 +273,12 @@ Bug Fixes:
     and eval lock cases.
  -- Alierak fixes several stepping past unparse buffer terminator cases. 
  -- Alierak perks up boolexp generally.
+ -- Players creating themselves from the welcome screen could cause
+    NOSPOOF-related messages to show a random executor to other players
+    on the Public channel.
+ -- Player names weren't validated properly. Instead of mux_PlayerNameSet[],
+    the code was using mux_ObjectNameSet[].
+ -- Fixed the bCanRead/read_remote_desc bugs.
 
 
 Performance Enhancements:
