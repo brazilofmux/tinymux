@@ -1,6 +1,6 @@
 // command.cpp -- command parser and support routines.
 //
-// $Id: command.cpp,v 1.45 2004-09-29 04:40:18 sdennis Exp $
+// $Id: command.cpp,v 1.46 2004-09-29 14:16:04 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -1995,7 +1995,7 @@ char *process_command
                     while (  switch_ptr
                           && *switch_ptr)
                     {
-                        search_nametab(executor, cmdp->switches, pSlash, &flagvalue);
+                        search_nametab(executor, cmdp->switches, switch_ptr, &flagvalue);
                         if (flagvalue == -1)
                         {
                             break;
