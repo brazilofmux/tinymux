@@ -1,6 +1,6 @@
 // mail.cpp
 //
-// $Id: mail.cpp,v 1.41 2002-09-11 04:46:58 sdennis Exp $
+// $Id: mail.cpp,v 1.42 2002-09-11 16:24:23 sdennis Exp $
 //
 // This code was taken from Kalkin's DarkZone code, which was
 // originally taken from PennMUSH 1.50 p10, and has been heavily modified
@@ -289,7 +289,6 @@ void set_player_folder(dbref player, int fnum)
 
 void add_folder_name(dbref player, int fld, char *name)
 {
-
     // Muck with the player's MAILFOLDERS attrib to add a string of the form:
     // number:name:number to it, replacing any such string with a matching
     // number.
@@ -389,56 +388,64 @@ static char *get_folder_name(dbref player, int fld)
 
 static int get_folder_number(dbref player, char *name)
 {
-    // Look up a folder name and return the appropriate number.
-    int aflags;
+    // Look up a folder name and return the corresponding folder number.
+    //
+    int flags;
+    int nFolders;
     dbref aowner;
-    char *atrstr = atr_get(player, A_MAILFOLDERS, &aowner, &aflags);
-    if (!*atrstr)
+    char *aFolders = alloc_lbuf("get_folder_num_str");
+    char *pFolders = atr_get_str_LEN(aFolders, player, A_MAILFOLDERS, &aowner,
+        &flags, &nFolders);
+    char *p;
+    if (nFolders != 0)
     {
-        free_lbuf(atrstr);
-        return -1;
-    }
+        char *aPattern = alloc_lbuf("get_folder_num_pat");
+        char *q = aPattern;
+        *q++ = ':';
+        char *p = name;
+        while (*p)
+        {
+            *q++ = Tiny_ToUpper[(unsigned char)*p];
+            p++;
+        }
+        *q++ = ':';
+        *q = '\0';
+        size_t nPattern = q - aPattern;
 
-    char *str = alloc_lbuf("get_folder_num_str");
-    char *pat = alloc_lbuf("get_folder_num_pat");
-    char *bp = pat;
-    strcpy(str, atrstr);
-    _strupr(name);
-    safe_tprintf_str(pat, &bp, ":%s:", name);
-    char *res = strstr(str, pat);
-    if (!res)
-    {
-        free_lbuf(str);
-        free_lbuf(pat);
-        free_lbuf(atrstr);
-        return -1;
+        int i = BMH_StringSearch(nPattern, aPattern, nFolders, aFolders);
+        free_lbuf(aPattern);
+        if (0 <= i)
+        {
+            p = aFolders + i + nPattern;
+            q = p;
+            while (!Tiny_IsSpace[(unsigned char)*q])
+            {
+                q++;
+            }
+            *q = '\0';
+            i = Tiny_atol(p);
+            free_lbuf(aFolders);
+            return i;
+        }
     }
-    res += 2 + strlen(name);
-    char *p = res;
-    while (!Tiny_IsSpace[(unsigned char)*p])
-    {
-        p++;
-    }
-    p = '\0';
-    free_lbuf(atrstr);
-    free_lbuf(str);
-    free_lbuf(pat);
-    return Tiny_atol(res);
+    free_lbuf(aFolders);
+    return -1;
 }
 
 static int parse_folder(dbref player, char *folder_string)
 {
-    // Given a string, return a folder #, or -1 The string is just a number,
-    // for now. Later, this will be where named folders are handled.
+    // Given a string, return a folder #, or -1.
     //
-    if (!folder_string || !*folder_string)
+    if (  !folder_string
+       || !*folder_string)
     {
         return -1;
     }
     if (Tiny_IsDigit[(unsigned char)*folder_string])
     {
         int fnum = Tiny_atol(folder_string);
-        if ((fnum < 0) || (fnum > MAX_FOLDERS))
+        if (  fnum < 0
+           || fnum > MAX_FOLDERS)
         {
             return -1;
         }
