@@ -1,6 +1,6 @@
 //comsys.c
 //
-// * $Id: comsys.cpp,v 1.5 2000-06-02 20:21:28 sdennis Exp $
+// * $Id: comsys.cpp,v 1.6 2000-06-10 02:22:51 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -131,15 +131,48 @@ void save_comsys(char *filename)
     ReplaceFile(buffer, filename);
 }
 
+BOOL ParseChannelLine(const char *pBuffer, char *pAlias5, char **ppChannelName)
+{
+    // Fetch alias portion. Must be between 1 and 5 characters long.
+    // We need to find the first space.
+    //
+    char *p = strchr(pBuffer, ' ');
+    if (!p) return FALSE;
+
+    int n = p - pBuffer;
+    if (n < 1 || 5 < n)
+    {
+        return FALSE;
+    }
+    memcpy(pAlias5, pBuffer, n);
+    pAlias5[n] = '\0';
+
+    // Skip any leading space before the channel name.
+    //
+    p++;
+    while (Tiny_IsSpace[(unsigned char)*p])
+    {
+        p++;
+    }
+
+    if (*p == '\0')
+    {
+        return FALSE;
+    }
+
+    // The rest of the line is the channel name.
+    //
+    *ppChannelName = StringClone(p);
+    return TRUE;
+}
+
 void load_channels(FILE *fp)
 {
     int i, j;
     char buffer[LBUF_SIZE];
     int np;
     comsys_t *c;
-    char *t;
-    char in;
-    
+
     fscanf(fp, "%d\n", &np);
     for (i = 0; i < np; i++)
     {
@@ -155,15 +188,12 @@ void load_channels(FILE *fp)
             
             for (j = 0; j < c->numchannels; j++)
             {
-                t = c->alias + j * 6;
-                while ((in = fgetc(fp)) != ' ')
-                {
-                    *t++ = in;
-                }
-                *t = 0;
-                
                 fscanf(fp, "%[^\n]\n", buffer);
-                c->channels[j] = StringClone(buffer);
+                if (!ParseChannelLine(buffer, c->alias + j * 6, c->channels+j))
+                {
+                    c->numchannels--;
+                    j--;
+                }
             }
             sort_com_aliases(c);
         }
