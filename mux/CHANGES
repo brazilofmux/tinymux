@@ -50,6 +50,7 @@ Feature Additions:
     interact with them.
  -- Added CHOOSE().  CHOOSE() is like PICKRAND() except that the
     distribution is weighted.
+ -- Added HELPTEXT() to allow easier softcode access to helpfile topics.
 
 
 Bug Fixes:
