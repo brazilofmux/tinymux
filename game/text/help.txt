@@ -354,15 +354,23 @@
   See also: @clist, @ccreate, @cchown.
  
 & @clist
- 
-  Command: @clist[/full]
- 
+
+  Command: @clist[/<option>]
+
   Without any switches, it will display the list of public channels with
-  their owner, and description. It will also display all channels you own.
-  With the /full switch, it will display the various channel statistics.
-  
-  See also: @ccreate, @cdestroy, @cchown.
- 
+  their owner, and description. It will also display all channels you
+  own.
+
+  <option> may also be any of the following:
+
+    full    - @clist will display more detailed information including
+              the channel object's dbref.
+
+    headers - Shows the @clist report with the description column
+              replaced by the a column of the channel headers.
+
+  Related Topics: @ccreate, @cdestroy, @cchown, @cset.
+
 & @cwho
  
   Command: @cwho <channel>[/all]
@@ -423,20 +431,29 @@
  
 & @cset
 
-  Command: @cset/<option> <channel>
-  Changes the way a channel behaves.  <option> can be one of the
-  following: public, private, loud, mute, quiet, object, spoof, anon
-  or nospoof. Public makes it show up on everyone's @clist, private
-  hides it. Loud makes it announce connects/disconnects. Mute/quiet,
-  shuts them off. Spoof/anon allows the comtitle to replace the
-  player's name. Nospoof makes it prepend the comtitle to the player's
-  name.
+  Command: @cset/<option> <channel>[=<value>]
 
-  The object switch sets the channel object to whatever you specify.
-  It will allow you to set a description for the @clist, by @descing
-  the object.  Also, the lock will be used to check to see if people
-  should be able to join the channel or not. See help channel object
-  for more.
+  Changes the way a channel behaves.  <option> can be one of the
+  following:
+
+    publc   - channel is listed in everyone's @clist.
+    private - channel is hidden from the @clist.
+    loud    - channel accounces player connects/disconnects.
+    mute    - shuts connects/disconnects off.
+    quite   - same as mute.
+    spoof   - allows the comtitle to replace the player's name.
+    anon    - same as spoof.
+    nospoof - channel will append the player's name to the comtitle.
+    header  - Changes the prefix text used to announce a channel emit to
+              <value>. <value> may contain color.
+
+    object  - Sets the channel object to <value>.
+
+  You can set a description for the channel by changing the description
+  of the channel object. Also, the channel object's lock will be used
+  to check to see if people should be able to join the channel or not.
+
+  Related Topics:  channel object
 
 & channel object
  

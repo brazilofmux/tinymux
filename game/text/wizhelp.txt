@@ -2364,6 +2364,42 @@
   only executed if the quota is greater than zero.
   See also: command_quota_incr, command_quota_max.
 
+& TOAD_RECIPIENT
+TOAD_RECIPIENT
+
+  CONFIG PARAMETER: toad_recipient <player dbref>
+
+  This is a configuration parameter; as such dbrefs should be given as the raw
+  number and not be preceded by the usual '#' (this is interpreted the
+  beginning of a comment by the config file parser).
+
+  Default: #-1 (-1)
+
+  When a player is @toaded (or @nuked) his or her property is normally @chowned
+  to another player; toad_recipient controls who the recipient of the player's
+  objects are. If the value is set to -1 the @toading wizard will get ownership
+  of all the victim's objects, otherwise the specified player gets ownership.
+  This can be explicitly overridden by providing a recipient with the @toad
+  command.
+
+  @toad/@nuke are potential security risks as they normally change the
+  ownership of a victim (a non-privileged character and presumably untrusted
+  player) to a player with wizard permissions. Furthermore, this can cause
+  clutter and it can be often difficult to sort out unwanted objects after an
+  @toading.
+
+  It is recommended that games create a non-privileged character for the
+  express purpose of being a toad_recipient.
+
+  Example:
+   > @pcreate Nobody=noone
+   New player 'Nobody' created with password 'noone'
+             (dbref of #57)
+
+   > @admin toad_recipient=57
+  
+  Related Topics: @admin, @toad, @nuke, config parameters.
+
 & trace_output_limit
   Config parameter: trace_output_limit <amount>.  Default: 200
   Specifies the maximum number of lines of trace output that will be displayed
