@@ -1,6 +1,6 @@
 // look.cpp -- commands which look at things
 //
-// $Id: look.cpp,v 1.22 2001-06-05 23:12:02 sdennis Exp $
+// $Id: look.cpp,v 1.23 2001-06-13 03:53:45 sdennis Exp $
 //
 // MUX 2.0
 // Portions are derived from MUX 1.6. The WOD_REALMS portion is original work.
@@ -1044,8 +1044,8 @@ void look_in(dbref player, dbref loc, int key)
         show_vrml_url(player, loc);
     }
     
-    // If the @nameformat (by Marlek) if it's present, otherwise, use the the
-    // name and if the player can link to it, the dbref as well.
+    // Use @nameformat (by Marlek) if it's present, otherwise, use the
+    // name and if the player can link to it, it's dbref as well.
     //
     dbref aowner;
     int aflags;
