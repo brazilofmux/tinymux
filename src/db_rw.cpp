@@ -1,6 +1,6 @@
 // db_rw.cpp
 //
-// $Id: db_rw.cpp,v 1.21 2001-10-17 04:03:17 sdennis Exp $
+// $Id: db_rw.cpp,v 1.22 2001-10-17 05:14:27 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -613,20 +613,7 @@ static void upgrade_flags(FLAG *flags1, FLAG *flags2, FLAG *flags3, dbref thing,
     newf1 = 0;
     newf2 = 0;
     newf3 = 0;
-    if (db_format == F_MUD)
-    {
-        // Old TinyMUD format
-        //
-        newf1 = f1 & (TYPE_MASK | WIZARD | LINK_OK | DARK | STICKY | HAVEN);
-        if (f1 & MUD_ABODE)
-            newf2 |= ABODE;
-        if (f1 & MUD_ROBOT)
-            newf1 |= ROBOT;
-        if (f1 & MUD_CHOWN_OK)
-            newf1 |= CHOWN_OK;
-
-    }
-    else if ((db_format == F_MUSH) && (db_version == 2))
+    if ((db_format == F_MUSH) && (db_version == 2))
     {
         // Pern variants
         //
@@ -832,29 +819,6 @@ static void upgrade_flags(FLAG *flags1, FLAG *flags2, FLAG *flags3, dbref thing,
 
 
 /* ---------------------------------------------------------------------------
- * efo_convert: Fix things up for Exits-From-Objects
- */
-
-void NDECL(efo_convert)
-{
-    int i;
-    dbref link;
-
-    DO_WHOLE_DB(i) {
-        switch (Typeof(i)) {
-        case TYPE_PLAYER:
-        case TYPE_THING:
-
-            // swap Exits and Link
-
-            link = Link(i);
-            s_Link(i, Exits(i));
-            s_Exits(i, link);
-            break;
-        }
-    }
-}
-/* ---------------------------------------------------------------------------
  * unscraw_foreign: Fix up strange object linking conventions for other formats
  */
 
@@ -864,10 +828,8 @@ void unscraw_foreign(int db_format, int db_version, int db_flags)
     int aflags;
     char *p_str;
 
-    switch (db_format)
+    if (db_format == F_MUSH)
     {
-    case F_MUSH:
-
         if ((db_version <= 5) && (db_flags & V_GDBM))
         {
             // Check for FORWARDLIST attribute
@@ -918,10 +880,6 @@ void unscraw_foreign(int db_format, int db_version, int db_flags)
                 }
             }
         }
-        break;
-
-    case F_MUD:
-        efo_convert();
     }
 }
 
@@ -1369,71 +1327,6 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
             break;
 
 #ifdef STANDALONE
-        case '#':
-            if (deduce_version)
-            {
-                g_format = F_MUD;
-                g_version = 1;
-                deduce_version = 0;
-            }
-            if (g_format != F_MUD)
-            {
-                Log.tinyprintf(ENDLINE "MUD-style object found in non-MUD database at object #%d" ENDLINE, i);
-                return -1;
-            }
-            if (i != getref(f))
-            {
-                Log.tinyprintf(ENDLINE "Sequence error at object #%d" ENDLINE, i);
-                return -1;
-            }
-            db_grow(i + 1);
-
-            p = getstring_noalloc(f, 0);
-            buff = alloc_lbuf("dbread.s_Name");
-            len = ANSI_TruncateToField(p, MBUF_SIZE, buff, MBUF_SIZE, &nVisualWidth, ANSI_ENDGOAL_NORMAL);
-            s_Name(i, buff);
-            free_lbuf(buff);
-
-            atr_add_raw(i, A_DESC, (char *)getstring_noalloc(f, 0));
-            s_Location(i, getref(f));
-            s_Contents(i, getref(f));
-            s_Exits(i, getref(f));
-            s_Link(i, NOTHING);
-            s_Next(i, getref(f));
-            // s_Zone(i, NOTHING);
-            tempbool = getboolexp(f);
-            atr_add_raw(i, A_LOCK,
-                    unparse_boolexp_quiet(1, tempbool));
-            free_boolexp(tempbool);
-            atr_add_raw(i, A_FAIL, (char *)getstring_noalloc(f, 0));
-            atr_add_raw(i, A_SUCC, (char *)getstring_noalloc(f, 0));
-            atr_add_raw(i, A_OFAIL, (char *)getstring_noalloc(f, 0));
-            atr_add_raw(i, A_OSUCC, (char *)getstring_noalloc(f, 0));
-            s_Owner(i, getref(f));
-            s_Parent(i, NOTHING);
-            s_Pennies(i, getref(f));
-            f1 = getref(f);
-            f2 = 0;
-            f3 = 0;
-            upgrade_flags(&f1, &f2, &f3, i, g_format, g_version);
-            s_Flags(i, f1);
-            s_Flags2(i, f2);
-            s_Flags3(i, f3);
-            s_Pass(i, getstring_noalloc(f, 0));
-            if (deduce_timestamps) {
-                peek = getc(f);
-                if ((peek != '#') && (peek != '*')) {
-                    read_timestamps = 1;
-                }
-                deduce_timestamps = 0;
-                ungetc(peek, f);
-            }
-            if (read_timestamps) {
-                aflags = getref(f); // created
-                aflags = getref(f); // lastused
-                aflags = getref(f); // usecount
-            }
-            break;
         case '&':   // MUSH 2.0a stub entry
             if (deduce_version) {
                 deduce_version = 0;
