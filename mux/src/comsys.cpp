@@ -1,6 +1,6 @@
 // comsys.cpp
 //
-// $Id: comsys.cpp,v 1.27 2004-09-16 16:44:17 sdennis Exp $
+// $Id: comsys.cpp,v 1.28 2004-10-25 15:45:12 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -2041,7 +2041,7 @@ void do_channelnuke(dbref player)
     for (ch = (struct channel *)hash_firstentry(&mudstate.channel_htab);
          ch; ch = (struct channel *)hash_nextentry(&mudstate.channel_htab))
     {
-        if (Controls(player, ch->charge_who))
+        if (player == ch->charge_who)
         {
             num_channels--;
             hashdeleteLEN(ch->name, strlen(ch->name), &mudstate.channel_htab);
