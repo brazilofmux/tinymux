@@ -1,6 +1,6 @@
 // command.cpp -- command parser and support routines.
 //
-// $Id: command.cpp,v 1.83 2002-09-15 00:35:39 jake Exp $
+// $Id: command.cpp,v 1.84 2002-09-16 04:25:31 jake Exp $
 //
 
 #include "copyright.h"
@@ -1510,7 +1510,7 @@ void hook_fail (dbref executor, dbref caller, dbref enactor, CMDENT *cmdp, char 
     if(  Good_obj(mudconf.hook_obj)
         && !Going(mudconf.hook_obj))
     {
-        char *s_uselock = hook_name(pCommand, HOOK_AFAIL);
+        char *s_uselock = hook_name(cmdp->cmdname, HOOK_AFAIL);
         ATTR *hk_ap2 = atr_str(s_uselock);
         BOOL hk_retval = process_hook(executor, caller, enactor, mudconf.hook_obj, s_uselock, hk_ap2, FALSE);
         free_sbuf(s_uselock);
