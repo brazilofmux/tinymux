@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.107 2001-11-25 05:29:02 sdennis Exp $
+// $Id: functions.cpp,v 1.108 2001-11-25 05:32:11 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -4502,6 +4502,23 @@ FUNCTION(fun_mudname)
     safe_str(mudconf.mud_name, buff, bufc);
 }
 
+// ---------------------------------------------------------------------------
+// fun_ctime: Return the value of an object's CREATED attribute.
+// ---------------------------------------------------------------------------
+
+FUNCTION(fun_ctime)
+{
+    dbref thing = match_thing(player, fargs[0]);
+    if (Examinable(player, thing))
+    {
+        safe_str(atr_get_raw(thing, A_CREATED), buff, bufc);
+    }
+    else
+    {
+        safe_str(NOPERM_MESSAGE, buff, bufc);
+    }
+}
+
 void ANSI_TransformTextWithTable
 (
     char *buff,
@@ -6676,6 +6693,7 @@ FUN flist[] =
     {"COS",      fun_cos,      MAX_ARG, 1,  1,       0, CA_PUBLIC},
     {"CRC32",    fun_crc32,    MAX_ARG, 0,  MAX_ARG, 0, CA_PUBLIC},
     {"CREATE",   fun_create,   MAX_ARG, 2,  3,       0, CA_PUBLIC},
+    {"CTIME",    fun_ctime,    MAX_ARG, 1,  1,       0, CA_PUBLIC},
     {"CWHO",     fun_cwho,     MAX_ARG, 1,  1,       0, CA_PUBLIC},
     {"DEC",      fun_dec,      MAX_ARG, 0,  1,       0, CA_PUBLIC},
     {"DECRYPT",  fun_decrypt,  MAX_ARG, 2,  2,       0, CA_PUBLIC},
