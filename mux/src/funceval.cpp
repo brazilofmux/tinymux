@@ -1,6 +1,6 @@
 // funceval.cpp -- MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.10 2002-06-12 16:02:27 sdennis Exp $
+// $Id: funceval.cpp,v 1.11 2002-06-12 16:43:57 jake Exp $
 //
 
 #include "copyright.h"
@@ -313,12 +313,6 @@ static void set_attr_internal(dbref player, dbref thing, int attrnum, char *attr
     atr_pget_info(thing, attrnum, &aowner, &aflags);
     if (attr && Set_attr(player, thing, attr, aflags))
     {
-        if (  (attr->check != NULL)
-           && (!(*attr->check) (0, player, thing, attrnum, attrtext)))
-        {
-            safe_noperm(buff, bufc);
-            return;
-        }
         could_hear = Hearer(thing);
         atr_add(thing, attrnum, attrtext, Owner(player), aflags);
         handle_ears(thing, could_hear, Hearer(thing));

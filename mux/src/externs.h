@@ -1,6 +1,6 @@
 // externs.h -- Prototypes for externs not defined elsewhere.
 //
-// $Id: externs.h,v 1.6 2002-06-12 01:24:46 raevnos Exp $
+// $Id: externs.h,v 1.7 2002-06-12 16:43:57 jake Exp $
 //
 
 #ifndef EXTERNS_H
@@ -306,6 +306,7 @@ extern void FDECL(atr_free, (dbref));
 extern int  FDECL(check_zone, (dbref, dbref));
 extern int  FDECL(check_zone_for_player, (dbref, dbref));
 extern void ReleaseAllResources(dbref obj);
+extern int fwdlist_ck(dbref player, dbref thing, int anum, char *atext);
 
 /* Command handler keys */
 

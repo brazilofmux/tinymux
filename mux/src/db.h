@@ -1,6 +1,6 @@
 // db.h
 //
-// $Id: db.h,v 1.1 2002-05-24 06:53:15 sdennis Exp $
+// $Id: db.h,v 1.2 2002-06-12 16:43:57 jake Exp $
 //
 
 #ifndef __DB_H
@@ -35,7 +35,6 @@ struct attr
     const char *name;   // This has to be first.  braindeath.
     int number;         // attr number
     int flags;
-    int FDECL((*check),(int, dbref, dbref, int, char *));
 };
 
 #ifdef MEMORY_BASED

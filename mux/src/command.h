@@ -1,6 +1,6 @@
 // command.h -- declarations used by the command processor.
 //
-// $Id: command.h,v 1.2 2002-06-04 00:47:27 sdennis Exp $
+// $Id: command.h,v 1.3 2002-06-12 16:43:57 jake Exp $
 //
 
 #ifndef __COMMAND_H
@@ -71,6 +71,7 @@ CMD_ONE_ARG(do_find);           /* Search for name in database */
 CMD_TWO_ARG(do_fixdb);          /* Database repair functions */
 CMD_TWO_ARG_CMDARG(do_force);   /* Force someone to do something */
 CMD_ONE_ARG_CMDARG(do_force_prefixed);  /* #<num> <cmd> variant of FORCE */
+CMD_TWO_ARG(do_forwardlist);    // Set a forwardlist on something
 CMD_TWO_ARG(do_function);       /* Make iser-def global function */
 CMD_ONE_ARG(do_get);            /* Get an object */
 CMD_TWO_ARG(do_give);           /* Give something away */

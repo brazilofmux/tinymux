@@ -1,6 +1,6 @@
 // set.cpp -- Commands which set parameters.
 //
-// $Id: set.cpp,v 1.5 2002-06-11 20:53:43 jake Exp $
+// $Id: set.cpp,v 1.6 2002-06-12 16:43:57 jake Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -377,6 +377,60 @@ void do_alias
             {
                 notify_quiet(executor, "Set.");
             }
+        }
+    }
+}
+
+// ---------------------------------------------------------------------------
+// do_forwardlist: Set a forwardlist.
+// ---------------------------------------------------------------------------
+void do_forwardlist
+(
+    dbref executor,
+    dbref caller,
+    dbref enactor,
+    int   key,
+    int   nargs,
+    char *target,
+    char *newlist
+)
+{
+    dbref thing = match_controlled(executor, target);
+    if (thing == NOTHING)
+    {
+        return;
+    }
+    dbref aowner, aflags;
+    atr_pget_info(thing, A_FORWARDLIST, &aowner, &aflags);
+
+    if (!Controls(executor, thing))
+    {
+        notify_quiet(executor, (char *)executor);
+        notify_quiet(executor, (char *)thing);
+        notify_quiet(executor, NOPERM_MESSAGE);
+        return;
+    }
+    else if (!*newlist)
+    {
+            // New forwardlist is null, just clear it.
+            //
+            atr_clr(thing, A_FORWARDLIST);
+            if (!Quiet(executor))
+            {
+                notify_quiet(executor, "Forwardlist removed.");
+            }
+    }
+    else if (!fwdlist_ck(executor, thing, A_FORWARDLIST, newlist))
+    {
+        notify_quiet(executor, "Invalid forwardlist.");
+        return;
+    }
+    else
+    {
+        atr_add(thing, A_FORWARDLIST, newlist, Owner(executor), aflags);
+        if (!Quiet(executor))
+        {
+            notify_quiet(executor, "Set.");
         }
     }
 }
@@ -881,9 +935,6 @@ static void set_attr_internal(dbref player, dbref thing, int attrnum, char *attr
     attr = atr_num(attrnum);
     atr_pget_info(thing, attrnum, &aowner, &aflags);
     if (attr && Set_attr(player, thing, attr, aflags)) {
-        if ((attr->check != NULL) &&
-            (!(*attr->check) (0, player, thing, attrnum, attrtext)))
-            return;
         could_hear = Hearer(thing);
         atr_add(thing, attrnum, attrtext, Owner(player), aflags);
         handle_ears(thing, could_hear, Hearer(thing));
@@ -1645,15 +1696,7 @@ void do_edit(dbref executor, dbref caller, dbref enactor, int key, char *it,
                 //
                 got_one = 1;
                 edit_string_ansi(atext, &result, &returnstr, from, to);
-                if (ap->check != NULL)
-                {
-                    doit = (*ap->check) (0, executor, thing,
-                            ap->number, result);
-                }
-                else
-                {
-                    doit = 1;
-                }
+                doit = 1;
                 if (doit)
                 {
                     atr_add(thing, ap->number, result,

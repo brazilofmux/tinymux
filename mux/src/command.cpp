@@ -1,6 +1,6 @@
 // command.cpp -- command parser and support routines.
 //
-// $Id: command.cpp,v 1.7 2002-06-12 15:48:16 sdennis Exp $
+// $Id: command.cpp,v 1.8 2002-06-12 16:43:57 jake Exp $
 //
 
 #include "copyright.h"
@@ -613,6 +613,7 @@ CMDENT_TWO_ARG command_table_two_arg[] =
     {"@drain",       NULL,       CA_GBL_INTERP|CA_NO_SLAVE|CA_NO_GUEST,            NFY_DRAIN,   CS_TWO_ARG,           do_notify},
     {"@femit",       femit_sw,   CA_LOCATION|CA_NO_GUEST|CA_NO_SLAVE,              PEMIT_FEMIT, CS_TWO_ARG|CS_INTERP, do_pemit},
     {"@fixdb",       fixdb_sw,   CA_GOD,                                           0,           CS_TWO_ARG|CS_INTERP, do_fixdb},
+    {"@forwardlist", NULL,       CA_NO_SLAVE|CA_NO_GUEST,                          0,           CS_TWO_ARG,           do_forwardlist},
     {"@fpose",       fpose_sw,   CA_LOCATION|CA_NO_SLAVE,                          PEMIT_FPOSE, CS_TWO_ARG|CS_INTERP, do_pemit},
     {"@fsay",        NULL,       CA_LOCATION|CA_NO_SLAVE,                          PEMIT_FSAY,  CS_TWO_ARG|CS_INTERP, do_pemit},
     {"@function",    function_sw,CA_GOD,                                           0,           CS_TWO_ARG|CS_INTERP, do_function},
