@@ -2,7 +2,7 @@
  * conf.c:      set up configuration information and static data 
  */
 /*
- * $Id: conf.cpp,v 1.2 2000-04-11 09:15:54 sdennis Exp $ 
+ * $Id: conf.cpp,v 1.3 2000-04-11 20:53:33 sdennis Exp $ 
  */
 
 #include "copyright.h"
@@ -333,7 +333,10 @@ void NDECL(cf_init)
     mudstate.poutbufc = NULL;
     mudstate.poutobj = -1;
     for (i = 0; i < MAX_GLOBAL_REGS; i++)
+    {
         mudstate.global_regs[i] = NULL;
+        mudstate.glob_reg_len[i] = 0;
+    }
 #else
     mudconf.paylimit = 10000;
     mudconf.digcost = 10;
