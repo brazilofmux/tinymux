@@ -8956,7 +8956,6 @@ CASE()
   Related Topics: @switch, match(), ifelse(), switch().
 
 & IFELSE()
-& IF()
 IFELSE()
 
   FUNCTION: ifelse(<expression>,<true string>,<false string>)
