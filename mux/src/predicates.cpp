@@ -1,6 +1,6 @@
 // predicates.cpp
 //
-// $Id: predicates.cpp,v 1.19 2003-02-05 16:03:11 sdennis Exp $
+// $Id: predicates.cpp,v 1.20 2003-02-05 20:06:34 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -817,8 +817,7 @@ void do_addcommand
     if (  old
        && (old->callseq & CS_ADDED))
     {
-        // If it's already found in the hash table, and it's being
-        // added using the same object and attribute...
+        // Don't allow the same (thing,atr) in the list.
         //
         for (nextp = (ADDENT *)old->handler; nextp != NULL; nextp = nextp->next)
         {
@@ -830,7 +829,7 @@ void do_addcommand
             }
         }
 
-        // Else tack it on to the existing entry...
+        // Otherwise, add another (thing,atr) to the list.
         //
         add = (ADDENT *)MEMALLOC(sizeof(ADDENT));
         (void)ISOUTOFMEMORY(add);
@@ -844,7 +843,8 @@ void do_addcommand
     {
         if (old)
         {
-            // Delete the old built-in and rename it __name.
+            // Delete the old built-in (which will later be added back as
+            // __name).
             //
             hashdeleteLEN(pName, strlen(pName), &mudstate.command_htab);
         }
@@ -855,7 +855,8 @@ void do_addcommand
         cmd->switches = NULL;
         cmd->perms = 0;
         cmd->extra = 0;
-        if (old && (old->callseq & CS_LEADIN))
+        if (  old
+           && (old->callseq & CS_LEADIN))
         {
             cmd->callseq = CS_ADDED|CS_ONE_ARG|CS_LEADIN;
         }
@@ -876,7 +877,9 @@ void do_addcommand
         if (  old
            && strcmp(pName, old->cmdname) == 0)
         {
-            // Fix any aliases of this command.
+            // We are @addcommand'ing over a built-in command by its
+            // unaliased name, therefore, we want to re-target all the
+            // aliases.
             //
             char *p = tprintf("__%s", pName);
             hashdeleteLEN(p, strlen(p), &mudstate.command_htab);
@@ -999,47 +1002,63 @@ void do_delcommand
 
     CMDENT *old, *cmd;
     ADDENT *prev = NULL, *nextp;
-    old = (CMDENT *)hashfindLEN(name, strlen(name), &mudstate.command_htab);
+    size_t nName = strlen(name);
+    old = (CMDENT *)hashfindLEN(name, nName, &mudstate.command_htab);
 
     if (  old
        && (old->callseq & CS_ADDED))
     {
         char *p__Name = tprintf("__%s", name);
         unsigned int n__Name = strlen(p__Name);
-        unsigned int nName = strlen(name);
 
-        if (!*command)
+        if (command[0] == '\0')
         {
+            // Delete all @addcommand'ed associations with the given name.
+            //
             for (prev = (ADDENT *)old->handler; prev != NULL; prev = nextp)
             {
                 nextp = prev->next;
-                /* Delete it! */
                 MEMFREE(prev->name);
                 prev->name = NULL;
                 MEMFREE(prev);
                 prev = NULL;
             }
             hashdeleteLEN(name, nName, &mudstate.command_htab);
-            if ((cmd = (CMDENT *)hashfindLEN(p__Name, n__Name, &mudstate.command_htab)) != NULL)
+            cmd = (CMDENT *)hashfindLEN(p__Name, n__Name, &mudstate.command_htab);
+            if (cmd)
             {
+                hashaddLEN(cmd->cmdname, strlen(cmd->cmdname), (int *)cmd,
+                    &mudstate.command_htab);
+                if (strcmp(name, cmd->cmdname) != 0)
+                {
+                    hashaddLEN(name, nName, (int *)cmd, &mudstate.command_htab);
+                }
+
                 hashdeleteLEN(p__Name, n__Name, &mudstate.command_htab);
-                hashaddLEN(name, nName, (int *)cmd, &mudstate.command_htab);
+                hashaddLEN(p__Name, n__Name, (int *)cmd, &mudstate.command_htab);
                 hashreplall((int *)old, (int *)cmd, &mudstate.command_htab);
             }
+            else
+            {
+                // TODO: Delete everything related to 'old'.
+                //
+            }
+            MEMFREE(old->cmdname);
+            old->cmdname = NULL;
             MEMFREE(old);
             old = NULL;
             set_prefix_cmds();
             notify(player, "Done.");
-            return;
         }
         else
         {
+            // Remove only the (name,thing,atr) association.
+            //
             for (nextp = (ADDENT *)old->handler; nextp != NULL; nextp = nextp->next)
             {
                 if (  nextp->thing == thing
                    && nextp->atr == atr)
                 {
-                    /* Delete it! */
                     MEMFREE(nextp->name);
                     nextp->name = NULL;
                     if (!prev)
@@ -1047,12 +1066,27 @@ void do_delcommand
                         if (!nextp->next)
                         {
                             hashdeleteLEN(name, nName, &mudstate.command_htab);
-                            if ((cmd = (CMDENT *)hashfindLEN(p__Name, n__Name, &mudstate.command_htab)) != NULL)
+                            cmd = (CMDENT *)hashfindLEN(p__Name, n__Name,
+                                &mudstate.command_htab);
+                            if (cmd)
                             {
-                                hashdeleteLEN(p__Name, n__Name, &mudstate.command_htab);
-                                hashaddLEN(name, nName, (int *)cmd, &mudstate.command_htab);
-                                hashreplall((int *)old, (int *)cmd, &mudstate.command_htab);
+                                hashaddLEN(cmd->cmdname, strlen(cmd->cmdname),
+                                    (int *)cmd, &mudstate.command_htab);
+                                if (strcmp(name, cmd->cmdname) != 0)
+                                {
+                                    hashaddLEN(name, nName, (int *)cmd,
+                                        &mudstate.command_htab);
+                                }
+
+                                hashdeleteLEN(p__Name, n__Name,
+                                    &mudstate.command_htab);
+                                hashaddLEN(p__Name, n__Name, (int *)cmd,
+                                    &mudstate.command_htab);
+                                hashreplall((int *)old, (int *)cmd,
+                                    &mudstate.command_htab);
                             }
+                            MEMFREE(old->cmdname);
+                            old->cmdname = NULL;
                             MEMFREE(old);
                             old = NULL;
                         }
