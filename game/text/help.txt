@@ -9188,6 +9188,9 @@ CONVTIME()
   30826 AD. Year 0 is 1 BC, -1 is 2 BC, ..., so 27257 BC should be
   given as -27256. This follows the astronomical conventions.
 
+  Note: The time string can also be freeform and this function will
+  attempt to parse.
+
   If a second argument is given, it is the <zonename>:
 
    local - indicates that a conversion for timezone/DST of the 'local'
@@ -9203,9 +9206,19 @@ CONVTIME()
     > say time()
     You say "Wed Jun 24 10:22:54 1992"
     > say convtime(Wed Jun 24 10:22:54 1992)
-    You say "709395774"
+    You say "709406574"
     > say convtime(Wed Jun 24 10:22:54 1992, utc)
     You say "709381374"
+    > say convtime(June 24th 1992 10:22:54.0001am Z)
+    You say "709381374"
+    > say convtime(Wed 24 Jun 1992 10:22:54 -0700)
+    You say "709406574"
+    > say convtime(2001-01-01T100000Q)
+    You say "978357600"
+    > say convtime(-1605-120T123456M)
+    You say "-112805738704"
+    > say convtime(23456W12-1T123456T)
+    You say "678039276896"
 
   Related Topics: convsecs(), secs(), time().
 
