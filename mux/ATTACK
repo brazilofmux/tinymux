@@ -1,5 +1,5 @@
 TinyMUX 2.4: ATTACK
-Last Update: April 2004
+Last Update: May 2004
 
 You should familiarize yourself with defensive procedures that serve to
 thwart the effects of attacks.  Don't wait until an attack is mounted
@@ -38,6 +38,7 @@ As a player, WIZARD, or #1, you can prevent being spammed by:
 
     &CANPAGEME me=0
     @lock/page me=CANPAGEME/1
+    @admin pemit_far_players=0   (the default)
 
 Attack on the queue:
 --------------------
@@ -56,7 +57,35 @@ Attribute attack:
 -----------------
 
 The server will not allow more than a few thousand attributes per
-object.  This attack doesn't work anymore.
+object.  This attack is no longer feasible.
+
+
+Attribute Name Attack:
+----------------------
+
+Attribute names are different than the attribute values they name.  By
+default, mortals are not allowed to create more than 5000 new names per
+hour.  See 'wizhelp user_attrib_per_hour'.  However, the site admin
+still needs to keep an eye on attribute names as described below in
+'General Server Hygiene'.
+
+
+@Mail Attack:
+-------------
+
+Mortals are not allowed to send more than 50 @mails per hour.  However,
+the site admin still needs to keep an eye on the size of @mail.  See
+'wizhelp mail_per_hour'.
+
+
+CPU Slaming:
+------------
+
+There are ways of consuming hours and days of CPU time with carefully
+chosen softcode.  The lag_limit configuration option controls the point
+at which the server abbreviates its efforts.  In some ways, this is
+like hitting a Function Invocation Limit.  One additional thing that
+hitting a lag_limit does is @halt the offending code.
 
 
 General server hygiene:
