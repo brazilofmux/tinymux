@@ -1,6 +1,6 @@
 // db.cpp
 //
-// $Id: db.cpp,v 1.62 2001-12-06 03:20:01 sdennis Exp $
+// $Id: db.cpp,v 1.63 2001-12-06 07:06:57 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -2734,46 +2734,8 @@ void putref(FILE *f, dbref ref)
 {
     char buf[SBUF_SIZE];
     int n = Tiny_ltoa(ref, buf);
-    buf[n++] = '\n';
-    fwrite(buf, sizeof(char), n, f);
-}
-
-#define SIZEOF_PUTSTRING_BUFFER (LBUF_SIZE+4)
-void putstring(FILE *f, const char *pRaw)
-{
-    char aBuffer[SIZEOF_PUTSTRING_BUFFER];
-    char *pBuffer = aBuffer;
-
-    // Always leave room for four characters. One at the beginning and
-    // three on the end. '\\"\n' or '\""\n'
-    //
-    char *pBufferEnd = aBuffer + SIZEOF_PUTSTRING_BUFFER - 4;
-    *pBuffer++ = '"';
-
-    if (pRaw)
-    {
-        char ch = *pRaw++;
-        while (ch)
-        {
-            if (pBuffer > pBufferEnd)
-            {
-                fwrite(aBuffer, sizeof(char), pBuffer - aBuffer, f);
-                pBuffer = aBuffer;
-            }
-
-            if (ch == '\\' || ch == '"')
-            {
-                *pBuffer++ = '\\';
-            }
-            *pBuffer++ = ch;
-            ch = *pRaw++;
-        }
-    }
-
-    *pBuffer++ = '"';
-    *pBuffer++ = '\n';
-
-    fwrite(aBuffer, sizeof(char), pBuffer - aBuffer, f);
+    buf[n] = '\n';
+    fwrite(buf, sizeof(char), n+1, f);
 }
 
 // Code 0 - Any byte.
@@ -2781,7 +2743,7 @@ void putstring(FILE *f, const char *pRaw)
 // Code 2 - '"' (0x22)
 // Code 3 - '\\' (0x5C)
 //
-char xlat_table[256] =
+const char xlat_table[256] =
 {
     1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -2950,6 +2912,40 @@ char *getstring_noalloc(FILE *f, int new_strings)
             return buf;
         }
     }
+}
+
+void putstring(FILE *f, const char *pRaw)
+{
+    static char aBuffer[2*LBUF_SIZE+4];
+    char *pBuffer = aBuffer;
+
+    // Always leave room for four characters. One at the beginning and
+    // three on the end. '\\"\n' or '\""\n'
+    //
+    *pBuffer++ = '"';
+
+    if (pRaw)
+    {
+        for (;;)
+        {
+            char ch;
+            while ((ch = xlat_table[*pRaw]) == 0)
+            {
+                *pBuffer++ = *pRaw++;
+            }
+            if (ch == 1)
+            {
+                break;
+            }
+            *pBuffer++ = '\\';
+            *pBuffer++ = *pRaw++;
+        }
+    }
+
+    *pBuffer++ = '"';
+    *pBuffer++ = '\n';
+
+    fwrite(aBuffer, sizeof(char), pBuffer - aBuffer, f);
 }
 
 dbref getref(FILE *f)
