@@ -6112,13 +6112,14 @@ EXPTIME()
 & EXTRACT()
 EXTRACT()
 
-  FUNCTION: extract(<string>, <first>, <length>[, <delim>])
+  FUNCTION: extract(<string>, <first>, <length>[,<idelim>[,<odelim>]])
 
   Extract returns a string of length words, starting with the first
-  word. Unlike letters, the first word in a string is number 1,
+  word.  Unlike letters, the first word in a string is number 1,
   instead of 0.
 
-  <delim> may be used to specify a delimiter other than a space.
+  The input delimiter for <string> is <idelim>.  The output list
+  delimiter is <odelim>.  <idelim> defaults to a space.
 
   Examples:
     > say extract(This is a really neat example, 4, 2)
