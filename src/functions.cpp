@@ -1,6 +1,6 @@
 // functions.c - MUX function handlers 
 //
-// $Id: functions.cpp,v 1.7 2000-04-15 03:51:42 sdennis Exp $
+// $Id: functions.cpp,v 1.8 2000-04-15 15:42:15 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -1034,56 +1034,73 @@ FUNCTION(fun_get)
 FUNCTION(fun_xget)
 {
     dbref thing, aowner;
-    int attrib, free_buffer, aflags;
+    int attrib, aflags;
     ATTR *attr;
     char *atr_gotten;
     struct boolexp *pBoolExp;
 
     if (!*fargs[0] || !*fargs[1])
+    {
         return;
+    }
 
-    if (!parse_attrib(player, tprintf("%s/%s", fargs[0], fargs[1]),
-              &thing, &attrib)) {
+    if (!parse_attrib(player, tprintf("%s/%s", fargs[0], fargs[1]), &thing, &attrib))
+    {
         safe_str("#-1 NO MATCH", buff, bufc);
         return;
     }
-    if (attrib == NOTHING) {
+    if (attrib == NOTHING)
+    {
         return;
     }
-    free_buffer = 1;
-    attr = atr_num(attrib); /*
-                 * We need the attr's flags for this: 
-                 */
-    if (!attr) {
+    // We need the attr's flags for this:
+    attr = atr_num(attrib);
+    if (!attr)
+    {
         return;
     }
-    if (attr->flags & AF_IS_LOCK) {
-        atr_gotten = atr_get(thing, attrib, &aowner, &aflags);
-        if (Read_attr(player, thing, attr, aowner, aflags)) {
+    int free_buffer = 1;
+    int nLen = 0;
+    if (attr->flags & AF_IS_LOCK)
+    {
+        atr_gotten = atr_get_LEN(thing, attrib, &aowner, &aflags, &nLen);
+        if (Read_attr(player, thing, attr, aowner, aflags))
+        {
             pBoolExp = parse_boolexp(player, atr_gotten, 1);
             free_lbuf(atr_gotten);
             atr_gotten = unparse_boolexp(player, pBoolExp);
             free_boolexp(pBoolExp);
-        } else {
+        }
+        else
+        {
             free_lbuf(atr_gotten);
             atr_gotten = (char *)"#-1 PERMISSION DENIED";
         }
         free_buffer = 0;
-    } else {
-        atr_gotten = atr_pget(thing, attrib, &aowner, &aflags);
+    }
+    else
+    {
+        atr_gotten = atr_pget_LEN(thing, attrib, &aowner, &aflags, &nLen);
     }
 
-    /*
-     * Perform access checks.  c_r_p fills buff with an error message * * 
-     * 
-     * *  * * if needed. 
-     */
-
+    // Perform access checks.  c_r_p fills buff with an error message
+    // if needed.
+    //
     if (check_read_perms(player, thing, attr, aowner, aflags, buff, bufc))
-        safe_str(atr_gotten, buff, bufc);
+    {
+        if (free_buffer)
+        {
+            safe_copy_buf(atr_gotten, nLen, buff, bufc, LBUF_SIZE-1);
+        }
+        else
+        {
+            safe_str(atr_gotten, buff, bufc);
+        }
+    }
     if (free_buffer)
+    {
         free_lbuf(atr_gotten);
-    return;
+    }
 }
 
 FUNCTION(fun_get_eval)
@@ -1485,35 +1502,32 @@ FUNCTION(fun_v)
     ATTR *ap;
 
     tbuf = fargs[0];
-    if (isalpha(tbuf[0]) && tbuf[1]) {
-
-        /*
-         * Fetch an attribute from me.  First see if it exists, * * * 
-         * 
-         * * returning a null string if it does not. 
-         */
-
+    if (Tiny_IsAlpha[(unsigned char)tbuf[0]] && tbuf[1])
+    {
+        // Fetch an attribute from me. First see if it exists,
+        // returning a null string if it does not.
+        //
         ap = atr_str(fargs[0]);
-        if (!ap) {
+        if (!ap)
+        {
             return;
         }
-        /*
-         * If we can access it, return it, otherwise return a * null
-         * * * * string 
-         */
 
-        atr_pget_info(player, ap->number, &aowner, &aflags);
-        if (See_attr(player, player, ap, aowner, aflags)) {
-            tbuf = atr_pget(player, ap->number, &aowner, &aflags);
-            safe_str(tbuf, buff, bufc);
-            free_lbuf(tbuf);
+        // If we can access it, return it, otherwise return a null
+        // string.
+        //
+        int nLen;
+        tbuf = atr_pget_LEN(player, ap->number, &aowner, &aflags, &nLen);
+        if (See_attr(player, player, ap, aowner, aflags))
+        {
+            safe_copy_buf(tbuf, nLen, buff, bufc, LBUF_SIZE-1);
         }
+        free_lbuf(tbuf);
         return;
     }
-    /*
-     * Not an attribute, process as %<arg> 
-     */
 
+    // Not an attribute, process as %<arg>
+    //
     sbuf = alloc_sbuf("fun_v");
     sbufc = sbuf;
     safe_sb_chr('%', sbuf, &sbufc);
