@@ -1,6 +1,6 @@
 // bsd.cpp
 //
-// $Id: bsd.cpp,v 1.38 2001-11-28 06:42:59 sdennis Exp $
+// $Id: bsd.cpp,v 1.39 2001-12-01 08:44:45 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6 and Nick Gammon's NT IO Completion port
@@ -81,9 +81,15 @@ OVERLAPPED lpo_wakeup;  // special to indicate that the loop should wakeup and r
 void ProcessWindowsTCP(DWORD dwTimeout);  // handle NT-style IOs
 CRITICAL_SECTION csDescriptorList;      // for thread synchronization
 
+typedef struct
+{
+    int                port_in;
+    struct sockaddr_in sa_in;
+} SLAVE_REQUEST;
+
 static HANDLE hSlaveRequestStackSemaphore;
 #define SLAVE_REQUEST_STACK_SIZE 50
-static struct sockaddr_in SlaveRequests[SLAVE_REQUEST_STACK_SIZE];
+static SLAVE_REQUEST SlaveRequests[SLAVE_REQUEST_STACK_SIZE];
 static int iSlaveRequest = 0;
 
 typedef struct
@@ -111,7 +117,7 @@ static HANDLE hSlaveThreadsSemaphore;
 
 DWORD WINAPI SlaveProc(LPVOID lpParameter)
 {
-    struct sockaddr_in req;
+    SLAVE_REQUEST req;
     unsigned long addr;
     struct hostent *hp;
     DWORD iSlave = (DWORD)lpParameter;
@@ -199,7 +205,7 @@ DWORD WINAPI SlaveProc(LPVOID lpParameter)
             ltdTimeout.SetSeconds(-IDENT_PROTOCOL_TIMEOUT);
             CLinearTimeAbsolute ltaTimeoutBackward(ltaTimeoutOrigin, ltdTimeout);
 
-            addr = req.sin_addr.S_un.S_addr;
+            addr = req.sa_in.sin_addr.S_un.S_addr;
             hp = gethostbyaddr((char *)&addr, sizeof(addr), AF_INET);
 
             if (hp)
@@ -215,7 +221,7 @@ DWORD WINAPI SlaveProc(LPVOID lpParameter)
 
                 // We have a host name.
                 //
-                strcpy(host, inet_ntoa(req.sin_addr));
+                strcpy(host, inet_ntoa(req.sa_in.sin_addr));
                 strcpy(token, hp->h_name);
 
                 // Setup ident port.
@@ -250,7 +256,8 @@ DWORD WINAPI SlaveProc(LPVOID lpParameter)
 
                         SlaveThreadInfo[iSlave].iDoing = __LINE__;
                         char szPortPair[128];
-                        sprintf(szPortPair, "%d, %d\r\n", ntohs(req.sin_port), mudconf.port);
+                        sprintf(szPortPair, "%d, %d\r\n",
+                            ntohs(req.sa_in.sin_port), req.port_in);
                         SlaveThreadInfo[iSlave].iDoing = __LINE__;
                         int nPortPair = strlen(szPortPair);
 
@@ -1367,7 +1374,9 @@ DESC *new_connection(SOCKET sock)
             {
                 // There is room on the stack, so make the request.
                 //
-                SlaveRequests[iSlaveRequest++] = addr;
+                SlaveRequests[iSlaveRequest].sa_in = addr;
+                SlaveRequests[iSlaveRequest].port_in = mudconf.ports.pi[0]; // QQQ
+                iSlaveRequest++;
                 ReleaseSemaphore(hSlaveRequestStackSemaphore, 1, NULL);
 
                 // Wake up a single slave thread. Event automatically resets itself.
@@ -1389,7 +1398,7 @@ DESC *new_connection(SOCKET sock)
         {
             char *pBuffL1 = alloc_lbuf("new_connection.write");
             sprintf(pBuffL1, "%s\n%s,%d,%d\n", pBuffM2,
-                pBuffM2, usPort, mudconf.port);
+                pBuffM2, usPort, mudconf.ports.pi[0]);
             len = strlen(pBuffL1);
             if (write(slave_socket, pBuffL1, len) < 0)
             {
@@ -2885,7 +2894,9 @@ void __cdecl MUDListenThread(void * pVoid)
             {
                 // There is room on the stack, so make the request.
                 //
-                SlaveRequests[iSlaveRequest++] = SockAddr;
+                SlaveRequests[iSlaveRequest].sa_in = SockAddr;
+                SlaveRequests[iSlaveRequest].port_in = mudconf.ports.pi[0];
+                iSlaveRequest++;
                 ReleaseSemaphore(hSlaveRequestStackSemaphore, 1, NULL);
 
                 // Wake up a single slave thread. Event automatically resets itself.

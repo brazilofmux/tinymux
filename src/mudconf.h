@@ -1,6 +1,6 @@
 // mudconf.h
 //
-// $Id: mudconf.h,v 1.33 2001-11-19 19:43:26 sdennis Exp $
+// $Id: mudconf.h,v 1.34 2001-12-01 08:44:45 sdennis Exp $
 //
 
 #ifndef __CONF_H
@@ -23,6 +23,12 @@
 
 /* CONFDATA:    runtime configurable parameters */
 
+typedef struct tag_int_array
+{
+    int n;
+    int *pi;
+} IntArray;
+
 typedef unsigned char Uchar;
 
 typedef struct confdata CONFDATA;
@@ -30,21 +36,21 @@ struct confdata
 {
     int     cache_names;           /* Should object names be cached separately */
 #ifndef STANDALONE
-    int     compress_db;    /* should we use compress */
-    int     have_comsys;    /* Should the comsystem be active? */
-    int     have_mailer;    /* Should @mail be active? */
-    int     have_zones; /* Should zones be active? */
-    int     port;       /* user port */
-    int     init_size;  /* initial db size */
-    int     have_guest; /* Do we wish to allow a GUEST character? */
+    int     compress_db;    // should we use compress.
+    int     have_comsys;    // Should the comsystem be active?
+    int     have_mailer;    // Should @mail be active?
+    int     have_zones;     // Should zones be active?
+    IntArray ports;         // user ports.
+    int     init_size;      // initial db size.
+    int     have_guest;     // Do we wish to allow a GUEST character?
     dbref   guest_char;     // player num of prototype GUEST character.
     dbref   guest_nuker;    // Wiz who nukes the GUEST characters.
-    int     number_guests;  /* number of guest characters allowed */
-    int     indent_desc;    /* Newlines before and after descs? */
-    int     name_spaces;    /* allow player names to have spaces */
-    unsigned int site_chars;/* where to truncate site name */
-    int     fork_dump;  /* perform dump in a forked process */
-    int     sig_action; /* What to do with fatal signals */
+    int     number_guests;  // number of guest characters allowed.
+    int     indent_desc;    // Newlines before and after descs?
+    int     name_spaces;    // allow player names to have spaces.
+    unsigned int site_chars;// where to truncate site name.
+    int     fork_dump;      // perform dump in a forked process.
+    int     sig_action;     // What to do with fatal signals.
     int     paranoid_alloc; /* Rigorous buffer integrity checks */
     int     max_players;    /* Max # of connected players */
     int     dump_interval;  /* interval between ckp dumps in seconds */

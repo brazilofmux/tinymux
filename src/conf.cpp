@@ -1,6 +1,6 @@
 // conf.cpp -- Set up configuration information and static data.
 //
-// $Id: conf.cpp,v 1.53 2001-11-28 10:23:10 sdennis Exp $
+// $Id: conf.cpp,v 1.54 2001-12-01 08:44:45 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -63,7 +63,12 @@ void NDECL(cf_init)
     mudconf.uncompress = StringClone("gzip -d");
     mudconf.status_file = StringClone("shutdown.status");
     mudconf.max_cache_size = 1*1024*1024;
-    mudconf.port = 2860;
+
+    mudconf.ports.n = 1;
+    mudconf.ports.pi = (int *)MEMALLOC(sizeof(int));
+    ISOUTOFMEMORY(mudconf.ports.pi);
+    mudconf.ports.pi[0] = 2860;
+
     mudconf.init_size = 1000;
     mudconf.guest_char = -1;
     mudconf.guest_nuker = 1;
@@ -428,6 +433,54 @@ int cf_status_from_succfail(dbref player, char *cmd, int success, int failure)
         }
     }
     return -1;
+}
+
+#define MAX_LISTEN_PORTS 10
+// ---------------------------------------------------------------------------
+// cf_int_array: Setup array of integers.
+//
+CF_HAND(cf_int_array)
+{
+    int *aPorts = (int *)MEMALLOC(nExtra*sizeof(int));
+    ISOUTOFMEMORY(aPorts);
+    int nPorts = 0;
+
+    char *p;
+    int nLen;
+    TINY_STRTOK_STATE tts;
+    Tiny_StrTokString(&tts, str);
+    Tiny_StrTokControl(&tts, " \t");
+    while ((p = Tiny_StrTokParseLEN(&tts, &nLen)) != NULL)
+    {
+        int unused;
+        if (is_integer(p, &unused))
+        {
+            aPorts[nPorts++] = Tiny_atol(p);
+            if (nPorts >= nExtra)
+            {
+                break;
+            }
+        }
+    }
+
+    IntArray *pia = (IntArray *)vp;
+    if (nPorts)
+    {
+        if (pia->pi)
+        {
+            MEMFREE(pia->pi);
+            pia->pi = NULL;
+        }
+        pia->pi = (int *)MEMALLOC(nPorts * sizeof(int));
+        ISOUTOFMEMORY(pia->pi);
+        pia->n = nPorts;
+        for (int i = 0; i < nPorts; i++)
+        {
+            pia->pi[i] = aPorts[i];
+        }
+    }
+    MEMFREE(aPorts);
+    return 0;
 }
 
 // ---------------------------------------------------------------------------
@@ -1490,7 +1543,7 @@ CONF conftable[] =
     {"public_channel",            cf_string,      CA_STATIC, (int *)mudconf.public_channel,   NULL,              32},
     {"wiznews_file",              cf_string_dyn,  CA_STATIC, (int *)&mudconf.wiznews_file,    NULL, SIZEOF_PATHNAME},
     {"wiznews_index",             cf_string_dyn,  CA_STATIC, (int *)&mudconf.wiznews_indx,    NULL, SIZEOF_PATHNAME},
-    {"port",                      cf_int,         CA_STATIC, &mudconf.port,                   NULL,               0},
+    {"port",                      cf_int_array,   CA_STATIC, (int *)&mudconf.ports,           NULL, MAX_LISTEN_PORTS},
     {"public_flags",              cf_bool,        CA_GOD,    &mudconf.pub_flags,              NULL,               0},
     {"queue_active_chunk",        cf_int,         CA_GOD,    &mudconf.active_q_chunk,         NULL,               0},
     {"queue_idle_chunk",          cf_int,         CA_GOD,    &mudconf.queue_chunk,            NULL,               0},

@@ -1,6 +1,6 @@
 // game.cpp
 //
-// $Id: game.cpp,v 1.45 2001-11-28 06:35:54 sdennis Exp $
+// $Id: game.cpp,v 1.46 2001-12-01 08:44:45 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -2092,15 +2092,15 @@ int DCL_CDECL main(int argc, char *argv[])
     if (platform == VER_PLATFORM_WIN32_NT)
     {
         process_output = process_outputNT;
-        shovecharsNT(mudconf.port);
+        shovecharsNT(mudconf.ports.pi[0]);
     }
     else
     {
         process_output = process_output9x;
-        shovechars9x(mudconf.port);
+        shovechars9x(mudconf.ports.pi[0]);
     }
 #else // WIN32
-    shovechars(mudconf.port);
+    shovechars(mudconf.ports.pi[0]);
 #endif // WIN32
 
     close_sockets(0, (char *)"Going down - Bye");
