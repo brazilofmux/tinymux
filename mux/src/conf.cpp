@@ -1,6 +1,6 @@
 // conf.cpp -- Set up configuration information and static data.
 //
-// $Id: conf.cpp,v 1.19 2002-08-29 16:43:08 jake Exp $
+// $Id: conf.cpp,v 1.20 2002-09-11 19:36:09 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -1371,14 +1371,23 @@ CF_HAND(cf_cf_access)
     return -1;
 }
 
-CF_HAND(cf_helpfile)
+// ---------------------------------------------------------------------------
+// cf_helpfile, cf_raw_helpfile: Add help files and their corresponding
+// command.
+//
+int add_helpfile(dbref player, char *cmd, char *str, BOOL bRaw)
 {
     return -1;
 }
 
+CF_HAND(cf_helpfile)
+{
+    return add_helpfile(player, cmd, str, FALSE);
+}
+
 CF_HAND(cf_raw_helpfile)
 {
-    return -1;
+    return add_helpfile(player, cmd, str, TRUE);
 }
 
 // @hook: run softcode before or after running a hardcode command, or softcode access.
