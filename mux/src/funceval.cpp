@@ -1,6 +1,6 @@
 // funceval.cpp -- MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.74 2004-08-18 22:25:34 sdennis Exp $
+// $Id: funceval.cpp,v 1.75 2004-08-25 19:42:04 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -453,9 +453,10 @@ static void set_attr_internal(dbref player, dbref thing, int attrnum, char *attr
 
     dbref aowner;
     int aflags;
-    ATTR *attr = atr_num(attrnum);
+    ATTR *pattr = atr_num(attrnum);
     atr_pget_info(thing, attrnum, &aowner, &aflags);
-    if (attr && bCanSetAttr(player, thing, attr))
+    if (  pattr
+       && bCanSetAttr(player, thing, pattr))
     {
         bool could_hear = Hearer(thing);
         atr_add(thing, attrnum, attrtext, Owner(player), aflags);
@@ -482,15 +483,15 @@ FUNCTION(fun_set)
 
     dbref thing, aowner;
     int aflags;
-    ATTR *attr;
+    ATTR *pattr;
 
     // See if we have the <obj>/<attr> form, which is how you set
     // attribute flags.
     //
-    if (parse_attrib(executor, fargs[0], &thing, &attr))
+    if (parse_attrib(executor, fargs[0], &thing, &pattr))
     {
-        if (  attr
-           && See_attr(executor, thing, attr))
+        if (  pattr
+           && See_attr(executor, thing, pattr))
         {
             char *flagname = fargs[1];
 
@@ -522,7 +523,7 @@ FUNCTION(fun_set)
 
             // Make sure the object has the attribute present.
             //
-            if (!atr_get_info(thing, attr->number, &aowner, &aflags))
+            if (!atr_get_info(thing, pattr->number, &aowner, &aflags))
             {
                 safe_str("#-1 ATTRIBUTE NOT PRESENT ON OBJECT", buff, bufc);
                 return;
@@ -530,7 +531,7 @@ FUNCTION(fun_set)
 
             // Make sure we can write to the attribute.
             //
-            if (!bCanSetAttr(executor, thing, attr))
+            if (!bCanSetAttr(executor, thing, pattr))
             {
                 safe_noperm(buff, bufc);
                 return;
@@ -546,7 +547,7 @@ FUNCTION(fun_set)
             {
                 aflags |= flagvalue;
             }
-            atr_set_flags(thing, attr->number, aflags);
+            atr_set_flags(thing, pattr->number, aflags);
             return;
         }
     }
@@ -577,13 +578,13 @@ FUNCTION(fun_set)
             safe_str("#-1 UNABLE TO CREATE ATTRIBUTE", buff, bufc);
             return;
         }
-        attr = atr_num(atr);
-        if (!attr)
+        pattr = atr_num(atr);
+        if (!pattr)
         {
             safe_noperm(buff, bufc);
             return;
         }
-        if (!bCanSetAttr(executor, thing, attr))
+        if (!bCanSetAttr(executor, thing, pattr))
         {
             safe_noperm(buff, bufc);
             return;
@@ -594,21 +595,21 @@ FUNCTION(fun_set)
         //
         if (*p == '_')
         {
-            ATTR *attr2;
+            ATTR *pattr2;
             dbref thing2;
 
             strcpy(buff2, p + 1);
-            if (!( parse_attrib(executor, p + 1, &thing2, &attr2)
-                && attr2))
+            if (!( parse_attrib(executor, p + 1, &thing2, &pattr2)
+                && pattr2))
             {
                 free_lbuf(buff2);
                 safe_nomatch(buff, bufc);
                 return;
             }
             p = buff2;
-            atr_pget_str(buff2, thing2, attr2->number, &aowner, &aflags);
+            atr_pget_str(buff2, thing2, pattr2->number, &aowner, &aflags);
 
-            if (!See_attr(executor, thing2, attr2))
+            if (!See_attr(executor, thing2, pattr2))
             {
                 free_lbuf(buff2);
                 safe_noperm(buff, bufc);
@@ -939,9 +940,10 @@ FUNCTION(fun_zfun)
     }
     dbref aowner;
     int aflags;
-    ATTR *attr = atr_num(attrib);
+    ATTR *pattr = atr_num(attrib);
     char *tbuf1 = atr_pget(zone, attrib, &aowner, &aflags);
-    if (!attr || !See_attr(executor, zone, attr))
+    if (  !pattr
+       || !See_attr(executor, zone, pattr))
     {
         safe_noperm(buff, bufc);
         free_lbuf(tbuf1);
@@ -1231,11 +1233,12 @@ static int mem_usage(dbref thing)
         size_t nLen;
         const char *str = atr_get_raw_LEN(thing, ca, &nLen);
         k += nLen+1;
-        ATTR *attr = atr_num(ca);
-        if (attr)
+        ATTR *pattr = atr_num(ca);
+        if (pattr)
         {
-            str = attr->name;
-            if (str && *str)
+            str = pattr->name;
+            if (  str
+               && *str)
             {
                 k += strlen(str)+1;
             }
@@ -1659,11 +1662,11 @@ void hasattr_handler(char *buff, char **bufc, dbref executor, char *fargs[],
         return;
     }
 
-    ATTR *attr = atr_str(fargs[1]);
+    ATTR *pattr = atr_str(fargs[1]);
     bool result = false;
-    if (attr)
+    if (pattr)
     {
-        if (!bCanReadAttr(executor, thing, attr, bCheckParent))
+        if (!bCanReadAttr(executor, thing, pattr, bCheckParent))
         {
             safe_noperm(buff, bufc);
             return;
@@ -1674,13 +1677,13 @@ void hasattr_handler(char *buff, char **bufc, dbref executor, char *fargs[],
             {
                 dbref aowner;
                 int aflags;
-                char *tbuf = atr_pget(thing, attr->number, &aowner, &aflags);
+                char *tbuf = atr_pget(thing, pattr->number, &aowner, &aflags);
                 result = (tbuf[0] != '\0');
                 free_lbuf(tbuf);
             }
             else
             {
-                const char *tbuf = atr_get_raw(thing, attr->number);
+                const char *tbuf = atr_get_raw(thing, pattr->number);
                 result = (tbuf != NULL);
             }
         }
@@ -1728,21 +1731,21 @@ void default_handler(char *buff, char **bufc, dbref executor, dbref caller, dbre
     // Parse the first argument as either <dbref>/<attrname> or <attrname>.
     //
     dbref thing;
-    ATTR *attr;
+    ATTR *pattr;
 
-    if (!parse_attrib(executor, objattr, &thing, &attr))
+    if (!parse_attrib(executor, objattr, &thing, &pattr))
     {
         thing = executor;
-        attr = atr_str(objattr);
+        pattr = atr_str(objattr);
     }
     free_lbuf(objattr);
 
-    if (  attr
-       && See_attr(executor, thing, attr))
+    if (  pattr
+       && See_attr(executor, thing, pattr))
     {
         dbref aowner;
         int   aflags;
-        char *atr_gotten = atr_pget(thing, attr->number, &aowner, &aflags);
+        char *atr_gotten = atr_pget(thing, pattr->number, &aowner, &aflags);
         if (atr_gotten[0] != '\0')
         {
             switch (key)
@@ -1891,8 +1894,8 @@ FUNCTION(fun_visible)
 
     bool  result = false;
     dbref thing;
-    ATTR  *attr;
-    if (!parse_attrib(executor, fargs[1], &thing, &attr))
+    ATTR  *pattr;
+    if (!parse_attrib(executor, fargs[1], &thing, &pattr))
     {
         thing = match_thing_quiet(executor, fargs[1]);
         if (!Good_obj(thing))
@@ -1904,9 +1907,9 @@ FUNCTION(fun_visible)
     }
     if (Good_obj(thing))
     {
-        if (attr)
+        if (pattr)
         {
-            result = (See_attr(it, thing, attr));
+            result = (See_attr(it, thing, pattr));
         }
         else
         {
