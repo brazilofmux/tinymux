@@ -1,10 +1,11 @@
 /* copyright.h */
 /* -*-C-*- */
-/* $Id: copyright.h,v 1.2 2000-10-25 04:53:53 sdennis Exp $ */
+/* $Id: copyright.h,v 1.3 2001-11-19 19:41:58 sdennis Exp $ */
 
 /*
  * TinyMUX 2.0 and 2.1 maintained by Stephen Dennis (AKA Brazil)
- * Copyright (C) 1999 and 2000 by Solid Vertical Domains, Ltd. 
+ * Copyright (C) 1999, 2000 and 2001 by Solid Vertical Domains, Ltd. 
+ * Stephen Dennis <sdennis@svdltd.com>
  * 
  * TinyMUX 1.0, 1.1 and 1.2 Source code is maintained by David Passmore
  * (Lauren@Children of the Atom).
