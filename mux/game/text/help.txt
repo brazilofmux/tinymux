@@ -6427,11 +6427,11 @@ FUNCTION CLASSES
 FUNCTION CLASSES (continued)
 
   Lists:                     COLUMNS EXTRACT ELEMENTS FOREACH FILTER FILTERBOOL
-                             FIRST FOLD GRAB ILEV INDEX INSERT ITEMIZE ITER
-                             LADD LAST LDELETE LIST LNUM LRAND MAP MATCH
-                             MATCHALL MEMBER MIX MUNGE PARSE PICKRAND REMOVE
-                             REST REVWORDS SETDIFF SETINTER SETUNION SHUFFLE
-                             SORT SORTBY SPLICE TABLE WORDS
+                             FIRST FOLD ILEV INDEX INSERT ITEMIZE ITER LADD
+                             LAST LDELETE LIST LNUM LRAND MAP MATCH MATCHALL
+                             MEMBER MIX MUNGE PARSE PICKRAND REMOVE REST
+                             REVWORDS SETDIFF SETINTER SETUNION SHUFFLE SORT
+                             SORTBY SPLICE TABLE WORDS
 
   Logarithms:                E EXP LOG LN
 
@@ -6475,13 +6475,13 @@ FUNCTION CLASSES (continued)
 
   Strings:                   ACCENT AFTER ALPHAMAX ALPHAMIN BEFORE CAPSTR CASE
                              CAT CENTER CHR COMP DECRYPT DELETE EDIT ENCRYPT
-                             ESCAPE IF IFELSE LCSTR LJUST LPOS MERGE MID ORD
-                             POS REGMATCH REGMATCHI REGRAB REGRABALL
-                             REGRABALLI REGRABI REPEAT REPLACE REVERSE RIGHT
-                             RJUST ROMAN SCRAMBLE SECURE SPACE SPELLNUM SQUISH
-                             STRCAT STRIP STRIPACCENTS STRIPANSI STRLEN
-                             STRMATCH STRTRUNC SWITCH TRANSLATE TRIM UCSTR
-                             WORDPOS WRAP
+                             ESCAPE GRAB GRABLL IF IFELSE LCSTR LJUST LPOS
+                             MERGE MID ORD POS REGMATCH REGMATCHI REGRAB
+                             REGRABALL REGRABALLI REGRABI REPEAT REPLACE
+                             REVERSE RIGHT RJUST ROMAN SCRAMBLE SECURE SPACE
+                             SPELLNUM SQUISH STRCAT STRIP STRIPACCENTS
+                             STRIPANSI STRLEN STRMATCH STRTRUNC SWITCH
+                             TRANSLATE TRIM UCSTR WORDPOS WRAP
 
   Time:                      CONVSECS CONVTIME DIGITTIME EXPTIME SECS
                              SINGLETIME STARTSECS STARTTIME TIME TIMEFMT 
@@ -6511,55 +6511,56 @@ FUNCTION LIST
     EQ()        ERROR()     ESCAPE()    EVAL()      EXIT()      EXP()
     EXPTIME()   EXTRACT()   FDIV()      FILTER()    FILTERBOOL()FINDABLE()
     FIRST()     FLAGS()     FLOOR()     FLOORDIV()  FOLD()      FOREACH()
-    FULLNAME()  GET()       GET_EVAL()  GRAB()      GREP()      GREPI()
+    FULLNAME()  GET()       GET_EVAL()  GRAB()      GRABALL()   GREP()
 
 ("help function list2" for more)
 
 & FUNCTION LIST2
 FUNCTION LIST (continued)
 
-    GT()        GTE()       HASATTR()   HASATTRP()  HASFLAG()   HASPOWER()
-    HASQUOTA()  HASTYPE()   HOME()      HOST()      IABS()      IADD()
-    IDIV()      IDLE()      IF()        IFELSE()    ILEV()      IMUL()
-    INC()       INDEX()     INSERT()    INZONE()    ISDBREF()   ISIGN()
-    ISINT()     ISNUM()     ISRAT()     ISUB()      ISWORD()    ITEMIZE()
-    ITEMS()     ITER()      LADD()      LAND()      LAST()      LATTR()
-    LATTRCMDS() LATTRP()    LCMDS()     LCON()      LCSTR()     LDELETE()
-    LEXITS()    LFLAGS()    LINK()      LIST()      LIT()       LJUST()
-    LN()        LNUM()      LOC()       LOCALIZE()  LOCATE()    LOCK()
-    LOG()       LOR()       LPARENT()   LPORTS()    LPOS()      LRAND()
-    LROOMS()    LSTACK()    LT()        LTE()       LWHO()      MAIL()
-    MAILFROM()  MAP()       MATCH()     MATCHALL()  MAX()       MEMBER()
-    MERGE()     MID()       MIN()       MIX()       MOD()       MONEY()
-    MONIKER()   MOTD()      MTIME()     MUDNAME()   MUL()       MUNGE()
-    NAME()      NEARBY()    NEQ()       NEXT()      NOT()       NULL()
-    NUM()       OBJ()       OBJEVAL()   OBJMEM()    OEMIT()     OR()
-    ORBOOL()    ORD()       ORFLAGS()   OWNER()     PACK()      PARENT()
-    PARSE()     PEEK()      PEMIT()     PFIND()     PI()        PICKRAND()
-    PLAYMEM()   PMATCH()    POLL()      POP()       PORTS()     POS()
+    GREPI()     GT()        GTE()       HASATTR()   HASATTRP()  HASFLAG()
+    HASPOWER()  HASQUOTA()  HASTYPE()   HOME()      HOST()      IABS()
+    IADD()      IDIV()      IDLE()      IF()        IFELSE()    ILEV()
+    IMUL()      INC()       INDEX()     INSERT()    INZONE()    ISDBREF()
+    ISIGN()     ISINT()     ISNUM()     ISRAT()     ISUB()      ISWORD()
+    ITEMIZE()   ITEMS()     ITER()      LADD()      LAND()      LAST()
+    LATTR()     LATTRCMDS() LATTRP()    LCMDS()     LCON()      LCSTR()
+    LDELETE()   LEXITS()    LFLAGS()    LINK()      LIST()      LIT()
+    LJUST()     LN()        LNUM()      LOC()       LOCALIZE()  LOCATE()
+    LOCK()      LOG()       LOR()       LPARENT()   LPORTS()    LPOS()
+    LRAND()     LROOMS()    LSTACK()    LT()        LTE()       LWHO()
+    MAIL()      MAILFROM()  MAP()       MATCH()     MATCHALL()  MAX()
+    MEMBER()    MERGE()     MID()       MIN()       MIX()       MOD()
+    MONEY()     MONIKER()   MOTD()      MTIME()     MUDNAME()   MUL()
+    MUNGE()     NAME()      NEARBY()    NEQ()       NEXT()      NOT()
+    NULL()      NUM()       OBJ()       OBJEVAL()   OBJMEM()    OEMIT()
+    OR()        ORBOOL()    ORD()       ORFLAGS()   OWNER()     PACK()
+    PARENT()    PARSE()     PEEK()      PEMIT()     PFIND()     PI()
+    PICKRAND()  PLAYMEM()   PMATCH()    POLL()      POP()       PORTS()
 
 ("help function list3" for more)
 
 & FUNCTION LIST3
 FUNCTION LIST (continued)
 
-    POSS()      POWER()     PUSH()      R()         RAND()      REGMATCH()
-    REGMATCHI() REGRAB()    REGRABALL() REGRABALLI()REGRABI()   REMAINDER()
-    REMIT()     REMOVE()    REPEAT()    REPLACE()   REST()      REVERSE()
-    REVWORDS()  RIGHT()     RJUST()     RLOC()      ROMAN()     ROOM()
-    ROUND()     S()         SCRAMBLE()  SEARCH()    SECS()      SECURE()
-    SET()       SETDIFF()   SETINTER()  SETQ()      SETR()      SETUNION()
-    SHA1()      SHL()       SHR()       SHUFFLE()   SIGN()      SIN()
-    SINGLETIME()SORT()      SORTBY()    SPACE()     SPELLNUM()  SPLICE()
-    SQRT()      SQUISH()    STARTSECS() STARTTIME() STATS()     STRCAT()
-    STRIP()     STRIPACCENTS()          STRIPANSI() STRLEN()    STRMATCH()
-    STRTRUNC()  SUB()       SUBEVAL()   SUBJ()      SWITCH()    T()
-    TABLE()     TAN()       TEL()       TIME()      TIMEFMT()   TRANSLATE()
-    TRIM()      TRUNC()     TYPE()      U()         UCSTR()     UDEFAULT()
-    ULOCAL()    UNPACK()    V()         VADD()      VALID()     VCROSS()
-    VDIM()      VDOT()      VERSION()   VISIBLE()   VMAG()      VMUL()
-    VSUB()      VUNIT()     WHERE()     WORDPOS()   WORDS()     WRAP()
-    WRITETIME() XGET()      XOR()       ZFUN()      ZONE()      ZWHO()
+    POS()       POSS()      POWER()     PUSH()      R()         RAND()
+    REGMATCH()  REGMATCHI() REGRAB()    REGRABALL() REGRABALLI()REGRABI()
+    REMAINDER() REMIT()     REMOVE()    REPEAT()    REPLACE()   REST()
+    REVERSE()   REVWORDS()  RIGHT()     RJUST()     RLOC()      ROMAN()
+    ROOM()      ROUND()     S()         SCRAMBLE()  SEARCH()    SECS()
+    SECURE()    SET()       SETDIFF()   SETINTER()  SETQ()      SETR()
+    SETUNION()  SHA1()      SHL()       SHR()       SHUFFLE()   SIGN()
+    SIN()       SINGLETIME()SORT()      SORTBY()    SPACE()     SPELLNUM()
+    SPLICE()    SQRT()      SQUISH()    STARTSECS() STARTTIME() STATS()
+    STRCAT()    STRIP()     STRIPACCENTS()          STRIPANSI() STRLEN()
+    STRMATCH()  STRTRUNC()  SUB()       SUBEVAL()   SUBJ()      SWITCH()
+    T()         TABLE()     TAN()       TEL()       TIME()      TIMEFMT()
+    TRANSLATE() TRIM()      TRUNC()     TYPE()      U()         UCSTR()
+    UDEFAULT()  ULOCAL()    UNPACK()    V()         VADD()      VALID()
+    VCROSS()    VDIM()      VDOT()      VERSION()   VISIBLE()   VMAG()
+    VMUL()      VSUB()      VUNIT()     WHERE()     WORDPOS()   WORDS()
+    WRAP()      WRITETIME() XGET()      XOR()       ZFUN()      ZONE()
+    ZWHO()
 
 & FUNCTIONS
 FUNCTIONS
@@ -6752,7 +6753,16 @@ GRAB()
     > say grab(Holodeck:#10~Airlock:#58~Dorm:#12~Brig:#83,Airlock:*,~)
     You say "Airlock:#58"
 
-  Related Topics: LISTS, member(), match(), regrab().
+  Related Topics: graball(), LISTS, member(), match(), regrab().
+
+& GRABALL()
+GRABALL()
+
+  FUNCTION: graball(<list>, <pattern>[, <delim>])
+
+  Not implemented, yet.
+
+  Related Topics: grab(), regrab(), regraball().
 
 & GREP()
 GREP()
@@ -10343,20 +10353,51 @@ REGMATCHI()
 
 & REGRAB()
 REGRAB()
-REGRABI()
-REGRABALL()
-REGRABALLI()
 
   FUNCTION: regrab(<list>, <regexp>[, <separator>])
+            regrabi(<list>, <regexp>[, <separator>])
             regraball(<list>, <regexp>[, <separator>])
+            regraballi(<list>, <regexp>[, <separator>])
 
   These functions act like grab() and graball(), respectively, except
   instead of matching with a wildcard pattern, they use a regular
-  expression. regrab() returns the first element of the list that matches
-  the regexp, and regraball() returns all the elements that match.
-  They are case-sensitive. The versions ending in 'i' are case-insensitive.
+  expression.  regrab() returns the first element of the list that
+  matches the regexp, and regraball() returns all the elements that
+  match.  They are case-sensitive. The versions ending in 'i' are
+  case-insensitive.
 
-  See 'help regexp syntax' for an explanation of regular expressions.
+  Related Topics: grab(), graball(), regrabi(), regraball(),
+      regraballi(), regexp syntax.
+
+& REGRABI()
+REGRABI()
+
+  FUNCTION: regrabi(<list>, <regexp>[, <separator>])
+
+  This function is part of the REGRAB family of functions.  See regrab()
+  for a full description.
+
+  Related Topics: regrab(), regraball(), regraballi(), regexp syntax.
+
+& REGRABALLI()
+REGRABALLI()
+
+  FUNCTION: regraballi(<list>, <regexp>[, <separator>])
+
+  This function is part of the REGRAB family of functions.  See regrab()
+  for a full description.
+
+  Related Topics: regrab(), regrabi(), regraball(), regexp syntax.
+
+& REGRABALL()
+REGRABALL()
+
+  FUNCTION: regraball(<list>, <regexp>[, <separator>])
+
+  This function is part of the REGRAB family of functions.  See regrab()
+  for a full description.
+
+  Related Topics: regrab(), regrabi(), regraballi(), regexp syntax.
 
 & REMAINDER()
 REMAINDER()
