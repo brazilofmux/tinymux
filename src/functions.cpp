@@ -1,6 +1,6 @@
 // functions.cpp - MUX function handlers 
 //
-// $Id: functions.cpp,v 1.76 2001-09-09 02:32:04 sdennis Exp $
+// $Id: functions.cpp,v 1.77 2001-09-11 03:55:46 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -2236,12 +2236,14 @@ FUNCTION(fun_index)
 
 FUNCTION(fun_cat)
 {
-    int i;
-
-    safe_str(fargs[0], buff, bufc);
-    for (i = 1; i < nfargs; i++) {
-        safe_chr(' ', buff, bufc);
-        safe_str(fargs[i], buff, bufc);
+    if (nfargs)
+    {
+        safe_str(fargs[0], buff, bufc);
+        for (int i = 1; i < nfargs; i++)
+        {
+            safe_chr(' ', buff, bufc);
+            safe_str(fargs[i], buff, bufc);
+        }
     }
 }
 
