@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.103 2001-11-20 05:17:55 sdennis Exp $
+// $Id: functions.cpp,v 1.104 2001-11-22 19:15:45 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -2802,22 +2802,6 @@ FUNCTION(fun_sqrt)
 #endif
 }
 
-#if 0
-FUNCTION(fun_add)
-{
-    double sum = 0.0;
-    for (int i = 0; i < nfargs; i++)
-    {
-        sum += Tiny_atof(fargs[i]);
-    }
-    fval(buff, bufc, sum);
-}
-
-FUNCTION(fun_sub)
-{
-    fval(buff, bufc, Tiny_atof(fargs[0]) - Tiny_atof(fargs[1]));
-}
-#else
 static long nMaximums[10] =
 {
     0, 9, 99, 999, 9999, 99999, 999999, 9999999, 99999999, 999999999
@@ -2873,8 +2857,6 @@ FUNCTION(fun_sub)
         fval(buff, bufc, Tiny_atof(fargs[0]) - Tiny_atof(fargs[1]));
     }
 }
-
-#endif
 
 FUNCTION(fun_mul)
 {
