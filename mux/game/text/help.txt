@@ -2279,6 +2279,30 @@ Related Topics: @name.
                                        list all mailing aliases currently
                                        defined by their number.
 
+& @MONIKER
+@MONIKER
+
+  Command: @moniker <object> = <string>
+  Attribute: Moniker
+
+  The @moniker command allows you to set accented, multi-color names for
+  an item.  This affects contents, inventories, the normal 'look', and
+  many other cases.
+
+  The name in @moniker MUST match the name returned by name() minus ANSI
+  codes and accent marks or the moniker is ignored in favor of name().
+
+  Examples:
+    > @name object=99 Red Balloons
+    Name set.
+    > @moniker object=99 [ansi(hr,Red)] Baboons
+    String entered must match name of target, '99 Red Balloons'.
+    > @moniker object=99 [ansi(hr,Red)] Balloons
+    Ansi string entered for 99 Red Balloons of '99 Red Balloons'.
+
+  Related Topics: accent(), ansi(), chr(), moniker(), @name, NOACCENT, ord(),
+                  stripaccents(), and stripansi().
+
 & @MOVE
 @MOVE
 
@@ -2319,30 +2343,6 @@ Related Topics: @name.
 
   See '@list options' as to whether or not a player name may contain
   spaces.
-
-& @NAMEACCENT
-@NAMEACCENT
-
-  Command: @nameaccent <object> = <string>
-  Attribute: NameAccent
-
-  The @nameaccent command allows you to set accented, multi-color names for
-  an item.  This affects contents, inventories, the normal 'look', and
-  many other cases.
-
-  The name in @nameaccent MUST match the name returned by name() minus ANSI
-  codes and accent marks.
-
-  Examples:
-    > @name object=99 Red Balloons
-    Name set.
-    > @nameaccent object=99 [ansi(hr,Red)] Baboons
-    String entered must match name of target, '99 Red Balloons'.
-    > @nameaccent object=99 [ansi(hr,Red)] Balloons
-    Ansi string entered for 99 Red Balloons of '99 Red Balloons'.
-
-  Related Topics: accent(), ansi(), chr(), @name, NOACCENT, ord(),
-                  stripaccents(), and stripansi().
 
 & @NAMEFORMAT
 @NAMEFORMAT
@@ -6319,9 +6319,9 @@ FUNCTION CLASSES (continued)
   Object Information:        ANDFLAGS APOSS ATTRCNT BITTYPE CHILDREN CMDS CON
                              CONTROLS CTIME DEFAULT EDEFAULT ELOCK EVAL FLAGS
                              FULLNAME GET GET_EVAL GREP GREPI HASATTR HASATTRP
-                             HASFLAG HASPOWER HASTYPE HOME INAME LATTR
-                             LATTRCMDS LATTRP LCMDS LCON LEXITS LFLAGS LPARENT
-                             LOCALIZE LOCK MONEY MTIME NAME OBJ OBJEVAL OBJMEM
+                             HASFLAG HASPOWER HASTYPE HOME LATTR LATTRCMDS
+                             LATTRP LCMDS LCON LEXITS LFLAGS LPARENT LOCALIZE
+                             LOCK MONEY MONIKER MTIME NAME OBJ OBJEVAL OBJMEM
                              ORFLAGS OWNER PARENT PFIND PMATCH POSS S SUBJ
                              TYPE U UDEFAULT ULOCAL V VISIBLE XGET
 
@@ -6388,17 +6388,17 @@ FUNCTION LIST (continued)
 
     GTE()       HASATTR()   HASATTRP()  HASFLAG()   HASPOWER()  HASQUOTA()
     HASTYPE()   HOME()      HOST()      IABS()      IADD()      IDIV()
-    IDLE()      IF()        IFELSE()    ILEV()      IMUL()      INAME()
-    INC()       INDEX()     INSERT()    INZONE()    ISDBREF()   ISIGN()
-    ISINT()     ISNUM()     ISRAT()     ISUB()      ISWORD()    ITEMIZE()
-    ITEMS()     ITER()      LADD()      LAND()      LAST()      LATTR()
-    LATTRCMDS() LATTRP()    LCMDS()     LCON()      LCSTR()     LDELETE()
-    LEXITS()    LFLAGS()    LINK()      LIST()      LIT()       LJUST()
-    LN()        LNUM()      LOC()       LOCALIZE()  LOCATE()    LOCK()
-    LOG()       LOR()       LPARENT()   LPORTS()    LPOS()      LRAND()
-    LROOMS()    LSTACK()    LT()        LTE()       LWHO()      MAIL()
-    MAILFROM()  MAP()       MATCH()     MATCHALL()  MAX()       MEMBER()
-    MERGE()     MID()       MIN()       MIX()       MOD()       MONEY()
+    IDLE()      IF()        IFELSE()    ILEV()      IMUL()      INC()
+    INDEX()     INSERT()    INZONE()    ISDBREF()   ISIGN()     ISINT()
+    ISNUM()     ISRAT()     ISUB()      ISWORD()    ITEMIZE()   ITEMS()
+    ITER()      LADD()      LAND()      LAST()      LATTR()     LATTRCMDS()
+    LATTRP()    LCMDS()     LCON()      LCSTR()     LDELETE()   LEXITS()
+    LFLAGS()    LINK()      LIST()      LIT()       LJUST()     LN()
+    LNUM()      LOC()       LOCALIZE()  LOCATE()    LOCK()      LOG()
+    LOR()       LPARENT()   LPORTS()    LPOS()      LRAND()     LROOMS()
+    LSTACK()    LT()        LTE()       LWHO()      MAIL()      MAILFROM()
+    MAP()       MATCH()     MATCHALL()  MAX()       MEMBER()    MERGE()
+    MID()       MIN()       MIX()       MOD()       MONEY()     MONIKER()
     MOTD()      MTIME()     MUDNAME()   MUL()       MUNGE()     NAME()
     NEARBY()    NEQ()       NEXT()      NOT()       NULL()      NUM()
     OBJ()       OBJEVAL()   OBJMEM()    OEMIT()     OR()        ORBOOL()
@@ -7041,18 +7041,6 @@ IMUL()
 
   Related Topics: add(), fdiv(), iadd(), idiv(), isub(), mod(), mul(),
             round(), sub(), trunc().
-
-& INAME()
-INAME()
-
-  Function: iname([<object>])
-
-  This function returns the value of an object's NAMEACCENT attribute.  The
-  the accented/colorized name must match the normal name or the normal name
-  is returned instead of the decorated one.
-
-  Related Topics: @name, ansi(), @nameaccent, chr(), ord(), NOACCENT,
-                  stripaccent(), and stripansi().
 
 & INC()
 INC()
@@ -8778,6 +8766,18 @@ MONEY()
     You say "20"
 
   Related Topics:
+
+& MONIKER()
+MONIKER()
+
+  Function: moniker([<object>])
+
+  This function returns the value of an object's MONIKER attribute.  The
+  the accented/colorized name must match the normal name or the normal NAME
+  attribute is returned instead of the decorated one.
+
+  Related Topics: @name, ansi(), @moniker, chr(), ord(), NOACCENT,
+                  stripaccent(), and stripansi().
 
 & MONITOR
 MONITOR

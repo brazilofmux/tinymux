@@ -1,6 +1,6 @@
 // command.cpp -- command parser and support routines.
 //
-// $Id: command.cpp,v 1.88 2002-09-19 05:09:40 sdennis Exp $
+// $Id: command.cpp,v 1.89 2002-09-19 05:22:37 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -4059,7 +4059,7 @@ void do_moniker(dbref executor, dbref caller, dbref enactor, int key,
     if (  instr == NULL
        || instr[0] == '\0')
     {
-        notify_quiet(executor, "Accent name cleared.");
+        notify_quiet(executor, "Moniker cleared.");
         s_Moniker(thing, NULL);
     }
     else
@@ -4068,7 +4068,7 @@ void do_moniker(dbref executor, dbref caller, dbref enactor, int key,
         if (  !Quiet(executor)
            && !Quiet(thing))
         {
-            notify_quiet(executor, "Accent name set.");
+            notify_quiet(executor, "Moniker set.");
         }
     }
     set_modified(thing);
