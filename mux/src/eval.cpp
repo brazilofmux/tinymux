@@ -1,6 +1,6 @@
 // eval.cpp -- Command evaluation and cracking.
 //
-// $Id: eval.cpp,v 1.2 2003-01-28 15:47:59 sdennis Exp $
+// $Id: eval.cpp,v 1.3 2003-01-31 07:12:03 sdennis Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -1359,9 +1359,7 @@ void TinyExec( char *buff, char **bufc, dbref executor, dbref caller,
                     else
                     {
                         // If the number of args is right, perform the func.
-                        // Otherwise, return an error message.  Note that
-                        // parse_arglist returns zero args as one null arg, so
-                        // we have to handle that case specially.
+                        // Otherwise, return an error message.
                         //
                         if (  fp->minArgs <= nfargs
                            && nfargs <= fp->maxArgs)
