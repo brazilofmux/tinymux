@@ -1,6 +1,6 @@
 // funceval.cpp -- MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.43 2004-03-18 19:09:32 sdennis Exp $
+// $Id: funceval.cpp,v 1.44 2004-03-18 19:40:49 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -1934,6 +1934,7 @@ FUNCTION(fun_graball)
 {
     char sep;
     varargs_preamble(3);
+    bool bFirst = true;
 
     char *s = trim_space_sep(fargs[0], sep);
     do
@@ -1942,6 +1943,14 @@ FUNCTION(fun_graball)
         mudstate.wild_invk_ctr = 0;
         if (quick_wild(fargs[1], r))
         {
+            if (!bFirst)
+            {
+                safe_chr(sep, buff, bufc);
+            }
+            else
+            {
+                bFirst = false;
+            }
             safe_str(r, buff, bufc);
         }
     } while (s);
