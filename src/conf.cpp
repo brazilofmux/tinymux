@@ -2,7 +2,7 @@
  * conf.c:      set up configuration information and static data 
  */
 /*
- * $Id: conf.cpp,v 1.5 2000-04-13 09:49:02 sdennis Exp $ 
+ * $Id: conf.cpp,v 1.6 2000-04-16 08:11:52 sdennis Exp $ 
  */
 
 #include "copyright.h"
@@ -71,6 +71,8 @@ char *StringClone(const char *str)
     }
     else if (mudstate.initializing)
     {
+        Log.WriteString("ABORT! conf.cpp, failed to allocate memory in StringClone().\n");
+        Log.Flush();
         abort();
     }
     return buff;
@@ -624,6 +626,8 @@ CF_HAND(cf_string_dyn)
     {
         if (mudstate.initializing)
         {
+            Log.WriteString("ABORT! conf.cpp, failed to allocate memory in cf_string_dyn().\n");
+            Log.Flush();
             abort();
         }
         else
@@ -1430,6 +1434,8 @@ int cf_read(void)
             char *buff = (char *)MEMALLOC(nInDB + nSuffix + 1, __FILE__, __LINE__);
             if (!buff)
             {
+                Log.WriteString("ABORT! conf.cpp, failed to allocate memory in cf_read().\n");
+                Log.Flush();
                 abort();
             }
             memcpy(buff, mudconf.indb, nInDB);
