@@ -1,5 +1,5 @@
 TinyMUX 2.2:  CHANGES
-Last Update:  July 2004
+Last Update:  December 2004
 
 Major changes that may affect performance and require softcode tweaks:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -410,6 +410,9 @@ Bug Fixes:
     code creates the right timestamp.
  -- Locks failed to evaluate properly after a dbref within the lock was
     @destroy.
+ -- Fixed SIGSEGV in AFTER() with accent characters in the pattern.
+ -- Fixed uninitialized variable problem with an empty ladd().  It
+    returned the result of the last operation.
 
 
 Performance Enhancements:
