@@ -1059,9 +1059,9 @@
   create_max_cost  create_min_cost  dark_sleepers  default_home  dig_cost
   down_file  down_motd_message  dump_interval  dump_message  dump_offset
   earn_limit  examine_flags  examine_public_attrs  exit_flags  exit_quota
-  events_daily_hour  fascist_teleport  find_money_chance  fixed_home_message
+  events_daily_hour  fascist_teleport   find_money_chance  fixed_home_message
   fixed_tel_message  flag_access  flag_alias  forbid_site  fork_dump
-  fork_vfork  full_file  full_motd_message  function_access
+  fork_vfork  full_file  full_motd_message function_access
   function_invocation_limit  function_recursion_limit  game_dir_file
   game_page_file  good_name  guest_char_num  guest_file  guest_nuker
   guest_prefix  guests_channel  have_comsys  have_macros  have_mailer
@@ -1512,8 +1512,8 @@
   See also: fork_dump.
 
 & full_file
-  Config parameter: down_file <pathname>.  Default: text/full.txt
- 
+  Config parameter: full_file <pathname>.  Default: text/full.txt
+
   Specifies the name of the file that is displayed when players attempt to
   connect to a non-wizard character when the number of connected players
   is not less than the number of players allowed by the max_players directive.
