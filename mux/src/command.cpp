@@ -1,6 +1,6 @@
 // command.cpp -- command parser and support routines.
 //
-// $Id: command.cpp,v 1.39 2004-06-18 15:51:21 sdennis Exp $
+// $Id: command.cpp,v 1.40 2004-07-08 18:54:25 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -144,6 +144,12 @@ NAMETAB dolist_sw[] =
     {"delimit",         1,  CA_PUBLIC,  DOLIST_DELIMIT},
     {"notify",          1,  CA_PUBLIC,  DOLIST_NOTIFY|SW_MULTIPLE},
     {"space",           1,  CA_PUBLIC,  DOLIST_SPACE},
+    { NULL,             0,          0,  0}
+};
+
+NAMETAB query_sw[] =
+{
+    {"sql",             1,  CA_PUBLIC,  QUERY_SQL},
     { NULL,             0,          0,  0}
 };
 
@@ -731,7 +737,7 @@ CMDENT_TWO_ARG_CMDARG command_table_two_arg_cmdarg[] =
 {
     {"@dolist", dolist_sw,  CA_GBL_INTERP,  0,      CS_TWO_ARG|CS_CMDARG|CS_NOINTERP|CS_STRIP_AROUND, 0, do_dolist},
     {"@force",  NULL,       CA_NO_SLAVE|CA_GBL_INTERP|CA_NO_GUEST,    0,    CS_TWO_ARG|CS_INTERP|CS_CMDARG, 0, do_force},
-    {"@sql",    NULL,       CA_WIZARD,      0,      CS_TWO_ARG|CS_INTERP,                             0, do_sql},
+    {"@query",  query_sw,   CA_WIZARD,      0,      CS_TWO_ARG|CS_INTERP,                             0, do_sql},
     {"@wait",   wait_sw,    CA_GBL_INTERP,  0,      CS_TWO_ARG|CS_CMDARG|CS_NOINTERP|CS_STRIP_AROUND, 0, do_wait},
     {NULL,      NULL,       0,              0,      0,              0, NULL}
 };

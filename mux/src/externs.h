@@ -1,6 +1,6 @@
 // externs.h -- Prototypes for externs not defined elsewhere.
 //
-// $Id: externs.h,v 1.26 2004-06-30 10:52:40 sdennis Exp $
+// $Id: externs.h,v 1.27 2004-07-08 18:54:25 sdennis Exp $
 //
 
 #ifndef EXTERNS_H
@@ -471,6 +471,7 @@ extern bool fwdlist_ck(dbref player, dbref thing, int anum, char *atext);
 #define PS_LONG         1   /* Long PS report */
 #define PS_SUMM         2   /* Queue counts only */
 #define PS_ALL          4   /* List entire queue */
+#define QUERY_SQL       1   /* SQL query */
 #define QUEUE_KICK      1   /* Process commands from queue */
 #define QUEUE_WARP      2   /* Advance or set back wait queue clock */
 #define QUOTA_SET       1   /* Set a quota */
