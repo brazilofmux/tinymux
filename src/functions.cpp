@@ -1,6 +1,6 @@
 // functions.cpp - MUX function handlers 
 //
-// $Id: functions.cpp,v 1.63 2001-06-14 09:22:16 sdennis Exp $
+// $Id: functions.cpp,v 1.64 2001-06-17 07:53:26 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -2182,11 +2182,11 @@ FUNCTION(fun_pfind)
 FUNCTION(fun_gt)
 {
     int ch = '0';
-    int nDigits0, nDigits1;
-    if (  (  is_integer(fargs[0], &nDigits0)
-          && nDigits0 <= 9
-          && is_integer(fargs[1], &nDigits1)
-          && nDigits1 <= 9
+    int nDigits;
+    if (  (  is_integer(fargs[0], &nDigits)
+          && nDigits <= 9
+          && is_integer(fargs[1], &nDigits)
+          && nDigits <= 9
           && Tiny_atol(fargs[0]) > Tiny_atol(fargs[1]))
        || safe_atof(fargs[0]) > safe_atof(fargs[1]))
     {
@@ -2198,11 +2198,11 @@ FUNCTION(fun_gt)
 FUNCTION(fun_gte)
 {
     int ch = '0';
-    int nDigits0, nDigits1;
-    if (  (  is_integer(fargs[0], &nDigits0)
-          && nDigits0 <= 9
-          && is_integer(fargs[1], &nDigits1)
-          && nDigits1 <= 9
+    int nDigits;
+    if (  (  is_integer(fargs[0], &nDigits)
+          && nDigits <= 9
+          && is_integer(fargs[1], &nDigits)
+          && nDigits <= 9
           && Tiny_atol(fargs[0]) >= Tiny_atol(fargs[1]))
        || safe_atof(fargs[0]) >= safe_atof(fargs[1]))
     {
@@ -2214,11 +2214,11 @@ FUNCTION(fun_gte)
 FUNCTION(fun_lt)
 {
     int ch = '0';
-    int nDigits0, nDigits1;
-    if (  (  is_integer(fargs[0], &nDigits0)
-          && nDigits0 <= 9
-          && is_integer(fargs[1], &nDigits1)
-          && nDigits1 <= 9
+    int nDigits;
+    if (  (  is_integer(fargs[0], &nDigits)
+          && nDigits <= 9
+          && is_integer(fargs[1], &nDigits)
+          && nDigits <= 9
           && Tiny_atol(fargs[0]) < Tiny_atol(fargs[1]))
        || safe_atof(fargs[0]) < safe_atof(fargs[1]))
     {
@@ -2230,11 +2230,11 @@ FUNCTION(fun_lt)
 FUNCTION(fun_lte)
 {
     int ch = '0';
-    int nDigits0, nDigits1;
-    if (  (  is_integer(fargs[0], &nDigits0)
-          && nDigits0 <= 9
-          && is_integer(fargs[1], &nDigits1)
-          && nDigits1 <= 9
+    int nDigits;
+    if (  (  is_integer(fargs[0], &nDigits)
+          && nDigits <= 9
+          && is_integer(fargs[1], &nDigits)
+          && nDigits <= 9
           && Tiny_atol(fargs[0]) <= Tiny_atol(fargs[1]))
        || safe_atof(fargs[0]) <= safe_atof(fargs[1]))
     {
@@ -2246,12 +2246,13 @@ FUNCTION(fun_lte)
 FUNCTION(fun_eq)
 {
     int ch = '0';
-    int nDigits0, nDigits1;
-    if (  (  is_integer(fargs[0], &nDigits0)
-          && nDigits0 <= 9
-          && is_integer(fargs[1], &nDigits1)
-          && nDigits1 <= 9
+    int nDigits;
+    if (  (  is_integer(fargs[0], &nDigits)
+          && nDigits <= 9
+          && is_integer(fargs[1], &nDigits)
+          && nDigits <= 9
           && Tiny_atol(fargs[0]) == Tiny_atol(fargs[1]))
+       || strcmp(fargs[0], fargs[1]) == 0
        || safe_atof(fargs[0]) == safe_atof(fargs[1]))
     {
         ch = '1';
@@ -2262,13 +2263,14 @@ FUNCTION(fun_eq)
 FUNCTION(fun_neq)
 {
     int ch = '0';
-    int nDigits0, nDigits1;
-    if (  (  is_integer(fargs[0], &nDigits0)
-          && nDigits0 <= 9
-          && is_integer(fargs[1], &nDigits1)
-          && nDigits1 <= 9
+    int nDigits;
+    if (  (  is_integer(fargs[0], &nDigits)
+          && nDigits <= 9
+          && is_integer(fargs[1], &nDigits)
+          && nDigits <= 9
           && Tiny_atol(fargs[0]) != Tiny_atol(fargs[1]))
-       || safe_atof(fargs[0]) != safe_atof(fargs[1]))
+       || (  strcmp(fargs[0], fargs[1]) != 0
+          && safe_atof(fargs[0]) != safe_atof(fargs[1])))
     {
         ch = '1';
     }
@@ -2334,6 +2336,7 @@ FUNCTION(fun_sqrt)
 #endif
 }
 
+#if 0
 FUNCTION(fun_add)
 {
     double sum = 0.0;
@@ -2348,6 +2351,64 @@ FUNCTION(fun_sub)
 {
     fval(buff, bufc, safe_atof(fargs[0]) - safe_atof(fargs[1]));
 }
+#else
+static long nMaximums[10] =
+{
+    0, 9, 99, 999, 9999, 99999, 999999, 9999999, 99999999, 999999999
+};
+
+FUNCTION(fun_add)
+{
+    int i;
+    for (i = 0; i < nfargs; i++)
+    {
+        int nDigits;
+        long nMaxValue = 0;
+        if (  !is_integer(fargs[i], &nDigits)
+           || nDigits > 9
+           || (nMaxValue += nMaximums[nDigits]) > 999999999L)
+        {
+            // Do it the slow way.
+            //
+            double sum = 0.0;
+            for (int j = 0; j < nfargs; j++)
+            {
+                sum += safe_atof(fargs[j]);
+            }
+            fval(buff, bufc, sum);
+            return;
+        }
+    }
+
+    // We can do it the fast way.
+    //
+    long sum = 0;
+    for (i = 0; i < nfargs; i++)
+    {
+        sum += Tiny_atol(fargs[i]);
+    }
+    safe_ltoa(sum, buff, bufc, LBUF_SIZE-1);
+}
+
+FUNCTION(fun_sub)
+{
+    int nDigits;
+    if (  is_integer(fargs[0], &nDigits)
+       && nDigits <= 9
+       && is_integer(fargs[1], &nDigits)
+       && nDigits <= 9)
+    {
+        int iResult;
+        iResult = Tiny_atol(fargs[0]) - Tiny_atol(fargs[1]);
+        safe_ltoa(iResult, buff, bufc, LBUF_SIZE-1);
+    }
+    else
+    {
+        fval(buff, bufc, safe_atof(fargs[0]) - safe_atof(fargs[1]));
+    }
+}
+
+#endif
 
 FUNCTION(fun_mul)
 {
