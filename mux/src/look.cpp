@@ -1,6 +1,6 @@
 // look.cpp -- Commands which look at things.
 //
-// $Id: look.cpp,v 1.35 2003-01-31 06:34:20 sdennis Exp $
+// $Id: look.cpp,v 1.36 2003-07-24 04:25:08 sdennis Exp $
 //
 // MUX 2.2
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -952,7 +952,8 @@ static void look_simple(dbref player, dbref thing, BOOL obey_terse)
 
     // Get the name and db-number if we can examine it.
     //
-    if (Examinable(player, thing))
+    if (  !Dark(thing)
+       || Examinable(player, thing))
     {
         char *buff = unparse_object(player, thing, TRUE);
         notify(player, buff);
