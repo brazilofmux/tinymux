@@ -1,6 +1,6 @@
 // externs.h - Prototypes for externs not defined elsewhere.
 //
-// $Id: externs.h,v 1.10 2000-04-14 04:11:58 sdennis Exp $
+// $Id: externs.h,v 1.11 2000-04-15 15:25:10 sdennis Exp $
 //
 #ifndef EXTERNS_H
 #define EXTERNS_H
@@ -205,10 +205,12 @@ extern dbref    FDECL(match_examinable, (dbref, const char *));
 // From stringutil.c
 //
 extern char Tiny_IsDigit[256];
-extern char Tiny_IsSpace[256];
+extern char Tiny_IsAlpha[256];
 extern char Tiny_IsAlphaNumeric[256];
 extern char Tiny_IsUpper[256];
 extern char Tiny_IsLower[256];
+extern char Tiny_IsSpace[256];
+extern char Tiny_IsAttributeNameCharacter[256];
 extern unsigned char Tiny_ToUpper[256];
 extern unsigned char Tiny_ToLower[256];
 int ANSI_lex(int nString, const char *pString, int *nLengthToken0, int *nLengthToken1);
