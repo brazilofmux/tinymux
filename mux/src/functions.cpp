@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.80 2004-04-15 16:24:53 sdennis Exp $
+// $Id: functions.cpp,v 1.81 2004-04-17 20:48:49 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -665,9 +665,11 @@ static void fval_buf(char *buff, double result)
  */
 bool delim_check
 (
-    char *fargs[], int nfargs, int sep_arg, char *sep, char *buff,
-    char **bufc, bool eval, dbref executor, dbref caller, dbref enactor,
-    char *cargs[], int ncargs, bool allow_special
+    char *buff, char **bufc,
+    dbref executor, dbref caller, dbref enactor,
+    char *fargs[], int nfargs,
+    char *cargs[], int ncargs,
+    int sep_arg, SEP *sep, int dflags
 )
 {
     bool bSuccess = true;
@@ -679,9 +681,9 @@ bool delim_check
         int tlen = strlen(tstr);
         if (tlen <= 1)
         {
-            eval = false;
+            dflags &= DELIM_EVAL;
         }
-        if (eval)
+        if (dflags & DELIM_EVAL)
         {
             char *str = tstr;
             char *bp = tstr = alloc_lbuf("delim_check");
@@ -696,26 +698,28 @@ bool delim_check
         //
         if (tlen == 1)
         {
-            *sep = tstr[0];
+            sep->str[0] = tstr[0];
         }
         else if (tlen == 0)
         {
-            *sep = ' ';
+            sep->str[0] = ' ';
         }
         else
         {
             // We might have an issue.
             //
             if (  tlen == 2
-               && allow_special)
+               && dflags & (DELIM_CRLF|DELIM_NULL))
             {
-                if (memcmp(tstr, NULL_DELIM_VAR, 2) == 0)
+                if (  dflags & DELIM_NULL
+                   && memcmp(tstr, NULL_DELIM_VAR, 2) == 0)
                 {
-                    *sep = '\0';
+                    sep->str[0] = '\0';
                 }
-                else if (memcmp(tstr, "\r\n", 2) == 0)
+                else if (  (dflags & DELIM_CRLF)
+                        && memcmp(tstr, "\r\n", 2) == 0)
                 {
-                    *sep = '\r';
+                    sep->str[0] = '\r';
                 }
                 else
                 {
@@ -730,7 +734,7 @@ bool delim_check
 
         // Clean up the evaluation buffer.
         //
-        if (eval)
+        if (dflags & DELIM_EVAL)
         {
             free_lbuf(tstr);
         }
@@ -742,7 +746,7 @@ bool delim_check
     }
     else
     {
-        *sep = ' ';
+        sep->str[0] = ' ';
     }
     return true;
 }
@@ -776,9 +780,9 @@ FUNCTION(fun_words)
         return;
     }
 
-    char sep;
+    SEP sep;
     varargs_preamble(2);
-    safe_ltoa(countwords(strip_ansi(fargs[0]), sep), buff, bufc);
+    safe_ltoa(countwords(strip_ansi(fargs[0]), sep.str[0]), buff, bufc);
 }
 
 /* ---------------------------------------------------------------------------
@@ -1680,11 +1684,11 @@ FUNCTION(fun_first)
     {
         return;
     }
-    char sep;
+    SEP sep;
     varargs_preamble(2);
 
-    char *s = trim_space_sep(fargs[0], sep);
-    char *first = split_token(&s, sep);
+    char *s = trim_space_sep(fargs[0], sep.str[0]);
+    char *first = split_token(&s, sep.str[0]);
     if (first)
     {
         safe_str(first, buff, bufc);
@@ -1705,11 +1709,11 @@ FUNCTION(fun_rest)
     {
         return;
     }
-    char sep;
+    SEP sep;
     varargs_preamble(2);
 
-    char *s = trim_space_sep(fargs[0], sep);  // leading spaces ...
-    split_token(&s, sep);
+    char *s = trim_space_sep(fargs[0], sep.str[0]);  // leading spaces ...
+    split_token(&s, sep.str[0]);
     if (s)
     {
         safe_str(s, buff, bufc);
@@ -2170,16 +2174,16 @@ FUNCTION(fun_name)
 
 FUNCTION(fun_match)
 {
-    char sep;
+    SEP sep;
     varargs_preamble(3);
 
     // Check each word individually, returning the word number of the first
     // one that matches.  If none match, return 0.
     //
     int wcount = 1;
-    char *s = trim_space_sep(fargs[0], sep);
+    char *s = trim_space_sep(fargs[0], sep.str[0]);
     do {
-        char *r = split_token(&s, sep);
+        char *r = split_token(&s, sep.str[0]);
         mudstate.wild_invk_ctr = 0;
         if (quick_wild(fargs[1], r))
         {
@@ -2213,7 +2217,8 @@ FUNCTION(fun_strmatch)
 FUNCTION(fun_extract)
 {
     int start, len;
-    char *r, *s, *t, sep;
+    char *r, *s, *t;
+    SEP sep;
 
     varargs_preamble(4);
 
@@ -2229,10 +2234,10 @@ FUNCTION(fun_extract)
     // Skip to the start of the string to save.
     //
     start--;
-    s = trim_space_sep(s, sep);
+    s = trim_space_sep(s, sep.str[0]);
     while (start && s)
     {
-        s = next_token(s, sep);
+        s = next_token(s, sep.str[0]);
         start--;
     }
 
@@ -2249,7 +2254,7 @@ FUNCTION(fun_extract)
     len--;
     while (len && s)
     {
-        s = next_token(s, sep);
+        s = next_token(s, sep.str[0]);
         len--;
     }
 
@@ -2257,7 +2262,7 @@ FUNCTION(fun_extract)
     //
     if (s && *s)
     {
-        t = split_token(&s, sep);
+        t = split_token(&s, sep.str[0]);
     }
     safe_str(r, buff, bufc);
 }
@@ -3256,13 +3261,13 @@ FUNCTION(fun_ladd)
     int n = 0;
     if (0 < nfargs)
     {
-        char sep;
+        SEP sep;
         varargs_preamble(2);
 
-        char *cp = trim_space_sep(fargs[0], sep);
+        char *cp = trim_space_sep(fargs[0], sep.str[0]);
         while (cp)
         {
-            char *curr = split_token(&cp, sep);
+            char *curr = split_token(&cp, sep.str[0]);
             g_aDoubles[n++] = mux_atof(curr);
         }
     }
@@ -3274,13 +3279,13 @@ FUNCTION(fun_land)
     bool bValue = true;
     if (0 < nfargs)
     {
-        char sep;
+        SEP sep;
         varargs_preamble(2);
 
-        char *cp = trim_space_sep(fargs[0], sep);
+        char *cp = trim_space_sep(fargs[0], sep.str[0]);
         while (cp && bValue)
         {
-            char *curr = split_token(&cp, sep);
+            char *curr = split_token(&cp, sep.str[0]);
             bValue = isTRUE(mux_atol(curr));
         }
     }
@@ -3292,13 +3297,13 @@ FUNCTION(fun_lor)
     bool bValue = false;
     if (0 < nfargs)
     {
-        char sep;
+        SEP sep;
         varargs_preamble(2);
 
-        char *cp = trim_space_sep(fargs[0], sep);
+        char *cp = trim_space_sep(fargs[0], sep.str[0]);
         while (cp && !bValue)
         {
-            char *curr = split_token(&cp, sep);
+            char *curr = split_token(&cp, sep.str[0]);
             bValue = isTRUE(mux_atol(curr));
         }
     }
@@ -3956,41 +3961,41 @@ static void handle_vectors
 
 FUNCTION(fun_vadd)
 {
-    char sep, osep;
+    SEP sep, osep;
     svarargs_preamble(4);
-    handle_vectors(fargs[0], fargs[1], buff, bufc, sep, osep, VADD_F);
+    handle_vectors(fargs[0], fargs[1], buff, bufc, sep.str[0], osep.str[0], VADD_F);
 }
 
 FUNCTION(fun_vsub)
 {
-    char sep, osep;
+    SEP sep, osep;
     svarargs_preamble(4);
-    handle_vectors(fargs[0], fargs[1], buff, bufc, sep, osep, VSUB_F);
+    handle_vectors(fargs[0], fargs[1], buff, bufc, sep.str[0], osep.str[0], VSUB_F);
 }
 
 FUNCTION(fun_vmul)
 {
-    char sep, osep;
+    SEP sep, osep;
     svarargs_preamble(4);
-    handle_vectors(fargs[0], fargs[1], buff, bufc, sep, osep, VMUL_F);
+    handle_vectors(fargs[0], fargs[1], buff, bufc, sep.str[0], osep.str[0], VMUL_F);
 }
 
 FUNCTION(fun_vdot)
 {
     // dot product: (a,b,c) . (d,e,f) = ad + be + cf
     //
-    char sep, osep;
+    SEP sep, osep;
     svarargs_preamble(4);
-    handle_vectors(fargs[0], fargs[1], buff, bufc, sep, osep, VDOT_F);
+    handle_vectors(fargs[0], fargs[1], buff, bufc, sep.str[0], osep.str[0], VDOT_F);
 }
 
 FUNCTION(fun_vcross)
 {
     // cross product: (a,b,c) x (d,e,f) = (bf - ce, cd - af, ae - bd)
     //
-    char sep, osep;
+    SEP sep, osep;
     svarargs_preamble(4);
-    handle_vectors(fargs[0], fargs[1], buff, bufc, sep, osep, VCROSS_F);
+    handle_vectors(fargs[0], fargs[1], buff, bufc, sep.str[0], osep.str[0], VCROSS_F);
 }
 
 FUNCTION(fun_vmag)
@@ -3998,7 +4003,7 @@ FUNCTION(fun_vmag)
     char *v1[LBUF_SIZE];
     int n, i;
     double tmp, res = 0.0;
-    char sep;
+    SEP sep;
 
     varargs_preamble(2);
 
@@ -4008,7 +4013,7 @@ FUNCTION(fun_vmag)
     {
         return;
     }
-    n = list2arr(v1, LBUF_SIZE, fargs[0], sep);
+    n = list2arr(v1, LBUF_SIZE, fargs[0], sep.str[0]);
 
     if (n > MAXDIM)
     {
@@ -4040,7 +4045,7 @@ FUNCTION(fun_vunit)
     char vres[MAXDIM][LBUF_SIZE];
     int n, i;
     double tmp, res = 0.0;
-    char sep;
+    SEP sep;
 
     varargs_preamble(2);
 
@@ -4050,7 +4055,7 @@ FUNCTION(fun_vunit)
     {
         return;
     }
-    n = list2arr(v1, LBUF_SIZE, fargs[0], sep);
+    n = list2arr(v1, LBUF_SIZE, fargs[0], sep.str[0]);
 
     if (n > MAXDIM)
     {
@@ -4078,12 +4083,12 @@ FUNCTION(fun_vunit)
         v1[i] = (char *) vres[i];
     }
 
-    arr2list(v1, n, buff, bufc, sep);
+    arr2list(v1, n, buff, bufc, sep.str[0]);
 }
 
 FUNCTION(fun_vdim)
 {
-    char sep;
+    SEP sep;
     if (fargs == 0)
     {
         safe_chr('0', buff, bufc);
@@ -4091,7 +4096,7 @@ FUNCTION(fun_vdim)
     else
     {
         varargs_preamble(2);
-        safe_ltoa(countwords(fargs[0],sep), buff, bufc);
+        safe_ltoa(countwords(fargs[0],sep.str[0]), buff, bufc);
     }
 }
 
@@ -4758,27 +4763,27 @@ FUNCTION(fun_ldelete)
 {
     // Delete a word at position X of a list.
     //
-    char sep;
+    SEP sep;
     varargs_preamble(3);
-    do_itemfuns(buff, bufc, fargs[0], mux_atol(fargs[1]), NULL, sep, IF_DELETE);
+    do_itemfuns(buff, bufc, fargs[0], mux_atol(fargs[1]), NULL, sep.str[0], IF_DELETE);
 }
 
 FUNCTION(fun_replace)
 {
     // Replace a word at position X of a list.
     //
-    char sep;
+    SEP sep;
     varargs_preamble(4);
-    do_itemfuns(buff, bufc, fargs[0], mux_atol(fargs[1]), fargs[2], sep, IF_REPLACE);
+    do_itemfuns(buff, bufc, fargs[0], mux_atol(fargs[1]), fargs[2], sep.str[0], IF_REPLACE);
 }
 
 FUNCTION(fun_insert)
 {
     // Insert a word at position X of a list.
     //
-    char sep;
+    SEP sep;
     varargs_preamble(4);
-    do_itemfuns(buff, bufc, fargs[0], mux_atol(fargs[1]), fargs[2], sep, IF_INSERT);
+    do_itemfuns(buff, bufc, fargs[0], mux_atol(fargs[1]), fargs[2], sep.str[0], IF_INSERT);
 }
 
 /*
@@ -4789,11 +4794,11 @@ FUNCTION(fun_insert)
 FUNCTION(fun_remove)
 {
     char *s, *sp, *word;
-    char sep;
+    SEP sep;
     bool first, found;
 
     varargs_preamble(3);
-    if (strchr(fargs[1], sep))
+    if (strchr(fargs[1], sep.str[0]))
     {
         safe_str("#-1 CAN ONLY DELETE ONE ELEMENT", buff, bufc);
         return;
@@ -4809,11 +4814,11 @@ FUNCTION(fun_remove)
     first = true;
     while (s)
     {
-        sp = split_token(&s, sep);
+        sp = split_token(&s, sep.str[0]);
         if (found || strcmp(sp, word))
         {
             if (!first)
-                safe_chr(sep, buff, bufc);
+                safe_chr(sep.str[0], buff, bufc);
             safe_str(sp, buff, bufc);
             first = false;
         }
@@ -4832,13 +4837,14 @@ FUNCTION(fun_remove)
 FUNCTION(fun_member)
 {
     int wcount;
-    char *r, *s, sep;
+    char *r, *s;
+    SEP sep;
 
     varargs_preamble(3);
     wcount = 1;
-    s = trim_space_sep(fargs[0], sep);
+    s = trim_space_sep(fargs[0], sep.str[0]);
     do {
-        r = split_token(&s, sep);
+        r = split_token(&s, sep.str[0]);
         if (!strcmp(fargs[1], r))
         {
             safe_ltoa(wcount, buff, bufc);
@@ -4948,7 +4954,8 @@ FUNCTION(fun_wordpos)
 {
     unsigned charpos;
     int i;
-    char *cp, *tp, *xp, sep;
+    char *cp, *tp, *xp;
+    SEP sep;
 
     varargs_preamble(3);
 
@@ -4957,13 +4964,13 @@ FUNCTION(fun_wordpos)
     if ((charpos > 0) && (charpos <= strlen(cp)))
     {
         tp = &(cp[charpos - 1]);
-        cp = trim_space_sep(cp, sep);
-        xp = split_token(&cp, sep);
+        cp = trim_space_sep(cp, sep.str[0]);
+        xp = split_token(&cp, sep.str[0]);
         for (i = 1; xp; i++)
         {
             if (tp < (xp + strlen(xp)))
                 break;
-            xp = split_token(&cp, sep);
+            xp = split_token(&cp, sep.str[0]);
         }
         safe_ltoa(i, buff, bufc);
         return;
@@ -5542,10 +5549,10 @@ FUNCTION(fun_capstr)
  */
 FUNCTION(fun_lnum)
 {
-    char sep;
+    SEP sep;
     if (  nfargs == 0
-       || !delim_check(fargs, nfargs, 3, &sep, buff, bufc, false, executor,
-               caller, enactor, cargs, ncargs, true))
+       || !delim_check(buff, bufc, executor, caller, enactor,
+               fargs, nfargs, cargs, ncargs, 3, &sep, DELIM_NULL|DELIM_CRLF))
     {
         return;
     }
@@ -5575,7 +5582,7 @@ FUNCTION(fun_lnum)
         safe_ltoa(bot, buff, bufc);
         for (i = bot+1; i <= top; i++)
         {
-            print_sep(sep, buff, bufc);
+            print_sep(sep.str[0], buff, bufc);
             char *p = *bufc;
             safe_ltoa(i, buff, bufc);
             if (p == *bufc) return;
@@ -5586,7 +5593,7 @@ FUNCTION(fun_lnum)
         safe_ltoa(bot, buff, bufc);
         for (i = bot-1; i >= top; i--)
         {
-            print_sep(sep, buff, bufc);
+            print_sep(sep.str[0], buff, bufc);
             char *p = *bufc;
             safe_ltoa(i, buff, bufc);
             if (p == *bufc) return;
@@ -5811,9 +5818,9 @@ FUNCTION(fun_revwords)
     {
         return;
     }
-    char sep;
+    SEP sep;
     varargs_preamble(2);
-    ReverseWordsInText_Seperator = sep;
+    ReverseWordsInText_Seperator = sep.str[0];
     ANSI_TransformTextReverseWithFunction(buff, bufc, fargs[0], ReverseWordsInText);
 }
 
@@ -6063,18 +6070,18 @@ FUNCTION(fun_merge)
 
 FUNCTION(fun_splice)
 {
-    char sep;
+    SEP sep;
     varargs_preamble(4);
 
     // Length checks.
     //
-    if (countwords(fargs[2], sep) > 1)
+    if (countwords(fargs[2], sep.str[0]) > 1)
     {
         safe_str("#-1 TOO MANY WORDS", buff, bufc);
         return;
     }
-    int words = countwords(fargs[0], sep);
-    if (words != countwords(fargs[1], sep))
+    int words = countwords(fargs[0], sep.str[0]);
+    if (words != countwords(fargs[1], sep.str[0]))
     {
         safe_str("#-1 NUMBER OF WORDS MUST BE EQUAL", buff, bufc);
         return;
@@ -6089,11 +6096,11 @@ FUNCTION(fun_splice)
     int i;
     for (i = 0; i < words; i++)
     {
-        p2 = split_token(&p1, sep);
-        q2 = split_token(&q1, sep);
+        p2 = split_token(&p1, sep.str[0]);
+        q2 = split_token(&q1, sep.str[0]);
         if (!first)
         {
-            safe_chr(sep, buff, bufc);
+            safe_chr(sep.str[0], buff, bufc);
         }
         if (!strcmp(p2, fargs[2]))
         {
@@ -6175,8 +6182,9 @@ FUNCTION(fun_repeat)
 
 FUNCTION(fun_parse)
 {
-    char *curr, *objstring, *cp, *dp, sep, osep;
+    char *curr, *objstring, *cp, *dp;
     char *str;
+    SEP sep, osep;
 
     sevarargs_preamble(4);
     cp = curr = dp = alloc_lbuf("fun_parse");
@@ -6184,7 +6192,7 @@ FUNCTION(fun_parse)
     mux_exec(curr, &dp, executor, caller, enactor,
         EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, cargs, ncargs);
     *dp = '\0';
-    cp = trim_space_sep(cp, sep);
+    cp = trim_space_sep(cp, sep.str[0]);
     if (!*cp)
     {
         free_lbuf(curr);
@@ -6200,11 +6208,11 @@ FUNCTION(fun_parse)
     {
         if (!first)
         {
-            print_sep(osep, buff, bufc);
+            print_sep(osep.str[0], buff, bufc);
         }
         first = false;
         number++;
-        objstring = split_token(&cp, sep);
+        objstring = split_token(&cp, sep.str[0]);
         mudstate.itext[mudstate.in_loop-1] = objstring;
         mudstate.inum[mudstate.in_loop-1]  = number;
         char *buff2 = replace_tokens(fargs[1], objstring, mux_ltoa_t(number), NULL);
@@ -6227,7 +6235,8 @@ FUNCTION(fun_parse)
 
 FUNCTION(fun_iter)
 {
-    char *curr, *cp, *dp, sep, osep, *str;
+    char *curr, *cp, *dp, *str;
+    SEP sep, osep;
 
     sevarargs_preamble(4);
     dp = cp = curr = alloc_lbuf("fun_iter");
@@ -6235,7 +6244,7 @@ FUNCTION(fun_iter)
     mux_exec(curr, &dp, executor, caller, enactor,
         EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, cargs, ncargs);
     *dp = '\0';
-    cp = trim_space_sep(cp, sep);
+    cp = trim_space_sep(cp, sep.str[0]);
     if (!*cp)
     {
         free_lbuf(curr);
@@ -6251,11 +6260,11 @@ FUNCTION(fun_iter)
     {
         if (!first)
         {
-            print_sep(osep, buff, bufc);
+            print_sep(osep.str[0], buff, bufc);
         }
         first = false;
         number++;
-        char *objstring = split_token(&cp, sep);
+        char *objstring = split_token(&cp, sep.str[0]);
         mudstate.itext[mudstate.in_loop-1] = objstring;
         mudstate.inum[mudstate.in_loop-1]  = number;
         char *buff2 = replace_tokens(fargs[1], objstring, mux_ltoa_t(number),
@@ -6311,14 +6320,15 @@ FUNCTION(fun_inum)
 
 FUNCTION(fun_list)
 {
-    char *curr, *objstring, *result, *cp, *dp, *str, sep;
+    char *curr, *objstring, *result, *cp, *dp, *str;
+    SEP sep;
 
     evarargs_preamble(3);
     cp = curr = dp = alloc_lbuf("fun_list");
     str = fargs[0];
     mux_exec(curr, &dp, executor, caller, enactor,
         EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, cargs, ncargs);
-    cp = trim_space_sep(cp, sep);
+    cp = trim_space_sep(cp, sep.str[0]);
     if (!*cp)
     {
         free_lbuf(curr);
@@ -6332,7 +6342,7 @@ FUNCTION(fun_list)
           && mudstate.func_invk_ctr < mudconf.func_invk_lim)
     {
         number++;
-        objstring = split_token(&cp, sep);
+        objstring = split_token(&cp, sep.str[0]);
         mudstate.itext[mudstate.in_loop-1] = objstring;
         mudstate.inum[mudstate.in_loop-1]  = number;
         char *buff2 = replace_tokens(fargs[1], objstring, mux_ltoa_t(number),
@@ -6374,7 +6384,7 @@ FUNCTION(fun_ilev)
 
 FUNCTION(fun_fold)
 {
-    char sep;
+    SEP sep;
 
     // We need two to four arguments only.
     //
@@ -6402,7 +6412,7 @@ FUNCTION(fun_fold)
        && fargs[2])
     {
         clist[0] = fargs[2];
-        clist[1] = split_token(&cp, sep);
+        clist[1] = split_token(&cp, sep.str[0]);
         result = bp = alloc_lbuf("fun_fold");
         str = atextbuf;
         mux_exec(result, &bp, thing, executor, enactor,
@@ -6411,8 +6421,8 @@ FUNCTION(fun_fold)
     }
     else
     {
-        clist[0] = split_token(&cp, sep);
-        clist[1] = split_token(&cp, sep);
+        clist[0] = split_token(&cp, sep.str[0]);
+        clist[1] = split_token(&cp, sep.str[0]);
         result = bp = alloc_lbuf("fun_fold");
         str = atextbuf;
         mux_exec(result, &bp, thing, executor, enactor,
@@ -6427,7 +6437,7 @@ FUNCTION(fun_fold)
           && mudstate.func_invk_ctr < mudconf.func_invk_lim)
     {
         clist[0] = rstore;
-        clist[1] = split_token(&cp, sep);
+        clist[1] = split_token(&cp, sep.str[0]);
         strcpy(atextbuf, atext);
         result = bp = alloc_lbuf("fun_fold");
         str = atextbuf;
@@ -6454,7 +6464,7 @@ FUNCTION(fun_fold)
 //
 FUNCTION(fun_itemize)
 { 
-    char sep;
+    SEP sep;
     varargs_preamble(2);
     const char *lconj = "and";
     if (nfargs > 2)
@@ -6468,13 +6478,13 @@ FUNCTION(fun_itemize)
     }
 
     int pos = 1;
-    char *cp = trim_space_sep(fargs[0], sep);
-    char *word = split_token(&cp, sep);
+    char *cp = trim_space_sep(fargs[0], sep.str[0]);
+    char *word = split_token(&cp, sep.str[0]);
     while (cp && *cp)
     {
         pos++;
         safe_str(word, buff, bufc);
-        char *nextword = split_token(&cp, sep);
+        char *nextword = split_token(&cp, sep.str[0]);
 
         if (!cp || !*cp)
         {
@@ -6558,18 +6568,18 @@ void filter_handler(char *buff, char **bufc, dbref executor, dbref enactor,
 
 FUNCTION(fun_filter)
 {
-    char sep;
+    SEP sep;
 
     varargs_preamble(3);
-    filter_handler(buff, bufc, executor, enactor, fargs, sep, false);
+    filter_handler(buff, bufc, executor, enactor, fargs, sep.str[0], false);
 }
 
 FUNCTION(fun_filterbool)
 {
-    char sep;
+    SEP sep;
 
     varargs_preamble(3);
-    filter_handler(buff, bufc, executor, enactor, fargs, sep, true);
+    filter_handler(buff, bufc, executor, enactor, fargs, sep.str[0], true);
 }
 
 /* ---------------------------------------------------------------------------
@@ -6584,7 +6594,7 @@ FUNCTION(fun_filterbool)
 
 FUNCTION(fun_map)
 {
-    char sep, osep;
+    SEP sep, osep;
 
     svarargs_preamble(4);
 
@@ -6597,7 +6607,7 @@ FUNCTION(fun_map)
 
     // Now process the list one element at a time.
     //
-    char *cp = trim_space_sep(fargs[1], sep);
+    char *cp = trim_space_sep(fargs[1], sep.str[0]);
     char *atextbuf = alloc_lbuf("fun_map");
     bool first = true;
     char *objstring, *str;
@@ -6606,10 +6616,10 @@ FUNCTION(fun_map)
     {
         if (!first)
         {
-            print_sep(osep, buff, bufc);
+            print_sep(osep.str[0], buff, bufc);
         }
         first = false;
-        objstring = split_token(&cp, sep);
+        objstring = split_token(&cp, sep.str[0]);
         strcpy(atextbuf, atext);
         str = atextbuf;
         mux_exec(buff, bufc, thing, executor, enactor,
@@ -7118,7 +7128,7 @@ static void do_asort(char *s[], int n, int sort_type)
 
 FUNCTION(fun_sort)
 {
-    char sep, osep;
+    SEP sep, osep;
     char *ptrs[LBUF_SIZE / 2];
 
     // If we are passed an empty arglist return a null string.
@@ -7129,10 +7139,10 @@ FUNCTION(fun_sort)
     //
     char *list = alloc_lbuf("fun_sort");
     strcpy(list, fargs[0]);
-    int nitems = list2arr(ptrs, LBUF_SIZE / 2, list, sep);
+    int nitems = list2arr(ptrs, LBUF_SIZE / 2, list, sep.str[0]);
     int sort_type = get_list_type(fargs, nfargs, 2, ptrs, nitems);
     do_asort(ptrs, nitems, sort_type);
-    arr2list(ptrs, nitems, buff, bufc, osep);
+    arr2list(ptrs, nitems, buff, bufc, osep.str[0]);
     free_lbuf(list);
 }
 
@@ -7393,23 +7403,23 @@ static void handle_sets
 
 FUNCTION(fun_setunion)
 {
-    char sep, osep;
+    SEP sep, osep;
     svarargs_preamble(4);
-    handle_sets(fargs, buff, bufc, SET_UNION, sep, osep);
+    handle_sets(fargs, buff, bufc, SET_UNION, sep.str[0], osep.str[0]);
 }
 
 FUNCTION(fun_setdiff)
 {
-    char sep, osep;
+    SEP sep, osep;
     svarargs_preamble(4);
-    handle_sets(fargs, buff, bufc, SET_DIFF, sep, osep);
+    handle_sets(fargs, buff, bufc, SET_DIFF, sep.str[0], osep.str[0]);
 }
 
 FUNCTION(fun_setinter)
 {
-    char sep, osep;
+    SEP sep, osep;
     svarargs_preamble(4);
-    handle_sets(fargs, buff, bufc, SET_INTERSECT, sep, osep);
+    handle_sets(fargs, buff, bufc, SET_INTERSECT, sep.str[0], osep.str[0]);
 }
 
 /* ---------------------------------------------------------------------------
@@ -7737,8 +7747,9 @@ FUNCTION(fun_isdbref)
 
 FUNCTION(fun_trim)
 {
-    char *p, *lastchar, *q, sep;
+    char *p, *lastchar, *q;
     int trim;
+    SEP sep;
 
     varargs_preamble(3);
     if (nfargs >= 2)
@@ -7766,7 +7777,7 @@ FUNCTION(fun_trim)
         p = lastchar = fargs[0];
         while (*p != '\0')
         {
-            if (*p != sep)
+            if (*p != sep.str[0])
                 lastchar = p;
             p++;
         }
@@ -7777,7 +7788,7 @@ FUNCTION(fun_trim)
     {
         while (*q != '\0')
         {
-            if (*q == sep)
+            if (*q == sep.str[0])
             {
                 q++;
             }
@@ -7999,6 +8010,7 @@ static int wraplen(char *str, const int nWidth, bool &newline)
 FUNCTION(fun_wrap)
 {
     // ARG 2: Width. Default: 78.
+    //
     int nWidth = DEFAULT_WIDTH;
     if (  nfargs >= 2
        && fargs[1][0])
@@ -8013,6 +8025,7 @@ FUNCTION(fun_wrap)
     }
 
     // ARG 3: Justification. Default: Left.
+    //
     int iJustKey = CJC_LJUST;
     if (  nfargs >= 3
        && fargs[2][0])
@@ -8036,6 +8049,7 @@ FUNCTION(fun_wrap)
     }
 
     // ARG 4: Left padding. Default: blank.
+    //
     char *pLeft = NULL;
     if (  nfargs >= 4
        && fargs[3][0])
@@ -8044,6 +8058,7 @@ FUNCTION(fun_wrap)
     }
 
     // ARG 5: Right padding. Default: blank.
+    //
     char *pRight = NULL;
     if (  nfargs >= 5
        && fargs[4][0])
@@ -8052,6 +8067,7 @@ FUNCTION(fun_wrap)
     }
 
     // ARG 6: Hanging indent. Default: 0.
+    //
     int nHanging = 0;
     if (  nfargs >= 6
        && fargs[5][0])
@@ -8060,6 +8076,7 @@ FUNCTION(fun_wrap)
     }
 
     // ARG 7: Output separator. Default: line break.
+    //
     char *pOSep = "\r\n";
     if (  nfargs >= 7
        && fargs[6][0])
@@ -8733,9 +8750,9 @@ FUNCTION(fun_lattrcmds)
 //
 FUNCTION(fun_lcmds)
 {
-    char sep;
-    if (!delim_check(fargs, nfargs, 2, &sep, buff, bufc, false, executor,
-                     caller, enactor, cargs, ncargs, true))
+    SEP sep;
+    if (!delim_check(buff, bufc, executor, caller, enactor,
+        fargs, nfargs, cargs, ncargs, 2, &sep, DELIM_NULL|DELIM_CRLF))
     {
         return;
     }
@@ -8745,7 +8762,8 @@ FUNCTION(fun_lcmds)
     //
     char cmd_type = '$';
     if (  nfargs == 3
-        && (*fargs[2] == '$' || *fargs[2] == '^'))
+        && (  *fargs[2] == '$'
+           || *fargs[2] == '^'))
     {
         cmd_type = *fargs[2];
     }
@@ -8809,7 +8827,7 @@ FUNCTION(fun_lcmds)
                     {
                         if (!isFirst)
                         {
-                            print_sep(sep, buff, bufc);
+                            print_sep(sep.str[0], buff, bufc);
                         }
                         
                         mux_strlwr(buf);

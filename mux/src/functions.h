@@ -1,6 +1,6 @@
 // functions.h -- declarations for functions & function processing.
 //
-// $Id: functions.h,v 1.3 2003-03-02 03:58:12 jake Exp $
+// $Id: functions.h,v 1.4 2004-04-17 20:48:49 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -37,6 +37,9 @@ typedef struct ufun {
 #define FN_LIST     1   // Corresponds to /list switch. -not- used in
                         // UFUN structure.
 
+extern void init_functab(void);
+extern void list_functable(dbref);
+
 /* Special handling of separators. */
 
 #define print_sep(s,b,p) \
@@ -48,14 +51,29 @@ if (s) { \
     } \
 }
 
-extern void init_functab(void);
-extern void list_functable(dbref);
+#define MAX_SEP_LEN 15
+typedef struct
+{
+    char str[MAX_SEP_LEN+1];
+} SEP;
+
+// dlfags in delim_check() accepts the following options.
+//
+#define DELIM_DFLT   0x0000  // Default processing.
+#define DELIM_EVAL   0x0001  // Evaluate delimiter.
+#define DELIM_NULL   0x0002  // Allow '@@'.
+#define DELIM_CRLF   0x0004  // Allow '%r'.
+#define DELIM_STRING 0x0008  // Multi-character.
+
 extern bool delim_check
 (
-    char *fargs[], int nfargs, int sep_arg, char *sep, char *buff,
-    char **bufc, bool eval, dbref executor, dbref caller, dbref enactor,
-    char *cargs[], int ncargs, bool allow_special
+    char *buff, char **bufc,
+    dbref executor, dbref caller, dbref enactor,
+    char *fargs[], int nfargs,
+    char *cargs[], int ncargs,
+    int sep_arg, SEP *sep, int dflags
 );
+
 extern int list2arr(char *arr[], int maxlen, char *list, char sep);
 
 // This is the prototype for functions
@@ -68,33 +86,33 @@ extern int list2arr(char *arr[], int maxlen, char *list, char sep);
 // This is for functions that take an optional delimiter character.
 //
 #define varargs_preamble(xnargs)                                      \
-    if (!delim_check(fargs, nfargs, xnargs, &sep, buff, bufc, false,  \
-        executor, caller, enactor, cargs, ncargs, false))             \
+    if (!delim_check(buff, bufc, executor, caller, enactor,           \
+        fargs, nfargs, cargs, ncargs, xnargs, &sep, DELIM_DFLT))      \
         return;
 
 #define evarargs_preamble(xnargs)                                     \
-    if (!delim_check(fargs, nfargs, xnargs, &sep, buff, bufc, true,   \
-        executor, caller, enactor, cargs, ncargs, false))             \
+    if (!delim_check(buff, bufc, executor, caller, enactor,           \
+        fargs, nfargs, cargs, ncargs, xnargs, &sep, DELIM_EVAL))      \
         return;
 
 #define svarargs_preamble(xnargs)                                     \
-    if (!delim_check(fargs, nfargs, xnargs-1, &sep, buff, bufc, false,\
-        executor, caller, enactor, cargs, ncargs, false))             \
+    if (!delim_check(buff, bufc, executor, caller, enactor,           \
+        fargs, nfargs, cargs, ncargs, xnargs-1, &sep, DELIM_DFLT))    \
         return;                                                       \
     if (nfargs < xnargs)                                              \
         osep = sep;                                                   \
-    else if (!delim_check(fargs, nfargs, xnargs, &osep, buff, bufc,   \
-        false, executor, caller, enactor, cargs, ncargs, true))       \
+    else if (!delim_check(buff, bufc, executor, caller, enactor,      \
+        fargs, nfargs, cargs, ncargs, xnargs, &osep, DELIM_NULL|DELIM_CRLF)) \
         return;
 
 #define sevarargs_preamble(xnargs)                                    \
-    if (!delim_check(fargs, nfargs, xnargs-1, &sep, buff, bufc, true, \
-        executor, caller, enactor, cargs, ncargs, false))             \
+    if (!delim_check(buff, bufc, executor, caller, enactor,           \
+        fargs, nfargs, cargs, ncargs, xnargs-1, &sep, DELIM_EVAL))    \
         return;                                                       \
     if (nfargs < xnargs)                                              \
-        osep = ' ';                                                   \
-    else if (!delim_check(fargs, nfargs, xnargs, &osep, buff, bufc,   \
-        true, executor, caller, enactor, cargs, ncargs, true))        \
+        osep.str[0] = ' ';                                            \
+    else if (!delim_check(buff, bufc, executor, caller, enactor,      \
+        fargs, nfargs, cargs, ncargs, xnargs, &osep, DELIM_EVAL|DELIM_NULL|DELIM_CRLF)) \
         return;
 
 #endif // !__FUNCTIONS_H
