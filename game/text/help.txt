@@ -5446,6 +5446,7 @@ BOOLEAN VALUES
   Examples:
   not(foo) = 0             not(<null string>) = 1   not(-66) = 0
   not(0) = 1               not(#-1) = 1             not(#12) = 0
+  t(1)   = 1               t(#-1)   = 0             t(-66)   = 1
   And so on...
 
   Note: These rules only apply when a function expects a Boolean
@@ -8036,7 +8037,7 @@ AND()
   Takes one or more booleans, and returns 1 if they are all each
   equivalent to true(1).
 
-  Related Topics: BOOLEAN VALUES, or(), not(), xor().
+  Related Topics: BOOLEAN VALUES, or(), not(), t(), xor().
 
 & OR()
 OR()
@@ -8046,7 +8047,16 @@ OR()
   Takes one or more booleans, and returns 1 if at least one is equivalent
   to true(1).
 
-  Related Topics: BOOLEAN VALUES, and(), not(), xor().
+  Related Topics: BOOLEAN VALUES, and(), not(), t(), xor().
+
+& T()
+T()
+
+  FUNCTION: t(<boolean>)
+
+  Takes a boolean value, and returns 1 if it's true, and 0 if it's false.
+
+  Related Topics: BOOLEAN VALUES, and(), not(), or(), xor().
 
 & NOT()
 NOT()
@@ -8057,7 +8067,7 @@ NOT()
   equivalent to true(1) it returns a 0, and if the input is equivalent to
   false(0), it returns a 1.
 
-  Related Topics: BOOLEAN VALUES, and(), or(), xor().
+  Related Topics: BOOLEAN VALUES, and(), or(), t(), xor().
 
 & XOR()
 XOR()
@@ -8067,7 +8077,7 @@ XOR()
   Takes one or more booleans, and returns 1 if an odd number of them are
   equivalent to true(1).
 
-  Related Topics: BOOLEAN VALUES, and(), not(), or().
+  Related Topics: BOOLEAN VALUES, and(), not(), or(), t().
 
 & GT()
 GT()
