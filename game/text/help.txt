@@ -9432,7 +9432,7 @@ ROUND()
 & ROYALTY
 ROYALTY
 
-  FLAG: ROYALTY(z)  ()
+  FLAG: ROYALTY(Z)  ()
 
   If a person is ROYALTY, they can see and examine things, and
   teleport anywhere or anything, like a wizard can. They cannot modify
