@@ -1,6 +1,6 @@
 // timeutil.cpp -- CLinearTimeAbsolute and CLinearTimeDelta modules.
 //
-// $Id: timeutil.cpp,v 1.26 2003-02-25 01:02:16 sdennis Exp $
+// $Id: timeutil.cpp,v 1.27 2003-02-26 06:16:11 sdennis Exp $
 //
 // Date/Time code based on algorithms presented in "Calendrical Calculations",
 // Cambridge Press, 1998.
@@ -1691,7 +1691,7 @@ Again:
             int nSize = sizeof(OffsetEntry)*(nOffsetTable-iMinTouched-1);
             memmove(OffsetTable+iMinTouched, OffsetTable+iMinTouched+1, nSize);
             nOffsetTable--;
-            if (iMinTouched < i)
+            if (iMinTouched <= i)
             {
                 i--;
             }
