@@ -1,6 +1,6 @@
 // command.cpp -- command parser and support routines.
 //
-// $Id: command.cpp,v 1.74 2002-09-06 16:30:20 sdennis Exp $
+// $Id: command.cpp,v 1.75 2002-09-06 16:35:10 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -4068,14 +4068,14 @@ void do_ansiname(dbref executor, dbref caller, dbref enactor, int key, int nfarg
 
         if (isExit(thing)) 
         {
-            for (const char *s = Name(thing); *s && (*s != ';'); s++)
+            for (const char *s = PureName(thing); *s && (*s != ';'); s++)
             {
                 safe_chr(*s, namebuff, &namebuffptr);
             }
         }
         else
         {
-            safe_str(Name(thing), namebuff, &namebuffptr);
+            safe_str(PureName(thing), namebuff, &namebuffptr);
         }
         *namebuffptr = '\0';
 
