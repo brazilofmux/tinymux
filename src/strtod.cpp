@@ -2314,7 +2314,7 @@ char *Tiny_dtoa(double _d, int mode, int ndigits, int *decpt, int *sign,
         }
     }
     j = sizeof(ULong);
-    for (result_k = 0; sizeof(Bigint) - sizeof(ULong) + j <= i; j <<= 1)
+    for (result_k = 0; sizeof(Bigint) - sizeof(ULong) + j <= (unsigned)i; j <<= 1)
     {
         result_k++;
     }
