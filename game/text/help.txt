@@ -591,7 +591,7 @@ DELCOM
   Changes the way a channel behaves. <option> can be one of the
   following:
 
-    publc   - channel is listed in everyone's @clist.
+    public  - channel is listed in everyone's @clist.
     private - channel is hidden from the @clist.
     loud    - channel announces player connects/disconnects.
     mute    - shuts connects/disconnects off.
