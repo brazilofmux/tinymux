@@ -1,6 +1,6 @@
 // db.c 
 //
-// $Id: db.cpp,v 1.28 2000-10-15 19:53:03 sdennis Exp $
+// $Id: db.cpp,v 1.29 2000-10-16 04:31:36 sdennis Exp $
 //
 // MUX 2.0
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -1120,19 +1120,30 @@ int mkattr(char *buff)
         BOOL bValid;
         char *pName = MakeCanonicalAttributeName(buff, &nName, &bValid);
         VATTR *va;
-        if (  !bValid
-           || !(va = vattr_alloc_LEN(pName, nName, mudconf.vattr_flags))
-           || !(va->number))
+        if (bValid)
         {
-            return -1;
+            int aflags = mudconf.vattr_flags;
+            if (pName[0] == '_')
+            {
+                // An attribute that begins with an underline is
+                // hidden from mortals and only changeable by
+                // WIZARDs.
+                //
+                aflags |=  AF_MDARK | AF_WIZARD;
+            }
+            va = vattr_alloc_LEN(pName, nName, aflags);
+            if (va && va->number)
+            {
+                return va->number;
+            }
         }
-        return va->number;
-    }
-    if (!(ap->number))
-    {
         return -1;
     }
-    return ap->number;
+    else if (ap->number)
+    {
+        return ap->number;
+    }
+    return -1;
 }
 
 /*
