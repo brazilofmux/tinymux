@@ -1,5 +1,5 @@
 TinyMUX 2.0:  CHANGES
-Last Update:  January 2001
+Last Update:  February 2001
 
 Major changes that may affect performance and require softcode tweaks:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -160,6 +160,7 @@ Feature Additions:
  --  Freshened help for @aconnect and @adisconnect.
  --  Support second argument for squish().
  --  Compiles under Cygwin.
+ -- Changes for DEC Alpha Linux and IA64.
 
 
 Bug Fixes:
