@@ -1,5 +1,5 @@
 /* config.h */
-/* $Id: config.h,v 1.11 2001-02-06 20:45:48 sdennis Exp $ */
+/* $Id: config.h,v 1.12 2001-02-07 05:01:28 sdennis Exp $ */
 
 #ifndef CONFIG_H
 #define CONFIG_H
@@ -137,6 +137,9 @@ typedef unsigned short   UINT32;
 typedef INT64            INT32;
 typedef UINT64           UINT32;
 #endif
+#define INT32_MIN_VALUE  (-2147483647 - 1)
+#define INT32_MAX_VALUE  2147483647
+#define UINT32_MAX_VALUE 0xFFFFFFFFU
 
 // Find the minimum-sized integer type that will hold 16-bits.
 // Promote to 32-bits if necessary.
@@ -154,6 +157,9 @@ typedef unsigned short   UINT16;
 typedef INT32            INT16;
 typedef UINT32           UINT16;
 #endif
+#define INT16_MIN_VALUE  (-32768)
+#define INT16_MAX_VALUE  32767
+#define UINT16_MAX_VALUE 0xFFFFU
 
 extern BOOL AssertionFailed(const char *SourceFile, unsigned int LineNo);
 #define Tiny_Assert(exp) (void)( (exp) || (AssertionFailed(__FILE__, __LINE__), 0) )
