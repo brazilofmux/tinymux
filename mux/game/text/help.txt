@@ -4225,6 +4225,30 @@ BOR()
 
   Related Topics: shl(), shr(), band(), bnand().
 
+& CAND()
+CAND()
+
+  FUNCTION: cand(<boolean1>[,<booleanN>]...)
+
+  Takes one or more BOOLEAN-Z values, and returns 1 (TRUE) if all arguments
+  are TRUE.  cand() evaluates it's arguments from left to right until either
+  all arguments return TRUE or one of the arguments returns FALSE. This is
+  unlike and() in that some arguments may not be evaluated.
+
+  Related Topics: and(), candbool(), BOOLEAN VALUES, cor().
+
+& CANDBOOL()
+CANDBOOL()
+
+  FUNCTION: candbool(<boolean1>[,<booleanN>]...)
+
+  Takes one or more BOOLEAN values, and returns 1 (TRUE) if all arguments are
+  TRUE.  candbool() evaluates it's arguments from left to right until either
+  all arguments return TRUE or one of the arguments returns FALSE. This is
+  unlike andbool() in that some arguments may not be evaluated.
+
+  Related Topics: andbool(), cand(), BOOLEAN VALUES, corbool().
+
 & CANSEE()
 CANSEE()
 
