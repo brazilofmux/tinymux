@@ -1,6 +1,6 @@
 // timeutil.cpp -- CLinearTimeAbsolute, and CLinearTimeDelta modules
 //
-// $Id: timeutil.h,v 1.3 2000-05-05 19:40:33 sdennis Exp $
+// $Id: timeutil.h,v 1.4 2001-02-12 07:05:48 sdennis Exp $
 //
 // Date/Time code based on algorithms presented in "Calendrical Calculations",
 // Cambridge Press, 1998.
@@ -134,5 +134,17 @@ extern const INT64 FACTOR_100NS_PER_DAY;
 extern const INT64 FACTOR_100NS_PER_WEEK;
 
 void TIME_Initialize(void);
+#ifdef SMALLEST_INT_GTE_NEG_QUOTIENT
+INT64 i64Mod(INT64 x, INT64 y);
+INT64 i64FloorDivision(INT64 x, INT64 y);
+INT64 DCL_INLINE i64Division(INT64 x, INT64 y) { return x / y; }
+INT64 DCL_INLINE i64Remainder(INT64 x, INT64 y) { return x % y; }
+#else
+INT64 DCL_INLINE i64Mod(INT64 x, INT64 y) { return x % y; }
+INT64 DCL_INLINE i64FloorDivision(INT64 x, INT64 y) { return x / y; }
+INT64 i64Division(INT64 x, INT64 y);
+INT64 i64Remainder(INT64 x, INT64 y);
+#endif
+
 
 #endif // TIMEUTIL_H

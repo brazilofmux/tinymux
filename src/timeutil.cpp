@@ -1,6 +1,6 @@
 // timeutil.cpp -- CLinearTimeAbsolute and CLinearTimeDelta modules.
 //
-// $Id: timeutil.cpp,v 1.10 2000-10-12 20:06:18 sdennis Exp $
+// $Id: timeutil.cpp,v 1.11 2001-02-12 07:05:48 sdennis Exp $
 //
 // Date/Time code based on algorithms presented in "Calendrical Calculations",
 // Cambridge Press, 1998.
@@ -27,91 +27,208 @@
 #include "timeutil.h"
 #include "stringutil.h"
 
+
+#ifdef SMALLEST_INT_GTE_NEG_QUOTIENT
+
+// The following functions provide a consistent division/modulus function
+// regardless of how the platform chooses to provide this function.
+//
+// Confused yet? Here's an example:
+//
+// SMALLEST_INT_GTE_NEG_QUOTIENT indicates that this platform computes
+// division and modulus like so:
+//
+//   -9/5 ==> -1 and -9%5 ==> -4
+//   and (-9/5)*5 + (-9%5) ==> -1*5 + -4 ==> -5 + -4 ==> -9
+//
+// The iMod() function uses this to provide LARGEST_INT_LTE_NEG_QUOTIENT
+// behavior (required by much math). This behavior computes division and
+// modulus like so:
+//
+//   -9/5 ==> -2 and -9%5 ==> 1
+//   and (-9/5)*5 + (-9%5) ==> -2*5 + 1 ==> -10 + 1 ==> -9
+//
+
+// Provide LLEQ modulus on a SGEQ platform.
+//
 int iMod(int x, int y)
 {
-    if (x < 0)
+    if (y < 0)
     {
-        return ((x+1) % y) + y - 1;
+        if (x <= 0)
+        {
+            return x % y;
+        }
+        else
+        {
+            return ((x-1) % y) + y + 1;
+        }
     }
     else
     {
-        return x % y;
+        if (x < 0)
+        {
+            return ((x+1) % y) + y - 1;
+        }
+        else
+        {
+            return x % y;
+        }
     }
 }
 
-int iModAdjusted(int x, int y)
-{
-    return iMod(x - 1, y) + 1;
-}
-
-#if 0
 INT64 i64Mod(INT64 x, INT64 y)
 {
-    if (x < 0)
+    if (y < 0)
     {
-        return ((x+1) % y) + y - 1;
+        if (x <= 0)
+        {
+            return x % y;
+        }
+        else
+        {
+            return ((x-1) % y) + y + 1;
+        }
     }
     else
     {
-        return x % y;
+        if (x < 0)
+        {
+            return ((x+1) % y) + y - 1;
+        }
+        else
+        {
+            return x % y;
+        }
     }
 }
 
-INT64 i64ModAdjusted(INT64 x, INT64 y)
+// Provide SGEQ modulus on a SGEQ platform.
+//
+int DCL_INLINE iRemainder(int x, int y)
 {
-    return i64Mod(x - 1, y) + 1;
+    return x % y;
 }
-#endif
 
-int DCL_CDECL iFloorDivision(int x, int y)
+// Provide SGEQ division on a SGEQ platform.
+//
+int DCL_INLINE iDivision(int x, int y)
 {
-    if (x < 0)
+    return x / y;
+}
+
+// Provide LLEQ division on a SGEQ platform.
+//
+int iFloorDivision(int x, int y)
+{
+    if (y < 0)
     {
-        return (x - y + 1) / y;
+        if (x <= 0)
+        {
+            return x / y;
+        }
+        else
+        {
+            return (x - y - 1) / y;
+        }
     }
     else
     {
-        return x / y;
+        if (x < 0)
+        {
+            return (x - y + 1) / y;
+        }
+        else
+        {
+            return x / y;
+        }
     }
 }
 
-INT64 DCL_CDECL i64FloorDivision(INT64 x, INT64 y)
+
+INT64 i64FloorDivision(INT64 x, INT64 y)
 {
-    if (x < 0)
+    if (y < 0)
     {
-        return (x - y + 1) / y;
+        if (x <= 0)
+        {
+            return x / y;
+        }
+        else
+        {
+            return (x - y - 1) / y;
+        }
     }
     else
     {
-        return x / y;
+        if (x < 0)
+        {
+            return (x - y + 1) / y;
+        }
+        else
+        {
+            return x / y;
+        }
     }
 }
 
-int DCL_CDECL iFloorDivisionMod(int x, int y, int *piMod)
+int iFloorDivisionMod(int x, int y, int *piMod)
 {
-    if (x < 0)
+    if (y < 0)
     {
-        *piMod = ((x+1) % y) + y - 1;
-        return (x - y + 1) / y;
+        if (x <= 0)
+        {
+            *piMod = x % y;
+            return x / y;
+        }
+        else
+        {
+            *piMod = ((x-1) % y) + y + 1;
+            return (x - y - 1) / y;
+        }
     }
     else
     {
-        *piMod = x % y;
-        return x / y;
+        if (x < 0)
+        {
+            *piMod = ((x+1) % y) + y - 1;
+            return (x - y + 1) / y;
+        }
+        else
+        {
+            *piMod = x % y;
+            return x / y;
+        }
     }
 }
 
-INT64 DCL_CDECL i64FloorDivisionMod(INT64 x, INT64 y, INT64 *piMod)
+INT64 i64FloorDivisionMod(INT64 x, INT64 y, INT64 *piMod)
 {
-    if (x < 0)
+    if (y < 0)
     {
-        *piMod = ((x+1) % y) + y - 1;
-        return (x - y + 1) / y;
+        if (x <= 0)
+        {
+            *piMod = x % y;
+            return x / y;
+        }
+        else
+        {
+            *piMod = ((x-1) % y) + y + 1;
+            return (x - y - 1) / y;
+        }
     }
     else
     {
-        *piMod = x % y;
-        return x / y;
+        if (x < 0)
+        {
+            *piMod = ((x+1) % y) + y - 1;
+            return (x - y + 1) / y;
+        }
+        else
+        {
+            *piMod = x % y;
+            return x / y;
+        }
     }
 }
 
@@ -138,6 +255,155 @@ INT64 i64CeilingDivision(INT64 x, INT64 y)
     {
         return (x + y - 1) / y;
     }
+}
+#endif
+
+#else // LARGEST_INT_LTE_NEG_QUOTIENT
+
+// Provide LLEQ modulus on a LLEQ platform.
+//
+int DCL_INLINE iMod(int x, int y)
+{
+    return x % y;
+}
+
+// Provide a SGEQ modulus on a LLEQ platform.
+//
+int iRemainder(int x, int y)
+{
+    if (y < 0)
+    {
+        if (x <= 0)
+        {
+            return x % y;
+        }
+        else
+        {
+            return ((x+1) % y) - y - 1;
+        }
+    }
+    else
+    {
+        if (x < 0)
+        {
+            return ((x-1) % y) - y + 1;
+        }
+        else
+        {
+            return x % y;
+        }
+    }
+}
+
+INT64 i64Remainder(INT64 x, INT64 y)
+{
+    if (y < 0)
+    {
+        if (x <= 0)
+        {
+            return x % y;
+        }
+        else
+        {
+            return ((x+1) % y) - y - 1;
+        }
+    }
+    else
+    {
+        if (x < 0)
+        {
+            return ((x-1) % y) - y + 1;
+        }
+        else
+        {
+            return x % y;
+        }
+    }
+}
+
+// Provide SGEQ division on a LLEQ platform.
+//
+int iDivision(int x, int y)
+{
+    if (y < 0)
+    {
+        if (x <= 0)
+        {
+            return x / y;
+        }
+        else
+        {
+            return (x + y + 1) / y;
+        }
+    }
+    else
+    {
+        if (x < 0)
+        {
+            return (x + y - 1) / y;
+        }
+        else
+        {
+            return x / y;
+        }
+    }
+}
+
+INT64 i64Division(INT64 x, INT64 y)
+{
+    if (y < 0)
+    {
+        if (x <= 0)
+        {
+            return x / y;
+        }
+        else
+        {
+            return (x + y + 1) / y;
+        }
+    }
+    else
+    {
+        if (x < 0)
+        {
+            return (x + y - 1) / y;
+        }
+        else
+        {
+            return x / y;
+        }
+    }
+}
+
+// Provide a LLEQ division on a LLEQ platform.
+//
+int DCL_INLINE iFloorDivision(int x, int y)
+{
+    return x / y;
+}
+
+
+int DCL_INLINE iFloorDivisionMod(int x, int y, int *piMod)
+{
+    *piMod = x % y;
+    return x / y;
+}
+
+INT64 DCL_INLINE i64FloorDivisionMod(INT64 x, INT64 y, INT64 *piMod)
+{
+    *piMod = x % y;
+    return x / y;
+}
+#endif
+
+int iModAdjusted(int x, int y)
+{
+    return iMod(x - 1, y) + 1;
+}
+#if 0
+INT64 i64ModAdjusted(INT64 x, INT64 y)
+{
+    return i64Mod(x - 1, y) + 1;
 }
 #endif
 
@@ -1432,4 +1698,3 @@ void CLinearTimeAbsolute::Local2UTC(void)
         m_tAbsolute = ltaUTC1.m_tAbsolute;
     }
 }
-

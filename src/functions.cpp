@@ -1,6 +1,6 @@
 // functions.cpp - MUX function handlers 
 //
-// $Id: functions.cpp,v 1.44 2001-02-07 05:28:50 sdennis Exp $
+// $Id: functions.cpp,v 1.45 2001-02-12 07:05:48 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -2553,7 +2553,6 @@ FUNCTION(fun_div)
 {
     INT64 bot, top;
 
-    top = Tiny_atoi64(fargs[0]);
     bot = Tiny_atoi64(fargs[1]);
     if (bot == 0)
     {
@@ -2561,7 +2560,26 @@ FUNCTION(fun_div)
     }
     else
     {
-        safe_i64toa(top/bot, buff, bufc, LBUF_SIZE-1);
+        top = Tiny_atoi64(fargs[0]);
+        top = i64Division(top, bot);
+        safe_i64toa(top, buff, bufc, LBUF_SIZE-1);
+    }
+}
+
+FUNCTION(fun_floordiv)
+{
+    INT64 bot, top;
+
+    bot = Tiny_atoi64(fargs[1]);
+    if (bot == 0)
+    {
+        safe_str("#-1 DIVIDE BY ZERO", buff, bufc);
+    }
+    else
+    {
+        top = Tiny_atoi64(fargs[0]);
+        top = i64FloorDivision(top, bot);
+        safe_i64toa(top, buff, bufc, LBUF_SIZE-1);
     }
 }
 
@@ -2598,13 +2616,28 @@ FUNCTION(fun_mod)
 {
     INT64 bot, top;
 
-    top = Tiny_atoi64(fargs[0]);
     bot = Tiny_atoi64(fargs[1]);
     if (bot == 0)
     {
         bot = 1;
     }
-    safe_i64toa(top%bot, buff, bufc, LBUF_SIZE-1);
+    top = Tiny_atoi64(fargs[0]);
+    top = i64Mod(top, bot);
+    safe_i64toa(top, buff, bufc, LBUF_SIZE-1);
+}
+
+FUNCTION(fun_remainder)
+{
+    INT64 bot, top;
+
+    bot = Tiny_atoi64(fargs[1]);
+    if (bot == 0)
+    {
+        bot = 1;
+    }
+    top = Tiny_atoi64(fargs[0]);
+    top = i64Remainder(top, bot);
+    safe_i64toa(top, buff, bufc, LBUF_SIZE-1);
 }
 
 FUNCTION(fun_pi)
@@ -6351,6 +6384,7 @@ FUN flist[] =
     {"FIRST",    fun_first,    0,  FN_VARARGS, CA_PUBLIC},
     {"FLAGS",    fun_flags,    1,  0,          CA_PUBLIC},
     {"FLOOR",    fun_floor,    1,  0,          CA_PUBLIC},
+    {"FLOORDIV", fun_floordiv, 2,  0,          CA_PUBLIC},
     {"FOLD",     fun_fold,     0,  FN_VARARGS, CA_PUBLIC},
     {"FOREACH",  fun_foreach,  0,  FN_VARARGS, CA_PUBLIC},
     {"FULLNAME", fun_fullname, 1,  0,          CA_PUBLIC},
@@ -6453,6 +6487,7 @@ FUN flist[] =
     {"R",        fun_r,        1,  0,          CA_PUBLIC},
     {"RAND",     fun_rand,     1,  0,          CA_PUBLIC},
     {"REGMATCH", fun_regmatch, 0,  FN_VARARGS, CA_PUBLIC},
+    {"REMAINDER",fun_remainder,2,  0,          CA_PUBLIC},
     {"REMOVE",   fun_remove,   0,  FN_VARARGS, CA_PUBLIC},
     {"REPEAT",   fun_repeat,   2,  0,          CA_PUBLIC},
     {"REPLACE",  fun_replace,  0,  FN_VARARGS, CA_PUBLIC},
