@@ -1,6 +1,6 @@
 // db.cpp
 //
-// $Id: db.cpp,v 1.33 2003-08-19 01:56:44 jake Exp $
+// $Id: db.cpp,v 1.34 2003-09-08 01:55:26 sdennis Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -56,7 +56,7 @@ ATTR attr[] =
     {"Akill",       A_AKILL,    AF_ODARK | AF_NOPROG},
     {"Aleave",      A_ALEAVE,   AF_ODARK | AF_NOPROG},
     {"Alfail",      A_ALFAIL,   AF_ODARK | AF_NOPROG},
-    {"Alias",       A_ALIAS,    AF_NOPROG | AF_NOCMD | AF_NOCLONE | AF_PRIVATE | AF_CONST},
+    {"Alias",       A_ALIAS,    AF_NOPROG | AF_NOCMD | AF_NOCLONE | AF_PRIVATE | AF_CONST | AF_VISUAL},
     {"Allowance",   A_ALLOWANCE, AF_MDARK | AF_NOPROG | AF_WIZARD},
     {"Amail",       A_AMAIL,    AF_ODARK | AF_NOPROG},
     {"Amhear",      A_AMHEAR,   AF_ODARK | AF_NOPROG},
