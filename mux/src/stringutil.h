@@ -1,6 +1,6 @@
 // stringutil.h -- string utilities.
 //
-// $Id: stringutil.h,v 1.20 2002-10-20 17:04:08 sdennis Exp $
+// $Id: stringutil.h,v 1.21 2002-10-20 17:09:49 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -67,14 +67,14 @@ BOOL is_real(char *);
 #pragma pack(1)
 typedef struct
 {
-    char bNormal:1;
-    char bBlink:1;
-    char bHighlite:1;
-    char bInverse:1;
-    char bUnder:1;
+    unsigned char bNormal:1;
+    unsigned char bBlink:1;
+    unsigned char bHighlite:1;
+    unsigned char bInverse:1;
+    unsigned char bUnder:1;
 
-    char iForeground:4;
-    char iBackground:4;
+    unsigned char iForeground:4;
+    unsigned char iBackground:4;
 } ANSI_ColorState;
 #pragma pack()
 
