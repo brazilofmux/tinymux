@@ -4389,7 +4389,8 @@ COMALIAS()
   FUNCTION: comalias(<player>, <channel>)
 
   comalias() returns the alias the player uses to access the named channel.
-  Non-wizards can only use it to return their own alias.
+  Wizards can retrieve the comalias for anyone. Players and objects can check
+  for themselves. Objects that Inherit can check for their owners.
 
   Example:
     > say comalias(me,Public)
