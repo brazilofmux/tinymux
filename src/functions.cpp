@@ -1,6 +1,6 @@
 // functions.c - MUX function handlers 
 //
-// $Id: functions.cpp,v 1.6 2000-04-14 04:18:17 sdennis Exp $
+// $Id: functions.cpp,v 1.7 2000-04-15 03:51:42 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -3164,6 +3164,41 @@ FUNCTION(fun_pos)
     return;
 }
 
+/* ---------------------------------------------------------------------------
+ * fun_lpos: Find all occurrences of a character in a string, and return
+ * a space-separated list of the positions, starting at 0. i.e.,
+ * lpos(a-bc-def-g,-) ==> 1 4 8
+ */
+
+FUNCTION(fun_lpos)
+{
+    if (*fargs[0] == '\0')
+    {
+        return;
+    }
+    
+    char c = *fargs[1];
+    if (!c)
+    {
+        c = ' ';
+    }
+
+    int i;
+    char *bb_p = *bufc;
+    char *s = strip_ansi(fargs[0]);
+    for (i = 0; *s; i++, s++)
+    {
+        if (*s == c)
+        {
+            if (*bufc != bb_p)
+            {
+                safe_chr(' ', buff, bufc);
+            }
+            safe_ltoa(i, buff, bufc, LBUF_SIZE-1);
+        }
+    }
+}
+
 /*
  * ---------------------------------------------------------------------------
  * * ldelete: Remove a word from a string by place
@@ -5897,6 +5932,7 @@ FUN flist[] =
     {"LOCATE",   fun_locate,   3,  0,          CA_PUBLIC},
     {"LOCK",     fun_lock,     1,  0,          CA_PUBLIC},
     {"LOG",      fun_log,      1,  0,          CA_PUBLIC},
+    {"LPOS",     fun_lpos,     2,  0,          CA_PUBLIC},
     {"LSTACK",   fun_lstack,   0,  FN_VARARGS, CA_PUBLIC},
     {"LT",       fun_lt,       2,  0,          CA_PUBLIC},
     {"LTE",      fun_lte,      2,  0,          CA_PUBLIC},
