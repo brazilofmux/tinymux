@@ -1,4 +1,6 @@
-// Data structures for an up-to-256ary tree to hold strings
+// radix.h -- Data structures for an up-to-256ary tree to hold strings.
+//
+// $Id: radix.h,v 1.2 2001-11-19 01:24:52 sdennis Exp $
 //
 
 /* forward */
