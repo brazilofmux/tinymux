@@ -10034,7 +10034,7 @@ LCMDS()
   FUNCTION: lcmds(<object>)
 
   Returns the attribute names of any commands on a specific <object>
-  
+
   Example:
     > &CMD1 me=$command1:@pemit me=blah
     Set.
@@ -10042,9 +10042,9 @@ LCMDS()
     Set.
     > say lcmds(me)
     You say "command1 command2"
-  
+
   See also: lattrcmds().
-  
+
 & STARTSECS()
 STARTSECS()
 
@@ -10059,24 +10059,26 @@ STARTSECS()
     > say startsecs()
     You say "959093815"
   
-  See also: secs().
-
+  Related Topics: secs().
+  
 & LATTRCMDS()
-  Function: lattrcmds(<object>)
+LATTRCMDS()
+
+  FUNCTION: lattrcmds(<object>)
 
   Returns the names of the attributes that contain commands on a
   specific <object>.
-  
+
   Example:
     > &CMD1 me=$command1:@pemit me=blah
     Set.
     > &CMD2 me=$command2:@pemit me=blah blah
     Set.
-    > say lcmds(me)
+    > say lattrcmds(me)
     You say "CMD1 CMD2"
-  
+
   See also: lcmds().
-  
+
 & DIGITTIME()
 DIGITTIME()
 
