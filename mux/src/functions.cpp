@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.77 2004-04-06 18:28:57 sdennis Exp $
+// $Id: functions.cpp,v 1.78 2004-04-06 18:47:33 sdennis Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -3762,30 +3762,28 @@ FUNCTION(fun_atan)
 
 FUNCTION(fun_dist2d)
 {
-    int d;
-    double r;
+    double d;
+    double sum;
 
-    d = mux_atol(fargs[0]) - mux_atol(fargs[2]);
-    r = (double)(d * d);
-    d = mux_atol(fargs[1]) - mux_atol(fargs[3]);
-    r += (double)(d * d);
-    d = (int)(sqrt(r) + 0.5);
-    safe_ltoa(d, buff, bufc);
+    d = mux_atof(fargs[0]) - mux_atof(fargs[2]);
+    sum  = d * d;
+    d = mux_atof(fargs[1]) - mux_atof(fargs[3]);
+    sum += d * d;
+    fval(buff, bufc, sqrt(sum));
 }
 
 FUNCTION(fun_dist3d)
 {
-    int d;
-    double r;
+    double d;
+    double sum;
 
-    d = mux_atol(fargs[0]) - mux_atol(fargs[3]);
-    r = (double)(d * d);
-    d = mux_atol(fargs[1]) - mux_atol(fargs[4]);
-    r += (double)(d * d);
-    d = mux_atol(fargs[2]) - mux_atol(fargs[5]);
-    r += (double)(d * d);
-    d = (int)(sqrt(r) + 0.5);
-    safe_ltoa(d, buff, bufc);
+    d = mux_atof(fargs[0]) - mux_atof(fargs[3]);
+    sum  = d * d;
+    d = mux_atof(fargs[1]) - mux_atof(fargs[4]);
+    sum += d * d;
+    d = mux_atof(fargs[2]) - mux_atof(fargs[5]);
+    sum += d * d;
+    fval(buff, bufc, sqrt(sum));
 }
 
 FUNCTION(fun_ctu)
