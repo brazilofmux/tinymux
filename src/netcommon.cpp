@@ -1,6 +1,6 @@
 // netcommon.cpp
 //
-// $Id: netcommon.cpp,v 1.41 2001-10-24 16:09:34 sdennis Exp $ 
+// $Id: netcommon.cpp,v 1.42 2001-10-25 17:06:14 sdennis Exp $ 
 //
 // This file contains routines used by the networking code that do not
 // depend on the implementation of the networking code.  The network-specific
@@ -309,6 +309,7 @@ void queue_write(DESC *d, const char *b, int n)
                 d->output_tail = NULL;
             }
             MEMFREE(tp);
+            tp = NULL;
         }
     }
     
@@ -343,7 +344,8 @@ void freeqs(DESC *d)
     CBLK *cb, *cnext;
     
     tb = d->output_head;
-    while (tb) {
+    while (tb)
+    {
         tnext = tb->hdr.nxt;
         MEMFREE(tb);
         tb = tnext;
@@ -352,7 +354,8 @@ void freeqs(DESC *d)
     d->output_tail = NULL;
     
     cb = d->input_head;
-    while (cb) {
+    while (cb)
+    {
         cnext = (CBLK *) cb->hdr.nxt;
         free_lbuf(cb);
         cb = cnext;

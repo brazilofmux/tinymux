@@ -2,7 +2,7 @@
  * help.c -- commands for giving help 
  */
 /*
- * $Id: help.cpp,v 1.8 2001-07-07 17:54:44 sdennis Exp $ 
+ * $Id: help.cpp,v 1.9 2001-10-25 17:04:28 sdennis Exp $ 
  */
 
 #include "copyright.h"
@@ -38,7 +38,9 @@ void helpindex_clean(CHashTable *htab)
          htab_entry = (struct help_entry *)hash_nextentry(htab))
     {
         MEMFREE(htab_entry->key);
+        htab_entry->key = NULL;
         MEMFREE(htab_entry);
+        htab_entry = NULL;
     }
 
     hashflush(htab);
@@ -97,7 +99,9 @@ int helpindex_read(CHashTable *htab, char *filename)
             else
             {
                 MEMFREE(htab_entry->key);
+                htab_entry->key = NULL;
                 MEMFREE(htab_entry);
+                htab_entry = NULL;
             }
         }
     }

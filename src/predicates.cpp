@@ -1,6 +1,6 @@
 // predicates.cpp
 //
-// $Id: predicates.cpp,v 1.38 2001-09-18 05:35:40 sdennis Exp $
+// $Id: predicates.cpp,v 1.39 2001-10-25 17:06:51 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -782,7 +782,9 @@ void do_delcommand(dbref player, dbref cause, int key, char *name, char *command
                 nextp = prev->next;
                 /* Delete it! */
                 MEMFREE(prev->name);
+                prev->name = NULL;
                 MEMFREE(prev);
+                prev = NULL;
             }
             hashdeleteLEN(name, nName, &mudstate.command_htab);
             if ((cmd = (CMDENT *)hashfindLEN(p__Name, n__Name, &mudstate.command_htab)) != NULL)
@@ -792,6 +794,7 @@ void do_delcommand(dbref player, dbref cause, int key, char *name, char *command
                 hashreplall((int *)old, (int *)cmd, &mudstate.command_htab);
             }
             MEMFREE(old);
+            old = NULL;
             set_prefix_cmds();
             notify(player, "Done.");
             return;
@@ -804,6 +807,7 @@ void do_delcommand(dbref player, dbref cause, int key, char *name, char *command
                 {
                     /* Delete it! */
                     MEMFREE(nextp->name);
+                    nextp->name = NULL;
                     if (!prev)
                     {
                         if (!nextp->next)
@@ -816,17 +820,20 @@ void do_delcommand(dbref player, dbref cause, int key, char *name, char *command
                                 hashreplall((int *)old, (int *)cmd, &mudstate.command_htab);
                             }
                             MEMFREE(old);
+                            old = NULL;
                         }
                         else
                         {
                             old->addent = nextp->next;
                             MEMFREE(nextp);
+                            nextp = NULL;
                         }
                     }
                     else
                     {
                         prev->next = nextp->next;
                         MEMFREE(nextp);
+                        nextp = NULL;
                     }
                     set_prefix_cmds();
                     notify(player, "Done.");

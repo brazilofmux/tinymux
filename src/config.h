@@ -1,6 +1,6 @@
 // config.h
 //
-// $Id: config.h,v 1.20 2001-10-17 20:47:34 sdennis Exp $
+// $Id: config.h,v 1.21 2001-10-25 17:09:25 sdennis Exp $
 //
 #ifndef CONFIG_H
 #define CONFIG_H
@@ -183,9 +183,24 @@ extern BOOL AssertionFailed(const char *SourceFile, unsigned int LineNo);
 extern BOOL OutOfMemory(const char *SourceFile, unsigned int LineNo);
 #define ISOUTOFMEMORY(exp) (!(exp) && OutOfMemory(__FILE__, __LINE__))
 
-#define MEMALLOC(size)        malloc((size))
-#define MEMFREE(ptr)          free((ptr))
-#define MEMREALLOC(ptr, size) realloc((ptr), (size))
+#ifndef STANDALONE
+//#define MEMORY_ACCOUNTING
+#endif
+
+// Memory Allocation Accounting
+//
+#ifdef MEMORY_ACCOUNTING
+extern void *MemAllocate(size_t n, const char *f, int l);
+extern void MemFree(void *p, const char *f, int l);
+extern void *MemRealloc(void *p, size_t n, const char *f, int l);
+#define MEMALLOC(n)          MemAllocate((n), __FILE__, __LINE__)
+#define MEMFREE(p)           MemFree((p), __FILE__, __LINE__)
+#define MEMREALLOC(p, n)     MemRealloc((p), (n), __FILE__, __LINE__)
+#else
+#define MEMALLOC(n)          malloc((n))
+#define MEMFREE(p)           free((p))
+#define MEMREALLOC(p, n)     realloc((p),(n))
+#endif
 
 // If it's Hewlett Packard, then getrusage is provided a different
 // way.

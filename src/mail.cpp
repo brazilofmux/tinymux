@@ -1,6 +1,6 @@
 // mail.cpp
 //
-// $Id: mail.cpp,v 1.27 2001-10-17 18:58:28 sdennis Exp $
+// $Id: mail.cpp,v 1.28 2001-10-25 17:05:26 sdennis Exp $
 //
 // This code was taken from Kalkin's DarkZone code, which was
 // originally taken from PennMUSH 1.50 p10, and has been heavily modified
@@ -104,6 +104,7 @@ static void mail_db_grow(int newtop)
                     mudstate.mail_list,
                     (mudstate.mail_db_top + MAIL_FUDGE) * sizeof(MENT));
             MEMFREE(mudstate.mail_list);
+            mudstate.mail_list = NULL;
         }
         mudstate.mail_list = newdb + MAIL_FUDGE;
         newdb = NULL;
@@ -680,10 +681,14 @@ void do_mail_retract(dbref player, char *name, char *msglist)
 
                     nextp = mp->next;
                     MessageReferenceDec(mp->number);
-                    MEMFREE((char *)mp->subject);
-                    MEMFREE((char *)mp->time);
-                    MEMFREE((char *)mp->tolist);
+                    MEMFREE(mp->subject);
+                    mp->subject = NULL;
+                    MEMFREE(mp->time);
+                    mp->time = NULL;
+                    MEMFREE(mp->tolist);
+                    mp->tolist = NULL;
                     MEMFREE(mp);
+                    mp = NULL;
                     notify(player, "MAIL: Mail retracted.");
                 }
                 else
@@ -980,10 +985,14 @@ void do_mail_purge(dbref player)
 
             nextp = mp->next;
             MessageReferenceDec(mp->number);
-            MEMFREE((char *)mp->subject);
-            MEMFREE((char *)mp->time);
-            MEMFREE((char *)mp->tolist);
+            MEMFREE(mp->subject);
+            mp->subject = NULL;
+            MEMFREE(mp->time);
+            mp->time = NULL;
+            MEMFREE(mp->tolist);
+            mp->tolist = NULL;
             MEMFREE(mp);
+            mp = NULL;
         }
         else
         {
@@ -1348,10 +1357,14 @@ void do_mail_nuke(dbref player)
         {
             struct mail *nextp = mp->next;
             MessageReferenceDec(mp->number);
-            MEMFREE((char *)mp->subject);
-            MEMFREE((char *)mp->tolist);
-            MEMFREE((char *)mp->time);
+            MEMFREE(mp->subject);
+            mp->subject = NULL;
+            MEMFREE(mp->tolist);
+            mp->tolist = NULL;
+            MEMFREE(mp->time);
+            mp->time = NULL;
             MEMFREE(mp);
+            mp = NULL;
             mp = nextp;
         }
         hashdeleteLEN(&thing, sizeof(thing), &mudstate.mail_htab);
@@ -1472,6 +1485,7 @@ void do_mail_debug(dbref player, char *action, char *victim)
             }
         }
         MEMFREE(ai);
+        ai = NULL;
         notify(player, "Mail sanity check completed.");
     }
     else if (string_prefix("fix", action))
@@ -1511,6 +1525,7 @@ void do_mail_debug(dbref player, char *action, char *victim)
                 notify(player, "Some reference counts were wrong [FIXED].");
             }
             MEMFREE(ai);
+            ai = NULL;
         }
 
         notify(player, tprintf("Removing @mail that is associated with non-players."));
@@ -1549,10 +1564,14 @@ void do_mail_debug(dbref player, char *action, char *victim)
 
                 nextp = mp->next;
                 MessageReferenceDec(mp->number);
-                MEMFREE((char *)mp->subject);
-                MEMFREE((char *)mp->time);
-                MEMFREE((char *)mp->tolist);
+                MEMFREE(mp->subject);
+                mp->subject = NULL;
+                MEMFREE(mp->time);
+                mp->time = NULL;
+                MEMFREE(mp->tolist);
+                mp->tolist = NULL;
                 MEMFREE(mp);
+                mp = NULL;
             }
             else
             {
@@ -2736,10 +2755,14 @@ void check_mail_expiration(void)
 
         nextp = mp->next;
         MessageReferenceDec(mp->number);
-        MEMFREE((char *)mp->subject);
-        MEMFREE((char *)mp->tolist);
-        MEMFREE((char *)mp->time);
+        MEMFREE(mp->subject);
+        mp->subject = NULL;
+        MEMFREE(mp->tolist);
+        mp->tolist = NULL;
+        MEMFREE(mp->time);
+        mp->time = NULL;
         MEMFREE(mp);
+        mp = NULL;
     }
 }
 

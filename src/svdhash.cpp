@@ -1,6 +1,6 @@
 // svdhash.cpp -- CHashPage, CHashFile, CHashTable modules
 //
-// $Id: svdhash.cpp,v 1.29 2001-10-18 03:41:11 sdennis Exp $
+// $Id: svdhash.cpp,v 1.30 2001-10-25 17:07:51 sdennis Exp $
 //
 // MUX 2.1
 // Copyright (C) 1998 through 2001 Solid Vertical Domains, Ltd. All
@@ -1324,7 +1324,11 @@ void CHashFile::WriteDirectory(void)
 
 BOOL CHashFile::EmptyDirectory(void)
 {
-    if (m_pDir) delete m_pDir;
+    if (m_pDir)
+    {
+        MEMFREE(m_pDir);
+        m_pDir = NULL;
+    }
 
     m_nDir = 2;
     m_nDirDepth = 1;
@@ -1627,7 +1631,7 @@ void CHashFile::CloseAll(void)
         if (m_pDir)
         {
             MEMFREE(m_pDir);
-            m_pDir = 0;
+            m_pDir = NULL;
         }
 #ifdef WIN32
         CloseHandle(m_hPageFile);
@@ -2084,7 +2088,7 @@ void CHashTable::Init(void)
             else
             {
                 delete m_pDir[0];
-                m_pDir[0] = 0;
+                m_pDir[0] = NULL;
             }
         }
     }
@@ -2327,6 +2331,7 @@ void CHashTable::Final(void)
             }
         }
         delete m_pDir;
+        m_pDir = NULL;
     }
 }
 
@@ -2577,3 +2582,243 @@ void CLogFile::Flush(void)
 #endif
     m_nBuffer = 0;
 }
+
+#ifdef MEMORY_ACCOUNTING
+
+#pragma pack(1)
+typedef struct
+{
+    int address;
+    int size;
+    unsigned long fileline;
+} AllocDataRec;
+#pragma pack()
+
+BOOL bMemAccountingInitialized = FALSE;
+CHashFile hfAllocData;
+CHashFile hfIdentData;
+extern long DebugTotalMemory;
+extern void	log_text(char *);
+
+UINT32 HashPointer(void *vp)
+{
+    return HASH_ProcessBuffer(0, &vp, sizeof(void *));
+}
+
+char MemIdentBuffer[1024];
+int  nMemIdentBuffer;
+char TempMemBuffer[1024];
+
+unsigned long HashFileLine(const char *file, int line)
+{
+    int len = strlen(file);
+    char *p = MemIdentBuffer;
+    memcpy(p, file, len+1);
+    p += len+1;
+    *(int *)p = line;
+    p += sizeof(line);
+
+    nMemIdentBuffer = p - MemIdentBuffer;
+    return HASH_ProcessBuffer(0, MemIdentBuffer, nMemIdentBuffer);
+}
+
+BOOL SubtractSpaceFromFileLine
+(
+    UINT32  nHash,
+    int     size,
+    size_t *pnSpace,
+    int    *pAllocLine
+)
+{
+    *pnSpace = 0;
+    *pAllocLine = -1;
+    HP_DIRINDEX iDir = hfIdentData.FindFirstKey(nHash);
+    if (iDir != HF_FIND_END)
+    {
+        HP_HEAPLENGTH nIdent;
+        hfIdentData.Copy(iDir, &nIdent, TempMemBuffer);
+        hfIdentData.Remove(iDir);
+
+        char *p = TempMemBuffer;
+        int n = strlen(p);
+        p += n+1;
+        *pAllocLine = *(int *)p;
+        p += sizeof(int);
+        *pnSpace = (*(size_t *)p) - size;
+        *(size_t *)p = *pnSpace;
+        hfIdentData.Insert(nIdent, nHash, TempMemBuffer);
+    }
+    return TRUE;
+}
+
+unsigned long AddSpaceToFileLine
+(
+    const char *file,
+    int     line,
+    size_t  nSpace,
+    size_t *pnTotalSpace
+)
+{
+    UINT32 nHash = HashFileLine(file, line);
+    HP_DIRINDEX iDir = hfIdentData.FindFirstKey(nHash);
+    if (iDir != HF_FIND_END)
+    {
+        HP_HEAPLENGTH nIdent;
+        hfIdentData.Copy(iDir, &nIdent, TempMemBuffer);
+        hfIdentData.Remove(iDir);
+
+        char *p = TempMemBuffer;
+        int n = strlen(p);
+        p += n+1 + sizeof(int);
+        nSpace += *(size_t *)p;
+    }
+    *(size_t *)(MemIdentBuffer+nMemIdentBuffer) = nSpace;
+    *pnTotalSpace = nSpace;
+    nMemIdentBuffer += sizeof(size_t);
+    hfIdentData.Insert(nMemIdentBuffer, nHash, MemIdentBuffer);
+    return nHash;
+}
+
+void AccountForAllocation(void *pointer, size_t size, const char *file, int line)
+{
+    DebugTotalMemory += size;
+
+    AllocDataRec adr;
+    adr.address = (int)pointer;
+    adr.size = size;
+
+    unsigned long nHash = HashPointer(pointer);
+    HP_DIRINDEX iDir = hfAllocData.FindFirstKey(nHash);
+
+    while (iDir != HF_FIND_END)
+    {
+        AllocDataRec adr2;
+        HP_HEAPLENGTH nRecord;
+        hfAllocData.Copy(iDir, &nRecord, &adr2);
+        if (adr2.address == adr.address)
+        {
+            // Whoa! We've been told this new pointer, but it's not.
+            //
+            fprintf(stderr, "The heap is giving us unfreed pointers. Weird.\n");
+            hfAllocData.Remove(iDir);
+        }
+        iDir = hfAllocData.FindNextKey(iDir, nHash);
+    }
+
+    size_t TotalSpace;
+    adr.fileline = AddSpaceToFileLine(file, line, size, &TotalSpace);
+    hfAllocData.Insert(sizeof(adr), nHash, &adr);
+    fprintf(stderr, "malloc %d bytes %s, %d\n  bringing total to %d bytes\n",
+        size, file, line, TotalSpace);
+}
+
+void AccountForFree(void *pointer, const char *file, int line)
+{
+    unsigned long nHash = HashPointer(pointer);
+
+    BOOL bFound = FALSE;
+    HP_DIRINDEX iDir = hfAllocData.FindFirstKey(nHash);
+    while (iDir != HF_FIND_END)
+    {
+        // We found it.
+        //
+        bFound = TRUE;
+        HP_HEAPLENGTH nRecord;
+        AllocDataRec adr;
+        hfAllocData.Copy(iDir, &nRecord, &adr);
+        if (adr.address == (int)pointer)
+        {
+            hfAllocData.Remove(iDir);
+
+            DebugTotalMemory -= adr.size;
+            size_t nSpace;
+            int AllocLine;
+            if (SubtractSpaceFromFileLine(adr.fileline, adr.size, &nSpace, &AllocLine))
+            {
+                fprintf(stderr, "free %d bytes on %s, %d ...\n  allocated on %s, %d...\n  leaving total of %d bytes\n",
+                    adr.size, file, line, MemIdentBuffer, AllocLine, nSpace);
+            }
+            else
+            {
+                fprintf(stderr, "free %d bytes on %s, %d ...\n  allocated on UNKNOWN\n", adr.size, file, line);
+            }
+        }
+        iDir = hfAllocData.FindNextKey(iDir, nHash);
+    }
+
+    if (!bFound)
+    {
+        // Problems.
+        //
+    	fprintf(stderr, "We are freeing unallocated pointers on %s, %d\n", file, line);
+    }
+}
+
+int iRecursion = 0;
+
+void *MemAllocate(size_t size, const char *file, int line)
+{
+    void *vp = malloc(size);
+    if (vp)
+    {
+        if (bMemAccountingInitialized)
+        {
+            if (iRecursion == 0)
+            {
+                iRecursion++;
+                AccountForAllocation(vp, size, file, line);
+                iRecursion--;
+            }
+        }
+        else
+        {
+            fprintf(stderr, "malloc not intitalized on %s, %d.\n", file, line);
+        }
+    }
+    else
+    {
+        fprintf(stderr, "malloc ran out of memory on %s, %d.\n", file, line);
+    }
+    return vp;
+}
+
+void MemFree(void *pointer, const char *file, int line)
+{
+    if (pointer)
+    {
+        if (bMemAccountingInitialized)
+        {
+            if (iRecursion == 0)
+            {
+                iRecursion++;
+                AccountForFree(pointer, file, line);
+                iRecursion--;
+            }
+        }
+        else
+        {
+            fprintf(stderr, "free called on %s, %d before initialized\n", file, line);
+        }
+        free(pointer);
+    }
+    else
+    {
+        fprintf(stderr, "We tried to free(0) on %s, %d\n", file, line);
+    }
+}
+
+void *MemRealloc(void *pointer, size_t size, const char *file, int line)
+{
+    if (pointer)
+    {
+        AccountForFree(pointer, file, line);
+    }
+    void * vp = realloc(pointer, size);
+    if (vp)
+    {
+        AccountForAllocation(vp, size, file, line);
+    }
+    return vp;
+}
+
+#endif

@@ -1,6 +1,6 @@
 // vattr.cpp -- Manages the user-defined attributes.
 //
-// $Id: vattr.cpp,v 1.12 2001-10-17 18:12:46 sdennis Exp $
+// $Id: vattr.cpp,v 1.13 2001-10-25 17:08:36 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -447,7 +447,8 @@ int dbclean_RemoveStaleAttributeNames(void)
                     iDir = pht->FindNextKey(iDir, nHash);
                 }
 
-                MEMFREE((char *)va);
+                MEMFREE(va);
+                va = NULL;
             }
             else
             {
@@ -558,7 +559,8 @@ void dbclean_RenumberAttributes(int cVAttributes)
     }
     atr_pop();
 
-    MEMFREE((char *)aMap);
+    MEMFREE(aMap);
+    aMap = NULL;
 }
 
 void do_dbclean(dbref player, dbref cause, int key)
@@ -606,7 +608,8 @@ void vattr_delete_LEN(char *pName, int nName)
             VATTR *vp = (VATTR *)anum_table[anum];
             anum_set(anum, NULL);
             pht->Remove(iDir);
-            MEMFREE((char *)vp);
+            MEMFREE(vp);
+            vp = NULL;
         }
         iDir = pht->FindNextKey(iDir, nHash);
     }

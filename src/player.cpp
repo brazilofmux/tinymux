@@ -1,6 +1,6 @@
 // player.cpp
 //
-// $Id: player.cpp,v 1.9 2001-08-27 06:29:52 sdennis Exp $ 
+// $Id: player.cpp,v 1.10 2001-10-25 17:06:41 sdennis Exp $ 
 ///
 
 #include "copyright.h"
@@ -492,11 +492,16 @@ int delete_player_name(dbref player, char *name)
     _strlwr(temp);
 
     p = (int *)hashfindLEN(temp, strlen(temp), &mudstate.player_htab);
-    if (!p || (*p == NOTHING) || ((player != NOTHING) && (*p != player))) {
+    if (  !p
+       || *p == NOTHING
+       || (  player != NOTHING
+          && *p != player))
+    {
         free_lbuf(temp);
         return 0;
     }
     MEMFREE(p);
+    p = NULL;
     hashdeleteLEN(temp, strlen(temp), &mudstate.player_htab);
     free_lbuf(temp);
     return 1;
@@ -608,21 +613,26 @@ void badname_add(char *bad_name)
 
 void badname_remove(char *bad_name)
 {
-    BADNAME *bp, *backp;
-
-    /*
-     * Look for an exact match on the bad name and remove if found 
-     */
-
-    backp = NULL;
-    for (bp = mudstate.badname_head; bp; backp = bp, bp = bp->next) {
-        if (!string_compare(bad_name, bp->name)) {
+    // Look for an exact match on the bad name and remove if found.
+    //
+    BADNAME *bp;
+    BADNAME *backp = NULL;
+    for (bp = mudstate.badname_head; bp; backp = bp, bp = bp->next)
+    {
+        if (!string_compare(bad_name, bp->name))
+        {
             if (backp)
+            {
                 backp->next = bp->next;
+            }
             else
+            {
                 mudstate.badname_head = bp->next;
+            }
             MEMFREE(bp->name);
+            bp->name = NULL;
             MEMFREE(bp);
+            bp = NULL;
             return;
         }
     }

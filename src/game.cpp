@@ -1,6 +1,6 @@
 // game.cpp
 //
-// $Id: game.cpp,v 1.42 2001-10-17 20:47:34 sdennis Exp $
+// $Id: game.cpp,v 1.43 2001-10-25 17:10:51 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -135,6 +135,7 @@ int regexp_match(char *pattern, char *str, char *args[], int nargs)
     if (!got_match)
     {
         MEMFREE(re);
+        re = NULL;
         return 0;
     }
 
@@ -164,6 +165,7 @@ int regexp_match(char *pattern, char *str, char *args[], int nargs)
     }
 
     MEMFREE(re);
+    re = NULL;
     return 1;
 }
 
@@ -1789,6 +1791,9 @@ long DebugTotalSockets = 0;
 long DebugTotalThreads = 1;
 long DebugTotalSemaphores = 0;
 #endif
+#ifdef MEMORY_ACCOUNTING
+long DebugTotalMemory = 0;
+#endif
 
 #define CLI_DO_CONFIG_FILE CLI_USER+0
 #define CLI_DO_MINIMAL     CLI_USER+1
@@ -1836,9 +1841,18 @@ int DCL_CDECL main(int argc, char *argv[])
     BuildSignalNamesTable();
 #endif
 
-    SeedRandomNumberGenerator();
     TIME_Initialize();
+    SeedRandomNumberGenerator();
     game_pid = getpid();
+
+#ifdef MEMORY_ACCOUNTING
+    extern CHashFile hfAllocData;
+    extern CHashFile hfIdentData;
+    extern BOOL bMemAccountingInitialized;
+    hfAllocData.Open("svdptrs.dir", "svdptrs.pag");
+    hfIdentData.Open("svdlines.dir", "svdlines.pag");
+    bMemAccountingInitialized = TRUE;
+#endif
 
     // Parse the command line
     //
