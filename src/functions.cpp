@@ -1,6 +1,6 @@
 // functions.cpp - MUX function handlers 
 //
-// $Id: functions.cpp,v 1.100 2001-10-25 16:54:50 sdennis Exp $
+// $Id: functions.cpp,v 1.101 2001-11-05 15:42:32 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -5991,12 +5991,12 @@ static void do_asort(char *s[], int n, int sort_type)
 FUNCTION(fun_sort)
 {
     int nitems, sort_type;
-    char *list, sep;
+    char *list, sep, osep;
     char *ptrs[LBUF_SIZE / 2];
 
     // If we are passed an empty arglist return a null string.
     //
-    varargs_preamble(3);
+    svarargs_preamble(4);
 
     // Convert the list to an array.
     //
@@ -6005,7 +6005,7 @@ FUNCTION(fun_sort)
     nitems = list2arr(ptrs, LBUF_SIZE / 2, list, sep);
     sort_type = get_list_type(fargs, nfargs, 2, ptrs, nitems);
     do_asort(ptrs, nitems, sort_type);
-    arr2list(ptrs, nitems, buff, bufc, sep);
+    arr2list(ptrs, nitems, buff, bufc, osep);
     free_lbuf(list);
 }
 
@@ -6814,7 +6814,7 @@ FUN flist[] =
     {"SHUFFLE",  fun_shuffle,  MAX_ARG, 1,  2,       0, CA_PUBLIC},
     {"SIGN",     fun_sign,     MAX_ARG, 1,  1,       0, CA_PUBLIC},
     {"SIN",      fun_sin,      MAX_ARG, 1,  1,       0, CA_PUBLIC},
-    {"SORT",     fun_sort,     MAX_ARG, 1,  3,       0, CA_PUBLIC},
+    {"SORT",     fun_sort,     MAX_ARG, 1,  4,       0, CA_PUBLIC},
     {"SORTBY",   fun_sortby,   MAX_ARG, 2,  3,       0, CA_PUBLIC},
     {"SPACE",    fun_space,    MAX_ARG, 1,  1,       0, CA_PUBLIC},
     {"SPLICE",   fun_splice,   MAX_ARG, 3,  4,       0, CA_PUBLIC},

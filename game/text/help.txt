@@ -9473,30 +9473,30 @@ CONVTIME()
 & SORT()
 SORT()
 
-  FUNCTION: sort(<list>[, <sort type>[, <delim>]])
+  FUNCTION: sort(<list>[, <sort type>[, <idelim>[, <odelim>]]])
 
-  Takes a list of words, numbers, or dbref, and sorts them into ascending
-  order.  Lexicographic order is used for words, and numeric order is used
-  for numbers and dbrefs.
+  Takes a list of words, numbers or dbrefs, and sorts them into ascending
+  order.  By default, lexicographic order is used for words, and numeric
+  order is used for numbers and dbrefs.
 
-  <sort type> may be used to specify the type of sort to perform (use d for
-  dbref, n for integer numeric, f for floating numeric, and a for
+  <sort type> may be used to specify the type of sort to perform (use 'd' for
+  dbref, 'n' for integer numeric, 'f' for floating numeric, and 'a' for
   alphanumeric).  If omitted or left blank, the sort() function will
-  automatically determine the type of sort to perform.
+  try to determine the type of sort to perform automatically.
 
-  If <delim> is specified, it (rather than a space) is used to separate items
-  in the list.  You may specify an alternate delimiter without specifying
-  a sort type by passing a null <sort type> parameter.
+  By default, the output delimeter, <odelim>, defaults to the input delimeter,
+  <idelim>, which itself defaults to a space. Delimeters here, like most other
+  functions, are used to separate items in a list.
 
   Examples:
     > say sort(This is a test)
     You say "This a is test"
     > say sort(98 100 99 101,n)
     You say "98 99 100 101"
-    > say sort(foo-bar-bletch,,-)
-    You say "bar-bletch-foo"
+    > say sort(foo-bar-bletch,,-,|)
+    You say "bar|bletch|foo"
 
-  Related Topics:
+  Related Topics: munge, sortby
 
 & SETDIFF()
 SETDIFF()
