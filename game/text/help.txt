@@ -10116,7 +10116,7 @@ WRITETIME()
     > say writetime(123456)
     You say "1 day 10 hours 17 minutes 36 seconds"
 
-  See also: digittime(), exptime(), secs(), singletime(), time().
+  Related Topics: digittime(), exptime(), secs(), singletime(), time().
 
 & EXPTIME()
 EXPTIME()
