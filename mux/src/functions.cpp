@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.93 2002-09-08 06:12:39 sdennis Exp $
+// $Id: functions.cpp,v 1.94 2002-09-08 07:21:46 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -6164,7 +6164,6 @@ FUNCTION(fun_parse)
 {
     char *curr, *objstring, *cp, *dp, sep, osep;
     char *str;
-    int number = 0;
 
     sevarargs_preamble(4);
     cp = curr = dp = alloc_lbuf("fun_parse");
@@ -6179,6 +6178,10 @@ FUNCTION(fun_parse)
         return;
     }
     BOOL first = TRUE;
+    int number = 0;
+    mudstate.itext[mudstate.in_loop] = NULL;
+    mudstate.inum[mudstate.in_loop] = number;
+    mudstate.in_loop++;
     while (  cp
           && mudstate.func_invk_ctr < mudconf.func_invk_lim)
     {
@@ -6189,12 +6192,17 @@ FUNCTION(fun_parse)
         first = FALSE;
         number++;
         objstring = split_token(&cp, sep);
+        mudstate.itext[mudstate.in_loop-1] = objstring;
+        mudstate.inum[mudstate.in_loop-1]  = number;
         char *buff2 = replace_tokens(fargs[1], objstring, Tiny_ltoa_t(number), NULL);
         str = buff2;
         TinyExec(buff, bufc, executor, caller, enactor,
             EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, cargs, ncargs);
         free_lbuf(buff2);
     }
+    mudstate.in_loop--;
+    mudstate.itext[mudstate.in_loop] = NULL;
+    mudstate.inum[mudstate.in_loop] = 0;
     free_lbuf(curr);
 }
 
@@ -6291,7 +6299,6 @@ FUNCTION(fun_inum)
 FUNCTION(fun_list)
 {
     char *curr, *objstring, *result, *cp, *dp, *str, sep;
-    int number = 0;
 
     evarargs_preamble(3);
     cp = curr = dp = alloc_lbuf("fun_list");
@@ -6304,12 +6311,17 @@ FUNCTION(fun_list)
         free_lbuf(curr);
         return;
     }
+    int number = 0;
+    mudstate.itext[mudstate.in_loop] = NULL;
+    mudstate.inum[mudstate.in_loop] = number;
     mudstate.in_loop++;
     while (  cp
           && mudstate.func_invk_ctr < mudconf.func_invk_lim)
     {
         number++;
         objstring = split_token(&cp, sep);
+        mudstate.itext[mudstate.in_loop-1] = objstring;
+        mudstate.inum[mudstate.in_loop-1]  = number;
         char *buff2 = replace_tokens(fargs[1], objstring, Tiny_ltoa_t(number),
             NULL);
         dp = result = alloc_lbuf("fun_list.2");
@@ -6322,6 +6334,8 @@ FUNCTION(fun_list)
         free_lbuf(result);
     }
     mudstate.in_loop--;
+    mudstate.itext[mudstate.in_loop] = NULL;
+    mudstate.inum[mudstate.in_loop] = 0;
     free_lbuf(curr);
 }
 
