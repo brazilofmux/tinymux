@@ -2,7 +2,7 @@
  * speech.c -- Commands which involve speaking 
  */
 /*
- * $Id: speech.cpp,v 1.13 2001-11-08 04:37:35 sdennis Exp $ 
+ * $Id: speech.cpp,v 1.14 2001-11-08 05:54:47 sdennis Exp $ 
  */
 
 #include "copyright.h"
@@ -1006,6 +1006,11 @@ void do_pemit
     char *message
 )
 {
+    if (nargs < 2)
+    {
+        return;
+    }
+
     // Decode PEMIT_CONENTS and PEMIT_LIST and remove from key.
     //
     BOOL bDoContents = FALSE;
