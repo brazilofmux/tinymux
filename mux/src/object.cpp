@@ -1,6 +1,6 @@
 // object.cpp -- Low-level object manipulation routines.
 //
-// $Id: object.cpp,v 1.6 2002-06-12 19:28:11 jake Exp $
+// $Id: object.cpp,v 1.7 2002-06-12 19:51:23 jake Exp $
 //
 
 #include "copyright.h"
@@ -813,7 +813,10 @@ static void check_pennies(dbref thing, int limit, const char *qual)
     }
     else
     {
-        Log_header_err(thing, NOTHING, j, 0, qual, "is zero.");
+        if(isPlayer(thing) || isThing(thing))
+        {
+            Log_header_err(thing, NOTHING, j, 0, qual, "is zero.");
+        }
     }
 }
 
@@ -1675,7 +1678,6 @@ void do_dbck(dbref executor, dbref caller, dbref enactor, int key)
 {
     check_type = key;
     check_dead_refs();
-    make_freelist();
     check_exit_chains();
     check_contents_chains();
     check_floating();
@@ -1686,6 +1688,7 @@ void do_dbck(dbref executor, dbref caller, dbref enactor, int key)
     }
 #endif
     purge_going();
+    make_freelist();
 #ifndef STANDALONE
     if (  executor != NOTHING
        && !Quiet(executor))
