@@ -1,6 +1,6 @@
 // vattr.cpp -- Manages the user-defined attributes.
 //
-// $Id: vattr.cpp,v 1.8 2004-08-16 05:14:07 sdennis Exp $
+// $Id: vattr.cpp,v 1.9 2004-08-18 22:49:56 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -385,11 +385,11 @@ int dbclean_RemoveStaleAttributeNames(void)
     {
         char *as;
 
-        for (int attr = atr_head(iObject, &as); attr; attr = atr_next(&as))
+        for (int atr = atr_head(iObject, &as); atr; atr = atr_next(&as))
         {
-            if (attr >= A_USER_START)
+            if (atr >= A_USER_START)
             {
-                va = (ATTR *) anum_get(attr);
+                va = (ATTR *) anum_get(atr);
                 if (va != NULL)
                 {
                     va->flags |= AF_ISUSED;
