@@ -1,6 +1,6 @@
 // stringutil.cpp -- string utilities
 //
-// $Id: stringutil.cpp,v 1.3 2000-04-12 02:37:11 sdennis Exp $
+// $Id: stringutil.cpp,v 1.4 2000-04-12 04:00:24 sdennis Exp $
 //
 // MUX 2.0
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -1961,6 +1961,46 @@ char *Tiny_StrTokParse(TINY_STRTOK_STATE *tts)
     {
         return NULL;
     }
+}
+
+void DbrefToBuffer_Init(DTB *p, char *arg_buff, char **arg_bufc)
+{
+    p->bFirst = 1;
+    p->buff = arg_buff;
+    p->bufc = arg_bufc;
+    p->nBufferAvailable = LBUF_SIZE - (*arg_bufc - arg_buff) - 1;
+}
+
+int DbrefToBuffer_Add(DTB *pContext, int i)
+{
+    char smbuf[SBUF_SIZE];
+    char *p = smbuf;
+    if (pContext->bFirst)
+    {
+        pContext->bFirst = 0;
+    }
+    else
+    {
+        *p++ = ' ';
+    }
+    *p++ = '#';
+    p += Tiny_ltoa(i, p);
+    int nLen = p - smbuf;
+    if (nLen > pContext->nBufferAvailable)
+    {
+        // Out of room.
+        //
+        return 0;
+    }
+    memcpy(*(pContext->bufc), smbuf, nLen);
+    *(pContext->bufc) += nLen;
+    pContext->nBufferAvailable -= nLen;
+    return 1;
+}
+
+void DbrefToBuffer_Final(DTB *pContext)
+{
+    **(pContext->bufc) = '\0';
 }
 
 #ifndef WIN32

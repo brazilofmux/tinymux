@@ -2,7 +2,7 @@
  * funceval.c - MUX function handlers 
  */
 /*
- * $Id: funceval.cpp,v 1.3 2000-04-12 03:13:30 sdennis Exp $ 
+ * $Id: funceval.cpp,v 1.4 2000-04-12 04:00:24 sdennis Exp $ 
  */
 
 #include "copyright.h"
@@ -46,46 +46,6 @@ extern int FDECL(countwords, (char *, char));
 extern int FDECL(check_read_perms, (dbref, dbref, ATTR *, int, int, char *, char **));
 extern void arr2list(char *arr[], int alen, char *list, char **bufc, char sep);
 extern void FDECL(make_portlist, (dbref, dbref, char *, char **));
-
-void DbrefToBuffer_Init(DTB *p, char *arg_buff, char **arg_bufc)
-{
-    p->bFirst = 1;
-    p->buff = arg_buff;
-    p->bufc = arg_bufc;
-    p->nBufferAvailable = LBUF_SIZE - (*arg_bufc - arg_buff) - 1;
-}
-
-int DbrefToBuffer_Add(DTB *pContext, int i)
-{
-    char smbuf[SBUF_SIZE];
-    char *p = smbuf;
-    if (pContext->bFirst)
-    {
-        pContext->bFirst = 0;
-    }
-    else
-    {
-        *p++ = ' ';
-    }
-    *p++ = '#';
-    p += Tiny_ltoa(i, p);
-    int nLen = p - smbuf;
-    if (nLen > pContext->nBufferAvailable)
-    {
-        // Out of room.
-        //
-        return 0;
-    }
-    memcpy(*(pContext->bufc), smbuf, nLen);
-    *(pContext->bufc) += nLen;
-    pContext->nBufferAvailable -= nLen;
-    return 1;
-}
-
-void DbrefToBuffer_Final(DTB *pContext)
-{
-    **(pContext->bufc) = '\0';
-}
 
 FUNCTION(fun_cwho)
 {
