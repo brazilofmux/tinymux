@@ -91,6 +91,7 @@ Feature Additions:
      in object names are ANSI-optimized and correctly terminated with %cn.
  --  Added a 'report' command that shows a distribution of 'last logged in'
      times for a week in 8 hour intervals. 
+ --  Updated lnum() function to accept three arguments.
 
 Bug Fixes:
 ~~~~~~~~~
@@ -192,7 +193,7 @@ Bug Fixes:
      under RH 5.1. (thanks MacGuyver)
  --  Documented band(), bnand(), and bor().
  --  Documented link(), subeval(), tel(), and valid() from MUX 1.6
- --  Documented allow_guest_from_registerd_sited configuration option.
+ --  Documented allow_guest_from_registered_site configuration option.
  --  Obsoleted cache_depth, cache_trim, and cache_width in wizhelp.txt.
  --  Documented max_cache_size in wizhelp.txt.
  --  Changed default concentrator port in wizhelp.txt.
@@ -201,11 +202,11 @@ Bug Fixes:
  --  Obsoleted gdbm_database configuration option.
  --  do_conv now accepts "Jan 01 00:00:00 2000" as well as
      "Sat Jan 01 00:00:00 2000". Long-standing bug where the comments and the
-     code do different things.
+     code describe different things.
  --  Fixed bug in trimmed_site where with a sufficiently large site_chars
      configuration limit, the server will overflow a MBUF_SIZE buffer.
  --  Fixed slow SBUF memory leak in find_power() which is called by the
-     haspower() softcode function (from Alierak).
+     haspower() softcode function (from Robby Griffen).
  --  Found memory leak in !MEMORY_BASED + RADIX_COMPRESSION.
  --  Found typo that prevented !MEMORY_BASED + RADIX_COMPRESSION configuration
      from compiling.
@@ -258,18 +259,22 @@ Performance Enhancements:
  --  Increased the size of stream buffers for @dump and game startup.
  --  Improved performance of dbconvert when loading a DB by doing some key
      sorting.
+ --  mid() was still one character too agressive.
+ --  repeat() was one character too conservative.
  --  Save and restore global registers using memcpy instead of strcpy.
  --  Save and restore global registers in a few extra places in the code.
  --  Use our own tables for character typing instead of ctype.h
  --  Use MakeCanonicalAttributeName and MakeCanonicalAttributeCommand with
-     their validity checking instead having these steps performed redudnantly
-     at different levels in the code.
+     their truncation, uppercasing, and validity checking done in one place
+     and in one pass. And have them called from one level in the code.
+     This instead of having these steps performed redundantly at
+     different levels in the code.
  --  Removed cache_reset calls throughout the server as the call is a null
      operation with CHashFile.
  --  Maintain a length for the current A_LIST so we can use memcpy instead
-     of memcpy for speed.
+     of strcpy for speed.
  --  Wrote DbrefToBuffer_* functions that deal with creating dbref lists
-     more efficiently and conviently.
+     more efficiently.
  --  Improved speed of get(), xget(), and v() by using length from the
      database layer.
  --  Improved speed of switch() by avoiding a buffer allocation.
@@ -281,12 +286,13 @@ Performance Enhancements:
  --  Improved speed of insert(), replace(), and ldelete() by using memcpy
      instead of strcpy.
  --  Re-wrote do_conv to avoid a buffer allocation, safe_db_copy call, etc.
- --  Re-wrote ljust() and rjust() for speed and they do the right thing
+ --  Re-wrote ljust() and rjust() for speed, and they do the right thing
      ANSI-wise as well.
  --  Re-wrote the random number generator to be 32-bit instead of 31-bit,
-     so that all 32 of those bits are 'equally' 'psuedo-random', and that
-     we save unused bits from one call to service later calls as a way to
-     improve performance.
+     encouraged all 32 of those bits to be 'equally' 'psuedo-random', and
+     saved unused bits from one call to service later calls as a way to
+     improve performance. @wait uses RandomLong to decide whether to ding
+     the invoker for an extra penny.
 
 Cosmetic Changes:
 ~~~~~~~~~~~~~~~~
