@@ -1,6 +1,6 @@
 // stringutil.cpp -- string utilities
 //
-// $Id: stringutil.cpp,v 1.40 2001-06-27 07:33:19 sdennis Exp $
+// $Id: stringutil.cpp,v 1.41 2001-06-29 11:34:04 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -1875,16 +1875,16 @@ const char Digits100[201] =
 int Tiny_ltoa(long val, char *buf)
 {
     char *p = buf;
-    
+
     if (val < 0)
     {
         *p++ = '-';
         val = -val;
     }
     unsigned int uval = (unsigned int)val;
-    
+
     char *q = p;
-    
+
     const char *z;
     while (uval > 99)
     {
@@ -1943,15 +1943,15 @@ void safe_ltoa(long val, char *buff, char **bufc, int size)
 int Tiny_i64toa(INT64 val, char *buf)
 {
     char *p = buf;
-    
+
     if (val < 0)
     {
         *p++ = '-';
         val = -val;
     }
-    
+
     char *q = p;
-    
+
     const char *z;
     while (val > 99)
     {
@@ -2465,7 +2465,7 @@ void BMH_Prepare(BMH_State *bmhs, int nPat, char *pPat)
     {
         bmhs->m_d[k] = nPat;
     }
-    
+
     char chLastPat = pPat[nPat-1];
     bmhs->m_skip2 = nPat;
     for (k = 0; k < nPat - 1; k++)
@@ -2520,7 +2520,7 @@ void BMH_PrepareI(BMH_State *bmhs, int nPat, char *pPat)
     {
         bmhs->m_d[k] = nPat;
     }
-    
+
     char chLastPat = pPat[nPat-1];
     bmhs->m_skip2 = nPat;
     for (k = 0; k < nPat - 1; k++)
@@ -2585,7 +2585,7 @@ CF_HAND(cf_art_rule)
 {
 #ifndef STANDALONE
     char* pCurrent = str;
-    
+
     while (Tiny_IsSpace[(unsigned char)*pCurrent])
     {
         pCurrent++;
@@ -2609,7 +2609,7 @@ CF_HAND(cf_art_rule)
         if (*pArticle == 'A' || *pArticle == 'a')
         {
             if (*(pArticle + 1) == 'N' || *(pArticle + 1) == 'n')
-            {            
+            {
                 bUseAn = TRUE;
                 bOkay = TRUE;
             }
@@ -2627,7 +2627,7 @@ CF_HAND(cf_art_rule)
         cf_log_syntax(player, cmd, "Invalid article '%s'.", pArticle);
         return -1;
     }
-    
+
 
     while (!Tiny_IsSpace[(unsigned char)*pCurrent] && *pCurrent != '\0')
     {
@@ -2654,7 +2654,7 @@ CF_HAND(cf_art_rule)
     arNewRule->m_pNextRule = *arRules;
     arNewRule->m_bUseAn = bUseAn;
     arNewRule->m_pRegexp = reNewRegexp;
-    
+
     *arRules = arNewRule;
 #endif
     return 0;
