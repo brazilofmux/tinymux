@@ -2,7 +2,7 @@
  * conf.c:      set up configuration information and static data 
  */
 /*
- * $Id: conf.cpp,v 1.1 2000-04-11 07:14:43 sdennis Exp $ 
+ * $Id: conf.cpp,v 1.2 2000-04-11 09:15:54 sdennis Exp $ 
  */
 
 #include "copyright.h"
@@ -869,6 +869,7 @@ CF_HAND(cf_set_flags)
             {
                 (*fset).word1 = 0;
                 (*fset).word2 = 0;
+                (*fset).word3 = 0;
             }
             if (fp->flagflag & FLAG_WORD3)
                 (*fset).word3 |= fp->flagvalue;
@@ -894,6 +895,7 @@ CF_HAND(cf_set_flags)
     {
         (*fset).word1 = 0;
         (*fset).word2 = 0;
+        (*fset).word3 = 0;
         return 0;
     }
     if (success > 0)
@@ -1105,6 +1107,7 @@ extern CF_HAND(cf_cmd_alias);
 extern CF_HAND(cf_acmd_access);
 extern CF_HAND(cf_attr_access);
 extern CF_HAND(cf_func_access);
+extern CF_HAND(cf_flag_access);
 
 /* ---------------------------------------------------------------------------
  * conftable: Table for parsing the configuration file.
@@ -1156,6 +1159,7 @@ CONF conftable[] =
     {(char *)"fixed_home_message",    cf_string,  CA_DISABLED,    (int *)mudconf.fixed_home_msg,  128},
     {(char *)"fixed_tel_message",    cf_string,  CA_DISABLED,    (int *)mudconf.fixed_tel_msg,   128},
     {(char *)"find_money_chance",    cf_int,     CA_GOD,     &mudconf.payfind,       0},
+    {(char *)"flag_access",   cf_flag_access, CA_GOD,     NULL,               0},
     {(char *)"flag_alias",    cf_flagalias,   CA_GOD,     NULL,               0},
     {(char *)"forbid_site",    cf_site,    CA_GOD,     (int *)&mudstate.access_list,    H_FORBIDDEN},
 #if !defined(VMS) && !defined(WIN32)

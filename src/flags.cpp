@@ -2,7 +2,7 @@
  * flags.c - flag manipulation routines 
  */
 /*
- * $Id: flags.cpp,v 1.1 2000-04-11 07:14:44 sdennis Exp $ 
+ * $Id: flags.cpp,v 1.2 2000-04-11 09:15:54 sdennis Exp $ 
  */
 
 #include "copyright.h"
@@ -17,6 +17,9 @@
 #include "alloc.h"
 #include "powers.h"
 
+extern void FDECL(cf_log_syntax, (dbref, char *, const char *, char *));
+extern void FDECL(cf_log_notfound, (dbref, char *, const char *, char *));
+
 #ifndef STANDALONE
 
 /*
@@ -26,17 +29,36 @@
 
 int fh_any(dbref target, dbref player, FLAG flag, int fflags, int reset)
 {
-    if (fflags & FLAG_WORD3) {
+    // Never let God drop his/her own wizbit.
+    //
+    if (  God(target)
+       && reset
+       && (flag == WIZARD)
+       && !(fflags & FLAG_WORD2)
+       && !(fflags & FLAG_WORD3))
+    {
+        notify(player, "You cannot make God mortal.");
+        return 0;
+    }
+    
+    // Otherwise we can go do it.
+    //
+    if (fflags & FLAG_WORD3)
+    {
         if (reset)
             s_Flags3(target, Flags3(target) & ~flag);
         else
             s_Flags3(target, Flags3(target) | flag);
-    } else if (fflags & FLAG_WORD2) {
+    }
+    else if (fflags & FLAG_WORD2)
+    {
         if (reset)
             s_Flags2(target, Flags2(target) & ~flag);
         else
             s_Flags2(target, Flags2(target) | flag);
-    } else {
+    }
+    else
+    {
         if (reset)
             s_Flags(target, Flags(target) & ~flag);
         else
@@ -71,19 +93,6 @@ int fh_wiz(dbref target, dbref player, FLAG flag, int fflags, int reset)
 
 /*
  * ---------------------------------------------------------------------------
- * * fh_fixed: Settable only on players by WIZARDS
- */
-
-int fh_fixed(dbref target, dbref player, FLAG flag, int fflags, int reset)
-{
-    if (isPlayer(target))
-        if (!Wizard(player) && !God(player))
-            return 0;
-    return (fh_any(target, player, flag, fflags, reset));
-}
-
-/*
- * ---------------------------------------------------------------------------
  * * fh_wizroy: only WIZARDS, ROYALTY, (or GOD) may set or clear the bit
  */
 
@@ -92,6 +101,78 @@ int fh_wizroy(dbref target, dbref player, FLAG flag, int fflags, int reset)
     if (!WizRoy(player) && !God(player))
         return 0;
     return (fh_any(target, player, flag, fflags, reset));
+}
+
+/*
+ * ---------------------------------------------------------------------------
+ * * fh_restrict_player (renamed from fh_fixed): Only Wizards can set
+ * * this on players, but ordinary players can set it on other types
+ * * of objects.
+ */
+int fh_restrict_player
+(
+    dbref target,
+    dbref player,
+    FLAG flag,
+    int fflags,
+    int reset
+)
+{
+    if (  isPlayer(target)
+       && !Wizard(player)
+       && !God(player))
+    {
+        return 0;
+    }
+    return fh_any(target, player, flag, fflags, reset);
+}
+
+/* ---------------------------------------------------------------------------
+ * fh_privileged: You can set this flag on a non-player object, if you
+ * yourself have this flag and are a player who owns themselves (i.e.,
+ * no robots). Only God can set this on a player.
+ */
+int fh_privileged
+(
+    dbref target,
+    dbref player,
+    FLAG flag,
+    int fflags,
+    int reset
+)
+{
+    int has_it;
+    
+    if (!God(player))
+    {
+        if (!isPlayer(player) || (player != Owner(player)))
+        {
+            return 0;
+        }
+        if (isPlayer(target))
+        {
+            return 0;
+        }
+        
+        if (fflags & FLAG_WORD3)
+        {
+            has_it = (Flags3(player) & flag) ? 1 : 0;
+        }
+        else if (fflags & FLAG_WORD2)
+        {
+            has_it = (Flags2(player) & flag) ? 1 : 0;
+        }
+        else
+        {
+            has_it = (Flags(player) & flag) ? 1 : 0;
+        }
+        
+        if (!has_it)
+        {
+            return 0;
+        }
+    }
+    return fh_any(target, player, flag, fflags, reset);
 }
 
 /*
@@ -108,32 +189,21 @@ int fh_inherit(dbref target, dbref player, FLAG flag, int fflags, int reset)
 
 /*
  * ---------------------------------------------------------------------------
- * * fh_wiz_bit: Only GOD may set/clear this bit on others.
- */
-
-int fh_wiz_bit(dbref target, dbref player, FLAG flag, int fflags, int reset)
-{
-    if (!God(player))
-        return 0;
-    if (God(target) && reset) {
-        notify(player, "You cannot make yourself mortal.");
-        return 0;
-    }
-    return (fh_any(target, player, flag, fflags, reset));
-}
-
-/*
- * ---------------------------------------------------------------------------
  * * fh_dark_bit: manipulate the dark bit. Nonwizards may not set on players.
  */
 
 int fh_dark_bit(dbref target, dbref player, FLAG flag, int fflags, int reset)
 {
-    if (!reset && isPlayer(target) && !((target == player) &&
-                        Can_Hide(player)) &&
-        (!Wizard(player) && !God(player)))
+    if (  !reset
+       && isPlayer(target)
+       && !(  (target == player)
+           && Can_Hide(player))
+       && !Wizard(player)
+       && !God(player))
+    {
         return 0;
-    return (fh_any(target, player, flag, fflags, reset));
+    }
+    return fh_any(target, player, flag, fflags, reset);
 }
 
 /*
@@ -143,13 +213,18 @@ int fh_dark_bit(dbref target, dbref player, FLAG flag, int fflags, int reset)
 
 int fh_going_bit(dbref target, dbref player, FLAG flag, int fflags, int reset)
 {
-    if (Going(target) && reset && (Typeof(target) != TYPE_GARBAGE)) {
+    if (  Going(target)
+       && reset
+       && (Typeof(target) != TYPE_GARBAGE))
+    {
         notify(player, "Your object has been spared from destruction.");
-        return (fh_any(target, player, flag, fflags, reset));
+        return fh_any(target, player, flag, fflags, reset);
     }
     if (!God(player))
+    {
         return 0;
-    return (fh_any(target, player, flag, fflags, reset));
+    }
+    return fh_any(target, player, flag, fflags, reset);
 }
 
 /*
@@ -162,10 +237,12 @@ int fh_hear_bit(dbref target, dbref player, FLAG flag, int fflags, int reset)
     int could_hear;
 
     if (isPlayer(target) && (flag & MONITOR))
+    {
         if (Can_Monitor(player))
             fh_any(target, player, flag, fflags, reset);
         else
             return 0;
+    }
 
     could_hear = Hearer(target);
     fh_any(target, player, flag, fflags, reset);
@@ -173,22 +250,42 @@ int fh_hear_bit(dbref target, dbref player, FLAG flag, int fflags, int reset)
     return 1;
 }
 
-#ifdef DSPACE
-/*
- * ---------------------------------------------------------------------------
- * * fh_dynamic_bit: only settable on rooms or exits.
+/* ---------------------------------------------------------------------------
+ * fh_player_bit: Can set and reset this on everything but players.
  */
-
-int fh_dynamic_bit(dbref target, dbref player, FLAG flag, int fflags, int reset)
+int fh_player_bit
+(
+    dbref target,
+    dbref player,
+    FLAG flag,
+    int fflags,
+    int reset
+)
 {
-
-    if (isPlayer(target) || isThing(target))
+    if (isPlayer(target))
+    {
         return 0;
-
-    return (fh_any(target, player, flag, fflags, reset));
+    }
+    return fh_any(target, player, flag, fflags, reset);
 }
 
-#endif
+/* ---------------------------------------------------------------------------
+ * fh_staff: only STAFF, WIZARDS, ROYALTY, (or GOD) may set or clear
+ * the bit.
+ */
+int fh_staff
+(
+    dbref target,
+    dbref player,
+    FLAG flag,
+    int fflags,
+    int reset
+)
+{
+    if (!Staff(player) && !God(player))
+        return 0;
+    return (fh_any(target, player, flag, fflags, reset));
+}
 
 FLAGENT gen_flags[] =
 { 
@@ -218,17 +315,14 @@ FLAGENT gen_flags[] =
     {"TRACE",           TRACE,        'T',    0,          0,                    fh_any},
     {"UNFINDABLE",      UNFINDABLE,   'U',    FLAG_WORD2, 0,                    fh_any},
     {"VISUAL",          VISUAL,       'V',    0,          0,                    fh_any},
-    {"VACATION",        VACATION,     '|',    FLAG_WORD2, 0,                    fh_fixed},
-    {"WIZARD",          WIZARD,       'W',    0,          0,                    fh_wiz_bit},
+    {"VACATION",        VACATION,     '|',    FLAG_WORD2, 0,                    fh_restrict_player},
+    {"WIZARD",          WIZARD,       'W',    0,          0,                    fh_god},
     {"PARENT_OK",       PARENT_OK,    'Y',    FLAG_WORD2, 0,                    fh_any},
     {"ROYALTY",         ROYALTY,      'Z',    0,          0,                    fh_wiz},
-    {"FIXED",           FIXED,        'f',    FLAG_WORD2, 0,                    fh_fixed}, 
+    {"FIXED",           FIXED,        'f',    FLAG_WORD2, 0,                    fh_restrict_player}, 
     {"UNINSPECTED",     UNINSPECTED,  'g',    FLAG_WORD2, 0,                    fh_wizroy},
     {"NO_COMMAND",      NO_COMMAND,   'n',    FLAG_WORD2, 0,                    fh_any},
     {"NOBLEED",         NOBLEED,      '-',    FLAG_WORD2, 0,                    fh_any},
-#ifdef DSPACE
-    {"DYNAMIC",         DYNAMIC,      '!',    FLAG_WORD2, 0,                    fh_dynamic_bit},
-#endif
     {"AUDIBLE",         HEARTHRU,     'a',    0,          0,                    fh_hear_bit},
     {"CONNECTED",       CONNECTED,    'c',    FLAG_WORD2, CA_NO_DECOMP,         fh_god},
     {"DESTROY_OK",      DESTROY_OK,   'd',    0,          0,                    fh_any},
@@ -239,7 +333,7 @@ FLAGENT gen_flags[] =
     {"MYOPIC",          MYOPIC,       'm',    0,          0,                    fh_any},
     {"PUPPET",          PUPPET,       'p',    0,          0,                    fh_hear_bit},
     {"TERSE",           TERSE,        'q',    0,          0,                    fh_any},
-    {"ROBOT",           ROBOT,        'r',    0,          0,                    fh_any},
+    {"ROBOT",           ROBOT,        'r',    0,          0,                    fh_player_bit},
     {"SAFE",            SAFE,         's',    0,          0,                    fh_any},
     {"TRANSPARENT",     SEETHRU,      't',    0,          0,                    fh_any},
     {"SUSPECT",         SUSPECT,      'u',    FLAG_WORD2, CA_WIZARD,            fh_wiz},
@@ -269,14 +363,11 @@ FLAGENT gen_flags[] =
 OBJENT object_types[8] =
 {
     {"ROOM",    'R', CA_PUBLIC, OF_CONTENTS|OF_EXITS|OF_DROPTO|OF_HOME},
-    {"THING",   ' ', CA_PUBLIC,
-        OF_CONTENTS|OF_LOCATION|OF_EXITS|OF_HOME|OF_SIBLINGS},
+    {"THING",   ' ', CA_PUBLIC, OF_CONTENTS|OF_LOCATION|OF_EXITS|OF_HOME|OF_SIBLINGS},
     {"EXIT",    'E', CA_PUBLIC, OF_SIBLINGS},
-    {"PLAYER",  'P', CA_PUBLIC,
-        OF_CONTENTS|OF_LOCATION|OF_EXITS|OF_HOME|OF_OWNER|OF_SIBLINGS},
+    {"PLAYER",  'P', CA_PUBLIC, OF_CONTENTS|OF_LOCATION|OF_EXITS|OF_HOME|OF_OWNER|OF_SIBLINGS},
     {"TYPE5",   '+', CA_GOD,    0},
-    {"GARBAGE", '-', CA_PUBLIC,
-        OF_CONTENTS|OF_LOCATION|OF_EXITS|OF_HOME|OF_SIBLINGS},
+    {"GARBAGE", '-', CA_PUBLIC, OF_CONTENTS|OF_LOCATION|OF_EXITS|OF_HOME|OF_SIBLINGS},
     {"GARBAGE", '#', CA_GOD,    0}
 };
 
@@ -332,13 +423,12 @@ FLAGENT *find_flag(dbref thing, char *flagname)
 {
     // Convert flagname to canonical lowercase format.
     //
-    char *buff = alloc_sbuf("find_flag");
+    static char buff[SBUF_SIZE];
     strncpy(buff, flagname, SBUF_SIZE);
     buff[SBUF_SIZE-1] = '\0';
     _strlwr(buff);
 
     FLAGENT *fe = (FLAGENT *)hashfindLEN(buff, strlen(buff), &mudstate.flags_htab);
-    free_sbuf(buff);
     return fe;
 }
 
@@ -450,8 +540,8 @@ char *decode_flags(dbref player, FLAG flagword, FLAG flag2word, FLAG flag3word)
             // Don't show CONNECT on dark wizards to mortals 
             //
             if (  isPlayer(player)
-               && (fp->flagflag & FLAG_WORD2)
                && (fp->flagvalue == CONNECTED)
+               && (fp->flagflag & FLAG_WORD2)
                && ((flagword & (WIZARD | DARK)) == (WIZARD | DARK))
                && !Wizard(player))
             {
@@ -506,8 +596,8 @@ int has_flag(dbref player, dbref it, char *flagname)
         // Don't show CONNECT on dark wizards to mortals 
         //
         if (  isPlayer(it)
-           && (fp->flagflag & FLAG_WORD2)
            && (fp->flagvalue == CONNECTED)
+           && (fp->flagflag & FLAG_WORD2)
            && ((Flags(it) & (WIZARD | DARK)) == (WIZARD | DARK))
            && !Wizard(player))
         {
@@ -530,29 +620,26 @@ char *flag_description(dbref player, dbref target)
     int otype;
     FLAG fv;
 
-    /*
-     * Allocate the return buffer 
-     */
-
+    // Allocate the return buffer.
+    //
     otype = Typeof(target);
     bp = buff = alloc_mbuf("flag_description");
 
-    /*
-     * Store the header strings and object type 
-     */
-
+    // Store the header strings and object type.
+    //
     safe_mb_str((char *)"Type: ", buff, &bp);
     safe_mb_str((char *)object_types[otype].name, buff, &bp);
     safe_mb_str((char *)" Flags:", buff, &bp);
-    if (object_types[otype].perm != CA_PUBLIC) {
+    if (object_types[otype].perm != CA_PUBLIC)
+    {
         *bp = '\0';
         return buff;
     }
-    /*
-     * Store the type-invariant flags 
-     */
 
-    for (fp = gen_flags; fp->flagname; fp++) {
+    // Store the type-invariant flags.
+    //
+    for (fp = gen_flags; fp->flagname; fp++)
+    {
         if (fp->flagflag & FLAG_WORD3)
             fv = Flags3(target);
         else if (fp->flagflag & FLAG_WORD2)
@@ -567,20 +654,21 @@ char *flag_description(dbref player, dbref target)
             /*
              * don't show CONNECT on dark wizards to mortals 
              */
-            if (isPlayer(target) &&
-                (fp->flagvalue == CONNECTED) &&
-                ((Flags(target) & (WIZARD | DARK)) == (WIZARD | DARK)) &&
-                !Wizard(player))
+            if (  isPlayer(target)
+               && (fp->flagvalue == CONNECTED)
+               && (fp->flagflag & FLAG_WORD2)
+               && ((Flags(target) & (WIZARD | DARK)) == (WIZARD | DARK))
+               && !Wizard(player))
+            {
                 continue;
+            }
             safe_mb_chr(' ', buff, &bp);
             safe_mb_str((char *)fp->flagname, buff, &bp);
         }
     }
 
-    /*
-     * Terminate the string, and return the buffer to the caller 
-     */
-
+    // Terminate the string, and return the buffer to the caller.
+    //
     *bp = '\0';
     return buff;
 }
@@ -652,10 +740,86 @@ char *unparse_object(dbref player, dbref target, int obey_myopic)
         {
             // show only the name.
             //
-            StringCopy(buf, Name(target));
+            strcpy(buf, Name(target));
         }
     }
     return buf;
+}
+
+/* ---------------------------------------------------------------------------
+* cf_flag_access: Modify who can set a flag.
+*/
+
+CF_HAND(cf_flag_access)
+{
+    TINY_STRTOK_STATE tts;
+    Tiny_StrTokString(&tts, str);
+    Tiny_StrTokControl(&tts, " \t=,");
+    char *fstr = Tiny_StrTokParse(&tts);
+    char *permstr = Tiny_StrTokParse(&tts);
+    
+    if (!fstr || !*fstr)
+    {
+        return -1;
+    }
+    
+    FLAGENT *fp;
+    if ((fp = find_flag(GOD, fstr)) == NULL)
+    {
+        cf_log_notfound(player, cmd, "No such flag", fstr);
+        return -1;
+    }
+    
+    // Don't change the handlers on special things.
+    //
+    if (  (fp->handler != fh_any)
+       && (fp->handler != fh_wizroy)
+       && (fp->handler != fh_wiz)
+       && (fp->handler != fh_god)
+       && (fp->handler != fh_restrict_player)
+       && (fp->handler != fh_privileged))
+    {
+        STARTLOG(LOG_CONFIGMODS, "CFG", "PERM");
+        log_text((char *) "Cannot change access for flag: ");
+        log_text((char *) fp->flagname);
+        ENDLOG;
+        return -1;
+    }
+    
+    if (!strcmp(permstr, (char *) "any"))
+    {
+        fp->handler = fh_any;
+    }
+    else if (!strcmp(permstr, (char *) "royalty"))
+    {
+        fp->handler = fh_wizroy;
+    }
+    else if (!strcmp(permstr, (char *) "wizard"))
+    {
+        fp->handler = fh_wiz;
+    }
+    else if (!strcmp(permstr, (char *) "god"))
+    {
+        fp->handler = fh_god;
+    }
+    else if (!strcmp(permstr, (char *) "restrict_player"))
+    {
+        fp->handler = fh_restrict_player;
+    }
+    else if (!strcmp(permstr, (char *) "privileged"))
+    {
+        fp->handler = fh_privileged;
+    }
+    else if (!strcmp(permstr, (char *) "staff"))
+    {
+        fp->handler = fh_staff;
+    }
+    else
+    {
+        cf_log_notfound(player, cmd, "Flag access", permstr);
+        return -1;
+    }
+    return 0;
 }
 
 /*
