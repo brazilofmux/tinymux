@@ -1,5 +1,5 @@
 /* command.h - declarations used by the command processor */
-/* $Id: command.h,v 1.6 2001-03-31 01:54:10 sdennis Exp $ */
+/* $Id: command.h,v 1.7 2001-07-05 18:40:18 hellspawn Exp $ */
 
 #ifndef __COMMAND_H
 #define __COMMAND_H
@@ -108,6 +108,7 @@ CMD_ONE_ARG(do_queue);          /* Force queue processing */
 CMD_TWO_ARG(do_quota);          /* Set or display quotas */
 CMD_NO_ARG(do_readcache);       /* Reread text file cache */
 CMD_NO_ARG(do_restart);         /* Restart the game. */
+CMD_NO_ARG(do_backup);          /* Backup the database and restart */
 CMD_ONE_ARG(do_say);            /* Messages to all */
 CMD_NO_ARG(do_score);           /* Display my wealth */
 CMD_ONE_ARG(do_search);         /* Search for objs matching criteria */

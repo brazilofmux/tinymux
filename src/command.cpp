@@ -1,6 +1,6 @@
 // command.cpp - command parser and support routines.
 //
-// $Id: command.cpp,v 1.45 2001-06-29 16:23:30 sdennis Exp $
+// $Id: command.cpp,v 1.46 2001-07-05 18:40:18 hellspawn Exp $
 //
 
 #include "copyright.h"
@@ -484,6 +484,7 @@ NAMETAB warp_sw[] =
 CMDENT_NO_ARG command_table_no_arg[] =
 {
     {(char *)"@@",            NULL,       0,  0,      CS_NO_ARGS,         do_comment},
+    {(char *)"@backup",       NULL,       CA_WIZARD,    0,      CS_NO_ARGS,         do_backup},
     {(char *)"@clist",        clist_sw,   CA_NO_SLAVE,        0,              CS_NO_ARGS,                     do_chanlist},
     {(char *)"@dbck",         NULL,       CA_WIZARD,    0,      CS_NO_ARGS,         do_dbck},
     {(char *)"@dbclean",      NULL,       CA_GOD,       0,      CS_NO_ARGS,         do_dbclean},

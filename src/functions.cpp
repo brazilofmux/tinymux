@@ -1,6 +1,6 @@
 // functions.cpp - MUX function handlers 
 //
-// $Id: functions.cpp,v 1.78 2001-07-05 11:55:25 sdennis Exp $
+// $Id: functions.cpp,v 1.79 2001-07-05 18:40:18 hellspawn Exp $
 //
 
 #include "copyright.h"
@@ -152,6 +152,7 @@ XFUNCTION(fun_connnum);
 XFUNCTION(fun_connleft);
 XFUNCTION(fun_art); 
 XFUNCTION(fun_t);
+XFUNCTION(fun_dumping);
 
 // Trim off leading and trailing spaces if the separator char is a
 // space -- known length version.
@@ -6297,6 +6298,7 @@ FUN flist[] =
     {"DIST2D",   fun_dist2d,   MAX_ARG, 4,  4,       0, CA_PUBLIC},
     {"DIST3D",   fun_dist3d,   MAX_ARG, 6,  6,       0, CA_PUBLIC},
     {"DOING",    fun_doing,    MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"DUMPING",  fun_dumping,  MAX_ARG, 0,  0,       0, CA_PUBLIC},
     {"E",        fun_e,        MAX_ARG, 0,  0,       0, CA_PUBLIC},
     {"EDEFAULT", fun_edefault, MAX_ARG, 2,  2, FN_NO_EVAL, CA_PUBLIC},
     {"EDIT",     fun_edit,     MAX_ARG, 3,  3,       0, CA_PUBLIC},

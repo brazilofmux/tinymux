@@ -1,6 +1,6 @@
 // predicates.cpp
 //
-// $Id: predicates.cpp,v 1.29 2001-06-30 17:44:18 morgan Exp $
+// $Id: predicates.cpp,v 1.30 2001-07-05 18:40:18 hellspawn Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -1252,6 +1252,31 @@ extern SOCKET slave_socket;
     execl("bin/netmux", "netmux", mudconf.config_file, NULL);
 #endif // GAME_DOOFERMUX
 #endif // !WIN32
+}
+
+/*
+ * ---------------------------------------------------------------------------
+ * * do_backup: Backs up and restarts the game
+ * * By Wadhah Al-Tailji (7-21-97), altailji@nmt.edu
+ * * Ported to MUX2 by Patrick Hill (7-5-2001), hellspawn@anomux.org
+ */
+
+void do_backup(dbref player, int cause, int key)
+{
+   if (mudstate.dumping)
+     {
+	notify(player, "Dumping. Please try again later.");
+     }
+   
+   raw_broadcast(0, "GAME: Backing up database. Please wait.");
+   STARTLOG(LOG_ALWAYS, "WIZ", "BACK")
+     log_text((char *)"Backup by ");
+   log_name(player);
+   ENDLOG
+     
+   dump_database_internal(3);
+   system(tprintf("./Backup.new %s.FLAT 1>&2", mudconf.outdb));
+   raw_broadcast(0, "GAME: Backup finished.");
 }
 
 /*
