@@ -1,5 +1,5 @@
 /* command.h - declarations used by the command processor */
-/* $Id: command.h,v 1.4 2000-11-06 18:23:39 sdennis Exp $ */
+/* $Id: command.h,v 1.5 2000-11-06 18:30:28 sdennis Exp $ */
 
 #ifndef __COMMAND_H
 #define __COMMAND_H
@@ -85,7 +85,7 @@ CMD_TWO_ARG(do_link);           /* Set home, dropto, or dest */
 CMD_ONE_ARG(do_list);           /* List contents of internal tables */
 CMD_ONE_ARG(do_list_file);      /* List contents of message files */
 CMD_TWO_ARG(do_lock);           /* Set a lock on an object */
-CMD_TWO_ARG(do_log);        /* Extra logging routine */
+CMD_TWO_ARG(do_log);            /* Extra logging routine */
 CMD_ONE_ARG(do_look);           /* Look here or at something */
 CMD_NO_ARG(do_markall);         /* Mark or unmark all objects */
 CMD_ONE_ARG(do_motd);           /* Set/list MOTD messages */
