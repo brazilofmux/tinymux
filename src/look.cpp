@@ -1,6 +1,6 @@
 // look.cpp -- commands which look at things
 //
-// $Id: look.cpp,v 1.15 2001-03-22 23:05:04 morgan Exp $
+// $Id: look.cpp,v 1.16 2001-03-23 08:44:43 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. The WOD_REALMS portion is original work.
@@ -445,60 +445,65 @@ static void look_exits(dbref player, dbref loc, const char *exit_name)
     if (!foundany)
         return;
 
-	// Retrieve the ExitFormat attribute from the location, evaluate and display
-	// the results in lieu of the traditional exits list if it exists.
-	//
+    // Retrieve the ExitFormat attribute from the location, evaluate and display
+    // the results in lieu of the traditional exits list if it exists.
+    //
+    dbref aowner;
+    int aflags;
+    char *ExitFormat = atr_pget(loc, A_EXITFORMAT, &aowner, &aflags);
 
-	dbref aowner;
-	int aflags;
-	char* ExitOrig, * ExitFormat = atr_pget(loc, A_EXITFORMAT, &aowner, &aflags);
-	ExitOrig = ExitFormat;
+    BOOL bDisplayExits = 1;
+    if (*ExitFormat)
+    {
+        char *VisibleObjectList = alloc_lbuf("look_exits.VOL");
+        char *tPtr = VisibleObjectList;
 
-	int bDisplayExits = 1;
-	if ( *ExitFormat )
-	{
-		char* VisibleObjectList, * tPtr;
+        DTB pContext;
+        DbrefToBuffer_Init(&pContext, VisibleObjectList, &tPtr);
 
-		tPtr = VisibleObjectList = alloc_lbuf("look_exits.VisibleObjectList");
+        ITER_PARENTS(loc, parent, lev)
+        {
+            key &= ~VE_LOC_DARK;
+            if (Dark(parent))
+            {
+                key |= VE_LOC_DARK;
+            }
 
-		ITER_PARENTS(loc, parent, lev)
-		{
-			key &= ~VE_LOC_DARK;
-			if (Dark(parent))
-			{
-				key |= VE_LOC_DARK;
-			}
+            BOOL bShortCircuit = FALSE;
+            DOLIST(thing, Exits(parent))
+            {
+                if (!DbrefToBuffer_Add(&pContext, thing))
+                {
+                    bShortCircuit = TRUE;
+                    break;
+                }
+            }
+            if (bShortCircuit) break;
+        }
+        DbrefToBuffer_Final(&pContext);
 
-			DOLIST(thing, Exits(parent))
-			{
-				safe_str(tprintf("#%d ", thing), VisibleObjectList, &tPtr);
-			}
-		}
+        notify(player, exit_name);
 
-		*(tPtr - 1) = '\0';
+        char *FormatOutput = alloc_lbuf("look_exits.FO");
+        tPtr = FormatOutput;
 
-		notify(player, exit_name);
+        TinyExec(FormatOutput, &tPtr, 0, loc, player, 
+                EV_FCHECK | EV_EVAL | EV_TOP,
+                &ExitFormat, &VisibleObjectList, 1);
 
-		char* FormatOutput = alloc_lbuf("look_exits.FormatOutput");
-		tPtr = FormatOutput;
+        notify(player, FormatOutput);
 
-		TinyExec(FormatOutput, &tPtr, 0, loc, player, 
-				EV_FCHECK | EV_EVAL | EV_TOP,
-				&ExitFormat, &VisibleObjectList, 1);
+        free_lbuf(FormatOutput);
+        free_lbuf(VisibleObjectList);
 
-		notify(player, FormatOutput);
+        bDisplayExits = 0;
+    }
+    free_lbuf(ExitFormat);
 
-		free_lbuf(FormatOutput);
-		free_lbuf(VisibleObjectList);
-
-		bDisplayExits = 0;
-	}
-
-	if ( ExitOrig )
-		free_lbuf(ExitOrig);
-
-	if ( !bDisplayExits )
-		return;
+    if (!bDisplayExits)
+    {
+        return;
+    }
 
     // Display the list of exit names 
     //
@@ -506,22 +511,22 @@ static void look_exits(dbref player, dbref loc, const char *exit_name)
     e = buff = alloc_lbuf("look_exits");
     e1 = buff1 = alloc_lbuf("look_exits2");
     ITER_PARENTS(loc, parent, lev)
-   	{
+    {
         key &= ~VE_LOC_DARK;
         if (Dark(parent))
         {
-   	        key |= VE_LOC_DARK;
+            key |= VE_LOC_DARK;
         }
-   	    if (Transparent(loc))
+        if (Transparent(loc))
         {
             DOLIST(thing, Exits(parent))
             {
-   	            if (exit_displayable(thing, player, key))
+                if (exit_displayable(thing, player, key))
                 {
                     StringCopy(buff, Name(thing));
                     for (e = buff; *e && (*e != ';'); e++) ;
                     *e = '\0';
-   	                notify(player, tprintf("%s leads to %s.", buff, Name(Location(thing))));
+                    notify(player, tprintf("%s leads to %s.", buff, Name(Location(thing))));
                 }
             }
         }
@@ -539,12 +544,16 @@ static void look_exits(dbref player, dbref loc, const char *exit_name)
                     //
                    
                     if (buff != e)
+                    {
                         safe_str((char *)"  ", buff, &e);
+                    }
 
                     for (s = Name(thing); *s && (*s != ';'); s++)
+                    {
                         safe_chr(*s, buff1, &e1);
+                    }
 
-	                    *e1 = 0;
+                    *e1 = 0;
                     /* Copy the exit name into 'buff' */
                     if (Html(player))
                     {
@@ -592,64 +601,68 @@ static void look_contents(dbref player, dbref loc, const char *contents_name, in
     can_see_loc = (!Dark(loc) ||
         (mudconf.see_own_dark && Examinable(player, loc)));
 
-	dbref aowner;
-	int aflags;
-	char* FormatOriginal, * ContentsFormat;
-	FormatOriginal = ContentsFormat = atr_pget(loc, A_CONFORMAT, &aowner,
-		&aflags);
+    dbref aowner;
+    int aflags;
+    char *ContentsFormat = atr_pget(loc, A_CONFORMAT, &aowner, &aflags);
 
-	int bDisplayContents = 1;
-	if ( *ContentsFormat )
-	{
-		char* tPtr, * VisibleObjectList;
-		tPtr = VisibleObjectList = alloc_lbuf("look_contents.VisibleObjectList");
+    int bDisplayContents = 1;
+    if (*ContentsFormat)
+    {
+        char *VisibleObjectList = alloc_lbuf("look_contents.VOL");
+        char *tPtr = VisibleObjectList;
 
-		DOLIST(thing, Contents(loc))
-		{
+        DTB pContext;
+        DbrefToBuffer_Init(&pContext, VisibleObjectList, &tPtr);
+
+        DOLIST(thing, Contents(loc))
+        {
 #ifdef WOD_REALMS
-			if ( can_see(player, thing, can_see_loc) &&
-				(REALM_DO_HIDDEN_FROM_YOU != DoThingToThingVisiblity(player,
-												thing, ACTION_IS_STATIONARY)) )
+            if (  can_see(player, thing, can_see_loc)
+               && (REALM_DO_HIDDEN_FROM_YOU != DoThingToThingVisiblity(player,
+                                                thing, ACTION_IS_STATIONARY)) )
 #else
-			if ( can_see(player, thing, can_see_loc) )
+            if (can_see(player, thing, can_see_loc))
 #endif
-				safe_str(tprintf("#%d ", thing), VisibleObjectList, &tPtr);
-		}
-		*(tPtr - 1) = '\0';
+            {
+                if (!DbrefToBuffer_Add(&pContext, thing))
+                {
+                    break;
+                }
+            }
+        }
+        DbrefToBuffer_Final(&pContext);
 
-		notify(player, contents_name);
+        notify(player, contents_name);
 
-		char* ContentsNameScratch = alloc_lbuf("look_contents.ContentsNameScratch.");
-		tPtr = ContentsNameScratch;
+        char *ContentsNameScratch = alloc_lbuf("look_contents.CNS");
+        tPtr = ContentsNameScratch;
 
-		safe_str(contents_name, ContentsNameScratch, &tPtr);
+        safe_str(contents_name, ContentsNameScratch, &tPtr);
 
-		char* FormatOutput = alloc_lbuf("look_contents.FormatOutput");
-		tPtr = FormatOutput;
+        char *FormatOutput = alloc_lbuf("look_contents.FO");
+        tPtr = FormatOutput;
 
-		char* ParameterList[] =
-			{ VisibleObjectList, ContentsNameScratch };
+        char* ParameterList[] =
+            { VisibleObjectList, ContentsNameScratch };
 
-		TinyExec(FormatOutput, &tPtr, 0, loc, player,
-				EV_FCHECK | EV_EVAL | EV_TOP,
-				&ContentsFormat, ParameterList, 2);
+        TinyExec(FormatOutput, &tPtr, 0, loc, player,
+                EV_FCHECK | EV_EVAL | EV_TOP,
+                &ContentsFormat, ParameterList, 2);
 
-		notify(player, FormatOutput);
+        notify(player, FormatOutput);
 
-		free_lbuf(FormatOutput);
-		free_lbuf(ContentsNameScratch);
-		free_lbuf(VisibleObjectList);
+        free_lbuf(FormatOutput);
+        free_lbuf(ContentsNameScratch);
+        free_lbuf(VisibleObjectList);
 
-		bDisplayContents = 0;
-	}
+        bDisplayContents = 0;
+    }
+    free_lbuf(ContentsFormat);
 
-	if ( *FormatOriginal )
-	{
-		free_lbuf(FormatOriginal);
-	}
-
-	if ( !bDisplayContents )
-		return;
+    if (!bDisplayContents)
+    {
+        return;
+    }
 
     html_buff = html_cp = alloc_lbuf("look_contents");
     
