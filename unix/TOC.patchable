@@ -36,7 +36,6 @@ src/_build.cpp
 src/_build.h
 src/alloc.cpp
 src/alloc.h
-src/analyse.pre
 src/ansi.h
 src/attrcache.cpp
 src/attrcache.h
