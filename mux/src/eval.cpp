@@ -1,6 +1,6 @@
 // eval.cpp -- Command evaluation and cracking.
 //
-// $Id: eval.cpp,v 1.22 2002-09-26 19:59:15 sdennis Exp $
+// $Id: eval.cpp,v 1.23 2003-01-04 04:38:09 sdennis Exp $
 //
 
 // MUX 2.1
@@ -35,24 +35,25 @@
 static char *parse_to_cleanup( int eval, int first, char *cstr, char *rstr,
                                char *zstr, char *strFirewall)
 {
-    if (  (mudconf.space_compress || (eval & EV_STRIP_TS))
+    if (  (  mudconf.space_compress
+          || (eval & EV_STRIP_TS))
        && !(eval & EV_NO_COMPRESS)
        && !first
-       && (cstr > strFirewall)
-       && (cstr[-1] == ' ')
-       )
+       && strFirewall < cstr
+       && cstr[-1] == ' ')
     {
         zstr--;
     }
 
     if (  (eval & EV_STRIP_AROUND)
-       && (*rstr == '{')
-       && (zstr > strFirewall)
-       && (zstr[-1] == '}')
-       )
+       && *rstr == '{'
+       && strFirewall < zstr
+       && zstr[-1] == '}')
     {
         rstr++;
-        if (mudconf.space_compress && !(eval & EV_NO_COMPRESS) || (eval & EV_STRIP_LS))
+        if (  (  mudconf.space_compress
+              && !(eval & EV_NO_COMPRESS))
+           || (eval & EV_STRIP_LS))
         {
             while (Tiny_IsSpace[(unsigned char)*rstr])
             {
@@ -61,9 +62,12 @@ static char *parse_to_cleanup( int eval, int first, char *cstr, char *rstr,
         }
         rstr[-1] = '\0';
         zstr--;
-        if (mudconf.space_compress && !(eval & EV_NO_COMPRESS) || (eval & EV_STRIP_TS))
+        if (  (  mudconf.space_compress
+              && !(eval & EV_NO_COMPRESS))
+           || (eval & EV_STRIP_TS))
         {
-            while ((zstr > strFirewall) && Tiny_IsSpace[(unsigned char)zstr[-1]])
+            while (  strFirewall < zstr
+                  && Tiny_IsSpace[(unsigned char)zstr[-1]])
             {
                 zstr--;
             }
@@ -180,8 +184,11 @@ char *parse_to(char **dstr, char delim, int eval)
     char *rstr, *cstr, *zstr, *strFirewall;
     int sp, tp, bracketlev;
 
-    if ((dstr == NULL) || (*dstr == NULL))
+    if (  dstr == NULL
+       || *dstr == NULL)
+    {
         return NULL;
+    }
 
     if (**dstr == '\0')
     {
@@ -192,10 +199,14 @@ char *parse_to(char **dstr, char delim, int eval)
     sp = 0;
     BOOL first = TRUE;
     strFirewall = rstr = *dstr;
-    if ((mudconf.space_compress || (eval & EV_STRIP_LS)) && !(eval & EV_NO_COMPRESS))
+    if (  (  mudconf.space_compress
+          || (eval & EV_STRIP_LS))
+       && !(eval & EV_NO_COMPRESS))
     {
         while (Tiny_IsSpace[(unsigned char)*rstr])
+        {
             rstr++;
+        }
         *dstr = rstr;
     }
     zstr = cstr = rstr;
@@ -241,13 +252,15 @@ TryAgain:
                 {
                     // space
                     //
-                    if (mudconf.space_compress && !(eval & EV_NO_COMPRESS))
+                    if (  mudconf.space_compress
+                       && !(eval & EV_NO_COMPRESS))
                     {
                         if (first)
                         {
                             rstr++;
                         }
-                        else if ((cstr > strFirewall) && cstr[-1] == ' ')
+                        else if (  strFirewall < cstr
+                                && cstr[-1] == ' ')
                         {
                             zstr--;
                         }
@@ -309,9 +322,9 @@ TryAgain:
                 {
                     // ) and ]
                     //
-                    for (tp = sp - 1; (tp >= 0) && (stack[tp] != *cstr); tp--)
+                    for (tp = sp - 1; tp >= 0 && stack[tp] != *cstr; tp--)
                     {
-                        ;
+                        ; // Nothing.
                     }
 
                     // If we hit something on the stack, unwind to it. Otherwise (it's
@@ -461,7 +474,8 @@ char *parse_to_lite(char **dstr, char delim1, char delim2, int *nLen, int *iWhic
     char *rstr, *cstr;
     int sp, tp, bracketlev;
 
-    if ((dstr == NULL) || (*dstr == NULL))
+    if (  dstr == NULL
+       || *dstr == NULL)
     {
         *nLen = 0;
         return NULL;
@@ -552,9 +566,9 @@ TryAgain:
                 {
                     // ) and ]
                     //
-                    for (tp = sp - 1; (tp >= 0) && (stack[tp] != *cstr); tp--)
+                    for (tp = sp - 1; tp >= 0 && stack[tp] != *cstr; tp--)
                     {
-                        ;
+                        ; // Nothing.
                     }
 
                     // If we hit something on the stack, unwind to it. Otherwise (it's
@@ -562,11 +576,12 @@ TryAgain:
                     // delim to a null and return a ptr to the char after the null. If
                     // it's not our delimiter, skip over it normally.
                     //
-                    if (tp >= 0)
+                    if (0 <= tp)
                     {
                         sp = tp;
                     }
-                    else if (*cstr == delim1 || *cstr == delim2)
+                    else if (  *cstr == delim1
+                            || *cstr == delim2)
                     {
                         if (*cstr == delim1)
                         {
@@ -729,12 +744,17 @@ char *parse_arglist( dbref executor, dbref caller, dbref enactor, char *dstr,
 
     peval = (eval & ~EV_EVAL);
 
-    while ((arg < nfargs) && rstr)
+    while (  arg < nfargs
+          && rstr)
     {
-        if (arg < (nfargs - 1))
+        if (arg < nfargs - 1)
+        {
             tstr = parse_to(&rstr, ',', peval);
+        }
         else
+        {
             tstr = parse_to(&rstr, '\0', peval);
+        }
 
         bp = fargs[arg] = alloc_lbuf("parse_arglist");
         if (eval & EV_EVAL)
@@ -779,14 +799,22 @@ char *parse_arglist_lite( dbref executor, dbref caller, dbref enactor,
     }
     int arg = 0;
     int iWhichDelim = 0;
-    while ((arg < nfargs) && dstr && iWhichDelim != 2)
+    while (  arg < nfargs
+          && dstr
+          && iWhichDelim != 2)
     {
-        if (arg < (nfargs - 1))
+        if (arg < nfargs - 1)
+        {
             tstr = parse_to_lite(&dstr, ',', ')', &nLen, &iWhichDelim);
+        }
         else
+        {
             tstr = parse_to_lite(&dstr, '\0', ')', &nLen, &iWhichDelim);
+        }
 
-        if (iWhichDelim == 2 && arg == 0 && tstr[0] == '\0')
+        if (  iWhichDelim == 2
+           && arg == 0
+           && tstr[0] == '\0')
         {
             break;
         }
@@ -816,8 +844,10 @@ int get_gender(dbref player)
     {
     case 'p':
         return 4;
+
     case 'm':
         return 3;
+
     case 'f':
     case 'w':
         return 2;
@@ -867,7 +897,7 @@ static void tcache_add(dbref player, char *orig, char *result)
         {
             TCENT *xp = (TCENT *) alloc_sbuf("tcache_add.sbuf");
             char *tp = alloc_lbuf("tcache_add.lbuf");
-            StringCopy(tp, result);
+            strcpy(tp, result);
             xp->player = player;
             xp->orig = orig;
             xp->result = tp;
@@ -986,7 +1016,7 @@ static PtrsFrame *pPtrsFrame = NULL;
 char **PushPointers(int nNeeded)
 {
     if (  !pPtrsFrame
-       || nNeeded > pPtrsFrame->nptrs)
+       || pPtrsFrame->nptrs < nNeeded)
     {
         PtrsFrame *p = (PtrsFrame *)alloc_lbuf("PushPointers");
         p->next = pPtrsFrame;
@@ -1022,7 +1052,7 @@ static IntsFrame *pIntsFrame = NULL;
 int *PushIntegers(int nNeeded)
 {
     if (  !pIntsFrame
-       || nNeeded > pIntsFrame->nints)
+       || pIntsFrame->nints < nNeeded)
     {
         IntsFrame *p = (IntsFrame *)alloc_lbuf("PushPointers");
         p->next = pIntsFrame;
@@ -1048,14 +1078,15 @@ void PopIntegers(int *pi, int nNeeded)
 void TinyExec( char *buff, char **bufc, dbref executor, dbref caller,
                dbref enactor, int eval, char **dstr, char *cargs[], int ncargs)
 {
-    if (*dstr == NULL || **dstr == '\0')
+    if (  *dstr == NULL
+       || **dstr == '\0')
     {
         return;
     }
 
     // Stack Limit checking with thanks to RhostMUSH.
     //
-    if (mudstate.nStackNest > mudconf.nStackLimit)
+    if (mudconf.nStackLimit < mudstate.nStackNest)
     {
         mudstate.bStackLimitReached = TRUE;
         return;
@@ -1093,7 +1124,7 @@ void TinyExec( char *buff, char **bufc, dbref executor, dbref caller,
 
     // Extend the buffer if we need to.
     //
-    if (((*bufc) - buff) > (LBUF_SIZE - SBUF_SIZE))
+    if (LBUF_SIZE - SBUF_SIZE < (*bufc) - buff)
     {
         realbuff = buff;
         realbp = *bufc;
@@ -1141,7 +1172,7 @@ void TinyExec( char *buff, char **bufc, dbref executor, dbref caller,
                 ; // Nothing.
             }
             i = p - pdstr - 1;
-            if (i > nBufferAvailable)
+            if (nBufferAvailable < i)
             {
                 i = nBufferAvailable;
             }
@@ -1186,7 +1217,8 @@ void TinyExec( char *buff, char **bufc, dbref executor, dbref caller,
             char *pEnd = *bufc - 1;
             if (mudconf.space_compress)
             {
-                while ((pEnd >= oldp) && Tiny_IsSpace[(unsigned char)*pEnd])
+                while (  oldp <= pEnd
+                      && Tiny_IsSpace[(unsigned char)*pEnd])
                 {
                     pEnd--;
                 }
@@ -1246,7 +1278,8 @@ void TinyExec( char *buff, char **bufc, dbref executor, dbref caller,
                 }
 
                 tstr = pdstr;
-                if (fp && (fp->flags & FN_NO_EVAL))
+                if (  fp
+                   && (fp->flags & FN_NO_EVAL))
                 {
                     feval = eval & ~(EV_EVAL|EV_TOP);
                 }
@@ -1280,11 +1313,11 @@ void TinyExec( char *buff, char **bufc, dbref executor, dbref caller,
                     //
                     mudstate.func_nest_lev++;
                     mudstate.func_invk_ctr++;
-                    if (mudstate.func_nest_lev >= mudconf.func_nest_lim )
+                    if (mudconf.func_nest_lim <= mudstate.func_nest_lev)
                     {
                          safe_str("#-1 FUNCTION RECURSION LIMIT EXCEEDED", buff, &oldp);
                     }
-                    else if (mudstate.func_invk_ctr >= mudconf.func_invk_lim)
+                    else if (mudconf.func_invk_lim <= mudstate.func_invk_ctr)
                     {
                         safe_str("#-1 FUNCTION INVOCATION LIMIT EXCEEDED", buff, &oldp);
                     }
@@ -1300,9 +1333,13 @@ void TinyExec( char *buff, char **bufc, dbref executor, dbref caller,
                     {
                         tstr = atr_get(ufp->obj, ufp->atr, &aowner, &aflags);
                         if (ufp->flags & FN_PRIV)
+                        {
                             i = ufp->obj;
+                        }
                         else
+                        {
                             i = executor;
+                        }
                         TempPtr = tstr;
 
                         char **preserve = NULL;
@@ -1330,9 +1367,10 @@ void TinyExec( char *buff, char **bufc, dbref executor, dbref caller,
                     }
                     else
                     {
-                        // If the number of args is right, perform the func. Otherwise
-                        // return an error message. Note that parse_arglist returns zero
-                        // args as one null arg, so we have to handle that case specially.
+                        // If the number of args is right, perform the func.
+                        // Otherwise, return an error message.  Note that
+                        // parse_arglist returns zero args as one null arg, so
+                        // we have to handle that case specially.
                         //
                         if (  fp->minArgs <= nfargs
                            && nfargs <= fp->maxArgs)
@@ -1344,15 +1382,21 @@ void TinyExec( char *buff, char **bufc, dbref executor, dbref caller,
                         {
                             if (fp->minArgs == fp->maxArgs)
                             {
-                                sprintf(TinyExec_scratch, "#-1 FUNCTION (%s) EXPECTS %d ARGUMENTS", fp->name, fp->minArgs);
+                                sprintf(TinyExec_scratch,
+                                    "#-1 FUNCTION (%s) EXPECTS %d ARGUMENTS",
+                                    fp->name, fp->minArgs);
                             }
                             else if (fp->minArgs + 1 == fp->maxArgs)
                             {
-                                sprintf(TinyExec_scratch, "#-1 FUNCTION (%s) EXPECTS %d OR %d ARGUMENTS", fp->name, fp->minArgs, fp->maxArgs);
+                                sprintf(TinyExec_scratch,
+                                    "#-1 FUNCTION (%s) EXPECTS %d OR %d ARGUMENTS",
+                                    fp->name, fp->minArgs, fp->maxArgs);
                             }
                             else
                             {
-                                sprintf(TinyExec_scratch, "#-1 FUNCTION (%s) EXPECTS BETWEEN %d AND %d ARGUMENTS", fp->name, fp->minArgs, fp->maxArgs);
+                                sprintf(TinyExec_scratch,
+                                    "#-1 FUNCTION (%s) EXPECTS BETWEEN %d AND %d ARGUMENTS",
+                                    fp->name, fp->minArgs, fp->maxArgs);
                             }
                             safe_str(TinyExec_scratch, buff, &oldp);
                         }
@@ -1409,7 +1453,8 @@ void TinyExec( char *buff, char **bufc, dbref executor, dbref caller,
                     // Command argument number N.
                     //
                     i = ch - '0';
-                    if (i < ncargs && cargs[i])
+                    if (  i < ncargs
+                       && cargs[i])
                     {
                         safe_str(cargs[i], buff, bufc);
                         nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
@@ -1422,7 +1467,8 @@ void TinyExec( char *buff, char **bufc, dbref executor, dbref caller,
                     //
                     pdstr++;
                     i = Tiny_IsRegister[(unsigned char)*pdstr];
-                    if (0 <= i && i < MAX_GLOBAL_REGS)
+                    if (  0 <= i
+                       && i < MAX_GLOBAL_REGS)
                     {
                         if (  mudstate.glob_reg_len[i] > 0
                            && mudstate.global_regs[i])
@@ -1571,7 +1617,7 @@ void TinyExec( char *buff, char **bufc, dbref executor, dbref caller,
                             int nAttrGotten;
                             atr_pget_str_LEN(TinyExec_scratch, executor, i,
                                 &aowner, &aflags, &nAttrGotten);
-                            if (nAttrGotten > 0)
+                            if (0 < nAttrGotten)
                             {
                                 if (nAttrGotten > nBufferAvailable)
                                 {
@@ -1806,10 +1852,9 @@ void TinyExec( char *buff, char **bufc, dbref executor, dbref caller,
             {
                 mudstate.nStackNest--;
                 TempPtr = tbuf;
-                TinyExec( buff, bufc, executor, caller, enactor,
-                          (eval | EV_FCHECK | EV_FMAND) & ~EV_TOP, &TempPtr,
-                          cargs, ncargs
-                        );
+                TinyExec(buff, bufc, executor, caller, enactor,
+                    (eval | EV_FCHECK | EV_FMAND) & ~EV_TOP, &TempPtr, cargs,
+                    ncargs);
                 nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
                 pdstr--;
             }
@@ -1961,8 +2006,7 @@ void TinyExec( char *buff, char **bufc, dbref executor, dbref caller,
     //
     if (  bSpaceIsSpecial
        && at_space
-       && (start != *bufc)
-       )
+       && start != *bufc)
     {
         (*bufc)--;
     }
@@ -1973,7 +2017,8 @@ void TinyExec( char *buff, char **bufc, dbref executor, dbref caller,
     // the color with a %xn yet, we'll have to do it for them. Certain
     // overflows can trim ANSI off as well.
     //
-    if (ansi || (eval & EV_TOP))
+    if (  ansi
+       || (eval & EV_TOP))
     {
         // ANSI_NORMAL is guaranteed to be written on the end.
         //
@@ -1993,12 +2038,13 @@ void TinyExec( char *buff, char **bufc, dbref executor, dbref caller,
     if (is_trace)
     {
         tcache_add(executor, savestr, start);
-        if (is_top || !mudconf.trace_topdown)
+        if (  is_top
+           || !mudconf.trace_topdown)
         {
             tcache_finish();
         }
         if (  is_top
-           && tcache_count - mudconf.trace_limit > 0)
+           && 0 < tcache_count - mudconf.trace_limit)
         {
             tbuf = alloc_mbuf("exec.trace_diag");
             sprintf(tbuf, "%d lines of trace output discarded.", tcache_count
