@@ -1,6 +1,6 @@
 // wild.cpp -- Wildcard routines.
 //
-// $Id: wild.cpp,v 1.1 2002-05-24 06:53:16 sdennis Exp $
+// $Id: wild.cpp,v 1.2 2002-06-13 14:33:57 sdennis Exp $
 //
 // Written by T. Alexander Popiel, 24 June 1993
 // Last modified by T. Alexander Popiel, 19 August 1993
@@ -32,7 +32,7 @@ static int numargs;
 //
 // This routine will cause crashes if fed NULLs instead of strings.
 //
-int quick_wild(char *tstr, char *dstr)
+int quick_wild(char *tstr, const char *dstr)
 {
     while (*tstr != '*')
     {

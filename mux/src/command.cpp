@@ -1,6 +1,6 @@
 // command.cpp -- command parser and support routines.
 //
-// $Id: command.cpp,v 1.11 2002-06-13 07:19:33 jake Exp $
+// $Id: command.cpp,v 1.12 2002-06-13 14:33:57 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -2743,7 +2743,7 @@ static void list_vattrs(dbref player, char *s_mask, int wild_mtch)
             //
             if (wild_mtch)
             {
-                if (s_mask && *s_mask && !quick_wild(s_mask, (char *)va->name))
+                if (s_mask && *s_mask && !quick_wild(s_mask, va->name))
                 {
                    continue;
                 }

@@ -1,6 +1,6 @@
 // set.cpp -- Commands which set parameters.
 //
-// $Id: set.cpp,v 1.8 2002-06-13 07:19:33 jake Exp $
+// $Id: set.cpp,v 1.9 2002-06-13 14:33:57 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -1443,7 +1443,7 @@ static void find_wild_attrs(dbref player, dbref thing, char *str, int check_excl
         }
 
         if (  ok
-           && quick_wild(str, (char *)attr->name))
+           && quick_wild(str, attr->name))
         {
             olist_add(ca);
             if (hash_insert)

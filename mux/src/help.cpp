@@ -1,6 +1,6 @@
 // help.cpp -- Commands for giving help.
 //
-// $Id: help.cpp,v 1.4 2002-06-04 18:11:02 sdennis Exp $
+// $Id: help.cpp,v 1.5 2002-06-13 14:33:57 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -148,15 +148,21 @@ void help_write(dbref player, char *topic, CHashTable *htab, char *filename, int
     }
     htab_entry = (struct help_entry *)hashfindLEN(topic, strlen(topic), htab);
     if (htab_entry)
+    {
         offset = htab_entry->pos;
-    else {
+    }
+    else
+    {
         matched = 0;
         for (htab_entry = (struct help_entry *)hash_firstentry(htab);
              htab_entry != NULL;
-           htab_entry = (struct help_entry *)hash_nextentry(htab)) {
-            if (htab_entry->original &&
-                quick_wild(topic, htab_entry->key)) {
-                if (matched == 0) {
+             htab_entry = (struct help_entry *)hash_nextentry(htab))
+        {
+            if (  htab_entry->original
+               && quick_wild(topic, htab_entry->key))
+            {
+                if (matched == 0)
+                {
                     matched = 1;
                     topic_list = alloc_lbuf("help_write");
                     buffp = topic_list;
@@ -167,8 +173,11 @@ void help_write(dbref player, char *topic, CHashTable *htab, char *filename, int
             }
         }
         if (matched == 0)
+        {
             notify(player, tprintf("No entry for '%s'.", topic));
-        else {
+        }
+        else
+        {
             notify(player, tprintf("Here are the entries which match '%s':", topic));
             *buffp = '\0';
             notify(player, topic_list);

@@ -1,6 +1,6 @@
 // game.cpp
 //
-// $Id: game.cpp,v 1.6 2002-06-12 16:03:55 sdennis Exp $
+// $Id: game.cpp,v 1.7 2002-06-13 14:33:57 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -339,13 +339,14 @@ int check_filter(dbref object, dbref player, int filter, const char *msg)
 
     do {
         cp = parse_to(&dp, ',', EV_STRIP_CURLY);
-        if (quick_wild(cp, (char *)msg)) {
+        if (quick_wild(cp, msg))
+        {
             free_lbuf(nbuf);
             return (0);
         }
     } while (dp != NULL);
     free_lbuf(nbuf);
-    return (1);
+    return 1;
 }
 
 static char *add_prefix(dbref object, dbref player, int prefix, const char *msg, const char *dflt)

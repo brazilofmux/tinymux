@@ -1,6 +1,6 @@
 // externs.h -- Prototypes for externs not defined elsewhere.
 //
-// $Id: externs.h,v 1.9 2002-06-13 04:22:38 jake Exp $
+// $Id: externs.h,v 1.10 2002-06-13 14:33:57 sdennis Exp $
 //
 
 #ifndef EXTERNS_H
@@ -246,7 +246,7 @@ extern dbref olist_next(void);
 /* From wild.cpp */
 extern int  FDECL(wild, (char *, char *, char *[], int));
 extern int  FDECL(wild_match, (char *, char *));
-extern int  FDECL(quick_wild, (char *, char *));
+extern int  quick_wild(char *, const char *);
 
 /* From compress.cpp */
 extern const char * FDECL(uncompress, (const char *, int));
