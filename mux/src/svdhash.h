@@ -1,6 +1,6 @@
 // svdhash.h -- CHashPage, CHashFile, CHashTable modules.
 //
-// $Id: svdhash.h,v 1.1 2003-01-22 19:58:26 sdennis Exp $
+// $Id: svdhash.h,v 1.2 2003-01-24 04:01:29 sdennis Exp $
 //
 // MUX 2.2
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -32,11 +32,7 @@ extern UINT32 HASH_ProcessBuffer
     unsigned int nBuffer
 );
 
-#ifdef STANDALONE
-#define HF_PAGES 650
-#else // STANDALONE
 #define HF_PAGES 40
-#endif // STANDALONE
 
 #ifdef _SGI_SOURCE
 #define EXPAND_TO_BOUNDARY(x) (((x) + 3) & (~3))
@@ -269,25 +265,21 @@ public:
 class CLogFile
 {
 private:
-#ifndef STANDALONE
     CLinearTimeAbsolute m_ltaStarted;
 #ifdef WIN32
     CRITICAL_SECTION csLog;
 #endif // WIN32
     HANDLE m_hFile;
     int  m_nSize;
-#endif // !STANDALONE
     int  m_nBuffer;
     char m_aBuffer[SIZEOF_LOG_BUFFER];
     BOOL bEnabled;
-#ifndef STANDALONE
     char m_szPrefix[32];
     char m_szFilename[SIZEOF_PATHNAME];
 
     void CreateLogFile(void);
     void AppendLogFile(void);
     void CloseLogFile(void);
-#endif // !STANDALONE
 public:
     CLogFile(void);
     ~CLogFile(void);
