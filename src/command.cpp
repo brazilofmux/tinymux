@@ -1,6 +1,6 @@
 // command.cpp - command parser and support routines.
 // 
-// $Id: command.cpp,v 1.4 2000-04-16 08:02:10 sdennis Exp $
+// $Id: command.cpp,v 1.5 2000-04-16 09:34:46 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -668,7 +668,7 @@ void NDECL(init_cmdtab)
     //
     for (ap = attr; ap->name; ap++)
     {
-        if (!(ap->flags & AF_NOCMD))
+        if (ap->flags & AF_NOCMD)
         {
             continue;
         }
