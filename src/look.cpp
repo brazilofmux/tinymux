@@ -1,6 +1,6 @@
 // look.cpp -- commands which look at things
 //
-// $Id: look.cpp,v 1.18 2001-03-31 17:33:13 sdennis Exp $
+// $Id: look.cpp,v 1.19 2001-03-31 17:36:14 sdennis Exp $
 //
 // MUX 2.0
 // Portions are derived from MUX 1.6. The WOD_REALMS portion is original work.
@@ -630,7 +630,7 @@ static void look_contents(dbref player, dbref loc, const char *contents_name, in
         tPtr = ContentsNameScratch;
 
         safe_str(contents_name, ContentsNameScratch, &tPtr);
-        **tPtr = '\0';
+        *tPtr = '\0';
 
         char *FormatOutput = alloc_lbuf("look_contents.FO");
         tPtr = FormatOutput;
