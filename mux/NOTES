@@ -1,5 +1,5 @@
 TinyMUX 2.3: NOTES
-Last Update: Jaunary 2003
+Last Update: January 2003
 
 This is a list of information that never seems to be handy enough when you 
 need it.
@@ -8,7 +8,7 @@ Handy Stuff:
 ~~~~~~~~~~~
  - The default password for Wizard(#1) is 'potrzebie'.
  
- - For new games, change the password to #1 first thing and *write it down* 
+ - For new games, change the password for #1 first thing and *write it down* 
    in a safe place offline.  
  
  - It is worth noting that keeping a record of changes in the #1 character 
@@ -38,11 +38,11 @@ Handy Stuff:
    value of 14 days will be deleted.
  
  - 'Backup' has superceeded the traditional use of db_unload for making 
-    flatfiles.  The script makes a flatfile of the DB and also creates a 
-    tar.gz file containing the mail,db, comsys.db, configuration files, 
-    and the customized files in game/text.  When porting, all you have to do 
-    is place the backup in the game directory, extract the archive and db_load 
-    before restarting the game.
+   flatfiles.  The script makes a flatfile of the DB and also creates a 
+   tar.gz file containing the mail,db, comsys.db, configuration files, 
+   and the customized files in game/text.  When porting, all you have to do 
+   is place the backup in the game directory, extract the archive and db_load 
+   before restarting the game.
     
 Changes to dbconvert:
 ~~~~~~~~~~~~~~~~~~~~
@@ -107,11 +107,11 @@ On Tools:
    connects, it announces a message and disconnects them.
  
  - You should create a message and call the file 'message_file'.  This will 
-   server as your announcement to people trying to connect.
+   serve as your announcement to people trying to connect.
  
- - Compile announce.c by typing 'gcc announce.c'.  If you are not using the 
-   GNU compiler, substitute the C compiler in use on your system.  This 
-   will create a file called 'a.out', which you should rename 'announce'
+ - Compile announce.c by typing 'gcc -o announce announce.c'.  If you are
+   not using the GNU compiler, substitute the C compiler in use on your
+   system.
  
  - Type 'announce port < message_file' and the port announcer will take 
    over from there.
