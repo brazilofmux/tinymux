@@ -1,6 +1,6 @@
 // game.cpp
 //
-// $Id: game.cpp,v 1.19 2000-09-07 08:21:26 sdennis Exp $
+// $Id: game.cpp,v 1.20 2000-09-20 19:22:31 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -1297,7 +1297,7 @@ void NDECL(dump_database)
             // We have a forked dump in progress, so we will wait until the
             // child exits.
             //
-            sleep(2);
+            sleep(1);
         }
     }
     mudstate.dumping = 1;

@@ -1,6 +1,6 @@
 // svdhash.cpp -- CHashPage, CHashFile, CHashTable modules
 //
-// $Id: svdhash.cpp,v 1.11 2000-09-07 14:15:27 sdennis Exp $
+// $Id: svdhash.cpp,v 1.12 2000-09-20 19:22:31 sdennis Exp $
 //
 // MUX 2.0
 // Copyright (C) 1998 through 2000 Solid Vertical Domains, Ltd. All
@@ -1780,6 +1780,24 @@ BOOL CHashFile::Insert(HP_HEAPLENGTH nRecord, unsigned long nHash, void *pRecord
         {
             return FALSE;
         }
+
+#if !defined(VMS) && !defined(WIN32)
+        // First, if we are @dumping, then we have a @forked process
+        // that is also reading from the file. We must pause and let
+        // this reader process finish.
+        //
+        STARTLOG(LOG_DBSAVES, "DMP", "DUMP");
+        log_text("Waiting on previously-forked child before page-splitting... ");
+        ENDLOG;
+
+        while (mudstate.dumping)
+        {
+            // We have a forked dump in progress, so we will wait until the
+            // child exits.
+            //
+            sleep(1);
+        }
+#endif
 
         // If the depth of this page is already as deep as the directory
         // depth,then we must increase depth of the directory, first.
