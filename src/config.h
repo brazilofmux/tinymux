@@ -1,6 +1,6 @@
 // config.h
 //
-// $Id: config.h,v 1.22 2001-11-19 19:41:24 sdennis Exp $
+// $Id: config.h,v 1.23 2001-12-30 06:32:01 sdennis Exp $
 //
 
 #ifndef CONFIG_H
@@ -105,7 +105,9 @@ typedef unsigned __int64 UINT64;
 #define DCL_CDECL
 #define DCL_INLINE inline
 #define INVALID_HANDLE_VALUE (-1)
+#ifndef O_BINARY
 #define O_BINARY 0
+#endif
 typedef int BOOL;
 #define TRUE    1
 #define FALSE   0
