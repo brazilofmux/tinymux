@@ -1,6 +1,6 @@
 // bsd.cpp
 //
-// $Id: bsd.cpp,v 1.13 2003-03-02 05:10:23 sdennis Exp $
+// $Id: bsd.cpp,v 1.14 2003-03-02 05:33:57 sdennis Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -2832,17 +2832,21 @@ RETSIGTYPE DCL_CDECL sighandler(int sig)
 #ifdef HAVE_WAIT3
         while (wait3(&stat_buf, WNOHANG, NULL) > 0)
         {
-            ; // Nothing.
+            if (  WIFEXITED(stat_buf)
+               && WEXITSTATUS(stat_buf) == 8)
+            {
+                exit(0);
+            }
         }
 #else // HAVE_WAIT3
         wait((int *)&stat_buf);
-#endif // HAVE_WAIT3
-        // Did the child exit?
-        //
-        if (WEXITSTATUS(stat_buf) == 8)
+        if (  WIFEXITED(stat_buf)
+           && WEXITSTATUS(stat_buf) == 8)
         {
             exit(0);
         }
+#endif // HAVE_WAIT3
+
         mudstate.dumping = false;
         break;
 
