@@ -84,6 +84,11 @@ Feature Additions:
  -- Jake added Modified timestamp attribute.
  -- Jake added mtime() function, to retrieve Modified. Aliased to modifytime
     and lastmodify for Rhost and TM3 compatibility.
+ -- Jake added OPEN_OK for opening links to a room, player, or thing.
+ -- Jake added @hook. Idea from TinyMUSH 3.x. Code from RhostMUSH with permission.
+ -- Jake added OpenLock.
+ -- Jake added hook_obj and hook_cmd configuration options.
+ -- Jake added BITTYPE() from RhostMUSH with permission.
 
 Bug Fixes:
 ~~~~~~~~~
