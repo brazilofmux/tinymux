@@ -388,10 +388,12 @@ Bug Fixes:
     Caused by and fixed by Brazil.  Reported by Ian.
  -- regmatch() wasn't handling the full range of return codes from PCRE
     properly.  PCRE contributed by Raevnos.  Fixed by Brazil.
- -- Fix hang in @dbck when orphaned objects lose both their home and
+ -- Fixed hang in @dbck when orphaned objects lose both their home and
     their current location.  This crashing bug was probably introduced
     inadvertantly by Jake when he changed the defintion of a good object.
     Fixed by Brazil.
+ -- Fixed use of LIBOBJS in Makefile.in so that clean (or initial)
+    builds succeed.
 
 
 Performance Enhancements:
