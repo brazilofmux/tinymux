@@ -1,4 +1,0 @@
-#! /bin/sh
-latex muxman.tex
-dvips muxman.dvi
-ps2pdf muxman.ps
