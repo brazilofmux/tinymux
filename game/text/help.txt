@@ -6752,9 +6752,20 @@ DIV()
 IDIV()
 
   FUNCTION: idiv(<number1>,<number2>)
- 
+
   Returns the integer quotient from dividing <number1> by <number2>.
- 
+
+  However, integer division for the case where either <integer1> or
+  <integer2> is negative is defined in a specific way -- by choosing
+  the smallest integer that is greater than or equal to the algebraic
+  quotient. If <integer1> and <integer2> are the same sign, then
+  idiv() and floordiv() are equivalent.
+
+  For example, division of -9 by 5 would give -1 by this definition
+  instead of -2. idiv() would return -1. floordiv() would return -2.
+
+    idiv(x,y)*y + remainder(x,y) ==> x
+
   Examples:
     > say idiv(15,3)
     You say "5"
@@ -6767,8 +6778,42 @@ IDIV()
     > say idiv(-17,3)
     You say "-5"
 
-  Related Topics: add(), div(), fdiv(), iadd(), imul(), isub(), mod(), mul(),
-            round(), sub(), trunc().
+  Related Topics: fdiv(), floordiv(), iadd(), imul(), isub(), mod(),
+                  remainder().
+
+& FLOORDIV()
+FLOORDIV()
+
+  FUNCTION: floordiv(<number1>,<number2>)
+
+  Returns the integer quotient from dividing <number1> by <number2>.
+
+  However, integer division for the case where either <integer1> or
+  <integer2> is negative is defined in a specific way -- by choosing
+  the largest integer that is less than or equal to the algebraic
+  quotient. If <integer1> and <integer2> are the same sign, then
+  idiv() and floordiv() are equivalent.
+
+  For example, division of -9 by 5 would give -2 by this definition
+  instead of -1. idiv() would return -1. floordiv() would return -2.
+  The floordiv() function goes with the mod() function.
+
+    floordiv(x,y)*y + mod(x,y) ==> x
+
+  Examples:
+    > say floordiv(15,3)
+    You say "5"
+    > say floordiv(16,3)
+    You say "5"
+    > say floordiv(17,3)
+    You say "5"
+    > say floordiv(18,3)
+    You say "6"
+    > say floordiv(-17,3)
+    You say "-6"
+
+  Related Topics: fdiv(), iadd(), idiv(), imul(), isub(), mod(),
+                  remainder().
 
 & FDIV()
 FDIV()
@@ -6802,17 +6847,81 @@ MOD()
 
   Returns the integer remainder from dividing <integer1> by <integer2>.
 
+  However, integer division for the case where either <integer1> or
+  <integer2> is negative is defined in a specific way -- by choosing
+  the largest integer that is less than or equal to the algebraic
+  quotient. If <integer1> and <integer2> are the same sign, then
+  mod() and remainder() are equivalent.
+
+  For example, division of -9 by 5 would give -2 by this definition
+  instead of -1. idiv() would return -1. floordiv() would return -2,
+  and so, the mod() function properly goes with the floordiv()
+  function:
+
+    floordiv(x,y)*y + mod(x,y) ==> x
+
+  For positive y, mod(x,y) always returns a positive number less than
+  y. For negative y, mod(x,y) always returns a negative number greater
+  than y.
+
+  mod() is the more 'mathy' definition of a modulus as defined by the
+  following:
+
+    x mod y  is defined as x - y*floor(x/y) where x,y, every operation
+    is over real numbers.
+
   Example:
-    > say mod(15,3)
-    You say "0"
-    > say mod(16,3)
+    > say mod(-9,5)
     You say "1"
+    > say mod(-9,-5)
+    You say "-4"
     > say mod(17,3)
     You say "2"
     > say mod(18,3)
     You say "0"
 
-  Related Topics: add(), fdiv(), div(), mul(), round(), sub(), trunc().
+  Related Topics: floordiv(), iadd(), idiv(), imul(), isub(),
+                  remainder().
+
+& REMAINDER()
+REMAINDER()
+
+  FUNCTION: remainder(<integer1>,<integer2>)
+
+  Returns the integer remainder from dividing <integer1> by <integer2>.
+
+  However, integer division for the case where either <integer1> or
+  <integer2> is negative is defined in a specific way -- by choosing
+  the smallest integer that is greater than or equal to the algebraic
+  quotient. If <integer1> and <integer2> are the same sign, then
+  mod() and remainder() are equivalent.
+
+  For example, division of -9 by 5 would give -1 by this definition
+  instead of -2. idiv() would return -1. floordiv() would return -2,
+  and so, the remainder() function properly goes with the idiv()
+  function:
+
+    idiv(x,y)*y + remainder(x,y) ==> x
+
+  For positive x, remainder(x,y) always returns a positive number less
+  than y. For negative x, remainder(x,y) always returns a negative
+  number greater than y.
+
+  remainder() is the usually the way the '%' operator in the C
+   programming language is defined.
+
+  Example:
+    > say remainder(-9,5)
+    You say "-4"
+    > say remainder(-9,-5)
+    You say "-4"
+    > say remainder(17,3)
+    You say "2"
+    > say remainder(18,3)
+    You say "0"
+
+  Related Topics: idiv(), floordiv(), iadd(), idiv(), imul(), isub(),
+                  mod().
 
 & DIST2D()
 DIST2D()
