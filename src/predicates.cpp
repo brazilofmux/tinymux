@@ -1,6 +1,6 @@
 // predicates.cpp
 //
-// $Id: predicates.cpp,v 1.51 2002-09-22 21:08:30 sdennis Exp $
+// $Id: predicates.cpp,v 1.52 2002-10-13 17:08:35 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -2027,11 +2027,11 @@ BOOL OutOfMemory(const char *SourceFile, unsigned int LineNo)
 #else // STANDALONE
     if (mudstate.bCanRestart)
     {
-        abort();
+        do_restart(GOD, GOD, 0);
     }
     else
     {
-        do_restart(GOD, GOD, 0);
+        abort();
     }
 #endif // STANDALONE
     return TRUE;
@@ -2049,11 +2049,11 @@ BOOL AssertionFailed(const char *SourceFile, unsigned int LineNo)
 #else // STANDALONE
     if (mudstate.bCanRestart)
     {
-        abort();
+        do_restart(GOD, GOD, 0);
     }
     else
     {
-        do_restart(GOD, GOD, 0);
+        abort();
     }
 #endif // STANDALONE
     return FALSE;
