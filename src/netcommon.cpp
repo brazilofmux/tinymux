@@ -2,7 +2,7 @@
 * netcommon.c 
 */
 /*
-* $Id: netcommon.cpp,v 1.5 2000-04-15 16:35:49 sdennis Exp $ 
+* $Id: netcommon.cpp,v 1.6 2000-04-21 05:35:43 sdennis Exp $ 
 */
 
 /*
@@ -1153,14 +1153,23 @@ static char *trimmed_name(dbref player)
     }
 }
 
-static char *trimmed_site(char *name)
+static char *trimmed_site(char *szName)
 {
     static char buff[MBUF_SIZE];
     
-    if ((strlen(name) <= mudconf.site_chars) || (mudconf.site_chars == 0))
-        return name;
-    memcpy(buff, name, mudconf.site_chars);
-    buff[mudconf.site_chars] = '\0';
+    unsigned int nLen = strlen(szName);
+    if (  mudconf.site_chars <= 0
+       || nLen <= mudconf.site_chars)
+    {
+        return szName;
+    }
+    nLen = mudconf.site_chars;
+    if (nLen > sizeof(buff)-1)
+    {
+        nLen = sizeof(buff)-1;
+    }
+    memcpy(buff, szName, nLen);
+    buff[nLen] = '\0';
     return buff;
 }
 
@@ -1271,7 +1280,7 @@ static void dump_users(DESC *e, char *match, int key)
             CLinearTimeDelta ltdLastTime  = ltaNow - d->last_time;
             if ((e->flags & DS_CONNECTED) && Wizard_Who(e->player) && (key == CMD_WHO))
             {
-                sprintf(buf, "%-16s%9s %4s%-3s#%-6d%5d%3s%-25s\r\n",
+                sprintf(buf, "%-16s%9s %4s%-3s#%-6d%5d%3s%s\r\n",
                     trimmed_name(d->player),
                     time_format_1(ltdConnected.ReturnSeconds()),
                     time_format_2(ltdLastTime.ReturnSeconds()),
