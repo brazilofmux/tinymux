@@ -2,7 +2,7 @@
  * speech.c -- Commands which involve speaking 
  */
 /*
- * $Id: speech.cpp,v 1.7 2001-06-09 08:41:54 sdennis Exp $ 
+ * $Id: speech.cpp,v 1.8 2001-06-09 14:46:25 sdennis Exp $ 
  */
 
 #include "copyright.h"
@@ -271,13 +271,13 @@ void do_say(dbref player, dbref cause, int key, char *message)
                   buf2);
             free_lbuf(buf2);
         }
-        STARTLOG(LOG_SHOUTS, "WIZ", "BCAST")
-            log_name(player);
+        STARTLOG(LOG_SHOUTS, "WIZ", "BCAST");
+        log_name(player);
         log_text((char *)" broadcasts: '");
         log_text(message);
         log_text((char *)"'");
-        ENDLOG
-            break;
+        ENDLOG;
+        break;
     case SAY_ADMINSHOUT:
         switch (*message) {
         case ':':
@@ -361,11 +361,11 @@ void do_say(dbref player, dbref cause, int key, char *message)
     case SAY_WIZEMIT:
         if (say_flags & SAY_NOTAG)
         {
-           wall_broadcast(SHOUT_WIZARD, player, tprintf("%s", message));
+            wall_broadcast(SHOUT_WIZARD, player, tprintf("%s", message));
         }
         else
         {
-           wall_broadcast(SHOUT_WIZARD, player, tprintf("Broadcast: %s", message));
+            wall_broadcast(SHOUT_WIZARD, player, tprintf("Broadcast: %s", message));
         }
         STARTLOG(LOG_SHOUTS, "WIZ", "BCAST");
         log_name(player);
