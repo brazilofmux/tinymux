@@ -1,6 +1,6 @@
 // stringutil.cpp -- string utilities.
 //
-// $Id: stringutil.cpp,v 1.62 2004-07-08 22:13:56 sdennis Exp $
+// $Id: stringutil.cpp,v 1.63 2004-07-09 14:52:57 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -514,7 +514,7 @@ char *strip_ansi(const char *szString, size_t *pnString)
         *pBuffer = '\0';
         return Buffer;
     }
-    int   nString = strlen(szString);
+    size_t nString = strlen(szString);
 
     while (nString)
     {
@@ -613,7 +613,7 @@ void ANSI_Parse_m(ANSI_ColorState *pacsCurrent, int nANSI, const char *pANSI,
         {
             p++;
         }
-        int nLen = p - pANSI + 1;
+        size_t nLen = p - pANSI + 1;
         if (p[0] == 'm' || p[0] == ';')
         {
             // We have an attribute.
@@ -1317,7 +1317,7 @@ char *translate_string(const char *szString, bool bConvert)
         *pTranslatedString = '\0';
         return szTranslatedString;
     }
-    int   nString = strlen(szString);
+    size_t nString = strlen(szString);
 
     ANSI_ColorState acsCurrent;
     ANSI_ColorState acsPrevious;
@@ -1638,7 +1638,7 @@ char *replace_string(const char *old, const char *new0, const char *s)
     {
         return NULL;
     }
-    int olen = strlen(old);
+    size_t olen = strlen(old);
     char *result = alloc_lbuf("replace_string");
     char *r = result;
     while (*s)
@@ -1646,11 +1646,12 @@ char *replace_string(const char *old, const char *new0, const char *s)
         // Find next occurrence of the first character of OLD string.
         //
         const char *p;
-        if (olen && (p = strchr(s, old[0])))
+        if (  olen
+           && (p = strchr(s, old[0])))
         {
             // Copy up to the next occurrence of the first char of OLD.
             //
-            int n = p - s;
+            size_t n = p - s;
             if (n)
             {
                 safe_copy_buf(s, n, result, &r);
@@ -1712,7 +1713,7 @@ char *replace_tokens
         {
             // Copy up to the next occurrence of the first character.
             //
-            int n = p - s;
+            size_t n = p - s;
             if (n)
             {
                 safe_copy_buf(s, n, result, &r);
@@ -1876,7 +1877,7 @@ void safe_copy_str_lbuf(const char *src, char *buff, char **bufp)
 
 int safe_copy_buf(const char *src, int nLen, char *buff, char **bufc)
 {
-    int left = LBUF_SIZE - (*bufc - buff) - 1;
+    size_t left = LBUF_SIZE - (*bufc - buff) - 1;
     if (left < nLen)
     {
         nLen = left;
@@ -1890,7 +1891,7 @@ int safe_fill(char *buff, char **bufc, char chFill, int nSpaces)
 {
     // Check for buffer limits.
     //
-    int nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
+    size_t nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
     if (nSpaces > nBufferAvailable)
     {
         nSpaces = nBufferAvailable;
@@ -2020,7 +2021,7 @@ char *mux_ltoa_t(long val)
 void safe_ltoa(long val, char *buff, char **bufc)
 {
     static char temp[12];
-    int n = mux_ltoa(val, temp);
+    size_t n = mux_ltoa(val, temp);
     safe_copy_buf(temp, n, buff, bufc);
 }
 
@@ -2090,7 +2091,7 @@ char *mux_i64toa_t(INT64 val)
 void safe_i64toa(INT64 val, char *buff, char **bufc)
 {
     static char temp[22];
-    int n = mux_i64toa(val, temp);
+    size_t n = mux_i64toa(val, temp);
     safe_copy_buf(temp, n, buff, bufc);
 }
 
@@ -2465,7 +2466,7 @@ double mux_atof(char *szString, bool bStrict)
     }
 
     const char *p = pfr.pMeat;
-    int n = pfr.nMeat;
+    size_t n = pfr.nMeat;
 
     // We need to protect certain libraries from going nuts from being
     // force fed lots of ASCII.
@@ -3143,7 +3144,7 @@ int DCL_CDECL mux_vsnprintf(char *buff, int count, const char *fmt, va_list va)
 //
 int GetLineTrunc(char *Buffer, size_t nBuffer, FILE *fp)
 {
-    int lenBuffer = 0;
+    size_t lenBuffer = 0;
     if (fgets(Buffer, nBuffer, fp))
     {
         lenBuffer = strlen(Buffer);
@@ -3159,7 +3160,7 @@ int GetLineTrunc(char *Buffer, size_t nBuffer, FILE *fp)
         // end of the line.
         //
         char TruncBuffer[SBUF_SIZE];
-        int lenTruncBuffer;
+        size_t lenTruncBuffer;
         do
         {
             if (!fgets(TruncBuffer, sizeof(TruncBuffer), fp))
