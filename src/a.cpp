@@ -74,7 +74,7 @@ int DCL_CDECL main(int ac, char *av[])
         break;
     }
 
-    root = (struct r_node *)MEMALLOC(sizeof(struct r_node), __FILE__, __LINE__);
+    root = (struct r_node *)MEMALLOC(sizeof(struct r_node));
 
     root->count = 0;
 

@@ -36,7 +36,7 @@ void init_string_compress(void)
     unsigned char *p;
 
 
-    root = (struct r_node *)MEMALLOC(sizeof(struct r_node), __FILE__, __LINE__);
+    root = (struct r_node *)MEMALLOC(sizeof(struct r_node));
 
     root->count = 0;
 

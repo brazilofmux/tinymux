@@ -1,6 +1,6 @@
 // vattr.cpp -- Manages the user-defined attributes.
 //
-// $Id: vattr.cpp,v 1.3 2000-04-24 22:09:28 sdennis Exp $
+// $Id: vattr.cpp,v 1.4 2000-06-02 16:18:01 sdennis Exp $
 //
 // MUX 2.0
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -78,7 +78,7 @@ VATTR *vattr_define_LEN(char *pName, int nName, int number, int flags)
     VATTR *vp = vattr_find_LEN(pName, nName);
     if (vp) return vp;
 
-    vp = (VATTR *)MEMALLOC(sizeof(VATTR), __FILE__, __LINE__);
+    vp = (VATTR *)MEMALLOC(sizeof(VATTR));
 
     // NOTE: By using store_string, the only way to release the memory associated with a user
     // attribute name is to @restart the game.
@@ -439,7 +439,7 @@ int dbclean_RemoveStaleAttributeNames(void)
                     iDir = pht->FindNextKey(iDir, nHash);
                 }
 
-                MEMFREE((char *)va, __FILE__, __LINE__);
+                MEMFREE((char *)va);
             }
             else
             {
@@ -466,7 +466,7 @@ void dbclean_RenumberAttributes(int cVAttributes)
     int iMapStart = A_USER_START+cVAttributes+1;
     int iMapEnd = anum_alc_top;
     int nMap = iMapEnd - iMapStart + 1;
-    int *aMap = (int *)MEMALLOC(sizeof(int) * nMap, __FILE__, __LINE__);
+    int *aMap = (int *)MEMALLOC(sizeof(int) * nMap);
     if (aMap)
     {
         int iSweep = A_USER_START;
@@ -548,7 +548,7 @@ void dbclean_RenumberAttributes(int cVAttributes)
         }
         atr_pop();
 
-        MEMFREE((char *)aMap, __FILE__, __LINE__);
+        MEMFREE((char *)aMap);
     }
 }
 
@@ -590,7 +590,7 @@ void vattr_delete_LEN(char *pName, int nName)
             VATTR *vp = (VATTR *)anum_table[anum];
             anum_set(anum, NULL);
             pht->Remove(iDir);
-            MEMFREE((char *)vp, __FILE__, __LINE__);
+            MEMFREE((char *)vp);
         }
         iDir = pht->FindNextKey(iDir, nHash);
     }
@@ -675,7 +675,7 @@ static char *store_string(char *str)
     {
         // NOTE: These allocations are -never- freed, and this is intentional.
         //
-        stringblock = (char *)MEMALLOC(STRINGBLOCK, __FILE__, __LINE__);
+        stringblock = (char *)MEMALLOC(STRINGBLOCK);
         if (!stringblock)
             return ((char *)0);
         stringblock_hwm = 0;

@@ -1,6 +1,6 @@
 // functions.c - MUX function handlers 
 //
-// $Id: functions.cpp,v 1.20 2000-05-19 18:06:01 sdennis Exp $
+// $Id: functions.cpp,v 1.21 2000-06-02 16:18:07 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -5393,7 +5393,7 @@ static void do_asort(char *s[], int n, int sort_type)
 
         break;
     case NUMERIC_LIST:
-        ip = (i_rec *) MEMALLOC(n * sizeof(i_rec), __FILE__, __LINE__);
+        ip = (i_rec *) MEMALLOC(n * sizeof(i_rec));
         for (i = 0; i < n; i++) {
             ip[i].str = s[i];
             ip[i].data = Tiny_atol(s[i]);
@@ -5402,10 +5402,10 @@ static void do_asort(char *s[], int n, int sort_type)
         for (i = 0; i < n; i++) {
             s[i] = ip[i].str;
         }
-        MEMFREE(ip, __FILE__, __LINE__);
+        MEMFREE(ip);
         break;
     case DBREF_LIST:
-        ip = (i_rec *) MEMALLOC(n * sizeof(i_rec), __FILE__, __LINE__);
+        ip = (i_rec *) MEMALLOC(n * sizeof(i_rec));
         for (i = 0; i < n; i++) {
             ip[i].str = s[i];
             ip[i].data = dbnum(s[i]);
@@ -5414,10 +5414,10 @@ static void do_asort(char *s[], int n, int sort_type)
         for (i = 0; i < n; i++) {
             s[i] = ip[i].str;
         }
-        MEMFREE(ip, __FILE__, __LINE__);
+        MEMFREE(ip);
         break;
     case FLOAT_LIST:
-        fp = (f_rec *) MEMALLOC(n * sizeof(f_rec), __FILE__, __LINE__);
+        fp = (f_rec *) MEMALLOC(n * sizeof(f_rec));
         for (i = 0; i < n; i++) {
             fp[i].str = s[i];
             fp[i].data = safe_atof(s[i]);
@@ -5426,7 +5426,7 @@ static void do_asort(char *s[], int n, int sort_type)
         for (i = 0; i < n; i++) {
             s[i] = fp[i].str;
         }
-        MEMFREE(fp, __FILE__, __LINE__);
+        MEMFREE(fp);
         break;
     }
 }
@@ -6320,7 +6320,7 @@ void do_function(dbref player, dbref cause, int key, char *fname, char *target)
 
     if (!ufp)
     {
-        ufp = (UFUN *) MEMALLOC(sizeof(UFUN), __FILE__, __LINE__);
+        ufp = (UFUN *) MEMALLOC(sizeof(UFUN));
         ufp->name = strsave(np);
         _strupr(ufp->name);
         ufp->obj = obj;

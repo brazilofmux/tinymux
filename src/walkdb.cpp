@@ -1,7 +1,7 @@
 //
 // walkdb.c -- Support for commands that walk the entire db 
 //
-// $Id: walkdb.cpp,v 1.4 2000-05-19 18:33:28 sdennis Exp $ 
+// $Id: walkdb.cpp,v 1.5 2000-06-02 16:18:00 sdennis Exp $ 
 //
 
 #include "copyright.h"
@@ -243,30 +243,6 @@ void do_stats(dbref player, dbref cause, int key, char *name)
                statinfo.s_things, statinfo.s_players,
                statinfo.s_garbage);
     notify(player, buff);
-
-#ifdef TEST_MALLOC
-    if (Wizard(player))
-    {
-        notify(player, tprintf("Malloc count = %d.", malloc_count));
-    }
-#endif // TEST_MALLOC 
-#ifdef MCHECK
-    if (Wizard(player))
-    {
-        struct mstats mval;
-
-        mval = mstats();
-        buff = tprintf("Total size of the heap: %d", mval.bytes_total);
-        notify(player, buff);
-        buff = tprintf(
-          "Chunks allocated: %d -- Total size of allocated chunks: %d",
-           mval.chunks_used, mval.bytes_used);
-        notify(player, buff);
-        buff = tprintf("Chunks free: %d -- Total size of free chunks: %d",
-                       mval.chunks_free, mval.bytes_free);
-        notify(player, buff);
-    }
-#endif // MCHECK 
 }
 
 int chown_all(dbref from_player, dbref to_player, dbref acting_player, int key)
@@ -1193,7 +1169,7 @@ void olist_push(void)
 {
     OLSTK *ol;
     
-    ol = (OLSTK *)MEMALLOC(sizeof(OLSTK), __FILE__, __LINE__);
+    ol = (OLSTK *)MEMALLOC(sizeof(OLSTK));
     ol->next = mudstate.olist;
     mudstate.olist = ol;
     
@@ -1219,7 +1195,7 @@ void olist_pop(void)
         onext = op->next;
         free_lbuf(op);
     }
-    MEMFREE(mudstate.olist, __FILE__, __LINE__);
+    MEMFREE(mudstate.olist);
     mudstate.olist = ol;
 }
 

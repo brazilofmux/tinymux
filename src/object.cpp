@@ -2,7 +2,7 @@
  * object.c - low-level object manipulation routines 
  */
 /*
- * $Id: object.cpp,v 1.4 2000-05-25 04:33:20 sdennis Exp $ 
+ * $Id: object.cpp,v 1.5 2000-06-02 16:18:03 sdennis Exp $ 
  */
 
 #include "copyright.h"
@@ -543,7 +543,7 @@ void destroy_obj(dbref player, dbref obj)
     {
         next = sp->next;
         free_lbuf(sp->data);
-        MEMFREE(sp, __FILE__, __LINE__);
+        MEMFREE(sp);
     }
     s_Stack(obj, NULL);
 }

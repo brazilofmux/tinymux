@@ -1,5 +1,5 @@
 /* config.h */
-/* $Id: config.h,v 1.5 2000-05-19 19:29:16 sdennis Exp $ */
+/* $Id: config.h,v 1.6 2000-06-02 16:18:11 sdennis Exp $ */
 
 #ifndef CONFIG_H
 #define CONFIG_H
@@ -8,7 +8,6 @@
 
 #define CONF_FILE "netmux.conf" /* Default config file */
 
-/* #define TEST_MALLOC */       /* Keep track of block allocs */
 #define SIDE_EFFECT_FUNCTIONS   /* Those neat funcs that should be commands */
                  
 #define PLAYER_NAME_LIMIT   22  /* Max length for player names */
@@ -80,37 +79,6 @@
 #define OBJECT_DEPOSIT(pennies) \
     (((pennies)-mudconf.sacadjust)*mudconf.sacfactor)
 
-
-#ifdef TEST_MALLOC
-extern int malloc_count;
-#define XMALLOC(x,y) (Log.printf("Malloc: %s\n", (y)), malloc_count++, \
-                    (char *)malloc((x)))
-#define XFREE(x,y) (Log.printf("Free: %s\n", (y)), \
-                    ((x) ? malloc_count--, free((x)), (x)=NULL : (x)))
-#else
-#define XMALLOC(x,y) (char *)malloc((x))
-#define XFREE(x,y) (free((x)), (x) = NULL)
-#endif // TEST_MALLOC
-
-#ifndef STANDALONE
-//#define MEMORY_ACCOUNTING
-#endif
-
-// Memory Allocation Accounting
-//
-#ifdef MEMORY_ACCOUNTING
-extern void *MemAllocate(size_t size, const char *file, int line);
-extern void MemFree(void *pointer, const char *file, int line);
-extern void *MemRealloc(void *pointer, size_t size, const char *file, int line);
-#define MEMALLOC(size,file,line) MemAllocate(size,file,line)
-#define MEMFREE(pointer,file,line)  MemFree(pointer,file,line)
-#define MEMREALLOC(pointer, size, file, line) MemRealloc(pointer, size, file, line);
-#else
-#define MEMALLOC(size, file, line) malloc(size)
-#define MEMFREE(pointer, file, line)  free(pointer)
-#define MEMREALLOC(pointer, size, file, line) realloc(pointer, size);
-#endif
-
 #ifdef WIN32
 #define DCL_CDECL __cdecl
 #define DCL_INLINE __inline
@@ -148,5 +116,22 @@ typedef int SOCKET;
 #define SD_BOTH (2)
 
 #endif // WIN32
+
+extern BOOL AssertionFailed(const char *SourceFile, unsigned int LineNo);
+#define Tiny_Assert(exp) (void)( (exp) || (AssertionFailed(__FILE__, __LINE__), 0) )
+
+extern void OutOfMemory(const char *SourceFile, unsigned int LineNo);
+#if 0
+extern DCL_INLINE void *MemAllocate(size_t size, const char *filename, int linenum);
+extern DCL_INLINE void MemFree(void *ptr, const char *filename, int linenum);
+extern DCL_INLINE void *MemRealloc(void *ptr, size_t size, const char *filename, int linenum);
+#define MEMALLOC(size) MemAllocate(size,__FILE__,__LINE__)
+#define MEMFREE(ptr)  MemFree(ptr, __FILE__, __LINE__)
+#define MEMREALLOC(ptr, size) MemRealloc(ptr, size, __FILE__, __LINE__)
+#else
+#define MEMALLOC(size) malloc(size)
+#define MEMFREE(ptr)  free(ptr)
+#define MEMREALLOC(ptr, size) realloc(ptr,size)
+#endif
 
 #endif // CONFIG_H

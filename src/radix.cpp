@@ -100,7 +100,7 @@ static int do_insert(struct r_node **curr, unsigned char *key)
              */
             struct r_node *tmp;
 
-            tmp = (struct r_node *)MEMREALLOC(*curr, sizeof(struct r_node) + (sizeof(struct r_letter) * (*curr)->count), __FILE__, __LINE__);
+            tmp = (struct r_node *)MEMREALLOC(*curr, sizeof(struct r_node) + (sizeof(struct r_letter) * (*curr)->count));
 
             if (!tmp) {
                 return -1;  /*
@@ -155,7 +155,7 @@ static int do_insert(struct r_node **curr, unsigned char *key)
     if ((*curr)->letter[mid].child == NULL) {
         struct r_node *tmp;
 
-        tmp = (struct r_node *)MEMALLOC(sizeof(struct r_node), __FILE__, __LINE__);
+        tmp = (struct r_node *)MEMALLOC(sizeof(struct r_node));
 
         if (!tmp) {
             return -1;

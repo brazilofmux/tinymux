@@ -1,6 +1,6 @@
 // externs.h - Prototypes for externs not defined elsewhere.
 //
-// $Id: externs.h,v 1.20 2000-06-02 03:42:53 sdennis Exp $
+// $Id: externs.h,v 1.21 2000-06-02 16:18:09 sdennis Exp $
 //
 #ifndef EXTERNS_H
 #define EXTERNS_H
@@ -189,9 +189,6 @@ extern void FDECL(did_it, (dbref, dbref, int, const char *, int,
             const char *, int, char *[], int));
 extern void FDECL(list_bufstats, (dbref));
 extern void FDECL(list_buftrace, (dbref));
-extern void OutOfMemory(const char *SourceFile, unsigned int LineNo);
-extern BOOL AssertionFailed(const char *SourceFile, unsigned int LineNo);
-#define Tiny_Assert(exp) (void)( (exp) || (AssertionFailed(__FILE__, __LINE__), 0) )
 
 /* From set.cpp */
 extern int  FDECL(parse_attrib, (dbref, char *, dbref *, int *));
@@ -659,9 +656,6 @@ extern int corrupt;
 
 extern long DebugTotalFiles;
 extern long DebugTotalSockets;
-#ifdef MEMORY_ACCOUNTING
-extern long DebugTotalMemory;
-#endif // MEMORY_ACCOUNTING
 
 #ifdef WIN32
 extern int game_pid;

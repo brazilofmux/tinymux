@@ -2,7 +2,7 @@
 * netcommon.c 
 */
 /*
-* $Id: netcommon.cpp,v 1.11 2000-05-25 03:44:12 sdennis Exp $ 
+* $Id: netcommon.cpp,v 1.12 2000-06-02 16:18:03 sdennis Exp $ 
 */
 
 /*
@@ -224,7 +224,7 @@ void add_to_output_queue(DESC *d, const char *b, int n)
     //
     if (d->output_head == NULL)
     {
-        tp = (TBLOCK *)MEMALLOC(OUTPUT_BLOCK_SIZE, __FILE__, __LINE__);
+        tp = (TBLOCK *)MEMALLOC(OUTPUT_BLOCK_SIZE);
         tp->hdr.nxt = NULL;
         tp->hdr.start = tp->data;
         tp->hdr.end = tp->data;
@@ -264,7 +264,7 @@ void add_to_output_queue(DESC *d, const char *b, int n)
                 b += left;
                 n -= left;
             }
-            tp = (TBLOCK *)MEMALLOC(OUTPUT_BLOCK_SIZE, __FILE__, __LINE__);
+            tp = (TBLOCK *)MEMALLOC(OUTPUT_BLOCK_SIZE);
             tp->hdr.nxt = NULL;
             tp->hdr.start = tp->data;
             tp->hdr.end = tp->data;
@@ -318,7 +318,7 @@ void queue_write(DESC *d, const char *b, int n)
             {
                 d->output_tail = NULL;
             }
-            MEMFREE(tp, __FILE__, __LINE__);
+            MEMFREE(tp);
         }
     }
     
@@ -355,7 +355,7 @@ void freeqs(DESC *d)
     tb = d->output_head;
     while (tb) {
         tnext = tb->hdr.nxt;
-        MEMFREE(tb, __FILE__, __LINE__);
+        MEMFREE(tb);
         tb = tnext;
     }
     d->output_head = NULL;

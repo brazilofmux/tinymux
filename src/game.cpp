@@ -1,6 +1,6 @@
 // game.cpp
 //
-// $Id: game.cpp,v 1.11 2000-05-26 18:15:31 sdennis Exp $
+// $Id: game.cpp,v 1.12 2000-06-02 16:18:06 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -138,7 +138,7 @@ int regexp_match(char *pattern, char *str, char *args[], int nargs)
     got_match = regexec(re, str);
     if (!got_match)
     {
-        MEMFREE(re, __FILE__, __LINE__);
+        MEMFREE(re);
         return 0;
     }
     
@@ -167,7 +167,7 @@ int regexp_match(char *pattern, char *str, char *args[], int nargs)
         args[i][len] = '\0';        /* strncpy() does not null-terminate */
     }
     
-    MEMFREE(re, __FILE__, __LINE__);
+    MEMFREE(re);
     return 1;
 }
 
@@ -1733,9 +1733,6 @@ long DebugTotalSockets = 0;
 long DebugTotalThreads = 1;
 long DebugTotalSemaphores = 0;
 #endif // WIN32
-#ifdef MEMORY_ACCOUNTING
-long DebugTotalMemory = 0;
-#endif
 
 #ifdef WIN32         // workaround till we have a getopt for windows
 #undef USE_GETOPT    // ugly but easy to remove :)  -- carsten
@@ -1843,14 +1840,6 @@ int DCL_CDECL main(int argc, char *argv[])
 
     SeedRandomNumberGenerator();
     TIME_Initialize();
-
-#ifdef MEMORY_ACCOUNTING
-    extern CHashFile hfAllocData;
-    extern CHashFile hfIdentData;
-    hfAllocData.Open("svdptrs.dir", "svdptrs.pag");
-    hfIdentData.Open("svdlines.dir", "svdlines.pag");
-#endif
-
     game_pid = getpid();
 
 #ifdef WIN32
@@ -2126,10 +2115,6 @@ int DCL_CDECL main(int argc, char *argv[])
     }
 #endif // CONCENTRATE && !WIN32
 
-#ifdef MCHECK
-    mtrace();
-#endif
-
     // go do it.
     //
     init_timer();
@@ -2148,10 +2133,6 @@ int DCL_CDECL main(int argc, char *argv[])
 #else // !WIN32
     shovechars(mudconf.port);
 #endif // WIN32
-
-#ifdef MCHECK
-    muntrace();
-#endif
 
     close_sockets(0, (char *)"Going down - Bye");
     dump_database();

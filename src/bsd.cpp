@@ -1,5 +1,5 @@
 // bsd.cpp
-// $Id: bsd.cpp,v 1.7 2000-05-19 18:08:46 sdennis Exp $
+// $Id: bsd.cpp,v 1.8 2000-06-02 16:18:12 sdennis Exp $
 //
 // MUX 2.0
 // Portions are derived from MUX 1.6 and Nick Gammon's NT IO Completion port
@@ -1523,7 +1523,7 @@ void shutdownsock(DESC *d, int reason)
                         d->program_data->wait_regs[i] = NULL;
                     }
                 }
-                MEMFREE(d->program_data, __FILE__, __LINE__);
+                MEMFREE(d->program_data);
                 d->program_data = NULL;
             }
         }
@@ -1789,7 +1789,7 @@ void process_output9x(void *dvoid, int bHandleShutdown)
         }
         save = tb;
         tb = tb->hdr.nxt;
-        MEMFREE(save, __FILE__, __LINE__);
+        MEMFREE(save);
         d->output_head = tb;
         if (tb == NULL)
             d->output_tail = NULL;
@@ -1877,7 +1877,7 @@ void process_outputNT(void *dvoid, int bHandleShutdown)
         {
             save = tb;
             tb = tb->hdr.nxt;
-            MEMFREE(save, __FILE__, __LINE__);
+            MEMFREE(save);
             d->output_head = tb;
             if (tb == NULL)
             {
@@ -1902,7 +1902,7 @@ void process_outputNT(void *dvoid, int bHandleShutdown)
         {
             save = tb;
             tb = tb->hdr.nxt;
-            MEMFREE(save, __FILE__, __LINE__);
+            MEMFREE(save);
             d->output_head = tb;
             if (tb == NULL)
                 d->output_tail = NULL;
@@ -2509,11 +2509,6 @@ void list_system_resources(dbref player)
         notify(player, buffer);
     }
 #endif // WIN32
-
-#ifdef MEMORY_ACCOUNTING
-    sprintf(buffer, "Total memory allocated: %d", DebugTotalMemory);
-    notify(player, buffer);
-#endif
 }
 
 #ifdef WIN32
@@ -2747,7 +2742,7 @@ void ProcessWindowsTCP(DWORD dwTimeout)
                     memcpy(d->output_buffer, tp->hdr.start, nBytes); 
                     TBLOCK *save = tp;
                     tp = tp->hdr.nxt;
-                    MEMFREE(save, __FILE__, __LINE__);
+                    MEMFREE(save);
                     d->output_head = tp;
                     if (tp == NULL)
                     {

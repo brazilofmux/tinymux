@@ -1,6 +1,6 @@
 // db.c 
 //
-// $Id: db.cpp,v 1.15 2000-05-25 04:33:20 sdennis Exp $
+// $Id: db.cpp,v 1.16 2000-06-02 16:18:10 sdennis Exp $
 //
 // MUX 2.0
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -67,10 +67,6 @@ extern int conc_pid;
 #endif // WIN32
 
 extern void FDECL(desc_addhash, (DESC *));
-
-#ifdef TEST_MALLOC
-int malloc_count = 0;
-#endif // TEST_MALLOC
 
 #ifdef RADIX_COMPRESSION
 
@@ -297,7 +293,7 @@ void fwdlist_set(dbref thing, FWDLIST *ifp)
      * Copy input forwardlist to a correctly-sized buffer 
      */
 
-    fp = (FWDLIST *)MEMALLOC(sizeof(int) * ((ifp->count) + 1), __FILE__, __LINE__);
+    fp = (FWDLIST *)MEMALLOC(sizeof(int) * ((ifp->count) + 1));
 
     for (i = 0; i < ifp->count; i++)
     {
@@ -311,7 +307,7 @@ void fwdlist_set(dbref thing, FWDLIST *ifp)
     xfp = fwdlist_get(thing);
     if (xfp)
     {
-        MEMFREE(xfp, __FILE__, __LINE__);
+        MEMFREE(xfp);
         xfp = NULL;
         hashreplLEN(&thing, sizeof(thing), (int *)fp, &mudstate.fwdlist_htab);
     }
@@ -332,7 +328,7 @@ void fwdlist_clr(dbref thing)
     xfp = fwdlist_get(thing);
     if (xfp)
     {
-        MEMFREE(xfp, __FILE__, __LINE__);
+        MEMFREE(xfp);
         xfp = NULL;
         hashdeleteLEN(&thing, sizeof(thing), &mudstate.fwdlist_htab);
     }
@@ -490,7 +486,7 @@ static char *set_string(char **ptr, char *new0)
     //
     if (*ptr)
     {
-        MEMFREE(*ptr, __FILE__, __LINE__);
+        MEMFREE(*ptr);
         *ptr = NULL;
     }
 
@@ -500,7 +496,7 @@ static char *set_string(char **ptr, char *new0)
     {
         return (*ptr = NULL);
     }
-    *ptr = (char *)MEMALLOC(strlen(new0) + 1, __FILE__, __LINE__);
+    *ptr = (char *)MEMALLOC(strlen(new0) + 1);
     StringCopy(*ptr, new0);
     return (*ptr);
 }
@@ -1010,17 +1006,20 @@ void anum_extend(int newtop)
         return;
     if (newtop < anum_alc_top + delta)
         newtop = anum_alc_top + delta;
-    if (anum_table == NULL) {
-        anum_table = (ATTR **) MEMALLOC((newtop + 1) * sizeof(ATTR *), __FILE__, __LINE__);
+    if (anum_table == NULL)
+    {
+        anum_table = (ATTR **) MEMALLOC((newtop + 1) * sizeof(ATTR *));
         for (i = 0; i <= newtop; i++)
             anum_table[i] = NULL;
-    } else {
-        anum_table2 = (ATTR **) MEMALLOC((newtop + 1) * sizeof(ATTR *), __FILE__, __LINE__);
+    }
+    else
+    {
+        anum_table2 = (ATTR **) MEMALLOC((newtop + 1) * sizeof(ATTR *));
         for (i = 0; i <= anum_alc_top; i++)
             anum_table2[i] = anum_table[i];
         for (i = anum_alc_top + 1; i <= newtop; i++)
             anum_table2[i] = NULL;
-        MEMFREE((char *)anum_table, __FILE__, __LINE__);
+        MEMFREE((char *)anum_table);
         anum_table = anum_table2;
     }
     anum_alc_top = newtop;
@@ -1195,14 +1194,14 @@ void al_extend(char **buffer, int *bufsiz, int len, int copy)
     if (len > *bufsiz)
     {
         int newsize = len + ATR_BUF_CHUNK;
-        tbuff = (char *)MEMALLOC(newsize, __FILE__, __LINE__);
+        tbuff = (char *)MEMALLOC(newsize);
         if (*buffer)
         {
             if (copy)
             {
                 memcpy(tbuff, *buffer, *bufsiz);
             }
-            MEMFREE(*buffer, __FILE__, __LINE__);
+            MEMFREE(*buffer);
             *buffer = NULL;
         }
         *buffer = tbuff;
@@ -1628,7 +1627,7 @@ void atr_clr(dbref thing, int atr)
         mid = ((hi - lo) >> 1) + lo;
         if (list[mid].number == atr)
         {
-            MEMFREE(list[mid].data, __FILE__, __LINE__);
+            MEMFREE(list[mid].data);
             db[thing].at_count -= 1;
             if (mid != db[thing].at_count)
             {
@@ -1704,21 +1703,21 @@ void atr_add_raw_LEN(dbref thing, int atr, char *szValue, int nValue)
     }
 #ifdef RADIX_COMPRESSION
     int nCompressedValue = string_compress(szValue, compress_buff);
-    text = (char *)MEMALLOC(nCompressedValue, __FILE__, __LINE__);
+    text = (char *)MEMALLOC(nCompressedValue);
     if (!text) return;
     memcpy(text, compress_buff, nCompressedValue);
 #else // RADIX_COMPRESSION
-    text = (char *)MEMALLOC(nValue+1, __FILE__, __LINE__);
+    text = (char *)MEMALLOC(nValue+1);
     if (!text) return;
     memcpy(text, szValue, nValue+1);
 #endif // RADIX_COMPRESSION
 
     if (!db[thing].ahead)
     {
-        list = (ATRLIST *)MEMALLOC(sizeof(ATRLIST), __FILE__, __LINE__);
+        list = (ATRLIST *)MEMALLOC(sizeof(ATRLIST));
         if (!list)
         {
-            MEMFREE(text, __FILE__, __LINE__);
+            MEMFREE(text);
             return;
         }
         db[thing].ahead = list;
@@ -1745,7 +1744,7 @@ void atr_add_raw_LEN(dbref thing, int atr, char *szValue, int nValue)
             mid = ((hi - lo) >> 1) + lo;
             if (list[mid].number == atr)
             {
-                MEMFREE(list[mid].data, __FILE__, __LINE__);
+                MEMFREE(list[mid].data);
                 list[mid].data = text;
 #ifdef  RADIX_COMPRESSION
                 list[mid].size = nCompressedValue;
@@ -1771,7 +1770,7 @@ void atr_add_raw_LEN(dbref thing, int atr, char *szValue, int nValue)
             // If we got here, we didn't find it, so lo = hi + 1,
             // and the attribute should be inserted between them.
             //
-            list = (ATRLIST *)MEMALLOC((db[thing].at_count + 1) * sizeof(ATRLIST), __FILE__, __LINE__);
+            list = (ATRLIST *)MEMALLOC((db[thing].at_count + 1) * sizeof(ATRLIST));
             if (!list)
             {
                 db[thing].ahead = NULL;
@@ -1792,7 +1791,7 @@ void atr_add_raw_LEN(dbref thing, int atr, char *szValue, int nValue)
             {
                 memcpy(list+lo+1, db[thing].ahead+lo, (db[thing].at_count - lo) * sizeof(ATRLIST));
             }
-            MEMFREE(db[thing].ahead, __FILE__, __LINE__);
+            MEMFREE(db[thing].ahead);
 
             list[lo].data = text;
             list[lo].number = atr;
@@ -2178,7 +2177,7 @@ void atr_free(dbref thing)
 #ifdef MEMORY_BASED
     if (db[thing].ahead)
     {
-        MEMFREE(db[thing].ahead, __FILE__, __LINE__);
+        MEMFREE(db[thing].ahead);
     }
     db[thing].ahead = NULL;
     db[thing].at_count = 0;
@@ -2279,7 +2278,7 @@ int atr_next(char **attrp)
         atr = (ATRCOUNT *) * attrp;
         if (atr->count >= db[atr->thing].at_count)
         {
-            MEMFREE(atr, __FILE__, __LINE__);
+            MEMFREE(atr);
             return 0;
         }
         atr->count++;
@@ -2324,7 +2323,7 @@ void NDECL(atr_pop)
 
     if (mudstate.iter_alist.data)
     {
-        MEMFREE(mudstate.iter_alist.data, __FILE__, __LINE__);
+        MEMFREE(mudstate.iter_alist.data);
     }
     if (old_alist)
     {
@@ -2355,7 +2354,7 @@ int atr_head(dbref thing, char **attrp)
 
     if (db[thing].at_count)
     {
-        atr = (ATRCOUNT *) MEMALLOC(sizeof(ATRCOUNT), __FILE__, __LINE__);
+        atr = (ATRCOUNT *) MEMALLOC(sizeof(ATRCOUNT));
         atr->thing = thing;
         atr->count = 1;
         *attrp = (char *)atr;
@@ -2502,7 +2501,7 @@ void db_grow(dbref newtop)
     // NOTE: There is always one copy of 'names' around that isn't freed even just before the process terminates.
     // We rely (quite safely) on the OS to reclaim the memory.
     //
-    NAME *newnames = (NAME *) MEMALLOC((newsize + SIZE_HACK) * sizeof(NAME), __FILE__, __LINE__);
+    NAME *newnames = (NAME *) MEMALLOC((newsize + SIZE_HACK) * sizeof(NAME));
     if (!newnames)
     {
         Log.printf("ABORT! db.cpp, could not allocate space for %d item name cache in db_grow().\n", newsize);
@@ -2519,7 +2518,7 @@ void db_grow(dbref newtop)
         names -= SIZE_HACK;
         memcpy(newnames, names, (newtop + SIZE_HACK) * sizeof(NAME));
         cp = (char *)names;
-        MEMFREE(cp, __FILE__, __LINE__);
+        MEMFREE(cp);
         cp = NULL;
     }
     else
@@ -2541,7 +2540,7 @@ void db_grow(dbref newtop)
         // NOTE: There is always one copy of 'purenames' around that isn't freed even just before the process terminates.
         // We rely (quite safely) on the OS to reclaim the memory.
         //
-        newpurenames = (NAME *)MEMALLOC((newsize + SIZE_HACK) * sizeof(NAME), __FILE__, __LINE__);
+        newpurenames = (NAME *)MEMALLOC((newsize + SIZE_HACK) * sizeof(NAME));
 
         if (!newpurenames)
         {
@@ -2558,7 +2557,7 @@ void db_grow(dbref newtop)
             purenames -= SIZE_HACK;
             memcpy(newpurenames, purenames, (newtop + SIZE_HACK) * sizeof(NAME));
             cp = (char *)purenames;
-            MEMFREE(cp, __FILE__, __LINE__);
+            MEMFREE(cp);
             cp = NULL;
         }
         else
@@ -2582,7 +2581,7 @@ void db_grow(dbref newtop)
     // NOTE: There is always one copy of 'db' around that isn't freed even just before the process terminates.
     // We rely (quite safely) on the OS to reclaim the memory.
     //
-    newdb = (OBJ *)MEMALLOC((newsize + SIZE_HACK) * sizeof(OBJ), __FILE__, __LINE__);
+    newdb = (OBJ *)MEMALLOC((newsize + SIZE_HACK) * sizeof(OBJ));
     if (!newdb)
     {
         Log.printf("ABORT! db.cpp, could not allocate space for %d item struct database.", newsize);
@@ -2596,7 +2595,7 @@ void db_grow(dbref newtop)
         db -= SIZE_HACK;
         memcpy(newdb, db, (mudstate.db_top + SIZE_HACK) * sizeof(OBJ));
         cp = (char *)db;
-        MEMFREE(cp, __FILE__, __LINE__);
+        MEMFREE(cp);
         cp = NULL;
     }
     else
@@ -2646,14 +2645,14 @@ void db_grow(dbref newtop)
      */
 
     marksize = (newsize + 7) >> 3;
-    newmarkbuf = (MARKBUF *)MEMALLOC(marksize, __FILE__, __LINE__);
+    newmarkbuf = (MARKBUF *)MEMALLOC(marksize);
     bzero((char *)newmarkbuf, marksize);
     if (mudstate.markbits)
     {
         marksize = (newtop + 7) >> 3;
         memcpy(newmarkbuf, mudstate.markbits, marksize);
         cp = (char *)mudstate.markbits;
-        MEMFREE(cp, __FILE__, __LINE__);
+        MEMFREE(cp);
         cp = NULL;
     }
     mudstate.markbits = newmarkbuf;
@@ -2666,7 +2665,7 @@ void NDECL(db_free)
     if (db != NULL) {
         db -= SIZE_HACK;
         cp = (char *)db;
-        MEMFREE(cp, __FILE__, __LINE__);
+        MEMFREE(cp);
         cp = NULL;
         db = NULL;
     }
@@ -2991,7 +2990,7 @@ void free_boolexp(BOOLEXP *b)
         break;
     case BOOLEXP_ATR:
     case BOOLEXP_EVAL:
-        MEMFREE((char *)b->sub1, __FILE__, __LINE__);
+        MEMFREE((char *)b->sub1);
         free_bool(b);
         break;
     }

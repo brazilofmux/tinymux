@@ -1,6 +1,6 @@
 //comsys.c
 //
-// * $Id: comsys.cpp,v 1.3 2000-04-24 22:18:56 sdennis Exp $
+// * $Id: comsys.cpp,v 1.4 2000-06-02 16:22:22 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -49,16 +49,16 @@ void do_setnewtitle(dbref player, struct channel *ch, char *pValidatedTitle)
     {
         if (user->title)
         {
-            MEMFREE(user->title, __FILE__, __LINE__);
+            MEMFREE(user->title);
         }
         if (pValidatedTitle[0] != '\0')
         {
-            user->title = (char *)MEMALLOC(strlen(pValidatedTitle) + 1, __FILE__, __LINE__);
+            user->title = (char *)MEMALLOC(strlen(pValidatedTitle) + 1);
             StringCopy(user->title, pValidatedTitle);
         }
         else
         {
-            user->title = (char *)MEMALLOC(1, __FILE__, __LINE__);
+            user->title = (char *)MEMALLOC(1);
             user->title[0] = 0;
         }
     }
@@ -157,8 +157,8 @@ void load_channels(FILE *fp)
         c->maxchannels = c->numchannels;
         if (c->maxchannels > 0)
         {
-            c->alias = (char *)MEMALLOC(c->maxchannels * 6, __FILE__, __LINE__);
-            c->channels = (char **)MEMALLOC(sizeof(char *) * c->maxchannels, __FILE__, __LINE__);
+            c->alias = (char *)MEMALLOC(c->maxchannels * 6);
+            c->channels = (char **)MEMALLOC(sizeof(char *) * c->maxchannels);
             
             for (j = 0; j < c->numchannels; j++)
             {
@@ -169,7 +169,7 @@ void load_channels(FILE *fp)
                 
                 fscanf(fp, "%[^\n]\n", buffer);
                 
-                c->channels[j] = (char *)MEMALLOC(strlen(buffer) + 1, __FILE__, __LINE__);
+                c->channels[j] = (char *)MEMALLOC(strlen(buffer) + 1);
                 StringCopy(c->channels[j], buffer);
             }
             sort_com_aliases(c);
@@ -212,8 +212,8 @@ void load_old_channels(FILE *fp)
         c->maxchannels = c->numchannels;
         if (c->maxchannels > 0)
         {
-            c->alias = (char *)MEMALLOC(c->maxchannels * 6, __FILE__, __LINE__);
-            c->channels = (char **)MEMALLOC(sizeof(char *) * c->maxchannels, __FILE__, __LINE__);
+            c->alias = (char *)MEMALLOC(c->maxchannels * 6);
+            c->channels = (char **)MEMALLOC(sizeof(char *) * c->maxchannels);
             
             for (j = 0; j < c->numchannels; j++)
             {
@@ -224,7 +224,7 @@ void load_old_channels(FILE *fp)
                 
                 fscanf(fp, "%[^\n]\n", buffer);
                 
-                c->channels[j] = (char *)MEMALLOC(strlen(buffer) + 1, __FILE__, __LINE__);
+                c->channels[j] = (char *)MEMALLOC(strlen(buffer) + 1);
                 StringCopy(c->channels[j], buffer);
             }
             sort_com_aliases(c);
@@ -326,7 +326,7 @@ comsys_t *create_new_comsys()
 {
     comsys_t *c;
     
-    c = (comsys_t *)MEMALLOC(sizeof(comsys_t), __FILE__, __LINE__);
+    c = (comsys_t *)MEMALLOC(sizeof(comsys_t));
     
     c->who = -1;
     c->numchannels = 0;
@@ -414,17 +414,17 @@ void destroy_comsys(comsys_t *c)
 
     if (c->alias)
     {
-        MEMFREE(c->alias, __FILE__, __LINE__);
+        MEMFREE(c->alias);
     }
     for (i = 0; i < c->numchannels; i++)
     {
-        MEMFREE(c->channels[i], __FILE__, __LINE__);
+        MEMFREE(c->channels[i]);
     }
     if (c->channels)
     {
-        MEMFREE(c->channels, __FILE__, __LINE__);
+        MEMFREE(c->channels);
     }
-    MEMFREE(c, __FILE__, __LINE__);
+    MEMFREE(c);
 }
 
 void sort_com_aliases(comsys_t *c)
@@ -510,7 +510,7 @@ void load_comsystem(FILE *fp)
     
     for (i = 0; i < nc; i++)
     {
-        ch = (struct channel *)MEMALLOC(sizeof(struct channel), __FILE__, __LINE__);
+        ch = (struct channel *)MEMALLOC(sizeof(struct channel));
         
         fscanf(fp, "%[^\n]\n", temp);
         
@@ -542,7 +542,7 @@ void load_comsystem(FILE *fp)
             
             for (j = 0; j < ch->num_users; j++)
             {
-                user = (struct comuser *)MEMALLOC(sizeof(struct comuser), __FILE__, __LINE__);
+                user = (struct comuser *)MEMALLOC(sizeof(struct comuser));
                 
                 ch->users[j] = user;
                 
@@ -560,12 +560,12 @@ void load_comsystem(FILE *fp)
                 
                 if (strlen(temp + 2) > 0)
                 {
-                    user->title = (char *)MEMALLOC(strlen(temp + 2) + 1, __FILE__, __LINE__);
+                    user->title = (char *)MEMALLOC(strlen(temp + 2) + 1);
                     StringCopy(user->title, temp + 2);
                 }
                 else
                 {
-                    user->title = (char *)MEMALLOC(1, __FILE__, __LINE__);
+                    user->title = (char *)MEMALLOC(1);
                     user->title[0] = 0;
                 }
                 if (user->who >= 0 && user->who < mudstate.db_top)
@@ -802,16 +802,16 @@ void do_joinchannel(dbref player, struct channel *ch)
         if (ch->num_users >= ch->max_users)
         {
             ch->max_users += 10;
-            cu = (struct comuser **)MEMALLOC(sizeof(struct comuser *) * ch->max_users, __FILE__, __LINE__);
+            cu = (struct comuser **)MEMALLOC(sizeof(struct comuser *) * ch->max_users);
             
             for (i = 0; i < (ch->num_users - 1); i++)
             {
                 cu[i] = ch->users[i];
             }
-            MEMFREE(ch->users, __FILE__, __LINE__);
+            MEMFREE(ch->users);
             ch->users = cu;
         }
-        user = (struct comuser *)MEMALLOC(sizeof(struct comuser), __FILE__, __LINE__);
+        user = (struct comuser *)MEMALLOC(sizeof(struct comuser));
         
         for (i = ch->num_users - 1; i > 0 && ch->users[i - 1]->who > player; i--)
         {
@@ -822,7 +822,7 @@ void do_joinchannel(dbref player, struct channel *ch)
         user->who = player;
         user->bUserIsOn = 1;
 
-        user->title = (char *)MEMALLOC(1, __FILE__, __LINE__);
+        user->title = (char *)MEMALLOC(1);
         user->title[0] = 0;
         
         // if (Connected(player))&&(isPlayer(player))
@@ -1127,8 +1127,8 @@ void do_addcom(dbref player, dbref cause, int key, char *arg1, char *arg2)
     {
         c->maxchannels += 10;
         
-        na = (char *)MEMALLOC(6 * c->maxchannels, __FILE__, __LINE__);
-        nc = (char **)MEMALLOC(sizeof(char *) * c->maxchannels, __FILE__, __LINE__);
+        na = (char *)MEMALLOC(6 * c->maxchannels);
+        nc = (char **)MEMALLOC(sizeof(char *) * c->maxchannels);
         
         for (i = 0; i < c->numchannels; i++)
         {
@@ -1137,11 +1137,11 @@ void do_addcom(dbref player, dbref cause, int key, char *arg1, char *arg2)
         }
         if (c->alias)
         {
-            MEMFREE(c->alias, __FILE__, __LINE__);
+            MEMFREE(c->alias);
         }
         if (c->channels)
         {
-            MEMFREE(c->channels, __FILE__, __LINE__);
+            MEMFREE(c->channels);
         }
         c->alias = na;
         c->channels = nc;
@@ -1156,7 +1156,7 @@ void do_addcom(dbref player, dbref cause, int key, char *arg1, char *arg2)
     where = j;
     StringCopyTrunc(c->alias + where * 6, arg1, 5);
     *(c->alias + where * 6 + 5) = '\0';
-    c->channels[where] = (char *)MEMALLOC(strlen(channel) + 1, __FILE__, __LINE__);
+    c->channels[where] = (char *)MEMALLOC(strlen(channel) + 1);
     StringCopy(c->channels[where], channel);
     
     do_joinchannel(player, ch);
@@ -1197,7 +1197,7 @@ void do_delcom(dbref player, dbref cause, int key, char *arg1)
         {
             do_delcomchannel(player, c->channels[i]);
             raw_notify(player, tprintf("Channel %s deleted.", c->channels[i]));
-            MEMFREE(c->channels[i], __FILE__, __LINE__);
+            MEMFREE(c->channels[i]);
             
             c->numchannels--;
             for (; i < c->numchannels; i++)
@@ -1257,9 +1257,9 @@ void do_delcomchannel(dbref player, char *channel)
                 
                 if (user->title)
                 {
-                    MEMFREE(user->title, __FILE__, __LINE__);
+                    MEMFREE(user->title);
                 }
-                MEMFREE(user, __FILE__, __LINE__);
+                MEMFREE(user);
                 j = 1;
             }
         }
@@ -1294,7 +1294,7 @@ void do_createchannel(dbref player, dbref cause, int key, char *channel)
         raw_notify(player, "You do not have permission to do that.");
         return;
     }
-    newchannel = (struct channel *)MEMALLOC(sizeof(struct channel), __FILE__, __LINE__);
+    newchannel = (struct channel *)MEMALLOC(sizeof(struct channel));
     
     StringCopyTrunc(newchannel->name, channel, MAX_CHANNEL_LEN);
     newchannel->name[MAX_CHANNEL_LEN] = '\0';
@@ -1345,10 +1345,10 @@ void do_destroychannel(dbref player, dbref cause, int key, char *channel)
     
     for (j = 0; j < ch->num_users; j++)
     {
-        MEMFREE(ch->users[j], __FILE__, __LINE__);
+        MEMFREE(ch->users[j]);
     }
-    MEMFREE(ch->users, __FILE__, __LINE__);
-    MEMFREE(ch, __FILE__, __LINE__);
+    MEMFREE(ch->users);
+    MEMFREE(ch);
     raw_notify(player, tprintf("Channel %s destroyed.", channel));
 }
 
@@ -1435,9 +1435,9 @@ void do_cleanupchannels(void)
                         //
                         if (cuVictim->title)
                         {
-                            MEMFREE(cuVictim->title, __FILE__, __LINE__);
+                            MEMFREE(cuVictim->title);
                         }
-                        MEMFREE(cuVictim, __FILE__, __LINE__);
+                        MEMFREE(cuVictim);
     
                         continue;
                     }
@@ -1572,10 +1572,10 @@ void do_channelnuke(dbref player)
             
             for (j = 0; j < ch->num_users; j++)
             {
-                MEMFREE(ch->users[j], __FILE__, __LINE__);
+                MEMFREE(ch->users[j]);
             }
-            MEMFREE(ch->users, __FILE__, __LINE__);
-            MEMFREE(ch, __FILE__, __LINE__);
+            MEMFREE(ch->users);
+            MEMFREE(ch);
         }
     }
 }

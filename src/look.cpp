@@ -1,6 +1,6 @@
 // look.cpp -- commands which look at things
 //
-// $Id: look.cpp,v 1.6 2000-05-25 01:41:55 sdennis Exp $
+// $Id: look.cpp,v 1.7 2000-06-02 16:18:05 sdennis Exp $
 //
 // MUX 2.0
 // Portions are derived from MUX 1.6. The WOD_REALMS portion is original work.
@@ -683,7 +683,7 @@ static void look_atrs1(dbref player, dbref thing, dbref othing, int check_exclud
     ATTR *attr, *cattr;
     char *as, *buf;
     
-    cattr = (ATTR *)MEMALLOC(sizeof(ATTR), __FILE__, __LINE__);
+    cattr = (ATTR *)MEMALLOC(sizeof(ATTR));
     for (ca = atr_head(thing, &as); ca; ca = atr_next(&as)) {
         if ((ca == A_DESC) || (ca == A_LOCK))
             continue;
@@ -725,7 +725,7 @@ static void look_atrs1(dbref player, dbref thing, dbref othing, int check_exclud
         }
         free_lbuf(buf);
     }
-    MEMFREE(cattr, __FILE__, __LINE__);
+    MEMFREE(cattr);
 }
 
 static void look_atrs(dbref player, dbref thing, int check_parents)

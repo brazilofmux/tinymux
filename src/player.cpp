@@ -2,7 +2,7 @@
  * player.c 
  */
 /*
- * $Id: player.cpp,v 1.2 2000-04-24 21:58:41 sdennis Exp $ 
+ * $Id: player.cpp,v 1.3 2000-06-02 16:18:02 sdennis Exp $ 
  */
 
 #include "copyright.h"
@@ -457,8 +457,8 @@ int add_player_name(dbref player, char *name)
         /*
          * It's an alias (or an incorrect entry).  Clobber it 
          */
-        MEMFREE(p, __FILE__, __LINE__);
-        p = (dbref *)MEMALLOC(sizeof(int), __FILE__, __LINE__);
+        MEMFREE(p);
+        p = (dbref *)MEMALLOC(sizeof(int));
 
         *p = player;
         stat = hashreplLEN(temp, strlen(temp), p, &mudstate.player_htab);
@@ -466,7 +466,7 @@ int add_player_name(dbref player, char *name)
     }
     else
     {
-        p = (dbref *)MEMALLOC(sizeof(int), __FILE__, __LINE__);
+        p = (dbref *)MEMALLOC(sizeof(int));
 
         *p = player;
         stat = hashaddLEN(temp, strlen(temp), p, &mudstate.player_htab);
@@ -491,7 +491,7 @@ int delete_player_name(dbref player, char *name)
         free_lbuf(temp);
         return 0;
     }
-    MEMFREE(p, __FILE__, __LINE__);
+    MEMFREE(p);
     hashdeleteLEN(temp, strlen(temp), &mudstate.player_htab);
     free_lbuf(temp);
     return 1;
@@ -586,8 +586,8 @@ void badname_add(char *bad_name)
     /*
      * Make a new node and link it in at the top 
      */
-    bp = (BADNAME *)MEMALLOC(sizeof(BADNAME), __FILE__, __LINE__);
-    bp->name = (char *)MEMALLOC(strlen(bad_name) + 1, __FILE__, __LINE__);
+    bp = (BADNAME *)MEMALLOC(sizeof(BADNAME));
+    bp->name = (char *)MEMALLOC(strlen(bad_name) + 1);
     bp->next = mudstate.badname_head;
     mudstate.badname_head = bp;
     StringCopy(bp->name, bad_name);
@@ -608,8 +608,8 @@ void badname_remove(char *bad_name)
                 backp->next = bp->next;
             else
                 mudstate.badname_head = bp->next;
-            MEMFREE(bp->name, __FILE__, __LINE__);
-            MEMFREE(bp, __FILE__, __LINE__);
+            MEMFREE(bp->name);
+            MEMFREE(bp);
             return;
         }
     }

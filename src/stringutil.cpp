@@ -1,6 +1,6 @@
 // stringutil.cpp -- string utilities
 //
-// $Id: stringutil.cpp,v 1.10 2000-06-02 03:42:52 sdennis Exp $
+// $Id: stringutil.cpp,v 1.11 2000-06-02 16:18:01 sdennis Exp $
 //
 // MUX 2.0
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -1684,7 +1684,7 @@ int minmatch(char *str, char *target, int min)
 //
 char *StringCloneLen(const char *str, unsigned int nStr)
 {
-    char *buff = (char *)MEMALLOC(nStr+1, __FILE__, __LINE__);
+    char *buff = (char *)MEMALLOC(nStr+1);
     if (!buff)
     {
         OutOfMemory(__FILE__, __LINE__);
@@ -1708,7 +1708,7 @@ char *StringClone(const char *str)
 //
 char *BufferCloneLen(const char *pBuffer, unsigned int nBuffer)
 {
-    char *buff = (char *)MEMALLOC(nBuffer, __FILE__, __LINE__);
+    char *buff = (char *)MEMALLOC(nBuffer);
     if (!buff)
     {
         OutOfMemory(__FILE__, __LINE__);
@@ -1722,7 +1722,7 @@ char *BufferCloneLen(const char *pBuffer, unsigned int nBuffer)
 //
 char *strsave(const char *s)
 {
-    char *p = (char *)MEMALLOC(strlen(s) + 1, __FILE__, __LINE__);
+    char *p = (char *)MEMALLOC(strlen(s) + 1);
     if (p)
     {
         strcpy(p, s);
@@ -2251,3 +2251,30 @@ int DCL_CDECL Tiny_vsnprintf(char *buff, int count, const char *fmt, va_list va)
     buff[len] = '\0';
     return len;
 }
+
+#if 0
+DCL_INLINE void *MemAllocate(size_t size, const char *filename, int linenum)
+{
+    void *p = malloc(size);
+    if (!p)
+    {
+        OutOfMemory(filename, linenum);
+    }
+    return p;
+}
+
+DCL_INLINE void MemFree(void *ptr, const char *filename, int linenum)
+{
+    free(ptr);
+}
+
+DCL_INLINE void *MemRealloc(void *ptr, size_t size, const char *filename, int linenum)
+{
+    void *p = realloc(ptr, size);
+    if (!p)
+    {
+        OutOfMemory(filename, linenum);
+    }
+    return p;
+}
+#endif

@@ -1,6 +1,6 @@
 // svdhash.cpp -- CHashPage, CHashFile, CHashTable modules
 //
-// $Id: svdhash.cpp,v 1.6 2000-05-21 06:00:08 sdennis Exp $
+// $Id: svdhash.cpp,v 1.7 2000-06-02 16:18:01 sdennis Exp $
 //
 // MUX 2.0
 // Copyright (C) 1998 through 2000 Solid Vertical Domains, Ltd. All
@@ -1435,7 +1435,7 @@ BOOL CHashFile::EmptyDirectory(void)
     m_nDir = 2;
     m_nDirDepth = 1;
 
-    m_pDir = (HF_FILEOFFSET *)MEMALLOC(sizeof(HF_FILEOFFSET)*m_nDir, __FILE__, __LINE__);
+    m_pDir = (HF_FILEOFFSET *)MEMALLOC(sizeof(HF_FILEOFFSET)*m_nDir);
     if (m_pDir == NULL) return FALSE;
 
     m_pDir[0] = m_pDir[1] = 0xFFFFFFFFUL;
@@ -1554,7 +1554,7 @@ BOOL CHashFile::ReadDirectory(void)
         return FALSE;
     }
     m_nDir = (int)(cc / HF_SIZEOF_FILEOFFSET);
-    m_pDir = (HF_FILEOFFSET *)MEMALLOC(sizeof(HF_FILEOFFSET)*m_nDir, __FILE__, __LINE__);
+    m_pDir = (HF_FILEOFFSET *)MEMALLOC(sizeof(HF_FILEOFFSET)*m_nDir);
     m_nDirDepth = 0;
     int n = m_nDir;
     n >>= 1;
@@ -1720,7 +1720,7 @@ void CHashFile::CloseAll(void)
         Sync();
         if (m_pDir)
         {
-            MEMFREE(m_pDir, __FILE__, __LINE__);
+            MEMFREE(m_pDir);
             m_pDir = 0;
         }
 #ifdef WIN32
@@ -1889,7 +1889,7 @@ BOOL CHashFile::DoubleDirectory(void)
     unsigned int nNewDir      = 2 * m_nDir;
     HP_DIRINDEX nNewDirDepth = m_nDirDepth + 1;
 
-    HF_PFILEOFFSET pNewDir = (HF_PFILEOFFSET)MEMALLOC(sizeof(HF_FILEOFFSET)*nNewDir, __FILE__, __LINE__);
+    HF_PFILEOFFSET pNewDir = (HF_PFILEOFFSET)MEMALLOC(sizeof(HF_FILEOFFSET)*nNewDir);
     if (pNewDir)
     {
         unsigned int iNewDir = 0;
@@ -1904,7 +1904,7 @@ BOOL CHashFile::DoubleDirectory(void)
         //
         WriteDirectory();
 
-        MEMFREE(m_pDir, __FILE__, __LINE__);
+        MEMFREE(m_pDir);
         m_pDir = pNewDir;
         m_nDirDepth = nNewDirDepth;
         m_nDir = nNewDir;

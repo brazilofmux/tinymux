@@ -2,7 +2,7 @@
  * funceval.c - MUX function handlers 
  */
 /*
- * $Id: funceval.cpp,v 1.9 2000-04-24 21:17:09 sdennis Exp $ 
+ * $Id: funceval.cpp,v 1.10 2000-06-02 16:18:07 sdennis Exp $ 
  */
 
 #include "copyright.h"
@@ -2583,7 +2583,7 @@ FUNCTION(fun_empty)
     {
         next = sp->next;
         free_lbuf(sp->data);
-        MEMFREE(sp, __FILE__, __LINE__);
+        MEMFREE(sp);
     }
 
     s_Stack(doer, NULL);
@@ -2734,13 +2734,13 @@ FUNCTION(fun_pop)
     {
         s_Stack(doer, sp->next);
         free_lbuf(sp->data);
-        MEMFREE(sp, __FILE__, __LINE__);
+        MEMFREE(sp);
     }
     else
     {
         prev->next = sp->next;
         free_lbuf(sp->data);
-        MEMFREE(sp, __FILE__, __LINE__);
+        MEMFREE(sp);
     }
 }
 
@@ -2776,7 +2776,7 @@ FUNCTION(fun_push)
         safe_str("#-1 STACK SIZE EXCEEDED", buff, bufc);
         return;
     }
-    sp = (STACK *) MEMALLOC(sizeof(STACK), __FILE__, __LINE__);
+    sp = (STACK *) MEMALLOC(sizeof(STACK));
     sp->next = Stack(doer);
     sp->data = alloc_lbuf("push");
     StringCopy(sp->data, data);
@@ -2817,8 +2817,9 @@ FUNCTION(fun_regmatch)
     safe_ltoa(regexec(re, fargs[0]), buff, bufc, LBUF_SIZE-1);
 
     /* If we don't have a third argument, we're done. */
-    if (nfargs != 3) {
-        MEMFREE(re, __FILE__, __LINE__);
+    if (nfargs != 3)
+    {
+        MEMFREE(re);
         return;
     }
 
@@ -2857,7 +2858,7 @@ FUNCTION(fun_regmatch)
         }
     }
 
-    MEMFREE(re, __FILE__, __LINE__);
+    MEMFREE(re);
 }
 
 /* ---------------------------------------------------------------------------

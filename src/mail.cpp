@@ -4,7 +4,7 @@
  * originally taken from PennMUSH 1.50 p10, and has been heavily modified
  * since being included in MUX.
  * 
- * $Id: mail.cpp,v 1.5 2000-04-24 23:56:48 sdennis Exp $
+ * $Id: mail.cpp,v 1.6 2000-06-02 16:18:04 sdennis Exp $
  * -------------------------------------------------------------------
  */
 
@@ -75,7 +75,7 @@ char *strndup(const char *str, int len)
 {
     char *s;
 
-    s = (char *)MEMALLOC(len, __FILE__, __LINE__);
+    s = (char *)MEMALLOC(len);
     memcpy(s, str, len);
     return s;
 }
@@ -120,7 +120,7 @@ static void mail_db_grow(int newtop)
         newsize = newtop;
     }
 
-    newdb = (MENT *) MEMALLOC((newsize + 1) * sizeof(MENT), __FILE__, __LINE__);
+    newdb = (MENT *) MEMALLOC((newsize + 1) * sizeof(MENT));
 
     if (!newdb)
     {
@@ -133,7 +133,7 @@ static void mail_db_grow(int newtop)
     {
         mudstate.mail_list -= 1;
         memcpy(newdb, mudstate.mail_list, (mudstate.mail_db_top + 1) * sizeof(MENT));
-        MEMFREE(mudstate.mail_list, __FILE__, __LINE__);
+        MEMFREE(mudstate.mail_list);
     }
     mudstate.mail_list = newdb + 1;
     newdb = NULL;
@@ -294,7 +294,7 @@ static void delete_mail_message(int number)
 
     if (mudstate.mail_list[number].count < 1)
     {
-        MEMFREE(mudstate.mail_list[number].message, __FILE__, __LINE__);
+        MEMFREE(mudstate.mail_list[number].message);
         mudstate.mail_list[number].message = NULL;
         mudstate.mail_list[number].count = 0;
     }
@@ -674,11 +674,11 @@ void do_mail_retract(dbref player, char *name, char *msglist)
                         mp->next->prev = mp->prev;
 
                     nextp = mp->next;
-                    MEMFREE((char *)mp->subject, __FILE__, __LINE__);
+                    MEMFREE((char *)mp->subject);
                     delete_mail_message(mp->number);
-                    MEMFREE((char *)mp->time, __FILE__, __LINE__);
-                    MEMFREE((char *)mp->tolist, __FILE__, __LINE__);
-                    MEMFREE(mp, __FILE__, __LINE__);
+                    MEMFREE((char *)mp->time);
+                    MEMFREE((char *)mp->tolist);
+                    MEMFREE(mp);
                     notify(player, "MAIL: Mail retracted.");
                 }
                 else
@@ -991,11 +991,11 @@ void do_mail_purge(dbref player)
             /*
              * then wipe 
              */
-            MEMFREE((char *)mp->subject, __FILE__, __LINE__);
+            MEMFREE((char *)mp->subject);
             delete_mail_message(mp->number);
-            MEMFREE((char *)mp->time, __FILE__, __LINE__);
-            MEMFREE((char *)mp->tolist, __FILE__, __LINE__);
-            MEMFREE(mp, __FILE__, __LINE__);
+            MEMFREE((char *)mp->time);
+            MEMFREE((char *)mp->tolist);
+            MEMFREE(mp);
         }
         else
         {
@@ -1261,7 +1261,7 @@ static void send_mail(dbref player, dbref target, const char *tolist, const char
     /*
      * initialize the appropriate fields 
      */
-    struct mail *newp = (struct mail *)MEMALLOC(sizeof(struct mail), __FILE__, __LINE__);
+    struct mail *newp = (struct mail *)MEMALLOC(sizeof(struct mail));
 
     newp->to = target;
     newp->from = player;
@@ -1337,10 +1337,10 @@ void do_mail_nuke(dbref player)
     {
         nextp = mp->next;
         delete_mail_message(mp->number);
-        MEMFREE((char *)mp->subject, __FILE__, __LINE__);
-        MEMFREE((char *)mp->tolist, __FILE__, __LINE__);
-        MEMFREE((char *)mp->time, __FILE__, __LINE__);
-        MEMFREE(mp, __FILE__, __LINE__);
+        MEMFREE((char *)mp->subject);
+        MEMFREE((char *)mp->tolist);
+        MEMFREE((char *)mp->time);
+        MEMFREE(mp);
     }
 
     log_text(tprintf("** MAIL PURGE ** done by %s(#%d).",
@@ -1433,11 +1433,11 @@ void do_mail_debug(dbref player, char *action, char *victim)
                 /*
                  * then wipe 
                  */
-                MEMFREE((char *)mp->subject, __FILE__, __LINE__);
+                MEMFREE((char *)mp->subject);
                 delete_mail_message(mp->number);
-                MEMFREE((char *)mp->time, __FILE__, __LINE__);
-                MEMFREE((char *)mp->tolist, __FILE__, __LINE__);
-                MEMFREE(mp, __FILE__, __LINE__);
+                MEMFREE((char *)mp->time);
+                MEMFREE((char *)mp->tolist);
+                MEMFREE(mp);
             } else
                 nextp = mp->next;
         }
@@ -1945,7 +1945,7 @@ int load_mail(FILE *fp)
 
     while (strncmp(nbuf1, "***", 3) != 0)
     {
-        struct mail *mp = (struct mail *)MEMALLOC(sizeof(struct mail), __FILE__, __LINE__);
+        struct mail *mp = (struct mail *)MEMALLOC(sizeof(struct mail));
 
         dbref nTo = Tiny_atol(nbuf1);
 
@@ -2679,11 +2679,11 @@ void check_mail_expiration(void)
         /*
          * then wipe 
          */
-        MEMFREE((char *)mp->subject, __FILE__, __LINE__);
+        MEMFREE((char *)mp->subject);
         delete_mail_message(mp->number);
-        MEMFREE((char *)mp->tolist, __FILE__, __LINE__);
-        MEMFREE((char *)mp->time, __FILE__, __LINE__);
-        MEMFREE(mp, __FILE__, __LINE__);
+        MEMFREE((char *)mp->tolist);
+        MEMFREE((char *)mp->time);
+        MEMFREE(mp);
     }
 }
 
@@ -2942,17 +2942,17 @@ void do_malias_create(dbref player, char *alias, char *tolist)
     }
     if (!ma_size) {
         ma_size = MA_INC;
-        malias = (struct malias **)MEMALLOC(sizeof(struct malias *) * ma_size, __FILE__, __LINE__);
+        malias = (struct malias **)MEMALLOC(sizeof(struct malias *) * ma_size);
     } else if (ma_top >= ma_size) {
         ma_size += MA_INC;
-        nm = (struct malias **)MEMALLOC(sizeof(struct malias *) * (ma_size), __FILE__, __LINE__);
+        nm = (struct malias **)MEMALLOC(sizeof(struct malias *) * (ma_size));
 
         for (i = 0; i < ma_top; i++)
             nm[i] = malias[i];
-        MEMFREE(malias, __FILE__, __LINE__);
+        MEMFREE(malias);
         malias = nm;
     }
-    malias[ma_top] = (struct malias *)MEMALLOC(sizeof(struct malias), __FILE__, __LINE__);
+    malias[ma_top] = (struct malias *)MEMALLOC(sizeof(struct malias));
 
     i = 0;
 
@@ -3011,11 +3011,11 @@ void do_malias_create(dbref player, char *alias, char *tolist)
     malias[ma_top]->list[i] = NOTHING;
 
     na = alias + 1;
-    malias[ma_top]->name = (char *)MEMALLOC(strlen(na) + 1, __FILE__, __LINE__);
+    malias[ma_top]->name = (char *)MEMALLOC(strlen(na) + 1);
     malias[ma_top]->numrecep = i;
     malias[ma_top]->owner = player;
     StringCopy(malias[ma_top]->name, na);
-    malias[ma_top]->desc = (char *)MEMALLOC(strlen(na) + 1, __FILE__, __LINE__);
+    malias[ma_top]->desc = (char *)MEMALLOC(strlen(na) + 1);
     StringCopy(malias[ma_top]->desc, na);
     ma_top++;
 
@@ -3108,23 +3108,23 @@ void malias_read(FILE *fp)
     ma_size = ma_top;
 
     if (ma_top > 0)
-        malias = (struct malias **)MEMALLOC(sizeof(struct malias *) * ma_size, __FILE__, __LINE__);
+        malias = (struct malias **)MEMALLOC(sizeof(struct malias *) * ma_size);
 
     else
         malias = NULL;
 
     for (i = 0; i < ma_top; i++) {
-        malias[i] = (struct malias *)MEMALLOC(sizeof(struct malias), __FILE__, __LINE__);
+        malias[i] = (struct malias *)MEMALLOC(sizeof(struct malias));
 
         m = (struct malias *)malias[i];
 
         fscanf(fp, "%d %d\n", &(m->owner), &(m->numrecep));
 
         fscanf(fp, "%[^\n]\n", buffer);
-        m->name = (char *)MEMALLOC(strlen(buffer) - 1, __FILE__, __LINE__);
+        m->name = (char *)MEMALLOC(strlen(buffer) - 1);
         StringCopy(m->name, buffer + 2);
         fscanf(fp, "%[^\n]\n", buffer);
-        m->desc = (char *)MEMALLOC(strlen(buffer) - 1, __FILE__, __LINE__);
+        m->desc = (char *)MEMALLOC(strlen(buffer) - 1);
         StringCopy(m->desc, buffer + 2);
 
         if (m->numrecep > 0) {
@@ -3648,8 +3648,8 @@ void do_malias_desc(dbref player, char *alias, char *desc)
     }
     else if ((m->owner != GOD) || ExpMail(player))
     {
-        MEMFREE(m->desc, __FILE__, __LINE__);
-        m->desc = (char *)MEMALLOC(strlen(desc) + 1, __FILE__, __LINE__);
+        MEMFREE(m->desc);
+        m->desc = (char *)MEMALLOC(strlen(desc) + 1);
 
         StringCopy(m->desc, desc);
         notify(player, "MAIL: Description changed.");
@@ -3825,8 +3825,8 @@ void do_malias_rename(dbref player, char *alias, char *newname)
         notify(player, "MAIL: Permission denied.");
         return;
     }
-    MEMFREE(m->name, __FILE__, __LINE__);
-    m->name = (char *)MEMALLOC(sizeof(char) * strlen(newname), __FILE__, __LINE__);
+    MEMFREE(m->name);
+    m->name = (char *)MEMALLOC(sizeof(char) * strlen(newname));
 
     StringCopy(m->name, newname + 1);
 

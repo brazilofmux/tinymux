@@ -1,5 +1,5 @@
 // predicates.cpp
-// $Id: predicates.cpp,v 1.12 2000-06-02 03:42:52 sdennis Exp $
+// $Id: predicates.cpp,v 1.13 2000-06-02 16:18:02 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -678,7 +678,7 @@ void do_addcommand(dbref player, dbref cause, int key, char *name, char *command
         
         /* else tack it on to the existing entry... */
         
-        add = (ADDENT *)MEMALLOC(sizeof(ADDENT), __FILE__, __LINE__);
+        add = (ADDENT *)MEMALLOC(sizeof(ADDENT));
         add->thing = thing;
         add->atr = atr;
         add->name = (char *)strdup(name);
@@ -691,7 +691,7 @@ void do_addcommand(dbref player, dbref cause, int key, char *name, char *command
             hashdeleteLEN(name, strlen(name), &mudstate.command_htab);
         }
         
-        cmd = (CMDENT *)MEMALLOC(sizeof(CMDENT), __FILE__, __LINE__);
+        cmd = (CMDENT *)MEMALLOC(sizeof(CMDENT));
         
         cmd->cmdname = (char *)strdup(name);
         cmd->switches = NULL;
@@ -702,7 +702,7 @@ void do_addcommand(dbref player, dbref cause, int key, char *name, char *command
         } else {
             cmd->callseq = CS_ADDED|CS_ONE_ARG;
         }
-        add = (ADDENT *)MEMALLOC(sizeof(ADDENT), __FILE__, __LINE__);
+        add = (ADDENT *)MEMALLOC(sizeof(ADDENT));
         add->thing = thing;
         add->atr = atr;
         add->name = (char *)strdup(name);
@@ -824,8 +824,8 @@ void do_delcommand(dbref player, dbref cause, int key, char *name, char *command
             {
                 nextp = prev->next;
                 /* Delete it! */
-                MEMFREE(prev->name, __FILE__, __LINE__);
-                MEMFREE(prev, __FILE__, __LINE__);
+                MEMFREE(prev->name);
+                MEMFREE(prev);
             }
             hashdeleteLEN(name, nName, &mudstate.command_htab);
             if ((cmd = (CMDENT *)hashfindLEN(p__Name, n__Name, &mudstate.command_htab)) != NULL)
@@ -834,7 +834,7 @@ void do_delcommand(dbref player, dbref cause, int key, char *name, char *command
                 hashaddLEN(name, nName, (int *)cmd, &mudstate.command_htab);
                 hashreplall((int *)old, (int *)cmd, &mudstate.command_htab);
             }
-            MEMFREE(old, __FILE__, __LINE__);
+            MEMFREE(old);
             set_prefix_cmds();
             notify(player, "Done.");
             return;
@@ -846,7 +846,7 @@ void do_delcommand(dbref player, dbref cause, int key, char *name, char *command
                 if ((nextp->thing == thing) && (nextp->atr == atr))
                 {
                     /* Delete it! */
-                    MEMFREE(nextp->name, __FILE__, __LINE__);
+                    MEMFREE(nextp->name);
                     if (!prev)
                     {
                         if (!nextp->next)
@@ -858,18 +858,18 @@ void do_delcommand(dbref player, dbref cause, int key, char *name, char *command
                                 hashaddLEN(name, nName, (int *)cmd, &mudstate.command_htab);
                                 hashreplall((int *)old, (int *)cmd, &mudstate.command_htab);
                             }
-                            MEMFREE(old, __FILE__, __LINE__);
+                            MEMFREE(old);
                         }
                         else
                         {
                             old->addent = nextp->next;
-                            MEMFREE(nextp, __FILE__, __LINE__);
+                            MEMFREE(nextp);
                         }
                     }
                     else
                     {
                         prev->next = nextp->next;
-                        MEMFREE(nextp, __FILE__, __LINE__);
+                        MEMFREE(nextp);
                     }
                     set_prefix_cmds();
                     notify(player, "Done.");
@@ -934,7 +934,7 @@ void handle_prog(DESC *d, char *message)
             }
         }
 
-        MEMFREE(all->program_data, __FILE__, __LINE__);
+        MEMFREE(all->program_data);
         all->program_data = NULL;
 
         // Set info for all player descriptors to NULL
@@ -997,7 +997,7 @@ void do_quitprog(dbref player, dbref cause, int key, char *name)
                 d->program_data->wait_regs[i] = NULL;
             }
         }
-        MEMFREE(d->program_data, __FILE__, __LINE__);
+        MEMFREE(d->program_data);
         d->program_data = NULL;
 
         /* Set info for all player descriptors to NULL */
@@ -1086,7 +1086,7 @@ void do_prog(dbref player, dbref cause, int key, char *name, char *command)
         }
     }
 
-    program = (PROG *)MEMALLOC(sizeof(PROG), __FILE__, __LINE__);
+    program = (PROG *)MEMALLOC(sizeof(PROG));
     program->wait_cause = player;
     for (i = 0; i < MAX_GLOBAL_REGS; i++)
     {

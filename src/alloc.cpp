@@ -2,7 +2,7 @@
  * alloc.cpp - memory allocation subsystem 
  */
 /*
- * $Id: alloc.cpp,v 1.2 2000-04-11 17:41:34 sdennis Exp $ 
+ * $Id: alloc.cpp,v 1.3 2000-06-02 16:18:14 sdennis Exp $ 
  */
 #include "copyright.h"
 #include "autoconf.h"
@@ -152,12 +152,10 @@ char *pool_alloc(int poolnum, const char *tag)
     {
         if (pools[poolnum].free_head == NULL)
         {
-            h = (char *)MEMALLOC(pools[poolnum].pool_size + sizeof(POOLHDR) + sizeof(POOLFTR), __FILE__, __LINE__);
-            if (h == NULL)
+            h = (char *)MEMALLOC(pools[poolnum].pool_size + sizeof(POOLHDR) + sizeof(POOLFTR));
+            if (!h)
             {
-                Log.WriteString("ABORT! alloc.cpp, pool_alloc() failed to get memory.\n");
-                Log.Flush();
-                abort();
+                OutOfMemory(__FILE__, __LINE__);
             }
             ph = (POOLHDR *) h;
             h += sizeof(POOLHDR);
@@ -383,7 +381,7 @@ void pool_reset(void)
             ibuf = (unsigned int *)h;
             if (*ibuf == POOL_MAGICNUM)
             {
-                MEMFREE(ph, __FILE__, __LINE__);
+                MEMFREE(ph);
             }
             else
             {

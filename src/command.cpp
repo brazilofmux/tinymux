@@ -1,6 +1,6 @@
 // command.cpp - command parser and support routines.
 // 
-// $Id: command.cpp,v 1.9 2000-05-19 19:06:30 sdennis Exp $
+// $Id: command.cpp,v 1.10 2000-06-02 16:18:12 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -690,7 +690,7 @@ void NDECL(init_cmdtab)
             continue;
         }
 
-        cp2a = (CMDENT_TWO_ARG *)MEMALLOC(sizeof(CMDENT_TWO_ARG), __FILE__, __LINE__);
+        cp2a = (CMDENT_TWO_ARG *)MEMALLOC(sizeof(CMDENT_TWO_ARG));
         cp2a->cmdname = (char *)strsave(cbuff);
         cp2a->perms = CA_NO_GUEST | CA_NO_SLAVE;
         cp2a->switches = NULL;
@@ -2311,7 +2311,7 @@ CF_HAND(cf_cmd_alias)
          * Got it, create the new command table entry 
          */
 
-        cmd2 = (CMDENT *)MEMALLOC(sizeof(CMDENT), __FILE__, __LINE__);
+        cmd2 = (CMDENT *)MEMALLOC(sizeof(CMDENT));
         cmd2->cmdname = strsave(alias);
         cmd2->switches = cmdp->switches;
         cmd2->perms = cmdp->perms | nt->perm;
@@ -2322,8 +2322,8 @@ CF_HAND(cf_cmd_alias)
         cmd2->handler = cmdp->handler;
         if (hashaddLEN(cmd2->cmdname, strlen(cmd2->cmdname), (int *)cmd2, (CHashTable *) vp))
         {
-            MEMFREE(cmd2->cmdname, __FILE__, __LINE__);
-            MEMFREE(cmd2, __FILE__, __LINE__);
+            MEMFREE(cmd2->cmdname);
+            MEMFREE(cmd2);
         }
     }
     else

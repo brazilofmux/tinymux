@@ -211,7 +211,7 @@ void Task_RunQueueEntry(void *pEntry, int iUnused)
                 }
             }
         }
-        MEMFREE(point->text, __FILE__, __LINE__);
+        MEMFREE(point->text);
         free_qentry(point);
     }
 
@@ -264,7 +264,7 @@ int CallBack_HaltQueue(PTASK_RECORD p)
             {
                 add_to(point->sem, -1, point->attr);
             }
-            MEMFREE(point->text, __FILE__, __LINE__);
+            MEMFREE(point->text);
             free_qentry(point);
             return IU_REMOVE_TASK;
         }
@@ -398,7 +398,7 @@ int CallBack_NotifySemaphore(PTASK_RECORD p)
                 //
                 giveto(point->player, mudconf.waitcost);
                 a_Queue(Owner(point->player), -1);
-                MEMFREE(point->text, __FILE__, __LINE__);
+                MEMFREE(point->text);
                 free_qentry(point);
                 return IU_REMOVE_TASK;
             }
@@ -629,7 +629,7 @@ static BQUE *setup_que(dbref player, dbref cause, char *command, char *args[], i
         tmp->scr[a] = NULL;
     }
 
-    tptr = tmp->text = (char *)MEMALLOC(tlen, __FILE__, __LINE__);
+    tptr = tmp->text = (char *)MEMALLOC(tlen);
 
     if (command)
     {

@@ -2,7 +2,7 @@
  * help.c -- commands for giving help 
  */
 /*
- * $Id: help.cpp,v 1.2 2000-05-19 18:56:22 sdennis Exp $ 
+ * $Id: help.cpp,v 1.3 2000-06-02 16:18:06 sdennis Exp $ 
  */
 
 #include "copyright.h"
@@ -42,8 +42,8 @@ void helpindex_clean(CHashTable *htab)
          htab_entry;
          htab_entry = (struct help_entry *)hash_nextentry(htab))
     {
-        MEMFREE(htab_entry->key, __FILE__, __LINE__);
-        MEMFREE(htab_entry, __FILE__, __LINE__);
+        MEMFREE(htab_entry->key);
+        MEMFREE(htab_entry);
     }
 
     hashflush(htab);
@@ -88,11 +88,11 @@ int helpindex_read(CHashTable *htab, char *filename)
 
             entry.topic[nTopic] = '\0';
 
-            struct help_entry *htab_entry = (struct help_entry *)MEMALLOC(sizeof(struct help_entry), __FILE__, __LINE__);
+            struct help_entry *htab_entry = (struct help_entry *)MEMALLOC(sizeof(struct help_entry));
             htab_entry->pos = entry.pos;
             htab_entry->original = bOriginal;
             bOriginal = 0;
-            htab_entry->key = (char *)MEMALLOC(nTopic+1, __FILE__, __LINE__);
+            htab_entry->key = (char *)MEMALLOC(nTopic+1);
             StringCopy(htab_entry->key, entry.topic);
 
             if ((hashaddLEN(entry.topic, nTopic, (int *)htab_entry, htab)) == 0)
@@ -101,8 +101,8 @@ int helpindex_read(CHashTable *htab, char *filename)
             }
             else
             {
-                MEMFREE(htab_entry->key, __FILE__, __LINE__);
-                MEMFREE(htab_entry, __FILE__, __LINE__);
+                MEMFREE(htab_entry->key);
+                MEMFREE(htab_entry);
             }
         }
     }

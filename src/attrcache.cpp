@@ -1,6 +1,6 @@
 // svdocache.cpp -- Attribute caching module
 //
-// $Id: attrcache.cpp,v 1.2 2000-04-25 00:03:04 sdennis Exp $
+// $Id: attrcache.cpp,v 1.3 2000-06-02 16:18:13 sdennis Exp $
 //
 // MUX 2.0
 // Copyright (C) 1998 through 2000 Solid Vertical Domains, Ltd. All
@@ -253,7 +253,7 @@ char *cache_get(Aname *nam, int *pLen)
 #ifdef DO_CACHEING
             // Add this information to the cache.
             //
-            pCacheEntry = (PCENT_HDR)MEMALLOC(sizeof(CENT_HDR)+nLength, __FILE__, __LINE__);
+            pCacheEntry = (PCENT_HDR)MEMALLOC(sizeof(CENT_HDR)+nLength);
             if (pCacheEntry)
             {
                 pCacheEntry->attrKey = *nam;
@@ -279,7 +279,7 @@ char *cache_get(Aname *nam, int *pLen)
                     REMOVE_ENTRY(pCacheEntry);
                     CacheSize -= pCacheEntry->nSize;
                     hashdeleteLEN((char *)&(pCacheEntry->attrKey), sizeof(Aname), &mudstate.acache_htab);
-                    MEMFREE(pCacheEntry, __FILE__, __LINE__);
+                    MEMFREE(pCacheEntry);
                 }
             }
 #endif // DO_CACHEING
@@ -361,12 +361,12 @@ BOOL cache_put(Aname *nam, char *value, int len)
         REMOVE_ENTRY(pCacheEntry);
         CacheSize -= pCacheEntry->nSize;
         hashdeleteLEN((char *)nam, sizeof(Aname), &mudstate.acache_htab);
-        MEMFREE(pCacheEntry, __FILE__, __LINE__);
+        MEMFREE(pCacheEntry);
     }
 
     // Add information about the new entry back into the cache.
     //
-    pCacheEntry = (PCENT_HDR)MEMALLOC(sizeof(CENT_HDR)+len, __FILE__, __LINE__);
+    pCacheEntry = (PCENT_HDR)MEMALLOC(sizeof(CENT_HDR)+len);
     if (pCacheEntry)
     {
         pCacheEntry->attrKey = *nam;
@@ -392,7 +392,7 @@ BOOL cache_put(Aname *nam, char *value, int len)
             REMOVE_ENTRY(pCacheEntry);
             CacheSize -= pCacheEntry->nSize;
             hashdeleteLEN((char *)&(pCacheEntry->attrKey), sizeof(Aname), &mudstate.acache_htab);
-            MEMFREE(pCacheEntry, __FILE__, __LINE__);
+            MEMFREE(pCacheEntry);
         }
     }
 #endif // DO_CACHEING
@@ -442,7 +442,7 @@ void cache_del(Aname *nam)
         REMOVE_ENTRY(pCacheEntry);
         CacheSize -= pCacheEntry->nSize;;
         hashdeleteLEN((char *)nam, sizeof(Aname), &mudstate.acache_htab);
-        MEMFREE(pCacheEntry, __FILE__, __LINE__);
+        MEMFREE(pCacheEntry);
     }
 #endif // DO_CACHEING
 }

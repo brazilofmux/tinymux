@@ -234,7 +234,7 @@ regexp *regcomp(char *exp)
         FAIL("regexp too big");
 
     /* Allocate space. */
-    r = (regexp *)MEMALLOC(sizeof(regexp) + (unsigned)regsize, __FILE__, __LINE__);
+    r = (regexp *)MEMALLOC(sizeof(regexp) + (unsigned)regsize);
     if (r == NULL)
         FAIL("out of space");
 
