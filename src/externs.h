@@ -1,6 +1,6 @@
 // externs.h - Prototypes for externs not defined elsewhere.
 //
-// $Id: externs.h,v 1.65 2001-10-11 21:09:59 sdennis Exp $
+// $Id: externs.h,v 1.66 2001-10-17 20:47:34 sdennis Exp $
 //
 #ifndef EXTERNS_H
 #define EXTERNS_H
@@ -375,7 +375,7 @@ extern void ReleaseAllResources(dbref obj);
 #define DOING_UNIQUE    3   // Set DOING message for current port only
 #define DROP_QUIET      1   /* Don't do odrop/adrop if control */
 #define DUMP_STRUCT     1   /* Dump flat structure file */
-#define DUMP_TEXT       2   /* Dump text (gdbm) file */
+#define DUMP_TEXT       2   /* Dump to external attribute database. */
 #define DUMP_FLATFILE   4   /* Dump .FLAT file */
 #define EXAM_DEFAULT    0   /* Default */
 #define EXAM_BRIEF  1   /* Nonowner sees just owner */

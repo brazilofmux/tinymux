@@ -1,6 +1,6 @@
 // config.h
 //
-// $Id: config.h,v 1.19 2001-10-17 15:55:57 sdennis Exp $
+// $Id: config.h,v 1.20 2001-10-17 20:47:34 sdennis Exp $
 //
 #ifndef CONFIG_H
 #define CONFIG_H
@@ -25,7 +25,7 @@
  */
 
 #define MANDFLAGS  (V_LINK|V_PARENT|V_XFLAGS|V_ZONE|V_POWERS|V_3FLAGS|V_QUOTED)
-#define OFLAGS     (V_GDBM|V_ATRKEY|V_ATRNAME|V_ATRMONEY)
+#define OFLAGS     (V_DATABASE|V_ATRKEY|V_ATRNAME|V_ATRMONEY)
 
 #define OUTPUT_VERSION  1
 #ifdef MEMORY_BASED

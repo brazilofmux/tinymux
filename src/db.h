@@ -1,6 +1,6 @@
 // db.h
 //
-// $Id: db.h,v 1.11 2001-10-17 16:27:41 sdennis Exp $
+// $Id: db.h,v 1.12 2001-10-17 20:47:34 sdennis Exp $
 //
 #ifndef __DB_H
 #define __DB_H
@@ -101,7 +101,7 @@ struct boolexp
 #define V_MASK      0x000000ff  /* Database version */
 #define V_ZONE      0x00000100  /* ZONE/DOMAIN field */
 #define V_LINK      0x00000200  /* LINK field (exits from objs) */
-#define V_GDBM      0x00000400  /* attrs are in a gdbm db, not here */
+#define V_DATABASE  0x00000400  /* attrs in a separate database */
 #define V_ATRNAME   0x00000800  /* NAME is an attr, not in the hdr */
 #define V_ATRKEY    0x00001000  /* KEY is an attr, not in the hdr */
 #define V_PARENT    0x00002000  /* db has the PARENT field */

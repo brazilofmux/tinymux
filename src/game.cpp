@@ -1,6 +1,6 @@
 // game.cpp
 //
-// $Id: game.cpp,v 1.41 2001-10-17 18:05:39 sdennis Exp $
+// $Id: game.cpp,v 1.42 2001-10-17 20:47:34 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -1585,7 +1585,7 @@ static int load_game(int ccPageFile)
     f = 0;
 
 #ifndef MEMORY_BASED
-    if (db_flags & V_GDBM)
+    if (db_flags & V_DATABASE)
     {
         // It loaded an output file.
         //

@@ -1,6 +1,6 @@
 // db_rw.cpp
 //
-// $Id: db_rw.cpp,v 1.33 2001-10-17 19:28:44 sdennis Exp $
+// $Id: db_rw.cpp,v 1.34 2001-10-17 20:47:34 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -561,7 +561,7 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
 
                     // Otherwise extract feature flags
                     //
-                    if (g_version & V_GDBM)
+                    if (g_version & V_DATABASE)
                     {
                         read_attribs = FALSE;
                         read_name = !(g_version & V_ATRNAME);
@@ -793,7 +793,7 @@ static int db_write_object(FILE *f, dbref i, int db_format, int flags)
 
     // Write the attribute list.
     //
-    if ((!(flags & V_GDBM)))
+    if ((!(flags & V_DATABASE)))
     {
         char buf[SBUF_SIZE];
         buf[0] = '>';
