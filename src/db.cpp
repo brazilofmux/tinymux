@@ -1,6 +1,6 @@
 // db.cpp
 //
-// $Id: db.cpp,v 1.41 2001-06-28 09:21:27 sdennis Exp $
+// $Id: db.cpp,v 1.42 2001-06-28 09:22:07 sdennis Exp $
 //
 // MUX 2.0
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -2442,7 +2442,7 @@ void db_grow(dbref newtop)
 
     // If requested size is greater than the current db size but smaller
     // than the amount of space we have allocated, raise the db size and
-	// initialize the new area.
+    // initialize the new area.
     //
     if (newtop <= mudstate.db_size)
     {
