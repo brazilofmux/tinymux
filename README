@@ -1,5 +1,5 @@
 TinyMUX 2.1:  README (Unix-based)
-Last Update:  May 2002
+Last Update:  August 2002
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 Congratulations and welcome to the README file for TinyMUX 2.1.  That 
 you have chosen to actually read the file is a sign of bravery equal to 
@@ -72,7 +72,7 @@ somewhat more focused on features with some new performance enhancements.
 
 The latest version of this code can generally be found running at:
 
-  svdltd.com 6250 
+  brazilmux.svdltd.com 6250 
 
 Refer to the file CHANGES for information about new features, commands, 
 and bug fixes.  NOTES now contains a LOT of small bits of info related 
