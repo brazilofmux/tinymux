@@ -1,6 +1,6 @@
 // game.cpp
 //
-// $Id: game.cpp,v 1.16 2002-07-13 07:23:01 jake Exp $
+// $Id: game.cpp,v 1.17 2002-07-16 06:05:19 jake Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -39,19 +39,10 @@ void pcache_sync(void);
 static void init_rlimit(void);
 #endif // HAVE_SETRLIMIT RLIMIT_NOFILE
 
-int reserved;
-
 #ifdef WIN32
 extern CRITICAL_SECTION csDescriptorList;      // for thread synchronisation
 #endif // WIN32
-#ifdef MEMORY_BASED
-int corrupt = 0;
-#endif // MEMORY_BASED
 
-
-// used to allocate storage for temporary stuff, cleared before command
-// execution
-//
 void do_dump(dbref executor, dbref caller, dbref enactor, int key)
 {
 #ifndef WIN32
@@ -65,10 +56,8 @@ void do_dump(dbref executor, dbref caller, dbref enactor, int key)
     fork_and_dump(key);
 }
 
-/*
- * print out stuff into error file
- */
-
+// print out stuff into error file
+//
 void report(void)
 {
     STARTLOG(LOG_BUGS, "BUG", "INFO");
@@ -164,9 +153,8 @@ BOOL regexp_match(char *pattern, char *str, char *args[], int nargs)
 }
 
 
-/*
- * ----------------------------------------------------------------------
- * * atr_match: Check attribute list for wild card matches and queue them.
+/* ----------------------------------------------------------------------
+ * atr_match: Check attribute list for wild card matches and queue them.
  */
 
 static int atr_match1(dbref thing, dbref parent, dbref player, char type, char *str, int check_exclude,
@@ -308,10 +296,9 @@ int atr_match(dbref thing, dbref player, char type, char *str, BOOL check_parent
     return match;
 }
 
-/*
- * ---------------------------------------------------------------------------
- * * notify_check: notifies the object #target of the message msg, and
- * * optionally notify the contents, neighbors, and location also.
+/* ---------------------------------------------------------------------------
+ * notify_check: notifies the object #target of the message msg, and
+ * optionally notify the contents, neighbors, and location also.
  */
 
 BOOL check_filter(dbref object, dbref player, int filter, const char *msg)
@@ -1356,8 +1343,6 @@ void dump_database(void)
 
 void fork_and_dump(int key)
 {
-    char *buff;
-
 #ifndef WIN32
     // fork_and_dump is never called with mudstate.dumping TRUE, but we'll
     // ensure assertion now.
@@ -1381,7 +1366,7 @@ void fork_and_dump(int key)
         raw_broadcast(0, "%s", mudconf.dump_msg);
     }
     check_mail_expiration();
-    buff = alloc_lbuf("fork_and_dump");
+    char *buff = alloc_lbuf("fork_and_dump");
     if (key & (DUMP_TEXT|DUMP_STRUCT))
     {
         STARTLOG(LOG_DBSAVES, "DMP", "CHKPT");
@@ -1467,7 +1452,7 @@ void fork_and_dump(int key)
         // use it; or, we tried to fork a child and failed; or, we didn't
         // need to dump the structure or a flatfile.
         //
-        mudstate.dumping = 0;
+        mudstate.dumping = FALSE;
     }
 #endif
 
@@ -1815,8 +1800,8 @@ long DebugTotalMemory = 0;
 #define CLI_DO_CONFIG_FILE CLI_USER+0
 #define CLI_DO_MINIMAL     CLI_USER+1
 
-int  bMinDB = FALSE;
-int  bSyntaxError = FALSE;
+BOOL bMinDB = FALSE;
+BOOL bSyntaxError = FALSE;
 char *conffile = NULL;
 
 CLI_OptionEntry OptionTable[2] =
@@ -1958,11 +1943,6 @@ int DCL_CDECL main(int argc, char *argv[])
     }
 #endif // WIN32
 
-#ifdef MEMORY_BASED
-    // Database isn't corrupted.
-    //
-    corrupt = 0;
-#endif // MEMORY_BASED
     mudstate.start_time.GetLocal();
     mudstate.cpu_count_from.GetUTC();
     pool_init(POOL_LBUF, LBUF_SIZE);

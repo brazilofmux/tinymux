@@ -1,6 +1,6 @@
 // externs.h -- Prototypes for externs not defined elsewhere.
 //
-// $Id: externs.h,v 1.27 2002-07-14 07:38:08 jake Exp $
+// $Id: externs.h,v 1.28 2002-07-16 06:05:19 jake Exp $
 //
 
 #ifndef EXTERNS_H
@@ -752,10 +752,6 @@ extern int maxd;
 #endif // WIN32
 
 extern unsigned int ndescriptors;
-
-#ifdef MEMORY_BASED
-extern int corrupt;
-#endif
 
 extern long DebugTotalFiles;
 extern long DebugTotalSockets;
