@@ -6089,7 +6089,7 @@ GET()
     > read me
     > say get(me/desc)
 
-  Related Topics: get_eval(), eval(), xget().
+  Related Topics: get_eval(), eval(), u(), v(), xget().
 
 & GET2
 GET (continued)
@@ -6128,7 +6128,7 @@ GET_EVAL()
     > say get_eval(test/va)
     You say "This is a get_eval test on Foobar. The vb is VB from test"
 
-  Related Topics: get(), get_eval(), xget().
+  Related Topics: get(), eval(), u(), v(), xget().
 
 & GIVE
 GIVE
@@ -6687,7 +6687,7 @@ INZONE()
   Returns a list of rooms in the zone defined by <object>. Currently a
   wizard/royalty only function.
 
-  Related Topics:
+  Related Topics: zwho(), ZONES.
 
 & ISDBREF()
 ISDBREF()
@@ -11425,7 +11425,7 @@ VDOT()
   FUNCTION: vdot(<vector>,<vector>[,<delim>][,<output delim>])
 
   Returns the dot product of two vectors. The dot product of two
-  vectors is a scalar. (a,b,c) * (x,y,z) = aw + bx + cz
+  vectors is a scalar. (a,b,c) * (x,y,z) = ax + by + cz
 
   Example:
     > @pemit me=vdot(1 2 3,2 3 4)
@@ -11825,7 +11825,7 @@ ZWHO()
   Returns a list of players who are a member of the zone defined by
   <object>. Currently a wizard/royalty only function.
 
-  Related Topics:
+  Related Topics: inzone(), ZONES.
 
 & \\
 \\
