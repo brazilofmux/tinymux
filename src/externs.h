@@ -1,6 +1,6 @@
 // externs.h - Prototypes for externs not defined elsewhere.
 //
-// $Id: externs.h,v 1.11 2000-04-15 15:25:10 sdennis Exp $
+// $Id: externs.h,v 1.12 2000-04-15 16:17:36 sdennis Exp $
 //
 #ifndef EXTERNS_H
 #define EXTERNS_H
@@ -204,6 +204,8 @@ extern dbref    FDECL(match_examinable, (dbref, const char *));
 
 // From stringutil.c
 //
+extern char Tiny_IsASCII[256];
+extern char Tiny_IsPrint[256];
 extern char Tiny_IsDigit[256];
 extern char Tiny_IsAlpha[256];
 extern char Tiny_IsAlphaNumeric[256];
