@@ -1,6 +1,6 @@
 // db.h
 //
-// $Id: db.h,v 1.14 2001-11-28 06:35:53 sdennis Exp $
+// $Id: db.h,v 1.15 2002-02-25 02:00:42 sdennis Exp $
 //
 
 #ifndef __DB_H
@@ -251,6 +251,8 @@ char *getstring_noalloc(FILE *f, int new_strings);
          (thing)=(next), (next)=Next(next))
 #define DO_WHOLE_DB(thing) \
     for ((thing)=0; (thing)<mudstate.db_top; (thing)++)
+#define	DO_WHOLE_DB_BACKWARDS(thing) \
+	for ((thing)=mudstate.db_top-1; (thing)>=0; (thing)--)
 
 #define Dropper(thing)  (Connected(Owner(thing)) && Hearer(thing))
 

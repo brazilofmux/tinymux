@@ -1,6 +1,6 @@
 // object.cpp -- Low-level object manipulation routines.
 //
-// $Id: object.cpp,v 1.26 2002-02-13 20:23:44 sdennis Exp $
+// $Id: object.cpp,v 1.27 2002-02-25 02:00:42 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -567,8 +567,10 @@ static void NDECL(make_freelist)
     dbref i;
 
     mudstate.freelist = NOTHING;
-    DO_WHOLE_DB(i) {
-        if (IS_CLEAN(i)) {
+    DO_WHOLE_DB_BACKWARDS(i)
+    {
+        if (IS_CLEAN(i))
+        {
             s_Link(i, mudstate.freelist);
             mudstate.freelist = i;
         }
