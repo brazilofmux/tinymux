@@ -1,6 +1,6 @@
 // timeutil.cpp -- CLinearTimeAbsolute and CLinearTimeDelta modules.
 //
-// $Id: timeutil.cpp,v 1.24 2002-05-28 17:53:35 sdennis Exp $
+// $Id: timeutil.cpp,v 1.25 2002-10-12 18:56:24 sdennis Exp $
 //
 // Date/Time code based on algorithms presented in "Calendrical Calculations",
 // Cambridge Press, 1998.
@@ -2535,7 +2535,7 @@ PD_Node *PD_NewNode(void)
     {
         return Nodes+(nNodes++);
     }
-    return 0;
+    return NULL;
 }
 
 PD_Node *PD_FirstNode(void)
@@ -2653,20 +2653,20 @@ PD_Node *PD_ScanNextToken(char **ppString)
     int ch = *p;
     if (ch == 0)
     {
-        return 0;
+        return NULL;
     }
     PD_Node *pNode;
     int iType = LexTable[ch];
     if (iType == PD_LEX_EOS || iType == PD_LEX_INVALID)
     {
-        return 0;
+        return NULL;
     }
     else if (iType == PD_LEX_SYMBOL)
     {
         pNode = PD_NewNode();
         if (!pNode)
         {
-            return 0;
+            return NULL;
         }
         pNode->pNextNode = 0;
         pNode->pPrevNode = 0;
@@ -2711,6 +2711,10 @@ PD_Node *PD_ScanNextToken(char **ppString)
         } while (iType == LexTable[ch]);
 
         pNode = PD_NewNode();
+        if (!pNode)
+        {
+            return NULL;
+        }
         pNode->pNextNode = 0;
         pNode->pPrevNode = 0;
         unsigned int nLen = p - pSave;
@@ -2759,7 +2763,7 @@ PD_Node *PD_ScanNextToken(char **ppString)
             }
             if (!bFound)
             {
-                return 0;
+                return NULL;
             }
         }
     }
