@@ -1,6 +1,6 @@
 // game.cpp
 //
-// $Id: game.cpp,v 1.30 2003-08-14 19:05:20 sdennis Exp $
+// $Id: game.cpp,v 1.31 2003-12-03 19:30:23 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -703,8 +703,10 @@ void notify_check(dbref target, dbref sender, const char *msg, int key)
         //
         if (  (key & MSG_ME)
            && pass_listen
-           && pass_uselock)
+           && pass_uselock
+           && mudstate.nHearNest <= 2)
         {
+            mudstate.nHearNest++;
             if (sender != target)
             {
                 did_it(sender, target, 0, NULL, 0, NULL, A_AHEAR, args, nargs);
@@ -715,6 +717,7 @@ void notify_check(dbref target, dbref sender, const char *msg, int key)
                     nargs);
             }
             did_it(sender, target, 0, NULL, 0, NULL, A_AAHEAR, args, nargs);
+            mudstate.nHearNest--;
         }
 
         // Get rid of match arguments. We don't need them anymore.

@@ -1,6 +1,6 @@
 // mudconf.h
 //
-// $Id: mudconf.h,v 1.13 2003-09-07 22:25:44 sdennis Exp $
+// $Id: mudconf.h,v 1.14 2003-12-03 19:30:23 sdennis Exp $
 //
 
 #ifndef __CONF_H
@@ -308,6 +308,7 @@ struct statedata
     int     nHelpDesc;          // Number of entries used.
     int     nObjEvalNest;       // The nesting level of objeval() invocations.
     int     nStackNest;         // Current stack depth.
+    int     nHearNest;          // Current aahear depth.
     int     ntfy_nest_lev;      /* Current nesting of notifys */
     int     record_players;     /* The maximum # of player logged on */
     int     wild_invk_ctr;      // Regular Expression function calls.
