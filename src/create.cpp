@@ -1,10 +1,7 @@
-/*
- * create.c -- Commands that create new objects 
- */
-/*
- * $Id: create.cpp,v 1.7 2000-06-09 19:10:41 sdennis Exp $ 
- */
-
+// create.cpp -- Commands that create new objects 
+//
+// $Id: create.cpp,v 1.8 2000-09-18 18:56:28 sdennis Exp $ 
+//
 #include "copyright.h"
 #include "autoconf.h"
 #include "config.h"

@@ -1,6 +1,6 @@
 // object.cpp - low-level object manipulation routines.
 //
-// $Id: object.cpp,v 1.7 2000-06-09 19:10:39 sdennis Exp $
+// $Id: object.cpp,v 1.8 2000-09-18 18:56:28 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -679,7 +679,7 @@ void destroy_player(dbref agent, dbref victim)
     dbref player = (dbref) Tiny_atol(atr_get_raw(victim, A_DESTROYER));
     boot_off(victim, (char *)"You have been destroyed!");
     halt_que(victim, NOTHING);
-    int count = chown_all(victim, player, player, 0);
+    int count = chown_all(victim, player, player, CHOWN_NOZONE);
 
     // Remove the name from the name hash table.
     //
