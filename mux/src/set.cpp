@@ -1,6 +1,6 @@
 // set.cpp -- Commands which set parameters.
 //
-// $Id: set.cpp,v 1.25 2004-06-10 15:28:43 sdennis Exp $
+// $Id: set.cpp,v 1.26 2004-07-24 05:43:59 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -912,6 +912,9 @@ void do_set
 {
     dbref thing, aowner;
     int aflags;
+#ifdef BT_ENABLED
+    int have_xcode;
+#endif
     ATTR *attr;
 
     // See if we have the <obj>/<attr> form, which is how you set
@@ -976,11 +979,19 @@ void do_set
                 aflags |= flagvalue;
             }
             bool could_hear = Hearer(thing);
+
+#ifdef BT_ENABLED
+            have_xcode = Hardcode(thing);
+#endif
             atr_set_flags(thing, attr->number, aflags);
 
             // Tell the player about it.
             //
             handle_ears(thing, could_hear, Hearer(thing));
+
+#ifdef BT_ENABLED
+            handle_xcode(executor, thing, have_xcode, Hardcode(thing));
+#endif
             if (  !(key & SET_QUIET)
                && !Quiet(executor)
                && !Quiet(thing))

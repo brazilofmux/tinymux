@@ -1,6 +1,6 @@
 // timer.cpp -- Mini-task scheduler for timed events.
 //
-// $Id: timer.cpp,v 1.10 2004-06-10 15:27:14 sdennis Exp $
+// $Id: timer.cpp,v 1.11 2004-07-24 05:40:15 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -119,6 +119,10 @@ void dispatch_CheckEvents(void *pUnused, int iUnused)
         check_events();
         mudstate.debug_cmd = cmdsave;
     }
+
+#if BT_ENABLED
+    UpdateSpecialObjects();
+#endif
 
     // Schedule ourselves again.
     //

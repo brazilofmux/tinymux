@@ -1,6 +1,6 @@
 // flags.h -- Object flags.
 //
-// $Id: flags.h,v 1.5 2004-06-10 15:21:50 sdennis Exp $
+// $Id: flags.h,v 1.6 2004-07-24 05:39:03 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -85,6 +85,8 @@
 
 // Third word of flags
 //
+// WOD_REALMS and BT_ENABLED cannot be turned on at the same time.
+//
 #ifdef WOD_REALMS
 #define OBF          0x00000001      // Obfuscate Flag
 #define HSS          0x00000002      // Auspex/Heightened Senses Flag
@@ -98,6 +100,14 @@
 #define PEERING      0x00000200      // Means the a looker is seeing a
                                      // different realm than they are in.
 #endif // WOD_REALMS
+
+#ifdef BT_ENABLED
+#define HARDCODE     0x00000001
+#define IN_CHARACTER 0x00000002
+#define ZOMBIE       0x00000004
+#define ANSIMAP      0x00000008
+#endif
+
 #define SITEMON      0x00000400      // Sitemonitor Flag
 #define CMDCHECK     0x00000800      // Has @icmd set
 #define MARK_0       0x00400000      // User-defined flags.
@@ -316,6 +326,13 @@ extern char *MakeCanonicalFlagName
 #define s_Going(x)          s_Flags((x), FLAG_WORD1, Flags(x) | GOING)
 #define s_Connected(x)      s_Flags((x), FLAG_WORD2, Flags2(x) | CONNECTED)
 #define c_Connected(x)      s_Flags((x), FLAG_WORD2, Flags2(x) & ~CONNECTED)
+#ifdef BT_ENABLED
+#define s_Slave(x)          s_Flags((x), FLAG_WORD2, Flags2(x) | SLAVE)
+#define s_Dark(x)           s_Flags((x), FLAG_WORD1, Flags(x) | DARK) 
+#define s_Inherit(x)        s_Flags((x), FLAG_WORD1, Flags(x) | INHERIT) 
+#define Alive(x)            (isPlayer(x) || (Puppet(x) && Has_contents(x)))
+#define isRobot(x)          ((Flags(x) & ROBOT) != 0)
+#endif
 
 #define SiteMon(x)          ((Flags3(x) & SITEMON) != 0)
 #define CmdCheck(x)         ((Flags3(x) & CMDCHECK) != 0)
@@ -331,6 +348,22 @@ extern char *MakeCanonicalFlagName
 #define isChimera(x)          ((Flags3(x) & CHIMERA) != 0)
 #define isPeering(x)          ((Flags3(x) & PEERING) != 0)
 #endif // WOD_REALMS
+
+#ifdef BT_ENABLED
+
+#define Hardcode(x)           ((Flags3(x) & HARDCODE) != 0)
+#define In_Character(x)       ((Flags3(x) & IN_CHARACTER) != 0)
+#define Ansimap(x)            ((Flags3(x) & ANSIMAP) != 0)
+#define Zombie(x)             ((Flags3(x) & ZOMBIE) != 0)
+
+#define s_Hardcode(x)         s_Flags((x), FLAG_WORD3, Flags3(x) | HARDCODE)
+#define c_Hardcode(x)         s_Flags((x), FLAG_WORD3, Flags3(x) & ~HARDCODE)
+#define s_Zombie(x)           s_Flags((x), FLAG_WORD3, Flags3(x) | ZOMBIE)
+#define c_Zombie(x)           s_Flags((x), FLAG_WORD3, Flags3(x) & ~ZOMBIE)
+#define s_In_Character(x)     s_Flags((x), FLAG_WORD3, Flags3(x) | IN_CHARACTER)
+#define c_In_Character(x)     s_Flags((x), FLAG_WORD3, Flags3(x) & ~IN_CHARACTER)
+
+#endif
 
 #define Parentable(p,x)     (Controls(p,x) || \
                             (Parent_ok(x) && could_doit(p,x,A_LPARENT)))
