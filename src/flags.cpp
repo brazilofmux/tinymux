@@ -1,6 +1,6 @@
 // flags.cpp -- Flag manipulation routines.
 //
-// $Id: flags.cpp,v 1.19 2002-01-15 05:25:38 sdennis Exp $
+// $Id: flags.cpp,v 1.20 2002-02-07 07:39:58 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -649,10 +649,10 @@ char *decode_flags(dbref player, FLAGSET *fs)
 
             // Don't show CONNECT on dark wizards to mortals
             //
-            if (  isPlayer(player)
-               && (fbe->flagvalue == CONNECTED)
-               && (fbe->flagflag == FLAG_WORD2)
-               && ((fs->word[FLAG_WORD1] & (WIZARD | DARK)) == (WIZARD | DARK))
+            if (  flagtype == TYPE_PLAYER
+               && fbe->flagflag == FLAG_WORD2
+               && fbe->flagvalue == CONNECTED
+               && (fs->word[FLAG_WORD1] & (WIZARD | DARK)) == (WIZARD | DARK)
                && !Wizard(player))
             {
                 continue;
