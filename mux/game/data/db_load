@@ -1,13 +1,11 @@
 #!/bin/sh
 PATH=/bin:/usr/bin:
 #
-#	Convert from arbitrary format to MUX V2 CHashFile format.
+#	Load MUX V2 flatfile into MUX V2 database.
 #
 case $# in
-	1)	../bin/dbconvert $1 X ;;
-	2)	../bin/dbconvert $1 X <$2 ;;
-	3)	../bin/dbconvert $1 X <$2 >$3 ;;
-	*)	echo Usage: $0 'basename [flatfile [structfile]]';
+	3)	../bin/netmux -d$1 -l -i$2 -o$3 ;;
+	*)	echo Usage: $0 'basename flatfile structfile';
                 echo i.e., $0 netmux netmux.flat netmux.db;
                 exit 1 ;;
 esac
