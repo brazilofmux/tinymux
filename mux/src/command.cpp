@@ -1,6 +1,6 @@
 // command.cpp -- command parser and support routines.
 //
-// $Id: command.cpp,v 1.90 2002-09-19 12:25:28 jake Exp $
+// $Id: command.cpp,v 1.91 2002-09-19 16:31:24 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -674,7 +674,7 @@ CMDENT_TWO_ARG command_table_two_arg[] =
     {"@log",         NULL,       CA_WIZARD,                                        0,           CS_TWO_ARG,           0, do_log},
     {"@mail",        mail_sw,    CA_NO_SLAVE|CA_NO_GUEST,                          0,           CS_TWO_ARG|CS_INTERP, 0, do_mail},
     {"@malias",      malias_sw,  CA_NO_SLAVE|CA_NO_GUEST,                          0,           CS_TWO_ARG|CS_INTERP, 0, do_malias},
-    {"@moniker",     NULL,       CA_NO_GUEST|CA_NO_SLAVE,                          0,           CS_TWO_ARG,           0, do_moniker},
+    {"@moniker",     NULL,       CA_NO_GUEST|CA_NO_SLAVE,                          0,           CS_TWO_ARG|CS_INTERP, 0, do_moniker},
     {"@name",        NULL,       CA_NO_SLAVE|CA_GBL_BUILD|CA_NO_GUEST,             0,           CS_TWO_ARG|CS_INTERP, 0, do_name},
     {"@newpassword", NULL,       CA_WIZARD,                                        0,           CS_TWO_ARG,           0, do_newpassword},
     {"@notify",      notify_sw,  CA_GBL_INTERP|CA_NO_SLAVE|CA_NO_GUEST,            0,           CS_TWO_ARG,           0, do_notify},
