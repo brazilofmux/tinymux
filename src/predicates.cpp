@@ -1,6 +1,6 @@
 // predicates.cpp
 //
-// $Id: predicates.cpp,v 1.34 2001-07-07 19:31:14 morgan Exp $
+// $Id: predicates.cpp,v 1.35 2001-08-01 05:28:13 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -1834,7 +1834,7 @@ void did_it(dbref player, dbref thing, int what, const char *def, int owhat, con
             save_global_regs("did_it_save", preserve, preserve_len);
             buff = bp = alloc_lbuf("did_it.1");
             str = d;
-            TinyExec(buff, &bp, 0, thing, player, EV_EVAL | EV_FIGNORE | EV_TOP, &str, args, nargs);
+            TinyExec(buff, &bp, 0, thing, player, EV_EVAL | EV_FIGNORE | EV_FCHECK | EV_TOP, &str, args, nargs);
             *bp = '\0';
             if (what == A_HTDESC) {
                 safe_str("\r\n", buff, &bp);
@@ -1866,7 +1866,7 @@ void did_it(dbref player, dbref thing, int what, const char *def, int owhat, con
             }
             buff = bp = alloc_lbuf("did_it.2");
             str = d;
-            TinyExec(buff, &bp, 0, thing, player, EV_EVAL | EV_FIGNORE | EV_TOP, &str, args, nargs);
+            TinyExec(buff, &bp, 0, thing, player, EV_EVAL | EV_FIGNORE | EV_FCHECK | EV_TOP, &str, args, nargs);
             *bp = '\0';
             if (*buff)
             {
