@@ -1,6 +1,6 @@
 // netcommon.cpp
 //
-// $Id: netcommon.cpp,v 1.56 2002-02-13 18:57:29 sdennis Exp $
+// $Id: netcommon.cpp,v 1.57 2002-02-13 19:24:47 sdennis Exp $
 //
 // This file contains routines used by the networking code that do not
 // depend on the implementation of the networking code.  The network-specific
@@ -782,7 +782,6 @@ static void announce_connect(dbref player, DESC *d)
     {
         db[player].fs.word[FLAG_WORD1] &= ~DARK;
     }
-    
 }
 
 void announce_disconnect(dbref player, DESC *d, const char *reason)
