@@ -1,6 +1,6 @@
 // cque.cpp -- commands and functions for manipulating the command queue.
 //
-// $Id: cque.cpp,v 1.12 2000-08-03 21:12:19 sdennis Exp $
+// $Id: cque.cpp,v 1.13 2000-08-03 21:42:18 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -69,7 +69,6 @@ CLinearTimeDelta GetProcessorUsage(void)
 
     struct rusage usage;
     getrusage(RUSAGE_SELF, &usage);
-    CLinearTimeDelta ltd;
     ltd.SetTimeValueStruct(&usage.ru_utime);
     return ltd;
 
