@@ -1,6 +1,6 @@
 // comsys.cpp
 //
-// $Id: comsys.cpp,v 1.22 2002-07-18 07:38:12 sdennis Exp $
+// $Id: comsys.cpp,v 1.23 2002-07-18 23:09:41 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -21,9 +21,11 @@ int max_channels;
 struct channel **channels;
 comsys_t *comsys_table[NUM_COMSYS];
 
-#define MIN_RECALL 10
-#define MAX_RECALL 200
-#define DEFAULT_RECALL 0
+#define DFLT_MAX_LOG        0
+#define MIN_RECALL_REQUEST  1
+#define DFLT_RECALL_REQUEST 10
+#define MAX_RECALL_REQUEST  200
+
 extern int iMod(int x, int y);
 
 // Return value must be free_lbuf'ed.
@@ -925,10 +927,19 @@ void do_processcom(dbref player, char *arg1, char *arg2)
     {
         do_comwho(player, ch);
     }
-    else if (  !strncmp(arg2, "last ", 5)
-            && is_rational(arg2 + 5))
+    else if (  !strncmp(arg2, "last", 4)
+            && (  arg2[4] == ' '
+               || arg2[4] == '\0'))
     {
-        do_comlast(player, ch, Tiny_atol(arg2 + 5));
+        // Parse optional number after the 'last' command.
+        //
+        int nRecall = DFLT_RECALL_REQUEST;
+        if (  arg2[4] == ' '
+           && is_integer(arg2 + 5, NULL))
+        {
+            nRecall = Tiny_atol(arg2 + 5);
+        }
+        do_comlast(player, ch, nRecall);
     }
     else if (!do_test_access(player, CHANNEL_TRANSMIT, ch))
     {
@@ -995,11 +1006,11 @@ void SendChannelMessage
     {
         dbref aowner;
         int aflags;
-        int logmax = DEFAULT_RECALL;
+        int logmax = DFLT_MAX_LOG;
         char *maxbuf;
         ATTR *attr;
         if (  (attr = atr_str("MAX_LOG"))
-           && (attr->number))
+           && attr->number)
         {
             maxbuf = atr_get(obj, attr->number, &aowner, &aflags);
             logmax = Tiny_atol(maxbuf);
@@ -1007,10 +1018,11 @@ void SendChannelMessage
         }
         if (logmax > 0)
         {
-            if (logmax > MAX_RECALL)
+            if (logmax > MAX_RECALL_REQUEST)
             {
-                logmax = MAX_RECALL;
-                atr_add(ch->chan_obj, attr->number, Tiny_ltoa_t(logmax), GOD, AF_CONST|AF_NOPROG|AF_NOPARSE);
+                logmax = MAX_RECALL_REQUEST;
+                atr_add(ch->chan_obj, attr->number, Tiny_ltoa_t(logmax), GOD,
+                    AF_CONST|AF_NOPROG|AF_NOPARSE);
             }
             int atr = mkattr(tprintf("HISTORY_%d", iMod(ch->num_messages, logmax)));
             atr_add(ch->chan_obj, atr, msgNormal, GOD, AF_CONST|AF_NOPROG|AF_NOPARSE);
@@ -1213,7 +1225,7 @@ void do_comlast(dbref player, struct channel *ch, int arg)
     dbref aowner;
     int aflags;
     dbref obj = ch->chan_obj;
-    int logmax = MAX_RECALL;
+    int logmax = MAX_RECALL_REQUEST;
     ATTR *attr;
     if (  (attr = atr_str("MAX_LOG"))
        && (atr_get_info(obj, attr->number, &aowner, &aflags)))
@@ -1227,9 +1239,9 @@ void do_comlast(dbref player, struct channel *ch, int arg)
         raw_notify(player, "Channel does not log.");
         return;
     }
-    if (arg < MIN_RECALL)
+    if (arg < MIN_RECALL_REQUEST)
     {
-        arg = MIN_RECALL;
+        arg = MIN_RECALL_REQUEST;
     }
     if (arg > logmax)
     {
@@ -1259,7 +1271,7 @@ BOOL do_chanlog(dbref player, char *channel, char *arg)
     int value ;
     if (  !*arg
        || !is_rational(arg)
-       || (value = Tiny_atol(arg)) > MAX_RECALL)
+       || (value = Tiny_atol(arg)) > MAX_RECALL_REQUEST)
     {
         return FALSE;
     }
@@ -2602,7 +2614,7 @@ void do_chopen
         }
         else
         {
-            msg = tprintf("@cset: Maximum history must be a number less than or equal to %d.", MAX_RECALL);
+            msg = tprintf("@cset: Maximum history must be a number less than or equal to %d.", MAX_RECALL_REQUEST);
         }
         break;
     }
