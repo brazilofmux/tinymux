@@ -1,6 +1,6 @@
 // externs.h - Prototypes for externs not defined elsewhere.
 //
-// $Id: externs.h,v 1.47 2001-06-27 21:10:33 sdennis Exp $
+// $Id: externs.h,v 1.48 2001-06-28 02:07:14 sdennis Exp $
 //
 #ifndef EXTERNS_H
 #define EXTERNS_H
@@ -351,6 +351,7 @@ extern void ReleaseAllResources(dbref obj);
 #define DEST_ONE    1   /* object */
 #define DEST_ALL    2   /* owner */
 #define DEST_OVERRIDE   4   /* override Safe() */
+#define DEST_INSTANT    8   /* instantly destroy */
 #define DIG_TELEPORT    1   /* teleport to room after @digging */
 #define DOLIST_SPACE    0   /* expect spaces as delimiter */
 #define DOLIST_DELIMIT  1   /* expect custom delimiter */
