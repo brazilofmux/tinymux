@@ -45,11 +45,8 @@ src/autoconf.h.in
 src/boolexp.cpp
 src/bsd.cpp
 src/buildnum.sh
-src/c-radix.cpp
 src/command.cpp
 src/command.h
-src/complib.cpp
-src/compresstab.h
 src/comsys.cpp
 src/comsys.h
 src/conf.cpp
@@ -83,7 +80,6 @@ src/install-sh
 src/interface.h
 src/log.cpp
 src/look.cpp
-src/macro.h
 src/mail.cpp
 src/mail.h
 src/match.cpp
@@ -109,8 +105,6 @@ src/powers.cpp
 src/powers.h
 src/predicates.cpp
 src/quota.cpp
-src/radix.cpp
-src/radix.h
 src/rob.cpp
 src/sa-attrcache.cpp
 src/sa-boolexp.cpp

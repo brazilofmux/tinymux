@@ -55,33 +55,6 @@ ifdef SWITCH_MEMORY_BASED
 BASED = -DMEMORY_BASED
 endif
 
-# Uncomment the first 'switch' definition to use radix tree string
-# compression. This will result in less memory usage in both memory and disk
-# based schemes, and reduced disk space as well when disk based. You SHOULD
-# carefully read docs/COMPRESSION and follow the instructions exactly before
-# you define these, or you may cause damage to your database.
-#
-# NOTE: To ensure a clean build, please 'make clean' first.
-#
-# NOTE: You should have a fairly large database before you begin to use
-#       radix compression. 
-#
-#SWITCH_RADIX_COMPRESSION=Uncomment me.
-ifdef SWITCH_RADIX_COMPRESSION
-COMPRESS_DEFS = -DRADIX_COMPRESSION 
-C_COMPRESS_S = c-radix.cpp complib.cpp
-C_COMPRESS_O = c-radix.o complib.o
-COMPRESS_S = radix.cpp
-COMPRESS_O = radix.o
-COMPRESS_H = radix.h
-else
-C_COMPRESS_S = 
-C_COMPRESS_O =
-COMPRESS_S = 
-COMPRESS_O =
-COMPRESS_H =
-endif
-
 # Source common to netmux and standalone code
 COM_SRC	=
 COM_OBJ	=
@@ -170,6 +143,7 @@ NET_O	= bsd.o
 # ================== END OF CONFIGURATION SECTION =================
 
 # Auxiliary source files: only used by offline utilities.
+#
 AUX_SRC	= dbconvert.cpp mkindx.cpp unsplit.cpp
 LIB_SRC = 
 LIB_INC = 
@@ -189,21 +163,13 @@ A_AUTO	= configure configure.in autoconf.h.in Makefile.in .depend
 AUXIL	= $(A_INST) $(A_TXT) $(A_SH) $(A_CONF) $(A_MISC) $(A_RT) $(A_VMS) \
 	  $(A_AUTO)
 
-#Installation files
-INSTALL_PROG	= Startmux netmux dbconvert mkindx db_load db_unload db_check $(R_SERV)
-INSTALL_TARG	= $(INSTALL_PROG) *.txt *.conf
-REINSTALL_TARG	= $(INSTALL_PROG) help.txt wizhelp.txt alias.conf compat.conf
-
-#compiliation source files
+# Compiliation source files.
+#
 ALLSRC	= $(D_SRC) $(VER_SRC) $(COM_SRC) $(SA_SRC) $(AUX_SRC) $(LIB_SRC)
-SRC	= $(D_SRC) $(COM_SRC) $(MALLOC_S) $(C_COMPRESS_S)
-OBJ	= $(D_OBJ) $(COM_OBJ) $(MALLOC_O) $(C_COMPRESS_O)
+SRC	= $(D_SRC) $(COM_SRC) $(MALLOC_S)
+OBJ	= $(D_OBJ) $(COM_OBJ) $(MALLOC_O)
 
-ifdef SWITCH_RADIX_COMPRESSION
-OUT	= netmux mkindx dbconvert a
-else
 OUT	= netmux mkindx dbconvert
-endif
 
 .cpp.o:
 	$(CXX) $(ALLCXXFLAGS) -c $<
@@ -230,20 +196,8 @@ mkindx: _build.o mkindx.o
 unsplit: unsplit.o
 	$(CXX) $(ALLCXXFLAGS) -o unsplit unsplit.o
 
-dbconvert: _build.o dbconvert.o $(SA_OBJ) $(ALLOC_O) $(C_RADIX_O) $(LIBOBJS)
-	$(CXX) $(ALLCXXFLAGS) -o dbconvert _build.o dbconvert.o $(SA_OBJ) $(COM_OBJ) $(ALLOC_O) $(C_COMPRESS_O) $(LIBS) $(MORELIBS) $(LIBOBJS)
-
-saber:	$(SRC)
-	#load $(SRC)
-
-saber-o: $(OBJ) $(LIBOBJS)
-	#load $(OBJ) $(VER_OBJ) $(LIBS) $(MORELIBS)
-
-ifdef SWITCH_RADIX_COMPRESSION
-a.o: autoconf.h config.h radix.h _build.h
-a: _build.o a.o radix.o
-	$(CXX) $(ALLCXXFLAGS) -o a _build.o a.o radix.o
-endif
+dbconvert: _build.o dbconvert.o $(SA_OBJ) $(ALLOC_O) $(LIBOBJS)
+	$(CXX) $(ALLCXXFLAGS) -o dbconvert _build.o dbconvert.o $(SA_OBJ) $(COM_OBJ) $(ALLOC_O) $(LIBS) $(MORELIBS) $(LIBOBJS)
 
 netmux: $(OBJ) $(LIBOBJS) $(VER_SRC)
 	$(CXX) $(ALLCXXFLAGS) $(VER_FLG) -c $(VER_SRC)
