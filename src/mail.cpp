@@ -1,6 +1,6 @@
 // mail.cpp 
 //
-// $Id: mail.cpp,v 1.24 2001-02-25 16:28:14 sdennis Exp $
+// $Id: mail.cpp,v 1.25 2001-06-29 18:19:40 sdennis Exp $
 //
 // This code was taken from Kalkin's DarkZone code, which was
 // originally taken from PennMUSH 1.50 p10, and has been heavily modified
@@ -3579,7 +3579,7 @@ void load_malias(FILE *fp)
     }
     else
     {
-        Log.WriteString("ERROR: Couldn't find Begin MALIAS.\n");
+        Log.WriteString("ERROR: Couldn't find Begin MALIAS." ENDLINE);
         return;
     }
 }
