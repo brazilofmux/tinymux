@@ -272,12 +272,19 @@ COMSYS COMMANDS AND FUNCTIONS
 
   COMMAND: @cboot <channel>=<object>
 
-  Only wizards, or the owner of the channel can use this command. It
+  Only wizards or the owner of the channel can use this command. It
   forcefully removes an object from that channel.
 
-  Note: You may specify a player name as <object> if you prefix it with an
-  '*'. Otherwise, <object> should be a dbref, or a name of an object if you
-  are nearby it.
+  You may specify a player name as <object> if you prefix it with an '*'
+  (e.g., '*Player1'), otherwise <object> should be a dbref or if you are
+  in the same room, the name of an object or player.
+
+  Example:
+    > @cboot Player1
+    [Public] Staff1 boots Player1 off the channel.
+    [Public] Player1 has left this channel.
+
+  Related Topics: comsys commands
 
 & ADDCOM
 ADDCOM
@@ -331,9 +338,22 @@ ALLCOM
 
   COMMAND: allcom <on|off|who>
 
-  This works like using a single alias, except it does an action for every
-  alias you have. You can turn every alias on, or off, or see who is on
-  every channel you subscribe to.
+  This works like using a single alias except that it does an action for
+  every alias you have. You can turn every alias on, or off, or see who is
+  on every channel you subscribe to.
+
+  Example:
+    > allcom who
+    -- Players --
+    Player1
+    Player2
+    -- Objects --
+    -- Public --
+    -- Players --
+    Staff1
+    Player1
+    -- Objects --
+    -- Staff --
 
   Related Topics: alias, comtitle, delcom, addcom.
 
@@ -342,9 +362,15 @@ COMLIST
 
   COMMAND: comlist
 
-  Displays a list of all the aliases you are using, whether you are 'on' or
-  'off' the channel, and some information about them, such as your channel
-  title and status.
+  This command displays a list of all the channels you are connected to, the
+  alias you're using for the channel, whether you are 'on' or 'off' on the
+  channel and what your comtitle is.
+
+  Example:
+    > comlist
+    Alias     Channel            Status   Title
+    pub       Public             off      Roleplay Staff
+    staff     Staff              on
 
   Related Topics: comtitle, addcom, alias, delcom.
 
@@ -363,7 +389,7 @@ COMTITLE
   Anonymous channels (@cset/anon) do not allow their comtitles to be
   turned off.
 
-  For example:
+  Examples:
     > comtitle pub=The Great and Powerful
     Title set to 'The Great and Powerful' on channel Public.
     > pub :waves to everyone.
@@ -376,8 +402,18 @@ CLEARCOM
 
   COMMAND: clearcom
 
-  Removes all your aliases for channels. You should be extremely careful
-  about this command, as it will wipe out all of your channel information.
+  This command will erase all channel information.
+
+  The 'clearcom' command is equivalent to typing 'delcom <alias>' for each
+  channel. It will remove you from all channels and erase your status and
+  title.
+
+  Example:
+    > clearcom
+    You have left channel Public.
+    Channel Public deleted.
+    You have left channel Staff.
+    Channel Staff deleted.
 
   Related Topics: addcom, delcom.
 
@@ -386,11 +422,17 @@ DELCOM
 
   COMMAND: delcom <alias>
 
-  Deletes <alias> from your list of channel aliases. If <alias> was the only
-  alias you had for a certain channel, you may no longer use that channel
-  until you add a new alias for it.
+  Deletes <alias> from your list of channel aliases. If the <alias> was the
+  only alias for the channel, then the channel has now been effectively
+  removed. In order to use that channel again, you will need to re-add the
+  channel with the 'addcom' command. If you only wish to have the channel
+  quiet for a time, then a better command is '<alias> off'.
 
-  Related Topics: addcom, comlist, clearcom.
+  Example:
+    >delcom pub
+    Channel Public deleted.
+
+  Related Topics: addcom, alias, comlist, clearcom.
 
 & @CCREATE
 @CCREATE
