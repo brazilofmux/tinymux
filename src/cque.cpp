@@ -1,6 +1,6 @@
 // cque.cpp -- commands and functions for manipulating the command queue.
 //
-// $Id: cque.cpp,v 1.27 2001-07-31 05:22:00 sdennis Exp $
+// $Id: cque.cpp,v 1.28 2001-09-25 04:00:25 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -406,16 +406,10 @@ int Notify_Num_Max;
 int Notify_Sem;
 int Notify_Attr;
 
-int CallBack_NotifySemaphore(PTASK_RECORD p)
+// NFY_DRAIN or NFY_NFYALL
+//
+int CallBack_NotifySemaphoreDrainOrAll(PTASK_RECORD p)
 {
-    // If we've notified enough, exit.
-    //
-    if (  Notify_Key == NFY_NFY
-       && Notify_Num_Done >= Notify_Num_Max)
-    {
-        return IU_DONE;
-    }
-
     if (p->fpTask == Task_SemaphoreTimeout)
     {
         // This represents a semaphore.
@@ -458,6 +452,48 @@ int CallBack_NotifySemaphore(PTASK_RECORD p)
     return IU_NEXT_TASK;
 }
 
+// NFY_NFY or NFY_QUIET
+//
+int CallBack_NotifySemaphoreFirstOrQuiet(PTASK_RECORD p)
+{
+    // If we've notified enough, exit.
+    //
+    if (  Notify_Key == NFY_NFY
+       && Notify_Num_Done >= Notify_Num_Max)
+    {
+        return IU_DONE;
+    }
+
+    if (p->fpTask == Task_SemaphoreTimeout)
+    {
+        // This represents a semaphore.
+        //
+        BQUE *point = (BQUE *)(p->arg_voidptr);
+        if (  point->sem == Notify_Sem
+           && (  point->attr == Notify_Attr
+              || !Notify_Attr))
+        {
+            Notify_Num_Done++;
+
+            // Allow the command to run. The priority may have been
+            // PRIORITY_SUSPEND, so we need to change it.
+            //
+            if (Typeof(point->cause) == TYPE_PLAYER)
+            {
+                p->iPriority = PRIORITY_PLAYER;
+            }
+            else
+            {
+                p->iPriority = PRIORITY_OBJECT;
+            }
+            p->ltaWhen = mudstate.now;
+            p->fpTask = Task_RunQueueEntry;
+            return IU_UPDATE_TASK;
+        }
+    }
+    return IU_NEXT_TASK;
+}
+
 // ---------------------------------------------------------------------------
 // nfy_que: Notify commands from the queue and perform or discard them.
 
@@ -480,7 +516,15 @@ int nfy_que(dbref sem, int attr, int key, int count)
         Notify_Sem     = sem;
         Notify_Attr    = attr;
         Notify_Num_Max = count;
-        scheduler.TraverseUnordered(CallBack_NotifySemaphore);
+        if (  key == NFY_NFY
+           || key == NFY_QUIET)
+        {
+            scheduler.TraverseOrdered(CallBack_NotifySemaphoreFirstOrQuiet);
+        }
+        else
+        {
+            scheduler.TraverseUnordered(CallBack_NotifySemaphoreDrainOrAll);
+        }
     }
 
     // Update the sem waiters count.

@@ -1,6 +1,6 @@
 // timer.cpp -- Mini-task scheduler for timed events.
 //
-// $Id: timer.cpp,v 1.5 2001-09-08 19:25:47 sdennis Exp $
+// $Id: timer.cpp,v 1.6 2001-09-25 04:00:25 sdennis Exp $
 //
 // MUX 2.1
 // Copyright (C) 1998 through 2001 Solid Vertical Domains, Ltd. All
@@ -684,7 +684,11 @@ int CTaskHeap::TraverseOrdered(SCHLOOK *pfLook, SCHCMP *pfCompare)
     for (int i = m_nCurrent-1; i >= 0; i--)
     {
         PTASK_RECORD p = m_pHeap[i];
-        pfLook(p);
+        int cmd = pfLook(p);
+        if (IU_DONE == cmd)
+        {
+            break;
+        }
     }
 
     Remake(pfCompare);
