@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.164 2002-03-02 08:05:00 sdennis Exp $
+// $Id: functions.cpp,v 1.165 2002-03-02 08:47:00 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -7135,22 +7135,22 @@ FUN flist[] =
     {"LDELETE",  fun_ldelete,  MAX_ARG, 2,  3,       0, CA_PUBLIC},
     {"LEXITS",   fun_lexits,   MAX_ARG, 1,  1,       0, CA_PUBLIC},
     {"LFLAGS",   fun_lflags,   MAX_ARG, 1,  1,       0, CA_PUBLIC},
-    {"LIST",     fun_list,     MAX_ARG, 2,  3, FN_NO_EVAL, CA_PUBLIC},
     {"LINK",     fun_link,     MAX_ARG, 2,  2,       0, CA_PUBLIC},
+    {"LIST",     fun_list,     MAX_ARG, 2,  3, FN_NO_EVAL, CA_PUBLIC},
     {"LIT",      fun_lit,      MAX_ARG, 1,  1, FN_NO_EVAL, CA_PUBLIC},
     {"LJUST",    fun_ljust,    MAX_ARG, 2,  3,       0, CA_PUBLIC},
     {"LN",       fun_ln,       MAX_ARG, 1,  1,       0, CA_PUBLIC},
     {"LNUM",     fun_lnum,     MAX_ARG, 0,  3,       0, CA_PUBLIC},
     {"LOC",      fun_loc,      MAX_ARG, 1,  1,       0, CA_PUBLIC},
-    {"LOCATE",   fun_locate,   MAX_ARG, 3,  3,       0, CA_PUBLIC},
     {"LOCALIZE", fun_localize, MAX_ARG, 1,  1, FN_NO_EVAL, CA_PUBLIC},
+    {"LOCATE",   fun_locate,   MAX_ARG, 3,  3,       0, CA_PUBLIC},
     {"LOCK",     fun_lock,     MAX_ARG, 1,  1,       0, CA_PUBLIC},
     {"LOG",      fun_log,      MAX_ARG, 1,  1,       0, CA_PUBLIC},
-    {"LPORTS",   fun_lports,   MAX_ARG, 0,  0,       0, CA_WIZARD},
     {"LPARENT",  fun_lparent,  MAX_ARG, 1,  1,       0, CA_PUBLIC},
-    {"LROOMS",   fun_lrooms,   MAX_ARG, 1,  3,       0, CA_PUBLIC},
+    {"LPORTS",   fun_lports,   MAX_ARG, 0,  0,       0, CA_WIZARD},
     {"LPOS",     fun_lpos,     MAX_ARG, 2,  2,       0, CA_PUBLIC},
     {"LRAND",    fun_lrand,    MAX_ARG, 3,  4,       0, CA_PUBLIC},
+    {"LROOMS",   fun_lrooms,   MAX_ARG, 1,  3,       0, CA_PUBLIC},
     {"LSTACK",   fun_lstack,   MAX_ARG, 0,  1,       0, CA_PUBLIC},
     {"LT",       fun_lt,       MAX_ARG, 2,  2,       0, CA_PUBLIC},
     {"LTE",      fun_lte,      MAX_ARG, 2,  2,       0, CA_PUBLIC},
