@@ -1,6 +1,6 @@
 // db.cpp
 //
-// $Id: db.cpp,v 1.42 2002-09-01 16:31:31 jake Exp $
+// $Id: db.cpp,v 1.43 2002-09-18 21:26:44 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -33,8 +33,6 @@
 #endif // O_ACCMODE
 
 OBJ *db = NULL;
-NAME *names = NULL;
-NAME *purenames = NULL;
 
 extern void desc_addhash(DESC *);
 
@@ -443,10 +441,9 @@ FWDLIST *fwdlist_get(dbref thing)
     return fp;
 }
 
-/* ---------------------------------------------------------------------------
- * Name, s_Name: Get or set an object's name.
- */
-
+// ---------------------------------------------------------------------------
+// Name, PureName, and s_Name: Get or set an object's name.
+//
 const char *Name(dbref thing)
 {
     if (thing < 0)
@@ -461,14 +458,14 @@ const char *Name(dbref thing)
     atr_get_str(tbuff, thing, A_NAME, &aowner, &aflags);
     return tbuff;
 #else // MEMORY_BASED
-    if (!names[thing])
+    if (!db[thing].name)
     {
         int len;
         char *pName = atr_get_LEN( thing, A_NAME, &aowner, &aflags, &len);
-        names[thing] = StringCloneLen(pName, len);
+        db[thing].name = StringCloneLen(pName, len);
         free_lbuf(pName);
     }
-    return names[thing];
+    return db[thing].name;
 #endif // MEMORY_BASED
 }
 
@@ -485,7 +482,7 @@ const char *PureName(dbref thing)
     char *pName, *pPureName;
     if (mudconf.cache_names)
     {
-        if (!purenames[thing])
+        if (!db[thing].purename)
         {
             int nName;
             size_t nPureName;
@@ -493,27 +490,27 @@ const char *PureName(dbref thing)
             pName = atr_get_LEN(thing, A_NAME, &aowner, &aflags, &nName);
             pPureName = strip_ansi(pName, &nPureName);
             free_lbuf(pName);
-            purenames[thing] = StringCloneLen(pPureName, nPureName);
+            db[thing].purename = StringCloneLen(pPureName, nPureName);
 #else // MEMORY_BASED
-            if (!names[thing])
+            if (!db[thing].name)
             {
                 pName = atr_get_LEN(thing, A_NAME, &aowner, &aflags, &nName);
-                names[thing] = StringCloneLen(pName, nName);
+                db[thing].name = StringCloneLen(pName, nName);
                 free_lbuf(pName);
             }
-            pName = names[thing];
+            pName = db[thing].name;
             pPureName = strip_ansi(pName, &nPureName);
             if (nPureName == nName)
             {
-                purenames[thing] = pName;
+                db[thing].purename = pName;
             }
             else
             {
-                purenames[thing] = StringCloneLen(pPureName, nPureName);
+                db[thing].purename = StringCloneLen(pPureName, nPureName);
             }
 #endif // MEMORY_BASED
         }
-        return purenames[thing];
+        return db[thing].purename;
     }
     pName = atr_get(thing, A_NAME, &aowner, &aflags);
     pPureName = strip_ansi(pName);
@@ -525,26 +522,26 @@ void s_Name(dbref thing, const char *s)
 {
     atr_add_raw(thing, A_NAME, s);
 #ifndef MEMORY_BASED
-    if (names[thing])
+    if (db[thing].name)
     {
         if (  mudconf.cache_names
-           && names[thing] == purenames[thing])
+           && db[thing].name == db[thing].purename)
         {
-            purenames[thing] = NULL;
+            db[thing].purename = NULL;
         }
-        MEMFREE(names[thing]);
-        names[thing] = NULL;
+        MEMFREE(db[thing].name);
+        db[thing].name = NULL;
     }
     if (s)
     {
-        names[thing] = StringClone(s);
+        db[thing].name = StringClone(s);
     }
 #endif // !MEMORY_BASED
     if (  mudconf.cache_names
-       && purenames[thing])
+       && db[thing].purename)
     {
-        MEMFREE(purenames[thing]);
-        purenames[thing] = NULL;
+        MEMFREE(db[thing].purename);
+        db[thing].purename = NULL;
     }
 }
 
@@ -2203,7 +2200,13 @@ void initialize_objects(dbref first, dbref last)
 #ifdef MEMORY_BASED
         db[thing].ahead = NULL;
         db[thing].at_count = 0;
+#else
+        db[thing].name = NULL;
 #endif // MEMORY_BASED
+        if (mudconf.cache_names)
+        {
+            db[thing].purename = NULL;
+        }
     }
 }
 
@@ -2212,7 +2215,6 @@ void db_grow(dbref newtop)
     int newsize, marksize, delta, i;
     MARKBUF *newmarkbuf;
     OBJ *newdb;
-    NAME *newpurenames;
     char *cp;
 
 #ifdef STANDALONE
@@ -2238,14 +2240,6 @@ void db_grow(dbref newtop)
     //
     if (newtop <= mudstate.db_size)
     {
-        for (i = mudstate.db_top; i < newtop; i++)
-        {
-#ifndef MEMORY_BASED
-            names[i] = NULL;
-#endif // !MEMORY_BASED
-            if (mudconf.cache_names)
-                purenames[i] = NULL;
-        }
         initialize_objects(mudstate.db_top, newtop);
         mudstate.db_top = newtop;
         return;
@@ -2265,77 +2259,8 @@ void db_grow(dbref newtop)
     // Enforce minimum database size
     //
     if (newsize < mudstate.min_size)
-        newsize = mudstate.min_size + delta;;
-
-    // Grow the name tables
-    //
-#ifndef MEMORY_BASED
-
-    // NOTE: There is always one copy of 'names' around that isn't freed even
-    // just before the process terminates. We rely (quite safely) on the OS to
-    // reclaim the memory.
-    //
-    NAME *newnames = (NAME *) MEMALLOC((newsize + SIZE_HACK) * sizeof(NAME));
-    (void)ISOUTOFMEMORY(newnames);
-    memset(newnames, 0, (newsize + SIZE_HACK) * sizeof(NAME));
-
-    if (names)
     {
-        // An old name cache exists. Copy it.
-        //
-        names -= SIZE_HACK;
-        memcpy(newnames, names, (newtop + SIZE_HACK) * sizeof(NAME));
-        cp = (char *)names;
-        MEMFREE(cp);
-        cp = NULL;
-    }
-    else
-    {
-        // Creating a brand new struct database.  Fill in the 'reserved' area
-        // in case it gets referenced.
-        //
-        names = newnames;
-        for (i = 0; i < SIZE_HACK; i++)
-        {
-            names[i] = NULL;
-        }
-    }
-    names = newnames + SIZE_HACK;
-    newnames = NULL;
-#endif // !MEMORY_BASED
-
-    if (mudconf.cache_names)
-    {
-        // NOTE: There is always one copy of 'purenames' around that isn't
-        // freed even just before the process terminates. We rely (quite
-        // safely) on the OS to reclaim the memory.
-        //
-        newpurenames = (NAME *)MEMALLOC((newsize + SIZE_HACK) * sizeof(NAME));
-        (void)ISOUTOFMEMORY(newpurenames);
-        memset(newpurenames, 0, (newsize + SIZE_HACK) * sizeof(NAME));
-
-        if (purenames)
-        {
-            // An old name cache exists. Copy it.
-            //
-            purenames -= SIZE_HACK;
-            memcpy(newpurenames, purenames, (newtop + SIZE_HACK) * sizeof(NAME));
-            cp = (char *)purenames;
-            MEMFREE(cp);
-            cp = NULL;
-        }
-        else
-        {
-            // Creating a brand new struct database. Fill in the 'reserved' area in case it gets referenced.
-            //
-            purenames = newpurenames;
-            for (i = 0; i < SIZE_HACK; i++)
-            {
-                purenames[i] = NULL;
-            }
-        }
-        purenames = newpurenames + SIZE_HACK;
-        newpurenames = NULL;
+        newsize = mudstate.min_size + delta;
     }
 
     // Grow the db array
@@ -2359,42 +2284,15 @@ void db_grow(dbref newtop)
     }
     else
     {
-        // Creating a brand new struct database. Fill in the 'reserved' area in case it gets referenced.
+        // Creating a brand new struct database. Fill in the 'reserved' area
+        // in case it gets referenced.
         //
         db = newdb;
-        for (i = 0; i < SIZE_HACK; i++)
-        {
-#ifdef MEMORY_BASED
-            db[i].ahead = NULL;
-            db[i].at_count = 0;
-#endif // MEMORY_BASED
-            s_Owner(i, GOD);
-            s_Flags(i, FLAG_WORD1, (TYPE_GARBAGE | GOING));
-            s_Powers(i, 0);
-            s_Powers2(i, 0);
-            s_Location(i, NOTHING);
-            s_Contents(i, NOTHING);
-            s_Exits(i, NOTHING);
-            s_Link(i, NOTHING);
-            s_Next(i, NOTHING);
-            s_Zone(i, NOTHING);
-            s_Parent(i, NOTHING);
-            s_Stack(i, NULL);
-        }
+        initialize_objects(0, SIZE_HACK);
     }
     db = newdb + SIZE_HACK;
     newdb = NULL;
 
-    for (i = mudstate.db_top; i < newtop; i++)
-    {
-#ifndef MEMORY_BASED
-        names[i] = NULL;
-#endif // !MEMORY_BASED
-        if (mudconf.cache_names)
-        {
-            purenames[i] = NULL;
-        }
-    }
     initialize_objects(mudstate.db_top, newtop);
     mudstate.db_top = newtop;
     mudstate.db_size = newsize;

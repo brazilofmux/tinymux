@@ -1,6 +1,6 @@
 // db.h
 //
-// $Id: db.h,v 1.8 2002-07-23 15:51:11 jake Exp $
+// $Id: db.h,v 1.9 2002-09-18 21:26:44 sdennis Exp $
 //
 
 #ifndef __DB_H
@@ -155,16 +155,17 @@ struct object
 
     CLinearTimeDelta cpu_time_used; /* ALL: CPU time eaten */
 
+    char    *purename;
+
 #ifdef MEMORY_BASED
     ATRLIST *ahead;     /* The head of the attribute list. */
     int at_count;       /* How many attributes do we have? */
+#else
+    char    *name;
 #endif // MEMORY_BASED
 };
 
-typedef char *NAME;
-
 extern OBJ *db;
-extern NAME *names;
 
 #define Location(t)     db[t].location
 
