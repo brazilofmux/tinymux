@@ -1,6 +1,6 @@
 // command.cpp -- command parser and support routines.
 //
-// $Id: command.cpp,v 1.55 2002-08-01 18:18:28 sdennis Exp $
+// $Id: command.cpp,v 1.56 2002-08-02 03:03:30 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -888,27 +888,23 @@ BOOL check_access(dbref player, int mask)
  * Idea taken from TinyMUSH3, code from RhostMUSH, ported by Jake Nelson.
  * Hooks processed:  before, after, ignore, permit, fail
  *****************************************************************************/
-BOOL process_hook(dbref executor, dbref caller, dbref enactor, dbref thing, char *s_uselock, ATTR *hk_attr, BOOL save_flg)
+BOOL process_hook(dbref executor, dbref caller, dbref enactor, dbref thing,
+                  char *s_uselock, ATTR *hk_attr, BOOL save_flg)
 {
     BOOL retval = TRUE;
-    if ( hk_attr )
+    if (hk_attr)
     {
         dbref aowner;
         int aflags, x;
         int anum = hk_attr->number;
         char *atext = atr_get(thing, anum, &aowner, &aflags);
-        if ( atext && !(aflags & AF_NOPROG))
+        if (atext[0] && !(aflags & AF_NOPROG))
         {
-            char *savereg[MAX_GLOBAL_REGS];
-            char *pt;
-            if ( save_flg )
+            int preserve_len[MAX_GLOBAL_REGS];
+            char *preserve[MAX_GLOBAL_REGS];
+            if (save_flg)
             {
-                for (x = 0; x < MAX_GLOBAL_REGS; x++)
-                {
-                    savereg[x] = alloc_lbuf("ulocal_reg");
-                    pt = savereg[x];
-                    safe_str(mudstate.global_regs[x],savereg[x],&pt);
-                }
+                save_global_regs("process_hook.save", preserve, preserve_len);
             }
             char *buff, *bufc;
             bufc = buff = alloc_lbuf("process_hook");
@@ -917,24 +913,15 @@ BOOL process_hook(dbref executor, dbref caller, dbref enactor, dbref thing, char
                 (char **)NULL, 0);
             free_lbuf(atext);
             *bufc = '\0';
-            if ( save_flg )
+            if (save_flg)
             {
-                for (x = 0; x < MAX_GLOBAL_REGS; x++)
-                {
-                    pt = mudstate.global_regs[x];
-                    safe_str(savereg[x],mudstate.global_regs[x], &pt);
-                    free_lbuf(savereg[x]);
-                }
+                restore_global_regs("proces_hook.save", preserve, preserve_len);
             }
-
-            if (buff)
-            {
-                retval = (Tiny_atol(buff) > 0);
-                free_lbuf(buff);
-            }
+            retval = (Tiny_atol(buff) > 0);
+            free_lbuf(buff);
         }
     }
-   return retval;
+    return retval;
 }
 
 char *hook_name(char *pCommand, int key)
