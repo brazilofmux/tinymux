@@ -1,6 +1,6 @@
 // object.cpp -- Low-level object manipulation routines.
 //
-// $Id: object.cpp,v 1.13 2004-06-10 15:39:34 sdennis Exp $
+// $Id: object.cpp,v 1.14 2004-06-19 21:49:14 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -20,7 +20,6 @@
              (Next(i) == NOTHING) && (Owner(i) == GOD))
 
 static int check_type;
-extern void fix_all_quotas(void);
 
 /*
  * ---------------------------------------------------------------------------
@@ -1714,10 +1713,6 @@ void do_dbck(dbref executor, dbref caller, dbref enactor, int key)
     }
     purge_going();
     make_freelist();
-    if (mudconf.quotas)
-    {
-        fix_all_quotas();
-    }
     if (  !mudstate.bStandAlone
        && executor != NOTHING
        && !Quiet(executor))
