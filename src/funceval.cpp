@@ -1,6 +1,6 @@
 // funceval.cpp -- MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.87 2002-02-01 06:10:21 sdennis Exp $
+// $Id: funceval.cpp,v 1.88 2002-02-04 09:43:36 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -1839,7 +1839,7 @@ FUNCTION(fun_shuffle)
 
     n = list2arr(words, LBUF_SIZE, fargs[0], sep);
 
-    for (i = 0; i < n; i++)
+    for (i = 0; i < n-1; i++)
     {
         j = RandomINT32(i, n-1);
 
