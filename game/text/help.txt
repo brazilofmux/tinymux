@@ -7680,7 +7680,7 @@ COLUMNS()
   number of characters. As many columns as possible will be fit
   onto the screen. Columns takes an optional delimiter.
 
-  Related Topics:
+  Related Topics: table()
 
 & TABLE()
 TABLE ()
