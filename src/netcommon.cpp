@@ -1,6 +1,6 @@
 // netcommon.cpp
 //
-// $Id: netcommon.cpp,v 1.32 2001-06-30 07:00:15 sdennis Exp $ 
+// $Id: netcommon.cpp,v 1.33 2001-08-24 18:03:14 sdennis Exp $ 
 //
 // This file contains routines used by the networking code that do not
 // depend on the implementation of the networking code.  The network-specific
@@ -1483,7 +1483,7 @@ void do_doing(dbref player, dbref cause, int key, char *arg)
             notify(player, "Set.");
         }
     }
-    else
+    else // if (key == DOING_POLL)
     {
         notify(player, tprintf("Poll: %s", mudstate.doing_hdr));
     }
