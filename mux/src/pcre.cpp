@@ -6844,7 +6844,7 @@ if (extra_data != NULL)
   {
   register unsigned int flags = extra_data->flags;
   if ((flags & PCRE_EXTRA_STUDY_DATA) != 0)
-    study = static_cast<const pcre_study_data*>(extra_data->study_data);
+    study = static_cast<pcre_study_data*>(extra_data->study_data);
   if ((flags & PCRE_EXTRA_MATCH_LIMIT) != 0)
     match_block.match_limit = extra_data->match_limit;
   if ((flags & PCRE_EXTRA_CALLOUT_DATA) != 0)
