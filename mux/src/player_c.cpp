@@ -1,6 +1,6 @@
 // player_c.cpp -- Player cache routines.
 //
-// $Id: player_c.cpp,v 1.3 2003-02-03 06:01:48 sdennis Exp $
+// $Id: player_c.cpp,v 1.4 2003-02-03 15:00:34 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -92,12 +92,12 @@ static void pcache_save(PCACHE *pp)
         return;
     if (pp->cflags & PF_MONEY_CH)
     {
-        Tiny_ltoa(pp->money, tbuf);
+        mux_ltoa(pp->money, tbuf);
         atr_add_raw(pp->player, A_MONEY, tbuf);
     }
     if (pp->cflags & PF_QMAX_CH)
     {
-        Tiny_ltoa(pp->qmax, tbuf);
+        mux_ltoa(pp->qmax, tbuf);
         atr_add_raw(pp->player, A_QUEUEMAX, tbuf);
     }
     pp->cflags &= ~(PF_MONEY_CH | PF_QMAX_CH);
@@ -232,6 +232,6 @@ void s_Pennies(dbref obj, int howfew)
             pp->cflags |= PF_MONEY_CH;
         }
     }
-    Tiny_ltoa(howfew, tbuf);
+    mux_ltoa(howfew, tbuf);
     atr_add_raw(obj, A_MONEY, tbuf);
 }

@@ -1,6 +1,6 @@
 // command.cpp -- command parser and support routines.
 //
-// $Id: command.cpp,v 1.3 2003-01-29 23:48:01 jake Exp $
+// $Id: command.cpp,v 1.4 2003-02-03 15:00:33 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -3026,7 +3026,7 @@ static void list_costs(dbref player)
     }
     if (mudconf.sacfactor == 0)
     {
-        Tiny_ltoa(mudconf.sacadjust, buff);
+        mux_ltoa(mudconf.sacadjust, buff);
     }
     else if (mudconf.sacfactor == 1)
     {

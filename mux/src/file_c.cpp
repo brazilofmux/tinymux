@@ -1,6 +1,6 @@
 // file_c.cpp -- File cache management.
 //
-// $Id: file_c.cpp,v 1.1 2003-01-22 19:58:25 sdennis Exp $
+// $Id: file_c.cpp,v 1.2 2003-02-03 15:00:33 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -240,20 +240,26 @@ void fcache_load(dbref player)
     for (fp = fcache; fp->ppFilename; fp++)
     {
         int i = fcache_read(&fp->fileblock, *fp->ppFilename);
-        if ((player != NOTHING) && !Quiet(player))
+        if (  player != NOTHING
+           && !Quiet(player))
         {
-            Tiny_ltoa(i, sbuf);
+            mux_ltoa(i, sbuf);
             if (fp == fcache)
+            {
                 safe_str("File sizes: ", buff, &bufc);
+            }
             else
+            {
                 safe_str("  ", buff, &bufc);
+            }
             safe_str(fp->desc, buff, &bufc);
             safe_str("...", buff, &bufc);
             safe_str(sbuf, buff, &bufc);
         }
     }
     *bufc = '\0';
-    if ((player != NOTHING) && !Quiet(player))
+    if (  player != NOTHING
+       && !Quiet(player))
     {
         notify(player, buff);
     }

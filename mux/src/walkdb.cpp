@@ -1,6 +1,6 @@
 // walkdb.cpp -- Support for commands that walk the entire db.
 //
-// $Id: walkdb.cpp,v 1.2 2003-02-03 06:01:48 sdennis Exp $
+// $Id: walkdb.cpp,v 1.3 2003-02-03 15:00:34 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -18,7 +18,7 @@ static void bind_and_queue(dbref executor, dbref caller, dbref enactor,
                            char *action, char *argstr, char *cargs[],
                            int ncargs, int number)
 {
-    char *command = replace_tokens(action, argstr, Tiny_ltoa_t(number), NULL);
+    char *command = replace_tokens(action, argstr, mux_ltoa_t(number), NULL);
     CLinearTimeAbsolute lta;
     wait_que(executor, caller, enactor, FALSE, lta, NOTHING, 0, command,
         cargs, ncargs, mudstate.global_regs);
@@ -819,7 +819,7 @@ void search_perform(dbref executor, dbref caller, dbref enactor, SEARCH *parm)
         if (parm->s_rst_eval != NULL)
         {
             buff[0] = '#';
-            Tiny_ltoa(thing, buff+1);
+            mux_ltoa(thing, buff+1);
             char *buff2 = replace_tokens(parm->s_rst_eval, buff, NULL, NULL);
             result = bp = alloc_lbuf("search_perform");
             str = buff2;
@@ -1152,7 +1152,7 @@ void do_apply_marked( dbref executor, dbref caller, dbref enactor, int key,
         if (Marked(i))
         {
             buff[0] = '#';
-            Tiny_ltoa(i, buff+1);
+            mux_ltoa(i, buff+1);
             number++;
             bind_and_queue(executor, caller, enactor, command, buff,
                 cargs, ncargs, number);

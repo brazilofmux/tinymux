@@ -1,6 +1,6 @@
 // stringutil.h -- string utilities.
 //
-// $Id: stringutil.h,v 1.4 2003-02-03 06:01:48 sdennis Exp $
+// $Id: stringutil.h,v 1.5 2003-02-03 15:00:34 sdennis Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -41,8 +41,8 @@ char *Tiny_StrTokParseLEN(TINY_STRTOK_STATE *tts, int *pnLen);
 char *Tiny_StrTokParse(TINY_STRTOK_STATE *tts);
 char *RemoveSetOfCharacters(char *pString, char *pSetToRemove);
 
-int Tiny_ltoa(long val, char *buf);
-char *Tiny_ltoa_t(long val);
+int mux_ltoa(long val, char *buf);
+char *mux_ltoa_t(long val);
 void safe_ltoa(long val, char *buff, char **bufc);
 int Tiny_i64toa(INT64 val, char *buf);
 char *Tiny_i64toa_t(INT64 val);

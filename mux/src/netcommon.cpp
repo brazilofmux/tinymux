@@ -1,6 +1,6 @@
 // netcommon.cpp
 //
-// $Id: netcommon.cpp,v 1.3 2003-02-03 06:01:48 sdennis Exp $
+// $Id: netcommon.cpp,v 1.4 2003-02-03 15:00:34 sdennis Exp $
 //
 // This file contains routines used by the networking code that do not
 // depend on the implementation of the networking code.  The network-specific
@@ -75,9 +75,9 @@ void make_port_ulist(dbref player, char *buff, char **bufc)
         // printf format: printf("%d:%d", d->player, d->descriptor);
         //
         char *p = tmp;
-        p += Tiny_ltoa(d->player, p);
+        p += mux_ltoa(d->player, p);
         *p++ = ':';
-        p += Tiny_ltoa(d->descriptor, p);
+        p += mux_ltoa(d->descriptor, p);
 
         size_t n = p - tmp;
         if (!ItemToList_AddStringLEN(&itl, n, tmp))
@@ -1533,7 +1533,7 @@ static void dump_users(DESC *e, char *match, int key)
     //
     sprintf(buf, "%d Player%slogged in, %d record, %s maximum.\r\n", count,
         (count == 1) ? " " : "s ", mudstate.record_players,
-        (mudconf.max_players == -1) ? "no" : Tiny_ltoa_t(mudconf.max_players));
+        (mudconf.max_players == -1) ? "no" : mux_ltoa_t(mudconf.max_players));
     queue_string(e, buf);
 
     if (  (e->flags & DS_PUEBLOCLIENT)
@@ -2763,7 +2763,7 @@ void put_ConnectionInfoFields
     char *p = pConnInfo;
     for (int i = 0; i < 4; i++)
     {
-        p += Tiny_ltoa(anFields[i], p);
+        p += mux_ltoa(anFields[i], p);
         *p++ = ' ';
     }
     p += Tiny_i64toa(ltaLogout.ReturnSeconds(), p);

@@ -1,6 +1,6 @@
 // db.cpp
 //
-// $Id: db.cpp,v 1.7 2003-02-03 06:01:48 sdennis Exp $
+// $Id: db.cpp,v 1.8 2003-02-03 15:00:33 sdennis Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -2492,7 +2492,7 @@ dbref parse_dbref(const char *s)
 void putref(FILE *f, dbref ref)
 {
     char buf[SBUF_SIZE];
-    int n = Tiny_ltoa(ref, buf);
+    int n = mux_ltoa(ref, buf);
     buf[n] = '\n';
     fwrite(buf, sizeof(char), n+1, f);
 }

@@ -1,6 +1,6 @@
 // stringutil.cpp -- string utilities.
 //
-// $Id: stringutil.cpp,v 1.10 2003-02-03 07:59:57 sdennis Exp $
+// $Id: stringutil.cpp,v 1.11 2003-02-03 15:00:34 sdennis Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -1939,7 +1939,7 @@ const char Digits100[201] =
 061626364656667686960717273747576777879708182838485868788898\
 09192939495969798999";
 
-int Tiny_ltoa(long val, char *buf)
+int mux_ltoa(long val, char *buf)
 {
     char *p = buf;
 
@@ -1993,17 +1993,17 @@ int Tiny_ltoa(long val, char *buf)
     return nLength;
 }
 
-char *Tiny_ltoa_t(long val)
+char *mux_ltoa_t(long val)
 {
     static char buff[12];
-    Tiny_ltoa(val, buff);
+    mux_ltoa(val, buff);
     return buff;
 }
 
 void safe_ltoa(long val, char *buff, char **bufc)
 {
     static char temp[12];
-    int n = Tiny_ltoa(val, temp);
+    int n = mux_ltoa(val, temp);
     safe_copy_buf(temp, n, buff, bufc);
 }
 
@@ -2680,7 +2680,7 @@ char *Tiny_ftoa(double r, BOOL bRounded, int frac)
             q += nSize-1;
         }
         *q++ = 'E';
-        q += Tiny_ltoa(iDecimalPoint-1, q);
+        q += mux_ltoa(iDecimalPoint-1, q);
     }
     else if (iDecimalPoint <= 0)
     {
@@ -3054,7 +3054,7 @@ BOOL ItemToList_AddInteger(ITL *pContext, int i)
     {
         *p++ = pContext->chPrefix;
     }
-    p += Tiny_ltoa(i, p);
+    p += mux_ltoa(i, p);
     size_t nLen = p - smbuf;
     if (nLen > pContext->nBufferAvailable)
     {

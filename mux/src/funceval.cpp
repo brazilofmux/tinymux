@@ -1,6 +1,6 @@
 // funceval.cpp -- MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.7 2003-02-03 06:01:48 sdennis Exp $
+// $Id: funceval.cpp,v 1.8 2003-02-03 15:00:33 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -2193,9 +2193,11 @@ FUNCTION(fun_matchall)
         mudstate.wild_invk_ctr = 0;
         if (quick_wild(fargs[1], r))
         {
-            Tiny_ltoa(wcount, tbuf);
+            mux_ltoa(wcount, tbuf);
             if (old != *bufc)
+            {
                 safe_chr(' ', buff, bufc);
+            }
             safe_str(tbuf, buff, bufc);
         }
         wcount++;

@@ -1,6 +1,6 @@
 // unparse.cpp
 //
-// $Id: unparse.cpp,v 1.2 2003-01-23 15:48:29 sdennis Exp $
+// $Id: unparse.cpp,v 1.3 2003-02-03 15:00:34 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -150,7 +150,7 @@ static void unparse_boolexp1(dbref player, BOOLEXP *b, char outer_type, int form
     
                     buff = alloc_sbuf("unparse_boolexp1");
                     buff[0] = '#';
-                    Tiny_ltoa(b->thing, buff+1);
+                    mux_ltoa(b->thing, buff+1);
                     safe_str(buff, boolexp_buf, &buftop);
                     free_sbuf(buff);
                 }
@@ -173,7 +173,7 @@ static void unparse_boolexp1(dbref player, BOOLEXP *b, char outer_type, int form
     
                     buff = alloc_sbuf("unparse_boolexp1");
                     buff[0] = '#';
-                    Tiny_ltoa(b->thing, buff+1);
+                    mux_ltoa(b->thing, buff+1);
                     safe_str(buff, boolexp_buf, &buftop);
                     free_sbuf(buff);
                 }
@@ -201,7 +201,7 @@ static void unparse_boolexp1(dbref player, BOOLEXP *b, char outer_type, int form
         else if (b->thing > 0)
         {
             tbuf = alloc_sbuf("unparse_boolexp1.atr_num");
-            Tiny_ltoa(b->thing, tbuf);
+            mux_ltoa(b->thing, tbuf);
             safe_str(tbuf, boolexp_buf, &buftop);
             safe_chr(sep_ch, boolexp_buf, &buftop);
             safe_str((char *)b->sub1, boolexp_buf, &buftop);

@@ -1,6 +1,6 @@
 // quota.cpp -- Quota Management Commands.
 //
-// $Id: quota.cpp,v 1.2 2003-02-03 06:01:48 sdennis Exp $
+// $Id: quota.cpp,v 1.3 2003-02-03 15:00:34 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -71,14 +71,14 @@ static void mung_quotas(dbref player, int key, int value)
         {
             buff = atr_get(player, A_RQUOTA, &aowner, &aflags);
             aq = mux_atol(buff) + xq;
-            atr_add_raw(player, A_QUOTA, Tiny_ltoa_t(aq));
+            atr_add_raw(player, A_QUOTA, mux_ltoa_t(aq));
             free_lbuf(buff);
         }
         else
         {
             buff = atr_get(player, A_QUOTA, &aowner, &aflags);
             rq = mux_atol(buff) - xq;
-            atr_add_raw(player, A_RQUOTA, Tiny_ltoa_t(rq));
+            atr_add_raw(player, A_RQUOTA, mux_ltoa_t(rq));
             free_lbuf(buff);
         }
     }
@@ -119,8 +119,8 @@ static void mung_quotas(dbref player, int key, int value)
 
         // Set both abs and relative quota.
         //
-        atr_add_raw(player, A_QUOTA, Tiny_ltoa_t(aq));
-        atr_add_raw(player, A_RQUOTA, Tiny_ltoa_t(rq));
+        atr_add_raw(player, A_QUOTA, mux_ltoa_t(aq));
+        atr_add_raw(player, A_RQUOTA, mux_ltoa_t(rq));
     }
 }
 

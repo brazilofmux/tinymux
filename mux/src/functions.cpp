@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.11 2003-02-03 06:01:48 sdennis Exp $
+// $Id: functions.cpp,v 1.12 2003-02-03 15:00:34 sdennis Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -641,7 +641,7 @@ static void fval_buf(char *buff, double result)
            &&  rIntegerPart <= LONG_MAX)
         {
             long i = (long)rIntegerPart;
-            Tiny_ltoa(i, buff);
+            mux_ltoa(i, buff);
         }
         else
         {
@@ -6188,7 +6188,7 @@ FUNCTION(fun_parse)
         objstring = split_token(&cp, sep);
         mudstate.itext[mudstate.in_loop-1] = objstring;
         mudstate.inum[mudstate.in_loop-1]  = number;
-        char *buff2 = replace_tokens(fargs[1], objstring, Tiny_ltoa_t(number), NULL);
+        char *buff2 = replace_tokens(fargs[1], objstring, mux_ltoa_t(number), NULL);
         str = buff2;
         TinyExec(buff, bufc, executor, caller, enactor,
             EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, cargs, ncargs);
@@ -6239,7 +6239,7 @@ FUNCTION(fun_iter)
         char *objstring = split_token(&cp, sep);
         mudstate.itext[mudstate.in_loop-1] = objstring;
         mudstate.inum[mudstate.in_loop-1]  = number;
-        char *buff2 = replace_tokens(fargs[1], objstring, Tiny_ltoa_t(number),
+        char *buff2 = replace_tokens(fargs[1], objstring, mux_ltoa_t(number),
             NULL);
         str = buff2;
         TinyExec(buff, bufc, executor, caller, enactor,
@@ -6316,7 +6316,7 @@ FUNCTION(fun_list)
         objstring = split_token(&cp, sep);
         mudstate.itext[mudstate.in_loop-1] = objstring;
         mudstate.inum[mudstate.in_loop-1]  = number;
-        char *buff2 = replace_tokens(fargs[1], objstring, Tiny_ltoa_t(number),
+        char *buff2 = replace_tokens(fargs[1], objstring, mux_ltoa_t(number),
             NULL);
         dp = result = alloc_lbuf("fun_list.2");
         str = buff2;
@@ -7997,7 +7997,7 @@ void wrap_send_line (char *buff, char **bufc, char *pLineStart, char cJust, int 
     }
     char *jargs[2];
     jargs[0] = pLineStart;
-    jargs[1] = Tiny_ltoa_t(nWidth);
+    jargs[1] = mux_ltoa_t(nWidth);
     centerjustcombo(key, buff, bufc, jargs, 2);
     safe_str(pRight, buff, bufc);
     if (!bEnd)
@@ -8275,7 +8275,7 @@ void GeneralTimeConversion
                 {
                     *p++ = ' ';
                 }
-                p += Tiny_ltoa(iValue, p);
+                p += mux_ltoa(iValue, p);
                 if (bNames)
                 {
                     // Use the names with the correct pluralization.

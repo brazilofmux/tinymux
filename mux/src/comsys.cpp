@@ -1,6 +1,6 @@
 // comsys.cpp
 //
-// $Id: comsys.cpp,v 1.4 2003-02-03 06:01:48 sdennis Exp $
+// $Id: comsys.cpp,v 1.5 2003-02-03 15:00:33 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -1065,7 +1065,7 @@ void SendChannelMessage
             if (logmax > MAX_RECALL_REQUEST)
             {
                 logmax = MAX_RECALL_REQUEST;
-                atr_add(ch->chan_obj, attr->number, Tiny_ltoa_t(logmax), GOD,
+                atr_add(ch->chan_obj, attr->number, mux_ltoa_t(logmax), GOD,
                     AF_CONST|AF_NOPROG|AF_NOPARSE);
             }
             int atr = mkattr(tprintf("HISTORY_%d", iMod(ch->num_messages, logmax)));
@@ -1352,13 +1352,15 @@ BOOL do_chanlog(dbref player, char *channel, char *arg)
         }
         free_lbuf(oldvalue);
     }
-    atr_add(ch->chan_obj, atr, Tiny_ltoa_t(value), GOD, AF_CONST|AF_NOPROG|AF_NOPARSE);
+    atr_add(ch->chan_obj, atr, mux_ltoa_t(value), GOD,
+        AF_CONST|AF_NOPROG|AF_NOPARSE);
     return TRUE;
 }
 
 struct channel *select_channel(char *channel)
 {
-    struct channel *cp = (struct channel *)hashfindLEN(channel, strlen(channel), &mudstate.channel_htab);
+    struct channel *cp = (struct channel *)hashfindLEN(channel,
+        strlen(channel), &mudstate.channel_htab);
     if (!cp)
     {
         return NULL;

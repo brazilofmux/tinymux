@@ -1,6 +1,6 @@
 // create.cpp -- Commands that create new objects.
 //
-// $Id: create.cpp,v 1.2 2003-02-03 06:01:48 sdennis Exp $
+// $Id: create.cpp,v 1.3 2003-02-03 15:00:33 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -155,7 +155,7 @@ void do_open(dbref executor, dbref caller, dbref enactor, int key,
         if (Good_obj(destnum) || destnum == HOME)
         {
             char buff[12];
-            Tiny_ltoa(loc, buff);
+            mux_ltoa(loc, buff);
             open_exit(executor, destnum, links[1], buff);
         }
     }
@@ -467,14 +467,14 @@ void do_dig(dbref executor, dbref caller, dbref enactor, int key, char *name,
        && args[0]
        && *args[0])
     {
-        Tiny_ltoa(room, buff);
+        mux_ltoa(room, buff);
         open_exit(executor, Location(executor), args[0], buff);
     }
     if (  nargs >= 2
        && args[1]
        && *args[1])
     {
-        Tiny_ltoa(Location(executor), buff);
+        mux_ltoa(Location(executor), buff);
         open_exit(executor, room, args[1], buff);
     }
     free_sbuf(buff);
@@ -921,7 +921,7 @@ void do_destroy(dbref executor, dbref caller, dbref enactor, int key, char *what
             break;
 
         case TYPE_PLAYER:
-            atr_add_raw(thing, A_DESTROYER, Tiny_ltoa_t(executor));
+            atr_add_raw(thing, A_DESTROYER, mux_ltoa_t(executor));
             if (!atr_get_raw(thing, A_DESTROYER))
             {
                 // Not a likely situation, but the player has too many

@@ -1,6 +1,6 @@
 // cque.cpp -- commands and functions for manipulating the command queue.
 //
-// $Id: cque.cpp,v 1.3 2003-02-03 06:01:48 sdennis Exp $
+// $Id: cque.cpp,v 1.4 2003-02-03 15:00:33 sdennis Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -101,7 +101,7 @@ static int add_to(dbref executor, int am, int attrnum)
     *buff = '\0';
     if (num)
     {
-        nlen = Tiny_ltoa(num, buff);
+        nlen = mux_ltoa(num, buff);
     }
     atr_add_raw_LEN(executor, attrnum, buff, nlen);
     return num;

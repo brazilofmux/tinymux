@@ -1,6 +1,6 @@
 // mail.cpp
 //
-// $Id: mail.cpp,v 1.3 2003-02-03 06:01:48 sdennis Exp $
+// $Id: mail.cpp,v 1.4 2003-02-03 15:00:34 sdennis Exp $
 //
 // This code was taken from Kalkin's DarkZone code, which was
 // originally taken from PennMUSH 1.50 p10, and has been heavily modified
@@ -282,7 +282,7 @@ void set_player_folder(dbref player, int fnum)
     // Set a player's folder to fnum.
     //
     char *tbuf1 = alloc_lbuf("set_player_folder");
-    Tiny_ltoa(fnum, tbuf1);
+    mux_ltoa(fnum, tbuf1);
     ATTR *a = atr_num(A_MAILCURF);
     if (a)
     {
@@ -312,7 +312,7 @@ void add_folder_name(dbref player, int fld, char *name)
     //
     char *aNew = alloc_lbuf("add_folder_name.new");
     char *q = aNew;
-    q += Tiny_ltoa(fld, q);
+    q += mux_ltoa(fld, q);
     *q++ = ':';
     char *p = name;
     while (*p)
@@ -321,7 +321,7 @@ void add_folder_name(dbref player, int fld, char *name)
         p++;
     }
     *q++ = ':';
-    q += Tiny_ltoa(fld, q);
+    q += mux_ltoa(fld, q);
     *q = '\0';
     size_t nNew = q - aNew;
 
@@ -331,7 +331,7 @@ void add_folder_name(dbref player, int fld, char *name)
         //
         char *aPattern = alloc_lbuf("add_folder_name.pat");
         q = aPattern;
-        q += Tiny_ltoa(fld, q);
+        q += mux_ltoa(fld, q);
         *q++ = ':';
         *q = '\0';
         size_t nPattern = q - aPattern;
@@ -424,7 +424,7 @@ static char *get_folder_name(dbref player, int fld)
     {
         char *aPattern = alloc_lbuf("get_folder_name");
         p = aPattern;
-        p += Tiny_ltoa(fld, p);
+        p += mux_ltoa(fld, p);
         *p++ = ':';
         *p = '\0';
         size_t nPattern = p - aPattern;
@@ -1820,7 +1820,7 @@ void do_mail_fwd(dbref player, char *msg, char *tolist)
     {
         iFlag |= mux_atol(pValue);
     }
-    atr_add_raw(player, A_MAILFLAGS, Tiny_ltoa_t(iFlag));
+    atr_add_raw(player, A_MAILFLAGS, mux_ltoa_t(iFlag));
 }
 
 void do_mail_reply(dbref player, char *msg, BOOL all, int key)
@@ -1914,7 +1914,7 @@ void do_mail_reply(dbref player, char *msg, BOOL all, int key)
     {
         iFlag |= mux_atol(pValue);
     }
-    atr_add_raw(player, A_MAILFLAGS, Tiny_ltoa_t(iFlag));
+    atr_add_raw(player, A_MAILFLAGS, mux_ltoa_t(iFlag));
 
     free_lbuf(tolist);
 }

@@ -1,6 +1,6 @@
 // look.cpp -- Commands which look at things.
 //
-// $Id: look.cpp,v 1.4 2003-02-03 06:01:48 sdennis Exp $
+// $Id: look.cpp,v 1.5 2003-02-03 15:00:34 sdennis Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -721,7 +721,7 @@ static void look_contents(dbref player, dbref loc, const char *contents_name, in
                         case CONTENTS_REMOTE:
 
                             remote_num[0] = '#';
-                            Tiny_ltoa(thing, remote_num+1);
+                            mux_ltoa(thing, remote_num+1);
                             safe_str(remote_num, html_buff, &html_cp);
                             break;
 

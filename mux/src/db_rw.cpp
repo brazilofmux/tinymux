@@ -1,6 +1,6 @@
 // db_rw.cpp
 //
-// $Id: db_rw.cpp,v 1.2 2003-01-24 07:15:17 sdennis Exp $
+// $Id: db_rw.cpp,v 1.3 2003-02-03 15:00:33 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -887,7 +887,7 @@ static BOOL db_write_object(FILE *f, dbref i, int db_format, int flags)
             // Format is: ">%d\n", j
             //
             const char *p = atr_get_raw(i, j);
-            int n = Tiny_ltoa(j, buf+1) + 1;
+            int n = mux_ltoa(j, buf+1) + 1;
             buf[n++] = '\n';
             fwrite(buf, sizeof(char), n, f);
             putstring(f, p);
@@ -943,10 +943,10 @@ dbref db_write(FILE *f, int format, int version)
             // Format is: "+A%d\n\"%d:%s\"\n", vp->number, vp->flags, vp->name
             //
             char *pBuffer = Buffer+2;
-            pBuffer += Tiny_ltoa(vp->number, pBuffer);
+            pBuffer += mux_ltoa(vp->number, pBuffer);
             *pBuffer++ = '\n';
             *pBuffer++ = '"';
-            pBuffer += Tiny_ltoa(vp->flags, pBuffer);
+            pBuffer += mux_ltoa(vp->flags, pBuffer);
             *pBuffer++ = ':';
             int nNameLength = strlen(vp->name);
             memcpy(pBuffer, vp->name, nNameLength);
@@ -977,7 +977,7 @@ dbref db_write(FILE *f, int format, int version)
         {
             // Format is: "!%d\n", i
             //
-            int n = Tiny_ltoa(i, buf+1) + 1;
+            int n = mux_ltoa(i, buf+1) + 1;
             buf[n++] = '\n';
             fwrite(buf, sizeof(char), n, f);
             db_write_object(f, i, format, flags);

@@ -1,6 +1,6 @@
 // bsd.cpp
 //
-// $Id: bsd.cpp,v 1.6 2003-02-02 18:33:48 sdennis Exp $
+// $Id: bsd.cpp,v 1.7 2003-02-03 15:00:33 sdennis Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -3469,7 +3469,7 @@ void ProcessWindowsTCP(DWORD dwTimeout)
             //
             STARTLOG(LOG_NET | LOG_LOGIN, "NET", "CONN");
             Log.tinyprintf("[%s/%s] Connection opened (remote port %d)",
-                bInvalidSocket ? "UNKNOWN" : Tiny_ltoa_t(d->descriptor), buff,
+                bInvalidSocket ? "UNKNOWN" : mux_ltoa_t(d->descriptor), buff,
                 ntohs(d->address.sin_port));
             ENDLOG;
 

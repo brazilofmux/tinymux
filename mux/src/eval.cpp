@@ -1,6 +1,6 @@
 // eval.cpp -- Command evaluation and cracking.
 //
-// $Id: eval.cpp,v 1.3 2003-01-31 07:12:03 sdennis Exp $
+// $Id: eval.cpp,v 1.4 2003-02-03 15:00:33 sdennis Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -1482,7 +1482,7 @@ void TinyExec( char *buff, char **bufc, dbref executor, dbref caller,
                         // Enactor DB number.
                         //
                         TinyExec_scratch[0] = '#';
-                        i = Tiny_ltoa(enactor, TinyExec_scratch+1);
+                        i = mux_ltoa(enactor, TinyExec_scratch+1);
                         safe_copy_buf(TinyExec_scratch, i+1, buff, bufc);
                         nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
                     }
@@ -1495,7 +1495,7 @@ void TinyExec( char *buff, char **bufc, dbref executor, dbref caller,
                         // Executor DB number.
                         //
                         TinyExec_scratch[0] = '#';
-                        i = Tiny_ltoa(executor, TinyExec_scratch+1);
+                        i = mux_ltoa(executor, TinyExec_scratch+1);
                         safe_copy_buf(TinyExec_scratch, i+1, buff, bufc);
                         nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
                     }
@@ -1587,7 +1587,7 @@ void TinyExec( char *buff, char **bufc, dbref executor, dbref caller,
                         if (!(eval & EV_NO_LOCATION))
                         {
                             TinyExec_scratch[0] = '#';
-                            i = Tiny_ltoa(where_is(enactor), TinyExec_scratch+1);
+                            i = mux_ltoa(where_is(enactor), TinyExec_scratch+1);
                             safe_copy_buf(TinyExec_scratch, i+1, buff, bufc);
                             nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
                         }
@@ -1801,7 +1801,7 @@ void TinyExec( char *buff, char **bufc, dbref executor, dbref caller,
                             // Caller DB number.
                             //
                             TinyExec_scratch[0] = '#';
-                            i = Tiny_ltoa(caller, TinyExec_scratch+1);
+                            i = mux_ltoa(caller, TinyExec_scratch+1);
                             safe_copy_buf(TinyExec_scratch, i+1, buff, bufc);
                             nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
                         }

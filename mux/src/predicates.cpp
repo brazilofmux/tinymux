@@ -1,6 +1,6 @@
 // predicates.cpp
 //
-// $Id: predicates.cpp,v 1.8 2003-02-03 06:01:48 sdennis Exp $
+// $Id: predicates.cpp,v 1.9 2003-02-03 15:00:34 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -199,7 +199,7 @@ static BOOL pay_quota(dbref who, int cost)
     // Dock the quota.
     //
     char buf[20];
-    Tiny_ltoa(quota, buf);
+    mux_ltoa(quota, buf);
     atr_add_raw(Owner(who), A_RQUOTA, buf);
 
     return TRUE;
@@ -271,7 +271,7 @@ void add_quota(dbref who, int payment)
     char buf[20];
 
     char *quota = atr_get(who, A_RQUOTA, &aowner, &aflags);
-    Tiny_ltoa(mux_atol(quota) + payment, buf);
+    mux_ltoa(mux_atol(quota) + payment, buf);
     free_lbuf(quota);
     atr_add_raw(who, A_RQUOTA, buf);
 }
@@ -2175,7 +2175,7 @@ void did_it(dbref player, dbref thing, int what, const char *def, int owhat,
                 if (num > 0)
                 {
                     buff = alloc_sbuf("did_it.charges");
-                    Tiny_ltoa(num-1, buff);
+                    mux_ltoa(num-1, buff);
                     atr_add_raw(thing, A_CHARGES, buff);
                     free_sbuf(buff);
                 }

@@ -1,6 +1,6 @@
 // object.cpp -- Low-level object manipulation routines.
 //
-// $Id: object.cpp,v 1.4 2003-02-03 06:01:48 sdennis Exp $
+// $Id: object.cpp,v 1.5 2003-02-03 15:00:34 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -381,7 +381,7 @@ dbref create_obj(dbref player, int objtype, const char *name, int cost)
         atr_add_raw(obj, A_LAST, buff);
 
         buff = alloc_sbuf("create_obj.quota");
-        Tiny_ltoa(quota, buff);
+        mux_ltoa(quota, buff);
         atr_add_raw(obj, A_QUOTA, buff);
         atr_add_raw(obj, A_RQUOTA, buff);
         add_player_name(obj, Name(obj));
