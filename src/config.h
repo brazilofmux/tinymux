@@ -1,6 +1,7 @@
-/* config.h */
-/* $Id: config.h,v 1.13 2001-02-12 07:05:48 sdennis Exp $ */
-
+// config.h
+//
+// $Id: config.h,v 1.14 2001-06-28 07:48:52 sdennis Exp $
+//
 #ifndef CONFIG_H
 #define CONFIG_H
 
@@ -9,7 +10,7 @@
 #define CONF_FILE "netmux.conf" /* Default config file */
 
 #define SIDE_EFFECT_FUNCTIONS   /* Those neat funcs that should be commands */
-                 
+
 #define PLAYER_NAME_LIMIT   22  /* Max length for player names */
 #define NUM_ENV_VARS        10  /* Number of env vars (%0 et al) */
 #define MAX_ARG             100 /* max # args from command processor */
@@ -35,9 +36,9 @@
 #else
 #define OUTPUT_FLAGS    (MANDFLAGS|OFLAGS1|OFLAGS2)
                         /* format for dumps */
-#endif /* MEMORY_BASED */
+#endif
 
-#define UNLOAD_VERSION  1           /* verison for export */
+#define UNLOAD_VERSION  1           /* version for export */
 #define UNLOAD_OUTFLAGS (MANDFLAGS)     /* format for export */
 
 /* magic lock cookies */
@@ -93,7 +94,7 @@ typedef unsigned __int64 UINT64;
 #define popen _popen
 #define pclose _pclose
 
-#else // WIN32
+#else
 
 #define DCL_CDECL
 #define DCL_INLINE inline
@@ -119,7 +120,7 @@ typedef int SOCKET;
 #define INVALID_SOCKET (-1)
 #define SD_BOTH (2)
 
-#endif // WIN32
+#endif
 
 // Find the minimum-sized integer type that will hold 32-bits.
 // Promote to 64-bits if necessary.
@@ -185,4 +186,4 @@ extern BOOL OutOfMemory(const char *SourceFile, unsigned int LineNo);
 #define getrusage(x,p)   syscall(SYS_GETRUSAGE,x,p)
 #endif
 
-#endif // CONFIG_H
+#endif
