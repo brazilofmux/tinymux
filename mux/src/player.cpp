@@ -1,6 +1,6 @@
 // player.cpp
 //
-// $Id: player.cpp,v 1.24 2004-07-08 19:24:51 sdennis Exp $
+// $Id: player.cpp,v 1.25 2004-07-19 21:33:54 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -206,8 +206,8 @@ const char Base64Table[65] =
 
 void EncodeBase64(size_t nIn, const char *pIn, char *pOut)
 {
-    int nTriples  = nIn/3;
-    int nLeftover = nIn%3;
+    size_t nTriples  = nIn/3;
+    size_t nLeftover = nIn%3;
     UINT32 stage;
 
     const UINT8 *p = (const UINT8 *)pIn;

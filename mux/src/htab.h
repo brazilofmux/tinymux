@@ -1,6 +1,6 @@
 // htab.h - Structures and declarations needed for table hashing.
 //
-// $Id: htab.h,v 1.6 2004-07-09 15:16:00 sdennis Exp $
+// $Id: htab.h,v 1.7 2004-07-19 21:33:54 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -42,9 +42,9 @@ struct bque
 extern void hashreset(CHashTable *);
 extern void *hashfindLEN(const void *Str, size_t nStr, CHashTable *htab);
 extern int  hashaddLEN(const void *Str, size_t nStr, void *hashdata, CHashTable *htab);
-extern void hashdeleteLEN(const void *, int, CHashTable *);
+extern void hashdeleteLEN(const void *Str, size_t nStr, CHashTable *htab);
 extern void hashflush(CHashTable *);
-extern bool hashreplLEN(const void *, int, void *, CHashTable *);
+extern bool hashreplLEN(const void *Str, size_t nStr, void *hashdata, CHashTable *htab);
 extern void hashreplall(const void *, void *, CHashTable *);
 extern void *hash_nextentry(CHashTable *htab);
 extern void *hash_firstentry(CHashTable *htab);

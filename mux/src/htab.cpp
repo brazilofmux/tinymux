@@ -1,6 +1,6 @@
 // htab.cpp -- Table hashing routines.
 //
-// $Id: htab.cpp,v 1.14 2004-07-09 15:16:00 sdennis Exp $
+// $Id: htab.cpp,v 1.15 2004-07-19 21:33:54 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -109,7 +109,7 @@ int hashaddLEN(const void *str, size_t nStr, void *hashdata, CHashTable *htab)
  * * hashdelete: Remove an entry from a hash table.
  */
 
-void hashdeleteLEN(const void *str, int nStr, CHashTable *htab)
+void hashdeleteLEN(const void *str, size_t nStr, CHashTable *htab)
 {
     if (  str == NULL
        || nStr <= 0)
@@ -124,7 +124,7 @@ void hashdeleteLEN(const void *str, int nStr, CHashTable *htab)
     {
         HP_HEAPLENGTH nRecord;
         htab->Copy(iDir, &nRecord, &htab_rec);
-        int nTarget = nRecord - sizeof(int *);
+        size_t nTarget = nRecord - sizeof(int *);
 
         if (  nTarget == nStr
            && memcmp(str, htab_rec.aTarget, nStr) == 0)
@@ -150,7 +150,7 @@ void hashflush(CHashTable *htab)
  * * hashreplLEN: replace the data part of a hash entry.
  */
 
-bool hashreplLEN(const void *str, int nStr, void *hashdata, CHashTable *htab)
+bool hashreplLEN(const void *str, size_t nStr, void *hashdata, CHashTable *htab)
 {
     if (  str == NULL
        || nStr <= 0)
@@ -165,7 +165,7 @@ bool hashreplLEN(const void *str, int nStr, void *hashdata, CHashTable *htab)
     {
         HP_HEAPLENGTH nRecord;
         htab->Copy(iDir, &nRecord, &htab_rec);
-        int nTarget = nRecord - sizeof(int *);
+        size_t nTarget = nRecord - sizeof(int *);
 
         if (  nTarget == nStr
            && memcmp(str, htab_rec.aTarget, nStr) == 0)
