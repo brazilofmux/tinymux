@@ -1,6 +1,6 @@
 // funceval.cpp -- MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.30 2002-07-14 00:23:39 jake Exp $
+// $Id: funceval.cpp,v 1.31 2002-07-17 03:19:19 jake Exp $
 //
 
 #include "copyright.h"
@@ -3718,7 +3718,7 @@ FUNCTION(fun_lrooms)
     BOOL B = TRUE;
     if (nfargs == 3)
     {
-        B = Tiny_atol(fargs[2]) ? TRUE : FALSE;
+        B = xlate(fargs[2]);
     }
 
     CBitField bfReport(mudstate.db_top-1);
