@@ -1,6 +1,6 @@
 // mail.cpp
 //
-// $Id: mail.cpp,v 1.9 2002-07-08 23:43:04 jake Exp $
+// $Id: mail.cpp,v 1.10 2002-07-08 23:45:37 jake Exp $
 //
 // This code was taken from Kalkin's DarkZone code, which was
 // originally taken from PennMUSH 1.50 p10, and has been heavily modified
@@ -633,7 +633,7 @@ void do_mail_retract(dbref player, char *name, char *msglist)
 
 void do_mail_review(dbref player, char *name, char *msglist)
 {
-    target = lookup_player(player, name, 1);
+    dbref target = lookup_player(player, name, 1);
     if (target == NOTHING)
     {
         notify(player, "MAIL: No such player.");
@@ -643,7 +643,6 @@ void do_mail_review(dbref player, char *name, char *msglist)
     struct mail *mp;
     struct mail_selector ms;
     int i = 0, j = 0;
-    dbref target;
     char *msg, *status, *bp, *str;
     int iRealVisibleWidth;
     char szSubjectBuffer[MBUF_SIZE];
