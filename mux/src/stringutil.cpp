@@ -1,6 +1,6 @@
 // stringutil.cpp -- string utilities.
 //
-// $Id: stringutil.cpp,v 1.34 2003-02-04 22:21:20 sdennis Exp $
+// $Id: stringutil.cpp,v 1.35 2003-02-04 22:35:51 sdennis Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -83,7 +83,7 @@ const char mux_isalpha[256] =
     1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 0   // F
 };
 
-const char Tiny_IsAlphaNumeric[256] =
+const char mux_isalnum[256] =
 {
 //  0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F
 //
@@ -1606,11 +1606,11 @@ const char *string_match(const char *src, const char *sub)
 
             // else scan to beginning of next word
             //
-            while (Tiny_IsAlphaNumeric[(unsigned char)*src])
+            while (mux_isalnum[(unsigned char)*src])
             {
                 src++;
             }
-            while (*src && !Tiny_IsAlphaNumeric[(unsigned char)*src])
+            while (*src && !mux_isalnum[(unsigned char)*src])
             {
                 src++;
             }

@@ -1,6 +1,6 @@
 // conf.cpp -- Set up configuration information and static data.
 //
-// $Id: conf.cpp,v 1.10 2003-02-04 00:07:28 sdennis Exp $
+// $Id: conf.cpp,v 1.11 2003-02-04 22:35:51 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -533,7 +533,7 @@ CF_HAND(cf_string)
         size_t nLen = 0;
         while (*q && nLen < SBUF_SIZE)
         {
-            if (Tiny_IsAlphaNumeric[(unsigned char)*q])
+            if (mux_isalnum[(unsigned char)*q])
             {
                 *p++ = *q;
                 nLen++;
