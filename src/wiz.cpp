@@ -1,6 +1,6 @@
 // wiz.c -- Wizard-only commands
 //
-// $Id: wiz.cpp,v 1.9 2000-11-01 09:12:29 sdennis Exp $
+// $Id: wiz.cpp,v 1.10 2000-11-04 08:54:01 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -224,8 +224,8 @@ void do_force( dbref player, dbref cause, int key, char *what, char *command,
     {
         // Force victim to do command.
         //
-        CLinearTimeDelta ltd;
-        wait_que(victim, player, FALSE, ltd, NOTHING, 0, command,
+        CLinearTimeAbsolute lta;
+        wait_que(victim, player, FALSE, lta, NOTHING, 0, command,
             args, nargs, mudstate.global_regs);
     }
 }

@@ -1,6 +1,6 @@
 // cque.cpp -- commands and functions for manipulating the command queue.
 //
-// $Id: cque.cpp,v 1.15 2000-11-01 09:12:31 sdennis Exp $
+// $Id: cque.cpp,v 1.16 2000-11-04 08:54:02 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -694,7 +694,7 @@ void wait_que
     dbref player,
     dbref cause,
     BOOL bTimed,
-    CLinearTimeDelta &ltdWait,
+    CLinearTimeAbsolute &ltaWhen,
     dbref sem,
     int   attr,
     char *command,
@@ -727,8 +727,7 @@ void wait_que
     tmp->IsTimed = bTimed;
     if (bTimed)
     {
-        tmp->waittime.GetUTC();
-        tmp->waittime += ltdWait;
+        tmp->waittime = ltaWhen;
     }
 
     tmp->sem = sem;
@@ -778,14 +777,24 @@ void do_wait
     int ncargs
 )
 {
-    CLinearTimeDelta ltdHowLong;
+    CLinearTimeAbsolute ltaWhen;
+    CLinearTimeDelta    ltd;
 
     // If arg1 is all numeric, do simple (non-sem) timed wait.
     //
     if (is_number(event))
     {
-        ltdHowLong.SetSecondsString(event);
-        wait_que(player, cause, TRUE, ltdHowLong, NOTHING, 0, cmd,
+        if (key & WAIT_UNTIL)
+        {
+            ltaWhen.SetSecondsString(event);
+        }
+        else
+        {
+            ltaWhen.GetUTC();
+            ltd.SetSecondsString(event);
+            ltaWhen += ltd;
+        }
+        wait_que(player, cause, TRUE, ltaWhen, NOTHING, 0, cmd,
             cargs, ncargs, mudstate.global_regs);
         return;
     }
@@ -815,7 +824,16 @@ void do_wait
         {
             if (is_number(event))
             {
-                ltdHowLong.SetSecondsString(event);
+                if (key & WAIT_UNTIL)
+                {
+                    ltaWhen.SetSecondsString(event);
+                }
+                else
+                {
+                    ltaWhen.GetUTC();
+                    ltd.SetSecondsString(event);
+                    ltaWhen += ltd;
+                }
                 bTimed = TRUE;
             }
             else
@@ -850,7 +868,7 @@ void do_wait
             thing = NOTHING;
             bTimed = FALSE;
         }
-        wait_que(player, cause, bTimed, ltdHowLong, thing, attr,
+        wait_que(player, cause, bTimed, ltaWhen, thing, attr,
             cmd, cargs, ncargs, mudstate.global_regs);
     }
 }

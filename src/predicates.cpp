@@ -1,6 +1,6 @@
 // predicates.cpp
 //
-// $Id: predicates.cpp,v 1.23 2000-11-01 09:12:29 sdennis Exp $
+// $Id: predicates.cpp,v 1.24 2000-11-04 08:54:01 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -677,15 +677,16 @@ void do_switch(dbref player, dbref cause, int key, char *expr, char *args[], int
 
     any = 0;
     buff = bp = alloc_lbuf("do_switch");
-    CLinearTimeDelta ltd;
-    for (a = 0; (a < (nargs - 1)) && args[a] && args[a + 1]; a += 2) {
+    CLinearTimeAbsolute lta;
+    for (a = 0; (a < (nargs - 1)) && args[a] && args[a + 1]; a += 2)
+    {
         bp = buff;
         str = args[a];
         TinyExec(buff, &bp, 0, player, cause, EV_FCHECK | EV_EVAL | EV_TOP, &str, cargs, ncargs);
         *bp = '\0';
         if (wild_match(buff, expr))
         {
-            wait_que(player, cause, FALSE, ltd, NOTHING, 0,
+            wait_que(player, cause, FALSE, lta, NOTHING, 0,
                 args[a+1], cargs, ncargs, mudstate.global_regs);
             if (key == SWITCH_ONE)
             {
@@ -698,8 +699,8 @@ void do_switch(dbref player, dbref cause, int key, char *expr, char *args[], int
     free_lbuf(buff);
     if ((a < nargs) && !any && args[a])
     {
-        wait_que(player, cause, FALSE, ltd, NOTHING, 0, args[a], cargs, ncargs,
-             mudstate.global_regs);
+        wait_que(player, cause, FALSE, lta, NOTHING, 0, args[a],
+            cargs, ncargs, mudstate.global_regs);
     }
 }
 
@@ -988,8 +989,8 @@ void handle_prog(DESC *d, char *message)
         return;
     }
     cmd = atr_get(d->player, A_PROGCMD, &aowner, &aflags);
-    CLinearTimeDelta ltd;
-    wait_que(d->program_data->wait_cause, d->player, FALSE, ltd,
+    CLinearTimeAbsolute lta;
+    wait_que(d->program_data->wait_cause, d->player, FALSE, lta,
         NOTHING, 0, cmd, (char **)&message, 1,
         (char **)d->program_data->wait_regs);
 
@@ -1882,8 +1883,8 @@ void did_it(dbref player, dbref thing, int what, const char *def, int owhat, con
                 }
             }
             free_lbuf(charges);
-            CLinearTimeDelta ltd;
-            wait_que(thing, player, FALSE, ltd, NOTHING, 0, act,
+            CLinearTimeAbsolute lta;
+            wait_que(thing, player, FALSE, lta, NOTHING, 0, act,
                 args, nargs, mudstate.global_regs);
         }
         free_lbuf(act);

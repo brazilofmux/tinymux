@@ -1,6 +1,6 @@
 // game.cpp
 //
-// $Id: game.cpp,v 1.24 2000-11-04 05:29:31 sdennis Exp $
+// $Id: game.cpp,v 1.25 2000-11-04 08:54:01 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -262,8 +262,8 @@ static int atr_match1(dbref thing, dbref parent, dbref player, char type, char *
                     args, 10))
         {
             match = 1;
-            CLinearTimeDelta ltd;
-            wait_que(thing, player, FALSE, ltd, NOTHING, 0, s, args,
+            CLinearTimeAbsolute lta;
+            wait_que(thing, player, FALSE, lta, NOTHING, 0, s, args,
                 10, mudstate.global_regs);
             for (i = 0; i < 10; i++)
             {
