@@ -1,6 +1,6 @@
 // predicates.cpp
 //
-// $Id: predicates.cpp,v 1.32 2003-03-01 21:41:48 sdennis Exp $
+// $Id: predicates.cpp,v 1.33 2003-04-01 19:13:08 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -1439,9 +1439,9 @@ extern SOCKET slave_socket;
     if (slave_pid > 0)
     {
         kill(slave_pid, SIGKILL);
+        waitpid(slave_pid, NULL, WNOHANG);
     }
     slave_pid = 0;
-    waitpid(slave_pid, NULL, WNOHANG);
 
 #ifdef GAME_DOOFERMUX
     execl("bin/netmux", mudconf.mud_name, "-c", mudconf.config_file, NULL);

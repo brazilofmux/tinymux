@@ -1,6 +1,6 @@
 // slave.cpp -- This slave does iptoname conversions, and identquery lookups.
 //
-// $Id: slave.cpp,v 1.9 2003-04-01 18:46:49 sdennis Exp $
+// $Id: slave.cpp,v 1.10 2003-04-01 19:13:08 sdennis Exp $
 //
 // The philosophy is to keep this program as simple/small as possible.  It
 // routinely performs non-vfork forks()s, so the conventional wisdom is that
@@ -229,11 +229,7 @@ RETSIGTYPE child_signal(int iSig)
 {
     // Collect the children.
     //
-#ifdef NEXT
-    while (wait3(NULL, WNOHANG, NULL) > 0)
-#else
     while (waitpid(0, NULL, WNOHANG) > 0)
-#endif
     {
         int nChildren = nChildrenStarted - nChildrenEndedSIGCHLD
             - nChildrenEndedMain;
@@ -318,11 +314,7 @@ int main(int argc, char *argv[])
 
         // Collect the children.
         //
-#ifdef NEXT
-        while (wait3(NULL, (nChildren < MAX_CHILDREN) ? WNOHANG : 0, NULL) > 0)
-#else
         while (waitpid(0, NULL, (nChildren < MAX_CHILDREN) ? WNOHANG : 0) > 0)
-#endif
         {
             if (0 < nChildren)
             {

@@ -1,6 +1,6 @@
 // bsd.cpp
 //
-// $Id: bsd.cpp,v 1.18 2003-03-08 21:21:58 sdennis Exp $
+// $Id: bsd.cpp,v 1.19 2003-04-01 19:13:08 sdennis Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -490,6 +490,7 @@ void boot_slave(dbref executor, dbref caller, dbref enactor, int)
     if (slave_pid > 0)
     {
         kill(slave_pid, SIGKILL);
+        waitpid(slave_pid, NULL, WNOHANG);
     }
     slave_pid = 0;
 
@@ -582,6 +583,7 @@ failure:
     if (slave_pid > 0)
     {
         kill(slave_pid, SIGKILL);
+        waitpid(slave_pid, NULL, WNOHANG);
     }
     slave_pid = 0;
     STARTLOG(LOG_ALWAYS, "NET", "SLAVE");
@@ -2831,11 +2833,8 @@ RETSIGTYPE DCL_CDECL sighandler(int sig)
 #ifndef SIGNAL_SIGCHLD_BRAINDAMAGE
         signal(SIGCHLD, CAST_SIGNAL_FUNC sighandler);
 #endif // !SIGNAL_SIGCHLD_BRAINDAMAGE
-#ifdef HAVE_WAIT3
-        while ((child = wait3(&stat_buf, WNOHANG, NULL)) > 0)
-#else
-        if ((child = wait((int *)&stat_buf)) > 0)
-#endif // HAVE_WAIT3
+
+        while ((child = waitpid(0, &stat_buf, WNOHANG)) > 0)
         {
             if (  mudconf.fork_dump
                && mudstate.dumping
@@ -2941,6 +2940,7 @@ RETSIGTYPE DCL_CDECL sighandler(int sig)
             if (slave_pid > 0)
             {
                 kill(slave_pid, SIGKILL);
+                waitpid(slave_pid, NULL, WNOHANG);
             }
             slave_pid = 0;
 
