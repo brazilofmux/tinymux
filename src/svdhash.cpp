@@ -1,6 +1,6 @@
 // svdhash.cpp -- CHashPage, CHashFile, CHashTable modules
 //
-// $Id: svdhash.cpp,v 1.30 2001-10-25 17:07:51 sdennis Exp $
+// $Id: svdhash.cpp,v 1.31 2001-10-26 00:38:57 sdennis Exp $
 //
 // MUX 2.1
 // Copyright (C) 1998 through 2001 Solid Vertical Domains, Ltd. All
@@ -166,7 +166,7 @@ UINT32 HASH_ProcessBuffer
     unsigned int nBuffer
 )
 {
-    char *pBuffer = (char *)arg_pBuffer;
+    unsigned char *pBuffer = (unsigned char *)arg_pBuffer;
     ulHash = ~ulHash;
 
     if (nBuffer <= 16)
@@ -2588,10 +2588,17 @@ void CLogFile::Flush(void)
 #pragma pack(1)
 typedef struct
 {
-    int address;
-    int size;
-    unsigned long fileline;
+    void  *address;
+    int    size;
+    UINT32 fileline;
 } AllocDataRec;
+
+typedef struct
+{
+    size_t nSize;
+    int    line;
+    char   filename[1];
+} IdentDataRec;
 #pragma pack()
 
 BOOL bMemAccountingInitialized = FALSE;
@@ -2602,24 +2609,20 @@ extern void	log_text(char *);
 
 UINT32 HashPointer(void *vp)
 {
-    return HASH_ProcessBuffer(0, &vp, sizeof(void *));
+    UINT32 nHash1 = HASH_ProcessBuffer(0, &vp, sizeof(void *));
+    UINT32 nHash2 = CRC32_ProcessBuffer(0, &vp, sizeof(void *));
+    Tiny_Assert(nHash1 == nHash2);
+    return nHash1;
 }
 
-char MemIdentBuffer[1024];
-int  nMemIdentBuffer;
-char TempMemBuffer[1024];
-
-unsigned long HashFileLine(const char *file, int line)
+unsigned long HashFileLine(const char *fn, int line)
 {
-    int len = strlen(file);
-    char *p = MemIdentBuffer;
-    memcpy(p, file, len+1);
-    p += len+1;
-    *(int *)p = line;
-    p += sizeof(line);
-
-    nMemIdentBuffer = p - MemIdentBuffer;
-    return HASH_ProcessBuffer(0, MemIdentBuffer, nMemIdentBuffer);
+    UINT32 nHash1 = CRC32_ProcessInteger(line);
+    nHash1 = HASH_ProcessBuffer(nHash1, fn, strlen(fn)+1);
+    UINT32 nHash2 = CRC32_ProcessInteger(line);
+    nHash2 = CRC32_ProcessBuffer(nHash2, fn, strlen(fn)+1);
+    Tiny_Assert(nHash1 == nHash2);
+    return nHash1;
 }
 
 BOOL SubtractSpaceFromFileLine
@@ -2627,7 +2630,8 @@ BOOL SubtractSpaceFromFileLine
     UINT32  nHash,
     int     size,
     size_t *pnSpace,
-    int    *pAllocLine
+    int    *pAllocLine,
+    char   *file
 )
 {
     *pnSpace = 0;
@@ -2636,17 +2640,17 @@ BOOL SubtractSpaceFromFileLine
     if (iDir != HF_FIND_END)
     {
         HP_HEAPLENGTH nIdent;
-        hfIdentData.Copy(iDir, &nIdent, TempMemBuffer);
+        char Buffer[1024];
+        hfIdentData.Copy(iDir, &nIdent, Buffer);
         hfIdentData.Remove(iDir);
 
-        char *p = TempMemBuffer;
-        int n = strlen(p);
-        p += n+1;
-        *pAllocLine = *(int *)p;
-        p += sizeof(int);
-        *pnSpace = (*(size_t *)p) - size;
-        *(size_t *)p = *pnSpace;
-        hfIdentData.Insert(nIdent, nHash, TempMemBuffer);
+        IdentDataRec *idr = (IdentDataRec *)Buffer;
+        *pAllocLine = idr->line;
+        strcpy(file, idr->filename);
+        idr->nSize -= size;
+        *pnSpace = idr->nSize;
+
+        hfIdentData.Insert(nIdent, nHash, Buffer);
     }
     return TRUE;
 }
@@ -2659,23 +2663,39 @@ unsigned long AddSpaceToFileLine
     size_t *pnTotalSpace
 )
 {
-    UINT32 nHash = HashFileLine(file, line);
-    HP_DIRINDEX iDir = hfIdentData.FindFirstKey(nHash);
-    if (iDir != HF_FIND_END)
-    {
-        HP_HEAPLENGTH nIdent;
-        hfIdentData.Copy(iDir, &nIdent, TempMemBuffer);
-        hfIdentData.Remove(iDir);
+    *pnTotalSpace = 0;
 
-        char *p = TempMemBuffer;
-        int n = strlen(p);
-        p += n+1 + sizeof(int);
-        nSpace += *(size_t *)p;
+    HP_HEAPLENGTH nIdent;
+    char Buffer[1024];
+    IdentDataRec *idr = (IdentDataRec *)Buffer;
+    UINT32 nHash = HashFileLine(file, line);
+    BOOL bFound = FALSE;
+again:
+    HP_DIRINDEX iDir = hfIdentData.FindFirstKey(nHash);
+    while (iDir != HF_FIND_END)
+    {
+        hfIdentData.Copy(iDir, &nIdent, Buffer);
+        if (  line == idr->line
+           && strcmp(idr->filename, file) == 0)
+        {
+            hfIdentData.Remove(iDir);
+            nSpace += idr->nSize;
+            bFound = TRUE;
+            goto again;
+        }
+        iDir = hfIdentData.FindNextKey(iDir, nHash);
     }
-    *(size_t *)(MemIdentBuffer+nMemIdentBuffer) = nSpace;
+    if (!bFound)
+    {
+        idr->line = line;
+        strcpy(idr->filename, file);
+
+        char *p = idr->filename + strlen(idr->filename) + 1;
+        nIdent = p - Buffer;
+    }
+    idr->nSize = nSpace;
+    hfIdentData.Insert(nIdent, nHash, Buffer);
     *pnTotalSpace = nSpace;
-    nMemIdentBuffer += sizeof(size_t);
-    hfIdentData.Insert(nMemIdentBuffer, nHash, MemIdentBuffer);
     return nHash;
 }
 
@@ -2684,10 +2704,11 @@ void AccountForAllocation(void *pointer, size_t size, const char *file, int line
     DebugTotalMemory += size;
 
     AllocDataRec adr;
-    adr.address = (int)pointer;
+    adr.address = pointer;
     adr.size = size;
 
     unsigned long nHash = HashPointer(pointer);
+again:
     HP_DIRINDEX iDir = hfAllocData.FindFirstKey(nHash);
 
     while (iDir != HF_FIND_END)
@@ -2699,8 +2720,9 @@ void AccountForAllocation(void *pointer, size_t size, const char *file, int line
         {
             // Whoa! We've been told this new pointer, but it's not.
             //
-            fprintf(stderr, "The heap is giving us unfreed pointers. Weird.\n");
+            fprintf(stderr, "The heap is giving us unfreed pointers (0x%08X). Weird.\n", adr.address);
             hfAllocData.Remove(iDir);
+            goto again;
         }
         iDir = hfAllocData.FindNextKey(iDir, nHash);
     }
@@ -2717,31 +2739,34 @@ void AccountForFree(void *pointer, const char *file, int line)
     unsigned long nHash = HashPointer(pointer);
 
     BOOL bFound = FALSE;
+again:
     HP_DIRINDEX iDir = hfAllocData.FindFirstKey(nHash);
     while (iDir != HF_FIND_END)
     {
         // We found it.
         //
-        bFound = TRUE;
         HP_HEAPLENGTH nRecord;
         AllocDataRec adr;
         hfAllocData.Copy(iDir, &nRecord, &adr);
-        if (adr.address == (int)pointer)
+        if (adr.address == pointer)
         {
+            bFound = TRUE;
             hfAllocData.Remove(iDir);
 
             DebugTotalMemory -= adr.size;
             size_t nSpace;
             int AllocLine;
-            if (SubtractSpaceFromFileLine(adr.fileline, adr.size, &nSpace, &AllocLine))
+            char filename[1024];
+            if (SubtractSpaceFromFileLine(adr.fileline, adr.size, &nSpace, &AllocLine, filename))
             {
                 fprintf(stderr, "free %d bytes on %s, %d ...\n  allocated on %s, %d...\n  leaving total of %d bytes\n",
-                    adr.size, file, line, MemIdentBuffer, AllocLine, nSpace);
+                    adr.size, file, line, filename, AllocLine, nSpace);
             }
             else
             {
                 fprintf(stderr, "free %d bytes on %s, %d ...\n  allocated on UNKNOWN\n", adr.size, file, line);
             }
+            goto again;
         }
         iDir = hfAllocData.FindNextKey(iDir, nHash);
     }
@@ -2750,7 +2775,7 @@ void AccountForFree(void *pointer, const char *file, int line)
     {
         // Problems.
         //
-    	fprintf(stderr, "We are freeing unallocated pointers on %s, %d\n", file, line);
+    	fprintf(stderr, "We are freeing unallocated pointers (0x%08X) on %s, %d\n", pointer, file, line);
     }
 }
 
@@ -2797,7 +2822,7 @@ void MemFree(void *pointer, const char *file, int line)
         }
         else
         {
-            fprintf(stderr, "free called on %s, %d before initialized\n", file, line);
+            fprintf(stderr, "free called on %s, %d before initialized with 0x%08X\n", file, line, pointer);
         }
         free(pointer);
     }
