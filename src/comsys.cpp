@@ -1,6 +1,6 @@
 // comsys.cpp
 //
-// * $Id: comsys.cpp,v 1.36 2001-03-31 08:27:11 sdennis Exp $
+// * $Id: comsys.cpp,v 1.37 2001-03-31 08:41:40 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -44,12 +44,14 @@ char *RestrictTitleValue(char *pTitleRequest)
     memcpy(pNewTitle, NewTitle_ANSI, nLen+1);
     return pNewTitle;
 }
-void do_setcomtitlestatus(dbref player, struct channel *ch, int status)
+
+void do_setcomtitlestatus(dbref player, struct channel *ch, BOOL status)
 {
-  struct comuser *user = select_user(ch,player);
-  if(ch && user) {
-    user->ComTitleStatus=status;
-  }
+    struct comuser *user = select_user(ch,player);
+    if (ch && user)
+    {
+        user->ComTitleStatus = status;
+    }
 }
 
 void do_setnewtitle(dbref player, struct channel *ch, char *pValidatedTitle)
@@ -987,7 +989,7 @@ void SendChannelMessage(struct channel *ch, char *msgNormal, char *msgNoComtitle
             {
                 if ((Typeof(user->who) == TYPE_PLAYER) && Connected(user->who)) 
                 {
-                    if ((user->ComTitleStatus == 1) || bSpoof)
+                    if (user->ComTitleStatus || bSpoof)
                     {
                         raw_notify(user->who, msgNormal);
                     }
@@ -998,7 +1000,7 @@ void SendChannelMessage(struct channel *ch, char *msgNormal, char *msgNoComtitle
                 }
                 else
                 {
-                    if ((user->ComTitleStatus == 1) || bSpoof)
+                    if (user->ComTitleStatus || bSpoof)
                     {
                         notify(user->who, msgNormal);
                     }
@@ -1734,22 +1736,22 @@ void do_comtitle(dbref player, dbref cause, int key, char *arg1, char *arg2)
     {
         if (select_user(ch, player))
         {
-            if (key == 1)
+            if (key == COMTITLE_OFF)
             {
                 if ((ch->type & CHANNEL_SPOOF) == 0)
                 {
                     raw_notify(player, tprintf("Comtitles are now off for channel %s", channel));
-                    do_setcomtitlestatus(player, ch, 0);
+                    do_setcomtitlestatus(player, ch, FALSE);
                 }
                 else
                 {
                     raw_notify(player, "You can not turn off comtitles on that channel.");    
                 }
             }
-            else if (key == 2)
+            else if (key == COMTITLE_ON)
             {
                 raw_notify(player, tprintf("Comtitles are now on for channel %s", channel));
-                do_setcomtitlestatus(player, ch, 1);
+                do_setcomtitlestatus(player, ch, TRUE);
             }
             else
             {
