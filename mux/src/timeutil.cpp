@@ -1,6 +1,6 @@
 // timeutil.cpp -- CLinearTimeAbsolute and CLinearTimeDelta modules.
 //
-// $Id: timeutil.cpp,v 1.32 2004-05-15 17:19:04 sdennis Exp $
+// $Id: timeutil.cpp,v 1.33 2004-05-15 20:44:55 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -1587,13 +1587,13 @@ void CMuxAlarm::Sleep(CLinearTimeDelta ltd)
     }
 #else
 #ifdef HAVE_SETITIMER
-    struct itimerval it;
     struct itimerval oit;
     bool   bSaved = false;
     if (bAlarmSet)
     {
         // Save existing timer and disable.
         //
+        struct itimerval it;
         it.it_value.tv_sec = 0;
         it.it_value.tv_usec = 0;
         it.it_interval.tv_sec = 0;
@@ -1652,6 +1652,7 @@ void CMuxAlarm::Set(CLinearTimeDelta ltd)
     it.it_interval.tv_usec = 0;
     setitimer(ITIMER_PROF, &it, NULL);
     bAlarmSet = true;
+    bAlarmed  = false;
 #endif
 }
 
@@ -1667,12 +1668,14 @@ void CMuxAlarm::Clear(void)
     it.it_interval.tv_usec = 0;
     setitimer(ITIMER_PROF, &it, NULL);
     bAlarmSet = false;
+    bAlarmed  = false;
 #endif
 }
 
 void CMuxAlarm::Signal(void)
 {
-    bAlarmed = true;
+    bAlarmSet = false;
+    bAlarmed  = true;
 }
 
 #endif // !WIN32

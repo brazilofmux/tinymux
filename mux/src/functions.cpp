@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.101 2004-05-01 03:49:15 sdennis Exp $
+// $Id: functions.cpp,v 1.102 2004-05-15 20:44:55 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -2752,7 +2752,7 @@ FUNCTION(fun_cand)
 {
     bool val = true;
     char *temp = alloc_lbuf("fun_cand");
-    for (int i = 0; i < nfargs && val; i++)
+    for (int i = 0; i < nfargs && val && !MuxAlarm.bAlarmed; i++)
     {
         char *bp = temp;
         char *str = fargs[i];
@@ -2769,7 +2769,7 @@ FUNCTION(fun_cor)
 {
     bool val = false;
     char *temp = alloc_lbuf("fun_cor");
-    for (int i = 0; i < nfargs && !val; i++)
+    for (int i = 0; i < nfargs && !val && !MuxAlarm.bAlarmed; i++)
     {
         char *bp = temp;
         char *str = fargs[i];
@@ -2786,7 +2786,7 @@ FUNCTION(fun_candbool)
 {
     bool val = true;
     char *temp = alloc_lbuf("fun_candbool");
-    for (int i = 0; i < nfargs && val; i++)
+    for (int i = 0; i < nfargs && val && !MuxAlarm.bAlarmed; i++)
     {
         char *bp = temp;
         char *str = fargs[i];
@@ -2803,7 +2803,7 @@ FUNCTION(fun_corbool)
 {
     bool val = false;
     char *temp = alloc_lbuf("fun_corbool");
-    for (int i = 0; i < nfargs && !val; i++)
+    for (int i = 0; i < nfargs && !val && !MuxAlarm.bAlarmed; i++)
     {
         char *bp = temp;
         char *str = fargs[i];
@@ -6442,7 +6442,8 @@ FUNCTION(fun_parse)
     mudstate.inum[mudstate.in_loop] = number;
     mudstate.in_loop++;
     while (  cp
-          && mudstate.func_invk_ctr < mudconf.func_invk_lim)
+          && mudstate.func_invk_ctr < mudconf.func_invk_lim
+          && !MuxAlarm.bAlarmed)
     {
         if (!first)
         {
@@ -6508,7 +6509,8 @@ FUNCTION(fun_iter)
     mudstate.inum[mudstate.in_loop] = number;
     mudstate.in_loop++;
     while (  cp
-          && mudstate.func_invk_ctr < mudconf.func_invk_lim)
+          && mudstate.func_invk_ctr < mudconf.func_invk_lim
+          && !MuxAlarm.bAlarmed)
     {
         if (!first)
         {
@@ -6597,7 +6599,8 @@ FUNCTION(fun_list)
     mudstate.inum[mudstate.in_loop] = number;
     mudstate.in_loop++;
     while (  cp
-          && mudstate.func_invk_ctr < mudconf.func_invk_lim)
+          && mudstate.func_invk_ctr < mudconf.func_invk_lim
+          && !MuxAlarm.bAlarmed)
     {
         number++;
         objstring = split_token(&cp, &sep);
@@ -6692,7 +6695,8 @@ FUNCTION(fun_fold)
     result = NULL;
 
     while (  cp
-          && mudstate.func_invk_ctr < mudconf.func_invk_lim)
+          && mudstate.func_invk_ctr < mudconf.func_invk_lim
+          && !MuxAlarm.bAlarmed)
     {
         clist[0] = rstore;
         clist[1] = split_token(&cp, &sep);
@@ -6801,7 +6805,8 @@ void filter_handler(char *buff, char **bufc, dbref executor, dbref enactor,
     char *atextbuf = alloc_lbuf("fun_filter");
     bool bFirst = true;
     while (  cp
-          && mudstate.func_invk_ctr < mudconf.func_invk_lim)
+          && mudstate.func_invk_ctr < mudconf.func_invk_lim
+          && !MuxAlarm.bAlarmed)
     {
         objstring = split_token(&cp, psep);
         strcpy(atextbuf, atext);
@@ -6897,7 +6902,8 @@ FUNCTION(fun_map)
     bool first = true;
     char *objstring, *str;
     while (  cp
-          && mudstate.func_invk_ctr < mudconf.func_invk_lim)
+          && mudstate.func_invk_ctr < mudconf.func_invk_lim
+          && !MuxAlarm.bAlarmed)
     {
         if (!first)
         {
@@ -7073,7 +7079,7 @@ FUNCTION(fun_switch)
 
     // Loop through the patterns looking for a match.
     //
-    for (i = 1; (i < nfargs - 1) && fargs[i] && fargs[i + 1]; i += 2)
+    for (i = 1; (i < nfargs - 1) && fargs[i] && fargs[i + 1] && !MuxAlarm.bAlarmed; i += 2)
     {
         tbuff = bp = alloc_lbuf("fun_switch.2");
         str = fargs[i];
@@ -7123,7 +7129,7 @@ FUNCTION(fun_case)
 
     // Loop through the patterns looking for a match.
     //
-    for (i = 1; (i < nfargs - 1) && fargs[i] && fargs[i + 1]; i += 2)
+    for (i = 1; (i < nfargs - 1) && fargs[i] && fargs[i + 1] && !MuxAlarm.bAlarmed; i += 2)
     {
         if (!string_compare(fargs[i], mbuff))
         {
@@ -9263,8 +9269,9 @@ FUNCTION(fun_art)
         pcre* reRuleRegexp = (pcre *) arRule->m_pRegexp;
         pcre_extra* reRuleStudy = (pcre_extra *) arRule->m_pRegexpStudy;
 
-        if (pcre_exec(reRuleRegexp, reRuleStudy, fargs[0], strlen(fargs[0]),
-              0, 0, ovec, ovecsize) > 0)
+        if (  !MuxAlarm.bAlarmed
+           && pcre_exec(reRuleRegexp, reRuleStudy, fargs[0], strlen(fargs[0]),
+                0, 0, ovec, ovecsize) > 0)
         {
             safe_str(arRule->m_bUseAn ? "an" : "a", buff, bufc);
             return;

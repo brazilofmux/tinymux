@@ -1,6 +1,6 @@
 // game.cpp
 //
-// $Id: game.cpp,v 1.37 2004-05-15 14:31:53 sdennis Exp $
+// $Id: game.cpp,v 1.38 2004-05-15 20:44:55 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -109,7 +109,8 @@ bool regexp_match
      */
 
     pcre *re = pcre_compile(pattern, case_opt, &errptr, &erroffset, NULL);
-    if (re == NULL)
+    if (  MuxAlarm.bAlarmed
+       || re == NULL)
     {
         /*
          * This is a matching error. We have an error message in
@@ -351,7 +352,8 @@ bool check_filter(dbref object, dbref player, int filter, const char *msg)
         {
             cp = parse_to(&dp, ',', EV_STRIP_CURLY);
             mudstate.wild_invk_ctr = 0;
-            if (quick_wild(cp, msg))
+            if (  MuxAlarm.bAlarmed
+               || quick_wild(cp, msg))
             {
                 free_lbuf(nbuf);
                 return false;
@@ -366,8 +368,9 @@ bool check_filter(dbref object, dbref player, int filter, const char *msg)
             int erroffset;
             const char *errptr;
             cp = parse_to(&dp, ',', EV_STRIP_CURLY);
-            pcre *re = pcre_compile(cp, case_opt, &errptr, &erroffset, NULL);
-            if (re != NULL)
+            pcre *re;
+            if (  !MuxAlarm.bAlarmed
+               && (re = pcre_compile(cp, case_opt, &errptr, &erroffset, NULL)) != NULL)
             {
                 const int ovecsize = 33;
                 int ovec[ovecsize];

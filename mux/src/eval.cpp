@@ -1,6 +1,6 @@
 // eval.cpp -- Command evaluation and cracking.
 //
-// $Id: eval.cpp,v 1.23 2004-04-13 06:34:22 sdennis Exp $
+// $Id: eval.cpp,v 1.24 2004-05-15 20:44:55 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -1074,7 +1074,8 @@ void mux_exec( char *buff, char **bufc, dbref executor, dbref caller,
                dbref enactor, int eval, char **dstr, char *cargs[], int ncargs)
 {
     if (  *dstr == NULL
-       || **dstr == '\0')
+       || **dstr == '\0'
+       || MuxAlarm.bAlarmed)
     {
         return;
     }
@@ -1324,6 +1325,10 @@ void mux_exec( char *buff, char **bufc, dbref executor, dbref caller,
                     {
                         safe_noperm(buff, &oldp);
                     }
+                    else if (MuxAlarm.bAlarmed)
+                    {
+                        safe_str("#-1 CPU LIMITED", buff, &oldp);
+                    }
                     else if (ufp)
                     {
                         tstr = atr_get(ufp->obj, ufp->atr, &aowner, &aflags);
@@ -1366,7 +1371,8 @@ void mux_exec( char *buff, char **bufc, dbref executor, dbref caller,
                         // Otherwise, return an error message.
                         //
                         if (  fp->minArgs <= nfargs
-                           && nfargs <= fp->maxArgs)
+                           && nfargs <= fp->maxArgs
+                           && !MuxAlarm.bAlarmed)
                         {
                             fp->fun(buff, &oldp, executor, caller, enactor,
                                     fargs, nfargs, cargs, ncargs);
@@ -1384,6 +1390,10 @@ void mux_exec( char *buff, char **bufc, dbref executor, dbref caller,
                                 sprintf(mux_scratch,
                                     "#-1 FUNCTION (%s) EXPECTS %d OR %d ARGUMENTS",
                                     fp->name, fp->minArgs, fp->maxArgs);
+                            }
+                            else if (MuxAlarm.bAlarmed)
+                            {
+                                sprintf(mux_scratch, "#-1 CPU LIMITED");
                             }
                             else
                             {

@@ -1,6 +1,6 @@
 // funceval.cpp -- MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.62 2004-05-01 03:50:01 sdennis Exp $
+// $Id: funceval.cpp,v 1.63 2004-05-15 20:44:55 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -2133,7 +2133,8 @@ static int u_comp(const void *s1, const void *s2)
     int n;
 
     if (  mudstate.func_invk_ctr > mudconf.func_invk_lim
-       || mudstate.func_nest_lev > mudconf.func_nest_lim)
+       || mudstate.func_nest_lev > mudconf.func_nest_lim
+       || MuxAlarm.bAlarmed)
     {
         return 0;
     }
@@ -2443,7 +2444,7 @@ FUNCTION(fun_mix)
     char *atextbuf = alloc_lbuf("fun_mix");
     char *str, *os[10];
     bool bFirst = true;
-    for (int wc = 0; wc < nwords; wc++) 
+    for (int wc = 0; wc < nwords && !MuxAlarm.bAlarmed; wc++) 
     {
         if (!bFirst)
         {
@@ -2506,7 +2507,8 @@ FUNCTION(fun_foreach)
         bool flag = false;
         while (  cp
               && *cp
-              && mudstate.func_invk_ctr < mudconf.func_invk_lim)
+              && mudstate.func_invk_ctr < mudconf.func_invk_lim
+              && !MuxAlarm.bAlarmed)
         {
             cbuf[0] = *cp++;
 
@@ -2547,7 +2549,8 @@ FUNCTION(fun_foreach)
     {
         while (  cp
               && *cp
-              && mudstate.func_invk_ctr < mudconf.func_invk_lim)
+              && mudstate.func_invk_ctr < mudconf.func_invk_lim
+              && !MuxAlarm.bAlarmed)
         {
             cbuf[0] = *cp++;
 
@@ -3016,7 +3019,7 @@ char *grep_util(dbref player, dbref thing, char *pattern, char *lookfor, int len
             BMH_Prepare(&bmhs, len, lookfor);
         }
 
-        for (ca = olist_first(); ca != NOTHING; ca = olist_next())
+        for (ca = olist_first(); ca != NOTHING && !MuxAlarm.bAlarmed; ca = olist_next())
         {
             size_t nText;
             char *attrib = atr_get_LEN(thing, ca, &aowner, &aflags, &nText);
@@ -3546,6 +3549,11 @@ FUNCTION(fun_push)
 void real_regmatch(const char *search, const char *pattern, char *registers,
                    int nfargs, char *buff, char **bufc, bool cis)
 {
+    if (MuxAlarm.bAlarmed)
+    {
+        return;
+    }
+
     const char *errptr;
     int erroffset;
     const int ovecsize = 111;
@@ -3655,6 +3663,10 @@ FUNCTION(fun_regmatchi)
 void real_regrab(char *search, const char *pattern, SEP *psep, char *buff,
                  char **bufc, bool cis, bool all)
 {
+    if (MuxAlarm.bAlarmed)
+    {
+        return;
+    }
     pcre *re;
     pcre_extra *study = NULL;
     const char *errptr;
@@ -3683,7 +3695,8 @@ void real_regrab(char *search, const char *pattern, SEP *psep, char *buff,
     do
     {
         char *r = split_token(&s, psep);
-        if (pcre_exec(re, study, r, strlen(r), 0, 0, ovec, ovecsize) >= 1)
+        if (  !MuxAlarm.bAlarmed
+           && pcre_exec(re, study, r, strlen(r), 0, 0, ovec, ovecsize) >= 1)
         {
             if (first) 
             {

@@ -1,6 +1,6 @@
 // predicates.cpp
 //
-// $Id: predicates.cpp,v 1.49 2004-04-30 18:13:40 sdennis Exp $
+// $Id: predicates.cpp,v 1.50 2004-05-15 20:44:55 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -2157,6 +2157,11 @@ bool exit_displayable(dbref exit, dbref player, int key)
 void did_it(dbref player, dbref thing, int what, const char *def, int owhat,
             const char *odef, int awhat, char *args[], int nargs)
 {
+    if (MuxAlarm.bAlarmed)
+    {
+        return;
+    }
+
     char *d, *buff, *act, *charges, *bp, *str;
     dbref loc, aowner;
     int num, aflags;

@@ -1,6 +1,6 @@
 // mail.cpp
 //
-// $Id: mail.cpp,v 1.29 2004-04-29 05:01:22 sdennis Exp $
+// $Id: mail.cpp,v 1.30 2004-05-15 20:44:55 sdennis Exp $
 //
 // This code was taken from Kalkin's DarkZone code, which was
 // originally taken from PennMUSH 1.50 p10, and has been heavily modified
@@ -1510,7 +1510,8 @@ void do_mail_review(dbref player, char *name, char *msglist)
         {
             return;
         }
-        for (mp = (struct mail *)hashfindLEN(&target, sizeof(target), &mudstate.mail_htab); mp; mp = mp->next)
+        mp = (struct mail *)hashfindLEN(&target, sizeof(target), &mudstate.mail_htab);
+        for ( ; mp && !MuxAlarm.bAlarmed; mp = mp->next)
         {
             if (mp->from == player)
             {

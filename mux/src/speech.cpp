@@ -1,6 +1,6 @@
 // speech.cpp -- Commands which involve speaking.
 //
-// $Id: speech.cpp,v 1.13 2004-04-08 04:36:09 sdennis Exp $
+// $Id: speech.cpp,v 1.14 2004-05-15 20:44:55 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -19,7 +19,8 @@ char *modSpeech(dbref player, char *message, bool bWhich, char *command)
     char *mod = atr_get(player, bWhich ? A_SPEECHMOD : A_SAYSTRING,
         &aowner, &aflags);
 
-    if (mod[0] == '\0')
+    if (  mod[0] == '\0'
+       || MuxAlarm.bAlarmed)
     {
         free_lbuf(mod);
         return NULL;
@@ -511,6 +512,11 @@ void do_shout(dbref executor, dbref caller, dbref enactor, int key,
 static void page_return(dbref player, dbref target, const char *tag,
     int anum, const char *dflt)
 {
+    if (MuxAlarm.bAlarmed)
+    {
+        return;
+    }
+
     dbref aowner;
     int aflags;
     char *str, *str2, *buf, *bp;

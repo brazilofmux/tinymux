@@ -1,6 +1,6 @@
 // boolexp.cpp
 //
-// $Id: boolexp.cpp,v 1.11 2003-02-17 02:26:23 sdennis Exp $
+// $Id: boolexp.cpp,v 1.12 2004-05-15 20:44:55 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -182,7 +182,8 @@ bool eval_boolexp(dbref player, dbref thing, dbref from, BOOLEXP *b)
         {
             bCheck = true;
         }
-        if (bCheck)
+        if (  bCheck
+           && !MuxAlarm.bAlarmed)
         {
             char **preserve = NULL;
             int *preserve_len = NULL;
