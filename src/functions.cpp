@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.129 2002-01-25 11:37:07 sdennis Exp $
+// $Id: functions.cpp,v 1.130 2002-01-25 16:01:20 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -5288,7 +5288,7 @@ FUNCTION(fun_parse)
         first = FALSE;
         number++;
         objstring = split_token(&cp, sep);
-        char *buff2 = replace_tokens(fargs[1], objstring, Tiny_ltoa_t(number));
+        char *buff2 = replace_tokens(fargs[1], objstring, Tiny_ltoa_t(number), NULL, NULL);
         str = buff2;
         TinyExec(buff, bufc, 0, player, cause,
             EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, cargs, ncargs);
@@ -5331,7 +5331,7 @@ FUNCTION(fun_iter)
         first = FALSE;
         number++;
         objstring = split_token(&cp, sep);
-        char *buff2 = replace_tokens(fargs[1], objstring, Tiny_ltoa_t(number));
+        char *buff2 = replace_tokens(fargs[1], objstring, Tiny_ltoa_t(number), NULL, NULL);
         str = buff2;
         TinyExec(buff, bufc, 0, player, cause,
             EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, cargs, ncargs);
@@ -5361,7 +5361,7 @@ FUNCTION(fun_list)
     {
         number++;
         objstring = split_token(&cp, sep);
-        char *buff2 = replace_tokens(fargs[1], objstring, Tiny_ltoa_t(number));
+        char *buff2 = replace_tokens(fargs[1], objstring, Tiny_ltoa_t(number), NULL, NULL);
         dp = result = alloc_lbuf("fun_list.2");
         str = buff2;
         TinyExec(result, &dp, 0, player, cause,
@@ -5844,26 +5844,29 @@ FUNCTION(fun_switch)
         if (wild_match(tbuff, mbuff))
         {
             free_lbuf(tbuff);
-            str = fargs[i+1];
+            tbuff = replace_tokens(fargs[i+1], NULL, NULL, mbuff, NULL);
+            free_lbuf(mbuff);
+            str = tbuff;
             TinyExec(buff, bufc, 0, player, cause,
                 EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, cargs, ncargs);
-            free_lbuf(mbuff);
+            free_lbuf(tbuff);
             return;
         }
         free_lbuf(tbuff);
     }
-    free_lbuf(mbuff);
 
     // Nope, return the default if there is one.
     //
-    if ((i < nfargs) && fargs[i])
+    if (  i < nfargs
+       && fargs[i])
     {
-        str = fargs[i];
+        tbuff = replace_tokens(fargs[i], NULL, NULL, mbuff, NULL);
+        str = tbuff;
         TinyExec(buff, bufc, 0, player, cause,
             EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, cargs, ncargs);
-
+        free_lbuf(tbuff);
     }
-    return;
+    free_lbuf(mbuff);
 }
 
 FUNCTION(fun_case)

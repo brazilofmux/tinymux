@@ -1,6 +1,6 @@
 // stringutil.cpp -- string utilities.
 //
-// $Id: stringutil.cpp,v 1.60 2002-01-25 11:37:07 sdennis Exp $
+// $Id: stringutil.cpp,v 1.61 2002-01-25 16:01:20 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -1641,7 +1641,14 @@ char *replace_string(const char *old, const char *new0, const char *s)
 // ---------------------------------------------------------------------------
 // replace_tokens: Performs ## and #@ substitution.
 //
-char *replace_tokens(const char *s, const char *pBound, const char *pListPlace)
+char *replace_tokens
+(
+    const char *s,
+    const char *pBound,
+    const char *pListPlace,
+    const char *pSwitch,
+    const char *pNestLevel
+)
 {
     if (!s)
     {
@@ -1666,26 +1673,42 @@ char *replace_tokens(const char *s, const char *pBound, const char *pListPlace)
                 s += n;
             }
 
-            switch (s[1])
+            if (  s[1] == '#'
+               && pBound)
             {
-            case '#':
                 // BOUND_VAR
                 //
                 safe_str(pBound, result, &r);
                 s += 2;
-                break;
-
-            case '@':
+            }
+            else if (  s[1] == '@'
+                    && pListPlace)
+            {
                 // LISTPLACE_VAR
                 //
                 safe_str(pListPlace, result, &r);
                 s += 2;
-                break;
-
-            default:
+            }
+            else if (  s[1] == '$'
+                    && pSwitch)
+            {
+                // SWITCH_VAR
+                //
+                safe_str(pSwitch, result, &r);
+                s += 2;
+            }
+            else if (  s[1] == '!'
+                    && pNestLevel)
+            {
+                // SWITCH_VAR
+                //
+                safe_str(pNestLevel, result, &r);
+                s += 2;
+            }
+            else
+            {
                 safe_chr(*s, result, &r);
                 s++;
-                break;
             }
         }
         else
