@@ -1,6 +1,6 @@
 // game.cpp
 //
-// $Id: game.cpp,v 1.1 2003-01-22 19:58:25 sdennis Exp $
+// $Id: game.cpp,v 1.2 2003-01-22 21:01:37 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -1908,6 +1908,8 @@ int DCL_CDECL main(int argc, char *argv[])
         printf("  -h  Display this help." ENDLINE);
         return 1;
     }
+
+    mudstate.bStandAlone = FALSE;
 
     Log.EnableLogging();
 

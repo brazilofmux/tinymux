@@ -1,6 +1,6 @@
 // mudconf.h
 //
-// $Id: mudconf.h,v 1.1 2003-01-22 19:58:25 sdennis Exp $
+// $Id: mudconf.h,v 1.2 2003-01-22 21:01:37 sdennis Exp $
 //
 
 #ifndef __CONF_H
@@ -282,6 +282,7 @@ struct statedata
     CLinearTimeAbsolute start_time;     /* When was MUX started */
     CLinearTimeAbsolute cpu_count_from; /* When did we last reset CPU counters? */
 
+    BOOL bStandAlone;       // Are we running in dbconvert mode.
     int record_players; /* The maximum # of player logged on */
 #ifndef STANDALONE
     BOOL bReadingConfiguration;  // are we reading the config file at startup?

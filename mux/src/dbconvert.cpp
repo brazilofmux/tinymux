@@ -1,6 +1,6 @@
 // dbconvert.cpp -- Convert databases to various MUX formats.
 //
-// $Id: dbconvert.cpp,v 1.1 2003-01-22 19:58:25 sdennis Exp $ 
+// $Id: dbconvert.cpp,v 1.2 2003-01-22 21:01:37 sdennis Exp $ 
 //
 
 #include "copyright.h"
@@ -101,6 +101,7 @@ int DCL_CDECL main(int argc, char *argv[])
 
     SeedRandomNumberGenerator();
 
+    mudstate.bStandAlone = TRUE;
     cf_init();
 
     // Decide what conversions to do and how to format the output file.
