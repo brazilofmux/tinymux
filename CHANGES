@@ -89,6 +89,7 @@ Feature Additions:
  -- Expanded ROUND() function to round in any position left or right of the
     decimal point.
  -- Added HASQUOTA(). Patch from Jake.
+ -- Added @list guests which tracks guest characters. Zenty patch. Rhost idea.
 
 Bug Fixes:
 ~~~~~~~~~
@@ -163,6 +164,9 @@ Bug Fixes:
     from the channel. addcom warnings also removed.
  -- Objects could use flags() to see CONNECTED flag of DARK WIZARDs.
  -- scramble() strips ANSI now.
+ -- Bug #782 - You could log into a guest twice if you knew the dbref#.
+ -- Bug #783 - Could get a DARK guest by logging into a previous guest player
+    with it's dbref.
 
 Performance Enhancements:
 ~~~~~~~~~~~~~~~~~~~~~~~~
