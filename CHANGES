@@ -65,6 +65,7 @@ Feature Additions:
  -- Added LOcALIZE().
  -- Added function invocation limit checking for various loop functions:
     ITER, PARSE, MIX, FILTER, FOLD, MAP, etc.
+ -- Clean cygwin builds on Win32 with support for @restart.
 
 Bug Fixes:
 ~~~~~~~~~
