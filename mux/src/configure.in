@@ -47,7 +47,7 @@ AC_EGREP_HEADER(rindex,string.h, ,AC_DEFINE(NEED_INDEX_DCL))
 AC_CHECKING(for malloc dcl)
 querymalloc=no
 AC_EGREP_HEADER(realloc,stdlib.h,AC_DEFINE(MALLOC_IN_STDLIB_H),querymalloc=yes)
-if test $ac_cv_header_malloc_h = no && $querymalloc = yes; then
+if test $ac_cv_header_malloc_h = no && test $querymalloc = yes; then
     AC_DEFINE(NEED_MALLOC_DCL)
 else
     AC_EGREP_HEADER(realloc,malloc.h, ,AC_DEFINE(NEED_MALLOC_DCL))
