@@ -1,6 +1,6 @@
 // funceval.cpp -- MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.38 2003-07-22 04:10:06 sdennis Exp $
+// $Id: funceval.cpp,v 1.39 2003-07-22 04:56:51 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -18,6 +18,7 @@
 #include "functions.h"
 #include "misc.h"
 #include "pcre.h"
+#include "sha1.h"
 
 /* Note: Many functions in this file have been taken, whole or in part, from
  * PennMUSH 1.50, and TinyMUSH 2.2, for softcode compatibility. The
@@ -2628,6 +2629,24 @@ FUNCTION(fun_crc32)
         ulCRC32 = CRC32_ProcessBuffer(ulCRC32, fargs[i], n);
     }
     safe_i64toa(ulCRC32, buff, bufc);
+}
+
+FUNCTION(fun_sha1)
+{
+    int i;
+    SHA1_CONTEXT shac;
+    SHA1_Init(&shac);
+    for (i = 0; i < nfargs; i++)
+    {
+        SHA1_Compute(&shac, strlen(fargs[i]), fargs[i]);
+    }
+    SHA1_Final(&shac);
+    for (i = 0; i <= 4; i++)
+    {
+        char buf[9];
+        sprintf(buf, "%08X", shac.H[i]);
+        safe_str(buf, buff, bufc);
+    }
 }
 
 FUNCTION(fun_dumping)

@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.60 2003-07-17 00:23:32 sdennis Exp $
+// $Id: functions.cpp,v 1.61 2003-07-22 04:56:51 sdennis Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -54,6 +54,7 @@ XFUNCTION(fun_bor);
 XFUNCTION(fun_children);
 XFUNCTION(fun_columns);
 XFUNCTION(fun_crc32);
+XFUNCTION(fun_sha1);
 XFUNCTION(fun_cwho);
 XFUNCTION(fun_dec);
 XFUNCTION(fun_decrypt);
@@ -9127,6 +9128,7 @@ FUN flist[] =
     {"SETQ",        fun_setq,       MAX_ARG, 2,       2,         0, CA_PUBLIC},
     {"SETR",        fun_setr,       MAX_ARG, 2,       2,         0, CA_PUBLIC},
     {"SETUNION",    fun_setunion,   MAX_ARG, 2,       4,         0, CA_PUBLIC},
+    {"SHA1",        fun_sha1,             1, 0,       1,         0, CA_PUBLIC},
     {"SHL",         fun_shl,        MAX_ARG, 2,       2,         0, CA_PUBLIC},
     {"SHR",         fun_shr,        MAX_ARG, 2,       2,         0, CA_PUBLIC},
     {"SHUFFLE",     fun_shuffle,    MAX_ARG, 1,       2,         0, CA_PUBLIC},
