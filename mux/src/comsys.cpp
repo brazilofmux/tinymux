@@ -1,6 +1,6 @@
 // comsys.cpp
 //
-// $Id: comsys.cpp,v 1.17 2002-07-17 03:46:30 sdennis Exp $
+// $Id: comsys.cpp,v 1.18 2002-07-17 04:48:40 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -2795,39 +2795,29 @@ FUNCTION(fun_channels)
     if (nfargs >= 1)
     {
         who = lookup_player(executor, fargs[0], TRUE);
-        if (who == NOTHING)
+        if (  who == NOTHING
+           && _stricmp(fargs[0], "all") != 0)
         {
-            if (_stricmp(fargs[0], "all") != 0)
-            {
-                safe_str("#-1 PLAYER NOT FOUND", buff, bufc);
-                return;
-            }
+            safe_str("#-1 PLAYER NOT FOUND", buff, bufc);
+            return;
         }
     }
 
-    BOOL bFirst = TRUE;
+    ITL itl;
+    ItemToList_Init(&itl, buff, bufc);
     struct channel *chn;
     for (chn = (struct channel *)hash_firstentry(&mudstate.channel_htab);
          chn;
          chn = (struct channel *)hash_nextentry(&mudstate.channel_htab))
     {
-        if (  Comm_All(executor)
-           || (chn->type & CHANNEL_PUBLIC)
-           || chn->charge_who == executor)
+        if (  (  Comm_All(executor)
+              || (chn->type & CHANNEL_PUBLIC)
+              || chn->charge_who == executor)
+           && (  chn->charge_who == who
+              || who == NOTHING)
+           && !ItemToList_AddString(&itl, chn->name))
         {
-            if (  chn->charge_who == who
-               || who == NOTHING)
-            {
-                if (bFirst)
-                {
-                    bFirst = FALSE;
-                }
-                else
-                {
-                    safe_chr(' ', buff, bufc);
-                }
-                safe_str(chn->name, buff, bufc);
-            }
+            break;
         }
     }
 }
