@@ -1,6 +1,6 @@
 // funceval.cpp - MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.35 2000-11-12 11:06:14 sdennis Exp $
+// $Id: funceval.cpp,v 1.36 2000-11-12 11:19:07 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -1707,18 +1707,22 @@ FUNCTION(fun_visible)
     }
     if (parse_attrib(player, fargs[1], &thing, &atr))
     {
-        if (atr == NOTHING)
+        if (  thing == NOTHING
+           || atr   == NOTHING)
         {
-            safe_ltoa(Examinable(it, thing), buff, bufc, LBUF_SIZE-1);
-            return;
+            break;
         }
         ap = atr_num(atr);
         atr_pget_info(thing, atr, &aowner, &aflags);
         safe_ltoa(See_attr(it, thing, ap, aowner, aflags), buff, bufc, LBUF_SIZE-1);
         return;
     }
-    thing = match_thing(player, fargs[1]);
-    if (!Good_obj(thing)) {
+    else
+    {
+        thing = match_thing(player, fargs[1]);
+    }
+    if (!Good_obj(thing))
+    {
         safe_chr('0', buff, bufc);
         return;
     }
