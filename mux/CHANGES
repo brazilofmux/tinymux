@@ -256,6 +256,7 @@ Bug Fixes:
  -- Alierak fixes strcat() given that its assumptions about TinyExec are no
     longer true.
  -- Alierak fix for home(bad_obj) logic.
+ -- Alierak fixes off-by-one error in wrap().
 
 
 Performance Enhancements:
