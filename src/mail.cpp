@@ -1,6 +1,6 @@
 // mail.cpp 
 //
-// $Id: mail.cpp,v 1.14 2000-10-04 21:01:48 sdennis Exp $
+// $Id: mail.cpp,v 1.15 2000-10-05 17:08:11 sdennis Exp $
 //
 // This code was taken from Kalkin's DarkZone code, which was
 // originally taken from PennMUSH 1.50 p10, and has been heavily modified
@@ -1231,7 +1231,7 @@ static void send_mail(dbref player, dbref target, const char *tolist, const char
 {
     char tbuf1[30];
 
-    if (Typeof(target) != TYPE_PLAYER)
+    if (!isPlayer(target))
     {
         notify(player, "MAIL: You cannot send mail to non-existent people.");
         delete_mail_message(number);
@@ -1367,7 +1367,7 @@ void do_mail_debug(dbref player, char *action, char *victim)
         {
             if (!Good_obj(mp->to))
                 notify(player, tprintf("Bad object #%d has mail.", mp->to));
-            else if (Typeof(mp->to) != TYPE_PLAYER)
+            else if (!isPlayer(mp->to))
                 notify(player, tprintf("%s(#%d) has mail but is not a player.",
                              Name(mp->to), mp->to));
         }
@@ -1377,7 +1377,7 @@ void do_mail_debug(dbref player, char *action, char *victim)
     {
         MAIL_ITER_SAFE(mp, thing, nextp)
         {
-            if (!Good_obj(mp->to) || (Typeof(mp->to) != TYPE_PLAYER))
+            if (!Good_obj(mp->to) || !isPlayer(mp->to))
             {
                 notify(player, tprintf("Fixing mail for #%d.", mp->to));
                 /*
@@ -1455,7 +1455,7 @@ void do_mail_stats(dbref player, char *name, int full)
             target = player;
     } else if (*name == NUMBER_TOKEN) {
         target = Tiny_atol(&name[1]);
-        if (!Good_obj(target) || (Typeof(target) != TYPE_PLAYER))
+        if (!Good_obj(target) || !isPlayer(target))
             target = NOTHING;
     } else if (!_stricmp(name, "me")) {
         target = player;
@@ -3061,7 +3061,7 @@ void do_malias_send(dbref player, char *tolist, char *listto, char *subject, int
     {
         vic = m->list[k];
 
-        if (Typeof(vic) == TYPE_PLAYER)
+        if (isPlayer(vic))
         {
             send_mail(player, m->list[k], listto, subject, number, flags, silent);
         }
@@ -3162,7 +3162,7 @@ void do_malias_create(dbref player, char *alias, char *tolist)
         {
             target = lookup_player(player, head, 1);
         }
-        if ((target == NOTHING) || (Typeof(target) != TYPE_PLAYER))
+        if ((target == NOTHING) || !isPlayer(target))
         {
             notify(player, "MAIL: No such player.");
         }
