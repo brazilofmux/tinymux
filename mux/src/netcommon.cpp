@@ -1,6 +1,6 @@
 // netcommon.cpp
 //
-// $Id: netcommon.cpp,v 1.39 2003-01-04 05:07:32 sdennis Exp $
+// $Id: netcommon.cpp,v 1.40 2003-01-10 05:14:26 sdennis Exp $
 //
 // This file contains routines used by the networking code that do not
 // depend on the implementation of the networking code.  The network-specific
@@ -1386,7 +1386,8 @@ static void dump_users(DESC *e, char *match, int key)
                  || See_Hidden(e->player))))
         {
             count++;
-            if (match && !(string_prefix(Name(d->player), match)))
+            if (  match
+               && string_prefix(Name(d->player), match) == 0)
             {
                 continue;
             }
