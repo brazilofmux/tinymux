@@ -1,4 +1,5 @@
 BETA
+docs/COMPRESSION
 src/regexp.cpp
 src/regexp.h
 src/macro.h
