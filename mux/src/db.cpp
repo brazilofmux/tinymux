@@ -1,6 +1,6 @@
 // db.cpp
 //
-// $Id: db.cpp,v 1.4 2003-01-23 06:36:44 sdennis Exp $
+// $Id: db.cpp,v 1.5 2003-01-24 15:08:04 sdennis Exp $
 //
 // MUX 2.2
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -9,9 +9,6 @@
 #include "copyright.h"
 #include "autoconf.h"
 #include "config.h"
-#ifdef STANDALONE
-#undef MEMORY_BASED
-#endif // STANDALONE
 #include "externs.h"
 
 #include "attrs.h"
@@ -226,7 +223,6 @@ char *aszSpecialDBRefNames[1-NOPERM] =
     "", "*NOTHING*", "*AMBIGUOUS*", "*HOME*", "*NOPERMISSION*"
 };
 
-#ifndef STANDALONE
 /* ---------------------------------------------------------------------------
  * fwdlist_set, fwdlist_clr: Manage cached forwarding lists
  */
@@ -283,8 +279,6 @@ void fwdlist_clr(dbref thing)
     }
 }
 
-#endif // !STANDALONE
-
 /* ---------------------------------------------------------------------------
  * fwdlist_load: Load text into a forwardlist.
  */
@@ -316,25 +310,30 @@ int fwdlist_load(FWDLIST *fp, dbref player, char *atext)
             *bp++ = '\0';
         }
 
-        if ((*dp++ == '#') && Tiny_IsDigit[(unsigned char)*dp])
+        if (  *dp++ == '#'
+           && Tiny_IsDigit[(unsigned char)*dp])
         {
             target = Tiny_atol(dp);
-#ifdef STANDALONE
-            fail = !Good_obj(target);
-#else // STANDALONE
-            fail = (  !Good_obj(target)
-                   || (  !God(player)
-                      && !Controls(player, target)
-                      && (  !Link_ok(target)
-                         || !could_doit(player, target, A_LLINK))));
-#endif // STANDALONE
+            if (mudstate.bStandAlone)
+            {
+                fail = !Good_obj(target);
+            }
+            else
+            {
+                fail = (  !Good_obj(target)
+                       || (  !God(player)
+                          && !Controls(player, target)
+                          && (  !Link_ok(target)
+                             || !could_doit(player, target, A_LLINK))));
+            }
             if (fail)
             {
-#ifndef STANDALONE
-                notify(player,
-                       tprintf("Cannot forward to #%d: Permission denied.",
-                           target));
-#endif // !STANDALONE
+                if (!mudstate.bStandAlone)
+                {
+                    notify(player,
+                        tprintf("Cannot forward to #%d: Permission denied.",
+                        target));
+                }
                 errors++;
             }
             else
@@ -383,11 +382,10 @@ int fwdlist_rewrite(FWDLIST *fp, char *atext)
  */
 BOOL fwdlist_ck(dbref player, dbref thing, int anum, char *atext)
 {
-#ifdef STANDALONE
-
-    return TRUE;
-
-#else // STANDALONE
+    if (mudstate.bStandAlone)
+    {
+        return TRUE;
+    }
 
     FWDLIST *fp;
     int count = 0;
@@ -411,26 +409,28 @@ BOOL fwdlist_ck(dbref player, dbref thing, int anum, char *atext)
         free_lbuf(fp);
     }
     return ((count > 0) || !atext || !*atext);
-
-#endif // STANDALONE
 }
 
 FWDLIST *fwdlist_get(dbref thing)
 {
-#ifdef STANDALONE
     static FWDLIST *fp = NULL;
-    if (!fp)
+    if (mudstate.bStandAlone)
     {
-        fp = (FWDLIST *) alloc_lbuf("fwdlist_get");
+        if (!fp)
+        {
+            fp = (FWDLIST *) alloc_lbuf("fwdlist_get");
+        }
+        dbref aowner;
+        int   aflags;
+        char *tp = atr_get(thing, A_FORWARDLIST, &aowner, &aflags);
+        fwdlist_load(fp, GOD, tp);
+        free_lbuf(tp);
     }
-    dbref aowner;
-    int   aflags;
-    char *tp = atr_get(thing, A_FORWARDLIST, &aowner, &aflags);
-    fwdlist_load(fp, GOD, tp);
-    free_lbuf(tp);
-#else // STANDALONE
-    FWDLIST *fp = ((FWDLIST *) hashfindLEN(&thing, sizeof(thing), &mudstate.fwdlist_htab));
-#endif // STANDALONE
+    else
+    {
+        fp = (FWDLIST *) hashfindLEN(&thing, sizeof(thing),
+            &mudstate.fwdlist_htab);
+    }
     return fp;
 }
 
@@ -666,8 +666,6 @@ void s_Pass(dbref thing, const char *s)
 {
     atr_add_raw(thing, A_PASS, s);
 }
-
-#ifndef STANDALONE
 
 /* ---------------------------------------------------------------------------
  * do_attrib: Manage user-named attributes.
@@ -919,8 +917,6 @@ void do_fixdb
     }
 }
 
-#endif // !STANDALONE
-
 // MakeCanonicalAttributeName
 //
 // See stringutil.cpp for valid characters used here..
@@ -1093,11 +1089,14 @@ void anum_extend(int newtop)
     ATTR **anum_table2;
     int delta, i;
 
-#ifdef STANDALONE
-    delta = 1000;
-#else // STANDALONE
-    delta = mudconf.init_size;
-#endif // STANDALONE
+    if (mudstate.bStandAlone)
+    {
+        delta = 1000;
+    }
+    else
+    {
+        delta = mudconf.init_size;
+    }
     if (newtop <= anum_alc_top)
     {
         return;
@@ -1626,9 +1625,12 @@ void atr_clr(dbref thing, int atr)
     case A_FORWARDLIST:
 
         db[thing].fs.word[FLAG_WORD2] &= ~HAS_FWDLIST;
-#ifndef STANDALONE
-        fwdlist_clr(thing); // We should clear the hashtable too
-#endif // !STANDALONE
+        if (!mudstate.bStandAlone)
+        {
+            // We should clear the hashtable, too.
+            //
+            fwdlist_clr(thing);
+        }
         break;
 
     case A_LISTEN:
@@ -1636,7 +1638,6 @@ void atr_clr(dbref thing, int atr)
         db[thing].fs.word[FLAG_WORD2] &= ~HAS_LISTEN;
         break;
 
-#ifndef STANDALONE
     case A_TIMEOUT:
 
         desc_reload(thing);
@@ -1646,8 +1647,6 @@ void atr_clr(dbref thing, int atr)
 
         pcache_reload(thing);
         break;
-
-#endif // !STANDALONE
     }
 }
 
@@ -1800,7 +1799,6 @@ void atr_add_raw_LEN(dbref thing, int atr, const char *szValue, int nValue)
         db[thing].fs.word[FLAG_WORD2] |= HAS_LISTEN;
         break;
 
-#ifndef STANDALONE
     case A_TIMEOUT:
 
         desc_reload(thing);
@@ -1810,8 +1808,6 @@ void atr_add_raw_LEN(dbref thing, int atr, const char *szValue, int nValue)
 
         pcache_reload(thing);
         break;
-
-#endif // !STANDALONE
     }
 }
 
@@ -1954,11 +1950,7 @@ char *atr_get_real(dbref thing, int atr, dbref *owner, int *flags,
     const char *file, const int line)
 {
     size_t nLen;
-#ifdef STANDALONE
-    char *buff = (char *)malloc(LBUF_SIZE);
-#else
     char *buff = pool_alloc_lbuf("atr_get", file, line);
-#endif
     return atr_get_str_LEN(buff, thing, atr, owner, flags, &nLen);
 }
 
@@ -1975,8 +1967,6 @@ BOOL atr_get_info(dbref thing, int atr, dbref *owner, int *flags)
     atr_decode_LEN(buff, nLen, NULL, thing, owner, flags, &nLen);
     return TRUE;
 }
-
-#ifndef STANDALONE
 
 char *atr_pget_str_LEN(char *s, dbref thing, int atr, dbref *owner, int *flags, size_t *pLen)
 {
@@ -2063,8 +2053,6 @@ BOOL atr_pget_info(dbref thing, int atr, dbref *owner, int *flags)
     *flags = 0;
     return FALSE;
 }
-
-#endif // !STANDALONE
 
 /* ---------------------------------------------------------------------------
  * atr_free: Reset all attributes of an object.
@@ -2333,11 +2321,15 @@ void initialize_objects(dbref first, dbref last)
 
 void db_grow(dbref newtop)
 {
-#ifdef STANDALONE
-    const int delta = 1000;
-#else // STANDALONE
-    const int delta = mudconf.init_size;
-#endif // STANDALONE
+    int delta;
+    if (mudstate.bStandAlone)
+    {
+        delta = 1000;
+    }
+    else
+    {
+        delta = mudconf.init_size;
+    }
 
     // Determine what to do based on requested size, current top and size.
     // Make sure we grow in reasonable-sized chunks to prevent frequent
@@ -2444,7 +2436,6 @@ void db_free(void)
     mudstate.freelist = NOTHING;
 }
 
-#ifndef STANDALONE
 void db_make_minimal(void)
 {
     db_free();
@@ -2479,7 +2470,6 @@ void db_make_minimal(void)
     s_Contents(0, obj);
     s_Link(obj, 0);
 }
-#endif // !STANDALONE
 
 dbref parse_dbref(const char *s)
 {
@@ -2790,27 +2780,30 @@ BOOLEXP *dup_bool(BOOLEXP *b)
 #ifndef MEMORY_BASED
 int init_dbfile(char *game_dir_file, char *game_pag_file)
 {
-#ifdef STANDALONE
-    Log.tinyprintf("Opening (%s,%s)" ENDLINE, game_dir_file, game_pag_file);
-#endif // STANDALONE
+    if (mudstate.bStandAlone)
+    {
+        Log.tinyprintf("Opening (%s,%s)" ENDLINE, game_dir_file, game_pag_file);
+    }
     int cc = cache_init(game_dir_file, game_pag_file);
     if (cc != HF_OPEN_STATUS_ERROR)
     {
-#ifdef STANDALONE
-        Log.tinyprintf("Done opening (%s,%s)." ENDLINE, game_dir_file, game_pag_file);
-#else // STANDALONE
-        STARTLOG(LOG_ALWAYS, "INI", "LOAD");
-        Log.tinyprintf("Using game db files: (%s,%s).", game_dir_file, game_pag_file);
-        ENDLOG;
-#endif // STANDALONE
+        if (mudstate.bStandAlone)
+        {
+            Log.tinyprintf("Done opening (%s,%s)." ENDLINE, game_dir_file,
+                game_pag_file);
+        }
+        else
+        {
+            STARTLOG(LOG_ALWAYS, "INI", "LOAD");
+            Log.tinyprintf("Using game db files: (%s,%s).", game_dir_file,
+                game_pag_file);
+            ENDLOG;
+        }
         db_free();
     }
     return cc;
 }
 #endif // !MEMORY_BASED
-
-
-#ifndef STANDALONE
 
 // check_zone - checks back through a zone tree for control.
 //
@@ -3055,7 +3048,6 @@ void load_restart_db(void)
     raw_broadcast(0, "GAME: Restart finished.");
 }
 #endif // !WIN32
-#endif // !STANDALONE
 
 #ifdef WIN32
 
@@ -3068,7 +3060,8 @@ int ReplaceFile(char *old_name, char *new_name)
     }
     else
     {
-        Log.tinyprintf("MoveFile %s to %s fails with GetLastError() of %d" ENDLINE, old_name, new_name, GetLastError());
+        Log.tinyprintf("MoveFile %s to %s fails with GetLastError() of %d" ENDLINE,
+            old_name, new_name, GetLastError());
     }
     return -1;
 }
