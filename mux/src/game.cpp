@@ -1,6 +1,6 @@
 // game.cpp
 //
-// $Id: game.cpp,v 1.42 2004-06-01 01:08:59 sdennis Exp $
+// $Id: game.cpp,v 1.43 2004-06-07 16:35:39 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -2299,16 +2299,16 @@ int DCL_CDECL main(int argc, char *argv[])
 
     mudstate.bStandAlone = false;
 
+    FLOAT_Initialize();
+    TIME_Initialize();
+    SeedRandomNumberGenerator();
+
     Log.SetBasename(pErrorBasename);
     Log.StartLogging();
     game_pid = getpid();
     write_pidfile(pidfile);
 
     BuildSignalNamesTable();
-
-    FLOAT_Initialize();
-    TIME_Initialize();
-    SeedRandomNumberGenerator();
 
 #ifdef MEMORY_ACCOUNTING
     extern CHashFile hfAllocData;
