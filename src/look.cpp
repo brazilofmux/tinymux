@@ -1,6 +1,6 @@
 // look.cpp -- commands which look at things
 //
-// $Id: look.cpp,v 1.31 2001-09-28 09:49:02 sdennis Exp $
+// $Id: look.cpp,v 1.32 2001-09-28 12:38:44 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. The WOD_REALMS portion is original work.
@@ -47,13 +47,13 @@ extern void FDECL(ufun, (char *, char *, int, int, int, dbref, dbref));
 int RealmActions[NUMBER_OF_REALMS] =
 {
     REALM_DO_NORMALLY_SEEN,
-        REALM_DO_SHOW_UMBRADESC,
-        REALM_DO_SHOW_WRAITHDESC,
-        REALM_DO_SHOW_MATRIXDESC,
-        REALM_DO_SHOW_FAEDESC,
-        REALM_DO_SHOW_FAEDESC,
-        REALM_DO_HIDDEN_FROM_YOU,
-        REALM_DO_NORMALLY_SEEN
+    REALM_DO_SHOW_UMBRADESC,
+    REALM_DO_SHOW_WRAITHDESC,
+    REALM_DO_SHOW_MATRIXDESC,
+    REALM_DO_SHOW_FAEDESC,
+    REALM_DO_SHOW_FAEDESC,
+    REALM_DO_HIDDEN_FROM_YOU,
+    REALM_DO_NORMALLY_SEEN
 };
 
 // Umbra and Matrix are realms unto themselves, so if you aren't in the same
