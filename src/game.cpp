@@ -1,6 +1,6 @@
 // game.cpp
 //
-// $Id: game.cpp,v 1.21 2000-10-12 21:07:54 sdennis Exp $
+// $Id: game.cpp,v 1.22 2000-10-24 22:39:58 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -32,6 +32,7 @@ extern void NDECL(init_cmdtab);
 extern void NDECL(cf_init);
 extern void NDECL(pcache_init);
 extern int cf_read(void);
+extern void ValidateConfigurationDbrefs(void);
 extern void NDECL(init_functab);
 extern void FDECL(close_sockets, (int emergency, char *message));
 extern void NDECL(init_version);
@@ -2098,20 +2099,7 @@ int DCL_CDECL main(int argc, char *argv[])
         mudstate.glob_reg_len[i] = 0;
     }
 
-    // If master room does not exist in the DB, clear
-    // the master room in the configuration.
-    //
-    if (mudconf.master_room != NOTHING)
-    {
-        // A master room was specified in the config.
-        //
-        if (mudconf.master_room < 0 || mudstate.db_top <= mudconf.master_room)
-        {
-            // The specified master room outside the range of valid DBrefs
-            //
-            mudconf.master_room = NOTHING;
-        }
-    }
+    ValidateConfigurationDbrefs();
     process_preload();
 
 #ifndef WIN32

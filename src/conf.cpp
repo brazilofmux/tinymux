@@ -1,6 +1,6 @@
 // conf.cpp: set up configuration information and static data.
 //
-// $Id: conf.cpp,v 1.25 2000-10-10 23:06:47 sdennis Exp $
+// $Id: conf.cpp,v 1.26 2000-10-24 22:39:58 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -1235,7 +1235,7 @@ CONF conftable[] =
     {(char *)"create_max_cost",    cf_int,     CA_GOD,     &mudconf.createmax,     0},
     {(char *)"create_min_cost",    cf_int,     CA_GOD,     &mudconf.createmin,     0},
     {(char *)"dark_sleepers",    cf_bool,    CA_GOD,     &mudconf.dark_sleepers,     0},
-    {(char *)"default_home",    cf_int,     CA_GOD,     &mudconf.default_home,      0},
+    {"default_home",                    cf_int,         CA_GOD,     &mudconf.default_home,      0},
     {(char *)"dig_cost",    cf_int,     CA_GOD,     &mudconf.digcost,       0},
     {(char *)"down_file",               cf_string_dyn,  CA_STATIC,  (int *)&mudconf.down_file,   SIZEOF_PATHNAME},
     {(char *)"down_motd_message",    cf_string,  CA_GOD,     (int *)mudconf.downmotd_msg,    GBUF_SIZE},
@@ -1270,8 +1270,8 @@ CONF conftable[] =
     {(char *)"game_dir_file",           cf_string_dyn,  CA_STATIC,  (int *)&mudconf.game_dir,   SIZEOF_PATHNAME},
     {(char *)"game_pag_file",           cf_string_dyn,  CA_STATIC,  (int *)&mudconf.game_pag,   SIZEOF_PATHNAME},
     {(char *)"good_name",    cf_badname, CA_GOD,     NULL,               1},
-    {(char *)"guest_char_num",          cf_int,         CA_STATIC,  &mudconf.guest_char,        0},
-    {(char *)"guest_nuker",        cf_int,         CA_GOD,         &mudconf.guest_nuker,           0},
+    {"guest_char_num",                  cf_int,         CA_STATIC,  &mudconf.guest_char,        0},
+    {"guest_nuker",                     cf_int,         CA_GOD,     &mudconf.guest_nuker,       0},
     {(char *)"guest_prefix",            cf_string,      CA_STATIC,  (int *)mudconf.guest_prefix,    32},
     {(char *)"guest_file",              cf_string_dyn,  CA_STATIC,  (int *)&mudconf.guest_file,  SIZEOF_PATHNAME},
     {(char *)"number_guests",           cf_int,         CA_STATIC,  &mudconf.number_guests,         0},
@@ -1306,7 +1306,7 @@ CONF conftable[] =
     {(char *)"machine_command_cost",    cf_int,     CA_GOD,     &mudconf.machinecost,       0},
     {(char *)"mail_database",    cf_string_dyn,  CA_GOD,     (int *)&mudconf.mail_db,     SIZEOF_PATHNAME},
     {(char *)"mail_expiration",    cf_int,     CA_GOD,     &mudconf.mail_expiration,   0},
-    {(char *)"master_room",    cf_int,     CA_GOD,     &mudconf.master_room,       0},
+    {"master_room",                     cf_int,         CA_GOD,     &mudconf.master_room,       0},
     {(char *)"match_own_commands",    cf_bool,    CA_GOD,     &mudconf.match_mine,        0},
     {(char *)"max_players",    cf_int,     CA_GOD,     &mudconf.max_players,       0},
     {(char *)"max_cache_size", cf_int,     CA_GOD,     (int *)&mudconf.max_cache_size,    0},
@@ -1335,8 +1335,8 @@ CONF conftable[] =
     {(char *)"player_name_spaces",    cf_bool,    CA_GOD,     &mudconf.name_spaces,       0},
     {(char *)"player_queue_limit",    cf_int,     CA_GOD,     &mudconf.queuemax,      0},
     {(char *)"player_quota",    cf_int,     CA_GOD,     &mudconf.player_quota,      0},
-    {(char *)"player_starting_home",    cf_int,     CA_GOD,     &mudconf.start_home,        0},
-    {(char *)"player_starting_room",    cf_int,     CA_GOD,     &mudconf.start_room,        0},
+    {"player_starting_home",            cf_int,         CA_GOD,     &mudconf.start_home,        0},
+    {"player_starting_room",            cf_int,         CA_GOD,     &mudconf.start_room,        0},
     {(char *)"plushelp_file",           cf_string_dyn,  CA_STATIC,  (int *)&mudconf.plushelp_file,  SIZEOF_PATHNAME},
     {(char *)"plushelp_index",          cf_string_dyn,  CA_STATIC,  (int *)&mudconf.plushelp_indx,  SIZEOF_PATHNAME},
     {(char *)"staffhelp_file",          cf_string_dyn,  CA_STATIC,  (int *)&mudconf.staffhelp_file, SIZEOF_PATHNAME},
@@ -1469,6 +1469,33 @@ int cf_set(char *cp, char *ap, dbref player)
     return -1;
 }
 
+// Validate important dbrefs.
+//
+void ValidateConfigurationDbrefs(void)
+{
+    static dbref *Table[] =
+    {
+        &mudconf.default_home,
+        &mudconf.guest_char,
+        &mudconf.guest_nuker,
+        &mudconf.master_room,
+        &mudconf.start_home,
+        &mudconf.start_room,
+        0
+    };
+
+    for (int i = 0; Table[i]; i++)
+    {
+        if (*Table[i] != NOTHING)
+        {
+            if (*Table[i] < 0 || mudstate.db_top <= *Table[i])
+            {
+                *Table[i] = NOTHING;
+            }
+        }
+    }
+}
+
 /*
  * ---------------------------------------------------------------------------
  * * do_admin: Command handler to set config params at runtime 
@@ -1480,8 +1507,10 @@ void do_admin(dbref player, dbref cause, int extra, char *kw, char *value)
 
     i = cf_set(kw, value, player);
     if ((i >= 0) && !Quiet(player))
+    {
         notify(player, "Set.");
-    return;
+    }
+    ValidateConfigurationDbrefs();
 }
 
 /*
@@ -1556,6 +1585,4 @@ void list_cf_access(dbref player)
     free_mbuf(buff);
 }
 
-#endif /*
-        * * STANDALONE  
-        */
+#endif // STANDALONE
