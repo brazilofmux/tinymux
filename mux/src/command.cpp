@@ -1,6 +1,6 @@
 // command.cpp -- command parser and support routines.
 //
-// $Id: command.cpp,v 1.34 2004-05-20 04:31:19 sdennis Exp $
+// $Id: command.cpp,v 1.35 2004-05-20 04:48:16 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -3561,7 +3561,7 @@ void do_list(dbref executor, dbref caller, dbref enactor, int extra,
     char *s_option = mux_strtok_parse(&tts);
 
     int flagvalue;
-    if (!search_nametab(executor, list_names, s_option, &flagvalue))
+    if (!search_nametab(executor, list_names, arg, &flagvalue))
     {
         if (flagvalue == -1)
         {
