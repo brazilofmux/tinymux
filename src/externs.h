@@ -1,6 +1,6 @@
 // externs.h - Prototypes for externs not defined elsewhere.
 //
-// $Id: externs.h,v 1.46 2001-03-31 08:41:40 sdennis Exp $
+// $Id: externs.h,v 1.47 2001-05-05 01:34:34 zenty Exp $
 //
 #ifndef EXTERNS_H
 #define EXTERNS_H
@@ -332,8 +332,8 @@ extern void ReleaseAllResources(dbref obj);
 #define CLONE_SET_NAME  32  /* ARG2 is alternate name of cloned object */
 #define CLONE_PARENT    64  /* Set parent on obj instd of cloning attrs */
 #endif // QQQ3
-#define COMTITLE_ON     0   // Turn Comtitles on.
-#define COMTITLE_OFF    1   // Turn Comtitles off.
+#define COMTITLE_ON     1   // Turn Comtitles on.
+#define COMTITLE_OFF    2   // Turn Comtitles off.
 #define CRE_INVENTORY   0   /* Create object in my inventory */
 #define CRE_LOCATION    1   /* Create object in my location */
 #define CRE_SET_LOC 2   /* ARG2 is location of new object */

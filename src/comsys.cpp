@@ -1,6 +1,6 @@
 // comsys.cpp
 //
-// * $Id: comsys.cpp,v 1.39 2001-04-11 18:35:10 sdennis Exp $
+// * $Id: comsys.cpp,v 1.40 2001-05-05 01:34:34 zenty Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -853,8 +853,8 @@ void BuildChannelMessage
 
     // Don't evaluate a title if there isn't one to parse or evaluation of
     // comtitles is disabled.
-    //
-    if (hasComTitle)
+    // If their set spoof, ComTitleStatus doesn't matter.
+    if (hasComTitle && (user->ComTitleStatus || bSpoof))
     {
         if (mudconf.eval_comtitle)
         {
