@@ -130,6 +130,9 @@ Feature Additions:
  --  Added floordiv(), remainder(), and changed mod().
  --  Added INFO command which can be used at the connect screen and from within
      the game.
+ --  Added automagic date parsing as part of convtime. The date parser supports
+     free-form dates and also ISO formats including year/day, month/day, and
+     weekofyear/dayofweek.
 
 
 Bug Fixes:
