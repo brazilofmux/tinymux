@@ -31,7 +31,7 @@ Bug Fixes:
 
 Performance Enhancements:
 ~~~~~~~~~~~~~~~~~~~~~~~~
- -- AAA.
+ -- Jake sorted the mudconf structures first by type and then by name.
 
 
 Cosmetic Changes:
