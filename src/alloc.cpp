@@ -1,6 +1,6 @@
 // alloc.cpp -- Memory Allocation Subsystem.
 //
-// $Id: alloc.cpp,v 1.12 2001-11-24 19:19:13 sdennis Exp $
+// $Id: alloc.cpp,v 1.13 2001-11-24 20:07:09 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -225,21 +225,22 @@ char *pool_alloc(int poolnum, const char *tag)
     pools[poolnum].tot_alloc++;
     pools[poolnum].num_alloc++;
 
-    unsigned int *pui = (unsigned int *)p;
-    if (mudstate.logging == 0)
+    if (  (LOG_ALLOCATE & mudconf.log_options) != 0
+       && mudstate.logging == 0
+       && start_log("DBG", "ALLOC"))
     {
-        STARTLOG(LOG_ALLOCATE, "DBG", "ALLOC");
         Log.tinyprintf("Alloc[%d] (tag %s) buffer at %lx. (%s)",
             pools[poolnum].pool_size, tag, (long)ph, mudstate.debug_cmd);
-        ENDLOG;
+        end_log();
+    }
 
-        // If the buffer was modified after it was last freed, log it.
-        //
-        if (*pui != POOL_MAGICNUM)
-        {
-            pool_err("BUG", LOG_PROBLEMS, poolnum, tag, ph, "Alloc",
-                "buffer modified after free");
-        }
+    // If the buffer was modified after it was last freed, log it.
+    //
+    unsigned int *pui = (unsigned int *)p;
+    if (*pui != POOL_MAGICNUM)
+    {
+        pool_err("BUG", LOG_PROBLEMS, poolnum, tag, ph, "Alloc",
+            "buffer modified after free");
     }
     *pui = 0;
     return p;
@@ -310,21 +311,22 @@ char *pool_alloc_lbuf(const char *tag)
     pools[POOL_LBUF].tot_alloc++;
     pools[POOL_LBUF].num_alloc++;
 
-    unsigned int *pui = (unsigned int *)p;
-    if (mudstate.logging == 0)
+    if (  (LOG_ALLOCATE & mudconf.log_options) != 0
+       && mudstate.logging == 0
+       && start_log("DBG", "ALLOC"))
     {
-        STARTLOG(LOG_ALLOCATE, "DBG", "ALLOC");
-        Log.tinyprintf("Alloc[%d] (tag %s) buffer at %lx. (%s)", LBUF_SIZE,
-            tag, (long)ph, mudstate.debug_cmd);
-        ENDLOG;
+        Log.tinyprintf("Alloc[%d] (tag %s) buffer at %lx. (%s)",
+            LBUF_SIZE, tag, (long)ph, mudstate.debug_cmd);
+        end_log();
+    }
 
-        // If the buffer was modified after it was last freed, log it.
-        //
-        if (*pui != POOL_MAGICNUM)
-        {
-            pool_err("BUG", LOG_PROBLEMS, POOL_LBUF, tag, ph, "Alloc",
-                "buffer modified after free");
-        }
+    // If the buffer was modified after it was last freed, log it.
+    //
+    unsigned int *pui = (unsigned int *)p;
+    if (*pui != POOL_MAGICNUM)
+    {
+        pool_err("BUG", LOG_PROBLEMS, POOL_LBUF, tag, ph, "Alloc",
+            "buffer modified after free");
     }
     *pui = 0;
     return p;
@@ -372,13 +374,14 @@ void pool_free(int poolnum, char *buf)
         return;
     }
 
-    if (mudstate.logging == 0)
+    if (  (LOG_ALLOCATE & mudconf.log_options) != 0
+       && mudstate.logging == 0
+       && start_log("DBG", "ALLOC"))
     {
-        STARTLOG(LOG_ALLOCATE, "DBG", "ALLOC");
         Log.tinyprintf("Free[%d] (tag %s) buffer at %lx. (%s)",
             pools[poolnum].pool_size, ph->buf_tag, (long)ph,
             mudstate.debug_cmd);
-        ENDLOG;
+        end_log();
     }
 
     // Make sure we aren't freeing an already free buffer.  If we are, log an
@@ -453,13 +456,13 @@ void pool_free_lbuf(char *buf)
         }
     }
 
-    if (mudstate.logging == 0)
+    if (  (LOG_ALLOCATE & mudconf.log_options) != 0
+       && mudstate.logging == 0
+       && start_log("DBG", "ALLOC"))
     {
-        STARTLOG(LOG_ALLOCATE, "DBG", "ALLOC");
         Log.tinyprintf("Free[%d] (tag %s) buffer at %lx. (%s)",
-            LBUF_SIZE, ph->buf_tag, (long)ph,
-            mudstate.debug_cmd);
-        ENDLOG;
+            LBUF_SIZE, ph->buf_tag, (long)ph, mudstate.debug_cmd);
+        end_log();
     }
 
     // Update the pool header and stats.
