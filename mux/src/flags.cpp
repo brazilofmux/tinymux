@@ -1,6 +1,6 @@
 // flags.cpp -- Flag manipulation routines.
 //
-// $Id: flags.cpp,v 1.12 2002-08-28 16:13:27 jake Exp $
+// $Id: flags.cpp,v 1.13 2002-08-29 04:16:11 jake Exp $
 //
 
 #include "copyright.h"
@@ -1144,8 +1144,6 @@ BOOL flag_rename(char *alias, char *newname)
 
     FLAGNAMEENT *flag1 = NULL, *flag2 = NULL;
     flag1 = (FLAGNAMEENT *)hashfindLEN(pAlias, pnAlias, &mudstate.flags_htab);
-    notify(GOD, pAlias);
-    notify(GOD, Tiny_ltoa_t(pnAlias));
     if (flag1 != NULL)
     {
         flag2 = (FLAGNAMEENT *)hashfindLEN(pNewName, pnNewName, &mudstate.flags_htab);
