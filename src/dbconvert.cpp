@@ -1,6 +1,6 @@
 // dbconvert.cpp - Convert databases to various MUX formats.
 //
-// $Id: dbconvert.cpp,v 1.13 2001-10-17 16:27:41 sdennis Exp $ 
+// $Id: dbconvert.cpp,v 1.14 2001-10-17 21:09:21 sdennis Exp $ 
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -45,8 +45,8 @@ void info(int fmt, int flags, int ver)
     {
         Log.WriteString(" Unsupported flags");
     }
-    if (flags & V_GDBM)
-        Log.WriteString(" GDBM");
+    if (flags & V_DATABASE)
+        Log.WriteString(" Database");
     if (flags & V_ATRNAME)
         Log.WriteString(" AtrName");
     if (flags & V_ATRKEY)
