@@ -1,6 +1,6 @@
 // stringutil.h -- string utilities
 //
-// $Id: stringutil.h,v 1.11 2000-09-28 18:11:51 sdennis Exp $
+// $Id: stringutil.h,v 1.12 2000-09-29 23:41:36 sdennis Exp $
 //
 // MUX 2.0
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -124,6 +124,7 @@ void DbrefToBuffer_Init(DTB *p, char *arg_buff, char **arg_bufc);
 int DbrefToBuffer_Add(DTB *pContext, int i);
 void DbrefToBuffer_Final(DTB *pContext);
 int DCL_CDECL Tiny_vsnprintf(char *buff, int count, const char *fmt, va_list va);
+int GetLineTrunc(char *Buffer, size_t nBuffer, FILE *fp);
 
 #ifdef MUX21
 typedef struct

@@ -1,6 +1,6 @@
 // mail.cpp 
 //
-// $Id: mail.cpp,v 1.11 2000-09-20 22:49:28 sdennis Exp $
+// $Id: mail.cpp,v 1.12 2000-09-29 23:41:49 sdennis Exp $
 //
 // This code was taken from Kalkin's DarkZone code, which was
 // originally taken from PennMUSH 1.50 p10, and has been heavily modified
@@ -3333,35 +3333,10 @@ void save_malias(FILE *fp)
     malias_write(fp);
 }
 
-// This function acts like fgets except that any data on the end of the 
-// line past the buffer size is truncated instead of being returned on
-// the next call.
-//
-int GetLineTrunc(char *Buffer, size_t nBuffer, FILE *fp)
-{
-    fgets(Buffer, nBuffer, fp);
-    int lenBuffer = strlen(Buffer);
-    if (Buffer[lenBuffer-1] != '\n')
-    {
-        // The line was too long for the buffer. Continue reading until the
-        // end of the line.
-        //
-        char TruncBuffer[SBUF_SIZE];
-        int lenTruncBuffer;
-        do
-        {
-            fgets(TruncBuffer, sizeof(TruncBuffer), fp);
-            lenTruncBuffer = strlen(TruncBuffer);
-        }
-        while (TruncBuffer[lenTruncBuffer-1] != '\n');
-    }
-    return lenBuffer;
-}
-
 void malias_read(FILE *fp)
 {
     int i, j;
-    char buffer[1000];
+    char buffer[LBUF_SIZE];
     struct malias *m;
 
     ma_top = getref(fp);

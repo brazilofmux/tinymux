@@ -1,6 +1,6 @@
 // stringutil.cpp -- string utilities
 //
-// $Id: stringutil.cpp,v 1.24 2000-09-28 18:14:50 sdennis Exp $
+// $Id: stringutil.cpp,v 1.25 2000-09-29 23:41:36 sdennis Exp $
 //
 // MUX 2.0
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -2244,6 +2244,31 @@ int DCL_CDECL Tiny_vsnprintf(char *buff, int count, const char *fmt, va_list va)
     }
     buff[len] = '\0';
     return len;
+}
+
+// This function acts like fgets except that any data on the end of the 
+// line past the buffer size is truncated instead of being returned on
+// the next call.
+//
+int GetLineTrunc(char *Buffer, size_t nBuffer, FILE *fp)
+{
+    fgets(Buffer, nBuffer, fp);
+    int lenBuffer = strlen(Buffer);
+    if (Buffer[lenBuffer-1] != '\n')
+    {
+        // The line was too long for the buffer. Continue reading until the
+        // end of the line.
+        //
+        char TruncBuffer[SBUF_SIZE];
+        int lenTruncBuffer;
+        do
+        {
+            fgets(TruncBuffer, sizeof(TruncBuffer), fp);
+            lenTruncBuffer = strlen(TruncBuffer);
+        }
+        while (TruncBuffer[lenTruncBuffer-1] != '\n');
+    }
+    return lenBuffer;
 }
 
 #ifdef MUX21
