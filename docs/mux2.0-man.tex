@@ -47,7 +47,7 @@ experimentation without the advantage of some experience or history can be
 nearly impossible.
 \chapter{New to TinyMUX}
 \section{Frequently Asked Questions (FAQ)}
-\subsection{What is a Text-based Game Server?}
+\subsection{What is a Text-Based Game Server?}
 It is a program that allows a multitude of people to connect to the same
 text-based environment and interact with each other and with the environment.
 The administrator runs this server on top of an operating system and the server
@@ -77,7 +77,7 @@ Internet or Intranet connection, as without it, you'll be using it by yourself.
 
 You need to find the latest known-good distribution from
 www.tinymux.com and download it. If you are using a web browser, it will
-download it in 'binary' mode for you automatically, however, if you use an FTP
+download it in `binary' mode for you automatically, however, if you use an FTP
 client manually, you'll need to be sure to put the transfer into binary. Even
 between Unix machines, Non-binary transfers can be problematic.
 
@@ -120,12 +120,24 @@ ftp$>$ \emph{quit}\\
 \end{verse}
 }}
 The suffixes on the end of the filename tell you which tools were used to
-produce the file and in which order. Gzip handles '.gz' files, and tar handled
-'.tar' files. So in order to unpack this distribution, we do the following:
+produce the file and in which order. Gzip handles `.gz' files, and tar handled
+`.tar' files. So in order to unpack this distribution, we do the following:
 \footnotesize{\texttt{
 \begin{verse}
 \$ \emph{gzip -d mux2.0-B7.tar.gz}\\
-\$ \emph{tar xvf mux2.0-B7.tar}\\
+\$ \emph{tar xvf mux2.0-B7.tar}
 \end{verse}
 }}
+These two commands will create a sub-directory called `mux2.0' with all the
+required files in the right places. So, in order to build the game, continue
+as follows:
+\footnotesize{\texttt{
+\begin{verse}
+\$ \emph{cd mux2.0/src}\\
+\$ \emph{./Configure}\\
+\$ \emph{make}
+\end{verse}
+}}
+
+
 \end{document}
