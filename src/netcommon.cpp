@@ -1,6 +1,6 @@
 // netcommon.cpp
 //
-// $Id: netcommon.cpp,v 1.27 2000-11-06 02:04:34 sdennis Exp $ 
+// $Id: netcommon.cpp,v 1.28 2000-11-06 03:17:15 sdennis Exp $ 
 //
 // This file contains routines used by the networking code that do not
 // depend on the implementation of the networking code.  The network-specific
@@ -1922,7 +1922,30 @@ int do_command(DESC *d, char *command, int first)
                 mudstate.global_regs[i][0] = '\0';
                 mudstate.glob_reg_len[i] = 0;
             }
-            process_command(d->player, d->player, 1, command, (char **)NULL, 0);
+
+            CLinearTimeAbsolute ltaBegin;
+            ltaBegin.GetUTC();
+
+            char *log_cmdbuf = process_command(d->player, d->player,
+                1, command, (char **)NULL, 0);
+
+            CLinearTimeAbsolute ltaEnd;
+            ltaEnd.GetUTC();
+
+            CLinearTimeDelta ltd = ltaEnd - ltaBegin;
+            if (ltd.ReturnSeconds() >= mudconf.max_cmdsecs)
+            {
+                STARTLOG(LOG_PROBLEMS, "CMD", "CPU");
+                log_name_and_loc(d->player);
+                char *logbuf = alloc_lbuf("do_command.LOG.cpu");
+                long ms = ltd.ReturnMilliseconds();
+                sprintf(logbuf, " queued command taking %d.%02d secs: ", ms/100, ms%100);
+                log_text(logbuf);
+                free_lbuf(logbuf);
+                log_text(log_cmdbuf);
+                ENDLOG;
+            }
+
 			mudstate.curr_cmd = (char *) "";
             if (d->output_suffix)
             {

@@ -1,6 +1,6 @@
 // cque.cpp -- commands and functions for manipulating the command queue.
 //
-// $Id: cque.cpp,v 1.16 2000-11-04 08:54:02 sdennis Exp $
+// $Id: cque.cpp,v 1.17 2000-11-06 03:17:15 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -181,7 +181,7 @@ void Task_RunQueueEntry(void *pEntry, int iUnused)
                     ltaBegin.GetUTC();
                     CLinearTimeDelta ltdUsageBegin = GetProcessorUsage();
 
-                    process_command(player, point->cause, 0, cp, point->env, point->nargs);
+                    char *log_cmdbuf = process_command(player, point->cause, 0, cp, point->env, point->nargs);
 
                     CLinearTimeAbsolute ltaEnd;
                     ltaEnd.GetUTC();
@@ -206,7 +206,7 @@ void Task_RunQueueEntry(void *pEntry, int iUnused)
                         sprintf(logbuf, " queued command taking %d.%02d secs (enactor #%d): ", ms/100, ms%100, point->cause);
                         log_text(logbuf);
                         free_lbuf(logbuf);
-                        //log_text(log_cmdbuf);
+                        log_text(log_cmdbuf);
                         ENDLOG;
                     }
                 }
