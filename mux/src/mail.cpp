@@ -1,6 +1,6 @@
 // mail.cpp
 //
-// $Id: mail.cpp,v 1.16 2002-07-13 22:22:51 jake Exp $
+// $Id: mail.cpp,v 1.17 2002-07-13 22:47:34 jake Exp $
 //
 // This code was taken from Kalkin's DarkZone code, which was
 // originally taken from PennMUSH 1.50 p10, and has been heavily modified
@@ -1107,8 +1107,27 @@ static void send_mail
     }
     CLinearTimeAbsolute ltaNow;
     ltaNow.GetLocal();
-    char *temp = ltaNow.ReturnDateString();
-    strcpy(tbuf1, temp);
+
+    BOOL bOmitting = FALSE;
+    int count = 0;
+    for(char *temp = ltaNow.ReturnDateString();*temp;*temp++)
+    {
+        if (*temp == '.')
+        {
+            bOmitting = TRUE;
+            continue;
+        }
+        else if (*temp == ' ')
+        {
+            bOmitting = FALSE;
+        }
+        if(!bOmitting)
+        {
+            tbuf1[count] = *temp;
+            count++;
+        }
+    }
+    tbuf1[count] = '\0';
 
     // Initialize the appropriate fields.
     //
