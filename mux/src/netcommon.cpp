@@ -1,6 +1,6 @@
 // netcommon.cpp
 //
-// $Id: netcommon.cpp,v 1.43 2003-03-08 09:03:19 sdennis Exp $
+// $Id: netcommon.cpp,v 1.44 2003-08-30 04:56:42 sdennis Exp $
 //
 // This file contains routines used by the networking code that do not
 // depend on the implementation of the networking code.  The network-specific
@@ -2182,7 +2182,7 @@ BOOL do_command(DESC *d, char *command)
                 log_name_and_loc(d->player);
                 char *logbuf = alloc_lbuf("do_command.LOG.cpu");
                 long ms = ltd.ReturnMilliseconds();
-                sprintf(logbuf, " queued command taking %ld.%02ld secs: ", ms/100, ms%100);
+                sprintf(logbuf, " queued command taking %ld.%03ld secs: ", ms/1000, ms%1000);
                 log_text(logbuf);
                 free_lbuf(logbuf);
                 log_text(log_cmdbuf);
