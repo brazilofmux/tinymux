@@ -1,6 +1,6 @@
 // object.cpp -- Low-level object manipulation routines.
 //
-// $Id: object.cpp,v 1.28 2002-02-25 02:43:50 sdennis Exp $
+// $Id: object.cpp,v 1.29 2003-01-20 05:46:34 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -255,7 +255,7 @@ dbref create_obj(dbref player, int objtype, char *name, int cost)
         cost = mudconf.opencost;
         quota = mudconf.exit_quota;
         f = mudconf.exit_flags;
-        pValidName = MakeCanonicalObjectName(name, &nValidName, &okname);
+        pValidName = MakeCanonicalExitName(name, &nValidName, &okname);
         tname = "an exit";
         break;
 

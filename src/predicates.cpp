@@ -1,6 +1,6 @@
 // predicates.cpp
 //
-// $Id: predicates.cpp,v 1.52 2002-10-13 17:08:35 sdennis Exp $
+// $Id: predicates.cpp,v 1.53 2003-01-20 05:46:34 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -273,7 +273,7 @@ void giveto(dbref who, int pennies)
 }
 
 // The following function validates that the object names (which will be
-// used for things, exits, and rooms, but not for players) and generates
+// used for things and rooms, but not for players or exits) and generates
 // a canonical form of that name (with optimized ANSI).
 //
 char *MakeCanonicalObjectName(const char *pName, int *pnName, BOOL *pbValid)
@@ -340,6 +340,116 @@ char *MakeCanonicalObjectName(const char *pName, int *pnName, BOOL *pbValid)
     *pnName = nBuf;
     *pbValid = TRUE;
     return Buf;
+}
+
+// The following function validates exit names.
+//
+char *MakeCanonicalExitName(const char *pName, int *pnName, BOOL *pbValid)
+{
+    static char Buf[MBUF_SIZE];
+    static char Out[MBUF_SIZE];
+
+    *pnName = 0;
+    *pbValid = FALSE;
+
+    if (!pName)
+    {
+        return NULL;
+    }
+
+    // Build the non-ANSI version so that we can parse for semicolons
+    // safely.
+    //
+    char *pStripped = strip_ansi(pName);
+    char *pBuf = Buf;
+    safe_mb_str(pStripped, Buf, &pBuf);
+    *pBuf = '\0';
+
+    int nBuf = pBuf - Buf;
+    pBuf = Buf;
+
+    BOOL bHaveDisplay = FALSE;
+
+    char *pOut = Out;
+
+    for (; nBuf;)
+    {
+        // Build (q,n) as the next segment.  Leave the the remaining segments as
+        // (pBuf,nBuf).
+        //
+        char *q = strchr(pBuf, ';');
+        size_t n;
+        if (q)
+        {
+            *q = '\0';
+            n = q - pBuf;
+            q = pBuf;
+            pBuf += n + 1;
+            nBuf -= n + 1;
+        }
+        else
+        {
+            n = nBuf;
+            q = pBuf;
+            pBuf += nBuf;
+            nBuf = 0;
+        }
+
+        if (bHaveDisplay)
+        {
+            // We already have the displayable name. We don't allow ANSI in
+            // any segment but the first, so we can pull them directly from
+            // the stripped buffer.
+            //
+            int  nN;
+            BOOL bN;
+            char *pN = MakeCanonicalObjectName(q, &nN, &bN);
+            if (  bN
+               && nN < MBUF_SIZE - (pOut - Out) - 1)
+            {
+                safe_mb_chr(';', Out, &pOut);
+                safe_mb_str(pN, Out, &pOut);
+            }
+        }
+        else
+        {
+            // We don't have the displayable name, yet. We know where the next
+            // semicolon occurs, so we limit the visible width of the
+            // truncation to that.  We should be picking up all the visible
+            // characters leading up to the semicolon, but not including the
+            // semi-colon.
+            //
+            int vw;
+            int nN = ANSI_TruncateToField(pName, sizeof(Out), Out, n, &vw,
+                ANSI_ENDGOAL_NORMAL);
+
+            // vw should always be equal to n, but we'll just make sure.
+            //
+            if (vw == n)
+            {
+                int  nN;
+                BOOL bN;
+                char *pN = MakeCanonicalObjectName(Out, &nN, &bN);
+                if (  bN
+                   && nN <= MBUF_SIZE - 1)
+                {
+                    safe_mb_str(pN, Out, &pOut);
+                    bHaveDisplay = TRUE;
+                }
+            }
+        }
+    }
+    if (bHaveDisplay)
+    {
+        *pnName = pOut - Out;
+        *pbValid = TRUE;
+        *pOut = '\0';
+        return Out;
+    }
+    else
+    {
+        return NULL;
+    }
 }
 
 // The following function validates the player name. ANSI is not
