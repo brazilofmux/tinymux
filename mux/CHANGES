@@ -116,6 +116,8 @@ Feature Additions:
  -- Blank lines in configuration are now ignored as if they were comments.
  -- Jake added file/line information in ALLOC/BUG messages. From RhostMUSH.
  -- Added /QUIET switch to @doing command.
+ -- Improved signal names from 'SIGTERM' to 'SIGTERM (Terminated)' and from
+    'SIGUSR1' to 'SIGUSR1 (Restart Server)'.
 
 
 Bug Fixes:
@@ -183,6 +185,15 @@ Bug Fixes:
     further so that the connection can continued to be used for logging into
     another account. Prompted by Alierak.
  -- Fixed @cemit alloc/free problems from previous check-in.
+ -- Fixed @hook/ignore so that it can sometimes not ignore.
+ -- Raw_broadcast is sometimes called from the signal handlers, therefore is
+    should not be calling memory allocation.
+ -- Check in the slave for long hostnames. Alierak.
+ -- Long signal names have always been non-functional. Reported by Alierak.
+ -- Not an issue due to above bug, but avoid using a temporary buffer that
+    would have been too small for the long signal names.  Reported by Alierak.
+ -- Use God() macro in chown_all() in case someone tries the multiple-GOD
+    hack. Reported by Alierak.
 
 
 Performance Enhancements:
@@ -194,6 +205,7 @@ Performance Enhancements:
 Cosmetic Changes:
 ~~~~~~~~~~~~~~~~
  -- Added grammatically correct comma after 'shouts'.
+
 
 Miscellaneous:
 ~~~~~~~~~~~~~
