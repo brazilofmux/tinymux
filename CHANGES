@@ -274,6 +274,19 @@ Bug Fixes:
     Reported by Alierak.
  -- Fix seeding random numbers on Win32. The call to CryptAcquireContext
     was likely to fail.
+ -- On sizeof(int) == 8 systems, IPv4 mask validation gave false negatives.
+    Reported by Alierak.
+ -- On sizeof(int) == 8 systems, slave was non functional because
+    gethostbyname choked on an eight-byte IPv4 argument. Reported by Alierak.
+ -- IP ranges of the form 'a.b.c.d/m' would allow 'm' to be text and take it
+    as a zero value. For example, 'forbid_site 1.2.3.4/foobar' would effect
+    every IP address. Too easy to shoot yourself in the foot. Reported by
+    Alierak.
+ -- LROOMS() would not check across the entire database. It left off
+    consideration of the database's last dbref. Reported by Alierak.
+ -- For exits, loc(foo) did not return the same answer as rloc(foo,1).
+    Reported by Alierak.
+
 
 Performance Enhancements:
 ~~~~~~~~~~~~~~~~~~~~~~~~
