@@ -1,5 +1,5 @@
 TinyMUX 2.2:  CHANGES
-Last Update:  October 2002
+Last Update:  November 2002
 
 Major changes that may affect performance and require softcode tweaks:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -123,6 +123,8 @@ Feature Additions:
     and line number where atr_get() was originally called from. Code from
     RhostMUSH. Jake.
  -- Extended exptime() and writetime() to use weeks and 30-day months.
+ -- Added MailLock as a new @lock.  Incoming @mail must pass the MailLock or
+    it is returned.
 
 
 Bug Fixes:
