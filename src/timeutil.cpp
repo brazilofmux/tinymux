@@ -1,6 +1,6 @@
 // timeutil.cpp -- CLinearTimeAbsolute and CLinearTimeDelta modules.
 //
-// $Id: timeutil.cpp,v 1.7 2000-05-22 22:13:00 sdennis Exp $
+// $Id: timeutil.cpp,v 1.8 2000-06-20 16:37:47 sdennis Exp $
 //
 // Date/Time code based on algorithms presented in "Calendrical Calculations",
 // Cambridge Press, 1998.
@@ -950,7 +950,7 @@ static CLinearTimeDelta    ltdTimeZoneStandard;
 //
 void test_time_t(void)
 {
-    long ulUpper, ulMid, ulLower;
+    time_t ulUpper, ulMid, ulLower;
 
     // Determine the upper bound.
     //
