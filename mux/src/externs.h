@@ -1,6 +1,6 @@
 // externs.h -- Prototypes for externs not defined elsewhere.
 //
-// $Id: externs.h,v 1.23 2002-07-09 08:22:48 jake Exp $
+// $Id: externs.h,v 1.24 2002-07-09 21:24:45 jake Exp $
 //
 
 #ifndef EXTERNS_H
@@ -131,7 +131,7 @@ extern void show_vrml_url(dbref, dbref);
 extern void move_object(dbref, dbref);
 extern void move_via_generic(dbref, dbref, dbref, int);
 extern void move_via_exit(dbref, dbref, dbref, dbref, int);
-extern int  move_via_teleport(dbref, dbref, dbref, int);
+extern BOOL move_via_teleport(dbref, dbref, dbref, int);
 extern void move_exit(dbref, dbref, int, const char *, int);
 extern void do_enter_internal(dbref, dbref, int);
 

@@ -1,6 +1,6 @@
 // wiz.cpp -- Wizard-only commands.
 //
-// $Id: wiz.cpp,v 1.7 2002-07-09 02:25:06 jake Exp $
+// $Id: wiz.cpp,v 1.8 2002-07-09 21:24:45 jake Exp $
 //
 
 #include "copyright.h"
@@ -31,10 +31,8 @@ void do_teleport
     int hush = 0;
 
     if (  (  Fixed(executor)
-          || Fixed(Owner(executor))
-          )
-       && !Tel_Anywhere(executor)
-       )
+          || Fixed(Owner(executor)))
+       && !Tel_Anywhere(executor))
     {
         notify(executor, mudconf.fixed_tel_msg);
         return;
@@ -76,7 +74,8 @@ void do_teleport
     // Fail if we don't control the victim or the victim's location.
     //
     if (  !Controls(executor, victim)
-       && (  (isExit(victim) && !Controls(executor, Home(victim)))
+       && (  (  isExit(victim)
+             && !Controls(executor, Home(victim)))
 	      || !Controls(executor, Location(victim)))
        && !Tel_Anything(executor))
     {
@@ -144,9 +143,7 @@ void do_teleport
            || !isRoom(loc)
            || !( Controls(executor, loc)
               || Jump_ok(loc)
-              || Tel_Anywhere(executor)
-              )
-           )
+              || Tel_Anywhere(executor)))
         {
             notify_quiet(executor, NOPERM_MESSAGE);
             return;
@@ -166,13 +163,13 @@ void do_teleport
         // You must control the destination, or it must be a JUMP_OK
         // room where you pass its TELEPORT lock.
         //
-        if (  !( Controls(executor, destination)
-                 || Jump_ok(destination)
-                 || Tel_Anywhere(executor)
-               )
-              || !could_doit(executor, destination, A_LTPORT)
-              || ( isExit(victim) && God(destination) && !God(executor) )
-           )
+        if (  !(  Controls(executor, destination)
+               || Jump_ok(destination)
+               || Tel_Anywhere(executor))
+           || !could_doit(executor, destination, A_LTPORT)
+           || (  isExit(victim)
+              && God(destination)
+              && !God(executor)))
         {
             // Nope, report failure.
             //
@@ -204,11 +201,11 @@ void do_teleport
             }
         }
     }
-    else if ( isExit(destination) )
+    else if (isExit(destination))
     {
-        if ( isExit(victim) )
+        if (isExit(victim))
         {
-            if ( executor != victim )
+            if (executor != victim)
             {
                 notify_quiet(executor, "Bad destination.");
             }
@@ -502,10 +499,8 @@ void do_boot(dbref executor, dbref caller, dbref enactor, int key, char *name)
             return;
         }
         if (  (  !isPlayer(victim)
-              && !God(executor)
-              )
-           || executor == victim
-           )
+              && !God(executor))
+           || executor == victim)
         {
             notify_quiet(executor, "You can only boot off other players!");
             return;
@@ -544,14 +539,14 @@ void do_boot(dbref executor, dbref caller, dbref enactor, int key, char *name)
 //
 void do_poor(dbref executor, dbref caller, dbref enactor, int key, char *arg1)
 {
-    dbref a;
-    int amt, curamt;
-
     if (!is_rational(arg1))
     {
         return;
     }
-    amt = Tiny_atol(arg1);
+
+    int amt = Tiny_atol(arg1);
+    int curamt;
+    dbref a;
     DO_WHOLE_DB(a)
     {
         if (isPlayer(a))

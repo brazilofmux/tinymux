@@ -1,6 +1,6 @@
 // comsys.cpp
 //
-// $Id: comsys.cpp,v 1.10 2002-07-09 08:22:48 jake Exp $
+// $Id: comsys.cpp,v 1.11 2002-07-09 21:24:45 jake Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -1622,7 +1622,7 @@ void do_cleanupchannels(void)
                 {
                     // Go looking for user in the array.
                     //
-                    int bFound = FALSE;
+                    BOOL bFound = FALSE;
                     int iPos;
                     for (iPos = 0; iPos < ch->num_users && !bFound; iPos++)
                     {
@@ -1928,12 +1928,9 @@ void do_channelwho(dbref executor, dbref caller, dbref enactor, int key, char *a
 {
     struct comuser *user;
     char channel[MAX_CHANNEL_LEN+1];
-    int flag;
-    char *s;
-    char *t;
-    char *buff;
+    char *s, *t, *buff;
     char temp[LBUF_SIZE];
-    int i;
+    int i, flag;
 
     if (!mudconf.have_comsys)
     {

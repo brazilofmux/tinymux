@@ -1,6 +1,6 @@
 // object.cpp -- Low-level object manipulation routines.
 //
-// $Id: object.cpp,v 1.16 2002-07-09 08:22:49 jake Exp $
+// $Id: object.cpp,v 1.17 2002-07-09 21:24:45 jake Exp $
 //
 
 #include "copyright.h"
@@ -990,8 +990,7 @@ static void check_dead_refs(void)
                 if (!Wizard(Owner(i))) 
                 {
                     Log_header_err(i, NOTHING, Owner(i), 1,
-                               "Owner",
-                               "of a WIZARD object is not a wizard");
+                               "Owner", "of a WIZARD object is not a wizard");
                 }
             }
         }
@@ -1230,8 +1229,6 @@ static void check_dead_refs(void)
 
 static void check_loc_exits(dbref loc)
 {
-    dbref exit, back, temp, exitloc, dest;
-
     if (!Good_obj(loc))
     {
         return;
@@ -1254,8 +1251,9 @@ static void check_loc_exits(dbref loc)
 
     // Check all the exits.
     //
-    back = NOTHING;
-    exit = Exits(loc);
+    dbref temp, exitloc, dest;
+    dbref back = NOTHING;
+    dbref exit = Exits(loc);
     while (exit != NOTHING)
     {
         exitloc = NOTHING;

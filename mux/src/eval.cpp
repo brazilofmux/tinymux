@@ -1,6 +1,6 @@
 // eval.cpp -- Command evaluation and cracking.
 //
-// $Id: eval.cpp,v 1.13 2002-07-09 08:22:48 jake Exp $
+// $Id: eval.cpp,v 1.14 2002-07-09 21:24:45 jake Exp $
 //
 
 // MUX 2.1
@@ -179,7 +179,7 @@ char *parse_to(char **dstr, char delim, int eval)
 #define stacklim 32
     char stack[stacklim];
     char *rstr, *cstr, *zstr, *strFirewall;
-    int sp, tp, first, bracketlev;
+    int sp, tp, bracketlev;
 
     if ((dstr == NULL) || (*dstr == NULL))
         return NULL;
@@ -191,7 +191,7 @@ char *parse_to(char **dstr, char delim, int eval)
         return rstr;
     }
     sp = 0;
-    first = 1;
+    BOOL first = TRUE;
     strFirewall = rstr = *dstr;
     if ((mudconf.space_compress || (eval & EV_STRIP_LS)) && !(eval & EV_NO_COMPRESS))
     {
@@ -216,9 +216,9 @@ char *parse_to(char **dstr, char delim, int eval)
 TryAgain:
         if (iCode == 0)
         {
-            // Mudane characters and not the delimiter we are looking for.
+            // Mundane characters and not the delimiter we are looking for.
             //
-            first = 0;
+            first = FALSE;
             do
             {
                 NEXTCHAR
@@ -259,7 +259,7 @@ TryAgain:
                 {
                     // '['
                     //
-                    first = 0;
+                    first = FALSE;
                     if (sp < stacklim)
                     {
                         stack[sp++] = ']';
@@ -274,7 +274,7 @@ TryAgain:
                 //
                 if (iCode == 3)
                 {
-                    first = 0;
+                    first = FALSE;
                     if (sp < stacklim)
                     {
                         stack[sp++] = ')';
@@ -285,7 +285,7 @@ TryAgain:
                 {
                     // %, \, and ESC escapes.
                     //
-                    first = 0;
+                    first = FALSE;
                     NEXTCHAR
                     if (*cstr)
                     {
@@ -332,7 +332,7 @@ TryAgain:
                         isSpecial_L3[' '] = 0; // Spaces aren't special anymore
                         return rstr;
                     }
-                    first = 0;
+                    first = FALSE;
                     NEXTCHAR
                 }
                 else
@@ -1059,7 +1059,6 @@ void TinyExec( char *buff, char **bufc, dbref executor, dbref caller,
     char *realbuff = NULL, *realbp = NULL;
     dbref aowner;
     int at_space, nfargs, gender, aflags, feval, i;
-    int is_trace, is_top;
     int ansi = 0;
     FUN *fp;
     UFUN *ufp;
@@ -1093,8 +1092,8 @@ void TinyExec( char *buff, char **bufc, dbref executor, dbref caller,
     at_space = 1;
     gender = -1;
 
-    is_trace = Trace(executor) && !(eval & EV_NOTRACE);
-    is_top = 0;
+    BOOL is_trace = Trace(executor) && !(eval & EV_NOTRACE);
+    BOOL is_top = FALSE;
 
     // Extend the buffer if we need to.
     //

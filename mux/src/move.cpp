@@ -1,6 +1,6 @@
 // move.cpp -- Routines for moving about.
 //
-// $Id: move.cpp,v 1.9 2002-07-09 05:57:33 jake Exp $
+// $Id: move.cpp,v 1.10 2002-07-09 21:24:45 jake Exp $
 //
 
 #include "copyright.h"
@@ -163,12 +163,16 @@ void move_object(dbref thing, dbref dest)
     // Remove from the source location 
     //
     if (src != NOTHING)
+    {
         s_Contents(src, remove_first(Contents(src), thing));
+    }
 
     // Special check for HOME 
     //
     if (dest == HOME)
+    {
         dest = Home(thing);
+    }
 
     // Add to destination location 
     //
@@ -185,11 +189,11 @@ void move_object(dbref thing, dbref dest)
     // Look around and do the penny check 
     //
     look_in(thing, dest, (LK_SHOWEXIT | LK_OBEYTERSE));
-    if (isPlayer(thing) &&
-        (mudconf.payfind > 0) &&
-        (Pennies(thing) < mudconf.paylimit) &&
-        (!Controls(thing, dest)) &&
-        RandomINT32(0, mudconf.payfind-1) == 0)
+    if (  isPlayer(thing)
+       && mudconf.payfind > 0
+       && Pennies(thing) < mudconf.paylimit
+       && !Controls(thing, dest)
+       && RandomINT32(0, mudconf.payfind-1) == 0)
     {
         giveto(thing, 1);
         notify(thing, tprintf("You found a %s!", mudconf.one_coin));
@@ -349,10 +353,10 @@ void move_via_exit(dbref thing, dbref dest, dbref cause, dbref exit, int hush)
  * * divestiture + dropto check.
  */
 
-int move_via_teleport(dbref thing, dbref dest, dbref cause, int hush)
+BOOL move_via_teleport(dbref thing, dbref dest, dbref cause, int hush)
 {
     dbref curr;
-    int canhear, count;
+    int count;
     char *failmsg;
 
     dbref src = Location(thing);
@@ -375,7 +379,7 @@ int move_via_teleport(dbref thing, dbref dest, dbref cause, int hush)
                 did_it(thing, src,
                        A_TOFAIL, failmsg, A_OTOFAIL, NULL,
                        A_ATOFAIL, (char **)NULL, 0);
-                return 0;
+                return FALSE;
             }
             if (isRoom(curr))
             {
@@ -388,13 +392,13 @@ int move_via_teleport(dbref thing, dbref dest, dbref cause, int hush)
     if (isExit(thing))
     {
         move_the_exit(thing, dest);
-        return 1;
+        return TRUE;
     }
     if (dest == HOME)
     {
         dest = Home(thing);
     }
-    canhear = Hearer(thing);
+    BOOL canhear = Hearer(thing);
     if (!(hush & HUSH_LEAVE))
     {
         did_it(thing, thing, 0, NULL, A_OXTPORT, NULL, 0,
@@ -414,7 +418,7 @@ int move_via_teleport(dbref thing, dbref dest, dbref cause, int hush)
     process_enter_loc(thing, src, NOTHING, canhear, hush);
     divest_object(thing);
     process_sticky_dropto(src, thing);
-    return 1;
+    return TRUE;
 }
 
 /*
@@ -600,7 +604,7 @@ void do_get(dbref executor, dbref caller, dbref enactor, int key, char *what)
     //
     if (  !isRoom(playerloc)
        && !Enter_ok(playerloc)
-       && !controls(executor, playerloc))
+       && !Controls(executor, playerloc))
     {
         notify(executor, NOPERM_MESSAGE);
         return;

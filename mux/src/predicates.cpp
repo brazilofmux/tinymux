@@ -1,6 +1,6 @@
 // predicates.cpp
 //
-// $Id: predicates.cpp,v 1.27 2002-07-09 18:58:19 sdennis Exp $
+// $Id: predicates.cpp,v 1.28 2002-07-09 21:24:45 jake Exp $
 //
 
 #include "copyright.h"
@@ -137,8 +137,10 @@ BOOL can_see(dbref player, dbref thing, BOOL can_see_loc)
     // seen.  The thing is a disconnected player.  The player is not a
     // puppet.
     //
-    if (mudconf.dark_sleepers && isPlayer(thing) &&
-        !Connected(thing) && !Puppet(thing))
+    if (  mudconf.dark_sleepers
+       && isPlayer(thing)
+       && !Connected(thing)
+       && !Puppet(thing))
     {
         return FALSE;
     }
@@ -1295,10 +1297,6 @@ static dbref promote_dflt(dbref old, dbref new0)
 
 dbref match_possessed(dbref player, dbref thing, char *target, dbref dflt, BOOL check_enter)
 {
-    dbref result, result1;
-    BOOL control;
-    char *buff, *start, *place, *s1, *d1, *temp;
-
     // First, check normally.
     //
     if (Good_obj(dflt))
@@ -1308,7 +1306,10 @@ dbref match_possessed(dbref player, dbref thing, char *target, dbref dflt, BOOL 
 
     // Didn't find it directly.  Recursively do a contents check.
     //
-    start = target;
+    dbref result, result1;
+    BOOL control;
+    char *buff, *place, *s1, *d1, *temp;
+    char *start = target;
     while (*target)
     {
         // Fail if no ' characters.

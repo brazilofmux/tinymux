@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.52 2002-07-09 19:33:53 jake Exp $
+// $Id: functions.cpp,v 1.53 2002-07-09 21:24:45 jake Exp $
 //
 
 #include "copyright.h"
@@ -8742,13 +8742,13 @@ extern FLAGNAMEENT gen_flag_names[];
 //
 FUNCTION(fun_lflags)
 {
-    BOOL bFirst = TRUE;
     dbref target = match_thing_quiet(executor, fargs[0]);
     if (!Good_obj(target))
     {
         safe_match_result(target, buff, bufc);
         return;
     }
+    BOOL bFirst = TRUE;
     if (  mudconf.pub_flags
        || Examinable(executor, target)
        || target == enactor)

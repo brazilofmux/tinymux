@@ -1,6 +1,6 @@
 // set.cpp -- Commands which set parameters.
 //
-// $Id: set.cpp,v 1.20 2002-07-09 19:33:53 jake Exp $
+// $Id: set.cpp,v 1.21 2002-07-09 21:24:45 jake Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -840,7 +840,7 @@ void do_chown
         break;
     }
 
-    BOOL bPlayerControlsThing = controls(executor, thing);
+    BOOL bPlayerControlsThing = Controls(executor, thing);
     if (  isGarbage(thing)
        && bPlayerControlsThing)
     {

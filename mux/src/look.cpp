@@ -1,6 +1,6 @@
 // look.cpp -- Commands which look at things.
 //
-// $Id: look.cpp,v 1.14 2002-07-09 20:44:36 sdennis Exp $
+// $Id: look.cpp,v 1.15 2002-07-09 21:24:45 jake Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. The WOD_REALMS portion is original work.
@@ -176,9 +176,6 @@ int HandleObfuscation(dbref looker, dbref lookee, int threshhold)
 
 int DoThingToThingVisibility(dbref looker, dbref lookee, int action_state)
 {
-    int iReturn;
-    BOOL bDisableADESC = FALSE;
-
     // If the looker is a room, then there is some contents/recursion stuff
     // that happens in the rest of the game code. We'll be called later for
     // each item in the room, things that are nearby the room, etc.
@@ -218,6 +215,7 @@ int DoThingToThingVisibility(dbref looker, dbref lookee, int action_state)
         return RealmActions[realmLooker];
     }
 
+    BOOL bDisableADESC = FALSE;
     if (isRoom(lookee) || isExit(lookee))
     {
         // All realms see normal rooms and exits, however, if a realm
@@ -286,7 +284,7 @@ int DoThingToThingVisibility(dbref looker, dbref lookee, int action_state)
 
     // Do default see rules.
     //
-    iReturn = RealmActions[realmLooker];
+    int iReturn = RealmActions[realmLooker];
     if (iReturn == REALM_DO_HIDDEN_FROM_YOU)
     {
         return iReturn;
@@ -968,14 +966,14 @@ static void show_a_desc(dbref player, dbref loc)
 {
     char *got2;
     dbref aowner;
-    int aflags, indent = 0;
+    int aflags;
     int iDescDefault = A_DESC;
     int iADescDefault = A_ADESC;
 #ifdef WOD_REALMS
     int iRealmDirective;
 #endif
 
-    indent = (isRoom(loc) && mudconf.indent_desc && atr_get_raw(loc, A_DESC));
+    BOOL indent = (isRoom(loc) && mudconf.indent_desc && atr_get_raw(loc, A_DESC));
 
 #ifdef WOD_REALMS
     iRealmDirective = DoThingToThingVisibility(player, loc, ACTION_IS_STATIONARY);
@@ -996,20 +994,28 @@ static void show_a_desc(dbref player, dbref loc)
         else
         {
             if (indent)
+            {
                 raw_notify_newline(player);
+            }
             did_it(player, loc, iDescDefault, NULL, A_ODESC, NULL, iADescDefault, (char **) NULL, 0);
             if (indent)
+            {
                 raw_notify_newline(player);
+            }
         }
         free_lbuf(got2);
     }
     else
     {
         if (indent)
+        {
             raw_notify_newline(player);
+        }
         did_it(player, loc, iDescDefault, NULL, A_ODESC, NULL, iADescDefault, (char **) NULL, 0);
         if (indent)
+        {
             raw_notify_newline(player);
+        }
     }
 }
 
@@ -1039,11 +1045,6 @@ static void show_desc(dbref player, dbref loc, int key)
 
 void look_in(dbref player, dbref loc, int key)
 {
-    int pattr, oattr, aattr, is_terse, showkey;
-    char *buff;
-
-    is_terse = (key & LK_OBEYTERSE) ? Terse(player) : 0;
-
     // Only makes sense for things that can hear.
     //
     if (!Hearer(player))
@@ -1088,7 +1089,7 @@ void look_in(dbref player, dbref loc, int key)
     {
         // Okay, no @NameFormat.  Show the normal name.
         //
-        buff = unparse_object(player, loc, 1);
+        char *buff = unparse_object(player, loc, 1);
         notify(player, buff);
         free_lbuf(buff);
     }
@@ -1103,18 +1104,24 @@ void look_in(dbref player, dbref loc, int key)
 
     // Tell him the description.
     //
-
-    showkey = 0;
+    int showkey = 0;
     if (loc == Location(player))
+    {
         showkey |= LK_IDESC;
+    }
     if (key & LK_OBEYTERSE)
+    {
         showkey |= LK_OBEYTERSE;
+    }
     show_desc(player, loc, showkey);
+
+    BOOL is_terse = (key & LK_OBEYTERSE) ? Terse(player) : 0;
 
     // Tell him the appropriate messages if he has the key.
     //
     if (Typeof(loc) == TYPE_ROOM)
     {
+        int pattr, oattr, aattr;
         if (could_doit(player, loc, A_LOCK))
         {
             pattr = A_SUCC;
@@ -1162,21 +1169,25 @@ void look_in(dbref player, dbref loc, int key)
 
 void do_look(dbref executor, dbref caller, dbref enactor, int key, char *name)
 {
-    dbref thing, loc, look_key;
-
-    look_key = LK_SHOWATTR | LK_SHOWEXIT;
+    int look_key = LK_SHOWATTR | LK_SHOWEXIT;
     if (!mudconf.terse_look)
+    {
         look_key |= LK_OBEYTERSE;
+    }
 
-    loc = Location(executor);
-    if (!name || !*name) {
+    dbref loc = Location(executor);
+    dbref thing;
+    if (!name || !*name)
+    {
         thing = loc;
-        if (Good_obj(thing)) {
-            if (key & LOOK_OUTSIDE) {
-                if ((Typeof(thing) == TYPE_ROOM) ||
-                    Opaque(thing)) {
-                    notify_quiet(executor,
-                        "You can't look outside.");
+        if (Good_obj(thing))
+        {
+            if (key & LOOK_OUTSIDE)
+            {
+                if (  Typeof(thing) == TYPE_ROOM
+                   || Opaque(thing))
+                {
+                    notify_quiet(executor, "You can't look outside.");
                     return;
                 }
                 thing = Location(thing);
@@ -1193,7 +1204,8 @@ void do_look(dbref executor, dbref caller, dbref enactor, int key, char *name)
     match_exit_with_parents();
     match_neighbor();
     match_possession();
-    if (Long_Fingers(executor)) {
+    if (Long_Fingers(executor))
+    {
         match_absolute();
         match_player();
     }
@@ -1208,8 +1220,7 @@ void do_look(dbref executor, dbref caller, dbref enactor, int key, char *name)
     {
         thing = match_status(executor,
             match_possessed(executor,
-            ((key & LOOK_OUTSIDE) ? loc : executor),
-            (char *)name, thing, 0));
+            ((key & LOOK_OUTSIDE) ? loc : executor), name, thing, FALSE));
     }
 
     // If we found something, go handle it.
@@ -1926,26 +1937,25 @@ void do_entrances(dbref executor, dbref caller, dbref enactor, int key, char *na
 
 // Check the current location for bugs.
 //
-static void sweep_check(dbref player, dbref what, int key, int is_loc)
+static void sweep_check(dbref player, dbref what, int key, BOOL is_loc)
 {
     dbref aowner, parent;
-    int canhear, cancom, isplayer, ispuppet, isconnected, attr, aflags;
-    int is_parent, lev;
+    int attr, aflags, lev;
     char *buf, *buf2, *bp, *as, *buff, *s;
     ATTR *ap;
 
-    canhear = 0;
-    cancom = 0;
-    isplayer = 0;
-    ispuppet = 0;
-    isconnected = 0;
-    is_parent = 0;
+    BOOL canhear    = FALSE;
+    BOOL cancom     = FALSE;
+    BOOL isplayer   = FALSE;
+    BOOL ispuppet   = FALSE;
+    BOOL isconnected = FALSE;
+    BOOL is_parent  = FALSE;
 
     if (  (key & SWEEP_LISTEN)
        && (  (isExit(what) || is_loc)
           && Audible(what)))
     {
-        canhear = 1;
+        canhear = TRUE;
     }
     else if (key & SWEEP_LISTEN)
     {
@@ -1959,7 +1969,7 @@ static void sweep_check(dbref player, dbref what, int key, int is_loc)
         {
             if (attr == A_LISTEN)
             {
-                canhear = 1;
+                canhear = TRUE;
                 break;
             }
             if (Monitor(what))
@@ -1987,7 +1997,7 @@ static void sweep_check(dbref player, dbref what, int key, int is_loc)
                 }
                 if (s)
                 {
-                    canhear = 1;
+                    canhear = TRUE;
                     break;
                 }
             }
@@ -2005,10 +2015,10 @@ static void sweep_check(dbref player, dbref what, int key, int is_loc)
         {
             if (Commer(parent))
             {
-                cancom = 1;
+                cancom = TRUE;
                 if (lev)
                 {
-                    is_parent = 1;
+                    is_parent = TRUE;
                     break;
                 }
             }
@@ -2024,18 +2034,18 @@ static void sweep_check(dbref player, dbref what, int key, int is_loc)
               && canhear
               && Connected(Owner(what))))
         {
-            isconnected = 1;
+            isconnected = TRUE;
         }
     }
     if (key & SWEEP_PLAYER || isconnected)
     {
         if (isPlayer(what))
         {
-            isplayer = 1;
+            isplayer = TRUE;
         }
         if (Puppet(what))
         {
-            ispuppet = 1;
+            ispuppet = TRUE;
         }
     }
     if (  canhear
@@ -2133,18 +2143,18 @@ void do_sweep(dbref executor, dbref caller, dbref enactor, int key, char *where)
             {
                 notify_quiet(executor,
                     "Sorry, it is dark here and you can't search for bugs");
-                sweep_check(executor, sweeploc, what_key, 0);
+                sweep_check(executor, sweeploc, what_key, FALSE);
             }
             else
             {
-                sweep_check(executor, here, what_key, 1);
+                sweep_check(executor, here, what_key, TRUE);
                 for (here = Contents(here); here != NOTHING; here = Next(here))
-                    sweep_check(executor, here, what_key, 0);
+                    sweep_check(executor, here, what_key, FALSE);
             }
         }
         else
         {
-            sweep_check(executor, sweeploc, what_key, 0);
+            sweep_check(executor, sweeploc, what_key, FALSE);
         }
     }
 
@@ -2154,7 +2164,7 @@ void do_sweep(dbref executor, dbref caller, dbref enactor, int key, char *where)
     {
         notify(executor, "Sweeping exits...");
         for (here = Exits(Location(sweeploc)); here != NOTHING; here = Next(here))
-            sweep_check(executor, here, what_key, 0);
+            sweep_check(executor, here, what_key, FALSE);
     }
 
     // Check my inventory
@@ -2163,7 +2173,7 @@ void do_sweep(dbref executor, dbref caller, dbref enactor, int key, char *where)
     {
         notify(executor, "Sweeping inventory...");
         for (here = Contents(sweeploc); here != NOTHING; here = Next(here))
-            sweep_check(executor, here, what_key, 0);
+            sweep_check(executor, here, what_key, FALSE);
     }
 
     // Check carried exits
@@ -2172,7 +2182,7 @@ void do_sweep(dbref executor, dbref caller, dbref enactor, int key, char *where)
     {
         notify(executor, "Sweeping carried exits...");
         for (here = Exits(sweeploc); here != NOTHING; here = Next(here))
-            sweep_check(executor, here, what_key, 0);
+            sweep_check(executor, here, what_key, FALSE);
     }
     notify(executor, "Sweep complete.");
 }

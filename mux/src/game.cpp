@@ -1,6 +1,6 @@
 // game.cpp
 //
-// $Id: game.cpp,v 1.14 2002-07-09 18:57:54 sdennis Exp $
+// $Id: game.cpp,v 1.15 2002-07-09 21:24:45 jake Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -462,13 +462,6 @@ BOOL html_escape(const char *src, char *dest, char **destp)
 
 void notify_check(dbref target, dbref sender, const char *msg, int key)
 {
-    char *msg_ns, *mp, *tbuff, *tp, *buff;
-    char *args[10];
-    dbref aowner, targetloc, recip, obj;
-    int i, nargs, aflags, has_neighbors, pass_listen;
-    int check_listens, pass_uselock, is_audible;
-    FWDLIST *fp;
-
     // If speaker is invalid or message is empty, just exit.
     //
     if (!Good_obj(target) || !msg || !*msg)
@@ -504,6 +497,13 @@ void notify_check(dbref target, dbref sender, const char *msg, int key)
         mudstate.ntfy_nest_lev--;
         return;
     }
+
+    char *msg_ns, *mp, *tbuff, *tp, *buff;
+    char *args[10];
+    dbref aowner,  recip, obj;
+    int i, nargs, aflags;
+    BOOL pass_uselock;
+    FWDLIST *fp;
 
     // If we want NOSPOOF output, generate it.  It is only needed if we are
     // sending the message to the target object.
@@ -551,7 +551,7 @@ void notify_check(dbref target, dbref sender, const char *msg, int key)
 
     // msg contains the raw message, msg_ns contains the NOSPOOFed msg.
     //
-    check_listens = Halted(target) ? 0 : 1;
+    BOOL check_listens = Halted(target) ? FALSE : TRUE;
     switch (Typeof(target))
     {
     case TYPE_PLAYER:
@@ -580,7 +580,7 @@ void notify_check(dbref target, dbref sender, const char *msg, int key)
         }
         if (!mudconf.player_listen)
         {
-            check_listens = 0;
+            check_listens = FALSE;
         }
 
         // FALLTHROUGH
@@ -600,9 +600,9 @@ void notify_check(dbref target, dbref sender, const char *msg, int key)
 
         // Forward puppet message if it is for me.
         //
-        has_neighbors = Has_location(target);
-        targetloc = where_is(target);
-        is_audible = Audible(target);
+        BOOL has_neighbors = Has_location(target);
+        dbref targetloc = where_is(target);
+        BOOL is_audible = Audible(target);
 
         if ( (key & MSG_ME)
            && Puppet(target)
@@ -622,7 +622,7 @@ void notify_check(dbref target, dbref sender, const char *msg, int key)
 
         // Check for @Listen match if it will be useful.
         //
-        pass_listen = 0;
+        BOOL pass_listen = FALSE;
         nargs = 0;
         if (  check_listens
            && (key & (MSG_ME | MSG_INV_L))
@@ -637,7 +637,7 @@ void notify_check(dbref target, dbref sender, const char *msg, int key)
                     //
                     ;
                 }
-                pass_listen = 1;
+                pass_listen = TRUE;
             }
             free_lbuf(tp);
         }
@@ -645,7 +645,7 @@ void notify_check(dbref target, dbref sender, const char *msg, int key)
         // If we matched the @listen or are monitoring, check the
         // USE lock.
         //
-        pass_uselock = 0;
+        BOOL pass_uselock = FALSE;
         if (  (key & MSG_ME)
            && check_listens
            && (pass_listen || Monitor(target)))
@@ -697,7 +697,7 @@ void notify_check(dbref target, dbref sender, const char *msg, int key)
         // Deliver message to forwardlist members.
         //
         if ( (key & MSG_FWDLIST)
-           && Audible(target)
+           && is_audible
            && check_filter(target, sender, A_FILTER, msg))
         {
             tbuff = dflt_from_msg(sender, target);

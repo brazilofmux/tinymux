@@ -1,6 +1,6 @@
 // comsys.h
 //
-// $Id: comsys.h,v 1.5 2002-07-09 08:22:48 jake Exp $
+// $Id: comsys.h,v 1.6 2002-07-09 21:24:45 jake Exp $
 //
 
 #ifndef __COMSYS_H__
@@ -23,9 +23,9 @@ struct chanentry
 struct comuser
 {
     dbref who;
-    int bUserIsOn;
+    BOOL bUserIsOn;
     char *title;
-    int ComTitleStatus;
+    BOOL ComTitleStatus;
     struct comuser *on_next;
 };
 
@@ -37,11 +37,11 @@ struct channel
     int temp1;
     int temp2;
     int charge;
-    int charge_who;
+    dbref charge_who;
     int amount_col;
     int num_users;
     int max_users;
-    int chan_obj;
+    dbref chan_obj;
     struct comuser **users;
     struct comuser *on_users;   /* Linked list of who is on */
     int num_messages;
@@ -84,7 +84,7 @@ void SendChannelMessage
     struct channel *ch,
     char  *msgNormal,
     char  *msgNoComtitle,
-    int    raw
+    BOOL   bRaw
 );
 void do_comwho(dbref player, struct channel *ch);
 void do_leavechannel(dbref player, struct channel *ch);
