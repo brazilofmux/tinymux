@@ -53,6 +53,7 @@ Feature Additions:
  -- Improved messages when home or dropto is changed.
  -- inc, dec, shl, shr, sort(,n), band, bnand, bor are all extended to
     64-bit integers.
+ -- Added /noeval switch to page.
 
 
 Bug Fixes:
