@@ -1,6 +1,6 @@
 // look.cpp -- Commands which look at things.
 //
-// $Id: look.cpp,v 1.13 2003-07-23 19:40:17 sdennis Exp $
+// $Id: look.cpp,v 1.14 2003-07-24 01:13:03 sdennis Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -967,7 +967,7 @@ static bool show_a_desc(dbref player, dbref loc)
         safe_str(cattr->name, attrname, &cp);
         *cp = '\0';
         char* ParameterList[] =
-            { attrname, attrtext };
+            { attrtext, attrname };
 
         mux_exec(FormatOutput, &tPtr, loc, player, player,
                 EV_FCHECK | EV_EVAL | EV_TOP,
