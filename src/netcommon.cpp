@@ -1,6 +1,6 @@
 // netcommon.cpp
 //
-// $Id: netcommon.cpp,v 1.29 2000-11-12 11:06:13 sdennis Exp $ 
+// $Id: netcommon.cpp,v 1.30 2000-11-15 02:48:33 sdennis Exp $ 
 //
 // This file contains routines used by the networking code that do not
 // depend on the implementation of the networking code.  The network-specific
@@ -1674,10 +1674,12 @@ static int check_connect(DESC *d, char *msg)
             }
             announce_connect(player, d);
             
-            /* If stuck in an @prog, show the prompt */
-            
+            // If stuck in an @prog, show the prompt.
+            //            
             if (d->program_data != NULL)
+            {
                 queue_string(d, ">\377\371");
+            }
             
         }
         else if (!(mudconf.control_flags & CF_LOGIN))
