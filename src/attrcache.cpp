@@ -1,6 +1,6 @@
 // svdocache.cpp -- Attribute caching module
 //
-// $Id: attrcache.cpp,v 1.3 2000-06-02 16:18:13 sdennis Exp $
+// $Id: attrcache.cpp,v 1.4 2000-06-03 04:16:30 sdennis Exp $
 //
 // MUX 2.0
 // Copyright (C) 1998 through 2000 Solid Vertical Domains, Ltd. All
@@ -83,12 +83,7 @@ void cache_redirect(void)
         char TempFileName[20];
         sprintf(TempFileName, "$convtemp.%d", i);
         TempFiles[i] = fopen(TempFileName, "wb+");
-        if (TempFiles[i] == NULL)
-        {
-            Log.printf("Cannot create %s.\n", TempFileName);
-            Log.Flush();
-            abort();
-        }
+        Tiny_Assert(TempFile[i])
         setvbuf(TempFiles[i], NULL, _IOFBF, 16384);
     }
     cache_redirected = TRUE;
