@@ -1,6 +1,6 @@
 // eval.cpp -- Command evaluation and cracking.
 //
-// $Id: eval.cpp,v 1.18 2003-03-02 03:58:12 jake Exp $
+// $Id: eval.cpp,v 1.19 2003-03-11 06:18:56 sdennis Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -1045,7 +1045,7 @@ int *PushIntegers(int nNeeded)
     if (  !pIntsFrame
        || pIntsFrame->nints < nNeeded)
     {
-        IntsFrame *p = (IntsFrame *)alloc_lbuf("PushPointers");
+        IntsFrame *p = (IntsFrame *)alloc_lbuf("PushIntegers");
         p->next = pIntsFrame;
         p->nints = INTS_PER_FRAME;
         pIntsFrame = p;
