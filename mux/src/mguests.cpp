@@ -2,7 +2,7 @@
 // Multiguest code rewritten by Matthew J. Leavitt (zenty).
 // Idea for @list guest from Ashen-Shugar and the great team of RhostMUSH
 //
-// $Id: mguests.cpp,v 1.15 2004-09-21 04:18:40 sdennis Exp $
+// $Id: mguests.cpp,v 1.16 2004-09-21 04:22:18 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -160,7 +160,7 @@ const char *CGuests::Create(DESC *d)
                 // Release comsys and @mail state.
                 //
                 ReleaseAllResources(guest_player);
-				AddToGuestChannel(guest_player);
+                AddToGuestChannel(guest_player);
             }
 
             // Reset the flags back to the default.
@@ -426,12 +426,12 @@ void CGuests::ListAll(dbref player)
 
 void CGuests::AddToGuestChannel(dbref player)
 {
-	if (  mudconf.guests_channel[0] != '\0'
-	   && mudconf.guests_channel_alias[0] != '\0')
-	{
-		do_addcom(player, player, player, 0, 2,
-			mudconf.guests_channel_alias, mudconf.guests_channel);
-	}
+    if (  mudconf.guests_channel[0] != '\0'
+       && mudconf.guests_channel_alias[0] != '\0')
+    {
+        do_addcom(player, player, player, 0, 2,
+            mudconf.guests_channel_alias, mudconf.guests_channel);
+    }
 }
 
 char CGuests::name[50];
