@@ -1,6 +1,6 @@
 // db.c 
 //
-// $Id: db.cpp,v 1.26 2000-09-05 20:28:53 sdennis Exp $
+// $Id: db.cpp,v 1.27 2000-10-13 17:47:36 sdennis Exp $
 //
 // MUX 2.0
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -795,7 +795,8 @@ void do_fixdb(dbref player, dbref cause, int key, char *arg1, char *arg2)
                 notify(player, "That's not a good name for a player.");
                 return;
             }
-            if (lookup_player(NOTHING, arg2, 0) != NOTHING)
+            pValidName = arg2;
+            if (lookup_player(NOTHING, pValidName, 0) != NOTHING)
             {
                 notify(player, "That name is already in use.");
                 return;
@@ -803,15 +804,16 @@ void do_fixdb(dbref player, dbref cause, int key, char *arg1, char *arg2)
             STARTLOG(LOG_SECURITY, "SEC", "CNAME");
             log_name(thing),
             log_text((char *)" renamed to ");
-            log_text(arg2);
+            log_text(pValidName);
             ENDLOG;
             if (Suspect(player))
             {
-                raw_broadcast(WIZARD, "[Suspect] %s renamed to %s", Name(thing), arg2);
+                raw_broadcast(WIZARD, "[Suspect] %s renamed to %s",
+                    Name(thing), pValidName);
             }
             delete_player_name(thing, Name(thing));
-            s_Name(thing, arg2);
-            add_player_name(thing, arg2);
+            s_Name(thing, pValidName);
+            add_player_name(thing, pValidName);
         }
         else
         {
