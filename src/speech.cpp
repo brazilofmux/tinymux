@@ -2,7 +2,7 @@
  * speech.c -- Commands which involve speaking 
  */
 /*
- * $Id: speech.cpp,v 1.14 2001-11-08 05:54:47 sdennis Exp $ 
+ * $Id: speech.cpp,v 1.15 2001-11-08 06:11:23 sdennis Exp $ 
  */
 
 #include "copyright.h"
@@ -500,27 +500,28 @@ void do_page
 )
 {
     dbref target, aowner;
-    char *p, *buf1, *bp, *buf2, *bp2, *mp, *str;
+    char *p, *str;
     char targetname[LBUF_SIZE];
     int ismessage = 0;
     int count = 0;
     int n = 0;
     int aflags = 0;
 
-    buf1 = alloc_lbuf("page_return_list");
-    bp = buf1;
+    char *buf1 = alloc_lbuf("page_return_list");
+    char *bp = buf1;
 
-    buf2 = alloc_lbuf("page_list");
-    bp2 = buf2;
+    char *buf2 = alloc_lbuf("page_list");
+    char *bp2 = buf2;
 
-    mp = message;
+    char *mp = message;
 
     if (nargs < 2)
     {
         atr_get_str(targetname, player, A_LASTPAGE, &aowner, &aflags);
-        if (nargs < 1)
+        if (  nargs < 1
+           || tname[0] == '\0')
         {
-            if (!*targetname)
+            if (targetname[0] == '\0')
             {
                 notify(player, "You have not paged anyone.");
             }
