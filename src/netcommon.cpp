@@ -1,6 +1,6 @@
 // netcommon.cpp
 //
-// $Id: netcommon.cpp,v 1.48 2001-11-28 06:35:54 sdennis Exp $
+// $Id: netcommon.cpp,v 1.49 2002-01-12 15:54:53 sdennis Exp $
 //
 // This file contains routines used by the networking code that do not
 // depend on the implementation of the networking code.  The network-specific
@@ -879,7 +879,7 @@ void announce_disconnect(dbref player, DESC *d, const char *reason)
         free_lbuf(buf);
         if (d->flags & DS_AUTODARK)
         {
-            s_Flags(d->player, FLAG_WORD1, Flags(d->player) & ~DARK);
+            db[d->player].fs.word[FLAG_WORD1] &= ~DARK;
             d->flags &= ~DS_AUTODARK;
         }
 
@@ -1082,17 +1082,20 @@ void check_idle(void)
         if (d->flags & DS_CONNECTED)
         {
             CLinearTimeDelta ltdIdle = ltaNow - d->last_time;
-            if ((ltdIdle.ReturnSeconds() > d->timeout) && !Can_Idle(d->player))
+            if (Can_Idle(d->player))
+            {
+                if (  mudconf.idle_wiz_dark
+                   && ltdIdle.ReturnSeconds() > mudconf.idle_timeout
+                   && !Dark(d->player))
+                {
+                    db[d->player].fs.word[FLAG_WORD1] |= DARK;
+                    d->flags |= DS_AUTODARK;
+                }
+            }
+            else if (ltdIdle.ReturnSeconds() > d->timeout)
             {
                 queue_string(d, "*** Inactivity Timeout ***\r\n");
                 shutdownsock(d, R_TIMEOUT);
-            }
-            else if (  mudconf.idle_wiz_dark
-                && (ltdIdle.ReturnSeconds() > mudconf.idle_timeout)
-                && Can_Idle(d->player) && !Dark(d->player))
-            {
-                db[d->player].fs.word[FLAG_WORD1] |= DARK;
-                d->flags |= DS_AUTODARK;
             }
         }
         else
