@@ -11,8 +11,8 @@ docs/MEMORY
 docs/PATCHES
 docs/REALMS
 docs/latticeS.ps
-docs/mux2.2-man.pdf
-docs/mux2.2-man.tex
+docs/muxman.pdf
+docs/muxman.tex
 game/alias.conf
 game/bin/netmux.exe
 game/compat.conf
