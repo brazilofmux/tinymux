@@ -1,6 +1,6 @@
 // htab.cpp -- Table hashing routines.
 //
-// $Id: htab.cpp,v 1.8 2004-04-13 06:34:22 sdennis Exp $
+// $Id: htab.cpp,v 1.9 2004-05-07 22:29:53 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -87,7 +87,8 @@ int hashaddLEN(const void *str, int nStr, void *hashdata, CHashTable *htab)
         htab->Copy(iDir, &nRecord, &htab_rec);
         int nTarget = nRecord - sizeof(int *);
 
-        if (nTarget == nStr && memcmp(str, htab_rec.aTarget, nStr) == 0)
+        if (  nTarget == nStr
+           && memcmp(str, htab_rec.aTarget, nStr) == 0)
         {
             return -1;
         }
@@ -125,7 +126,8 @@ void hashdeleteLEN(const void *str, int nStr, CHashTable *htab)
         htab->Copy(iDir, &nRecord, &htab_rec);
         int nTarget = nRecord - sizeof(int *);
 
-        if (nTarget == nStr && memcmp(str, htab_rec.aTarget, nStr) == 0)
+        if (  nTarget == nStr
+           && memcmp(str, htab_rec.aTarget, nStr) == 0)
         {
             htab->Remove(iDir);
         }
