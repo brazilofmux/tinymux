@@ -1,6 +1,6 @@
 // funceval.cpp -- MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.44 2002-08-09 03:12:43 sdennis Exp $
+// $Id: funceval.cpp,v 1.45 2002-08-09 04:08:20 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -130,9 +130,15 @@ static const unsigned char ansi_have_table[256] =
     0, 0, 0, 0, 0, 0, 0, 0,  0, 0, 0, 0, 0, 0, 0, 0       // 0xF0-0xFF
 };
 
-void SimplifyColorLetters(size_t *nOut, char *pOut, char *pIn)
+void SimplifyColorLetters(char *pOut, char *pIn)
 {
-    *nOut = 0;
+    if (  pIn[0] == 'n'
+       && pIn[1] == '\0')
+    {
+        pOut[0] = 'n';
+        pOut[1] = '\0';
+        return;
+    }
     char *p;
     int have = 0;
     size_t nIn = strlen(pIn);
@@ -142,7 +148,6 @@ void SimplifyColorLetters(size_t *nOut, char *pOut, char *pIn)
         if (  mask
            && (have & mask) == 0)
         {
-            (*nOut)++;
             *pOut++ = *p;
             have |= mask;
         }
@@ -154,35 +159,25 @@ void SimplifyColorLetters(size_t *nOut, char *pOut, char *pIn)
 //
 FUNCTION(fun_ansi)
 {
-    size_t nOut;
-    char   pOut[8];
-    SimplifyColorLetters(&nOut, pOut, fargs[0]);
-
-    char *s = pOut;
-    char *bufc_save = *bufc;
-
-    while (*s)
+    int iArg0;
+    for (iArg0 = 0; iArg0 + 1 < nfargs; iArg0 += 2)
     {
-        extern const char *ColorTable[256];
-        const char *pColor = ColorTable[(unsigned char)*s];
-        if (pColor)
-        {
-            safe_str(pColor, buff, bufc);
-        }
-        s++;
-    }
-    safe_str(fargs[1], buff, bufc);
-    **bufc = '\0';
+        char   pOut[8];
+        SimplifyColorLetters(pOut, fargs[iArg0]);
 
-    // ANSI_NORMAL is guaranteed to be written on the end.
-    //
-    char Temp[LBUF_SIZE];
-    int nVisualWidth;
-    int nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
-    int nLen = ANSI_TruncateToField(bufc_save, nBufferAvailable, Temp, sizeof(Temp),
-        &nVisualWidth, ANSI_ENDGOAL_NORMAL);
-    memcpy(bufc_save, Temp, nLen);
-    *bufc = bufc_save + nLen;
+        char *s = pOut;
+        while (*s)
+        {
+            extern const char *ColorTable[256];
+            const char *pColor = ColorTable[(unsigned char)*s];
+            if (pColor)
+            {
+                safe_str(pColor, buff, bufc);
+            }
+            s++;
+        }
+        safe_str(fargs[iArg0+1], buff, bufc);
+    }
 }
 
 FUNCTION(fun_zone)
