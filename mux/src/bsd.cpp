@@ -1,6 +1,6 @@
 // bsd.cpp
 //
-// $Id: bsd.cpp,v 1.24 2003-04-12 06:15:00 sdennis Exp $
+// $Id: bsd.cpp,v 1.25 2003-04-16 17:20:50 sdennis Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -2837,8 +2837,8 @@ RETSIGTYPE DCL_CDECL sighandler(int sig)
             {
                 if (child == mudstate.dumper)
                 {
-                    mudstate.dumping = false;
                     mudstate.dumper  = 0;
+                    mudstate.dumping = false;
                 }
                 else if (mudstate.dumper == 0)
                 {
@@ -2846,6 +2846,7 @@ RETSIGTYPE DCL_CDECL sighandler(int sig)
                     // process id.
                     //
                     mudstate.dumper = child;
+                    mudstate.dumping = false;
                 }
             }
         }
