@@ -1,10 +1,7 @@
-/*
- * db_rw.c 
- */
-/*
- * $Id: db_rw.cpp,v 1.7 2000-06-09 19:10:40 sdennis Exp $ 
- */
-
+// db_rw.cpp
+//
+// $Id: db_rw.cpp,v 1.8 2000-09-07 14:29:35 sdennis Exp $ 
+//
 #include "copyright.h"
 #include "autoconf.h"
 #include "config.h"
@@ -2196,18 +2193,24 @@ static int db_write_object(FILE *f, dbref i, int db_format, int flags)
 
     char *got, *as;
     dbref aowner;
-    int ca, aflags, save, j;
+    int ca, aflags, j;
     BOOLEXP *tempbool;
 
     if (!(flags & V_ATRNAME))
+    {
         putstring(f, Name(i));
+    }
     putref(f, Location(i));
     if (flags & V_ZONE)
+    {
         putref(f, Zone(i));
+    }
     putref(f, Contents(i));
     putref(f, Exits(i));
     if (flags & V_LINK)
+    {
         putref(f, Link(i));
+    }
     putref(f, Next(i));
     if (!(flags & V_ATRKEY))
     {
@@ -2216,66 +2219,82 @@ static int db_write_object(FILE *f, dbref i, int db_format, int flags)
         free_lbuf(got);
         putboolexp(f, tempbool);
         if (tempbool)
+        {
             free_bool(tempbool);
+        }
     }
     putref(f, Owner(i));
     if (flags & V_PARENT)
+    {
         putref(f, Parent(i));
+    }
     if (!(flags & V_ATRMONEY))
+    {
         putref(f, Pennies(i));
+    }
     putref(f, Flags(i));
     if (flags & V_XFLAGS)
+    {
         putref(f, Flags2(i));
+    }
     if (flags & V_3FLAGS)
+    {
         putref(f, Flags3(i));
-    if (flags & V_POWERS) {
+    }
+    if (flags & V_POWERS)
+    {
         putref(f, Powers(i));
         putref(f, Powers2(i));
     }
-    /*
-     * write the attribute list 
-     */
 
-
+    // Write the attribute list.
+    //
     if ((!(flags & V_GDBM)))
     {
+        char buf[SBUF_SIZE];
+        buf[0] = '>';
         for (ca = atr_head(i, &as); ca; ca = atr_next(&as))
         {
-            save = 0;
 #ifndef STANDALONE
             a = atr_num(ca);
-            if (a)
-                j = a->number;
-            else
-                j = -1;
+            if (!a)
+            {
+                continue;
+            }
+            j = a->number;
 #else
             j = ca;
 #endif
-
-            if (j > 0) {
-                switch (j) {
+            if (j < A_USER_START)
+            {
+                switch (j)
+                {
                 case A_NAME:
-                    if (flags & V_ATRNAME)
-                        save = 1;
+                    if (!(flags & V_ATRNAME))
+                    {
+                        continue;
+                    }
                     break;
+
                 case A_LOCK:
-                    if (flags & V_ATRKEY)
-                        save = 1;
+                    if (!(flags & V_ATRKEY))
+                    {
+                        continue;
+                    }
                     break;
+
                 case A_LIST:
                 case A_MONEY:
-                    break;
-                default:
-                    save = 1;
+                    continue;
                 }
             }
-            if (save) {
-                got = atr_get_raw(i, j);
-                fprintf(f, ">%d\n", j);
-                putstring(f, got);
-            }
+            got = atr_get_raw(i, j);
+            int n = Tiny_ltoa(j, buf+1) + 1;
+            buf[n++] = '\n';
+            fwrite(buf, sizeof(char), n, f);
+            putstring(f, got);
         }
-        fprintf(f, "<\n");
+        fwrite("<\n", sizeof(char), 2, f);
     }
     return 0;
 }
@@ -2317,6 +2336,8 @@ dbref db_write(FILE *f, int format, int version)
     {
         if (!(vp->flags & AF_DELETED))
         {
+            // Format is: "+A%d\n\"%d:%s\"\n", vp->number, vp->flags, vp->name
+            //
             char *pBuffer = Buffer+2;
             pBuffer += Tiny_ltoa(vp->number, pBuffer);
             *pBuffer++ = '\n';
@@ -2328,11 +2349,7 @@ dbref db_write(FILE *f, int format, int version)
             pBuffer += nNameLength;
             *pBuffer++ = '"';
             *pBuffer++ = '\n';
-            fwrite(Buffer, 1, pBuffer-Buffer, f);
-#if 0
-            fprintf(f, "+A%d\n\"%d:%s\"\n", vp->number, vp->flags,
-                vp->name);
-#endif
+            fwrite(Buffer, sizeof(char), pBuffer-Buffer, f);
         }
         vp = vattr_next(vp);
     }
@@ -2340,6 +2357,8 @@ dbref db_write(FILE *f, int format, int version)
 #ifdef STANDALONE
     int iDotCounter = 0;
 #endif
+    char buf[SBUF_SIZE];
+    buf[0] = '!';
     DO_WHOLE_DB(i)
     {
 #ifdef STANDALONE
@@ -2354,7 +2373,11 @@ dbref db_write(FILE *f, int format, int version)
 
         if (!(Going(i)))
         {
-            fprintf(f, "!%d\n", i);
+            // Format is: "!%d\n", i
+            //
+            int n = Tiny_ltoa(i, buf+1) + 1;
+            buf[n++] = '\n';
+            fwrite(buf, sizeof(char), n, f);
             db_write_object(f, i, format, flags);
         }
     }
