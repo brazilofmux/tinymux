@@ -1,6 +1,6 @@
 // speech.cpp -- Commands which involve speaking.
 //
-// $Id: speech.cpp,v 1.3 2002-06-04 00:47:28 sdennis Exp $
+// $Id: speech.cpp,v 1.4 2002-06-05 05:12:31 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -99,7 +99,7 @@ void do_think(dbref executor, dbref caller, dbref enactor, int key, char *messag
 
     buf = bp = alloc_lbuf("do_think");
     str = message;
-    TinyExec(buf, &bp, executor, CALLERQQQ, enactor, EV_FCHECK | EV_EVAL | EV_TOP,
+    TinyExec(buf, &bp, executor, caller, enactor, EV_FCHECK | EV_EVAL | EV_TOP,
              &str, (char **)NULL, 0);
     *bp = '\0';
     notify(executor, buf);
