@@ -1,6 +1,6 @@
 // wiz.cpp -- Wizard-only commands.
 //
-// $Id: wiz.cpp,v 1.22 2001-11-28 06:35:55 sdennis Exp $
+// $Id: wiz.cpp,v 1.23 2001-12-06 05:37:23 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -333,7 +333,7 @@ void do_toad
 
     STARTLOG(LOG_WIZARD, "WIZ", "TOAD");
     log_name_and_loc(victim);
-    log_text((char *)" was @toaded by ");
+    log_text(" was @toaded by ");
     log_name(player);
     ENDLOG;
 
@@ -382,7 +382,7 @@ void do_toad
 
     // Boot off.
     //
-    count = boot_off(victim, (char *)"You have been turned into a slimy toad!");
+    count = boot_off(victim, "You have been turned into a slimy toad!");
 
     // Release comsys and @mail resources.
     //
@@ -424,7 +424,7 @@ void do_newpassword
     }
     STARTLOG(LOG_WIZARD, "WIZ", "PASS");
     log_name(player);
-    log_text((char *)" changed the password of ");
+    log_text(" changed the password of ");
     log_name(victim);
     ENDLOG;
 
@@ -465,7 +465,7 @@ void do_boot(dbref player, dbref cause, int key, char *name)
         buf = alloc_sbuf("do_boot.port");
         sprintf(buf, "Port %d", victim);
         log_text(buf);
-        log_text((char *)" was @booted by ");
+        log_text(" was @booted by ");
         log_name(player);
         free_sbuf(buf);
         ENDLOG;
@@ -497,7 +497,7 @@ void do_boot(dbref player, dbref cause, int key, char *name)
         }
         STARTLOG(LOG_WIZARD, "WIZ", "BOOT");
         log_name_and_loc(victim);
-        log_text((char *)" was @booted by ");
+        log_text(" was @booted by ");
         log_name(player);
         ENDLOG;
         notify_quiet(player, tprintf("You booted %s off!", Name(victim)));
@@ -510,7 +510,7 @@ void do_boot(dbref player, dbref cause, int key, char *name)
     {
         bp = buf = alloc_lbuf("do_boot.msg");
         safe_str(Name(player), buf, &bp);
-        safe_str((char *)" gently shows you the door.", buf, &bp);
+        safe_str(" gently shows you the door.", buf, &bp);
         *bp = '\0';
     }
 
@@ -687,18 +687,18 @@ void do_motd(dbref player, dbref cause, int key, char *message)
 //
 NAMETAB enable_names[] =
 {
-    {(char *)"building",        1,  CA_PUBLIC,  CF_BUILD},
-    {(char *)"checkpointing",   2,  CA_PUBLIC,  CF_CHECKPOINT},
-    {(char *)"cleaning",        2,  CA_PUBLIC,  CF_DBCHECK},
-    {(char *)"dequeueing",      1,  CA_PUBLIC,  CF_DEQUEUE},
+    {"building",        1,  CA_PUBLIC,  CF_BUILD},
+    {"checkpointing",   2,  CA_PUBLIC,  CF_CHECKPOINT},
+    {"cleaning",        2,  CA_PUBLIC,  CF_DBCHECK},
+    {"dequeueing",      1,  CA_PUBLIC,  CF_DEQUEUE},
 #ifdef MUSH3
-    {(char *)"god_monitoring",  1,  CA_PUBLIC,  CF_GODMONITOR},
+    {"god_monitoring",  1,  CA_PUBLIC,  CF_GODMONITOR},
 #endif
-    {(char *)"idlechecking",    2,  CA_PUBLIC,  CF_IDLECHECK},
-    {(char *)"interpret",       2,  CA_PUBLIC,  CF_INTERP},
-    {(char *)"logins",          3,  CA_PUBLIC,  CF_LOGIN},
-    {(char *)"eventchecking",   2,  CA_PUBLIC,  CF_EVENTCHECK},
-    { NULL,                     0,  0,          0}
+    {"idlechecking",    2,  CA_PUBLIC,  CF_IDLECHECK},
+    {"interpret",       2,  CA_PUBLIC,  CF_INTERP},
+    {"logins",          3,  CA_PUBLIC,  CF_LOGIN},
+    {"eventchecking",   2,  CA_PUBLIC,  CF_EVENTCHECK},
+    { NULL,             0,  0,          0}
 };
 
 void do_global(dbref player, dbref cause, int key, char *flag)
@@ -723,7 +723,7 @@ void do_global(dbref player, dbref cause, int key, char *flag)
         mudconf.control_flags |= flagvalue;
         STARTLOG(LOG_CONFIGMODS, "CFG", "GLOBAL");
         log_name(player);
-        log_text((char *)" enabled: ");
+        log_text(" enabled: ");
         log_text(flag);
         ENDLOG;
         if (!Quiet(player))
@@ -740,7 +740,7 @@ void do_global(dbref player, dbref cause, int key, char *flag)
         mudconf.control_flags &= ~flagvalue;
         STARTLOG(LOG_CONFIGMODS, "CFG", "GLOBAL");
         log_name(player);
-        log_text((char *)" disabled: ");
+        log_text(" disabled: ");
         log_text(flag);
         ENDLOG;
         if (!Quiet(player))
