@@ -1,6 +1,6 @@
 // stringutil.cpp -- string utilities.
 //
-// $Id: stringutil.cpp,v 1.5 2003-02-01 22:17:26 sdennis Exp $
+// $Id: stringutil.cpp,v 1.6 2003-02-03 04:50:57 sdennis Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -2204,6 +2204,8 @@ INT64 Tiny_atoi64(const char *pString)
 //
 BOOL ParseFloat(PARSE_FLOAT_RESULT *pfr, const char *str, BOOL bStrict)
 {
+    memset(&pfr, 0, sizeof(PARSE_FLOAT_RESULT));
+
     // Parse Input
     //
     unsigned char ch0;
@@ -2385,11 +2387,7 @@ static const double powerstab[10] =
 
 double Tiny_atof(char *szString, BOOL bStrict)
 {
-    // Initialize structure.
-    //
     PARSE_FLOAT_RESULT pfr;
-    memset(&pfr, 0, sizeof(PARSE_FLOAT_RESULT));
-
     if (!ParseFloat(&pfr, szString, bStrict))
     {
         return 0.0;
@@ -2739,7 +2737,6 @@ BOOL is_rational(char *str)
 BOOL is_real(char *str)
 {
     PARSE_FLOAT_RESULT pfr;
-    memset(&pfr, 0, sizeof(PARSE_FLOAT_RESULT));
     return ParseFloat(&pfr, str);
 }
 
