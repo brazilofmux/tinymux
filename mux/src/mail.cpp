@@ -1,6 +1,6 @@
 // mail.cpp
 //
-// $Id: mail.cpp,v 1.48 2002-09-12 05:07:59 jake Exp $
+// $Id: mail.cpp,v 1.49 2002-09-12 05:29:35 sdennis Exp $
 //
 // This code was taken from Kalkin's DarkZone code, which was
 // originally taken from PennMUSH 1.50 p10, and has been heavily modified
@@ -1209,32 +1209,40 @@ static char *make_namelist(dbref player, char *arg)
     BOOL bFirst = TRUE;
     for (p = Tiny_StrTokParse(&tts); p; p = Tiny_StrTokParse(&tts))
     {
-        if (bFirst)
-        {
-            bFirst = FALSE;
-        }
-        else
+        if (!bFirst)
         {
             safe_str(", ", names, &bp);
         }
+        bFirst = FALSE;
 
-        if (*p == '!')
+        if (  Tiny_IsDigit[(unsigned char)p[0]]
+           || (  p[0] == '!'
+              && Tiny_IsDigit[(unsigned char)p[1]]))
         {
-            safe_chr('!', names, &bp);
-            p++;
+            char ch = p[0];
+            if (ch == '!')
+            {
+                p++;
+            }
+            dbref target = Tiny_atol(p);
+            if (  Good_obj(target)
+               && isPlayer(target))
+            {
+                if (ch == '!')
+                {
+                    safe_chr('!', names, &bp);
+                }
+                safe_str(Name(target), names, &bp);
+            }
         }
-        dbref target = Tiny_atol(p);
-        if (Good_obj(target) && isPlayer(target))
-        {
-            safe_str(Name(target), names, &bp);
-        }
-        else if (!strcmp(p, "-1"))
-        {
-            safe_str("*HIDDEN*", names, &bp);
-        }
-        else
+        else if (p[0] == '*')
         {
             safe_str(p, names, &bp);
+        }
+        else if (  p[0] == '-'
+                && p[1] != '\0')
+        {
+            safe_str("*HIDDEN*", names, &bp);
         }
     }
     *bp = '\0';
