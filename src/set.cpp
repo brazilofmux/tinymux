@@ -2,7 +2,7 @@
  * set.c -- commands which set parameters 
  */
 /*
- * $Id: set.cpp,v 1.1 2000-04-11 07:14:47 sdennis Exp $ 
+ * $Id: set.cpp,v 1.2 2000-04-11 21:38:01 sdennis Exp $ 
  */
 
 #include "copyright.h"
@@ -1153,7 +1153,6 @@ int parse_attrib_wild(dbref player, char *str, dbref *thing, int check_parents, 
     dbref parent;
     int check_exclude, hash_insert, lev;
 
-    olist_init();
     if (!str)
         return 0;
 
@@ -1333,33 +1332,33 @@ void do_edit(dbref player, dbref cause, int key, char *it, char *args[], int nar
     char *from, *to, *result, *returnstr, *atext;
     ATTR *ap;
 
-    /*
-     * Make sure we have something to do. 
-     */
-
-    if ((nargs < 1) || !*args[0]) {
+    // Make sure we have something to do.
+    //
+    if ((nargs < 1) || !*args[0])
+    {
         notify_quiet(player, "Nothing to do.");
         return;
     }
     from = args[0];
     to = (nargs >= 2) ? args[1] : (char *)"";
 
-    /*
-     * Look for the object and get the attribute (possibly wildcarded) 
-     */
-
-    if (!it || !*it || !parse_attrib_wild(player, it, &thing, 0, 0, 0)) {
+    // Look for the object and get the attribute (possibly wildcarded)
+    //
+    olist_push();
+    if (!it || !*it || !parse_attrib_wild(player, it, &thing, 0, 0, 0))
+    {
         notify_quiet(player, "No match.");
         return;
     }
-    /*
-     * Iterate through matching attributes, performing edit 
-     */
 
+    // Iterate through matching attributes, performing edit.
+    //
     got_one = 0;
     atext = alloc_lbuf("do_edit.atext");
+    int could_hear = Hearer(thing);
 
-    for (attr = olist_first(); attr != NOTHING; attr = olist_next()) {
+    for (attr = olist_first(); attr != NOTHING; attr = olist_next())
+    {
         ap = atr_num(attr);
         if (ap) {
 
@@ -1369,21 +1368,23 @@ void do_edit(dbref player, dbref cause, int key, char *it, char *args[], int nar
 
             atr_get_str(atext, thing, ap->number,
                     &aowner, &aflags);
-            if (Set_attr(player, thing, ap, aflags)) {
-
-                /*
-                 * Do the edit and save the result 
-                 */
-
+            if (Set_attr(player, thing, ap, aflags))
+            {
+                // Do the edit and save the result
+                //
                 got_one = 1;
                 edit_string_ansi(atext, &result, &returnstr, from, to);
-                if (ap->check != NULL) {
+                if (ap->check != NULL)
+                {
                     doit = (*ap->check) (0, player, thing,
                             ap->number, result);
-                } else {
+                }
+                else
+                {
                     doit = 1;
                 }
-                if (doit) {
+                if (doit)
+                {
                     atr_add(thing, ap->number, result,
                         Owner(player), aflags);
                     if (!Quiet(player))
@@ -1394,12 +1395,11 @@ void do_edit(dbref player, dbref cause, int key, char *it, char *args[], int nar
                 }
                 free_lbuf(result);
                 free_lbuf(returnstr);
-            } else {
-
-                /*
-                 * No rights to change the attr 
-                 */
-
+            }
+            else
+            {
+                // No rights to change the attr.
+                //
                 notify_quiet(player,
                        tprintf("%s: Permission denied.",
                            ap->name));
@@ -1408,15 +1408,18 @@ void do_edit(dbref player, dbref cause, int key, char *it, char *args[], int nar
         }
     }
 
-    /*
-     * Clean up 
-     */
-
+    // Clean up.
+    //
     free_lbuf(atext);
-    olist_init();
+    olist_pop();
 
-    if (!got_one) {
+    if (!got_one)
+    {
         notify_quiet(player, "No matching attributes.");
+    }
+    else
+    {
+        handle_ears(thing, could_hear, Hearer(thing));
     }
 }
 
@@ -1427,44 +1430,51 @@ void do_wipe(dbref player, dbref cause, int key, char *it)
     ATTR *ap;
     char *atext;
 
-    if (!it || !*it || !parse_attrib_wild(player, it, &thing, 0, 0, 1)) {
+    olist_push();
+    if (!it || !*it || !parse_attrib_wild(player, it, &thing, 0, 0, 1))
+    {
         notify_quiet(player, "No match.");
         return;
     }
-    /*
-     * Iterate through matching attributes, zapping the writable ones 
-     */
 
+    // Iterate through matching attributes, zapping the writable ones
+    //
     got_one = 0;
     atext = alloc_lbuf("do_wipe.atext");
-    for (attr = olist_first(); attr != NOTHING; attr = olist_next()) {
+    int could_hear = Hearer(thing);
+
+    for (attr = olist_first(); attr != NOTHING; attr = olist_next())
+    {
         ap = atr_num(attr);
-        if (ap) {
-
-            /*
-             * Get the attr and make sure we can modify it. 
-             */
-
-            atr_get_str(atext, thing, ap->number,
-                    &aowner, &aflags);
-            if (Set_attr(player, thing, ap, aflags)) {
+        if (ap)
+        {
+            // Get the attr and make sure we can modify it.
+            //
+            atr_get_str(atext, thing, ap->number, &aowner, &aflags);
+            if (Set_attr(player, thing, ap, aflags))
+            {
                 atr_clr(thing, ap->number);
                 got_one = 1;
             }
         }
     }
-    /*
-     * Clean up 
-     */
 
+    // Clean up
+    //
     free_lbuf(atext);
-    olist_init();
+    olist_pop();
 
-    if (!got_one) {
+    if (!got_one)
+    {
         notify_quiet(player, "No matching attributes.");
-    } else {
+    }
+    else
+    {
+        handle_ears(thing, could_hear, Hearer(thing));
         if (!Quiet(player))
+        {
             notify_quiet(player, "Wiped.");
+        }
     }
 }
 

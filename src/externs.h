@@ -1,6 +1,6 @@
 // externs.h - Prototypes for externs not defined elsewhere.
 //
-// $Id: externs.h,v 1.2 2000-04-11 20:48:02 sdennis Exp $
+// $Id: externs.h,v 1.3 2000-04-11 21:38:02 sdennis Exp $
 //
 #ifndef EXTERNS_H
 #define EXTERNS_H
@@ -305,10 +305,11 @@ extern char *   FDECL(unparse_boolexp_function, (dbref, BOOLEXP *));
 
 /* From walkdb.c */
 int chown_all(dbref from_player, dbref to_player, dbref acting_player, int key);
-extern void NDECL(olist_init);
-extern void FDECL(olist_add, (dbref));
-extern dbref    NDECL(olist_first);
-extern dbref    NDECL(olist_next);
+extern void olist_push(void);
+extern void olist_pop(void);
+extern void olist_add(dbref);
+extern dbref olist_first(void);
+extern dbref olist_next(void);
 
 /* From wild.c */
 extern int  FDECL(wild, (char *, char *, char *[], int));

@@ -1,7 +1,7 @@
 //
 // walkdb.c -- Support for commands that walk the entire db 
 //
-// $Id: walkdb.cpp,v 1.1 2000-04-11 07:14:48 sdennis Exp $ 
+// $Id: walkdb.cpp,v 1.2 2000-04-11 21:38:00 sdennis Exp $ 
 //
 
 #include "copyright.h"
@@ -758,7 +758,6 @@ void search_perform(dbref player, dbref cause, SEARCH *parm)
     int save_invk_ctr;
 
     buff = alloc_sbuf("search_perform.num");
-    olist_init();
     save_invk_ctr = mudstate.func_invk_ctr;
 
 #ifndef MEMORY_BASED
@@ -936,6 +935,7 @@ void do_search(dbref player, dbref cause, int key, char *arg)
     {
         return;
     }
+    olist_push();
     search_perform(player, cause, &searchparm);
     destitute = 1;
 
@@ -944,9 +944,16 @@ void do_search(dbref player, dbref cause, int key, char *arg)
     if (key != SRCH_SEARCH)
     {
         search_mark(player, key);
+        olist_pop();
         return;
     }
     outbuf = alloc_lbuf("do_search.outbuf");
+
+    int rcount = 0;
+    int ecount = 0;
+    int tcount = 0;
+    int pcount = 0;
+    int gcount = 0;
 
     // Room search.
     //
@@ -969,6 +976,7 @@ void do_search(dbref player, dbref cause, int key, char *arg)
             buff = unparse_object(player, thing, 0);
             notify(player, buff);
             free_lbuf(buff);
+            rcount++;
         }
     }
 
@@ -1011,6 +1019,7 @@ void do_search(dbref player, dbref cause, int key, char *arg)
             safe_chr(']', outbuf, &bp);
             *bp = '\0';
             notify(player, outbuf);
+            ecount++;
         }
     }
 
@@ -1045,6 +1054,7 @@ void do_search(dbref player, dbref cause, int key, char *arg)
             safe_chr(']', outbuf, &bp);
             *bp = '\0';
             notify(player, outbuf);
+            tcount++;
         }
     }
 
@@ -1079,6 +1089,7 @@ void do_search(dbref player, dbref cause, int key, char *arg)
             safe_chr(']', outbuf, &bp);
             *bp = '\0';
             notify(player, outbuf);
+            gcount++;
         }
     }
 
@@ -1114,6 +1125,7 @@ void do_search(dbref player, dbref cause, int key, char *arg)
             }
             *bp = '\0';
             notify(player, outbuf);
+            pcount++;
         }
     }
 
@@ -1123,10 +1135,16 @@ void do_search(dbref player, dbref cause, int key, char *arg)
     {
         notify(player, "Nothing found.");
     }
+    else
+    {
+        sprintf(outbuf,
+            "\nFound:  Rooms...%d  Exits...%d  Objects...%d  Players...%d  Garbage...%d",
+            rcount, ecount, tcount, pcount, gcount);
+        notify(player, outbuf);
+    }
     free_lbuf(outbuf);
-    olist_init();
+    olist_pop();
 }
-
 
 // ---------------------------------------------------------------------------
 // do_markall: set or clear the mark bits of all objects in the db.
@@ -1187,93 +1205,115 @@ void do_apply_marked( dbref player, dbref cause, int key, char *command,
     }
 }
 
-// ---------------------------------------------------------------------------
-// olist_init, olist_add, olist_first, olist_next: Object list management
-// routines.
-//
+/* ---------------------------------------------------------------------------
+ * * Object list management routines:
+ * * olist_push, olist_pop, olist_add, olist_first, olist_next
+ */
 
-// olist_init: Clear and initialize the object list
-//
-void NDECL(olist_init)
+/*
+ * olist_push: Create a new object list at the top of the object list stack
+ */
+void olist_push(void)
 {
-    OBLOCK *op, *onext;
+    OLSTK *ol;
+    
+    ol = (OLSTK *)MEMALLOC(sizeof(OLSTK), __FILE__, __LINE__);
+    ol->next = mudstate.olist;
+    mudstate.olist = ol;
+    
+    ol->head = NULL;
+    ol->tail = NULL;
+    ol->cblock = NULL;
+    ol->count = 0;
+    ol->citm = 0;
+}
 
-    for (op = mudstate.olist_head; op != NULL; op = onext)
+/*
+ * olist_pop: Pop one entire list off the object list stack
+ */
+void olist_pop(void)
+{
+    OLSTK *ol;
+    OBLOCK *op, *onext;
+    
+    ol = mudstate.olist->next;
+    
+    for (op = mudstate.olist->head; op != NULL; op = onext)
     {
         onext = op->next;
         free_lbuf(op);
     }
-    mudstate.olist_head = NULL;
-    mudstate.olist_tail = NULL;
-    mudstate.olist_cblock = NULL;
-    mudstate.olist_count = 0;
-    mudstate.olist_citm = 0;
+    MEMFREE(mudstate.olist, __FILE__, __LINE__);
+    mudstate.olist = ol;
 }
 
-// olist_add: Add an entry to the object list
-//
+/*
+ * olist_add: Add an entry to the object list 
+ */
 void olist_add(dbref item)
 {
     OBLOCK *op;
-
-    if (!mudstate.olist_head)
+    
+    if (!mudstate.olist->head)
     {
         op = (OBLOCK *) alloc_lbuf("olist_add.first");
-        mudstate.olist_head = mudstate.olist_tail = op;
-        mudstate.olist_count = 0;
+        mudstate.olist->head = mudstate.olist->tail = op;
+        mudstate.olist->count = 0;
         op->next = NULL;
     }
-    else if (mudstate.olist_count >= OBLOCK_SIZE)
+    else if (mudstate.olist->count >= OBLOCK_SIZE)
     {
         op = (OBLOCK *) alloc_lbuf("olist_add.next");
-        mudstate.olist_tail->next = op;
-        mudstate.olist_tail = op;
-        mudstate.olist_count = 0;
+        mudstate.olist->tail->next = op;
+        mudstate.olist->tail = op;
+        mudstate.olist->count = 0;
         op->next = NULL;
     }
     else
     {
-        op = mudstate.olist_tail;
+        op = mudstate.olist->tail;
     }
-    op->data[mudstate.olist_count++] = item;
+    op->data[mudstate.olist->count++] = item;
 }
 
-// olist_first: Return the first entry in the object list
-//
-dbref NDECL(olist_first)
+/*
+ * olist_first: Return the first entry in the object list 
+ */
+
+dbref olist_first(void)
 {
-    if (!mudstate.olist_head)
+    if (!mudstate.olist->head)
     {
         return NOTHING;
     }
-    if (  (mudstate.olist_head == mudstate.olist_tail)
-       && (mudstate.olist_count == 0))
+    if (  (mudstate.olist->head == mudstate.olist->tail)
+       && (mudstate.olist->count == 0))
     {
         return NOTHING;
     }
-    mudstate.olist_cblock = mudstate.olist_head;
-    mudstate.olist_citm = 0;
-    return mudstate.olist_cblock->data[mudstate.olist_citm++];
+    mudstate.olist->cblock = mudstate.olist->head;
+    mudstate.olist->citm = 0;
+    return mudstate.olist->cblock->data[mudstate.olist->citm++];
 }
 
-dbref NDECL(olist_next)
+dbref olist_next(void)
 {
     dbref thing;
-
-    if (!mudstate.olist_cblock)
+    
+    if (!mudstate.olist->cblock)
     {
         return NOTHING;
     }
-    if (  (mudstate.olist_cblock == mudstate.olist_tail)
-       && (mudstate.olist_citm >= mudstate.olist_count))
+    if (  (mudstate.olist->cblock == mudstate.olist->tail)
+       && (mudstate.olist->citm >= mudstate.olist->count))
     {
         return NOTHING;
     }
-    thing = mudstate.olist_cblock->data[mudstate.olist_citm++];
-    if (mudstate.olist_citm >= OBLOCK_SIZE)
+    thing = mudstate.olist->cblock->data[mudstate.olist->citm++];
+    if (mudstate.olist->citm >= OBLOCK_SIZE)
     {
-        mudstate.olist_cblock = mudstate.olist_cblock->next;
-        mudstate.olist_citm = 0;
+        mudstate.olist->cblock = mudstate.olist->cblock->next;
+        mudstate.olist->citm = 0;
     }
     return thing;
 }
