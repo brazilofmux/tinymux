@@ -135,6 +135,7 @@ Feature Additions:
      weekofyear/dayofweek.
  --  Morgan added @conformat and @exitformat from PennMUSH.
  --  Marlek added @nameformat.
+ --  Hellspawn added @dolist/notify.
 
 
 Bug Fixes:
@@ -387,7 +388,18 @@ Bug Fixes:
      paging an unconnected player.
  --  Bug #661 - comtitles near the maximum length were truncated when the game
      first starts.
- --  Bug #693 - TRACE with large output causes SIGSEGV.
+ --  Bug #693 - TRACE with large output causes SIGSEGV. Found on Due Rewards.
+     Fixed by Brazil. Bug from MUX 1.6.
+ --  Bug #706 - WIZARD could @chownall #1. Reported by Ashen-Shugar. Fixed by
+     Hellspawn. Bug from MUX 1.6.
+ --  Bug #707 - @chown garbage objects. Reported by Ashen-Shugar. Fixed by
+     Hellspawn. Bug from MUX 1.6.
+ --  Bug #708 - give to garbage objects. Reported by Ashen-Shugar. Fixed by
+     Hellspawn. Bug from MUX 1.6
+ --  Bug #757 - @wall/admin double emits. Report by many. Fixed by Hellspawn.
+     Bug from MUX 1.6.
+ --  @nameformat, @conformat and @exitformat global registers are saved and
+     cleared. Reported and fixed by Brazil.
 
 
 Performance Enhancements:
