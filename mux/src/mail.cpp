@@ -1,6 +1,6 @@
 // mail.cpp
 //
-// $Id: mail.cpp,v 1.40 2002-09-11 04:34:55 jake Exp $
+// $Id: mail.cpp,v 1.41 2002-09-11 04:46:58 sdennis Exp $
 //
 // This code was taken from Kalkin's DarkZone code, which was
 // originally taken from PennMUSH 1.50 p10, and has been heavily modified
@@ -350,41 +350,41 @@ void add_folder_name(dbref player, int fld, char *name)
 
 static char *get_folder_name(dbref player, int fld)
 {
-    // Get the name of the folder, or "nameless"
-    char *pat = alloc_lbuf("get_folder_name");
-    sprintf(pat, "%d:", fld);
-    static char str[LBUF_SIZE];
-
+    // Get the name of the folder, or return "unamed".
+    //
     int flags;
-    char *atrstr = atr_get(player, A_MAILFOLDERS, &player, &flags);
-    if (!*atrstr)
+    int nFolders;
+    dbref aowner;
+    static char aFolders[LBUF_SIZE];
+    char *pFolders = atr_get_str_LEN(aFolders, player, A_MAILFOLDERS, &aowner,
+        &flags, &nFolders);
+    char *p;
+    if (nFolders != 0)
     {
-        strcpy(str, "unnamed");
-        free_lbuf(pat);
-        free_lbuf(atrstr);
-        return str;
-    }
-    strcpy(str, atrstr);
-    free_lbuf(atrstr);
-    char *old = (char *)string_match(str, pat);
-    if (old)
-    {
-        char *r = old + strlen(pat);
-        while (*r != ':')
+        char *aPattern = alloc_lbuf("get_folder_name");
+        p = aPattern;
+        p += Tiny_ltoa(fld, p);
+        *p++ = ':';
+        *p = '\0';
+        size_t nPattern = p - aPattern;
+
+        int i = BMH_StringSearch(nPattern, aPattern, nFolders, aFolders);
+        free_lbuf(aPattern);
+
+        if (0 <= i)
         {
-            r++;
+            p = aFolders + i + nPattern;
+            char *q = p;
+            while (*q != ':')
+            {
+                q++;
+            }
+            *q = '\0';
+            return p;
         }
-        *r = '\0';
-        int len = strlen(pat);
-        free_lbuf(pat);
-        return old + len;
     }
-    else
-    {
-        strcpy(str, "unnamed");
-        free_lbuf(pat);
-        return str;
-    }
+    p = "unnamed";
+    return p;
 }
 
 static int get_folder_number(dbref player, char *name)
