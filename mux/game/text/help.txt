@@ -10501,10 +10501,11 @@ REMIT()
 & REMOVE()
 REMOVE()
 
-  FUNCTION: remove(<list>, <word>[, <delim>])
+  FUNCTION: remove(<list>, <word>[, <idelim>[, <odelim>]])
 
-  Remove takes a list and a word, and returns the list, with the word deleted
-  from it.  <delim> may be used to specify a delimiter other than a space.
+  Remove takes a list and a word, and returns the list, with the word
+  deleted from it.  <idelim> may be used to specify an input delimiter
+  other than a space.  <odelim> is the output delimiter.
 
   Example:
     > say remove(this is a test, is)
