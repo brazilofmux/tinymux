@@ -1,6 +1,6 @@
 // timer.cpp -- Mini-task scheduler for timed events.
 //
-// $Id: timer.cpp,v 1.3 2003-01-28 15:48:00 sdennis Exp $
+// $Id: timer.cpp,v 1.4 2003-02-03 06:01:48 sdennis Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -232,7 +232,7 @@ void do_timewarp(dbref executor, dbref caller, dbref enactor, int key, char *arg
 {
     int secs;
 
-    secs = Tiny_atol(arg);
+    secs = mux_atol(arg);
 
     // Sem/Wait queues
     //

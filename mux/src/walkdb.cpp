@@ -1,6 +1,6 @@
 // walkdb.cpp -- Support for commands that walk the entire db.
 //
-// $Id: walkdb.cpp,v 1.1 2003-01-22 19:58:26 sdennis Exp $
+// $Id: walkdb.cpp,v 1.2 2003-02-03 06:01:48 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -433,7 +433,7 @@ BOOL search_setup(dbref player, char *searchfor, SEARCH *parm)
     }
     else if (pname[0] == '#')
     {
-        parm->s_rst_owner = Tiny_atol(&pname[1]);
+        parm->s_rst_owner = mux_atol(&pname[1]);
         if (!Good_obj(parm->s_rst_owner))
         {
             parm->s_rst_owner = NOTHING;

@@ -1,6 +1,6 @@
 // wild.cpp -- Wildcard routines.
 //
-// $Id: wild.cpp,v 1.1 2003-01-22 19:58:26 sdennis Exp $
+// $Id: wild.cpp,v 1.2 2003-02-03 06:01:49 sdennis Exp $
 //
 // Written by T. Alexander Popiel, 24 June 1993
 // Last modified by T. Alexander Popiel, 19 August 1993
@@ -459,7 +459,7 @@ BOOL wild_match(char *tstr, const char *dstr)
         if (  Tiny_IsDigit[(unsigned char)*tstr]
            || *tstr == '-')
         {
-            return (Tiny_atol(tstr) < Tiny_atol(dstr));
+            return (mux_atol(tstr) < mux_atol(dstr));
         }
         else
         {
@@ -472,7 +472,7 @@ BOOL wild_match(char *tstr, const char *dstr)
         if (  Tiny_IsDigit[(unsigned char)*tstr]
            || *tstr == '-')
         {
-            return (Tiny_atol(tstr) > Tiny_atol(dstr));
+            return (mux_atol(tstr) > mux_atol(dstr));
         }
         else
         {

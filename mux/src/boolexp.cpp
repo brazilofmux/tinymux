@@ -1,6 +1,6 @@
 // boolexp.cpp
 //
-// $Id: boolexp.cpp,v 1.2 2003-01-24 15:12:06 sdennis Exp $
+// $Id: boolexp.cpp,v 1.3 2003-02-03 06:01:48 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -349,7 +349,7 @@ static BOOLEXP *test_atr(char *s)
             free_lbuf(buff);
             return TRUE_BOOLEXP;
         }
-        anum = Tiny_atol(buff);
+        anum = mux_atol(buff);
     }
     else
     {
@@ -439,7 +439,7 @@ static BOOLEXP *parse_boolexp_L(void)
                     free_bool(b);
                     return TRUE_BOOLEXP;
                 }
-                b->thing = Tiny_atol(&buf[1]);
+                b->thing = mux_atol(&buf[1]);
                 if (!Good_obj(b->thing))
                 {
                     free_lbuf(buf);
@@ -482,7 +482,7 @@ static BOOLEXP *parse_boolexp_L(void)
                 free_bool(b);
                 return TRUE_BOOLEXP;
             }
-            b->thing = Tiny_atol(&buf[1]);
+            b->thing = mux_atol(&buf[1]);
             if (b->thing < 0)
             {
                 free_lbuf(buf);

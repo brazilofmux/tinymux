@@ -1,6 +1,6 @@
 // quota.cpp -- Quota Management Commands.
 //
-// $Id: quota.cpp,v 1.1 2003-01-22 19:58:26 sdennis Exp $
+// $Id: quota.cpp,v 1.2 2003-02-03 06:01:48 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -70,14 +70,14 @@ static void mung_quotas(dbref player, int key, int value)
         if (key & QUOTA_TOT)
         {
             buff = atr_get(player, A_RQUOTA, &aowner, &aflags);
-            aq = Tiny_atol(buff) + xq;
+            aq = mux_atol(buff) + xq;
             atr_add_raw(player, A_QUOTA, Tiny_ltoa_t(aq));
             free_lbuf(buff);
         }
         else
         {
             buff = atr_get(player, A_QUOTA, &aowner, &aflags);
-            rq = Tiny_atol(buff) - xq;
+            rq = mux_atol(buff) - xq;
             atr_add_raw(player, A_RQUOTA, Tiny_ltoa_t(rq));
             free_lbuf(buff);
         }
@@ -91,16 +91,16 @@ static void mung_quotas(dbref player, int key, int value)
         {
             free_lbuf(buff);
             buff = atr_get(player, A_RQUOTA, &aowner, &aflags);
-            rq = Tiny_atol(buff);
+            rq = mux_atol(buff);
             free_lbuf(buff);
             aq = rq + count_quota(player);
         }
         else
         {
-            aq = Tiny_atol(buff);
+            aq = mux_atol(buff);
             free_lbuf(buff);
             buff = atr_get(player, A_RQUOTA, &aowner, &aflags);
-            rq = Tiny_atol(buff);
+            rq = mux_atol(buff);
             free_lbuf(buff);
         }
 
@@ -131,10 +131,10 @@ static void show_quota(dbref player, dbref victim)
     char *buff;
 
     buff = atr_get(victim, A_QUOTA, &aowner, &aflags);
-    aq = Tiny_atol(buff);
+    aq = mux_atol(buff);
     free_lbuf(buff);
     buff = atr_get(victim, A_RQUOTA, &aowner, &aflags);
-    rq = aq - Tiny_atol(buff);
+    rq = aq - mux_atol(buff);
     free_lbuf(buff);
     if (!Free_Quota(victim))
     {
@@ -179,7 +179,7 @@ void do_quota
     {
         if (arg1 && *arg1)
         {
-            value = Tiny_atol(arg1);
+            value = mux_atol(arg1);
             set = TRUE;
         }
         else if (key & (QUOTA_SET | QUOTA_FIX))
@@ -242,7 +242,7 @@ void do_quota
     if (arg2 && *arg2)
     {
         set = TRUE;
-        value = Tiny_atol(arg2);
+        value = mux_atol(arg2);
     }
     else if (key & QUOTA_FIX)
     {
@@ -292,8 +292,8 @@ FUNCTION(fun_hasquota)
     {
         int aflags;
         dbref aowner;
-        int rq = Tiny_atol(atr_get(who, A_RQUOTA, &aowner, &aflags));
-        bResult = (rq >= Tiny_atol(fargs[1]));
+        int rq = mux_atol(atr_get(who, A_RQUOTA, &aowner, &aflags));
+        bResult = (rq >= mux_atol(fargs[1]));
     }
     safe_bool(bResult, buff, bufc);
 }

@@ -1,6 +1,6 @@
 // funceval.cpp -- MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.6 2003-01-31 22:39:12 sdennis Exp $
+// $Id: funceval.cpp,v 1.7 2003-02-03 06:01:48 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -349,7 +349,7 @@ FUNCTION(fun_create)
         }
         if (*fargs[1])
         {
-            cost = Tiny_atol(fargs[1]);
+            cost = mux_atol(fargs[1]);
             if (cost < mudconf.createmin || cost > mudconf.createmax)
             {
                 safe_range(buff, bufc);
@@ -878,11 +878,11 @@ FUNCTION(fun_columns)
     char sep;
     evarargs_preamble(3);
 
-    int nWidth = Tiny_atol(fargs[1]);
+    int nWidth = mux_atol(fargs[1]);
     int nIndent = 0;
     if (nfargs == 4)
     {
-        nIndent = Tiny_atol(fargs[3]);
+        nIndent = mux_atol(fargs[3]);
         if (nIndent < 0 || 77 < nIndent)
         {
             nIndent = 1;
@@ -1008,7 +1008,7 @@ FUNCTION(fun_table)
     int nLineLength = 78;
     if (nfargs >= 3)
     {
-        nLineLength = Tiny_atol(fargs[2]);
+        nLineLength = mux_atol(fargs[2]);
     }
 
     // Get field width.
@@ -1016,7 +1016,7 @@ FUNCTION(fun_table)
     int nFieldWidth = 10;
     if (nfargs >= 2)
     {
-        nFieldWidth = Tiny_atol(fargs[1]);
+        nFieldWidth = mux_atol(fargs[1]);
     }
     else
     {
@@ -1330,7 +1330,7 @@ FUNCTION(fun_andflags)
 
 FUNCTION(fun_strtrunc)
 {
-    int maxVisualWidth = Tiny_atol(fargs[1]);
+    int maxVisualWidth = mux_atol(fargs[1]);
     if (maxVisualWidth < 0)
     {
         safe_range(buff, bufc);
@@ -1379,7 +1379,7 @@ FUNCTION(fun_inc)
 {
     if (nfargs == 1)
     {
-        safe_ltoa(Tiny_atol(fargs[0]) + 1, buff, bufc);
+        safe_ltoa(mux_atol(fargs[0]) + 1, buff, bufc);
     }
     else
     {
@@ -1391,7 +1391,7 @@ FUNCTION(fun_dec)
 {
     if (nfargs == 1)
     {
-        safe_ltoa(Tiny_atol(fargs[0]) - 1, buff, bufc);
+        safe_ltoa(mux_atol(fargs[0]) - 1, buff, bufc);
     }
     else
     {
@@ -1458,7 +1458,7 @@ FUNCTION(fun_mail)
         else
         {
             playerask = executor;
-            num = Tiny_atol(fargs[0]);
+            num = mux_atol(fargs[0]);
         }
     }
     else // if (nfargs == 2)
@@ -1472,7 +1472,7 @@ FUNCTION(fun_mail)
         else if (  (playerask == executor && !mudstate.nObjEvalNest)
                 || God(executor))
         {
-            num = Tiny_atol(fargs[1]);
+            num = mux_atol(fargs[1]);
         }
         else
         {
@@ -1520,7 +1520,7 @@ FUNCTION(fun_mailfrom)
     if (nfargs == 1)
     {
         playerask = executor;
-        num = Tiny_atol(fargs[0]);
+        num = mux_atol(fargs[0]);
     }
     else // if (nfargs == 2)
     {
@@ -1532,7 +1532,7 @@ FUNCTION(fun_mailfrom)
         }
         if (playerask == executor || Wizard(executor))
         {
-            num = Tiny_atol(fargs[1]);
+            num = mux_atol(fargs[1]);
         }
         else
         {
@@ -1839,7 +1839,7 @@ FUNCTION(fun_elements)
     //
     do {
         r = split_token(&s, ' ');
-        cur = Tiny_atol(r) - 1;
+        cur = mux_atol(r) - 1;
         if (  cur >= 0
            && cur < nwords
            && ptrs[cur])
@@ -1999,7 +1999,7 @@ static int u_comp(const void *s1, const void *s2)
     if (!result)
         n = 0;
     else {
-        n = Tiny_atol(result);
+        n = mux_atol(result);
         free_lbuf(result);
     }
     free_lbuf(tbuf);
@@ -2573,8 +2573,8 @@ FUNCTION(fun_munge)
 
 FUNCTION(fun_die)
 {
-    int n = Tiny_atol(fargs[0]);
-    int die = Tiny_atol(fargs[1]);
+    int n = mux_atol(fargs[0]);
+    int die = mux_atol(fargs[1]);
 
     if ((n == 0) || (die <= 0))
     {
@@ -2605,7 +2605,7 @@ FUNCTION(fun_lrand)
         return;
     }
 
-    int n_times = Tiny_atol(fargs[2]);
+    int n_times = mux_atol(fargs[2]);
     if (n_times < 1)
     {
         return;
@@ -2614,8 +2614,8 @@ FUNCTION(fun_lrand)
     {
         n_times = LBUF_SIZE;
     }
-    INT32 iLower = Tiny_atol(fargs[0]);
-    INT32 iUpper = Tiny_atol(fargs[1]);
+    INT32 iLower = mux_atol(fargs[0]);
+    INT32 iUpper = mux_atol(fargs[1]);
 
     if (iLower <= iUpper)
     {
@@ -2644,7 +2644,7 @@ FUNCTION(fun_lit)
 FUNCTION(fun_shl)
 {
     if (is_integer(fargs[0], NULL) && is_integer(fargs[1], NULL))
-        safe_ltoa(Tiny_atol(fargs[0]) << Tiny_atol(fargs[1]), buff, bufc);
+        safe_ltoa(mux_atol(fargs[0]) << mux_atol(fargs[1]), buff, bufc);
     else
         safe_str("#-1 ARGUMENTS MUST BE INTEGERS", buff, bufc);
 }
@@ -2652,7 +2652,7 @@ FUNCTION(fun_shl)
 FUNCTION(fun_shr)
 {
     if (is_integer(fargs[0], NULL) && is_integer(fargs[1], NULL))
-        safe_ltoa(Tiny_atol(fargs[0]) >> Tiny_atol(fargs[1]), buff, bufc);
+        safe_ltoa(mux_atol(fargs[0]) >> mux_atol(fargs[1]), buff, bufc);
     else
         safe_str("#-1 ARGUMENTS MUST BE INTEGERS", buff, bufc);
 }
@@ -2660,7 +2660,7 @@ FUNCTION(fun_shr)
 FUNCTION(fun_band)
 {
     if (is_integer(fargs[0], NULL) && is_integer(fargs[1], NULL))
-        safe_ltoa(Tiny_atol(fargs[0]) & Tiny_atol(fargs[1]), buff, bufc);
+        safe_ltoa(mux_atol(fargs[0]) & mux_atol(fargs[1]), buff, bufc);
     else
         safe_str("#-1 ARGUMENTS MUST BE INTEGERS", buff, bufc);
 }
@@ -2668,7 +2668,7 @@ FUNCTION(fun_band)
 FUNCTION(fun_bor)
 {
     if (is_integer(fargs[0], NULL) && is_integer(fargs[1], NULL))
-        safe_ltoa(Tiny_atol(fargs[0]) | Tiny_atol(fargs[1]), buff, bufc);
+        safe_ltoa(mux_atol(fargs[0]) | mux_atol(fargs[1]), buff, bufc);
     else
         safe_str("#-1 ARGUMENTS MUST BE INTEGERS", buff, bufc);
 }
@@ -2676,7 +2676,7 @@ FUNCTION(fun_bor)
 FUNCTION(fun_bnand)
 {
     if (is_integer(fargs[0], NULL) && is_integer(fargs[1], NULL))
-        safe_ltoa(Tiny_atol(fargs[0]) & ~(Tiny_atol(fargs[1])), buff, bufc);
+        safe_ltoa(mux_atol(fargs[0]) & ~(mux_atol(fargs[1])), buff, bufc);
     else
         safe_str("#-1 ARGUMENTS MUST BE INTEGERS", buff, bufc);
 }
@@ -3262,7 +3262,7 @@ FUNCTION(fun_peek)
     }
     else
     {
-        pos = Tiny_atol(fargs[1]);
+        pos = mux_atol(fargs[1]);
     }
 
     if (stacksize(doer) == 0)
@@ -3319,7 +3319,7 @@ FUNCTION(fun_pop)
     }
     else
     {
-        pos = Tiny_atol(fargs[1]);
+        pos = mux_atol(fargs[1]);
     }
     if (stacksize(doer) == 0)
     {
@@ -3813,7 +3813,7 @@ FUNCTION(fun_lrooms)
     int N = 1;
     if (nfargs >= 2)
     {
-        N = Tiny_atol(fargs[1]);
+        N = mux_atol(fargs[1]);
         if (N < 0)
         {
             safe_str("#-1 SECOND ARGUMENT MUST BE A POSITIVE NUMBER",

@@ -1,6 +1,6 @@
 // conf.cpp -- Set up configuration information and static data.
 //
-// $Id: conf.cpp,v 1.3 2003-01-24 14:52:04 sdennis Exp $
+// $Id: conf.cpp,v 1.4 2003-02-03 06:01:48 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -404,7 +404,7 @@ CF_HAND(cf_int_array)
         int unused;
         if (is_integer(p, &unused))
         {
-            aPorts[nPorts++] = Tiny_atol(p);
+            aPorts[nPorts++] = mux_atol(p);
             if (nPorts >= nExtra)
             {
                 break;
@@ -439,7 +439,7 @@ CF_HAND(cf_int)
 {
     // Copy the numeric value to the parameter.
     //
-    *vp = Tiny_atol(str);
+    *vp = mux_atol(str);
     return 0;
 }
 
@@ -1196,7 +1196,7 @@ CF_HAND(cf_site)
             cf_log_syntax(player, cmd, "Mask field (%s) in CIDR IP prefix is not numeric.", mask_txt);
             return -1;
         }
-        int mask_bits = Tiny_atol(mask_txt);
+        int mask_bits = mux_atol(mask_txt);
         if (  mask_bits < 0
            || 32 < mask_bits)
         {

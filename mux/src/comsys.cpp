@@ -1,6 +1,6 @@
 // comsys.cpp
 //
-// $Id: comsys.cpp,v 1.3 2003-01-31 06:32:14 sdennis Exp $
+// $Id: comsys.cpp,v 1.4 2003-02-03 06:01:48 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -526,7 +526,7 @@ void load_comsystem(FILE *fp)
     {
         // +V2 has colored headers
         //
-        ver = Tiny_atol(temp + 2);
+        ver = mux_atol(temp + 2);
         if (ver < 1 || 3 < ver)
         {
             return;
@@ -535,7 +535,7 @@ void load_comsystem(FILE *fp)
     }
     else
     {
-        nc = Tiny_atol(temp);
+        nc = mux_atol(temp);
     }
 
     num_channels = nc;
@@ -982,7 +982,7 @@ void do_processcom(dbref player, char *arg1, char *arg2)
         int nRecall = DFLT_RECALL_REQUEST;
         if (arg2[4] == ' ')
         {
-            nRecall = Tiny_atol(arg2 + 5);
+            nRecall = mux_atol(arg2 + 5);
         }
         do_comlast(player, ch, nRecall);
     }
@@ -1057,7 +1057,7 @@ void SendChannelMessage
            && attr->number)
         {
             maxbuf = atr_get(obj, attr->number, &aowner, &aflags);
-            logmax = Tiny_atol(maxbuf);
+            logmax = mux_atol(maxbuf);
             free_lbuf(maxbuf);
         }
         if (logmax > 0)
@@ -1276,7 +1276,7 @@ void do_comlast(dbref player, struct channel *ch, int arg)
        && (atr_get_info(obj, attr->number, &aowner, &aflags)))
     {
         char *maxbuf = atr_get(obj, attr->number, &aowner, &aflags);
-        logmax = Tiny_atol(maxbuf);
+        logmax = mux_atol(maxbuf);
         free_lbuf(maxbuf);
     }
     if (logmax < 1)
@@ -1316,7 +1316,7 @@ BOOL do_chanlog(dbref player, char *channel, char *arg)
     int value;
     if (  !*arg
        || !is_integer(arg, NULL)
-       || (value = Tiny_atol(arg)) > MAX_RECALL_REQUEST)
+       || (value = mux_atol(arg)) > MAX_RECALL_REQUEST)
     {
         return FALSE;
     }
@@ -1337,7 +1337,7 @@ BOOL do_chanlog(dbref player, char *channel, char *arg)
     int aflags;
     if (oldvalue = atr_get(ch->chan_obj, atr, &aowner, &aflags))
     {
-        int oldnum = Tiny_atol(oldvalue);
+        int oldnum = mux_atol(oldvalue);
         if (oldnum > value)
         {
             ATTR *hist;
@@ -2314,7 +2314,7 @@ void do_editchannel
         break;
 
     case 1:
-        ch->charge = Tiny_atol(arg2);
+        ch->charge = mux_atol(arg2);
         raw_notify(executor, "Set.");
         break;
 

@@ -1,6 +1,6 @@
 // db.cpp
 //
-// $Id: db.cpp,v 1.6 2003-01-28 15:47:59 sdennis Exp $
+// $Id: db.cpp,v 1.7 2003-02-03 06:01:48 sdennis Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -313,7 +313,7 @@ int fwdlist_load(FWDLIST *fp, dbref player, char *atext)
         if (  *dp++ == '#'
            && Tiny_IsDigit[(unsigned char)*dp])
         {
-            target = Tiny_atol(dp);
+            target = mux_atol(dp);
             if (mudstate.bStandAlone)
             {
                 fail = !Good_obj(target);
@@ -819,7 +819,7 @@ void do_fixdb
         res = noisy_match_result();
         break;
     case FIXDB_PENNIES:
-        res = Tiny_atol(arg2);
+        res = mux_atol(arg2);
         break;
     }
 
@@ -2484,7 +2484,7 @@ dbref parse_dbref(const char *s)
             return NOTHING;
     }
 
-    x = Tiny_atol(s);
+    x = mux_atol(s);
     return ((x >= 0) ? x : NOTHING);
 }
 
@@ -2709,7 +2709,7 @@ int getref(FILE *f)
 {
     static char buf[SBUF_SIZE];
     fgets(buf, sizeof(buf), f);
-    return Tiny_atol(buf);
+    return mux_atol(buf);
 }
 
 void free_boolexp(BOOLEXP *b)

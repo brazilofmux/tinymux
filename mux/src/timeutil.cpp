@@ -1,6 +1,6 @@
 // timeutil.cpp -- CLinearTimeAbsolute and CLinearTimeDelta modules.
 //
-// $Id: timeutil.cpp,v 1.2 2003-01-28 15:48:00 sdennis Exp $
+// $Id: timeutil.cpp,v 1.3 2003-02-03 06:01:48 sdennis Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -967,7 +967,7 @@ void ParseDecimalSeconds(size_t n, const char *p, unsigned short *iMilli,
    memcpy(aBuffer, p, n);
    memset(aBuffer + n, '0', sizeof(aBuffer) - n - 1);
    aBuffer[sizeof(aBuffer) - 1] = '\0';
-   int ns = Tiny_atol(aBuffer);
+   int ns = mux_atol(aBuffer);
    *iNano = ns % 1000;
    ns /= 1000;
    *iMicro = ns % 1000;
@@ -1010,7 +1010,7 @@ BOOL do_convtime(const char *str, FIELDEDTIME *ft)
 
     // Day of month.
     //
-    ft->iDayOfMonth = (unsigned short)Tiny_atol(p);
+    ft->iDayOfMonth = (unsigned short)mux_atol(p);
     if (ft->iDayOfMonth < 1 || daystab[i] < ft->iDayOfMonth)
     {
         return FALSE;
@@ -1020,7 +1020,7 @@ BOOL do_convtime(const char *str, FIELDEDTIME *ft)
 
     // Hours
     //
-    ft->iHour = (unsigned short)Tiny_atol(p);
+    ft->iHour = (unsigned short)mux_atol(p);
     if (ft->iHour > 23 || (ft->iHour == 0 && *p != '0'))
     {
         return FALSE;
@@ -1031,7 +1031,7 @@ BOOL do_convtime(const char *str, FIELDEDTIME *ft)
 
     // Minutes
     //
-    ft->iMinute = (unsigned short)Tiny_atol(p);
+    ft->iMinute = (unsigned short)mux_atol(p);
     if (ft->iMinute > 59 || (ft->iMinute == 0 && *p != '0'))
     {
         return FALSE;
@@ -1042,7 +1042,7 @@ BOOL do_convtime(const char *str, FIELDEDTIME *ft)
 
     // Seconds
     //
-    ft->iSecond = (unsigned short)Tiny_atol(p);
+    ft->iSecond = (unsigned short)mux_atol(p);
     if (ft->iSecond > 59 || (ft->iSecond == 0 && *p != '0'))
     {
         return FALSE;
@@ -1076,7 +1076,7 @@ BOOL do_convtime(const char *str, FIELDEDTIME *ft)
 
     // Year
     //
-    ft->iYear = (short)Tiny_atol(p);
+    ft->iYear = (short)mux_atol(p);
     if (ft->iYear == 0 && *p != '0')
     {
         return FALSE;
@@ -2737,7 +2737,7 @@ PD_Node *PD_ScanNextToken(char **ppString)
                 char buff[10];
                 memcpy(buff, pSave, nLen);
                 buff[nLen] = '\0';
-                pNode->iToken = Tiny_atol(buff);
+                pNode->iToken = mux_atol(buff);
                 ClassifyNumericToken(pNode);
             }
         }

@@ -1,6 +1,6 @@
 // mail.cpp
 //
-// $Id: mail.cpp,v 1.2 2003-01-23 08:02:52 jake Exp $
+// $Id: mail.cpp,v 1.3 2003-02-03 06:01:48 sdennis Exp $
 //
 // This code was taken from Kalkin's DarkZone code, which was
 // originally taken from PennMUSH 1.50 p10, and has been heavily modified
@@ -486,7 +486,7 @@ static int get_folder_number(dbref player, char *name)
                 q++;
             }
             *q = '\0';
-            i = Tiny_atol(p);
+            i = mux_atol(p);
             free_lbuf(aFolders);
             return i;
         }
@@ -506,7 +506,7 @@ static int parse_folder(dbref player, char *folder_string)
     }
     if (Tiny_IsDigit[(unsigned char)*folder_string])
     {
-        int fnum = Tiny_atol(folder_string);
+        int fnum = mux_atol(folder_string);
         if (  fnum < 0
            || fnum > MAX_FOLDERS)
         {
@@ -569,7 +569,7 @@ static BOOL parse_msglist(char *msglist, struct mail_selector *ms, dbref player)
             // We have a subrange, split it up and test to see if it is valid.
             //
             q++;
-            ms->low = Tiny_atol(p);
+            ms->low = mux_atol(p);
             if (ms->low <= 0)
             {
                 notify(player, "MAIL: Invalid message range");
@@ -583,7 +583,7 @@ static BOOL parse_msglist(char *msglist, struct mail_selector *ms, dbref player)
             }
             else
             {
-                ms->high = Tiny_atol(q);
+                ms->high = mux_atol(q);
                 if (ms->low > ms->high)
                 {
                     notify(player, "MAIL: Invalid message range");
@@ -595,7 +595,7 @@ static BOOL parse_msglist(char *msglist, struct mail_selector *ms, dbref player)
         {
             // A single message.
             //
-            ms->low = ms->high = Tiny_atol(p);
+            ms->low = ms->high = mux_atol(p);
             if (ms->low <= 0)
             {
                 notify(player, "MAIL: Invalid message number");
@@ -617,7 +617,7 @@ static BOOL parse_msglist(char *msglist, struct mail_selector *ms, dbref player)
                 notify(player, "MAIL: Invalid message range");
                 return FALSE;
             }
-            ms->high = Tiny_atol(p);
+            ms->high = mux_atol(p);
             if (ms->high <= 0)
             {
                 notify(player, "MAIL: Invalid message range");
@@ -636,7 +636,7 @@ static BOOL parse_msglist(char *msglist, struct mail_selector *ms, dbref player)
                 return FALSE;
             }
             ms->day_comp = 0;
-            ms->days = Tiny_atol(p);
+            ms->days = mux_atol(p);
             if (ms->days < 0)
             {
                 notify(player, "MAIL: Invalid age");
@@ -655,7 +655,7 @@ static BOOL parse_msglist(char *msglist, struct mail_selector *ms, dbref player)
                 return FALSE;
             }
             ms->day_comp = -1;
-            ms->days = Tiny_atol(p);
+            ms->days = mux_atol(p);
             if (ms->days < 0)
             {
                 notify(player, "MAIL: Invalid age");
@@ -674,7 +674,7 @@ static BOOL parse_msglist(char *msglist, struct mail_selector *ms, dbref player)
                 return FALSE;
             }
             ms->day_comp = 1;
-            ms->days = Tiny_atol(p);
+            ms->days = mux_atol(p);
             if (ms->days < 0)
             {
                 notify(player, "MAIL: Invalid age");
@@ -692,7 +692,7 @@ static BOOL parse_msglist(char *msglist, struct mail_selector *ms, dbref player)
                 notify(player, "MAIL: Invalid dbref #");
                 return FALSE;
             }
-            ms->player = Tiny_atol(p);
+            ms->player = mux_atol(p);
             if (!Good_obj(ms->player) || !(ms->player))
             {
                 notify(player, "MAIL: Invalid dbref #");
@@ -839,7 +839,7 @@ static int player_folder(dbref player)
         set_player_folder(player, 0);
         return 0;
     }
-    int number = Tiny_atol(atrstr);
+    int number = mux_atol(atrstr);
     free_lbuf(atrstr);
     return number;
 }
@@ -1154,7 +1154,7 @@ struct malias *get_malias(dbref player, char *alias, int *pnResult)
     {
         if (ExpMail(player))
         {
-            int x = Tiny_atol(alias + 1);
+            int x = mux_atol(alias + 1);
             if (x < 0 || x >= ma_top)
             {
                 *pnResult = GMA_NOTFOUND;
@@ -1239,7 +1239,7 @@ static char *make_namelist(dbref player, char *arg)
             {
                 p++;
             }
-            dbref target = Tiny_atol(p);
+            dbref target = mux_atol(p);
             if (  Good_obj(target)
                && isPlayer(target))
             {
@@ -1800,7 +1800,7 @@ void do_mail_fwd(dbref player, char *msg, char *tolist)
         notify(player, "MAIL: To whom should I forward?");
         return;
     }
-    int num = Tiny_atol(msg);
+    int num = mux_atol(msg);
     if (!num)
     {
         notify(player, "MAIL: I don't understand that message number.");
@@ -1818,7 +1818,7 @@ void do_mail_fwd(dbref player, char *msg, char *tolist)
     int iFlag = M_FORWARD;
     if (pValue)
     {
-        iFlag |= Tiny_atol(pValue);
+        iFlag |= mux_atol(pValue);
     }
     atr_add_raw(player, A_MAILFLAGS, Tiny_ltoa_t(iFlag));
 }
@@ -1835,7 +1835,7 @@ void do_mail_reply(dbref player, char *msg, BOOL all, int key)
         notify(player, "MAIL: No message list.");
         return;
     }
-    int num = Tiny_atol(msg);
+    int num = mux_atol(msg);
     if (!num)
     {
         notify(player, "MAIL: I don't understand that message number.");
@@ -1864,7 +1864,7 @@ void do_mail_reply(dbref player, char *msg, BOOL all, int key)
         char *p;
         for (p = Tiny_StrTokParse(&tts); p; p = Tiny_StrTokParse(&tts))
         {
-            if (Tiny_atol(p) != mp->from)
+            if (mux_atol(p) != mp->from)
             {
                 safe_chr('#', names, &bp);
                 safe_str(p, names, &bp);
@@ -1912,7 +1912,7 @@ void do_mail_reply(dbref player, char *msg, BOOL all, int key)
     int iFlag = M_REPLY;
     if (pValue)
     {
-        iFlag |= Tiny_atol(pValue);
+        iFlag |= mux_atol(pValue);
     }
     atr_add_raw(player, A_MAILFLAGS, Tiny_ltoa_t(iFlag));
 
@@ -2438,7 +2438,7 @@ void do_mail_stats(dbref player, char *name, int full)
     }
     else if (*name == NUMBER_TOKEN)
     {
-        target = Tiny_atol(&name[1]);
+        target = mux_atol(&name[1]);
         if (!Good_obj(target) || !isPlayer(target))
         {
             target = NOTHING;
@@ -2808,7 +2808,7 @@ void load_mail_V5(FILE *fp)
         struct mail *mp = (struct mail *)MEMALLOC(sizeof(struct mail));
         (void)ISOUTOFMEMORY(mp);
 
-        mp->to      = Tiny_atol(nbuf1);
+        mp->to      = mux_atol(nbuf1);
         mp->from    = getref(fp);
 
         mp->number  = getref(fp);
@@ -2826,7 +2826,7 @@ void load_mail_V5(FILE *fp)
     p = fgets(nbuf1, sizeof(nbuf1), fp);
     while (p && strncmp(nbuf1, "+++", 3))
     {
-        int number = Tiny_atol(nbuf1);
+        int number = mux_atol(nbuf1);
         new_mail_message(getstring_noalloc(fp, TRUE), number);
         p = fgets(nbuf1, sizeof(nbuf1), fp);
     }
@@ -2908,8 +2908,8 @@ void malias_read(FILE *fp)
         m->owner = m->numrecep = 0;
         if (p)
         {
-            m->owner = Tiny_atol(buffer);
-            m->numrecep = Tiny_atol(p+1);
+            m->owner = mux_atol(buffer);
+            m->numrecep = mux_atol(p+1);
         }
 
         // The format of @malias name is "N:<name>\n".
@@ -3249,7 +3249,7 @@ void do_malias_create(dbref player, char *alias, char *tolist)
         }
         else if (*head == '#')
         {
-            target = Tiny_atol(head + 1);
+            target = mux_atol(head + 1);
         }
         else
         {
@@ -3525,7 +3525,7 @@ void mail_to_list(dbref player, char *list, char *subject, char *message, int fl
             }
             else
             {
-                target = Tiny_atol(head);
+                target = mux_atol(head);
                 if (Good_obj(target) && isPlayer(target))
                 {
                     send_mail(player, target, tolist, subject, number, flags, silent, bBlind);
@@ -3607,7 +3607,7 @@ void do_expmail_stop(dbref player, int flags)
         {
             char *mailsub   = atr_get(player, A_MAILSUB, &aowner, &aflags);
             char *mailflags = atr_get(player, A_MAILFLAGS, &aowner, &aflags);
-            mail_to_list(player, tolist, mailsub, mailmsg, flags | Tiny_atol(mailflags), FALSE);
+            mail_to_list(player, tolist, mailsub, mailmsg, flags | mux_atol(mailflags), FALSE);
             free_lbuf(mailflags);
             free_lbuf(mailsub);
 

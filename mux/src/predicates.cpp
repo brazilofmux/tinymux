@@ -1,6 +1,6 @@
 // predicates.cpp
 //
-// $Id: predicates.cpp,v 1.7 2003-01-31 06:32:15 sdennis Exp $
+// $Id: predicates.cpp,v 1.8 2003-02-03 06:01:48 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -183,7 +183,7 @@ static BOOL pay_quota(dbref who, int cost)
     dbref aowner;
     int aflags;
     char *quota_str = atr_get(Owner(who), A_RQUOTA, &aowner, &aflags);
-    int quota = Tiny_atol(quota_str);
+    int quota = mux_atol(quota_str);
     free_lbuf(quota_str);
 
     // enough to build?  Wizards always have enough.
@@ -271,7 +271,7 @@ void add_quota(dbref who, int payment)
     char buf[20];
 
     char *quota = atr_get(who, A_RQUOTA, &aowner, &aflags);
-    Tiny_ltoa(Tiny_atol(quota) + payment, buf);
+    Tiny_ltoa(mux_atol(quota) + payment, buf);
     free_lbuf(quota);
     atr_add_raw(who, A_RQUOTA, buf);
 }
@@ -1612,7 +1612,7 @@ void parse_range(char **name, dbref *low_bound, dbref *high_bound)
                 buff1++;
             }
 
-            *high_bound = Tiny_atol(buff1);
+            *high_bound = mux_atol(buff1);
             if (*high_bound >= mudstate.db_top)
             {
                 *high_bound = mudstate.db_top - 1;
@@ -1633,7 +1633,7 @@ void parse_range(char **name, dbref *low_bound, dbref *high_bound)
             buff2++;
         }
 
-        *low_bound = Tiny_atol(buff2);
+        *low_bound = mux_atol(buff2);
         if (*low_bound < 0)
         {
             *low_bound = 0;
@@ -2171,7 +2171,7 @@ void did_it(dbref player, dbref thing, int what, const char *def, int owhat,
             charges = atr_pget(thing, A_CHARGES, &aowner, &aflags);
             if (*charges)
             {
-                num = Tiny_atol(charges);
+                num = mux_atol(charges);
                 if (num > 0)
                 {
                     buff = alloc_sbuf("did_it.charges");

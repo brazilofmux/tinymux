@@ -1,6 +1,6 @@
 // speech.cpp -- Commands which involve speaking.
 //
-// $Id: speech.cpp,v 1.2 2003-01-23 08:02:53 jake Exp $
+// $Id: speech.cpp,v 1.3 2003-02-03 06:01:48 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -44,7 +44,7 @@ static int idle_timeout_val(dbref player)
     dbref aowner;
     int aflags;
     char *ITbuffer = atr_get(player, A_IDLETMOUT, &aowner, &aflags);
-    int idle_timeout = Tiny_atol(ITbuffer);
+    int idle_timeout = mux_atol(ITbuffer);
     free_lbuf(ITbuffer);
     return idle_timeout;
 }
@@ -658,7 +658,7 @@ void do_page
         char *p;
         for (p = Tiny_StrTokParse(&tts); p; p = Tiny_StrTokParse(&tts))
         {
-            dbref target = Tiny_atol(p);
+            dbref target = mux_atol(p);
             if (  Good_obj(target)
                && isPlayer(target))
             {

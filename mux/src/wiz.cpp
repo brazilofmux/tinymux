@@ -1,6 +1,6 @@
 // wiz.cpp -- Wizard-only commands.
 //
-// $Id: wiz.cpp,v 1.1 2003-01-22 19:58:26 sdennis Exp $
+// $Id: wiz.cpp,v 1.2 2003-02-03 06:01:49 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -468,7 +468,7 @@ void do_boot(dbref executor, dbref caller, dbref enactor, int key, char *name)
     {
         if (is_integer(name, NULL))
         {
-            victim = Tiny_atol(name);
+            victim = mux_atol(name);
         }
         else
         {
@@ -543,7 +543,7 @@ void do_poor(dbref executor, dbref caller, dbref enactor, int key, char *arg1)
         return;
     }
 
-    int amt = Tiny_atol(arg1);
+    int amt = mux_atol(arg1);
     int curamt;
     dbref a;
     DO_WHOLE_DB(a)

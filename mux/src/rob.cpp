@@ -1,6 +1,6 @@
 // rob.cpp -- Commands dealing with giving/taking/killing things or money.
 //
-// $Id: rob.cpp,v 1.1 2003-01-22 19:58:26 sdennis Exp $
+// $Id: rob.cpp,v 1.2 2003-02-03 06:01:48 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -67,7 +67,7 @@ void do_kill
         int cost = 0;
         if (key == KILL_KILL)
         {
-            cost = Tiny_atol(costchar);
+            cost = mux_atol(costchar);
             if (cost < mudconf.killmin)
             {
                 cost = mudconf.killmin;
@@ -313,7 +313,7 @@ static void give_money(dbref giver, dbref recipient, int key, int amount)
         dbref aowner;
         int aflags;
         char *str = atr_pget(recipient, A_COST, &aowner, &aflags);
-        cost = Tiny_atol(str);
+        cost = mux_atol(str);
         free_lbuf(str);
 
         // Can't afford it?
@@ -418,7 +418,7 @@ void do_give
     }
     if (is_rational(amnt))
     {
-        give_money(executor, recipient, key, Tiny_atol(amnt));
+        give_money(executor, recipient, key, mux_atol(amnt));
     }
     else
     {

@@ -1,6 +1,6 @@
 // player.cpp
 //
-// $Id: player.cpp,v 1.1 2003-01-22 19:58:26 sdennis Exp $
+// $Id: player.cpp,v 1.2 2003-02-03 06:01:48 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -73,14 +73,14 @@ static void decrypt_logindata(char *atrbuf, LDATA *info)
     if (*atrbuf == '#')
     {
         atrbuf++;
-        info->tot_good = Tiny_atol(grabto(&atrbuf, ';'));
+        info->tot_good = mux_atol(grabto(&atrbuf, ';'));
         for (i = 0; i < NUM_GOOD; i++)
         {
             info->good[i].host = grabto(&atrbuf, ';');
             info->good[i].dtm = grabto(&atrbuf, ';');
         }
-        info->new_bad = Tiny_atol(grabto(&atrbuf, ';'));
-        info->tot_bad = Tiny_atol(grabto(&atrbuf, ';'));
+        info->new_bad = mux_atol(grabto(&atrbuf, ';'));
+        info->tot_bad = mux_atol(grabto(&atrbuf, ';'));
         for (i = 0; i < NUM_BAD; i++)
         {
             info->bad[i].host = grabto(&atrbuf, ';');
@@ -276,7 +276,7 @@ dbref connect_player(char *name, char *password, char *host, char *username, cha
         }
         else
         {
-            giveto(player, Tiny_atol(allowance));
+            giveto(player, mux_atol(allowance));
         }
         free_lbuf(allowance);
     }
@@ -529,7 +529,7 @@ dbref lookup_player(dbref doer, char *name, BOOL check_who)
         {
             return NOTHING;
         }
-        thing = Tiny_atol(name);
+        thing = mux_atol(name);
         if (!Good_obj(thing))
         {
             return NOTHING;

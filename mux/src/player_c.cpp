@@ -1,6 +1,6 @@
 // player_c.cpp -- Player cache routines.
 //
-// $Id: player_c.cpp,v 1.2 2003-01-24 00:42:50 sdennis Exp $
+// $Id: player_c.cpp,v 1.3 2003-02-03 06:01:48 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -37,13 +37,13 @@ static void pcache_reload1(dbref player, PCACHE *pp)
 {
     const char *cp = atr_get_raw(player, A_MONEY);
     if (cp && *cp)
-        pp->money = Tiny_atol(cp);
+        pp->money = mux_atol(cp);
     else
         pp->money = 0;
 
     cp = atr_get_raw(player, A_QUEUEMAX);
     if (cp && *cp)
-        pp->qmax = Tiny_atol(cp);
+        pp->qmax = mux_atol(cp);
     else if (!Wizard(player))
         pp->qmax = mudconf.queuemax;
     else
@@ -213,7 +213,7 @@ int Pennies(dbref obj)
     const char *cp = atr_get_raw(obj, A_MONEY);
     if (cp)
     {
-        return Tiny_atol(cp);
+        return mux_atol(cp);
     }
     return 0;
 }

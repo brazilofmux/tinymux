@@ -1,6 +1,6 @@
 // look.cpp -- Commands which look at things.
 //
-// $Id: look.cpp,v 1.3 2003-01-31 06:32:15 sdennis Exp $
+// $Id: look.cpp,v 1.4 2003-02-03 06:01:48 sdennis Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -124,7 +124,7 @@ int HandleObfuscation(dbref looker, dbref lookee, int threshhold)
         buff = atr_get(lookee, get_atr("OBF_LEVEL"), &owner, &flags);
         if (*buff)
         {
-            iObfuscateLevel = Tiny_atol(buff);
+            iObfuscateLevel = mux_atol(buff);
         }
         free_lbuf(buff);
 
@@ -143,7 +143,7 @@ int HandleObfuscation(dbref looker, dbref lookee, int threshhold)
                 buff = atr_get(looker, get_atr("HSS_LEVEL"), &owner, &flags);
                 if (*buff)
                 {
-                    iHeightenSensesLevel = Tiny_atol(buff);
+                    iHeightenSensesLevel = mux_atol(buff);
                 }
                 free_lbuf(buff);
             }

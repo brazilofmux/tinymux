@@ -1,6 +1,6 @@
 // netcommon.cpp
 //
-// $Id: netcommon.cpp,v 1.2 2003-01-23 07:21:27 sdennis Exp $
+// $Id: netcommon.cpp,v 1.3 2003-02-03 06:01:48 sdennis Exp $
 //
 // This file contains routines used by the networking code that do not
 // depend on the implementation of the networking code.  The network-specific
@@ -647,7 +647,7 @@ static void announce_connect(dbref player, DESC *d)
     atr_pget_str_LEN(buf, player, A_TIMEOUT, &aowner, &aflags, &nLen);
     if (nLen)
     {
-        d->timeout = Tiny_atol(buf);
+        d->timeout = mux_atol(buf);
         if (d->timeout <= 0)
         {
             d->timeout = mudconf.idle_timeout;
@@ -1043,7 +1043,7 @@ void desc_reload(dbref player)
         buf = atr_pget(player, A_TIMEOUT, &aowner, &aflags);
         if (buf)
         {
-            d->timeout = Tiny_atol(buf);
+            d->timeout = mux_atol(buf);
             if (d->timeout <= 0)
                 d->timeout = mudconf.idle_timeout;
         }
@@ -2579,7 +2579,7 @@ FUNCTION(fun_doing)
 {
     if (is_rational(fargs[0]))
     {
-        SOCKET s = Tiny_atol(fargs[0]);
+        SOCKET s = mux_atol(fargs[0]);
         BOOL bFound = FALSE;
         DESC *d;
         DESC_ITER_CONN(d)
@@ -2642,7 +2642,7 @@ FUNCTION(fun_host)
     DESC *d;
     if (isPort)
     {
-        SOCKET s = Tiny_atol(fargs[0]);
+        SOCKET s = mux_atol(fargs[0]);
         DESC_ITER_CONN(d)
         {
             if (d->descriptor == s) 
@@ -2743,7 +2743,7 @@ void fetch_ConnectionInfoFields(dbref target, long anFields[4])
     {
         long result;
         if (  !aFields[i]
-           || (result = Tiny_atol(aFields[i])) < 0)
+           || (result = mux_atol(aFields[i])) < 0)
         {
             result = 0;
         }
@@ -2783,7 +2783,7 @@ long fetch_ConnectionInfoField(dbref target, int iField)
 
     long result;
     if (  !aFields[iField]
-       || (result = Tiny_atol(aFields[iField])) < 0)
+       || (result = mux_atol(aFields[iField])) < 0)
     {
         result = 0;
     }

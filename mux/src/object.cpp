@@ -1,6 +1,6 @@
 // object.cpp -- Low-level object manipulation routines.
 //
-// $Id: object.cpp,v 1.3 2003-01-28 00:48:26 jake Exp $
+// $Id: object.cpp,v 1.4 2003-02-03 06:01:48 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -717,7 +717,7 @@ static void purge_going(void)
             }
             else
             {
-                dbref player = (dbref) Tiny_atol(p);
+                dbref player = (dbref) mux_atol(p);
                 destroy_player(player, i);
             }
             break;

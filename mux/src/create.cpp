@@ -1,6 +1,6 @@
 // create.cpp -- Commands that create new objects.
 //
-// $Id: create.cpp,v 1.1 2003-01-22 19:58:25 sdennis Exp $
+// $Id: create.cpp,v 1.2 2003-02-03 06:01:48 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -505,7 +505,7 @@ void do_create
         return;
     }
     else if (  nargs == 2
-            && (cost = Tiny_atol(coststr)) < 0)
+            && (cost = mux_atol(coststr)) < 0)
     {
         notify_quiet(executor, "You can't create an object for less than nothing!");
         return;
@@ -590,7 +590,7 @@ void do_clone
     new_owner = (key & CLONE_PRESERVE) ? Owner(thing) : Owner(executor);
     if (key & CLONE_SET_COST)
     {
-        cost = Tiny_atol(arg2);
+        cost = mux_atol(arg2);
         if (cost < mudconf.createmin)
             cost = mudconf.createmin;
         if (cost > mudconf.createmax)

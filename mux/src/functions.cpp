@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.10 2003-02-03 05:58:22 sdennis Exp $
+// $Id: functions.cpp,v 1.11 2003-02-03 06:01:48 sdennis Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -460,7 +460,7 @@ static int dbnum(char *dbr)
     }
     else
     {
-        return Tiny_atol(dbr + 1);
+        return mux_atol(dbr + 1);
     }
 }
 
@@ -825,7 +825,7 @@ FUNCTION(fun_flags)
 
 FUNCTION(fun_rand)
 {
-    int num = Tiny_atol(fargs[0]);
+    int num = mux_atol(fargs[0]);
     if (num < 1)
     {
         safe_chr('0', buff, bufc);
@@ -898,7 +898,7 @@ FUNCTION(fun_time)
     int nPrecision = 0;
     if (nfargs == 2)
     {
-        nPrecision = Tiny_atol(fargs[1]);
+        nPrecision = mux_atol(fargs[1]);
     }
     char *temp = ltaNow.ReturnDateString(nPrecision);
     safe_str(temp, buff, bufc);
@@ -930,7 +930,7 @@ FUNCTION(fun_secs)
     int nPrecision = 0;
     if (nfargs == 2)
     {
-        nPrecision = Tiny_atol(fargs[1]);
+        nPrecision = mux_atol(fargs[1]);
     }
     safe_str(ltaNow.ReturnSecondsString(nPrecision), buff, bufc);
 }
@@ -962,7 +962,7 @@ FUNCTION(fun_convsecs)
     int nPrecision = 0;
     if (nfargs == 3)
     {
-        nPrecision = Tiny_atol(fargs[2]);
+        nPrecision = mux_atol(fargs[2]);
     }
     char *temp = lta.ReturnDateString(nPrecision);
     safe_str(temp, buff, bufc);
@@ -1002,7 +1002,7 @@ FUNCTION(fun_convtime)
         int nPrecision = 0;
         if (nfargs == 3)
         {
-            nPrecision = Tiny_atol(fargs[2]);
+            nPrecision = mux_atol(fargs[2]);
         }
         safe_str(lta.ReturnSecondsString(nPrecision), buff, bufc);
     }
@@ -1713,8 +1713,8 @@ FUNCTION(fun_mid)
     // Initial checks for iPosition0 [0,LBUF_SIZE), nLength [0,LBUF_SIZE),
     // and iPosition1 [0,LBUF_SIZE).
     //
-    int iPosition0 = Tiny_atol(fargs[1]);
-    int nLength = Tiny_atol(fargs[2]);
+    int iPosition0 = mux_atol(fargs[1]);
+    int nLength = mux_atol(fargs[2]);
     int iPosition1 = iPosition0 + nLength;
 
     if (  iPosition0 < 0 || iPosition0 > LBUF_SIZE-1
@@ -1756,7 +1756,7 @@ FUNCTION(fun_right)
     // and iPosition1 [0,LBUF_SIZE).
 
     int iPosition1 = strlen(fargs[0]);
-    int nLength = Tiny_atol(fargs[1]);
+    int nLength = mux_atol(fargs[1]);
     int iPosition0 = iPosition1 - nLength;   
 
     if (nLength > LBUF_SIZE-1)
@@ -2083,7 +2083,7 @@ FUNCTION(fun_where)
 
 FUNCTION(fun_rloc)
 {
-    int levels = Tiny_atol(fargs[1]);
+    int levels = mux_atol(fargs[1]);
     if (levels > mudconf.ntfy_nest_lim)
     {
         levels = mudconf.ntfy_nest_lim;
@@ -2339,8 +2339,8 @@ FUNCTION(fun_extract)
     varargs_preamble(4);
 
     s = fargs[0];
-    start = Tiny_atol(fargs[1]);
-    len = Tiny_atol(fargs[2]);
+    start = mux_atol(fargs[1]);
+    len = mux_atol(fargs[2]);
 
     if ((start < 1) || (len < 1))
     {
@@ -2460,8 +2460,8 @@ FUNCTION(fun_index)
 
     s = fargs[0];
     c = *fargs[1];
-    start = Tiny_atol(fargs[2]);
-    end = Tiny_atol(fargs[3]);
+    start = mux_atol(fargs[2]);
+    end = mux_atol(fargs[3]);
 
     if ((start < 1) || (end < 1) || (*s == '\0'))
     {
@@ -2627,7 +2627,7 @@ FUNCTION(fun_gt)
        && is_integer(fargs[1], &nDigits)
        && nDigits <= 9)
     {
-        bResult = (Tiny_atol(fargs[0]) > Tiny_atol(fargs[1]));
+        bResult = (mux_atol(fargs[0]) > mux_atol(fargs[1]));
     }
     else
     {
@@ -2645,7 +2645,7 @@ FUNCTION(fun_gte)
        && is_integer(fargs[1], &nDigits)
        && nDigits <= 9)
     {
-        bResult = (Tiny_atol(fargs[0]) >= Tiny_atol(fargs[1]));
+        bResult = (mux_atol(fargs[0]) >= mux_atol(fargs[1]));
     }
     else
     {
@@ -2663,7 +2663,7 @@ FUNCTION(fun_lt)
        && is_integer(fargs[1], &nDigits)
        && nDigits <= 9)
     {
-        bResult = (Tiny_atol(fargs[0]) < Tiny_atol(fargs[1]));
+        bResult = (mux_atol(fargs[0]) < mux_atol(fargs[1]));
     }
     else
     {
@@ -2681,7 +2681,7 @@ FUNCTION(fun_lte)
        && is_integer(fargs[1], &nDigits)
        && nDigits <= 9)
     {
-        bResult = (Tiny_atol(fargs[0]) <= Tiny_atol(fargs[1]));
+        bResult = (mux_atol(fargs[0]) <= mux_atol(fargs[1]));
     }
     else
     {
@@ -2699,7 +2699,7 @@ FUNCTION(fun_eq)
        && is_integer(fargs[1], &nDigits)
        && nDigits <= 9)
     {
-        bResult = (Tiny_atol(fargs[0]) == Tiny_atol(fargs[1]));
+        bResult = (mux_atol(fargs[0]) == mux_atol(fargs[1]));
     }
     else 
     {
@@ -2718,7 +2718,7 @@ FUNCTION(fun_neq)
        && is_integer(fargs[1], &nDigits)
        && nDigits <= 9)
     {
-        bResult = (Tiny_atol(fargs[0]) != Tiny_atol(fargs[1]));
+        bResult = (mux_atol(fargs[0]) != mux_atol(fargs[1]));
     }
     else 
     {
@@ -2733,7 +2733,7 @@ FUNCTION(fun_and)
     BOOL val = TRUE;
     for (int i = 0; i < nfargs && val; i++)
     {
-        val = Tiny_atol(fargs[i]);
+        val = mux_atol(fargs[i]);
     }
     safe_bool(val, buff, bufc);
 }
@@ -2743,7 +2743,7 @@ FUNCTION(fun_or)
     BOOL val = FALSE;
     for (int i = 0; i < nfargs && !val; i++)
     {
-        val = Tiny_atol(fargs[i]);
+        val = mux_atol(fargs[i]);
     }
     safe_bool(val, buff, bufc);
 }
@@ -2779,7 +2779,7 @@ FUNCTION(fun_cand)
         TinyExec(temp, &bp, executor, caller, enactor, 
             EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, (char **)NULL, 0);
         *bp = '\0';
-        val = Tiny_atol(temp);
+        val = mux_atol(temp);
     }
     free_lbuf(temp);
     safe_bool(val, buff, bufc);
@@ -2796,7 +2796,7 @@ FUNCTION(fun_cor)
         TinyExec(temp, &bp, executor, caller, enactor, 
             EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, (char **)NULL, 0);
         *bp = '\0';
-        val = Tiny_atol(temp);
+        val = mux_atol(temp);
     }
     free_lbuf(temp);
     safe_bool(val, buff, bufc);
@@ -2841,7 +2841,7 @@ FUNCTION(fun_xor)
     BOOL val = FALSE;
     for (int i = 0; i < nfargs; i++)
     {
-        int tval = Tiny_atol(fargs[i]);
+        int tval = mux_atol(fargs[i]);
         val = (val && !tval) || (!val && tval);
     }
     safe_bool(val, buff, bufc);
@@ -3402,7 +3402,7 @@ FUNCTION(fun_land)
         while (cp && bValue)
         {
             char *curr = split_token(&cp, sep);
-            bValue = Tiny_atol(curr);
+            bValue = mux_atol(curr);
         }
     }
     safe_bool(bValue, buff, bufc);
@@ -3420,7 +3420,7 @@ FUNCTION(fun_lor)
         while (cp && !bValue)
         {
             char *curr = split_token(&cp, sep);
-            bValue = Tiny_atol(curr);
+            bValue = mux_atol(curr);
         }
     }
     safe_bool(bValue, buff, bufc);
@@ -3481,7 +3481,7 @@ FUNCTION(fun_add)
     long sum = 0;
     for (i = 0; i < nfargs; i++)
     {
-        sum += Tiny_atol(fargs[i]);
+        sum += mux_atol(fargs[i]);
     }
     safe_ltoa(sum, buff, bufc);
 }
@@ -3505,7 +3505,7 @@ FUNCTION(fun_sub)
        && nDigits <= 9)
     {
         int iResult;
-        iResult = Tiny_atol(fargs[0]) - Tiny_atol(fargs[1]);
+        iResult = mux_atol(fargs[0]) - mux_atol(fargs[1]);
         safe_ltoa(iResult, buff, bufc);
     }
     else
@@ -3575,7 +3575,7 @@ FUNCTION(fun_round)
             r = 0.0;
         }
 #endif // HAVE_IEEE_FP_FORMAT
-        int frac = Tiny_atol(fargs[1]);
+        int frac = mux_atol(fargs[1]);
         safe_str(Tiny_ftoa(r, TRUE, frac), buff, bufc);
 #ifdef HAVE_IEEE_FP_FORMAT
     }
@@ -3897,9 +3897,9 @@ FUNCTION(fun_dist2d)
     int d;
     double r;
 
-    d = Tiny_atol(fargs[0]) - Tiny_atol(fargs[2]);
+    d = mux_atol(fargs[0]) - mux_atol(fargs[2]);
     r = (double)(d * d);
-    d = Tiny_atol(fargs[1]) - Tiny_atol(fargs[3]);
+    d = mux_atol(fargs[1]) - mux_atol(fargs[3]);
     r += (double)(d * d);
     d = (int)(sqrt(r) + 0.5);
     safe_ltoa(d, buff, bufc);
@@ -3910,11 +3910,11 @@ FUNCTION(fun_dist3d)
     int d;
     double r;
 
-    d = Tiny_atol(fargs[0]) - Tiny_atol(fargs[3]);
+    d = mux_atol(fargs[0]) - mux_atol(fargs[3]);
     r = (double)(d * d);
-    d = Tiny_atol(fargs[1]) - Tiny_atol(fargs[4]);
+    d = mux_atol(fargs[1]) - mux_atol(fargs[4]);
     r += (double)(d * d);
-    d = Tiny_atol(fargs[2]) - Tiny_atol(fargs[5]);
+    d = mux_atol(fargs[2]) - mux_atol(fargs[5]);
     r += (double)(d * d);
     d = (int)(sqrt(r) + 0.5);
     safe_ltoa(d, buff, bufc);
@@ -4268,7 +4268,7 @@ FUNCTION(fun_cansee)
     int mode;
     if (nfargs == 3)
     {
-        mode = Tiny_atol(fargs[2]);
+        mode = mux_atol(fargs[2]);
         switch (mode)
         {
         case ACTION_IS_STATIONARY:
@@ -4743,7 +4743,7 @@ FUNCTION(fun_ldelete)
     //
     char sep;
     varargs_preamble(3);
-    do_itemfuns(buff, bufc, fargs[0], Tiny_atol(fargs[1]), NULL, sep, IF_DELETE);
+    do_itemfuns(buff, bufc, fargs[0], mux_atol(fargs[1]), NULL, sep, IF_DELETE);
 }
 
 FUNCTION(fun_replace)
@@ -4752,7 +4752,7 @@ FUNCTION(fun_replace)
     //
     char sep;
     varargs_preamble(4);
-    do_itemfuns(buff, bufc, fargs[0], Tiny_atol(fargs[1]), fargs[2], sep, IF_REPLACE);
+    do_itemfuns(buff, bufc, fargs[0], mux_atol(fargs[1]), fargs[2], sep, IF_REPLACE);
 }
 
 FUNCTION(fun_insert)
@@ -4761,7 +4761,7 @@ FUNCTION(fun_insert)
     //
     char sep;
     varargs_preamble(4);
-    do_itemfuns(buff, bufc, fargs[0], Tiny_atol(fargs[1]), fargs[2], sep, IF_INSERT);
+    do_itemfuns(buff, bufc, fargs[0], mux_atol(fargs[1]), fargs[2], sep, IF_INSERT);
 }
 
 /*
@@ -4935,7 +4935,7 @@ FUNCTION(fun_wordpos)
 
     varargs_preamble(3);
 
-    charpos = Tiny_atol(fargs[1]);
+    charpos = mux_atol(fargs[1]);
     cp = fargs[0];
     if ((charpos > 0) && (charpos <= strlen(cp)))
     {
@@ -5094,8 +5094,8 @@ FUNCTION(fun_haspower)
 FUNCTION(fun_delete)
 {
     char *s = fargs[0];
-    int iStart = Tiny_atol(fargs[1]);
-    int nChars = Tiny_atol(fargs[2]);
+    int iStart = mux_atol(fargs[1]);
+    int nChars = mux_atol(fargs[2]);
     int nLen = strlen(s);
 
     int iEnd = iStart + nChars;
@@ -5536,7 +5536,7 @@ FUNCTION(fun_lnum)
     int bot = 0, top;
     if (nfargs == 1)
     {
-        top = Tiny_atol(fargs[0]) - 1;
+        top = mux_atol(fargs[0]) - 1;
         if (top < 0)
         {
             return;
@@ -5544,8 +5544,8 @@ FUNCTION(fun_lnum)
     }
     else
     {
-        bot = Tiny_atol(fargs[0]);
-        top = Tiny_atol(fargs[1]);
+        bot = mux_atol(fargs[0]);
+        top = mux_atol(fargs[1]);
     }
 
     int i;
@@ -6094,7 +6094,7 @@ FUNCTION(fun_splice)
 
 FUNCTION(fun_repeat)
 {
-    int times = Tiny_atol(fargs[1]);
+    int times = mux_atol(fargs[1]);
     if (times < 1 || *fargs[0] == '\0')
     {
         // Legal but no work to do.
@@ -6257,7 +6257,7 @@ void iter_value(char *buff, char **bufc, char *fargs[], int nfargs, BOOL bWhich)
     int number = 0;
     if (nfargs > 0)
     {
-        number = Tiny_atol(fargs[0]);
+        number = mux_atol(fargs[0]);
         if (number < 0)
         {
             number = 0;
@@ -6965,7 +6965,7 @@ FUNCTION(fun_space)
     }
     else
     {
-        num = Tiny_atol(fargs[0]);
+        num = mux_atol(fargs[0]);
         if (num == 0)
         {
             // If 'space(0)', 'space(00)', ..., then allow num == 0,
@@ -6995,7 +6995,7 @@ FUNCTION(fun_idle)
     long nIdle = -1;
     if (is_rational(fargs[0]))
     {
-        SOCKET s = Tiny_atol(fargs[0]);
+        SOCKET s = mux_atol(fargs[0]);
         BOOL bFound = FALSE;
         DESC *d;
         CLinearTimeAbsolute ltaNow;
@@ -7039,7 +7039,7 @@ FUNCTION(fun_conn)
     long nConnected = -1;
     if (is_rational(fargs[0]))
     {
-        SOCKET s = Tiny_atol(fargs[0]);
+        SOCKET s = mux_atol(fargs[0]);
         int bFound = FALSE;
         DESC *d;
         CLinearTimeAbsolute ltaNow;
@@ -7147,7 +7147,7 @@ static void do_asort(char *s[], int n, int sort_type)
         for (i = 0; i < n; i++)
         {
             ip[i].str = s[i];
-            ip[i].data = Tiny_atol(s[i]);
+            ip[i].data = mux_atol(s[i]);
         }
         qsort((void *)ip, n, sizeof(i_rec), i_comp);
         for (i = 0; i < n; i++)
@@ -7513,7 +7513,7 @@ void centerjustcombo
     {
         return;
     }
-    int width = Tiny_atol(fargs[1]);
+    int width = mux_atol(fargs[1]);
     if (width <= 0 || LBUF_SIZE <= width)
     {
         safe_range(buff, bufc);
@@ -8012,7 +8012,7 @@ FUNCTION(fun_wrap)
     if (  nfargs >= 2
        && fargs[1][0] != '\0')
     {
-        nWidth = Tiny_atol(fargs[1]);
+        nWidth = mux_atol(fargs[1]);
         if (  nWidth < 1
            || nWidth >= LBUF_SIZE)
         {
@@ -8052,7 +8052,7 @@ FUNCTION(fun_wrap)
         if (  nfargs >= 6
            && fargs[5][0] != '\0')
         {
-            nHanging = Tiny_atol(fargs[5]);
+            nHanging = mux_atol(fargs[5]);
         }
     }
 
@@ -8398,7 +8398,7 @@ const char *write_time(int Seconds)
 //
 FUNCTION(fun_digittime)
 {
-    int tt = Tiny_atol(fargs[0]);
+    int tt = mux_atol(fargs[0]);
     safe_str(time_format_1(tt), buff, bufc);
 }
 
@@ -8407,7 +8407,7 @@ FUNCTION(fun_digittime)
 //
 FUNCTION(fun_singletime)
 {
-    int tt = Tiny_atol(fargs[0]);
+    int tt = mux_atol(fargs[0]);
     safe_str(time_format_2(tt), buff, bufc);
 }
 
@@ -8416,7 +8416,7 @@ FUNCTION(fun_singletime)
 //
 FUNCTION(fun_exptime)
 {
-    int tt = Tiny_atol(fargs[0]);
+    int tt = mux_atol(fargs[0]);
     safe_str(expand_time(tt), buff, bufc);
 }
 
@@ -8425,7 +8425,7 @@ FUNCTION(fun_exptime)
 //
 FUNCTION(fun_writetime)
 {
-    int tt = Tiny_atol(fargs[0]);
+    int tt = mux_atol(fargs[0]);
     safe_str(write_time(tt), buff, bufc);
 }
 
@@ -8437,7 +8437,7 @@ FUNCTION(fun_cmds)
     long nCmds = -1;
     if (is_rational(fargs[0]))
     {
-        SOCKET s = Tiny_atol(fargs[0]);
+        SOCKET s = mux_atol(fargs[0]);
         BOOL bFound = FALSE;
         DESC *d;
         DESC_ITER_CONN(d) 
@@ -8866,7 +8866,7 @@ FUNCTION(fun_chr)
         safe_str("#-1 ARGUMENT MUST BE A NUMBER", buff, bufc);
         return;
     }
-    int ch = Tiny_atol(fargs[0]);
+    int ch = mux_atol(fargs[0]);
     if (  ch < 0
        || UCHAR_MAX < ch)
     {

@@ -1,6 +1,6 @@
 // stringutil.cpp -- string utilities.
 //
-// $Id: stringutil.cpp,v 1.7 2003-02-03 05:58:22 sdennis Exp $
+// $Id: stringutil.cpp,v 1.8 2003-02-03 06:01:48 sdennis Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -2089,7 +2089,7 @@ const char TableATOI[16][10] =
     { 90, 91, 92, 93, 94, 95, 96, 97, 98, 99}
 };
 
-long Tiny_atol(const char *pString)
+long mux_atol(const char *pString)
 {
     long sum = 0;
     int LeadingCharacter = 0;
@@ -2563,14 +2563,14 @@ double Tiny_atof(char *szString, BOOL bStrict)
             {
                 // This 'floating-point' number is just an integer.
                 //
-                ret = (double)Tiny_atol(pfr.pDigitsA);
+                ret = (double)mux_atol(pfr.pDigitsA);
             }
             else
             {
                 // This 'floating-point' number is fixed-point.
                 //
-                double rA = (double)Tiny_atol(pfr.pDigitsA);
-                double rB = (double)Tiny_atol(pfr.pDigitsB);
+                double rA = (double)mux_atol(pfr.pDigitsA);
+                double rB = (double)mux_atol(pfr.pDigitsB);
                 double rScale = powerstab[pfr.nDigitsB];
                 ret = rA + rB/rScale;
 

@@ -1,6 +1,6 @@
 // cque.cpp -- commands and functions for manipulating the command queue.
 //
-// $Id: cque.cpp,v 1.2 2003-01-28 15:47:59 sdennis Exp $
+// $Id: cque.cpp,v 1.3 2003-02-03 06:01:48 sdennis Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -92,7 +92,7 @@ static int add_to(dbref executor, int am, int attrnum)
     dbref aowner;
 
     char *atr_gotten = atr_get(executor, attrnum, &aowner, &aflags);
-    int num = Tiny_atol(atr_gotten);
+    int num = mux_atol(atr_gotten);
     free_lbuf(atr_gotten);
     num += am;
 
@@ -498,7 +498,7 @@ int nfy_que(dbref sem, int attr, int key, int count)
         int   aflags;
         dbref aowner;
         char *str = atr_get(sem, attr, &aowner, &aflags);
-        cSemaphore = Tiny_atol(str);
+        cSemaphore = mux_atol(str);
         free_lbuf(str);
     }
 
@@ -595,7 +595,7 @@ void do_notify
 
         if (count && *count)
         {
-            loccount = Tiny_atol(count);
+            loccount = mux_atol(count);
         }
         else
         {
@@ -1224,7 +1224,7 @@ void do_queue(dbref executor, dbref caller, dbref enactor, int key, char *arg)
 {
     if (key == QUEUE_KICK)
     {
-        int i = Tiny_atol(arg);
+        int i = mux_atol(arg);
         int save_minPriority = scheduler.GetMinPriority();
         if (save_minPriority <= PRIORITY_CF_DEQUEUE_DISABLED)
         {
@@ -1244,7 +1244,7 @@ void do_queue(dbref executor, dbref caller, dbref enactor, int key, char *arg)
     }
     else if (key == QUEUE_WARP)
     {
-        int iWarp = Tiny_atol(arg);
+        int iWarp = mux_atol(arg);
         CLinearTimeDelta ltdWarp;
         ltdWarp.SetSeconds(iWarp);
         if (scheduler.GetMinPriority() <= PRIORITY_CF_DEQUEUE_DISABLED)
