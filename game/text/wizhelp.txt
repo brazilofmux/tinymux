@@ -904,11 +904,11 @@
  
     /screen	Print information to the screen.
     /log	Print information to the logfile.
-    /clear	Clear the counters.
+    /reset      Clear the counters.
  
   If no switches are provided, printing to the screen and clearing the
   counters are assumed. The counters are otherwise not cleared unless
-  /clear is specified.
+  /reset is specified.
  
 & @toad
   Command: @toad[/<switches>] <victim>[=<recipient>]
