@@ -1,15 +1,13 @@
-/*
- * This slave does iptoname conversions, and identquery lookups.
- * 
- * The philosophy is to keep this program as simple/small as possible.
- * It does normal fork()s, so the smaller it is, the faster it goes.
- * 
- * $Id: slave.cpp,v 1.4 2000-09-07 05:37:54 sdennis Exp $
- */
-
+//
+// This slave does iptoname conversions, and identquery lookups.
+// 
+// The philosophy is to keep this program as simple/small as possible.
+// It does normal fork()s, so the smaller it is, the faster it goes.
+// 
+// $Id: slave.cpp,v 1.5 2000-12-03 04:49:32 sdennis Exp $
+//
 #include "autoconf.h"
 
-#include <ctype.h>
 #include <netdb.h>
 #include <netinet/in.h>
 #include <sys/wait.h>
@@ -80,7 +78,7 @@ int query(char *ip, char *orig_arg)
         return -1;
     }
     hp = gethostbyaddr((char *)&addr, sizeof(addr), AF_INET);
-    if (hp && !isdigit(*(hp->h_name)))
+    if (hp)
     {
         p = stpcpy(buf, ip);
         *p++ = ' ';
@@ -174,7 +172,7 @@ int query(char *ip, char *orig_arg)
                 {
                     break;
                 }
-                if (isprint(c))
+                if (0x20 <= c && c <= 0x7E)
                 {
                     *p++ = c;
                     if (p - result == MAX_STRING - 1)
