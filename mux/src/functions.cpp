@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.10 2002-06-11 16:59:59 jake Exp $
+// $Id: functions.cpp,v 1.11 2002-06-11 17:32:35 jake Exp $
 //
 
 #include "copyright.h"
@@ -18,6 +18,7 @@
 #include "functions.h"
 #include "misc.h"
 #include "ansi.h"
+#include "interface.h"
 
 UFUN *ufun_head;
 
@@ -125,6 +126,7 @@ XFUNCTION(fun_lstack);
 XFUNCTION(fun_regmatch);
 XFUNCTION(fun_translate);
 XFUNCTION(fun_doing);      // in netcommon.cpp
+XFUNCTION(fun_host);       // in netcommon.cpp
 XFUNCTION(fun_poll);       // in netcommon.cpp
 XFUNCTION(fun_motd);       // in netcommon.cpp
 XFUNCTION(fun_channels);   // in comsys.cpp
@@ -6255,36 +6257,110 @@ FUNCTION(fun_space)
 
 FUNCTION(fun_idle)
 {
-    char *pTargetName = fargs[0];
-    if (*pTargetName == '*')
+    if (is_rational(fargs[0]))
     {
-        pTargetName++;
-    }
-    dbref target = lookup_player(executor, pTargetName, 1);
-    if (  Good_obj(target)
-       && Hidden(target)
-       && !See_Hidden(executor))
+        int foundit = 0;
+        DESC *d;
+        CLinearTimeAbsolute ltaNow, ltaNewestLastTime;
+        ltaNow.GetUTC();
+        DESC_ITER_CONN(d) 
+        {
+            if (((long)d->descriptor) == Tiny_atol(fargs[0]))
+            {
+                    foundit = 1;
+                    break;
+            }
+        }
+        if(foundit)
+        {
+            if (!((d->player == executor) || Wizard_Who(executor)))
+            {
+                safe_ltoa(NOTHING, buff, bufc);
+                return;
+            }
+            else
+            {
+                ltaNewestLastTime = d->last_time;
+                CLinearTimeDelta ltdResult = ltaNow - ltaNewestLastTime;
+                safe_ltoa(ltdResult.ReturnSeconds(), buff, bufc);
+                return;
+            }
+        }
+        else
+        {
+            safe_ltoa(NOTHING, buff, bufc);
+            return;
+        }
+
+    } 
+    else 
     {
-        target = NOTHING;
+        char *pTargetName = fargs[0];
+        if (*pTargetName == '*')
+        {
+            pTargetName++;
+        }
+        dbref target = lookup_player(executor, pTargetName, 1);
+        if (Good_obj(target) && Dark(target) && !Wizard(executor))
+        {
+            target = NOTHING;
+        }
+        safe_ltoa(fetch_idle(target), buff, bufc);
     }
-    safe_ltoa(fetch_idle(target), buff, bufc);
 }
 
 FUNCTION(fun_conn)
 {
-    char *pTargetName = fargs[0];
-    if (*pTargetName == '*')
+    if (is_rational(fargs[0]))
     {
-        pTargetName++;
-    }
-    dbref target = lookup_player(executor, pTargetName, 1);
-    if (  Good_obj(target)
-       && Hidden(target)
-       && !See_Hidden(executor))
+        int foundit = 0;
+        DESC *d;
+        CLinearTimeAbsolute ltaNow, ltaNewestConnect;
+        ltaNow.GetUTC();
+        DESC_ITER_CONN(d) 
+        {
+            if (((long)d->descriptor) == Tiny_atol(fargs[0]))
+            {
+                    foundit = 1;
+                    break;
+            }
+        }
+        if(foundit)
+        {
+            if (!((d->player == executor) || Wizard_Who(executor)))
+            {
+                safe_ltoa(NOTHING, buff, bufc);
+                return;
+            }
+            else
+            {   
+                ltaNewestConnect = d->connected_at;
+                CLinearTimeDelta ltdResult = ltaNow - ltaNewestConnect;
+                safe_ltoa(ltdResult.ReturnSeconds(), buff, bufc);
+                return;
+            }
+        }
+        else
+        {
+            safe_ltoa(NOTHING, buff, bufc);
+            return;
+        }
+
+    } 
+    else 
     {
-        target = NOTHING;
+        char *pTargetName = fargs[0];
+        if (*pTargetName == '*')
+        {
+            pTargetName++;
+        }
+        dbref target = lookup_player(executor, pTargetName, 1);
+        if (Good_obj(target) && Dark(target) && !Wizard(executor))
+        {
+            target = NOTHING;
+        }
+        safe_ltoa(fetch_connect(target), buff, bufc);
     }
-    safe_ltoa(fetch_connect(target), buff, bufc);
 }
 
 /*
@@ -7197,6 +7273,7 @@ FUN flist[] =
     {"HASQUOTA", fun_hasquota, MAX_ARG, 2,  3,       0, CA_PUBLIC},
     {"HASTYPE",  fun_hastype,  MAX_ARG, 2,  2,       0, CA_PUBLIC},
     {"HOME",     fun_home,     MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"HOST",     fun_host,     MAX_ARG, 1,  1,       0, CA_PUBLIC},
     {"IABS",     fun_iabs,     MAX_ARG, 1,  1,       0, CA_PUBLIC},
     {"IADD",     fun_iadd,     MAX_ARG, 0,  MAX_ARG, 0, CA_PUBLIC},
     {"IDIV",     fun_idiv,     MAX_ARG, 2,  2,       0, CA_PUBLIC},
@@ -7916,18 +7993,52 @@ FUNCTION(fun_writetime)
 //
 FUNCTION(fun_cmds)
 {
-    dbref target = lookup_player(executor, fargs[0], 1);
-    if (Good_obj(target) && Connected(target))
+    if (is_rational(fargs[0]))
     {
-        if (!(Wizard_Who(executor) || Controls(executor, target)))
+        int foundit = 0;
+        DESC *d;
+        DESC_ITER_CONN(d) 
         {
-            target = NOTHING;
+            if (((long)d->descriptor) == Tiny_atol(fargs[0]))
+            {
+                    foundit = 1;
+                    break;
+            }
         }
-        safe_ltoa(fetch_cmds(target), buff, bufc);
+        if(foundit)
+        {
+            if (!((d->player == executor) || Wizard_Who(executor)))
+            {
+                safe_ltoa(NOTHING, buff, bufc);
+                return;
+            }
+            else
+            {
+                safe_ltoa(d->command_count, buff, bufc);
+                return;
+            }
+        }
+        else
+        {
+            safe_ltoa(NOTHING, buff, bufc);
+            return;
+        }
     }
     else
     {
-        safe_str("#-1 PLAYER NOT FOUND", buff, bufc);
+        dbref target = lookup_player(executor, fargs[0], 1);
+    if (Good_obj(target) && Connected(target))
+        {
+            if (!(Wizard_Who(executor) || Controls(executor, target)))
+            {
+                target = NOTHING;
+            }
+            safe_ltoa(fetch_cmds(target), buff, bufc);
+        }
+        else
+        {
+            safe_str("#-1 PLAYER NOT FOUND", buff, bufc);
+        }
     }
 }
 

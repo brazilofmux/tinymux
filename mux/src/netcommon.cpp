@@ -1,6 +1,6 @@
 // netcommon.cpp
 //
-// $Id: netcommon.cpp,v 1.3 2002-06-05 05:07:46 sdennis Exp $
+// $Id: netcommon.cpp,v 1.4 2002-06-11 17:32:35 jake Exp $
 //
 // This file contains routines used by the networking code that do not
 // depend on the implementation of the networking code.  The network-specific
@@ -2031,7 +2031,7 @@ int do_command(DESC *d, char *command, int first)
                 ENDLOG;
             }
 
-			mudstate.curr_cmd = (char *) "";
+            mudstate.curr_cmd = (char *) "";
             if (d->output_suffix)
             {
                 queue_string(d, d->output_suffix);
@@ -2419,6 +2419,37 @@ dbref find_connected_name(dbref player, char *name)
 
 FUNCTION(fun_doing)
 {
+    if (is_rational(fargs[0]))
+    {
+        int foundit = 0;
+        DESC *d;
+        DESC_ITER_CONN(d)
+        {
+            if (((long)d->descriptor) == Tiny_atol(fargs[0])) 
+            {
+                    foundit = 1;
+                    break;
+            }
+        }
+        if(foundit)
+        {
+            if (!((d->player == executor) || Wizard_Who(executor)))
+            {
+                safe_ltoa(NOTHING, buff, bufc);
+                return;
+            }
+            else
+            {
+                safe_str(d->doing, buff, bufc);
+                return;
+            }
+        }
+        else
+        {
+            safe_ltoa(NOTHING, buff, bufc);
+            return;
+        }
+    } else {
     dbref victim = lookup_player(executor, fargs[0], 1);
     if (victim == NOTHING)
     {
@@ -2441,6 +2472,55 @@ FUNCTION(fun_doing)
         }
     }
     safe_str("#-1 NOT A CONNECTED PLAYER", buff, bufc);
+    }
+}
+
+// ---------------------------------------------------------------------------
+// fun_host: Return hostname of player or port descriptor.
+// ---------------------------------------------------------------------------
+FUNCTION(fun_host)
+{
+    if (Wizard_Who(executor))
+    {
+        char *hostname;
+        if (is_rational(fargs[0]))
+        {
+            DESC *d;
+            DESC_ITER_CONN(d) {
+                if (((long)d->descriptor) == Tiny_atol(fargs[0])) 
+                {
+                    hostname = ((d->username[0] != '\0') ? 
+                        tprintf("%s@%s", d->username, d->addr) : d->addr);
+                    safe_str(hostname, buff, bufc);
+                    return;
+                }
+            }
+        } 
+        else
+        {
+            dbref victim = lookup_player(executor, fargs[0], 1);
+            if (victim == NOTHING)
+            {
+                safe_str("#-1 PLAYER DOES NOT EXIST", buff, bufc);
+                return;
+            }
+            for (DESC *d = descriptor_list; d; d = d->next)
+            {
+                if (d->player == victim)
+                {
+                    hostname = ((d->username[0] != '\0') ? 
+                        tprintf("%s@%s", d->username, d->addr) : d->addr);
+                    safe_str(hostname, buff, bufc);
+                    return;
+                }
+            }
+            safe_str("#-1 NOT A CONNECTED PLAYER", buff, bufc);
+       }
+    }
+    else
+    {   
+        safe_noperm(buff, bufc);
+    }
 }
 
 FUNCTION(fun_poll)
