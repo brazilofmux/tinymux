@@ -6356,7 +6356,7 @@ FUNCTION CLASSES (continued)
                              RJUST ROMAN SCRAMBLE SECURE SPACE SPELLNUM SQUISH
                              STRCAT STRIP STRIPACCENTS STRIPANSI STRLEN
                              STRMATCH STRTRUNC SWITCH TRANSLATE TRIM UCSTR
-                             WORDPOS
+                             WORDPOS WRAP
 
   Time:                      CONVSECS CONVTIME DIGITTIME EXPTIME SECS
                              SINGLETIME STARTSECS STARTTIME TIME TIMEFMT 
@@ -6433,8 +6433,8 @@ FUNCTION LIST (continued)
     U()         UCSTR()     UDEFAULT()  ULOCAL()    UNPACK()    V()
     VADD()      VALID()     VCROSS()    VDIM()      VDOT()      VERSION()
     VISIBLE()   VMAG()      VMUL()      VSUB()      VUNIT()     WHERE()
-    WORDPOS()   WORDS()     WRITETIME() XGET()      XOR()       ZFUN()
-    ZONE()      ZWHO()
+    WORDPOS()   WORDS()     WRAP()      WRITETIME() XGET()      XOR()
+    ZFUN()      ZONE()      ZWHO()
 
 & FUNCTIONS
 FUNCTIONS
@@ -12419,6 +12419,48 @@ WORDS()
     > You say "6"
 
   Related Topics:
+
+& WRAP()
+WRAP()
+
+  FUNCTION: wrap(<text>,<width>[,<just>,[<lefttxt>[,<righttxt>[,<hanging>]]]])
+
+  This function word wraps the text to fit into a column of the specified
+  width.  Words are separated by spaces. If a word in the text is longer than
+  a single line, it is simply broken at the end of the line.  Tabs are
+  expanded to 8 spaces, and %r's are treated as a force to the next line,
+  overriding the logic of the word wrapping. 
+
+  The <just> argument may be Left, Right, Center, or Justified. Only the first
+  character of the argument is significant. <just> defaults to Left.
+
+  The <lefttxt> and <righttxt> specify text to insert as borders on either
+  side of each line. They default to nothing.
+
+  The <hanging> argument specifies an optional number of spaces to insert on
+  the left margin for any line that is not the first line. This is commonly
+  called a hanging indent in word processing.
+
+("help wrap2" for more)
+
+& WRAP2
+WRAP() (continued)
+
+  Examples:
+  > @emit wrap(Hi there. How are you?, 10, right, |%b, %b|)
+  |  Hi there. |
+  |    How are |
+  |       you? |
+
+  > @emit DESC: [wrap(get(me/desc), 10, left,,,6)]
+  DESC: You see 
+        before 
+        you a
+        stranger.
+
+  The width can not be above 4000 characters.
+
+  Related Topics: ljust(), rjust(), center(), columns().
 
 & WRITETIME()
 WRITETIME()
