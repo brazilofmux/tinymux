@@ -1,6 +1,6 @@
 // funceval.cpp - MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.37 2001-06-14 09:04:04 sdennis Exp $
+// $Id: funceval.cpp,v 1.38 2001-06-28 12:17:58 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -27,12 +27,11 @@
 #include "radix.h"
 #endif
 
-/*
- * Note: Many functions in this file have been taken, whole or in part, from
- * * PennMUSH 1.50, and TinyMUSH 2.2, for softcode compatibility. The
- * * maintainers of MUX would like to thank those responsible for PennMUSH 1.50
- * * and TinyMUSH 2.2, and hope we have adequately noted in the source where
- * * credit is due.
+/* Note: Many functions in this file have been taken, whole or in part, from
+ * PennMUSH 1.50, and TinyMUSH 2.2, for softcode compatibility. The
+ * maintainers of MUX would like to thank those responsible for PennMUSH 1.50
+ * and TinyMUSH 2.2, and hope we have adequately noted in the source where
+ * credit is due.
  */
 
 extern NAMETAB indiv_attraccess_nametab[];
@@ -75,10 +74,8 @@ FUNCTION(fun_beep)
     safe_chr(BEEP_CHAR, buff, bufc);
 }
 
-/*
- * This function was originally taken from PennMUSH 1.50 
- */
-
+// This function was originally taken from PennMUSH 1.50
+//
 FUNCTION(fun_ansi)
 {
     extern char *ColorTable[256];
@@ -155,7 +152,7 @@ FUNCTION(fun_link)
 FUNCTION(fun_tel)
 {
     if (check_command(player, "@teleport", buff, bufc))
-    	return;
+        return;
     do_teleport(player, cause, 0, fargs[0], fargs[1]);
 }
 
@@ -246,7 +243,7 @@ FUNCTION(fun_create)
     safe_tprintf_str(buff, bufc, "#%d", thing);
 }
 
-/*---------------------------------------------------------------------------
+/* ---------------------------------------------------------------------------
  * fun_set: sets an attribute on an object
  */
 
@@ -256,21 +253,35 @@ static void set_attr_internal(dbref player, dbref thing, int attrnum, char *attr
     int aflags, could_hear;
     ATTR *attr;
 
+    if (isGarbage(thing))
+    {
+        notify_quiet(player, "Cannot set attributes on garbage objects.");
+        return;
+    }
     attr = atr_num(attrnum);
     atr_pget_info(thing, attrnum, &aowner, &aflags);
-    if (attr && Set_attr(player, thing, attr, aflags)) {
-        if ((attr->check != NULL) &&
-            (!(*attr->check) (0, player, thing, attrnum, attrtext))) {
-                safe_str("#-1 PERMISSION DENIED", buff, bufc);
+    if (attr && Set_attr(player, thing, attr, aflags))
+    {
+        if (  (attr->check != NULL)
+           && (!(*attr->check) (0, player, thing, attrnum, attrtext)))
+        {
+            safe_str("#-1 PERMISSION DENIED", buff, bufc);
             return;
         }
         could_hear = Hearer(thing);
         atr_add(thing, attrnum, attrtext, Owner(player), aflags);
         handle_ears(thing, could_hear, Hearer(thing));
-        if (!(key & SET_QUIET) && !Quiet(player) && !Quiet(thing))
+        if (  !(key & SET_QUIET)
+           && !Quiet(player)
+           && !Quiet(thing))
+        {
+
             notify_quiet(player, "Set.");
-    } else {
-        safe_str("#-1 PERMISSION DENIED.", buff, bufc);
+        }
+    }
+    else
+    {
+        safe_str("#-1 PERMISSION DENIED", buff, bufc);
     }
 }
 
@@ -307,7 +318,7 @@ FUNCTION(fun_set)
                 fargs[0]++;
                 clear = 1;
             }
-            
+
             // valid attribute flag?
             //
             flagvalue = search_nametab(player, indiv_attraccess_nametab, fargs[1]);
@@ -434,7 +445,7 @@ static unsigned int GenCode(char *pCode, const char *pCodeASCII)
     char *pIn = strip_ansi(pCodeASCII, &nIn);
 
     // Process the printable characters.
-    // 
+    //
     char *pOut = pCode;
     while (*pIn)
     {
@@ -523,9 +534,8 @@ FUNCTION(fun_decrypt)
     safe_str(crypt_code(fargs[1], fargs[0], 0), buff, bufc);
 }
 
-/*
- * Borrowed from DarkZone 
- */
+// Borrowed from DarkZone
+//
 FUNCTION(fun_zwho)
 {
     dbref it = match_thing(player, fargs[0]);
@@ -551,7 +561,7 @@ FUNCTION(fun_zwho)
 }
 
 /*
- * Borrowed from DarkZone 
+ * Borrowed from DarkZone
  */
 FUNCTION(fun_inzone)
 {
@@ -577,9 +587,8 @@ FUNCTION(fun_inzone)
     DbrefToBuffer_Final(&pContext);
 }
 
-/*
- * Borrowed from DarkZone 
- */
+// Borrowed from DarkZone
+//
 FUNCTION(fun_children)
 {
     dbref it = match_thing(player, fargs[0]);
@@ -658,9 +667,8 @@ FUNCTION(fun_stripansi)
     safe_str((char *)strip_ansi(fargs[0]), buff, bufc);
 }
 
-/*
- * Borrowed from PennMUSH 1.50 
- */
+// Borrowed from PennMUSH 1.50
+//
 FUNCTION(fun_zfun)
 {
     dbref aowner;
@@ -709,9 +717,9 @@ FUNCTION(fun_columns)
 {
     int rturn = 1;
     char *curr, *objstring, *bp, *cp, sep, *str;
-    
+
     evarargs_preamble("COLUMNS", 3);
-    
+
     int nWidth = Tiny_atol(fargs[1]);
     if ((nWidth < 1) || (nWidth > 78))
     {
@@ -729,7 +737,7 @@ FUNCTION(fun_columns)
         return;
     }
     safe_chr(' ', buff, bufc);
-    
+
     int nBufferAvailable = LBUF_SIZE - (*bufc-buff) - 1;
     while (cp && nBufferAvailable > 0)
     {
@@ -750,13 +758,13 @@ FUNCTION(fun_columns)
             *bufc += spaces;
             nBufferAvailable -= spaces;
         }
-        
+
         if (!(rturn % (int)(78 / nWidth)))
         {
             safe_str((char *)"\r\n ", buff, bufc);
             nBufferAvailable -= 3;
         }
-        
+
         rturn++;
     }
     free_lbuf(curr);
@@ -876,7 +884,7 @@ FUNCTION(fun_table)
 
         *bufc += nStringLength;
         nBufferAvailable -= nStringLength;
-        
+
         nPaddingLength = nFieldWidth - nVisibleLength;
         if (nPaddingLength > nBufferAvailable)
         {
@@ -891,7 +899,7 @@ FUNCTION(fun_table)
                        nPaddingLength > 0;
                        nPaddingLength--)
                 {
-                    **bufc = *pPaddingCurrent;		   
+                    **bufc = *pPaddingCurrent;
                     (*bufc)++;
                     pPaddingCurrent++;
 
@@ -899,7 +907,7 @@ FUNCTION(fun_table)
                     {
                         pPaddingCurrent = pPaddingStart;
                     }
-                }	
+                }
             }
             else
             {
@@ -922,7 +930,7 @@ FUNCTION(fun_table)
                 char *p = *bufc;
                 p[0] = '\r';
                 p[1] = '\n';
-                
+
                 nBufferAvailable -= 2;
                 *bufc += 2;
             }
@@ -951,9 +959,8 @@ FUNCTION(fun_table)
     }
 }
 
-/*
- * Code for objmem and playmem borrowed from PennMUSH 1.50 
- */
+// Code for objmem and playmem borrowed from PennMUSH 1.50
+//
 static int mem_usage(dbref thing)
 {
     int k;
@@ -997,16 +1004,22 @@ FUNCTION(fun_objmem)
 
 FUNCTION(fun_playmem)
 {
-    int tot = 0;
     dbref thing;
-    dbref j;
-
-    thing = match_thing(player, fargs[0]);
-    if (thing == NOTHING || !Examinable(player, thing))
+    if (nfargs)
     {
-        safe_str("#-1 PERMISSION DENIED", buff, bufc);
-        return;
+        thing = match_thing(player, fargs[0]);
+        if (thing == NOTHING || !Examinable(player, thing))
+        {
+            safe_str("#-1 PERMISSION DENIED", buff, bufc);
+            return;
+        }
     }
+    else
+    {
+        thing = player;
+    }
+    int tot = 0;
+    dbref j;
     DO_WHOLE_DB(j)
     {
         if (Owner(j) == thing)
@@ -1017,9 +1030,7 @@ FUNCTION(fun_playmem)
     safe_ltoa(tot, buff, bufc, LBUF_SIZE-1);
 }
 
-/*
- * Code for andflags() and orflags() borrowed from PennMUSH 1.50 
- */
+// Code for andflags() and orflags() borrowed from PennMUSH 1.50
 // 0 for orflags, 1 for andflags
 //
 static int handle_flaglists(dbref player, char *name, char *fstr, int type)
@@ -1037,13 +1048,11 @@ static int handle_flaglists(dbref player, char *name, char *fstr, int type)
     if (it == NOTHING)
         return 0;
 
-    for (s = fstr; *s; s++) {
-
-        /*
-         * Check for a negation sign. If we find it, we note it and 
-         * * * * * increment the pointer to the next character. 
-         */
-
+    for (s = fstr; *s; s++)
+    {
+        // Check for a negation sign. If we find it, we note it and
+        // increment the pointer to the next character.
+        //
         if (*s == '!') {
             negate = 1;
             s++;
@@ -1057,70 +1066,65 @@ static int handle_flaglists(dbref player, char *name, char *fstr, int type)
         flagletter[0] = *s;
         flagletter[1] = '\0';
 
-        if (!convert_flags(player, flagletter, &fset, &p_type)) {
-
-            /*
-             * Either we got a '!' that wasn't followed by a * *
-             * * letter, or * we couldn't find that flag. For
-             * AND, * * * since we've failed * a check, we can
-             * return * * false.  * Otherwise we just go on. 
-             */
-
+        if (!convert_flags(player, flagletter, &fset, &p_type))
+        {
+            // Either we got a '!' that wasn't followed by a letter, or we
+            // couldn't find that flag. For AND, since we've failed a check,
+            // we can return false. Otherwise we just go on.
+            //
             if (type == 1)
                 return 0;
             else
                 continue;
-
-        } else {
-
-            /*
-             * does the object have this flag? 
-             */
-
+        }
+        else
+        {
+            // Does the object have this flag?
+            //
             if ((Flags(it) & fset.word1) ||
                 (Flags2(it) & fset.word2) ||
                 (Flags3(it) & fset.word3) ||
-                (Typeof(it) == p_type)) {
+                (Typeof(it) == p_type))
+            {
                 if (isPlayer(it) && (fset.word2 == CONNECTED) &&
                     ((Flags(it) & (WIZARD | DARK)) == (WIZARD | DARK)) &&
                     !Wizard(player))
+                {
                     temp = 0;
+                }
                 else
+                {
                     temp = 1;
-            } else {
+                }
+            }
+            else
+            {
                 temp = 0;
             }
 
-            if ((type == 1) && ((negate && temp) || (!negate && !temp))) {
-
-                /*
-                 * Too bad there's no NXOR function... * At * 
-                 * 
-                 * *  * * this point we've either got a flag
-                 * and * we * * don't want * it, or we don't
-                 * have a  * flag * * and we want it. Since
-                 * it's * AND,  * we * * return false. 
-                 */
+            if ((type == 1) && ((negate && temp) || (!negate && !temp)))
+            {
+                // Too bad there's no NXOR function. At this point we've
+                // either got a flag and we don't want it, or we don't have a
+                // flag and we want it. Since it's AND, we return false.
+                //
                 return 0;
 
-            } else if ((type == 0) &&
-                 ((!negate && temp) || (negate && !temp))) {
-
-                /*
-                 * We've found something we want, in an OR. * 
-                 * 
-                 * *  * * We OR a * true with the current
-                 * value. 
-                 */
-
+            }
+            else if (  type == 0
+                    && ((!negate && temp) || (negate && !temp)))
+            {
+                // We've found something we want, in an OR. We OR a true with
+                // the current value.
+                //
                 ret |= 1;
             }
-            /*
-             * Otherwise, we don't need to do anything. 
-             */
+
+            // Otherwise, we don't need to do anything.
+            //
         }
     }
-    return (ret);
+    return ret;
 }
 
 FUNCTION(fun_orflags)
@@ -1155,14 +1159,14 @@ FUNCTION(fun_ifelse)
 {
     /* This function now assumes that its arguments have not been
        evaluated. */
-    
+
     char *str, *mbuff, *bp;
-    
+
     mbuff = bp = alloc_lbuf("fun_ifelse");
     str = fargs[0];
     TinyExec(mbuff, &bp, 0, player, cause, EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, cargs, ncargs);
     *bp = '\0';
-    
+
     if (!mbuff || !*mbuff || ((Tiny_atol(mbuff) == 0) && is_number(mbuff)))
     {
         str = fargs[2];
@@ -1172,6 +1176,26 @@ FUNCTION(fun_ifelse)
     {
         str = fargs[1];
         TinyExec(buff, bufc, 0, player, cause, EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, cargs, ncargs);
+    }
+    free_lbuf(mbuff);
+}
+
+FUNCTION(fun_t)
+{
+    char *str, *mbuff, *bp;
+
+    mbuff = bp = alloc_lbuf("fun_t");
+    str = fargs[0];
+    TinyExec(mbuff, &bp, 0, player, cause, EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, cargs, ncargs);
+    *bp = '\0';
+
+    if (!mbuff || !*mbuff || !xlate(mbuff))
+    {
+        safe_chr('0', buff, bufc);
+    }
+    else
+    {
+        safe_chr('1', buff, bufc);
     }
     free_lbuf(mbuff);
 }
@@ -1370,15 +1394,10 @@ FUNCTION(fun_mailfrom)
     safe_str("#-1 NO SUCH MESSAGE", buff, bufc);
 }
 
-/*
- * ---------------------------------------------------------------------------
- * * fun_hasattr: does object X have attribute Y.
- */
-
-/*
- * Hasattr (and hasattrp, which is derived from hasattr) borrowed from
- * * TinyMUSH 2.2. 
- */
+// ---------------------------------------------------------------------------
+// fun_hasattr: does object X have attribute Y.
+// Hasattr (and hasattrp, which is derived from hasattr) borrowed from
+// TinyMUSH 2.2.
 
 FUNCTION(fun_hasattr)
 {
@@ -1446,19 +1465,17 @@ FUNCTION(fun_hasattrp)
     safe_chr(ch, buff, bufc);
 }
 
-/*
- * ---------------------------------------------------------------------------
- * * fun_default, fun_edefault, and fun_udefault:
- * * These check for the presence of an attribute. If it exists, then it
- * * is gotten, via the equivalent of get(), get_eval(), or u(), respectively.
- * * Otherwise, the default message is used.
- * * In the case of udefault(), the remaining arguments to the function
- * * are used as arguments to the u().
+/* ---------------------------------------------------------------------------
+ * fun_default, fun_edefault, and fun_udefault:
+ * These check for the presence of an attribute. If it exists, then it
+ * is gotten, via the equivalent of get(), get_eval(), or u(), respectively.
+ * Otherwise, the default message is used.
+ * In the case of udefault(), the remaining arguments to the function
+ * are used as arguments to the u().
  */
 
-/*
- * default(), edefault(), and udefault() borrowed from TinyMUSH 2.2 
- */
+// default(), edefault(), and udefault() borrowed from TinyMUSH 2.2
+//
 FUNCTION(fun_default)
 {
     dbref thing, aowner;
@@ -1471,12 +1488,9 @@ FUNCTION(fun_default)
     TinyExec(objname, &bp, 0, player, cause, EV_EVAL | EV_STRIP_CURLY | EV_FCHECK, &str, cargs, ncargs);
     *bp = '\0';
 
-    /*
-     * First we check to see that the attribute exists on the object. * * 
-     * 
-     * *  * * If so, we grab it and use it. 
-     */
-
+    // First we check to see that the attribute exists on the object. If so,
+    // we grab it and use it.
+    //
     if (objname != NULL) {
         if (parse_attrib(player, objname, &thing, &attrib) &&
             (attrib != NOTHING)) {
@@ -1496,12 +1510,10 @@ FUNCTION(fun_default)
         }
         free_lbuf(objname);
     }
-    /*
-     * If we've hit this point, we've not gotten anything useful, so * we 
-     * 
-     * *  * *  * * go and evaluate the default. 
-     */
 
+    // If we've hit this point, we've not gotten anything useful, so we go
+    // and evaluate the default.
+    //
     str = fargs[1];
     TinyExec(buff, bufc, 0, player, cause, EV_EVAL | EV_STRIP_CURLY | EV_FCHECK, &str, cargs, ncargs);
 }
@@ -1518,12 +1530,9 @@ FUNCTION(fun_edefault)
     TinyExec(objname, &bp, 0, player, cause, EV_EVAL | EV_STRIP_CURLY | EV_FCHECK, &str, cargs, ncargs);
     *bp = '\0';
 
-    /*
-     * First we check to see that the attribute exists on the object. * * 
-     * 
-     * *  * * If so, we grab it and use it. 
-     */
-
+    // First we check to see that the attribute exists on the object. If so, we
+    // grab it and use it.
+    //
     if (objname != NULL) {
         if (parse_attrib(player, objname, &thing, &attrib) &&
             (attrib != NOTHING)) {
@@ -1544,12 +1553,10 @@ FUNCTION(fun_edefault)
         }
         free_lbuf(objname);
     }
-    /*
-     * If we've hit this point, we've not gotten anything useful, so * we 
-     * 
-     * *  * *  * * go and evaluate the default. 
-     */
 
+    // If we've hit this point, we've not gotten anything useful, so we go and
+    // evaluate the default.
+    //
     str = fargs[1];
     TinyExec(buff, bufc, 0, player, cause, EV_EVAL | EV_STRIP_CURLY | EV_FCHECK, &str, cargs, ncargs);
 }
@@ -1574,12 +1581,9 @@ FUNCTION(fun_udefault)
     TinyExec(objname, &bp, 0, player, cause, EV_EVAL | EV_STRIP_CURLY | EV_FCHECK, &str, cargs, ncargs);
     *bp = '\0';
 
-    /*
-     * First we check to see that the attribute exists on the object. * * 
-     * 
-     * *  * * If so, we grab it and use it. 
-     */
-
+    // First we check to see that the attribute exists on the object.
+    // If so, we grab it and use it.
+    //
     if (objname != NULL) {
         if (parse_attrib(player, objname, &thing, &anum)) {
             if ((anum == NOTHING) || (!Good_obj(thing)))
@@ -1615,13 +1619,9 @@ FUNCTION(fun_udefault)
     TinyExec(buff, bufc, 0, player, cause, EV_EVAL | EV_STRIP_CURLY | EV_FCHECK, &str, cargs, ncargs);
 }
 
-/*
- * ---------------------------------------------------------------------------
- * * fun_findable: can X locate Y
- */
-
-/*
- * Borrowed from PennMUSH 1.50 
+/* ---------------------------------------------------------------------------
+ * fun_findable: can X locate Y
+ * Borrowed from PennMUSH 1.50
  */
 FUNCTION(fun_findable)
 {
@@ -1646,13 +1646,9 @@ FUNCTION(fun_findable)
     }
 }
 
-/*
- * ---------------------------------------------------------------------------
- * * isword: is every character in the argument a letter?
- */
-
-/*
- * Borrowed from PennMUSH 1.50 
+/* ---------------------------------------------------------------------------
+ * isword: is every character in the argument a letter?
+ * Borrowed from PennMUSH 1.50
  */
 FUNCTION(fun_isword)
 {
@@ -1670,16 +1666,12 @@ FUNCTION(fun_isword)
     safe_chr(ch, buff, bufc);
 }
 
-/*
- * ---------------------------------------------------------------------------
- * * fun_visible:  Can X examine Y. If X does not exist, 0 is returned.
- * *               If Y, the object, does not exist, 0 is returned. If
- * *               Y the object exists, but the optional attribute does
- * *               not, X's ability to return Y the object is returned.
- */
-
-/*
- * Borrowed from PennMUSH 1.50 
+/* ---------------------------------------------------------------------------
+ * fun_visible:  Can X examine Y. If X does not exist, 0 is returned.
+ *               If Y, the object, does not exist, 0 is returned. If
+ *               Y the object exists, but the optional attribute does
+ *               not, X's ability to return Y the object is returned.
+ * Borrowed from PennMUSH 1.50
  */
 FUNCTION(fun_visible)
 {
@@ -1712,16 +1704,12 @@ FUNCTION(fun_visible)
     safe_ltoa(Examinable(it, thing), buff, bufc, LBUF_SIZE-1);
 }
 
-/*
- * ---------------------------------------------------------------------------
- * * fun_elements: given a list of numbers, get corresponding elements from
- * * the list.  elements(ack bar eep foof yay,2 4) ==> bar foof
- * * The function takes a separator, but the separator only applies to the
- * * first list.
- */
-
-/*
- * Borrowed from PennMUSH 1.50 
+/* ---------------------------------------------------------------------------
+ * fun_elements: given a list of numbers, get corresponding elements from
+ * the list.  elements(ack bar eep foof yay,2 4) ==> bar foof
+ * The function takes a separator, but the separator only applies to the
+ * first list.
+ * Borrowed from PennMUSH 1.50
  */
 FUNCTION(fun_elements)
 {
@@ -1732,22 +1720,17 @@ FUNCTION(fun_elements)
     varargs_preamble("ELEMENTS", 3);
     oldp = *bufc;
 
-    /*
-     * Turn the first list into an array. 
-     */
-
+    // Turn the first list into an array.
+    //
     wordlist = alloc_lbuf("fun_elements.wordlist");
     strcpy(wordlist, fargs[0]);
     nwords = list2arr(ptrs, LBUF_SIZE / 2, wordlist, sep);
 
     s = trim_space_sep(fargs[1], ' ');
 
-    /*
-     * Go through the second list, grabbing the numbers and finding the * 
-     * 
-     * *  * *  * * corresponding elements. 
-     */
-
+    // Go through the second list, grabbing the numbers and finding the
+    // corresponding elements.
+    //
     do {
         r = split_token(&s, ' ');
         cur = Tiny_atol(r) - 1;
@@ -1760,17 +1743,13 @@ FUNCTION(fun_elements)
     free_lbuf(wordlist);
 }
 
-/*
- * ---------------------------------------------------------------------------
- * * fun_grab: a combination of extract() and match(), sortof. We grab the
- * *           single element that we match.
- * *
- * *   grab(Test:1 Ack:2 Foof:3,*:2)    => Ack:2
- * *   grab(Test-1+Ack-2+Foof-3,*o*,+)  => Ack:2
- */
-
-/*
- * Borrowed from PennMUSH 1.50 
+/* ---------------------------------------------------------------------------
+ * fun_grab: a combination of extract() and match(), sortof. We grab the
+ *           single element that we match.
+ *
+ *  grab(Test:1 Ack:2 Foof:3,*:2)    => Ack:2
+ *  grab(Test-1+Ack-2+Foof-3,*o*,+)  => Ack:2
+ * Borrowed from PennMUSH 1.50
  */
 FUNCTION(fun_grab)
 {
@@ -1779,7 +1758,7 @@ FUNCTION(fun_grab)
     varargs_preamble("GRAB", 3);
 
     /*
-     * Walk the wordstring, until we find the word we want. 
+     * Walk the wordstring, until we find the word we want.
      */
 
     s = trim_space_sep(fargs[0], sep);
@@ -1792,13 +1771,9 @@ FUNCTION(fun_grab)
     } while (s);
 }
 
-/*
- * ---------------------------------------------------------------------------
- * * fun_scramble:  randomizes the letters in a string.
- */
-
-/*
- * Borrowed from PennMUSH 1.50 
+/* ---------------------------------------------------------------------------
+ * fun_scramble:  randomizes the letters in a string.
+ * Borrowed from PennMUSH 1.50
  */
 FUNCTION(fun_scramble)
 {
@@ -1825,13 +1800,9 @@ FUNCTION(fun_scramble)
     }
 }
 
-/*
- * ---------------------------------------------------------------------------
- * * fun_shuffle: randomize order of words in a list.
- */
-
-/*
- * Borrowed from PennMUSH 1.50 
+/* ---------------------------------------------------------------------------
+ * fun_shuffle: randomize order of words in a list.
+ * Borrowed from PennMUSH 1.50
  */
 FUNCTION(fun_shuffle)
 {
@@ -1895,22 +1866,17 @@ FUNCTION(fun_pickrand)
     }
 }
 
-/*
- * sortby() code borrowed from TinyMUSH 2.2 
- */
-
+// sortby() code borrowed from TinyMUSH 2.2
+//
 static char ucomp_buff[LBUF_SIZE];
 static dbref ucomp_cause;
 static dbref ucomp_player;
 
 static int u_comp(const void *s1, const void *s2)
 {
-    /*
-     * Note that this function is for use in conjunction with our own * * 
-     * 
-     * *  * * sane_qsort routine, NOT with the standard library qsort! 
-     */
-
+    // Note that this function is for use in conjunction with our own
+    // sane_qsort routine, NOT with the standard library qsort!
+    //
     char *result, *tbuf, *elems[2], *bp, *str;
     int n;
 
@@ -1940,27 +1906,21 @@ typedef int PV(const void *, const void *);
 
 static void sane_qsort(void *array[], int left, int right, PV compare)
 {
-    /*
-     * Andrew Molitor's qsort, which doesn't require transitivity between
-     * * * * * comparisons (essential for preventing crashes due to *
-     * boneheads * * * who write comparison functions where a > b doesn't
-     * * mean b < a).  
-     */
-
+    // Andrew Molitor's qsort, which doesn't require transitivity between
+    // comparisons (essential for preventing crashes due to boneheads
+    // who write comparison functions where a > b doesn't mean b < a).
+    //
     int i, last;
     void *tmp;
 
-      loop:
+loop:
+
     if (left >= right)
         return;
 
-    /*
-     * Pick something at random at swap it into the leftmost slot   
-     */
-    /*
-     * This is the pivot, we'll put it back in the right spot later 
-     */
-
+    // Pick something at random at swap it into the leftmost slot
+    // This is the pivot, we'll put it back in the right spot later.
+    //
     i = RandomINT32(0, right - left);
     tmp = array[left + i];
     array[left + i] = array[left];
@@ -1969,13 +1929,9 @@ static void sane_qsort(void *array[], int left, int right, PV compare)
     last = left;
     for (i = left + 1; i <= right; i++) {
 
-        /*
-         * Walk the array, looking for stuff that's less than our 
-         */
-        /*
-         * pivot. If it is, swap it with the next thing along     
-         */
-
+        // Walk the array, looking for stuff that's less than our
+        // pivot. If it is, swap it with the next thing along
+        //
         if ((*compare) (array[i], array[left]) < 0) {
             last++;
             if (last == i)
@@ -1987,24 +1943,16 @@ static void sane_qsort(void *array[], int left, int right, PV compare)
         }
     }
 
-    /*
-     * Now we put the pivot back, it's now in the right spot, we never 
-     */
-    /*
-     * need to look at it again, trust me.                             
-     */
-
+    // Now we put the pivot back, it's now in the right spot, we never
+    // need to look at it again, trust me.
+    //
     tmp = array[last];
     array[last] = array[left];
     array[left] = tmp;
 
-    /*
-     * At this point everything underneath the 'last' index is < the 
-     */
-    /*
-     * entry at 'last' and everything above it is not < it.          
-     */
-
+    // At this point everything underneath the 'last' index is < the
+    // entry at 'last' and everything above it is not < it.
+    //
     if ((last - left) < (right - last)) {
         sane_qsort(array, left, last - 1, compare);
         left = last + 1;
@@ -2057,10 +2005,10 @@ FUNCTION(fun_sortby)
     strcpy(list, fargs[1]);
     nptrs = list2arr(ptrs, LBUF_SIZE / 2, list, sep);
 
-    if (nptrs > 1)      /*
-                 * pointless to sort less than 2 elements 
-                 */
+    if (nptrs > 1)
+    {
         sane_qsort((void **)ptrs, 0, nptrs - 1, u_comp);
+    }
 
     arr2list(ptrs, nptrs, buff, bufc, sep);
     free_lbuf(list);
@@ -2112,9 +2060,8 @@ FUNCTION(fun_last)
     safe_copy_buf(p+1, nLen, buff, bufc, LBUF_SIZE-1);
 }
 
-/*
- * Borrowed from TinyMUSH 2.2 
- */
+// Borrowed from TinyMUSH 2.2
+//
 FUNCTION(fun_matchall)
 {
     int wcount;
@@ -2123,9 +2070,8 @@ FUNCTION(fun_matchall)
     varargs_preamble("MATCHALL", 3);
     old = *bufc;
 
-    
-    // Check each word individually, returning the word number of all
-    // that match. If none match, return 0. 
+    // Check each word individually, returning the word number of all that
+    // match. If none match, return 0.
     //
     wcount = 1;
     s = trim_space_sep(fargs[0], sep);
@@ -2146,14 +2092,10 @@ FUNCTION(fun_matchall)
         safe_chr('0', buff, bufc);
 }
 
-/*
- * ---------------------------------------------------------------------------
- * * fun_ports: Returns a list of ports for a user.
- */
-
-/*
- * Borrowed from TinyMUSH 2.2 
- */
+// ---------------------------------------------------------------------------
+// fun_ports: Returns a list of ports for a user.
+// Borrowed from TinyMUSH 2.2
+//
 FUNCTION(fun_ports)
 {
     dbref target;
@@ -2168,14 +2110,10 @@ FUNCTION(fun_ports)
     make_portlist(player, target, buff, bufc);
 }
 
-/*
- * ---------------------------------------------------------------------------
- * * fun_mix: Like map, but operates on two lists simultaneously, passing
- * * the elements as %0 as %1.
- */
-
-/*
- * Borrowed from PennMUSH 1.50 
+/* ---------------------------------------------------------------------------
+ * fun_mix: Like map, but operates on two lists simultaneously, passing
+ * the elements as %0 as %1.
+ * Borrowed from PennMUSH 1.50
  */
 FUNCTION(fun_mix)
 {
@@ -2187,10 +2125,8 @@ FUNCTION(fun_mix)
     varargs_preamble("MIX", 4);
     oldp = *bufc;
 
-    /*
-     * Get the attribute, check the permissions. 
-     */
-
+    // Get the attribute, check the permissions.
+    //
     if (parse_attrib(player, fargs[0], &thing, &anum)) {
         if ((anum == NOTHING) || !Good_obj(thing))
             ap = NULL;
@@ -2211,10 +2147,9 @@ FUNCTION(fun_mix)
         free_lbuf(atext);
         return;
     }
-    /*
-     * process the two lists, one element at a time. 
-     */
 
+    // process the two lists, one element at a time.
+    //
     cp1 = trim_space_sep(fargs[1], sep);
     cp2 = trim_space_sep(fargs[2], sep);
 
@@ -2238,15 +2173,11 @@ FUNCTION(fun_mix)
     free_lbuf(atextbuf);
 }
 
-/*
- * ---------------------------------------------------------------------------
- * * fun_foreach: like map(), but it operates on a string, rather than on a list,
- * * calling a user-defined function for each character in the string.
- * * No delimiter is inserted between the results.
- */
-
-/*
- * Borrowed from TinyMUSH 2.2 
+/* ---------------------------------------------------------------------------
+ * fun_foreach: like map(), but it operates on a string, rather than on a list,
+ * calling a user-defined function for each character in the string.
+ * No delimiter is inserted between the results.
+ * Borrowed from TinyMUSH 2.2
  */
 FUNCTION(fun_foreach)
 {
@@ -2285,13 +2216,13 @@ FUNCTION(fun_foreach)
     cp = trim_space_sep(fargs[1], ' ');
 
     bp = cbuf;
-    
+
     cbuf[1] = '\0';
-    
+
     if (nfargs == 4) {
         while (cp && *cp) {
             cbuf[0] = *cp++;
-            
+
             if (flag) {
                 if ((cbuf[0] == *fargs[3]) && (prev != '\\') && (prev != '%')) {
                     flag = 0;
@@ -2315,7 +2246,7 @@ FUNCTION(fun_foreach)
     } else {
         while (cp && *cp) {
             cbuf[0] = *cp++;
-    
+
             strcpy(atextbuf, atext);
             str = atextbuf;
             TinyExec(buff, bufc, 0, player, cause, EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, &bp, 1);
@@ -2326,13 +2257,9 @@ FUNCTION(fun_foreach)
     free_lbuf(atext);
 }
 
-/*
- * ---------------------------------------------------------------------------
- * * fun_munge: combines two lists in an arbitrary manner.
- */
-
-/*
- * Borrowed from TinyMUSH 2.2 
+/* ---------------------------------------------------------------------------
+ * fun_munge: combines two lists in an arbitrary manner.
+ * Borrowed from TinyMUSH 2.2
  */
 FUNCTION(fun_munge)
 {
@@ -2350,7 +2277,7 @@ FUNCTION(fun_munge)
     varargs_preamble("MUNGE", 4);
 
     /*
-     * Find our object and attribute 
+     * Find our object and attribute
      */
 
     if (parse_attrib(player, fargs[0], &thing, &anum)) {
@@ -2374,7 +2301,7 @@ FUNCTION(fun_munge)
         return;
     }
     /*
-     * Copy our lists and chop them up. 
+     * Copy our lists and chop them up.
      */
 
     list1 = alloc_lbuf("fun_munge.list1");
@@ -2392,7 +2319,7 @@ FUNCTION(fun_munge)
         return;
     }
     /*
-     * Call the u-function with the first list as %0. 
+     * Call the u-function with the first list as %0.
      */
 
     bp = rlist = alloc_lbuf("fun_munge");
@@ -2400,13 +2327,10 @@ FUNCTION(fun_munge)
     TinyExec(rlist, &bp, 0, player, cause, EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, &fargs[1], 1);
     *bp = '\0';
 
-    /*
-     * Now that we have our result, put it back into array form. Search * 
-     * 
-     * *  * *  * * through list1 until we find the element position, then 
-     * copy  * the * * * corresponding element from list2. 
-     */
-
+    // Now that we have our result, put it back into array form. Search through
+    // list1 until we find the element position, then copy the corresponding
+    // element from list2.
+    //
     nresults = list2arr(results, LBUF_SIZE / 2, rlist, sep);
 
     for (i = 0; i < nresults; i++) {
@@ -2497,20 +2421,18 @@ FUNCTION(fun_lrand)
     }
 }
 
-/*
- * Borrowed from PennMUSH 1.50 
- */
+// Borrowed from PennMUSH 1.50
+//
 FUNCTION(fun_lit)
 {
     /*
-     * Just returns the argument, literally 
+     * Just returns the argument, literally
      */
     safe_str(fargs[0], buff, bufc);
 }
 
-/*
- * shl() and shr() borrowed from PennMUSH 1.50 
- */
+// shl() and shr() borrowed from PennMUSH 1.50
+//
 FUNCTION(fun_shl)
 {
     if (is_number(fargs[0]) && is_number(fargs[1]))
@@ -2608,7 +2530,7 @@ FUNCTION(fun_unpack)
     INT64 sum;
     int c;
     int LeadingCharacter;
-    
+
     // Leading whitespace
     //
     while (Tiny_IsSpace[(unsigned char)*pString])
@@ -2623,9 +2545,9 @@ FUNCTION(fun_unpack)
     {
         c = *pString++;
     }
-    
+
     sum = 0;
-    
+
     // Convert symbols
     //
     int iValue;
@@ -2634,7 +2556,7 @@ FUNCTION(fun_unpack)
         sum = iRadix * sum + iValue - 1;
         c = *pString++;
     }
-    
+
     // Interpret sign
     //
     if (LeadingCharacter == '-')
@@ -2685,7 +2607,7 @@ FUNCTION(fun_pack)
         *p++ = '-';
         val = -val;
     }
-    
+
     char *q = p;
     while (val > iRadix-1)
     {
@@ -2725,16 +2647,15 @@ FUNCTION(fun_pack)
 FUNCTION(fun_strcat)
 {
     int i;
-    
+
     safe_str(fargs[0], buff, bufc);
     for (i = 1; i < nfargs; i++) {
         safe_str(fargs[i], buff, bufc);
     }
 }
 
-/*
- * grep() and grepi() code borrowed from PennMUSH 1.50 
- */
+// grep() and grepi() code borrowed from PennMUSH 1.50
+//
 char *grep_util(dbref player, dbref thing, char *pattern, char *lookfor, int len, int insensitive)
 {
     // Returns a list of attributes which match <pattern> on <thing>
@@ -2865,9 +2786,9 @@ FUNCTION(fun_grepi)
         safe_str("#-1 PERMISSION DENIED", buff, bufc);
         return;
     }
-    /*
-     * make sure there's an attribute and a pattern 
-     */
+
+    // Make sure there's an attribute and a pattern
+    //
     if (!fargs[1] || !*fargs[1]) {
         safe_str("#-1 NO SUCH ATTRIBUTE", buff, bufc);
         return;
@@ -2882,12 +2803,12 @@ FUNCTION(fun_grepi)
 }
 
 /*
- * Borrowed from PennMUSH 1.50 
+ * Borrowed from PennMUSH 1.50
  */
 FUNCTION(fun_art)
 {
 /*
- * checks a word and returns the appropriate article, "a" or "an" 
+ * checks a word and returns the appropriate article, "a" or "an"
  */
     char c = Tiny_ToLower[(unsigned char)*fargs[0]];
 
@@ -2897,9 +2818,8 @@ FUNCTION(fun_art)
         safe_chr('a', buff, bufc);
 }
 
-/*
- * Borrowed from PennMUSH 1.50 
- */
+// Borrowed from PennMUSH 1.50
+//
 FUNCTION(fun_alphamax)
 {
     if (nfargs <= 0)
@@ -2920,9 +2840,8 @@ FUNCTION(fun_alphamax)
     safe_tprintf_str(buff, bufc, "%s", amax);
 }
 
-/*
- * Borrowed from PennMUSH 1.50 
- */
+// Borrowed from PennMUSH 1.50
+//
 FUNCTION(fun_alphamin)
 {
     if (nfargs <= 0)
@@ -2943,13 +2862,11 @@ FUNCTION(fun_alphamin)
     safe_tprintf_str(buff, bufc, "%s", amin);
 }
 
-/*
- * Borrowed from PennMUSH 1.50 
- */
-
+// Borrowed from PennMUSH 1.50
+//
 FUNCTION(fun_valid)
 {
-    // Checks to see if a given <something> is valid as a parameter of 
+    // Checks to see if a given <something> is valid as a parameter of
     // a given type (such as an object name)
     //
     if (!*fargs[0] || !*fargs[1])
@@ -2970,9 +2887,8 @@ FUNCTION(fun_valid)
     }
 }
 
-/*
- * Borrowed from PennMUSH 1.50 
- */
+// Borrowed from PennMUSH 1.50
+//
 FUNCTION(fun_hastype)
 {
     dbref it = match_thing(player, fargs[0]);
@@ -3008,9 +2924,8 @@ FUNCTION(fun_hastype)
     };
 }
 
-/*
- * Borrowed from PennMUSH 1.50 
- */
+// Borrowed from PennMUSH 1.50
+//
 FUNCTION(fun_lparent)
 {
     dbref it;
@@ -3051,8 +2966,8 @@ FUNCTION(fun_lparent)
     }
 }
 
-/* stacksize - returns how many items are stuffed onto an object stack */
-
+// stacksize - returns how many items are stuffed onto an object stack
+//
 int stacksize(dbref doer)
 {
     int i;
@@ -3093,7 +3008,7 @@ FUNCTION(fun_lstack)
         safe_str(sp->data, buff, bufc);
         safe_chr(' ', buff, bufc);
     }
-    
+
     if (sp)
     {
         (*bufc)--;
@@ -3348,7 +3263,6 @@ FUNCTION(fun_push)
  * If -1 is specified as a register number, the matching bit is tossed.
  * Therefore, if the list is "-1 0 3 5", the regexp $0 is tossed, and
  * the regexp $1, $2, and $3 become r(0), r(3), and r(5), respectively.
- *
  */
 
 FUNCTION(fun_regmatch)
@@ -3427,7 +3341,7 @@ FUNCTION(fun_regmatch)
  * is 0 or s, control characters are converted to spaces. If it's 1 or p,
  * they're converted to percent substitutions.
  */
- 
+
 FUNCTION(fun_translate)
 {
     int type = 0;
@@ -3437,7 +3351,6 @@ FUNCTION(fun_translate)
     {
         type = 1;
     }
-        
+
     safe_str(translate_string(fargs[0], type), buff, bufc);
 }
-
