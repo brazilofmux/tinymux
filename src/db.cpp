@@ -1,6 +1,6 @@
 // db.c 
 //
-// $Id: db.cpp,v 1.13 2000-05-24 08:34:13 sdennis Exp $
+// $Id: db.cpp,v 1.14 2000-05-25 02:30:16 sdennis Exp $
 //
 // MUX 2.0
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -3111,12 +3111,38 @@ int check_zone_for_player(dbref player, dbref thing)
 
 }
 
+// This function releases:
+//
+//  1. comsys resources associated with an object.
+//  2. @mail resources associated with an object.
+//
+void ReleaseAllResources(dbref obj)
+{
+    if (mudconf.have_comsys)
+    {
+        do_comdisconnect(obj);
+        do_clearcom(obj, obj, 0);
+        do_channelnuke(obj);
+        del_comsys(obj);
+    }
+    if (mudconf.have_mailer)
+    {
+        do_mail_clear(obj, NULL);
+        do_mail_purge(obj);
+    }
+}
+
+#if 1
 void toast_player(dbref player)
 {
-    do_clearcom(player, player, 0);
-    do_channelnuke(player);
-    del_comsys(player);
+    if (mudconf.have_comsys)
+    {
+        do_clearcom(player, player, 0);
+        do_channelnuke(player);
+        del_comsys(player);
+    }
 }
+#endif
 
 #else
 
