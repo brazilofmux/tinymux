@@ -2054,6 +2054,30 @@ GUEST_NUKER
 
   Related Topics: guest_char_num, guest_prefix, number_guests.
 
+&GUEST_PREFIX
+GUEST_PREFIX
+
+  CONFIG PARAMETER: guest_preifx <name>
+  DEFAULT: Guest
+
+  Specifies the prefix for all guests. This will be what is put before the #
+  when the guest is created. This will also be what is used to connect to
+  the guests on your system.
+
+  Related Topics: guest_char_num, number_guests, min_guests, guest_site.
+
+& GUEST_SITE
+GUEST_SITE
+
+  CONFIG PARAMETER: guest_site <site>
+
+  Indicates that connections to guests form this site should be rejected.
+  Players will be able to connect normally and create if set.
+
+  Related Topics: badsite_file, permit_site, register_site, forbid_site,
+                  SITE LISTS, SITE NOTATION,
+                  allow_guest_from_registered_site.
+
 & HAVE_COMSYS
 HAVE_COMSYS
 
