@@ -4746,6 +4746,7 @@ COMMAND EVALUATION
     matches, it is performed.  If more than one matches, one is picked randomly
     from the exits for which the player passes the lock (If the player does not
     pass any locks, then the exit to be tried is picked randomly.
+
 { 'help command evaluation2' for more }
 
 & command evaluation2
@@ -4778,30 +4779,33 @@ COMMAND EVALUATION (continued)
 COMMANDS
 
   Help available for MUX Commands:
-  Note: Some commands are @-related.
 
   drop         enter        examine      get          give         goto
-  help         inventory    kill         leave        LOGOUT       look
-  move         news         OUTPUTPREFIX OUTPUTSUFFIX page         pose
-  QUIT         read         say          score        SESSION      take
-  think        throw        use          version      whisper      WHO
-  "            :            ;            &            #            \\
+  help         +help        INFO         inventory    kill         leave
+  LOGOUT       look         move         news         OUTPUTPREFIX OUTPUTSUFFIX
+  page         pose         QUIT         read         report       say
+  score        SESSION      take         think        throw        train
+  use          version      whisper      WHO          "            :
+  ;            &            #            \\
 
-  @@           @cemit       @chown       @chzone      @clone       @cpattr
-  @create      @decompile   @destroy     @dig         @doing       @dolist
-  @drain       @edit        @emit        @entrances   @femit       @find
-  @force       @fpose       @fsay        @halt        @last        @link
-  @list        @listmotd    @lock        @mail        @mvattr      @name
-  @notify      @npemit      @oemit       @open        @parent      @password
-  @pemit       @power       @program     @ps          @quitprogram @quota
-  @remit       @robot       @search      @set         @stats       @sweep
-  @switch      @teleport    @trigger     @unlink      @unlock      @verb
-  @wait        @wipe
+  @@           @backup      @break       @cemit       @chown       @chzone
+  @clone       @cpattr      @create      @decompile   @destroy     @dig
+  @doing       @dolist      @drain       @edit        @emit        @entrances
+  @femit       @find        @force       @fpose       @fsay        @halt
+  @if          @last        @link        @list        @listmotd    @lock
+  @mail        @mvattr      @name        @nemit       @notify      @npemit
+  @oemit       @open        @parent      @password    @pemit       @power
+  @program     @ps          @quitprogram @quota       @remit       @robot
+  @search      @set         @stats       @sweep       @switch      @teleport
+  @timecheck   @trigger     @unlink      @unlock      @verb        @wait
+  @wipe
 
 { 'help commands2' for more }
 
 & COMMANDS2
 COMMANDS (continued)
+
+  The following are @-related:
 
   @aahear      @aclone      @aconnect    @adescribe   @adfail      @adisconnect
   @adrop       @aefail      @aenter      @afail       @agfail      @ahear
@@ -4812,13 +4816,13 @@ COMMANDS (continued)
   @efail       @enter       @exitformat  @fail        @filter      @forwardlist
   @gfail       @idesc       @idle        @idletimeout @infilter    @inprefix
   @kill        @lalias      @leave       @lfail       @listen      @mailsucc
-  @move        @odescribe   @odfail      @odrop       @oefail      @oenter
-  @ofail       @ogfail      @okill       @oleave      @olfail      @omove
-  @opay        @orfail      @osuccess    @otfail      @otofail     @otport
-  @oufail      @ouse        @oxenter     @oxleave     @oxtport     @pay
-  @prefix      @reject      @rfail       @runout      @sex         @signature
-  @startup     @success     @tfail       @tofail      @tport       @ufail
-  @use
+  @moniker     @move        @odescribe   @odfail      @odrop       @oefail
+  @oenter      @ofail       @ogfail      @okill       @oleave      @olfail
+  @omove       @opay        @orfail      @osuccess    @otfail      @otofail
+  @otport      @oufail      @ouse        @oxenter     @oxleave     @oxtport
+  @pay         @prefix      @reject      @rfail       @runout      @sex
+  @signature   @startup     @success     @tfail       @tofail      @tport
+  @ufail       @use
 
 & COMP()
 COMP()
