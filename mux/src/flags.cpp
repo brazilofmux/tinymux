@@ -1,6 +1,6 @@
 // flags.cpp -- Flag manipulation routines.
 //
-// $Id: flags.cpp,v 1.1 2003-01-22 19:58:25 sdennis Exp $
+// $Id: flags.cpp,v 1.2 2003-01-24 07:08:28 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -10,8 +10,6 @@
 
 #include "command.h"
 #include "powers.h"
-
-#ifndef STANDALONE
 
 /* ---------------------------------------------------------------------------
  * fh_any: set or clear indicated bit, no security checking
@@ -445,8 +443,6 @@ FLAGNAMEENT gen_flag_names[] =
     {NULL,             FALSE, NULL}
 };
 
-#endif // !STANDALONE
-
 OBJENT object_types[8] =
 {
     {"ROOM",    'R', CA_PUBLIC, OF_CONTENTS|OF_EXITS|OF_DROPTO|OF_HOME},
@@ -457,8 +453,6 @@ OBJENT object_types[8] =
     {"GARBAGE", '-', CA_PUBLIC, OF_CONTENTS|OF_LOCATION|OF_EXITS|OF_HOME|OF_SIBLINGS},
     {"GARBAGE", '#', CA_GOD,    0}
 };
-
-#ifndef STANDALONE
 
 /* ---------------------------------------------------------------------------
  * init_flagtab: initialize flag hash tables.
@@ -1254,5 +1248,3 @@ CF_HAND(cf_flag_name)
         return -1;
     }
 }
-
-#endif

@@ -1,6 +1,6 @@
 // game.cpp
 //
-// $Id: game.cpp,v 1.5 2003-01-23 23:49:37 sdennis Exp $
+// $Id: game.cpp,v 1.6 2003-01-24 07:05:08 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -1114,8 +1114,6 @@ void do_shutdown(dbref executor, dbref caller, dbref enactor, int key, char *mes
     mudstate.shutdown_flag = TRUE;
 }
 
-#ifndef STANDALONE
-
 // There are several types of dumps:
 //
 // Type 0 - Normal   mudstate.dumping controlled
@@ -1325,7 +1323,6 @@ void dump_database_internal(int dump_type)
         save_comsys(mudconf.comsys_db);
     }
 }
-#endif // !STANDALONE
 
 void dump_database(void)
 {
