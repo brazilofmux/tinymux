@@ -1,6 +1,6 @@
 // game.cpp
 //
-// $Id: game.cpp,v 1.10 2000-05-11 15:56:44 sdennis Exp $
+// $Id: game.cpp,v 1.11 2000-05-26 18:15:31 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -1425,6 +1425,10 @@ void fork_and_dump(int key)
     }
 }
 
+#define LOAD_GAME_SUCCESS           0
+#define LOAD_GAME_NO_INPUT_DB     (-1)
+#define LOAD_GAME_CANNOT_OPEN     (-2)
+#define LOAD_GAME_LOADING_PROBLEM (-3)
 
 #ifdef MEMORY_BASED
 static int load_game(void)
@@ -1463,11 +1467,11 @@ static int load_game(int ccPageFile)
             // Indicate that we couldn't load because the input db didn't
             // exist.
             // 
-            return -2;
+            return LOAD_GAME_NO_INPUT_DB;
         }
         if ((f = fopen(infile, "rb")) == NULL)
         {
-            return -1;
+            return LOAD_GAME_CANNOT_OPEN;
         }
         DebugTotalFiles++;
         setvbuf(f, NULL, _IOFBF, 16384);
@@ -1503,7 +1507,7 @@ static int load_game(int ccPageFile)
         log_text((char *)"Error loading ");
         log_text(infile);
         ENDLOG
-        return -1;
+        return LOAD_GAME_LOADING_PROBLEM;
     }
 
     // Everything is ok.
@@ -1550,7 +1554,9 @@ static int load_game(int ccPageFile)
 #endif
 
     if (mudconf.have_comsys || mudconf.have_macros)
+    {
         load_comsys(mudconf.comsys_db);
+    }
 
     if (mudconf.have_mailer)
     {
@@ -1569,11 +1575,11 @@ static int load_game(int ccPageFile)
             f = 0;
         }
     }
-    STARTLOG(LOG_STARTUP, "INI", "LOAD")
+    STARTLOG(LOG_STARTUP, "INI", "LOAD");
     log_text((char *)"Load complete.");
-    ENDLOG
+    ENDLOG;
 
-    return 0;
+    return LOAD_GAME_SUCCESS;
 }
 
 
@@ -1973,7 +1979,9 @@ int DCL_CDECL main(int argc, char *argv[])
     fcache_init();
     helpindex_init();
 
-#ifndef MEMORY_BASED
+#ifdef MEMORY_BASED
+    db_free();
+#else // MEMORY_BASED
     if (bMinDB)
     {
         RemoveFile(mudconf.game_dir);
@@ -1989,8 +1997,6 @@ int DCL_CDECL main(int argc, char *argv[])
         ENDLOG;
         return 2;
     }
-#else
-    db_free();
 #endif // MEMORY_BASED
 
     mudstate.record_players = 0;
@@ -2005,21 +2011,25 @@ int DCL_CDECL main(int argc, char *argv[])
         int ccInFile = load_game();
 #else
         int ccInFile = load_game(ccPageFile);
-        if (ccInFile == -2)
+#endif
+        if (LOAD_GAME_NO_INPUT_DB == ccInFile)
         {
             // The input file didn't exist.
             //
+#ifndef MEMORY_BASED
             if (HF_OPEN_STATUS_NEW == ccPageFile)
             {
                 // Since the .db file didn't exist, and the .pag/.dir files
                 // were newly created, just create a minimal DB.
                 //
+#endif // !MEMORY_BASED
                 db_make_minimal();
-                ccInFile = 0;
+                ccInFile = LOAD_GAME_SUCCESS;
+#ifndef MEMORY_BASED
             }
+#endif // !MEMORY_BASED
         }
-#endif
-        if (ccInFile < 0)
+        if (ccInFile != LOAD_GAME_SUCCESS)
         {
             STARTLOG(LOG_ALWAYS, "INI", "LOAD")
             log_text((char *)"Couldn't load: ");
