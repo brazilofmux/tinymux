@@ -1,5 +1,5 @@
 /* config.h */
-/* $Id: config.h,v 1.9 2000-06-30 21:47:23 sdennis Exp $ */
+/* $Id: config.h,v 1.10 2000-09-07 08:19:46 sdennis Exp $ */
 
 #ifndef CONFIG_H
 #define CONFIG_H
@@ -84,7 +84,7 @@
 #define DCL_INLINE __inline
 typedef __int64 INT64;
 typedef unsigned __int64 UINT64;
-#define SIZEOF_PATHNAME _MAX_PATH
+#define SIZEOF_PATHNAME (_MAX_PATH + 1)
 #define SOCKET_WRITE(s,b,n,f) send(s,b,n,f)
 #define SOCKET_READ(s,b,n,f) recv(s,b,n,f)
 #define SOCKET_CLOSE(s) closesocket(s)
@@ -106,7 +106,11 @@ typedef int HANDLE;
 typedef long long INT64;
 typedef unsigned long long UINT64;
 typedef int SOCKET;
-#define SIZEOF_PATHNAME 128
+#ifdef PATH_MAX
+#define SIZEOF_PATHNAME (PATH_MAX + 1)
+#else
+#define SIZEOF_PATHNAME (4095 + 1)
+#endif
 #define SOCKET_WRITE(s,b,n,f) write(s,b,n)
 #define SOCKET_READ(s,b,n,f) read(s,b,n)
 #define SOCKET_CLOSE(s) close(s)
