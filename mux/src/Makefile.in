@@ -54,16 +54,16 @@ D_SRC	= _build.cpp alloc.cpp attrcache.cpp boolexp.cpp bsd.cpp command.cpp \
 	htab.cpp log.cpp look.cpp mail.cpp match.cpp mguests.cpp move.cpp \
 	muxcli.cpp netcommon.cpp object.cpp predicates.cpp player.cpp \
 	player_c.cpp powers.cpp quota.cpp rob.cpp pcre.cpp set.cpp \
-	sha1.cpp speech.cpp stringutil.cpp strtod.cpp svdrand.cpp svdhash.cpp \
-	svdreport.cpp timer.cpp timeutil.cpp unparse.cpp vattr.cpp walkdb.cpp \
-	wild.cpp wiz.cpp
+	sha1.cpp speech.cpp sqlshared.cpp stringutil.cpp strtod.cpp svdrand.cpp \
+	svdhash.cpp svdreport.cpp timer.cpp timeutil.cpp unparse.cpp vattr.cpp \
+	walkdb.cpp wild.cpp wiz.cpp
 D_OBJ	= _build.o alloc.o attrcache.o boolexp.o bsd.o command.o comsys.o \
 	conf.o cque.o create.o db.o db_rw.o eval.o file_c.o flags.o funceval.o \
 	functions.o game.o help.o htab.o log.o look.o mail.o match.o \
 	mguests.o move.o muxcli.o netcommon.o object.o predicates.o \
 	player.o player_c.o powers.o quota.o rob.o pcre.o set.o sha1.o \
-	speech.o stringutil.o strtod.o svdrand.o svdhash.o svdreport.o timer.o \
-	timeutil.o unparse.o vattr.o walkdb.o wild.o wiz.o
+	speech.o sqlshared.o stringutil.o strtod.o svdrand.o svdhash.o \
+	svdreport.o timer.o timeutil.o unparse.o vattr.o walkdb.o wild.o wiz.o
 
 # Version number routine
 VER_SRC	= version.cpp
@@ -158,8 +158,8 @@ links: netmux slave sqlslave
 	cd ../game/bin ; rm -f slave ; ln -s ../../src/slave slave
 	cd ../game/bin ; rm -f sqlslave ; ln -s ../../src/sqlslave sqlslave
 
-sqlslave: sqlslave.o
-	$(CXX) $(ALLCXXFLAGS) $(LIBS) -o sqlslave sqlslave.o
+sqlslave: sqlslave.o sqlshared.o
+	$(CXX) $(ALLCXXFLAGS) $(LIBS) -o sqlslave sqlslave.o sqlshared.o
 
 slave: slave.o
 	$(CXX) $(ALLCXXFLAGS) $(LIBS) -o slave slave.o
@@ -173,7 +173,7 @@ netmux: $(OBJ) $(VER_SRC)
 	$(CXX) $(ALLCXXFLAGS) -o netmux $(OBJ) $(VER_OBJ) $(BTLIBS) $(LIBS) $(MORELIBS)
 
 depend: $(ALLSRC) unsplit
-	for i in $(D_SRC) $(SA_SRC) $(AUX_SRC) $(LIB_SRC) $(MALLOC_S) slave.cpp sqlslave.cpp ; do $(CXXCPP) $(ALLCXXFLAGS) -M $$i; done | sed -e 's:/usr[^ ]*[ ]*::g' | ./unsplit > .depend~
+	for i in $(D_SRC) $(SA_SRC) $(AUX_SRC) $(LIB_SRC) $(MALLOC_S) slave.cpp sqlslave.cpp sqlshared.cpp ; do $(CXXCPP) $(ALLCXXFLAGS) -M $$i; done | sed -e 's:/usr[^ ]*[ ]*::g' | ./unsplit > .depend~
 	mv .depend~ .depend
 
 realclean:
