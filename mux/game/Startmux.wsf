@@ -198,7 +198,7 @@ End Sub
 Sub UpdatePrograms()
     dim va
     dim item
-    va = Array("tinymux", "dbconvert", "mkindx", "a")
+    va = Array("netmux", "dbconvert", "mkindx")
     For Each item in va
         MoveFileIfNewer bin & "_new\" & item & ".exe", bin & "\" & item & ".exe"
     Next
@@ -261,7 +261,7 @@ Do
     
     ' Kick off the MUX
     '
-    ret = shell.run(bin & "\tinymux " & gamename & ".conf", SW_HIDE, True)
+    ret = shell.run(bin & "\netmux " & gamename & ".conf", SW_HIDE, True)
 Loop While ret = 12345678
 
 ]]>
