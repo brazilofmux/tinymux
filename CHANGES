@@ -253,7 +253,7 @@ Bug Fixes:
     the source attribute while prevented from creating it on the
     destination object.
  -- Fixed server hang possibility in BMH_Execute(), Boyer-Moore-Horspool
-    string searching.
+    string searching. Encountered by nails and Anomaly at mushpark.com.
 
 Performance Enhancements:
 ~~~~~~~~~~~~~~~~~~~~~~~~
