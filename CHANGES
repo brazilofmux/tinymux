@@ -120,6 +120,10 @@ Feature Additions:
  --  Bug #375 - Added table() function from PennMUSH.
  --  Bug #522 - Enhanced '@mail/debug' to check for and repair mailbag item
      reference counts.
+ --  Bug #539 - Server will wait 10 seconds after startup before accepting
+     @restart requests, and any SIGSEGVs during this period do not cause a
+     @restart either, but a prompt abort.
+ --  Added CRC32, PACK, and UNPACK softcode functions.
 
 
 Bug Fixes:
@@ -325,8 +329,26 @@ Bug Fixes:
  --  Bug #519 - @mail ref counts could be thrown off.
  --  Bug #389 - @mail subject was not ANSI-aware and could leak color.
  --  Bug #523 - Memory leak when importing +V1 mail.db files.
+ --  Bug #543 - Because popen is more restrictive with it's second argument
+     than fopen, the 'compression' config option didn't work on Unix.
+ --  Bug #546 - @fixdb/rename uninitialized variable.
+ --  Bug #547 - Buffer in pool_err needed to be larger.
+ --  Bug #549 - An fread on the second pass in attrcache.cpp, line 110 needed
+     to protect itself against truncated files (disk quota limits for example).
+ --  Bug #564 - Encrypt/decrypt printf will leak passwords onto file descriptor
+     1 (which, frankly, could be anything).
+ --  Bug #542 - timeconv(time()) is off by 1 hour during daylight savings time.
+ --  Bug #544 - 'Previous' file is not handled properly with compression on.
+ --  Bug #545 - @malias description width not set at @malias creation time.
+ --  Bug #565 - Encrypt can be used to generate characters 28, 29, 30, 31, and
+     probably more.
+ --  Bug #568 - Encrypt/decrypt is not ANSI-aware.
+ --  Bug #534 - pi() topic is wrong in helpfiles.
+ --  Bug #541 - A page-split shouldn't give the message that it's waiting on a
+     @dump unless it really is.
+ --  Bug #265 - _ATTRS for Chimera.
+ --  Bug #378 - A perpetual @restart doesn't stop until the game is crashed.
 
- 
 
 Performance Enhancements:
 ~~~~~~~~~~~~~~~~~~~~~~~~
