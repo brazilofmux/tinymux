@@ -121,8 +121,6 @@ void SHA1_Compute(SHA1_CONTEXT *p, size_t n, const char *buf)
 
 void SHA1_Final(SHA1_CONTEXT *p)
 {
-    int i, j;
-
     p->block[p->nblock++] = 0x80;
     if (sizeof(p->block) - sizeof(UINT64) <= p->nblock)
     {
