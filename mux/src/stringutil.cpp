@@ -1,6 +1,6 @@
 // stringutil.cpp -- string utilities.
 //
-// $Id: stringutil.cpp,v 1.9 2003-02-03 06:44:23 sdennis Exp $
+// $Id: stringutil.cpp,v 1.10 2003-02-03 07:59:57 sdennis Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -2252,13 +2252,12 @@ int mux_bcdtoa(INT64 val, char *buf)
 
     char *q = p;
 
-    const char *z;
     while (uval > 15)
     {
-        *p++ = '0' + (uval & 15);
+        *p++ = '0' + (char)(uval & 15);
         uval >>= 4;
     }
-    *p++ = '0' + (uval & 15);
+    *p++ = '0' + (char)(uval & 15);
 
     int nLength = p - buf;
     *p-- = '\0';
@@ -2300,7 +2299,6 @@ INT64 mux_atobcd(const char *pString)
 
     // Convert ASCII digits
     //
-    unsigned c1;
     unsigned c0 = pString[0];
     if (!Tiny_IsDigit[c0])
     {
