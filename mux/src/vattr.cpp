@@ -1,6 +1,6 @@
 // vattr.cpp -- Manages the user-defined attributes.
 //
-// $Id: vattr.cpp,v 1.1 2003-01-22 19:58:26 sdennis Exp $
+// $Id: vattr.cpp,v 1.2 2003-01-23 08:00:45 sdennis Exp $
 //
 // MUX 2.2
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -91,18 +91,18 @@ ATTR *vattr_define_LEN(char *pName, int nName, int number, int flags)
     return vp;
 }
 
-#ifndef STANDALONE
 extern int anum_alc_top;
 
-// There are five data structures which must remain mutually consistent: The attr_name_htab, vattr_name_htab,
-// the anum_table, the A_LIST for every object, and the attribute database.
+// There are five data structures which must remain mutually consistent: The
+// attr_name_htab, vattr_name_htab, the anum_table, the A_LIST for every
+// object, and the attribute database.
 //
 void dbclean_CheckANHtoAT(dbref executor)
 {
     notify(executor, "1. Checking (v)attr_name_htabs to anum_table mapping...");
 
-    // This test traverses the attr_name_htab/vattr_name_htab and verifies that the corresponding anum_table
-    // entry exists and is valid.
+    // This test traverses the attr_name_htab/vattr_name_htab and verifies
+    // that the corresponding anum_table entry exists and is valid.
     //
     int nAttributes = 0;
     int nPredefined = 0;
@@ -623,7 +623,6 @@ void do_dbclean(dbref executor, dbref caller, dbref enactor, int key)
     dbclean_IntegrityChecking(executor);
     notify(executor, "@dbclean completed..");
 }
-#endif // !STANDALONE
 
 void vattr_delete_LEN(char *pName, int nName)
 {
