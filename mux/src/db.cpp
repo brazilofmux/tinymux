@@ -1,6 +1,6 @@
 // db.cpp
 //
-// $Id: db.cpp,v 1.2 2002-06-04 00:47:27 sdennis Exp $
+// $Id: db.cpp,v 1.3 2002-06-04 15:33:34 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -3122,7 +3122,7 @@ void ReleaseAllResources(dbref obj)
     if (mudconf.have_comsys)
     {
         do_comdisconnect(obj);
-        do_clearcom(obj, CALLERQQQ, obj, 0);
+        do_clearcom(obj, obj, obj, 0);
         do_channelnuke(obj);
         del_comsys(obj);
     }

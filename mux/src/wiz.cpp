@@ -1,6 +1,6 @@
 // wiz.cpp -- Wizard-only commands.
 //
-// $Id: wiz.cpp,v 1.2 2002-06-04 00:47:28 sdennis Exp $
+// $Id: wiz.cpp,v 1.3 2002-06-04 15:33:34 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -249,7 +249,7 @@ void do_force_prefixed( dbref executor, dbref caller, dbref enactor, int key,
     }
     if (*command)
     {
-        do_force(executor, CALLERQQQ, enactor, key, cp, command, args, nargs);
+        do_force(executor, caller, enactor, key, cp, command, args, nargs);
     }
 }
 
@@ -265,7 +265,7 @@ void do_force( dbref executor, dbref caller, dbref enactor, int key,
         // Force victim to do command.
         //
         CLinearTimeAbsolute lta;
-        wait_que(victim, CALLERQQQ, executor, FALSE, lta, NOTHING, 0, command,
+        wait_que(victim, caller, executor, FALSE, lta, NOTHING, 0, command,
             args, nargs, mudstate.global_regs);
     }
 }
