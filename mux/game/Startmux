@@ -14,15 +14,6 @@ if [ $nmux -gt 1 ]; then
 	exit 0
 fi
 #
-#	Make sure the indexes are up-to-date.
-#
-$BIN/mkindx $TEXT/news.txt $TEXT/news.indx
-$BIN/mkindx $TEXT/help.txt $TEXT/help.indx
-$BIN/mkindx $TEXT/wizhelp.txt $TEXT/wizhelp.indx
-$BIN/mkindx $TEXT/plushelp.txt $TEXT/plushelp.indx
-$BIN/mkindx $TEXT/wiznews.txt $TEXT/wiznews.indx
-$BIN/mkindx $TEXT/staffhelp.txt $TEXT/staffhelp.indx
-#
 #	Save a copy of the previous input database.
 #
 if [ -r $DATA/$INPUT_DB ]; then

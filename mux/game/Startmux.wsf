@@ -12,39 +12,6 @@ For Win32 platforms, this script starts the MUX 2.x server. -->
 Option Explicit
 const SW_HIDE = 0
 
-Sub FreshenHelpIndex(basename)
-    dim line
-    dim fnText
-    dim fnIndex
-    dim fs
-    dim fd
-
-    fnText = text & "\" & basename & ".txt"
-    fnIndex = text & "\" & basename & ".indx"
-    line = bin & "\mkindx " & fnText & " " & fnIndex
-
-    if fso.FileExists(fnIndex) then
-        set fs = fso.GetFile(fnText)
-        set fd = fso.GetFile(fnIndex)
-        if fs.DateLastModified > fd.DateLastModified then
-            wscript.Echo "Re-building indexes for" & fnText
-            shell.run line, SW_HIDE, True
-        end if
-    else
-        wscript.Echo "Re-building indexes for" & fnText
-        shell.run line, SW_HIDE, True
-    end if
-End Sub
-
-Sub FreshenHelpIndexes()
-    dim va
-    dim item
-    va = Array("news", "help", "wizhelp", "plushelp", "staffhelp", "wiznews")
-    For Each item in va
-        FreshenHelpIndex(item)
-    Next
-End Sub
-
 ' Given three filenames, this function (using existance and modification
 ' dates) positions the most recent copy in fnPresent, the next-most-recent
 ' copy in fnPast, and fnFuture is left vacant.
@@ -209,9 +176,6 @@ If instr(1, s, "wscript.exe", vbTextCompare) <> 0 Then
 End If
 
 Do
-
-    FreshenHelpIndexes
-
     dim fnInput
     dim fnSave
     dim fnNew
@@ -235,7 +199,7 @@ Do
     If fso.FileExists(fnCrash) Then
         wscript.echo "There is a CRASH database present. You should salvage what you can before"
         wscript.echo "renaming or deleting this database. This script cannot continue while this"
-        wscript.echo "files exist."
+        wscript.echo "file exists."
         ret = 0
         Exit Do
     End If
