@@ -1,6 +1,6 @@
 // db.cpp
 //
-// $Id: db.cpp,v 1.58 2003-02-16 20:43:34 sdennis Exp $
+// $Id: db.cpp,v 1.59 2003-03-17 01:10:15 sdennis Exp $
 //
 // MUX 2.2
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -593,7 +593,7 @@ const char *Moniker(dbref thing)
         }
         else
         {
-            pReturn = db[thing].name;
+            pReturn = Name(thing);
         }
 #endif // MEMORY_BASED
     }
