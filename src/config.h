@@ -1,5 +1,5 @@
 /* config.h */
-/* $Id: config.h,v 1.8 2000-06-06 09:52:03 sdennis Exp $ */
+/* $Id: config.h,v 1.9 2000-06-30 21:47:23 sdennis Exp $ */
 
 #ifndef CONFIG_H
 #define CONFIG_H
@@ -126,5 +126,14 @@ extern BOOL OutOfMemory(const char *SourceFile, unsigned int LineNo);
 #define MEMALLOC(size)        malloc((size))
 #define MEMFREE(ptr)          free((ptr))
 #define MEMREALLOC(ptr, size) realloc((ptr), (size))
+
+// If it's Hewlett Packard, then getrusage is provided a different
+// way.
+//
+#ifdef hpux
+#define HAVE_GETRUSAGE 1
+#include <sys/syscall.h>
+#define getrusage(x,p)   syscall(SYS_GETRUSAGE,x,p)
+#endif
 
 #endif // CONFIG_H
