@@ -1,6 +1,6 @@
 // log.cpp -- Logging routines.
 //
-// $Id: log.cpp,v 1.3 2002-06-12 03:30:38 jake Exp $
+// $Id: log.cpp,v 1.4 2002-06-27 06:38:31 jake Exp $
 //
 
 #include "copyright.h"
@@ -102,7 +102,7 @@ int start_log(const char *primary, const char *secondary)
  * * end_log: Finish up writing a log entry
  */
 
-void NDECL(end_log)
+void end_log(void)
 {
     Log.WriteString(ENDLINE);
     Log.Flush();

@@ -1,6 +1,6 @@
 // db.cpp
 //
-// $Id: db.cpp,v 1.12 2002-06-22 01:02:33 sdennis Exp $
+// $Id: db.cpp,v 1.13 2002-06-27 06:38:31 jake Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -36,7 +36,7 @@ OBJ *db = NULL;
 NAME *names = NULL;
 NAME *purenames = NULL;
 
-extern void FDECL(desc_addhash, (DESC *));
+extern void desc_addhash(DESC *);
 
 typedef struct atrcount ATRCOUNT;
 struct atrcount {
@@ -46,10 +46,8 @@ struct atrcount {
 
 // Check routine forward declaration.
 //
-extern int FDECL(fwdlist_ck, (int, dbref, dbref, int, char *));
-
-extern void FDECL(pcache_reload, (dbref));
-extern void FDECL(desc_reload, (dbref));
+extern void pcache_reload(dbref);
+extern void desc_reload(dbref);
 
 // list of attributes
 //
@@ -914,7 +912,7 @@ char *MakeCanonicalAttributeCommand(const char *pName, int *pnName, BOOL *pbVali
  * init_attrtab: Initialize the attribute hash tables.
  */
 
-void NDECL(init_attrtab)
+void init_attrtab(void)
 {
     ATTR *a;
 
@@ -1193,7 +1191,7 @@ void al_extend(char **buffer, int *bufsiz, int len, int copy)
 
 // al_store: Write modified attribute list
 //
-void NDECL(al_store)
+void al_store(void)
 {
     if (mudstate.mod_al_id != NOTHING)
     {
@@ -2119,7 +2117,7 @@ int atr_next(char **attrp)
  * atr_push, atr_pop: Push and pop attr lists.
  */
 
-void NDECL(atr_push)
+void atr_push(void)
 {
 #ifndef MEMORY_BASED
     ALIST *new_alist = (ALIST *) alloc_sbuf("atr_push");
@@ -2133,7 +2131,7 @@ void NDECL(atr_push)
 #endif // !MEMORY_BASED
 }
 
-void NDECL(atr_pop)
+void atr_pop(void)
 {
 #ifndef MEMORY_BASED
     ALIST *old_alist = mudstate.iter_alist.next;
@@ -2453,7 +2451,7 @@ void db_grow(dbref newtop)
     mudstate.markbits = newmarkbuf;
 }
 
-void NDECL(db_free)
+void db_free(void)
 {
     char *cp;
 
@@ -2471,7 +2469,7 @@ void NDECL(db_free)
 }
 
 #ifndef STANDALONE
-void NDECL(db_make_minimal)
+void db_make_minimal(void)
 {
     dbref obj;
 

@@ -1,6 +1,6 @@
 // file_c.cpp -- File cache management.
 //
-// $Id: file_c.cpp,v 1.2 2002-06-04 00:47:27 sdennis Exp $
+// $Id: file_c.cpp,v 1.3 2002-06-27 06:38:31 jake Exp $
 //
 
 #include "copyright.h"
@@ -266,7 +266,7 @@ void fcache_load(dbref player)
     free_sbuf(sbuf);
 }
 
-void NDECL(fcache_init)
+void fcache_init(void)
 {
     FCACHE *fp = fcache;
     for (fp = fcache; fp->ppFilename; fp++)

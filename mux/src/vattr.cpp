@@ -1,6 +1,6 @@
 // vattr.cpp -- Manages the user-defined attributes.
 //
-// $Id: vattr.cpp,v 1.4 2002-06-13 22:12:46 jake Exp $
+// $Id: vattr.cpp,v 1.5 2002-06-27 06:38:31 jake Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -24,7 +24,7 @@
 #include "functions.h"
 #include "vattr.h"
 
-static char FDECL(*store_string, (char *));
+static char *store_string(char *);
 
 // Allocate space for strings in lumps this big.
 //
@@ -686,7 +686,7 @@ ATTR *vattr_rename_LEN(char *pOldName, int nOldName, char *pNewName, int nNewNam
     return NULL;
 }
 
-ATTR *NDECL(vattr_first)
+ATTR *vattr_first(void)
 {
     HP_HEAPLENGTH nRecord;
     int anum;

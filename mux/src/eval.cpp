@@ -1,6 +1,6 @@
 // eval.cpp -- Command evaluation and cracking.
 //
-// $Id: eval.cpp,v 1.9 2002-06-20 16:00:11 sdennis Exp $
+// $Id: eval.cpp,v 1.10 2002-06-27 06:38:31 jake Exp $
 //
 
 // MUX 2.1
@@ -840,14 +840,14 @@ struct tcache_ent
 
 int tcache_top, tcache_count;
 
-void NDECL(tcache_init)
+void tcache_init(void)
 {
     tcache_head = NULL;
     tcache_top = 1;
     tcache_count = 0;
 }
 
-int NDECL(tcache_empty)
+int tcache_empty(void)
 {
     if (tcache_top)
     {

@@ -1,6 +1,6 @@
 // alloc.h -- External definitions for memory allocation subsystem.
 //
-// $Id: alloc.h,v 1.1 2002-05-24 06:53:14 sdennis Exp $
+// $Id: alloc.h,v 1.2 2002-06-27 06:38:30 jake Exp $
 //
 
 #ifndef M_ALLOC_H
@@ -45,13 +45,13 @@
 
 #else // STANDALONE
 
-extern void FDECL(pool_init, (int, int));
+extern void pool_init(int, int);
 extern char *pool_alloc(int, const char *);
 extern char *pool_alloc_lbuf(const char *);
 extern void pool_free(int, char *);
 extern void pool_free_lbuf(char *);
-extern void FDECL(list_bufstats, (dbref));
-extern void FDECL(list_buftrace, (dbref));
+extern void list_bufstats(dbref);
+extern void list_buftrace(dbref);
 
 #define alloc_lbuf(s)   pool_alloc_lbuf(s)
 #define free_lbuf(b)    pool_free_lbuf((char *)(b))

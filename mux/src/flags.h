@@ -1,6 +1,6 @@
 // flags.h -- Object flags.
 //
-// $Id: flags.h,v 1.7 2002-06-18 20:19:35 jake Exp $
+// $Id: flags.h,v 1.8 2002-06-27 06:38:31 jake Exp $
 //
 
 #include "copyright.h"
@@ -154,17 +154,17 @@ typedef struct flagset
     FLAG  word[3];
 } FLAGSET;
 
-extern void NDECL(init_flagtab);
-extern void FDECL(display_flagtab, (dbref));
-extern void FDECL(flag_set, (dbref, dbref, char *, int));
-extern char *   FDECL(flag_description, (dbref, dbref));
+extern void init_flagtab(void);
+extern void display_flagtab(dbref);
+extern void flag_set(dbref, dbref, char *, int);
+extern char *flag_description(dbref, dbref);
 extern FLAGNAMEENT *find_flag(dbref, char *);
 extern char *decode_flags(dbref, FLAGSET *);
-extern int  FDECL(has_flag, (dbref, dbref, char *));
-extern char *   FDECL(unparse_object, (dbref, dbref, int));
-extern char *   FDECL(unparse_object_numonly, (dbref));
-extern int  FDECL(convert_flags, (dbref, char *, FLAGSET *, FLAG *));
-extern void FDECL(decompile_flags, (dbref, dbref, char *));
+extern int  has_flag(dbref, dbref, char *);
+extern char *unparse_object(dbref, dbref, int);
+extern char *unparse_object_numonly(dbref);
+extern int  convert_flags(dbref, char *, FLAGSET *, FLAG *);
+extern void decompile_flags(dbref, dbref, char *);
 extern char *MakeCanonicalFlagName
 (
     const char *pName,

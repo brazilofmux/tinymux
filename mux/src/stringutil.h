@@ -1,6 +1,6 @@
 // stringutil.h -- string utilities.
 //
-// $Id: stringutil.h,v 1.2 2002-06-12 01:24:46 raevnos Exp $
+// $Id: stringutil.h,v 1.3 2002-06-27 06:38:31 jake Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -125,8 +125,8 @@ extern char *replace_tokens
     const char *pListPlace,
     const char *pSwitch
 );
-extern int  FDECL(prefix_match, (const char *, const char *));
-extern int  FDECL(minmatch, (char *, char *, int));
+extern int prefix_match(const char *, const char *);
+extern int minmatch(char *, char *, int);
 extern char *StringCloneLen(const char *str, unsigned int nStr);
 extern char *StringClone(const char *str);
 extern char *BufferCloneLen(const char *pBuffer, unsigned int nBuffer);
@@ -134,8 +134,8 @@ void safe_copy_str(const char *src, char *buff, char **bufp, int max);
 void safe_copy_str_lbuf(const char *src, char *buff, char **bufp);
 int safe_copy_buf(const char *src, int nLen, char *buff, char **bufp);
 int safe_fill(char *buff, char **bufc, char chFile, int nSpaces);
-extern int  FDECL(matches_exit_from_list, (char *, char *));
-extern char *   FDECL(translate_string, (const char *, int));
+extern int matches_exit_from_list(char *, char *);
+extern char *translate_string(const char *, int);
 #ifndef WIN32
 extern int _stricmp(const char *a, const char *b);
 extern int _strnicmp(const char *a, const char *b, int n);

@@ -1,6 +1,6 @@
 // mail.h
 //
-// $Id: mail.h,v 1.2 2002-06-13 22:12:46 jake Exp $
+// $Id: mail.h,v 1.3 2002-06-27 06:38:31 jake Exp $
 //
 
 #ifndef _MAIL_H
@@ -9,7 +9,7 @@
 #include "copyright.h"
 
 /* Some of this isn't implemented yet, but heralds the future! */
-#define M_ISREAD        0x0001
+#define M_ISREAD    0x0001
 #define M_UNREAD    0x0FFE
 #define M_CLEARED   0x0002
 #define M_URGENT    0x0004
@@ -31,7 +31,7 @@
 
 #define Urgent(m)   (m->read & M_URGENT)
 #define Mass(m)     (m->read & M_MASS)
-#define M_Safe(m)       (m->read & M_SAFE)
+#define M_Safe(m)   (m->read & M_SAFE)
 #define Receipt(m)  (m->read & M_RECEIPT)
 #define Forward(m)  (m->read & M_FORWARD)
 #define Tagged(m)   (m->read & M_TAG)
@@ -95,28 +95,27 @@ struct mail_entry
     int   m_nRefs;
 };
 
-extern void FDECL(set_player_folder, (dbref, int));
-extern void FDECL(do_malias_send, (dbref, char *, char *, char *, int, \
-            mail_flag, int));
-extern struct malias *  FDECL(get_malias, (dbref, char *));
-extern void FDECL(load_malias, (FILE *));
-extern void FDECL(save_malias, (FILE *));
-extern void FDECL(malias_read, (FILE *));
-extern void FDECL(malias_write, (FILE *));
-extern void FDECL(do_malias_chown, (dbref, char *, char *));
-extern void FDECL(do_malias_desc, (dbref, char *, char *));
-extern void FDECL(do_expmail_start, (dbref, char *, char *));
-extern void FDECL(do_expmail_stop, (dbref, int));
-extern void FDECL(do_mail_quick, (dbref, char *, char *));
-extern void FDECL(do_malias_rename, (dbref, char *, char *));
-extern void FDECL(do_malias_adminlist, (dbref));
-extern void FDECL(do_malias_delete, (dbref, char *));
-extern void FDECL(do_malias_status, (dbref));
-extern void FDECL(do_malias_create, (dbref, char *, char *));
-extern void FDECL(do_malias_list, (dbref, char *));
-extern void FDECL(do_malias_list_all, (dbref));
-extern void FDECL(do_malias_add, (dbref, char *, char *));
-extern void FDECL(do_malias_remove, (dbref, char *, char *));
+extern void set_player_folder(dbref, int);
+extern void do_malias_send(dbref, char *, char *, char *, int, mail_flag, int);
+extern struct malias *get_malias(dbref, char *);
+extern void load_malias(FILE *);
+extern void save_malias(FILE *);
+extern void malias_read(FILE *);
+extern void malias_write(FILE *);
+extern void do_malias_chown(dbref, char *, char *);
+extern void do_malias_desc(dbref, char *, char *);
+extern void do_expmail_start(dbref, char *, char *);
+extern void do_expmail_stop(dbref, int);
+extern void do_mail_quick(dbref, char *, char *);
+extern void do_malias_rename(dbref, char *, char *);
+extern void do_malias_adminlist(dbref);
+extern void do_malias_delete(dbref, char *);
+extern void do_malias_status(dbref);
+extern void do_malias_create(dbref, char *, char *);
+extern void do_malias_list(dbref, char *);
+extern void do_malias_list_all(dbref);
+extern void do_malias_add(dbref, char *, char *);
+extern void do_malias_remove(dbref, char *, char *);
 extern void count_mail(dbref player, int folder, int *rcount, int *ucount, int *ccount);
 extern char *MessageFetch(int number);
 extern void check_mail_expiration(void);

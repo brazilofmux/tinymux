@@ -1,6 +1,6 @@
 // object.cpp -- Low-level object manipulation routines.
 //
-// $Id: object.cpp,v 1.11 2002-06-13 22:12:46 jake Exp $
+// $Id: object.cpp,v 1.12 2002-06-27 06:38:31 jake Exp $
 //
 
 #include "copyright.h"
@@ -128,14 +128,14 @@ static void Log_simple_err(dbref obj, dbref loc, const char *errtype)
  * * Routines for validating and determining homes.
  */
 
-dbref NDECL(start_home)
+dbref start_home(void)
 {
     if (mudconf.start_home != NOTHING)
         return mudconf.start_home;
     return mudconf.start_room;
 }
 
-dbref NDECL(default_home)
+dbref default_home(void)
 {
     if (mudconf.default_home != NOTHING)
         return mudconf.default_home;
@@ -577,7 +577,7 @@ void destroy_obj(dbref obj)
  * * make_freelist: Build a freelist
  */
 
-static void NDECL(make_freelist)
+static void make_freelist(void)
 {
     dbref i;
 
@@ -716,7 +716,7 @@ void destroy_player(dbref player, dbref victim)
 #endif
 }
 
-static void NDECL(purge_going)
+static void purge_going(void)
 {
     dbref i;
     DO_WHOLE_DB(i)
@@ -817,7 +817,7 @@ static void check_pennies(dbref thing, int limit, const char *qual)
     }
 }
 
-static NDECL(void check_dead_refs)
+static void check_dead_refs(void)
 {
     dbref targ, owner, i, j;
     int aflags, dirty = 0;
@@ -1371,7 +1371,7 @@ static void check_loc_exits(dbref loc)
     return;
 }
 
-static void NDECL(check_exit_chains)
+static void check_exit_chains(void)
 {
     dbref i;
 
@@ -1407,7 +1407,7 @@ static void NDECL(check_exit_chains)
  * *      Location of member is not specified location    - reset it.
  */
 
-static void FDECL(check_loc_contents, (dbref));
+static void check_loc_contents(dbref);
 
 static void check_misplaced_obj(dbref *obj, dbref back, dbref loc)
 {
@@ -1581,7 +1581,7 @@ static void check_loc_contents(dbref loc)
     return;
 }
 
-static void NDECL(check_contents_chains)
+static void check_contents_chains(void)
 {
     dbref i;
 
@@ -1634,7 +1634,7 @@ static void mark_place(dbref loc)
     }
 }
 
-static NDECL(void check_floating)
+static void check_floating(void)
 {
     dbref owner, i;
 

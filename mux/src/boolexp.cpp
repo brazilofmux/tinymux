@@ -1,6 +1,6 @@
 // boolexp.cpp
 //
-// $Id: boolexp.cpp,v 1.6 2002-06-18 20:19:35 jake Exp $
+// $Id: boolexp.cpp,v 1.7 2002-06-27 06:38:30 jake Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -272,7 +272,7 @@ static const char *parsebuf;
 static char parsestore[LBUF_SIZE];
 static dbref parse_player;
 
-static void NDECL(skip_whitespace)
+static void skip_whitespace(void)
 {
     while (Tiny_IsSpace[(unsigned char)*parsebuf])
     {
@@ -282,7 +282,7 @@ static void NDECL(skip_whitespace)
 
 // Defined below.
 //
-static BOOLEXP *NDECL(parse_boolexp_E);
+static BOOLEXP *parse_boolexp_E(void);
 
 static BOOLEXP *test_atr(char *s)
 {
@@ -341,7 +341,7 @@ static BOOLEXP *test_atr(char *s)
 
 // L -> (E); L -> object identifier
 //
-static BOOLEXP *NDECL(parse_boolexp_L)
+static BOOLEXP *parse_boolexp_L(void)
 {
     BOOLEXP *b;
     char *p, *buf;
@@ -469,7 +469,7 @@ static BOOLEXP *NDECL(parse_boolexp_L)
 // F -> !F; F -> @L; F -> =L; F -> +L; F -> $L
 // The argument L must be type BOOLEXP_CONST
 //
-static BOOLEXP *NDECL(parse_boolexp_F)
+static BOOLEXP *parse_boolexp_F(void)
 {
     BOOLEXP *b2;
 
@@ -604,7 +604,7 @@ static BOOLEXP *NDECL(parse_boolexp_F)
 
 // T -> F; T -> F & T
 //
-static BOOLEXP *NDECL(parse_boolexp_T)
+static BOOLEXP *parse_boolexp_T(void)
 {
     BOOLEXP *b, *b2;
 
@@ -628,7 +628,7 @@ static BOOLEXP *NDECL(parse_boolexp_T)
 
 // E -> T; E -> T | E
 //
-static BOOLEXP *NDECL(parse_boolexp_E)
+static BOOLEXP *parse_boolexp_E(void)
 {
     BOOLEXP *b, *b2;
 

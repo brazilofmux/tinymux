@@ -1,6 +1,6 @@
 // help.cpp -- Commands for giving help.
 //
-// $Id: help.cpp,v 1.5 2002-06-13 14:33:57 sdennis Exp $
+// $Id: help.cpp,v 1.6 2002-06-27 06:38:31 jake Exp $
 //
 
 #include "copyright.h"
@@ -124,7 +124,7 @@ void helpindex_load(dbref player)
                    news, help, whelp, phelp, wnhelp));
 }
 
-void NDECL(helpindex_init)
+void helpindex_init(void)
 {
     helpindex_load(NOTHING);
 }

@@ -1,6 +1,6 @@
 // functions.h -- declarations for functions & function processing.
 //
-// $Id: functions.h,v 1.3 2002-06-04 00:47:27 sdennis Exp $
+// $Id: functions.h,v 1.4 2002-06-27 06:38:31 jake Exp $
 //
 
 #include "copyright.h"
@@ -48,8 +48,8 @@ if (s) { \
     } \
 }
 
-extern void NDECL(init_functab);
-extern void FDECL(list_functable, (dbref));
+extern void init_functab(void);
+extern void list_functable(dbref);
 extern int delim_check
 (
     char *fargs[], int nfargs, int sep_arg, char *sep, char *buff,

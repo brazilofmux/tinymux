@@ -1,6 +1,6 @@
 // db_rw.cpp
 //
-// $Id: db_rw.cpp,v 1.3 2002-06-13 22:12:46 jake Exp $
+// $Id: db_rw.cpp,v 1.4 2002-06-27 06:38:31 jake Exp $
 //
 
 #include "copyright.h"
@@ -14,7 +14,7 @@
 #include "attrs.h"
 #include "vattr.h"
 
-extern void FDECL(db_grow, (dbref));
+extern void db_grow(dbref);
 
 extern struct object *db;
 

@@ -1,6 +1,6 @@
 // timer.cpp -- Mini-task scheduler for timed events.
 //
-// $Id: timer.cpp,v 1.4 2002-06-13 22:12:46 jake Exp $
+// $Id: timer.cpp,v 1.5 2002-06-27 06:38:31 jake Exp $
 //
 // MUX 2.1
 // Copyright (C) 1998 through 2001 Solid Vertical Domains, Ltd. All
@@ -22,9 +22,9 @@
 #include "command.h"
 #include "mguests.h"
 
-extern void NDECL(pool_reset);
-extern void FDECL(fork_and_dump, (int key));
-extern void NDECL(pcache_trim);
+extern void pool_reset(void);
+extern void fork_and_dump(int key);
+extern void pcache_trim(void);
 
 CScheduler scheduler;
 

@@ -1,6 +1,6 @@
 // interface.h
 //
-// $Id: interface.h,v 1.4 2002-06-13 22:12:46 jake Exp $
+// $Id: interface.h,v 1.5 2002-06-27 06:38:31 jake Exp $
 //
 
 #include "copyright.h"
@@ -147,8 +147,8 @@ extern DESC *descriptor_list;
 
 /* from the net interface */
 
-extern void NDECL(emergency_shutdown);
-extern void FDECL(shutdownsock, (DESC *, int));
+extern void emergency_shutdown(void);
+extern void shutdownsock(DESC *, int);
 extern void SetupPorts(int *pnPorts, PortInfo aPorts[], IntArray *pia);
 #ifdef WIN32
 extern void shovechars9x(int nPorts, PortInfo aPorts[]);
@@ -170,24 +170,24 @@ extern void set_signals(void);
 /* from netcommon.c */
 
 extern CLinearTimeAbsolute update_quotas(const CLinearTimeAbsolute& tLast, const CLinearTimeAbsolute& tCurrent);
-extern void FDECL(handle_http, (DESC *, char *));
-extern void FDECL(raw_notify, (dbref, const char *));
-extern void FDECL(raw_notify_newline, (dbref));
-extern void FDECL(clearstrings, (DESC *));
-extern void FDECL(queue_write, (DESC *, const char *, int));
-extern void FDECL(queue_string, (DESC *, const char *));
-extern void FDECL(freeqs, (DESC *));
-extern void FDECL(welcome_user, (DESC *));
-extern void FDECL(save_command, (DESC *, CBLK *));
-extern void FDECL(announce_disconnect, (dbref, DESC *, const char *));
-extern int  FDECL(boot_off, (dbref, char *));
+extern void handle_http(DESC *, char *);
+extern void raw_notify(dbref, const char *);
+extern void raw_notify_newline(dbref);
+extern void clearstrings(DESC *);
+extern void queue_write(DESC *, const char *, int);
+extern void queue_string(DESC *, const char *);
+extern void freeqs(DESC *);
+extern void welcome_user(DESC *);
+extern void save_command(DESC *, CBLK *);
+extern void announce_disconnect(dbref, DESC *, const char *);
+extern int boot_off(dbref, char *);
 extern int boot_by_port(SOCKET port, int no_god, char *message);
 extern void find_oldest(dbref target, DESC *dOldest[2]);
 extern void check_idle(void);
 void Task_ProcessCommand(void *arg_voidptr, int arg_iInteger);
-extern int  FDECL(site_check, (struct in_addr, SITE *));
-extern void FDECL(make_ulist, (dbref, char *, char **));
-extern dbref    FDECL(find_connected_name, (dbref, char *));
+extern int site_check(struct in_addr, SITE *);
+extern void make_ulist(dbref, char *, char **);
+extern dbref  find_connected_name(dbref, char *);
 
 /* From predicates.c */
 

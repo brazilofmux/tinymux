@@ -1,6 +1,6 @@
 // htab.cpp -- Table hashing routines.
 //
-// $Id: htab.cpp,v 1.1 2002-05-24 06:53:15 sdennis Exp $
+// $Id: htab.cpp,v 1.2 2002-06-27 06:38:31 jake Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -388,8 +388,6 @@ void listset_nametab(dbref player, NAMETAB *ntab, int flagword, char *prefix, in
  * ---------------------------------------------------------------------------
  * * cf_ntab_access: Change the access on a nametab entry.
  */
-
-extern void FDECL(cf_log_notfound, (dbref, char *, const char *, char *));
 
 CF_HAND(cf_ntab_access)
 {

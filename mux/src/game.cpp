@@ -1,6 +1,6 @@
 // game.cpp
 //
-// $Id: game.cpp,v 1.8 2002-06-13 22:12:46 jake Exp $
+// $Id: game.cpp,v 1.9 2002-06-27 06:38:31 jake Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -18,25 +18,25 @@
 #include "pcre.h"
 #include "powers.h"
 
-extern void NDECL(init_attrtab);
-extern void NDECL(init_cmdtab);
-extern void NDECL(cf_init);
-extern void NDECL(pcache_init);
-extern int cf_read(void);
+extern void init_attrtab(void);
+extern void init_cmdtab(void);
+extern void cf_init(void);
+extern void pcache_init(void);
+extern int  cf_read(void);
 extern void ValidateConfigurationDbrefs(void);
-extern void NDECL(init_functab);
-extern void FDECL(close_sockets, (int emergency, char *message));
-extern void NDECL(init_version);
-extern void NDECL(init_logout_cmdtab);
-extern void FDECL(raw_notify, (dbref, const char *));
+extern void init_functab(void);
+extern void close_sockets(int emergency, char *message);
+extern void init_version(void);
+extern void init_logout_cmdtab(void);
+extern void raw_notify(dbref, const char *);
 extern void do_dbck(dbref executor, dbref caller, dbref enactor, int);
 extern void boot_slave(dbref executor, dbref caller, dbref enactor, int);
 
-void FDECL(fork_and_dump, (int));
-void NDECL(dump_database);
-void NDECL(pcache_sync);
+void fork_and_dump(int);
+void dump_database(void);
+void pcache_sync(void);
 #if defined(HAVE_SETRLIMIT) && defined(RLIMIT_NOFILE)
-static void NDECL(init_rlimit);
+static void init_rlimit(void);
 #endif // HAVE_SETRLIMIT RLIMIT_NOFILE
 
 int reserved;
@@ -69,7 +69,7 @@ void do_dump(dbref executor, dbref caller, dbref enactor, int key)
  * print out stuff into error file
  */
 
-void NDECL(report)
+void report(void)
 {
     STARTLOG(LOG_BUGS, "BUG", "INFO");
     log_text((char *)"Command: '");
@@ -1309,7 +1309,7 @@ void dump_database_internal(int dump_type)
 }
 #endif // !STANDALONE
 
-void NDECL(dump_database)
+void dump_database(void)
 {
     char *buff;
 
@@ -1742,7 +1742,7 @@ void do_readcache(dbref executor, dbref caller, dbref enactor, int key)
     fcache_load(executor);
 }
 
-static void NDECL(process_preload)
+static void process_preload(void)
 {
     dbref thing, parent, aowner;
     int aflags, lev, i;
@@ -2155,7 +2155,7 @@ int DCL_CDECL main(int argc, char *argv[])
 }
 
 #if defined(HAVE_SETRLIMIT) && defined(RLIMIT_NOFILE)
-static void NDECL(init_rlimit)
+static void init_rlimit(void)
 {
     struct rlimit *rlp;
 

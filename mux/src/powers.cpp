@@ -1,6 +1,6 @@
 // powers.cpp -- Power manipulation routines.
 //
-// $Id: powers.cpp,v 1.1 2002-05-24 06:53:15 sdennis Exp $
+// $Id: powers.cpp,v 1.2 2002-06-27 06:38:31 jake Exp $
 //
 
 #include "copyright.h"
@@ -133,7 +133,7 @@ POWERENT gen_powers[] =
  * * init_powertab: initialize power hash tables.
  */
 
-void NDECL(init_powertab)
+void init_powertab(void)
 {
     POWERENT *fp;
     char *nbuf;

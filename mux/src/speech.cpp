@@ -1,6 +1,6 @@
 // speech.cpp -- Commands which involve speaking.
 //
-// $Id: speech.cpp,v 1.8 2002-06-13 22:12:46 jake Exp $
+// $Id: speech.cpp,v 1.9 2002-06-27 06:38:31 jake Exp $
 //
 
 #include "copyright.h"
@@ -12,7 +12,7 @@
 #include "interface.h"
 #include "powers.h"
 
-extern char *FDECL(next_token, (char *, char));
+extern char *next_token(char *, char);
 
 static int idle_timeout_val(dbref player)
 {

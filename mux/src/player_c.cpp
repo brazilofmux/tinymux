@@ -1,6 +1,6 @@
 // player_c.cpp -- Player cache routines.
 //
-// $Id: player_c.cpp,v 1.2 2002-06-13 22:12:46 jake Exp $
+// $Id: player_c.cpp,v 1.3 2002-06-27 06:38:31 jake Exp $
 //
 
 #include "copyright.h"
@@ -29,7 +29,7 @@ PCACHE *pcache_head;
 #define PF_MONEY_CH 0x0004
 #define PF_QMAX_CH  0x0008
 
-void NDECL(pcache_init)
+void pcache_init(void)
 {
     pool_init(POOL_PCACHE, sizeof(PCACHE));
     pcache_head = NULL;
@@ -107,7 +107,7 @@ static void pcache_save(PCACHE *pp)
     pp->cflags &= ~(PF_MONEY_CH | PF_QMAX_CH);
 }
 
-void NDECL(pcache_trim)
+void pcache_trim(void)
 {
     PCACHE *pp = pcache_head;
     PCACHE *pplast = NULL;
@@ -143,7 +143,7 @@ void NDECL(pcache_trim)
     }
 }
 
-void NDECL(pcache_sync)
+void pcache_sync(void)
 {
     PCACHE *pp;
 

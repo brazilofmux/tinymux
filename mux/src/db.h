@@ -1,6 +1,6 @@
 // db.h
 //
-// $Id: db.h,v 1.3 2002-06-13 22:12:46 jake Exp $
+// $Id: db.h,v 1.4 2002-06-27 06:38:31 jake Exp $
 //
 
 #ifndef __DB_H
@@ -59,27 +59,27 @@ struct stack
     STACK *next;
 };
 
-extern ATTR *   FDECL(atr_num, (int anum));
-extern ATTR *   FDECL(atr_str, (char *s));
+extern ATTR *atr_num(int anum);
+extern ATTR *atr_str(char *s);
 
 extern ATTR attr[];
 
 extern ATTR **anum_table;
 #define anum_get(x) (anum_table[(x)])
 #define anum_set(x,v)   anum_table[(x)] = v
-extern void FDECL(anum_extend,(int));
+extern void anum_extend(int);
 
 #define ATR_INFO_CHAR   '\1'    /* Leadin char for attr control data */
 
 /* Boolean expressions, for locks */
-#define BOOLEXP_AND 0
-#define BOOLEXP_OR  1
-#define BOOLEXP_NOT 2
+#define BOOLEXP_AND     0
+#define BOOLEXP_OR      1
+#define BOOLEXP_NOT     2
 #define BOOLEXP_CONST   3
-#define BOOLEXP_ATR 4
+#define BOOLEXP_ATR     4
 #define BOOLEXP_INDIR   5
 #define BOOLEXP_CARRY   6
-#define BOOLEXP_IS  7
+#define BOOLEXP_IS      7
 #define BOOLEXP_OWNER   8
 #define BOOLEXP_EVAL    9
 
@@ -215,29 +215,29 @@ extern NAME *names;
 #define s_Home(t,n)         s_Link(t,n)
 #define s_Dropto(t,n)       s_Location(t,n)
 
-extern int  FDECL(Pennies, (dbref));
-extern void FDECL(s_Pennies, (dbref, int));
+extern int  Pennies(dbref);
+extern void s_Pennies(dbref, int);
 
 #ifndef WIN32
 extern void load_restart_db(void);
 #endif // !WIN32
 
-extern dbref    FDECL(getref, (FILE *));
-extern void FDECL(putref, (FILE *, dbref));
-extern BOOLEXP *FDECL(dup_bool, (BOOLEXP *));
-extern void FDECL(free_boolexp, (BOOLEXP *));
-extern dbref    FDECL(parse_dbref, (const char *));
-extern int  FDECL(mkattr, (char *));
-extern void FDECL(al_delete, (dbref, int));
-extern void FDECL(al_destroy, (dbref));
-extern void NDECL(al_store);
-extern void FDECL(db_grow, (dbref));
-extern void NDECL(db_free);
-extern void NDECL(db_make_minimal);
-extern dbref    FDECL(db_read, (FILE *, int *, int *, int *));
-extern dbref    FDECL(db_write, (FILE *, int, int));
-extern void FDECL(destroy_thing, (dbref));
-extern void FDECL(destroy_exit, (dbref));
+extern dbref    getref(FILE *);
+extern void putref(FILE *, dbref);
+extern BOOLEXP *dup_bool(BOOLEXP *);
+extern void free_boolexp(BOOLEXP *);
+extern dbref    parse_dbref(const char *);
+extern int  mkattr(char *);
+extern void al_delete(dbref, int);
+extern void al_destroy(dbref);
+extern void al_store(void);
+extern void db_grow(dbref);
+extern void db_free(void);
+extern void db_make_minimal(void);
+extern dbref    db_read(FILE *, int *, int *, int *);
+extern dbref    db_write(FILE *, int, int);
+extern void destroy_thing(dbref);
+extern void destroy_exit(dbref);
 extern void putstring(FILE *f, const char *s);
 char *getstring_noalloc(FILE *f, int new_strings);
 

@@ -124,10 +124,6 @@
 
 /* Prototype templates for ANSI C and traditional C */
 
-#define NDECL(f)    f(void)
-#define FDECL(f,p)  f p
-#define VDECL(f,p)  f p
-
 #ifdef STDC_HEADERS
 #include <io.h>
 #include <fcntl.h>
@@ -137,9 +133,9 @@
 #include <process.h>
 #else
 #include <varargs.h>
-extern int  FDECL(atoi, (const char *));
-extern double   FDECL(atof, (const char *));
-extern long FDECL(atol, (const char *));
+extern int  atoi(const char *);
+extern double   atof(const char *);
+extern long atol(const char *);
 #endif
 
 #ifdef NEED_MEMORY_H
@@ -157,9 +153,9 @@ extern long FDECL(atol, (const char *));
 #endif
 #else
 #include <strings.h>
-extern char *   FDECL(strchr, (char *, char));
-extern void FDECL(bcopy, (char *, char *, int));
-extern void FDECL(bzero, (char *, int));
+extern char *strchr(char *, char);
+extern void bcopy(char *, char *, int);
+extern void bzero(char *, int);
 #endif
 #define bcopy(d1, d2, n) memmove(d2, d1, n)
 #define bcmp(d1, d2, n) memcmp(d1, d2, n)
@@ -168,11 +164,11 @@ extern void FDECL(bzero, (char *, int));
 #ifdef HAVE_ERRNO_H
 #include <errno.h>
 #ifdef NEED_PERROR_DCL
-extern void FDECL(perror, (const char *));
+extern void perror(const char *);
 #endif
 #else
 extern int errno;
-extern void FDECL(perror, (const char *));
+extern void perror(const char *);
 #endif
 
 #ifdef NEED_SYS_ERRLIST_DCL

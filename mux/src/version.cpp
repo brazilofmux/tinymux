@@ -1,6 +1,6 @@
 // version.cpp -- Version information.
 //
-// $Id: version.cpp,v 1.3 2002-06-12 07:26:22 sdennis Exp $
+// $Id: version.cpp,v 1.4 2002-06-27 06:38:31 jake Exp $
 //
 
 #include "copyright.h"
@@ -19,7 +19,7 @@ void do_version(dbref executor, dbref caller, dbref enactor, int extra)
     free_mbuf(buff);
 }
 
-void NDECL(init_version)
+void init_version(void)
 {
 #ifdef WIN32
 #if defined(ALPHA)

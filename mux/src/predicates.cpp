@@ -1,6 +1,6 @@
 // predicates.cpp
 //
-// $Id: predicates.cpp,v 1.17 2002-06-27 05:00:33 jake Exp $
+// $Id: predicates.cpp,v 1.18 2002-06-27 06:38:31 jake Exp $
 //
 
 #include "copyright.h"
@@ -16,8 +16,8 @@
 #include "interface.h"
 #include "powers.h"
 
-extern int FDECL(do_command, (DESC *, char *, int));
-extern void NDECL(dump_database);
+extern int do_command(DESC *, char *, int);
+extern void dump_database(void);
 
 char * DCL_CDECL tprintf(const char *fmt,...)
 {

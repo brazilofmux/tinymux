@@ -1,6 +1,6 @@
 // cque.cpp -- commands and functions for manipulating the command queue.
 //
-// $Id: cque.cpp,v 1.5 2002-06-13 22:12:46 jake Exp $
+// $Id: cque.cpp,v 1.6 2002-06-27 06:38:31 jake Exp $
 //
 
 #include "copyright.h"
@@ -15,9 +15,9 @@
 #include "interface.h"
 #include "powers.h"
 
-extern int FDECL(a_Queue, (dbref, int));
-extern void FDECL(s_Queue, (dbref, int));
-extern int FDECL(QueueMax, (dbref));
+extern int  a_Queue(dbref, int);
+extern void s_Queue(dbref, int);
+extern int  QueueMax(dbref);
 int break_called = 0;
 
 CLinearTimeDelta GetProcessorUsage(void)

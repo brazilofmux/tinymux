@@ -1,6 +1,6 @@
 // wiz.cpp -- Wizard-only commands.
 //
-// $Id: wiz.cpp,v 1.4 2002-06-13 22:12:46 jake Exp $
+// $Id: wiz.cpp,v 1.5 2002-06-27 06:38:31 jake Exp $
 //
 
 #include "copyright.h"
@@ -13,7 +13,7 @@
 #include "file_c.h"
 #include "powers.h"
 
-extern char *FDECL(crypt, (const char *, const char *));
+extern char *crypt(const char *, const char *);
 
 void do_teleport
 (

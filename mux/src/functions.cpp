@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.34 2002-06-27 05:32:28 raevnos Exp $
+// $Id: functions.cpp,v 1.35 2002-06-27 06:38:31 jake Exp $
 //
 
 #include "copyright.h"
@@ -24,8 +24,6 @@ UFUN *ufun_head;
 
 extern NAMETAB indiv_attraccess_nametab[];
 
-extern void cf_log_notfound(dbref player, char *cmd, const char *thingname,
-                            char *thing);
 extern void cf_display(dbref, char *, char *, char **);
 
 // Function definitions from funceval.cpp
@@ -7724,7 +7722,7 @@ FUN flist[] =
 };
 
 
-void NDECL(init_functab)
+void init_functab(void)
 {
     char *buff = alloc_sbuf("init_functab");
     for (FUN *fp = flist; fp->name; fp++)

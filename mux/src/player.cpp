@@ -1,6 +1,6 @@
 // player.cpp
 //
-// $Id: player.cpp,v 1.4 2002-06-13 22:12:46 jake Exp $
+// $Id: player.cpp,v 1.5 2002-06-27 06:38:31 jake Exp $
 //
 
 #include "copyright.h"
@@ -570,7 +570,7 @@ dbref lookup_player(dbref doer, char *name, int check_who)
     return thing;
 }
 
-void NDECL(load_player_names)
+void load_player_names(void)
 {
     dbref i;
     DO_WHOLE_DB(i)

@@ -1,6 +1,6 @@
 // flags.cpp -- Flag manipulation routines.
 //
-// $Id: flags.cpp,v 1.2 2002-06-12 04:01:06 raevnos Exp $
+// $Id: flags.cpp,v 1.3 2002-06-27 06:38:31 jake Exp $
 //
 
 #include "copyright.h"
@@ -10,8 +10,6 @@
 
 #include "command.h"
 #include "powers.h"
-
-extern void FDECL(cf_log_notfound, (dbref, char *, const char *, char *));
 
 #ifndef STANDALONE
 
@@ -452,7 +450,7 @@ OBJENT object_types[8] =
  * * init_flagtab: initialize flag hash tables.
  */
 
-void NDECL(init_flagtab)
+void init_flagtab(void)
 {
     char *nbuf = alloc_sbuf("init_flagtab");
     for (FLAGNAMEENT *fp = gen_flag_names; fp->flagname; fp++)

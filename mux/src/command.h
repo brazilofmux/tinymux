@@ -1,6 +1,6 @@
 // command.h -- declarations used by the command processor.
 //
-// $Id: command.h,v 1.3 2002-06-12 16:43:57 jake Exp $
+// $Id: command.h,v 1.4 2002-06-27 06:38:31 jake Exp $
 //
 
 #ifndef __COMMAND_H
@@ -56,7 +56,7 @@ CMD_TWO_ARG_ARGV(do_cpattr);    /* Copy attributes */
 CMD_TWO_ARG(do_create);         /* Create a new object */
 CMD_ONE_ARG(do_cut);            /* Truncate contents or exits list */
 CMD_NO_ARG(do_dbck);            /* Consistency check */
-CMD_TWO_ARG(do_decomp);         /* Reproduce commands to recrete obj */
+CMD_TWO_ARG(do_decomp);         /* Reproduce commands to recreate obj */
 CMD_ONE_ARG(do_destroy);        /* Destroy an object */
 CMD_TWO_ARG_ARGV(do_dig);       /* Dig a new room */
 CMD_ONE_ARG(do_doing);          /* Set doing string in WHO report */

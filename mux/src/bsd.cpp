@@ -1,6 +1,6 @@
 // bsd.cpp
 //
-// $Id: bsd.cpp,v 1.3 2002-06-13 22:12:46 jake Exp $
+// $Id: bsd.cpp,v 1.4 2002-06-27 06:38:30 jake Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6 and Nick Gammon's NT IO Completion port
@@ -56,7 +56,7 @@ pid_t game_pid;
 
 DESC *initializesock(SOCKET, struct sockaddr_in *);
 DESC *new_connection(PortInfo *Port, int *piError);
-int FDECL(process_input, (DESC *));
+int  process_input(DESC *);
 void SiteMonSend(int, const char *, DESC *, const char *);
 
 #ifdef WIN32
@@ -2391,7 +2391,7 @@ void close_sockets(int emergency, char *message)
     }
 }
 
-void NDECL(emergency_shutdown)
+void emergency_shutdown(void)
 {
     close_sockets(1, "Going down - Bye");
 }

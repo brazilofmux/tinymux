@@ -1,6 +1,6 @@
 // conf.cpp -- Set up configuration information and static data.
 //
-// $Id: conf.cpp,v 1.4 2002-06-22 23:28:32 sdennis Exp $
+// $Id: conf.cpp,v 1.5 2002-06-27 06:38:31 jake Exp $
 //
 
 #include "copyright.h"
@@ -47,7 +47,7 @@ extern CONF conftable[];
 // ---------------------------------------------------------------------------
 // cf_init: Initialize mudconf to default values.
 //
-void NDECL(cf_init)
+void cf_init(void)
 {
 #ifndef STANDALONE
     int i;
@@ -1330,8 +1330,7 @@ CF_HAND(cf_include)
     FILE *fp;
     char *cp, *ap, *zp, *buf;
 
-    extern int FDECL(cf_set, (char *, char *, dbref));
-
+    extern int cf_set(char *, char *, dbref);
 
     if (!mudstate.bReadingConfiguration)
         return -1;

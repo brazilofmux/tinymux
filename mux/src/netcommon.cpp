@@ -1,6 +1,6 @@
 // netcommon.cpp
 //
-// $Id: netcommon.cpp,v 1.11 2002-06-22 04:19:15 sdennis Exp $
+// $Id: netcommon.cpp,v 1.12 2002-06-27 06:38:31 jake Exp $
 //
 // This file contains routines used by the networking code that do not
 // depend on the implementation of the networking code.  The network-specific
@@ -24,7 +24,7 @@
 #include "powers.h"
 #include "svdreport.h"
 
-extern void FDECL(handle_prog, (DESC *, char *));
+extern void handle_prog(DESC *, char *);
 
 #ifdef WIN32
 extern HANDLE CompletionPort;    // IOs are queued up on this port
@@ -1622,7 +1622,7 @@ NAMETAB logout_cmdtable[] =
     {NULL,                    0,          0,         0}
 };
 
-void NDECL(init_logout_cmdtab)
+void init_logout_cmdtab(void)
 {
     NAMETAB *cp;
 
