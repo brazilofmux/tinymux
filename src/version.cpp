@@ -2,7 +2,7 @@
  * version.c - version information 
  */
 /*
- * $Id: version.cpp,v 1.7 2000-06-10 10:24:02 sdennis Exp $ 
+ * $Id: version.cpp,v 1.8 2000-08-01 01:54:22 sdennis Exp $ 
  */
 
 #include "copyright.h"
@@ -30,10 +30,10 @@ void NDECL(init_version)
 {
 #ifdef BETA
 #if PATCHLEVEL > 0
-    sprintf(mudstate.version, "MUX Beta 10A version %s patchlevel %d #%s",
+    sprintf(mudstate.version, "MUX Beta 11 version %s patchlevel %d #%s",
         MUX_VERSION, PATCHLEVEL, MUX_BUILD_NUM);
 #else
-    sprintf(mudstate.version, "MUX Beta 10A version %s #%s",
+    sprintf(mudstate.version, "MUX Beta 11 version %s #%s",
         MUX_VERSION, MUX_BUILD_NUM);
 #endif // PATCHLEVEL
 #else // BETA
