@@ -1,6 +1,6 @@
 // externs.h - Prototypes for externs not defined elsewhere.
 //
-// $Id: externs.h,v 1.16 2000-05-19 17:20:02 sdennis Exp $
+// $Id: externs.h,v 1.17 2000-05-25 04:14:06 sdennis Exp $
 //
 #ifndef EXTERNS_H
 #define EXTERNS_H
@@ -279,7 +279,8 @@ extern int  FDECL(atr_pget_info, (dbref, int, dbref *, int *));
 extern void FDECL(atr_free, (dbref));
 extern int  FDECL(check_zone, (dbref, dbref));
 extern int  FDECL(check_zone_for_player, (dbref, dbref));
-extern void FDECL(toast_player, (dbref));
+extern void FDECL(toast_player, (dbref)); // QQQ
+extern void ReleaseAllResources(dbref obj);
 
 /* Command handler keys */
 
@@ -610,6 +611,7 @@ extern void FDECL(toast_player, (dbref));
 
 extern int ReplaceFile(char *old_name, char *new_name);
 extern void RemoveFile(char *name);
+//QQQ: extern void destroy_player(dbref agent, dbref victim);
 extern void destroy_player(dbref victim);
 extern dbref match_controlled_quiet(dbref player, const char *name);
 extern void do_pemit_list(dbref player, char *list, const char *message);
