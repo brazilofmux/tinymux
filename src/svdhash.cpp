@@ -1,6 +1,6 @@
 // svdhash.cpp -- CHashPage, CHashFile, CHashTable modules
 //
-// $Id: svdhash.cpp,v 1.8 2000-06-05 23:43:48 sdennis Exp $
+// $Id: svdhash.cpp,v 1.9 2000-06-20 16:37:18 sdennis Exp $
 //
 // MUX 2.0
 // Copyright (C) 1998 through 2000 Solid Vertical Domains, Ltd. All
@@ -2624,7 +2624,7 @@ CLogFile::CLogFile(void)
 #endif
 }
 
-#define FILE_SIZE_TRIGGER (50*1024UL)
+#define FILE_SIZE_TRIGGER (512*1024UL)
 
 void CLogFile::Flush(void)
 {
