@@ -2919,10 +2919,10 @@ PLUSHELP_INDEX
 & PORT
 PORT
 
-  CONFIG PARAMETER: port <port>
+  CONFIG PARAMETER: port <port1> [<port2> [<port3> ...]]
   DEFAULT: 2860
 
-  Specifies the IP port on which the game listens for new connections.
+  Specifies the IP port(s) on which the game listens for new connections.
 
 & POSTDUMP_MESSAGE
 POSTDUMP_MESSAGE
