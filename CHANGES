@@ -75,6 +75,8 @@ Feature Additions:
  -- Added ilev() for nesting level of iter() and list().
  -- Added ISO8601 year and week ($g, $G, and $V codes) to timefmt.
  -- conn() and idle() accept '*' before the playername.
+ -- hasflag() provides flag information on attribute values. From TM3.
+ -- Allow GOD and WIZARD players to view logindata. From TM3.
 
 Bug Fixes:
 ~~~~~~~~~
@@ -133,6 +135,11 @@ Bug Fixes:
  -- Fix potential unterminated buffer operation in setinter().
  -- In an unlikely senario, the timezone offset info can be off by less
     than 1 second.
+ -- Disallow GOD from changing player Aliases. From TM3.
+ -- Alias, last, lastsite, mailcurf, mailflags, mailfolders, quota, rquota,
+    and semaphore are now set AF_NOCLONE. They are not copied by @clone.
+    Cloning alias would have created a duplicate. There is value is not
+    cloning the other attributes as well. From TM3.
 
 Performance Enhancements:
 ~~~~~~~~~~~~~~~~~~~~~~~~
