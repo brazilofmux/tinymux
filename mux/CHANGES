@@ -109,6 +109,9 @@ Feature Additions:
     from RhostMUSH.
  -- Added MONIKER() as a combination of INAME() from PennMUSH and ANSINAME()
     from RhostMUSH.
+ -- Jake added STRIP().
+ -- Jake added WRAP() from RhostMUSH.
+ -- Blank lines in configuration are now ignored as if they were comments.
 
 Bug Fixes:
 ~~~~~~~~~
@@ -138,6 +141,8 @@ Bug Fixes:
  -- Idle time didn't update while in an @program. Fixed by Jake.
  -- Allow exits to commit suicide (www.livejournal.com, mushcode journal,
     _Programming Suicidal Exits_ by DrDubious).
+ --  Fixed @listcommand when @addcommand'ed commands have previous aliases.
+     It only affected the report.
 
 Performance Enhancements:
 ~~~~~~~~~~~~~~~~~~~~~~~~
