@@ -2769,7 +2769,7 @@ OUTPUT_LIMIT
   CONFIG PARAMETER: output_limit <amount>
   DEFAULT: 16384
 
-  Specifies how many bytes should be output before the output is flushed,
+  Specifies how many bytes should be output before the output is flushed
   and characters are lost.
 
 & PAGE_COST
@@ -2848,44 +2848,63 @@ PERMISSIONS
   There are three different senses of Wizard:
 
     1) 'WIZARD' means the WIZARD flag,
+
     2) 'Wizard' means Wizard-level authority which can be achieved either by
        being set WIZARD or by inheriting that authority from a WIZARD-owned
        object with the INHERIT flag, and
+
     3) Wizard(#1) who is always set WIZARD and has other special privileges.
 
-  The follow uses two of those senses: 'Wizard' and Wizard(#1).
+
+  The following list uses two of those senses: 'Wizard' and Wizard(#1).
 
   This is a list of the valid permissions and their meanings:
 
-    builder       - Must be Wizard, ROYALTY, or have the BUILDER power.
-    dark          - Feature is not shown but is still available.
-    disabled      - No one can use this feature.
-    global_build  - Requires the BUILDER power, Wizard/ROYALTY, or for
-                    building to be allowed game-wide.
-    global_interp - Requires that global interpretation be turned on.
-    god           - Only #1 may use this feature.
-    head          - Must be set HEAD to use this feature.
-    immortal      - Must be set IMMORTAL or set INHERIT with IMMORTAL owner.
+    builder        - Must be Wizard, ROYALTY, or have the BUILDER power.
+    dark           - Feature is not shown but is still available.
+    disabled       - No one can use this feature.
 
 { 'wizhelp permissions2' for more }
 
 & PERMISSIONS2
 PERMISSIONS (continued)
 
-    need_contents - Only players, things, and rooms may use this feature.
-    need_location - Only players and things may use this feature.
-    need_player   - Only players may use this feature.
-    no_haven      - Non-Wizard players with owners set HAVEN may not use this
-                    feature.
-    no_robot      - Non-Wizard players set ROBOT may not use this feature.
-    no_slave      - Non-Wizard players with owners set SLAVE may not use this
-                    feature.
-    no_suspect    - Non-Wizard players with owners set SUSPECT may not use
-                    this feature.
-    no_guest      - Non-Wizards must not possess the GUEST power in order to
-                    use this feature.
-    robot         - Only players set ROBOT can use this feature.
-    wizard        - Only Wizards may use this feature.
+    global_build   - Requires the BUILDER power, Wizard/ROYALTY, or for
+                     building to be allowed game-wide.
+    global_interp  - Requires that global interpretation be turned on.
+    god            - Only #1 may use this feature.
+    head           - Must be set HEAD to use this feature.
+    immortal       - Must be set IMMORTAL or set INHERIT with IMMORTAL owner.
+
+
+    need_contents  - Only players, things, and rooms may use this feature.
+    need_location  - Only players and things may use this feature.
+    need_player    - Only players may use this feature.
+    no_haven       - Non-Wizard players with owners set HAVEN may not use this
+                     feature.
+    no_robot       - Non-Wizard players set ROBOT may not use this feature.
+    no_slave       - Non-Wizard players with owners set SLAVE may not use this
+                     feature.
+    no_suspect     - Non-Wizard players with owners set SUSPECT may not use
+                     this feature.
+    no_guest       - Non-Wizards must not possess the GUEST power in order to
+                     use this feature.
+
+{ 'wizhelp permissions3' for more }
+
+& PERMISSIONS3
+PERMISSIONS (continued)
+
+    no_uninspected - Only things which have been inspected can use this
+                     feature.
+    robot          - Only players set ROBOT can use this feature.
+    staff          - Only STAFF/ROYALTY/IMMORTAL players can use this feature.
+    static         - Nothing is allowed to use this feature after the server
+                     starts.  This is useful for controlling something in the
+                     configuration file that you do not want to be
+                     controllable via the @admin command.
+    uninspected    - Only things marked uninspected can use this feature.
+    wizard         - Only Wizards may use this feature.
 
 & PERMIT_SITE
 PERMIT_SITE
