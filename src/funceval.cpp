@@ -1,6 +1,6 @@
 // funceval.cpp - MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.27 2000-10-09 06:51:18 sdennis Exp $
+// $Id: funceval.cpp,v 1.28 2000-10-09 06:57:39 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -1148,21 +1148,11 @@ FUNCTION(fun_ifelse)
 
 FUNCTION(fun_inc)
 {
-    if (!is_number(fargs[0]))
-    {
-        safe_str("#-1 ARGUMENT MUST BE A NUMBER", buff, bufc);
-        return;
-    }
     safe_ltoa(Tiny_atol(fargs[0]) + 1, buff, bufc, LBUF_SIZE-1);
 }
 
 FUNCTION(fun_dec)
 {
-    if (!is_number(fargs[0]))
-    {
-        safe_str("#-1 ARGUMENT MUST BE A NUMBER", buff, bufc);
-        return;
-    }
     safe_ltoa(Tiny_atol(fargs[0]) - 1, buff, bufc, LBUF_SIZE-1);
 }
 
