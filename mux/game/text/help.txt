@@ -6489,11 +6489,14 @@ IDIV()
 & IDLE()
 IDLE()
 
-  FUNCTION: idle(<player>)
+  FUNCTION: idle(<player|port>)
 
-  Returns the number of seconds that <player> has been idle.  If <player>
-  is not connected then -1 is returned.  If <player> is connected more than
-  once, the smallest idle time is returned.
+  Returns the number of seconds that <player|port> has been idle.  If
+  <player|port> is not connected then -1 is returned.
+
+  If <player|port> is numeric, it's taken as a port number (as shown in
+  SESSION). Otherwise, it's treated as a player name. If the named player is
+  connected more than once, the smallest idle time is returned.
 
   Example:
     > WHO
