@@ -1,6 +1,6 @@
 // functions.cpp - MUX function handlers 
 //
-// $Id: functions.cpp,v 1.68 2001-06-28 11:59:41 sdennis Exp $
+// $Id: functions.cpp,v 1.69 2001-06-29 07:25:42 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -5329,7 +5329,7 @@ FUNCTION(fun_case)
 
     // Evaluate the target in fargs[0]
     //
-    mbuff = bp = alloc_lbuf("fun_switch");
+    mbuff = bp = alloc_lbuf("fun_case");
     str = fargs[0];
     TinyExec(mbuff, &bp, 0, player, cause, EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, cargs, ncargs);
     *bp = '\0';
@@ -6341,7 +6341,7 @@ FUN flist[] =
     {"PFIND",    fun_pfind,    MAX_ARG, 1,  1,       0, CA_PUBLIC},
     {"PI",       fun_pi,       MAX_ARG, 0,  0,       0, CA_PUBLIC},
     {"PICKRAND", fun_pickrand, MAX_ARG, 0,  2,       0, CA_PUBLIC},
-    {"PLAYMEM",  fun_playmem,  MAX_ARG, 0,  1,       0, CA_PUBLIC},
+    {"PLAYMEM",  fun_playmem,  MAX_ARG, 1,  1,       0, CA_PUBLIC},
     {"PMATCH",   fun_pmatch,   MAX_ARG, 1,  1,       0, CA_PUBLIC},
     {"POLL",     fun_poll,     MAX_ARG, 0,  0,       0, CA_PUBLIC},
     {"POP",      fun_pop,      MAX_ARG, 0,  2,       0, CA_PUBLIC},
