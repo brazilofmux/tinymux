@@ -1,6 +1,6 @@
 // db_rw.cpp
 //
-// $Id: db_rw.cpp,v 1.12 2000-12-10 23:33:39 sdennis Exp $ 
+// $Id: db_rw.cpp,v 1.13 2001-02-25 17:55:07 sdennis Exp $ 
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -2386,12 +2386,15 @@ dbref db_write(FILE *f, int format, int version)
         iDotCounter--;
 #endif // STANDALONE
 
-        // Format is: "!%d\n", i
-        //
-        int n = Tiny_ltoa(i, buf+1) + 1;
-        buf[n++] = '\n';
-        fwrite(buf, sizeof(char), n, f);
-        db_write_object(f, i, format, flags);
+        if (!(isGarbage(i)))
+        {
+            // Format is: "!%d\n", i
+            //
+            int n = Tiny_ltoa(i, buf+1) + 1;
+            buf[n++] = '\n';
+            fwrite(buf, sizeof(char), n, f);
+            db_write_object(f, i, format, flags);
+        }
     }
     fputs("***END OF DUMP***\n", f);
 #ifdef STANDALONE
