@@ -257,6 +257,7 @@ Bug Fixes:
  -- Fix hasquota() so that it returns '1' and '0' instead of '49' and '48'.
  -- Fix ancient filter() bug where a prefix of '1' was enough to test true.
     Fixed by Raevnos.
+ -- @chzone should have cleared powers.
 
 Performance Enhancements:
 ~~~~~~~~~~~~~~~~~~~~~~~~
