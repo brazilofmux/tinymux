@@ -1,6 +1,6 @@
 // bsd.cpp
 //
-// $Id: bsd.cpp,v 1.12 2003-02-17 01:37:01 sdennis Exp $
+// $Id: bsd.cpp,v 1.13 2003-03-02 05:10:23 sdennis Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -2830,7 +2830,10 @@ RETSIGTYPE DCL_CDECL sighandler(int sig)
         signal(SIGCHLD, CAST_SIGNAL_FUNC sighandler);
 #endif // !SIGNAL_SIGCHLD_BRAINDAMAGE
 #ifdef HAVE_WAIT3
-        while (wait3(&stat_buf, WNOHANG, NULL) > 0) ;
+        while (wait3(&stat_buf, WNOHANG, NULL) > 0)
+        {
+            ; // Nothing.
+        }
 #else // HAVE_WAIT3
         wait((int *)&stat_buf);
 #endif // HAVE_WAIT3
@@ -2840,7 +2843,7 @@ RETSIGTYPE DCL_CDECL sighandler(int sig)
         {
             exit(0);
         }
-        mudstate.dumping = 0;
+        mudstate.dumping = false;
         break;
 
     case SIGHUP:
