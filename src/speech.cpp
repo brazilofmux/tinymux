@@ -2,7 +2,7 @@
  * speech.c -- Commands which involve speaking 
  */
 /*
- * $Id: speech.cpp,v 1.3 2000-06-08 20:24:33 sdennis Exp $ 
+ * $Id: speech.cpp,v 1.4 2000-06-08 20:30:36 sdennis Exp $ 
  */
 
 #include "copyright.h"
@@ -403,9 +403,13 @@ static int page_check(dbref player, dbref target)
     else if (!could_doit(player, target, A_LPAGE))
     {
         if (Wizard(target) && Dark(target))
+        {
             page_return(player, target, "Away", A_AWAY, tprintf("Sorry, %s is not connected.", Name(target)));
+        }
         else
+        {
             page_return(player, target, "Reject", A_REJECT, tprintf("Sorry, %s is not accepting pages.", Name(target)));
+        }
     }
     else if (!could_doit(target, player, A_LPAGE))
     {
