@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.105 2001-11-23 20:26:24 sdennis Exp $
+// $Id: functions.cpp,v 1.106 2001-11-24 23:14:23 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -1454,7 +1454,7 @@ FUNCTION(fun_get)
 
     if (!parse_attrib(player, fargs[0], &thing, &attrib))
     {
-        safe_str("#-1 NO MATCH", buff, bufc);
+        safe_nomatch(buff, bufc);
         return;
     }
     if (attrib == NOTHING)
@@ -1532,7 +1532,7 @@ FUNCTION(fun_xget)
 
     if (!parse_attrib(player, tprintf("%s/%s", fargs[0], fargs[1]), &thing, &attrib))
     {
-        safe_str("#-1 NO MATCH", buff, bufc);
+        safe_nomatch(buff, bufc);
         return;
     }
     if (attrib == NOTHING)
@@ -1598,41 +1598,51 @@ FUNCTION(fun_get_eval)
     char *atr_gotten, *str;
     struct boolexp *pBoolExp;
 
-    if (!parse_attrib(player, fargs[0], &thing, &attrib)) {
-        safe_str("#-1 NO MATCH", buff, bufc);
+    if (!parse_attrib(player, fargs[0], &thing, &attrib))
+    {
+        safe_nomatch(buff, bufc);
         return;
     }
-    if (attrib == NOTHING) {
+    if (attrib == NOTHING)
+    {
         return;
     }
     free_buffer = 1;
     eval_it = 1;
-    attr = atr_num(attrib); /*
-                 * We need the attr's flags for this:
-                 */
-    if (!attr) {
+    attr = atr_num(attrib); // We need the attr's flags for this:
+    if (!attr)
+    {
         return;
     }
-    if (attr->flags & AF_IS_LOCK) {
+    if (attr->flags & AF_IS_LOCK)
+    {
         atr_gotten = atr_get(thing, attrib, &aowner, &aflags);
-        if (Read_attr(player, thing, attr, aowner, aflags)) {
+        if (Read_attr(player, thing, attr, aowner, aflags))
+        {
             pBoolExp = parse_boolexp(player, atr_gotten, 1);
             free_lbuf(atr_gotten);
             atr_gotten = unparse_boolexp(player, pBoolExp);
             free_boolexp(pBoolExp);
-        } else {
+        }
+        else
+        {
             free_lbuf(atr_gotten);
             // TODO: This is bad practice.
             atr_gotten = (char *)FUNC_NOPERM_MESSAGE;
         }
         free_buffer = 0;
         eval_it = 0;
-    } else {
+    }
+    else
+    {
         atr_gotten = atr_pget(thing, attrib, &aowner, &aflags);
     }
-    if (!check_read_perms(player, thing, attr, aowner, aflags, buff, bufc)) {
+    if (!check_read_perms(player, thing, attr, aowner, aflags, buff, bufc))
+    {
         if (free_buffer)
+        {
             free_lbuf(atr_gotten);
+        }
         return;
     }
     if (eval_it)
@@ -1677,7 +1687,7 @@ FUNCTION(fun_eval)
     if (!parse_attrib(player, tprintf("%s/%s", fargs[0], fargs[1]),
               &thing, &attrib))
     {
-        safe_str("#-1 NO MATCH", buff, bufc);
+        safe_nomatch(buff, bufc);
         return;
     }
     if (attrib == NOTHING)
@@ -2544,7 +2554,7 @@ void internalPlayerFind
         {
             if (!Good_obj(thing) || !isPlayer(thing))
             {
-                safe_str("#-1 NO MATCH", buff, bufc);
+                safe_nomatch(buff, bufc);
                 return;
             }
         }
@@ -2562,7 +2572,7 @@ void internalPlayerFind
         if (  (thing == NOTHING)
            || (!isPlayer(thing) && bVerifyPlayer))
         {
-            safe_str("#-1 NO MATCH", buff, bufc);
+            safe_nomatch(buff, bufc);
             return;
         }
     }
@@ -4453,7 +4463,7 @@ static void process_sex(dbref player, char *what, const char *token, char *buff,
     it = match_thing(player, what);
     if (!Good_obj(it) || (!isPlayer(it) && !nearby_or_control(player, it)))
     {
-        safe_str("#-1 NO MATCH", buff, bufc);
+        safe_nomatch(buff, bufc);
     }
     else
     {
@@ -4702,7 +4712,39 @@ FUNCTION(fun_lattr)
     }
     else
     {
-        safe_str("#-1 NO MATCH", buff, bufc);
+        safe_nomatch(buff, bufc);
+    }
+    olist_pop();
+}
+
+// ---------------------------------------------------------------------------
+// fun_attrcnt: Return number of attributes I can see on the object.
+// ---------------------------------------------------------------------------
+
+FUNCTION(fun_attrcnt)
+{
+    dbref thing;
+    int ca, count = 0;
+    ATTR *attr;
+
+    // Mechanism from lattr.
+    //
+    olist_push();
+    if (parse_attrib_wild(player, fargs[0], &thing, 0, 0, 1))
+    {
+        for (ca = olist_first(); ca != NOTHING; ca = olist_next())
+        {
+            attr = atr_num(ca);
+            if (attr)
+            {
+                count++;
+            }
+        }
+        safe_ltoa(count, buff, bufc);
+    }
+    else
+    {
+        safe_nomatch(buff, bufc);
     }
     olist_pop();
 }
@@ -6600,6 +6642,7 @@ FUN flist[] =
     {"ART",      fun_art,      MAX_ARG, 1,  1,       0, CA_PUBLIC},
     {"ASIN",     fun_asin,     MAX_ARG, 1,  1,       0, CA_PUBLIC},
     {"ATAN",     fun_atan,     MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"ATTRCNT",  fun_attrcnt,  MAX_ARG, 1,  1,       0, CA_PUBLIC},
     {"BAND",     fun_band,     MAX_ARG, 2,  2,       0, CA_PUBLIC},
     {"BEEP",     fun_beep,     MAX_ARG, 0,  0,       0, CA_WIZARD},
     {"BEFORE",   fun_before,   MAX_ARG, 1,  2,       0, CA_PUBLIC},
@@ -7555,7 +7598,7 @@ FUNCTION(fun_lattrcmds)
     }
     else
     {
-        safe_str("#-1 NO MATCH", buff, bufc);
+        safe_nomatch(buff, bufc);
     }
     olist_pop();
 }
@@ -7608,7 +7651,7 @@ FUNCTION(fun_lcmds)
     }
     else
     {
-        safe_str("#-1 NO MATCH", buff, bufc);
+        safe_nomatch(buff, bufc);
     }
     olist_pop();
 }
