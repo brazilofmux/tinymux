@@ -1,6 +1,6 @@
 // eval.cpp -- Command evaluation and cracking.
 //
-// $Id: eval.cpp,v 1.39 2003-01-31 07:12:49 sdennis Exp $
+// $Id: eval.cpp,v 1.40 2003-03-11 15:18:20 sdennis Exp $
 //
 
 // MUX 2.1
@@ -1027,7 +1027,7 @@ static DCL_INLINE int *PushIntegers(int nNeeded)
     if (  !pIntsFrame
        || nNeeded > pIntsFrame->nints)
     {
-        IntsFrame *p = (IntsFrame *)alloc_lbuf("PushPointers");
+        IntsFrame *p = (IntsFrame *)alloc_lbuf("PushIntegers");
         p->next = pIntsFrame;
         p->nints = INTS_PER_FRAME;
         pIntsFrame = p;
