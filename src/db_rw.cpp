@@ -1,6 +1,6 @@
 // db_rw.cpp
 //
-// $Id: db_rw.cpp,v 1.13 2001-02-25 17:52:58 sdennis Exp $ 
+// $Id: db_rw.cpp,v 1.14 2001-06-16 02:22:19 sdennis Exp $ 
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -1278,13 +1278,16 @@ static void fix_typed_quotas(dbref i)
 
 static void getpenn_new_locks(FILE *f, int i)
 {
-    char c, *buf, *p;
+    int c;
+    char *buf, *p;
     struct boolexp *tempbool;
 
     buf = alloc_lbuf("getpenn_new_locks");
     p = buf;
     while (c = getc(f), (c != EOF) && (c != '|'))
+    {
         *p++ = c;
+    }
 
     *p = '\0';
     
