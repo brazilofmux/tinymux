@@ -14,6 +14,7 @@ game/tinymux.conf
 mkindx.dep
 mkindx.dsp
 mkindx.mak
+src/a.cpp
 src/analyse.pre
 src/complib.cpp
 src/compresstab.h
