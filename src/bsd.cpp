@@ -1,5 +1,5 @@
 // bsd.cpp
-// $Id: bsd.cpp,v 1.3 2000-04-24 18:04:19 sdennis Exp $
+// $Id: bsd.cpp,v 1.4 2000-04-29 08:04:23 sdennis Exp $
 //
 // MUX 2.0
 // Portions are derived from MUX 1.6 and Nick Gammon's NT IO Completion port
@@ -59,10 +59,13 @@ SOCKET MainGameSockPort;
 unsigned int ndescriptors = 0;
 DESC *descriptor_list = NULL;
 
-#ifndef WIN32
+#ifdef WIN32
+int game_pid;
+#else // WIN32
 int maxd = 0;
 pid_t slave_pid;
-int slave_socket = -1;
+int slave_socket = INVALID_SOCKET;
+pid_t game_pid;
 #endif // WIN32
 
 DESC *initializesock(SOCKET, struct sockaddr_in *);
@@ -76,7 +79,14 @@ int FDECL(process_input, (DESC *));
 // Windows NT TCP/IP routines written by Nick Gammon <nick@gammon.com.au>
 // Throughly reviewed, editted, debugged, and re-written by Stephen Dennis <sdennis@svdltd.com>
 //
+HANDLE hGameProcess = INVALID_HANDLE_VALUE;
 FCANCELIO *fpCancelIo = NULL;
+FGETPROCESSTIMES *fpGetProcessTimes = NULL;
+BOOL bQueryPerformanceAvailable = FALSE;
+INT64 QP_A = 0;
+INT64 QP_B = 0;
+INT64 QP_C = 0;
+INT64 QP_D = 0;
 HANDLE CompletionPort;    // IOs are queued up on this port
 void __cdecl MUDListenThread(void * pVoid);  // the listening thread
 DWORD platform;   // which version of Windows are we using?
