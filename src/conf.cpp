@@ -1,6 +1,6 @@
 // conf.cpp: set up configuration information and static data.
 //
-// $Id: conf.cpp,v 1.36 2001-06-24 01:23:10 sdennis Exp $
+// $Id: conf.cpp,v 1.37 2001-06-27 14:38:08 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -895,9 +895,9 @@ typedef struct
 {
     int    nShift;
     UINT32 maxValue;
-    int    maxOctLen;
-    int    maxDecLen;
-    int    maxHexLen;
+    size_t maxOctLen;
+    size_t maxDecLen;
+    size_t maxHexLen;
 } DECODEIPV4;
 
 static BOOL DecodeN(int nType, size_t len, const char *p, unsigned long *pu32)
