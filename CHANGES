@@ -153,7 +153,7 @@ Feature Additions:
      script.
  --  @break command from Raevnos and PennMUSH.
  --  LROOMS() function from Marlek and RhostMUSH.
- --  No longer require that lock code require surrounding brackets.
+ --  Locks no longer require surrounding square brackets.
 
 
 Bug Fixes:
