@@ -1,6 +1,6 @@
 // functions.cpp - MUX function handlers 
 //
-// $Id: functions.cpp,v 1.64 2001-06-17 07:53:26 sdennis Exp $
+// $Id: functions.cpp,v 1.65 2001-06-18 16:22:34 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -133,6 +133,8 @@ XFUNCTION(fun_comalias);   // in comsys.cpp
 XFUNCTION(fun_iadd);
 XFUNCTION(fun_isub);
 XFUNCTION(fun_imul);
+XFUNCTION(fun_iabs);
+XFUNCTION(fun_isign);
 XFUNCTION(fun_digittime);
 XFUNCTION(fun_singletime);
 XFUNCTION(fun_exptime);
@@ -6274,6 +6276,7 @@ FUN flist[] =
     {"HASPOWER", fun_haspower, MAX_ARG, 2,  2,       0, CA_PUBLIC},
     {"HASTYPE",  fun_hastype,  MAX_ARG, 2,  2,       0, CA_PUBLIC},
     {"HOME",     fun_home,     MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"IABS",     fun_iabs,     MAX_ARG, 1,  1,       0, CA_PUBLIC},
     {"IADD",     fun_iadd,     MAX_ARG, 0,  MAX_ARG, 0, CA_PUBLIC},
     {"IDIV",     fun_idiv,     MAX_ARG, 2,  2,       0, CA_PUBLIC},
     {"IDLE",     fun_idle,     MAX_ARG, 1,  1,       0, CA_PUBLIC},
@@ -6284,6 +6287,7 @@ FUN flist[] =
     {"INSERT",   fun_insert,   MAX_ARG, 3,  4,       0, CA_PUBLIC},
     {"INZONE",   fun_inzone,   MAX_ARG, 1,  1,       0, CA_PUBLIC},
     {"ISDBREF",  fun_isdbref,  MAX_ARG, 1,  1,       0, CA_PUBLIC},
+    {"ISIGN",    fun_isign,    MAX_ARG, 1,  1,       0, CA_PUBLIC},
     {"ISNUM",    fun_isnum,    MAX_ARG, 1,  1,       0, CA_PUBLIC},
     {"ISUB",     fun_isub,     MAX_ARG, 2,  2,       0, CA_PUBLIC},
     {"ISWORD",   fun_isword,   MAX_ARG, 1,  1,       0, CA_PUBLIC},
@@ -6740,6 +6744,42 @@ FUNCTION(fun_imul)
         prod *= Tiny_atoi64(fargs[i]);
     }
     safe_i64toa(prod, buff, bufc, LBUF_SIZE-1);
+}
+
+// fun_abs: Returns the absolute value of its argument.
+//
+FUNCTION(fun_iabs)
+{
+    INT64 num = Tiny_atoi64(fargs[0]);
+
+    if (num == 0)
+    {
+        safe_chr('0', buff, bufc);
+    }
+    else if (num < 0)
+    {
+        safe_i64toa(-num, buff, bufc, LBUF_SIZE-1);
+    }
+    else
+    {
+        safe_i64toa(num, buff, bufc, LBUF_SIZE-1);
+    }
+}
+
+// fun_isign: Returns -1, 0, or 1 based on the the sign of its argument.
+//
+FUNCTION(fun_isign)
+{
+    INT64 num = Tiny_atoi64(fargs[0]);
+
+    if (num < 0)
+    {
+        safe_str("-1", buff, bufc);
+    }
+    else
+    {
+        safe_chr((num > 0) ? '1' : '0', buff, bufc);
+    }
 }
 
 typedef struct
