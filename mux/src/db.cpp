@@ -1,6 +1,6 @@
 // db.cpp
 //
-// $Id: db.cpp,v 1.51 2002-11-12 15:47:06 jake Exp $
+// $Id: db.cpp,v 1.52 2002-11-25 01:18:42 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -2817,14 +2817,14 @@ int init_dbfile(char *game_dir_file, char *game_pag_file)
 
 // check_zone - checks back through a zone tree for control.
 //
-BOOL check_zone_handler (dbref player, dbref thing, BOOL bPlayerCheck)
+BOOL check_zone_handler(dbref player, dbref thing, BOOL bPlayerCheck)
 {
     mudstate.zone_nest_num++;
 
     if (  !mudconf.have_zones
        || !Good_obj(Zone(thing))
        || mudstate.zone_nest_num >= mudconf.zone_nest_lim
-       || (isPlayer(thing) == bPlayerCheck))
+       || isPlayer(thing) != bPlayerCheck)
     {
         mudstate.zone_nest_num = 0;
         return FALSE;
