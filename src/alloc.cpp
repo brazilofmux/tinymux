@@ -1,6 +1,6 @@
 // alloc.cpp - Memory Allocation Subsystem.
-// 
-// $Id: alloc.cpp,v 1.6 2000-10-26 18:41:45 sdennis Exp $
+//
+// $Id: alloc.cpp,v 1.7 2001-06-27 17:20:42 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -19,10 +19,10 @@
 //
 typedef struct pool_header_unaligned
 {
-    unsigned int        magicnum;   // For consistency check 
+    unsigned int        magicnum;   // For consistency check
     int                 pool_size;  // For consistency check
-    struct pool_header *next;       // Next pool header in chain 
-    struct pool_header *nxtfree;    // Next pool header in freelist 
+    struct pool_header *next;       // Next pool header in chain
+    struct pool_header *nxtfree;    // Next pool header in freelist
     char               *buf_tag;    // Debugging/trace tag
 } POOLHDR_UNALIGNED;
 
@@ -32,28 +32,28 @@ typedef struct pool_header_unaligned
 //
 typedef struct pool_header
 {
-    unsigned int        magicnum;   // For consistency check 
+    unsigned int        magicnum;   // For consistency check
     int                 pool_size;  // For consistency check
-    struct pool_header *next;       // Next pool header in chain 
-    struct pool_header *nxtfree;    // Next pool header in freelist 
+    struct pool_header *next;       // Next pool header in chain
+    struct pool_header *nxtfree;    // Next pool header in freelist
     char               *buf_tag;    // Debugging/trace tag
     char  PaddingTo64bits[7 - ((sizeof(POOLHDR_UNALIGNED)-1) & 7)];
 } POOLHDR;
 
 typedef struct pool_footer
 {
-    unsigned int magicnum;          // For consistency check 
+    unsigned int magicnum;          // For consistency check
 } POOLFTR;
 
 typedef struct pooldata
 {
-    int pool_size;                  // Size in bytes of a buffer 
-    POOLHDR *free_head;             // Buffer freelist head 
+    int pool_size;                  // Size in bytes of a buffer
+    POOLHDR *free_head;             // Buffer freelist head
     POOLHDR *chain_head;            // Buffer chain head
-    int tot_alloc;                  // Total buffers allocated 
-    int num_alloc;                  // Number of buffers currently allocated 
-    int max_alloc;                  // Max # buffers allocated at one time 
-    int num_lost;                   // Buffers lost due to corruption 
+    int tot_alloc;                  // Total buffers allocated
+    int num_alloc;                  // Number of buffers currently allocated
+    int max_alloc;                  // Max # buffers allocated at one time
+    int num_lost;                   // Buffers lost due to corruption
 } POOL;
 
 POOL pools[NUM_POOLS];
@@ -381,7 +381,7 @@ void pool_reset(void)
     int i;
     unsigned int *ibuf;
     char *h;
-    
+
     for (i = 0; i < NUM_POOLS; i++)
     {
         newchain = NULL;
