@@ -28,6 +28,7 @@ done
 for i in $removeFiles;
 do
     if [ -e $NewDir\_src/$i ]; then
+        echo Removing: $NewDir\_src/$i
         rm $NewDir\_src/$i
     fi
 done
@@ -45,6 +46,7 @@ done
 for i in $removeFiles;
 do
     if [ -e $NewDir\_src/$i ]; then
+        echo Removing: $NewDir\_src/$i
         rm $NewDir\_src/$i
     fi
 done
@@ -79,6 +81,7 @@ done
 for i in $removeFiles;
 do
     if [ -e $NewDir\_bin/$i ]; then
+        echo Removing: $NewDir\_bin/$i
         rm $NewDir\_bin/$i
     fi
 done
@@ -96,6 +99,7 @@ done
 for i in $removeFiles;
 do
     if [ -e $NewDir\_bin/$i ]; then
+        echo Removing: $NewDir\_bin/$i
         rm $NewDir\_bin/$i
     fi
 done
