@@ -1,6 +1,6 @@
 // interface.h
 //
-// $Id: interface.h,v 1.10 2002-07-17 00:51:10 jake Exp $
+// $Id: interface.h,v 1.11 2002-07-21 03:35:42 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -139,9 +139,9 @@ struct descriptor_data
 };
 
 /* flags in the flag field */
-#define DS_CONNECTED    0x0001      /* player is connected */
-#define DS_AUTODARK 0x0002      /* Wizard was auto set dark. */
-#define DS_PUEBLOCLIENT 0x0004          /* Client is Pueblo-enhanced. */
+#define DS_CONNECTED    0x0001      // player is connected.
+#define DS_AUTODARK     0x0002      // Wizard was auto set dark.
+#define DS_PUEBLOCLIENT 0x0004      // Client is Pueblo-enhanced.
 
 extern DESC *descriptor_list;
 
