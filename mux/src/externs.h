@@ -1,6 +1,6 @@
 // externs.h -- Prototypes for externs not defined elsewhere.
 //
-// $Id: externs.h,v 1.20 2003-07-23 19:37:38 sdennis Exp $
+// $Id: externs.h,v 1.21 2003-08-14 19:05:20 sdennis Exp $
 //
 
 #ifndef EXTERNS_H
@@ -10,6 +10,10 @@
 #include "match.h"
 #include "mudconf.h"
 #include "svdrand.h"
+
+/* From bsd.cpp */
+void CleanUpSlaveSocket(void);
+void CleanUpSlaveProcess(void);
 
 /* From conf.cpp */
 extern void cf_log_notfound(dbref, char *, const char *, char *);

@@ -1,6 +1,6 @@
 // bsd.cpp
 //
-// $Id: bsd.cpp,v 1.25 2003-04-16 17:20:50 sdennis Exp $
+// $Id: bsd.cpp,v 1.26 2003-08-14 19:05:20 sdennis Exp $
 //
 // MUX 2.3
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -461,7 +461,30 @@ static int get_slave_result(void)
 
 #else // WIN32
 
-int make_nonblocking(SOCKET s);
+extern int make_nonblocking(SOCKET s);
+
+void CleanUpSlaveSocket(void)
+{
+    if (!IS_INVALID_SOCKET(slave_socket))
+    {
+        shutdown(slave_socket, SD_BOTH);
+        if (close(slave_socket) == 0)
+        {
+            DebugTotalSockets--;
+        }
+        slave_socket = INVALID_SOCKET;
+    }
+}
+
+void CleanUpSlaveProcess(void)
+{
+    if (slave_pid > 0)
+    {
+        kill(slave_pid, SIGKILL);
+        waitpid(slave_pid, NULL, 0);
+    }
+    slave_pid = 0;
+}
 
 void boot_slave(dbref executor, dbref caller, dbref enactor, int)
 {
@@ -476,22 +499,8 @@ void boot_slave(dbref executor, dbref caller, dbref enactor, int)
     maxfds = sysconf(_SC_OPEN_MAX);
 #endif // HAVE_GETDTABLESIZE
 
-    // Let go of previous slave info.
-    //
-    if (!IS_INVALID_SOCKET(slave_socket))
-    {
-        shutdown(slave_socket, SD_BOTH);
-        if (close(slave_socket) == 0)
-        {
-            DebugTotalSockets--;
-        }
-        slave_socket = INVALID_SOCKET;
-    }
-    if (slave_pid > 0)
-    {
-        kill(slave_pid, SIGKILL);
-    }
-    slave_pid = 0;
+    CleanUpSlaveSocket();
+    CleanUpSlaveProcess();
 
     if (socketpair(AF_UNIX, SOCK_DGRAM, 0, sv) < 0)
     {
@@ -558,12 +567,7 @@ void boot_slave(dbref executor, dbref caller, dbref enactor, int)
     if (make_nonblocking(slave_socket) < 0)
     {
         pFailedFunc = "make_nonblocking() error: ";
-        shutdown(slave_socket, SD_BOTH);
-        if (close(slave_socket) == 0)
-        {
-            DebugTotalSockets--;
-        }
-        slave_socket = INVALID_SOCKET;
+        CleanUpSlaveSocket();
         goto failure;
     }
     if (maxd <= slave_socket)
@@ -579,11 +583,7 @@ void boot_slave(dbref executor, dbref caller, dbref enactor, int)
 
 failure:
 
-    if (slave_pid > 0)
-    {
-        kill(slave_pid, SIGKILL);
-    }
-    slave_pid = 0;
+    CleanUpSlaveProcess();
     STARTLOG(LOG_ALWAYS, "NET", "SLAVE");
     log_text(pFailedFunc);
     log_number(errno);
@@ -609,12 +609,8 @@ static int get_slave_result()
             free_lbuf(buf);
             return -1;
         }
-        shutdown(slave_socket, SD_BOTH);
-        if (close(slave_socket) == 0)
-        {
-            DebugTotalSockets--;
-        }
-        slave_socket = INVALID_SOCKET;
+        CleanUpSlaveSocket();
+        CleanUpSlaveProcess();
         free_lbuf(buf);
         return -1;
     }
@@ -1532,7 +1528,7 @@ DESC *new_connection(PortInfo *Port, int *piSocketError)
 #else // WIN32
         // Make slave request
         //
-        if (  slave_socket != INVALID_SOCKET
+        if (  !IS_INVALID_SOCKET(slave_socket)
            && mudconf.use_hostname)
         {
             char *pBuffL1 = alloc_lbuf("new_connection.write");
@@ -1541,12 +1537,8 @@ DESC *new_connection(PortInfo *Port, int *piSocketError)
             len = strlen(pBuffL1);
             if (write(slave_socket, pBuffL1, len) < 0)
             {
-                shutdown(slave_socket, SD_BOTH);
-                if (close(slave_socket) == 0)
-                {
-                    DebugTotalSockets--;
-                }
-                slave_socket = INVALID_SOCKET;
+                CleanUpSlaveSocket();
+                CleanUpSlaveProcess();
             }
             free_lbuf(pBuffL1);
         }
@@ -2837,13 +2829,24 @@ RETSIGTYPE DCL_CDECL sighandler(int sig)
             {
                 if (child == mudstate.dumper)
                 {
+                    // The dumping process finished.
+                    //
                     mudstate.dumper  = 0;
                     mudstate.dumping = false;
                 }
+                else if (child == slave_pid)
+                {
+                    // The reverse-DNS slave process ended (unexpectedly)
+                    // during a forked dump.
+                    //
+                    CleanUpSlaveSocket();
+                    slave_pid = 0;
+                }
                 else if (mudstate.dumper == 0)
                 {
-                    // The child finished before we could determine its
-                    // process id.
+                    // The dumping process finished before we could
+                    // determine its process id.  The new process can
+                    // complete before the fork() call returns.
                     //
                     mudstate.dumper = child;
                     mudstate.dumping = false;
@@ -2935,18 +2938,8 @@ RETSIGTYPE DCL_CDECL sighandler(int sig)
             WSACleanup();
             exit(12345678);
 #else // WIN32
-            shutdown(slave_socket, SD_BOTH);
-            if (close(slave_socket) == 0)
-            {
-                DebugTotalSockets--;
-            }
-            slave_socket = INVALID_SOCKET;
-            if (slave_pid > 0)
-            {
-                kill(slave_pid, SIGKILL);
-                waitpid(slave_pid, NULL, 0);
-            }
-            slave_pid = 0;
+            CleanUpSlaveSocket();
+            CleanUpSlaveProcess();
 
             // Try our best to dump a core first
             //

@@ -1,6 +1,6 @@
 // game.cpp
 //
-// $Id: game.cpp,v 1.29 2003-04-12 06:30:23 sdennis Exp $
+// $Id: game.cpp,v 1.30 2003-08-14 19:05:20 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -42,9 +42,6 @@ static void init_rlimit(void);
 
 #ifdef WIN32
 extern CRITICAL_SECTION csDescriptorList;      // for thread synchronisation
-#else
-extern pid_t  slave_pid;
-extern SOCKET slave_socket;
 #endif // WIN32
 
 void do_dump(dbref executor, dbref caller, dbref enactor, int key)
@@ -2515,15 +2512,8 @@ int DCL_CDECL main(int argc, char *argv[])
     CLOSE;
 
 #ifndef WIN32
-    shutdown(slave_socket, SD_BOTH);
-    close(slave_socket);
-    slave_socket = INVALID_SOCKET;
-    if (slave_pid > 0)
-    {
-        kill(slave_pid, SIGKILL);
-        waitpid(slave_pid, NULL, 0);
-    }
-    slave_pid = 0;
+    CleanUpSlaveSocket();
+    CleanUpSlaveProcess();
 #endif
 
     // Go ahead and explicitly free the memory for these things so

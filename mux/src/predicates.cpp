@@ -1,6 +1,6 @@
 // predicates.cpp
 //
-// $Id: predicates.cpp,v 1.41 2003-07-23 00:19:54 sdennis Exp $
+// $Id: predicates.cpp,v 1.42 2003-08-14 19:05:20 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -1422,17 +1422,8 @@ void do_restart(dbref player, dbref caller, dbref enactor, int key)
 
     dump_restart_db();
 
-extern pid_t slave_pid;
-extern SOCKET slave_socket;
-    shutdown(slave_socket, SD_BOTH);
-    close(slave_socket);
-    slave_socket = INVALID_SOCKET;
-    if (slave_pid > 0)
-    {
-        kill(slave_pid, SIGKILL);
-        waitpid(slave_pid, NULL, 0);
-    }
-    slave_pid = 0;
+    CleanUpSlaveSocket();
+    CleanUpSlaveProcess();
 
 #ifdef GAME_DOOFERMUX
     execl("bin/netmux", mudconf.mud_name, "-c", mudconf.config_file, NULL);
