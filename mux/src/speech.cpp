@@ -1,6 +1,6 @@
 // speech.cpp -- Commands which involve speaking.
 //
-// $Id: speech.cpp,v 1.6 2002-06-07 19:44:28 sdennis Exp $
+// $Id: speech.cpp,v 1.7 2002-06-13 19:42:12 jake Exp $
 //
 
 #include "copyright.h"
@@ -535,7 +535,7 @@ void do_page
             }
             else
             {
-                notify(executor, tprintf("I don't recognized #%d.", target));
+                notify(executor, tprintf("I don't recognize #%d.", target));
                 bModified = TRUE;
             }
         }
