@@ -365,6 +365,7 @@ Bug Fixes:
  --  Fixed typo that could have affected the logic, but didn't in this
      particular case.
  --  Bug #664 - The "playername" syntax at the connect screen was broken.
+ --  Bug #623 - Interaction between GOING and @restart affected exits.
 
 
 Performance Enhancements:
