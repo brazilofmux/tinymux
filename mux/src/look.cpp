@@ -1,6 +1,6 @@
 // look.cpp -- Commands which look at things.
 //
-// $Id: look.cpp,v 1.24 2004-06-10 15:39:34 sdennis Exp $
+// $Id: look.cpp,v 1.25 2004-06-26 06:24:52 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -806,7 +806,8 @@ static void view_atr
     // If we don't control the object or own the attribute, hide the
     // attr owner and flag info.
     //
-    if (!Controls(player, thing) && (Owner(player) != aowner))
+    if (  !Controls(player, thing)
+       && Owner(player) != aowner)
     {
         if (  skip_tag
            && ap->number == A_DESC)
