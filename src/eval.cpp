@@ -1,6 +1,6 @@
 // eval.cpp - command evaluation and cracking 
 //
-// $Id: eval.cpp,v 1.7 2000-06-13 22:41:52 sdennis Exp $
+// $Id: eval.cpp,v 1.8 2000-06-13 23:29:10 sdennis Exp $
 //
 
 // MUX 2.0
@@ -968,7 +968,7 @@ void TinyExec( char *buff, char **bufc, int tflags, dbref player, dbref cause,
     char *preserve[MAX_GLOBAL_REGS];
     int preserve_len[MAX_GLOBAL_REGS];
     char *TempPtr;
-    char *tstr, *tbuf, *atr_gotten, *start, *oldp, *savestr;
+    char *tstr, *tbuf, *start, *oldp, *savestr;
     int ch;
     char *realbuff = NULL, *realbp = NULL;
     dbref aowner;
@@ -1657,10 +1657,16 @@ void TinyExec( char *buff, char **bufc, int tflags, dbref player, dbref cause,
                                         pdstr++;
                                         ch = Tiny_ToUpper[(unsigned char)ch];
                                         i = 100 + ch - 'A';
-                                        atr_gotten = atr_pget(player, i, &aowner, &aflags);
-                                        safe_str(atr_gotten, buff, bufc);
-                                        nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
-                                        free_lbuf(atr_gotten);
+                                        int nAttrGotten;
+                                        char *pAttrGotten = atr_pget_LEN(player, i, &aowner, &aflags, &nAttrGotten);
+                                        if (nAttrGotten > nBufferAvailable)
+                                        {
+                                            nAttrGotten = nBufferAvailable;
+                                        }
+                                        memcpy(*bufc, pAttrGotten, nAttrGotten);
+                                        *bufc += nAttrGotten;
+                                        nBufferAvailable -= nAttrGotten;
+                                        free_lbuf(pAttrGotten);
                                     }
                                     else if (ch != '\0')
                                     {
