@@ -1206,6 +1206,16 @@ ARTICLE_RULE
 
   Related topics: art(), regexps, @admin, config parameters.
 
+& ATTRIBUTE PERMISSIONS
+ATTRIBUTE PERMISSIONS
+
+  The following attribute flags are available:
+
+    const dark deleted god hidden ignore is_lock locked no_command no_inherit
+    private visual wizard.
+
+  Related Topics: @attribute.
+
 & ATTR_ACCESS
 ATTR_ACCESS
 
@@ -1243,16 +1253,6 @@ ATTR_CMD_ACCESS
   to properly set access to restricted attributes.
 
   Related Topics: access, PERMISSION.
-
-& ATTRIBUTE PERMISSIONS
-ATTRIBUTE PERMISSIONS
-
-  The following attribute flags are available:
-
-    const dark deleted god hidden ignore is_lock locked no_command no_inherit
-    private visual wizard.
-
-  Related Topics: @attribute.
 
 & AUTOZONE
 AUTOZONE
@@ -3048,8 +3048,18 @@ QUOTAS
   quotas are turned off and turned back on later, any building or @destroying
   that occurs in the interim does not affect the quotas.
 
-  Related Topics: @allquota, @create, @destroy, @dig, @open, @quota, QUOTAS,
-                  quota_cost.
+  Related Topics: @create, @destroy, @dig, @open, @quota, QUOTAS, quota_cost.
+
+& QUOTA_COST
+QUOTA_COST
+
+  CONFIG PARAMETER: quota_cost <amount>
+  DEFAULT: 1
+
+  Indicates how much adding one object to the database charges against the
+  player's quota.
+
+  Related Topics: @create, @destroy, @dig, @open, @quota, QUOTAS.
 
 & READ_REMOTE_DESC
 READ_REMOTE_DESC
