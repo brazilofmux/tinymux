@@ -144,7 +144,7 @@ Performance Enhancements:
     138 bytes.
  -- Improve putstring() performance and therefore @dumps.
  -- Improved parser speed by a few instructions.
- -- Improve speed of TRANSLATE() and emit %t for hardtabs..
+ -- Improve speed of TRANSLATE() and emit %t for hardtabs.
 
 Cosmetic Changes:
 ~~~~~~~~~~~~~~~~
