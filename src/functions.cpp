@@ -1,6 +1,6 @@
 // functions.c - MUX function handlers 
 //
-// $Id: functions.cpp,v 1.11 2000-04-17 17:49:05 sdennis Exp $
+// $Id: functions.cpp,v 1.12 2000-04-27 23:28:32 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -792,9 +792,7 @@ FUNCTION(fun_flags)
 
 FUNCTION(fun_rand)
 {
-    int num;
-
-    num = Tiny_atol(fargs[0]);
+    int num = Tiny_atol(fargs[0]);
     if (num < 1)
     {
         safe_chr('0', buff, bufc);
