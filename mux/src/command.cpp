@@ -1,6 +1,6 @@
 // command.cpp -- command parser and support routines.
 //
-// $Id: command.cpp,v 1.14 2002-06-13 22:12:46 jake Exp $
+// $Id: command.cpp,v 1.15 2002-06-18 20:19:35 jake Exp $
 //
 
 #include "copyright.h"
@@ -2209,7 +2209,7 @@ static void list_attraccess(dbref player)
     buff = alloc_sbuf("list_attraccess");
     for (ap = attr; ap->name; ap++)
     {
-        if (Read_attr(player, player, ap, player, 0))
+        if (bCanReadAttr(player, player, ap, FALSE))
         {
             sprintf(buff, "%s:", ap->name);
             listset_nametab(player, attraccess_nametab, ap->flags, buff, 1);

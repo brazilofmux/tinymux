@@ -1,6 +1,6 @@
 // flags.h -- Object flags.
 //
-// $Id: flags.h,v 1.6 2002-06-18 18:22:58 jake Exp $
+// $Id: flags.h,v 1.7 2002-06-18 20:19:35 jake Exp $
 //
 
 #include "copyright.h"
@@ -220,9 +220,6 @@ extern char *MakeCanonicalFlagName
 /* Unmark(x)            - Clear marked flag on X */
 /* Marked(x)            - Check marked flag on X */
 /* See_attr(P,X.A,O,F)  - Can P see text attr A on X if attr has owner O */
-/* Set_attr(P,X,A,F)    - Can P set/change text attr A (with flags F) on X */
-/* Read_attr(P,X,A,O,F) - Can P see attr A on X if attr has owner O */
-/* Write_attr(P,X,A,F)  - Can P set/change attr A (with flags F) on X */
 
 #define IS(thing,type,flag) ((Typeof(thing)==(type)) && (Flags(thing) & (flag)))
 #define Typeof(x)           (Flags(x) & TYPE_MASK)
@@ -372,7 +369,6 @@ extern char *MakeCanonicalFlagName
 #define See_attr_explicit(p,x,a,o,f) (!((a)->flags & (AF_INTERNAL|AF_IS_LOCK)) && \
                             (((f) & AF_VISUAL) || (Owner(p) == (o)) && \
                             !((a)->flags & (AF_DARK|AF_MDARK))))
-#define Read_attr(p,x,a,o,f) bCanReadAttr(p,x,a,FALSE)
 
 #define Has_power(p,x)      (check_access((p),powers_nametab[x].flag))
 #define Html(x)             ((Flags2(x) & HTML) != 0)

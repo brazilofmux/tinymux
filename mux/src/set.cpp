@@ -1,6 +1,6 @@
 // set.cpp -- Commands which set parameters.
 //
-// $Id: set.cpp,v 1.13 2002-06-17 22:18:35 jake Exp $
+// $Id: set.cpp,v 1.14 2002-06-18 20:19:35 jake Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -102,7 +102,7 @@ void do_chzone
 
     if (  !Wizard(executor)
        && !Controls(executor, thing)
-       && !check_zone_for_player(executor, thing)
+       && !check_zone_handler(executor, thing, TRUE)
        && db[executor].owner != db[thing].owner)
     {
         notify(executor, "You don't have the power to shift reality.");

@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.16 2002-06-13 22:12:46 jake Exp $
+// $Id: functions.cpp,v 1.17 2002-06-18 20:19:35 jake Exp $
 //
 
 #include "copyright.h"
@@ -1444,7 +1444,7 @@ FUNCTION(fun_get)
     if (attr->flags & AF_IS_LOCK)
     {
         atr_gotten = atr_get_LEN(thing, attrib, &aowner, &aflags, &nLen);
-        if (Read_attr(executor, thing, attr, aowner, aflags))
+        if (bCanReadAttr(executor, thing, attr, FALSE))
         {
             pBoolExp = parse_boolexp(executor, atr_gotten, 1);
             free_lbuf(atr_gotten);
@@ -1520,7 +1520,7 @@ FUNCTION(fun_xget)
     if (attr->flags & AF_IS_LOCK)
     {
         atr_gotten = atr_get_LEN(thing, attrib, &aowner, &aflags, &nLen);
-        if (Read_attr(executor, thing, attr, aowner, aflags))
+        if (bCanReadAttr(executor, thing, attr, FALSE))
         {
             pBoolExp = parse_boolexp(executor, atr_gotten, 1);
             free_lbuf(atr_gotten);
@@ -1587,7 +1587,7 @@ FUNCTION(fun_get_eval)
     if (attr->flags & AF_IS_LOCK)
     {
         atr_gotten = atr_get(thing, attrib, &aowner, &aflags);
-        if (Read_attr(executor, thing, attr, aowner, aflags))
+        if (bCanReadAttr(executor, thing, attr, FALSE))
         {
             pBoolExp = parse_boolexp(executor, atr_gotten, 1);
             free_lbuf(atr_gotten);
@@ -1678,7 +1678,7 @@ FUNCTION(fun_eval)
     if (attr->flags & AF_IS_LOCK)
     {
         atr_gotten = atr_get(thing, attrib, &aowner, &aflags);
-        if (Read_attr(executor, thing, attr, aowner, aflags))
+        if (bCanReadAttr(executor, thing, attr, FALSE))
         {
             pBoolExp = parse_boolexp(executor, atr_gotten, 1);
             free_lbuf(atr_gotten);
@@ -4581,7 +4581,7 @@ FUNCTION(fun_lock)
      */
 
     tbuf = atr_get(it, attr->number, &aowner, &aflags);
-    if (Read_attr(executor, it, attr, aowner, aflags)) {
+    if (bCanReadAttr(executor, it, attr, FALSE)) {
         pBoolExp = parse_boolexp(executor, tbuf, 1);
         free_lbuf(tbuf);
         tbuf = (char *)unparse_boolexp_function(executor, pBoolExp);
@@ -4622,7 +4622,7 @@ FUNCTION(fun_elock)
     {
         tbuf = atr_get(it, attr->number, &aowner, &aflags);
         if (  attr->number == A_LOCK
-           || Read_attr(executor, it, attr, aowner, aflags))
+           || bCanReadAttr(executor, it, attr, FALSE))
         {
             pBoolExp = parse_boolexp(executor, tbuf, 1);
             safe_ltoa(eval_boolexp(victim, it, it, pBoolExp), buff, bufc);

@@ -1,6 +1,6 @@
 // predicates.cpp
 //
-// $Id: predicates.cpp,v 1.15 2002-06-14 07:31:56 sdennis Exp $
+// $Id: predicates.cpp,v 1.16 2002-06-18 20:19:35 jake Exp $
 //
 
 #include "copyright.h"
@@ -2100,7 +2100,7 @@ void do_verb(dbref player, dbref caller, dbref enactor, int key,
             atr_get_info(victim, what, &aowner, &aflags);
             ap = atr_num(what);
         }
-        if (!ap || !Read_attr(player, victim, ap, aowner, aflags) ||
+        if (!ap || !bCanReadAttr(player, victim, ap, FALSE) ||
             ((ap->number == A_DESC) && !mudconf.read_rem_desc &&
              !Examinable(player, victim) && !nearby(player, victim)))
         {
@@ -2113,7 +2113,7 @@ void do_verb(dbref player, dbref caller, dbref enactor, int key,
             atr_get_info(victim, owhat, &aowner, &aflags);
             ap = atr_num(owhat);
         }
-        if (!ap || !Read_attr(player, victim, ap, aowner, aflags) ||
+        if (!ap || !bCanReadAttr(player, victim, ap, FALSE) ||
             ((ap->number == A_DESC) && !mudconf.read_rem_desc &&
              !Examinable(player, victim) && !nearby(player, victim)))
         {

@@ -1,6 +1,6 @@
 // externs.h -- Prototypes for externs not defined elsewhere.
 //
-// $Id: externs.h,v 1.15 2002-06-18 18:22:58 jake Exp $
+// $Id: externs.h,v 1.16 2002-06-18 20:19:35 jake Exp $
 //
 
 #ifndef EXTERNS_H
@@ -310,7 +310,6 @@ extern int check_zone(dbref player, dbref thing);
 #else
 #define check_zone(player, thing) check_zone_handler(player, thing, FALSE)
 #endif
-#define check_zone_for_player(player, thing) check_zone_handler(player, thing, TRUE)
 extern void ReleaseAllResources(dbref obj);
 extern int fwdlist_ck(dbref player, dbref thing, int anum, char *atext);
 

@@ -1,6 +1,6 @@
 // boolexp.cpp
 //
-// $Id: boolexp.cpp,v 1.5 2002-06-13 22:12:46 jake Exp $
+// $Id: boolexp.cpp,v 1.6 2002-06-18 20:19:35 jake Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -169,7 +169,7 @@ int eval_boolexp(dbref player, dbref thing, dbref from, BOOLEXP *b)
         {
             checkit = 1;
         }
-        else if (Read_attr(source, source, a, aowner, aflags))
+        else if (bCanReadAttr(source, source, a, FALSE))
         {
             checkit = 1;
         }

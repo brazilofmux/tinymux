@@ -1,6 +1,6 @@
 // look.cpp -- Commands which look at things.
 //
-// $Id: look.cpp,v 1.8 2002-06-13 22:12:46 jake Exp $
+// $Id: look.cpp,v 1.9 2002-06-18 20:19:35 jake Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. The WOD_REALMS portion is original work.
@@ -876,7 +876,7 @@ static void look_atrs1
         }
 
         buf = atr_get(thing, ca, &aowner, &aflags);
-        if (Read_attr(player, othing, &cattr, aowner, aflags))
+        if (bCanReadAttr(player, othing, &cattr, FALSE))
         {
             if (!(check_exclude && (aflags & AF_PRIVATE)))
             {
@@ -1302,7 +1302,7 @@ static void debug_examine(dbref player, dbref thing)
         }
 
         atr_get_info(thing, ca, &aowner, &aflags);
-        if (Read_attr(player, thing, attr, aowner, aflags))
+        if (bCanReadAttr(player, thing, attr, FALSE))
         {
             if (attr)
             {
@@ -1330,7 +1330,7 @@ static void debug_examine(dbref player, dbref thing)
         }
 
         buf = atr_get(thing, ca, &aowner, &aflags);
-        if (Read_attr(player, thing, attr, aowner, aflags))
+        if (bCanReadAttr(player, thing, attr, FALSE))
         {
             view_atr(player, thing, attr, buf, aowner, aflags, 0);
         }
@@ -1374,13 +1374,13 @@ static void exam_wildattrs
         // and remote DESC-reading is not turned on.
         //
         if (  Examinable(player, thing)
-           && Read_attr(player, thing, ap, aowner, aflags))
+           && bCanReadAttr(player, thing, ap, do_parent))
         {
             got_any = TRUE;
             view_atr(player, thing, ap, buf, aowner, aflags, 0);
         }
         else if (  (Typeof(thing) == TYPE_PLAYER)
-                && Read_attr(player, thing, ap, aowner, aflags))
+                && bCanReadAttr(player, thing, ap, do_parent))
         {
             got_any = TRUE;
             if (aowner == Owner(player))
@@ -1401,7 +1401,7 @@ static void exam_wildattrs
                 notify(player, "<Too far away to get a good look>");
             }
         }
-        else if (Read_attr(player, thing, ap, aowner, aflags))
+        else if (bCanReadAttr(player, thing, ap, FALSE))
         {
             got_any = TRUE;
             if (aowner == Owner(player))
@@ -2337,7 +2337,7 @@ void do_decomp
         }
 
         got = atr_get(thing, ca, &aowner, &aflags);
-        if (Read_attr(executor, thing, attr, aowner, aflags))
+        if (bCanReadAttr(executor, thing, attr, FALSE))
         {
             if (attr->flags & AF_IS_LOCK)
             {
