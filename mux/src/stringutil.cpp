@@ -1,6 +1,6 @@
 // stringutil.cpp -- string utilities.
 //
-// $Id: stringutil.cpp,v 1.30 2002-09-26 14:48:33 sdennis Exp $
+// $Id: stringutil.cpp,v 1.31 2002-10-20 17:02:49 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -586,7 +586,7 @@ char *strip_accents(const char *szString, size_t *pnString)
 #define ANSI_COLOR_INDEX_MAGENTA   5
 #define ANSI_COLOR_INDEX_CYAN      6
 #define ANSI_COLOR_INDEX_WHITE     7
-#define ANSI_COLOR_INDEX_DEFAULT   9
+#define ANSI_COLOR_INDEX_DEFAULT   8
 
 const ANSI_ColorState acsRestingStates[3] =
 {
