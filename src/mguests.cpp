@@ -2,7 +2,7 @@
 // Multiguest code rewritten by Matthew J. Leavitt (zenty).
 // Idea for @list guest from Ashen-Shugar and the great team of RhostMUSH
 //
-// $Id: mguests.cpp,v 1.15 2002-02-13 21:32:26 zenty Exp $
+// $Id: mguests.cpp,v 1.16 2002-02-13 23:15:48 zenty Exp $
 //
 
 #include "copyright.h"
@@ -97,8 +97,16 @@ char *CGuests::Create(DESC *d)
     int i;
     for (i = 0; i < nGuests; i++)
     {
-        if (  !Connected(Guests[i])
-           && Good_obj(Guests[i]))
+        // If we have something that isn't a guest in the list, lets
+        // just drop it and make a new one
+        //
+        if(!Good_obj(Guests[i]) || isGarbage(Guests[i]) ||
+           !isPlayer(Guests[i]) || !Guest(Guests[i])) {
+            Guests[i]=MakeGuestChar();
+            return Name(Guests[i]);
+        }
+        
+        if (!Connected(Guests[i]))
         {
             // Lets try to grab our own name, if we don't have it.
             //
@@ -120,6 +128,16 @@ char *CGuests::Create(DESC *d)
             db[Guests[i]].fs.word[FLAG_WORD1] |= TYPE_PLAYER;
             db[Guests[i]].fs.word[FLAG_WORD1] &= ~WIZARD;
 
+            // Make sure they're a guest
+            //
+            s_Guest(player);
+            
+            move_object(player, mudconf.start_room);
+            s_Pennies(player, Pennies(mudconf.guest_char));
+            s_Zone(player, Zone(mudconf.guest_char));
+            s_Parent(player, Parent(mudconf.guest_char));
+                
+            
             // Wipe the attributes.
             //
             WipeAttrs(Guests[i]);
@@ -150,9 +168,17 @@ char *CGuests::Create(DESC *d)
 
 void CGuests::CleanUp(void)
 {
-    // Move all connected guests to the beginning of the list.
-    // If the number is less than the minimum, don't worry.
-    //
+    int i;
+
+    // Paranoia Checking. If it's after min_guests, we'll chop it anyways,
+    // so why care?
+    for(i=0;i<mudconf.min_guests;i++) {
+        if(!Good_obj(Guests[i]) || isGarbage(Guests[i]) ||
+           !isPlayer(Guests[i]) || !Guest(Guests[i])) {
+            Guests[i]=MakeGuestChar();
+        }
+    }
+    
     if (nGuests <= mudconf.min_guests)
     {
         return;
@@ -160,9 +186,12 @@ void CGuests::CleanUp(void)
 
     // Don't screw with the min_guests
     //
-    int i;
     int itmp;
     int currGuest;
+
+    // Move all connected guests to the beginning of the list.
+    // If the number is less than the minimum, don't worry.
+    //    
     for (i = currGuest = mudconf.min_guests; i < nGuests; i++)
     {
         if (Connected(Guests[i]))
@@ -180,7 +209,8 @@ void CGuests::CleanUp(void)
     itmp = nGuests;
     for (i = mudconf.min_guests; i < itmp;i++)
     {
-        if (!Connected(Guests[i]))
+        if (!Connected(Guests[i]) && Good_obj(Guests[i]) &&
+            !isGarbage(Guests[i]))
         {
             DestroyGuestChar(Guests[i]);
             nGuests--;
