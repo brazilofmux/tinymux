@@ -38,6 +38,21 @@ Feature Additions:
     basename to locate the logfiles in a directory other than the game
     sub-directory.
  -- Allow WHO report to be affected by @moniker.
+ -- dist2d() and dist3d() changed to use floating-point instead of integer
+    math.
+ -- Turned 'all' message spec back on.  '@mail/clear all' works again.
+    This option (which is described in the help files) was commented out
+    in TinyMUX 1.6p0 or earlier.  I'm not sure why it was commented out,
+    but I've turned support for it back on.  Unlike the other options,
+    this one will now require that you spell the entire word out.
+ -- Players with the hidden power can now hide on channels as well.
+ -- Added cf_dbref() and changed the way configuration files are parsed
+    to support 'master_room #2' and '@admin master_room=#2'.  Previously,
+    'master_room 2' and '@admin master_room=2' was required.  The latter
+    continue to be supported.
+ -- Improved messages when home or dropto is changed.
+ -- inc, dec, shl, shr, sort(,n), band, bnand, bor are all extended to
+    64-bit integers.
 
 
 Bug Fixes:
@@ -213,6 +228,7 @@ Bug Fixes:
  -- Fixed @mail/bcc behavior so that bcc'ed recipients are hidden from
     non-bcc'ed recipients.
  -- Removed '%' as a valid attribute name character.
+ -- Fixed MEMORY_BASED build.
 
 
 Performance Enhancements:
