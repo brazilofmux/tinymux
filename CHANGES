@@ -159,6 +159,8 @@ Bug Fixes:
     output is available and then later return an error on a particular recv()
     or send() call to the same socket. BSD or systems which do not restart
     system calls after a signal were mentioned as being affected.
+ -- Bug #624 - delcom now deletes aliases without removing you completely
+    from the channel. addcom warnings also removed.
 
 Performance Enhancements:
 ~~~~~~~~~~~~~~~~~~~~~~~~
