@@ -1,6 +1,6 @@
 // db.c 
 //
-// $Id: db.cpp,v 1.36 2001-03-30 16:43:41 zenty Exp $
+// $Id: db.cpp,v 1.37 2001-03-31 02:05:02 sdennis Exp $
 //
 // MUX 2.0
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -1711,7 +1711,7 @@ void atr_clr(dbref thing, int atr)
     case A_FORWARDLIST:
         s_Flags2(thing, Flags2(thing) & ~HAS_FWDLIST);
 #ifndef STANDALONE       
-	fwdlist_clr(thing); // We should clear the hashtable too
+        fwdlist_clr(thing); // We should clear the hashtable too
 #endif
         break;
     case A_LISTEN:
