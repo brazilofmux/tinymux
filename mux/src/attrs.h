@@ -1,31 +1,33 @@
 // attrs.h -- Attribute definitions.
 //
-// $Id: attrs.h,v 1.10 2002-11-12 11:38:48 jake Exp $
+// $Id: attrs.h,v 1.11 2003-01-21 01:33:51 sdennis Exp $
 //
 
 #ifndef _ATTRS_H
 #define _ATTRS_H
 
 /* Attribute flags */
-#define AF_ODARK    0x00001 /* players other than owner can't see it */
-#define AF_DARK     0x00002 /* Only #1 can see it */
-#define AF_WIZARD   0x00004 /* only wizards can change it */
-#define AF_MDARK    0x00008 /* Only wizards can see it. Dark to mortals */
-#define AF_INTERNAL 0x00010 /* Don't show even to #1 */
-#define AF_NOCMD    0x00020 /* Don't create a @ command for it */
-#define AF_LOCK     0x00040 /* Attribute is locked */
-#define AF_DELETED  0x00080 /* Attribute should be ignored */
-#define AF_NOPROG   0x00100 /* Don't process $-commands from this attr */
-#define AF_GOD      0x00200 /* Only #1 can change it */
-#define AF_IS_LOCK  0x00400 /* Attribute is a lock */
-#define AF_VISUAL   0x00800 /* Anyone can see */
-#define AF_PRIVATE  0x01000 /* Not inherited by children */
-#define AF_HTML     0x02000 /* Don't HTML escape this in did_it() */
-#define AF_NOPARSE  0x04000 /* Don't evaluate when checking for $-cmds */
-#define AF_REGEXP   0x08000 /* Do a regexp rather than wildcard match */
-#define AF_NOCLONE  0x10000 /* Don't copy this attr when cloning. */
-#define AF_CONST    0x20000 // No one can change it (set by server).
-#define AF_ISUSED   0x80000 /* Used to make efficient sweeps of stale attributes */
+#define AF_ODARK    0x00000001UL // players other than owner can't see it.
+#define AF_DARK     0x00000002UL // Only #1 can see it.
+#define AF_WIZARD   0x00000004UL // only wizards can change it.
+#define AF_MDARK    0x00000008UL // Only wizards can see it. Dark to mortals.
+#define AF_INTERNAL 0x00000010UL // Don't show even to #1.
+#define AF_NOCMD    0x00000020UL // Don't create a @ command for it.
+#define AF_LOCK     0x00000040UL // Attribute is locked.
+#define AF_DELETED  0x00000080UL // Attribute should be ignored.
+#define AF_NOPROG   0x00000100UL // Don't process $-commands from this attr.
+#define AF_GOD      0x00000200UL // Only #1 can change it.
+#define AF_IS_LOCK  0x00000400UL // Attribute is a lock.
+#define AF_VISUAL   0x00000800UL // Anyone can see.
+#define AF_PRIVATE  0x00001000UL // Not inherited by children.
+#define AF_HTML     0x00002000UL // Don't HTML escape this in did_it().
+#define AF_NOPARSE  0x00004000UL // Don't evaluate when checking for $-cmds.
+#define AF_REGEXP   0x00008000UL // Do a regexp rather than wildcard match.
+#define AF_NOCLONE  0x00010000UL // Don't copy this attr when cloning.
+#define AF_CONST    0x00020000UL // No one can change it (set by server).
+#define AF_CASE     0x00040000UL // Regexp matches are case-sensitive.
+#define AF_ISUSED   0x00080000UL // Used to make efficient sweeps of stale
+                                 // attributes.
 
 #define A_OSUCC     1   /* Others success message */
 #define A_OFAIL     2   /* Others fail message */

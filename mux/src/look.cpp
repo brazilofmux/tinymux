@@ -1,6 +1,6 @@
 // look.cpp -- Commands which look at things.
 //
-// $Id: look.cpp,v 1.33 2003-01-05 18:08:22 sdennis Exp $
+// $Id: look.cpp,v 1.34 2003-01-21 01:33:51 sdennis Exp $
 //
 // MUX 2.2
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -758,6 +758,7 @@ static ATTR_DECODE_ENTRY attr_decode_table[] =
 {
     { AF_LOCK,    '+' },
     { AF_NOPROG,  '$' },
+    { AF_CASE,    'C' },
     { AF_HTML,    'H' },
     { AF_PRIVATE, 'I' },
     { AF_REGEXP,  'R' },
@@ -822,7 +823,7 @@ static void view_atr
 
     // Generate flags.
     //
-    char xbuf[9];
+    char xbuf[10];
     decode_attr_flags(aflags, xbuf);
 
     if (  aowner != Owner(thing)

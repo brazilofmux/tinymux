@@ -1,6 +1,6 @@
 // game.cpp
 //
-// $Id: game.cpp,v 1.30 2003-01-12 18:18:15 sdennis Exp $
+// $Id: game.cpp,v 1.31 2003-01-21 01:33:51 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -85,9 +85,15 @@ void report(void)
  * registers.
  */
 
-BOOL regexp_match(char *pattern, char *str, char *args[], int nargs)
+BOOL regexp_match
+(
+    char *pattern,
+    char *str,
+    int case_opt,
+    char *args[],
+    int nargs
+)
 {
-    pcre *re;
     int matches;
     int i, len;
     const char *errptr;
@@ -101,7 +107,8 @@ BOOL regexp_match(char *pattern, char *str, char *args[], int nargs)
      * under it.
      */
 
-    if ((re = pcre_compile(pattern, 0, &errptr, &erroffset, NULL)) == NULL)
+    pcre *re = pcre_compile(pattern, case_opt, &errptr, &erroffset, NULL);
+    if (re == NULL)
     {
         /*
          * This is a matching error. We have an error message in
@@ -236,7 +243,8 @@ static int atr_match1(dbref thing, dbref parent, dbref player, char type, char *
         *s++ = '\0';
         char *args[NUM_ENV_VARS];
         if (  (  (aflags & AF_REGEXP)
-              && regexp_match(buff + 1, str, args, NUM_ENV_VARS))
+              && regexp_match(buff + 1, str,
+                     ((aflags & AF_CASE) ? 0 : PCRE_CASELESS), args, NUM_ENV_VARS))
            || wild(buff + 1, str, args, NUM_ENV_VARS))
         {
             match = 1;
