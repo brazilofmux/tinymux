@@ -1,6 +1,6 @@
 // stringutil.cpp -- string utilities
 //
-// $Id: stringutil.cpp,v 1.22 2000-09-20 22:22:47 sdennis Exp $
+// $Id: stringutil.cpp,v 1.23 2000-09-28 18:11:51 sdennis Exp $
 //
 // MUX 2.0
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -574,7 +574,7 @@ void ANSI_Parse_m(ANSI_ColorState *pacsCurrent, int nANSI, const char *pANSI,
         // typically).
         //
         const char *p = pANSI;
-        while (Tiny_IsDigit[(unsigned int)*p] == 1)
+        while (Tiny_IsDigit[(unsigned int)*p])
         {
             p++;
         }
@@ -1047,7 +1047,6 @@ int ANSI_String_Copy
 // into a field of size nField. Truncate text. Also make sure that no color
 // leaks out of the field.
 //
-#if 1
 int ANSI_TruncateToField(const char *szString, int nField, char *pField0, int maxVisualWidth, int *pnVisualWidth, BOOL bNoBleed)
 {
     if (!szString)
@@ -1059,125 +1058,6 @@ int ANSI_TruncateToField(const char *szString, int nField, char *pField0, int ma
     ANSI_String_Init(&state, szString, bNoBleed);
     return ANSI_String_Copy(&state, nField, pField0, maxVisualWidth, pnVisualWidth);
 }
-#else
-int ANSI_TruncateToField(const char *szString, int nField, char *pField0, int maxVisualWidth, int *pnVisualWidth, BOOL bNoBleed)
-{
-    *pnVisualWidth = 0;
-    char *pField = pField0;
-    const char *pString = szString;
-    if (!pString)
-    {
-        pField0[0] = '\0';
-        return 0;
-    }
-    int nString = strlen(szString);
-
-    ANSI_ColorState acsCurrent;
-    ANSI_ColorState acsPrevious;
-    ANSI_ColorState acsFinal;
-    ANSI_InitColorState(&acsCurrent, bNoBleed);
-    acsPrevious = acsCurrent;
-    acsFinal    = acsCurrent;
-    BOOL bSawNormal = FALSE;
-    while (nString)
-    {
-        int nTokenLength0;
-        int nTokenLength1;
-        int iType = ANSI_lex(nString, pString, &nTokenLength0, &nTokenLength1);
-
-        if (iType == TOKEN_TEXT_ANSI)
-        {
-            // Process TEXT
-            //
-            int nFieldEffective = nField - 1; // Leave room for '\0'.
-
-            int nTransitionFinal = 0;
-            if (memcmp(&acsCurrent, &acsFinal, sizeof(ANSI_ColorState)) != 0)
-            {
-                char *pTransitionFinal = ANSI_TransitionColorBinary(&acsCurrent, &acsFinal, &nTransitionFinal, bNoBleed);
-                nFieldEffective -= nTransitionFinal;
-            }
-
-            int nTransition = 0;
-            char *pTransition = ANSI_TransitionColorBinary(&acsPrevious, &acsCurrent, &nTransition, bNoBleed);
-            nFieldEffective -= nTransition;
-
-            if (nFieldEffective <= nTokenLength0 || *pnVisualWidth + nTokenLength0 > maxVisualWidth)
-            {
-                // We have reached the limits of the field
-                //
-                if (nFieldEffective > 0)
-                {
-                    if (nTransition)
-                    {
-                        memcpy(pField, pTransition, nTransition);
-                        pField += nTransition;
-                    }
-                    int nTextToAdd = maxVisualWidth - *pnVisualWidth;
-                    if (nTextToAdd < nFieldEffective)
-                    {
-                        nFieldEffective = nTextToAdd;
-                    }
-                    memcpy(pField, pString, nFieldEffective);
-                    pField += nFieldEffective;
-                    *pnVisualWidth += nFieldEffective;
-                }
-                if (nTransitionFinal)
-                {
-                    char *pTransitionFinal = ANSI_TransitionColorBinary(&acsCurrent,
-                        &acsFinal, &nTransitionFinal, bNoBleed);
-
-                    memcpy(pField, pTransitionFinal, nTransitionFinal);
-                    pField += nTransitionFinal;
-                }
-                *pField = '\0';
-                return pField - pField0;
-            }
-
-            if (nTransition)
-            {
-                memcpy(pField, pTransition, nTransition);
-                pField += nTransition;
-                nField -= nTransition;
-            }
-            memcpy(pField, pString, nTokenLength0);
-            pField  += nTokenLength0;
-            nField  -= nTokenLength0;
-            pString += nTokenLength0;
-            nString -= nTokenLength0;
-            *pnVisualWidth += nTokenLength0;
-            acsPrevious = acsCurrent;
-
-            if (nTokenLength1)
-            {
-                // Process ANSI
-                //
-                ANSI_Parse_m(&acsCurrent, nTokenLength1, pString, &bSawNormal);
-                pString += nTokenLength1;
-                nString -= nTokenLength1;
-            }
-        }
-        else
-        {
-            // Process ANSI
-            //
-            ANSI_Parse_m(&acsCurrent, nTokenLength0, pString, &bSawNormal);
-            nString -= nTokenLength0;
-            pString += nTokenLength0;
-        }
-    }
-
-    int nTransition = 0;
-    char *pTransition = ANSI_TransitionColorBinary(&acsPrevious, &acsFinal, &nTransition, bNoBleed);
-    if (nTransition)
-    {
-        memcpy(pField, pTransition, nTransition);
-        pField += nTransition;
-    }
-    *pField = '\0';
-    return pField - pField0;
-}
-#endif
 
 char *normal_to_white(const char *szString)
 {
@@ -1716,28 +1596,6 @@ char *replace_string_inplace(const char *old, const char *new0, char *string)
     StringCopy(string, s);
     free_lbuf(s);
     return string;
-}
-
-/*
- * Counts occurances of C in STR. - mnp 7 feb 91 
- */
-
-int count_chars(const char *str, const char c)
-{
-    int out = 0;
-    const char *p = str;
-
-    if (p)
-    {
-        while (*p != '\0')
-        {
-            if (*p++ == c)
-            {
-                out++;
-            }
-        }
-    }
-    return out;
 }
 
 /*
@@ -2387,3 +2245,136 @@ int DCL_CDECL Tiny_vsnprintf(char *buff, int count, const char *fmt, va_list va)
     buff[len] = '\0';
     return len;
 }
+
+#ifdef MUX21
+
+// Method: Boyer-Moore-Horspool
+//
+// This method is a simplification of the Boyer-Moore String Searching
+// Algorithm, but a useful one. It does not require as much temporary
+// storage, and the setup costs are not as high as the full Boyer-Moore.
+//
+// If we were searching megabytes of data instead of 8KB at most, then
+// the full Boyer-Moore would make more sense.
+//
+#define BMH_LARGE 32767
+void BMH_Prepare(BMH_State *bmhState, int nPat, char *pPat)
+{
+    int k;
+    for (k = 0; k < 128; k++)
+    {
+        bmhState->m_d[k] = nPat;
+    }
+    
+    for (k = 0; k < nPat - 1; k++)
+    {
+        bmhState->m_d[pPat[k]] = nPat - k - 1;
+    }
+    char chLastPat = pPat[nPat-1];
+    bmhState->m_d[chLastPat] = BMH_LARGE;
+    bmhState->m_skip2 = nPat;
+    for (int i = 0; i < nPat-1; ++i)
+    {
+        if (pPat[i] == chLastPat)
+        {
+            bmhState->m_skip2 = nPat - i - 1;
+        }
+    }
+}
+
+int BMH_Execute(BMH_State *bmhs, int nPat, char *pPat, int nSrc, char *pSrc)
+{
+    for (int i = nPat-1; i < nSrc; i += bmhState->m_skip2)
+    {
+        while ((i += bmhState->m_d[(unsigned char)(pSrc[i])]) < nSrc)
+        {
+            ; // Nothing.
+        }
+        if (i < BMH_LARGE)
+        {
+            break;
+        }
+        i -= BMH_LARGE;
+        int j = nPat - 1;
+        char *s = pSrc + (i - j);
+        while (--j >= 0 && s[j] == pPat[j])
+        {
+            ; // Nothing.
+        }
+        if (j < 0)
+        {
+            return s-pSrc;
+        }
+    }
+    return -1;
+}
+
+int BMH_StringSearch(int nPat, char *pPat, int nSrc, char *pSrc)
+{
+    BMH_State bmhs;
+    BMH_Prepare(&bmhs, nPat, pPat);
+    return BMH_Execute(&bmhs, nPat, pPat, nSrc, pSrc);
+}
+
+void BMH_PrepareI(BMH_State *bmhs, int nPat, char *pPat)
+{
+    int k;
+    for (k = 0; k < 128; k++)
+    {
+        bmhState->m_d[k] = nPat;
+    }
+    
+    for (k = 0; k < nPat - 1; k++)
+    {
+        bmhState->m_d[Tiny_ToUpper[(unsigned char)pPat[k]]] = nPat - k - 1;
+        bmhState->m_d[Tiny_ToLower[(unsigned char)pPat[k]]] = nPat - k - 1;
+    }
+    char chLastPat = pPat[nPat-1];
+    bmhState->m_d[Tiny_ToUpper[(unsigned char)chLastPat]] = BMH_LARGE;
+    bmhState->m_d[Tiny_ToLower[(unsigned char)chLastPat]] = BMH_LARGE;
+    bmhState->m_skip2 = nPat;
+    for (int i = 0; i < nPat-1; ++i)
+    {
+        if (pPat[i] == chLastPat)
+        {
+            bmhState->m_skip2 = nPat - i - 1;
+        }
+    }
+}
+
+int BMH_ExecuteI(BMH_State *bmhs, int nPat, char *pPat, int nSrc, char *pSrc)
+{
+    for (int i = nPat-1; i < nSrc; i += bmhState->m_skip2)
+    {
+        while ((i += bmhState->m_d[(unsigned char)(pSrc[i])]) < nSrc)
+        {
+            ; // Nothing.
+        }
+        if (i < BMH_LARGE)
+        {
+            break;
+        }
+        i -= BMH_LARGE;
+        int j = nPat - 1;
+        char *s = pSrc + (i - j);
+        while (  --j >= 0
+              && Tiny_ToUpper[(unsigned char)s[j]] == Tiny_ToUpper[(unsigned char)pPat[j]])
+        {
+            ; // Nothing.
+        }
+        if (j < 0)
+        {
+            return s-pSrc;
+        }
+    }
+    return -1;
+}
+
+int BMH_StringSearchI(int nPat, char *pPat, int nSrc, char *pSrc)
+{
+    BMH_State *bmhs;
+    BMH_PrepareI(&bmhs, nPat, pPat);
+    return BMH_ExecuteI(&bmhs, nPat, pPat, nSrc, pSrc);
+}
+
+#endif // MUX21

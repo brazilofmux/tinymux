@@ -1,6 +1,6 @@
 // funceval.cpp - MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.20 2000-07-31 16:43:35 sdennis Exp $
+// $Id: funceval.cpp,v 1.21 2000-09-28 18:11:51 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -2266,10 +2266,13 @@ char *grep_util(dbref player, dbref thing, char *pattern, char *lookfor, int len
     // whose contents have <lookfor>.
     //
     dbref aowner;
-    char *tbuf1, *buf, *text, *attrib;
+    char *tbuf1, *buf;
     char *bp, *bufc;
-    int found;
     int ca, aflags;
+#ifndef MUX21
+    char *attrib;
+    int found;
+#endif // MUX21
 
     tbuf1 = alloc_lbuf("grep_util");
     bufc = buf = alloc_lbuf("grep_util.parse_attrib");
@@ -2278,10 +2281,36 @@ char *grep_util(dbref player, dbref thing, char *pattern, char *lookfor, int len
     olist_push();
     if (parse_attrib_wild(player, buf, &thing, 0, 0, 1))
     {
+#ifdef MUX21
+        BMH_State bmhs;
+        if (insensitive)
+        {
+            BMH_PrepareI(&bmhs, len, lookfor);
+        }
+        else
+        {
+            BMH_Prepare(&bmhs, len, lookfor);
+        }
+#endif // MUX21
+
         for (ca = olist_first(); ca != NOTHING; ca = olist_next())
         {
+#ifdef MUX21
+            int nText;
+            attrib = atr_get_LEN(thing, ca, &aowner, &aflags, &nText);
+            int i;
+            if (insensitive)
+            {
+                i = BMH_ExecuteI(&bmhs, len, lookfor, nText, attrib);
+            }
+            else
+            {
+                i = BMH_Execute(&bmhs, len, lookfor, nText, attrib);
+            }
+            if (i >= 0)
+#else // MUX21
             attrib = atr_get(thing, ca, &aowner, &aflags);
-            text = attrib;
+            char *text = attrib;
             found = 0;
             while (*text && !found)
             {
@@ -2297,6 +2326,7 @@ char *grep_util(dbref player, dbref thing, char *pattern, char *lookfor, int len
             }
 
             if (found)
+#endif // MUX21
             {
                 if (bp != tbuf1)
                 {

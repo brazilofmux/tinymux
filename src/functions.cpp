@@ -1,6 +1,6 @@
 // functions.cpp - MUX function handlers 
 //
-// $Id: functions.cpp,v 1.29 2000-09-27 19:11:43 sdennis Exp $
+// $Id: functions.cpp,v 1.30 2000-09-28 18:11:51 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -3291,7 +3291,6 @@ FUNCTION(fun_pos)
 
     // Search for pattern string inside source string.
     //
-    int i = 1;
     if (nPat == 1)
     {
         // We can optimize the single-character case.
@@ -3299,15 +3298,24 @@ FUNCTION(fun_pos)
         char *p = strchr(pSrc, aPatBuf[0]);
         if (p)
         {
-            i = p - pSrc + 1;
+            int i = p - pSrc + 1;
             safe_ltoa(i, buff, bufc, LBUF_SIZE-1);
             return;
         }
     }
-    else
+    else if (nPat > 1)
     {
         // We have a multi-byte pattern.
         //
+#ifdef MUX21
+        int i = BMH_StringSearch(nPat, aPatBuf, nSrc, pSrc)+1;
+        if (i >= 0)
+        {
+            safe_ltoa(i, buff, bufc, LBUF_SIZE-1);
+            return;
+        }
+#else
+        int i = 1;
         while (nSrc)
         {
             if (  nPat <= nSrc
@@ -3320,6 +3328,7 @@ FUNCTION(fun_pos)
             pSrc++;
             nSrc--;
         }
+#endif // MUX21
     }
     safe_str("#-1", buff, bufc);
 }
@@ -4402,16 +4411,27 @@ FUNCTION(fun_after)
 
     // Look for the target string.
     //
+#ifdef MUX21
+    int nText = strlen(bp);
+    int i = BMH_StringSearch(mlen, mp, nText, bp);
+    if (i >= 0)
+    {
+        // Yup, return what follows.
+        //
+        bp += i + mlen;
+        safe_copy_buf(bp, nText-i-mlen, buff, bufc, LBUF_SIZE-1);
+    }
+#else // MUX21
     while (*bp)
     {
         // Search for the first character in the target string.
         //
-        cp = (char *)strchr(bp, *mp);
-        if (cp == NULL)
+        cp = strchr(bp, *mp);
+        if (!cp)
         {
             // Not found, return empty string.
             //
-            return;
+            break;
         }
 
         // See if what follows is what we are looking for.
@@ -4422,17 +4442,17 @@ FUNCTION(fun_after)
             //
             bp = cp + mlen;
             safe_str(bp, buff, bufc);
-            return;
+            break;
         }
 
         // Continue search after found first character.
         //
         bp = cp + 1;
     }
+#endif // MUX21
 
-    // Ran off the end without finding it.
     //
-    return;
+    // Ran off the end without finding it.
 }
 
 FUNCTION(fun_before)
@@ -4470,12 +4490,22 @@ FUNCTION(fun_before)
 
     // Look for the target string.
     //
+#ifdef MUX21
+    int i = BMH_StringSearch(mlen, mp, strlen(bp), bp);
+    if (i >= 0)
+    {
+        // Yup, return what follows.
+        //
+        safe_copy_buf(ip, i, buff, bufc, LBUF_SIZE-1);
+        return;
+    }
+#else // MUX21
     while (*bp)
     {
         // Search for the first character in the target string.
         //
-        cp = (char *)strchr(bp, *mp);
-        if (cp == NULL)
+        cp = strchr(bp, *mp);
+        if (!cp)
         {
             // Not found, return entire string.
             //
@@ -4498,11 +4528,11 @@ FUNCTION(fun_before)
         //
         bp = cp + 1;
     }
+#endif // MUX21
 
     // Ran off the end without finding it.
     //
     safe_str(ip, buff, bufc);
-    return;
 }
 
 /*
