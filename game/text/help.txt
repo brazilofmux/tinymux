@@ -5816,8 +5816,9 @@ FUNCTION CLASSES
                              MUL PACK POWER RAND REMAINDER SHL SHR SIGN SUB
                              SQRT UNPACK
   Comsystem Information:     CHANNELS COMALIAS COMTITLE CWHO
-  Database Information:      EXIT INZONE LOC LOCATE LROOMS MAIL NEARBY NEXT
-                             NUM RLOC ROOM SEARCH STATS VALID WHERE ZONE ZWHO
+  Database Information:      EXIT INZONE LOC LOCATE LROOMS MAIL MAILFROM
+                             NEARBY NEXT NUM RLOC ROOM SEARCH STATS VALID
+                             WHERE ZFUN ZONE ZWHO
   Floating Point Conversion: FLOOR ROUND TRUNC
   Game Information:          DUMPING MOTD MUDNAME POLL VERSION
   Lists:                     COLUMNS EXTRACT ELEMENTS FOREACH FILTER FIRST
@@ -5827,7 +5828,7 @@ FUNCTION CLASSES
                              SETDIFF SETINTER SETUNION SHUFFLE SORT SORTBY
                              SPLICE TABLE WORDS
   Logarithms:                E EXP LOG LN
-  Logical:                   AND NOT OR XOR
+  Logical:                   AND NOT OR T XOR
   Miscellaneous:             @@ ART R SETQ ANSI BEEP CREATE ISDBREF ISNUM
                              ISWORD LIT NULL SETR SUBEVAL
  
@@ -5842,21 +5843,22 @@ FUNCTION CLASSES (continued)
                              HASPOWER HASTYPE HOME LATTR LATTRCMDS LCMDS LCON
                              LEXITS LFLAGS LPARENT LOCK MONEY NAME OBJ OBJEVAL
                              OBJMEM ORFLAGS OWNER PARENT PMATCH POSS S SUBJ
-                             TYPE U UDEFAULT ULOCAL V VISIBLE
+                             TYPE U UDEFAULT ULOCAL V VISIBLE XGET
   Player Information:        CONN CONNLAST CONNLEFT CONNMAX CONNNUM CONNTOTAL
                              CTIME DOING FINDABLE IDLE LWHO PLAYMEM PORTS
-  Relational:                EQ GT GTE LT LTE MAX MIN NEQ SORT
+  Relational:                EQ GT GTE LT LTE MAX MIN NEQ
   Realms:                    CANSEE
-  Side-Effect Functions:     EMIT LINK TEL
-  Stack:                     EMPTY ITEMS LSTACK
+  Side-Effect Functions:     EMIT LINK OEMIT PEMIT REMIT TEL
+  Stack:                     EMPTY ITEMS LSTACK PEEK POP PUSH
   Strings:                   AFTER ALPHAMAX ALPHAMIN BEFORE CAPSTR CASE CAT
-                             CENTER COMP DELETE EDIT ESCAPE IFELSE LCSTR
-                             LJUST LPOS MERGE MID POS REPEAT REPLACE REVERSE
-                             RJUST SCRAMBLE SECURE SPACE SQUISH STRCAT STRLEN
-                             STRMATCH TRANSLATE STRTRUNC SWITCH UCSTR ENCRYPT
-                             DECRYPT VALID
+                             CENTER COMP DECRYPT DELETE EDIT ENCRYPT ESCAPE
+                             IFELSE LCSTR LJUST LPOS MERGE MID POS REGMATCH
+                             REPEAT REPLACE REVERSE RJUST SCRAMBLE SECURE
+                             SPACE SQUISH STRCAT STRIPANSI STRLEN STRMATCH
+                             STRTRUNC SWITCH TRANSLATE TRIM UCSTR WORDPOS
   Time:                      CONVSECS CONVTIME DIGITTIME EXPTIME SECS
-                             SINGLETIME STARTSECS STARTTIME TIME WRITETIME
+                             SINGLETIME STARTSECS STARTTIME TIME TIMEFMT 
+                             WRITETIME
   Trigometric:               ACOS ASIN ATAN COS DIST2D DIST3D PI SIN TAN
                              VADD VCROSS VDIM VDOT VMAG VMUL VSUB VUNIT
 
@@ -5898,23 +5900,24 @@ FUNCTION LIST (continued)
     MID()       MIN()       MIX()       MOD()       MONEY()     MOTD()
     MUDNAME()   MUL()       MUNGE()     NAME()      NEARBY()    NEQ()
     NEXT()      NOT()       NUM()       OBJ()       OBJEVAL()   OBJMEM()
-    OR()        ORFLAGS()   OWNER()     PACK()      PARENT()    PARSE()
-    PEEK()      PEMIT()     PI()        PICKRAND()  PLAYMEM()   PMATCH()
-    POLL()      POP()       PORTS()     POS()       POSS()      POWER()
-    PUSH()      R()         RAND()      REGMATCH()  REMAINDER() REMOVE()
-    REPEAT()    REPLACE()   REST()      REVERSE()   REVWORDS()  RJUST()
-    RLOC()      ROOM()      ROUND()     S()         SCRAMBLE()  SEARCH()
-    SECS()      SECURE()    SET()       SETDIFF()   SETINTER()  SETQ()
-    SETR()      SETUNION()  SHL()       SHR()       SHUFFLE()   SIGN()
-    SIN()       SINGLETIME()SORT()      SORTBY()    SPACE()     SPLICE()
-    SQRT()      SQUISH()    STARTSECS() STARTTIME() STATS()     STRCAT()
-    STRIPANSI() STRLEN()    STRMATCH()  STRTRUNC()  SUB()       SUBJ()
-    SWITCH()    TABLE()     TAN()       TIME()      TRANSLATE() TRIM()
-    TRUNC()     TYPE()      U()         UCSTR()     UDEFAULT()  ULOCAL()
-    UNPACK()    V()         VADD()      VALID()     VCROSS()    VDIM()
-    VDOT()      VERSION()   VISIBLE()   VMAG()      VMUL()      VSUB()
-    VUNIT()     WHERE()     WORDPOS()   WORDS()     WRITETIME() XGET()
-    XOR()       ZONE()      ZWHO()
+    OEMIT()     OR()        ORFLAGS()   OWNER()     PACK()      PARENT()
+    PARSE()     PEEK()      PEMIT()     PFIND()     PI()        PICKRAND()
+    PLAYMEM()   PMATCH()    POLL()      POP()       PORTS()     POS()
+    POSS()      POWER()     PUSH()      R()         RAND()      REGMATCH()
+    REMAINDER() REMIT()     REMOVE()    REPEAT()    REPLACE()   REST()
+    REVERSE()   REVWORDS()  RJUST()     RLOC()      ROOM()      ROUND()
+    S()         SCRAMBLE()  SEARCH()    SECS()      SECURE()    SET()
+    SETDIFF()   SETINTER()  SETQ()      SETR()      SETUNION()  SHL()
+    SHR()       SHUFFLE()   SIGN()      SIN()       SINGLETIME()SORT()
+    SORTBY()    SPACE()     SPLICE()    SQRT()      SQUISH()    STARTSECS()
+    STARTTIME() STATS()     STRCAT()    STRIPANSI() STRLEN()    STRMATCH()
+    STRTRUNC()  SUB()       SUBEVAL()   SUBJ()      SWITCH()    T()
+    TABLE()     TAN()       TEL()       TIME()      TIMEFMT()   TRANSLATE()
+    TRIM()      TRUNC()     TYPE()      U()         UCSTR()     UDEFAULT()
+    ULOCAL()    UNPACK()    V()         VADD()      VALID()     VCROSS()
+    VDIM()      VDOT()      VERSION()   VISIBLE()   VMAG()      VMUL()
+    VSUB()      VUNIT()     WHERE()     WORDPOS()   WORDS()     WRITETIME()
+    XGET()      XOR()       ZFUN()      ZONE()      ZWHO()
 
 & FUNCTIONS
 FUNCTIONS
@@ -11414,6 +11417,15 @@ XOR()
   equivalent to true(1).
 
   Related Topics: BOOLEAN VALUES, and(), not(), or(), t().
+
+& ZFUN()
+ZFUN()
+
+  FUNCTION: zfun(<attrib>, <arg0>[, <arg1>[, ...]])
+
+  Evaluates <attrib> on the enactor's zone object with parameters.
+
+  Related Topics:
 
 & ZONE OBJECTS
 ZONE OBJECTS

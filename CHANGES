@@ -57,6 +57,7 @@ Feature Additions:
  -- Freshened help for @aconnect and @disconnect.
  -- Support second argument for squish().
  -- attrcnt() function from Jake.
+ -- ctime() function from Jake.
 
 Bug Fixes:
 ~~~~~~~~~
