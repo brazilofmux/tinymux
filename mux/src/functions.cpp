@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.82 2002-08-22 01:00:27 sdennis Exp $
+// $Id: functions.cpp,v 1.83 2002-08-25 12:56:59 jake Exp $
 //
 
 #include "copyright.h"
@@ -7901,8 +7901,8 @@ FUN flist[] =
     {"ATTRCNT",  fun_attrcnt,  MAX_ARG, 1,  1,       0, CA_PUBLIC},
     {"BAND",     fun_band,     MAX_ARG, 2,  2,       0, CA_PUBLIC},
     {"BEEP",     fun_beep,     MAX_ARG, 0,  0,       0, CA_WIZARD},
-    {"BITTYPE",  fun_bittype,  MAX_ARG, 0,  1,       0, CA_PUBLIC},
     {"BEFORE",   fun_before,   MAX_ARG, 1,  2,       0, CA_PUBLIC},
+    {"BITTYPE",  fun_bittype,  MAX_ARG, 0,  1,       0, CA_PUBLIC},
     {"BNAND",    fun_bnand,    MAX_ARG, 2,  2,       0, CA_PUBLIC},
     {"BOR",      fun_bor,      MAX_ARG, 2,  2,       0, CA_PUBLIC},
     {"CAND",     fun_cand,     MAX_ARG, 0,  MAX_ARG, FN_NO_EVAL, CA_PUBLIC},
