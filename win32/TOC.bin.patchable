@@ -25,7 +25,6 @@ game/data/db_load.bat
 game/data/db_unload.bat
 game/muxconfig.vbs
 game/startmux.wsf
-game/startmuxold.bat
 game/text/help.txt
 game/text/wizhelp.txt
 INSTALL

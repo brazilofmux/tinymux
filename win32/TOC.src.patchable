@@ -22,7 +22,6 @@ game/data/db_load.bat
 game/data/db_unload.bat
 game/muxconfig.vbs
 game/startmux.wsf
-game/startmuxold.bat
 game/text/help.txt
 game/text/wizhelp.txt
 INSTALL
@@ -107,6 +106,8 @@ src/netcommon.cpp
 src/netmux.dsp
 src/netmux.dsw
 src/object.cpp
+src/pcre.cpp
+src/pcre.h
 src/phase1.awk
 src/phase2.awk
 src/player.cpp
@@ -117,8 +118,6 @@ src/predicates.cpp
 src/quota.cpp
 src/radix.cpp
 src/radix.h
-src/regexp.cpp
-src/regexp.h
 src/rob.cpp
 src/set.cpp
 src/slave.cpp
