@@ -1,6 +1,6 @@
 // svdhash.cpp -- CHashPage, CHashFile, CHashTable modules.
 //
-// $Id: svdhash.cpp,v 1.2 2003-01-23 23:50:15 sdennis Exp $
+// $Id: svdhash.cpp,v 1.3 2003-01-24 03:28:08 sdennis Exp $
 //
 // MUX 2.2
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All
@@ -1113,6 +1113,7 @@ BOOL CHashPage::WritePage(HANDLE hFile, HF_FILEOFFSET oWhere)
 
     // Don't struggle further.  You'll just make it worse.
     //
+    mudstate.shutdown_flag = TRUE;
     return FALSE;
 }
 

@@ -1,6 +1,6 @@
 // mudconf.h
 //
-// $Id: mudconf.h,v 1.2 2003-01-22 21:01:37 sdennis Exp $
+// $Id: mudconf.h,v 1.3 2003-01-24 03:24:52 sdennis Exp $
 //
 
 #ifndef __CONF_H
@@ -37,7 +37,6 @@ typedef struct
 typedef struct confdata CONFDATA;
 struct confdata
 {
-#ifndef STANDALONE
     BOOL    compress_db;    // should we use compress.
     BOOL    have_comsys;    // Should the comsystem be active?
     BOOL    have_mailer;    // Should @mail be active?
@@ -181,7 +180,7 @@ struct confdata
     dbref   hook_obj;       // Object with @hook data.
     int     hook_cmd;       // @hooks to be initialized.
     dbref   global_error_obj;    // Object that is used to generate error messages.
-#endif // !STANDALONE
+
     BOOL    cache_names;    /* Should object names be cached separately */
 
     int     paylimit;       /* getting money gets hard over this much */
@@ -284,7 +283,7 @@ struct statedata
 
     BOOL bStandAlone;       // Are we running in dbconvert mode.
     int record_players; /* The maximum # of player logged on */
-#ifndef STANDALONE
+
     BOOL bReadingConfiguration;  // are we reading the config file at startup?
     BOOL bCanRestart;            // are we ready to even attempt a restart.
     BOOL panicking;              // are we in the middle of dying horribly?
@@ -358,7 +357,7 @@ struct statedata
                                // invocations.
     BOOL    bStackLimitReached;// Was stack slammed?
     int     nStackNest;        // Current stack depth.
-#endif // !STANDALONE
+
     int     logging;    /* Are we in the middle of logging? */
     int     attr_next;  /* Next attr to alloc when freelist is empty */
     int     min_size;   /* Minimum db size (from file header) */
