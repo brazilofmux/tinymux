@@ -1,6 +1,6 @@
 // command.cpp -- command parser and support routines.
 //
-// $Id: command.cpp,v 1.25 2002-07-14 02:44:43 jake Exp $
+// $Id: command.cpp,v 1.26 2002-07-14 03:48:31 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -630,7 +630,7 @@ CMDENT_TWO_ARG command_table_two_arg[] =
     {"@name",        NULL,       CA_NO_SLAVE|CA_GBL_BUILD|CA_NO_GUEST,             0,           CS_TWO_ARG|CS_INTERP, do_name},
     {"@newpassword", NULL,       CA_WIZARD,                                        PASS_ANY,    CS_TWO_ARG,           do_newpassword},
     {"@notify",      notify_sw,  CA_GBL_INTERP|CA_NO_SLAVE|CA_NO_GUEST,            0,           CS_TWO_ARG,           do_notify},
-    {"@oemit",       NULL,       CA_CONTENTS|CA_NO_GUEST|CA_NO_SLAVE,              PEMIT_OEMIT, CS_TWO_ARG|CS_INTERP, do_pemit},
+    {"@oemit",       NULL,       CA_LOCATION|CA_NO_GUEST|CA_NO_SLAVE,              PEMIT_OEMIT, CS_TWO_ARG|CS_INTERP, do_pemit},
     {"@parent",      NULL,       CA_NO_SLAVE|CA_GBL_BUILD|CA_NO_GUEST,             0,           CS_TWO_ARG,           do_parent},
     {"@password",    NULL,       CA_NO_GUEST,                                      PASS_MINE,   CS_TWO_ARG,           do_password},
     {"@pcreate",     NULL,       CA_WIZARD|CA_GBL_BUILD,                           PCRE_PLAYER, CS_TWO_ARG,           do_pcreate},
@@ -788,31 +788,29 @@ BOOL check_access(dbref player, int mask)
     {
         return FALSE;
     }
-    if (God(player) || mudstate.bReadingConfiguration)
+    if (  God(player)
+       || mudstate.bReadingConfiguration)
     {
         return TRUE;
     }
-    if (mask & CA_GOD)
+
+    if (mask & CA_MUSTBE_MASK)
     {
-        return FALSE;
+        if (  !((mask & CA_GOD)      && God(player))
+           && !((mask & CA_WIZARD)   && Wizard(player))
+           && !((mask & CA_ADMIN)    && WizRoy(player))
+           && !((mask & CA_BUILDER)  && Builder(player))
+           && !((mask & CA_STAFF)    && Staff(player))
+           && !((mask & CA_HEAD)     && Head(player))
+           && !((mask & CA_ANNOUNCE) && Announce(player))
+           && !((mask & CA_IMMORTAL) && Immortal(player))
+           && !((mask & CA_UNINS)    && Uninspected(player))
+           && !((mask & CA_ROBOT)    && Robot(player)))
+        {
+            return FALSE;
+        }
     }
-
-    BOOL succ = TRUE;
-    if (mask & CA_WIZARD)              succ = Wizard(player);
-    if (succ && (mask & CA_ADMIN))     succ |= WizRoy(player);
-    if (succ && (mask & CA_BUILDER))   succ |= Builder(player);
-    if (succ && (mask & CA_STAFF))     succ |= Staff(player);
-    if (succ && (mask & CA_HEAD))      succ |= Head(player);
-    if (succ && (mask & CA_ANNOUNCE))  succ |= Announce(player);
-    if (succ && (mask & CA_IMMORTAL))  succ |= Immortal(player);
-    if (succ && (mask & CA_UNINS))     succ |= Uninspected(player);
-    if (succ && (mask & CA_ROBOT))     succ |= Robot(player);
-
-    if (!succ)
-    {
-        return FALSE;
-    }
-
+    
     // Check for forbidden flags.
     //
     if (  !Wizard(player)

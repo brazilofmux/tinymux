@@ -1,6 +1,6 @@
 // command.h -- declarations used by the command processor.
 //
-// $Id: command.h,v 1.4 2002-06-27 06:38:31 jake Exp $
+// $Id: command.h,v 1.5 2002-07-14 03:48:31 sdennis Exp $
 //
 
 #ifndef __COMMAND_H
@@ -263,11 +263,12 @@ typedef struct
 #define CA_IMMORTAL   0x00000008  /* Immortals only */
 #define CA_STAFF      0x00000010  /* Must have STAFF flag */
 #define CA_HEAD       0x00000020  /* Must have HEAD flag */
-#define CA_SQL_OK     0x00000040  /* Must have SQL_OK power */
+//#define CA_SQL_OK     0x00000040  /* Must have SQL_OK power */
 #define CA_ADMIN      0x00000080  /* Wizard or royal */
 #define CA_ROBOT      0x00000100  /* Robots only */
 #define CA_ANNOUNCE   0x00000200  /* Announce Power */
 #define CA_UNINS      0x00000400  /* Uninspected players ONLY */
+#define CA_MUSTBE_MASK  (CA_GOD|CA_WIZARD|CA_BUILDER|CA_IMMORTAL|CA_STAFF|CA_HEAD|CA_ADMIN|CA_ROBOT|CA_ANNOUNCE|CA_UNINS)
 
 #define CA_NO_HAVEN   0x00001000  /* Not by HAVEN players */
 #define CA_NO_ROBOT   0x00002000  /* Not by ROBOT players */
@@ -275,6 +276,7 @@ typedef struct
 #define CA_NO_SUSPECT 0x00008000  /* Not by SUSPECT players */
 #define CA_NO_GUEST   0x00010000  /* Not by GUEST players */
 #define CA_NO_UNINS   0x00020000  /* Not by UNINSPECTED players */
+#define CA_CANTBE_MASK (CA_NO_HAVEN|CA_NO_ROBOT|CA_NO_SLAVE|CA_NO_SUSPECT|CA_NO_GUEST|CA_NO_UNIS)
 
 #define CA_MARKER0    0x00002000
 #define CA_MARKER1    0x00004000
