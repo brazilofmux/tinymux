@@ -1,6 +1,6 @@
 // predicates.cpp
 //
-// $Id: predicates.cpp,v 1.23 2001-01-30 23:54:09 sdennis Exp $
+// $Id: predicates.cpp,v 1.24 2001-03-15 13:06:50 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -2067,7 +2067,7 @@ BOOL OutOfMemory(const char *SourceFile, unsigned int LineNo)
     }
     else
     {
-        do_restart(1,1,0);
+        do_restart(GOD, GOD, 0);
     }
 #endif // STANDALONE
     return TRUE;
@@ -2089,7 +2089,7 @@ BOOL AssertionFailed(const char *SourceFile, unsigned int LineNo)
     }
     else
     {
-        do_restart(1,1,0);
+        do_restart(GOD, GOD, 0);
     }
 #endif // STANDALONE
     return FALSE;
