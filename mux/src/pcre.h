@@ -11,8 +11,8 @@
 #define _PCRE_H
 
 #define PCRE_MAJOR          4
-#define PCRE_MINOR          3
-#define PCRE_DATE           21-May-2003
+#define PCRE_MINOR          4
+#define PCRE_DATE           21-August-2003
 
 #ifndef PCRE_DATA_SCOPE
 #  define PCRE_DATA_SCOPE     extern
@@ -38,6 +38,7 @@ it is needed here for malloc. */
 #define PCRE_NOTEMPTY           0x0400
 #define PCRE_UTF8               0x0800
 #define PCRE_NO_AUTO_CAPTURE    0x1000
+#define PCRE_NO_UTF8_CHECK      0x2000
 
 /* Exec-time and get/set-time error codes */
 
@@ -50,6 +51,7 @@ it is needed here for malloc. */
 #define PCRE_ERROR_NOSUBSTRING    (-7)
 #define PCRE_ERROR_MATCHLIMIT     (-8)
 #define PCRE_ERROR_CALLOUT        (-9)  /* Never used by PCRE itself */
+#define PCRE_ERROR_BADUTF8       (-10)
 
 /* Request types for pcre_fullinfo() */
 

@@ -118,10 +118,10 @@ time, run time or study time, respectively. */
 #define PUBLIC_OPTIONS \
   (PCRE_CASELESS|PCRE_EXTENDED|PCRE_ANCHORED|PCRE_MULTILINE| \
    PCRE_DOTALL|PCRE_DOLLAR_ENDONLY|PCRE_EXTRA|PCRE_UNGREEDY|PCRE_UTF8| \
-   PCRE_NO_AUTO_CAPTURE)
+   PCRE_NO_AUTO_CAPTURE|PCRE_NO_UTF8_CHECK)
 
 #define PUBLIC_EXEC_OPTIONS \
-  (PCRE_ANCHORED|PCRE_NOTBOL|PCRE_NOTEOL|PCRE_NOTEMPTY)
+  (PCRE_ANCHORED|PCRE_NOTBOL|PCRE_NOTEOL|PCRE_NOTEMPTY|PCRE_NO_UTF8_CHECK)
 
 #define PUBLIC_STUDY_OPTIONS 0   /* None defined */
 
@@ -441,6 +441,7 @@ just to accommodate the POSIX wrapper. */
 #define ERR41 "unrecognized character after (?P"
 #define ERR42 "syntax error after (?P"
 #define ERR43 "two named groups have the same name"
+#define ERR44 "invalid UTF-8 string"
 
 /* All character handling must be done as unsigned characters. Otherwise there
 are problems with top-bit-set characters and functions such as isspace().
@@ -1495,7 +1496,6 @@ Arguments:
   bracount   number of previous extracting brackets
   options    the options bits
   isclass    true if inside a character class
-  cd         pointer to char tables block
 
 Returns:     zero or positive => a data character
              negative => a special escape sequence
@@ -1504,7 +1504,7 @@ Returns:     zero or positive => a data character
 
 static int
 check_escape(const uschar **ptrptr, const char **errorptr, int bracount,
-  int options, bool isclass, compile_data *cd)
+  int options, bool isclass)
 {
 const uschar *ptr = *ptrptr;
 int c, i;
@@ -1604,7 +1604,8 @@ else
     c = 0;
     while (i++ < 2 && (digitab[ptr[1]] & ctype_xdigit) != 0)
       {
-      int cc = *(++ptr);
+      int cc;                               /* Some compilers don't like ++ */
+      cc = *(++ptr);                        /* in initializers */
       if (cc >= 'a') cc -= 32;              /* Convert to upper case */
       c = c * 16 + cc - ((cc < 'A')? '0' : ('A' - 10));
       }
@@ -1659,13 +1660,12 @@ where the ddds are digits.
 
 Arguments:
   p         pointer to the first char after '{'
-  cd        pointer to char tables block
 
 Returns:    true or false
 */
 
 static bool
-is_counted_repeat(const uschar *p, compile_data *cd)
+is_counted_repeat(const uschar *p)
 {
 if ((digitab[*p++] && ctype_digit) == 0) return false;
 while ((digitab[*p] & ctype_digit) != 0) p++;
@@ -1696,15 +1696,13 @@ Arguments:
   maxp       pointer to int for max
              returned as -1 if no max
   errorptr   points to pointer to error message
-  cd         pointer to character tables clock
 
 Returns:     pointer to '}' on success;
              current ptr on error, with errorptr set
 */
 
 static const uschar *
-read_repeat_counts(const uschar *p, int *minp, int *maxp,
-  const char **errorptr, compile_data *cd)
+read_repeat_counts(const uschar *p, int *minp, int *maxp, const char **errorptr)
 {
 int min = 0;
 int max = -1;
@@ -2521,7 +2519,7 @@ for (;; ptr++)
 
       if (c == '\\')
         {
-        c = check_escape(&ptr, errorptr, *brackets, options, true, cd);
+        c = check_escape(&ptr, errorptr, *brackets, options, true);
         if (-c == ESC_b) c = '\b';  /* \b is backslash in a class */
 
         if (-c == ESC_Q)            /* Handle start of quoted string */
@@ -2603,7 +2601,7 @@ for (;; ptr++)
         if (d == '\\')
           {
           const uschar *oldptr = ptr;
-          d = check_escape(&ptr, errorptr, *brackets, options, true, cd);
+          d = check_escape(&ptr, errorptr, *brackets, options, true);
 
           /* \b is backslash; any other special means the '-' was literal */
 
@@ -2745,8 +2743,8 @@ for (;; ptr++)
     /* Various kinds of repeat */
 
     case '{':
-    if (!is_counted_repeat(ptr+1, cd)) goto NORMAL_CHAR;
-    ptr = read_repeat_counts(ptr+1, &repeat_min, &repeat_max, errorptr, cd);
+    if (!is_counted_repeat(ptr+1)) goto NORMAL_CHAR;
+    ptr = read_repeat_counts(ptr+1, &repeat_min, &repeat_max, errorptr);
     if (*errorptr != NULL) goto FAILED;
     goto REPEAT;
 
@@ -3642,7 +3640,7 @@ for (;; ptr++)
 
     case '\\':
     tempptr = ptr;
-    c = check_escape(&ptr, errorptr, *brackets, options, false, cd);
+    c = check_escape(&ptr, errorptr, *brackets, options, false);
 
     /* Handle metacharacters introduced by \. For ones like \d, the ESC_ values
     are arranged to be the negation of the corresponding OP_values. For the
@@ -3745,7 +3743,7 @@ for (;; ptr++)
       if (c == '\\')
         {
         tempptr = ptr;
-        c = check_escape(&ptr, errorptr, *brackets, options, false, cd);
+        c = check_escape(&ptr, errorptr, *brackets, options, false);
         if (c < 0) { ptr = tempptr; break; }
 
         /* If a character is > 127 in UTF-8 mode, we have to turn it into
@@ -4399,7 +4397,7 @@ while ((c = *(++ptr)) != 0)
     case '\\':
       {
       const uschar *save_ptr = ptr;
-      c = check_escape(&ptr, errorptr, bracount, options, false, &compile_block);
+      c = check_escape(&ptr, errorptr, bracount, options, false);
       if (*errorptr != NULL) goto PCRE_ERROR_RETURN;
       if (c >= 0)
         {
@@ -4432,9 +4430,9 @@ while ((c = *(++ptr)) != 0)
       if (refnum > compile_block.top_backref)
         compile_block.top_backref = refnum;
       length += 2;   /* For single back reference */
-      if (ptr[1] == '{' && is_counted_repeat(ptr+2, &compile_block))
+      if (ptr[1] == '{' && is_counted_repeat(ptr+2))
         {
-        ptr = read_repeat_counts(ptr+2, &min, &max, errorptr, &compile_block);
+        ptr = read_repeat_counts(ptr+2, &min, &max, errorptr);
         if (*errorptr != NULL) goto PCRE_ERROR_RETURN;
         if ((min == 0 && (max == 1 || max == -1)) ||
           (min == 1 && max == -1))
@@ -4461,8 +4459,8 @@ while ((c = *(++ptr)) != 0)
     class, or back reference. */
 
     case '{':
-    if (!is_counted_repeat(ptr+1, &compile_block)) goto NORMAL_CHAR;
-    ptr = read_repeat_counts(ptr+1, &min, &max, errorptr, &compile_block);
+    if (!is_counted_repeat(ptr+1)) goto NORMAL_CHAR;
+    ptr = read_repeat_counts(ptr+1, &min, &max, errorptr);
     if (*errorptr != NULL) goto PCRE_ERROR_RETURN;
 
     /* These special cases just insert one extra opcode */
@@ -4538,8 +4536,7 @@ while ((c = *(++ptr)) != 0)
 
       if (*ptr == '\\')
         {
-        int ch = check_escape(&ptr, errorptr, bracount, options, true,
-          &compile_block);
+        int ch = check_escape(&ptr, errorptr, bracount, options, true);
         if (*errorptr != NULL) goto PCRE_ERROR_RETURN;
 
         /* \b is backspace inside a class */
@@ -4600,9 +4597,9 @@ while ((c = *(++ptr)) != 0)
 
       /* A repeat needs either 1 or 5 bytes. */
 
-      if (*ptr != 0 && ptr[1] == '{' && is_counted_repeat(ptr+2, &compile_block))
+      if (*ptr != 0 && ptr[1] == '{' && is_counted_repeat(ptr+2))
         {
-        ptr = read_repeat_counts(ptr+2, &min, &max, errorptr, &compile_block);
+        ptr = read_repeat_counts(ptr+2, &min, &max, errorptr);
         if (*errorptr != NULL) goto PCRE_ERROR_RETURN;
         if ((min == 0 && (max == 1 || max == -1)) ||
           (min == 1 && max == -1))
@@ -4954,9 +4951,9 @@ while ((c = *(++ptr)) != 0)
     /* Leave ptr at the final char; for read_repeat_counts this happens
     automatically; for the others we need an increment. */
 
-    if ((c = ptr[1]) == '{' && is_counted_repeat(ptr+2, &compile_block))
+    if ((c = ptr[1]) == '{' && is_counted_repeat(ptr+2))
       {
-      ptr = read_repeat_counts(ptr+2, &min, &max, errorptr, &compile_block);
+      ptr = read_repeat_counts(ptr+2, &min, &max, errorptr);
       if (*errorptr != NULL) goto PCRE_ERROR_RETURN;
       }
     else if (c == '*') { min = 0; max = -1; ptr++; }
@@ -5042,8 +5039,7 @@ while ((c = *(++ptr)) != 0)
       if (c == '\\')
         {
         const uschar *saveptr = ptr;
-        c = check_escape(&ptr, errorptr, bracount, options, false,
-          &compile_block);
+        c = check_escape(&ptr, errorptr, bracount, options, false);
         if (*errorptr != NULL) goto PCRE_ERROR_RETURN;
         if (c < 0) { ptr = saveptr; break; }
 
@@ -6917,7 +6913,7 @@ if (extra_data != NULL)
   {
   register unsigned int flags = extra_data->flags;
   if ((flags & PCRE_EXTRA_STUDY_DATA) != 0)
-    study = static_cast<pcre_study_data*>(extra_data->study_data);
+    study = (const pcre_study_data *)extra_data->study_data;
   if ((flags & PCRE_EXTRA_MATCH_LIMIT) != 0)
     match_block.match_limit = extra_data->match_limit;
   if ((flags & PCRE_EXTRA_CALLOUT_DATA) != 0)
