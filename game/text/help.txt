@@ -1896,7 +1896,7 @@ WHO
 
 { 'help @lock evaluation2' for more }
 
-& @LOCK EVALUTION2
+& @LOCK EVALUATION2
 @LOCK EVALUATION (continued)
 
   Examples:
