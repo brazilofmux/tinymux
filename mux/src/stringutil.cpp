@@ -1,6 +1,6 @@
 // stringutil.cpp -- string utilities.
 //
-// $Id: stringutil.cpp,v 1.68 2004-12-25 08:07:44 sdennis Exp $
+// $Id: stringutil.cpp,v 1.69 2005-04-11 17:53:10 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -1207,8 +1207,9 @@ int ANSI_TruncateToField
 char *ANSI_TruncateAndPad_sbuf(const char *pString, int nMaxVisualWidth, char fill)
 {
     char *pStringModified = alloc_sbuf("ANSI_TruncateAndPad_sbuf");
+    int nAvailable = SBUF_SIZE - nMaxVisualWidth;
     int nVisualWidth;
-    int nLen = ANSI_TruncateToField(pString, SBUF_SIZE,
+    int nLen = ANSI_TruncateToField(pString, nAvailable,
         pStringModified, nMaxVisualWidth, &nVisualWidth, ANSI_ENDGOAL_NORMAL);
     for (int i = nMaxVisualWidth - nVisualWidth; i > 0; i--)
     {
