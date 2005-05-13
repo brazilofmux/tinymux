@@ -1,6 +1,6 @@
 // timeutil.cpp -- CLinearTimeAbsolute and CLinearTimeDelta modules.
 //
-// $Id: timeutil.cpp,v 1.45 2005-05-13 19:31:38 sdennis Exp $
+// $Id: timeutil.cpp,v 1.46 2005-05-13 19:33:29 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -1817,7 +1817,7 @@ time_t time_t_smallest(void)
     return t;
 }
 
-// This determines the valid range of time_t and finds a 'standard'
+// This determines the valid range of localtime() and finds a 'standard'
 // time zone near the earliest supported time_t.
 //
 void test_time_t(void)
