@@ -1,6 +1,6 @@
 // timeutil.cpp -- CLinearTimeAbsolute and CLinearTimeDelta modules.
 //
-// $Id: timeutil.cpp,v 1.44 2005-05-13 19:30:10 sdennis Exp $
+// $Id: timeutil.cpp,v 1.45 2005-05-13 19:31:38 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -1897,6 +1897,10 @@ static bool bTimeInitialized = false;
 
 void TIME_Initialize(void)
 {
+    if (bTimeInitialized)
+    {
+        return;
+    }
     bTimeInitialized = true;
 
     tzset();
