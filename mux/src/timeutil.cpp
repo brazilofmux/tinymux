@@ -1,6 +1,6 @@
 // timeutil.cpp -- CLinearTimeAbsolute and CLinearTimeDelta modules.
 //
-// $Id: timeutil.cpp,v 1.40 2005-05-13 02:12:07 sdennis Exp $
+// $Id: timeutil.cpp,v 1.41 2005-05-13 02:26:51 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -1769,7 +1769,7 @@ time_t time_t_midpoint(time_t tLower, time_t tUpper)
 time_t time_t_largest(void)
 {
     time_t t;
-#ifdef _WIN64
+#if defined(WIN) && (_MSC_VER >= 1400) && (sizeof(time_t) > 4))
     // Not only can Windows not handle negative time_t values, but it also
     // cannot handle positive 64-bit values which are 'too large'.  Even
     // though the interface to localtime() provides for a NULL return value
@@ -1816,8 +1816,8 @@ time_t time_t_largest(void)
     {
         t = next;
     }
-    return t;
 #endif
+    return t;
 }
 
 
