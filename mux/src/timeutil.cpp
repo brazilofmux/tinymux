@@ -1,6 +1,6 @@
 // timeutil.cpp -- CLinearTimeAbsolute and CLinearTimeDelta modules.
 //
-// $Id: timeutil.cpp,v 1.42 2005-05-13 02:41:24 sdennis Exp $
+// $Id: timeutil.cpp,v 1.43 2005-05-13 02:56:06 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -1812,7 +1812,7 @@ time_t time_t_largest(void)
     // December 31, 2999, 23:59:59 UTC.
     //
     // The message here is that they really don't think anyone should be using
-    // localtime(), but if you do use it, they get to decide unilaterially and
+    // localtime(), but if you do use it, they get to decide unilaterally and
     // without hints whether your application is making reasonable calls.
     //
     const INT64 WIN_MAX__TIME64_T = 32535215999i64;
