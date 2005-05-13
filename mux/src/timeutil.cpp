@@ -1,6 +1,6 @@
 // timeutil.cpp -- CLinearTimeAbsolute and CLinearTimeDelta modules.
 //
-// $Id: timeutil.cpp,v 1.39 2005-05-13 00:12:41 sdennis Exp $
+// $Id: timeutil.cpp,v 1.40 2005-05-13 02:12:07 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -1768,7 +1768,27 @@ time_t time_t_midpoint(time_t tLower, time_t tUpper)
 
 time_t time_t_largest(void)
 {
-    time_t t = 1;
+    time_t t;
+#ifdef _WIN64
+    // Not only can Windows not handle negative time_t values, but it also
+    // cannot handle positive 64-bit values which are 'too large'.  Even
+    // though the interface to localtime() provides for a NULL return value
+    // for any unsupported arguments, with VS 2005, Microsoft has decided that
+    // an assert is more useful.
+    //
+    // The logic of their assert is based on private #defines which are not
+    // available to applications. Also, the values have changed from VS 2003
+    // (0x100000000000i64) to VS 2005 (32535215999). The latter corresponds to
+    // December 31, 2999, 23:59:59 UTC.
+    //
+    // The message here is that they really don't think anyone should be using
+    // localtime(), but if you do use it, they get to decide unilaterially and
+    // without hints whether your application is making reasonable calls.
+    //
+    const time_t WIN_MAX__TIME64_T = 32535215999;
+    t = WIN_MAX__TIME64_T;
+#else
+    t = 1;
 
     // Multiply to search within half the largest number.
     //
@@ -1780,7 +1800,7 @@ time_t time_t_largest(void)
 
     // Divide by powers of 2 to reach within a few values.
     //
-    time_t d = t/2;
+    time_t d;
     for (d = t/2; d != 0; d = d/2)
     {
         next = t + d;
@@ -1797,6 +1817,7 @@ time_t time_t_largest(void)
         t = next;
     }
     return t;
+#endif
 }
 
 
