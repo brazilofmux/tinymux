@@ -1,6 +1,6 @@
 // timeutil.cpp -- CLinearTimeAbsolute and CLinearTimeDelta modules.
 //
-// $Id: timeutil.cpp,v 1.43 2005-05-13 02:56:06 sdennis Exp $
+// $Id: timeutil.cpp,v 1.44 2005-05-13 19:30:10 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -1768,35 +1768,11 @@ time_t time_t_midpoint(time_t tLower, time_t tUpper)
 
 time_t time_t_largest(void)
 {
-    time_t t;
-    t = 1;
-
-    // Multiply to search within half the largest number.
+    // Assuming 2's complement.
     //
-    time_t next;
-    for (next = 2*t; t < next; next = 2*t)
-    {
-        t = next;
-    }
-
-    // Divide by powers of 2 to reach within a few values.
-    //
-    time_t d;
-    for (d = t/2; d != 0; d = d/2)
-    {
-        next = t + d;
-        if (t < next)
-        {
-            t = next;
-        }
-    }
-
-    // Increment until at the largest number.
-    //
-    for (next = t+1; t < next; next = t+1)
-    {
-        t = next;
-    }
+    time_t tOne = 1;
+    int nBits = sizeof(time_t)*8;
+    time_t t = ~(tOne << (nBits-1));
 
 #ifdef WIN32
 #if (_MSC_VER >= 1400)
@@ -1827,43 +1803,16 @@ time_t time_t_largest(void)
 }
 
 
-// This code creates overflows intentionally in order to find the most
-// negative time_t supported by the data type.
-//
 time_t time_t_smallest(void)
 {
-    time_t t;
 #ifdef WIN32
-    t = 0;
+    time_t t = 0;
 #else
-    t = -1;
-
-    // Multiply to search within half the smallest number.
+    // Assuming 2's complement.
     //
-    time_t next;
-    for (next = 2*t; next < t; next = 2*t)
-    {
-        t = next;
-    }
-
-    // Divide by powers of 2 to reach within a few values.
-    //
-    time_t d = t/2;
-    for (d = t/2; d != 0; d = d/2)
-    {
-        next = t + d;
-        if (next < t)
-        {
-            t = next;
-        }
-    }
-
-    // Decrement until at the smallest number.
-    //
-    for (next = t-1; next < t; next = t-1)
-    {
-        t = next;
-    }
+    time_t tOne = 1;
+    int nBits = sizeof(time_t)*8;
+    time_t t = tOne << (nBits-1);
 #endif
     return t;
 }
