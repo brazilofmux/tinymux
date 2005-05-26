@@ -1,6 +1,6 @@
 // db.cpp
 //
-// $Id: db.cpp,v 1.53 2005-04-04 12:50:16 sdennis Exp $
+// $Id: db.cpp,v 1.54 2005-05-26 00:06:01 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -1194,6 +1194,35 @@ void SetupThrottle(dbref executor)
     db[executor].tThrottleExpired = tNow + ltdHour;
     s_ThAttrib(executor, mudconf.vattr_per_hour);
     s_ThMail(executor, mudconf.mail_per_hour);
+}
+
+void SetupGlobalThrottle(void)
+{
+    CLinearTimeAbsolute tNow;
+    CLinearTimeDelta    ltdHour;
+
+    ltdHour.SetSeconds(24*60*60);
+    tNow.GetUTC();
+
+    mudstate.tThrottleExpired = tNow + ltdHour;
+    mudstate.pcreates_this_hour = mudconf.pcreate_per_hour;
+}
+
+bool ThrottlePlayerCreate(void)
+{
+    if (0 < mudstate.pcreates_this_hour)
+    {
+        mudstate.pcreates_this_hour--;
+        return false;
+    }
+    CLinearTimeAbsolute tNow;
+    tNow.GetUTC();
+    if (mudstate.tThrottleExpired <= tNow)
+    {
+        SetupGlobalThrottle();
+        return false;
+    }
+    return true;
 }
 
 bool ThrottleAttributeNames(dbref executor)

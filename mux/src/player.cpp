@@ -1,6 +1,6 @@
 // player.cpp
 //
-// $Id: player.cpp,v 1.27 2004-09-21 04:18:40 sdennis Exp $
+// $Id: player.cpp,v 1.28 2005-05-26 00:06:01 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -549,6 +549,14 @@ dbref create_player
 )
 {
     *pmsg = NULL;
+
+    // Potentially throttle the rate of player creation.
+    //
+    if (ThrottlePlayerCreate())
+    {
+        *pmsg = "The limit of new players for this hour has been reached. Please try again later.";
+        return NOTHING;
+    }
 
     // Make sure the password is OK.  Name is checked in create_obj.
     //

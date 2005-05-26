@@ -1,6 +1,6 @@
 // mudconf.h
 //
-// $Id: mudconf.h,v 1.24 2004-07-24 05:32:00 sdennis Exp $
+// $Id: mudconf.h,v 1.25 2005-05-26 00:06:01 sdennis Exp $
 //
 
 #ifndef __CONF_H
@@ -198,6 +198,7 @@ struct confdata
     int     paylimit;           /* getting money gets hard over this much */
     int     paystart;           /* new players start with this much money */
     int     player_quota;       /* quota needed to make a robot player */
+    int     pcreate_per_hour;   // Maximum allowed players created per hour */
     int     queue_chunk;        /* # cmds to run from queue when idle */
     int     queuemax;           /* max commands a player may have in queue */
     int     retry_limit;        /* close conn after this many bad logins */
@@ -385,6 +386,7 @@ struct statedata
     int     nStackNest;         // Current stack depth.
     int     nHearNest;          // Current aahear depth.
     int     pipe_nest_lev;      // Number of piped commands.
+    int     pcreates_this_hour; // Player creations possible this hour.
     int     ntfy_nest_lev;      /* Current nesting of notifys */
     int     record_players;     /* The maximum # of player logged on */
     int     wild_invk_ctr;      // Regular Expression function calls.
@@ -426,6 +428,7 @@ struct statedata
     CLinearTimeAbsolute events_counter; /* Countdown to next events check */
     CLinearTimeAbsolute idle_counter;   /* Countdown to next idle check */
     CLinearTimeAbsolute start_time;     /* When was MUX started */
+    CLinearTimeAbsolute tThrottleExpired; // How much time is left in this hour of throttling.
 
     CHashTable acache_htab;     // Attribute Cache
     CHashTable attr_name_htab;  /* Attribute names hashtable */

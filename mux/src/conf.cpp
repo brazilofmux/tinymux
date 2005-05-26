@@ -1,6 +1,6 @@
 // conf.cpp -- Set up configuration information and static data.
 //
-// $Id: conf.cpp,v 1.52 2004-08-16 05:14:07 sdennis Exp $
+// $Id: conf.cpp,v 1.53 2005-05-26 00:06:01 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -255,6 +255,7 @@ void cf_init(void)
     mudconf.cache_pages = 40;
     mudconf.mail_per_hour = 50;
     mudconf.vattr_per_hour = 5000;
+    mudconf.pcreate_per_hour = 100;
 
     mudstate.events_flag = 0;
     mudstate.bReadingConfiguration = false;
@@ -1792,6 +1793,7 @@ CONF conftable[] =
     {"port",                      cf_int_array,   CA_STATIC, CA_PUBLIC,   (int *)&mudconf.ports,           NULL, MAX_LISTEN_PORTS},
     {"postdump_message",          cf_string,      CA_GOD,    CA_WIZARD,   (int *)mudconf.postdump_msg,     NULL,             128},
     {"power_alias",               cf_poweralias,  CA_GOD,    CA_DISABLED, NULL,                            NULL,               0},
+    {"pcreate_per_hour",          cf_int,         CA_STATIC, CA_PUBLIC,   (int *)&mudconf.pcreate_per_hour,NULL,               0},
     {"public_channel",            cf_string,      CA_STATIC, CA_PUBLIC,   (int *)mudconf.public_channel,   NULL,              32},
     {"public_channel_alias",      cf_string,      CA_STATIC, CA_PUBLIC,   (int *)mudconf.public_channel_alias, NULL,          32},
     {"public_flags",              cf_bool,        CA_GOD,    CA_PUBLIC,   (int *)&mudconf.pub_flags,       NULL,               0},

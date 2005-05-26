@@ -1,6 +1,6 @@
 // db.h
 //
-// $Id: db.h,v 1.5 2004-04-29 04:59:17 sdennis Exp $
+// $Id: db.h,v 1.6 2005-05-26 00:06:01 sdennis Exp $
 //
 
 #ifndef __DB_H
@@ -227,6 +227,7 @@ extern void free_boolexp(BOOLEXP *);
 extern dbref    parse_dbref(const char *);
 extern bool ThrottleMail(dbref executor);
 extern bool ThrottleAttributeNames(dbref executor);
+extern bool ThrottlePlayerCreate(void);
 extern int  mkattr(dbref executor, char *);
 extern void al_store(void);
 extern void db_grow(dbref);
