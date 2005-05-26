@@ -1,5 +1,5 @@
 TinyMUX 2.4:  CHANGES
-Last Update:  December 2004
+Last Update:  May 2005
 
 Major changes that may affect performance and require softcode tweaks:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -129,6 +129,20 @@ Bug Fixes:
  -- Fix TRIM() so that it doesn't leave a separator on the right side.
  -- Remove the different 'Icons' appearance from a MATRIX room.  There
     are other ways of accomplishing the same effect now.
+ -- Document @queuemax and @cboot/quiet.
+ -- Let band(), bor(), and bxor() take a variable number of arguments.
+ -- Added strmem() to return the number of bytes required to represent
+    a string in memory. strlen() returns the visual length of a string.
+ -- Allow vadd() and vsub() to mix vector or scalar arguments.
+ -- Allow conn_timeout of 0 indicate that connection timeouts should be
+    disabled.
+ -- Limit the number of pcreates permitted per hour to be controlled by
+    pcreate_per_hour configuration option.
+ -- When a user disconnect or connects, announce their presence on a 
+    channel once reguardless of how many aliases they have for that
+    channel.
+ -- Add case-insensitive sort option to sort().
+
 
 
 Performance Enhancements:
@@ -143,6 +157,7 @@ Cosmetic Changes:
 ~~~~~~~~~~~~~~~~
  -- Increased the space available to WHO for @moniker names to provide
     more room for more ANSI transitions.
+ -- Remove references to have_macros in wizhelp.txt
 
 
 Miscellaneous:
