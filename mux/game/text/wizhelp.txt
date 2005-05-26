@@ -1773,7 +1773,7 @@ CONFIG PARAMETERS (continued)
   money_name_plural  money_name_singular  motd_file  motd_message  mud_name
   newuser_file  nositemon_site  notify_recursion_limit  number_guests
   open_cost  output_database  output_limit  page_cost  paranoid_allocate
-  parent_recursion_limit  paycheck  pcreates_per_hour  pemit_any_object
+  parent_recursion_limit  paycheck  pcreate_per_hour  pemit_any_object
   pemit_far_players  permit_site  player_flags  player_listen
   player_match_own_commands  player_name_spaces  player_queue_limit
   player_quota  player_starting_home  player_starting_room  port
@@ -3104,7 +3104,7 @@ MAIL_PER_HOUR
   reached are denied.  Any existing @mail-in-progress is still
   permitted.
 
-  Related Topics: pcreates_per_hour, user_attrib_per_hour
+  Related Topics: pcreate_per_hour, user_attr_per_hour
 
 & MARKED
 MARKED
@@ -3396,17 +3396,17 @@ PAYCHECK
 
   Related Topics: @allowance, earn_limit, starting_money.
 
-& PCREATES_PER_HOUR
-PCREATES_PER_HOUR
+& PCREATE_PER_HOUR
+PCREATE_PER_HOUR
 
-  CONFIG DIRECTIVE: pcreates_per_hour <maximum>
+  CONFIG DIRECTIVE: pcreate_per_hour <maximum>
   DEFAULT: 100
 
   Specifies the maximum number of player object creations that can be
   performed game-wide (including from the connect screen and via the @pcreate
   command).  Attempts to create more than this limit are denied.
 
-  Related Topics: mail_per_hour, user_attrib_per_hour
+  Related Topics: mail_per_hour, user_attr_per_hour
 
 & PEMIT_ANY_OBJECT
 PEMIT_ANY_OBJECT
@@ -4484,10 +4484,10 @@ UNOWNED_SAFE
 
   Related Topics: @destroy, DESTROY_OK, SAFE.
 
-& USER_ATTRIB_PER_HOUR
-USER_ATTRIB_PER_HOUR
+& USER_ATTR_PER_HOUR
+USER_ATTR_PER_HOUR
 
-  CONFIG DIRECTIVE: user_attrib_per_hour <max>
+  CONFIG DIRECTIVE: user_attr_per_hour <max>
   DEFAULT: 5000
 
   Specifies the maximum number of user-defined attributes per hour that
@@ -4495,7 +4495,7 @@ USER_ATTRIB_PER_HOUR
   this limit has been reached are denied.  Only new names are affected.
   Use of a pre-existing name is not counted towards this limit.
 
-  Related Topics: mail_per_hour, pcreates_per_hour
+  Related Topics: mail_per_hour, pcreate_per_hour
 
 & USER_ATTR_ACCESS
 USER_ATTR_ACCESS
