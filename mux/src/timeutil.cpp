@@ -1,6 +1,6 @@
 // timeutil.cpp -- CLinearTimeAbsolute and CLinearTimeDelta modules.
 //
-// $Id: timeutil.cpp,v 1.46 2005-05-13 19:33:29 sdennis Exp $
+// $Id: timeutil.cpp,v 1.47 2005-05-26 06:02:59 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -1402,15 +1402,10 @@ class CxyDiv
 public:
     void SetDenominator(const INT64 y_arg);
     INT64 Convert(const INT64 x_arg);
-    CxyDiv(void);
+
 private:
     INT64 A, B, C, D;
 };
-
-CxyDiv::CxyDiv(void)
-{
-    A = B = C = D = 0;
-}
 
 void CxyDiv::SetDenominator(const INT64 y_arg)
 {
