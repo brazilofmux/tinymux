@@ -1,6 +1,6 @@
 // vattr.cpp -- Manages the user-defined attributes.
 //
-// $Id: vattr.cpp,v 1.9 2004-08-18 22:49:56 sdennis Exp $
+// $Id: vattr.cpp,v 1.10 2005-06-02 04:09:05 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -17,6 +17,7 @@
 #include "vattr.h"
 
 static char *store_string(char *);
+extern void pcache_sync(void);
 
 // Allocate space for strings in lumps this big.
 //
@@ -605,6 +606,7 @@ void do_dbclean(dbref executor, dbref caller, dbref enactor, int key)
     //
     al_store();
 #endif // MEMORY_BASED
+    pcache_sync();
 
     notify(executor, "Checking Integrity of the attribute data structures...");
     dbclean_IntegrityChecking(executor);

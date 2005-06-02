@@ -1,6 +1,6 @@
 // db_rw.cpp
 //
-// $Id: db_rw.cpp,v 1.16 2004-08-18 22:18:10 sdennis Exp $
+// $Id: db_rw.cpp,v 1.17 2005-06-02 04:09:05 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -910,10 +910,6 @@ dbref db_write(FILE *f, int format, int version)
     dbref i;
     int flags;
     ATTR *vp;
-
-#ifndef MEMORY_BASED
-    al_store();
-#endif
 
     switch (format)
     {

@@ -1,6 +1,6 @@
 // game.cpp
 //
-// $Id: game.cpp,v 1.51 2004-08-25 21:29:08 sdennis Exp $
+// $Id: game.cpp,v 1.52 2005-06-02 04:09:05 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -1134,9 +1134,17 @@ void do_shutdown(dbref executor, dbref caller, dbref enactor, int key, char *mes
 
         // Close the attribute text db and dump the header db.
         //
+
+#ifndef MEMORY_BASED
+        // Save cached modified attribute list
+        //
+        al_store();
+#endif // MEMORY_BASED
+
         pcache_sync();
         SYNC;
         CLOSE;
+
         STARTLOG(LOG_ALWAYS, "DMP", "PANIC");
         log_text("Panic dump: ");
         log_text(mudconf.crashdb);
@@ -1402,6 +1410,13 @@ void dump_database(void)
     log_text("Dumping: ");
     log_text(buff);
     ENDLOG;
+
+#ifndef MEMORY_BASED
+    // Save cached modified attribute list
+    //
+    al_store();
+#endif // MEMORY_BASED
+
     pcache_sync();
 
     dump_database_internal(DUMP_I_NORMAL);
@@ -1479,16 +1494,14 @@ void fork_and_dump(int key)
         ENDLOG;
     }
     free_lbuf(buff);
+
 #ifndef MEMORY_BASED
     // Save cached modified attribute list
     //
     al_store();
 #endif // MEMORY_BASED
 
-    if (key & DUMP_TEXT)
-    {
-        pcache_sync();
-    }
+    pcache_sync();
     SYNC;
 
 #ifndef WIN32
@@ -2071,6 +2084,11 @@ void dbconvert(void)
         Log.WriteString("Output: ");
         info(F_MUX, db_flags, db_ver);
         setvbuf(fpOut, NULL, _IOFBF, 16384);
+#ifndef MEMORY_BASED
+        // Save cached modified attribute list
+        //
+        al_store();
+#endif // MEMORY_BASED
         db_write(fpOut, F_MUX, db_ver | db_flags);
         fclose(fpOut);
 #ifdef BT_ENABLED

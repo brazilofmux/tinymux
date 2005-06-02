@@ -1,6 +1,6 @@
 // predicates.cpp
 //
-// $Id: predicates.cpp,v 1.58 2004-08-26 18:56:12 sdennis Exp $
+// $Id: predicates.cpp,v 1.59 2005-06-02 04:09:05 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -17,6 +17,7 @@
 #include "powers.h"
 
 extern bool do_command(DESC *, char *);
+extern void pcache_sync(void);
 
 char * DCL_CDECL tprintf(const char *fmt,...)
 {
@@ -1421,6 +1422,10 @@ void do_restart(dbref executor, dbref caller, dbref enactor, int key)
     log_name(executor);
     ENDLOG;
 
+#ifndef MEMORY_BASED
+    al_store();
+#endif
+    pcache_sync();
     dump_database_internal(DUMP_I_RESTART);
     SYNC;
     CLOSE;
