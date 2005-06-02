@@ -1,6 +1,6 @@
 // db.cpp
 //
-// $Id: db.cpp,v 1.54 2005-05-26 00:06:01 sdennis Exp $
+// $Id: db.cpp,v 1.55 2005-06-02 03:14:12 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -1188,7 +1188,7 @@ void SetupThrottle(dbref executor)
     CLinearTimeAbsolute tNow;
     CLinearTimeDelta    ltdHour;
 
-    ltdHour.SetSeconds(24*60*60);
+    ltdHour.SetSeconds(60*60);
     tNow.GetUTC();
 
     db[executor].tThrottleExpired = tNow + ltdHour;
@@ -1201,7 +1201,7 @@ void SetupGlobalThrottle(void)
     CLinearTimeAbsolute tNow;
     CLinearTimeDelta    ltdHour;
 
-    ltdHour.SetSeconds(24*60*60);
+    ltdHour.SetSeconds(60*60);
     tNow.GetUTC();
 
     mudstate.tThrottleExpired = tNow + ltdHour;
