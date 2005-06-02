@@ -1,6 +1,6 @@
 // player_c.cpp -- Player cache routines.
 //
-// $Id: player_c.cpp,v 1.9 2005-01-04 21:58:15 sdennis Exp $
+// $Id: player_c.cpp,v 1.10 2005-06-02 04:48:54 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -40,6 +40,7 @@ static void pcache_reload1(dbref player, PCACHE *pp)
     }
     else
     {
+        pp->cflags |= PF_MONEY_CH;
         pp->money = 0;
     }
 
