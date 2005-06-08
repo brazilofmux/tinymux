@@ -1804,12 +1804,15 @@ CONFIG_ACCESS
   CONFIG PARAMETER: config_access <param> [!]<privilege> [[!]<privilege>]...
 
   Changes the privileges needed to change the specified configuration
-  parameter.  The value 'disabled' indicates that the parameter may only
-  be specified in the configuration file at startup.  Setting privileges
-  to anything other than disabled or god is meaningless unless the
-  restriction on the @admin command is weakened.
+  parameter.  The value 'disabled' indicates that the parameter may only be
+  specified in the configuration file at startup.
 
-  Related Topics: @admin, @list config_permissions, PERMISSIONS.
+  The privilege of the @admin command is controlled separately via the
+  access directive.  It is therefore ineffective to reduce the privilege of a
+  configuration option without also reducing the privilege of @admin to at
+  least the same level.
+
+  Related Topics: access, @admin, @list config_permissions, PERMISSIONS.
 
 & CONNECT_FILE
 CONNECT_FILE
