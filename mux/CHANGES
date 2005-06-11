@@ -1,5 +1,5 @@
 TinyMUX 2.4:  CHANGES
-Last Update:  May 2005
+Last Update:  June 2005
 
 Major changes that may affect performance and require softcode tweaks:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -73,6 +73,9 @@ Feature Additions:
  -- vadd() now allows addition of a vector by a scalar similiar to
     vmul().
  -- Remove the 20-argument limit from the vector functions.
+ -- Improve performance by avoiding write-through caching of A_MONEY in the
+    player cache. This was probably the primary reason for needing one cached
+    hash page per player. Paging is probably secondary to this one.
 
 
 Bug Fixes:
@@ -142,7 +145,12 @@ Bug Fixes:
     channel once reguardless of how many aliases they have for that
     channel.
  -- Add case-insensitive sort option to sort().
-
+ -- Use correct units in the @mail, attriute name, and new player throttles.
+ -- Avoid several situations in which the forked process and main process
+    would both attempt to update an attribute value. The forked process
+    should never attempt to update any attributes values.
+ -- Traverse pcache list properly (introduced in 2.4.0.15) to avoid orphaning
+    cache records and failing to flush A_MONEY updates to the database.
 
 
 Performance Enhancements:
