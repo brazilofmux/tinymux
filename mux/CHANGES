@@ -142,7 +142,7 @@ Bug Fixes:
  -- Limit the number of pcreates permitted per hour to be controlled by
     pcreate_per_hour configuration option.
  -- When a user disconnect or connects, announce their presence on a 
-    channel once reguardless of how many aliases they have for that
+    channel once regardless of how many aliases they have for that
     channel.
  -- Add case-insensitive sort option to sort().
  -- Use correct units in the @mail, attriute name, and new player throttles.
