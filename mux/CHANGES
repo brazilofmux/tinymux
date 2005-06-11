@@ -151,6 +151,7 @@ Bug Fixes:
     should never attempt to update any attributes values.
  -- Traverse pcache list properly (introduced in 2.4.0.15) to avoid orphaning
     cache records and failing to flush A_MONEY updates to the database.
+ -- Fix crashing bug in @clist/full with a heavily ANSI-ied owner name.
 
 
 Performance Enhancements:
