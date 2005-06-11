@@ -1,6 +1,6 @@
 // player_c.cpp -- Player cache routines.
 //
-// $Id: player_c.cpp,v 1.10 2005-06-02 04:48:54 sdennis Exp $
+// $Id: player_c.cpp,v 1.11 2005-06-11 19:11:46 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -60,7 +60,8 @@ static void pcache_reload1(dbref player, PCACHE *pp)
 
 PCACHE *pcache_find(dbref player)
 {
-    if (!Good_obj(player) || !OwnsOthers(player))
+    if (  !Good_obj(player)
+       || !OwnsOthers(player))
     {
         return NULL;
     }
@@ -106,9 +107,9 @@ static void pcache_save(PCACHE *pp)
 void pcache_trim(void)
 {
     PCACHE *pp = pcache_head;
+    PCACHE *pplast = NULL;
     while (pp)
     {
-        PCACHE *pplast = NULL;
         PCACHE *ppnext = pp->next;
         if (  pp->queue
            || (pp->cflags & PF_REF))
