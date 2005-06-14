@@ -124,6 +124,8 @@
 #undef HAVE_DEV_URANDOM
 /* Define if your system has the in_addr_t type */
 #undef HAVE_IN_ADDR_T
+/* Define if crypt library exists */
+#define HAVE_LIBCRYPT 1
 
 /* ---------------------------------------------------------------------------
  * Setup section:
