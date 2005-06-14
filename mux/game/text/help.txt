@@ -6010,7 +6010,9 @@ EQ()
 
   FUNCTION: eq(<integer1>,<integer2>)
 
-  Takes two integers, and returns 1 if they are equal and 0 if they are not.
+  Takes two integers, and returns a BOOLEAN (1 if they are equal and 0 if they
+  are not).
+
   Warning: passing anything but integers will produce unexpected results,
   as non-numeric strings usually are treated as numeric 0.
 
@@ -6022,7 +6024,7 @@ EQ()
     > say eq(foo, bar)
     You say "1"
 
-  Related Topics: lt(), lte(), gte(), gt(), neq().
+  Related Topics: BOOLEAN VALUES, lt(), lte(), gte(), gt(), neq().
 
 & ERROR()
 ERROR()
@@ -6971,10 +6973,11 @@ GT()
 
   FUNCTION: gt(<integer1>,<integer2>)
 
-  Takes two integers, and returns 1 if and only if <integer1> is greater than
-  <integer2>, and 0 otherwise.  Warning: passing anything but integers will
-  produce unexpected results, as non-numeric strings usually are treated
-  as numeric 0.
+  Takes two integers, and returns a BOOLEAN (1 if and only if <integer1> is
+  greater than <integer2>, and 0 otherwise).
+
+  Warning: passing anything but integers will produce unexpected results, as
+  non-numeric strings usually are treated as numeric 0.
 
   Example:
     > say gt(4,5)
@@ -6986,17 +6989,18 @@ GT()
     > say gt(foo, bar)
     You say "0"
 
-  Related Topics: lt(), lte(), gte(), eq(), neq().
+  Related Topics: BOOLEAN VALUES, lt(), lte(), gte(), eq(), neq().
 
 & GTE()
 GTE()
 
   FUNCTION: gte(<integer1>,<integer2>)
 
-  Takes two integers, and returns 1 if and only if <integer1> is greater than
-  or equal to <integer2>, and 0 otherwise.  Warning: passing anything but
-  integers will produce unexpected results, as non-numeric strings usually are
-  treated as numeric 0.
+  Takes two integers, and returns a BOOLEAN (1 if and only if <integer1> is
+  greater than or equal to <integer2>, and 0 otherwise).
+
+  Warning: passing anything but integers will produce unexpected results, as
+  non-numeric strings usually are treated as numeric 0.
 
   Example:
     > say gte(4,5)
@@ -7008,7 +7012,7 @@ GTE()
     > say gte(foo, bar)
     You say "1"
 
-  Related Topics: lt(), lte(), gt(), eq(), neq().
+  Related Topics: BOOLEAN VALUES, lt(), lte(), gt(), eq(), neq().
 
 & HALTED
 HALTED
@@ -8534,10 +8538,11 @@ LT()
 
   FUNCTION: lt(<integer1>,<integer2>)
 
-  Takes two integers, and returns 1 if and only if <integer1> is less than
-  <integer2>, and 0 otherwise.  Warning: passing anything but integers will
-  produce unexpected results, as non-numeric strings usually are treated
-  as numeric 0.
+  Takes two integers, and returns a BOOLEAN (1 if and only if <integer1> is
+  less than <integer2>, and 0 otherwise).
+
+  Warning: passing anything but integers will produce unexpected results, as
+  non-numeric strings usually are treated as numeric 0.
 
   Example:
     > say lt(4,5)
@@ -8549,17 +8554,18 @@ LT()
     > say lt(foo, bar)
     You say "0"
 
-  Related Topics: lte(), gte(), gt(), eq(), neq().
+  Related Topics: BOOLEAN VALUES, lte(), gte(), gt(), eq(), neq().
 
 & LTE()
 LTE()
 
   FUNCTION: lte(<integer1>,<integer2>)
 
-  Takes two integers, and returns 1 if and only if <integer1> is less than or
-  equal to <integer2>, and 0 otherwise.  Warning: passing anything but integers
-  will produce unexpected results, as non-numeric strings usually are treated
-  as numeric 0.
+  Takes two integers, and returns a BOOLEAN (1 if and only if <integer1> is
+  less than or equal to <integer2>, and 0 otherwise).
+
+  Warning: passing anything but integers will produce unexpected results, as
+  non-numeric strings usually are treated as numeric 0.
 
   Example:
     > say lte(4,5)
@@ -8571,7 +8577,7 @@ LTE()
     > say lte(foo, bar)
     You say "1"
 
-  Related Topics: lt(), gte(), gt(), eq(), neq().
+  Related Topics: BOOLEAN VALUES, lt(), gte(), gt(), eq(), neq().
 
 & LWHO()
 LWHO()
@@ -8948,7 +8954,7 @@ ME
   1) give yourself a description with
      '@describe me = <description>', then look at yourself with 'look me'.
   2) set your gender, if you wish it known, with
-     '@set me=male' or '@set me=female'  (or '@set me=neuter' to be an 'it').
+     '@sex me=male' or '@sex me=female'  (or '@sex me=neuter' to be an 'it').
 
 & MEDIUM
 MEDIUM
@@ -9038,7 +9044,7 @@ MIN()
     > say min(2,4)
     You say "2"
     > say min(-100,50,0,25)
-    You say "-10"
+    You say "-100"
 
   Related Topics: max()
 
@@ -9400,9 +9406,11 @@ NEQ()
 
   FUNCTION: neq(<integer1>,<integer2>)
 
-  Takes two integers, and returns 1 if they are not equal and 0 if they are
-  equal.  Warning: passing anything but integers will produce unexpected
-  results, as non-numeric strings usually are treated as numeric 0.
+  Takes two integers, and returns a BOOLEAN (1 if they are not equal and 0 if
+  they are equal).
+
+  Warning: passing anything but integers will produce unexpected results, as
+  non-numeric strings usually are treated as numeric 0.
 
   Examples:
     > say neq(1,-1)
@@ -9412,7 +9420,7 @@ NEQ()
     > say neq(foo, bar)
     You say "0"
 
-  Related Topics: lt(), lte(), gte(), gt(), eq(), not().
+  Related Topics: BOOLEAN VALUES, lt(), lte(), gte(), gt(), eq(), not().
 
 & NEWS
 NEWS
@@ -9473,7 +9481,7 @@ NOT()
 
   FUNCTION: not(<boolean>)
 
-  Takes a BOOLEAN value, and returns its inverse.  So, if the input is
+  Takes a BOOLEAN value, and returns its opposite.  So, if the input is
   equivalent to TRUE it returns a FALSE(0), and if the input is equivalent to
   FALSE, it returns a TRUE(1).
 
