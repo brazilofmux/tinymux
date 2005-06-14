@@ -148,6 +148,8 @@
 #undef HAVE_IN_ADDR_T
 /* Define if fcntl.h exists */
 #undef HAVE_FCNTL_H
+/* Define if crypt library exists */
+#undef HAVE_LIBCRYPT
 
 /* ---------------------------------------------------------------------------
  * Setup section:

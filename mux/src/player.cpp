@@ -1,6 +1,6 @@
 // player.cpp
 //
-// $Id: player.cpp,v 1.28 2005-05-26 00:06:01 sdennis Exp $
+// $Id: player.cpp,v 1.29 2005-06-14 14:56:34 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -406,7 +406,11 @@ const char *mux_crypt(const char *szPassword, const char *szSetting, int *piType
 #endif // WIN32
 
     case CRYPT_DES:
+#ifdef HAVE_LIBCRYPT
         return crypt(szPassword, szSetting);
+#else
+        return szFail;
+#endif
     }
 
     // Calculate SHA-1 Hash.
