@@ -1,6 +1,6 @@
 // stringutil.cpp -- string utilities.
 //
-// $Id: stringutil.cpp,v 1.69 2005-04-11 17:53:10 sdennis Exp $
+// $Id: stringutil.cpp,v 1.70 2005-06-24 23:59:08 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -801,8 +801,8 @@ char *ANSI_TransitionColorEscape
 )
 {
     static char Buffer[ANSI_MAXIMUM_ESCAPE_TRANSITION_LENGTH+1];
-    static char cForegroundColors[9] = "xrgybmcw";
-    static char cBackgroundColors[9] = "XRGYBMCW";
+    static const char cForegroundColors[9] = "xrgybmcw";
+    static const char cBackgroundColors[9] = "XRGYBMCW";
 
     if (memcmp(acsCurrent, acsNext, sizeof(ANSI_ColorState)) == 0)
     {
@@ -811,7 +811,7 @@ char *ANSI_TransitionColorEscape
         return Buffer;
     }
     ANSI_ColorState tmp = *acsCurrent;
-    char *p = Buffer;
+    int  i = 0;
 
     // Do we need to go through the normal state?
     //
@@ -823,37 +823,56 @@ char *ANSI_TransitionColorEscape
        || (  tmp.iForeground != ANSI_COLOR_INDEX_DEFAULT
           && acsNext->iForeground == ANSI_COLOR_INDEX_DEFAULT))
     {
-        memcpy(p, "%xn", 3); p += 3;
+        Buffer[i  ] = '%';
+        Buffer[i+1] = 'x';
+        Buffer[i+2] = 'n';
+        i = i + 3;
         tmp = acsRestingStates[ANSI_ENDGOAL_NORMAL];
     }
     if (tmp.bHighlite != acsNext->bHighlite)
     {
-        memcpy(p, "%xh", 3); p += 3;
+        Buffer[i  ] = '%';
+        Buffer[i+1] = 'x';
+        Buffer[i+2] = 'h';
+        i = i + 3;
     }
     if (tmp.bUnder != acsNext->bUnder)
     {
-        memcpy(p, "%xu", 3); p += 3;
+        Buffer[i  ] = '%';
+        Buffer[i+1] = 'x';
+        Buffer[i+2] = 'u';
+        i = i + 3;
     }
     if (tmp.bBlink != acsNext->bBlink)
     {
-        memcpy(p, "%xf", 3); p += 3;
+        Buffer[i  ] = '%';
+        Buffer[i+1] = 'x';
+        Buffer[i+2] = 'f';
+        i = i + 3;
     }
     if (tmp.bInverse != acsNext->bInverse)
     {
-        memcpy(p, "%xi", 3); p += 3;
+        Buffer[i  ] = '%';
+        Buffer[i+1] = 'x';
+        Buffer[i+2] = 'i';
+        i = i + 3;
     }
     if (tmp.iForeground != acsNext->iForeground)
     {
-        memcpy(p, "%x", 2); p += 2;
-        *p++ = cForegroundColors[acsNext->iForeground];
+        Buffer[i  ] = '%';
+        Buffer[i+1] = 'x';
+        Buffer[i+2] = cForegroundColors[acsNext->iForeground];
+        i = i + 3;
     }
     if (tmp.iBackground != acsNext->iBackground)
     {
-        memcpy(p, "%x", 2); p += 2;
-        *p++ = cBackgroundColors[acsNext->iBackground];
+        Buffer[i  ] = '%';
+        Buffer[i+1] = 'x';
+        Buffer[i+2] = cBackgroundColors[acsNext->iBackground];
+        i = i + 3;
     }
-    *p = '\0';
-    *nTransition = p - Buffer;
+    Buffer[i] = '\0';
+    *nTransition = i;
     return Buffer;
 }
 
