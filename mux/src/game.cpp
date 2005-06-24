@@ -1,6 +1,6 @@
 // game.cpp
 //
-// $Id: game.cpp,v 1.53 2005-06-24 17:32:40 sdennis Exp $
+// $Id: game.cpp,v 1.54 2005-06-24 18:52:45 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -1796,7 +1796,8 @@ bool list_check
         //
         dbref next;
         if (  thing == (next = Next(thing))
-           || --limit < 0)
+           || --limit < 0
+           || MuxAlarm.bAlarmed)
         {
             break;
         }
