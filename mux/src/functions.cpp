@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.135 2005-04-04 12:50:16 sdennis Exp $
+// $Id: functions.cpp,v 1.136 2005-06-24 17:32:40 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -857,7 +857,7 @@ FUNCTION(fun_flags)
             dbref aowner;
             int   aflags;
             atr_pget_info(it, pattr->number, &aowner, &aflags);
-            char xbuf[10];
+            char xbuf[11];
             decode_attr_flags(aflags, xbuf);
             safe_str(xbuf, buff, bufc);
         }

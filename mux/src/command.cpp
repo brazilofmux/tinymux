@@ -1,6 +1,6 @@
 // command.cpp -- command parser and support routines.
 //
-// $Id: command.cpp,v 1.46 2004-09-29 14:16:04 sdennis Exp $
+// $Id: command.cpp,v 1.47 2005-06-24 17:32:40 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -2206,8 +2206,9 @@ char *process_command
     //
     if (mudconf.match_mine && !No_Command(executor))
     {
-        if (  (!isPlayer(executor) || mudconf.match_mine_pl)
-           && atr_match(executor, executor, AMATCH_CMD, LowerCaseCommand, true))
+        if (  (  !isPlayer(executor)
+              || mudconf.match_mine_pl)
+           && atr_match(executor, executor, AMATCH_CMD, LowerCaseCommand, preserve_cmd, true))
         {
             succ = true;
         }
@@ -2217,11 +2218,11 @@ char *process_command
     //
     if (Has_location(executor))
     {
-        succ |= list_check(Contents(Location(executor)), executor, AMATCH_CMD, LowerCaseCommand, true);
+        succ |= list_check(Contents(Location(executor)), executor, AMATCH_CMD, LowerCaseCommand, preserve_cmd, true);
 
         if (!No_Command(Location(executor)))
         {
-            succ |= atr_match(Location(executor), executor, AMATCH_CMD, LowerCaseCommand, true);
+            succ |= atr_match(Location(executor), executor, AMATCH_CMD, LowerCaseCommand, preserve_cmd, true);
         }
     }
 
@@ -2229,7 +2230,7 @@ char *process_command
     //
     if (Has_contents(executor))
     {
-        succ |= list_check(Contents(executor), executor, AMATCH_CMD, LowerCaseCommand, true);
+        succ |= list_check(Contents(executor), executor, AMATCH_CMD, LowerCaseCommand, preserve_cmd, true);
     }
 
     if (  !succ
@@ -2261,7 +2262,8 @@ char *process_command
                         return preserve_cmd;
                     }
                     succ |= list_check(Contents(zone_loc), executor,
-                               AMATCH_CMD, LowerCaseCommand, true);
+                               AMATCH_CMD, LowerCaseCommand, preserve_cmd,
+                               true);
 
                     // end of parent room checks.
                     //
@@ -2274,7 +2276,7 @@ char *process_command
                 if (!No_Command(zone_loc))
                 {
                     succ |= atr_match(zone_loc, executor, AMATCH_CMD,
-                       LowerCaseCommand, true);
+                       LowerCaseCommand, preserve_cmd, true);
                 }
             }
         }
@@ -2290,7 +2292,7 @@ char *process_command
            && !No_Command(zone)
            && zone_loc != zone)
         {
-            succ |= atr_match(zone, executor, AMATCH_CMD, LowerCaseCommand, true);
+            succ |= atr_match(zone, executor, AMATCH_CMD, LowerCaseCommand, preserve_cmd, true);
         }
     }
 
@@ -2301,11 +2303,13 @@ char *process_command
         if (  Good_obj(mudconf.master_room)
            && Has_contents(mudconf.master_room))
         {
-            succ |= list_check(Contents(mudconf.master_room),
-                       executor, AMATCH_CMD, LowerCaseCommand, false);
+            succ |= list_check(Contents(mudconf.master_room), executor,
+                AMATCH_CMD, LowerCaseCommand, preserve_cmd, false);
+
             if (!No_Command(mudconf.master_room))
             {
-                succ |= atr_match(mudconf.master_room, executor, AMATCH_CMD, LowerCaseCommand, false);
+                succ |= atr_match(mudconf.master_room, executor, AMATCH_CMD,
+                    LowerCaseCommand, preserve_cmd, false);
             }
         }
     }

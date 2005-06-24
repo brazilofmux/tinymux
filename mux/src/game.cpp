@@ -1,6 +1,6 @@
 // game.cpp
 //
-// $Id: game.cpp,v 1.52 2005-06-02 04:09:05 sdennis Exp $
+// $Id: game.cpp,v 1.53 2005-06-24 17:32:40 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -169,8 +169,17 @@ bool regexp_match
  * atr_match: Check attribute list for wild card matches and queue them.
  */
 
-static int atr_match1(dbref thing, dbref parent, dbref player, char type,
-     char *str, int check_exclude, int hash_insert)
+static int atr_match1
+(
+    dbref thing,
+    dbref parent,
+    dbref player,
+    char  type,
+    char  *str,
+    char  *raw_str,
+    int   check_exclude,
+    int   hash_insert
+)
 {
     // See if we can do it.  Silently fail if we can't.
     //
@@ -244,16 +253,18 @@ static int atr_match1(dbref thing, dbref parent, dbref player, char type,
         }
         *s++ = '\0';
         char *args[NUM_ENV_VARS];
-        if (  (  (aflags & AF_REGEXP)
-              && regexp_match(buff + 1, str,
-                     ((aflags & AF_CASE) ? 0 : PCRE_CASELESS), args, NUM_ENV_VARS))
-           || (  (aflags & AF_REGEXP) == 0
-              && wild(buff + 1, str, args, NUM_ENV_VARS)))
+        if (  (  0 != (aflags & AF_REGEXP)
+            && regexp_match(buff + 1, (aflags & AF_NOPARSE) ? raw_str : str,
+                ((aflags & AF_CASE) ? 0 : PCRE_CASELESS), args, NUM_ENV_VARS))
+           || (  0 == (aflags & AF_REGEXP)
+              && wild(buff + 1, (aflags & AF_NOPARSE) ? raw_str : str,
+                args, NUM_ENV_VARS)))
         {
             match = 1;
             CLinearTimeAbsolute lta;
             wait_que(thing, player, player, false, lta, NOTHING, 0, s,
                 args, NUM_ENV_VARS, mudstate.global_regs);
+
             for (int i = 0; i < NUM_ENV_VARS; i++)
             {
                 if (args[i])
@@ -267,15 +278,26 @@ static int atr_match1(dbref thing, dbref parent, dbref player, char type,
     return match;
 }
 
-bool atr_match(dbref thing, dbref player, char type, char *str, bool check_parents)
+bool atr_match
+(
+    dbref thing,
+    dbref player,
+    char  type,
+    char  *str,
+    char  *raw_str,
+    bool check_parents
+)
 {
     int lev, result;
     bool exclude, insert;
     dbref parent;
 
-    // If thing is halted, don't check anything
+    // If thing is halted or we are matching $-commands on a NO_COMMAND
+    // object, don't check anything
     //
-    if (Halted(thing))
+    if (  Halted(thing)
+       || (  AMATCH_CMD == type
+          && No_Command(thing)))
     {
         return false;
     }
@@ -285,7 +307,7 @@ bool atr_match(dbref thing, dbref player, char type, char *str, bool check_paren
     bool match = false;
     if (!check_parents)
     {
-        return (atr_match1(thing, thing, player, type, str, false, false) > 0);
+        return (atr_match1(thing, thing, player, type, str, raw_str, false, false) > 0);
     }
 
     // Check parents, ignoring halted objects
@@ -299,7 +321,8 @@ bool atr_match(dbref thing, dbref player, char type, char *str, bool check_paren
         {
             insert = false;
         }
-        result = atr_match1(thing, parent, player, type, str, exclude, insert);
+        result = atr_match1(thing, parent, player, type, str, raw_str,
+            exclude, insert);
         if (result > 0)
         {
             match = true;
@@ -743,7 +766,8 @@ void notify_check(dbref target, dbref sender, const char *msg, int key)
            && sender != target
            && Monitor(target))
         {
-            atr_match(target, sender, AMATCH_LISTEN, (char *)msg, false);
+            atr_match(target, sender, AMATCH_LISTEN, (char *)msg, (char *)msg,
+                false);
         }
 
         // Deliver message to forwardlist members.
@@ -1747,23 +1771,36 @@ static int load_game(int ccPageFile)
  * match a list of things, using the no_command flag
  */
 
-bool list_check(dbref thing, dbref player, char type, char *str, bool check_parent)
+bool list_check
+(
+    dbref thing,
+    dbref player,
+    char  type,
+    char  *str,
+    char  *raw_str,
+    bool check_parent
+)
 {
     bool bMatch = false;
 
     int limit = mudstate.db_top;
-    while (thing != NOTHING)
+    while (NOTHING != thing)
     {
         if (  thing != player
            && !No_Command(thing))
         {
-            bMatch |= atr_match(thing, player, type, str, check_parent);
+            bMatch |= atr_match(thing, player, type, str, raw_str, check_parent);
         }
-        thing = Next(thing);
-        if (--limit < 0)
+
+        // Non-authoritative test of circular reference.
+        //
+        dbref next;
+        if (  thing == (next = Next(thing))
+           || --limit < 0)
         {
-            return bMatch;
+            break;
         }
+        thing = next;
     }
     return bMatch;
 }

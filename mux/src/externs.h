@@ -1,6 +1,6 @@
 // externs.h -- Prototypes for externs not defined elsewhere.
 //
-// $Id: externs.h,v 1.32 2004-12-31 00:12:16 sdennis Exp $
+// $Id: externs.h,v 1.33 2005-06-24 17:32:40 sdennis Exp $
 //
 
 #ifndef EXTERNS_H
@@ -100,8 +100,26 @@ extern void notify_check(dbref, dbref, const char *, int);
 
 extern bool Hearer(dbref);
 extern void report(void);
-extern bool atr_match(dbref, dbref, char, char *, bool);
-extern bool list_check(dbref, dbref, char, char *, bool);
+
+bool atr_match
+(
+    dbref thing,
+    dbref player,
+    char  type,
+    char  *str,
+    char  *raw_str,
+    bool  check_parents
+);
+
+bool list_check
+(
+    dbref thing,
+    dbref player,
+    char  type,
+    char  *str,
+    char  *raw_str,
+    bool  check_parent
+);
 extern bool html_escape(const char *src, char *dest, char **destp);
 
 #define DUMP_I_NORMAL    0  // OUTPUT to the outdb through a temporary file.
