@@ -4315,6 +4315,9 @@ ATTRIBUTE FLAGS (cont)
                      ownership when the object is @chowned and may not
                      be modified.
 
+    no_parse (P)   - $-commands and ^-listens matching is performed against
+                     the unparsed (non-evaluated) string.
+
     private        - Only attribute owner and wizards can see this
                      attribute.
 
