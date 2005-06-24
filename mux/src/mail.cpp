@@ -1,6 +1,6 @@
 // mail.cpp
 //
-// $Id: mail.cpp,v 1.32 2004-08-16 05:14:07 sdennis Exp $
+// $Id: mail.cpp,v 1.33 2005-06-24 01:28:02 sdennis Exp $
 //
 // This code was taken from Kalkin's DarkZone code, which was
 // originally taken from PennMUSH 1.50 p10, and has been heavily modified
@@ -4355,8 +4355,9 @@ void do_mail_retract1(dbref player, char *name, char *msglist)
                         }
                     }
                     else if (mp->next == NULL)
+                    {
                         mp->prev->next = NULL;
-
+                    }
                     if (mp->prev != NULL)
                     {
                         mp->prev->next = mp->next;
