@@ -1,6 +1,6 @@
 // externs.h -- Prototypes for externs not defined elsewhere.
 //
-// $Id: externs.h,v 1.33 2005-06-24 17:32:40 sdennis Exp $
+// $Id: externs.h,v 1.34 2005-06-25 07:02:59 sdennis Exp $
 //
 
 #ifndef EXTERNS_H
@@ -713,6 +713,12 @@ extern void do_say(dbref executor, dbref caller, dbref enactor, int key,
 extern int  boot_off(dbref player, const char *message);
 extern void do_mail_clear(dbref player, char *msglist);
 extern void do_mail_purge(dbref player);
+extern void malias_cleanup(dbref player);
+extern void count_mail(dbref player, int folder, int *rcount, int *ucount, int *ccount);
+extern void check_mail_expiration(void);
+extern void check_mail(dbref player, int folder, bool silent);
+extern const char *mail_fetch_message(dbref player, int num);
+extern int  mail_fetch_from(dbref player, int num);
 extern void raw_notify_html(dbref player, const char *msg);
 extern void do_lock(dbref executor, dbref caller, dbref enactor, int key,
                     int nargs, char *name, char *keytext);

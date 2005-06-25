@@ -1,6 +1,6 @@
 // mudconf.h
 //
-// $Id: mudconf.h,v 1.25 2005-05-26 00:06:01 sdennis Exp $
+// $Id: mudconf.h,v 1.26 2005-06-25 07:02:59 sdennis Exp $
 //
 
 #ifndef __CONF_H
@@ -8,7 +8,6 @@
 
 #include "alloc.h"
 #include "htab.h"
-#include "mail.h"
 #include "stringutil.h"
 
 #ifndef WIN32
@@ -417,7 +416,6 @@ struct statedata
     BADNAME *badname_head;      /* List of disallowed names */
     HELP_DESC *aHelpDesc;       // Table of help files hashes.
     MARKBUF *markbits;          /* temp storage for marking/unmarking */
-    MENT    *mail_list;         /* The mail database */
     OLSTK   *olist;             /* Stack of object lists for nested searches */
     SITE    *suspect_list;      /* Sites that are suspect */
     SITE    *access_list;       /* Access states for sites */

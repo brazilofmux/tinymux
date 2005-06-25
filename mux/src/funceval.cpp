@@ -1,6 +1,6 @@
 // funceval.cpp -- MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.78 2005-01-05 17:59:43 sdennis Exp $
+// $Id: funceval.cpp,v 1.79 2005-06-25 07:02:59 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -1579,15 +1579,17 @@ FUNCTION(fun_mail)
         }
     }
 
-    if (num < 1 || !isPlayer(playerask))
+    if (  num < 1
+       || !isPlayer(playerask))
     {
         safe_str("#-1 NO SUCH MESSAGE", buff, bufc);
         return;
     }
-    struct mail *mp = mail_fetch(playerask, num);
-    if (mp)
+    
+    const char *p = mail_fetch_message(playerask, num);
+    if (p)
     {
-        safe_str(MessageFetch(mp->number), buff, bufc);
+        safe_str(p, buff, bufc);
         return;
     }
 
@@ -1628,7 +1630,8 @@ FUNCTION(fun_mailfrom)
             safe_str("#-1 NO SUCH PLAYER", buff, bufc);
             return;
         }
-        if (playerask == executor || Wizard(executor))
+        if (  playerask == executor
+           || Wizard(executor))
         {
             num = mux_atol(fargs[1]);
         }
@@ -1639,15 +1642,17 @@ FUNCTION(fun_mailfrom)
         }
     }
 
-    if (num < 1 || !isPlayer(playerask))
+    if (  num < 1
+       || !isPlayer(playerask))
     {
         safe_str("#-1 NO SUCH MESSAGE", buff, bufc);
         return;
     }
-    struct mail *mp = mail_fetch(playerask, num);
-    if (mp != NULL)
+
+    int from = mail_fetch_from(playerask, num);
+    if (NOTHING != from)
     {
-        safe_tprintf_str(buff, bufc, "#%d", mp->from);
+        safe_tprintf_str(buff, bufc, "#%d", from);
         return;
     }
 

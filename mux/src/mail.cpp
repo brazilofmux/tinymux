@@ -1,6 +1,6 @@
 // mail.cpp
 //
-// $Id: mail.cpp,v 1.33 2005-06-24 01:28:02 sdennis Exp $
+// $Id: mail.cpp,v 1.34 2005-06-25 07:02:59 sdennis Exp $
 //
 // This code was taken from Kalkin's DarkZone code, which was
 // originally taken from PennMUSH 1.50 p10, and has been heavily modified
@@ -16,6 +16,7 @@
 
 #include "attrs.h"
 #include "powers.h"
+#include "mail.h"
 
 #define SIZEOF_MALIAS 13
 #define WIDTHOF_MALIASDESC 40
@@ -36,6 +37,7 @@ int ma_size = 0;
 int ma_top = 0;
 
 struct malias **malias = NULL;
+MENT          *mail_list = NULL;
 
 // Handling functions for the database of mail messages.
 //
@@ -63,16 +65,16 @@ static void mail_db_grow(int newtop)
 
         MENT *newdb = (MENT *)MEMALLOC((newsize + MAIL_FUDGE) * sizeof(MENT));
         ISOUTOFMEMORY(newdb);
-        if (mudstate.mail_list)
+        if (mail_list)
         {
-            mudstate.mail_list -= MAIL_FUDGE;
+            mail_list -= MAIL_FUDGE;
             memcpy( newdb,
-                    mudstate.mail_list,
+                    mail_list,
                     (mudstate.mail_db_top + MAIL_FUDGE) * sizeof(MENT));
-            MEMFREE(mudstate.mail_list);
-            mudstate.mail_list = NULL;
+            MEMFREE(mail_list);
+            mail_list = NULL;
         }
-        mudstate.mail_list = newdb + MAIL_FUDGE;
+        mail_list = newdb + MAIL_FUDGE;
         newdb = NULL;
         mudstate.mail_db_size = newsize;
     }
@@ -81,8 +83,8 @@ static void mail_db_grow(int newtop)
     //
     for (int i = mudstate.mail_db_top; i < newtop; i++)
     {
-        mudstate.mail_list[i].m_nRefs = 0;
-        mudstate.mail_list[i].m_pMessage = NULL;
+        mail_list[i].m_nRefs = 0;
+        mail_list[i].m_pMessage = NULL;
     }
     mudstate.mail_db_top = newtop;
 }
@@ -92,7 +94,7 @@ static void mail_db_grow(int newtop)
 //
 static DCL_INLINE void MessageReferenceInc(int number)
 {
-    mudstate.mail_list[number].m_nRefs++;
+    mail_list[number].m_nRefs++;
 }
 
 // MessageReferenceCheck - Checks whether the reference count for
@@ -102,7 +104,7 @@ static DCL_INLINE void MessageReferenceInc(int number)
 //
 static void MessageReferenceCheck(int number)
 {
-    MENT &m = mudstate.mail_list[number];
+    MENT &m = mail_list[number];
     if (m.m_nRefs <= 0)
     {
         if (m.m_pMessage)
@@ -122,7 +124,7 @@ static void MessageReferenceCheck(int number)
 //
 static void MessageReferenceDec(int number)
 {
-    mudstate.mail_list[number].m_nRefs--;
+    mail_list[number].m_nRefs--;
     MessageReferenceCheck(number);
 }
 
@@ -132,9 +134,9 @@ static void MessageReferenceDec(int number)
 const char *MessageFetch(int number)
 {
     MessageReferenceCheck(number);
-    if (mudstate.mail_list[number].m_pMessage)
+    if (mail_list[number].m_pMessage)
     {
-        return mudstate.mail_list[number].m_pMessage;
+        return mail_list[number].m_pMessage;
     }
     else
     {
@@ -147,7 +149,7 @@ const char *MessageFetch(int number)
 //
 static int MessageAdd(char *pMessage)
 {
-    if (!mudstate.mail_list)
+    if (!mail_list)
     {
         mail_db_grow(1);
     }
@@ -157,7 +159,7 @@ static int MessageAdd(char *pMessage)
     bool bFound = false;
     for (i = 0; i < mudstate.mail_db_top; i++)
     {
-        pm = &mudstate.mail_list[i];
+        pm = &mail_list[i];
         if (pm->m_pMessage == NULL)
         {
             pm->m_nRefs = 0;
@@ -170,7 +172,7 @@ static int MessageAdd(char *pMessage)
         mail_db_grow(i + 1);
     }
 
-    pm = &mudstate.mail_list[i];
+    pm = &mail_list[i];
     pm->m_pMessage = StringClone(pMessage);
     MessageReferenceInc(i);
     return i;
@@ -234,7 +236,7 @@ static bool MessageAddWithNumber(int i, char *pMessage)
 {
     mail_db_grow(i+1);
 
-    MENT *pm = &mudstate.mail_list[i];
+    MENT *pm = &mail_list[i];
     pm->m_pMessage = StringClone(pMessage);
     return true;
 }
@@ -1045,12 +1047,13 @@ static void do_mail_flags(dbref player, char *msglist, mail_flag flag, bool nega
     {
         return;
     }
-    struct mail *mp;
     int i = 0, j = 0;
     int folder = player_folder(player);
-    for (mp = (struct mail *)hashfindLEN(&player, sizeof(player), &mudstate.mail_htab); mp; mp = mp->next)
+    struct mail *mp = (struct mail *)hashfindLEN(&player, sizeof(player), &mudstate.mail_htab);
+    for ( ; mp; mp = mp->next)
     {
-        if (All(ms) || (Folder(mp) == folder))
+        if (  All(ms)
+           || Folder(mp) == folder)
         {
             i++;
             if (mail_match(mp, ms, i))
@@ -1138,12 +1141,13 @@ void do_mail_file(dbref player, char *msglist, char *folder)
         notify(player, "MAIL: Invalid folder specification");
         return;
     }
-    struct mail *mp;
     int i = 0, j = 0;
     int origfold = player_folder(player);
-    for (mp = (struct mail *)hashfindLEN(&player, sizeof(player), &mudstate.mail_htab); mp; mp = mp->next)
+    struct mail *mp = (struct mail *)hashfindLEN(&player, sizeof(player), &mudstate.mail_htab);
+    for ( ; mp; mp = mp->next)
     {
-        if (All(ms) || (Folder(mp) == origfold))
+        if (  All(ms)
+           || (Folder(mp) == origfold))
         {
             i++;
             if (mail_match(mp, ms, i))
@@ -1488,7 +1492,8 @@ void do_mail_review(dbref player, char *name, char *msglist)
     if (!msglist || !*msglist)
     {
         notify(player, tprintf("--------------------   MAIL: %-25s   ------------------", Name(target)));
-        for (mp = (struct mail *)hashfindLEN(&target, sizeof(target), &mudstate.mail_htab); mp; mp = mp->next)
+        mp = (struct mail *)hashfindLEN(&target, sizeof(target), &mudstate.mail_htab);
+        for ( ; mp; mp = mp->next)
         {
             if (mp->from == player)
             {
@@ -1605,7 +1610,6 @@ void do_mail_list(dbref player, char *msglist, bool sub)
     {
         return;
     }
-    struct mail *mp;
     int i = 0;
     char *time;
     int iRealVisibleWidth;
@@ -1615,7 +1619,8 @@ void do_mail_list(dbref player, char *msglist, bool sub)
     notify(player,
         tprintf("---------------------------   MAIL: Folder %d   ----------------------------", folder));
 
-    for (mp = (struct mail *)hashfindLEN(&player, sizeof(player), &mudstate.mail_htab); mp; mp = mp->next)
+    struct mail *mp = (struct mail *)hashfindLEN(&player, sizeof(player), &mudstate.mail_htab);
+    for ( ; mp; mp = mp->next)
     {
         if (Folder(mp) == folder)
         {
@@ -1647,11 +1652,11 @@ void do_mail_list(dbref player, char *msglist, bool sub)
 
 void do_mail_purge(dbref player)
 {
-    struct mail *mp, *nextp;
-
     // Go through player's mail, and remove anything marked cleared.
     //
-    for (mp = (struct mail *)hashfindLEN(&player, sizeof(player), &mudstate.mail_htab); mp; mp = nextp)
+    struct mail *nextp;
+    struct mail *mp = (struct mail *)hashfindLEN(&player, sizeof(player), &mudstate.mail_htab);
+    for ( ; mp; mp = nextp)
     {
         if (Cleared(mp))
         {
@@ -2027,10 +2032,9 @@ void do_mail_reply(dbref player, char *msg, bool all, int key)
  *-------------------------------------------------------------------------*/
 struct mail *mail_fetch(dbref player, int num)
 {
-    struct mail *mp;
     int i = 0;
-
-    for (mp = (struct mail *)hashfindLEN(&player, sizeof(player), &mudstate.mail_htab); mp; mp = mp->next)
+    struct mail *mp = (struct mail *)hashfindLEN(&player, sizeof(player), &mudstate.mail_htab);
+    for ( ; mp; mp = mp->next)
     {
         if (Folder(mp) == player_folder(player))
         {
@@ -2044,15 +2048,36 @@ struct mail *mail_fetch(dbref player, int num)
     return NULL;
 }
 
+const char *mail_fetch_message(dbref player, int num)
+{
+    struct mail *mp = mail_fetch(player, num);
+    if (mp)
+    {
+        return MessageFetch(mp->number);
+    }
+    return NULL;
+}
+
+int mail_fetch_from(dbref player, int num)
+{
+    struct mail *mp = mail_fetch(player, num);
+    if (mp)
+    {
+        return mp->from;
+    }
+    return NOTHING;
+}
+
 // Returns count of read, unread, and cleared messages as rcount, ucount, ccount.
 //
 void count_mail(dbref player, int folder, int *rcount, int *ucount, int *ccount)
 {
-    struct mail *mp;
-    int rc, uc, cc;
+    int rc = 0;
+    int uc = 0;
+    int cc = 0;
 
-    cc = rc = uc = 0;
-    for (mp = (struct mail *)hashfindLEN(&player, sizeof(player), &mudstate.mail_htab); mp; mp = mp->next)
+    struct mail *mp = (struct mail *)hashfindLEN(&player, sizeof(player), &mudstate.mail_htab);
+    for ( ; mp; mp = mp->next)
     {
         if (Folder(mp) == folder)
         {
@@ -2078,10 +2103,10 @@ void count_mail(dbref player, int folder, int *rcount, int *ucount, int *ccount)
 
 void urgent_mail(dbref player, int folder, int *ucount)
 {
-    struct mail *mp;
     int uc = 0;
 
-    for (mp = (struct mail *)hashfindLEN(&player, sizeof(player), &mudstate.mail_htab); mp; mp = mp->next)
+    struct mail *mp = (struct mail *)hashfindLEN(&player, sizeof(player), &mudstate.mail_htab);
+    for ( ; mp; mp = mp->next)
     {
         if (Folder(mp) == folder)
         {
@@ -2379,18 +2404,18 @@ void do_mail_debug(dbref player, char *action, char *victim)
 
         // Check ref counts.
         //
-        if (mudstate.mail_list)
+        if (mail_list)
         {
             int i;
             int nCountHigher = 0;
             int nCountLower  = 0;
             for (i = 0; i < mudstate.mail_db_top; i++)
             {
-                if (mudstate.mail_list[i].m_nRefs < ai[i])
+                if (mail_list[i].m_nRefs < ai[i])
                 {
                     nCountLower++;
                 }
-                else if (mudstate.mail_list[i].m_nRefs > ai[i])
+                else if (mail_list[i].m_nRefs > ai[i])
                 {
                     nCountHigher++;
                 }
@@ -2412,7 +2437,7 @@ void do_mail_debug(dbref player, char *action, char *victim)
     {
         // First, we should fixup the reference counts.
         //
-        if (mudstate.mail_list)
+        if (mail_list)
         {
             notify(player, tprintf("Re-counting mailbag reference counts."));
             int *ai = (int *)MEMALLOC(mudstate.mail_db_top * sizeof(int));
@@ -2434,9 +2459,9 @@ void do_mail_debug(dbref player, char *action, char *victim)
             int nCountWrong = 0;
             for (i = 0; i < mudstate.mail_db_top; i++)
             {
-                if (mudstate.mail_list[i].m_nRefs != ai[i])
+                if (mail_list[i].m_nRefs != ai[i])
                 {
-                    mudstate.mail_list[i].m_nRefs = ai[i];
+                    mail_list[i].m_nRefs = ai[i];
                     nCountWrong++;
                 }
             }
@@ -2857,7 +2882,7 @@ int dump_mail(FILE *fp)
     //
     for (i = 0; i < mudstate.mail_db_top; i++)
     {
-        if (mudstate.mail_list[i].m_nRefs > 0)
+        if (mail_list[i].m_nRefs > 0)
         {
             putref(fp, i);
             putstring(fp, MessageFetch(i));
@@ -4289,7 +4314,7 @@ void do_malias_status(dbref player)
     }
 }
 
-void malias_cleanup1 (struct malias *m, dbref target)
+void malias_cleanup1(struct malias *m, dbref target)
 {
     int count = 0;
     dbref j;
@@ -4309,7 +4334,7 @@ void malias_cleanup1 (struct malias *m, dbref target)
     m->numrecep -= count;
 }
 
-void malias_cleanup (dbref player)
+void malias_cleanup(dbref player)
 {
     for (int i = 0; i < ma_top; i++)
     {
@@ -4331,9 +4356,10 @@ void do_mail_retract1(dbref player, char *name, char *msglist)
         return;
     }
 
-    struct mail *mp, *nextp;
     int i = 0, j = 0;
-    for (mp = (struct mail *)hashfindLEN(&target, sizeof(target), &mudstate.mail_htab); mp; mp = nextp)
+    struct mail *nextp;
+    struct mail *mp = (struct mail *)hashfindLEN(&target, sizeof(target), &mudstate.mail_htab);
+    for ( ; mp; mp = nextp)
     {
         if (mp->from == player)
         {
