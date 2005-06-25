@@ -1,6 +1,6 @@
 // mail.h
 //
-// $Id: mail.h,v 1.3 2005-06-25 07:02:59 sdennis Exp $
+// $Id: mail.h,v 1.4 2005-06-25 15:04:25 sdennis Exp $
 //
 
 #ifndef _MAIL_H
@@ -63,41 +63,41 @@ typedef unsigned int mail_flag;
 
 struct mail
 {
-  struct mail *next;
-  struct mail *prev;
-  dbref to;
-  dbref from;
-  int number;
-  char *time;
-  char *subject;
-  char *tolist;
-  int read;
+    struct mail *next;
+    struct mail *prev;
+    dbref        to;
+    dbref        from;
+    int          number;
+    char        *time;
+    char        *subject;
+    char        *tolist;
+    int          read;
 };
 
 struct mail_selector
 {
-    int low, high;
+    int       low;
+    int       high;
     mail_flag flags;
-    dbref player;
-    int days, day_comp;
+    dbref     player;
+    int       days;
+    int       day_comp;
 };
 
 struct muser
 {
-    dbref who;
-    char *fwd;
-    char *vacation;
+    dbref  who;
+    char  *fwd;
+    char  *vacation;
     dbref *afilter;
-    int status;
+    int    status;
 };
 
-typedef struct mail_entry MENT;
-struct mail_entry
+typedef struct mail_body MAILBODY;
+struct mail_body
 {
     char *m_pMessage;
     int   m_nRefs;
 };
-
-extern const char *MessageFetch(int number);
 
 #endif // !_MAIL_H

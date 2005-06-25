@@ -1,6 +1,6 @@
 // mail.cpp
 //
-// $Id: mail.cpp,v 1.34 2005-06-25 07:02:59 sdennis Exp $
+// $Id: mail.cpp,v 1.35 2005-06-25 15:04:25 sdennis Exp $
 //
 // This code was taken from Kalkin's DarkZone code, which was
 // originally taken from PennMUSH 1.50 p10, and has been heavily modified
@@ -36,8 +36,8 @@ struct malias
 int ma_size = 0;
 int ma_top = 0;
 
-struct malias **malias = NULL;
-MENT          *mail_list = NULL;
+struct malias **malias   = NULL;
+MAILBODY      *mail_list = NULL;
 
 // Handling functions for the database of mail messages.
 //
@@ -63,14 +63,14 @@ static void mail_db_grow(int newtop)
             newsize = newtop;
         }
 
-        MENT *newdb = (MENT *)MEMALLOC((newsize + MAIL_FUDGE) * sizeof(MENT));
+        MAILBODY *newdb = (MAILBODY *)MEMALLOC((newsize + MAIL_FUDGE) * sizeof(MAILBODY));
         ISOUTOFMEMORY(newdb);
         if (mail_list)
         {
             mail_list -= MAIL_FUDGE;
             memcpy( newdb,
                     mail_list,
-                    (mudstate.mail_db_top + MAIL_FUDGE) * sizeof(MENT));
+                    (mudstate.mail_db_top + MAIL_FUDGE) * sizeof(MAILBODY));
             MEMFREE(mail_list);
             mail_list = NULL;
         }
@@ -104,7 +104,7 @@ static DCL_INLINE void MessageReferenceInc(int number)
 //
 static void MessageReferenceCheck(int number)
 {
-    MENT &m = mail_list[number];
+    MAILBODY &m = mail_list[number];
     if (m.m_nRefs <= 0)
     {
         if (m.m_pMessage)
@@ -155,7 +155,7 @@ static int MessageAdd(char *pMessage)
     }
 
     int i;
-    MENT *pm;
+    MAILBODY *pm;
     bool bFound = false;
     for (i = 0; i < mudstate.mail_db_top; i++)
     {
@@ -236,7 +236,7 @@ static bool MessageAddWithNumber(int i, char *pMessage)
 {
     mail_db_grow(i+1);
 
-    MENT *pm = &mail_list[i];
+    MAILBODY *pm = &mail_list[i];
     pm->m_pMessage = StringClone(pMessage);
     return true;
 }
