@@ -1,6 +1,6 @@
 // mail.h
 //
-// $Id: mail.h,v 1.4 2005-06-25 15:04:25 sdennis Exp $
+// $Id: mail.h,v 1.5 2005-06-25 19:09:31 sdennis Exp $
 //
 
 #ifndef _MAIL_H
@@ -48,17 +48,6 @@
 #define DASH_LINE  \
   "---------------------------------------------------------------------------"
 
-#define MAIL_ITER_ALL(mp, thing)    for((thing)=0; (thing)<mudstate.db_top; (thing)++) \
-                        for (mp = (struct mail *)hashfindLEN(&thing, sizeof(thing), &mudstate.mail_htab); mp != NULL; mp = mp->next)
-
-/* This macro requires you to put nextp = mp->next at
- * the beginning of the loop.
- */
-
-#define MAIL_ITER_SAFE(mp, thing, nextp)    for((thing)=0; (thing)<mudstate.db_top; (thing)++) \
-                            for (mp = (struct mail *)hashfindLEN(&thing, sizeof(thing), &mudstate.mail_htab); mp != NULL; mp = nextp)
-
-
 typedef unsigned int mail_flag;
 
 struct mail
@@ -98,6 +87,23 @@ struct mail_body
 {
     char *m_pMessage;
     int   m_nRefs;
+};
+
+class MailList
+{
+private:
+    struct mail *m_mi;
+    dbref        m_player;
+    bool         m_bRemoved;
+
+public:
+    MailList(dbref player);
+    struct mail *FirstItem(void);
+    struct mail *NextItem(void);
+    bool IsEnd(void);
+    void RemoveItem(void);
+    void RemoveAll(void);
+    void AppendItem(struct mail *newp);
 };
 
 #endif // !_MAIL_H

@@ -1,6 +1,6 @@
 // mail.cpp
 //
-// $Id: mail.cpp,v 1.35 2005-06-25 15:04:25 sdennis Exp $
+// $Id: mail.cpp,v 1.36 2005-06-25 19:09:31 sdennis Exp $
 //
 // This code was taken from Kalkin's DarkZone code, which was
 // originally taken from PennMUSH 1.50 p10, and has been heavily modified
@@ -1049,8 +1049,10 @@ static void do_mail_flags(dbref player, char *msglist, mail_flag flag, bool nega
     }
     int i = 0, j = 0;
     int folder = player_folder(player);
-    struct mail *mp = (struct mail *)hashfindLEN(&player, sizeof(player), &mudstate.mail_htab);
-    for ( ; mp; mp = mp->next)
+
+    MailList ml(player);
+    struct mail *mp;
+    for (mp = ml.FirstItem(); !ml.IsEnd(); mp = ml.NextItem())
     {
         if (  All(ms)
            || Folder(mp) == folder)
@@ -1143,8 +1145,10 @@ void do_mail_file(dbref player, char *msglist, char *folder)
     }
     int i = 0, j = 0;
     int origfold = player_folder(player);
-    struct mail *mp = (struct mail *)hashfindLEN(&player, sizeof(player), &mudstate.mail_htab);
-    for ( ; mp; mp = mp->next)
+
+    MailList ml(player);
+    struct mail *mp;
+    for (mp = ml.FirstItem(); !ml.IsEnd(); mp = ml.NextItem())
     {
         if (  All(ms)
            || (Folder(mp) == origfold))
@@ -1395,8 +1399,10 @@ void do_mail_read(dbref player, char *msglist)
     int i = 0, j = 0;
     char *buff = alloc_lbuf("do_mail_read.1");
     int folder = player_folder(player);
-    struct mail *mp = (struct mail *)hashfindLEN( &player, sizeof(player), &mudstate.mail_htab);
-    for ( ; mp; mp = mp->next)
+
+    MailList ml(player);
+    struct mail *mp;
+    for (mp = ml.FirstItem(); !ml.IsEnd(); mp = ml.NextItem())
     {
         if (Folder(mp) == folder)
         {
@@ -1489,11 +1495,12 @@ void do_mail_review(dbref player, char *name, char *msglist)
     int iRealVisibleWidth;
     char szSubjectBuffer[MBUF_SIZE];
 
-    if (!msglist || !*msglist)
+    if (  !msglist
+       || !*msglist)
     {
         notify(player, tprintf("--------------------   MAIL: %-25s   ------------------", Name(target)));
-        mp = (struct mail *)hashfindLEN(&target, sizeof(target), &mudstate.mail_htab);
-        for ( ; mp; mp = mp->next)
+        MailList ml(target);
+        for (mp = ml.FirstItem(); !ml.IsEnd(); mp = ml.NextItem())
         {
             if (mp->from == player)
             {
@@ -1515,8 +1522,8 @@ void do_mail_review(dbref player, char *name, char *msglist)
         {
             return;
         }
-        mp = (struct mail *)hashfindLEN(&target, sizeof(target), &mudstate.mail_htab);
-        for ( ; mp && !MuxAlarm.bAlarmed; mp = mp->next)
+        MailList ml(target);
+        for (mp = ml.FirstItem(); !ml.IsEnd() && !MuxAlarm.bAlarmed; mp = ml.NextItem())
         {
             if (mp->from == player)
             {
@@ -1619,8 +1626,9 @@ void do_mail_list(dbref player, char *msglist, bool sub)
     notify(player,
         tprintf("---------------------------   MAIL: Folder %d   ----------------------------", folder));
 
-    struct mail *mp = (struct mail *)hashfindLEN(&player, sizeof(player), &mudstate.mail_htab);
-    for ( ; mp; mp = mp->next)
+    MailList ml(player);
+    struct mail *mp;
+    for (mp = ml.FirstItem(); !ml.IsEnd(); mp = ml.NextItem())
     {
         if (Folder(mp) == folder)
         {
@@ -1654,56 +1662,13 @@ void do_mail_purge(dbref player)
 {
     // Go through player's mail, and remove anything marked cleared.
     //
-    struct mail *nextp;
-    struct mail *mp = (struct mail *)hashfindLEN(&player, sizeof(player), &mudstate.mail_htab);
-    for ( ; mp; mp = nextp)
+    MailList ml(player);
+    struct mail *mp;
+    for (mp = ml.FirstItem(); !ml.IsEnd(); mp = ml.NextItem())
     {
         if (Cleared(mp))
         {
-            // Delete this one.
-            // Head and tail of the list are special.
-            //
-            if (mp->prev == NULL)
-            {
-                if (mp->next == NULL)
-                {
-                    hashdeleteLEN(&player, sizeof(player), &mudstate.mail_htab);
-                }
-                else
-                {
-                    hashreplLEN(&player, sizeof(player), mp->next, &mudstate.mail_htab);
-                }
-            }
-            else if (mp->next == NULL)
-            {
-                mp->prev->next = NULL;
-            }
-
-            // relink the list
-            //
-            if (mp->prev != NULL)
-            {
-                mp->prev->next = mp->next;
-            }
-            if (mp->next != NULL)
-            {
-                mp->next->prev = mp->prev;
-            }
-
-            nextp = mp->next;
-            MessageReferenceDec(mp->number);
-            MEMFREE(mp->subject);
-            mp->subject = NULL;
-            MEMFREE(mp->time);
-            mp->time = NULL;
-            MEMFREE(mp->tolist);
-            mp->tolist = NULL;
-            MEMFREE(mp);
-            mp = NULL;
-        }
-        else
-        {
-            nextp = mp->next;
+            ml.RemoveItem();
         }
     }
     notify(player, "MAIL: Mailbox purged.");
@@ -2033,8 +1998,9 @@ void do_mail_reply(dbref player, char *msg, bool all, int key)
 struct mail *mail_fetch(dbref player, int num)
 {
     int i = 0;
-    struct mail *mp = (struct mail *)hashfindLEN(&player, sizeof(player), &mudstate.mail_htab);
-    for ( ; mp; mp = mp->next)
+    MailList ml(player);
+    struct mail *mp;
+    for (mp = ml.FirstItem(); !ml.IsEnd(); mp = ml.NextItem())
     {
         if (Folder(mp) == player_folder(player))
         {
@@ -2076,8 +2042,9 @@ void count_mail(dbref player, int folder, int *rcount, int *ucount, int *ccount)
     int uc = 0;
     int cc = 0;
 
-    struct mail *mp = (struct mail *)hashfindLEN(&player, sizeof(player), &mudstate.mail_htab);
-    for ( ; mp; mp = mp->next)
+    MailList ml(player);
+    struct mail *mp;
+    for (mp = ml.FirstItem(); !ml.IsEnd(); mp = ml.NextItem())
     {
         if (Folder(mp) == folder)
         {
@@ -2105,8 +2072,9 @@ void urgent_mail(dbref player, int folder, int *ucount)
 {
     int uc = 0;
 
-    struct mail *mp = (struct mail *)hashfindLEN(&player, sizeof(player), &mudstate.mail_htab);
-    for ( ; mp; mp = mp->next)
+    MailList ml(player);
+    struct mail *mp;
+    for (mp = ml.FirstItem(); !ml.IsEnd(); mp = ml.NextItem())
     {
         if (Folder(mp) == folder)
         {
@@ -2253,37 +2221,18 @@ static void send_mail
 
     // If this is the first message, it is the head and the tail.
     //
-    bool bFailed = false;
-    struct mail *mptr = (struct mail *)hashfindLEN(&target, sizeof(target), &mudstate.mail_htab);
-    if (mptr)
+    MailList ml(target);
+    ml.AppendItem(newp);
+
+    // Notify people.
+    //
+    if (!silent)
     {
-        while (mptr->next != NULL)
-        {
-            mptr = mptr->next;
-        }
-        mptr->next = newp;
-        newp->next = NULL;
-        newp->prev = mptr;
-    }
-    else
-    {
-        hashaddLEN(&target, sizeof(target), newp, &mudstate.mail_htab);
-        newp->next = NULL;
-        newp->prev = NULL;
+        notify(player, tprintf("MAIL: You sent your message to %s.", Name(target)));
     }
 
-    if (!bFailed)
-    {
-        // notify people
-        //
-        if (!silent)
-        {
-            notify(player, tprintf("MAIL: You sent your message to %s.", Name(target)));
-        }
-
-        notify(target, tprintf("MAIL: You have a new message from %s.", Name(player)));
-        did_it(player, target, A_MAIL, NULL, 0, NULL, A_AMAIL, NULL, NOTHING);
-    }
+    notify(target, tprintf("MAIL: You have a new message from %s.", Name(player)));
+    did_it(player, target, A_MAIL, NULL, 0, NULL, A_AMAIL, NULL, NOTHING);
 }
 
 void do_mail_nuke(dbref player)
@@ -2299,22 +2248,8 @@ void do_mail_nuke(dbref player)
     dbref thing;
     DO_WHOLE_DB(thing)
     {
-        struct mail *mp = (struct mail *)hashfindLEN(&thing, sizeof(thing), &mudstate.mail_htab);
-        while (mp)
-        {
-            struct mail *nextp = mp->next;
-            MessageReferenceDec(mp->number);
-            MEMFREE(mp->subject);
-            mp->subject = NULL;
-            MEMFREE(mp->tolist);
-            mp->tolist = NULL;
-            MEMFREE(mp->time);
-            mp->time = NULL;
-            MEMFREE(mp);
-            mp = NULL;
-            mp = nextp;
-        }
-        hashdeleteLEN(&thing, sizeof(thing), &mudstate.mail_htab);
+        MailList ml(thing);
+        ml.RemoveAll();
     }
     log_text(tprintf("** MAIL PURGE ** done by %s(#%d)." ENDLINE, Name(player), player));
     notify(player, "You annihilate the post office. All messages cleared.");
@@ -2328,7 +2263,6 @@ void do_mail_debug(dbref player, char *action, char *victim)
         return;
     }
 
-    struct mail *mp, *nextp;
     dbref thing;
     if (string_prefix("clear", action))
     {
@@ -2360,45 +2294,50 @@ void do_mail_debug(dbref player, char *action, char *victim)
         ISOUTOFMEMORY(ai);
         memset(ai, 0, mudstate.mail_db_top * sizeof(int));
 
-        MAIL_ITER_ALL(mp, thing)
+        DO_WHOLE_DB(thing)
         {
-            bool bGoodReference;
-            if (0 <= mp->number && mp->number < mudstate.mail_db_top)
+            MailList ml(thing);
+            struct mail *mp;
+            for (mp = ml.FirstItem(); !ml.IsEnd(); mp = ml.NextItem());
             {
-                ai[mp->number]++;
-                bGoodReference = true;
-            }
-            else
-            {
-                bGoodReference = false;
-            }
-            if (!Good_obj(mp->to))
-            {
-                if (bGoodReference)
+                bool bGoodReference;
+                if (0 <= mp->number && mp->number < mudstate.mail_db_top)
                 {
-                    notify(player, tprintf("Bad object #%d has mail.", mp->to));
+                    ai[mp->number]++;
+                    bGoodReference = true;
                 }
                 else
                 {
-                    notify(player, tprintf("Bad object #%d has mail which refers to a non-existent mailbag item.", mp->to));
+                    bGoodReference = false;
                 }
-            }
-            else if (!isPlayer(mp->to))
-            {
-                if (bGoodReference)
+                if (!Good_obj(mp->to))
                 {
-                    notify(player, tprintf("%s(#%d) has mail, but is not a player.",
-                             Name(mp->to), mp->to));
+                    if (bGoodReference)
+                    {
+                        notify(player, tprintf("Bad object #%d has mail.", mp->to));
+                    }
+                    else
+                    {
+                        notify(player, tprintf("Bad object #%d has mail which refers to a non-existent mailbag item.", mp->to));
+                    }
                 }
-                else
+                else if (!isPlayer(mp->to))
                 {
-                    notify(player, tprintf("%s(#%d) is not a player, but has mail which refers to a non-existent mailbag item.",
+                    if (bGoodReference)
+                    {
+                        notify(player, tprintf("%s(#%d) has mail, but is not a player.",
+                                 Name(mp->to), mp->to));
+                    }
+                    else
+                    {
+                        notify(player, tprintf("%s(#%d) is not a player, but has mail which refers to a non-existent mailbag item.",
                              Name(mp->to), mp->to));
+                    }
                 }
-            }
-            else if (!bGoodReference)
-            {
-                notify(player, tprintf("%s(#%d) has mail which refers to a non-existent mailbag item.", Name(mp->to), mp->to));
+                else if (!bGoodReference)
+                {
+                    notify(player, tprintf("%s(#%d) has mail which refers to a non-existent mailbag item.", Name(mp->to), mp->to));
+                }
             }
         }
 
@@ -2444,15 +2383,21 @@ void do_mail_debug(dbref player, char *action, char *victim)
             ISOUTOFMEMORY(ai);
             memset(ai, 0, mudstate.mail_db_top * sizeof(int));
 
-            MAIL_ITER_ALL(mp, thing)
+            DO_WHOLE_DB(thing)
             {
-                if (0 <= mp->number && mp->number < mudstate.mail_db_top)
+                MailList ml(thing);
+                struct mail *mp;
+                for (mp = ml.FirstItem(); !ml.IsEnd(); mp = ml.NextItem())
                 {
-                    ai[mp->number]++;
-                }
-                else
-                {
-                    mp->number = NOTHING;
+                    if (  0 <= mp->number
+                       && mp->number < mudstate.mail_db_top)
+                    {
+                        ai[mp->number]++;
+                    }
+                    else
+                    {
+                        mp->number = NOTHING;
+                    }
                 }
             }
             int i;
@@ -2478,53 +2423,21 @@ void do_mail_debug(dbref player, char *action, char *victim)
         // Now, remove all mail to non-good or non-players, or mail that
         // points to non-existent mailbag items.
         //
-        MAIL_ITER_SAFE(mp, thing, nextp)
+        DO_WHOLE_DB(thing)
         {
-            if (!Good_obj(mp->to) || !isPlayer(mp->to) || mp->number == NOTHING)
+            MailList ml(thing);
+            struct mail *mp;
+            for (mp = ml.FirstItem(); !ml.IsEnd(); mp = ml.NextItem())
             {
-                // Delete this item.
-                //
-                notify(player, tprintf("Fixing mail for #%d.", mp->to));
-
-                if (mp->prev == NULL)
+                if (  !Good_obj(mp->to)
+                   || !isPlayer(mp->to)
+                   || NOTHING == mp->number)
                 {
-                    if (mp->next == NULL)
-                    {
-                        hashdeleteLEN(&player, sizeof(player), &mudstate.mail_htab);
-                    }
-                    else
-                    {
-                        hashreplLEN(&player, sizeof(player), mp->next, &mudstate.mail_htab);
-                    }
+                    // Delete this item.
+                    //
+                    notify(player, tprintf("Fixing mail for #%d.", mp->to));
+                    ml.RemoveItem();
                 }
-                else if (mp->next == NULL)
-                {
-                    mp->prev->next = NULL;
-                }
-
-                if (mp->prev != NULL)
-                {
-                    mp->prev->next = mp->next;
-                }
-                if (mp->next != NULL)
-                {
-                    mp->next->prev = mp->prev;
-                }
-
-                nextp = mp->next;
-                MessageReferenceDec(mp->number);
-                MEMFREE(mp->subject);
-                mp->subject = NULL;
-                MEMFREE(mp->time);
-                mp->time = NULL;
-                MEMFREE(mp->tolist);
-                mp->tolist = NULL;
-                MEMFREE(mp);
-                mp = NULL;
-            }
-            else
-            {
-                nextp = mp->next;
             }
         }
         notify(player, "Mail sanity fix completed.");
@@ -2599,34 +2512,44 @@ void do_mail_stats(dbref player, char *name, int full)
                        (mudconf.searchcost == 1) ? mudconf.one_coin : mudconf.many_coins));
         return;
     }
-    struct mail *mp;
-    if (target == AMBIGUOUS)
+    if (AMBIGUOUS == target)
     {
-        // stats for all
+        // Stats for all.
+        //
         if (full == 0)
         {
-            MAIL_ITER_ALL(mp, thing)
+            DO_WHOLE_DB(thing)
             {
-                count++;
+                MailList ml(thing);
+                struct mail *mp;
+                for (mp = ml.FirstItem(); !ml.IsEnd(); mp = ml.NextItem())
+                {
+                    count++;
+                }
             }
             notify(player, tprintf("There are %d messages in the mail spool.", count));
             return;
         }
         else if (full == 1)
         {
-            MAIL_ITER_ALL(mp, thing)
+            DO_WHOLE_DB(thing)
             {
-                if (Cleared(mp))
+                MailList ml(thing);
+                struct mail *mp;
+                for (mp = ml.FirstItem(); !ml.IsEnd(); mp = ml.NextItem())
                 {
-                    fc++;
-                }
-                else if (Read(mp))
-                {
-                    fr++;
-                }
-                else
-                {
-                    fu++;
+                    if (Cleared(mp))
+                    {
+                        fc++;
+                    }
+                    else if (Read(mp))
+                    {
+                        fr++;
+                    }
+                    else
+                    {
+                        fu++;
+                    }
                 }
             }
             notify(player,
@@ -2636,22 +2559,27 @@ void do_mail_stats(dbref player, char *name, int full)
         }
         else
         {
-            MAIL_ITER_ALL(mp, thing)
+            DO_WHOLE_DB(thing)
             {
-                if (Cleared(mp))
+                MailList ml(thing);
+                struct mail *mp;
+                for (mp = ml.FirstItem(); !ml.IsEnd(); mp = ml.NextItem())
                 {
-                    fc++;
-                    cchars += strlen(MessageFetch(mp->number));
-                }
-                else if (Read(mp))
-                {
-                    fr++;
-                    fchars += strlen(MessageFetch(mp->number));
-                }
-                else
-                {
-                    fu++;
-                    tchars += strlen(MessageFetch(mp->number));
+                    if (Cleared(mp))
+                    {
+                        fc++;
+                        cchars += strlen(MessageFetch(mp->number));
+                    }
+                    else if (Read(mp))
+                    {
+                        fr++;
+                        fchars += strlen(MessageFetch(mp->number));
+                    }
+                    else
+                    {
+                        fu++;
+                        tchars += strlen(MessageFetch(mp->number));
+                    }
                 }
             }
             notify(player, tprintf("MAIL: There are %d old msgs in the mail spool, totalling %d characters.", fr, fchars));
@@ -2667,65 +2595,77 @@ void do_mail_stats(dbref player, char *name, int full)
     {
         // Just count the number of messages.
         //
-        MAIL_ITER_ALL(mp, thing)
+        DO_WHOLE_DB(thing)
         {
-            if (mp->from == target)
+            MailList ml(thing);
+            struct mail *mp;
+            for (mp = ml.FirstItem(); !ml.IsEnd(); mp = ml.NextItem())
             {
-                fr++;
-            }
-            if (mp->to == target)
-            {
-                tr++;
+                if (mp->from == target)
+                {
+                    fr++;
+                }
+                if (mp->to == target)
+                {
+                    tr++;
+                }
             }
         }
         notify(player, tprintf("%s sent %d messages.", Name(target), fr));
         notify(player, tprintf("%s has %d messages.", Name(target), tr));
         return;
     }
-    // more detailed message count
+
+    // More detailed message count.
+    //
     char last[50];
-    MAIL_ITER_ALL(mp, thing)
+    DO_WHOLE_DB(thing)
     {
-        if (mp->from == target)
+        MailList ml(thing);
+        struct mail *mp;
+        for (mp = ml.FirstItem(); !ml.IsEnd(); mp = ml.NextItem())
         {
-            if (Cleared(mp))
+            if (mp->from == target)
             {
-                fc++;
+                if (Cleared(mp))
+                {
+                    fc++;
+                }
+                else if (Read(mp))
+                {
+                    fr++;
+                }
+                else
+                {
+                    fu++;
+                }
+                if (full == 2)
+                {
+                    fchars += strlen(MessageFetch(mp->number));
+                }
             }
-            else if (Read(mp))
+            if (mp->to == target)
             {
-                fr++;
-            }
-            else
-            {
-                fu++;
-            }
-            if (full == 2)
-            {
-                fchars += strlen(MessageFetch(mp->number));
-            }
-        }
-        if (mp->to == target)
-        {
-            if (!tr && !tu)
-            {
-                strcpy(last, mp->time);
-            }
-            if (Cleared(mp))
-            {
-                tc++;
-            }
-            else if (Read(mp))
-            {
-                tr++;
-            }
-            else
-            {
-                tu++;
-            }
-            if (full == 2)
-            {
-                tchars += strlen(MessageFetch(mp->number));
+                if (!tr && !tu)
+                {
+                    strcpy(last, mp->time);
+                }
+                if (Cleared(mp))
+                {
+                    tc++;
+                }
+                else if (Read(mp))
+                {
+                    tr++;
+                }
+                else
+                {
+                    tu++;
+                }
+                if (full == 2)
+                {
+                    tchars += strlen(MessageFetch(mp->number));
+                }
             }
         }
     }
@@ -2858,20 +2798,18 @@ int dump_mail(FILE *fp)
     {
         if (isPlayer(thing))
         {
-            mptr = (struct mail *)hashfindLEN(&thing, sizeof(thing), &mudstate.mail_htab);
-            if (mptr != NULL)
+            MailList ml(thing);
+            struct mail *mp;
+            for (mp = ml.FirstItem(); !ml.IsEnd(); mp = ml.NextItem())
             {
-                for (mp = mptr; mp; mp = mp->next)
-                {
-                    putref(fp, mp->to);
-                    putref(fp, mp->from);
-                    putref(fp, mp->number);
-                    putstring(fp, mp->tolist);
-                    putstring(fp, mp->time);
-                    putstring(fp, mp->subject);
-                    putref(fp, mp->read);
-                    count++;
-                }
+                putref(fp, mp->to);
+                putref(fp, mp->from);
+                putref(fp, mp->number);
+                putstring(fp, mp->tolist);
+                putstring(fp, mp->time);
+                putstring(fp, mp->subject);
+                putref(fp, mp->read);
+                count++;
             }
         }
     }
@@ -2880,7 +2818,7 @@ int dump_mail(FILE *fp)
 
     // Add the db of mail messages
     //
-    for (i = 0; i < mudstate.mail_db_top; i++)
+    DO_WHOLE_DB(i)
     {
         if (mail_list[i].m_nRefs > 0)
         {
@@ -2896,25 +2834,8 @@ int dump_mail(FILE *fp)
 
 void SaveMailStruct(struct mail *mp)
 {
-    dbref nTo = mp->to;
-    struct mail *mptr = (struct mail *)hashfindLEN(&nTo, sizeof(nTo), &mudstate.mail_htab);
-    if (mptr)
-    {
-        // Find the end of the list the hard way.
-        //
-        while (mptr->next != NULL)
-        {
-            mptr = mptr->next;
-        }
-        mptr->next = mp;
-        mp->prev = mptr;
-    }
-    else
-    {
-        mp->prev = NULL;
-        hashaddLEN(&nTo, sizeof(nTo), mp, &mudstate.mail_htab);
-    }
-    mp->next = NULL;
+    MailList ml(mp->to);
+    ml.AppendItem(mp);
 }
 
 void load_mail_V5(FILE *fp)
@@ -3137,7 +3058,6 @@ void check_mail_expiration(void)
         return;
     }
 
-    struct mail *mp, *nextp;
     dbref thing;
     int expire_secs = mudconf.mail_expiration * 86400;
 
@@ -3145,70 +3065,33 @@ void check_mail_expiration(void)
     ltaNow.GetLocal();
 
     CLinearTimeAbsolute ltaMail;
-    MAIL_ITER_SAFE(mp, thing, nextp)
+    DO_WHOLE_DB(thing)
     {
-        if (M_Safe(mp))
+        MailList ml(thing);
+        struct mail *mp;
+        for (mp = ml.FirstItem(); !ml.IsEnd(); mp = ml.NextItem())
         {
-            nextp = mp->next;
-            continue;
-        }
-
-        const char *pMailTimeStr = mp->time;
-        if (!ltaMail.SetString(pMailTimeStr))
-        {
-            nextp = mp->next;
-            continue;
-        }
-
-        CLinearTimeDelta ltd(ltaMail, ltaNow);
-        if (ltd.ReturnSeconds() <= expire_secs)
-        {
-            nextp = mp->next;
-            continue;
-        }
-
-        // Delete this one.
-        //
-        // head and tail of the list are special.
-        //
-        dbref nTo = mp->to;
-        if (mp->prev == NULL)
-        {
-            if (mp->next == NULL)
+            if (M_Safe(mp))
             {
-                hashdeleteLEN(&nTo, sizeof(nTo), &mudstate.mail_htab);
+                continue;
             }
-            else
+    
+            const char *pMailTimeStr = mp->time;
+            if (!ltaMail.SetString(pMailTimeStr))
             {
-                hashreplLEN(&nTo, sizeof(nTo), mp->next, &mudstate.mail_htab);
+                continue;
             }
+    
+            CLinearTimeDelta ltd(ltaMail, ltaNow);
+            if (ltd.ReturnSeconds() <= expire_secs)
+            {
+                continue;
+            }
+    
+            // Delete this one.
+            //
+            ml.RemoveItem();
         }
-        else if (mp->next == NULL)
-        {
-            mp->prev->next = NULL;
-        }
-
-        // relink the list
-        //
-        if (mp->prev != NULL)
-        {
-            mp->prev->next = mp->next;
-        }
-        if (mp->next != NULL)
-        {
-            mp->next->prev = mp->prev;
-        }
-
-        nextp = mp->next;
-        MessageReferenceDec(mp->number);
-        MEMFREE(mp->subject);
-        mp->subject = NULL;
-        MEMFREE(mp->tolist);
-        mp->tolist = NULL;
-        MEMFREE(mp->time);
-        mp->time = NULL;
-        MEMFREE(mp);
-        mp = NULL;
     }
 }
 
@@ -3216,7 +3099,6 @@ void check_mail(dbref player, int folder, bool silent)
 {
     // Check for new @mail
     //
-
     int rc;     // Read messages.
     int uc;     // Unread messages.
     int cc;     // Cleared messages.
@@ -4357,9 +4239,9 @@ void do_mail_retract1(dbref player, char *name, char *msglist)
     }
 
     int i = 0, j = 0;
-    struct mail *nextp;
-    struct mail *mp = (struct mail *)hashfindLEN(&target, sizeof(target), &mudstate.mail_htab);
-    for ( ; mp; mp = nextp)
+    MailList ml(target);
+    struct mail *mp;
+    for (mp = ml.FirstItem(); !ml.IsEnd(); mp = ml.NextItem())
     {
         if (mp->from == player)
         {
@@ -4369,56 +4251,14 @@ void do_mail_retract1(dbref player, char *name, char *msglist)
                 j++;
                 if (Unread(mp))
                 {
-                    if (mp->prev == NULL)
-                    {
-                        if (mp->next == NULL)
-                        {
-                            hashdeleteLEN(&target, sizeof(target), &mudstate.mail_htab);
-                        }
-                        else
-                        {
-                            hashreplLEN(&target, sizeof(target), mp->next, &mudstate.mail_htab);
-                        }
-                    }
-                    else if (mp->next == NULL)
-                    {
-                        mp->prev->next = NULL;
-                    }
-                    if (mp->prev != NULL)
-                    {
-                        mp->prev->next = mp->next;
-                    }
-                    if (mp->next != NULL)
-                    {
-                        mp->next->prev = mp->prev;
-                    }
-
-                    nextp = mp->next;
-                    MessageReferenceDec(mp->number);
-                    MEMFREE(mp->subject);
-                    mp->subject = NULL;
-                    MEMFREE(mp->time);
-                    mp->time = NULL;
-                    MEMFREE(mp->tolist);
-                    mp->tolist = NULL;
-                    MEMFREE(mp);
-                    mp = NULL;
+                    ml.RemoveItem();
                     notify(player, "MAIL: Mail retracted.");
                 }
                 else
                 {
                     notify(player, "MAIL: That message has been read.");
-                    nextp = mp->next;
                 }
             }
-            else
-            {
-                nextp = mp->next;
-            }
-        }
-        else
-        {
-            nextp = mp->next;
         }
     }
 
@@ -4626,4 +4466,128 @@ void do_mail
         do_mail_cc(executor, arg1, true);
         break;
     }
+}
+
+struct mail *MailList::FirstItem(void)
+{
+    m_mi = (struct mail *)hashfindLEN(&m_player, sizeof(m_player), &mudstate.mail_htab);
+    m_bRemoved = false;
+    return m_mi;
+}
+
+struct mail *MailList::NextItem(void)
+{
+    if (!m_bRemoved)
+    {
+        m_bRemoved = false;
+        if (m_mi)
+        {
+            m_mi = m_mi->next;
+        }
+    }
+    return m_mi;
+}
+
+bool MailList::IsEnd(void)
+{
+    return (NULL == m_mi);
+}
+
+MailList::MailList(dbref player)
+{
+    m_mi       = NULL;
+    m_player   = player;
+    m_bRemoved = false;
+}
+
+void MailList::RemoveItem(void)
+{
+    if (  NULL == m_mi
+       || NOTHING == m_player)
+    {
+        return;
+    }
+
+    struct mail *nextp = m_mi->next;
+
+    if (m_mi->prev == NULL)
+    {
+        if (nextp == NULL)
+        {
+            hashdeleteLEN(&m_player, sizeof(m_player), &mudstate.mail_htab);
+        }
+        else
+        {
+            hashreplLEN(&m_player, sizeof(m_player), nextp, &mudstate.mail_htab);
+        }
+    }
+
+    // Relink the list
+    //
+    if (m_mi->prev != NULL)
+    {
+        m_mi->prev->next = nextp;
+    }
+    if (nextp != NULL)
+    {
+        m_mi->next->prev = m_mi->prev;
+    }
+
+    m_mi->next = NULL;
+    m_mi->prev = NULL;
+    MessageReferenceDec(m_mi->number);
+    MEMFREE(m_mi->subject);
+    m_mi->subject = NULL;
+    MEMFREE(m_mi->time);
+    m_mi->time = NULL;
+    MEMFREE(m_mi->tolist);
+    m_mi->tolist = NULL;
+    MEMFREE(m_mi);
+
+    m_bRemoved = true;
+    m_mi = nextp;
+}
+
+void MailList::AppendItem(struct mail *newp)
+{
+    struct mail *mptr = (struct mail *)
+        hashfindLEN(&m_player, sizeof(m_player), &mudstate.mail_htab);
+
+    if (mptr)
+    {
+        while (mptr->next != NULL)
+        {
+            mptr = mptr->next;
+        }
+        mptr->next = newp;
+        newp->next = NULL;
+        newp->prev = mptr;
+    }
+    else
+    {
+        hashaddLEN(&m_player, sizeof(m_player), newp, &mudstate.mail_htab);
+        newp->next = NULL;
+        newp->prev = NULL;
+    }
+}
+
+void MailList::RemoveAll(void)
+{
+    struct mail *mp = (struct mail *)hashfindLEN(&m_player, sizeof(m_player), &mudstate.mail_htab);
+    while (mp)
+    {
+        struct mail *nextp = mp->next;
+        MessageReferenceDec(mp->number);
+        MEMFREE(mp->subject);
+        mp->subject = NULL;
+        MEMFREE(mp->tolist);
+        mp->tolist = NULL;
+        MEMFREE(mp->time);
+        mp->time = NULL;
+        MEMFREE(mp);
+        mp = NULL;
+        mp = nextp;
+    }
+    hashdeleteLEN(&m_player, sizeof(m_player), &mudstate.mail_htab);
+    m_mi = NULL;
 }
