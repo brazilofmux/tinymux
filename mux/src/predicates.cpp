@@ -1,6 +1,6 @@
 // predicates.cpp
 //
-// $Id: predicates.cpp,v 1.59 2005-06-02 04:09:05 sdennis Exp $
+// $Id: predicates.cpp,v 1.60 2005-06-25 21:13:46 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -1314,13 +1314,24 @@ void do_prog
     if (ap)
     {
         dbref aowner;
-        int aflags;
-        char *pBuffer = atr_get(thing, ap->number, &aowner, &aflags);
-        if (*pBuffer)
+        int   aflags;
+        int   lev;
+        dbref parent;
+        char *pBuffer = NULL;
+        bool bFound = false;
+        ITER_PARENTS(thing, parent, lev)
+        {
+            pBuffer = atr_get(parent, ap->number, &aowner, &aflags);
+            if (pBuffer)
+            {
+                bFound = true;
+                break;
+            }
+        }
+        if (bFound)
         {
             if (  (   God(player)
                   || !God(thing))
-               && ap
                && See_attr(player, thing, ap))
             {
                 atr_add_raw(doer, A_PROGCMD, pBuffer);
