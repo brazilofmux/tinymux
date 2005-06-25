@@ -1,6 +1,6 @@
 // mail.h
 //
-// $Id: mail.h,v 1.5 2005-06-25 19:09:31 sdennis Exp $
+// $Id: mail.h,v 1.6 2005-06-25 19:48:13 sdennis Exp $
 //
 
 #ifndef _MAIL_H
@@ -92,6 +92,7 @@ struct mail_body
 class MailList
 {
 private:
+    struct mail *m_miHead;
     struct mail *m_mi;
     dbref        m_player;
     bool         m_bRemoved;

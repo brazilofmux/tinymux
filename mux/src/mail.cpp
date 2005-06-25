@@ -1,6 +1,6 @@
 // mail.cpp
 //
-// $Id: mail.cpp,v 1.36 2005-06-25 19:09:31 sdennis Exp $
+// $Id: mail.cpp,v 1.37 2005-06-25 19:48:13 sdennis Exp $
 //
 // This code was taken from Kalkin's DarkZone code, which was
 // originally taken from PennMUSH 1.50 p10, and has been heavily modified
@@ -4470,7 +4470,8 @@ void do_mail
 
 struct mail *MailList::FirstItem(void)
 {
-    m_mi = (struct mail *)hashfindLEN(&m_player, sizeof(m_player), &mudstate.mail_htab);
+    m_miHead = (struct mail *)hashfindLEN(&m_player, sizeof(m_player), &mudstate.mail_htab);
+    m_mi = m_miHead;
     m_bRemoved = false;
     return m_mi;
 }
@@ -4479,12 +4480,16 @@ struct mail *MailList::NextItem(void)
 {
     if (!m_bRemoved)
     {
-        m_bRemoved = false;
-        if (m_mi)
+        if (NULL != m_mi)
         {
             m_mi = m_mi->next;
+            if (m_mi == m_miHead)
+            {
+                m_mi = NULL;
+            }
         }
     }
+    m_bRemoved = false;
     return m_mi;
 }
 
@@ -4496,6 +4501,7 @@ bool MailList::IsEnd(void)
 MailList::MailList(dbref player)
 {
     m_mi       = NULL;
+    m_miHead   = NULL;
     m_player   = player;
     m_bRemoved = false;
 }
@@ -4508,30 +4514,24 @@ void MailList::RemoveItem(void)
         return;
     }
 
-    struct mail *nextp = m_mi->next;
+    struct mail *miNext = m_mi->next;
 
-    if (m_mi->prev == NULL)
+    if (m_mi == m_miHead)
     {
-        if (nextp == NULL)
+        if (miNext == m_miHead)
         {
             hashdeleteLEN(&m_player, sizeof(m_player), &mudstate.mail_htab);
         }
         else
         {
-            hashreplLEN(&m_player, sizeof(m_player), nextp, &mudstate.mail_htab);
+            hashreplLEN(&m_player, sizeof(m_player), miNext, &mudstate.mail_htab);
         }
     }
 
     // Relink the list
     //
-    if (m_mi->prev != NULL)
-    {
-        m_mi->prev->next = nextp;
-    }
-    if (nextp != NULL)
-    {
-        m_mi->next->prev = m_mi->prev;
-    }
+    m_mi->prev->next = miNext;
+    m_mi->next->prev = m_mi->prev;
 
     m_mi->next = NULL;
     m_mi->prev = NULL;
@@ -4544,50 +4544,73 @@ void MailList::RemoveItem(void)
     m_mi->tolist = NULL;
     MEMFREE(m_mi);
 
-    m_bRemoved = true;
-    m_mi = nextp;
-}
-
-void MailList::AppendItem(struct mail *newp)
-{
-    struct mail *mptr = (struct mail *)
-        hashfindLEN(&m_player, sizeof(m_player), &mudstate.mail_htab);
-
-    if (mptr)
+    m_mi = miNext;
+    if (m_mi == m_miHead)
     {
-        while (mptr->next != NULL)
-        {
-            mptr = mptr->next;
-        }
-        mptr->next = newp;
-        newp->next = NULL;
-        newp->prev = mptr;
+        m_bRemoved = false;
     }
     else
     {
-        hashaddLEN(&m_player, sizeof(m_player), newp, &mudstate.mail_htab);
-        newp->next = NULL;
-        newp->prev = NULL;
+        m_bRemoved = true;
+    }
+}
+
+void MailList::AppendItem(struct mail *miNew)
+{
+    struct mail *miHead = (struct mail *)
+        hashfindLEN(&m_player, sizeof(m_player), &mudstate.mail_htab);
+
+    if (miHead)
+    {
+        // Add new item to the end of the list.
+        //
+        struct mail *miEnd = miHead->prev;
+
+        miNew->next = miHead;
+        miNew->prev = miEnd;
+
+        miHead->prev = miNew;
+        miEnd->next  = miNew;
+    }
+    else
+    {
+        hashaddLEN(&m_player, sizeof(m_player), miNew, &mudstate.mail_htab);
+        miNew->next = miNew;
+        miNew->prev = miNew;
     }
 }
 
 void MailList::RemoveAll(void)
 {
-    struct mail *mp = (struct mail *)hashfindLEN(&m_player, sizeof(m_player), &mudstate.mail_htab);
-    while (mp)
+    struct mail *miHead = (struct mail *)
+        hashfindLEN(&m_player, sizeof(m_player), &mudstate.mail_htab);
+
+    if (NULL != miHead)
     {
-        struct mail *nextp = mp->next;
-        MessageReferenceDec(mp->number);
-        MEMFREE(mp->subject);
-        mp->subject = NULL;
-        MEMFREE(mp->tolist);
-        mp->tolist = NULL;
-        MEMFREE(mp->time);
-        mp->time = NULL;
-        MEMFREE(mp);
-        mp = NULL;
-        mp = nextp;
+        hashdeleteLEN(&m_player, sizeof(m_player), &mudstate.mail_htab);
     }
-    hashdeleteLEN(&m_player, sizeof(m_player), &mudstate.mail_htab);
+
+    struct mail *mi;
+    struct mail *miNext;
+    for (mi = miHead; NULL != mi; mi = miNext)
+    {
+        struct mail *miNext;
+        if (mi == miHead)
+        {
+            miNext = NULL;
+        }
+        else
+        {
+            miNext = mi->next;
+        }
+        MessageReferenceDec(mi->number);
+        MEMFREE(mi->subject);
+        mi->subject = NULL;
+        MEMFREE(mi->tolist);
+        mi->tolist = NULL;
+        MEMFREE(mi->time);
+        mi->time = NULL;
+        MEMFREE(mi);
+    }
     m_mi = NULL;
 }
