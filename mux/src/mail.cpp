@@ -1,6 +1,6 @@
 // mail.cpp
 //
-// $Id: mail.cpp,v 1.37 2005-06-25 19:48:13 sdennis Exp $
+// $Id: mail.cpp,v 1.38 2005-06-25 20:25:17 sdennis Exp $
 //
 // This code was taken from Kalkin's DarkZone code, which was
 // originally taken from PennMUSH 1.50 p10, and has been heavily modified
@@ -4521,17 +4521,19 @@ void MailList::RemoveItem(void)
         if (miNext == m_miHead)
         {
             hashdeleteLEN(&m_player, sizeof(m_player), &mudstate.mail_htab);
+            m_miHead = NULL;
         }
         else
         {
             hashreplLEN(&m_player, sizeof(m_player), miNext, &mudstate.mail_htab);
         }
+        miNext = NULL;
     }
 
     // Relink the list
     //
-    m_mi->prev->next = miNext;
     m_mi->next->prev = m_mi->prev;
+    m_mi->prev->next = miNext;
 
     m_mi->next = NULL;
     m_mi->prev = NULL;
@@ -4545,14 +4547,7 @@ void MailList::RemoveItem(void)
     MEMFREE(m_mi);
 
     m_mi = miNext;
-    if (m_mi == m_miHead)
-    {
-        m_bRemoved = false;
-    }
-    else
-    {
-        m_bRemoved = true;
-    }
+    m_bRemoved = true;
 }
 
 void MailList::AppendItem(struct mail *miNew)
