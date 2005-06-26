@@ -1,6 +1,6 @@
 // db.cpp
 //
-// $Id: db.cpp,v 1.55 2005-06-02 03:14:12 sdennis Exp $
+// $Id: db.cpp,v 1.56 2005-06-26 18:36:23 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -121,6 +121,7 @@ ATTR attr[] =
     {"Mailsub",     A_MAILSUB,  AF_DARK | AF_NOPROG | AF_NOCMD | AF_INTERNAL},
     {"Mailsucc",    A_MAIL,     AF_ODARK | AF_NOPROG},
     {"Mailto",      A_MAILTO,   AF_DARK | AF_NOPROG | AF_NOCMD | AF_INTERNAL},
+    {"Mfail",       A_MFAIL,    AF_ODARK | AF_NOPROG},
     {"Modified",    A_MODIFIED, AF_GOD | AF_VISUAL | AF_NOPROG | AF_NOCMD},
     {"Moniker",     A_MONIKER,  AF_ODARK | AF_NOPROG | AF_NOCMD | AF_CONST},
     {"Move",        A_MOVE,     AF_ODARK | AF_NOPROG},

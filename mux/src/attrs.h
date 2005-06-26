@@ -1,6 +1,6 @@
 // attrs.h -- Attribute definitions.
 //
-// $Id: attrs.h,v 1.3 2004-07-24 05:25:08 sdennis Exp $
+// $Id: attrs.h,v 1.4 2005-06-26 18:36:23 sdennis Exp $
 //
 
 #ifndef _ATTRS_H
@@ -129,8 +129,9 @@
 #define A_LPARENT   98  /* Who may @parent to me if PARENT_OK set */
 #define A_LCONTROL  99  /* Who controls me if CONTROL_OK set */
 #define A_VA        100 /* VA attribute (VB-VZ follow) */
+// 126 unused
 #define A_LGET      127 /* Get lock (who may get stuff from me?) */
-// 128 unused
+#define A_MFAIL     128 /* Mail rejected fail message */
 #define A_GFAIL     129 /* Give fail message */
 #define A_OGFAIL    130 /* Others give fail message */
 #define A_AGFAIL    131 /* Give fail action */
@@ -238,9 +239,10 @@
 #define A_SKILLS        280     /* Skills */
 #define A_PCEQUIP       281     /* PCombat equipment */
 #define A_AMECHDEST     282
-#define A_USER_START    283     // Start of user-named attributes.
-#define A_MECHPREFID    284     // BUGBUG: This should not occur after A_USER_START.
-#define A_HEATCHARS     285     // BUGBUG: This should not occur after A_USER_START.
+#define A_MECHPREFID    284
+#define A_HEATCHARS     285
+
+#define A_USER_START    286     // Start of user-named attributes.
 #else
 
 #define A_USER_START    256     // Start of user-named attributes.

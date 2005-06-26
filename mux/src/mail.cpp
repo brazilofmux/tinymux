@@ -1,6 +1,6 @@
 // mail.cpp
 //
-// $Id: mail.cpp,v 1.45 2005-06-26 15:43:56 sdennis Exp $
+// $Id: mail.cpp,v 1.46 2005-06-26 18:36:23 sdennis Exp $
 //
 // This code was taken from Kalkin's DarkZone code, which was
 // originally taken from PennMUSH 1.50 p10, and has been heavily modified
@@ -2068,7 +2068,7 @@ static void mail_return(dbref player, dbref target)
     dbref aowner;
     int aflags;
 
-    char *str = atr_pget(target, A_REJECT, &aowner, &aflags);
+    char *str = atr_pget(target, A_MFAIL, &aowner, &aflags);
     if (*str)
     {
         char *str2, *buf, *bp;
