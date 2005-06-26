@@ -1,6 +1,6 @@
 // mail.cpp
 //
-// $Id: mail.cpp,v 1.39 2005-06-26 01:54:55 sdennis Exp $
+// $Id: mail.cpp,v 1.40 2005-06-26 01:59:57 sdennis Exp $
 //
 // This code was taken from Kalkin's DarkZone code, which was
 // originally taken from PennMUSH 1.50 p10, and has been heavily modified
@@ -2818,9 +2818,9 @@ int dump_mail(FILE *fp)
 
     // Add the db of mail messages
     //
-    DO_WHOLE_DB(i)
+    for (i = 0; i < mudstate.mail_db_top; i++)
     {
-        if (mail_list[i].m_nRefs > 0)
+        if (0 < mail_list[i].m_nRefs)
         {
             putref(fp, i);
             putstring(fp, MessageFetch(i));
