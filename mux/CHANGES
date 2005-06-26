@@ -73,9 +73,15 @@ Feature Additions:
  -- vadd() now allows addition of a vector by a scalar similiar to
     vmul().
  -- Remove the 20-argument limit from the vector functions.
- -- Improve performance by avoiding write-through caching of A_MONEY in the
-    player cache. This was probably the primary reason for needing one cached
-    hash page per player. Paging is probably secondary to this one.
+ -- Added @mfail message. When @mail/lock rejects @mail, the @mfail is
+    shown to the sender. Previously, the @reject message was shown to
+    the sender.
+ -- Added NO_PARSE attribute flag to control whether $-commands and
+    ^-listens match the evaluated or unevaluated input.
+ -- @program now traverses an object's parents for the requested
+    attribute.
+ -- Fixed @mail/fwd to evalute the postpended and prepended text without
+    evaluating the forwarded text.
 
 
 Bug Fixes:
@@ -145,13 +151,16 @@ Bug Fixes:
     channel once regardless of how many aliases they have for that
     channel.
  -- Add case-insensitive sort option to sort().
- -- Use correct units in the @mail, attriute name, and new player throttles.
- -- Avoid several situations in which the forked process and main process
-    would both attempt to update an attribute value. The forked process
-    should never attempt to update any attributes values.
- -- Traverse pcache list properly (introduced in 2.4.0.15) to avoid orphaning
-    cache records and failing to flush A_MONEY updates to the database.
+ -- Use correct units in the @mail, attriute name, and new player
+    throttles.
+ -- Avoid several situations in which the forked process and main
+    process would both attempt to update an attribute value. The forked
+    process should never attempt to update any attributes values.
+ -- Traverse pcache list properly (introduced in 2.4.0.15) to avoid
+    orphaning cache records and failing to flush A_MONEY updates to the
+    database.
  -- Fix crashing bug in @clist/full with a heavily ANSI-ied owner name.
+ -- Documented @mail/bcc (blind carbon-copy).
 
 
 Performance Enhancements:
@@ -160,6 +169,10 @@ Performance Enhancements:
  -- Use nanosleep() or usleep() on Unix if available.
  -- Pulled alloc/free pairs outside an inner loop in switch() and
     fold().
+ -- Improve performance by avoiding write-through caching of A_MONEY in
+    the player cache. This was probably the primary reason for needing
+    one cached hash page per player. Paging is probably secondary to
+    this one.
 
 
 Cosmetic Changes:
@@ -172,3 +185,5 @@ Cosmetic Changes:
 Miscellaneous:
 ~~~~~~~~~~~~~
  -- Added ATTACK notes.
+ -- Added @folder as an alias for @mail/folder and @file as an alias for
+    @mail/file.
