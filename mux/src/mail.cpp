@@ -1,6 +1,6 @@
 // mail.cpp
 //
-// $Id: mail.cpp,v 1.43 2005-06-26 15:07:15 sdennis Exp $
+// $Id: mail.cpp,v 1.44 2005-06-26 15:30:59 sdennis Exp $
 //
 // This code was taken from Kalkin's DarkZone code, which was
 // originally taken from PennMUSH 1.50 p10, and has been heavily modified
@@ -3627,20 +3627,29 @@ void do_mail_quick(dbref player, char *arg1, char *arg2)
         notify(player, "MAIL: Too much @mail sent recently.");
         return;
     }
-    char *buf = alloc_lbuf("do_mail_quick");
-    char *bp = buf;
+    char *bufDest = alloc_lbuf("do_mail_quick");
+    char *bpSubject = bufDest;
 
-    strcpy(bp, arg1);
-    parse_to(&bp, '/', 1);
+    strcpy(bpSubject, arg1);
+    parse_to(&bpSubject, '/', 1);
 
-    if (!bp)
+    if (!bpSubject)
     {
         notify(player, "MAIL: No subject.");
-        free_lbuf(buf);
+        free_lbuf(bufDest);
         return;
     }
-    mail_to_list(player, make_numlist(player, buf, false), bp, arg2, 0, false);
-    free_lbuf(buf);
+
+    char *bufMsg = alloc_lbuf("add_mail_message");
+    char *bpMsg = bufMsg;
+    char *strMsg = arg2;
+    mux_exec(bufMsg, &bpMsg, player, player, player,
+             EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &strMsg, (char **)NULL, 0);
+    *bpMsg = '\0';
+
+    mail_to_list(player, make_numlist(player, bufDest, false), bpSubject, bufMsg, 0, false);
+    free_lbuf(bufMsg);
+    free_lbuf(bufDest);
 }
 
 void do_expmail_stop(dbref player, int flags)
