@@ -1,6 +1,6 @@
 // mail.cpp
 //
-// $Id: mail.cpp,v 1.44 2005-06-26 15:30:59 sdennis Exp $
+// $Id: mail.cpp,v 1.45 2005-06-26 15:43:56 sdennis Exp $
 //
 // This code was taken from Kalkin's DarkZone code, which was
 // originally taken from PennMUSH 1.50 p10, and has been heavily modified
@@ -907,7 +907,7 @@ void do_mail_change_folder(dbref player, char *fld, char *newname)
     {
         // Check mail in all folders
         //
-        for (pfld = MAX_FOLDERS; pfld >= 0; pfld--)
+        for (pfld = 0; pfld <= MAX_FOLDERS; pfld++)
         {
             check_mail(player, pfld, true);
         }
