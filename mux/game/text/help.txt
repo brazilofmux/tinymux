@@ -2352,6 +2352,19 @@ Related Topics: @name.
                                        list all mailing aliases currently
                                        defined by their number.
 
+& @MFAIL
+@MFAIL
+
+  COMMAND:   @mfail <object> = <message>
+  ATTRIBUTE: Mfail
+
+  This attribute is sent as a message to anyone who tries to @mail you but you
+  have prevented them via your @mail lock (@lock/mail).
+
+  Example: @mfail me = I _told_ you not to @mail me anymore...
+
+  Related Topics: @lock, @mail, @reject.
+
 & @MONIKER
 @MONIKER
 
@@ -5030,14 +5043,14 @@ COMMANDS (continued)
   @ealias      @efail       @enter       @exitformat  @exitto      @fail
   @filter      @forwardlist @gfail       @idesc       @idle        @idletimeout
   @infilter    @inprefix    @kill        @lalias      @leave       @lfail
-  @listen      @mailsucc    @moniker     @move        @nameformat  @odescribe
-  @odfail      @odrop       @oefail      @oenter      @ofail       @ogfail
-  @okill       @oleave      @olfail      @omove       @opay        @orfail
-  @osuccess    @otfail      @otofail     @otport      @oufail      @ouse
-  @oxenter     @oxleave     @oxtport     @pay         @prefix      @reject
-  @rfail       @runout      @saystring   @sex         @signature   @speechmod
-  @startup     @success     @tfail       @tofail      @tport       @ufail
-  @use
+  @listen      @mailsucc    @mfail       @moniker     @move        @nameformat
+  @odescribe   @odfail      @odrop       @oefail      @oenter      @ofail
+  @ogfail      @okill       @oleave      @olfail      @omove       @opay
+  @orfail      @osuccess    @otfail      @otofail     @otport      @oufail
+  @ouse        @oxenter     @oxleave     @oxtport     @pay         @prefix
+  @queuemax    @reject      @rfail       @runout      @saystring   @sex
+  @signature   @speechmod   @startup     @success     @tfail       @tofail
+  @tport       @ufail       @use
 
 & COMP()
 COMP()
