@@ -1,6 +1,6 @@
 // mail.cpp
 //
-// $Id: mail.cpp,v 1.42 2005-06-26 14:34:37 sdennis Exp $
+// $Id: mail.cpp,v 1.43 2005-06-26 15:07:15 sdennis Exp $
 //
 // This code was taken from Kalkin's DarkZone code, which was
 // originally taken from PennMUSH 1.50 p10, and has been heavily modified
@@ -184,7 +184,7 @@ static int MessageAdd(char *pMessage)
 // IF return value is !NOTHING, you have a reference to the message,
 // and the reference count reflects that.
 //
-static int add_mail_message(dbref player, char *message, bool bEval)
+static int add_mail_message(dbref player, char *message)
 {
     if (!mux_stricmp(message, "clear"))
     {
@@ -203,29 +203,12 @@ static int add_mail_message(dbref player, char *message, bool bEval)
     mux_exec(execstr, &bp, player, player, player,
              EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, (char **)NULL, 0);
     *bp = '\0';
-    char *msg;
-    if (bEval)
-    {
-        msg = bp = alloc_lbuf("add_mail_message.2");
-        str = message;
-        mux_exec(msg, &bp, player, player, player,
-             EV_EVAL | EV_FCHECK | EV_NO_COMPRESS, &str, (char **)NULL, 0);
-        *bp = '\0';
-    }
-    else
-    {
-        msg = message;
-    }
 
     // Save message body and return a reference to it.
     //
-    int number = MessageAdd(tprintf("%s %s", msg, execstr));
+    int number = MessageAdd(tprintf("%s %s", message, execstr));
     free_lbuf(atrstr);
     free_lbuf(execstr);
-    if (bEval)
-    {
-        free_lbuf(msg);
-    }
     return number;
 }
 
@@ -1491,7 +1474,6 @@ void do_mail_review(dbref player, char *name, char *msglist)
     struct mail *mp;
     struct mail_selector ms;
     int i = 0, j = 0;
-    char *msg, *status, *bp, *str;
     int iRealVisibleWidth;
     char szSubjectBuffer[MBUF_SIZE];
 
@@ -1531,13 +1513,8 @@ void do_mail_review(dbref player, char *name, char *msglist)
                 if (mail_match(mp, ms, i))
                 {
                     j++;
-                    status = status_string(mp);
-                    msg = bp = alloc_lbuf("do_mail_review");
-                    str = (char *)MessageFetch(mp->number);
-                    mux_exec(msg, &bp, player, player, player,
-                             EV_EVAL | EV_FCHECK | EV_NO_COMPRESS, &str,
-                             (char **)NULL, 0);
-                    *bp = '\0';
+                    char *status = status_string(mp);
+                    const char *str = MessageFetch(mp->number);
                     ANSI_TruncateToField(mp->subject, sizeof(szSubjectBuffer),
                         szSubjectBuffer, 65, &iRealVisibleWidth, ANSI_ENDGOAL_NORMAL);
                     notify(player, DASH_LINE);
@@ -1550,9 +1527,8 @@ void do_mail_review(dbref player, char *name, char *msglist)
                                    status, szSubjectBuffer));
                     free_lbuf(status);
                     notify(player, DASH_LINE);
-                    notify(player, msg);
+                    notify(player, str);
                     notify(player, DASH_LINE);
-                    free_lbuf(msg);
                 }
             }
         }
@@ -3165,7 +3141,7 @@ void do_malias_send
             // Complain about it.
             //
             char *pMail = tprintf("Alias Error: Bad Player %d for %s", vic, tolist);
-            int iMail = add_mail_message(player, pMail, !(flags & M_FORWARD));
+            int iMail = add_mail_message(player, pMail);
             if (iMail != NOTHING)
             {
                 send_mail(GOD, GOD, listto, subject, iMail, 0, silent);
@@ -3555,7 +3531,7 @@ void mail_to_list(dbref player, char *list, char *subject, char *message, int fl
     }
     *p = '\0';
 
-    int number = add_mail_message(player, message, !(flags & M_FORWARD));
+    int number = add_mail_message(player, message);
     if (number != NOTHING)
     {
         char spot;
@@ -3726,6 +3702,13 @@ void do_prepend(dbref executor, dbref caller, dbref enactor, int key, char *text
             return;
         }
 
+        char *bufText = alloc_lbuf("do_prepend");
+        char *bpText = bufText;
+        char *strText = text+1;
+        mux_exec(bufText, &bpText, executor, caller, enactor,
+                 EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &strText, (char **)NULL, 0);
+        *bpText = '\0';
+
         dbref aowner;
         int aflags;
 
@@ -3734,7 +3717,7 @@ void do_prepend(dbref executor, dbref caller, dbref enactor, int key, char *text
         {
             char *newmsg = alloc_lbuf("do_prepend");
             char *bp = newmsg;
-            safe_str(text + 1, newmsg, &bp);
+            safe_str(bufText, newmsg, &bp);
             safe_chr(' ', newmsg, &bp);
             safe_str(oldmsg, newmsg, &bp);
             *bp = '\0';
@@ -3743,9 +3726,10 @@ void do_prepend(dbref executor, dbref caller, dbref enactor, int key, char *text
         }
         else
         {
-            atr_add_raw(executor, A_MAILMSG, text + 1);
+            atr_add_raw(executor, A_MAILMSG, bufText);
         }
 
+        free_lbuf(bufText);
         free_lbuf(oldmsg);
         size_t nLen;
 
@@ -3780,6 +3764,13 @@ void do_postpend(dbref executor, dbref caller, dbref enactor, int key, char *tex
             return;
         }
 
+        char *bufText = alloc_lbuf("do_prepend");
+        char *bpText = bufText;
+        char *strText = text+1;
+        mux_exec(bufText, &bpText, executor, caller, enactor,
+                 EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &strText, (char **)NULL, 0);
+        *bpText = '\0';
+
         dbref aowner;
         int aflags;
 
@@ -3790,16 +3781,17 @@ void do_postpend(dbref executor, dbref caller, dbref enactor, int key, char *tex
             char *bp = newmsg;
             safe_str(oldmsg, newmsg, &bp);
             safe_chr(' ', newmsg, &bp);
-            safe_str(text + 1, newmsg, &bp);
+            safe_str(bufText, newmsg, &bp);
             *bp = '\0';
             atr_add_raw(executor, A_MAILMSG, newmsg);
             free_lbuf(newmsg);
         }
         else
         {
-            atr_add_raw(executor, A_MAILMSG, text + 1);
+            atr_add_raw(executor, A_MAILMSG, bufText);
         }
 
+        free_lbuf(bufText);
         free_lbuf(oldmsg);
         size_t nLen;
 
@@ -3839,33 +3831,28 @@ static void do_mail_proof(dbref player)
         return;
     }
 
-    char *mailmsg, *msg, *bp, *str;
     dbref aowner;
     int aflags;
+
+    char *mailto  = atr_get(player, A_MAILTO, &aowner, &aflags);
+    char *mailmsg = atr_get(player, A_MAILMSG, &aowner, &aflags);
+    char *names   = make_namelist(player, mailto);
+
     int iRealVisibleWidth;
     char szSubjectBuffer[MBUF_SIZE];
-
-    char *mailto = atr_get(player, A_MAILTO, &aowner, &aflags);
-    str = mailmsg = atr_get(player, A_MAILMSG, &aowner, &aflags);
-    bp = msg = alloc_lbuf("do_mail_proof");
-    mux_exec(msg, &bp, player, player, player, EV_EVAL | EV_FCHECK,
-                &str, (char **)NULL, 0);
-    *bp = '\0';
-    free_lbuf(mailmsg);
-
-    char *names = make_namelist(player, mailto);
     ANSI_TruncateToField(atr_get_raw(player, A_MAILSUB),
         sizeof(szSubjectBuffer), szSubjectBuffer, 35,
         &iRealVisibleWidth, ANSI_ENDGOAL_NORMAL);
+
     notify(player, DASH_LINE);
     notify(player, tprintf("From:  %-*s  Subject: %s\nTo: %s",
             PLAYER_NAME_LIMIT - 6, Name(player), szSubjectBuffer, names));
     notify(player, DASH_LINE);
-    notify(player, msg);
+    notify(player, mailmsg);
     notify(player, DASH_LINE);
+    free_lbuf(mailmsg);
     free_lbuf(names);
     free_lbuf(mailto);
-    free_lbuf(msg);
 }
 
 void do_malias_desc(dbref player, char *alias, char *desc)
