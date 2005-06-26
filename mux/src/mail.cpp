@@ -1,6 +1,6 @@
 // mail.cpp
 //
-// $Id: mail.cpp,v 1.38 2005-06-25 20:25:17 sdennis Exp $
+// $Id: mail.cpp,v 1.39 2005-06-26 01:54:55 sdennis Exp $
 //
 // This code was taken from Kalkin's DarkZone code, which was
 // originally taken from PennMUSH 1.50 p10, and has been heavily modified
@@ -2298,7 +2298,7 @@ void do_mail_debug(dbref player, char *action, char *victim)
         {
             MailList ml(thing);
             struct mail *mp;
-            for (mp = ml.FirstItem(); !ml.IsEnd(); mp = ml.NextItem());
+            for (mp = ml.FirstItem(); !ml.IsEnd(); mp = ml.NextItem())
             {
                 bool bGoodReference;
                 if (0 <= mp->number && mp->number < mudstate.mail_db_top)
