@@ -1,6 +1,6 @@
 // mail.cpp
 //
-// $Id: mail.cpp,v 1.41 2005-06-26 04:57:57 sdennis Exp $
+// $Id: mail.cpp,v 1.42 2005-06-26 14:34:37 sdennis Exp $
 //
 // This code was taken from Kalkin's DarkZone code, which was
 // originally taken from PennMUSH 1.50 p10, and has been heavily modified
@@ -188,7 +188,7 @@ static int add_mail_message(dbref player, char *message, bool bEval)
 {
     if (!mux_stricmp(message, "clear"))
     {
-        notify(player, "MAIL: You probably don't wanna send mail saying 'clear'.");
+        notify(player, "MAIL: You probably did not intend to send a @mail saying 'clear'.");
         return NOTHING;
     }
 
