@@ -8786,11 +8786,19 @@ MAIL-REVIEWING
 MAIL-SENDING
 
   @mail[/switch] <player-list> = <subject>
-        This begins a message to all players in <player-list>.
-        -<text> adds text to the message in progress, for example
+        This begins a message to all players in <player-list>.  The
+        <player list> forms the To: line of the @mail -- the list of primary
+        receipients.
+
+  -<text>
+  ~<text>
+        These add text to the message in progress, for example, the
+        following would add the text 'This is a test' to the end of your
+        @mail message:
+
             -This is a test
-        would add the text 'This is a test' to the end of your @mail
-        message, likewise, ~<text> prepends the text.
+
+        Likewise, ~<text> prepends the text.
 
   @mail/send
         This sends the message that is currently in progress.
@@ -8798,7 +8806,15 @@ MAIL-SENDING
         the message as urgent, and should not be used often.
 
   @mail/cc <player-list>
+        This adds <player-list> to the current list of recipients.  Like the
+        primary recipients, these additions will be visible to every
+        recipient.
+
+  @mail/bcc <player-list>
         This adds <player-list> to the current list of recipients.
+        Unlike the primary recipients and the carbon-copy (cc) receipients,
+        these additions will be hidden from every recipient including each
+        other.
 
 { 'help mail-sending2' for more }
 
