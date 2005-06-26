@@ -1,6 +1,6 @@
 // mail.cpp
 //
-// $Id: mail.cpp,v 1.40 2005-06-26 01:59:57 sdennis Exp $
+// $Id: mail.cpp,v 1.41 2005-06-26 04:57:57 sdennis Exp $
 //
 // This code was taken from Kalkin's DarkZone code, which was
 // originally taken from PennMUSH 1.50 p10, and has been heavily modified
@@ -2832,12 +2832,6 @@ int dump_mail(FILE *fp)
     return count;
 }
 
-void SaveMailStruct(struct mail *mp)
-{
-    MailList ml(mp->to);
-    ml.AppendItem(mp);
-}
-
 void load_mail_V5(FILE *fp)
 {
     int mail_top = getref(fp);
@@ -2860,7 +2854,9 @@ void load_mail_V5(FILE *fp)
         mp->time    = StringClone(getstring_noalloc(fp, true));
         mp->subject = StringClone(getstring_noalloc(fp, true));
         mp->read    = getref(fp);
-        SaveMailStruct(mp);
+
+        MailList ml(mp->to);
+        ml.AppendItem(mp);
 
         p = fgets(nbuf1, sizeof(nbuf1), fp);
     }
@@ -4532,8 +4528,8 @@ void MailList::RemoveItem(void)
 
     // Relink the list
     //
+    m_mi->prev->next = m_mi->next;
     m_mi->next->prev = m_mi->prev;
-    m_mi->prev->next = miNext;
 
     m_mi->next = NULL;
     m_mi->prev = NULL;
