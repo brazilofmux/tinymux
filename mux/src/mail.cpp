@@ -1,6 +1,6 @@
 // mail.cpp
 //
-// $Id: mail.cpp,v 1.46 2005-06-26 18:36:23 sdennis Exp $
+// $Id: mail.cpp,v 1.47 2005-06-26 18:39:05 sdennis Exp $
 //
 // This code was taken from Kalkin's DarkZone code, which was
 // originally taken from PennMUSH 1.50 p10, and has been heavily modified
@@ -3047,19 +3047,19 @@ void check_mail_expiration(void)
             {
                 continue;
             }
-    
+
             const char *pMailTimeStr = mp->time;
             if (!ltaMail.SetString(pMailTimeStr))
             {
                 continue;
             }
-    
+
             CLinearTimeDelta ltd(ltaMail, ltaNow);
             if (ltd.ReturnSeconds() <= expire_secs)
             {
                 continue;
             }
-    
+
             // Delete this one.
             //
             ml.RemoveItem();
