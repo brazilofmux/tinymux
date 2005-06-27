@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.136 2005-06-24 17:32:40 sdennis Exp $
+// $Id: functions.cpp,v 1.137 2005-06-27 01:00:08 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -24,8 +24,6 @@
 #include "pcre.h"
 
 UFUN *ufun_head;
-
-extern NAMETAB indiv_attraccess_nametab[];
 
 extern void cf_display(dbref, char *, char *, char **);
 extern void cf_list(dbref, char *, char **);
