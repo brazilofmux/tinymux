@@ -10101,16 +10101,16 @@ PMATCH()
 
   FUNCTION: pmatch(<string>)
 
-  Given the partial name of a player, it returns that player's dbref
-  number. This partial name completion works identically to the partial
-  name completion of the "page" command - i.e. it first attempts to match
-  the normal names of all players (connected or not), and if that fails,
-  it tries to match the partial names of connected players. If no player
-  is matched, it returns "#-1". If multiple matches are found, it returns
-  the first match, in order of connection time.
+  Given the partial name of a player, it returns that player's dbref number.
+  This partial name completion works identically to the partial name
+  completion of the "page" command - i.e. it first attempts to match the
+  normal names of all players (connected or not), and if that fails, it tries
+  to match the partial names of connected players.  If no player is matched,
+  it returns "#-1 NO MATCH".  If multiple matches are found, it returns the
+  first match, in order of connection time.
 
   Pmatch() will also accept *<player> or #<db#>. If given a non-player
-  dbref #, pmatch() will return #-1.
+  dbref #, pmatch() will return "#-1 NO MATCH".
 
   Related Topics:
 
