@@ -1,6 +1,6 @@
 // mail.cpp
 //
-// $Id: mail.cpp,v 1.47 2005-06-26 18:39:05 sdennis Exp $
+// $Id: mail.cpp,v 1.48 2005-06-28 16:00:58 sdennis Exp $
 //
 // This code was taken from Kalkin's DarkZone code, which was
 // originally taken from PennMUSH 1.50 p10, and has been heavily modified
@@ -4581,7 +4581,6 @@ void MailList::RemoveAll(void)
     struct mail *miNext;
     for (mi = miHead; NULL != mi; mi = miNext)
     {
-        struct mail *miNext;
         if (mi == miHead)
         {
             miNext = NULL;
