@@ -1,6 +1,6 @@
 // predicates.cpp
 //
-// $Id: predicates.cpp,v 1.60 2005-06-25 21:13:46 sdennis Exp $
+// $Id: predicates.cpp,v 1.61 2005-06-28 20:25:56 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -1322,11 +1322,12 @@ void do_prog
         ITER_PARENTS(thing, parent, lev)
         {
             pBuffer = atr_get(parent, ap->number, &aowner, &aflags);
-            if (pBuffer)
+            if (pBuffer[0])
             {
                 bFound = true;
                 break;
             }
+            free_lbuf(pBuffer);
         }
         if (bFound)
         {
