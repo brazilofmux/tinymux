@@ -1,6 +1,6 @@
 // externs.h -- Prototypes for externs not defined elsewhere.
 //
-// $Id: externs.h,v 1.34 2005-06-25 07:02:59 sdennis Exp $
+// $Id: externs.h,v 1.35 2005-06-28 21:47:10 sdennis Exp $
 //
 
 #ifndef EXTERNS_H
@@ -37,6 +37,18 @@ void CleanUpSlaveProcess(void);
 /* From conf.cpp */
 extern void cf_log_notfound(dbref, char *, const char *, char *);
 extern int  cf_modify_bits(int *, char *, void *, UINT32, dbref, char *);
+
+/* From local.cpp */
+extern void local_startup(void);
+extern void local_dump_database(int);
+extern void local_shutdown(void);
+extern void local_dbck(void);
+extern void local_timer(void);
+extern void local_connect(dbref, int, int);
+extern void local_disconnect(dbref, int);
+extern void local_data_create(dbref);
+extern void local_data_clone(dbref, dbref);
+extern void local_data_free(dbref);
 
 /* From mail.cpp */
 extern void load_mail(FILE *);

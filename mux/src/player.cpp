@@ -1,6 +1,6 @@
 // player.cpp
 //
-// $Id: player.cpp,v 1.29 2005-06-14 14:56:34 sdennis Exp $
+// $Id: player.cpp,v 1.30 2005-06-28 21:47:10 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -586,6 +586,7 @@ dbref create_player
     ChangePassword(player, pbuf);
     s_Home(player, start_home());
     free_lbuf(pbuf);
+    local_data_create(player);
     return player;
 }
 

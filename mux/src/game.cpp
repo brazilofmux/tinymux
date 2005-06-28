@@ -1,6 +1,6 @@
 // game.cpp
 //
-// $Id: game.cpp,v 1.54 2005-06-24 18:52:45 sdennis Exp $
+// $Id: game.cpp,v 1.55 2005-06-28 21:47:10 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -1255,6 +1255,11 @@ void dump_database_internal(int dump_type)
     }
 #endif
 
+    // Call the local dump function only if another dump is not already
+    // in progress.
+    //
+    local_dump_database(dump_type);
+
     if (0 < dump_type)
     {
         DUMP_PROCEDURE *dp = &DumpProcedures[dump_type];
@@ -1402,6 +1407,7 @@ void dump_database_internal(int dump_type)
     {
         save_comsys(mudconf.comsys_db);
     }
+
 }
 
 void dump_database(void)
@@ -2611,6 +2617,12 @@ int DCL_CDECL main(int argc, char *argv[])
     }
     SetupPorts(&nMainGamePorts, aMainGamePorts, &mudconf.ports);
     boot_slave(GOD, GOD, GOD, 0);
+
+    // All intialization should be complete, allow the local
+    // extensions to configure themselves.
+    //
+    local_startup();
+
     init_timer();
 
 #ifdef WIN32
@@ -2630,6 +2642,11 @@ int DCL_CDECL main(int argc, char *argv[])
 
     close_sockets(false, "Going down - Bye");
     dump_database();
+
+    // All shutdown, barring logfiles, should be done, shutdown the
+    // local extensions.
+    //
+    local_shutdown();
     CLOSE;
 
 #ifndef WIN32

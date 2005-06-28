@@ -1,6 +1,6 @@
 // netcommon.cpp
 //
-// $Id: netcommon.cpp,v 1.45 2005-04-06 18:27:09 sdennis Exp $
+// $Id: netcommon.cpp,v 1.46 2005-06-28 21:47:10 sdennis Exp $
 //
 // This file contains routines used by the networking code that do not
 // depend on the implementation of the networking code.  The network-specific
@@ -1009,6 +1009,8 @@ void announce_disconnect(dbref player, DESC *d, const char *reason)
 
     mudstate.curr_enactor = temp;
     desc_delhash(d);
+
+    local_disconnect(player, num);
 }
 
 int boot_off(dbref player, const char *message)
@@ -2043,6 +2045,14 @@ static bool check_connect(DESC *d, char *msg)
             }
             announce_connect(player, d);
 
+            DESC* dtemp;
+            int num_con = 0;
+            DESC_ITER_PLAYER(player, dtemp)
+            {
+                num_con++;
+            }
+            local_connect(player, 0, num_con);
+
             // If stuck in an @prog, show the prompt.
             //
             if (d->program_data != NULL)
@@ -2134,6 +2144,11 @@ static bool check_connect(DESC *d, char *msg)
                 d->player = player;
                 fcache_dump(d, FC_CREA_NEW);
                 announce_connect(player, d);
+
+                // Since it is on the create call, assume connection count 
+                // is 0 and indicate the connect is a new character.
+                //
+                local_connect(player, 1, 0);
             }
         }
     }

@@ -1,6 +1,6 @@
 // create.cpp -- Commands that create new objects.
 //
-// $Id: create.cpp,v 1.14 2004-09-21 04:18:40 sdennis Exp $
+// $Id: create.cpp,v 1.15 2005-06-28 21:47:10 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -80,6 +80,7 @@ static void open_exit(dbref player, dbref loc, char *direction, char *linkto)
     s_Exits(exit, loc);
     s_Next(exit, Exits(loc));
     s_Exits(loc, exit);
+    local_data_create(exit);
 
     // and we're done
     //
@@ -491,6 +492,7 @@ void do_dig(dbref executor, dbref caller, dbref enactor, int key, char *name,
         return;
     }
 
+    local_data_create(room);
     notify(executor, tprintf("%s created as room #%d.", name, room));
 
     char *buff = alloc_sbuf("do_dig");
@@ -553,6 +555,8 @@ void do_create
     {
         notify(executor, tprintf("%s created as object #%d", Name(thing), thing));
     }
+
+    local_data_create(thing);
 }
 
 
@@ -768,6 +772,8 @@ void do_clone
         }
         s_Halted(clone);
     }
+
+    local_data_clone(clone, thing);
 }
 
 // ---------------------------------------------------------------------------

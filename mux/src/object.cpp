@@ -1,6 +1,6 @@
 // object.cpp -- Low-level object manipulation routines.
 //
-// $Id: object.cpp,v 1.14 2004-06-19 21:49:14 sdennis Exp $
+// $Id: object.cpp,v 1.15 2005-06-28 21:47:10 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -547,6 +547,8 @@ void destroy_obj(dbref obj)
     s_Pennies(obj, 0);
     s_Parent(obj, NOTHING);
     s_Zone(obj, NOTHING);
+
+    local_data_free(obj);
 }
 
 /*
@@ -1713,6 +1715,11 @@ void do_dbck(dbref executor, dbref caller, dbref enactor, int key)
     }
     purge_going();
     make_freelist();
+
+    // Allow the local extensions to do data checks.
+    //
+    local_dbck();
+
     if (  !mudstate.bStandAlone
        && executor != NOTHING
        && !Quiet(executor))

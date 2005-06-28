@@ -1,6 +1,6 @@
 // timer.cpp -- Mini-task scheduler for timed events.
 //
-// $Id: timer.cpp,v 1.12 2004-10-30 22:21:01 sdennis Exp $
+// $Id: timer.cpp,v 1.13 2005-06-28 21:47:10 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -47,6 +47,21 @@ void dispatch_FreeListReconstruction(void *pUnused, int iUnused)
     scheduler.DeferTask(mudstate.check_counter, PRIORITY_SYSTEM,
         dispatch_FreeListReconstruction, 0, 0);
 }
+
+// Local timer handler
+//
+void dispatch_LocalTimer(void *pUnused, int iUnused)
+{
+    local_timer();
+
+    // Schedule ourselves again.
+    //
+    CLinearTimeAbsolute ltaNow;
+    ltaNow.GetUTC();
+    scheduler.DeferTask(ltaNow+time_1s, PRIORITY_SYSTEM,
+        dispatch_LocalTimer, 0, 0);
+}
+
 
 // Database Dump Task routine.
 //
@@ -206,24 +221,33 @@ void init_timer(void)
     CLinearTimeDelta ltd;
     ltd.SetSeconds((mudconf.check_offset == 0) ? mudconf.check_interval : mudconf.check_offset);
     mudstate.check_counter  = ltaNow + ltd;
-    scheduler.DeferTask(mudstate.check_counter, PRIORITY_SYSTEM, dispatch_FreeListReconstruction, 0, 0);
+    scheduler.DeferTask(mudstate.check_counter, PRIORITY_SYSTEM,
+        dispatch_FreeListReconstruction, 0, 0);
 
     // Setup re-occuring Database Dump task.
     //
     ltd.SetSeconds((mudconf.dump_offset == 0) ? mudconf.dump_interval : mudconf.dump_offset);
     mudstate.dump_counter  = ltaNow + ltd;
-    scheduler.DeferTask(mudstate.dump_counter, PRIORITY_SYSTEM, dispatch_DatabaseDump, 0, 0);
+    scheduler.DeferTask(mudstate.dump_counter, PRIORITY_SYSTEM,
+        dispatch_DatabaseDump, 0, 0);
 
     // Setup re-occuring Idle Check task.
     //
     ltd.SetSeconds(mudconf.idle_interval);
     mudstate.idle_counter   = ltaNow + ltd;
-    scheduler.DeferTask(mudstate.idle_counter, PRIORITY_SYSTEM, dispatch_IdleCheck, 0, 0);
+    scheduler.DeferTask(mudstate.idle_counter, PRIORITY_SYSTEM,
+        dispatch_IdleCheck, 0, 0);
+
+    // Setup re-occuring LocalTimer task
+    //
+    scheduler.DeferTask(ltaNow+time_1s, PRIORITY_SYSTEM, 
+        dispatch_LocalTimer, 0, 0);
 
     // Setup re-occuring Check Events task.
     //
     mudstate.events_counter = ltaNow + time_15s;
-    scheduler.DeferTask(mudstate.events_counter, PRIORITY_SYSTEM, dispatch_CheckEvents, 0, 0);
+    scheduler.DeferTask(mudstate.events_counter, PRIORITY_SYSTEM,
+        dispatch_CheckEvents, 0, 0);
 
 #ifndef MEMORY_BASED
     // Setup re-occuring cache_tick task.
@@ -233,7 +257,8 @@ void init_timer(void)
     {
         mudconf.cache_tick_period.SetSeconds(1);
     }
-    scheduler.DeferTask(ltaNow+mudconf.cache_tick_period, PRIORITY_SYSTEM, dispatch_CacheTick, 0, 0);
+    scheduler.DeferTask(ltaNow+mudconf.cache_tick_period, PRIORITY_SYSTEM,
+        dispatch_CacheTick, 0, 0);
 #endif // !MEMORY_BASED
 
 #if 0
