@@ -30,15 +30,6 @@ void local_shutdown(void)
 {
 }
 
-// Called once per second by an internal timer.  Code called within this
-// function can impact the cycle time of the game if it is computationally
-// expensive.
-//
-bool local_timer(void)
-{
-    return false;
-}
-
 // Called after the database consistency check is completed.   Add
 // checks for local data consistency here.
 //

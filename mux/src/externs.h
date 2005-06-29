@@ -1,6 +1,6 @@
 // externs.h -- Prototypes for externs not defined elsewhere.
 //
-// $Id: externs.h,v 1.36 2005-06-29 00:00:57 sdennis Exp $
+// $Id: externs.h,v 1.37 2005-06-29 18:06:48 sdennis Exp $
 //
 
 #ifndef EXTERNS_H
@@ -43,7 +43,6 @@ extern void local_startup(void);
 extern void local_dump_database(int);
 extern void local_shutdown(void);
 extern void local_dbck(void);
-extern bool local_timer(void);
 extern void local_connect(dbref, int, int);
 extern void local_disconnect(dbref, int);
 extern void local_data_create(dbref);

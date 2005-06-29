@@ -1,6 +1,6 @@
 // timer.cpp -- Mini-task scheduler for timed events.
 //
-// $Id: timer.cpp,v 1.14 2005-06-29 00:00:57 sdennis Exp $
+// $Id: timer.cpp,v 1.15 2005-06-29 18:06:48 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -47,22 +47,6 @@ void dispatch_FreeListReconstruction(void *pUnused, int iUnused)
     scheduler.DeferTask(mudstate.check_counter, PRIORITY_SYSTEM,
         dispatch_FreeListReconstruction, 0, 0);
 }
-
-// Local timer handler
-//
-void dispatch_LocalTimer(void *pUnused, int iUnused)
-{
-    if (local_timer())
-    {
-        // Schedule ourselves again.
-        //
-        CLinearTimeAbsolute ltaNow;
-        ltaNow.GetUTC();
-        scheduler.DeferTask(ltaNow+time_1s, PRIORITY_SYSTEM,
-            dispatch_LocalTimer, 0, 0);
-    }
-}
-
 
 // Database Dump Task routine.
 //
@@ -238,11 +222,6 @@ void init_timer(void)
     mudstate.idle_counter   = ltaNow + ltd;
     scheduler.DeferTask(mudstate.idle_counter, PRIORITY_SYSTEM,
         dispatch_IdleCheck, 0, 0);
-
-    // Setup re-occuring LocalTimer task
-    //
-    scheduler.DeferTask(ltaNow+time_1s, PRIORITY_SYSTEM, 
-        dispatch_LocalTimer, 0, 0);
 
     // Setup re-occuring Check Events task.
     //
