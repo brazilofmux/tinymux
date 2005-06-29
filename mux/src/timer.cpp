@@ -1,6 +1,6 @@
 // timer.cpp -- Mini-task scheduler for timed events.
 //
-// $Id: timer.cpp,v 1.13 2005-06-28 21:47:10 sdennis Exp $
+// $Id: timer.cpp,v 1.14 2005-06-29 00:00:57 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -52,14 +52,15 @@ void dispatch_FreeListReconstruction(void *pUnused, int iUnused)
 //
 void dispatch_LocalTimer(void *pUnused, int iUnused)
 {
-    local_timer();
-
-    // Schedule ourselves again.
-    //
-    CLinearTimeAbsolute ltaNow;
-    ltaNow.GetUTC();
-    scheduler.DeferTask(ltaNow+time_1s, PRIORITY_SYSTEM,
-        dispatch_LocalTimer, 0, 0);
+    if (local_timer())
+    {
+        // Schedule ourselves again.
+        //
+        CLinearTimeAbsolute ltaNow;
+        ltaNow.GetUTC();
+        scheduler.DeferTask(ltaNow+time_1s, PRIORITY_SYSTEM,
+            dispatch_LocalTimer, 0, 0);
+    }
 }
 
 
