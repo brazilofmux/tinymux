@@ -70,6 +70,7 @@ src/htab.cpp
 src/htab.h
 src/install-sh
 src/interface.h
+src/local.cpp
 src/log.cpp
 src/look.cpp
 src/mail.cpp

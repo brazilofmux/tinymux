@@ -76,6 +76,7 @@ src/help.h
 src/htab.cpp
 src/htab.h
 src/interface.h
+src/local.cpp
 src/log.cpp
 src/look.cpp
 src/mail.cpp
