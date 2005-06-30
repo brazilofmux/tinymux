@@ -1,6 +1,6 @@
 // predicates.cpp
 //
-// $Id: predicates.cpp,v 1.62 2005-06-30 05:05:57 sdennis Exp $
+// $Id: predicates.cpp,v 1.63 2005-06-30 05:08:49 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -1457,9 +1457,9 @@ void do_restart(dbref executor, dbref caller, dbref enactor, int key)
     Log.StopLogging();
 
 #ifdef GAME_DOOFERMUX
-    execl("bin/netmux", mudconf.mud_name, "-c", mudconf.config_file, "-p", mudconf.pidfile, NULL);
+    execl("bin/netmux", mudconf.mud_name, "-c", mudconf.config_file, "-p", mudconf.pid_file, NULL);
 #else
-    execl("bin/netmux", "netmux", "-c", mudconf.config_file, "-p", mudconf.pidfile, NULL);
+    execl("bin/netmux", "netmux", "-c", mudconf.config_file, "-p", mudconf.pid_file, NULL);
 #endif // GAME_DOOFERMUX
 #endif // !WIN32
 }
