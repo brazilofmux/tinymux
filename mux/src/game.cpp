@@ -1,6 +1,6 @@
 // game.cpp
 //
-// $Id: game.cpp,v 1.56 2005-06-30 05:05:57 sdennis Exp $
+// $Id: game.cpp,v 1.57 2005-06-30 16:14:44 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -1403,11 +1403,11 @@ void dump_database_internal(int dump_type)
             }
         }
     }
+
     if (mudconf.have_comsys)
     {
         save_comsys(mudconf.comsys_db);
     }
-
 }
 
 void dump_database(void)
