@@ -1,6 +1,6 @@
 // conf.cpp -- Set up configuration information and static data.
 //
-// $Id: conf.cpp,v 1.53 2005-05-26 00:06:01 sdennis Exp $
+// $Id: conf.cpp,v 1.54 2005-06-30 05:05:57 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -68,6 +68,8 @@ void cf_init(void)
     mudconf.uncompress = StringClone("gzip -d");
     mudconf.status_file = StringClone("shutdown.status");
     mudconf.max_cache_size = 1*1024*1024;
+
+    mudconf.pid_file = "netmux.pid";
 
     mudconf.ports.n = 1;
     mudconf.ports.pi = (int *)MEMALLOC(sizeof(int));

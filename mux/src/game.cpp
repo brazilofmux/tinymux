@@ -1,6 +1,6 @@
 // game.cpp
 //
-// $Id: game.cpp,v 1.55 2005-06-28 21:47:10 sdennis Exp $
+// $Id: game.cpp,v 1.56 2005-06-30 05:05:57 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -2188,7 +2188,6 @@ bool bMinDB = false;
 bool bSyntaxError = false;
 char *conffile = NULL;
 bool bVersion = false;
-char *pidfile = "netmux.pid";
 char *pErrorBasename = "";
 bool bServerOption = false;
 
@@ -2224,7 +2223,7 @@ void CLI_CallBack(CLI_OptionEntry *p, char *pValue)
         {
         case CLI_DO_PID_FILE:
             bServerOption = true;
-            pidfile = pValue;
+            mudconf.pid_file = pValue;
             break;
 
         case CLI_DO_CONFIG_FILE:
@@ -2397,7 +2396,7 @@ int DCL_CDECL main(int argc, char *argv[])
     Log.SetBasename(pErrorBasename);
     Log.StartLogging();
     game_pid = getpid();
-    write_pidfile(pidfile);
+    write_pidfile(mudconf.pid_file);
 
     BuildSignalNamesTable();
 

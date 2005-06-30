@@ -1,6 +1,6 @@
 // mudconf.h
 //
-// $Id: mudconf.h,v 1.26 2005-06-25 07:02:59 sdennis Exp $
+// $Id: mudconf.h,v 1.27 2005-06-30 05:05:57 sdennis Exp $
 //
 
 #ifndef __CONF_H
@@ -261,6 +261,7 @@ struct confdata
     char    *status_file;       /* Where to write arg to @shutdown */
     char    *uncompress;        /* program to run to uncompress */
     char    *wizmotd_file;      /* display this file on login to wizards */
+    char    *pid_file;          // file for communicating process id back to ./Startmux
 #if BT_ENABLED
     char *hcode_db;         /* Hardcode stuff */
     char *econ_db;          /* Econ Hardcode stuff */
