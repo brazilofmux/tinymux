@@ -20,6 +20,7 @@ game/startmux.wsf
 game/text/help.txt
 game/text/wizhelp.txt
 INSTALL
+LOCAL
 NOTES
 README
 readme.txt
