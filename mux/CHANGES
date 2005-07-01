@@ -82,6 +82,7 @@ Feature Additions:
     attribute.
  -- Fixed @mail/fwd to evalute the postpended and prepended text without
     evaluating the forwarded text.
+ -- Added the local.cpp patch surface. Details in LOCAL readme.
 
 
 Bug Fixes:
@@ -161,6 +162,9 @@ Bug Fixes:
     database.
  -- Fix crashing bug in @clist/full with a heavily ANSI-ied owner name.
  -- Documented @mail/bcc (blind carbon-copy).
+ -- The $GAMENAME.pid file option in mux.config was not surviving
+    @restart.
+ -- Fixes for @mail and @program from 2.4.0.17 changes.
 
 
 Performance Enhancements:
