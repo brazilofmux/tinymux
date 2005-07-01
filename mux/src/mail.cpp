@@ -1,6 +1,6 @@
 // mail.cpp
 //
-// $Id: mail.cpp,v 1.48 2005-06-28 16:00:58 sdennis Exp $
+// $Id: mail.cpp,v 1.49 2005-07-01 18:39:38 sdennis Exp $
 //
 // This code was taken from Kalkin's DarkZone code, which was
 // originally taken from PennMUSH 1.50 p10, and has been heavily modified
@@ -3644,7 +3644,7 @@ void do_mail_quick(dbref player, char *arg1, char *arg2)
     char *bpMsg = bufMsg;
     char *strMsg = arg2;
     mux_exec(bufMsg, &bpMsg, player, player, player,
-             EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &strMsg, (char **)NULL, 0);
+             EV_NO_COMPRESS | EV_FCHECK | EV_EVAL, &strMsg, (char **)NULL, 0);
     *bpMsg = '\0';
 
     mail_to_list(player, make_numlist(player, bufDest, false), bpSubject, bufMsg, 0, false);
