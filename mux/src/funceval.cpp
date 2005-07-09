@@ -1,6 +1,6 @@
 // funceval.cpp -- MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.79 2005-06-25 07:02:59 sdennis Exp $
+// $Id: funceval.cpp,v 1.80 2005-07-09 05:10:58 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -378,6 +378,10 @@ FUNCTION(fun_create)
             return;
         }
         thing = create_obj(executor, TYPE_ROOM, name, 0);
+        if (thing != NOTHING)
+        {
+            local_data_create(thing);
+        }
         break;
 
     case 'e':
@@ -392,6 +396,7 @@ FUNCTION(fun_create)
             s_Exits(thing, executor);
             s_Next(thing, Exits(executor));
             s_Exits(executor, thing);
+            local_data_create(thing);
         }
         break;
 
@@ -420,6 +425,7 @@ FUNCTION(fun_create)
         {
             move_via_generic(thing, executor, NOTHING, 0);
             s_Home(thing, new_home(executor));
+            local_data_create(thing);
         }
         break;
     }
