@@ -146,6 +146,12 @@
 #undef HAVE_FPU_CONTROL_H
 /* Define if ieeefp.h is available. */
 #undef HAVE_IEEEFP_H
+/* Define if fenv.h is available. */
+#undef HAVE_FENV_H
+/* Define if fegetprec is available. */
+#undef HAVE_FEGETPREC
+/* Define if fesetprec is available. */
+#undef HAVE_FESETPREC
 /* Define if your system has the in_addr_t type */
 #undef HAVE_IN_ADDR_T
 /* Define if fcntl.h exists */
