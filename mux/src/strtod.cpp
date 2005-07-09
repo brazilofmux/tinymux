@@ -3571,6 +3571,8 @@ void mux_FPInit(void)
 
 void mux_FPSet(void)
 {
+    // Set double-precision.
+    //
     fpsetprec(FE_DBLPREC);
 }
 
