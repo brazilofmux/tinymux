@@ -136,6 +136,8 @@
 #include <fpu_control.h>
 #elif defined(HAVE_IEEEFP_H)
 #include <ieeefp.h>
+#elif defined(HAVE_FENV_H)
+#include <fenv.h>
 #endif
 
 #if defined(WORDS_BIGENDIAN)
@@ -3497,6 +3499,8 @@ void mux_FPInit(void)
 
 void mux_FPSet(void)
 {
+    // Set double-precision.
+    //
     fpu_control_t newcw;
     newcw = (origcw & ~maskoff) | maskon;
     _FPU_SETCW(newcw);
@@ -3520,6 +3524,8 @@ void mux_FPInit(void)
 
 void mux_FPSet(void)
 {
+    // Set double-precision.
+    //
     fpsetprec(FP_PD);
 }
 
@@ -3549,6 +3555,28 @@ void mux_FPRestore(void)
     const unsigned int maskall = 0xFFFFFFFF;
 
     _controlfp(origcw, maskall);
+}
+
+#elif defined(HAVE_FENV) \
+   && defined(HAVE_FESETPREC) \
+   && defined(HAVE_FEGETPREC) \
+   && defined(FE_DBLPREC)
+
+int origcw;
+
+void mux_FPInit(void)
+{
+    origcw = fpgetprec();
+}
+
+void mux_FPSet(void)
+{
+    fpsetprec(FE_DBLPREC);
+}
+
+void mux_FPRestore(void)
+{
+    fpsetprec(origcw);
 }
 
 #else

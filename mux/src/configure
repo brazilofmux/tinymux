@@ -4660,7 +4660,8 @@ done
 
 
 
-for ac_header in fpu_control.h ieeefp.h
+
+for ac_header in fpu_control.h ieeefp.h fenv.h
 do
 as_ac_Header=`echo "ac_cv_header_$ac_header" | $as_tr_sh`
 if eval "test \"\${$as_ac_Header+set}\" = set"; then
@@ -5889,6 +5890,44 @@ _ACEOF
 fi
 rm -f conftest*
 
+if test $ac_cv_header_fenv_h = yes; then
+	cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+#include <fenv.h>
+
+_ACEOF
+if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
+  $EGREP "fesetprec" >/dev/null 2>&1; then
+  cat >>confdefs.h <<\_ACEOF
+#define HAVE_FESETPREC 1
+_ACEOF
+
+fi
+rm -f conftest*
+
+	cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+#include <fenv.h>
+
+_ACEOF
+if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
+  $EGREP "fegetprec" >/dev/null 2>&1; then
+  cat >>confdefs.h <<\_ACEOF
+#define HAVE_FEGETPREC 1
+_ACEOF
+
+fi
+rm -f conftest*
+
+fi
 echo "$as_me:$LINENO: checking for off_t" >&5
 echo $ECHO_N "checking for off_t... $ECHO_C" >&6
 if test "${ac_cv_type_off_t+set}" = set; then
