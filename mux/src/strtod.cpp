@@ -3467,18 +3467,92 @@ ret1:
     return s0;
 }
 
-void FLOAT_Initialize(void)
-{
-#if defined(HAVE_FPU_CONTROL_H) && defined(_FPU_GETCW) \
- && defined(_FPU_EXTENDED) && defined(_FPU_DOUBLE)
-    fpu_control_t oldcw, newcw;
-    _FPU_GETCW(oldcw);
-    newcw = (oldcw & ~_FPU_EXTENDED) | _FPU_DOUBLE;
-    _FPU_SETCW(newcw);
+#if defined(HAVE_FPU_CONTROL_H) \
+ && defined(_FPU_GETCW) \
+ && defined(_FPU_SETCW)
+
+fpu_control_t maskoff = 0
+#if defined(_FPU_EXTENDED)
+    | _FPU_EXTENDED
 #endif
-#ifdef WIN32
-    // Set Floating-Point precision.
+#if defined(_FPU_SINGLE)
+    | _FPU_SINGLE
+#endif
+    ;
+
+fpu_control_t maskon = 0
+#if defined(_FPU_DOUBLE)
+    | _FPU_DOUBLE
+#endif
+    ;
+
+fpu_control_t origcw;
+
+void mux_FPInit(void)
+{
+    _FPU_GETCW(origcw);
+}
+
+void mux_FPSet(void)
+{
+    fpu_control_t newcw;
+    newcw = (origcw & ~maskoff) | maskon;
+    _FPU_SETCW(newcw);
+}
+
+void mux_FPRestore(void)
+{
+    _FPU_SETCW(origcw);
+}
+
+#elif defined(HAVE_IEEEFP_H)
+
+fp_rnd_t   orig_rnd;
+ftp_prec_t orig_prec;
+
+void mux_FPInit(void)
+{
+    orig_rnd  = fpgetround();
+    orig_prec = fpgetprec();
+}
+
+void mux_FPSet(void)
+{
+    fpsetprec(FP_PD);
+}
+
+void mux_FPRestore(void)
+{
+    fpsetprec(orig_prec);
+}
+
+#elif defined(WIN32)
+
+unsigned origcw;
+
+void mux_FPInit(void)
+{
+    origcw = _controlfp(0, 0);
+}
+
+void mux_FPSet(void)
+{
+    // Set double-precision.
     //
     _controlfp(_PC_53, _MCW_PC);
-#endif // WIN32
+}
+
+void mux_FPRestore(void)
+{
+    const unsigned int maskall = 0xFFFFFFFF;
+
+    _controlfp(origcw, maskall);
+}
+
+#endif
+
+void FLOAT_Initialize(void)
+{
+    mux_FPInit();
+    mux_FPSet();
 }
