@@ -3551,6 +3551,22 @@ void mux_FPRestore(void)
     _controlfp(origcw, maskall);
 }
 
+#else
+
+#warning "No method of floating-point control was found, using dummy functions"
+
+void mux_FPInit(void)
+{
+}
+
+void mux_FPSet(void)
+{
+}
+
+void mux_FPRestore(void)
+{
+}
+
 #endif
 
 void FLOAT_Initialize(void)
