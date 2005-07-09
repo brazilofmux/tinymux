@@ -132,8 +132,10 @@
 #include "config.h"
 #include "stringutil.h"
 
-#ifdef HAVE_FPU_CONTROL_H
+#if   defined(HAVE_FPU_CONTROL_H)
 #include <fpu_control.h>
+#elif defined(HAVE_IEEEFP_H)
+#include <ieeefp.h>
 #endif
 
 #if defined(WORDS_BIGENDIAN)
@@ -3508,7 +3510,7 @@ void mux_FPRestore(void)
 #elif defined(HAVE_IEEEFP_H)
 
 fp_rnd_t   orig_rnd;
-ftp_prec_t orig_prec;
+fp_prec_t orig_prec;
 
 void mux_FPInit(void)
 {
