@@ -153,6 +153,8 @@
 #undef HAVE_IN_ADDR_T
 /* Define if crypt library exists */
 #define HAVE_LIBCRYPT 1
+/* Define if crypt exists */
+#define HAVE_CRYPT 1
 
 /* ---------------------------------------------------------------------------
  * Setup section:
