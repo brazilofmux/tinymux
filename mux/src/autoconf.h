@@ -27,21 +27,28 @@
 #undef NEED_MEMORY_H
 /* signal() return type */
 #define RETSIGTYPE void
-#undef HAVE_WAIT3
+/* Define if struct tm is not in time.h */
+#undef TM_IN_SYS_TIME
 /* Define if struct tm has a timezone member */
 #undef HAVE_TM_ZONE
 /* Define if tzname[] exists */
 #undef HAVE_TZNAME
 /* Define if setrlimit exists */
 #undef HAVE_SETRLIMIT
-/* Define if mktime exists */
-#undef HAVE_MKTIME
+/* Define if getrusage exists */
+#undef HAVE_GETRUSAGE
 /* Define if getdtablesize exists */
 #undef HAVE_GETDTABLESIZE
 /* Define if getpagesize exists */
 #undef HAVE_GETPAGESIZE
 /* Define if gettimeofday exists */
 #undef HAVE_GETTIMEOFDAY
+/* Define if usleep exists */
+#undef HAVE_USLEEP
+/* Define if nanosleep exists */
+#undef HAVE_NANOSLEEP
+/* Define if setitimer exists */
+#undef HAVE_SETITIMER
 /* Define if sys_siglist[] exists */
 #undef SYS_SIGLIST_DECLARED
 /* Define if sys_signame[] exists */
@@ -58,12 +65,12 @@
 #undef HAVE_SYS_SELECT_H
 /* Define if sys/rusage.h exists */
 #undef HAVE_SYS_RUSAGE_H
-/* Define if Big Endian */ 
-/* #undef WORDS_BIGENDIAN */
+/* Define if Big Endian */
+#undef WORDS_BIGENDIAN
 /* Define if Little Endian */
 #define WORDS_LITTLEENDIAN 1
 /* Define if Unknown Endian */
-/* #undef WORDS_UNKNOWN */ 
+#undef WORDS_UNKNOWN
 /* Define if const is broken */
 #undef const
 /* sizeof(short) */
@@ -86,16 +93,18 @@
 #define CAN_UNALIGN_LONG
 /* Define if unaligned long long access is allowed. */
 #define CAN_UNALIGN_LONGLONG
+/* Define if inline keyword is broken or nonstandard */
+#undef inline
 /* Define if we need to redef index/bcopy et al to their SYSV counterparts */
 #undef NEED_INDEX_DCL
 /* Define if we need to declare malloc et al */
 #undef NEED_MALLOC_DCL
+/* Define if you need to declare vsprintf yourself */
+#undef NEED_VSPRINTF_DCL
 /* Define if you need to declare sys_errlist yourself */
 #undef NEED_SYS_ERRLIST_DCL
 /* Define if you need to declare _sys_errlist yourself */
 #undef NEED_SYS__ERRLIST_DCL
-/* Define if you need to declare perror yourself */
-#undef NEED_PERROR_DCL
 /* Define if you need to declare sprintf yourself */
 #undef NEED_SPRINTF_DCL
 /* Define if you need to declare getrlimit yourself */
@@ -110,8 +119,16 @@
 #define EXTENDED_STDIO_DCLS
 /* Define if sys/socket.h defines lots of extra functions */
 #undef EXTENDED_SOCKET_DCLS
-/* Define if sys/wait.h defines union wait. */
-#undef HAVE_UNION_WAIT
+/* Define if socklen_t is defined */
+#undef SOCKLEN_T_DCL
+/* Define if we may safely include both time.h and sys/time.h */
+#undef TIME_WITH_SYS_TIME
+/* Define if sys/time.h exists */
+#undef HAVE_SYS_TIME_H
+/* Define if you need to declare gettimeofday yourself */
+#undef NEED_GETTIMEOFDAY_DCL
+/* Define if you need to declare getpagesize yourself */
+#undef NEED_GETPAGESIZE_DCL
 /* Define if you have IEEE floating-point formatted numbers */
 #define HAVE_IEEE_FP_FORMAT 1
 /* Define if your IEEE floating-point library can generate NaN */
@@ -122,6 +139,16 @@
 #define SMALLEST_INT_GTE_NEG_QUOTIENT 1
 /* Define if the character special file /dev/urandom is present */
 #undef HAVE_DEV_URANDOM
+/* Define if fpu_config.h is available. */
+#undef HAVE_FPU_CONTROL_H
+/* Define if ieeefp.h is available. */
+#undef HAVE_IEEEFP_H
+/* Define if fenv.h is available. */
+#undef HAVE_FENV_H
+/* Define if fegetprec is available. */
+#undef HAVE_FEGETPREC
+/* Define if fesetprec is available. */
+#undef HAVE_FESETPREC
 /* Define if your system has the in_addr_t type */
 #undef HAVE_IN_ADDR_T
 /* Define if crypt library exists */
