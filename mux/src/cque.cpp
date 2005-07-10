@@ -1,6 +1,6 @@
 // cque.cpp -- commands and functions for manipulating the command queue.
 //
-// $Id: cque.cpp,v 1.27 2004-10-30 22:21:01 sdennis Exp $
+// $Id: cque.cpp,v 1.28 2005-07-10 15:49:10 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -1014,20 +1014,29 @@ void do_wait
 }
 
 // ---------------------------------------------------------------------------
-// do_sql: Command interface to sql_que
+// do_query: Command interface to sql_que
 //
-void do_sql
+void do_query
 (
     dbref executor,
     dbref caller,
     dbref enactor,
-    int key,
-    char *event,
+    int   key,
+    char *query,
     char *cmd,
     char *cargs[],
-    int ncargs
+    int   ncargs
 )
 {
+    if (key & QUERY_SQL)
+    {
+        // SQL Query.
+        //
+    }
+    else
+    {
+        notify_quiet(executor, "At least one query option is required.");
+    }
     return;
 }
 

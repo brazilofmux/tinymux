@@ -1,6 +1,6 @@
 // command.cpp -- command parser and support routines.
 //
-// $Id: command.cpp,v 1.49 2005-06-27 01:03:01 sdennis Exp $
+// $Id: command.cpp,v 1.50 2005-07-10 15:49:10 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -757,7 +757,7 @@ CMDENT_TWO_ARG_CMDARG command_table_two_arg_cmdarg[] =
 {
     {"@dolist", dolist_sw,  CA_GBL_INTERP,  0,      CS_TWO_ARG|CS_CMDARG|CS_NOINTERP|CS_STRIP_AROUND, 0, do_dolist},
     {"@force",  NULL,       CA_NO_SLAVE|CA_GBL_INTERP|CA_NO_GUEST,    0,    CS_TWO_ARG|CS_INTERP|CS_CMDARG, 0, do_force},
-    {"@query",  query_sw,   CA_WIZARD,      0,      CS_TWO_ARG|CS_INTERP,                             0, do_sql},
+    {"@query",  query_sw,   CA_WIZARD,      0,      CS_TWO_ARG|CS_INTERP,                             0, do_query},
     {"@wait",   wait_sw,    CA_GBL_INTERP,  0,      CS_TWO_ARG|CS_CMDARG|CS_NOINTERP|CS_STRIP_AROUND, 0, do_wait},
     {NULL,      NULL,       0,              0,      0,              0, NULL}
 };
