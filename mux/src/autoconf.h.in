@@ -154,6 +154,8 @@
 #undef HAVE_FCNTL_H
 /* Define if crypt library exists */
 #undef HAVE_LIBCRYPT
+/* Define if crypt exists */
+#undef HAVE_CRYPT
 
 /* ---------------------------------------------------------------------------
  * Setup section:

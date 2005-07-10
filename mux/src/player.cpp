@@ -1,6 +1,6 @@
 // player.cpp
 //
-// $Id: player.cpp,v 1.30 2005-06-28 21:47:10 sdennis Exp $
+// $Id: player.cpp,v 1.31 2005-07-10 04:02:51 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -406,7 +406,8 @@ const char *mux_crypt(const char *szPassword, const char *szSetting, int *piType
 #endif // WIN32
 
     case CRYPT_DES:
-#ifdef HAVE_LIBCRYPT
+#if defined(HAVE_LIBCRYPT) \
+ || defined(HAVE_CRYPT)
         return crypt(szPassword, szSetting);
 #else
         return szFail;
