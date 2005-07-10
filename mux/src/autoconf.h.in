@@ -32,10 +32,6 @@
 #undef HAVE_SETRLIMIT
 /* Define if getrusage exists */
 #undef HAVE_GETRUSAGE
-/* Define if timelocal exists */
-#undef HAVE_TIMELOCAL
-/* Define if mktime exists */
-#undef HAVE_MKTIME
 /* Define if getdtablesize exists */
 #undef HAVE_GETDTABLESIZE
 /* Define if getpagesize exists */
@@ -296,17 +292,6 @@ extern int   free(char *);
 #ifdef NEED_SYS_ERRLIST_DCL
 extern char *sys_errlist[];
 #endif
-
-#ifndef HAVE_TIMELOCAL
-
-#ifndef HAVE_MKTIME
-#define NEED_TIMELOCAL
-extern time_t timelocal(struct tm *);
-#else
-#define timelocal mktime
-#endif /* HAVE_MKTIME */
-
-#endif /* HAVE_TIMELOCAL */
 
 #include <sys/types.h>
 #include <stdio.h>
