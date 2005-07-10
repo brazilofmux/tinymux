@@ -3557,7 +3557,7 @@ void mux_FPRestore(void)
     _controlfp(origcw, maskall);
 }
 
-#elif defined(HAVE_FENV) \
+#elif defined(HAVE_FENV_H) \
    && defined(HAVE_FESETPREC) \
    && defined(HAVE_FEGETPREC) \
    && defined(FE_DBLPREC)
@@ -3566,19 +3566,19 @@ int origcw;
 
 void mux_FPInit(void)
 {
-    origcw = fpgetprec();
+    origcw = fegetprec();
 }
 
 void mux_FPSet(void)
 {
     // Set double-precision.
     //
-    fpsetprec(FE_DBLPREC);
+    fesetprec(FE_DBLPREC);
 }
 
 void mux_FPRestore(void)
 {
-    fpsetprec(origcw);
+    fesetprec(origcw);
 }
 
 #else
