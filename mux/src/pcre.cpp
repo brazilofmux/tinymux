@@ -34,7 +34,11 @@ restrictions:
 
 /* Modified by Shawn Wagner for MUX to fit in one file and remove
    things we don't use, like a bunch of API functions and utf-8
-   support. If you want the full thing, see http://www.pcre.org. */
+   support. If you want the full thing, see http://www.pcre.org.
+
+   Patched by Alierak to protect against integer overflow in repeat
+   counts.
+ */
 
 #include "autoconf.h"
 #include "config.h"
@@ -1738,7 +1742,8 @@ if (*p == '}') max = min; else
 /* Do paranoid checks, then fill in the required variables, and pass back the
 pointer to the terminating '}'. */
 
-if (min > 65535 || max > 65535)
+if (min < 0 || 65535 < min ||
+    max < -1 || 65535 < max)
   *errorptr = ERR5;
 else
   {
