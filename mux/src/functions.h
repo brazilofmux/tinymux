@@ -1,6 +1,6 @@
 // functions.h -- declarations for functions & function processing.
 //
-// $Id: functions.h,v 1.12 2004-07-13 01:58:15 sdennis Exp $
+// $Id: functions.h,v 1.13 2005-07-11 02:41:50 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -53,7 +53,7 @@ typedef struct
 
 extern SEP sepSpace;
 
-// dlfags in delim_check() accepts the following options.
+// dflags in delim_check() accepts the following options.
 //
 #define DELIM_DFLT   0x0000  // Default processing.
 #define DELIM_EVAL   0x0001  // Evaluate delimiter.

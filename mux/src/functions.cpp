@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.137 2005-06-27 01:00:08 sdennis Exp $
+// $Id: functions.cpp,v 1.138 2005-07-11 02:41:50 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -5905,8 +5905,7 @@ FUNCTION(fun_lnum)
 {
     SEP sep;
     if (  nfargs == 0
-       || !delim_check(buff, bufc, executor, caller, enactor,
-               fargs, nfargs, cargs, ncargs, 3, &sep, DELIM_NULL|DELIM_CRLF|DELIM_STRING))
+       || !OPTIONAL_DELIM(3, sep, DELIM_NULL|DELIM_CRLF|DELIM_STRING))
     {
         return;
     }
@@ -9291,8 +9290,7 @@ FUNCTION(fun_lattrcmds)
 FUNCTION(fun_lcmds)
 {
     SEP sep;
-    if (!delim_check(buff, bufc, executor, caller, enactor,
-        fargs, nfargs, cargs, ncargs, 2, &sep, DELIM_NULL|DELIM_CRLF|DELIM_STRING))
+    if (!OPTIONAL_DELIM(2, sep, DELIM_NULL|DELIM_CRLF|DELIM_STRING))
     {
         return;
     }
