@@ -1,6 +1,6 @@
 // funceval.cpp -- MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.80 2005-07-09 05:10:58 sdennis Exp $
+// $Id: funceval.cpp,v 1.81 2005-07-11 04:25:40 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -3358,12 +3358,10 @@ FUNCTION(fun_lstack)
     for (sp = Stack(doer); sp != NULL; sp = sp->next)
     {
         safe_str(sp->data, buff, bufc);
-        safe_chr(' ', buff, bufc);
-    }
-
-    if (sp)
-    {
-        (*bufc)--;
+        if (sp->next != NULL)
+        {
+            safe_chr(' ', buff, bufc);
+        }
     }
 }
 
