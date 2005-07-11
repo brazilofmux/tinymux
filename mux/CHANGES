@@ -1,5 +1,5 @@
 TinyMUX 2.4:  CHANGES
-Last Update:  June 2005
+Last Update:  July 2005
 
 Major changes that may affect performance and require softcode tweaks:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -165,6 +165,20 @@ Bug Fixes:
  -- The $GAMENAME.pid file option in mux.config was not surviving
     @restart.
  -- Fixes for @mail and @program from 2.4.0.17 changes.
+ -- Add FreeBSD-friendly checks for ieeefp.h to choose double-precision
+    floating-point properly on FreeBSD.
+ -- Add Solaris-friendly checks for fenv.h, fesetprec(), and
+    fegetprec() to choose double-precision floating-point properly on
+    Solaris without inadvertently trying to use fenv.h on MacOS or SuSE.
+ -- local_data_create() in local.cpp was not being called for the
+    create() side-effect function.  Found and fixed by Alierak.
+ -- lstack() left a trailing output separator (space).  It also contains
+    some unreachable code.  Found and fixed by Alierak.
+ -- VDIM() referenced uninitialized memory.  Borrowed the correct
+    implementaiton from WORDS() since the two are nearly identical.
+    Found and fixed by Alierak.
+ -- Fix @mail/quick evaluation from 2.4.0.18 so that spaces are not
+    compressed.
 
 
 Performance Enhancements:
@@ -191,3 +205,6 @@ Miscellaneous:
  -- Added ATTACK notes.
  -- Added @folder as an alias for @mail/folder and @file as an alias for
     @mail/file.
+ -- Remove configure checks for mktime() and timelocal().
+ -- Alierak removed the last two direct uses of delim_check in lnum()
+    and lcmds().
