@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.138 2005-07-11 02:41:50 sdennis Exp $
+// $Id: functions.cpp,v 1.139 2005-07-11 04:09:31 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -125,7 +125,6 @@ XFUNCTION(fun_udefault);
 XFUNCTION(fun_unpack);
 XFUNCTION(fun_vadd);
 XFUNCTION(fun_valid);
-XFUNCTION(fun_vdim);
 XFUNCTION(fun_visible);
 XFUNCTION(fun_vmag);
 XFUNCTION(fun_vmul);
@@ -4342,23 +4341,6 @@ FUNCTION(fun_vunit)
             print_sep(&sep, buff, bufc);
         }
         fval(buff, bufc, mux_atof(v1[i]) / sqrt(res));
-    }
-}
-
-FUNCTION(fun_vdim)
-{
-    if (fargs == 0)
-    {
-        safe_chr('0', buff, bufc);
-    }
-    else
-    {
-        SEP sep;
-        if (!OPTIONAL_DELIM(2, sep, DELIM_DFLT|DELIM_STRING))
-        {
-            return;
-        }
-        safe_ltoa(countwords(fargs[0], &sep), buff, bufc);
     }
 }
 
@@ -9996,7 +9978,7 @@ FUN flist[] =
     {"VADD",        fun_vadd,       MAX_ARG, 2,       4,         0, CA_PUBLIC},
     {"VALID",       fun_valid,      MAX_ARG, 2,       2,         0, CA_PUBLIC},
     {"VCROSS",      fun_vcross,     MAX_ARG, 2,       4,         0, CA_PUBLIC},
-    {"VDIM",        fun_vdim,       MAX_ARG, 0,       2,         0, CA_PUBLIC},
+    {"VDIM",        fun_words,      MAX_ARG, 0,       2,         0, CA_PUBLIC},
     {"VDOT",        fun_vdot,       MAX_ARG, 2,       4,         0, CA_PUBLIC},
     {"VERSION",     fun_version,    MAX_ARG, 0,       0,         0, CA_PUBLIC},
     {"VISIBLE",     fun_visible,    MAX_ARG, 2,       2,         0, CA_PUBLIC},
