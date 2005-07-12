@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.139 2005-07-11 04:09:31 sdennis Exp $
+// $Id: functions.cpp,v 1.140 2005-07-12 04:35:37 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -6523,73 +6523,6 @@ FUNCTION(fun_repeat)
     }
 }
 
-/* ---------------------------------------------------------------------------
- * fun_parse: Make list from evaluating arg3 with each member of arg2.
- * arg1 specifies a delimiter character to use in the parsing of arg2.
- * NOTE: This function expects that its arguments have not been evaluated.
- */
-
-FUNCTION(fun_parse)
-{
-    // Optional Input Delimiter.
-    //
-    SEP sep;
-    if (!OPTIONAL_DELIM(3, sep, DELIM_EVAL|DELIM_STRING))
-    {
-        return;
-    }
-
-    // Optional Output Delimiter.
-    //
-    SEP osep;
-    if (!OPTIONAL_DELIM(4, osep, DELIM_EVAL|DELIM_NULL|DELIM_CRLF|DELIM_STRING))
-    {
-        return;
-    }
-
-    char *curr = alloc_lbuf("fun_parse");
-    char *dp   = curr;
-    char *str = fargs[0];
-    mux_exec(curr, &dp, executor, caller, enactor,
-        EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, cargs, ncargs);
-    *dp = '\0';
-    int ncp;
-    char *cp = trim_space_sep_LEN(curr, dp-curr, &sep, &ncp);
-    if (!*cp)
-    {
-        free_lbuf(curr);
-        return;
-    }
-    bool first = true;
-    int number = 0;
-    mudstate.itext[mudstate.in_loop] = NULL;
-    mudstate.inum[mudstate.in_loop] = number;
-    mudstate.in_loop++;
-    while (  cp
-          && mudstate.func_invk_ctr < mudconf.func_invk_lim
-          && !MuxAlarm.bAlarmed)
-    {
-        if (!first)
-        {
-            print_sep(&osep, buff, bufc);
-        }
-        first = false;
-        number++;
-        char *objstring = split_token(&cp, &sep);
-        mudstate.itext[mudstate.in_loop-1] = objstring;
-        mudstate.inum[mudstate.in_loop-1]  = number;
-        char *buff2 = replace_tokens(fargs[1], objstring, mux_ltoa_t(number), NULL);
-        str = buff2;
-        mux_exec(buff, bufc, executor, caller, enactor,
-            EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, cargs, ncargs);
-        free_lbuf(buff2);
-    }
-    mudstate.in_loop--;
-    mudstate.itext[mudstate.in_loop] = NULL;
-    mudstate.inum[mudstate.in_loop] = 0;
-    free_lbuf(curr);
-}
-
 /*
  * ---------------------------------------------------------------------------
  * * fun_iter: Make list from evaluating arg2 with each member of arg1.
@@ -9880,7 +9813,7 @@ FUN flist[] =
     {"OWNER",       fun_owner,      MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {"PACK",        fun_pack,       MAX_ARG, 1,       2,         0, CA_PUBLIC},
     {"PARENT",      fun_parent,     MAX_ARG, 1,       1,         0, CA_PUBLIC},
-    {"PARSE",       fun_parse,      MAX_ARG, 2,       4, FN_NOEVAL, CA_PUBLIC},
+    {"PARSE",       fun_iter,       MAX_ARG, 2,       4, FN_NOEVAL, CA_PUBLIC},
     {"PEEK",        fun_peek,       MAX_ARG, 0,       2,         0, CA_PUBLIC},
     {"PEMIT",       fun_pemit,      MAX_ARG, 2,       2,         0, CA_PUBLIC},
     {"PFIND",       fun_pfind,      MAX_ARG, 1,       1,         0, CA_PUBLIC},
