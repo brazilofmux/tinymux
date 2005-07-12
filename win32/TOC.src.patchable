@@ -71,6 +71,8 @@ src/flags.h
 src/funceval.cpp
 src/functions.cpp
 src/functions.h
+src/funmath.cpp
+src/funcmath.h
 src/game.cpp
 src/help.cpp
 src/help.h
