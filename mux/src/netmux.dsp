@@ -185,6 +185,10 @@ SOURCE=.\htab.cpp
 # End Source File
 # Begin Source File
 
+SOURCE=.\local.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=.\log.cpp
 # End Source File
 # Begin Source File
