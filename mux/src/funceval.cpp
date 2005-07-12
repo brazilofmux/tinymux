@@ -1,6 +1,6 @@
 // funceval.cpp -- MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.81 2005-07-11 04:25:40 sdennis Exp $
+// $Id: funceval.cpp,v 1.82 2005-07-12 05:50:06 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -18,7 +18,6 @@
 #include "functions.h"
 #include "misc.h"
 #include "pcre.h"
-#include "sha1.h"
 
 /* Note: Many functions in this file have been taken, whole or in part, from
  * PennMUSH 1.50, and TinyMUSH 2.2, for softcode compatibility. The
@@ -1479,30 +1478,6 @@ FUNCTION(fun_ifelse)
     free_lbuf(lbuff);
 }
 
-FUNCTION(fun_inc)
-{
-    if (nfargs == 1)
-    {
-        safe_i64toa(mux_atoi64(fargs[0]) + 1, buff, bufc);
-    }
-    else
-    {
-        safe_chr('1', buff, bufc);
-    }
-}
-
-FUNCTION(fun_dec)
-{
-    if (nfargs == 1)
-    {
-        safe_i64toa(mux_atoi64(fargs[0]) - 1, buff, bufc);
-    }
-    else
-    {
-        safe_str("-1", buff, bufc);
-    }
-}
-
 // Mail functions borrowed from DarkZone.
 //
 // This function can take one of three formats:
@@ -2765,130 +2740,6 @@ FUNCTION(fun_lit)
     // Just returns the argument, literally.
     //
     safe_str(fargs[0], buff, bufc);
-}
-
-// shl() and shr() borrowed from PennMUSH 1.50
-//
-FUNCTION(fun_shl)
-{
-    if (  is_integer(fargs[0], NULL)
-       && is_integer(fargs[1], NULL))
-    {
-        safe_i64toa(mux_atoi64(fargs[0]) << mux_atol(fargs[1]), buff, bufc);
-    }
-    else
-    {
-        safe_str("#-1 ARGUMENTS MUST BE INTEGERS", buff, bufc);
-    }
-}
-
-FUNCTION(fun_shr)
-{
-    if (  is_integer(fargs[0], NULL)
-       && is_integer(fargs[1], NULL))
-    {
-        safe_i64toa(mux_atoi64(fargs[0]) >> mux_atol(fargs[1]), buff, bufc);
-    }
-    else
-    {
-        safe_str("#-1 ARGUMENTS MUST BE INTEGERS", buff, bufc);
-    }
-}
-
-FUNCTION(fun_band)
-{
-    UINT64 val = UINT64_MAX_VALUE;
-    for (int i = 0; i < nfargs; i++)
-    {
-        if (is_integer(fargs[i], NULL))
-        {
-            val &= mux_atoi64(fargs[i]);
-        }
-        else
-        {
-            safe_str("#-1 ARGUMENTS MUST BE INTEGERS", buff, bufc);
-            return;
-        }
-    }
-    safe_i64toa(val, buff, bufc);
-}
-
-FUNCTION(fun_bor)
-{
-    UINT64 val = 0;
-    for (int i = 0; i < nfargs; i++)
-    {
-        if (is_integer(fargs[i], NULL))
-        {
-            val |= mux_atoi64(fargs[i]);
-        }
-        else
-        {
-            safe_str("#-1 ARGUMENTS MUST BE INTEGERS", buff, bufc);
-            return;
-        }
-    }
-    safe_i64toa(val, buff, bufc);
-}
-
-FUNCTION(fun_bnand)
-{
-    if (  is_integer(fargs[0], NULL)
-       && is_integer(fargs[1], NULL))
-    {
-        safe_i64toa(mux_atoi64(fargs[0]) & ~(mux_atoi64(fargs[1])), buff, bufc);
-    }
-    else
-    {
-        safe_str("#-1 ARGUMENTS MUST BE INTEGERS", buff, bufc);
-    }
-}
-
-FUNCTION(fun_bxor)
-{
-    UINT64 val = 0;
-    for (int i = 0; i < nfargs; i++)
-    {
-        if (is_integer(fargs[i], NULL))
-        {
-            val ^= mux_atoi64(fargs[i]);
-        }
-        else
-        {
-            safe_str("#-1 ARGUMENTS MUST BE INTEGERS", buff, bufc);
-            return;
-        }
-    }
-    safe_i64toa(val, buff, bufc);
-}
-
-FUNCTION(fun_crc32)
-{
-    UINT32 ulCRC32 = 0;
-    for (int i = 0; i < nfargs; i++)
-    {
-        int n = strlen(fargs[i]);
-        ulCRC32 = CRC32_ProcessBuffer(ulCRC32, fargs[i], n);
-    }
-    safe_i64toa(ulCRC32, buff, bufc);
-}
-
-FUNCTION(fun_sha1)
-{
-    int i;
-    SHA1_CONTEXT shac;
-    SHA1_Init(&shac);
-    for (i = 0; i < nfargs; i++)
-    {
-        SHA1_Compute(&shac, strlen(fargs[i]), fargs[i]);
-    }
-    SHA1_Final(&shac);
-    for (i = 0; i <= 4; i++)
-    {
-        char buf[9];
-        sprintf(buf, "%08X", shac.H[i]);
-        safe_str(buf, buff, bufc);
-    }
 }
 
 FUNCTION(fun_dumping)

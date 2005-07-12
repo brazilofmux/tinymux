@@ -1,6 +1,6 @@
 // functions.h -- declarations for functions & function processing.
 //
-// $Id: functions.h,v 1.13 2005-07-11 02:41:50 sdennis Exp $
+// $Id: functions.h,v 1.14 2005-07-12 05:50:06 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -89,5 +89,9 @@ extern char *split_token(char **sp, SEP *psep);
 #define OPTIONAL_DELIM(iSep, Sep, dflags)                        \
     delim_check(buff, bufc, executor, caller, enactor,           \
         fargs, nfargs, cargs, ncargs, (iSep), &(Sep), (dflags))
+
+#define XFUNCTION(x) extern void x(char *buff, char **bufc, dbref executor,    \
+ dbref caller, dbref enactor, char *fargs[], int nfargs, char *cargs[],        \
+ int ncargs)
 
 #endif // !__FUNCTIONS_H
