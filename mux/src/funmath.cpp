@@ -1,6 +1,6 @@
 // funmath.cpp -- MUX math function handlers.
 //
-// $Id: funmath.cpp,v 1.1 2005-07-12 06:02:12 sdennis Exp $
+// $Id: funmath.cpp,v 1.2 2005-07-12 16:01:40 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2005 Solid Vertical Domains, Ltd. All
@@ -558,7 +558,10 @@ FUNCTION(fun_trunc)
     double rIntegerPart;
     double rFractionalPart;
 
+    mux_FPRestore();
     rFractionalPart = modf(rArg, &rIntegerPart);
+    mux_FPSet();
+
 #ifdef HAVE_IEEE_FP_FORMAT
     int fpc = mux_fpclass(rIntegerPart);
     if (MUX_FPGROUP(fpc) == MUX_FPGROUP_PASS)
@@ -695,7 +698,12 @@ FUNCTION(fun_dist2d)
     sum  = d * d;
     d = mux_atof(fargs[1]) - mux_atof(fargs[3]);
     sum += d * d;
-    fval(buff, bufc, sqrt(sum));
+
+    mux_FPRestore();
+    double result = sqrt(sum);
+    mux_FPSet();
+
+    fval(buff, bufc, result);
 }
 
 FUNCTION(fun_dist3d)
@@ -709,7 +717,12 @@ FUNCTION(fun_dist3d)
     sum += d * d;
     d = mux_atof(fargs[2]) - mux_atof(fargs[5]);
     sum += d * d;
-    fval(buff, bufc, sqrt(sum));
+
+    mux_FPRestore();
+    double result = sqrt(sum);
+    mux_FPSet();
+
+    fval(buff, bufc, result);
 }
 
 //------------------------------------------------------------------------
@@ -1055,7 +1068,11 @@ FUNCTION(fun_vmag)
 
     if (res > 0)
     {
-        fval(buff, bufc, sqrt(res));
+        mux_FPRestore();
+        double result = sqrt(res);
+        mux_FPSet();
+
+        fval(buff, bufc, result);
     }
     else
     {
@@ -1103,13 +1120,21 @@ FUNCTION(fun_vunit)
         {
             print_sep(&sep, buff, bufc);
         }
-        fval(buff, bufc, mux_atof(v1[i]) / sqrt(res));
+
+        mux_FPRestore();
+        double result = sqrt(res);
+        mux_FPSet();
+
+        fval(buff, bufc, mux_atof(v1[i]) / result);
     }
 }
 
 FUNCTION(fun_floor)
 {
+    mux_FPRestore();
     double r = floor(mux_atof(fargs[0]));
+    mux_FPSet();
+
 #ifdef HAVE_IEEE_FP_FORMAT
     int fpc = mux_fpclass(r);
     if (MUX_FPGROUP(fpc) == MUX_FPGROUP_PASS)
@@ -1127,7 +1152,10 @@ FUNCTION(fun_floor)
 
 FUNCTION(fun_ceil)
 {
+    mux_FPRestore();
     double r = ceil(mux_atof(fargs[0]));
+    mux_FPSet();
+
 #ifdef HAVE_IEEE_FP_FORMAT
     int fpc = mux_fpclass(r);
     if (MUX_FPGROUP(fpc) == MUX_FPGROUP_PASS)
@@ -1229,7 +1257,12 @@ FUNCTION(fun_sin)
     {
         d = ConvertRDG2R(d, fargs[1]);
     }
-    fval(buff, bufc, sin(d));
+
+    mux_FPRestore();
+    d = sin(d);
+    mux_FPSet();
+
+    fval(buff, bufc, d);
 }
 
 FUNCTION(fun_cos)
@@ -1239,8 +1272,14 @@ FUNCTION(fun_cos)
     {
         d = ConvertRDG2R(d, fargs[1]);
     }
-    fval(buff, bufc, cos(d));
+
+    mux_FPRestore();
+    d = cos(d);
+    mux_FPSet();
+
+    fval(buff, bufc, d);
 }
+
 FUNCTION(fun_tan)
 {
     double d = mux_atof(fargs[0]);
@@ -1248,7 +1287,12 @@ FUNCTION(fun_tan)
     {
         d = ConvertRDG2R(d, fargs[1]);
     }
-    fval(buff, bufc, tan(d));
+
+    mux_FPRestore();
+    d = tan(d);
+    mux_FPSet();
+
+    fval(buff, bufc, d);
 }
 
 FUNCTION(fun_asin)
@@ -1261,7 +1305,10 @@ FUNCTION(fun_asin)
         return;
     }
 #endif
+    mux_FPRestore();
     val = asin(val);
+    mux_FPSet();
+
     if (nfargs == 2)
     {
         val = ConvertR2RDG(val, fargs[1]);
@@ -1279,7 +1326,10 @@ FUNCTION(fun_acos)
         return;
     }
 #endif
+    mux_FPRestore();
     val = acos(val);
+    mux_FPSet();
+
     if (nfargs == 2)
     {
         val = ConvertR2RDG(val, fargs[1]);
@@ -1289,7 +1339,12 @@ FUNCTION(fun_acos)
 
 FUNCTION(fun_atan)
 {
-    double val = atan(mux_atof(fargs[0]));
+    double val = mux_atof(fargs[0]);
+
+    mux_FPRestore();
+    val = atan(val);
+    mux_FPSet();
+
     if (nfargs == 2)
     {
         val = ConvertR2RDG(val, fargs[1]);
@@ -1299,12 +1354,18 @@ FUNCTION(fun_atan)
 
 FUNCTION(fun_exp)
 {
-    fval(buff, bufc, exp(mux_atof(fargs[0])));
+    double val = mux_atof(fargs[0]);
+
+    mux_FPRestore();
+    val = exp(val);
+    mux_FPSet();
+
+    fval(buff, bufc, val);
 }
 
 FUNCTION(fun_power)
 {
-    double val1, val2;
+    double val, val1, val2;
 
     val1 = mux_atof(fargs[0]);
     val2 = mux_atof(fargs[1]);
@@ -1315,11 +1376,16 @@ FUNCTION(fun_power)
     }
     else
     {
-        fval(buff, bufc, pow(val1, val2));
+        mux_FPRestore();
+        val = pow(val1, val2);
+        mux_FPSet();
     }
 #else
-    fval(buff, bufc, pow(val1, val2));
+    mux_FPRestore();
+    val = pow(val1, val2);
+    mux_FPSet();
 #endif
+    fval(buff, bufc, val);
 }
 
 FUNCTION(fun_ln)
@@ -1338,11 +1404,16 @@ FUNCTION(fun_ln)
     }
     else
     {
-        fval(buff, bufc, log(val));
+        mux_FPRestore();
+        val = log(val);
+        mux_FPSet();
     }
 #else
-    fval(buff, bufc, log(val));
+    mux_FPRestore();
+    val = log(val);
+    mux_FPSet();
 #endif
+    fval(buff, bufc, val);
 }
 
 FUNCTION(fun_log)
@@ -1361,11 +1432,16 @@ FUNCTION(fun_log)
     }
     else
     {
-        fval(buff, bufc, log10(val));
+        mux_FPRestore();
+        val = log10(val);
+        mux_FPSet();
     }
 #else
-    fval(buff, bufc, log10(val));
+    mux_FPRestore();
+    val = log10(val);
+    mux_FPSet();
 #endif
+    fval(buff, bufc, val);
 }
 
 FUNCTION(fun_sqrt)
@@ -1384,11 +1460,16 @@ FUNCTION(fun_sqrt)
     }
     else
     {
-        fval(buff, bufc, sqrt(val));
+        mux_FPRestore();
+        val = sqrt(val);
+        mux_FPSet();
     }
 #else
-    fval(buff, bufc, sqrt(val));
+    mux_FPRestore();
+    val = sqrt(val);
+    mux_FPSet();
 #endif
+    fval(buff, bufc, val);
 }
 
 /* ---------------------------------------------------------------------------
