@@ -169,6 +169,10 @@ SOURCE=.\functions.cpp
 # End Source File
 # Begin Source File
 
+SOURCE=.\funmath.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=.\game.cpp
 # End Source File
 # Begin Source File
@@ -378,6 +382,10 @@ SOURCE=.\flags.h
 # Begin Source File
 
 SOURCE=.\functions.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\funmath.h
 # End Source File
 # Begin Source File
 
