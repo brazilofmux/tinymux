@@ -3511,7 +3511,10 @@ void mux_FPRestore(void)
     _FPU_SETCW(origcw);
 }
 
-#elif defined(HAVE_IEEEFP_H)
+#elif defined(HAVE_IEEEFP_H) \
+   && defined(HAVE_FPGETPREC) \
+   && defined(HAVE_FPSETPREC) \
+   && defined(FP_PD)
 
 fp_rnd_t   orig_rnd;
 fp_prec_t orig_prec;
