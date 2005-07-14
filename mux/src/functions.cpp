@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.142 2005-07-14 04:40:54 rmg Exp $
+// $Id: functions.cpp,v 1.143 2005-07-14 15:41:07 rmg Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2005 Solid Vertical Domains, Ltd. All
@@ -7399,7 +7399,7 @@ FUNCTION(fun_chr)
     }
     int ch = mux_atol(fargs[0]);
     if (  ch < 0
-       || UCHAR_MAX < ch)
+       || (int) UCHAR_MAX < ch)
     {
         safe_str("#-1 THIS ISN'T UNICODE", buff, bufc);
     }
