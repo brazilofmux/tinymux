@@ -1,6 +1,6 @@
 // game.cpp
 //
-// $Id: game.cpp,v 1.57 2005-06-30 16:14:44 sdennis Exp $
+// $Id: game.cpp,v 1.58 2005-07-14 08:06:18 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -2290,11 +2290,234 @@ void CLI_CallBack(CLI_OptionEntry *p, char *pValue)
     }
 }
 
+#if defined(__INTEL_COMPILER)
+
+extern "C" unsigned int __intel_cpu_indicator;
+
+#define CPU_FD_ID 0x00200000UL
+
+#define CPUID_0 0
+
+// GenuineIntel
+//
+#define INTEL_MFGSTR0 'uneG'
+#define INTEL_MFGSTR1 'letn'
+#define INTEL_MFGSTR2 'Ieni'
+
+// AuthenticAMD
+//
+#define AMD_MFGSTR0   'htuA'
+#define AMD_MFGSTR1   'DMAc'
+#define AMD_MFGSTR2   'itne'
+
+#define CPUID_1 1
+
+#define CPU_STEPPING(x)  ((x      ) & 0x00000000F)
+#define CPU_MODEL(x)     ((x >>  4) & 0x00000000F)
+#define CPU_FAMILY(x)    ((x >>  8) & 0x00000000F)
+#define CPU_TYPE(x)      ((x >> 12) & 0x00000000F)
+#define CPU_EXTMODEL(x)  ((x >> 16) & 0x00000000F)
+#define CPU_EXTFAMILY(x) ((x >> 20) & 0x00000000F)
+
+#define CPU_FEATURE_MMX  0x00800000UL
+#define CPU_FEATURE_FSXR 0x01000000UL
+#define CPU_FEATURE_SSE  0x02000000UL
+#define CPU_FEATURE_SSE2 0x04000000UL
+#define CPU_MSR_SSE3     0x00000001UL
+
+// Indicators.
+//
+#define CPU_TYPE_UNSPECIALIZED          0x00000001UL
+#define CPU_TYPE_FAMILY_5               0x00000002UL
+#define CPU_TYPE_FAMILY_6               0x00000004UL
+#define CPU_TYPE_FAMILY_5_MMX           0x00000008UL
+#define CPU_TYPE_FAMILY_6_MMX           0x00000010UL
+#define CPU_TYPE_FAMILY_6_MMX_FSXR      0x00000020UL
+#define CPU_TYPE_FAMILY_6_MMX_FSXR_SSE  0x00000080UL
+#define CPU_TYPE_FAMILY_F_SSE2          0x00000200UL
+#define CPU_TYPE_FAMILY_6_MMX_FSXR_SSE2 0x00000400UL
+#define CPU_TYPE_FAMILY_6_MMX_FSXR_SSE3 0x00000800UL
+#define CPU_TYPE_FAMILY_F_SSE3          0x00000800UL
+
+void cpu_init(void)
+{
+    UINT32 dwCPUID;
+
+    // Determine whether CPUID instruction is supported.
+    //
+    __asm
+    {
+        // Obtain a copy of the flags register.
+        //
+        pushfd
+        pop     eax
+        mov     dwCPUID,eax
+
+        // Attempt to flip the ID bit.
+        //
+        xor     eax,CPU_FD_ID
+        push    eax
+        popfd
+
+        // Obtain a second copy of the flags register.
+        //
+        pushfd
+        pop     eax
+        xor     dwCPUID,eax
+    }
+
+    // If the ID bit didn't toggle, the CPUID instruction is not supported.
+    //
+    if (CPU_FD_ID != dwCPUID)
+    {
+        // CPUID instruction is not supported.
+        //
+        __intel_cpu_indicator = CPU_TYPE_UNSPECIALIZED;
+        return;
+    }
+
+    UINT32 dwHighest;
+    UINT32 dwMfgStr0;
+    UINT32 dwMfgStr1;
+    UINT32 dwMfgStr2;
+
+    // CPUID is supported.
+    //
+    __asm
+    {
+        mov eax,CPUID_0
+        cpuid
+        mov dwHighest,eax
+        mov dwMfgStr0,ebx
+        mov dwMfgStr1,ecx
+        mov dwMfgStr2,edx
+    }
+
+    if (0 == dwHighest)
+    {
+        // We can't decipher anything with only CPUID (EAX=$0) available.
+        //
+        __intel_cpu_indicator = CPU_TYPE_UNSPECIALIZED;
+        return;
+    }
+
+    if (  (  INTEL_MFGSTR0 != dwMfgStr0
+          || INTEL_MFGSTR1 != dwMfgStr1
+          || INTEL_MFGSTR2 != dwMfgStr2)
+       && (  AMD_MFGSTR0 != dwMfgStr0
+          || AMD_MFGSTR1 != dwMfgStr1
+          || AMD_MFGSTR2 != dwMfgStr2))
+    {
+        // It's not Intel or AMD. Cool, but we can't do much with it.
+        //
+        __intel_cpu_indicator = CPU_TYPE_UNSPECIALIZED;
+        return;
+    }
+
+    // AMD or Intel. Grab the features.
+    //
+    UINT32 dwSignature;
+    UINT32 dwBrand;
+    UINT32 dwMSR;
+    UINT32 dwFeatures;
+
+    __asm
+    {
+        mov eax,CPUID_1
+        cpuid
+        mov dwSignature,eax
+        mov dwBrand,ebx
+        mov dwMSR,ecx
+        mov dwFeatures,edx
+    }
+
+    switch (CPU_FAMILY(dwSignature))
+    {
+    case 5:
+        if (dwFeatures & CPU_FEATURE_MMX)
+        {
+            __intel_cpu_indicator = CPU_TYPE_FAMILY_5;
+        }
+        else
+        {
+            __intel_cpu_indicator = CPU_TYPE_FAMILY_5_MMX;
+        }
+        break;
+
+    case 6:
+        if (dwFeatures & CPU_FEATURE_MMX)
+        {
+            if (dwFeatures & CPU_FEATURE_FSXR)
+            {
+                if (dwFeatures & CPU_FEATURE_SSE)
+                {
+                    if (dwFeatures & CPU_FEATURE_SSE2)
+                    {
+                        if (dwMSR & CPU_MSR_SSE3)
+                        {
+                            __intel_cpu_indicator = CPU_TYPE_FAMILY_6_MMX_FSXR_SSE3;
+                        }
+                        else
+                        {
+                            __intel_cpu_indicator = CPU_TYPE_FAMILY_6_MMX_FSXR_SSE2;
+                        }
+                    }
+                    else
+                    {
+                        __intel_cpu_indicator = CPU_TYPE_FAMILY_6_MMX_FSXR_SSE;
+                    }
+                }
+                else
+                {
+                    __intel_cpu_indicator = CPU_TYPE_FAMILY_6_MMX_FSXR;
+                }
+            }
+            else
+            {
+                __intel_cpu_indicator = CPU_TYPE_FAMILY_6_MMX;
+            }
+        }
+        else
+        {
+            __intel_cpu_indicator = CPU_TYPE_FAMILY_6;
+        }
+        break;
+
+    case 15:
+        if (dwFeatures & CPU_FEATURE_SSE2)
+        {
+            if (dwMSR & CPU_MSR_SSE3)
+            {
+                __intel_cpu_indicator = CPU_TYPE_FAMILY_F_SSE3;
+            }
+            else
+            {
+                __intel_cpu_indicator = CPU_TYPE_FAMILY_F_SSE2;
+            }
+        }
+        else
+        {
+            __intel_cpu_indicator = CPU_TYPE_UNSPECIALIZED;
+        }
+        break;
+
+    default:
+        __intel_cpu_indicator = CPU_TYPE_UNSPECIALIZED;
+        break;
+    }
+}
+
+#endif
+
 #define DBCONVERT_NAME1 "dbconvert"
 #define DBCONVERT_NAME2 "dbconvert.exe"
 
 int DCL_CDECL main(int argc, char *argv[])
 {
+#if defined(__INTEL_COMPILER)
+    cpu_init(); 
+#endif
+
     build_version();
 
     // Look for dbconvert[.exe] in the program name.
