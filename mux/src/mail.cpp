@@ -1,6 +1,6 @@
 // mail.cpp
 //
-// $Id: mail.cpp,v 1.49 2005-07-01 18:39:38 sdennis Exp $
+// $Id: mail.cpp,v 1.50 2005-07-14 15:42:10 rmg Exp $
 //
 // This code was taken from Kalkin's DarkZone code, which was
 // originally taken from PennMUSH 1.50 p10, and has been heavily modified
@@ -2762,7 +2762,6 @@ void save_malias(FILE *fp)
 
 int dump_mail(FILE *fp)
 {
-    struct mail *mp, *mptr;
     dbref thing;
     int count = 0, i;
 
