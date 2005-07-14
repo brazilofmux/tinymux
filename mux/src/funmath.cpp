@@ -1,6 +1,6 @@
 // funmath.cpp -- MUX math function handlers.
 //
-// $Id: funmath.cpp,v 1.2 2005-07-12 16:01:40 sdennis Exp $
+// $Id: funmath.cpp,v 1.3 2005-07-14 04:40:54 rmg Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2005 Solid Vertical Domains, Ltd. All
@@ -308,6 +308,22 @@ FUNCTION(fun_ladd)
     fval(buff, bufc, AddDoubles(n, g_aDoubles));
 }
 
+/////////////////////////////////////////////////////////////////
+// Function : iadd(Arg[0], Arg[1],..,Arg[n])
+//
+// Written by : Chris Rouse (Seraphim) 04/04/2000
+/////////////////////////////////////////////////////////////////
+
+FUNCTION(fun_iadd)
+{
+    INT64 sum = 0;
+    for (int i = 0; i < nfargs; i++)
+    {
+        sum += mux_atoi64(fargs[i]);
+    }
+    safe_i64toa(sum, buff, bufc);
+}
+
 FUNCTION(fun_sub)
 {
     int nDigits;
@@ -328,6 +344,18 @@ FUNCTION(fun_sub)
     }
 }
 
+/////////////////////////////////////////////////////////////////
+// Function : isub(Arg[0], Arg[1])
+//
+// Written by : Chris Rouse (Seraphim) 04/04/2000
+/////////////////////////////////////////////////////////////////
+
+FUNCTION(fun_isub)
+{
+    INT64 diff = mux_atoi64(fargs[0]) - mux_atoi64(fargs[1]);
+    safe_i64toa(diff, buff, bufc);
+}
+
 FUNCTION(fun_mul)
 {
     double prod = 1.0;
@@ -336,6 +364,22 @@ FUNCTION(fun_mul)
         prod *= mux_atof(fargs[i]);
     }
     fval(buff, bufc, NearestPretty(prod));
+}
+
+/////////////////////////////////////////////////////////////////
+// Function : imul(Arg[0], Arg[1], ... , Arg[n])
+//
+// Written by : Chris Rouse (Seraphim) 04/04/2000
+/////////////////////////////////////////////////////////////////
+
+FUNCTION(fun_imul)
+{
+    INT64 prod = 1;
+    for (int i = 0; i < nfargs; i++)
+    {
+        prod *= mux_atoi64(fargs[i]);
+    }
+    safe_i64toa(prod, buff, bufc);
 }
 
 FUNCTION(fun_gt)
@@ -490,6 +534,22 @@ FUNCTION(fun_min)
 FUNCTION(fun_sign)
 {
     double num = mux_atof(fargs[0]);
+    if (num < 0)
+    {
+        safe_str("-1", buff, bufc);
+    }
+    else
+    {
+        safe_bool(num > 0, buff, bufc);
+    }
+}
+
+// fun_isign: Returns -1, 0, or 1 based on the the sign of its argument.
+//
+FUNCTION(fun_isign)
+{
+    INT64 num = mux_atoi64(fargs[0]);
+
     if (num < 0)
     {
         safe_str("-1", buff, bufc);
@@ -686,6 +746,26 @@ FUNCTION(fun_abs)
     else
     {
         fval(buff, bufc, num);
+    }
+}
+
+// fun_iabs: Returns the absolute value of its argument.
+//
+FUNCTION(fun_iabs)
+{
+    INT64 num = mux_atoi64(fargs[0]);
+
+    if (num == 0)
+    {
+        safe_chr('0', buff, bufc);
+    }
+    else if (num < 0)
+    {
+        safe_i64toa(-num, buff, bufc);
+    }
+    else
+    {
+        safe_i64toa(num, buff, bufc);
     }
 }
 

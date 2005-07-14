@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.141 2005-07-12 05:50:06 sdennis Exp $
+// $Id: functions.cpp,v 1.142 2005-07-14 04:40:54 rmg Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2005 Solid Vertical Domains, Ltd. All
@@ -42,7 +42,6 @@ XFUNCTION(fun_beep);
 XFUNCTION(fun_children);
 XFUNCTION(fun_columns);
 XFUNCTION(fun_cwho);
-XFUNCTION(fun_dec);
 XFUNCTION(fun_decrypt);
 XFUNCTION(fun_default);
 XFUNCTION(fun_die);
@@ -107,13 +106,8 @@ XFUNCTION(fun_table);
 XFUNCTION(fun_translate);
 XFUNCTION(fun_udefault);
 XFUNCTION(fun_unpack);
-XFUNCTION(fun_vadd);
 XFUNCTION(fun_valid);
 XFUNCTION(fun_visible);
-XFUNCTION(fun_vmag);
-XFUNCTION(fun_vmul);
-XFUNCTION(fun_vsub);
-XFUNCTION(fun_vunit);
 XFUNCTION(fun_zfun);
 XFUNCTION(fun_zone);
 XFUNCTION(fun_zwho);
@@ -6653,86 +6647,6 @@ FUNCTION(fun_wrap)
     free_lbuf(mbuf);
     free_lbuf(str);
     free_lbuf(tstr);
-}
-
-/////////////////////////////////////////////////////////////////
-// Function : iadd(Arg[0], Arg[1],..,Arg[n])
-//
-// Written by : Chris Rouse (Seraphim) 04/04/2000
-/////////////////////////////////////////////////////////////////
-
-FUNCTION(fun_iadd)
-{
-    INT64 sum = 0;
-    for (int i = 0; i < nfargs; i++)
-    {
-        sum += mux_atoi64(fargs[i]);
-    }
-    safe_i64toa(sum, buff, bufc);
-}
-
-/////////////////////////////////////////////////////////////////
-// Function : isub(Arg[0], Arg[1])
-//
-// Written by : Chris Rouse (Seraphim) 04/04/2000
-/////////////////////////////////////////////////////////////////
-
-FUNCTION(fun_isub)
-{
-    INT64 diff = mux_atoi64(fargs[0]) - mux_atoi64(fargs[1]);
-    safe_i64toa(diff, buff, bufc);
-}
-
-/////////////////////////////////////////////////////////////////
-// Function : imul(Arg[0], Arg[1], ... , Arg[n])
-//
-// Written by : Chris Rouse (Seraphim) 04/04/2000
-/////////////////////////////////////////////////////////////////
-
-FUNCTION(fun_imul)
-{
-    INT64 prod = 1;
-    for (int i = 0; i < nfargs; i++)
-    {
-        prod *= mux_atoi64(fargs[i]);
-    }
-    safe_i64toa(prod, buff, bufc);
-}
-
-// fun_abs: Returns the absolute value of its argument.
-//
-FUNCTION(fun_iabs)
-{
-    INT64 num = mux_atoi64(fargs[0]);
-
-    if (num == 0)
-    {
-        safe_chr('0', buff, bufc);
-    }
-    else if (num < 0)
-    {
-        safe_i64toa(-num, buff, bufc);
-    }
-    else
-    {
-        safe_i64toa(num, buff, bufc);
-    }
-}
-
-// fun_isign: Returns -1, 0, or 1 based on the the sign of its argument.
-//
-FUNCTION(fun_isign)
-{
-    INT64 num = mux_atoi64(fargs[0]);
-
-    if (num < 0)
-    {
-        safe_str("-1", buff, bufc);
-    }
-    else
-    {
-        safe_bool(num > 0, buff, bufc);
-    }
 }
 
 typedef struct
