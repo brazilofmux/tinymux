@@ -1,6 +1,6 @@
 // funceval.cpp -- MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.82 2005-07-12 05:50:06 sdennis Exp $
+// $Id: funceval.cpp,v 1.83 2005-07-14 19:13:19 rmg Exp $
 //
 
 #include "copyright.h"
@@ -3478,7 +3478,10 @@ void real_regmatch(const char *search, const char *pattern, char *registers,
 
     const char *errptr;
     int erroffset;
-    const int ovecsize = 111;
+    // To capture N substrings, you need space for 3(N+1) offsets in the
+    // offset vector. We'll allow 2N-1 substrings and possibly ignore some.
+    //
+    const int ovecsize = 6 * MAX_GLOBAL_REGS;
     int ovec[ovecsize];
 
     pcre *re = pcre_compile(pattern, cis ? PCRE_CASELESS : 0,
@@ -3492,20 +3495,19 @@ void real_regmatch(const char *search, const char *pattern, char *registers,
         return;
     }
 
-    int novec = pcre_exec(re, NULL, search, strlen(search), 0, 0,
+    int matches = pcre_exec(re, NULL, search, strlen(search), 0, 0,
         ovec, ovecsize);
-    if (novec == 0)
+    if (matches == 0)
     {
-        novec = (ovecsize-1)/2;
+        // There were too many substring matches. See docs for
+        // pcre_copy_substring().
+        //
+        matches = ovecsize / 3;
     }
-    safe_bool(novec > 0, buff, bufc);
-    if (novec < 0)
+    safe_bool(matches > 0, buff, bufc);
+    if (matches < 0)
     {
-        novec = 0;
-    }
-    else
-    {
-        novec *= 2;
+        matches = 0;
     }
 
     // If we don't have a third argument, we're done.
@@ -3520,15 +3522,14 @@ void real_regmatch(const char *search, const char *pattern, char *registers,
     // mentioned in the list, then either fill the register with the
     // subexpression, or if there wasn't a match, clear it.
     //
-    const int NSUBEXP = 36;
+    const int NSUBEXP = 2 * MAX_GLOBAL_REGS;
     char *qregs[NSUBEXP];
     SEP sep;
     sep.n = 1;
     memcpy(sep.str, " ", 2);
     int nqregs = list2arr(qregs, NSUBEXP, registers, &sep);
-    int iStart;
     int i;
-    for (i = 0, iStart = 0; i < nqregs; i++, iStart += 2)
+    for (i = 0; i < nqregs; i++)
     {
         int curq;
         if (  qregs[i]
@@ -3541,26 +3542,10 @@ void real_regmatch(const char *search, const char *pattern, char *registers,
             {
                 mudstate.global_regs[curq] = alloc_lbuf("fun_regmatch");
             }
-            int len = 0;
-            int iEnd   = iStart+1;
-            if (  iEnd < novec
-               && 0 <= ovec[iStart])
-            {
-                // We have a subexpression.
-                //
-                len = ovec[iEnd] - ovec[iStart];
-                if (len > LBUF_SIZE - 1)
-                {
-                    len = LBUF_SIZE - 1;
-                }
-                else if (len < 0)
-                {
-                    len = 0;
-                }
-                memcpy(mudstate.global_regs[curq], search + ovec[iStart], len);
-            }
-            mudstate.global_regs[curq][len] = '\0';
-            mudstate.glob_reg_len[curq] = len;
+            int len;
+	    len = pcre_copy_substring(search, ovec, matches, i,
+				      mudstate.global_regs[curq], LBUF_SIZE);
+            mudstate.glob_reg_len[curq] = (len > 0 ? len : 0);
         }
     }
     MEMFREE(re);
@@ -3593,7 +3578,10 @@ void real_regrab(char *search, const char *pattern, SEP *psep, char *buff,
     pcre_extra *study = NULL;
     const char *errptr;
     int erroffset;
-    const int ovecsize = 111;
+    // To capture N substrings, you need space for 3(N+1) offsets in the
+    // offset vector. We'll allow 2N-1 substrings and possibly ignore some.
+    //
+    const int ovecsize = 6 * MAX_GLOBAL_REGS;
     int ovec[ovecsize];
 
     re = pcre_compile(pattern, cis ? PCRE_CASELESS : 0,
@@ -3618,7 +3606,7 @@ void real_regrab(char *search, const char *pattern, SEP *psep, char *buff,
     {
         char *r = split_token(&s, psep);
         if (  !MuxAlarm.bAlarmed
-           && pcre_exec(re, study, r, strlen(r), 0, 0, ovec, ovecsize) >= 1)
+           && pcre_exec(re, study, r, strlen(r), 0, 0, ovec, ovecsize) >= 0)
         {
             if (first)
             {

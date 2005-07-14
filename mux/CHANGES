@@ -83,6 +83,8 @@ Feature Additions:
  -- Fixed @mail/fwd to evalute the postpended and prepended text without
     evaluating the forwarded text.
  -- Added the local.cpp patch surface. Details in LOCAL readme.
+ -- Allowed more substring matches in regexp $-commands, regmatch(),
+    regrab(), etc., though some matching substrings may not be observed.
 
 
 Bug Fixes:
@@ -179,6 +181,8 @@ Bug Fixes:
     Found and fixed by Alierak.
  -- Fix @mail/quick evaluation from 2.4.0.18 so that spaces are not
     compressed.
+ -- Fix unexploitable buffer overflow with too many substring matches
+    in a regexp $-command. Found and fixed by Alierak.
 
 
 Performance Enhancements:

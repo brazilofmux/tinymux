@@ -1,6 +1,6 @@
 // game.cpp
 //
-// $Id: game.cpp,v 1.59 2005-07-14 15:40:47 sdennis Exp $
+// $Id: game.cpp,v 1.60 2005-07-14 19:13:19 rmg Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -96,10 +96,13 @@ bool regexp_match
 )
 {
     int matches;
-    int i, len;
+    int i;
     const char *errptr;
     int erroffset;
-    const int ovecsize = 33;
+    // To capture N substrings, you need space for 3(N+1) offsets in the
+    // offset vector. We'll allow 2N-1 substrings and possibly ignore some.
+    //
+    const int ovecsize = 6 * nargs;
     int ovec[ovecsize];
 
     /*
@@ -125,10 +128,17 @@ bool regexp_match
      * automatically be filled in by this.
      */
     matches = pcre_exec(re, NULL, str, strlen(str), 0, 0, ovec, ovecsize);
-    if (matches <= 0)
+    if (matches < 0)
     {
         MEMFREE(re);
         return false;
+    }
+    if (matches == 0)
+    {
+        // There were too many substring matches. See docs for
+        // pcre_copy_substring().
+        //
+        matches = ovecsize / 3;
     }
 
     /*
@@ -138,26 +148,15 @@ bool regexp_match
      * with other languages.
      */
 
-    for (i = 0; i < nargs; i++)
+    for (i = 0; i < nargs; ++i)
     {
-        args[i] = NULL;
-    }
-
-    /* Convenient: nargs and NSUBEXP are the same.
-     * We are also guaranteed that our buffer is going to be LBUF_SIZE
-     * so we can copy without fear.
-     */
-
-    for (i = 0; i < matches; ++i)
-    {
-        if (ovec[i*2] == -1)
-        {
-            continue;
-        }
-        len = ovec[(i*2)+1] - ovec[i*2];
         args[i] = alloc_lbuf("regexp_match");
-        strncpy(args[i], str + ovec[i*2], len);
-        args[i][len] = '\0';        /* strncpy() does not null-terminate */
+        if (pcre_copy_substring(str, ovec, matches, i,
+				args[i], LBUF_SIZE) < 0)
+        {
+            free_lbuf(args[i]);
+            args[i] = NULL;
+        }
     }
 
     MEMFREE(re);
