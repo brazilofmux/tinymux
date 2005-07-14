@@ -1,6 +1,6 @@
 // game.cpp
 //
-// $Id: game.cpp,v 1.58 2005-07-14 08:06:18 sdennis Exp $
+// $Id: game.cpp,v 1.59 2005-07-14 15:40:47 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -2327,17 +2327,23 @@ extern "C" unsigned int __intel_cpu_indicator;
 
 // Indicators.
 //
-#define CPU_TYPE_UNSPECIALIZED          0x00000001UL
-#define CPU_TYPE_FAMILY_5               0x00000002UL
-#define CPU_TYPE_FAMILY_6               0x00000004UL
-#define CPU_TYPE_FAMILY_5_MMX           0x00000008UL
-#define CPU_TYPE_FAMILY_6_MMX           0x00000010UL
-#define CPU_TYPE_FAMILY_6_MMX_FSXR      0x00000020UL
-#define CPU_TYPE_FAMILY_6_MMX_FSXR_SSE  0x00000080UL
-#define CPU_TYPE_FAMILY_F_SSE2          0x00000200UL
-#define CPU_TYPE_FAMILY_6_MMX_FSXR_SSE2 0x00000400UL
-#define CPU_TYPE_FAMILY_6_MMX_FSXR_SSE3 0x00000800UL
-#define CPU_TYPE_FAMILY_F_SSE3          0x00000800UL
+// OLDOS tags indicate that the CPU supports SSE[n], but the operating system
+// will throw an exception when they are used.
+//
+//
+#define CPU_TYPE_UNSPECIALIZED               0x00000001UL
+#define CPU_TYPE_FAMILY_5                    0x00000002UL
+#define CPU_TYPE_FAMILY_6                    0x00000004UL
+#define CPU_TYPE_FAMILY_5_MMX                0x00000008UL
+#define CPU_TYPE_FAMILY_6_MMX                0x00000010UL
+#define CPU_TYPE_FAMILY_6_MMX_FSXR           0x00000020UL
+#define CPU_TYPE_FAMILY_6_MMX_FSXR_SSE_OLDOS 0x00000040UL
+#define CPU_TYPE_FAMILY_6_MMX_FSXR_SSE       0x00000080UL
+#define CPU_TYPE_FAMILY_F_SSE2_OLDOS         0x00000100UL
+#define CPU_TYPE_FAMILY_F_SSE2               0x00000200UL
+#define CPU_TYPE_FAMILY_6_MMX_FSXR_SSE2      0x00000400UL
+#define CPU_TYPE_FAMILY_6_MMX_FSXR_SSE3      0x00000800UL
+#define CPU_TYPE_FAMILY_F_SSE3               0x00000800UL
 
 void cpu_init(void)
 {
@@ -2453,18 +2459,45 @@ void cpu_init(void)
                 {
                     if (dwFeatures & CPU_FEATURE_SSE2)
                     {
-                        if (dwMSR & CPU_MSR_SSE3)
+                        try
                         {
-                            __intel_cpu_indicator = CPU_TYPE_FAMILY_6_MMX_FSXR_SSE3;
+                            __asm
+                            {
+                                // Let's try a SSE2 instruction.
+                                //
+                                xorpd xmm0, xmm0
+                            }
+                            if (dwMSR & CPU_MSR_SSE3)
+                            {
+                                __intel_cpu_indicator = CPU_TYPE_FAMILY_6_MMX_FSXR_SSE3;
+                            }
+                            else
+                            {
+                                __intel_cpu_indicator = CPU_TYPE_FAMILY_6_MMX_FSXR_SSE2;
+                            }
                         }
-                        else
+                        catch (...)
                         {
-                            __intel_cpu_indicator = CPU_TYPE_FAMILY_6_MMX_FSXR_SSE2;
+                            __intel_cpu_indicator = CPU_TYPE_FAMILY_6_MMX_FSXR_SSE_OLDOS;
                         }
                     }
                     else
                     {
-                        __intel_cpu_indicator = CPU_TYPE_FAMILY_6_MMX_FSXR_SSE;
+                        try
+                        {
+                            __asm
+                            {
+                                // Let's try a SSE instruction.
+                                //
+                                xorps xmm0, xmm0
+                            }
+                            __intel_cpu_indicator = CPU_TYPE_FAMILY_6_MMX_FSXR_SSE;
+                        }
+                        catch (...)
+                        {
+                            __intel_cpu_indicator = CPU_TYPE_FAMILY_6_MMX_FSXR_SSE_OLDOS;
+                        }
+
                     }
                 }
                 else
@@ -2486,13 +2519,26 @@ void cpu_init(void)
     case 15:
         if (dwFeatures & CPU_FEATURE_SSE2)
         {
-            if (dwMSR & CPU_MSR_SSE3)
+            try
             {
-                __intel_cpu_indicator = CPU_TYPE_FAMILY_F_SSE3;
+                __asm
+                {
+                    // Let's try a SSE2 instruction.
+                    //
+                    xorpd xmm0, xmm0
+                }
+                if (dwMSR & CPU_MSR_SSE3)
+                {
+                    __intel_cpu_indicator = CPU_TYPE_FAMILY_F_SSE3;
+                }
+                else
+                {
+                    __intel_cpu_indicator = CPU_TYPE_FAMILY_F_SSE2;
+                }
             }
-            else
+            catch (...)
             {
-                __intel_cpu_indicator = CPU_TYPE_FAMILY_F_SSE2;
+                    __intel_cpu_indicator = CPU_TYPE_FAMILY_F_SSE2_OLDOS;
             }
         }
         else
