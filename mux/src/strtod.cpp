@@ -134,7 +134,7 @@
 
 #if   defined(HAVE_FPU_CONTROL_H)
 #include <fpu_control.h>
-#elif defined(HAVE_IEEEFP_H)
+#elif defined(IEEEFP_H_USEABLE)
 #include <ieeefp.h>
 #elif defined(HAVE_FENV_H)
 #include <fenv.h>
@@ -3511,10 +3511,7 @@ void mux_FPRestore(void)
     _FPU_SETCW(origcw);
 }
 
-#elif defined(HAVE_IEEEFP_H) \
-   && defined(HAVE_FPGETPREC) \
-   && defined(HAVE_FPSETPREC) \
-   && defined(FP_PD)
+#elif defined(IEEEFP_H_USEABLE)
 
 fp_rnd_t   orig_rnd;
 fp_prec_t orig_prec;

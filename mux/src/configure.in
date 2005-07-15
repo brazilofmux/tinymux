@@ -88,8 +88,16 @@ AC_CHECK_FUNCS(gettimeofday select socket)
 AC_CHECK_FUNCS(getpagesize usleep nanosleep setitimer crypt)
 AC_EGREP_HEADER(getpagesize,unistd.h,,AC_DEFINE(NEED_GETPAGESIZE_DCL))
 if test $ac_cv_header_ieeefp_h = yes; then
-	AC_EGREP_HEADER(fpsetprec,ieeefp.h,AC_DEFINE(HAVE_FPSETPREC))
-	AC_EGREP_HEADER(fpgetprec,ieeefp.h,AC_DEFINE(HAVE_FPGETPREC))
+    AC_TRY_COMPILE([
+    #include <ieeefp.h>
+    ],[
+    int main(int argc, char *argv[])
+    {
+        fp_prec_t a = fpgetprec();
+        fpsetprec(FP_PD);
+        return 0;
+    }
+    ],AC_DEFINE(IEEEFP_H_USEABLE))
 fi
 if test $ac_cv_header_fenv_h = yes; then
 	AC_EGREP_HEADER(fesetprec,fenv.h,AC_DEFINE(HAVE_FESETPREC))
@@ -156,7 +164,6 @@ RETSIGTYPE sighand(int sig, int code)
 
 int main(int argc, char *argv[])
 {
-
   rlev = 0;
   signal(SIGCHLD, sighand);
   if (fork()) {
