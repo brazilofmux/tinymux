@@ -1,6 +1,6 @@
 // game.cpp
 //
-// $Id: game.cpp,v 1.61 2005-07-15 01:48:41 sdennis Exp $
+// $Id: game.cpp,v 1.62 2005-07-15 01:56:04 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -99,12 +99,7 @@ bool regexp_match
     int i;
     const char *errptr;
     int erroffset;
-    // To capture N substrings, you need space for 3(N+1) offsets in the
-    // offset vector. We'll allow 2N-1 substrings and possibly ignore some.
-    //
-    const int ovecsize = 6 * nargs;
-    int ovec[ovecsize];
- 
+
     /*
      * Load the regexp pattern. This allocates memory which must be
      * later freed. A free() of the regexp does free all structures
@@ -122,6 +117,13 @@ bool regexp_match
          */
         return false;
     }
+
+    // To capture N substrings, you need space for 3(N+1) offsets in the
+    // offset vector. We'll allow 2N-1 substrings and possibly ignore some.
+    //
+    const int ovecsize = 6 * nargs;
+    int *ovec = new int[ovecsize];
+ 
     /*
      * Now we try to match the pattern. The relevant fields will
      * automatically be filled in by this.
@@ -129,9 +131,11 @@ bool regexp_match
     matches = pcre_exec(re, NULL, str, strlen(str), 0, 0, ovec, ovecsize);
     if (matches < 0)
     {
+        delete ovec;
         MEMFREE(re);
         return false;
     }
+
     if (matches == 0)
     {
         // There were too many substring matches. See docs for
@@ -158,6 +162,7 @@ bool regexp_match
         }
     }
 
+    delete ovec;
     MEMFREE(re);
     return true;
 }
