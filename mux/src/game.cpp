@@ -1,6 +1,6 @@
 // game.cpp
 //
-// $Id: game.cpp,v 1.60 2005-07-14 19:13:19 rmg Exp $
+// $Id: game.cpp,v 1.61 2005-07-15 01:48:41 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -104,7 +104,7 @@ bool regexp_match
     //
     const int ovecsize = 6 * nargs;
     int ovec[ovecsize];
-
+ 
     /*
      * Load the regexp pattern. This allocates memory which must be
      * later freed. A free() of the regexp does free all structures
@@ -122,7 +122,6 @@ bool regexp_match
          */
         return false;
     }
-
     /*
      * Now we try to match the pattern. The relevant fields will
      * automatically be filled in by this.
@@ -152,7 +151,7 @@ bool regexp_match
     {
         args[i] = alloc_lbuf("regexp_match");
         if (pcre_copy_substring(str, ovec, matches, i,
-				args[i], LBUF_SIZE) < 0)
+                                args[i], LBUF_SIZE) < 0)
         {
             free_lbuf(args[i]);
             args[i] = NULL;
@@ -162,7 +161,6 @@ bool regexp_match
     MEMFREE(re);
     return true;
 }
-
 
 /* ----------------------------------------------------------------------
  * atr_match: Check attribute list for wild card matches and queue them.
@@ -2406,21 +2404,33 @@ void cpu_init(void)
         return;
     }
 
-    if (  (  INTEL_MFGSTR0 != dwMfgStr0
-          || INTEL_MFGSTR1 != dwMfgStr1
-          || INTEL_MFGSTR2 != dwMfgStr2)
-       && (  AMD_MFGSTR0 != dwMfgStr0
-          || AMD_MFGSTR1 != dwMfgStr1
-          || AMD_MFGSTR2 != dwMfgStr2))
+    typedef enum
     {
-        // It's not Intel or AMD. Cool, but we can't do much with it.
+        Intel = 0,
+        AMD
+    } CPUMaker;
+
+    CPUMaker maker;
+    if (  INTEL_MFGSTR0 == dwMfgStr0
+       && INTEL_MFGSTR1 == dwMfgStr1
+       && INTEL_MFGSTR2 == dwMfgStr2)
+    {
+        maker = Intel;
+    }
+    else if (  AMD_MFGSTR0 == dwMfgStr0
+            && AMD_MFGSTR1 == dwMfgStr1
+            && AMD_MFGSTR2 == dwMfgStr2)
+    {
+        maker = AMD;
+    }
+    else
+    {
+        // It's not Intel or AMD.
         //
         __intel_cpu_indicator = CPU_TYPE_UNSPECIALIZED;
         return;
     }
 
-    // AMD or Intel. Grab the features.
-    //
     UINT32 dwSignature;
     UINT32 dwBrand;
     UINT32 dwMSR;
@@ -2436,67 +2446,183 @@ void cpu_init(void)
         mov dwFeatures,edx
     }
 
-    switch (CPU_FAMILY(dwSignature))
+    // Develop 'Effective' Family and Model.
+    //
+    UINT32 dwEffFamily;
+    if (CPU_FAMILY(dwSignature) == 0xF)
     {
-    case 5:
-        if (dwFeatures & CPU_FEATURE_MMX)
+        dwEffFamily = CPU_FAMILY(dwSignature) + CPU_EXTFAMILY(dwSignature);
+    }
+    else
+    {
+        dwEffFamily = CPU_FAMILY(dwSignature);
+    }
+    UINT32 dwEffModel;
+    if (CPU_MODEL(dwSignature) == 0xF)
+    {
+        dwEffModel = CPU_MODEL(dwSignature) + (CPU_EXTMODEL(dwSignature) << 4);
+    }
+    else
+    {
+        dwEffModel = CPU_MODEL(dwSignature);
+    }
+
+#define ADVF_MMX  0x00000001UL
+#define ADVF_FSXR 0x00000002UL
+#define ADVF_SSE  0x00000004UL
+#define ADVF_SSE2 0x00000008UL
+#define ADVF_SSE3 0x00000010UL
+
+    UINT32 dwAdvFeatures = 0;
+
+    // Decode the features the chips claim to possess.
+    //
+    if (dwFeatures & CPU_FEATURE_MMX)
+    {
+        dwAdvFeatures |= ADVF_MMX;
+    }
+    if (dwFeatures & CPU_FEATURE_FSXR)
+    {
+        dwAdvFeatures |= ADVF_FSXR;
+    }
+    if (dwFeatures & CPU_FEATURE_SSE)
+    {
+        dwAdvFeatures |= ADVF_SSE;
+    }
+    if (dwFeatures & CPU_FEATURE_SSE2)
+    {
+        dwAdvFeatures |= ADVF_SSE2;
+    }
+    if (  dwEffFamily <= 5
+       && dwMSR & CPU_MSR_SSE3)
+    {
+        dwAdvFeatures |= ADVF_SSE3;
+    }
+
+    // Test whether operating system will allow use of these extensions.
+    //
+    UINT32 dwUseable = dwAdvFeatures;
+    if (dwUseable & ADVF_MMX)
+    {
+        try
         {
-            __intel_cpu_indicator = CPU_TYPE_FAMILY_5;
+            __asm
+            {
+                // Let's try a MMX instruction.
+                //
+                emms
+            }
         }
-        else
+        catch (...)
+        {
+            dwUseable &= ~(ADVF_MMX|ADVF_SSE|ADVF_SSE2|ADVF_SSE3);
+        }
+    }
+
+    if (dwUseable & ADVF_SSE)
+    {
+        try
+        {
+            __asm
+            {
+                // Let's try a SSE instruction.
+                //
+                xorps xmm0, xmm0
+            }
+        }
+        catch (...)
+        {
+            dwUseable &= ~(ADVF_SSE|ADVF_SSE2|ADVF_SSE3);
+        }
+    }
+
+    if (dwUseable & ADVF_SSE2)
+    {
+        try
+        {
+            __asm
+            {
+                // Let's try a SSE2 instruction.
+                //
+                xorpd xmm0, xmm0
+            }
+        }
+        catch (...)
+        {
+            dwUseable &= ~(ADVF_SSE2|ADVF_SSE3);
+        }
+    }
+
+    if (dwUseable & ADVF_SSE3)
+    {
+        try
+        {
+            __asm
+            {
+                // Let's try a SSE3 instruction.
+                //
+                haddpd xmm1,xmm2
+            }
+        }
+        catch (...)
+        {
+            dwUseable &= ~(ADVF_SSE3);
+        }
+    }
+
+    // Map tested features to an indicator for CPU dispatching.
+    //
+    if (dwEffFamily <= 4)
+    {
+        __intel_cpu_indicator = CPU_TYPE_UNSPECIALIZED;
+    }
+    else if (5 == dwEffFamily)
+    {
+        if (dwUseable & ADVF_MMX)
         {
             __intel_cpu_indicator = CPU_TYPE_FAMILY_5_MMX;
         }
-        break;
-
-    case 6:
-        if (dwFeatures & CPU_FEATURE_MMX)
+        else
         {
-            if (dwFeatures & CPU_FEATURE_FSXR)
+            __intel_cpu_indicator = CPU_TYPE_FAMILY_5;
+        }
+    }
+    else
+    {
+        if (dwUseable & ADVF_MMX)
+        {
+            if (dwUseable & ADVF_FSXR)
             {
-                if (dwFeatures & CPU_FEATURE_SSE)
+                if (dwUseable & ADVF_SSE)
                 {
-                    if (dwFeatures & CPU_FEATURE_SSE2)
+                    if (dwUseable & ADVF_SSE2)
                     {
-                        try
+                        if (dwUseable & ADVF_SSE3)
                         {
-                            __asm
-                            {
-                                // Let's try a SSE2 instruction.
-                                //
-                                xorpd xmm0, xmm0
-                            }
-                            if (dwMSR & CPU_MSR_SSE3)
+                            if (dwEffFamily < 15)
                             {
                                 __intel_cpu_indicator = CPU_TYPE_FAMILY_6_MMX_FSXR_SSE3;
                             }
                             else
                             {
-                                __intel_cpu_indicator = CPU_TYPE_FAMILY_6_MMX_FSXR_SSE2;
+                                __intel_cpu_indicator = CPU_TYPE_FAMILY_F_SSE3;
                             }
                         }
-                        catch (...)
+                        else
                         {
-                            __intel_cpu_indicator = CPU_TYPE_FAMILY_6_MMX_FSXR_SSE_OLDOS;
+                            if (dwEffFamily < 15)
+                            {
+                                __intel_cpu_indicator = CPU_TYPE_FAMILY_6_MMX_FSXR_SSE2;
+                            }
+                            else
+                            {
+                                __intel_cpu_indicator = CPU_TYPE_FAMILY_F_SSE2;
+                            }
                         }
                     }
                     else
                     {
-                        try
-                        {
-                            __asm
-                            {
-                                // Let's try a SSE instruction.
-                                //
-                                xorps xmm0, xmm0
-                            }
-                            __intel_cpu_indicator = CPU_TYPE_FAMILY_6_MMX_FSXR_SSE;
-                        }
-                        catch (...)
-                        {
-                            __intel_cpu_indicator = CPU_TYPE_FAMILY_6_MMX_FSXR_SSE_OLDOS;
-                        }
-
+                        __intel_cpu_indicator = CPU_TYPE_FAMILY_6_MMX_FSXR_SSE;
                     }
                 }
                 else
@@ -2513,42 +2639,29 @@ void cpu_init(void)
         {
             __intel_cpu_indicator = CPU_TYPE_FAMILY_6;
         }
-        break;
+    }
 
-    case 15:
-        if (dwFeatures & CPU_FEATURE_SSE2)
-        {
-            try
-            {
-                __asm
-                {
-                    // Let's try a SSE2 instruction.
-                    //
-                    xorpd xmm0, xmm0
-                }
-                if (dwMSR & CPU_MSR_SSE3)
-                {
-                    __intel_cpu_indicator = CPU_TYPE_FAMILY_F_SSE3;
-                }
-                else
-                {
-                    __intel_cpu_indicator = CPU_TYPE_FAMILY_F_SSE2;
-                }
-            }
-            catch (...)
-            {
-                    __intel_cpu_indicator = CPU_TYPE_FAMILY_F_SSE2_OLDOS;
-            }
-        }
-        else
-        {
-            __intel_cpu_indicator = CPU_TYPE_UNSPECIALIZED;
-        }
-        break;
+    // Report findings to the log.
+    //
+    fprintf(stderr, "cpu_init: %s, Family %d, Model %d, %s%s%s%s%s" ENDLINE,
+        (Intel == maker ? "Intel" : (AMD == maker ? "AMD" : "Unknown")),
+        dwEffFamily,
+        dwEffModel,
+        (dwUseable & ADVF_MMX)  ? "MMX " : "",
+        (dwUseable & ADVF_FSXR) ? "FSXR ": "",
+        (dwUseable & ADVF_SSE)  ? "SSE ": "",
+        (dwUseable & ADVF_SSE2) ? "SSE2 ": "",
+        (dwUseable & ADVF_SSE3) ? "SSE3 ": "");
 
-    default:
-        __intel_cpu_indicator = CPU_TYPE_UNSPECIALIZED;
-        break;
+    if (dwUseable != dwAdvFeatures)
+    {
+        UINT32 dw = dwAdvFeatures & (~dwUseable);
+        fprintf(stderr, "cpu_init: %s%s%s%s%s unsupported by OS." ENDLINE,
+            (dw & ADVF_MMX)  ? "MMX ": "",
+            (dw & ADVF_FSXR) ? "FSXR ": "",
+            (dw & ADVF_SSE)  ? "SSE ": "",
+            (dw & ADVF_SSE2) ? "SSE2 ": "",
+            (dw & ADVF_SSE3) ? "SSE3 ": "");
     }
 }
 
