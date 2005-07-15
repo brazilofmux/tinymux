@@ -143,6 +143,8 @@
 #undef HAVE_FPU_CONTROL_H
 /* Define if ieeefp.h is available. */
 #undef HAVE_IEEEFP_H
+/* Define if ieeefp.h is useable. */
+#undef IEEEFP_H_USEABLE
 /* Define if fenv.h is available. */
 #undef HAVE_FENV_H
 /* Define if fegetprec is available. */
