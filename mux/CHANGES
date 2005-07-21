@@ -212,3 +212,5 @@ Miscellaneous:
  -- Remove configure checks for mktime() and timelocal().
  -- Alierak removed the last two direct uses of delim_check in lnum()
     and lcmds().
+ -- Alierak removed stale code in add_player_name() since disallowed
+    names are stored separately.

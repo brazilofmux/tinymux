@@ -1,6 +1,6 @@
 // player.cpp
 //
-// $Id: player.cpp,v 1.31 2005-07-10 04:02:51 sdennis Exp $
+// $Id: player.cpp,v 1.32 2005-07-21 16:22:59 rmg Exp $
 //
 
 #include "copyright.h"
@@ -709,14 +709,8 @@ bool add_player_name(dbref player, const char *name)
     {
         // Entry found in the hashtable.  If a player, succeed if the
         // numbers match (already correctly in the hash table), fail
-        // if they don't. Fail if the name is a disallowed name
-        // (value AMBIGUOUS).
+        // if they don't.
         //
-        if (*p == AMBIGUOUS)
-        {
-            free_lbuf(temp);
-            return false;
-        }
         if (Good_obj(*p) && isPlayer(*p))
         {
             free_lbuf(temp);
