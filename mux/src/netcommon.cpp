@@ -1,6 +1,6 @@
 // netcommon.cpp
 //
-// $Id: netcommon.cpp,v 1.46 2005-06-28 21:47:10 sdennis Exp $
+// $Id: netcommon.cpp,v 1.47 2005-07-23 16:24:26 rmg Exp $
 //
 // This file contains routines used by the networking code that do not
 // depend on the implementation of the networking code.  The network-specific
@@ -834,6 +834,10 @@ static void announce_connect(dbref player, DESC *d)
 
     record_login(player, true, time_str, d->addr, d->username,
         inet_ntoa((d->address).sin_addr));
+    if (mudconf.have_mailer)
+    {
+        check_mail(player, 0, false);
+    }
     look_in(player, Location(player), (LK_SHOWEXIT|LK_OBEYTERSE|LK_SHOWVRML));
     mudstate.curr_enactor = temp;
     if (Guest(player))

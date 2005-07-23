@@ -1,6 +1,6 @@
 // player.cpp
 //
-// $Id: player.cpp,v 1.32 2005-07-21 16:22:59 rmg Exp $
+// $Id: player.cpp,v 1.33 2005-07-23 16:24:26 rmg Exp $
 //
 
 #include "copyright.h"
@@ -155,10 +155,6 @@ void record_login
         {
             notify(player, tprintf("Last connect was from %s on %s.",
                 login_info.good[0].host, login_info.good[0].dtm));
-        }
-        if (mudconf.have_mailer)
-        {
-            check_mail(player, 0, false);
         }
 
         for (i = NUM_GOOD - 1; i > 0; i--)

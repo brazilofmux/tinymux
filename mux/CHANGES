@@ -214,3 +214,5 @@ Miscellaneous:
     and lcmds().
  -- Alierak removed stale code in add_player_name() since disallowed
     names are stored separately.
+ -- Alierak moved the login mail check into announce_connect() to
+    clarify the purpose of record_login().
