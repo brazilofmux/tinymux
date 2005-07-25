@@ -1,6 +1,6 @@
 // funceval.cpp -- MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.83 2005-07-14 19:13:19 rmg Exp $
+// $Id: funceval.cpp,v 1.84 2005-07-25 19:14:18 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -693,6 +693,7 @@ static char *crypt_code(char *code, char *text, bool type)
     static char textbuff[LBUF_SIZE];
     char *p = strip_ansi(text);
     char *q = codebuff;
+    unsigned int nq = nCode;
     char *r = textbuff;
 
     int iMod    = '~' - ' ' + 1;
@@ -724,9 +725,11 @@ static char *crypt_code(char *code, char *text, bool type)
             }
             *r++ = iCode + ' ';
             q++;
-            if (*q == '\0')
+            nq--;
+            if (0 == nq)
             {
                 q = codebuff;
+                nq = nCode;
             }
         }
         p++;
