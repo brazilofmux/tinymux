@@ -1,6 +1,6 @@
 // game.cpp
 //
-// $Id: game.cpp,v 1.62 2005-07-15 01:56:04 sdennis Exp $
+// $Id: game.cpp,v 1.63 2005-07-27 02:57:52 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -2701,6 +2701,8 @@ int DCL_CDECL main(int argc, char *argv[])
     {
         mudstate.bStandAlone = true;
     }
+
+    mudconf.pid_file = "netmux.pid";
 
     // Parse the command line
     //
