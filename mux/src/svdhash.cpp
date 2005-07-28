@@ -1,6 +1,6 @@
 // svdhash.cpp -- CHashPage, CHashFile, CHashTable modules.
 //
-// $Id: svdhash.cpp,v 1.26 2004-09-22 14:24:33 sdennis Exp $
+// $Id: svdhash.cpp,v 1.27 2005-07-28 15:04:33 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -1588,7 +1588,10 @@ void CHashFile::Sync(void)
         bool bAllFlushed = true;
         for (int i = 0; i < m_nCache; i++)
         {
-            bAllFlushed &= FlushCache(i);
+            if (!FlushCache(i))
+            {
+                bAllFlushed = false;
+            }
         }
         if (!bAllFlushed)
         {
