@@ -1,6 +1,6 @@
 // svdhash.cpp -- CHashPage, CHashFile, CHashTable modules.
 //
-// $Id: svdhash.cpp,v 1.27 2005-07-28 15:04:33 sdennis Exp $
+// $Id: svdhash.cpp,v 1.28 2005-07-29 15:06:20 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -985,9 +985,9 @@ bool CHashPage::Split(CHashPage &hp0, CHashPage &hp1)
         }
     }
 #if 0
-    UINT32 nRecords0, nRecords1;
-    UINT32 nAllocatedSize0, nAllocatedSize1;
-    UINT32 temp;
+    int nRecords0, nRecords1;   
+    HP_HEAPLENGTH nAllocatedSize0, nAllocatedSize1;
+    int    temp;
     hp0.GetStats(0, &nRecords0, &nAllocatedSize0, &temp);
     hp1.GetStats(0, &nRecords1, &nAllocatedSize1, &temp);
     Log.tinyprintf("Split (%d %d) page into (%d %d) and (%d %d)" ENDLINE,
