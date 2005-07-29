@@ -2560,7 +2560,7 @@ GUEST_SITE
 
   CONFIG PARAMETER: guest_site <site>
 
-  Indicates that connections to guests form this site should be rejected.
+  Indicates that connections to guests from this site should be rejected.
   Players will be able to connect normally and create if set.
 
   Related Topics: badsite_file, permit_site, register_site, forbid_site,
