@@ -1,6 +1,6 @@
 // game.cpp
 //
-// $Id: game.cpp,v 1.63 2005-07-27 02:57:52 sdennis Exp $
+// $Id: game.cpp,v 1.64 2005-07-31 00:18:33 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -1535,6 +1535,7 @@ void fork_and_dump(int key)
 
     pcache_sync();
     SYNC;
+    mudstate.write_protect = true;
 
 #ifndef WIN32
     int child = 0;
@@ -1594,6 +1595,7 @@ void fork_and_dump(int key)
         }
 #endif
     }
+    mudstate.write_protect = false;
 
 #ifndef WIN32
     if (!bChildExists)

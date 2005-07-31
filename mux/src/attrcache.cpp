@@ -1,6 +1,6 @@
 // svdocache.cpp -- Attribute caching module.
 //
-// $Id: attrcache.cpp,v 1.12 2004-08-16 05:14:07 sdennis Exp $
+// $Id: attrcache.cpp,v 1.13 2005-07-31 00:18:33 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -296,6 +296,12 @@ bool cache_put(Aname *nam, const char *value, size_t len)
     {
         return false;
     }
+    if (mudstate.write_protect)
+    {
+        Log.tinyprintf("cache_put((%d,%d), '%s', %u) while database is write-protected" ENDLINE,
+            nam->object, nam->attrnum, value, len);
+        return false;
+    }
 
     if (len > sizeof(TempRecord.attrText))
     {
@@ -339,7 +345,11 @@ bool cache_put(Aname *nam, const char *value, size_t len)
 
     // Insertion into DB.
     //
-    hfAttributeFile.Insert(len+sizeof(Aname), nHash, &TempRecord);
+    if (!hfAttributeFile.Insert(len+sizeof(Aname), nHash, &TempRecord))
+    {
+        Log.tinyprintf("cache_put((%d,%d), '%s', %u) failed" ENDLINE,
+            nam->object, nam->attrnum, value, len);
+    }
 
     if (!mudstate.bStandAlone)
     {
@@ -410,6 +420,13 @@ void cache_del(Aname *nam)
     if (  !nam
        || !cache_initted)
     {
+        return;
+    }
+
+    if (mudstate.write_protect)
+    {
+        Log.tinyprintf("cache_del((%d,%d)) while database is write-protected" ENDLINE,
+            nam->object, nam->attrnum);
         return;
     }
 
