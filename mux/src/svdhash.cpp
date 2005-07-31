@@ -1,6 +1,6 @@
 // svdhash.cpp -- CHashPage, CHashFile, CHashTable modules.
 //
-// $Id: svdhash.cpp,v 1.28 2005-07-29 15:06:20 sdennis Exp $
+// $Id: svdhash.cpp,v 1.29 2005-07-31 00:15:23 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -1693,8 +1693,13 @@ bool CHashFile::Insert(HP_HEAPLENGTH nRecord, UINT32 nHash, void *pRecord)
             return false;
         }
         int errInserted = m_Cache[iCache].m_hp.Insert(nRecord, nHash, pRecord);
-        if (IS_HP_SUCCESS(errInserted)) break;
-        if (errInserted == HP_INSERT_ERROR_ILLEGAL)
+        if (IS_HP_SUCCESS(errInserted))
+        {
+            // The record was inserted successfully, so the page is dirty.
+            //
+            m_Cache[iCache].m_iState = HF_CACHE_UNPROTECTED;
+        }
+        else if (HP_INSERT_ERROR_ILLEGAL == errInserted)
         {
             return false;
         }
@@ -1821,7 +1826,6 @@ bool CHashFile::Insert(HP_HEAPLENGTH nRecord, UINT32 nHash, void *pRecord)
 #endif // WIN32
 #endif // DO_COMMIT
     }
-    m_Cache[iCache].m_iState = HF_CACHE_UNPROTECTED;
     return true;
 }
 
