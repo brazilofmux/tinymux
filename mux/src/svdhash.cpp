@@ -1,6 +1,6 @@
 // svdhash.cpp -- CHashPage, CHashFile, CHashTable modules.
 //
-// $Id: svdhash.cpp,v 1.30 2005-07-31 15:36:56 sdennis Exp $
+// $Id: svdhash.cpp,v 1.31 2005-07-31 15:53:29 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -985,7 +985,7 @@ bool CHashPage::Split(CHashPage &hp0, CHashPage &hp1)
         }
     }
 #if 0
-    int nRecords0, nRecords1;   
+    int nRecords0, nRecords1;
     HP_HEAPLENGTH nAllocatedSize0, nAllocatedSize1;
     int    temp;
     hp0.GetStats(0, &nRecords0, &nAllocatedSize0, &temp);
