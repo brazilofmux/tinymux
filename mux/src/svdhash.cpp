@@ -1,6 +1,6 @@
 // svdhash.cpp -- CHashPage, CHashFile, CHashTable modules.
 //
-// $Id: svdhash.cpp,v 1.31 2005-07-31 15:53:29 sdennis Exp $
+// $Id: svdhash.cpp,v 1.32 2005-07-31 16:00:10 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -1705,7 +1705,8 @@ bool CHashFile::Insert(HP_HEAPLENGTH nRecord, UINT32 nHash, void *pRecord)
         m_Cache[iCache].m_hp.GetRange(m_nDirDepth, nStart, nEnd);
         if (iFileDir < nStart || nEnd < iFileDir)
         {
-            Log.WriteString("CHashFile::Insert - Directory points to the wrong page." ENDLINE);
+            Log.tinyprintf("CHashFile::Insert - Directory entry (0x%08X) points to the wrong page (0x%08X-0x%08X)." ENDLINE,
+                iFileDir, nStart, nEnd);
             return false;
         }
         int errInserted = m_Cache[iCache].m_hp.Insert(nRecord, nHash, pRecord);
@@ -1714,6 +1715,7 @@ bool CHashFile::Insert(HP_HEAPLENGTH nRecord, UINT32 nHash, void *pRecord)
             // The record was inserted successfully, so the page is dirty.
             //
             m_Cache[iCache].m_iState = HF_CACHE_UNPROTECTED;
+            break;
         }
         else if (HP_INSERT_ERROR_ILLEGAL == errInserted)
         {
@@ -1898,11 +1900,12 @@ HP_DIRINDEX CHashFile::FindFirstKey(UINT32 nHash)
     m_Cache[iCache].m_hp.GetRange(m_nDirDepth, nStart, nEnd);
     if (iFileDir < nStart || nEnd < iFileDir)
     {
-        Log.WriteString("CHashFile::Find - Directory points to the wrong page." ENDLINE);
+        Log.tinyprintf("CHashFile::Find - Directory entry (0x%08X) points to the wrong page (0x%08X-0x%08X)." ENDLINE,
+            iFileDir, nStart, nEnd);
         return HF_FIND_END;
     }
-    unsigned int numchecks;
 
+    unsigned int numchecks;
     HP_DIRINDEX iDir = m_Cache[iCache].m_hp.FindFirstKey(nHash, &numchecks);
 
     if (iDir == HP_DIR_EMPTY)
@@ -2073,7 +2076,8 @@ int CHashFile::ReadCache(HF_FILEOFFSET oPage, int *phits)
 
     int i = m_hpCacheLookup[nHash];
 
-    if (m_Cache[i].m_iState != HF_CACHE_EMPTY && m_Cache[i].m_o == oPage)
+    if (  m_Cache[i].m_iState != HF_CACHE_EMPTY
+       && m_Cache[i].m_o == oPage)
     {
         m_Cache[i].m_Age = m_iAgeNext++;
         (*phits)++;
@@ -2082,7 +2086,8 @@ int CHashFile::ReadCache(HF_FILEOFFSET oPage, int *phits)
 
     for (i = 0; i < m_nCache; i++)
     {
-        if (m_Cache[i].m_iState != HF_CACHE_EMPTY && m_Cache[i].m_o == oPage)
+        if (  m_Cache[i].m_iState != HF_CACHE_EMPTY
+           && m_Cache[i].m_o == oPage)
         {
             m_hpCacheLookup[nHash] = i;
             m_Cache[i].m_Age = m_iAgeNext++;
