@@ -1,6 +1,6 @@
 // game.cpp
 //
-// $Id: game.cpp,v 1.64 2005-07-31 00:18:33 sdennis Exp $
+// $Id: game.cpp,v 1.65 2005-07-31 15:45:37 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -1541,11 +1541,21 @@ void fork_and_dump(int key)
     int child = 0;
     bool bChildExists = false;
     mudstate.dumping = true;
-#endif
+    bool bAttemptFork = mudconf.fork_dump;
+#if !defined(HAVE_PREAD) \
+ || !defined(HAVE_PWRITE)
+    if (key & DUMP_FLATFILE)
+    {
+        // Don't attempt a fork()'ed @dump/flat without pread()/pwrite() support.
+        //
+        bAttemptFork = false;
+    }
+#endif // !HAVE_PREAD !HAVE_PWRITE
+#endif // WIN32
     if (key & (DUMP_STRUCT|DUMP_FLATFILE))
     {
 #ifndef WIN32
-        if (mudconf.fork_dump)
+        if (bAttemptFork)
         {
             child = fork();
         }
