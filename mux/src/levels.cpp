@@ -44,7 +44,7 @@ RLEVEL RxLevel(dbref thing)
 
     int i;
     RLEVEL rx;
-    for (rx=0, i=0; buff[i] && mux_ishex(buff[i]); i++)
+    for (rx=0, i=0; mux_ishex(buff[i]); i++)
     {
         rx = 16 * rx + mux_hex2dec(buff[i]);
     }
@@ -72,7 +72,7 @@ RLEVEL TxLevel(dbref thing)
     }
     for(tx=0, i=0; buff[i] && !mux_isspace[buff[i]]; ++i);
     if(buff[i])
-        for(++i; buff[i] && mux_ishex(buff[i]); ++i)
+        for(++i; mux_ishex(buff[i]); ++i)
             tx = 16 * tx + mux_hex2dec(buff[i]);
     return(tx);
 }
