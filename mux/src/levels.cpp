@@ -194,36 +194,30 @@ void notify_except2_rlevel2
 
 char *rxlevel_description(dbref player, dbref target)
 {
-    RLEVEL rl;
-    char *buff, *bp;
-    int otype;
+    // Allocate the return buffer.
+    //
+    int  otype = Typeof(target);
+    char *buff = alloc_mbuf("rxlevel_description");
+    char *bp   = buff;
+
+    // Store the header strings and object type.
+    //
+    safe_mb_str("RxLevel:", buff, &bp);
+
     int i;
-
-    /*
-     * Allocate the return buffer
-     */
-
-    otype = Typeof(target);
-    bp = buff = alloc_mbuf("rxlevel_description");
-
-    /*
-     * Store the header strings and object type
-     */
-
-    safe_mb_str((char *)"RxLevel:", buff, &bp);
-
-    rl = RxLevel(target);
+    RLEVEL rl = RxLevel(target);
     for (i = 0; i < mudconf.no_levels; ++i)
-        if((rl & mudconf.reality_level[i].value) == mudconf.reality_level[i].value)
+    {
+        if (  (rl & mudconf.reality_level[i].value)
+           == mudconf.reality_level[i].value)
         {
             safe_mb_chr(' ', buff, &bp);
             safe_mb_str(mudconf.reality_level[i].name, buff, &bp);
         }
+    }
 
-    /*
-     * Terminate the string, and return the buffer to the caller
-     */
-
+    // Terminate the string, and return the buffer to the caller.
+    //
     *bp = '\0';
     return buff;
 }
@@ -235,36 +229,30 @@ char *rxlevel_description(dbref player, dbref target)
 
 char *txlevel_description(dbref player, dbref target)
 {
-    RLEVEL tl;
-    char *buff, *bp;
-    int otype;
-    int i;
+    // Allocate the return buffer.
+    //
+    int otype = Typeof(target);
+    char *buff = alloc_mbuf("txlevel_description");
+    char *bp = buff;
 
-    /*
-     * Allocate the return buffer
-     */
-
-    otype = Typeof(target);
-    bp = buff = alloc_mbuf("txlevel_description");
-
-    /*
-     * Store the header strings and object type
-     */
-
+    // Store the header strings and object type.
+    //
     safe_mb_str((char *)"TxLevel:", buff, &bp);
 
-    tl = TxLevel(target);
+    int i;
+    RLEVEL tl = TxLevel(target);
     for (i = 0; i < mudconf.no_levels; ++i)
-        if((tl & mudconf.reality_level[i].value) == mudconf.reality_level[i].value)
+    {
+        if (  (tl & mudconf.reality_level[i].value)
+           == mudconf.reality_level[i].value)
         {
             safe_mb_chr(' ', buff, &bp);
             safe_mb_str(mudconf.reality_level[i].name, buff, &bp);
         }
+    }
 
-    /*
-     * Terminate the string, and return the buffer to the caller
-     */
-
+    // Terminate the string, and return the buffer to the caller.
+    //
     *bp = '\0';
     return buff;
 }
