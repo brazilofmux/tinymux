@@ -43,8 +43,8 @@ RLEVEL RxLevel(dbref thing)
     }
 
     int i;
-    RLEVEL rx;
-    for (rx=0, i=0; mux_ishex(buff[i]); i++)
+    RLEVEL rx = 0;
+    for (i = 0; mux_ishex(buff[i]); i++)
     {
         rx = 16 * rx + mux_hex2dec(buff[i]);
     }
@@ -53,28 +53,42 @@ RLEVEL RxLevel(dbref thing)
 
 RLEVEL TxLevel(dbref thing)
 {
-    char *buff;
-    int i;
-    RLEVEL tx;
-
-    buff = (char *)atr_get_raw(thing, A_RLEVEL);
-    if (!buff || strlen(buff) != 17)
-    switch(Typeof(thing))
+    const char *buff = atr_get_raw(thing, A_RLEVEL);
+    if (  !buff
+       || strlen(buff) != 17)
     {
+        switch(Typeof(thing))
+        {
         case TYPE_ROOM:
             return(mudconf.def_room_tx);
+
         case TYPE_PLAYER:
             return(mudconf.def_player_tx);
+
         case TYPE_EXIT:
             return(mudconf.def_exit_tx);
+
         default:
             return(mudconf.def_thing_tx);
+        }
     }
-    for(tx=0, i=0; buff[i] && !mux_isspace[buff[i]]; ++i);
-    if(buff[i])
-        for(++i; mux_ishex(buff[i]); ++i)
+
+    int i;
+    for (i = 0; buff[i] && !mux_isspace(buff[i]); i++)
+    {
+        ; // Nothing.
+    }
+
+    RLEVEL tx = 0;
+    if (buff[i])
+    {
+        i++; // BUG: Why are we skipping a character?
+        for ( ; mux_ishex(buff[i]); i++)
+        {
             tx = 16 * tx + mux_hex2dec(buff[i]);
-    return(tx);
+        }
+    }
+    return tx;
 }
 
 void notify_except_rlevel(dbref loc, dbref player, dbref exception, const char *msg, int xflags)
