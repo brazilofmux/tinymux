@@ -22,7 +22,7 @@ extern void cf_log_notfound(dbref, char *, const char *, char *);
 
 RLEVEL RxLevel(dbref thing)
 {
-    char *buff = (char *)atr_get_raw(thing, A_RLEVEL);
+    const char *buff = atr_get_raw(thing, A_RLEVEL);
     if (  NULL != buff
        || strlen(buff) != 17)
     {
