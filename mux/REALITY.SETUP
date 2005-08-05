@@ -1,0 +1,315 @@
+Reality levels are a means to forbid (or allow) interaction between objects
+in the same location.
+
+Visibility:
+Each object (player, room, exit, thing) has two lists of reality levels. 
+An Rx list, which describe what it can see and a Tx list, which describe 
+where it can be seen. Those are bitfields. In order for X to see Y a bitwise
+'and' is performed between X's RxLevel and Y's TxLevel. If the result is not
+0, then X sees Y. If the result is 0, as far as X is concerned, Y doesn't 
+exist. This affects contents lists, exit lists, look, say, pose, @emit, 
+@verb, connect/disconnect, has arrived/has left messages, exit and object 
+matching. 'here' and 'me' match always.
+It doesn't affect @remit, @pemit, page, WHO or channels.
+By default, all new objects are created with an RxLevel of 1 and TxLevel of 
+1. Rooms are an exception, created with an RxLevel of 1 and a TxLevel of 
+0xFFFFFFFF. Those default levels can be changed with configuration
+parameters.
+An object is always visible to itself, even if its Rx and Tx levels don't 
+match. (See examples below)
+
+Descriptions:
+For every reality level defined, you can define an attribute that serves as 
+description. If you look at something and match more than one of its 
+TxLevels, you'll see all the corresponding descriptions on the target 
+object. If the object doesn't have any descriptions for the matching levels,
+you'll see the regular @desc.
+The @adesc attribute on the target is only triggered if the target can see 
+the looker in turn. It's only triggered once, no matter how many descs the 
+looker sees. The @odesc is shown only to those people that see /both/ the 
+looker and the target.
+Through extension, @afail/@ofail and similar pairs (@adrop/@odrop, 
+@asucc/@osucc etc) work in the same way. @verb commands are similary 
+affected.
+Softcoded commands are only matched on the objects that can see the player.
+The player doesn't have to see the object. This includes commands in the
+Master Room.
+Exits are treated specially. In order to be able to use an exit name (or to
+use the 'move <exit>' command) the exit must be visible to the enactor. In
+order to pass through the exit, the exit must see the enactor in turn. There
+are reasons for this, which will become evident in the examples below.
+
+Configuration parameters:
+A few configuration parameters have been introduced to deal with the reality
+levels.
+
+        reality_level <name> <value> [<desc attribute name>]
+
+This directive can only be used in the config file (not with the @admin
+command) and should be repeated for each reality level you want to define.
+It defines a new level named <name> with a bitvalue of <value> and an 
+optional desc attribute. There is a limit of 8 characters on <name>, a 
+32-bit value on <value> (basically an unsigned long) and 32 characters on
+the attribute name. A maximum of 32 reality levels can be defined.
+
+        def_exit_tx <value>
+        def_exit_rx <value>
+        def_room_tx <value>
+        def_room_rx <value>
+        def_player_rx <value>
+        def_player_tx <value>
+        def_thing_rx <value>
+        def_thing_tx <value>
+
+These 8 directives define the default reality levels of newly created 
+objects. They can be set in the config file or with the @admin command. 
+Like above, <value> must be a decimal number.
+
+        wiz_always_real <0|1>
+
+If this parameter is set to 1 then wizards (and immortals on Rhost) will see
+everything and will be visible to everyone. Their effective Rx and Tx levels
+will always be 0xFFFFFFFF. Also settable in the config file and with the
+@admin command.
+
+Commands:
+Two wiz-only commands are used to set the reality levels of an object.
+
+        @rxlevel <object>=<list>
+        @txlevel <object>=<list>
+
+<list> is a space-separated list of level names that have to be set on the
+object. If a level name is prefixed with an exclamation mark (!) that level
+will be cleared from the object.
+WARNING: Changing the Tx levels of an object might make it invisible to you.
+In this case, you can still manipulate it by using his #dbref (or *player 
+for players).
+
+Functions:
+There are five functions that deal with reality levels.
+
+        hasrxlevel(<object>,<level>)
+        hastxlevel(<object>,<level>)
+These two functions check if an object has the specified Rx or Tx level.
+You must control <object>. They return 0 or 1 and #-1 in case the object
+does not exist or you don't have permissions.
+
+        rxlevel(<object>)
+        txlevel(<object>)
+These two functions return a space-separated list of the object's Rx or Tx
+levels. Again, you must control the object.
+
+        cansee(<obj1>,<obj2>)
+A wiz-only function, returns 1 of <obj1> can see <obj2> from a reality
+levels point of view. It doesn't check if the objects are in the same 
+location, the DARK/CLOAKED flags and so on. Just <obj1>'s Rx level against
+<obj2>'s Tx level.
+WARNING: If you are using it on MUX2.0 with /both/ reality levels and Wod
+Realms enabled, the function will perform both checks and the Wod Realms
+version checks against the DARK flag.
+
+Example 1: A simplified Witchcraft setup
+In Witchcraft, besides the various Gifted classes, characters can be spirits
+There are spirit realms to which the mundane can not travel. Therefore we
+will use 2 reality levels: Real and Ghost. Since some spirits can become
+solid for a limited period of time, we will also use an additional desc for
+the Ghost level, called GHOSTDESC. Therefore in the config file we will
+have:
+        reality_level Real 1
+        reality_level Ghost 2 GHOSTDESC
+
+Ghosts can pass through most mundane locks, so the exists should allows the
+ghosts to pass:
+        def_exit_rx 3
+
+Note that def_exit_tx isn't set. Why? Because ghosts see the mundane world 
+anyway, so a spirit character will have:
+        @txlevel <player>=!Real Ghost
+        @rxlevel <player>=Real Ghost
+Let's assume 3 players: 
+John is a Mundane. He won't see spirits.
+John's Rx: Real
+John's Tx: Real
+John's @desc: This is John.
+John's &GHOSTDESC: (Not important, since it's never visible)
+Johh's @adesc: %N has looked at you.
+John's @odesc: has looked at John.
+
+Jack is a Gifted. He will sense spirits, but is still made from flesh
+and blood so visible to mundanes.
+Jack's Rx: Real Ghost
+Jack's Tx: Real
+Jack's @desc: This is Jack.
+Jack's &GHOSTDESC: (Not important, since it's never visible)
+Jack's @adesc: %N has looked at you.
+Jack's @odesc: has looked at Jack.
+
+Frank is a ghost. He will see other spirits as well as mundanes, but won't 
+be visible to mundanes. He can also become visible to everybody.
+Frank's Rx: Real Ghost
+Frank's Tx: Ghost
+Frank's @desc: This is Frank, looking human.
+Frank's &GHOSTDESC: This is Frank's ghostly shape.
+Frank's @adesc: %N has looked at you.
+Frank's @odesc: has looked at Frank.
+
+Following are commands that each of the players enter and what they see.
+I'll assume the +materialize command is defined like:
+&CMD_MATERIALIZE <cmdobject>=$+materialize:@txlevel %#=Real; @pemit %#=You
+are now material.
+
+        John            |         Jack          |         Frank
+                        |                       |
+> l                     |                       |
+A room                  |                       |
+This is a bare room.    |                       |
+Contents:               |                       |
+Jack                    |                       |
+Obvious exits:          |                       |
+Out <O>                 |                       |
+                        |> l                    |
+                        |A room                 |
+                        |This is a bare room.   |
+                        |Contents:              |
+                        |John Frank             |
+                        |Obvious exits:         |
+                        |Out <O>                |
+                        |                       |> l
+                        |                       |A room
+                        |                       |This is a bare room.
+                        |                       |Contents:
+                        |                       |John Jack
+                        |                       |Obvious exits:
+                        |                       |Out <O>
+>l Jack                 |                       |
+Jack                    |John has looked at you.|John has looked at Jack.
+This is Jack.           |                       |
+>l Frank                |                       |
+I don't see that here.  |                       |
+                        |>l Frank               |
+                        |Frank                  |Jack has looked at you.
+                        |This is Frank's ghostly|
+                        |shape.                 |
+                        |                       |>l John
+                        |Frank has looked at    |John
+                        |John.                  |This is John.
+                        |                       |>+materialize
+                        |                       |You are now material.
+>l Frank                |                       |
+Frank                   |John has looked at     |Frank has looked at you.
+This is Frank, looking  |Frank.                 |
+human.                  |                       |
+                        |>l Frank               |
+Jack has looked at      |Frank                  |John has looked at you.
+Frank.                  |This is Frank, looking |
+                        |human.                 |
+                        |This is Frank's ghostly|
+                        |shape.                 |
+
+
+Example 2: A WoD setup
+
+The reality levels will be defined like this:
+reality_level           Real 1
+reality_level           Obf1 2
+reality_level           Obf2 4
+reality_level           Obf3 8 OBFDESC
+reality_level           Obf4 16 OBFDESC
+reality_level           Obf5 32 OBFDESC
+reality_level           Umbra 64 UMBRADESC
+reality_level           Fae 128 FAEDESC
+reality_level           Shadow 256 SHADOWDESC
+reality_level           All 511
+
+5 levels of Obfuscation, Umbra, Dreaming, Wraiths. 'All' is a handy
+replacement for all levels, useful for wizards and wizobjects that should 
+be visible on all levels. Also useful when you want to set an object's 
+levels to something without knowing what he had before.
+@rxlevel #276=!All Real
+!All will clear all levels, then the object will gain the Real level.
+There is more than one Obfuscation level because of the relation between
+Auspex and Obfuscation.
+A vampire with Obfuscate 2, should not be visible by one with Auspex 1.
+However one with Auspex 3 should see another vampire with Obfuscate 1, 2
+/or/ 3.
+Obfuscated players can move if they have Obf > 1. Umbral and Shadow players
+should also be able to see most of the exits. So the exits at creation
+should have default levels of Real + Obf2 + Obf3 + Obf4 + Obf5 + Umbra + 
+Shadow = 1 + 4 + 8 + 16 + 32 + 64 + 256 = 381
+        def_exit_rx 381
+        def_exit_tx 381
+
+Obf1 is not included since an Obfuscated vampire should not be able to move
+if it only has Obf1. Therefore they won't see the exits. If you want them 
+to be able to see the exits, but not to use them, change the default Tx of 
+the exits:
+        def_exit_rx 381
+        def_exit_tx 383
+
+Joe the Mortal will have an RxLevel: Real and a TxLevel: Real
+Jack the Malk, who likes to walk around Obfuscated and has Obfuscate 2 will
+have an RxLevel: Real (he sees what the mortals see) but a TxLevel: Obf2
+Jimmy the Nossie, who is using the Mask and has Obfuscate 4, but doesn't 
+try to make himself invisible will have an RxLevel: Real (as Jack) 
+and a TxLevel: Real Obf4. He will also set his @desc to what the mortals see and 
+&OBFDESC to his real slimy desc. Simply put, he will be visible to mortals,
+but not with his real desc.
+Aldrin the Gangrel, has Auspex 4 and activates it. Therefore, his TxLevel 
+will still be Real, but RxLevel: Real Obf1 Obf2 Obf3 Obf4 (all of them). So
+he can see Joe, Jack and Jimmy's both descs.
+Joe, on the other hand, won't see Jack at all. He will still see Jimmy, but
+only Jimmy's @desc, not the OBFDESC
+
+Frida the Fae... will have RxLevel: Real Fae and TxLevel: Real Fae. @desc
+set to the mundane desc, &FAEDESC set to the Chimerical desc.
+Emily the Enchanted will have an RxLevel: Real Fae, but the TxLevel: Real.
+No &FAEDESC on her, although she'll be able to see it the one on Frida.
+Gil the Garou, while travelling through the Umbra, will have RxLevel: Umbra
+and TxLevel: Umbra. &UMBRADESC is his friend. He won't see mortals or other
+characters who are not in the Umbra.
+Barbie the Bastet, who's only peeking in the Umbra, without going there, 
+will have RxLevel: Umbra, TxLevel: Real. Dangerous position since she
+can't see the things that see her.
+Deanna the Drake, who activates her spirit vision, will have 
+RxLevel: Real Umbra and TxLevel: Real. She will see characters in Umbra and
+real world at the same time and perceive the desc appropiate to the realm 
+the ohter character is in.
+Wanda the Wraith: RxLevel: Real Shadow, TxLevel: Shadow. Her @desc
+would be empty, but the &SHADOWDESC should be set.
+Marie the Mortal+ Medium: RxLevel: Real Shadow, TxLevel: Real
+
+Global code objects that all characters should be able to use: 
+RxLevel: All, TxLevel: All
+
+Example 3: Softcode
+Considering the config directives from example 2 and assuming a function
+getstat(<dbref>,<stat>) that will return the value of a player's stat from
+the sheet here are softcode examples that implement some of the WoD powers.
+In a real game you would have to use some more checks, of course.
+
+@create Reality Levels Commands (RLS)
+&CMD_OBFON rls=$+obf/on:@switch [setr(0, getstat(%#,Obfuscate))]=0, @pemit 
+%#=You don't have Obfuscate!, {@txlevel %#=!All Obf%q0; @pemit %#=You are 
+now invisible.}
+&CMD_OBFOFF rls=$+obf/off:@txlevel %#=Real; @pemit %#=You are now visible.
+@@ Note: +obf/on clears all TxLevels before setting the appropiate Obf
+@@ This is necesary, because a character might advance from Obf2 to
+@@ Obf3 and he should be visible /only/ on the Obf3 level.
+@@ +obf/off simply sets the Real Tx level, without clearing the Obf. The
+@@ reason is the Mask. Players with Obf3 or higher who use the Mask should
+@@ +obf/on, then +obf/off after approval and everything is set.
+&CMD_AUSPEXON rls=$+auspex/on:@switch [setr(0, getstat(%#, Auspex))]=0, 
+@pemit %#=You don't have Auspex!, {@rxlevel %#=[iter(lnum(1, %q0), Obf##)]; 
+@pemit %#=Auspex enabled.}
+&CMD_AUSPEXOFF rls=$+auspex/off:@switch [hasrxlevel(%#, Obf1)]=0, @pemit %#=
+You don't have Auspex enabled!, {@rxlevel %#=[iter(lnum(1, 5), !Obf##)];
+@pemit %#=Auspex disabled.}
+&CMD_UMBRAENTER rls=$+umbra/enter:@rxlevel %#=!Real Umbra; @txlevel %#=
+!Real Umbra; @pemit %#=You are now in the Umbra.
+&CMD_UMBRALEAVE rls=$+umbra/leave:@rxlevel %#=Real !Umbra; @txlevel %#=
+Real !Umbra; @pemit %#=You left the Umbra.
+&CMD_PEEKON rls=$+peek/on:@switch hastxlevel(%#,Umbra)=1, {@rxlevel %#=Real
+!Umbra; @pemit %#=You are now peeking in the real world}, {@rxlevel %#=!Real
+Umbra; @pemit %#=You are now peeking into the Umbra}
+&CMD_PEEKOFF rls=$+peek/off:@rxlevel %#=!Real !Umbra [setinter(Real Umbra,
+txlevel(%#))]; @pemit %#=You are no longer peeking.
