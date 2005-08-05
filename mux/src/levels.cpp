@@ -382,14 +382,14 @@ void do_txlevel(dbref player, dbref cause, dbref enactor, int nargs, int key, ch
     while(*arg)
     {
         negate = 0;
-        while(*arg && mux_isspace[*arg])
+        while(*arg && mux_isspace(*arg))
             arg++;
         if(*arg == '!')
         {
             negate = 1;
             ++arg;
         }
-        for(i=0; *arg && !mux_isspace[*arg]; ++arg)
+        for(i=0; *arg && !mux_isspace(*arg); ++arg)
             if(i < 8)
                 lname[i++] = *arg;
         lname[i] = '\0';
