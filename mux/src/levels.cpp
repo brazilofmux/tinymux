@@ -259,61 +259,89 @@ char *txlevel_description(dbref player, dbref target)
 
 RLEVEL find_rlevel(char *name)
 {
-    int i;
-
-    for(i=0; i < mudconf.no_levels; ++i)
-        if(!strcasecmp(name, mudconf.reality_level[i].name))
+    for (int i = 0; i < mudconf.no_levels; i++)
+    {
+        if (strcasecmp(name, mudconf.reality_level[i].name) == 0)
+        {
             return mudconf.reality_level[i].value;
+        }
+    }
     return 0;
 }
 
-void do_rxlevel(dbref player, dbref cause, dbref enactor, int nargs, int key, char *object, char *arg)
+void do_rxlevel
+(
+    dbref player,
+    dbref cause,
+    dbref enactor,
+    int   nargs,
+    int   key,
+    char *object,
+    char *arg
+)
 {
-    dbref thing;
-    int negate, i;
-    RLEVEL result, ormask, andmask;
-    char lname[9], *buff;
-
-    if (!arg || !*arg) {
+    if (!arg || !*arg)
+    {
         notify_quiet(player, "I don't know what you want to set!");
         return;
     }
 
-    /* find thing */
-    if ((thing = match_controlled(player, object)) == NOTHING)
-        return;
-
-    ormask = 0;
-    andmask = ~ormask;
-    while(*arg)
+    // Find thing.
+    //
+    dbref thing = match_controlled(player, object);
+    if (NOTHING == thing)
     {
-        negate = 0;
-        while(*arg && mux_isspace[*arg])
+        return;
+    }
+
+    char lname[9];
+    RLEVEL ormask = 0;
+    RLEVEL andmask = ~ormask;
+    while (*arg)
+    {
+        int negate = 0;
+        while (  *arg != '\0'
+              && mux_isspace(*arg))
+        {
             arg++;
-        if(*arg == '!')
+        }
+
+        if (*arg == '!')
         {
             negate = 1;
             ++arg;
         }
-        for(i=0; *arg && !mux_isspace[*arg]; ++arg)
-            if(i < 8)
-                lname[i++] = *arg;
-        lname[i] = '\0';
-        if(!lname[0])
+
+        int i;
+        for (i = 0; *arg && !mux_isspace(*arg); arg++)
         {
-            if(negate)
+            if (i < 8)
+            {
+                lname[i++] = *arg;
+            }
+        }
+
+        lname[i] = '\0';
+        if (!lname[0])
+        {
+            if (negate)
+            {
                 notify(player, "You must specify a reality level to clear.");
+            }
             else
+            {
                 notify(player, "You must specify a reality level to set.");
+            }
             return;
         }
-        result = find_rlevel(lname);
-        if(!result)
+
+        RLEVEL result = find_rlevel(lname);
+        if (!result)
         {
             notify(player, "No such reality level.");
             continue;
         }
-        if(negate)
+        if (negate)
         {
             andmask &= ~result;
             notify(player, "Cleared.");
@@ -325,8 +353,9 @@ void do_rxlevel(dbref player, dbref cause, dbref enactor, int nargs, int key, ch
         }
     }
 
-    /* Set the Rx Level */
-    buff = alloc_lbuf("do_rxlevel");
+    // Set the Rx Level.
+    //
+    char *buff = alloc_lbuf("do_rxlevel");
     sprintf(buff, "%08X %08X", RxLevel(thing) & andmask | ormask, TxLevel(thing));
     atr_add_raw(thing, A_RLEVEL, buff);
     free_lbuf(buff);
