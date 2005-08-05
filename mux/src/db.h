@@ -1,6 +1,6 @@
 // db.h
 //
-// $Id: db.h,v 1.6 2005-05-26 00:06:01 sdennis Exp $
+// $Id: db.h,v 1.7 2005-08-05 15:37:50 sdennis Exp $
 //
 
 #ifndef __DB_H
@@ -250,7 +250,7 @@ char *getstring_noalloc(FILE *f, int new_strings);
          (thing)=(next), (next)=Next(next))
 #define DO_WHOLE_DB(thing) \
     for ((thing)=0; (thing)<mudstate.db_top; (thing)++)
-#define	DO_WHOLE_DB_BACKWARDS(thing) \
-	for ((thing)=mudstate.db_top-1; (thing)>=0; (thing)--)
+#define DO_WHOLE_DB_BACKWARDS(thing) \
+    for ((thing)=mudstate.db_top-1; (thing)>=0; (thing)--)
 
 #endif // !__DB_H

@@ -1,6 +1,6 @@
 // funceval.cpp -- MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.86 2005-08-05 15:35:14 sdennis Exp $
+// $Id: funceval.cpp,v 1.87 2005-08-05 15:37:50 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -3570,8 +3570,8 @@ void real_regmatch(const char *search, const char *pattern, char *registers,
                 mudstate.global_regs[curq] = alloc_lbuf("fun_regmatch");
             }
             int len;
-	    len = pcre_copy_substring(search, ovec, matches, i,
-				      mudstate.global_regs[curq], LBUF_SIZE);
+            len = pcre_copy_substring(search, ovec, matches, i,
+                                      mudstate.global_regs[curq], LBUF_SIZE);
             mudstate.glob_reg_len[curq] = (len > 0 ? len : 0);
         }
     }

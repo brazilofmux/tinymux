@@ -1,6 +1,6 @@
 // speech.cpp -- Commands which involve speaking.
 //
-// $Id: speech.cpp,v 1.19 2005-08-05 15:35:14 sdennis Exp $
+// $Id: speech.cpp,v 1.20 2005-08-05 15:37:50 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -564,7 +564,7 @@ static void page_return(dbref player, dbref target, const char *tag,
             char *p = tprintf("%s message from %s: %s", tag,
                 Moniker(target), str2);
 #ifdef BT_ENABLED
-	    if (  Wizard(target)
+            if (  Wizard(target)
                || !In_IC_Loc(target))
             {
                 notify_with_cause_ooc(player, target, p);

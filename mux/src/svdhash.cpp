@@ -1,6 +1,6 @@
 // svdhash.cpp -- CHashPage, CHashFile, CHashTable modules.
 //
-// $Id: svdhash.cpp,v 1.32 2005-07-31 16:00:10 sdennis Exp $
+// $Id: svdhash.cpp,v 1.33 2005-08-05 15:37:50 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -2940,7 +2940,7 @@ again:
     {
         // Problems.
         //
-    	fprintf(stderr, "We are freeing unallocated pointers (0x%08X) on %s, %d\n", pointer, file, line);
+        fprintf(stderr, "We are freeing unallocated pointers (0x%08X) on %s, %d\n", pointer, file, line);
     }
 }
 
