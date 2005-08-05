@@ -4,7 +4,7 @@
 #include "externs.h"
 
 /* local.cpp
- *  
+ *
  * Inspired by Penn's local extensions; implemented for MUX2.4 by
  * M. Hassman (June 2005)
  */
@@ -15,7 +15,7 @@ void local_startup(void)
 {
 }
 
-// Called prior to the game database being dumped.   Called by the 
+// Called prior to the game database being dumped.   Called by the
 // periodic dump timer, @restart, @shutdown, etc.  The argument
 // dump_type is one of the 5 DUMP_I_x defines declared in externs.h
 //
@@ -46,7 +46,7 @@ void local_connect(dbref player, int isnew, int num)
 }
 
 // Called when player disconnects from the game.  The parameter 'num' is
-// the number of connections the player had upon being disconnected.  
+// the number of connections the player had upon being disconnected.
 // Any value greater than 1 indicates multiple connections.
 //
 void local_disconnect(dbref player, int num)

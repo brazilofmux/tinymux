@@ -1,6 +1,6 @@
 // wiz.cpp -- Wizard-only commands.
 //
-// $Id: wiz.cpp,v 1.14 2005-04-02 04:42:50 sdennis Exp $
+// $Id: wiz.cpp,v 1.15 2005-08-05 15:35:14 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -247,7 +247,7 @@ void do_teleport
             init_match(executor, arg1, NOTYPE);
             match_everything(0);
             dbref victim = noisy_match_result();
-    
+
             if (Good_obj(victim))
             {
                 do_teleport_single(executor, caller, enactor, key, victim,

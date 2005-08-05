@@ -20,5 +20,5 @@ extern char *	txlevel_description(dbref, dbref);
 extern void	decompile_rlevels(dbref, dbref, char *);
 extern RLEVEL	find_rlevel(char *);
 extern void 	did_it_rlevel(dbref, dbref, int, const char *, int,const char *, int, char *[], int);
-            
+
 #endif /* __LEVELS_H */

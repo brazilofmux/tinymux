@@ -1,6 +1,6 @@
 // help.cpp -- Commands for giving help.
 //
-// $Id: help.cpp,v 1.11 2004-08-16 05:14:07 sdennis Exp $
+// $Id: help.cpp,v 1.12 2005-08-05 15:35:14 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -333,7 +333,7 @@ bool ReportTopic(dbref executor, struct help_entry *htab_entry, int iHelpfile,
         }
         else
         {
-            safe_str(line, result, &bp); 
+            safe_str(line, result, &bp);
         }
     }
     *bp = '\0';

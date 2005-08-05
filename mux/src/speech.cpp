@@ -1,6 +1,6 @@
 // speech.cpp -- Commands which involve speaking.
 //
-// $Id: speech.cpp,v 1.18 2005-08-05 15:27:43 sdennis Exp $
+// $Id: speech.cpp,v 1.19 2005-08-05 15:35:14 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -286,7 +286,7 @@ void do_say(dbref executor, dbref caller, dbref enactor, int key, char *message)
             }
             else
             {
- 
+
 #ifdef REALITY_LVLS
                 notify_except_rlevel(loc, executor, -1, message, SAY_EMIT);
 #else
@@ -609,7 +609,7 @@ static bool page_check(dbref player, dbref target)
     else if (  !could_doit(player, target, A_LPAGE)
             || (  !Wizard(player)
                && In_IC_Loc(target)
-               && !Wizard(target))) 
+               && !Wizard(target)))
 #else
     else if (!could_doit(player, target, A_LPAGE))
 #endif

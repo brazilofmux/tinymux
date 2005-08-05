@@ -1,6 +1,6 @@
 // game.cpp
 //
-// $Id: game.cpp,v 1.66 2005-08-05 15:27:43 sdennis Exp $
+// $Id: game.cpp,v 1.67 2005-08-05 15:35:14 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -126,7 +126,7 @@ bool regexp_match
     //
     const int ovecsize = 6 * nargs;
     int *ovec = new int[ovecsize];
- 
+
     /*
      * Now we try to match the pattern. The relevant fields will
      * automatically be filled in by this.
@@ -1781,7 +1781,7 @@ static int load_game(int ccPageFile)
     }
 #ifdef BT_ENABLED
     LoadSpecialObjects();
-#endif 
+#endif
     STARTLOG(LOG_STARTUP, "INI", "LOAD");
     log_text("Load complete.");
     ENDLOG;
@@ -1810,8 +1810,8 @@ bool list_check
     while (NOTHING != thing)
     {
 #ifdef REALITY_LVLS
-        if ((thing != player) 
-           && (!(No_Command(thing))) 
+        if ((thing != player)
+           && (!(No_Command(thing)))
            && IsReal(thing, player))
 #else
         if (  thing != player
@@ -2699,7 +2699,7 @@ void cpu_init(void)
 int DCL_CDECL main(int argc, char *argv[])
 {
 #if defined(__INTEL_COMPILER)
-    cpu_init(); 
+    cpu_init();
 #endif
 
     build_version();

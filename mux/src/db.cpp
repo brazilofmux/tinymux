@@ -1,6 +1,6 @@
 // db.cpp
 //
-// $Id: db.cpp,v 1.57 2005-08-05 15:27:43 sdennis Exp $
+// $Id: db.cpp,v 1.58 2005-08-05 15:35:14 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -241,8 +241,8 @@ ATTR attr[] =
     {"Techtime",       A_TECHTIME,      AF_MDARK | AF_WIZARD},
     {"*EconParts",     A_ECONPARTS,     AF_DARK | AF_NOPROG | AF_NOCMD | AF_INTERNAL},
     {"PCequip",        A_PCEQUIP,       AF_MDARK},
-    {"Amechdest",      A_AMECHDEST,     AF_MDARK}, 
-    {"MechPrefID",     A_MECHPREFID,    AF_MDARK|AF_WIZARD}, 
+    {"Amechdest",      A_AMECHDEST,     AF_MDARK},
+    {"MechPrefID",     A_MECHPREFID,    AF_MDARK|AF_WIZARD},
     {"Heatchars",      A_HEATCHARS,     AF_ODARK},
 #define PLSTAT_MODE (AF_DARK | AF_NOPROG | AF_NOCMD | AF_INTERNAL)
     {"PLHEALTH",       A_HEALTH,        PLSTAT_MODE},

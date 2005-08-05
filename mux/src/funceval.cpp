@@ -1,6 +1,6 @@
 // funceval.cpp -- MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.85 2005-08-05 15:27:43 sdennis Exp $
+// $Id: funceval.cpp,v 1.86 2005-08-05 15:35:14 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -1572,7 +1572,7 @@ FUNCTION(fun_mail)
         safe_str("#-1 NO SUCH MESSAGE", buff, bufc);
         return;
     }
-    
+
     const char *p = mail_fetch_message(playerask, num);
     if (p)
     {

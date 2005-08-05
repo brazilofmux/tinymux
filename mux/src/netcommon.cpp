@@ -1,6 +1,6 @@
 // netcommon.cpp
 //
-// $Id: netcommon.cpp,v 1.48 2005-08-05 15:27:43 sdennis Exp $
+// $Id: netcommon.cpp,v 1.49 2005-08-05 15:35:14 sdennis Exp $
 //
 // This file contains routines used by the networking code that do not
 // depend on the implementation of the networking code.  The network-specific
@@ -2173,7 +2173,7 @@ static bool check_connect(DESC *d, char *msg)
                 fcache_dump(d, FC_CREA_NEW);
                 announce_connect(player, d);
 
-                // Since it is on the create call, assume connection count 
+                // Since it is on the create call, assume connection count
                 // is 0 and indicate the connect is a new character.
                 //
                 local_connect(player, 1, 0);

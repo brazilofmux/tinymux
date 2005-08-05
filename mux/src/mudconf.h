@@ -1,6 +1,6 @@
 // mudconf.h
 //
-// $Id: mudconf.h,v 1.29 2005-08-05 15:27:43 sdennis Exp $
+// $Id: mudconf.h,v 1.30 2005-08-05 15:35:14 sdennis Exp $
 //
 
 #ifndef __CONF_H
@@ -282,7 +282,7 @@ struct confdata
     char *hcode_db;         /* Hardcode stuff */
     char *econ_db;          /* Econ Hardcode stuff */
     char *mech_db;          /* Mecha templates */
-    char *map_db;           /* Map templates */ 
+    char *map_db;           /* Map templates */
 #endif
     unsigned char    markdata[8];  /* Masks for marking/unmarking */
     CLinearTimeDelta rpt_cmdsecs;  /* Reporting Threshhold for time taken by command */

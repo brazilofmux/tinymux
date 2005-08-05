@@ -1,6 +1,6 @@
 // flags.h -- Object flags.
 //
-// $Id: flags.h,v 1.7 2005-08-05 15:27:43 sdennis Exp $
+// $Id: flags.h,v 1.8 2005-08-05 15:35:14 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -328,8 +328,8 @@ extern char *MakeCanonicalFlagName
 #define c_Connected(x)      s_Flags((x), FLAG_WORD2, Flags2(x) & ~CONNECTED)
 #ifdef BT_ENABLED
 #define s_Slave(x)          s_Flags((x), FLAG_WORD2, Flags2(x) | SLAVE)
-#define s_Dark(x)           s_Flags((x), FLAG_WORD1, Flags(x) | DARK) 
-#define s_Inherit(x)        s_Flags((x), FLAG_WORD1, Flags(x) | INHERIT) 
+#define s_Dark(x)           s_Flags((x), FLAG_WORD1, Flags(x) | DARK)
+#define s_Inherit(x)        s_Flags((x), FLAG_WORD1, Flags(x) | INHERIT)
 #define Alive(x)            (isPlayer(x) || (Puppet(x) && Has_contents(x)))
 #define isRobot(x)          ((Flags(x) & ROBOT) != 0)
 #endif

@@ -1,6 +1,6 @@
 // comsys.cpp
 //
-// $Id: comsys.cpp,v 1.29 2004-12-30 23:29:19 sdennis Exp $
+// $Id: comsys.cpp,v 1.30 2005-08-05 15:35:14 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -2257,7 +2257,7 @@ void do_comdisconnect(dbref player)
         char *CurrentChannel = c->channels[i];
         bool bFound = false;
         int j;
- 
+
         for (j = 0; j < i; j++)
         {
             if (strcmp(c->channels[j], CurrentChannel) == 0)
@@ -2285,7 +2285,7 @@ void do_comconnect(dbref player)
         char *CurrentChannel = c->channels[i];
         bool bFound = false;
         int j;
- 
+
         for (j = 0; j < i; j++)
         {
             if (strcmp(c->channels[j], CurrentChannel) == 0)

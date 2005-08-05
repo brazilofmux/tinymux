@@ -1,6 +1,6 @@
 // flags.cpp -- Flag manipulation routines.
 //
-// $Id: flags.cpp,v 1.18 2004-07-24 05:46:05 sdennis Exp $
+// $Id: flags.cpp,v 1.19 2005-08-05 15:35:14 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -228,13 +228,13 @@ bool fh_xcode_bit(dbref target, dbref player, FLAG flag, int fflags, bool reset)
 {
     int got_xcode;
     int new_xcode;
-                                                                                                                                                                                      
+
     got_xcode = Hardcode(target);
     fh_wiz(target, player, flag, fflags, reset);
     new_xcode = Hardcode(target);
     handle_xcode(player, target, got_xcode, new_xcode);
     return 1;
-} 
+}
 #endif
 
 /* ---------------------------------------------------------------------------

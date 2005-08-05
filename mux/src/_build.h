@@ -1,9 +1,9 @@
 // _build.h
 //
-// $Id: _build.h,v 1.43 2005-07-15 03:19:13 sdennis Exp $
+// $Id: _build.h,v 1.44 2005-08-05 15:35:14 sdennis Exp $
 //
 // MUX 2.4
-// Copyright (C) 2005 Stephen Dennis. 
+// Copyright (C) 2005 Stephen Dennis.
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd.
 // All rights not explicitly given are reserved.
 //

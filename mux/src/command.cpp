@@ -1,6 +1,6 @@
 // command.cpp -- command parser and support routines.
 //
-// $Id: command.cpp,v 1.51 2005-08-05 15:27:43 sdennis Exp $
+// $Id: command.cpp,v 1.52 2005-08-05 15:35:14 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -893,7 +893,7 @@ int In_IC_Loc(dbref player)
         }
     }
     return In_Character(d);
-} 
+}
 
 #endif
 
@@ -1994,7 +1994,7 @@ char *process_command
                     // All the switches given a command shouldn't exceed 200 chars together
                     char switch_buff[200];
                     char *switch_ptr;
-                    sprintf(switch_buff, "%.199s", pSlash); 
+                    sprintf(switch_buff, "%.199s", pSlash);
                     mux_strtok_src(&ttswitch, switch_buff);
                     mux_strtok_ctl(&ttswitch, "/");
                     switch_ptr = mux_strtok_parse(&ttswitch);
@@ -2015,7 +2015,7 @@ char *process_command
                 }
             }
             else
-            { 
+            {
                 // Switch exists but no switches allowed for command.
                 //
                 cval = 2;
