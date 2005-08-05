@@ -73,6 +73,8 @@ RLEVEL TxLevel(dbref thing)
         }
     }
 
+    // Skip the first field.
+    //
     int i;
     for (i = 0; buff[i] && !mux_isspace(buff[i]); i++)
     {
@@ -82,7 +84,12 @@ RLEVEL TxLevel(dbref thing)
     RLEVEL tx = 0;
     if (buff[i])
     {
-        i++; // BUG: Why are we skipping a character?
+        // Skip space found above.
+        //
+        i++;
+
+        // Decode second field.
+        //
         for ( ; mux_ishex(buff[i]); i++)
         {
             tx = 16 * tx + mux_hex2dec(buff[i]);
@@ -91,15 +98,28 @@ RLEVEL TxLevel(dbref thing)
     return tx;
 }
 
-void notify_except_rlevel(dbref loc, dbref player, dbref exception, const char *msg, int xflags)
+void notify_except_rlevel
+(
+    dbref loc,
+    dbref player,
+    dbref exception,
+    const char *msg,
+     int xflags
+)
 {
-    dbref first;
-
-    if (loc != exception && IsReal(loc, player))
+    if (  loc != exception
+       && IsReal(loc, player))
+    {
         notify_check(loc, player, msg,
             (MSG_ME_ALL | MSG_F_UP | MSG_S_INSIDE | MSG_NBR_EXITS_A| xflags));
-    DOLIST(first, Contents(loc)) {
-        if (first != exception && IsReal(first, player)) {
+    }
+
+    dbref first;
+    DOLIST(first, Contents(loc))
+    {
+        if (  first != exception
+           && IsReal(first, player))
+        {
             notify_check(first, player, msg,
                 (MSG_ME | MSG_F_DOWN | MSG_S_OUTSIDE | xflags));
         }
