@@ -4657,7 +4657,8 @@ CANSEE()
 
   FUNCTION: cansee(<looker>, <lookee>[,<lookee_action>])
 
-  Only usable if the Realms package is enabled.
+  NOTE: This function is not available unless WOD Realms was enabled at
+  compile-time.
 
   CANSEE returns 1 or 0 depending on whether it's possible for the looker
   to see the lookee or not. This is useful for wizard code in the master
@@ -6645,16 +6646,14 @@ FUNCTION CLASSES (continued)
 
   Relational:                EQ GT GTE LT LTE MAX MIN NEQ
 
-  Realms:                    CANSEE
-
   Side-Effect Functions:     CREATE EMIT LINK OEMIT PEMIT REMIT SET TEL
+
+  Stack:                     EMPTY ITEMS LSTACK PEEK POP PUSH
 
 { 'help function classes4' for more }
 
 & FUNCTION CLASSES4
 FUNCTION CLASSES (continued)
-
-  Stack:                     EMPTY ITEMS LSTACK PEEK POP PUSH
 
   Strings:                   ACCENT AFTER ALPHAMAX ALPHAMIN BEFORE CAPSTR CASE
                              CAT CENTER CHR COMP DECRYPT DELETE EDIT ENCRYPT
@@ -6672,6 +6671,11 @@ FUNCTION CLASSES (continued)
 
   Trigonometric:             ACOS ASIN ATAN COS CTU DIST2D DIST3D PI SIN TAN
                              VADD VCROSS VDIM VDOT VMAG VMUL VSUB VUNIT
+
+  WOD Realms (optional):     CANSEE
+
+  Reality Levels (optional): HASRXLEVEL HASTXLEVEL LISTRLEVELS RXLEVEL
+                             TXLEVEL
 
 & FUNCTION LIST
 FUNCTION LIST
@@ -6703,48 +6707,48 @@ FUNCTION LIST (continued)
 
     GET_EVAL()  GRAB()      GRABALL()   GREP()      GREPI()     GT()
     GTE()       HASATTR()   HASATTRP()  HASFLAG()   HASPOWER()  HASQUOTA()
-    HASTYPE()   HOME()      HOST()      IABS()      IADD()      IDIV()
-    IDLE()      IF()        IFELSE()    ILEV()      IMUL()      INC()
-    INDEX()     INSERT()    INZONE()    ISDBREF()   ISIGN()     ISINT()
-    ISNUM()     ISRAT()     ISUB()      ISWORD()    ITEMIZE()   ITEMS()
-    ITER()      LADD()      LAND()      LAST()      LATTR()     LATTRCMDS()
-    LATTRP()    LCMDS()     LCON()      LCSTR()     LDELETE()   LEXITS()
-    LFLAGS()    LINK()      LIST()      LIT()       LJUST()     LN()
-    LNUM()      LOC()       LOCALIZE()  LOCATE()    LOCK()      LOG()
-    LOR()       LPARENT()   LPORTS()    LPOS()      LRAND()     LROOMS()
-    LSTACK()    LT()        LTE()       LWHO()      MAIL()      MAILFROM()
-    MAP()       MATCH()     MATCHALL()  MAX()       MEMBER()    MERGE()
-    MID()       MIN()       MIX()       MOD()       MONEY()     MONIKER()
-    MOTD()      MTIME()     MUDNAME()   MUL()       MUNGE()     NAME()
-    NEARBY()    NEQ()       NEXT()      NOT()       NULL()      NUM()
-    OBJ()       OBJEVAL()   OBJMEM()    OEMIT()     OR()        ORBOOL()
-    ORD()       ORFLAGS()   OWNER()     PACK()      PARENT()    PARSE()
-    PEEK()      PEMIT()     PFIND()     PI()        PICKRAND()  PLAYMEM()
+    HASRXLEVEL()HASTXLEVEL()HASTYPE()   HOME()      HOST()      IABS()
+    IADD()      IDIV()      IDLE()      IF()        IFELSE()    ILEV()
+    IMUL()      INC()       INDEX()     INSERT()    INZONE()    ISDBREF()
+    ISIGN()     ISINT()     ISNUM()     ISRAT()     ISUB()      ISWORD()
+    ITEMIZE()   ITEMS()     ITER()      LADD()      LAND()      LAST()
+    LATTR()     LATTRCMDS() LATTRP()    LCMDS()     LCON()      LCSTR()
+    LDELETE()   LEXITS()    LFLAGS()    LINK()      LIST()      LISTRLEVELS()
+    LIT()       LJUST()     LN()        LNUM()      LOC()       LOCALIZE()
+    LOCATE()    LOCK()      LOG()       LOR()       LPARENT()   LPORTS()
+    LPOS()      LRAND()     LROOMS()    LSTACK()    LT()        LTE()
+    LWHO()      MAIL()      MAILFROM()  MAP()       MATCH()     MATCHALL()
+    MAX()       MEMBER()    MERGE()     MID()       MIN()       MIX()
+    MOD()       MONEY()     MONIKER()   MOTD()      MTIME()     MUDNAME()
+    MUL()       MUNGE()     NAME()      NEARBY()    NEQ()       NEXT()
+    NOT()       NULL()      NUM()       OBJ()       OBJEVAL()   OBJMEM()
+    OEMIT()     OR()        ORBOOL()    ORD()       ORFLAGS()   OWNER()
+    PACK()      PARENT()    PARSE()     PEEK()      PEMIT()     PFIND()
 
 ("help function list3" for more)
 
 & FUNCTION LIST3
 FUNCTION LIST (continued)
 
-    PMATCH()    POLL()      POP()       PORTS()     POS()       POSS()
-    POWER()     POWERS()    PUSH()      R()         RAND()      REGMATCH()
-    REGMATCHI() REGRAB()    REGRABALL() REGRABALLI()REGRABI()   REMAINDER()
-    REMIT()     REMOVE()    REPEAT()    REPLACE()   REST()      REVERSE()
-    REVWORDS()  RIGHT()     RJUST()     RLOC()      ROMAN()     ROOM()
-    ROUND()     S()         SCRAMBLE()  SEARCH()    SECS()      SECURE()
-    SET()       SETDIFF()   SETINTER()  SETQ()      SETR()      SETUNION()
-    SHA1()      SHL()       SHR()       SHUFFLE()   SIGN()      SIN()
-    SINGLETIME()SORT()      SORTBY()    SPACE()     SPELLNUM()  SPLICE()
-    SQRT()      SQUISH()    STARTSECS() STARTTIME() STATS()     STRCAT()
-    STRIP()     STRIPACCENTS()          STRIPANSI() STRLEN()    STRMATCH()
-    STRMEM()    STRTRUNC()  SUB()       SUBEVAL()   SUBJ()      SWITCH()
-    T()         TABLE()     TAN()       TEL()       TEXTFILE()  TIME()
-    TIMEFMT()   TRANSLATE() TRIM()      TRUNC()     TYPE()      U()
-    UCSTR()     UDEFAULT()  ULOCAL()    UNPACK()    V()         VADD()
-    VALID()     VCROSS()    VDIM()      VDOT()      VERSION()   VISIBLE()
-    VMAG()      VMUL()      VSUB()      VUNIT()     WHERE()     WORDPOS()
-    WORDS()     WRAP()      WRITETIME() XGET()      XOR()       ZFUN()
-    ZONE()      ZWHO()
+    PI()        PICKRAND()  PLAYMEM()   PMATCH()    POLL()      POP()
+    PORTS()     POS()       POSS()      POWER()     POWERS()    PUSH()
+    R()         RAND()      REGMATCH()  REGMATCHI() REGRAB()    REGRABALL()
+    REGRABALLI()REGRABI()   REMAINDER() REMIT()     REMOVE()    REPEAT()
+    REPLACE()   REST()      REVERSE()   REVWORDS()  RIGHT()     RJUST()
+    RLOC()      ROMAN()     ROOM()      ROUND()     RXLEVEL()   S()
+    SCRAMBLE()  SEARCH()    SECS()      SECURE()    SET()       SETDIFF()
+    SETINTER()  SETQ()      SETR()      SETUNION()  SHA1()      SHL()
+    SHR()       SHUFFLE()   SIGN()      SIN()       SINGLETIME()SORT()
+    SORTBY()    SPACE()     SPELLNUM()  SPLICE()    SQRT()      SQUISH()
+    STARTSECS() STARTTIME() STATS()     STRCAT()    STRIP()     STRIPACCENTS()
+    STRIPANSI() STRLEN()    STRMATCH()  STRMEM()    STRTRUNC()  SUB()
+    SUBEVAL()   SUBJ()      SWITCH()    T()         TABLE()     TAN()
+    TEL()       TEXTFILE()  TIME()      TIMEFMT()   TRANSLATE() TRIM()
+    TRUNC()     TXLEVEL()   TYPE()      U()         UCSTR()     UDEFAULT()
+    ULOCAL()    UNPACK()    V()         VADD()      VALID()     VCROSS()
+    VDIM()      VDOT()      VERSION()   VISIBLE()   VMAG()      VMUL()
+    VSUB()      VUNIT()     WHERE()     WORDPOS()   WORDS()     WRAP()
+    WRITETIME() XGET()      XOR()       ZFUN()      ZONE()      ZWHO()
 
 & FUNCTIONS
 FUNCTIONS
@@ -7124,6 +7128,42 @@ HASQUOTA()
     You say "1"
 
   Related Topics: @quota
+
+& HASRXLEVEL()
+HASRXLEVEL()
+
+  FUNCTION: hasrxlevel(<target>,<level>)
+
+  Returns 1 if <target> has the specified Rx Level. You must control <target>.
+  If the level does not exist, or you do not control the target, it returns
+  a '#-1'.
+
+  NOTE: This function is not available unless reality levels was enabled at
+  compile-time.
+
+  Example: 
+    > say hasrxlevel(me,real)
+    You say '1'.
+
+  Related Topics: hastxlevel(), rxlevel(), txlevel(), listrlevels()
+
+& HASTXLEVEL()
+HASTXLEVEL()
+
+  FUNCTION: hastxlevel(<target>,<level>)
+
+  Returns 1 if <target> has the specified Tx Level. You must control <target>.
+  If the level does not exist, or you do not control the target, it returns
+  a '#-1'.
+
+  NOTE: This function is not available unless reality levels was enabled at
+  compile-time.
+
+  Example: 
+    > say hastxlevel(me,real)
+    You say '1'.
+
+  Related Topics: hasrxlevel(), rxlevel(), txlevel(), listrlevels()
 
 & HASTYPE()
 HASTYPE()
@@ -8128,6 +8168,21 @@ LISTENING
     test says "I got a foo with bar!."
 
   Related Topics: @ahear, @listen, @set.
+
+& LISTRLEVELS()
+LISTRLEVELS()
+
+  FUNCTION: listrlevels()
+
+  Returns all available levels in a space seperated list.  This function
+  takes no arguments.
+
+  NOTE: This function is not available unless reality levels was enabled at
+  compile-time.
+
+  Example:
+    > say listrlevels()
+    You say "Real Shadow Auf Umbra"
 
 & LISTS
 LISTS
@@ -10971,6 +11026,24 @@ ROYALTY
 
   Related Topics:
 
+& RXLEVEL()
+RXLEVEL()
+
+  FUNCTION: rxlevel(<target>)
+
+  Returns a space separated list of <target>'s Rx Levels. You must control
+  <target>.  If no levels are listed, nothing is returned.  If you do not
+  control the target, or if the target does not exist, '#-1' is returned.
+
+  NOTE: This function is not available unless reality levels was enabled at
+  compile-time.
+
+  Example:
+    > say rxlevel(me)
+    You say 'Real'.
+
+  Related Topics: hasrxlevel(), hastxlevel(), txlevel(), listrlevels()
+
 & S()
 S()
 
@@ -12414,6 +12487,24 @@ TRUNC()
     You say "-5"
 
   Related Topics: fdiv(), floor(), mod(), round().
+
+& TXLEVEL()
+TXLEVEL()
+
+  FUNCTION: txlevel(<target>)
+
+  Returns a space separated list of <target>'s Tx Levels. You must control
+  <target>.  If no levels are listed, nothing is returned.  If you do not
+  control the target, or if the target does not exist, '#-1' is returned.
+
+  NOTE: This function is not available unless reality levels was enabled at
+  compile-time.
+
+  Example:
+    > say txlevel(me)
+    You say 'Real'.
+
+  Related Topics: hasrxlevel(), hastxlevel(), rxlevel(), listrlevels()
 
 & TYPE()
 TYPE()
