@@ -460,10 +460,10 @@ void do_txlevel
 
 void decompile_rlevels(dbref player,dbref thing,char *thingname)
 {
-    char *buf;
-    buf = rxlevel_description(player, thing);
+    char *buf = rxlevel_description(player, thing);
     notify(player, tprintf("@rxlevel %s=%s", strip_ansi(thingname), buf));
     free_mbuf(buf);
+
     buf = txlevel_description(player, thing);
     notify(player, tprintf("@txlevel %s=%s", strip_ansi(thingname), buf));
     free_mbuf(buf);
@@ -471,193 +471,274 @@ void decompile_rlevels(dbref player,dbref thing,char *thingname)
 
 int *desclist_match(dbref player, dbref thing)
 {
-    RLEVEL match;
-    int i, j;
-    ATTR *at;
     static int descbuffer[33];
 
     descbuffer[0] = 1;
-    match = RxLevel(player) & TxLevel(thing);
-    for(i = 0; i < mudconf.no_levels; ++i)
-        if((match & mudconf.reality_level[i].value) == mudconf.reality_level[i].value)
+    RLEVEL match = RxLevel(player) & TxLevel(thing);
+    for (int i = 0; i < mudconf.no_levels; i++)
+    {
+        if (  (match & mudconf.reality_level[i].value)
+           == mudconf.reality_level[i].value)
         {
-            at = atr_str(mudconf.reality_level[i].attr);
-            if(at)
+            ATTR *at = atr_str(mudconf.reality_level[i].attr);
+            if (at)
             {
-                for(j = 1; j < descbuffer[0]; ++j)
-                    if(at->number == descbuffer[j])
+                int j;
+                for (j = 1; j < descbuffer[0]; j++)
+                {
+                    if (at->number == descbuffer[j])
+                    {
                         break;
-                if(j == descbuffer[0])
+                    }
+                }
+                if (j == descbuffer[0])
+                {
                     descbuffer[descbuffer[0]++] = at->number;
+                }
             }
         }
+    }
     return descbuffer;
 }
 
 /* ---------------------------------------------------------------------------
- * did_it_rlevel: Have player do something to/with thing, watching the attributes
- * 'what' is actually ignored, the desclist match being used instead.
+ * did_it_rlevel: Have player do something to/with thing, watching the
+ * attributes. 'what' is actually ignored, the desclist match being used
+ * instead.
  */
-void did_it_rlevel(dbref player, dbref thing, int what, const char *def, int owhat, const char *odef, int awhat, char *args[], int nargs)
+void did_it_rlevel
+(
+    dbref player,
+    dbref thing,
+    int what,
+    const char *def,
+    int owhat,
+    const char *odef,
+    int awhat,
+    char *args[],
+    int nargs
+)
 {
-    char *d, *buff, *act, *charges, *bp, *str, *preserve[MAX_GLOBAL_REGS];
+    char *d, *buff, *act, *charges, *bp, *str;
     dbref loc, aowner;
-    int num, aflags,  need_pres, preserve_len[MAX_GLOBAL_REGS];
+    int num, aflags;
     int i, *desclist, found_a_desc;
-        CLinearTimeAbsolute lta;
 
-    need_pres = 0;
+    char *preserve[MAX_GLOBAL_REGS];
+    int  preserve_len[MAX_GLOBAL_REGS];
+    bool need_pres = false;
 
-    /* message to player */
+    // Message to player.
+    //
+    if (what > 0)
+    {
+        // Get description list.
+        //
+        desclist = desclist_match(player, thing);
+        found_a_desc = 0;
+        for (i = 1; i < desclist[0]; i++)
+        {
+            // Ok, if it's A_DESC, we need to check against A_IDESC.
+            //
+            if (  A_IDESC == what
+               && desclist[i] == A_DESC)
+            {
+                d = atr_pget(thing, A_IDESC, &aowner, &aflags);
+            }
+            else
+            {
+                d = atr_pget(thing, desclist[i], &aowner, &aflags);
+            }
+            if (*d)
+            {
+                // No need for the 'def' message.
+                //
+                found_a_desc = 1;
+                if (!need_pres)
+                {
+                    need_pres = true;
+                    save_global_regs("did_it_save", preserve, preserve_len);
+                }
+                buff = bp = alloc_lbuf("did_it.1");
+                str = d;
+                mux_exec(buff, &bp, 0, thing, player,
+                    EV_EVAL | EV_FIGNORE | EV_TOP, &str, args, nargs);
+                *bp = '\0';
 
-    if (what > 0) {
-      /* Get description list */
-      desclist = desclist_match(player, thing);
-      found_a_desc = 0;
-      for(i = 1; i < desclist[0]; ++i)
-      {
-                /* Ok, if it's A_DESC, we need to check against A_IDESC */
-                if ( (what == A_IDESC) && (desclist[i] == A_DESC) )
-                   d = atr_pget(thing, A_IDESC, &aowner, &aflags);
+                if (  A_HTDESC == desclist[i]
+                   && Html(player))
+                {
+                    safe_str("\r\n", buff, &bp);
+                    *bp = '\0';
+                    notify_html(player, buff);
+                }
                 else
-                   d = atr_pget(thing, desclist[i], &aowner, &aflags);
-        if (*d) {
-            found_a_desc = 1;    /* No need for the 'def' message */
-            if(!need_pres)
-            {
-                need_pres = 1;
-                save_global_regs("did_it_save", preserve,
-                     preserve_len);
+                {
+                    notify(player, buff);
+                }
+                free_lbuf(buff);
             }
-            buff = bp = alloc_lbuf("did_it.1");
-            str = d;
-            mux_exec(buff, &bp, 0, thing, player, EV_EVAL | EV_FIGNORE | EV_TOP, &str, args, nargs);
-            *bp = '\0';
-            if ((desclist[i] == A_HTDESC) && Html(player)) {
-                safe_str("\r\n", buff, &bp);
-                *bp = '\0';
-                notify_html(player, buff);
-            } else
-                notify(player, buff);
-            free_lbuf(buff);
+            free_lbuf(d);
         }
-        free_lbuf(d);
-      }
-      if(!found_a_desc)
-      {
-          /* No desc found... try the default desc (again) */
-          /* A_DESC or A_HTDESC... the worst case we look for it twice */
-        d = atr_pget(thing, what, &aowner, &aflags);
-        if (*d) {
-            found_a_desc = 1;    /* No need for the 'def' message */
-            if(!need_pres)
+        if (!found_a_desc)
+        {
+            // No desc found... try the default desc (again).
+            // A_DESC or A_HTDESC... the worst case we look for it twice.
+            //
+            d = atr_pget(thing, what, &aowner, &aflags);
+            if (*d)
             {
-                need_pres = 1;
-                save_global_regs("did_it_save", preserve,
-                     preserve_len);
-            }
-            buff = bp = alloc_lbuf("did_it.1");
-            str = d;
-            mux_exec(buff, &bp, 0, thing, player, EV_EVAL | EV_FIGNORE | EV_TOP, &str, args, nargs);
-            *bp = '\0';
-            if ((what == A_HTDESC) && Html(player)) {
-                safe_str("\r\n", buff, &bp);
+                // No need for the 'def' message
+                //
+                found_a_desc = 1;
+                if (!need_pres)
+                {
+                    need_pres = true;
+                    save_global_regs("did_it_save", preserve, preserve_len);
+                }
+                buff = bp = alloc_lbuf("did_it.1");
+                str = d;
+                mux_exec(buff, &bp, 0, thing, player,
+                    EV_EVAL | EV_FIGNORE | EV_TOP, &str, args, nargs);
                 *bp = '\0';
-                notify_html(player, buff);
-            } else
-                notify(player, buff);
-            free_lbuf(buff);
-        } else if(def) {
-            notify(player, def);
+
+                if (  A_HTDESC == what
+                   && Html(player))
+                {
+                    safe_str("\r\n", buff, &bp);
+                    *bp = '\0';
+                    notify_html(player, buff);
+                }
+                else
+                {
+                    notify(player, buff);
+                }
+                free_lbuf(buff);
+            }
+            else if (def)
+            {
+                notify(player, def);
+            }
+            free_lbuf(d);
         }
-        free_lbuf(d);
-      } /* !found_a_desc */
-    } else if ((what < 0) && def) {
+    }
+    else if (  what < 0
+            && def)
+    {
         notify(player, def);
     }
 
-        if (isPlayer(thing))
-        {
-           d = atr_pget(mudconf.master_room, get_atr("ASSET_DESC"), &aowner, &aflags);
-           if (*d)
-           {
-              if(!need_pres)
-              {
-                 need_pres = 1;
-                 save_global_regs("did_it_save", preserve, preserve_len);
-              }
-              buff = bp = alloc_lbuf("did_it.1");
-              str = d;
-              mux_exec(buff, &bp, 0, thing, player, EV_EVAL | EV_FIGNORE |EV_TOP, &str, args, nargs);
-              *bp = '\0';
-              notify(player, buff);
-              free_lbuf(buff);
-           }
-           free_lbuf(d);
-        }
+    if (isPlayer(thing))
+    {
+       d = atr_pget(mudconf.master_room, get_atr("ASSET_DESC"), &aowner, &aflags);
+       if (*d)
+       {
+          if (!need_pres)
+          {
+             need_pres = true;
+             save_global_regs("did_it_save", preserve, preserve_len);
+          }
+          buff = bp = alloc_lbuf("did_it.1");
+          str = d;
+          mux_exec(buff, &bp, 0, thing, player, EV_EVAL | EV_FIGNORE |EV_TOP, &str, args, nargs);
+          *bp = '\0';
+          notify(player, buff);
+          free_lbuf(buff);
+       }
+       free_lbuf(d);
+    }
 
 
-    /* message to neighbors */
-
-    if ((owhat > 0) && Has_location(player) &&
-        Good_obj(loc = Location(player))) {
+    // Message to neighbors.
+    //
+    if (  owhat > 0
+       && Has_location(player)
+       && Good_obj(loc = Location(player)))
+    {
         d = atr_pget(thing, owhat, &aowner, &aflags);
-        if (*d) {
-            if (!need_pres) {
-                need_pres = 1;
-                save_global_regs("did_it_save", preserve,
-                         preserve_len);
+        if (*d)
+        {
+            if (!need_pres)
+            {
+                need_pres = true;
+                save_global_regs("did_it_save", preserve, preserve_len);
             }
             buff = bp = alloc_lbuf("did_it.2");
             str = d;
             mux_exec(buff, &bp, 0, thing, player, EV_EVAL | EV_FIGNORE | EV_TOP, &str, args, nargs);
             *bp = '\0';
+
             if (*buff)
+            {
                 notify_except2_rlevel2(loc, player, player, thing,
-                       tprintf("%s %s", Name(player), buff));
+                    tprintf("%s %s", Name(player), buff));
+            }
             free_lbuf(buff);
-        } else if (odef) {
+        }
+        else if (odef)
+        {
             notify_except2_rlevel2(loc, player, player, thing,
-                       tprintf("%s %s", Name(player), odef));
+                tprintf("%s %s", Name(player), odef));
         }
         free_lbuf(d);
-    } else if ((owhat < 0) && odef && Has_location(player) &&
-           Good_obj(loc = Location(player))) {
+    }
+    else if (  owhat < 0
+            && odef
+            && Has_location(player)
+            && Good_obj(loc = Location(player)))
+    {
         notify_except2_rlevel2(loc, player, player, thing,
-                   tprintf("%s %s", Name(player), odef));
+            tprintf("%s %s", Name(player), odef));
     }
 
-    /* If we preserved the state of the global registers, restore them. */
-
+    // If we preserved the state of the global registers, restore them.
+    //
     if (need_pres)
+    {
         restore_global_regs("did_it_restore", preserve, preserve_len);
+    }
 
-    /* do the action attribute */
-
-    if (awhat > 0 && IsReal(thing, player)) {
-
-                if (*(act = atr_pget(thing, awhat, &aowner, &aflags))) {
+    // Do the action attribute.
+    //
+    if (  awhat > 0
+       && IsReal(thing, player))
+    {
+        act = atr_pget(thing, awhat, &aowner, &aflags);
+        if (*act != '\0')
+        {
             charges = atr_pget(thing, A_CHARGES, &aowner, &aflags);
-            if (*charges) {
+            if (*charges)
+            {
                 num = mux_atol(charges);
-                if (num > 0) {
+                if (num > 0)
+                {
                     buff = alloc_sbuf("did_it.charges");
                     mux_ltoa(num-1, buff);
                     atr_add_raw(thing, A_CHARGES, buff);
                     free_sbuf(buff);
-                } else if (*(buff = atr_pget(thing, A_RUNOUT, &aowner, &aflags))) {
-                    free_lbuf(act);
-                    act = buff;
-                } else {
-                    free_lbuf(act);
-                    free_lbuf(buff);
-                    free_lbuf(charges);
-                    return;
+                }
+                else
+                {
+                    buff = atr_pget(thing, A_RUNOUT, &aowner, &aflags);
+                    if (*buff != '\0')
+                    {
+                        free_lbuf(act);
+                        act = buff;
+                    }
+                    else
+                    {
+                        free_lbuf(act);
+                        free_lbuf(buff);
+                        free_lbuf(charges);
+                        return;
+                    }
                 }
             }
             free_lbuf(charges);
-            wait_que(thing, player, player, 0, lta, NOTHING, 0, act, args, nargs,
-                 mudstate.global_regs);
+
+            CLinearTimeAbsolute lta;
+            wait_que(thing, player, player, 0, lta, NOTHING, 0, act, args,
+                 nargs, mudstate.global_regs);
         }
         free_lbuf(act);
     }
