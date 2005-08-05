@@ -23,6 +23,14 @@ LIBS = @LIBS@
 #OPTIM = -g -pg -O
 OPTIM = -g -O
 
+# By default, REALITY_LVLS is not enabled.  If you wish to use REALITY_LVLS,
+# run configure with --enable-realitylvls.  Please read the docs/REALITY.
+#
+# NOTE: To ensure a clean build, please 'make clean' first.
+#
+REALITY_LVLS = @REALITY_LVLS@
+REALITY_SRC = @REALITY_SRC@
+REALITY_OBJ = @REALITY_OBJ@
 # By default, WOD_REALMS is not enabled.  If you wish to use WOD_REALMS,
 # run configure with --enable-wodrealms.  Please read the docs/REALMS.
 #
@@ -126,7 +134,7 @@ NET_O	= bsd.o
 AUX_SRC	= unsplit.cpp
 LIB_SRC = 
 LIB_INC = 
-ALLCXXFLAGS = $(CXXFLAGS) $(OPTIM) $(DEFS) $(COMPRESS_DEFS) $(BASED) $(BTBASED) $(MALLOC_DEFS) $(MOREDEFS) $(RLIM_F) $(WOD_REALMS)
+ALLCXXFLAGS = $(CXXFLAGS) $(OPTIM) $(DEFS) $(COMPRESS_DEFS) $(BASED) $(BTBASED) $(MALLOC_DEFS) $(MOREDEFS) $(RLIM_F) $(WOD_REALMS) $(REALITY_LVLS)
 
 #Auxiliary files
 A_INST	= README NOTES HIGHLIGHTS CREDITS CHANGES
@@ -144,9 +152,9 @@ AUXIL	= $(A_INST) $(A_TXT) $(A_SH) $(A_CONF) $(A_MISC) $(A_RT) $(A_VMS) \
 
 # Compiliation source files.
 #
-ALLSRC	= $(D_SRC) $(VER_SRC) $(AUX_SRC) $(LIB_SRC)
-SRC	= $(D_SRC) $(MALLOC_S)
-OBJ	= $(D_OBJ) $(MALLOC_O)
+ALLSRC	= $(D_SRC) $(REALITY_SRC) $(VER_SRC) $(AUX_SRC) $(LIB_SRC)
+SRC	= $(D_SRC) $(REALITY_SRC) $(MALLOC_S)
+OBJ	= $(D_OBJ) $(REALITY_OBJ) $(MALLOC_O)
 
 .cpp.o:
 	$(CXX) $(ALLCXXFLAGS) -c $<

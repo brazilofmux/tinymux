@@ -4657,8 +4657,10 @@ CANSEE()
 
   FUNCTION: cansee(<looker>, <lookee>[,<lookee_action>])
 
-  NOTE: This function is not available unless WOD Realms was enabled at
-  compile-time.
+  NOTE: This function is not available unless either WOD Realms or Reality
+  Levels was enabled at compile-time.
+
+  For WOD Realms:
 
   CANSEE returns 1 or 0 depending on whether it's possible for the looker
   to see the lookee or not. This is useful for wizard code in the master
@@ -4667,6 +4669,12 @@ CANSEE()
 
   The third parameter is optional, but if present should be 0 for standing
   still, 1 for moving, and 2 for talking.
+
+  For Reality Levels:
+
+  Returns 1 if <victim>'s Rx levels intersect with <target>'s Tx levels. It
+  does not take into account the location of the objects or other flags like
+  DARK.
 
   Related Topics:
 

@@ -135,10 +135,10 @@
 
   This file is tarred and gziped. It includes the game flatfile, and the
   mail and comsys databases. It does not include any of the text files, the
-  .conf files or the mux.config file. Those would need to be backed up 
+  .conf files or the mux.config file. Those would need to be backed up
   separately.
 
-  Related Topics: 
+  Related Topics:
 
 & @BOOT
 @BOOT
@@ -454,7 +454,7 @@
 @HOOK
 
   Command: @hook[/<switch(s)>] [<command/attribute>]
-  
+
   This command will set up 'hooks' to be applied to various commands or
   attributes.  You may specify multiple hooks on items.  The HOOK_OBJ is
   an @admin param that specifies the hook object.  The following hooks exist:
@@ -485,7 +485,7 @@
                       somehow block by a @hook/permit or @icmd/disable.
                       The HOOK_OBJ attribute is af_<command>.
 
-         /clear     - When used in junction with any of the above switches, 
+         /clear     - When used in junction with any of the above switches,
                       will clear the hook from being applied.
 
          /list      - This lists the current commands/attributes with hooks.
@@ -497,7 +497,7 @@
 
   Examples of @hook are as follows:
 
-    > @hook/before look 
+    > @hook/before look
     @hook: new mask for 'look' -> before
     > @hook/after look
     @hook: new mask for 'look' -> before after
@@ -1215,6 +1215,19 @@
   Sending the MUX process a SIGUSR1 from the shell account will also cause a
   @restart.
 
+& @RXLEVEL
+@RXLEVEL
+
+  COMMAND: @rxlevel <target>=<list>
+
+  Sets or clears the Rx levels for the target. If a level name in list is
+  prefixed with !, then the level is cleared.
+
+  NOTE: This command is not available unless reality levels was enabled at
+  compile-time.
+
+  Example: @rxlevel *Joe=!Real Umbra
+
 & @SHUTDOWN
 @SHUTDOWN
 
@@ -1314,6 +1327,19 @@
     /no_chown - Don't change the ownership of the victim or his objects.
 
   Related Topics: @boot, @chownall, @destroy.
+
+& @TXLEVEL
+@TXLEVEL
+
+  COMMAND: @txlevel <target>=<list>
+
+  Sets or clears the Tx levels for the target. If a level name in list is
+  prefixed with !, then the level is cleared.
+
+  NOTE: This command is not available unless reality levels was enabled at
+  compile-time.
+
+  Example: @txlevel *Joe=Real !Umbra
 
 & @WALL
 @WALL
@@ -1747,56 +1773,57 @@ CONFIG PARAMETERS
   clone_copies_cost  command_quota_increment  command_quota_max
   compress_program  compression  comsys_database  config_access  conn_timeout
   connect_file  connect_reg_file  crash_database  create_max_cost
-  create_min_cost  dark_sleepers  default_home  destroy_going_now  dig_cost
-  down_file  down_motd_message  dump_interval  dump_message  dump_offset
-  earn_limit  eval_comtitle  events_daily_hour  examine_flags
-  examine_public_attrs  exit_flags  exit_quota  fascist_teleport
-  find_money_chance  fixed_home_message  fixed_tel_message  flag_access
-  flag_alias  flag_name  forbid_site  fork_dump  full_file  full_motd_message
-  function_access  function_alias  function_invocation_limit
-  function_recursion_limit  game_dir_file  game_pag_file  global_error_obj
-  good_name  guest_char_num  guest_file  guest_nuker  guest_prefix  guest_site
+  create_min_cost  dark_sleepers  def_exit_rx  def_exit_tx  def_player_rx
+  def_player_tx  def_room_rx  def_room_tx  def_thing_rx  def_thing_tx
+  default_home  destroy_going_now  dig_cost  down_file  down_motd_message
+  dump_interval  dump_message  dump_offset  earn_limit  eval_comtitle
+  events_daily_hour  examine_flags  examine_public_attrs  exit_flags
+  exit_quota  fascist_teleport  find_money_chance  fixed_home_message
+  fixed_tel_message  flag_access  flag_alias  flag_name  forbid_site
+  fork_dump  full_file  full_motd_message  function_access  function_alias
+  function_invocation_limit  function_recursion_limit  game_dir_file
+  game_pag_file  global_error_obj  good_name  guest_char_num  guest_file
 
 { 'wizhelp config parameters2' for more }
 
 & CONFIG PARAMETERS2
 CONFIG PARAMETERS (continued)
 
-  guests_channel  guests_channel_alias  have_comsys  have_mailer  have_zones
-  helpfile hook_cmd  hook_obj  hostnames  idle_interval  idle_timeout
-  idle_wiz_dark  include  indent_desc  initial_size  input_database
-  kill_guarantee_cost  kill_max_cost  kill_min_cost  lag_limit  lag_maximum
-  link_cost  list_access  lock_recursion_limit  log  log_options
-  logout_cmd_access  logout_cmd_alias  look_obey_terse  machine_command_cost
-  mail_database  mail_expiration  mail_per_hour  master_room
-  match_own_commands  max_cache_size  max_players  min_guests
-  money_name_plural  money_name_singular  motd_file  motd_message  mud_name
-  newuser_file  nositemon_site  notify_recursion_limit  number_guests
-  open_cost  output_database  output_limit  page_cost  paranoid_allocate
-  parent_recursion_limit  paycheck  pcreate_per_hour  pemit_any_object
-  pemit_far_players  permit_site  player_flags  player_listen
-  player_match_own_commands  player_name_spaces  player_queue_limit
-  player_quota  player_starting_home  player_starting_room  port
-  postdump_message  power_alias  public_channel  public_channel_alias
+  guest_nuker  guest_prefix  guest_site  guests_channel  guests_channel_alias
+  have_comsys  have_mailer  have_zones  helpfile hook_cmd  hook_obj  hostnames
+  idle_interval  idle_timeout  idle_wiz_dark  include  indent_desc
+  initial_size  input_database  kill_guarantee_cost  kill_max_cost
+  kill_min_cost  lag_limit  lag_maximum  link_cost  list_access
+  lock_recursion_limit  log  log_options  logout_cmd_access  logout_cmd_alias
+  look_obey_terse  machine_command_cost  mail_database  mail_expiration
+  mail_per_hour  master_room  match_own_commands  max_cache_size  max_players
+  min_guests  money_name_plural  money_name_singular  motd_file  motd_message
+  mud_name  newuser_file  nositemon_site  notify_recursion_limit
+  number_guests  open_cost  output_database  output_limit  page_cost
+  paranoid_allocate  parent_recursion_limit  paycheck  pcreate_per_hour
+  pemit_any_object  pemit_far_players  permit_site  player_flags
+  player_listen  player_match_own_commands  player_name_spaces
+  player_queue_limit  player_quota  player_starting_home  player_starting_room
+  port  postdump_message  power_alias  public_channel  public_channel_alias
   public_flags  pueblo_message  queue_active_chunk  queue_idle_chunk
   quiet_look  quiet_whisper  quit_file  quotas  raw_helpfile  read_remote_desc
-  read_remote_name  register_create_file  register_site  reset_players
-  retry_limit  robot_cost  robot_flags  robot_speech  room_flags  room_quota
+  read_remote_name  reality_level  register_create_file  register_site
+  reset_players  retry_limit  robot_cost  robot_flags  robot_speech
 
 { 'wizhelp config parameters3' for more }
 
 & CONFIG PARAMETERS3
 CONFIG PARAMETERS (continued)
 
-  run_startup  sacrifice_adjust  sacrifice_factor  safe_wipe  safer_passwords
-  search_cost  see_owned_dark  signal_action  site_chars  space_compress
-  stack_limit  starting_money  starting_quota  status_file  suspect_site
-  sweep_dark  switch_default_all  terse_shows_contents  terse_shows_exits
-  terse_shows_move_messages  thing_flags  thing_quota  timeslice
-  toad_recipient  trace_output_limit  trace_topdown  trust_site
-  uncompress_program  unowned_safe  use_http  user_attr_access
-  user_attr_per_hour  wait_cost  wizard_motd_file  wizard_motd_message
-  zone_recursion_limit
+  room_flags  room_quota  run_startup  sacrifice_adjust  sacrifice_factor
+  safe_wipe  safer_passwords  search_cost  see_owned_dark  signal_action
+  site_chars  space_compress  stack_limit  starting_money  starting_quota
+  status_file  suspect_site  sweep_dark  switch_default_all
+  terse_shows_contents  terse_shows_exits  terse_shows_move_messages
+  thing_flags  thing_quota  timeslice  toad_recipient  trace_output_limit
+  trace_topdown  trust_site  uncompress_program  unowned_safe  use_http
+  user_attr_access  user_attr_per_hour  wait_cost  wiz_always_real
+  wizard_motd_file  wizard_motd_message  zone_recursion_limit
 
 & CONFIG_ACCESS
 CONFIG_ACCESS
@@ -1885,7 +1912,7 @@ CRASH_DATABASE
 & CREATE_MAX_COST
 CREATE_MAX_COST
 
-  CONFIG DIRECTIVE: create_max_cost <amount>
+  CONFIG PARAMETER: create_max_cost <amount>
   DEFAULT: 505
 
   Specifies the maximum amount of money that is used in calculating the value
@@ -1897,7 +1924,7 @@ CREATE_MAX_COST
 & CREATE_MIN_COST
 CREATE_MIN_COST
 
-  CONFIG DIRECTIVE: create_min_cost <amount>
+  CONFIG PARAMETER: create_min_cost <amount>
   DEFAULT: 10
 
   Specifies the minimum (and default) cost for creating an object.
@@ -1907,7 +1934,7 @@ CREATE_MIN_COST
 & DARK_SLEEPERS
 DARK_SLEEPERS
 
-  CONFIG DIRECTIVE: dark_sleepers <yes/no>
+  CONFIG PARAMETER: dark_sleepers <yes/no>
   DEFAULT: yes
 
   Indicates whether or not disconnected players are to be considered 'dark',
@@ -1923,7 +1950,7 @@ DEBUG FEATURES
 & DEFAULT_HOME
 DEFAULT_HOME
 
-  CONFIG DIRECTIVE: default_home <location>
+  CONFIG PARAMETER: default_home <location>
   DEFAULT: (player_starting_home)
 
   Sets the home location for objects which have an invalid home (whether
@@ -1932,6 +1959,92 @@ DEFAULT_HOME
   parameter is not set, the value of player_starting_home is used instead.
 
   Related Topics: player_starting_home.
+
+& DEF_EXIT_RX
+DEF_EXIT_RX
+
+  CONFIG PARAMETER: def_exit_rx <value>
+  DEFAULT: 1
+
+  Sets the default Rx level for a newly created exit.
+
+  NOTE: This feature is not available unless reality levels was enabled at 
+  compile-time.
+
+& DEF_EXIT_TX
+DEF_EXIT_TX
+
+  CONFIG PARAMETER: def_exit_rx <value>
+  DEFAULT: 1
+
+  Sets the default Tx level for a newly created exit.
+
+  NOTE: This feature is not available unless reality levels was enabled at 
+  compile-time.
+
+& DEF_PLAYER_RX
+DEF_PLAYER_RX
+
+  CONFIG PARAMETER: def_player_rx <value>
+  DEFAULT: 1
+
+  Sets the default Rx level for a newly created player.
+
+  NOTE: This feature is not available unless reality levels was enabled at 
+  compile-time.
+
+& DEF_PLAYER_TX
+DEF_PLAYER_TX
+
+  CONFIG PARAMETER: def_player_tx <value>
+  DEFAULT: 1
+
+  Sets the default Tx level for a newly created player.
+
+  NOTE: This feature is not available unless reality levels was enabled at 
+  compile-time.
+
+& DEF_ROOM_RX
+DEF_ROOM_RX
+
+  CONFIG PARAMETER: def_room_rx <value>
+  DEFAULT: 1
+
+  Sets the default Rx level for a newly created room.
+
+  NOTE: This feature is not available unless reality levels was enabled at 
+  compile-time.
+
+& DEF_ROOM_TX
+DEF_ROOM_TX
+
+  CONFIG PARAMETER: def_room_tx <value>
+  DEFAULT: all (-1)
+
+  Sets the default Tx level for a newly created exit.
+
+  NOTE: This feature is not available unless reality levels was enabled at 
+  compile-time.
+
+& DEF_THING_RX
+DEF_THING_RX
+
+  CONFIG PARAMETER: def_thing_rx <value>
+  DEFAULT: 1
+
+  NOTE: This feature is not available unless reality levels was enabled at 
+  compile-time.
+
+& DEF_THING_TX
+DEF_THING_TX
+
+  CONFIG PARAMETER: def_thing_tx <value>
+  DEFAULT: 1
+
+  Sets the default Tx level for a newly created object.
+
+  NOTE: This feature is not available unless reality levels was enabled at 
+  compile-time.
 
 & DESTROY_GOING_NOW
 DESTROY_GOING_NOW
@@ -2278,7 +2391,7 @@ FORBID_SITE
   prevent access from troublemaking sites.  The default is for all sites to
   be allowed to connect, none forbidden.
 
-  Related Topics: badsite_file, permit_site, register_site, guest_site, 
+  Related Topics: badsite_file, permit_site, register_site, guest_site,
                   SITE LISTS, SITE NOTATION,
 
 & FORK_DUMP
@@ -2424,7 +2537,7 @@ GIVE
 & GLOBAL_ERROR_OBJ
 GLOBAL_ERROR_OBJ
 
-  CONFIG DIRECTIVE: global_error_obj <dbref>
+  CONFIG PARAMETER: global_error_obj <dbref>
   DEFAULT: -1
 
   Specifies the object that it looks for, to evaluate an attribute
@@ -2654,7 +2767,7 @@ HOOK SETUP
   Hooks are set up by following the shown methods.
   1)  You must first create and setup a hook object to store the data.
       Once you have @created the object, the object needs to be defined
-      with the 'HOOK_OBJ' admin parameter.  This may be placed in the 
+      with the 'HOOK_OBJ' admin parameter.  This may be placed in the
       .conf file or done via @admin.
 
   2)  You must set up hooks for the commands/attributes you wish to use.
@@ -2663,7 +2776,7 @@ HOOK SETUP
       You may use the @hook command, or use the hook_cmd admin parameter
       to place in a .conf file.
 
-  3)  The PERMIT and IGNORE config params are 'enabled' if they return 
+  3)  The PERMIT and IGNORE config params are 'enabled' if they return
       anything but a 'NULL' or a '1'.
 
   4)  The IGSWITCH config parameter is a toggle only.
@@ -2698,9 +2811,9 @@ HOOK SETUP (continued)
   > @admin hook_cmd look before after ignore permit
 
   There, your hook object is all set up.  If you want it to last through
-  reboots, you need to either put the @hook's in a @startup, or add the 
+  reboots, you need to either put the @hook's in a @startup, or add the
   hook_cmd to the .conf file.  You probably want the hook_cmd :)
- 
+
   Related Topics: @hook, hook_cmd, hook_obj.
 
 & HOOK_CMD
@@ -2708,7 +2821,7 @@ HOOK_CMD
 
   Config parameter: hook_cmd <command> <hooks/!hooks>
   This admin parameter allows you to specify multiple hooks for commands
-  or attributes in the .conf file or online via @admin.  This is an 
+  or attributes in the .conf file or online via @admin.  This is an
   alternative way to applying hooks besides the @hook command.
   The following hooks exist:
          - before      set up functionality BEFORE a command executes.
@@ -2727,7 +2840,7 @@ HOOK_OBJ
 
   Config parameter: hook_obj <dbref>.  Default: -1
   Specifies the valid dbref# that the hook information is stored.  All
-  hooks are in the form <prefix>_<command/attribute>.  
+  hooks are in the form <prefix>_<command/attribute>.
   Attributes are stored in the form:
           I_<command> - ignore configuration
           P_<command> - permit configuration
@@ -2896,7 +3009,7 @@ KILL_MIN_COST
 & LAG_LIMIT
 LAG_LIMIT
 
-  CONFIG DIRECTIVE: lag_limit <seconds>
+  CONFIG PARAMETER: lag_limit <seconds>
   DEFAULT: 60.000
 
   Controls when to discontinue servicing expensive commands.  Any command
@@ -2913,7 +3026,7 @@ LAG_LIMIT
 & LAG_MAXIMUM
 LAG_MAXIMUM
 
-  CONFIG DIRECTIVE: lag_maximum <seconds>
+  CONFIG PARAMETER: lag_maximum <seconds>
   DEFAULT: 120.000
 
   Controls when to log expensive commands.  Any command taking longer than
@@ -2990,7 +3103,7 @@ LOG
 
 & LOGGING
 LOGGING
- 
+
   There are two separate forms of logging.  Firstly, server-related logging is
   controlled with the two configuration parameters: 'log_options' and 'log'.
   Secondly, softcode may use the @log command to send arbitrary text to
@@ -3002,16 +3115,16 @@ LOGGING
   is configured to write the timestamp of the log message and the location of
   referenced players and objects.
 
-  The log_options parameter controls what type of information is written to 
+  The log_options parameter controls what type of information is written to
   the logfile.  Many different types of log information can be stored.  By
-  default, log_options is configured to record the following events:  bugs, 
+  default, log_options is configured to record the following events:  bugs,
   security, network, logins, checkpoints, config_changes, shouts, startup,
-  wizard, suspect_commands, problems, and create.  See 'wizhelp log' for 
-  specifics on the information stored by these event types. 
+  wizard, suspect_commands, problems, and create.  See 'wizhelp log' for
+  specifics on the information stored by these event types.
 
-  Of note, the log configuration option of 'all_commands' can be used to 
+  Of note, the log configuration option of 'all_commands' can be used to
   monitor every command issued by every player on the game when strange
-  activity is occuring.   Doing so, however, may raise privacy concerns.  
+  activity is occuring.   Doing so, however, may raise privacy concerns.
   Use with caution.  If a single individual is in question, use of the
   SUSPECT flag and suspect_commands event logging is suggested.
 
@@ -3099,7 +3212,7 @@ MAIL_EXPIRATION
 & MAIL_PER_HOUR
 MAIL_PER_HOUR
 
-  CONFIG DIRECTIVE: mail_per_hour <maximum>
+  CONFIG PARAMETER: mail_per_hour <maximum>
   DEFAULT: 50
 
   Specifies the maximum number of @mail items per hour that a mortal
@@ -3402,7 +3515,7 @@ PAYCHECK
 & PCREATE_PER_HOUR
 PCREATE_PER_HOUR
 
-  CONFIG DIRECTIVE: pcreate_per_hour <maximum>
+  CONFIG PARAMETER: pcreate_per_hour <maximum>
   DEFAULT: 100
 
   Specifies the maximum number of player object creations that can be
@@ -3794,6 +3907,43 @@ READ_REMOTE_NAME
 
   Related Topics: examine, get().
 
+& REALITY LEVELS
+REALITY LEVELS
+
+  Reality levels are defined if you compile with the -DREALITY_LVLS
+  option.  Once enabled, you use the .conf admin parameter 'reality_level'
+  to define new reality levels.  You can only have a total of 32 reality
+  levels defined.
+
+  NOTE: This feature is not available unless reality levels was enabled at 
+  compile-time.
+
+  Related topics: @rxlevel, @txlevel, def_player_rx, def_player_tx,
+                 def_thing_rx, def_thing_tx, def_room_rx, def_room_tx,
+                 wiz_always_real, reality_level, CANSEE()
+
+& REALITY_LEVEL
+REALITY_LEVEL
+
+  CONFIG PARAMETER: reality_level <name> <value> [<desc attribute>]
+  DEFAULT: none
+
+  Defines a reality level, named <name> and with bitvalue <value>. If you
+  specify <desc attribute>, it will be used in place of @desc for the 'look'
+  command when a match is found for the level. Can be used only in the
+  configuration file.  When a reality_level is defined, it automatically
+  keeps a tally of those defined.  You can currently only have 32 total
+  reality levels defined.
+
+  NOTE: This feature is not available unless reality levels was enabled at 
+  compile-time.
+
+  Example:
+    reality_level real  1 desc
+    reality_level ooc   2 desc
+    reality_level build 4 desc
+    reality_level umbra 8 umbra_desc
+
 & REGISTER_CREATE_FILE
 REGISTER_CREATE_FILE
 
@@ -3816,7 +3966,7 @@ REGISTER_SITE
   Indicates that registration is to be enforced for sites whose address
   matches the specified <site>.
 
-  Related Topics: forbid_site, permit_site, guest_site, REGISTRATION, 
+  Related Topics: forbid_site, permit_site, guest_site, REGISTRATION,
                   SITE LISTS, SITE NOTATION.
 
 & REGISTRATION
@@ -4093,13 +4243,13 @@ SITE LISTS
 SITE LISTS (continued)
 
   Example:  Restricting Access
- 
+
   register_site  135.246.4.40 255.255.255.255  <- Allow this site w/reg
   forbid_site    135.246.4.0  255.255.255.0    <- Disallow a class C subnet
   permit_site    135.246.0.0  255.255.0.0      <- Permit a class B network
   register_site  195.3.17.1   255.255.255.255  <- Permit this site w/reg.
   forbid_site    0.0.0.0      0.0.0.0          <- Disallow everyone else
- 
+
   These directives only allow access from 135.346.*.* and 195.3.17.1, except
   that all hosts in the 135.246.4 subnet except for 135.246.4.40 are also
   not allowed access.  People connecting from 135.246.4.40 and 195.3.17.1
@@ -4487,10 +4637,18 @@ UNOWNED_SAFE
 
   Related Topics: @destroy, DESTROY_OK, SAFE.
 
+& USER_ATTR_ACCESS
+USER_ATTR_ACCESS
+
+  CONFIG PARAMETER: user_attr_access [!]<privilege> [[!]<privilege>]...
+
+  Changes the access flags that new user-named attributes receive when
+  they are created.  By default, user attributes are invisible to others.
+
 & USER_ATTR_PER_HOUR
 USER_ATTR_PER_HOUR
 
-  CONFIG DIRECTIVE: user_attr_per_hour <max>
+  CONFIG PARAMETER: user_attr_per_hour <max>
   DEFAULT: 5000
 
   Specifies the maximum number of user-defined attributes per hour that
@@ -4499,14 +4657,6 @@ USER_ATTR_PER_HOUR
   Use of a pre-existing name is not counted towards this limit.
 
   Related Topics: mail_per_hour, pcreate_per_hour
-
-& USER_ATTR_ACCESS
-USER_ATTR_ACCESS
-
-  CONFIG PARAMETER: user_attr_access [!]<privilege> [[!]<privilege>]...
-
-  Changes the access flags that new user-named attributes receive when
-  they are created.  By default, user attributes are invisible to others.
 
 & USE_HTTP
 USE_HTTP
@@ -4608,10 +4758,22 @@ WIZHELP
 
   Related Topics: the source code.
 
+& WIZ_ALWAYS_REAL
+WIZ_ALWAYS_REAL
+
+  CONFIG PARAMETER: wiz_always_real <0/1>
+  DEFAULT: 0
+
+  If 1, then players flagged royalty and above are always real for
+  everything and everything is real for them.
+
+  NOTE: This feature is not available unless reality levels was enabled at 
+  compile-time.
+
 & ZONE_RECURSION_LIMIT
 ZONE_RECURSION_LIMIT
 
-  CONFIG DIRECTIVE: zone_recursion_limit <num>
+  CONFIG PARAMETER: zone_recursion_limit <num>
   DEFAULT: 20
 
   This directive specifies how far back to check a zone tree for control and
