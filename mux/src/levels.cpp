@@ -1,6 +1,6 @@
 #ifdef REALITY_LVLS
 /*
- * levels.c - Reality levels stuff
+ * levels.cpp - Reality levels stuff
  */
 
 #include "copyright.h"
@@ -18,32 +18,37 @@
 #include "levels.h"
 #include "stringutil.h"
 
-#define Tiny_IsXDigit(X) (((X)>='0' && (X)<='9') || ((X)>='A' && (X)<='F') || ((X)>='a' && (X)<='f'))
-
 extern void cf_log_notfound(dbref, char *, const char *, char *);
 
 RLEVEL RxLevel(dbref thing)
 {
-    char *buff;
-    int i;
-    RLEVEL rx;
-
-    buff = (char *)atr_get_raw(thing, A_RLEVEL);
-    if (!buff || strlen(buff) != 17)
-    switch(Typeof(thing))
+    char *buff = (char *)atr_get_raw(thing, A_RLEVEL);
+    if (  NULL != buff
+       || strlen(buff) != 17)
     {
+        switch(Typeof(thing))
+        {
         case TYPE_ROOM:
             return(mudconf.def_room_rx);
+
         case TYPE_PLAYER:
             return(mudconf.def_player_rx);
+
         case TYPE_EXIT:
             return(mudconf.def_exit_rx);
+
         default:
             return(mudconf.def_thing_rx);
+        }
     }
-    for(rx=0, i=0; buff[i] && Tiny_IsXDigit(buff[i]); ++i)
-        rx = 16 * rx + ((buff[i] <= '9')?(buff[i]-'0'):(10 + mux_toupper[buff[i]] - 'A'));
-    return(rx);
+
+    int i;
+    RLEVEL rx;
+    for (rx=0, i=0; buff[i] && mux_ishex(buff[i]); i++)
+    {
+        rx = 16 * rx + mux_hex2dec(buff[i]);
+    }
+    return rx;
 }
 
 RLEVEL TxLevel(dbref thing)
@@ -67,8 +72,8 @@ RLEVEL TxLevel(dbref thing)
     }
     for(tx=0, i=0; buff[i] && !mux_isspace[buff[i]]; ++i);
     if(buff[i])
-        for(++i; buff[i] && Tiny_IsXDigit(buff[i]); ++i)
-            tx = 16 * tx + ((buff[i] <= '9')?(buff[i]-'0'):(10 + mux_toupper[buff[i]] - 'A'));
+        for(++i; buff[i] && mux_ishex(buff[i]); ++i)
+            tx = 16 * tx + mux_hex2dec(buff[i]);
     return(tx);
 }
 

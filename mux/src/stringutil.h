@@ -1,6 +1,6 @@
 // stringutil.h -- string utilities.
 //
-// $Id: stringutil.h,v 1.41 2004-07-09 15:07:01 sdennis Exp $
+// $Id: stringutil.h,v 1.42 2005-08-05 17:11:07 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -11,6 +11,7 @@
 
 extern const bool mux_isprint[256];
 extern const bool mux_isdigit[256];
+extern const bool mux_ishex[256];
 extern const bool mux_isalpha[256];
 extern const bool mux_isalnum[256];
 extern const bool mux_islower[256];
@@ -22,17 +23,20 @@ extern const bool mux_ObjectNameSet[256];
 extern bool mux_PlayerNameSet[256];
 extern const bool mux_issecure[256];
 extern const bool mux_isescape[256];
+extern const unsigned char mux_hex2dec[256];
 extern const unsigned char mux_toupper[256];
 extern const unsigned char mux_tolower[256];
 extern const unsigned char mux_StripAccents[256];
 
 #define mux_isprint(x) (mux_isprint[(unsigned char)(x)])
 #define mux_isdigit(x) (mux_isdigit[(unsigned char)(x)])
+#define mux_ishex(x)   (mux_ishex[(unsigned char)(x)])
 #define mux_isalpha(x) (mux_isalpha[(unsigned char)(x)])
 #define mux_isalnum(x) (mux_isalnum[(unsigned char)(x)])
 #define mux_islower(x) (mux_islower[(unsigned char)(x)])
 #define mux_isupper(x) (mux_isupper[(unsigned char)(x)])
 #define mux_isspace(x) (mux_isspace[(unsigned char)(x)])
+#define mux_hex2dec(x) (mux_hex2dec[(unsigned char)(x)])
 #define mux_toupper(x) (mux_toupper[(unsigned char)(x)])
 #define mux_tolower(x) (mux_tolower[(unsigned char)(x)])
 
