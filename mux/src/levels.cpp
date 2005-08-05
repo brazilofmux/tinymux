@@ -104,7 +104,7 @@ void notify_except_rlevel
     dbref player,
     dbref exception,
     const char *msg,
-     int xflags
+    int xflags
 )
 {
     if (  loc != exception
@@ -126,31 +126,61 @@ void notify_except_rlevel
     }
 }
 
-void notify_except2_rlevel(dbref loc, dbref player, dbref exc1, dbref exc2, const char *msg)
+void notify_except2_rlevel
+(
+    dbref loc,
+    dbref player,
+    dbref exc1,
+    dbref exc2,
+    const char *msg
+)
 {
-    dbref first;
-
-    if ((loc != exc1) && (loc != exc2) && IsReal(loc, player))
+    if (  loc != exc1
+       && loc != exc2
+       && IsReal(loc, player))
+    {
         notify_check(loc, player, msg,
             (MSG_ME_ALL | MSG_F_UP | MSG_S_INSIDE | MSG_NBR_EXITS_A));
-    DOLIST(first, Contents(loc)) {
-        if (first != exc1 && first != exc2 && IsReal(first, player)) {
+    }
+
+    dbref first;
+    DOLIST(first, Contents(loc))
+    {
+        if (  first != exc1
+           && first != exc2
+           && IsReal(first, player))
+        {
             notify_check(first, player, msg,
                 (MSG_ME | MSG_F_DOWN | MSG_S_OUTSIDE));
         }
     }
 }
 
-void notify_except2_rlevel2(dbref loc, dbref player, dbref exc1, dbref exc2, const char *msg)
+void notify_except2_rlevel2
+(
+    dbref loc,
+    dbref player,
+    dbref exc1,
+    dbref exc2,
+    const char *msg
+)
 {
-    dbref first;
-
-    if ((loc != exc1) && (loc != exc2) && IsReal(loc, player))
+    if (  loc != exc1
+       && loc != exc2
+       && IsReal(loc, player))
+    {
         notify_check(loc, player, msg,
             (MSG_ME_ALL | MSG_F_UP | MSG_S_INSIDE | MSG_NBR_EXITS_A));
-    DOLIST(first, Contents(loc)) {
-        if (first != exc1 && first != exc2
-            && IsReal(first, player) && IsReal(first, exc2)) {
+    }
+
+    dbref first;
+    DOLIST(first, Contents(loc))
+    {
+        if (  first != exc1
+           && first != exc2
+           && IsReal(first, player)
+           && IsReal(first, exc2))
+        {
             notify_check(first, player, msg,
                 (MSG_ME | MSG_F_DOWN | MSG_S_OUTSIDE));
         }
@@ -181,7 +211,7 @@ char *rxlevel_description(dbref player, dbref target)
      */
 
     safe_mb_str((char *)"RxLevel:", buff, &bp);
-    
+
     rl = RxLevel(target);
     for (i = 0; i < mudconf.no_levels; ++i)
         if((rl & mudconf.reality_level[i].value) == mudconf.reality_level[i].value)
@@ -222,7 +252,7 @@ char *txlevel_description(dbref player, dbref target)
      */
 
     safe_mb_str((char *)"TxLevel:", buff, &bp);
-    
+
     tl = TxLevel(target);
     for (i = 0; i < mudconf.no_levels; ++i)
         if((tl & mudconf.reality_level[i].value) == mudconf.reality_level[i].value)
@@ -242,7 +272,7 @@ char *txlevel_description(dbref player, dbref target)
 RLEVEL find_rlevel(char *name)
 {
     int i;
-    
+
     for(i=0; i < mudconf.no_levels; ++i)
         if(!strcasecmp(name, mudconf.reality_level[i].name))
             return mudconf.reality_level[i].value;
@@ -260,13 +290,13 @@ void do_rxlevel(dbref player, dbref cause, dbref enactor, int nargs, int key, ch
         notify_quiet(player, "I don't know what you want to set!");
         return;
     }
-    
+
     /* find thing */
     if ((thing = match_controlled(player, object)) == NOTHING)
         return;
 
     ormask = 0;
-    andmask = ~ormask;    
+    andmask = ~ormask;
     while(*arg)
     {
         negate = 0;
@@ -306,7 +336,7 @@ void do_rxlevel(dbref player, dbref cause, dbref enactor, int nargs, int key, ch
             notify(player, "Set.");
         }
     }
-    
+
     /* Set the Rx Level */
     buff = alloc_lbuf("do_rxlevel");
     sprintf(buff, "%08X %08X", RxLevel(thing) & andmask | ormask, TxLevel(thing));
@@ -325,13 +355,13 @@ void do_txlevel(dbref player, dbref cause, dbref enactor, int nargs, int key, ch
         notify_quiet(player, "I don't know what you want to set!");
         return;
     }
-    
+
     /* find thing */
     if ((thing = match_controlled(player, object)) == NOTHING)
         return;
 
     ormask = 0;
-    andmask = ~ormask;    
+    andmask = ~ormask;
     while(*arg)
     {
         negate = 0;
@@ -557,7 +587,7 @@ void did_it_rlevel(dbref player, dbref thing, int what, const char *def, int owh
 
     if (need_pres)
         restore_global_regs("did_it_restore", preserve, preserve_len);
-        
+
     /* do the action attribute */
 
     if (awhat > 0 && IsReal(thing, player)) {
