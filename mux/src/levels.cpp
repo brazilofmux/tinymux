@@ -131,14 +131,14 @@ char *rxlevel_description(dbref player, dbref target)
 	int i;
 
 	/*
-	 * Allocate the return buffer 
+	 * Allocate the return buffer
 	 */
 
 	otype = Typeof(target);
 	bp = buff = alloc_mbuf("rxlevel_description");
 
 	/*
-	 * Store the header strings and object type 
+	 * Store the header strings and object type
 	 */
 
 	safe_mb_str((char *)"RxLevel:", buff, &bp);
@@ -152,7 +152,7 @@ char *rxlevel_description(dbref player, dbref target)
 		}
 
 	/*
-	 * Terminate the string, and return the buffer to the caller 
+	 * Terminate the string, and return the buffer to the caller
 	 */
 
 	*bp = '\0';
@@ -172,14 +172,14 @@ char *txlevel_description(dbref player, dbref target)
 	int i;
 
 	/*
-	 * Allocate the return buffer 
+	 * Allocate the return buffer
 	 */
 
 	otype = Typeof(target);
 	bp = buff = alloc_mbuf("txlevel_description");
 
 	/*
-	 * Store the header strings and object type 
+	 * Store the header strings and object type
 	 */
 
 	safe_mb_str((char *)"TxLevel:", buff, &bp);
@@ -193,7 +193,7 @@ char *txlevel_description(dbref player, dbref target)
 		}
 
 	/*
-	 * Terminate the string, and return the buffer to the caller 
+	 * Terminate the string, and return the buffer to the caller
 	 */
 
 	*bp = '\0';
@@ -427,7 +427,7 @@ void did_it_rlevel(dbref player, dbref thing, int what, const char *def, int owh
 			} else
 				notify(player, buff);
 			free_lbuf(buff);
-		} 
+		}
 		free_lbuf(d);
 	  }
 	  if(!found_a_desc)
