@@ -1,6 +1,6 @@
 // attrs.h -- Attribute definitions.
 //
-// $Id: attrs.h,v 1.4 2005-06-26 18:36:23 sdennis Exp $
+// $Id: attrs.h,v 1.5 2005-08-05 15:27:43 sdennis Exp $
 //
 
 #ifndef _ATTRS_H
@@ -204,7 +204,13 @@
 #define A_CONFORMAT  242
 #define A_NAMEFORMAT 243
 #define A_DESCFORMAT 244
-// 245 - 251 unused
+// 245 - 249 unused
+
+#ifdef REALITY_LVLS
+#define A_RLEVEL      250
+#endif
+
+// 251 unused
 #define A_VLIST     252
 #define A_LIST      253
 #define A_STRUCT    254

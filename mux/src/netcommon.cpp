@@ -1,6 +1,6 @@
 // netcommon.cpp
 //
-// $Id: netcommon.cpp,v 1.47 2005-07-23 16:24:26 rmg Exp $
+// $Id: netcommon.cpp,v 1.48 2005-08-05 15:27:43 sdennis Exp $
 //
 // This file contains routines used by the networking code that do not
 // depend on the implementation of the networking code.  The network-specific
@@ -23,6 +23,9 @@
 #include "mguests.h"
 #include "powers.h"
 #include "svdreport.h"
+#ifdef REALITY_LVLS
+#include "levels.h"
+#endif /* REALITY_LVLS */
 
 extern void handle_prog(DESC *, char *);
 
@@ -759,7 +762,14 @@ static void announce_connect(dbref player, DESC *d)
 
     dbref temp = mudstate.curr_enactor;
     mudstate.curr_enactor = player;
+#ifdef REALITY_LVLS
+    if(loc == NOTHING)
+        notify_check(player, player, buf, key);
+    else
+        notify_except_rlevel(loc, player, player, buf, 0);
+#else
     notify_check(player, player, buf, key);
+#endif /* REALITY_LVLS */
     atr_pget_str_LEN(buf, player, A_ACONNECT, &aowner, &aflags, &nLen);
     CLinearTimeAbsolute lta;
     dbref zone, obj;
@@ -876,7 +886,14 @@ void announce_disconnect(dbref player, DESC *d, const char *reason)
         {
             key |= (MSG_NBR | MSG_NBR_EXITS | MSG_LOC | MSG_FWDLIST);
         }
-        notify_check(player, player, buf, key);
+#ifdef REALITY_LVLS
+        if(loc == NOTHING)
+            notify_check(player, player, buf, key);
+        else
+            notify_except_rlevel(loc, player, player, buf, 0);
+#else
+          notify_check(player, player, buf, key);
+#endif /* REALITY_LVLS */
 
         if (mudconf.have_mailer)
         {
@@ -1005,7 +1022,14 @@ void announce_disconnect(dbref player, DESC *d, const char *reason)
         {
             key |= (MSG_NBR | MSG_NBR_EXITS | MSG_LOC | MSG_FWDLIST);
         }
-        notify_check(player, player, mbuf, key);
+#ifdef REALITY_LVLS
+        if(loc == NOTHING)
+            notify_check(player, player, mbuf, key);
+        else
+            notify_except_rlevel(loc, player, player, mbuf, 0);
+#else
+          notify_check(player, player, mbuf, key);
+#endif /* REALITY_LVLS */
         raw_broadcast(MONITOR, "GAME: %s has partially disconnected.",
             Moniker(player));
         free_mbuf(mbuf);

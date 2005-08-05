@@ -1,6 +1,6 @@
 // mudconf.h
 //
-// $Id: mudconf.h,v 1.28 2005-07-31 00:18:33 sdennis Exp $
+// $Id: mudconf.h,v 1.29 2005-08-05 15:27:43 sdennis Exp $
 //
 
 #ifndef __CONF_H
@@ -186,6 +186,22 @@ struct confdata
     int     max_players;        /* Max # of connected players */
     int     min_guests;         // The # we should start nuking at.
     int     nStackLimit;        // Current stack limit.
+#ifdef REALITY_LVLS
+    int     no_levels;          /* Number of reality levels */
+    struct  rlevel_def {
+        char name[9];           /* Rlevel name */
+        RLEVEL value;           /* Rlevel bitmask */
+        char attr[33];          /* desc attribute */
+    } reality_level[32];        /* Reality levels */
+    RLEVEL  def_room_rx;        /* Default room RX level */
+    RLEVEL  def_room_tx;        /* Default room TX level */
+    RLEVEL  def_player_rx;      /* Default player RX level */
+    RLEVEL  def_player_tx;      /* Default player RX level */
+    RLEVEL  def_exit_rx;        /* Default exit RX level */
+    RLEVEL  def_exit_tx;        /* Default exit TX level */
+    RLEVEL  def_thing_rx;       /* Default thing RX level */
+    RLEVEL  def_thing_tx;       /* Default thing TX level */
+#endif /* REALITY_LVLS */
     int     ntfy_nest_lim;      /* Max nesting of notifys */
     int     number_guests;      // number of guest characters allowed.
     int     opencost;           /* cost of @open command */

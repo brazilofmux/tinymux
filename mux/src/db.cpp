@@ -1,6 +1,6 @@
 // db.cpp
 //
-// $Id: db.cpp,v 1.56 2005-06-26 18:36:23 sdennis Exp $
+// $Id: db.cpp,v 1.57 2005-08-05 15:27:43 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -250,6 +250,9 @@ ATTR attr[] =
     {"PLADVS",         A_ADVS,          PLSTAT_MODE},
     {"PLSKILLS",       A_SKILLS,        PLSTAT_MODE},
 #endif
+#ifdef REALITY_LVLS
+    {"Rlevel",         A_RLEVEL,        AF_DARK | AF_NOPROG | AF_NOCMD | AF_INTERNAL},
+#endif /* REALITY_LVLS */
     {NULL,          0,          0}
 };
 

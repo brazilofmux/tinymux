@@ -1,6 +1,6 @@
 // move.cpp -- Routines for moving about.
 //
-// $Id: move.cpp,v 1.5 2004-06-10 15:39:34 sdennis Exp $
+// $Id: move.cpp,v 1.6 2005-08-05 15:27:43 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -11,6 +11,9 @@
 #include "attrs.h"
 #include "interface.h"
 #include "powers.h"
+#ifdef REALITY_LVLS
+#include "levels.h"
+#endif /* REALITY_LVLS */
 
 /* ---------------------------------------------------------------------------
  * process_leave_loc: Generate messages and actions resulting from leaving a
@@ -45,7 +48,11 @@ static void process_leave_loc(dbref thing, dbref dest, dbref cause, bool canhear
     // EXCEPT if we were called with the HUSH_LEAVE key.
     //
 
+#ifdef REALITY_LVLS
+    bool quiet = (  (hush & HUSH_LEAVE) || !IsReal(loc, thing)
+#else
     bool quiet = (  (hush & HUSH_LEAVE)
+#endif /* REALITY_LVLS */
                  || (  !Wizard(loc)
                     && (  Dark(thing)
                        || Dark(loc))
@@ -81,7 +88,11 @@ static void process_leave_loc(dbref thing, dbref dest, dbref cause, bool canhear
            || (  canhear
               && !(Wizard(thing) && Dark(thing))))
         {
+#ifdef REALITY_LVLS
+            notify_except2_rlevel(loc, thing, thing, cause,
+#else
             notify_except2(loc, thing, thing, cause,
+#endif /* REALITY_LVLS */
                        tprintf("%s has left.", Name(thing)));
         }
     }
@@ -112,7 +123,11 @@ static void process_enter_loc(dbref thing, dbref src, dbref cause, bool canhear,
     //
     // EXCEPT if we were called with the HUSH_ENTER key.
     //
+#ifdef REALITY_LVLS
+    bool quiet = (  (hush & HUSH_ENTER) || !IsReal(loc, thing)
+#else
     bool quiet = (  (hush & HUSH_ENTER)
+#endif /* REALITY_LVLS */
                  || (  !Wizard(loc)
                     && (  Dark(thing)
                        || Dark(loc))
@@ -147,7 +162,11 @@ static void process_enter_loc(dbref thing, dbref src, dbref cause, bool canhear,
        && !Blind(loc)
        && !(Dark(thing) && Wizard(thing)))
     {
+#ifdef REALITY_LVLS
+        notify_except2_rlevel(loc, thing, thing, cause,
+#else
         notify_except2(loc, thing, thing, cause,
+#endif /* REALITY_LVLS */
                    tprintf("%s has arrived.", Name(thing)));
     }
 }

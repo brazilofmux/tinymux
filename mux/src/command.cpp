@@ -1,6 +1,6 @@
 // command.cpp -- command parser and support routines.
 //
-// $Id: command.cpp,v 1.50 2005-07-10 15:49:10 sdennis Exp $
+// $Id: command.cpp,v 1.51 2005-08-05 15:27:43 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -717,8 +717,14 @@ CMDENT_TWO_ARG command_table_two_arg[] =
     {"@program",     NULL,       CA_PUBLIC,                                        0,           CS_TWO_ARG|CS_INTERP, 0, do_prog},
     {"@quota",       quota_sw,   CA_PUBLIC,                                        0,           CS_TWO_ARG|CS_INTERP, 0, do_quota},
     {"@robot",       NULL,       CA_NO_SLAVE|CA_GBL_BUILD|CA_NO_GUEST|CA_PLAYER,   PCRE_ROBOT,  CS_TWO_ARG,           0, do_pcreate},
+#ifdef REALITY_LVLS
+    {"@rxlevel",    NULL,       CA_WIZARD,                                        0,           CS_TWO_ARG|CS_INTERP, 0, do_rxlevel},
+#endif
     {"@set",         set_sw,     CA_NO_SLAVE|CA_GBL_BUILD|CA_NO_GUEST,             0,           CS_TWO_ARG,           0, do_set},
     {"@teleport",    teleport_sw,CA_NO_GUEST,                                      TELEPORT_DEFAULT, CS_TWO_ARG|CS_INTERP, 0, do_teleport},
+#ifdef REALITY_LVLS
+    {"@txlevel",    NULL,       CA_WIZARD,                                        0,           CS_TWO_ARG|CS_INTERP, 0, do_txlevel},
+#endif
     {"@toad",        toad_sw,    CA_WIZARD,                                        0,           CS_TWO_ARG|CS_INTERP, 0, do_toad},
 #ifdef BT_ENABLED
     {"addcom",       NULL,       CA_NO_SLAVE|CA_NO_IC,                             0,           CS_TWO_ARG,           0, do_addcom},
@@ -3593,6 +3599,24 @@ static void list_process(dbref player)
 #endif // HAVE_GETRUSAGE
 }
 
+//----------------------------------------------------------------------------
+// list_rlevels
+//
+
+
+#ifdef REALITY_LVLS
+static void list_rlevels(dbref player)
+{
+    int i;
+    raw_notify(player, "Reality levels:");
+    for(i = 0; i < mudconf.no_levels; ++i)
+        raw_notify(player, tprintf("    Level: %-20.20s    Value: 0x%08x     Desc: %s",
+            mudconf.reality_level[i].name, mudconf.reality_level[i].value,
+                mudconf.reality_level[i].attr));
+    raw_notify(player, "--Completed.");
+}
+#endif /* REALITY_LVLS */
+
 // ---------------------------------------------------------------------------
 // do_list: List information stored in internal structures.
 //
@@ -3620,6 +3644,9 @@ static void list_process(dbref player)
 #define LIST_BADNAMES   22
 #define LIST_RESOURCES  23
 #define LIST_GUESTS     24
+#ifdef REALITY_LVLS
+#define LIST_RLEVELS    25
+#endif
 
 NAMETAB list_names[] =
 {
@@ -3647,6 +3674,9 @@ NAMETAB list_names[] =
     {"switches",           2,  CA_PUBLIC,  LIST_SWITCHES},
     {"user_attributes",    1,  CA_WIZARD,  LIST_VATTRS},
     {"guests",             2,  CA_WIZARD,  LIST_GUESTS},
+#ifdef REALITY_LVLS
+    {"rlevels",            3,  CA_PUBLIC,  LIST_RLEVELS},
+#endif
     { NULL,                0,  0,          0}
 };
 
@@ -3755,6 +3785,11 @@ void do_list(dbref executor, dbref caller, dbref enactor, int extra,
     case LIST_GUESTS:
         Guest.ListAll(executor);
         break;
+#ifdef REALITY_LVLS
+    case LIST_RLEVELS:
+        list_rlevels(executor);
+        break;
+#endif
     }
 }
 

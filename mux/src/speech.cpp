@@ -1,6 +1,6 @@
 // speech.cpp -- Commands which involve speaking.
 //
-// $Id: speech.cpp,v 1.17 2004-08-16 05:56:39 sdennis Exp $
+// $Id: speech.cpp,v 1.18 2005-08-05 15:27:43 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -11,6 +11,9 @@
 #include "attrs.h"
 #include "interface.h"
 #include "powers.h"
+#ifdef REALITY_LVLS
+#include "levels.h"
+#endif
 
 char *modSpeech(dbref player, char *message, bool bWhich, char *command)
 {
@@ -149,7 +152,7 @@ void do_say(dbref executor, dbref caller, dbref enactor, int key, char *message)
     //
     dbref loc = where_is(executor);
     if ( !(  Good_obj(loc)
-            && sp_ok(executor)))
+            & sp_ok(executor)))
     {
         return;
     }
@@ -238,26 +241,38 @@ void do_say(dbref executor, dbref caller, dbref enactor, int key, char *message)
         {
             notify_saypose(executor, tprintf("%s %s \"%s\"",
                 Moniker(executor), saystring, message));
-            notify_except(loc, executor, executor, tprintf("%s %s \"%s\"",
-                Moniker(executor), saystring, message), MSG_SAYPOSE);
+#ifdef REALITY_LVLS
+            notify_except_rlevel(loc, executor, executor, tprintf("%s %s \"%s\"", Moniker(executor), saystring, message), MSG_SAYPOSE);
+#else
+            notify_except(loc, executor, executor, tprintf("%s %s \"%s\"", Moniker(executor), saystring, message), MSG_SAYPOSE);
+#endif
             free_lbuf(saystring);
         }
         else
         {
             notify_saypose(executor, tprintf("You say, \"%s\"", message));
-            notify_except(loc, executor, executor, tprintf("%s says, \"%s\"",
-                Moniker(executor), message), MSG_SAYPOSE);
+#ifdef REALITY_LVLS
+            notify_except_rlevel(loc, executor, executor, tprintf("%s says, \"%s\"", Moniker(executor), message), MSG_SAYPOSE);
+#else
+            notify_except(loc, executor, executor, tprintf("%s says, \"%s\"", Moniker(executor), message), MSG_SAYPOSE);
+#endif
         }
         break;
 
     case SAY_POSE:
-        notify_all_from_inside_saypose(loc, executor, tprintf("%s %s",
-            Moniker(executor), message));
+#ifdef REALITY_LVLS
+        notify_except_rlevel(loc, executor, -1, tprintf("%s %s", Moniker(executor), message), MSG_SAYPOSE);
+#else
+        notify_all_from_inside_saypose(loc, executor, tprintf("%s %s", Moniker(executor), message));
+#endif
         break;
 
     case SAY_POSE_NOSPC:
-        notify_all_from_inside_saypose(loc, executor, tprintf("%s%s",
-            Moniker(executor), message));
+#ifdef REALITY_LVLS
+        notify_except_rlevel(loc, executor, -1, tprintf("%s%s", Moniker(executor), message), MSG_SAYPOSE);
+#else
+        notify_all_from_inside_saypose(loc, executor, tprintf("%s%s", Moniker(executor), message));
+#endif
         break;
 
     case SAY_EMIT:
@@ -271,7 +286,12 @@ void do_say(dbref executor, dbref caller, dbref enactor, int key, char *message)
             }
             else
             {
+ 
+#ifdef REALITY_LVLS
+                notify_except_rlevel(loc, executor, -1, message, SAY_EMIT);
+#else
                 notify_all_from_inside(loc, executor, message);
+#endif
             }
         }
         if (say_flags & SAY_ROOM)
@@ -300,7 +320,11 @@ void do_say(dbref executor, dbref caller, dbref enactor, int key, char *message)
             }
             if (isRoom(loc))
             {
+#ifdef REALITY_LVLS
+                notify_except_rlevel(loc, executor, -1, message, -1);
+#else
                 notify_all_from_inside(loc, executor, message);
+#endif
             }
         }
         break;

@@ -1,6 +1,6 @@
 // game.cpp
 //
-// $Id: game.cpp,v 1.65 2005-07-31 15:45:37 sdennis Exp $
+// $Id: game.cpp,v 1.66 2005-08-05 15:27:43 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -18,6 +18,9 @@
 #include "pcre.h"
 #include "powers.h"
 #include "help.h"
+#ifdef REALITY_LVLS
+#include "levels.h"
+#endif /* REALITY_LVLS */
 
 extern void init_attrtab(void);
 extern void init_cmdtab(void);
@@ -1806,8 +1809,14 @@ bool list_check
     int limit = mudstate.db_top;
     while (NOTHING != thing)
     {
+#ifdef REALITY_LVLS
+        if ((thing != player) 
+           && (!(No_Command(thing))) 
+           && IsReal(thing, player))
+#else
         if (  thing != player
            && !No_Command(thing))
+#endif /* REALITY_LVLS */
         {
             bMatch |= atr_match(thing, player, type, str, raw_str, check_parent);
         }

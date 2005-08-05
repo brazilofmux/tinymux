@@ -1,6 +1,6 @@
 // flags.h -- Object flags.
 //
-// $Id: flags.h,v 1.6 2004-07-24 05:39:03 sdennis Exp $
+// $Id: flags.h,v 1.7 2005-08-05 15:27:43 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -87,7 +87,7 @@
 //
 // WOD_REALMS and BT_ENABLED cannot be turned on at the same time.
 //
-#ifdef WOD_REALMS
+#if defined(WOD_REALMS) || defined(REALITY_LVLS)
 #define OBF          0x00000001      // Obfuscate Flag
 #define HSS          0x00000002      // Auspex/Heightened Senses Flag
 #define UMBRA        0x00000004      // Umbra, UMBRADESC
@@ -336,7 +336,7 @@ extern char *MakeCanonicalFlagName
 
 #define SiteMon(x)          ((Flags3(x) & SITEMON) != 0)
 #define CmdCheck(x)         ((Flags3(x) & CMDCHECK) != 0)
-#ifdef WOD_REALMS
+#if defined(WOD_REALMS) || defined(REALITY_LVLS)
 #define isObfuscate(x)        ((Flags3(x) & OBF) != 0)
 #define isHeightenedSenses(x) ((Flags3(x) & HSS) != 0)
 #define isUmbra(x)            ((Flags3(x) & UMBRA) != 0)

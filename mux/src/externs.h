@@ -1,6 +1,6 @@
 // externs.h -- Prototypes for externs not defined elsewhere.
 //
-// $Id: externs.h,v 1.38 2005-07-09 06:55:08 sdennis Exp $
+// $Id: externs.h,v 1.39 2005-08-05 15:27:43 sdennis Exp $
 //
 
 #ifndef EXTERNS_H
@@ -736,7 +736,7 @@ extern void do_lock(dbref executor, dbref caller, dbref enactor, int key,
 extern void check_events(void);
 extern void list_system_resources(dbref player);
 
-#ifdef WOD_REALMS
+#if defined(WOD_REALMS) || defined(REALITY_LVLS)
 
 #define ACTION_IS_STATIONARY    0
 #define ACTION_IS_MOVING        1
@@ -751,7 +751,6 @@ extern void list_system_resources(dbref player);
 #define REALM_DO_SHOW_MATRIXDESC      6
 #define REALM_DO_SHOW_FAEDESC         7
 #define REALM_DO_MASK                 7
-
 #define REALM_DISABLE_ADESC           0x00000008L
 extern int DoThingToThingVisibility(dbref looker, dbref lookee, int action_state);
 #endif // WOD_REALMS

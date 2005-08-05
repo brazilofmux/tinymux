@@ -1,6 +1,6 @@
 // funceval.cpp -- MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.84 2005-07-25 19:14:18 sdennis Exp $
+// $Id: funceval.cpp,v 1.85 2005-08-05 15:27:43 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -18,6 +18,9 @@
 #include "functions.h"
 #include "misc.h"
 #include "pcre.h"
+#ifdef REALITY_LVLS
+#include "levels.h"
+#endif /* REALITY_LVLS */
 
 /* Note: Many functions in this file have been taken, whole or in part, from
  * PennMUSH 1.50, and TinyMUSH 2.2, for softcode compatibility. The
@@ -1840,7 +1843,18 @@ FUNCTION(fun_findable)
         safe_str(" (ARG2)", buff, bufc);
         return;
     }
-#ifdef WOD_REALMS
+#ifndef WOD_REALMS
+#ifndef REALITY_LVLS
+    safe_bool(locatable(obj, victim, obj), buff, bufc);
+#else
+    if (IsReal(obj, victim))
+    {
+        safe_bool(locatable(obj, victim, obj), buff, bufc);
+    }
+    else safe_chr('0', buff, bufc);
+#endif
+#else
+#ifndef REALITY_LVLS
     if (REALM_DO_HIDDEN_FROM_YOU != DoThingToThingVisibility(obj, victim, ACTION_IS_STATIONARY))
     {
         safe_bool(locatable(obj, victim, obj), buff, bufc);
@@ -1849,8 +1863,18 @@ FUNCTION(fun_findable)
     {
         safe_chr('0', buff, bufc);
     }
+
 #else
-    safe_bool(locatable(obj, victim, obj), buff, bufc);
+    if (REALM_DO_HIDDEN_FROM_YOU != DoThingToThingVisibility(obj, victim, ACTION_IS_STATIONARY))
+    {
+        safe_bool(locatable(obj, victim, obj), buff, bufc);
+    }
+    else if (IsReal(obj, victim))
+    {
+        safe_bool(locatable(obj, victim, obj), buff, bufc);
+    }
+    else safe_chr('0', buff, bufc);
+#endif
 #endif
 }
 

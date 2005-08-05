@@ -1,6 +1,6 @@
 // match.cpp -- Routines for parsing arguments.
 //
-// $Id: match.cpp,v 1.5 2004-06-10 15:39:34 sdennis Exp $
+// $Id: match.cpp,v 1.6 2005-08-05 15:27:43 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -10,6 +10,9 @@
 
 #include "attrs.h"
 #include "powers.h"
+#ifdef REALITY_LVLS
+#include "levels.h"
+#endif /* REALITY_LVLS */
 
 const char *NOMATCH_MESSAGE      = "I don't see that here.";
 const char *AMBIGUOUS_MESSAGE    = "I don't know which one you mean!";
@@ -32,6 +35,12 @@ static MSTATE md;
 
 static void promote_match(dbref what, int confidence)
 {
+#ifdef REALITY_LVLS
+    // Check is the object is visible
+    if(Good_obj(what) && (confidence & CON_LOCAL) &&
+      !IsReal(md.player, what) && what != Location(md.player))
+        return;
+#endif /* REALITY_LVLS */
     // Check for type and locks, if requested.
     //
     if (md.pref_type != NOTYPE)

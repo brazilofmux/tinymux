@@ -1,6 +1,6 @@
 // predicates.cpp
 //
-// $Id: predicates.cpp,v 1.63 2005-06-30 05:08:49 sdennis Exp $
+// $Id: predicates.cpp,v 1.64 2005-08-05 15:27:43 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -15,6 +15,9 @@
 #include "command.h"
 #include "interface.h"
 #include "powers.h"
+#ifdef REALITY_LVLS
+#include "levels.h"
+#endif /* REALITY_LVLS */
 
 extern bool do_command(DESC *, char *);
 extern void pcache_sync(void);
@@ -160,12 +163,20 @@ bool can_see(dbref player, dbref thing, bool can_see_loc)
     //
     if (can_see_loc)
     {
+#ifdef REALITY_LVLS
+       return ((!Dark(thing) && IsReal(player, thing)) ||
+#else
         return (!Dark(thing) ||
+#endif /* REALITY_LVLS */
             (mudconf.see_own_dark && MyopicExam(player, thing)));
     }
     else
     {
+#ifdef REALITY_LVLS
+        return ((Light(thing) && !Dark(thing) && IsReal(player, thing)) ||
+#else
         return ((Light(thing) && !Dark(thing)) ||
+#endif /* REALITY_LVLS */
             (mudconf.see_own_dark && MyopicExam(player, thing)));
     }
 }
@@ -2113,6 +2124,27 @@ bool exit_visible(dbref exit, dbref player, int key)
     }
 #endif // WOD_REALMS
 
+#ifndef STANDALONE
+#ifdef REALITY_LVLS
+    if (!IsReal(player, exit))
+       return 0;
+#endif /* REALITY_LVLS */
+#endif
+
+#ifndef STANDALONE
+#ifdef REALITY_LVLS
+    if (!IsReal(player, exit))
+       return 0;
+#endif /* REALITY_LVLS */
+#endif
+
+#ifndef STANDALONE
+#ifdef REALITY_LVLS
+    if (!IsReal(player, exit))
+       return 0;
+#endif /* REALITY_LVLS */
+#endif
+
     // Exam exit's location
     //
     if (  (key & VE_LOC_XAM)
@@ -2270,13 +2302,21 @@ void did_it(dbref player, dbref thing, int what, const char *def, int owhat,
             *bp = '\0';
             if (*buff)
             {
+#ifdef REALITY_LVLS
+                notify_except2_rlevel(loc, player, player, thing, tprintf("%s %s", Name(player), buff));
+#else
                 notify_except2(loc, player, player, thing, tprintf("%s %s", Name(player), buff));
+#endif /* REALITY_LVLS */
             }
             free_lbuf(buff);
         }
         else if (odef)
         {
+#ifdef REALITY_LEVELS
+            notify_except2_rlevel(loc, player, player, thing, tprintf("%s %s", Name(player), odef));
+#else
             notify_except2(loc, player, player, thing, tprintf("%s %s", Name(player), odef));
+#endif /* REALITY_LEVELS */
         }
         free_lbuf(d);
     }
@@ -2285,7 +2325,11 @@ void did_it(dbref player, dbref thing, int what, const char *def, int owhat,
        && Has_location(player)
        && Good_obj(loc = Location(player)))
     {
+#ifdef REALITY_LVLS
+        notify_except2_rlevel(loc, player, player, thing, tprintf("%s %s", Name(player), odef));
+#else
         notify_except2(loc, player, player, thing, tprintf("%s %s", Name(player), odef));
+#endif /* REALITY_LVLS */
     }
 
     // If we preserved the state of the global registers, restore them.
@@ -2299,7 +2343,11 @@ void did_it(dbref player, dbref thing, int what, const char *def, int owhat,
 
     // do the action attribute.
     //
+#ifdef REALITY_LVLS
+    if (awhat > 0 && IsReal(thing, player))
+#else
     if (awhat > 0)
+#endif /* REALITY_LVLS */
     {
         if (*(act = atr_pget(thing, awhat, &aowner, &aflags)))
         {

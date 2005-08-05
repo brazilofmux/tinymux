@@ -1,6 +1,6 @@
 // conf.cpp -- Set up configuration information and static data.
 //
-// $Id: conf.cpp,v 1.56 2005-07-31 00:18:33 sdennis Exp $
+// $Id: conf.cpp,v 1.57 2005-08-05 15:27:43 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -132,6 +132,17 @@ void cf_init(void)
     mudconf.paycheck = 0;
     mudconf.paystart = 0;
     mudconf.paylimit = 10000;
+#ifdef REALITY_LVLS
+    mudconf.no_levels = 0;
+    mudconf.def_room_rx = 1;
+    mudconf.def_room_tx = ~(RLEVEL)0;
+    mudconf.def_player_rx = 1;
+    mudconf.def_player_tx = 1;
+    mudconf.def_exit_rx = 1;
+    mudconf.def_exit_tx = 1;
+    mudconf.def_thing_rx = 1;
+    mudconf.def_thing_tx = 1;
+#endif /* REALITY_LVLS */
     mudconf.start_quota = 20;
     mudconf.site_chars = 25;
     mudconf.payfind = 0;
@@ -403,6 +414,38 @@ int cf_status_from_succfail(dbref player, char *cmd, int success, int failure)
     }
     return -1;
 }
+
+//---------------------------------------------------------------------------
+// cf_rlevel
+//
+
+#ifdef REALITY_LVLS
+
+CF_HAND(cf_rlevel)
+{
+    CONFDATA *mc = (CONFDATA *)vp;
+    int i;
+
+    if(mc->no_levels >= 32)
+        return 1;
+    for(i=0; *str && !mux_isspace[*str]; ++str)
+        if(i < 8)
+            mc->reality_level[mc->no_levels].name[i++] = *str;
+    mc->reality_level[mc->no_levels].name[i] = '\0';
+    mc->reality_level[mc->no_levels].value = 1;
+    strcpy(mc->reality_level[mc->no_levels].attr, "DESC");
+    for(; *str && mux_isspace[*str]; ++str);
+    for(i=0; *str && mux_isdigit[*str]; ++str)
+        i = i * 10 + (*str - '0');
+    if(i)
+        mc->reality_level[mc->no_levels].value = (RLEVEL) i;
+    for(; *str && mux_isspace[*str]; ++str);
+    if(*str)
+        strncpy(mc->reality_level[mc->no_levels].attr, str, 32);
+    mc->no_levels++;
+    return 0;
+}
+#endif /* REALITY_LVLS */
 
 // ---------------------------------------------------------------------------
 // cf_int_array: Setup array of integers.
@@ -1853,6 +1896,17 @@ CONF conftable[] =
     {"wizard_motd_file",          cf_string_dyn,  CA_STATIC, CA_GOD,      (int *)&mudconf.wizmotd_file,    NULL, SIZEOF_PATHNAME},
     {"wizard_motd_message",       cf_string,      CA_GOD,    CA_WIZARD,   (int *)mudconf.wizmotd_msg,      NULL,       GBUF_SIZE},
     {"zone_recursion_limit",      cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.zone_nest_lim,          NULL,               0},
+#ifdef REALITY_LVLS
+    {"reality_level",             cf_rlevel,      CA_STATIC, CA_GOD,      (int *)&mudconf,                 NULL,               0},
+    {"def_room_rx",               cf_int,         CA_WIZARD, CA_PUBLIC,   (int *)&mudconf.def_room_rx,     NULL,               0},
+    {"def_room_tx",               cf_int,         CA_WIZARD, CA_PUBLIC,   (int *)&mudconf.def_room_tx,     NULL,               0},
+    {"def_player_rx",             cf_int,         CA_WIZARD, CA_PUBLIC,   (int *)&mudconf.def_player_rx,   NULL,               0},
+    {"def_player_tx",             cf_int,         CA_WIZARD, CA_PUBLIC,   (int *)&mudconf.def_player_tx,   NULL,               0},
+    {"def_exit_rx",               cf_int,         CA_WIZARD, CA_PUBLIC,   (int *)&mudconf.def_exit_rx,     NULL,               0},
+    {"def_exit_tx",               cf_int,         CA_WIZARD, CA_PUBLIC,   (int *)&mudconf.def_exit_tx,     NULL,               0},
+    {"def_thing_rx",              cf_int,         CA_WIZARD, CA_PUBLIC,   (int *)&mudconf.def_thing_rx,    NULL,               0},
+    {"def_thing_tx",              cf_int,         CA_WIZARD, CA_PUBLIC,   (int *)&mudconf.def_thing_tx,    NULL,               0},
+#endif /* REALITY_LVLS */
     { NULL,                       NULL,           0,         0,           NULL,                            NULL,               0}
 };
 

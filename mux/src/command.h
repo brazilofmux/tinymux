@@ -1,6 +1,6 @@
 // command.h -- declarations used by the command processor.
 //
-// $Id: command.h,v 1.4 2005-07-10 15:49:10 sdennis Exp $
+// $Id: command.h,v 1.5 2005-08-05 15:27:43 sdennis Exp $
 //
 
 #ifndef __COMMAND_H
@@ -142,6 +142,10 @@ CMD_TWO_ARG(do_addcommand);     /* Add or replace a global command */
 CMD_TWO_ARG(do_delcommand);     /* Delete an added global command */
 CMD_ONE_ARG(do_listcommands);   /* List added global commands */
 CMD_ONE_ARG(do_break);          /* Stop evaluating an action list */
+#ifdef REALITY_LVLS
+CMD_TWO_ARG(do_rxlevel);        /* set Rx Levels */
+CMD_TWO_ARG(do_txlevel);        /* set Tx Levels */
+#endif
 CMD_TWO_ARG_ARGV(do_icmd);      // Disable commands on a player or room
 CMD_ONE_ARG(do_hook);           // Set additional operations for a command
 CMD_TWO_ARG(do_flag);           // Rename a flag or remove flag aliases

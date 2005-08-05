@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.143 2005-07-14 15:41:07 rmg Exp $
+// $Id: functions.cpp,v 1.144 2005-08-05 15:27:43 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2005 Solid Vertical Domains, Ltd. All
@@ -19,6 +19,9 @@
 #include "interface.h"
 #include "misc.h"
 #include "pcre.h"
+#ifdef REALITY_LVLS
+#include "levels.h"
+#endif /* REALITY_LVLS */
 
 UFUN *ufun_head;
 
@@ -2459,7 +2462,7 @@ FUNCTION(fun_comp)
     }
 }
 
-#ifdef WOD_REALMS
+#if defined(WOD_REALMS) || defined(REALITY_LVLS)
 FUNCTION(fun_cansee)
 {
     dbref looker = match_thing_quiet(executor, fargs[0]);
@@ -2503,7 +2506,11 @@ FUNCTION(fun_cansee)
     bool bResult = false;
     if ((Realm_Do & REALM_DO_MASK) != REALM_DO_HIDDEN_FROM_YOU)
     {
+#ifdef REALITY_LVLS
+        bResult = (!Dark(lookee) && IsReal(looker, lookee));
+#else
         bResult = !Dark(lookee);
+#endif /* REALITY_LVLS */
     }
     safe_bool(bResult, buff, bufc);
 }
@@ -3497,6 +3504,141 @@ FUNCTION(fun_haspower)
         safe_noperm(buff, bufc);
     }
 }
+
+#ifdef REALITY_LVLS
+FUNCTION(fun_hasrxlevel)
+{
+    dbref player;
+    dbref it;
+    RLEVEL rl;
+
+    it = match_thing(player, fargs[0]);
+    if (!Good_obj(it)) {
+        safe_str("#-1 NOT FOUND", buff, bufc);
+        return;
+    }
+    rl = find_rlevel(fargs[1]);
+    if (!rl) {
+        safe_str("#-1 INVALID RLEVEL", buff, bufc);
+        return;
+    }
+    if (Examinable(player, it)) {
+        if ((RxLevel(it) & rl) == rl) {
+            safe_chr('1', buff, bufc);
+        } else {
+            safe_chr('0', buff, bufc);
+        }
+   } else {
+        safe_str("#-1 PERMISSION DENIED", buff, bufc);
+   }
+}
+
+FUNCTION(fun_hastxlevel)
+{
+    dbref it;
+    RLEVEL rl;
+
+    it = match_thing(executor, fargs[0]);
+    if (!Good_obj(it)) {
+        safe_str("#-1 NOT FOUND", buff, bufc);
+        return;
+    }
+    rl = find_rlevel(fargs[1]);
+    if (!rl) {
+        safe_str("#-1 INVALID RLEVEL", buff, bufc);
+        return;
+    }
+    if (Examinable(executor, it)) {
+        if ((TxLevel(it) & rl) == rl) {
+            safe_chr('1', buff, bufc);
+        } else {
+             safe_chr('0', buff, bufc);
+        }
+   } else {
+        safe_str("#-1 PERMISSION DENIED", buff, bufc);
+   }
+}
+
+FUNCTION(fun_listrlevels)
+{
+   int i, add_space, cmp_x, cmp_y, cmp_z;
+
+   cmp_x = sizeof(mudconf.reality_level);
+   cmp_y = sizeof(mudconf.reality_level[0]);
+   if ( cmp_y == 0 )
+      cmp_z = 0;
+   else
+      cmp_z = cmp_x / cmp_y;
+   if ( mudconf.no_levels < 1 ) {
+      safe_str("#-1 NO REALITY LEVELS DEFINED", buff, bufc);
+   } else {
+      for (add_space = i = 0; (i < mudconf.no_levels) && (i < cmp_z); ++i) {
+         if(add_space)
+            safe_chr(' ', buff, bufc);
+         safe_str(mudconf.reality_level[i].name, buff, bufc);
+         add_space = 1;
+      }
+   }
+}
+
+FUNCTION(fun_rxlevel)
+{
+    dbref it;
+    char levelbuff[2048];
+    int i;
+    RLEVEL lev;
+
+    it = match_thing(executor, fargs[0]);
+    if (!Good_obj(it))
+    {
+        safe_str("#-1 NOT FOUND", buff, bufc);
+        return;
+    }
+    if (Examinable(executor, it))
+    {
+        lev = RxLevel(it);
+        levelbuff[0]='\0';
+        for(i = 0; i < mudconf.no_levels; ++i)
+            if((lev & mudconf.reality_level[i].value) == mudconf.reality_level[i].value)
+            {
+                strcat(levelbuff, mudconf.reality_level[i].name);
+                strcat(levelbuff, " ");
+            }
+        safe_tprintf_str(buff, bufc, "%s", levelbuff);
+    }
+    else
+        safe_str("#-1 PERMISSION DENIED", buff, bufc);
+}
+
+FUNCTION(fun_txlevel)
+{
+    dbref it;
+    char levelbuff[2048];
+    int i;
+    RLEVEL lev;
+
+    it = match_thing(executor, fargs[0]);
+    if (!Good_obj(it))
+    {
+        safe_str("#-1 NOT FOUND", buff, bufc);
+        return;
+    }
+    if (Examinable(executor, it))
+    {
+        lev = TxLevel(it);
+        levelbuff[0]='\0';
+        for(i = 0; i < mudconf.no_levels; ++i)
+            if((lev & mudconf.reality_level[i].value) == mudconf.reality_level[i].value)
+            {
+                strcat(levelbuff, mudconf.reality_level[i].name);
+                strcat(levelbuff, " ");
+            }
+        safe_tprintf_str(buff, bufc, "%s", levelbuff);
+    }
+    else
+        safe_str("#-1 PERMISSION DENIED", buff, bufc);
+}
+#endif /* REALITY_LVLS */
 
 FUNCTION(fun_powers)
 {
@@ -7578,7 +7720,7 @@ FUN flist[] =
     {"BXOR",        fun_bxor,       MAX_ARG, 1, MAX_ARG,         0, CA_PUBLIC},
     {"CAND",        fun_cand,       MAX_ARG, 0, MAX_ARG, FN_NOEVAL, CA_PUBLIC},
     {"CANDBOOL",    fun_candbool,   MAX_ARG, 0, MAX_ARG, FN_NOEVAL, CA_PUBLIC},
-#ifdef WOD_REALMS
+#if defined(WOD_REALMS) || defined(REALITY_LVLS)
     {"CANSEE",      fun_cansee,     MAX_ARG, 2,       3,         0, CA_PUBLIC},
 #endif
     {"CAPSTR",      fun_capstr,           1, 1,       1,         0, CA_PUBLIC},
@@ -7669,6 +7811,10 @@ FUN flist[] =
     {"HASFLAG",     fun_hasflag,    MAX_ARG, 2,       2,         0, CA_PUBLIC},
     {"HASPOWER",    fun_haspower,   MAX_ARG, 2,       2,         0, CA_PUBLIC},
     {"HASQUOTA",    fun_hasquota,   MAX_ARG, 2,       3,         0, CA_PUBLIC},
+#ifdef REALITY_LVLS
+    {"HASRXLEVEL",  fun_hasrxlevel, MAX_ARG, 2,       2,         0, CA_PUBLIC},
+    {"HASTXLEVEL",  fun_hastxlevel, MAX_ARG, 2,       2,         0, CA_PUBLIC},
+#endif /* REALITY_LVLS */
     {"HASTYPE",     fun_hastype,    MAX_ARG, 2,       2,         0, CA_PUBLIC},
     {"HOME",        fun_home,       MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {"HOST",        fun_host,       MAX_ARG, 1,       1,         0, CA_PUBLIC},
@@ -7702,6 +7848,9 @@ FUN flist[] =
     {"LATTR",       fun_lattr,      MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {"LATTRCMDS",   fun_lattrcmds,  MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {"LATTRP",      fun_lattrp,     MAX_ARG, 1,       1,         0, CA_PUBLIC},
+#ifdef REALITY_LVLS
+    {"LISTRLEVELS", fun_listrlevels, MAX_ARG, 0,       0,         0, CA_PUBLIC},
+#endif
     {"LCMDS",       fun_lcmds,      MAX_ARG, 1,       3,         0, CA_PUBLIC},
     {"LCON",        fun_lcon,       MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {"LCSTR",       fun_lcstr,            1, 1,       1,         0, CA_PUBLIC},
@@ -7804,6 +7953,9 @@ FUN flist[] =
     {"ROMAN",       fun_roman,      MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {"ROOM",        fun_room,       MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {"ROUND",       fun_round,      MAX_ARG, 2,       2,         0, CA_PUBLIC},
+#ifdef REALITY_LVLS
+    {"RXLEVEL",     fun_rxlevel,    MAX_ARG, 1,       1,         0, CA_PUBLIC},
+#endif /* REALITY_LVLS */
     {"S",           fun_s,                1, 1,       1,         0, CA_PUBLIC},
     {"SCRAMBLE",    fun_scramble,   MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {"SEARCH",      fun_search,           1, 0,       1,         0, CA_PUBLIC},
@@ -7854,6 +8006,9 @@ FUN flist[] =
     {"TRANSLATE",   fun_translate,  MAX_ARG, 2,       2,         0, CA_PUBLIC},
     {"TRIM",        fun_trim,       MAX_ARG, 1,       3,         0, CA_PUBLIC},
     {"TRUNC",       fun_trunc,      MAX_ARG, 1,       1,         0, CA_PUBLIC},
+#ifdef REALITY_LVLS
+    {"TXLEVEL",     fun_txlevel,    MAX_ARG, 1,       1,         0, CA_PUBLIC},
+#endif /* REALITY_LVLS */
     {"TYPE",        fun_type,       MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {"U",           fun_u,          MAX_ARG, 1, MAX_ARG,         0, CA_PUBLIC},
     {"UCSTR",       fun_ucstr,            1, 1,       1,         0, CA_PUBLIC},
