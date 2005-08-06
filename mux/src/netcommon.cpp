@@ -1,6 +1,6 @@
 // netcommon.cpp
 //
-// $Id: netcommon.cpp,v 1.49 2005-08-05 15:35:14 sdennis Exp $
+// $Id: netcommon.cpp,v 1.50 2005-08-06 21:03:25 sdennis Exp $
 //
 // This file contains routines used by the networking code that do not
 // depend on the implementation of the networking code.  The network-specific
@@ -892,7 +892,7 @@ void announce_disconnect(dbref player, DESC *d, const char *reason)
         else
             notify_except_rlevel(loc, player, player, buf, 0);
 #else
-          notify_check(player, player, buf, key);
+        notify_check(player, player, buf, key);
 #endif /* REALITY_LVLS */
 
         if (mudconf.have_mailer)
@@ -1028,7 +1028,7 @@ void announce_disconnect(dbref player, DESC *d, const char *reason)
         else
             notify_except_rlevel(loc, player, player, mbuf, 0);
 #else
-          notify_check(player, player, mbuf, key);
+        notify_check(player, player, mbuf, key);
 #endif /* REALITY_LVLS */
         raw_broadcast(MONITOR, "GAME: %s has partially disconnected.",
             Moniker(player));
