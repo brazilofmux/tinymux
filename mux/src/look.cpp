@@ -1,6 +1,6 @@
 // look.cpp -- Commands which look at things.
 //
-// $Id: look.cpp,v 1.30 2005-08-05 15:35:14 sdennis Exp $
+// $Id: look.cpp,v 1.31 2005-08-06 21:11:00 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -401,7 +401,7 @@ static void look_exits(dbref player, dbref loc, const char *exit_name)
 #ifdef REALITY_LEVELS
     if (Dark(loc) || !IsReal(player, loc))
 #else
-     if (Dark(loc))
+    if (Dark(loc))
 #endif /* REALITY_LEVELS */
     {
         key |= VE_BASE_DARK;
