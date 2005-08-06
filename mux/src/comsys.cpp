@@ -1,6 +1,6 @@
 // comsys.cpp
 //
-// $Id: comsys.cpp,v 1.30 2005-08-05 15:35:14 sdennis Exp $
+// $Id: comsys.cpp,v 1.31 2005-08-06 22:54:04 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -684,8 +684,15 @@ void load_comsystem(FILE *fp)
                 int nTitle = GetLineTrunc(temp, sizeof(temp), fp);
                 char *pTitle = temp;
 
-                if (  t_user.who >= 0
-                   && t_user.who < mudstate.db_top)
+                if (!Good_dbref(t_user.who))
+                {
+                    Log.tinyprintf("load_comsystem: dbref %d out of range [0, %d)." ENDLINE, t_user.who, mudstate.db_top);
+                }
+                else if (isGarbage(t_user.who))
+                {
+                    Log.tinyprintf("load_comsystem: dbref is GARBAGE." ENDLINE, t_user.who);
+                }
+                else
                 {
                     // Validate comtitle
                     //
@@ -725,10 +732,6 @@ void load_comsystem(FILE *fp)
                     }
                     user->on_next = ch->on_users;
                     ch->on_users = user;
-                }
-                else
-                {
-                    Log.tinyprintf("load_comsystem: dbref %d out of range [0, %d)" ENDLINE, t_user.who, mudstate.db_top);
                 }
             }
             ch->num_users = jAdded;
