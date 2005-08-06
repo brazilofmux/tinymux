@@ -1,6 +1,6 @@
 // predicates.cpp
 //
-// $Id: predicates.cpp,v 1.64 2005-08-05 15:27:43 sdennis Exp $
+// $Id: predicates.cpp,v 1.65 2005-08-06 21:05:41 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -2124,26 +2124,13 @@ bool exit_visible(dbref exit, dbref player, int key)
     }
 #endif // WOD_REALMS
 
-#ifndef STANDALONE
 #ifdef REALITY_LVLS
+    if (!mudstate.bStandAlone)
+    {
     if (!IsReal(player, exit))
        return 0;
+    }
 #endif /* REALITY_LVLS */
-#endif
-
-#ifndef STANDALONE
-#ifdef REALITY_LVLS
-    if (!IsReal(player, exit))
-       return 0;
-#endif /* REALITY_LVLS */
-#endif
-
-#ifndef STANDALONE
-#ifdef REALITY_LVLS
-    if (!IsReal(player, exit))
-       return 0;
-#endif /* REALITY_LVLS */
-#endif
 
     // Exam exit's location
     //
