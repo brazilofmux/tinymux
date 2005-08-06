@@ -1,6 +1,6 @@
 // svdocache.cpp -- Attribute caching module.
 //
-// $Id: attrcache.cpp,v 1.13 2005-07-31 00:18:33 sdennis Exp $
+// $Id: attrcache.cpp,v 1.14 2005-08-06 21:16:07 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -296,12 +296,14 @@ bool cache_put(Aname *nam, const char *value, size_t len)
     {
         return false;
     }
+#ifndef WIN32
     if (mudstate.write_protect)
     {
         Log.tinyprintf("cache_put((%d,%d), '%s', %u) while database is write-protected" ENDLINE,
             nam->object, nam->attrnum, value, len);
         return false;
     }
+#endif
 
     if (len > sizeof(TempRecord.attrText))
     {
@@ -423,12 +425,14 @@ void cache_del(Aname *nam)
         return;
     }
 
+#ifndef WIN32
     if (mudstate.write_protect)
     {
         Log.tinyprintf("cache_del((%d,%d)) while database is write-protected" ENDLINE,
             nam->object, nam->attrnum);
         return;
     }
+#endif
 
     UINT32 nHash = CRC32_ProcessInteger2(nam->object, nam->attrnum);
 

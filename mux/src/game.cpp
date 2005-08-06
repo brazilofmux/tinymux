@@ -1,6 +1,6 @@
 // game.cpp
 //
-// $Id: game.cpp,v 1.67 2005-08-05 15:35:14 sdennis Exp $
+// $Id: game.cpp,v 1.68 2005-08-06 21:16:07 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -1538,9 +1538,9 @@ void fork_and_dump(int key)
 
     pcache_sync();
     SYNC;
-    mudstate.write_protect = true;
 
 #ifndef WIN32
+    mudstate.write_protect = true;
     int child = 0;
     bool bChildExists = false;
     mudstate.dumping = true;
@@ -1608,9 +1608,9 @@ void fork_and_dump(int key)
         }
 #endif
     }
-    mudstate.write_protect = false;
 
 #ifndef WIN32
+    mudstate.write_protect = false;
     if (!bChildExists)
     {
         // We have the ability to fork children, but we are not configured to
