@@ -1,6 +1,6 @@
 // mudconf.h
 //
-// $Id: mudconf.h,v 1.30 2005-08-05 15:35:14 sdennis Exp $
+// $Id: mudconf.h,v 1.31 2005-08-06 23:26:45 sdennis Exp $
 //
 
 #ifndef __CONF_H
@@ -232,6 +232,7 @@ struct confdata
     int     waitcost;           /* cost of @wait (refunded when finishes) */
     int     wild_invk_lim;      // Max Regular Expression function calls.
     int     zone_nest_lim;      /* Max nesting of zones */
+    int     restrict_home;	// Special condition to restrict 'home' command
 
     unsigned int    max_cache_size; /* Max size of attribute cache */
     unsigned int    site_chars; // where to truncate site name.

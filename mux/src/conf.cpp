@@ -1,6 +1,6 @@
 // conf.cpp -- Set up configuration information and static data.
 //
-// $Id: conf.cpp,v 1.57 2005-08-05 15:27:43 sdennis Exp $
+// $Id: conf.cpp,v 1.58 2005-08-06 23:26:45 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -113,6 +113,7 @@ void cf_init(void)
     mudstate.dumper   = 0;
     mudstate.write_protect = false;
 #endif
+    mudconf.restrict_home = false;
     mudconf.have_comsys = true;
     mudconf.have_mailer = true;
     mudconf.have_zones = true;
@@ -1854,6 +1855,7 @@ CONF conftable[] =
     {"register_create_file",      cf_string_dyn,  CA_STATIC, CA_GOD,      (int *)&mudconf.regf_file,       NULL, SIZEOF_PATHNAME},
     {"register_site",             cf_site,        CA_GOD,    CA_DISABLED, (int *)&mudstate.access_list,    NULL,  H_REGISTRATION},
     {"reset_players",             cf_bool,        CA_GOD,    CA_DISABLED, (int *)&mudconf.reset_players,   NULL,               0},
+    {"restrict_home",             cf_bool,        CA_GOD,    CA_DISABLED, (int *)&mudconf.restrict_home,   NULL,               0},
     {"retry_limit",               cf_int,         CA_GOD,    CA_WIZARD,   &mudconf.retry_limit,            NULL,               0},
     {"robot_cost",                cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.robotcost,              NULL,               0},
     {"robot_flags",               cf_set_flags,   CA_GOD,    CA_DISABLED, (int *)&mudconf.robot_flags,     NULL,               0},

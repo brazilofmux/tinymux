@@ -1,6 +1,6 @@
 // command.cpp -- command parser and support routines.
 //
-// $Id: command.cpp,v 1.52 2005-08-05 15:35:14 sdennis Exp $
+// $Id: command.cpp,v 1.53 2005-08-06 23:26:45 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -1821,6 +1821,11 @@ char *process_command
         }
         if (cval != 2)
         {
+            if (!check_access(executor, mudconf.restrict_home))
+            {
+                notify(executor, NOPERM_MESSAGE);
+                return preserve_cmd;
+            }
             if (cval == 1)
             {
                 notify(executor, NOPERM_MESSAGE);
@@ -2862,6 +2867,11 @@ CF_HAND(cf_access)
     }
     else
     {
+        if (!mux_stricmp(str, "home"))
+        {
+            return cf_modify_bits(&(mudconf.restrict_home), ap, pExtra,
+                                  nExtra, player, cmd);
+        }
         cf_log_notfound(player, cmd, "Command", str);
         return -1;
     }
