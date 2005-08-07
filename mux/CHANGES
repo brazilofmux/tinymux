@@ -1,5 +1,5 @@
 TinyMUX 2.4:  CHANGES
-Last Update:  July 2005
+Last Update:  August 2005
 
 Major changes that may affect performance and require softcode tweaks:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -85,6 +85,14 @@ Feature Additions:
  -- Added the local.cpp patch surface. Details in LOCAL readme.
  -- Allowed more substring matches in regexp $-commands, regmatch(),
     regrab(), etc., though some matching substrings may not be observed.
+ -- Ashen-Shugar contributed a muxdbpuller tool which can extract an
+    object by dbref from a flatfile in @decomp format.  This can use useful
+    for restoring accidently @nuked objects from backups.  It is located
+    in mux2.4/src/tools.
+ -- Draken Korin (with some help from Ian) submitted a 'Reality Levels'
+    option.  This is version one, and it still requires some attention,
+    but to enabled it, use ./configure --enable-realitylvls.
+ -- Ashen-Shugar added the restrict_home configuration option.
 
 
 Bug Fixes:
@@ -183,6 +191,20 @@ Bug Fixes:
     compressed.
  -- Fix unexploitable buffer overflow with too many substring matches
     in a regexp $-command. Found and fixed by Alierak.
+ -- Fixed @dump/flat coruption bug. When the main process and the
+    forked, @dumping process are both actively querying the text value
+    database, the sequence of lseek/read and lseek/write options
+    intermix.  Since the file position state is shared between the
+    child and parent process, it was possible for one process to read
+    or write the wrote CHash page.  Instead of using lseek/read and
+    lseek/write, MUX now either uses pread() and pwrite() or does not
+    fork a child to performs the @dump/flat.
+ -- The comsys loading procedure not removes references to GARBAGE.
+    Previously, it would not add the GARBAGE to any channel, but as new
+    objects are creates they would appear on channel at the next
+    @restart.
+ -- Fix @mail/purge bug where only the first cleared @mail item would
+    be purged.
 
 
 Performance Enhancements:
