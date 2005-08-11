@@ -1,0 +1,51 @@
+Ian's stuff:
+
+Did this:
+
+Job 76
+Job 54
+Job 60
+    Even sorts @clist output. Uses MEMALLOC()/MEMFREE(), though,
+    since there is no real channel maximum...
+    Caps output at 100,000 channels and thus uses 800,000 bytes
+    at most.
+Job 66
+Job 180
+    Stupid thing to impliment, but since Penn already did it.. mumble.
+    Also, I knocked out the 100-dice limit because lrand() has no
+    limit of the sort.
+Changed column header spacing to make @list hashstats look more
+    appealing.
+
+
+
+Things I did last patch yet to be added:
+Job 117
+Job 119
+Job 124
+Job 158
+
+Comments:
+    Isn't job 179 dead? The only thing not impliment is @assert.. and,
+    well, that might as well be @break not(blah).
+
+    Can job 90 already. It's cluttering up the jobs list, and the list
+    _seriously_ needs to be cleaned up.
+
+    Job 117 was fixed in my last patched but it never made its way into
+    MUX, so I'll include it here... (eventually)
+
+    Same thing with 119, fixed, submitted, ignored/overlooked.
+
+    And job 124.. sigh.
+
+    Get rid of job 215 and 210... And 206.
+
+    Consider axing 221. It's a lot of whining about a minor legacy
+    feature and, in all honestly, not worth screwing with to satisfy a
+    random whim. Better things to do.
+
+
+
+
+
