@@ -1,6 +1,6 @@
 // svdhash.cpp -- CHashPage, CHashFile, CHashTable modules.
 //
-// $Id: svdhash.cpp,v 1.33 2005-08-05 15:37:50 sdennis Exp $
+// $Id: svdhash.cpp,v 1.34 2005-08-11 21:38:46 ian Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -2451,6 +2451,11 @@ HP_DIRINDEX CHashTable::FindNext(HP_PHEAPLENGTH pnRecord, void *pRecord)
         }
     }
     return HF_FIND_END;
+}
+
+INT64 CHashTable::GetEntryCount()
+{
+    return m_nEntries;
 }
 
 void CHashTable::GetStats

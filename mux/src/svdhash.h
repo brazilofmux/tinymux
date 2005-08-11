@@ -1,6 +1,6 @@
 // svdhash.h -- CHashPage, CHashFile, CHashTable modules.
 //
-// $Id: svdhash.h,v 1.13 2004-07-07 20:28:47 sdennis Exp $
+// $Id: svdhash.h,v 1.14 2005-08-11 21:38:46 ian Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -256,6 +256,7 @@ public:
     void ResetStats(void);
     void GetStats( unsigned int *hashsize, int *entries, INT64 *deletes,
                    INT64 *scans, INT64 *hits, INT64 *checks, int *max_scan);
+    INT64 GetEntryCount();
 
     void Reset(void);
     bool Insert(HP_HEAPLENGTH nRecord, UINT32 nHash, void *pRecord);

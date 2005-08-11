@@ -1,6 +1,6 @@
 // game.cpp
 //
-// $Id: game.cpp,v 1.68 2005-08-06 21:16:07 sdennis Exp $
+// $Id: game.cpp,v 1.69 2005-08-11 21:38:46 ian Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -305,6 +305,15 @@ bool atr_match
           && No_Command(thing)))
     {
         return false;
+    }
+
+    // If we're matching ^-commands, strip ANSI
+    if ( AMATCH_LISTEN == type )
+    {
+        size_t junk;
+        // Remember, strip_ansi returns a pointer to a static buffer
+        // within itself.. Uhg. ;-)
+        str=strip_ansi(str,&junk);
     }
 
     // If not checking parents, just check the thing
@@ -1792,6 +1801,11 @@ static int load_game(int ccPageFile)
 
 /*
  * match a list of things, using the no_command flag
+ *
+ * This seems to be always called with type == AMATCH_CMD...
+ * So the fact that ansi_strip is done within atr_match only
+ * brings about a if () performance hit...
+ *
  */
 
 bool list_check

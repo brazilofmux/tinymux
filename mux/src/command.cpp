@@ -1,6 +1,6 @@
 // command.cpp -- command parser and support routines.
 //
-// $Id: command.cpp,v 1.53 2005-08-06 23:26:45 sdennis Exp $
+// $Id: command.cpp,v 1.54 2005-08-11 21:38:46 ian Exp $
 //
 
 #include "copyright.h"
@@ -563,7 +563,6 @@ CMDENT_NO_ARG command_table_no_arg[] =
 {
     {"@@",          NULL,       CA_PUBLIC,   0,          CS_NO_ARGS, 0, do_comment},
     {"@backup",     NULL,       CA_WIZARD,   0,          CS_NO_ARGS, 0, do_backup},
-    {"@clist",      clist_sw,   CA_NO_SLAVE, 0,          CS_NO_ARGS, 0, do_chanlist},
     {"@dbck",       dbck_sw,    CA_WIZARD,   0,          CS_NO_ARGS, 0, do_dbck},
     {"@dbclean",    NULL,       CA_GOD,      0,          CS_NO_ARGS, 0, do_dbclean},
     {"@dump",       dump_sw,    CA_WIZARD,   0,          CS_NO_ARGS, 0, do_dump},
@@ -576,10 +575,8 @@ CMDENT_NO_ARG command_table_no_arg[] =
     {"@timecheck",  timecheck_sw, CA_WIZARD, 0,          CS_NO_ARGS, 0, do_timecheck},
 #ifdef BT_ENABLED
     {"clearcom",    NULL,       CA_NO_SLAVE|CA_NO_IC, 0,          CS_NO_ARGS, 0, do_clearcom},
-    {"comlist",     NULL,       CA_NO_SLAVE|CA_NO_IC, 0,          CS_NO_ARGS, 0, do_comlist},
 #else
     {"clearcom",    NULL,       CA_NO_SLAVE, 0,          CS_NO_ARGS, 0, do_clearcom},
-    {"comlist",     NULL,       CA_NO_SLAVE, 0,          CS_NO_ARGS, 0, do_comlist},
 #endif
     {"info",        NULL,       CA_PUBLIC,   CMD_INFO,   CS_NO_ARGS, 0, logged_out0},
     {"inventory",   NULL,       CA_PUBLIC,   0,          CS_NO_ARGS, 0, do_inventory},
@@ -598,6 +595,7 @@ CMDENT_ONE_ARG command_table_one_arg[] =
     {"@break",        NULL,       CA_PUBLIC,                  0,  CS_ONE_ARG,           0, do_break},
     {"@ccreate",      NULL,       CA_NO_SLAVE|CA_NO_GUEST,    0,  CS_ONE_ARG,           0, do_createchannel},
     {"@cdestroy",     NULL,       CA_NO_SLAVE|CA_NO_GUEST,    0,  CS_ONE_ARG,           0, do_destroychannel},
+    {"@clist",        clist_sw,   CA_NO_SLAVE,                0,  CS_ONE_ARG,           0, do_chanlist},
     {"@cut",          NULL,       CA_WIZARD|CA_LOCATION,      0,  CS_ONE_ARG|CS_INTERP, 0, do_cut},
     {"@cwho",         NULL,       CA_NO_SLAVE,                0,  CS_ONE_ARG,           0, do_channelwho},
     {"@destroy",      destroy_sw, CA_NO_SLAVE|CA_NO_GUEST|CA_GBL_BUILD, DEST_ONE,   CS_ONE_ARG|CS_INTERP,   0, do_destroy},
@@ -632,9 +630,11 @@ CMDENT_ONE_ARG command_table_one_arg[] =
     {"@wipe",         NULL,       CA_NO_SLAVE|CA_NO_GUEST|CA_GBL_BUILD, 0,  CS_ONE_ARG|CS_INTERP,   0, do_wipe},
 #ifdef BT_ENABLED
     {"allcom",        NULL,       CA_NO_SLAVE|CA_NO_IC,       0,  CS_ONE_ARG,           0, do_allcom},
+    {"comlist",       NULL,       CA_NO_SLAVE|CA_NO_IC,       0,  CS_ONE_ARG,           0, do_comlist},
     {"delcom",        NULL,       CA_NO_SLAVE|CA_NO_IC,       0,  CS_ONE_ARG,           0, do_delcom},
 #else
     {"allcom",        NULL,       CA_NO_SLAVE,                0,  CS_ONE_ARG,           0, do_allcom},
+    {"comlist",       NULL,       CA_NO_SLAVE,                0,  CS_ONE_ARG,           0, do_comlist},
     {"delcom",        NULL,       CA_NO_SLAVE,                0,  CS_ONE_ARG,           0, do_delcom},
 #endif
     {"doing",         NULL,       CA_PUBLIC,          CMD_DOING,  CS_ONE_ARG,           0, logged_out1},
@@ -3466,7 +3466,7 @@ static void list_hashstat(dbref player, const char *tab_name, CHashTable *htab)
 
 static void list_hashstats(dbref player)
 {
-    raw_notify(player, "Hash Stats      Size Entries Deleted    Lookups      Hits       Checks   Longest");
+    raw_notify(player, "Hash Stats      Size Entries Deleted      Lookups        Hits     Checks Longest");
     list_hashstat(player, "Commands", &mudstate.command_htab);
     list_hashstat(player, "Logged-out Cmds", &mudstate.logout_cmd_htab);
     list_hashstat(player, "Functions", &mudstate.func_htab);

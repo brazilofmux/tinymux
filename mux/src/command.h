@@ -1,6 +1,6 @@
 // command.h -- declarations used by the command processor.
 //
-// $Id: command.h,v 1.5 2005-08-05 15:27:43 sdennis Exp $
+// $Id: command.h,v 1.6 2005-08-11 21:38:46 ian Exp $
 //
 
 #ifndef __COMMAND_H
@@ -24,12 +24,12 @@ CMD_ONE_ARG(do_checkchannel);   /* check a channel */
 CMD_ONE_ARG(do_createchannel);  /* create a channel */
 CMD_ONE_ARG(do_destroychannel); /* destroy a channel */
 CMD_TWO_ARG(do_edituser);       /* edit a channel user */
-CMD_NO_ARG(do_chanlist);        /* gives a channel listing */
+CMD_ONE_ARG(do_chanlist);        /* gives a channel listing */
 CMD_TWO_ARG(do_chopen);         /* opens a channel */
 CMD_ONE_ARG(do_channelwho);     /* who's on a channel */
 CMD_TWO_ARG(do_addcom);         /* adds a comalias */
 CMD_ONE_ARG(do_allcom);         /* on, off, who, all aliases */
-CMD_NO_ARG(do_comlist);         /* channel who by alias */
+CMD_ONE_ARG(do_comlist);         /* channel who by alias */
 CMD_TWO_ARG(do_comtitle);       /* sets a title on a channel */
 //CMD_NO_ARG(do_clearcom);      /* clears all comaliases */
 CMD_ONE_ARG(do_delcom);         /* deletes a comalias */

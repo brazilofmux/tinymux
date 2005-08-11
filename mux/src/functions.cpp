@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.144 2005-08-05 15:27:43 sdennis Exp $
+// $Id: functions.cpp,v 1.145 2005-08-11 21:38:46 ian Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2005 Solid Vertical Domains, Ltd. All
@@ -6371,17 +6371,79 @@ FUNCTION(fun_isdbref)
  * trim: trim off unwanted white space.
  */
 
+char* trim_fast_left(char* str,char delim)
+{
+    // We assume delim is never '\0'
+    while (*str==delim)
+        str++;
+    return str;
+}
+
+void trim_fast_right(char* str,char delim)
+{
+    char* last=NULL;
+    // We assume delim is never '\0'
+    while (*str)
+    {
+        if (*str!=delim)
+            last=str;
+        str++;
+    }
+
+    if (last==NULL)
+        return;
+
+    *(last+1)='\0';
+}
+
+char* trim_left(char* str,SEP* sep)
+{
+    if (sep->n==1)
+    {
+        return trim_fast_left(str,sep->str[0]);
+    }
+    int cycle=0;
+    int max=sep->n;
+    char* base=str-1;
+    for ( ; *str==sep->str[cycle]; str++)
+        if (++cycle >= max)
+        {
+            cycle=0;
+            base=str;
+        }
+    return base+1;
+}
+
+void trim_right(char* str,SEP* sep)
+{
+    if (sep->n==1)
+    {
+        trim_fast_right(str,sep->str[0]);
+        return;
+    }
+
+    int cycle=sep->n-1;
+    int max=sep->n-1;
+    int n=strlen(str);
+    int base=n;
+    n--;
+    for ( ; n>=0 && str[n]==sep->str[cycle]; n--)
+        if (--cycle < 0)
+        {
+            cycle=max;
+            base=n;
+        }
+    *(str+base)='\0';
+}
+
 FUNCTION(fun_trim)
 {
     SEP sep;
-    if (!OPTIONAL_DELIM(3, sep, DELIM_DFLT))
+    if (!OPTIONAL_DELIM(3, sep, DELIM_DFLT|DELIM_STRING))
     {
         return;
     }
 
-    char *p;
-    char *q;
-    char *lastchar;
     int trim;
     if (nfargs >= 2)
     {
@@ -6403,31 +6465,16 @@ FUNCTION(fun_trim)
         trim = 3;
     }
 
-    p = fargs[0];
+    char* str;
+    if (trim&1)
+        str=trim_left(fargs[0],&sep);
+    else
+        str=fargs[0];
 
-    if (  trim == 1
-       || trim == 3)
-    {
-        while (*p == sep.str[0])
-        {
-            p++;
-        }
-    }
-    if (  trim == 2
-       || trim == 3)
-    {
-        q = lastchar = p;
-        while (*q != '\0')
-        {
-            char ch = *q++;
-            if (ch != sep.str[0])
-            {
-                lastchar = q;
-            }
-        }
-        *lastchar = '\0';
-    }
-    safe_str(p, buff, bufc);
+    if (trim&2)
+        trim_right(str,&sep);
+
+    safe_str(str,buff,bufc);
 }
 
 FUNCTION(fun_config)
@@ -7762,7 +7809,7 @@ FUN flist[] =
     {"DECRYPT",     fun_decrypt,    MAX_ARG, 2,       2,         0, CA_PUBLIC},
     {"DEFAULT",     fun_default,    MAX_ARG, 2,       2, FN_NOEVAL, CA_PUBLIC},
     {"DELETE",      fun_delete,     MAX_ARG, 3,       3,         0, CA_PUBLIC},
-    {"DIE",         fun_die,        MAX_ARG, 2,       2,         0, CA_PUBLIC},
+    {"DIE",         fun_die,        MAX_ARG, 2,       3,         0, CA_PUBLIC},
     {"DIGITTIME",   fun_digittime,  MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {"DIST2D",      fun_dist2d,     MAX_ARG, 4,       4,         0, CA_PUBLIC},
     {"DIST3D",      fun_dist3d,     MAX_ARG, 6,       6,         0, CA_PUBLIC},

@@ -1,6 +1,6 @@
 // funceval.cpp -- MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.87 2005-08-05 15:37:50 sdennis Exp $
+// $Id: funceval.cpp,v 1.88 2005-08-11 21:38:46 ian Exp $
 //
 
 #include "copyright.h"
@@ -2326,36 +2326,22 @@ FUNCTION(fun_last)
 {
     // If we are passed an empty arglist return a null string.
     //
-    if (nfargs <= 0)
+    if (nfargs == 0)
     {
         return;
     }
 
     SEP sep;
-    if (!OPTIONAL_DELIM(2, sep, DELIM_DFLT))
+    if (!OPTIONAL_DELIM(2, sep, DELIM_DFLT|DELIM_STRING))
     {
         return;
     }
 
-    // Trim leading spaces.
-    //
-    int nLen = strlen(fargs[0]);
-    char *pStart = trim_space_sep_LEN(fargs[0], nLen, &sep, &nLen);
-    char *pEnd = pStart + nLen - 1;
-
-    // Find the separator nearest the end.
-    //
-    char *p = pEnd;
-    while (  pStart <= p
-          && *p != sep.str[0])
-    {
-        p--;
-    }
-
-    // Return the last token.
-    //
-    nLen = pEnd - p;
-    safe_copy_buf(p+1, nLen, buff, bufc);
+    char *str,*lstr;
+    lstr = trim_space_sep(fargs[0], &sep);
+    while ( str = next_token(lstr, &sep) )
+        lstr=str;
+    safe_str(lstr,buff,bufc);
 }
 
 // Borrowed from TinyMUSH 2.2
@@ -2712,12 +2698,23 @@ FUNCTION(fun_die)
         return;
     }
 
-    if (  n < 1
-       || n > 100)
+    if (  n < 1 )
     {
         safe_range(buff, bufc);
         return;
     }
+
+    if (nfargs>=3 && isTRUE(mux_atol(fargs[2])))
+    {
+        safe_ltoa(RandomINT32(1, die),buff,bufc);
+        for (int count = 1; count < n; count++)
+        {
+            safe_chr(' ',buff,bufc);
+            safe_ltoa(RandomINT32(1, die),buff,bufc);
+        }
+        return;
+    }
+
     int total = 0;
     for (int count = 0; count < n; count++)
     {
