@@ -1,6 +1,6 @@
 // bsd.cpp
 //
-// $Id: bsd.cpp,v 1.44 2005-06-30 05:08:49 sdennis Exp $
+// $Id: bsd.cpp,v 1.45 2005-08-11 18:38:25 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -630,6 +630,11 @@ static int get_slave_result()
         CleanUpSlaveSocket();
         CleanUpSlaveProcess();
         free_lbuf(buf);
+
+        STARTLOG(LOG_ALWAYS, "NET", "SLAVE");
+        log_text("read() of slave result failed. Slave stopped.");
+        ENDLOG;
+
         return -1;
     }
     else if (len == 0)
@@ -1562,6 +1567,10 @@ DESC *new_connection(PortInfo *Port, int *piSocketError)
             {
                 CleanUpSlaveSocket();
                 CleanUpSlaveProcess();
+
+                STARTLOG(LOG_ALWAYS, "NET", "SLAVE");
+                log_text("write() of slave request failed. Slave stopped.");
+                ENDLOG;
             }
             free_lbuf(pBuffL1);
         }
