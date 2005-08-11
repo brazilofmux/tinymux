@@ -1,6 +1,6 @@
 // comsys.cpp
 //
-// $Id: comsys.cpp,v 1.31 2005-08-06 22:54:04 sdennis Exp $
+// $Id: comsys.cpp,v 1.32 2005-08-11 18:14:44 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -2938,11 +2938,16 @@ FUNCTION(fun_comtitle)
     }
 
     dbref victim = lookup_player(executor, fargs[0], true);
-
-    if (victim == NOTHING)
+    if (!Good_obj(victim))
     {
-        safe_str("#-1 PLAYER DOES NOT EXIST", buff, bufc);
-        return;
+        init_match(executor, fargs[0], TYPE_THING);
+        match_everything(0);
+        victim = match_result();
+        if (!Good_obj(victim))
+        {
+            safe_str("#-1 OBJECT DOES NOT EXIST", buff, bufc);
+            return;
+        }
     }
 
     struct channel *chn = select_channel(fargs[1]);
@@ -2997,7 +3002,7 @@ FUNCTION(fun_comtitle)
 #endif
         }
     }
-    safe_str("#-1 PLAYER NOT ON THAT CHANNEL", buff, bufc);
+    safe_str("#-1 OBJECT NOT ON THAT CHANNEL", buff, bufc);
 }
 
 // Returns a player's comsys alias for a named channel.
@@ -3011,11 +3016,16 @@ FUNCTION(fun_comalias)
     }
 
     dbref victim = lookup_player(executor, fargs[0], true);
-
-    if (victim == NOTHING)
+    if (!Good_obj(victim))
     {
-        safe_str("#-1 PLAYER DOES NOT EXIST", buff, bufc);
-        return;
+        init_match(executor, fargs[0], TYPE_THING);
+        match_everything(0);
+        victim = match_result();
+        if (!Good_obj(victim))
+        {
+            safe_str("#-1 OBJECT DOES NOT EXIST", buff, bufc);
+            return;
+        }
     }
 
     struct channel *chn = select_channel(fargs[1]);
@@ -3046,7 +3056,7 @@ FUNCTION(fun_comalias)
             return;
         }
     }
-    safe_str("#-1 PLAYER NOT ON THAT CHANNEL", buff, bufc);
+    safe_str("#-1 OBJECT NOT ON THAT CHANNEL", buff, bufc);
 }
 
 // Returns a list of channels.
