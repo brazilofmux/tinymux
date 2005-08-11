@@ -1,6 +1,6 @@
 // comsys.cpp
 //
-// $Id: comsys.cpp,v 1.33 2005-08-11 21:42:45 ian Exp $
+// $Id: comsys.cpp,v 1.34 2005-08-11 22:41:04 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -2001,7 +2001,14 @@ void do_comtitle
     }
 }
 
-void do_comlist(dbref executor, dbref caller, dbref enactor, int key, char* pattern)
+void do_comlist
+(
+    dbref executor,
+    dbref caller,
+    dbref enactor,
+    int key,
+    char* pattern
+)
 {
     if (!mudconf.have_comsys)
     {
@@ -2009,8 +2016,16 @@ void do_comlist(dbref executor, dbref caller, dbref enactor, int key, char* patt
         return;
     }
 
-    bool wild;
-    wild=(pattern!=NULL && *pattern)?false:true;
+    bool bWild;
+    if (  NULL != pattern
+       && '\0' != *pattern)
+    {
+        bWild = true;
+    }
+    else
+    {
+        bWild = false;
+    }
 
     raw_notify(executor, "Alias     Channel            Status   Title");
 
@@ -2021,8 +2036,8 @@ void do_comlist(dbref executor, dbref caller, dbref enactor, int key, char* patt
         struct comuser *user = select_user(select_channel(c->channels[i]), executor);
         if (user)
         {
-            // Remember C/C++ spec: Left-to-right, the || stops evaluating if it hits true.
-            if (wild || quick_wild(pattern,c->channels[i]))
+            if (  !bWild
+               || quick_wild(pattern,c->channels[i]))
             {
                 char *p =
                     tprintf("%-9.9s %-18.18s %s %s %s",
@@ -2869,18 +2884,25 @@ void do_cheader(dbref player, char *channel, char *header)
 
 struct chanlist_node
 {
-    char* name;
-    struct channel* ptr;
+    char *           name;
+    struct channel * ptr;
 };
 
-int chanlist_comp(const void* a,const void* b)
+int chanlist_comp(const void* a, const void* b)
 {
-    chanlist_node* ca=(chanlist_node*)a;
-    chanlist_node* cb=(chanlist_node*)b;
-    return strcasecmp(ca->name,cb->name);
+    chanlist_node* ca = (chanlist_node*)a;
+    chanlist_node* cb = (chanlist_node*)b;
+    return strcasecmp(ca->name, cb->name);
 }
 
-void do_chanlist(dbref executor, dbref caller, dbref enactor, int key, char *pattern)
+void do_chanlist
+(
+    dbref executor,
+    dbref caller,
+    dbref enactor,
+    int   key,
+    char *pattern
+)
 {
     if (!mudconf.have_comsys)
     {
