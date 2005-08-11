@@ -1,6 +1,6 @@
 // comsys.cpp
 //
-// $Id: comsys.cpp,v 1.32 2005-08-11 18:14:44 sdennis Exp $
+// $Id: comsys.cpp,v 1.33 2005-08-11 21:42:45 ian Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -2001,13 +2001,16 @@ void do_comtitle
     }
 }
 
-void do_comlist(dbref executor, dbref caller, dbref enactor, int key)
+void do_comlist(dbref executor, dbref caller, dbref enactor, int key, char* pattern)
 {
     if (!mudconf.have_comsys)
     {
         raw_notify(executor, "Comsys disabled.");
         return;
     }
+
+    bool wild;
+    wild=(pattern!=NULL && *pattern)?false:true;
 
     raw_notify(executor, "Alias     Channel            Status   Title");
 
@@ -2018,8 +2021,18 @@ void do_comlist(dbref executor, dbref caller, dbref enactor, int key)
         struct comuser *user = select_user(select_channel(c->channels[i]), executor);
         if (user)
         {
-            char *p = tprintf("%-9.9s %-18.18s %s %s %s", c->alias + i * ALIAS_SIZE, c->channels[i], (user->bUserIsOn ? "on " : "off"), (user->ComTitleStatus ? "con " : "coff"), user->title);
-            raw_notify(executor, p);
+            // Remember C/C++ spec: Left-to-right, the || stops evaluating if it hits true.
+            if (wild || quick_wild(pattern,c->channels[i]))
+            {
+                char *p =
+                    tprintf("%-9.9s %-18.18s %s %s %s",
+                        c->alias + i * ALIAS_SIZE,
+                        c->channels[i],
+                        (user->bUserIsOn ? "on " : "off"),
+                        (user->ComTitleStatus ? "con " : "coff"),
+                        user->title);
+                raw_notify(executor, p);
+            }
         }
         else
         {
@@ -2635,7 +2648,7 @@ void do_chopen
     }
     if (key == CSET_LIST)
     {
-        do_chanlist(executor, caller, enactor, 1);
+        do_chanlist(executor, caller, enactor, 1, NULL);
         return;
     }
 
@@ -2854,7 +2867,20 @@ void do_cheader(dbref player, char *channel, char *header)
     memcpy(ch->header, NewHeader_ANSI, nLen+1);
 }
 
-void do_chanlist(dbref executor, dbref caller, dbref enactor, int key)
+struct chanlist_node
+{
+    char* name;
+    struct channel* ptr;
+};
+
+int chanlist_comp(const void* a,const void* b)
+{
+    chanlist_node* ca=(chanlist_node*)a;
+    chanlist_node* cb=(chanlist_node*)b;
+    return strcasecmp(ca->name,cb->name);
+}
+
+void do_chanlist(dbref executor, dbref caller, dbref enactor, int key, char *pattern)
 {
     if (!mudconf.have_comsys)
     {
@@ -2883,9 +2909,50 @@ void do_chanlist(dbref executor, dbref caller, dbref enactor, int key)
         raw_notify(executor, "*** Channel       Owner           Description");
     }
 
-    for (ch = (struct channel *)hash_firstentry(&mudstate.channel_htab);
-         ch; ch = (struct channel *)hash_nextentry(&mudstate.channel_htab))
+    bool wild;
+    wild=(pattern!=NULL && *pattern)?false:true;
+
+    INT64 entries;
+    int outEntries;
+    int actualEntries;
+    entries=mudstate.channel_htab.GetEntryCount();
+    // Nobody should have this many channels and live with it...
+    outEntries=entries>100000?100000:entries;
+
+    struct chanlist_node* charray=(chanlist_node*)MEMALLOC(sizeof(chanlist_node)*outEntries);
+
+    if (charray==NULL)
     {
+        raw_notify(executor,"Out of memory.\n");
+        free_lbuf(temp);
+        free_lbuf(buf);
+        return;
+    }
+
+    // Arrayify all the channels
+    if (wild)
+        for (actualEntries=0, ch = (struct channel *)hash_firstentry(&mudstate.channel_htab);
+             ch && actualEntries<outEntries; ch = (struct channel *)hash_nextentry(&mudstate.channel_htab))
+            if (quick_wild(pattern,ch->name))
+            {
+                charray[actualEntries].name=ch->name;
+                charray[actualEntries].ptr=ch;
+                actualEntries++;
+            }
+    else
+        for (actualEntries=0, ch = (struct channel *)hash_firstentry(&mudstate.channel_htab);
+             ch && actualEntries<outEntries; ch = (struct channel *)hash_nextentry(&mudstate.channel_htab))
+            {
+                charray[actualEntries].name=ch->name;
+                charray[actualEntries].ptr=ch;
+                actualEntries++;
+            }
+
+    qsort(charray,actualEntries,sizeof(struct chanlist_node),chanlist_comp);
+
+    for (int i=0;i<actualEntries;i++)
+    {
+        ch=charray[i].ptr;
         if (  Comm_All(executor)
            || (ch->type & CHANNEL_PUBLIC)
            || Controls(executor, ch->charge_who))
@@ -2922,6 +2989,7 @@ void do_chanlist(dbref executor, dbref caller, dbref enactor, int key)
             raw_notify(executor, temp);
         }
     }
+    MEMFREE(charray);
     free_mbuf(temp);
     free_mbuf(buf);
     raw_notify(executor, "-- End of list of Channels --");
