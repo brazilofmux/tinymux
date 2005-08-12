@@ -1,6 +1,6 @@
 // funceval.cpp -- MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.91 2005-08-12 14:21:12 sdennis Exp $
+// $Id: funceval.cpp,v 1.92 2005-08-12 14:37:11 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -2710,12 +2710,16 @@ FUNCTION(fun_die)
     if (  3 <= nfargs
        && isTRUE(mux_atol(fargs[2])))
     {
-        safe_ltoa(RandomINT32(1, die), buff, bufc);
-        for (int count = 1; count < n; count++)
+        ITL pContext;
+        ItemToList_Init(&pContext, buff, bufc);
+        for (int count = 0; count < n; count++)
         {
-            safe_chr(' ', buff, bufc);
-            safe_ltoa(RandomINT32(1, die), buff, bufc);
+            if (!ItemToList_AddInteger(&pContext, RandomINT32(1, die)))
+            {
+                break;
+            }
         }
+        ItemToList_Final(&pContext);
         return;
     }
 
