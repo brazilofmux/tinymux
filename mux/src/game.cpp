@@ -1,6 +1,6 @@
 // game.cpp
 //
-// $Id: game.cpp,v 1.69 2005-08-11 21:38:46 ian Exp $
+// $Id: game.cpp,v 1.70 2005-08-12 14:21:12 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -308,12 +308,14 @@ bool atr_match
     }
 
     // If we're matching ^-commands, strip ANSI
-    if ( AMATCH_LISTEN == type )
+    //
+    if (AMATCH_LISTEN == type)
     {
-        size_t junk;
         // Remember, strip_ansi returns a pointer to a static buffer
-        // within itself.. Uhg. ;-)
-        str=strip_ansi(str,&junk);
+        // within itself.
+        //
+        size_t junk;
+        str = strip_ansi(str, &junk);
     }
 
     // If not checking parents, just check the thing

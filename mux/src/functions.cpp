@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.145 2005-08-11 21:38:46 ian Exp $
+// $Id: functions.cpp,v 1.146 2005-08-12 14:21:12 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2005 Solid Vertical Domains, Ltd. All
@@ -6371,69 +6371,81 @@ FUNCTION(fun_isdbref)
  * trim: trim off unwanted white space.
  */
 
-char* trim_fast_left(char* str,char delim)
+char* trim_fast_left(char* str, char delim)
 {
     // We assume delim is never '\0'
-    while (*str==delim)
+    //
+    while (*str == delim)
+    {
         str++;
+    }
     return str;
 }
 
-void trim_fast_right(char* str,char delim)
+void trim_fast_right(char* str, char delim)
 {
-    char* last=NULL;
     // We assume delim is never '\0'
+    //
+    char* last = NULL;
     while (*str)
     {
-        if (*str!=delim)
-            last=str;
+        if (*str != delim)
+        {
+            last = str;
+        }
         str++;
     }
 
-    if (last==NULL)
+    if (last == NULL)
+    {
         return;
+    }
 
-    *(last+1)='\0';
+    *(last+1) = '\0';
 }
 
-char* trim_left(char* str,SEP* sep)
+char* trim_left(char* str, SEP* sep)
 {
-    if (sep->n==1)
+    if (1 == sep->n)
     {
-        return trim_fast_left(str,sep->str[0]);
+        return trim_fast_left(str, sep->str[0]);
     }
-    int cycle=0;
-    int max=sep->n;
-    char* base=str-1;
-    for ( ; *str==sep->str[cycle]; str++)
-        if (++cycle >= max)
+    int cycle = 0;
+    int max = sep->n;
+    char* base = str-1;
+    for ( ; *str == sep->str[cycle]; str++)
+    {
+        if (max <= ++cycle)
         {
-            cycle=0;
-            base=str;
+            cycle = 0;
+            base = str;
         }
+    }
     return base+1;
 }
 
-void trim_right(char* str,SEP* sep)
+void trim_right(char* str, SEP* sep)
 {
-    if (sep->n==1)
+    if (1 == sep->n)
     {
         trim_fast_right(str,sep->str[0]);
         return;
     }
 
-    int cycle=sep->n-1;
-    int max=sep->n-1;
-    int n=strlen(str);
-    int base=n;
+    int cycle = sep->n - 1;
+    int max = sep->n - 1;
+    int n = strlen(str);
+    int base = n;
     n--;
-    for ( ; n>=0 && str[n]==sep->str[cycle]; n--)
+    for ( ; n >= 0 && str[n] == sep->str[cycle]; n--)
+    {
         if (--cycle < 0)
         {
-            cycle=max;
-            base=n;
+            cycle = max;
+            base = n;
         }
-    *(str+base)='\0';
+    }
+    *(str+base) = '\0';
 }
 
 FUNCTION(fun_trim)
@@ -6444,36 +6456,46 @@ FUNCTION(fun_trim)
         return;
     }
 
+#define TRIM_LEFT  1
+#define TRIM_RIGHT 2
+
     int trim;
     if (nfargs >= 2)
     {
         switch (mux_tolower(*fargs[1]))
         {
         case 'l':
-            trim = 1;
+            trim = TRIM_LEFT;
             break;
+
         case 'r':
-            trim = 2;
+            trim = TRIM_RIGHT;
             break;
+
         default:
-            trim = 3;
+            trim = TRIM_LEFT|TRIM_RIGHT;
             break;
         }
     }
     else
     {
-        trim = 3;
+        trim = TRIM_LEFT|TRIM_RIGHT;
     }
 
     char* str;
-    if (trim&1)
-        str=trim_left(fargs[0],&sep);
+    if (trim & TRIM_LEFT)
+    {
+        str = trim_left(fargs[0],&sep);
+    }
     else
-        str=fargs[0];
+    {
+        str = fargs[0];
+    }
 
-    if (trim&2)
+    if (trim & TRIM_RIGHT)
+    {
         trim_right(str,&sep);
-
+    }
     safe_str(str,buff,bufc);
 }
 

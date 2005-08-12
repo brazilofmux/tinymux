@@ -1,6 +1,6 @@
 // funceval.cpp -- MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.90 2005-08-12 05:40:06 sdennis Exp $
+// $Id: funceval.cpp,v 1.91 2005-08-12 14:21:12 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -2690,7 +2690,7 @@ FUNCTION(fun_munge)
 
 FUNCTION(fun_die)
 {
-    int n = mux_atol(fargs[0]);
+    int n   = mux_atol(fargs[0]);
     int die = mux_atol(fargs[1]);
 
     if (  n == 0
@@ -2700,7 +2700,8 @@ FUNCTION(fun_die)
         return;
     }
 
-    if (n < 1)
+    if (  n < 1
+       || LBUF_SIZE <= n)
     {
         safe_range(buff, bufc);
         return;
