@@ -1,6 +1,6 @@
 // funceval.cpp -- MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.88 2005-08-11 21:38:46 ian Exp $
+// $Id: funceval.cpp,v 1.89 2005-08-12 05:35:42 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -2337,11 +2337,13 @@ FUNCTION(fun_last)
         return;
     }
 
-    char *str,*lstr;
-    lstr = trim_space_sep(fargs[0], &sep);
-    while ( str = next_token(lstr, &sep) )
-        lstr=str;
-    safe_str(lstr,buff,bufc);
+    char *str;
+    char *lstr = trim_space_sep(fargs[0], &sep);
+    while (NULL != (str = next_token(lstr, &sep)))
+    {
+        lstr = str;
+    }
+    safe_str(lstr, buff, bufc);
 }
 
 // Borrowed from TinyMUSH 2.2
@@ -2698,19 +2700,20 @@ FUNCTION(fun_die)
         return;
     }
 
-    if (  n < 1 )
+    if (n < 1)
     {
         safe_range(buff, bufc);
         return;
     }
 
-    if (nfargs>=3 && isTRUE(mux_atol(fargs[2])))
+    if (  3 <= nfargs
+       && isTRUE(mux_atol(fargs[2])))
     {
-        safe_ltoa(RandomINT32(1, die),buff,bufc);
+        safe_ltoa(RandomINT32(1, die), buff, bufc);
         for (int count = 1; count < n; count++)
         {
             safe_chr(' ',buff,bufc);
-            safe_ltoa(RandomINT32(1, die),buff,bufc);
+            safe_ltoa(RandomINT32(1, die), buff, bufc);
         }
         return;
     }
