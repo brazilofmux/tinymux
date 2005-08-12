@@ -1,6 +1,6 @@
 // comsys.cpp
 //
-// $Id: comsys.cpp,v 1.34 2005-08-11 22:41:04 sdennis Exp $
+// $Id: comsys.cpp,v 1.35 2005-08-12 05:36:20 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -2931,50 +2931,52 @@ void do_chanlist
         raw_notify(executor, "*** Channel       Owner           Description");
     }
 
-    bool wild;
-    wild=(pattern!=NULL && *pattern)?false:true;
-
-    INT64 entries;
-    int outEntries;
-    int actualEntries;
-    entries=mudstate.channel_htab.GetEntryCount();
-    // Nobody should have this many channels and live with it...
-    outEntries=entries>100000?100000:entries;
-
-    struct chanlist_node* charray=(chanlist_node*)MEMALLOC(sizeof(chanlist_node)*outEntries);
-
-    if (charray==NULL)
+    bool bWild;
+    if (  NULL != pattern
+       && '\0' != *pattern)
     {
-        raw_notify(executor,"Out of memory.\n");
-        free_lbuf(temp);
-        free_lbuf(buf);
-        return;
+        bWild = true;
+    }
+    else
+    {
+        bWild = false;
     }
 
-    // Arrayify all the channels
-    if (wild)
-        for (actualEntries=0, ch = (struct channel *)hash_firstentry(&mudstate.channel_htab);
-             ch && actualEntries<outEntries; ch = (struct channel *)hash_nextentry(&mudstate.channel_htab))
-            if (quick_wild(pattern,ch->name))
-            {
-                charray[actualEntries].name=ch->name;
-                charray[actualEntries].ptr=ch;
-                actualEntries++;
-            }
-    else
-        for (actualEntries=0, ch = (struct channel *)hash_firstentry(&mudstate.channel_htab);
-             ch && actualEntries<outEntries; ch = (struct channel *)hash_nextentry(&mudstate.channel_htab))
-            {
-                charray[actualEntries].name=ch->name;
-                charray[actualEntries].ptr=ch;
-                actualEntries++;
-            }
+#define MAX_SUPPORTED_NUM_ENTRIES 10000
 
-    qsort(charray,actualEntries,sizeof(struct chanlist_node),chanlist_comp);
-
-    for (int i=0;i<actualEntries;i++)
+    INT64 entries = mudstate.channel_htab.GetEntryCount();
+    if (MAX_SUPPORTED_NUM_ENTRIES < entries)
     {
-        ch=charray[i].ptr;
+        // Nobody should have so many channels.
+        //
+        entries = MAX_SUPPORTED_NUM_ENTRIES;
+    }
+
+    struct chanlist_node* charray = (chanlist_node*)MEMALLOC(sizeof(chanlist_node)*entries);
+    ISOUTOFMEMORY(charray);
+
+    // Arrayify all the channels
+    //
+    int   actualEntries;
+    for (  actualEntries = 0, ch = (struct channel *)hash_firstentry(&mudstate.channel_htab);
+           ch
+        && actualEntries < entries;
+           ch = (struct channel *)hash_nextentry(&mudstate.channel_htab))
+    {
+            if (  !bWild
+               || quick_wild(pattern, ch->name))
+            {
+                charray[actualEntries].name = ch->name;
+                charray[actualEntries].ptr = ch;
+                actualEntries++;
+            }
+    }
+
+    qsort(charray, actualEntries, sizeof(struct chanlist_node), chanlist_comp);
+
+    for (int i = 0; i < actualEntries; i++)
+    {
+        ch = charray[i].ptr;
         if (  Comm_All(executor)
            || (ch->type & CHANNEL_PUBLIC)
            || Controls(executor, ch->charge_who))
@@ -3000,6 +3002,7 @@ void do_chanlist
 
                 pBuffer = buf;
             }
+
             char *ownername_ansi = ANSI_TruncateAndPad_sbuf(Moniker(ch->charge_who), 15);
             sprintf(temp, "%c%c%c %-13.13s %s %-45.45s",
                 (ch->type & (CHANNEL_PUBLIC)) ? 'P' : '-',
