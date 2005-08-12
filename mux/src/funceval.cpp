@@ -1,6 +1,6 @@
 // funceval.cpp -- MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.89 2005-08-12 05:35:42 sdennis Exp $
+// $Id: funceval.cpp,v 1.90 2005-08-12 05:40:06 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -2712,7 +2712,7 @@ FUNCTION(fun_die)
         safe_ltoa(RandomINT32(1, die), buff, bufc);
         for (int count = 1; count < n; count++)
         {
-            safe_chr(' ',buff,bufc);
+            safe_chr(' ', buff, bufc);
             safe_ltoa(RandomINT32(1, die), buff, bufc);
         }
         return;
