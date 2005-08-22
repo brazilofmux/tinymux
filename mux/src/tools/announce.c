@@ -35,6 +35,9 @@ int main(int argc, char *argv[])
     char   *host;
     char   *inet_ntoa();
     long   ct;
+    int    ch;
+    char   *p;
+    int    opt;
 
     // Save program name for error messages.
     //
@@ -55,8 +58,7 @@ int main(int argc, char *argv[])
 
     // Read in message and translate CRLF/NL to something reasonable.
     //
-    int  ch;
-    char *p = msg;
+    p = msg;
     while (  (ch = getchar()) != EOF
           && p + 2 < msg + sizeof(msg))
     {
@@ -79,7 +81,7 @@ int main(int argc, char *argv[])
         perror("announce: socket");
         exit(1);
     }
-    int opt = 1;
+    opt = 1;
     if (setsockopt(s, SOL_SOCKET, SO_REUSEADDR, (char *)&opt, sizeof(opt)) < 0)
     {   
         perror("setsockopt");
