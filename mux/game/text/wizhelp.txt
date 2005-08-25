@@ -2800,7 +2800,6 @@ HOOK SETUP (continued)
   > &p_look #1234=[gt(match(v(is-forbidden),%#),0)]
   > &is-ignored #1234=#5 #8 #9 #12   (this gets 'Huh? (type 'help' for help)')
   > &is-forbidden #1234=#6 #10 #15   (this gets 'Permission denied.')
-  > @set #1234=sidefx                (needed to use side-effects like pemit())
 
   Now you can do one of two things:
   > @hook/before look
