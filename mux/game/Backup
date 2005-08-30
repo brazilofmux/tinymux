@@ -28,15 +28,15 @@ if [ -r $DATA/mail.db ]; then
 fi
 
 if [ -r $DATA/$NEW_DB ]; then
-    $BIN/dbconvert -d$DATA/$GDBM_DB -u -i$DATA/$NEW_DB -o$DATA/$GAMENAME.FLAT
+    RECENT_DB=$DATA/$NEW_DB
 else
     if [ -r $DATA/$INPUT_DB ]; then
         echo "No recent checkpoint db. Using older db."
-        $BIN/dbconvert -d$DATA/$GDBM_DB -u -i$DATA/$INPUT_DB -o$DATA/$GAMENAME.FLAT
+        RECENT_DB=$DATA/$INPUT_DB
     else
         if [ -r $DATA/$SAVE_DB ]; then
             echo "No input db. Using backup db."
-            $BIN/dbconvert -d$DATA/$GDBM_DB -u -i$DATA/$SAVE_DB -o$DATA/$GAMENAME.FLAT
+            RECENT_DB=$DATA/$SAVE_DB
         else
             echo "No dbs. Backup attempt failed."
 	    exit
@@ -44,5 +44,16 @@ else
     fi
 fi
 
+if [ `head -1 $RECENT_DB` = "+X992001" ]; then
+    cp $RECENT_DB $GAME_DB
+else
+    if [ `head -1 $RECENT_DB` = "+X1031937" ]; then
+        $BIN/dbconvert -d$DATA/$GDBM_DB -u -i$RECENT_DB -o$GAME_DB
+    else
+        echo "Unrecognized header in $RECENT_DB."
+        exit
+    fi
+fi
+
 tar cf - $GAME_DB $COMM_DB $MAIL_DB $CONFIG_FILES $TEXT_FILES | $ZIP -c > $GAMENAME.$DBDATE.tar.gz
-rm $DATA/$GAMENAME.FLAT
+rm $GAME_DB
