@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.146 2005-08-12 14:21:12 sdennis Exp $
+// $Id: functions.cpp,v 1.147 2005-09-12 16:55:43 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2005 Solid Vertical Domains, Ltd. All
@@ -2549,7 +2549,10 @@ FUNCTION(fun_lcon)
             if (iRealmAction != REALM_DO_HIDDEN_FROM_YOU)
             {
 #endif
-                if (!ItemToList_AddInteger(&pContext, thing))
+                if (  Can_Hide(thing)
+                   && Hidden(thing)
+                   && !See_Hidden(executor)
+                   && !ItemToList_AddInteger(&pContext, thing))
                 {
                     break;
                 }
