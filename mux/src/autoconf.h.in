@@ -173,6 +173,12 @@
 #error MUX requires standard headers.
 #endif
 
+#include _XOPEN_SOURCE 500
+
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif // HAVE_UNISTD_H
+
 #include <stdarg.h>
 #include <stdlib.h>
 #include <limits.h>
@@ -188,10 +194,6 @@
 #define rindex          strrchr
 #define bcopy(s,d,n)    memmove(d,s,n)
 #endif
-
-#ifdef HAVE_UNISTD_H
-#include <unistd.h>
-#endif // HAVE_UNISTD_H
 
 #ifdef TIME_WITH_SYS_TIME
 #include <sys/time.h>
