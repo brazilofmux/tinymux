@@ -173,7 +173,7 @@
 #error MUX requires standard headers.
 #endif
 
-#defin _XOPEN_SOURCE 500
+#define _XOPEN_SOURCE 500
 
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
