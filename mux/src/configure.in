@@ -107,7 +107,7 @@ AC_FUNC_STRFTIME
 AC_FUNC_VPRINTF
 AC_CHECK_FUNCS(setrlimit getrusage srandom)
 AC_CHECK_FUNCS(getdtablesize socket gethostbyaddr)
-AC_CHECK_FUNCS(gettimeofday select socket pread pwrite)
+AC_CHECK_FUNCS(gettimeofday select socket)
 AC_CHECK_FUNCS(getpagesize usleep nanosleep setitimer crypt)
 AC_EGREP_HEADER(getpagesize,unistd.h,,AC_DEFINE(NEED_GETPAGESIZE_DCL))
 if test $ac_cv_header_ieeefp_h = yes; then
@@ -302,6 +302,21 @@ int main(int argc, char *argv[])
    return 0;
 }
 ],AC_DEFINE(CAN_UNALIGN_LONGLONG))
+
+AC_CHECKING(for pread and pwrite)
+AC_TRY_RUN([
+#include <sys/types.h>
+#include <sys/uio.h>
+#include <unistd.h>
+main() { pwrite(0, "abc", 3, 0); exit(0); }],
+pwrite_works=yes, 
+pwrite_works=no,)
+
+if test $pwrite_works = yes; then
+  AC_DEFINE(HAVE_PREAD)
+  AC_DEFINE(HAVE_PWRITE)
+fi
+
 AC_TRY_COMPILE([#include <sys/types.h>
 #include <sys/socket.h>],
 [struct linger ling; ling.l_onoff = 1;],
