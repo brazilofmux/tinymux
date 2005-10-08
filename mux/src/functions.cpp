@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.147 2005-09-12 16:55:43 sdennis Exp $
+// $Id: functions.cpp,v 1.148 2005-10-08 02:47:28 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2005 Solid Vertical Domains, Ltd. All
@@ -7043,7 +7043,7 @@ int tf1_width_table[4][3] =
     { 86399, 863999999,   INT_MAX, }
 };
 
-struct
+static struct
 {
     char *specs[4];
     int  div[3];
