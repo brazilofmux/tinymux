@@ -1,6 +1,6 @@
 // conf.cpp -- Set up configuration information and static data.
 //
-// $Id: conf.cpp,v 1.58 2005-08-06 23:26:45 sdennis Exp $
+// $Id: conf.cpp,v 1.59 2005-10-08 01:52:11 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -2031,7 +2031,7 @@ void do_admin
 // ---------------------------------------------------------------------------
 // cf_read: Read in config parameters from named file
 //
-struct
+static struct
 {
     char **pFilename;
     char *pSuffix;
