@@ -1,6 +1,6 @@
 // predicates.cpp
 //
-// $Id: predicates.cpp,v 1.65 2005-08-06 21:05:41 sdennis Exp $
+// $Id: predicates.cpp,v 1.66 2005-10-09 19:33:27 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -2299,11 +2299,11 @@ void did_it(dbref player, dbref thing, int what, const char *def, int owhat,
         }
         else if (odef)
         {
-#ifdef REALITY_LEVELS
+#ifdef REALITY_LVLS
             notify_except2_rlevel(loc, player, player, thing, tprintf("%s %s", Name(player), odef));
 #else
             notify_except2(loc, player, player, thing, tprintf("%s %s", Name(player), odef));
-#endif /* REALITY_LEVELS */
+#endif /* REALITY_LVLS */
         }
         free_lbuf(d);
     }

@@ -1,6 +1,6 @@
 // look.cpp -- Commands which look at things.
 //
-// $Id: look.cpp,v 1.31 2005-08-06 21:11:00 sdennis Exp $
+// $Id: look.cpp,v 1.32 2005-10-09 19:34:38 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -17,9 +17,9 @@
 #include "interface.h"
 #include "powers.h"
 
-#ifdef REALITY_LEVELS
+#ifdef REALITY_LVLS
 #include "levels.h"
-#endif /* REALITY_LEVELS */
+#endif /* REALITY_LVLS */
 
 #if defined(WOD_REALMS) || defined(REALITY_LVLS)
 #define NORMAL_REALM  0
@@ -398,11 +398,11 @@ static void look_exits(dbref player, dbref loc, const char *exit_name)
     bool bFoundAny = false;
     int key = 0;
     int lev;
-#ifdef REALITY_LEVELS
+#ifdef REALITY_LVLS
     if (Dark(loc) || !IsReal(player, loc))
 #else
     if (Dark(loc))
-#endif /* REALITY_LEVELS */
+#endif /* REALITY_LVLS */
     {
         key |= VE_BASE_DARK;
     }
@@ -600,11 +600,11 @@ static void look_contents(dbref player, dbref loc, const char *contents_name, in
 
     // Check to see if he can see the location.
     //
-#ifdef REALITY_LEVELS
+#ifdef REALITY_LVLS
      bool can_see_loc = ( !Dark(loc) && IsReal(player, loc)
 #else
      bool can_see_loc = (  !Dark(loc)
-#endif /* REALITY_LEVELS */
+#endif /* REALITY_LVLS */
                        || (mudconf.see_own_dark && Examinable(player, loc)));
 
     dbref aowner;
@@ -982,11 +982,11 @@ static bool show_a_desc(dbref player, dbref loc)
                 &DescFormat, ParameterList, 2);
 
         notify(player, FormatOutput);
-#ifdef REALITY_LEVELS
+#ifdef REALITY_LVLS
         did_it_rlevel(player, loc, 0, NULL, A_ODESC, NULL, iADescDefault, (char **) NULL, 0);
 #else
         did_it(player, loc, 0, NULL, A_ODESC, NULL, iADescDefault, (char **) NULL, 0);
-#endif /* REALITY_LEVELS */
+#endif /* REALITY_LVLS */
 
         free_lbuf(tbuf1);
         free_lbuf(attrname);
@@ -1003,11 +1003,11 @@ static bool show_a_desc(dbref player, dbref loc)
             got = atr_pget(loc, A_HTDESC, &aowner, &aflags);
             if (*got)
             {
-#ifdef REALITY_LEVELS
+#ifdef REALITY_LVLS
                 did_it_rlevel(player, loc, A_HTDESC, NULL, A_ODESC, NULL, A_ADESC, (char **) NULL, 0);
 #else
                 did_it(player, loc, A_HTDESC, NULL, A_ODESC, NULL, A_ADESC, (char **) NULL, 0);
-#endif /* REALITY_LEVELS */
+#endif /* REALITY_LVLS */
                 ret = true;
             }
             else
@@ -1020,11 +1020,11 @@ static bool show_a_desc(dbref player, dbref loc)
                     {
                         raw_notify_newline(player);
                     }
-#ifdef REALITY_LEVELS
+#ifdef REALITY_LVLS
                     did_it_rlevel(player, loc, iDescDefault, NULL, A_ODESC, NULL, iADescDefault, (char **) NULL, 0);
 #else
                     did_it(player, loc, iDescDefault, NULL, A_ODESC, NULL, iADescDefault, (char **) NULL, 0);
-#endif /* REALITY_LEVELS */
+#endif /* REALITY_LVLS */
                     if (indent)
                     {
                         raw_notify_newline(player);
@@ -1039,11 +1039,11 @@ static bool show_a_desc(dbref player, dbref loc)
             {
                 raw_notify_newline(player);
             }
-#ifdef REALITY_LEVELS
+#ifdef REALITY_LVLS
             did_it_rlevel(player, loc, iDescDefault, NULL, A_ODESC, NULL, iADescDefault, (char **) NULL, 0);
 #else
             did_it(player, loc, iDescDefault, NULL, A_ODESC, NULL, iADescDefault, (char **) NULL, 0);
-#endif /* REALITY_LEVELS */
+#endif /* REALITY_LVLS */
             if (indent)
             {
                 raw_notify_newline(player);
@@ -1094,11 +1094,11 @@ static void look_simple(dbref player, dbref thing, bool obey_terse)
     if (!show_a_desc(player, thing))
     {
         notify(player, "You see nothing special.");
-#ifdef REALITY_LEVELS
+#ifdef REALITY_LVLS
         did_it_rlevel(player, thing, 0, NULL, A_ODESC, NULL, iADescDefault, (char **) NULL, 0);
 #else
         did_it(player, thing, pattr, NULL, A_ODESC, NULL, iADescDefault,
-#endif /* REALITY_LEVELS */
+#endif /* REALITY_LVLS */
             (char **)NULL, 0);
     }
 
@@ -1119,22 +1119,22 @@ static void show_desc(dbref player, dbref loc, int key)
     if (  (key & LK_OBEYTERSE)
        && Terse(player))
     {
-#ifdef REALITY_LEVELS
+#ifdef REALITY_LVLS
         did_it_rlevel(player, loc, 0, NULL, A_ODESC, NULL, A_ADESC, (char **)NULL, 0);
 #else
         did_it(player, loc, 0, NULL, A_ODESC, NULL, A_ADESC, (char **)NULL, 0);
-#endif /* REALITY_LEVELS */
+#endif /* REALITY_LVLS */
     }
     else if (  !isRoom(loc)
             && (key & LK_IDESC))
     {
         if (*(got = atr_pget(loc, A_IDESC, &aowner, &aflags)))
         {
-#ifdef REALITY_LEVELS
+#ifdef REALITY_LVLS
            did_it_rlevel(player, loc, A_IDESC, NULL, A_ODESC, NULL, A_ADESC, (char **)NULL, 0);
 #else
             did_it(player, loc, A_IDESC, NULL, A_ODESC, NULL, A_ADESC, (char **)NULL, 0);
-#endif /* REALITY_LEVELS */
+#endif /* REALITY_LVLS */
         }
         else
         {
@@ -1335,10 +1335,10 @@ void do_look(dbref executor, dbref caller, dbref enactor, int key, char *name)
     //
     if (Good_obj(thing))
     {
-#ifdef REALITY_LEVELS
+#ifdef REALITY_LVLS
         if (!IsReal(executor, thing))
             return;
-#endif /* REALITY_LEVELS */
+#endif /* REALITY_LVLS */
         switch (Typeof(thing))
         {
         case TYPE_ROOM:
@@ -1407,14 +1407,14 @@ static void debug_examine(dbref player, dbref thing)
     buf = powers_list(player, thing);
     notify(player, tprintf("Powers  = %s", buf));
     free_lbuf(buf);
-#ifdef REALITY_LEVELS
+#ifdef REALITY_LVLS
     buf = rxlevel_description(player, thing);
     notify(player, tprintf("RxLevel = %s", buf));
     free_lbuf(buf);
     buf = txlevel_description(player, thing);
     notify(player, tprintf("TxLevel = %s", buf));
     free_lbuf(buf);
-#endif /* REALITY_LEVELS */
+#endif /* REALITY_LVLS */
     buf = atr_get(thing, A_LOCK, &aowner, &aflags);
     pBoolExp = parse_boolexp(player, buf, true);
     free_lbuf(buf);
@@ -1714,7 +1714,7 @@ void do_examine(dbref executor, dbref caller, dbref enactor, int key, char *name
         buf2 = powers_list(executor, thing);
         notify(executor, tprintf("Powers: %s", buf2));
         free_lbuf(buf2);
-#ifdef REALITY_LEVELS
+#ifdef REALITY_LVLS
         /* Show Rx and Tx levels */
 
         buf2 = rxlevel_description(executor, thing);
@@ -1723,7 +1723,7 @@ void do_examine(dbref executor, dbref caller, dbref enactor, int key, char *name
         buf2 = txlevel_description(executor, thing);
         notify(executor, buf2);
         free_lbuf(buf2);
-#endif /* REALITY_LEVELS */
+#endif /* REALITY_LVLS */
     }
     if (!(key & EXAM_BRIEF))
     {
@@ -2515,9 +2515,9 @@ void do_decomp
     {
         decompile_flags(executor, thing, thingname);
         decompile_powers(executor, thing, thingname);
-#ifdef REALITY_LEVELS
+#ifdef REALITY_LVLS
         decompile_rlevels(executor, thing, thingname);
-#endif /* REALITY_LEVELS */
+#endif /* REALITY_LVLS */
     }
 
     // If the object has a parent, report it.
