@@ -261,7 +261,7 @@ RLEVEL find_rlevel(char *name)
 {
     for (int i = 0; i < mudconf.no_levels; i++)
     {
-        if (strcasecmp(name, mudconf.reality_level[i].name) == 0)
+        if (mux_stricmp(name, mudconf.reality_level[i].name) == 0)
         {
             return mudconf.reality_level[i].value;
         }
