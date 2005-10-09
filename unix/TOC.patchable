@@ -127,6 +127,7 @@ src/tools/announce.c
 src/tools/dbpuller.c
 src/tools/muxattrs.dat
 src/tools/muxlocks.dat
+src/tools/README.muxdbpuller
 src/unparse.cpp
 src/unsplit.cpp
 src/vattr.cpp
