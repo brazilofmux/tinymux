@@ -1,6 +1,6 @@
 // comsys.cpp
 //
-// $Id: comsys.cpp,v 1.35 2005-08-12 05:36:20 sdennis Exp $
+// $Id: comsys.cpp,v 1.36 2005-10-09 19:10:12 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -2888,11 +2888,11 @@ struct chanlist_node
     struct channel * ptr;
 };
 
-int chanlist_comp(const void* a, const void* b)
+int DCL_CDECL chanlist_comp(const void* a, const void* b)
 {
     chanlist_node* ca = (chanlist_node*)a;
     chanlist_node* cb = (chanlist_node*)b;
-    return strcasecmp(ca->name, cb->name);
+    return mux_stricmp(ca->name, cb->name);
 }
 
 void do_chanlist
