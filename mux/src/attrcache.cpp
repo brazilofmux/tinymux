@@ -1,6 +1,6 @@
 // svdocache.cpp -- Attribute caching module.
 //
-// $Id: attrcache.cpp,v 1.14 2005-08-06 21:16:07 sdennis Exp $
+// $Id: attrcache.cpp,v 1.15 2005-10-09 19:47:40 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -200,7 +200,7 @@ const char *cache_get(Aname *nam, int *pLen)
        || !cache_initted)
     {
         *pLen = 0;
-        return 0;
+        return NULL;
     }
 
     PCENT_HDR pCacheEntry = NULL;
@@ -281,7 +281,7 @@ const char *cache_get(Aname *nam, int *pLen)
     // We didn't find that one.
     //
     *pLen = 0;
-    return 0;
+    return NULL;
 }
 
 
