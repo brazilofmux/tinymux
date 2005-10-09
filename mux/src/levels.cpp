@@ -23,7 +23,7 @@ extern void cf_log_notfound(dbref, char *, const char *, char *);
 RLEVEL RxLevel(dbref thing)
 {
     const char *buff = atr_get_raw(thing, A_RLEVEL);
-    if (  NULL != buff
+    if (  NULL == buff
        || strlen(buff) != 17)
     {
         switch(Typeof(thing))
@@ -54,7 +54,7 @@ RLEVEL RxLevel(dbref thing)
 RLEVEL TxLevel(dbref thing)
 {
     const char *buff = atr_get_raw(thing, A_RLEVEL);
-    if (  !buff
+    if (  NULL == buff
        || strlen(buff) != 17)
     {
         switch(Typeof(thing))
