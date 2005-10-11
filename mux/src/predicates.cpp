@@ -1,6 +1,6 @@
 // predicates.cpp
 //
-// $Id: predicates.cpp,v 1.66 2005-10-09 19:33:27 sdennis Exp $
+// $Id: predicates.cpp,v 1.67 2005-10-11 16:16:12 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -19,7 +19,7 @@
 #include "levels.h"
 #endif /* REALITY_LVLS */
 
-extern bool do_command(DESC *, char *);
+extern void do_command(DESC *, char *);
 extern void pcache_sync(void);
 
 char * DCL_CDECL tprintf(const char *fmt,...)
