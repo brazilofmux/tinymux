@@ -205,7 +205,10 @@ Bug Fixes:
     @restart.
  -- Fix @mail/purge bug where only the first cleared @mail item would
     be purged.
-
+ -- Avoid reference to freed memory when an outputsuffix is set and
+    LOGOUT is sent at the login screen. Found and fixed by Alierak.
+ -- The logout_cmd_access parameter disables a logged-out command when
+    any access restriction, not just need_player, is specified.
 
 Performance Enhancements:
 ~~~~~~~~~~~~~~~~~~~~~~~~
@@ -238,3 +241,6 @@ Miscellaneous:
     names are stored separately.
  -- Alierak moved the login mail check into announce_connect() to
     clarify the purpose of record_login().
+ -- Alierak refactored the logged-out commands code, removing some
+    unreachable code in do_command() and clarifying how logged-out
+    commands are handled.

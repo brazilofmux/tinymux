@@ -1,6 +1,6 @@
 // netcommon.cpp
 //
-// $Id: netcommon.cpp,v 1.50 2005-08-06 21:03:25 sdennis Exp $
+// $Id: netcommon.cpp,v 1.51 2005-10-11 05:27:40 rmg Exp $
 //
 // This file contains routines used by the networking code that do not
 // depend on the implementation of the networking code.  The network-specific
@@ -2199,10 +2199,130 @@ static bool check_connect(DESC *d, char *msg)
     return true;
 }
 
-bool do_command(DESC *d, char *command)
+static void do_logged_out_internal(DESC *d, int key, char *arg)
+{
+    switch (key)
+    {
+    case CMD_QUIT:
+
+        shutdownsock(d, R_QUIT);
+        break;
+
+    case CMD_LOGOUT:
+
+        shutdownsock(d, R_LOGOUT);
+        break;
+
+    case CMD_WHO:
+    case CMD_DOING:
+    case CMD_SESSION:
+
+        dump_users(d, arg, key);
+        break;
+
+    case CMD_PREFIX:
+
+        set_userstring(&d->output_prefix, arg);
+        break;
+
+    case CMD_SUFFIX:
+
+        set_userstring(&d->output_suffix, arg);
+        break;
+
+    case CMD_INFO:
+
+        dump_info(d);
+        break;
+
+    case CMD_PUEBLOCLIENT:
+
+        // Set the descriptor's flag.
+        //
+        d->flags |= DS_PUEBLOCLIENT;
+
+        queue_string(d, mudconf.pueblo_msg);
+        queue_write_LEN(d, "\r\n", 2);
+        break;
+
+    default:
+
+        {
+            char buf[LBUF_SIZE * 2];
+            STARTLOG(LOG_BUGS, "BUG", "PARSE");
+            sprintf(buf, "Logged-out command with no handler: '%s'", mudstate.debug_cmd);
+            log_text(buf);
+            ENDLOG;
+        }
+    }
+}
+
+void do_command(DESC *d, char *command)
 {
     char *cmdsave = mudstate.debug_cmd;
     mudstate.debug_cmd = (char *)"< do_command >";
+
+    if (d->flags & DS_CONNECTED)
+    {
+        // Normal logged-in command processing.
+        //
+        d->command_count++;
+        if (d->output_prefix)
+        {
+            queue_string(d, d->output_prefix);
+            queue_write_LEN(d, "\r\n", 2);
+        }
+        mudstate.curr_executor = d->player;
+        mudstate.curr_enactor = d->player;
+        for (int i = 0; i < MAX_GLOBAL_REGS; i++)
+        {
+            mudstate.global_regs[i][0] = '\0';
+            mudstate.glob_reg_len[i] = 0;
+        }
+
+        CLinearTimeAbsolute ltaBegin;
+        ltaBegin.GetUTC();
+        MuxAlarm.Set(mudconf.max_cmdsecs);
+
+        char *log_cmdbuf = process_command(d->player, d->player, d->player,
+            true, command, (char **)NULL, 0);
+
+        CLinearTimeAbsolute ltaEnd;
+        ltaEnd.GetUTC();
+        if (MuxAlarm.bAlarmed)
+        {
+            notify(d->player, "GAME: Expensive activity abbreviated.");
+            halt_que(d->player, NOTHING);
+            s_Flags(d->player, FLAG_WORD1, Flags(d->player) | HALT);
+        }
+        MuxAlarm.Clear();
+
+        CLinearTimeDelta ltd = ltaEnd - ltaBegin;
+        if (ltd > mudconf.rpt_cmdsecs)
+        {
+            STARTLOG(LOG_PROBLEMS, "CMD", "CPU");
+            log_name_and_loc(d->player);
+            char *logbuf = alloc_lbuf("do_command.LOG.cpu");
+            sprintf(logbuf, " queued command taking %s secs: ",
+                ltd.ReturnSecondsString(4));
+            log_text(logbuf);
+            free_lbuf(logbuf);
+            log_text(log_cmdbuf);
+            ENDLOG;
+        }
+
+        mudstate.curr_cmd = (char *) "";
+        if (d->output_suffix)
+        {
+            queue_string(d, d->output_suffix);
+            queue_write_LEN(d, "\r\n", 2);
+        }
+        mudstate.debug_cmd = cmdsave;
+        return;
+    }
+
+    // Login screen (logged-out) command processing.
+    //
 
     // Split off the command from the arguments.
     //
@@ -2217,85 +2337,24 @@ bool do_command(DESC *d, char *command)
         *arg++ = '\0';
     }
 
-    // Look up the command.  If we don't find it, turn it over to the normal
-    // logged-in command processor or to create/connect.
+    // Look up the command in the logged-out command table.
     //
-    NAMETAB *cp = NULL;
-    if (!(d->flags & DS_CONNECTED))
-    {
-        cp = (NAMETAB *)hashfindLEN(command, strlen(command), &mudstate.logout_cmd_htab);
-    }
+    NAMETAB *cp = (NAMETAB *)hashfindLEN(command, strlen(command), &mudstate.logout_cmd_htab);
     if (cp == NULL)
     {
+        // Not in the logged-out command table, so maybe a connect attempt.
+        //
         if (*arg)
         {
             // Restore nullified space
             //
             *--arg = ' ';
         }
-        if (d->flags & DS_CONNECTED)
-        {
-            d->command_count++;
-            if (d->output_prefix)
-            {
-                queue_string(d, d->output_prefix);
-                queue_write_LEN(d, "\r\n", 2);
-            }
-            mudstate.curr_executor = d->player;
-            mudstate.curr_enactor = d->player;
-            for (int i = 0; i < MAX_GLOBAL_REGS; i++)
-            {
-                mudstate.global_regs[i][0] = '\0';
-                mudstate.glob_reg_len[i] = 0;
-            }
-
-            CLinearTimeAbsolute ltaBegin;
-            ltaBegin.GetUTC();
-            MuxAlarm.Set(mudconf.max_cmdsecs);
-
-            char *log_cmdbuf = process_command(d->player, d->player, d->player,
-                true, command, (char **)NULL, 0);
-
-            CLinearTimeAbsolute ltaEnd;
-            ltaEnd.GetUTC();
-            if (MuxAlarm.bAlarmed)
-            {
-                notify(d->player, "GAME: Expensive activity abbreviated.");
-                halt_que(d->player, NOTHING);
-                s_Flags(d->player, FLAG_WORD1, Flags(d->player) | HALT);
-            }
-            MuxAlarm.Clear();
-
-            CLinearTimeDelta ltd = ltaEnd - ltaBegin;
-            if (ltd > mudconf.rpt_cmdsecs)
-            {
-                STARTLOG(LOG_PROBLEMS, "CMD", "CPU");
-                log_name_and_loc(d->player);
-                char *logbuf = alloc_lbuf("do_command.LOG.cpu");
-                sprintf(logbuf, " queued command taking %s secs: ",
-                    ltd.ReturnSecondsString(4));
-                log_text(logbuf);
-                free_lbuf(logbuf);
-                log_text(log_cmdbuf);
-                ENDLOG;
-            }
-
-            mudstate.curr_cmd = (char *) "";
-            if (d->output_suffix)
-            {
-                queue_string(d, d->output_suffix);
-                queue_write_LEN(d, "\r\n", 2);
-            }
-            mudstate.debug_cmd = cmdsave;
-            return true;
-        }
-        else
-        {
-            mudstate.curr_executor = NOTHING;
-            mudstate.curr_enactor = NOTHING;
-            mudstate.debug_cmd = cmdsave;
-            return check_connect(d, command);
-        }
+        mudstate.curr_executor = NOTHING;
+        mudstate.curr_enactor = NOTHING;
+        mudstate.debug_cmd = cmdsave;
+        check_connect(d, command);
+        return;
     }
 
     // The command was in the logged-out command table. Perform
@@ -2311,87 +2370,21 @@ bool do_command(DESC *d, char *command)
             queue_write_LEN(d, "\r\n", 2);
         }
     }
-    if (  (  (d->flags & DS_CONNECTED)
-          && !check_access(d->player, cp->perm))
-       || ( !(d->flags & DS_CONNECTED)
-          && cp->perm & CA_PLAYER))
+    if (cp->perm != CA_PUBLIC)
     {
         queue_write(d, "Permission denied.\r\n");
     }
     else
     {
         mudstate.debug_cmd = cp->name;
-        switch (cp->flag & CMD_MASK)
-        {
-        case CMD_QUIT:
-
-            shutdownsock(d, R_QUIT);
-            mudstate.debug_cmd = cmdsave;
-            return false;
-
-        case CMD_LOGOUT:
-
-            shutdownsock(d, R_LOGOUT);
-            break;
-
-        case CMD_WHO:
-
-            dump_users(d, arg, CMD_WHO);
-            break;
-
-        case CMD_DOING:
-
-            dump_users(d, arg, CMD_DOING);
-            break;
-
-        case CMD_SESSION:
-
-            dump_users(d, arg, CMD_SESSION);
-            break;
-
-        case CMD_PREFIX:
-
-            set_userstring(&d->output_prefix, arg);
-            break;
-
-        case CMD_SUFFIX:
-
-            set_userstring(&d->output_suffix, arg);
-            break;
-
-        case CMD_INFO:
-
-            dump_info(d);
-            break;
-
-        case CMD_PUEBLOCLIENT:
-
-            // Set the descriptor's flag.
-            //
-            d->flags |= DS_PUEBLOCLIENT;
-
-            // If we're already connected, set the player's flag.
-            //
-            if (d->flags & DS_CONNECTED)
-            {
-                s_Html(d->player);
-            }
-            queue_string(d, mudconf.pueblo_msg);
-            queue_write_LEN(d, "\r\n", 2);
-            break;
-
-        default:
-
-            {
-                char buf[LBUF_SIZE * 2];
-                STARTLOG(LOG_BUGS, "BUG", "PARSE");
-                sprintf(buf, "Prefix command with no handler: '%s'", command);
-                log_text(buf);
-                ENDLOG;
-            }
-        }
+        do_logged_out_internal(d, cp->flag & CMD_MASK, arg);
     }
-    if (!(cp->flag & CMD_NOxFIX))
+    // QUIT or LOGOUT will close the connection and cause the
+    // descriptor to be freed!
+    //
+    if (  ((cp->flag & CMD_MASK) != CMD_QUIT)
+       && ((cp->flag & CMD_MASK) != CMD_LOGOUT)
+       && !(cp->flag & CMD_NOxFIX))
     {
         if (d->output_suffix)
         {
@@ -2400,32 +2393,28 @@ bool do_command(DESC *d, char *command)
         }
     }
     mudstate.debug_cmd = cmdsave;
-    return true;
 }
 
 void logged_out1(dbref executor, dbref caller, dbref enactor, int key, char *arg)
 {
+    // PUEBLOCLIENT affects all the player's connections.
+    //
     if (key == CMD_PUEBLOCLIENT)
     {
         DESC *d;
         DESC_ITER_PLAYER(executor, d)
         {
-            // Set the descriptor's flag.
-            //
-            d->flags |= DS_PUEBLOCLIENT;
-
-            // If we're already connected, set the player's flag.
-            //
-            if (d->flags & DS_CONNECTED)
-            {
-                s_Html(d->player);
-            }
-            queue_string(d, mudconf.pueblo_msg);
-            queue_write_LEN(d, "\r\n", 2);
+            do_logged_out_internal(d, key, arg);
         }
+        // Set the player's flag.
+        //
+        s_Html(executor);
         return;
     }
 
+    // Other logged-out commands affect only the player's most recently
+    // used connection.
+    //
     DESC *d;
     DESC *dLatest = NULL;
     DESC_ITER_PLAYER(executor, d)
@@ -2436,44 +2425,9 @@ void logged_out1(dbref executor, dbref caller, dbref enactor, int key, char *arg
             dLatest = d;
         }
     }
-    if (dLatest == NULL)
+    if (dLatest != NULL)
     {
-        return;
-    }
-
-    switch (key)
-    {
-    case CMD_QUIT:
-        shutdownsock(dLatest, R_QUIT);
-        break;
-
-    case CMD_LOGOUT:
-        shutdownsock(dLatest, R_LOGOUT);
-        break;
-
-    case CMD_WHO:
-        dump_users(dLatest, arg, CMD_WHO);
-        break;
-
-    case CMD_DOING:
-        dump_users(dLatest, arg, CMD_DOING);
-        break;
-
-    case CMD_SESSION:
-        dump_users(dLatest, arg, CMD_SESSION);
-        break;
-
-    case CMD_PREFIX:
-        set_userstring(&dLatest->output_prefix, arg);
-        break;
-
-    case CMD_SUFFIX:
-        set_userstring(&dLatest->output_suffix, arg);
-        break;
-
-    case CMD_INFO:
-        dump_info(dLatest);
-        break;
+        do_logged_out_internal(dLatest, key, arg);
     }
 }
 
