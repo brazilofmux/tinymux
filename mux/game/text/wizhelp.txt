@@ -1373,7 +1373,7 @@ ACCESS
   Specifying a permission adds it to the list of permissions required; to
   remove a permission prefix it with a ! character.
 
-  Related Topics: PERMISSIONS, @list.
+  Related Topics: @list, logout_cmd_access, PERMISSIONS.
 
 & ALIAS
 ALIAS
@@ -3134,8 +3134,11 @@ LOGOUT_CMD_ACCESS
 
   CONFIG PARAMETER: logout_cmd_access <command> <permlist>
 
-  Specifies permission for logged-out commands, like WHO, DOING, SESSION,
-  QUIT, OUTPUTPREFIX, and OUTPUTSUFFIX.
+  Specifies permission for logged-out commands (i.e., WHO, DOING, SESSION,
+  QUIT, OUTPUTPREFIX, and OUTPUTSUFFIX).
+
+  Any restriction applied here will disable the command from the login
+  screen without affecting its use by players within the game.
 
   Related Topics: access.
 
