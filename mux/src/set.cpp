@@ -1,6 +1,6 @@
 // set.cpp -- Commands which set parameters.
 //
-// $Id: set.cpp,v 1.28 2004-08-26 16:39:31 sdennis Exp $
+// $Id: set.cpp,v 1.29 2005-10-12 04:28:27 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -879,22 +879,13 @@ static void set_attr_internal(dbref player, dbref thing, int attrnum, char *attr
     dbref aowner;
     int aflags;
     ATTR *pattr = atr_num(attrnum);
-#ifdef BT_ENABLED
-    int have_xcode;
-#endif
     atr_pget_info(thing, attrnum, &aowner, &aflags);
     if (  pattr
        && bCanSetAttr(player, thing, pattr))
     {
         bool could_hear = Hearer(thing);
-#ifdef BT_ENABLED
-        have_xcode = Hardcode(thing);
-#endif
         atr_add(thing, attrnum, attrtext, Owner(player), aflags);
         handle_ears(thing, could_hear, Hearer(thing));
-#ifdef BT_ENABLED
-        handle_xcode(player, thing, have_xcode, Hardcode(thing));
-#endif
         if (  !(key & SET_QUIET)
            && !Quiet(player)
            && !Quiet(thing))
@@ -921,9 +912,6 @@ void do_set
 {
     dbref thing, aowner;
     int aflags;
-#ifdef BT_ENABLED
-    int have_xcode;
-#endif
     ATTR *pattr;
 
     // See if we have the <obj>/<attr> form, which is how you set
@@ -989,18 +977,12 @@ void do_set
             }
             bool could_hear = Hearer(thing);
 
-#ifdef BT_ENABLED
-            have_xcode = Hardcode(thing);
-#endif
             atr_set_flags(thing, pattr->number, aflags);
 
             // Tell the player about it.
             //
             handle_ears(thing, could_hear, Hearer(thing));
 
-#ifdef BT_ENABLED
-            handle_xcode(executor, thing, have_xcode, Hardcode(thing));
-#endif
             if (  !(key & SET_QUIET)
                && !Quiet(executor)
                && !Quiet(thing))

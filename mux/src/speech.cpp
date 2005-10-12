@@ -1,6 +1,6 @@
 // speech.cpp -- Commands which involve speaking.
 //
-// $Id: speech.cpp,v 1.20 2005-08-05 15:37:50 sdennis Exp $
+// $Id: speech.cpp,v 1.21 2005-10-12 04:28:27 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -563,15 +563,7 @@ static void page_return(dbref player, dbref target, const char *tag,
 
             char *p = tprintf("%s message from %s: %s", tag,
                 Moniker(target), str2);
-#ifdef BT_ENABLED
-            if (  Wizard(target)
-               || !In_IC_Loc(target))
-            {
-                notify_with_cause_ooc(player, target, p);
-            }
-#else
             notify_with_cause_ooc(player, target, p);
-#endif
             p = tprintf("[%d:%02d] %s message sent to %s.", ft.iHour,
                 ft.iMinute, tag, Moniker(player));
             notify_with_cause_ooc(target, player, p);
@@ -587,15 +579,6 @@ static void page_return(dbref player, dbref target, const char *tag,
 
 static bool page_check(dbref player, dbref target)
 {
-#ifdef BT_ENABLED
-    if (  In_IC_Loc(player)
-       && !WizRoy(target)
-       && !WizRoy(player))
-    {
-        notify(player, NOPERM_MESSAGE);
-        return false;
-    }
-#endif
     if (!payfor(player, Guest(player) ? 0 : mudconf.pagecost))
     {
         notify(player, tprintf("You don't have enough %s.", mudconf.many_coins));
@@ -605,14 +588,7 @@ static bool page_check(dbref player, dbref target)
         page_return(player, target, "Away", A_AWAY,
             tprintf("Sorry, %s is not connected.", Moniker(target)));
     }
-#ifdef BT_ENABLED
-    else if (  !could_doit(player, target, A_LPAGE)
-            || (  !Wizard(player)
-               && In_IC_Loc(target)
-               && !Wizard(target)))
-#else
     else if (!could_doit(player, target, A_LPAGE))
-#endif
     {
         if (  Can_Hide(target)
            && Hidden(target)
