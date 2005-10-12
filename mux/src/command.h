@@ -1,6 +1,6 @@
 // command.h -- declarations used by the command processor.
 //
-// $Id: command.h,v 1.6 2005-08-11 21:38:46 ian Exp $
+// $Id: command.h,v 1.7 2005-10-12 05:36:21 sdennis Exp $
 //
 
 #ifndef __COMMAND_H
@@ -294,12 +294,7 @@ typedef struct
 #define CA_NO_SUSPECT 0x00008000  /* Not by SUSPECT players */
 #define CA_NO_GUEST   0x00010000  /* Not by GUEST players */
 #define CA_NO_UNINS   0x00020000  /* Not by UNINSPECTED players */
-#ifdef BT_ENABLED
-#define CA_NO_IC      0x00040000
-#define CA_CANTBE_MASK (CA_NO_HAVEN|CA_NO_ROBOT|CA_NO_SLAVE|CA_NO_SUSPECT|CA_NO_GUEST|CA_NO_UNINS|CA_NO_IC)
-#else
 #define CA_CANTBE_MASK (CA_NO_HAVEN|CA_NO_ROBOT|CA_NO_SLAVE|CA_NO_SUSPECT|CA_NO_GUEST|CA_NO_UNINS)
-#endif
 
 #define CA_MARKER0    0x00002000
 #define CA_MARKER1    0x00004000

@@ -59,25 +59,6 @@ AC_ARG_ENABLE(
   ])
 AC_SUBST(MEMORY_BASED)
 
-AC_MSG_CHECKING(whether to enable Exile BTMUX)
-AC_ARG_ENABLE(
-  [exile],
-  AC_HELP_STRING([--enable-exile], [enable Exile BTMUX (default is NO)]),
-  [
-    if test "x$enableval" = "xno"; then
-      AC_MSG_RESULT(no)
-    else
-      BTBASED="-DBT_ENABLED"
-      BTLIBS="-Ihcode -Lhcode -Ihcode/btech -Lhcode/btech -lhcode -lbtech"
-      AC_MSG_RESULT(yes)
-    fi
-  ],
-  [
-    AC_MSG_RESULT(no)
-  ])
-AC_SUBST(BTBASED)
-AC_SUBST(BTLIBS)
-
 AC_CANONICAL_HOST
 AC_PROG_CC
 AC_PROG_CXX

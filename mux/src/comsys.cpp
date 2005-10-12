@@ -1,6 +1,6 @@
 // comsys.cpp
 //
-// $Id: comsys.cpp,v 1.36 2005-10-09 19:10:12 sdennis Exp $
+// $Id: comsys.cpp,v 1.37 2005-10-12 05:36:21 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -962,13 +962,6 @@ void do_processcom(dbref player, char *arg1, char *arg2)
     {
         arg2[3500] = '\0';
     }
-#ifdef BT_ENABLED
-    if (  !Wizard(player)
-       && In_IC_Loc(player))
-    {
-        raw_notify(player, "Permission Denied.");
-    }
-#endif
     struct channel *ch = select_channel(arg1);
     if (!ch)
     {

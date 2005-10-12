@@ -1,6 +1,6 @@
 // bsd.cpp
 //
-// $Id: bsd.cpp,v 1.45 2005-08-11 18:38:25 sdennis Exp $
+// $Id: bsd.cpp,v 1.46 2005-10-12 05:39:11 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -3007,9 +3007,6 @@ RETSIGTYPE DCL_CDECL sighandler(int sig)
 
             // We are the reproduced child with a slightly better chance.
             //
-#ifdef BT_ENABLED
-            ChangeSpecialObjects(0);
-#endif
             dump_restart_db();
 #ifdef GAME_DOOFERMUX
             execl("bin/netmux", mudconf.mud_name, "-c", mudconf.config_file, "-p", mudconf.pid_file, NULL);

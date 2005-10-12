@@ -1,6 +1,6 @@
 // externs.h -- Prototypes for externs not defined elsewhere.
 //
-// $Id: externs.h,v 1.39 2005-08-05 15:27:43 sdennis Exp $
+// $Id: externs.h,v 1.40 2005-10-12 05:30:31 sdennis Exp $
 //
 
 #ifndef EXTERNS_H
@@ -10,25 +10,6 @@
 #include "match.h"
 #include "mudconf.h"
 #include "svdrand.h"
-
-#ifdef BT_ENABLED
-
-#include "functions.h"
-
-/* Stuff in BT */
-extern FUN flist[];
-extern void DisposeSpecialObject(dbref, dbref);
-extern void handle_xcode(dbref, dbref, int, int);
-extern void SaveSpecialObjects(int);
-extern void ChangeSpecialObjects(int);
-extern void UpdateSpecialObjects(void);
-extern void LoadSpecialObjects(void);
-extern void ResetSpecialObjects(void);
-
-/* Local BT stuff */
-extern int In_IC_Loc(dbref player);
-
-#endif
 
 /* From bsd.cpp */
 void CleanUpSlaveSocket(void);

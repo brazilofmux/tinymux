@@ -1,6 +1,6 @@
 // create.cpp -- Commands that create new objects.
 //
-// $Id: create.cpp,v 1.15 2005-06-28 21:47:10 sdennis Exp $
+// $Id: create.cpp,v 1.16 2005-10-12 05:32:44 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -948,14 +948,6 @@ void do_destroy(dbref executor, dbref caller, dbref enactor, int key, char *what
     //
     dbref ThingOwner = Owner(thing);
     bool bInstant = (key & DEST_INSTANT) || Destroy_ok(thing) || Destroy_ok(ThingOwner);
-
-#ifdef BT_ENABLED
-    if (Hardcode(thing))
-    {
-        DisposeSpecialObject(executor, thing);
-        c_Hardcode(thing);
-    }
-#endif
 
     if (!bInstant)
     {
