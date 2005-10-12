@@ -48,13 +48,6 @@ WOD_REALMS = @WOD_REALMS@
 #
 MEMORY_BASED = @MEMORY_BASED@
 
-# BattleTech hooks are off by default.  At this point, the hooks are
-# experimental.  If you wish to enable these hooks, run configure with
-# --enable-exile.
-#
-BTBASED = @BTBASED@
-BTLIBS = @BTLIBS@
-
 # Distribution source files
 D_SRC	= _build.cpp alloc.cpp attrcache.cpp boolexp.cpp bsd.cpp command.cpp \
 	comsys.cpp conf.cpp cque.cpp create.cpp db.cpp db_rw.cpp eval.cpp \
@@ -134,7 +127,7 @@ NET_O	= bsd.o
 AUX_SRC	= unsplit.cpp
 LIB_SRC = 
 LIB_INC = 
-ALLCXXFLAGS = $(CXXFLAGS) $(OPTIM) $(DEFS) $(COMPRESS_DEFS) $(BASED) $(BTBASED) $(MALLOC_DEFS) $(MOREDEFS) $(RLIM_F) $(WOD_REALMS) $(REALITY_LVLS)
+ALLCXXFLAGS = $(CXXFLAGS) $(OPTIM) $(DEFS) $(COMPRESS_DEFS) $(BASED) $(MALLOC_DEFS) $(MOREDEFS) $(RLIM_F) $(WOD_REALMS) $(REALITY_LVLS)
 
 #Auxiliary files
 A_INST	= README NOTES HIGHLIGHTS CREDITS CHANGES
@@ -179,7 +172,7 @@ unsplit: unsplit.o
 netmux: $(OBJ) $(VER_SRC)
 	$(CXX) $(ALLCXXFLAGS) $(VER_FLG) -c $(VER_SRC)
 	( if [ -f netmux ]; then mv -f netmux netmux~ ; fi )
-	$(CXX) $(ALLCXXFLAGS) -o netmux $(OBJ) $(VER_OBJ) $(BTLIBS) $(LIBS) $(MORELIBS)
+	$(CXX) $(ALLCXXFLAGS) -o netmux $(OBJ) $(VER_OBJ) $(LIBS) $(MORELIBS)
 
 depend: $(ALLSRC) unsplit
 	for i in $(D_SRC) $(SA_SRC) $(AUX_SRC) $(LIB_SRC) $(MALLOC_S) slave.cpp sqlslave.cpp sqlshared.cpp ; do $(CXXCPP) $(ALLCXXFLAGS) -M $$i; done | sed -e 's:/usr[^ ]*[ ]*::g' | ./unsplit > .depend~
