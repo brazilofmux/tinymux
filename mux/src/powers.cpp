@@ -1,6 +1,6 @@
 // powers.cpp -- Power manipulation routines.
 //
-// $Id: powers.cpp,v 1.10 2004-07-24 06:00:33 sdennis Exp $
+// $Id: powers.cpp,v 1.11 2005-10-12 04:31:46 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -127,14 +127,6 @@ POWERENT gen_powers[] =
     {"tel_anything",    POW_TEL_UNRST,  0, 0,   ph_wiz},
     {"tel_anywhere",    POW_TEL_ANYWHR, 0, 0,   ph_wiz},
     {"unkillable",      POW_UNKILLABLE, 0, 0,   ph_wiz},
-#ifdef BT_ENABLED
-    {"mech",            POW_MECH,       POWER_EXT, 0,   ph_wiz},
-    {"security",        POW_SECURITY,   POWER_EXT, 0,   ph_wiz},
-    {"mechrep",         POW_MECHREP,    POWER_EXT, 0,   ph_wiz},
-    {"map",             POW_MAP,        POWER_EXT, 0,   ph_wiz},
-    {"tech",            POW_TECH,       POWER_EXT, 0,   ph_wiz},
-    {"template",        POW_TEMPLATE,   POWER_EXT, 0,   ph_wiz},
-#endif
     {NULL,              0,              0, 0,   0}
 };
 

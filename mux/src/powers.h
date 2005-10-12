@@ -1,6 +1,6 @@
 // powers.h -- Object powers.
 //
-// $Id: powers.h,v 1.5 2004-07-24 05:32:00 sdennis Exp $
+// $Id: powers.h,v 1.6 2005-10-12 04:30:17 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -47,17 +47,6 @@
 
 /* Second word of powers */
 #define POW_BUILDER     0x00000001  /* Can build */
-#ifdef BT_ENABLED
-
-#define POW_MECH        0x00000002      /* access to mech cmd set */
-#define POW_SECURITY    0x00000004      /* 'admin' - debug/comp */
-#define POW_MECHREP     0x00000008      /* access to mechrep cmd set */
-#define POW_MAP         0x00000010      /* map modifying powers */
-#define POW_TEMPLATE    0x00000020      /* templating powers */
-#define POW_TECH        0x00000040      /* can do the IC tech commands */
-
-#endif
-
 
 /* ---------------------------------------------------------------------------
  * POWERENT: Information about object powers.
@@ -85,17 +74,6 @@ extern void decompile_powers(dbref, dbref, char *);
 extern bool decode_power(dbref player, char *powername, POWERSET *pset);
 
 #define s_Guest(c)          s_Powers((c), Powers(c) | POW_GUEST)
-
-#ifdef BT_ENABLED
-
-#define s_Mech(c)               s_Powers2((c), Powers2(c) | POW_MECH)
-#define s_Security(c)           s_Powers2((c), Powers2(c) | POW_SECURITY)
-#define s_Mechrep(c)            s_Powers2((c), Powers2(c) | POW_MECHREP)
-#define s_Map(c)                s_Powers2((c), Powers2(c) | POW_MAP)
-#define s_Template(c)           s_Powers2((c), Powers2(c) | POW_TEMPLATE)
-#define s_Tech(c)               s_Powers2((c), Powers2(c) | POW_TECH)
-
-#endif
 
 #define Quota(c)            (((Powers(c) & POW_CHG_QUOTAS) != 0) || Wizard(c))
 #define Chown_Any(c)        (((Powers(c) & POW_CHOWN_ANY) != 0) || Wizard(c))
@@ -128,16 +106,6 @@ extern bool decode_power(dbref player, char *powername, POWERSET *pset);
 #define Pass_Locks(c)       ((Powers(c) & POW_PASS_LOCKS) != 0)
 #define Builder(c)          (((Powers2(c) & POW_BUILDER) != 0) || WizRoy(c))
 
-#ifdef BT_ENABLED
-
-#define Mech(c)                 (((Powers2(c) & POW_MECH) != 0) || WizRoy(c))
-#define Security(c)             (((Powers2(c) & POW_SECURITY) != 0) || WizRoy(c))
-#define Tech(c)                 (((Powers2(c) & POW_TECH) != 0) || WizRoy(c))
-#define Mechrep(c)              (((Powers2(c) & POW_MECHREP) != 0) || WizRoy(c))
-#define Map(c)                  (((Powers2(c) & POW_MAP) != 0) || WizRoy(c))
-#define Template(c)             (((Powers2(c) & POW_TEMPLATE) != 0) || WizRoy(c))
-
-#endif
 #define Can_SiteAdmin(c)    (((Powers(c) & POW_SITEADMIN) != 0) || Wizard(c))
 
 #endif /* POWERS_H */

@@ -1,6 +1,6 @@
 // mudconf.h
 //
-// $Id: mudconf.h,v 1.31 2005-08-06 23:26:45 sdennis Exp $
+// $Id: mudconf.h,v 1.32 2005-10-12 04:33:30 sdennis Exp $
 //
 
 #ifndef __CONF_H
@@ -92,66 +92,6 @@ struct confdata
     dbref   start_home;         // initial HOME for players.
     dbref   start_room;         // initial location and home for players.
     dbref   toad_recipient;     /* Default @toad recipient. */
-#if BT_ENABLED
-
-    int btech_disembark;        /* Allow embarking disembarking */
-    int btech_engine;           /* Allow engine explodes */
-    int btech_ic;
-    int btech_parts;
-    int btech_vcrit;
-    int btech_slowdown;
-    int btech_fasaturn;         /* toggle different turnrates */
-    int btech_dynspeed;
-    int btech_showtech;         /* toggle if techs should see their rolls */
-    int btech_stackpole;        /* toggle if engines can stackpole */
-    int btech_terrainmode;      /* toggle different terrain speeds */
-    int btech_erange;
-    int phys_use_pskill;
-    int namechange_days;
-    int btech_newterrain;       /* fasa terrain restrictions for wheeled */
-    int btech_fasacrit;         /* fasa critsystem */
-    int btech_newcharge;
-    int btech_tankfriendly;     /* Some tank friendly changes if fasacrit is too harsh */
-    int btech_skidcliff;        /* skidroll to check for cliffs and falldamage for mechs  */
-    int btech_xp_bthmod;        /* Use bth modifier in new xp code */
-    int btech_xp_missilemod;    /* Modifier for missile weapons */
-    int btech_xp_ammomod;       /* modifier for ammo weapons (not missiles ) */
-    int btech_defaultweapdam;   /* modifier to default weapon BV */
-    int btech_xp_modifier;      /* modifier to increase or decrease xp-gain */
-    int btech_defaultweapbv;    /* Weapons with BVs higher than this give less xp, lower give more */
-    int btech_oldxpsystem;      /* Uses old xp system if 1 */
-    int btech_xp_vrtmod;        /* Modifier for VRT weapons used if !0 */
-    int btech_limitedrepairs;   /*If on then armor fixes and reloads in stalls only */
-    int btech_extendedhide;
-    int btech_digbonus;
-    int btech_dig_only_fs;
-    int btech_usedmechstore;
-    int btech_mwparent;
-    int btech_masc;             /* New MASC crits over MASC freeze house rules */
-    int btech_xploss_assault;   /* XP Loss to death in XP /left/ not lost */
-    int btech_xploss_heavy;
-    int btech_xploss_medium;
-    int btech_xploss_light;
-    int btech_xploss_bsuit;
-    int btech_xploss_executed;
-    int btech_glance;           /* glancing blow rules */
-    int btech_faccount;         /* fractional @weight accounting */
-    int btech_critlevel;        /*percentage of armor left before TAC occurs */
-    int btech_tankshield;
-    int btech_floatcrit;
-    int btech_exttargmod;       /* Extended BTH for target over MP12 */
-    int btech_mtxcrit;          /* MaxTech expanded Crits */
-    int btech_bsuitmode;
-    int btech_headtopunchtab;
-    int btech_autopxp;
-    int btech_complexrepair;
-    int btech_allowsprint;
-    int btech_freetechtime;
-    int btech_laxcore;
-    int afterlife_dbref;
-    int afterscen_dbref;
-
-#endif
     int     active_q_chunk;     /* # cmds to run from queue when active */
     int     cache_pages;        // Size of hash page cache (in pages).
     int     check_interval;     /* interval between db check/cleans in secs */
@@ -279,12 +219,6 @@ struct confdata
     char    *uncompress;        /* program to run to uncompress */
     char    *wizmotd_file;      /* display this file on login to wizards */
     char    *pid_file;          // file for communicating process id back to ./Startmux
-#if BT_ENABLED
-    char *hcode_db;         /* Hardcode stuff */
-    char *econ_db;          /* Econ Hardcode stuff */
-    char *mech_db;          /* Mecha templates */
-    char *map_db;           /* Map templates */
-#endif
     unsigned char    markdata[8];  /* Masks for marking/unmarking */
     CLinearTimeDelta rpt_cmdsecs;  /* Reporting Threshhold for time taken by command */
     CLinearTimeDelta max_cmdsecs;  /* Upper Limit for real time taken by command */

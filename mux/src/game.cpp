@@ -1,6 +1,6 @@
 // game.cpp
 //
-// $Id: game.cpp,v 1.70 2005-08-12 14:21:12 sdennis Exp $
+// $Id: game.cpp,v 1.71 2005-10-12 04:33:30 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -1135,10 +1135,6 @@ void do_shutdown(dbref executor, dbref caller, dbref enactor, int key, char *mes
         return;
     }
 
-#ifdef BT_ENABLED
-    ResetSpecialObjects();
-#endif
-
     raw_broadcast(0, "GAME: Shutdown by %s", Name(Owner(executor)));
     STARTLOG(LOG_ALWAYS, "WIZ", "SHTDN");
     log_text("Shutdown by ");
@@ -1307,9 +1303,6 @@ void dump_database_internal(int dump_type)
             {
                 ReplaceFile(tmpfile, outfn);
             }
-#ifdef BT_ENABLED
-            SaveSpecialObjects(dump_type);
-#endif
         }
         else
         {
@@ -1365,9 +1358,6 @@ void dump_database_internal(int dump_type)
             {
                 log_perror("SAV", "FAIL", "Renaming output file to DB file", tmpfile);
             }
-#ifdef BT_ENABLED
-            SaveSpecialObjects(dump_type);
-#endif
         }
         else
         {
@@ -1396,9 +1386,6 @@ void dump_database_internal(int dump_type)
             {
                 log_perror("SAV", "FAIL", "Renaming output file to DB file", tmpfile);
             }
-#ifdef BT_ENABLED
-            SaveSpecialObjects(dump_type);
-#endif
         }
         else
         {
@@ -1790,9 +1777,6 @@ static int load_game(int ccPageFile)
             f = 0;
         }
     }
-#ifdef BT_ENABLED
-    LoadSpecialObjects();
-#endif
     STARTLOG(LOG_STARTUP, "INI", "LOAD");
     log_text("Load complete.");
     ENDLOG;
@@ -2174,9 +2158,6 @@ void dbconvert(void)
 #endif // MEMORY_BASED
         db_write(fpOut, F_MUX, db_ver | db_flags);
         fclose(fpOut);
-#ifdef BT_ENABLED
-        SaveSpecialObjects(DUMP_I_NORMAL);
-#endif
     }
     CLOSE;
     db_free();

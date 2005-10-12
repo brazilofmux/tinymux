@@ -1,6 +1,6 @@
 // predicates.cpp
 //
-// $Id: predicates.cpp,v 1.67 2005-10-11 16:16:12 sdennis Exp $
+// $Id: predicates.cpp,v 1.68 2005-10-12 04:30:17 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -1421,9 +1421,6 @@ void do_restart(dbref executor, dbref caller, dbref enactor, int key)
     }
 #endif // !WIN32
 
-#if BT_ENABLED
-    ResetSpecialObjects();
-#endif
 
     if (!mudstate.bCanRestart)
     {
