@@ -1,6 +1,6 @@
 // svdocache.cpp -- Attribute caching module.
 //
-// $Id: attrcache.cpp,v 1.17 2005-10-13 14:54:07 sdennis Exp $
+// $Id: attrcache.cpp,v 1.18 2005-10-13 14:58:48 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -351,7 +351,7 @@ bool cache_put(Aname *nam, const char *value, size_t len)
         memcpy(TempRecord.attrText, value, len);
         TempRecord.attrText[len-1] = '\0';
 
-        int iFile = (N_TEMP_FILES-1) & (nHash >> 30);
+        int iFile = (N_TEMP_FILES-1) & (nHash >> 29);
         size_t nSize = len+sizeof(Aname);
         fwrite(&nSize, 1, sizeof(nSize), TempFiles[iFile]);
         fwrite(&TempRecord, 1, nSize, TempFiles[iFile]);
