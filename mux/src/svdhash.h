@@ -1,6 +1,6 @@
 // svdhash.h -- CHashPage, CHashFile, CHashTable modules.
 //
-// $Id: svdhash.h,v 1.15 2005-10-13 04:41:56 sdennis Exp $
+// $Id: svdhash.h,v 1.16 2005-10-13 07:38:37 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -187,7 +187,6 @@ private:
     int             m_iOldest;
     int             m_iLastFlushed;
     int             *m_hpCacheLookup;
-    int             m_nhpCacheLookup;
     HF_FILEOFFSET   oEndOfFile;
     unsigned int    m_nDir;
     unsigned int    m_nDirDepth;
@@ -197,10 +196,10 @@ private:
     bool DoubleDirectory(void);
 
     int AllocateEmptyPage(int nSafe, int Safe[]);
-    int ReadCache(HF_FILEOFFSET oPage, int *pHits);
+    int ReadCache(UINT32 iFileDir, int *pHits);
     bool FlushCache(int iCache);
     void WriteDirectory(void);
-    bool EmptyDirectory(void);
+    bool InitializeDirectory(unsigned int nSize);
     void ResetAge(int iEntry);
 
     void Init(void);

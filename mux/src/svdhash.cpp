@@ -1,6 +1,6 @@
 // svdhash.cpp -- CHashPage, CHashFile, CHashTable modules.
 //
-// $Id: svdhash.cpp,v 1.35 2005-10-13 04:41:56 sdennis Exp $
+// $Id: svdhash.cpp,v 1.36 2005-10-13 07:38:37 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -1253,8 +1253,6 @@ CHashFile::CHashFile(void)
 {
     SeedRandomNumberGenerator();
     m_Cache = NULL;
-    m_hpCacheLookup = NULL;
-    m_nhpCacheLookup = 0;
     m_nCache = 0;
     Init();
 }
@@ -1266,6 +1264,7 @@ void CHashFile::Init(void)
     m_nDir = 0;
     m_nDirDepth = 0;
     m_pDir = NULL;
+    m_hpCacheLookup = NULL;
     iCache = 0;
     m_iLastFlushed = 0;
 }
@@ -1301,20 +1300,39 @@ void CHashFile::WriteDirectory(void)
 }
 #endif // WIN32
 
-bool CHashFile::EmptyDirectory(void)
+bool CHashFile::InitializeDirectory(unsigned int n)
 {
     if (m_pDir)
     {
         MEMFREE(m_pDir);
         m_pDir = NULL;
     }
+    if (m_hpCacheLookup)
+    {
+        MEMFREE(m_hpCacheLookup);
+        m_hpCacheLookup = NULL;
+    }
 
-    m_nDir = 2;
-    m_nDirDepth = 1;
+    m_nDir = n;
+    m_nDirDepth = 0;
+    n >>= 1;
+    while (n)
+    {
+        m_nDirDepth++;
+        n >>= 1;
+    }
 
     m_pDir = (HF_FILEOFFSET *)MEMALLOC(sizeof(HF_FILEOFFSET)*m_nDir);
     ISOUTOFMEMORY(m_pDir);
-    m_pDir[0] = m_pDir[1] = 0xFFFFFFFFUL;
+    m_hpCacheLookup = new int[m_nDir];
+    ISOUTOFMEMORY(m_hpCacheLookup);
+
+    for (int i = 0; i < m_nDir; i++)
+    {
+        m_pDir[i] = 0xFFFFFFFFUL;
+        m_hpCacheLookup[i] = -1;
+    }
+
     return true;
 }
 
@@ -1349,7 +1367,7 @@ bool CHashFile::CreateFileSet(const char *szDirFile, const char *szPageFile)
 
     // Create empty structures in memory and write them out.
     //
-    if (!EmptyDirectory())
+    if (!InitializeDirectory(2))
     {
         return false;
     }
@@ -1360,7 +1378,11 @@ bool CHashFile::CreateFileSet(const char *szDirFile, const char *szPageFile)
         return false;
     }
     m_Cache[iCache].m_hp.Empty(0, 0UL, 100);
-    m_pDir[0] = m_pDir[1] = m_Cache[iCache].m_o = 0UL;
+    m_Cache[iCache].m_o = 0UL;
+
+    m_pDir[0] = m_pDir[1] = m_Cache[iCache].m_o;
+    m_hpCacheLookup[0] = m_hpCacheLookup[1] = iCache;
+
     m_Cache[iCache].m_iState = HF_CACHE_UNPROTECTED;
 
     oEndOfFile = HF_SIZEOF_PAGE;
@@ -1376,7 +1398,7 @@ bool CHashFile::RebuildDirectory(void)
 {
     // Initialize in-memory page directory
     //
-    if (!EmptyDirectory())
+    if (!InitializeDirectory(2))
     {
         return false;
     }
@@ -1386,7 +1408,24 @@ bool CHashFile::RebuildDirectory(void)
     int Hits = 0;
     for (UINT32 oPage = 0; oPage < oEndOfFile; oPage += HF_SIZEOF_PAGE)
     {
-        int iCache = ReadCache(oPage, &Hits);
+        int iCache;
+        if ((iCache = AllocateEmptyPage(0, NULL)) < 0)
+        {
+            Log.WriteString("CHashFile::RebuildDirectory.  AllocateEmptyPage failed. DB DAMAGE." ENDLINE);
+            return false;
+        }
+
+        if (m_Cache[iCache].m_hp.ReadPage(m_hPageFile, oPage))
+        {
+            m_Cache[iCache].m_o = oPage;
+            m_Cache[iCache].m_iState = HF_CACHE_CLEAN;
+            ResetAge(iCache);
+        }
+        else
+        {
+            Log.WriteString("CHashFile::RebuildDirectory.  ReadPage failed to get the page. DB DAMAGE." ENDLINE);
+        }
+
         UINT32 nPageDepth = m_Cache[iCache].m_hp.GetDepth();
         while (m_nDirDepth < nPageDepth)
         {
@@ -1405,6 +1444,7 @@ bool CHashFile::RebuildDirectory(void)
                 return false;
             }
             m_pDir[nStart] = oPage;
+            m_hpCacheLookup[nStart] = iCache;
         }
     }
 
@@ -1433,17 +1473,9 @@ bool CHashFile::ReadDirectory(void)
     {
         return false;
     }
-    m_nDir = (int)(cc / HF_SIZEOF_FILEOFFSET);
-    m_nDirDepth = 0;
-    m_pDir = (HF_FILEOFFSET *)MEMALLOC(sizeof(HF_FILEOFFSET)*m_nDir);
-    ISOUTOFMEMORY(m_pDir);
-    int n = m_nDir;
-    n >>= 1;
-    while (n)
-    {
-        m_nDirDepth++;
-        n >>= 1;
-    }
+
+    InitializeDirectory(cc / HF_SIZEOF_FILEOFFSET);
+
 #ifdef WIN32
     cc = SetFilePointer(m_hDirFile, 0, 0, FILE_BEGIN);
     DWORD nRead;
@@ -1475,18 +1507,13 @@ void CHashFile::InitCache(int nCachePages)
     {
         m_Cache[i].m_hp.Allocate(HF_SIZEOF_PAGE);
         m_Cache[i].m_iState = HF_CACHE_EMPTY;
-        m_Cache[i].m_o = 0L;
+        m_Cache[i].m_o = 0UL;
         m_Cache[i].m_iYounger = i-1;
         m_Cache[i].m_iOlder   = i+1;
     }
     m_Cache[0].m_iYounger = m_nCache-1;
     m_Cache[m_nCache-1].m_iOlder = 0;
     m_iOldest = 0;
-
-    m_nhpCacheLookup = 2*m_nCache;
-    m_hpCacheLookup = new int[m_nhpCacheLookup];
-    ISOUTOFMEMORY(m_hpCacheLookup);
-    memset(m_hpCacheLookup, 0, sizeof(int)*m_nhpCacheLookup);
 }
 
 int CHashFile::Open(const char *szDirFile, const char *szPageFile, int nCachePages)
@@ -1645,6 +1672,12 @@ void CHashFile::CloseAll(void)
             MEMFREE(m_pDir);
             m_pDir = NULL;
         }
+        if (m_hpCacheLookup)
+        {
+            delete [] m_hpCacheLookup;
+            m_hpCacheLookup = NULL;
+        }
+
 #ifdef WIN32
         CloseHandle(m_hPageFile);
 #else // WIN32
@@ -1670,12 +1703,6 @@ void CHashFile::FinalCache(void)
         m_Cache = NULL;
         m_nCache = 0;
     }
-    if (m_hpCacheLookup)
-    {
-        delete [] m_hpCacheLookup;
-        m_hpCacheLookup = NULL;
-        m_nhpCacheLookup = 0;
-    }
 }
 
 CHashFile::~CHashFile(void)
@@ -1695,8 +1722,7 @@ bool CHashFile::Insert(HP_HEAPLENGTH nRecord, UINT32 nHash, void *pRecord)
             Log.WriteString("CHashFile::Insert - iFileDir out of range." ENDLINE);
             return false;
         }
-        HF_FILEOFFSET oPage = m_pDir[iFileDir];
-        iCache = ReadCache(oPage, &cs_whits);
+        iCache = ReadCache(iFileDir, &cs_whits);
         if (iCache < 0)
         {
             Log.WriteString("CHashFile::Insert - Page wasn't valid." ENDLINE);
@@ -1807,7 +1833,21 @@ bool CHashFile::Insert(HP_HEAPLENGTH nRecord, UINT32 nHash, void *pRecord)
         m_Cache[iEmpty0].m_iState = HF_CACHE_UNPROTECTED;
         m_Cache[iEmpty1].m_iState = HF_CACHE_UNPROTECTED;
 
-        // Now Flush these pages out.
+        // Update the directory.
+        //
+        m_Cache[iEmpty0].m_hp.GetRange(m_nDirDepth, nStart, nEnd);
+        for ( ; nStart <= nEnd; nStart++)
+        {
+            m_hpCacheLookup[nStart] = iEmpty0;
+        }
+        m_Cache[iEmpty1].m_hp.GetRange(m_nDirDepth, nStart, nEnd);
+        for ( ; nStart <= nEnd; nStart++)
+        {
+            m_pDir[nStart] = oNew;
+            m_hpCacheLookup[nStart] = iEmpty1;
+        }
+
+        // Flush the pages out.
         //
         FlushCache(iEmpty1);
         FlushCache(iEmpty0);
@@ -1818,14 +1858,6 @@ bool CHashFile::Insert(HP_HEAPLENGTH nRecord, UINT32 nHash, void *pRecord)
         fsync(m_hPageFile);
 #endif // WIN32
 #endif // DO_COMMIT
-
-        // Now, update the directory.
-        //
-        m_Cache[iEmpty1].m_hp.GetRange(m_nDirDepth, nStart, nEnd);
-        for ( ; nStart <= nEnd; nStart++)
-        {
-            m_pDir[nStart] = oNew;
-        }
 
         // Write Directory
         //
@@ -1861,11 +1893,17 @@ bool CHashFile::DoubleDirectory(void)
     HF_PFILEOFFSET pNewDir = (HF_PFILEOFFSET)MEMALLOC(sizeof(HF_FILEOFFSET)*nNewDir);
     ISOUTOFMEMORY(pNewDir);
 
+    int *pNewCacheLookup = new int[nNewDir];
+    ISOUTOFMEMORY(pNewCacheLookup);
+
     unsigned int iNewDir = 0;
     for (unsigned int iDir = 0; iDir < m_nDir; iDir++)
     {
-        pNewDir[iNewDir++] = m_pDir[iDir];
-        pNewDir[iNewDir++] = m_pDir[iDir];
+        pNewDir[iNewDir]   = m_pDir[iDir];
+        pNewDir[iNewDir+1] = m_pDir[iDir];
+        pNewCacheLookup[iNewDir]   = m_hpCacheLookup[iDir];
+        pNewCacheLookup[iNewDir+1] = m_hpCacheLookup[iDir];
+        iNewDir += 2;
     }
 
     // Write out the new directory. It's always larger than
@@ -1875,6 +1913,10 @@ bool CHashFile::DoubleDirectory(void)
 
     MEMFREE(m_pDir);
     m_pDir = pNewDir;
+
+    MEMFREE(m_hpCacheLookup);
+    m_hpCacheLookup = pNewCacheLookup;
+
     m_nDirDepth = nNewDirDepth;
     m_nDir = nNewDir;
     return true;
@@ -1891,8 +1933,7 @@ HP_DIRINDEX CHashFile::FindFirstKey(UINT32 nHash)
         cs_fails++;
         return HF_FIND_END;
     }
-    HF_FILEOFFSET oPage = m_pDir[iFileDir];
-    iCache = ReadCache(oPage, &cs_rhits);
+    iCache = ReadCache(iFileDir, &cs_rhits);
     if (iCache < 0)
     {
         cs_fails++;
@@ -1990,7 +2031,16 @@ int CHashFile::AllocateEmptyPage(int nSafe, int Safe[])
         if (  !bExclude
            && FlushCache(i))
         {
-            m_Cache[i].m_iState = HF_CACHE_EMPTY;
+            if (HF_CACHE_EMPTY != m_Cache[i].m_iState)
+            {
+                UINT32 nStart, nEnd;
+                m_Cache[i].m_hp.GetRange(m_nDirDepth, nStart, nEnd);
+                for ( ; nStart <= nEnd; nStart++)
+                {
+                    m_hpCacheLookup[nStart] = -1;
+                }
+                m_Cache[i].m_iState = HF_CACHE_EMPTY;
+            }
             return i;
         }
     }
@@ -2062,51 +2112,38 @@ void CHashFile::Tick(void)
     }
 }
 
-typedef struct tagCacheLookup
+int CHashFile::ReadCache(UINT32 iFileDir, int *phits)
 {
-    INT32  oPage;
-    UINT32 iCache;
-} CACHELOOKUP, *PCACHELOOKUP;
+    int iCache = m_hpCacheLookup[iFileDir];
+    HF_FILEOFFSET oPage = m_pDir[iFileDir];
 
-int CHashFile::ReadCache(HF_FILEOFFSET oPage, int *phits)
-{
-    UINT32  nHash = CRC32_ProcessInteger(oPage);
-    nHash = nHash % m_nhpCacheLookup;
-
-    int i = m_hpCacheLookup[nHash];
-
-    if (  m_Cache[i].m_iState != HF_CACHE_EMPTY
-       && m_Cache[i].m_o == oPage)
+    if (  iCache != -1
+       && m_Cache[iCache].m_iState != HF_CACHE_EMPTY
+       && m_Cache[iCache].m_o == oPage)
     {
-        ResetAge(i);
+        ResetAge(iCache);
         (*phits)++;
-        return i;
+        return iCache;
     }
 
-    for (i = 0; i < m_nCache; i++)
+    if ((iCache = AllocateEmptyPage(0, NULL)) >= 0)
     {
-        if (  m_Cache[i].m_iState != HF_CACHE_EMPTY
-           && m_Cache[i].m_o == oPage)
-        {
-            m_hpCacheLookup[nHash] = i;
-            ResetAge(i);
-            (*phits)++;
-            return i;
-        }
-    }
-
-    if ((i = AllocateEmptyPage(0, 0)) >= 0)
-    {
-        m_hpCacheLookup[nHash] = i;
-
-        if (m_Cache[i].m_hp.ReadPage(m_hPageFile, oPage))
+        if (m_Cache[iCache].m_hp.ReadPage(m_hPageFile, oPage))
         {
             //if (m_Cache[i].m_hp.Validate())
             //{
-                m_Cache[i].m_o = oPage;
-                m_Cache[i].m_iState = HF_CACHE_CLEAN;
-                ResetAge(i);
-                return i;
+                m_Cache[iCache].m_o = oPage;
+                m_Cache[iCache].m_iState = HF_CACHE_CLEAN;
+                ResetAge(iCache);
+
+                UINT32 nStart, nEnd;
+                m_Cache[iCache].m_hp.GetRange(m_nDirDepth, nStart, nEnd);
+                for ( ; nStart <= nEnd; nStart++)
+                {
+                    m_hpCacheLookup[nStart] = iCache;
+                }
+
+                return iCache;
             //}
         }
         else
