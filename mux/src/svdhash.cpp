@@ -1,6 +1,6 @@
 // svdhash.cpp -- CHashPage, CHashFile, CHashTable modules.
 //
-// $Id: svdhash.cpp,v 1.36 2005-10-13 07:38:37 sdennis Exp $
+// $Id: svdhash.cpp,v 1.37 2005-10-13 15:18:28 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -1279,7 +1279,10 @@ void CHashFile::WriteDirectory(void)
     WriteFile(m_hDirFile, m_pDir, sizeof(HF_FILEOFFSET)*m_nDir, &nWritten, 0);
     SetEndOfFile(m_hDirFile);
 #ifdef DO_COMMIT
-    FlushFileBuffers(m_hDirFile);
+    if (!mudstate.bStandAlone)
+    {
+        FlushFileBuffers(m_hDirFile);
+    }
 #endif // DO_COMMIT
 }
 #else // WIN32
@@ -1295,7 +1298,10 @@ void CHashFile::WriteDirectory(void)
 #endif // HAVE_PWRITE
     //SetEndOfFile(m_hDirFile);
 #ifdef DO_COMMIT
-    fsync(m_hDirFile);
+    if (!mudstate.bStandAlone)
+    {
+        fsync(m_hDirFile);
+    }
 #endif // DO_COMMIT
 }
 #endif // WIN32
@@ -1642,16 +1648,21 @@ void CHashFile::Sync(void)
         {
             Log.WriteString("CHashFile::Sync. Could not flush all the pages. DB DAMAGE." ENDLINE);
         }
+
 #ifdef DO_COMMIT
+        if (!mudstate.bStandAlone)
+        {
 #ifdef WIN32
-        FlushFileBuffers(m_hPageFile);
+            FlushFileBuffers(m_hPageFile);
 #else // WIN32
-        fsync(m_hPageFile);
+            fsync(m_hPageFile);
 #endif // WIN32
+        }
 #endif // DO_COMMIT
     }
 #ifdef DO_COMMIT
-    if (m_hDirFile != INVALID_HANDLE_VALUE)
+    if (  m_hDirFile != INVALID_HANDLE_VALUE
+       && !mudstate.bStandAlone)
     {
 #ifdef WIN32
         FlushFileBuffers(m_hDirFile);
@@ -1851,12 +1862,16 @@ bool CHashFile::Insert(HP_HEAPLENGTH nRecord, UINT32 nHash, void *pRecord)
         //
         FlushCache(iEmpty1);
         FlushCache(iEmpty0);
+
 #ifdef DO_COMMIT
+        if (!mudstate.bStandAlone)
+        {
 #ifdef WIN32
-        FlushFileBuffers(m_hPageFile);
+            FlushFileBuffers(m_hPageFile);
 #else // WIN32
-        fsync(m_hPageFile);
+            fsync(m_hPageFile);
 #endif // WIN32
+        }
 #endif // DO_COMMIT
 
         // Write Directory
@@ -1875,11 +1890,14 @@ bool CHashFile::Insert(HP_HEAPLENGTH nRecord, UINT32 nHash, void *pRecord)
 #endif // WIN32
 
 #ifdef DO_COMMIT
+        if (!mudstate.bStandAlone)
+        {
 #ifdef WIN32
-        FlushFileBuffers(m_hDirFile);
+            FlushFileBuffers(m_hDirFile);
 #else // WIN32
-        fsync(m_hDirFile);
+            fsync(m_hDirFile);
 #endif // WIN32
+        }
 #endif // DO_COMMIT
     }
     return true;
