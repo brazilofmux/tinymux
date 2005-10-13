@@ -1,6 +1,6 @@
 // game.cpp
 //
-// $Id: game.cpp,v 1.71 2005-10-12 04:33:30 sdennis Exp $
+// $Id: game.cpp,v 1.72 2005-10-13 14:54:07 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -1547,7 +1547,8 @@ void fork_and_dump(int key)
  || !defined(HAVE_PWRITE)
     if (key & DUMP_FLATFILE)
     {
-        // Don't attempt a fork()'ed @dump/flat without pread()/pwrite() support.
+        // Don't attempt a fork()'ed @dump/flat without pread()/pwrite()
+        // support.
         //
         bAttemptFork = false;
     }
