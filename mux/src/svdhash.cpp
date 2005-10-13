@@ -1,6 +1,6 @@
 // svdhash.cpp -- CHashPage, CHashFile, CHashTable modules.
 //
-// $Id: svdhash.cpp,v 1.34 2005-08-11 21:38:46 ian Exp $
+// $Id: svdhash.cpp,v 1.35 2005-10-13 04:41:56 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -1266,9 +1266,7 @@ void CHashFile::Init(void)
     m_nDir = 0;
     m_nDirDepth = 0;
     m_pDir = NULL;
-    m_iAgeNext = 0;
     iCache = 0;
-    m_iLastEmpty = 0;
     m_iLastFlushed = 0;
 }
 
@@ -1478,8 +1476,12 @@ void CHashFile::InitCache(int nCachePages)
         m_Cache[i].m_hp.Allocate(HF_SIZEOF_PAGE);
         m_Cache[i].m_iState = HF_CACHE_EMPTY;
         m_Cache[i].m_o = 0L;
-        m_Cache[i].m_Age = 0;
+        m_Cache[i].m_iYounger = i-1;
+        m_Cache[i].m_iOlder   = i+1;
     }
+    m_Cache[0].m_iYounger = m_nCache-1;
+    m_Cache[m_nCache-1].m_iOlder = 0;
+    m_iOldest = 0;
 
     m_nhpCacheLookup = 2*m_nCache;
     m_hpCacheLookup = new int[m_nhpCacheLookup];
@@ -1968,18 +1970,10 @@ bool CHashFile::FlushCache(int iCache)
 
 int CHashFile::AllocateEmptyPage(int nSafe, int Safe[])
 {
-again:
-    bool bFoundOldest = false;
-    int iOldest = 0;
-    int iOldestAge = 0;
-    for (int cnt = m_nCache, i = m_iLastEmpty+1; cnt--; i++)
+    int cnt = m_nCache;
+    while (cnt--)
     {
-        // Modulus
-        //
-        if (i >= m_nCache)
-        {
-            i -= m_nCache;
-        }
+        int i = m_iOldest;
 
         bool bExclude = false;
         for (int j = 0; j < nSafe; j++)
@@ -1990,46 +1984,51 @@ again:
                 break;
             }
         }
-        if (!bExclude)
-        {
-            if (m_Cache[i].m_iState == HF_CACHE_EMPTY)
-            {
-                m_iLastEmpty = i;
-                return i;
-            }
 
-            if (bFoundOldest)
-            {
-                int iDiff = iOldestAge - m_Cache[i].m_Age;
-                if (iDiff > 0)
-                {
-                    iOldestAge = m_Cache[i].m_Age;
-                    iOldest = i;
-                }
-            }
-            else
-            {
-                iOldestAge = m_Cache[i].m_Age;
-                iOldest = i;
-                bFoundOldest = true;
-            }
-        }
-    }
+        ResetAge(i);
 
-    if (bFoundOldest)
-    {
-        if (FlushCache(iOldest))
+        if (  !bExclude
+           && FlushCache(i))
         {
-            m_Cache[iOldest].m_iState = HF_CACHE_EMPTY;
-            return iOldest;
-        }
-        else
-        {
-            m_Cache[iOldest].m_Age = m_iAgeNext++;
-            goto again;
+            m_Cache[i].m_iState = HF_CACHE_EMPTY;
+            return i;
         }
     }
     return -1;
+}
+
+void CHashFile::ResetAge(int iEntry)
+{
+    if (iEntry == m_iOldest)
+    {
+        // Rotate the doubly-linked list to make the oldest entry the
+        // youngest.
+        //
+        m_iOldest = m_Cache[m_iOldest].m_iYounger;
+    }
+    else if (iEntry == m_Cache[m_iOldest].m_iOlder)
+    {
+        // This is already the youngest entry.
+        //
+    }
+    else
+    {
+        // Unlink this entry.
+        //
+        int iYounger = m_Cache[iEntry].m_iYounger;
+        int iOlder   = m_Cache[iEntry].m_iOlder;
+        m_Cache[iYounger].m_iOlder = iOlder;
+        m_Cache[iOlder].m_iYounger = iYounger;
+
+        // Re-link at the young end of the queue.
+        //
+        iYounger = m_iOldest;
+        iOlder   = m_Cache[iYounger].m_iOlder;
+        m_Cache[iEntry].m_iOlder   = iOlder;
+        m_Cache[iEntry].m_iYounger = iYounger;
+        m_Cache[iYounger].m_iOlder = iEntry;
+        m_Cache[iOlder].m_iYounger = iEntry;
+    }
 }
 
 void CHashFile::Tick(void)
@@ -2079,7 +2078,7 @@ int CHashFile::ReadCache(HF_FILEOFFSET oPage, int *phits)
     if (  m_Cache[i].m_iState != HF_CACHE_EMPTY
        && m_Cache[i].m_o == oPage)
     {
-        m_Cache[i].m_Age = m_iAgeNext++;
+        ResetAge(i);
         (*phits)++;
         return i;
     }
@@ -2090,7 +2089,7 @@ int CHashFile::ReadCache(HF_FILEOFFSET oPage, int *phits)
            && m_Cache[i].m_o == oPage)
         {
             m_hpCacheLookup[nHash] = i;
-            m_Cache[i].m_Age = m_iAgeNext++;
+            ResetAge(i);
             (*phits)++;
             return i;
         }
@@ -2106,7 +2105,7 @@ int CHashFile::ReadCache(HF_FILEOFFSET oPage, int *phits)
             //{
                 m_Cache[i].m_o = oPage;
                 m_Cache[i].m_iState = HF_CACHE_CLEAN;
-                m_Cache[i].m_Age = m_iAgeNext++;
+                ResetAge(i);
                 return i;
             //}
         }

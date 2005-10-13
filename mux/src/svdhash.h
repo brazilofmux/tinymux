@@ -1,6 +1,6 @@
 // svdhash.h -- CHashPage, CHashFile, CHashTable modules.
 //
-// $Id: svdhash.h,v 1.14 2005-08-11 21:38:46 ian Exp $
+// $Id: svdhash.h,v 1.15 2005-10-13 04:41:56 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -174,7 +174,8 @@ typedef struct tagHashFileCache
     CHashPage     m_hp;
     HF_FILEOFFSET m_o;
     int           m_iState;
-    int           m_Age;
+    int           m_iYounger;
+    int           m_iOlder;
 } HF_CACHE;
 
 class CHashFile
@@ -183,11 +184,10 @@ private:
     HANDLE          m_hDirFile;
     HANDLE          m_hPageFile;
     int             iCache;
-    int             m_iLastEmpty;
+    int             m_iOldest;
     int             m_iLastFlushed;
     int             *m_hpCacheLookup;
     int             m_nhpCacheLookup;
-    int             m_iAgeNext;
     HF_FILEOFFSET   oEndOfFile;
     unsigned int    m_nDir;
     unsigned int    m_nDirDepth;
@@ -201,6 +201,7 @@ private:
     bool FlushCache(int iCache);
     void WriteDirectory(void);
     bool EmptyDirectory(void);
+    void ResetAge(int iEntry);
 
     void Init(void);
     void InitCache(int nCachePages);
