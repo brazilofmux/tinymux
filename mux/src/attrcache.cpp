@@ -1,6 +1,6 @@
 // svdocache.cpp -- Attribute caching module.
 //
-// $Id: attrcache.cpp,v 1.15 2005-10-09 19:47:40 sdennis Exp $
+// $Id: attrcache.cpp,v 1.16 2005-10-13 07:37:56 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -194,6 +194,30 @@ void ADD_ENTRY(PCENT_HDR pEntry)
     }
 }
 
+void TrimCache(void)
+{
+    // Check to see if the cache needs to be trimmed.
+    //
+    while (CacheSize > mudconf.max_cache_size)
+    {
+        // Blow something away.
+        //
+        PCENT_HDR pCacheEntry = pCacheTail;
+        if (!pCacheEntry)
+        {
+            CacheSize = 0;
+            break;
+        }
+
+        REMOVE_ENTRY(pCacheEntry);
+        CacheSize -= pCacheEntry->nSize;
+        hashdeleteLEN(&(pCacheEntry->attrKey), sizeof(Aname),
+            &mudstate.acache_htab);
+        MEMFREE(pCacheEntry);
+        pCacheEntry = NULL;
+    }
+}
+
 const char *cache_get(Aname *nam, int *pLen)
 {
     if (  nam == (Aname *) 0
@@ -217,8 +241,16 @@ const char *cache_get(Aname *nam, int *pLen)
             //
             REMOVE_ENTRY(pCacheEntry);
             ADD_ENTRY(pCacheEntry);
-            *pLen = pCacheEntry->nSize - sizeof(CENT_HDR);
-            return (char *)(pCacheEntry+1);
+            if (sizeof(CENT_HDR) < pCacheEntry->nSize)
+            {
+                *pLen = pCacheEntry->nSize - sizeof(CENT_HDR);
+                return (char *)(pCacheEntry+1);
+            }
+            else
+            {
+                *pLen = 0;
+                return NULL;
+            }
         }
     }
 
@@ -251,26 +283,7 @@ const char *cache_get(Aname *nam, int *pLen)
                     hashaddLEN(nam, sizeof(Aname), pCacheEntry,
                         &mudstate.acache_htab);
 
-                    // Check to see if the cache needs to be trimmed.
-                    //
-                    while (CacheSize > mudconf.max_cache_size)
-                    {
-                        // Blow something away.
-                        //
-                        pCacheEntry = pCacheTail;
-                        if (!pCacheEntry)
-                        {
-                            CacheSize = 0;
-                            break;
-                        }
-
-                        REMOVE_ENTRY(pCacheEntry);
-                        CacheSize -= pCacheEntry->nSize;
-                        hashdeleteLEN(&(pCacheEntry->attrKey), sizeof(Aname),
-                            &mudstate.acache_htab);
-                        MEMFREE(pCacheEntry);
-                        pCacheEntry = NULL;
-                    }
+                    TrimCache();
                 }
             }
             return TempRecord.attrText;
@@ -280,6 +293,24 @@ const char *cache_get(Aname *nam, int *pLen)
 
     // We didn't find that one.
     //
+    if (!mudstate.bStandAlone)
+    {
+        // Add this information to the cache.
+        //
+        pCacheEntry = (PCENT_HDR)MEMALLOC(sizeof(CENT_HDR));
+        if (pCacheEntry)
+        {
+            pCacheEntry->attrKey = *nam;
+            pCacheEntry->nSize = sizeof(CENT_HDR);
+            CacheSize += pCacheEntry->nSize;
+            ADD_ENTRY(pCacheEntry);
+            hashaddLEN(nam, sizeof(Aname), pCacheEntry,
+                &mudstate.acache_htab);
+
+            TrimCache();
+        }
+    }
+
     *pLen = 0;
     return NULL;
 }
@@ -384,26 +415,7 @@ bool cache_put(Aname *nam, const char *value, size_t len)
             hashaddLEN(nam, sizeof(Aname), pCacheEntry,
                 &mudstate.acache_htab);
 
-            // Check to see if the cache needs to be trimmed.
-            //
-            while (CacheSize > mudconf.max_cache_size)
-            {
-                // Blow something away.
-                //
-                pCacheEntry = pCacheTail;
-                if (!pCacheEntry)
-                {
-                    CacheSize = 0;
-                    break;
-                }
-
-                REMOVE_ENTRY(pCacheEntry);
-                CacheSize -= pCacheEntry->nSize;
-                hashdeleteLEN(&(pCacheEntry->attrKey), sizeof(Aname),
-                    &mudstate.acache_htab);
-                MEMFREE(pCacheEntry);
-                pCacheEntry = NULL;
-            }
+            TrimCache();
         }
     }
     return true;
