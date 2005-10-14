@@ -1,5 +1,5 @@
 TinyMUX 2.4:  CHANGES
-Last Update:  August 2005
+Last Update:  October 2005
 
 Major changes that may affect performance and require softcode tweaks:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -93,6 +93,12 @@ Feature Additions:
     option.  This is version one, and it still requires some attention,
     but to enabled it, use ./configure --enable-realitylvls.
  -- Ashen-Shugar added the restrict_home configuration option.
+ -- Added support for MEMORY_BASED to the ./Backup script.
+ -- Ian added a wildcard argument to comlist and @clist commands as
+    well as displaying these lists in sorted order.
+ -- Ian added support for multi-character delimiter to LAST() function.
+ -- Ian added support for DIE() to return a list of rolls rather than
+    just the sum.
 
 
 Bug Fixes:
@@ -209,6 +215,8 @@ Bug Fixes:
     LOGOUT is sent at the login screen. Found and fixed by Alierak.
  -- The logout_cmd_access parameter disables a logged-out command when
     any access restriction, not just need_player, is specified.
+ -- Strip ANSI so ^-command matching works with ANSI emits.
+
 
 Performance Enhancements:
 ~~~~~~~~~~~~~~~~~~~~~~~~
@@ -220,6 +228,25 @@ Performance Enhancements:
     the player cache. This was probably the primary reason for needing
     one cached hash page per player. Paging is probably secondary to
     this one.
+ -- Changed dbconvert-mode so that it creates 8 temporary files when
+    loading a flatfile instead of 4.
+ -- Changed attribute cache so that it retains knowledge that an
+    attribute value does not exist in the database.
+ -- Maintain hash page cache as a double-linked list ordered by recent
+    use. Previously, finding the oldest entry required looking at a
+    counter in every entry. This improved AllocateEmptyPage()
+    performance.
+ -- No longer call fsync() when in dbconvert mode.
+ -- Mapping page offsets to cache entries has been re-done.  There is
+    now a corresponding 'directory' containing all the indices of the
+    cache entries.  This is maintained similarly to the directory of
+    offsets (which is written to netmux.dir).  To maintain this linkage
+    properly, it is necessarily to update ranges of entries which
+    correspond to the hash page in the cache.  Previously, the lookup
+    was accomplished by looking at recent queries, and if that failed to
+    give the answer, it looked at all the cache entries to find a match.
+    This improved ReadCache() performance as the corresponding cache
+    entry is now always known.
 
 
 Cosmetic Changes:
@@ -227,6 +254,8 @@ Cosmetic Changes:
  -- Increased the space available to WHO for @moniker names to provide
     more room for more ANSI transitions.
  -- Remove references to have_macros in wizhelp.txt
+ -- Removed mention of SIDEFX flag from help topic as this is an
+    Rhost-ism.
 
 
 Miscellaneous:
@@ -244,3 +273,11 @@ Miscellaneous:
  -- Alierak refactored the logged-out commands code, removing some
     unreachable code in do_command() and clarifying how logged-out
     commands are handled.
+ -- Included REALITY and REALITY.SETUP readme files which were
+    previously left out of the distribution.
+ -- Removed BTMUX patch surfaces as their approach has changed.
+ -- Fixed various minor GCC 4.0 build issues.
+ -- Verify that pread() and pwrite() can actually be used.
+ -- Ashen-Shugar provided muxdbpuller which allows individual objects
+    (and attributes on those objects) to be extracted from an offline
+    flatfile.  The result is in an @decomp format suitable for quoting.
