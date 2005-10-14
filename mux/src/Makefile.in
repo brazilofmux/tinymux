@@ -31,6 +31,7 @@ OPTIM = -g -O
 REALITY_LVLS = @REALITY_LVLS@
 REALITY_SRC = @REALITY_SRC@
 REALITY_OBJ = @REALITY_OBJ@
+
 # By default, WOD_REALMS is not enabled.  If you wish to use WOD_REALMS,
 # run configure with --enable-wodrealms.  Please read the docs/REALMS.
 #
@@ -47,6 +48,12 @@ WOD_REALMS = @WOD_REALMS@
 # NOTE: To ensure a clean build, please 'make clean' first.
 #
 MEMORY_BASED = @MEMORY_BASED@
+
+# Query Slave. By default, this is off. This can be turned on by running
+# configure with --enable-sqlquery. The Query Slave is how to support
+# queries to foriegn data sources such as SQL servers.
+#
+QUERY_SLAVE = @QUERY_SLAVE@
 
 # Distribution source files
 D_SRC	= _build.cpp alloc.cpp attrcache.cpp boolexp.cpp bsd.cpp command.cpp \
@@ -127,7 +134,7 @@ NET_O	= bsd.o
 AUX_SRC	= unsplit.cpp
 LIB_SRC = 
 LIB_INC = 
-ALLCXXFLAGS = $(CXXFLAGS) $(OPTIM) $(DEFS) $(COMPRESS_DEFS) $(BASED) $(MALLOC_DEFS) $(MOREDEFS) $(RLIM_F) $(WOD_REALMS) $(REALITY_LVLS)
+ALLCXXFLAGS = $(CXXFLAGS) $(OPTIM) $(DEFS) $(COMPRESS_DEFS) $(BASED) $(MALLOC_DEFS) $(MOREDEFS) $(RLIM_F) $(MEMORY_BASED) $(WOD_REALMS) $(REALITY_LVLS) $(QUERY_SLAVE)
 
 #Auxiliary files
 A_INST	= README NOTES HIGHLIGHTS CREDITS CHANGES
