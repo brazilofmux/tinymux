@@ -1,6 +1,6 @@
 // bsd.cpp
 //
-// $Id: bsd.cpp,v 1.46 2005-10-12 05:39:11 sdennis Exp $
+// $Id: bsd.cpp,v 1.47 2005-10-14 17:34:09 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -43,9 +43,11 @@ int game_pid;
 int maxd = 0;
 pid_t slave_pid = 0;
 int slave_socket = INVALID_SOCKET;
+pid_t game_pid;
+#ifdef QUERY_SLAVE
 pid_t sqlslave_pid = 0;
 int sqlslave_socket = INVALID_SOCKET;
-pid_t game_pid;
+#endif // QUERY_SLAVE
 #endif // WIN32
 
 DESC *initializesock(SOCKET, struct sockaddr_in *);
@@ -481,6 +483,7 @@ void CleanUpSlaveProcess(void)
     slave_pid = 0;
 }
 
+#ifdef QUERY_SLAVE
 void CleanUpSQLSlaveSocket(void)
 {
     if (!IS_INVALID_SOCKET(sqlslave_socket))
@@ -503,6 +506,7 @@ void CleanUpSQLSlaveProcess(void)
     }
     sqlslave_pid = 0;
 }
+#endif // QUERY_SLAVE
 
 void boot_slave(dbref executor, dbref caller, dbref enactor, int)
 {
@@ -1286,12 +1290,14 @@ void shovechars(int nPorts, PortInfo aPorts[])
             FD_SET(slave_socket, &input_set);
         }
 
+#ifdef QUERY_SLAVE
         // Listen for replies from the sqlslave socket.
         //
         if (!IS_INVALID_SOCKET(sqlslave_socket))
         {
             FD_SET(sqlslave_socket, &input_set);
         }
+#endif // QUERY_SLAVE
 
         // Mark sockets that we want to test for change in status.
         //
@@ -1351,11 +1357,15 @@ void shovechars(int nPorts, PortInfo aPorts[])
                     ENDLOG;
                     boot_slave(GOD, GOD, GOD, 0);
                 }
+
+#ifdef QUERY_SLAVE
                 if (  !IS_INVALID_SOCKET(sqlslave_socket)
                    && !ValidSocket(sqlslave_socket))
                 {
                     CleanUpSQLSlaveSocket();
                 }
+#endif // QUERY_SLAVE
+
                 for (i = 0; i < nPorts; i++)
                 {
                     if (!ValidSocket(aPorts[i].socket))
@@ -1387,6 +1397,8 @@ void shovechars(int nPorts, PortInfo aPorts[])
                 ; // Nothing.
             }
         }
+
+#ifdef QUERY_SLAVE
 #if 0
         // Get result sets from sqlslave.
         //
@@ -1399,6 +1411,7 @@ void shovechars(int nPorts, PortInfo aPorts[])
             }
         }
 #endif
+#endif // QUERY_SLAVE
 
         // Check for new connection requests.
         //
@@ -2870,6 +2883,7 @@ RETSIGTYPE DCL_CDECL sighandler(int sig)
                     CleanUpSlaveSocket();
                     slave_pid = 0;
                 }
+#ifdef QUERY_SLAVE
                 else if (child == sqlslave_pid)
                 {
                     // The SQL slave process ended (unexpectedly)
@@ -2878,6 +2892,7 @@ RETSIGTYPE DCL_CDECL sighandler(int sig)
                     CleanUpSQLSlaveSocket();
                     sqlslave_pid = 0;
                 }
+#endif // QUERY_SLAVE
                 else if (mudstate.dumper == 0)
                 {
                     // The dumping process finished before we could
@@ -2891,8 +2906,13 @@ RETSIGTYPE DCL_CDECL sighandler(int sig)
                 {
                     log_signal(sig);
                     STARTLOG(LOG_PROBLEMS, "SIG", "DEBUG");
+#ifdef QUERY_SLAVE
                     Log.tinyprintf("mudstate.dumper=%d, child=%d, slave_pid=%d, sqlslave_pid=%d" ENDLINE,
                         mudstate.dumper, child, slave_pid, sqlslave_pid);
+#else
+                    Log.tinyprintf("mudstate.dumper=%d, child=%d, slave_pid=%d" ENDLINE,
+                        mudstate.dumper, child, slave_pid);
+#endif // QUERY_SLAVE
                     ENDLOG;
                 }
             }
