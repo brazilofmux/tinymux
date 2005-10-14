@@ -216,6 +216,8 @@ Bug Fixes:
  -- The logout_cmd_access parameter disables a logged-out command when
     any access restriction, not just need_player, is specified.
  -- Strip ANSI so ^-command matching works with ANSI emits.
+ -- Fixed pointer dereference bug in RxLevel() introduced by Brazil
+    which caused REALITYLVLS to crash after ./Startmux.
 
 
 Performance Enhancements:
