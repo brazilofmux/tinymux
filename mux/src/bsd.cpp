@@ -1,6 +1,6 @@
 // bsd.cpp
 //
-// $Id: bsd.cpp,v 1.48 2005-10-15 05:54:30 sdennis Exp $
+// $Id: bsd.cpp,v 1.49 2005-10-15 06:03:28 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -2822,6 +2822,26 @@ void log_signal_ignore(int iSignal)
     ENDLOG;
 }
 
+#ifndef WIN32
+void LogStatBuf(int stat_buf, const char *Name)
+{
+    STARTLOG(LOG_ALWAYS, "NET", Name);
+    if (WIFEXITED(stat_buf))
+    {
+        Log.tinyprintf("process exited unexpectedly with exit status %d.", WEXITSTATUS(stat_buf));
+    }
+    else if (WIFSIGNALED(stat_buf))
+    {
+        Log.tinyprintf("process was terminated with signal %d.", WTERMSIG(stat_buf));
+    }
+    else
+    {
+        log_text("process ended unexpectedly.");
+    }
+    ENDLOG;
+}
+#endif
+
 RETSIGTYPE DCL_CDECL sighandler(int sig)
 {
 #ifndef WIN32
@@ -2873,9 +2893,7 @@ RETSIGTYPE DCL_CDECL sighandler(int sig)
                     CleanUpSlaveSocket();
                     slave_pid = 0;
 
-                    STARTLOG(LOG_ALWAYS, "NET", "SLAVE");
-                    log_text("slave process ended unexpectedly.");
-                    ENDLOG;
+                    LogStatBuf(stat_buf, "SLAVE");
 
                     continue;
                 }
@@ -2887,9 +2905,7 @@ RETSIGTYPE DCL_CDECL sighandler(int sig)
                     CleanUpSQLSlaveSocket();
                     sqlslave_pid = 0;
 
-                    STARTLOG(LOG_ALWAYS, "NET", "QUERY");
-                    log_text("sqlslave process ended unexpectedly.");
-                    ENDLOG;
+                    LogStatBuf(stat_buf, "QUERY");
 
                     continue;
                 }
@@ -2922,6 +2938,8 @@ RETSIGTYPE DCL_CDECL sighandler(int sig)
             }
 
             log_signal(sig);
+            LogStatBuf(stat_buf, "UKNWN");
+
             STARTLOG(LOG_PROBLEMS, "SIG", "DEBUG");
 #ifdef QUERY_SLAVE
             Log.tinyprintf("mudstate.dumper=%d, child=%d, slave_pid=%d, sqlslave_pid=%d" ENDLINE,
