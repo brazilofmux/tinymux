@@ -1,6 +1,6 @@
 // bsd.cpp
 //
-// $Id: bsd.cpp,v 1.49 2005-10-15 06:03:28 sdennis Exp $
+// $Id: bsd.cpp,v 1.50 2005-10-15 06:09:33 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -2832,7 +2832,7 @@ void LogStatBuf(int stat_buf, const char *Name)
     }
     else if (WIFSIGNALED(stat_buf))
     {
-        Log.tinyprintf("process was terminated with signal %d.", WTERMSIG(stat_buf));
+        Log.tinyprintf("process was terminated with signal %s.", SignalDesc(WTERMSIG(stat_buf)));
     }
     else
     {
