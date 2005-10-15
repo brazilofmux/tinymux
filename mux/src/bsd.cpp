@@ -1,6 +1,6 @@
 // bsd.cpp
 //
-// $Id: bsd.cpp,v 1.50 2005-10-15 06:09:33 sdennis Exp $
+// $Id: bsd.cpp,v 1.51 2005-10-15 06:24:25 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -2910,9 +2910,8 @@ RETSIGTYPE DCL_CDECL sighandler(int sig)
                     continue;
                 }
 #endif // QUERY_SLAVE
-
-                if (  mudconf.fork_dump
-                   && mudstate.dumping)
+                else if (  mudconf.fork_dump
+                        && mudstate.dumping)
                 {
                     if (child == mudstate.dumper)
                     {
