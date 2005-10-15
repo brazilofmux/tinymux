@@ -1,6 +1,6 @@
 // bsd.cpp
 //
-// $Id: bsd.cpp,v 1.47 2005-10-14 17:34:09 sdennis Exp $
+// $Id: bsd.cpp,v 1.48 2005-10-15 05:54:30 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -2863,59 +2863,74 @@ RETSIGTYPE DCL_CDECL sighandler(int sig)
 
         while ((child = waitpid(0, &stat_buf, WNOHANG)) > 0)
         {
-            if (  mudconf.fork_dump
-               && mudstate.dumping
-               && (  WIFEXITED(stat_buf)
-                  || WIFSIGNALED(stat_buf)))
+            if (  WIFEXITED(stat_buf)
+               || WIFSIGNALED(stat_buf))
             {
-                if (child == mudstate.dumper)
+                if (child == slave_pid)
                 {
-                    // The dumping process finished.
-                    //
-                    mudstate.dumper  = 0;
-                    mudstate.dumping = false;
-                }
-                else if (child == slave_pid)
-                {
-                    // The reverse-DNS slave process ended (unexpectedly)
-                    // during a forked dump.
+                    // The reverse-DNS slave process ended unexpectedly.
                     //
                     CleanUpSlaveSocket();
                     slave_pid = 0;
+
+                    STARTLOG(LOG_ALWAYS, "NET", "SLAVE");
+                    log_text("slave process ended unexpectedly.");
+                    ENDLOG;
+
+                    continue;
                 }
 #ifdef QUERY_SLAVE
                 else if (child == sqlslave_pid)
                 {
-                    // The SQL slave process ended (unexpectedly)
-                    // during a forked dump.
+                    // The SQL slave process ended unexpectedly.
                     //
                     CleanUpSQLSlaveSocket();
                     sqlslave_pid = 0;
-                }
-#endif // QUERY_SLAVE
-                else if (mudstate.dumper == 0)
-                {
-                    // The dumping process finished before we could
-                    // determine its process id.  The new process can
-                    // complete before the fork() call returns.
-                    //
-                    mudstate.dumper = child;
-                    mudstate.dumping = false;
-                }
-                else
-                {
-                    log_signal(sig);
-                    STARTLOG(LOG_PROBLEMS, "SIG", "DEBUG");
-#ifdef QUERY_SLAVE
-                    Log.tinyprintf("mudstate.dumper=%d, child=%d, slave_pid=%d, sqlslave_pid=%d" ENDLINE,
-                        mudstate.dumper, child, slave_pid, sqlslave_pid);
-#else
-                    Log.tinyprintf("mudstate.dumper=%d, child=%d, slave_pid=%d" ENDLINE,
-                        mudstate.dumper, child, slave_pid);
-#endif // QUERY_SLAVE
+
+                    STARTLOG(LOG_ALWAYS, "NET", "QUERY");
+                    log_text("sqlslave process ended unexpectedly.");
                     ENDLOG;
+
+                    continue;
+                }
+#endif // QUERY_SLAVE
+
+                if (  mudconf.fork_dump
+                   && mudstate.dumping)
+                {
+                    if (child == mudstate.dumper)
+                    {
+                        // The dumping process finished.
+                        //
+                        mudstate.dumper  = 0;
+                        mudstate.dumping = false;
+
+                        continue;
+                    }
+                    else if (mudstate.dumper == 0)
+                    {
+                        // The dumping process finished before we could
+                        // determine its process id.  The new process can
+                        // complete before the fork() call returns.
+                        //
+                        mudstate.dumper = child;
+                        mudstate.dumping = false;
+
+                        continue;
+                    }
                 }
             }
+
+            log_signal(sig);
+            STARTLOG(LOG_PROBLEMS, "SIG", "DEBUG");
+#ifdef QUERY_SLAVE
+            Log.tinyprintf("mudstate.dumper=%d, child=%d, slave_pid=%d, sqlslave_pid=%d" ENDLINE,
+                mudstate.dumper, child, slave_pid, sqlslave_pid);
+#else
+            Log.tinyprintf("mudstate.dumper=%d, child=%d, slave_pid=%d" ENDLINE,
+                mudstate.dumper, child, slave_pid);
+#endif // QUERY_SLAVE
+            ENDLOG;
         }
         break;
 
