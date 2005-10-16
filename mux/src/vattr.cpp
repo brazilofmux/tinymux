@@ -1,6 +1,6 @@
 // vattr.cpp -- Manages the user-defined attributes.
 //
-// $Id: vattr.cpp,v 1.10 2005-06-02 04:09:05 sdennis Exp $
+// $Id: vattr.cpp,v 1.11 2005-10-16 04:31:33 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -246,7 +246,8 @@ void dbclean_CheckALISTtoAT(dbref executor)
 {
     notify(executor, "3. Checking ALIST to anum_table mapping...");
 
-    // Traverse every attribute on every object and make sure that attribute is represented in the attribute table.
+    // Traverse every attribute on every object and make sure that attribute is
+    // represented in the attribute table.
     //
     dbref iObject;
     int nInvalid = 0;
@@ -315,7 +316,8 @@ void dbclean_CheckALISTtoDB(dbref executor)
 {
     notify(executor, "4. Checking ALIST against attribute DB on disk...");
 
-    // Traverse every attribute on every object and make sure that attribute is represented attribute database.
+    // Traverse every attribute on every object and make sure that attribute is
+    // represented attribute database.
     //
     dbref iObject;
     int nInvalid = 0;
