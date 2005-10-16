@@ -1,6 +1,6 @@
 // funceval.cpp -- MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.92 2005-08-12 14:37:11 sdennis Exp $
+// $Id: funceval.cpp,v 1.93 2005-10-16 05:55:11 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -3717,64 +3717,100 @@ FUNCTION(fun_translate)
     safe_str(translate_string(fargs[0], type), buff, bufc);
 }
 
-class CBitField
-{
-    unsigned int nBitsPer;
-    unsigned int nShift;
-    unsigned int nMask;
-    unsigned int nMaximum;
-    size_t  nInts;
-    UINT32 *pInts;
-    UINT32 *pMasks;
-
-public:
-    CBitField(unsigned int max);
-    ~CBitField(void);
-    void ClearAll(void);
-    void Set(unsigned int i);
-    void Clear(unsigned int i);
-    bool IsSet(unsigned int i);
-};
-
 // Construct a CBitField to hold (nMaximum_arg+1) bits numbered 0 through
 // nMaximum_arg.
 //
 CBitField::CBitField(unsigned int nMaximum_arg)
 {
-    nInts  = 0;
-    pInts  = NULL;
-    pMasks = NULL;
-    if (0 < nMaximum_arg)
-    {
-        nMaximum = nMaximum_arg;
-        nBitsPer = sizeof(UINT32)*8;
+    nMaximum = 0;
+    nInts    = 0;
+    pInts    = NULL;
+    pMasks   = NULL;
 
-        // Calculate Shift
+    nBitsPer = sizeof(UINT32)*8;
+
+    // Calculate Shift
+    //
+    nShift = 0;
+    unsigned int i = 1;
+    while (i < nBitsPer)
+    {
+        nShift++;
+        i <<= 1;
+    }
+
+    // Calculate Mask
+    //
+    nMask = nBitsPer - 1;
+
+    // Allocate array of UINT32s.
+    //
+    Resize(nMaximum_arg);
+}
+
+#define MINIMUM_RESIZE (4096*sizeof(UINT32))
+
+void CBitField::Resize(unsigned int nMaximum_arg)
+{
+    if (  0 < nMaximum_arg
+       && nMaximum < nMaximum_arg)
+    {
+        unsigned int nNewMaximum = nMaximum_arg;
+
+        // This provides some assurances that we are not resizing too often.
         //
-        nShift = 0;
-        unsigned int i = 1;
-        while (i < nBitsPer)
+        if (  pMasks
+           && nNewMaximum < nMaximum + MINIMUM_RESIZE)
         {
-            nShift++;
-            i <<= 1;
+            nNewMaximum = nMaximum + MINIMUM_RESIZE;
         }
 
-        // Calculate Mask
-        //
-        nMask = nBitsPer - 1;
+        size_t  nNewInts = (nNewMaximum+nBitsPer) >> nShift;
+        UINT32 *pNewMasks = (UINT32 *)MEMALLOC((nNewInts+nBitsPer)
+                          * sizeof(UINT32));
+        ISOUTOFMEMORY(pNewMasks);
+        UINT32 *pNewInts = pNewMasks + nBitsPer;
 
-        // Allocate array of UINT32s.
+        // Is this the first sizing or a re-sizing?
         //
-        nInts    = (nMaximum+nBitsPer) >> nShift;
-        pMasks   = (UINT32 *)MEMALLOC((nInts+nBitsPer)*sizeof(UINT32));
-        ISOUTOFMEMORY(pMasks);
-        pInts    = pMasks + nBitsPer;
-
-        // Calculate all possible single bits.
-        //
-        for (i = 0; i < nBitsPer; i++)
+        if (pMasks)
         {
-            pMasks[i] = ((UINT32)1) << i;
+            // Copy existing masks and bits to the new location, and
+            // clear the new bits.
+            //
+            memcpy(pNewMasks, pMasks, (nInts+nBitsPer)*sizeof(UINT32));
+            memset(pNewInts + nInts, 0, (nNewInts - nInts)*sizeof(UINT32));
+
+            // Free the previous allocation.
+            //
+            MEMFREE(pMasks);
+
+            // A reallocation.
+            //
+            nMaximum = nNewMaximum;
+            nInts    = nNewInts;
+            pMasks   = pNewMasks;
+            pInts    = pNewInts;
+        }
+        else
+        {
+            // First allocation.
+            //
+            nMaximum = nNewMaximum;
+            nInts    = nNewInts;
+            pMasks   = pNewMasks;
+            pInts    = pNewInts;
+
+            // Initialize masks by calculating all possible single bits.
+            //
+            for (int i = 0; i < nBitsPer; i++)
+            {
+                pMasks[i] = ((UINT32)1) << i;
+            }
+
+            // Initialize bits by clearing them all.
+            //
+            ClearAll();
         }
     }
 }
@@ -3908,6 +3944,9 @@ static void room_list
 
 FUNCTION(fun_lrooms)
 {
+    static CBitField bfReport(0);
+    static CBitField bfTraverse(0);
+
     dbref room = match_thing_quiet(executor, fargs[0]);
     if (!Good_obj(room))
     {
@@ -3946,8 +3985,8 @@ FUNCTION(fun_lrooms)
         B = xlate(fargs[2]);
     }
 
-    CBitField bfReport(mudstate.db_top-1);
-    CBitField bfTraverse(mudstate.db_top-1);
+    bfReport.Resize(mudstate.db_top-1);
+    bfTraverse.Resize(mudstate.db_top-1);
     bfReport.ClearAll();
     bfTraverse.ClearAll();
 
