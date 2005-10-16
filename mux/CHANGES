@@ -249,6 +249,8 @@ Performance Enhancements:
     give the answer, it looked at all the cache entries to find a match.
     This improved ReadCache() performance as the corresponding cache
     entry is now always known.
+ -- Avoid scanning an object's attributes in Hearer() or sweep_check()
+    if it is already known to have @listen or is not set MONITOR.
 
 
 Cosmetic Changes:
