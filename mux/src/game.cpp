@@ -1,6 +1,6 @@
 // game.cpp
 //
-// $Id: game.cpp,v 1.72 2005-10-13 14:54:07 sdennis Exp $
+// $Id: game.cpp,v 1.73 2005-10-16 07:01:23 rmg Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -1838,11 +1838,6 @@ bool list_check
 
 bool Hearer(dbref thing)
 {
-    char *as, *buff, *s;
-    dbref aowner;
-    int atr, aflags;
-    ATTR *ap;
-
     if (  mudstate.inpipe
        && thing == mudstate.poutobj)
     {
@@ -1850,33 +1845,22 @@ bool Hearer(dbref thing)
     }
 
     if (  Connected(thing)
-       || Puppet(thing))
+       || Puppet(thing)
+       || H_Listen(thing))
     {
         return true;
     }
 
     if (Monitor(thing))
     {
+        char *as, *buff, *s;
+        dbref aowner;
+        int atr, aflags;
+        ATTR *ap;
+
         buff = alloc_lbuf("Hearer");
-    }
-    else
-    {
-        buff = NULL;
-    }
-    atr_push();
-    for (atr = atr_head(thing, &as); atr; atr = atr_next(&as))
-    {
-        if (atr == A_LISTEN)
-        {
-            if (buff)
-            {
-                free_lbuf(buff);
-                buff = NULL;
-            }
-            atr_pop();
-            return true;
-        }
-        if (buff)
+        atr_push();
+        for (atr = atr_head(thing, &as); atr; atr = atr_next(&as))
         {
             ap = atr_num(atr);
             if (  !ap
@@ -1904,18 +1888,13 @@ bool Hearer(dbref thing)
             if (s)
             {
                 free_lbuf(buff);
-                buff = NULL;
                 atr_pop();
                 return true;
             }
         }
-    }
-    if (buff)
-    {
         free_lbuf(buff);
-        buff = NULL;
+        atr_pop();
     }
-    atr_pop();
     return false;
 }
 
