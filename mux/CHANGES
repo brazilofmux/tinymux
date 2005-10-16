@@ -277,6 +277,7 @@ Miscellaneous:
  -- Alierak refactored the logged-out commands code, removing some
     unreachable code in do_command() and clarifying how logged-out
     commands are handled.
+ -- Alierak removed duplicated code relating to setting the MONITOR flag.
  -- Included REALITY and REALITY.SETUP readme files which were
     previously left out of the distribution.
  -- Removed BTMUX patch surfaces as their approach has changed.
