@@ -1,6 +1,6 @@
 // predicates.cpp
 //
-// $Id: predicates.cpp,v 1.68 2005-10-12 04:30:17 sdennis Exp $
+// $Id: predicates.cpp,v 1.69 2005-10-16 08:45:38 rmg Exp $
 //
 
 #include "copyright.h"
@@ -615,10 +615,9 @@ void handle_ears(dbref thing, bool could_hear, bool can_hear)
     static const char *poss[5] =
     {"", "its", "her", "his", "their"};
 
-    if (  !could_hear
-       && can_hear)
+    if (could_hear != can_hear)
     {
-        buff = alloc_lbuf("handle_ears.grow");
+        buff = alloc_lbuf("handle_ears");
         strcpy(buff, Name(thing));
         if (isExit(thing))
         {
@@ -629,29 +628,22 @@ void handle_ears(dbref thing, bool could_hear, bool can_hear)
             *bp = '\0';
         }
         gender = get_gender(thing);
-        notify_check(thing, thing, tprintf("%s grow%s ears and can now hear.",
-            buff, (gender == 4) ? "" : "s"),
-            (MSG_ME | MSG_NBR | MSG_LOC | MSG_INV));
-        free_lbuf(buff);
-    }
-    else if (  could_hear
-            && !can_hear)
-    {
-        buff = alloc_lbuf("handle_ears.lose");
-        strcpy(buff, Name(thing));
-        if (isExit(thing))
+
+        if (can_hear)
         {
-            for (bp = buff; *bp && *bp != ';'; bp++)
-            {
-                ; // Nothing.
-            }
-            *bp = '\0';
+            notify_check(thing, thing,
+                         tprintf("%s grow%s ears and can now hear.",
+                                 buff, (gender == 4) ? "" : "s"),
+                         (MSG_ME | MSG_NBR | MSG_LOC | MSG_INV));
         }
-        gender = get_gender(thing);
-        notify_check(thing, thing,
-            tprintf("%s lose%s %s ears and become%s deaf.", buff,
-            (gender == 4) ? "" : "s", poss[gender], (gender == 4) ? "" : "s"),
-            (MSG_ME | MSG_NBR | MSG_LOC | MSG_INV));
+        else
+        {
+            notify_check(thing, thing,
+                         tprintf("%s lose%s %s ears and become%s deaf.",
+                                 buff, (gender == 4) ? "" : "s",
+                                 poss[gender], (gender == 4) ? "" : "s"),
+                         (MSG_ME | MSG_NBR | MSG_LOC | MSG_INV));
+        }
         free_lbuf(buff);
     }
 }
