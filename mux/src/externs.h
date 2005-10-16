@@ -1,6 +1,6 @@
 // externs.h -- Prototypes for externs not defined elsewhere.
 //
-// $Id: externs.h,v 1.41 2005-10-16 05:55:11 sdennis Exp $
+// $Id: externs.h,v 1.42 2005-10-16 20:48:14 sdennis Exp $
 //
 
 #ifndef EXTERNS_H
@@ -912,25 +912,5 @@ double ulp(double);
 double mux_strtod(const char *s00, char **se);
 char *mux_dtoa(double d, int mode, int ndigits, int *decpt, int *sign,
              char **rve);
-
-class CBitField
-{
-    unsigned int nBitsPer;
-    unsigned int nShift;
-    unsigned int nMask;
-    unsigned int nMaximum;
-    size_t  nInts;
-    UINT32 *pInts;
-    UINT32 *pMasks;
-
-public:
-    CBitField(unsigned int max);
-    void Resize(unsigned int max);
-    ~CBitField(void);
-    void ClearAll(void);
-    void Set(unsigned int i);
-    void Clear(unsigned int i);
-    bool IsSet(unsigned int i);
-};
 
 #endif // EXTERNS_H

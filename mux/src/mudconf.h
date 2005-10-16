@@ -1,6 +1,6 @@
 // mudconf.h
 //
-// $Id: mudconf.h,v 1.32 2005-10-12 04:33:30 sdennis Exp $
+// $Id: mudconf.h,v 1.33 2005-10-16 20:48:14 sdennis Exp $
 //
 
 #ifndef __CONF_H
@@ -400,6 +400,14 @@ struct statedata
 #endif // PARSE_TREES
     CHashTable ufunc_htab;      /* Local functions hashtable */
     CHashTable vattr_name_htab; /* User attribute names hashtable */
+
+    CBitField bfNoListens;      // Cache knowledge that there are no ^-Commands.
+    CBitField bfNoCommands;     // Cache knowledge that there are no $-Commands.
+    CBitField bfCommands;       // Cache knowledge that there are $-Commands.
+    CBitField bfListens;        // Cache knowledge that there are ^-Commands.
+
+    CBitField bfReport;         // Used for LROOMS.
+    CBitField bfTraverse;       // Used for LROOMS.
 };
 
 extern STATEDATA mudstate;

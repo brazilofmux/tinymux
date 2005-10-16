@@ -1,6 +1,6 @@
 // db.cpp
 //
-// $Id: db.cpp,v 1.59 2005-10-12 05:30:31 sdennis Exp $
+// $Id: db.cpp,v 1.60 2005-10-16 20:48:14 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -1342,23 +1342,39 @@ bool Commer(dbref thing)
     dbref aowner;
     ATTR *ap;
 
+    if (mudstate.bfNoCommands.IsSet(thing))
+    {
+        return false;
+    }
+    else if (mudstate.bfCommands.IsSet(thing))
+    {
+        return true;
+    }
+
     atr_push();
     for (atr = atr_head(thing, &as); atr; atr = atr_next(&as))
     {
         ap = atr_num(atr);
-        if (!ap || (ap->flags & AF_NOPROG))
+        if (  !ap
+           || (ap->flags & AF_NOPROG))
+        {
             continue;
+        }
 
         s = atr_get(thing, atr, &aowner, &aflags);
         c = *s;
         free_lbuf(s);
-        if ((c == '$') && !(aflags & AF_NOPROG))
+
+        if (  AMATCH_CMD == c
+           && !(aflags & AF_NOPROG))
         {
             atr_pop();
+            mudstate.bfCommands.Set(thing);
             return true;
         }
     }
     atr_pop();
+    mudstate.bfNoCommands.Set(thing);
     return false;
 }
 
@@ -1705,6 +1721,7 @@ void atr_clr(dbref thing, int atr)
     cache_del(&okey);
     al_delete(thing, atr);
 #endif // MEMORY_BASED
+
     switch (atr)
     {
     case A_STARTUP:
@@ -1742,6 +1759,15 @@ void atr_clr(dbref thing, int atr)
 
         pcache_reload(thing);
         break;
+
+    default:
+
+        // Since this could overwrite an existing ^-Command or $-Command, we
+        // longer assert that the object has one.
+        //
+        mudstate.bfListens.Clear(thing);
+        mudstate.bfCommands.Clear(thing);
+        break;
     }
 }
 
@@ -1751,8 +1777,6 @@ void atr_clr(dbref thing, int atr)
 
 void atr_add_raw_LEN(dbref thing, int atr, const char *szValue, int nValue)
 {
-#ifdef MEMORY_BASED
-
     if (!szValue || szValue[0] == '\0')
     {
         atr_clr(thing, atr);
@@ -1763,6 +1787,8 @@ void atr_add_raw_LEN(dbref thing, int atr, const char *szValue, int nValue)
     {
         nValue = LBUF_SIZE-1;
     }
+
+#ifdef MEMORY_BASED
     ATRLIST *list;
     bool found = false;
     int hi, lo, mid;
@@ -1841,21 +1867,9 @@ void atr_add_raw_LEN(dbref thing, int atr, const char *szValue, int nValue)
         }
     }
 #else // MEMORY_BASED
+
     Aname okey;
-
     makekey(thing, atr, &okey);
-    if (!szValue || szValue[0] == '\0')
-    {
-        cache_del(&okey);
-        al_delete(thing, atr);
-        return;
-    }
-
-    if (nValue > LBUF_SIZE-1)
-    {
-        nValue = LBUF_SIZE-1;
-    }
-
     if (atr == A_LIST)
     {
         // A_LIST is never compressed and it's never listed within itself.
@@ -1921,6 +1935,31 @@ void atr_add(dbref thing, int atr, char *buff, dbref owner, int flags)
     }
     else
     {
+        switch (buff[0])
+        {
+        case AMATCH_LISTEN:
+
+            // Since this could be a ^-Command, we no longer assert that the
+            // object has none.
+            //
+            mudstate.bfNoListens.Clear(thing);
+            break;
+
+        case AMATCH_CMD:
+
+            // Since this could be a $-Command, we no longer assert that the
+            // object has none.
+            //
+            mudstate.bfNoCommands.Clear(thing);
+            break;
+        }
+
+        // Since this could overwrite an existing ^-Command or $-Command, we
+        // longer assert that the object has one.
+        //
+        mudstate.bfListens.Clear(thing);
+        mudstate.bfCommands.Clear(thing);
+
         char *tbuff = atr_encode(buff, thing, owner, flags, atr);
         atr_add_raw(thing, atr, tbuff);
     }
@@ -2426,6 +2465,11 @@ void initialize_objects(dbref first, dbref last)
 
 void db_grow(dbref newtop)
 {
+    mudstate.bfCommands.Resize(newtop);
+    mudstate.bfNoCommands.Resize(newtop);
+    mudstate.bfListens.Resize(newtop);
+    mudstate.bfNoListens.Resize(newtop);
+
     int delta;
     if (mudstate.bStandAlone)
     {

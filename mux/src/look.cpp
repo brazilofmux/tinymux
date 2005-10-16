@@ -1,6 +1,6 @@
 // look.cpp -- Commands which look at things.
 //
-// $Id: look.cpp,v 1.34 2005-10-16 07:33:43 rmg Exp $
+// $Id: look.cpp,v 1.35 2005-10-16 20:48:14 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -863,6 +863,9 @@ static void look_atrs1
     ATTR *pattr;
     char *as, *buf;
 
+    bool bFoundCommands = false;
+    bool bFoundListens  = false;
+
     ATTR cattr;
     for (ca = atr_head(thing, &as); ca; ca = atr_next(&as))
     {
@@ -889,6 +892,20 @@ static void look_atrs1
         }
 
         buf = atr_get(thing, ca, &aowner, &aflags);
+        if (!(aflags & AF_NOPROG))
+        {
+            switch (buf[0])
+            {
+            case AMATCH_CMD:
+                bFoundCommands = true;
+                break;
+
+            case AMATCH_LISTEN:
+                bFoundListens = true;
+                break;
+            }
+        }
+
         if (bCanReadAttr(player, othing, &cattr, false))
         {
             if (!(check_exclude && (aflags & AF_PRIVATE)))
@@ -902,6 +919,28 @@ static void look_atrs1
             }
         }
         free_lbuf(buf);
+    }
+
+    if (bFoundCommands)
+    {
+        mudstate.bfNoCommands.Clear(thing);
+        mudstate.bfCommands.Set(thing);
+    }
+    else
+    {
+        mudstate.bfCommands.Clear(thing);
+        mudstate.bfNoCommands.Set(thing);
+    }
+
+    if (bFoundListens)
+    {
+        mudstate.bfNoListens.Clear(thing);
+        mudstate.bfListens.Set(thing);
+    }
+    else
+    {
+        mudstate.bfListens.Clear(thing);
+        mudstate.bfNoListens.Set(thing);
     }
 }
 

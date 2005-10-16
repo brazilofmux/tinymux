@@ -1,6 +1,6 @@
 // funceval.cpp -- MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.93 2005-10-16 05:55:11 sdennis Exp $
+// $Id: funceval.cpp,v 1.94 2005-10-16 20:48:14 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -3876,8 +3876,6 @@ static void room_list
     dbref player,
     dbref enactor,
     dbref room,
-    CBitField &bfTraverse,
-    CBitField &bfReport,
     int   level,
     int   maxlevels,
     bool  showall
@@ -3891,7 +3889,7 @@ static void room_list
           || Location(player) == room
           || room == enactor))
     {
-        bfReport.Set(room);
+        mudstate.bfReport.Set(room);
     }
 
     // If the Nth level has been reach, stop this branch in the recursion
@@ -3932,11 +3930,10 @@ static void room_list
         {
             dbref loc = Location(thing);
             if (  exit_visible(thing, player, key)
-               && !bfTraverse.IsSet(loc))
+               && !mudstate.bfTraverse.IsSet(loc))
             {
-                bfTraverse.Set(loc);
-                room_list(player, enactor, loc, bfTraverse, bfReport,
-                    (level + 1), maxlevels, showall);
+                mudstate.bfTraverse.Set(loc);
+                room_list(player, enactor, loc, (level + 1), maxlevels, showall);
             }
         }
     }
@@ -3944,9 +3941,6 @@ static void room_list
 
 FUNCTION(fun_lrooms)
 {
-    static CBitField bfReport(0);
-    static CBitField bfTraverse(0);
-
     dbref room = match_thing_quiet(executor, fargs[0]);
     if (!Good_obj(room))
     {
@@ -3985,21 +3979,21 @@ FUNCTION(fun_lrooms)
         B = xlate(fargs[2]);
     }
 
-    bfReport.Resize(mudstate.db_top-1);
-    bfTraverse.Resize(mudstate.db_top-1);
-    bfReport.ClearAll();
-    bfTraverse.ClearAll();
+    mudstate.bfReport.Resize(mudstate.db_top-1);
+    mudstate.bfTraverse.Resize(mudstate.db_top-1);
+    mudstate.bfReport.ClearAll();
+    mudstate.bfTraverse.ClearAll();
 
-    bfTraverse.Set(room);
-    room_list(executor, enactor, room, bfTraverse, bfReport, 0, N, B);
-    bfReport.Clear(room);
+    mudstate.bfTraverse.Set(room);
+    room_list(executor, enactor, room, 0, N, B);
+    mudstate.bfReport.Clear(room);
 
     ITL pContext;
     ItemToList_Init(&pContext, buff, bufc, '#');
     dbref i;
     DO_WHOLE_DB(i)
     {
-        if (  bfReport.IsSet(i)
+        if (  mudstate.bfReport.IsSet(i)
            && !ItemToList_AddInteger(&pContext, i))
         {
             break;

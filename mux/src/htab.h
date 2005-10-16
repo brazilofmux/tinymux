@@ -1,6 +1,6 @@
 // htab.h - Structures and declarations needed for table hashing.
 //
-// $Id: htab.h,v 1.7 2004-07-19 21:33:54 sdennis Exp $
+// $Id: htab.h,v 1.8 2005-10-16 20:48:14 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -37,6 +37,26 @@ struct bque
     char    *env[NUM_ENV_VARS];     // environment vars
     char    *scr[MAX_GLOBAL_REGS];  // temp vars
     bool    IsTimed;                // Is there a waittime time on this entry?
+};
+
+class CBitField
+{
+    unsigned int nBitsPer;
+    unsigned int nShift;
+    unsigned int nMask;
+    unsigned int nMaximum;
+    size_t  nInts;
+    UINT32 *pInts;
+    UINT32 *pMasks;
+
+public:
+    CBitField(unsigned int max = 0);
+    void Resize(unsigned int max);
+    ~CBitField(void);
+    void ClearAll(void);
+    void Set(unsigned int i);
+    void Clear(unsigned int i);
+    bool IsSet(unsigned int i);
 };
 
 extern void hashreset(CHashTable *);

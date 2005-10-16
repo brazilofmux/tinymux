@@ -1,6 +1,6 @@
 // game.cpp
 //
-// $Id: game.cpp,v 1.73 2005-10-16 07:01:23 rmg Exp $
+// $Id: game.cpp,v 1.74 2005-10-16 20:48:14 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -194,6 +194,20 @@ static int atr_match1
     }
 
     int match = 0;
+    if (  AMATCH_CMD == type
+       && mudstate.bfNoCommands.IsSet(parent))
+    {
+        return match;
+    }
+    else if ( AMATCH_LISTEN == type
+            && mudstate.bfNoListens.IsSet(parent))
+    {
+        return match;
+    }
+
+    bool bFoundCommands = false;
+    bool bFoundListens  = false;
+
     int atr;
     char *as;
     atr_push();
@@ -209,24 +223,36 @@ static int atr_match1
             continue;
         }
 
-        // If we aren't the bottom level check if we saw this attr
-        // before. Also exclude it if the attribute type is PRIVATE.
+        // We need to grab the attribute even before we know whether we'll use
+        // it or not in order to maintain cached knowledge about ^-Commands
+        // and $-Commands.
         //
-        if (  check_exclude
-           && (  (ap->flags & AF_PRIVATE)
-              || hashfindLEN(&(ap->number), sizeof(ap->number), &mudstate.parent_htab)))
-        {
-            continue;
-        }
         dbref aowner;
         int   aflags;
         char buff[LBUF_SIZE];
         atr_get_str(buff, parent, atr, &aowner, &aflags);
 
-        // Skip if private and on a parent.
+        if (!(aflags & AF_NOPROG))
+        {
+            switch (buff[0])
+            {
+            case AMATCH_CMD:
+                bFoundCommands = true;
+                break;
+
+            case AMATCH_LISTEN:
+                bFoundListens = true;
+                break;
+            }
+        }
+
+        // If we aren't the bottom level check if we saw this attr
+        // before. Also exclude it if the attribute type is PRIVATE.
         //
         if (  check_exclude
-           && (aflags & AF_PRIVATE))
+           && (  (ap->flags & AF_PRIVATE)
+              || (aflags & AF_PRIVATE)
+              || hashfindLEN(&(ap->number), sizeof(ap->number), &mudstate.parent_htab)))
         {
             continue;
         }
@@ -280,6 +306,28 @@ static int atr_match1
         }
     }
     atr_pop();
+
+    if (bFoundCommands)
+    {
+        mudstate.bfNoCommands.Clear(parent);
+        mudstate.bfCommands.Set(parent);
+    }
+    else
+    {
+        mudstate.bfCommands.Clear(parent);
+        mudstate.bfNoCommands.Set(parent);
+    }
+
+    if (bFoundListens)
+    {
+        mudstate.bfNoListens.Clear(parent);
+        mudstate.bfListens.Set(parent);
+    }
+    else
+    {
+        mudstate.bfListens.Clear(parent);
+        mudstate.bfNoListens.Set(parent);
+    }
     return match;
 }
 
@@ -1851,6 +1899,18 @@ bool Hearer(dbref thing)
         return true;
     }
 
+    if (mudstate.bfNoListens.IsSet(thing))
+    {
+        return false;
+    }
+    else if (mudstate.bfListens.IsSet(thing))
+    {
+        return true;
+    }
+
+    bool bFoundCommands = false;
+    bool bFoundListens  = false;
+
     if (Monitor(thing))
     {
         char *as, *buff, *s;
@@ -1870,6 +1930,19 @@ bool Hearer(dbref thing)
             }
 
             atr_get_str(buff, thing, atr, &aowner, &aflags);
+            if (!(aflags & AF_NOPROG))
+            {
+                switch (buff[0])
+                {
+                case AMATCH_CMD:
+                    bFoundCommands = true;
+                    break;
+
+                case AMATCH_LISTEN:
+                    bFoundListens = true;
+                    break;
+                }
+            }
 
             // Make sure we can execute it.
             //
@@ -1889,11 +1962,25 @@ bool Hearer(dbref thing)
             {
                 free_lbuf(buff);
                 atr_pop();
+                mudstate.bfListens.Set(thing);
                 return true;
             }
         }
         free_lbuf(buff);
         atr_pop();
+
+        mudstate.bfNoListens.Set(thing);
+
+        if (bFoundCommands)
+        {
+            mudstate.bfNoCommands.Clear(thing);
+            mudstate.bfCommands.Set(thing);
+        }
+        else
+        {
+            mudstate.bfCommands.Clear(thing);
+            mudstate.bfNoCommands.Set(thing);
+        }
     }
     return false;
 }
