@@ -1,6 +1,6 @@
 // comsys.h
 //
-// $Id: comsys.h,v 1.3 2005-08-11 21:38:46 ian Exp $
+// $Id: comsys.h,v 1.4 2005-10-16 03:01:21 sdennis Exp $
 //
 
 #ifndef __COMSYS_H__
@@ -64,7 +64,9 @@ void save_comsys(char *filename);
 void load_comsys(char *filename);
 void del_comsys(dbref who);
 void add_comsys(comsys_t *c);
-bool do_test_access(dbref player, long access, struct channel *chan);
+bool test_join_access(dbref player, struct channel *chan);
+bool test_transmit_access(dbref player, struct channel *chan);
+bool test_receive_access(dbref player, struct channel *chan);
 void do_joinchannel(dbref player, struct channel *ch);
 void do_comdisconnectchannel(dbref player, char *channel);
 void load_channels(FILE *fp);
@@ -116,16 +118,15 @@ bool  do_comsystem(dbref who, char *cmd);
 void  do_chanlist(dbref executor, dbref caller, dbref enactor, int key, char *pattern);
 extern char *modSpeech(dbref player, char *message, bool bWhich, char *command);
 
-#define CHANNEL_JOIN      0x1
-#define CHANNEL_TRANSMIT  0x2
-#define CHANNEL_RECEIVE   0x4
-
-#define CHANNEL_PL_MULT   0x001 // See JOIN, TRANSMIT, RECEIVE
-#define CHANNEL_OBJ_MULT  0x010 // See JOIN, TRANSMIT, RECEIVE
-#define CHANNEL_LOUD      0x100
-#define CHANNEL_PUBLIC    0x200
-#define CHANNEL_SPOOF     0x400
-
+#define CHANNEL_PLAYER_JOIN     (0x00000001UL)
+#define CHANNEL_PLAYER_TRANSMIT (0x00000002UL)
+#define CHANNEL_PLAYER_RECEIVE  (0x00000004UL)
+#define CHANNEL_OBJECT_JOIN     (0x00000010UL)
+#define CHANNEL_OBJECT_TRANSMIT (0x00000020UL)
+#define CHANNEL_OBJECT_RECEIVE  (0x00000040UL)
+#define CHANNEL_LOUD            (0x00000100UL)
+#define CHANNEL_PUBLIC          (0x00000200UL)
+#define CHANNEL_SPOOF           (0x00000400UL)
 
 // Connected players and non-garbage objects are ok.
 //

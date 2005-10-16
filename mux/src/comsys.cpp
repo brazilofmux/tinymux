@@ -1,6 +1,6 @@
 // comsys.cpp
 //
-// $Id: comsys.cpp,v 1.37 2005-10-12 05:36:21 sdennis Exp $
+// $Id: comsys.cpp,v 1.38 2005-10-16 03:01:21 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -1011,7 +1011,7 @@ void do_processcom(dbref player, char *arg1, char *arg2)
         }
         do_comlast(player, ch, nRecall);
     }
-    else if (!do_test_access(player, CHANNEL_TRANSMIT, ch))
+    else if (!test_transmit_access(player, ch))
     {
         raw_notify(player, "That channel type cannot be transmitted on.");
         return;
@@ -1055,7 +1055,7 @@ void SendChannelMessage
     for (user = ch->on_users; user; user = user->on_next)
     {
         if (  user->bUserIsOn
-           && do_test_access(user->who, CHANNEL_RECEIVE, ch))
+           && test_receive_access(user->who, ch))
         {
             if (  user->ComTitleStatus
                || bSpoof
@@ -1503,7 +1503,7 @@ void do_addcom
         raw_notify(executor, tprintf("Channel %s does not exist yet.", Buffer));
         return;
     }
-    if (!do_test_access(executor, CHANNEL_JOIN, ch))
+    if (!test_join_access(executor, ch))
     {
         raw_notify(executor, "Sorry, this channel type does not allow you to join.");
         return;
@@ -1814,7 +1814,7 @@ void do_cleanupchannels(void)
         {
             if (isPlayer(user->who))
             {
-                if (!do_test_access(user->who, CHANNEL_JOIN, ch))
+                if (!test_join_access(user->who, ch))
                 //if (!Connected(user->who))
                 {
                     // Go looking for user in the array.
@@ -1909,16 +1909,16 @@ void do_listchannels(dbref player)
            || Controls(player, ch->charge_who))
         {
             sprintf(temp, "%c%c%c %-13.13s %c%c%c/%c%c%c %5d %5d %8d %8d %6d %10d",
-                (ch->type & (CHANNEL_PUBLIC)) ? 'P' : '-',
-                (ch->type & (CHANNEL_LOUD)) ? 'L' : '-',
-                (ch->type & (CHANNEL_SPOOF)) ? 'S' : '-',
+                (ch->type & CHANNEL_PUBLIC) ? 'P' : '-',
+                (ch->type & CHANNEL_LOUD) ? 'L' : '-',
+                (ch->type & CHANNEL_SPOOF) ? 'S' : '-',
                 ch->name,
-                (ch->type & (CHANNEL_PL_MULT * CHANNEL_JOIN)) ? 'J' : '-',
-                (ch->type & (CHANNEL_PL_MULT * CHANNEL_TRANSMIT)) ? 'X' : '-',
-                (ch->type & (CHANNEL_PL_MULT * CHANNEL_RECEIVE)) ? 'R' : '-',
-                (ch->type & (CHANNEL_OBJ_MULT * CHANNEL_JOIN)) ? 'j' : '-',
-                (ch->type & (CHANNEL_OBJ_MULT * CHANNEL_TRANSMIT)) ? 'x' : '-',
-                (ch->type & (CHANNEL_OBJ_MULT * CHANNEL_RECEIVE)) ? 'r' : '-',
+                (ch->type & CHANNEL_PLAYER_JOIN) ? 'J' : '-',
+                (ch->type & CHANNEL_PLAYER_TRANSMIT) ? 'X' : '-',
+                (ch->type & CHANNEL_PLAYER_RECEIVE) ? 'R' : '-',
+                (ch->type & CHANNEL_OBJECT_JOIN) ? 'j' : '-',
+                (ch->type & CHANNEL_OBJECT_TRANSMIT) ? 'x' : '-',
+                (ch->type & CHANNEL_OBJECT_RECEIVE) ? 'r' : '-',
                 (ch->chan_obj != NOTHING) ? ch->chan_obj : -1,
                 ch->charge_who, ch->charge, ch->amount_col, ch->num_users, ch->num_messages);
             raw_notify(player, temp);
@@ -2419,149 +2419,139 @@ void do_editchannel
         break;
 
     case 3:
-        if (strcmp(s, "join") == 0)
         {
-            if (add_remove)
+            int access = 0;
+            if (strcmp(s, "join") == 0)
             {
-                ch->type |= (CHANNEL_PL_MULT * CHANNEL_JOIN);
-                raw_notify(executor, "@cpflags: Set.");
+                access = CHANNEL_PLAYER_JOIN;
+            }
+            else if (strcmp(s, "receive") == 0)
+            {
+                access = CHANNEL_PLAYER_RECEIVE;
+            }
+            else if (strcmp(s, "transmit") == 0)
+            {
+                access = CHANNEL_PLAYER_TRANSMIT;
             }
             else
             {
-                ch->type &= ~(CHANNEL_PL_MULT * CHANNEL_JOIN);
-                raw_notify(executor, "@cpflags: Cleared.");
+                raw_notify(executor, "@cpflags: Unknown Flag.");
             }
-        }
-        else if (strcmp(s, "receive") == 0)
-        {
-            if (add_remove)
+
+            if (access)
             {
-                ch->type |= (CHANNEL_PL_MULT * CHANNEL_RECEIVE);
-                raw_notify(executor, "@cpflags: Set.");
+                if (add_remove)
+                {
+                    ch->type |= access;
+                    raw_notify(executor, "@cpflags: Set.");
+                }
+                else
+                {
+                    ch->type &= ~access;
+                    raw_notify(executor, "@cpflags: Cleared.");
+                }
             }
-            else
-            {
-                ch->type &= ~(CHANNEL_PL_MULT * CHANNEL_RECEIVE);
-                raw_notify(executor, "@cpflags: Cleared.");
-            }
-        }
-        else if (strcmp(s, "transmit") == 0)
-        {
-            if (add_remove)
-            {
-                ch->type |= (CHANNEL_PL_MULT * CHANNEL_TRANSMIT);
-                raw_notify(executor, "@cpflags: Set.");
-            }
-            else
-            {
-                ch->type &= ~(CHANNEL_PL_MULT * CHANNEL_TRANSMIT);
-                raw_notify(executor, "@cpflags: Cleared.");
-            }
-        }
-        else
-        {
-            raw_notify(executor, "@cpflags: Unknown Flag.");
         }
         break;
 
     case 4:
-        if (strcmp(s, "join") == 0)
         {
-            if (add_remove)
+            int access = 0;
+            if (strcmp(s, "join") == 0)
             {
-                ch->type |= (CHANNEL_OBJ_MULT * CHANNEL_JOIN);
-                raw_notify(executor, "@coflags: Set.");
+                access = CHANNEL_OBJECT_JOIN;
+            }
+            else if (strcmp(s, "receive") == 0)
+            {
+                access = CHANNEL_OBJECT_RECEIVE;
+            }
+            else if (strcmp(s, "transmit") == 0)
+            {
+                access = CHANNEL_OBJECT_TRANSMIT;
             }
             else
             {
-                ch->type &= ~(CHANNEL_OBJ_MULT * CHANNEL_JOIN);
-                raw_notify(executor, "@coflags: Cleared.");
+                raw_notify(executor, "@coflags: Unknown Flag.");
             }
-        }
-        else if (strcmp(s, "receive") == 0)
-        {
-            if (add_remove)
+
+            if (access)
             {
-                ch->type |= (CHANNEL_OBJ_MULT * CHANNEL_RECEIVE);
-                raw_notify(executor, "@coflags: Set.");
+                if (add_remove)
+                {
+                    ch->type |= access;
+                    raw_notify(executor, "@coflags: Set.");
+                }
+                else
+                {
+                    ch->type &= ~access;
+                    raw_notify(executor, "@coflags: Cleared.");
+                }
             }
-            else
-            {
-                ch->type &= ~(CHANNEL_OBJ_MULT * CHANNEL_RECEIVE);
-                raw_notify(executor, "@coflags: Cleared.");
-            }
-        }
-        else if (strcmp(s, "transmit") == 0)
-        {
-            if (add_remove)
-            {
-                ch->type |= (CHANNEL_OBJ_MULT * CHANNEL_TRANSMIT);
-                raw_notify(executor, "@coflags: Set.");
-            }
-            else
-            {
-                ch->type &= ~(CHANNEL_OBJ_MULT * CHANNEL_TRANSMIT);
-                raw_notify(executor, "@coflags: Cleared.");
-            }
-        }
-        else
-        {
-            raw_notify(executor, "@coflags: Unknown Flag.");
         }
         break;
     }
 }
 
-bool do_test_access(dbref player, long access, struct channel *chan)
+bool test_join_access(dbref player, struct channel *chan)
 {
     if (Comm_All(player))
     {
         return true;
     }
 
-    // Channel objects allow custom locks for channels.  The normal
-    // lock is used to see if they can join that channel. The enterlock
-    // is checked to see if they can receive messages on it. The
-    // Uselock is checked to see if they can transmit on it. Note:
-    // These checks do not supercede the normal channel flags. If a
-    // channel is set JOIN for players, ALL players can join the
-    // channel, whether or not they pass the lock.  Same for all
-    // channel object locks.
-    //
-    long flag_value = access;
-    if (chan->chan_obj != NOTHING && chan->chan_obj != 0)
-    {
-        if (flag_value & CHANNEL_JOIN)
-        {
-            if (could_doit(player, chan->chan_obj, A_LOCK))
-                return true;
-        }
-        if (flag_value & CHANNEL_TRANSMIT)
-        {
-            if (could_doit(player, chan->chan_obj, A_LUSE))
-                return true;
-        }
-        if (flag_value & CHANNEL_RECEIVE)
-        {
-            if (could_doit(player, chan->chan_obj, A_LENTER))
-                return true;
-        }
-    }
-
+    int access;
     if (isPlayer(player))
     {
-        flag_value *= CHANNEL_PL_MULT;
+        access = CHANNEL_PLAYER_JOIN;
     }
     else
     {
-        flag_value *= CHANNEL_OBJ_MULT;
+        access = CHANNEL_OBJECT_JOIN;
+    }
+    return (  (chan->type & access) != 0
+           || could_doit(player, chan->chan_obj, A_LOCK));
+}
+
+bool test_transmit_access(dbref player, struct channel *chan)
+{
+    if (Comm_All(player))
+    {
+        return true;
     }
 
-    // Mask out CHANNEL_PUBLIC, CHANNEL_LOUD, and CHANNEL_SPOOF
-    //
-    flag_value &= 0xFF;
+    int access;
+    if (isPlayer(player))
+    {
+        access = CHANNEL_PLAYER_TRANSMIT;
+    }
+    else
+    {
+        access = CHANNEL_OBJECT_TRANSMIT;
+    }
+    return (  (chan->type & access) != 0
+           || could_doit(player, chan->chan_obj, A_LUSE));
 
-    return (((long)chan->type & flag_value) ? true : false);
+}
+
+bool test_receive_access(dbref player, struct channel *chan)
+{
+    if (Comm_All(player))
+    {
+        return true;
+    }
+
+    int access;
+    if (isPlayer(player))
+    {
+        access = CHANNEL_PLAYER_RECEIVE;
+    }
+    else
+    {
+        access = CHANNEL_OBJECT_RECEIVE;
+    }
+    return (  (chan->type & access) != 0
+           || could_doit(player, chan->chan_obj, A_LENTER));
+
 }
 
 // true means continue, false means stop
