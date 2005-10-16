@@ -1,6 +1,8 @@
 ALPHA
 ATTACK
 CHANGES
+REALITY
+REALITY.SETUP
 docs/BACKUPS
 docs/CONFIGURATION
 docs/CONVERSION
@@ -10,8 +12,6 @@ docs/GUESTS
 docs/LIMITS
 docs/MEMORY
 docs/PATCHES
-docs/REALITY
-docs/REALITY.SETUP
 docs/REALMS
 docs/muxman.pdf
 game/alias.conf
