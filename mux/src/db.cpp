@@ -1,6 +1,6 @@
 // db.cpp
 //
-// $Id: db.cpp,v 1.60 2005-10-16 20:48:14 sdennis Exp $
+// $Id: db.cpp,v 1.61 2005-10-16 21:26:44 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -2216,6 +2216,11 @@ void atr_free(dbref thing)
     }
     atr_clr(thing, A_LIST);
 #endif // MEMORY_BASED
+
+    mudstate.bfCommands.Clear(thing);
+    mudstate.bfNoCommands.Set(thing);
+    mudstate.bfListens.Clear(thing);
+    mudstate.bfNoListens.Set(thing);
 }
 
 /* ---------------------------------------------------------------------------
