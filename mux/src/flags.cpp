@@ -1,6 +1,6 @@
 // flags.cpp -- Flag manipulation routines.
 //
-// $Id: flags.cpp,v 1.20 2005-10-12 04:36:40 sdennis Exp $
+// $Id: flags.cpp,v 1.21 2005-10-16 09:08:10 rmg Exp $
 //
 
 #include "copyright.h"
@@ -102,7 +102,7 @@ bool fh_restrict_player
     {
         return false;
     }
-    return fh_any(target, player, flag, fflags, reset);
+    return (fh_any(target, player, flag, fflags, reset));
 }
 
 /* ---------------------------------------------------------------------------
@@ -129,7 +129,7 @@ bool fh_privileged
             return false;
         }
     }
-    return fh_any(target, player, flag, fflags, reset);
+    return (fh_any(target, player, flag, fflags, reset));
 }
 
 /*
@@ -161,7 +161,7 @@ bool fh_dark_bit(dbref target, dbref player, FLAG flag, int fflags, bool reset)
     {
         return false;
     }
-    return fh_any(target, player, flag, fflags, reset);
+    return (fh_any(target, player, flag, fflags, reset));
 }
 
 /*
@@ -176,7 +176,7 @@ bool fh_going_bit(dbref target, dbref player, FLAG flag, int fflags, bool reset)
        && (Typeof(target) != TYPE_GARBAGE))
     {
         notify(player, "Your object has been spared from destruction.");
-        return fh_any(target, player, flag, fflags, reset);
+        return (fh_any(target, player, flag, fflags, reset));
     }
     if (!God(player))
     {
@@ -195,7 +195,7 @@ bool fh_going_bit(dbref target, dbref player, FLAG flag, int fflags, bool reset)
     {
         return false;
     }
-    return fh_any(target, player, flag, fflags, reset);
+    return (fh_any(target, player, flag, fflags, reset));
 }
 
 /*
@@ -209,7 +209,7 @@ bool fh_hear_bit(dbref target, dbref player, FLAG flag, int fflags, bool reset)
     {
         if (Can_Monitor(player))
         {
-            fh_any(target, player, flag, fflags, reset);
+            return (fh_any(target, player, flag, fflags, reset));
         }
         else
         {
@@ -218,9 +218,9 @@ bool fh_hear_bit(dbref target, dbref player, FLAG flag, int fflags, bool reset)
     }
 
     bool could_hear = Hearer(target);
-    fh_any(target, player, flag, fflags, reset);
+    bool result = fh_any(target, player, flag, fflags, reset);
     handle_ears(target, could_hear, Hearer(target));
-    return true;
+    return result;
 }
 
 
@@ -240,7 +240,7 @@ bool fh_player_bit
     {
         return false;
     }
-    return fh_any(target, player, flag, fflags, reset);
+    return (fh_any(target, player, flag, fflags, reset));
 }
 
 /* ---------------------------------------------------------------------------
