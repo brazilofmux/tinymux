@@ -1,6 +1,6 @@
 // look.cpp -- Commands which look at things.
 //
-// $Id: look.cpp,v 1.33 2005-10-09 19:49:56 sdennis Exp $
+// $Id: look.cpp,v 1.34 2005-10-16 07:33:43 rmg Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -2050,11 +2050,6 @@ void do_entrances(dbref executor, dbref caller, dbref enactor, int key, char *na
 //
 static void sweep_check(dbref player, dbref what, int key, bool is_loc)
 {
-    dbref aowner, parent;
-    int atr, aflags, lev;
-    char *buf, *buf2, *bp, *as, *buff, *s;
-    ATTR *ap;
-
     bool canhear    = false;
     bool cancom     = false;
     bool isplayer   = false;
@@ -2062,29 +2057,24 @@ static void sweep_check(dbref player, dbref what, int key, bool is_loc)
     bool isconnected = false;
     bool is_parent  = false;
 
-    if (  (key & SWEEP_LISTEN)
-       && (  (  isExit(what)
-             || is_loc)
-          && Audible(what)))
+    if (key & SWEEP_LISTEN)
     {
-        canhear = true;
-    }
-    else if (key & SWEEP_LISTEN)
-    {
-        buff = NULL;
-        if (Monitor(what))
+        if (  (  (  isExit(what)
+                 || is_loc)
+              && Audible(what))
+           || H_Listen(what))
         {
-            buff = alloc_lbuf("Hearer");
-        }
-
-        for (atr = atr_head(what, &as); atr; atr = atr_next(&as))
-        {
-            if (atr == A_LISTEN)
-            {
                 canhear = true;
-                break;
-            }
-            if (Monitor(what))
+        }
+        else if (Monitor(what))
+        {
+            dbref aowner;
+            int aflags;
+            char *as, *buff, *s;
+            ATTR *ap;
+
+            buff = alloc_lbuf("sweep_check.Hearer");
+            for (int atr = atr_head(what, &as); atr; atr = atr_next(&as))
             {
                 ap = atr_num(atr);
                 if (  !ap
@@ -2115,9 +2105,6 @@ static void sweep_check(dbref player, dbref what, int key, bool is_loc)
                     break;
                 }
             }
-        }
-        if (buff)
-        {
             free_lbuf(buff);
         }
     }
@@ -2126,6 +2113,8 @@ static void sweep_check(dbref player, dbref what, int key, bool is_loc)
     {
         // Look for commands on the object and parents too.
         //
+        dbref parent;
+        int lev;     
         ITER_PARENTS(what, parent, lev)
         {
             if (Commer(parent))
@@ -2170,6 +2159,8 @@ static void sweep_check(dbref player, dbref what, int key, bool is_loc)
        || ispuppet
        || isconnected)
     {
+        char *buf, *buf2, *bp;
+
         buf = alloc_lbuf("sweep_check.types");
         bp = buf;
 
