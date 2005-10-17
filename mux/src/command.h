@@ -1,6 +1,6 @@
 // command.h -- declarations used by the command processor.
 //
-// $Id: command.h,v 1.7 2005-10-12 05:36:21 sdennis Exp $
+// $Id: command.h,v 1.8 2005-10-17 06:13:05 sdennis Exp $
 //
 
 #ifndef __COMMAND_H
@@ -253,6 +253,14 @@ typedef struct
         ADDENT *addent;
     };
 } CMDENT;
+
+void commands_no_arg_add(CMDENT_NO_ARG cmdent[]);
+void commands_one_arg_add(CMDENT_ONE_ARG cmdent[]);
+void commands_one_arg_cmdarg_add(CMDENT_ONE_ARG_CMDARG cmdent[]);
+void commands_two_arg_add(CMDENT_TWO_ARG cmdent[]);
+void commands_two_arg_cmdarg_add(CMDENT_TWO_ARG_CMDARG cmdent[]);
+void commands_two_arg_argv_add(CMDENT_TWO_ARG_ARGV cmdent[]);
+void commands_two_arg_argv_cmdarg_add(CMDENT_TWO_ARG_ARGV_CMDARG cmdent[]);
 
 /* Command handler call conventions */
 

@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.149 2005-10-17 03:55:02 sdennis Exp $
+// $Id: functions.cpp,v 1.150 2005-10-17 06:13:05 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2005 Solid Vertical Domains, Ltd. All
@@ -7764,7 +7764,7 @@ FUNCTION(fun_accent)
 //   Name          Handler      # of args   min #    max #   flags  permissions
 //                               to parse  of args  of args
 //
-FUN flist[] =
+FUN builtin_function_list[] =
 {
     {"@@",          fun_null,             1, 1,       1, FN_NOEVAL, CA_PUBLIC},
     {"ABS",         fun_abs,        MAX_ARG, 1,       1,         0, CA_PUBLIC},
@@ -8126,7 +8126,7 @@ void function_add(FUN *fp)
 void functions_add(FUN funlist[])
 {
     char *buff = alloc_sbuf("init_functab");
-    for (FUN *fp = flist; fp->name; fp++)
+    for (FUN *fp = funlist; fp->name; fp++)
     {
         char *bp = buff;
         safe_sb_str(fp->name, buff, &bp);
@@ -8139,7 +8139,7 @@ void functions_add(FUN funlist[])
 
 void init_functab(void)
 {
-    functions_add(flist);
+    functions_add(builtin_function_list);
     ufun_head = NULL;
 }
 
@@ -8295,7 +8295,7 @@ void list_functable(dbref player)
     safe_str("Functions:", buff, &bp);
 
     FUN *fp;
-    for (fp = flist; fp->name && bp < buff + (LBUF_SIZE-1); fp++)
+    for (fp = builtin_function_list; fp->name && bp < buff + (LBUF_SIZE-1); fp++)
     {
         if (check_access(player, fp->perms))
         {
@@ -8333,27 +8333,24 @@ CF_HAND(cf_func_access)
     char *ap;
     for (ap = str; *ap && !mux_isspace(*ap); ap++)
     {
-        ; // Nothing.
+        *ap = mux_tolower(*ap); // Nothing.
     }
+    int nstr = ap - str;
+
     if (*ap)
     {
         *ap++ = '\0';
     }
-    FUN *fp;
-    for (fp = flist; fp->name; fp++)
+
+    FUN *fp = (FUN *)hashfindLEN(str, nstr, &mudstate.func_htab);
+    if (fp)
     {
-        if (!string_compare(fp->name, str))
-        {
-            return cf_modify_bits(&fp->perms, ap, pExtra, nExtra, player, cmd);
-        }
+        return cf_modify_bits(&fp->perms, ap, pExtra, nExtra, player, cmd);
     }
-    UFUN *ufp;
-    for (ufp = ufun_head; ufp; ufp = ufp->next)
+    UFUN *ufp = (UFUN *)hashfindLEN(str, nstr, &mudstate.ufunc_htab);
+    if (ufp)
     {
-        if (!string_compare(ufp->name, str))
-        {
-            return cf_modify_bits(&ufp->perms, ap, pExtra, nExtra, player, cmd);
-        }
+        return cf_modify_bits(&ufp->perms, ap, pExtra, nExtra, player, cmd);
     }
     cf_log_notfound(player, cmd, "Function", str);
     return -1;

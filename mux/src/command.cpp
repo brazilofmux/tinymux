@@ -1,6 +1,6 @@
 // command.cpp -- command parser and support routines.
 //
-// $Id: command.cpp,v 1.55 2005-10-12 05:36:21 sdennis Exp $
+// $Id: command.cpp,v 1.56 2005-10-17 06:13:05 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -760,16 +760,72 @@ CMDENT *prefix_cmds[256];
 
 CMDENT *goto_cmdp;
 
+void commands_no_arg_add(CMDENT_NO_ARG cmdent[])
+{
+    CMDENT_NO_ARG *cp0a;
+    for (cp0a = cmdent; cp0a->cmdname; cp0a++)
+    {
+        hashaddLEN(cp0a->cmdname, strlen(cp0a->cmdname), cp0a, &mudstate.command_htab);
+    }
+}
+
+void commands_one_arg_add(CMDENT_ONE_ARG cmdent[])
+{
+    CMDENT_ONE_ARG *cp1a;
+    for (cp1a = cmdent; cp1a->cmdname; cp1a++)
+    {
+        hashaddLEN(cp1a->cmdname, strlen(cp1a->cmdname), cp1a, &mudstate.command_htab);
+    }
+}
+
+void commands_one_arg_cmdarg_add(CMDENT_ONE_ARG_CMDARG cmdent[])
+{
+    CMDENT_ONE_ARG_CMDARG *cp1ac;
+    for (cp1ac = cmdent; cp1ac->cmdname; cp1ac++)
+    {
+        hashaddLEN(cp1ac->cmdname, strlen(cp1ac->cmdname), cp1ac, &mudstate.command_htab);
+    }
+}
+
+void commands_two_arg_add(CMDENT_TWO_ARG cmdent[])
+{
+    CMDENT_TWO_ARG *cp2a;
+    for (cp2a = cmdent; cp2a->cmdname; cp2a++)
+    {
+        hashaddLEN(cp2a->cmdname, strlen(cp2a->cmdname), cp2a, &mudstate.command_htab);
+    }
+}
+
+void commands_two_arg_argv_add(CMDENT_TWO_ARG_ARGV cmdent[])
+{
+    CMDENT_TWO_ARG_ARGV *cp2aa;
+    for (cp2aa = cmdent; cp2aa->cmdname; cp2aa++)
+    {
+        hashaddLEN(cp2aa->cmdname, strlen(cp2aa->cmdname), cp2aa, &mudstate.command_htab);
+    }
+}
+
+
+void commands_two_arg_cmdarg_add(CMDENT_TWO_ARG_CMDARG cmdent[])
+{
+    CMDENT_TWO_ARG_CMDARG  *cp2ac;
+    for (cp2ac = cmdent; cp2ac->cmdname; cp2ac++)
+    {
+        hashaddLEN(cp2ac->cmdname, strlen(cp2ac->cmdname), cp2ac, &mudstate.command_htab);
+    }
+}
+
+void commands_two_arg_argv_cmdarg_add(CMDENT_TWO_ARG_ARGV_CMDARG cmdent[])
+{
+    CMDENT_TWO_ARG_ARGV_CMDARG  *cp2aac;
+    for (cp2aac = cmdent; cp2aac->cmdname; cp2aac++)
+    {
+        hashaddLEN(cp2aac->cmdname, strlen(cp2aac->cmdname), cp2aac, &mudstate.command_htab);
+    }
+}
+
 void init_cmdtab(void)
 {
-    CMDENT_NO_ARG               *cp0a;
-    CMDENT_ONE_ARG              *cp1a;
-    CMDENT_ONE_ARG_CMDARG       *cp1ac;
-    CMDENT_TWO_ARG              *cp2a;
-    CMDENT_TWO_ARG_ARGV         *cp2aa;
-    CMDENT_TWO_ARG_CMDARG       *cp2ac;
-    CMDENT_TWO_ARG_ARGV_CMDARG  *cp2aac;
-
     ATTR *ap;
 
     // Load attribute-setting commands.
@@ -789,6 +845,7 @@ void init_cmdtab(void)
             continue;
         }
 
+        CMDENT_TWO_ARG *cp2a;
         cp2a = (CMDENT_TWO_ARG *)MEMALLOC(sizeof(CMDENT_TWO_ARG));
         ISOUTOFMEMORY(cp2a);
         cp2a->cmdname = StringClone(cbuff);
@@ -807,26 +864,13 @@ void init_cmdtab(void)
 
     // Load the builtin commands
     //
-    for (cp0a = command_table_no_arg; cp0a->cmdname; cp0a++)
-        hashaddLEN(cp0a->cmdname, strlen(cp0a->cmdname), cp0a, &mudstate.command_htab);
-
-    for (cp1a = command_table_one_arg; cp1a->cmdname; cp1a++)
-        hashaddLEN(cp1a->cmdname, strlen(cp1a->cmdname), cp1a, &mudstate.command_htab);
-
-    for (cp1ac = command_table_one_arg_cmdarg; cp1ac->cmdname; cp1ac++)
-        hashaddLEN(cp1ac->cmdname, strlen(cp1ac->cmdname), cp1ac, &mudstate.command_htab);
-
-    for (cp2a = command_table_two_arg; cp2a->cmdname; cp2a++)
-        hashaddLEN(cp2a->cmdname, strlen(cp2a->cmdname), cp2a, &mudstate.command_htab);
-
-    for (cp2aa = command_table_two_arg_argv; cp2aa->cmdname; cp2aa++)
-        hashaddLEN(cp2aa->cmdname, strlen(cp2aa->cmdname), cp2aa, &mudstate.command_htab);
-
-    for (cp2ac = command_table_two_arg_cmdarg; cp2ac->cmdname; cp2ac++)
-        hashaddLEN(cp2ac->cmdname, strlen(cp2ac->cmdname), cp2ac, &mudstate.command_htab);
-
-    for (cp2aac = command_table_two_arg_argv_cmdarg; cp2aac->cmdname; cp2aac++)
-        hashaddLEN(cp2aac->cmdname, strlen(cp2aac->cmdname), cp2aac, &mudstate.command_htab);
+    commands_no_arg_add(command_table_no_arg);
+    commands_one_arg_add(command_table_one_arg);
+    commands_one_arg_cmdarg_add(command_table_one_arg_cmdarg);
+    commands_two_arg_add(command_table_two_arg);
+    commands_two_arg_argv_add(command_table_two_arg_argv);
+    commands_two_arg_cmdarg_add(command_table_two_arg_cmdarg);
+    commands_two_arg_argv_cmdarg_add(command_table_two_arg_argv_cmdarg);
 
     set_prefix_cmds();
 
