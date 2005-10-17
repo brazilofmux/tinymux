@@ -1,6 +1,6 @@
 // externs.h -- Prototypes for externs not defined elsewhere.
 //
-// $Id: externs.h,v 1.42 2005-10-16 20:48:14 sdennis Exp $
+// $Id: externs.h,v 1.43 2005-10-17 03:54:23 sdennis Exp $
 //
 
 #ifndef EXTERNS_H
@@ -232,7 +232,7 @@ extern BOOLEXP *parse_boolexp(dbref, const char *, bool);
 extern bool eval_boolexp_atr(dbref, dbref, dbref, char *);
 
 /* From functions.cpp */
-extern bool xlate(char *);
+bool xlate(char *);
 
 #define IEEE_MAKE_NAN  1
 #define IEEE_MAKE_IND  2
