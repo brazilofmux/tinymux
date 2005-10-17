@@ -2,6 +2,18 @@
 #include "autoconf.h"
 #include "config.h"
 #include "externs.h"
+#include "functions.h"
+
+// ----------------------------------------------------------------------------
+// flist: List of existing functions in alphabetical order.
+//
+//   Name          Handler      # of args   min #    max #   flags  permissions
+//                               to parse  of args  of args
+//
+FUN local_funlist[] =
+{
+    {NULL,          NULL,           MAX_ARG, 0,       0,         0, 0}
+};
 
 /* local.cpp
  *
@@ -13,6 +25,9 @@
 //
 void local_startup(void)
 {
+    // Add additional hardcode functions to the above table.
+    //
+    functions_add(local_funlist);
 }
 
 // Called prior to the game database being dumped.   Called by the
