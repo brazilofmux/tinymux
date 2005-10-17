@@ -16,7 +16,6 @@ docs/REALMS
 docs/muxman.pdf
 game/alias.conf
 game/bin/netmux.exe
-game/bin/alt/netmux.exe
 game/compat.conf
 game/data/db_load.bat
 game/data/db_unload.bat
