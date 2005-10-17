@@ -1,3 +1,9 @@
+/* local.cpp
+ *
+ * Inspired by Penn's local extensions; implemented for MUX2.4 by
+ * M. Hassman (June 2005)
+ */
+
 #include "copyright.h"
 #include "autoconf.h"
 #include "config.h"
@@ -14,12 +20,6 @@ FUN local_funlist[] =
 {
     {NULL,          NULL,           MAX_ARG, 0,       0,         0, 0}
 };
-
-/* local.cpp
- *
- * Inspired by Penn's local extensions; implemented for MUX2.4 by
- * M. Hassman (June 2005)
- */
 
 // Called after all normal MUX initialization is complete
 //
