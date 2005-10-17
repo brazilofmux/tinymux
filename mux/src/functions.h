@@ -1,6 +1,6 @@
 // functions.h -- declarations for functions & function processing.
 //
-// $Id: functions.h,v 1.14 2005-07-12 05:50:06 sdennis Exp $
+// $Id: functions.h,v 1.15 2005-10-17 03:55:02 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -93,5 +93,10 @@ extern char *split_token(char **sp, SEP *psep);
 #define XFUNCTION(x) extern void x(char *buff, char **bufc, dbref executor,    \
  dbref caller, dbref enactor, char *fargs[], int nfargs, char *cargs[],        \
  int ncargs)
+
+// Interface for adding additional hardcode functions.
+//
+void function_add(FUN *fp);
+void functions_add(FUN funlist[]);
 
 #endif // !__FUNCTIONS_H

@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.148 2005-10-08 02:47:28 sdennis Exp $
+// $Id: functions.cpp,v 1.149 2005-10-17 03:55:02 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2005 Solid Vertical Domains, Ltd. All
@@ -8112,8 +8112,18 @@ FUN flist[] =
     {NULL,          NULL,           MAX_ARG, 0,       0,         0, 0}
 };
 
+void function_add(FUN *fp)
+{
+    char *buff = alloc_sbuf("init_functab");
+    char *bp = buff;
+    safe_sb_str(fp->name, buff, &bp);
+    *bp = '\0';
+    mux_strlwr(buff);
+    hashaddLEN(buff, strlen(buff), fp, &mudstate.func_htab);
+    free_sbuf(buff);
+}
 
-void init_functab(void)
+void functions_add(FUN funlist[])
 {
     char *buff = alloc_sbuf("init_functab");
     for (FUN *fp = flist; fp->name; fp++)
@@ -8125,6 +8135,11 @@ void init_functab(void)
         hashaddLEN(buff, strlen(buff), fp, &mudstate.func_htab);
     }
     free_sbuf(buff);
+}
+
+void init_functab(void)
+{
+    functions_add(flist);
     ufun_head = NULL;
 }
 
