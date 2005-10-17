@@ -9,9 +9,10 @@
 #include "config.h"
 #include "externs.h"
 #include "functions.h"
+#include "command.h"
 
 // ----------------------------------------------------------------------------
-// flist: List of existing functions in alphabetical order.
+// local_funlist: List of existing functions in alphabetical order.
 //
 //   Name          Handler      # of args   min #    max #   flags  permissions
 //                               to parse  of args  of args
@@ -21,6 +22,41 @@ FUN local_funlist[] =
     {NULL,          NULL,           MAX_ARG, 0,       0,         0, 0}
 };
 
+CMDENT_NO_ARG local_command_table_no_arg[] =
+{
+    {NULL,          NULL,       0,           0,          0,          0, NULL}
+};
+
+CMDENT_ONE_ARG local_command_table_one_arg[] =
+{
+    {NULL,          NULL,       0,           0,          0,          0, NULL}
+};
+
+CMDENT_ONE_ARG_CMDARG local_command_table_one_arg_cmdarg[] =
+{
+    {NULL,          NULL,       0,           0,          0,          0, NULL}
+};
+
+CMDENT_TWO_ARG local_command_table_two_arg[] =
+{
+    {NULL,          NULL,       0,           0,          0,          0, NULL}
+};
+
+CMDENT_TWO_ARG_CMDARG local_command_table_two_arg_cmdarg[] =
+{
+    {NULL,          NULL,       0,           0,          0,          0, NULL}
+};
+
+CMDENT_TWO_ARG_ARGV local_command_table_two_arg_argv[] =
+{
+    {NULL,          NULL,       0,           0,          0,          0, NULL}
+};
+
+CMDENT_TWO_ARG_ARGV_CMDARG local_command_table_two_argv_cmdarg[] =
+{
+    {NULL,          NULL,       0,           0,          0,          0, NULL}
+};
+
 // Called after all normal MUX initialization is complete
 //
 void local_startup(void)
@@ -28,6 +64,16 @@ void local_startup(void)
     // Add additional hardcode functions to the above table.
     //
     functions_add(local_funlist);
+
+    // Add additional CMDENT_NO_ARG commands to the above table.
+    //
+    commands_no_arg_add(local_command_table_no_arg);
+    commands_one_arg_add(local_command_table_one_arg);
+    commands_one_arg_cmdarg_add(local_command_table_one_arg_cmdarg);
+    commands_two_arg_add(local_command_table_two_arg);
+    commands_two_arg_cmdarg_add(local_command_table_two_arg_cmdarg);
+    commands_two_arg_argv_add(local_command_table_two_arg_argv);
+    commands_two_arg_argv_cmdarg_add(local_command_table_two_argv_cmdarg);
 }
 
 // Called prior to the game database being dumped.   Called by the
