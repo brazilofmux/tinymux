@@ -22,6 +22,11 @@ FUN local_funlist[] =
     {NULL,          NULL,           MAX_ARG, 0,       0,         0, 0}
 };
 
+// ---------------------------------------------------------------------------
+// Local command tables: Definitions for local hardcode commands.
+//
+//   Name       Switches    Permissions    Key Calling Seq   hook mask  Handler
+//
 CMDENT_NO_ARG local_command_table_no_arg[] =
 {
     {NULL,          NULL,       0,           0,          0,          0, NULL}
