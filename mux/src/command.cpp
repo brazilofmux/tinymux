@@ -1,6 +1,6 @@
 // command.cpp -- command parser and support routines.
 //
-// $Id: command.cpp,v 1.56 2005-10-17 06:13:05 sdennis Exp $
+// $Id: command.cpp,v 1.57 2005-10-17 06:21:23 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -804,7 +804,6 @@ void commands_two_arg_argv_add(CMDENT_TWO_ARG_ARGV cmdent[])
         hashaddLEN(cp2aa->cmdname, strlen(cp2aa->cmdname), cp2aa, &mudstate.command_htab);
     }
 }
-
 
 void commands_two_arg_cmdarg_add(CMDENT_TWO_ARG_CMDARG cmdent[])
 {
