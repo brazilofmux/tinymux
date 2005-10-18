@@ -1,6 +1,6 @@
 // db.cpp
 //
-// $Id: db.cpp,v 1.61 2005-10-16 21:26:44 sdennis Exp $
+// $Id: db.cpp,v 1.62 2005-10-18 15:12:26 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -1337,44 +1337,87 @@ static char *al_code(char *ap, int atrnum)
 
 bool Commer(dbref thing)
 {
-    char *s, *as, c;
-    int atr, aflags;
-    dbref aowner;
-    ATTR *ap;
-
     if (mudstate.bfNoCommands.IsSet(thing))
     {
+        // We already know that there are no commands on this thing.
+        //
         return false;
     }
     else if (mudstate.bfCommands.IsSet(thing))
     {
+        // We already know that there are definitely commands on this thing.
+        //
         return true;
     }
 
+    bool bFoundListens = false;
+
+    char *as;
     atr_push();
-    for (atr = atr_head(thing, &as); atr; atr = atr_next(&as))
+    char *buff = alloc_lbuf("Commer");
+    for (int atr = atr_head(thing, &as); atr; atr = atr_next(&as))
     {
-        ap = atr_num(atr);
+        ATTR *ap = atr_num(atr);
         if (  !ap
            || (ap->flags & AF_NOPROG))
         {
             continue;
         }
 
-        s = atr_get(thing, atr, &aowner, &aflags);
-        c = *s;
-        free_lbuf(s);
+        int   aflags;
+        dbref aowner;
 
-        if (  AMATCH_CMD == c
-           && !(aflags & AF_NOPROG))
+        atr_get_str(buff, thing, atr, &aowner, &aflags);
+
+        if (aflags & AF_NOPROG)
         {
+            continue;
+        }
+
+        if (  AMATCH_CMD != buff[0]
+           && AMATCH_LISTEN != buff[0])
+        {
+            continue;
+        }
+
+        // Search for unescaped ':'
+        //
+        char *s = strchr(buff+1, ':');
+        if (!s)
+        {
+            continue;
+        }
+
+        if (AMATCH_CMD == buff[0])
+        {
+            free_lbuf(buff);
             atr_pop();
             mudstate.bfCommands.Set(thing);
+            if (bFoundListens)
+            {
+                mudstate.bfListens.Set(thing);
+                mudstate.bfNoListens.Clear(thing);
+            }
             return true;
         }
+        else // AMATCH_LISTEN == buff[0]
+        {
+            bFoundListens = true;
+        }
     }
+    free_lbuf(buff);
     atr_pop();
     mudstate.bfNoCommands.Set(thing);
+    if (bFoundListens)
+    {
+        mudstate.bfListens.Set(thing);
+        mudstate.bfNoListens.Clear(thing);
+    }
+    else
+    {
+        mudstate.bfNoListens.Set(thing);
+        mudstate.bfListens.Clear(thing);
+    }
     return false;
 }
 
