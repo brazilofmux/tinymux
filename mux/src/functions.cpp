@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.150 2005-10-17 06:13:05 sdennis Exp $
+// $Id: functions.cpp,v 1.151 2005-10-18 01:15:01 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2005 Solid Vertical Domains, Ltd. All
@@ -2551,8 +2551,12 @@ FUNCTION(fun_lcon)
 #endif
                 if (  Can_Hide(thing)
                    && Hidden(thing)
-                   && !See_Hidden(executor)
-                   && !ItemToList_AddInteger(&pContext, thing))
+                   && !See_Hidden(executor))
+                {
+                    continue;
+                }
+ 
+                if (!ItemToList_AddInteger(&pContext, thing))
                 {
                     break;
                 }
