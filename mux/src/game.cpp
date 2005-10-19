@@ -1,6 +1,6 @@
 // game.cpp
 //
-// $Id: game.cpp,v 1.74 2005-10-16 20:48:14 sdennis Exp $
+// $Id: game.cpp,v 1.75 2005-10-19 08:22:44 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -208,10 +208,9 @@ static int atr_match1
     bool bFoundCommands = false;
     bool bFoundListens  = false;
 
-    int atr;
     char *as;
     atr_push();
-    for (atr = atr_head(parent, &as); atr; atr = atr_next(&as))
+    for (int atr = atr_head(parent, &as); atr; atr = atr_next(&as))
     {
         ATTR *ap = atr_num(atr);
 
@@ -232,21 +231,30 @@ static int atr_match1
         char buff[LBUF_SIZE];
         atr_get_str(buff, parent, atr, &aowner, &aflags);
 
-        if (!(aflags & AF_NOPROG))
+        if (aflags & AF_NOPROG)
         {
-            switch (buff[0])
-            {
-            case AMATCH_CMD:
-                bFoundCommands = true;
-                break;
+            continue;
+        }
 
-            case AMATCH_LISTEN:
-                bFoundListens = true;
-                break;
+        char *s = NULL;
+        if (  AMATCH_CMD    == buff[0]
+           || AMATCH_LISTEN == buff[0])
+        {
+            s = strchr(buff+1, ':');
+            if (s)
+            {
+                if (AMATCH_CMD == buff[0])
+                {
+                    bFoundCommands = true;
+                }
+                else
+                {
+                    bFoundListens = true;
+                }
             }
         }
 
-        // If we aren't the bottom level check if we saw this attr
+        // If we aren't the bottom level, check if we saw this attr
         // before. Also exclude it if the attribute type is PRIVATE.
         //
         if (  check_exclude
@@ -257,7 +265,7 @@ static int atr_match1
             continue;
         }
 
-        // If we aren't the top level remember this attr so we
+        // If we aren't the top level, remember this attr so we
         // exclude it from now on.
         //
         if (hash_insert)
@@ -269,20 +277,19 @@ static int atr_match1
         // This lets non-command attribs on the child block commands
         // on the parent.
         //
-        if (  buff[0] != type
-           || (aflags & AF_NOPROG))
+        if (buff[0] != type)
         {
             continue;
         }
 
-        // Decode it: search for first unescaped :
+        // Was there a ':'?
         //
-        char *s = strchr(buff+1, ':');
         if (!s)
         {
             continue;
         }
         *s++ = '\0';
+
         char *args[NUM_ENV_VARS];
         if (  (  0 != (aflags & AF_REGEXP)
             && regexp_match(buff + 1, (aflags & AF_NOPARSE) ? raw_str : str,
