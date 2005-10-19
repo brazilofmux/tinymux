@@ -1,6 +1,6 @@
 // look.cpp -- Commands which look at things.
 //
-// $Id: look.cpp,v 1.36 2005-10-19 08:46:35 sdennis Exp $
+// $Id: look.cpp,v 1.37 2005-10-19 08:50:47 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -891,17 +891,24 @@ static void look_atrs1
         int   aflags;
         dbref aowner;
         char *buf = atr_get(thing, ca, &aowner, &aflags);
+
         if (!(aflags & AF_NOPROG))
         {
-            switch (buf[0])
+            if (  AMATCH_CMD    == buf[0]
+               || AMATCH_LISTEN == buf[0])
             {
-            case AMATCH_CMD:
-                bFoundCommands = true;
-                break;
-
-            case AMATCH_LISTEN:
-                bFoundListens = true;
-                break;
+                char *s = strchr(buf+1, ':');
+                if (s)
+                {
+                    if (AMATCH_CMD == buf[0])
+                    {
+                        bFoundCommands = true;
+                    }
+                    else
+                    {
+                        bFoundListens = true;
+                    }
+                }
             }
         }
 
