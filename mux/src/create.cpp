@@ -1,6 +1,6 @@
 // create.cpp -- Commands that create new objects.
 //
-// $Id: create.cpp,v 1.16 2005-10-12 05:32:44 sdennis Exp $
+// $Id: create.cpp,v 1.17 2005-10-19 23:52:39 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -612,12 +612,12 @@ void do_clone
     //
     if (  !Controls(executor, thing)
        && !Parent_ok(thing)
-       && (key & CLONE_PARENT))
+       && (key & CLONE_FROM_PARENT))
     {
         notify_quiet(executor,
               tprintf("You don't control %s, ignoring /parent.",
                   Name(thing)));
-        key &= ~CLONE_PARENT;
+        key &= ~CLONE_FROM_PARENT;
     }
 
     // Determine the cost of cloning
@@ -680,7 +680,7 @@ void do_clone
     // Wipe out any old attributes and copy in the new data.
     //
     atr_free(clone);
-    if (key & CLONE_PARENT)
+    if (key & CLONE_FROM_PARENT)
         s_Parent(clone, thing);
     else
         atr_cpy(clone, thing);
@@ -756,7 +756,7 @@ void do_clone
     //
     if (new_owner == Owner(thing))
     {
-        if (!(key & CLONE_PARENT))
+        if (!(key & CLONE_FROM_PARENT))
         {
             s_Parent(clone, Parent(thing));
         }
@@ -765,7 +765,7 @@ void do_clone
     }
     else
     {
-        if (  !(key & CLONE_PARENT)
+        if (  !(key & CLONE_FROM_PARENT)
            && (Controls(executor, thing) || Parent_ok(thing)))
         {
             s_Parent(clone, Parent(thing));

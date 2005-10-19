@@ -1,6 +1,6 @@
 // command.cpp -- command parser and support routines.
 //
-// $Id: command.cpp,v 1.57 2005-10-17 06:21:23 sdennis Exp $
+// $Id: command.cpp,v 1.58 2005-10-19 23:52:39 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -75,7 +75,7 @@ NAMETAB clone_sw[] =
     {"inherit",         3,  CA_PUBLIC,  CLONE_INHERIT|SW_MULTIPLE},
     {"inventory",       3,  CA_PUBLIC,  CLONE_INVENTORY},
     {"location",        1,  CA_PUBLIC,  CLONE_LOCATION},
-    {"parent",          2,  CA_PUBLIC,  CLONE_PARENT|SW_MULTIPLE},
+    {"parent",          2,  CA_PUBLIC,  CLONE_FROM_PARENT|SW_MULTIPLE},
     {"preserve",        2,  CA_WIZARD,  CLONE_PRESERVE|SW_MULTIPLE},
     { NULL,             0,          0,  0}
 };
