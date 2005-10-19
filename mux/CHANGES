@@ -99,6 +99,9 @@ Feature Additions:
  -- Ian added support for multi-character delimiter to LAST() function.
  -- Ian added support for DIE() to return a list of rolls rather than
     just the sum.
+ -- Bring functions_add(), function_add(), and the various
+    commands*_add() out into local.cpp so that adding commands and
+    functions is as simple as adding an entry to a table.
 
 
 Bug Fixes:
@@ -218,6 +221,10 @@ Bug Fixes:
  -- Strip ANSI so ^-command matching works with ANSI emits.
  -- Fixed pointer dereference bug in RxLevel() introduced by Brazil
     which caused REALITYLVLS to crash after ./Startmux.
+ -- Fix bug in LCON() which was introduced by Brazil in 2.4.0.21 that
+    prevented LCON() from showing anything.
+ -- Fix @sweep and NEARBY() so that they don't leak information about
+    Dark Wizards.
 
 
 Performance Enhancements:
@@ -254,6 +261,9 @@ Performance Enhancements:
  -- Collect and cache knowledge about the presence of ^-Commands and
     $-Commands on all objects. This knowledge is used to short-circuit
     later checks as unnecessary.
+ -- Since caching knowledge of ^-Commands and $-Commands seems to work
+    so well, revisit each area and look for and require the colon as
+    well.
 
 
 Cosmetic Changes:
