@@ -1,6 +1,6 @@
 // db.cpp
 //
-// $Id: db.cpp,v 1.62 2005-10-18 15:12:26 sdennis Exp $
+// $Id: db.cpp,v 1.63 2005-10-19 06:17:36 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -2245,10 +2245,9 @@ void atr_free(dbref thing)
     db[thing].ahead = NULL;
     db[thing].at_count = 0;
 #else // MEMORY_BASED
-    int atr;
     char *as;
     atr_push();
-    for (atr = atr_head(thing, &as); atr; atr = atr_next(&as))
+    for (int atr = atr_head(thing, &as); atr; atr = atr_next(&as))
     {
         atr_clr(thing, atr);
     }
@@ -2272,23 +2271,24 @@ void atr_free(dbref thing)
 
 void atr_cpy(dbref dest, dbref source)
 {
-    int atr, aflags;
-    dbref aowner;
-    char *as, *buf;
-    ATTR *at;
-
     dbref owner = Owner(dest);
+
+    char *as;
     atr_push();
-    for (atr = atr_head(source, &as); atr; atr = atr_next(&as))
+    for (int atr = atr_head(source, &as); atr; atr = atr_next(&as))
     {
-        buf = atr_get(source, atr, &aowner, &aflags);
+        int   aflags;
+        dbref aowner;
+        char *buf = atr_get(source, atr, &aowner, &aflags);
+
         if (!(aflags & AF_LOCK))
         {
             // Change owner.
             //
             aowner = owner;
         }
-        at = atr_num(atr);
+
+        ATTR *at = atr_num(atr);
         if (  atr
            && at)
         {
@@ -2319,15 +2319,15 @@ void atr_cpy(dbref dest, dbref source)
 
 void atr_chown(dbref obj)
 {
-    int atr, aflags;
-    dbref aowner;
-    char *as, *buf;
-
     dbref owner = Owner(obj);
+
+    char *as;
     atr_push();
-    for (atr = atr_head(obj, &as); atr; atr = atr_next(&as))
+    for (int atr = atr_head(obj, &as); atr; atr = atr_next(&as))
     {
-        buf = atr_get(obj, atr, &aowner, &aflags);
+        int   aflags;
+        dbref aowner;
+        char *buf = atr_get(obj, atr, &aowner, &aflags);
         if (  aowner != owner
            && !(aflags & AF_LOCK))
         {
