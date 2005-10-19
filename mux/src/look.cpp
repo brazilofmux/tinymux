@@ -1,6 +1,6 @@
 // look.cpp -- Commands which look at things.
 //
-// $Id: look.cpp,v 1.37 2005-10-19 08:50:47 sdennis Exp $
+// $Id: look.cpp,v 1.38 2005-10-19 09:07:00 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -2107,52 +2107,79 @@ static void sweep_check(dbref player, dbref what, int key, bool is_loc)
         if (  (  (  isExit(what)
                  || is_loc)
               && Audible(what))
-           || H_Listen(what))
+           || H_Listen(what)
+           || mudstate.bfListens.IsSet(what))
         {
-                canhear = true;
+            canhear = true;
         }
-        else if (Monitor(what))
+        else if (  !mudstate.bfNoListens.IsSet(what)
+                && Monitor(what))
         {
-            dbref aowner;
-            int aflags;
-            char *as, *buff, *s;
-            ATTR *ap;
+            bool bFoundCommands = false;
 
-            buff = alloc_lbuf("sweep_check.Hearer");
+            char *as;
+            char *buff = alloc_lbuf("sweep_check.Hearer");
             for (int atr = atr_head(what, &as); atr; atr = atr_next(&as))
             {
-                ap = atr_num(atr);
+                ATTR *ap = atr_num(atr);
                 if (  !ap
                    || (ap->flags & AF_NOPROG))
                 {
                     continue;
                 }
 
+                int   aflags;
+                dbref aowner;
                 atr_get_str(buff, what, atr, &aowner, &aflags);
 
-                // Make sure we can execute it.
-                //
-                if (  (buff[0] != AMATCH_LISTEN)
-                   || (aflags & AF_NOPROG))
+                if (aflags & AF_NOPROG)
                 {
                     continue;
                 }
 
-                // Make sure there's a : in it.
-                //
-                for (s = buff + 1; *s && (*s != ':'); s++)
+                char *s = NULL;
+                if (  AMATCH_CMD    == buff[0]
+                   || AMATCH_LISTEN == buff[0])
                 {
-                    ; // Nothing.
-                }
-                if (s)
-                {
-                    canhear = true;
-                    break;
+                    s = strchr(buff+1, ':');
+                    if (s)
+                    {
+                        if (AMATCH_CMD == buff[0])
+                        {
+                            bFoundCommands = true;
+                        }
+                        else
+                        {
+                            canhear = true;
+                            break;
+                        }
+                    }
                 }
             }
             free_lbuf(buff);
+
+            if (canhear)
+            {
+                mudstate.bfListens.Set(what);
+            }
+            else
+            {
+                mudstate.bfNoListens.Set(what);
+            }
+
+            if (bFoundCommands)
+            {
+                mudstate.bfNoCommands.Clear(what);
+                mudstate.bfCommands.Set(what);
+            }
+            else
+            {
+                mudstate.bfCommands.Clear(what);
+                mudstate.bfNoCommands.Set(what);
+            }
         }
     }
+
     if (  (key & SWEEP_COMMANDS)
        && !isExit(what))
     {
@@ -2245,7 +2272,10 @@ static void sweep_check(dbref player, dbref what, int key, bool is_loc)
         {
             buf2 = alloc_lbuf("sweep_check.name");
             strcpy(buf2, Name(what));
-            for (bp = buf2; *bp && (*bp != ';'); bp++) ;
+            for (bp = buf2; *bp && (*bp != ';'); bp++)
+            {
+                ; // Nothing.
+            }
             *bp = '\0';
             notify(player, tprintf("  %s is listening. [%s]", buf2, buf));
             free_lbuf(buf2);

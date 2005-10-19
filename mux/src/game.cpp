@@ -1,6 +1,6 @@
 // game.cpp
 //
-// $Id: game.cpp,v 1.76 2005-10-19 08:38:52 sdennis Exp $
+// $Id: game.cpp,v 1.77 2005-10-19 09:07:00 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -1901,24 +1901,17 @@ bool Hearer(dbref thing)
 
     if (  Connected(thing)
        || Puppet(thing)
-       || H_Listen(thing))
+       || H_Listen(thing)
+       || mudstate.bfListens.IsSet(thing))
     {
         return true;
     }
 
-    if (mudstate.bfNoListens.IsSet(thing))
+    if (  !mudstate.bfNoListens.IsSet(thing)
+       && Monitor(thing))
     {
-        return false;
-    }
-    else if (mudstate.bfListens.IsSet(thing))
-    {
-        return true;
-    }
+        bool bFoundCommands = false;
 
-    bool bFoundCommands = false;
-
-    if (Monitor(thing))
-    {
         char *buff = alloc_lbuf("Hearer");
         char *as;
         atr_push();
