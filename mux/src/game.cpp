@@ -1,6 +1,6 @@
 // game.cpp
 //
-// $Id: game.cpp,v 1.75 2005-10-19 08:22:44 sdennis Exp $
+// $Id: game.cpp,v 1.76 2005-10-19 08:38:52 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -1916,61 +1916,49 @@ bool Hearer(dbref thing)
     }
 
     bool bFoundCommands = false;
-    bool bFoundListens  = false;
 
     if (Monitor(thing))
     {
-        char *as, *buff, *s;
-        dbref aowner;
-        int atr, aflags;
-        ATTR *ap;
-
-        buff = alloc_lbuf("Hearer");
+        char *buff = alloc_lbuf("Hearer");
+        char *as;
         atr_push();
-        for (atr = atr_head(thing, &as); atr; atr = atr_next(&as))
+        for (int atr = atr_head(thing, &as); atr; atr = atr_next(&as))
         {
-            ap = atr_num(atr);
+            ATTR *ap = atr_num(atr);
             if (  !ap
                || (ap->flags & AF_NOPROG))
             {
                 continue;
             }
 
+            int   aflags;
+            dbref aowner;
             atr_get_str(buff, thing, atr, &aowner, &aflags);
-            if (!(aflags & AF_NOPROG))
-            {
-                switch (buff[0])
-                {
-                case AMATCH_CMD:
-                    bFoundCommands = true;
-                    break;
 
-                case AMATCH_LISTEN:
-                    bFoundListens = true;
-                    break;
-                }
-            }
-
-            // Make sure we can execute it.
-            //
-            if (  buff[0] != AMATCH_LISTEN
-               || (aflags & AF_NOPROG))
+            if (aflags & AF_NOPROG)
             {
                 continue;
             }
 
-            // Make sure there's a : in it.
-            //
-            for (s = buff + 1; *s && *s != ':'; s++)
+            char *s = NULL;
+            if (  AMATCH_CMD    == buff[0]
+               || AMATCH_LISTEN == buff[0])
             {
-                ; // Nothing
-            }
-            if (s)
-            {
-                free_lbuf(buff);
-                atr_pop();
-                mudstate.bfListens.Set(thing);
-                return true;
+                s = strchr(buff+1, ':');
+                if (s)
+                {
+                    if (AMATCH_CMD == buff[0])
+                    {
+                        bFoundCommands = true;
+                    }
+                    else
+                    {
+                        free_lbuf(buff);
+                        atr_pop();
+                        mudstate.bfListens.Set(thing);
+                        return true;
+                    }
+                }
             }
         }
         free_lbuf(buff);
