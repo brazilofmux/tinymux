@@ -1,6 +1,6 @@
 // match.cpp -- Routines for parsing arguments.
 //
-// $Id: match.cpp,v 1.6 2005-08-05 15:27:43 sdennis Exp $
+// $Id: match.cpp,v 1.7 2005-10-19 23:10:00 rmg Exp $
 //
 
 #include "copyright.h"
@@ -446,8 +446,7 @@ void match_carried_exit_with_parents(void)
         return;
     }
     if (  Good_obj(md.player)
-       && (  Has_exits(md.player)
-          || isRoom(md.player)))
+       && Has_exits(md.player))
     {
         dbref parent;
         int lev;
