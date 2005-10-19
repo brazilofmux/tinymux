@@ -1,6 +1,6 @@
 // look.cpp -- Commands which look at things.
 //
-// $Id: look.cpp,v 1.38 2005-10-19 09:07:00 sdennis Exp $
+// $Id: look.cpp,v 1.39 2005-10-19 09:26:20 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -2095,6 +2095,13 @@ void do_entrances(dbref executor, dbref caller, dbref enactor, int key, char *na
 //
 static void sweep_check(dbref player, dbref what, int key, bool is_loc)
 {
+    if (  Can_Hide(what)
+       && Hidden(what)
+       && !See_Hidden(player))
+    {
+        return;
+    }
+
     bool canhear    = false;
     bool cancom     = false;
     bool isplayer   = false;
@@ -2200,6 +2207,7 @@ static void sweep_check(dbref player, dbref what, int key, bool is_loc)
             }
         }
     }
+
     if (key & SWEEP_CONNECT)
     {
         if (  Connected(what)
@@ -2213,6 +2221,7 @@ static void sweep_check(dbref player, dbref what, int key, bool is_loc)
             isconnected = true;
         }
     }
+
     if (  (key & SWEEP_PLAYER)
        || isconnected)
     {
@@ -2225,44 +2234,49 @@ static void sweep_check(dbref player, dbref what, int key, bool is_loc)
             ispuppet = true;
         }
     }
+
     if (  canhear
        || cancom
        || isplayer
        || ispuppet
        || isconnected)
     {
-        char *buf, *buf2, *bp;
-
-        buf = alloc_lbuf("sweep_check.types");
-        bp = buf;
+        char *buf = alloc_lbuf("sweep_check.types");
+        char *bp = buf;
 
         if (cancom)
         {
             safe_str("commands ", buf, &bp);
         }
+
         if (canhear)
         {
             safe_str("messages ", buf, &bp);
         }
+
         if (isplayer)
         {
             safe_str("player ", buf, &bp);
         }
+
         if (ispuppet)
         {
             safe_str("puppet(", buf, &bp);
             safe_str(Name(Owner(what)), buf, &bp);
             safe_str(") ", buf, &bp);
         }
+
         if (isconnected)
         {
             safe_str("connected ", buf, &bp);
         }
+
         if (is_parent)
         {
             safe_str("parent ", buf, &bp);
         }
         bp[-1] = '\0';
+
         if (!isExit(what))
         {
             notify(player, tprintf("  %s is listening. [%s]",
@@ -2270,7 +2284,7 @@ static void sweep_check(dbref player, dbref what, int key, bool is_loc)
         }
         else
         {
-            buf2 = alloc_lbuf("sweep_check.name");
+            char *buf2 = alloc_lbuf("sweep_check.name");
             strcpy(buf2, Name(what));
             for (bp = buf2; *bp && (*bp != ';'); bp++)
             {
@@ -2306,11 +2320,17 @@ void do_sweep(dbref executor, dbref caller, dbref enactor, int key, char *where)
     }
 
     if (!where_key)
+    {
         where_key = -1;
+    }
     if (!what_key)
+    {
         what_key = -1;
+    }
     else if (what_key == SWEEP_VERBOSE)
+    {
         what_key = SWEEP_VERBOSE | SWEEP_COMMANDS;
+    }
 
     // Check my location.  If I have none or it is dark, check just me.
     //
