@@ -1,6 +1,6 @@
 // predicates.cpp
 //
-// $Id: predicates.cpp,v 1.69 2005-10-16 08:45:38 rmg Exp $
+// $Id: predicates.cpp,v 1.70 2005-10-19 09:33:40 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -2078,6 +2078,12 @@ bool nearby(dbref player, dbref thing)
 {
     if (  !Good_obj(player)
        || !Good_obj(thing))
+    {
+        return false;
+    }
+    if (  Can_Hide(thing)
+       && Hidden(thing)
+       && !See_Hidden(player))
     {
         return false;
     }
