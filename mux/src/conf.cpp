@@ -1,6 +1,6 @@
 // conf.cpp -- Set up configuration information and static data.
 //
-// $Id: conf.cpp,v 1.60 2005-10-12 05:34:32 sdennis Exp $
+// $Id: conf.cpp,v 1.61 2005-10-20 05:59:28 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -1382,7 +1382,8 @@ CF_HAND(cf_cf_access)
         {
             // Cannot modify parameters set CA_STATIC.
             //
-            if (tp->flags & CA_STATIC)
+            if (  tp->flags & CA_STATIC
+               && !mudstate.bReadingConfiguration)
             {
                 notify(player, NOPERM_MESSAGE);
                 STARTLOG(LOG_CONFIGMODS, "CFG", "PERM");
