@@ -81,11 +81,52 @@ void local_startup(void)
     commands_two_arg_argv_cmdarg_add(local_command_table_two_argv_cmdarg);
 }
 
-// Called prior to the game database being dumped.   Called by the
-// periodic dump timer, @restart, @shutdown, etc.  The argument
-// dump_type is one of the 5 DUMP_I_x defines declared in externs.h
+// This is called prior to the game syncronizing its own state to its own
+// database.  If you depend on the the core database to store your data, you
+// need to checkpoint your changes here. The write-protection
+// mechanism in MUX is not turned on at this point.  You are guaranteed
+// to not be a fork()-ed dumping process.
+//
+void local_presync_database(void)
+{
+}
+
+// Like the above routine except that it called from the SIGSEGV handler.
+// At this point, your choices are limited. You can attempt to use the core
+// database. The core won't stop you, but it is risky.
+//
+void local_presync_database_sigsegv(void)
+{
+}
+
+// This is called prior to the game database writing out it's own database.
+// This is typically only called from the fork()-ed process so write-
+// protection is in force and you will be unable to modify the game's
+// database for you own needs.  You can however, use this point to maintain
+// your own dump file.
+//
+// The caveat is that it is possible the game will crash while you are doing
+// this, or it is already in the process of crashing.  You may be called
+// reentrantly.  Therefore, it is recommended that you follow the pattern in
+// dump_database_internal() and write your database to a temporary file, and
+// then if completed successfully, move your temporary over the top of your
+// old database.
+//
+// The argument dump_type is one of the 5 DUMP_I_x defines declared in
+// externs.h
 //
 void local_dump_database(int dump_type)
+{
+}
+
+// The function is called when the dumping process has completed. Typically,
+// this will be called from within a signal handler. Your ability to do
+// anything interesting from within a signal handler is severly limited.
+// This is also called at the end of the dumping process if either no dumping
+// child was created or if the child finished quickly. In fact, this
+// may be called twice at the end of the same dump.
+//
+void local_dump_complete_signal(void)
 {
 }
 
