@@ -1,6 +1,6 @@
 // bsd.cpp
 //
-// $Id: bsd.cpp,v 1.51 2005-10-15 06:24:25 sdennis Exp $
+// $Id: bsd.cpp,v 1.52 2005-10-21 03:36:01 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -2842,6 +2842,8 @@ void LogStatBuf(int stat_buf, const char *Name)
 }
 #endif
 
+void pcache_sync(void);
+
 RETSIGTYPE DCL_CDECL sighandler(int sig)
 {
 #ifndef WIN32
@@ -2919,6 +2921,7 @@ RETSIGTYPE DCL_CDECL sighandler(int sig)
                         //
                         mudstate.dumper  = 0;
                         mudstate.dumping = false;
+                        local_dump_complete_signal();
 
                         continue;
                     }
@@ -2930,6 +2933,7 @@ RETSIGTYPE DCL_CDECL sighandler(int sig)
                         //
                         mudstate.dumper = child;
                         mudstate.dumping = false;
+                        local_dump_complete_signal();
 
                         continue;
                     }
@@ -3021,7 +3025,14 @@ RETSIGTYPE DCL_CDECL sighandler(int sig)
         check_panicking(sig);
         log_signal(sig);
         report();
+
+        local_presync_database_sigsegv();
+#ifndef MEMORY_BASED
+        al_store();
+#endif
+        pcache_sync();
         SYNC;
+
         if (  mudconf.sig_action != SA_EXIT
            && mudstate.bCanRestart)
         {

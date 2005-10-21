@@ -1,6 +1,6 @@
 // predicates.cpp
 //
-// $Id: predicates.cpp,v 1.70 2005-10-19 09:33:40 sdennis Exp $
+// $Id: predicates.cpp,v 1.71 2005-10-21 03:36:01 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -1433,6 +1433,8 @@ void do_restart(dbref executor, dbref caller, dbref enactor, int key)
     log_text("Restart by ");
     log_name(executor);
     ENDLOG;
+
+    local_presync_database();
 
 #ifndef MEMORY_BASED
     al_store();

@@ -1,6 +1,6 @@
 // game.cpp
 //
-// $Id: game.cpp,v 1.77 2005-10-19 09:07:00 sdennis Exp $
+// $Id: game.cpp,v 1.78 2005-10-21 03:36:01 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -1182,7 +1182,14 @@ void do_timecheck(dbref executor, dbref caller, dbref enactor, int key)
     report_timecheck(executor, yes_screen, yes_log, yes_clear);
 }
 
-void do_shutdown(dbref executor, dbref caller, dbref enactor, int key, char *message)
+void do_shutdown
+(
+    dbref executor,
+    dbref caller,
+    dbref enactor,
+    int   key,
+    char *message
+)
 {
     if (!Can_SiteAdmin(executor))
     {
@@ -1223,9 +1230,10 @@ void do_shutdown(dbref executor, dbref caller, dbref enactor, int key, char *mes
         //
         emergency_shutdown();
 
+        local_presync_database();
+
         // Close the attribute text db and dump the header db.
         //
-
 #ifndef MEMORY_BASED
         // Save cached modified attribute list
         //
@@ -1499,6 +1507,8 @@ void dump_database(void)
     log_text(buff);
     ENDLOG;
 
+    local_presync_database();
+
 #ifndef MEMORY_BASED
     // Save cached modified attribute list
     //
@@ -1521,6 +1531,7 @@ void dump_database(void)
     // leave it in.
     //
     mudstate.dumping = false;
+    local_dump_complete_signal();
 #endif
 }
 
@@ -1582,6 +1593,8 @@ void fork_and_dump(int key)
         ENDLOG;
     }
     free_lbuf(buff);
+
+    local_presync_database();
 
 #ifndef MEMORY_BASED
     // Save cached modified attribute list
@@ -1672,8 +1685,9 @@ void fork_and_dump(int key)
         // need to dump the structure or a flatfile; or, the child has finished
         // dumping already.
         //
-        mudstate.dumping = false;
         mudstate.dumper = 0;
+        mudstate.dumping = false;
+        local_dump_complete_signal();
     }
     bRequestAccepted = false;
 #endif

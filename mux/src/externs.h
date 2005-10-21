@@ -1,6 +1,6 @@
 // externs.h -- Prototypes for externs not defined elsewhere.
 //
-// $Id: externs.h,v 1.44 2005-10-19 23:52:39 sdennis Exp $
+// $Id: externs.h,v 1.45 2005-10-21 03:36:01 sdennis Exp $
 //
 
 #ifndef EXTERNS_H
@@ -21,7 +21,10 @@ extern int  cf_modify_bits(int *, char *, void *, UINT32, dbref, char *);
 
 /* From local.cpp */
 extern void local_startup(void);
+extern void local_presync_database(void);
+extern void local_presync_database_sigsegv(void);
 extern void local_dump_database(int);
+extern void local_dump_complete_signal(void);
 extern void local_shutdown(void);
 extern void local_dbck(void);
 extern void local_connect(dbref, int, int);
