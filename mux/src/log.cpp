@@ -1,6 +1,6 @@
 // log.cpp -- Logging routines.
 //
-// $Id: log.cpp,v 1.7 2003-02-17 01:59:21 sdennis Exp $
+// $Id: log.cpp,v 1.8 2005-10-22 16:21:47 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -146,6 +146,16 @@ void log_text(const char *text)
 void log_number(int num)
 {
     Log.WriteInteger(num);
+}
+
+void DCL_CDECL log_printf(const char *fmt, ...)
+{
+    va_list ap;
+    va_start(ap, fmt);
+    char aTempBuffer[SIZEOF_LOG_BUFFER];
+    int nString = mux_vsnprintf(aTempBuffer, SIZEOF_LOG_BUFFER, fmt, ap);
+    va_end(ap);
+    Log.WriteBuffer(nString, aTempBuffer);
 }
 
 /* ---------------------------------------------------------------------------
