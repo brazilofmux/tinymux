@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.151 2005-10-18 01:15:01 sdennis Exp $
+// $Id: functions.cpp,v 1.152 2005-10-24 01:48:12 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2005 Solid Vertical Domains, Ltd. All
@@ -4543,7 +4543,10 @@ FUNCTION(fun_stats)
 {
     dbref who;
 
-    if (nfargs == 0 || (!fargs[0]) || !*fargs[0] || !string_compare(fargs[0], "all"))
+    if (  nfargs == 0
+       || (!fargs[0])
+       || !*fargs[0]
+       || !string_compare(fargs[0], "all"))
     {
         who = NOTHING;
     }
@@ -5424,7 +5427,7 @@ void switch_handler
             EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, cargs, ncargs);
         *bp = '\0';
 
-        if (bSwitch ? wild_match(tbuff, mbuff) : string_compare(tbuff, mbuff) == 0)
+        if (bSwitch ? wild_match(tbuff, mbuff) : strcmp(tbuff, mbuff) == 0)
         {
             free_lbuf(tbuff);
             tbuff = replace_tokens(fargs[i+1], NULL, NULL, mbuff);
