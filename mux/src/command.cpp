@@ -1,6 +1,6 @@
 // command.cpp -- command parser and support routines.
 //
-// $Id: command.cpp,v 1.59 2005-10-24 04:02:51 sdennis Exp $
+// $Id: command.cpp,v 1.60 2005-10-24 07:00:17 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -2898,7 +2898,6 @@ CF_HAND(cf_acmd_access)
             if (failure != 0)
             {
                 cmdp->perms = save;
-                free_sbuf(buff);
                 return -1;
             }
         }
