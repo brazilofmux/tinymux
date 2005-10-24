@@ -1,6 +1,6 @@
 // svdhash.cpp -- CHashPage, CHashFile, CHashTable modules.
 //
-// $Id: svdhash.cpp,v 1.39 2005-10-24 03:06:31 sdennis Exp $
+// $Id: svdhash.cpp,v 1.40 2005-10-24 03:12:46 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -739,7 +739,8 @@ HP_DIRINDEX CHashPage::FindFirstKey(UINT32 nHash, unsigned int *numchecks)
         return HP_DIR_EMPTY;
     }
 
-    // HP_DIR_DELETED == sOffset
+    //    HP_DIR_DELETED == sOffset
+    // || pNode->u.s.nHash != nHash
 
     m_nProbesLeft = nDirSize - 1;
     int di = m_pHeader->m_Primes[nHash & 15];
