@@ -1,6 +1,6 @@
 // predicates.cpp
 //
-// $Id: predicates.cpp,v 1.71 2005-10-21 03:36:01 sdennis Exp $
+// $Id: predicates.cpp,v 1.72 2005-10-24 15:48:36 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -1905,6 +1905,9 @@ bool bCanSetAttr(dbref executor, dbref target, ATTR *tattr)
     dbref aowner;
     int aflags;
     if (  (tattr->flags & mDeny)
+#ifdef FIRANMUX
+       || Immutable(target)
+#endif
        || (  atr_get_info(target, tattr->number, &aowner, &aflags)
           && (aflags & mDeny)))
     {

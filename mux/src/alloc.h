@@ -1,6 +1,6 @@
 // alloc.h -- External definitions for memory allocation subsystem.
 //
-// $Id: alloc.h,v 1.2 2003-01-23 08:07:13 sdennis Exp $
+// $Id: alloc.h,v 1.3 2005-10-24 15:48:36 sdennis Exp $
 //
 
 #ifndef M_ALLOC_H
@@ -15,8 +15,11 @@
 #define POOL_PCACHE 6
 #define NUM_POOLS   7
 
-
+#ifdef FIRANMUX
+#define LBUF_SIZE   16000   // Large
+#else
 #define LBUF_SIZE   8000    // Large
+#endif
 #define GBUF_SIZE   1024    // Generic
 #define MBUF_SIZE   400     // Medium
 #define PBUF_SIZE   128     // Pathname

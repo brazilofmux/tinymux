@@ -1,6 +1,6 @@
 // powers.h -- Object powers.
 //
-// $Id: powers.h,v 1.6 2005-10-12 04:30:17 sdennis Exp $
+// $Id: powers.h,v 1.7 2005-10-24 15:48:36 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -47,6 +47,9 @@
 
 /* Second word of powers */
 #define POW_BUILDER     0x00000001  /* Can build */
+#ifdef FIRANMUX
+#define POW_IMMUTABLE   0x00000002  /* Can not change */
+#endif
 
 /* ---------------------------------------------------------------------------
  * POWERENT: Information about object powers.
@@ -105,6 +108,9 @@ extern bool decode_power(dbref player, char *powername, POWERSET *pset);
 #define Prog(c)             (((Powers(c) & POW_PROG) != 0) || Wizard(c))
 #define Pass_Locks(c)       ((Powers(c) & POW_PASS_LOCKS) != 0)
 #define Builder(c)          (((Powers2(c) & POW_BUILDER) != 0) || WizRoy(c))
+#ifdef FIRANMUX
+#define Immutable(c)        ((Powers2(c) & POW_IMMUTABLE) != 0)
+#endif
 
 #define Can_SiteAdmin(c)    (((Powers(c) & POW_SITEADMIN) != 0) || Wizard(c))
 

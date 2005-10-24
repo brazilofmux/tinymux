@@ -1,6 +1,6 @@
 // powers.cpp -- Power manipulation routines.
 //
-// $Id: powers.cpp,v 1.11 2005-10-12 04:31:46 sdennis Exp $
+// $Id: powers.cpp,v 1.12 2005-10-24 15:48:36 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -110,6 +110,9 @@ POWERENT gen_powers[] =
     {"halt",            POW_HALT,       0, 0,   ph_wiz},
     {"hide",            POW_HIDE,       0, 0,   ph_wiz},
     {"idle",            POW_IDLE,       0, 0,   ph_wiz},
+#ifdef FIRANMUX
+    {"immutable",       POW_IMMUTABLE,  POWER_EXT, 0, ph_wiz},
+#endif
     {"long_fingers",    POW_LONGFINGERS,0, 0,   ph_wiz},
     {"monitor",         POW_MONITOR,    0, 0,   ph_wiz},
     {"no_destroy",      POW_NO_DESTROY, 0, 0,   ph_wiz},
