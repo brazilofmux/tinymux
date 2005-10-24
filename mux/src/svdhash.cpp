@@ -1,6 +1,6 @@
 // svdhash.cpp -- CHashPage, CHashFile, CHashTable modules.
 //
-// $Id: svdhash.cpp,v 1.38 2005-10-24 02:51:29 sdennis Exp $
+// $Id: svdhash.cpp,v 1.39 2005-10-24 03:06:31 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -716,14 +716,41 @@ HP_DIRINDEX CHashPage::FindFirstKey(UINT32 nHash, unsigned int *numchecks)
         return HP_DIR_EMPTY;
 #endif // HP_PROTECTION
 
-    int nDirSize = m_pHeader->m_nDirSize;
+    const int nDirSize = m_pHeader->m_nDirSize;
 
     // Where do we begin our first probe?
     //
-    int di = m_pHeader->m_Primes[nHash & 15];
     int iDir = (nHash >> 4) % nDirSize;
-    m_nProbesLeft = nDirSize;
     int sOffset = m_pDirectory[iDir];
+    if (sOffset < HP_DIR_DELETED)
+    {
+        HP_PHEAPNODE pNode = (HP_PHEAPNODE)(m_pHeapStart + sOffset);
+        if (pNode->u.s.nHash == nHash)
+        {
+            m_nProbesLeft = nDirSize - 1;
+            *numchecks = 1;
+            return iDir;
+        }
+    }
+    else if (HP_DIR_EMPTY == sOffset)
+    {
+        m_nProbesLeft = nDirSize;
+        *numchecks = 0;
+        return HP_DIR_EMPTY;
+    }
+
+    // HP_DIR_DELETED == sOffset
+
+    m_nProbesLeft = nDirSize - 1;
+    int di = m_pHeader->m_Primes[nHash & 15];
+
+    iDir += di;
+    if (iDir >= nDirSize)
+    {
+        iDir -= nDirSize;
+    }
+    sOffset = m_pDirectory[iDir];
+
     while (sOffset != HP_DIR_EMPTY)
     {
         m_nProbesLeft--;
