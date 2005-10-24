@@ -1,6 +1,6 @@
 // command.cpp -- command parser and support routines.
 //
-// $Id: command.cpp,v 1.58 2005-10-19 23:52:39 sdennis Exp $
+// $Id: command.cpp,v 1.59 2005-10-24 04:02:51 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -2987,26 +2987,24 @@ CF_HAND(cf_cmd_alias)
             return -1;
         }
 
-        // Got it, create the new command table entry.
-        //
-        cmd2 = (CMDENT *)MEMALLOC(sizeof(CMDENT));
-        ISOUTOFMEMORY(cmd2);
-        cmd2->cmdname = StringClone(alias);
-        cmd2->switches = cmdp->switches;
-        cmd2->perms = cmdp->perms | nt->perm;
-        cmd2->extra = (cmdp->extra | nt->flag) & ~SW_MULTIPLE;
-        if (!(nt->flag & SW_MULTIPLE))
+        if (!hashfindLEN(alias, strlen(alias), (CHashTable *)vp))
         {
-            cmd2->extra |= SW_GOT_UNIQUE;
-        }
-        cmd2->callseq = cmdp->callseq;
-        cmd2->handler = cmdp->handler;
-        if (hashaddLEN(cmd2->cmdname, strlen(cmd2->cmdname), cmd2, (CHashTable *) vp))
-        {
-            MEMFREE(cmd2->cmdname);
-            cmd2->cmdname = NULL;
-            MEMFREE(cmd2);
-            cmd2 = NULL;
+            // Create the new command table entry.
+            //
+            cmd2 = (CMDENT *)MEMALLOC(sizeof(CMDENT));
+            ISOUTOFMEMORY(cmd2);
+            cmd2->cmdname = StringClone(alias);
+            cmd2->switches = cmdp->switches;
+            cmd2->perms = cmdp->perms | nt->perm;
+            cmd2->extra = (cmdp->extra | nt->flag) & ~SW_MULTIPLE;
+            if (!(nt->flag & SW_MULTIPLE))
+            {
+                cmd2->extra |= SW_GOT_UNIQUE;
+            }
+            cmd2->callseq = cmdp->callseq;
+            cmd2->handler = cmdp->handler;
+
+            hashaddLEN(cmd2->cmdname, strlen(cmd2->cmdname), cmd2, (CHashTable *) vp);
         }
     }
     else

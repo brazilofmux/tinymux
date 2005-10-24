@@ -1,6 +1,6 @@
 // help.cpp -- Commands for giving help.
 //
-// $Id: help.cpp,v 1.12 2005-08-05 15:35:14 sdennis Exp $
+// $Id: help.cpp,v 1.13 2005-10-24 04:02:52 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -187,8 +187,9 @@ int helpindex_read(int iHelpfile)
             bOriginal = false;
             htab_entry->key = StringCloneLen(entry.topic, nTopic);
 
-            if ((hashaddLEN(entry.topic, nTopic, htab_entry, htab)) == 0)
+            if (!hashfindLEN(entry.topic, nTopic, htab))
             {
+                hashaddLEN(entry.topic, nTopic, htab_entry, htab);
                 count++;
             }
             else

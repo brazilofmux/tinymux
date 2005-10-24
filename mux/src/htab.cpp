@@ -1,6 +1,6 @@
 // htab.cpp -- Table hashing routines.
 //
-// $Id: htab.cpp,v 1.19 2005-01-11 19:43:26 sdennis Exp $
+// $Id: htab.cpp,v 1.20 2005-10-24 04:02:52 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -80,6 +80,7 @@ int hashaddLEN(const void *str, size_t nStr, void *hashdata, CHashTable *htab)
 
     UINT32 nHash = HASH_ProcessBuffer(0, str, nStr);
 
+#if 0
     HP_DIRINDEX iDir = htab->FindFirstKey(nHash);
     while (iDir != HF_FIND_END)
     {
@@ -97,6 +98,8 @@ int hashaddLEN(const void *str, size_t nStr, void *hashdata, CHashTable *htab)
 
     // Otherwise, add it.
     //
+#endif
+
     htab_rec.hashdata = hashdata;
     memcpy(htab_rec.aTarget, str, nStr);
     unsigned int nRecord = nStr + sizeof(int *);
