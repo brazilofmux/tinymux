@@ -1,6 +1,6 @@
 // db.cpp
 //
-// $Id: db.cpp,v 1.63 2005-10-19 06:17:36 sdennis Exp $
+// $Id: db.cpp,v 1.64 2005-10-24 15:47:44 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -1826,11 +1826,6 @@ void atr_add_raw_LEN(dbref thing, int atr, const char *szValue, int nValue)
         return;
     }
 
-    if (nValue > LBUF_SIZE-1)
-    {
-        nValue = LBUF_SIZE-1;
-    }
-
 #ifdef MEMORY_BASED
     ATRLIST *list;
     bool found = false;
@@ -1909,7 +1904,13 @@ void atr_add_raw_LEN(dbref thing, int atr, const char *szValue, int nValue)
             db[thing].ahead = list;
         }
     }
+
 #else // MEMORY_BASED
+
+    if (nValue > LBUF_SIZE-1)
+    {
+        nValue = LBUF_SIZE-1;
+    }
 
     Aname okey;
     makekey(thing, atr, &okey);
