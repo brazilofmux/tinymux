@@ -1,6 +1,6 @@
 // svdhash.cpp -- CHashPage, CHashFile, CHashTable modules.
 //
-// $Id: svdhash.cpp,v 1.37 2005-10-13 15:18:28 sdennis Exp $
+// $Id: svdhash.cpp,v 1.38 2005-10-24 02:51:29 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -702,8 +702,9 @@ int CHashPage::Insert(HP_HEAPLENGTH nRecord, UINT32 nHash, void *pRecord)
 //        directory index or HP_DIR_EMPTY if no hash keys are found.
 //
 //        Call iDir = FindFirstKey(hash) the first time, and then call
-//        iDir = FindNextKey(iDir, hash) every time after than until iDir == HP_DIR_EMPTY
-//        to interate through all the records with the desired hash key.
+//        iDir = FindNextKey(iDir, hash) every time after than until
+//        iDir == HP_DIR_EMPTY to interate through all the records with the
+//        desired hash key.
 //
 HP_DIRINDEX CHashPage::FindFirstKey(UINT32 nHash, unsigned int *numchecks)
 {
