@@ -1,6 +1,6 @@
 // help.cpp -- Commands for giving help.
 //
-// $Id: help.cpp,v 1.13 2005-10-24 04:02:52 sdennis Exp $
+// $Id: help.cpp,v 1.14 2005-10-24 16:52:17 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -166,9 +166,13 @@ int helpindex_read(int iHelpfile)
     HelpIndex_Start(fp);
     while (HelpIndex_Read(&entry))
     {
-        // Convert the entry to all lowercase letters and add all leftmost substrings.
+        // Convert the entry to all lowercase letters and add all leftmost
+        // substrings.
         //
-        // Substrings already added will be rejected by hashaddLEN.
+        // Topic names which appear earlier in the help file have priority
+        // over topics names which appear later in the help file.  That is,
+        // we do not associate prefixes with this topic if they have already
+        // been used on a previous topic.
         //
         mux_strlwr(entry.topic);
         bool bOriginal = true; // First is the longest.
