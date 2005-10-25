@@ -1,6 +1,6 @@
 // command.cpp -- command parser and support routines.
 //
-// $Id: command.cpp,v 1.61 2005-10-25 05:42:19 sdennis Exp $
+// $Id: command.cpp,v 1.62 2005-10-25 05:46:30 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -821,7 +821,12 @@ void commands_two_arg_argv_add(CMDENT_TWO_ARG_ARGV cmdent[])
     CMDENT_TWO_ARG_ARGV *cp2aa;
     for (cp2aa = cmdent; cp2aa->cmdname; cp2aa++)
     {
-        hashaddLEN(cp2aa->cmdname, strlen(cp2aa->cmdname), cp2aa, &mudstate.command_htab);
+        if (!hashfindLEN(cp2aa->cmdname, strlen(cp2aa->cmdname),
+                         &mudstate.command_htab))
+        {
+            hashaddLEN(cp2aa->cmdname, strlen(cp2aa->cmdname), cp2aa,
+                       &mudstate.command_htab);
+        }
     }
 }
 
@@ -830,7 +835,12 @@ void commands_two_arg_cmdarg_add(CMDENT_TWO_ARG_CMDARG cmdent[])
     CMDENT_TWO_ARG_CMDARG  *cp2ac;
     for (cp2ac = cmdent; cp2ac->cmdname; cp2ac++)
     {
-        hashaddLEN(cp2ac->cmdname, strlen(cp2ac->cmdname), cp2ac, &mudstate.command_htab);
+        if (!hashfindLEN(cp2ac->cmdname, strlen(cp2ac->cmdname),
+                         &mudstate.command_htab))
+        {
+            hashaddLEN(cp2ac->cmdname, strlen(cp2ac->cmdname), cp2ac,
+                       &mudstate.command_htab);
+        }
     }
 }
 
@@ -839,7 +849,12 @@ void commands_two_arg_argv_cmdarg_add(CMDENT_TWO_ARG_ARGV_CMDARG cmdent[])
     CMDENT_TWO_ARG_ARGV_CMDARG  *cp2aac;
     for (cp2aac = cmdent; cp2aac->cmdname; cp2aac++)
     {
-        hashaddLEN(cp2aac->cmdname, strlen(cp2aac->cmdname), cp2aac, &mudstate.command_htab);
+        if (!hashfindLEN(cp2aac->cmdname, strlen(cp2aac->cmdname),
+                         &mudstate.command_htab))
+        {
+            hashaddLEN(cp2aac->cmdname, strlen(cp2aac->cmdname), cp2aac,
+                       &mudstate.command_htab);
+        }
     }
 }
 
