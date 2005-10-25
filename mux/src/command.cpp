@@ -1,6 +1,6 @@
 // command.cpp -- command parser and support routines.
 //
-// $Id: command.cpp,v 1.60 2005-10-24 07:00:17 sdennis Exp $
+// $Id: command.cpp,v 1.61 2005-10-25 05:42:19 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -765,7 +765,12 @@ void commands_no_arg_add(CMDENT_NO_ARG cmdent[])
     CMDENT_NO_ARG *cp0a;
     for (cp0a = cmdent; cp0a->cmdname; cp0a++)
     {
-        hashaddLEN(cp0a->cmdname, strlen(cp0a->cmdname), cp0a, &mudstate.command_htab);
+        if (!hashfindLEN(cp0a->cmdname, strlen(cp0a->cmdname),
+                         &mudstate.command_htab))
+        {
+            hashaddLEN(cp0a->cmdname, strlen(cp0a->cmdname), cp0a,
+                       &mudstate.command_htab);
+        }
     }
 }
 
@@ -774,7 +779,12 @@ void commands_one_arg_add(CMDENT_ONE_ARG cmdent[])
     CMDENT_ONE_ARG *cp1a;
     for (cp1a = cmdent; cp1a->cmdname; cp1a++)
     {
-        hashaddLEN(cp1a->cmdname, strlen(cp1a->cmdname), cp1a, &mudstate.command_htab);
+        if (!hashfindLEN(cp1a->cmdname, strlen(cp1a->cmdname),
+                        &mudstate.command_htab))
+        {
+            hashaddLEN(cp1a->cmdname, strlen(cp1a->cmdname), cp1a,
+                       &mudstate.command_htab);
+        }
     }
 }
 
@@ -783,7 +793,12 @@ void commands_one_arg_cmdarg_add(CMDENT_ONE_ARG_CMDARG cmdent[])
     CMDENT_ONE_ARG_CMDARG *cp1ac;
     for (cp1ac = cmdent; cp1ac->cmdname; cp1ac++)
     {
-        hashaddLEN(cp1ac->cmdname, strlen(cp1ac->cmdname), cp1ac, &mudstate.command_htab);
+        if (!hashfindLEN(cp1ac->cmdname, strlen(cp1ac->cmdname),
+                         &mudstate.command_htab))
+        {
+            hashaddLEN(cp1ac->cmdname, strlen(cp1ac->cmdname), cp1ac,
+                       &mudstate.command_htab);
+        }
     }
 }
 
@@ -792,7 +807,12 @@ void commands_two_arg_add(CMDENT_TWO_ARG cmdent[])
     CMDENT_TWO_ARG *cp2a;
     for (cp2a = cmdent; cp2a->cmdname; cp2a++)
     {
-        hashaddLEN(cp2a->cmdname, strlen(cp2a->cmdname), cp2a, &mudstate.command_htab);
+        if (!hashfindLEN(cp2a->cmdname, strlen(cp2a->cmdname),
+                         &mudstate.command_htab))
+        {
+            hashaddLEN(cp2a->cmdname, strlen(cp2a->cmdname), cp2a,
+                       &mudstate.command_htab);
+        }
     }
 }
 
