@@ -1,6 +1,6 @@
 // htab.h - Structures and declarations needed for table hashing.
 //
-// $Id: htab.h,v 1.8 2005-10-16 20:48:14 sdennis Exp $
+// $Id: htab.h,v 1.9 2005-10-27 06:27:53 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -59,17 +59,19 @@ public:
     bool IsSet(unsigned int i);
 };
 
-extern void hashreset(CHashTable *);
-extern void *hashfindLEN(const void *Str, size_t nStr, CHashTable *htab);
-extern int  hashaddLEN(const void *Str, size_t nStr, void *hashdata, CHashTable *htab);
-extern void hashdeleteLEN(const void *Str, size_t nStr, CHashTable *htab);
-extern void hashflush(CHashTable *);
-extern bool hashreplLEN(const void *Str, size_t nStr, void *hashdata, CHashTable *htab);
-extern void hashreplall(const void *, void *, CHashTable *);
-extern void *hash_nextentry(CHashTable *htab);
-extern void *hash_firstentry(CHashTable *htab);
-extern void *hash_firstkey(CHashTable *htab, int *, char **);
-extern void *hash_nextkey(CHashTable *htab, int *, char **);
+void hashreset(CHashTable *);
+void *hashfindLEN(const void *pKey, size_t nKey, CHashTable *htab);
+int  hashaddLEN(const void *pKey, size_t nKey, void *pData,
+                CHashTable *htab);
+void hashdeleteLEN(const void *Str, size_t nStr, CHashTable *htab);
+void hashflush(CHashTable *);
+bool hashreplLEN(const void *Str, size_t nStr, void *hashdata,
+                 CHashTable *htab);
+void hashreplall(const void *, void *, CHashTable *);
+void *hash_nextentry(CHashTable *htab);
+void *hash_firstentry(CHashTable *htab);
+void *hash_firstkey(CHashTable *htab, int *, char **);
+void *hash_nextkey(CHashTable *htab, int *, char **);
 
 extern NAMETAB powers_nametab[];
 

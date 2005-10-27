@@ -1,7 +1,7 @@
 /*! \file htab.cpp
  * Table hashing routines.
  *
- * $Id: htab.cpp,v 1.21 2005-10-27 05:09:06 sdennis Exp $
+ * $Id: htab.cpp,v 1.22 2005-10-27 06:27:53 sdennis Exp $
  *
  * MUX 2.4
  * Copyright (C) 1998 through 2005 Solid Vertical Domains, Ltd. All
@@ -29,21 +29,30 @@ static struct
 } htab_rec;
 #pragma pack()
 
-/*
- * ---------------------------------------------------------------------------
- * * hashfindLEN: Look up an entry in a hash table and return a pointer to its
- * * hash data.
+/*! \brief Look for a previously-added (key, data) pair in a hash table, and
+ *         return its data pointer.
+ *
+ * Given a variable-sized Key, hashfindLEN() uses the associations previously
+ * created with hashaddLEN() to find and return the corresponding 'Data' part
+ * of a (Key, Data) pair, if it exists.
+ *
+ * NULL is returned if the request is not valid or if the (Key, Data) pair
+ * is not found.
+ *
+ * \param pKey     The key under which hashdata is pointer to the 
+ * \param nKey     Size (in bytes) of the above key.
+ * \param htab     Hash Table.
+ * \return         pData or NULL.
  */
-
-void *hashfindLEN(const void *str, size_t nStr, CHashTable *htab)
+void *hashfindLEN(const void *pKey, size_t nKey, CHashTable *htab)
 {
-    if (  str == NULL
-       || nStr <= 0)
+    if (  pKey == NULL
+       || nKey <= 0)
     {
         return NULL;
     }
 
-    UINT32 nHash = HASH_ProcessBuffer(0, str, nStr);
+    UINT32 nHash = HASH_ProcessBuffer(0, pKey, nKey);
 
     HP_DIRINDEX iDir = HF_FIND_FIRST;
     iDir = htab->FindFirstKey(nHash);
@@ -53,8 +62,8 @@ void *hashfindLEN(const void *str, size_t nStr, CHashTable *htab)
         htab->Copy(iDir, &nRecord, &htab_rec);
         size_t nTarget = nRecord - sizeof(int *);
 
-        if (  nTarget == nStr
-           && memcmp(str, htab_rec.aTarget, nStr) == 0)
+        if (  nTarget == nKey
+           && memcmp(pKey, htab_rec.aTarget, nKey) == 0)
         {
             return htab_rec.hashdata;
         }
@@ -63,7 +72,7 @@ void *hashfindLEN(const void *str, size_t nStr, CHashTable *htab)
     return NULL;
 }
 
-/*! \brief Add a new (key, data) pair to a hash table.
+/*! \brief Add a new (Key, Data) pair to a hash table.
  *
  * hashaddLEN() associates a variable-sized key with a pointer using a hash
  * table. The pointer, pData, given to hashaddLEN() may be obtained again
