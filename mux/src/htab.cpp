@@ -1,7 +1,7 @@
 /*! \file htab.cpp
  * Table hashing routines.
  *
- * $Id: htab.cpp,v 1.23 2005-10-27 06:44:56 sdennis Exp $
+ * $Id: htab.cpp,v 1.24 2005-10-27 15:18:29 sdennis Exp $
  *
  * MUX 2.4
  * Copyright (C) 1998 through 2005 Solid Vertical Domains, Ltd. All
@@ -13,7 +13,7 @@
 #include "config.h"
 #include "externs.h"
 
-/*! \brief Reset hash table statistic.
+/*! \brief Reset hash table statistics.
  *
  * Each Hash Table maintains certain statistics regarding the type and
  * number of requests they receive as well as the hash table's performance
@@ -38,7 +38,7 @@ static struct
 } htab_rec;
 #pragma pack()
 
-/*! \brief Look for a previously-added (key, data) pair in a hash table, and
+/*! \brief Look for a previously-added (Key, Data) pair in a hash table, and
  *         return its data pointer.
  *
  * Given a variable-sized Key, hashfindLEN() uses the associations previously
