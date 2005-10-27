@@ -1,6 +1,6 @@
 // powers.cpp -- Power manipulation routines.
 //
-// $Id: powers.cpp,v 1.12 2005-10-24 15:48:36 sdennis Exp $
+// $Id: powers.cpp,v 1.13 2005-10-27 02:08:11 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -147,7 +147,11 @@ void init_powertab(void)
         strncpy(nbuf, fp->powername, SBUF_SIZE);
         nbuf[SBUF_SIZE-1] = '\0';
         mux_strlwr(nbuf);
-        hashaddLEN(nbuf, strlen(nbuf), fp, &mudstate.powers_htab);
+       
+        if (!hashfindLEN(nbuf, strlen(nbuf), &mudstate.powers_htab))
+        {
+            hashaddLEN(nbuf, strlen(nbuf), fp, &mudstate.powers_htab);
+        }
     }
     free_sbuf(nbuf);
 }
