@@ -1,21 +1,30 @@
 /*! \file htab.cpp
  * Table hashing routines.
  *
- * $Id: htab.cpp,v 1.22 2005-10-27 06:27:53 sdennis Exp $
+ * $Id: htab.cpp,v 1.23 2005-10-27 06:44:56 sdennis Exp $
  *
  * MUX 2.4
  * Copyright (C) 1998 through 2005 Solid Vertical Domains, Ltd. All
  * rights not explicitly given are reserved.
  */
+
 #include "copyright.h"
 #include "autoconf.h"
 #include "config.h"
 #include "externs.h"
 
-/*
- * ---------------------------------------------------------------------------
- * hashreset: Reset hash table stats.
+/*! \brief Reset hash table statistic.
+ *
+ * Each Hash Table maintains certain statistics regarding the type and
+ * number of requests they receive as well as the hash table's performance
+ * in responding to those requests. The hashreset() function allows callers
+ * to reset these statistics. Typically, this is done when the caller knows
+ * future access patterns are of more interest than past access paterns. 
+ *
+ * \param htab     Hash Table.
+ * \return         None.
  */
+
 void hashreset(CHashTable *htab)
 {
     htab->ResetStats();
@@ -44,6 +53,7 @@ static struct
  * \param htab     Hash Table.
  * \return         pData or NULL.
  */
+
 void *hashfindLEN(const void *pKey, size_t nKey, CHashTable *htab)
 {
     if (  pKey == NULL
