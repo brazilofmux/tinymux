@@ -1,6 +1,6 @@
 // conf.cpp -- Set up configuration information and static data.
 //
-// $Id: conf.cpp,v 1.63 2005-10-27 03:22:39 sdennis Exp $
+// $Id: conf.cpp,v 1.64 2005-10-27 05:09:06 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -699,7 +699,7 @@ CF_HAND(cf_alias)
                 return -1;
             }
         }
-        if (!hashfindLEN(alias, strlen(alias), cp, (CHashTable *) vp))
+        if (!hashfindLEN(alias, strlen(alias), (CHashTable *) vp))
         {
             hashaddLEN(alias, strlen(alias), cp, (CHashTable *) vp);
         }

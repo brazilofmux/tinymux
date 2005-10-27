@@ -1,11 +1,12 @@
-// htab.cpp -- Table hashing routines.
-//
-// $Id: htab.cpp,v 1.20 2005-10-24 04:02:52 sdennis Exp $
-//
-// MUX 2.4
-// Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
-// rights not explicitly given are reserved.
-//
+/*! \file htab.cpp
+ * Table hashing routines.
+ *
+ * $Id: htab.cpp,v 1.21 2005-10-27 05:09:06 sdennis Exp $
+ *
+ * MUX 2.4
+ * Copyright (C) 1998 through 2005 Solid Vertical Domains, Ltd. All
+ * rights not explicitly given are reserved.
+ */
 #include "copyright.h"
 #include "autoconf.h"
 #include "config.h"
@@ -62,47 +63,38 @@ void *hashfindLEN(const void *str, size_t nStr, CHashTable *htab)
     return NULL;
 }
 
-/*
- * ---------------------------------------------------------------------------
- * * hashaddLEN: Add a new entry to a hash table.
+/*! \brief Add a new (key, data) pair to a hash table.
+ *
+ * hashaddLEN() associates a variable-sized key with a pointer using a hash
+ * table. The pointer, pData, given to hashaddLEN() may be obtained again
+ * later by presenting the the same key to hashfindLEN(). The data given in
+ * (pKey, nKey) is saved, so the caller is free to reuse the Key buffer.
+ * While the value of pData is also saved, the data that pData points to is
+ * not.
+ *
+ * This function requires that the Key does not already exist in the hash
+ * table. It may be necessary to use hashfindLEN() to insure this.
+ *
+ * \param pKey     The key under which hashdata is pointer to the 
+ * \param nKey     Size (in bytes) of the above key.
+ * \param pData    Pointer to record to associate with the above key.
+ * \param htab     Hash Table.
+ * \return         -1 for failure. 0 for success.
  */
 
-int hashaddLEN(const void *str, size_t nStr, void *hashdata, CHashTable *htab)
+int hashaddLEN(const void *pKey, size_t nKey, void *pData, CHashTable *htab)
 {
-    // Make sure that the entry isn't already in the hash table.  If it
-    // is, exit with an error.
-    //
-    if (  str == NULL
-       || nStr <= 0)
+    if (  pKey == NULL
+       || nKey <= 0)
     {
         return -1;
     }
 
-    UINT32 nHash = HASH_ProcessBuffer(0, str, nStr);
+    UINT32 nHash = HASH_ProcessBuffer(0, pKey, nKey);
 
-#if 0
-    HP_DIRINDEX iDir = htab->FindFirstKey(nHash);
-    while (iDir != HF_FIND_END)
-    {
-        HP_HEAPLENGTH nRecord;
-        htab->Copy(iDir, &nRecord, &htab_rec);
-        size_t nTarget = nRecord - sizeof(int *);
-
-        if (  nTarget == nStr
-           && memcmp(str, htab_rec.aTarget, nStr) == 0)
-        {
-            return -1;
-        }
-        iDir = htab->FindNextKey(iDir, nHash);
-    }
-
-    // Otherwise, add it.
-    //
-#endif
-
-    htab_rec.hashdata = hashdata;
-    memcpy(htab_rec.aTarget, str, nStr);
-    unsigned int nRecord = nStr + sizeof(int *);
+    htab_rec.hashdata = pData;
+    memcpy(htab_rec.aTarget, pKey, nKey);
+    unsigned int nRecord = nKey + sizeof(void *);
     htab->Insert(nRecord, nHash, &htab_rec);
     return 0;
 }
