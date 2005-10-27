@@ -1,7 +1,7 @@
 /*! \file htab.cpp
  * Table hashing routines.
  *
- * $Id: htab.cpp,v 1.24 2005-10-27 15:18:29 sdennis Exp $
+ * $Id: htab.cpp,v 1.25 2005-10-27 15:38:19 sdennis Exp $
  *
  * MUX 2.4
  * Copyright (C) 1998 through 2005 Solid Vertical Domains, Ltd. All
@@ -48,8 +48,8 @@ static struct
  * NULL is returned if the request is not valid or if the (Key, Data) pair
  * is not found.
  *
- * \param pKey     The key under which hashdata is pointer to the 
- * \param nKey     Size (in bytes) of the above key.
+ * \param pKey     Pointer to Key to find.
+ * \param nKey     Size (in bytes) of the above Key.
  * \param htab     Hash Table.
  * \return         pData or NULL.
  */
@@ -94,9 +94,9 @@ void *hashfindLEN(const void *pKey, size_t nKey, CHashTable *htab)
  * This function requires that the Key does not already exist in the hash
  * table. It may be necessary to use hashfindLEN() to insure this.
  *
- * \param pKey     The key under which hashdata is pointer to the 
- * \param nKey     Size (in bytes) of the above key.
- * \param pData    Pointer to record to associate with the above key.
+ * \param pKey     Pointer to Key of (Key, Data) pair to add.
+ * \param nKey     Size (in bytes) of the above Key.
+ * \param pData    Pointer to Data part of (Key, Data) pair.
  * \param htab     Hash Table.
  * \return         -1 for failure. 0 for success.
  */
@@ -118,20 +118,28 @@ int hashaddLEN(const void *pKey, size_t nKey, void *pData, CHashTable *htab)
     return 0;
 }
 
-/*
- * ---------------------------------------------------------------------------
- * * hashdelete: Remove an entry from a hash table.
+/*! \brief Removes a (Key, Data) pair from a hash table.
+ *
+ * hashdeleteLEN() disassociates a variable-sized Key from its Data pointer
+ * by removing the (Key, Data) pair from the hash table and freeing any
+ * related storage. However, it is the caller's responsibility to free any
+ * memory that Data points to.
+ *
+ * \param pKey     The Key to remove.
+ * \param nKey     Size (in bytes) of the above Key.
+ * \param htab     Hash Table.
+ * \return         None.
  */
 
-void hashdeleteLEN(const void *str, size_t nStr, CHashTable *htab)
+void hashdeleteLEN(const void *pKey, size_t nKey, CHashTable *htab)
 {
-    if (  str == NULL
-       || nStr <= 0)
+    if (  pKey == NULL
+       || nKey <= 0)
     {
         return;
     }
 
-    UINT32 nHash = HASH_ProcessBuffer(0, str, nStr);
+    UINT32 nHash = HASH_ProcessBuffer(0, pKey, nKey);
 
     HP_DIRINDEX iDir = htab->FindFirstKey(nHash);
     while (iDir != HF_FIND_END)
@@ -140,8 +148,8 @@ void hashdeleteLEN(const void *str, size_t nStr, CHashTable *htab)
         htab->Copy(iDir, &nRecord, &htab_rec);
         size_t nTarget = nRecord - sizeof(int *);
 
-        if (  nTarget == nStr
-           && memcmp(str, htab_rec.aTarget, nStr) == 0)
+        if (  nTarget == nKey
+           && memcmp(pKey, htab_rec.aTarget, nKey) == 0)
         {
             htab->Remove(iDir);
         }
