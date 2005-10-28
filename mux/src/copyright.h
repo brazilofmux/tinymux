@@ -1,11 +1,11 @@
 /* copyright.h */
 /* -*-C-*- */
-/* $Id: copyright.h,v 1.7 2004-12-24 15:22:58 sdennis Exp $ */
+/* $Id: copyright.h,v 1.8 2005-10-28 01:29:32 sdennis Exp $ */
 
 /*
  * MUX Source Code (version 2.0 through 2.4).
  * Copyright (C) 1999-2004 by Solid Vertical Domains, Ltd.
- * Contact: Stephen Dennis
+ * Copyright (C) 2005 Stephen Dennis
  *
  * TinyMUX Source Code (versions 1.0 through 1.6)
  * Copyright (c) 1995, 1996, 1997, 1998, 1999, David Passmore.
@@ -23,7 +23,6 @@
  * (Modified by these authors from the original 1989, 1990 TinyMUD copyright.)
  *
  *
- *
  * TinyMUX 2.0 is a derivation of TinyMUX 1.6 which is a derivation of
  * TinyMUSH 2.0.10 patchlevel 6.  TinyMUSH 2.0 is dervived from TinyMUD.
  *
@@ -31,7 +30,6 @@
  *
  * The TinyMUD copyright follows below.  PennMUSH, TinyMUSH 2.0 and
  * TinyMUX 1.6 are now released under the OSI-standard Artistic License.
- *
  *
  *
  * Revised TinyMUD copyright:
@@ -48,7 +46,6 @@
  * THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR IMPLIED
  * WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED WARRANTIES OF
  * MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
- *
  *
  *
  * TinyMUX 2.4 Copyright: The Artistic License
@@ -203,7 +200,6 @@
  * everyone a lot of time and effort.
  *
  *    Many others.
- *
  *
  *
  * TinyMUSH 2.0 Credits:
