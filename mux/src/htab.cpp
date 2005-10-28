@@ -1,11 +1,22 @@
 /*! \file htab.cpp
- * Table hashing routines.
+ *  Table hashing routines.
  *
- * $Id: htab.cpp,v 1.25 2005-10-27 15:38:19 sdennis Exp $
+ * $Id: htab.cpp,v 1.26 2005-10-28 03:05:32 sdennis Exp $
  *
- * MUX 2.4
- * Copyright (C) 1998 through 2005 Solid Vertical Domains, Ltd. All
- * rights not explicitly given are reserved.
+ * The functions here outsource most of their work to CHashTable.  There are
+ * several reasons to use the functions here instead of using CHashTable
+ * directly: 1) they are briefer to use, 2) this interface predates
+ * CHashTable, 3) there are many references to these functions throughout the
+ * code, and 4) MUSH hardcoders are generally more familiar with this
+ * interface than with the CHashTable interface.
+ *
+ * To replace them all would require rexamining the assumptions near every
+ * reference.
+ *
+ * CHashTable is not aware of Keys -- only hashs of Keys. In fact, CHashTable
+ * could not tell you anything about the Keys kept within its records.  It
+ * will give you all the records stored under a specific hash, but it leaves
+ * to its callers the small chore of looking in each record for a desired Key.
  */
 
 #include "copyright.h"
@@ -30,11 +41,19 @@ void hashreset(CHashTable *htab)
     htab->ResetStats();
 }
 
+/*! \brief Staging area for reads and writes into CHashTable.
+ *
+ * The htab_rec structure is a fixed size, but only part of htab_rec is used.
+ * Since requests use variable-sized Keys, the portion of htab_rec used on
+ * any particular request is also variable-sized. pData is always present,
+ * but aKey may occupy as little as a single byte.
+ */
+
 #pragma pack(1)
 static struct
 {
-    void *hashdata;
-    char aTarget[LBUF_SIZE+125];
+    void *pData;
+    char  aKey[LBUF_SIZE+125];
 } htab_rec;
 #pragma pack()
 
@@ -73,9 +92,9 @@ void *hashfindLEN(const void *pKey, size_t nKey, CHashTable *htab)
         size_t nTarget = nRecord - sizeof(int *);
 
         if (  nTarget == nKey
-           && memcmp(pKey, htab_rec.aTarget, nKey) == 0)
+           && memcmp(pKey, htab_rec.aKey, nKey) == 0)
         {
-            return htab_rec.hashdata;
+            return htab_rec.pData;
         }
         iDir = htab->FindNextKey(iDir, nHash);
     }
@@ -111,8 +130,8 @@ int hashaddLEN(const void *pKey, size_t nKey, void *pData, CHashTable *htab)
 
     UINT32 nHash = HASH_ProcessBuffer(0, pKey, nKey);
 
-    htab_rec.hashdata = pData;
-    memcpy(htab_rec.aTarget, pKey, nKey);
+    htab_rec.pData = pData;
+    memcpy(htab_rec.aKey, pKey, nKey);
     unsigned int nRecord = nKey + sizeof(void *);
     htab->Insert(nRecord, nHash, &htab_rec);
     return 0;
@@ -149,7 +168,7 @@ void hashdeleteLEN(const void *pKey, size_t nKey, CHashTable *htab)
         size_t nTarget = nRecord - sizeof(int *);
 
         if (  nTarget == nKey
-           && memcmp(pKey, htab_rec.aTarget, nKey) == 0)
+           && memcmp(pKey, htab_rec.aKey, nKey) == 0)
         {
             htab->Remove(iDir);
         }
@@ -172,7 +191,7 @@ void hashflush(CHashTable *htab)
  * * hashreplLEN: replace the data part of a hash entry.
  */
 
-bool hashreplLEN(const void *str, size_t nStr, void *hashdata, CHashTable *htab)
+bool hashreplLEN(const void *str, size_t nStr, void *pData, CHashTable *htab)
 {
     if (  str == NULL
        || nStr <= 0)
@@ -190,9 +209,9 @@ bool hashreplLEN(const void *str, size_t nStr, void *hashdata, CHashTable *htab)
         size_t nTarget = nRecord - sizeof(int *);
 
         if (  nTarget == nStr
-           && memcmp(str, htab_rec.aTarget, nStr) == 0)
+           && memcmp(str, htab_rec.aKey, nStr) == 0)
         {
-            htab_rec.hashdata = hashdata;
+            htab_rec.pData = pData;
             htab->Update(iDir, nRecord, &htab_rec);
             return true;
         }
@@ -208,9 +227,9 @@ void hashreplall(const void *old, void *new0, CHashTable *htab)
            iDir != HF_FIND_END;
            iDir = htab->FindNext(&nRecord, &htab_rec))
     {
-        if (htab_rec.hashdata == old)
+        if (htab_rec.pData == old)
         {
-            htab_rec.hashdata = new0;
+            htab_rec.pData = new0;
             htab->Update(iDir, nRecord, &htab_rec);
         }
     }
@@ -226,7 +245,7 @@ void *hash_firstentry(CHashTable *htab)
     HP_DIRINDEX iDir = htab->FindFirst(&nRecord, &htab_rec);
     if (iDir != HF_FIND_END)
     {
-        return htab_rec.hashdata;
+        return htab_rec.pData;
     }
     return NULL;
 }
@@ -237,7 +256,7 @@ void *hash_nextentry(CHashTable *htab)
     HP_DIRINDEX iDir = htab->FindNext(&nRecord, &htab_rec);
     if (iDir != HF_FIND_END)
     {
-        return htab_rec.hashdata;
+        return htab_rec.pData;
     }
     return NULL;
 }
@@ -249,8 +268,8 @@ void *hash_firstkey(CHashTable *htab, int *nKeyLength, char **pKey)
     if (iDir != HF_FIND_END)
     {
         *nKeyLength = nRecord-sizeof(int *);
-        *pKey = htab_rec.aTarget;
-        return htab_rec.hashdata;
+        *pKey = htab_rec.aKey;
+        return htab_rec.pData;
     }
     *nKeyLength = 0;
     *pKey = NULL;
@@ -264,8 +283,8 @@ void *hash_nextkey(CHashTable *htab, int *nKeyLength, char **pKey)
     if (iDir != HF_FIND_END)
     {
         *nKeyLength = nRecord-sizeof(int *);
-        *pKey = htab_rec.aTarget;
-        return htab_rec.hashdata;
+        *pKey = htab_rec.aKey;
+        return htab_rec.pData;
     }
     *nKeyLength = 0;
     *pKey = NULL;
