@@ -1,6 +1,6 @@
 // flags.cpp -- Flag manipulation routines.
 //
-// $Id: flags.cpp,v 1.21 2005-10-16 09:08:10 rmg Exp $
+// $Id: flags.cpp,v 1.22 2005-10-28 06:03:47 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -468,7 +468,10 @@ void init_flagtab(void)
         strncpy(nbuf, fp->pOrigName, SBUF_SIZE);
         nbuf[SBUF_SIZE-1] = '\0';
         mux_strlwr(nbuf);
-        hashaddLEN(nbuf, strlen(nbuf), fp, &mudstate.flags_htab);
+        if (!hashfindLEN(nbuf, strlen(nbuf), &mudstate.flags_htab))
+        {
+            hashaddLEN(nbuf, strlen(nbuf), fp, &mudstate.flags_htab);
+        }
     }
     free_sbuf(nbuf);
 }

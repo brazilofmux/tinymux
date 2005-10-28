@@ -1,7 +1,7 @@
 /*! \file htab.cpp
  *  Table hashing routines.
  *
- * $Id: htab.cpp,v 1.26 2005-10-28 03:05:32 sdennis Exp $
+ * $Id: htab.cpp,v 1.27 2005-10-28 06:03:47 sdennis Exp $
  *
  * The functions here outsource most of their work to CHashTable.  There are
  * several reasons to use the functions here instead of using CHashTable
@@ -176,9 +176,13 @@ void hashdeleteLEN(const void *pKey, size_t nKey, CHashTable *htab)
     }
 }
 
-/*
- * ---------------------------------------------------------------------------
- * * hashflush: free all the entries in a hashtable.
+/*! \brief Removes all (Key, Data) entries in a hash table.
+ *
+ * The Hash Table is re-initialized from scratch and all storage is
+ * reclaimed. The resulting Hash Table is empty.
+ *
+ * \param htab     Hash Table.
+ * \return         None.
  */
 
 void hashflush(CHashTable *htab)
