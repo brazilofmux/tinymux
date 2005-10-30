@@ -1,13 +1,13 @@
 /*! \file player_c.cpp
  * Player cache routines.
  *
- * $Id: player_c.cpp,v 1.15 2005-10-30 06:15:17 sdennis Exp $
+ * $Id: player_c.cpp,v 1.16 2005-10-30 11:27:05 sdennis Exp $
  *
  * Frequenty-used items which appear on every object generally find a home in
  * the db[] structure managed in db.cpp. However, there are a few items
  * related only to players which are still accessed frequently enough that
- * they should still be cached. These items are money, count queued commands, 
- * and the limit of queued commands.
+ * they should be cached. These items are money, current number of queued
+ * commands, and the limit on the number of queued commands.
  */
 
 #include "copyright.h"
@@ -212,7 +212,7 @@ void pcache_trim(void)
 /*! \brief Flushes any dirty player items to the database.
  *
  * The primary access is via the singly-linked list. Upon return, all the
- * player cache records are clean.
+ * player cache records are marked as clean.
  *
  * \return         None.
  */
