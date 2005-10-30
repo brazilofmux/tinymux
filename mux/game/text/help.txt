@@ -11973,7 +11973,7 @@ SUBEVAL()
   evaluated, but {} and functions are not. The location escape is also
   not evaluated.
 
-  When used from the command line, it's use is limited to nil because
+  When used from the command line, its use is limited to nil because
   evaluation of subeval's parameters occurs before the subeval()
   function is called.
 
