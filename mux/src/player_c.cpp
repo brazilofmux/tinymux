@@ -1,13 +1,13 @@
 /*! \file player_c.cpp
  * Player cache routines.
  *
- * $Id: player_c.cpp,v 1.12 2005-10-30 06:01:10 sdennis Exp $
+ * $Id: player_c.cpp,v 1.13 2005-10-30 06:09:35 sdennis Exp $
  *
  * Frequenty-used items which appear on every object generally find a home in
- * the db[] structure managed in db.cpp. There are few items related to
- * players which are still accessed frequently enough that they should be
- * cached. These items are money, count queued commands, and the limit of
- * queued commands.
+ * the db[] structure managed in db.cpp. However, there are a few items
+ * related only to players which are still accessed frequently enough that
+ * they should still be cached. These items are money, count queued commands, 
+ * and the limit of queued commands.
  */
 
 #include "copyright.h"
@@ -95,7 +95,7 @@ static void pcache_reload1(dbref player, PCACHE *pp)
     pp->qmax = m;
 }
 
-/*! \brief Returns a players cache record.
+/*! \brief Returns a player's cache record.
  *
  * Whether created from scratch or found in the cache, pcache_find() always
  * returns a valid player cache record for the requested player object dbref.
