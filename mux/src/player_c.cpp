@@ -1,7 +1,7 @@
 /*! \file player_c.cpp
  * Player cache routines.
  *
- * $Id: player_c.cpp,v 1.14 2005-10-30 06:11:44 sdennis Exp $
+ * $Id: player_c.cpp,v 1.15 2005-10-30 06:15:17 sdennis Exp $
  *
  * Frequenty-used items which appear on every object generally find a home in
  * the db[] structure managed in db.cpp. However, there are a few items
@@ -62,7 +62,7 @@ void pcache_init(void)
  * items in the player cache.  If a Money attribute does not exist for some
  * strange reason, it it initialized to zero and marked as dirty. If a
  * QueueMax attribute doesn't exist or is negative, then the game will
- * choose a reasonable limit later.
+ * choose a reasonable limit later in QueueMax().
  *
  * \param player   player object to begin caching.
  * \param pp       pointer to PCACHE structure.
