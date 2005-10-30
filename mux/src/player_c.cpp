@@ -1,7 +1,7 @@
 /*! \file player_c.cpp
  * Player cache routines.
  *
- * $Id: player_c.cpp,v 1.13 2005-10-30 06:09:35 sdennis Exp $
+ * $Id: player_c.cpp,v 1.14 2005-10-30 06:11:44 sdennis Exp $
  *
  * Frequenty-used items which appear on every object generally find a home in
  * the db[] structure managed in db.cpp. However, there are a few items
@@ -45,7 +45,7 @@ PCACHE *pcache_head;
  *
  * This is called once to initialize the player cache and supporting
  * data structures:  Player cache structures are pooled, the Hash Table
- * initializes itself, and the singley-linked list is started.
+ * initializes itself, and the singly-linked list is started.
  *
  * \return         None.
  */
@@ -100,7 +100,7 @@ static void pcache_reload1(dbref player, PCACHE *pp)
  * Whether created from scratch or found in the cache, pcache_find() always
  * returns a valid player cache record for the requested player object dbref.
  * This function uses Hash Table access primarily, but it maintains the
- * single-linked list as well.
+ * singly-linked list as well.
  *
  * \param player   player object dbref.
  * \return         Pointer to new or existing player cache record.
@@ -143,11 +143,6 @@ static void pcache_save(PCACHE *pp)
 }
 
 /*! \brief Re-initializes Money and QueueMax items from the database.
- *
- * Whether created from scratch or found in the cache, pcache_find() always
- * returns a valid player cache record for the requested player object dbref.
- * This function uses Hash Table access primarily, but it maintains the
- * single-linked list as well.
  *
  * \param player   player object dbref.
  * \return         None.
