@@ -1,6 +1,6 @@
 // cque.cpp -- commands and functions for manipulating the command queue.
 //
-// $Id: cque.cpp,v 1.29 2005-10-14 17:34:09 sdennis Exp $
+// $Id: cque.cpp,v 1.30 2005-10-30 00:01:55 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -674,6 +674,8 @@ static BQUE *setup_que(dbref executor, dbref caller, dbref enactor,
     a = QueueMax(Owner(executor));
     if (a_Queue(Owner(executor), 1) > a)
     {
+        a_Queue(Owner(executor), -1);
+
         notify(Owner(executor),
             "Run away objects: too many commands queued.  Halted.");
         halt_que(Owner(executor), NOTHING);
