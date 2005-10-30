@@ -1,7 +1,7 @@
 /*! \file htab.cpp
  *  Table hashing routines.
  *
- * $Id: htab.cpp,v 1.27 2005-10-28 06:03:47 sdennis Exp $
+ * $Id: htab.cpp,v 1.28 2005-10-30 05:18:28 sdennis Exp $
  *
  * The functions here outsource most of their work to CHashTable.  There are
  * several reasons to use the functions here instead of using CHashTable
@@ -13,7 +13,7 @@
  * To replace them all would require rexamining the assumptions near every
  * reference.
  *
- * CHashTable is not aware of Keys -- only hashs of Keys. In fact, CHashTable
+ * CHashTable is not aware of Keys -- only hashes of Keys. In fact, CHashTable
  * could not tell you anything about the Keys kept within its records.  It
  * will give you all the records stored under a specific hash, but it leaves
  * to its callers the small chore of looking in each record for a desired Key.
