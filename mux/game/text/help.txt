@@ -6629,7 +6629,7 @@ FUNCTION CLASSES (continued)
   Logical:                   AND ANDBOOL CAND CANDBOOL COR CORBOOL LAND LOR
                              NOT OR ORBOOL T XOR
 
-  Miscellaneous:             @@ ANSI ART R BEEP ERROR ISDBREF ISINT ISNUM
+  Miscellaneous:             @@ ANSI ART BEEP ERROR ISDBREF ISINT ISNUM
                              ISRAT ISWORD LIT NULL R SETQ SETR SUBEVAL
                              TEXTFILE
  
@@ -6665,7 +6665,7 @@ FUNCTION CLASSES (continued)
 
   Strings:                   ACCENT AFTER ALPHAMAX ALPHAMIN BEFORE CAPSTR CASE
                              CAT CENTER CHR COMP DECRYPT DELETE EDIT ENCRYPT
-                             ESCAPE GRAB GRABLL IF IFELSE LCSTR LJUST LPOS
+                             ESCAPE GRAB GRABALL IF IFELSE LCSTR LJUST LPOS
                              MERGE MID ORD POS REGMATCH REGMATCHI REGRAB
                              REGRABALL REGRABALLI REGRABI REPEAT REPLACE
                              REVERSE RIGHT RJUST ROMAN SCRAMBLE SECURE SPACE
