@@ -1,7 +1,11 @@
 /**************************************************************************************************
  * Db puller - used to pull data from a MUX flatfile and dump it into a file in @decompile format *
- *                                                                                                *
+ * Version: 1.01                                                                                  *
  * By: Ashen-Shugar (08/16/2005)                                                                  *
+ * Modifications: List modifications below                                                        *
+ *     11/02/05 : filenames are now saved with _<dbref> extensions.                               *
+ *                the name of the object starts the file with a '@@' comment prefix.              *
+ *                                                                                                *
  **************************************************************************************************/
 
 #include <stdio.h>
@@ -39,9 +43,9 @@ stricmp(char *buf1, char *buf2)
 int main(int argc, char **argv) 
 {
    FILE *f_muxflat, *f_mymuxfile, *f_muxattrs, *f_muxout, *f_muxlock;
-   char *pt1, *spt2, *spt3, *pt2, *pt3, s_attrib[SBUFSIZE],
+   char *pt1, *spt2, *spt3, *pt2, *pt3, s_attrib[SBUFSIZE], s_filename[80],
         s_attrval[SBUFSIZE], s_attr[SBUFSIZE], s_finattr[SBUFSIZE];
-   int i_chk = 0, i_lck = 1, i_atrcntr = 0, i_atrcntr2 = 0;
+   int i_chk = 0, i_lck = 1, i_atrcntr = 0, i_atrcntr2 = 0, i_pullname = 0;
    
    if ( argc < 3 ) {
       fprintf(stderr, "Syntax: %s mux-flatfile dbref# (no preceeding # character) [optional attribute-name]\r\n", argv[0]);
@@ -103,11 +107,13 @@ int main(int argc, char **argv)
       free(spt2);
       exit(1);
    }
-   if ( (f_muxout = fopen("muxout.txt", "w")) == NULL ) {
+   memset(s_filename, '\0', sizeof(s_filename));
+   sprintf(s_filename, "muxout_%d.txt", atoi(argv[2]));
+   if ( (f_muxout = fopen(s_filename, "w")) == NULL ) {
       fclose(f_muxflat);
       fclose(f_mymuxfile);
       fclose(f_muxattrs);
-      fprintf(stderr, "ERROR: Unable to open output file (muxout.txt)\r\n");
+      fprintf(stderr, "ERROR: Unable to open output file (%s)\r\n", s_filename);
       free(spt2);
       exit(1);
    }
@@ -129,12 +135,17 @@ int main(int argc, char **argv)
    i_chk = 0;
    while ( !feof(f_muxflat) ) {
       fgets(spt2, (MALSIZE-2), f_muxflat);
+      if ( i_pullname ) {
+         i_pullname = 0;
+         fprintf(f_muxout, "@@ %s\n", spt2);
+      }
       pt2 = spt2;
       if ( (*pt2 == '<') && i_chk ) {
          break;
       }
       if ( *pt2 == '!' && (atoi(pt2+1) == atoi(argv[2])) ) {
          i_chk = 1;
+         i_pullname = 1;
          continue;
       }
       if ( i_chk && *pt2 == '>' && isdigit(*(pt2+1)) ) {
@@ -238,6 +249,6 @@ int main(int argc, char **argv)
    fclose(f_muxflat);
    free(spt2);
    free(spt3);
-   fprintf(stderr, "Step 3: Completed (file is: muxout.txt).\n");
+   fprintf(stderr, "Step 3: Completed (file is: %s).\n", s_filename);
    return 0;
 }
