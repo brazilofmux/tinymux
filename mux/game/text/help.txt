@@ -6256,7 +6256,7 @@ FAE
 & FAILURE
 FAILURE
 
-  You fail to use a player or a thing when you cannot take it (because it's
+  You fail to use a player or a thing when you cannot take it (because its
   lock fails).  You fail to use an exit when you cannot go through it
   (because it is unlinked or locked). You fail to use a room when you fail
   to look around (because it's locked).
@@ -7182,7 +7182,7 @@ HASTYPE()
   Valid types are: ROOM, EXIT, PLAYER, THING.
   If an invalid type is given, #-1 is returned.
 
-  Related Topics:
+  Related Topics: type().
 
 & HAVEN
 HAVEN
@@ -11996,7 +11996,7 @@ SUBSTITUTIONS
   %-substitution is a '%' followed by one or two letters, digits, or symbols.
   If a sequence is understood, it is substituted by a corresponding value.
   If a sequence is not understood, the initial '%' is removed.  In this way,
-  the '%' also acts similiarly to the '\' escape.
+  the '%' also acts similarly to the '\' escape.
 
   For some substitutions, if the letter following the '%' is capitalized, the
   first letter of the result of the substitution is also capitalized.
@@ -12025,7 +12025,7 @@ SUBSTITUTIONS (continued)
     %s, %S   Subjective form: he, she, it, they.  See: subj(%#)
     %o, %O   Objective form: him, her, it, them.  See: obj(%#)
     %p, %P   Possessive form: his, her, its, their.  See: poss(%#)
-    %a, %A   Absolute Possessive form: his, hers, its, theirs.
+    %a, %A   Absolute Possessive form: his, hers, its, theirs.  See: aposs(%#)
 
   Database substitutions:
 
@@ -12528,7 +12528,7 @@ TYPE()
     > say type(here)
     You say "ROOM"
 
-  Related Topics:
+  Related Topics: hastype().
 
 & U()
 U()
