@@ -5017,12 +5017,12 @@ COMMANDS
   Help available for MUX Commands:
 
   drop         enter        examine      get          give         goto
-  help         +help        INFO         inventory    kill         leave
-  LOGOUT       look         move         news         OUTPUTPREFIX OUTPUTSUFFIX
-  page         pose         QUIT         read         report       say
-  score        SESSION      take         think        throw        train
-  use          version      whisper      WHO          "            :
-  ;            &            #            \\
+  help         INFO         inventory    kill         leave        LOGOUT
+  look         move         news         OUTPUTPREFIX OUTPUTSUFFIX page
+  pose         QUIT         read         report       say          score
+  SESSION      take         think        throw        train        use
+  version      whisper      WHO          "            :            ;
+  &            #            \\
 
   @@           @backup      @break       @cemit       @chown       @chzone
   @clone       @cpattr      @create      @decompile   @destroy     @dig
