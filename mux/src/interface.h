@@ -1,6 +1,6 @@
 // interface.h
 //
-// $Id: interface.h,v 1.8 2005-11-08 16:23:23 sdennis Exp $
+// $Id: interface.h,v 1.9 2005-11-08 16:34:54 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -85,8 +85,9 @@ struct prog_data {
 
 #define NVT_IS_NORMAL          0
 #define NVT_IS_HAVE_IAC        1
-#define NVT_IS_HAVE_IAC_SB     2
-#define NVT_IS_HAVE_IAC_SB_IAC 3
+#define NVT_IS_HAVE_IAC_WDDW   2
+#define NVT_IS_HAVE_IAC_SB     3
+#define NVT_IS_HAVE_IAC_SB_IAC 4
 
 typedef struct descriptor_data DESC;
 struct descriptor_data

@@ -1,7 +1,7 @@
 /*! \file bsd.cpp
  * File for most TCP socket-related code. Some socket-related code also exists in netcommon.cpp, but most of it is here.
  *
- * $Id: bsd.cpp,v 1.53 2005-11-08 16:23:23 sdennis Exp $
+ * $Id: bsd.cpp,v 1.54 2005-11-08 16:34:54 sdennis Exp $
  */
 
 #include "copyright.h"
@@ -2072,13 +2072,17 @@ DESC *initializesock(SOCKET s, struct sockaddr_in *a)
     // any interference from socket shutdowns
     //
     if (platform == VER_PLATFORM_WIN32_NT)
+    {
         EnterCriticalSection (&csDescriptorList);
+    }
 #endif // WIN32
 
     ndescriptors++;
 
     if (descriptor_list)
+    {
         descriptor_list->prev = &d->next;
+    }
     d->hashnext = NULL;
     d->next = descriptor_list;
     d->prev = &descriptor_list;
@@ -2364,12 +2368,6 @@ static const char nvt_input_xlat_table[256] =
     5,  6,  7,  8,  9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20   // F
 };
 
-#define STATE_NORMAL          0
-#define STATE_HAVE_IAC        1
-#define STATE_HAVE_IAC_WDDW   2
-#define STATE_HAVE_IAC_SB     3
-#define STATE_HAVE_IAC_SB_IAC 4
-
 // Action  0 - Nothing.
 // Action  1 - Accept CHR(X) (and transition to Normal state).
 // Action  2 - Erase Character.
@@ -2449,7 +2447,7 @@ void process_input_helper(DESC *d, char *pBytes, int nBytes)
                     nLostBytes++;
                 }
             }
-            d->raw_input_state = STATE_NORMAL;
+            d->raw_input_state = NVT_IS_NORMAL;
             break;
 
         case 0:
@@ -2505,13 +2503,13 @@ void process_input_helper(DESC *d, char *pBytes, int nBytes)
         case 5:
             // Action  5 - Transition to Have_IAC state.
             //
-            d->raw_input_state = STATE_HAVE_IAC;
+            d->raw_input_state = NVT_IS_HAVE_IAC;
             break;
 
         case 6:
             // Action 6 - Transition to the Normal state.
             //
-            d->raw_input_state = STATE_NORMAL;
+            d->raw_input_state = NVT_IS_NORMAL;
             break;
 
         case 7:
@@ -2532,25 +2530,25 @@ void process_input_helper(DESC *d, char *pBytes, int nBytes)
             log_printf("Expected telnet sequence ending in %d", *pBytes);
             ENDLOG;
 #endif
-            d->raw_input_state = STATE_NORMAL;
+            d->raw_input_state = NVT_IS_NORMAL;
             break;
 
         case 9:
             // Action  9 - Transition to the Have_IAC_SB state.
             //
-            d->raw_input_state = STATE_HAVE_IAC_SB;
+            d->raw_input_state = NVT_IS_HAVE_IAC_SB;
             break;
 
         case 10:
             // Action 10 - Transition to the Have_IAC_WDDW state.
             //
-            d->raw_input_state = STATE_HAVE_IAC_WDDW;
+            d->raw_input_state = NVT_IS_HAVE_IAC_WDDW;
             break;
 
         case 11:
             // Action 11 - Transition to the Have_IAC_SB_IAC state.
             //
-            d->raw_input_state = STATE_HAVE_IAC_SB_IAC;
+            d->raw_input_state = NVT_IS_HAVE_IAC_SB_IAC;
             break;
         }
         pBytes++;
