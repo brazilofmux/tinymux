@@ -1,6 +1,6 @@
 // interface.h
 //
-// $Id: interface.h,v 1.7 2004-05-13 13:52:24 sdennis Exp $
+// $Id: interface.h,v 1.8 2005-11-08 16:23:23 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -83,6 +83,11 @@ struct prog_data {
     char *wait_regs[MAX_GLOBAL_REGS];
 };
 
+#define NVT_IS_NORMAL          0
+#define NVT_IS_HAVE_IAC        1
+#define NVT_IS_HAVE_IAC_SB     2
+#define NVT_IS_HAVE_IAC_SB_IAC 3
+
 typedef struct descriptor_data DESC;
 struct descriptor_data
 {
@@ -123,6 +128,7 @@ struct descriptor_data
   CBLK *input_tail;
   CBLK *raw_input;
   char *raw_input_at;
+  int raw_input_state;
   int quota;
   int wait_for_input;       /* Used by @prog */
   dbref wait_enactor;       /* Used by @prog */

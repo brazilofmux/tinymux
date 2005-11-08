@@ -1,6 +1,6 @@
 // db.cpp
 //
-// $Id: db.cpp,v 1.64 2005-10-24 15:47:44 sdennis Exp $
+// $Id: db.cpp,v 1.65 2005-11-08 16:23:23 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -3071,7 +3071,7 @@ void dump_restart_db(void)
 {
     FILE *f;
     DESC *d;
-    int version = 1;
+    int version = 2;
 
     f = fopen("restart.db", "wb");
     fprintf(f, "+V%d\n", version);
@@ -3094,6 +3094,7 @@ void dump_restart_db(void)
         putref(f, d->host_info);
         putref(f, d->player);
         putref(f, d->last_time.ReturnSeconds());
+        putref(f, d->raw_input_state);
         putstring(f, d->output_prefix);
         putstring(f, d->output_suffix);
         putstring(f, d->addr);
@@ -3125,9 +3126,11 @@ void load_restart_db(void)
     fgets(buf, 3, f);
     mux_assert(strncmp(buf, "+V", 2) == 0);
     int version = getref(f);
-    if (version == 1)
+    if (  1 == version
+       || 2 == version)
     {
-        // Started on 2001-DEC-03
+        // Version 1 started on 2001-DEC-03
+        // Version 2 started on 2005-NOV-08
         //
         nMainGamePorts = getref(f);
         for (int i = 0; i < nMainGamePorts; i++)
@@ -3172,6 +3175,15 @@ void load_restart_db(void)
         d->host_info = getref(f);
         d->player = getref(f);
         d->last_time.SetSeconds(getref(f));
+        if (2 == version)
+        {
+            d->raw_input_state = getref(f);
+        }
+        else
+        {
+            d->raw_input_state = NVT_IS_NORMAL;
+        }
+
         temp = getstring_noalloc(f, true);
         if (*temp)
         {

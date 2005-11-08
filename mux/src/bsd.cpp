@@ -1,11 +1,9 @@
-// bsd.cpp
-//
-// $Id: bsd.cpp,v 1.52 2005-10-21 03:36:01 sdennis Exp $
-//
-// MUX 2.4
-// Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
-// rights not explicitly given are reserved.
-//
+/*! \file bsd.cpp
+ * File for most TCP socket-related code. Some socket-related code also exists in netcommon.cpp, but most of it is here.
+ *
+ * $Id: bsd.cpp,v 1.53 2005-11-08 16:23:23 sdennis Exp $
+ */
+
 #include "copyright.h"
 #include "autoconf.h"
 #include "config.h"
@@ -2062,6 +2060,7 @@ DESC *initializesock(SOCKET s, struct sockaddr_in *a)
     d->input_lost = 0;
     d->raw_input = NULL;
     d->raw_input_at = NULL;
+    d->raw_input_state = NVT_IS_NORMAL;
     d->quota = mudconf.cmd_quota_max;
     d->program_data = NULL;
     d->address = *a;
@@ -2320,42 +2319,148 @@ void process_output(void *dvoid, int bHandleShutdown)
 }
 #endif // WIN32
 
-bool process_input_helper(DESC *d, char *buf, int got)
+// Class  0 - Any byte.
+// Class  1 - BS   (0x08)
+// Class  2 - LF   (0x0A)
+// Class  3 - CR   (0x0D)
+// Class  4 - DEL  (0x7F)
+// Class  5 - SE   (0xF0)
+// Class  6 - NOP  (0xF1)
+// Class  7 - DM   (0xF2)
+// Class  8 - BRK  (0xF3)
+// Class  9 - IP   (0xF4)
+// Class 10 - AO   (0xF5)
+// Class 11 - AYT  (0xF6)
+// Class 12 - EC   (0xF7)
+// Class 13 - EL   (0xF8)
+// Class 14 - GA   (0xF9)
+// Class 15 - SB   (0xFA)
+// Class 16 - WILL (0xFB)
+// Class 17 - WONT (0xFC)
+// Class 18 - DO   (0xFD)
+// Class 19 - DONT (0xFE)
+// Class 20 - IAC  (0xFF)
+//
+static const char nvt_input_xlat_table[256] =
+{
+//  0   1   2   3   4   5   6   7   8   9   A   B   C   D   E   F
+//
+    0,  0,  0,  0,  0,  0,  0,  0,  1,  0,  2,  0,  0,  3,  0,  0,  // 0
+    0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  // 1
+    0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  // 2
+    0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  // 3
+    0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  // 4
+    0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  // 5
+    0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  // 6
+    0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  4,  // 7
+
+    0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  // 8
+    0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  // 9
+    0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  // A
+    0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  // B
+    0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  // C
+    0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  // D
+    0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  // E
+    5,  6,  7,  8,  9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20   // F
+};
+
+#define STATE_NORMAL          0
+#define STATE_HAVE_IAC        1
+#define STATE_HAVE_IAC_WDDW   2
+#define STATE_HAVE_IAC_SB     3
+#define STATE_HAVE_IAC_SB_IAC 4
+
+// Action  0 - Nothing.
+// Action  1 - Accept CHR(X) (and transition to Normal state).
+// Action  2 - Erase Character.
+// Action  3 - Erase Line.
+// Action  4 - Accept Line.
+// Action  5 - Transition to Have_IAC state.
+// Action  6 - Transition to the Normal state.
+// Action  7 - Log unexpected sequence and return to the Normal state.
+// Action  8 - Log IAC {NOP, DM, BRK, IP, AO, AYT, and GA) and return to the Normal state.
+// Action  9 - Transition to the Have_IAC_SB state.
+// Action 10 - Transition to the Have_IAC_WDDW state.
+// Action 11 - Transition to the Have_IAC_SB_IAC state.
+//
+
+static const int nvt_input_action_table[5][21] =
+{
+//    Any   BS   LF   CR  DEL   SE  NOP   DM  BRK   IP   AO  AYT   EC   EL   GA   SB WILL DONT   DO WONT  IAC
+    {   1,   2,   4,   0,   2,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   5  }, // Normal
+    {   7,   7,   7,   7,   7,   7,   8,   8,   8,   8,   8,   8,   2,   3,   8,   9,  10,  10,  10,  10,   1  }, // Have_IAC
+    {   6,   6,   6,   6,   6,   6,   6,   6,   6,   6,   6,   6,   6,   6,   6,   6,   6,   6,   6,   6,   7  }, // Have_IAC_WDDW
+    {   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,  11  }, // Have_IAC_SB
+    {   0,   0,   0,   0,   0,   6,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   9  }, // Have_IAC_SB_IAC
+};
+
+/*! \brief Parse raw data from network connection into command lines and
+ * Telnet indications.
+ *
+ * Once input has been received from a particular socket, it is given to this
+ * function for initial parsing. While most clients do line editing on their
+ * side, a raw telnet client is still capable of sending backspace (BS) and
+ * Delete (DEL) to the server, so we perform basic editing on our side.
+ *
+ * TinyMUX only allows printable characters through, imposes a maximum line
+ * length, and breaks lines at CRLF.
+ *
+ * \param d        Player connection on which the input arrived.
+ * \param pBytes   Point to received bytes.
+ * \param nBytes   Number of received bytes in above buffer.
+ * \return         None.
+ */
+
+void process_input_helper(DESC *d, char *pBytes, int nBytes)
 {
     if (!d->raw_input)
     {
         d->raw_input = (CBLK *) alloc_lbuf("process_input.raw");
         d->raw_input_at = d->raw_input->cmd;
     }
-    int in = got;
-    int lost = 0;
+
+    int nInputBytes = 0;
+    int nLostBytes  = 0;
     char *p = d->raw_input_at;
     char *pend = d->raw_input->cmd + (LBUF_SIZE - sizeof(CBLKHDR) - 1);
-    char *q, *qend;
-    for (q = buf, qend = buf + got; q < qend; q++)
-    {
-        if (*q == '\n')
-        {
-            *p = '\0';
-            if (p > d->raw_input->cmd)
-            {
-                save_command(d, d->raw_input);
-                d->raw_input = (CBLK *) alloc_lbuf("process_input.raw");
 
-                p = d->raw_input_at = d->raw_input->cmd;
-                pend = d->raw_input->cmd + (LBUF_SIZE - sizeof(CBLKHDR) - 1);
-            }
-            else
-            {
-                // For newline
-                //
-                in -= 1;
-            }
-        }
-        else if (  (*q == '\b')
-                || (*q == 127))
+    while (nBytes--)
+    {
+        int iAction = nvt_input_action_table[d->raw_input_state][nvt_input_xlat_table[(unsigned char)*pBytes]];
+#if 0
+        STARTLOG(LOG_ALWAYS, "NET", "TELNT");
+        log_printf("S %d 0x%02X %d", d->raw_input_state, (unsigned char)*pBytes, iAction);
+        ENDLOG;
+#endif
+        switch (iAction)
         {
-            if (*q == 127)
+        case 1:
+            // Action 1 - Accept CHR(X).
+            //
+            if (mux_isprint(*pBytes))
+            {
+                if (p < pend)
+                {
+                    *p++ = *pBytes;
+                    nInputBytes++;
+                }
+                else
+                {
+                    nLostBytes++;
+                }
+            }
+            d->raw_input_state = STATE_NORMAL;
+            break;
+
+        case 0:
+            // Action 0 - Nothing.
+            //
+            break;
+
+        case 2:
+            // Action 2 - Erase Character.
+            //
+            if (*pBytes == 127)
             {
                 queue_string(d, "\b \b");
             }
@@ -2364,33 +2469,93 @@ bool process_input_helper(DESC *d, char *buf, int got)
                 queue_string(d, " \b");
             }
 
-            // For the backspace.
-            //
-            in -= 1;
             if (p > d->raw_input->cmd)
             {
-                // For the character we took back.
+                // The character we took back.
                 //
-                in -= 1;
+                nInputBytes -= 1;
                 p--;
             }
-            if (p < d->raw_input_at)
+            break;
+
+        case 3:
+            // Action  3 - Erase Line.
+            // (Unimplemented)
+#if 0
+            STARTLOG(LOG_ALWAYS, "NET", "TELNT");
+            log_text("IAC EL (erase line)");
+            ENDLOG;
+#endif
+            break;
+
+        case 4:
+            // Action  4 - Accept Line.
+            //
+            *p = '\0';
+            if (d->raw_input->cmd < p)
             {
-                (d->raw_input_at)--;
+                save_command(d, d->raw_input);
+                d->raw_input = (CBLK *) alloc_lbuf("process_input.raw");
+
+                p = d->raw_input_at = d->raw_input->cmd;
+                pend = d->raw_input->cmd + (LBUF_SIZE - sizeof(CBLKHDR) - 1);
             }
+            break;
+
+        case 5:
+            // Action  5 - Transition to Have_IAC state.
+            //
+            d->raw_input_state = STATE_HAVE_IAC;
+            break;
+
+        case 6:
+            // Action 6 - Transition to the Normal state.
+            //
+            d->raw_input_state = STATE_NORMAL;
+            break;
+
+        case 7:
+            // Action  7 - Log unexpected sequence and return to the Normal state.
+            //
+#if 0
+            STARTLOG(LOG_ALWAYS, "NET", "TELNT");
+            log_printf("Unexpected telnet sequence ending in %d", *pBytes);
+            ENDLOG;
+#endif
+            break;
+
+        case 8:
+            // Action  8 - Log IAC {NOP, DM, BRK, IP, AO, AYT, and GA) and return to the Normal state.
+            //
+#if 0
+            STARTLOG(LOG_ALWAYS, "NET", "TELNT");
+            log_printf("Expected telnet sequence ending in %d", *pBytes);
+            ENDLOG;
+#endif
+            d->raw_input_state = STATE_NORMAL;
+            break;
+
+        case 9:
+            // Action  9 - Transition to the Have_IAC_SB state.
+            //
+            d->raw_input_state = STATE_HAVE_IAC_SB;
+            break;
+
+        case 10:
+            // Action 10 - Transition to the Have_IAC_WDDW state.
+            //
+            d->raw_input_state = STATE_HAVE_IAC_WDDW;
+            break;
+
+        case 11:
+            // Action 11 - Transition to the Have_IAC_SB_IAC state.
+            //
+            d->raw_input_state = STATE_HAVE_IAC_SB_IAC;
+            break;
         }
-        else if (  p < pend
-                && mux_isprint(*q))
-        {
-            *p++ = *q;
-        }
-        else
-        {
-            in--;
-            if (p >= pend)
-                lost++;
-        }
+        pBytes++;
     }
+
     if (p > d->raw_input->cmd)
     {
         d->raw_input_at = p;
@@ -2401,10 +2566,9 @@ bool process_input_helper(DESC *d, char *buf, int got)
         d->raw_input = NULL;
         d->raw_input_at = NULL;
     }
-    d->input_tot += got;
-    d->input_size += in;
-    d->input_lost += lost;
-    return true;
+    d->input_tot  += nBytes;
+    d->input_size += nInputBytes;
+    d->input_lost += nLostBytes;
 }
 
 bool process_input(DESC *d)
@@ -2429,9 +2593,9 @@ bool process_input(DESC *d)
         }
         return false;
     }
-    bool cc = process_input_helper(d, buf, got);
+    process_input_helper(d, buf, got);
     mudstate.debug_cmd = cmdsave;
-    return cc;
+    return true;
 }
 
 void close_sockets(bool emergency, char *message)
