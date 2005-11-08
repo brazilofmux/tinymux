@@ -1,6 +1,6 @@
 // netcommon.cpp
 //
-// $Id: netcommon.cpp,v 1.53 2005-11-08 18:31:45 sdennis Exp $
+// $Id: netcommon.cpp,v 1.54 2005-11-08 18:50:50 sdennis Exp $
 //
 // This file contains routines used by the networking code that do not
 // depend on the implementation of the networking code.  The network-specific
@@ -1274,7 +1274,8 @@ void check_idle(void)
             // Send a Telnet NOP code - creates traffic to keep NAT routers
             // happy.  Hopefully this only runs once a minute.
             //
-            queue_write_LEN(d, "\377\361", 2);
+            const char aNOP[2] = { NVT_IAC, NVT_NOP };
+            queue_write_LEN(d, aNOP, sizeof(aNOP));
         }
         if (d->flags & DS_AUTODARK)
         {

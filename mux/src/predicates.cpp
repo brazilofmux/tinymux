@@ -1,6 +1,6 @@
 // predicates.cpp
 //
-// $Id: predicates.cpp,v 1.72 2005-10-24 15:48:36 sdennis Exp $
+// $Id: predicates.cpp,v 1.73 2005-11-08 18:50:50 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -1147,7 +1147,9 @@ void handle_prog(DESC *d, char *message)
         //
         if (d->program_data != NULL)
         {
-            queue_string(d, tprintf("%s>%s \377\371", ANSI_HILITE, ANSI_NORMAL));
+            const char aGoAhead[2] = { NVT_IAC, NVT_GA };
+            queue_string(d, tprintf("%s>%s ", ANSI_HILITE, ANSI_NORMAL));
+            queue_write_LEN(d, aGoAhead, sizeof(aGoAhead));
         }
         return;
     }
@@ -1389,7 +1391,9 @@ void do_prog
 
         // Use telnet protocol's GOAHEAD command to show prompt.
         //
-        queue_string(d, tprintf("%s>%s \377\371", ANSI_HILITE, ANSI_NORMAL));
+        const char aGoAhead[2] = { NVT_IAC, NVT_GA };
+        queue_string(d, tprintf("%s>%s ", ANSI_HILITE, ANSI_NORMAL));
+        queue_write_LEN(d, aGoAhead, sizeof(aGoAhead));
     }
 }
 
