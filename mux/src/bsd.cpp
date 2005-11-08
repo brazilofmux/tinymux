@@ -1,7 +1,7 @@
 /*! \file bsd.cpp
  * File for most TCP socket-related code. Some socket-related code also exists in netcommon.cpp, but most of it is here.
  *
- * $Id: bsd.cpp,v 1.54 2005-11-08 16:34:54 sdennis Exp $
+ * $Id: bsd.cpp,v 1.55 2005-11-08 18:31:45 sdennis Exp $
  */
 
 #include "copyright.h"
@@ -2458,7 +2458,7 @@ void process_input_helper(DESC *d, char *pBytes, int nBytes)
         case 2:
             // Action 2 - Erase Character.
             //
-            if (*pBytes == 127)
+            if (NVT_DEL == *pBytes)
             {
                 queue_string(d, "\b \b");
             }

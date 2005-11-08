@@ -1,6 +1,6 @@
 // netcommon.cpp
 //
-// $Id: netcommon.cpp,v 1.52 2005-11-08 16:23:23 sdennis Exp $
+// $Id: netcommon.cpp,v 1.53 2005-11-08 18:31:45 sdennis Exp $
 //
 // This file contains routines used by the networking code that do not
 // depend on the implementation of the networking code.  The network-specific
@@ -388,6 +388,52 @@ void queue_write(DESC *d, const char *b)
     queue_write_LEN(d, b, strlen(b));
 }
 
+const char *encode_iac(const char *szString)
+{
+    static char Buffer[2*LBUF_SIZE];
+    char *pBuffer = Buffer;
+
+    const char *pString = szString;
+    if (pString)
+    {
+        while (*pString)
+        {
+            const char *p = strchr(pString, NVT_IAC);
+            if (!p)
+            {
+                // NVT_IAC does not appear in the buffer. This is by far the most-common case.
+                //
+                if (pString == szString)
+                {
+                    // Avoid copying to the static buffer, and just return the original buffer.
+                    //
+                    return szString;
+                }
+                else
+                {
+                    strcpy(pBuffer, pString);
+                    return Buffer;
+                }
+            }
+            else
+            {
+                // Copy up to and including the IAC.
+                //
+                size_t n = p - pString + 1;
+                memcpy(pBuffer, pString, n);
+                pBuffer += n;
+                pString += n;
+
+                // Add another IAC.
+                //
+                *pBuffer++ = NVT_IAC;
+            }
+        }
+    }
+    *pBuffer = '\0';
+    return Buffer;
+}
+
 void queue_string(DESC *d, const char *s)
 {
     const char *p = s;
@@ -417,6 +463,7 @@ void queue_string(DESC *d, const char *s)
         }
         p = strip_accents(p);
     }
+    p = encode_iac(p);
     queue_write(d, p);
 }
 
