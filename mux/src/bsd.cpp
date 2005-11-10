@@ -1,7 +1,7 @@
 /*! \file bsd.cpp
  * File for most TCP socket-related code. Some socket-related code also exists in netcommon.cpp, but most of it is here.
  *
- * $Id: bsd.cpp,v 1.55 2005-11-08 18:31:45 sdennis Exp $
+ * $Id: bsd.cpp,v 1.56 2005-11-10 04:56:31 sdennis Exp $
  */
 
 #include "copyright.h"
@@ -2061,6 +2061,10 @@ DESC *initializesock(SOCKET s, struct sockaddr_in *a)
     d->raw_input = NULL;
     d->raw_input_at = NULL;
     d->raw_input_state = NVT_IS_NORMAL;
+    d->nvt_naws_him_state = OPTION_NO;
+    d->nvt_naws_us_state = OPTION_NO;
+    d->height = 24;
+    d->width = 78;
     d->quota = mudconf.cmd_quota_max;
     d->program_data = NULL;
     d->address = *a;
@@ -2371,26 +2375,108 @@ static const char nvt_input_xlat_table[256] =
 // Action  0 - Nothing.
 // Action  1 - Accept CHR(X) (and transition to Normal state).
 // Action  2 - Erase Character.
-// Action  3 - Erase Line.
-// Action  4 - Accept Line.
+// Action  3 - Accept Line.
+// Action  4 - Transition to the Normal state.
 // Action  5 - Transition to Have_IAC state.
-// Action  6 - Transition to the Normal state.
-// Action  7 - Log unexpected sequence and return to the Normal state.
-// Action  8 - Log IAC {NOP, DM, BRK, IP, AO, AYT, and GA) and return to the Normal state.
-// Action  9 - Transition to the Have_IAC_SB state.
-// Action 10 - Transition to the Have_IAC_WDDW state.
+// Action  6 - Transition to the Have_IAC_WILL state.
+// Action  7 - Transition to the Have_IAC_DONT state.
+// Action  8 - Transition to the Have_IAC_DO state.
+// Action  9 - Transition to the Have_IAC_WONT state.
+// Action 10 - Transition to the Have_IAC_SB state.
 // Action 11 - Transition to the Have_IAC_SB_IAC state.
+// Action 12 - Respond to IAC AYT and return to the Normal state.
+// Action 13 - Respond to IAC WILL X
+// Action 14 - Respond to IAC DONT X
+// Action 15 - Respond to IAC DO X
+// Action 16 - Respond to IAC WONT X
+// Action 17 - Accept CHR(X) for Sub-Option (and transition to Have_IAC_SB state).
+// Action 18 - Accept Completed Sub-option and transition to Normal state.
 //
 
-static const int nvt_input_action_table[5][21] =
+static const int nvt_input_action_table[8][21] =
 {
 //    Any   BS   LF   CR  DEL   SE  NOP   DM  BRK   IP   AO  AYT   EC   EL   GA   SB WILL DONT   DO WONT  IAC
-    {   1,   2,   4,   0,   2,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   5  }, // Normal
-    {   7,   7,   7,   7,   7,   7,   8,   8,   8,   8,   8,   8,   2,   3,   8,   9,  10,  10,  10,  10,   1  }, // Have_IAC
-    {   6,   6,   6,   6,   6,   6,   6,   6,   6,   6,   6,   6,   6,   6,   6,   6,   6,   6,   6,   6,   7  }, // Have_IAC_WDDW
-    {   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,  11  }, // Have_IAC_SB
-    {   0,   0,   0,   0,   0,   6,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   9  }, // Have_IAC_SB_IAC
+    {   1,   2,   3,   0,   2,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   5  }, // Normal
+    {   4,   4,   4,   4,   4,   4,   4,   4,   4,   4,   4,  12,   2,   4,   4,  10,   6,   7,   8,   9,   1  }, // Have_IAC
+    {  13,  13,  13,  13,  13,  13,  13,  13,  13,  13,  13,  13,  13,  13,  13,  13,  13,  13,  13,  13,   4  }, // Have_IAC_WILL
+    {  14,  14,  14,  14,  14,  14,  14,  14,  14,  14,  14,  14,  14,  14,  14,  14,  14,  14,  14,  14,   4  }, // Have_IAC_DONT
+    {  15,  15,  15,  15,  15,  15,  15,  15,  15,  15,  15,  15,  15,  15,  15,  15,  15,  15,  15,  15,   4  }, // Have_IAC_DO
+    {  16,  16,  16,  16,  16,  16,  16,  16,  16,  16,  16,  16,  16,  16,  16,  16,  16,  16,  16,  16,   4  }, // Have_IAC_WONT
+    {  17,  17,  17,  17,  17,  17,  17,  17,  17,  17,  17,  17,  17,  17,  17,  17,  17,  17,  17,  17,  11  }, // Have_IAC_SB
+    {   0,   0,   0,   0,   0,  18,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,  17  }, // Have_IAC_SB_IAC
 };
+
+int HimState(DESC *d, unsigned char chOption)
+{
+    if (TELNET_NAWS == chOption)
+    {
+        return d->nvt_naws_him_state;
+    }
+    return OPTION_NO;
+}
+
+int UsState(DESC *d, unsigned char chOption)
+{
+    if (TELNET_NAWS == chOption)
+    {
+        return d->nvt_naws_us_state;
+    }
+    return OPTION_NO;
+}
+
+void SetHimState(DESC *d, unsigned char chOption, int iHimState)
+{
+    if (TELNET_NAWS == chOption)
+    {
+        d->nvt_naws_him_state = iHimState;
+    }
+}
+
+void SetUsState(DESC *d, unsigned char chOption, int iUsState)
+{
+    if (TELNET_NAWS == chOption)
+    {
+        d->nvt_naws_us_state = iUsState;
+    }
+    return;
+}
+
+void SendWill(DESC *d, unsigned char chOption)
+{
+    char aWill[3] = { NVT_IAC, NVT_WILL, 0 };
+    aWill[2] = chOption;
+    queue_write_LEN(d, aWill, sizeof(aWill));
+}
+
+void SendDont(DESC *d, unsigned char chOption)
+{
+    char aDont[3] = { NVT_IAC, NVT_DONT, 0 };
+    aDont[2] = chOption;
+    queue_write_LEN(d, aDont, sizeof(aDont));
+}
+
+void SendDo(DESC *d, unsigned char chOption)
+{
+    char aDo[3]   = { NVT_IAC, NVT_DO,   0 };
+    aDo[2] = chOption;
+    queue_write_LEN(d, aDo, sizeof(aDo));
+}
+
+void SendWont(DESC *d, unsigned char chOption)
+{
+    char aWont[3] = { NVT_IAC, NVT_WONT, 0 };
+    aWont[2] = chOption;
+    queue_write_LEN(d, aWont, sizeof(aWont));
+}
+
+bool DesiredOption(unsigned char chOption)
+{
+    if (TELNET_NAWS == chOption)
+    {
+        return true;
+    }
+    return false;
+}
 
 /*! \brief Parse raw data from network connection into command lines and
  * Telnet indications.
@@ -2411,6 +2497,10 @@ static const int nvt_input_action_table[5][21] =
 
 void process_input_helper(DESC *d, char *pBytes, int nBytes)
 {
+    static unsigned char aOption[SBUF_SIZE];
+    unsigned char *pOption = NULL;
+    unsigned char *pOptionEnd = NULL;
+
     if (!d->raw_input)
     {
         d->raw_input = (CBLK *) alloc_lbuf("process_input.raw");
@@ -2424,10 +2514,11 @@ void process_input_helper(DESC *d, char *pBytes, int nBytes)
 
     while (nBytes--)
     {
-        int iAction = nvt_input_action_table[d->raw_input_state][nvt_input_xlat_table[(unsigned char)*pBytes]];
+        unsigned char ch = (unsigned char)*pBytes;
+        int iAction = nvt_input_action_table[d->raw_input_state][nvt_input_xlat_table[ch]];
 #if 0
         STARTLOG(LOG_ALWAYS, "NET", "TELNT");
-        log_printf("S %d 0x%02X %d", d->raw_input_state, (unsigned char)*pBytes, iAction);
+        log_printf("S %d 0x%02X %d", d->raw_input_state, ch, iAction);
         ENDLOG;
 #endif
         switch (iAction)
@@ -2435,11 +2526,11 @@ void process_input_helper(DESC *d, char *pBytes, int nBytes)
         case 1:
             // Action 1 - Accept CHR(X).
             //
-            if (mux_isprint(*pBytes))
+            if (mux_isprint(ch))
             {
                 if (p < pend)
                 {
-                    *p++ = *pBytes;
+                    *p++ = ch;
                     nInputBytes++;
                 }
                 else
@@ -2458,7 +2549,7 @@ void process_input_helper(DESC *d, char *pBytes, int nBytes)
         case 2:
             // Action 2 - Erase Character.
             //
-            if (NVT_DEL == *pBytes)
+            if (NVT_DEL == ch)
             {
                 queue_string(d, "\b \b");
             }
@@ -2474,20 +2565,11 @@ void process_input_helper(DESC *d, char *pBytes, int nBytes)
                 nInputBytes -= 1;
                 p--;
             }
+            d->raw_input_state = NVT_IS_NORMAL;
             break;
 
         case 3:
-            // Action  3 - Erase Line.
-            // (Unimplemented)
-#if 0
-            STARTLOG(LOG_ALWAYS, "NET", "TELNT");
-            log_text("IAC EL (erase line)");
-            ENDLOG;
-#endif
-            break;
-
-        case 4:
-            // Action  4 - Accept Line.
+            // Action  3 - Accept Line.
             //
             *p = '\0';
             if (d->raw_input->cmd < p)
@@ -2500,6 +2582,12 @@ void process_input_helper(DESC *d, char *pBytes, int nBytes)
             }
             break;
 
+        case 4:
+            // Action 4 - Transition to the Normal state.
+            //
+            d->raw_input_state = NVT_IS_NORMAL;
+            break;
+
         case 5:
             // Action  5 - Transition to Have_IAC state.
             //
@@ -2507,48 +2595,194 @@ void process_input_helper(DESC *d, char *pBytes, int nBytes)
             break;
 
         case 6:
-            // Action 6 - Transition to the Normal state.
+            // Action 6 - Transition to the Have_IAC_WILL state.
             //
-            d->raw_input_state = NVT_IS_NORMAL;
+            d->raw_input_state = NVT_IS_HAVE_IAC_WILL;
             break;
 
         case 7:
-            // Action  7 - Log unexpected sequence and return to the Normal state.
+            // Action  7 - Transition to the Have_IAC_DONT state.
             //
-#if 0
-            STARTLOG(LOG_ALWAYS, "NET", "TELNT");
-            log_printf("Unexpected telnet sequence ending in %d", *pBytes);
-            ENDLOG;
-#endif
+            d->raw_input_state = NVT_IS_HAVE_IAC_DONT;
             break;
 
         case 8:
-            // Action  8 - Log IAC {NOP, DM, BRK, IP, AO, AYT, and GA) and return to the Normal state.
+            // Action  8 - Transition to the Have_IAC_DO state.
             //
-#if 0
-            STARTLOG(LOG_ALWAYS, "NET", "TELNT");
-            log_printf("Expected telnet sequence ending in %d", *pBytes);
-            ENDLOG;
-#endif
-            d->raw_input_state = NVT_IS_NORMAL;
+            d->raw_input_state = NVT_IS_HAVE_IAC_DO;
             break;
 
         case 9:
-            // Action  9 - Transition to the Have_IAC_SB state.
+            // Action  9 - Transition to the Have_IAC_WONT state.
             //
-            d->raw_input_state = NVT_IS_HAVE_IAC_SB;
+            d->raw_input_state = NVT_IS_HAVE_IAC_WONT;
             break;
 
         case 10:
-            // Action 10 - Transition to the Have_IAC_WDDW state.
+            // Action 10 - Transition to the Have_IAC_SB state.
             //
-            d->raw_input_state = NVT_IS_HAVE_IAC_WDDW;
+            pOption = aOption;
+            pOptionEnd = aOption + sizeof(aOption) - 1;
+            d->raw_input_state = NVT_IS_HAVE_IAC_SB;
             break;
 
         case 11:
             // Action 11 - Transition to the Have_IAC_SB_IAC state.
             //
             d->raw_input_state = NVT_IS_HAVE_IAC_SB_IAC;
+            break;
+
+        case 12:
+            // Action 12 - Respond to IAC AYT and return to the Normal state.
+            //
+            queue_string(d, "\r\n[Yes]\r\n");
+            d->raw_input_state = NVT_IS_NORMAL;
+            break;
+
+        case 13:
+            // Action 13 - Respond to IAC WILL X
+            //
+            switch (HimState(d, ch))
+            {
+            case OPTION_NO:
+                if (DesiredOption(ch))
+                {
+                    SetHimState(d, ch, OPTION_YES);
+                    SendDo(d, ch);
+                }
+                else
+                {
+                    SendDont(d, ch);
+                }
+                break;
+
+            case OPTION_WANTNO_EMPTY:
+                SetHimState(d, ch, OPTION_NO);
+                break;
+
+            case OPTION_WANTYES_OPPOSITE:
+                SetHimState(d, ch, OPTION_WANTNO_EMPTY);
+                SendDont(d, ch);
+                break;
+
+            default:
+                SetHimState(d, ch, OPTION_YES);
+                break;
+            }
+            d->raw_input_state = NVT_IS_NORMAL;
+            break;
+
+        case 14:
+            // Action 14 - Respond to IAC DONT X
+            //
+            switch (UsState(d, ch))
+            {
+            case OPTION_YES:
+                SetUsState(d, ch, OPTION_NO);
+                SendWont(d, ch);
+                break;
+
+            case OPTION_WANTNO_OPPOSITE:
+                SetUsState(d, ch, OPTION_WANTYES_EMPTY);
+                SendWill(d, ch);
+                break;
+
+            default:
+                SetUsState(d, ch, OPTION_NO);
+                break;                
+            }
+            d->raw_input_state = NVT_IS_NORMAL;
+            break;
+
+        case 15:
+            // Action 15 - Respond to IAC DO X
+            //
+            switch (UsState(d, ch))
+            {
+            case OPTION_NO:
+                if (DesiredOption(ch))
+                {
+                    SetUsState(d, ch, OPTION_YES);
+                    SendWill(d, ch);
+                }
+                else
+                {
+                    SendWont(d, ch);
+                }
+                break;
+
+            case OPTION_WANTNO_EMPTY:
+                SetUsState(d, ch, OPTION_NO);
+                break;
+
+            case OPTION_WANTYES_OPPOSITE:
+                SetUsState(d, ch, OPTION_WANTNO_EMPTY);
+                SendWont(d, ch);
+                break;
+
+            default:
+                SetUsState(d, ch, OPTION_YES);
+                break;
+            }
+            d->raw_input_state = NVT_IS_NORMAL;
+            break;
+
+        case 16:
+            // Action 16 - Respond to IAC WONT X
+            //
+            // Ignore.
+            //
+            switch (HimState(d, ch))
+            {
+            case OPTION_NO:
+                break;
+
+            case OPTION_YES:
+                SetHimState(d, ch, OPTION_NO);
+                SendDont(d, ch);
+                break;
+
+            case OPTION_WANTNO_OPPOSITE:
+                SetHimState(d, ch, OPTION_WANTYES_EMPTY);
+                SendDo(d, ch);
+                break;
+
+            default:
+                SetHimState(d, ch, OPTION_NO);
+                break;
+            }
+            d->raw_input_state = NVT_IS_NORMAL;
+            break;
+
+        case 17:
+            // Action 17 - Accept CHR(X) for Sub-Option (and transition to Have_IAC_SB state).
+            //
+            d->raw_input_state = NVT_IS_HAVE_IAC_SB;
+            if (pOption < pOptionEnd)
+            {
+                *pOption++ = ch;
+            }
+            break;
+
+        case 18:
+            // Action 18 - Accept Completed Sub-option and transition to Normal state.
+            //
+            if (aOption < pOption)
+            {
+                size_t n = pOption - aOption;
+                switch (aOption[0])
+                {
+                case TELNET_NAWS:
+                    if (n == 5)
+                    {
+                        d->width  = (aOption[1] << 8 ) | aOption[2];
+                        d->height = (aOption[3] << 8 ) | aOption[4];
+                    }
+                    break;
+                }
+            }
+            d->raw_input_state = NVT_IS_NORMAL;
+            *pOption = '\0';
             break;
         }
         pBytes++;

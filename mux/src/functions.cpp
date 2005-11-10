@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.153 2005-11-08 18:30:33 sdennis Exp $
+// $Id: functions.cpp,v 1.154 2005-11-10 04:56:31 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2005 Solid Vertical Domains, Ltd. All
@@ -5520,6 +5520,89 @@ FUNCTION(fun_space)
     safe_fill(buff, bufc, ' ', num);
 }
 
+FUNCTION(fun_height)
+{
+    long nHeight = 0;
+    if (is_rational(fargs[0]))
+    {
+        SOCKET s = mux_atol(fargs[0]);
+        bool bFound = false;
+        DESC *d;
+        DESC_ITER_CONN(d)
+        {
+            if (d->descriptor == s)
+            {
+                bFound = true;
+                break;
+            }
+        }
+        if (  bFound
+           && (  d->player == executor
+              || Wizard_Who(executor)))
+        {
+            nHeight = d->height;
+        }
+    }
+    else
+    {
+        char *pTargetName = fargs[0];
+        if (*pTargetName == '*')
+        {
+            pTargetName++;
+        }
+        dbref target = lookup_player(executor, pTargetName, true);
+        if (  Good_obj(target)
+           && (  !Hidden(target)
+              || See_Hidden(executor)))
+        {
+            nHeight = fetch_height(target);
+        }
+    }
+    safe_ltoa(nHeight, buff, bufc);
+}
+
+
+FUNCTION(fun_width)
+{
+    long nWidth = 0;
+    if (is_rational(fargs[0]))
+    {
+        SOCKET s = mux_atol(fargs[0]);
+        bool bFound = false;
+        DESC *d;
+        DESC_ITER_CONN(d)
+        {
+            if (d->descriptor == s)
+            {
+                bFound = true;
+                break;
+            }
+        }
+        if (  bFound
+           && (  d->player == executor
+              || Wizard_Who(executor)))
+        {
+            nWidth = d->width;
+        }
+    }
+    else
+    {
+        char *pTargetName = fargs[0];
+        if (*pTargetName == '*')
+        {
+            pTargetName++;
+        }
+        dbref target = lookup_player(executor, pTargetName, true);
+        if (  Good_obj(target)
+           && (  !Hidden(target)
+              || See_Hidden(executor)))
+        {
+            nWidth = fetch_width(target);
+        }
+    }
+    safe_ltoa(nWidth, buff, bufc);
+}
+
 /*
  * ---------------------------------------------------------------------------
  * * fun_idle, fun_conn: return seconds idle or connected.
@@ -7895,6 +7978,7 @@ FUN builtin_function_list[] =
     {"HASTXLEVEL",  fun_hastxlevel, MAX_ARG, 2,       2,         0, CA_PUBLIC},
 #endif /* REALITY_LVLS */
     {"HASTYPE",     fun_hastype,    MAX_ARG, 2,       2,         0, CA_PUBLIC},
+    {"HEIGHT",      fun_height,     MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {"HOME",        fun_home,       MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {"HOST",        fun_host,       MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {"IABS",        fun_iabs,       MAX_ARG, 1,       1,         0, CA_PUBLIC},
@@ -8107,6 +8191,7 @@ FUN builtin_function_list[] =
     {"VSUB",        fun_vsub,       MAX_ARG, 2,       4,         0, CA_PUBLIC},
     {"VUNIT",       fun_vunit,      MAX_ARG, 1,       2,         0, CA_PUBLIC},
     {"WHERE",       fun_where,      MAX_ARG, 1,       1,         0, CA_PUBLIC},
+    {"WIDTH",       fun_width,      MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {"WORDPOS",     fun_wordpos,    MAX_ARG, 2,       3,         0, CA_PUBLIC},
     {"WORDS",       fun_words,      MAX_ARG, 0,       2,         0, CA_PUBLIC},
     {"WRAP",        fun_wrap,       MAX_ARG, 1,       8,         0, CA_PUBLIC},

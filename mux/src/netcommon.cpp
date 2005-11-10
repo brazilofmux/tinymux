@@ -1,6 +1,6 @@
 // netcommon.cpp
 //
-// $Id: netcommon.cpp,v 1.54 2005-11-08 18:50:50 sdennis Exp $
+// $Id: netcommon.cpp,v 1.55 2005-11-10 04:56:31 sdennis Exp $
 //
 // This file contains routines used by the networking code that do not
 // depend on the implementation of the networking code.  The network-specific
@@ -501,6 +501,10 @@ void freeqs(DESC *d)
     d->raw_input = NULL;
     d->raw_input_at = NULL;
     d->raw_input_state = NVT_IS_NORMAL;
+    d->nvt_naws_him_state = OPTION_NO;
+    d->nvt_naws_us_state = OPTION_NO;
+    d->height = 24;
+    d->width = 78;
 }
 
 /* ---------------------------------------------------------------------------
@@ -1173,30 +1177,57 @@ int fetch_session(dbref target)
     return nCount;
 }
 
+DESC *find_least_idle(dbref target)
+{
+    CLinearTimeAbsolute ltaNewestLastTime;
+
+    DESC *d;
+    DESC *dLeastIdle = NULL;
+    DESC_ITER_PLAYER(target, d)
+    {
+        if (  NULL == dLeastIdle
+           || ltaNewestLastTime < d->last_time)
+        {
+            dLeastIdle = d;
+            ltaNewestLastTime = d->last_time;
+        }
+    }
+    return dLeastIdle;
+}
+
+int fetch_height(dbref target)
+{
+    DESC *d = find_least_idle(target);
+    if (NULL != d)
+    {
+        return d->height;
+    }
+    return 24;
+}
+
+int fetch_width(dbref target)
+{
+    DESC *d = find_least_idle(target);
+    if (NULL != d)
+    {
+        return d->width;
+    }
+    return 78;
+}
+
 // ---------------------------------------------------------------------------
 // fetch_idle: Return smallest idle time for a player (or -1 if not logged in).
 //
 int fetch_idle(dbref target)
 {
     CLinearTimeAbsolute ltaNow;
-    CLinearTimeAbsolute ltaNewestLastTime;
     ltaNow.GetUTC();
 
-    DESC *d;
-    bool bFound = false;
-    DESC_ITER_PLAYER(target, d)
-    {
-        if (  !bFound
-           || ltaNewestLastTime < d->last_time)
-        {
-            bFound = true;
-            ltaNewestLastTime = d->last_time;
-        }
-    }
-    if (bFound)
+    DESC *d = find_least_idle(target);
+    if (NULL != d)
     {
         CLinearTimeDelta ltdResult;
-        ltdResult = ltaNow - ltaNewestLastTime;
+        ltdResult = ltaNow - d->last_time;
         return ltdResult.ReturnSeconds();
     }
     else

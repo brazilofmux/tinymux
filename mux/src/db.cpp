@@ -1,6 +1,6 @@
 // db.cpp
 //
-// $Id: db.cpp,v 1.65 2005-11-08 16:23:23 sdennis Exp $
+// $Id: db.cpp,v 1.66 2005-11-10 04:56:31 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -3095,6 +3095,10 @@ void dump_restart_db(void)
         putref(f, d->player);
         putref(f, d->last_time.ReturnSeconds());
         putref(f, d->raw_input_state);
+        putref(f, d->nvt_naws_him_state);
+        putref(f, d->nvt_naws_us_state);
+        putref(f, d->height);
+        putref(f, d->width);
         putstring(f, d->output_prefix);
         putstring(f, d->output_suffix);
         putstring(f, d->addr);
@@ -3178,10 +3182,18 @@ void load_restart_db(void)
         if (2 == version)
         {
             d->raw_input_state = getref(f);
+            d->nvt_naws_him_state = getref(f);
+            d->nvt_naws_us_state = getref(f);
+            d->height = getref(f);
+            d->width = getref(f);
         }
         else
         {
             d->raw_input_state = NVT_IS_NORMAL;
+            d->nvt_naws_him_state = OPTION_NO;
+            d->nvt_naws_us_state = OPTION_NO;
+            d->height = 24;
+            d->width = 78;
         }
 
         temp = getstring_noalloc(f, true);

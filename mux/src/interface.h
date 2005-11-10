@@ -1,6 +1,6 @@
 // interface.h
 //
-// $Id: interface.h,v 1.11 2005-11-08 18:50:50 sdennis Exp $
+// $Id: interface.h,v 1.12 2005-11-10 04:56:31 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -83,17 +83,41 @@ struct prog_data {
     char *wait_regs[MAX_GLOBAL_REGS];
 };
 
+// Input state
+//
 #define NVT_IS_NORMAL          0
 #define NVT_IS_HAVE_IAC        1
-#define NVT_IS_HAVE_IAC_WDDW   2
-#define NVT_IS_HAVE_IAC_SB     3
-#define NVT_IS_HAVE_IAC_SB_IAC 4
+#define NVT_IS_HAVE_IAC_WILL   2
+#define NVT_IS_HAVE_IAC_WONT   3
+#define NVT_IS_HAVE_IAC_DO     4
+#define NVT_IS_HAVE_IAC_DONT   5
+#define NVT_IS_HAVE_IAC_SB     6
+#define NVT_IS_HAVE_IAC_SB_IAC 7
 
-#define NVT_BS  0x08
-#define NVT_DEL 0x7F
-#define NVT_NOP 0xF1
-#define NVT_GA  0xF9
-#define NVT_IAC 0xFF
+// Character Names
+//
+#define NVT_BS   0x08
+#define NVT_DEL  0x7F
+#define NVT_NOP  0xF1
+#define NVT_GA   0xF9
+#define NVT_WILL 0xFB
+#define NVT_WONT 0xFC
+#define NVT_DO   0xFD
+#define NVT_DONT 0xFE
+#define NVT_IAC  0xFF
+
+// Telnet Options
+//
+#define TELNET_NAWS 0x1F
+
+// Telnet Option Negotiation States
+//
+#define OPTION_NO               0
+#define OPTION_YES              1
+#define OPTION_WANTNO_EMPTY     2
+#define OPTION_WANTNO_OPPOSITE  3
+#define OPTION_WANTYES_EMPTY    4
+#define OPTION_WANTYES_OPPOSITE 5
 
 typedef struct descriptor_data DESC;
 struct descriptor_data
@@ -136,6 +160,10 @@ struct descriptor_data
   CBLK *raw_input;
   char *raw_input_at;
   int raw_input_state;
+  int nvt_naws_him_state;
+  int nvt_naws_us_state;
+  int width;
+  int height;
   int quota;
   int wait_for_input;       /* Used by @prog */
   dbref wait_enactor;       /* Used by @prog */
@@ -185,6 +213,8 @@ extern void make_port_ulist(dbref, char *, char **);
 extern int fetch_session(dbref target);
 extern int fetch_idle(dbref target);
 extern int fetch_connect(dbref target);
+extern int fetch_height(dbref target);
+extern int fetch_width(dbref target);
 extern const char *time_format_1(int Seconds, size_t maxWidth);
 extern const char *time_format_2(int Seconds);
 extern void update_quotas(CLinearTimeAbsolute& tLast, const CLinearTimeAbsolute& tCurrent);
