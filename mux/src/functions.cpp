@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.154 2005-11-10 04:56:31 sdennis Exp $
+// $Id: functions.cpp,v 1.155 2005-11-10 05:47:39 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2005 Solid Vertical Domains, Ltd. All
@@ -5522,25 +5522,19 @@ FUNCTION(fun_space)
 
 FUNCTION(fun_height)
 {
-    long nHeight = 0;
+    long nHeight = 24;
+    dbref target = NOTHING;
     if (is_rational(fargs[0]))
     {
         SOCKET s = mux_atol(fargs[0]);
-        bool bFound = false;
         DESC *d;
         DESC_ITER_CONN(d)
         {
             if (d->descriptor == s)
             {
-                bFound = true;
+                target = d->player;
                 break;
             }
-        }
-        if (  bFound
-           && (  d->player == executor
-              || Wizard_Who(executor)))
-        {
-            nHeight = d->height;
         }
     }
     else
@@ -5550,39 +5544,41 @@ FUNCTION(fun_height)
         {
             pTargetName++;
         }
-        dbref target = lookup_player(executor, pTargetName, true);
-        if (  Good_obj(target)
-           && (  !Hidden(target)
-              || See_Hidden(executor)))
+        target = lookup_player(executor, pTargetName, true);
+        if (!Good_obj(target))
+        {
+            target == NOTHING;
+        }
+    }
+
+    if (NOTHING != target)
+    {
+        if (  executor == target
+           || See_All(executor))
         {
             nHeight = fetch_height(target);
         }
     }
+
     safe_ltoa(nHeight, buff, bufc);
 }
 
 
 FUNCTION(fun_width)
 {
-    long nWidth = 0;
+    long nWidth = 78;
+    dbref target = NOTHING;
     if (is_rational(fargs[0]))
     {
         SOCKET s = mux_atol(fargs[0]);
-        bool bFound = false;
         DESC *d;
         DESC_ITER_CONN(d)
         {
             if (d->descriptor == s)
             {
-                bFound = true;
+                target = d->player;
                 break;
             }
-        }
-        if (  bFound
-           && (  d->player == executor
-              || Wizard_Who(executor)))
-        {
-            nWidth = d->width;
         }
     }
     else
@@ -5592,14 +5588,22 @@ FUNCTION(fun_width)
         {
             pTargetName++;
         }
-        dbref target = lookup_player(executor, pTargetName, true);
-        if (  Good_obj(target)
-           && (  !Hidden(target)
-              || See_Hidden(executor)))
+        target = lookup_player(executor, pTargetName, true);
+        if (!Good_obj(target))
+        {
+            target == NOTHING;
+        }
+    }
+
+    if (NOTHING != target)
+    {
+        if (  executor == target
+           || See_All(executor))
         {
             nWidth = fetch_width(target);
         }
     }
+
     safe_ltoa(nWidth, buff, bufc);
 }
 
