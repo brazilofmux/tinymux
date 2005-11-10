@@ -1,6 +1,6 @@
 // funmath.h -- declarations for math-related functions.
 //
-// $Id: funmath.h,v 1.2 2005-07-14 04:40:54 rmg Exp $
+// $Id: funmath.h,v 1.3 2005-11-10 23:05:28 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -60,6 +60,7 @@ XFUNCTION(fun_acos);
 XFUNCTION(fun_atan);
 XFUNCTION(fun_exp);
 XFUNCTION(fun_power);
+XFUNCTION(fun_fmod);
 XFUNCTION(fun_ln);
 XFUNCTION(fun_log);
 XFUNCTION(fun_sqrt);

@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.155 2005-11-10 05:47:39 sdennis Exp $
+// $Id: functions.cpp,v 1.156 2005-11-10 23:05:28 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2005 Solid Vertical Domains, Ltd. All
@@ -7961,6 +7961,7 @@ FUN builtin_function_list[] =
     {"FLAGS",       fun_flags,      MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {"FLOOR",       fun_floor,      MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {"FLOORDIV",    fun_floordiv,   MAX_ARG, 2,       2,         0, CA_PUBLIC},
+    {"FMOD",        fun_fmod,       MAX_ARG, 2,       2,         0, CA_PUBLIC},
     {"FOLD",        fun_fold,       MAX_ARG, 2,       4,         0, CA_PUBLIC},
     {"FOREACH",     fun_foreach,    MAX_ARG, 2,       4,         0, CA_PUBLIC},
     {"FULLNAME",    fun_fullname,   MAX_ARG, 1,       1,         0, CA_PUBLIC},
