@@ -1,7 +1,7 @@
 /*! \file bsd.cpp
  * File for most TCP socket-related code. Some socket-related code also exists in netcommon.cpp, but most of it is here.
  *
- * $Id: bsd.cpp,v 1.56 2005-11-10 04:56:31 sdennis Exp $
+ * $Id: bsd.cpp,v 1.57 2005-11-10 07:35:49 sdennis Exp $
  */
 
 #include "copyright.h"
@@ -2332,6 +2332,7 @@ void process_output(void *dvoid, int bHandleShutdown)
 // Class  2 - LF   (0x0A)
 // Class  3 - CR   (0x0D)
 // Class  4 - DEL  (0x7F)
+// Class    - EOR  (0xEF)
 // Class  5 - SE   (0xF0)
 // Class  6 - NOP  (0xF1)
 // Class  7 - DM   (0xF2)

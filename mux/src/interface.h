@@ -1,6 +1,6 @@
 // interface.h
 //
-// $Id: interface.h,v 1.12 2005-11-10 04:56:31 sdennis Exp $
+// $Id: interface.h,v 1.13 2005-11-10 07:35:49 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -98,6 +98,7 @@ struct prog_data {
 //
 #define NVT_BS   0x08
 #define NVT_DEL  0x7F
+#define NVT_EOR  0xEF
 #define NVT_NOP  0xF1
 #define NVT_GA   0xF9
 #define NVT_WILL 0xFB
