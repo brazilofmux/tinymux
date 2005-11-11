@@ -1,7 +1,7 @@
 /*! \file bsd.cpp
  * File for most TCP socket-related code. Some socket-related code also exists in netcommon.cpp, but most of it is here.
  *
- * $Id: bsd.cpp,v 1.60 2005-11-11 17:06:02 sdennis Exp $
+ * $Id: bsd.cpp,v 1.61 2005-11-11 17:24:49 sdennis Exp $
  */
 
 #include "copyright.h"
@@ -2520,11 +2520,22 @@ void SendWont(DESC *d, unsigned char chOption)
     queue_write_LEN(d, aWont, sizeof(aWont));
 }
 
-bool DesiredOption(unsigned char chOption)
+bool DesiredHimOption(DESC *d, unsigned char chOption)
 {
     if (  TELNET_NAWS == chOption
-       || TELNET_SGA  == chOption
-       || TELNET_EOR  == chOption)
+       || TELNET_EOR  == chOption
+       || TELNET_SGA  == chOption)
+    {
+        return true;
+    }
+    return false;
+}
+
+bool DesiredUsOption(DESC *d, unsigned char chOption)
+{
+    if (  TELNET_EOR  == chOption
+       || (  TELNET_SGA == chOption
+          && OPTION_YES == UsState(d, TELNET_EOR)))
     {
         return true;
     }
@@ -2785,7 +2796,7 @@ void process_input_helper(DESC *d, char *pBytes, int nBytes)
             switch (HimState(d, ch))
             {
             case OPTION_NO:
-                if (DesiredOption(ch))
+                if (DesiredHimOption(d, ch))
                 {
                     SetHimState(d, ch, OPTION_YES);
                     SendDo(d, ch);
@@ -2840,7 +2851,7 @@ void process_input_helper(DESC *d, char *pBytes, int nBytes)
             switch (UsState(d, ch))
             {
             case OPTION_NO:
-                if (DesiredOption(ch))
+                if (DesiredUsOption(d, ch))
                 {
                     SetUsState(d, ch, OPTION_YES);
                     SendWill(d, ch);
