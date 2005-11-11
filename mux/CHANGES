@@ -1,5 +1,5 @@
 TinyMUX 2.4:  CHANGES
-Last Update:  October 2005
+Last Update:  November 2005
 
 Major changes that may affect performance and require softcode tweaks:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -102,6 +102,7 @@ Feature Additions:
  -- Bring functions_add(), function_add(), and the various
     commands*_add() out into local.cpp so that adding commands and
     functions is as simple as adding an entry to a table.
+ -- Added FMOD().
 
 
 Bug Fixes:
