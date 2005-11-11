@@ -1,6 +1,6 @@
 // interface.h
 //
-// $Id: interface.h,v 1.14 2005-11-11 06:42:52 sdennis Exp $
+// $Id: interface.h,v 1.15 2005-11-11 08:08:28 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -182,6 +182,13 @@ struct descriptor_data
   char username[11];
   char doing[SIZEOF_DOING_STRING];
 };
+
+int HimState(DESC *d, unsigned char chOption);
+int UsState(DESC *d, unsigned char chOption);
+void EnableHim(DESC *d, unsigned chOption);
+void DisableHim(DESC *d, unsigned chOption);
+void EnableUs(DESC *d, unsigned chOption);
+void DisableUs(DESC *d, unsigned chOption);
 
 /* flags in the flag field */
 #define DS_CONNECTED    0x0001      // player is connected.

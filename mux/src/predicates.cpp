@@ -1,6 +1,6 @@
 // predicates.cpp
 //
-// $Id: predicates.cpp,v 1.73 2005-11-08 18:50:50 sdennis Exp $
+// $Id: predicates.cpp,v 1.74 2005-11-11 08:08:28 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -1136,20 +1136,23 @@ void do_delcommand
 
 void handle_prog(DESC *d, char *message)
 {
-
     // Allow the player to pipe a command while in interactive mode.
     //
     if (*message == '|')
     {
         do_command(d, message + 1);
 
-        // Use telnet protocol's GOAHEAD command to show prompt
-        //
         if (d->program_data != NULL)
         {
-            const char aGoAhead[2] = { NVT_IAC, NVT_GA };
             queue_string(d, tprintf("%s>%s ", ANSI_HILITE, ANSI_NORMAL));
-            queue_write_LEN(d, aGoAhead, sizeof(aGoAhead));
+
+            if (OPTION_YES != UsState(d, TELNET_SGA))
+            {
+                // Use telnet protocol's GOAHEAD command to show prompt.
+                //
+                const char aGoAhead[2] = { NVT_IAC, NVT_GA };
+                queue_write_LEN(d, aGoAhead, sizeof(aGoAhead));
+            }
         }
         return;
     }
@@ -1389,11 +1392,15 @@ void do_prog
     {
         d->program_data = program;
 
-        // Use telnet protocol's GOAHEAD command to show prompt.
-        //
-        const char aGoAhead[2] = { NVT_IAC, NVT_GA };
         queue_string(d, tprintf("%s>%s ", ANSI_HILITE, ANSI_NORMAL));
-        queue_write_LEN(d, aGoAhead, sizeof(aGoAhead));
+
+        if (OPTION_YES != UsState(d, TELNET_SGA))
+        {
+            // Use telnet protocol's GOAHEAD command to show prompt.
+            //
+            const char aGoAhead[2] = { NVT_IAC, NVT_GA };
+            queue_write_LEN(d, aGoAhead, sizeof(aGoAhead));
+        }
     }
 }
 
