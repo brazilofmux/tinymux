@@ -1,6 +1,6 @@
 // interface.h
 //
-// $Id: interface.h,v 1.15 2005-11-11 08:08:28 sdennis Exp $
+// $Id: interface.h,v 1.16 2005-11-11 16:02:49 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -110,6 +110,7 @@ struct prog_data {
 // Telnet Options
 //
 #define TELNET_SGA  0x03
+#define TELNET_EOR  0x19
 #define TELNET_NAWS 0x1F
 
 // Telnet Option Negotiation States
@@ -164,6 +165,8 @@ struct descriptor_data
   int raw_input_state;
   int nvt_sga_him_state;
   int nvt_sga_us_state;
+  int nvt_eor_him_state;
+  int nvt_eor_us_state;
   int nvt_naws_him_state;
   int nvt_naws_us_state;
   int width;

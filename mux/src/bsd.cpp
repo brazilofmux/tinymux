@@ -1,7 +1,7 @@
 /*! \file bsd.cpp
  * File for most TCP socket-related code. Some socket-related code also exists in netcommon.cpp, but most of it is here.
  *
- * $Id: bsd.cpp,v 1.58 2005-11-11 06:42:52 sdennis Exp $
+ * $Id: bsd.cpp,v 1.59 2005-11-11 16:02:49 sdennis Exp $
  */
 
 #include "copyright.h"
@@ -2070,6 +2070,8 @@ DESC *initializesock(SOCKET s, struct sockaddr_in *a)
     d->raw_input_state = NVT_IS_NORMAL;
     d->nvt_sga_him_state = OPTION_NO;
     d->nvt_sga_us_state = OPTION_NO;
+    d->nvt_eor_him_state = OPTION_NO;
+    d->nvt_eor_us_state = OPTION_NO;
     d->nvt_naws_him_state = OPTION_NO;
     d->nvt_naws_us_state = OPTION_NO;
     d->height = 24;
@@ -2422,6 +2424,10 @@ int HimState(DESC *d, unsigned char chOption)
     {
         return d->nvt_naws_him_state;
     }
+    else if (TELNET_EOR == chOption)
+    {
+        return d->nvt_eor_him_state;
+    }
     else if (TELNET_SGA == chOption)
     {
         return d->nvt_sga_him_state;
@@ -2434,6 +2440,10 @@ int UsState(DESC *d, unsigned char chOption)
     if (TELNET_NAWS == chOption)
     {
         return d->nvt_naws_us_state;
+    }
+    else if (TELNET_EOR == chOption)
+    {
+        return d->nvt_eor_us_state;
     }
     else if (TELNET_SGA == chOption)
     {
@@ -2448,6 +2458,10 @@ void SetHimState(DESC *d, unsigned char chOption, int iHimState)
     {
         d->nvt_naws_him_state = iHimState;
     }
+    else if (TELNET_EOR == chOption)
+    {
+        d->nvt_eor_him_state = iHimState;
+    }
     else if (TELNET_SGA == chOption)
     {
         d->nvt_sga_him_state = iHimState;
@@ -2460,11 +2474,22 @@ void SetUsState(DESC *d, unsigned char chOption, int iUsState)
     {
         d->nvt_naws_us_state = iUsState;
     }
+    else if (TELNET_EOR == chOption)
+    {
+        d->nvt_eor_us_state = iUsState;
+        if (OPTION_YES == iUsState)
+        {
+            EnableUs(d, TELNET_SGA);
+        }
+        else if (OPTION_NO == iUsState)
+        {
+            DisableUs(d, TELNET_SGA);
+        }
+    }
     else if (TELNET_SGA == chOption)
     {
         d->nvt_sga_us_state = iUsState;
     }
-    return;
 }
 
 void SendWill(DESC *d, unsigned char chOption)
@@ -2583,7 +2608,11 @@ void DisableUs(DESC *d, unsigned chOption)
 
 void TelnetSetup(DESC *d)
 {
-    EnableUs(d, TELNET_SGA);
+    // We would also like to enable SGA on our side, but we won't unless the
+    // client successfully negotiates EOR.
+    //
+    EnableUs(d, TELNET_EOR);
+    EnableHim(d, TELNET_EOR);
     EnableHim(d, TELNET_SGA);
     EnableHim(d, TELNET_NAWS);
 }

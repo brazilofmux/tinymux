@@ -1,6 +1,6 @@
 // predicates.cpp
 //
-// $Id: predicates.cpp,v 1.74 2005-11-11 08:08:28 sdennis Exp $
+// $Id: predicates.cpp,v 1.75 2005-11-11 16:02:49 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -1146,7 +1146,14 @@ void handle_prog(DESC *d, char *message)
         {
             queue_string(d, tprintf("%s>%s ", ANSI_HILITE, ANSI_NORMAL));
 
-            if (OPTION_YES != UsState(d, TELNET_SGA))
+            if (OPTION_YES == UsState(d, TELNET_EOR))
+            {
+                // Use telnet protocol's EOR command to show prompt.
+                //
+                const char aEOR[2] = { NVT_IAC, NVT_EOR };
+                queue_write_LEN(d, aEOR, sizeof(aEOR));
+            }
+            else if (OPTION_YES != UsState(d, TELNET_SGA))
             {
                 // Use telnet protocol's GOAHEAD command to show prompt.
                 //
@@ -1394,7 +1401,14 @@ void do_prog
 
         queue_string(d, tprintf("%s>%s ", ANSI_HILITE, ANSI_NORMAL));
 
-        if (OPTION_YES != UsState(d, TELNET_SGA))
+        if (OPTION_YES == UsState(d, TELNET_EOR))
+        {
+            // Use telnet protocol's EOR command to show prompt.
+            //
+            const char aEOR[2] = { NVT_IAC, NVT_EOR };
+            queue_write_LEN(d, aEOR, sizeof(aEOR));
+        }
+        else if (OPTION_YES != UsState(d, TELNET_SGA))
         {
             // Use telnet protocol's GOAHEAD command to show prompt.
             //
