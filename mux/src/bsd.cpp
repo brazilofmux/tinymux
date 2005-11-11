@@ -1,7 +1,7 @@
 /*! \file bsd.cpp
  * File for most TCP socket-related code. Some socket-related code also exists in netcommon.cpp, but most of it is here.
  *
- * $Id: bsd.cpp,v 1.59 2005-11-11 16:02:49 sdennis Exp $
+ * $Id: bsd.cpp,v 1.60 2005-11-11 17:06:02 sdennis Exp $
  */
 
 #include "copyright.h"
@@ -2523,7 +2523,8 @@ void SendWont(DESC *d, unsigned char chOption)
 bool DesiredOption(unsigned char chOption)
 {
     if (  TELNET_NAWS == chOption
-       || TELNET_SGA  == chOption)
+       || TELNET_SGA  == chOption
+       || TELNET_EOR  == chOption)
     {
         return true;
     }
