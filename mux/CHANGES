@@ -102,6 +102,9 @@ Feature Additions:
  -- Bring functions_add(), function_add(), and the various
     commands*_add() out into local.cpp so that adding commands and
     functions is as simple as adding an entry to a table.
+ -- Added Telnet negotiation including options for Negotiate About
+    Window Size (NAWS), End Of Record (EOR), and Surpress Go-Ahead (SGA).
+ -- Added WIDTH() and HEIGHT().
  -- Added FMOD().
 
 
