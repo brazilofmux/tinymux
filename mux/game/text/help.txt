@@ -6663,8 +6663,8 @@ FUNCTION CLASSES (continued)
                              V VISIBLE XGET
 
   Player Information:        CONN CONNLAST CONNLEFT CONNMAX CONNNUM CONNRECORD
-                             CONNTOTAL DOING FINDABLE HASQUOTA HOST IDLE LWHO
-                             LPORTS PLAYMEM PORTS
+                             CONNTOTAL DOING FINDABLE HASQUOTA HEIGHT HOST
+                             IDLE LWHO LPORTS PLAYMEM PORTS WIDTH
 
   Relational:                EQ GT GTE LT LTE MAX MIN NEQ
 
@@ -6729,49 +6729,49 @@ FUNCTION LIST (continued)
 
     GET()       GET_EVAL()  GRAB()      GRABALL()   GREP()      GREPI()
     GT()        GTE()       HASATTR()   HASATTRP()  HASFLAG()   HASPOWER()
-    HASQUOTA()  HASRXLEVEL()HASTXLEVEL()HASTYPE()   HOME()      HOST()
-    IABS()      IADD()      IDIV()      IDLE()      IF()        IFELSE()
-    ILEV()      IMUL()      INC()       INDEX()     INSERT()    INZONE()
-    ISDBREF()   ISIGN()     ISINT()     ISNUM()     ISRAT()     ISUB()
-    ISWORD()    ITEMIZE()   ITEMS()     ITER()      LADD()      LAND()
-    LAST()      LATTR()     LATTRCMDS() LATTRP()    LCMDS()     LCON()
-    LCSTR()     LDELETE()   LEXITS()    LFLAGS()    LINK()      LIST()
-    LISTRLEVELS() LIT()     LJUST()     LN()        LNUM()      LOC()
-    LOCALIZE()  LOCATE()    LOCK()      LOG()       LOR()       LPARENT()
-    LPORTS()    LPOS()      LRAND()     LROOMS()    LSTACK()    LT()
-    LTE()       LWHO()      MAIL()      MAILFROM()  MAP()       MATCH()
-    MATCHALL()  MAX()       MEMBER()    MERGE()     MID()       MIN()
-    MIX()       MOD()       MONEY()     MONIKER()   MOTD()      MTIME()
-    MUDNAME()   MUL()       MUNGE()     NAME()      NEARBY()    NEQ()
-    NEXT()      NOT()       NULL()      NUM()       OBJ()       OBJEVAL()
-    OBJMEM()    OEMIT()     OR()        ORBOOL()    ORD()       ORFLAGS()
-    OWNER()     PACK()      PARENT()    PARSE()     PEEK()      PEMIT()
+    HASQUOTA()  HASRXLEVEL()HASTXLEVEL()HASTYPE()   HEIGHT()    HOME()
+    HOST()      IABS()      IADD()      IDIV()      IDLE()      IF()
+    IFELSE()    ILEV()      IMUL()      INC()       INDEX()     INSERT()
+    INZONE()    ISDBREF()   ISIGN()     ISINT()     ISNUM()     ISRAT()
+    ISUB()      ISWORD()    ITEMIZE()   ITEMS()     ITER()      LADD()
+    LAND()      LAST()      LATTR()     LATTRCMDS() LATTRP()    LCMDS()
+    LCON()      LCSTR()     LDELETE()   LEXITS()    LFLAGS()    LINK()
+    LIST()      LISTRLEVELS() LIT()     LJUST()     LN()        LNUM()
+    LOC()       LOCALIZE()  LOCATE()    LOCK()      LOG()       LOR()
+    LPARENT()   LPORTS()    LPOS()      LRAND()     LROOMS()    LSTACK()
+    LT()        LTE()       LWHO()      MAIL()      MAILFROM()  MAP()
+    MATCH()     MATCHALL()  MAX()       MEMBER()    MERGE()     MID()
+    MIN()       MIX()       MOD()       MONEY()     MONIKER()   MOTD()
+    MTIME()     MUDNAME()   MUL()       MUNGE()     NAME()      NEARBY()
+    NEQ()       NEXT()      NOT()       NULL()      NUM()       OBJ()
+    OBJEVAL()   OBJMEM()    OEMIT()     OR()        ORBOOL()    ORD()
+    ORFLAGS()   OWNER()     PACK()      PARENT()    PARSE()     PEEK()
 
 ("help function list3" for more)
 
 & FUNCTION LIST3
 FUNCTION LIST (continued)
 
-    PFIND()     PI()        PICKRAND()  PLAYMEM()   PMATCH()    POLL()
-    POP()       PORTS()     POS()       POSS()      POWER()     POWERS()
-    PUSH()      R()         RAND()      REGMATCH()  REGMATCHI() REGRAB()
-    REGRABALL() REGRABALLI()REGRABI()   REMAINDER() REMIT()     REMOVE()
-    REPEAT()    REPLACE()   REST()      REVERSE()   REVWORDS()  RIGHT()
-    RJUST()     RLOC()      ROMAN()     ROOM()      ROUND()     RXLEVEL()
-    S()         SCRAMBLE()  SEARCH()    SECS()      SECURE()    SET()
-    SETDIFF()   SETINTER()  SETQ()      SETR()      SETUNION()  SHA1()
-    SHL()       SHR()       SHUFFLE()   SIGN()      SIN()       SINGLETIME()
-    SORT()      SORTBY()    SPACE()     SPELLNUM()  SPLICE()    SQRT()
-    SQUISH()    STARTSECS() STARTTIME() STATS()     STRCAT()    STRIP()
-    STRIPACCENTS() STRIPANSI() STRLEN() STRMATCH()  STRMEM()    STRTRUNC()
-    SUB()       SUBEVAL()   SUBJ()      SWITCH()    T()         TABLE()
-    TAN()       TEL()       TEXTFILE()  TIME()      TIMEFMT()   TRANSLATE()
-    TRIM()      TRUNC()     TXLEVEL()   TYPE()      U()         UCSTR()
-    UDEFAULT()  ULOCAL()    UNPACK()    V()         VADD()      VALID()
-    VCROSS()    VDIM()      VDOT()      VERSION()   VISIBLE()   VMAG()
-    VMUL()      VSUB()      VUNIT()     WHERE()     WORDPOS()   WORDS()
-    WRAP()      WRITETIME() XGET()      XOR()       ZFUN()      ZONE()
-    ZWHO()
+    PEMIT()     PFIND()     PI()        PICKRAND()  PLAYMEM()   PMATCH()
+    POLL()      POP()       PORTS()     POS()       POSS()      POWER()
+    POWERS()    PUSH()      R()         RAND()      REGMATCH()  REGMATCHI()
+    REGRAB()    REGRABALL() REGRABALLI()REGRABI()   REMAINDER() REMIT()
+    REMOVE()    REPEAT()    REPLACE()   REST()      REVERSE()   REVWORDS()
+    RIGHT()     RJUST()     RLOC()      ROMAN()     ROOM()      ROUND()
+    RXLEVEL()   S()         SCRAMBLE()  SEARCH()    SECS()      SECURE()
+    SET()       SETDIFF()   SETINTER()  SETQ()      SETR()      SETUNION()
+    SHA1()      SHL()       SHR()       SHUFFLE()   SIGN()      SIN()
+    SINGLETIME()SORT()      SORTBY()    SPACE()     SPELLNUM()  SPLICE()
+    SQRT()      SQUISH()    STARTSECS() STARTTIME() STATS()     STRCAT()
+    STRIP()     STRIPACCENTS() STRIPANSI() STRLEN() STRMATCH()  STRMEM()
+    STRTRUNC()  SUB()       SUBEVAL()   SUBJ()      SWITCH()    T()
+    TABLE()     TAN()       TEL()       TEXTFILE()  TIME()      TIMEFMT()
+    TRANSLATE() TRIM()      TRUNC()     TXLEVEL()   TYPE()      U()
+    UCSTR()     UDEFAULT()  ULOCAL()    UNPACK()    V()         VADD()
+    VALID()     VCROSS()    VDIM()      VDOT()      VERSION()   VISIBLE()
+    VMAG()      VMUL()      VSUB()      VUNIT()     WHERE()     WIDTH()
+    WORDPOS()   WORDS()     WRAP()      WRITETIME() XGET()      XOR()
+    ZFUN()      ZONE()      ZWHO()
 
 & FUNCTIONS
 FUNCTIONS
@@ -7219,6 +7219,29 @@ HEAD
   with STAFF, no powers come with it, it is purely a marker.
 
   Related Topics:
+
+& HEIGHT()
+HEIGHT()
+
+  FUNCTION: height(<player|port>)
+
+  Returns the height of the client window as reported by Telnet's Negotiate
+  About Window Size (NAWS) option. For clients which do not negotiate the
+  NAWS option, a value of 78 is returned.
+
+  If <player|port> is numeric, it's taken as a port number (as shown in
+  SESSION).  Otherwise, it's treated as a player name.  If the named player is
+  connected more than once, the height of the session having the smallest idle
+  time is returned.
+
+  You and any object with the See_All @power may obtain the height of your
+  sessions.
+
+  Example:
+    > think height(me)
+    You say "26"
+
+  Related Topics: width().
 
 & HERE
 HERE
@@ -12990,6 +13013,29 @@ WHERE()
   "true" location is the source room. For rooms, it is #-1.
 
   Related Topics: loc(), rloc().
+
+& WIDTH()
+WIDTH()
+
+  FUNCTION: width(<player|port>)
+
+  Returns the width of the client window as reported by Telnet's Negotiate
+  About Window Size (NAWS) option. For clients which do not negotiate the
+  NAWS option, a value of 78 is returned.
+
+  If <player|port> is numeric, it's taken as a port number (as shown in
+  SESSION).  Otherwise, it's treated as a player name.  If the named player is
+  connected more than once, the width of the session having the smallest idle
+  time is returned.
+
+  You and any object with the See_All @power may obtain the width of your
+  sessions.
+
+  Example:
+    > think width(me)
+    You say "122"
+
+  Related Topics: height().
 
 & WHISPER
 WHISPER
