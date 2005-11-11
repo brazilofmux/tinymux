@@ -1,7 +1,7 @@
 /*! \file bsd.cpp
  * File for most TCP socket-related code. Some socket-related code also exists in netcommon.cpp, but most of it is here.
  *
- * $Id: bsd.cpp,v 1.57 2005-11-10 07:35:49 sdennis Exp $
+ * $Id: bsd.cpp,v 1.58 2005-11-11 06:42:52 sdennis Exp $
  */
 
 #include "copyright.h"
@@ -1477,6 +1477,8 @@ void shovechars(int nPorts, PortInfo aPorts[])
 
 #endif // WIN32
 
+void TelnetSetup(DESC *d);
+
 DESC *new_connection(PortInfo *Port, int *piSocketError)
 {
     DESC *d;
@@ -1596,6 +1598,7 @@ DESC *new_connection(PortInfo *Port, int *piSocketError)
         ENDLOG;
 
         d = initializesock(newsock, &addr);
+        TelnetSetup(d);
 
         // Initalize everything before sending the sitemon info, so that we
         // can pass the descriptor, d.
@@ -2018,14 +2021,18 @@ DESC *initializesock(SOCKET s, struct sockaddr_in *a)
     // any interference from socket shutdowns
     //
     if (platform == VER_PLATFORM_WIN32_NT)
+    {
         EnterCriticalSection(&csDescriptorList);
+    }
 #endif // WIN32
 
     d = alloc_desc("init_sock");
 
 #ifdef WIN32
     if (platform == VER_PLATFORM_WIN32_NT)
+    {
         LeaveCriticalSection(&csDescriptorList);
+    }
 #endif // WIN32
 
     d->descriptor = s;
@@ -2061,6 +2068,8 @@ DESC *initializesock(SOCKET s, struct sockaddr_in *a)
     d->raw_input = NULL;
     d->raw_input_at = NULL;
     d->raw_input_state = NVT_IS_NORMAL;
+    d->nvt_sga_him_state = OPTION_NO;
+    d->nvt_sga_us_state = OPTION_NO;
     d->nvt_naws_him_state = OPTION_NO;
     d->nvt_naws_us_state = OPTION_NO;
     d->height = 24;
@@ -2413,6 +2422,10 @@ int HimState(DESC *d, unsigned char chOption)
     {
         return d->nvt_naws_him_state;
     }
+    else if (TELNET_SGA == chOption)
+    {
+        return d->nvt_sga_him_state;
+    }
     return OPTION_NO;
 }
 
@@ -2421,6 +2434,10 @@ int UsState(DESC *d, unsigned char chOption)
     if (TELNET_NAWS == chOption)
     {
         return d->nvt_naws_us_state;
+    }
+    else if (TELNET_SGA == chOption)
+    {
+        return d->nvt_sga_us_state;
     }
     return OPTION_NO;
 }
@@ -2431,6 +2448,10 @@ void SetHimState(DESC *d, unsigned char chOption, int iHimState)
     {
         d->nvt_naws_him_state = iHimState;
     }
+    else if (TELNET_SGA == chOption)
+    {
+        d->nvt_sga_him_state = iHimState;
+    }
 }
 
 void SetUsState(DESC *d, unsigned char chOption, int iUsState)
@@ -2438,6 +2459,10 @@ void SetUsState(DESC *d, unsigned char chOption, int iUsState)
     if (TELNET_NAWS == chOption)
     {
         d->nvt_naws_us_state = iUsState;
+    }
+    else if (TELNET_SGA == chOption)
+    {
+        d->nvt_sga_us_state = iUsState;
     }
     return;
 }
@@ -2472,11 +2497,95 @@ void SendWont(DESC *d, unsigned char chOption)
 
 bool DesiredOption(unsigned char chOption)
 {
-    if (TELNET_NAWS == chOption)
+    if (  TELNET_NAWS == chOption
+       || TELNET_SGA  == chOption)
     {
         return true;
     }
     return false;
+}
+
+void EnableHim(DESC *d, unsigned chOption)
+{
+    switch (HimState(d, chOption))
+    {
+    case OPTION_NO:
+        SetHimState(d, chOption, OPTION_WANTYES_EMPTY);
+        SendDo(d, chOption);
+        break;
+
+    case OPTION_WANTNO_EMPTY:
+        SetHimState(d, chOption, OPTION_WANTNO_OPPOSITE);
+        break;
+
+    case OPTION_WANTYES_OPPOSITE:
+        SetHimState(d, chOption, OPTION_WANTYES_EMPTY);
+        break;
+    }
+}
+
+void DisableHim(DESC *d, unsigned chOption)
+{
+    switch (HimState(d, chOption))
+    {
+    case OPTION_YES:
+        SetHimState(d, chOption, OPTION_WANTNO_EMPTY);
+        SendDont(d, chOption);
+        break;
+
+    case OPTION_WANTNO_OPPOSITE:
+        SetHimState(d, chOption, OPTION_WANTNO_EMPTY);
+        break;
+
+    case OPTION_WANTYES_EMPTY:
+        SetHimState(d, chOption, OPTION_WANTYES_OPPOSITE);
+        break;
+    }
+}
+
+void EnableUs(DESC *d, unsigned chOption)
+{
+    switch (HimState(d, chOption))
+    {
+    case OPTION_NO:
+        SetUsState(d, chOption, OPTION_WANTYES_EMPTY);
+        SendWill(d, chOption);
+        break;
+
+    case OPTION_WANTNO_EMPTY:
+        SetUsState(d, chOption, OPTION_WANTNO_OPPOSITE);
+        break;
+
+    case OPTION_WANTYES_OPPOSITE:
+        SetUsState(d, chOption, OPTION_WANTYES_EMPTY);
+        break;
+    }
+}
+
+void DisableUs(DESC *d, unsigned chOption)
+{
+    switch (HimState(d, chOption))
+    {
+    case OPTION_YES:
+        SetUsState(d, chOption, OPTION_WANTNO_EMPTY);
+        SendWont(d, chOption);
+        break;
+
+    case OPTION_WANTNO_OPPOSITE:
+        SetUsState(d, chOption, OPTION_WANTNO_EMPTY);
+        break;
+
+    case OPTION_WANTYES_EMPTY:
+        SetUsState(d, chOption, OPTION_WANTYES_OPPOSITE);
+        break;
+    }
+}
+
+void TelnetSetup(DESC *d)
+{
+    EnableUs(d, TELNET_SGA);
+    EnableHim(d, TELNET_SGA);
+    EnableHim(d, TELNET_NAWS);
 }
 
 /*! \brief Parse raw data from network connection into command lines and
@@ -3699,7 +3808,7 @@ void __cdecl MUDListenThread(void * pVoid)
         }
         d = initializesock(socketClient, &SockAddr);
 
-        // add this socket to the IO completion port
+        // Add this socket to the IO completion port.
         //
         CompletionPort = CreateIoCompletionPort((HANDLE)socketClient, CompletionPort, (DWORD) d, 1);
 
@@ -3709,6 +3818,8 @@ void __cdecl MUDListenThread(void * pVoid)
             shutdownsock_brief(d);
             continue;
         }
+
+        TelnetSetup(d);
 
         if (!PostQueuedCompletionStatus(CompletionPort, 0, (DWORD) d, &lpo_welcome))
         {
