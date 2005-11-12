@@ -1,7 +1,7 @@
 /*! \file bsd.cpp
  * File for most TCP socket-related code. Some socket-related code also exists in netcommon.cpp, but most of it is here.
  *
- * $Id: bsd.cpp,v 1.63 2005-11-12 05:33:07 sdennis Exp $
+ * $Id: bsd.cpp,v 1.64 2005-11-12 08:02:56 rmg Exp $
  */
 
 #include "copyright.h"
@@ -2354,7 +2354,7 @@ void process_output(void *dvoid, int bHandleShutdown)
  * Class  5 - DM   (0xF2)  Class  9 - WILL (0xFB)
  */
 
-static const char nvt_input_xlat_table[256] =
+static const unsigned char nvt_input_xlat_table[256] =
 {
 //  0   1   2   3   4   5   6   7   8   9   A   B   C   D   E   F
 //
