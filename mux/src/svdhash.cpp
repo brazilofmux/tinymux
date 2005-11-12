@@ -1,6 +1,6 @@
 // svdhash.cpp -- CHashPage, CHashFile, CHashTable modules.
 //
-// $Id: svdhash.cpp,v 1.40 2005-10-24 03:12:46 sdennis Exp $
+// $Id: svdhash.cpp,v 1.41 2005-11-12 08:27:50 rmg Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -722,7 +722,7 @@ HP_DIRINDEX CHashPage::FindFirstKey(UINT32 nHash, unsigned int *numchecks)
     //
     int iDir = (nHash >> 4) % nDirSize;
     int sOffset = m_pDirectory[iDir];
-    if (sOffset < HP_DIR_DELETED)
+    if ((unsigned int)sOffset < HP_DIR_DELETED)
     {
         HP_PHEAPNODE pNode = (HP_PHEAPNODE)(m_pHeapStart + sOffset);
         if (pNode->u.s.nHash == nHash)
@@ -1362,7 +1362,7 @@ bool CHashFile::InitializeDirectory(unsigned int n)
     m_hpCacheLookup = new int[m_nDir];
     ISOUTOFMEMORY(m_hpCacheLookup);
 
-    for (int i = 0; i < m_nDir; i++)
+    for (unsigned int i = 0; i < m_nDir; i++)
     {
         m_pDir[i] = 0xFFFFFFFFUL;
         m_hpCacheLookup[i] = -1;
@@ -1440,7 +1440,6 @@ bool CHashFile::RebuildDirectory(void)
 
     // Re-build the directory from CHashPages.
     //
-    int Hits = 0;
     for (UINT32 oPage = 0; oPage < oEndOfFile; oPage += HF_SIZEOF_PAGE)
     {
         int iCache;
