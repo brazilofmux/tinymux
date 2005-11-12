@@ -1,6 +1,6 @@
 // funceval.cpp -- MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.95 2005-10-19 06:17:36 sdennis Exp $
+// $Id: funceval.cpp,v 1.96 2005-11-12 08:13:11 rmg Exp $
 //
 
 #include "copyright.h"
@@ -2813,7 +2813,7 @@ FUNCTION(fun_unpack)
     memset(MatchTable, 0, sizeof(MatchTable));
     for (int i = 0; i < iRadix; i++)
     {
-        MatchTable[aRadixTable[i]] = i+1;
+        MatchTable[(unsigned char)aRadixTable[i]] = i+1;
     }
 
     // Validate that first argument contains only characters from the
@@ -3803,7 +3803,7 @@ void CBitField::Resize(unsigned int nMaximum_arg)
 
             // Initialize masks by calculating all possible single bits.
             //
-            for (int i = 0; i < nBitsPer; i++)
+            for (unsigned int i = 0; i < nBitsPer; i++)
             {
                 pMasks[i] = ((UINT32)1) << i;
             }
