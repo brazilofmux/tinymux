@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.156 2005-11-10 23:05:28 sdennis Exp $
+// $Id: functions.cpp,v 1.157 2005-11-12 08:22:20 rmg Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2005 Solid Vertical Domains, Ltd. All
@@ -5547,7 +5547,7 @@ FUNCTION(fun_height)
         target = lookup_player(executor, pTargetName, true);
         if (!Good_obj(target))
         {
-            target == NOTHING;
+            target = NOTHING;
         }
     }
 
@@ -5591,7 +5591,7 @@ FUNCTION(fun_width)
         target = lookup_player(executor, pTargetName, true);
         if (!Good_obj(target))
         {
-            target == NOTHING;
+            target = NOTHING;
         }
     }
 
@@ -7733,7 +7733,7 @@ FUNCTION(fun_stripaccents)
 
 // Base Letter: AaCcEeIiNnOoUuYy?!<>sPpD
 //
-static const char AccentCombo1[256] =
+static const unsigned char AccentCombo1[256] =
 {
 //  0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F
 //
@@ -7758,7 +7758,7 @@ static const char AccentCombo1[256] =
 
 // Accent:      `'^~:o,u"B|-&Ee
 //
-static const char AccentCombo2[256] =
+static const unsigned char AccentCombo2[256] =
 {
 //  0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F
 //
@@ -7826,16 +7826,16 @@ FUNCTION(fun_accent)
         return;
     }
 
-    const char *p = fargs[0];
-    const char *q = fargs[1];
+    const unsigned char *p = (unsigned char *)fargs[0];
+    const unsigned char *q = (unsigned char *)fargs[1];
 
     while (*p)
     {
         unsigned char ch = '\0';
-        char ch0 = AccentCombo1[*p];
+        unsigned char ch0 = AccentCombo1[*p];
         if (ch0)
         {
-            char ch1 = AccentCombo2[*q];
+            unsigned char ch1 = AccentCombo2[*q];
             if (ch1)
             {
                 ch  = AccentCombo3[ch0-1][ch1];
