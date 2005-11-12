@@ -1,7 +1,7 @@
 /*! \file bsd.cpp
  * File for most TCP socket-related code. Some socket-related code also exists in netcommon.cpp, but most of it is here.
  *
- * $Id: bsd.cpp,v 1.61 2005-11-11 17:24:49 sdennis Exp $
+ * $Id: bsd.cpp,v 1.62 2005-11-12 01:45:48 sdennis Exp $
  */
 
 #include "copyright.h"
@@ -2338,29 +2338,22 @@ void process_output(void *dvoid, int bHandleShutdown)
 }
 #endif // WIN32
 
-// Class  0 - Any byte.
-// Class  1 - BS   (0x08)
-// Class  2 - LF   (0x0A)
-// Class  3 - CR   (0x0D)
-// Class  4 - DEL  (0x7F)
-// Class    - EOR  (0xEF)
-// Class  5 - SE   (0xF0)
-// Class  6 - NOP  (0xF1)
-// Class  7 - DM   (0xF2)
-// Class  8 - BRK  (0xF3)
-// Class  9 - IP   (0xF4)
-// Class 10 - AO   (0xF5)
-// Class 11 - AYT  (0xF6)
-// Class 12 - EC   (0xF7)
-// Class 13 - EL   (0xF8)
-// Class 14 - GA   (0xF9)
-// Class 15 - SB   (0xFA)
-// Class 16 - WILL (0xFB)
-// Class 17 - WONT (0xFC)
-// Class 18 - DO   (0xFD)
-// Class 19 - DONT (0xFE)
-// Class 20 - IAC  (0xFF)
-//
+/*! \brief Table to quickly classify characters recieved from the wire with
+ * their Telnet meaning.
+ *
+ * The use of this table reduces the size of the state table.
+ *
+ * Class  0 - Any byte.    Class  5 - BRK  (0xF3)  Class 10 - WONT (0xFC)
+ * Class  1 - BS   (0x08)  Class  5 - IP   (0xF4)  Class 11 - DO   (0xFD)
+ * Class  2 - LF   (0x0A)  Class  5 - AO   (0xF5)  Class 12 - DONT (0xFE)
+ * Class  3 - CR   (0x0D)  Class  6 - AYT  (0xF6)  Class 13 - IAC  (0xFF)
+ * Class  1 - DEL  (0x7F)  Class  7 - EC   (0xF7)
+ * Class  5 - EOR  (0xEF)  Class  5 - EL   (0xF8)
+ * Class  4 - SE   (0xF0)  Class  5 - GA   (0xF9)
+ * Class  5 - NOP  (0xF1)  Class  8 - SB   (0xFA)
+ * Class  5 - DM   (0xF2)  Class  9 - WILL (0xFB)
+ */
+
 static const char nvt_input_xlat_table[256] =
 {
 //  0   1   2   3   4   5   6   7   8   9   A   B   C   D   E   F
@@ -2372,7 +2365,7 @@ static const char nvt_input_xlat_table[256] =
     0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  // 4
     0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  // 5
     0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  // 6
-    0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  4,  // 7
+    0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  1,  // 7
 
     0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  // 8
     0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  // 9
@@ -2380,43 +2373,60 @@ static const char nvt_input_xlat_table[256] =
     0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  // B
     0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  // C
     0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  // D
-    0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  // E
-    5,  6,  7,  8,  9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20   // F
+    0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  5,  // E
+    4,  5,  5,  5,  5,  5,  6,  7,  5,  5,  8,  9, 10, 11, 12, 13   // F
 };
 
-// Action  0 - Nothing.
-// Action  1 - Accept CHR(X) (and transition to Normal state).
-// Action  2 - Erase Character.
-// Action  3 - Accept Line.
-// Action  4 - Transition to the Normal state.
-// Action  5 - Transition to Have_IAC state.
-// Action  6 - Transition to the Have_IAC_WILL state.
-// Action  7 - Transition to the Have_IAC_DONT state.
-// Action  8 - Transition to the Have_IAC_DO state.
-// Action  9 - Transition to the Have_IAC_WONT state.
-// Action 10 - Transition to the Have_IAC_SB state.
-// Action 11 - Transition to the Have_IAC_SB_IAC state.
-// Action 12 - Respond to IAC AYT and return to the Normal state.
-// Action 13 - Respond to IAC WILL X
-// Action 14 - Respond to IAC DONT X
-// Action 15 - Respond to IAC DO X
-// Action 16 - Respond to IAC WONT X
-// Action 17 - Accept CHR(X) for Sub-Option (and transition to Have_IAC_SB state).
-// Action 18 - Accept Completed Sub-option and transition to Normal state.
-//
+/*! \brief Table to map current telnet parsing state state and input to
+ * specific actions and state changes.
+ *
+ * Action  0 - Nothing.
+ * Action  1 - Accept CHR(X) (and transition to Normal state).
+ * Action  2 - Erase Character.
+ * Action  3 - Accept Line.
+ * Action  4 - Transition to the Normal state.
+ * Action  5 - Transition to Have_IAC state.
+ * Action  6 - Transition to the Have_IAC_WILL state.
+ * Action  7 - Transition to the Have_IAC_DONT state.
+ * Action  8 - Transition to the Have_IAC_DO state.
+ * Action  9 - Transition to the Have_IAC_WONT state.
+ * Action 10 - Transition to the Have_IAC_SB state.
+ * Action 11 - Transition to the Have_IAC_SB_IAC state.
+ * Action 12 - Respond to IAC AYT and return to the Normal state.
+ * Action 13 - Respond to IAC WILL X
+ * Action 14 - Respond to IAC DONT X
+ * Action 15 - Respond to IAC DO X
+ * Action 16 - Respond to IAC WONT X
+ * Action 17 - Accept CHR(X) for Sub-Option (and transition to Have_IAC_SB state).
+ * Action 18 - Accept Completed Sub-option and transition to Normal state.
+ */
 
-static const int nvt_input_action_table[8][21] =
+static const int nvt_input_action_table[8][14] =
 {
-//    Any   BS   LF   CR  DEL   SE  NOP   DM  BRK   IP   AO  AYT   EC   EL   GA   SB WILL DONT   DO WONT  IAC
-    {   1,   2,   3,   0,   2,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   5  }, // Normal
-    {   4,   4,   4,   4,   4,   4,   4,   4,   4,   4,   4,  12,   2,   4,   4,  10,   6,   7,   8,   9,   1  }, // Have_IAC
-    {  13,  13,  13,  13,  13,  13,  13,  13,  13,  13,  13,  13,  13,  13,  13,  13,  13,  13,  13,  13,   4  }, // Have_IAC_WILL
-    {  14,  14,  14,  14,  14,  14,  14,  14,  14,  14,  14,  14,  14,  14,  14,  14,  14,  14,  14,  14,   4  }, // Have_IAC_DONT
-    {  15,  15,  15,  15,  15,  15,  15,  15,  15,  15,  15,  15,  15,  15,  15,  15,  15,  15,  15,  15,   4  }, // Have_IAC_DO
-    {  16,  16,  16,  16,  16,  16,  16,  16,  16,  16,  16,  16,  16,  16,  16,  16,  16,  16,  16,  16,   4  }, // Have_IAC_WONT
-    {  17,  17,  17,  17,  17,  17,  17,  17,  17,  17,  17,  17,  17,  17,  17,  17,  17,  17,  17,  17,  11  }, // Have_IAC_SB
-    {   0,   0,   0,   0,   0,  18,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,  17  }, // Have_IAC_SB_IAC
+//    Any   BS   LF   CR   SE  NOP  AYT   EC   SB WILL DONT   DO WONT  IAC
+    {   1,   2,   3,   0,   1,   1,   1,   1,   1,   1,   1,   1,   1,   5  }, // Normal
+    {   4,   4,   4,   4,   4,   4,  12,   2,  10,   6,   7,   8,   9,   1  }, // Have_IAC
+    {  13,  13,  13,  13,  13,  13,  13,  13,  13,  13,  13,  13,  13,   4  }, // Have_IAC_WILL
+    {  14,  14,  14,  14,  14,  14,  14,  14,  14,  14,  14,  14,  14,   4  }, // Have_IAC_DONT
+    {  15,  15,  15,  15,  15,  15,  15,  15,  15,  15,  15,  15,  15,   4  }, // Have_IAC_DO
+    {  16,  16,  16,  16,  16,  16,  16,  16,  16,  16,  16,  16,  16,   4  }, // Have_IAC_WONT
+    {  17,  17,  17,  17,  17,  17,  17,  17,  17,  17,  17,  17,  17,  11  }, // Have_IAC_SB
+    {   0,   0,   0,   0,  18,   0,   0,   0,   0,   0,   0,   0,   0,  17  }, // Have_IAC_SB_IAC
 };
+
+/*! \brief Return the other side's negotiation state.
+ *
+ * The negotiation of each optional feature of telnet can be in one of six
+ * states (defined in interface.h): OPTION_NO, OPTION_YES,
+ * OPTION_WANTNO_EMPTY, OPTION_WANTNO_OPPOSITE, OPTION_WANTYES_EMPTY, and
+ * OPTION_WANTYES_OPPOSITE.
+ *
+ * An option is only enabled when it is in the OPTION_YES state.
+ * 
+ * \param d        Player connection context.
+ * \param chOption Telnet Option
+ * \return         One of six states.
+ */
 
 int HimState(DESC *d, unsigned char chOption)
 {
@@ -2435,6 +2445,20 @@ int HimState(DESC *d, unsigned char chOption)
     return OPTION_NO;
 }
 
+/*! \brief Return our side's negotiation state.
+ *
+ * The negotiation of each optional feature of telnet can be in one of six
+ * states (defined in interface.h): OPTION_NO, OPTION_YES,
+ * OPTION_WANTNO_EMPTY, OPTION_WANTNO_OPPOSITE, OPTION_WANTYES_EMPTY, and
+ * OPTION_WANTYES_OPPOSITE.
+ *
+ * An option is only enabled when it is in the OPTION_YES state.
+ * 
+ * \param d        Player connection context.
+ * \param chOption Telnet Option
+ * \return         One of six states.
+ */
+
 int UsState(DESC *d, unsigned char chOption)
 {
     if (TELNET_NAWS == chOption)
@@ -2452,6 +2476,14 @@ int UsState(DESC *d, unsigned char chOption)
     return OPTION_NO;
 }
 
+/*! \brief Change the other side's negotiation state.
+ *
+ * \param d         Player connection context.
+ * \param chOption  Telnet Option
+ * \param iHimState One of the six option negotiation states.
+ * \return          None.
+ */
+
 void SetHimState(DESC *d, unsigned char chOption, int iHimState)
 {
     if (TELNET_NAWS == chOption)
@@ -2467,6 +2499,14 @@ void SetHimState(DESC *d, unsigned char chOption, int iHimState)
         d->nvt_sga_him_state = iHimState;
     }
 }
+
+/*! \brief Change our side's negotiation state.
+ *
+ * \param d         Player connection context.
+ * \param chOption  Telnet Option.
+ * \param iHimState One of the six option negotiation states.
+ * \return          None.
+ */
 
 void SetUsState(DESC *d, unsigned char chOption, int iUsState)
 {
@@ -2492,12 +2532,26 @@ void SetUsState(DESC *d, unsigned char chOption, int iUsState)
     }
 }
 
+/*! \brief Transmit a Telnet WILL sequence for the given option.
+ *
+ * \param d         Player connection context.
+ * \param chOption  Telnet Option.
+ * \return          None.
+ */
+
 void SendWill(DESC *d, unsigned char chOption)
 {
     char aWill[3] = { NVT_IAC, NVT_WILL, 0 };
     aWill[2] = chOption;
     queue_write_LEN(d, aWill, sizeof(aWill));
 }
+
+/*! \brief Transmit a Telnet DONT sequence for the given option.
+ *
+ * \param d         Player connection context.
+ * \param chOption  Telnet Option.
+ * \return          None.
+ */
 
 void SendDont(DESC *d, unsigned char chOption)
 {
@@ -2506,6 +2560,13 @@ void SendDont(DESC *d, unsigned char chOption)
     queue_write_LEN(d, aDont, sizeof(aDont));
 }
 
+/*! \brief Transmit a Telnet DO sequence for the given option.
+ *
+ * \param d         Player connection context.
+ * \param chOption  Telnet Option.
+ * \return          None.
+ */
+
 void SendDo(DESC *d, unsigned char chOption)
 {
     char aDo[3]   = { NVT_IAC, NVT_DO,   0 };
@@ -2513,12 +2574,27 @@ void SendDo(DESC *d, unsigned char chOption)
     queue_write_LEN(d, aDo, sizeof(aDo));
 }
 
+/*! \brief Transmit a Telnet WONT sequence for the given option.
+ *
+ * \param d         Player connection context.
+ * \param chOption  Telnet Option.
+ * \return          None.
+ */
+
 void SendWont(DESC *d, unsigned char chOption)
 {
     char aWont[3] = { NVT_IAC, NVT_WONT, 0 };
     aWont[2] = chOption;
     queue_write_LEN(d, aWont, sizeof(aWont));
 }
+
+/*! \brief Determine whether we want a particular option on his side of the
+ * link to be enabled.
+ *
+ * \param d         Player connection context.
+ * \param chOption  Telnet Option.
+ * \return          Yes if we want it enabled.
+ */
 
 bool DesiredHimOption(DESC *d, unsigned char chOption)
 {
@@ -2531,6 +2607,18 @@ bool DesiredHimOption(DESC *d, unsigned char chOption)
     return false;
 }
 
+/*! \brief Determine whether we want a particular option on our side of the
+ * link to be enabled.
+ *
+ * It doesn't make sense for NAWS to be enabled on the server side, and we
+ * only negotiate SGA on our side if we have already successfully negotiated
+ * the EOR option.
+ *
+ * \param d         Player connection context.
+ * \param chOption  Telnet Option.
+ * \return          Yes if we want it enabled.
+ */
+
 bool DesiredUsOption(DESC *d, unsigned char chOption)
 {
     if (  TELNET_EOR  == chOption
@@ -2541,6 +2629,17 @@ bool DesiredUsOption(DESC *d, unsigned char chOption)
     }
     return false;
 }
+
+/*! \brief Start the process of negotiating the enablement of an option on
+ * his side.
+ *
+ * Whether we actually send anything across the wire to enable this depends
+ * on the negotiation state. The option could potentially already be enabled.
+ *
+ * \param d         Player connection context.
+ * \param chOption  Telnet Option.
+ * \return          None.
+ */
 
 void EnableHim(DESC *d, unsigned chOption)
 {
@@ -2561,6 +2660,17 @@ void EnableHim(DESC *d, unsigned chOption)
     }
 }
 
+/*! \brief Start the process of negotiating the disablement of an option on
+ * his side.
+ *
+ * Whether we actually send anything across the wire to disable this depends
+ * on the negotiation state. The option could potentially already be disabled.
+ *
+ * \param d         Player connection context.
+ * \param chOption  Telnet Option.
+ * \return          None.
+ */
+
 void DisableHim(DESC *d, unsigned chOption)
 {
     switch (HimState(d, chOption))
@@ -2579,6 +2689,17 @@ void DisableHim(DESC *d, unsigned chOption)
         break;
     }
 }
+
+/*! \brief Start the process of negotiating the enablement of an option on
+ * our side.
+ *
+ * Whether we actually send anything across the wire to enable this depends
+ * on the negotiation state. The option could potentially already be enabled.
+ *
+ * \param d         Player connection context.
+ * \param chOption  Telnet Option.
+ * \return          None.
+ */
 
 void EnableUs(DESC *d, unsigned chOption)
 {
@@ -2599,6 +2720,17 @@ void EnableUs(DESC *d, unsigned chOption)
     }
 }
 
+/*! \brief Start the process of negotiating the disablement of an option on
+ * our side.
+ *
+ * Whether we actually send anything across the wire to disable this depends
+ * on the negotiation state. The option could potentially already be disabled.
+ *
+ * \param d         Player connection context.
+ * \param chOption  Telnet Option.
+ * \return          None.
+ */
+
 void DisableUs(DESC *d, unsigned chOption)
 {
     switch (HimState(d, chOption))
@@ -2618,10 +2750,22 @@ void DisableUs(DESC *d, unsigned chOption)
     }
 }
 
+/*! \brief Begin initial telnet negotiations on a socket.
+ *
+ * The two sides of the connection may not agree on the following set of
+ * options, and keep in mind that the successful negotiation of a particular
+ * option may cause the negotiation of another option.
+ *
+ * Without this function, we are only react to client requests.
+ *
+ * \param d        Player connection on which the input arrived.
+ * \return         None.
+ */
+
 void TelnetSetup(DESC *d)
 {
-    // We would also like to enable SGA on our side, but we won't unless the
-    // client successfully negotiates EOR.
+    // Attempt negotation of EOR so we can use that, and if that succeeds,
+    // code elsewhere will attempt the negotation of SGA for our side as well.
     //
     EnableUs(d, TELNET_EOR);
     EnableHim(d, TELNET_EOR);
