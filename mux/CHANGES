@@ -104,6 +104,8 @@ Feature Additions:
     functions is as simple as adding an entry to a table.
  -- Added Telnet negotiation including options for Negotiate About
     Window Size (NAWS), End Of Record (EOR), and Surpress Go-Ahead (SGA).
+ -- Add support for y-umlaut in accent() and throughout.
+ -- Add support for ae and AE ligatures in accent().
  -- Added WIDTH() and HEIGHT().
  -- Added FMOD().
 
@@ -229,6 +231,10 @@ Bug Fixes:
     prevented LCON() from showing anything.
  -- Fix @sweep and NEARBY() so that they don't leak information about
     Dark Wizards.
+ -- Fix an off-by-one command quota bug.  After 100 times of trying
+    to queue too many commands, players are left unable to queue even a
+    single command without auto-@halting themselves.
+ -- @mail/quick was double-evaluating.
 
 
 Performance Enhancements:
@@ -268,6 +274,9 @@ Performance Enhancements:
  -- Since caching knowledge of ^-Commands and $-Commands seems to work
     so well, revisit each area and look for and require the colon as
     well.
+ -- Remove FindFirstKey() sanity checking from hashadd_LEN() to reduce
+    the number of FindFirstKey() requests.
+ -- Unroll CHashPage::FindFirstKey() and favor most common case.
 
 
 Cosmetic Changes:
@@ -277,6 +286,7 @@ Cosmetic Changes:
  -- Remove references to have_macros in wizhelp.txt
  -- Removed mention of SIDEFX flag from help topic as this is an
     Rhost-ism.
+ -- Begin making comments doxygen-compatible.
 
 
 Miscellaneous:
@@ -303,3 +313,4 @@ Miscellaneous:
  -- Ashen-Shugar provided muxdbpuller which allows individual objects
     (and attributes on those objects) to be extracted from an offline
     flatfile.  The result is in an @decomp format suitable for quoting.
+ -- Added some #defines around FiranMUX-specific behavior.
