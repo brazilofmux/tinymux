@@ -1,7 +1,7 @@
 /*! \file bsd.cpp
  * File for most TCP socket-related code. Some socket-related code also exists in netcommon.cpp, but most of it is here.
  *
- * $Id: bsd.cpp,v 1.62 2005-11-12 01:45:48 sdennis Exp $
+ * $Id: bsd.cpp,v 1.63 2005-11-12 05:33:07 sdennis Exp $
  */
 
 #include "copyright.h"
@@ -2807,7 +2807,8 @@ void process_input_helper(DESC *d, char *pBytes, int nBytes)
     char *p = d->raw_input_at;
     char *pend = d->raw_input->cmd + (LBUF_SIZE - sizeof(CBLKHDR) - 1);
 
-    while (nBytes--)
+    int n = nBytes;
+    while (n--)
     {
         unsigned char ch = (unsigned char)*pBytes;
         int iAction = nvt_input_action_table[d->raw_input_state][nvt_input_xlat_table[ch]];

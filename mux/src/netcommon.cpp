@@ -1,6 +1,6 @@
 // netcommon.cpp
 //
-// $Id: netcommon.cpp,v 1.57 2005-11-11 16:02:49 sdennis Exp $
+// $Id: netcommon.cpp,v 1.58 2005-11-12 05:33:07 sdennis Exp $
 //
 // This file contains routines used by the networking code that do not
 // depend on the implementation of the networking code.  The network-specific
@@ -2545,7 +2545,7 @@ void Task_ProcessCommand(void *arg_voidptr, int arg_iInteger)
                 {
                     d->input_tail = NULL;
                 }
-                d->input_size -= (strlen(t->cmd) + 1);
+                d->input_size -= strlen(t->cmd);
                 d->last_time.GetUTC();
                 if (d->program_data != NULL)
                 {
