@@ -6408,7 +6408,7 @@ FLAG LIST
     p - PUPPET     |   q - TERSE      |   r - ROBOT      |   s - SAFE
     t - TRANSPARENT|   u - SUSPECT    |   v - VERBOSE    |   w - STAFF
     x - SLAVE      |   $ - SITEMON    |   z - CONTROL_OK |   ? - HEAD
-    - - NOBLEED    |   | - VACATION   |   ~ - NOACCENTS  |
+    - - NOBLEED    |   | - VACATION   |   ~ - NOACCENTS  |   ( - HTML
   ------------------------------------------------------------------------
 
   (*) Note that these 'flags' are really types.  Also notice that THING
