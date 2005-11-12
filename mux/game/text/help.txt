@@ -3609,7 +3609,7 @@ Related Topics: @name.
 & @UNLOCK
 @UNLOCK
 
-  COMMAND: @unlock <object>
+  COMMAND: @unlock[/<whichlock>] <object>
            @unlock <object>/<attrib>
 
   The first form removes the lock on <object>, so that anyone may pass
@@ -3622,7 +3622,8 @@ Related Topics: @name.
   You must own the attribute to be unlocked, but you do not need to own the
   object.
 
-  Related Topics: @chown, @lock, ATTRIBUTE OWNERSHIP.
+  Related Topics: @chown, @lock, @lock keys, @lock locks,
+      ATTRIBUTE OWNERSHIP.
 
 & @USE
 @USE
