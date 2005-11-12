@@ -1,6 +1,6 @@
 // db.cpp
 //
-// $Id: db.cpp,v 1.69 2005-11-12 08:06:46 rmg Exp $
+// $Id: db.cpp,v 1.70 2005-11-12 22:26:53 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -3188,8 +3188,8 @@ void load_restart_db(void)
             d->raw_input_state    = getref(f);
             d->nvt_sga_him_state  = getref(f);
             d->nvt_sga_us_state   = getref(f);
-            d->nvt_eor_him_state = getref(f);
-            d->nvt_eor_us_state  = getref(f);
+            d->nvt_eor_him_state  = getref(f);
+            d->nvt_eor_us_state   = getref(f);
             d->nvt_naws_him_state = getref(f);
             d->nvt_naws_us_state  = getref(f);
             d->height = getref(f);
@@ -3245,6 +3245,7 @@ void load_restart_db(void)
         d->input_lost = 0;
         d->raw_input = NULL;
         d->raw_input_at = NULL;
+        d->nOption = 0;
         d->quota = mudconf.cmd_quota_max;
         d->program_data = NULL;
         d->hashnext = NULL;

@@ -1,6 +1,6 @@
 // netcommon.cpp
 //
-// $Id: netcommon.cpp,v 1.58 2005-11-12 05:33:07 sdennis Exp $
+// $Id: netcommon.cpp,v 1.59 2005-11-12 22:26:53 sdennis Exp $
 //
 // This file contains routines used by the networking code that do not
 // depend on the implementation of the networking code.  The network-specific
@@ -497,9 +497,10 @@ void freeqs(DESC *d)
     {
         free_lbuf(d->raw_input);
     }
-
     d->raw_input = NULL;
+
     d->raw_input_at = NULL;
+    d->nOption = 0;
     d->raw_input_state    = NVT_IS_NORMAL;
     d->nvt_sga_him_state  = OPTION_NO;
     d->nvt_sga_us_state   = OPTION_NO;

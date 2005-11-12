@@ -1,7 +1,7 @@
 /*! \file bsd.cpp
  * File for most TCP socket-related code. Some socket-related code also exists in netcommon.cpp, but most of it is here.
  *
- * $Id: bsd.cpp,v 1.64 2005-11-12 08:02:56 rmg Exp $
+ * $Id: bsd.cpp,v 1.65 2005-11-12 22:26:53 sdennis Exp $
  */
 
 #include "copyright.h"
@@ -2067,6 +2067,7 @@ DESC *initializesock(SOCKET s, struct sockaddr_in *a)
     d->input_lost = 0;
     d->raw_input = NULL;
     d->raw_input_at = NULL;
+    d->nOption = 0;
     d->raw_input_state = NVT_IS_NORMAL;
     d->nvt_sga_him_state = OPTION_NO;
     d->nvt_sga_us_state = OPTION_NO;
@@ -2792,10 +2793,6 @@ void TelnetSetup(DESC *d)
 
 void process_input_helper(DESC *d, char *pBytes, int nBytes)
 {
-    static unsigned char aOption[SBUF_SIZE];
-    unsigned char *pOption = NULL;
-    unsigned char *pOptionEnd = NULL;
-
     if (!d->raw_input)
     {
         d->raw_input = (CBLK *) alloc_lbuf("process_input.raw");
@@ -2804,19 +2801,18 @@ void process_input_helper(DESC *d, char *pBytes, int nBytes)
 
     int nInputBytes = 0;
     int nLostBytes  = 0;
-    char *p = d->raw_input_at;
+
+    char *p    = d->raw_input_at;
     char *pend = d->raw_input->cmd + (LBUF_SIZE - sizeof(CBLKHDR) - 1);
+
+    unsigned char *q    = d->aOption + d->nOption;
+    unsigned char *qend = d->aOption + SBUF_SIZE - 1;
 
     int n = nBytes;
     while (n--)
     {
         unsigned char ch = (unsigned char)*pBytes;
         int iAction = nvt_input_action_table[d->raw_input_state][nvt_input_xlat_table[ch]];
-#if 0
-        STARTLOG(LOG_ALWAYS, "NET", "TELNT");
-        log_printf("S %d 0x%02X %d", d->raw_input_state, ch, iAction);
-        ENDLOG;
-#endif
         switch (iAction)
         {
         case 1:
@@ -2917,8 +2913,7 @@ void process_input_helper(DESC *d, char *pBytes, int nBytes)
         case 10:
             // Action 10 - Transition to the Have_IAC_SB state.
             //
-            pOption = aOption;
-            pOptionEnd = aOption + sizeof(aOption) - 1;
+            q = d->aOption;
             d->raw_input_state = NVT_IS_HAVE_IAC_SB;
             break;
 
@@ -3054,37 +3049,39 @@ void process_input_helper(DESC *d, char *pBytes, int nBytes)
             // Action 17 - Accept CHR(X) for Sub-Option (and transition to Have_IAC_SB state).
             //
             d->raw_input_state = NVT_IS_HAVE_IAC_SB;
-            if (pOption < pOptionEnd)
+            if (q < qend)
             {
-                *pOption++ = ch;
+                *q++ = ch;
             }
             break;
 
         case 18:
             // Action 18 - Accept Completed Sub-option and transition to Normal state.
             //
-            if (aOption < pOption)
+            if (  d->aOption < q
+               && q < qend)
             {
-                size_t n = pOption - aOption;
-                switch (aOption[0])
+                size_t n = q - d->aOption;
+                switch (d->aOption[0])
                 {
                 case TELNET_NAWS:
                     if (n == 5)
                     {
-                        d->width  = (aOption[1] << 8 ) | aOption[2];
-                        d->height = (aOption[3] << 8 ) | aOption[4];
+                        d->width  = (d->aOption[1] << 8 ) | d->aOption[2];
+                        d->height = (d->aOption[3] << 8 ) | d->aOption[4];
                     }
                     break;
                 }
             }
+            q = d->aOption;
             d->raw_input_state = NVT_IS_NORMAL;
-            *pOption = '\0';
             break;
         }
         pBytes++;
     }
 
-    if (p > d->raw_input->cmd)
+    if (  d->raw_input->cmd < p
+       && p < pend)
     {
         d->raw_input_at = p;
     }
@@ -3093,6 +3090,16 @@ void process_input_helper(DESC *d, char *pBytes, int nBytes)
         free_lbuf(d->raw_input);
         d->raw_input = NULL;
         d->raw_input_at = NULL;
+    }
+
+    if ( d->aOption <= q
+       && q < qend)
+    {
+        d->nOption = q - d->aOption;
+    }
+    else
+    {
+        d->nOption = 0;
     }
     d->input_tot  += nBytes;
     d->input_size += nInputBytes;

@@ -1,6 +1,6 @@
 // interface.h
 //
-// $Id: interface.h,v 1.16 2005-11-11 16:02:49 sdennis Exp $
+// $Id: interface.h,v 1.17 2005-11-12 22:26:53 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -162,6 +162,8 @@ struct descriptor_data
   CBLK *input_tail;
   CBLK *raw_input;
   char *raw_input_at;
+  size_t        nOption;
+  unsigned char aOption[SBUF_SIZE];
   int raw_input_state;
   int nvt_sga_him_state;
   int nvt_sga_us_state;
