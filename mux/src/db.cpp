@@ -1,6 +1,6 @@
 // db.cpp
 //
-// $Id: db.cpp,v 1.68 2005-11-11 16:02:49 sdennis Exp $
+// $Id: db.cpp,v 1.69 2005-11-12 08:06:46 rmg Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -2708,7 +2708,7 @@ void putref(FILE *f, dbref ref)
 // Code 2 - '"'  (0x22)
 // Code 3 - '\\' (0x5C)
 //
-static const char xlat_table[256] =
+static const unsigned char xlat_table[256] =
 {
     1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
