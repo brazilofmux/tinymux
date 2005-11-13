@@ -1,6 +1,6 @@
 // command.cpp -- command parser and support routines.
 //
-// $Id: command.cpp,v 1.62 2005-10-25 05:46:30 sdennis Exp $
+// $Id: command.cpp,v 1.63 2005-11-13 18:00:12 rmg Exp $
 //
 
 #include "copyright.h"
@@ -911,24 +911,32 @@ void init_cmdtab(void)
     goto_cmdp = (CMDENT *) hashfindLEN((char *)"goto", strlen("goto"), &mudstate.command_htab);
 }
 
+/*! \brief Fills in the table of single-character prefix commands.
+ *
+ * Command entries for known prefix commands (<code>" : ; \ # & - ~</code>)
+ * are copied from the regular command table. Entries for all other starting
+ * characters are set to \c NULL.
+ *
+ * \return         None.
+ */
 void set_prefix_cmds()
 {
-    int i;
-
-    // Load the command prefix table.
-    //
-    for (i = 0; i < 256; i++)
+    for (int i = 0; i < 256; i++)
     {
         prefix_cmds[i] = NULL;
     }
-    prefix_cmds['"']  = (CMDENT *) hashfindLEN((char *)"\"", 1, &mudstate.command_htab);
-    prefix_cmds[':']  = (CMDENT *) hashfindLEN((char *)":",  1, &mudstate.command_htab);
-    prefix_cmds[';']  = (CMDENT *) hashfindLEN((char *)";",  1, &mudstate.command_htab);
-    prefix_cmds['\\'] = (CMDENT *) hashfindLEN((char *)"\\", 1, &mudstate.command_htab);
-    prefix_cmds['#']  = (CMDENT *) hashfindLEN((char *)"#",  1, &mudstate.command_htab);
-    prefix_cmds['&']  = (CMDENT *) hashfindLEN((char *)"&",  1, &mudstate.command_htab);
-    prefix_cmds['-']  = (CMDENT *) hashfindLEN((char *)"-",  1, &mudstate.command_htab);
-    prefix_cmds['~']  = (CMDENT *) hashfindLEN((char *)"~",  1, &mudstate.command_htab);
+
+#define SET_PREFIX_CMD(s) prefix_cmds[(unsigned char)(s)[0]] = \
+        (CMDENT *) hashfindLEN((char *)(s), 1, &mudstate.command_htab)
+    SET_PREFIX_CMD("\"");
+    SET_PREFIX_CMD(":");
+    SET_PREFIX_CMD(";");
+    SET_PREFIX_CMD("\\");
+    SET_PREFIX_CMD("#");
+    SET_PREFIX_CMD("&");
+    SET_PREFIX_CMD("-");
+    SET_PREFIX_CMD("~");
+#undef SET_PREFIX_CMD
 }
 
 // ---------------------------------------------------------------------------
