@@ -235,6 +235,7 @@ Bug Fixes:
     to queue too many commands, players are left unable to queue even a
     single command without auto-@halting themselves.
  -- @mail/quick was double-evaluating.
+ -- Fixed input statistics of SESSION report. Introduced in 2.4.0.23.
  -- Suboption sequences that crossed packet boundaries would crash the
     server.  Introduced in 2.4.0.23.
  -- Alierak fixed several signed/unsigned warning as well as the use of
