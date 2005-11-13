@@ -1,6 +1,6 @@
 // eval.cpp -- Command evaluation and cracking.
 //
-// $Id: eval.cpp,v 1.27 2004-08-18 22:20:13 sdennis Exp $
+// $Id: eval.cpp,v 1.28 2005-11-13 10:12:37 rmg Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -68,6 +68,14 @@ static char *parse_to_cleanup( int eval, int first, char *cstr, char *rstr,
     *zstr = '\0';
     return rstr;
 }
+
+/*! \brief Accesses the isSpecial_ tables with proper typecast.
+ *
+ * \param table    indicates which table: \c L1, \c L2, \c L3, or \c L4.
+ * \param c        character being looked up.
+ * \return         lvalue of table entry.
+ */
+#define isSpecial(table, c) isSpecial_##table[(unsigned char)(c)]
 
 // During parsing, this table may be modified for a particular terminating delimeter.
 // The table is always restored it's original state.
@@ -201,18 +209,18 @@ char *parse_to(char **dstr, char delim, int eval)
         *dstr = rstr;
     }
     zstr = cstr = rstr;
-    int iOriginalCode = isSpecial_L3[(unsigned char)delim];
-    isSpecial_L3[' '] = 1; // Spaces are special.
+    int iOriginalCode = isSpecial(L3, delim);
+    isSpecial(L3, ' ') = 1; // Spaces are special.
     if (iOriginalCode <= 3)
     {
         // We can override this code.
         //
-        isSpecial_L3[(unsigned char)delim] = 8;
+        isSpecial(L3, delim) = 8;
     }
 
     for (;;)
     {
-        int iCode = isSpecial_L3[(unsigned char)*cstr];
+        int iCode = isSpecial(L3, *cstr);
 
 TryAgain:
         if (iCode == 0)
@@ -223,7 +231,7 @@ TryAgain:
             do
             {
                 NEXTCHAR
-                iCode = isSpecial_L3[(unsigned char)*cstr];
+                iCode = isSpecial(L3, *cstr);
             } while (iCode == 0);
         }
 
@@ -331,8 +339,8 @@ TryAgain:
                     {
                         rstr = parse_to_cleanup(eval, first, cstr, rstr, zstr, strFirewall);
                         *dstr = ++cstr;
-                        isSpecial_L3[(unsigned char)delim] = iOriginalCode;
-                        isSpecial_L3[' '] = 0; // Spaces aren't special anymore
+                        isSpecial(L3, delim) = iOriginalCode;
+                        isSpecial(L3, ' ') = 0; // Spaces no longer special
                         return rstr;
                     }
                     first = false;
@@ -353,7 +361,7 @@ TryAgain:
                     }
                     for (;;)
                     {
-                        int iCodeL4 = isSpecial_L4[(unsigned char)*cstr];
+                        int iCodeL4 = isSpecial(L4, *cstr);
                         if (iCodeL4 == 0)
                         {
                             // Mudane Characters
@@ -361,7 +369,7 @@ TryAgain:
                             do
                             {
                                 NEXTCHAR
-                                iCodeL4 = isSpecial_L4[(unsigned char)*cstr];
+                                iCodeL4 = isSpecial(L4, *cstr);
                             } while (iCodeL4 == 0);
                         }
 
@@ -423,8 +431,8 @@ TryAgain:
                 {
                     // '\0' - End of string.
                     //
-                    isSpecial_L3[(unsigned char)delim] = iOriginalCode;
-                    isSpecial_L3[' '] = 0; // Spaces aren't special anymore
+                    isSpecial(L3, delim) = iOriginalCode;
+                    isSpecial(L3, ' ') = 0; // Spaces no longer special
                     break;
                 }
                 else
@@ -435,8 +443,8 @@ TryAgain:
                     {
                         rstr = parse_to_cleanup(eval, first, cstr, rstr, zstr, strFirewall);
                         *dstr = ++cstr;
-                        isSpecial_L3[(unsigned char)delim] = iOriginalCode;
-                        isSpecial_L3[' '] = 0; // Spaces aren't special anymore
+                        isSpecial(L3, delim) = iOriginalCode;
+                        isSpecial(L3, ' ') = 0; // Spaces no longer special
                         return rstr;
                     }
 
@@ -481,24 +489,24 @@ char *parse_to_lite(char **dstr, char delim1, char delim2, int *nLen, int *iWhic
     }
     sp = 0;
     cstr = rstr = *dstr;
-    int iOriginalCode1 = isSpecial_L3[(unsigned char)delim1];
-    int iOriginalCode2 = isSpecial_L3[(unsigned char)delim2];
+    int iOriginalCode1 = isSpecial(L3, delim1);
+    int iOriginalCode2 = isSpecial(L3, delim2);
     if (iOriginalCode1 <= 3)
     {
         // We can override this code.
         //
-        isSpecial_L3[(unsigned char)delim1] = 8;
+        isSpecial(L3, delim1) = 8;
     }
     if (iOriginalCode2 <= 3)
     {
         // We can override this code.
         //
-        isSpecial_L3[(unsigned char)delim2] = 8;
+        isSpecial(L3, delim2) = 8;
     }
 
     for (;;)
     {
-        int iCode = isSpecial_L3[(unsigned char)*cstr];
+        int iCode = isSpecial(L3, *cstr);
 
 TryAgain:
         if (iCode == 0)
@@ -508,7 +516,7 @@ TryAgain:
             do
             {
                 cstr++;
-                iCode = isSpecial_L3[(unsigned char)*cstr];
+                iCode = isSpecial(L3, *cstr);
             } while (iCode == 0);
         }
 
@@ -585,8 +593,8 @@ TryAgain:
                         *cstr = '\0';
                         *nLen = (cstr - rstr);
                         *dstr = ++cstr;
-                        isSpecial_L3[(unsigned char)delim1] = iOriginalCode1;
-                        isSpecial_L3[(unsigned char)delim2] = iOriginalCode2;
+                        isSpecial(L3, delim1) = iOriginalCode1;
+                        isSpecial(L3, delim2) = iOriginalCode2;
                         return rstr;
                     }
                     cstr++;
@@ -599,7 +607,7 @@ TryAgain:
                     cstr++;
                     for (;;)
                     {
-                        int iCodeL4 = isSpecial_L4[(unsigned char)*cstr];
+                        int iCodeL4 = isSpecial(L4, *cstr);
                         if (iCodeL4 == 0)
                         {
                             // Mudane Characters
@@ -607,7 +615,7 @@ TryAgain:
                             do
                             {
                                 cstr++;
-                                iCodeL4 = isSpecial_L4[(unsigned char)*cstr];
+                                iCodeL4 = isSpecial(L4, *cstr);
                             } while (iCodeL4 == 0);
                         }
 
@@ -661,8 +669,8 @@ TryAgain:
                 {
                     // '\0' - End of string.
                     //
-                    isSpecial_L3[(unsigned char)delim1] = iOriginalCode1;
-                    isSpecial_L3[(unsigned char)delim2] = iOriginalCode2;
+                    isSpecial(L3, delim1) = iOriginalCode1;
+                    isSpecial(L3, delim2) = iOriginalCode2;
                     break;
                 }
                 else
@@ -682,8 +690,8 @@ TryAgain:
                         *cstr = '\0';
                         *nLen = (cstr - rstr);
                         *dstr = ++cstr;
-                        isSpecial_L3[(unsigned char)delim1] = iOriginalCode1;
-                        isSpecial_L3[(unsigned char)delim2] = iOriginalCode2;
+                        isSpecial(L3, delim1) = iOriginalCode1;
+                        isSpecial(L3, delim2) = iOriginalCode2;
                         return rstr;
                     }
 
@@ -1143,16 +1151,16 @@ void mux_exec( char *buff, char **bufc, dbref executor, dbref caller,
 
     // Save Parser Mode.
     //
-    bool bSpaceIsSpecialSave = isSpecial_L1[' '];
-    bool bParenthesisIsSpecialSave = isSpecial_L1['('];
-    bool bBracketIsSpecialSave = isSpecial_L1['['];
+    bool bSpaceIsSpecialSave = isSpecial(L1, ' ');
+    bool bParenthesisIsSpecialSave = isSpecial(L1, '(');
+    bool bBracketIsSpecialSave = isSpecial(L1, '[');
 
     // Setup New Parser Mode.
     //
     bool bSpaceIsSpecial = mudconf.space_compress && !(eval & EV_NO_COMPRESS);
-    isSpecial_L1[' '] = bSpaceIsSpecial;
-    isSpecial_L1['('] = (eval & EV_FCHECK) != 0;
-    isSpecial_L1['['] = (eval & EV_NOFCHECK) == 0;
+    isSpecial(L1, ' ') = bSpaceIsSpecial;
+    isSpecial(L1, '(') = (eval & EV_FCHECK) != 0;
+    isSpecial(L1, '[') = (eval & EV_NOFCHECK) == 0;
 
     size_t nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
     for (;;)
@@ -1160,10 +1168,10 @@ void mux_exec( char *buff, char **bufc, dbref executor, dbref caller,
         // Handle mundane characters specially. There are usually a lot of them.
         // Just copy them.
         //
-        if (!isSpecial_L1[(unsigned char)*pdstr])
+        if (!isSpecial(L1, *pdstr))
         {
             char *p = pdstr + 1;
-            while (!isSpecial_L1[(unsigned char)*p++])
+            while (!isSpecial(L1, *p++))
             {
                 ; // Nothing.
             }
@@ -1419,7 +1427,7 @@ void mux_exec( char *buff, char **bufc, dbref executor, dbref caller,
                 fargs = NULL;
             }
             eval &= ~EV_FCHECK;
-            isSpecial_L1['('] = false;
+            isSpecial(L1, '(') = false;
         }
         else if (*pdstr == '%')
         {
@@ -1445,7 +1453,7 @@ void mux_exec( char *buff, char **bufc, dbref executor, dbref caller,
             {
                 pdstr++;
                 ch = *pdstr;
-                unsigned char cType_L2 = isSpecial_L2[(unsigned char)ch];
+                unsigned char cType_L2 = isSpecial(L2, ch);
                 TempPtr = *bufc;
                 int iCode = cType_L2 & 0x7F;
                 if (iCode == 1)
@@ -2072,9 +2080,9 @@ void mux_exec( char *buff, char **bufc, dbref executor, dbref caller,
 
     // Restore Parser Mode.
     //
-    isSpecial_L1[' '] = bSpaceIsSpecialSave;
-    isSpecial_L1['('] = bParenthesisIsSpecialSave;
-    isSpecial_L1['['] = bBracketIsSpecialSave;
+    isSpecial(L1, ' ') = bSpaceIsSpecialSave;
+    isSpecial(L1, '(') = bParenthesisIsSpecialSave;
+    isSpecial(L1, '[') = bBracketIsSpecialSave;
 }
 
 /* ---------------------------------------------------------------------------
