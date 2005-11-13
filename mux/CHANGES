@@ -235,6 +235,10 @@ Bug Fixes:
     to queue too many commands, players are left unable to queue even a
     single command without auto-@halting themselves.
  -- @mail/quick was double-evaluating.
+ -- Suboption sequences that crossed packet boundaries would crash the
+    server.  Introduced in 2.4.0.23.
+ -- Alierak fixed several signed/unsigned warning as well as the use of
+    '==' where '=' was intened.
 
 
 Performance Enhancements:
