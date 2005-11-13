@@ -1,6 +1,6 @@
 // db.cpp
 //
-// $Id: db.cpp,v 1.70 2005-11-12 22:26:53 sdennis Exp $
+// $Id: db.cpp,v 1.71 2005-11-13 10:25:08 rmg Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -1039,8 +1039,9 @@ void init_attrtab(void)
     // initialization because it's part of the A_PASS attribute
     // name.
     //
-    mux_AttrNameSet['*'] = true;
-    mux_AttrNameInitialSet['*'] = true;
+    const unsigned char star = '*';
+    mux_AttrNameSet[star] = true;
+    mux_AttrNameInitialSet[star] = true;
     for (a = attr; a->number; a++)
     {
         int nLen;
@@ -1054,8 +1055,8 @@ void init_attrtab(void)
         anum_set(a->number, a);
         hashaddLEN(buff, nLen, a, &mudstate.attr_name_htab);
     }
-    mux_AttrNameInitialSet['*'] = false;
-    mux_AttrNameSet['*'] = false;
+    mux_AttrNameInitialSet[star] = false;
+    mux_AttrNameSet[star] = false;
 }
 
 /* ---------------------------------------------------------------------------
