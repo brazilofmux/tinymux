@@ -1,6 +1,6 @@
 // command.cpp -- command parser and support routines.
 //
-// $Id: command.cpp,v 1.63 2005-11-13 18:00:12 rmg Exp $
+// $Id: command.cpp,v 1.64 2005-11-13 18:46:13 rmg Exp $
 //
 
 #include "copyright.h"
@@ -3852,9 +3852,8 @@ void do_icmd(dbref player, dbref cause, dbref enactor, int key, char *name,
              char *args[], int nargs)
 {
     CMDENT *cmdp;
-    NAMETAB *logcmdp;
-    char *buff1, *pt1, *pt2, *pt3, *atrpt, pre[2], *pt4, *pt5;
-    int x, aflags, y, home;
+    char *buff1, *pt1, *pt2, *pt3, *atrpt, *pt4, *pt5;
+    int x, aflags, y;
     dbref target = NOTHING, aowner, zone;
     bool bFound, set;
 
@@ -4038,74 +4037,51 @@ void do_icmd(dbref player, dbref cause, dbref enactor, int key, char *name,
         }
         if (*pt1)
         {
-            home = 0;
-            *pre = '\0';
-            *(pre+1) = '\0';
-            logcmdp = (NAMETAB *) hashfindLEN(pt4, strlen(pt4), &mudstate.logout_cmd_htab);
-            if (!logcmdp)
+            bool bHome, bColon = false;
+            if (!string_compare(pt1, "home"))
             {
-                cmdp = (CMDENT *) hashfindLEN(pt1, strlen(pt1), &mudstate.command_htab);
-                if (!cmdp)
-                {
-                    if (!string_compare(pt1, "home"))
-                    {
-                        home = 1;
-                    }
-                    else if (prefix_cmds[*pt1] && !*(pt1 + 1))
-                    {
-                        *pre = *pt1;
-                    }
-                }
+                bHome = true;
+                cmdp = NULL;
             }
             else
             {
-                cmdp = NULL;
+                bHome = false;
+                cmdp = (CMDENT *) hashfindLEN(pt1, strlen(pt1), &mudstate.command_htab);
             }
-            if (cmdp || logcmdp || home || *pre)
+            if (cmdp || bHome)
             {
                 atrpt = atr_get(target, A_CMDCHECK, &aowner, &aflags);
                 if (cmdp)
                 {
                     aflags = strlen(cmdp->cmdname);
-                }
-                else if (logcmdp)
-                {
-                    aflags = strlen(logcmdp->name);
-                }
-                else if (home)
-                {
-                    aflags = 4;
+                    bColon = (  aflags == 1
+                             && *(cmdp->cmdname) == ':');
                 }
                 else
                 {
-                    aflags = 1;
+                    aflags = 4;
                 }
                 pt5 = atrpt;
                 while (pt1)
                 {
                     if (cmdp)
                     {
-                        pt1 = strstr(pt5, cmdp->cmdname);
-                    }
-                    else if (logcmdp)
-                    {
-                        pt1 = strstr(pt5, logcmdp->name);
-                    }
-                    else if (home)
-                    {
-                        pt1 = strstr(pt5, "home");
-                    }
-                    else if (*pre == ':')
-                    {
-                        pt1 = strstr(pt5, "::");
-                        if (pt1)
+                        if (bColon)
                         {
-                            pt1++;
+                            pt1 = strstr(pt5, "::");
+                            if (pt1)
+                            {
+                                pt1++;
+                            }
+                        }
+                        else
+                        {
+                            pt1 = strstr(pt5, cmdp->cmdname);
                         }
                     }
                     else
                     {
-                        pt1 = strstr(pt5, pre);
+                        pt1 = strstr(pt5, "home");
                     }
                     if (  pt1
                        && (pt1 > atrpt)
@@ -4140,17 +4116,9 @@ void do_icmd(dbref player, dbref cause, dbref enactor, int key, char *name,
                         {
                             pt3 = tprintf("%d:%s", key + 1, cmdp->cmdname);
                         }
-                        else if (logcmdp)
-                        {
-                            pt3 = tprintf("%d:%s", key + 1, logcmdp->name);
-                        }
-                        else if (home)
-                        {
-                            pt3 = tprintf("%d:home", key + 1);
-                        }
                         else
                         {
-                            pt3 = tprintf("%d:%c", key + 1, *pre);
+                            pt3 = tprintf("%d:home", key + 1);
                         }
                         if ((strlen(atrpt) + strlen(pt3)) < LBUF_SIZE - 1)
                         {
