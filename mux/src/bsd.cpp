@@ -1,7 +1,7 @@
 /*! \file bsd.cpp
  * File for most TCP socket-related code. Some socket-related code also exists in netcommon.cpp, but most of it is here.
  *
- * $Id: bsd.cpp,v 1.65 2005-11-12 22:26:53 sdennis Exp $
+ * $Id: bsd.cpp,v 1.66 2005-11-13 00:25:24 sdennis Exp $
  */
 
 #include "copyright.h"
@@ -3049,7 +3049,8 @@ void process_input_helper(DESC *d, char *pBytes, int nBytes)
             // Action 17 - Accept CHR(X) for Sub-Option (and transition to Have_IAC_SB state).
             //
             d->raw_input_state = NVT_IS_HAVE_IAC_SB;
-            if (q < qend)
+            if (  d->aOption < q
+               && q < qend)
             {
                 *q++ = ch;
             }
