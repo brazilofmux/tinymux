@@ -1,9 +1,9 @@
-TinyMUX 2.3:  SGP Minimal DB
-Last Update:  January 2003
+TinyMUX 2.4:  SGP Minimal DB
+Last Update:  November 2005
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The Sandbox Globals Project(SGP) has been included as part of a minimal
-DB with this distribution of MUX.  The current version is 1.0, dated
+DB with this distribution of TinyMUX.  The current version is 1.0, dated
 August 1, 2000, and contains all patches and bugfixes as of 042501.
 More information and additional global commands that work with SGP may
 be found at:
@@ -21,7 +21,7 @@ The Basics:
     SGP RP Pack Globals, and PLACES.
 
   - The plushelp.txt and staffhelp.txt files for SGP have been
-    installed in the mux2.3/game/text directory.
+    installed in the mux2.4/game/text directory.
 
   - The netmux.conf has been modified to include needed configuration
     options for SGP.
@@ -34,7 +34,7 @@ The Basics:
     always, move all non-command objects to either inside the other SGP
     objects or store in a special place for that purpose.
 
-  - Storage has been created, with the password of 'luftroma'. 
+  - Storage has been created, with the password of 'luftroma'.
 	
   * AS ALWAYS, be sure to read the server documentation.
 
