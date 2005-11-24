@@ -1,6 +1,6 @@
 // cque.cpp -- commands and functions for manipulating the command queue.
 //
-// $Id: cque.cpp,v 1.30 2005-10-30 00:01:55 sdennis Exp $
+// $Id: cque.cpp,v 1.31 2005-11-24 03:19:52 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -1021,6 +1021,7 @@ void do_wait
     }
 }
 
+#ifdef QUERY_SLAVE
 // ---------------------------------------------------------------------------
 // do_query: Command interface to sql_que
 //
@@ -1030,26 +1031,51 @@ void do_query
     dbref caller,
     dbref enactor,
     int   key,
-    char *query,
-    char *cmd,
+    char *dbref_attr,
+    char *dbname_query,
     char *cargs[],
     int   ncargs
 )
 {
-#ifdef QUERY_SLAVE
     if (key & QUERY_SQL)
     {
         // SQL Query.
         //
+        dbref thing;
+        ATTR *pattr;
+
+        if (!( parse_attrib(executor, dbref_attr, &thing, &pattr)
+            && pattr))
+        {
+            notify_quiet(executor, "No match.");
+            return;
+        }
+
+        if (!Controls(executor, thing))
+        {
+            notify_quiet(executor, NOPERM_MESSAGE);
+            return;
+        }
+
+        char *pQuery = dbname_query;
+        char *pDBName = parse_to(&pQuery, '/', 0);
+
+        if (NULL == pQuery)
+        {
+            notify(executor, "QUERY: No Query.");
+            return;
+        }
+
+        STARTLOG(LOG_ALWAYS, "CMD", "QUERY");
+        Log.tinyprintf("Thing=#%d, Attr=%s, dbname=%s, query=%s", thing, pattr->name, pDBName, pQuery);
+        ENDLOG;
     }
     else
     {
         notify_quiet(executor, "At least one query option is required.");
     }
-#else
-    notify_quiet(executor, "@query support is not enabled.");
-#endif
 }
+#endif // QUERY_SLAVE
 
 CLinearTimeAbsolute Show_lsaNow;
 int Total_SystemTasks;
