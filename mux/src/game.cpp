@@ -1,6 +1,6 @@
 // game.cpp
 //
-// $Id: game.cpp,v 1.78 2005-10-21 03:36:01 sdennis Exp $
+// $Id: game.cpp,v 1.79 2005-11-24 19:24:48 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -36,6 +36,9 @@ extern void init_logout_cmdtab(void);
 extern void raw_notify(dbref, const char *);
 extern void do_dbck(dbref executor, dbref caller, dbref enactor, int);
 extern void boot_slave(dbref executor, dbref caller, dbref enactor, int key);
+#ifdef QUERY_SLAVE
+extern void boot_sqlslave(dbref executor, dbref caller, dbref enactor, int key);
+#endif // QUERY_SLAVE
 
 void fork_and_dump(int);
 void pcache_sync(void);
@@ -3091,6 +3094,9 @@ int DCL_CDECL main(int argc, char *argv[])
     }
     SetupPorts(&nMainGamePorts, aMainGamePorts, &mudconf.ports);
     boot_slave(GOD, GOD, GOD, 0);
+#ifdef QUERY_SLAVE
+    boot_sqlslave(GOD, GOD, GOD, 0);
+#endif // QUERY_SLAVE
 
     // All intialization should be complete, allow the local
     // extensions to configure themselves.

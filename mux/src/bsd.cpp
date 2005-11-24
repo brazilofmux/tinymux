@@ -1,7 +1,7 @@
 /*! \file bsd.cpp
  * File for most TCP socket-related code. Some socket-related code also exists in netcommon.cpp, but most of it is here.
  *
- * $Id: bsd.cpp,v 1.66 2005-11-13 00:25:24 sdennis Exp $
+ * $Id: bsd.cpp,v 1.67 2005-11-24 19:24:48 sdennis Exp $
  */
 
 #include "copyright.h"
@@ -504,6 +504,111 @@ void CleanUpSQLSlaveProcess(void)
     }
     sqlslave_pid = 0;
 }
+
+void boot_sqlslave(dbref executor, dbref caller, dbref enactor, int)
+{
+    char *pFailedFunc = 0;
+    int sv[2];
+    int i;
+    int maxfds;
+
+#ifdef HAVE_GETDTABLESIZE
+    maxfds = getdtablesize();
+#else // HAVE_GETDTABLESIZE
+    maxfds = sysconf(_SC_OPEN_MAX);
+#endif // HAVE_GETDTABLESIZE
+
+    CleanUpSQLSlaveSocket();
+    CleanUpSQLSlaveProcess();
+
+    if (socketpair(AF_UNIX, SOCK_DGRAM, 0, sv) < 0)
+    {
+        pFailedFunc = "socketpair() error: ";
+        goto failure;
+    }
+
+    // Set to nonblocking.
+    //
+    if (make_nonblocking(sv[0]) < 0)
+    {
+        pFailedFunc = "make_nonblocking() error: ";
+        close(sv[0]);
+        close(sv[1]);
+        goto failure;
+    }
+
+    sqlslave_pid = fork();
+    switch (sqlslave_pid)
+    {
+    case -1:
+
+        pFailedFunc = "fork() error: ";
+        close(sv[0]);
+        close(sv[1]);
+        goto failure;
+
+    case 0:
+
+        // Child.  The following calls to dup2() assume only the minimal
+        // dup2() functionality.  That is, the destination descriptor is
+        // always available for it, and sv[1] is never that descriptor.
+        // It is likely that the standard defined behavior of dup2()
+        // would handle the job by itself more directly, but a little
+        // extra code is low-cost insurance.
+        //
+        close(sv[0]);
+        if (sv[1] != 0)
+        {
+            close(0);
+            if (dup2(sv[1], 0) == -1)
+            {
+                _exit(1);
+            }
+        }
+        if (sv[1] != 1)
+        {
+            close(1);
+            if (dup2(sv[1], 1) == -1)
+            {
+                _exit(1);
+            }
+        }
+        for (i = 3; i < maxfds; i++)
+        {
+            close(i);
+        }
+        execlp("bin/sqlslave", "sqlslave", NULL);
+        _exit(1);
+    }
+    close(sv[1]);
+
+    sqlslave_socket = sv[0];
+    DebugTotalSockets++;
+    if (make_nonblocking(sqlslave_socket) < 0)
+    {
+        pFailedFunc = "make_nonblocking() error: ";
+        CleanUpSQLSlaveSocket();
+        goto failure;
+    }
+    if (maxd <= sqlslave_socket)
+    {
+        maxd = sqlslave_socket + 1;
+    }
+
+    STARTLOG(LOG_ALWAYS, "NET", "QUERY");
+    log_text("SQL slave started on fd ");
+    log_number(sqlslave_socket);
+    ENDLOG;
+    return;
+
+failure:
+
+    CleanUpSQLSlaveProcess();
+    STARTLOG(LOG_ALWAYS, "NET", "SQL");
+    log_text(pFailedFunc);
+    log_number(errno);
+    ENDLOG;
+}
 #endif // QUERY_SLAVE
 
 void boot_slave(dbref executor, dbref caller, dbref enactor, int)
@@ -610,9 +715,16 @@ failure:
     ENDLOG;
 }
 
+// Get results from the SQL slave
+//
+static int get_sqlslave_result(void)
+{
+    return 0;
+}
+
 // Get a result from the slave
 //
-static int get_slave_result()
+static int get_slave_result(void)
 {
     int local_port, remote_port;
     DESC *d;
@@ -1397,7 +1509,6 @@ void shovechars(int nPorts, PortInfo aPorts[])
         }
 
 #ifdef QUERY_SLAVE
-#if 0
         // Get result sets from sqlslave.
         //
         if (  !IS_INVALID_SOCKET(sqlslave_socket)
@@ -1408,7 +1519,6 @@ void shovechars(int nPorts, PortInfo aPorts[])
                 ; // Nothing.
             }
         }
-#endif
 #endif // QUERY_SLAVE
 
         // Check for new connection requests.
