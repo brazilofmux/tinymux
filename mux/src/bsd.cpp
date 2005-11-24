@@ -1,7 +1,7 @@
 /*! \file bsd.cpp
  * File for most TCP socket-related code. Some socket-related code also exists in netcommon.cpp, but most of it is here.
  *
- * $Id: bsd.cpp,v 1.67 2005-11-24 19:24:48 sdennis Exp $
+ * $Id: bsd.cpp,v 1.68 2005-11-24 20:07:06 sdennis Exp $
  */
 
 #include "copyright.h"
@@ -599,6 +599,8 @@ void boot_sqlslave(dbref executor, dbref caller, dbref enactor, int)
     log_text("SQL slave started on fd ");
     log_number(sqlslave_socket);
     ENDLOG;
+
+    write(sqlslave_socket, "PING", 4);
     return;
 
 failure:
@@ -719,6 +721,36 @@ failure:
 //
 static int get_sqlslave_result(void)
 {
+    char buf[LBUF_SIZE];
+
+    int len = read(sqlslave_socket, buf, sizeof(buf)-1);
+    if (len < 0)
+    {
+        int iSocketError = SOCKET_LAST_ERROR;
+        if (  iSocketError == SOCKET_EAGAIN
+           || iSocketError == SOCKET_EWOULDBLOCK)
+        {
+            return -1;
+        }
+        CleanUpSQLSlaveSocket();
+        CleanUpSQLSlaveProcess();
+
+        STARTLOG(LOG_ALWAYS, "NET", "QUERY");
+        log_text("read() of query slave failed. Query Slave stopped.");
+        ENDLOG;
+
+        return -1;
+    }
+    else if (len == 0)
+    {
+        return -1;
+    }
+    buf[len] = '\0';
+
+    STARTLOG(LOG_ALWAYS, "NET", "QUERY");
+    log_text(buf);
+    ENDLOG;
+
     return 0;
 }
 

@@ -1,6 +1,6 @@
 // slave.cpp -- This slave does iptoname conversions, and identquery lookups.
 //
-// $Id: slave.cpp,v 1.10 2003-04-01 19:13:08 sdennis Exp $
+// $Id: slave.cpp,v 1.11 2005-11-24 20:07:06 sdennis Exp $
 //
 // The philosophy is to keep this program as simple/small as possible.  It
 // routinely performs non-vfork forks()s, so the conventional wisdom is that
@@ -252,8 +252,12 @@ int main(int argc, char *argv[])
     parent_pid = getppid();
     if (parent_pid == 1)
     {
+        // Our real parent process is gone, and we have been inherited by the
+        // init process.
+        //
         exit(1);
     }
+
     alarm_signal(SIGALRM);
     signal(SIGCHLD, CAST_SIGNAL_FUNC child_signal);
     signal(SIGPIPE, SIG_DFL);

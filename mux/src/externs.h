@@ -1,6 +1,6 @@
 // externs.h -- Prototypes for externs not defined elsewhere.
 //
-// $Id: externs.h,v 1.46 2005-10-22 16:21:47 sdennis Exp $
+// $Id: externs.h,v 1.47 2005-11-24 20:07:06 sdennis Exp $
 //
 
 #ifndef EXTERNS_H
@@ -14,6 +14,10 @@
 /* From bsd.cpp */
 void CleanUpSlaveSocket(void);
 void CleanUpSlaveProcess(void);
+#ifdef QUERY_SLAVE
+void CleanUpSQLSlaveSocket(void);
+void CleanUpSQLSlaveProcess(void);
+#endif // QUERY_SLAVE
 
 /* From conf.cpp */
 extern void cf_log_notfound(dbref, char *, const char *, char *);

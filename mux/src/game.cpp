@@ -1,6 +1,6 @@
 // game.cpp
 //
-// $Id: game.cpp,v 1.79 2005-11-24 19:24:48 sdennis Exp $
+// $Id: game.cpp,v 1.80 2005-11-24 20:07:06 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -3132,6 +3132,10 @@ int DCL_CDECL main(int argc, char *argv[])
 #ifndef WIN32
     CleanUpSlaveSocket();
     CleanUpSlaveProcess();
+#endif
+#ifdef QUERY_SLAVE
+    CleanUpSQLSlaveSocket();
+    CleanUpSQLSlaveProcess();
 #endif
 
     // Go ahead and explicitly free the memory for these things so
