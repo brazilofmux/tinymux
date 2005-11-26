@@ -19,7 +19,7 @@ funmath.o: funmath.cpp copyright.h autoconf.h config.h externs.h db.h attrcache.
 game.o: game.cpp copyright.h autoconf.h config.h externs.h db.h attrcache.h flags.h timeutil.h match.h mudconf.h alloc.h htab.h svdhash.h stringutil.h svdrand.h attrs.h comsys.h file_c.h interface.h mguests.h muxcli.h pcre.h powers.h help.h
 help.o: help.cpp copyright.h autoconf.h config.h externs.h db.h attrcache.h flags.h timeutil.h match.h mudconf.h alloc.h htab.h svdhash.h stringutil.h svdrand.h help.h command.h
 htab.o: htab.cpp copyright.h autoconf.h config.h externs.h db.h attrcache.h flags.h timeutil.h match.h mudconf.h alloc.h htab.h svdhash.h stringutil.h svdrand.h
-local.o: local.cpp copyright.h autoconf.h config.h externs.h db.h attrcache.h flags.h timeutil.h match.h mudconf.h alloc.h htab.h svdhash.h stringutil.h svdrand.h
+local.o: local.cpp copyright.h autoconf.h config.h externs.h db.h attrcache.h flags.h timeutil.h match.h mudconf.h alloc.h htab.h svdhash.h stringutil.h svdrand.h functions.h command.h
 log.o: log.cpp copyright.h autoconf.h config.h externs.h db.h attrcache.h flags.h timeutil.h match.h mudconf.h alloc.h htab.h svdhash.h stringutil.h svdrand.h
 look.o: look.cpp copyright.h autoconf.h config.h externs.h db.h attrcache.h flags.h timeutil.h match.h mudconf.h alloc.h htab.h svdhash.h stringutil.h svdrand.h ansi.h attrs.h command.h interface.h powers.h
 mail.o: mail.cpp copyright.h autoconf.h config.h externs.h db.h attrcache.h flags.h timeutil.h match.h mudconf.h alloc.h htab.h svdhash.h stringutil.h svdrand.h attrs.h powers.h mail.h
