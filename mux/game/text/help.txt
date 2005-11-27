@@ -7375,7 +7375,7 @@ IDIV()
     > say idiv(-17,3)
     You say "-5"
 
-  Related Topics: fdiv(), floordiv(), iadd(), imul(), isub(), mod(),
+  Related Topics: iadd(), imul(), isub(), fdiv(), floordiv(), fmod(), mod(),
                   remainder().
 
 & IDLE()
@@ -10760,8 +10760,8 @@ REMAINDER()
   than y. For negative x, remainder(x,y) always returns a negative
   number greater than y.
 
-  remainder() is the usually the way the '%' operator in the C
-   programming language is defined.
+  remainder() is usually the way the '%' operator in the C programming
+  language is defined.
 
   Example:
     > say remainder(-9,5)
@@ -10773,7 +10773,7 @@ REMAINDER()
     > say remainder(18,3)
     You say "0"
 
-  Related Topics: idiv(), floordiv(), iadd(), idiv(), imul(), isub(),
+  Related Topics: iadd(), idiv(), imul(), isub(), floordiv(), fmod(),
                   mod().
 
 & REMIT()
