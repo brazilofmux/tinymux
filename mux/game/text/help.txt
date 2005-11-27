@@ -9249,7 +9249,7 @@ MOD()
     > say mod(18,3)
     You say "0"
 
-  Related Topics: floordiv(), iadd(), idiv(), imul(), isub(),
+  Related Topics: floordiv(), fmod(), iadd(), idiv(), imul(), isub(),
                   remainder().
 
 & MONEY
