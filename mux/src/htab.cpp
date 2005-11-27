@@ -1,7 +1,7 @@
 /*! \file htab.cpp
  *  Table hashing routines.
  *
- * $Id: htab.cpp,v 1.28 2005-10-30 05:18:28 sdennis Exp $
+ * $Id: htab.cpp,v 1.29 2005-11-27 04:03:38 sdennis Exp $
  *
  * The functions here outsource most of their work to CHashTable.  There are
  * several reasons to use the functions here instead of using CHashTable
@@ -30,7 +30,7 @@
  * number of requests they receive as well as the hash table's performance
  * in responding to those requests. The hashreset() function allows callers
  * to reset these statistics. Typically, this is done when the caller knows
- * future access patterns are of more interest than past access paterns. 
+ * future access patterns are of more interest than past access paterns.
  *
  * \param htab     Hash Table.
  * \return         None.

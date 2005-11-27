@@ -1,7 +1,7 @@
 /*! \file bsd.cpp
  * File for most TCP socket-related code. Some socket-related code also exists in netcommon.cpp, but most of it is here.
  *
- * $Id: bsd.cpp,v 1.68 2005-11-24 20:07:06 sdennis Exp $
+ * $Id: bsd.cpp,v 1.69 2005-11-27 04:01:10 sdennis Exp $
  */
 
 #include "copyright.h"
@@ -2565,7 +2565,7 @@ static const int nvt_input_action_table[8][14] =
  * OPTION_WANTYES_OPPOSITE.
  *
  * An option is only enabled when it is in the OPTION_YES state.
- * 
+ *
  * \param d        Player connection context.
  * \param chOption Telnet Option
  * \return         One of six states.
@@ -2596,7 +2596,7 @@ int HimState(DESC *d, unsigned char chOption)
  * OPTION_WANTYES_OPPOSITE.
  *
  * An option is only enabled when it is in the OPTION_YES state.
- * 
+ *
  * \param d        Player connection context.
  * \param chOption Telnet Option
  * \return         One of six states.
@@ -3122,7 +3122,7 @@ void process_input_helper(DESC *d, char *pBytes, int nBytes)
 
             default:
                 SetUsState(d, ch, OPTION_NO);
-                break;                
+                break;
             }
             d->raw_input_state = NVT_IS_NORMAL;
             break;

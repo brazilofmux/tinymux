@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.157 2005-11-12 08:22:20 rmg Exp $
+// $Id: functions.cpp,v 1.158 2005-11-27 04:01:10 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2005 Solid Vertical Domains, Ltd. All
@@ -2555,7 +2555,7 @@ FUNCTION(fun_lcon)
                 {
                     continue;
                 }
- 
+
                 if (!ItemToList_AddInteger(&pContext, thing))
                 {
                     break;
