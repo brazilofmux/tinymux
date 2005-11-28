@@ -1,7 +1,8 @@
 /*! \file bsd.cpp
- * File for most TCP socket-related code. Some socket-related code also exists in netcommon.cpp, but most of it is here.
+ * File for most TCP socket-related code. Some socket-related code also exists
+ * in netcommon.cpp, but most of it is here.
  *
- * $Id: bsd.cpp,v 1.69 2005-11-27 04:01:10 sdennis Exp $
+ * $Id: bsd.cpp,v 1.70 2005-11-28 23:37:24 sdennis Exp $
  */
 
 #include "copyright.h"
@@ -549,6 +550,11 @@ void boot_sqlslave(dbref executor, dbref caller, dbref enactor, int)
 
     case 0:
 
+        // If we don't clear this alarm, the child will eventually receive a
+        // SIG_PROF.
+        //
+        MuxAlarm.Clear();
+
         // Child.  The following calls to dup2() assume only the minimal
         // dup2() functionality.  That is, the destination descriptor is
         // always available for it, and sv[1] is never that descriptor.
@@ -655,6 +661,11 @@ void boot_slave(dbref executor, dbref caller, dbref enactor, int)
         goto failure;
 
     case 0:
+
+        // If we don't clear this alarm, the child will eventually receive a
+        // SIG_PROF.
+        //
+        MuxAlarm.Clear();
 
         // Child.  The following calls to dup2() assume only the minimal
         // dup2() functionality.  That is, the destination descriptor is

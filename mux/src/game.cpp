@@ -1,6 +1,6 @@
 // game.cpp
 //
-// $Id: game.cpp,v 1.80 2005-11-24 20:07:06 sdennis Exp $
+// $Id: game.cpp,v 1.81 2005-11-28 23:37:24 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -1634,6 +1634,10 @@ void fork_and_dump(int key)
         }
         if (child == 0)
         {
+            // If we don't clear this alarm, the child will eventually receive a
+            // SIG_PROF.
+            //
+            MuxAlarm.Clear();
 #endif
             if (key & DUMP_STRUCT)
             {
