@@ -3096,6 +3096,7 @@ LOG
     shouts         - Record uses of the @wall command.
     startup        - Record information about game startup.
     suspect        - Record commands entered by players flagged SUSPECT.
+    time_usage     - Record @timecheck output.
     wizard         - Record uses of dangerous commands like @toad.
 
   Related Topics: log_options.
