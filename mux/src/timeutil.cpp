@@ -1,6 +1,6 @@
 // timeutil.cpp -- CLinearTimeAbsolute and CLinearTimeDelta modules.
 //
-// $Id: timeutil.cpp,v 1.47 2005-05-26 06:02:59 sdennis Exp $
+// $Id: timeutil.cpp,v 1.48 2005-12-14 02:53:05 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -409,7 +409,6 @@ char CLinearTimeAbsolute::m_Buffer[204];
 char CLinearTimeDelta::m_Buffer[204];
 
 void GetUTCLinearTime(INT64 *plt);
-void GetLocalFieldedTime(FIELDEDTIME *ft);
 
 bool operator<(const CLinearTimeAbsolute& lta, const CLinearTimeAbsolute& ltb)
 {
