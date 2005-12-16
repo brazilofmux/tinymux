@@ -2,7 +2,7 @@
  * File for most TCP socket-related code. Some socket-related code also exists
  * in netcommon.cpp, but most of it is here.
  *
- * $Id: bsd.cpp,v 1.70 2005-11-28 23:37:24 sdennis Exp $
+ * $Id: bsd.cpp,v 1.71 2005-12-16 20:54:04 sdennis Exp $
  */
 
 #include "copyright.h"
@@ -728,6 +728,8 @@ failure:
     ENDLOG;
 }
 
+#ifdef QUERY_SLAVE
+
 // Get results from the SQL slave
 //
 static int get_sqlslave_result(void)
@@ -764,6 +766,8 @@ static int get_sqlslave_result(void)
 
     return 0;
 }
+
+#endif // QUERY_SLAVE
 
 // Get a result from the slave
 //
