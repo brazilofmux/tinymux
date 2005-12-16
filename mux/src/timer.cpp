@@ -1,6 +1,6 @@
 // timer.cpp -- Mini-task scheduler for timed events.
 //
-// $Id: timer.cpp,v 1.16 2005-10-12 04:24:16 sdennis Exp $
+// $Id: timer.cpp,v 1.17 2005-12-16 20:54:52 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -324,9 +324,16 @@ CTaskHeap::~CTaskHeap(void)
     while (m_nCurrent--)
     {
         PTASK_RECORD pTask = m_pHeap[m_nCurrent];
-        if (pTask) delete pTask;
+        if (pTask)
+        {
+            delete pTask;
+        }
+        m_pHeap[m_nCurrent] = NULL;
     }
-    if (m_pHeap) delete m_pHeap;
+    if (m_pHeap)
+    {
+        delete [] m_pHeap;
+    }
 }
 
 void CTaskHeap::Insert(PTASK_RECORD pTask, SCHCMP *pfCompare)
@@ -348,11 +355,14 @@ bool CTaskHeap::Grow(void)
     //
     int n = m_nAllocated + EXTRA_TASKS;
     PTASK_RECORD *p = new PTASK_RECORD[n];
-    if (!p) return false;
+    if (!p)
+    {
+        return false;
+    }
 
     memcpy(p, m_pHeap, sizeof(PTASK_RECORD)*m_nAllocated);
     m_nAllocated = n;
-    delete m_pHeap;
+    delete [] m_pHeap;
     m_pHeap = p;
 
     return true;

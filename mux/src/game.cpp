@@ -1,6 +1,6 @@
 // game.cpp
 //
-// $Id: game.cpp,v 1.81 2005-11-28 23:37:24 sdennis Exp $
+// $Id: game.cpp,v 1.82 2005-12-16 20:54:52 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -137,7 +137,7 @@ bool regexp_match
     matches = pcre_exec(re, NULL, str, strlen(str), 0, 0, ovec, ovecsize);
     if (matches < 0)
     {
-        delete ovec;
+        delete [] ovec;
         MEMFREE(re);
         return false;
     }
@@ -168,7 +168,7 @@ bool regexp_match
         }
     }
 
-    delete ovec;
+    delete [] ovec;
     MEMFREE(re);
     return true;
 }

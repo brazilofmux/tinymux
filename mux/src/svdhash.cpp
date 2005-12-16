@@ -1,6 +1,6 @@
 // svdhash.cpp -- CHashPage, CHashFile, CHashTable modules.
 //
-// $Id: svdhash.cpp,v 1.41 2005-11-12 08:27:50 rmg Exp $
+// $Id: svdhash.cpp,v 1.42 2005-12-16 20:54:52 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -389,7 +389,7 @@ CHashPage::~CHashPage(void)
 {
     if (m_pPage)
     {
-        delete m_pPage;
+        delete [] m_pPage;
         m_pPage = 0;
     }
 }
@@ -2364,7 +2364,7 @@ bool CHashTable::DoubleDirectory(void)
             pNewDir[iNewDir++] = m_pDir[iDir];
         }
 
-        delete m_pDir;
+        delete [] m_pDir;
 
         m_pDir = pNewDir;
         m_nDirDepth = nNewDirDepth;
@@ -2474,7 +2474,7 @@ void CHashTable::Final(void)
                 m_hpLast = hp;
             }
         }
-        delete m_pDir;
+        delete [] m_pDir;
         m_pDir = NULL;
     }
 }
