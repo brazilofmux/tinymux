@@ -39,10 +39,10 @@ pcre.o: pcre.cpp autoconf.h copyright.h config.h pcre.h externs.h db.h attrcache
 set.o: set.cpp copyright.h autoconf.h config.h externs.h db.h attrcache.h flags.h timeutil.h match.h mudconf.h alloc.h htab.h svdhash.h stringutil.h svdrand.h ansi.h attrs.h powers.h
 sha1.o: sha1.cpp copyright.h autoconf.h config.h externs.h db.h attrcache.h flags.h timeutil.h match.h mudconf.h alloc.h htab.h svdhash.h stringutil.h svdrand.h sha1.h
 speech.o: speech.cpp copyright.h autoconf.h config.h externs.h db.h attrcache.h flags.h timeutil.h match.h mudconf.h alloc.h htab.h svdhash.h stringutil.h svdrand.h attrs.h interface.h powers.h
-sqlshared.o: sqlshared.cpp autoconf.h copyright.h config.h sqlshared.h
+sqlshared.o: sqlshared.cpp autoconf.h copyright.h config.h
 stringutil.o: stringutil.cpp copyright.h autoconf.h config.h externs.h db.h attrcache.h flags.h timeutil.h match.h mudconf.h alloc.h htab.h svdhash.h stringutil.h svdrand.h ansi.h pcre.h
 strtod.o: strtod.cpp autoconf.h copyright.h config.h stringutil.h 
-svdrand.o: svdrand.cpp copyright.h autoconf.h config.h timeutil.h svdhash.h svdrand.h
+svdrand.o: svdrand.cpp copyright.h autoconf.h config.h timeutil.h svdhash.h svdrand.h 
 svdhash.o: svdhash.cpp copyright.h autoconf.h config.h externs.h db.h attrcache.h flags.h timeutil.h match.h mudconf.h alloc.h htab.h svdhash.h stringutil.h svdrand.h
 svdreport.o: svdreport.cpp copyright.h autoconf.h config.h externs.h db.h attrcache.h flags.h timeutil.h match.h mudconf.h alloc.h htab.h svdhash.h stringutil.h svdrand.h attrs.h
 timer.o: timer.cpp copyright.h autoconf.h config.h externs.h db.h attrcache.h flags.h timeutil.h match.h mudconf.h alloc.h htab.h svdhash.h stringutil.h svdrand.h command.h mguests.h interface.h 
@@ -55,4 +55,4 @@ wiz.o: wiz.cpp copyright.h autoconf.h config.h externs.h db.h attrcache.h flags.
 unsplit.o: unsplit.cpp copyright.h 
 slave.o: slave.cpp autoconf.h copyright.h config.h slave.h 
 sqlslave.o: sqlslave.cpp autoconf.h copyright.h config.h
-sqlshared.o: sqlshared.cpp autoconf.h copyright.h config.h sqlshared.h
+sqlshared.o: sqlshared.cpp autoconf.h copyright.h config.h
