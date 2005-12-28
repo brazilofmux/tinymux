@@ -1,6 +1,6 @@
 // eval.cpp -- Command evaluation and cracking.
 //
-// $Id: eval.cpp,v 1.28 2005-11-13 10:12:37 rmg Exp $
+// $Id: eval.cpp,v 1.29 2005-12-28 16:47:58 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -1219,7 +1219,7 @@ void mux_exec( char *buff, char **bufc, dbref executor, dbref caller,
             // configured.
             //
             char *pEnd = *bufc - 1;
-            if (mudconf.space_compress)
+            if (mudconf.space_compress && (eval & EV_FMAND))
             {
                 while (  oldp <= pEnd
                       && mux_isspace(*pEnd))
