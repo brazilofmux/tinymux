@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.158 2005-11-27 04:01:10 sdennis Exp $
+// $Id: functions.cpp,v 1.159 2005-12-28 18:28:55 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2005 Solid Vertical Domains, Ltd. All
@@ -3676,11 +3676,21 @@ FUNCTION(fun_delete)
     int nChars = mux_atol(fargs[2]);
     int nLen = strlen(s);
 
-    int iEnd = iStart + nChars;
+    int iEnd;
+    if (0 <= nChars)
+    {
+        iEnd = iStart + nChars;
+    }
+    else
+    {
+        iEnd = iStart + 1;
+        iStart = iEnd + nChars;
+    }
 
     // Are we deleting anything at all?
     //
-    if (iEnd <= 0 || nLen <= iStart)
+    if (  iEnd <= 0
+       || nLen <= iStart)
     {
         if (nLen)
         {
@@ -3690,7 +3700,7 @@ FUNCTION(fun_delete)
     }
 
     if (iStart < 0) iStart = 0;
-    if (nLen < iEnd ) iEnd = nLen;
+    if (nLen < iEnd) iEnd = nLen;
 
     // ASSERT: Now [iStart,iEnd) exist somewhere within the the string
     // [s,nLen).
