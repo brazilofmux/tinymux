@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.159 2005-12-28 18:28:55 sdennis Exp $
+// $Id: functions.cpp,v 1.160 2005-12-29 01:10:35 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2005 Solid Vertical Domains, Ltd. All
@@ -3683,7 +3683,7 @@ FUNCTION(fun_delete)
     }
     else
     {
-        iEnd = iStart + 1;
+        iEnd = iStart;
         iStart = iEnd + nChars;
     }
 
