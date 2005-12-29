@@ -1,6 +1,6 @@
 // mudconf.h
 //
-// $Id: mudconf.h,v 1.33 2005-10-16 20:48:14 sdennis Exp $
+// $Id: mudconf.h,v 1.34 2005-12-29 17:47:40 sdennis Exp $
 //
 
 #ifndef __CONF_H
@@ -308,7 +308,8 @@ struct statedata
 #ifndef WIN32
     bool          restarting;   // Are we restarting?
     volatile bool dumping;      // Are we dumping?
-    volatile pid_t dumper;      // PID of dumping process.
+    volatile pid_t dumper;      // PID of dumping process (as returned by fork()).
+    volatile pid_t dumped;      // PID of dumping process (as given by SIGCHLD).
     bool    write_protect;      // Write-protect against modifications to the
                                 // database during dumps.
 #endif // !WIN32

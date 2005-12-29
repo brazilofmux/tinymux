@@ -2,7 +2,7 @@
  * File for most TCP socket-related code. Some socket-related code also exists
  * in netcommon.cpp, but most of it is here.
  *
- * $Id: bsd.cpp,v 1.71 2005-12-16 20:54:04 sdennis Exp $
+ * $Id: bsd.cpp,v 1.72 2005-12-29 17:47:40 sdennis Exp $
  */
 
 #include "copyright.h"
@@ -3772,28 +3772,24 @@ RETSIGTYPE DCL_CDECL sighandler(int sig)
                 else if (  mudconf.fork_dump
                         && mudstate.dumping)
                 {
-                    if (child == mudstate.dumper)
+                    mudstate.dumped = child;
+                    if (mudstate.dumper == mudstate.dumped)
                     {
                         // The dumping process finished.
                         //
                         mudstate.dumper  = 0;
-                        mudstate.dumping = false;
-                        local_dump_complete_signal();
-
-                        continue;
+                        mudstate.dumped  = 0;
                     }
-                    else if (mudstate.dumper == 0)
+                    else
                     {
                         // The dumping process finished before we could
-                        // determine its process id.  The new process can
-                        // complete before the fork() call returns.
+                        // obtain its process id from fork().
                         //
-                        mudstate.dumper = child;
-                        mudstate.dumping = false;
-                        local_dump_complete_signal();
-
-                        continue;
                     }
+                    mudstate.dumping = false;
+                    local_dump_complete_signal();
+
+                    continue;
                 }
             }
 

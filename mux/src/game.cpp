@@ -1,6 +1,6 @@
 // game.cpp
 //
-// $Id: game.cpp,v 1.82 2005-12-16 20:54:52 sdennis Exp $
+// $Id: game.cpp,v 1.83 2005-12-29 17:47:40 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -1501,6 +1501,7 @@ void dump_database(void)
         }
     }
     mudstate.dumping = true;
+    mudstate.dumped  = 0;
 #endif
     buff = alloc_mbuf("dump_database");
     sprintf(buff, "%s.#%d#", mudconf.outdb, mudstate.epoch);
@@ -1613,6 +1614,7 @@ void fork_and_dump(int key)
     int child = 0;
     bool bChildExists = false;
     mudstate.dumping = true;
+    mudstate.dumped  = false;
     bool bAttemptFork = mudconf.fork_dump;
 #if !defined(HAVE_PREAD) \
  || !defined(HAVE_PWRITE)
@@ -1657,28 +1659,29 @@ void fork_and_dump(int key)
         {
             log_perror("DMP", "FORK", NULL, "fork()");
         }
-        else if (child != mudstate.dumper)
+        else
         {
             mudstate.dumper = child;
-            bChildExists = true;
-        }
-        else if (child == mudstate.dumper)
-        {
-            // The child process executed and exited before fork() returned to
-            // the parent process.  Without a process id, the parent's SIGCHLD
-            // handler could not be certain that the pid of the exiting
-            // process would match the pid of this child.
-            //
-            // However, at the this point, we can be sure.  But, there's
-            // nothing much left to do.
-            //
-            // See SIGCHLD handler in bsd.cpp.
-            //
-            mudstate.dumper = 0;
-
-            // There is no child (bChildExists == false), we aren't dumping
-            // (mudstate.dumping == false) and there is no outstanding dumper
-            // process (mudstate.dumper == 0).
+            MuxAlarm.SurrenderSlice();
+            if (mudstate.dumper == mudstate.dumped)
+            {
+                // The child process executed and exited before fork() returned to
+                // the parent process.  Without a process id, the parent's SIGCHLD
+                // handler could not be certain that the pid of the exiting
+                // process would match the pid of this child.
+                //
+                // At the this point, we can be sure, however, there's
+                // nothing much left to do.
+                //
+                // See SIGCHLD handler in bsd.cpp.
+                //
+                mudstate.dumper = 0;
+                mudstate.dumped = 0;
+            }
+            else
+            {
+                bChildExists = true;
+            }
         }
 #endif
     }
@@ -3153,7 +3156,8 @@ int DCL_CDECL main(int argc, char *argv[])
     db_free();
 
 #ifdef WIN32
-    // critical section not needed any more
+    // Critical section not needed any more.
+    //
     if (platform == VER_PLATFORM_WIN32_NT)
     {
         DeleteCriticalSection(&csDescriptorList);
