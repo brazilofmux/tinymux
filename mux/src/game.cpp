@@ -1,6 +1,6 @@
 // game.cpp
 //
-// $Id: game.cpp,v 1.83 2005-12-29 17:47:40 sdennis Exp $
+// $Id: game.cpp,v 1.84 2005-12-29 18:00:25 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -1662,7 +1662,6 @@ void fork_and_dump(int key)
         else
         {
             mudstate.dumper = child;
-            MuxAlarm.SurrenderSlice();
             if (mudstate.dumper == mudstate.dumped)
             {
                 // The child process executed and exited before fork() returned to
