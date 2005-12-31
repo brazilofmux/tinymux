@@ -1,5 +1,5 @@
 TinyMUX 2.4:  SGP Minimal DB
-Last Update:  November 2005
+Last Update:  December 2005
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The Sandbox Globals Project(SGP) has been included as part of a minimal
@@ -17,6 +17,8 @@ and questions.
 The Basics:
 ----------
 
+  - Wizard (#1) has the default pasword of 'potrzebie'.
+
   - Included packages in this minimal DB are the SGP Base Globals v1.0,
     SGP RP Pack Globals, and PLACES.
 
@@ -28,13 +30,14 @@ The Basics:
 
   - The master_room is defined as #2.
 
-  - ALL SGP objects are installed and left in the master room.  This is
-    totally intentional and done as a means to facilitate the
-    installation of additional code that the user may desire.  As
-    always, move all non-command objects to either inside the other SGP
-    objects or store in a special place for that purpose.
+  - ALL SGP objects were first installed in the master room.  The Global
+    Parent Object (#4) and Places Functions Object (#10) were moved to an
+    Auxilary Room (#11).
 
-  - Storage has been created, with the password of 'luftroma'.
+  - Storage (#3) was created with a random password. Even though only one
+    person knows the password, you should change it.  Storage owns most
+    game-wide things to keep things uncluttered for staff and to keep
+    things working in the face of staff changes.
 	
   * AS ALWAYS, be sure to read the server documentation.
 
