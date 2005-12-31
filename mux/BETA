@@ -1,20 +1,15 @@
 TinyMUX 2.4:  BETA
-Last Update:  September 2004
+Last Update:  December 2005
 
 General Cautions During the Beta Period:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Yet again, the work in TinyMUX 2.3 has a different flavor than versions
-2.0, 2.1, or 2.2.  Fewer changes have been made to 2.3 than were made
-in 2.2.  There were fewer contributors and the flow of contributions was
-lower as well.
-
 Please take the time to read the README.  These files should be
 helpful to you.  If they are not helpful, then please help us improve
-the documentation by by suggesting specific changes.  Documentation bugs
+the documentation by suggesting specific changes.  Documentation bugs
 can usually be fixed more rapidly than any other type of bug.
 
-If you port an existing game to this beta:
+If you port an existing game to this BETA:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
     - Make frequent backups.  We cannot stress this enough.  The included 
@@ -30,7 +25,7 @@ If you port an existing game to this beta:
     - Report Bugs to brazilofmux@gmail.com following the procedure in README.
 
 
-If you start a new game to this beta:
+If you start a new game to this BETA:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
     - Make frequent backups.  We cannot stress this enough.  The included 
