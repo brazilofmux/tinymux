@@ -1,5 +1,5 @@
 TinyMUX 2.4:  CHANGES
-Last Update:  November 2005
+Last Update:  December 2005
 
 Major changes that may affect performance and require softcode tweaks:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -240,6 +240,9 @@ Bug Fixes:
     server.  Introduced in 2.4.0.23.
  -- Alierak fixed several signed/unsigned warning as well as the use of
     '==' where '=' was intened.
+ -- Closed a narrow window for a SIGCHLD race-condition.  It was
+    possible for a forked-dump to finish with the main process
+    realizing it.
 
 
 Performance Enhancements:
