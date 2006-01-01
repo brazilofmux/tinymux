@@ -1,6 +1,6 @@
 // game.cpp
 //
-// $Id: game.cpp,v 1.84 2005-12-29 18:00:25 sdennis Exp $
+// $Id: game.cpp,v 1.85 2006-01-01 22:47:02 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -1924,73 +1924,82 @@ bool Hearer(dbref thing)
 
     if (  Connected(thing)
        || Puppet(thing)
-       || H_Listen(thing)
-       || mudstate.bfListens.IsSet(thing))
+       || H_Listen(thing))
     {
         return true;
     }
 
-    if (  !mudstate.bfNoListens.IsSet(thing)
-       && Monitor(thing))
+    if (Monitor(thing))
     {
-        bool bFoundCommands = false;
-
-        char *buff = alloc_lbuf("Hearer");
-        char *as;
-        atr_push();
-        for (int atr = atr_head(thing, &as); atr; atr = atr_next(&as))
+        if (mudstate.bfListens.IsSet(thing))
         {
-            ATTR *ap = atr_num(atr);
-            if (  !ap
-               || (ap->flags & AF_NOPROG))
-            {
-                continue;
-            }
-
-            int   aflags;
-            dbref aowner;
-            atr_get_str(buff, thing, atr, &aowner, &aflags);
-
-            if (aflags & AF_NOPROG)
-            {
-                continue;
-            }
-
-            char *s = NULL;
-            if (  AMATCH_CMD    == buff[0]
-               || AMATCH_LISTEN == buff[0])
-            {
-                s = strchr(buff+1, ':');
-                if (s)
-                {
-                    if (AMATCH_CMD == buff[0])
-                    {
-                        bFoundCommands = true;
-                    }
-                    else
-                    {
-                        free_lbuf(buff);
-                        atr_pop();
-                        mudstate.bfListens.Set(thing);
-                        return true;
-                    }
-                }
-            }
+            return true;
         }
-        free_lbuf(buff);
-        atr_pop();
-
-        mudstate.bfNoListens.Set(thing);
-
-        if (bFoundCommands)
+        else if (mudstate.bfNoListens.IsSet(thing))
         {
-            mudstate.bfNoCommands.Clear(thing);
-            mudstate.bfCommands.Set(thing);
+            return false;
         }
         else
         {
-            mudstate.bfCommands.Clear(thing);
-            mudstate.bfNoCommands.Set(thing);
+            bool bFoundCommands = false;
+
+            char *buff = alloc_lbuf("Hearer");
+            char *as;
+            atr_push();
+            for (int atr = atr_head(thing, &as); atr; atr = atr_next(&as))
+            {
+                ATTR *ap = atr_num(atr);
+                if (  !ap
+                   || (ap->flags & AF_NOPROG))
+                {
+                    continue;
+                }
+
+                int   aflags;
+                dbref aowner;
+                atr_get_str(buff, thing, atr, &aowner, &aflags);
+
+                if (aflags & AF_NOPROG)
+                {
+                    continue;
+                }
+
+                char *s = NULL;
+                if (  AMATCH_CMD    == buff[0]
+                   || AMATCH_LISTEN == buff[0])
+                {
+                    s = strchr(buff+1, ':');
+                    if (s)
+                    {
+                        if (AMATCH_CMD == buff[0])
+                        {
+                            bFoundCommands = true;
+                        }
+                        else
+                        {
+                            free_lbuf(buff);
+                            atr_pop();
+                            mudstate.bfListens.Set(thing);
+                            return true;
+                        }
+                    }
+                }
+            }
+            free_lbuf(buff);
+            atr_pop();
+
+            mudstate.bfNoListens.Set(thing);
+
+            if (bFoundCommands)
+            {
+                mudstate.bfNoCommands.Clear(thing);
+                mudstate.bfCommands.Set(thing);
+            }
+            else
+            {
+                mudstate.bfCommands.Clear(thing);
+                mudstate.bfNoCommands.Set(thing);
+            }
         }
     }
     return false;
