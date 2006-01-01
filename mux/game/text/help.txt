@@ -5535,7 +5535,7 @@ CREATE()
 
   Topic: CREDITS
 
-TinyMUX 2.4 is based on TinyMUX 2.3. It is currently maintained by
+TinyMUX 2.6 is based on TinyMUX 2.4. It is currently maintained by
 Stephen Dennis (AKA Brazil). There is a more complete list of credits
 in the README files for the server itself.
 
@@ -9249,7 +9249,7 @@ MOD()
     > say mod(18,3)
     You say "0"
 
-  Related Topics: floordiv(), fmod(), iadd(), idiv(), imul(), isub(),
+  Related Topics: floordiv(), iadd(), idiv(), imul(), isub(),
                   remainder().
 
 & MONEY

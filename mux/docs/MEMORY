@@ -1,13 +1,13 @@
-TinyMUX 2.4: MEMORY
-Last Update: September 2004
+TinyMUX 2.6: MEMORY
+Last Update: January 2006
 
-This file will explain how to configure for the two memory options of MUX as
-well as the procedure for converting between them.
+This file will explain how to configure for the two memory options of TinyMUX
+as well as the procedure for converting between them.
 
-The default build procedure creates a disk-based server.  MUX is also able to
-run in a memory-based mode and this version of MUX continues to support that
-style.  However, to create a memory-based server, you need to enable it at a
-specific time in the build process.
+The default build procedure creates a disk-based server.  TinyMUX is also able
+to run in a memory-based mode and this version of MUX continues to support
+that style.  However, to create a memory-based server, you need to enable it
+at a specific time in the build process.
 
   ./configure --enable-memory-based
   make depend
@@ -32,8 +32,8 @@ NOTE: In all four of these procedures, the word 'GAMENAME' is the same as the
       file (on Win32).
 
       Also note that while the following procedures may be adapted for Win32,
-      building MUX on Win32 using the MEMORY_BASED mode is beyond the scope of
-      this readme file.
+      building TinyMUX on Win32 using the MEMORY_BASED mode is beyond the
+      scope of this readme file.
 
 
 Procedure 1.  Converting from Memory-Based to Disk-Based:

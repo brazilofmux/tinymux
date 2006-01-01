@@ -1,5 +1,5 @@
-TinyMUX 2.2:  LIMITS
-Last Update:  January 2003
+TinyMUX 2.6:  LIMITS
+Last Update:  January 2006
 
 While some limits of the server depend on the host environment (CPU
 architecture, compiler, and operating system), there are certain univeral
@@ -30,11 +30,11 @@ The number of unique attribute names is limited to the maximum value of a
 
 Attributes per Object:
 
-In MUX 2.0, 2.1, and 2.2, the number of attributes that can be associated with
-an object is limited to somewhere between 2666 and 4000 depending on the number
-of unique attribute names game-wide and in particular which ones are used on
-that particular object.  The total encoded size is limited to 8000 bytes, and
-each attribute number is encoded into 1 to 5 bytes depending on its value.
+In TinyMUX 2.6, the number of attributes that can be associated with an object
+is limited to somewhere between 2666 and 4000 depending on the number of
+unique attribute names game-wide and in particular which ones are used on that
+particular object.  The total encoded size is limited to 8000 bytes, and each
+attribute number is encoded into 1 to 5 bytes depending on its value.
 
   Attribute numbers between 1 and 127 can be encoded in 1 byte.
   Attribute numbers between 128 and 16383 can be encoded into 2 bytes.
