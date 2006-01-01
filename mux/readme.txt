@@ -1,4 +1,4 @@
-Last Updated: November 2005
+Last Updated: January 2006
 
 Herein are extra notes for the Win32 distribution.  These notes do not apply
 well to the Unix distribution.
@@ -38,15 +38,15 @@ To use a binary distribution:
    following lines (depending on which archiving program you have choosen to
    use).
 
-        jar32 x mux-2.4.0.24.win32.bin.j
-        tar xzf mux-2.4.0.24.win32.bin.tar.gz
-        pkzip -extract -directories mux-2.4.0.24.win32.bin.zip
+        jar32 x mux-2.6.0.1.win32.bin.j
+        tar xzf mux-2.6.0.1.win32.bin.tar.gz
+        pkzip -extract -directories mux-2.6.0.1.win32.bin.zip
 
    -OR-
 
-   Unpack the mux-2.4.0.24.win32.bin.zip using WinZip.
+   Unpack the mux-2.6.0.1.win32.bin.zip using WinZip.
 
-2. cd mux2.4/game
+2. cd mux2.6/game
 
 3. Possibly edit netmux.conf and mux.config to tweak the configuration.
 
@@ -67,19 +67,19 @@ To use a source distribution:
    following lines (depending on which archiving program you have choosen to
    use).
 
-        jar32 x mux-2.4.0.24.win32.src.j
-        tar xzf mux-2.4.0.24.win32.src.tar.gz
-        pkzip -extract -directories mux-2.4.0.24.win32.src.zip
+        jar32 x mux-2.6.0.1.win32.src.j
+        tar xzf mux-2.6.0.1.win32.src.tar.gz
+        pkzip -extract -directories mux-2.6.0.1.win32.src.zip
 
    -OR-
 
-   Unpack the mux-2.4.0.24.win32.src.zip using WinZip.
+   Unpack the mux-2.6.0.1.win32.src.zip using WinZip.
 
-2. Start Visual C++ and open the workspace file (mux2.4/src/netmux.dsw).
+2. Start Visual C++ and open the workspace file (mux2.6/src/netmux.dsw).
 
 3. Within Visual C++, Do a batch build in order to produce netmux.exe.  The
-   non-debug version will be placed in mux2.4/src/bin_release and must be
-   copied over to mux2.4/game/bin.
+   non-debug version will be placed in mux2.6/src/bin_release and must be
+   copied over to mux2.6/game/bin.
 
 4. Start the server with the following:
 
