@@ -409,6 +409,10 @@ SOURCE=.\muxcli.h
 # End Source File
 # Begin Source File
 
+SOURCE=.\crypt\patchlevel.h
+# End Source File
+# Begin Source File
+
 SOURCE=.\pcre.h
 # End Source File
 # Begin Source File
