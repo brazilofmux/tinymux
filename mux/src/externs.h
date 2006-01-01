@@ -1,6 +1,6 @@
 // externs.h -- Prototypes for externs not defined elsewhere.
 //
-// $Id: externs.h,v 1.47 2005-11-24 20:07:06 sdennis Exp $
+// $Id: externs.h,v 1.48 2006-01-01 18:41:18 sdennis Exp $
 //
 
 #ifndef EXTERNS_H
@@ -51,9 +51,7 @@ extern int  halt_que(dbref, dbref);
 extern void wait_que(dbref executor, dbref caller, dbref enactor, bool,
     CLinearTimeAbsolute&, dbref, int, char *, char *[],int, char *[]);
 
-#ifdef WIN32
-#include "crypt/crypt.h"
-#else // WIN32
+#ifndef WIN32
 extern "C" char *crypt(const char *inptr, const char *inkey);
 #endif // WIN32
 
