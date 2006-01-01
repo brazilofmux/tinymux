@@ -1,6 +1,6 @@
 // player.cpp
 //
-// $Id: player.cpp,v 1.33 2005-07-23 16:24:26 rmg Exp $
+// $Id: player.cpp,v 1.34 2006-01-01 18:44:32 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -396,7 +396,7 @@ const char *mux_crypt(const char *szPassword, const char *szSetting, int *piType
     case CRYPT_OTHER:
     case CRYPT_DES_EXT:
 #ifdef WIN32
-        // The WIN32 release only supports SHA1, DES, and clear-text.
+        // The WIN32 release only supports SHA1 and clear-text.
         //
         return szFail;
 #endif // WIN32

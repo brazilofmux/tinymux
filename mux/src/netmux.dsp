@@ -129,18 +129,6 @@ SOURCE=.\create.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=".\crypt\crypt-entry.cpp"
-# End Source File
-# Begin Source File
-
-SOURCE=.\crypt\crypt.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=.\crypt\crypt_util.cpp
-# End Source File
-# Begin Source File
-
 SOURCE=.\db.cpp
 # End Source File
 # Begin Source File
@@ -361,14 +349,6 @@ SOURCE=.\copyright.h
 # End Source File
 # Begin Source File
 
-SOURCE=".\crypt\crypt-private.h"
-# End Source File
-# Begin Source File
-
-SOURCE=.\crypt\crypt.h
-# End Source File
-# Begin Source File
-
 SOURCE=.\db.h
 # End Source File
 # Begin Source File
@@ -429,10 +409,6 @@ SOURCE=.\muxcli.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\crypt\patchlevel.h
-# End Source File
-# Begin Source File
-
 SOURCE=.\pcre.h
 # End Source File
 # Begin Source File
@@ -466,10 +442,6 @@ SOURCE=.\svdreport.h
 # Begin Source File
 
 SOURCE=.\timeutil.h
-# End Source File
-# Begin Source File
-
-SOURCE=".\crypt\ufc-crypt.h"
 # End Source File
 # Begin Source File
 

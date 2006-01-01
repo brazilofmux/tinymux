@@ -154,9 +154,9 @@
 /* Define if your system has the in_addr_t type */
 #undef HAVE_IN_ADDR_T
 /* Define if crypt library exists */
-#define HAVE_LIBCRYPT 1
+#undef HAVE_LIBCRYPT
 /* Define if crypt exists */
-#define HAVE_CRYPT 1
+#undef HAVE_CRYPT
 
 /* ---------------------------------------------------------------------------
  * Setup section:
