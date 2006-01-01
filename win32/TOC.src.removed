@@ -1,1 +1,17 @@
 BETA
+src/crypt/Banner
+src/crypt/cert.cpp
+src/crypt/cert.input
+src/crypt/configure
+src/crypt/COPYING.LIB
+src/crypt/crypt-entry.cpp
+src/crypt/crypt-private.h
+src/crypt/crypt.cpp
+src/crypt/crypt.h
+src/crypt/crypt_util.cpp
+src/crypt/Makefile
+src/crypt/patchlevel.h
+src/crypt/README
+src/crypt/speeds.cpp
+src/crypt/ufc-crypt.h
+src/crypt/ufc.cpp
