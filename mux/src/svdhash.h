@@ -1,10 +1,6 @@
 // svdhash.h -- CHashPage, CHashFile, CHashTable modules.
 //
-// $Id: svdhash.h,v 1.16 2005-10-13 07:38:37 sdennis Exp $
-//
-// MUX 2.4
-// Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
-// rights not explicitly given are reserved.
+// $Id: svdhash.h,v 1.17 2006-01-01 18:20:57 sdennis Exp $
 //
 #ifndef SVDHASH_H
 #define SVDHASH_H

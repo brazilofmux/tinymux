@@ -1,10 +1,6 @@
 // muxcli.cpp
 //
-// $Id: muxcli.cpp,v 1.4 2004-06-10 15:39:34 sdennis Exp $
-//
-// MUX 2.4
-// Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
-// rights not explicitly given are reserved.
+// $Id: muxcli.cpp,v 1.5 2006-01-01 18:20:57 sdennis Exp $
 //
 #include "copyright.h"
 #include <string.h>

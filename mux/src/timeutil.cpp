@@ -1,10 +1,6 @@
 // timeutil.cpp -- CLinearTimeAbsolute and CLinearTimeDelta modules.
 //
-// $Id: timeutil.cpp,v 1.48 2005-12-14 02:53:05 sdennis Exp $
-//
-// MUX 2.4
-// Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
-// rights not explicitly given are reserved.
+// $Id: timeutil.cpp,v 1.49 2006-01-01 18:20:57 sdennis Exp $
 //
 // Date/Time code based on algorithms presented in "Calendrical Calculations",
 // Cambridge Press, 1998.

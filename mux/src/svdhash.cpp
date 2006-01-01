@@ -1,10 +1,6 @@
 // svdhash.cpp -- CHashPage, CHashFile, CHashTable modules.
 //
-// $Id: svdhash.cpp,v 1.42 2005-12-16 20:54:52 sdennis Exp $
-//
-// MUX 2.4
-// Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
-// rights not explicitly given are reserved.
+// $Id: svdhash.cpp,v 1.43 2006-01-01 18:20:57 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"

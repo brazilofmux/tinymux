@@ -1,10 +1,6 @@
 // look.cpp -- Commands which look at things.
 //
-// $Id: look.cpp,v 1.41 2005-11-27 04:03:38 sdennis Exp $
-//
-// MUX 2.4
-// Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
-// rights not explicitly given are reserved.
+// $Id: look.cpp,v 1.42 2006-01-01 18:20:57 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"

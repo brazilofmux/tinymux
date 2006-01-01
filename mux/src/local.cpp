@@ -1,6 +1,6 @@
 /* local.cpp
  *
- * Inspired by Penn's local extensions; implemented for MUX2.4 by
+ * Inspired by Penn's local extensions; implemented for TinyMUX by
  * M. Hassman (June 2005)
  */
 

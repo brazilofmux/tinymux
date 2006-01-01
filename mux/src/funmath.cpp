@@ -1,10 +1,6 @@
 // funmath.cpp -- MUX math function handlers.
 //
-// $Id: funmath.cpp,v 1.4 2005-11-10 23:05:28 sdennis Exp $
-//
-// MUX 2.4
-// Copyright (C) 1998 through 2005 Solid Vertical Domains, Ltd. All
-// rights not explicitly given are reserved.
+// $Id: funmath.cpp,v 1.5 2006-01-01 18:20:57 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"

@@ -1,11 +1,11 @@
 /* copyright.h */
 /* -*-C-*- */
-/* $Id: copyright.h,v 1.8 2005-10-28 01:29:32 sdennis Exp $ */
+/* $Id: copyright.h,v 1.9 2006-01-01 18:20:57 sdennis Exp $ */
 
 /*
- * MUX Source Code (version 2.0 through 2.4).
+ * MUX Source Code (version 2.0 through 2.6).
  * Copyright (C) 1999-2004 by Solid Vertical Domains, Ltd.
- * Copyright (C) 2005 Stephen Dennis
+ * Copyright (C) 2005-2006 Stephen Dennis
  *
  * TinyMUX Source Code (versions 1.0 through 1.6)
  * Copyright (c) 1995, 1996, 1997, 1998, 1999, David Passmore.
@@ -48,7 +48,7 @@
  * MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
  *
- * TinyMUX 2.4 Copyright: The Artistic License
+ * TinyMUX 2.6 Copyright: The Artistic License
  *
  * Preamble
  *

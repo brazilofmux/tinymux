@@ -1,10 +1,6 @@
 // cque.cpp -- commands and functions for manipulating the command queue.
 //
-// $Id: cque.cpp,v 1.31 2005-11-24 03:19:52 sdennis Exp $
-//
-// MUX 2.4
-// Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
-// rights not explicitly given are reserved.
+// $Id: cque.cpp,v 1.32 2006-01-01 18:20:57 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
