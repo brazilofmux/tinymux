@@ -54,6 +54,7 @@ MEMORY_BASED = @MEMORY_BASED@
 # queries to foriegn data sources such as SQL servers.
 #
 QUERY_SLAVE = @QUERY_SLAVE@
+QUERYLIBS   = -ldbi
 
 # Distribution source files
 D_SRC	= _build.cpp alloc.cpp attrcache.cpp boolexp.cpp bsd.cpp command.cpp \
@@ -168,7 +169,7 @@ links: netmux slave sqlslave
 	cd ../game/bin ; rm -f sqlslave ; ln -s ../../src/sqlslave sqlslave
 
 sqlslave: sqlslave.o sqlshared.o
-	$(CXX) $(ALLCXXFLAGS) $(LIBS) -o sqlslave sqlslave.o sqlshared.o
+	$(CXX) $(ALLCXXFLAGS) $(LIBS) $(QUERYLIBS) -o sqlslave sqlslave.o sqlshared.o
 
 slave: slave.o
 	$(CXX) $(ALLCXXFLAGS) $(LIBS) -o slave slave.o
