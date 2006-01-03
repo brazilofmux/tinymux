@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.160 2005/12/29 01:10:35 sdennis Exp $
+// $Id: functions.cpp,v 1.161 2006/01/03 01:18:51 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2005 Solid Vertical Domains, Ltd. All
@@ -1310,16 +1310,20 @@ void get_handler(char *buff, char **bufc, dbref executor, char *fargs[], int key
     {
         free_lbuf(pRefAttrib);
     }
+
     if (bNoMatch)
     {
         safe_nomatch(buff, bufc);
         return;
     }
+
     if (!pattr)
     {
         return;
     }
-    if (!See_attr(executor, thing, pattr))
+ 
+    if (  (pattr->flags & AF_IS_LOCK)
+       || !bCanReadAttr(executor, thing, pattr, true))
     {
         safe_noperm(buff, bufc);
         return;
