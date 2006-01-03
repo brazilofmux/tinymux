@@ -1,6 +1,6 @@
 // eval.cpp -- Command evaluation and cracking.
 //
-// $Id: eval.cpp,v 1.30 2006-01-01 18:20:57 sdennis Exp $
+// $Id: eval.cpp,v 1.31 2006-01-03 22:11:15 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -1281,7 +1281,7 @@ void mux_exec( char *buff, char **bufc, dbref executor, dbref caller,
                 if (  fp
                    && (fp->flags & FN_NOEVAL))
                 {
-                    feval = eval & ~(EV_EVAL|EV_TOP);
+                    feval = eval & ~(EV_EVAL|EV_TOP|EV_STRIP_CURLY);
                 }
                 else
                 {
