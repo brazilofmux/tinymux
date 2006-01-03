@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.161 2006-01-01 18:20:57 sdennis Exp $
+// $Id: functions.cpp,v 1.162 2006-01-03 01:16:10 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -1306,16 +1306,20 @@ void get_handler(char *buff, char **bufc, dbref executor, char *fargs[], int key
     {
         free_lbuf(pRefAttrib);
     }
+
     if (bNoMatch)
     {
         safe_nomatch(buff, bufc);
         return;
     }
+
     if (!pattr)
     {
         return;
     }
-    if (!See_attr(executor, thing, pattr))
+ 
+    if (  (pattr->flags & AF_IS_LOCK)
+       || !bCanReadAttr(executor, thing, pattr, true))
     {
         safe_noperm(buff, bufc);
         return;
