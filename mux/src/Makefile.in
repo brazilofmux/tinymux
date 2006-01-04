@@ -55,6 +55,7 @@ MEMORY_BASED = @MEMORY_BASED@
 #
 QUERY_SLAVE = @QUERY_SLAVE@
 QUERYLIBS   = -ldbi
+SQLSLAVE    = @SQLSLAVE@
 
 # Distribution source files
 D_SRC	= _build.cpp alloc.cpp attrcache.cpp boolexp.cpp bsd.cpp command.cpp \
@@ -160,13 +161,13 @@ OBJ	= $(D_OBJ) $(REALITY_OBJ) $(MALLOC_O)
 .cpp.o:
 	$(CXX) $(ALLCXXFLAGS) -c $<
 
-all: netmux slave sqlslave links 
+all: netmux slave $(SQLSLAVE) links 
 
-links: netmux slave sqlslave
+links: netmux slave $(SQLSLAVE)
 	cd ../game/bin ; rm -f dbconvert ; ln -s ../../src/netmux dbconvert
 	cd ../game/bin ; rm -f netmux ; ln -s ../../src/netmux netmux
 	cd ../game/bin ; rm -f slave ; ln -s ../../src/slave slave
-	cd ../game/bin ; rm -f sqlslave ; ln -s ../../src/sqlslave sqlslave
+	( if [ -f sqlslave ]; then cd ../game/bin ; rm -f sqlslave; ln -s ../../src/sqlslave sqlslave ; fi )
 
 sqlslave: sqlslave.o sqlshared.o
 	$(CXX) $(ALLCXXFLAGS) $(LIBS) $(QUERYLIBS) -o sqlslave sqlslave.o sqlshared.o
