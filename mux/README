@@ -33,11 +33,11 @@ the following files:
 
   NOTES               All kinds of tidbits made much easier to find.  
                       Known compiling issues and known fixes are located 
-                      here. Known OS that TinyMUX 2.6 will run on and 
+                      here.  Known OSes that TinyMUX 2.6 will run on and 
                       compiling issues.  Contains basic conversion 
                       information. 
   
-  docs/BACKUP         A file about the MUX 2.6 Backup script.
+  docs/BACKUP         A file about the TinyMUX 2.6 Backup script.
   
   docs/CONFIGURATION  How to set up your MUX, including an explanation of 
                       the common configuration items, as well as how to set 
@@ -57,12 +57,13 @@ the following files:
   
   docs/PATCHES        A very basic introduction to applying patches to the 
                       server.
+
 ===========================================================================
         
 General Information:
 ~~~~~~~~~~~~~~~~~~~
-TinyMUX 2.6 is currently being developed in parallel under Win32 and SuSE 8.1
-and is written in C and C++.  It is a continuation of the TinyMUX 1.x line of
+TinyMUX 2.6 is written in a mix of C and C++ and is currently being developed
+on Win32, Debian, FreeBSD.  It is a continuation of the TinyMUX 1.x line of
 servers.
 
 The latest version of this code can generally be found running at:
@@ -81,9 +82,9 @@ Reminder of changes to dbconvert from MUX 1.x:
    in the place of GDBM.  You will notice the changes primarily in the way 
    dbconvert and the db_unload and db_load scripts work.  
  
- - dbconvert is the means by which the binary game data is converted to 
-   flatfile format and back again.  The db_load and db_unload scripts 
-   simplify the process for the user. 
+ - For disk-based games, dbconvert is the means by which the binary game data
+   is converted to flatfile format and back again.  The db_load and db_unload
+   scripts simplify the process for the user. 
  
  - The syntax of the scripts is:
    
@@ -104,9 +105,9 @@ Reminder of changes to dbconvert from MUX 1.x:
 
 Conversions from Other Database Formats:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Support for other database formats was removed circa MUX 2.1. To import
+Support for other database formats was removed circa TinyMUX 2.1. To import
 one of the following formats, you must first use dbconvert from TinyMUX 2.0
-before using the resulting flatfile with MUX 2.6.
+before using the resulting flatfile with TinyMUX 2.6.
 
    TinyMUX 1.4, 1.5, 1.6 (not beta)
    TinyMUX(Win32Beta) 1.5, 1.6, 2.0
@@ -116,7 +117,6 @@ before using the resulting flatfile with MUX 2.6.
 
 BUGS! and bug reporting:
 ~~~~~~~~~~~~~~~~~~~~~~~
-
 First things first....  Bugs happen in any large and complex piece of 
 code.  The important thing to understand is that the dev team has worked 
 very hard to ferret out and fix as many of the crashing/corrupting bugs 
@@ -128,11 +128,12 @@ years. We are finding much fewer crashing/corrupting bugs than before,
 and at the same time, the bugs we find are now more likely to be our own
 than legacy issues.
 
-As for the cases where you do find bugs, we would like you to take the 
-time to send an email with as much data as possible about the bug.  Each 
-bug report we receive will be assigned a number from 1 to 4 according to
-severity (how much pain it causes) and prioritized from 1 to 3 according to
-how beneficial it would be to fix it relative to other bugs on the list.
+As for the cases where you do find bugs, we would like you to take the time
+to send an E-mail with as much data as possible about the bug.  Each bug
+report we receive is rated both by its severity (how much pain it causes) and
+prioritized according to how beneficial it would be to fix it relative to the
+other bugs on the list.  Sometimes, this process is formalizes.  Sometimes,
+due to lack of available time, it is ad-hoc.
 
 -- Please double check to be sure it really is a bug and not a new 
    feature or design decision.  This is important to the process, as it  
@@ -165,19 +166,19 @@ has been compiled and run successfully 'out of the box' on the following
 platforms:
 
 RedHat 5.1, 5.2, 6.0
-Slackware 3.6, 4.0, 7.0
+Slackware 3.6, 4.0, 7.0, 10.0
 Solaris 2.4, 2.5, 2.6
 Mandrake 6.0, 7.0
 Linux Kernels 2.0.35 - 2.2.14
 IRIX (Some versions)
-Debian 2.1, 2.2
+Debian 2.1, 2.2, Sarge
 FreeBSD
 OpenBSD
 SuSE 6.2
 AIX 4.3
 Mac OS X.
-
-In fact, the only platform that we know won't work is HP-UX.
+QNX
+Cygwin
 
 If you get TinyMUX 2.6 working on another platform, please let us know
 about it!
