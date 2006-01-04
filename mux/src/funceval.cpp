@@ -1,6 +1,6 @@
 // funceval.cpp -- MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.96 2005-11-12 08:13:11 rmg Exp $
+// $Id: funceval.cpp,v 1.97 2006-01-04 02:01:02 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -1003,17 +1003,10 @@ FUNCTION(fun_columns)
         safe_range(buff, bufc);
         return;
     }
-    char *curr = alloc_lbuf("fun_columns");
-    char *bp = curr;
-    char *str = fargs[0];
-    mux_exec(curr, &bp, executor, caller, enactor,
-             EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, cargs, ncargs);
-    *bp = '\0';
-    int ncp;
-    char *cp = trim_space_sep_LEN(curr, bp-curr, &sep, &ncp);
+
+    char *cp = trim_space_sep(fargs[0], &sep);
     if (!*cp)
     {
-        free_lbuf(curr);
         return;
     }
 
@@ -1055,7 +1048,6 @@ FUNCTION(fun_columns)
     {
         safe_copy_buf("\r\n", 2, buff, bufc);
     }
-    free_lbuf(curr);
 }
 
 // table(<list>,<field width>,<line length>,<delimiter>,<output separator>, <padding>)
