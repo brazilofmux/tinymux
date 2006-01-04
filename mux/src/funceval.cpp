@@ -1,6 +1,6 @@
 // funceval.cpp -- MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.97 2006-01-04 02:01:02 sdennis Exp $
+// $Id: funceval.cpp,v 1.98 2006-01-04 20:18:22 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -978,7 +978,7 @@ FUNCTION(fun_zfun)
 FUNCTION(fun_columns)
 {
     SEP sep;
-    if (!OPTIONAL_DELIM(3, sep, DELIM_EVAL|DELIM_STRING))
+    if (!OPTIONAL_DELIM(3, sep, DELIM_STRING))
     {
         return;
     }
