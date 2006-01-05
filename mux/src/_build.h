@@ -1,6 +1,6 @@
 // _build.h
 //
-// $Id: _build.h,v 1.51 2005/12/31 20:07:04 sdennis Exp $
+// $Id: _build.h,v 1.52 2006/01/05 18:31:37 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 2005 Stephen Dennis.
@@ -17,8 +17,8 @@ extern char szBuildDate[];
 #define MUX_BUILD_DATE szBuildDate
 #endif // MUX_BUILD_DATE
 
-#define MUX_VERSION       "2.4.1.25"         // Version number
-#define MUX_RELEASE_DATE  "2005-DEC-31"      // Source release date
+#define MUX_VERSION       "2.4.1.26"         // Version number
+#define MUX_RELEASE_DATE  "2005-JAN-05"      // Source release date
 
 // Define if this release is qualified as ALPHA or BETA.
 //
