@@ -1,5 +1,5 @@
 TinyMUX 2.4:  CHANGES
-Last Update:  December 2005
+Last Update:  January 2006
 
 Major changes that may affect performance and require softcode tweaks:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -243,6 +243,15 @@ Bug Fixes:
  -- Closed a narrow window for a SIGCHLD race-condition.  It was
     possible for a forked-dump to finish with the main process
     realizing it.
+ -- Fixed page/noeval and other /noeval cases that would still strip
+    curly braces.
+ -- Fixed COLUMNS() from double-evaluating its 1st and 3rd arguments.
+    Bug from TinyMUX 1.x. Reported by Ashen-Shugar.
+ -- Fixed GET() and friends who could not access a VISUAL attribute on
+    a parent without the child object also being set VISUAL.
+ -- Fixed Hearer() where a spontaneous 'loses its ears' message could
+    occur after setting an attribute.
+ -- TELNET sub-option data was never saved in buffer.
 
 
 Performance Enhancements:
