@@ -1012,7 +1012,7 @@
 >419
 "%r[setq(0,ulocal(GETINFO,%l,%0,CURPLACES))][setq(1,extract(get(%l/PLACENUMS),%0,1,|))][capstr(ulocal(GETINFO,%l,%0,NAME))] (#%0) has [setq(2,sub(r(0),words(r(1))))][switch(r(2),0,no empty places,1,1 empty place,[r(2)] empty places)].[switch(words(r(1)),0,,1,%r%tPresent is: %b[name(edit(r(1),%b,))].,%r%tPresent are: %b[ulocal(PLACE_LOOK,r(1))])]"
 >420
-"[setq(9,words(%0))][switch(r(9),0,,1,name(%0),2, [name(first(%0))] and [name(rest(%0))],[iter(extract(%0,1,sub(r(9),1)),{name(##),})] and [name(extract(%0,r(9),1))])]"
+"itemize(iter(%0,moniker(itext()),,|),|)"
 >421
 "$plook: @pemit %#=[setq(0,edit(get(%l/PLACENUMS),|,))][fold(PLOOK_FOLD_FN,rest(lnum(add(get(%l/PLACESMAX),1))),-----)]%rNo place [space(3)] [setq(3,setdiff(setinter(lcon(%l),lwho()),r(0)))][rjust([words(r(3))] at no places,15)] [space(3)] [setq(4,sort(iter(r(3),name(##))))][ljust(mid(extract(r(4),1,1),0,14),14)] [ljust(mid(extract(r(4),2,1),0,14),14)] [ljust(mid(extract(r(4),3,1),0,14),14)][switch(gt(words(r(4)),3),1,ulocal(NAME_3COL_FN,extract(r(4),4,3999)))]%r-----"
 >422
