@@ -2,7 +2,7 @@
  * File for most TCP socket-related code. Some socket-related code also exists
  * in netcommon.cpp, but most of it is here.
  *
- * $Id: bsd.cpp,v 1.74 2006-01-04 13:14:13 sdennis Exp $
+ * $Id: bsd.cpp,v 1.75 2006-01-06 15:09:50 sdennis Exp $
  */
 
 #include "copyright.h"
@@ -1165,14 +1165,17 @@ void shovechars9x(int nPorts, PortInfo aPorts[])
         }
 
         if (mudstate.shutdown_flag)
+        {
             break;
+        }
 
         FD_ZERO(&input_set);
         FD_ZERO(&output_set);
 
         // Listen for new connections.
         //
-        for (int i = 0; i < nPorts; i++)
+        int i;
+        for (i = 0; i < nPorts; i++)
         {
             FD_SET(aPorts[i].socket, &input_set);
         }
