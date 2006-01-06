@@ -1,6 +1,6 @@
 // comsys.cpp
 //
-// $Id: comsys.cpp,v 1.38 2005-10-16 03:01:21 sdennis Exp $
+// $Id: comsys.cpp,v 1.39 2006-01-06 22:08:46 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -2927,20 +2927,21 @@ void do_chanlist
 
 #define MAX_SUPPORTED_NUM_ENTRIES 10000
 
-    INT64 entries = mudstate.channel_htab.GetEntryCount();
-    if (MAX_SUPPORTED_NUM_ENTRIES < entries)
+    INT64 iEntryCount64 = mudstate.channel_htab.GetEntryCount();
+    if (MAX_SUPPORTED_NUM_ENTRIES < iEntryCount64)
     {
         // Nobody should have so many channels.
         //
-        entries = MAX_SUPPORTED_NUM_ENTRIES;
+        iEntryCount64 = MAX_SUPPORTED_NUM_ENTRIES;
     }
+    size_t entries = (size_t)iEntryCount64;
 
     struct chanlist_node* charray = (chanlist_node*)MEMALLOC(sizeof(chanlist_node)*entries);
     ISOUTOFMEMORY(charray);
 
     // Arrayify all the channels
     //
-    int   actualEntries;
+    size_t  actualEntries;
     for (  actualEntries = 0, ch = (struct channel *)hash_firstentry(&mudstate.channel_htab);
            ch
         && actualEntries < entries;
@@ -2957,7 +2958,7 @@ void do_chanlist
 
     qsort(charray, actualEntries, sizeof(struct chanlist_node), chanlist_comp);
 
-    for (int i = 0; i < actualEntries; i++)
+    for (size_t i = 0; i < actualEntries; i++)
     {
         ch = charray[i].ptr;
         if (  Comm_All(executor)
