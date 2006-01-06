@@ -1,6 +1,6 @@
 // interface.h
 //
-// $Id: interface.h,v 1.17 2005-11-12 22:26:53 sdennis Exp $
+// $Id: interface.h,v 1.18 2006-01-06 22:42:19 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -96,22 +96,22 @@ struct prog_data {
 
 // Character Names
 //
-#define NVT_BS   0x08
-#define NVT_DEL  0x7F
-#define NVT_EOR  0xEF
-#define NVT_NOP  0xF1
-#define NVT_GA   0xF9
-#define NVT_WILL 0xFB
-#define NVT_WONT 0xFC
-#define NVT_DO   0xFD
-#define NVT_DONT 0xFE
-#define NVT_IAC  0xFF
+#define NVT_BS   '\x08'
+#define NVT_DEL  '\x7F'
+#define NVT_EOR  '\xEF'
+#define NVT_NOP  '\xF1'
+#define NVT_GA   '\xF9'
+#define NVT_WILL '\xFB'
+#define NVT_WONT '\xFC'
+#define NVT_DO   '\xFD'
+#define NVT_DONT '\xFE'
+#define NVT_IAC  '\xFF'
 
 // Telnet Options
 //
-#define TELNET_SGA  0x03
-#define TELNET_EOR  0x19
-#define TELNET_NAWS 0x1F
+#define TELNET_SGA  '\x03'
+#define TELNET_EOR  '\x19'
+#define TELNET_NAWS '\x1F'
 
 // Telnet Option Negotiation States
 //
