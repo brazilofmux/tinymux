@@ -1,6 +1,6 @@
 // player.cpp
 //
-// $Id: player.cpp,v 1.33 2005/07/23 16:24:26 rmg Exp $
+// $Id: player.cpp,v 1.34 2006/01/06 15:10:49 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -305,14 +305,14 @@ const char szFail[] = "$FAIL$$";
 //
 const char *mux_crypt(const char *szPassword, const char *szSetting, int *piType)
 {
-    char   *pSaltField = NULL;
+    const char *pSaltField = NULL;
     size_t nSaltField = 0;
 
     *piType = CRYPT_FAIL;
 
     if (szSetting[0] == '$')
     {
-        char *p = strchr(szSetting+1, '$');
+        const char *p = strchr(szSetting+1, '$');
         if (p)
         {
             p++;
