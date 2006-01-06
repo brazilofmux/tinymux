@@ -1,6 +1,6 @@
 // netcommon.cpp
 //
-// $Id: netcommon.cpp,v 1.59 2005-11-12 22:26:53 sdennis Exp $
+// $Id: netcommon.cpp,v 1.60 2006-01-06 19:25:36 sdennis Exp $
 //
 // This file contains routines used by the networking code that do not
 // depend on the implementation of the networking code.  The network-specific
@@ -1044,20 +1044,7 @@ void announce_disconnect(dbref player, DESC *d, const char *reason)
         if (d->flags & DS_AUTODARK)
         {
             d->flags &= ~DS_AUTODARK;
-
-            // Don't clear the DARK flag on the player unless there are
-            // no other sessions.
-            //
-            DESC *d1;
-            int num = 0;
-            DESC_ITER_PLAYER(player, d1)
-            {
-                num++;
-            }
-            if (num <= 1)
-            {
-                db[player].fs.word[FLAG_WORD1] &= ~DARK;
-            }
+            db[player].fs.word[FLAG_WORD1] &= ~DARK;
         }
 
         if (Guest(player))
