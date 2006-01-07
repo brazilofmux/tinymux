@@ -356,6 +356,6 @@ typedef unsigned int RLEVEL;
 typedef char  boolexp_type;
 typedef char  IBUF[16];
 
-#define UNREFERENCED_PARAMETER(x) ((void)(x)
+#define UNREFERENCED_PARAMETER(x) ((void)(x))
 
 #endif /* AUTOCONF_H */
