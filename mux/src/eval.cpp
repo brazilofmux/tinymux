@@ -1,6 +1,6 @@
 // eval.cpp -- Command evaluation and cracking.
 //
-// $Id: eval.cpp,v 1.31 2006-01-03 22:11:15 sdennis Exp $
+// $Id: eval.cpp,v 1.32 2006-01-07 05:47:32 jake Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -89,7 +89,7 @@ static char *parse_to_cleanup( int eval, int first, char *cstr, char *rstr,
 // A code 4 or above means that the client-specified delim cannot override it.
 // A code 8 is temporary.
 //
-static char isSpecial_L3[256] =
+static int isSpecial_L3[256] =
 {
     7, 0, 0, 0, 0, 0, 0, 0,  0, 0, 0, 0, 0, 0, 0, 0, // 0x00-0x0F
     0, 0, 0, 0, 0, 0, 0, 0,  0, 0, 0, 4, 0, 0, 0, 0, // 0x10-0x1F
@@ -774,6 +774,8 @@ char *parse_arglist_lite( dbref executor, dbref caller, dbref enactor,
                           dbref nfargs, char *cargs[], dbref ncargs,
                           int *nArgsParsed)
 {
+    UNREFERENCED_PARAMETER(delim);
+
     char *tstr, *bp, *str;
 
     if (dstr == NULL)
@@ -1028,6 +1030,8 @@ char **PushPointers(int nNeeded)
 
 void PopPointers(char **p, int nNeeded)
 {
+    UNREFERENCED_PARAMETER(p);
+
     if (pPtrsFrame->nptrs == PTRS_PER_FRAME)
     {
         PtrsFrame *q = pPtrsFrame->next;
@@ -1064,6 +1068,8 @@ int *PushIntegers(int nNeeded)
 
 void PopIntegers(int *pi, int nNeeded)
 {
+    UNREFERENCED_PARAMETER(pi);
+
     if (pIntsFrame->nints == INTS_PER_FRAME)
     {
         IntsFrame *p = pIntsFrame->next;
@@ -1095,7 +1101,7 @@ void mux_exec( char *buff, char **bufc, dbref executor, dbref caller,
     char *TempPtr;
     char *tstr, *tbuf, *start, *oldp, *savestr;
     const char *constbuf;
-    int ch;
+    char ch;
     char *realbuff = NULL, *realbp = NULL;
     dbref aowner;
     int nfargs, aflags, feval, i;
@@ -2120,6 +2126,8 @@ void save_and_clear_global_regs
     int preserve_len[]
 )
 {
+    UNREFERENCED_PARAMETER(funcname);
+
     int i;
 
     for (i = 0; i < MAX_GLOBAL_REGS; i++)
@@ -2139,6 +2147,8 @@ void restore_global_regs
     int preserve_len[]
 )
 {
+    UNREFERENCED_PARAMETER(funcname);
+
     int i;
 
     for (i = 0; i < MAX_GLOBAL_REGS; i++)
