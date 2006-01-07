@@ -1,6 +1,6 @@
 // db_rw.cpp
 //
-// $Id: db_rw.cpp,v 1.20 2006/01/07 06:43:08 sdennis Exp $
+// $Id: db_rw.cpp,v 1.21 2006/01/07 07:21:55 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -230,7 +230,7 @@ static BOOLEXP *getboolexp1(FILE *f)
                 && c != '/'
                 && s < buff + LBUF_SIZE;
 
-                   *s++ = c)
+                   *s++ = (char)c)
             {
                 ; // Nothing.
             }
@@ -286,7 +286,7 @@ static BOOLEXP *getboolexp1(FILE *f)
                 && c != AND_TOKEN
                 && s < buff + LBUF_SIZE;
 
-                   *s++ = c)
+                   *s++ = (char)c)
             {
                 ; // Nothing
             }
