@@ -1,6 +1,6 @@
 // config.h
 //
-// $Id: config.h,v 1.11 2004-08-16 05:14:07 sdennis Exp $
+// $Id: config.h,v 1.12 2006-01-07 20:55:42 sdennis Exp $
 //
 
 #ifndef CONFIG_H
@@ -239,5 +239,10 @@ extern void *MemRealloc(void *p, size_t n, const char *f, int l);
 #include <sys/syscall.h>
 #define getrusage(x,p)   syscall(SYS_GETRUSAGE,x,p)
 #endif // hpux
+
+#if defined(__INTEL_COMPILER)
+
+extern "C" unsigned int __intel_cpu_indicator;
+#endif
 
 #endif // !CONFIG_H

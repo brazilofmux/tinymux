@@ -1,6 +1,6 @@
 // functions.h -- declarations for functions & function processing.
 //
-// $Id: functions.h,v 1.17 2006-01-07 08:37:26 sdennis Exp $
+// $Id: functions.h,v 1.18 2006-01-07 20:55:42 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -37,8 +37,8 @@ typedef struct ufun {
 #define FN_LIST     1   // Corresponds to /list switch. -not- used in
                         // UFUN structure.
 
-extern void init_functab(void);
-extern void list_functable(dbref);
+void init_functab(void);
+void list_functable(dbref);
 extern UFUN *ufun_head;
 
 /* Special handling of separators. */
@@ -63,7 +63,7 @@ extern SEP sepSpace;
 #define DELIM_STRING 0x0008  // Multi-character.
 #define DELIM_INIT   0x0010  // The sep is initialized.
 
-extern bool delim_check
+bool delim_check
 (
     char *buff, char **bufc,
     dbref executor, dbref caller, dbref enactor,
@@ -72,11 +72,11 @@ extern bool delim_check
     int sep_arg, SEP *sep, int dflags
 );
 
-extern int list2arr(char *arr[], int maxlen, char *list, SEP *psep);
-extern char *trim_space_sep(char *str, SEP *psep);
-extern char *trim_space_sep_LEN(char *str, int nStr, SEP *psep, int *nTrim);
-extern char *next_token(char *str, SEP *psep);
-extern char *split_token(char **sp, SEP *psep);
+int list2arr(char *arr[], int maxlen, char *list, SEP *psep);
+char *trim_space_sep(char *str, SEP *psep);
+char *trim_space_sep_LEN(char *str, int nStr, SEP *psep, int *nTrim);
+char *next_token(char *str, SEP *psep);
+char *split_token(char **sp, SEP *psep);
 
 // This is the prototype for functions
 //
@@ -91,7 +91,7 @@ extern char *split_token(char **sp, SEP *psep);
     delim_check(buff, bufc, executor, caller, enactor,           \
         fargs, nfargs, cargs, ncargs, (iSep), &(Sep), (dflags))
 
-#define XFUNCTION(x) extern void x(char *buff, char **bufc, dbref executor,    \
+#define XFUNCTION(x) void x(char *buff, char **bufc, dbref executor,    \
  dbref caller, dbref enactor, char *fargs[], int nfargs, char *cargs[],        \
  int ncargs)
 

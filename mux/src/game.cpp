@@ -1,6 +1,6 @@
 // game.cpp
 //
-// $Id: game.cpp,v 1.89 2006-01-07 18:24:34 sdennis Exp $
+// $Id: game.cpp,v 1.90 2006-01-07 20:55:42 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -11,6 +11,8 @@
 #include <signal.h>
 
 #include "attrs.h"
+#include "command.h"
+#include "functions.h"
 #include "comsys.h"
 #include "file_c.h"
 #include "mguests.h"
@@ -22,32 +24,15 @@
 #include "levels.h"
 #endif /* REALITY_LVLS */
 
-extern void init_attrtab(void);
-extern void init_cmdtab(void);
-extern void cf_init(void);
-extern int  cf_read(void);
-extern void ValidateConfigurationDbrefs(void);
-extern void init_functab(void);
-extern void close_sockets(bool emergency, char *message);
-extern void raw_notify(dbref, const char *);
-extern void do_dbck(dbref executor, dbref caller, dbref enactor, int);
-extern void boot_slave(dbref executor, dbref caller, dbref enactor, int key);
-#ifdef QUERY_SLAVE
-extern void boot_sqlslave(dbref executor, dbref caller, dbref enactor, int key);
-#endif // QUERY_SLAVE
-
-void fork_and_dump(int);
-void pcache_sync(void);
 #if defined(HAVE_SETRLIMIT) && defined(RLIMIT_NOFILE)
 static void init_rlimit(void);
 #endif // HAVE_SETRLIMIT RLIMIT_NOFILE
 
-#ifdef WIN32
-extern CRITICAL_SECTION csDescriptorList;      // for thread synchronisation
-#endif // WIN32
-
 void do_dump(dbref executor, dbref caller, dbref enactor, int key)
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+
 #ifndef WIN32
     if (mudstate.dumping)
     {
@@ -411,7 +396,7 @@ bool atr_match
  * optionally notify the contents, neighbors, and location also.
  */
 
-bool check_filter(dbref object, dbref player, int filter, const char *msg)
+static bool check_filter(dbref object, dbref player, int filter, const char *msg)
 {
     int aflags;
     dbref aowner;
@@ -1130,17 +1115,20 @@ static void report_timecheck
         }
     }
 
+    long lTotal = ltdTotal.ReturnMilliseconds();
+    long lPeriod = ltdPeriod.ReturnSeconds();
+
     if (yes_screen)
     {
         raw_notify(player,
             tprintf("Counted %d objects using %ld msecs over %d seconds.",
-            obj_counted, ltdTotal.ReturnMilliseconds(), ltdPeriod.ReturnSeconds()));
+            obj_counted, lTotal, lPeriod));
     }
 
     if (yes_log)
     {
         Log.tinyprintf("Counted %d objects using %ld msecs over %d seconds.",
-            obj_counted, ltdTotal.ReturnMilliseconds(), ltdPeriod.ReturnSeconds());
+            obj_counted, lTotal, lPeriod);
         end_log();
     }
 
@@ -1152,6 +1140,9 @@ static void report_timecheck
 
 void do_timecheck(dbref executor, dbref caller, dbref enactor, int key)
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+
     bool yes_screen, yes_log, yes_clear;
 
     yes_screen = yes_log = yes_clear = false;
@@ -1190,6 +1181,9 @@ void do_shutdown
     char *message
 )
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+
     if (!Can_SiteAdmin(executor))
     {
         notify(executor, NOPERM_MESSAGE);
@@ -1284,7 +1278,7 @@ typedef struct
     char *pszErrorMessage;
 } DUMP_PROCEDURE;
 
-DUMP_PROCEDURE DumpProcedures[NUM_DUMP_TYPES] =
+static DUMP_PROCEDURE DumpProcedures[NUM_DUMP_TYPES] =
 {
     { 0,                ""       , false, 0,                             "" }, // 0 -- Handled specially.
     { &mudconf.crashdb, ""       , false, UNLOAD_VERSION | UNLOAD_FLAGS, "Opening crash file" }, // 1
@@ -1475,7 +1469,7 @@ void dump_database_internal(int dump_type)
     }
 }
 
-void dump_database(void)
+static void dump_database(void)
 {
     char *buff;
 
@@ -2003,6 +1997,10 @@ bool Hearer(dbref thing)
 
 void do_readcache(dbref executor, dbref caller, dbref enactor, int key)
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(key);
+
     helpindex_load(executor);
     fcache_load(executor);
 }
@@ -2010,13 +2008,12 @@ void do_readcache(dbref executor, dbref caller, dbref enactor, int key)
 static void process_preload(void)
 {
     dbref thing, parent, aowner;
-    int aflags, lev, i;
+    int aflags, lev;
     char *tstr;
     FWDLIST *fp;
 
     fp = (FWDLIST *) alloc_lbuf("process_preload.fwdlist");
     tstr = alloc_lbuf("process_preload.string");
-    i = 0;
     DO_WHOLE_DB(thing)
     {
         // Ignore GOING objects.
@@ -2073,7 +2070,7 @@ static void process_preload(void)
  * * info: display info about the file being read or written.
  */
 
-void info(int fmt, int flags, int ver)
+static void info(int fmt, int flags, int ver)
 {
     const char *cp;
 
@@ -2101,14 +2098,14 @@ void info(int fmt, int flags, int ver)
     Log.WriteString("\n");
 }
 
-char *standalone_infile = NULL;
-char *standalone_outfile = NULL;
-char *standalone_basename = NULL;
-bool standalone_check = false;
-bool standalone_load = false;
-bool standalone_unload = false;
+static char *standalone_infile = NULL;
+static char *standalone_outfile = NULL;
+static char *standalone_basename = NULL;
+static bool standalone_check = false;
+static bool standalone_load = false;
+static bool standalone_unload = false;
 
-void dbconvert(void)
+static void dbconvert(void)
 {
     int setflags, clrflags, ver;
     int db_ver, db_format, db_flags;
@@ -2246,7 +2243,7 @@ void dbconvert(void)
 }
 #endif // MEMORY_BASED
 
-void write_pidfile(const char *pFilename)
+static void write_pidfile(const char *pFilename)
 {
     FILE *fp = fopen(pFilename, "wb");
     if (fp)
@@ -2285,12 +2282,12 @@ long DebugTotalMemory = 0;
 #define CLI_DO_PID_FILE    CLI_USER+10
 #define CLI_DO_ERRORPATH   CLI_USER+11
 
-bool bMinDB = false;
-bool bSyntaxError = false;
-char *conffile = NULL;
-bool bVersion = false;
-char *pErrorBasename = "";
-bool bServerOption = false;
+static bool bMinDB = false;
+static bool bSyntaxError = false;
+static char *conffile = NULL;
+static bool bVersion = false;
+static char *pErrorBasename = "";
+static bool bServerOption = false;
 
 #ifdef MEMORY_BASED
 #define NUM_CLI_OPTIONS 6
@@ -2298,7 +2295,7 @@ bool bServerOption = false;
 #define NUM_CLI_OPTIONS 12
 #endif
 
-CLI_OptionEntry OptionTable[NUM_CLI_OPTIONS] =
+static CLI_OptionEntry OptionTable[NUM_CLI_OPTIONS] =
 {
     { "c", CLI_REQUIRED, CLI_DO_CONFIG_FILE },
     { "s", CLI_NONE,     CLI_DO_MINIMAL     },
@@ -2316,7 +2313,7 @@ CLI_OptionEntry OptionTable[NUM_CLI_OPTIONS] =
     { "e", CLI_REQUIRED, CLI_DO_ERRORPATH   }
 };
 
-void CLI_CallBack(CLI_OptionEntry *p, char *pValue)
+static void CLI_CallBack(CLI_OptionEntry *p, char *pValue)
 {
     if (p)
     {
@@ -2393,8 +2390,6 @@ void CLI_CallBack(CLI_OptionEntry *p, char *pValue)
 
 #if defined(__INTEL_COMPILER)
 
-extern "C" unsigned int __intel_cpu_indicator;
-
 #define CPU_FD_ID 0x00200000UL
 
 #define CPUID_0 0
@@ -2446,7 +2441,7 @@ extern "C" unsigned int __intel_cpu_indicator;
 #define CPU_TYPE_FAMILY_6_MMX_FSXR_SSE3      0x00000800UL
 #define CPU_TYPE_FAMILY_F_SSE3               0x00000800UL
 
-void cpu_init(void)
+static void cpu_init(void)
 {
     UINT32 dwCPUID;
 
@@ -2549,6 +2544,8 @@ void cpu_init(void)
         mov dwMSR,ecx
         mov dwFeatures,edx
     }
+
+    (void)(dwBrand);
 
     // Develop 'Effective' Family and Model.
     //
@@ -2747,7 +2744,7 @@ void cpu_init(void)
 
     // Report findings to the log.
     //
-    fprintf(stderr, "cpu_init: %s, Family %d, Model %d, %s%s%s%s%s" ENDLINE,
+    fprintf(stderr, "cpu_init: %s, Family %u, Model %u, %s%s%s%s%s" ENDLINE,
         (Intel == maker ? "Intel" : (AMD == maker ? "AMD" : "Unknown")),
         dwEffFamily,
         dwEffModel,

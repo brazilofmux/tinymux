@@ -1,6 +1,6 @@
 // db.h
 //
-// $Id: db.h,v 1.7 2005-08-05 15:37:50 sdennis Exp $
+// $Id: db.h,v 1.8 2006-01-07 20:55:42 sdennis Exp $
 //
 
 #ifndef __DB_H
@@ -214,31 +214,32 @@ extern OBJ *db;
 #define s_ThAttrib(t,n)     db[t].throttled_attributes = (n);
 #define s_ThMail(t,n)       db[t].throttled_mail = (n);
 
-extern int  Pennies(dbref);
-extern void s_Pennies(dbref, int);
+int  Pennies(dbref);
+void s_Pennies(dbref, int);
 
 #ifndef WIN32
-extern void load_restart_db(void);
+void load_restart_db(void);
 #endif // !WIN32
 
-extern dbref    getref(FILE *);
-extern void putref(FILE *, dbref);
-extern void free_boolexp(BOOLEXP *);
-extern dbref    parse_dbref(const char *);
-extern bool ThrottleMail(dbref executor);
-extern bool ThrottleAttributeNames(dbref executor);
-extern bool ThrottlePlayerCreate(void);
-extern int  mkattr(dbref executor, char *);
-extern void al_store(void);
-extern void db_grow(dbref);
-extern void db_free(void);
-extern void db_make_minimal(void);
-extern dbref    db_read(FILE *, int *, int *, int *);
-extern dbref    db_write(FILE *, int, int);
-extern void destroy_thing(dbref);
-extern void destroy_exit(dbref);
-extern void putstring(FILE *f, const char *s);
+dbref    getref(FILE *);
+void putref(FILE *, dbref);
+void free_boolexp(BOOLEXP *);
+dbref    parse_dbref(const char *);
+bool ThrottleMail(dbref executor);
+bool ThrottleAttributeNames(dbref executor);
+bool ThrottlePlayerCreate(void);
+int  mkattr(dbref executor, char *);
+void al_store(void);
+void db_grow(dbref);
+void db_free(void);
+void db_make_minimal(void);
+dbref    db_read(FILE *, int *, int *, int *);
+dbref    db_write(FILE *, int, int);
+void destroy_thing(dbref);
+void destroy_exit(dbref);
+void putstring(FILE *f, const char *s);
 char *getstring_noalloc(FILE *f, int new_strings);
+void init_attrtab(void);
 
 #define DOLIST(thing,list) \
     for ((thing)=(list); \
