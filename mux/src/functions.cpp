@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.163 2006/01/07 08:32:45 sdennis Exp $
+// $Id: functions.cpp,v 1.164 2006/01/07 09:46:14 jake Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2005 Solid Vertical Domains, Ltd. All
@@ -581,6 +581,11 @@ FUNCTION(fun_words)
 
 FUNCTION(fun_flags)
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     dbref it;
     ATTR  *pattr;
     if (parse_attrib(executor, fargs[0], &it, &pattr))
@@ -625,6 +630,12 @@ FUNCTION(fun_flags)
 
 FUNCTION(fun_rand)
 {
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     int nDigits;
     switch (nfargs)
     {
@@ -682,6 +693,12 @@ FUNCTION(fun_rand)
 //
 FUNCTION(fun_time)
 {
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     CLinearTimeAbsolute ltaNow;
     if (  nfargs == 0
        || mux_stricmp("utc", fargs[0]) != 0)
@@ -714,6 +731,12 @@ FUNCTION(fun_time)
 //
 FUNCTION(fun_secs)
 {
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     CLinearTimeAbsolute ltaNow;
     if (  nfargs == 0
        || mux_stricmp("local", fargs[0]) != 0)
@@ -749,6 +772,12 @@ FUNCTION(fun_secs)
 //
 FUNCTION(fun_convsecs)
 {
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     CLinearTimeAbsolute lta;
     lta.SetSecondsString(fargs[0]);
     if (  nfargs == 1
@@ -785,6 +814,12 @@ FUNCTION(fun_convsecs)
 //
 FUNCTION(fun_convtime)
 {
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     CLinearTimeAbsolute lta;
     bool bZoneSpecified = false;
     if (  lta.SetString(fargs[0])
@@ -816,6 +851,14 @@ FUNCTION(fun_convtime)
 
 FUNCTION(fun_starttime)
 {
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(fargs);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     char *temp = mudstate.start_time.ReturnDateString();
     safe_str(temp, buff, bufc);
 }
@@ -865,6 +908,12 @@ const int Map24to12[24] =
 };
 FUNCTION(fun_timefmt)
 {
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     CLinearTimeAbsolute lta, ltaUTC;
     if (nfargs == 2)
     {
@@ -1247,11 +1296,23 @@ void get_handler(char *buff, char **bufc, dbref executor, char *fargs[], int key
 
 FUNCTION(fun_get)
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     get_handler(buff, bufc, executor, fargs, GET_GET);
 }
 
 FUNCTION(fun_xget)
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     if (!*fargs[0] || !*fargs[1])
     {
         return;
@@ -1263,11 +1324,21 @@ FUNCTION(fun_xget)
 
 FUNCTION(fun_get_eval)
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     get_handler(buff, bufc, executor, fargs, GET_GEVAL);
 }
 
 FUNCTION(fun_subeval)
 {
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     char *str = fargs[0];
     mux_exec(buff, bufc, executor, caller, enactor,
              EV_EVAL|EV_NO_LOCATION|EV_NOFCHECK|EV_FIGNORE|EV_NO_COMPRESS,
@@ -1276,6 +1347,9 @@ FUNCTION(fun_subeval)
 
 FUNCTION(fun_eval)
 {
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     if (nfargs == 1)
     {
         char *str = fargs[0];
@@ -1302,6 +1376,10 @@ static void do_ufun(char *buff, char **bufc, dbref executor, dbref caller,
             char *cargs[], int ncargs,
             bool is_local)
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     char *atext;
     dbref thing;
     if (!parse_and_get_attrib(executor, fargs, &atext, &thing, buff, bufc))
@@ -1356,6 +1434,11 @@ FUNCTION(fun_ulocal)
 
 FUNCTION(fun_parent)
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     dbref it = match_thing_quiet(executor, fargs[0]);
     if (!Good_obj(it))
     {
@@ -1380,6 +1463,13 @@ FUNCTION(fun_parent)
 
 FUNCTION(fun_mid)
 {
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     // Initial checks for iPosition0 [0,LBUF_SIZE), nLength [0,LBUF_SIZE),
     // and iPosition1 [0,LBUF_SIZE).
     //
@@ -1426,6 +1516,13 @@ FUNCTION(fun_mid)
 
 FUNCTION(fun_right)
 {
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     // nLength on [0,LBUF_SIZE).
     //
     long   lLength = mux_atol(fargs[1]);
@@ -1544,6 +1641,8 @@ FUNCTION(fun_rest)
 
 FUNCTION(fun_v)
 {
+    UNUSED_PARAMETER(nfargs);
+
     dbref aowner;
     int aflags;
     char *sbuf, *sbufc, *tbuf, *str;
@@ -1594,6 +1693,8 @@ FUNCTION(fun_v)
 
 FUNCTION(fun_s)
 {
+    UNUSED_PARAMETER(nfargs);
+
     char *str = fargs[0];
     mux_exec(buff, bufc, executor, caller, enactor, EV_FIGNORE | EV_EVAL, &str,
              cargs, ncargs);
@@ -1606,6 +1707,11 @@ FUNCTION(fun_s)
 
 FUNCTION(fun_con)
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     dbref it = match_thing_quiet(executor, fargs[0]);
     if (!Good_obj(it))
     {
@@ -1637,6 +1743,12 @@ FUNCTION(fun_con)
 
 FUNCTION(fun_exit)
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     dbref it = match_thing_quiet(executor, fargs[0]);
     if (!Good_obj(it))
     {
@@ -1678,6 +1790,12 @@ FUNCTION(fun_exit)
 
 FUNCTION(fun_next)
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     dbref it = match_thing_quiet(executor, fargs[0]);
     if (!Good_obj(it))
     {
@@ -1737,6 +1855,11 @@ FUNCTION(fun_next)
 
 FUNCTION(fun_loc)
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     dbref it = match_thing_quiet(executor, fargs[0]);
     if (!Good_obj(it))
     {
@@ -1759,6 +1882,11 @@ FUNCTION(fun_loc)
 
 FUNCTION(fun_where)
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     dbref it = match_thing_quiet(executor, fargs[0]);
     if (!Good_obj(it))
     {
@@ -1781,6 +1909,11 @@ FUNCTION(fun_where)
 
 FUNCTION(fun_rloc)
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     int levels = mux_atol(fargs[1]);
     if (levels > mudconf.ntfy_nest_lim)
     {
@@ -1822,6 +1955,11 @@ FUNCTION(fun_rloc)
 
 FUNCTION(fun_room)
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     dbref it = match_thing_quiet(executor, fargs[0]);
     if (!Good_obj(it))
     {
@@ -1862,6 +2000,12 @@ FUNCTION(fun_room)
 
 FUNCTION(fun_owner)
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     dbref it;
     ATTR *pattr;
     if (parse_attrib(executor, fargs[0], &it, &pattr))
@@ -1900,6 +2044,12 @@ FUNCTION(fun_owner)
 
 FUNCTION(fun_controls)
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     dbref x = match_thing_quiet(executor, fargs[0]);
     if (!Good_obj(x))
     {
@@ -1924,6 +2074,12 @@ FUNCTION(fun_controls)
 
 FUNCTION(fun_fullname)
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     dbref it = match_thing_quiet(executor, fargs[0]);
     if (!Good_obj(it))
     {
@@ -1949,6 +2105,12 @@ FUNCTION(fun_fullname)
 
 FUNCTION(fun_name)
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     dbref it = match_thing_quiet(executor, fargs[0]);
     if (!Good_obj(it))
     {
@@ -2017,6 +2179,13 @@ FUNCTION(fun_match)
 
 FUNCTION(fun_strmatch)
 {
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     // Check if we match the whole string.  If so, return 1.
     //
     mudstate.wild_invk_ctr = 0;
@@ -2167,6 +2336,13 @@ bool xlate(char *arg)
 
 FUNCTION(fun_index)
 {
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     int start, end;
     char c, *s, *p;
 
@@ -2238,6 +2414,12 @@ FUNCTION(fun_index)
 
 FUNCTION(fun_cat)
 {
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     if (nfargs)
     {
         safe_str(fargs[0], buff, bufc);
@@ -2251,11 +2433,25 @@ FUNCTION(fun_cat)
 
 FUNCTION(fun_version)
 {
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(fargs);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     safe_str(mudstate.version, buff, bufc);
 }
 
 FUNCTION(fun_strlen)
 {
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     size_t n = 0;
     if (nfargs >= 1)
     {
@@ -2266,6 +2462,12 @@ FUNCTION(fun_strlen)
 
 FUNCTION(fun_strmem)
 {
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
    size_t n = 0;
    if (nfargs >= 1)
    {
@@ -2276,6 +2478,12 @@ FUNCTION(fun_strmem)
 
 FUNCTION(fun_num)
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     safe_tprintf_str(buff, bufc, "#%d", match_thing_quiet(executor, fargs[0]));
 }
 
@@ -2332,11 +2540,23 @@ void internalPlayerFind
 
 FUNCTION(fun_pmatch)
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     internalPlayerFind(buff, bufc, executor, fargs[0], true);
 }
 
 FUNCTION(fun_pfind)
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     internalPlayerFind(buff, bufc, executor, fargs[0], false);
 }
 
@@ -2347,6 +2567,13 @@ FUNCTION(fun_pfind)
 
 FUNCTION(fun_comp)
 {
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     int x;
 
     x = strcmp(fargs[0], fargs[1]);
@@ -2363,6 +2590,11 @@ FUNCTION(fun_comp)
 #if defined(WOD_REALMS) || defined(REALITY_LVLS)
 FUNCTION(fun_cansee)
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     dbref looker = match_thing_quiet(executor, fargs[0]);
     if (!Good_obj(looker))
     {
@@ -2421,6 +2653,11 @@ FUNCTION(fun_cansee)
 
 FUNCTION(fun_lcon)
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     dbref it = match_thing_quiet(executor, fargs[0]);
     if (!Good_obj(it))
     {
@@ -2477,6 +2714,11 @@ FUNCTION(fun_lcon)
 
 FUNCTION(fun_lexits)
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     dbref it = match_thing_quiet(executor, fargs[0]);
     if (!Good_obj(it))
     {
@@ -2549,6 +2791,11 @@ FUNCTION(fun_lexits)
 //
 FUNCTION(fun_entrances)
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     char *p;
     dbref i;
 
@@ -2701,6 +2948,12 @@ FUNCTION(fun_entrances)
 
 FUNCTION(fun_home)
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     dbref it = match_thing_quiet(executor, fargs[0]);
     if (!Good_obj(it))
     {
@@ -2735,6 +2988,12 @@ FUNCTION(fun_home)
 
 FUNCTION(fun_money)
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     dbref it = match_thing_quiet(executor, fargs[0]);
     if (!Good_obj(it))
     {
@@ -2758,6 +3017,13 @@ FUNCTION(fun_money)
 
 FUNCTION(fun_pos)
 {
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     // Strip ANSI from pattern and save.
     //
     // Note: We need to save it because the next call to strip_ansi()
@@ -2813,6 +3079,13 @@ FUNCTION(fun_pos)
 
 FUNCTION(fun_lpos)
 {
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     if (*fargs[0] == '\0')
     {
         return;
@@ -3150,6 +3423,13 @@ FUNCTION(fun_member)
 //
 FUNCTION(fun_secure)
 {
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     char *pString = fargs[0];
     int nString = strlen(pString);
 
@@ -3197,6 +3477,14 @@ FUNCTION(fun_secure)
 //
 FUNCTION(fun_escape)
 {
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(fargs);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     char *pString = fargs[0];
     int nString = strlen(pString);
 
@@ -3275,6 +3563,12 @@ FUNCTION(fun_wordpos)
 
 FUNCTION(fun_type)
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     dbref it = match_thing_quiet(executor, fargs[0]);
     if (!Good_obj(it))
     {
@@ -3333,6 +3627,8 @@ static bool atr_has_flag
     const char *flagname
 )
 {
+    UNUSED_PARAMETER(aowner);
+
     if (See_attr(player, thing, pattr))
     {
         ATR_HAS_FLAG_ENTRY *pEntry = atr_has_flag_table;
@@ -3350,6 +3646,11 @@ static bool atr_has_flag
 
 FUNCTION(fun_hasflag)
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     dbref it;
     ATTR *pattr;
 
@@ -3392,6 +3693,11 @@ FUNCTION(fun_hasflag)
 
 FUNCTION(fun_haspower)
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     dbref it = match_thing_quiet(executor, fargs[0]);
     if (!Good_obj(it))
     {
@@ -3547,6 +3853,11 @@ FUNCTION(fun_txlevel)
 
 FUNCTION(fun_powers)
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     dbref it = match_thing_quiet(executor, fargs[0]);
     if (!Good_obj(it))
     {
@@ -3569,6 +3880,13 @@ FUNCTION(fun_powers)
 
 FUNCTION(fun_delete)
 {
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     char *s = fargs[0];
     int iStart = mux_atol(fargs[1]);
     int nChars = mux_atol(fargs[2]);
@@ -3615,6 +3933,12 @@ FUNCTION(fun_delete)
 
 FUNCTION(fun_lock)
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     dbref it, aowner;
     int aflags;
     ATTR *pattr;
@@ -3646,6 +3970,11 @@ FUNCTION(fun_lock)
 
 FUNCTION(fun_elock)
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     dbref it, aowner;
     int aflags;
     ATTR *pattr;
@@ -3702,6 +4031,11 @@ FUNCTION(fun_elock)
 
 FUNCTION(fun_lwho)
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     bool bPorts = false;
     if (nfargs == 1)
     {
@@ -3722,6 +4056,13 @@ FUNCTION(fun_lwho)
 
 FUNCTION(fun_lports)
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(fargs);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     make_port_ulist(executor, buff, bufc);
 }
 
@@ -3731,6 +4072,12 @@ FUNCTION(fun_lports)
 
 FUNCTION(fun_nearby)
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     dbref obj1 = match_thing_quiet(executor, fargs[0]);
     if (!Good_obj(obj1))
     {
@@ -3778,21 +4125,45 @@ static void process_sex(dbref player, char *what, const char *token, char *buff,
 
 FUNCTION(fun_obj)
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     process_sex(executor, fargs[0], "%o", buff, bufc);
 }
 
 FUNCTION(fun_poss)
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     process_sex(executor, fargs[0], "%p", buff, bufc);
 }
 
 FUNCTION(fun_subj)
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     process_sex(executor, fargs[0], "%s", buff, bufc);
 }
 
 FUNCTION(fun_aposs)
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     process_sex(executor, fargs[0], "%a", buff, bufc);
 }
 
@@ -3803,6 +4174,14 @@ FUNCTION(fun_aposs)
 
 FUNCTION(fun_mudname)
 {
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(fargs);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     safe_str(mudconf.mud_name, buff, bufc);
 }
 
@@ -3812,6 +4191,14 @@ FUNCTION(fun_mudname)
 
 FUNCTION(fun_connrecord)
 {
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(fargs);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     safe_ltoa(mudstate.record_players, buff, bufc);
 }
 
@@ -3821,6 +4208,14 @@ FUNCTION(fun_connrecord)
 
 FUNCTION(fun_fcount)
 {
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(fargs);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     safe_ltoa(mudstate.func_invk_ctr, buff, bufc);
 }
 
@@ -3830,6 +4225,14 @@ FUNCTION(fun_fcount)
 
 FUNCTION(fun_fdepth)
 {
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(fargs);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     safe_ltoa(mudstate.func_nest_lev, buff, bufc);
 }
 
@@ -3839,6 +4242,11 @@ FUNCTION(fun_fdepth)
 
 FUNCTION(fun_ctime)
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     dbref thing;
     if (nfargs == 1)
     {
@@ -3868,6 +4276,11 @@ FUNCTION(fun_ctime)
 
 FUNCTION(fun_mtime)
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     dbref thing;
     if (nfargs == 1)
     {
@@ -3896,6 +4309,11 @@ FUNCTION(fun_mtime)
 // ---------------------------------------------------------------------------
 FUNCTION(fun_moniker)
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     dbref thing;
     if (nfargs == 1)
     {
@@ -3994,16 +4412,37 @@ void ANSI_TransformTextWithTable
 
 FUNCTION(fun_lcstr)
 {
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     ANSI_TransformTextWithTable(buff, bufc, fargs[0], mux_tolower);
 }
 
 FUNCTION(fun_ucstr)
 {
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     ANSI_TransformTextWithTable(buff, bufc, fargs[0], mux_toupper);
 }
 
 FUNCTION(fun_capstr)
 {
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     char *pString = fargs[0];
     char *pBuffer = *bufc;
     int nString = strlen(pString);
@@ -4133,11 +4572,23 @@ void lattr_handler(char *buff, char **bufc, dbref executor, char *fargs[],
 
 FUNCTION(fun_lattr)
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     lattr_handler(buff, bufc, executor, fargs, false);
 }
 
 FUNCTION(fun_lattrp)
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     lattr_handler(buff, bufc, executor, fargs, true);
 }
 // ---------------------------------------------------------------------------
@@ -4146,6 +4597,12 @@ FUNCTION(fun_lattrp)
 
 FUNCTION(fun_attrcnt)
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     dbref thing;
     int ca, count = 0;
 
@@ -4262,6 +4719,13 @@ void ANSI_TransformTextReverseWithFunction
 
 FUNCTION(fun_reverse)
 {
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     ANSI_TransformTextReverseWithFunction(buff, bufc, fargs[0], mux_memrevcpy);
 }
 
@@ -4322,6 +4786,12 @@ FUNCTION(fun_revwords)
 
 FUNCTION(fun_after)
 {
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     char *mp;
     int mlen;
 
@@ -4362,6 +4832,12 @@ FUNCTION(fun_after)
 
 FUNCTION(fun_before)
 {
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     char *mp, *ip;
     int mlen;
 
@@ -4409,6 +4885,9 @@ FUNCTION(fun_before)
 
 FUNCTION(fun_search)
 {
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     char *pArg = NULL;
     if (nfargs != 0)
     {
@@ -4449,6 +4928,11 @@ FUNCTION(fun_search)
 
 FUNCTION(fun_stats)
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     dbref who;
 
     if (  nfargs == 0
@@ -4487,6 +4971,13 @@ FUNCTION(fun_stats)
 
 FUNCTION(fun_merge)
 {
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     char *str, *rep;
     char c;
 
@@ -4589,6 +5080,13 @@ FUNCTION(fun_splice)
 
 FUNCTION(fun_repeat)
 {
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     int times = mux_atol(fargs[1]);
     if (times < 1 || *fargs[0] == '\0')
     {
@@ -4741,11 +5239,23 @@ void iter_value(char *buff, char **bufc, char *fargs[], int nfargs, bool bWhich)
 
 FUNCTION(fun_itext)
 {
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     iter_value(buff, bufc, fargs, nfargs, false);
 }
 
 FUNCTION(fun_inum)
 {
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     iter_value(buff, bufc, fargs, nfargs, true);
 }
 
@@ -4802,6 +5312,14 @@ FUNCTION(fun_list)
 
 FUNCTION(fun_ilev)
 {
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(fargs);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     safe_ltoa(mudstate.in_loop-1, buff, bufc);
 }
 
@@ -5169,6 +5687,13 @@ FUNCTION(fun_map)
 
 FUNCTION(fun_edit)
 {
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     char *tstr;
 
     edit_string(strip_ansi(fargs[0]), &tstr, fargs[1], fargs[2]);
@@ -5182,6 +5707,12 @@ FUNCTION(fun_edit)
 
 FUNCTION(fun_locate)
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     bool check_locks, verbose, multiple;
     dbref thing, what;
     char *cp;
@@ -5399,6 +5930,12 @@ FUNCTION(fun_case)
 
 FUNCTION(fun_space)
 {
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     // Validate request.
     //
     int num;
@@ -5430,6 +5967,12 @@ FUNCTION(fun_space)
 
 FUNCTION(fun_height)
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     long nHeight = 24;
     dbref target = NOTHING;
     if (is_rational(fargs[0]))
@@ -5474,6 +6017,12 @@ FUNCTION(fun_height)
 
 FUNCTION(fun_width)
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     long nWidth = 78;
     dbref target = NOTHING;
     if (is_rational(fargs[0]))
@@ -5522,6 +6071,12 @@ FUNCTION(fun_width)
 
 FUNCTION(fun_idle)
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     long nIdle = -1;
     if (is_rational(fargs[0]))
     {
@@ -5566,6 +6121,12 @@ FUNCTION(fun_idle)
 
 FUNCTION(fun_conn)
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     long nConnected = -1;
     if (is_rational(fargs[0]))
     {
@@ -6278,16 +6839,34 @@ void centerjustcombo
 
 FUNCTION(fun_ljust)
 {
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     centerjustcombo(CJC_LJUST, buff, bufc, fargs, nfargs);
 }
 
 FUNCTION(fun_rjust)
 {
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     centerjustcombo(CJC_RJUST, buff, bufc, fargs, nfargs);
 }
 
 FUNCTION(fun_center)
 {
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     centerjustcombo(CJC_CENTER, buff, bufc, fargs, nfargs);
 }
 
@@ -6297,6 +6876,13 @@ FUNCTION(fun_center)
 
 FUNCTION(fun_setq)
 {
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     int regnum = mux_RegisterSet[(unsigned char)fargs[0][0]];
     if (  regnum < 0
        || regnum >= MAX_GLOBAL_REGS
@@ -6318,6 +6904,13 @@ FUNCTION(fun_setq)
 
 FUNCTION(fun_setr)
 {
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     int regnum = mux_RegisterSet[(unsigned char)fargs[0][0]];
     if (  regnum < 0
        || regnum >= MAX_GLOBAL_REGS
@@ -6340,6 +6933,13 @@ FUNCTION(fun_setr)
 
 FUNCTION(fun_r)
 {
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     int regnum = mux_RegisterSet[(unsigned char)fargs[0][0]];
     if (  regnum < 0
        || regnum >= MAX_GLOBAL_REGS
@@ -6360,6 +6960,13 @@ FUNCTION(fun_r)
 
 FUNCTION(fun_isdbref)
 {
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     bool bResult = false;
 
     char *p = fargs[0];
@@ -6506,6 +7113,11 @@ FUNCTION(fun_trim)
 
 FUNCTION(fun_config)
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     if (nfargs == 1)
     {
         cf_display(executor, fargs[0], buff, bufc);
@@ -6539,6 +7151,11 @@ int return_bit(dbref player)
 
 FUNCTION(fun_bittype)
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     dbref target;
     if (nfargs == 1)
     {
@@ -6557,6 +7174,10 @@ FUNCTION(fun_bittype)
 
 FUNCTION(fun_error)
 {
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     if (  Good_obj(mudconf.global_error_obj)
         && !Going(mudconf.global_error_obj) )
     {
@@ -6589,6 +7210,12 @@ FUNCTION(fun_error)
 
 FUNCTION(fun_strip)
 {
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     if (fargs[0][0] == '\0')
     {
         return;
@@ -6712,6 +7339,12 @@ static int wraplen(char *str, const int nWidth, bool &newline)
 
 FUNCTION(fun_wrap)
 {
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     // ARG 2: Width. Default: 78.
     //
     int nWidth = DEFAULT_WIDTH;
@@ -7144,6 +7777,13 @@ const char *write_time(int Seconds)
 //
 FUNCTION(fun_digittime)
 {
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     int tt = mux_atol(fargs[0]);
     safe_str(digit_format(tt), buff, bufc);
 }
@@ -7153,6 +7793,13 @@ FUNCTION(fun_digittime)
 //
 FUNCTION(fun_singletime)
 {
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     int tt = mux_atol(fargs[0]);
     safe_str(time_format_2(tt), buff, bufc);
 }
@@ -7162,6 +7809,13 @@ FUNCTION(fun_singletime)
 //
 FUNCTION(fun_exptime)
 {
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     int tt = mux_atol(fargs[0]);
     safe_str(expand_time(tt), buff, bufc);
 }
@@ -7171,6 +7825,13 @@ FUNCTION(fun_exptime)
 //
 FUNCTION(fun_writetime)
 {
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     int tt = mux_atol(fargs[0]);
     safe_str(write_time(tt), buff, bufc);
 }
@@ -7180,6 +7841,12 @@ FUNCTION(fun_writetime)
 //
 FUNCTION(fun_cmds)
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     long nCmds = -1;
     if (is_rational(fargs[0]))
     {
@@ -7220,6 +7887,14 @@ FUNCTION(fun_cmds)
 //
 FUNCTION(fun_startsecs)
 {
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(fargs);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     CLinearTimeAbsolute lta;
     lta = mudstate.start_time;
     lta.Local2UTC();
@@ -7231,6 +7906,12 @@ FUNCTION(fun_startsecs)
 //
 FUNCTION(fun_conntotal)
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     dbref target = lookup_player(executor, fargs[0], true);
     if (Good_obj(target))
     {
@@ -7252,6 +7933,12 @@ FUNCTION(fun_conntotal)
 //
 FUNCTION(fun_connmax)
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     dbref target = lookup_player(executor, fargs[0], true);
     if (Good_obj(target))
     {
@@ -7274,6 +7961,12 @@ FUNCTION(fun_connmax)
 //
 FUNCTION(fun_connlast)
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     dbref target = lookup_player(executor, fargs[0], true);
     if (Good_obj(target))
     {
@@ -7290,6 +7983,12 @@ FUNCTION(fun_connlast)
 //
 FUNCTION(fun_connnum)
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     dbref target = lookup_player(executor, fargs[0], true);
     if (Good_obj(target))
     {
@@ -7311,6 +8010,12 @@ FUNCTION(fun_connnum)
 //
 FUNCTION(fun_connleft)
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     dbref target = lookup_player(executor, fargs[0], true);
     if (Good_obj(target))
     {
@@ -7328,6 +8033,12 @@ FUNCTION(fun_connleft)
 //
 FUNCTION(fun_lattrcmds)
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     // Check for wildcard matching.  parse_attrib_wild checks for read
     // permission, so we don't have to.  Have p_a_w assume the
     // slash-star if it is missing.
@@ -7476,6 +8187,12 @@ extern FLAGNAMEENT gen_flag_names[];
 //
 FUNCTION(fun_lflags)
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     dbref target = match_thing_quiet(executor, fargs[0]);
     if (!Good_obj(target))
     {
@@ -7547,6 +8264,13 @@ FUNCTION(fun_lflags)
 
 FUNCTION(fun_art)
 {
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     const int ovecsize = 33;
     int ovec[ovecsize];
 
@@ -7587,6 +8311,13 @@ FUNCTION(fun_art)
 //
 FUNCTION(fun_ord)
 {
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     size_t n;
     char *p  = strip_ansi(fargs[0], &n);
     if (n == 1)
@@ -7608,6 +8339,13 @@ FUNCTION(fun_ord)
 //
 FUNCTION(fun_chr)
 {
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     if (!is_integer(fargs[0], NULL))
     {
         safe_str("#-1 ARGUMENT MUST BE A NUMBER", buff, bufc);
@@ -7634,6 +8372,13 @@ FUNCTION(fun_chr)
 //
 FUNCTION(fun_stripaccents)
 {
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     size_t nLen;
     char *p = strip_accents(fargs[0], &nLen);
     safe_copy_buf(p, nLen, buff, bufc);
@@ -7727,6 +8472,13 @@ static const unsigned char AccentCombo3[24][16] =
 //
 FUNCTION(fun_accent)
 {
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     size_t n = strlen(fargs[0]);
     if (n != strlen(fargs[1]))
     {
@@ -8159,6 +8911,10 @@ void do_function
     char *target
 )
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(nargs);
+
     UFUN *ufp, *ufp2;
     ATTR *ap;
 
@@ -8335,6 +9091,8 @@ void list_functable(dbref player)
 
 CF_HAND(cf_func_access)
 {
+    UNUSED_PARAMETER(vp);
+
     char *ap;
     for (ap = str; *ap && !mux_isspace(*ap); ap++)
     {
