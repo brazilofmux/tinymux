@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.161 2006/01/03 01:18:51 sdennis Exp $
+// $Id: functions.cpp,v 1.162 2006/01/07 05:31:51 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2005 Solid Vertical Domains, Ltd. All
@@ -946,8 +946,7 @@ const char *DayOfWeekStringLong[7] =
     "Friday",
     "Saturday"
 };
-extern char *DayOfWeekString[];
-extern const char *monthtab[];
+
 const char *MonthTableLong[] =
 {
     "January",

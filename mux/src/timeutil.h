@@ -1,6 +1,6 @@
 // timeutil.h -- CLinearTimeAbsolute, and CLinearTimeDelta modules.
 //
-// $Id: timeutil.h,v 1.16 2005/08/25 19:42:32 sdennis Exp $
+// $Id: timeutil.h,v 1.17 2006/01/07 05:31:52 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -201,5 +201,8 @@ int DCL_INLINE iFloorDivisionMod(int x, int y, int *piMod) \
 
 extern bool ParseDate(CLinearTimeAbsolute &lta, char *pDateString, bool *pbZoneSpecified);
 extern bool isLeapYear(long iYear);
+extern const char *monthtab[];
+extern char *DayOfWeekString[];
+extern int iMod(int x, int y);
 
 #endif // TIMEUTIL_H
