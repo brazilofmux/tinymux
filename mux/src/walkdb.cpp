@@ -1,6 +1,6 @@
 // walkdb.cpp -- Support for commands that walk the entire db.
 //
-// $Id: walkdb.cpp,v 1.11 2004-08-16 05:14:07 sdennis Exp $
+// $Id: walkdb.cpp,v 1.12 2006-01-07 01:43:51 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -10,6 +10,7 @@
 
 #include "misc.h"
 #include "attrs.h"
+#include "command.h"
 
 // Bind occurances of the universal var in ACTION to ARG, then run ACTION.
 // Cmds run in low-prio Q after a 1 sec delay for the first one.
@@ -82,6 +83,10 @@ void do_dolist(dbref executor, dbref caller, dbref enactor, int key,
 //
 void do_find(dbref executor, dbref caller, dbref enactor, int key, char *name)
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(key);
+
     char *buff;
 
     if (!payfor(executor, mudconf.searchcost))
@@ -180,6 +185,9 @@ bool get_stats(dbref player, dbref who, STATS *info)
 //
 void do_stats(dbref executor, dbref caller, dbref enactor, int key, char *name)
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+
     dbref owner;
 
     switch (key)
@@ -319,6 +327,10 @@ void do_chownall
     char *to
 )
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(nargs);
+
     int count;
     dbref victim, recipient;
 
@@ -356,7 +368,7 @@ void do_chownall
 
 #define ANY_OWNER -2
 
-void er_mark_disabled(dbref player)
+static void er_mark_disabled(dbref player)
 {
     notify(player,
      "The mark commands are not allowed while DB cleaning is enabled.");
@@ -1075,6 +1087,9 @@ void do_search(dbref executor, dbref caller, dbref enactor, int key, char *arg)
 //
 void do_markall(dbref executor, dbref caller, dbref enactor, int key)
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+
     int i;
 
     if (mudconf.control_flags & CF_DBCHECK)
@@ -1102,6 +1117,8 @@ void do_markall(dbref executor, dbref caller, dbref enactor, int key)
 void do_apply_marked( dbref executor, dbref caller, dbref enactor, int key,
                       char *command, char *cargs[], int ncargs)
 {
+    UNUSED_PARAMETER(key);
+
     if (mudconf.control_flags & CF_DBCHECK)
     {
         er_mark_disabled(executor);
