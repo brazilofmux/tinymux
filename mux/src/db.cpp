@@ -1,6 +1,6 @@
 // db.cpp
 //
-// $Id: db.cpp,v 1.73 2006-01-07 02:50:01 jake Exp $
+// $Id: db.cpp,v 1.74 2006-01-07 05:30:10 jake Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -390,6 +390,8 @@ int fwdlist_rewrite(FWDLIST *fp, char *atext)
  */
 bool fwdlist_ck(dbref player, dbref thing, int anum, char *atext)
 {
+    UNREFERENCED_PARAMETER(anum);
+
     if (mudstate.bStandAlone)
     {
         return true;
@@ -692,22 +694,33 @@ void do_attribute
     char *value
 )
 {
-    int f;
-    char *sp;
-    ATTR *va2;
-    bool negate, success;
+    UNREFERENCED_PARAMETER(caller);
+    UNREFERENCED_PARAMETER(enactor);
+    UNREFERENCED_PARAMETER(nargs);
 
     // Look up the user-named attribute we want to play with.
     //
     int nName;
     bool bValid;
-    ATTR *va;
     char *pName = MakeCanonicalAttributeName(aname, &nName, &bValid);
-    if (!bValid || !(va = (ATTR *)vattr_find_LEN(pName, nName)))
+    if (!bValid)
     {
         notify(executor, "No such user-named attribute.");
         return;
     }
+
+    ATTR *va = (ATTR *)vattr_find_LEN(pName, nName);
+    if (!va)
+    {
+        notify(executor, "No such user-named attribute.");
+        return;
+    }
+
+    int f;
+    char *sp;
+    ATTR *va2;
+    bool negate, success;
+
     switch (key)
     {
     case ATTRIB_ACCESS:
@@ -805,6 +818,10 @@ void do_fixdb
     char *arg2
 )
 {
+    UNREFERENCED_PARAMETER(caller);
+    UNREFERENCED_PARAMETER(enactor);
+    UNREFERENCED_PARAMETER(nargs);
+
     init_match(executor, arg1, NOTYPE);
     match_everything(0);
     dbref thing = noisy_match_result();
@@ -1600,6 +1617,7 @@ DCL_INLINE static void makekey(dbref thing, int atr, Aname *abuff)
 
 static char *atr_encode(char *iattr, dbref thing, dbref owner, int flags, int atr)
 {
+    UNREFERENCED_PARAMETER(atr);
 
     // If using the default owner and flags (almost all attributes will),
     // just store the string.
