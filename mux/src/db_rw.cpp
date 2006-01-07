@@ -1,6 +1,6 @@
 // db_rw.cpp
 //
-// $Id: db_rw.cpp,v 1.22 2006-01-07 07:11:37 jake Exp $
+// $Id: db_rw.cpp,v 1.23 2006-01-07 07:36:11 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -10,10 +10,6 @@
 
 #include "attrs.h"
 #include "vattr.h"
-
-extern void db_grow(dbref);
-
-extern struct object *db;
 
 static int g_version;
 static int g_format;
@@ -154,7 +150,6 @@ static BOOLEXP *getboolexp1(FILE *f)
         }
         ungetc(c, f);
         return TRUE_BOOLEXP;
-        break;
 
     case '"':
         ungetc(c, f);
@@ -511,7 +506,6 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
     int aflags;
     BOOLEXP *tempbool;
     char *buff;
-    int len;
     int nVisualWidth;
 
     g_format = F_UNKNOWN;
@@ -673,7 +667,7 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
             {
                 tstr = getstring_noalloc(f, true);
                 buff = alloc_lbuf("dbread.s_Name");
-                len = ANSI_TruncateToField(tstr, MBUF_SIZE, buff, MBUF_SIZE,
+                (void)ANSI_TruncateToField(tstr, MBUF_SIZE, buff, MBUF_SIZE,
                     &nVisualWidth, ANSI_ENDGOAL_NORMAL);
                 s_Name(i, buff);
                 free_lbuf(buff);
@@ -904,8 +898,6 @@ static bool db_write_object(FILE *f, dbref i, int db_format, int flags)
     }
     return false;
 }
-
-extern int anum_alc_top;
 
 dbref db_write(FILE *f, int format, int version)
 {
