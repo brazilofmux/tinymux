@@ -1,6 +1,6 @@
 // set.cpp -- Commands which set parameters.
 //
-// $Id: set.cpp,v 1.29 2005-10-12 04:28:27 sdennis Exp $
+// $Id: set.cpp,v 1.30 2006-01-07 08:27:21 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -9,9 +9,8 @@
 
 #include "ansi.h"
 #include "attrs.h"
+#include "command.h"
 #include "powers.h"
-
-extern NAMETAB indiv_attraccess_nametab[];
 
 void set_modified(dbref thing)
 {
@@ -60,6 +59,11 @@ void do_chzone
     char *newobj
 )
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(key);
+    UNUSED_PARAMETER(nargs);
+
     if (!mudconf.have_zones)
     {
         notify(executor, "Zones disabled.");
@@ -155,6 +159,10 @@ void do_name
     char *newname
 )
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(key);
+
     dbref thing = match_controlled(executor, name);
     if (thing == NOTHING)
     {
@@ -262,6 +270,11 @@ void do_alias
     char *alias
 )
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(key);
+    UNUSED_PARAMETER(nargs);
+
     dbref thing = match_controlled(executor, name);
     if (thing == NOTHING)
     {
@@ -369,6 +382,11 @@ void do_forwardlist
     char *newlist
 )
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(key);
+    UNUSED_PARAMETER(nargs);
+
     dbref thing = match_controlled(executor, target);
     if (thing == NOTHING)
     {
@@ -424,6 +442,10 @@ void do_lock
     char *keytext
 )
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(nargs);
+
     dbref thing;
     ATTR *ap;
 
@@ -507,6 +529,9 @@ void do_lock
 
 void do_unlock(dbref executor, dbref caller, dbref enactor, int key, char *name)
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+
     dbref thing;
     ATTR *ap;
 
@@ -565,6 +590,10 @@ void do_unlock(dbref executor, dbref caller, dbref enactor, int key, char *name)
 
 void do_unlink(dbref executor, dbref caller, dbref enactor, int key, char *name)
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(key);
+
     dbref exit;
 
     init_match(executor, name, TYPE_EXIT);
@@ -637,6 +666,11 @@ void do_chown
     char *newown
 )
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(key);
+    UNUSED_PARAMETER(nargs);
+
     dbref nOwnerOrig, nOwnerNew, thing;
     bool bDoit;
     ATTR *ap;
@@ -910,6 +944,10 @@ void do_set
     char *flagname
 )
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(nargs);
+
     dbref thing, aowner;
     int aflags;
     ATTR *pattr;
@@ -1087,6 +1125,10 @@ void do_power
     char *flag
 )
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(nargs);
+
     if (  !flag
        || !*flag)
     {
@@ -1115,6 +1157,10 @@ void do_setattr
     char *attrtext
 )
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(nargs);
+
     init_match(executor, name, NOTYPE);
     match_everything(MAT_EXIT_PARENTS);
     dbref thing = noisy_match_result();
@@ -1129,6 +1175,8 @@ void do_setattr
 void do_cpattr(dbref executor, dbref caller, dbref enactor, int key,
                char *oldpair, char *newpair[], int nargs)
 {
+    UNUSED_PARAMETER(key);
+
     int i;
     char *oldthing, *oldattr, *newthing, *newattr;
 
@@ -1182,6 +1230,10 @@ void do_cpattr(dbref executor, dbref caller, dbref enactor, int key,
 void do_mvattr(dbref executor, dbref caller, dbref enactor, int key,
                char *what, char *args[], int nargs)
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(key);
+
     // Make sure we have something to do.
     //
     if (nargs < 2)
@@ -1517,7 +1569,7 @@ void edit_string(char *src, char **dst, char *from, char *to)
     }
 }
 
-void edit_string_ansi(char *src, char **dst, char **returnstr, char *from, char *to)
+static void edit_string_ansi(char *src, char **dst, char **returnstr, char *from, char *to)
 {
     char *cp, *rp;
 
@@ -1586,6 +1638,10 @@ void edit_string_ansi(char *src, char **dst, char **returnstr, char *from, char 
 void do_edit(dbref executor, dbref caller, dbref enactor, int key, char *it,
              char *args[], int nargs)
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(key);
+
     dbref thing, aowner;
     int atr, aflags;
     bool bGotOne;
@@ -1670,6 +1726,10 @@ void do_edit(dbref executor, dbref caller, dbref enactor, int key, char *it,
 
 void do_wipe(dbref executor, dbref caller, dbref enactor, int key, char *it)
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(key);
+
     dbref thing;
 
     olist_push();
@@ -1730,6 +1790,9 @@ void do_wipe(dbref executor, dbref caller, dbref enactor, int key, char *it)
 void do_trigger(dbref executor, dbref caller, dbref enactor, int key,
                 char *object, char *argv[], int nargs)
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+
     dbref thing;
     ATTR *pattr;
 
@@ -1757,6 +1820,10 @@ void do_trigger(dbref executor, dbref caller, dbref enactor, int key,
 
 void do_use(dbref executor, dbref caller, dbref enactor, int key, char *object)
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(key);
+
     char *df_use, *df_ouse, *temp;
     dbref thing, aowner;
     int aflags;
@@ -1833,6 +1900,9 @@ void do_setvattr
     char *arg2
 )
 {
+    UNUSED_PARAMETER(key);
+    UNUSED_PARAMETER(nargs);
+
     char *s;
     int anum;
 
