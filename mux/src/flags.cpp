@@ -1,6 +1,6 @@
 // flags.cpp -- Flag manipulation routines.
 //
-// $Id: flags.cpp,v 1.24 2006-01-07 06:08:25 sdennis Exp $
+// $Id: flags.cpp,v 1.25 2006-01-07 23:03:52 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -15,7 +15,7 @@
  * fh_any: set or clear indicated bit, no security checking
  */
 
-bool fh_any(dbref target, dbref player, FLAG flag, int fflags, bool reset)
+static bool fh_any(dbref target, dbref player, FLAG flag, int fflags, bool reset)
 {
     // Never let God drop his/her own wizbit.
     //
@@ -45,7 +45,7 @@ bool fh_any(dbref target, dbref player, FLAG flag, int fflags, bool reset)
  * fh_god: only GOD may set or clear the bit
  */
 
-bool fh_god(dbref target, dbref player, FLAG flag, int fflags, bool reset)
+static bool fh_god(dbref target, dbref player, FLAG flag, int fflags, bool reset)
 {
     if (!God(player))
     {
@@ -59,7 +59,7 @@ bool fh_god(dbref target, dbref player, FLAG flag, int fflags, bool reset)
  * * fh_wiz: only WIZARDS (or GOD) may set or clear the bit
  */
 
-bool fh_wiz(dbref target, dbref player, FLAG flag, int fflags, bool reset)
+static bool fh_wiz(dbref target, dbref player, FLAG flag, int fflags, bool reset)
 {
     if (!Wizard(player))
     {
@@ -73,7 +73,7 @@ bool fh_wiz(dbref target, dbref player, FLAG flag, int fflags, bool reset)
  * * fh_wizroy: only WIZARDS, ROYALTY, (or GOD) may set or clear the bit
  */
 
-bool fh_wizroy(dbref target, dbref player, FLAG flag, int fflags, bool reset)
+static bool fh_wizroy(dbref target, dbref player, FLAG flag, int fflags, bool reset)
 {
     if (!WizRoy(player))
     {
@@ -88,7 +88,7 @@ bool fh_wizroy(dbref target, dbref player, FLAG flag, int fflags, bool reset)
  * * this on players, but ordinary players can set it on other types
  * * of objects.
  */
-bool fh_restrict_player
+static bool fh_restrict_player
 (
     dbref target,
     dbref player,
@@ -110,7 +110,7 @@ bool fh_restrict_player
  * yourself have this flag and are a player who owns themselves (i.e.,
  * no robots). Only God can set this on a player.
  */
-bool fh_privileged
+static bool fh_privileged
 (
     dbref target,
     dbref player,
@@ -137,7 +137,7 @@ bool fh_privileged
  * * fh_inherit: only players may set or clear this bit.
  */
 
-bool fh_inherit(dbref target, dbref player, FLAG flag, int fflags, bool reset)
+static bool fh_inherit(dbref target, dbref player, FLAG flag, int fflags, bool reset)
 {
     if (!Inherits(player))
     {
@@ -151,7 +151,7 @@ bool fh_inherit(dbref target, dbref player, FLAG flag, int fflags, bool reset)
  * * fh_dark_bit: manipulate the dark bit. Nonwizards may not set on players.
  */
 
-bool fh_dark_bit(dbref target, dbref player, FLAG flag, int fflags, bool reset)
+static bool fh_dark_bit(dbref target, dbref player, FLAG flag, int fflags, bool reset)
 {
     if (  !reset
        && isPlayer(target)
@@ -169,7 +169,7 @@ bool fh_dark_bit(dbref target, dbref player, FLAG flag, int fflags, bool reset)
  * * fh_going_bit: manipulate the going bit.  Non-gods may only clear.
  */
 
-bool fh_going_bit(dbref target, dbref player, FLAG flag, int fflags, bool reset)
+static bool fh_going_bit(dbref target, dbref player, FLAG flag, int fflags, bool reset)
 {
     if (  Going(target)
        && reset
@@ -203,7 +203,7 @@ bool fh_going_bit(dbref target, dbref player, FLAG flag, int fflags, bool reset)
  * * fh_hear_bit: set or clear bits that affect hearing.
  */
 
-bool fh_hear_bit(dbref target, dbref player, FLAG flag, int fflags, bool reset)
+static bool fh_hear_bit(dbref target, dbref player, FLAG flag, int fflags, bool reset)
 {
     if (isPlayer(target) && (flag & MONITOR))
     {
@@ -227,7 +227,7 @@ bool fh_hear_bit(dbref target, dbref player, FLAG flag, int fflags, bool reset)
 /* ---------------------------------------------------------------------------
  * fh_player_bit: Can set and reset this on everything but players.
  */
-bool fh_player_bit
+static bool fh_player_bit
 (
     dbref target,
     dbref player,
@@ -247,7 +247,7 @@ bool fh_player_bit
  * fh_staff: only STAFF, WIZARDS, ROYALTY, (or GOD) may set or clear
  * the bit.
  */
-bool fh_staff
+static bool fh_staff
 (
     dbref target,
     dbref player,
@@ -548,7 +548,7 @@ char *MakeCanonicalFlagName
     }
 }
 
-FLAGNAMEENT *find_flag(char *flagname)
+static FLAGNAMEENT *find_flag(char *flagname)
 {
     // Convert flagname to canonical lowercase format.
     //
@@ -1125,7 +1125,7 @@ void decompile_flags(dbref player, dbref thing, char *thingname)
 // do_flag: Rename flags or remove flag aliases.
 // Based on RhostMUSH code.
 //
-bool flag_rename(char *alias, char *newname)
+static bool flag_rename(char *alias, char *newname)
 {
     int nAlias;
     bool bValidAlias;
