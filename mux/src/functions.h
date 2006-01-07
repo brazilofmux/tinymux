@@ -1,6 +1,6 @@
 // functions.h -- declarations for functions & function processing.
 //
-// $Id: functions.h,v 1.18 2006-01-07 20:55:42 sdennis Exp $
+// $Id: functions.h,v 1.19 2006-01-07 21:53:26 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -72,11 +72,13 @@ bool delim_check
     int sep_arg, SEP *sep, int dflags
 );
 
+void arr2list(char *arr[], int alen, char *list, char **bufc, SEP *psep);
 int list2arr(char *arr[], int maxlen, char *list, SEP *psep);
 char *trim_space_sep(char *str, SEP *psep);
 char *trim_space_sep_LEN(char *str, int nStr, SEP *psep, int *nTrim);
 char *next_token(char *str, SEP *psep);
 char *split_token(char **sp, SEP *psep);
+int countwords(char *str, SEP *psep);
 
 // This is the prototype for functions
 //

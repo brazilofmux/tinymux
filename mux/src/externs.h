@@ -1,6 +1,6 @@
 // externs.h -- Prototypes for externs not defined elsewhere.
 //
-// $Id: externs.h,v 1.58 2006-01-07 20:55:42 sdennis Exp $
+// $Id: externs.h,v 1.59 2006-01-07 21:53:26 sdennis Exp $
 //
 
 #ifndef EXTERNS_H
@@ -41,6 +41,8 @@ void DCL_CDECL cf_log_syntax(dbref player, char *cmd, const char *fmt, ...);
 void ValidateConfigurationDbrefs(void);
 int  cf_read(void);
 void cf_init(void);
+void cf_list(dbref, char *, char **);
+void cf_display(dbref, char *, char *, char **);
 CF_HAND(cf_access);
 CF_HAND(cf_cmd_alias);
 CF_HAND(cf_acmd_access);
@@ -1012,5 +1014,6 @@ char *modSpeech(dbref player, char *message, bool bWhich, char *command);
 // From funceval.cpp
 //
 void stack_clr(dbref obj);
+bool parse_and_get_attrib(dbref, char *[], char **, dbref *, char *, char **);
 
 #endif // EXTERNS_H

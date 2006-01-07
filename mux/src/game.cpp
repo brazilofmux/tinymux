@@ -1,6 +1,6 @@
 // game.cpp
 //
-// $Id: game.cpp,v 1.90 2006-01-07 20:55:42 sdennis Exp $
+// $Id: game.cpp,v 1.91 2006-01-07 21:53:26 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -23,10 +23,6 @@
 #ifdef REALITY_LVLS
 #include "levels.h"
 #endif /* REALITY_LVLS */
-
-#if defined(HAVE_SETRLIMIT) && defined(RLIMIT_NOFILE)
-static void init_rlimit(void);
-#endif // HAVE_SETRLIMIT RLIMIT_NOFILE
 
 void do_dump(dbref executor, dbref caller, dbref enactor, int key)
 {

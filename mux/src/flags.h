@@ -1,6 +1,6 @@
 // flags.h -- Object flags.
 //
-// $Id: flags.h,v 1.9 2005-10-12 04:36:40 sdennis Exp $
+// $Id: flags.h,v 1.10 2006-01-07 21:53:26 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -132,6 +132,8 @@ typedef struct flag_name_entry
     FLAGBITENT *fbe;        // Which bit is this associated with?
     char *flagname;         // Name of the flag.
 } FLAGNAMEENT;
+
+extern FLAGNAMEENT gen_flag_names[];
 
 /* ---------------------------------------------------------------------------
  * OBJENT: Fundamental object types
@@ -375,4 +377,5 @@ extern char *MakeCanonicalFlagName
 #define Has_power(p,x)      (check_access((p),powers_nametab[x].flag))
 #define Html(x)             ((Flags2(x) & HTML) != 0)
 #define s_Html(x)           s_Flags((x), FLAG_WORD2, Flags2(x) | HTML)
+
 #endif // !__FLAGS_H
