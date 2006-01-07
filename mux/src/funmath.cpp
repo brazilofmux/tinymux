@@ -1,6 +1,6 @@
 // funmath.cpp -- MUX math function handlers.
 //
-// $Id: funmath.cpp,v 1.4 2005/11/10 23:05:28 sdennis Exp $
+// $Id: funmath.cpp,v 1.5 2006/01/07 21:19:40 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2005 Solid Vertical Domains, Ltd. All
@@ -21,7 +21,7 @@
 
 #ifdef HAVE_IEEE_FP_FORMAT
 
-const char *mux_FPStrings[] = { "+Inf", "-Inf", "Ind", "NaN", "0", "0", "0", "0" };
+static const char *mux_FPStrings[] = { "+Inf", "-Inf", "Ind", "NaN", "0", "0", "0", "0" };
 
 #define MUX_FPGROUP_PASS  0x00 // Pass-through to printf
 #define MUX_FPGROUP_ZERO  0x10 // Force to be zero.
@@ -70,7 +70,7 @@ typedef union
 // MUX doesn't catch SIGFPE, but if it did, a Signalling NAN would
 // generate a SIGFPE.
 //
-SpecialFloatUnion SpecialFloatTable[IEEE_MAKE_TABLESIZE] =
+static SpecialFloatUnion SpecialFloatTable[IEEE_MAKE_TABLESIZE] =
 {
     { 0 }, // Unused.
     { IEEE_MASK_EXPONENT | IEEE_MASK_QNAN | ARBITRARY_NUMBER },
@@ -257,6 +257,12 @@ static double g_aDoubles[(LBUF_SIZE+1)/2];
 
 FUNCTION(fun_add)
 {
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     int i;
     for (i = 0; i < nfargs; i++)
     {
@@ -289,6 +295,12 @@ FUNCTION(fun_add)
 
 FUNCTION(fun_ladd)
 {
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     int n = 0;
     if (0 < nfargs)
     {
@@ -316,6 +328,12 @@ FUNCTION(fun_ladd)
 
 FUNCTION(fun_iadd)
 {
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     INT64 sum = 0;
     for (int i = 0; i < nfargs; i++)
     {
@@ -326,6 +344,13 @@ FUNCTION(fun_iadd)
 
 FUNCTION(fun_sub)
 {
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     int nDigits;
     if (  is_integer(fargs[0], &nDigits)
        && nDigits <= 9
@@ -352,12 +377,25 @@ FUNCTION(fun_sub)
 
 FUNCTION(fun_isub)
 {
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     INT64 diff = mux_atoi64(fargs[0]) - mux_atoi64(fargs[1]);
     safe_i64toa(diff, buff, bufc);
 }
 
 FUNCTION(fun_mul)
 {
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     double prod = 1.0;
     for (int i = 0; i < nfargs; i++)
     {
@@ -374,6 +412,12 @@ FUNCTION(fun_mul)
 
 FUNCTION(fun_imul)
 {
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     INT64 prod = 1;
     for (int i = 0; i < nfargs; i++)
     {
@@ -384,6 +428,13 @@ FUNCTION(fun_imul)
 
 FUNCTION(fun_gt)
 {
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     bool bResult = false;
     int nDigits;
     if (  is_integer(fargs[0], &nDigits)
@@ -402,6 +453,13 @@ FUNCTION(fun_gt)
 
 FUNCTION(fun_gte)
 {
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     bool bResult = false;
     int nDigits;
     if (  is_integer(fargs[0], &nDigits)
@@ -420,6 +478,13 @@ FUNCTION(fun_gte)
 
 FUNCTION(fun_lt)
 {
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     bool bResult = false;
     int nDigits;
     if (  is_integer(fargs[0], &nDigits)
@@ -438,6 +503,13 @@ FUNCTION(fun_lt)
 
 FUNCTION(fun_lte)
 {
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     bool bResult = false;
     int nDigits;
     if (  is_integer(fargs[0], &nDigits)
@@ -456,6 +528,13 @@ FUNCTION(fun_lte)
 
 FUNCTION(fun_eq)
 {
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     bool bResult = false;
     int nDigits;
     if (  is_integer(fargs[0], &nDigits)
@@ -475,6 +554,13 @@ FUNCTION(fun_eq)
 
 FUNCTION(fun_neq)
 {
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     bool bResult = false;
     int nDigits;
     if (  is_integer(fargs[0], &nDigits)
@@ -499,6 +585,12 @@ FUNCTION(fun_neq)
 
 FUNCTION(fun_max)
 {
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     double maximum = 0.0;
     for (int i = 0; i < nfargs; i++)
     {
@@ -514,6 +606,12 @@ FUNCTION(fun_max)
 
 FUNCTION(fun_min)
 {
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     double minimum = 0.0;
     for (int i = 0; i < nfargs; i++)
     {
@@ -533,6 +631,13 @@ FUNCTION(fun_min)
 
 FUNCTION(fun_sign)
 {
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     double num = mux_atof(fargs[0]);
     if (num < 0)
     {
@@ -548,6 +653,13 @@ FUNCTION(fun_sign)
 //
 FUNCTION(fun_isign)
 {
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     INT64 num = mux_atoi64(fargs[0]);
 
     if (num < 0)
@@ -564,10 +676,19 @@ FUNCTION(fun_isign)
 //
 FUNCTION(fun_shl)
 {
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     if (  is_integer(fargs[0], NULL)
        && is_integer(fargs[1], NULL))
     {
-        safe_i64toa(mux_atoi64(fargs[0]) << mux_atol(fargs[1]), buff, bufc);
+        INT64 a = mux_atoi64(fargs[0]);
+        long  b = mux_atol(fargs[1]);
+        safe_i64toa(a << b, buff, bufc);
     }
     else
     {
@@ -577,10 +698,19 @@ FUNCTION(fun_shl)
 
 FUNCTION(fun_shr)
 {
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     if (  is_integer(fargs[0], NULL)
        && is_integer(fargs[1], NULL))
     {
-        safe_i64toa(mux_atoi64(fargs[0]) >> mux_atol(fargs[1]), buff, bufc);
+        INT64 a = mux_atoi64(fargs[0]);
+        long  b = mux_atol(fargs[1]);
+        safe_i64toa(a >> b, buff, bufc);
     }
     else
     {
@@ -590,6 +720,12 @@ FUNCTION(fun_shr)
 
 FUNCTION(fun_inc)
 {
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     if (nfargs == 1)
     {
         safe_i64toa(mux_atoi64(fargs[0]) + 1, buff, bufc);
@@ -602,6 +738,12 @@ FUNCTION(fun_inc)
 
 FUNCTION(fun_dec)
 {
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     if (nfargs == 1)
     {
         safe_i64toa(mux_atoi64(fargs[0]) - 1, buff, bufc);
@@ -614,12 +756,18 @@ FUNCTION(fun_dec)
 
 FUNCTION(fun_trunc)
 {
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     double rArg = mux_atof(fargs[0]);
     double rIntegerPart;
-    double rFractionalPart;
 
     mux_FPRestore();
-    rFractionalPart = modf(rArg, &rIntegerPart);
+    (void)modf(rArg, &rIntegerPart);
     mux_FPSet();
 
 #ifdef HAVE_IEEE_FP_FORMAT
@@ -639,6 +787,13 @@ FUNCTION(fun_trunc)
 
 FUNCTION(fun_fdiv)
 {
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     double bot = mux_atof(fargs[1]);
     double top = mux_atof(fargs[0]);
 #ifndef HAVE_IEEE_FP_SNAN
@@ -668,6 +823,13 @@ FUNCTION(fun_fdiv)
 
 FUNCTION(fun_idiv)
 {
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     INT64 bot, top;
 
     bot = mux_atoi64(fargs[1]);
@@ -685,6 +847,13 @@ FUNCTION(fun_idiv)
 
 FUNCTION(fun_floordiv)
 {
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     INT64 bot, top;
 
     bot = mux_atoi64(fargs[1]);
@@ -702,6 +871,13 @@ FUNCTION(fun_floordiv)
 
 FUNCTION(fun_mod)
 {
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     INT64 bot, top;
 
     bot = mux_atoi64(fargs[1]);
@@ -716,6 +892,13 @@ FUNCTION(fun_mod)
 
 FUNCTION(fun_remainder)
 {
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     INT64 bot, top;
 
     bot = mux_atoi64(fargs[1]);
@@ -734,6 +917,13 @@ FUNCTION(fun_remainder)
 
 FUNCTION(fun_abs)
 {
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     double num = mux_atof(fargs[0]);
     if (num == 0.0)
     {
@@ -753,6 +943,13 @@ FUNCTION(fun_abs)
 //
 FUNCTION(fun_iabs)
 {
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     INT64 num = mux_atoi64(fargs[0]);
 
     if (num == 0)
@@ -771,6 +968,13 @@ FUNCTION(fun_iabs)
 
 FUNCTION(fun_dist2d)
 {
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     double d;
     double sum;
 
@@ -788,6 +992,13 @@ FUNCTION(fun_dist2d)
 
 FUNCTION(fun_dist3d)
 {
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     double d;
     double sum;
 
@@ -888,7 +1099,9 @@ static void handle_vectors
                 {
                     print_sep(posep, buff, bufc);
                 }
-                fval(buff, bufc, mux_atof(v1[i]) + mux_atof(v2[i]));
+                double a = mux_atof(v1[i]);
+                double b = mux_atof(v2[i]);
+                fval(buff, bufc, a + b);
             }
         }
         break;
@@ -933,7 +1146,9 @@ static void handle_vectors
                 {
                     print_sep(posep, buff, bufc);
                 }
-                fval(buff, bufc, mux_atof(v1[i]) - mux_atof(v2[i]));
+                double a = mux_atof(v1[i]);
+                double b = mux_atof(v2[i]);
+                fval(buff, bufc, a - b);
             }
         }
         break;
@@ -977,7 +1192,9 @@ static void handle_vectors
                 {
                     print_sep(posep, buff, bufc);
                 }
-                fval(buff, bufc, mux_atof(v1[i]) * mux_atof(v2[i]));
+                double a = mux_atof(v1[i]);
+                double b = mux_atof(v2[i]);
+                fval(buff, bufc, a * b);
             }
         }
         break;
@@ -987,7 +1204,9 @@ static void handle_vectors
         scalar = 0.0;
         for (i = 0; i < n; i++)
         {
-            scalar += mux_atof(v1[i]) * mux_atof(v2[i]);
+            double a = mux_atof(v1[i]);
+            double b = mux_atof(v2[i]);
+            scalar +=  a * b;
         }
         fval(buff, bufc, scalar);
         break;
@@ -1211,6 +1430,13 @@ FUNCTION(fun_vunit)
 
 FUNCTION(fun_floor)
 {
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     mux_FPRestore();
     double r = floor(mux_atof(fargs[0]));
     mux_FPSet();
@@ -1232,6 +1458,13 @@ FUNCTION(fun_floor)
 
 FUNCTION(fun_ceil)
 {
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     mux_FPRestore();
     double r = ceil(mux_atof(fargs[0]));
     mux_FPSet();
@@ -1253,6 +1486,13 @@ FUNCTION(fun_ceil)
 
 FUNCTION(fun_round)
 {
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     double r = mux_atof(fargs[0]);
 #ifdef HAVE_IEEE_FP_FORMAT
     int fpc = mux_fpclass(r);
@@ -1277,10 +1517,27 @@ FUNCTION(fun_round)
 
 FUNCTION(fun_pi)
 {
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(fargs);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     safe_str("3.141592653589793", buff, bufc);
 }
+
 FUNCTION(fun_e)
 {
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(fargs);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     safe_str("2.718281828459045", buff, bufc);
 }
 
@@ -1324,6 +1581,13 @@ static double ConvertR2RDG(double d, const char *szUnits)
 
 FUNCTION(fun_ctu)
 {
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     double val = mux_atof(fargs[0]);
     val = ConvertRDG2R(val, fargs[1]);
     val = ConvertR2RDG(val, fargs[2]);
@@ -1332,6 +1596,12 @@ FUNCTION(fun_ctu)
 
 FUNCTION(fun_sin)
 {
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     double d = mux_atof(fargs[0]);
     if (nfargs == 2)
     {
@@ -1347,6 +1617,12 @@ FUNCTION(fun_sin)
 
 FUNCTION(fun_cos)
 {
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     double d = mux_atof(fargs[0]);
     if (nfargs == 2)
     {
@@ -1362,6 +1638,12 @@ FUNCTION(fun_cos)
 
 FUNCTION(fun_tan)
 {
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     double d = mux_atof(fargs[0]);
     if (nfargs == 2)
     {
@@ -1377,6 +1659,12 @@ FUNCTION(fun_tan)
 
 FUNCTION(fun_asin)
 {
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     double val = mux_atof(fargs[0]);
 #ifndef HAVE_IEEE_FP_SNAN
     if ((val < -1.0) || (val > 1.0))
@@ -1398,6 +1686,12 @@ FUNCTION(fun_asin)
 
 FUNCTION(fun_acos)
 {
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     double val = mux_atof(fargs[0]);
 #ifndef HAVE_IEEE_FP_SNAN
     if ((val < -1.0) || (val > 1.0))
@@ -1419,6 +1713,12 @@ FUNCTION(fun_acos)
 
 FUNCTION(fun_atan)
 {
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     double val = mux_atof(fargs[0]);
 
     mux_FPRestore();
@@ -1434,6 +1734,13 @@ FUNCTION(fun_atan)
 
 FUNCTION(fun_exp)
 {
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     double val = mux_atof(fargs[0]);
 
     mux_FPRestore();
@@ -1445,6 +1752,13 @@ FUNCTION(fun_exp)
 
 FUNCTION(fun_power)
 {
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     double val, val1, val2;
 
     val1 = mux_atof(fargs[0]);
@@ -1470,6 +1784,13 @@ FUNCTION(fun_power)
 
 FUNCTION(fun_fmod)
 {
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     double val, val1, val2;
 
     val1 = mux_atof(fargs[0]);
@@ -1495,6 +1816,13 @@ FUNCTION(fun_fmod)
 
 FUNCTION(fun_ln)
 {
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     double val;
 
     val = mux_atof(fargs[0]);
@@ -1523,6 +1851,13 @@ FUNCTION(fun_ln)
 
 FUNCTION(fun_log)
 {
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     double val;
 
     val = mux_atof(fargs[0]);
@@ -1551,6 +1886,13 @@ FUNCTION(fun_log)
 
 FUNCTION(fun_sqrt)
 {
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     double val;
 
     val = mux_atof(fargs[0]);
@@ -1583,6 +1925,13 @@ FUNCTION(fun_sqrt)
 
 FUNCTION(fun_isnum)
 {
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     safe_bool(is_real(fargs[0]), buff, bufc);
 }
 
@@ -1592,6 +1941,13 @@ FUNCTION(fun_isnum)
 
 FUNCTION(fun_israt)
 {
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     safe_bool(is_rational(fargs[0]), buff, bufc);
 }
 
@@ -1601,11 +1957,24 @@ FUNCTION(fun_israt)
 
 FUNCTION(fun_isint)
 {
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     safe_bool(is_integer(fargs[0], NULL), buff, bufc);
 }
 
 FUNCTION(fun_and)
 {
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     bool val = true;
     for (int i = 0; i < nfargs && val; i++)
     {
@@ -1616,6 +1985,12 @@ FUNCTION(fun_and)
 
 FUNCTION(fun_or)
 {
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     bool val = false;
     for (int i = 0; i < nfargs && !val; i++)
     {
@@ -1626,6 +2001,12 @@ FUNCTION(fun_or)
 
 FUNCTION(fun_andbool)
 {
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     bool val = true;
     for (int i = 0; i < nfargs && val; i++)
     {
@@ -1636,6 +2017,12 @@ FUNCTION(fun_andbool)
 
 FUNCTION(fun_orbool)
 {
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     bool val = false;
     for (int i = 0; i < nfargs && !val; i++)
     {
@@ -1714,6 +2101,12 @@ FUNCTION(fun_corbool)
 
 FUNCTION(fun_xor)
 {
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     bool val = false;
     for (int i = 0; i < nfargs; i++)
     {
@@ -1725,11 +2118,24 @@ FUNCTION(fun_xor)
 
 FUNCTION(fun_not)
 {
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     safe_bool(!xlate(fargs[0]), buff, bufc);
 }
 
 FUNCTION(fun_t)
 {
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     if (  nfargs <= 0
        || fargs[0][0] == '\0')
     {
@@ -2060,12 +2466,26 @@ void CSpellNum::SpellNum(const char *number, char *buff_arg, char **bufc_arg)
 
 FUNCTION(fun_spellnum)
 {
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     CSpellNum sn;
     sn.SpellNum(fargs[0], buff, bufc);
 }
 
 FUNCTION(fun_roman)
 {
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     const char *number = fargs[0];
 
     // Trim Spaces from beginning.
@@ -2162,6 +2582,12 @@ FUNCTION(fun_roman)
 
 FUNCTION(fun_land)
 {
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     bool bValue = true;
     if (0 < nfargs)
     {
@@ -2183,6 +2609,12 @@ FUNCTION(fun_land)
 
 FUNCTION(fun_lor)
 {
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     bool bValue = false;
     if (0 < nfargs)
     {
@@ -2204,6 +2636,12 @@ FUNCTION(fun_lor)
 
 FUNCTION(fun_band)
 {
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     UINT64 val = UINT64_MAX_VALUE;
     for (int i = 0; i < nfargs; i++)
     {
@@ -2222,6 +2660,12 @@ FUNCTION(fun_band)
 
 FUNCTION(fun_bor)
 {
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     UINT64 val = 0;
     for (int i = 0; i < nfargs; i++)
     {
@@ -2240,10 +2684,19 @@ FUNCTION(fun_bor)
 
 FUNCTION(fun_bnand)
 {
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     if (  is_integer(fargs[0], NULL)
        && is_integer(fargs[1], NULL))
     {
-        safe_i64toa(mux_atoi64(fargs[0]) & ~(mux_atoi64(fargs[1])), buff, bufc);
+        INT64 a = mux_atoi64(fargs[0]);
+        INT64 b = mux_atoi64(fargs[1]);
+        safe_i64toa(a & ~(b), buff, bufc);
     }
     else
     {
@@ -2253,6 +2706,12 @@ FUNCTION(fun_bnand)
 
 FUNCTION(fun_bxor)
 {
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     UINT64 val = 0;
     for (int i = 0; i < nfargs; i++)
     {
@@ -2271,6 +2730,12 @@ FUNCTION(fun_bxor)
 
 FUNCTION(fun_crc32)
 {
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     UINT32 ulCRC32 = 0;
     for (int i = 0; i < nfargs; i++)
     {
@@ -2282,6 +2747,12 @@ FUNCTION(fun_crc32)
 
 FUNCTION(fun_sha1)
 {
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     int i;
     SHA1_CONTEXT shac;
     SHA1_Init(&shac);
