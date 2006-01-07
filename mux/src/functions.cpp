@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.164 2006/01/07 09:46:14 jake Exp $
+// $Id: functions.cpp,v 1.165 2006/01/07 21:48:00 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2005 Solid Vertical Domains, Ltd. All
@@ -24,10 +24,6 @@
 #endif /* REALITY_LVLS */
 
 UFUN *ufun_head;
-
-extern void cf_display(dbref, char *, char *, char **);
-extern void cf_list(dbref, char *, char **);
-extern bool parse_and_get_attrib(dbref, char *[], char **, dbref *, char *, char **);
 
 SEP sepSpace = { 1, " " };
 
@@ -96,7 +92,7 @@ char *trim_space_sep(char *str, SEP *sep)
 // next_token: Point at start of next token in string -- known length
 // version.
 //
-char *next_token_LEN(char *str, int *nStr, SEP *psep)
+static char *next_token_LEN(char *str, int *nStr, SEP *psep)
 {
     char *pBegin = str;
     if (psep->n == 1)
@@ -179,7 +175,7 @@ char *next_token(char *str, SEP *psep)
 // split_token: Get next token from string as null-term string. String is
 // destructively modified -- known length version.
 //
-char *split_token_LEN(char **sp, int *nStr, SEP *psep, int *nToken)
+static char *split_token_LEN(char **sp, int *nStr, SEP *psep, int *nToken)
 {
     char *str = *sp;
     char *save = str;
@@ -423,7 +419,7 @@ static int dbnum(char *dbr)
  * nearby_or_control: Check if player is near or controls thing
  */
 
-bool nearby_or_control(dbref player, dbref thing)
+static bool nearby_or_control(dbref player, dbref thing)
 {
     if (!Good_obj(player) || !Good_obj(thing))
     {
@@ -557,7 +553,7 @@ int countwords(char *str, SEP *psep)
     return n;
 }
 
-FUNCTION(fun_words)
+static FUNCTION(fun_words)
 {
     if (nfargs == 0)
     {
@@ -579,7 +575,7 @@ FUNCTION(fun_words)
  * Because @switch is case-insensitive, not quite as useful as it could be.
  */
 
-FUNCTION(fun_flags)
+static FUNCTION(fun_flags)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(nfargs);
@@ -628,7 +624,7 @@ FUNCTION(fun_flags)
  * fun_rand: Return a random number from 0 to arg1-1
  */
 
-FUNCTION(fun_rand)
+static FUNCTION(fun_rand)
 {
     UNUSED_PARAMETER(executor);
     UNUSED_PARAMETER(caller);
@@ -691,7 +687,7 @@ FUNCTION(fun_rand)
 // If an argument is provided, "utc" gives a UTC time string, and "local"
 // gives the local time string.
 //
-FUNCTION(fun_time)
+static FUNCTION(fun_time)
 {
     UNUSED_PARAMETER(executor);
     UNUSED_PARAMETER(caller);
@@ -729,7 +725,7 @@ FUNCTION(fun_time)
 // as a count, but it can be given to convsecs(secs(),raw) to get the
 // corresponding time string.
 //
-FUNCTION(fun_secs)
+static FUNCTION(fun_secs)
 {
     UNUSED_PARAMETER(executor);
     UNUSED_PARAMETER(caller);
@@ -770,7 +766,7 @@ FUNCTION(fun_secs)
 //           This is useful to give a unique one-to-one mapping between an
 //           integer and it's corresponding text-string.
 //
-FUNCTION(fun_convsecs)
+static FUNCTION(fun_convsecs)
 {
     UNUSED_PARAMETER(executor);
     UNUSED_PARAMETER(caller);
@@ -812,7 +808,7 @@ FUNCTION(fun_convsecs)
 //
 // This function returns -1 if there was a problem parsing the time string.
 //
-FUNCTION(fun_convtime)
+static FUNCTION(fun_convtime)
 {
     UNUSED_PARAMETER(executor);
     UNUSED_PARAMETER(caller);
@@ -849,7 +845,7 @@ FUNCTION(fun_convtime)
  * * fun_starttime: What time did this system last reboot?
  */
 
-FUNCTION(fun_starttime)
+static FUNCTION(fun_starttime)
 {
     UNUSED_PARAMETER(executor);
     UNUSED_PARAMETER(caller);
@@ -874,7 +870,7 @@ FUNCTION(fun_starttime)
 // All escape sequences start with a $. Any unrecognized codes or other
 // text will be returned unchanged.
 //
-const char *DayOfWeekStringLong[7] =
+static const char *DayOfWeekStringLong[7] =
 {
     "Sunday",
     "Monday",
@@ -885,7 +881,7 @@ const char *DayOfWeekStringLong[7] =
     "Saturday"
 };
 
-const char *MonthTableLong[] =
+static const char *MonthTableLong[] =
 {
     "January",
     "February",
@@ -901,12 +897,13 @@ const char *MonthTableLong[] =
     "December"
 };
 
-const int Map24to12[24] =
+static const int Map24to12[24] =
 {
     12, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11,
     12, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11
 };
-FUNCTION(fun_timefmt)
+
+static FUNCTION(fun_timefmt)
 {
     UNUSED_PARAMETER(executor);
     UNUSED_PARAMETER(caller);
@@ -1233,7 +1230,7 @@ FUNCTION(fun_timefmt)
 #define GET_EVAL    4
 #define GET_GEVAL   8
 
-void get_handler(char *buff, char **bufc, dbref executor, char *fargs[], int key)
+static void get_handler(char *buff, char **bufc, dbref executor, char *fargs[], int key)
 {
     bool bFreeBuffer = false;
     char *pRefAttrib = fargs[0];
@@ -1294,7 +1291,7 @@ void get_handler(char *buff, char **bufc, dbref executor, char *fargs[], int key
     free_lbuf(atr_gotten);
 }
 
-FUNCTION(fun_get)
+static FUNCTION(fun_get)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
@@ -1305,7 +1302,7 @@ FUNCTION(fun_get)
     get_handler(buff, bufc, executor, fargs, GET_GET);
 }
 
-FUNCTION(fun_xget)
+static FUNCTION(fun_xget)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
@@ -1322,7 +1319,7 @@ FUNCTION(fun_xget)
 }
 
 
-FUNCTION(fun_get_eval)
+static FUNCTION(fun_get_eval)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
@@ -1333,7 +1330,7 @@ FUNCTION(fun_get_eval)
     get_handler(buff, bufc, executor, fargs, GET_GEVAL);
 }
 
-FUNCTION(fun_subeval)
+static FUNCTION(fun_subeval)
 {
     UNUSED_PARAMETER(nfargs);
     UNUSED_PARAMETER(cargs);
@@ -1345,7 +1342,7 @@ FUNCTION(fun_subeval)
              &str, (char **)NULL, 0);
 }
 
-FUNCTION(fun_eval)
+static FUNCTION(fun_eval)
 {
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
@@ -1415,13 +1412,13 @@ static void do_ufun(char *buff, char **bufc, dbref executor, dbref caller,
     }
 }
 
-FUNCTION(fun_u)
+static FUNCTION(fun_u)
 {
     do_ufun(buff, bufc, executor, caller, enactor, fargs, nfargs, cargs,
             ncargs, false);
 }
 
-FUNCTION(fun_ulocal)
+static FUNCTION(fun_ulocal)
 {
     do_ufun(buff, bufc, executor, caller, enactor, fargs, nfargs, cargs,
             ncargs, true);
@@ -1432,7 +1429,7 @@ FUNCTION(fun_ulocal)
  * * fun_parent: Get parent of object.
  */
 
-FUNCTION(fun_parent)
+static FUNCTION(fun_parent)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(nfargs);
@@ -1461,7 +1458,7 @@ FUNCTION(fun_parent)
  * * fun_mid: mid(foobar,2,3) returns oba
  */
 
-FUNCTION(fun_mid)
+static FUNCTION(fun_mid)
 {
     UNUSED_PARAMETER(executor);
     UNUSED_PARAMETER(caller);
@@ -1514,7 +1511,7 @@ FUNCTION(fun_mid)
 // fun_right: right(foobar,2) returns ar
 // ---------------------------------------------------------------------------
 
-FUNCTION(fun_right)
+static FUNCTION(fun_right)
 {
     UNUSED_PARAMETER(executor);
     UNUSED_PARAMETER(caller);
@@ -1582,7 +1579,7 @@ FUNCTION(fun_right)
  * * fun_first: Returns first word in a string
  */
 
-FUNCTION(fun_first)
+static FUNCTION(fun_first)
 {
     // If we are passed an empty arglist return a null string.
     //
@@ -1611,7 +1608,7 @@ FUNCTION(fun_first)
  */
 
 
-FUNCTION(fun_rest)
+static FUNCTION(fun_rest)
 {
     // If we are passed an empty arglist return a null string.
     //
@@ -1639,7 +1636,7 @@ FUNCTION(fun_rest)
  * * fun_v: Function form of %-substitution
  */
 
-FUNCTION(fun_v)
+static FUNCTION(fun_v)
 {
     UNUSED_PARAMETER(nfargs);
 
@@ -1691,7 +1688,7 @@ FUNCTION(fun_v)
  * * fun_s: Force substitution to occur.
  */
 
-FUNCTION(fun_s)
+static FUNCTION(fun_s)
 {
     UNUSED_PARAMETER(nfargs);
 
@@ -1705,7 +1702,7 @@ FUNCTION(fun_s)
  * * fun_con: Returns first item in contents list of object/room
  */
 
-FUNCTION(fun_con)
+static FUNCTION(fun_con)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(nfargs);
@@ -1741,7 +1738,7 @@ FUNCTION(fun_con)
  * * fun_exit: Returns first exit in exits list of room.
  */
 
-FUNCTION(fun_exit)
+static FUNCTION(fun_exit)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
@@ -1788,7 +1785,7 @@ FUNCTION(fun_exit)
  * * fun_next: return next thing in contents or exits chain
  */
 
-FUNCTION(fun_next)
+static FUNCTION(fun_next)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
@@ -1853,7 +1850,7 @@ FUNCTION(fun_next)
  * * fun_loc: Returns the location of something
  */
 
-FUNCTION(fun_loc)
+static FUNCTION(fun_loc)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(nfargs);
@@ -1880,7 +1877,7 @@ FUNCTION(fun_loc)
  * * fun_where: Returns the "true" location of something
  */
 
-FUNCTION(fun_where)
+static FUNCTION(fun_where)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(nfargs);
@@ -1907,7 +1904,7 @@ FUNCTION(fun_where)
  * * fun_rloc: Returns the recursed location of something (specifying #levels)
  */
 
-FUNCTION(fun_rloc)
+static FUNCTION(fun_rloc)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(nfargs);
@@ -1953,7 +1950,7 @@ FUNCTION(fun_rloc)
  * * fun_room: Find the room an object is ultimately in.
  */
 
-FUNCTION(fun_room)
+static FUNCTION(fun_room)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(nfargs);
@@ -1998,7 +1995,7 @@ FUNCTION(fun_room)
  * * fun_owner: Return the owner of an object.
  */
 
-FUNCTION(fun_owner)
+static FUNCTION(fun_owner)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
@@ -2042,7 +2039,7 @@ FUNCTION(fun_owner)
  * * fun_controls: Does x control y?
  */
 
-FUNCTION(fun_controls)
+static FUNCTION(fun_controls)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
@@ -2072,7 +2069,7 @@ FUNCTION(fun_controls)
  * * fun_fullname: Return the fullname of an object (good for exits)
  */
 
-FUNCTION(fun_fullname)
+static FUNCTION(fun_fullname)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
@@ -2103,7 +2100,7 @@ FUNCTION(fun_fullname)
  * * fun_name: Return the name of an object
  */
 
-FUNCTION(fun_name)
+static FUNCTION(fun_name)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
@@ -2151,7 +2148,7 @@ FUNCTION(fun_name)
  * * index of first match, or against the whole string.
  */
 
-FUNCTION(fun_match)
+static FUNCTION(fun_match)
 {
     SEP sep;
     if (!OPTIONAL_DELIM(3, sep, DELIM_DFLT|DELIM_STRING))
@@ -2177,7 +2174,7 @@ FUNCTION(fun_match)
     safe_chr('0', buff, bufc);
 }
 
-FUNCTION(fun_strmatch)
+static FUNCTION(fun_strmatch)
 {
     UNUSED_PARAMETER(executor);
     UNUSED_PARAMETER(caller);
@@ -2203,7 +2200,7 @@ FUNCTION(fun_strmatch)
  * * Now takes optional separator extract(foo-bar-baz,1,2,-) returns 'foo-bar'
  */
 
-FUNCTION(fun_extract)
+static FUNCTION(fun_extract)
 {
     SEP sep;
     if (!OPTIONAL_DELIM(4, sep, DELIM_DFLT|DELIM_STRING))
@@ -2334,7 +2331,7 @@ bool xlate(char *arg)
  * index(a b | c d e | f g h | i j k, |, 2, 2) => c d e | f g h
  */
 
-FUNCTION(fun_index)
+static FUNCTION(fun_index)
 {
     UNUSED_PARAMETER(executor);
     UNUSED_PARAMETER(caller);
@@ -2412,7 +2409,7 @@ FUNCTION(fun_index)
 }
 
 
-FUNCTION(fun_cat)
+static FUNCTION(fun_cat)
 {
     UNUSED_PARAMETER(executor);
     UNUSED_PARAMETER(caller);
@@ -2431,7 +2428,7 @@ FUNCTION(fun_cat)
     }
 }
 
-FUNCTION(fun_version)
+static FUNCTION(fun_version)
 {
     UNUSED_PARAMETER(executor);
     UNUSED_PARAMETER(caller);
@@ -2444,7 +2441,7 @@ FUNCTION(fun_version)
     safe_str(mudstate.version, buff, bufc);
 }
 
-FUNCTION(fun_strlen)
+static FUNCTION(fun_strlen)
 {
     UNUSED_PARAMETER(executor);
     UNUSED_PARAMETER(caller);
@@ -2460,7 +2457,7 @@ FUNCTION(fun_strlen)
     safe_ltoa(n, buff, bufc);
 }
 
-FUNCTION(fun_strmem)
+static FUNCTION(fun_strmem)
 {
     UNUSED_PARAMETER(executor);
     UNUSED_PARAMETER(caller);
@@ -2476,7 +2473,7 @@ FUNCTION(fun_strmem)
    safe_ltoa(n, buff, bufc);
 }
 
-FUNCTION(fun_num)
+static FUNCTION(fun_num)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
@@ -2487,7 +2484,7 @@ FUNCTION(fun_num)
     safe_tprintf_str(buff, bufc, "#%d", match_thing_quiet(executor, fargs[0]));
 }
 
-void internalPlayerFind
+static void internalPlayerFind
 (
     char* buff,
     char** bufc,
@@ -2538,7 +2535,7 @@ void internalPlayerFind
 }
 
 
-FUNCTION(fun_pmatch)
+static FUNCTION(fun_pmatch)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
@@ -2549,7 +2546,7 @@ FUNCTION(fun_pmatch)
     internalPlayerFind(buff, bufc, executor, fargs[0], true);
 }
 
-FUNCTION(fun_pfind)
+static FUNCTION(fun_pfind)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
@@ -2565,7 +2562,7 @@ FUNCTION(fun_pfind)
  * * fun_comp: string compare.
  */
 
-FUNCTION(fun_comp)
+static FUNCTION(fun_comp)
 {
     UNUSED_PARAMETER(executor);
     UNUSED_PARAMETER(caller);
@@ -2588,7 +2585,7 @@ FUNCTION(fun_comp)
 }
 
 #if defined(WOD_REALMS) || defined(REALITY_LVLS)
-FUNCTION(fun_cansee)
+static FUNCTION(fun_cansee)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
@@ -2651,7 +2648,7 @@ FUNCTION(fun_cansee)
  * * fun_lcon: Return a list of contents.
  */
 
-FUNCTION(fun_lcon)
+static FUNCTION(fun_lcon)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(nfargs);
@@ -2712,7 +2709,7 @@ FUNCTION(fun_lcon)
  * * fun_lexits: Return a list of exits.
  */
 
-FUNCTION(fun_lexits)
+static FUNCTION(fun_lexits)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(nfargs);
@@ -2946,7 +2943,7 @@ FUNCTION(fun_entrances)
  * * fun_home: Return an object's home
  */
 
-FUNCTION(fun_home)
+static FUNCTION(fun_home)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
@@ -2986,7 +2983,7 @@ FUNCTION(fun_home)
  * * fun_money: Return an object's value
  */
 
-FUNCTION(fun_money)
+static FUNCTION(fun_money)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
@@ -3015,7 +3012,7 @@ FUNCTION(fun_money)
  * * fun_pos: Find a word in a string
  */
 
-FUNCTION(fun_pos)
+static FUNCTION(fun_pos)
 {
     UNUSED_PARAMETER(executor);
     UNUSED_PARAMETER(caller);
@@ -3077,7 +3074,7 @@ FUNCTION(fun_pos)
  * lpos(a-bc-def-g,-) ==> 1 4 8
  */
 
-FUNCTION(fun_lpos)
+static FUNCTION(fun_lpos)
 {
     UNUSED_PARAMETER(executor);
     UNUSED_PARAMETER(caller);
@@ -3136,7 +3133,6 @@ static void do_itemfuns(char *buff, char **bufc, char *str, int el,
     char *sptr, *iptr, *eptr;
     int slen = 0, ilen = 0, elen = 0;
     bool overrun;
-    char nullb;
 
     // If passed a null string return an empty string, except that we
     // are allowed to append to a null string.
@@ -3161,7 +3157,6 @@ static void do_itemfuns(char *buff, char **bufc, char *str, int el,
     // Split the list up into 'before', 'target', and 'after' chunks
     // pointed to by sptr, iptr, and eptr respectively.
     //
-    nullb = '\0';
     if (el == 1)
     {
         // No 'before' portion, just split off element 1
@@ -3289,7 +3284,7 @@ static void do_itemfuns(char *buff, char **bufc, char *str, int el,
 }
 
 
-FUNCTION(fun_ldelete)
+static FUNCTION(fun_ldelete)
 {
     SEP sep;
     if (!OPTIONAL_DELIM(3, sep, DELIM_DFLT|DELIM_STRING))
@@ -3302,7 +3297,7 @@ FUNCTION(fun_ldelete)
     do_itemfuns(buff, bufc, fargs[0], mux_atol(fargs[1]), NULL, &sep, IF_DELETE);
 }
 
-FUNCTION(fun_replace)
+static FUNCTION(fun_replace)
 {
     SEP sep;
     if (!OPTIONAL_DELIM(4, sep, DELIM_DFLT|DELIM_STRING))
@@ -3315,7 +3310,7 @@ FUNCTION(fun_replace)
     do_itemfuns(buff, bufc, fargs[0], mux_atol(fargs[1]), fargs[2], &sep, IF_REPLACE);
 }
 
-FUNCTION(fun_insert)
+static FUNCTION(fun_insert)
 {
     SEP sep;
     if (!OPTIONAL_DELIM(4, sep, DELIM_DFLT|DELIM_STRING))
@@ -3333,7 +3328,7 @@ FUNCTION(fun_insert)
  * * fun_remove: Remove a word from a string
  */
 
-FUNCTION(fun_remove)
+static FUNCTION(fun_remove)
 {
     SEP sep;
     if (!OPTIONAL_DELIM(3, sep, DELIM_DFLT|DELIM_STRING))
@@ -3391,7 +3386,7 @@ FUNCTION(fun_remove)
  * * fun_member: Is a word in a string
  */
 
-FUNCTION(fun_member)
+static FUNCTION(fun_member)
 {
     SEP sep;
     if (!OPTIONAL_DELIM(3, sep, DELIM_DFLT|DELIM_STRING))
@@ -3421,7 +3416,7 @@ FUNCTION(fun_member)
 // '%$\[](){},;' with a space. It handles ANSI by not replacing
 // the '[' character within an ANSI sequence.
 //
-FUNCTION(fun_secure)
+static FUNCTION(fun_secure)
 {
     UNUSED_PARAMETER(executor);
     UNUSED_PARAMETER(caller);
@@ -3475,7 +3470,7 @@ FUNCTION(fun_secure)
 // It handles ANSI by not treating the '[' character within an ANSI
 // sequence as a special character.
 //
-FUNCTION(fun_escape)
+static FUNCTION(fun_escape)
 {
     UNUSED_PARAMETER(executor);
     UNUSED_PARAMETER(caller);
@@ -3527,7 +3522,7 @@ FUNCTION(fun_escape)
  * Take a character position and return which word that char is in.
  * * wordpos(<string>, <charpos>)
  */
-FUNCTION(fun_wordpos)
+static FUNCTION(fun_wordpos)
 {
     SEP sep;
     if (!OPTIONAL_DELIM(3, sep, DELIM_DFLT|DELIM_STRING))
@@ -3561,7 +3556,7 @@ FUNCTION(fun_wordpos)
     safe_nothing(buff, bufc);
 }
 
-FUNCTION(fun_type)
+static FUNCTION(fun_type)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
@@ -3600,7 +3595,7 @@ typedef struct
     int  iMask;
 } ATR_HAS_FLAG_ENTRY;
 
-ATR_HAS_FLAG_ENTRY atr_has_flag_table[] =
+static ATR_HAS_FLAG_ENTRY atr_has_flag_table[] =
 {
     { "dark",       AF_DARK    },
     { "wizard",     AF_WIZARD  },
@@ -3644,7 +3639,7 @@ static bool atr_has_flag
     return false;
 }
 
-FUNCTION(fun_hasflag)
+static FUNCTION(fun_hasflag)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(nfargs);
@@ -3691,7 +3686,7 @@ FUNCTION(fun_hasflag)
     }
 }
 
-FUNCTION(fun_haspower)
+static FUNCTION(fun_haspower)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(nfargs);
@@ -3717,7 +3712,7 @@ FUNCTION(fun_haspower)
 }
 
 #ifdef REALITY_LVLS
-FUNCTION(fun_hasrxlevel)
+static FUNCTION(fun_hasrxlevel)
 {
     dbref player;
     dbref it;
@@ -3744,7 +3739,7 @@ FUNCTION(fun_hasrxlevel)
    }
 }
 
-FUNCTION(fun_hastxlevel)
+static FUNCTION(fun_hastxlevel)
 {
     dbref it;
     RLEVEL rl;
@@ -3770,7 +3765,7 @@ FUNCTION(fun_hastxlevel)
    }
 }
 
-FUNCTION(fun_listrlevels)
+static FUNCTION(fun_listrlevels)
 {
    int i, add_space, cmp_x, cmp_y, cmp_z;
 
@@ -3792,7 +3787,7 @@ FUNCTION(fun_listrlevels)
    }
 }
 
-FUNCTION(fun_rxlevel)
+static FUNCTION(fun_rxlevel)
 {
     dbref it;
     char levelbuff[2048];
@@ -3821,7 +3816,7 @@ FUNCTION(fun_rxlevel)
         safe_str("#-1 PERMISSION DENIED", buff, bufc);
 }
 
-FUNCTION(fun_txlevel)
+static FUNCTION(fun_txlevel)
 {
     dbref it;
     char levelbuff[2048];
@@ -3851,7 +3846,7 @@ FUNCTION(fun_txlevel)
 }
 #endif /* REALITY_LVLS */
 
-FUNCTION(fun_powers)
+static FUNCTION(fun_powers)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(nfargs);
@@ -3878,7 +3873,7 @@ FUNCTION(fun_powers)
     }
 }
 
-FUNCTION(fun_delete)
+static FUNCTION(fun_delete)
 {
     UNUSED_PARAMETER(executor);
     UNUSED_PARAMETER(caller);
@@ -3931,7 +3926,7 @@ FUNCTION(fun_delete)
     }
 }
 
-FUNCTION(fun_lock)
+static FUNCTION(fun_lock)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
@@ -3968,7 +3963,7 @@ FUNCTION(fun_lock)
     }
 }
 
-FUNCTION(fun_elock)
+static FUNCTION(fun_elock)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(nfargs);
@@ -4029,7 +4024,7 @@ FUNCTION(fun_elock)
  * fun_lwho: Return list of connected users.
  */
 
-FUNCTION(fun_lwho)
+static FUNCTION(fun_lwho)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
@@ -4054,7 +4049,7 @@ FUNCTION(fun_lwho)
 // fun_lports: Return list of ports of connected users.
 // ---------------------------------------------------------------------------
 
-FUNCTION(fun_lports)
+static FUNCTION(fun_lports)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
@@ -4070,7 +4065,7 @@ FUNCTION(fun_lports)
  * fun_nearby: Return whether or not obj1 is near obj2.
  */
 
-FUNCTION(fun_nearby)
+static FUNCTION(fun_nearby)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
@@ -4123,7 +4118,7 @@ static void process_sex(dbref player, char *what, const char *token, char *buff,
     }
 }
 
-FUNCTION(fun_obj)
+static FUNCTION(fun_obj)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
@@ -4134,7 +4129,7 @@ FUNCTION(fun_obj)
     process_sex(executor, fargs[0], "%o", buff, bufc);
 }
 
-FUNCTION(fun_poss)
+static FUNCTION(fun_poss)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
@@ -4145,7 +4140,7 @@ FUNCTION(fun_poss)
     process_sex(executor, fargs[0], "%p", buff, bufc);
 }
 
-FUNCTION(fun_subj)
+static FUNCTION(fun_subj)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
@@ -4156,7 +4151,7 @@ FUNCTION(fun_subj)
     process_sex(executor, fargs[0], "%s", buff, bufc);
 }
 
-FUNCTION(fun_aposs)
+static FUNCTION(fun_aposs)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
@@ -4172,7 +4167,7 @@ FUNCTION(fun_aposs)
  * * fun_mudname: Return the name of the mud.
  */
 
-FUNCTION(fun_mudname)
+static FUNCTION(fun_mudname)
 {
     UNUSED_PARAMETER(executor);
     UNUSED_PARAMETER(caller);
@@ -4189,7 +4184,7 @@ FUNCTION(fun_mudname)
 // fun_connrecord: Return the record number of connected players.
 // ---------------------------------------------------------------------------
 
-FUNCTION(fun_connrecord)
+static FUNCTION(fun_connrecord)
 {
     UNUSED_PARAMETER(executor);
     UNUSED_PARAMETER(caller);
@@ -4240,7 +4235,7 @@ FUNCTION(fun_fdepth)
 // fun_ctime: Return the value of an object's CREATED attribute.
 // ---------------------------------------------------------------------------
 
-FUNCTION(fun_ctime)
+static FUNCTION(fun_ctime)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
@@ -4274,7 +4269,7 @@ FUNCTION(fun_ctime)
 // fun_mtime: Return the value of an object's Modified attribute.
 // ---------------------------------------------------------------------------
 
-FUNCTION(fun_mtime)
+static FUNCTION(fun_mtime)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
@@ -4307,7 +4302,7 @@ FUNCTION(fun_mtime)
 // ---------------------------------------------------------------------------
 // fun_moniker: Return the value of an object's @moniker attribute.
 // ---------------------------------------------------------------------------
-FUNCTION(fun_moniker)
+static FUNCTION(fun_moniker)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
@@ -4331,7 +4326,7 @@ FUNCTION(fun_moniker)
     safe_str(Moniker(thing), buff, bufc);
 }
 
-void ANSI_TransformTextWithTable
+static void ANSI_TransformTextWithTable
 (
     char *buff,
     char **bufc,
@@ -4410,7 +4405,7 @@ void ANSI_TransformTextWithTable
  * * fun_lcstr, fun_ucstr, fun_capstr: Lowercase, uppercase, or capitalize str.
  */
 
-FUNCTION(fun_lcstr)
+static FUNCTION(fun_lcstr)
 {
     UNUSED_PARAMETER(executor);
     UNUSED_PARAMETER(caller);
@@ -4422,7 +4417,7 @@ FUNCTION(fun_lcstr)
     ANSI_TransformTextWithTable(buff, bufc, fargs[0], mux_tolower);
 }
 
-FUNCTION(fun_ucstr)
+static FUNCTION(fun_ucstr)
 {
     UNUSED_PARAMETER(executor);
     UNUSED_PARAMETER(caller);
@@ -4434,7 +4429,7 @@ FUNCTION(fun_ucstr)
     ANSI_TransformTextWithTable(buff, bufc, fargs[0], mux_toupper);
 }
 
-FUNCTION(fun_capstr)
+static FUNCTION(fun_capstr)
 {
     UNUSED_PARAMETER(executor);
     UNUSED_PARAMETER(caller);
@@ -4474,7 +4469,7 @@ FUNCTION(fun_capstr)
  * ---------------------------------------------------------------------------
  * * fun_lnum: Return a list of numbers.
  */
-FUNCTION(fun_lnum)
+static FUNCTION(fun_lnum)
 {
     SEP sep;
     if (  nfargs == 0
@@ -4534,7 +4529,7 @@ FUNCTION(fun_lnum)
  * fun_lattr, fun_lattrp: Return list of attributes I can see on the object.
  */
 
-void lattr_handler(char *buff, char **bufc, dbref executor, char *fargs[],
+static void lattr_handler(char *buff, char **bufc, dbref executor, char *fargs[],
                    bool bCheckParent)
 {
     dbref thing;
@@ -4570,7 +4565,7 @@ void lattr_handler(char *buff, char **bufc, dbref executor, char *fargs[],
     olist_pop();
 }
 
-FUNCTION(fun_lattr)
+static FUNCTION(fun_lattr)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
@@ -4581,7 +4576,7 @@ FUNCTION(fun_lattr)
     lattr_handler(buff, bufc, executor, fargs, false);
 }
 
-FUNCTION(fun_lattrp)
+static FUNCTION(fun_lattrp)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
@@ -4595,7 +4590,7 @@ FUNCTION(fun_lattrp)
 // fun_attrcnt: Return number of attributes I can see on the object.
 // ---------------------------------------------------------------------------
 
-FUNCTION(fun_attrcnt)
+static FUNCTION(fun_attrcnt)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
@@ -4643,7 +4638,7 @@ static void mux_memrevcpy(char *dest, char *src, unsigned int n)
 }
 
 typedef void MEMXFORM(char *dest, char *src, unsigned int n);
-void ANSI_TransformTextReverseWithFunction
+static void ANSI_TransformTextReverseWithFunction
 (
     char *buff,
     char **bufc,
@@ -4717,7 +4712,7 @@ void ANSI_TransformTextReverseWithFunction
     memcpy(pBuffer, pANSI, nANSI);
 }
 
-FUNCTION(fun_reverse)
+static FUNCTION(fun_reverse)
 {
     UNUSED_PARAMETER(executor);
     UNUSED_PARAMETER(caller);
@@ -4729,7 +4724,8 @@ FUNCTION(fun_reverse)
     ANSI_TransformTextReverseWithFunction(buff, bufc, fargs[0], mux_memrevcpy);
 }
 
-char ReverseWordsInText_Seperator;
+static char ReverseWordsInText_Seperator;
+
 static void ReverseWordsInText(char *dest, char *src, unsigned int n)
 {
     char chSave = src[n];
@@ -4762,7 +4758,7 @@ static void ReverseWordsInText(char *dest, char *src, unsigned int n)
     src[n] = chSave;
 }
 
-FUNCTION(fun_revwords)
+static FUNCTION(fun_revwords)
 {
     // If we are passed an empty arglist return a null string.
     //
@@ -4784,7 +4780,7 @@ FUNCTION(fun_revwords)
  * * fun_after, fun_before: Return substring after or before a specified string.
  */
 
-FUNCTION(fun_after)
+static FUNCTION(fun_after)
 {
     UNUSED_PARAMETER(executor);
     UNUSED_PARAMETER(caller);
@@ -4830,7 +4826,7 @@ FUNCTION(fun_after)
     // Ran off the end without finding it.
 }
 
-FUNCTION(fun_before)
+static FUNCTION(fun_before)
 {
     UNUSED_PARAMETER(executor);
     UNUSED_PARAMETER(caller);
@@ -4883,7 +4879,7 @@ FUNCTION(fun_before)
  * * fun_search: Search the db for things, returning a list of what matches
  */
 
-FUNCTION(fun_search)
+static FUNCTION(fun_search)
 {
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
@@ -4926,7 +4922,7 @@ FUNCTION(fun_search)
  * * fun_stats: Get database size statistics.
  */
 
-FUNCTION(fun_stats)
+static FUNCTION(fun_stats)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
@@ -4969,7 +4965,7 @@ FUNCTION(fun_stats)
  * *   The strings must be of the same length.
  */
 
-FUNCTION(fun_merge)
+static FUNCTION(fun_merge)
 {
     UNUSED_PARAMETER(executor);
     UNUSED_PARAMETER(caller);
@@ -4983,7 +4979,9 @@ FUNCTION(fun_merge)
 
     // Do length checks first.
     //
-    if (strlen(fargs[0]) != strlen(fargs[1]))
+    size_t n0 = strlen(fargs[0]);
+    size_t n1 = strlen(fargs[2]);
+    if (n0 != n1)
     {
         safe_str("#-1 STRING LENGTHS MUST BE EQUAL", buff, bufc);
         return;
@@ -5020,7 +5018,7 @@ FUNCTION(fun_merge)
  * fun_splice: similar to MERGE(), eplaces by word instead of by character.
  */
 
-FUNCTION(fun_splice)
+static FUNCTION(fun_splice)
 {
     SEP sep;
     if (!OPTIONAL_DELIM(4, sep, DELIM_DFLT|DELIM_STRING))
@@ -5078,7 +5076,7 @@ FUNCTION(fun_splice)
  * fun_repeat: repeats a string
  */
 
-FUNCTION(fun_repeat)
+static FUNCTION(fun_repeat)
 {
     UNUSED_PARAMETER(executor);
     UNUSED_PARAMETER(caller);
@@ -5147,7 +5145,7 @@ FUNCTION(fun_repeat)
  * * NOTE: This function expects that its arguments have not been evaluated.
  */
 
-FUNCTION(fun_iter)
+static FUNCTION(fun_iter)
 {
     // Optional Input Delimiter.
     //
@@ -5209,7 +5207,7 @@ FUNCTION(fun_iter)
     free_lbuf(curr);
 }
 
-void iter_value(char *buff, char **bufc, char *fargs[], int nfargs, bool bWhich)
+static void iter_value(char *buff, char **bufc, char *fargs[], int nfargs, bool bWhich)
 {
     int number = 0;
     if (nfargs > 0)
@@ -5237,7 +5235,7 @@ void iter_value(char *buff, char **bufc, char *fargs[], int nfargs, bool bWhich)
     }
 }
 
-FUNCTION(fun_itext)
+static FUNCTION(fun_itext)
 {
     UNUSED_PARAMETER(executor);
     UNUSED_PARAMETER(caller);
@@ -5248,7 +5246,7 @@ FUNCTION(fun_itext)
     iter_value(buff, bufc, fargs, nfargs, false);
 }
 
-FUNCTION(fun_inum)
+static FUNCTION(fun_inum)
 {
     UNUSED_PARAMETER(executor);
     UNUSED_PARAMETER(caller);
@@ -5259,7 +5257,7 @@ FUNCTION(fun_inum)
     iter_value(buff, bufc, fargs, nfargs, true);
 }
 
-FUNCTION(fun_list)
+static FUNCTION(fun_list)
 {
     SEP sep;
     if (!OPTIONAL_DELIM(3, sep, DELIM_EVAL|DELIM_STRING))
@@ -5310,7 +5308,7 @@ FUNCTION(fun_list)
     free_lbuf(curr);
 }
 
-FUNCTION(fun_ilev)
+static FUNCTION(fun_ilev)
 {
     UNUSED_PARAMETER(executor);
     UNUSED_PARAMETER(caller);
@@ -5338,7 +5336,7 @@ FUNCTION(fun_ilev)
  * NOTE: To use added list separator, you must use base case!
  */
 
-FUNCTION(fun_fold)
+static FUNCTION(fun_fold)
 {
     SEP sep;
     if (!OPTIONAL_DELIM(4, sep, DELIM_DFLT|DELIM_STRING))
@@ -5419,7 +5417,7 @@ FUNCTION(fun_fold)
 //  If there's >2, returns <e1><punc> <e2><punc> ... <conjunction> <en>
 // Default <conjunction> is "and", default punctuation is ","
 //
-FUNCTION(fun_itemize)
+static FUNCTION(fun_itemize)
 {
     SEP sep;
     if (!OPTIONAL_DELIM(2, sep, DELIM_DFLT|DELIM_STRING))
@@ -5473,7 +5471,7 @@ FUNCTION(fun_itemize)
 // fun_choose: Weighted random choice from a list.
 //             choose(<list of items>,<list of weights>,<input delim>)
 //
-FUNCTION(fun_choose)
+static FUNCTION(fun_choose)
 {
     SEP isep;
     if (!OPTIONAL_DELIM(3, isep, DELIM_DFLT|DELIM_STRING))
@@ -5546,7 +5544,7 @@ FUNCTION(fun_choose)
  *  NOTE:  If you specify a separator, it is used to delimit the returned list.
  */
 
-void filter_handler(char *buff, char **bufc, dbref executor, dbref enactor,
+static void filter_handler(char *buff, char **bufc, dbref executor, dbref enactor,
                     char *fargs[], SEP *psep, SEP *posep, bool bBool)
 {
     char *atext;
@@ -5594,7 +5592,7 @@ void filter_handler(char *buff, char **bufc, dbref executor, dbref enactor,
     free_lbuf(atextbuf);
 }
 
-FUNCTION(fun_filter)
+static FUNCTION(fun_filter)
 {
     SEP sep;
     if (!OPTIONAL_DELIM(3, sep, DELIM_DFLT|DELIM_STRING))
@@ -5609,7 +5607,7 @@ FUNCTION(fun_filter)
     filter_handler(buff, bufc, executor, enactor, fargs, &sep, &osep, false);
 }
 
-FUNCTION(fun_filterbool)
+static FUNCTION(fun_filterbool)
 {
     SEP sep;
     if (!OPTIONAL_DELIM(3, sep, DELIM_DFLT|DELIM_STRING))
@@ -5634,7 +5632,7 @@ FUNCTION(fun_filterbool)
  *      You say, "0.5-1-1.5-2-2.5"
  */
 
-FUNCTION(fun_map)
+static FUNCTION(fun_map)
 {
     SEP sep;
     if (!OPTIONAL_DELIM(3, sep, DELIM_DFLT|DELIM_STRING))
@@ -5685,7 +5683,7 @@ FUNCTION(fun_map)
  * * fun_edit: Edit text.
  */
 
-FUNCTION(fun_edit)
+static FUNCTION(fun_edit)
 {
     UNUSED_PARAMETER(executor);
     UNUSED_PARAMETER(caller);
@@ -5705,7 +5703,7 @@ FUNCTION(fun_edit)
  * fun_locate: Search for things with the perspective of another obj.
  */
 
-FUNCTION(fun_locate)
+static FUNCTION(fun_locate)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
@@ -5832,7 +5830,7 @@ FUNCTION(fun_locate)
     safe_tprintf_str(buff, bufc, "#%d", what);
 }
 
-void switch_handler
+static void switch_handler
 (
     char *buff, char **bufc,
     dbref executor, dbref caller, dbref enactor,
@@ -5899,7 +5897,7 @@ void switch_handler
  * NOTE: This function expects that its arguments have not been evaluated.
  */
 
-FUNCTION(fun_switch)
+static FUNCTION(fun_switch)
 {
     switch_handler
     (
@@ -5911,7 +5909,7 @@ FUNCTION(fun_switch)
     );
 }
 
-FUNCTION(fun_case)
+static FUNCTION(fun_case)
 {
     switch_handler
     (
@@ -5928,7 +5926,7 @@ FUNCTION(fun_case)
  * * fun_space: Make spaces.
  */
 
-FUNCTION(fun_space)
+static FUNCTION(fun_space)
 {
     UNUSED_PARAMETER(executor);
     UNUSED_PARAMETER(caller);
@@ -5965,7 +5963,7 @@ FUNCTION(fun_space)
     safe_fill(buff, bufc, ' ', num);
 }
 
-FUNCTION(fun_height)
+static FUNCTION(fun_height)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
@@ -6015,7 +6013,7 @@ FUNCTION(fun_height)
 }
 
 
-FUNCTION(fun_width)
+static FUNCTION(fun_width)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
@@ -6069,7 +6067,7 @@ FUNCTION(fun_width)
  * * fun_idle, fun_conn: return seconds idle or connected.
  */
 
-FUNCTION(fun_idle)
+static FUNCTION(fun_idle)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
@@ -6119,7 +6117,7 @@ FUNCTION(fun_idle)
     safe_ltoa(nIdle, buff, bufc);
 }
 
-FUNCTION(fun_conn)
+static FUNCTION(fun_conn)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
@@ -6311,7 +6309,7 @@ static void do_asort(char *s[], int n, int sort_type)
     }
 }
 
-FUNCTION(fun_sort)
+static FUNCTION(fun_sort)
 {
     SEP sep;
     if (!OPTIONAL_DELIM(3, sep, DELIM_DFLT|DELIM_STRING))
@@ -6593,7 +6591,7 @@ static void handle_sets
     free_lbuf(list2);
 }
 
-FUNCTION(fun_setunion)
+static FUNCTION(fun_setunion)
 {
     SEP sep;
     if (!OPTIONAL_DELIM(3, sep, DELIM_DFLT|DELIM_STRING))
@@ -6609,7 +6607,7 @@ FUNCTION(fun_setunion)
     handle_sets(fargs, buff, bufc, SET_UNION, &sep, &osep);
 }
 
-FUNCTION(fun_setdiff)
+static FUNCTION(fun_setdiff)
 {
     SEP sep;
     if (!OPTIONAL_DELIM(3, sep, DELIM_DFLT|DELIM_STRING))
@@ -6625,7 +6623,7 @@ FUNCTION(fun_setdiff)
     handle_sets(fargs, buff, bufc, SET_DIFF, &sep, &osep);
 }
 
-FUNCTION(fun_setinter)
+static FUNCTION(fun_setinter)
 {
     SEP sep;
     if (!OPTIONAL_DELIM(3, sep, DELIM_DFLT|DELIM_STRING))
@@ -6648,7 +6646,7 @@ FUNCTION(fun_setinter)
 #define CJC_LJUST  1
 #define CJC_RJUST  2
 
-void centerjustcombo
+static void centerjustcombo
 (
     int iType,
     char *buff,
@@ -6837,7 +6835,7 @@ void centerjustcombo
     *bufc += n;
 }
 
-FUNCTION(fun_ljust)
+static FUNCTION(fun_ljust)
 {
     UNUSED_PARAMETER(executor);
     UNUSED_PARAMETER(caller);
@@ -6848,7 +6846,7 @@ FUNCTION(fun_ljust)
     centerjustcombo(CJC_LJUST, buff, bufc, fargs, nfargs);
 }
 
-FUNCTION(fun_rjust)
+static FUNCTION(fun_rjust)
 {
     UNUSED_PARAMETER(executor);
     UNUSED_PARAMETER(caller);
@@ -6859,7 +6857,7 @@ FUNCTION(fun_rjust)
     centerjustcombo(CJC_RJUST, buff, bufc, fargs, nfargs);
 }
 
-FUNCTION(fun_center)
+static FUNCTION(fun_center)
 {
     UNUSED_PARAMETER(executor);
     UNUSED_PARAMETER(caller);
@@ -6874,7 +6872,7 @@ FUNCTION(fun_center)
  * setq, setr, r: set and read global registers.
  */
 
-FUNCTION(fun_setq)
+static FUNCTION(fun_setq)
 {
     UNUSED_PARAMETER(executor);
     UNUSED_PARAMETER(caller);
@@ -6902,7 +6900,7 @@ FUNCTION(fun_setq)
     }
 }
 
-FUNCTION(fun_setr)
+static FUNCTION(fun_setr)
 {
     UNUSED_PARAMETER(executor);
     UNUSED_PARAMETER(caller);
@@ -6931,7 +6929,7 @@ FUNCTION(fun_setr)
     }
 }
 
-FUNCTION(fun_r)
+static FUNCTION(fun_r)
 {
     UNUSED_PARAMETER(executor);
     UNUSED_PARAMETER(caller);
@@ -6958,7 +6956,7 @@ FUNCTION(fun_r)
  * isdbref: is the argument a valid dbref?
  */
 
-FUNCTION(fun_isdbref)
+static FUNCTION(fun_isdbref)
 {
     UNUSED_PARAMETER(executor);
     UNUSED_PARAMETER(caller);
@@ -6983,7 +6981,7 @@ FUNCTION(fun_isdbref)
  * trim: trim off unwanted white space.
  */
 
-char* trim_fast_left(char* str, char delim)
+static char* trim_fast_left(char* str, char delim)
 {
     // We assume delim is never '\0'
     //
@@ -6994,7 +6992,7 @@ char* trim_fast_left(char* str, char delim)
     return str;
 }
 
-void trim_fast_right(char* str, char delim)
+static void trim_fast_right(char* str, char delim)
 {
     // We assume delim is never '\0'
     //
@@ -7016,7 +7014,7 @@ void trim_fast_right(char* str, char delim)
     *(last+1) = '\0';
 }
 
-char* trim_left(char* str, SEP* sep)
+static char* trim_left(char* str, SEP* sep)
 {
     if (1 == sep->n)
     {
@@ -7036,7 +7034,7 @@ char* trim_left(char* str, SEP* sep)
     return base+1;
 }
 
-void trim_right(char* str, SEP* sep)
+static void trim_right(char* str, SEP* sep)
 {
     if (1 == sep->n)
     {
@@ -7060,7 +7058,7 @@ void trim_right(char* str, SEP* sep)
     *(str+base) = '\0';
 }
 
-FUNCTION(fun_trim)
+static FUNCTION(fun_trim)
 {
     SEP sep;
     if (!OPTIONAL_DELIM(3, sep, DELIM_DFLT|DELIM_STRING))
@@ -7111,7 +7109,7 @@ FUNCTION(fun_trim)
     safe_str(str,buff,bufc);
 }
 
-FUNCTION(fun_config)
+static FUNCTION(fun_config)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
@@ -7131,7 +7129,7 @@ FUNCTION(fun_config)
 // ---------------------------------------------------------------------------
 // fun_bittype adapted from RhostMUSH. Used with permission.
 //
-int return_bit(dbref player)
+static int return_bit(dbref player)
 {
    if (God(player))
       return 7;
@@ -7149,7 +7147,7 @@ int return_bit(dbref player)
    return 0;
 }
 
-FUNCTION(fun_bittype)
+static FUNCTION(fun_bittype)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
@@ -7172,7 +7170,7 @@ FUNCTION(fun_bittype)
     safe_ltoa(return_bit(target), buff, bufc);
 }
 
-FUNCTION(fun_error)
+static FUNCTION(fun_error)
 {
     UNUSED_PARAMETER(executor);
     UNUSED_PARAMETER(cargs);
@@ -7208,7 +7206,7 @@ FUNCTION(fun_error)
     }
 }
 
-FUNCTION(fun_strip)
+static FUNCTION(fun_strip)
 {
     UNUSED_PARAMETER(executor);
     UNUSED_PARAMETER(caller);
@@ -7236,7 +7234,7 @@ FUNCTION(fun_strip)
 }
 
 #define DEFAULT_WIDTH 78
-char *expand_tabs(const char *str)
+static char *expand_tabs(const char *str)
 {
     static char tbuf1[LBUF_SIZE];
     char *bp = tbuf1;
@@ -7337,7 +7335,7 @@ static int wraplen(char *str, const int nWidth, bool &newline)
     return (maxlen ? maxlen : -1);
 }
 
-FUNCTION(fun_wrap)
+static FUNCTION(fun_wrap)
 {
     UNUSED_PARAMETER(executor);
     UNUSED_PARAMETER(caller);
@@ -7508,7 +7506,7 @@ typedef struct
 } RADIX_ENTRY;
 
 #define N_RADIX_ENTRIES 7
-const RADIX_ENTRY reTable[N_RADIX_ENTRIES] =
+static const RADIX_ENTRY reTable[N_RADIX_ENTRIES] =
 {
     { 31556926, 'y', 4, "year"   },  // Average solar year.
     {  2629743, 'M', 5, "month"  },  // Average month.
@@ -7530,7 +7528,7 @@ const RADIX_ENTRY reTable[N_RADIX_ENTRIES] =
 // This routine supports most of the time formats using the above
 // table.
 //
-void GeneralTimeConversion
+static void GeneralTimeConversion
 (
     char *Buffer,
     long Seconds,
@@ -7614,7 +7612,7 @@ static char TimeBuffer80[80];
 // 2^63/86400 is 1.07E14 which is at most 15 digits.
 // '(15)d (2):(2)\0' is at most 23 characters.
 //
-const char *digit_format(int Seconds)
+static const char *digit_format(int Seconds)
 {
     if (Seconds < 0)
     {
@@ -7670,7 +7668,7 @@ const char *digit_format(int Seconds)
 //   ZZZ9d 99:99       86,400 to    863,999,999
 //   ZZZZZ9d 99h  864,000,000 to 86,399,996,459
 //
-int tf1_width_table[4][3] =
+static int tf1_width_table[4][3] =
 {
     { 86399,    863999,  86396459, },
     { 86399,   8639999, 863996459, },
@@ -7751,7 +7749,7 @@ const char *time_format_2(int Seconds)
 
 // expand_time - Written (short) time format.
 //
-const char *expand_time(int Seconds)
+static const char *expand_time(int Seconds)
 {
     // 2^63/2592000 is 3558399705577 which is at most 13 digits.
     // '(13)M (1)w (1)d (2)h (2)m (2)s\0' is at most 33 characters.
@@ -7762,7 +7760,7 @@ const char *expand_time(int Seconds)
 
 // write_time - Written (long) time format.
 //
-const char *write_time(int Seconds)
+static const char *write_time(int Seconds)
 {
     // 2^63/2592000 is 3558399705577 which is at most 13 digits.
     // '(13) months (1) weeks (1) days (2) hours (2) minutes (2) seconds\0' is
@@ -7775,7 +7773,7 @@ const char *write_time(int Seconds)
 // digittime - Digital format time ([(days)d]HH:MM) from given
 // seconds. D.Piper - May 1997 & April 2000
 //
-FUNCTION(fun_digittime)
+static FUNCTION(fun_digittime)
 {
     UNUSED_PARAMETER(executor);
     UNUSED_PARAMETER(caller);
@@ -7791,7 +7789,7 @@ FUNCTION(fun_digittime)
 // singletime - Single element time from given seconds.
 // D.Piper - May 1997 & April 2000
 //
-FUNCTION(fun_singletime)
+static FUNCTION(fun_singletime)
 {
     UNUSED_PARAMETER(executor);
     UNUSED_PARAMETER(caller);
@@ -7807,7 +7805,7 @@ FUNCTION(fun_singletime)
 // exptime - Written (short) time from given seconds
 // D.Piper - May 1997 & April 2000
 //
-FUNCTION(fun_exptime)
+static FUNCTION(fun_exptime)
 {
     UNUSED_PARAMETER(executor);
     UNUSED_PARAMETER(caller);
@@ -7823,7 +7821,7 @@ FUNCTION(fun_exptime)
 // writetime - Written (long) time from given seconds
 // D.Piper - May 1997 & April 2000
 //
-FUNCTION(fun_writetime)
+static FUNCTION(fun_writetime)
 {
     UNUSED_PARAMETER(executor);
     UNUSED_PARAMETER(caller);
@@ -7839,7 +7837,7 @@ FUNCTION(fun_writetime)
 // cmds - Return player command count (Wizard_Who OR Self ONLY)
 // D.Piper - May 1997
 //
-FUNCTION(fun_cmds)
+static FUNCTION(fun_cmds)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
@@ -7885,7 +7883,7 @@ FUNCTION(fun_cmds)
 // startsecs - Time the MUX was started, in seconds
 // D.Piper - May 1997 & April 2000
 //
-FUNCTION(fun_startsecs)
+static FUNCTION(fun_startsecs)
 {
     UNUSED_PARAMETER(executor);
     UNUSED_PARAMETER(caller);
@@ -7904,7 +7902,7 @@ FUNCTION(fun_startsecs)
 // conntotal - Return player's total online time to the MUX
 // (including their current connection). D.Piper - May 1997
 //
-FUNCTION(fun_conntotal)
+static FUNCTION(fun_conntotal)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
@@ -7931,7 +7929,7 @@ FUNCTION(fun_conntotal)
 // connmax - Return player's longest session to the MUX
 // (including the current one). D.Piper - May 1997
 //
-FUNCTION(fun_connmax)
+static FUNCTION(fun_connmax)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
@@ -7959,7 +7957,7 @@ FUNCTION(fun_connmax)
 // connlast - Return player's last connection time to the MUX
 // D.Piper - May 1997
 //
-FUNCTION(fun_connlast)
+static FUNCTION(fun_connlast)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
@@ -7981,7 +7979,7 @@ FUNCTION(fun_connlast)
 // connnum - Return the total number of sessions this player has had
 // to the MUX (including any current ones). D.Piper - May 1997
 //
-FUNCTION(fun_connnum)
+static FUNCTION(fun_connnum)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
@@ -8008,7 +8006,7 @@ FUNCTION(fun_connnum)
 // connleft - Return when a player last logged off the MUX as
 // UTC seconds. D.Piper - May 1997
 //
-FUNCTION(fun_connleft)
+static FUNCTION(fun_connleft)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
@@ -8031,7 +8029,7 @@ FUNCTION(fun_connleft)
 // lattrcmds - Output a list of all attributes containing $ commands.
 // Altered from lattr(). D.Piper - May 1997 & April 2000
 //
-FUNCTION(fun_lattrcmds)
+static FUNCTION(fun_lattrcmds)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
@@ -8082,7 +8080,7 @@ FUNCTION(fun_lattrcmds)
 // Modified to handle spaced commands and ^-listens - July 2001 (Ash)
 // Applied patch and code reviewed - February 2002 (Stephen)
 //
-FUNCTION(fun_lcmds)
+static FUNCTION(fun_lcmds)
 {
     SEP sep;
     if (!OPTIONAL_DELIM(2, sep, DELIM_NULL|DELIM_CRLF|DELIM_STRING))
@@ -8180,12 +8178,10 @@ FUNCTION(fun_lcmds)
     olist_pop();
 }
 
-extern FLAGNAMEENT gen_flag_names[];
-
 // lflags - List flags as names - (modified from 'flag_description()' and
 // MUX flags(). D.Piper - May 1997 & May 2000
 //
-FUNCTION(fun_lflags)
+static FUNCTION(fun_lflags)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
@@ -8262,7 +8258,7 @@ FUNCTION(fun_lflags)
 // will return the given article.
 //
 
-FUNCTION(fun_art)
+static FUNCTION(fun_art)
 {
     UNUSED_PARAMETER(executor);
     UNUSED_PARAMETER(caller);
@@ -8309,7 +8305,7 @@ FUNCTION(fun_art)
 // Takes a single character and returns the corresponding ordinal of its
 // position in the character set.
 //
-FUNCTION(fun_ord)
+static FUNCTION(fun_ord)
 {
     UNUSED_PARAMETER(executor);
     UNUSED_PARAMETER(caller);
@@ -8337,7 +8333,7 @@ FUNCTION(fun_ord)
 // Takes an integer and returns the corresponding character from the character
 // set.
 //
-FUNCTION(fun_chr)
+static FUNCTION(fun_chr)
 {
     UNUSED_PARAMETER(executor);
     UNUSED_PARAMETER(caller);
@@ -8370,7 +8366,7 @@ FUNCTION(fun_chr)
 // ---------------------------------------------------------------------------
 // fun_stripaccents:
 //
-FUNCTION(fun_stripaccents)
+static FUNCTION(fun_stripaccents)
 {
     UNUSED_PARAMETER(executor);
     UNUSED_PARAMETER(caller);
@@ -8470,7 +8466,7 @@ static const unsigned char AccentCombo3[24][16] =
 // ---------------------------------------------------------------------------
 // fun_accent:
 //
-FUNCTION(fun_accent)
+static FUNCTION(fun_accent)
 {
     UNUSED_PARAMETER(executor);
     UNUSED_PARAMETER(caller);
@@ -8518,7 +8514,7 @@ FUNCTION(fun_accent)
 //   Name          Handler      # of args   min #    max #   flags  permissions
 //                               to parse  of args  of args
 //
-FUN builtin_function_list[] =
+static FUN builtin_function_list[] =
 {
     {"@@",          fun_null,             1, 1,       1, FN_NOEVAL, CA_PUBLIC},
     {"ABS",         fun_abs,        MAX_ARG, 1,       1,         0, CA_PUBLIC},
