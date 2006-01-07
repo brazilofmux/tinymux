@@ -2,7 +2,7 @@
  * File for most TCP socket-related code. Some socket-related code also exists
  * in netcommon.cpp, but most of it is here.
  *
- * $Id: bsd.cpp,v 1.76 2006-01-07 02:47:17 jake Exp $
+ * $Id: bsd.cpp,v 1.77 2006-01-07 04:33:41 jake Exp $
  */
 
 #include "copyright.h"
@@ -355,6 +355,10 @@ DWORD WINAPI SlaveProc(LPVOID lpParameter)
 static bool bSlaveBooted = false;
 void boot_slave(dbref executor, dbref caller, dbref enactor, int)
 {
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+
     int iSlave;
 
     if (bSlaveBooted) return;
@@ -1297,6 +1301,8 @@ const char szApp[] = "MUX2";
 
 DWORD WINAPI ListenForCloseProc(LPVOID lpParameter)
 {
+    UNUSED_PARAMETER(lpParameter);
+
     WNDCLASS wc;
 
     wc.style         = CS_HREDRAW | CS_VREDRAW;
@@ -1330,6 +1336,9 @@ DWORD WINAPI ListenForCloseProc(LPVOID lpParameter)
 
 void shovecharsNT(int nPorts, PortInfo aPorts[])
 {
+    UNUSED_PARAMETER(nPorts);
+    UNUSED_PARAMETER(aPorts);
+
     mudstate.debug_cmd = "< shovechars >";
 
     CreateThread(NULL, 0, ListenForCloseProc, NULL, 0, NULL);
@@ -2417,6 +2426,8 @@ int AsyncSend(DESC *d, char *buf, int len)
 
 void process_outputNT(void *dvoid, int bHandleShutdown)
 {
+    UNUSED_PARAMETER(bHandleShutdown);
+
     DESC *d = (DESC *)dvoid;
 
     // Don't write if connection dropped or a write is pending.
@@ -2788,6 +2799,8 @@ void SendWont(DESC *d, unsigned char chOption)
 
 bool DesiredHimOption(DESC *d, unsigned char chOption)
 {
+    UNUSED_PARAMETER(d);
+
     if (  TELNET_NAWS == chOption
        || TELNET_EOR  == chOption
        || TELNET_SGA  == chOption)
@@ -3378,6 +3391,7 @@ static void check_panicking(int sig)
             signal(i, SIG_DFL);
         }
 #ifdef WIN32
+        UNUSED_PARAMETER(sig);
         abort();
 #else // WIN32
         kill(game_pid, sig);
@@ -4116,7 +4130,7 @@ void __cdecl MUDListenThread(void * pVoid)
     //
     // Loop forever accepting connections
     //
-    while (true)
+    for (;;)
     {
         //
         // Block on accept()
@@ -4229,6 +4243,8 @@ void __cdecl MUDListenThread(void * pVoid)
 
 void Task_FreeDescriptor(void *arg_voidptr, int arg_Integer)
 {
+    UNUSED_PARAMETER(arg_Integer);
+
     DESC *d = (DESC *)arg_voidptr;
     if (d)
     {
@@ -4242,6 +4258,8 @@ void Task_FreeDescriptor(void *arg_voidptr, int arg_Integer)
 
 void Task_DeferredClose(void *arg_voidptr, int arg_Integer)
 {
+    UNUSED_PARAMETER(arg_Integer);
+
     DESC *d = (DESC *)arg_voidptr;
     if (d)
     {
