@@ -1,6 +1,6 @@
 // db.cpp
 //
-// $Id: db.cpp,v 1.73 2006/01/07 06:36:39 sdennis Exp $
+// $Id: db.cpp,v 1.74 2006/01/07 08:38:23 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -711,10 +711,13 @@ void do_attribute
     if (bValid)
     {
         va = (ATTR *)vattr_find_LEN(pName, nName);
+        if (!va)
+        {
+            bValid = false;
+        }
     }
 
-    if (  !bValid
-       || !va)
+    if (!bValid)
     {
         notify(executor, "No such user-named attribute.");
         return;
