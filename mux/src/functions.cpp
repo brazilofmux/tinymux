@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.163 2006-01-07 06:01:59 sdennis Exp $
+// $Id: functions.cpp,v 1.164 2006-01-07 08:37:26 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -24,111 +24,6 @@ UFUN *ufun_head;
 extern void cf_display(dbref, char *, char *, char **);
 extern void cf_list(dbref, char *, char **);
 extern bool parse_and_get_attrib(dbref, char *[], char **, dbref *, char *, char **);
-
-// Function definitions from funceval.cpp
-//
-
-// In comsys.cpp
-XFUNCTION(fun_channels);
-XFUNCTION(fun_comalias);
-XFUNCTION(fun_comtitle);
-// In funceval.cpp
-XFUNCTION(fun_alphamax);
-XFUNCTION(fun_alphamin);
-XFUNCTION(fun_andflags);
-XFUNCTION(fun_ansi);
-XFUNCTION(fun_beep);
-XFUNCTION(fun_children);
-XFUNCTION(fun_columns);
-XFUNCTION(fun_cwho);
-XFUNCTION(fun_decrypt);
-XFUNCTION(fun_default);
-XFUNCTION(fun_die);
-XFUNCTION(fun_dumping);
-XFUNCTION(fun_edefault);
-XFUNCTION(fun_elements);
-XFUNCTION(fun_empty);
-XFUNCTION(fun_encrypt);
-XFUNCTION(fun_entrances);
-XFUNCTION(fun_fcount);
-XFUNCTION(fun_fdepth);
-XFUNCTION(fun_findable);
-XFUNCTION(fun_foreach);
-XFUNCTION(fun_grab);
-XFUNCTION(fun_graball);
-XFUNCTION(fun_grep);
-XFUNCTION(fun_grepi);
-XFUNCTION(fun_hasattr);
-XFUNCTION(fun_hasattrp);
-XFUNCTION(fun_hastype);
-XFUNCTION(fun_ifelse);
-XFUNCTION(fun_inzone);
-XFUNCTION(fun_isword);
-XFUNCTION(fun_items);
-XFUNCTION(fun_last);
-XFUNCTION(fun_lit);
-XFUNCTION(fun_localize);
-XFUNCTION(fun_lparent);
-XFUNCTION(fun_lrand);
-XFUNCTION(fun_lrooms);
-XFUNCTION(fun_lstack);
-XFUNCTION(fun_mail);
-XFUNCTION(fun_mailfrom);
-XFUNCTION(fun_matchall);
-XFUNCTION(fun_mix);
-XFUNCTION(fun_munge);
-XFUNCTION(fun_null);
-XFUNCTION(fun_objeval);
-XFUNCTION(fun_objmem);
-XFUNCTION(fun_orflags);
-XFUNCTION(fun_pack);
-XFUNCTION(fun_peek);
-XFUNCTION(fun_pickrand);
-XFUNCTION(fun_playmem);
-XFUNCTION(fun_pop);
-XFUNCTION(fun_ports);
-XFUNCTION(fun_push);
-XFUNCTION(fun_regmatch);
-XFUNCTION(fun_regmatchi);
-XFUNCTION(fun_regrab);
-XFUNCTION(fun_regraball);
-XFUNCTION(fun_regraballi);
-XFUNCTION(fun_regrabi);
-XFUNCTION(fun_scramble);
-XFUNCTION(fun_shuffle);
-XFUNCTION(fun_sortby);
-XFUNCTION(fun_squish);
-XFUNCTION(fun_strcat);
-XFUNCTION(fun_stripansi);
-XFUNCTION(fun_strtrunc);
-XFUNCTION(fun_table);
-XFUNCTION(fun_translate);
-XFUNCTION(fun_udefault);
-XFUNCTION(fun_unpack);
-XFUNCTION(fun_valid);
-XFUNCTION(fun_visible);
-XFUNCTION(fun_zfun);
-XFUNCTION(fun_zone);
-XFUNCTION(fun_zwho);
-#ifdef SIDE_EFFECT_FUNCTIONS
-XFUNCTION(fun_create);
-XFUNCTION(fun_emit);
-XFUNCTION(fun_link);
-XFUNCTION(fun_oemit);
-XFUNCTION(fun_pemit);
-XFUNCTION(fun_remit);
-XFUNCTION(fun_cemit);
-XFUNCTION(fun_set);
-XFUNCTION(fun_tel);
-XFUNCTION(fun_textfile);
-#endif
-// In netcommon.cpp
-XFUNCTION(fun_doing);
-XFUNCTION(fun_host);
-XFUNCTION(fun_motd);
-XFUNCTION(fun_poll);
-// In quota.cpp
-XFUNCTION(fun_hasquota);
 
 SEP sepSpace = { 1, " " };
 

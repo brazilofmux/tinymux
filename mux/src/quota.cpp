@@ -1,6 +1,6 @@
 // quota.cpp -- Quota Management Commands.
 //
-// $Id: quota.cpp,v 1.6 2004-06-19 21:49:14 sdennis Exp $
+// $Id: quota.cpp,v 1.7 2006-01-07 08:37:26 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -9,6 +9,7 @@
 #include "externs.h"
 
 #include "attrs.h"
+#include "command.h"
 #include "functions.h"
 #include "powers.h"
 
@@ -162,6 +163,10 @@ void do_quota
     char *arg2
 )
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(nargs);
+
     if (!(mudconf.quotas || Quota(executor)))
     {
         notify_quiet(executor, "Quotas are not enabled.");
@@ -267,6 +272,12 @@ void do_quota
 
 FUNCTION(fun_hasquota)
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     if (!mudconf.quotas)
     {
         safe_str("#-1 Quotas are not enabled.", buff, bufc);

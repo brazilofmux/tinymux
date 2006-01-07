@@ -1,6 +1,6 @@
 // rob.cpp -- Commands dealing with giving/taking/killing things or money.
 //
-// $Id: rob.cpp,v 1.3 2004-06-10 15:28:43 sdennis Exp $
+// $Id: rob.cpp,v 1.4 2006-01-07 08:37:26 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -9,6 +9,7 @@
 #include "externs.h"
 
 #include "attrs.h"
+#include "command.h"
 #include "powers.h"
 
 void do_kill
@@ -22,6 +23,10 @@ void do_kill
     char *costchar
 )
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(nargs);
+
     char *buf1, *buf2;
 
     init_match(executor, what, TYPE_PLAYER);
@@ -383,6 +388,10 @@ void do_give
     char *amnt
 )
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(nargs);
+
     // Check recipient.
     //
     init_match(executor, who, TYPE_PLAYER);
