@@ -1,6 +1,6 @@
 // flags.cpp -- Flag manipulation routines.
 //
-// $Id: flags.cpp,v 1.23 2006-01-07 06:01:36 jake Exp $
+// $Id: flags.cpp,v 1.24 2006-01-07 06:08:25 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -919,9 +919,9 @@ char *unparse_object(dbref player, dbref target, bool obey_myopic)
 
 CF_HAND(cf_flag_access)
 {
-    UNREFERENCED_PARAMETER(vp);
-    UNREFERENCED_PARAMETER(pExtra);
-    UNREFERENCED_PARAMETER(nExtra);
+    UNUSED_PARAMETER(vp);
+    UNUSED_PARAMETER(pExtra);
+    UNUSED_PARAMETER(nExtra);
 
     MUX_STRTOK_STATE tts;
     mux_strtok_src(&tts, str);
@@ -1178,8 +1178,8 @@ bool flag_rename(char *alias, char *newname)
 void do_flag(dbref executor, dbref caller, dbref enactor, int key, int nargs,
              char *flag1, char *flag2)
 {
-    UNREFERENCED_PARAMETER(caller);
-    UNREFERENCED_PARAMETER(enactor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
 
     if (key & FLAG_REMOVE)
     {
@@ -1235,11 +1235,11 @@ void do_flag(dbref executor, dbref caller, dbref enactor, int key, int nargs,
 
 CF_HAND(cf_flag_name)
 {
-    UNREFERENCED_PARAMETER(vp);
-    UNREFERENCED_PARAMETER(pExtra);
-    UNREFERENCED_PARAMETER(nExtra);
-    UNREFERENCED_PARAMETER(player);
-    UNREFERENCED_PARAMETER(cmd);
+    UNUSED_PARAMETER(vp);
+    UNUSED_PARAMETER(pExtra);
+    UNUSED_PARAMETER(nExtra);
+    UNUSED_PARAMETER(player);
+    UNUSED_PARAMETER(cmd);
 
     MUX_STRTOK_STATE tts;
     mux_strtok_src(&tts, str);
