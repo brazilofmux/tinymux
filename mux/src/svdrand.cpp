@@ -1,6 +1,6 @@
 // svdrand.cpp -- Random Numbers.
 //
-// $Id: svdrand.cpp,v 1.6 2004/06/10 15:27:14 sdennis Exp $
+// $Id: svdrand.cpp,v 1.7 2006/01/07 07:44:46 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -11,6 +11,7 @@
 #include "copyright.h"
 #include "autoconf.h"
 #include "config.h"
+#include "externs.h"
 
 #include "timeutil.h"
 
