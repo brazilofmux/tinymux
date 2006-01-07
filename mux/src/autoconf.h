@@ -186,5 +186,7 @@ typedef int     POWER;
 typedef char    boolexp_type;
 typedef char    IBUF[16];
 
+#define UNUSED_PARAMETER(x) ((void)(x))
+
 #endif /* AUTOCONF_H */
 
