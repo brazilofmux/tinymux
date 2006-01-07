@@ -1,6 +1,6 @@
 // file_c.cpp -- File cache management.
 //
-// $Id: file_c.cpp,v 1.7 2006-01-07 06:01:59 sdennis Exp $
+// $Id: file_c.cpp,v 1.8 2006-01-07 23:06:43 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -35,7 +35,7 @@ typedef struct filecache_hdr FCACHE;
 
 #define FBLOCK_SIZE (MBUF_SIZE - sizeof(FBLKHDR))
 
-FCACHE fcache[] =
+static FCACHE fcache[] =
 {
     { &mudconf.conn_file,    NULL,   "Conn" },
     { &mudconf.site_file,    NULL,   "Conn/Badsite" },
@@ -51,7 +51,7 @@ FCACHE fcache[] =
     { NULL,                  NULL,   NULL }
 };
 
-NAMETAB list_files[] =
+static NAMETAB list_files[] =
 {
     {"badsite_connect",  1,  CA_WIZARD,  FC_CONN_SITE},
     {"connect",          2,  CA_WIZARD,  FC_CONN},
