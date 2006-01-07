@@ -1,6 +1,6 @@
 // svdhash.cpp -- CHashPage, CHashFile, CHashTable modules.
 //
-// $Id: svdhash.cpp,v 1.43 2006-01-01 18:20:57 sdennis Exp $
+// $Id: svdhash.cpp,v 1.44 2006-01-07 07:54:25 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -288,7 +288,7 @@ const int Primes[NUMBER_OF_PRIMES] =
     977, 983, 991, 997, 1009, 1013, 1019, 1021, 1031, 1033, 1039, 0
 };
 
-void ChoosePrimes(int TableSize, HP_HEAPOFFSET HashPrimes[16])
+static void ChoosePrimes(int TableSize, HP_HEAPOFFSET HashPrimes[16])
 {
     int LargestPrime = TableSize/2;
     if (LargestPrime > Primes[NUMBER_OF_PRIMES-2])
@@ -2620,7 +2620,7 @@ void DCL_CDECL CLogFile::tinyprintf(char *fmt, ...)
     WriteBuffer(nString, aTempBuffer);
 }
 
-void MakeLogName
+static void MakeLogName
 (
     const char *pBasename,
     const char *szPrefix,

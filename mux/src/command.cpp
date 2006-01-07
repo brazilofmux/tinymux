@@ -1,6 +1,6 @@
 // command.cpp -- command parser and support routines.
 //
-// $Id: command.cpp,v 1.68 2006-01-07 06:22:30 sdennis Exp $
+// $Id: command.cpp,v 1.69 2006-01-07 07:54:24 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -3541,21 +3541,6 @@ static void list_hashstats(dbref player)
             mudstate.aHelpDesc[i].ht);
     }
 }
-
-#ifndef MEMORY_BASED
-//
-// These are from 'svdhash.cpp'.
-//
-extern int cs_writes;       // total writes
-extern int cs_reads;        // total reads
-extern int cs_dels;         // total deletes
-extern int cs_fails;        // attempts to grab nonexistent
-extern int cs_syncs;        // total cache syncs
-extern int cs_dbreads;      // total read-throughs
-extern int cs_dbwrites;     // total write-throughs
-extern int cs_rhits;        // total reads filled from cache
-extern int cs_whits;        // total writes to dirty cache
-#endif // !MEMORY_BASED
 
 
 // ---------------------------------------------------------------------------
