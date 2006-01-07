@@ -1,6 +1,6 @@
 // command.h -- declarations used by the command processor.
 //
-// $Id: command.h,v 1.13 2006-01-07 20:55:42 sdennis Exp $
+// $Id: command.h,v 1.14 2006-01-07 22:56:14 sdennis Exp $
 //
 
 #ifndef __COMMAND_H
@@ -267,7 +267,6 @@ void init_cmdtab(void);
 
 extern NAMETAB indiv_attraccess_nametab[];
 extern NAMETAB lock_sw[];
-extern NAMETAB indiv_attraccess_nametab[];
 extern NAMETAB logoptions_nametab[];
 extern NAMETAB logdata_nametab[];
 

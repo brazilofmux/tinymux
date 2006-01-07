@@ -1,6 +1,6 @@
 // config.h
 //
-// $Id: config.h,v 1.13 2006-01-07 21:53:26 sdennis Exp $
+// $Id: config.h,v 1.14 2006-01-07 22:56:14 sdennis Exp $
 //
 
 #ifndef CONFIG_H
@@ -245,7 +245,7 @@ extern "C" unsigned int __intel_cpu_indicator;
 #endif
 
 #if defined(HAVE_SETRLIMIT) && defined(RLIMIT_NOFILE)
-static void init_rlimit(void);
+void init_rlimit(void);
 #endif // HAVE_SETRLIMIT RLIMIT_NOFILE
 
 #endif // !CONFIG_H

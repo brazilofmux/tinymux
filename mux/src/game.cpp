@@ -1,6 +1,6 @@
 // game.cpp
 //
-// $Id: game.cpp,v 1.91 2006-01-07 21:53:26 sdennis Exp $
+// $Id: game.cpp,v 1.92 2006-01-07 22:56:14 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -3164,7 +3164,7 @@ int DCL_CDECL main(int argc, char *argv[])
 }
 
 #if defined(HAVE_SETRLIMIT) && defined(RLIMIT_NOFILE)
-static void init_rlimit(void)
+void init_rlimit(void)
 {
     struct rlimit *rlp;
 
