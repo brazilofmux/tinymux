@@ -1,6 +1,6 @@
 // db_rw.cpp
 //
-// $Id: db_rw.cpp,v 1.20 2006-01-07 05:51:24 sdennis Exp $
+// $Id: db_rw.cpp,v 1.21 2006-01-07 06:47:00 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -29,7 +29,7 @@ static BOOLEXP *getboolexp1(FILE *f)
     char *buff, *s;
     int d, anum;
 
-    char c = (char)getc(f);
+    int c = getc(f);
     switch (c)
     {
     case '\n':
@@ -45,7 +45,7 @@ static BOOLEXP *getboolexp1(FILE *f)
 
     case '(':
         b = alloc_bool("getboolexp1.openparen");
-        switch (c = (char)getc(f))
+        switch (c = getc(f))
         {
         case NOT_TOKEN:
             b->type = BOOLEXP_NOT;
@@ -115,9 +115,9 @@ static BOOLEXP *getboolexp1(FILE *f)
         default:
             ungetc(c, f);
             b->sub1 = getboolexp1(f);
-            if ((c = (char)getc(f)) == '\n')
+            if ((c = getc(f)) == '\n')
             {
-                c = (char)getc(f);
+                c = getc(f);
             }
             switch (c)
             {
@@ -148,7 +148,7 @@ static BOOLEXP *getboolexp1(FILE *f)
 
         // obsolete NOTHING key, eat it.
         //
-        while ((c = (char)getc(f)) != '\n')
+        while ((c = getc(f)) != '\n')
         {
             mux_assert(c != EOF);
         }
@@ -160,7 +160,7 @@ static BOOLEXP *getboolexp1(FILE *f)
         ungetc(c, f);
         buff = alloc_lbuf("getboolexp_quoted");
         strcpy(buff, getstring_noalloc(f, 1));
-        c = (char)fgetc(f);
+        c = fgetc(f);
         if (c == EOF)
         {
             free_lbuf(buff);
@@ -213,7 +213,7 @@ static BOOLEXP *getboolexp1(FILE *f)
         //
         if (mux_isdigit(c))
         {
-            while (mux_isdigit(c = (char)getc(f)))
+            while (mux_isdigit(c = getc(f)))
             {
                 b->thing = b->thing * 10 + c - '0';
             }
@@ -224,7 +224,7 @@ static BOOLEXP *getboolexp1(FILE *f)
 
             for (  s = buff;
 
-                   (c = (char)getc(f)) != EOF
+                   (c = getc(f)) != EOF
                 && c != '\n'
                 && c != ':'
                 && c != '/'
@@ -279,7 +279,7 @@ static BOOLEXP *getboolexp1(FILE *f)
             buff = alloc_lbuf("getboolexp1.attr_lock");
             for (  s = buff;
 
-                   (c = (char)getc(f)) != EOF
+                   (c = getc(f)) != EOF
                 && c != '\n'
                 && c != ')'
                 && c != OR_TOKEN
@@ -317,14 +317,14 @@ error:
 static BOOLEXP *getboolexp(FILE *f)
 {
     BOOLEXP *b = getboolexp1(f);
-    char c = (char)getc(f);
+    int c = getc(f);
     mux_assert(c == '\n');
 
     if (g_format == F_MUX)
     {
-        if ((c = (char)getc(f)) != '\n')
+        if ((c = getc(f)) != '\n')
         {
-            ungetc((int)c, f);
+            ungetc(c, f);
         }
     }
     return b;
