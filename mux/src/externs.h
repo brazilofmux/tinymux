@@ -1,6 +1,6 @@
 // externs.h -- Prototypes for externs not defined elsewhere.
 //
-// $Id: externs.h,v 1.51 2006/01/07 06:26:07 sdennis Exp $
+// $Id: externs.h,v 1.52 2006/01/07 07:15:29 sdennis Exp $
 //
 
 #ifndef EXTERNS_H
@@ -128,6 +128,7 @@ extern bool html_escape(const char *src, char *dest, char **destp);
 #define DUMP_I_SIGNAL    4  // UNLOAD to a .FLAT file from signal.
 #define NUM_DUMP_TYPES   5
 extern void dump_database_internal(int);
+extern void fork_and_dump(int key);
 
 /* From help.cpp */
 extern void helpindex_clean(int);
@@ -935,6 +936,7 @@ extern void init_version(void);
 // From player_c.cpp
 //
 extern void pcache_sync(void);
+extern void pcache_trim(void);
 
 // From attrcache.cpp
 //
