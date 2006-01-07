@@ -1,6 +1,6 @@
 // predicates.cpp
 //
-// $Id: predicates.cpp,v 1.76 2005-11-13 10:18:42 rmg Exp $
+// $Id: predicates.cpp,v 1.77 2006-01-07 08:55:24 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -18,9 +18,6 @@
 #ifdef REALITY_LVLS
 #include "levels.h"
 #endif /* REALITY_LVLS */
-
-extern void do_command(DESC *, char *);
-extern void pcache_sync(void);
 
 char * DCL_CDECL tprintf(const char *fmt,...)
 {
@@ -741,6 +738,8 @@ void do_if
     int   ncargs
 )
 {
+    UNUSED_PARAMETER(key);
+
     if (  !expr
        || nargs <= 0)
     {
@@ -774,6 +773,10 @@ void do_addcommand
     char *command
 )
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(key);
+
     // Validate command name.
     //
     char *pName = NULL;
@@ -898,6 +901,10 @@ void do_addcommand
 void do_listcommands(dbref player, dbref caller, dbref enactor, int key,
                      char *name)
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(key);
+
     CMDENT *old;
     ADDENT *nextp;
     bool didit = false;
@@ -980,6 +987,11 @@ void do_delcommand
     char *command
 )
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(key);
+    UNUSED_PARAMETER(nargs);
+
     if (!*name)
     {
         notify(player, "Sorry.");
@@ -1200,6 +1212,10 @@ void handle_prog(DESC *d, char *message)
 
 void do_quitprog(dbref player, dbref caller, dbref enactor, int key, char *name)
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(key);
+
     dbref doer;
 
     if (*name)
@@ -1285,6 +1301,11 @@ void do_prog
     char *command
 )
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(key);
+    UNUSED_PARAMETER(nargs);
+
     if (  !name
        || !*name)
     {
@@ -1423,6 +1444,10 @@ void do_prog
  */
 void do_restart(dbref executor, dbref caller, dbref enactor, int key)
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(key);
+
     if (!Can_SiteAdmin(executor))
     {
         notify(executor, NOPERM_MESSAGE);
@@ -1501,6 +1526,10 @@ void do_restart(dbref executor, dbref caller, dbref enactor, int key)
 
 void do_backup(dbref player, dbref caller, dbref enactor, int key)
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(key);
+
     notify(player, "This feature is not yet available on Win32-hosted MUX.");
 }
 
@@ -1544,6 +1573,10 @@ void do_backup(dbref player, dbref caller, dbref enactor, int key)
 
 void do_comment(dbref player, dbref caller, dbref enactor, int key)
 {
+    UNUSED_PARAMETER(player);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(key);
 }
 
 static dbref promote_dflt(dbref old, dbref new0)
@@ -1784,8 +1817,6 @@ bool parse_thing_slash(dbref player, char *thing, char **after, dbref *it)
     //
     return Good_obj(*it);
 }
-
-extern NAMETAB lock_sw[];
 
 bool get_obj_and_lock(dbref player, char *what, dbref *it, ATTR **attr, char *errmsg, char **bufc)
 {
@@ -2403,6 +2434,9 @@ void did_it(dbref player, dbref thing, int what, const char *def, int owhat,
 void do_verb(dbref executor, dbref caller, dbref enactor, int key,
              char *victim_str, char *args[], int nargs)
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(key);
+
     // Look for the victim.
     //
     if (  !victim_str

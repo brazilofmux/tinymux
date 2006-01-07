@@ -1,6 +1,6 @@
 // interface.h
 //
-// $Id: interface.h,v 1.19 2006-01-07 02:47:17 jake Exp $
+// $Id: interface.h,v 1.20 2006-01-07 08:55:24 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -222,8 +222,8 @@ extern void dump_restart_db(void);
 extern void BuildSignalNamesTable(void);
 extern void set_signals(void);
 
-// from netcommon.cpp
-
+// From netcommon.cpp
+//
 extern void make_ulist(dbref, char *, char **, bool);
 extern void make_port_ulist(dbref, char *, char **);
 extern int fetch_session(dbref target);
@@ -250,13 +250,16 @@ extern void check_idle(void);
 void Task_ProcessCommand(void *arg_voidptr, int arg_iInteger);
 extern int site_check(struct in_addr, SITE *);
 extern dbref  find_connected_name(dbref, char *);
+extern void do_command(DESC *, char *);
 
-/* From predicates.c */
-
+// From predicates.cpp
+//
 #define alloc_desc(s) (DESC *)pool_alloc(POOL_DESC,s, __FILE__, __LINE__)
 #define free_desc(b) pool_free(POOL_DESC,(char *)(b), __FILE__, __LINE__)
+extern void handle_prog(DESC *d, char *message);
 
 // From player.cpp
+//
 extern void record_login(dbref, bool, char *, char *, char *, char *);
 extern dbref connect_player(char *, char *, char *, char *, char *);
 
@@ -277,4 +280,5 @@ extern dbref connect_player(char *, char *, char *, char *, char *);
     for (d=descriptor_list,n=((d!=NULL) ? d->next : NULL); \
          d; \
          d=n,n=((n!=NULL) ? n->next : NULL))
+
 #endif // !__INTERFACE__H

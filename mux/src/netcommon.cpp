@@ -1,6 +1,6 @@
 // netcommon.cpp
 //
-// $Id: netcommon.cpp,v 1.60 2006-01-06 19:25:36 sdennis Exp $
+// $Id: netcommon.cpp,v 1.61 2006-01-07 08:55:24 sdennis Exp $
 //
 // This file contains routines used by the networking code that do not
 // depend on the implementation of the networking code.  The network-specific
@@ -26,8 +26,6 @@
 #ifdef REALITY_LVLS
 #include "levels.h"
 #endif /* REALITY_LVLS */
-
-extern void handle_prog(DESC *, char *);
 
 #ifdef WIN32
 extern HANDLE CompletionPort;    // IOs are queued up on this port
