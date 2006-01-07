@@ -1,6 +1,6 @@
 // externs.h -- Prototypes for externs not defined elsewhere.
 //
-// $Id: externs.h,v 1.47 2005/11/24 20:07:06 sdennis Exp $
+// $Id: externs.h,v 1.48 2006/01/07 01:50:19 sdennis Exp $
 //
 
 #ifndef EXTERNS_H
@@ -920,5 +920,14 @@ double ulp(double);
 double mux_strtod(const char *s00, char **se);
 char *mux_dtoa(double d, int mode, int ndigits, int *decpt, int *sign,
              char **rve);
+
+// From wiz.cpp
+//
+extern NAMETAB enable_names[];
+
+// From version.cpp
+//
+extern void build_version(void);
+extern void init_version(void);
 
 #endif // EXTERNS_H

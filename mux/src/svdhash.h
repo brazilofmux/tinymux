@@ -1,6 +1,6 @@
 // svdhash.h -- CHashPage, CHashFile, CHashTable modules.
 //
-// $Id: svdhash.h,v 1.16 2005/10/13 07:38:37 sdennis Exp $
+// $Id: svdhash.h,v 1.17 2006/01/07 01:47:10 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -37,7 +37,7 @@ extern UINT32 HASH_ProcessBuffer
     size_t       nBuffer
 );
 
-#if _SGI_SOURCE || ((UINT16_MAX_VALUE-2) <= HF_SIZEOF_PAGE)
+#if defined(_SGI_SOURCE) || ((UINT16_MAX_VALUE-2) <= HF_SIZEOF_PAGE)
 typedef UINT32 UINT_OFFSET;
 #define UINT_OFFSET_MAX_VALUE UINT32_MAX_VALUE
 #define EXPAND_TO_BOUNDARY(x) (((x) + 3) & (~3))
