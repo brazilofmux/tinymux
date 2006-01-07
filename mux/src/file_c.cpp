@@ -1,6 +1,6 @@
 // file_c.cpp -- File cache management.
 //
-// $Id: file_c.cpp,v 1.5 2004/05/20 04:31:19 sdennis Exp $
+// $Id: file_c.cpp,v 1.6 2006/01/07 23:05:01 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -35,7 +35,7 @@ typedef struct filecache_hdr FCACHE;
 
 #define FBLOCK_SIZE (MBUF_SIZE - sizeof(FBLKHDR))
 
-FCACHE fcache[] =
+static FCACHE fcache[] =
 {
     { &mudconf.conn_file,    NULL,   "Conn" },
     { &mudconf.site_file,    NULL,   "Conn/Badsite" },
@@ -51,7 +51,7 @@ FCACHE fcache[] =
     { NULL,                  NULL,   NULL }
 };
 
-NAMETAB list_files[] =
+static NAMETAB list_files[] =
 {
     {"badsite_connect",  1,  CA_WIZARD,  FC_CONN_SITE},
     {"connect",          2,  CA_WIZARD,  FC_CONN},
@@ -69,6 +69,10 @@ NAMETAB list_files[] =
 
 void do_list_file(dbref executor, dbref caller, dbref enactor, int extra, char *arg)
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(extra);
+
     int flagvalue;
     if (!search_nametab(executor, list_files, arg, &flagvalue))
     {
