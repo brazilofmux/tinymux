@@ -1,6 +1,6 @@
 // db.cpp
 //
-// $Id: db.cpp,v 1.74 2006/01/07 08:38:23 sdennis Exp $
+// $Id: db.cpp,v 1.75 2006/01/07 09:07:15 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -34,7 +34,6 @@ struct atrcount
 
 // Check routine forward declaration.
 //
-extern void pcache_reload(dbref);
 extern void desc_reload(dbref);
 
 // list of attributes

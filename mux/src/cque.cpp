@@ -1,6 +1,6 @@
 // cque.cpp -- commands and functions for manipulating the command queue.
 //
-// $Id: cque.cpp,v 1.32 2006/01/07 08:59:16 sdennis Exp $
+// $Id: cque.cpp,v 1.33 2006/01/07 09:07:15 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -18,8 +18,6 @@
 #include "interface.h"
 #include "powers.h"
 
-extern int  a_Queue(dbref, int);
-extern int  QueueMax(dbref);
 bool break_called = false;
 
 CLinearTimeDelta GetProcessorUsage(void)
@@ -1104,18 +1102,6 @@ int Show_bFirstLine;
 int Total_SQLTimeout;
 int Shown_SQLTimeout;
 #endif // QUERY_SLAVE
-
-#ifdef WIN32
-extern void Task_FreeDescriptor(void *arg_voidptr, int arg_Integer);
-extern void Task_DeferredClose(void *arg_voidptr, int arg_Integer);
-#endif
-void dispatch_DatabaseDump(void *pUnused, int iUnused);
-void dispatch_FreeListReconstruction(void *pUnused, int iUnused);
-void dispatch_IdleCheck(void *pUnused, int iUnused);
-void dispatch_CheckEvents(void *pUnused, int iUnused);
-#ifndef MEMORY_BASED
-void dispatch_CacheTick(void *pUnused, int iUnused);
-#endif
 
 int CallBack_ShowDispatches(PTASK_RECORD p)
 {
