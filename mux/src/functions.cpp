@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.162 2006-01-03 01:16:10 sdennis Exp $
+// $Id: functions.cpp,v 1.163 2006-01-07 06:01:59 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -942,8 +942,7 @@ const char *DayOfWeekStringLong[7] =
     "Friday",
     "Saturday"
 };
-extern char *DayOfWeekString[];
-extern const char *monthtab[];
+
 const char *MonthTableLong[] =
 {
     "January",

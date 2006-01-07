@@ -1,6 +1,6 @@
 // eval.cpp -- Command evaluation and cracking.
 //
-// $Id: eval.cpp,v 1.32 2006-01-07 05:47:32 jake Exp $
+// $Id: eval.cpp,v 1.33 2006-01-07 06:01:59 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -774,7 +774,7 @@ char *parse_arglist_lite( dbref executor, dbref caller, dbref enactor,
                           dbref nfargs, char *cargs[], dbref ncargs,
                           int *nArgsParsed)
 {
-    UNREFERENCED_PARAMETER(delim);
+    UNUSED_PARAMETER(delim);
 
     char *tstr, *bp, *str;
 
@@ -1030,7 +1030,7 @@ char **PushPointers(int nNeeded)
 
 void PopPointers(char **p, int nNeeded)
 {
-    UNREFERENCED_PARAMETER(p);
+    UNUSED_PARAMETER(p);
 
     if (pPtrsFrame->nptrs == PTRS_PER_FRAME)
     {
@@ -1068,7 +1068,7 @@ int *PushIntegers(int nNeeded)
 
 void PopIntegers(int *pi, int nNeeded)
 {
-    UNREFERENCED_PARAMETER(pi);
+    UNUSED_PARAMETER(pi);
 
     if (pIntsFrame->nints == INTS_PER_FRAME)
     {
@@ -2126,7 +2126,7 @@ void save_and_clear_global_regs
     int preserve_len[]
 )
 {
-    UNREFERENCED_PARAMETER(funcname);
+    UNUSED_PARAMETER(funcname);
 
     int i;
 
@@ -2147,7 +2147,7 @@ void restore_global_regs
     int preserve_len[]
 )
 {
-    UNREFERENCED_PARAMETER(funcname);
+    UNUSED_PARAMETER(funcname);
 
     int i;
 

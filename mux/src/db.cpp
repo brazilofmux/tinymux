@@ -1,6 +1,6 @@
 // db.cpp
 //
-// $Id: db.cpp,v 1.74 2006-01-07 05:30:10 jake Exp $
+// $Id: db.cpp,v 1.75 2006-01-07 06:01:59 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -390,7 +390,7 @@ int fwdlist_rewrite(FWDLIST *fp, char *atext)
  */
 bool fwdlist_ck(dbref player, dbref thing, int anum, char *atext)
 {
-    UNREFERENCED_PARAMETER(anum);
+    UNUSED_PARAMETER(anum);
 
     if (mudstate.bStandAlone)
     {
@@ -694,9 +694,9 @@ void do_attribute
     char *value
 )
 {
-    UNREFERENCED_PARAMETER(caller);
-    UNREFERENCED_PARAMETER(enactor);
-    UNREFERENCED_PARAMETER(nargs);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(nargs);
 
     // Look up the user-named attribute we want to play with.
     //
@@ -818,9 +818,9 @@ void do_fixdb
     char *arg2
 )
 {
-    UNREFERENCED_PARAMETER(caller);
-    UNREFERENCED_PARAMETER(enactor);
-    UNREFERENCED_PARAMETER(nargs);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(nargs);
 
     init_match(executor, arg1, NOTYPE);
     match_everything(0);
@@ -1617,7 +1617,7 @@ DCL_INLINE static void makekey(dbref thing, int atr, Aname *abuff)
 
 static char *atr_encode(char *iattr, dbref thing, dbref owner, int flags, int atr)
 {
-    UNREFERENCED_PARAMETER(atr);
+    UNUSED_PARAMETER(atr);
 
     // If using the default owner and flags (almost all attributes will),
     // just store the string.
