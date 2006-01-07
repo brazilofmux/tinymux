@@ -1,6 +1,6 @@
 // flags.cpp -- Flag manipulation routines.
 //
-// $Id: flags.cpp,v 1.22 2005-10-28 06:03:47 sdennis Exp $
+// $Id: flags.cpp,v 1.23 2006-01-07 06:01:36 jake Exp $
 //
 
 #include "copyright.h"
@@ -919,6 +919,10 @@ char *unparse_object(dbref player, dbref target, bool obey_myopic)
 
 CF_HAND(cf_flag_access)
 {
+    UNREFERENCED_PARAMETER(vp);
+    UNREFERENCED_PARAMETER(pExtra);
+    UNREFERENCED_PARAMETER(nExtra);
+
     MUX_STRTOK_STATE tts;
     mux_strtok_src(&tts, str);
     mux_strtok_ctl(&tts, " \t=,");
@@ -1000,11 +1004,10 @@ bool convert_flags(dbref player, char *flaglist, FLAGSET *fset, FLAG *p_type)
 {
     FLAG type = NOTYPE;
     FLAGSET flagmask;
+    flagmask.word[FLAG_WORD1] = 0;
+    flagmask.word[FLAG_WORD2] = 0;
+    flagmask.word[FLAG_WORD3] = 0;
     int i;
-    for (i = FLAG_WORD1; i <= FLAG_WORD3; i++)
-    {
-        flagmask.word[i] = 0;
-    }
 
     char *s;
     bool handled;
@@ -1175,6 +1178,9 @@ bool flag_rename(char *alias, char *newname)
 void do_flag(dbref executor, dbref caller, dbref enactor, int key, int nargs,
              char *flag1, char *flag2)
 {
+    UNREFERENCED_PARAMETER(caller);
+    UNREFERENCED_PARAMETER(enactor);
+
     if (key & FLAG_REMOVE)
     {
         if (nargs == 2)
@@ -1229,6 +1235,12 @@ void do_flag(dbref executor, dbref caller, dbref enactor, int key, int nargs,
 
 CF_HAND(cf_flag_name)
 {
+    UNREFERENCED_PARAMETER(vp);
+    UNREFERENCED_PARAMETER(pExtra);
+    UNREFERENCED_PARAMETER(nExtra);
+    UNREFERENCED_PARAMETER(player);
+    UNREFERENCED_PARAMETER(cmd);
+
     MUX_STRTOK_STATE tts;
     mux_strtok_src(&tts, str);
     mux_strtok_ctl(&tts, " \t=,");
