@@ -1,6 +1,6 @@
 // svdreport.cpp -- Aggregate User Statistics module.
 //
-// $Id: svdreport.cpp,v 1.6 2006-01-07 07:38:08 sdennis Exp $
+// $Id: svdreport.cpp,v 1.7 2006-01-07 07:39:39 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -8,6 +8,7 @@
 #include "externs.h"
 
 #include "attrs.h"
+#include "command.h"
 
 #define NPERIODS 24
 void do_report(dbref executor, dbref caller, dbref enactor, int extra)
