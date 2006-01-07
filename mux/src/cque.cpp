@@ -1,6 +1,6 @@
 // cque.cpp -- commands and functions for manipulating the command queue.
 //
-// $Id: cque.cpp,v 1.34 2006/01/07 23:27:32 sdennis Exp $
+// $Id: cque.cpp,v 1.35 2006/01/07 23:46:32 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -18,7 +18,7 @@
 #include "interface.h"
 #include "powers.h"
 
-static bool break_called = false;
+bool break_called = false;
 
 static CLinearTimeDelta GetProcessorUsage(void)
 {
