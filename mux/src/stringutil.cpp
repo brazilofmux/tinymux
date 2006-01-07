@@ -1,6 +1,6 @@
 // stringutil.cpp -- string utilities.
 //
-// $Id: stringutil.cpp,v 1.72 2005/11/08 18:31:45 sdennis Exp $
+// $Id: stringutil.cpp,v 1.73 2006/01/07 08:00:51 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -625,14 +625,14 @@ char *strip_accents(const char *szString, size_t *pnString)
 #define ANSI_COLOR_INDEX_WHITE     7
 #define ANSI_COLOR_INDEX_DEFAULT   8
 
-const ANSI_ColorState acsRestingStates[3] =
+static const ANSI_ColorState acsRestingStates[3] =
 {
     {true,  false, false, false, false, ANSI_COLOR_INDEX_DEFAULT, ANSI_COLOR_INDEX_DEFAULT},
     {false, false, false, false, false, ANSI_COLOR_INDEX_WHITE,   ANSI_COLOR_INDEX_DEFAULT},
     {true,  false, false, false, false, ANSI_COLOR_INDEX_DEFAULT, ANSI_COLOR_INDEX_DEFAULT}
 };
 
-void ANSI_Parse_m(ANSI_ColorState *pacsCurrent, int nANSI, const char *pANSI,
+static void ANSI_Parse_m(ANSI_ColorState *pacsCurrent, int nANSI, const char *pANSI,
                   bool *pbSawNormal)
 {
     // If the last character isn't an 'm', then it's an ANSI sequence we
@@ -750,7 +750,7 @@ void ANSI_Parse_m(ANSI_ColorState *pacsCurrent, int nANSI, const char *pANSI,
 // Generate the minimal ANSI sequence that will transition from one color state
 // to another.
 //
-char *ANSI_TransitionColorBinary
+static char *ANSI_TransitionColorBinary
 (
     ANSI_ColorState *acsCurrent,
     const ANSI_ColorState *pcsNext,
@@ -838,7 +838,7 @@ char *ANSI_TransitionColorBinary
 // Generate the minimal MU ANSI %-sequence that will transition from one color state
 // to another.
 //
-char *ANSI_TransitionColorEscape
+static char *ANSI_TransitionColorEscape
 (
     ANSI_ColorState *acsCurrent,
     ANSI_ColorState *acsNext,
@@ -1304,7 +1304,7 @@ typedef struct
     char *p;
 } LITERAL_STRING_STRUCT;
 
-LITERAL_STRING_STRUCT MU_Substitutes[] =
+static LITERAL_STRING_STRUCT MU_Substitutes[] =
 {
     { 1, " "  },  // 0
     { 1, " "  },  // 1
@@ -2552,9 +2552,6 @@ double mux_atof(char *szString, bool bStrict)
     return ret;
 }
 
-extern char *mux_dtoa(double d, int mode, int nRequest, int *iDecimalPoint,
-                       int *sign, char **rve);
-
 char *mux_ftoa(double r, bool bRounded, int frac)
 {
     static char buffer[100];
@@ -3381,10 +3378,11 @@ int BMH_StringSearchI(int nPat, const char *pPat, int nSrc, const char *pSrc)
 // Add an article rule to the ruleset.
 //
 
-extern void DCL_CDECL cf_log_syntax(dbref player, char *cmd, const char *fmt, ...);
-
 CF_HAND(cf_art_rule)
 {
+    UNUSED_PARAMETER(pExtra);
+    UNUSED_PARAMETER(nExtra);
+
     char* pCurrent = str;
 
     while (mux_isspace(*pCurrent))
