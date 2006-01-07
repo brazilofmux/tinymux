@@ -1,6 +1,6 @@
 // move.cpp -- Routines for moving about.
 //
-// $Id: move.cpp,v 1.6 2005-08-05 15:27:43 sdennis Exp $
+// $Id: move.cpp,v 1.7 2006-01-07 19:26:08 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -9,6 +9,7 @@
 #include "externs.h"
 
 #include "attrs.h"
+#include "command.h"
 #include "interface.h"
 #include "powers.h"
 #ifdef REALITY_LVLS
@@ -222,7 +223,7 @@ void move_object(dbref thing, dbref dest)
 
 // move_the_exit: Move an exit silently from its location to its destination
 //
-void move_the_exit(dbref thing, dbref dest)
+static void move_the_exit(dbref thing, dbref dest)
 {
     dbref exitloc = Exits(thing);
     s_Exits(exitloc, remove_first(Exits(exitloc), thing));
@@ -330,7 +331,7 @@ void move_via_generic(dbref thing, dbref dest, dbref cause, int hush)
  * move_via_exit: Exit move routine, generic + exit messages + dropto check.
  */
 
-void move_via_exit(dbref thing, dbref dest, dbref cause, dbref exit, int hush)
+static void move_via_exit(dbref thing, dbref dest, dbref cause, dbref exit, int hush)
 {
     if (dest == HOME)
     {
@@ -440,7 +441,7 @@ bool move_via_teleport(dbref thing, dbref dest, dbref cause, int hush)
  * move_exit: Try to move a player through an exit.
  */
 
-dbref get_exit_dest(dbref executor, dbref exit)
+static dbref get_exit_dest(dbref executor, dbref exit)
 {
     dbref aowner;
     int   aflags;
@@ -577,6 +578,9 @@ void move_exit(dbref player, dbref exit, bool divest, const char *failmsg, int h
 
 void do_move(dbref executor, dbref caller, dbref enactor, int key, char *direction)
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+
     dbref exit, loc;
     int i, quiet;
 
@@ -636,6 +640,9 @@ void do_move(dbref executor, dbref caller, dbref enactor, int key, char *directi
 
 void do_get(dbref executor, dbref caller, dbref enactor, int key, char *what)
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+
     dbref playerloc;
     if (  !Has_location(executor)
        || !Good_obj(playerloc = Location(executor)))
@@ -791,6 +798,9 @@ void do_get(dbref executor, dbref caller, dbref enactor, int key, char *what)
 
 void do_drop(dbref executor, dbref caller, dbref enactor, int key, char *name)
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+
     dbref loc = Location(executor);
     if (!Good_obj(loc))
         return;
@@ -918,6 +928,9 @@ void do_enter_internal(dbref player, dbref thing, bool quiet)
 
 void do_enter(dbref executor, dbref caller, dbref enactor, int key, char *what)
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+
     init_match(executor, what, TYPE_THING);
     match_neighbor();
     if (Long_Fingers(executor))
@@ -945,6 +958,9 @@ void do_enter(dbref executor, dbref caller, dbref enactor, int key, char *what)
 
 void do_leave(dbref executor, dbref caller, dbref enactor, int key)
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+
     dbref loc = Location(executor);
     dbref newLoc = loc;
 
