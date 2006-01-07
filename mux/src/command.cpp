@@ -1,6 +1,6 @@
 // command.cpp -- command parser and support routines.
 //
-// $Id: command.cpp,v 1.69 2006/01/07 19:57:38 sdennis Exp $
+// $Id: command.cpp,v 1.70 2006/01/07 20:48:10 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -21,14 +21,6 @@
 
 extern void list_cf_access(dbref);
 extern void boot_slave(dbref executor, dbref caller, dbref enactor, int key);
-extern bool regexp_match
-(
-    char *pattern,
-    char *str,
-    int case_opt,
-    char *args[],
-    int nargs
-);
 
 // Switch tables for the various commands.
 //
