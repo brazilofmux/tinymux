@@ -1,6 +1,6 @@
 // eval.cpp -- Command evaluation and cracking.
 //
-// $Id: eval.cpp,v 1.31 2006/01/03 22:10:26 sdennis Exp $
+// $Id: eval.cpp,v 1.32 2006/01/07 23:09:47 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -466,7 +466,7 @@ TryAgain:
 // the characters to another buffer anyway and is more than able to perform the
 // escapes and trimming.
 //
-char *parse_to_lite(char **dstr, char delim1, char delim2, int *nLen, int *iWhichDelim)
+static char *parse_to_lite(char **dstr, char delim1, char delim2, int *nLen, int *iWhichDelim)
 {
 #define stacklim 32
     char stack[stacklim];
@@ -773,11 +773,13 @@ char *parse_arglist( dbref executor, dbref caller, dbref enactor, char *dstr,
     return dstr;
 }
 
-char *parse_arglist_lite( dbref executor, dbref caller, dbref enactor,
+static char *parse_arglist_lite( dbref executor, dbref caller, dbref enactor,
                           char *dstr, char delim, int eval, char *fargs[],
                           dbref nfargs, char *cargs[], dbref ncargs,
                           int *nArgsParsed)
 {
+    UNUSED_PARAMETER(delim);
+
     char *tstr, *bp, *str;
 
     if (dstr == NULL)
@@ -858,7 +860,7 @@ int get_gender(dbref player)
 // Trace cache routines.
 //
 typedef struct tcache_ent TCENT;
-struct tcache_ent
+static struct tcache_ent
 {
     dbref player;
     char *orig;
@@ -866,8 +868,8 @@ struct tcache_ent
     struct tcache_ent *next;
 } *tcache_head;
 
-bool tcache_top;
-int  tcache_count;
+static bool tcache_top;
+static int  tcache_count;
 
 void tcache_init(void)
 {
@@ -876,7 +878,7 @@ void tcache_init(void)
     tcache_count = 0;
 }
 
-bool tcache_empty(void)
+static bool tcache_empty(void)
 {
     if (tcache_top)
     {
@@ -1032,6 +1034,8 @@ char **PushPointers(int nNeeded)
 
 void PopPointers(char **p, int nNeeded)
 {
+    UNUSED_PARAMETER(p);
+
     if (pPtrsFrame->nptrs == PTRS_PER_FRAME)
     {
         PtrsFrame *q = pPtrsFrame->next;
@@ -1068,6 +1072,8 @@ int *PushIntegers(int nNeeded)
 
 void PopIntegers(int *pi, int nNeeded)
 {
+    UNUSED_PARAMETER(pi);
+
     if (pIntsFrame->nints == INTS_PER_FRAME)
     {
         IntsFrame *p = pIntsFrame->next;
@@ -2124,6 +2130,8 @@ void save_and_clear_global_regs
     int preserve_len[]
 )
 {
+    UNUSED_PARAMETER(funcname);
+
     int i;
 
     for (i = 0; i < MAX_GLOBAL_REGS; i++)
@@ -2143,6 +2151,8 @@ void restore_global_regs
     int preserve_len[]
 )
 {
+    UNUSED_PARAMETER(funcname);
+
     int i;
 
     for (i = 0; i < MAX_GLOBAL_REGS; i++)
