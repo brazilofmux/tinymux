@@ -1,6 +1,6 @@
 // db.cpp
 //
-// $Id: db.cpp,v 1.75 2006/01/07 09:07:15 sdennis Exp $
+// $Id: db.cpp,v 1.76 2006/01/07 18:17:49 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -23,18 +23,12 @@
 
 OBJ *db = NULL;
 
-extern void desc_addhash(DESC *);
-
 typedef struct atrcount ATRCOUNT;
 struct atrcount
 {
     dbref thing;
     int count;
 };
-
-// Check routine forward declaration.
-//
-extern void desc_reload(dbref);
 
 // list of attributes
 //
