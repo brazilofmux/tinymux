@@ -1,6 +1,6 @@
 // db.cpp
 //
-// $Id: db.cpp,v 1.76 2006-01-07 06:46:26 sdennis Exp $
+// $Id: db.cpp,v 1.77 2006-01-07 08:31:51 jake Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -707,10 +707,13 @@ void do_attribute
     if (bValid)
     {
         va = (ATTR *)vattr_find_LEN(pName, nName);
+        if (!va)
+        {
+            bValid = false;
+        }
     }
 
-    if (  !bValid
-       || !va)
+    if (!bValid)
     {
         notify(executor, "No such user-named attribute.");
         return;
