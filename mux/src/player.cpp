@@ -1,6 +1,6 @@
 // player.cpp
 //
-// $Id: player.cpp,v 1.36 2006-01-07 02:50:01 jake Exp $
+// $Id: player.cpp,v 1.37 2006-01-07 09:16:04 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -9,6 +9,7 @@
 #include "externs.h"
 
 #include "attrs.h"
+#include "command.h"
 #include "comsys.h"
 #include "functions.h"
 #include "interface.h"
@@ -200,7 +201,7 @@ const char Base64Table[65] =
 
 #define ENCODED_LENGTH(x) ((((x)+2)/3)*4)
 
-void EncodeBase64(size_t nIn, const char *pIn, char *pOut)
+static void EncodeBase64(size_t nIn, const char *pIn, char *pOut)
 {
     size_t nTriples  = nIn/3;
     size_t nLeftover = nIn%3;
@@ -262,7 +263,7 @@ const char szBlowfishPrefix[BLOWFISH_PREFIX_LENGTH+1] = "$2a$";
 #define SALT_LENGTH 9
 #define ENCODED_SALT_LENGTH ENCODED_LENGTH(SALT_LENGTH)
 
-const char *GenerateSalt(void)
+static const char *GenerateSalt(void)
 {
     char szSaltRaw[SALT_LENGTH+1];
     int i;
@@ -450,7 +451,7 @@ const char *mux_crypt(const char *szPassword, const char *szSetting, int *piType
  * check_pass: Test a password to see if it is correct.
  */
 
-bool check_pass(dbref player, const char *pPassword)
+static bool check_pass(dbref player, const char *pPassword)
 {
     bool bValidPass  = false;
     int  iType;
@@ -602,6 +603,11 @@ void do_password
     char *newpass
 )
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(key);
+    UNUSED_PARAMETER(nargs);
+
     dbref aowner;
     int   aflags;
     char *target = atr_get(executor, A_PASS, &aowner, &aflags);
@@ -638,6 +644,10 @@ static void disp_from_on(dbref player, char *dtm_str, char *host_str)
 
 void do_last(dbref executor, dbref caller, dbref enactor, int key, char *who)
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(key);
+
     dbref target, aowner;
     int i, aflags;
 

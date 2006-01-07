@@ -1,6 +1,6 @@
 // db.cpp
 //
-// $Id: db.cpp,v 1.77 2006-01-07 08:31:51 jake Exp $
+// $Id: db.cpp,v 1.78 2006-01-07 09:16:04 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -30,7 +30,6 @@ struct atrcount
 
 // Check routine forward declaration.
 //
-extern void pcache_reload(dbref);
 extern void desc_reload(dbref);
 
 // list of attributes

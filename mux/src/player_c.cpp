@@ -1,7 +1,7 @@
 /*! \file player_c.cpp
  * Player cache routines.
  *
- * $Id: player_c.cpp,v 1.16 2005-10-30 11:27:05 sdennis Exp $
+ * $Id: player_c.cpp,v 1.17 2006-01-07 09:16:04 sdennis Exp $
  *
  * Frequenty-used items which appear on every object generally find a home in
  * the db[] structure managed in db.cpp. However, there are a few items
@@ -32,11 +32,11 @@ typedef struct player_cache
 
 /*! \brief Hash Table which maps player dbref to PCACHE entry.
  */
-CHashTable pcache_htab;
+static CHashTable pcache_htab;
 
 /*! \brief The head of a singly-linked list of all PCACHE entries.
  */
-PCACHE *pcache_head;
+static PCACHE *pcache_head;
 
 #define PF_REF      0x0002
 #define PF_MONEY_CH 0x0004

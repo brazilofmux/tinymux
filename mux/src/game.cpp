@@ -1,6 +1,6 @@
 // game.cpp
 //
-// $Id: game.cpp,v 1.87 2006-01-07 06:22:30 sdennis Exp $
+// $Id: game.cpp,v 1.88 2006-01-07 09:16:04 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -25,7 +25,6 @@
 extern void init_attrtab(void);
 extern void init_cmdtab(void);
 extern void cf_init(void);
-extern void pcache_init(void);
 extern int  cf_read(void);
 extern void ValidateConfigurationDbrefs(void);
 extern void init_functab(void);
