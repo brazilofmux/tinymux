@@ -1,6 +1,6 @@
 // db.cpp
 //
-// $Id: db.cpp,v 1.75 2006-01-07 06:01:59 sdennis Exp $
+// $Id: db.cpp,v 1.76 2006-01-07 06:46:26 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -702,15 +702,15 @@ void do_attribute
     //
     int nName;
     bool bValid;
+    ATTR *va;
     char *pName = MakeCanonicalAttributeName(aname, &nName, &bValid);
-    if (!bValid)
+    if (bValid)
     {
-        notify(executor, "No such user-named attribute.");
-        return;
+        va = (ATTR *)vattr_find_LEN(pName, nName);
     }
 
-    ATTR *va = (ATTR *)vattr_find_LEN(pName, nName);
-    if (!va)
+    if (  !bValid
+       || !va)
     {
         notify(executor, "No such user-named attribute.");
         return;
