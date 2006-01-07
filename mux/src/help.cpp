@@ -1,6 +1,6 @@
 // help.cpp -- Commands for giving help.
 //
-// $Id: help.cpp,v 1.14 2005-10-24 16:52:17 sdennis Exp $
+// $Id: help.cpp,v 1.15 2006-01-07 20:47:33 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -44,17 +44,17 @@ void helpindex_clean(int iHelpfile)
     mudstate.aHelpDesc[iHelpfile].ht = NULL;
 }
 
-bool bHaveTopic;
-long pos;
-int lineno;
-int ntopics;
-FILE *rfp;
+static bool bHaveTopic;
+static long pos;
+static int lineno;
+static int ntopics;
+static FILE *rfp;
 
 #define LINE_SIZE 4096
-char Line[LINE_SIZE + 1];
-int  nLine;
+static char Line[LINE_SIZE + 1];
+static int  nLine;
 
-void HelpIndex_Start(FILE *fp)
+static void HelpIndex_Start(FILE *fp)
 {
     pos = 0L;
     lineno = 0;
@@ -64,7 +64,7 @@ void HelpIndex_Start(FILE *fp)
     nLine = 0;
 }
 
-bool HelpIndex_Read(help_indx *pEntry)
+static bool HelpIndex_Read(help_indx *pEntry)
 {
     for (;;)
     {
@@ -130,7 +130,7 @@ bool HelpIndex_Read(help_indx *pEntry)
     }
 }
 
-void HelpIndex_End(void)
+static void HelpIndex_End(void)
 {
     pos = 0L;
     lineno = 0;
@@ -138,7 +138,7 @@ void HelpIndex_End(void)
     rfp = NULL;
 }
 
-int helpindex_read(int iHelpfile)
+static int helpindex_read(int iHelpfile)
 {
     helpindex_clean(iHelpfile);
 
@@ -232,7 +232,7 @@ void helpindex_init(void)
     helpindex_load(NOTHING);
 }
 
-const char *MakeCanonicalTopicName(char *topic_arg)
+static const char *MakeCanonicalTopicName(char *topic_arg)
 {
     const char *topic;
     if (topic_arg[0] == '\0')
@@ -247,7 +247,7 @@ const char *MakeCanonicalTopicName(char *topic_arg)
     return topic;
 }
 
-void ReportMatchedTopics(dbref executor, const char *topic, CHashTable *htab)
+static void ReportMatchedTopics(dbref executor, const char *topic, CHashTable *htab)
 {
     bool matched = false;
     char *topic_list = NULL;
@@ -285,7 +285,7 @@ void ReportMatchedTopics(dbref executor, const char *topic, CHashTable *htab)
     }
 }
 
-bool ReportTopic(dbref executor, struct help_entry *htab_entry, int iHelpfile,
+static bool ReportTopic(dbref executor, struct help_entry *htab_entry, int iHelpfile,
     char *result)
 {
     char szTextFilename[SBUF_SIZE+8];
@@ -350,7 +350,7 @@ bool ReportTopic(dbref executor, struct help_entry *htab_entry, int iHelpfile,
     return true;
 }
 
-void help_write(dbref executor, char *topic_arg, int iHelpfile)
+static void help_write(dbref executor, char *topic_arg, int iHelpfile)
 {
     const char *topic = MakeCanonicalTopicName(topic_arg);
 
@@ -377,7 +377,7 @@ void help_write(dbref executor, char *topic_arg, int iHelpfile)
     }
 }
 
-bool ValidateHelpFileIndex(int iHelpfile)
+static bool ValidateHelpFileIndex(int iHelpfile)
 {
     if (  iHelpfile < 0
        || mudstate.mHelpDesc <= iHelpfile)
@@ -400,6 +400,9 @@ bool ValidateHelpFileIndex(int iHelpfile)
 
 void do_help(dbref executor, dbref caller, dbref enactor, int key, char *message)
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+
     int iHelpfile = key;
 
     if (!ValidateHelpFileIndex(iHelpfile))

@@ -17,7 +17,7 @@
 //   Name          Handler      # of args   min #    max #   flags  permissions
 //                               to parse  of args  of args
 //
-FUN local_funlist[] =
+static FUN local_funlist[] =
 {
     {NULL,          NULL,           MAX_ARG, 0,       0,         0, 0}
 };
@@ -27,37 +27,37 @@ FUN local_funlist[] =
 //
 //   Name       Switches    Permissions    Key Calling Seq   hook mask  Handler
 //
-CMDENT_NO_ARG local_command_table_no_arg[] =
+static CMDENT_NO_ARG local_command_table_no_arg[] =
 {
     {NULL,          NULL,       0,           0,          0,          0, NULL}
 };
 
-CMDENT_ONE_ARG local_command_table_one_arg[] =
+static CMDENT_ONE_ARG local_command_table_one_arg[] =
 {
     {NULL,          NULL,       0,           0,          0,          0, NULL}
 };
 
-CMDENT_ONE_ARG_CMDARG local_command_table_one_arg_cmdarg[] =
+static CMDENT_ONE_ARG_CMDARG local_command_table_one_arg_cmdarg[] =
 {
     {NULL,          NULL,       0,           0,          0,          0, NULL}
 };
 
-CMDENT_TWO_ARG local_command_table_two_arg[] =
+static CMDENT_TWO_ARG local_command_table_two_arg[] =
 {
     {NULL,          NULL,       0,           0,          0,          0, NULL}
 };
 
-CMDENT_TWO_ARG_CMDARG local_command_table_two_arg_cmdarg[] =
+static CMDENT_TWO_ARG_CMDARG local_command_table_two_arg_cmdarg[] =
 {
     {NULL,          NULL,       0,           0,          0,          0, NULL}
 };
 
-CMDENT_TWO_ARG_ARGV local_command_table_two_arg_argv[] =
+static CMDENT_TWO_ARG_ARGV local_command_table_two_arg_argv[] =
 {
     {NULL,          NULL,       0,           0,          0,          0, NULL}
 };
 
-CMDENT_TWO_ARG_ARGV_CMDARG local_command_table_two_argv_cmdarg[] =
+static CMDENT_TWO_ARG_ARGV_CMDARG local_command_table_two_argv_cmdarg[] =
 {
     {NULL,          NULL,       0,           0,          0,          0, NULL}
 };
@@ -117,6 +117,7 @@ void local_presync_database_sigsegv(void)
 //
 void local_dump_database(int dump_type)
 {
+    UNUSED_PARAMETER(dump_type);
 }
 
 // The function is called when the dumping process has completed. Typically,
@@ -150,6 +151,9 @@ void local_dbck(void)
 //
 void local_connect(dbref player, int isnew, int num)
 {
+    UNUSED_PARAMETER(player);
+    UNUSED_PARAMETER(isnew);
+    UNUSED_PARAMETER(num);
 }
 
 // Called when player disconnects from the game.  The parameter 'num' is
@@ -158,12 +162,15 @@ void local_connect(dbref player, int isnew, int num)
 //
 void local_disconnect(dbref player, int num)
 {
+    UNUSED_PARAMETER(player);
+    UNUSED_PARAMETER(num);
 }
 
 // Called after any object type is created.
 //
 void local_data_create(dbref object)
 {
+    UNUSED_PARAMETER(object);
 }
 
 // Called when an object is cloned.  clone is the new object created
@@ -171,10 +178,13 @@ void local_data_create(dbref object)
 //
 void local_data_clone(dbref clone, dbref source)
 {
+    UNUSED_PARAMETER(clone);
+    UNUSED_PARAMETER(source);
 }
 
 // Called when the object is truly destroyed, not just set GOING
 //
 void local_data_free(dbref object)
 {
+    UNUSED_PARAMETER(object);
 }
