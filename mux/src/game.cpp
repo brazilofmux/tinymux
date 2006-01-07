@@ -1,6 +1,6 @@
 // game.cpp
 //
-// $Id: game.cpp,v 1.85 2006-01-01 22:47:02 sdennis Exp $
+// $Id: game.cpp,v 1.86 2006-01-07 01:55:27 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -30,8 +30,6 @@ extern int  cf_read(void);
 extern void ValidateConfigurationDbrefs(void);
 extern void init_functab(void);
 extern void close_sockets(bool emergency, char *message);
-extern void build_version(void);
-extern void init_version(void);
 extern void init_logout_cmdtab(void);
 extern void raw_notify(dbref, const char *);
 extern void do_dbck(dbref executor, dbref caller, dbref enactor, int);
