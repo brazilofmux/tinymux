@@ -1,6 +1,6 @@
 // alloc.h -- External definitions for memory allocation subsystem.
 //
-// $Id: alloc.h,v 1.4 2006-01-07 02:42:46 jake Exp $
+// $Id: alloc.h,v 1.5 2006-01-07 07:25:27 sdennis Exp $
 //
 
 #ifndef M_ALLOC_H
@@ -32,6 +32,7 @@ extern void pool_free(int, char *, const char *, int);
 extern void pool_free_lbuf(char *, const char *, int);
 extern void list_bufstats(dbref);
 extern void list_buftrace(dbref);
+extern void pool_reset(void);
 
 #define alloc_lbuf(s)   pool_alloc_lbuf(s, __FILE__, __LINE__)
 #define free_lbuf(b)    pool_free_lbuf((char *)(b), __FILE__, __LINE__)

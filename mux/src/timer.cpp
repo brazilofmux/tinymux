@@ -1,6 +1,6 @@
 // timer.cpp -- Mini-task scheduler for timed events.
 //
-// $Id: timer.cpp,v 1.18 2006-01-01 18:20:57 sdennis Exp $
+// $Id: timer.cpp,v 1.19 2006-01-07 07:25:27 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -12,16 +12,15 @@
 #include "command.h"
 #include "mguests.h"
 
-extern void pool_reset(void);
-extern void fork_and_dump(int key);
-extern void pcache_trim(void);
-
 CScheduler scheduler;
 
 // Free List Reconstruction Task routine.
 //
 void dispatch_FreeListReconstruction(void *pUnused, int iUnused)
 {
+    UNUSED_PARAMETER(pUnused);
+    UNUSED_PARAMETER(iUnused);
+
     if (mudconf.control_flags & CF_DBCHECK)
     {
         char *cmdsave = mudstate.debug_cmd;
@@ -48,6 +47,9 @@ void dispatch_FreeListReconstruction(void *pUnused, int iUnused)
 //
 void dispatch_DatabaseDump(void *pUnused, int iUnused)
 {
+    UNUSED_PARAMETER(pUnused);
+    UNUSED_PARAMETER(iUnused);
+
     int nNextTimeInSeconds = mudconf.dump_interval;
 
     if (mudconf.control_flags & CF_CHECKPOINT)
@@ -86,6 +88,9 @@ void dispatch_DatabaseDump(void *pUnused, int iUnused)
 //
 void dispatch_IdleCheck(void *pUnused, int iUnused)
 {
+    UNUSED_PARAMETER(pUnused);
+    UNUSED_PARAMETER(iUnused);
+
     if (mudconf.control_flags & CF_IDLECHECK)
     {
         char *cmdsave = mudstate.debug_cmd;
@@ -108,6 +113,9 @@ void dispatch_IdleCheck(void *pUnused, int iUnused)
 //
 void dispatch_CheckEvents(void *pUnused, int iUnused)
 {
+    UNUSED_PARAMETER(pUnused);
+    UNUSED_PARAMETER(iUnused);
+
     if (mudconf.control_flags & CF_EVENTCHECK)
     {
         char *cmdsave = mudstate.debug_cmd;
@@ -128,6 +136,9 @@ void dispatch_CheckEvents(void *pUnused, int iUnused)
 #ifndef MEMORY_BASED
 void dispatch_CacheTick(void *pUnused, int iUnused)
 {
+    UNUSED_PARAMETER(pUnused);
+    UNUSED_PARAMETER(iUnused);
+
     char *cmdsave = mudstate.debug_cmd;
     mudstate.debug_cmd = (char *)"< cachetick >";
 
@@ -167,14 +178,19 @@ void dispatch_CleanChannels(void *pUnused, int iUnused)
 }
 #endif // 0
 
-void dispatch_CanRestart(void *pUnused, int iUnused)
+static void dispatch_CanRestart(void *pUnused, int iUnused)
 {
+    UNUSED_PARAMETER(pUnused);
+    UNUSED_PARAMETER(iUnused);
     mudstate.bCanRestart = true;
 }
 
 #ifdef WIN32
-void dispatch_CalibrateQueryPerformance(void *pUnused, int iUnused)
+static void dispatch_CalibrateQueryPerformance(void *pUnused, int iUnused)
 {
+    UNUSED_PARAMETER(pUnused);
+    UNUSED_PARAMETER(iUnused);
+
     CLinearTimeAbsolute ltaNextTime;
     ltaNextTime.GetUTC();
     CLinearTimeDelta ltd = time_30s;
@@ -392,7 +408,7 @@ void CTaskHeap::CancelTask(FTASK *fpTask, void *arg_voidptr, int arg_Integer)
     }
 }
 
-int ComparePriority(PTASK_RECORD pTaskA, PTASK_RECORD pTaskB)
+static int ComparePriority(PTASK_RECORD pTaskA, PTASK_RECORD pTaskB)
 {
     int i = (pTaskA->iPriority) - (pTaskB->iPriority);
     if (i == 0)
@@ -404,7 +420,7 @@ int ComparePriority(PTASK_RECORD pTaskA, PTASK_RECORD pTaskB)
     return i;
 }
 
-int CompareWhen(PTASK_RECORD pTaskA, PTASK_RECORD pTaskB)
+static int CompareWhen(PTASK_RECORD pTaskA, PTASK_RECORD pTaskB)
 {
     // Can't simply subtract because comparing involves a truncation cast.
     //

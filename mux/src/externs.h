@@ -1,6 +1,6 @@
 // externs.h -- Prototypes for externs not defined elsewhere.
 //
-// $Id: externs.h,v 1.51 2006-01-07 06:22:30 sdennis Exp $
+// $Id: externs.h,v 1.52 2006-01-07 07:25:27 sdennis Exp $
 //
 
 #ifndef EXTERNS_H
@@ -126,6 +126,7 @@ extern bool html_escape(const char *src, char *dest, char **destp);
 #define DUMP_I_SIGNAL    4  // UNLOAD to a .FLAT file from signal.
 #define NUM_DUMP_TYPES   5
 extern void dump_database_internal(int);
+extern void fork_and_dump(int key);
 
 /* From help.cpp */
 extern void helpindex_clean(int);
@@ -780,7 +781,21 @@ extern FGETPROCESSTIMES *fpGetProcessTimes;
 extern pid_t game_pid;
 #endif // WIN32
 
+// From timer.cpp
+//
 extern void init_timer(void);
+#ifdef WIN32
+void Task_FreeDescriptor(void *arg_voidptr, int arg_Integer);
+void Task_DeferredClose(void *arg_voidptr, int arg_Integer);
+#endif
+void dispatch_DatabaseDump(void *pUnused, int iUnused);
+void dispatch_FreeListReconstruction(void *pUnused, int iUnused);
+void dispatch_IdleCheck(void *pUnused, int iUnused);
+void dispatch_CheckEvents(void *pUnused, int iUnused);
+#ifndef MEMORY_BASED
+void dispatch_CacheTick(void *pUnused, int iUnused);
+#endif
+
 
 // Using a heap as the data structure for representing this priority
 // has some attributes which we depend on:
@@ -933,6 +948,7 @@ extern void init_version(void);
 // From player_c.cpp
 //
 extern void pcache_sync(void);
+extern void pcache_trim(void);
 
 // From attrcache.cpp
 //
