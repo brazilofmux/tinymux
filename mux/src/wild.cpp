@@ -1,6 +1,6 @@
 // wild.cpp -- Wildcard routines.
 //
-// $Id: wild.cpp,v 1.8 2004-06-10 15:24:24 sdennis Exp $
+// $Id: wild.cpp,v 1.9 2006-01-07 01:36:28 sdennis Exp $
 //
 // Written by T. Alexander Popiel, 24 June 1993
 // Last modified by T. Alexander Popiel, 19 August 1993
@@ -144,7 +144,7 @@ bool quick_wild(const char *tstr, const char *dstr)
 //
 // Side Effect: this routine modifies the 'arglist' static global variable.
 //
-bool wild1(char *tstr, char *dstr, int arg)
+static bool wild1(char *tstr, char *dstr, int arg)
 {
     if (mudstate.wild_invk_ctr >= mudconf.wild_invk_lim)
     {
@@ -288,7 +288,7 @@ bool wild1(char *tstr, char *dstr, int arg)
     // Check for possible matches.  This loop terminates either at end of data
     // (resulting in failure), or at a successful match.
     //
-    while (true)
+    for (;;)
     {
         // Scan forward until first character matches.
         //
@@ -459,7 +459,9 @@ bool wild_match(char *tstr, const char *dstr)
         if (  mux_isdigit(*tstr)
            || *tstr == '-')
         {
-            return (mux_atol(tstr) < mux_atol(dstr));
+            long lt = mux_atol(tstr);
+            long ld = mux_atol(dstr);
+            return (lt < ld);
         }
         else
         {
@@ -472,7 +474,9 @@ bool wild_match(char *tstr, const char *dstr)
         if (  mux_isdigit(*tstr)
            || *tstr == '-')
         {
-            return (mux_atol(tstr) > mux_atol(dstr));
+            long lt = mux_atol(tstr);
+            long ld = mux_atol(dstr);
+            return (lt > ld);
         }
         else
         {

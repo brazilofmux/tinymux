@@ -1,6 +1,6 @@
 // wiz.cpp -- Wizard-only commands.
 //
-// $Id: wiz.cpp,v 1.15 2005-08-05 15:35:14 sdennis Exp $
+// $Id: wiz.cpp,v 1.16 2006-01-07 01:35:09 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -13,7 +13,7 @@
 #include "file_c.h"
 #include "powers.h"
 
-void do_teleport_single
+static void do_teleport_single
 (
     dbref executor,
     dbref caller,
@@ -23,6 +23,9 @@ void do_teleport_single
     char *to
 )
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+
     dbref loc;
     int   hush = 0;
 
@@ -284,6 +287,9 @@ void do_force_prefixed( dbref executor, dbref caller, dbref enactor, int key,
 void do_force( dbref executor, dbref caller, dbref enactor, int key,
                char *what, char *command, char *args[], int nargs )
 {
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(key);
+
     dbref victim = match_controlled(executor, what);
     if (victim != NOTHING)
     {
@@ -309,6 +315,9 @@ void do_toad
     char *newowner
 )
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+
     dbref victim, recipient, loc, aowner;
     char *buf;
     int count, aflags;
@@ -427,6 +436,11 @@ void do_newpassword
     char *password
 )
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(key);
+    UNUSED_PARAMETER(nargs);
+
     dbref victim = lookup_player(executor, name, false);
     if (victim == NOTHING)
     {
@@ -487,6 +501,9 @@ void do_newpassword
 
 void do_boot(dbref executor, dbref caller, dbref enactor, int key, char *name)
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+
     if (!Can_Boot(executor))
     {
         notify(executor, NOPERM_MESSAGE);
@@ -569,6 +586,11 @@ void do_boot(dbref executor, dbref caller, dbref enactor, int key, char *name)
 //
 void do_poor(dbref executor, dbref caller, dbref enactor, int key, char *arg1)
 {
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(key);
+
     if (!is_rational(arg1))
     {
         return;
@@ -595,6 +617,10 @@ void do_poor(dbref executor, dbref caller, dbref enactor, int key, char *arg1)
 //
 void do_cut(dbref executor, dbref caller, dbref enactor, int key, char *thing)
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(key);
+
     dbref object = match_controlled(executor, thing);
     if (Good_obj(object))
     {
@@ -608,6 +634,9 @@ void do_cut(dbref executor, dbref caller, dbref enactor, int key, char *thing)
 //
 void do_motd(dbref executor, dbref caller, dbref enactor, int key, char *message)
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+
     bool is_brief = false;
 
     if (key & MOTD_BRIEF)
@@ -723,6 +752,9 @@ NAMETAB enable_names[] =
 
 void do_global(dbref executor, dbref caller, dbref enactor, int key, char *flag)
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+
     // Set or clear the indicated flag.
     //
     int flagvalue;
