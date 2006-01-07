@@ -1,6 +1,6 @@
 // svdreport.cpp -- Aggregate User Statistics module.
 //
-// $Id: svdreport.cpp,v 1.4 2004/06/10 15:27:14 sdennis Exp $
+// $Id: svdreport.cpp,v 1.5 2006/01/07 07:35:24 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -14,8 +14,12 @@
 #include "attrs.h"
 
 #define NPERIODS 24
-void do_report(dbref executor, dbref caller, dbref enactor, int extra)
+static void do_report(dbref executor, dbref caller, dbref enactor, int extra)
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(extra);
+
     char *buff = alloc_mbuf("do_report");
     int nBin[NPERIODS];
     int i;
