@@ -1,6 +1,6 @@
 // externs.h -- Prototypes for externs not defined elsewhere.
 //
-// $Id: externs.h,v 1.55 2006-01-07 09:16:04 sdennis Exp $
+// $Id: externs.h,v 1.56 2006-01-07 09:22:35 sdennis Exp $
 //
 
 #ifndef EXTERNS_H
@@ -969,8 +969,12 @@ extern void cache_redirect(void);
 extern void cache_pass2(void);
 extern CLinearTimeAbsolute cs_ltime;
 
-// speech.cpp
+// From speech.cpp
 //
 extern char *modSpeech(dbref player, char *message, bool bWhich, char *command);
+
+// From funceval.cpp
+//
+extern void stack_clr(dbref obj);
 
 #endif // EXTERNS_H

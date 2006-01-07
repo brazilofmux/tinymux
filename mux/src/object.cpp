@@ -1,6 +1,6 @@
 // object.cpp -- Low-level object manipulation routines.
 //
-// $Id: object.cpp,v 1.15 2005-06-28 21:47:10 sdennis Exp $
+// $Id: object.cpp,v 1.16 2006-01-07 09:22:35 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -395,15 +395,13 @@ dbref create_obj(dbref player, int objtype, const char *name, int cost)
     return obj;
 }
 
-extern void stack_clr(dbref obj);
-
 /*
  * ---------------------------------------------------------------------------
  * * destroy_obj: Destroy an object.  Assumes it has already been removed from
  * * all lists and has no contents or exits.
  */
 
-void destroy_bad_obj(dbref obj)
+static void destroy_bad_obj(dbref obj)
 {
     if (!mudstate.bStandAlone)
     {
@@ -1703,6 +1701,9 @@ static void check_floating(void)
 
 void do_dbck(dbref executor, dbref caller, dbref enactor, int key)
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+
     check_type = key;
     check_dead_refs();
     check_exit_chains();
