@@ -1,6 +1,6 @@
 // boolexp.cpp
 //
-// $Id: boolexp.cpp,v 1.16 2004-08-16 05:14:07 sdennis Exp $
+// $Id: boolexp.cpp,v 1.17 2006-01-07 02:45:38 jake Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -303,7 +303,8 @@ static BOOLEXP *parse_boolexp_E(void);
 static BOOLEXP *test_atr(char *s)
 {
     char *s1;
-    int anum, locktype;
+    int anum;
+    boolexp_type locktype;
 
     char *buff = alloc_lbuf("test_atr");
     strcpy(buff, s);
