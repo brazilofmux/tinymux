@@ -1,6 +1,6 @@
 // conf.cpp -- Set up configuration information and static data.
 //
-// $Id: conf.cpp,v 1.66 2006/01/07 08:00:51 sdennis Exp $
+// $Id: conf.cpp,v 1.67 2006/01/07 19:57:38 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -33,8 +33,6 @@ typedef struct confparm
 CONFDATA mudconf;
 STATEDATA mudstate;
 
-extern NAMETAB logdata_nametab[];
-extern NAMETAB logoptions_nametab[];
 extern NAMETAB access_nametab[];
 extern NAMETAB attraccess_nametab[];
 extern NAMETAB list_names[];
