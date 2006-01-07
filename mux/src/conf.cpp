@@ -1,6 +1,6 @@
 // conf.cpp -- Set up configuration information and static data.
 //
-// $Id: conf.cpp,v 1.65 2005-12-29 17:47:40 sdennis Exp $
+// $Id: conf.cpp,v 1.66 2006-01-07 07:59:35 jake Exp $
 //
 
 #include "copyright.h"
@@ -447,6 +447,10 @@ CF_HAND(cf_rlevel)
 //
 CF_HAND(cf_int_array)
 {
+    UNUSED_PARAMETER(pExtra);
+    UNUSED_PARAMETER(player);
+    UNUSED_PARAMETER(cmd);
+
     int *aPorts = (int *)MEMALLOC(nExtra*sizeof(int));
     ISOUTOFMEMORY(aPorts);
     unsigned int nPorts = 0;
@@ -493,6 +497,11 @@ CF_HAND(cf_int_array)
 //
 CF_HAND(cf_int)
 {
+    UNUSED_PARAMETER(pExtra);
+    UNUSED_PARAMETER(nExtra);
+    UNUSED_PARAMETER(player);
+    UNUSED_PARAMETER(cmd);
+
     // Copy the numeric value to the parameter.
     //
     *vp = mux_atol(str);
@@ -504,6 +513,11 @@ CF_HAND(cf_int)
 //
 CF_HAND(cf_dbref)
 {
+    UNUSED_PARAMETER(pExtra);
+    UNUSED_PARAMETER(nExtra);
+    UNUSED_PARAMETER(player);
+    UNUSED_PARAMETER(cmd);
+
     char *p = str;
     while (mux_isspace(*p))
     {
@@ -525,6 +539,11 @@ CF_HAND(cf_dbref)
 //
 CF_HAND(cf_seconds)
 {
+    UNUSED_PARAMETER(pExtra);
+    UNUSED_PARAMETER(nExtra);
+    UNUSED_PARAMETER(player);
+    UNUSED_PARAMETER(cmd);
+
     CLinearTimeDelta *pltd = (CLinearTimeDelta *)vp;
     pltd->SetSecondsString(str);
     return 0;
@@ -546,6 +565,9 @@ NAMETAB bool_names[] =
 
 CF_HAND(cf_bool)
 {
+    UNUSED_PARAMETER(pExtra);
+    UNUSED_PARAMETER(nExtra);
+
     int i;
     if (!search_nametab(GOD, bool_names, str, &i))
     {
@@ -562,6 +584,8 @@ CF_HAND(cf_bool)
 //
 CF_HAND(cf_option)
 {
+    UNUSED_PARAMETER(nExtra);
+
     int i;
     if (!search_nametab(GOD, (NAMETAB *)pExtra, str, &i))
     {
@@ -577,6 +601,8 @@ CF_HAND(cf_option)
 //
 CF_HAND(cf_string)
 {
+    UNUSED_PARAMETER(pExtra);
+
     char *pc = (char *)vp;
 
     // The following should never happen because extra is always a non-zero
@@ -640,6 +666,8 @@ CF_HAND(cf_string)
 //
 CF_HAND(cf_string_dyn)
 {
+    UNUSED_PARAMETER(pExtra);
+
     char **ppc = (char **)vp;
 
     // Allocate memory for buffer and copy string to it. If nExtra is non-zero,
@@ -680,6 +708,9 @@ CF_HAND(cf_string_dyn)
 //
 CF_HAND(cf_alias)
 {
+    UNUSED_PARAMETER(pExtra);
+    UNUSED_PARAMETER(nExtra);
+
     MUX_STRTOK_STATE tts;
     mux_strtok_src(&tts, str);
     mux_strtok_ctl(&tts, " \t=,");
@@ -714,6 +745,10 @@ CF_HAND(cf_alias)
 //
 CF_HAND(cf_flagalias)
 {
+    UNUSED_PARAMETER(vp);
+    UNUSED_PARAMETER(pExtra);
+    UNUSED_PARAMETER(nExtra);
+
     MUX_STRTOK_STATE tts;
     mux_strtok_src(&tts, str);
     mux_strtok_ctl(&tts, " \t=,");
@@ -725,16 +760,19 @@ CF_HAND(cf_flagalias)
     bool bValid;
     void *cp;
     char *pName = MakeCanonicalFlagName(orig, &nName, &bValid);
-    if (  bValid
-       && (cp = hashfindLEN(pName, nName, &mudstate.flags_htab)))
+    if (bValid)
     {
-        pName = MakeCanonicalFlagName(alias, &nName, &bValid);
-        if (bValid)
+        cp = hashfindLEN(pName, nName, &mudstate.flags_htab);
+        if (cp)
         {
-            if (!hashfindLEN(pName, nName, &mudstate.flags_htab))
+            pName = MakeCanonicalFlagName(alias, &nName, &bValid);
+            if (bValid)
             {
-                hashaddLEN(pName, nName, cp, &mudstate.flags_htab);
-                success = true;
+                if (!hashfindLEN(pName, nName, &mudstate.flags_htab))
+                {
+                   hashaddLEN(pName, nName, cp, &mudstate.flags_htab);
+                    success = true;
+               }
             }
         }
     }
@@ -750,6 +788,10 @@ CF_HAND(cf_flagalias)
 //
 CF_HAND(cf_poweralias)
 {
+    UNUSED_PARAMETER(vp);
+    UNUSED_PARAMETER(pExtra);
+    UNUSED_PARAMETER(nExtra);
+
     MUX_STRTOK_STATE tts;
     mux_strtok_src(&tts, str);
     mux_strtok_ctl(&tts, " \t=,");
@@ -761,14 +803,17 @@ CF_HAND(cf_poweralias)
     bool bValid;
     void *cp;
     char *pName = MakeCanonicalFlagName(orig, &nName, &bValid);
-    if (  bValid
-       && (cp = hashfindLEN(pName, nName, &mudstate.powers_htab)))
+    if (bValid)
     {
-        pName = MakeCanonicalFlagName(alias, &nName, &bValid);
-        if (bValid)
+        cp = hashfindLEN(pName, nName, &mudstate.powers_htab);
+        if (cp)
         {
-            hashaddLEN(pName, nName, cp, &mudstate.powers_htab);
-            success = true;
+            pName = MakeCanonicalFlagName(alias, &nName, &bValid);
+            if (bValid)
+            {
+                hashaddLEN(pName, nName, cp, &mudstate.powers_htab);
+                success = true;
+            }
         }
     }
     if (!success)
@@ -783,6 +828,8 @@ CF_HAND(cf_poweralias)
 //
 CF_HAND(cf_or_in_bits)
 {
+    UNUSED_PARAMETER(nExtra);
+
     int f, success, failure;
 
     // Walk through the tokens.
@@ -819,6 +866,8 @@ CF_HAND(cf_or_in_bits)
 //
 CF_HAND(cf_modify_bits)
 {
+    UNUSED_PARAMETER(nExtra);
+
     int f, success, failure;
     bool negate;
 
@@ -868,6 +917,8 @@ CF_HAND(cf_modify_bits)
 //
 CF_HAND(cf_set_bits)
 {
+    UNUSED_PARAMETER(nExtra);
+
     int f, success, failure;
 
     // Walk through the tokens
@@ -906,6 +957,9 @@ CF_HAND(cf_set_bits)
 //
 CF_HAND(cf_set_flags)
 {
+    UNUSED_PARAMETER(pExtra);
+    UNUSED_PARAMETER(nExtra);
+
     int success, failure;
 
     // Walk through the tokens.
@@ -981,6 +1035,11 @@ CF_HAND(cf_set_flags)
 //
 CF_HAND(cf_badname)
 {
+    UNUSED_PARAMETER(vp);
+    UNUSED_PARAMETER(pExtra);
+    UNUSED_PARAMETER(player);
+    UNUSED_PARAMETER(cmd);
+
     if (nExtra)
         badname_remove(str);
     else
@@ -1241,6 +1300,8 @@ bool isValidSubnetMask(in_addr_t ulMask)
 
 CF_HAND(cf_site)
 {
+    UNUSED_PARAMETER(pExtra);
+
     SITE **ppv = (SITE **)vp;
     struct in_addr addr_num, mask_num;
     in_addr_t ulMask, ulNetBits;
@@ -1371,6 +1432,9 @@ CF_HAND(cf_site)
 //
 CF_HAND(cf_cf_access)
 {
+    UNUSED_PARAMETER(vp);
+    UNUSED_PARAMETER(pExtra);
+
     CONF *tp;
     char *ap;
 
@@ -1502,11 +1566,19 @@ int add_helpfile(dbref player, char *cmd, char *str, bool bRaw)
 
 CF_HAND(cf_helpfile)
 {
+    UNUSED_PARAMETER(vp);
+    UNUSED_PARAMETER(pExtra);
+    UNUSED_PARAMETER(nExtra);
+
     return add_helpfile(player, cmd, str, false);
 }
 
 CF_HAND(cf_raw_helpfile)
 {
+    UNUSED_PARAMETER(vp);
+    UNUSED_PARAMETER(pExtra);
+    UNUSED_PARAMETER(nExtra);
+
     return add_helpfile(player, cmd, str, true);
 }
 
@@ -1528,6 +1600,11 @@ NAMETAB hook_names[] =
 
 CF_HAND(cf_hook)
 {
+    UNUSED_PARAMETER(pExtra);
+    UNUSED_PARAMETER(nExtra);
+    UNUSED_PARAMETER(player);
+    UNUSED_PARAMETER(cmd);
+
     char *hookcmd, *hookptr, playbuff[201];
     int hookflg;
     CMDENT *cmdp;
@@ -1585,6 +1662,10 @@ CF_HAND(cf_hook)
 //
 CF_HAND(cf_include)
 {
+    UNUSED_PARAMETER(vp);
+    UNUSED_PARAMETER(pExtra);
+    UNUSED_PARAMETER(nExtra);
+
     extern int cf_set(char *, char *, dbref);
 
     if (!mudstate.bReadingConfiguration)
@@ -2015,6 +2096,11 @@ void do_admin
     char *value
 )
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(extra);
+    UNUSED_PARAMETER(nargs);
+
     int i = cf_set(kw, value, executor);
     if ((i >= 0) && !Quiet(executor))
     {
