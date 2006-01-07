@@ -1,7 +1,7 @@
 /*! \file htab.cpp
  *  Table hashing routines.
  *
- * $Id: htab.cpp,v 1.29 2005-11-27 04:03:38 sdennis Exp $
+ * $Id: htab.cpp,v 1.30 2006-01-07 07:13:26 jake Exp $
  *
  * The functions here outsource most of their work to CHashTable.  There are
  * several reasons to use the functions here instead of using CHashTable
@@ -132,8 +132,8 @@ int hashaddLEN(const void *pKey, size_t nKey, void *pData, CHashTable *htab)
 
     htab_rec.pData = pData;
     memcpy(htab_rec.aKey, pKey, nKey);
-    unsigned int nRecord = nKey + sizeof(void *);
-    htab->Insert(nRecord, nHash, &htab_rec);
+    size_t nRecord = nKey + sizeof(void *);
+    htab->Insert((HP_HEAPLENGTH)nRecord, nHash, &htab_rec);
     return 0;
 }
 
