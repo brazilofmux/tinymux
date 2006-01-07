@@ -1,6 +1,6 @@
 // conf.cpp -- Set up configuration information and static data.
 //
-// $Id: conf.cpp,v 1.66 2006-01-07 07:59:35 jake Exp $
+// $Id: conf.cpp,v 1.67 2006-01-07 08:06:02 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -1761,15 +1761,6 @@ CF_HAND(cf_include)
     }
     return 0;
 }
-
-extern CF_HAND(cf_access);
-extern CF_HAND(cf_cmd_alias);
-extern CF_HAND(cf_acmd_access);
-extern CF_HAND(cf_attr_access);
-extern CF_HAND(cf_func_access);
-extern CF_HAND(cf_flag_access);
-extern CF_HAND(cf_flag_name);
-extern CF_HAND(cf_art_rule);
 
 // ---------------------------------------------------------------------------
 // conftable: Table for parsing the configuration file.

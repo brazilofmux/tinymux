@@ -1,6 +1,6 @@
 // externs.h -- Prototypes for externs not defined elsewhere.
 //
-// $Id: externs.h,v 1.52 2006-01-07 07:25:27 sdennis Exp $
+// $Id: externs.h,v 1.53 2006-01-07 08:06:02 sdennis Exp $
 //
 
 #ifndef EXTERNS_H
@@ -22,6 +22,15 @@ void CleanUpSQLSlaveProcess(void);
 /* From conf.cpp */
 extern void cf_log_notfound(dbref, char *, const char *, char *);
 extern int  cf_modify_bits(int *, char *, void *, UINT32, dbref, char *);
+extern void DCL_CDECL cf_log_syntax(dbref player, char *cmd, const char *fmt, ...);
+extern CF_HAND(cf_access);
+extern CF_HAND(cf_cmd_alias);
+extern CF_HAND(cf_acmd_access);
+extern CF_HAND(cf_attr_access);
+extern CF_HAND(cf_func_access);
+extern CF_HAND(cf_flag_access);
+extern CF_HAND(cf_flag_name);
+extern CF_HAND(cf_art_rule);
 
 /* From local.cpp */
 extern void local_startup(void);
