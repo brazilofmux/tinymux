@@ -1,6 +1,6 @@
 // game.cpp
 //
-// $Id: game.cpp,v 1.86 2006-01-07 01:55:27 sdennis Exp $
+// $Id: game.cpp,v 1.87 2006-01-07 06:22:30 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -2197,14 +2197,12 @@ void dbconvert(void)
     //
     if (do_redirect)
     {
-        extern void cache_redirect(void);
         cache_redirect();
     }
     setvbuf(fpIn, NULL, _IOFBF, 16384);
     db_read(fpIn, &db_format, &db_ver, &db_flags);
     if (do_redirect)
     {
-        extern void cache_pass2(void);
         cache_pass2();
     }
     Log.WriteString("Input: ");
