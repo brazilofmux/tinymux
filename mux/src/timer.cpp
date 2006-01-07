@@ -1,6 +1,6 @@
 // timer.cpp -- Mini-task scheduler for timed events.
 //
-// $Id: timer.cpp,v 1.18 2006/01/07 07:15:29 sdennis Exp $
+// $Id: timer.cpp,v 1.19 2006/01/07 07:18:56 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -20,7 +20,7 @@ CScheduler scheduler;
 
 // Free List Reconstruction Task routine.
 //
-static void dispatch_FreeListReconstruction(void *pUnused, int iUnused)
+void dispatch_FreeListReconstruction(void *pUnused, int iUnused)
 {
     UNUSED_PARAMETER(pUnused);
     UNUSED_PARAMETER(iUnused);
@@ -49,7 +49,7 @@ static void dispatch_FreeListReconstruction(void *pUnused, int iUnused)
 
 // Database Dump Task routine.
 //
-static void dispatch_DatabaseDump(void *pUnused, int iUnused)
+void dispatch_DatabaseDump(void *pUnused, int iUnused)
 {
     UNUSED_PARAMETER(pUnused);
     UNUSED_PARAMETER(iUnused);
@@ -90,7 +90,7 @@ static void dispatch_DatabaseDump(void *pUnused, int iUnused)
 
 // Idle Check Task routine.
 //
-static void dispatch_IdleCheck(void *pUnused, int iUnused)
+void dispatch_IdleCheck(void *pUnused, int iUnused)
 {
     UNUSED_PARAMETER(pUnused);
     UNUSED_PARAMETER(iUnused);
@@ -115,7 +115,7 @@ static void dispatch_IdleCheck(void *pUnused, int iUnused)
 
 // Check Events Task routine.
 //
-static void dispatch_CheckEvents(void *pUnused, int iUnused)
+void dispatch_CheckEvents(void *pUnused, int iUnused)
 {
     UNUSED_PARAMETER(pUnused);
     UNUSED_PARAMETER(iUnused);
@@ -138,7 +138,7 @@ static void dispatch_CheckEvents(void *pUnused, int iUnused)
 }
 
 #ifndef MEMORY_BASED
-static void dispatch_CacheTick(void *pUnused, int iUnused)
+void dispatch_CacheTick(void *pUnused, int iUnused)
 {
     UNUSED_PARAMETER(pUnused);
     UNUSED_PARAMETER(iUnused);

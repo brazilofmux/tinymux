@@ -1,6 +1,6 @@
 // externs.h -- Prototypes for externs not defined elsewhere.
 //
-// $Id: externs.h,v 1.52 2006/01/07 07:15:29 sdennis Exp $
+// $Id: externs.h,v 1.53 2006/01/07 07:18:56 sdennis Exp $
 //
 
 #ifndef EXTERNS_H
@@ -783,7 +783,21 @@ extern FGETPROCESSTIMES *fpGetProcessTimes;
 extern pid_t game_pid;
 #endif // WIN32
 
+// From timer.cpp
+//
 extern void init_timer(void);
+#ifdef WIN32
+void Task_FreeDescriptor(void *arg_voidptr, int arg_Integer);
+void Task_DeferredClose(void *arg_voidptr, int arg_Integer);
+#endif
+void dispatch_DatabaseDump(void *pUnused, int iUnused);
+void dispatch_FreeListReconstruction(void *pUnused, int iUnused);
+void dispatch_IdleCheck(void *pUnused, int iUnused);
+void dispatch_CheckEvents(void *pUnused, int iUnused);
+#ifndef MEMORY_BASED
+void dispatch_CacheTick(void *pUnused, int iUnused);
+#endif
+
 
 // Using a heap as the data structure for representing this priority
 // has some attributes which we depend on:
