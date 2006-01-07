@@ -1,6 +1,6 @@
 // db.cpp
 //
-// $Id: db.cpp,v 1.76 2006/01/07 18:17:49 sdennis Exp $
+// $Id: db.cpp,v 1.77 2006/01/07 23:18:52 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -12,6 +12,7 @@
 #include "externs.h"
 
 #include "attrs.h"
+#include "command.h"
 #include "comsys.h"
 #include "interface.h"
 #include "powers.h"
@@ -678,8 +679,6 @@ void s_Pass(dbref thing, const char *s)
  * do_attrib: Manage user-named attributes.
  */
 
-extern NAMETAB attraccess_nametab[];
-
 void do_attribute
 (
     dbref executor,
@@ -1169,7 +1168,7 @@ ATTR *atr_num(int anum)
     return  anum_get(anum);
 }
 
-void SetupThrottle(dbref executor)
+static void SetupThrottle(dbref executor)
 {
     CLinearTimeAbsolute tNow;
     CLinearTimeDelta    ltdHour;
@@ -1182,7 +1181,7 @@ void SetupThrottle(dbref executor)
     s_ThMail(executor, mudconf.mail_per_hour);
 }
 
-void SetupGlobalThrottle(void)
+static void SetupGlobalThrottle(void)
 {
     CLinearTimeAbsolute tNow;
     CLinearTimeDelta    ltdHour;
@@ -1445,7 +1444,7 @@ bool Commer(dbref thing)
 
 // al_extend: Get more space for attributes, if needed
 //
-void al_extend(char **buffer, size_t *bufsiz, size_t len, bool copy)
+static void al_extend(char **buffer, size_t *bufsiz, size_t len, bool copy)
 {
     if (len > *bufsiz)
     {
@@ -1486,7 +1485,7 @@ void al_store(void)
 
 // al_fetch: Load attribute list
 //
-char *al_fetch(dbref thing)
+static char *al_fetch(dbref thing)
 {
     // We only need fetch if we change things.
     //
@@ -1518,7 +1517,7 @@ char *al_fetch(dbref thing)
 
 // al_add: Add an attribute to an attribute list
 //
-bool al_add(dbref thing, int attrnum)
+static bool al_add(dbref thing, int attrnum)
 {
     char *abuf = al_fetch(thing);
     char *cp = abuf;
@@ -1566,7 +1565,7 @@ bool al_add(dbref thing, int attrnum)
 
 // al_delete: Remove an attribute from an attribute list
 //
-void al_delete(dbref thing, int attrnum)
+static void al_delete(dbref thing, int attrnum)
 {
     int anum;
     char *abuf, *cp, *dp;
@@ -1603,7 +1602,7 @@ void al_delete(dbref thing, int attrnum)
     return;
 }
 
-DCL_INLINE static void makekey(dbref thing, int atr, Aname *abuff)
+static DCL_INLINE void makekey(dbref thing, int atr, Aname *abuff)
 {
     abuff->object = thing;
     abuff->attrnum = atr;
@@ -2493,7 +2492,7 @@ int atr_head(dbref thing, char **attrp)
 
 #define SIZE_HACK   1   // So mistaken refs to #-1 won't die.
 
-void initialize_objects(dbref first, dbref last)
+static void initialize_objects(dbref first, dbref last)
 {
     dbref thing;
 
@@ -2966,7 +2965,7 @@ void free_boolexp(BOOLEXP *b)
     }
 }
 
-BOOLEXP *dup_bool(BOOLEXP *b)
+static BOOLEXP *dup_bool(BOOLEXP *b)
 {
     if (b == TRUE_BOOLEXP)
         return (TRUE_BOOLEXP);
