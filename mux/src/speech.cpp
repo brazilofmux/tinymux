@@ -1,6 +1,6 @@
 // speech.cpp -- Commands which involve speaking.
 //
-// $Id: speech.cpp,v 1.21 2005-10-12 04:28:27 sdennis Exp $
+// $Id: speech.cpp,v 1.22 2006-01-07 08:14:42 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -9,6 +9,7 @@
 #include "externs.h"
 
 #include "attrs.h"
+#include "command.h"
 #include "interface.h"
 #include "powers.h"
 #ifdef REALITY_LVLS
@@ -54,7 +55,7 @@ static int idle_timeout_val(dbref player)
     return idle_timeout;
 }
 
-bool sp_ok(dbref player)
+static bool sp_ok(dbref player)
 {
     if (  Gagged(player)
        && !Wizard(player))
@@ -82,7 +83,7 @@ bool sp_ok(dbref player)
     return true;
 }
 
-void wall_broadcast(int target, dbref player, char *message)
+static void wall_broadcast(int target, dbref player, char *message)
 {
     DESC *d;
     DESC_ITER_CONN(d)
@@ -135,6 +136,8 @@ static const char *admin_msg = "Admin: ";
 void do_think(dbref executor, dbref caller, dbref enactor, int key,
     char *message)
 {
+    UNUSED_PARAMETER(key);
+
     char *str, *buf, *bp;
 
     buf = bp = alloc_lbuf("do_think");
@@ -148,6 +151,9 @@ void do_think(dbref executor, dbref caller, dbref enactor, int key,
 
 void do_say(dbref executor, dbref caller, dbref enactor, int key, char *message)
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+
     // Make sure speaker is somewhere if speaking in a place
     //
     dbref loc = where_is(executor);
@@ -339,6 +345,9 @@ void do_say(dbref executor, dbref caller, dbref enactor, int key, char *message)
 void do_shout(dbref executor, dbref caller, dbref enactor, int key,
     char *message)
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+
     char *p;
     char *buf2, *bp;
     int say_flags = key & (SAY_NOTAG | SAY_HERE | SAY_ROOM | SAY_HTML);
@@ -649,6 +658,10 @@ void do_page
     char *arg2
 )
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(key);
+
     int   nPlayers = 0;
     dbref aPlayers[(LBUF_SIZE+1)/2];
 
@@ -988,7 +1001,9 @@ void do_page
         if (target != NOTHING)
         {
             notify_with_cause_ooc(target, executor, omessage);
-            if (fetch_idle(target) >= idle_timeout_val(target))
+            int target_idle = fetch_idle(target);
+            int target_idle_timeout_val = idle_timeout_val(target);
+            if (target_idle >= target_idle_timeout_val)
             {
                 page_return(executor, target, "Idle", A_IDLE, NULL);
             }
@@ -1010,7 +1025,7 @@ void do_page
  * do_pemit: Messages to specific players, or to all but specific players.
  */
 
-void whisper_pose(dbref player, dbref target, char *message, bool bSpace)
+static void whisper_pose(dbref player, dbref target, char *message, bool bSpace)
 {
     char *newMessage = modSpeech(player, message, true, "whisper");
     if (newMessage)
@@ -1355,6 +1370,9 @@ void do_pemit
     char *message
 )
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+
     if (nargs < 2)
     {
         return;

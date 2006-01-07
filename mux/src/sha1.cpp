@@ -25,7 +25,7 @@ void SHA1_Init(SHA1_CONTEXT *p)
 #define Parity(x,y,z)  ((x) ^ (y) ^ (z))
 #define Maj(x,y,z)     (((x) & (y)) ^ ((x) & (z)) ^ ((y) & (z)))
 
-void SHA1_HashBlock(SHA1_CONTEXT *p)
+static void SHA1_HashBlock(SHA1_CONTEXT *p)
 {
     int t;
     UINT32 W[80];
