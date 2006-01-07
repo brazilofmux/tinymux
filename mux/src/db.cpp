@@ -1,6 +1,6 @@
 // db.cpp
 //
-// $Id: db.cpp,v 1.71 2005/11/13 10:25:08 rmg Exp $
+// $Id: db.cpp,v 1.72 2006/01/07 05:48:46 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -394,6 +394,8 @@ int fwdlist_rewrite(FWDLIST *fp, char *atext)
  */
 bool fwdlist_ck(dbref player, dbref thing, int anum, char *atext)
 {
+    UNUSED_PARAMETER(anum);
+
     if (mudstate.bStandAlone)
     {
         return true;
@@ -696,22 +698,33 @@ void do_attribute
     char *value
 )
 {
-    int f;
-    char *sp;
-    ATTR *va2;
-    bool negate, success;
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(nargs);
 
     // Look up the user-named attribute we want to play with.
     //
     int nName;
     bool bValid;
-    ATTR *va;
     char *pName = MakeCanonicalAttributeName(aname, &nName, &bValid);
-    if (!bValid || !(va = (ATTR *)vattr_find_LEN(pName, nName)))
+    if (!bValid)
     {
         notify(executor, "No such user-named attribute.");
         return;
     }
+
+    ATTR *va = (ATTR *)vattr_find_LEN(pName, nName);
+    if (!va)
+    {
+        notify(executor, "No such user-named attribute.");
+        return;
+    }
+
+    int f;
+    char *sp;
+    ATTR *va2;
+    bool negate, success;
+
     switch (key)
     {
     case ATTRIB_ACCESS:
@@ -809,6 +822,10 @@ void do_fixdb
     char *arg2
 )
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(nargs);
+
     init_match(executor, arg1, NOTYPE);
     match_everything(0);
     dbref thing = noisy_match_result();
@@ -1326,9 +1343,9 @@ static char *al_code(char *ap, int atrnum)
         }
         atrnum >>= 7;
         bits |= 0x80;
-        *ap++ = bits;
+        *ap++ = (char)bits;
     }
-    *ap++ = bits;
+    *ap++ = (char)bits;
     return ap;
 }
 
@@ -1604,6 +1621,7 @@ DCL_INLINE static void makekey(dbref thing, int atr, Aname *abuff)
 
 static char *atr_encode(char *iattr, dbref thing, dbref owner, int flags, int atr)
 {
+    UNUSED_PARAMETER(atr);
 
     // If using the default owner and flags (almost all attributes will),
     // just store the string.
@@ -2776,7 +2794,7 @@ char *getstring_noalloc(FILE *f, int new_strings)
             //
             for (;;)
             {
-                int ch = *pInput++;
+                char ch = *pInput++;
                 if (iState == STATE_START)
                 {
                     if (xlat_table[(unsigned char)ch] == 0)

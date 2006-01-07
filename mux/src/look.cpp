@@ -1,6 +1,6 @@
 // look.cpp -- Commands which look at things.
 //
-// $Id: look.cpp,v 1.41 2005/11/27 04:03:38 sdennis Exp $
+// $Id: look.cpp,v 1.42 2006/01/07 05:48:46 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -749,7 +749,7 @@ static void look_contents(dbref player, dbref loc, const char *contents_name, in
 typedef struct
 {
     int mask;
-    int letter;
+    char letter;
 } ATTR_DECODE_ENTRY, *PATTR_DECODE_ENTRY;
 
 static ATTR_DECODE_ENTRY attr_decode_table[] =

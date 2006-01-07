@@ -1,6 +1,6 @@
 // svdocache.cpp -- Attribute caching module.
 //
-// $Id: attrcache.cpp,v 1.18 2005/10/13 14:58:48 sdennis Exp $
+// $Id: attrcache.cpp,v 1.19 2006/01/07 05:48:46 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -378,7 +378,7 @@ bool cache_put(Aname *nam, const char *value, size_t len)
 
     // Insertion into DB.
     //
-    if (!hfAttributeFile.Insert(len+sizeof(Aname), nHash, &TempRecord))
+    if (!hfAttributeFile.Insert((HP_HEAPLENGTH)(len+sizeof(Aname)), nHash, &TempRecord))
     {
         Log.tinyprintf("cache_put((%d,%d), '%s', %u) failed" ENDLINE,
             nam->object, nam->attrnum, value, len);

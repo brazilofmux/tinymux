@@ -1,6 +1,6 @@
 // player.cpp
 //
-// $Id: player.cpp,v 1.34 2006/01/06 15:10:49 sdennis Exp $
+// $Id: player.cpp,v 1.35 2006/01/07 05:48:46 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -268,7 +268,7 @@ const char *GenerateSalt(void)
     int i;
     for (i = 0; i < SALT_LENGTH; i++)
     {
-        szSaltRaw[i] = RandomINT32(0, 255);
+        szSaltRaw[i] = (char)RandomINT32(0, 255);
     }
     szSaltRaw[SALT_LENGTH] = '\0';
 

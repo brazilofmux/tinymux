@@ -1,6 +1,6 @@
 // comsys.cpp
 //
-// $Id: comsys.cpp,v 1.40 2006/01/07 05:31:51 sdennis Exp $
+// $Id: comsys.cpp,v 1.41 2006/01/07 05:48:46 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -1075,8 +1075,8 @@ void SendChannelMessage
         int aflags;
         int logmax = DFLT_MAX_LOG;
         char *maxbuf;
-        ATTR *pattr;
-        if (  (pattr = atr_str("MAX_LOG"))
+        ATTR *pattr = atr_str("MAX_LOG");
+        if (  pattr
            && pattr->number)
         {
             maxbuf = atr_get(obj, pattr->number, &aowner, &aflags);
@@ -1303,8 +1303,8 @@ void do_comlast(dbref player, struct channel *ch, int arg)
     int aflags;
     dbref obj = ch->chan_obj;
     int logmax = MAX_RECALL_REQUEST;
-    ATTR *pattr;
-    if (  (pattr = atr_str("MAX_LOG"))
+    ATTR *pattr = atr_str("MAX_LOG");
+    if (  pattr
        && (atr_get_info(obj, pattr->number, &aowner, &aflags)))
     {
         char *maxbuf = atr_get(obj, pattr->number, &aowner, &aflags);
@@ -1345,6 +1345,8 @@ void do_comlast(dbref player, struct channel *ch, int arg)
 
 bool do_chanlog(dbref player, char *channel, char *arg)
 {
+    UNUSED_PARAMETER(player);
+
     int value;
     if (  !*arg
        || !is_integer(arg, NULL)
@@ -1459,6 +1461,11 @@ void do_addcom
     char *arg2
 )
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(key);
+    UNUSED_PARAMETER(nargs);
+
     if (!mudconf.have_comsys)
     {
         raw_notify(executor, "Comsys disabled.");
@@ -1571,6 +1578,10 @@ void do_addcom
 
 void do_delcom(dbref executor, dbref caller, dbref enactor, int key, char *arg1)
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(key);
+
     if (!mudconf.have_comsys)
     {
         raw_notify(executor, "Comsys disabled.");
@@ -1682,6 +1693,10 @@ void do_delcomchannel(dbref player, char *channel, bool bQuiet)
 
 void do_createchannel(dbref executor, dbref caller, dbref enactor, int key, char *channel)
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(key);
+
     if (select_channel(channel))
     {
         raw_notify(executor, tprintf("Channel %s already exists.", channel));
@@ -1764,6 +1779,10 @@ void do_createchannel(dbref executor, dbref caller, dbref enactor, int key, char
 
 void do_destroychannel(dbref executor, dbref caller, dbref enactor, int key, char *channel)
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(key);
+
     struct channel *ch;
     int j;
 
@@ -1936,6 +1955,10 @@ void do_comtitle
     char *arg2
 )
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(nargs);
+
     if (!mudconf.have_comsys)
     {
         raw_notify(executor, "Comsys disabled.");
@@ -2001,6 +2024,10 @@ void do_comlist
     char* pattern
 )
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(key);
+
     if (!mudconf.have_comsys)
     {
         raw_notify(executor, "Comsys disabled.");
@@ -2076,6 +2103,8 @@ void do_channelnuke(dbref player)
 
 void do_clearcom(dbref executor, dbref caller, dbref enactor, int unused2)
 {
+    UNUSED_PARAMETER(unused2);
+
     if (!mudconf.have_comsys)
     {
         raw_notify(executor, "Comsys disabled.");
@@ -2092,6 +2121,10 @@ void do_clearcom(dbref executor, dbref caller, dbref enactor, int unused2)
 
 void do_allcom(dbref executor, dbref caller, dbref enactor, int key, char *arg1)
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(key);
+
     if (!mudconf.have_comsys)
     {
         raw_notify(executor, "Comsys disabled.");
@@ -2142,6 +2175,10 @@ void sort_users(struct channel *ch)
 
 void do_channelwho(dbref executor, dbref caller, dbref enactor, int key, char *arg1)
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(key);
+
     if (!mudconf.have_comsys)
     {
         raw_notify(executor, "Comsys disabled.");
@@ -2369,6 +2406,10 @@ void do_editchannel
     char *arg2
 )
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(nargs);
+
     if (!mudconf.have_comsys)
     {
         raw_notify(executor, "Comsys disabled.");
@@ -2597,6 +2638,10 @@ void do_cemit
     char *text
 )
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(nargs);
+
     if (!mudconf.have_comsys)
     {
         raw_notify(executor, "Comsys disabled.");
@@ -2637,6 +2682,8 @@ void do_chopen
     char *value
 )
 {
+    UNUSED_PARAMETER(nargs);
+
     if (!mudconf.have_comsys)
     {
         raw_notify(executor, "Comsys disabled.");
@@ -2750,6 +2797,10 @@ void do_chboot
     char *victim
 )
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(nargs);
+
     // I sure hope it's not going to be that long.
     //
     if (!mudconf.have_comsys)
@@ -2885,6 +2936,9 @@ void do_chanlist
     char *pattern
 )
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+
     if (!mudconf.have_comsys)
     {
         raw_notify(executor, "Comsys disabled.");
@@ -3006,6 +3060,12 @@ void do_chanlist
 //
 FUNCTION(fun_comtitle)
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     if (!mudconf.have_comsys)
     {
         safe_str("#-1 COMSYS DISABLED", buff, bufc);
@@ -3084,6 +3144,12 @@ FUNCTION(fun_comtitle)
 //
 FUNCTION(fun_comalias)
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     if (!mudconf.have_comsys)
     {
         safe_str("#-1 COMSYS DISABLED", buff, bufc);
@@ -3138,6 +3204,11 @@ FUNCTION(fun_comalias)
 //
 FUNCTION(fun_channels)
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     if (!mudconf.have_comsys)
     {
         safe_str("#-1 COMSYS DISABLED", buff, bufc);
