@@ -1,6 +1,6 @@
 // db_rw.cpp
 //
-// $Id: db_rw.cpp,v 1.19 2006-01-07 05:18:37 jake Exp $
+// $Id: db_rw.cpp,v 1.20 2006-01-07 05:51:24 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -807,7 +807,7 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
 
 static bool db_write_object(FILE *f, dbref i, int db_format, int flags)
 {
-    UNREFERENCED_PARAMETER(db_format);
+    UNUSED_PARAMETER(db_format);
 
     ATTR *a;
     char *got, *as;
