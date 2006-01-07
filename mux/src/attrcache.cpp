@@ -1,6 +1,6 @@
 // svdocache.cpp -- Attribute caching module.
 //
-// $Id: attrcache.cpp,v 1.19 2006/01/07 05:48:46 sdennis Exp $
+// $Id: attrcache.cpp,v 1.20 2006/01/07 06:15:44 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -11,14 +11,14 @@
 #include "config.h"
 #include "externs.h"
 
-CHashFile hfAttributeFile;
+static CHashFile hfAttributeFile;
 static bool cache_initted = false;
 
 static bool cache_redirected = false;
 #define N_TEMP_FILES 8
-FILE *TempFiles[N_TEMP_FILES];
+static FILE *TempFiles[N_TEMP_FILES];
 
-CLinearTimeAbsolute cs_ltime;
+static CLinearTimeAbsolute cs_ltime;
 
 #pragma pack(1)
 typedef struct tagAttrRecord
@@ -38,9 +38,9 @@ typedef struct tagCacheEntryHeader
     unsigned int nSize;
 } CENT_HDR, *PCENT_HDR;
 
-PCENT_HDR pCacheHead = 0;
-PCENT_HDR pCacheTail = 0;
-unsigned int CacheSize = 0;
+static PCENT_HDR pCacheHead = 0;
+static PCENT_HDR pCacheTail = 0;
+static unsigned int CacheSize = 0;
 
 int cache_init(const char *game_dir_file, const char *game_pag_file,
     int nCachePages)
@@ -123,7 +123,7 @@ void cache_tick(void)
     hfAttributeFile.Tick();
 }
 
-void REMOVE_ENTRY(PCENT_HDR pEntry)
+static void REMOVE_ENTRY(PCENT_HDR pEntry)
 {
     // How is X positioned?
     //
@@ -179,7 +179,7 @@ void REMOVE_ENTRY(PCENT_HDR pEntry)
     }
 }
 
-void ADD_ENTRY(PCENT_HDR pEntry)
+static void ADD_ENTRY(PCENT_HDR pEntry)
 {
     if (pCacheHead)
     {
@@ -194,7 +194,7 @@ void ADD_ENTRY(PCENT_HDR pEntry)
     }
 }
 
-void TrimCache(void)
+static void TrimCache(void)
 {
     // Check to see if the cache needs to be trimmed.
     //

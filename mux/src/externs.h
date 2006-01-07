@@ -1,6 +1,6 @@
 // externs.h -- Prototypes for externs not defined elsewhere.
 //
-// $Id: externs.h,v 1.49 2006/01/07 02:06:03 sdennis Exp $
+// $Id: externs.h,v 1.50 2006/01/07 06:15:44 sdennis Exp $
 //
 
 #ifndef EXTERNS_H
@@ -935,5 +935,10 @@ extern void init_version(void);
 // From player_c.cpp
 //
 extern void pcache_sync(void);
+
+// From attrcache.cpp
+//
+extern void cache_redirect(void);
+extern void cache_pass2(void);
 
 #endif // EXTERNS_H
