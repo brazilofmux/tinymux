@@ -1,6 +1,6 @@
 // command.cpp -- command parser and support routines.
 //
-// $Id: command.cpp,v 1.66 2006-01-07 02:50:01 jake Exp $
+// $Id: command.cpp,v 1.67 2006-01-07 04:46:45 jake Exp $
 //
 
 #include "copyright.h"
@@ -1016,6 +1016,8 @@ bool check_access(dbref player, int mask)
 bool process_hook(dbref executor, dbref thing, char *s_uselock, ATTR *hk_attr,
                   bool save_flg)
 {
+    UNUSED_PARAMETER(s_uselock);
+
     bool retval = true;
     if (hk_attr)
     {
@@ -1587,6 +1589,10 @@ int zonecmdtest(dbref player, char *cmd)
 int higcheck(dbref executor, dbref caller, dbref enactor, CMDENT *cmdp,
              char *pCommand)
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(pCommand);
+
     if (  Good_obj(mudconf.hook_obj)
        && !Going(mudconf.hook_obj))
     {
@@ -1623,6 +1629,8 @@ int higcheck(dbref executor, dbref caller, dbref enactor, CMDENT *cmdp,
 
 void hook_fail(dbref executor, CMDENT *cmdp, char *pCommand)
 {
+    UNUSED_PARAMETER(pCommand);
+
     if (  Good_obj(mudconf.hook_obj)
        && !Going(mudconf.hook_obj))
     {
@@ -2868,6 +2876,8 @@ static void list_attraccess(dbref player)
 //
 CF_HAND(cf_access)
 {
+    UNUSED_PARAMETER(vp);
+
     CMDENT *cmdp;
     char *ap;
     bool set_switch;
@@ -2922,6 +2932,8 @@ CF_HAND(cf_access)
 //
 CF_HAND(cf_acmd_access)
 {
+    UNUSED_PARAMETER(vp);
+
     ATTR *ap;
 
     for (ap = attr; ap->name; ap++)
@@ -2955,6 +2967,8 @@ CF_HAND(cf_acmd_access)
 //
 CF_HAND(cf_attr_access)
 {
+    UNUSED_PARAMETER(vp);
+
     ATTR *ap;
     char *sp;
 
@@ -2988,6 +3002,9 @@ CF_HAND(cf_attr_access)
 //
 CF_HAND(cf_cmd_alias)
 {
+    UNUSED_PARAMETER(pExtra);
+    UNUSED_PARAMETER(nExtra);
+
     char *ap;
     CMDENT *cmdp, *cmd2;
     NAMETAB *nt;
@@ -3734,6 +3751,10 @@ extern NAMETAB logdata_nametab[];
 void do_list(dbref executor, dbref caller, dbref enactor, int extra,
              char *arg)
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(extra);
+
     MUX_STRTOK_STATE tts;
     mux_strtok_src(&tts, arg);
     mux_strtok_ctl(&tts, " \t=,");
@@ -3842,6 +3863,11 @@ void do_list(dbref executor, dbref caller, dbref enactor, int extra,
 
 void do_break(dbref executor, dbref caller, dbref enactor, int key, char *arg1)
 {
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(key);
+
     extern bool break_called;
     break_called = xlate(arg1);
 }
@@ -3853,6 +3879,9 @@ void do_break(dbref executor, dbref caller, dbref enactor, int key, char *arg1)
 void do_icmd(dbref player, dbref cause, dbref enactor, int key, char *name,
              char *args[], int nargs)
 {
+    UNUSED_PARAMETER(cause);
+    UNUSED_PARAMETER(enactor);
+
     CMDENT *cmdp;
     char *buff1, *pt1, *pt2, *pt3, *atrpt, *pt4, *pt5;
     int x, aflags, y;
@@ -4213,6 +4242,8 @@ void do_icmd(dbref player, dbref cause, dbref enactor, int key, char *name,
 //
 void do_train(dbref executor, dbref caller, dbref enactor, int key, char *string)
 {
+    UNUSED_PARAMETER(key);
+
     dbref loc = Location(executor);
     if (!Good_obj(loc))
     {
@@ -4234,6 +4265,11 @@ void do_train(dbref executor, dbref caller, dbref enactor, int key, char *string
 void do_moniker(dbref executor, dbref caller, dbref enactor, int key,
                  int nfargs, char *name, char *instr)
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(key);
+    UNUSED_PARAMETER(nfargs);
+
     dbref thing = match_thing(executor, name);
     if ( !(  Good_obj(thing)
           && Controls(executor, thing)))
@@ -4331,6 +4367,9 @@ void hook_loop(dbref executor, CMDENT *cmdp, char *s_ptr, char *s_ptrbuff)
 
 void do_hook(dbref executor, dbref caller, dbref enactor, int key, char *name)
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+
     bool negate, found;
     char *s_ptr, *s_ptrbuff, *cbuff, *p, *q;
     CMDENT *cmdp = (CMDENT *)NULL;
