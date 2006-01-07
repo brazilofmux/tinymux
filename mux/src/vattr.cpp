@@ -1,6 +1,6 @@
 // vattr.cpp -- Manages the user-defined attributes.
 //
-// $Id: vattr.cpp,v 1.12 2006-01-01 18:20:57 sdennis Exp $
+// $Id: vattr.cpp,v 1.13 2006-01-07 02:10:22 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -13,7 +13,6 @@
 #include "vattr.h"
 
 static char *store_string(char *);
-extern void pcache_sync(void);
 
 // Allocate space for strings in lumps this big.
 //
@@ -85,13 +84,11 @@ ATTR *vattr_define_LEN(char *pName, size_t nName, int number, int flags)
     return vp;
 }
 
-extern int anum_alc_top;
-
 // There are five data structures which must remain mutually consistent: The
 // attr_name_htab, vattr_name_htab, the anum_table, the A_LIST for every
 // object, and the attribute database.
 //
-void dbclean_CheckANHtoAT(dbref executor)
+static void dbclean_CheckANHtoAT(dbref executor)
 {
     notify(executor, "1. Checking (v)attr_name_htabs to anum_table mapping...");
 
@@ -168,7 +165,7 @@ void dbclean_CheckANHtoAT(dbref executor)
     notify(executor, "   Done.");
 }
 
-void dbclean_CheckATtoANH(dbref executor)
+static void dbclean_CheckATtoANH(dbref executor)
 {
     notify(executor, "2. Checking anum_table to vattr_name_htab mapping...");
 
@@ -238,7 +235,7 @@ void dbclean_CheckATtoANH(dbref executor)
     notify(executor, "   Done.");
 }
 
-void dbclean_CheckALISTtoAT(dbref executor)
+static void dbclean_CheckALISTtoAT(dbref executor)
 {
     notify(executor, "3. Checking ALIST to anum_table mapping...");
 
@@ -308,7 +305,7 @@ void dbclean_CheckALISTtoAT(dbref executor)
     atr_pop();
 }
 
-void dbclean_CheckALISTtoDB(dbref executor)
+static void dbclean_CheckALISTtoDB(dbref executor)
 {
     notify(executor, "4. Checking ALIST against attribute DB on disk...");
 
@@ -351,7 +348,7 @@ void dbclean_CheckALISTtoDB(dbref executor)
     atr_pop();
 }
 
-void dbclean_IntegrityChecking(dbref executor)
+static void dbclean_IntegrityChecking(dbref executor)
 {
     dbclean_CheckANHtoAT(executor);
     dbclean_CheckATtoANH(executor);
@@ -359,13 +356,12 @@ void dbclean_IntegrityChecking(dbref executor)
     dbclean_CheckALISTtoDB(executor);
 }
 
-int dbclean_RemoveStaleAttributeNames(void)
+static int dbclean_RemoveStaleAttributeNames(void)
 {
     ATTR *va;
 
     // Clear every valid attribute's AF_ISUSED flag
     //
-    extern int anum_alc_top;
     int iAttr;
     for (iAttr = A_USER_START; iAttr <= anum_alc_top; iAttr++)
     {
@@ -441,7 +437,7 @@ int dbclean_RemoveStaleAttributeNames(void)
     return cVAttributes;
 }
 
-void dbclean_RenumberAttributes(int cVAttributes)
+static void dbclean_RenumberAttributes(int cVAttributes)
 {
     ATTR *va;
 
@@ -571,7 +567,6 @@ void dbclean_RenumberAttributes(int cVAttributes)
     // Traverse entire @function data structure.
     //
     UFUN *ufp2;
-    extern UFUN *ufun_head;
     for (ufp2 = ufun_head; ufp2; ufp2 = ufp2->next)
     {
         int iAttr = ufp2->atr;
@@ -592,6 +587,10 @@ void dbclean_RenumberAttributes(int cVAttributes)
 
 void do_dbclean(dbref executor, dbref caller, dbref enactor, int key)
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(key);
+
 #ifndef WIN32
     if (mudstate.dumping)
     {

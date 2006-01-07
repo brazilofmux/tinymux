@@ -1,6 +1,6 @@
 // unparse.cpp
 //
-// $Id: unparse.cpp,v 1.6 2004-06-10 15:25:33 sdennis Exp $
+// $Id: unparse.cpp,v 1.7 2006-01-07 02:12:02 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -23,6 +23,8 @@
 
 static char *unparse_object_quiet(dbref player, dbref loc)
 {
+    UNUSED_PARAMETER(player);
+
     static char buf[SBUF_SIZE];
 
     switch (loc)

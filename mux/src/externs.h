@@ -1,6 +1,6 @@
 // externs.h -- Prototypes for externs not defined elsewhere.
 //
-// $Id: externs.h,v 1.49 2006-01-07 01:55:27 sdennis Exp $
+// $Id: externs.h,v 1.50 2006-01-07 02:10:22 sdennis Exp $
 //
 
 #ifndef EXTERNS_H
@@ -323,6 +323,8 @@ extern bool check_zone_handler(dbref player, dbref thing, bool bPlayerCheck);
 #define check_zone(player, thing) check_zone_handler(player, thing, false)
 extern void ReleaseAllResources(dbref obj);
 extern bool fwdlist_ck(dbref player, dbref thing, int anum, char *atext);
+
+extern int anum_alc_top;
 
 /* Command handler keys */
 
@@ -927,5 +929,9 @@ extern NAMETAB enable_names[];
 //
 extern void build_version(void);
 extern void init_version(void);
+
+// From player_c.cpp
+//
+extern void pcache_sync(void);
 
 #endif // EXTERNS_H

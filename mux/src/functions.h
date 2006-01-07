@@ -1,6 +1,6 @@
 // functions.h -- declarations for functions & function processing.
 //
-// $Id: functions.h,v 1.15 2005-10-17 03:55:02 sdennis Exp $
+// $Id: functions.h,v 1.16 2006-01-07 02:10:22 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -39,6 +39,7 @@ typedef struct ufun {
 
 extern void init_functab(void);
 extern void list_functable(dbref);
+extern UFUN *ufun_head;
 
 /* Special handling of separators. */
 
