@@ -1,6 +1,6 @@
 // interface.h
 //
-// $Id: interface.h,v 1.18 2006-01-06 22:42:19 sdennis Exp $
+// $Id: interface.h,v 1.19 2006-01-07 02:47:17 jake Exp $
 //
 
 #include "copyright.h"
@@ -190,10 +190,10 @@ struct descriptor_data
 
 int HimState(DESC *d, unsigned char chOption);
 int UsState(DESC *d, unsigned char chOption);
-void EnableHim(DESC *d, unsigned chOption);
-void DisableHim(DESC *d, unsigned chOption);
-void EnableUs(DESC *d, unsigned chOption);
-void DisableUs(DESC *d, unsigned chOption);
+void EnableHim(DESC *d, unsigned char chOption);
+void DisableHim(DESC *d, unsigned char chOption);
+void EnableUs(DESC *d, unsigned char chOption);
+void DisableUs(DESC *d, unsigned char chOption);
 
 /* flags in the flag field */
 #define DS_CONNECTED    0x0001      // player is connected.

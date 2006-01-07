@@ -2,7 +2,7 @@
  * File for most TCP socket-related code. Some socket-related code also exists
  * in netcommon.cpp, but most of it is here.
  *
- * $Id: bsd.cpp,v 1.75 2006-01-06 15:09:50 sdennis Exp $
+ * $Id: bsd.cpp,v 1.76 2006-01-07 02:47:17 jake Exp $
  */
 
 #include "copyright.h"
@@ -2831,7 +2831,7 @@ bool DesiredUsOption(DESC *d, unsigned char chOption)
  * \return          None.
  */
 
-void EnableHim(DESC *d, unsigned chOption)
+void EnableHim(DESC *d, unsigned char chOption)
 {
     switch (HimState(d, chOption))
     {
@@ -2861,7 +2861,7 @@ void EnableHim(DESC *d, unsigned chOption)
  * \return          None.
  */
 
-void DisableHim(DESC *d, unsigned chOption)
+void DisableHim(DESC *d, unsigned char chOption)
 {
     switch (HimState(d, chOption))
     {
@@ -2891,7 +2891,7 @@ void DisableHim(DESC *d, unsigned chOption)
  * \return          None.
  */
 
-void EnableUs(DESC *d, unsigned chOption)
+void EnableUs(DESC *d, unsigned char chOption)
 {
     switch (HimState(d, chOption))
     {
@@ -2921,7 +2921,7 @@ void EnableUs(DESC *d, unsigned chOption)
  * \return          None.
  */
 
-void DisableUs(DESC *d, unsigned chOption)
+void DisableUs(DESC *d, unsigned char chOption)
 {
     switch (HimState(d, chOption))
     {
