@@ -1,6 +1,6 @@
 // command.cpp -- command parser and support routines.
 //
-// $Id: command.cpp,v 1.69 2006-01-07 07:54:24 sdennis Exp $
+// $Id: command.cpp,v 1.70 2006-01-07 20:02:37 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -20,9 +20,6 @@
 #include "pcre.h"
 
 extern void list_cf_access(dbref);
-extern void list_siteinfo(dbref);
-extern void logged_out0(dbref executor, dbref caller, dbref enactor, int key);
-extern void logged_out1(dbref executor, dbref caller, dbref enactor, int key, char *arg);
 extern void boot_slave(dbref executor, dbref caller, dbref enactor, int key);
 extern bool regexp_match
 (
@@ -3729,8 +3726,6 @@ NAMETAB list_names[] =
 };
 
 extern NAMETAB enable_names[];
-extern NAMETAB logoptions_nametab[];
-extern NAMETAB logdata_nametab[];
 
 void do_list(dbref executor, dbref caller, dbref enactor, int extra,
              char *arg)

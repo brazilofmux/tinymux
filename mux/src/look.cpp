@@ -1,6 +1,6 @@
 // look.cpp -- Commands which look at things.
 //
-// $Id: look.cpp,v 1.43 2006-01-07 02:50:01 jake Exp $
+// $Id: look.cpp,v 1.44 2006-01-07 20:02:37 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -28,7 +28,7 @@
 #define STAFF_REALM   7
 #define NUMBER_OF_REALMS 8
 
-int RealmActions[NUMBER_OF_REALMS] =
+static int RealmActions[NUMBER_OF_REALMS] =
 {
     REALM_DO_NORMALLY_SEEN,
     REALM_DO_SHOW_UMBRADESC,
@@ -52,7 +52,7 @@ int RealmActions[NUMBER_OF_REALMS] =
 #define MAP_NO_ADESC 2 // Don't trigger DESC actions on that.
 #define MAP_MEDIUM   4 // Hide this from that unless that is a medium and this is moving or talking.
 
-int RealmHiddenMap[NUMBER_OF_REALMS][NUMBER_OF_REALMS] =
+static int RealmHiddenMap[NUMBER_OF_REALMS][NUMBER_OF_REALMS] =
 {
     /* NORMAL  LOOKER */ {     MAP_SEEN, MAP_HIDE, MAP_MEDIUM, MAP_HIDE,     MAP_SEEN, MAP_HIDE, MAP_NO_ADESC, MAP_SEEN},
     /* UMBRA   LOOKER */ {     MAP_HIDE, MAP_SEEN, MAP_MEDIUM, MAP_HIDE,     MAP_HIDE, MAP_HIDE,     MAP_HIDE, MAP_SEEN},
@@ -64,7 +64,7 @@ int RealmHiddenMap[NUMBER_OF_REALMS][NUMBER_OF_REALMS] =
     /* STAFF   LOOKER */ {     MAP_SEEN, MAP_SEEN,   MAP_SEEN, MAP_SEEN,     MAP_SEEN, MAP_SEEN,     MAP_SEEN, MAP_SEEN}
 };
 
-int RealmExitsMap[NUMBER_OF_REALMS][NUMBER_OF_REALMS] =
+static int RealmExitsMap[NUMBER_OF_REALMS][NUMBER_OF_REALMS] =
 {
     /* NORMAL  LOOKER */ { MAP_SEEN, MAP_HIDE, MAP_HIDE, MAP_HIDE, MAP_HIDE, MAP_HIDE, MAP_HIDE, MAP_HIDE},
     /* UMBRA   LOOKER */ { MAP_SEEN, MAP_SEEN, MAP_HIDE, MAP_HIDE, MAP_HIDE, MAP_HIDE, MAP_HIDE, MAP_HIDE},
@@ -75,7 +75,8 @@ int RealmExitsMap[NUMBER_OF_REALMS][NUMBER_OF_REALMS] =
     /* BLIND   LOOKER */ { MAP_HIDE, MAP_HIDE, MAP_HIDE, MAP_HIDE, MAP_HIDE, MAP_HIDE, MAP_HIDE, MAP_HIDE},
     /* STAFF   LOOKER */ { MAP_SEEN, MAP_SEEN, MAP_SEEN, MAP_SEEN, MAP_SEEN, MAP_SEEN, MAP_SEEN, MAP_SEEN}
 };
-int WhichRealm(dbref what, bool bPeering)
+
+static int WhichRealm(dbref what, bool bPeering)
 {
     int realm = NORMAL_REALM;
     if (isMatrix(what))       realm = MATRIX_REALM;
@@ -109,7 +110,8 @@ int WhichRealm(dbref what, bool bPeering)
     }
     return realm;
 }
-int HandleObfuscation(dbref looker, dbref lookee, int threshhold)
+
+static int HandleObfuscation(dbref looker, dbref lookee, int threshhold)
 {
     int iReturn = REALM_DO_NORMALLY_SEEN;
     if (isObfuscate(lookee))
@@ -322,7 +324,7 @@ int DoThingToThingVisibility(dbref looker, dbref lookee, int action_state)
     return iReturn;
 }
 
-void LetDescriptionsDefault(dbref thing, int *piDESC, int *piADESC, int RealmDirective)
+static void LetDescriptionsDefault(dbref thing, int *piDESC, int *piADESC, int RealmDirective)
 {
     int   iDesc = 0;
     dbref owner;
@@ -1319,6 +1321,9 @@ void look_in(dbref player, dbref loc, int key)
 
 void do_look(dbref executor, dbref caller, dbref enactor, int key, char *name)
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+
     int look_key = LK_SHOWATTR | LK_SHOWEXIT;
     if (!mudconf.terse_look)
     {
@@ -1585,6 +1590,9 @@ static void exam_wildattrs
 
 void do_examine(dbref executor, dbref caller, dbref enactor, int key, char *name)
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+
     // This command is pointless if the player can't hear.
     //
     if (!Hearer(executor))
@@ -1920,12 +1928,20 @@ void do_examine(dbref executor, dbref caller, dbref enactor, int key, char *name
 
 void do_score(dbref executor, dbref caller, dbref enactor, int key)
 {
-    notify(executor, tprintf("You have %d %s.", Pennies(executor),
-        (Pennies(executor) == 1) ?  mudconf.one_coin : mudconf.many_coins));
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(key);
+
+    int nPennies = Pennies(executor);
+    notify(executor, tprintf("You have %d %s.", nPennies,
+        (1 == nPennies) ?  mudconf.one_coin : mudconf.many_coins));
 }
 
 void do_inventory(dbref executor, dbref caller, dbref enactor, int key)
 {
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(key);
+
     dbref thing;
     char *buff, *e;
     const char *s;
@@ -1970,6 +1986,10 @@ void do_inventory(dbref executor, dbref caller, dbref enactor, int key)
 
 void do_entrances(dbref executor, dbref caller, dbref enactor, int key, char *name)
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(key);
+
     dbref thing, i, j;
     char *exit, *message;
     int control_thing, count, low_bound, high_bound;
@@ -2295,6 +2315,9 @@ static void sweep_check(dbref player, dbref what, int key, bool is_loc)
 
 void do_sweep(dbref executor, dbref caller, dbref enactor, int key, char *where)
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+
     dbref here, sweeploc;
     int where_key, what_key;
 
@@ -2402,8 +2425,6 @@ void do_sweep(dbref executor, dbref caller, dbref enactor, int key, char *where)
  * will almost certainly vary.  (i.e. different flags, etc.)
  */
 
-extern NAMETAB indiv_attraccess_nametab[];
-
 void do_decomp
 (
     dbref executor,
@@ -2415,6 +2436,10 @@ void do_decomp
     char *qual
 )
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(nargs);
+
     BOOLEXP *pBoolExp;
     char *got, *thingname, *as, *ltext, *buff;
     dbref aowner, thing;

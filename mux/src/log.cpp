@@ -1,6 +1,6 @@
 // log.cpp -- Logging routines.
 //
-// $Id: log.cpp,v 1.8 2005-10-22 16:21:47 sdennis Exp $
+// $Id: log.cpp,v 1.9 2006-01-07 20:02:37 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -9,6 +9,8 @@
 #include "externs.h"
 
 #include <sys/types.h>
+
+#include "command.h"
 
 NAMETAB logdata_nametab[] =
 {
@@ -217,7 +219,7 @@ void log_name_and_loc(dbref player)
     return;
 }
 
-const char *OBJTYP(dbref thing)
+static const char *OBJTYP(dbref thing)
 {
     if (!Good_dbref(thing))
     {
@@ -266,6 +268,11 @@ void do_log
     char *logtext
 )
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(key);
+    UNUSED_PARAMETER(nargs);
+
     bool bValid = true;
 
     // Strip the filename of all ANSI.
