@@ -1,6 +1,6 @@
 // cque.cpp -- commands and functions for manipulating the command queue.
 //
-// $Id: cque.cpp,v 1.31 2005/11/24 03:19:52 sdennis Exp $
+// $Id: cque.cpp,v 1.32 2006/01/07 08:59:16 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -87,6 +87,8 @@ static int add_to(dbref executor, int am, int attrnum)
 //
 void Task_RunQueueEntry(void *pEntry, int iUnused)
 {
+    UNUSED_PARAMETER(iUnused);
+
     BQUE *point = (BQUE *)pEntry;
     dbref executor = point->executor;
 
@@ -250,6 +252,8 @@ static bool que_want(BQUE *entry, dbref ptarg, dbref otarg)
 
 void Task_SemaphoreTimeout(void *pExpired, int iUnused)
 {
+    UNUSED_PARAMETER(iUnused);
+
     // A semaphore has timed out.
     //
     BQUE *point = (BQUE *)pExpired;
@@ -355,6 +359,9 @@ int halt_que(dbref executor, dbref object)
 //
 void do_halt(dbref executor, dbref caller, dbref enactor, int key, char *target)
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+
     dbref executor_targ, obj_targ;
 
     if ((key & HALT_ALL) && !Can_Halt(executor))
@@ -575,6 +582,10 @@ void do_notify
     char *count
 )
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(nargs);
+
     char *obj = parse_to(&what, '/', 0);
     init_match(executor, obj, NOTYPE);
     match_everything(0);
@@ -1281,6 +1292,9 @@ int CallBack_ShowSQLQueries(PTASK_RECORD p)
 //
 void do_ps(dbref executor, dbref caller, dbref enactor, int key, char *target)
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+
     char *bufp;
     dbref executor_targ, obj_targ;
 
@@ -1410,6 +1424,9 @@ int CallBack_Warp(PTASK_RECORD p)
 //
 void do_queue(dbref executor, dbref caller, dbref enactor, int key, char *arg)
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+
     if (key == QUEUE_KICK)
     {
         int i = mux_atol(arg);
