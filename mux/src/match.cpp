@@ -1,6 +1,6 @@
 // match.cpp -- Routines for parsing arguments.
 //
-// $Id: match.cpp,v 1.7 2005-10-19 23:10:00 rmg Exp $
+// $Id: match.cpp,v 1.8 2006-01-07 19:29:57 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -211,7 +211,7 @@ void match_absolute(void)
     }
 }
 
-void match_numeric(void)
+static void match_numeric(void)
 {
     if (md.confidence >= CON_DBREF)
     {
@@ -243,7 +243,7 @@ void match_me(void)
     return;
 }
 
-void match_home(void)
+static void match_home(void)
 {
     if (md.confidence >= CON_DBREF)
     {
