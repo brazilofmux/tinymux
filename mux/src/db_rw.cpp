@@ -1,6 +1,6 @@
 // db_rw.cpp
 //
-// $Id: db_rw.cpp,v 1.17 2005-06-02 04:09:05 sdennis Exp $
+// $Id: db_rw.cpp,v 1.18 2006-01-07 02:50:01 jake Exp $
 //
 
 #include "copyright.h"
@@ -317,7 +317,7 @@ error:
 static BOOLEXP *getboolexp(FILE *f)
 {
     BOOLEXP *b = getboolexp1(f);
-    char c = getc(f);
+    char c = (char)getc(f);
     mux_assert(c == '\n');
 
     if (g_format == F_MUX)

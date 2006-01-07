@@ -1,6 +1,6 @@
 // db.cpp
 //
-// $Id: db.cpp,v 1.72 2006-01-01 18:20:57 sdennis Exp $
+// $Id: db.cpp,v 1.73 2006-01-07 02:50:01 jake Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -1322,9 +1322,9 @@ static char *al_code(char *ap, int atrnum)
         }
         atrnum >>= 7;
         bits |= 0x80;
-        *ap++ = bits;
+        *ap++ = (char)bits;
     }
-    *ap++ = bits;
+    *ap++ = (char)bits;
     return ap;
 }
 
@@ -2772,7 +2772,7 @@ char *getstring_noalloc(FILE *f, int new_strings)
             //
             for (;;)
             {
-                int ch = *pInput++;
+                char ch = *pInput++;
                 if (iState == STATE_START)
                 {
                     if (xlat_table[(unsigned char)ch] == 0)

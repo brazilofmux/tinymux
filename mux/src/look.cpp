@@ -1,6 +1,6 @@
 // look.cpp -- Commands which look at things.
 //
-// $Id: look.cpp,v 1.42 2006-01-01 18:20:57 sdennis Exp $
+// $Id: look.cpp,v 1.43 2006-01-07 02:50:01 jake Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -745,7 +745,7 @@ static void look_contents(dbref player, dbref loc, const char *contents_name, in
 typedef struct
 {
     int mask;
-    int letter;
+    char letter;
 } ATTR_DECODE_ENTRY, *PATTR_DECODE_ENTRY;
 
 static ATTR_DECODE_ENTRY attr_decode_table[] =

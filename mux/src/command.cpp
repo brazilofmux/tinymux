@@ -1,6 +1,6 @@
 // command.cpp -- command parser and support routines.
 //
-// $Id: command.cpp,v 1.65 2005-11-24 03:19:52 sdennis Exp $
+// $Id: command.cpp,v 1.66 2006-01-07 02:50:01 jake Exp $
 //
 
 #include "copyright.h"
@@ -1780,7 +1780,7 @@ char *process_command
         // CmdCheck tests for @icmd. higcheck tests for i/p hooks.
         // Both from RhostMUSH.
         // cval/hval values: 0 normal, 1 disable, 2 ignore
-        *check2 = i;
+        *check2 = (char)i;
         if (CmdCheck(executor))
         {
             cval = cmdtest(executor, check2);
