@@ -1,6 +1,6 @@
 // externs.h -- Prototypes for externs not defined elsewhere.
 //
-// $Id: externs.h,v 1.59 2006-01-07 21:53:26 sdennis Exp $
+// $Id: externs.h,v 1.60 2006-01-07 23:00:09 sdennis Exp $
 //
 
 #ifndef EXTERNS_H
@@ -110,6 +110,7 @@ void PopPointers(char **p, int nNeeded);
 int *PushIntegers(int nNeeded);
 void PopIntegers(int *pi, int nNeeded);
 extern const signed char mux_RegisterSet[256];
+extern const char *ColorTable[256];
 
 /* From game.cpp */
 #define notify(p,m)                         notify_check(p,p,m, MSG_PUP_ALWAYS|MSG_ME_ALL|MSG_F_DOWN)

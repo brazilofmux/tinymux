@@ -1,6 +1,6 @@
 // funceval.cpp -- MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.101 2006-01-07 21:53:26 sdennis Exp $
+// $Id: funceval.cpp,v 1.102 2006-01-07 23:00:09 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -28,8 +28,6 @@
  * and TinyMUSH 2.2, and hope we have adequately noted in the source where
  * credit is due.
  */
-
-extern NAMETAB indiv_attraccess_nametab[];
 
 bool parse_and_get_attrib(dbref executor, char *fargs[], char **atext, dbref *thing, char *buff, char **bufc)
 {
@@ -79,6 +77,11 @@ bool parse_and_get_attrib(dbref executor, char *fargs[], char **atext, dbref *th
 
 FUNCTION(fun_cwho)
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     struct channel *ch = select_channel(fargs[0]);
     if (!ch)
     {
@@ -129,6 +132,14 @@ FUNCTION(fun_cwho)
 
 FUNCTION(fun_beep)
 {
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(fargs);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     safe_chr(BEEP_CHAR, buff, bufc);
 }
 
@@ -171,7 +182,7 @@ static const unsigned char ansi_have_table[256] =
     0, 0, 0, 0, 0, 0, 0, 0,  0, 0, 0, 0, 0, 0, 0, 0       // 0xF0-0xFF
 };
 
-void SimplifyColorLetters(char *pOut, char *pIn)
+static void SimplifyColorLetters(char *pOut, char *pIn)
 {
     if (  pIn[0] == 'n'
        && pIn[1] == '\0')
@@ -200,6 +211,12 @@ void SimplifyColorLetters(char *pOut, char *pIn)
 //
 FUNCTION(fun_ansi)
 {
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     int iArg0;
     for (iArg0 = 0; iArg0 + 1 < nfargs; iArg0 += 2)
     {
@@ -211,7 +228,6 @@ FUNCTION(fun_ansi)
         char *s = pOut;
         while (*s)
         {
-            extern const char *ColorTable[256];
             const char *pColor = ColorTable[(unsigned char)*s];
             if (pColor)
             {
@@ -231,6 +247,12 @@ FUNCTION(fun_ansi)
 
 FUNCTION(fun_zone)
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     if (!mudconf.have_zones)
     {
         safe_str("#-1 ZONES DISABLED", buff, bufc);
@@ -277,6 +299,10 @@ static bool check_command(dbref player, char *name, char *buff, char **bufc)
 
 FUNCTION(fun_link)
 {
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     if (check_command(executor, "@link", buff, bufc))
     {
         return;
@@ -286,6 +312,10 @@ FUNCTION(fun_link)
 
 FUNCTION(fun_tel)
 {
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     if (check_command(executor, "@teleport", buff, bufc))
     {
         return;
@@ -295,6 +325,12 @@ FUNCTION(fun_tel)
 
 FUNCTION(fun_pemit)
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     if (check_command(executor, "@pemit", buff, bufc))
     {
         return;
@@ -304,6 +340,12 @@ FUNCTION(fun_pemit)
 
 FUNCTION(fun_oemit)
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     if (check_command(executor, "@oemit", buff, bufc))
     {
         return;
@@ -313,6 +355,10 @@ FUNCTION(fun_oemit)
 
 FUNCTION(fun_emit)
 {
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     if (check_command(executor, "@emit", buff, bufc))
     {
         return;
@@ -322,6 +368,12 @@ FUNCTION(fun_emit)
 
 FUNCTION(fun_remit)
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     if (check_command(executor, "@pemit", buff, bufc))
     {
         return;
@@ -331,6 +383,9 @@ FUNCTION(fun_remit)
 
 FUNCTION(fun_cemit)
 {
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     if (check_command(executor, "@cemit", buff, bufc))
     {
         return;
@@ -433,6 +488,12 @@ FUNCTION(fun_create)
 
 FUNCTION(fun_textfile)
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     mux_strlwr(fargs[0]);
 
     CMDENT_ONE_ARG *cmdp = (CMDENT_ONE_ARG *)hashfindLEN(fargs[0],
@@ -490,6 +551,12 @@ static void set_attr_internal(dbref player, dbref thing, int attrnum, char *attr
 
 FUNCTION(fun_set)
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     if (check_command(executor, "@set", buff, bufc))
     {
         return;
@@ -743,17 +810,31 @@ static char *crypt_code(char *code, char *text, bool type)
 //
 FUNCTION(fun_encrypt)
 {
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     safe_str(crypt_code(fargs[1], fargs[0], true), buff, bufc);
 }
 
 FUNCTION(fun_decrypt)
 {
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     safe_str(crypt_code(fargs[1], fargs[0], false), buff, bufc);
 }
 
 // Borrowed from DarkZone
 //
-void scan_zone
+static void scan_zone
 (
     dbref executor,
     char *szZone,
@@ -798,11 +879,23 @@ void scan_zone
 
 FUNCTION(fun_zwho)
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     scan_zone(executor, fargs[0], TYPE_PLAYER, buff, bufc);
 }
 
 FUNCTION(fun_inzone)
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     scan_zone(executor, fargs[0], TYPE_ROOM, buff, bufc);
 }
 
@@ -810,6 +903,12 @@ FUNCTION(fun_inzone)
 //
 FUNCTION(fun_children)
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     dbref it = match_thing_quiet(executor, fargs[0]);
     if (!Good_obj(it))
     {
@@ -839,6 +938,8 @@ FUNCTION(fun_children)
 
 FUNCTION(fun_objeval)
 {
+    UNUSED_PARAMETER(nfargs);
+
     if (!*fargs[0])
     {
         return;
@@ -876,6 +977,8 @@ FUNCTION(fun_objeval)
 
 FUNCTION(fun_localize)
 {
+    UNUSED_PARAMETER(nfargs);
+
     char **preserve = NULL;
     int *preserve_len = NULL;
     preserve = PushPointers(MAX_GLOBAL_REGS);
@@ -893,11 +996,27 @@ FUNCTION(fun_localize)
 
 FUNCTION(fun_null)
 {
+    UNUSED_PARAMETER(buff);
+    UNUSED_PARAMETER(bufc);
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(fargs);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     return;
 }
 
 FUNCTION(fun_squish)
 {
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     if (nfargs == 0)
     {
         return;
@@ -927,6 +1046,13 @@ FUNCTION(fun_squish)
 
 FUNCTION(fun_stripansi)
 {
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     safe_str(strip_ansi(fargs[0]), buff, bufc);
 }
 
@@ -934,6 +1060,10 @@ FUNCTION(fun_stripansi)
 //
 FUNCTION(fun_zfun)
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     if (!mudconf.have_zones)
     {
         safe_str("#-1 ZONES DISABLED", buff, bufc);
@@ -1055,6 +1185,12 @@ FUNCTION(fun_columns)
 //
 FUNCTION(fun_table)
 {
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     // Check argument numbers, assign values and defaults if necessary.
     //
     char *pPaddingStart = NULL;
@@ -1258,6 +1394,12 @@ static int mem_usage(dbref thing)
 
 FUNCTION(fun_objmem)
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     dbref thing = match_thing_quiet(executor, fargs[0]);
     if (!Good_obj(thing))
     {
@@ -1275,6 +1417,11 @@ FUNCTION(fun_objmem)
 
 FUNCTION(fun_playmem)
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     dbref thing;
     if (nfargs == 1)
     {
@@ -1418,16 +1565,35 @@ static bool handle_flaglists(dbref player, char *name, char *fstr, bool type)
 
 FUNCTION(fun_orflags)
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     safe_bool(handle_flaglists(executor, fargs[0], fargs[1], false), buff, bufc);
 }
 
 FUNCTION(fun_andflags)
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     safe_bool(handle_flaglists(executor, fargs[0], fargs[1], true), buff, bufc);
 }
 
 FUNCTION(fun_strtrunc)
 {
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     int maxVisualWidth = mux_atol(fargs[1]);
     if (maxVisualWidth < 0)
     {
@@ -1484,6 +1650,11 @@ FUNCTION(fun_ifelse)
 //
 FUNCTION(fun_mail)
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     if (!mudconf.have_mailer)
     {
         safe_str("#-1 MAILER DISABLED.", buff, bufc);
@@ -1583,6 +1754,11 @@ FUNCTION(fun_mail)
 //
 FUNCTION(fun_mailfrom)
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     if (!mudconf.have_mailer)
     {
         safe_str("#-1 MAILER DISABLED.", buff, bufc);
@@ -1642,7 +1818,7 @@ FUNCTION(fun_mailfrom)
 // Hasattr (and hasattrp, which is derived from hasattr) borrowed from
 // TinyMUSH 2.2.
 
-void hasattr_handler(char *buff, char **bufc, dbref executor, char *fargs[],
+static void hasattr_handler(char *buff, char **bufc, dbref executor, char *fargs[],
                    bool bCheckParent)
 {
     dbref thing = match_thing_quiet(executor, fargs[0]);
@@ -1683,11 +1859,23 @@ void hasattr_handler(char *buff, char **bufc, dbref executor, char *fargs[],
 
 FUNCTION(fun_hasattr)
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     hasattr_handler(buff, bufc, executor, fargs, false);
 }
 
 FUNCTION(fun_hasattrp)
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     hasattr_handler(buff, bufc, executor, fargs, true);
 }
 
@@ -1706,7 +1894,7 @@ FUNCTION(fun_hasattrp)
 #define DEFAULT_EDEFAULT 2
 #define DEFAULT_UDEFAULT 4
 
-void default_handler(char *buff, char **bufc, dbref executor, dbref caller, dbref enactor,
+static void default_handler(char *buff, char **bufc, dbref executor, dbref caller, dbref enactor,
                      char *fargs[], int nfargs, char *cargs[], int ncargs, int key)
 {
     // Evaluating the first argument.
@@ -1818,6 +2006,12 @@ FUNCTION(fun_udefault)
  */
 FUNCTION(fun_findable)
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     dbref obj = match_thing_quiet(executor, fargs[0]);
     if (!Good_obj(obj))
     {
@@ -1873,6 +2067,13 @@ FUNCTION(fun_findable)
  */
 FUNCTION(fun_isword)
 {
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     char *p;
     bool result = true;
 
@@ -1892,6 +2093,12 @@ FUNCTION(fun_isword)
  */
 FUNCTION(fun_visible)
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     dbref it = match_thing_quiet(executor, fargs[0]);
     if (!Good_obj(it))
     {
@@ -2061,6 +2268,13 @@ FUNCTION(fun_graball)
  */
 FUNCTION(fun_scramble)
 {
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     size_t n;
     char *old = strip_ansi(fargs[0], &n);
 
@@ -2382,6 +2596,12 @@ FUNCTION(fun_matchall)
 //
 FUNCTION(fun_ports)
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     dbref target = lookup_player(executor, fargs[0], true);
     if (Good_obj(target))
     {
@@ -2499,6 +2719,11 @@ FUNCTION(fun_mix)
  */
 FUNCTION(fun_foreach)
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     if (  nfargs != 2
        && nfargs != 4)
     {
@@ -2610,11 +2835,9 @@ FUNCTION(fun_munge)
     }
 
     int nptrs1, nptrs2, nresults, i, j;
-    char *list1, *list2, *rlist, *bp, *str, *oldp;
+    char *list1, *list2, *rlist, *bp, *str;
     char *ptrs1[LBUF_SIZE / 2], *ptrs2[LBUF_SIZE / 2], *results[LBUF_SIZE / 2];
     char *uargs[2];
-
-    oldp = *bufc;
 
     // Copy our lists and chop them up.
     //
@@ -2679,6 +2902,12 @@ FUNCTION(fun_munge)
 
 FUNCTION(fun_die)
 {
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     int n   = mux_atol(fargs[0]);
     int die = mux_atol(fargs[1]);
 
@@ -2758,6 +2987,13 @@ FUNCTION(fun_lrand)
 //
 FUNCTION(fun_lit)
 {
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     // Just returns the argument, literally.
     //
     safe_str(fargs[0], buff, bufc);
@@ -2765,6 +3001,14 @@ FUNCTION(fun_lit)
 
 FUNCTION(fun_dumping)
 {
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(fargs);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
 #ifdef WIN32
     safe_chr('0', buff, bufc);
 #else // WIN32
@@ -2782,6 +3026,12 @@ static char aRadixTable[] =
 
 FUNCTION(fun_unpack)
 {
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     // Validate radix if present.
     //
     INT64 iRadix = 64;
@@ -2849,7 +3099,7 @@ FUNCTION(fun_unpack)
     safe_i64toa(sum, buff, bufc);
 }
 
-size_t mux_Pack(INT64 val, int iRadix, char *buf)
+static size_t mux_Pack(INT64 val, int iRadix, char *buf)
 {
     char *p = buf;
 
@@ -2899,6 +3149,12 @@ size_t mux_Pack(INT64 val, int iRadix, char *buf)
 
 FUNCTION(fun_pack)
 {
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     // Validate the arguments are numeric.
     //
     if (  !is_integer(fargs[0], NULL)
@@ -2929,6 +3185,12 @@ FUNCTION(fun_pack)
 
 FUNCTION(fun_strcat)
 {
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     int i;
     for (i = 0; i < nfargs; i++)
     {
@@ -2938,7 +3200,7 @@ FUNCTION(fun_strcat)
 
 // grep() and grepi() code borrowed from PennMUSH 1.50
 //
-char *grep_util(dbref player, dbref thing, char *pattern, char *lookfor, int len, bool insensitive)
+static char *grep_util(dbref player, dbref thing, char *pattern, char *lookfor, int len, bool insensitive)
 {
     // Returns a list of attributes which match <pattern> on <thing>
     // whose contents have <lookfor>.
@@ -3001,7 +3263,7 @@ char *grep_util(dbref player, dbref thing, char *pattern, char *lookfor, int len
     return tbuf1;
 }
 
-void grep_handler(char *buff, char **bufc, dbref executor, char *fargs[],
+static void grep_handler(char *buff, char **bufc, dbref executor, char *fargs[],
                    bool bCaseInsens)
 {
     dbref it = match_thing_quiet(executor, fargs[0]);
@@ -3036,11 +3298,23 @@ void grep_handler(char *buff, char **bufc, dbref executor, char *fargs[],
 
 FUNCTION(fun_grep)
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     grep_handler(buff, bufc, executor, fargs, false);
 }
 
 FUNCTION(fun_grepi)
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     grep_handler(buff, bufc, executor, fargs, true);
 }
 
@@ -3048,6 +3322,12 @@ FUNCTION(fun_grepi)
 //
 FUNCTION(fun_alphamax)
 {
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     char *amax = fargs[0];
     for (int i = 1; i < nfargs; i++)
     {
@@ -3063,6 +3343,12 @@ FUNCTION(fun_alphamax)
 //
 FUNCTION(fun_alphamin)
 {
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     char *amin = fargs[0];
     for (int i = 1; i < nfargs; i++)
     {
@@ -3078,6 +3364,13 @@ FUNCTION(fun_alphamin)
 //
 FUNCTION(fun_valid)
 {
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     // Checks to see if a given <something> is valid as a parameter of
     // a given type (such as an object name)
     //
@@ -3111,6 +3404,12 @@ FUNCTION(fun_valid)
 //
 FUNCTION(fun_hastype)
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     dbref it = match_thing_quiet(executor, fargs[0]);
     if (!Good_obj(it))
     {
@@ -3152,6 +3451,12 @@ FUNCTION(fun_hastype)
 //
 FUNCTION(fun_lparent)
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     dbref it = match_thing_quiet(executor, fargs[0]);
     if (!Good_obj(it))
     {
@@ -3192,7 +3497,7 @@ FUNCTION(fun_lparent)
 
 // stacksize - returns how many items are stuffed onto an object stack
 //
-int stacksize(dbref doer)
+static int stacksize(dbref doer)
 {
     int i;
     STACK *sp;
@@ -3206,6 +3511,11 @@ int stacksize(dbref doer)
 
 FUNCTION(fun_lstack)
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     STACK *sp;
     dbref doer;
 
@@ -3257,6 +3567,11 @@ void stack_clr(dbref obj)
 
 FUNCTION(fun_empty)
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     dbref doer;
 
     if (nfargs == 0 || !*fargs[0])
@@ -3283,6 +3598,11 @@ FUNCTION(fun_empty)
 
 FUNCTION(fun_items)
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     dbref doer;
 
     if (nfargs == 0 || !*fargs[0])
@@ -3309,6 +3629,11 @@ FUNCTION(fun_items)
 
 FUNCTION(fun_peek)
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     STACK *sp;
     dbref doer;
     int count, pos;
@@ -3367,6 +3692,11 @@ FUNCTION(fun_peek)
 
 FUNCTION(fun_pop)
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     dbref doer;
 
     if (nfargs <= 0 || !*fargs[0])
@@ -3440,6 +3770,11 @@ FUNCTION(fun_pop)
 
 FUNCTION(fun_push)
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     dbref doer;
     char *data;
 
@@ -3490,7 +3825,7 @@ FUNCTION(fun_push)
  * the regexp $1, $2, and $3 become r(0), r(3), and r(5), respectively.
  */
 
-void real_regmatch(const char *search, const char *pattern, char *registers,
+static void real_regmatch(const char *search, const char *pattern, char *registers,
                    int nfargs, char *buff, char **bufc, bool cis)
 {
     if (MuxAlarm.bAlarmed)
@@ -3575,11 +3910,25 @@ void real_regmatch(const char *search, const char *pattern, char *registers,
 
 FUNCTION(fun_regmatch)
 {
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     real_regmatch(fargs[0], fargs[1], fargs[2], nfargs, buff, bufc, false);
 }
 
 FUNCTION(fun_regmatchi)
 {
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     real_regmatch(fargs[0], fargs[1], fargs[2], nfargs, buff, bufc, true);
 }
 
@@ -3589,7 +3938,7 @@ FUNCTION(fun_regmatchi)
  * instead of a wildcard pattern. The versions ending in i are case-insensitive.
  */
 
-void real_regrab(char *search, const char *pattern, SEP *psep, char *buff,
+static void real_regrab(char *search, const char *pattern, SEP *psep, char *buff,
                  char **bufc, bool cis, bool all)
 {
     if (MuxAlarm.bAlarmed)
@@ -3702,6 +4051,13 @@ FUNCTION(fun_regraballi)
 
 FUNCTION(fun_translate)
 {
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     int ch = fargs[1][0];
     bool type = (ch == 'p' || ch == '1');
     safe_str(translate_string(fargs[0], type), buff, bufc);
@@ -3931,6 +4287,10 @@ static void room_list
 
 FUNCTION(fun_lrooms)
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     dbref room = match_thing_quiet(executor, fargs[0]);
     if (!Good_obj(room))
     {
