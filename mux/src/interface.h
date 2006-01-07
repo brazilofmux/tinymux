@@ -1,6 +1,6 @@
 // interface.h
 //
-// $Id: interface.h,v 1.20 2006-01-07 08:55:24 sdennis Exp $
+// $Id: interface.h,v 1.21 2006-01-07 18:24:34 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -251,6 +251,7 @@ void Task_ProcessCommand(void *arg_voidptr, int arg_iInteger);
 extern int site_check(struct in_addr, SITE *);
 extern dbref  find_connected_name(dbref, char *);
 extern void do_command(DESC *, char *);
+extern void desc_addhash(DESC *);
 
 // From predicates.cpp
 //

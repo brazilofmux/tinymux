@@ -1,6 +1,6 @@
 // netcommon.cpp
 //
-// $Id: netcommon.cpp,v 1.61 2006-01-07 08:55:24 sdennis Exp $
+// $Id: netcommon.cpp,v 1.62 2006-01-07 18:24:34 sdennis Exp $
 //
 // This file contains routines used by the networking code that do not
 // depend on the implementation of the networking code.  The network-specific
@@ -27,12 +27,6 @@
 #include "levels.h"
 #endif /* REALITY_LVLS */
 
-#ifdef WIN32
-extern HANDLE CompletionPort;    // IOs are queued up on this port
-extern OVERLAPPED lpo_aborted; // special to indicate a player has finished TCP IOs
-extern OVERLAPPED lpo_aborted_final; // Actually free the descriptor.
-extern OVERLAPPED lpo_shutdown; // special to indicate a player should do a shutdown
-#endif
 
 /* ---------------------------------------------------------------------------
  * make_portlist: Make a list of ports for PORTS().
@@ -40,6 +34,8 @@ extern OVERLAPPED lpo_shutdown; // special to indicate a player should do a shut
 
 void make_portlist(dbref player, dbref target, char *buff, char **bufc)
 {
+    UNUSED_PARAMETER(player);
+
     ITL itl;
     ItemToList_Init(&itl, buff, bufc);
 
@@ -254,7 +250,7 @@ void clearstrings(DESC *d)
     }
 }
 
-void add_to_output_queue(DESC *d, const char *b, int n)
+static void add_to_output_queue(DESC *d, const char *b, int n)
 {
     TBLOCK *tp;
     int left;
@@ -347,7 +343,7 @@ void queue_write_LEN(DESC *d, const char *b, int n)
         {
             STARTLOG(LOG_NET, "NET", "WRITE");
             char *buf = alloc_lbuf("queue_write.LOG");
-            sprintf(buf, "[%d/%s] Output buffer overflow, %d chars discarded by ", d->descriptor, d->addr, tp->hdr.nchars);
+            sprintf(buf, "[%u/%s] Output buffer overflow, %d chars discarded by ", d->descriptor, d->addr, tp->hdr.nchars);
             log_text(buf);
             free_lbuf(buf);
             if (d->flags & DS_CONNECTED)
@@ -386,7 +382,7 @@ void queue_write(DESC *d, const char *b)
     queue_write_LEN(d, b, strlen(b));
 }
 
-const char *encode_iac(const char *szString)
+static const char *encode_iac(const char *szString)
 {
     static char Buffer[2*LBUF_SIZE];
     char *pBuffer = Buffer;
@@ -1167,7 +1163,7 @@ int fetch_session(dbref target)
     return nCount;
 }
 
-DESC *find_least_idle(dbref target)
+static DESC *find_least_idle(dbref target)
 {
     CLinearTimeAbsolute ltaNewestLastTime;
 
@@ -1651,14 +1647,17 @@ static void dump_users(DESC *e, char *match, int key)
             //
             size_t nOnFor = 25 - nFill - vwNameField;
 
+            const char *pTimeStamp1 = time_format_1(ltdConnected.ReturnSeconds(), nOnFor);
+            const char *pTimeStamp2 = time_format_2(ltdLastTime.ReturnSeconds());
+
             if (  (e->flags & DS_CONNECTED)
                && Wizard_Who(e->player)
                && key == CMD_WHO)
             {
                 sprintf(buf, "%s%s%s %4s%-3s#%-6d%5d%3s%s\r\n",
                     pNameField, aFill,
-                    time_format_1(ltdConnected.ReturnSeconds(), nOnFor),
-                    time_format_2(ltdLastTime.ReturnSeconds()),
+                    pTimeStamp1,
+                    pTimeStamp2,
                     flist,
                     ((d->flags & DS_CONNECTED) ? Location(d->player) : -1),
                     d->command_count,
@@ -1667,10 +1666,10 @@ static void dump_users(DESC *e, char *match, int key)
             }
             else if (key == CMD_SESSION)
             {
-                sprintf(buf, "%s%s%s %4s%5d%5d%6d%10d%6d%6d%10d\r\n",
+                sprintf(buf, "%s%s%s %4s%5u%5d%6d%10d%6d%6d%10d\r\n",
                     pNameField, aFill,
-                    time_format_1(ltdConnected.ReturnSeconds(), nOnFor),
-                    time_format_2(ltdLastTime.ReturnSeconds()),
+                    pTimeStamp1,
+                    pTimeStamp2,
                     d->descriptor,
                     d->input_size, d->input_lost,
                     d->input_tot,
@@ -1682,8 +1681,8 @@ static void dump_users(DESC *e, char *match, int key)
             {
                 sprintf(buf, "%s%s%s %4s%-3s%s\r\n",
                     pNameField, aFill,
-                    time_format_1(ltdConnected.ReturnSeconds(), nOnFor),
-                    time_format_2(ltdLastTime.ReturnSeconds()),
+                    pTimeStamp1,
+                    pTimeStamp2,
                     flist,
                     d->doing);
             }
@@ -1691,8 +1690,8 @@ static void dump_users(DESC *e, char *match, int key)
             {
                 sprintf(buf, "%s%s%s %4s  %s\r\n",
                     pNameField, aFill,
-                    time_format_1(ltdConnected.ReturnSeconds(), nOnFor),
-                    time_format_2(ltdLastTime.ReturnSeconds()),
+                    pTimeStamp1,
+                    pTimeStamp2,
                     d->doing);
             }
             queue_string(e, buf);
@@ -1753,7 +1752,7 @@ static void dump_info(DESC *arg_desc)
     queue_write(arg_desc, "### End INFO\r\n");
 }
 
-char *MakeCanonicalDoing(char *pDoing, int *pnValidDoing, bool *pbValidDoing)
+static char *MakeCanonicalDoing(char *pDoing, int *pnValidDoing, bool *pbValidDoing)
 {
     *pnValidDoing = 0;
     *pbValidDoing = false;
@@ -1789,6 +1788,9 @@ char *MakeCanonicalDoing(char *pDoing, int *pnValidDoing, bool *pbValidDoing)
 //
 void do_doing(dbref executor, dbref caller, dbref enactor, int key, char *arg)
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+
     // Make sure there can be no embedded newlines from %r
     //
     static char *Empty = "";
@@ -1918,7 +1920,7 @@ static void failconn(const char *logcode, const char *logtype, const char *logre
 {
     STARTLOG(LOG_LOGIN | LOG_SECURITY, logcode, "RJCT");
     char *buff = alloc_mbuf("failconn.LOG");
-    sprintf(buff, "[%d/%s] %s rejected to ", d->descriptor, d->addr, logtype);
+    sprintf(buff, "[%u/%s] %s rejected to ", d->descriptor, d->addr, logtype);
     log_text(buff);
     free_mbuf(buff);
     if (player != NOTHING)
@@ -2048,7 +2050,7 @@ static bool check_connect(DESC *d, char *msg)
             queue_write(d, connect_fail);
             STARTLOG(LOG_LOGIN | LOG_SECURITY, "CON", "BAD");
             buff = alloc_lbuf("check_conn.LOG.bad");
-            sprintf(buff, "[%d/%s] Failed connect to '%s'", d->descriptor, d->addr, user);
+            sprintf(buff, "[%u/%s] Failed connect to '%s'", d->descriptor, d->addr, user);
             log_text(buff);
             free_lbuf(buff);
             ENDLOG;
@@ -2104,7 +2106,7 @@ static bool check_connect(DESC *d, char *msg)
             //
             STARTLOG(LOG_LOGIN, "CON", "LOGIN");
             buff = alloc_mbuf("check_conn.LOG.login");
-            sprintf(buff, "[%d/%s] Connected to ", d->descriptor, d->addr);
+            sprintf(buff, "[%u/%s] Connected to ", d->descriptor, d->addr);
             log_text(buff);
             log_name_and_loc(player);
             free_mbuf(buff);
@@ -2224,7 +2226,7 @@ static bool check_connect(DESC *d, char *msg)
                 queue_write(d, "\r\n");
                 STARTLOG(LOG_SECURITY | LOG_PCREATES, "CON", "BAD");
                 buff = alloc_lbuf("check_conn.LOG.badcrea");
-                sprintf(buff, "[%d/%s] Create of '%s' failed", d->descriptor, d->addr, user);
+                sprintf(buff, "[%u/%s] Create of '%s' failed", d->descriptor, d->addr, user);
                 log_text(buff);
                 free_lbuf(buff);
                 ENDLOG;
@@ -2234,7 +2236,7 @@ static bool check_connect(DESC *d, char *msg)
                 AddToPublicChannel(player);
                 STARTLOG(LOG_LOGIN | LOG_PCREATES, "CON", "CREA");
                 buff = alloc_mbuf("check_conn.LOG.create");
-                sprintf(buff, "[%d/%s] Created ", d->descriptor, d->addr);
+                sprintf(buff, "[%u/%s] Created ", d->descriptor, d->addr);
                 log_text(buff);
                 log_name(player);
                 free_mbuf(buff);
@@ -2259,7 +2261,7 @@ static bool check_connect(DESC *d, char *msg)
         STARTLOG(LOG_LOGIN | LOG_SECURITY, "CON", "BAD");
         buff = alloc_mbuf("check_conn.LOG.bad");
         msg[150] = '\0';
-        sprintf(buff, "[%d/%s] Failed connect: '%s'", d->descriptor, d->addr, msg);
+        sprintf(buff, "[%u/%s] Failed connect: '%s'", d->descriptor, d->addr, msg);
         log_text(buff);
         free_mbuf(buff);
         ENDLOG;
@@ -2470,6 +2472,9 @@ void do_command(DESC *d, char *command)
 
 void logged_out1(dbref executor, dbref caller, dbref enactor, int key, char *arg)
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+
     // PUEBLOCLIENT affects all the player's connections.
     //
     if (key == CMD_PUEBLOCLIENT)
@@ -2511,6 +2516,8 @@ void logged_out0(dbref executor, dbref caller, dbref enactor, int key)
 
 void Task_ProcessCommand(void *arg_voidptr, int arg_iInteger)
 {
+    UNUSED_PARAMETER(arg_iInteger);
+
     DESC *d = (DESC *)arg_voidptr;
     if (d)
     {
@@ -2731,6 +2738,12 @@ dbref find_connected_name(dbref player, char *name)
 
 FUNCTION(fun_doing)
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     if (is_rational(fargs[0]))
     {
         SOCKET s = mux_atol(fargs[0]);
@@ -2786,6 +2799,12 @@ FUNCTION(fun_doing)
 // ---------------------------------------------------------------------------
 FUNCTION(fun_host)
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     if (!Wizard_Who(executor))
     {
         safe_noperm(buff, bufc);
@@ -2843,11 +2862,27 @@ FUNCTION(fun_host)
 
 FUNCTION(fun_poll)
 {
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(fargs);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     safe_str(mudstate.doing_hdr, buff, bufc);
 }
 
 FUNCTION(fun_motd)
 {
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(fargs);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     safe_str(mudconf.motd_msg, buff, bufc);
 }
 
@@ -2875,7 +2910,7 @@ int fetch_cmds(dbref target)
     }
 }
 
-void ParseConnectionInfoString(char *pConnInfo, char *pFields[5])
+static void ParseConnectionInfoString(char *pConnInfo, char *pFields[5])
 {
     MUX_STRTOK_STATE tts;
     mux_strtok_src(&tts, pConnInfo);

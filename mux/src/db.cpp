@@ -1,6 +1,6 @@
 // db.cpp
 //
-// $Id: db.cpp,v 1.78 2006-01-07 09:16:04 sdennis Exp $
+// $Id: db.cpp,v 1.79 2006-01-07 18:24:34 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -19,18 +19,12 @@
 
 OBJ *db = NULL;
 
-extern void desc_addhash(DESC *);
-
 typedef struct atrcount ATRCOUNT;
 struct atrcount
 {
     dbref thing;
     int count;
 };
-
-// Check routine forward declaration.
-//
-extern void desc_reload(dbref);
 
 // list of attributes
 //

@@ -1,6 +1,6 @@
 // externs.h -- Prototypes for externs not defined elsewhere.
 //
-// $Id: externs.h,v 1.56 2006-01-07 09:22:35 sdennis Exp $
+// $Id: externs.h,v 1.57 2006-01-07 18:24:34 sdennis Exp $
 //
 
 #ifndef EXTERNS_H
@@ -18,6 +18,12 @@ void CleanUpSlaveProcess(void);
 void CleanUpSQLSlaveSocket(void);
 void CleanUpSQLSlaveProcess(void);
 #endif // QUERY_SLAVE
+#ifdef WIN32
+extern HANDLE CompletionPort;    // IOs are queued up on this port
+extern OVERLAPPED lpo_aborted; // special to indicate a player has finished TCP IOs
+extern OVERLAPPED lpo_aborted_final; // Actually free the descriptor.
+extern OVERLAPPED lpo_shutdown; // special to indicate a player should do a shutdown
+#endif
 
 /* From conf.cpp */
 extern void cf_log_notfound(dbref, char *, const char *, char *);
@@ -53,6 +59,12 @@ extern struct mail *mail_fetch(dbref, int);
 
 /* From netcommon.cpp */
 extern void DCL_CDECL raw_broadcast(int, char *, ...);
+extern void list_siteinfo(dbref);
+extern void logged_out0(dbref executor, dbref caller, dbref enactor, int key);
+extern void logged_out1(dbref executor, dbref caller, dbref enactor, int key, char *arg);
+extern void init_logout_cmdtab(void);
+extern void desc_reload(dbref);
+extern void make_portlist(dbref, dbref, char *, char **);
 
 /* From cque.cpp */
 extern int  nfy_que(dbref, int, int, int);
