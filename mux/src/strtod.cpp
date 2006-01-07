@@ -130,6 +130,7 @@
 
 #include "autoconf.h"
 #include "config.h"
+#include "externs.h"
 #include "stringutil.h"
 
 #if   defined(HAVE_FPU_CONTROL_H)
@@ -2577,7 +2578,7 @@ static char *nrv_alloc(char *s, char **rve, int n)
 
 /* freedtoa(s) must be used to free values s returned by dtoa.
  */
-void freedtoa(char *s)
+static void freedtoa(char *s)
 {
     Bigint *b = (Bigint *)((int *)s - 1);
     b->maxwds = 1 << (b->k = *(int*)b);
@@ -3536,7 +3537,7 @@ void mux_FPRestore(void)
 
 #elif defined(WIN32)
 
-unsigned origcw;
+static unsigned origcw;
 
 void mux_FPInit(void)
 {
