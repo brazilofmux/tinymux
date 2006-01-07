@@ -1,6 +1,6 @@
 // externs.h -- Prototypes for externs not defined elsewhere.
 //
-// $Id: externs.h,v 1.50 2006/01/07 06:15:44 sdennis Exp $
+// $Id: externs.h,v 1.51 2006/01/07 06:26:07 sdennis Exp $
 //
 
 #ifndef EXTERNS_H
@@ -940,5 +940,6 @@ extern void pcache_sync(void);
 //
 extern void cache_redirect(void);
 extern void cache_pass2(void);
+extern CLinearTimeAbsolute cs_ltime;
 
 #endif // EXTERNS_H

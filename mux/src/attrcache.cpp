@@ -1,6 +1,6 @@
 // svdocache.cpp -- Attribute caching module.
 //
-// $Id: attrcache.cpp,v 1.20 2006/01/07 06:15:44 sdennis Exp $
+// $Id: attrcache.cpp,v 1.21 2006/01/07 06:26:07 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -18,7 +18,7 @@ static bool cache_redirected = false;
 #define N_TEMP_FILES 8
 static FILE *TempFiles[N_TEMP_FILES];
 
-static CLinearTimeAbsolute cs_ltime;
+CLinearTimeAbsolute cs_ltime;
 
 #pragma pack(1)
 typedef struct tagAttrRecord
