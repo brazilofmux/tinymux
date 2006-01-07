@@ -1,6 +1,6 @@
 // powers.cpp -- Power manipulation routines.
 //
-// $Id: powers.cpp,v 1.14 2005-11-27 04:03:38 sdennis Exp $
+// $Id: powers.cpp,v 1.15 2006-01-07 09:01:30 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -15,8 +15,10 @@
  * ph_any: set or clear indicated bit, no security checking
  */
 
-bool ph_any(dbref target, dbref player, POWER power, int fpowers, bool reset)
+static bool ph_any(dbref target, dbref player, POWER power, int fpowers, bool reset)
 {
+    UNUSED_PARAMETER(player);
+
     if (fpowers & POWER_EXT)
     {
         if (reset)
@@ -46,7 +48,7 @@ bool ph_any(dbref target, dbref player, POWER power, int fpowers, bool reset)
  * ph_god: only GOD may set or clear the bit
  */
 
-bool ph_god(dbref target, dbref player, POWER power, int fpowers, bool reset)
+static bool ph_god(dbref target, dbref player, POWER power, int fpowers, bool reset)
 {
     if (!God(player))
     {
@@ -59,7 +61,7 @@ bool ph_god(dbref target, dbref player, POWER power, int fpowers, bool reset)
  * ph_wiz: only WIZARDS (or GOD) may set or clear the bit
  */
 
-bool ph_wiz(dbref target, dbref player, POWER power, int fpowers, bool reset)
+static bool ph_wiz(dbref target, dbref player, POWER power, int fpowers, bool reset)
 {
     if (!Wizard(player))
     {
@@ -67,6 +69,8 @@ bool ph_wiz(dbref target, dbref player, POWER power, int fpowers, bool reset)
     }
     return (ph_any(target, player, power, fpowers, reset));
 }
+
+#if 0
 
 /* ---------------------------------------------------------------------------
  * ph_wizroy: only WIZARDS, ROYALTY, (or GOD) may set or clear the bit
@@ -93,8 +97,9 @@ bool ph_inherit(dbref target, dbref player, POWER power, int fpowers, bool reset
     }
     return (ph_any(target, player, power, fpowers, reset));
 }
+#endif
 
-POWERENT gen_powers[] =
+static POWERENT gen_powers[] =
 {
     {"announce",        POW_ANNOUNCE,   0, 0,   ph_wiz},
     {"boot",            POW_BOOT,       0, 0,   ph_wiz},
@@ -185,8 +190,10 @@ void display_powertab(dbref player)
     free_lbuf(buf);
 }
 
-POWERENT *find_power(dbref thing, char *powername)
+static POWERENT *find_power(dbref thing, char *powername)
 {
+    UNUSED_PARAMETER(thing);
+
     // Convert powername to canonical lowercase.
     //
     char *buff = alloc_sbuf("find_power");
