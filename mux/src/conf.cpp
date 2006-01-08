@@ -1,6 +1,6 @@
 // conf.cpp -- Set up configuration information and static data.
 //
-// $Id: conf.cpp,v 1.69 2006/01/07 23:46:32 sdennis Exp $
+// $Id: conf.cpp,v 1.70 2006/01/08 03:10:21 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -752,16 +752,19 @@ static CF_HAND(cf_flagalias)
     bool bValid;
     void *cp;
     char *pName = MakeCanonicalFlagName(orig, &nName, &bValid);
-    if (  bValid
-       && (cp = hashfindLEN(pName, nName, &mudstate.flags_htab)))
+    if (bValid)
     {
-        pName = MakeCanonicalFlagName(alias, &nName, &bValid);
-        if (bValid)
+        cp = hashfindLEN(pName, nName, &mudstate.flags_htab);
+        if (cp)
         {
-            if (!hashfindLEN(pName, nName, &mudstate.flags_htab))
+            pName = MakeCanonicalFlagName(alias, &nName, &bValid);
+            if (bValid)
             {
-                hashaddLEN(pName, nName, cp, &mudstate.flags_htab);
-                success = true;
+                if (!hashfindLEN(pName, nName, &mudstate.flags_htab))
+                {
+                    hashaddLEN(pName, nName, cp, &mudstate.flags_htab);
+                    success = true;
+               }
             }
         }
     }
@@ -792,14 +795,17 @@ static CF_HAND(cf_poweralias)
     bool bValid;
     void *cp;
     char *pName = MakeCanonicalFlagName(orig, &nName, &bValid);
-    if (  bValid
-       && (cp = hashfindLEN(pName, nName, &mudstate.powers_htab)))
+    if (bValid)
     {
-        pName = MakeCanonicalFlagName(alias, &nName, &bValid);
-        if (bValid)
+        cp = hashfindLEN(pName, nName, &mudstate.powers_htab);
+        if (cp)
         {
-            hashaddLEN(pName, nName, cp, &mudstate.powers_htab);
-            success = true;
+            pName = MakeCanonicalFlagName(alias, &nName, &bValid);
+            if (bValid)
+            {
+                hashaddLEN(pName, nName, cp, &mudstate.powers_htab);
+                success = true;
+            }
         }
     }
     if (!success)
