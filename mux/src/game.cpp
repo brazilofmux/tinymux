@@ -1,6 +1,6 @@
 // game.cpp
 //
-// $Id: game.cpp,v 1.92 2006-01-07 22:56:14 sdennis Exp $
+// $Id: game.cpp,v 1.93 2006-01-08 17:06:24 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -648,7 +648,7 @@ void notify_check(dbref target, dbref sender, const char *msg, int key)
             tbuff = alloc_sbuf("notify_check.nospoof");
             safe_chr('[', msg_ns, &mp);
             safe_str(Name(sender), msg_ns, &mp);
-            sprintf(tbuff, "(#%d)", sender);
+            mux_sprintf(tbuff, SBUF_SIZE, "(#%d)", sender);
             safe_str(tbuff, msg_ns, &mp);
 
             if (sender != Owner(sender))
@@ -659,7 +659,7 @@ void notify_check(dbref target, dbref sender, const char *msg, int key)
             }
             if (sender != mudstate.curr_enactor)
             {
-                sprintf(tbuff, "<-(#%d)", mudstate.curr_enactor);
+                mux_sprintf(tbuff, SBUF_SIZE, "<-(#%d)", mudstate.curr_enactor);
                 safe_str(tbuff, msg_ns, &mp);
             }
             safe_str("] ", msg_ns, &mp);
@@ -1328,10 +1328,10 @@ void dump_database_internal(int dump_type)
     {
         DUMP_PROCEDURE *dp = &DumpProcedures[dump_type];
 
-        sprintf(outfn, "%s%s", *(dp->ppszOutputBase), dp->szOutputSuffix);
+        mux_sprintf(outfn, sizeof(outfn), "%s%s", *(dp->ppszOutputBase), dp->szOutputSuffix);
         if (dp->bUseTemporary)
         {
-            sprintf(tmpfile, "%s.#%d#", outfn, mudstate.epoch);
+            mux_sprintf(tmpfile, sizeof(tmpfile), "%s.#%d#", outfn, mudstate.epoch);
             RemoveFile(tmpfile);
             f = fopen(tmpfile, "wb");
         }
@@ -1388,10 +1388,10 @@ void dump_database_internal(int dump_type)
     //
     if (mudconf.compress_db)
     {
-        sprintf(prevfile, "%s.prev.gz", mudconf.outdb);
-        sprintf(tmpfile, "%s.#%d#.gz", mudconf.outdb, mudstate.epoch - 1);
+        mux_sprintf(prevfile, sizeof(prevfile), "%s.prev.gz", mudconf.outdb);
+        mux_sprintf(tmpfile, sizeof(tmpfile), "%s.#%d#.gz", mudconf.outdb, mudstate.epoch - 1);
         RemoveFile(tmpfile);
-        sprintf(tmpfile, "%s.#%d#.gz", mudconf.outdb, mudstate.epoch);
+        mux_sprintf(tmpfile, sizeof(tmpfile), "%s.#%d#.gz", mudconf.outdb, mudstate.epoch);
         strcpy(outfn, mudconf.outdb);
         strcat(outfn, ".gz");
 
@@ -1418,10 +1418,10 @@ void dump_database_internal(int dump_type)
     }
     else
     {
-        sprintf(prevfile, "%s.prev", mudconf.outdb);
-        sprintf(tmpfile, "%s.#%d#", mudconf.outdb, mudstate.epoch - 1);
+        mux_sprintf(prevfile, sizeof(prevfile), "%s.prev", mudconf.outdb);
+        mux_sprintf(tmpfile, sizeof(tmpfile), "%s.#%d#", mudconf.outdb, mudstate.epoch - 1);
         RemoveFile(tmpfile);
-        sprintf(tmpfile, "%s.#%d#", mudconf.outdb, mudstate.epoch);
+        mux_sprintf(tmpfile, sizeof(tmpfile), "%s.#%d#", mudconf.outdb, mudstate.epoch);
 
         f = fopen(tmpfile, "wb");
         if (f)
@@ -1490,7 +1490,7 @@ static void dump_database(void)
     mudstate.dumped  = 0;
 #endif
     buff = alloc_mbuf("dump_database");
-    sprintf(buff, "%s.#%d#", mudconf.outdb, mudstate.epoch);
+    mux_sprintf(buff, MBUF_SIZE, "%s.#%d#", mudconf.outdb, mudstate.epoch);
 
     STARTLOG(LOG_DBSAVES, "DMP", "DUMP");
     log_text("Dumping: ");
@@ -1568,7 +1568,7 @@ void fork_and_dump(int key)
         if (key & DUMP_STRUCT)
         {
             mudstate.epoch++;
-            sprintf(buff, "%s.#%d#", mudconf.outdb, mudstate.epoch);
+            mux_sprintf(buff, LBUF_SIZE, "%s.#%d#", mudconf.outdb, mudstate.epoch);
             log_text("Checkpointing: ");
             log_text(buff);
         }
@@ -1578,7 +1578,7 @@ void fork_and_dump(int key)
     {
         STARTLOG(LOG_DBSAVES, "DMP", "FLAT");
         log_text("Creating flatfile: ");
-        sprintf(buff, "%s.FLAT", mudconf.outdb);
+        mux_sprintf(buff, LBUF_SIZE, "%s.FLAT", mudconf.outdb);
         log_text(buff);
         ENDLOG;
     }

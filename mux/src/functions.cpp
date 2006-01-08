@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.166 2006-01-07 21:53:26 sdennis Exp $
+// $Id: functions.cpp,v 1.167 2006-01-08 17:02:46 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -7630,11 +7630,11 @@ static const char *digit_format(int Seconds)
 
     if (Days > 0)
     {
-        sprintf(TimeBuffer80, "%dd %02d:%02d", Days, Hours, Minutes);
+        mux_sprintf(TimeBuffer80, sizeof(TimeBuffer80), "%dd %02d:%02d", Days, Hours, Minutes);
     }
     else
     {
-        sprintf(TimeBuffer80, "%02d:%02d", Hours, Minutes);
+        mux_sprintf(TimeBuffer80, sizeof(TimeBuffer80), "%02d:%02d", Hours, Minutes);
     }
     return TimeBuffer80;
 }
@@ -7724,7 +7724,7 @@ const char *time_format_1(int Seconds, size_t maxWidth)
         n[i] = Seconds / tf1_case_table[iCase].div[i];
         Seconds -= n[i] *tf1_case_table[iCase].div[i];
     }
-    sprintf(TimeBuffer80, tf1_case_table[iCase].specs[iWidth], n[0], n[1], n[2]);
+    mux_sprintf(TimeBuffer80, sizeof(TimeBuffer80), tf1_case_table[iCase].specs[iWidth], n[0], n[1], n[2]);
     return TimeBuffer80;
 }
 

@@ -1,6 +1,6 @@
 // create.cpp -- Commands that create new objects.
 //
-// $Id: create.cpp,v 1.18 2006-01-08 06:41:37 sdennis Exp $
+// $Id: create.cpp,v 1.19 2006-01-08 16:56:59 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -388,7 +388,7 @@ void do_link
 
         STARTLOG(LOG_BUGS, "BUG", "OTYPE");
         buff = alloc_mbuf("do_link.LOG.badtype");
-        sprintf(buff, "Strange object type: object #%d = %d",
+        mux_sprintf(buff, MBUF_SIZE, "Strange object type: object #%d = %d",
             thing, Typeof(thing));
         log_text(buff);
         free_mbuf(buff);

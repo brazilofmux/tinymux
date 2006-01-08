@@ -1,6 +1,6 @@
 // comsys.cpp
 //
-// $Id: comsys.cpp,v 1.42 2006-01-08 05:42:38 sdennis Exp $
+// $Id: comsys.cpp,v 1.43 2006-01-08 16:54:12 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -119,7 +119,7 @@ void save_comsys(char *filename)
 {
     char buffer[500];
 
-    sprintf(buffer, "%s.#", filename);
+    mux_sprintf(buffer, sizeof(buffer), "%s.#", filename);
     FILE *fp = fopen(buffer, "wb");
     if (!fp)
     {
@@ -616,12 +616,12 @@ void load_comsystem(FILE *fp)
             //
             if (ch->type & CHANNEL_PUBLIC)
             {
-                sprintf(temp, "%s[%s%s%s%s%s]%s", ANSI_CYAN, ANSI_HILITE,
+                mux_sprintf(temp, sizeof(temp), "%s[%s%s%s%s%s]%s", ANSI_CYAN, ANSI_HILITE,
                     ANSI_BLUE, ch->name, ANSI_NORMAL, ANSI_CYAN, ANSI_NORMAL);
             }
             else
             {
-                sprintf(temp, "%s[%s%s%s%s%s]%s", ANSI_MAGENTA, ANSI_HILITE,
+                mux_sprintf(temp, sizeof(temp), "%s[%s%s%s%s%s]%s", ANSI_MAGENTA, ANSI_HILITE,
                     ANSI_RED, ch->name, ANSI_NORMAL, ANSI_MAGENTA,
                     ANSI_NORMAL);
             }
@@ -1734,8 +1734,8 @@ void do_createchannel(dbref executor, dbref caller, dbref enactor, int key, char
             nChannel = nMax;
         }
         Buffer[nChannel] = '\0';
-        sprintf(newchannel->header, "%s[%s]%s", ANSI_HILITE, Buffer,
-            ANSI_NORMAL);
+        mux_sprintf(newchannel->header, sizeof(newchannel->header),
+            "%s[%s]%s", ANSI_HILITE, Buffer, ANSI_NORMAL);
 
         // Then, we use the non-ANSI part for the name.
         //
@@ -1926,7 +1926,7 @@ static void do_listchannels(dbref player)
            || (ch->type & CHANNEL_PUBLIC)
            || Controls(player, ch->charge_who))
         {
-            sprintf(temp, "%c%c%c %-13.13s %c%c%c/%c%c%c %5d %5d %8d %8d %6d %10d",
+            mux_sprintf(temp, sizeof(temp), "%c%c%c %-13.13s %c%c%c/%c%c%c %5d %5d %8d %8d %6d %10d",
                 (ch->type & CHANNEL_PUBLIC) ? 'P' : '-',
                 (ch->type & CHANNEL_LOUD) ? 'L' : '-',
                 (ch->type & CHANNEL_SPOOF) ? 'S' : '-',
@@ -2229,7 +2229,7 @@ void do_channelwho(dbref executor, dbref caller, dbref enactor, int key, char *a
               || See_Hidden(executor)))
         {
             buff = unparse_object(executor, user->who, false);
-            sprintf(temp, "%-29.29s %-6.6s %-6.6s", strip_ansi(buff),
+            mux_sprintf(temp, sizeof(temp), "%-29.29s %-6.6s %-6.6s", strip_ansi(buff),
                 user->bUserIsOn ? "on " : "off",
                 isPlayer(user->who) ? "yes" : "no ");
             raw_notify(executor, temp);
@@ -3033,7 +3033,7 @@ void do_chanlist
                 }
                 else
                 {
-                    sprintf(buf, "%-54.54s", atrstr);
+                    mux_sprintf(buf, MBUF_SIZE, "%-54.54s", atrstr);
                 }
                 free_lbuf(atrstr);
 
@@ -3041,7 +3041,7 @@ void do_chanlist
             }
 
             char *ownername_ansi = ANSI_TruncateAndPad_sbuf(Moniker(ch->charge_who), 15);
-            sprintf(temp, "%c%c%c %-13.13s %s %-45.45s",
+            mux_sprintf(temp, MBUF_SIZE, "%c%c%c %-13.13s %s %-45.45s",
                 (ch->type & (CHANNEL_PUBLIC)) ? 'P' : '-',
                 (ch->type & (CHANNEL_LOUD)) ? 'L' : '-',
                 (ch->type & (CHANNEL_SPOOF)) ? 'S' : '-',

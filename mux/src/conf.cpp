@@ -1,6 +1,6 @@
 // conf.cpp -- Set up configuration information and static data.
 //
-// $Id: conf.cpp,v 1.71 2006-01-08 03:10:45 sdennis Exp $
+// $Id: conf.cpp,v 1.72 2006-01-08 16:55:15 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -389,7 +389,7 @@ static int cf_status_from_succfail(dbref player, char *cmd, int success, int fai
         {
             STARTLOG(LOG_STARTUP, "CNF", "NDATA")
             buff = alloc_lbuf("cf_status_from_succfail.LOG");
-            sprintf(buff, "%s: Nothing to set", cmd);
+            mux_sprintf(buff, LBUF_SIZE, "%s: Nothing to set", cmd);
             log_text(buff);
             free_lbuf(buff);
             ENDLOG
@@ -2159,7 +2159,7 @@ void list_cf_access(dbref player)
     {
         if (God(player) || check_access(player, tp->flags))
         {
-            sprintf(buff, "%s:", tp->pname);
+            mux_sprintf(buff, MBUF_SIZE, "%s:", tp->pname);
             listset_nametab(player, access_nametab, tp->flags, buff, true);
         }
     }

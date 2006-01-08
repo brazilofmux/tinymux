@@ -1,6 +1,6 @@
 // file_c.cpp -- File cache management.
 //
-// $Id: file_c.cpp,v 1.8 2006-01-07 23:06:43 sdennis Exp $
+// $Id: file_c.cpp,v 1.9 2006-01-08 16:59:57 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -123,7 +123,7 @@ static int fcache_read(FBLOCK **cp, char *filename)
         //
         STARTLOG(LOG_PROBLEMS, "FIL", "OPEN");
         buff = alloc_mbuf("fcache_read.LOG");
-        sprintf(buff, "Couldn't open file '%s'.", filename);
+        mux_sprintf(buff, MBUF_SIZE, "Couldn't open file '%s'.", filename);
         log_text(buff);
         free_mbuf(buff);
         ENDLOG

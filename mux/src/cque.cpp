@@ -1,6 +1,6 @@
 // cque.cpp -- commands and functions for manipulating the command queue.
 //
-// $Id: cque.cpp,v 1.35 2006-01-08 02:46:41 sdennis Exp $
+// $Id: cque.cpp,v 1.36 2006-01-08 16:56:22 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -182,7 +182,7 @@ static void Task_RunQueueEntry(void *pEntry, int iUnused)
                         STARTLOG(LOG_PROBLEMS, "CMD", "CPU");
                         log_name_and_loc(executor);
                         char *logbuf = alloc_lbuf("do_top.LOG.cpu");
-                        sprintf(logbuf, " queued command taking %s secs (enactor #%d): ",
+                        mux_sprintf(logbuf, LBUF_SIZE, " queued command taking %s secs (enactor #%d): ",
                             ltd.ReturnSecondsString(4), point->enactor);
                         log_text(logbuf);
                         free_lbuf(logbuf);
@@ -1364,19 +1364,19 @@ void do_ps(dbref executor, dbref caller, dbref enactor, int key, char *target)
     //
     bufp = alloc_mbuf("do_ps");
 #ifdef QUERY_SLAVE
-    sprintf(bufp, "Totals: Wait Queue...%d/%d  Semaphores...%d/%d  SQL %d/%d",
+    mux_sprintf(bufp, MBUF_SIZE, "Totals: Wait Queue...%d/%d  Semaphores...%d/%d  SQL %d/%d",
         Shown_RunQueueEntry, Total_RunQueueEntry,
         Shown_SemaphoreTimeout, Total_SemaphoreTimeout,
         Shown_SQLTimeout, Total_SQLTimeout);
 #else
-    sprintf(bufp, "Totals: Wait Queue...%d/%d  Semaphores...%d/%d",
+    mux_sprintf(bufp, MBUF_SIZE, "Totals: Wait Queue...%d/%d  Semaphores...%d/%d",
         Shown_RunQueueEntry, Total_RunQueueEntry,
         Shown_SemaphoreTimeout, Total_SemaphoreTimeout);
 #endif // QUERY_SLAVE
     notify(executor, bufp);
     if (Wizard(executor))
     {
-        sprintf(bufp, "        System Tasks.....%d", Total_SystemTasks);
+        mux_sprintf(bufp, MBUF_SIZE, "        System Tasks.....%d", Total_SystemTasks);
         notify(executor, bufp);
     }
     free_mbuf(bufp);

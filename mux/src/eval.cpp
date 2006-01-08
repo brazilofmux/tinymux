@@ -1,6 +1,6 @@
 // eval.cpp -- Command evaluation and cracking.
 //
-// $Id: eval.cpp,v 1.34 2006-01-07 23:13:58 sdennis Exp $
+// $Id: eval.cpp,v 1.35 2006-01-08 16:58:39 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -1391,23 +1391,23 @@ void mux_exec( char *buff, char **bufc, dbref executor, dbref caller,
                         {
                             if (fp->minArgs == fp->maxArgs)
                             {
-                                sprintf(mux_scratch,
+                                mux_sprintf(mux_scratch, sizeof(mux_scratch),
                                     "#-1 FUNCTION (%s) EXPECTS %d ARGUMENTS",
                                     fp->name, fp->minArgs);
                             }
                             else if (fp->minArgs + 1 == fp->maxArgs)
                             {
-                                sprintf(mux_scratch,
+                                mux_sprintf(mux_scratch, sizeof(mux_scratch),
                                     "#-1 FUNCTION (%s) EXPECTS %d OR %d ARGUMENTS",
                                     fp->name, fp->minArgs, fp->maxArgs);
                             }
                             else if (MuxAlarm.bAlarmed)
                             {
-                                sprintf(mux_scratch, "#-1 CPU LIMITED");
+                                mux_sprintf(mux_scratch, sizeof(mux_scratch), "#-1 CPU LIMITED");
                             }
                             else
                             {
-                                sprintf(mux_scratch,
+                                mux_sprintf(mux_scratch, sizeof(mux_scratch),
                                     "#-1 FUNCTION (%s) EXPECTS BETWEEN %d AND %d ARGUMENTS",
                                     fp->name, fp->minArgs, fp->maxArgs);
                             }
@@ -2040,7 +2040,7 @@ void mux_exec( char *buff, char **bufc, dbref executor, dbref caller,
            && 0 < tcache_count - mudconf.trace_limit)
         {
             tbuf = alloc_mbuf("exec.trace_diag");
-            sprintf(tbuf, "%d lines of trace output discarded.", tcache_count
+            mux_sprintf(tbuf, MBUF_SIZE, "%d lines of trace output discarded.", tcache_count
                 - mudconf.trace_limit);
             notify(executor, tbuf);
             free_mbuf(tbuf);

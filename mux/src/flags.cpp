@@ -1,6 +1,6 @@
 // flags.cpp -- Flag manipulation routines.
 //
-// $Id: flags.cpp,v 1.25 2006-01-07 23:03:52 sdennis Exp $
+// $Id: flags.cpp,v 1.26 2006-01-08 17:01:38 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -858,11 +858,11 @@ char *unparse_object_numonly(dbref target)
     }
     else if (!Good_obj(target))
     {
-        sprintf(buf, "*ILLEGAL*(#%d)", target);
+        mux_sprintf(buf, LBUF_SIZE, "*ILLEGAL*(#%d)", target);
     }
     else
     {
-        sprintf(buf, "%.200s(#%d)", Name(target), target);
+        mux_sprintf(buf, LBUF_SIZE, "%.200s(#%d)", Name(target), target);
     }
     return buf;
 }
@@ -880,7 +880,7 @@ char *unparse_object(dbref player, dbref target, bool obey_myopic)
     }
     else if (!Good_obj(target))
     {
-        sprintf(buf, "*ILLEGAL*(#%d)", target);
+        mux_sprintf(buf, LBUF_SIZE, "*ILLEGAL*(#%d)", target);
     }
     else
     {
@@ -900,7 +900,7 @@ char *unparse_object(dbref player, dbref target, bool obey_myopic)
             // show everything
             //
             char *fp = decode_flags(player, &(db[target].fs));
-            sprintf(buf, "%.200s(#%d%s)", Moniker(target), target, fp);
+            mux_sprintf(buf, LBUF_SIZE, "%.200s(#%d%s)", Moniker(target), target, fp);
             free_sbuf(fp);
         }
         else

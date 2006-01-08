@@ -1,6 +1,6 @@
 // funmath.cpp -- MUX math function handlers.
 //
-// $Id: funmath.cpp,v 1.7 2006-01-08 08:13:46 sdennis Exp $
+// $Id: funmath.cpp,v 1.8 2006-01-08 17:03:42 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -2802,7 +2802,7 @@ FUNCTION(fun_sha1)
     for (i = 0; i <= 4; i++)
     {
         char buf[9];
-        sprintf(buf, "%08X", shac.H[i]);
+        mux_sprintf(buf, sizeof(buf), "%08X", shac.H[i]);
         safe_str(buf, buff, bufc);
     }
 }
