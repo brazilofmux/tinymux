@@ -1,6 +1,6 @@
 // timeutil.cpp -- CLinearTimeAbsolute and CLinearTimeDelta modules.
 //
-// $Id: timeutil.cpp,v 1.50 2006-01-07 06:01:59 sdennis Exp $
+// $Id: timeutil.cpp,v 1.51 2006-01-08 20:18:25 sdennis Exp $
 //
 // Date/Time code based on algorithms presented in "Calendrical Calculations",
 // Cambridge Press, 1998.
@@ -1246,17 +1246,17 @@ static void SetStructTm(FIELDEDTIME *ft, struct tm *ptm)
     ft->iSecond = ptm->tm_sec;
 }
 
-void CLinearTimeAbsolute::ReturnUniqueString(char *buffer)
+void CLinearTimeAbsolute::ReturnUniqueString(char *buffer, size_t nBuffer)
 {
     FIELDEDTIME ft;
     if (LinearTimeToFieldedTime(m_tAbsolute, &ft))
     {
-        sprintf(buffer, "%04d%02d%02d-%02d%02d%02d", ft.iYear, ft.iMonth,
+        mux_sprintf(buffer, nBuffer, "%04d%02d%02d-%02d%02d%02d", ft.iYear, ft.iMonth,
                 ft.iDayOfMonth, ft.iHour, ft.iMinute, ft.iSecond);
     }
     else
     {
-        sprintf(buffer, "%03d", m_nCount++);
+        mux_sprintf(buffer, nBuffer, "%03d", m_nCount++);
     }
 }
 
@@ -1285,8 +1285,8 @@ char *CLinearTimeAbsolute::ReturnDateString(int nFracDigits)
               || ft.iMicrosecond != 0
               || ft.iNanosecond != 0))
         {
-            sprintf(buffer, ".%03d%03d%03d", ft.iMillisecond, ft.iMicrosecond,
-                ft.iNanosecond);
+            mux_sprintf(buffer, sizeof(buffer), ".%03d%03d%03d",
+                ft.iMillisecond, ft.iMicrosecond, ft.iNanosecond);
 
             // Remove trailing zeros.
             //
@@ -1298,7 +1298,8 @@ char *CLinearTimeAbsolute::ReturnDateString(int nFracDigits)
             p++;
             *p = '\0';
         }
-        sprintf(m_Buffer, "%s %s %02d %02d:%02d:%02d%s %04d",
+        mux_sprintf(m_Buffer, sizeof(m_Buffer),
+            "%s %s %02d %02d:%02d:%02d%s %04d",
             DayOfWeekString[ft.iDayOfWeek], monthtab[ft.iMonth-1],
             ft.iDayOfMonth, ft.iHour, ft.iMinute, ft.iSecond, buffer,
             ft.iYear);

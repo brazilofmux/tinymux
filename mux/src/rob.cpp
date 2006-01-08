@@ -1,6 +1,6 @@
 // rob.cpp -- Commands dealing with giving/taking/killing things or money.
 //
-// $Id: rob.cpp,v 1.4 2006-01-07 08:37:26 sdennis Exp $
+// $Id: rob.cpp,v 1.5 2006-01-08 20:13:58 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -100,7 +100,7 @@ void do_kill
             //
             notify(executor, "Your murder attempt failed.");
             buf1 = alloc_lbuf("do_kill.failed");
-            sprintf(buf1, "%s tried to kill you!", Name(executor));
+            mux_sprintf(buf1, LBUF_SIZE, "%s tried to kill you!", Name(executor));
             notify_with_cause_ooc(victim, executor, buf1);
             if (Suspect(executor))
             {
@@ -140,8 +140,8 @@ void do_kill
                     buf2, buf1, executor, Name(victim), victim);
             }
         }
-        sprintf(buf1, "You killed %s!", Name(victim));
-        sprintf(buf2, "killed %s!", Name(victim));
+        mux_sprintf(buf1, LBUF_SIZE, "You killed %s!", Name(victim));
+        mux_sprintf(buf2, LBUF_SIZE, "killed %s!", Name(victim));
         if (!isPlayer(victim))
         {
             if (halt_que(NOTHING, victim) > 0)
@@ -156,7 +156,7 @@ void do_kill
 
         // notify victim
         //
-        sprintf(buf1, "%s killed you!", Name(executor));
+        mux_sprintf(buf1, LBUF_SIZE, "%s killed you!", Name(executor));
         notify_with_cause_ooc(victim, executor, buf1);
 
         // Pay off the bonus.
@@ -166,7 +166,7 @@ void do_kill
             cost /= 2;  // Victim gets half.
             if (Pennies(Owner(victim)) < mudconf.paylimit)
             {
-                sprintf(buf1, "Your insurance policy pays %d %s.", cost,
+                mux_sprintf(buf1, LBUF_SIZE, "Your insurance policy pays %d %s.", cost,
                     mudconf.many_coins);
                 notify(victim, buf1);
                 giveto(Owner(victim), cost);

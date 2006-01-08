@@ -1,6 +1,6 @@
 // svdhash.cpp -- CHashPage, CHashFile, CHashTable modules.
 //
-// $Id: svdhash.cpp,v 1.44 2006-01-07 07:54:25 sdennis Exp $
+// $Id: svdhash.cpp,v 1.45 2006-01-08 20:18:25 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -2629,7 +2629,7 @@ static void MakeLogName
 )
 {
     char szTimeStamp[18];
-    lta.ReturnUniqueString(szTimeStamp);
+    lta.ReturnUniqueString(szTimeStamp, sizeof(szTimeStamp));
     if (  pBasename
        && pBasename[0] != '\0')
     {

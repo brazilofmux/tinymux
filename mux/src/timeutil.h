@@ -1,6 +1,6 @@
 // timeutil.h -- CLinearTimeAbsolute, and CLinearTimeDelta modules.
 //
-// $Id: timeutil.h,v 1.19 2006-01-08 08:56:24 sdennis Exp $
+// $Id: timeutil.h,v 1.20 2006-01-08 20:18:25 sdennis Exp $
 //
 // Date/Time code based on algorithms presented in "Calendrical Calculations",
 // Cambridge Press, 1998.
@@ -53,7 +53,7 @@ public:
     void GetUTC(void);
     void GetLocal(void);
 
-    void  ReturnUniqueString(char *buffer);
+    void  ReturnUniqueString(char *buffer, size_t nBuffer);
     char *ReturnDateString(int nFracDigits = 0);
     bool  ReturnFields(FIELDEDTIME *arg_tStruct);
     INT64 ReturnSeconds(void);
