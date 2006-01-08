@@ -1,6 +1,6 @@
 // command.cpp -- command parser and support routines.
 //
-// $Id: command.cpp,v 1.76 2006-01-08 16:42:50 sdennis Exp $
+// $Id: command.cpp,v 1.77 2006-01-08 16:45:31 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -1667,8 +1667,8 @@ char *process_command
         // We are using SpaceCompressCommand temporarily.
         //
         STARTLOG(LOG_BUGS, "CMD", "PLYR");
-        mux_sprintf(SpaceCompressCommand, LBUF_SIZE, "Bad player in process_command: %d",
-            executor);
+        mux_sprintf(SpaceCompressCommand, sizeof(SpaceCompressCommand),
+            "Bad player in process_command: %d", executor);
         log_text(SpaceCompressCommand);
         ENDLOG;
         mudstate.debug_cmd = cmdsave;
@@ -3122,9 +3122,11 @@ static void list_df_flags(dbref player)
 static void list_costs(dbref player)
 {
     char *buff = alloc_mbuf("list_costs");
-    *buff = '\0';
+
     if (mudconf.quotas)
+    {
         mux_sprintf(buff, MBUF_SIZE, " and %d quota", mudconf.room_quota);
+    }
     notify(player,
            tprintf("Digging a room costs %d %s%s.",
                mudconf.digcost, coin_name(mudconf.digcost), buff));
