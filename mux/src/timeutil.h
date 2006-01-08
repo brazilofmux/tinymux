@@ -1,6 +1,6 @@
 // timeutil.h -- CLinearTimeAbsolute, and CLinearTimeDelta modules.
 //
-// $Id: timeutil.h,v 1.18 2006-01-07 06:01:59 sdennis Exp $
+// $Id: timeutil.h,v 1.19 2006-01-08 08:56:24 sdennis Exp $
 //
 // Date/Time code based on algorithms presented in "Calendrical Calculations",
 // Cambridge Press, 1998.
@@ -164,6 +164,7 @@ extern const INT64 FACTOR_100NS_PER_WEEK;
 
 const CLinearTimeDelta time_250ms = 250*FACTOR_100NS_PER_MILLISECOND;
 const CLinearTimeDelta time_1s    = FACTOR_100NS_PER_SECOND;
+const CLinearTimeDelta time_5s    = 5*FACTOR_100NS_PER_SECOND;
 const CLinearTimeDelta time_15s   = 15*FACTOR_100NS_PER_SECOND;
 const CLinearTimeDelta time_30s   = 30*FACTOR_100NS_PER_SECOND;
 const CLinearTimeDelta time_45s   = 45*FACTOR_100NS_PER_SECOND;
