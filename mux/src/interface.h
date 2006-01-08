@@ -1,6 +1,6 @@
 // interface.h
 //
-// $Id: interface.h,v 1.22 2006-01-08 06:03:47 sdennis Exp $
+// $Id: interface.h,v 1.23 2006-01-08 06:21:55 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -281,19 +281,5 @@ extern dbref connect_player(char *, char *, char *, char *, char *);
     for (d=descriptor_list,n=((d!=NULL) ? d->next : NULL); \
          d; \
          d=n,n=((n!=NULL) ? n->next : NULL))
-
-// From bsd.cpp
-//
-void TelnetSetup(DESC *d);
-void SiteMonSend(int, const char *, DESC *, const char *);
-DESC *initializesock(SOCKET, struct sockaddr_in *);
-DESC *new_connection(PortInfo *Port, int *piError);
-bool process_input(DESC *);
-int make_nonblocking(SOCKET s);
-
-#ifdef WIN32
-void __cdecl MUDListenThread(void * pVoid);  // the listening thread
-void ProcessWindowsTCP(DWORD dwTimeout);  // handle NT-style IOs
-#endif
 
 #endif // !__INTERFACE__H
