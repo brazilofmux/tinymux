@@ -1,6 +1,6 @@
 // funmath.cpp -- MUX math function handlers.
 //
-// $Id: funmath.cpp,v 1.6 2006-01-07 21:56:00 sdennis Exp $
+// $Id: funmath.cpp,v 1.7 2006-01-08 08:13:46 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -354,7 +354,9 @@ FUNCTION(fun_sub)
        && nDigits <= 9)
     {
         int iResult;
-        iResult = mux_atol(fargs[0]) - mux_atol(fargs[1]);
+        long a = mux_atol(fargs[0]);
+        long b = mux_atol(fargs[1]);
+        iResult = a - b;
         safe_ltoa(iResult, buff, bufc);
     }
     else
@@ -380,7 +382,9 @@ FUNCTION(fun_isub)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    INT64 diff = mux_atoi64(fargs[0]) - mux_atoi64(fargs[1]);
+    INT64 a = mux_atoi64(fargs[0]);
+    INT64 b = mux_atoi64(fargs[1]);
+    INT64 diff = a - b;
     safe_i64toa(diff, buff, bufc);
 }
 
@@ -438,11 +442,15 @@ FUNCTION(fun_gt)
        && is_integer(fargs[1], &nDigits)
        && nDigits <= 9)
     {
-        bResult = (mux_atol(fargs[0]) > mux_atol(fargs[1]));
+        long a = mux_atol(fargs[0]);
+        long b = mux_atol(fargs[1]);
+        bResult = (a > b);
     }
     else
     {
-        bResult = (mux_atof(fargs[0]) > mux_atof(fargs[1]));
+        double a = mux_atof(fargs[0]);
+        double b = mux_atof(fargs[1]);
+        bResult = (a > b);
     }
     safe_bool(bResult, buff, bufc);
 }
@@ -463,11 +471,15 @@ FUNCTION(fun_gte)
        && is_integer(fargs[1], &nDigits)
        && nDigits <= 9)
     {
-        bResult = (mux_atol(fargs[0]) >= mux_atol(fargs[1]));
+        long a = mux_atol(fargs[0]);
+        long b = mux_atol(fargs[1]);
+        bResult = (a >= b);
     }
     else
     {
-        bResult = (mux_atof(fargs[0]) >= mux_atof(fargs[1]));
+        double a = mux_atof(fargs[0]);
+        double b = mux_atof(fargs[1]);
+        bResult = (a >= b);
     }
     safe_bool(bResult, buff, bufc);
 }
@@ -488,11 +500,15 @@ FUNCTION(fun_lt)
        && is_integer(fargs[1], &nDigits)
        && nDigits <= 9)
     {
-        bResult = (mux_atol(fargs[0]) < mux_atol(fargs[1]));
+        long a = mux_atol(fargs[0]);
+        long b = mux_atol(fargs[1]);
+        bResult = (a < b);
     }
     else
     {
-        bResult = (mux_atof(fargs[0]) < mux_atof(fargs[1]));
+        double a = mux_atof(fargs[0]);
+        double b = mux_atof(fargs[1]);
+        bResult = (a < b);
     }
     safe_bool(bResult, buff, bufc);
 }
@@ -513,11 +529,15 @@ FUNCTION(fun_lte)
        && is_integer(fargs[1], &nDigits)
        && nDigits <= 9)
     {
-        bResult = (mux_atol(fargs[0]) <= mux_atol(fargs[1]));
+        long a = mux_atol(fargs[0]);
+        long b = mux_atol(fargs[1]);
+        bResult = (a <= b);
     }
     else
     {
-        bResult = (mux_atof(fargs[0]) <= mux_atof(fargs[1]));
+        double a = mux_atof(fargs[0]);
+        double b = mux_atof(fargs[1]);
+        bResult = (a <= b);
     }
     safe_bool(bResult, buff, bufc);
 }
@@ -531,19 +551,25 @@ FUNCTION(fun_eq)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    bool bResult = false;
+    bool bResult = true;
     int nDigits;
     if (  is_integer(fargs[0], &nDigits)
        && nDigits <= 9
        && is_integer(fargs[1], &nDigits)
        && nDigits <= 9)
     {
-        bResult = (mux_atol(fargs[0]) == mux_atol(fargs[1]));
+        long a = mux_atol(fargs[0]);
+        long b = mux_atol(fargs[1]);
+        bResult = (a == b);
     }
     else
     {
-        bResult = (  strcmp(fargs[0], fargs[1]) == 0
-                  || mux_atof(fargs[0]) == mux_atof(fargs[1]));
+        if (strcmp(fargs[0], fargs[1]) != 0)
+        {
+            double a = mux_atof(fargs[0]);
+            double b = mux_atof(fargs[1]);
+            bResult = (a == b);
+        }
     }
     safe_bool(bResult, buff, bufc);
 }
@@ -564,12 +590,18 @@ FUNCTION(fun_neq)
        && is_integer(fargs[1], &nDigits)
        && nDigits <= 9)
     {
-        bResult = (mux_atol(fargs[0]) != mux_atol(fargs[1]));
+        long a = mux_atol(fargs[0]);
+        long b = mux_atol(fargs[1]);
+        bResult = (a != b);
     }
     else
     {
-        bResult = (  strcmp(fargs[0], fargs[1]) != 0
-                  && mux_atof(fargs[0]) != mux_atof(fargs[1]));
+        if (strcmp(fargs[0], fargs[1]) != 0)
+        {
+            double a = mux_atof(fargs[0]);
+            double b = mux_atof(fargs[1]);
+            bResult = (a != b);
+        }
     }
     safe_bool(bResult, buff, bufc);
 }
@@ -921,7 +953,7 @@ FUNCTION(fun_abs)
     UNUSED_PARAMETER(ncargs);
 
     double num = mux_atof(fargs[0]);
-    if (num == 0.0)
+    if (0.0 == num)
     {
         safe_chr('0', buff, bufc);
     }
@@ -971,12 +1003,16 @@ FUNCTION(fun_dist2d)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    double d;
+    double a, b, d;
     double sum;
 
-    d = mux_atof(fargs[0]) - mux_atof(fargs[2]);
+    a = mux_atof(fargs[0]);
+    b = mux_atof(fargs[2]);
+    d = a - b;
     sum  = d * d;
-    d = mux_atof(fargs[1]) - mux_atof(fargs[3]);
+    a = mux_atof(fargs[1]);
+    b = mux_atof(fargs[3]);
+    d = a - b;
     sum += d * d;
 
     mux_FPRestore();
@@ -995,14 +1031,20 @@ FUNCTION(fun_dist3d)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    double d;
+    double a, b, d;
     double sum;
 
-    d = mux_atof(fargs[0]) - mux_atof(fargs[3]);
+    a = mux_atof(fargs[0]);
+    b = mux_atof(fargs[3]);
+    d = a - b;
     sum  = d * d;
-    d = mux_atof(fargs[1]) - mux_atof(fargs[4]);
+    a = mux_atof(fargs[1]);
+    b = mux_atof(fargs[4]);
+    d = a - b;
     sum += d * d;
-    d = mux_atof(fargs[2]) - mux_atof(fargs[5]);
+    a = mux_atof(fargs[2]);
+    b = mux_atof(fargs[5]);
+    d = a - b;
     sum += d * d;
 
     mux_FPRestore();
