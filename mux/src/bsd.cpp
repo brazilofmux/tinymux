@@ -2,7 +2,7 @@
  * File for most TCP socket-related code. Some socket-related code also exists
  * in netcommon.cpp, but most of it is here.
  *
- * $Id: bsd.cpp,v 1.83 2006-01-08 09:13:40 sdennis Exp $
+ * $Id: bsd.cpp,v 1.84 2006-01-08 10:24:08 sdennis Exp $
  */
 
 #include "copyright.h"
@@ -251,7 +251,7 @@ static DWORD WINAPI SlaveProc(LPVOID lpParameter)
 
                         SlaveThreadInfo[iSlave].iDoing = __LINE__;
                         char szPortPair[128];
-                        sprintf(szPortPair, "%d, %d\r\n",
+                        mux_sprintf(szPortPair, sizeof(szPortPair), "%d, %d\r\n",
                             ntohs(req.sa_in.sin_port), req.port_in);
                         SlaveThreadInfo[iSlave].iDoing = __LINE__;
                         int nPortPair = strlen(szPortPair);
@@ -1726,7 +1726,7 @@ DESC *new_connection(PortInfo *Port, int *piSocketError)
     {
         STARTLOG(LOG_NET | LOG_SECURITY, "NET", "SITE");
         char *pBuffM1  = alloc_mbuf("new_connection.LOG.badsite");
-        sprintf(pBuffM1, "[%u/%s] Connection refused.  (Remote port %d)",
+        mux_sprintf(pBuffM1, MBUF_SIZE, "[%u/%s] Connection refused.  (Remote port %d)",
             newsock, pBuffM2, usPort);
         log_text(pBuffM1);
         free_mbuf(pBuffM1);
@@ -1786,7 +1786,7 @@ DESC *new_connection(PortInfo *Port, int *piSocketError)
            && mudconf.use_hostname)
         {
             char *pBuffL1 = alloc_lbuf("new_connection.write");
-            sprintf(pBuffL1, "%s\n%s,%d,%d\n", pBuffM2, pBuffM2, usPort,
+            mux_sprintf(pBuffL1, LBUF_SIZE, "%s\n%s,%d,%d\n", pBuffM2, pBuffM2, usPort,
                 Port->port);
             len = strlen(pBuffL1);
             if (write(slave_socket, pBuffL1, len) < 0)
@@ -1804,7 +1804,7 @@ DESC *new_connection(PortInfo *Port, int *piSocketError)
 
         STARTLOG(LOG_NET, "NET", "CONN");
         char *pBuffM3 = alloc_mbuf("new_connection.LOG.open");
-        sprintf(pBuffM3, "[%u/%s] Connection opened (remote port %d)", newsock,
+        mux_sprintf(pBuffM3, MBUF_SIZE, "[%u/%s] Connection opened (remote port %d)", newsock,
             pBuffM2, usPort);
         log_text(pBuffM3);
         free_mbuf(pBuffM3);
@@ -1937,10 +1937,10 @@ void shutdownsock(DESC *d, int reason)
         {
             STARTLOG(LOG_NET | LOG_LOGIN, "NET", "LOGO")
             buff = alloc_mbuf("shutdownsock.LOG.logout");
-            sprintf(buff, "[%u/%s] Logout by ", d->descriptor, d->addr);
+            mux_sprintf(buff, MBUF_SIZE, "[%u/%s] Logout by ", d->descriptor, d->addr);
             log_text(buff);
             log_name(d->player);
-            sprintf(buff, " <Reason: %s>", disc_reasons[reason]);
+            mux_sprintf(buff, MBUF_SIZE, " <Reason: %s>", disc_reasons[reason]);
             log_text(buff);
             free_mbuf(buff);
             ENDLOG;
@@ -1950,10 +1950,10 @@ void shutdownsock(DESC *d, int reason)
             fcache_dump(d, FC_QUIT);
             STARTLOG(LOG_NET | LOG_LOGIN, "NET", "DISC")
             buff = alloc_mbuf("shutdownsock.LOG.disconn");
-            sprintf(buff, "[%u/%s] Logout by ", d->descriptor, d->addr);
+            mux_sprintf(buff, MBUF_SIZE, "[%u/%s] Logout by ", d->descriptor, d->addr);
             log_text(buff);
             log_name(d->player);
-            sprintf(buff, " <Reason: %s>", disc_reasons[reason]);
+            mux_sprintf(buff, MBUF_SIZE, " <Reason: %s>", disc_reasons[reason]);
             log_text(buff);
             free_mbuf(buff);
             ENDLOG;
@@ -1971,7 +1971,7 @@ void shutdownsock(DESC *d, int reason)
         dbref locPlayer = Location(d->player);
         int penPlayer = Pennies(d->player);
         const char *PlayerName = Name(d->player);
-        sprintf(buff, "%d %s %d %d %d %d [%s] <%s> %s", d->player, buff2, d->command_count,
+        mux_sprintf(buff, LBUF_SIZE, "%d %s %d %d %d %d [%s] <%s> %s", d->player, buff2, d->command_count,
                 Seconds, locPlayer, penPlayer, d->addr, disc_reasons[reason],
                 PlayerName);
         log_text(buff);
@@ -1988,7 +1988,8 @@ void shutdownsock(DESC *d, int reason)
         }
         STARTLOG(LOG_SECURITY | LOG_NET, "NET", "DISC");
         buff = alloc_mbuf("shutdownsock.LOG.neverconn");
-        sprintf(buff, "[%u/%s] Connection closed, never connected. <Reason: %s>", d->descriptor, d->addr, disc_reasons[reason]);
+        mux_sprintf(buff, MBUF_SIZE, "[%u/%s] Connection closed, never connected. <Reason: %s>",
+            d->descriptor, d->addr, disc_reasons[reason]);
         log_text(buff);
         free_mbuf(buff);
         ENDLOG;
@@ -4098,31 +4099,31 @@ void list_system_resources(dbref player)
     int nTotal = 0;
     notify(player, "System Resources");
 
-    sprintf(buffer, "Total Open Files: %ld", DebugTotalFiles);
+    mux_sprintf(buffer, sizeof(buffer), "Total Open Files: %ld", DebugTotalFiles);
     notify(player, buffer);
     nTotal += DebugTotalFiles;
 
-    sprintf(buffer, "Total Sockets: %ld", DebugTotalSockets);
+    mux_sprintf(buffer, sizeof(buffer), "Total Sockets: %ld", DebugTotalSockets);
     notify(player, buffer);
     nTotal += DebugTotalSockets;
 
 #ifdef WIN32
-    sprintf(buffer, "Total Threads: %ld", DebugTotalThreads);
+    mux_sprintf(buffer, sizeof(buffer), "Total Threads: %ld", DebugTotalThreads);
     notify(player, buffer);
     nTotal += DebugTotalThreads;
 
-    sprintf(buffer, "Total Semaphores: %ld", DebugTotalSemaphores);
+    mux_sprintf(buffer, sizeof(buffer), "Total Semaphores: %ld", DebugTotalSemaphores);
     notify(player, buffer);
     nTotal += DebugTotalSemaphores;
 #endif // WIN32
 
-    sprintf(buffer, "Total Handles (sum of above): %d", nTotal);
+    mux_sprintf(buffer, sizeof(buffer), "Total Handles (sum of above): %d", nTotal);
     notify(player, buffer);
 
 #ifdef WIN32
     for (int i = 0; i < NUM_SLAVE_THREADS; i++)
     {
-        sprintf(buffer, "Thread %d at line %u", i+1, SlaveThreadInfo[i].iDoing);
+        mux_sprintf(buffer, sizeof(buffer), "Thread %d at line %u", i+1, SlaveThreadInfo[i].iDoing);
         notify(player, buffer);
     }
 #endif // WIN32
