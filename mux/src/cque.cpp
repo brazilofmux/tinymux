@@ -1,6 +1,6 @@
 // cque.cpp -- commands and functions for manipulating the command queue.
 //
-// $Id: cque.cpp,v 1.34 2006-01-07 09:16:04 sdennis Exp $
+// $Id: cque.cpp,v 1.35 2006-01-08 02:46:41 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -16,7 +16,7 @@
 
 bool break_called = false;
 
-CLinearTimeDelta GetProcessorUsage(void)
+static CLinearTimeDelta GetProcessorUsage(void)
 {
     CLinearTimeDelta ltd;
 #ifdef WIN32
@@ -79,7 +79,7 @@ static int add_to(dbref executor, int am, int attrnum)
 // This Task assumes that pEntry is already unlinked from any lists it may
 // have been related to.
 //
-void Task_RunQueueEntry(void *pEntry, int iUnused)
+static void Task_RunQueueEntry(void *pEntry, int iUnused)
 {
     UNUSED_PARAMETER(iUnused);
 
@@ -244,7 +244,7 @@ static bool que_want(BQUE *entry, dbref ptarg, dbref otarg)
            || otarg == entry->executor);
 }
 
-void Task_SemaphoreTimeout(void *pExpired, int iUnused)
+static void Task_SemaphoreTimeout(void *pExpired, int iUnused)
 {
     UNUSED_PARAMETER(iUnused);
 
@@ -266,13 +266,13 @@ void Task_SQLTimeout(void *pExpired, int iUnused)
 }
 #endif // QUERY_SLAVE
 
-dbref Halt_Player_Target;
-dbref Halt_Object_Target;
-int   Halt_Entries;
-dbref Halt_Player_Run;
-dbref Halt_Entries_Run;
+static dbref Halt_Player_Target;
+static dbref Halt_Object_Target;
+static int   Halt_Entries;
+static dbref Halt_Player_Run;
+static dbref Halt_Entries_Run;
 
-int CallBack_HaltQueue(PTASK_RECORD p)
+static int CallBack_HaltQueue(PTASK_RECORD p)
 {
     if (  p->fpTask == Task_RunQueueEntry
 #ifdef QUERY_SLAVE
@@ -420,15 +420,15 @@ void do_halt(dbref executor, dbref caller, dbref enactor, int key, char *target)
     notify(Owner(executor), tprintf("%d queue entr%s removed.", numhalted, numhalted == 1 ? "y" : "ies"));
 }
 
-int Notify_Key;
-int Notify_Num_Done;
-int Notify_Num_Max;
-int Notify_Sem;
-int Notify_Attr;
+static int Notify_Key;
+static int Notify_Num_Done;
+static int Notify_Num_Max;
+static int Notify_Sem;
+static int Notify_Attr;
 
 // NFY_DRAIN or NFY_NFYALL
 //
-int CallBack_NotifySemaphoreDrainOrAll(PTASK_RECORD p)
+static int CallBack_NotifySemaphoreDrainOrAll(PTASK_RECORD p)
 {
     if (p->fpTask == Task_SemaphoreTimeout)
     {
@@ -475,7 +475,7 @@ int CallBack_NotifySemaphoreDrainOrAll(PTASK_RECORD p)
 
 // NFY_NFY or NFY_QUIET
 //
-int CallBack_NotifySemaphoreFirstOrQuiet(PTASK_RECORD p)
+static int CallBack_NotifySemaphoreFirstOrQuiet(PTASK_RECORD p)
 {
     // If we've notified enough, exit.
     //
@@ -1082,24 +1082,24 @@ void do_query
 }
 #endif // QUERY_SLAVE
 
-CLinearTimeAbsolute Show_lsaNow;
-int Total_SystemTasks;
-int Total_RunQueueEntry;
-int Shown_RunQueueEntry;
-int Total_SemaphoreTimeout;
-int Shown_SemaphoreTimeout;
-dbref Show_Player_Target;
-dbref Show_Object_Target;
-int Show_Key;
-dbref Show_Player;
-int Show_bFirstLine;
+static CLinearTimeAbsolute Show_lsaNow;
+static int Total_SystemTasks;
+static int Total_RunQueueEntry;
+static int Shown_RunQueueEntry;
+static int Total_SemaphoreTimeout;
+static int Shown_SemaphoreTimeout;
+static dbref Show_Player_Target;
+static dbref Show_Object_Target;
+static int Show_Key;
+static dbref Show_Player;
+static int Show_bFirstLine;
 
 #ifdef QUERY_SLAVE
 int Total_SQLTimeout;
 int Shown_SQLTimeout;
 #endif // QUERY_SLAVE
 
-int CallBack_ShowDispatches(PTASK_RECORD p)
+static int CallBack_ShowDispatches(PTASK_RECORD p)
 {
     Total_SystemTasks++;
     CLinearTimeDelta ltd = p->ltaWhen - Show_lsaNow;
@@ -1146,7 +1146,7 @@ int CallBack_ShowDispatches(PTASK_RECORD p)
     return IU_NEXT_TASK;
 }
 
-void ShowPsLine(BQUE *tmp)
+static void ShowPsLine(BQUE *tmp)
 {
     char *bufp = unparse_object(Show_Player, tmp->executor, false);
     if (tmp->IsTimed && (Good_obj(tmp->sem)))
@@ -1189,7 +1189,7 @@ void ShowPsLine(BQUE *tmp)
     free_lbuf(bufp);
 }
 
-int CallBack_ShowWait(PTASK_RECORD p)
+static int CallBack_ShowWait(PTASK_RECORD p)
 {
     if (p->fpTask != Task_RunQueueEntry)
     {
@@ -1215,7 +1215,7 @@ int CallBack_ShowWait(PTASK_RECORD p)
     return IU_NEXT_TASK;
 }
 
-int CallBack_ShowSemaphore(PTASK_RECORD p)
+static int CallBack_ShowSemaphore(PTASK_RECORD p)
 {
     if (p->fpTask != Task_SemaphoreTimeout)
     {
@@ -1382,8 +1382,8 @@ void do_ps(dbref executor, dbref caller, dbref enactor, int key, char *target)
     free_mbuf(bufp);
 }
 
-CLinearTimeDelta ltdWarp;
-int CallBack_Warp(PTASK_RECORD p)
+static CLinearTimeDelta ltdWarp;
+static int CallBack_Warp(PTASK_RECORD p)
 {
     if (  p->fpTask == Task_RunQueueEntry
 #ifdef QUERY_SLAVE

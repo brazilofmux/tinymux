@@ -1,6 +1,6 @@
 // externs.h -- Prototypes for externs not defined elsewhere.
 //
-// $Id: externs.h,v 1.60 2006-01-07 23:00:09 sdennis Exp $
+// $Id: externs.h,v 1.61 2006-01-08 02:48:55 sdennis Exp $
 //
 
 #ifndef EXTERNS_H
@@ -33,6 +33,8 @@ extern CRITICAL_SECTION csDescriptorList;
 void boot_sqlslave(dbref executor, dbref caller, dbref enactor, int key);
 #endif // QUERY_SLAVE
 
+extern NAMETAB sigactions_nametab[];
+
 // From conf.cpp
 //
 void cf_log_notfound(dbref, char *, const char *, char *);
@@ -43,6 +45,9 @@ int  cf_read(void);
 void cf_init(void);
 void cf_list(dbref, char *, char **);
 void cf_display(dbref, char *, char *, char **);
+void list_cf_access(dbref);
+int cf_set(char *, char *, dbref);
+CF_HAND(cf_cf_access);
 CF_HAND(cf_access);
 CF_HAND(cf_cmd_alias);
 CF_HAND(cf_acmd_access);
@@ -92,6 +97,7 @@ void wait_que(dbref executor, dbref caller, dbref enactor, bool,
 #ifndef WIN32
 extern "C" char *crypt(const char *inptr, const char *inkey);
 #endif // WIN32
+extern bool break_called;
 
 /* From eval.cpp */
 void tcache_init(void);
