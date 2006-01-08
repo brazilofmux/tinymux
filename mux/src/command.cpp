@@ -1,6 +1,6 @@
 // command.cpp -- command parser and support routines.
 //
-// $Id: command.cpp,v 1.71 2006-01-07 20:55:42 sdennis Exp $
+// $Id: command.cpp,v 1.72 2006-01-08 02:57:34 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -19,7 +19,6 @@
 #include "help.h"
 #include "pcre.h"
 
-extern void list_cf_access(dbref);
 extern void boot_slave(dbref executor, dbref caller, dbref enactor, int key);
 
 // Switch tables for the various commands.
@@ -3839,7 +3838,6 @@ void do_break(dbref executor, dbref caller, dbref enactor, int key, char *arg1)
     UNUSED_PARAMETER(enactor);
     UNUSED_PARAMETER(key);
 
-    extern bool break_called;
     break_called = xlate(arg1);
 }
 
