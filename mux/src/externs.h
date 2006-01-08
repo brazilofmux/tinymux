@@ -1,6 +1,6 @@
 // externs.h -- Prototypes for externs not defined elsewhere.
 //
-// $Id: externs.h,v 1.61 2006-01-08 02:48:55 sdennis Exp $
+// $Id: externs.h,v 1.62 2006-01-08 06:03:47 sdennis Exp $
 //
 
 #ifndef EXTERNS_H
@@ -23,9 +23,6 @@ void CleanUpSQLSlaveProcess(void);
 #endif // QUERY_SLAVE
 #ifdef WIN32
 extern HANDLE CompletionPort;    // IOs are queued up on this port
-extern OVERLAPPED lpo_aborted; // special to indicate a player has finished TCP IOs
-extern OVERLAPPED lpo_aborted_final; // Actually free the descriptor.
-extern OVERLAPPED lpo_shutdown; // special to indicate a player should do a shutdown
 extern CRITICAL_SECTION csDescriptorList;
 #endif // WIN32
 

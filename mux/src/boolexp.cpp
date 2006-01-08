@@ -1,6 +1,6 @@
 // boolexp.cpp
 //
-// $Id: boolexp.cpp,v 1.17 2006-01-07 02:45:38 jake Exp $
+// $Id: boolexp.cpp,v 1.18 2006-01-08 06:03:47 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -531,7 +531,6 @@ static BOOLEXP *parse_boolexp_F(void)
 
         // NOTREACHED
         //
-        break;
 
     case INDIR_TOKEN:
 
@@ -556,7 +555,6 @@ static BOOLEXP *parse_boolexp_F(void)
 
         // NOTREACHED
         //
-        break;
 
     case IS_TOKEN:
 
@@ -582,7 +580,6 @@ static BOOLEXP *parse_boolexp_F(void)
 
         // NOTREACHED
         //
-        break;
 
     case CARRY_TOKEN:
 
@@ -608,7 +605,6 @@ static BOOLEXP *parse_boolexp_F(void)
 
         // NOTREACHED
         //
-        break;
 
     case OWNER_TOKEN:
 
@@ -633,7 +629,6 @@ static BOOLEXP *parse_boolexp_F(void)
 
         // NOTREACHED
         //
-        break;
 
     default:
         return parse_boolexp_L();

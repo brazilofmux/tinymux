@@ -2,7 +2,7 @@
  * File for most TCP socket-related code. Some socket-related code also exists
  * in netcommon.cpp, but most of it is here.
  *
- * $Id: bsd.cpp,v 1.77 2006-01-07 04:33:41 jake Exp $
+ * $Id: bsd.cpp,v 1.78 2006-01-08 06:03:47 sdennis Exp $
  */
 
 #include "copyright.h"
@@ -34,7 +34,7 @@ int      nMainGamePorts = 0;
 
 unsigned int ndescriptors = 0;
 DESC *descriptor_list = NULL;
-bool bDescriptorListInit = false;
+static bool bDescriptorListInit = false;
 
 #ifdef WIN32
 int game_pid;
@@ -49,11 +49,6 @@ int sqlslave_socket = INVALID_SOCKET;
 #endif // QUERY_SLAVE
 #endif // WIN32
 
-DESC *initializesock(SOCKET, struct sockaddr_in *);
-DESC *new_connection(PortInfo *Port, int *piError);
-bool process_input(DESC *);
-void SiteMonSend(int, const char *, DESC *, const char *);
-
 #ifdef WIN32
 
 // First version of Windows NT TCP/IP routines written by Nick Gammon
@@ -64,16 +59,13 @@ HANDLE hGameProcess = INVALID_HANDLE_VALUE;
 FCANCELIO *fpCancelIo = NULL;
 FGETPROCESSTIMES *fpGetProcessTimes = NULL;
 HANDLE CompletionPort;    // IOs are queued up on this port
-void __cdecl MUDListenThread(void * pVoid);  // the listening thread
 DWORD platform;   // which version of Windows are we using?
-OVERLAPPED lpo_aborted; // special to indicate a player has finished TCP IOs
-OVERLAPPED lpo_aborted_final; // Finally free the descriptor.
-OVERLAPPED lpo_shutdown; // special to indicate a player should do a shutdown
-OVERLAPPED lpo_welcome; // special to indicate a player has -just- connected.
-OVERLAPPED lpo_wakeup;  // special to indicate that the loop should wakeup and return.
-void ProcessWindowsTCP(DWORD dwTimeout);  // handle NT-style IOs
+static OVERLAPPED lpo_aborted; // special to indicate a player has finished TCP IOs
+static OVERLAPPED lpo_aborted_final; // Finally free the descriptor.
+static OVERLAPPED lpo_shutdown; // special to indicate a player should do a shutdown
+static OVERLAPPED lpo_welcome; // special to indicate a player has -just- connected.
+static OVERLAPPED lpo_wakeup;  // special to indicate that the loop should wakeup and return.
 CRITICAL_SECTION csDescriptorList;      // for thread synchronization
-extern void Task_DeferredClose(void *arg_voidptr, int arg_Integer);
 
 typedef struct
 {
@@ -108,7 +100,7 @@ typedef struct tagSlaveThreadsInfo
 static SLAVETHREADINFO SlaveThreadInfo[NUM_SLAVE_THREADS];
 static HANDLE hSlaveThreadsSemaphore;
 
-DWORD WINAPI SlaveProc(LPVOID lpParameter)
+static DWORD WINAPI SlaveProc(LPVOID lpParameter)
 {
     SLAVE_REQUEST req;
     unsigned long addr;
@@ -348,8 +340,8 @@ DWORD WINAPI SlaveProc(LPVOID lpParameter)
             }
         }
     }
-    SlaveThreadInfo[iSlave].iDoing = __LINE__;
-    return 1;
+    //SlaveThreadInfo[iSlave].iDoing = __LINE__;
+    //return 1;
 }
 
 static bool bSlaveBooted = false;
@@ -460,8 +452,6 @@ static int get_slave_result(void)
 }
 
 #else // WIN32
-
-extern int make_nonblocking(SOCKET s);
 
 void CleanUpSlaveSocket(void)
 {
@@ -905,7 +895,7 @@ Done:
 }
 #endif // WIN32
 
-void make_socket(PortInfo *Port)
+static void make_socket(PortInfo *Port)
 {
     SOCKET s;
     struct sockaddr_in server;
@@ -1274,7 +1264,7 @@ void shovechars9x(int nPorts, PortInfo aPorts[])
     }
 }
 
-LRESULT WINAPI mux_WindowProc
+static LRESULT WINAPI mux_WindowProc
 (
     HWND   hWin,
     UINT   msg,
@@ -1299,7 +1289,7 @@ LRESULT WINAPI mux_WindowProc
 
 const char szApp[] = "MUX2";
 
-DWORD WINAPI ListenForCloseProc(LPVOID lpParameter)
+static DWORD WINAPI ListenForCloseProc(LPVOID lpParameter)
 {
     UNUSED_PARAMETER(lpParameter);
 
@@ -1675,8 +1665,6 @@ void shovechars(int nPorts, PortInfo aPorts[])
 
 #endif // WIN32
 
-void TelnetSetup(DESC *d);
-
 DESC *new_connection(PortInfo *Port, int *piSocketError)
 {
     DESC *d;
@@ -1711,7 +1699,7 @@ DESC *new_connection(PortInfo *Port, int *piSocketError)
     {
         STARTLOG(LOG_NET | LOG_SECURITY, "NET", "SITE");
         char *pBuffM1  = alloc_mbuf("new_connection.LOG.badsite");
-        sprintf(pBuffM1, "[%d/%s] Connection refused.  (Remote port %d)",
+        sprintf(pBuffM1, "[%u/%s] Connection refused.  (Remote port %d)",
             newsock, pBuffM2, usPort);
         log_text(pBuffM1);
         free_mbuf(pBuffM1);
@@ -1789,7 +1777,7 @@ DESC *new_connection(PortInfo *Port, int *piSocketError)
 
         STARTLOG(LOG_NET, "NET", "CONN");
         char *pBuffM3 = alloc_mbuf("new_connection.LOG.open");
-        sprintf(pBuffM3, "[%d/%s] Connection opened (remote port %d)", newsock,
+        sprintf(pBuffM3, "[%u/%s] Connection opened (remote port %d)", newsock,
             pBuffM2, usPort);
         log_text(pBuffM3);
         free_mbuf(pBuffM3);
@@ -1922,7 +1910,7 @@ void shutdownsock(DESC *d, int reason)
         {
             STARTLOG(LOG_NET | LOG_LOGIN, "NET", "LOGO")
             buff = alloc_mbuf("shutdownsock.LOG.logout");
-            sprintf(buff, "[%d/%s] Logout by ", d->descriptor, d->addr);
+            sprintf(buff, "[%u/%s] Logout by ", d->descriptor, d->addr);
             log_text(buff);
             log_name(d->player);
             sprintf(buff, " <Reason: %s>", disc_reasons[reason]);
@@ -1935,7 +1923,7 @@ void shutdownsock(DESC *d, int reason)
             fcache_dump(d, FC_QUIT);
             STARTLOG(LOG_NET | LOG_LOGIN, "NET", "DISC")
             buff = alloc_mbuf("shutdownsock.LOG.disconn");
-            sprintf(buff, "[%d/%s] Logout by ", d->descriptor, d->addr);
+            sprintf(buff, "[%u/%s] Logout by ", d->descriptor, d->addr);
             log_text(buff);
             log_name(d->player);
             sprintf(buff, " <Reason: %s>", disc_reasons[reason]);
@@ -1970,7 +1958,7 @@ void shutdownsock(DESC *d, int reason)
         }
         STARTLOG(LOG_SECURITY | LOG_NET, "NET", "DISC");
         buff = alloc_mbuf("shutdownsock.LOG.neverconn");
-        sprintf(buff, "[%d/%s] Connection closed, never connected. <Reason: %s>", d->descriptor, d->addr, disc_reasons[reason]);
+        sprintf(buff, "[%u/%s] Connection closed, never connected. <Reason: %s>", d->descriptor, d->addr, disc_reasons[reason]);
         log_text(buff);
         free_mbuf(buff);
         ENDLOG;
@@ -2090,7 +2078,7 @@ void shutdownsock(DESC *d, int reason)
 }
 
 #ifdef WIN32
-void shutdownsock_brief(DESC *d)
+static void shutdownsock_brief(DESC *d)
 {
     // don't close down the socket twice
     //
@@ -2189,7 +2177,7 @@ int make_nonblocking(SOCKET s)
     return 0;
 }
 
-void make_nolinger(SOCKET s)
+static void make_nolinger(SOCKET s)
 {
 #if defined(HAVE_LINGER)
     struct linger ling;
@@ -2202,7 +2190,7 @@ void make_nolinger(SOCKET s)
 #endif // HAVE_LINGER
 }
 
-void config_socket(SOCKET s)
+static void config_socket(SOCKET s)
 {
     make_nonblocking(s);
     make_nolinger(s);
@@ -2371,7 +2359,7 @@ void process_output9x(void *dvoid, int bHandleShutdown)
     mudstate.debug_cmd = cmdsave;
 }
 
-int AsyncSend(DESC *d, char *buf, int len)
+static int AsyncSend(DESC *d, char *buf, int len)
 {
     DWORD nBytes;
 
@@ -2685,7 +2673,7 @@ int UsState(DESC *d, unsigned char chOption)
  * \return          None.
  */
 
-void SetHimState(DESC *d, unsigned char chOption, int iHimState)
+static void SetHimState(DESC *d, unsigned char chOption, int iHimState)
 {
     if (TELNET_NAWS == chOption)
     {
@@ -2709,7 +2697,7 @@ void SetHimState(DESC *d, unsigned char chOption, int iHimState)
  * \return          None.
  */
 
-void SetUsState(DESC *d, unsigned char chOption, int iUsState)
+static void SetUsState(DESC *d, unsigned char chOption, int iUsState)
 {
     if (TELNET_NAWS == chOption)
     {
@@ -2740,7 +2728,7 @@ void SetUsState(DESC *d, unsigned char chOption, int iUsState)
  * \return          None.
  */
 
-void SendWill(DESC *d, unsigned char chOption)
+static void SendWill(DESC *d, unsigned char chOption)
 {
     char aWill[3] = { NVT_IAC, NVT_WILL, 0 };
     aWill[2] = chOption;
@@ -2754,7 +2742,7 @@ void SendWill(DESC *d, unsigned char chOption)
  * \return          None.
  */
 
-void SendDont(DESC *d, unsigned char chOption)
+static void SendDont(DESC *d, unsigned char chOption)
 {
     char aDont[3] = { NVT_IAC, NVT_DONT, 0 };
     aDont[2] = chOption;
@@ -2768,7 +2756,7 @@ void SendDont(DESC *d, unsigned char chOption)
  * \return          None.
  */
 
-void SendDo(DESC *d, unsigned char chOption)
+static void SendDo(DESC *d, unsigned char chOption)
 {
     char aDo[3]   = { NVT_IAC, NVT_DO,   0 };
     aDo[2] = chOption;
@@ -2782,7 +2770,7 @@ void SendDo(DESC *d, unsigned char chOption)
  * \return          None.
  */
 
-void SendWont(DESC *d, unsigned char chOption)
+static void SendWont(DESC *d, unsigned char chOption)
 {
     char aWont[3] = { NVT_IAC, NVT_WONT, 0 };
     aWont[2] = chOption;
@@ -2797,7 +2785,7 @@ void SendWont(DESC *d, unsigned char chOption)
  * \return          Yes if we want it enabled.
  */
 
-bool DesiredHimOption(DESC *d, unsigned char chOption)
+static bool DesiredHimOption(DESC *d, unsigned char chOption)
 {
     UNUSED_PARAMETER(d);
 
@@ -2822,7 +2810,7 @@ bool DesiredHimOption(DESC *d, unsigned char chOption)
  * \return          Yes if we want it enabled.
  */
 
-bool DesiredUsOption(DESC *d, unsigned char chOption)
+static bool DesiredUsOption(DESC *d, unsigned char chOption)
 {
     if (  TELNET_EOR  == chOption
        || (  TELNET_SGA == chOption
@@ -2993,7 +2981,7 @@ void TelnetSetup(DESC *d)
  * \return         None.
  */
 
-void process_input_helper(DESC *d, char *pBytes, int nBytes)
+static void process_input_helper(DESC *d, char *pBytes, int nBytes)
 {
     if (!d->raw_input)
     {
@@ -3264,11 +3252,11 @@ void process_input_helper(DESC *d, char *pBytes, int nBytes)
             if (  d->aOption < q
                && q < qend)
             {
-                size_t n = q - d->aOption;
+                size_t m = q - d->aOption;
                 switch (d->aOption[0])
                 {
                 case TELNET_NAWS:
-                    if (n == 5)
+                    if (m == 5)
                     {
                         d->width  = (d->aOption[1] << 8 ) | d->aOption[2];
                         d->height = (d->aOption[3] << 8 ) | d->aOption[4];
@@ -3708,7 +3696,7 @@ static char *SignalDesc(int iSignal)
     return buff;
 }
 
-void log_signal(int iSignal)
+static void log_signal(int iSignal)
 {
     STARTLOG(LOG_PROBLEMS, "SIG", "CATCH");
     log_text("Caught signal ");
@@ -3716,7 +3704,8 @@ void log_signal(int iSignal)
     ENDLOG;
 }
 
-void log_signal_ignore(int iSignal)
+#ifndef WIN32
+static void log_signal_ignore(int iSignal)
 {
     STARTLOG(LOG_PROBLEMS, "SIG", "CATCH");
     log_text("Caught signal and ignored signal ");
@@ -3725,7 +3714,6 @@ void log_signal_ignore(int iSignal)
     ENDLOG;
 }
 
-#ifndef WIN32
 void LogStatBuf(int stat_buf, const char *Name)
 {
     STARTLOG(LOG_ALWAYS, "NET", Name);
@@ -3745,9 +3733,7 @@ void LogStatBuf(int stat_buf, const char *Name)
 }
 #endif
 
-void pcache_sync(void);
-
-RETSIGTYPE DCL_CDECL sighandler(int sig)
+static RETSIGTYPE DCL_CDECL sighandler(int sig)
 {
 #ifndef WIN32
     int stat_buf;
@@ -4103,7 +4089,7 @@ void list_system_resources(dbref player)
 #ifdef WIN32
     for (int i = 0; i < NUM_SLAVE_THREADS; i++)
     {
-        sprintf(buffer, "Thread %d at line %d", i+1, SlaveThreadInfo[i].iDoing);
+        sprintf(buffer, "Thread %d at line %u", i+1, SlaveThreadInfo[i].iDoing);
         notify(player, buffer);
     }
 #endif // WIN32
