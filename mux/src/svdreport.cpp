@@ -1,6 +1,6 @@
 // svdreport.cpp -- Aggregate User Statistics module.
 //
-// $Id: svdreport.cpp,v 1.7 2006-01-07 07:39:39 sdennis Exp $
+// $Id: svdreport.cpp,v 1.8 2006-01-08 20:26:18 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -58,7 +58,8 @@ void do_report(dbref executor, dbref caller, dbref enactor, int extra)
     for (i = 0, iHour = 0; i < NPERIODS; i++, iHour += 8)
     {
         nSum += nBin[i];
-        sprintf(buff, "%3d %03d - %03d: %6d %6d", iHour/24 + 1, iHour, iHour+8, nBin[i], nSum);
+        mux_sprintf(buff, MBUF_SIZE, "%3d %03d - %03d: %6d %6d",
+            iHour/24 + 1, iHour, iHour+8, nBin[i], nSum);
         notify(executor, buff);
     }
     free_mbuf(buff);

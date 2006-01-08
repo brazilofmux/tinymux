@@ -1,6 +1,6 @@
 // unparse.cpp
 //
-// $Id: unparse.cpp,v 1.7 2006-01-07 02:12:02 sdennis Exp $
+// $Id: unparse.cpp,v 1.8 2006-01-08 20:26:18 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -34,7 +34,7 @@ static char *unparse_object_quiet(dbref player, dbref loc)
     case HOME:
         return (char *)"-3";
     default:
-        sprintf(buf, "(#%d)", loc);
+        mux_sprintf(buf, SBUF_SIZE, "(#%d)", loc);
         return buf;
     }
 }

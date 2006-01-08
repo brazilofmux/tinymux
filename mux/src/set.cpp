@@ -1,6 +1,6 @@
 // set.cpp -- Commands which set parameters.
 //
-// $Id: set.cpp,v 1.30 2006-01-07 08:27:21 sdennis Exp $
+// $Id: set.cpp,v 1.31 2006-01-08 20:26:18 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -1871,8 +1871,8 @@ void do_use(dbref executor, dbref caller, dbref enactor, int key, char *object)
     {
         df_use = alloc_lbuf("do_use.use");
         df_ouse = alloc_lbuf("do_use.ouse");
-        sprintf(df_use, "You use %s", Name(thing));
-        sprintf(df_ouse, "uses %s", Name(thing));
+        mux_sprintf(df_use, LBUF_SIZE, "You use %s", Name(thing));
+        mux_sprintf(df_ouse, LBUF_SIZE, "uses %s", Name(thing));
         did_it(executor, thing, A_USE, df_use, A_OUSE, df_ouse, A_AUSE,
                (char **)NULL, 0);
         free_lbuf(df_use);

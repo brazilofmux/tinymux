@@ -1,6 +1,6 @@
 // walkdb.cpp -- Support for commands that walk the entire db.
 //
-// $Id: walkdb.cpp,v 1.12 2006-01-07 01:43:51 sdennis Exp $
+// $Id: walkdb.cpp,v 1.13 2006-01-08 20:26:18 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -1073,7 +1073,7 @@ void do_search(dbref executor, dbref caller, dbref enactor, int key, char *arg)
     }
     else
     {
-        sprintf(outbuf,
+        mux_sprintf(outbuf, LBUF_SIZE,
             "\nFound:  Rooms...%d  Exits...%d  Objects...%d  Players...%d",
             rcount, ecount, tcount, pcount);
         notify(executor, outbuf);

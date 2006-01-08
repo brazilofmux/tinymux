@@ -1,6 +1,6 @@
 // svdhash.cpp -- CHashPage, CHashFile, CHashTable modules.
 //
-// $Id: svdhash.cpp,v 1.45 2006-01-08 20:18:25 sdennis Exp $
+// $Id: svdhash.cpp,v 1.46 2006-01-08 20:23:27 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -2625,7 +2625,8 @@ static void MakeLogName
     const char *pBasename,
     const char *szPrefix,
     CLinearTimeAbsolute lta,
-    char *szLogName
+    char *szLogName,
+    size_t nLogName
 )
 {
     char szTimeStamp[18];
@@ -2633,14 +2634,14 @@ static void MakeLogName
     if (  pBasename
        && pBasename[0] != '\0')
     {
-        sprintf(szLogName, "%s/%s-%s.log",
+        mux_sprintf(szLogName, nLogName, "%s/%s-%s.log",
             pBasename,
             szPrefix,
             szTimeStamp);
     }
     else
     {
-        sprintf(szLogName, "%s-%s.log",
+        mux_sprintf(szLogName, nLogName, "%s-%s.log",
             szPrefix,
             szTimeStamp);
     }
@@ -2723,7 +2724,8 @@ void CLogFile::Flush(void)
             CloseLogFile();
 
             m_ltaStarted.GetLocal();
-            MakeLogName(m_pBasename, m_szPrefix, m_ltaStarted, m_szFilename);
+            MakeLogName(m_pBasename, m_szPrefix, m_ltaStarted, m_szFilename,
+                sizeof(m_szFilename));
 
             CreateLogFile();
         }
@@ -2742,7 +2744,7 @@ void CLogFile::SetPrefix(const char *szPrefix)
         }
 
         char szNewName[SIZEOF_PATHNAME];
-        MakeLogName(m_pBasename, szPrefix, m_ltaStarted, szNewName);
+        MakeLogName(m_pBasename, szPrefix, m_ltaStarted, szNewName, sizeof(szNewName));
         if (bEnabled)
         {
             ReplaceFile(m_szFilename, szNewName);
@@ -2805,7 +2807,8 @@ void CLogFile::StartLogging()
     if (!bUseStderr)
     {
         m_ltaStarted.GetLocal();
-        MakeLogName(m_pBasename, m_szPrefix, m_ltaStarted, m_szFilename);
+        MakeLogName(m_pBasename, m_szPrefix, m_ltaStarted, m_szFilename,
+            sizeof(m_szFilename));
         CreateLogFile();
     }
     bEnabled = true;

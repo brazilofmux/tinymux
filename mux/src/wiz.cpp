@@ -1,6 +1,6 @@
 // wiz.cpp -- Wizard-only commands.
 //
-// $Id: wiz.cpp,v 1.16 2006-01-07 01:35:09 sdennis Exp $
+// $Id: wiz.cpp,v 1.17 2006-01-08 20:19:59 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -395,14 +395,16 @@ void do_toad
     loc = Location(victim);
     buf = alloc_mbuf("do_toad");
     const char *pVictimName = Name(victim);
-    sprintf(buf, "%s has been turned into a slimy toad!", pVictimName);
+    mux_sprintf(buf, MBUF_SIZE, "%s has been turned into a slimy toad!",
+        pVictimName);
     notify_except2(loc, executor, victim, executor, buf);
-    sprintf(buf, "You toaded %s! (%d objects @chowned)", pVictimName, count + 1);
+    mux_sprintf(buf, MBUF_SIZE, "You toaded %s! (%d objects @chowned)",
+        pVictimName, count + 1);
     notify_quiet(executor, buf);
 
     // Zap the name from the name hash table.
     //
-    sprintf(buf, "a slimy toad named %s", pVictimName);
+    mux_sprintf(buf, MBUF_SIZE, "a slimy toad named %s", pVictimName);
     delete_player_name(victim, pVictimName);
     s_Name(victim, buf);
     free_mbuf(buf);
