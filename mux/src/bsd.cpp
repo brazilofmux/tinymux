@@ -2,7 +2,7 @@
  * File for most TCP socket-related code. Some socket-related code also exists
  * in netcommon.cpp, but most of it is here.
  *
- * $Id: bsd.cpp,v 1.82 2006-01-08 09:12:17 sdennis Exp $
+ * $Id: bsd.cpp,v 1.83 2006-01-08 09:13:40 sdennis Exp $
  */
 
 #include "copyright.h"
@@ -988,7 +988,7 @@ static void make_socket(PortInfo *Port)
         // Create the MUD listening thread
         //
         HANDLE hThread = CreateThread(NULL, 0, MUDListenThread, (LPVOID)Port, 0, NULL);
-        if (INVALID_HANDLE_VALUE == hThread)
+        if (NULL == hThread)
         {
             log_perror("NET", "FAIL", "CreateThread", "setsockopt");
             WSACleanup();
