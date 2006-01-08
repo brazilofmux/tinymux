@@ -2,7 +2,7 @@
  * File for most TCP socket-related code. Some socket-related code also exists
  * in netcommon.cpp, but most of it is here.
  *
- * $Id: bsd.cpp,v 1.78 2006/01/08 06:07:45 sdennis Exp $
+ * $Id: bsd.cpp,v 1.79 2006/01/08 06:16:08 sdennis Exp $
  */
 
 #include "copyright.h"
@@ -35,6 +35,13 @@ int      nMainGamePorts = 0;
 unsigned int ndescriptors = 0;
 DESC *descriptor_list = NULL;
 
+static void TelnetSetup(DESC *d);
+static void SiteMonSend(int, const char *, DESC *, const char *);
+static DESC *initializesock(SOCKET, struct sockaddr_in *);
+static DESC *new_connection(PortInfo *Port, int *piError);
+static bool process_input(DESC *);
+static int make_nonblocking(SOCKET s);
+
 #ifdef WIN32
 static bool bDescriptorListInit = false;
 int game_pid;
@@ -66,6 +73,8 @@ static OVERLAPPED lpo_shutdown; // special to indicate a player should do a shut
 static OVERLAPPED lpo_welcome; // special to indicate a player has -just- connected.
 static OVERLAPPED lpo_wakeup;  // special to indicate that the loop should wakeup and return.
 CRITICAL_SECTION csDescriptorList;      // for thread synchronization
+static void __cdecl MUDListenThread(void * pVoid);  // the listening thread
+static void ProcessWindowsTCP(DWORD dwTimeout);  // handle NT-style IOs
 
 typedef struct
 {
