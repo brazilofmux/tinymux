@@ -2,7 +2,7 @@
  * File for most TCP socket-related code. Some socket-related code also exists
  * in netcommon.cpp, but most of it is here.
  *
- * $Id: bsd.cpp,v 1.80 2006-01-08 08:57:48 sdennis Exp $
+ * $Id: bsd.cpp,v 1.81 2006-01-08 08:59:09 sdennis Exp $
  */
 
 #include "copyright.h"
@@ -2159,7 +2159,7 @@ static void shutdownsock_brief(DESC *d)
     // queued completed IOs that will crash when they refer to a descriptor
     // (d) that has been freed.
     //
-    if (!PostQueuedCompletionStatus(CompletionPort, 0, (DWORD_PTR) d, &lpo_aborted))
+    if (!PostQueuedCompletionStatus(CompletionPort, 0, (DWORD) d, &lpo_aborted))
     {
         Log.tinyprintf("Error %ld on PostQueuedCompletionStatus in shutdownsock" ENDLINE, GetLastError());
     }
