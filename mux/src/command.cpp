@@ -1,6 +1,6 @@
 // command.cpp -- command parser and support routines.
 //
-// $Id: command.cpp,v 1.75 2006-01-08 10:11:59 sdennis Exp $
+// $Id: command.cpp,v 1.76 2006-01-08 16:42:50 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -1085,7 +1085,7 @@ static char *hook_name(char *pCommand, int key)
     }
 
     char *s_uselock = alloc_sbuf("command_hook.hookname");
-    sprintf(s_uselock, "%s_%s", keylet, cmdName);
+    mux_sprintf(s_uselock, SBUF_SIZE, "%s_%s", keylet, cmdName);
     return s_uselock;
 }
 
@@ -1667,7 +1667,7 @@ char *process_command
         // We are using SpaceCompressCommand temporarily.
         //
         STARTLOG(LOG_BUGS, "CMD", "PLYR");
-        sprintf(SpaceCompressCommand, "Bad player in process_command: %d",
+        mux_sprintf(SpaceCompressCommand, LBUF_SIZE, "Bad player in process_command: %d",
             executor);
         log_text(SpaceCompressCommand);
         ENDLOG;
@@ -2567,7 +2567,7 @@ static void list_cmdaccess(dbref player)
             if (  check_access(player, cmdp->perms)
                && !(cmdp->perms & CF_DARK))
             {
-                sprintf(buff, "%.60s:", cmdp->cmdname);
+                mux_sprintf(buff, SBUF_SIZE, "%.60s:", cmdp->cmdname);
                 listset_nametab(player, access_nametab, cmdp->perms, buff, true);
             }
         }
@@ -2579,7 +2579,7 @@ static void list_cmdaccess(dbref player)
             if (  check_access(player, cmdp->perms)
                && !(cmdp->perms & CF_DARK))
             {
-                sprintf(buff, "%.60s:", cmdp->cmdname);
+                mux_sprintf(buff, SBUF_SIZE, "%.60s:", cmdp->cmdname);
                 listset_nametab(player, access_nametab, cmdp->perms, buff, true);
             }
         }
@@ -2591,7 +2591,7 @@ static void list_cmdaccess(dbref player)
             if (  check_access(player, cmdp->perms)
                && !(cmdp->perms & CF_DARK))
             {
-                sprintf(buff, "%.60s:", cmdp->cmdname);
+                mux_sprintf(buff, SBUF_SIZE, "%.60s:", cmdp->cmdname);
                 listset_nametab(player, access_nametab, cmdp->perms, buff, true);
             }
         }
@@ -2603,7 +2603,7 @@ static void list_cmdaccess(dbref player)
             if (  check_access(player, cmdp->perms)
                && !(cmdp->perms & CF_DARK))
             {
-                sprintf(buff, "%.60s:", cmdp->cmdname);
+                mux_sprintf(buff, SBUF_SIZE, "%.60s:", cmdp->cmdname);
                 listset_nametab(player, access_nametab, cmdp->perms, buff, true);
             }
         }
@@ -2615,7 +2615,7 @@ static void list_cmdaccess(dbref player)
             if (  check_access(player, cmdp->perms)
                && !(cmdp->perms & CF_DARK))
             {
-                sprintf(buff, "%.60s:", cmdp->cmdname);
+                mux_sprintf(buff, SBUF_SIZE, "%.60s:", cmdp->cmdname);
                 listset_nametab(player, access_nametab, cmdp->perms, buff, true);
             }
         }
@@ -2627,7 +2627,7 @@ static void list_cmdaccess(dbref player)
             if (  check_access(player, cmdp->perms)
                && !(cmdp->perms & CF_DARK))
             {
-                sprintf(buff, "%.60s:", cmdp->cmdname);
+                mux_sprintf(buff, SBUF_SIZE, "%.60s:", cmdp->cmdname);
                 listset_nametab(player, access_nametab, cmdp->perms, buff, true);
             }
         }
@@ -2639,7 +2639,7 @@ static void list_cmdaccess(dbref player)
             if (  check_access(player, cmdp->perms)
                && !(cmdp->perms & CF_DARK))
             {
-                sprintf(buff, "%.60s:", cmdp->cmdname);
+                mux_sprintf(buff, SBUF_SIZE, "%.60s:", cmdp->cmdname);
                 listset_nametab(player, access_nametab, cmdp->perms, buff, true);
             }
         }
@@ -2673,7 +2673,7 @@ static void list_cmdaccess(dbref player)
 
         if (!(cmdp->perms & CF_DARK))
         {
-            sprintf(buff, "%.60s:", cmdp->cmdname);
+            mux_sprintf(buff, SBUF_SIZE, "%.60s:", cmdp->cmdname);
             listset_nametab(player, access_nametab, cmdp->perms, buff, true);
         }
     }
@@ -2695,7 +2695,7 @@ static void list_cmdswitches(dbref player)
                 {
                     if (!(cmdp->perms & CF_DARK))
                     {
-                        sprintf(buff, "%.60s:", cmdp->cmdname);
+                        mux_sprintf(buff, SBUF_SIZE, "%.60s:", cmdp->cmdname);
                         display_nametab(player, cmdp->switches, buff, false);
                     }
                 }
@@ -2712,7 +2712,7 @@ static void list_cmdswitches(dbref player)
                 {
                     if (!(cmdp->perms & CF_DARK))
                     {
-                        sprintf(buff, "%.60s:", cmdp->cmdname);
+                        mux_sprintf(buff, SBUF_SIZE, "%.60s:", cmdp->cmdname);
                         display_nametab(player, cmdp->switches, buff, false);
                     }
                 }
@@ -2729,7 +2729,7 @@ static void list_cmdswitches(dbref player)
                 {
                     if (!(cmdp->perms & CF_DARK))
                     {
-                        sprintf(buff, "%.60s:", cmdp->cmdname);
+                        mux_sprintf(buff, SBUF_SIZE, "%.60s:", cmdp->cmdname);
                         display_nametab(player, cmdp->switches, buff, false);
                     }
                 }
@@ -2746,7 +2746,7 @@ static void list_cmdswitches(dbref player)
                 {
                     if (!(cmdp->perms & CF_DARK))
                     {
-                        sprintf(buff, "%.60s:", cmdp->cmdname);
+                        mux_sprintf(buff, SBUF_SIZE, "%.60s:", cmdp->cmdname);
                         display_nametab(player, cmdp->switches, buff, false);
                     }
                 }
@@ -2763,7 +2763,7 @@ static void list_cmdswitches(dbref player)
                 {
                     if (!(cmdp->perms & CF_DARK))
                     {
-                        sprintf(buff, "%.60s:", cmdp->cmdname);
+                        mux_sprintf(buff, SBUF_SIZE, "%.60s:", cmdp->cmdname);
                         display_nametab(player, cmdp->switches, buff, false);
                     }
                 }
@@ -2780,7 +2780,7 @@ static void list_cmdswitches(dbref player)
                 {
                     if (!(cmdp->perms & CF_DARK))
                     {
-                        sprintf(buff, "%.60s:", cmdp->cmdname);
+                        mux_sprintf(buff, SBUF_SIZE, "%.60s:", cmdp->cmdname);
                         display_nametab(player, cmdp->switches, buff, false);
                     }
                 }
@@ -2797,7 +2797,7 @@ static void list_cmdswitches(dbref player)
                 {
                     if (!(cmdp->perms & CF_DARK))
                     {
-                        sprintf(buff, "%.60s:", cmdp->cmdname);
+                        mux_sprintf(buff, SBUF_SIZE, "%.60s:", cmdp->cmdname);
                         display_nametab(player, cmdp->switches, buff, false);
                     }
                 }
@@ -2853,7 +2853,7 @@ static void list_attraccess(dbref player)
     {
         if (bCanReadAttr(player, player, ap, false))
         {
-            sprintf(buff, "%s:", ap->name);
+            mux_sprintf(buff, SBUF_SIZE, "%s:", ap->name);
             listset_nametab(player, attraccess_nametab, ap->flags, buff, true);
         }
     }
@@ -3100,7 +3100,7 @@ static void list_df_flags(dbref player)
     char *robotb = decode_flags(player, &fs);
 
     char *buff = alloc_lbuf("list_df_flags");
-    sprintf(buff,
+    mux_sprintf(buff, LBUF_SIZE,
         "Default flags: Players...%s Rooms...%s Exits...%s Things...%s Robots...%s",
         playerb, roomb, exitb, thingb, robotb);
 
@@ -3124,12 +3124,14 @@ static void list_costs(dbref player)
     char *buff = alloc_mbuf("list_costs");
     *buff = '\0';
     if (mudconf.quotas)
-        sprintf(buff, " and %d quota", mudconf.room_quota);
+        mux_sprintf(buff, MBUF_SIZE, " and %d quota", mudconf.room_quota);
     notify(player,
            tprintf("Digging a room costs %d %s%s.",
                mudconf.digcost, coin_name(mudconf.digcost), buff));
     if (mudconf.quotas)
-        sprintf(buff, " and %d quota", mudconf.exit_quota);
+    {
+        mux_sprintf(buff, MBUF_SIZE, " and %d quota", mudconf.exit_quota);
+    }
     notify(player,
            tprintf("Opening a new exit costs %d %s%s.",
                mudconf.opencost, coin_name(mudconf.opencost), buff));
@@ -3137,7 +3139,9 @@ static void list_costs(dbref player)
            tprintf("Linking an exit, home, or dropto costs %d %s.",
                mudconf.linkcost, coin_name(mudconf.linkcost)));
     if (mudconf.quotas)
-        sprintf(buff, " and %d quota", mudconf.thing_quota);
+    {
+        mux_sprintf(buff, MBUF_SIZE, " and %d quota", mudconf.thing_quota);
+    }
     if (mudconf.createmin == mudconf.createmax)
     {
         raw_notify(player,
@@ -3153,7 +3157,9 @@ static void list_costs(dbref player)
             mudconf.many_coins, buff));
     }
     if (mudconf.quotas)
-        sprintf(buff, " and %d quota", mudconf.player_quota);
+    {
+        mux_sprintf(buff, MBUF_SIZE, " and %d quota", mudconf.player_quota);
+    }
     notify(player,
            tprintf("Creating a robot costs %d %s%s.",
                mudconf.robotcost, coin_name(mudconf.robotcost), buff));
@@ -3204,20 +3210,20 @@ static void list_costs(dbref player)
     else if (mudconf.sacfactor == 1)
     {
         if (mudconf.sacadjust < 0)
-            sprintf(buff, "<create cost> - %d", -mudconf.sacadjust);
+            mux_sprintf(buff, MBUF_SIZE, "<create cost> - %d", -mudconf.sacadjust);
         else if (mudconf.sacadjust > 0)
-            sprintf(buff, "<create cost> + %d", mudconf.sacadjust);
+            mux_sprintf(buff, MBUF_SIZE, "<create cost> + %d", mudconf.sacadjust);
         else
-            sprintf(buff, "<create cost>");
+            mux_sprintf(buff, MBUF_SIZE, "<create cost>");
     }
     else
     {
         if (mudconf.sacadjust < 0)
-            sprintf(buff, "(<create cost> / %d) - %d", mudconf.sacfactor, -mudconf.sacadjust);
+            mux_sprintf(buff, MBUF_SIZE, "(<create cost> / %d) - %d", mudconf.sacfactor, -mudconf.sacadjust);
         else if (mudconf.sacadjust > 0)
-            sprintf(buff, "(<create cost> / %d) + %d", mudconf.sacfactor, mudconf.sacadjust);
+            mux_sprintf(buff, MBUF_SIZE, "(<create cost> / %d) + %d", mudconf.sacfactor, mudconf.sacadjust);
         else
-            sprintf(buff, "<create cost> / %d", mudconf.sacfactor);
+            mux_sprintf(buff, MBUF_SIZE, "<create cost> / %d", mudconf.sacfactor);
     }
     raw_notify(player, tprintf("The value of an object is %s.", buff));
     if (mudconf.clone_copy_cost)
@@ -3336,7 +3342,7 @@ static void list_options(dbref player)
         tprintf("There may be at most %d players logged in at once.",
             mudconf.max_players));
     if (mudconf.quotas)
-        sprintf(buff, " and %d quota", mudconf.start_quota);
+        mux_sprintf(buff, MBUF_SIZE, " and %d quota", mudconf.start_quota);
     else
         *buff = '\0';
     raw_notify(player,
@@ -3356,7 +3362,7 @@ static void list_options(dbref player)
            tprintf("The head of the object freelist is #%d.",
                mudstate.freelist));
 
-    sprintf(buff, "Intervals: Dump...%d  Clean...%d  Idlecheck...%d",
+    mux_sprintf(buff, MBUF_SIZE, "Intervals: Dump...%d  Clean...%d  Idlecheck...%d",
         mudconf.dump_interval, mudconf.check_interval,
         mudconf.idle_interval);
     raw_notify(player, buff);
@@ -3368,30 +3374,30 @@ static void list_options(dbref player)
     long lDump  = ltdDump.ReturnSeconds();
     long lCheck = ltdCheck.ReturnSeconds();
     long lIdle  = ltdIdle.ReturnSeconds();
-    sprintf(buff, "Timers: Dump...%ld  Clean...%ld  Idlecheck...%ld",
+    mux_sprintf(buff, MBUF_SIZE, "Timers: Dump...%ld  Clean...%ld  Idlecheck...%ld",
         lDump, lCheck, lIdle);
     raw_notify(player, buff);
 
-    sprintf(buff, "Timeouts: Idle...%d  Connect...%d  Tries...%d",
+    mux_sprintf(buff, MBUF_SIZE, "Timeouts: Idle...%d  Connect...%d  Tries...%d",
         mudconf.idle_timeout, mudconf.conn_timeout,
         mudconf.retry_limit);
     raw_notify(player, buff);
 
-    sprintf(buff, "Scheduling: Timeslice...%s  Max_Quota...%d  Increment...%d",
+    mux_sprintf(buff, MBUF_SIZE, "Scheduling: Timeslice...%s  Max_Quota...%d  Increment...%d",
         mudconf.timeslice.ReturnSecondsString(3),mudconf.cmd_quota_max,
         mudconf.cmd_quota_incr);
     raw_notify(player, buff);
 
-    sprintf(buff, "Spaces...%s  Savefiles...%s",
+    mux_sprintf(buff, MBUF_SIZE, "Spaces...%s  Savefiles...%s",
         ed[mudconf.space_compress], ed[mudconf.compress_db]);
     raw_notify(player, buff);
 
-    sprintf(buff, "New characters: Room...#%d  Home...#%d  DefaultHome...#%d  Quota...%d",
+    mux_sprintf(buff, MBUF_SIZE, "New characters: Room...#%d  Home...#%d  DefaultHome...#%d  Quota...%d",
         mudconf.start_room, mudconf.start_home, mudconf.default_home,
         mudconf.start_quota);
     raw_notify(player, buff);
 
-    sprintf(buff, "Misc: GuestChar...#%d  IdleQueueChunk...%d  ActiveQueueChunk...%d  Master_room...#%d",
+    mux_sprintf(buff, MBUF_SIZE, "Misc: GuestChar...#%d  IdleQueueChunk...%d  ActiveQueueChunk...%d  Master_room...#%d",
         mudconf.guest_char, mudconf.queue_chunk,
         mudconf.active_q_chunk, mudconf.master_room);
     raw_notify(player, buff);
@@ -3434,7 +3440,7 @@ static void list_vattrs(dbref player, char *s_mask)
                 }
                 wna++;
             }
-            sprintf(buff, "%s(%d):", va->name, va->number);
+            mux_sprintf(buff, LBUF_SIZE, "%s(%d):", va->name, va->number);
             listset_nametab(player, attraccess_nametab, va->flags, buff, true);
         }
     }
