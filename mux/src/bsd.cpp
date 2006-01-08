@@ -2,7 +2,7 @@
  * File for most TCP socket-related code. Some socket-related code also exists
  * in netcommon.cpp, but most of it is here.
  *
- * $Id: bsd.cpp,v 1.77 2006/01/08 05:59:19 sdennis Exp $
+ * $Id: bsd.cpp,v 1.78 2006/01/08 06:07:45 sdennis Exp $
  */
 
 #include "copyright.h"
@@ -34,9 +34,9 @@ int      nMainGamePorts = 0;
 
 unsigned int ndescriptors = 0;
 DESC *descriptor_list = NULL;
-static bool bDescriptorListInit = false;
 
 #ifdef WIN32
+static bool bDescriptorListInit = false;
 int game_pid;
 #else // WIN32
 int maxd = 0;
@@ -452,8 +452,6 @@ static int get_slave_result(void)
 }
 
 #else // WIN32
-
-extern int make_nonblocking(SOCKET s);
 
 void CleanUpSlaveSocket(void)
 {
@@ -2139,7 +2137,7 @@ static void shutdownsock_brief(DESC *d)
 }
 #endif // WIN32
 
-static int make_nonblocking(SOCKET s)
+int make_nonblocking(SOCKET s)
 {
 #ifdef WIN32
     unsigned long on = 1;
