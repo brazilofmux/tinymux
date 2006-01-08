@@ -1,6 +1,6 @@
 // alloc.cpp -- Memory Allocation Subsystem.
 //
-// $Id: alloc.cpp,v 1.8 2004-08-16 05:14:07 sdennis Exp $
+// $Id: alloc.cpp,v 1.9 2006-01-08 05:42:38 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -52,8 +52,8 @@ typedef struct pooldata
     UINT64 num_lost;                // Buffers lost due to corruption
 } POOL;
 
-POOL pools[NUM_POOLS];
-const char *poolnames[] =
+static POOL pools[NUM_POOLS];
+static const char *poolnames[] =
 {
     "Lbufs", "Sbufs", "Mbufs", "Bools", "Descs", "Qentries", "Pcaches"
 };
@@ -150,7 +150,7 @@ static void pool_vfy(int poolnum, const char *tag, const char *file, const int l
     }
 }
 
-void pool_check(const char *tag, const char *file, const int line)
+static void pool_check(const char *tag, const char *file, const int line)
 {
     int i;
     for (i = 0; i < NUM_POOLS; i++)

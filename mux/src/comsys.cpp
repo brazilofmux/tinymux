@@ -1,6 +1,6 @@
 // comsys.cpp
 //
-// $Id: comsys.cpp,v 1.41 2006-01-07 06:01:59 sdennis Exp $
+// $Id: comsys.cpp,v 1.42 2006-01-08 05:42:38 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -11,13 +11,14 @@
 
 #include "ansi.h"
 #include "attrs.h"
+#include "command.h"
 #include "comsys.h"
 #include "functions.h"
 #include "interface.h"
 #include "powers.h"
 
-int num_channels;
-comsys_t *comsys_table[NUM_COMSYS];
+static int num_channels;
+static comsys_t *comsys_table[NUM_COMSYS];
 
 #define DFLT_MAX_LOG        0
 #define MIN_RECALL_REQUEST  1
@@ -26,7 +27,7 @@ comsys_t *comsys_table[NUM_COMSYS];
 
 // Return value must be free_lbuf'ed.
 //
-char *RestrictTitleValue(char *pTitleRequest)
+static char *RestrictTitleValue(char *pTitleRequest)
 {
     // First, remove all '\r\n\t' from the string.
     //
@@ -43,7 +44,7 @@ char *RestrictTitleValue(char *pTitleRequest)
     return pNewTitle;
 }
 
-void do_setcomtitlestatus(dbref player, struct channel *ch, bool status)
+static void do_setcomtitlestatus(dbref player, struct channel *ch, bool status)
 {
     struct comuser *user = select_user(ch,player);
     if (ch && user)
@@ -52,7 +53,7 @@ void do_setcomtitlestatus(dbref player, struct channel *ch, bool status)
     }
 }
 
-void do_setnewtitle(dbref player, struct channel *ch, char *pValidatedTitle)
+static void do_setnewtitle(dbref player, struct channel *ch, char *pValidatedTitle)
 {
     struct comuser *user = select_user(ch, player);
 
@@ -141,7 +142,7 @@ void save_comsys(char *filename)
 
 // Aliases must be between 1 and 5 characters. No spaces. No ANSI.
 //
-char *MakeCanonicalComAlias
+static char *MakeCanonicalComAlias
 (
     const char *pAlias,
     int *nValidAlias,
@@ -185,7 +186,7 @@ char *MakeCanonicalComAlias
     return Buffer;
 }
 
-bool ParseChannelLine(char *pBuffer, char *pAlias5, char **ppChannelName)
+static bool ParseChannelLine(char *pBuffer, char *pAlias5, char **ppChannelName)
 {
     // Fetch alias portion. We need to find the first space.
     //
@@ -365,7 +366,7 @@ comsys_t *create_new_comsys(void)
     return c;
 }
 
-comsys_t *get_comsys(dbref which)
+static comsys_t *get_comsys(dbref which)
 {
     if (which < 0)
     {
@@ -483,7 +484,7 @@ void sort_com_aliases(comsys_t *c)
     }
 }
 
-char *get_channel_from_alias(dbref player, char *alias)
+static char *get_channel_from_alias(dbref player, char *alias)
 {
     int first, last, current, dir;
 
@@ -794,7 +795,7 @@ void save_comsystem(FILE *fp)
     }
 }
 
-void BuildChannelMessage
+static void BuildChannelMessage
 (
     bool bSpoof,
     const char *pHeader,
@@ -949,7 +950,7 @@ void BuildChannelMessage
     }
 }
 
-void do_processcom(dbref player, char *arg1, char *arg2)
+static void do_processcom(dbref player, char *arg1, char *arg2)
 {
     if (!*arg2)
     {
@@ -1196,7 +1197,7 @@ void do_leavechannel(dbref player, struct channel *ch)
     user->bUserIsOn = false;
 }
 
-void do_comwho_line
+static void do_comwho_line
 (
     dbref player,
     struct channel *ch,
@@ -1343,7 +1344,7 @@ void do_comlast(dbref player, struct channel *ch, int arg)
     raw_notify(player, "-- End Comsys Recall --");
 }
 
-bool do_chanlog(dbref player, char *channel, char *arg)
+static bool do_chanlog(dbref player, char *channel, char *arg)
 {
     UNUSED_PARAMETER(player);
 
@@ -1906,7 +1907,7 @@ void do_cleanupchannels(void)
 }
 #endif
 
-void do_listchannels(dbref player)
+static void do_listchannels(dbref player)
 {
     struct channel *ch;
     char temp[LBUF_SIZE];
@@ -2238,7 +2239,7 @@ void do_channelwho(dbref executor, dbref caller, dbref enactor, int key, char *a
     raw_notify(executor, tprintf("-- %s --", ch->name));
 }
 
-void do_comdisconnectraw_notify(dbref player, char *chan)
+static void do_comdisconnectraw_notify(dbref player, char *chan)
 {
     struct channel *ch = select_channel(chan);
     if (!ch) return;
@@ -2257,7 +2258,7 @@ void do_comdisconnectraw_notify(dbref player, char *chan)
     }
 }
 
-void do_comconnectraw_notify(dbref player, char *chan)
+static void do_comconnectraw_notify(dbref player, char *chan)
 {
     struct channel *ch = select_channel(chan);
     if (!ch) return;
@@ -2275,7 +2276,7 @@ void do_comconnectraw_notify(dbref player, char *chan)
     }
 }
 
-void do_comconnectchannel(dbref player, char *channel, char *alias, int i)
+static void do_comconnectchannel(dbref player, char *channel, char *alias, int i)
 {
     struct comuser *user;
 
@@ -2920,7 +2921,7 @@ struct chanlist_node
     struct channel * ptr;
 };
 
-int DCL_CDECL chanlist_comp(const void* a, const void* b)
+static int DCL_CDECL chanlist_comp(const void* a, const void* b)
 {
     chanlist_node* ca = (chanlist_node*)a;
     chanlist_node* cb = (chanlist_node*)b;
