@@ -1,6 +1,6 @@
 // command.cpp -- command parser and support routines.
 //
-// $Id: command.cpp,v 1.74 2006-01-08 09:39:00 sdennis Exp $
+// $Id: command.cpp,v 1.75 2006-01-08 10:11:59 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -2035,7 +2035,8 @@ char *process_command
                     // All the switches given a command shouldn't exceed 200 chars together
                     char switch_buff[200];
                     char *switch_ptr;
-                    sprintf(switch_buff, "%.199s", pSlash);
+                    strncpy(switch_buff, pSlash, sizeof(switch_buff));
+                    switch_buff[sizeof(switch_buff)-1] = '\0';
                     mux_strtok_src(&ttswitch, switch_buff);
                     mux_strtok_ctl(&ttswitch, "/");
                     switch_ptr = mux_strtok_parse(&ttswitch);

@@ -1,6 +1,6 @@
 // stringutil.cpp -- string utilities.
 //
-// $Id: stringutil.cpp,v 1.74 2006-01-07 08:06:02 sdennis Exp $
+// $Id: stringutil.cpp,v 1.75 2006-01-08 10:12:00 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -3191,6 +3191,14 @@ int DCL_CDECL mux_vsnprintf(char *buff, int count, const char *fmt, va_list va)
     }
     buff[len] = '\0';
     return len;
+}
+
+void DCL_CDECL mux_sprintf(char *buff, int count, const char *fmt, ...)
+{
+    va_list ap;
+    va_start(ap, fmt);
+    (void)mux_vsnprintf(buff, count, fmt, ap);
+    va_end(ap);
 }
 
 // This function acts like fgets except that any data on the end of the

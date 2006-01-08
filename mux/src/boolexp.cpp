@@ -1,6 +1,6 @@
 // boolexp.cpp
 //
-// $Id: boolexp.cpp,v 1.18 2006-01-08 06:03:47 sdennis Exp $
+// $Id: boolexp.cpp,v 1.19 2006-01-08 10:11:59 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -110,7 +110,7 @@ bool eval_boolexp(dbref player, dbref thing, dbref from, BOOLEXP *b)
                 STARTLOG(LOG_BUGS, "BUG", "LOCK");
                 log_name_and_loc(player);
                 buff = alloc_mbuf("eval_boolexp.LOG.indir");
-                sprintf(buff, ": Lock had bad indirection (%c, type %d)",
+                mux_sprintf(buff, MBUF_SIZE, ": Lock had bad indirection (%c, type %d)",
                     INDIR_TOKEN, b->sub1->type);
                 log_text(buff);
                 free_mbuf(buff);
