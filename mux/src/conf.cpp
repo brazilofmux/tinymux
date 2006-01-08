@@ -1,6 +1,6 @@
 // conf.cpp -- Set up configuration information and static data.
 //
-// $Id: conf.cpp,v 1.70 2006-01-08 03:07:37 sdennis Exp $
+// $Id: conf.cpp,v 1.71 2006-01-08 03:10:45 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -762,7 +762,7 @@ static CF_HAND(cf_flagalias)
             {
                 if (!hashfindLEN(pName, nName, &mudstate.flags_htab))
                 {
-                   hashaddLEN(pName, nName, cp, &mudstate.flags_htab);
+                    hashaddLEN(pName, nName, cp, &mudstate.flags_htab);
                     success = true;
                }
             }
