@@ -1,6 +1,6 @@
 // help.cpp -- Commands for giving help.
 //
-// $Id: help.cpp,v 1.15 2006-01-07 20:47:33 sdennis Exp $
+// $Id: help.cpp,v 1.16 2006-01-08 19:58:52 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -146,7 +146,7 @@ static int helpindex_read(int iHelpfile)
     CHashTable *htab = mudstate.aHelpDesc[iHelpfile].ht;
 
     char szTextFilename[SBUF_SIZE+8];
-    sprintf(szTextFilename, "%s.txt", mudstate.aHelpDesc[iHelpfile].pBaseFilename);
+    mux_sprintf(szTextFilename, sizeof(szTextFilename), "%s.txt", mudstate.aHelpDesc[iHelpfile].pBaseFilename);
 
     help_indx entry;
 
@@ -155,7 +155,7 @@ static int helpindex_read(int iHelpfile)
     {
         STARTLOG(LOG_PROBLEMS, "HLP", "RINDX");
         char *p = alloc_lbuf("helpindex_read.LOG");
-        sprintf(p, "Can't open %s for reading.", szTextFilename);
+        mux_sprintf(p, LBUF_SIZE, "Can't open %s for reading.", szTextFilename);
         log_text(p);
         free_lbuf(p);
         ENDLOG;
@@ -289,7 +289,7 @@ static bool ReportTopic(dbref executor, struct help_entry *htab_entry, int iHelp
     char *result)
 {
     char szTextFilename[SBUF_SIZE+8];
-    sprintf(szTextFilename, "%s.txt", mudstate.aHelpDesc[iHelpfile].pBaseFilename);
+    mux_sprintf(szTextFilename, sizeof(szTextFilename), "%s.txt", mudstate.aHelpDesc[iHelpfile].pBaseFilename);
 
     int offset = htab_entry->pos;
     FILE *fp = fopen(szTextFilename, "rb");
@@ -297,7 +297,7 @@ static bool ReportTopic(dbref executor, struct help_entry *htab_entry, int iHelp
     {
         STARTLOG(LOG_PROBLEMS, "HLP", "OPEN");
         char *line = alloc_lbuf("ReportTopic.open");
-        sprintf(line, "Can't open %s for reading.", szTextFilename);
+        mux_sprintf(line, LBUF_SIZE, "Can't open %s for reading.", szTextFilename);
         log_text(line);
         free_lbuf(line);
         ENDLOG;
@@ -308,7 +308,7 @@ static bool ReportTopic(dbref executor, struct help_entry *htab_entry, int iHelp
     {
         STARTLOG(LOG_PROBLEMS, "HLP", "SEEK");
         char *line = alloc_lbuf("ReportTopic.seek");
-        sprintf(line, "Seek error in file %s.", szTextFilename);
+        mux_sprintf(line, LBUF_SIZE, "Seek error in file %s.", szTextFilename);
         log_text(line);
         free_lbuf(line);
         ENDLOG;
@@ -384,7 +384,7 @@ static bool ValidateHelpFileIndex(int iHelpfile)
     {
         char *buf = alloc_mbuf("do_help.LOG");
         STARTLOG(LOG_BUGS, "BUG", "HELP");
-        sprintf(buf, "Unknown help file number: %d", iHelpfile);
+        mux_sprintf(buf, MBUF_SIZE, "Unknown help file number: %d", iHelpfile);
         log_text(buf);
         ENDLOG;
         free_mbuf(buf);

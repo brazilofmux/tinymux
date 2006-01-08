@@ -1,6 +1,6 @@
 // log.cpp -- Logging routines.
 //
-// $Id: log.cpp,v 1.9 2006-01-07 20:02:37 sdennis Exp $
+// $Id: log.cpp,v 1.10 2006-01-08 20:00:36 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -67,7 +67,7 @@ bool start_log(const char *primary, const char *secondary)
                 ltaNow.GetLocal();
                 FIELDEDTIME ft;
                 ltaNow.ReturnFields(&ft);
-                sprintf(buffer, "%d.%02d%02d:%02d%02d%02d ",ft.iYear,
+                mux_sprintf(buffer, sizeof(buffer), "%d.%02d%02d:%02d%02d%02d ",ft.iYear,
                     ft.iMonth, ft.iDayOfMonth, ft.iHour, ft.iMinute,
                     ft.iSecond);
             }
@@ -247,7 +247,7 @@ void log_type_and_name(dbref thing)
     char nbuf[16];
 
     log_text(OBJTYP(thing));
-    sprintf(nbuf, " #%d(", thing);
+    mux_sprintf(nbuf, sizeof(nbuf), " #%d(", thing);
     log_text(nbuf);
     if (Good_obj(thing))
     {
@@ -320,7 +320,7 @@ void do_log
     if (bValid)
     {
         pFullName = alloc_lbuf("do_log_filename");
-        sprintf(pFullName, "logs/M-%s.log", pFilename);
+        mux_sprintf(pFullName, LBUF_SIZE, "logs/M-%s.log", pFilename);
 
         // Strip the message of all ANSI.
         //

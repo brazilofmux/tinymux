@@ -356,7 +356,7 @@ void do_rxlevel
     // Set the Rx Level.
     //
     char *buff = alloc_lbuf("do_rxlevel");
-    sprintf(buff, "%08X %08X", RxLevel(thing) & andmask | ormask, TxLevel(thing));
+    mux_sprintf(buff, LBUF_SIZE, "%08X %08X", RxLevel(thing) & andmask | ormask, TxLevel(thing));
     atr_add_raw(thing, A_RLEVEL, buff);
     free_lbuf(buff);
 }
@@ -448,7 +448,7 @@ void do_txlevel
     // Set the Tx Level.
     //
     char *buff = alloc_lbuf("do_rxlevel");
-    sprintf(buff, "%08X %08X", RxLevel(thing), TxLevel(thing) & andmask | ormask);
+    mux_sprintf(buff, LBUF_SIZE, "%08X %08X", RxLevel(thing), TxLevel(thing) & andmask | ormask);
     atr_add_raw(thing, A_RLEVEL, buff);
     free_lbuf(buff);
 }

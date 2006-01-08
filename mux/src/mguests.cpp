@@ -2,7 +2,7 @@
 // Multiguest code rewritten by Matthew J. Leavitt (zenty).
 // Idea for @list guest from Ashen-Shugar and the great team of RhostMUSH
 //
-// $Id: mguests.cpp,v 1.16 2004-09-21 04:22:18 sdennis Exp $
+// $Id: mguests.cpp,v 1.17 2006-01-08 20:02:21 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -147,7 +147,7 @@ const char *CGuests::Create(DESC *d)
         {
             // Lets try to grab our own name, if we don't have it.
             //
-            sprintf(name, "%s%d", mudconf.guest_prefix, i+1);
+            mux_sprintf(name, sizeof(name), "%s%d", mudconf.guest_prefix, i+1);
             dbref j = lookup_player(GOD, name, false);
             if (j == NOTHING)
             {
@@ -284,7 +284,7 @@ dbref CGuests::MakeGuestChar(void)
     bool bFound = false;
     for (i = 0; i < mudconf.number_guests;i++)
     {
-        sprintf(name, "%s%d", mudconf.guest_prefix, i + 1);
+        mux_sprintf(name, sizeof(name), "%s%d", mudconf.guest_prefix, i + 1);
         player = lookup_player(GOD, name, false);
         if (player == NOTHING)
         {
@@ -407,7 +407,7 @@ void CGuests::ListAll(dbref player)
         dbref aowner;
         int aflags;
         atr_get_str(LastSite, Guests[i], A_LASTSITE, &aowner, &aflags);
-        sprintf(buff, "%sGuest %-3d: %-15s #%-5d %-10s %s",
+        mux_sprintf(buff, LBUF_SIZE, "%sGuest %-3d: %-15s #%-5d %-10s %s",
                 (i<mudconf.min_guests ? "*" : " "),
                 i, Name(Guests[i]), Guests[i],
                 (Connected(Guests[i]) ? "Online" : "NotOnline"),
