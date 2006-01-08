@@ -2,7 +2,7 @@
  * File for most TCP socket-related code. Some socket-related code also exists
  * in netcommon.cpp, but most of it is here.
  *
- * $Id: bsd.cpp,v 1.81 2006-01-08 08:59:09 sdennis Exp $
+ * $Id: bsd.cpp,v 1.82 2006-01-08 09:12:17 sdennis Exp $
  */
 
 #include "copyright.h"
@@ -73,7 +73,7 @@ static OVERLAPPED lpo_shutdown; // special to indicate a player should do a shut
 static OVERLAPPED lpo_welcome; // special to indicate a player has -just- connected.
 static OVERLAPPED lpo_wakeup;  // special to indicate that the loop should wakeup and return.
 CRITICAL_SECTION csDescriptorList;      // for thread synchronization
-static void __cdecl MUDListenThread(void * pVoid);  // the listening thread
+static DWORD WINAPI MUDListenThread(LPVOID pVoid);
 static void ProcessWindowsTCP(DWORD dwTimeout);  // handle NT-style IOs
 
 typedef struct
@@ -987,9 +987,10 @@ static void make_socket(PortInfo *Port)
 
         // Create the MUD listening thread
         //
-        if (_beginthread(MUDListenThread, 0, (void *) Port) == (unsigned)(-1))
+        HANDLE hThread = CreateThread(NULL, 0, MUDListenThread, (LPVOID)Port, 0, NULL);
+        if (INVALID_HANDLE_VALUE == hThread)
         {
-            log_perror("NET", "FAIL", "_beginthread", "setsockopt");
+            log_perror("NET", "FAIL", "CreateThread", "setsockopt");
             WSACleanup();
             exit(1);
         }
@@ -4133,7 +4134,7 @@ void list_system_resources(dbref player)
 // Thread to listen on MUD port - for Windows NT
 // ---------------------------------------------------------------------------
 //
-void __cdecl MUDListenThread(void * pVoid)
+static DWORD WINAPI MUDListenThread(LPVOID pVoid)
 {
     PortInfo *Port = (PortInfo *)pVoid;
 
@@ -4257,6 +4258,7 @@ void __cdecl MUDListenThread(void * pVoid)
         }
     }
     Log.tinyprintf("End of NT-style listening on port %d" ENDLINE, Port->port);
+    return 1;
 }
 
 
