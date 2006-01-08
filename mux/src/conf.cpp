@@ -1,6 +1,6 @@
 // conf.cpp -- Set up configuration information and static data.
 //
-// $Id: conf.cpp,v 1.69 2006-01-07 23:21:46 sdennis Exp $
+// $Id: conf.cpp,v 1.70 2006-01-08 03:07:37 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -32,11 +32,6 @@ typedef struct confparm
 //
 CONFDATA mudconf;
 STATEDATA mudstate;
-
-extern NAMETAB access_nametab[];
-extern NAMETAB list_names[];
-extern NAMETAB sigactions_nametab[];
-extern CONF conftable[];
 
 // ---------------------------------------------------------------------------
 // cf_init: Initialize mudconf to default values.
@@ -375,7 +370,7 @@ void DCL_CDECL cf_log_syntax(dbref player, char *cmd, const char *fmt, ...)
 // ---------------------------------------------------------------------------
 // cf_status_from_succfail: Return command status from succ and fail info
 //
-int cf_status_from_succfail(dbref player, char *cmd, int success, int failure)
+static int cf_status_from_succfail(dbref player, char *cmd, int success, int failure)
 {
     char *buff;
 
@@ -442,7 +437,7 @@ CF_HAND(cf_rlevel)
 // ---------------------------------------------------------------------------
 // cf_int_array: Setup array of integers.
 //
-CF_HAND(cf_int_array)
+static CF_HAND(cf_int_array)
 {
     UNUSED_PARAMETER(pExtra);
     UNUSED_PARAMETER(player);
@@ -492,7 +487,7 @@ CF_HAND(cf_int_array)
 // ---------------------------------------------------------------------------
 // cf_int: Set integer parameter.
 //
-CF_HAND(cf_int)
+static CF_HAND(cf_int)
 {
     UNUSED_PARAMETER(pExtra);
     UNUSED_PARAMETER(nExtra);
@@ -508,7 +503,7 @@ CF_HAND(cf_int)
 // ---------------------------------------------------------------------------
 // cf_dbref: Set dbref parameter....looking for an ignoring the leading '#'.
 //
-CF_HAND(cf_dbref)
+static CF_HAND(cf_dbref)
 {
     UNUSED_PARAMETER(pExtra);
     UNUSED_PARAMETER(nExtra);
@@ -534,7 +529,7 @@ CF_HAND(cf_dbref)
 // ---------------------------------------------------------------------------
 // cf_seconds: Set CLinearTimeDelta in units of seconds.
 //
-CF_HAND(cf_seconds)
+static CF_HAND(cf_seconds)
 {
     UNUSED_PARAMETER(pExtra);
     UNUSED_PARAMETER(nExtra);
@@ -549,7 +544,7 @@ CF_HAND(cf_seconds)
 // ---------------------------------------------------------------------------
 // cf_bool: Set boolean parameter.
 //
-NAMETAB bool_names[] =
+static NAMETAB bool_names[] =
 {
     {"true",    1,  0,  true},
     {"false",   1,  0,  false},
@@ -560,7 +555,7 @@ NAMETAB bool_names[] =
     {NULL,      0,  0,  0}
 };
 
-CF_HAND(cf_bool)
+static CF_HAND(cf_bool)
 {
     UNUSED_PARAMETER(pExtra);
     UNUSED_PARAMETER(nExtra);
@@ -579,7 +574,7 @@ CF_HAND(cf_bool)
 // ---------------------------------------------------------------------------
 // cf_option: Select one option from many choices.
 //
-CF_HAND(cf_option)
+static CF_HAND(cf_option)
 {
     UNUSED_PARAMETER(nExtra);
 
@@ -596,7 +591,7 @@ CF_HAND(cf_option)
 // ---------------------------------------------------------------------------
 // cf_string: Set string parameter.
 //
-CF_HAND(cf_string)
+static CF_HAND(cf_string)
 {
     UNUSED_PARAMETER(pExtra);
 
@@ -661,7 +656,7 @@ CF_HAND(cf_string)
 // ---------------------------------------------------------------------------
 // cf_string_dyn: Set string parameter using dynamically allocated memory.
 //
-CF_HAND(cf_string_dyn)
+static CF_HAND(cf_string_dyn)
 {
     UNUSED_PARAMETER(pExtra);
 
@@ -703,7 +698,7 @@ CF_HAND(cf_string_dyn)
 // ---------------------------------------------------------------------------
 // cf_alias: define a generic hash table alias.
 //
-CF_HAND(cf_alias)
+static CF_HAND(cf_alias)
 {
     UNUSED_PARAMETER(pExtra);
     UNUSED_PARAMETER(nExtra);
@@ -740,7 +735,7 @@ CF_HAND(cf_alias)
 // ---------------------------------------------------------------------------
 // cf_flagalias: define a flag alias.
 //
-CF_HAND(cf_flagalias)
+static CF_HAND(cf_flagalias)
 {
     UNUSED_PARAMETER(vp);
     UNUSED_PARAMETER(pExtra);
@@ -783,7 +778,7 @@ CF_HAND(cf_flagalias)
 // ---------------------------------------------------------------------------
 // cf_poweralias: define a power alias.
 //
-CF_HAND(cf_poweralias)
+static CF_HAND(cf_poweralias)
 {
     UNUSED_PARAMETER(vp);
     UNUSED_PARAMETER(pExtra);
@@ -820,10 +815,11 @@ CF_HAND(cf_poweralias)
     return (success ? 0 : -1);
 }
 
+#if 0
 // ---------------------------------------------------------------------------
 // cf_or_in_bits: OR in bits from namelist to a word.
 //
-CF_HAND(cf_or_in_bits)
+static CF_HAND(cf_or_in_bits)
 {
     UNUSED_PARAMETER(nExtra);
 
@@ -857,6 +853,7 @@ CF_HAND(cf_or_in_bits)
     }
     return cf_status_from_succfail(player, cmd, success, failure);
 }
+#endif
 
 // ---------------------------------------------------------------------------
 // cf_modify_bits: set or clear bits in a flag word from a namelist.
@@ -909,10 +906,11 @@ CF_HAND(cf_modify_bits)
     return cf_status_from_succfail(player, cmd, success, failure);
 }
 
+#if 0
 // ---------------------------------------------------------------------------
 // cf_set_bits: Clear flag word and then set specified bits from namelist.
 //
-CF_HAND(cf_set_bits)
+static CF_HAND(cf_set_bits)
 {
     UNUSED_PARAMETER(nExtra);
 
@@ -948,11 +946,12 @@ CF_HAND(cf_set_bits)
     }
     return cf_status_from_succfail(player, cmd, success, failure);
 }
+#endif
 
 // ---------------------------------------------------------------------------
 // cf_set_flags: Clear flag word and then set from a flags htab.
 //
-CF_HAND(cf_set_flags)
+static CF_HAND(cf_set_flags)
 {
     UNUSED_PARAMETER(pExtra);
     UNUSED_PARAMETER(nExtra);
@@ -1030,7 +1029,7 @@ CF_HAND(cf_set_flags)
 // ---------------------------------------------------------------------------
 // cf_badname: Disallow use of player name/alias.
 //
-CF_HAND(cf_badname)
+static CF_HAND(cf_badname)
 {
     UNUSED_PARAMETER(vp);
     UNUSED_PARAMETER(pExtra);
@@ -1038,9 +1037,13 @@ CF_HAND(cf_badname)
     UNUSED_PARAMETER(cmd);
 
     if (nExtra)
+    {
         badname_remove(str);
+    }
     else
+    {
         badname_add(str);
+    }
     return 0;
 }
 
@@ -1278,7 +1281,7 @@ static bool MakeCanonicalIPv4(const char *str, in_addr_t *pnIP)
 // valid one. Valid masks consist of a N-bit sequence of '1' bits followed by
 // a (32-N)-bit sequence of '0' bits, where N is 0 to 32.
 //
-bool isValidSubnetMask(in_addr_t ulMask)
+static bool isValidSubnetMask(in_addr_t ulMask)
 {
     in_addr_t ulTest = 0xFFFFFFFFUL;
     for (int i = 0; i <= 32; i++)
@@ -1295,7 +1298,7 @@ bool isValidSubnetMask(in_addr_t ulMask)
 // ---------------------------------------------------------------------------
 // cf_site: Update site information
 
-CF_HAND(cf_site)
+static CF_HAND(cf_site)
 {
     UNUSED_PARAMETER(pExtra);
 
@@ -1425,54 +1428,10 @@ CF_HAND(cf_site)
 }
 
 // ---------------------------------------------------------------------------
-// cf_cf_access: Set access on config directives
-//
-CF_HAND(cf_cf_access)
-{
-    UNUSED_PARAMETER(vp);
-    UNUSED_PARAMETER(pExtra);
-
-    CONF *tp;
-    char *ap;
-
-    for (ap = str; *ap && !mux_isspace(*ap); ap++)
-    {
-        ; // Nothing
-    }
-    if (*ap)
-    {
-        *ap++ = '\0';
-    }
-
-    for (tp = conftable; tp->pname; tp++)
-    {
-        if (!strcmp(tp->pname, str))
-        {
-            // Cannot modify parameters set CA_STATIC.
-            //
-            if (  tp->flags & CA_STATIC
-               && !mudstate.bReadingConfiguration)
-            {
-                notify(player, NOPERM_MESSAGE);
-                STARTLOG(LOG_CONFIGMODS, "CFG", "PERM");
-                log_name(player);
-                log_text(" tried to change access to static param: ");
-                log_text(tp->pname);
-                ENDLOG;
-                return -1;
-            }
-            return cf_modify_bits(&tp->flags, ap, pExtra, nExtra, player, cmd);
-        }
-    }
-    cf_log_notfound(player, cmd, "Config directive", str);
-    return -1;
-}
-
-// ---------------------------------------------------------------------------
 // cf_helpfile, cf_raw_helpfile: Add help files and their corresponding
 // command.
 //
-int add_helpfile(dbref player, char *cmd, char *str, bool bRaw)
+static int add_helpfile(dbref player, char *cmd, char *str, bool bRaw)
 {
     // Parse the two arguments.
     //
@@ -1561,7 +1520,7 @@ int add_helpfile(dbref player, char *cmd, char *str, bool bRaw)
     return 0;
 }
 
-CF_HAND(cf_helpfile)
+static CF_HAND(cf_helpfile)
 {
     UNUSED_PARAMETER(vp);
     UNUSED_PARAMETER(pExtra);
@@ -1570,7 +1529,7 @@ CF_HAND(cf_helpfile)
     return add_helpfile(player, cmd, str, false);
 }
 
-CF_HAND(cf_raw_helpfile)
+static CF_HAND(cf_raw_helpfile)
 {
     UNUSED_PARAMETER(vp);
     UNUSED_PARAMETER(pExtra);
@@ -1584,7 +1543,7 @@ CF_HAND(cf_raw_helpfile)
 // Used with express permission of RhostMUSH developers.
 // Bludgeoned into MUX by Jake Nelson 7/2002.
 //
-NAMETAB hook_names[] =
+static NAMETAB hook_names[] =
 {
     {"after",      3, 0, HOOK_AFTER},
     {"before",     3, 0, HOOK_BEFORE},
@@ -1595,7 +1554,7 @@ NAMETAB hook_names[] =
     {NULL,         0, 0, 0}
 };
 
-CF_HAND(cf_hook)
+static CF_HAND(cf_hook)
 {
     UNUSED_PARAMETER(pExtra);
     UNUSED_PARAMETER(nExtra);
@@ -1657,13 +1616,11 @@ CF_HAND(cf_hook)
 // ---------------------------------------------------------------------------
 // cf_include: Read another config file.  Only valid during startup.
 //
-CF_HAND(cf_include)
+static CF_HAND(cf_include)
 {
     UNUSED_PARAMETER(vp);
     UNUSED_PARAMETER(pExtra);
     UNUSED_PARAMETER(nExtra);
-
-    extern int cf_set(char *, char *, dbref);
 
     if (!mudstate.bReadingConfiguration)
     {
@@ -1762,7 +1719,7 @@ CF_HAND(cf_include)
 // ---------------------------------------------------------------------------
 // conftable: Table for parsing the configuration file.
 
-CONF conftable[] =
+static CONF conftable[] =
 {
     {"access",                    cf_access,      CA_GOD,    CA_DISABLED, NULL,                            access_nametab,     0},
     {"alias",                     cf_cmd_alias,   CA_GOD,    CA_DISABLED, (int *)&mudstate.command_htab,   0,                  0},
@@ -1975,6 +1932,49 @@ CONF conftable[] =
 #endif /* REALITY_LVLS */
     { NULL,                       NULL,           0,         0,           NULL,                            NULL,               0}
 };
+
+// ---------------------------------------------------------------------------
+// cf_cf_access: Set access on config directives
+//
+CF_HAND(cf_cf_access)
+{
+    UNUSED_PARAMETER(vp);
+
+    CONF *tp;
+    char *ap;
+
+    for (ap = str; *ap && !mux_isspace(*ap); ap++)
+    {
+        ; // Nothing
+    }
+    if (*ap)
+    {
+        *ap++ = '\0';
+    }
+
+    for (tp = conftable; tp->pname; tp++)
+    {
+        if (!strcmp(tp->pname, str))
+        {
+            // Cannot modify parameters set CA_STATIC.
+            //
+            if (  tp->flags & CA_STATIC
+               && !mudstate.bReadingConfiguration)
+            {
+                notify(player, NOPERM_MESSAGE);
+                STARTLOG(LOG_CONFIGMODS, "CFG", "PERM");
+                log_name(player);
+                log_text(" tried to change access to static param: ");
+                log_text(tp->pname);
+                ENDLOG;
+                return -1;
+            }
+            return cf_modify_bits(&tp->flags, ap, pExtra, nExtra, player, cmd);
+        }
+    }
+    cf_log_notfound(player, cmd, "Config directive", str);
+    return -1;
+}
 
 // ---------------------------------------------------------------------------
 // cf_set: Set config parameter.
