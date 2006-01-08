@@ -1,6 +1,6 @@
 // alloc.cpp -- Memory Allocation Subsystem.
 //
-// $Id: alloc.cpp,v 1.9 2006-01-08 05:42:38 sdennis Exp $
+// $Id: alloc.cpp,v 1.10 2006-01-08 09:33:35 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -42,7 +42,8 @@ typedef struct pool_footer
 
 typedef struct pooldata
 {
-    size_t pool_size;               // Size in bytes of a buffer
+    size_t pool_client_size;        // Size in bytes of a buffer as seen by client.
+    size_t pool_alloc_size;         // Size as allocated from system.
     unsigned int poolmagic;         // Magic number specific to this pool
     POOLHDR *free_head;             // Buffer freelist head
     POOLHDR *chain_head;            // Buffer chain head
@@ -60,7 +61,9 @@ static const char *poolnames[] =
 
 void pool_init(int poolnum, int poolsize)
 {
-    pools[poolnum].pool_size = poolsize;
+    pools[poolnum].pool_client_size = poolsize;
+    pools[poolnum].pool_alloc_size  = poolsize + sizeof(POOLHDR) + sizeof(POOLFTR);
+    mux_assert(pools[poolnum].pool_client_size < pools[poolnum].pool_alloc_size);
     pools[poolnum].poolmagic = CRC32_ProcessInteger2(poolnum, poolsize);
     pools[poolnum].free_head = NULL;
     pools[poolnum].chain_head = NULL;
@@ -87,14 +90,14 @@ static void pool_err
     {
         STARTLOG(logflag, logsys, "ALLOC");
         Log.tinyprintf("%s[%d] (tag %s) %s in %s line %d at %lx. (%s)", action,
-            pools[poolnum].pool_size, tag, reason, file, line, (long)ph,
+            pools[poolnum].pool_client_size, tag, reason, file, line, (long)ph,
             mudstate.debug_cmd);
         ENDLOG;
     }
     else if (logflag != LOG_ALLOCATE)
     {
         Log.tinyprintf(ENDLINE "***< %s[%d] (tag %s) %s in %s line %d at %lx. >***",
-            action, pools[poolnum].pool_size, tag, reason, file, line, (long)ph);
+            action, pools[poolnum].pool_client_size, tag, reason, file, line, (long)ph);
     }
 }
 
@@ -105,12 +108,12 @@ static void pool_vfy(int poolnum, const char *tag, const char *file, const int l
     char *h;
 
     lastph = NULL;
-    size_t psize = pools[poolnum].pool_size;
+    size_t psize = pools[poolnum].pool_client_size;
     for (ph = pools[poolnum].chain_head; ph; lastph = ph, ph = ph->next)
     {
         h = (char *)ph;
         h += sizeof(POOLHDR);
-        h += pools[poolnum].pool_size;
+        h += pools[poolnum].pool_client_size;
         pf = (POOLFTR *) h;
 
         if (ph->magicnum != pools[poolnum].poolmagic)
@@ -173,7 +176,7 @@ char *pool_alloc(int poolnum, const char *tag, const char *file, const int line)
        && ph->magicnum == pools[poolnum].poolmagic)
     {
         p = (char *)(ph + 1);
-        pf = (POOLFTR *)(p + pools[poolnum].pool_size);
+        pf = (POOLFTR *)(p + pools[poolnum].pool_client_size);
         pools[poolnum].free_head = ph->nxtfree;
 
         // Check for corrupted footer, just report and fix it.
@@ -202,18 +205,17 @@ char *pool_alloc(int poolnum, const char *tag, const char *file, const int line)
             pools[poolnum].tot_alloc = pools[poolnum].num_alloc;
         }
 
-        ph = (POOLHDR *)MEMALLOC(pools[poolnum].pool_size + sizeof(POOLHDR)
-           + sizeof(POOLFTR));
+        ph = (POOLHDR *)MEMALLOC(pools[poolnum].pool_alloc_size);
         ISOUTOFMEMORY(ph);
         p = (char *)(ph + 1);
-        pf = (POOLFTR *)(p + pools[poolnum].pool_size);
+        pf = (POOLFTR *)(p + pools[poolnum].pool_client_size);
 
         // Initialize.
         //
         ph->next = pools[poolnum].chain_head;
         ph->nxtfree = NULL;
         ph->magicnum = pools[poolnum].poolmagic;
-        ph->pool_size = pools[poolnum].pool_size;
+        ph->pool_size = pools[poolnum].pool_client_size;
         pf->magicnum = pools[poolnum].poolmagic;
         *((unsigned int *)p) = pools[poolnum].poolmagic;
         pools[poolnum].chain_head = ph;
@@ -229,7 +231,7 @@ char *pool_alloc(int poolnum, const char *tag, const char *file, const int line)
        && start_log("DBG", "ALLOC"))
     {
         Log.tinyprintf("Alloc[%d] (tag %s) in %s line %d buffer at %lx. (%s)",
-            pools[poolnum].pool_size, tag, file, line, (long)ph, mudstate.debug_cmd);
+            pools[poolnum].pool_client_size, tag, file, line, (long)ph, mudstate.debug_cmd);
         end_log();
     }
 
@@ -341,7 +343,7 @@ void pool_free(int poolnum, char *buf, const char *file, const int line)
         return;
     }
     POOLHDR *ph = ((POOLHDR *)(buf)) - 1;
-    POOLFTR *pf = (POOLFTR *)(buf + pools[poolnum].pool_size);
+    POOLFTR *pf = (POOLFTR *)(buf + pools[poolnum].pool_client_size);
     unsigned int *pui = (unsigned int *)buf;
 
     if (mudconf.paranoid_alloc)
@@ -373,7 +375,7 @@ void pool_free(int poolnum, char *buf, const char *file, const int line)
 
     // Verify that we are not trying to free someone else's buffer.
     //
-    if (ph->pool_size != pools[poolnum].pool_size)
+    if (ph->pool_size != pools[poolnum].pool_client_size)
     {
         pool_err("BUG", LOG_ALWAYS, poolnum, ph->buf_tag, ph, "Free",
                  "Attempt to free into a different pool.", file, line);
@@ -385,7 +387,7 @@ void pool_free(int poolnum, char *buf, const char *file, const int line)
        && start_log("DBG", "ALLOC"))
     {
         Log.tinyprintf("Free[%d] (tag %s) in %s line %d buffer at %lx. (%s)",
-            pools[poolnum].pool_size, ph->buf_tag, file, line, (long)ph,
+            pools[poolnum].pool_client_size, ph->buf_tag, file, line, (long)ph,
             mudstate.debug_cmd);
         end_log();
     }
@@ -534,8 +536,8 @@ void list_bufstats(dbref player)
         mux_i64toa(pools[i].tot_alloc, szTotAlloc);
         mux_i64toa(pools[i].num_lost,  szNumLost);
 
-        sprintf(buff, "%-12s %5d%10s%10s%14s%7s",
-            poolnames[i], (int)pools[i].pool_size,
+        sprintf(buff, "%-12s %5u%10s%10s%14s%7s",
+            poolnames[i], pools[i].pool_client_size,
             szNumAlloc, szMaxAlloc, szTotAlloc, szNumLost);
         notify(player, buff);
     }
