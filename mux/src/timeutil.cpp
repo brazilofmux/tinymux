@@ -1,6 +1,6 @@
 // timeutil.cpp -- CLinearTimeAbsolute and CLinearTimeDelta modules.
 //
-// $Id: timeutil.cpp,v 1.51 2006-01-08 20:18:25 sdennis Exp $
+// $Id: timeutil.cpp,v 1.52 2006-01-08 20:58:28 sdennis Exp $
 //
 // Date/Time code based on algorithms presented in "Calendrical Calculations",
 // Cambridge Press, 1998.
@@ -688,16 +688,16 @@ CLinearTimeDelta::CLinearTimeDelta(INT64 arg_t100ns)
 void CLinearTimeDelta::ReturnTimeValueStruct(struct timeval *tv)
 {
     INT64 Leftover;
-    tv->tv_sec = (long)i64FloorDivisionMod(m_tDelta, FACTOR_100NS_PER_SECOND, &Leftover);
-    tv->tv_usec = (long)i64FloorDivision(Leftover, FACTOR_100NS_PER_MICROSECOND);
+    tv->tv_sec = static_cast<long>(i64FloorDivisionMod(m_tDelta, FACTOR_100NS_PER_SECOND, &Leftover));
+    tv->tv_usec = static_cast<long>(i64FloorDivision(Leftover, FACTOR_100NS_PER_MICROSECOND));
 }
 
 #ifdef HAVE_NANOSLEEP
 void CLinearTimeDelta::ReturnTimeSpecStruct(struct timespec *ts)
 {
     INT64 Leftover;
-    ts->tv_sec = (long)i64FloorDivisionMod(m_tDelta, FACTOR_100NS_PER_SECOND, &Leftover);
-    ts->tv_nsec = (long)Leftover*FACTOR_NANOSECONDS_PER_100NS;
+    ts->tv_sec = static_cast<long>(i64FloorDivisionMod(m_tDelta, FACTOR_100NS_PER_SECOND, &Leftover));
+    ts->tv_nsec = static_cast<long>((Leftover*FACTOR_NANOSECONDS_PER_100NS);
 }
 #endif // HAVE_NANOSLEEP
 
@@ -727,7 +727,7 @@ void CLinearTimeDelta::SetMilliseconds(unsigned long arg_dwMilliseconds)
 
 long CLinearTimeDelta::ReturnMilliseconds(void)
 {
-    return (long)(m_tDelta/FACTOR_100NS_PER_MILLISECOND);
+    return static_cast<long>(m_tDelta/FACTOR_100NS_PER_MILLISECOND);
 }
 
 INT64 CLinearTimeDelta::ReturnMicroseconds(void)
@@ -1137,12 +1137,12 @@ CLinearTimeDelta::CLinearTimeDelta(CLinearTimeAbsolute t0, CLinearTimeAbsolute t
 
 long CLinearTimeDelta::ReturnDays(void)
 {
-    return (long)(m_tDelta/FACTOR_100NS_PER_DAY);
+    return static_cast<long>(m_tDelta/FACTOR_100NS_PER_DAY);
 }
 
 long CLinearTimeDelta::ReturnSeconds(void)
 {
-    return (long)(m_tDelta/FACTOR_100NS_PER_SECOND);
+    return static_cast<long>(m_tDelta/FACTOR_100NS_PER_SECOND);
 }
 
 bool CLinearTimeAbsolute::ReturnFields(FIELDEDTIME *arg_tStruct)
@@ -1204,7 +1204,7 @@ CLinearTimeDelta operator*(const CLinearTimeDelta& ltd, int Scale)
 
 int operator/(const CLinearTimeDelta& ltdA, const CLinearTimeDelta& ltdB)
 {
-    int iResult = (int)(ltdA.m_tDelta / ltdB.m_tDelta);
+    int iResult = static_cast<int>(ltdA.m_tDelta / ltdB.m_tDelta);
     return iResult;
 }
 
@@ -1352,7 +1352,7 @@ bool LinearTimeToFieldedTime(INT64 lt, FIELDEDTIME *ft)
     int iYear, iMonth, iDayOfYear, iDayOfMonth, iDayOfWeek;
 
     memset(ft, 0, sizeof(FIELDEDTIME));
-    int d0 = (int)i64FloorDivisionMod(lt, FACTOR_100NS_PER_DAY, &ns100);
+    int d0 = static_cast<int>(i64FloorDivisionMod(lt, FACTOR_100NS_PER_DAY, &ns100));
     GregorianFromFixed_Adjusted(d0, iYear, iMonth, iDayOfYear, iDayOfMonth, iDayOfWeek);
     if (!isValidDate(iYear, iMonth, iDayOfMonth))
     {
@@ -1365,18 +1365,18 @@ bool LinearTimeToFieldedTime(INT64 lt, FIELDEDTIME *ft)
     ft->iDayOfMonth = iDayOfMonth;
     ft->iDayOfWeek = iDayOfWeek;
 
-    ft->iHour = (int)(ns100 / FACTOR_100NS_PER_HOUR);
+    ft->iHour = static_cast<int>(ns100 / FACTOR_100NS_PER_HOUR);
     ns100 = ns100 % FACTOR_100NS_PER_HOUR;
-    ft->iMinute = (int)(ns100 / FACTOR_100NS_PER_MINUTE);
+    ft->iMinute = static_cast<int>(ns100 / FACTOR_100NS_PER_MINUTE);
     ns100 = ns100 % FACTOR_100NS_PER_MINUTE;
-    ft->iSecond = (int)(ns100 / FACTOR_100NS_PER_SECOND);
+    ft->iSecond = static_cast<int>(ns100 / FACTOR_100NS_PER_SECOND);
     ns100 = ns100 % FACTOR_100NS_PER_SECOND;
 
-    ft->iMillisecond = (int)(ns100 / FACTOR_100NS_PER_MILLISECOND);
+    ft->iMillisecond = static_cast<int>(ns100 / FACTOR_100NS_PER_MILLISECOND);
     ns100 = ns100 % FACTOR_100NS_PER_MILLISECOND;
-    ft->iMicrosecond = (int)(ns100 / FACTOR_100NS_PER_MICROSECOND);
+    ft->iMicrosecond = static_cast<int>(ns100 / FACTOR_100NS_PER_MICROSECOND);
     ns100 = ns100 % FACTOR_100NS_PER_MICROSECOND;
-    ft->iNanosecond = (int)(ns100 * FACTOR_NANOSECONDS_PER_100NS);
+    ft->iNanosecond = static_cast<int>(ns100 * FACTOR_NANOSECONDS_PER_100NS);
 
     return true;
 }
@@ -2175,7 +2175,7 @@ static CLinearTimeDelta QueryLocalOffsetAt_Internal
     // to a fielded local time complete with known timezone and DST
     // adjustments.
     //
-    time_t lt = (time_t)lta.ReturnSeconds();
+    time_t lt = static_cast<time_t>(lta.ReturnSeconds());
     struct tm *ptm = localtime(&lt);
     if (!ptm)
     {
