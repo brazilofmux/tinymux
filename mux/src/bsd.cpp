@@ -2,7 +2,7 @@
  * File for most TCP socket-related code. Some socket-related code also exists
  * in netcommon.cpp, but most of it is here.
  *
- * $Id: bsd.cpp,v 1.79 2006-01-08 06:21:55 sdennis Exp $
+ * $Id: bsd.cpp,v 1.80 2006-01-08 08:57:48 sdennis Exp $
  */
 
 #include "copyright.h"
@@ -102,9 +102,9 @@ static volatile int iSlaveResult = 0;
 #define NUM_SLAVE_THREADS 5
 typedef struct tagSlaveThreadsInfo
 {
-    DWORD iDoing;
-    DWORD iError;
-    DWORD hThreadId;
+    unsigned iDoing;
+    DWORD    iError;
+    DWORD    hThreadId;
 } SLAVETHREADINFO;
 static SLAVETHREADINFO SlaveThreadInfo[NUM_SLAVE_THREADS];
 static HANDLE hSlaveThreadsSemaphore;
@@ -1127,6 +1127,19 @@ DCL_INLINE bool FD_ISSET_priv(SOCKET fd, fd_set *set)
     return false;
 }
 
+DCL_INLINE void FD_ZERO_priv(fd_set *set)
+{
+    set->fd_count = 0;
+}
+
+DCL_INLINE void FD_SET_priv(SOCKET fd, fd_set *set)
+{
+    if (set->fd_count < FD_SETSIZE)
+    {
+        set->fd_array[set->fd_count++] = fd;
+    }
+}
+
 void shovechars9x(int nPorts, PortInfo aPorts[])
 {
     fd_set input_set, output_set;
@@ -1172,15 +1185,15 @@ void shovechars9x(int nPorts, PortInfo aPorts[])
             break;
         }
 
-        FD_ZERO(&input_set);
-        FD_ZERO(&output_set);
+        FD_ZERO_priv(&input_set);
+        FD_ZERO_priv(&output_set);
 
         // Listen for new connections.
         //
         int i;
         for (i = 0; i < nPorts; i++)
         {
-            FD_SET(aPorts[i].socket, &input_set);
+            FD_SET_priv(aPorts[i].socket, &input_set);
         }
 
         // Mark sockets that we want to test for change in status.
@@ -1188,9 +1201,13 @@ void shovechars9x(int nPorts, PortInfo aPorts[])
         DESC_ITER_ALL(d)
         {
             if (!d->input_head)
-                FD_SET(d->descriptor, &input_set);
+            {
+                FD_SET_priv(d->descriptor, &input_set);
+            }
             if (d->output_head)
-                FD_SET(d->descriptor, &output_set);
+            {
+                FD_SET_priv(d->descriptor, &output_set);
+            }
         }
 
         // Wait for something to happen
@@ -1950,9 +1967,12 @@ void shutdownsock(DESC *d, int reason)
         int Seconds = ltd.ReturnSeconds();
         buff = alloc_lbuf("shutdownsock.LOG.accnt");
         buff2 = decode_flags(GOD, &(db[d->player].fs));
+        dbref locPlayer = Location(d->player);
+        int penPlayer = Pennies(d->player);
+        const char *PlayerName = Name(d->player);
         sprintf(buff, "%d %s %d %d %d %d [%s] <%s> %s", d->player, buff2, d->command_count,
-                Seconds, Location(d->player), Pennies(d->player), d->addr, disc_reasons[reason],
-                Name(d->player));
+                Seconds, locPlayer, penPlayer, d->addr, disc_reasons[reason],
+                PlayerName);
         log_text(buff);
         free_lbuf(buff);
         free_sbuf(buff2);
@@ -2011,8 +2031,9 @@ void shutdownsock(DESC *d, int reason)
         d->doing[0] = '\0';
         d->quota = mudconf.cmd_quota_max;
         d->last_time = d->connected_at;
-        d->host_info = site_check((d->address).sin_addr, mudstate.access_list)
-                     | site_check((d->address).sin_addr, mudstate.suspect_list);
+        int AccessFlag = site_check((d->address).sin_addr, mudstate.access_list);
+        int SuspectFlag = site_check((d->address).sin_addr, mudstate.suspect_list);
+        d->host_info = AccessFlag | SuspectFlag;
         d->input_tot = d->input_size;
         d->output_tot = 0;
         welcome_user(d);
@@ -2053,7 +2074,7 @@ void shutdownsock(DESC *d, int reason)
 
                 // Close the connection in 5 seconds.
                 //
-                scheduler.DeferTask(ltaNow + FACTOR_100NS_PER_SECOND*5,
+                scheduler.DeferTask(ltaNow + time_5s,
                     PRIORITY_SYSTEM, Task_DeferredClose, d, 0);
             }
             return;
@@ -2138,7 +2159,7 @@ static void shutdownsock_brief(DESC *d)
     // queued completed IOs that will crash when they refer to a descriptor
     // (d) that has been freed.
     //
-    if (!PostQueuedCompletionStatus(CompletionPort, 0, (DWORD) d, &lpo_aborted))
+    if (!PostQueuedCompletionStatus(CompletionPort, 0, (DWORD_PTR) d, &lpo_aborted))
     {
         Log.tinyprintf("Error %ld on PostQueuedCompletionStatus in shutdownsock" ENDLINE, GetLastError());
     }
@@ -2237,8 +2258,10 @@ DESC *initializesock(SOCKET s, struct sockaddr_in *a)
     d->retries_left = mudconf.retry_limit;
     d->command_count = 0;
     d->timeout = mudconf.idle_timeout;
-    d->host_info = site_check((*a).sin_addr, mudstate.access_list)
-                 | site_check((*a).sin_addr, mudstate.suspect_list);
+
+    int AccessFlag = site_check((*a).sin_addr, mudstate.access_list);
+    int SuspectFlag = site_check((*a).sin_addr, mudstate.suspect_list);
+    d->host_info = AccessFlag | SuspectFlag;
 
     // Be sure #0 isn't wizard. Shouldn't be.
     //
@@ -4146,8 +4169,9 @@ void __cdecl MUDListenThread(void * pVoid)
         if (site_check(SockAddr.sin_addr, mudstate.access_list) == H_FORBIDDEN)
         {
             STARTLOG(LOG_NET | LOG_SECURITY, "NET", "SITE");
+            unsigned short us = ntohs(SockAddr.sin_port);
             Log.tinyprintf("[%d/%s] Connection refused.  (Remote port %d)",
-                socketClient, inet_ntoa(SockAddr.sin_addr), ntohs(SockAddr.sin_port));
+                socketClient, inet_ntoa(SockAddr.sin_addr), us);
             ENDLOG;
 
             // The following are commented out for thread-safety, but
@@ -4533,8 +4557,9 @@ void ProcessWindowsTCP(DWORD dwTimeout)
             // Log connection.
             //
             STARTLOG(LOG_NET | LOG_LOGIN, "NET", "CONN");
+            const char *lDesc = mux_ltoa_t(d->descriptor);
             Log.tinyprintf("[%s/%s] Connection opened (remote port %d)",
-                bInvalidSocket ? "UNKNOWN" : mux_ltoa_t(d->descriptor), buff,
+                bInvalidSocket ? "UNKNOWN" : lDesc, buff,
                 ntohs(d->address.sin_port));
             ENDLOG;
 
