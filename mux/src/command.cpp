@@ -1,6 +1,6 @@
 // command.cpp -- command parser and support routines.
 //
-// $Id: command.cpp,v 1.73 2006-01-08 06:03:47 sdennis Exp $
+// $Id: command.cpp,v 1.74 2006-01-08 09:39:00 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -1956,8 +1956,9 @@ char *process_command
 
     // Make lowercase command
     //
+    char *LowerCaseCommandEnd = LowerCaseCommand + (LBUF_SIZE - 1);
     for (p = pCommand, q = LowerCaseCommand;
-         *p && !mux_isspace(*p);
+         *p && !mux_isspace(*p) && q < LowerCaseCommandEnd;
          p++, q++)
     {
         *q = mux_tolower(*p);
