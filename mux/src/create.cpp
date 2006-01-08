@@ -1,6 +1,6 @@
 // create.cpp -- Commands that create new objects.
 //
-// $Id: create.cpp,v 1.17 2005-10-19 23:52:39 sdennis Exp $
+// $Id: create.cpp,v 1.18 2006-01-08 06:41:37 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -123,6 +123,9 @@ static void open_exit(dbref player, dbref loc, char *direction, char *linkto)
 void do_open(dbref executor, dbref caller, dbref enactor, int key,
              char *direction, char *links[], int nlinks)
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+
     char *dest;
 
     // Create the exit and link to the destination, if there is one
@@ -233,6 +236,8 @@ void do_link
     char *where
 )
 {
+    UNUSED_PARAMETER(nargs);
+
     // Find the thing to link
     //
     init_match(executor, what, TYPE_EXIT);
@@ -405,6 +410,11 @@ void do_parent
     char *pname
 )
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(key);
+    UNUSED_PARAMETER(nargs);
+
     dbref thing, parent, curr;
     int lev;
 
@@ -479,6 +489,8 @@ void do_parent
 void do_dig(dbref executor, dbref caller, dbref enactor, int key, char *name,
             char *args[], int nargs)
 {
+    UNUSED_PARAMETER(caller);
+
     // we don't need to know player's location!  hooray!
     //
     if (!name || !*name)
@@ -531,6 +543,10 @@ void do_create
     char *coststr
 )
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(key);
+
     int cost = 0;
     if (!name || !*name)
     {
@@ -574,6 +590,10 @@ void do_clone
     char *arg2
 )
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(nargs);
+
     dbref clone, thing, new_owner, loc;
     FLAG rmv_flags;
     int cost;
@@ -790,6 +810,10 @@ void do_pcreate
     char *pass
 )
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(nargs);
+
     const char *pmsg;
     bool isrobot = (key == PCRE_ROBOT);
     dbref newplayer = create_player(name, pass, executor, isrobot, &pmsg);
@@ -869,6 +893,9 @@ static bool can_destroy_player(dbref player, dbref victim)
 
 void do_destroy(dbref executor, dbref caller, dbref enactor, int key, char *what)
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+
     // You can destroy anything you control.
     //
     dbref thing = match_controlled_quiet(executor, what);
