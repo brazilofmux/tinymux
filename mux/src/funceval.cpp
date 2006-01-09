@@ -1,6 +1,6 @@
 // funceval.cpp -- MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.104 2006-01-09 22:43:11 sdennis Exp $
+// $Id: funceval.cpp,v 1.105 2006-01-09 22:46:25 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -2427,7 +2427,8 @@ static void sane_qsort(void *array[], int left, int right, PV compare)
 
 loop:
 
-    if (left >= right)
+    if (  left < 0
+       || right <= left)
     {
         return;
     }
