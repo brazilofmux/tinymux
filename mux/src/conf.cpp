@@ -1,6 +1,6 @@
 // conf.cpp -- Set up configuration information and static data.
 //
-// $Id: conf.cpp,v 1.72 2006-01-08 16:55:15 sdennis Exp $
+// $Id: conf.cpp,v 1.73 2006-01-09 07:28:49 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -1636,7 +1636,10 @@ static CF_HAND(cf_include)
     DebugTotalFiles++;
 
     char *buf = alloc_lbuf("cf_include");
-    fgets(buf, LBUF_SIZE, fp);
+    if (NULL == fgets(buf, LBUF_SIZE, fp))
+    {
+        return 0;
+    }
     while (!feof(fp))
     {
         char *zp = buf;
@@ -1706,7 +1709,11 @@ static CF_HAND(cf_include)
         {
             cf_set(cp, ap, player);
         }
-        fgets(buf, LBUF_SIZE, fp);
+
+        if (NULL == fgets(buf, LBUF_SIZE, fp))
+        {
+            break;
+        }
     }
     free_lbuf(buf);
     if (fclose(fp) == 0)
