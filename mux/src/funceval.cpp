@@ -1,6 +1,6 @@
 // funceval.cpp -- MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.105 2006-01-09 22:46:25 sdennis Exp $
+// $Id: funceval.cpp,v 1.106 2006-01-09 23:17:12 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -2839,8 +2839,12 @@ FUNCTION(fun_munge)
 
     int nptrs1, nptrs2, nresults, i, j;
     char *list1, *list2, *rlist, *bp, *str;
-    char *ptrs1[LBUF_SIZE / 2], *ptrs2[LBUF_SIZE / 2], *results[LBUF_SIZE / 2];
     char *uargs[2];
+
+    char **ptrs1 = new char *[LBUF_SIZE / 2];
+    ISOUTOFMEMORY(ptrs1);
+    char **ptrs2 = new char *[LBUF_SIZE / 2];
+    ISOUTOFMEMORY(ptrs2);
 
     // Copy our lists and chop them up.
     //
@@ -2857,6 +2861,8 @@ FUNCTION(fun_munge)
         free_lbuf(atext);
         free_lbuf(list1);
         free_lbuf(list2);
+        delete [] ptrs1;
+        delete [] ptrs2;
         return;
     }
 
@@ -2874,6 +2880,8 @@ FUNCTION(fun_munge)
     // Search through list1 until we find the element position, then
     // copy the corresponding element from list2.
     //
+    char **results = new char *[LBUF_SIZE / 2];
+    ISOUTOFMEMORY(results);
     nresults = list2arr(results, LBUF_SIZE / 2, rlist, &sep);
 
     bool bFirst = true;
@@ -2901,6 +2909,9 @@ FUNCTION(fun_munge)
     free_lbuf(list1);
     free_lbuf(list2);
     free_lbuf(rlist);
+    delete [] ptrs1;
+    delete [] ptrs2;
+    delete [] results;
 }
 
 FUNCTION(fun_die)
