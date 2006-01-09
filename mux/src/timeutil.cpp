@@ -1,6 +1,6 @@
 // timeutil.cpp -- CLinearTimeAbsolute and CLinearTimeDelta modules.
 //
-// $Id: timeutil.cpp,v 1.53 2006-01-09 01:27:06 sdennis Exp $
+// $Id: timeutil.cpp,v 1.54 2006-01-09 04:24:34 sdennis Exp $
 //
 // Date/Time code based on algorithms presented in "Calendrical Calculations",
 // Cambridge Press, 1998.
@@ -697,7 +697,7 @@ void CLinearTimeDelta::ReturnTimeSpecStruct(struct timespec *ts)
 {
     INT64 Leftover;
     ts->tv_sec = static_cast<long>(i64FloorDivisionMod(m_tDelta, FACTOR_100NS_PER_SECOND, &Leftover));
-    ts->tv_nsec = static_cast<long>((Leftover*FACTOR_NANOSECONDS_PER_100NS);
+    ts->tv_nsec = static_cast<long>(Leftover*FACTOR_NANOSECONDS_PER_100NS);
 }
 #endif // HAVE_NANOSLEEP
 
