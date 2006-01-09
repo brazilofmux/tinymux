@@ -1,6 +1,6 @@
 // db.cpp
 //
-// $Id: db.cpp,v 1.84 2006-01-09 18:29:53 sdennis Exp $
+// $Id: db.cpp,v 1.85 2006-01-09 20:06:28 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -2568,21 +2568,18 @@ void db_grow(dbref newtop)
 
     // Grow by a minimum of delta objects
     //
-    int newsize;
-    if (newtop <= mudstate.db_size + delta)
+    int newsize = newtop;
+    int nMinimumGrowth = mudstate.db_size + delta;
+    if (newtop <= nMinimumGrowth)
     {
-        newsize = mudstate.db_size + delta;
-    }
-    else
-    {
-        newsize = newtop;
+        newsize = nMinimumGrowth;
     }
 
     // Enforce minimum database size
     //
     if (newsize < mudstate.min_size)
     {
-        newsize = mudstate.min_size + delta;
+        newsize = mudstate.min_size;
     }
 
     // Grow the db array
