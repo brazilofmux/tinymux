@@ -1,6 +1,6 @@
 // look.cpp -- Commands which look at things.
 //
-// $Id: look.cpp,v 1.46 2006-01-09 16:03:54 sdennis Exp $
+// $Id: look.cpp,v 1.47 2006-01-09 20:30:54 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -750,7 +750,7 @@ typedef struct
     char letter;
 } ATTR_DECODE_ENTRY, *PATTR_DECODE_ENTRY;
 
-static ATTR_DECODE_ENTRY attr_decode_table[] =
+static ATTR_DECODE_ENTRY attr_decode_table[NUM_ATTRIBUTE_CODES+1] =
 {
     { AF_LOCK,    '+' },
     { AF_NOPROG,  '$' },
@@ -765,19 +765,19 @@ static ATTR_DECODE_ENTRY attr_decode_table[] =
     { 0, 0 }
 };
 
-size_t decode_attr_flags(int aflags, char *buff)
+size_t decode_attr_flags(int aflags, char buff[NUM_ATTRIBUTE_CODES+1])
 {
-    char *p = buff;
+    size_t n = 0;
     PATTR_DECODE_ENTRY pEntry;
-    for (pEntry = attr_decode_table; pEntry->mask; pEntry++)
+    for (pEntry = attr_decode_table; pEntry->mask && n < NUM_ATTRIBUTE_CODES; pEntry++)
     {
         if (aflags & pEntry->mask)
         {
-            *p++ = pEntry->letter;
+            buff[n++] = pEntry->letter;
         }
     }
-    *p = '\0';
-    return p - buff;
+    buff[n] = '\0';
+    return n;
 }
 
 static void view_atr
