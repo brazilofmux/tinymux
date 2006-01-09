@@ -200,10 +200,6 @@ char *rxlevel_description(dbref player, dbref target)
     char *buff = alloc_mbuf("rxlevel_description");
     char *bp   = buff;
 
-    // Store the header strings and object type.
-    //
-    safe_mb_str("RxLevel:", buff, &bp);
-
     int i;
     RLEVEL rl = RxLevel(target);
     for (i = 0; i < mudconf.no_levels; ++i)
@@ -234,10 +230,6 @@ char *txlevel_description(dbref player, dbref target)
     int otype = Typeof(target);
     char *buff = alloc_mbuf("txlevel_description");
     char *bp = buff;
-
-    // Store the header strings and object type.
-    //
-    safe_mb_str((char *)"TxLevel:", buff, &bp);
 
     int i;
     RLEVEL tl = TxLevel(target);
@@ -458,7 +450,7 @@ void do_txlevel
  * * decompile_rlevels: Produce commands to set reality levels on target.
  */
 
-void decompile_rlevels(dbref player,dbref thing,char *thingname)
+void decompile_rlevels(dbref player, dbref thing, char *thingname)
 {
     char *buf = rxlevel_description(player, thing);
     notify(player, tprintf("@rxlevel %s=%s", strip_ansi(thingname), buf));
