@@ -1,6 +1,6 @@
 // db.cpp
 //
-// $Id: db.cpp,v 1.86 2006-01-09 20:09:40 sdennis Exp $
+// $Id: db.cpp,v 1.87 2006-01-09 20:15:01 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -340,13 +340,10 @@ int fwdlist_load(FWDLIST *fp, dbref player, char *atext)
             }
             else
             {
-                if (count < 1000)
-                {
-                    fp->data[count++] = target;
-                }
+                fp->data[count++] = target;
             }
         }
-    } while (*bp);
+    } while (*bp && count < 1000);
     free_lbuf(tp);
     fp->count = count;
     return errors;
