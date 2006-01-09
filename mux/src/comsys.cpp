@@ -1,6 +1,6 @@
 // comsys.cpp
 //
-// $Id: comsys.cpp,v 1.47 2006-01-09 07:08:50 sdennis Exp $
+// $Id: comsys.cpp,v 1.48 2006-01-09 07:11:48 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -521,7 +521,10 @@ void load_comsystem(FILE *fp)
     num_channels = 0;
 
     int nc = 0;
-    fgets(temp, sizeof(temp), fp);
+    if (NULL == fgets(temp, sizeof(temp), fp))
+    {
+        return;
+    }
     if (!strncmp(temp, "+V", 2))
     {
         // +V2 has colored headers
