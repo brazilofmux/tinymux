@@ -1,6 +1,6 @@
 // funceval.cpp -- MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.106 2006-01-09 23:17:12 sdennis Exp $
+// $Id: funceval.cpp,v 1.107 2006-01-09 23:50:25 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -713,7 +713,7 @@ FUNCTION(fun_set)
 
 // Generate a substitution array.
 //
-static unsigned int GenCode(char *pCode, const char *pCodeASCII)
+static unsigned int GenCode(char *pCode, size_t nCode, const char *pCodeASCII)
 {
     // Strip out the ANSI.
     //
@@ -722,19 +722,21 @@ static unsigned int GenCode(char *pCode, const char *pCodeASCII)
 
     // Process the printable characters.
     //
-    char *pOut = pCode;
-    while (*pIn)
+    size_t i = 0;
+    size_t j = 0;
+    while (  pIn[i]
+          && j < nCode - 1)
     {
-        unsigned char ch = *pIn;
+        unsigned char ch = pIn[i++];
         if (  ' ' <= ch
            && ch <= '~')
         {
-            *pOut++ = static_cast<char>(ch - ' ');
+            pCode[j++] = static_cast<char>(ch - ' ');
         }
         pIn++;
     }
-    *pOut = '\0';
-    return pOut - pCode;
+    pCode[j] = '\0';
+    return j;
 }
 
 static char *crypt_code(char *code, char *text, bool type)
@@ -751,32 +753,34 @@ static char *crypt_code(char *code, char *text, bool type)
     }
 
     char codebuff[LBUF_SIZE];
-    unsigned int nCode = GenCode(codebuff, code);
-    if (nCode == 0)
+    unsigned int nCode = GenCode(codebuff, sizeof(codebuff), code);
+    if (0 == nCode)
     {
         return text;
     }
 
     static char textbuff[LBUF_SIZE];
     char *p = strip_ansi(text);
-    char *q = codebuff;
     unsigned int nq = nCode;
-    char *r = textbuff;
+    size_t ip = 0;
+    size_t iq = 0;
+    size_t ir = 0;
 
     int iMod    = '~' - ' ' + 1;
 
     // Encryption loop:
     //
-    while (*p)
+    while (  p[ip]
+          && ir < sizeof(textbuff) - 1)
     {
-        unsigned char ch = *p;
+        unsigned char ch = p[ip++];
         if (  ' ' <= ch
            && ch <= '~')
         {
             int iCode = ch - ' ';
             if (type)
             {
-                iCode += *q;
+                iCode += codebuff[iq++];
                 if (iMod <= iCode)
                 {
                     iCode -= iMod;
@@ -784,24 +788,24 @@ static char *crypt_code(char *code, char *text, bool type)
             }
             else
             {
-                iCode -= *q;
+                iCode -= codebuff[iq++];
                 if (iCode < 0)
                 {
                     iCode += iMod;
                 }
             }
-            *r++ = static_cast<char>(iCode + ' ');
-            q++;
+            textbuff[ir++] = static_cast<char>(iCode + ' ');
+
             nq--;
             if (0 == nq)
             {
-                q = codebuff;
+                iq = 0;
                 nq = nCode;
             }
         }
         p++;
     }
-    *r = '\0';
+    textbuff[ir] = '\0';
     return textbuff;
 }
 
