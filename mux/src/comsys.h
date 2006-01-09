@@ -1,6 +1,6 @@
 // comsys.h
 //
-// $Id: comsys.h,v 1.5 2006-01-07 08:14:42 sdennis Exp $
+// $Id: comsys.h,v 1.6 2006-01-09 06:18:39 sdennis Exp $
 //
 
 #ifndef __COMSYS_H__
@@ -15,6 +15,7 @@ struct chanentry
 
 #define NUM_COMSYS 500
 
+#define MAX_USERS_PER_CHANNEL 1000000
 #define MAX_CHANNEL_LEN 50
 #define MAX_HEADER_LEN  100
 #define MAX_TITLE_LEN   200

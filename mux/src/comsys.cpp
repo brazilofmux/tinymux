@@ -1,6 +1,6 @@
 // comsys.cpp
 //
-// $Id: comsys.cpp,v 1.43 2006-01-08 16:54:12 sdennis Exp $
+// $Id: comsys.cpp,v 1.44 2006-01-09 06:18:39 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -1127,6 +1127,12 @@ void do_joinchannel(dbref player, struct channel *ch)
 
     if (!user)
     {
+        if (ch->num_users >= MAX_USERS_PER_CHANNEL)
+        {
+            raw_notify(player, tprintf("Too many people on channel %s already.", ch->name));
+            return;
+        }
+
         ch->num_users++;
         if (ch->num_users >= ch->max_users)
         {
@@ -2980,14 +2986,13 @@ void do_chanlist
 
 #define MAX_SUPPORTED_NUM_ENTRIES 10000
 
-    INT64 iEntryCount64 = mudstate.channel_htab.GetEntryCount();
-    if (MAX_SUPPORTED_NUM_ENTRIES < iEntryCount64)
+    unsigned int entries = mudstate.channel_htab.GetEntryCount();
+    if (MAX_SUPPORTED_NUM_ENTRIES < entries)
     {
         // Nobody should have so many channels.
         //
-        iEntryCount64 = MAX_SUPPORTED_NUM_ENTRIES;
+        entries = MAX_SUPPORTED_NUM_ENTRIES;
     }
-    size_t entries = (size_t)iEntryCount64;
 
     struct chanlist_node* charray = (chanlist_node*)MEMALLOC(sizeof(chanlist_node)*entries);
     ISOUTOFMEMORY(charray);

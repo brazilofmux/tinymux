@@ -1,6 +1,6 @@
 // svdhash.cpp -- CHashPage, CHashFile, CHashTable modules.
 //
-// $Id: svdhash.cpp,v 1.47 2006-01-09 04:22:28 sdennis Exp $
+// $Id: svdhash.cpp,v 1.48 2006-01-09 06:18:39 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -2547,7 +2547,7 @@ UINT32 CHashTable::FindNext(HP_PHEAPLENGTH pnRecord, void *pRecord)
     return HF_FIND_END;
 }
 
-INT64 CHashTable::GetEntryCount()
+unsigned int CHashTable::GetEntryCount()
 {
     return m_nEntries;
 }

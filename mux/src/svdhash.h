@@ -1,6 +1,6 @@
 // svdhash.h -- CHashPage, CHashFile, CHashTable modules.
 //
-// $Id: svdhash.h,v 1.20 2006-01-09 04:22:28 sdennis Exp $
+// $Id: svdhash.h,v 1.21 2006-01-09 06:18:39 sdennis Exp $
 //
 #ifndef SVDHASH_H
 #define SVDHASH_H
@@ -267,7 +267,7 @@ public:
     void ResetStats(void);
     void GetStats( unsigned int *hashsize, int *entries, INT64 *deletes,
                    INT64 *scans, INT64 *hits, INT64 *checks, int *max_scan);
-    INT64 GetEntryCount();
+    unsigned int GetEntryCount();
 
     void Reset(void);
     bool Insert(HP_HEAPLENGTH nRecord, UINT32 nHash, void *pRecord);
