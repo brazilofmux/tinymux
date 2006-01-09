@@ -1,6 +1,6 @@
 // comsys.cpp
 //
-// $Id: comsys.cpp,v 1.45 2006-01-09 06:24:32 sdennis Exp $
+// $Id: comsys.cpp,v 1.46 2006-01-09 06:40:56 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -1538,7 +1538,7 @@ void do_addcom
     }
     if (c->numchannels >= c->maxchannels)
     {
-        c->maxchannels += 10;
+        c->maxchannels = c->numchannels + 10;
 
         na = (char *)MEMALLOC(ALIAS_SIZE * c->maxchannels);
         ISOUTOFMEMORY(na);
