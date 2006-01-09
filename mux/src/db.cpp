@@ -1,6 +1,6 @@
 // db.cpp
 //
-// $Id: db.cpp,v 1.82 2006-01-09 08:10:29 sdennis Exp $
+// $Id: db.cpp,v 1.83 2006-01-09 17:58:49 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -1161,11 +1161,12 @@ void anum_extend(int newtop)
 //
 ATTR *atr_num(int anum)
 {
-    if (anum > anum_alc_top)
+    if (  anum < 0
+       || anum_alc_top < anum)
     {
         return NULL;
     }
-    return  anum_get(anum);
+    return anum_get(anum);
 }
 
 static void SetupThrottle(dbref executor)
