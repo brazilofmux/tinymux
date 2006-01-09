@@ -1,6 +1,6 @@
 // db.cpp
 //
-// $Id: db.cpp,v 1.81 2006-01-09 01:30:19 sdennis Exp $
+// $Id: db.cpp,v 1.82 2006-01-09 08:10:29 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -1106,9 +1106,12 @@ int anum_alc_top = 0;
 
 void anum_extend(int newtop)
 {
-    ATTR **anum_table2;
-    int delta, i;
+    if (newtop <= anum_alc_top)
+    {
+        return;
+    }
 
+	int delta;
     if (mudstate.bStandAlone)
     {
         delta = 1000;
@@ -1117,15 +1120,16 @@ void anum_extend(int newtop)
     {
         delta = mudconf.init_size;
     }
-    if (newtop <= anum_alc_top)
-    {
-        return;
-    }
-    if (newtop < anum_alc_top + delta)
-    {
-        newtop = anum_alc_top + delta;
-    }
-    if (anum_table == NULL)
+	int h = anum_alc_top + delta;
+	if (  anum_alc_top < h
+	   && newtop < h)
+	{
+		newtop = h;
+	}
+	
+    int i;
+    ATTR **anum_table2;
+	if (anum_table == NULL)
     {
         anum_table = (ATTR **) MEMALLOC((newtop + 1) * sizeof(ATTR *));
         ISOUTOFMEMORY(anum_table);
