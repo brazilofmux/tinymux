@@ -1,6 +1,6 @@
 // stringutil.cpp -- string utilities.
 //
-// $Id: stringutil.cpp,v 1.75 2006-01-08 10:12:00 sdennis Exp $
+// $Id: stringutil.cpp,v 1.76 2006-01-09 01:38:32 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -812,14 +812,14 @@ static char *ANSI_TransitionColorBinary
     {
         memcpy(p, ANSI_FOREGROUND, sizeof(ANSI_FOREGROUND)-1);
         p += sizeof(ANSI_FOREGROUND)-1;
-        *p++ = pcsNext->iForeground + '0';
+        *p++ = static_cast<char>(pcsNext->iForeground + '0');
         *p++ = ANSI_ATTR_CMD;
     }
     if (tmp.iBackground != pcsNext->iBackground)
     {
         memcpy(p, ANSI_BACKGROUND, sizeof(ANSI_BACKGROUND)-1);
         p += sizeof(ANSI_BACKGROUND)-1;
-        *p++ = pcsNext->iBackground + '0';
+        *p++ = static_cast<char>(pcsNext->iBackground + '0');
         *p++ = ANSI_ATTR_CMD;
     }
     *p = '\0';
@@ -1706,9 +1706,9 @@ char *replace_string(const char *old, const char *new0, const char *s)
     {
         // Find next occurrence of the first character of OLD string.
         //
-        const char *p;
+        const char *p = strchr(s, old[0]);
         if (  olen
-           && (p = strchr(s, old[0])))
+           && p)
         {
             // Copy up to the next occurrence of the first char of OLD.
             //

@@ -1,6 +1,6 @@
 // funceval.cpp -- MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.102 2006-01-07 23:00:09 sdennis Exp $
+// $Id: funceval.cpp,v 1.103 2006-01-09 01:32:49 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -729,7 +729,7 @@ static unsigned int GenCode(char *pCode, const char *pCodeASCII)
         if (  ' ' <= ch
            && ch <= '~')
         {
-            *pOut++ = ch - ' ';
+            *pOut++ = static_cast<char>(ch - ' ');
         }
         pIn++;
     }
@@ -790,7 +790,7 @@ static char *crypt_code(char *code, char *text, bool type)
                     iCode += iMod;
                 }
             }
-            *r++ = iCode + ' ';
+            *r++ = static_cast<char>(iCode + ' ');
             q++;
             nq--;
             if (0 == nq)
@@ -3052,7 +3052,7 @@ FUNCTION(fun_unpack)
     memset(MatchTable, 0, sizeof(MatchTable));
     for (int i = 0; i < iRadix; i++)
     {
-        MatchTable[(unsigned char)aRadixTable[i]] = i+1;
+        MatchTable[(unsigned char)aRadixTable[i]] = static_cast<char>(i + 1);
     }
 
     // Validate that first argument contains only characters from the

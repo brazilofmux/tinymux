@@ -1,6 +1,6 @@
 // timeutil.cpp -- CLinearTimeAbsolute and CLinearTimeDelta modules.
 //
-// $Id: timeutil.cpp,v 1.52 2006-01-08 20:58:28 sdennis Exp $
+// $Id: timeutil.cpp,v 1.53 2006-01-09 01:27:06 sdennis Exp $
 //
 // Date/Time code based on algorithms presented in "Calendrical Calculations",
 // Cambridge Press, 1998.
@@ -1002,11 +1002,11 @@ static void ParseDecimalSeconds(size_t n, const char *p, unsigned short *iMilli,
    memcpy(aBuffer, p, n);
    memset(aBuffer + n, '0', sizeof(aBuffer) - n - 1);
    aBuffer[sizeof(aBuffer) - 1] = '\0';
-   int ns = mux_atol(aBuffer);
-   *iNano = ns % 1000;
+   long ns = mux_atol(aBuffer);
+   *iNano = static_cast<unsigned short>(ns % 1000);
    ns /= 1000;
-   *iMicro = ns % 1000;
-   *iMilli = ns / 1000;
+   *iMicro = static_cast<unsigned short>(ns % 1000);
+   *iMilli = static_cast<unsigned short>(ns / 1000);
 }
 
 static bool do_convtime(const char *str, FIELDEDTIME *ft)
@@ -1025,7 +1025,12 @@ static bool do_convtime(const char *str, FIELDEDTIME *ft)
     {
         return false;
     }
-    for (i = 0; (i < 12) && iHash != MonthTabHash[i]; i++) ;
+
+    for (i = 0; (i < 12) && iHash != MonthTabHash[i]; i++)
+    {
+        ; // Nothing.
+    }
+
     if (i == 12)
     {
         // The above three letters were probably the Day-Of-Week, the
@@ -1035,13 +1040,21 @@ static bool do_convtime(const char *str, FIELDEDTIME *ft)
         {
             return false;
         }
-        for (i = 0; (i < 12) && iHash != MonthTabHash[i]; i++) ;
+
+        for (i = 0; (i < 12) && iHash != MonthTabHash[i]; i++)
+        {
+            ; // Nothing.
+        }
+
         if (i == 12)
         {
             return false;
         }
     }
-    ft->iMonth = i + 1; // January = 1, February = 2, etc.
+
+    // January = 1, February = 2, etc.
+    //
+    ft->iMonth = static_cast<unsigned short>(i + 1);
 
     // Day of month.
     //
@@ -1236,14 +1249,14 @@ bool CLinearTimeAbsolute::SetFields(FIELDEDTIME *arg_tStruct)
 
 static void SetStructTm(FIELDEDTIME *ft, struct tm *ptm)
 {
-    ft->iYear = ptm->tm_year + 1900;
-    ft->iMonth = ptm->tm_mon + 1;
-    ft->iDayOfMonth = ptm->tm_mday;
-    ft->iDayOfWeek = ptm->tm_wday;
-    ft->iDayOfYear = 0;
-    ft->iHour = ptm->tm_hour;
-    ft->iMinute = ptm->tm_min;
-    ft->iSecond = ptm->tm_sec;
+    ft->iYear       = static_cast<short>(ptm->tm_year + 1900);
+    ft->iMonth      = static_cast<unsigned short>(ptm->tm_mon + 1);
+    ft->iDayOfMonth = static_cast<unsigned short>(ptm->tm_mday);
+    ft->iDayOfWeek  = static_cast<unsigned short>(ptm->tm_wday);
+    ft->iDayOfYear  = 0;
+    ft->iHour       = static_cast<unsigned short>(ptm->tm_hour);
+    ft->iMinute     = static_cast<unsigned short>(ptm->tm_min);
+    ft->iSecond     = static_cast<unsigned short>(ptm->tm_sec);
 }
 
 void CLinearTimeAbsolute::ReturnUniqueString(char *buffer, size_t nBuffer)
@@ -1331,7 +1344,7 @@ bool FieldedTimeToLinearTime(FIELDEDTIME *ft, INT64 *plt)
     }
 
     int iFixedDay = FixedFromGregorian_Adjusted(ft->iYear, ft->iMonth, ft->iDayOfMonth);
-    ft->iDayOfWeek = iMod(iFixedDay+1, 7);
+    ft->iDayOfWeek = static_cast<unsigned short>(iMod(iFixedDay+1, 7));
 
     INT64 lt;
     lt  = iFixedDay * FACTOR_100NS_PER_DAY;
@@ -1359,24 +1372,24 @@ bool LinearTimeToFieldedTime(INT64 lt, FIELDEDTIME *ft)
         return false;
     }
 
-    ft->iYear = iYear;
-    ft->iMonth = iMonth;
-    ft->iDayOfYear = iDayOfYear;
-    ft->iDayOfMonth = iDayOfMonth;
-    ft->iDayOfWeek = iDayOfWeek;
+    ft->iYear       = static_cast<short>(iYear);
+    ft->iMonth      = static_cast<unsigned short>(iMonth);
+    ft->iDayOfYear  = static_cast<unsigned short>(iDayOfYear);
+    ft->iDayOfMonth = static_cast<unsigned short>(iDayOfMonth);
+    ft->iDayOfWeek  = static_cast<unsigned short>(iDayOfWeek);
 
-    ft->iHour = static_cast<int>(ns100 / FACTOR_100NS_PER_HOUR);
+    ft->iHour = static_cast<unsigned short>(ns100 / FACTOR_100NS_PER_HOUR);
     ns100 = ns100 % FACTOR_100NS_PER_HOUR;
-    ft->iMinute = static_cast<int>(ns100 / FACTOR_100NS_PER_MINUTE);
+    ft->iMinute = static_cast<unsigned short>(ns100 / FACTOR_100NS_PER_MINUTE);
     ns100 = ns100 % FACTOR_100NS_PER_MINUTE;
-    ft->iSecond = static_cast<int>(ns100 / FACTOR_100NS_PER_SECOND);
+    ft->iSecond = static_cast<unsigned short>(ns100 / FACTOR_100NS_PER_SECOND);
     ns100 = ns100 % FACTOR_100NS_PER_SECOND;
 
-    ft->iMillisecond = static_cast<int>(ns100 / FACTOR_100NS_PER_MILLISECOND);
+    ft->iMillisecond = static_cast<unsigned short>(ns100 / FACTOR_100NS_PER_MILLISECOND);
     ns100 = ns100 % FACTOR_100NS_PER_MILLISECOND;
-    ft->iMicrosecond = static_cast<int>(ns100 / FACTOR_100NS_PER_MICROSECOND);
+    ft->iMicrosecond = static_cast<unsigned short>(ns100 / FACTOR_100NS_PER_MICROSECOND);
     ns100 = ns100 % FACTOR_100NS_PER_MICROSECOND;
-    ft->iNanosecond = static_cast<int>(ns100 * FACTOR_NANOSECONDS_PER_100NS);
+    ft->iNanosecond = static_cast<unsigned short>(ns100 * FACTOR_NANOSECONDS_PER_100NS);
 
     return true;
 }
@@ -1729,7 +1742,7 @@ static int YearType(int iYear)
 {
     FIELDEDTIME ft;
     memset(&ft, 0, sizeof(FIELDEDTIME));
-    ft.iYear        = iYear;
+    ft.iYear        = static_cast<short>(iYear);
     ft.iMonth       = 1;
     ft.iDayOfMonth  = 1;
 
@@ -1883,7 +1896,7 @@ static void test_time_t(void)
     }
 }
 
-static int NearestYearOfType[15];
+static short NearestYearOfType[15];
 static CLinearTimeDelta ltdIntervalMinimum;
 static bool bTimeInitialized = false;
 
@@ -1912,7 +1925,7 @@ void TIME_Initialize(void)
         int iYearType = YearType(i);
         if (NearestYearOfType[iYearType] < 0)
         {
-            NearestYearOfType[iYearType] = i;
+            NearestYearOfType[iYearType] = static_cast<short>(i);
             cnt--;
         }
     }
@@ -3823,12 +3836,12 @@ static bool ConvertAllFieldsToLinearTime(CLinearTimeAbsolute &lta, ALLFIELDS *pa
     {
         return false;
     }
-    ft.iYear = paf->iYear;
+    ft.iYear = static_cast<short>(paf->iYear);
 
     if (paf->iMonthOfYear != NOT_PRESENT && paf->iDayOfMonth != NOT_PRESENT)
     {
-        ft.iMonth = paf->iMonthOfYear;
-        ft.iDayOfMonth = paf->iDayOfMonth;
+        ft.iMonth = static_cast<unsigned short>(paf->iMonthOfYear);
+        ft.iDayOfMonth = static_cast<unsigned short>(paf->iDayOfMonth);
     }
     else if (paf->iDayOfYear != NOT_PRESENT)
     {
@@ -3843,7 +3856,7 @@ static bool ConvertAllFieldsToLinearTime(CLinearTimeAbsolute &lta, ALLFIELDS *pa
         //
         FIELDEDTIME ftWD;
         memset(&ftWD, 0, sizeof(ftWD));
-        ftWD.iYear = paf->iYear - 1;
+        ftWD.iYear = static_cast<short>(paf->iYear - 1);
         ftWD.iMonth = 12;
         ftWD.iDayOfMonth = 27;
         if (!lta.SetFields(&ftWD))
@@ -3895,18 +3908,18 @@ static bool ConvertAllFieldsToLinearTime(CLinearTimeAbsolute &lta, ALLFIELDS *pa
 
     if (paf->iHourTime != NOT_PRESENT)
     {
-        ft.iHour = paf->iHourTime;
+        ft.iHour = static_cast<unsigned short>(paf->iHourTime);
         if (paf->iMinuteTime != NOT_PRESENT)
         {
-            ft.iMinute = paf->iMinuteTime;
+            ft.iMinute = static_cast<unsigned short>(paf->iMinuteTime);
             if (paf->iSecondTime != NOT_PRESENT)
             {
-                ft.iSecond = paf->iSecondTime;
+                ft.iSecond = static_cast<unsigned short>(paf->iSecondTime);
                 if (paf->iMillisecondTime != NOT_PRESENT)
                 {
-                    ft.iMillisecond = paf->iMillisecondTime;
-                    ft.iMicrosecond = paf->iMicrosecondTime;
-                    ft.iNanosecond = paf->iNanosecondTime;
+                    ft.iMillisecond = static_cast<unsigned short>(paf->iMillisecondTime);
+                    ft.iMicrosecond = static_cast<unsigned short>(paf->iMicrosecondTime);
+                    ft.iNanosecond  = static_cast<unsigned short>(paf->iNanosecondTime);
                 }
             }
         }
@@ -3941,7 +3954,9 @@ bool ParseDate
 
     char *p = pDateString;
     PD_Node *pNode;
-    while ((pNode = PD_ScanNextToken(&p)))
+    for (  pNode = PD_ScanNextToken(&p);
+           pNode;
+           pNode = PD_ScanNextToken(&p))
     {
         PD_AppendNode(pNode);
     }

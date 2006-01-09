@@ -134,14 +134,14 @@ void SHA1_Final(SHA1_CONTEXT *p)
     }
     p->nTotal *= 8;
 
-    p->block[sizeof(p->block) - 8] = (UINT8)(p->nTotal >> 56) & 0xFF;
-    p->block[sizeof(p->block) - 7] = (UINT8)(p->nTotal >> 48) & 0xFF;
-    p->block[sizeof(p->block) - 6] = (UINT8)(p->nTotal >> 40) & 0xFF;
-    p->block[sizeof(p->block) - 5] = (UINT8)(p->nTotal >> 32) & 0xFF;
-    p->block[sizeof(p->block) - 4] = (UINT8)(p->nTotal >> 24) & 0xFF;
-    p->block[sizeof(p->block) - 3] = (UINT8)(p->nTotal >> 16) & 0xFF;
-    p->block[sizeof(p->block) - 2] = (UINT8)(p->nTotal >>  8) & 0xFF;
-    p->block[sizeof(p->block) - 1] = (UINT8)(p->nTotal      ) & 0xFF;
+    p->block[sizeof(p->block) - 8] = static_cast<UINT8>((p->nTotal >> 56) & 0xFF);
+    p->block[sizeof(p->block) - 7] = static_cast<UINT8>((p->nTotal >> 48) & 0xFF);
+    p->block[sizeof(p->block) - 6] = static_cast<UINT8>((p->nTotal >> 40) & 0xFF);
+    p->block[sizeof(p->block) - 5] = static_cast<UINT8>((p->nTotal >> 32) & 0xFF);
+    p->block[sizeof(p->block) - 4] = static_cast<UINT8>((p->nTotal >> 24) & 0xFF);
+    p->block[sizeof(p->block) - 3] = static_cast<UINT8>((p->nTotal >> 16) & 0xFF);
+    p->block[sizeof(p->block) - 2] = static_cast<UINT8>((p->nTotal >>  8) & 0xFF);
+    p->block[sizeof(p->block) - 1] = static_cast<UINT8>((p->nTotal      ) & 0xFF);
     SHA1_HashBlock(p);
 }
 
