@@ -1,6 +1,6 @@
 // conf.cpp -- Set up configuration information and static data.
 //
-// $Id: conf.cpp,v 1.73 2006-01-09 07:28:49 sdennis Exp $
+// $Id: conf.cpp,v 1.74 2006-01-09 07:50:39 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -451,16 +451,13 @@ static CF_HAND(cf_int_array)
     MUX_STRTOK_STATE tts;
     mux_strtok_src(&tts, str);
     mux_strtok_ctl(&tts, " \t\n\r");
-    while ((p = mux_strtok_parse(&tts)) != NULL)
+    while (  (p = mux_strtok_parse(&tts)) != NULL
+          && nPorts < nExtra)
     {
         int unused;
         if (is_integer(p, &unused))
         {
             aPorts[nPorts++] = mux_atol(p);
-            if (nPorts >= nExtra)
-            {
-                break;
-            }
         }
     }
 
