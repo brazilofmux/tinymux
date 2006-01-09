@@ -1,6 +1,6 @@
 // command.cpp -- command parser and support routines.
 //
-// $Id: command.cpp,v 1.78 2006-01-09 05:10:06 sdennis Exp $
+// $Id: command.cpp,v 1.79 2006-01-09 05:46:37 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -4554,7 +4554,7 @@ void do_hook(dbref executor, dbref caller, dbref enactor, int key, char *name)
 
                 p = cbuff;
                 safe_sb_chr('@', cbuff, &p);
-                for (q = ap->name; *q; p++, q++)
+                for (q = ap->name; *q; q++)
                 {
                     safe_sb_chr(mux_tolower(*q), cbuff, &p);
                 }
