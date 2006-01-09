@@ -1,6 +1,6 @@
 // command.cpp -- command parser and support routines.
 //
-// $Id: command.cpp,v 1.77 2006-01-08 16:45:31 sdennis Exp $
+// $Id: command.cpp,v 1.78 2006-01-09 05:10:06 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -4353,7 +4353,8 @@ void do_hook(dbref executor, dbref caller, dbref enactor, int key, char *name)
     UNUSED_PARAMETER(enactor);
 
     bool negate, found;
-    char *s_ptr, *s_ptrbuff, *cbuff, *p, *q;
+    char *s_ptr, *s_ptrbuff, *cbuff, *p;
+    const char *q;
     CMDENT *cmdp = (CMDENT *)NULL;
 
     if (  (  key
@@ -4552,13 +4553,14 @@ void do_hook(dbref executor, dbref caller, dbref enactor, int key, char *name)
                 s_ptr = s_ptrbuff;
 
                 p = cbuff;
-                *p++ = '@';
-                for (q = (char *) ap->name; *q && p < cbuff + SBUF_SIZE; p++, q++)
+                safe_sb_chr('@', cbuff, &p);
+                for (q = ap->name; *q; p++, q++)
                 {
-                    *p = mux_tolower(*q);
+                    safe_sb_chr(mux_tolower(*q), cbuff, &p);
                 }
                 *p = '\0';
-                cmdp = (CMDENT *)hashfindLEN(cbuff, strlen(cbuff), &mudstate.command_htab);
+                size_t ncbuff = p - cbuff;
+                cmdp = (CMDENT *)hashfindLEN(cbuff, ncbuff, &mudstate.command_htab);
                 if (  cmdp
                    && cmdp->hookmask)
                 {
