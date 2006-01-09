@@ -1,6 +1,6 @@
 // svdhash.cpp -- CHashPage, CHashFile, CHashTable modules.
 //
-// $Id: svdhash.cpp,v 1.46 2006-01-08 20:23:27 sdennis Exp $
+// $Id: svdhash.cpp,v 1.47 2006-01-09 04:22:28 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -310,19 +310,24 @@ static void ChoosePrimes(int TableSize, HP_HEAPOFFSET HashPrimes[16])
         int Lower = Primes[0];
         for (int jPrime = 0; Primes[jPrime] != 0; jPrime++)
         {
-            if (jPrime != 0 && TableSize % Primes[jPrime] == 0) continue;
+            if (  jPrime != 0
+               && TableSize % Primes[jPrime] == 0)
+            {
+                continue;
+            }
             int Upper = Primes[jPrime];
-            if (Lower <= iZone && iZone <= Upper)
+            if (  Lower <= iZone
+               && iZone <= Upper)
             {
                 // Choose the closest lower prime number.
                 //
                 if (iZone - Lower <= Upper - iZone)
                 {
-                    HashPrimes[iPrime++] = Lower;
+                    HashPrimes[iPrime++] = static_cast<HP_HEAPOFFSET>(Lower);
                 }
                 else
                 {
-                    HashPrimes[iPrime++] = Upper;
+                    HashPrimes[iPrime++] = static_cast<HP_HEAPOFFSET>(Upper);
                 }
                 break;
             }
@@ -334,7 +339,7 @@ static void ChoosePrimes(int TableSize, HP_HEAPOFFSET HashPrimes[16])
     //
     for (iPrime = 0; iPrime < 16; iPrime += 2)
     {
-        HashPrimes[iPrime] = TableSize-HashPrimes[iPrime];
+        HashPrimes[iPrime] = static_cast<HP_HEAPOFFSET>(TableSize-HashPrimes[iPrime]);
     }
 
     // Shuffle the set of primes to reduce correlation with bits in
@@ -404,12 +409,11 @@ void CHashPage::GetStats
     HP_HEAPLENGTH nExtra,
     int *pnRecords,
     HP_HEAPLENGTH *pnAllocatedSize,
-    int *pnGoodDirSize
+    UINT32        *pnGoodDirSize
 )
 {
-    unsigned nSize = 0;
-    unsigned nCount = 0;
-    unsigned nGoodDirSize = 100;
+    UINT32  nSize  = 0;
+    UINT32  nCount = 0;
 
     // Count and measure all the records in this page.
     //
@@ -430,16 +434,16 @@ void CHashPage::GetStats
         }
     }
     *pnRecords = nCount;
-    *pnAllocatedSize = nSize;
+    *pnAllocatedSize = static_cast<HP_HEAPLENGTH>(nSize);
 
     // If we have records to talk about, or even if we are trying to reserve
     // space, then do the math.
     //
+    UINT32 nGoodDirSize = 100;
     if (  nExtra != 0
        || nCount != 0)
     {
-        UINT32 nSpace = (UINT32)( ((unsigned char *)m_pTrailer)
-                                - ((unsigned char *)m_pDirectory));
+        UINT32 nSpace      = ((unsigned char *)m_pTrailer) - ((unsigned char *)m_pDirectory);
         UINT32 nMinDirSize = nCount;
         UINT32 nMaxDirSize = (nSpace - nSize)/sizeof(HP_HEAPOFFSET);
 
@@ -458,7 +462,7 @@ void CHashPage::GetStats
 #define FILL_FACTOR 1
         UINT32 nAverageSize = (nSize + nCount/2)/nCount;
         UINT32 nHeapGoal = (nSpace * nAverageSize)/(nAverageSize + sizeof(HP_HEAPOFFSET) + FILL_FACTOR);
-        nGoodDirSize = (UINT32)((nSpace - nHeapGoal + sizeof(HP_HEAPOFFSET)/2)/sizeof(HP_HEAPOFFSET));
+        nGoodDirSize = (nSpace - nHeapGoal + sizeof(HP_HEAPOFFSET)/2)/sizeof(HP_HEAPOFFSET);
         if (nGoodDirSize < nMinDirSize)
         {
             nGoodDirSize = nMinDirSize;
@@ -479,14 +483,14 @@ void CHashPage::SetFixedPointers(void)
     m_pTrailer = (HP_PTRAILER)(m_pPage + m_nPageSize - sizeof(HP_TRAILER));
 }
 
-void CHashPage::Empty(HP_DIRINDEX arg_nDepth, UINT32 arg_nHashGroup, HP_DIRINDEX arg_nDirSize)
+void CHashPage::Empty(UINT32 arg_nDepth, UINT32 arg_nHashGroup, UINT32 arg_nDirSize)
 {
     memset(m_pPage, 0, m_nPageSize);
 
     SetFixedPointers();
 
-    m_pHeader->m_nDepth = arg_nDepth;
-    m_pHeader->m_nDirSize = arg_nDirSize;
+    m_pHeader->m_nDepth = static_cast<HP_DIRINDEX>(arg_nDepth);
+    m_pHeader->m_nDirSize = static_cast<HP_DIRINDEX>(arg_nDirSize);
     m_pHeader->m_nHashGroup = arg_nHashGroup;
     m_pHeader->m_nTotalInsert = 0;
     m_pHeader->m_nDirEmptyLeft = arg_nDirSize;  // Number of entries marked HP_DIR_EMPTY.
@@ -532,9 +536,14 @@ bool CHashPage::Validate(void)
 //
 bool CHashPage::ValidateAllocatedBlock(UINT32 iDir)
 {
-    if (iDir >= m_pHeader->m_nDirSize) return false;
-    if (m_pDirectory[iDir] >= HP_DIR_DELETED)
+    if (iDir >= m_pHeader->m_nDirSize)
+    {
         return false;
+    }
+    if (m_pDirectory[iDir] >= HP_DIR_DELETED)
+    {
+        return false;
+    }
 
     // Use directory entry to go find heap node. The record itself follows.
     //
@@ -648,7 +657,7 @@ int CHashPage::Insert(HP_HEAPLENGTH nRecord, UINT32 nHash, void *pRecord)
 #ifdef HP_PROTECTION
         // First, is this page dealing with keys like this at all?
         //
-        HP_DIRINDEX nDepth = m_pHeader->m_nDepth;
+        UINT32 nDepth = m_pHeader->m_nDepth;
         if ((nHash & anGroupMask[nDepth]) != m_pHeader->m_nHashGroup)
         {
             Log.WriteString("CHashPage::Insert - Inserting into the wrong page." ENDLINE);
@@ -658,8 +667,8 @@ int CHashPage::Insert(HP_HEAPLENGTH nRecord, UINT32 nHash, void *pRecord)
 
         // Where do we begin our first probe?
         //
-        int di   = m_pHeader->m_Primes[nHash & 15];
-        int iDir = (nHash >> 4) % (m_pHeader->m_nDirSize);
+        UINT32 di   = m_pHeader->m_Primes[nHash & 15];
+        UINT32 iDir = (nHash >> 4) % (m_pHeader->m_nDirSize);
         m_nProbesLeft = m_pHeader->m_nDirSize;
         while (m_nProbesLeft-- && (m_pDirectory[iDir] < HP_DIR_DELETED))
         {
@@ -702,23 +711,25 @@ int CHashPage::Insert(HP_HEAPLENGTH nRecord, UINT32 nHash, void *pRecord)
 //        iDir == HP_DIR_EMPTY to interate through all the records with the
 //        desired hash key.
 //
-HP_DIRINDEX CHashPage::FindFirstKey(UINT32 nHash, unsigned int *numchecks)
+UINT32 CHashPage::FindFirstKey(UINT32 nHash, unsigned int *numchecks)
 {
 #ifdef HP_PROTECTION
     // First, is this page dealing with keys like this at all?
     //
-    HP_DIRINDEX nDepth = m_pHeader->m_nDepth;
+    UINT32 nDepth = m_pHeader->m_nDepth;
     if ((nHash & anGroupMask[nDepth]) != m_pHeader->m_nHashGroup)
+    {
         return HP_DIR_EMPTY;
+    }
 #endif // HP_PROTECTION
 
-    const int nDirSize = m_pHeader->m_nDirSize;
+    const UINT32 nDirSize = m_pHeader->m_nDirSize;
 
     // Where do we begin our first probe?
     //
-    int iDir = (nHash >> 4) % nDirSize;
-    int sOffset = m_pDirectory[iDir];
-    if ((unsigned int)sOffset < HP_DIR_DELETED)
+    UINT32 iDir = (nHash >> 4) % nDirSize;
+    UINT32 sOffset = m_pDirectory[iDir];
+    if (sOffset < HP_DIR_DELETED)
     {
         HP_PHEAPNODE pNode = (HP_PHEAPNODE)(m_pHeapStart + sOffset);
         if (pNode->u.s.nHash == nHash)
@@ -739,7 +750,7 @@ HP_DIRINDEX CHashPage::FindFirstKey(UINT32 nHash, unsigned int *numchecks)
     // || pNode->u.s.nHash != nHash
 
     m_nProbesLeft = nDirSize - 1;
-    int di = m_pHeader->m_Primes[nHash & 15];
+    UINT32 di = m_pHeader->m_Primes[nHash & 15];
 
     iDir += di;
     if (iDir >= nDirSize)
@@ -778,24 +789,26 @@ HP_DIRINDEX CHashPage::FindFirstKey(UINT32 nHash, unsigned int *numchecks)
 //        directory index or HP_DIR_EMPTY if no hash keys are found.
 //
 //
-HP_DIRINDEX CHashPage::FindNextKey(HP_DIRINDEX iDir, UINT32 nHash, unsigned int *numchecks)
+UINT32 CHashPage::FindNextKey(UINT32 iDir, UINT32 nHash, unsigned int *numchecks)
 {
     *numchecks = 0;
 
 #ifdef HP_PROTECTION
     // First, is this page dealing with keys like this at all?
     //
-    HP_DIRINDEX nDepth = m_pHeader->m_nDepth;
+    UINT32 nDepth = m_pHeader->m_nDepth;
     if ((nHash & anGroupMask[nDepth]) != m_pHeader->m_nHashGroup)
+    {
         return HP_DIR_EMPTY;
+    }
 #endif // HP_PROTECTION
 
-    int nDirSize = m_pHeader->m_nDirSize;
+    UINT32 nDirSize = m_pHeader->m_nDirSize;
 
     // Where do we begin our first probe? If this is the first call, i will be HP_DIR_EMPTY.
     // On calls after that, it will be what we returned on the previous call.
     //
-    int di = m_pHeader->m_Primes[nHash & 15];
+    UINT32 di = m_pHeader->m_Primes[nHash & 15];
     iDir += di;
     if (iDir >= nDirSize)
     {
@@ -810,7 +823,10 @@ HP_DIRINDEX CHashPage::FindNextKey(HP_DIRINDEX iDir, UINT32 nHash, unsigned int 
             if (m_pDirectory[iDir] < HP_DIR_DELETED) // ValidateAllocatedBlock(iDir))
             {
                 HP_PHEAPNODE pNode = (HP_PHEAPNODE)(m_pHeapStart + m_pDirectory[iDir]);
-                if (pNode->u.s.nHash == nHash) return iDir;
+                if (pNode->u.s.nHash == nHash)
+                {
+                    return iDir;
+                }
             }
         }
         iDir += di;
@@ -825,7 +841,7 @@ HP_DIRINDEX CHashPage::FindNextKey(HP_DIRINDEX iDir, UINT32 nHash, unsigned int 
 // HeapAlloc - Return true if there was enough room to copy the record into the heap, otherwise,
 //             it returns false.
 //
-bool CHashPage::HeapAlloc(HP_DIRINDEX iDir, HP_HEAPLENGTH nRecord, UINT32 nHash, void *pRecord)
+bool CHashPage::HeapAlloc(UINT32 iDir, HP_HEAPLENGTH nRecord, UINT32 nHash, void *pRecord)
 {
     //ValidateFreeList();
     if (m_pDirectory[iDir] < HP_DIR_DELETED)
@@ -862,13 +878,13 @@ bool CHashPage::HeapAlloc(HP_DIRINDEX iDir, HP_HEAPLENGTH nRecord, UINT32 nHash,
             //
             // Do we cut it into two blocks or take the whole thing?
             //
-            HP_HEAPLENGTH nNewBlockSize = pNode->nBlockSize - nRequired;
+            UINT32 nNewBlockSize = pNode->nBlockSize - nRequired;
             if (nNewBlockSize >= EXPAND_TO_BOUNDARY(HP_MIN_HEAP_ALLOC+1))
             {
                 // There is enough for leftovers, split it.
                 //
                 HP_PHEAPNODE pNewNode = (HP_PHEAPNODE)(pBlockStart + nRequired);
-                pNewNode->nBlockSize = nNewBlockSize;
+                pNewNode->nBlockSize = static_cast<HP_HEAPLENGTH>(nNewBlockSize);
                 pNewNode->u.oNext = pNode->u.oNext;
 
                 // Update current node.
@@ -879,7 +895,7 @@ bool CHashPage::HeapAlloc(HP_DIRINDEX iDir, HP_HEAPLENGTH nRecord, UINT32 nHash,
 
                 // Update Free list pointer.
                 //
-                *poPrev += nRequired;
+                *poPrev = static_cast<HP_HEAPLENGTH>(*poPrev + nRequired);
             }
             else
             {
@@ -906,7 +922,7 @@ bool CHashPage::HeapAlloc(HP_DIRINDEX iDir, HP_HEAPLENGTH nRecord, UINT32 nHash,
 // HeapFree - Returns to the heap the space for the record associated with iDir. It
 //            always succeeds even if there wasn't a record there to delete.
 //
-void CHashPage::HeapFree(HP_DIRINDEX iDir)
+void CHashPage::HeapFree(UINT32 iDir)
 {
     //ValidateFreeList();
     if (m_pDirectory[iDir] < HP_DIR_DELETED) // ValidateAllocatedBlock(iDir))
@@ -930,7 +946,7 @@ void CHashPage::HeapFree(HP_DIRINDEX iDir)
     }
 }
 
-void CHashPage::HeapCopy(HP_DIRINDEX iDir, HP_PHEAPLENGTH pnRecord, void *pRecord)
+void CHashPage::HeapCopy(UINT32 iDir, HP_PHEAPLENGTH pnRecord, void *pRecord)
 {
     if (pnRecord == 0 || pRecord == 0) return;
 
@@ -945,7 +961,7 @@ void CHashPage::HeapCopy(HP_DIRINDEX iDir, HP_PHEAPLENGTH pnRecord, void *pRecor
     }
 }
 
-void CHashPage::HeapUpdate(HP_DIRINDEX iDir, HP_HEAPLENGTH nRecord, void *pRecord)
+void CHashPage::HeapUpdate(UINT32 iDir, HP_HEAPLENGTH nRecord, void *pRecord)
 {
     if (nRecord == 0 || pRecord == 0) return;
 
@@ -962,9 +978,9 @@ bool CHashPage::Split(CHashPage &hp0, CHashPage &hp1)
 {
     // Figure out what a good directory size is given the actual records in this page.
     //
-    int   nRecords;
+    int           nRecords;
     HP_HEAPLENGTH nAllocatedSize;
-    int   nGoodDirSize;
+    UINT32        nGoodDirSize;
     GetStats(0, &nRecords, &nAllocatedSize, &nGoodDirSize);
     if (nRecords == 0)
     {
@@ -974,7 +990,7 @@ bool CHashPage::Split(CHashPage &hp0, CHashPage &hp1)
 
     // Initialize that type of HashPage and copy records over.
     //
-    int   nNewDepth = m_pHeader->m_nDepth + 1;
+    UINT32 nNewDepth = m_pHeader->m_nDepth + 1;
     UINT32 nBitMask = 1 << (32-nNewDepth);
     UINT32 nHashGroup0 = m_pHeader->m_nHashGroup & (~nBitMask);
     UINT32 nHashGroup1 = nHashGroup0 | nBitMask;
@@ -1178,7 +1194,7 @@ bool CHashPage::ReadPage(HANDLE hFile, HF_FILEOFFSET oWhere)
 }
 #endif // WIN32
 
-HP_DIRINDEX CHashPage::GetDepth(void)
+UINT32 CHashPage::GetDepth(void)
 {
     return m_pHeader->m_nDepth;
 }
@@ -1199,9 +1215,9 @@ bool CHashPage::Defrag(HP_HEAPLENGTH nExtra)
 
     // Figure out what a good directory size is given the actual records in this page.
     //
-    int   nRecords;
+    int           nRecords;
     HP_HEAPLENGTH nAllocatedSize;
-    int   nGoodDirSize;
+    UINT32        nGoodDirSize;
     GetStats(nExtra, &nRecords, &nAllocatedSize, &nGoodDirSize);
 
     // Initialize that type of HashPage and copy records over.
@@ -1244,7 +1260,7 @@ void CHashPage::SetVariablePointers(void)
     m_nDirEmptyTrigger = (m_pHeader->m_nDirSize)/7;
 }
 
-HP_DIRINDEX CHashPage::FindFirst(HP_PHEAPLENGTH pnRecord, void *pRecord)
+UINT32 CHashPage::FindFirst(HP_PHEAPLENGTH pnRecord, void *pRecord)
 {
     for (m_iDir = 0; m_iDir < m_pHeader->m_nDirSize; m_iDir++)
     {
@@ -1259,9 +1275,9 @@ HP_DIRINDEX CHashPage::FindFirst(HP_PHEAPLENGTH pnRecord, void *pRecord)
     return HP_DIR_EMPTY;
 }
 
-HP_DIRINDEX CHashPage::FindNext(HP_PHEAPLENGTH pnRecord, void *pRecord)
+UINT32 CHashPage::FindNext(HP_PHEAPLENGTH pnRecord, void *pRecord)
 {
-    for ( m_iDir++; m_iDir < m_pHeader->m_nDirSize; m_iDir++)
+    for (m_iDir++; m_iDir < m_pHeader->m_nDirSize; m_iDir++)
     {
         if (m_pDirectory[m_iDir] < HP_DIR_DELETED) // ValidateAllocatedBlock(iDir))
         {
@@ -1929,8 +1945,8 @@ bool CHashFile::Insert(HP_HEAPLENGTH nRecord, UINT32 nHash, void *pRecord)
 
 bool CHashFile::DoubleDirectory(void)
 {
-    unsigned int nNewDir      = 2 * m_nDir;
-    HP_DIRINDEX nNewDirDepth = m_nDirDepth + 1;
+    unsigned int nNewDir     = 2 * m_nDir;
+    UINT32       nNewDirDepth = m_nDirDepth + 1;
 
     HF_PFILEOFFSET pNewDir = (HF_PFILEOFFSET)MEMALLOC(sizeof(HF_FILEOFFSET)*nNewDir);
     ISOUTOFMEMORY(pNewDir);
@@ -1964,7 +1980,7 @@ bool CHashFile::DoubleDirectory(void)
     return true;
 }
 
-HP_DIRINDEX CHashFile::FindFirstKey(UINT32 nHash)
+UINT32 CHashFile::FindFirstKey(UINT32 nHash)
 {
     cs_reads++;
 
@@ -1991,7 +2007,7 @@ HP_DIRINDEX CHashFile::FindFirstKey(UINT32 nHash)
     }
 
     unsigned int numchecks;
-    HP_DIRINDEX iDir = m_Cache[iCache].m_hp.FindFirstKey(nHash, &numchecks);
+    UINT32 iDir = m_Cache[iCache].m_hp.FindFirstKey(nHash, &numchecks);
 
     if (iDir == HP_DIR_EMPTY)
     {
@@ -2001,7 +2017,7 @@ HP_DIRINDEX CHashFile::FindFirstKey(UINT32 nHash)
     return iDir;
 }
 
-HP_DIRINDEX CHashFile::FindNextKey(HP_DIRINDEX iDir, UINT32 nHash)
+UINT32 CHashFile::FindNextKey(UINT32 iDir, UINT32 nHash)
 {
     cs_reads++;
 
@@ -2017,12 +2033,12 @@ HP_DIRINDEX CHashFile::FindNextKey(HP_DIRINDEX iDir, UINT32 nHash)
     return iDir;
 }
 
-void CHashFile::Copy(HP_DIRINDEX iDir, HP_PHEAPLENGTH pnRecord, void *pRecord)
+void CHashFile::Copy(UINT32 iDir, HP_PHEAPLENGTH pnRecord, void *pRecord)
 {
     m_Cache[iCache].m_hp.HeapCopy(iDir, pnRecord, pRecord);
 }
 
-void CHashFile::Remove(HP_DIRINDEX iDir)
+void CHashFile::Remove(UINT32 iDir)
 {
     cs_dels++;
     m_Cache[iCache].m_hp.HeapFree(iDir);
@@ -2370,7 +2386,7 @@ bool CHashTable::DoubleDirectory(void)
     return false;
 }
 
-HP_DIRINDEX CHashTable::FindFirstKey(UINT32  nHash)
+UINT32 CHashTable::FindFirstKey(UINT32  nHash)
 {
     m_nScans++;
     UINT32  iTableDir = nHash >> (32-m_nDirDepth);
@@ -2398,7 +2414,7 @@ HP_DIRINDEX CHashTable::FindFirstKey(UINT32  nHash)
 #endif // HP_PROTECTION
     unsigned int numchecks;
 
-    HP_DIRINDEX iDir = m_hpLast->FindFirstKey(nHash, &numchecks);
+    UINT32 iDir = m_hpLast->FindFirstKey(nHash, &numchecks);
 
     m_nChecks += numchecks;
     if (numchecks > m_nMaxScan)
@@ -2413,7 +2429,7 @@ HP_DIRINDEX CHashTable::FindFirstKey(UINT32  nHash)
     return iDir;
 }
 
-HP_DIRINDEX CHashTable::FindNextKey(HP_DIRINDEX iDir, UINT32  nHash)
+UINT32 CHashTable::FindNextKey(UINT32 iDir, UINT32  nHash)
 {
     m_nScans++;
     unsigned int numchecks;
@@ -2433,19 +2449,19 @@ HP_DIRINDEX CHashTable::FindNextKey(HP_DIRINDEX iDir, UINT32  nHash)
     return iDir;
 }
 
-void CHashTable::Copy(HP_DIRINDEX iDir, HP_PHEAPLENGTH pnRecord, void *pRecord)
+void CHashTable::Copy(UINT32 iDir, HP_PHEAPLENGTH pnRecord, void *pRecord)
 {
     m_hpLast->HeapCopy(iDir, pnRecord, pRecord);
 }
 
-void CHashTable::Remove(HP_DIRINDEX iDir)
+void CHashTable::Remove(UINT32 iDir)
 {
     m_nEntries--;
     m_nDeletions++;
     m_hpLast->HeapFree(iDir);
 }
 
-void CHashTable::Update(HP_DIRINDEX iDir, HP_HEAPLENGTH nRecord, void *pRecord)
+void CHashTable::Update(UINT32 iDir, HP_HEAPLENGTH nRecord, void *pRecord)
 {
     m_hpLast->HeapUpdate(iDir, nRecord, pRecord);
 }
@@ -2481,7 +2497,7 @@ void CHashTable::Reset(void)
     Init();
 }
 
-HP_DIRINDEX CHashTable::FindFirst(HP_PHEAPLENGTH pnRecord, void *pRecord)
+UINT32 CHashTable::FindFirst(HP_PHEAPLENGTH pnRecord, void *pRecord)
 {
     m_hpLast = 0;
     for (m_iPage = 0; m_iPage < m_nDir; m_iPage++)
@@ -2490,7 +2506,7 @@ HP_DIRINDEX CHashTable::FindFirst(HP_PHEAPLENGTH pnRecord, void *pRecord)
         m_hpLast = m_pDir[m_iPage];
         if (m_hpLast)
         {
-            HP_DIRINDEX iDir = m_hpLast->FindFirst(pnRecord, pRecord);
+            UINT32 iDir = m_hpLast->FindFirst(pnRecord, pRecord);
             if (iDir != HP_DIR_EMPTY)
             {
                 return iDir;
@@ -2500,11 +2516,11 @@ HP_DIRINDEX CHashTable::FindFirst(HP_PHEAPLENGTH pnRecord, void *pRecord)
     return HF_FIND_END;
 }
 
-HP_DIRINDEX CHashTable::FindNext(HP_PHEAPLENGTH pnRecord, void *pRecord)
+UINT32 CHashTable::FindNext(HP_PHEAPLENGTH pnRecord, void *pRecord)
 {
     if (m_hpLast)
     {
-        HP_DIRINDEX iDir = m_hpLast->FindNext(pnRecord, pRecord);
+        UINT32 iDir = m_hpLast->FindNext(pnRecord, pRecord);
         if (iDir != HP_DIR_EMPTY)
         {
             return iDir;
@@ -2521,7 +2537,7 @@ HP_DIRINDEX CHashTable::FindNext(HP_PHEAPLENGTH pnRecord, void *pRecord)
         m_hpLast = m_pDir[m_iPage];
         if (m_hpLast)
         {
-            HP_DIRINDEX iDir = m_hpLast->FindFirst(pnRecord, pRecord);
+            UINT32 iDir = m_hpLast->FindFirst(pnRecord, pRecord);
             if (iDir != HP_DIR_EMPTY)
             {
                 return iDir;
@@ -2887,7 +2903,7 @@ bool SubtractSpaceFromFileLine
 {
     *pnSpace = 0;
     *pAllocLine = -1;
-    HP_DIRINDEX iDir = hfIdentData.FindFirstKey(nHash);
+    UINT32 iDir = hfIdentData.FindFirstKey(nHash);
     if (iDir != HF_FIND_END)
     {
         HP_HEAPLENGTH nIdent;
@@ -2922,7 +2938,7 @@ unsigned long AddSpaceToFileLine
     UINT32 nHash = HashFileLine(file, line);
     bool bFound = false;
 again:
-    HP_DIRINDEX iDir = hfIdentData.FindFirstKey(nHash);
+    UINT32 iDir = hfIdentData.FindFirstKey(nHash);
     while (iDir != HF_FIND_END)
     {
         hfIdentData.Copy(iDir, &nIdent, Buffer);
@@ -2960,7 +2976,7 @@ void AccountForAllocation(void *pointer, size_t size, const char *file, int line
 
     unsigned long nHash = HashPointer(pointer);
 again:
-    HP_DIRINDEX iDir = hfAllocData.FindFirstKey(nHash);
+    UINT32 iDir = hfAllocData.FindFirstKey(nHash);
 
     while (iDir != HF_FIND_END)
     {
@@ -2991,7 +3007,7 @@ void AccountForFree(void *pointer, const char *file, int line)
 
     bool bFound = false;
 again:
-    HP_DIRINDEX iDir = hfAllocData.FindFirstKey(nHash);
+    UINT32 iDir = hfAllocData.FindFirstKey(nHash);
     while (iDir != HF_FIND_END)
     {
         // We found it.

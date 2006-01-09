@@ -1,6 +1,6 @@
 // vattr.cpp -- Manages the user-defined attributes.
 //
-// $Id: vattr.cpp,v 1.13 2006-01-07 02:10:22 sdennis Exp $
+// $Id: vattr.cpp,v 1.14 2006-01-09 04:22:28 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -31,7 +31,7 @@ ATTR *vattr_find_LEN(const char *pAttrName, size_t nAttrName)
     UINT32 nHash = HASH_ProcessBuffer(0, pAttrName, nAttrName);
 
     CHashTable *pht = &mudstate.vattr_name_htab;
-    HP_DIRINDEX iDir = pht->FindFirstKey(nHash);
+    UINT32 iDir = pht->FindFirstKey(nHash);
     while (iDir != HF_FIND_END)
     {
         HP_HEAPLENGTH nRecord;
@@ -411,7 +411,7 @@ static int dbclean_RemoveStaleAttributeNames(void)
                 //
                 UINT32 nHash = HASH_ProcessBuffer(0, va->name, strlen(va->name));
                 CHashTable *pht = &mudstate.vattr_name_htab;
-                HP_DIRINDEX iDir = pht->FindFirstKey(nHash);
+                UINT32 iDir = pht->FindFirstKey(nHash);
                 while (iDir != HF_FIND_END)
                 {
                     HP_HEAPLENGTH nRecord;
@@ -476,7 +476,7 @@ static void dbclean_RenumberAttributes(int cVAttributes)
             //
             UINT32 nHash = HASH_ProcessBuffer(0, va->name, strlen(va->name));
             CHashTable *pht = &mudstate.vattr_name_htab;
-            HP_DIRINDEX iDir = pht->FindFirstKey(nHash);
+            UINT32 iDir = pht->FindFirstKey(nHash);
             while (iDir != HF_FIND_END)
             {
                 HP_HEAPLENGTH nRecord;
@@ -623,7 +623,7 @@ void vattr_delete_LEN(char *pName, int nName)
     //
     UINT32 nHash = HASH_ProcessBuffer(0, pName, nName);
     CHashTable *pht = &mudstate.vattr_name_htab;
-    HP_DIRINDEX iDir = pht->FindFirstKey(nHash);
+    UINT32 iDir = pht->FindFirstKey(nHash);
     while (iDir != HF_FIND_END)
     {
         HP_HEAPLENGTH nRecord;
@@ -647,7 +647,7 @@ ATTR *vattr_rename_LEN(char *pOldName, int nOldName, char *pNewName, int nNewNam
     //
     UINT32 nHash = HASH_ProcessBuffer(0, pOldName, nOldName);
     CHashTable *pht = &mudstate.vattr_name_htab;
-    HP_DIRINDEX iDir = pht->FindFirstKey(nHash);
+    UINT32 iDir = pht->FindFirstKey(nHash);
     while (iDir != HF_FIND_END)
     {
         HP_HEAPLENGTH nRecord;
@@ -675,7 +675,7 @@ ATTR *vattr_first(void)
 {
     HP_HEAPLENGTH nRecord;
     int anum;
-    HP_DIRINDEX iDir = mudstate.vattr_name_htab.FindFirst(&nRecord, &anum);
+    UINT32 iDir = mudstate.vattr_name_htab.FindFirst(&nRecord, &anum);
     if (iDir != HF_FIND_END)
     {
         return (ATTR *)anum_table[anum];
@@ -691,7 +691,7 @@ ATTR *vattr_next(ATTR *vp)
 
     HP_HEAPLENGTH nRecord;
     int anum;
-    HP_DIRINDEX iDir = mudstate.vattr_name_htab.FindNext(&nRecord, &anum);
+    UINT32 iDir = mudstate.vattr_name_htab.FindNext(&nRecord, &anum);
     if (iDir != HF_FIND_END)
     {
         return (ATTR *)anum_table[anum];

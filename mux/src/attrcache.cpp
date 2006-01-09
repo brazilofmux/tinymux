@@ -1,6 +1,6 @@
 // svdocache.cpp -- Attribute caching module.
 //
-// $Id: attrcache.cpp,v 1.22 2006-01-08 10:11:59 sdennis Exp $
+// $Id: attrcache.cpp,v 1.23 2006-01-09 04:22:28 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -251,9 +251,8 @@ const char *cache_get(Aname *nam, int *pLen)
     }
 
     UINT32 nHash = CRC32_ProcessInteger2(nam->object, nam->attrnum);
+    UINT32 iDir = hfAttributeFile.FindFirstKey(nHash);
 
-    HP_DIRINDEX iDir;
-    iDir = hfAttributeFile.FindFirstKey(nHash);
     while (iDir != HF_FIND_END)
     {
         HP_HEAPLENGTH nRecord;
@@ -354,7 +353,7 @@ bool cache_put(Aname *nam, const char *value, size_t len)
         return true;
     }
 
-    HP_DIRINDEX iDir = hfAttributeFile.FindFirstKey(nHash);
+    UINT32 iDir = hfAttributeFile.FindFirstKey(nHash);
     while (iDir != HF_FIND_END)
     {
         HP_HEAPLENGTH nRecord;
@@ -443,8 +442,8 @@ void cache_del(Aname *nam)
 #endif
 
     UINT32 nHash = CRC32_ProcessInteger2(nam->object, nam->attrnum);
+    UINT32 iDir = hfAttributeFile.FindFirstKey(nHash);
 
-    HP_DIRINDEX iDir = hfAttributeFile.FindFirstKey(nHash);
     while (iDir != HF_FIND_END)
     {
         HP_HEAPLENGTH nRecord;

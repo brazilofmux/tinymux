@@ -1,7 +1,7 @@
 /*! \file htab.cpp
  *  Table hashing routines.
  *
- * $Id: htab.cpp,v 1.30 2006-01-07 07:13:26 jake Exp $
+ * $Id: htab.cpp,v 1.31 2006-01-09 04:22:28 sdennis Exp $
  *
  * The functions here outsource most of their work to CHashTable.  There are
  * several reasons to use the functions here instead of using CHashTable
@@ -83,7 +83,7 @@ void *hashfindLEN(const void *pKey, size_t nKey, CHashTable *htab)
 
     UINT32 nHash = HASH_ProcessBuffer(0, pKey, nKey);
 
-    HP_DIRINDEX iDir = HF_FIND_FIRST;
+    UINT32 iDir = HF_FIND_FIRST;
     iDir = htab->FindFirstKey(nHash);
     while (iDir != HF_FIND_END)
     {
@@ -160,7 +160,7 @@ void hashdeleteLEN(const void *pKey, size_t nKey, CHashTable *htab)
 
     UINT32 nHash = HASH_ProcessBuffer(0, pKey, nKey);
 
-    HP_DIRINDEX iDir = htab->FindFirstKey(nHash);
+    UINT32 iDir = htab->FindFirstKey(nHash);
     while (iDir != HF_FIND_END)
     {
         HP_HEAPLENGTH nRecord;
@@ -205,7 +205,7 @@ bool hashreplLEN(const void *str, size_t nStr, void *pData, CHashTable *htab)
 
     UINT32 nHash = HASH_ProcessBuffer(0, str, nStr);
 
-    HP_DIRINDEX iDir = htab->FindFirstKey(nHash);
+    UINT32 iDir = htab->FindFirstKey(nHash);
     while (iDir != HF_FIND_END)
     {
         HP_HEAPLENGTH nRecord;
@@ -227,7 +227,7 @@ bool hashreplLEN(const void *str, size_t nStr, void *pData, CHashTable *htab)
 void hashreplall(const void *old, void *new0, CHashTable *htab)
 {
     HP_HEAPLENGTH nRecord;
-    for (  HP_DIRINDEX iDir = htab->FindFirst(&nRecord, &htab_rec);
+    for (  UINT32 iDir = htab->FindFirst(&nRecord, &htab_rec);
            iDir != HF_FIND_END;
            iDir = htab->FindNext(&nRecord, &htab_rec))
     {
@@ -246,7 +246,7 @@ void hashreplall(const void *old, void *new0, CHashTable *htab)
 void *hash_firstentry(CHashTable *htab)
 {
     HP_HEAPLENGTH nRecord;
-    HP_DIRINDEX iDir = htab->FindFirst(&nRecord, &htab_rec);
+    UINT32 iDir = htab->FindFirst(&nRecord, &htab_rec);
     if (iDir != HF_FIND_END)
     {
         return htab_rec.pData;
@@ -257,7 +257,7 @@ void *hash_firstentry(CHashTable *htab)
 void *hash_nextentry(CHashTable *htab)
 {
     HP_HEAPLENGTH nRecord;
-    HP_DIRINDEX iDir = htab->FindNext(&nRecord, &htab_rec);
+    UINT32 iDir = htab->FindNext(&nRecord, &htab_rec);
     if (iDir != HF_FIND_END)
     {
         return htab_rec.pData;
@@ -268,7 +268,7 @@ void *hash_nextentry(CHashTable *htab)
 void *hash_firstkey(CHashTable *htab, int *nKeyLength, char **pKey)
 {
     HP_HEAPLENGTH nRecord;
-    HP_DIRINDEX iDir = htab->FindFirst(&nRecord, &htab_rec);
+    UINT32 iDir = htab->FindFirst(&nRecord, &htab_rec);
     if (iDir != HF_FIND_END)
     {
         *nKeyLength = nRecord-sizeof(int *);
@@ -283,7 +283,7 @@ void *hash_firstkey(CHashTable *htab, int *nKeyLength, char **pKey)
 void *hash_nextkey(CHashTable *htab, int *nKeyLength, char **pKey)
 {
     HP_HEAPLENGTH nRecord;
-    HP_DIRINDEX iDir = htab->FindNext(&nRecord, &htab_rec);
+    UINT32 iDir = htab->FindNext(&nRecord, &htab_rec);
     if (iDir != HF_FIND_END)
     {
         *nKeyLength = nRecord-sizeof(int *);

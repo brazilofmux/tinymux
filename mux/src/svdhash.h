@@ -1,6 +1,6 @@
 // svdhash.h -- CHashPage, CHashFile, CHashTable modules.
 //
-// $Id: svdhash.h,v 1.19 2006-01-07 07:54:25 sdennis Exp $
+// $Id: svdhash.h,v 1.20 2006-01-09 04:22:28 sdennis Exp $
 //
 #ifndef SVDHASH_H
 #define SVDHASH_H
@@ -55,7 +55,7 @@ typedef UINT32 UINT_OFFSET;
 #else
 typedef UINT16 UINT_OFFSET;
 #define UINT_OFFSET_MAX_VALUE UINT16_MAX_VALUE
-#define EXPAND_TO_BOUNDARY(x) (((x) + 1) & (~1))
+#define EXPAND_TO_BOUNDARY(x) (static_cast<HP_HEAPLENGTH>(((x) + 1) & (~1)))
 #endif
 
 typedef UINT_OFFSET HP_HEAPOFFSET, *HP_PHEAPOFFSET;
@@ -131,16 +131,16 @@ private:
     bool ValidateFreeBlock(HP_HEAPOFFSET oBlock);
     bool ValidateFreeList(void);
 #endif // HP_PROTECTION
-    bool HeapAlloc(HP_DIRINDEX iDir, HP_HEAPLENGTH nRecord, UINT32 nHash, void *pRecord);
+    bool HeapAlloc(UINT32 iDir, HP_HEAPLENGTH nRecord, UINT32 nHash, void *pRecord);
     void SetVariablePointers(void);
     void SetFixedPointers(void);
-    void GetStats(HP_HEAPLENGTH nExtra, int *pnRecords, HP_HEAPLENGTH *pnAllocatedSize, int *pnGoodDirSize);
+    void GetStats(HP_HEAPLENGTH nExtra, int *pnRecords, HP_HEAPLENGTH *pnAllocatedSize, UINT32 *pnGoodDirSize);
 
 public:
     CHashPage(void);
     bool Allocate(unsigned int nPageSize);
     ~CHashPage(void);
-    void Empty(HP_DIRINDEX arg_nDepth, UINT32 arg_nHashGroup, HP_DIRINDEX arg_nDirSize);
+    void Empty(UINT32 arg_nDepth, UINT32 arg_nHashGroup, UINT32 arg_nDirSize);
 #ifdef HP_PROTECTION
     void Protection(void);
     bool Validate(void);
@@ -152,18 +152,18 @@ public:
 #define HP_INSERT_ERROR_ILLEGAL  3
 #define IS_HP_SUCCESS(x) ((x) <= HP_INSERT_SUCCESS)
     int Insert(HP_HEAPLENGTH nRecord, UINT32 nHash, void *pRecord);
-    HP_DIRINDEX FindFirstKey(UINT32 nHash, unsigned int *numchecks);
-    HP_DIRINDEX FindNextKey(HP_DIRINDEX i, UINT32 nHash, unsigned int *numchecks);
-    HP_DIRINDEX FindFirst(HP_PHEAPLENGTH pnRecord, void *pRecord);
-    HP_DIRINDEX FindNext(HP_PHEAPLENGTH pnRecord, void *pRecord);
-    void HeapCopy(HP_DIRINDEX iDir, HP_PHEAPLENGTH pnRecord, void *pRecord);
-    void HeapFree(HP_DIRINDEX iDir);
-    void HeapUpdate(HP_DIRINDEX iDir, HP_HEAPLENGTH nRecord, void *pRecord);
+    UINT32 FindFirstKey(UINT32 nHash, unsigned int *numchecks);
+    UINT32 FindNextKey(UINT32 i, UINT32 nHash, unsigned int *numchecks);
+    UINT32 FindFirst(HP_PHEAPLENGTH pnRecord, void *pRecord);
+    UINT32 FindNext(HP_PHEAPLENGTH pnRecord, void *pRecord);
+    void HeapCopy(UINT32 iDir, HP_PHEAPLENGTH pnRecord, void *pRecord);
+    void HeapFree(UINT32 iDir);
+    void HeapUpdate(UINT32 iDir, HP_HEAPLENGTH nRecord, void *pRecord);
 
     bool WritePage(HANDLE hFile, HF_FILEOFFSET oWhere);
     bool ReadPage(HANDLE hFile, HF_FILEOFFSET oWhere);
 
-    HP_DIRINDEX GetDepth(void);
+    UINT32 GetDepth(void);
     bool Split(CHashPage &hp0, CHashPage &hp1);
 
     bool Defrag(HP_HEAPLENGTH nExtra);
@@ -228,10 +228,10 @@ public:
 #define HF_OPEN_STATUS_OLD    1
     int Open(const char *szDirFile, const char *szPageFile, int nCachePages);
     bool Insert(HP_HEAPLENGTH nRecord, UINT32 nHash, void *pRecord);
-    HP_DIRINDEX FindFirstKey(UINT32 nHash);
-    HP_DIRINDEX FindNextKey(HP_DIRINDEX iDir, UINT32 nHash);
-    void Copy(HP_DIRINDEX iDir, HP_PHEAPLENGTH pnRecord, void *pRecord);
-    void Remove(HP_DIRINDEX iDir);
+    UINT32 FindFirstKey(UINT32 nHash);
+    UINT32 FindNextKey(UINT32 iDir, UINT32 nHash);
+    void Copy(UINT32 iDir, HP_PHEAPLENGTH pnRecord, void *pRecord);
+    void Remove(UINT32 iDir);
     void CloseAll(void);
     void Sync(void);
     void Tick(void);
@@ -271,13 +271,13 @@ public:
 
     void Reset(void);
     bool Insert(HP_HEAPLENGTH nRecord, UINT32 nHash, void *pRecord);
-    HP_DIRINDEX FindFirstKey(UINT32 nHash);
-    HP_DIRINDEX FindNextKey(HP_DIRINDEX iDir, UINT32 nHash);
-    HP_DIRINDEX FindFirst(HP_PHEAPLENGTH pnRecord, void *pRecord);
-    HP_DIRINDEX FindNext(HP_PHEAPLENGTH pnRecord, void *pRecord);
-    void Copy(HP_DIRINDEX iDir, HP_PHEAPLENGTH pnRecord, void *pRecord);
-    void Remove(HP_DIRINDEX iDir);
-    void Update(HP_DIRINDEX iDir, HP_HEAPLENGTH nRecord, void *pRecord);
+    UINT32 FindFirstKey(UINT32 nHash);
+    UINT32 FindNextKey(UINT32 iDir, UINT32 nHash);
+    UINT32 FindFirst(HP_PHEAPLENGTH pnRecord, void *pRecord);
+    UINT32 FindNext(HP_PHEAPLENGTH pnRecord, void *pRecord);
+    void Copy(UINT32 iDir, HP_PHEAPLENGTH pnRecord, void *pRecord);
+    void Remove(UINT32 iDir);
+    void Update(UINT32 iDir, HP_HEAPLENGTH nRecord, void *pRecord);
     ~CHashTable(void);
 };
 
