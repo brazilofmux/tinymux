@@ -1,6 +1,6 @@
 // db.cpp
 //
-// $Id: db.cpp,v 1.87 2006-01-09 20:15:01 sdennis Exp $
+// $Id: db.cpp,v 1.88 2006-01-09 20:19:32 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -765,8 +765,10 @@ void do_attribute
             // Save the old name for use later.
             //
             char OldName[SBUF_SIZE];
-            int nOldName = nName;
-            memcpy(OldName, pName, nName+1);
+            char *pOldName = OldName;
+            safe_sb_str(pName, OldName, &pOldName);
+            *pOldName = '\0';
+            int nOldName = pOldName - OldName;
 
             // Make sure the new name doesn't already exist. This checks
             // the built-in and user-defined data structures.
