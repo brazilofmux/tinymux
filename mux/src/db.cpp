@@ -1,6 +1,6 @@
 // db.cpp
 //
-// $Id: db.cpp,v 1.83 2006-01-09 17:58:49 sdennis Exp $
+// $Id: db.cpp,v 1.84 2006-01-09 18:29:53 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -1323,26 +1323,26 @@ static int al_decode(char **app)
 // al_code: Store an attribute number in an alist
 //
 // Because A_LIST are attributes, too. We cannot generate a '\0', otherwise
-// the size of an A_LIST cannot be determined with strlen. Fortunately, the
-// following routine only genreates a '\0' in the atrnum == 0 case (which is
+// the size of an A_LIST cannot be determined with strlen(). Fortunately, the
+// following routine only generates a '\0' if atrnum == 0 (which is
 // never used).
 //
-static char *al_code(char *ap, int atrnum)
+static char *al_code(char *ap, unsigned int atrnum)
 {
-    int bits;
-    for (;;)
+    int i;
+    unsigned int bits;
+    for (i = 0; i < ATR_BUF_INCR - 1; i++)
     {
         bits = atrnum & 0x7F;
         if (atrnum <= 0x7F)
         {
+            ap[i] = (char)bits;
             break;
         }
         atrnum >>= 7;
-        bits |= 0x80;
-        *ap++ = (char)bits;
+        ap[i] = (char)(bits | 0x80);
     }
-    *ap++ = (char)bits;
-    return ap;
+    return ap + i + 1;
 }
 
 /* ---------------------------------------------------------------------------
