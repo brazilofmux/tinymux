@@ -1,6 +1,6 @@
 // look.cpp -- Commands which look at things.
 //
-// $Id: look.cpp,v 1.44 2006-01-07 20:02:37 sdennis Exp $
+// $Id: look.cpp,v 1.45 2006-01-09 15:44:35 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -1768,10 +1768,10 @@ void do_examine(dbref executor, dbref caller, dbref enactor, int key, char *name
 
         buf2 = rxlevel_description(executor, thing);
         notify(executor, buf2);
-        free_lbuf(buf2);
+        free_mbuf(buf2);
         buf2 = txlevel_description(executor, thing);
         notify(executor, buf2);
-        free_lbuf(buf2);
+        free_mbuf(buf2);
 #endif /* REALITY_LVLS */
     }
     if (!(key & EXAM_BRIEF))
