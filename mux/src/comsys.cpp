@@ -1,6 +1,6 @@
 // comsys.cpp
 //
-// $Id: comsys.cpp,v 1.44 2006-01-09 06:18:39 sdennis Exp $
+// $Id: comsys.cpp,v 1.45 2006-01-09 06:24:32 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -1136,7 +1136,7 @@ void do_joinchannel(dbref player, struct channel *ch)
         ch->num_users++;
         if (ch->num_users >= ch->max_users)
         {
-            ch->max_users += 10;
+            ch->max_users = ch->num_users + 10;
             cu = (struct comuser **)MEMALLOC(sizeof(struct comuser *) * ch->max_users);
             ISOUTOFMEMORY(cu);
 
