@@ -1,6 +1,6 @@
 // look.cpp -- Commands which look at things.
 //
-// $Id: look.cpp,v 1.43 2006/01/07 19:52:04 sdennis Exp $
+// $Id: look.cpp,v 1.44 2006/01/09 15:43:57 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -1772,10 +1772,10 @@ void do_examine(dbref executor, dbref caller, dbref enactor, int key, char *name
 
         buf2 = rxlevel_description(executor, thing);
         notify(executor, buf2);
-        free_lbuf(buf2);
+        free_mbuf(buf2);
         buf2 = txlevel_description(executor, thing);
         notify(executor, buf2);
-        free_lbuf(buf2);
+        free_mbuf(buf2);
 #endif /* REALITY_LVLS */
     }
     if (!(key & EXAM_BRIEF))
