@@ -1,6 +1,6 @@
 // help.cpp -- Commands for giving help.
 //
-// $Id: help.cpp,v 1.16 2006-01-08 19:58:52 sdennis Exp $
+// $Id: help.cpp,v 1.17 2006-01-09 20:48:44 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -107,21 +107,25 @@ static bool HelpIndex_Read(help_indx *pEntry)
             {
                 topic++;
             }
-            char *s;
-            int i;
+
             memset(pEntry->topic, 0, sizeof(pEntry->topic));
-            for (i = -1, s = topic; *s != '\n' && *s != '\r' && *s != '\0'; s++)
+
+            char   *s = topic;
+            size_t  i = 0;
+            while (  *s != '\n'
+                  && *s != '\r'
+                  && *s != '\0'
+                  && i < TOPIC_NAME_LEN)
             {
-                if (i >= TOPIC_NAME_LEN - 1)
+                if (  *s != ' '
+                   || (  0 < i
+                      && pEntry->topic[i-1] != ' '))
                 {
-                    break;
+                    pEntry->topic[i++] = *s;
                 }
-                if (*s != ' ' || pEntry->topic[i] != ' ')
-                {
-                    pEntry->topic[++i] = *s;
-                }
+                s++;
             }
-            pEntry->topic[++i] = '\0';
+            pEntry->topic[i] = '\0';
             pEntry->pos = pos + (long)nLine;
             bHaveTopic = true;
         }
