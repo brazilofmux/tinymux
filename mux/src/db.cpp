@@ -1,6 +1,6 @@
 // db.cpp
 //
-// $Id: db.cpp,v 1.85 2006-01-09 20:06:28 sdennis Exp $
+// $Id: db.cpp,v 1.86 2006-01-09 20:09:40 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -2926,8 +2926,14 @@ void putstring(FILE *f, const char *pRaw)
 int getref(FILE *f)
 {
     static char buf[SBUF_SIZE];
-    fgets(buf, sizeof(buf), f);
-    return mux_atol(buf);
+    if (NULL != fgets(buf, sizeof(buf), f))
+    {
+        return mux_atol(buf);
+    }
+    else
+    {
+        return 0;
+    }
 }
 
 void free_boolexp(BOOLEXP *b)
