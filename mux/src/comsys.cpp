@@ -1,6 +1,6 @@
 // comsys.cpp
 //
-// $Id: comsys.cpp,v 1.46 2006-01-09 06:40:56 sdennis Exp $
+// $Id: comsys.cpp,v 1.47 2006-01-09 07:08:50 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -157,30 +157,27 @@ static char *MakeCanonicalComAlias
     {
         return NULL;
     }
-    const char *p = pAlias;
-    char *q = Buffer;
-    int n = 0;
-    while (*p)
+    size_t n = 0;
+    while (pAlias[n])
     {
-        if (  !mux_isprint(*p)
-           || *p == ' ')
+        if (  !mux_isprint(pAlias[n])
+           || ' ' == pAlias[n])
         {
             return NULL;
         }
-        if (  n <= MAX_ALIAS_LEN
-           && q < Buffer + ALIAS_SIZE)
-        {
-            n++;
-            *q++ = *p;
-        }
-        p++;
+		n++;
     }
-    *q = '\0';
-    if (  n < 1
-       || MAX_ALIAS_LEN < n)
+
+    if (n < 1)
     {
         return NULL;
     }
+	else if (MAX_ALIAS_LEN < n)
+	{
+		n = MAX_ALIAS_LEN;
+	}
+	memcpy(Buffer, pAlias, n);
+	Buffer[n] = '\0';
     *nValidAlias = n;
     *bValidAlias = true;
     return Buffer;
