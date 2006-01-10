@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.167 2006-01-08 17:02:46 sdennis Exp $
+// $Id: functions.cpp,v 1.168 2006-01-10 00:01:42 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -3027,6 +3027,10 @@ static FUNCTION(fun_pos)
     size_t nPat = 0;
     char aPatBuf[LBUF_SIZE];
     char *pPatStrip = strip_ansi(fargs[0], &nPat);
+    if (sizeof(aPatBuf) < nPat)
+    {
+        nPat = sizeof(aPatBuf);
+    }
     memcpy(aPatBuf, pPatStrip, nPat);
 
     // Strip ANSI from source.
