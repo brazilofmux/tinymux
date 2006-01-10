@@ -417,7 +417,8 @@ static Bigint *Balloc(int k)
     unsigned int len;
 #endif
 
-    if ((rv = freelist[k]))
+    rv = freelist[k];
+    if (rv)
     {
         freelist[k] = rv->next;
     }
@@ -697,7 +698,8 @@ static Bigint *mult(Bigint *a, Bigint *b)
 #ifdef ULLong
     for (; xb < xbe; xc0++)
     {
-        if ((y = *xb++))
+        y = *xb++;
+        if (y)
         {
             x = xa;
             xc = xc0;
@@ -782,7 +784,8 @@ static Bigint *pow5mult(Bigint *b, int k)
     int i;
     static int p05[3] = { 5, 25, 125 };
 
-    if ((i = k & 3))
+    i = k & 3;
+    if (i)
     {
         b = multadd(b, p05[i-1], 0);
     }
@@ -791,7 +794,9 @@ static Bigint *pow5mult(Bigint *b, int k)
     {
         return b;
     }
-    if (!(p5 = p5s))
+
+    p5 = p5s;
+    if (!p5)
     {
         /* first time */
         p5 = p5s = i2b(625);
@@ -809,7 +814,8 @@ static Bigint *pow5mult(Bigint *b, int k)
         {
             break;
         }
-        if (!(p51 = p5->next))
+        p51 = p5->next;
+        if (!p51)
         {
             p51 = p5->next = mult(p5,p5);
             p51->next = 0;
@@ -854,7 +860,8 @@ static Bigint *lshift(Bigint *b, int k)
             *x1++ = *x << k | z;
             z = *x++ >> k1;
         } while (x < xe);
-        if ((*x1 = z))
+        *x1 = z;
+        if (*x1)
         {
             ++n1;
         }
@@ -1150,15 +1157,18 @@ static Bigint *d2b(double d, int *e, int *bits)
     z |= Exp_msk11;
 #endif
 #else
-    if ((de = (int)(d0 >> Exp_shift)))
+    de = (int)(d0 >> Exp_shift);
+    if (de)
     {
         z |= Exp_msk1;
     }
 #endif
 #ifdef Pack_32
-    if ((y = d1))
+    y = d1;
+    if (y)
     {
-        if ((k = lo0bits(&y)))
+        k = lo0bits(&y);
+        if (k)
         {
             x[0] = y | z << (32 - k);
             z >>= k;
@@ -1170,7 +1180,8 @@ static Bigint *d2b(double d, int *e, int *bits)
 #ifndef Sudden_Underflow
         i =
 #endif
-            b->wds = (x[1] = z) ? 2 : 1;
+            x[1] = z;
+            b->wds = (x[1]) ? 2 : 1;
     }
     else
     {
@@ -1675,7 +1686,8 @@ vax_ovfl_check:
 
     if (e1 > 0)
     {
-        if ((i = e1 & 15))
+        i = e1 & 15;
+        if (i)
         {
             dval(rv) *= tens[i];
         }
@@ -1749,7 +1761,8 @@ ovfl:
     else if (e1 < 0)
     {
         e1 = -e1;
-        if ((i = e1 & 15))
+        i = e1 & 15;
+        if (i)
         {
             dval(rv) /= tens[i];
         }
@@ -2565,9 +2578,11 @@ static char *nrv_alloc(char *s, char **rve, int n)
     char *rv, *t;
 
     t = rv = rv_alloc(n);
-    while ((*t = *s++))
+    *t = *s++;
+    while (*t)
     {
         t++;
+        *t = *s++;
     }
     if (rve)
     {
@@ -2747,7 +2762,8 @@ char *mux_dtoa(double d, int mode, int ndigits, int *decpt, int *sign,
 #ifdef Sudden_Underflow
     i = (int)(word0(d) >> Exp_shift1 & (Exp_mask>>Exp_shift1));
 #else
-    if ((i = (int)(word0(d) >> Exp_shift1 & (Exp_mask>>Exp_shift1))))
+    i = (int)(word0(d) >> Exp_shift1 & (Exp_mask>>Exp_shift1));
+    if (i)
     {
 #endif
         dval(d2) = dval(d);
@@ -2929,15 +2945,19 @@ char *mux_dtoa(double d, int mode, int ndigits, int *decpt, int *sign,
             }
             dval(d) /= ds;
         }
-        else if ((j1 = -k))
+        else
         {
-            dval(d) *= tens[j1 & 0xf];
-            for (j = j1 >> 4; j; j >>= 1, i++)
+            j1 = -k;
+            if (j1)
             {
-                if (j & 1)
+                dval(d) *= tens[j1 & 0xf];
+                for (j = j1 >> 4; j; j >>= 1, i++)
                 {
-                    ieps++;
-                    dval(d) *= bigtens[i];
+                    if (j & 1)
+                    {
+                        ieps++;
+                        dval(d) *= bigtens[i];
+                    }
                 }
             }
         }
@@ -2979,7 +2999,7 @@ char *mux_dtoa(double d, int mode, int ndigits, int *decpt, int *sign,
             {
                 L = (Long)dval(d);
                 dval(d) -= L;
-                *s++ = '0' + (int)L;
+                *s++ = static_cast<char>('0' + (int)L);
                 if (dval(d) < dval(eps))
                 {
                     goto ret1;
@@ -3008,7 +3028,7 @@ char *mux_dtoa(double d, int mode, int ndigits, int *decpt, int *sign,
                 {
                     ilim = i;
                 }
-                *s++ = '0' + (int)L;
+                *s++ = static_cast<char>('0' + (int)L);
                 if (i == ilim)
                 {
                     if (dval(d) > 0.5 + dval(eps))
@@ -3069,7 +3089,7 @@ fast_failed:
                 L++;
                 dval(d) -= ds;
             }
-            *s++ = '0' + (int)L;
+            *s++ = static_cast<char>('0' + (int)L);
             if (!dval(d))
             {
 #ifdef SET_INEXACT
@@ -3146,7 +3166,8 @@ bump_up:
                 Bfree(b);
                 b = b1;
             }
-            if ((j = b5 - m5))
+            j = b5 - m5;
+            if (j)
             {
                 b = pow5mult(b, j);
             }
@@ -3192,7 +3213,8 @@ bump_up:
      * can do shifts and ors to compute the numerator for q.
      */
 #ifdef Pack_32
-    if ((i = ((s5 ? 32 - hi0bits(S->x[S->wds-1]) : 1) + s2) & 0x1f))
+    i = ((s5 ? 32 - hi0bits(S->x[S->wds-1]) : 1) + s2) & 0x1f;
+    if (i)
     {
         i = 32 - i;
     }
@@ -3301,7 +3323,7 @@ one_digit:
                     inexact = 0;
                 }
 #endif
-                *s++ = dig;
+                *s++ = static_cast<char>(dig);
                 goto ret;
             }
 #endif
@@ -3339,7 +3361,7 @@ one_digit:
                     }
                 }
 accept_dig:
-                *s++ = dig;
+                *s++ = static_cast<char>(dig);
                 goto ret;
             }
             if (j1 > 0)
@@ -3357,13 +3379,13 @@ round_9_up:
                     *s++ = '9';
                     goto roundoff;
                 }
-                *s++ = dig + 1;
+                *s++ = static_cast<char>(dig + 1);
                 goto ret;
             }
 #ifdef Honor_FLT_ROUNDS
 keep_dig:
 #endif
-            *s++ = dig;
+            *s++ = static_cast<char>(dig);
             if (i == ilim)
             {
                 break;
@@ -3384,7 +3406,8 @@ keep_dig:
     {
         for (i = 1;; i++)
         {
-            *s++ = dig = quorem(b,S) + '0';
+            dig = quorem(b,S) + '0';
+            *s++ = static_cast<char>(dig);
             if (!b->x[0] && b->wds <= 1)
             {
 #ifdef SET_INEXACT
