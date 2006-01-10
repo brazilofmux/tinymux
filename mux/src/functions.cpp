@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.170 2006-01-10 00:13:04 sdennis Exp $
+// $Id: functions.cpp,v 1.171 2006-01-10 00:16:47 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -6370,7 +6370,11 @@ static void handle_sets
     SEP  *posep
 )
 {
-    char *ptrs1[LBUF_SIZE], *ptrs2[LBUF_SIZE];
+    char **ptrs1 = new char *[LBUF_SIZE];
+    ISOUTOFMEMORY(ptrs1);
+    char **ptrs2 = new char *[LBUF_SIZE];
+    ISOUTOFMEMORY(ptrs2);
+
     int val;
 
     char *list1 = alloc_lbuf("fun_setunion.1");
@@ -6605,6 +6609,8 @@ static void handle_sets
     }
     free_lbuf(list1);
     free_lbuf(list2);
+    delete [] ptrs1;
+    delete [] ptrs2;
 }
 
 static FUNCTION(fun_setunion)
