@@ -1,6 +1,6 @@
 // timeutil.cpp -- CLinearTimeAbsolute and CLinearTimeDelta modules.
 //
-// $Id: timeutil.cpp,v 1.55 2006-01-10 06:50:57 sdennis Exp $
+// $Id: timeutil.cpp,v 1.56 2006-01-10 07:08:55 sdennis Exp $
 //
 // Date/Time code based on algorithms presented in "Calendrical Calculations",
 // Cambridge Press, 1998.
@@ -1896,7 +1896,7 @@ void TIME_Initialize(void)
     }
     bTimeInitialized = true;
 
-    tzset();
+    mux_tzset();
 
     test_time_t();
     ltdIntervalMinimum = time_1w;

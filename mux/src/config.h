@@ -1,6 +1,6 @@
 // config.h
 //
-// $Id: config.h,v 1.15 2006-01-10 06:50:57 sdennis Exp $
+// $Id: config.h,v 1.16 2006-01-10 07:08:55 sdennis Exp $
 //
 
 #ifndef CONFIG_H
@@ -84,7 +84,6 @@ typedef unsigned __int64 UINT64;
 #define TIME_T_MAX_VALUE 32535215999ui64
 #elif (_MSC_VER >= 1310)
 // 1310 is Visual C++ .NET 2003
-//#define TIME_T_MAX_VALUE 0x100000000000i64
 #elif (_MSC_VER >= 1300)
 // 1300 is Visual C++ .NET 2002
 #elif (_MSC_VER >= 1200)
@@ -103,8 +102,9 @@ typedef unsigned __int64 UINT64;
 #define SOCKET_EINTR       (WSAEINTR)
 #define SOCKET_EWOULDBLOCK (WSAEWOULDBLOCK)
 #define SOCKET_EBADF       (WSAEBADF)
-#define popen _popen
+#define popen  _popen
 #define pclose _pclose
+#define mux_tzset  _tzset
 
 #else // WIN32
 
@@ -142,6 +142,9 @@ typedef int SOCKET;
 #define SOCKET_EBADF       (EBADF)
 #define INVALID_SOCKET (-1)
 #define SD_BOTH (2)
+
+#define mux_tzset  tzset
+
 
 #endif // WIN32
 
