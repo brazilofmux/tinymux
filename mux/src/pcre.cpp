@@ -1485,7 +1485,7 @@ indirections below, and it can optionally do callouts. These values can be
 changed by the caller, but are shared between all threads. However, when
 compiling for Virtual Pascal, things are done differently (see pcre.in). */
 
-int   (*pcre_callout)(pcre_callout_block *) = NULL;
+static int   (*pcre_callout)(pcre_callout_block *) = NULL;
 
 
 /*************************************************
