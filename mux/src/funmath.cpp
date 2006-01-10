@@ -1,6 +1,6 @@
 // funmath.cpp -- MUX math function handlers.
 //
-// $Id: funmath.cpp,v 1.8 2006-01-08 17:03:42 sdennis Exp $
+// $Id: funmath.cpp,v 1.9 2006-01-10 01:13:32 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -1070,18 +1070,22 @@ static void handle_vectors
     SEP *posep, int flag
 )
 {
-    char *v1[(LBUF_SIZE+1)/2], *v2[(LBUF_SIZE+1)/2];
-    double scalar;
-    int n, m, i;
-
-    // Split the list up, or return if the list is empty.
+    // Return if the list is empty.
     //
     if (!vecarg1 || !*vecarg1 || !vecarg2 || !*vecarg2)
     {
         return;
     }
-    n = list2arr(v1, (LBUF_SIZE+1)/2, vecarg1, psep);
-    m = list2arr(v2, (LBUF_SIZE+1)/2, vecarg2, psep);
+
+    char **v1 = new char *[(LBUF_SIZE+1)/2];
+    ISOUTOFMEMORY(v1);
+    char **v2 = new char *[(LBUF_SIZE+1)/2];
+    ISOUTOFMEMORY(v2);
+
+    // Split the list up, or return if the list is empty.
+    //
+    int n = list2arr(v1, (LBUF_SIZE+1)/2, vecarg1, psep);
+    int m = list2arr(v2, (LBUF_SIZE+1)/2, vecarg2, psep);
 
     // vmul() and vadd() accepts a scalar in the first or second arg,
     // but everything else has to be same-dimensional.
@@ -1094,8 +1098,13 @@ static void handle_vectors
               || m == 1)))
     {
         safe_str("#-1 VECTORS MUST BE SAME DIMENSIONS", buff, bufc);
+        delete [] v1;
+        delete [] v2;
         return;
     }
+
+    double scalar;
+    int i;
 
     switch (flag)
     {
@@ -1289,6 +1298,8 @@ static void handle_vectors
         //
         safe_str("#-1 UNIMPLEMENTED", buff, bufc);
     }
+    delete [] v1;
+    delete [] v2;
 }
 
 FUNCTION(fun_vadd)
