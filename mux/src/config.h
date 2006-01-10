@@ -1,6 +1,6 @@
 // config.h
 //
-// $Id: config.h,v 1.17 2006-01-10 07:26:43 sdennis Exp $
+// $Id: config.h,v 1.18 2006-01-10 08:48:06 sdennis Exp $
 //
 
 #ifndef CONFIG_H
@@ -82,12 +82,12 @@ typedef unsigned __int64 UINT64;
 #if (_MSC_VER >= 1400)
 // 1400 is Visual C++ 2005
 #define TIME_T_MAX_VALUE 32535215999ui64
-#elif (_MSC_VER >= 1310)
-// 1310 is Visual C++ .NET 2003
-#elif (_MSC_VER >= 1300)
-// 1300 is Visual C++ .NET 2002
+#define MUX_ULONG_PTR ULONG_PTR
 #elif (_MSC_VER >= 1200)
+// 1310 is Visual C++ .NET 2003
+// 1300 is Visual C++ .NET 2002
 // 1200 is Visual C++ 6.0
+#define MUX_ULONG_PTR DWORD
 #elif
 #error TinyMUX Requires at least version 6.0 of Visual C++.
 #endif

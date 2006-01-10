@@ -2,7 +2,7 @@
  * File for most TCP socket-related code. Some socket-related code also exists
  * in netcommon.cpp, but most of it is here.
  *
- * $Id: bsd.cpp,v 1.85 2006-01-10 07:26:43 sdennis Exp $
+ * $Id: bsd.cpp,v 1.86 2006-01-10 08:48:06 sdennis Exp $
  */
 
 #include "copyright.h"
@@ -2161,7 +2161,7 @@ static void shutdownsock_brief(DESC *d)
     // queued completed IOs that will crash when they refer to a descriptor
     // (d) that has been freed.
     //
-    if (!PostQueuedCompletionStatus(CompletionPort, 0, (DWORD) d, &lpo_aborted))
+    if (!PostQueuedCompletionStatus(CompletionPort, 0, (MUX_ULONG_PTR) d, &lpo_aborted))
     {
         Log.tinyprintf("Error %ld on PostQueuedCompletionStatus in shutdownsock" ENDLINE, GetLastError());
     }
@@ -2435,7 +2435,7 @@ static int AsyncSend(DESC *d, char *buf, int len)
                 //
                 d->bConnectionDropped = true;
                 Log.tinyprintf("AsyncSend(%d) failed with error %ld. Requesting port shutdown." ENDLINE, d->descriptor, dwLastError);
-                if (!PostQueuedCompletionStatus(CompletionPort, 0, (DWORD) d, &lpo_shutdown))
+                if (!PostQueuedCompletionStatus(CompletionPort, 0, (MUX_ULONG_PTR) d, &lpo_shutdown))
                 {
                     Log.tinyprintf("Error %ld on PostQueuedCompletionStatus in AsyncSend" ENDLINE, GetLastError());
                 }
@@ -4224,7 +4224,7 @@ static DWORD WINAPI MUDListenThread(LPVOID pVoid)
 
         // Add this socket to the IO completion port.
         //
-        CompletionPort = CreateIoCompletionPort((HANDLE)socketClient, CompletionPort, (DWORD) d, 1);
+        CompletionPort = CreateIoCompletionPort((HANDLE)socketClient, CompletionPort, (MUX_ULONG_PTR) d, 1);
 
         if (!CompletionPort)
         {
@@ -4235,7 +4235,7 @@ static DWORD WINAPI MUDListenThread(LPVOID pVoid)
 
         TelnetSetup(d);
 
-        if (!PostQueuedCompletionStatus(CompletionPort, 0, (DWORD) d, &lpo_welcome))
+        if (!PostQueuedCompletionStatus(CompletionPort, 0, (MUX_ULONG_PTR) d, &lpo_welcome))
         {
             Log.tinyprintf("Error %ld on PostQueuedCompletionStatus in ProcessWindowsTCP (read)" ENDLINE, GetLastError());
             shutdownsock_brief(d);
@@ -4252,7 +4252,7 @@ static DWORD WINAPI MUDListenThread(LPVOID pVoid)
             //
             d->bConnectionDropped = true;
             Log.tinyprintf("ProcessWindowsTCP(%d) cannot queue read request with error %ld. Requesting port shutdown." ENDLINE, d->descriptor, GetLastError());
-            if (!PostQueuedCompletionStatus(CompletionPort, 0, (DWORD) d, &lpo_shutdown))
+            if (!PostQueuedCompletionStatus(CompletionPort, 0, (MUX_ULONG_PTR) d, &lpo_shutdown))
             {
                 Log.tinyprintf("Error %ld on PostQueuedCompletionStatus in ProcessWindowsTCP (initial read)" ENDLINE, GetLastError());
             }
@@ -4306,7 +4306,7 @@ void Task_DeferredClose(void *arg_voidptr, int arg_Integer)
         // queued completed IOs that will crash when they refer to a descriptor
         // (d) that has been freed.
         //
-        if (!PostQueuedCompletionStatus(CompletionPort, 0, (DWORD) d, &lpo_aborted))
+        if (!PostQueuedCompletionStatus(CompletionPort, 0, (MUX_ULONG_PTR) d, &lpo_aborted))
         {
             Log.tinyprintf("Error %ld on PostQueuedCompletionStatus in shutdownsock" ENDLINE, GetLastError());
         }
@@ -4372,7 +4372,7 @@ void ProcessWindowsTCP(DWORD dwTimeout)
                     // Post a notification that the descriptor should be shutdown
                     //
                     Log.tinyprintf("ProcessWindowsTCP(%d) failed IO with error %ld. Requesting port shutdown." ENDLINE, d->descriptor, dwLastError);
-                    if (!PostQueuedCompletionStatus(CompletionPort, 0, (DWORD) d, &lpo_shutdown))
+                    if (!PostQueuedCompletionStatus(CompletionPort, 0, (MUX_ULONG_PTR) d, &lpo_shutdown))
                     {
                         Log.tinyprintf("Error %ld on PostQueuedCompletionStatus in ProcessWindowsTCP (write)" ENDLINE, GetLastError());
                     }
@@ -4472,7 +4472,7 @@ void ProcessWindowsTCP(DWORD dwTimeout)
                 d->bWritePending = false;
                 d->bConnectionDropped = true;
                 Log.tinyprintf("ProcessWindowsTCP(%d) cannot queue write request with error %ld. Requesting port shutdown." ENDLINE, d->descriptor, dwLastError);
-                if (!PostQueuedCompletionStatus(CompletionPort, 0, (DWORD) d, &lpo_shutdown))
+                if (!PostQueuedCompletionStatus(CompletionPort, 0, (MUX_ULONG_PTR) d, &lpo_shutdown))
                 {
                     Log.tinyprintf("Error %ld on PostQueuedCompletionStatus in ProcessWindowsTCP (write)" ENDLINE, GetLastError());
                 }
@@ -4492,7 +4492,7 @@ void ProcessWindowsTCP(DWORD dwTimeout)
                 //
                 d->bConnectionDropped = true;
                 Log.tinyprintf("ProcessWindowsTCP(%d) zero-length read. Requesting port shutdown." ENDLINE, d->descriptor);
-                if (!PostQueuedCompletionStatus(CompletionPort, 0, (DWORD) d, &lpo_shutdown))
+                if (!PostQueuedCompletionStatus(CompletionPort, 0, (MUX_ULONG_PTR) d, &lpo_shutdown))
                 {
                     Log.tinyprintf("Error %ld on PostQueuedCompletionStatus in ProcessWindowsTCP (read)" ENDLINE, GetLastError());
                 }
@@ -4539,7 +4539,7 @@ void ProcessWindowsTCP(DWORD dwTimeout)
                     //
                     d->bConnectionDropped = true;
                     Log.tinyprintf("ProcessWindowsTCP(%d) cannot queue read request with error %ld. Requesting port shutdown." ENDLINE, d->descriptor, dwLastError);
-                    if (!PostQueuedCompletionStatus(CompletionPort, 0, (DWORD) d, &lpo_shutdown))
+                    if (!PostQueuedCompletionStatus(CompletionPort, 0, (MUX_ULONG_PTR) d, &lpo_shutdown))
                     {
                         Log.tinyprintf("Error %ld on PostQueuedCompletionStatus in ProcessWindowsTCP (read)" ENDLINE, GetLastError());
                     }
@@ -4600,7 +4600,7 @@ void ProcessWindowsTCP(DWORD dwTimeout)
             // end of the queue. CancelIo will still generate aborted packets. We don't want the descriptor
             // be be re-used and have a new connection be stepped on by a dead one.
             //
-            if (!PostQueuedCompletionStatus(CompletionPort, 0, (DWORD) d, &lpo_aborted_final))
+            if (!PostQueuedCompletionStatus(CompletionPort, 0, (MUX_ULONG_PTR) d, &lpo_aborted_final))
             {
                 Log.tinyprintf("Error %ld on PostQueuedCompletionStatus in ProcessWindowsTCP (aborted)" ENDLINE, GetLastError());
             }
