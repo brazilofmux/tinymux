@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.168 2006-01-10 00:01:42 sdennis Exp $
+// $Id: functions.cpp,v 1.169 2006-01-10 00:07:32 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -5479,13 +5479,19 @@ static FUNCTION(fun_choose)
         return;
     }
 
-    char *elems[LBUF_SIZE/2], *weights[LBUF_SIZE/2];
-    int n_elems = list2arr(elems, LBUF_SIZE/2, fargs[0], &isep);
+    char **elems = new char *[LBUF_SIZE/2];
+    ISOUTOFMEMORY(elems);
+    char **weights = new char *[LBUF_SIZE/2];
+    ISOUTOFMEMORY(weights);
+
+    int n_elems   = list2arr(elems, LBUF_SIZE/2, fargs[0], &isep);
     int n_weights = list2arr(weights, LBUF_SIZE/2, fargs[1], &sepSpace);
 
     if (n_elems != n_weights)
     {
         safe_str("#-1 LISTS MUST BE OF EQUAL SIZE", buff, bufc);
+        delete [] elems;
+        delete [] weights;
         return;
     }
 
@@ -5511,6 +5517,8 @@ static FUNCTION(fun_choose)
             if (sum_next < sum)
             {
                 safe_str("#-1 OVERFLOW", buff, bufc);
+                delete [] elems;
+                delete [] weights;
                 return;
             }
             sum = sum_next;
@@ -5529,6 +5537,8 @@ static FUNCTION(fun_choose)
             break;
         }
     }
+    delete [] elems;
+    delete [] weights;
 }
 
 /* ---------------------------------------------------------------------------
