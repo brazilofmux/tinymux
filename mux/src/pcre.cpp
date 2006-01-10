@@ -76,8 +76,8 @@ the config.h file, but can be overridden by using -D on the command line. This
 is automated on Unix systems via the "configure" command. */
 
 #define PUT(a,n,d)   \
-  (a[n] = (d) >> 8), \
-  (a[(n)+1] = (d) & 255)
+  (a[n] = static_cast<uschar>((d) >> 8)), \
+  (a[(n)+1] = static_cast<uschar>((d) & 255))
 
 #define GET(a,n) \
   (((a)[n] << 8) | (a)[(n)+1])
@@ -95,8 +95,8 @@ offsets changes. There are used for repeat counts and for other things such as
 capturing parenthesis numbers in back references. */
 
 #define PUT2(a,n,d)   \
-  a[n] = (d) >> 8; \
-  a[(n)+1] = (d) & 255
+  a[n] = static_cast<uschar>((d) >> 8); \
+  a[(n)+1] = static_cast<uschar>((d) & 255)
 
 #define GET2(a,n) \
   (((a)[n] << 8) | (a)[(n)+1])
@@ -840,72 +840,77 @@ Returns:     pointer to the contiguous block of data
 const unsigned char *
 pcre_maketables(void)
 {
-unsigned char *yield, *p;
-int i;
+    unsigned char *yield, *p;
+    int i;
 
-yield = static_cast<unsigned char*>(malloc(tables_length));
+    yield = static_cast<unsigned char*>(malloc(tables_length));
 
-if (yield == NULL) return NULL;
-p = yield;
+    if (yield == NULL) return NULL;
+    p = yield;
 
-/* First comes the lower casing table */
+    /* First comes the lower casing table */
 
-for (i = 0; i < 256; i++) *p++ = tolower(i);
-
-/* Next the case-flipping table */
-
-for (i = 0; i < 256; i++) *p++ = islower(i)? toupper(i) : tolower(i);
-
-/* Then the character class tables. Don't try to be clever and save effort
-on exclusive ones - in some locales things may be different. Note that the
-table for "space" includes everything "isspace" gives, including VT in the
-default locale. This makes it work for the POSIX class [:space:]. */
-
-memset(p, 0, cbit_length);
-for (i = 0; i < 256; i++)
-  {
-  if (isdigit(i))
+    for (i = 0; i < 256; i++)
     {
-    p[cbit_digit  + i/8] |= 1 << (i&7);
-    p[cbit_word   + i/8] |= 1 << (i&7);
+        *p++ = mux_tolower(i);
     }
-  if (isupper(i))
+
+    /* Next the case-flipping table */
+
+    for (i = 0; i < 256; i++)
     {
-    p[cbit_upper  + i/8] |= 1 << (i&7);
-    p[cbit_word   + i/8] |= 1 << (i&7);
+        *p++ = mux_islower(i)? mux_toupper(i) : mux_tolower(i);
     }
-  if (islower(i))
+
+    /* Then the character class tables. Don't try to be clever and save effort
+    on exclusive ones - in some locales things may be different. Note that the
+    table for "space" includes everything "isspace" gives, including VT in the
+    default locale. This makes it work for the POSIX class [:space:]. */
+
+    memset(p, 0, cbit_length);
+    for (i = 0; i < 256; i++)
     {
-    p[cbit_lower  + i/8] |= 1 << (i&7);
-    p[cbit_word   + i/8] |= 1 << (i&7);
+        if (mux_isdigit(i))
+        {
+            p[cbit_digit  + i/8] |= 1 << (i&7);
+            p[cbit_word   + i/8] |= 1 << (i&7);
+        }
+        if (mux_isupper(i))
+        {
+            p[cbit_upper  + i/8] |= 1 << (i&7);
+            p[cbit_word   + i/8] |= 1 << (i&7);
+        }
+        if (mux_islower(i))
+        {
+            p[cbit_lower  + i/8] |= 1 << (i&7);
+            p[cbit_word   + i/8] |= 1 << (i&7);
+        }
+        if (i == '_')       p[cbit_word   + i/8] |= 1 << (i&7);
+        if (mux_isspace(i)) p[cbit_space  + i/8] |= 1 << (i&7);
+        if (mux_isxdigit(i))p[cbit_xdigit + i/8] |= 1 << (i&7);
+        if (isgraph(i))     p[cbit_graph  + i/8] |= 1 << (i&7);
+        if (mux_isprint(i)) p[cbit_print  + i/8] |= 1 << (i&7);
+        if (ispunct(i))     p[cbit_punct  + i/8] |= 1 << (i&7);
+        if (iscntrl(i))     p[cbit_cntrl  + i/8] |= 1 << (i&7);
     }
-  if (i == '_')   p[cbit_word   + i/8] |= 1 << (i&7);
-  if (isspace(i)) p[cbit_space  + i/8] |= 1 << (i&7);
-  if (isxdigit(i))p[cbit_xdigit + i/8] |= 1 << (i&7);
-  if (isgraph(i)) p[cbit_graph  + i/8] |= 1 << (i&7);
-  if (isprint(i)) p[cbit_print  + i/8] |= 1 << (i&7);
-  if (ispunct(i)) p[cbit_punct  + i/8] |= 1 << (i&7);
-  if (iscntrl(i)) p[cbit_cntrl  + i/8] |= 1 << (i&7);
-  }
-p += cbit_length;
+    p += cbit_length;
 
-/* Finally, the character type table. In this, we exclude VT from the white
-space chars, because Perl doesn't recognize it as such for \s and for comments
-within regexes. */
+    /* Finally, the character type table. In this, we exclude VT from the white
+    space chars, because Perl doesn't recognize it as such for \s and for comments
+    within regexes. */
 
-for (i = 0; i < 256; i++)
-  {
-  int x = 0;
-  if (i != 0x0b && isspace(i)) x += ctype_space;
-  if (isalpha(i)) x += ctype_letter;
-  if (isdigit(i)) x += ctype_digit;
-  if (isxdigit(i)) x += ctype_xdigit;
-  if (isalnum(i) || i == '_') x += ctype_word;
-  if (strchr("*+?{^.$|()[", i) != 0) x += ctype_meta;
-  *p++ = x;
-  }
-
-return yield;
+    for (i = 0; i < 256; i++)
+    {
+        unsigned char x = 0;
+        if (i != 0x0b && mux_isspace(i)) x += ctype_space;
+        if (mux_isalpha(i)) x += ctype_letter;
+        if (mux_isdigit(i)) x += ctype_digit;
+        if (mux_isxdigit(i)) x += ctype_xdigit;
+        if (mux_isalnum(i) || i == '_') x += ctype_word;
+        if (strchr("*+?{^.$|()[", i) != 0) x += ctype_meta;
+        *p++ = x;
+    }
+    return yield;
 }
 
 /* End of maketables.c */
@@ -2791,7 +2796,7 @@ for (;; ptr++)
         *code++ = OP_CHARS;
         *code++ = 1;
         }
-      *code++ = class_lastchar;
+      *code++ = static_cast<uschar>(class_lastchar);
       break;  /* End of class handling */
       }       /* End of 1-byte optimization */
 
@@ -2980,11 +2985,11 @@ for (;; ptr++)
 
       if (repeat_min == 0)
         {
-        if (repeat_max == -1) *code++ = OP_STAR + repeat_type;
-          else if (repeat_max == 1) *code++ = OP_QUERY + repeat_type;
+        if (repeat_max == -1) *code++ = static_cast<uschar>(OP_STAR + repeat_type);
+          else if (repeat_max == 1) *code++ = static_cast<uschar>(OP_QUERY + repeat_type);
         else
           {
-          *code++ = OP_UPTO + repeat_type;
+          *code++ = static_cast<uschar>(OP_UPTO + repeat_type);
           PUT2INC(code, 0, repeat_max);
           }
         }
@@ -2992,7 +2997,7 @@ for (;; ptr++)
       /* The case {1,} is handled as the special case + */
 
       else if (repeat_min == 1 && repeat_max == -1)
-        *code++ = OP_PLUS + repeat_type;
+        *code++ = static_cast<uschar>(OP_PLUS + repeat_type);
 
       /* The case {n,n} is just an EXACT, while the general case {n,m} is
       handled as an EXACT followed by an UPTO. An EXACT of 1 is optimized. */
@@ -3001,7 +3006,7 @@ for (;; ptr++)
         {
         if (repeat_min != 1)
           {
-          *code++ = OP_EXACT + op_type;  /* NB EXACT doesn't have repeat_type */
+          *code++ = static_cast<uschar>(OP_EXACT + op_type);  /* NB EXACT doesn't have repeat_type */
           PUT2INC(code, 0, repeat_min);
           }
 
@@ -3034,8 +3039,8 @@ for (;; ptr++)
 
         if (repeat_max < 0)
           {
-          *code++ = c;
-          *code++ = OP_STAR + repeat_type;
+          *code++ = static_cast<uschar>(c);
+          *code++ = static_cast<uschar>(OP_STAR + repeat_type);
           }
 
         /* Else insert an UPTO if the max is greater than the min, again
@@ -3043,9 +3048,9 @@ for (;; ptr++)
 
         else if (repeat_max != repeat_min)
           {
-          *code++ = c;
+          *code++ = static_cast<uschar>(c);
           repeat_max -= repeat_min;
-          *code++ = OP_UPTO + repeat_type;
+          *code++ = static_cast<uschar>(OP_UPTO + repeat_type);
           PUT2INC(code, 0, repeat_max);
           }
         }
@@ -3053,7 +3058,7 @@ for (;; ptr++)
       /* The character or character type itself comes last in all cases. */
 
 
-      *code++ = c;
+      *code++ = static_cast<uschar>(c);
       }
 
     /* If previous was a character class or a back reference, we put the repeat
@@ -3069,14 +3074,14 @@ for (;; ptr++)
         goto END_REPEAT;
         }
       if (repeat_min == 0 && repeat_max == -1)
-        *code++ = OP_CRSTAR + repeat_type;
+        *code++ = static_cast<uschar>(OP_CRSTAR + repeat_type);
       else if (repeat_min == 1 && repeat_max == -1)
-        *code++ = OP_CRPLUS + repeat_type;
+        *code++ = static_cast<uschar>(OP_CRPLUS + repeat_type);
       else if (repeat_min == 0 && repeat_max == 1)
-        *code++ = OP_CRQUERY + repeat_type;
+        *code++ = static_cast<uschar>(OP_CRQUERY + repeat_type);
       else
         {
-        *code++ = OP_CRRANGE + repeat_type;
+        *code++ = static_cast<uschar>(OP_CRRANGE + repeat_type);
         PUT2INC(code, 0, repeat_min);
         if (repeat_max == -1) repeat_max = 0;  /* 2-byte encoding for max */
         PUT2INC(code, 0, repeat_max);
@@ -3137,7 +3142,7 @@ for (;; ptr++)
           adjust_recurse(previous, 1, utf8, cd);
           memmove(previous+1, previous, len);
           code++;
-          *previous++ = OP_BRAZERO + repeat_type;
+          *previous++ = static_cast<uschar>(OP_BRAZERO + repeat_type);
           }
 
         /* If the maximum is greater than 1 and limited, we have to replicate
@@ -3155,7 +3160,7 @@ for (;; ptr++)
           adjust_recurse(previous, 2 + LINK_SIZE, utf8, cd);
           memmove(previous + 2 + LINK_SIZE, previous, len);
           code += 2 + LINK_SIZE;
-          *previous++ = OP_BRAZERO + repeat_type;
+          *previous++ = static_cast<uschar>(OP_BRAZERO + repeat_type);
           *previous++ = OP_BRA;
 
           /* We chain together the bracket offset fields that have to be
@@ -3198,7 +3203,7 @@ for (;; ptr++)
         {
         for (i = repeat_max - 1; i >= 0; i--)
           {
-          *code++ = OP_BRAZERO + repeat_type;
+          *code++ = static_cast<uschar>(OP_BRAZERO + repeat_type);
 
           /* All but the final copy start a new nesting, maintaining the
           chain of brackets outstanding. */
@@ -3237,7 +3242,7 @@ for (;; ptr++)
       don't know if there's been an options resetting after the ket. The
       correct offset was computed above. */
 
-      else code[-ketoffset] = OP_KETRMAX + repeat_type;
+      else code[-ketoffset] = static_cast<uschar>(OP_KETRMAX + repeat_type);
       }
 
     /* Else there's some kind of shambles */
@@ -3381,7 +3386,7 @@ for (;; ptr++)
             *errorptr = ERR38;
             goto FAILED;
             }
-          *code++ = n;
+          *code++ = static_cast<uschar>(n);
           }
         previous = NULL;
         continue;
@@ -3555,7 +3560,7 @@ for (;; ptr++)
           if ((options & PCRE_IMS) != (newoptions & PCRE_IMS))
             {
             *code++ = OP_OPT;
-            *code++ = newoptions & PCRE_IMS;
+            *code++ = static_cast<uschar>(newoptions & PCRE_IMS);
             }
 
           /* Change options at this level, and pass them back for use
@@ -3612,7 +3617,7 @@ for (;; ptr++)
     new setting for the ims options if they have changed. */
 
     previous = (bravalue >= OP_ONCE)? code : NULL;
-    *code = bravalue;
+    *code = static_cast<uschar>(bravalue);
     tempcode = code;
     tempreqvary = cd->req_varyopt;     /* Save value before bracket */
 
@@ -3775,7 +3780,7 @@ for (;; ptr++)
       else
         {
         previous = (-c > ESC_b && -c < ESC_Z)? code : NULL;
-        *code++ = -c;
+        *code++ = static_cast<uschar>(-c);
         }
       continue;
       }
@@ -3809,7 +3814,7 @@ for (;; ptr++)
           }
         else
           {
-          *code++ = c;
+          *code++ = static_cast<uschar>(c);
           length++;
           }
         continue;
@@ -3847,7 +3852,7 @@ for (;; ptr++)
 
       /* Ordinary character or single-char escape */
 
-      *code++ = c;
+      *code++ = static_cast<uschar>(c);
       length++;
       }
 
@@ -3898,7 +3903,7 @@ for (;; ptr++)
 
     /* Set the length in the data vector, and advance to the next state. */
 
-    previous[1] = length;
+    previous[1] = static_cast<uschar>(length);
     if (length < MAXLIT) ptr--;
     break;
     }
@@ -3978,7 +3983,7 @@ for (;!MuxAlarm.bAlarmed;)
   if ((options & PCRE_IMS) != oldims)
     {
     *code++ = OP_OPT;
-    *code++ = options & PCRE_IMS;
+    *code++ = static_cast<uschar>(options & PCRE_IMS);
     }
 
   /* Set up dummy OP_REVERSE if lookbehind assertion */
@@ -4089,7 +4094,7 @@ for (;!MuxAlarm.bAlarmed;)
     if ((options & PCRE_IMS) != oldims && *ptr == ')')
       {
       *code++ = OP_OPT;
-      *code++ = oldims;
+      *code++ = static_cast<uschar>(oldims);
       }
 
     /* Set values to pass back */
@@ -5019,7 +5024,7 @@ while ((c = *(++ptr)) != 0)
       goto PCRE_ERROR_RETURN;
       }
 
-    bralenstack[brastackptr] = branch_extra;
+    bralenstack[brastackptr] = static_cast<uschar>(branch_extra);
     branch_extra = branch_newextra;
 
     brastack[brastackptr++] = length;
@@ -5200,8 +5205,8 @@ re->magic_number = MAGIC_NUMBER;
 re->size = size;
 re->options = options;
 re->tables = tables;
-re->name_entry_size = max_name_size + 3;
-re->name_count = name_count;
+re->name_entry_size = static_cast<unsigned short>(max_name_size + 3);
+re->name_count = static_cast<unsigned short>(name_count);
 
 /* The starting points of the name/number translation table and of the code are
 passed around in the compile data block. */
@@ -5223,8 +5228,8 @@ code = (uschar *)codestart;
 bracount = 0;
 (void)compile_regex(options, options & PCRE_IMS, &bracount, &code, &ptr,
   errorptr, false, 0, &firstbyte, &reqbyte, NULL, &compile_block);
-re->top_bracket = bracount;
-re->top_backref = compile_block.top_backref;
+re->top_bracket = static_cast<unsigned short>(bracount);
+re->top_backref = static_cast<unsigned short>(compile_block.top_backref);
 
 /* If not reached end of pattern on success, there's an excess bracket. */
 
@@ -5274,8 +5279,8 @@ if ((options & PCRE_ANCHORED) == 0)
     if (firstbyte >= 0)   /* Remove caseless flag for non-caseable chars */
       {
       int ch = firstbyte & 255;
-      re->first_byte = ((firstbyte & REQ_CASELESS) != 0 &&
-         compile_block.fcc[ch] == ch)? ch : firstbyte;
+      re->first_byte = static_cast<unsigned short>(((firstbyte & REQ_CASELESS) != 0 &&
+         compile_block.fcc[ch] == ch)? ch : firstbyte);
       re->options |= PCRE_FIRSTSET;
       }
     else if (is_startline(codestart, 0, compile_block.backref_map))
@@ -5291,8 +5296,8 @@ if (reqbyte >= 0 &&
      ((re->options & PCRE_ANCHORED) == 0 || (reqbyte & REQ_VARY) != 0))
   {
   int ch = reqbyte & 255;
-  re->req_byte = ((reqbyte & REQ_CASELESS) != 0 &&
-    compile_block.fcc[ch] == ch)? (reqbyte & ~REQ_CASELESS) : reqbyte;
+  re->req_byte = static_cast<unsigned short>(((reqbyte & REQ_CASELESS) != 0 &&
+    compile_block.fcc[ch] == ch)? (reqbyte & ~REQ_CASELESS) : reqbyte);
   re->options |= PCRE_REQCHSET;
   }
 

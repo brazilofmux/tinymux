@@ -1,13 +1,13 @@
 // stringutil.h -- string utilities.
 //
-// $Id: stringutil.h,v 1.44 2006-01-08 10:12:00 sdennis Exp $
+// $Id: stringutil.h,v 1.45 2006-01-10 03:31:40 sdennis Exp $
 //
 #ifndef STRINGUTIL_H
 #define STRINGUTIL_H
 
 extern const bool mux_isprint[256];
 extern const bool mux_isdigit[256];
-extern const bool mux_ishex[256];
+extern const bool mux_isxdigit[256];
 extern const bool mux_isalpha[256];
 extern const bool mux_isalnum[256];
 extern const bool mux_islower[256];
@@ -26,7 +26,7 @@ extern const unsigned char mux_StripAccents[256];
 
 #define mux_isprint(x) (mux_isprint[(unsigned char)(x)])
 #define mux_isdigit(x) (mux_isdigit[(unsigned char)(x)])
-#define mux_ishex(x)   (mux_ishex[(unsigned char)(x)])
+#define mux_isxdigit(x)(mux_isxdigit[(unsigned char)(x)])
 #define mux_isalpha(x) (mux_isalpha[(unsigned char)(x)])
 #define mux_isalnum(x) (mux_isalnum[(unsigned char)(x)])
 #define mux_islower(x) (mux_islower[(unsigned char)(x)])

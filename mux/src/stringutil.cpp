@@ -1,6 +1,6 @@
 // stringutil.cpp -- string utilities.
 //
-// $Id: stringutil.cpp,v 1.76 2006-01-09 01:38:32 sdennis Exp $
+// $Id: stringutil.cpp,v 1.77 2006-01-10 03:31:40 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -56,7 +56,7 @@ const bool mux_isdigit[256] =
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0   // F
 };
 
-const bool mux_ishex[256] =
+const bool mux_isxdigit[256] =
 {
 //  0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F
 //
