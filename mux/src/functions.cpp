@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.169 2006-01-10 00:07:32 sdennis Exp $
+// $Id: functions.cpp,v 1.170 2006-01-10 00:13:04 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -6251,6 +6251,12 @@ static int DCL_CDECL i64_comp(const void *s1, const void *s2)
 
 static void do_asort(char *s[], int n, int sort_type)
 {
+    if (  n < 0
+       || LBUF_SIZE <= n)
+    {
+        return;
+    }
+
     int i;
     f_rec *fp;
     i_rec *ip;
