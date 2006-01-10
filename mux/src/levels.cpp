@@ -44,7 +44,7 @@ RLEVEL RxLevel(dbref thing)
 
     int i;
     RLEVEL rx = 0;
-    for (i = 0; mux_ishex(buff[i]); i++)
+    for (i = 0; mux_isxdigit(buff[i]); i++)
     {
         rx = 16 * rx + mux_hex2dec(buff[i]);
     }
@@ -90,7 +90,7 @@ RLEVEL TxLevel(dbref thing)
 
         // Decode second field.
         //
-        for ( ; mux_ishex(buff[i]); i++)
+        for ( ; mux_isxdigit(buff[i]); i++)
         {
             tx = 16 * tx + mux_hex2dec(buff[i]);
         }
