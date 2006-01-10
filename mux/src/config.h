@@ -1,6 +1,6 @@
 // config.h
 //
-// $Id: config.h,v 1.14 2006-01-07 22:56:14 sdennis Exp $
+// $Id: config.h,v 1.15 2006-01-10 06:50:57 sdennis Exp $
 //
 
 #ifndef CONFIG_H
@@ -78,6 +78,20 @@ typedef unsigned __int64 UINT64;
 #define INT64_MAX_VALUE  9223372036854775807i64
 #define INT64_MIN_VALUE  (-9223372036854775807i64 - 1)
 #define UINT64_MAX_VALUE 0xffffffffffffffffui64
+
+#if (_MSC_VER >= 1400)
+// 1400 is Visual C++ 2005
+#define TIME_T_MAX_VALUE 32535215999ui64
+#elif (_MSC_VER >= 1310)
+// 1310 is Visual C++ .NET 2003
+//#define TIME_T_MAX_VALUE 0x100000000000i64
+#elif (_MSC_VER >= 1300)
+// 1300 is Visual C++ .NET 2002
+#elif (_MSC_VER >= 1200)
+// 1200 is Visual C++ 6.0
+#elif
+#error TinyMUX Requires at least version 6.0 of Visual C++.
+#endif
 
 #define SIZEOF_PATHNAME (_MAX_PATH + 1)
 #define SOCKET_WRITE(s,b,n,f) send(s,b,n,f)
