@@ -1,6 +1,6 @@
 // svdhash.cpp -- CHashPage, CHashFile, CHashTable modules.
 //
-// $Id: svdhash.cpp,v 1.48 2006-01-09 06:18:39 sdennis Exp $
+// $Id: svdhash.cpp,v 1.49 2006-01-10 07:26:43 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -1122,12 +1122,12 @@ bool CHashPage::WritePage(HANDLE hFile, HF_FILEOFFSET oWhere)
 #ifdef HAVE_PWRITE
         int cc = pwrite(hFile, m_pPage, m_nPageSize, oWhere);
 #else
-        if (lseek(hFile, oWhere, SEEK_SET) == (off_t)-1)
+        if (mux_lseek(hFile, oWhere, SEEK_SET) == (off_t)-1)
         {
             Log.tinyprintf("CHashPage::Write - lseek error %u." ENDLINE, errno);
             continue;
         }
-        int cc = write(hFile, m_pPage, m_nPageSize);
+        int cc = mux_write(hFile, m_pPage, m_nPageSize);
 #endif // HAVE_PWRITE
         if ((int)m_nPageSize != cc)
         {
@@ -1162,12 +1162,12 @@ bool CHashPage::ReadPage(HANDLE hFile, HF_FILEOFFSET oWhere)
 #ifdef HAVE_PREAD
         int cc = pread(hFile, m_pPage, m_nPageSize, oWhere);
 #else
-        if (lseek(hFile, oWhere, SEEK_SET) == (off_t)-1)
+        if (mux_lseek(hFile, oWhere, SEEK_SET) == (off_t)-1)
         {
             Log.tinyprintf("CHashPage::Read - lseek error %u." ENDLINE, errno);
             continue;
         }
-        int cc = read(hFile, m_pPage, m_nPageSize);
+        int cc = mux_read(hFile, m_pPage, m_nPageSize);
 #endif // HAVE_PREAD
         if ((int)m_nPageSize != cc)
         {
@@ -1334,8 +1334,8 @@ void CHashFile::WriteDirectory(void)
 #ifdef HAVE_PWRITE
     pwrite(m_hDirFile, m_pDir, sizeof(HF_FILEOFFSET)*m_nDir, 0);
 #else
-    lseek(m_hDirFile, 0, SEEK_SET);
-    write(m_hDirFile, m_pDir, sizeof(HF_FILEOFFSET)*m_nDir);
+    mux_lseek(m_hDirFile, 0, SEEK_SET);
+    mux_write(m_hDirFile, m_pDir, sizeof(HF_FILEOFFSET)*m_nDir);
 #endif // HAVE_PWRITE
     //SetEndOfFile(m_hDirFile);
 #ifdef DO_COMMIT
@@ -1391,7 +1391,7 @@ bool CHashFile::CreateFileSet(const char *szDirFile, const char *szPageFile)
         FILE_SHARE_READ, 0, CREATE_ALWAYS,
         FILE_ATTRIBUTE_NORMAL + FILE_FLAG_RANDOM_ACCESS, NULL);
 #else // WIN32
-    m_hPageFile = open(szPageFile, O_RDWR|O_BINARY|O_CREAT|O_TRUNC, 0600);
+    m_hPageFile = mux_open(szPageFile, O_RDWR|O_BINARY|O_CREAT|O_TRUNC, 0600);
 #endif // WIN32
 
     if (m_hPageFile == INVALID_HANDLE_VALUE)
@@ -1404,7 +1404,7 @@ bool CHashFile::CreateFileSet(const char *szDirFile, const char *szPageFile)
         FILE_SHARE_READ, 0, CREATE_ALWAYS,
         FILE_ATTRIBUTE_NORMAL + FILE_FLAG_SEQUENTIAL_SCAN, NULL);
 #else // WIN32
-    m_hDirFile = open(szDirFile, O_RDWR|O_BINARY|O_CREAT|O_TRUNC, 0600);
+    m_hDirFile = mux_open(szDirFile, O_RDWR|O_BINARY|O_CREAT|O_TRUNC, 0600);
 #endif // WIN32
 
     if (m_hPageFile == INVALID_HANDLE_VALUE)
@@ -1513,7 +1513,7 @@ bool CHashFile::ReadDirectory(void)
 #ifdef WIN32
     UINT32 cc = SetFilePointer(m_hDirFile, 0, 0, FILE_END);
 #else // WIN32
-    UINT32 cc = lseek(m_hDirFile, 0, SEEK_END);
+    UINT32 cc = mux_lseek(m_hDirFile, 0, SEEK_END);
 #endif // WIN32
     if (cc == 0xFFFFFFFFUL)
     {
@@ -1530,8 +1530,8 @@ bool CHashFile::ReadDirectory(void)
 #ifdef HAVE_PREAD
     pread(m_hDirFile, m_pDir, sizeof(HF_FILEOFFSET)*m_nDir, 0);
 #else
-    lseek(m_hDirFile, 0, SEEK_SET);
-    read(m_hDirFile, m_pDir, sizeof(HF_FILEOFFSET)*m_nDir);
+    mux_lseek(m_hDirFile, 0, SEEK_SET);
+    mux_read(m_hDirFile, m_pDir, sizeof(HF_FILEOFFSET)*m_nDir);
 #endif // HAVE_PREAD
 #endif // WIN32
     return true;
@@ -1575,7 +1575,7 @@ int CHashFile::Open(const char *szDirFile, const char *szPageFile, int nCachePag
         FILE_SHARE_READ, 0, OPEN_EXISTING,
         FILE_ATTRIBUTE_NORMAL + FILE_FLAG_RANDOM_ACCESS, NULL);
 #else // WIN32
-    m_hPageFile = open(szPageFile, O_RDWR|O_BINARY);
+    m_hPageFile = mux_open(szPageFile, O_RDWR|O_BINARY);
 #endif // WIN32
     if (m_hPageFile == INVALID_HANDLE_VALUE)
     {
@@ -1597,7 +1597,7 @@ int CHashFile::Open(const char *szDirFile, const char *szPageFile, int nCachePag
 #ifdef WIN32
     oEndOfFile = SetFilePointer(m_hPageFile, 0, 0, FILE_END);
 #else // WIN32
-    oEndOfFile = lseek(m_hPageFile, 0, SEEK_END);
+    oEndOfFile = mux_lseek(m_hPageFile, 0, SEEK_END);
 #endif // WIN32
     if (oEndOfFile == 0xFFFFFFFFUL)
     {
@@ -1633,7 +1633,7 @@ int CHashFile::Open(const char *szDirFile, const char *szPageFile, int nCachePag
         FILE_SHARE_READ, 0, OPEN_EXISTING,
         FILE_ATTRIBUTE_NORMAL + FILE_FLAG_SEQUENTIAL_SCAN, NULL);
 #else // WIN32
-    m_hDirFile = open(szDirFile, O_RDWR|O_BINARY);
+    m_hDirFile = mux_open(szDirFile, O_RDWR|O_BINARY);
 #endif // WIN32
     if (m_hDirFile == INVALID_HANDLE_VALUE)
     {
@@ -1644,7 +1644,7 @@ int CHashFile::Open(const char *szDirFile, const char *szPageFile, int nCachePag
             FILE_SHARE_READ, 0, CREATE_ALWAYS,
             FILE_ATTRIBUTE_NORMAL + FILE_FLAG_SEQUENTIAL_SCAN, NULL);
 #else // WIN32
-        m_hDirFile = open(szDirFile, O_RDWR|O_BINARY|O_CREAT|O_TRUNC, 0600);
+        m_hDirFile = mux_open(szDirFile, O_RDWR|O_BINARY|O_CREAT|O_TRUNC, 0600);
 #endif // WIN32
 
         if (m_hPageFile == INVALID_HANDLE_VALUE)
@@ -1732,7 +1732,7 @@ void CHashFile::CloseAll(void)
 #ifdef WIN32
         CloseHandle(m_hPageFile);
 #else // WIN32
-        close(m_hPageFile);
+        mux_close(m_hPageFile);
 #endif // WIN32
     }
     if (m_hDirFile != INVALID_HANDLE_VALUE)
@@ -1740,7 +1740,7 @@ void CHashFile::CloseAll(void)
 #ifdef WIN32
         CloseHandle(m_hDirFile);
 #else // WIN32
-        close(m_hDirFile);
+        mux_close(m_hDirFile);
 #endif // WIN32
     }
     Init();
@@ -1924,8 +1924,8 @@ bool CHashFile::Insert(HP_HEAPLENGTH nRecord, UINT32 nHash, void *pRecord)
 #ifdef HAVE_PWRITE
         pwrite(m_hDirFile, m_pDir, sizeof(HF_FILEOFFSET)*m_nDir, 0);
 #else
-        lseek(m_hDirFile, 0, SEEK_SET);
-        write(m_hDirFile, m_pDir, sizeof(HF_FILEOFFSET)*m_nDir);
+        mux_lseek(m_hDirFile, 0, SEEK_SET);
+        mux_write(m_hDirFile, m_pDir, sizeof(HF_FILEOFFSET)*m_nDir);
 #endif // HAVE_PWRITE
 #endif // WIN32
 
@@ -2673,7 +2673,7 @@ void CLogFile::CreateLogFile(void)
         FILE_SHARE_READ, 0, CREATE_ALWAYS,
         FILE_ATTRIBUTE_NORMAL + FILE_FLAG_SEQUENTIAL_SCAN, NULL);
 #else // WIN32
-    m_hFile = open(m_szFilename, O_RDWR|O_BINARY|O_CREAT|O_TRUNC, 0600);
+    m_hFile = mux_open(m_szFilename, O_RDWR|O_BINARY|O_CREAT|O_TRUNC, 0600);
 #endif // WIN32
 }
 
@@ -2686,7 +2686,7 @@ void CLogFile::AppendLogFile(void)
         FILE_SHARE_READ, 0, OPEN_ALWAYS,
         FILE_ATTRIBUTE_NORMAL + FILE_FLAG_SEQUENTIAL_SCAN, NULL);
 #else // WIN32
-    m_hFile = open(m_szFilename, O_RDWR|O_BINARY, 0600);
+    m_hFile = mux_open(m_szFilename, O_RDWR|O_BINARY, 0600);
 #endif // WIN32
 
     if (m_hFile != INVALID_HANDLE_VALUE)
@@ -2694,7 +2694,7 @@ void CLogFile::AppendLogFile(void)
 #ifdef WIN32
         SetFilePointer(m_hFile, 0, 0, FILE_END);
 #else // WIN32
-        lseek(m_hFile, 0, SEEK_SET);
+        mux_lseek(m_hFile, 0, SEEK_SET);
 #endif // WIN32
     }
 }
@@ -2706,7 +2706,7 @@ void CLogFile::CloseLogFile(void)
 #ifdef WIN32
         CloseHandle(m_hFile);
 #else // WIN32
-        close(m_hFile);
+        mux_close(m_hFile);
 #endif // WIN32
         m_hFile = INVALID_HANDLE_VALUE;
     }
@@ -2732,7 +2732,7 @@ void CLogFile::Flush(void)
         unsigned long nWritten;
         WriteFile(m_hFile, m_aBuffer, (DWORD)m_nBuffer, &nWritten, NULL);
 #else // WIN32
-        write(m_hFile, m_aBuffer, m_nBuffer);
+        mux_write(m_hFile, m_aBuffer, m_nBuffer);
 #endif // WIN32
 
         if (m_nSize > FILE_SIZE_TRIGGER)

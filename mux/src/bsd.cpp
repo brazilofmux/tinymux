@@ -2,7 +2,7 @@
  * File for most TCP socket-related code. Some socket-related code also exists
  * in netcommon.cpp, but most of it is here.
  *
- * $Id: bsd.cpp,v 1.84 2006-01-08 10:24:08 sdennis Exp $
+ * $Id: bsd.cpp,v 1.85 2006-01-10 07:26:43 sdennis Exp $
  */
 
 #include "copyright.h"
@@ -467,7 +467,7 @@ void CleanUpSlaveSocket(void)
     if (!IS_INVALID_SOCKET(slave_socket))
     {
         shutdown(slave_socket, SD_BOTH);
-        if (close(slave_socket) == 0)
+        if (mux_close(slave_socket) == 0)
         {
             DebugTotalSockets--;
         }
@@ -491,7 +491,7 @@ void CleanUpSQLSlaveSocket(void)
     if (!IS_INVALID_SOCKET(sqlslave_socket))
     {
         shutdown(sqlslave_socket, SD_BOTH);
-        if (close(sqlslave_socket) == 0)
+        if (mux_close(sqlslave_socket) == 0)
         {
             DebugTotalSockets--;
         }
@@ -548,8 +548,8 @@ void boot_sqlslave(dbref executor, dbref caller, dbref enactor, int)
     if (make_nonblocking(sv[0]) < 0)
     {
         pFailedFunc = "make_nonblocking() error: ";
-        close(sv[0]);
-        close(sv[1]);
+        mux_close(sv[0]);
+        mux_close(sv[1]);
         goto failure;
     }
 
@@ -559,8 +559,8 @@ void boot_sqlslave(dbref executor, dbref caller, dbref enactor, int)
     case -1:
 
         pFailedFunc = "fork() error: ";
-        close(sv[0]);
-        close(sv[1]);
+        mux_close(sv[0]);
+        mux_close(sv[1]);
         goto failure;
 
     case 0:
@@ -577,10 +577,10 @@ void boot_sqlslave(dbref executor, dbref caller, dbref enactor, int)
         // would handle the job by itself more directly, but a little
         // extra code is low-cost insurance.
         //
-        close(sv[0]);
+        mux_close(sv[0]);
         if (sv[1] != 0)
         {
-            close(0);
+            mux_close(0);
             if (dup2(sv[1], 0) == -1)
             {
                 _exit(1);
@@ -588,7 +588,7 @@ void boot_sqlslave(dbref executor, dbref caller, dbref enactor, int)
         }
         if (sv[1] != 1)
         {
-            close(1);
+            mux_close(1);
             if (dup2(sv[1], 1) == -1)
             {
                 _exit(1);
@@ -596,12 +596,12 @@ void boot_sqlslave(dbref executor, dbref caller, dbref enactor, int)
         }
         for (i = 3; i < maxfds; i++)
         {
-            close(i);
+            mux_close(i);
         }
         execlp("bin/sqlslave", "sqlslave", NULL);
         _exit(1);
     }
-    close(sv[1]);
+    mux_close(sv[1]);
 
     sqlslave_socket = sv[0];
     DebugTotalSockets++;
@@ -621,7 +621,7 @@ void boot_sqlslave(dbref executor, dbref caller, dbref enactor, int)
     log_number(sqlslave_socket);
     ENDLOG;
 
-    write(sqlslave_socket, "PING", 4);
+    mux_write(sqlslave_socket, "PING", 4);
     return;
 
 failure:
@@ -673,8 +673,8 @@ void boot_slave(dbref executor, dbref caller, dbref enactor, int)
     if (make_nonblocking(sv[0]) < 0)
     {
         pFailedFunc = "make_nonblocking() error: ";
-        close(sv[0]);
-        close(sv[1]);
+        mux_close(sv[0]);
+        mux_close(sv[1]);
         goto failure;
     }
     slave_pid = fork();
@@ -683,8 +683,8 @@ void boot_slave(dbref executor, dbref caller, dbref enactor, int)
     case -1:
 
         pFailedFunc = "fork() error: ";
-        close(sv[0]);
-        close(sv[1]);
+        mux_close(sv[0]);
+        mux_close(sv[1]);
         goto failure;
 
     case 0:
@@ -701,10 +701,10 @@ void boot_slave(dbref executor, dbref caller, dbref enactor, int)
         // would handle the job by itself more directly, but a little
         // extra code is low-cost insurance.
         //
-        close(sv[0]);
+        mux_close(sv[0]);
         if (sv[1] != 0)
         {
-            close(0);
+            mux_close(0);
             if (dup2(sv[1], 0) == -1)
             {
                 _exit(1);
@@ -712,7 +712,7 @@ void boot_slave(dbref executor, dbref caller, dbref enactor, int)
         }
         if (sv[1] != 1)
         {
-            close(1);
+            mux_close(1);
             if (dup2(sv[1], 1) == -1)
             {
                 _exit(1);
@@ -720,7 +720,7 @@ void boot_slave(dbref executor, dbref caller, dbref enactor, int)
         }
         for (i = 3; i < maxfds; i++)
         {
-            close(i);
+            mux_close(i);
         }
         execlp("bin/slave", "slave", NULL);
         _exit(1);
@@ -768,7 +768,7 @@ static int get_sqlslave_result(void)
 {
     char buf[LBUF_SIZE];
 
-    int len = read(sqlslave_socket, buf, sizeof(buf)-1);
+    int len = mux_read(sqlslave_socket, buf, sizeof(buf)-1);
     if (len < 0)
     {
         int iSocketError = SOCKET_LAST_ERROR;
@@ -810,7 +810,7 @@ static int get_slave_result(void)
 
     char *buf = alloc_lbuf("slave_buf");
 
-    int len = read(slave_socket, buf, LBUF_SIZE-1);
+    int len = mux_read(slave_socket, buf, LBUF_SIZE-1);
     if (len < 0)
     {
         int iSocketError = SOCKET_LAST_ERROR;
@@ -1789,7 +1789,7 @@ DESC *new_connection(PortInfo *Port, int *piSocketError)
             mux_sprintf(pBuffL1, LBUF_SIZE, "%s\n%s,%d,%d\n", pBuffM2, pBuffM2, usPort,
                 Port->port);
             len = strlen(pBuffL1);
-            if (write(slave_socket, pBuffL1, len) < 0)
+            if (mux_write(slave_socket, pBuffL1, len) < 0)
             {
                 CleanUpSlaveSocket();
                 CleanUpSlaveProcess();

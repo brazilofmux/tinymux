@@ -1,6 +1,6 @@
 // config.h
 //
-// $Id: config.h,v 1.16 2006-01-10 07:08:55 sdennis Exp $
+// $Id: config.h,v 1.17 2006-01-10 07:26:43 sdennis Exp $
 //
 
 #ifndef CONFIG_H
@@ -102,9 +102,16 @@ typedef unsigned __int64 UINT64;
 #define SOCKET_EINTR       (WSAEINTR)
 #define SOCKET_EWOULDBLOCK (WSAEWOULDBLOCK)
 #define SOCKET_EBADF       (WSAEBADF)
-#define popen  _popen
-#define pclose _pclose
-#define mux_tzset  _tzset
+
+#define popen       _popen
+#define pclose      _pclose
+#define mux_tzset   _tzset
+#define mux_getpid  _getpid
+#define mux_open    _open
+#define mux_close   _close
+#define mux_read    _read
+#define mux_write   _write
+#define mux_lseek   _lseek
 
 #else // WIN32
 
@@ -128,9 +135,9 @@ typedef int SOCKET;
 #else // PATH_MAX
 #define SIZEOF_PATHNAME (4095 + 1)
 #endif // PATH_MAX
-#define SOCKET_WRITE(s,b,n,f) write(s,b,n)
-#define SOCKET_READ(s,b,n,f) read(s,b,n)
-#define SOCKET_CLOSE(s) close(s)
+#define SOCKET_WRITE(s,b,n,f) mux_write(s,b,n)
+#define SOCKET_READ(s,b,n,f) mux_read(s,b,n)
+#define SOCKET_CLOSE(s) mux_close(s)
 #define IS_SOCKET_ERROR(cc) ((cc) < 0)
 #define IS_INVALID_SOCKET(s) ((s) < 0)
 #define SOCKET_LAST_ERROR (errno)
@@ -143,8 +150,13 @@ typedef int SOCKET;
 #define INVALID_SOCKET (-1)
 #define SD_BOTH (2)
 
-#define mux_tzset  tzset
-
+#define mux_tzset   tzset
+#define mux_getpid  getpid
+#define mux_open    open
+#define mux_close   close
+#define mux_read    read
+#define mux_write   write
+#define mux_lseek   lseek
 
 #endif // WIN32
 

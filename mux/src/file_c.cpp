@@ -1,6 +1,6 @@
 // file_c.cpp -- File cache management.
 //
-// $Id: file_c.cpp,v 1.9 2006-01-08 16:59:57 sdennis Exp $
+// $Id: file_c.cpp,v 1.10 2006-01-10 07:26:43 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -117,7 +117,7 @@ static int fcache_read(FBLOCK **cp, char *filename)
 
     // Read the text file into a new chain.
     //
-    if ((fd = open(filename, O_RDONLY|O_BINARY)) == -1)
+    if ((fd = mux_open(filename, O_RDONLY|O_BINARY)) == -1)
     {
         // Failure: log the event
         //
@@ -142,7 +142,7 @@ static int fcache_read(FBLOCK **cp, char *filename)
 
     // Process the file, one lbuf at a time.
     //
-    nmax = read(fd, buff, LBUF_SIZE);
+    nmax = mux_read(fd, buff, LBUF_SIZE);
     while (nmax > 0)
     {
         for (n = 0; n < nmax; n++)
@@ -161,10 +161,10 @@ static int fcache_read(FBLOCK **cp, char *filename)
                 tchars++;
             }
         }
-        nmax = read(fd, buff, LBUF_SIZE);
+        nmax = mux_read(fd, buff, LBUF_SIZE);
     }
     free_lbuf(buff);
-    if (close(fd) == 0)
+    if (mux_close(fd) == 0)
     {
         DebugTotalFiles--;
     }

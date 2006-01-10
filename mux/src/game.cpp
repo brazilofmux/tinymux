@@ -1,6 +1,6 @@
 // game.cpp
 //
-// $Id: game.cpp,v 1.93 2006-01-08 17:06:24 sdennis Exp $
+// $Id: game.cpp,v 1.94 2006-01-10 07:26:43 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -1197,13 +1197,13 @@ void do_shutdown
     log_text(message);
     ENDLOG;
 
-    int fd = open(mudconf.status_file, O_RDWR | O_CREAT | O_TRUNC | O_BINARY, 0600);
+    int fd = mux_open(mudconf.status_file, O_RDWR | O_CREAT | O_TRUNC | O_BINARY, 0600);
     if (fd != -1)
     {
-        write(fd, message, strlen(message));
-        write(fd, ENDLINE, sizeof(ENDLINE)-1);
+        mux_write(fd, message, strlen(message));
+        mux_write(fd, ENDLINE, sizeof(ENDLINE)-1);
         DebugTotalFiles++;
-        if (close(fd) == 0)
+        if (mux_close(fd) == 0)
         {
             DebugTotalFiles--;
         }
@@ -2875,7 +2875,7 @@ int DCL_CDECL main(int argc, char *argv[])
 
     Log.SetBasename(pErrorBasename);
     Log.StartLogging();
-    game_pid = getpid();
+    game_pid = mux_getpid();
     write_pidfile(mudconf.pid_file);
 
     BuildSignalNamesTable();

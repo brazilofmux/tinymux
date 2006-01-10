@@ -1,6 +1,6 @@
 // svdrand.cpp -- Random Numbers.
 //
-// $Id: svdrand.cpp,v 1.9 2006-01-07 08:18:14 jake Exp $
+// $Id: svdrand.cpp,v 1.10 2006-01-10 07:26:43 sdennis Exp $
 //
 // Random Numbers from Makoto Matsumoto and Takuji Nishimura.
 //
@@ -50,12 +50,12 @@ void SeedRandomNumberGenerator(void)
     // Try to seed the PRNG from /dev/urandom
     // If it doesn't work, just seed the normal way
     //
-    int fd = open("/dev/urandom", O_RDONLY);
+    int fd = mux_open("/dev/urandom", O_RDONLY);
 
     if (fd >= 0)
     {
-        int len = read(fd, aRandomSystemBytes, sizeof aRandomSystemBytes);
-        close(fd);
+        int len = mux_read(fd, aRandomSystemBytes, sizeof aRandomSystemBytes);
+        mux_close(fd);
         if (len > 0)
         {
             nRandomSystemBytes = len/sizeof(UINT32);
@@ -123,7 +123,7 @@ void SeedRandomNumberGenerator(void)
     CLinearTimeAbsolute lsaNow;
     lsaNow.GetUTC();
     INT64 i64Seed = lsaNow.Return100ns();
-    int pid = getpid();
+    int pid = mux_getpid();
 
     UINT32 nSeed = CRC32_ProcessBuffer(0, &i64Seed, sizeof(INT64));
     nSeed = CRC32_ProcessBuffer(nSeed, &pid, sizeof(pid));
