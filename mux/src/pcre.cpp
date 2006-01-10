@@ -2821,7 +2821,7 @@ for (;; ptr++)
     if (negate_class)
       {
       *code++ = OP_NCLASS;
-      for (c = 0; c < 32; c++) code[c] = ~classa[c];
+      for (c = 0; c < 32; c++) code[c] = static_cast<uschar>(~classa[c]);
       }
     else
       {
