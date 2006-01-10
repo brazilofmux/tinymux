@@ -1,6 +1,6 @@
 // mail.cpp
 //
-// $Id: mail.cpp,v 1.53 2006-01-07 19:47:25 sdennis Exp $
+// $Id: mail.cpp,v 1.54 2006-01-10 00:23:26 sdennis Exp $
 //
 // This code was taken from Kalkin's DarkZone code, which was
 // originally taken from PennMUSH 1.50 p10, and has been heavily modified
@@ -3661,8 +3661,8 @@ static void do_expmail_stop(dbref player, int flags)
     }
     else
     {
-        char *mailmsg = atr_get(player, A_MAILMSG, &aowner, &aflags);
-        if (*mailmsg == '\0')
+        char *pMailMsg = atr_get(player, A_MAILMSG, &aowner, &aflags);
+        if (*pMailMsg == '\0')
         {
             notify(player, "MAIL: The body of this message is empty.  Use - to add to the message.");
         }
@@ -3670,13 +3670,13 @@ static void do_expmail_stop(dbref player, int flags)
         {
             char *mailsub   = atr_get(player, A_MAILSUB, &aowner, &aflags);
             char *mailflags = atr_get(player, A_MAILFLAGS, &aowner, &aflags);
-            mail_to_list(player, tolist, mailsub, mailmsg, flags | mux_atol(mailflags), false);
+            mail_to_list(player, tolist, mailsub, pMailMsg, flags | mux_atol(mailflags), false);
             free_lbuf(mailflags);
             free_lbuf(mailsub);
 
             Flags2(player) &= ~PLAYER_MAILS;
         }
-        free_lbuf(mailmsg);
+        free_lbuf(pMailMsg);
     }
 }
 
@@ -3838,9 +3838,9 @@ static void do_mail_proof(dbref player)
     dbref aowner;
     int aflags;
 
-    char *mailto  = atr_get(player, A_MAILTO, &aowner, &aflags);
-    char *mailmsg = atr_get(player, A_MAILMSG, &aowner, &aflags);
-    char *names   = make_namelist(player, mailto);
+    char *mailto   = atr_get(player, A_MAILTO, &aowner, &aflags);
+    char *pMailMsg = atr_get(player, A_MAILMSG, &aowner, &aflags);
+    char *names    = make_namelist(player, mailto);
 
     int iRealVisibleWidth;
     char szSubjectBuffer[MBUF_SIZE];
@@ -3852,9 +3852,9 @@ static void do_mail_proof(dbref player)
     notify(player, tprintf("From:  %-*s  Subject: %s\nTo: %s",
             PLAYER_NAME_LIMIT - 6, Name(player), szSubjectBuffer, names));
     notify(player, DASH_LINE);
-    notify(player, mailmsg);
+    notify(player, pMailMsg);
     notify(player, DASH_LINE);
-    free_lbuf(mailmsg);
+    free_lbuf(pMailMsg);
     free_lbuf(names);
     free_lbuf(mailto);
 }
