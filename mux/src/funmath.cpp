@@ -1,6 +1,6 @@
 // funmath.cpp -- MUX math function handlers.
 //
-// $Id: funmath.cpp,v 1.9 2006-01-10 01:13:32 sdennis Exp $
+// $Id: funmath.cpp,v 1.10 2006-01-10 18:34:39 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -1394,7 +1394,6 @@ FUNCTION(fun_vmag)
         return;
     }
 
-    char *v1[LBUF_SIZE];
     int n, i;
     double tmp, res = 0.0;
 
@@ -1404,6 +1403,10 @@ FUNCTION(fun_vmag)
     {
         return;
     }
+
+    char **v1 = new char *[LBUF_SIZE];
+    ISOUTOFMEMORY(v1);
+
     n = list2arr(v1, LBUF_SIZE, fargs[0], &sep);
 
     // Calculate the magnitude.
@@ -1426,6 +1429,7 @@ FUNCTION(fun_vmag)
     {
         safe_chr('0', buff, bufc);
     }
+    delete [] v1;
 }
 
 FUNCTION(fun_vunit)
@@ -1436,7 +1440,6 @@ FUNCTION(fun_vunit)
         return;
     }
 
-    char *v1[LBUF_SIZE];
     int n, i;
     double tmp, res = 0.0;
 
@@ -1446,6 +1449,10 @@ FUNCTION(fun_vunit)
     {
         return;
     }
+
+    char **v1 = new char *[LBUF_SIZE];
+    ISOUTOFMEMORY(v1);
+
     n = list2arr(v1, LBUF_SIZE, fargs[0], &sep);
 
     // Calculate the magnitude.
@@ -1460,6 +1467,7 @@ FUNCTION(fun_vunit)
     {
         safe_str("#-1 CAN'T MAKE UNIT VECTOR FROM ZERO-LENGTH VECTOR",
             buff, bufc);
+        delete [] v1;
         return;
     }
     for (i = 0; i < n; i++)
@@ -1475,6 +1483,7 @@ FUNCTION(fun_vunit)
 
         fval(buff, bufc, mux_atof(v1[i]) / result);
     }
+    delete [] v1;
 }
 
 FUNCTION(fun_floor)
