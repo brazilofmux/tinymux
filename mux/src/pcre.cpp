@@ -5319,26 +5319,56 @@ Returns:      true if matched
 */
 
 static bool
-match_ref(int offset, register const uschar *eptr, int length, match_data *md,
-  unsigned long int ims)
+match_ref
+(
+    int offset,
+    register const uschar *eptr,
+    int length,
+    match_data *md,
+    unsigned long int ims
+)
 {
-const uschar *p = md->start_subject + md->offset_vector[offset];
+    const uschar *p = md->start_subject + md->offset_vector[offset];
 
-/* Always fail if not enough characters left */
+    /* Always fail if not enough characters left */
 
-if (length > md->end_subject - eptr) return false;
+    if (length > md->end_subject - eptr)
+    {
+        return false;
+    }
 
-/* Separate the caselesss case for speed */
+    /* Separate the caselesss case for speed */
 
-if ((ims & PCRE_CASELESS) != 0)
-  {
-  while (length-- > 0)
-    if (md->lcc[*p++] != md->lcc[*eptr++]) return false;
-  }
-else
-  { while (length-- > 0) if (*p++ != *eptr++) return false; }
+    if ((ims & PCRE_CASELESS) != 0)
+    {
+        while (length-- > 0)
+        {
+            if (md->lcc[*p] != md->lcc[*eptr])
+            {
+                p++;
+                eptr++;
+                return false;
+            }
+            p++;
+            eptr++;
+        }
+    }
+    else
+    {
+        while (length-- > 0)
+        {
+            if (*p != *eptr)
+            {
+                p++;
+                eptr++;
+                return false;
+            }
+            p++;
+            eptr++;
+        }
+    }
 
-return true;
+    return true;
 }
 
 /***************************************************************************
@@ -6453,23 +6483,45 @@ for (;!MuxAlarm.bAlarmed;)
     /* Match a run of characters */
 
     case OP_CHARS:
-      {
-      register int slen = ecode[1];
-      ecode += 2;
+        {
+            register int slen = ecode[1];
+            ecode += 2;
 
-      if (slen > md->end_subject - eptr) RRETURN(MATCH_NOMATCH);
-      if ((ims & PCRE_CASELESS) != 0)
-        {
-        while (slen-- > 0)
-          if (md->lcc[*ecode++] != md->lcc[*eptr++])
-            RRETURN(MATCH_NOMATCH);
+            if (slen > md->end_subject - eptr)
+            {
+                RRETURN(MATCH_NOMATCH);
+            }
+
+            if ((ims & PCRE_CASELESS) != 0)
+            {
+                while (slen-- > 0)
+                {
+                    if (md->lcc[*ecode] != md->lcc[*eptr])
+                    {
+                        ecode++;
+                        eptr++;
+                        RRETURN(MATCH_NOMATCH);
+                    }
+                    ecode++;
+                    eptr++;
+                }
+            }
+            else
+            {
+                while (slen-- > 0)
+                {
+                    if (*ecode != *eptr)
+                    {
+                        ecode++;
+                        eptr++;
+                        RRETURN(MATCH_NOMATCH);
+                    }
+                    ecode++;
+                    eptr++;
+                }
+            }
         }
-      else
-        {
-        while (slen-- > 0) if (*ecode++ != *eptr++) RRETURN(MATCH_NOMATCH);
-        }
-      }
-    break;
+        break;
 
     /* Match a single character repeatedly; different opcodes share code. */
 
