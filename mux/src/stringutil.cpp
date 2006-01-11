@@ -1,6 +1,6 @@
 // stringutil.cpp -- string utilities.
 //
-// $Id: stringutil.cpp,v 1.85 2006-01-11 16:29:38 sdennis Exp $
+// $Id: stringutil.cpp,v 1.86 2006-01-11 19:56:43 jake Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -3274,7 +3274,7 @@ void BMH_Prepare(BMH_State *bmhs, size_t nPat, const char *pPat)
     {
         return;
     }
-    int k;
+    size_t k;
     for (k = 0; k < 256; k++)
     {
         bmhs->m_d[k] = nPat;
@@ -3338,7 +3338,7 @@ void BMH_PrepareI(BMH_State *bmhs, size_t nPat, const char *pPat)
     {
         return;
     }
-    int k;
+    size_t k;
     for (k = 0; k < 256; k++)
     {
         bmhs->m_d[k] = nPat;
