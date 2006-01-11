@@ -2,7 +2,7 @@
  * File for most TCP socket-related code. Some socket-related code also exists
  * in netcommon.cpp, but most of it is here.
  *
- * $Id: bsd.cpp,v 1.89 2006-01-11 08:15:41 sdennis Exp $
+ * $Id: bsd.cpp,v 1.90 2006-01-11 20:42:19 jake Exp $
  */
 
 #include "copyright.h"
@@ -36,7 +36,7 @@ unsigned int ndescriptors = 0;
 DESC *descriptor_list = NULL;
 
 static void TelnetSetup(DESC *d);
-static void SiteMonSend(int, const char *, DESC *, const char *);
+static void SiteMonSend(SOCKET, const char *, DESC *, const char *);
 static DESC *initializesock(SOCKET, struct sockaddr_in *);
 static DESC *new_connection(PortInfo *Port, int *piError);
 static bool process_input(DESC *);
@@ -4557,7 +4557,7 @@ void ProcessWindowsTCP(DWORD dwTimeout)
             // Log connection.
             //
             STARTLOG(LOG_NET | LOG_LOGIN, "NET", "CONN");
-            const char *lDesc = mux_ltoa_t(d->descriptor);
+            const char *lDesc = mux_i64toa_t(d->descriptor);
             Log.tinyprintf("[%s/%s] Connection opened (remote port %d)",
                 bInvalidSocket ? "UNKNOWN" : lDesc, buff,
                 ntohs(d->address.sin_port));
@@ -4621,7 +4621,7 @@ void ProcessWindowsTCP(DWORD dwTimeout)
 
 #endif // WIN32
 
-void SiteMonSend(int port, const char *address, DESC *d, const char *msg)
+void SiteMonSend(SOCKET port, const char *address, DESC *d, const char *msg)
 {
     // Don't do sitemon for blocked sites.
     //
