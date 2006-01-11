@@ -3551,7 +3551,7 @@ void mux_FPRestore(void)
     fpsetprec(orig_prec);
 }
 
-#elif defined(WIN32)
+#elif defined(WIN32) && !defined(_WIN64)
 
 static unsigned origcw;
 
@@ -3600,7 +3600,9 @@ void mux_FPRestore(void)
 
 #else
 
+#ifndef _WIN64
 #warning "No method of floating-point control was found, using dummy functions"
+#endif
 
 void mux_FPInit(void)
 {
