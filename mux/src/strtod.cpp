@@ -1569,13 +1569,8 @@ ret0:
         dval(rv) = tens[k - 9] * dval(rv) + z;
     }
     bd0 = 0;
-    if (nd <= DBL_DIG
-#ifndef RND_PRODQUOT
-#ifndef Honor_FLT_ROUNDS
-        && Flt_Rounds == 1
-#endif
-#endif
-            )
+#if defined(RND_PROQUOT) || defined(Honor_FLT_ROUNDS) || Flt_Rounds == 1
+    if (nd <= DBL_DIG)
     {
         if (!e)
         {
@@ -1651,6 +1646,7 @@ vax_ovfl_check:
         }
 #endif
     }
+#endif
     e1 += nd - k;
 
 #ifdef IEEE_Arith
@@ -2260,11 +2256,8 @@ drop_down:
             case 3: /* towards -infinity */
                 aadj1 += 0.5;
             }
-#else
-            if (Flt_Rounds == 0)
-            {
-                aadj1 += 0.5;
-            }
+#elif Flt_Rounds == 0
+            aadj1 += 0.5;
 #endif /*Check_FLT_ROUNDS*/
         }
         y = word0(rv) & Exp_mask;
