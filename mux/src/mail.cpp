@@ -1,6 +1,6 @@
 // mail.cpp
 //
-// $Id: mail.cpp,v 1.55 2006-01-11 04:19:53 jake Exp $
+// $Id: mail.cpp,v 1.56 2006-01-11 04:23:35 sdennis Exp $
 //
 // This code was taken from Kalkin's DarkZone code, which was
 // originally taken from PennMUSH 1.50 p10, and has been heavily modified
@@ -150,11 +150,6 @@ static const char *MessageFetch(int number)
 //
 static int MessageAdd(char *pMessage)
 {
-    if (!mail_list)
-    {
-        mail_db_grow(1);
-    }
-
     int i;
     MAILBODY *pm;
     bool bFound = false;
