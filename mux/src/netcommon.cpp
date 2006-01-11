@@ -1,6 +1,6 @@
 // netcommon.cpp
 //
-// $Id: netcommon.cpp,v 1.70 2006-01-11 21:25:52 sdennis Exp $
+// $Id: netcommon.cpp,v 1.71 2006-01-11 21:30:11 sdennis Exp $
 //
 // This file contains routines used by the networking code that do not
 // depend on the implementation of the networking code.  The network-specific
@@ -616,7 +616,7 @@ static void set_userstring(char **userstring, const char *command)
     }
 }
 
-static void parse_connect(const char *msg, char *command, char *user, char *pass)
+static void parse_connect(const char *msg, char command[LBUF_SIZE], char *user, char *pass)
 {
     if (strlen(msg) > MBUF_SIZE)
     {
@@ -633,7 +633,7 @@ static void parse_connect(const char *msg, char *command, char *user, char *pass
     while (  *msg
           && !mux_isspace(*msg))
     {
-        *p++ = *msg++;
+        safe_copy_chr(*msg, command, &p, sizeof(command)-1);
     }
     *p = '\0';
     while (mux_isspace(*msg))
