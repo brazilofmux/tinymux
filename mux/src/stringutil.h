@@ -1,6 +1,6 @@
 // stringutil.h -- string utilities.
 //
-// $Id: stringutil.h,v 1.49 2006-01-11 08:15:42 sdennis Exp $
+// $Id: stringutil.h,v 1.50 2006-01-11 08:38:31 sdennis Exp $
 //
 #ifndef STRINGUTIL_H
 #define STRINGUTIL_H
@@ -106,7 +106,7 @@ struct ANSI_Out_Context
     size_t          m_n;
     size_t          m_nMax;
     size_t          m_vw;
-    int             m_vwMax;
+    size_t          m_vwMax;
 };
 
 #define ANSI_ENDGOAL_NORMAL  0
