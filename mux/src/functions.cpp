@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.174 2006-01-11 08:15:42 sdennis Exp $
+// $Id: functions.cpp,v 1.175 2006-01-11 08:29:03 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -1466,8 +1466,8 @@ static FUNCTION(fun_mid)
     // Initial checks for iPosition0 [0,LBUF_SIZE), nLength [0,LBUF_SIZE),
     // and iPosition1 [0,LBUF_SIZE).
     //
-    int iPosition0 = mux_atol(fargs[1]);
-    int nLength = mux_atol(fargs[2]);
+    size_t iPosition0 = mux_atol(fargs[1]);
+    size_t nLength    = mux_atol(fargs[2]);
     if (nLength < 0)
     {
         iPosition0 += nLength;
@@ -4333,9 +4333,9 @@ static void ANSI_TransformTextWithTable
     char *pString,
     const unsigned char xfrmTable[256])
 {
-    int   nString = strlen(pString);
-    char *pBuffer = *bufc;
-    int   nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
+    size_t nString = strlen(pString);
+    char  *pBuffer = *bufc;
+    size_t nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
     while (nString)
     {
         size_t nTokenLength0;
@@ -4346,7 +4346,7 @@ static void ANSI_TransformTextWithTable
         {
             // Determine how much to move.
             //
-            int nMove = nTokenLength0;
+            size_t nMove = nTokenLength0;
             if (nMove > nBufferAvailable)
             {
                 nMove = nBufferAvailable;
@@ -6683,7 +6683,7 @@ static void centerjustcombo
     {
         return;
     }
-    int width = mux_atol(fargs[1]);
+    size_t width = mux_atol(fargs[1]);
     if (width <= 0 || LBUF_SIZE <= width)
     {
         safe_range(buff, bufc);
@@ -6715,7 +6715,7 @@ static void centerjustcombo
 
     size_t vwStr;
     char aStr[LBUF_SIZE];
-    int nStr = ANSI_TruncateToField(fargs[0], sizeof(aStr), aStr,
+    size_t nStr = ANSI_TruncateToField(fargs[0], sizeof(aStr), aStr,
         width, &vwStr, ANSI_ENDGOAL_NORMAL);
 
     // If the visual width of the text fits exactly into the field,
@@ -7465,7 +7465,7 @@ static FUNCTION(fun_wrap)
     char *tstr = alloc_lbuf("fun_mywrap.str2");
     mux_strncpy(tstr, expand_tabs(fargs[0]), LBUF_SIZE-1);
     mux_strncpy(str,strip_ansi(tstr), LBUF_SIZE-1);
-    int nLength = 0;
+    size_t nLength = 0;
     bool newline = false;
     char *jargs[2];
     struct ANSI_In_Context aic;
@@ -7474,7 +7474,7 @@ static FUNCTION(fun_wrap)
     char *mbuf = mbufc = alloc_lbuf("fun_mywrap.out");
     size_t nBufferAvailable, nSize;
     size_t nDone;
-    int i = 0;
+    size_t i = 0;
 
     while (str[i])
     {

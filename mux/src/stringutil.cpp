@@ -1,6 +1,6 @@
 // stringutil.cpp -- string utilities.
 //
-// $Id: stringutil.cpp,v 1.82 2006-01-11 08:15:42 sdennis Exp $
+// $Id: stringutil.cpp,v 1.83 2006-01-11 08:29:03 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -1043,7 +1043,7 @@ void ANSI_String_Copy
     // What is the working limit for visual width.
     //
     size_t vw = 0;
-    int vwMax = pacOut->m_vwMax;
+    size_t vwMax = pacOut->m_vwMax;
     if (maxVisualWidth0 < vwMax)
     {
         vwMax = maxVisualWidth0;
@@ -2655,7 +2655,7 @@ char *mux_ftoa(double r, bool bRounded, int frac)
     {
         // iDecimalPoint = 1 to 17
         //
-        if (nSize <= iDecimalPoint)
+        if (nSize <= static_cast<size_t>(iDecimalPoint))
         {
             memcpy(q, p, nSize);
             q += nSize;
