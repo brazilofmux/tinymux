@@ -1,6 +1,6 @@
 // game.cpp
 //
-// $Id: game.cpp,v 1.94 2006-01-10 07:26:43 sdennis Exp $
+// $Id: game.cpp,v 1.95 2006-01-11 00:49:30 jake Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -2147,11 +2147,16 @@ static void dbconvert(void)
     init_attrtab();
 
     char dirfile[SIZEOF_PATHNAME];
+    char *dirfile_c = dirfile;
+    safe_copy_str(standalone_basename, dirfile, &dirfile_c, (SIZEOF_PATHNAME-1));
+    safe_copy_str(".dir", dirfile, &dirfile_c, (SIZEOF_PATHNAME-1));
+    *dirfile_c = '\0';
+
     char pagfile[SIZEOF_PATHNAME];
-    strcpy(dirfile, standalone_basename);
-    strcat(dirfile, ".dir");
-    strcpy(pagfile, standalone_basename);
-    strcat(pagfile, ".pag");
+    char *pagfile_c = pagfile;
+    safe_copy_str(standalone_basename, pagfile, &pagfile_c, (SIZEOF_PATHNAME-1));
+    safe_copy_str(".pag", pagfile, &pagfile_c, (SIZEOF_PATHNAME-1));
+    *pagfile_c = '\0';
 
     int cc = init_dbfile(dirfile, pagfile, 650);
     if (cc == HF_OPEN_STATUS_ERROR)
