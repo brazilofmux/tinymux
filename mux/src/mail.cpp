@@ -1,6 +1,6 @@
 // mail.cpp
 //
-// $Id: mail.cpp,v 1.58 2006-01-11 16:25:56 sdennis Exp $
+// $Id: mail.cpp,v 1.59 2006-01-11 19:05:31 sdennis Exp $
 //
 // This code was taken from Kalkin's DarkZone code, which was
 // originally taken from PennMUSH 1.50 p10, and has been heavily modified
@@ -26,11 +26,11 @@
 #define MAX_MALIAS_MEMBERSHIP 100
 struct malias
 {
-    int owner;
+    int  owner;
+    int  numrecep;
     char *name;
     char *desc;
-    int desc_width; // The visual width of the Mail Alias Description.
-    int numrecep;
+    size_t desc_width; // The visual width of the Mail Alias Description.
     dbref list[MAX_MALIAS_MEMBERSHIP];
 };
 
@@ -294,14 +294,14 @@ static void add_folder_name(dbref player, int fld, char *name)
     char *aNew = alloc_lbuf("add_folder_name.new");
     char *q = aNew;
     q += mux_ltoa(fld, q);
-    *q++ = ':';
+    safe_chr(':', aNew, &q);
     char *p = name;
     while (*p)
     {
-        *q++ = mux_toupper(*p);
+        safe_chr(mux_toupper(*p), aNew, &q);
         p++;
     }
-    *q++ = ':';
+    safe_chr(':', aNew, &q);
     q += mux_ltoa(fld, q);
     *q = '\0';
     size_t nNew = q - aNew;
@@ -313,7 +313,7 @@ static void add_folder_name(dbref player, int fld, char *name)
         char *aPattern = alloc_lbuf("add_folder_name.pat");
         q = aPattern;
         q += mux_ltoa(fld, q);
-        *q++ = ':';
+        safe_chr(':', aPattern, &q);
         *q = '\0';
         size_t nPattern = q - aPattern;
 
@@ -363,7 +363,8 @@ static void add_folder_name(dbref player, int fld, char *name)
             }
             while (*p)
             {
-                *q++ = *p++;
+                safe_chr(*p, aFolders, &q);
+                p++;
             }
             *q = '\0';
             nFolders = q - aFolders;
@@ -445,14 +446,14 @@ static int get_folder_number(dbref player, char *name)
     {
         char *aPattern = alloc_lbuf("get_folder_num_pat");
         char *q = aPattern;
-        *q++ = ':';
+        safe_chr(':', aPattern, &q);
         char *p = name;
         while (*p)
         {
-            *q++ = mux_toupper(*p);
+            safe_chr(mux_toupper(*p), aPattern, &q);
             p++;
         }
-        *q++ = ':';
+        safe_chr(':', aPattern, &q);
         *q = '\0';
         size_t nPattern = q - aPattern;
 
@@ -2426,8 +2427,11 @@ static void do_mail_debug(dbref player, char *action, char *victim)
 static void do_mail_stats(dbref player, char *name, int full)
 {
     dbref target, thing;
-    int fc, fr, fu, tc, tr, tu, fchars, tchars, cchars, count;
-    fc = fr = fu = tc = tr = tu = fchars = tchars = cchars = count = 0;
+    int fc, fr, fu, tc, tr, tu, count;
+    size_t cchars = 0;
+    size_t fchars = 0;
+    size_t tchars = 0;
+    fc = fr = fu = tc = tr = tu = count = 0;
 
     // Find player.
     //
@@ -3303,7 +3307,7 @@ static void do_malias_create(dbref player, char *alias, char *tolist)
     }
 #else
     char *pValidMailAliasDesc = pValidMailAlias;
-    int nValidMailAliasDesc = nValidMailAlias;
+    size_t nValidMailAliasDesc = nValidMailAlias;
 #endif
 
     malias[ma_top]->list[i] = NOTHING;
@@ -3360,10 +3364,10 @@ static void do_malias_list(dbref player, char *alias)
     free_lbuf(buff);
 }
 
-static char *Spaces(unsigned int n)
+static char *Spaces(size_t n)
 {
     static char buffer[42] = "                                         ";
-    static unsigned int nLast = 0;
+    static size_t nLast = 0;
     buffer[nLast] = ' ';
     if (n < sizeof(buffer)-1)
     {
@@ -3512,7 +3516,7 @@ static void mail_to_list(dbref player, char *list, char *subject, char *message,
         {
             if (p != tolist)
             {
-                *p++ = ' ';
+                safe_chr(' ', tolist, &p);
             }
             memcpy(p, head, tail-head);
             p += tail-head;
@@ -3535,7 +3539,7 @@ static void mail_to_list(dbref player, char *list, char *subject, char *message,
         head = list;
         while (*head)
         {
-            while (*head == ' ')
+            while (' ' == *head)
             {
                 head++;
             }
