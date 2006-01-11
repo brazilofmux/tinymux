@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.172 2006-01-11 04:19:53 jake Exp $
+// $Id: functions.cpp,v 1.173 2006-01-11 07:16:38 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -3430,8 +3430,8 @@ static FUNCTION(fun_secure)
 
     while (nString)
     {
-        int nTokenLength0;
-        int nTokenLength1;
+        size_t nTokenLength0;
+        size_t nTokenLength1;
         int iType = ANSI_lex(nString, pString, &nTokenLength0, &nTokenLength1);
 
         if (iType == TOKEN_TEXT_ANSI)
@@ -3485,8 +3485,8 @@ static FUNCTION(fun_escape)
 
     while (nString)
     {
-        int nTokenLength0;
-        int nTokenLength1;
+        size_t nTokenLength0;
+        size_t nTokenLength1;
         int iType = ANSI_lex(nString, pString, &nTokenLength0, &nTokenLength1);
 
         if (iType == TOKEN_TEXT_ANSI)
@@ -4338,8 +4338,8 @@ static void ANSI_TransformTextWithTable
     int   nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
     while (nString)
     {
-        int nTokenLength0;
-        int nTokenLength1;
+        size_t nTokenLength0;
+        size_t nTokenLength1;
         int iType = ANSI_lex(nString, pString, &nTokenLength0, &nTokenLength1);
 
         if (iType == TOKEN_TEXT_ANSI)
@@ -4447,8 +4447,8 @@ static FUNCTION(fun_capstr)
     //
     while (nString)
     {
-        int nTokenLength0;
-        int nTokenLength1;
+        size_t nTokenLength0;
+        size_t nTokenLength1;
         int iType = ANSI_lex(nString, pBuffer, &nTokenLength0, &nTokenLength1);
         if (iType == TOKEN_TEXT_ANSI)
         {
@@ -4676,8 +4676,8 @@ static void ANSI_TransformTextReverseWithFunction
     **bufc = '\0';
     while (nString)
     {
-        int nTokenLength0;
-        int nTokenLength1;
+        size_t nTokenLength0;
+        size_t nTokenLength1;
         int iType = ANSI_lex(nString, pString, &nTokenLength0, &nTokenLength1);
 
         if (iType == TOKEN_TEXT_ANSI)

@@ -1,6 +1,6 @@
 // stringutil.h -- string utilities.
 //
-// $Id: stringutil.h,v 1.47 2006-01-11 06:56:58 sdennis Exp $
+// $Id: stringutil.h,v 1.48 2006-01-11 07:16:38 sdennis Exp $
 //
 #ifndef STRINGUTIL_H
 #define STRINGUTIL_H
@@ -44,7 +44,7 @@ extern const unsigned char mux_StripAccents[256];
 #define mux_isescape(x)           (mux_isescape[(unsigned char)(x)])
 #define mux_StripAccents(x)       (mux_StripAccents[(unsigned char)(x)])
 
-int ANSI_lex(int nString, const char *pString, int *nLengthToken0, int *nLengthToken1);
+int ANSI_lex(int nString, const char *pString, size_t *nLengthToken0, size_t *nLengthToken1);
 #define TOKEN_TEXT_ANSI 0 // Text sequence + optional ANSI sequence.
 #define TOKEN_ANSI      1 // ANSI sequence.
 

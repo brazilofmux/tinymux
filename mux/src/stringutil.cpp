@@ -1,6 +1,6 @@
 // stringutil.cpp -- string utilities.
 //
-// $Id: stringutil.cpp,v 1.80 2006-01-11 07:07:46 sdennis Exp $
+// $Id: stringutil.cpp,v 1.81 2006-01-11 07:16:38 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -469,7 +469,7 @@ const unsigned char mux_StripAccents[256] =
 // The type identifies the token type of length nLengthToken0. nLengthToken1
 // may also be present and is a token of the -other- type.
 //
-int ANSI_lex(int nString, const char *pString, int *nLengthToken0, int *nLengthToken1)
+int ANSI_lex(int nString, const char *pString, size_t *nLengthToken0, size_t *nLengthToken1)
 {
     *nLengthToken0 = 0;
     *nLengthToken1 = 0;
@@ -559,8 +559,8 @@ char *strip_ansi(const char *szString, size_t *pnString)
 
     while (nString)
     {
-        int nTokenLength0;
-        int nTokenLength1;
+        size_t nTokenLength0;
+        size_t nTokenLength1;
         int iType = ANSI_lex(nString, pString, &nTokenLength0, &nTokenLength1);
 
         if (iType == TOKEN_TEXT_ANSI)
@@ -958,8 +958,8 @@ void ANSI_String_Skip
     *pnVisualWidth = 0;
     while (pacIn->m_n)
     {
-        int nTokenLength0;
-        int nTokenLength1;
+        size_t nTokenLength0;
+        size_t nTokenLength1;
         int iType = ANSI_lex(pacIn->m_n, pacIn->m_p, &nTokenLength0, &nTokenLength1);
 
         if (iType == TOKEN_TEXT_ANSI)
@@ -1055,8 +1055,8 @@ void ANSI_String_Copy
     char *pField = pacOut->m_p;
     while (pacIn->m_n)
     {
-        int nTokenLength0;
-        int nTokenLength1;
+        size_t nTokenLength0;
+        size_t nTokenLength1;
         int iType = ANSI_lex(pacIn->m_n, pacIn->m_p, &nTokenLength0,
             &nTokenLength1);
 
@@ -1388,8 +1388,8 @@ char *translate_string(const char *szString, bool bConvert)
     const unsigned char *MU_EscapeChar = (bConvert)? MU_EscapeConvert : MU_EscapeNoConvert;
     while (nString)
     {
-        int nTokenLength0;
-        int nTokenLength1;
+        size_t nTokenLength0;
+        size_t nTokenLength1;
         int iType = ANSI_lex(nString, pString, &nTokenLength0, &nTokenLength1);
 
         if (iType == TOKEN_TEXT_ANSI)
