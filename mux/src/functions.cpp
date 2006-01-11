@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.175 2006-01-11 08:29:03 sdennis Exp $
+// $Id: functions.cpp,v 1.176 2006-01-11 08:32:42 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -1466,8 +1466,8 @@ static FUNCTION(fun_mid)
     // Initial checks for iPosition0 [0,LBUF_SIZE), nLength [0,LBUF_SIZE),
     // and iPosition1 [0,LBUF_SIZE).
     //
-    size_t iPosition0 = mux_atol(fargs[1]);
-    size_t nLength    = mux_atol(fargs[2]);
+    int iPosition0 = mux_atol(fargs[1]);
+    int nLength    = mux_atol(fargs[2]);
     if (nLength < 0)
     {
         iPosition0 += nLength;
