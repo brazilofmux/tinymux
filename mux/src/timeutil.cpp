@@ -1,6 +1,6 @@
 // timeutil.cpp -- CLinearTimeAbsolute and CLinearTimeDelta modules.
 //
-// $Id: timeutil.cpp,v 1.56 2006-01-10 07:08:55 sdennis Exp $
+// $Id: timeutil.cpp,v 1.57 2006-01-11 04:55:14 sdennis Exp $
 //
 // Date/Time code based on algorithms presented in "Calendrical Calculations",
 // Cambridge Press, 1998.
@@ -1810,11 +1810,35 @@ static time_t time_t_smallest(void)
     return t;
 }
 
+bool mux_localtime(struct tm *ptm_arg, const time_t *pt_arg)
+{
+    // TODO: Look for localtime_r().
+    //
+#if defined(WIN32) && (_MSC_VER >= 1400)
+    // 1400 is Visual C++ 2005
+    //
+    return (localtime_s(ptm_arg, pt_arg) == 0);
+#else
+    struct tm *ptm = localtime(pt_arg);
+    if (ptm)
+    {
+        *ptm_arg = *ptm;
+        return true;
+    }
+    else
+    {
+        return false;
+    }
+#endif // WIN32
+}
+
 // This determines the valid range of localtime() and finds a 'standard'
 // time zone near the earliest supported time_t.
 //
 static void test_time_t(void)
 {
+    struct tm _tm;
+
     // Search for the highest supported value of time_t.
     //
     time_t tUpper = time_t_largest();
@@ -1823,7 +1847,7 @@ static void test_time_t(void)
     while (tLower < tUpper)
     {
         tMid = time_t_midpoint(tLower+1, tUpper);
-        if (localtime(&tMid))
+        if (mux_localtime(&_tm, &tMid))
         {
             tLower = tMid;
         }
@@ -1841,7 +1865,7 @@ static void test_time_t(void)
     while (tLower < tUpper)
     {
         tMid = time_t_midpoint(tLower, tUpper-1);
-        if (localtime(&tMid))
+        if (mux_localtime(&_tm, &tMid))
         {
             tUpper = tMid;
         }
@@ -2176,9 +2200,9 @@ static CLinearTimeDelta QueryLocalOffsetAt_Internal
     // to a fielded local time complete with known timezone and DST
     // adjustments.
     //
+    struct tm _tm;
     time_t lt = static_cast<time_t>(lta.ReturnSeconds());
-    struct tm *ptm = localtime(&lt);
-    if (!ptm)
+    if (!mux_localtime(&_tm, &lt))
     {
         // This should never happen as we have already taken pains
         // to restrict the range of UTC seconds gives to localtime().
@@ -2190,7 +2214,7 @@ static CLinearTimeDelta QueryLocalOffsetAt_Internal
     // can convert to a linear time in the same time zone.
     //
     FIELDEDTIME ft;
-    SetStructTm(&ft, ptm);
+    SetStructTm(&ft, &_tm);
     ft.iMillisecond = 0;
     ft.iMicrosecond = 0;
     ft.iNanosecond  = 0;
@@ -2201,7 +2225,7 @@ static CLinearTimeDelta QueryLocalOffsetAt_Internal
     lta.SetSeconds(lt);
     ltdOffset = ltaLocal - lta;
 
-    *pisDST = (ptm->tm_isdst > 0);
+    *pisDST = (_tm.tm_isdst > 0);
 
     // We now have a mapping from UTC lta to a (ltdOffset, *pisDST)
     // tuple which will will use to update the cache.
