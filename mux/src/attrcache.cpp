@@ -1,6 +1,6 @@
 // svdocache.cpp -- Attribute caching module.
 //
-// $Id: attrcache.cpp,v 1.23 2006-01-09 04:22:28 sdennis Exp $
+// $Id: attrcache.cpp,v 1.24 2006-01-11 10:33:32 jake Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -31,12 +31,12 @@ typedef struct tagCacheEntryHeader
     struct tagCacheEntryHeader *pPrevEntry;
     struct tagCacheEntryHeader *pNextEntry;
     Aname attrKey;
-    unsigned int nSize;
+    size_t nSize;
 } CENT_HDR, *PCENT_HDR;
 
 static PCENT_HDR pCacheHead = 0;
 static PCENT_HDR pCacheTail = 0;
-static unsigned int CacheSize = 0;
+static size_t CacheSize = 0;
 
 int cache_init(const char *game_dir_file, const char *game_pag_file,
     int nCachePages)
