@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.176 2006-01-11 08:32:42 sdennis Exp $
+// $Id: functions.cpp,v 1.177 2006-01-11 08:33:58 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -1490,7 +1490,7 @@ static FUNCTION(fun_mid)
     ANSI_String_In_Init(&aic, fargs[0], ANSI_ENDGOAL_NORMAL);
     size_t nDone;
     ANSI_String_Skip(&aic, iPosition0, &nDone);
-    if (nDone < iPosition0)
+    if (nDone < static_cast<size_t>(iPosition0))
     {
         return;
     }
