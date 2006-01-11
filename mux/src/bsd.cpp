@@ -2,7 +2,7 @@
  * File for most TCP socket-related code. Some socket-related code also exists
  * in netcommon.cpp, but most of it is here.
  *
- * $Id: bsd.cpp,v 1.87 2006-01-11 04:19:53 jake Exp $
+ * $Id: bsd.cpp,v 1.88 2006-01-11 06:52:08 sdennis Exp $
  */
 
 #include "copyright.h"
@@ -4341,7 +4341,7 @@ void ProcessWindowsTCP(DWORD dwTimeout)
     {
         // pull out the next completed IO
         //
-        BOOL b = GetQueuedCompletionStatus(CompletionPort, &nbytes, (LPDWORD) &d, &lpo, dwTimeout);
+        BOOL b = GetQueuedCompletionStatus(CompletionPort, &nbytes, (MUX_PULONG_PTR) &d, &lpo, dwTimeout);
 
         if (!b)
         {
