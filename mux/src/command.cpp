@@ -1,6 +1,6 @@
 // command.cpp -- command parser and support routines.
 //
-// $Id: command.cpp,v 1.81 2006-01-11 08:15:42 sdennis Exp $
+// $Id: command.cpp,v 1.82 2006-01-11 11:59:28 jake Exp $
 //
 
 #include "copyright.h"
@@ -1964,7 +1964,7 @@ char *process_command
         *q = mux_tolower(*p);
     }
     *q = '\0';
-    int nLowerCaseCommand = q - LowerCaseCommand;
+    size_t nLowerCaseCommand = q - LowerCaseCommand;
 
     // Skip spaces before arg
     //
@@ -3459,9 +3459,9 @@ static void list_vattrs(dbref player, char *s_mask)
     free_lbuf(buff);
 }
 
-static int LeftJustifyString(char *field, int nWidth, const char *value)
+static size_t LeftJustifyString(char *field, size_t nWidth, const char *value)
 {
-    int n = strlen(value);
+    size_t n = strlen(value);
     if (n > nWidth)
     {
         n = nWidth;
@@ -3863,7 +3863,8 @@ void do_icmd(dbref player, dbref cause, dbref enactor, int key, char *name,
 
     CMDENT *cmdp;
     char *buff1, *pt1, *pt2, *pt3, *atrpt, *pt5;
-    int x, aflags, y;
+    int x, aflags;
+    size_t y;
     dbref target = NOTHING, aowner, zone;
     bool bFound, set;
 
@@ -4061,7 +4062,7 @@ void do_icmd(dbref player, dbref cause, dbref enactor, int key, char *name,
                 atrpt = atr_get(target, A_CMDCHECK, &aowner, &aflags);
                 if (cmdp)
                 {
-                    aflags = strlen(cmdp->cmdname);
+                    aflags = (int)strlen(cmdp->cmdname);
                     bColon = (  aflags == 1
                              && *(cmdp->cmdname) == ':');
                 }
@@ -4116,25 +4117,20 @@ void do_icmd(dbref player, dbref cause, dbref enactor, int key, char *name,
                 {
                     if (!pt1)
                     {
-                        if (*atrpt && (strlen(atrpt) < LBUF_SIZE - 2))
-                        {
-                            strcat(atrpt, " ");
-                        }
-
                         if (cmdp)
                         {
-                            pt3 = tprintf("%d:%s", key + 1, cmdp->cmdname);
+                            pt3 = tprintf(" %d:%s", key + 1, cmdp->cmdname);
                         }
                         else
                         {
-                            pt3 = tprintf("%d:home", key + 1);
+                            pt3 = tprintf(" %d:home", key + 1);
                         }
 
                         size_t natrpt = strlen(atrpt);
                         size_t npt3 = strlen(pt3);
                         if ((natrpt + npt3) < LBUF_SIZE - 1)
                         {
-                            strcat(atrpt, pt3);
+                            mux_strncpy(atrpt + natrpt, pt3, LBUF_SIZE-natrpt-1);
                             atr_add_raw(target, A_CMDCHECK, atrpt);
                             if ( loc_set == -1 )
                             {
@@ -4158,7 +4154,11 @@ void do_icmd(dbref player, dbref cause, dbref enactor, int key, char *name,
                             pt2--;
                         }
                         y = pt2 - atrpt + 1;
-                        strncpy(buff1, atrpt, y);
+                        // Save the char that'll be nulled by mux_strncpy.
+                        // (Even though it may be unneeded by this point.)
+                        char cSave = buff1[y]; 
+                        mux_strncpy(buff1, atrpt, y);
+                        buff1[y] = cSave;
                         if (y == 1)
                         {
                             *atrpt = '\0';
@@ -4173,7 +4173,8 @@ void do_icmd(dbref player, dbref cause, dbref enactor, int key, char *name,
                             }
                             if (*pt2)
                             {
-                                strcat(atrpt,pt2);
+                                size_t natrpt = strlen(atrpt);
+                                mux_strncpy(atrpt + natrpt, pt2, LBUF_SIZE-natrpt-1);
                             }
                         }
                         if ((y > 1) && !*pt2)
