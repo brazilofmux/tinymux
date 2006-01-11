@@ -1,6 +1,6 @@
 // stringutil.cpp -- string utilities.
 //
-// $Id: stringutil.cpp,v 1.84 2006-01-11 16:25:56 sdennis Exp $
+// $Id: stringutil.cpp,v 1.85 2006-01-11 16:29:38 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -3310,7 +3310,7 @@ bool BMH_Execute(BMH_State *bmhs, size_t *pnMatched, size_t nPat, const char *pP
             break;
         }
         i -= BMH_LARGE;
-        size_t j = nPat - 1;
+        int j = static_cast<int>(nPat - 1);
         const char *s = pSrc + (i - j);
         while (--j >= 0 && s[j] == pPat[j])
         {
@@ -3376,7 +3376,7 @@ bool BMH_ExecuteI(BMH_State *bmhs, size_t *pnMatched, size_t nPat, const char *p
             break;
         }
         i -= BMH_LARGE;
-        size_t j = nPat - 1;
+        int j = static_cast<int>(nPat - 1);
         const char *s = pSrc + (i - j);
         while (  --j >= 0
               && mux_toupper(s[j]) == mux_toupper(pPat[j]))
@@ -3392,7 +3392,7 @@ bool BMH_ExecuteI(BMH_State *bmhs, size_t *pnMatched, size_t nPat, const char *p
     return false;
 }
 
-bool BMH_StringSearchI(size_t *pnMatched, size_t nPat, const char *pPat, int nSrc, const char *pSrc)
+bool BMH_StringSearchI(size_t *pnMatched, size_t nPat, const char *pPat, size_t nSrc, const char *pSrc)
 {
     BMH_State bmhs;
     BMH_PrepareI(&bmhs, nPat, pPat);

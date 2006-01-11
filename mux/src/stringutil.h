@@ -1,6 +1,6 @@
 // stringutil.h -- string utilities.
 //
-// $Id: stringutil.h,v 1.50 2006-01-11 08:38:31 sdennis Exp $
+// $Id: stringutil.h,v 1.51 2006-01-11 16:25:56 sdennis Exp $
 //
 #ifndef STRINGUTIL_H
 #define STRINGUTIL_H
@@ -179,16 +179,16 @@ size_t GetLineTrunc(char *Buffer, size_t nBuffer, FILE *fp);
 
 typedef struct
 {
-    int m_d[256];
-    int m_skip2;
+    size_t m_d[256];
+    size_t m_skip2;
 } BMH_State;
 
-extern void BMH_Prepare(BMH_State *bmhs, int nPat, const char *pPat);
-extern int  BMH_Execute(BMH_State *bmhs, int nPat, const char *pPat, int nSrc, const char *pSrc);
-extern int  BMH_StringSearch(int nPat, const char *pPat, int nSrc, const char *pSrc);
-extern void BMH_PrepareI(BMH_State *bmhs, int nPat, const char *pPat);
-extern int  BMH_ExecuteI(BMH_State *bmhs, int nPat, const char *pPat, int nSrc, const char *pSrc);
-extern int  BMH_StringSearchI(int nPat, const char *pPat, int nSrc, const char *pSrc);
+extern void BMH_Prepare(BMH_State *bmhs, size_t nPat, const char *pPat);
+extern bool BMH_Execute(BMH_State *bmhs, size_t *pnMatched, size_t nPat, const char *pPat, size_t nSrc, const char *pSrc);
+extern bool BMH_StringSearch(size_t *pnMatched, size_t nPat, const char *pPat, size_t nSrc, const char *pSrc);
+extern void BMH_PrepareI(BMH_State *bmhs, size_t nPat, const char *pPat);
+extern bool BMH_ExecuteI(BMH_State *bmhs, size_t *pnMatched, size_t nPat, const char *pPat, size_t nSrc, const char *pSrc);
+extern bool BMH_StringSearchI(size_t *pnMatched, size_t nPat, const char *pPat, size_t nSrc, const char *pSrc);
 
 struct ArtRuleset
 {

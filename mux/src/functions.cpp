@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.177 2006-01-11 08:33:58 sdennis Exp $
+// $Id: functions.cpp,v 1.178 2006-01-11 16:25:56 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -3040,7 +3040,8 @@ static FUNCTION(fun_pos)
 
     // Search for pattern string inside source string.
     //
-    int i = -1;
+    size_t i;
+    bool bSucceeded = false;
     if (nPat == 1)
     {
         // We can optimize the single-character case.
@@ -3055,10 +3056,10 @@ static FUNCTION(fun_pos)
     {
         // We have a multi-byte pattern.
         //
-        i = BMH_StringSearch(nPat, aPatBuf, nSrc, pSrc)+1;
+        bSucceeded = BMH_StringSearch(&i, nPat, aPatBuf, nSrc, pSrc)+1;
     }
 
-    if (i > 0)
+    if (bSucceeded)
     {
         safe_ltoa(i, buff, bufc);
     }
@@ -4813,9 +4814,10 @@ static FUNCTION(fun_after)
 
     // Look for the target string.
     //
-    int nText = strlen(bp);
-    int i = BMH_StringSearch(mlen, mp, nText, bp);
-    if (i >= 0)
+    size_t nText = strlen(bp);
+    size_t i;
+    bool bSucceeded = BMH_StringSearch(&i, mlen, mp, nText, bp);
+    if (bSucceeded)
     {
         // Yup, return what follows.
         //
@@ -4861,8 +4863,9 @@ static FUNCTION(fun_before)
 
     // Look for the target string.
     //
-    int i = BMH_StringSearch(mlen, mp, strlen(bp), bp);
-    if (i >= 0)
+    size_t i;
+    bool bSucceeded = BMH_StringSearch(&i, mlen, mp, strlen(bp), bp);
+    if (bSucceeded)
     {
         // Yup, return what follows.
         //

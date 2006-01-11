@@ -1,6 +1,6 @@
 // funceval.cpp -- MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.111 2006-01-11 08:38:09 sdennis Exp $
+// $Id: funceval.cpp,v 1.112 2006-01-11 16:25:56 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -3247,16 +3247,17 @@ static char *grep_util(dbref player, dbref thing, char *pattern, char *lookfor, 
         {
             size_t nText;
             char *attrib = atr_get_LEN(thing, ca, &aowner, &aflags, &nText);
-            int i;
+            size_t i;
+            bool bSucceeded;
             if (insensitive)
             {
-                i = BMH_ExecuteI(&bmhs, len, lookfor, nText, attrib);
+                bSucceeded = BMH_ExecuteI(&bmhs, &i, len, lookfor, nText, attrib);
             }
             else
             {
-                i = BMH_Execute(&bmhs, len, lookfor, nText, attrib);
+                bSucceeded = BMH_Execute(&bmhs, &i, len, lookfor, nText, attrib);
             }
-            if (i >= 0)
+            if (bSucceeded)
             {
                 if (bp != tbuf1)
                 {

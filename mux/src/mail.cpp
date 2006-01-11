@@ -1,6 +1,6 @@
 // mail.cpp
 //
-// $Id: mail.cpp,v 1.57 2006-01-11 08:15:42 sdennis Exp $
+// $Id: mail.cpp,v 1.58 2006-01-11 16:25:56 sdennis Exp $
 //
 // This code was taken from Kalkin's DarkZone code, which was
 // originally taken from PennMUSH 1.50 p10, and has been heavily modified
@@ -321,8 +321,8 @@ static void add_folder_name(dbref player, int fld, char *name)
         BMH_Prepare(&bmhs, nPattern, aPattern);
         for (;;)
         {
-            int i = BMH_Execute(&bmhs, nPattern, aPattern, nFolders, aFolders);
-            if (i < 0)
+            size_t i;
+            if (!BMH_Execute(&bmhs, &i, nPattern, aPattern, nFolders, aFolders))
             {
                 break;
             }
@@ -410,10 +410,11 @@ static char *get_folder_name(dbref player, int fld)
         *p = '\0';
         size_t nPattern = p - aPattern;
 
-        int i = BMH_StringSearch(nPattern, aPattern, nFolders, aFolders);
+        size_t i;
+        bool bSucceeded = BMH_StringSearch(&i, nPattern, aPattern, nFolders, aFolders);
         free_lbuf(aPattern);
 
-        if (0 <= i)
+        if (bSucceeded)
         {
             p = aFolders + i + nPattern;
             char *q = p;
@@ -455,9 +456,10 @@ static int get_folder_number(dbref player, char *name)
         *q = '\0';
         size_t nPattern = q - aPattern;
 
-        int i = BMH_StringSearch(nPattern, aPattern, nFolders, aFolders);
+        size_t i;
+        bool bSucceeded = BMH_StringSearch(&i, nPattern, aPattern, nFolders, aFolders);
         free_lbuf(aPattern);
-        if (0 <= i)
+        if (bSucceeded)
         {
             p = aFolders + i + nPattern;
             q = p;
@@ -467,9 +469,10 @@ static int get_folder_number(dbref player, char *name)
                 q++;
             }
             *q = '\0';
-            i = mux_atol(p);
+
+            int iFolderNumber = mux_atol(p);
             free_lbuf(aFolders);
-            return i;
+            return iFolderNumber;
         }
     }
     free_lbuf(aFolders);
