@@ -1,6 +1,6 @@
 // vattr.cpp -- Manages the user-defined attributes.
 //
-// $Id: vattr.cpp,v 1.15 2006-01-11 04:19:53 jake Exp $
+// $Id: vattr.cpp,v 1.16 2006-01-11 11:33:17 jake Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -617,7 +617,7 @@ void do_dbclean(dbref executor, dbref caller, dbref enactor, int key)
     notify(executor, "@dbclean completed..");
 }
 
-void vattr_delete_LEN(char *pName, int nName)
+void vattr_delete_LEN(char *pName, size_t nName)
 {
     // Delete from hashtable.
     //
@@ -641,7 +641,7 @@ void vattr_delete_LEN(char *pName, int nName)
     }
 }
 
-ATTR *vattr_rename_LEN(char *pOldName, int nOldName, char *pNewName, int nNewName)
+ATTR *vattr_rename_LEN(char *pOldName, size_t nOldName, char *pNewName, size_t nNewName)
 {
     // Find and Delete old name from hashtable.
     //
