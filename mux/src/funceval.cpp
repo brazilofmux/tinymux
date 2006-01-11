@@ -1,6 +1,6 @@
 // funceval.cpp -- MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.110 2006-01-11 08:15:42 sdennis Exp $
+// $Id: funceval.cpp,v 1.111 2006-01-11 08:38:09 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -1596,7 +1596,7 @@ FUNCTION(fun_strtrunc)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    size_t maxVisualWidth = mux_atol(fargs[1]);
+    long maxVisualWidth = mux_atol(fargs[1]);
     if (maxVisualWidth < 0)
     {
         safe_range(buff, bufc);
