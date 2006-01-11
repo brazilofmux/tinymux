@@ -1,6 +1,6 @@
 // db.cpp
 //
-// $Id: db.cpp,v 1.90 2006-01-11 08:15:42 sdennis Exp $
+// $Id: db.cpp,v 1.91 2006-01-11 11:13:40 jake Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -2094,7 +2094,7 @@ const char *atr_get_raw_LEN(dbref thing, int atr, size_t *pLen)
     Aname okey;
 
     makekey(thing, atr, &okey);
-    int nLen;
+    size_t nLen;
     const char *a = cache_get(&okey, &nLen);
     nLen = a ? (nLen-1) : 0;
     *pLen = nLen;

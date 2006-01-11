@@ -1,6 +1,6 @@
 // svdocache.cpp -- Attribute caching module.
 //
-// $Id: attrcache.cpp,v 1.24 2006-01-11 10:33:32 jake Exp $
+// $Id: attrcache.cpp,v 1.25 2006-01-11 11:13:40 jake Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -214,7 +214,7 @@ static void TrimCache(void)
     }
 }
 
-const char *cache_get(Aname *nam, int *pLen)
+const char *cache_get(Aname *nam, size_t *pLen)
 {
     if (  nam == (Aname *) 0
        || !cache_initted)
