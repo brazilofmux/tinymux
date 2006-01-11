@@ -1,6 +1,6 @@
 // match.cpp -- Routines for parsing arguments.
 //
-// $Id: match.cpp,v 1.9 2006-01-11 04:19:53 jake Exp $
+// $Id: match.cpp,v 1.10 2006-01-11 21:06:12 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -127,7 +127,8 @@ static char *munge_space_for_match(char *name)
             while (  *p
                   && !mux_isspace(*p))
             {
-                *q++ = *p++;
+                safe_chr(*p, buffer, &q);
+                p++;
             }
 
             while (mux_isspace(*p))
@@ -137,7 +138,7 @@ static char *munge_space_for_match(char *name)
 
             if (*p)
             {
-                *q++ = ' ';
+                safe_chr(' ', buffer, &q);
             }
         }
     }
