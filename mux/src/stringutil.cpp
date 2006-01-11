@@ -1,6 +1,6 @@
 // stringutil.cpp -- string utilities.
 //
-// $Id: stringutil.cpp,v 1.83 2006-01-11 08:29:03 sdennis Exp $
+// $Id: stringutil.cpp,v 1.84 2006-01-11 16:25:56 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -3268,7 +3268,7 @@ size_t GetLineTrunc(char *Buffer, size_t nBuffer, FILE *fp)
 // the full Boyer-Moore would make more sense.
 //
 #define BMH_LARGE 32767
-void BMH_Prepare(BMH_State *bmhs, int nPat, const char *pPat)
+void BMH_Prepare(BMH_State *bmhs, size_t nPat, const char *pPat)
 {
     if (nPat <= 0)
     {
@@ -3293,13 +3293,13 @@ void BMH_Prepare(BMH_State *bmhs, int nPat, const char *pPat)
     bmhs->m_d[(unsigned char)chLastPat] = BMH_LARGE;
 }
 
-int BMH_Execute(BMH_State *bmhs, int nPat, const char *pPat, int nSrc, const char *pSrc)
+bool BMH_Execute(BMH_State *bmhs, size_t *pnMatched, size_t nPat, const char *pPat, size_t nSrc, const char *pSrc)
 {
     if (nPat <= 0)
     {
-        return -1;
+        return false;
     }
-    for (int i = nPat-1; i < nSrc; i += bmhs->m_skip2)
+    for (size_t i = nPat-1; i < nSrc; i += bmhs->m_skip2)
     {
         while ((i += bmhs->m_d[(unsigned char)(pSrc[i])]) < nSrc)
         {
@@ -3310,7 +3310,7 @@ int BMH_Execute(BMH_State *bmhs, int nPat, const char *pPat, int nSrc, const cha
             break;
         }
         i -= BMH_LARGE;
-        int j = nPat - 1;
+        size_t j = nPat - 1;
         const char *s = pSrc + (i - j);
         while (--j >= 0 && s[j] == pPat[j])
         {
@@ -3318,20 +3318,21 @@ int BMH_Execute(BMH_State *bmhs, int nPat, const char *pPat, int nSrc, const cha
         }
         if (j < 0)
         {
-            return static_cast<int>(s-pSrc);
+            *pnMatched = s-pSrc;
+            return true;
         }
     }
-    return -1;
+    return false;
 }
 
-int BMH_StringSearch(int nPat, const char *pPat, int nSrc, const char *pSrc)
+bool BMH_StringSearch(size_t *pnMatched, size_t nPat, const char *pPat, size_t nSrc, const char *pSrc)
 {
     BMH_State bmhs;
     BMH_Prepare(&bmhs, nPat, pPat);
-    return BMH_Execute(&bmhs, nPat, pPat, nSrc, pSrc);
+    return BMH_Execute(&bmhs, pnMatched, nPat, pPat, nSrc, pSrc);
 }
 
-void BMH_PrepareI(BMH_State *bmhs, int nPat, const char *pPat)
+void BMH_PrepareI(BMH_State *bmhs, size_t nPat, const char *pPat)
 {
     if (nPat <= 0)
     {
@@ -3358,13 +3359,13 @@ void BMH_PrepareI(BMH_State *bmhs, int nPat, const char *pPat)
     bmhs->m_d[mux_tolower(chLastPat)] = BMH_LARGE;
 }
 
-int BMH_ExecuteI(BMH_State *bmhs, int nPat, const char *pPat, int nSrc, const char *pSrc)
+bool BMH_ExecuteI(BMH_State *bmhs, size_t *pnMatched, size_t nPat, const char *pPat, size_t nSrc, const char *pSrc)
 {
     if (nPat <= 0)
     {
-        return -1;
+        return false;
     }
-    for (int i = nPat-1; i < nSrc; i += bmhs->m_skip2)
+    for (size_t i = nPat-1; i < nSrc; i += bmhs->m_skip2)
     {
         while ((i += bmhs->m_d[(unsigned char)(pSrc[i])]) < nSrc)
         {
@@ -3375,7 +3376,7 @@ int BMH_ExecuteI(BMH_State *bmhs, int nPat, const char *pPat, int nSrc, const ch
             break;
         }
         i -= BMH_LARGE;
-        int j = nPat - 1;
+        size_t j = nPat - 1;
         const char *s = pSrc + (i - j);
         while (  --j >= 0
               && mux_toupper(s[j]) == mux_toupper(pPat[j]))
@@ -3384,17 +3385,18 @@ int BMH_ExecuteI(BMH_State *bmhs, int nPat, const char *pPat, int nSrc, const ch
         }
         if (j < 0)
         {
-            return static_cast<int>(s-pSrc);
+            *pnMatched = s-pSrc;
+            return true;
         }
     }
-    return -1;
+    return false;
 }
 
-int BMH_StringSearchI(int nPat, const char *pPat, int nSrc, const char *pSrc)
+bool BMH_StringSearchI(size_t *pnMatched, size_t nPat, const char *pPat, int nSrc, const char *pSrc)
 {
     BMH_State bmhs;
     BMH_PrepareI(&bmhs, nPat, pPat);
-    return BMH_ExecuteI(&bmhs, nPat, pPat, nSrc, pSrc);
+    return BMH_ExecuteI(&bmhs, pnMatched, nPat, pPat, nSrc, pSrc);
 }
 
 // ---------------------------------------------------------------------------
