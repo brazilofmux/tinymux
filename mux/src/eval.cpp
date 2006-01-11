@@ -1,6 +1,6 @@
 // eval.cpp -- Command evaluation and cracking.
 //
-// $Id: eval.cpp,v 1.38 2006-01-11 20:51:31 sdennis Exp $
+// $Id: eval.cpp,v 1.39 2006-01-11 20:56:29 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -1178,7 +1178,7 @@ void mux_exec( char *buff, char **bufc, dbref executor, dbref caller,
             {
                 ; // Nothing.
             }
-            size_t n = p - pdstr - 1;
+            n = p - pdstr - 1;
             if (nBufferAvailable < n)
             {
                 n = nBufferAvailable;
