@@ -1,6 +1,6 @@
 // stringutil.cpp -- string utilities.
 //
-// $Id: stringutil.cpp,v 1.79 2006-01-11 06:56:58 sdennis Exp $
+// $Id: stringutil.cpp,v 1.80 2006-01-11 07:07:46 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -3192,7 +3192,7 @@ int DCL_CDECL mux_vsnprintf(char *buff, size_t count, const char *fmt, va_list v
     // pass garbage, but this possibility seems very unlikely.
     //
     int len = VSNPRINTF(buff, count, fmt, va);
-    if (len < 0 || len > count-1)
+    if (len < 0 || count-1 < static_cast<size_t>(len))
     {
         if (buff[0] == '\0')
         {
