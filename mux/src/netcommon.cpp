@@ -1,6 +1,6 @@
 // netcommon.cpp
 //
-// $Id: netcommon.cpp,v 1.71 2006-01-11 21:30:11 sdennis Exp $
+// $Id: netcommon.cpp,v 1.72 2006-01-11 21:37:16 sdennis Exp $
 //
 // This file contains routines used by the networking code that do not
 // depend on the implementation of the networking code.  The network-specific
@@ -616,7 +616,7 @@ static void set_userstring(char **userstring, const char *command)
     }
 }
 
-static void parse_connect(const char *msg, char command[LBUF_SIZE], char *user, char *pass)
+static void parse_connect(const char *msg, char command[LBUF_SIZE], char user[LBUF_SIZE], char pass[LBUF_SIZE])
 {
     if (strlen(msg) > MBUF_SIZE)
     {
@@ -634,6 +634,7 @@ static void parse_connect(const char *msg, char command[LBUF_SIZE], char *user, 
           && !mux_isspace(*msg))
     {
         safe_copy_chr(*msg, command, &p, sizeof(command)-1);
+        msg++;
     }
     *p = '\0';
     while (mux_isspace(*msg))
@@ -655,7 +656,8 @@ static void parse_connect(const char *msg, char command[LBUF_SIZE], char *user, 
                   && !mux_isspace(*msg)
                   && *msg != '\"')
             {
-                *p++ = *msg++;
+                safe_copy_chr(*msg, user, &p, sizeof(user)-1);
+                msg++;
             }
 
             if (*msg == '\"')
@@ -685,7 +687,8 @@ static void parse_connect(const char *msg, char command[LBUF_SIZE], char *user, 
         while (  *msg
               && !mux_isspace(*msg))
         {
-            *p++ = *msg++;
+            safe_copy_chr(*msg, user, &p, sizeof(user)-1);
+            msg++;
         }
     }
     *p = '\0';
@@ -697,7 +700,8 @@ static void parse_connect(const char *msg, char command[LBUF_SIZE], char *user, 
     while (  *msg
           && !mux_isspace(*msg))
     {
-        *p++ = *msg++;
+        safe_copy_chr(*msg, pass, &p, sizeof(pass)-1);
+        msg++;
     }
     *p = '\0';
 }
