@@ -1,6 +1,6 @@
 // stringutil.cpp -- string utilities.
 //
-// $Id: stringutil.cpp,v 1.78 2006-01-11 04:19:53 jake Exp $
+// $Id: stringutil.cpp,v 1.79 2006-01-11 06:56:58 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -3162,7 +3162,7 @@ extern char *vsprintf(char *, char *, va_list);
 // Returns: A number from 0 to count-1 that is the string length of
 // the returned (possibly truncated) buffer.
 //
-int DCL_CDECL mux_vsnprintf(char *buff, int count, const char *fmt, va_list va)
+int DCL_CDECL mux_vsnprintf(char *buff, size_t count, const char *fmt, va_list va)
 {
     // From the manuals:
     //
@@ -3209,7 +3209,7 @@ int DCL_CDECL mux_vsnprintf(char *buff, int count, const char *fmt, va_list va)
     return len;
 }
 
-void DCL_CDECL mux_sprintf(char *buff, int count, const char *fmt, ...)
+void DCL_CDECL mux_sprintf(char *buff, size_t count, const char *fmt, ...)
 {
     va_list ap;
     va_start(ap, fmt);

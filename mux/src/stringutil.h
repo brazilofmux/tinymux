@@ -1,6 +1,6 @@
 // stringutil.h -- string utilities.
 //
-// $Id: stringutil.h,v 1.46 2006-01-11 04:19:53 jake Exp $
+// $Id: stringutil.h,v 1.47 2006-01-11 06:56:58 sdennis Exp $
 //
 #ifndef STRINGUTIL_H
 #define STRINGUTIL_H
@@ -173,8 +173,8 @@ bool ItemToList_AddString(ITL *pContext, char *pStr);
 bool ItemToList_AddStringLEN(ITL *pContext, size_t nStr, char *pStr);
 void ItemToList_Final(ITL *pContext);
 
-int DCL_CDECL mux_vsnprintf(char *buff, int count, const char *fmt, va_list va);
-void DCL_CDECL mux_sprintf(char *buff, int count, const char *fmt, ...);
+int DCL_CDECL mux_vsnprintf(char *buff, size_t count, const char *fmt, va_list va);
+void DCL_CDECL mux_sprintf(char *buff, size_t count, const char *fmt, ...);
 int GetLineTrunc(char *Buffer, size_t nBuffer, FILE *fp);
 
 typedef struct
