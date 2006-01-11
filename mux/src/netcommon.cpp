@@ -1,6 +1,6 @@
 // netcommon.cpp
 //
-// $Id: netcommon.cpp,v 1.72 2006-01-11 21:37:16 sdennis Exp $
+// $Id: netcommon.cpp,v 1.73 2006-01-11 21:50:55 sdennis Exp $
 //
 // This file contains routines used by the networking code that do not
 // depend on the implementation of the networking code.  The network-specific
@@ -618,90 +618,99 @@ static void set_userstring(char **userstring, const char *command)
 
 static void parse_connect(const char *msg, char command[LBUF_SIZE], char user[LBUF_SIZE], char pass[LBUF_SIZE])
 {
-    if (strlen(msg) > MBUF_SIZE)
+    size_t nmsg = strlen(msg);
+    size_t i = 0;
+    if (nmsg > MBUF_SIZE)
     {
         *command = '\0';
         *user = '\0';
         *pass = '\0';
         return;
     }
-    while (mux_isspace(*msg))
+    while (  i < nmsg
+          && mux_isspace(msg[i]))
     {
-        msg++;
+        i++;
     }
     char *p = command;
-    while (  *msg
-          && !mux_isspace(*msg))
+    while (  i < nmsg
+          && !mux_isspace(msg[i]))
     {
-        safe_copy_chr(*msg, command, &p, sizeof(command)-1);
-        msg++;
+        safe_copy_chr(msg[i], command, &p, sizeof(command)-1);
+        i++;
     }
     *p = '\0';
-    while (mux_isspace(*msg))
+
+    while (  i < nmsg
+          && mux_isspace(msg[i]))
     {
-        msg++;
+        i++;
     }
     p = user;
     if (  mudconf.name_spaces
-       && *msg == '\"')
+       && i < nmsg
+       && msg[i] == '\"')
     {
-        for (; *msg && (*msg == '\"' || mux_isspace(*msg)); msg++)
+        for (; i < nmsg && (msg[i] == '\"' || mux_isspace(msg[i])); i++)
         {
             // Nothing.
         }
-        while (  *msg
-              && *msg != '\"')
+        while (  i < nmsg
+              && msg[i] != '\"')
         {
-            while (  *msg
-                  && !mux_isspace(*msg)
-                  && *msg != '\"')
+            while (  i < nmsg
+                  && !mux_isspace(msg[i])
+                  && msg[i] != '\"')
             {
-                safe_copy_chr(*msg, user, &p, sizeof(user)-1);
-                msg++;
+                safe_copy_chr(msg[i], user, &p, sizeof(user)-1);
+                i++;
             }
 
-            if (*msg == '\"')
+            if (  nmsg <= i
+               || msg[i] == '\"')
             {
                 break;
             }
 
-            while (mux_isspace(*msg))
+            while (  i < nmsg
+                  && mux_isspace(msg[i]))
             {
-                msg++;
+                i++;
             }
 
-            if (  *msg
-               && *msg != '\"')
+            if (  i < nmsg
+               && msg[i] != '\"')
             {
-                *p++ = ' ';
+                safe_copy_chr(' ', user, &p, sizeof(user)-1);
             }
         }
-        while (  *msg
-              && *msg == '\"')
+        while (  i < nmsg
+              && msg[i] == '\"')
         {
-             msg++;
+             i++;
         }
     }
     else
     {
-        while (  *msg
-              && !mux_isspace(*msg))
+        while (  i < nmsg
+              && !mux_isspace(msg[i]))
         {
-            safe_copy_chr(*msg, user, &p, sizeof(user)-1);
-            msg++;
+            safe_copy_chr(msg[i], user, &p, sizeof(user)-1);
+            i++;
         }
     }
     *p = '\0';
-    while (mux_isspace(*msg))
+    while (  i < nmsg
+          && mux_isspace(msg[i]))
     {
-        msg++;
+        i++;
     }
     p = pass;
-    while (  *msg
-          && !mux_isspace(*msg))
+    while (  i < nmsg
+          && !mux_isspace(msg[i]))
     {
-        safe_copy_chr(*msg, pass, &p, sizeof(pass)-1);
-        msg++;
+        safe_copy_chr(msg[i], pass, &p, sizeof(pass)-1);
+        i++;
     }
     *p = '\0';
 }
