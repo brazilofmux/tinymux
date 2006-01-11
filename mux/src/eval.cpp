@@ -1,6 +1,6 @@
 // eval.cpp -- Command evaluation and cracking.
 //
-// $Id: eval.cpp,v 1.37 2006-01-11 08:15:42 sdennis Exp $
+// $Id: eval.cpp,v 1.38 2006-01-11 20:51:31 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -462,7 +462,7 @@ TryAgain:
 // the characters to another buffer anyway and is more than able to perform the
 // escapes and trimming.
 //
-static char *parse_to_lite(char **dstr, char delim1, char delim2, int *nLen, int *iWhichDelim)
+static char *parse_to_lite(char **dstr, char delim1, char delim2, size_t *nLen, int *iWhichDelim)
 {
 #define stacklim 32
     char stack[stacklim];
@@ -732,7 +732,7 @@ char *parse_arglist( dbref executor, dbref caller, dbref enactor, char *dstr,
         return NULL;
     }
 
-    int nLen;
+    size_t nLen;
     int iWhichDelim;
     rstr = parse_to_lite(&dstr, delim, '\0', &nLen, &iWhichDelim);
     arg = 0;
@@ -784,7 +784,7 @@ static char *parse_arglist_lite( dbref executor, dbref caller, dbref enactor,
         return NULL;
     }
 
-    int nLen;
+    size_t nLen;
     int peval = eval;
     if (eval & EV_EVAL)
     {
@@ -1045,19 +1045,19 @@ void PopPointers(char **p, int nNeeded)
 #define INTS_PER_FRAME ((LBUF_SIZE - sizeof(char *) - sizeof(int))/sizeof(int))
 typedef struct tag_intsframe
 {
-    int   nints;
-    int   ints[INTS_PER_FRAME];
+    int    nints;
+    size_t ints[INTS_PER_FRAME];
     struct tag_intsframe *next;
 } IntsFrame;
 
 static IntsFrame *pIntsFrame = NULL;
 
-int *PushIntegers(int nNeeded)
+size_t *PushLengths(int nNeeded)
 {
     if (  !pIntsFrame
        || pIntsFrame->nints < nNeeded)
     {
-        IntsFrame *p = (IntsFrame *)alloc_lbuf("PushIntegers");
+        IntsFrame *p = (IntsFrame *)alloc_lbuf("PushLengths");
         p->next = pIntsFrame;
         p->nints = INTS_PER_FRAME;
         pIntsFrame = p;
@@ -1066,7 +1066,7 @@ int *PushIntegers(int nNeeded)
     return pIntsFrame->ints + pIntsFrame->nints;
 }
 
-void PopIntegers(int *pi, int nNeeded)
+void PopLengths(size_t *pi, int nNeeded)
 {
     UNUSED_PARAMETER(pi);
 
@@ -1105,6 +1105,7 @@ void mux_exec( char *buff, char **bufc, dbref executor, dbref caller,
     char *realbuff = NULL, *realbp = NULL;
     dbref aowner;
     int nfargs, aflags, feval, i;
+    size_t n;
     bool ansi = false;
     FUN *fp;
     UFUN *ufp;
@@ -1239,7 +1240,7 @@ void mux_exec( char *buff, char **bufc, dbref executor, dbref caller,
             }
             *p2 = '\0';
 
-            int ntbuf = p2 - mux_scratch;
+            size_t ntbuf = p2 - mux_scratch;
             fp = (FUN *)hashfindLEN(mux_scratch, ntbuf, &mudstate.func_htab);
 
             // If not a builtin func, check for global func.
@@ -1353,12 +1354,12 @@ void mux_exec( char *buff, char **bufc, dbref executor, dbref caller,
                         TempPtr = tstr;
 
                         char **preserve = NULL;
-                        int *preserve_len = NULL;
+                        size_t *preserve_len = NULL;
 
                         if (ufp->flags & FN_PRES)
                         {
                             preserve = PushPointers(MAX_GLOBAL_REGS);
-                            preserve_len = PushIntegers(MAX_GLOBAL_REGS);
+                            preserve_len = PushLengths(MAX_GLOBAL_REGS);
                             save_global_regs("eval_save", preserve, preserve_len);
                         }
 
@@ -1368,7 +1369,7 @@ void mux_exec( char *buff, char **bufc, dbref executor, dbref caller,
                         if (ufp->flags & FN_PRES)
                         {
                             restore_global_regs("eval_restore", preserve, preserve_len);
-                            PopIntegers(preserve_len, MAX_GLOBAL_REGS);
+                            PopLengths(preserve_len, MAX_GLOBAL_REGS);
                             PopPointers(preserve, MAX_GLOBAL_REGS);
                             preserve = NULL;
                             preserve_len = NULL;
@@ -1506,8 +1507,8 @@ void mux_exec( char *buff, char **bufc, dbref executor, dbref caller,
                         // Enactor DB number.
                         //
                         mux_scratch[0] = '#';
-                        i = mux_ltoa(enactor, mux_scratch+1);
-                        safe_copy_buf(mux_scratch, i+1, buff, bufc);
+                        n = mux_ltoa(enactor, mux_scratch+1);
+                        safe_copy_buf(mux_scratch, n+1, buff, bufc);
                         nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
                     }
                     else if (iCode == 4)
@@ -1519,8 +1520,8 @@ void mux_exec( char *buff, char **bufc, dbref executor, dbref caller,
                         // Executor DB number.
                         //
                         mux_scratch[0] = '#';
-                        i = mux_ltoa(executor, mux_scratch+1);
-                        safe_copy_buf(mux_scratch, i+1, buff, bufc);
+                        n = mux_ltoa(executor, mux_scratch+1);
+                        safe_copy_buf(mux_scratch, n+1, buff, bufc);
                         nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
                     }
                     else
@@ -1611,8 +1612,8 @@ void mux_exec( char *buff, char **bufc, dbref executor, dbref caller,
                         if (!(eval & EV_NO_LOCATION))
                         {
                             mux_scratch[0] = '#';
-                            i = mux_ltoa(where_is(enactor), mux_scratch+1);
-                            safe_copy_buf(mux_scratch, i+1, buff, bufc);
+                            n = mux_ltoa(where_is(enactor), mux_scratch+1);
+                            safe_copy_buf(mux_scratch, n+1, buff, bufc);
                             nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
                         }
                     }
@@ -1825,8 +1826,8 @@ void mux_exec( char *buff, char **bufc, dbref executor, dbref caller,
                             // Caller DB number.
                             //
                             mux_scratch[0] = '#';
-                            i = mux_ltoa(caller, mux_scratch+1);
-                            safe_copy_buf(mux_scratch, i+1, buff, bufc);
+                            n = mux_ltoa(caller, mux_scratch+1);
+                            safe_copy_buf(mux_scratch, n+1, buff, bufc);
                             nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
                         }
                     }
@@ -1850,7 +1851,7 @@ void mux_exec( char *buff, char **bufc, dbref executor, dbref caller,
             //
             tstr = pdstr++;
             mudstate.nStackNest++;
-            tbuf = parse_to_lite(&pdstr, ']', '\0', &at_space, &at_space);
+            tbuf = parse_to_lite(&pdstr, ']', '\0', &n, &at_space);
             at_space = 0;
             if (pdstr == NULL)
             {
@@ -1903,7 +1904,7 @@ void mux_exec( char *buff, char **bufc, dbref executor, dbref caller,
             //
             tstr = pdstr++;
             mudstate.nStackNest++;
-            tbuf = parse_to_lite(&pdstr, '}', '\0', &at_space, &at_space);
+            tbuf = parse_to_lite(&pdstr, '}', '\0', &n, &at_space);
             at_space = 0;
             if (pdstr == NULL)
             {
@@ -2096,7 +2097,7 @@ void save_global_regs
 (
     const char *funcname,
     char *preserve[],
-    int preserve_len[]
+    size_t preserve_len[]
 )
 {
     UNUSED_PARAMETER(funcname);
@@ -2108,7 +2109,7 @@ void save_global_regs
         if (mudstate.global_regs[i])
         {
             preserve[i] = alloc_lbuf(funcname);
-            int n = mudstate.glob_reg_len[i];
+            size_t n = mudstate.glob_reg_len[i];
             memcpy(preserve[i], mudstate.global_regs[i], n);
             preserve[i][n] = '\0';
             preserve_len[i] = n;
@@ -2125,7 +2126,7 @@ void save_and_clear_global_regs
 (
     const char *funcname,
     char *preserve[],
-    int preserve_len[]
+    size_t preserve_len[]
 )
 {
     UNUSED_PARAMETER(funcname);
@@ -2146,7 +2147,7 @@ void restore_global_regs
 (
     const char *funcname,
     char *preserve[],
-    int preserve_len[]
+    size_t preserve_len[]
 )
 {
     UNUSED_PARAMETER(funcname);

@@ -1,6 +1,6 @@
 // predicates.cpp
 //
-// $Id: predicates.cpp,v 1.80 2006-01-11 11:25:06 jake Exp $
+// $Id: predicates.cpp,v 1.81 2006-01-11 20:51:31 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -2280,7 +2280,7 @@ void did_it(dbref player, dbref thing, int what, const char *def, int owhat,
 
     bool need_pres = false;
     char **preserve = NULL;
-    int *preserve_len = NULL;
+    size_t *preserve_len = NULL;
 
     // message to player.
     //
@@ -2291,7 +2291,7 @@ void did_it(dbref player, dbref thing, int what, const char *def, int owhat,
         {
             need_pres = true;
             preserve = PushPointers(MAX_GLOBAL_REGS);
-            preserve_len = PushIntegers(MAX_GLOBAL_REGS);
+            preserve_len = PushLengths(MAX_GLOBAL_REGS);
             save_global_regs("did_it_save", preserve, preserve_len);
             buff = bp = alloc_lbuf("did_it.1");
             str = d;
@@ -2335,7 +2335,7 @@ void did_it(dbref player, dbref thing, int what, const char *def, int owhat,
             {
                 need_pres = true;
                 preserve = PushPointers(MAX_GLOBAL_REGS);
-                preserve_len = PushIntegers(MAX_GLOBAL_REGS);
+                preserve_len = PushLengths(MAX_GLOBAL_REGS);
                 save_global_regs("did_it_save", preserve, preserve_len);
             }
             buff = bp = alloc_lbuf("did_it.2");
@@ -2380,7 +2380,7 @@ void did_it(dbref player, dbref thing, int what, const char *def, int owhat,
     if (need_pres)
     {
         restore_global_regs("did_it_restore", preserve, preserve_len);
-        PopIntegers(preserve_len, MAX_GLOBAL_REGS);
+        PopLengths(preserve_len, MAX_GLOBAL_REGS);
         PopPointers(preserve, MAX_GLOBAL_REGS);
     }
 

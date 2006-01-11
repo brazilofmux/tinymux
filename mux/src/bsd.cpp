@@ -2,7 +2,7 @@
  * File for most TCP socket-related code. Some socket-related code also exists
  * in netcommon.cpp, but most of it is here.
  *
- * $Id: bsd.cpp,v 1.90 2006-01-11 20:42:19 jake Exp $
+ * $Id: bsd.cpp,v 1.91 2006-01-11 20:51:31 sdennis Exp $
  */
 
 #include "copyright.h"
@@ -254,13 +254,13 @@ static DWORD WINAPI SlaveProc(LPVOID lpParameter)
                         mux_sprintf(szPortPair, sizeof(szPortPair), "%d, %d\r\n",
                             ntohs(req.sa_in.sin_port), req.port_in);
                         SlaveThreadInfo[iSlave].iDoing = __LINE__;
-                        int nPortPair = strlen(szPortPair);
+                        size_t nPortPair = strlen(szPortPair);
 
                         CLinearTimeAbsolute ltaCurrent;
                         ltaCurrent.GetUTC();
                         if (  ltaTimeoutBackward < ltaCurrent
-                           &&  ltaCurrent < ltaTimeoutForward
-                           && send(s, szPortPair, nPortPair, 0) != SOCKET_ERROR)
+                           && ltaCurrent < ltaTimeoutForward
+                           && send(s, szPortPair, static_cast<int>(nPortPair), 0) != SOCKET_ERROR)
                         {
                             SlaveThreadInfo[iSlave].iDoing = __LINE__;
                             int nIdent = 0;
@@ -2390,7 +2390,7 @@ void process_output9x(void *dvoid, int bHandleShutdown)
     mudstate.debug_cmd = cmdsave;
 }
 
-static int AsyncSend(DESC *d, char *buf, int len)
+static int AsyncSend(DESC *d, char *buf, size_t len)
 {
     DWORD nBytes;
 
@@ -2400,7 +2400,7 @@ static int AsyncSend(DESC *d, char *buf, int len)
     {
         // We can consume this buffer.
         //
-        nBytes = len;
+        nBytes = static_cast<DWORD>(len);
     }
     else
     {
@@ -4403,7 +4403,7 @@ void ProcessWindowsTCP(DWORD dwTimeout)
                 {
                     // We can consume this buffer.
                     //
-                    nBytes = tp->hdr.nchars;
+                    nBytes = static_cast<DWORD>(tp->hdr.nchars);
                     memcpy(d->output_buffer, tp->hdr.start, nBytes);
                     TBLOCK *save = tp;
                     tp = tp->hdr.nxt;

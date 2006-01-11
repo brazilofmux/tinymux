@@ -1,6 +1,6 @@
 // mudconf.h
 //
-// $Id: mudconf.h,v 1.35 2006-01-11 20:33:42 jake Exp $
+// $Id: mudconf.h,v 1.36 2006-01-11 20:51:31 sdennis Exp $
 //
 
 #ifndef __CONF_H
@@ -145,6 +145,7 @@ struct confdata
     int     ntfy_nest_lim;      /* Max nesting of notifys */
     int     number_guests;      // number of guest characters allowed.
     int     opencost;           /* cost of @open command */
+    int     output_limit;       /* Max # chars queued for output */
     int     pagecost;           /* cost of @page command */
     int     parent_nest_lim;    /* Max levels of parents */
     int     paycheck;           /* players earn this much each day connected */
@@ -174,7 +175,6 @@ struct confdata
     int     restrict_home;	// Special condition to restrict 'home' command
 
     unsigned int    max_cache_size; /* Max size of attribute cache */
-    unsigned int    output_limit;   /* Max # chars queued for output */
     unsigned int    site_chars; // where to truncate site name.
 
     IntArray    ports;          // user ports.
@@ -349,9 +349,9 @@ struct statedata
     int     mstat_isrss[2];     /* Summed private stack size */
     int     mstat_ixrss[2];     /* Summed shared size */
     int     mstat_secs[2];      /* Time of samples */
-    int     glob_reg_len[MAX_GLOBAL_REGS];  /* Length of strs */
     int     inum[MAX_ITEXT];    // Number of iter(). Equivalent to #@.
     int     *guest_free;        /* Table to keep track of free guests */
+    size_t  glob_reg_len[MAX_GLOBAL_REGS];  /* Length of strs */
     size_t  mod_alist_len;      /* Length of mod_alist */
     size_t  mod_size;           /* Length of modified buffer */
 

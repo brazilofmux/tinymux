@@ -1,6 +1,6 @@
 // svdhash.h -- CHashPage, CHashFile, CHashTable modules.
 //
-// $Id: svdhash.h,v 1.21 2006-01-09 06:18:39 sdennis Exp $
+// $Id: svdhash.h,v 1.22 2006-01-11 20:51:31 sdennis Exp $
 //
 #ifndef SVDHASH_H
 #define SVDHASH_H
@@ -31,7 +31,7 @@ extern UINT32 CRC32_ProcessBuffer
 (
     UINT32         ulCrc,
     const void    *pBuffer,
-    unsigned int   nBuffer
+    size_t         nBuffer
 );
 
 extern UINT32 CRC32_ProcessInteger(UINT32 nInteger);

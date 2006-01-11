@@ -1,6 +1,6 @@
 // help.cpp -- Commands for giving help.
 //
-// $Id: help.cpp,v 1.17 2006-01-09 20:48:44 sdennis Exp $
+// $Id: help.cpp,v 1.18 2006-01-11 20:51:31 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -17,10 +17,10 @@
 //
 struct help_entry
 {
-    int  pos;       // Position, copied from help_indx
-    char original;  // 1 for the longest name for a topic. 0 for
-                    // abbreviations.
-    char *key;      // The key this is stored under.
+    size_t pos;       // Position, copied from help_indx
+    char   original;  // 1 for the longest name for a topic. 0 for
+                      // abbreviations.
+    char *key;        // The key this is stored under.
 };
 
 void helpindex_clean(int iHelpfile)
@@ -45,14 +45,14 @@ void helpindex_clean(int iHelpfile)
 }
 
 static bool bHaveTopic;
-static long pos;
+static size_t pos;
 static int lineno;
 static int ntopics;
 static FILE *rfp;
 
 #define LINE_SIZE 4096
 static char Line[LINE_SIZE + 1];
-static int  nLine;
+static size_t nLine;
 
 static void HelpIndex_Start(FILE *fp)
 {
@@ -126,7 +126,7 @@ static bool HelpIndex_Read(help_indx *pEntry)
                 s++;
             }
             pEntry->topic[i] = '\0';
-            pEntry->pos = pos + (long)nLine;
+            pEntry->pos = pos + nLine;
             bHaveTopic = true;
         }
         pos += nLine;
@@ -180,7 +180,7 @@ static int helpindex_read(int iHelpfile)
         //
         mux_strlwr(entry.topic);
         bool bOriginal = true; // First is the longest.
-        int nTopic = strlen(entry.topic);
+        size_t nTopic = strlen(entry.topic);
 
         for (nTopic = strlen(entry.topic); nTopic > 0; nTopic--)
         {
@@ -295,7 +295,7 @@ static bool ReportTopic(dbref executor, struct help_entry *htab_entry, int iHelp
     char szTextFilename[SBUF_SIZE+8];
     mux_sprintf(szTextFilename, sizeof(szTextFilename), "%s.txt", mudstate.aHelpDesc[iHelpfile].pBaseFilename);
 
-    int offset = htab_entry->pos;
+    size_t offset = htab_entry->pos;
     FILE *fp = fopen(szTextFilename, "rb");
     if (fp == NULL)
     {
@@ -308,7 +308,7 @@ static bool ReportTopic(dbref executor, struct help_entry *htab_entry, int iHelp
         return false;
     }
     DebugTotalFiles++;
-    if (fseek(fp, offset, 0) < 0L)
+    if (fseek(fp, static_cast<long>(offset), 0) < 0L)
     {
         STARTLOG(LOG_PROBLEMS, "HLP", "SEEK");
         char *line = alloc_lbuf("ReportTopic.seek");

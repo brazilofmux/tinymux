@@ -1,6 +1,6 @@
 // stringutil.cpp -- string utilities.
 //
-// $Id: stringutil.cpp,v 1.86 2006-01-11 19:56:43 jake Exp $
+// $Id: stringutil.cpp,v 1.87 2006-01-11 20:51:31 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -2154,14 +2154,12 @@ size_t mux_i64toa(INT64 val, char *buf)
     return nLength;
 }
 
-#if 0
 char *mux_i64toa_t(INT64 val)
 {
     static char buff[22];
     mux_i64toa(val, buff);
     return buff;
 }
-#endif
 
 void safe_i64toa(INT64 val, char *buff, char **bufc)
 {
@@ -3004,6 +3002,37 @@ bool ItemToList_AddInteger(ITL *pContext, int i)
         *p++ = pContext->chPrefix;
     }
     p += mux_ltoa(i, p);
+    size_t nLen = p - smbuf;
+    if (nLen > pContext->nBufferAvailable)
+    {
+        // Out of room.
+        //
+        return false;
+    }
+    if (pContext->bFirst)
+    {
+        pContext->bFirst = false;
+    }
+    memcpy(*(pContext->bufc), smbuf, nLen);
+    *(pContext->bufc) += nLen;
+    pContext->nBufferAvailable -= nLen;
+    return true;
+}
+
+bool ItemToList_AddInteger64(ITL *pContext, INT64 i64)
+{
+    char smbuf[SBUF_SIZE];
+    char *p = smbuf;
+    if (  !pContext->bFirst
+       && pContext->chSep)
+    {
+        *p++ = pContext->chSep;
+    }
+    if (pContext->chPrefix)
+    {
+        *p++ = pContext->chPrefix;
+    }
+    p += mux_i64toa(i64, p);
     size_t nLen = p - smbuf;
     if (nLen > pContext->nBufferAvailable)
     {

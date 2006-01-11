@@ -1,6 +1,6 @@
 // command.cpp -- command parser and support routines.
 //
-// $Id: command.cpp,v 1.82 2006-01-11 11:59:28 jake Exp $
+// $Id: command.cpp,v 1.83 2006-01-11 20:51:31 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -1016,11 +1016,11 @@ static bool process_hook(dbref executor, dbref thing, char *s_uselock, ATTR *hk_
         if (atext[0] && !(aflags & AF_NOPROG))
         {
             char **preserve = NULL;
-            int *preserve_len = NULL;
+            size_t *preserve_len = NULL;
             if (save_flg)
             {
                 preserve = PushPointers(MAX_GLOBAL_REGS);
-                preserve_len = PushIntegers(MAX_GLOBAL_REGS);
+                preserve_len = PushLengths(MAX_GLOBAL_REGS);
                 save_global_regs("process_hook.save", preserve, preserve_len);
             }
             char *buff, *bufc;
@@ -1033,7 +1033,7 @@ static bool process_hook(dbref executor, dbref thing, char *s_uselock, ATTR *hk_
             if (save_flg)
             {
                 restore_global_regs("process_hook.save", preserve, preserve_len);
-                PopIntegers(preserve_len, MAX_GLOBAL_REGS);
+                PopLengths(preserve_len, MAX_GLOBAL_REGS);
                 PopPointers(preserve, MAX_GLOBAL_REGS);
             }
             retval = xlate(buff);

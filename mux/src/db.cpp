@@ -1,6 +1,6 @@
 // db.cpp
 //
-// $Id: db.cpp,v 1.93 2006-01-11 20:33:42 jake Exp $
+// $Id: db.cpp,v 1.94 2006-01-11 20:51:31 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -1448,7 +1448,7 @@ static void al_extend(char **buffer, size_t *bufsiz, size_t len, bool copy)
 {
     if (len > *bufsiz)
     {
-        int newsize = len + ATR_BUF_CHUNK;
+        size_t newsize = len + ATR_BUF_CHUNK;
         char *tbuff = (char *)MEMALLOC(newsize);
         ISOUTOFMEMORY(tbuff);
         if (*buffer)
@@ -1536,7 +1536,7 @@ static bool al_add(dbref thing, int attrnum)
 
     // The attribute isn't there, so we need to try to add it.
     //
-    int iPosition = cp - abuf;
+    size_t iPosition = cp - abuf;
 
     // If we are too large for an attribute
     //
@@ -2709,7 +2709,7 @@ dbref parse_dbref(const char *s)
 void putref(FILE *f, dbref ref)
 {
     char buf[SBUF_SIZE];
-    int n = mux_ltoa(ref, buf);
+    size_t n = mux_ltoa(ref, buf);
     buf[n] = '\n';
     fwrite(buf, sizeof(char), n+1, f);
 }
@@ -2763,7 +2763,7 @@ char *getstring_noalloc(FILE *f, int new_strings)
     int c = fgetc(f);
     if (new_strings && c == '"')
     {
-        int nBufferLeft = sizeof(buf)-10;
+        size_t nBufferLeft = sizeof(buf)-10;
         int iState = STATE_START;
         char *pOutput = buf;
         for (;;)
@@ -2771,7 +2771,7 @@ char *getstring_noalloc(FILE *f, int new_strings)
             // Fetch up to and including the next LF.
             //
             char *pInput = pOutput + 6;
-            if (fgets(pInput, nBufferLeft, f) == NULL)
+            if (fgets(pInput, static_cast<int>(nBufferLeft), f) == NULL)
             {
                 // EOF or ERROR.
                 //
@@ -2779,7 +2779,7 @@ char *getstring_noalloc(FILE *f, int new_strings)
                 return buf;
             }
 
-            int nOutput = 0;
+            size_t nOutput = 0;
 
             // De-escape this data. removing the '\\' prefixes.
             // Terminate when you hit a '"'.
@@ -2867,7 +2867,7 @@ char *getstring_noalloc(FILE *f, int new_strings)
             {
                 // How much data did we fetch?
                 //
-                int nLine = strlen(p);
+                size_t nLine = strlen(p);
                 if (nLine >= 2)
                 {
                     if (p[nLine-2] == '\r')

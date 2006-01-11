@@ -1,6 +1,6 @@
 // db_rw.cpp
 //
-// $Id: db_rw.cpp,v 1.25 2006-01-11 08:15:42 sdennis Exp $
+// $Id: db_rw.cpp,v 1.26 2006-01-11 20:51:31 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -889,7 +889,7 @@ static bool db_write_object(FILE *f, dbref i, int db_format, int flags)
             // Format is: ">%d\n", j
             //
             const char *p = atr_get_raw(i, j);
-            int n = mux_ltoa(j, buf+1) + 1;
+            size_t n = mux_ltoa(j, buf+1) + 1;
             buf[n++] = '\n';
             fwrite(buf, sizeof(char), n, f);
             putstring(f, p);
@@ -944,7 +944,7 @@ dbref db_write(FILE *f, int format, int version)
             *pBuffer++ = '"';
             pBuffer += mux_ltoa(vp->flags, pBuffer);
             *pBuffer++ = ':';
-            int nNameLength = strlen(vp->name);
+            size_t nNameLength = strlen(vp->name);
             memcpy(pBuffer, vp->name, nNameLength);
             pBuffer += nNameLength;
             *pBuffer++ = '"';
@@ -973,7 +973,7 @@ dbref db_write(FILE *f, int format, int version)
         {
             // Format is: "!%d\n", i
             //
-            int n = mux_ltoa(i, buf+1) + 1;
+            size_t n = mux_ltoa(i, buf+1) + 1;
             buf[n++] = '\n';
             fwrite(buf, sizeof(char), n, f);
             db_write_object(f, i, format, flags);

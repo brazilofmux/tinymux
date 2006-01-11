@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.178 2006-01-11 16:25:56 sdennis Exp $
+// $Id: functions.cpp,v 1.179 2006-01-11 20:51:31 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -26,7 +26,7 @@ SEP sepSpace = { 1, " " };
 // Trim off leading and trailing spaces if the separator char is a
 // space -- known length version.
 //
-char *trim_space_sep_LEN(char *str, int nStr, SEP *sep, int *nTrim)
+char *trim_space_sep_LEN(char *str, size_t nStr, SEP *sep, size_t *nTrim)
 {
     if (  sep->n != 1
        || sep->str[0] != ' ')
@@ -88,7 +88,7 @@ char *trim_space_sep(char *str, SEP *sep)
 // next_token: Point at start of next token in string -- known length
 // version.
 //
-static char *next_token_LEN(char *str, int *nStr, SEP *psep)
+static char *next_token_LEN(char *str, size_t *nStr, SEP *psep)
 {
     char *pBegin = str;
     if (psep->n == 1)
@@ -171,7 +171,7 @@ char *next_token(char *str, SEP *psep)
 // split_token: Get next token from string as null-term string. String is
 // destructively modified -- known length version.
 //
-static char *split_token_LEN(char **sp, int *nStr, SEP *psep, int *nToken)
+static char *split_token_LEN(char **sp, size_t *nStr, SEP *psep, size_t *nToken)
 {
     char *str = *sp;
     char *save = str;
@@ -450,7 +450,7 @@ bool delim_check
         // First, we decide whether to evalute fargs[sep_arg-1] or not.
         //
         char *tstr = fargs[sep_arg-1];
-        int tlen = strlen(tstr);
+        size_t tlen = strlen(tstr);
 
         if (tlen <= 1)
         {
@@ -1383,11 +1383,11 @@ static void do_ufun(char *buff, char **bufc, dbref executor, dbref caller,
     // If we're evaluating locally, preserve the global registers.
     //
     char **preserve = NULL;
-    int *preserve_len = NULL;
+    size_t *preserve_len = NULL;
     if (is_local)
     {
         preserve = PushPointers(MAX_GLOBAL_REGS);
-        preserve_len = PushIntegers(MAX_GLOBAL_REGS);
+        preserve_len = PushLengths(MAX_GLOBAL_REGS);
         save_global_regs("fun_ulocal_save", preserve, preserve_len);
     }
 
@@ -1403,7 +1403,7 @@ static void do_ufun(char *buff, char **bufc, dbref executor, dbref caller,
     if (is_local)
     {
         restore_global_regs("fun_ulocal_restore", preserve, preserve_len);
-        PopIntegers(preserve_len, MAX_GLOBAL_REGS);
+        PopLengths(preserve_len, MAX_GLOBAL_REGS);
         PopPointers(preserve, MAX_GLOBAL_REGS);
     }
 }
@@ -1496,10 +1496,10 @@ static FUNCTION(fun_mid)
     }
 
     struct ANSI_Out_Context aoc;
-    int nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
+    size_t nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
     ANSI_String_Out_Init(&aoc, *bufc, nBufferAvailable, nLength, ANSI_ENDGOAL_NORMAL);
     ANSI_String_Copy(&aoc, &aic, nLength);
-    int nSize = ANSI_String_Finalize(&aoc, &nDone);
+    size_t nSize = ANSI_String_Finalize(&aoc, &nDone);
     *bufc += nSize;
 }
 
@@ -1563,10 +1563,10 @@ static FUNCTION(fun_right)
     }
 
     struct ANSI_Out_Context aoc;
-    int nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
+    size_t nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
     ANSI_String_Out_Init(&aoc, *bufc, nBufferAvailable, nLength, ANSI_ENDGOAL_NORMAL);
     ANSI_String_Copy(&aoc, &aic, nLength);
-    int nSize = ANSI_String_Finalize(&aoc, &nDone);
+    size_t nSize = ANSI_String_Finalize(&aoc, &nDone);
     *bufc += nSize;
 }
 
@@ -2450,7 +2450,7 @@ static FUNCTION(fun_strlen)
     {
         strip_ansi(fargs[0], &n);
     }
-    safe_ltoa(n, buff, bufc);
+    safe_ltoa(static_cast<long>(n), buff, bufc);
 }
 
 static FUNCTION(fun_strmem)
@@ -2466,7 +2466,7 @@ static FUNCTION(fun_strmem)
    {
        n = strlen(fargs[0]);
    }
-   safe_ltoa(n, buff, bufc);
+   safe_ltoa(static_cast<long>(n), buff, bufc);
 }
 
 static FUNCTION(fun_num)
@@ -3056,12 +3056,12 @@ static FUNCTION(fun_pos)
     {
         // We have a multi-byte pattern.
         //
-        bSucceeded = BMH_StringSearch(&i, nPat, aPatBuf, nSrc, pSrc)+1;
+        bSucceeded = BMH_StringSearch(&i, nPat, aPatBuf, nSrc, pSrc);
     }
 
     if (bSucceeded)
     {
-        safe_ltoa(i, buff, bufc);
+        safe_ltoa(static_cast<long>(i+1), buff, bufc);
     }
     else
     {
@@ -3132,7 +3132,7 @@ static void do_itemfuns(char *buff, char **bufc, char *str, int el,
 {
     int ct;
     char *sptr, *iptr, *eptr;
-    int slen = 0, ilen = 0, elen = 0;
+    size_t slen = 0, ilen = 0, elen = 0;
     bool overrun;
 
     // If passed a null string return an empty string, except that we
@@ -3145,7 +3145,7 @@ static void do_itemfuns(char *buff, char **bufc, char *str, int el,
     {
         return;
     }
-    int nStr = strlen(str);
+    size_t nStr = strlen(str);
 
     // We can't fiddle with anything before the first position.
     //
@@ -3427,7 +3427,7 @@ static FUNCTION(fun_secure)
     UNUSED_PARAMETER(ncargs);
 
     char *pString = fargs[0];
-    int nString = strlen(pString);
+    size_t nString = strlen(pString);
 
     while (nString)
     {
@@ -3482,7 +3482,7 @@ static FUNCTION(fun_escape)
     UNUSED_PARAMETER(ncargs);
 
     char *pString = fargs[0];
-    int nString = strlen(pString);
+    size_t nString = strlen(pString);
 
     while (nString)
     {
@@ -3537,7 +3537,7 @@ static FUNCTION(fun_wordpos)
     if (  charpos > 0
        && charpos <= ncp)
     {
-        int ncp_trimmed;
+        size_t ncp_trimmed;
         char *tp = &(cp[charpos - 1]);
         cp = trim_space_sep_LEN(cp, ncp, &sep, &ncp_trimmed);
         char *xp = split_token(&cp, &sep);
@@ -3884,11 +3884,11 @@ static FUNCTION(fun_delete)
     UNUSED_PARAMETER(ncargs);
 
     char *s = fargs[0];
-    int iStart = mux_atol(fargs[1]);
-    int nChars = mux_atol(fargs[2]);
-    int nLen = strlen(s);
+    long iStart = mux_atol(fargs[1]);
+    long nChars = mux_atol(fargs[2]);
+    size_t nLen = strlen(s);
 
-    int iEnd;
+    long iEnd;
     if (0 <= nChars)
     {
         iEnd = iStart + nChars;
@@ -3902,7 +3902,7 @@ static FUNCTION(fun_delete)
     // Are we deleting anything at all?
     //
     if (  iEnd <= 0
-       || nLen <= iStart)
+       || nLen <= static_cast<size_t>(iStart))
     {
         if (nLen)
         {
@@ -3911,8 +3911,14 @@ static FUNCTION(fun_delete)
         return;
     }
 
-    if (iStart < 0) iStart = 0;
-    if (nLen < iEnd) iEnd = nLen;
+    if (iStart < 0)
+    {
+        iStart = 0;
+    }
+    if (static_cast<long>(nLen) < iEnd)
+    {
+        iEnd = static_cast<long>(nLen);
+    }
 
     // ASSERT: Now [iStart,iEnd) exist somewhere within the the string
     // [s,nLen).
@@ -3921,7 +3927,7 @@ static FUNCTION(fun_delete)
     {
         safe_copy_buf(s, iStart, buff, bufc);
     }
-    if (iEnd < nLen)
+    if (iEnd < static_cast<long>(nLen))
     {
         safe_copy_buf(s + iEnd, nLen - iEnd, buff, bufc);
     }
@@ -4441,7 +4447,7 @@ static FUNCTION(fun_capstr)
 
     char *pString = fargs[0];
     char *pBuffer = *bufc;
-    int nString = strlen(pString);
+    size_t nString = strlen(pString);
     nString = safe_copy_buf(pString, nString, buff, bufc);
 
     // Find the first text character in (nString, pBuffer).
@@ -4629,7 +4635,7 @@ static FUNCTION(fun_attrcnt)
  * * fun_reverse, fun_revwords: Reverse things.
  */
 
-static void mux_memrevcpy(char *dest, char *src, unsigned int n)
+static void mux_memrevcpy(char *dest, char *src, size_t n)
 {
     dest += n - 1;
     while (n--)
@@ -4638,7 +4644,7 @@ static void mux_memrevcpy(char *dest, char *src, unsigned int n)
     }
 }
 
-typedef void MEMXFORM(char *dest, char *src, unsigned int n);
+typedef void MEMXFORM(char *dest, char *src, size_t n);
 static void ANSI_TransformTextReverseWithFunction
 (
     char *buff,
@@ -4649,9 +4655,9 @@ static void ANSI_TransformTextReverseWithFunction
 {
     // Bounds checking.
     //
-    unsigned int nString = strlen(pString);
+    size_t nString = strlen(pString);
     char *pBuffer = *bufc;
-    unsigned int nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
+    size_t nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
     if (nString > nBufferAvailable)
     {
         nString = nBufferAvailable;
@@ -4670,7 +4676,7 @@ static void ANSI_TransformTextReverseWithFunction
     //
     // TODO: Do not reverse the CRLF in the text part either.
     //
-    int  nANSI = 0;
+    size_t  nANSI = 0;
     char *pANSI = pString;
     pBuffer += nString;
     *bufc = pBuffer;
@@ -4727,7 +4733,7 @@ static FUNCTION(fun_reverse)
 
 static char ReverseWordsInText_Seperator;
 
-static void ReverseWordsInText(char *dest, char *src, unsigned int n)
+static void ReverseWordsInText(char *dest, char *src, size_t n)
 {
     char chSave = src[n];
     src[n] = '\0';
@@ -4735,7 +4741,7 @@ static void ReverseWordsInText(char *dest, char *src, unsigned int n)
     while (n)
     {
         char *pWord = strchr(src, ReverseWordsInText_Seperator);
-        int nLen;
+        size_t nLen;
         if (pWord)
         {
             nLen = (pWord - src);
@@ -4790,7 +4796,7 @@ static FUNCTION(fun_after)
     UNUSED_PARAMETER(ncargs);
 
     char *mp;
-    int mlen;
+    size_t mlen;
 
     // Sanity-check arg1 and arg2.
     //
@@ -4837,7 +4843,7 @@ static FUNCTION(fun_before)
     UNUSED_PARAMETER(ncargs);
 
     char *mp, *ip;
-    int mlen;
+    size_t mlen;
 
     // Sanity-check arg1 and arg2.
     //
@@ -5103,7 +5109,7 @@ static FUNCTION(fun_repeat)
     }
     else
     {
-        int len = strlen(fargs[0]);
+        size_t len = strlen(fargs[0]);
         if (len == 1)
         {
             // It turns into a memset.
@@ -5112,7 +5118,7 @@ static FUNCTION(fun_repeat)
         }
         else
         {
-            int nSize = len*times;
+            size_t nSize = len*times;
             if (  times > LBUF_SIZE - 1
                || nSize > LBUF_SIZE - 1)
             {
@@ -5120,13 +5126,13 @@ static FUNCTION(fun_repeat)
             }
             else
             {
-                int nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
+                size_t nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
                 if (nSize > nBufferAvailable)
                 {
                     nSize = nBufferAvailable;
                 }
-                int nFullCopies = nSize / len;
-                int nPartial = nSize - nFullCopies * len;
+                size_t nFullCopies = nSize / len;
+                size_t nPartial = nSize - nFullCopies * len;
                 while (nFullCopies--)
                 {
                     memcpy(*bufc, fargs[0], len);
@@ -5172,7 +5178,7 @@ static FUNCTION(fun_iter)
     mux_exec(curr, &dp, executor, caller, enactor,
         EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, cargs, ncargs);
     *dp = '\0';
-    int ncp;
+    size_t ncp;
     char *cp = trim_space_sep_LEN(curr, dp-curr, &sep, &ncp);
     if (!*cp)
     {
@@ -5275,7 +5281,7 @@ static FUNCTION(fun_list)
     str = fargs[0];
     mux_exec(curr, &dp, executor, caller, enactor,
         EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, cargs, ncargs);
-    int ncp;
+    size_t ncp;
     char *cp = trim_space_sep_LEN(curr, dp-curr, &sep, &ncp);
     if (!*cp)
     {
@@ -6696,7 +6702,7 @@ static void centerjustcombo
     // Determine string to pad with.
     //
     size_t vwPad = 0;
-    int  nPad = -1;
+    size_t nPad = 0;
     char aPad[SBUF_SIZE];
     struct ANSI_In_Context  aic;
     struct ANSI_Out_Context aoc;
@@ -6708,7 +6714,7 @@ static void centerjustcombo
         ANSI_String_Copy(&aoc, &aic, sizeof(aPad));
         nPad = ANSI_String_Finalize(&aoc, &vwPad);
     }
-    if (nPad <= 0)
+    if (0 == nPad)
     {
         aPad[0] = ' ';
         aPad[1] = '\0';
@@ -6731,7 +6737,7 @@ static void centerjustcombo
         return;
     }
 
-    int vwLeading = 0;
+    size_t vwLeading = 0;
     if (iType == CJC_CENTER)
     {
         vwLeading = (width - vwStr)/2;
@@ -6740,7 +6746,7 @@ static void centerjustcombo
     {
         vwLeading = width - vwStr;
     }
-    int vwTrailing      = width - vwLeading - vwStr;
+    size_t vwTrailing      = width - vwLeading - vwStr;
 
     // Shortcut this function if nPad == 1 (i.e., the padding is a single
     // character).
@@ -6767,8 +6773,8 @@ static void centerjustcombo
     //
     // vwLeading == nLeadFull * vwPad + vwLeadPartial
     //
-    int nLeadFull     = 0;
-    int vwLeadPartial = 0;
+    size_t nLeadFull     = 0;
+    size_t vwLeadPartial = 0;
     if (vwLeading)
     {
         nLeadFull     = vwLeading / vwPad;
@@ -6780,17 +6786,17 @@ static void centerjustcombo
     // vwTrailing == vwTrailPartial0 + nTrailFull * vwPad
     //             + vwTrailPartial1
     //
-    int vwTrailSkip0    = 0;
-    int vwTrailPartial0 = 0;
-    int nTrailFull      = 0;
-    int vwTrailPartial1 = 0;
+    size_t vwTrailSkip0    = 0;
+    size_t vwTrailPartial0 = 0;
+    size_t nTrailFull      = 0;
+    size_t vwTrailPartial1 = 0;
     if (vwTrailing)
     {
         vwTrailSkip0    = (vwLeading + vwStr) % vwPad;
         vwTrailPartial0 = 0;
         if (vwTrailSkip0)
         {
-            int n = vwPad - vwTrailSkip0;
+            size_t n = vwPad - vwTrailSkip0;
             if (vwTrailing >= vwTrailPartial0)
             {
                 vwTrailPartial0 = n;
@@ -6808,7 +6814,8 @@ static void centerjustcombo
 
     // Output the runs of full leading padding.
     //
-    int i, n;
+    size_t i;
+    size_t n;
     for (i = 0; i < nLeadFull; i++)
     {
         ANSI_String_In_Init(&aic, aPad, ANSI_ENDGOAL_NORMAL);
@@ -6919,7 +6926,7 @@ static FUNCTION(fun_setq)
         {
             mudstate.global_regs[regnum] = alloc_lbuf("fun_setq");
         }
-        int n = strlen(fargs[1]);
+        size_t n = strlen(fargs[1]);
         memcpy(mudstate.global_regs[regnum], fargs[1], n+1);
         mudstate.glob_reg_len[regnum] = n;
     }
@@ -6947,7 +6954,7 @@ static FUNCTION(fun_setr)
         {
             mudstate.global_regs[regnum] = alloc_lbuf("fun_setq");
         }
-        int n = strlen(fargs[1]);
+        size_t n = strlen(fargs[1]);
         memcpy(mudstate.global_regs[regnum], fargs[1], n+1);
         mudstate.glob_reg_len[regnum] = n;
         safe_copy_buf(fargs[1], n, buff, bufc);
@@ -7045,8 +7052,8 @@ static char* trim_left(char* str, SEP* sep)
     {
         return trim_fast_left(str, sep->str[0]);
     }
-    int cycle = 0;
-    int max = sep->n;
+    size_t cycle = 0;
+    size_t max = sep->n;
     char* base = str-1;
     for ( ; *str == sep->str[cycle]; str++)
     {
@@ -7067,10 +7074,10 @@ static void trim_right(char* str, SEP* sep)
         return;
     }
 
-    int cycle = sep->n - 1;
-    int max = sep->n - 1;
-    int n = strlen(str);
-    int base = n;
+    size_t cycle = sep->n - 1;
+    size_t max = sep->n - 1;
+    size_t n = strlen(str);
+    size_t base = n;
     n--;
     for ( ; n >= 0 && str[n] == sep->str[cycle]; n--)
     {
@@ -7309,9 +7316,9 @@ static char *expand_tabs(const char *str)
     return tbuf1;
 }
 
-static int wraplen(char *str, const int nWidth, bool &newline)
+static size_t wraplen(char *str, const size_t nWidth, bool &newline)
 {
-    const int length = strlen(str);
+    const size_t length = strlen(str);
     newline = false;
     if (length <= nWidth)
     {
@@ -7319,7 +7326,7 @@ static int wraplen(char *str, const int nWidth, bool &newline)
         * so %r will not mess with any alignment
         * functions.
         */
-        for (int i = 0; i < length; i++)
+        for (size_t i = 0; i < length; i++)
         {
             if (  str[i] == '\n'
                || str[i] == '\r')
@@ -7335,7 +7342,7 @@ static int wraplen(char *str, const int nWidth, bool &newline)
     * so %r will not mess with any alignment
     * functions.
     */
-    for (int i = 0; i < nWidth; i++)
+    for (size_t i = 0; i < nWidth; i++)
     {
         if (  str[i] == '\n'
            || str[i] == '\r')
@@ -7348,7 +7355,7 @@ static int wraplen(char *str, const int nWidth, bool &newline)
     /* No return char was found. Now
     * find the last space in str.
     */
-    int maxlen = nWidth;
+    size_t maxlen = nWidth;
     while (str[maxlen] != ' ' && maxlen > 0)
     {
         maxlen--;
@@ -7357,7 +7364,7 @@ static int wraplen(char *str, const int nWidth, bool &newline)
     {
         maxlen = nWidth;
     }
-    return (maxlen ? maxlen : -1);
+    return maxlen;
 }
 
 static FUNCTION(fun_wrap)
@@ -7738,7 +7745,7 @@ const char *time_format_1(int Seconds, size_t maxWidth)
         mux_strncpy(TimeBuffer80, "???", sizeof(TimeBuffer80)-1);
         return TimeBuffer80;
     }
-    int iWidth = maxWidth - 8;
+    size_t iWidth = maxWidth - 8;
 
     int iCase = 0;
     while (  iCase < 3
@@ -8309,7 +8316,7 @@ static FUNCTION(fun_art)
         pcre_extra* reRuleStudy = (pcre_extra *) arRule->m_pRegexpStudy;
 
         if (  !MuxAlarm.bAlarmed
-           && pcre_exec(reRuleRegexp, reRuleStudy, fargs[0], strlen(fargs[0]),
+           && pcre_exec(reRuleRegexp, reRuleStudy, fargs[0], static_cast<int>(strlen(fargs[0])),
                 0, 0, ovec, ovecsize) > 0)
         {
             safe_str(arRule->m_bUseAn ? "an" : "a", buff, bufc);
@@ -9119,7 +9126,7 @@ CF_HAND(cf_func_access)
     {
         *ap = mux_tolower(*ap); // Nothing.
     }
-    int nstr = ap - str;
+    size_t nstr = ap - str;
 
     if (*ap)
     {

@@ -1,6 +1,6 @@
 // netcommon.cpp
 //
-// $Id: netcommon.cpp,v 1.67 2006-01-11 20:33:42 jake Exp $
+// $Id: netcommon.cpp,v 1.68 2006-01-11 20:51:31 sdennis Exp $
 //
 // This file contains routines used by the networking code that do not
 // depend on the implementation of the networking code.  The network-specific
@@ -43,7 +43,7 @@ void make_portlist(dbref player, dbref target, char *buff, char **bufc)
     DESC_ITER_CONN(d)
     {
         if (  d->player == target
-           && !ItemToList_AddInteger(&itl, d->descriptor))
+           && !ItemToList_AddInteger64(&itl, d->descriptor))
         {
             break;
         }
@@ -324,12 +324,12 @@ void queue_write_LEN(DESC *d, const char *b, size_t n)
         return;
     }
 
-    if (d->output_size + n > mudconf.output_limit)
+    if (static_cast<size_t>(mudconf.output_limit) < d->output_size + n)
     {
         process_output(d, false);
     }
 
-    if (d->output_size + n > mudconf.output_limit)
+    if (static_cast<size_t>(mudconf.output_limit) < d->output_size + n)
     {
         TBLOCK *tp = d->output_head;
         if (tp == NULL)

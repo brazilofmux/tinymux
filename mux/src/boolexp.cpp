@@ -1,6 +1,6 @@
 // boolexp.cpp
 //
-// $Id: boolexp.cpp,v 1.20 2006-01-11 04:19:53 jake Exp $
+// $Id: boolexp.cpp,v 1.21 2006-01-11 20:51:31 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -186,9 +186,9 @@ bool eval_boolexp(dbref player, dbref thing, dbref from, BOOLEXP *b)
         if (bCheck)
         {
             char **preserve = NULL;
-            int *preserve_len = NULL;
+            size_t *preserve_len = NULL;
             preserve = PushPointers(MAX_GLOBAL_REGS);
-            preserve_len = PushIntegers(MAX_GLOBAL_REGS);
+            preserve_len = PushLengths(MAX_GLOBAL_REGS);
             save_global_regs("eval_boolexp_save", preserve, preserve_len);
 
             buff2 = bp = alloc_lbuf("eval_boolexp");
@@ -199,7 +199,7 @@ bool eval_boolexp(dbref player, dbref thing, dbref from, BOOLEXP *b)
             *bp = '\0';
 
             restore_global_regs("eval_boolexp_save", preserve, preserve_len);
-            PopIntegers(preserve_len, MAX_GLOBAL_REGS);
+            PopLengths(preserve_len, MAX_GLOBAL_REGS);
             PopPointers(preserve, MAX_GLOBAL_REGS);
 
             bCheck = !string_compare(buff2, (char *)b->sub1);

@@ -1,6 +1,6 @@
 // funmath.cpp -- MUX math function handlers.
 //
-// $Id: funmath.cpp,v 1.10 2006-01-10 18:34:39 sdennis Exp $
+// $Id: funmath.cpp,v 1.11 2006-01-11 20:51:31 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -144,12 +144,13 @@ static double NearestPretty(double R)
     // R.
     //
     char *p = mux_dtoa(R, mode, 50, &decpt, &bNegative, &rve);
-    int nDigits = rve - p;
+    size_t nDigits = rve - p;
 
     // R-ulp(R)
     //
     p = mux_dtoa(R0, mode, 50, &decpt, &bNegative, &rve);
-    if (rve - p < nDigits)
+    size_t nDigitsR0 = rve - p;
+    if (nDigitsR0 < nDigits)
     {
         nDigits = rve - p;
         R  = R0;
@@ -158,7 +159,8 @@ static double NearestPretty(double R)
     // R+ulp(R)
     //
     p = mux_dtoa(R1, mode, 50, &decpt, &bNegative, &rve);
-    if (rve - p < nDigits)
+    size_t nDigitsR1 = rve - p;
+    if (nDigitsR1 < nDigits)
     {
         nDigits = rve - p;
         R = R1;
@@ -2269,9 +2271,9 @@ public:
 
 private:
     void TwoDigits(const char *p);
-    void ThreeDigits(const char *p, int iBigOne);
-    void ManyDigits(int n, const char *p, bool bHundreds);
-    void FractionalDigits(int n, const char *p);
+    void ThreeDigits(const char *p, size_t iBigOne);
+    void ManyDigits(size_t n, const char *p, bool bHundreds);
+    void FractionalDigits(size_t n, const char *p);
 
     void StartWord(void);
     void AddWord(const char *p);
@@ -2333,7 +2335,7 @@ void CSpellNum::TwoDigits(const char *p)
 
 // Handle three-character sequences.
 //
-void CSpellNum::ThreeDigits(const char *p, int iBigOne)
+void CSpellNum::ThreeDigits(const char *p, size_t iBigOne)
 {
     if (  p[0] == '0'
        && p[1] == '0'
@@ -2361,7 +2363,7 @@ void CSpellNum::ThreeDigits(const char *p, int iBigOne)
 
 // Handle a series of patterns of three.
 //
-void CSpellNum::ManyDigits(int n, const char *p, bool bHundreds)
+void CSpellNum::ManyDigits(size_t n, const char *p, bool bHundreds)
 {
     // Handle special Hundreds cases.
     //
@@ -2378,15 +2380,15 @@ void CSpellNum::ManyDigits(int n, const char *p, bool bHundreds)
 
     // Handle normal cases.
     //
-    int ndiv = ((n + 2) / 3) - 1;
-    int nrem = n % 3;
+    size_t ndiv = ((n + 2) / 3) - 1;
+    size_t nrem = n % 3;
     char buf[3];
     if (nrem == 0)
     {
         nrem = 3;
     }
 
-    int j = nrem;
+    size_t j = nrem;
     for (int i = 2; 0 <= i; i--)
     {
         if (j)
@@ -2410,14 +2412,14 @@ void CSpellNum::ManyDigits(int n, const char *p, bool bHundreds)
 
 // Handle precision ending for part to the right of the decimal place.
 //
-void CSpellNum::FractionalDigits(int n, const char *p)
+void CSpellNum::FractionalDigits(size_t n, const char *p)
 {
     ManyDigits(n, p, false);
     if (  0 < n
        && n < 15)
     {
-        int d = n / 3;
-        int r = n % 3;
+        size_t d = n / 3;
+        size_t r = n % 3;
         StartWord();
         if (r != 0)
         {
@@ -2797,7 +2799,7 @@ FUNCTION(fun_crc32)
     UINT32 ulCRC32 = 0;
     for (int i = 0; i < nfargs; i++)
     {
-        int n = strlen(fargs[i]);
+        size_t n = strlen(fargs[i]);
         ulCRC32 = CRC32_ProcessBuffer(ulCRC32, fargs[i], n);
     }
     safe_i64toa(ulCRC32, buff, bufc);

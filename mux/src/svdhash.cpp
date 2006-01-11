@@ -1,6 +1,6 @@
 // svdhash.cpp -- CHashPage, CHashFile, CHashTable modules.
 //
-// $Id: svdhash.cpp,v 1.52 2006-01-11 08:15:42 sdennis Exp $
+// $Id: svdhash.cpp,v 1.53 2006-01-11 20:51:31 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -94,7 +94,7 @@ UINT32 CRC32_ProcessBuffer
 (
     UINT32         ulCrc,
     const void    *arg_pBuffer,
-    unsigned int   nBuffer
+    size_t         nBuffer
 )
 {
     UINT8 *pBuffer = (UINT8 *)arg_pBuffer;

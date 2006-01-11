@@ -1,6 +1,6 @@
 // config.h
 //
-// $Id: config.h,v 1.20 2006-01-11 08:15:42 sdennis Exp $
+// $Id: config.h,v 1.21 2006-01-11 20:51:31 sdennis Exp $
 //
 
 #ifndef CONFIG_H
@@ -95,8 +95,8 @@ typedef unsigned __int64 UINT64;
 #endif
 
 #define SIZEOF_PATHNAME (_MAX_PATH + 1)
-#define SOCKET_WRITE(s,b,n,f) send(s,b,n,f)
-#define SOCKET_READ(s,b,n,f) recv(s,b,n,f)
+#define SOCKET_WRITE(s,b,n,f) send(s,b,static_cast<int>(n),f)
+#define SOCKET_READ(s,b,n,f) recv(s,b,static_cast<int>(n),f)
 #define SOCKET_CLOSE(s) closesocket(s)
 #define IS_SOCKET_ERROR(cc) ((cc) == SOCKET_ERROR)
 #define IS_INVALID_SOCKET(s) ((s) == INVALID_SOCKET)

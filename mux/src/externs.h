@@ -1,6 +1,6 @@
 // externs.h -- Prototypes for externs not defined elsewhere.
 //
-// $Id: externs.h,v 1.65 2006-01-11 20:33:42 jake Exp $
+// $Id: externs.h,v 1.66 2006-01-11 20:51:31 sdennis Exp $
 //
 
 #ifndef EXTERNS_H
@@ -105,13 +105,13 @@ int get_gender(dbref);
 void mux_exec(char *buff, char **bufc, dbref executor, dbref caller,
               dbref enactor, int eval, char **dstr, char *cargs[],
               int ncargs);
-void save_global_regs(const char *, char *[], int []);
-void save_and_clear_global_regs(const char *, char *[], int[]);
-void restore_global_regs(const char *, char *[], int []);
+void save_global_regs(const char *, char *[], size_t []);
+void save_and_clear_global_regs(const char *, char *[], size_t[]);
+void restore_global_regs(const char *, char *[], size_t []);
 char **PushPointers(int nNeeded);
 void PopPointers(char **p, int nNeeded);
-int *PushIntegers(int nNeeded);
-void PopIntegers(int *pi, int nNeeded);
+size_t *PushLengths(int nNeeded);
+void PopLengths(size_t *pi, int nNeeded);
 extern const signed char mux_RegisterSet[256];
 extern const char *ColorTable[256];
 
@@ -357,7 +357,7 @@ int  init_dbfile(char *game_dir_file, char *game_pag_file, int nCachePages);
 void atr_cpy(dbref dest, dbref source);
 void atr_chown(dbref);
 void atr_clr(dbref, int);
-void atr_add_raw_LEN(dbref, int, const char *, size_t);
+void atr_add_raw_LEN(dbref, int, const char *, size_t n);
 void atr_add_raw(dbref, int, const char *);
 void atr_add(dbref, int, char *, dbref, int);
 void atr_set_flags(dbref, int, int);

@@ -1,6 +1,6 @@
 // game.cpp
 //
-// $Id: game.cpp,v 1.96 2006-01-11 04:19:53 jake Exp $
+// $Id: game.cpp,v 1.97 2006-01-11 20:51:31 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -111,7 +111,7 @@ bool regexp_match
      * Now we try to match the pattern. The relevant fields will
      * automatically be filled in by this.
      */
-    matches = pcre_exec(re, NULL, str, strlen(str), 0, 0, ovec, ovecsize);
+    matches = pcre_exec(re, NULL, str, static_cast<int>(strlen(str)), 0, 0, ovec, ovecsize);
     if (matches < 0)
     {
         delete [] ovec;
@@ -405,9 +405,9 @@ static bool check_filter(dbref object, dbref player, int filter, const char *msg
         return true;
     }
     char **preserve = NULL;
-    int *preserve_len = NULL;
+    size_t *preserve_len = NULL;
     preserve = PushPointers(MAX_GLOBAL_REGS);
-    preserve_len = PushIntegers(MAX_GLOBAL_REGS);
+    preserve_len = PushLengths(MAX_GLOBAL_REGS);
     save_global_regs("check_filter_save", preserve, preserve_len);
     nbuf = dp = alloc_lbuf("check_filter");
     str = buf;
@@ -417,7 +417,7 @@ static bool check_filter(dbref object, dbref player, int filter, const char *msg
     dp = nbuf;
     free_lbuf(buf);
     restore_global_regs("check_filter_restore", preserve, preserve_len);
-    PopIntegers(preserve_len, MAX_GLOBAL_REGS);
+    PopLengths(preserve_len, MAX_GLOBAL_REGS);
     PopPointers(preserve, MAX_GLOBAL_REGS);
 
     if (!(aflags & AF_REGEXP))
@@ -448,7 +448,7 @@ static bool check_filter(dbref object, dbref player, int filter, const char *msg
             {
                 const int ovecsize = 33;
                 int ovec[ovecsize];
-                int matches = pcre_exec(re, NULL, msg, strlen(msg), 0, 0,
+                int matches = pcre_exec(re, NULL, msg, static_cast<int>(strlen(msg)), 0, 0,
                     ovec, ovecsize);
                 if (0 <= matches)
                 {
@@ -480,9 +480,9 @@ static char *add_prefix(dbref object, dbref player, int prefix,
     else
     {
         char **preserve = NULL;
-        int *preserve_len = NULL;
+        size_t *preserve_len = NULL;
         preserve = PushPointers(MAX_GLOBAL_REGS);
-        preserve_len = PushIntegers(MAX_GLOBAL_REGS);
+        preserve_len = PushLengths(MAX_GLOBAL_REGS);
         save_global_regs("add_prefix_save", preserve, preserve_len);
 
         nbuf = cp = alloc_lbuf("add_prefix");
@@ -492,7 +492,7 @@ static char *add_prefix(dbref object, dbref player, int prefix,
         free_lbuf(buf);
 
         restore_global_regs("add_prefix_restore", preserve, preserve_len);
-        PopIntegers(preserve_len, MAX_GLOBAL_REGS);
+        PopLengths(preserve_len, MAX_GLOBAL_REGS);
         PopPointers(preserve, MAX_GLOBAL_REGS);
 
         buf = nbuf;
@@ -1200,7 +1200,7 @@ void do_shutdown
     int fd = mux_open(mudconf.status_file, O_RDWR | O_CREAT | O_TRUNC | O_BINARY, 0600);
     if (fd != -1)
     {
-        mux_write(fd, message, strlen(message));
+        mux_write(fd, message, static_cast<unsigned int>(strlen(message)));
         mux_write(fd, ENDLINE, sizeof(ENDLINE)-1);
         DebugTotalFiles++;
         if (mux_close(fd) == 0)

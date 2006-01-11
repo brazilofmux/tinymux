@@ -1,6 +1,6 @@
 // conf.cpp -- Set up configuration information and static data.
 //
-// $Id: conf.cpp,v 1.76 2006-01-11 20:33:42 jake Exp $
+// $Id: conf.cpp,v 1.77 2006-01-11 20:51:31 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -605,7 +605,7 @@ static CF_HAND(cf_string)
     // Copy the string to the buffer if it is not too big.
     //
     int retval = 0;
-    unsigned int nStr = strlen(str);
+    size_t nStr = strlen(str);
     if (nStr >= nExtra)
     {
         nStr = nExtra - 1;
@@ -663,7 +663,7 @@ static CF_HAND(cf_string_dyn)
     // then there is a size limitation as well.
     //
     int retval = 0;
-    unsigned int nStr = strlen(str);
+    size_t nStr = strlen(str);
     if (nExtra && nStr >= nExtra)
     {
         nStr = nExtra - 1;
@@ -2128,7 +2128,7 @@ int cf_read(void)
 
     // Fill in missing DB file names.
     //
-    unsigned int nInDB = strlen(mudconf.indb);
+    size_t nInDB = strlen(mudconf.indb);
     for (int i = 0; DefaultSuffixes[i].pFilename; i++)
     {
         char **p = DefaultSuffixes[i].pFilename;
@@ -2138,7 +2138,7 @@ int cf_read(void)
             // a default filename.
             //
             char *pSuffix = DefaultSuffixes[i].pSuffix;
-            int nSuffix = strlen(pSuffix);
+            size_t nSuffix = strlen(pSuffix);
             char *buff = (char *)MEMALLOC(nInDB + nSuffix + 1);
             ISOUTOFMEMORY(buff);
             memcpy(buff, mudconf.indb, nInDB);

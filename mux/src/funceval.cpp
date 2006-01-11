@@ -1,6 +1,6 @@
 // funceval.cpp -- MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.113 2006-01-11 20:33:42 jake Exp $
+// $Id: funceval.cpp,v 1.114 2006-01-11 20:51:31 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -713,7 +713,7 @@ FUNCTION(fun_set)
 
 // Generate a substitution array.
 //
-static unsigned int GenCode(char *pCode, size_t nCode, const char *pCodeASCII)
+static size_t GenCode(char *pCode, size_t nCode, const char *pCodeASCII)
 {
     // Strip out the ANSI.
     //
@@ -752,7 +752,7 @@ static char *crypt_code(char *code, char *text, bool type)
     }
 
     char codebuff[LBUF_SIZE];
-    unsigned int nCode = GenCode(codebuff, sizeof(codebuff), code);
+    size_t nCode = GenCode(codebuff, sizeof(codebuff), code);
     if (0 == nCode)
     {
         return text;
@@ -760,7 +760,7 @@ static char *crypt_code(char *code, char *text, bool type)
 
     static char textbuff[LBUF_SIZE];
     char *p = strip_ansi(text);
-    unsigned int nq = nCode;
+    size_t nq = nCode;
     size_t ip = 0;
     size_t iq = 0;
     size_t ir = 0;
@@ -982,9 +982,9 @@ FUNCTION(fun_localize)
     UNUSED_PARAMETER(nfargs);
 
     char **preserve = NULL;
-    int *preserve_len = NULL;
+    size_t *preserve_len = NULL;
     preserve = PushPointers(MAX_GLOBAL_REGS);
-    preserve_len = PushIntegers(MAX_GLOBAL_REGS);
+    preserve_len = PushLengths(MAX_GLOBAL_REGS);
     save_global_regs("fun_localize", preserve, preserve_len);
 
     char *str = fargs[0];
@@ -992,7 +992,7 @@ FUNCTION(fun_localize)
         EV_FCHECK | EV_STRIP_CURLY | EV_EVAL, &str, cargs, ncargs);
 
     restore_global_regs("fun_localize", preserve, preserve_len);
-    PopIntegers(preserve_len, MAX_GLOBAL_REGS);
+    PopLengths(preserve_len, MAX_GLOBAL_REGS);
     PopPointers(preserve, MAX_GLOBAL_REGS);
 }
 
@@ -1154,7 +1154,7 @@ FUNCTION(fun_columns)
 
         char *objstring = split_token(&cp, &sep);
         size_t nVisualWidth;
-        int nLen = ANSI_TruncateToField(objstring, nBufferAvailable, *bufc,
+        size_t nLen = ANSI_TruncateToField(objstring, nBufferAvailable, *bufc,
             nWidth, &nVisualWidth, ANSI_ENDGOAL_NORMAL);
         *bufc += nLen;
         nBufferAvailable -= nLen;
@@ -1409,7 +1409,7 @@ FUNCTION(fun_objmem)
     }
     else if (Examinable(executor, thing))
     {
-        safe_ltoa(mem_usage(thing), buff, bufc);
+        safe_ltoa(static_cast<long>(mem_usage(thing)), buff, bufc);
     }
     else
     {
@@ -1452,7 +1452,7 @@ FUNCTION(fun_playmem)
             tot += mem_usage(j);
         }
     }
-    safe_ltoa(tot, buff, bufc);
+    safe_ltoa(static_cast<long>(tot), buff, bufc);
 }
 
 // Code for andflags() and orflags() borrowed from PennMUSH 1.50
@@ -2277,12 +2277,13 @@ FUNCTION(fun_scramble)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    size_t n;
-    char *old = strip_ansi(fargs[0], &n);
+    size_t nStrip;
+    char *old = strip_ansi(fargs[0], &nStrip);
 
+    INT32 n = static_cast<INT32>(nStrip);
     if (2 <= n)
     {
-        unsigned int i;
+        INT32 i;
         for (i = 0; i < n-1; i++)
         {
             int j = RandomINT32(i, n-1);
@@ -3137,7 +3138,7 @@ static size_t mux_Pack(INT64 val, int iRadix, char *buf)
     }
     *p++ = aRadixTable[val];
 
-    int nLength = p - buf;
+    size_t nLength = p - buf;
     *p-- = '\0';
 
     // The digits are in reverse order with a possible leading '-'
@@ -3195,7 +3196,7 @@ FUNCTION(fun_pack)
     }
 
     char TempBuffer[76]; // 1 '-', 63 binary digits, 1 '\0', 11 for safety.
-    int nLength = mux_Pack(val, iRadix, TempBuffer);
+    size_t nLength = mux_Pack(val, iRadix, TempBuffer);
     safe_copy_buf(TempBuffer, nLength, buff, bufc);
 }
 
@@ -3216,7 +3217,7 @@ FUNCTION(fun_strcat)
 
 // grep() and grepi() code borrowed from PennMUSH 1.50
 //
-static char *grep_util(dbref player, dbref thing, char *pattern, char *lookfor, int len, bool insensitive)
+static char *grep_util(dbref player, dbref thing, char *pattern, char *lookfor, size_t len, bool insensitive)
 {
     // Returns a list of attributes which match <pattern> on <thing>
     // whose contents have <lookfor>.
@@ -3869,7 +3870,7 @@ static void real_regmatch(const char *search, const char *pattern, char *registe
         return;
     }
 
-    int matches = pcre_exec(re, NULL, search, strlen(search), 0, 0,
+    int matches = pcre_exec(re, NULL, search, static_cast<int>(strlen(search)), 0, 0,
         ovec, ovecsize);
     if (matches == 0)
     {
@@ -3994,7 +3995,7 @@ static void real_regrab(char *search, const char *pattern, SEP *psep, char *buff
     {
         char *r = split_token(&s, psep);
         if (  !MuxAlarm.bAlarmed
-           && pcre_exec(re, study, r, strlen(r), 0, 0, ovec, ovecsize) >= 0)
+           && pcre_exec(re, study, r, static_cast<int>(strlen(r)), 0, 0, ovec, ovecsize) >= 0)
         {
             if (first)
             {

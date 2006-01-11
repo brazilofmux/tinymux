@@ -1,6 +1,6 @@
 // cque.cpp -- commands and functions for manipulating the command queue.
 //
-// $Id: cque.cpp,v 1.37 2006-01-11 20:33:42 jake Exp $
+// $Id: cque.cpp,v 1.38 2006-01-11 20:51:31 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -102,7 +102,7 @@ static void Task_RunQueueEntry(void *pEntry, int iUnused)
             {
                 if (point->scr[i])
                 {
-                    int n = strlen(point->scr[i]);
+                    size_t n = strlen(point->scr[i]);
                     memcpy(mudstate.global_regs[i], point->scr[i], n+1);
                     mudstate.glob_reg_len[i] = n;
                 }
@@ -696,10 +696,10 @@ static BQUE *setup_que(dbref executor, dbref caller, dbref enactor,
 
     // Calculate the length of the save string.
     //
-    unsigned int tlen = 0;
-    static unsigned int nCommand;
-    static unsigned int nLenEnv[NUM_ENV_VARS];
-    static unsigned int nLenRegs[MAX_GLOBAL_REGS];
+    size_t tlen = 0;
+    static size_t nCommand;
+    static size_t nLenEnv[NUM_ENV_VARS];
+    static size_t nLenRegs[MAX_GLOBAL_REGS];
 
     if (command)
     {

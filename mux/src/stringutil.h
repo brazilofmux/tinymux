@@ -1,6 +1,6 @@
 // stringutil.h -- string utilities.
 //
-// $Id: stringutil.h,v 1.51 2006-01-11 16:25:56 sdennis Exp $
+// $Id: stringutil.h,v 1.52 2006-01-11 20:51:31 sdennis Exp $
 //
 #ifndef STRINGUTIL_H
 #define STRINGUTIL_H
@@ -169,6 +169,7 @@ typedef struct tag_itl
 void ItemToList_Init(ITL *pContext, char *arg_buff, char **arg_bufc,
     char arg_chPrefix = 0, char arg_chSep = ' ');
 bool ItemToList_AddInteger(ITL *pContext, int i);
+bool ItemToList_AddInteger64(ITL *pContext, INT64 i);
 bool ItemToList_AddString(ITL *pContext, char *pStr);
 bool ItemToList_AddStringLEN(ITL *pContext, size_t nStr, char *pStr);
 void ItemToList_Final(ITL *pContext);

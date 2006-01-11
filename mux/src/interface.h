@@ -1,6 +1,6 @@
 // interface.h
 //
-// $Id: interface.h,v 1.24 2006-01-11 20:33:42 jake Exp $
+// $Id: interface.h,v 1.25 2006-01-11 20:51:31 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -68,7 +68,7 @@ typedef struct text_block_hdr
     struct text_block *nxt;
     char    *start;
     char    *end;
-    int nchars;
+    size_t   nchars;
 }   TBLOCKHDR;
 
 typedef struct text_block
@@ -150,14 +150,14 @@ struct descriptor_data
   dbref player;
   char *output_prefix;
   char *output_suffix;
-  int output_size;
-  int output_tot;
-  int output_lost;
+  size_t output_size;
+  size_t output_tot;
+  size_t output_lost;
   TBLOCK *output_head;
   TBLOCK *output_tail;
-  int input_size;
-  int input_tot;
-  int input_lost;
+  size_t input_size;
+  size_t input_tot;
+  size_t input_lost;
   CBLK *input_head;
   CBLK *input_tail;
   CBLK *raw_input;
@@ -237,7 +237,7 @@ extern void update_quotas(CLinearTimeAbsolute& tLast, const CLinearTimeAbsolute&
 extern void raw_notify(dbref, const char *);
 extern void raw_notify_newline(dbref);
 extern void clearstrings(DESC *);
-extern void queue_write_LEN(DESC *, const char *, size_t);
+extern void queue_write_LEN(DESC *, const char *, size_t n);
 extern void queue_write(DESC *, const char *);
 extern void queue_string(DESC *, const char *);
 extern void freeqs(DESC *);
