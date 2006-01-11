@@ -1,6 +1,6 @@
 // netcommon.cpp
 //
-// $Id: netcommon.cpp,v 1.68 2006-01-11 20:51:31 sdennis Exp $
+// $Id: netcommon.cpp,v 1.69 2006-01-11 21:19:18 sdennis Exp $
 //
 // This file contains routines used by the networking code that do not
 // depend on the implementation of the networking code.  The network-specific
@@ -1549,18 +1549,18 @@ static void dump_users(DESC *e, char *match, int key)
                 {
                     if (d->flags & DS_AUTODARK)
                     {
-                        *fp++ = 'd';
+                        safe_copy_chr('d', flist, &fp, sizeof(flist)-1);
                     }
                     else
                     {
-                        *fp++ = 'D';
+                        safe_copy_chr('D', flist, &fp, sizeof(flist)-1);
                     }
                 }
                 if (d->flags & DS_CONNECTED)
                 {
                     if (Hideout(d->player))
                     {
-                        *fp++ = 'U';
+                        safe_copy_chr('U', flist, &fp, sizeof(flist)-1);
                     }
                     else
                     {
@@ -1569,35 +1569,35 @@ static void dump_users(DESC *e, char *match, int key)
                         {
                             if (Hideout(room_it))
                             {
-                                *fp++ = 'u';
+                                safe_copy_chr('u', flist, &fp, sizeof(flist)-1);
                             }
                         }
                         else
                         {
-                            *fp++ = 'u';
+                            safe_copy_chr('u', flist, &fp, sizeof(flist)-1);
                         }
                     }
 
                     if (Suspect(d->player))
                     {
-                        *fp++ = '+';
+                        safe_copy_chr('+', flist, &fp, sizeof(flist)-1);
                     }
                 }
                 if (d->host_info & H_FORBIDDEN)
                 {
-                    *sp++ = 'F';
+                    safe_copy_chr('F', slist, &sp, sizeof(slist)-1);
                 }
                 if (d->host_info & H_REGISTRATION)
                 {
-                    *sp++ = 'R';
+                    safe_copy_chr('R', slist, &sp, sizeof(slist)-1);
                 }
                 if (d->host_info & H_SUSPECT)
                 {
-                    *sp++ = '+';
+                    safe_copy_chr('+', slist, &sp, sizeof(slist)-1);
                 }
                 if (d->host_info & H_GUEST)
                 {
-                    *sp++ = 'G';
+                    safe_copy_chr('G', slist, &sp, sizeof(slist)-1);
                 }
             }
             else if (  (e->flags & DS_CONNECTED)
@@ -1607,11 +1607,11 @@ static void dump_users(DESC *e, char *match, int key)
             {
                 if (d->flags & DS_AUTODARK)
                 {
-                    *fp++ = 'd';
+                    safe_copy_chr('d', flist, &fp, sizeof(flist)-1);
                 }
                 else
                 {
-                    *fp++ = 'D';
+                    safe_copy_chr('D', flist, &fp, sizeof(flist)-1);
                 }
             }
             *fp = '\0';
