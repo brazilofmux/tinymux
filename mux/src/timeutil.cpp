@@ -1,6 +1,6 @@
 // timeutil.cpp -- CLinearTimeAbsolute and CLinearTimeDelta modules.
 //
-// $Id: timeutil.cpp,v 1.57 2006-01-11 04:55:14 sdennis Exp $
+// $Id: timeutil.cpp,v 1.58 2006-01-11 04:57:09 sdennis Exp $
 //
 // Date/Time code based on algorithms presented in "Calendrical Calculations",
 // Cambridge Press, 1998.
@@ -1880,16 +1880,17 @@ static void test_time_t(void)
     //
     for (;;)
     {
-        struct tm *ptm = localtime(&tLower);
+        struct tm _tm;
+        mux_localtime(&_tm, &tLower);
 
-        if (ptm->tm_isdst <= 0)
+        if (_tm.tm_isdst <= 0)
         {
             // Daylight savings time is either not in effect or
             // we have no way of knowing whether it is in effect
             // or not.
             //
             FIELDEDTIME ft;
-            SetStructTm(&ft, ptm);
+            SetStructTm(&ft, &_tm);
             ft.iMillisecond = 0;
             ft.iMicrosecond = 0;
             ft.iNanosecond  = 0;
