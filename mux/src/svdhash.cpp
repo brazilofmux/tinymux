@@ -1,6 +1,6 @@
 // svdhash.cpp -- CHashPage, CHashFile, CHashTable modules.
 //
-// $Id: svdhash.cpp,v 1.50 2006-01-11 04:19:53 jake Exp $
+// $Id: svdhash.cpp,v 1.51 2006-01-11 07:02:57 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -443,7 +443,9 @@ void CHashPage::GetStats
     if (  nExtra != 0
        || nCount != 0)
     {
-        UINT32 nSpace      = ((unsigned char *)m_pTrailer) - ((unsigned char *)m_pDirectory);
+        size_t nSpaceTmp   = ((unsigned char *)m_pTrailer) - ((unsigned char *)m_pDirectory);
+        mux_assert(nSpaceTmp <= UINT32_MAX_VALUE);
+        UINT32 nSpace      = static_cast<UINT32>(nSpaceTmp);
         UINT32 nMinDirSize = nCount;
         UINT32 nMaxDirSize = (nSpace - nSize)/sizeof(HP_HEAPOFFSET);
 
