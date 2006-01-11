@@ -1,6 +1,6 @@
 // comsys.cpp
 //
-// $Id: comsys.cpp,v 1.51 2006-01-11 08:18:41 sdennis Exp $
+// $Id: comsys.cpp,v 1.52 2006-01-11 12:09:36 jake Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -37,7 +37,7 @@ static char *RestrictTitleValue(char *pTitleRequest)
     //
     char NewTitle_ANSI[MAX_TITLE_LEN+1];
     size_t nVisualWidth;
-    int nLen = ANSI_TruncateToField(pNewTitle, sizeof(NewTitle_ANSI),
+    size_t nLen = ANSI_TruncateToField(pNewTitle, sizeof(NewTitle_ANSI),
         NewTitle_ANSI, sizeof(NewTitle_ANSI), &nVisualWidth,
         ANSI_ENDGOAL_NORMAL);
     memcpy(pNewTitle, NewTitle_ANSI, nLen+1);
@@ -145,7 +145,7 @@ void save_comsys(char *filename)
 static char *MakeCanonicalComAlias
 (
     const char *pAlias,
-    int *nValidAlias,
+    size_t *nValidAlias,
     bool *bValidAlias
 )
 {
@@ -195,7 +195,7 @@ static bool ParseChannelLine(char *pBuffer, char *pAlias5, char **ppChannelName)
 
     *p = '\0';
     bool bValidAlias;
-    int  nValidAlias;
+    size_t  nValidAlias;
     char *pValidAlias = MakeCanonicalComAlias(pBuffer, &nValidAlias, &bValidAlias);
     if (!bValidAlias)
     {
@@ -248,7 +248,7 @@ void load_channels(FILE *fp)
 
             for (j = 0; j < c->numchannels; j++)
             {
-                int n = GetLineTrunc(buffer, sizeof(buffer), fp);
+                size_t n = GetLineTrunc(buffer, sizeof(buffer), fp);
                 if (buffer[n-1] == '\n')
                 {
                     // Get rid of trailing '\n'.
@@ -550,7 +550,7 @@ void load_comsystem(FILE *fp)
         ch = (struct channel *)MEMALLOC(sizeof(struct channel));
         ISOUTOFMEMORY(ch);
 
-        int nChannel = GetLineTrunc(temp, sizeof(temp), fp);
+        size_t nChannel = GetLineTrunc(temp, sizeof(temp), fp);
         if (nChannel > MAX_CHANNEL_LEN)
         {
             nChannel = MAX_CHANNEL_LEN;
@@ -566,7 +566,7 @@ void load_comsystem(FILE *fp)
 
         if (ver >= 2)
         {
-            int nHeader = GetLineTrunc(temp, sizeof(temp), fp);
+            size_t nHeader = GetLineTrunc(temp, sizeof(temp), fp);
             if (nHeader > MAX_HEADER_LEN)
             {
                 nHeader = MAX_HEADER_LEN;
@@ -680,7 +680,7 @@ void load_comsystem(FILE *fp)
 
                 // Read Comtitle.
                 //
-                int nTitle = GetLineTrunc(temp, sizeof(temp), fp);
+                size_t nTitle = GetLineTrunc(temp, sizeof(temp), fp);
                 char *pTitle = temp;
 
                 if (!Good_dbref(t_user.who))
@@ -1479,7 +1479,7 @@ void do_addcom
         return;
     }
     bool bValidAlias;
-    int  nValidAlias;
+    size_t  nValidAlias;
     char *pValidAlias = MakeCanonicalComAlias(arg1, &nValidAlias, &bValidAlias);
     if (!bValidAlias)
     {
@@ -2915,7 +2915,7 @@ void do_cheader(dbref player, char *channel, char *header)
     //
     char NewHeader_ANSI[MAX_HEADER_LEN+1];
     size_t nVisualWidth;
-    int nLen = ANSI_TruncateToField(p, sizeof(NewHeader_ANSI),
+    size_t nLen = ANSI_TruncateToField(p, sizeof(NewHeader_ANSI),
         NewHeader_ANSI, sizeof(NewHeader_ANSI), &nVisualWidth,
         ANSI_ENDGOAL_NORMAL);
     memcpy(ch->header, NewHeader_ANSI, nLen+1);
