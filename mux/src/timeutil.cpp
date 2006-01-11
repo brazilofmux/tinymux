@@ -1,6 +1,6 @@
 // timeutil.cpp -- CLinearTimeAbsolute and CLinearTimeDelta modules.
 //
-// $Id: timeutil.cpp,v 1.60 2006-01-11 04:59:53 sdennis Exp $
+// $Id: timeutil.cpp,v 1.61 2006-01-11 05:11:52 jake Exp $
 //
 // Date/Time code based on algorithms presented in "Calendrical Calculations",
 // Cambridge Press, 1998.
@@ -1817,7 +1817,7 @@ static bool mux_localtime(struct tm *ptm_arg, const time_t *pt_arg)
 #if defined(WIN32) && (_MSC_VER >= 1400)
     // 1400 is Visual C++ 2005
     //
-    return (localtime_s(ptm_arg, pt_arg) == 0);
+    return (_localtime64_s(ptm_arg, pt_arg) == 0);
 #else
     struct tm *ptm = localtime(pt_arg);
     if (ptm)
