@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.173 2006-01-11 07:16:38 sdennis Exp $
+// $Id: functions.cpp,v 1.174 2006-01-11 08:15:42 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -1488,7 +1488,7 @@ static FUNCTION(fun_mid)
     //
     struct ANSI_In_Context aic;
     ANSI_String_In_Init(&aic, fargs[0], ANSI_ENDGOAL_NORMAL);
-    int nDone;
+    size_t nDone;
     ANSI_String_Skip(&aic, iPosition0, &nDone);
     if (nDone < iPosition0)
     {
@@ -1555,7 +1555,7 @@ static FUNCTION(fun_right)
     //
     struct ANSI_In_Context aic;
     ANSI_String_In_Init(&aic, fargs[0], ANSI_ENDGOAL_NORMAL);
-    int nDone;
+    size_t nDone;
     ANSI_String_Skip(&aic, iPosition0, &nDone);
     if ((size_t)nDone < iPosition0)
     {
@@ -6692,7 +6692,7 @@ static void centerjustcombo
 
     // Determine string to pad with.
     //
-    int  vwPad = 0;
+    size_t vwPad = 0;
     int  nPad = -1;
     char aPad[SBUF_SIZE];
     struct ANSI_In_Context  aic;
@@ -6713,7 +6713,7 @@ static void centerjustcombo
         vwPad   = 1;
     }
 
-    int  vwStr;
+    size_t vwStr;
     char aStr[LBUF_SIZE];
     int nStr = ANSI_TruncateToField(fargs[0], sizeof(aStr), aStr,
         width, &vwStr, ANSI_ENDGOAL_NORMAL);
@@ -6798,10 +6798,10 @@ static void centerjustcombo
         vwTrailPartial1 = vwTrailing - nTrailFull * vwPad;
     }
 
-    int nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
+    size_t nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
     ANSI_String_Out_Init(&aoc, *bufc, nBufferAvailable,
         LBUF_SIZE-1, ANSI_ENDGOAL_NORMAL);
-    int    vwDone;
+    size_t vwDone;
 
     // Output the runs of full leading padding.
     //
@@ -7472,8 +7472,8 @@ static FUNCTION(fun_wrap)
     struct ANSI_Out_Context aoc;
     char *mbufc;
     char *mbuf = mbufc = alloc_lbuf("fun_mywrap.out");
-    int nBufferAvailable, nSize;
-    int nDone;
+    size_t nBufferAvailable, nSize;
+    size_t nDone;
     int i = 0;
 
     while (str[i])

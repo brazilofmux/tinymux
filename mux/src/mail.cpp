@@ -1,6 +1,6 @@
 // mail.cpp
 //
-// $Id: mail.cpp,v 1.56 2006-01-11 04:23:35 sdennis Exp $
+// $Id: mail.cpp,v 1.57 2006-01-11 08:15:42 sdennis Exp $
 //
 // This code was taken from Kalkin's DarkZone code, which was
 // originally taken from PennMUSH 1.50 p10, and has been heavily modified
@@ -1154,7 +1154,7 @@ static void do_mail_file(dbref player, char *msglist, char *folder)
 static char *MakeCanonicalMailAlias
 (
     char *pMailAlias,
-    int *pnValidMailAlias,
+    size_t *pnValidMailAlias,
     bool *pbValidMailAlias
 )
 {
@@ -1219,8 +1219,8 @@ static struct malias *get_malias(dbref player, char *alias, int *pnResult)
     }
     else if (alias[0] == '*')
     {
-        int  nValidMailAlias;
-        bool bValidMailAlias;
+        size_t nValidMailAlias;
+        bool   bValidMailAlias;
         char *pValidMailAlias = MakeCanonicalMailAlias
                                 (   alias+1,
                                     &nValidMailAlias,
@@ -1399,7 +1399,7 @@ static void do_mail_read(dbref player, char *msglist)
                 status = status_string(mp);
                 names = make_namelist(player, mp->tolist);
                 char szSubjectBuffer[MBUF_SIZE];
-                int iRealVisibleWidth;
+                size_t iRealVisibleWidth;
                 ANSI_TruncateToField(mp->subject, sizeof(szSubjectBuffer),
                     szSubjectBuffer, 65, &iRealVisibleWidth, ANSI_ENDGOAL_NORMAL);
                 notify(player, tprintf("%-3d         From:  %-*s  At: %-25s  %s\r\nFldr   : %-2d Status: %s\r\nTo     : %-65s\r\nSubject: %s",
@@ -1465,7 +1465,7 @@ static void do_mail_review(dbref player, char *name, char *msglist)
     struct mail *mp;
     struct mail_selector ms;
     int i = 0, j = 0;
-    int iRealVisibleWidth;
+    size_t iRealVisibleWidth;
     char szSubjectBuffer[MBUF_SIZE];
 
     if (  !msglist
@@ -1588,7 +1588,7 @@ static void do_mail_list(dbref player, char *msglist, bool sub)
     }
     int i = 0;
     char *time;
-    int iRealVisibleWidth;
+    size_t iRealVisibleWidth;
     char szSubjectBuffer[MBUF_SIZE];
     int folder = player_folder(player);
 
@@ -2847,9 +2847,9 @@ static void load_mail_V5(FILE *fp)
 static char *MakeCanonicalMailAliasDesc
 (
     char *pMailAliasDesc,
-    int *pnValidMailAliasDesc,
+    size_t *pnValidMailAliasDesc,
     bool *pbValidMailAliasDesc,
-    int *pnVisualWidth
+    size_t *pnVisualWidth
 )
 {
     if (!pMailAliasDesc)
@@ -2921,9 +2921,9 @@ static void malias_read(FILE *fp)
 
         // The format of @malias name is "N:<name>\n".
         //
-        int nLen = GetLineTrunc(buffer, sizeof(buffer), fp);
+        size_t nLen = GetLineTrunc(buffer, sizeof(buffer), fp);
         buffer[nLen-1] = '\0'; // Get rid of trailing '\n'.
-        int  nMailAlias;
+        size_t nMailAlias;
         bool bMailAlias;
         char *pMailAlias = MakeCanonicalMailAlias( buffer+2,
                                                    &nMailAlias,
@@ -2940,9 +2940,9 @@ static void malias_read(FILE *fp)
         // The format of the description is "D:<description>\n"
         //
         nLen = GetLineTrunc(buffer, sizeof(buffer), fp);
-        int  nMailAliasDesc;
+        size_t  nMailAliasDesc;
         bool bMailAliasDesc;
-        int  nVisualWidth;
+        size_t nVisualWidth;
         char *pMailAliasDesc = MakeCanonicalMailAliasDesc( buffer+2,
                                                            &nMailAliasDesc,
                                                            &bMailAliasDesc,
@@ -3265,8 +3265,8 @@ static void do_malias_create(dbref player, char *alias, char *tolist)
             head++;
         }
     }
-    int  nValidMailAlias;
-    bool bValidMailAlias;
+    size_t nValidMailAlias;
+    bool   bValidMailAlias;
     char *pValidMailAlias = MakeCanonicalMailAlias
                             (   alias+1,
                                 &nValidMailAlias,
@@ -3837,7 +3837,7 @@ static void do_mail_proof(dbref player)
     char *pMailMsg = atr_get(player, A_MAILMSG, &aowner, &aflags);
     char *names    = make_namelist(player, mailto);
 
-    int iRealVisibleWidth;
+    size_t iRealVisibleWidth;
     char szSubjectBuffer[MBUF_SIZE];
     ANSI_TruncateToField(atr_get_raw(player, A_MAILSUB),
         sizeof(szSubjectBuffer), szSubjectBuffer, 35,
@@ -3870,9 +3870,9 @@ static void do_malias_desc(dbref player, char *alias, char *desc)
     if (  m->owner != GOD
        || ExpMail(player))
     {
-        int  nValidMailAliasDesc;
-        bool bValidMailAliasDesc;
-        int  nVisualWidth;
+        size_t nValidMailAliasDesc;
+        bool   bValidMailAliasDesc;
+        size_t nVisualWidth;
         char *pValidMailAliasDesc = MakeCanonicalMailAliasDesc
                                     (   desc,
                                         &nValidMailAliasDesc,
@@ -4078,8 +4078,8 @@ static void do_malias_rename(dbref player, char *alias, char *newname)
         return;
     }
 
-    int  nValidMailAlias;
-    bool bValidMailAlias;
+    size_t nValidMailAlias;
+    bool   bValidMailAlias;
     char *pValidMailAlias = MakeCanonicalMailAlias
                             (   newname+1,
                                 &nValidMailAlias,

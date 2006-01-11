@@ -1,6 +1,6 @@
 // set.cpp -- Commands which set parameters.
 //
-// $Id: set.cpp,v 1.32 2006-01-11 04:19:53 jake Exp $
+// $Id: set.cpp,v 1.33 2006-01-11 08:15:42 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -224,7 +224,7 @@ void do_name
     }
     else
     {
-        int nValidName;
+        size_t nValidName;
         bool bValid;
         char *pValidName;
 

@@ -1,6 +1,6 @@
 // stringutil.cpp -- string utilities.
 //
-// $Id: stringutil.cpp,v 1.81 2006-01-11 07:16:38 sdennis Exp $
+// $Id: stringutil.cpp,v 1.82 2006-01-11 08:15:42 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -469,7 +469,7 @@ const unsigned char mux_StripAccents[256] =
 // The type identifies the token type of length nLengthToken0. nLengthToken1
 // may also be present and is a token of the -other- type.
 //
-int ANSI_lex(int nString, const char *pString, size_t *nLengthToken0, size_t *nLengthToken1)
+int ANSI_lex(size_t nString, const char *pString, size_t *nLengthToken0, size_t *nLengthToken1)
 {
     *nLengthToken0 = 0;
     *nLengthToken1 = 0;
@@ -568,7 +568,7 @@ char *strip_ansi(const char *szString, size_t *pnString)
             memcpy(pBuffer, pString, nTokenLength0);
             pBuffer += nTokenLength0;
 
-            int nSkipLength = nTokenLength0 + nTokenLength1;
+            size_t nSkipLength = nTokenLength0 + nTokenLength1;
             nString -= nSkipLength;
             pString += nSkipLength;
         }
@@ -628,7 +628,7 @@ static const ANSI_ColorState acsRestingStates[3] =
     {true,  false, false, false, false, ANSI_COLOR_INDEX_DEFAULT, ANSI_COLOR_INDEX_DEFAULT}
 };
 
-static void ANSI_Parse_m(ANSI_ColorState *pacsCurrent, int nANSI, const char *pANSI,
+static void ANSI_Parse_m(ANSI_ColorState *pacsCurrent, size_t nANSI, const char *pANSI,
                   bool *pbSawNormal)
 {
     // If the last character isn't an 'm', then it's an ANSI sequence we
@@ -750,7 +750,7 @@ static char *ANSI_TransitionColorBinary
 (
     ANSI_ColorState *acsCurrent,
     const ANSI_ColorState *pcsNext,
-    int *nTransition,
+    size_t *nTransition,
     int  iEndGoal
 )
 {
@@ -933,10 +933,10 @@ void ANSI_String_In_Init
 void ANSI_String_Out_Init
 (
     struct ANSI_Out_Context *pacOut,
-    char *pField,
-    int   nField,
-    int   vwMax,
-    int   iEndGoal
+    char  *pField,
+    size_t nField,
+    size_t vwMax,
+    int    iEndGoal
 )
 {
     pacOut->m_acs      = acsRestingStates[ANSI_ENDGOAL_NORMAL];
@@ -952,8 +952,9 @@ void ANSI_String_Out_Init
 void ANSI_String_Skip
 (
     struct ANSI_In_Context *pacIn,
-    int   maxVisualWidth,
-    int  *pnVisualWidth)
+    size_t                  maxVisualWidth,
+    size_t                 *pnVisualWidth
+)
 {
     *pnVisualWidth = 0;
     while (pacIn->m_n)
@@ -966,7 +967,7 @@ void ANSI_String_Skip
         {
             // Process TEXT
             //
-            int nTextToSkip = maxVisualWidth - *pnVisualWidth;
+            size_t nTextToSkip = maxVisualWidth - *pnVisualWidth;
             if (nTokenLength0 > nTextToSkip)
             {
                 // We have reached the limits of the field
@@ -1028,7 +1029,7 @@ void ANSI_String_Copy
 (
     struct ANSI_Out_Context *pacOut,
     struct ANSI_In_Context  *pacIn,
-    int maxVisualWidth0
+    size_t maxVisualWidth0
 )
 {
     // Check whether we have previous struck the session limits (given
@@ -1041,7 +1042,7 @@ void ANSI_String_Copy
 
     // What is the working limit for visual width.
     //
-    int vw = 0;
+    size_t vw = 0;
     int vwMax = pacOut->m_vwMax;
     if (maxVisualWidth0 < vwMax)
     {
@@ -1050,7 +1051,7 @@ void ANSI_String_Copy
 
     // What is the working limit for field size.
     //
-    int nMax = pacOut->m_nMax;
+    size_t nMax = pacOut->m_nMax;
 
     char *pField = pacOut->m_p;
     while (pacIn->m_n)
@@ -1076,9 +1077,9 @@ void ANSI_String_Copy
             // the rest of the physical field (given by the current
             // nField length).
             //
-            int nFieldEffective = nMax - 1; // Leave room for '\0'.
+            size_t nFieldEffective = nMax - 1; // Leave room for '\0'.
 
-            int nTransitionFinal = 0;
+            size_t nTransitionFinal = 0;
             if (pacOut->m_iEndGoal <= ANSI_ENDGOAL_NOBLEED)
             {
                 // If we lay down -any- of the TEXT part, we need to make
@@ -1105,7 +1106,7 @@ void ANSI_String_Copy
             // If we lay down -any- of the TEXT part, it needs to be
             // the right color.
             //
-            int nTransition = 0;
+            size_t nTransition = 0;
             char *pTransition =
                 ANSI_TransitionColorBinary( &(pacOut->m_acs),
                                             &(pacIn->m_acs),
@@ -1139,7 +1140,7 @@ void ANSI_String_Copy
 
                     // Place just enough of the TEXT in the field.
                     //
-                    int nTextToAdd = vwMax - vw;
+                    size_t nTextToAdd = vwMax - vw;
                     if (nTextToAdd < nFieldEffective)
                     {
                         nFieldEffective = nTextToAdd;
@@ -1210,16 +1211,16 @@ void ANSI_String_Copy
     pacOut->m_vw += vw;
 }
 
-int ANSI_String_Finalize
+size_t ANSI_String_Finalize
 (
     struct ANSI_Out_Context *pacOut,
-    int *pnVisualWidth
+    size_t *pnVisualWidth
 )
 {
     char *pField = pacOut->m_p;
     if (pacOut->m_iEndGoal <= ANSI_ENDGOAL_NOBLEED)
     {
-        int nTransition = 0;
+        size_t nTransition = 0;
         char *pTransition =
             ANSI_TransitionColorBinary( &(pacOut->m_acs),
                                         &acsRestingStates[pacOut->m_iEndGoal],
@@ -1241,13 +1242,13 @@ int ANSI_String_Finalize
 // into a field of size nField. Truncate text. Also make sure that no color
 // leaks out of the field.
 //
-int ANSI_TruncateToField
+size_t ANSI_TruncateToField
 (
     const char *szString,
-    int nField,
+    size_t nField,
     char *pField0,
-    int maxVisualWidth,
-    int *pnVisualWidth,
+    size_t maxVisualWidth,
+    size_t *pnVisualWidth,
     int  iEndGoal
 )
 {
@@ -1264,14 +1265,14 @@ int ANSI_TruncateToField
     return ANSI_String_Finalize(&aoc, pnVisualWidth);
 }
 
-char *ANSI_TruncateAndPad_sbuf(const char *pString, int nMaxVisualWidth, char fill)
+char *ANSI_TruncateAndPad_sbuf(const char *pString, size_t nMaxVisualWidth, char fill)
 {
     char *pStringModified = alloc_sbuf("ANSI_TruncateAndPad_sbuf");
-    int nAvailable = SBUF_SIZE - nMaxVisualWidth;
-    int nVisualWidth;
-    int nLen = ANSI_TruncateToField(pString, nAvailable,
+    size_t nAvailable = SBUF_SIZE - nMaxVisualWidth;
+    size_t nVisualWidth;
+    size_t nLen = ANSI_TruncateToField(pString, nAvailable,
         pStringModified, nMaxVisualWidth, &nVisualWidth, ANSI_ENDGOAL_NORMAL);
-    for (int i = nMaxVisualWidth - nVisualWidth; i > 0; i--)
+    for (size_t i = nMaxVisualWidth - nVisualWidth; i > 0; i--)
     {
         pStringModified[nLen] = fill;
         nLen++;
@@ -1283,7 +1284,7 @@ char *ANSI_TruncateAndPad_sbuf(const char *pString, int nMaxVisualWidth, char fi
 char *normal_to_white(const char *szString)
 {
     static char Buffer[LBUF_SIZE];
-    int nVisualWidth;
+    size_t nVisualWidth;
     ANSI_TruncateToField( szString,
                           sizeof(Buffer),
                           Buffer,
@@ -2588,7 +2589,7 @@ char *mux_ftoa(double r, bool bRounded, int frac)
         }
     }
     char *p = mux_dtoa(r, mode, nRequest, &iDecimalPoint, &bNegative, &rve);
-    int nSize = rve - p;
+    size_t nSize = rve - p;
     if (nSize > 50)
     {
         nSize = 50;
@@ -2642,7 +2643,7 @@ char *mux_ftoa(double r, bool bRounded, int frac)
         q += nSize;
         if (bRounded)
         {
-            int nPad = nRequest - (nSize - iDecimalPoint);
+            size_t nPad = nRequest - (nSize - iDecimalPoint);
             if (0 < nPad)
             {
                 memset(q, '0', nPad);
@@ -2678,7 +2679,7 @@ char *mux_ftoa(double r, bool bRounded, int frac)
             q += nSize - iDecimalPoint;
             if (bRounded)
             {
-                int nPad = nRequest - (nSize - iDecimalPoint);
+                size_t nPad = nRequest - (nSize - iDecimalPoint);
                 if (0 < nPad)
                 {
                     memset(q, '0', nPad);
@@ -2875,7 +2876,7 @@ void mux_strtok_ctl(MUX_STRTOK_STATE *tts, char *pControl)
     }
 }
 
-char *mux_strtok_parseLEN(MUX_STRTOK_STATE *tts, int *pnLen)
+char *mux_strtok_parseLEN(MUX_STRTOK_STATE *tts, size_t *pnLen)
 {
     *pnLen = 0;
     if (!tts)
@@ -2939,7 +2940,7 @@ char *mux_strtok_parseLEN(MUX_STRTOK_STATE *tts, int *pnLen)
 
 char *mux_strtok_parse(MUX_STRTOK_STATE *tts)
 {
-    int nLen;
+    size_t nLen;
     char *p = mux_strtok_parseLEN(tts, &nLen);
     if (p)
     {
@@ -2956,8 +2957,8 @@ char *RemoveSetOfCharacters(char *pString, char *pSetToRemove)
     static char Buffer[LBUF_SIZE];
     char *pBuffer = Buffer;
 
-    int nLen;
-    int nLeft = sizeof(Buffer) - 1;
+    size_t nLen;
+    size_t nLeft = sizeof(Buffer) - 1;
     char *p;
     MUX_STRTOK_STATE tts;
     mux_strtok_src(&tts, pString);
@@ -3162,7 +3163,7 @@ extern char *vsprintf(char *, char *, va_list);
 // Returns: A number from 0 to count-1 that is the string length of
 // the returned (possibly truncated) buffer.
 //
-int DCL_CDECL mux_vsnprintf(char *buff, size_t count, const char *fmt, va_list va)
+size_t DCL_CDECL mux_vsnprintf(char *buff, size_t count, const char *fmt, va_list va)
 {
     // From the manuals:
     //
@@ -3178,7 +3179,6 @@ int DCL_CDECL mux_vsnprintf(char *buff, size_t count, const char *fmt, va_list v
     // On Win32, it can fill the buffer completely without a
     // null-termination and return -1.
 
-
     // To favor the Unix case, if there is an output error, but
     // vsnprint doesn't touch the buffer, we avoid undefined trash by
     // null-terminating the buffer to zero-length before the call.
@@ -3191,8 +3191,13 @@ int DCL_CDECL mux_vsnprintf(char *buff, size_t count, const char *fmt, va_list v
     // touches the buffer writes garbage, and then returns -1, we may
     // pass garbage, but this possibility seems very unlikely.
     //
-    int len = VSNPRINTF(buff, count, fmt, va);
-    if (len < 0 || count-1 < static_cast<size_t>(len))
+    size_t len;
+    int cc = VSNPRINTF(buff, count, fmt, va);
+    if (0 <= cc && static_cast<size_t>(cc) <= count-1)
+    {
+        len = cc;
+    }
+    else
     {
         if (buff[0] == '\0')
         {
@@ -3221,10 +3226,10 @@ void DCL_CDECL mux_sprintf(char *buff, size_t count, const char *fmt, ...)
 // line past the buffer size is truncated instead of being returned on
 // the next call.
 //
-int GetLineTrunc(char *Buffer, size_t nBuffer, FILE *fp)
+size_t GetLineTrunc(char *Buffer, size_t nBuffer, FILE *fp)
 {
     size_t lenBuffer = 0;
-    if (fgets(Buffer, nBuffer, fp))
+    if (fgets(Buffer, static_cast<int>(nBuffer), fp))
     {
         lenBuffer = strlen(Buffer);
     }
@@ -3313,7 +3318,7 @@ int BMH_Execute(BMH_State *bmhs, int nPat, const char *pPat, int nSrc, const cha
         }
         if (j < 0)
         {
-            return s-pSrc;
+            return static_cast<int>(s-pSrc);
         }
     }
     return -1;
@@ -3379,7 +3384,7 @@ int BMH_ExecuteI(BMH_State *bmhs, int nPat, const char *pPat, int nSrc, const ch
         }
         if (j < 0)
         {
-            return s-pSrc;
+            return static_cast<int>(s-pSrc);
         }
     }
     return -1;

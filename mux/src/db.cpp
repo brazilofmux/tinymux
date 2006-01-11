@@ -1,6 +1,6 @@
 // db.cpp
 //
-// $Id: db.cpp,v 1.89 2006-01-11 04:19:53 jake Exp $
+// $Id: db.cpp,v 1.90 2006-01-11 08:15:42 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -689,7 +689,7 @@ void do_attribute
 
     // Look up the user-named attribute we want to play with.
     //
-    int nName;
+    size_t nName;
     bool bValid = false;
     ATTR *va = NULL;
     char *pName = MakeCanonicalAttributeName(aname, &nName, &bValid);
@@ -917,7 +917,7 @@ void do_fixdb
         }
         else
         {
-            int nTmp;
+            size_t nTmp;
             bool bValid;
             pValidName = MakeCanonicalObjectName(arg2, &nTmp, &bValid);
             if (!bValid)
@@ -945,7 +945,7 @@ void do_fixdb
 // NOTE: Refer to init_attrtab() where it directly manipulates
 // mux_AttrNameSet to allow the attribute name: "*Password".
 //
-char *MakeCanonicalAttributeName(const char *pName, int *pnName, bool *pbValid)
+char *MakeCanonicalAttributeName(const char *pName, size_t *pnName, bool *pbValid)
 {
     static char Buffer[SBUF_SIZE];
 
@@ -998,7 +998,7 @@ char *MakeCanonicalAttributeName(const char *pName, int *pnName, bool *pbValid)
 
 // MakeCanonicalAttributeCommand
 //
-char *MakeCanonicalAttributeCommand(const char *pName, int *pnName, bool *pbValid)
+char *MakeCanonicalAttributeCommand(const char *pName, size_t *pnName, bool *pbValid)
 {
     if (!pName)
     {
@@ -1051,7 +1051,7 @@ void init_attrtab(void)
     mux_AttrNameInitialSet[star] = true;
     for (a = attr; a->number; a++)
     {
-        int nLen;
+        size_t nLen;
         bool bValid;
         char *buff = MakeCanonicalAttributeName(a->name, &nLen, &bValid);
         if (!bValid)
@@ -1074,7 +1074,7 @@ ATTR *atr_str(char *s)
 {
     // Make attribute name canonical.
     //
-    int nBuffer;
+    size_t nBuffer;
     bool bValid;
     char *buff = MakeCanonicalAttributeName(s, &nBuffer, &bValid);
     if (!bValid)
@@ -1255,7 +1255,7 @@ int mkattr(dbref executor, char *buff)
     {
         // Unknown attribute name, create a new one.
         //
-        int nName;
+        size_t nName;
         bool bValid;
         char *pName = MakeCanonicalAttributeName(buff, &nName, &bValid);
         ATTR *va;

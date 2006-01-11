@@ -1,6 +1,6 @@
 // comsys.cpp
 //
-// $Id: comsys.cpp,v 1.49 2006-01-11 04:19:53 jake Exp $
+// $Id: comsys.cpp,v 1.50 2006-01-11 08:15:42 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -36,7 +36,7 @@ static char *RestrictTitleValue(char *pTitleRequest)
     // Optimize/terminate any ANSI in the string.
     //
     char NewTitle_ANSI[MAX_TITLE_LEN+1];
-    int nVisualWidth;
+    size_t nVisualWidth;
     int nLen = ANSI_TruncateToField(pNewTitle, sizeof(NewTitle_ANSI),
         NewTitle_ANSI, sizeof(NewTitle_ANSI), &nVisualWidth,
         ANSI_ENDGOAL_NORMAL);
@@ -625,7 +625,7 @@ void load_comsystem(FILE *fp)
                     ANSI_RED, ch->name, ANSI_NORMAL, ANSI_MAGENTA,
                     ANSI_NORMAL);
             }
-            int vwVisual;
+            size_t vwVisual;
             ANSI_TruncateToField(temp, MAX_HEADER_LEN+1, ch->header,
                 MAX_HEADER_LEN+1, &vwVisual, ANSI_ENDGOAL_NORMAL);
         }
@@ -1510,7 +1510,7 @@ void do_addcom
     char Buffer[MAX_CHANNEL_LEN+1];
     if (!ch)
     {
-        int nVisualWidth;
+        size_t nVisualWidth;
         ANSI_TruncateToField(channel, sizeof(Buffer), Buffer, sizeof(Buffer), &nVisualWidth, ANSI_ENDGOAL_NORMAL);
         raw_notify(executor, tprintf("Channel %s does not exist yet.", Buffer));
         return;
@@ -1722,7 +1722,7 @@ void do_createchannel(dbref executor, dbref caller, dbref enactor, int key, char
     struct channel *newchannel = (struct channel *)MEMALLOC(sizeof(struct channel));
     ISOUTOFMEMORY(newchannel);
 
-    int   vwChannel;
+    size_t vwChannel;
     size_t nNameNoANSI;
     char *pNameNoANSI;
     char Buffer[MAX_HEADER_LEN];
@@ -2914,7 +2914,7 @@ void do_cheader(dbref player, char *channel, char *header)
     // Optimize/terminate any ANSI in the string.
     //
     char NewHeader_ANSI[MAX_HEADER_LEN+1];
-    int nVisualWidth;
+    size_t nVisualWidth;
     int nLen = ANSI_TruncateToField(p, sizeof(NewHeader_ANSI),
         NewHeader_ANSI, sizeof(NewHeader_ANSI), &nVisualWidth,
         ANSI_ENDGOAL_NORMAL);

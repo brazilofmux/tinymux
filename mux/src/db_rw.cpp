@@ -1,6 +1,6 @@
 // db_rw.cpp
 //
-// $Id: db_rw.cpp,v 1.24 2006-01-11 04:19:53 jake Exp $
+// $Id: db_rw.cpp,v 1.25 2006-01-11 08:15:42 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -506,7 +506,7 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
     int aflags;
     BOOLEXP *tempbool;
     char *buff;
-    int nVisualWidth;
+    size_t nVisualWidth;
 
     g_format = F_UNKNOWN;
     g_version = 0;
@@ -521,7 +521,7 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
     bool read_key = true;
     bool read_money = true;
 
-    int nName;
+    size_t nName;
     bool bValid;
     char *pName;
 

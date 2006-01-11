@@ -1,6 +1,6 @@
 // predicates.cpp
 //
-// $Id: predicates.cpp,v 1.78 2006-01-11 04:19:53 jake Exp $
+// $Id: predicates.cpp,v 1.79 2006-01-11 08:15:42 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -302,7 +302,7 @@ void giveto(dbref who, int pennies)
 // used for things and rooms, but not for players or exits) and generates
 // a canonical form of that name (with optimized ANSI).
 //
-char *MakeCanonicalObjectName(const char *pName, int *pnName, bool *pbValid)
+char *MakeCanonicalObjectName(const char *pName, size_t *pnName, bool *pbValid)
 {
     static char Buf[MBUF_SIZE];
 
@@ -317,8 +317,8 @@ char *MakeCanonicalObjectName(const char *pName, int *pnName, bool *pbValid)
     // Build up what the real name would be. If we pass all the
     // checks, this is what we will return as a result.
     //
-    int nVisualWidth;
-    int nBuf = ANSI_TruncateToField(pName, sizeof(Buf), Buf, MBUF_SIZE,
+    size_t nVisualWidth;
+    size_t nBuf = ANSI_TruncateToField(pName, sizeof(Buf), Buf, MBUF_SIZE,
         &nVisualWidth, ANSI_ENDGOAL_NORMAL);
 
     // Disallow pure ANSI names. There must be at least -something-
@@ -371,7 +371,7 @@ char *MakeCanonicalObjectName(const char *pName, int *pnName, bool *pbValid)
 
 // The following function validates exit names.
 //
-char *MakeCanonicalExitName(const char *pName, int *pnName, bool *pbValid)
+char *MakeCanonicalExitName(const char *pName, size_t *pnName, bool *pbValid)
 {
     static char Buf[MBUF_SIZE];
     static char Out[MBUF_SIZE];
@@ -428,11 +428,11 @@ char *MakeCanonicalExitName(const char *pName, int *pnName, bool *pbValid)
             // any segment but the first, so we can pull them directly from
             // the stripped buffer.
             //
-            int  nN;
-            bool bN;
-            char *pN = MakeCanonicalObjectName(q, &nN, &bN);
+            size_t nN;
+            bool   bN;
+            char  *pN = MakeCanonicalObjectName(q, &nN, &bN);
             if (  bN
-               && nN < MBUF_SIZE - (pOut - Out) - 1)
+               && nN < static_cast<size_t>(MBUF_SIZE - (pOut - Out) - 1))
             {
                 safe_mb_chr(';', Out, &pOut);
                 safe_mb_str(pN, Out, &pOut);
@@ -446,7 +446,7 @@ char *MakeCanonicalExitName(const char *pName, int *pnName, bool *pbValid)
             // characters leading up to the semicolon, but not including the
             // semi-colon.
             //
-            int vw;
+            size_t vw;
             ANSI_TruncateToField(pName, sizeof(Out), Out, n, &vw,
                 ANSI_ENDGOAL_NORMAL);
 
@@ -454,9 +454,9 @@ char *MakeCanonicalExitName(const char *pName, int *pnName, bool *pbValid)
             //
             if ((size_t)vw == n)
             {
-                int  nN;
-                bool bN;
-                char *pN = MakeCanonicalObjectName(Out, &nN, &bN);
+                size_t nN;
+                bool   bN;
+                char  *pN = MakeCanonicalObjectName(Out, &nN, &bN);
                 if (  bN
                    && nN <= MBUF_SIZE - 1)
                 {

@@ -1,6 +1,6 @@
 // stringutil.h -- string utilities.
 //
-// $Id: stringutil.h,v 1.48 2006-01-11 07:16:38 sdennis Exp $
+// $Id: stringutil.h,v 1.49 2006-01-11 08:15:42 sdennis Exp $
 //
 #ifndef STRINGUTIL_H
 #define STRINGUTIL_H
@@ -44,7 +44,7 @@ extern const unsigned char mux_StripAccents[256];
 #define mux_isescape(x)           (mux_isescape[(unsigned char)(x)])
 #define mux_StripAccents(x)       (mux_StripAccents[(unsigned char)(x)])
 
-int ANSI_lex(int nString, const char *pString, size_t *nLengthToken0, size_t *nLengthToken1);
+int ANSI_lex(size_t nString, const char *pString, size_t *nLengthToken0, size_t *nLengthToken1);
 #define TOKEN_TEXT_ANSI 0 // Text sequence + optional ANSI sequence.
 #define TOKEN_ANSI      1 // ANSI sequence.
 
@@ -56,7 +56,7 @@ typedef struct
 
 void mux_strtok_src(MUX_STRTOK_STATE *tts, char *pString);
 void mux_strtok_ctl(MUX_STRTOK_STATE *tts, char *pControl);
-char *mux_strtok_parseLEN(MUX_STRTOK_STATE *tts, int *pnLen);
+char *mux_strtok_parseLEN(MUX_STRTOK_STATE *tts, size_t *pnLen);
 char *mux_strtok_parse(MUX_STRTOK_STATE *tts);
 char *RemoveSetOfCharacters(char *pString, char *pSetToRemove);
 
@@ -93,7 +93,7 @@ struct ANSI_In_Context
 {
     ANSI_ColorState m_acs;
     const char     *m_p;
-    int             m_n;
+    size_t          m_n;
     bool            m_bSawNormal;
 };
 
@@ -103,9 +103,9 @@ struct ANSI_Out_Context
     ANSI_ColorState m_acs;
     bool            m_bDone; // some constraint was met.
     char           *m_p;
-    int             m_n;
-    int             m_nMax;
-    int             m_vw;
+    size_t          m_n;
+    size_t          m_nMax;
+    size_t          m_vw;
     int             m_vwMax;
 };
 
@@ -113,24 +113,24 @@ struct ANSI_Out_Context
 #define ANSI_ENDGOAL_NOBLEED 1
 #define ANSI_ENDGOAL_LEAK    2
 
-extern void ANSI_String_In_Init(struct ANSI_In_Context *pacIn, const char *szString, int iEndGoal);
-extern void ANSI_String_Out_Init(struct ANSI_Out_Context *pacOut, char *pField, int nField, int vwMax, int iEndGoal);
-extern void ANSI_String_Skip(struct ANSI_In_Context *pacIn, int maxVisualWidth, int *pnVisualWidth);
-extern void ANSI_String_Copy(struct ANSI_Out_Context *pacOut, struct ANSI_In_Context *pacIn, int vwMax);
-extern int ANSI_String_Finalize(struct ANSI_Out_Context *pacOut, int *pnVisualWidth);
-extern char *ANSI_TruncateAndPad_sbuf(const char *pString, int nMaxVisualWidth, char fill = ' ');
-extern int ANSI_TruncateToField(const char *szString, int nField, char *pField, int maxVisual, int *nVisualWidth, int iEndGoal);
-extern char *strip_ansi(const char *szString, size_t *pnString = 0);
-extern char *strip_accents(const char *szString, size_t *pnString = 0);
-extern char *normal_to_white(const char *);
-extern char *munge_space(const char *);
-extern char *trim_spaces(char *);
-extern char *grabto(char **, char);
-extern int  string_compare(const char *, const char *);
-extern int  string_prefix(const char *, const char *);
-extern const char * string_match(const char * ,const char *);
-extern char *replace_string(const char *, const char *, const char *);
-extern char *replace_tokens
+void ANSI_String_In_Init(struct ANSI_In_Context *pacIn, const char *szString, int iEndGoal);
+void ANSI_String_Out_Init(struct ANSI_Out_Context *pacOut, char *pField, size_t nField, size_t vwMax, int iEndGoal);
+void ANSI_String_Skip(struct ANSI_In_Context *pacIn, size_t maxVisualWidth, size_t *pnVisualWidth);
+void ANSI_String_Copy(struct ANSI_Out_Context *pacOut, struct ANSI_In_Context *pacIn, size_t vwMax);
+size_t ANSI_String_Finalize(struct ANSI_Out_Context *pacOut, size_t *pnVisualWidth);
+char *ANSI_TruncateAndPad_sbuf(const char *pString, size_t nMaxVisualWidth, char fill = ' ');
+size_t ANSI_TruncateToField(const char *szString, size_t nField, char *pField, size_t maxVisual, size_t *nVisualWidth, int iEndGoal);
+char *strip_ansi(const char *szString, size_t *pnString = 0);
+char *strip_accents(const char *szString, size_t *pnString = 0);
+char *normal_to_white(const char *);
+char *munge_space(const char *);
+char *trim_spaces(char *);
+char *grabto(char **, char);
+int  string_compare(const char *, const char *);
+int  string_prefix(const char *, const char *);
+const char * string_match(const char * ,const char *);
+char *replace_string(const char *, const char *, const char *);
+char *replace_tokens
 (
     const char *s,
     const char *pBound,
@@ -138,23 +138,23 @@ extern char *replace_tokens
     const char *pSwitch
 );
 #if 0
-extern int prefix_match(const char *, const char *);
-extern char *BufferCloneLen(const char *pBuffer, unsigned int nBuffer);
+int prefix_match(const char *, const char *);
+char *BufferCloneLen(const char *pBuffer, unsigned int nBuffer);
 #endif // 0
-extern bool minmatch(char *str, char *target, int min);
-extern char *StringCloneLen(const char *str, size_t nStr);
-extern char *StringClone(const char *str);
+bool minmatch(char *str, char *target, int min);
+char *StringCloneLen(const char *str, size_t nStr);
+char *StringClone(const char *str);
 void safe_copy_str(const char *src, char *buff, char **bufp, int max);
 void safe_copy_str_lbuf(const char *src, char *buff, char **bufp);
 size_t safe_copy_buf(const char *src, size_t nLen, char *buff, char **bufp);
 size_t safe_fill(char *buff, char **bufc, char chFile, size_t nSpaces);
 void mux_strncpy(char *dest, const char *src, size_t nSizeOfBuffer);
-extern bool matches_exit_from_list(char *, const char *);
-extern char *translate_string(const char *, bool);
-extern int mux_stricmp(const char *a, const char *b);
-extern int mux_memicmp(const void *p1_arg, const void *p2_arg, size_t n);
-extern void mux_strlwr(char *tp);
-extern void mux_strupr(char *a);
+bool matches_exit_from_list(char *, const char *);
+char *translate_string(const char *, bool);
+int mux_stricmp(const char *a, const char *b);
+int mux_memicmp(const void *p1_arg, const void *p2_arg, size_t n);
+void mux_strlwr(char *tp);
+void mux_strupr(char *a);
 
 typedef struct tag_itl
 {
@@ -173,9 +173,9 @@ bool ItemToList_AddString(ITL *pContext, char *pStr);
 bool ItemToList_AddStringLEN(ITL *pContext, size_t nStr, char *pStr);
 void ItemToList_Final(ITL *pContext);
 
-int DCL_CDECL mux_vsnprintf(char *buff, size_t count, const char *fmt, va_list va);
+size_t DCL_CDECL mux_vsnprintf(char *buff, size_t count, const char *fmt, va_list va);
 void DCL_CDECL mux_sprintf(char *buff, size_t count, const char *fmt, ...);
-int GetLineTrunc(char *Buffer, size_t nBuffer, FILE *fp);
+size_t GetLineTrunc(char *Buffer, size_t nBuffer, FILE *fp);
 
 typedef struct
 {

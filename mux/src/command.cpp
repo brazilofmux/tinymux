@@ -1,6 +1,6 @@
 // command.cpp -- command parser and support routines.
 //
-// $Id: command.cpp,v 1.80 2006-01-11 04:19:53 jake Exp $
+// $Id: command.cpp,v 1.81 2006-01-11 08:15:42 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -861,7 +861,7 @@ void init_cmdtab(void)
             continue;
         }
 
-        int nBuffer;
+        size_t nBuffer;
         bool bValid;
         char *cbuff = MakeCanonicalAttributeCommand(ap->name, &nBuffer, &bValid);
         if (!bValid)
@@ -2651,7 +2651,7 @@ static void list_cmdaccess(dbref player)
             continue;
         }
 
-        int nBuffer;
+        size_t nBuffer;
         bool bValid;
         buff = MakeCanonicalAttributeCommand(ap->name, &nBuffer, &bValid);
         if (!bValid)
@@ -2926,7 +2926,7 @@ CF_HAND(cf_acmd_access)
 
     for (ap = attr; ap->name; ap++)
     {
-        int nBuffer;
+        size_t nBuffer;
         bool bValid;
         char *buff = MakeCanonicalAttributeCommand(ap->name, &nBuffer, &bValid);
         if (!bValid)

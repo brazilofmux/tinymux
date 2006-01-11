@@ -1,6 +1,6 @@
 // funceval.cpp -- MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.109 2006-01-11 04:19:53 jake Exp $
+// $Id: funceval.cpp,v 1.110 2006-01-11 08:15:42 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -237,7 +237,7 @@ FUNCTION(fun_ansi)
         }
         safe_str(fargs[iArg0+1], tmp, &bp);
         *bp = '\0';
-        int nVisualWidth;
+        size_t nVisualWidth;
         size_t nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
         size_t nLen = ANSI_TruncateToField(tmp, nBufferAvailable, *bufc,
             LBUF_SIZE, &nVisualWidth, ANSI_ENDGOAL_NORMAL);
@@ -1142,7 +1142,7 @@ FUNCTION(fun_columns)
     int nColumns = (78-nIndent)/nWidth;
     int iColumn = 0;
 
-    int nBufferAvailable = LBUF_SIZE - (*bufc-buff) - 1;
+    size_t nBufferAvailable = LBUF_SIZE - (*bufc-buff) - 1;
     bool bNeedCRLF = false;
     while (  cp
           && 0 < nBufferAvailable)
@@ -1153,7 +1153,7 @@ FUNCTION(fun_columns)
         }
 
         char *objstring = split_token(&cp, &sep);
-        int nVisualWidth;
+        size_t nVisualWidth;
         int nLen = ANSI_TruncateToField(objstring, nBufferAvailable, *bufc,
             nWidth, &nVisualWidth, ANSI_ENDGOAL_NORMAL);
         *bufc += nLen;
@@ -1282,12 +1282,12 @@ FUNCTION(fun_table)
         return;
     }
 
-    int nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
-    int nCurrentCol = nNumCols - 1;
+    size_t nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
+    size_t nCurrentCol = nNumCols - 1;
     for (;;)
     {
-        int nVisibleLength, nPaddingLength;
-        int nStringLength =
+        size_t nVisibleLength, nPaddingLength;
+        size_t nStringLength =
             ANSI_TruncateToField( pCurrent, nBufferAvailable, *bufc,
                                   nFieldWidth, &nVisibleLength, ANSI_ENDGOAL_NORMAL);
 
@@ -1596,7 +1596,7 @@ FUNCTION(fun_strtrunc)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    int maxVisualWidth = mux_atol(fargs[1]);
+    size_t maxVisualWidth = mux_atol(fargs[1]);
     if (maxVisualWidth < 0)
     {
         safe_range(buff, bufc);
@@ -1606,7 +1606,7 @@ FUNCTION(fun_strtrunc)
     {
         return;
     }
-    int nVisualWidth;
+    size_t nVisualWidth;
     char buf[LBUF_SIZE+1];
     ANSI_TruncateToField(fargs[0], LBUF_SIZE, buf, maxVisualWidth, &nVisualWidth, ANSI_ENDGOAL_NORMAL);
     safe_str(buf, buff, bufc);
@@ -3390,7 +3390,7 @@ FUNCTION(fun_valid)
     // Checks to see if a given <something> is valid as a parameter of
     // a given type (such as an object name)
     //
-    int nValidName;
+    size_t nValidName;
     bool bValid;
     if (!*fargs[0] || !*fargs[1])
     {

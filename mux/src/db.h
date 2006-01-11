@@ -1,6 +1,6 @@
 // db.h
 //
-// $Id: db.h,v 1.8 2006-01-07 20:55:42 sdennis Exp $
+// $Id: db.h,v 1.9 2006-01-11 08:15:42 sdennis Exp $
 //
 
 #ifndef __DB_H
@@ -43,8 +43,8 @@ struct atrlist
 };
 #endif // MEMORY_BASED
 
-extern char *MakeCanonicalAttributeName(const char *pName, int *pnName, bool *pbValid);
-extern char *MakeCanonicalAttributeCommand(const char *pName, int *pnName, bool *pbValid);
+char *MakeCanonicalAttributeName(const char *pName, size_t *pnName, bool *pbValid);
+char *MakeCanonicalAttributeCommand(const char *pName, size_t *pnName, bool *pbValid);
 
 typedef struct stack STACK;
 struct stack

@@ -1,6 +1,6 @@
 // eval.cpp -- Command evaluation and cracking.
 //
-// $Id: eval.cpp,v 1.36 2006-01-11 04:19:53 jake Exp $
+// $Id: eval.cpp,v 1.37 2006-01-11 08:15:42 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -895,7 +895,7 @@ static void tcache_add(dbref player, char *orig, char *result)
             TCENT *xp = (TCENT *) alloc_sbuf("tcache_add.sbuf");
             char *tp = alloc_lbuf("tcache_add.lbuf");
 
-            int nvw;
+            size_t nvw;
             ANSI_TruncateToField(result, LBUF_SIZE, tp, LBUF_SIZE,
                 &nvw, ANSI_ENDGOAL_NORMAL);
             xp->result = tp;
@@ -2072,8 +2072,8 @@ void mux_exec( char *buff, char **bufc, dbref executor, dbref caller,
             buff = realbuff;
         }
 
-        int nVisualWidth;
-        int nLen = ANSI_String_Finalize(&aoc, &nVisualWidth);
+        size_t nVisualWidth;
+        size_t nLen = ANSI_String_Finalize(&aoc, &nVisualWidth);
         memcpy(buff, mux_scratch, nLen+1);
         *bufc = buff + nLen;
     }

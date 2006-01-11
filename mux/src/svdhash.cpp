@@ -1,6 +1,6 @@
 // svdhash.cpp -- CHashPage, CHashFile, CHashTable modules.
 //
-// $Id: svdhash.cpp,v 1.51 2006-01-11 07:02:57 sdennis Exp $
+// $Id: svdhash.cpp,v 1.52 2006-01-11 08:15:42 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -2633,7 +2633,7 @@ void DCL_CDECL CLogFile::tinyprintf(char *fmt, ...)
     va_list ap;
     va_start(ap, fmt);
     char aTempBuffer[SIZEOF_LOG_BUFFER];
-    int nString = mux_vsnprintf(aTempBuffer, SIZEOF_LOG_BUFFER, fmt, ap);
+    size_t nString = mux_vsnprintf(aTempBuffer, SIZEOF_LOG_BUFFER, fmt, ap);
     va_end(ap);
     WriteBuffer(nString, aTempBuffer);
 }

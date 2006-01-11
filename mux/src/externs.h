@@ -1,6 +1,6 @@
 // externs.h -- Prototypes for externs not defined elsewhere.
 //
-// $Id: externs.h,v 1.63 2006-01-09 21:57:00 sdennis Exp $
+// $Id: externs.h,v 1.64 2006-01-11 08:15:42 sdennis Exp $
 //
 
 #ifndef EXTERNS_H
@@ -260,8 +260,8 @@ void add_quota(dbref, int);
 bool canpayfees(dbref, dbref, int, int);
 void giveto(dbref,int);
 bool payfor(dbref,int);
-char *MakeCanonicalObjectName(const char *pName, int *pnName, bool *pbValid);
-char *MakeCanonicalExitName(const char *pName, int *pnName, bool *pbValid);
+char *MakeCanonicalObjectName(const char *pName, size_t *pnName, bool *pbValid);
+char *MakeCanonicalExitName(const char *pName, size_t *pnName, bool *pbValid);
 bool ValidatePlayerName(const char *pName);
 bool ok_password(const char *szPassword, const char **pmsg);
 void handle_ears(dbref, bool, bool);

@@ -1,6 +1,6 @@
 // object.cpp -- Low-level object manipulation routines.
 //
-// $Id: object.cpp,v 1.16 2006-01-07 09:22:35 sdennis Exp $
+// $Id: object.cpp,v 1.17 2006-01-11 08:15:42 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -182,7 +182,8 @@ dbref clone_home(dbref player, dbref thing)
 dbref create_obj(dbref player, int objtype, const char *name, int cost)
 {
     dbref obj, owner;
-    int quota = 0, value = 0, nValidName;
+    int quota = 0, value = 0;
+    size_t nValidName;
     FLAGSET f;
     char *buff;
     const char *pValidName;

@@ -1,6 +1,6 @@
 // create.cpp -- Commands that create new objects.
 //
-// $Id: create.cpp,v 1.20 2006-01-11 04:19:53 jake Exp $
+// $Id: create.cpp,v 1.21 2006-01-11 08:15:42 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -679,7 +679,7 @@ void do_clone
     // Go make the clone object.
     //
     bool bValid;
-    int nValidName;
+    size_t nValidName;
     char *pValidName = MakeCanonicalObjectName(arg2, &nValidName, &bValid);
     const char *clone_name;
     if (bValid)

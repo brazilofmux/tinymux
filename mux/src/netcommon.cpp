@@ -1,6 +1,6 @@
 // netcommon.cpp
 //
-// $Id: netcommon.cpp,v 1.64 2006-01-11 04:19:53 jake Exp $
+// $Id: netcommon.cpp,v 1.65 2006-01-11 08:15:42 sdennis Exp $
 //
 // This file contains routines used by the networking code that do not
 // depend on the implementation of the networking code.  The network-specific
@@ -1410,7 +1410,7 @@ void check_events(void)
 }
 
 #define MAX_TRIMMED_NAME_LENGTH 16
-static const char *trimmed_name(dbref player, int *pvw)
+static const char *trimmed_name(dbref player, size_t *pvw)
 {
     static char cbuff[MBUF_SIZE];
 
@@ -1622,7 +1622,7 @@ static void dump_users(DESC *e, char *match, int key)
             CLinearTimeDelta ltdLastTime  = ltaNow - d->last_time;
 
             const char *pNameField = "<Unconnected>";
-            int vwNameField = strlen(pNameField);
+            size_t vwNameField = strlen(pNameField);
             if (d->flags & DS_CONNECTED)
             {
                 pNameField = trimmed_name(d->player, &vwNameField);
@@ -1752,7 +1752,7 @@ static void dump_info(DESC *arg_desc)
     queue_write(arg_desc, "### End INFO\r\n");
 }
 
-static char *MakeCanonicalDoing(char *pDoing, int *pnValidDoing, bool *pbValidDoing)
+static char *MakeCanonicalDoing(char *pDoing, size_t *pnValidDoing, bool *pbValidDoing)
 {
     *pnValidDoing = 0;
     *pbValidDoing = false;
@@ -1768,7 +1768,7 @@ static char *MakeCanonicalDoing(char *pDoing, int *pnValidDoing, bool *pbValidDo
 
     // Optimize/terminate any ANSI in the string.
     //
-    int nVisualWidth;
+    size_t nVisualWidth;
     static char szFittedDoing[SIZEOF_DOING_STRING];
     *pnValidDoing = ANSI_TruncateToField
                     ( Buffer,
@@ -1796,7 +1796,7 @@ void do_doing(dbref executor, dbref caller, dbref enactor, int key, char *arg)
     static char *Empty = "";
     char *szValidDoing = Empty;
     bool bValidDoing;
-    int nValidDoing = 0;
+    size_t nValidDoing = 0;
     if (arg)
     {
         szValidDoing = MakeCanonicalDoing(arg, &nValidDoing, &bValidDoing);
