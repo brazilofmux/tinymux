@@ -1,6 +1,6 @@
 // stringutil.cpp -- string utilities.
 //
-// $Id: stringutil.cpp,v 1.77 2006-01-10 03:31:40 sdennis Exp $
+// $Id: stringutil.cpp,v 1.78 2006-01-11 04:19:53 jake Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -1960,6 +1960,22 @@ size_t safe_fill(char *buff, char **bufc, char chFill, size_t nSpaces)
     memset(*bufc, chFill, nSpaces);
     *bufc += nSpaces;
     return nSpaces;
+}
+
+// mux_strncpy: Copies up to specified number of chars from source.
+// Note: unlike strncpy(), this null-terminates after copying.
+//
+void mux_strncpy(char *dest, const char *src, size_t nSizeOfBuffer)
+{
+    if (src == NULL) return;
+
+    char *tp = dest;
+    char *maxtp = dest + nSizeOfBuffer;
+    while (tp < maxtp && *src)
+    {
+        *tp++ = *src++;
+    }
+    *tp = '\0';
 }
 
 bool matches_exit_from_list(char *str, const char *pattern)

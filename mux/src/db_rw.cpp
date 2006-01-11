@@ -1,6 +1,6 @@
 // db_rw.cpp
 //
-// $Id: db_rw.cpp,v 1.23 2006-01-07 07:36:11 sdennis Exp $
+// $Id: db_rw.cpp,v 1.24 2006-01-11 04:19:53 jake Exp $
 //
 
 #include "copyright.h"
@@ -154,7 +154,7 @@ static BOOLEXP *getboolexp1(FILE *f)
     case '"':
         ungetc(c, f);
         buff = alloc_lbuf("getboolexp_quoted");
-        strcpy(buff, getstring_noalloc(f, 1));
+        mux_strncpy(buff, getstring_noalloc(f, 1), LBUF_SIZE-1);
         c = fgetc(f);
         if (c == EOF)
         {
@@ -188,7 +188,7 @@ static BOOLEXP *getboolexp1(FILE *f)
                 b->type = BOOLEXP_ATR;
             }
             buff = alloc_lbuf("getboolexp1.attr_lock");
-            strcpy(buff, getstring_noalloc(f, 1));
+            mux_strncpy(buff, getstring_noalloc(f, 1), LBUF_SIZE-1);
             b->sub1 = (BOOLEXP *)StringClone(buff);
             free_lbuf(buff);
         }

@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.171 2006-01-10 00:16:47 sdennis Exp $
+// $Id: functions.cpp,v 1.172 2006-01-11 04:19:53 jake Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -5356,7 +5356,7 @@ static FUNCTION(fun_fold)
     char *curr = fargs[1];
     char *cp = curr;
     char *atextbuf = alloc_lbuf("fun_fold");
-    strcpy(atextbuf, atext);
+    mux_strncpy(atextbuf, atext, LBUF_SIZE-1);
 
     char *result, *bp, *str, *clist[2];
 
@@ -5393,13 +5393,13 @@ static FUNCTION(fun_fold)
     {
         clist[0] = rstore;
         clist[1] = split_token(&cp, &sep);
-        strcpy(atextbuf, atext);
+        mux_strncpy(atextbuf, atext, LBUF_SIZE-1);
         bp = result;
         str = atextbuf;
         mux_exec(result, &bp, thing, executor, enactor,
             EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, clist, 2);
         *bp = '\0';
-        strcpy(rstore, result);
+        mux_strncpy(rstore, result, LBUF_SIZE-1);
     }
     free_lbuf(result);
     safe_str(rstore, buff, bufc);
@@ -5576,7 +5576,7 @@ static void filter_handler(char *buff, char **bufc, dbref executor, dbref enacto
           && !MuxAlarm.bAlarmed)
     {
         char *objstring = split_token(&cp, psep);
-        strcpy(atextbuf, atext);
+        mux_strncpy(atextbuf, atext, LBUF_SIZE-1);
         char *bp = result;
         char *str = atextbuf;
         mux_exec(result, &bp, thing, executor, enactor,
@@ -5679,7 +5679,7 @@ static FUNCTION(fun_map)
         }
         first = false;
         objstring = split_token(&cp, &sep);
-        strcpy(atextbuf, atext);
+        mux_strncpy(atextbuf, atext, LBUF_SIZE-1);
         str = atextbuf;
         mux_exec(buff, bufc, thing, executor, enactor,
             EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, &objstring, 1);
@@ -6344,7 +6344,7 @@ static FUNCTION(fun_sort)
     // Convert the list to an array.
     //
     char *list = alloc_lbuf("fun_sort");
-    strcpy(list, fargs[0]);
+    mux_strncpy(list, fargs[0], LBUF_SIZE-1);
     int nitems = list2arr(ptrs, LBUF_SIZE / 2, list, &sep);
     int sort_type = get_list_type(fargs, nfargs, 2, ptrs, nitems);
     do_asort(ptrs, nitems, sort_type);
@@ -6378,12 +6378,12 @@ static void handle_sets
     int val;
 
     char *list1 = alloc_lbuf("fun_setunion.1");
-    strcpy(list1, fargs[0]);
+    mux_strncpy(list1, fargs[0], LBUF_SIZE-1);
     int n1 = list2arr(ptrs1, LBUF_SIZE, list1, psep);
     do_asort(ptrs1, n1, ASCII_LIST);
 
     char *list2 = alloc_lbuf("fun_setunion.2");
-    strcpy(list2, fargs[1]);
+    mux_strncpy(list2, fargs[1], LBUF_SIZE-1);
     int n2 = list2arr(ptrs2, LBUF_SIZE, list2, psep);
     do_asort(ptrs2, n2, ASCII_LIST);
 
@@ -7463,8 +7463,8 @@ static FUNCTION(fun_wrap)
 
     char *str = alloc_lbuf("fun_mywrap.str");
     char *tstr = alloc_lbuf("fun_mywrap.str2");
-    strcpy(tstr, expand_tabs(fargs[0]));
-    strcpy(str,strip_ansi(tstr));
+    mux_strncpy(tstr, expand_tabs(fargs[0]), LBUF_SIZE-1);
+    mux_strncpy(str,strip_ansi(tstr), LBUF_SIZE-1);
     int nLength = 0;
     bool newline = false;
     char *jargs[2];
@@ -7732,7 +7732,7 @@ const char *time_format_1(int Seconds, size_t maxWidth)
     if (  maxWidth < 8
        || 12 < maxWidth)
     {
-        strcpy(TimeBuffer80, "???");
+        mux_strncpy(TimeBuffer80, "???", sizeof(TimeBuffer80)-1);
         return TimeBuffer80;
     }
     int iWidth = maxWidth - 8;

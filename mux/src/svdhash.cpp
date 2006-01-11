@@ -1,6 +1,6 @@
 // svdhash.cpp -- CHashPage, CHashFile, CHashTable modules.
 //
-// $Id: svdhash.cpp,v 1.49 2006-01-10 07:26:43 sdennis Exp $
+// $Id: svdhash.cpp,v 1.50 2006-01-11 04:19:53 jake Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -2765,8 +2765,8 @@ void CLogFile::SetPrefix(const char *szPrefix)
         {
             ReplaceFile(m_szFilename, szNewName);
         }
-        strcpy(m_szPrefix, szPrefix);
-        strcpy(m_szFilename, szNewName);
+        mux_strncpy(m_szPrefix, szPrefix, 31);
+        mux_strncpy(m_szFilename, szNewName, SIZEOF_PATHNAME-1);
 
         if (bEnabled)
         {

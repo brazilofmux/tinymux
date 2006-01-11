@@ -1,6 +1,6 @@
 // wiz.cpp -- Wizard-only commands.
 //
-// $Id: wiz.cpp,v 1.17 2006-01-08 20:19:59 sdennis Exp $
+// $Id: wiz.cpp,v 1.18 2006-01-11 04:19:53 jake Exp $
 //
 
 #include "copyright.h"
@@ -654,8 +654,7 @@ void do_motd(dbref executor, dbref caller, dbref enactor, int key, char *message
     {
     case MOTD_ALL:
 
-        strncpy(mudconf.motd_msg, message, GBUF_SIZE-1);
-        mudconf.motd_msg[GBUF_SIZE-1] = '\0';
+        mux_strncpy(mudconf.motd_msg, message, GBUF_SIZE-1);
         if (!Quiet(executor))
         {
             notify_quiet(executor, "Set: MOTD.");
@@ -664,8 +663,7 @@ void do_motd(dbref executor, dbref caller, dbref enactor, int key, char *message
 
     case MOTD_WIZ:
 
-        strncpy(mudconf.wizmotd_msg, message, GBUF_SIZE-1);
-        mudconf.wizmotd_msg[GBUF_SIZE-1] = '\0';
+        mux_strncpy(mudconf.wizmotd_msg, message, GBUF_SIZE-1);
         if (!Quiet(executor))
         {
             notify_quiet(executor, "Set: Wizard MOTD.");
@@ -674,8 +672,7 @@ void do_motd(dbref executor, dbref caller, dbref enactor, int key, char *message
 
     case MOTD_DOWN:
 
-        strncpy(mudconf.downmotd_msg, message, GBUF_SIZE-1);
-        mudconf.downmotd_msg[GBUF_SIZE-1] = '\0';
+        mux_strncpy(mudconf.downmotd_msg, message, GBUF_SIZE-1);
         if (!Quiet(executor))
         {
             notify_quiet(executor, "Set: Down MOTD.");
@@ -684,8 +681,7 @@ void do_motd(dbref executor, dbref caller, dbref enactor, int key, char *message
 
     case MOTD_FULL:
 
-        strncpy(mudconf.fullmotd_msg, message, GBUF_SIZE-1);
-        mudconf.fullmotd_msg[GBUF_SIZE-1] = '\0';
+        mux_strncpy(mudconf.fullmotd_msg, message, GBUF_SIZE-1);
         if (!Quiet(executor))
         {
             notify_quiet(executor, "Set: Full MOTD.");

@@ -1,6 +1,6 @@
 // eval.cpp -- Command evaluation and cracking.
 //
-// $Id: eval.cpp,v 1.35 2006-01-08 16:58:39 sdennis Exp $
+// $Id: eval.cpp,v 1.36 2006-01-11 04:19:53 jake Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -761,7 +761,7 @@ char *parse_arglist( dbref executor, dbref caller, dbref enactor, char *dstr,
         }
         else
         {
-            strcpy(fargs[arg], tstr);
+            mux_strncpy(fargs[arg], tstr, LBUF_SIZE-1);
         }
         arg++;
     }
@@ -1148,7 +1148,7 @@ void mux_exec( char *buff, char **bufc, dbref executor, dbref caller,
     {
         is_top = tcache_empty();
         savestr = alloc_lbuf("exec.save");
-        strcpy(savestr, pdstr);
+        mux_strncpy(savestr, pdstr, LBUF_SIZE-1);
     }
 
     // Save Parser Mode.

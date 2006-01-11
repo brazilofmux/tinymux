@@ -1,6 +1,6 @@
 // funceval.cpp -- MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.108 2006-01-10 01:34:47 sdennis Exp $
+// $Id: funceval.cpp,v 1.109 2006-01-11 04:19:53 jake Exp $
 //
 
 #include "copyright.h"
@@ -679,7 +679,7 @@ FUNCTION(fun_set)
             ATTR *pattr2;
             dbref thing2;
 
-            strcpy(buff2, p + 1);
+            mux_strncpy(buff2, p + 1, LBUF_SIZE-1);
             if (!( parse_attrib(executor, p + 1, &thing2, &pattr2)
                 && pattr2))
             {
@@ -2170,7 +2170,7 @@ FUNCTION(fun_elements)
     // Turn the first list into an array.
     //
     wordlist = alloc_lbuf("fun_elements.wordlist");
-    strcpy(wordlist, fargs[0]);
+    mux_strncpy(wordlist, fargs[0], LBUF_SIZE-1);
     nwords = list2arr(ptrs, LBUF_SIZE / 2, wordlist, &sep);
 
     s = trim_space_sep(fargs[1], &sepSpace);
@@ -2397,7 +2397,7 @@ static int u_comp(const void *s1, const void *s2)
     tbuf = alloc_lbuf("u_comp");
     elems[0] = (char *)s1;
     elems[1] = (char *)s2;
-    strcpy(tbuf, ucomp_buff);
+    mux_strncpy(tbuf, ucomp_buff, LBUF_SIZE-1);
     result = bp = alloc_lbuf("u_comp");
     str = tbuf;
     mux_exec(result, &bp, ucomp_executor, ucomp_caller, ucomp_enactor,
@@ -2508,13 +2508,13 @@ FUNCTION(fun_sortby)
         return;
     }
 
-    strcpy(ucomp_buff, atext);
+    mux_strncpy(ucomp_buff, atext, sizeof(ucomp_buff)-1);
     ucomp_executor = thing;
     ucomp_caller   = executor;
     ucomp_enactor  = enactor;
 
     char *list = alloc_lbuf("fun_sortby");
-    strcpy(list, fargs[1]);
+    mux_strncpy(list, fargs[1], LBUF_SIZE-1);
     char *ptrs[LBUF_SIZE / 2];
     int nptrs = list2arr(ptrs, LBUF_SIZE / 2, list, &sep);
 
@@ -2707,7 +2707,7 @@ FUNCTION(fun_mix)
         {
             os[i] = split_token(&cp[i], &sep);
         }
-        strcpy(atextbuf, atext);
+        mux_strncpy(atextbuf, atext, LBUF_SIZE-1);
         str = atextbuf;
         mux_exec(buff, bufc, thing, executor, enactor,
             EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, &(os[0]), lastn);
@@ -2792,7 +2792,7 @@ FUNCTION(fun_foreach)
                 }
             }
 
-            strcpy(atextbuf, atext);
+            mux_strncpy(atextbuf, atext, LBUF_SIZE-1);
             str = atextbuf;
             mux_exec(buff, bufc, thing, executor, enactor,
                 EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, &bp, 1);
@@ -2808,7 +2808,7 @@ FUNCTION(fun_foreach)
         {
             cbuf[0] = *cp++;
 
-            strcpy(atextbuf, atext);
+            mux_strncpy(atextbuf, atext, LBUF_SIZE-1);
             str = atextbuf;
             mux_exec(buff, bufc, thing, executor, enactor,
                 EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, &bp, 1);
@@ -2852,8 +2852,8 @@ FUNCTION(fun_munge)
     //
     list1 = alloc_lbuf("fun_munge.list1");
     list2 = alloc_lbuf("fun_munge.list2");
-    strcpy(list1, fargs[1]);
-    strcpy(list2, fargs[2]);
+    mux_strncpy(list1, fargs[1], LBUF_SIZE-1);
+    mux_strncpy(list2, fargs[2], LBUF_SIZE-1);
     nptrs1 = list2arr(ptrs1, LBUF_SIZE / 2, list1, &sep);
     nptrs2 = list2arr(ptrs2, LBUF_SIZE / 2, list2, &sep);
 
@@ -3824,7 +3824,7 @@ FUNCTION(fun_push)
     ISOUTOFMEMORY(sp);
     sp->next = Stack(doer);
     sp->data = alloc_lbuf("push");
-    strcpy(sp->data, data);
+    mux_strncpy(sp->data, data, LBUF_SIZE-1);
     s_Stack(doer, sp);
 }
 

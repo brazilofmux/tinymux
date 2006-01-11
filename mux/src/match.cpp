@@ -1,6 +1,6 @@
 // match.cpp -- Routines for parsing arguments.
 //
-// $Id: match.cpp,v 1.8 2006-01-07 19:29:57 sdennis Exp $
+// $Id: match.cpp,v 1.9 2006-01-11 04:19:53 jake Exp $
 //
 
 #include "copyright.h"
@@ -584,7 +584,7 @@ void save_match_state(MSTATE *mstate)
     mstate->match = md.match;
     mstate->player = md.player;
     mstate->string = alloc_lbuf("save_match_state");
-    strcpy(mstate->string, md.string);
+    mux_strncpy(mstate->string, md.string, LBUF_SIZE-1);
 }
 
 void restore_match_state(MSTATE *mstate)
@@ -596,7 +596,7 @@ void restore_match_state(MSTATE *mstate)
     md.absolute_form = mstate->absolute_form;
     md.match = mstate->match;
     md.player = mstate->player;
-    strcpy(md.string, mstate->string);
+    mux_strncpy(md.string, mstate->string, LBUF_SIZE-1);
     free_lbuf(mstate->string);
 }
 

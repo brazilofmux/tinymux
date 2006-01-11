@@ -1,6 +1,6 @@
 // comsys.cpp
 //
-// $Id: comsys.cpp,v 1.48 2006-01-09 07:11:48 sdennis Exp $
+// $Id: comsys.cpp,v 1.49 2006-01-11 04:19:53 jake Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -201,7 +201,7 @@ static bool ParseChannelLine(char *pBuffer, char *pAlias5, char **ppChannelName)
     {
         return false;
     }
-    strcpy(pAlias5, pValidAlias);
+    mux_strncpy(pAlias5, pValidAlias, ALIAS_SIZE-1);
 
     // Skip any leading space before the channel name.
     //
@@ -469,9 +469,9 @@ void sort_com_aliases(comsys_t *c)
         {
             if (strcmp(c->alias + i * ALIAS_SIZE, c->alias + (i + 1) * ALIAS_SIZE) > 0)
             {
-                strcpy(buffer, c->alias + i * ALIAS_SIZE);
-                strcpy(c->alias + i * ALIAS_SIZE, c->alias + (i + 1) * ALIAS_SIZE);
-                strcpy(c->alias + (i + 1) * ALIAS_SIZE, buffer);
+                mux_strncpy(buffer, c->alias + i * ALIAS_SIZE, sizeof(buffer)-1);
+                mux_strncpy(c->alias + i * ALIAS_SIZE, c->alias + (i + 1) * ALIAS_SIZE, ALIAS_SIZE-1);
+                mux_strncpy(c->alias + (i + 1) * ALIAS_SIZE, buffer, ALIAS_SIZE-1);
                 s = c->channels[i];
                 c->channels[i] = c->channels[i + 1];
                 c->channels[i + 1] = s;
@@ -839,7 +839,7 @@ static void BuildChannelMessage
             // Evaluate the comtitle as code.
             //
             char TempToEval[LBUF_SIZE];
-            strcpy(TempToEval, user->title);
+            mux_strncpy(TempToEval, user->title, LBUF_SIZE-1);
             char *q = TempToEval;
             mux_exec(*messNormal, &mnptr, user->who, user->who, user->who,
                 EV_FCHECK | EV_EVAL | EV_TOP, &q, (char **)NULL, 0);
@@ -1547,7 +1547,7 @@ void do_addcom
 
         for (i = 0; i < c->numchannels; i++)
         {
-            strcpy(na + i * ALIAS_SIZE, c->alias + i * ALIAS_SIZE);
+            mux_strncpy(na + i * ALIAS_SIZE, c->alias + i * ALIAS_SIZE, ALIAS_SIZE-1);
             nc[i] = c->channels[i];
         }
         if (c->alias)
@@ -1566,7 +1566,7 @@ void do_addcom
     where = c->numchannels++;
     for (i = where; i > j; i--)
     {
-        strcpy(c->alias + i * ALIAS_SIZE, c->alias + (i - 1) * ALIAS_SIZE);
+        mux_strncpy(c->alias + i * ALIAS_SIZE, c->alias + (i - 1) * ALIAS_SIZE, ALIAS_SIZE-1);
         c->channels[i] = c->channels[i - 1];
     }
 
@@ -1634,7 +1634,7 @@ void do_delcom(dbref executor, dbref caller, dbref enactor, int key, char *arg1)
 
             for (; i < c->numchannels; i++)
             {
-                strcpy(c->alias + i * ALIAS_SIZE, c->alias + (i + 1) * ALIAS_SIZE);
+                mux_strncpy(c->alias + i * ALIAS_SIZE, c->alias + (i + 1) * ALIAS_SIZE, ALIAS_SIZE-1);
                 c->channels[i] = c->channels[i + 1];
             }
             return;
@@ -1978,7 +1978,7 @@ void do_comtitle
     }
 
     char channel[MAX_CHANNEL_LEN+1];
-    strcpy(channel, get_channel_from_alias(executor, arg1));
+    mux_strncpy(channel, get_channel_from_alias(executor, arg1), MAX_CHANNEL_LEN);
 
     if (channel[0] == '\0')
     {
@@ -2669,11 +2669,11 @@ void do_cemit
     char *text2 = alloc_lbuf("do_cemit");
     if (key == CEMIT_NOHEADER)
     {
-        strcpy(text2, text);
+        mux_strncpy(text2, text, LBUF_SIZE-1);
     }
     else
     {
-        strcpy(text2, tprintf("%s %s", ch->header, text));
+        mux_strncpy(text2, tprintf("%s %s", ch->header, text), LBUF_SIZE-1);
     }
     SendChannelMessage(executor, ch, text2, text2);
 }
@@ -3034,7 +3034,7 @@ void do_chanlist
                 if (  NOTHING == ch->chan_obj
                    || !*atrstr)
                 {
-                    strcpy(buf, "No description.");
+                    mux_strncpy(buf, "No description.", MBUF_SIZE-1);
                 }
                 else
                 {

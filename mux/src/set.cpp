@@ -1,6 +1,6 @@
 // set.cpp -- Commands which set parameters.
 //
-// $Id: set.cpp,v 1.31 2006-01-08 20:26:18 sdennis Exp $
+// $Id: set.cpp,v 1.32 2006-01-11 04:19:53 jake Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -1083,7 +1083,7 @@ void do_set
             ATTR *pattr2;
             dbref thing2;
 
-            strcpy(buff, p + 1);
+            mux_strncpy(buff, p + 1, LBUF_SIZE-1);
             if (!( parse_attrib(executor, p + 1, &thing2, &pattr2)
                 && pattr2))
             {
@@ -1379,7 +1379,7 @@ bool parse_attrib(dbref player, char *str, dbref *thing, ATTR **attr)
     // Break apart string into obj and attr.
     //
     char *buff = alloc_lbuf("parse_attrib");
-    strcpy(buff, str);
+    mux_strncpy(buff, str, LBUF_SIZE-1);
     char *AttrName;
     bool retval = parse_thing_slash(player, buff, &AttrName, thing);
 
@@ -1468,7 +1468,7 @@ bool parse_attrib_wild(dbref player, char *str, dbref *thing,
     int lev;
     bool check_exclude, hash_insert;
     char *buff = alloc_lbuf("parse_attrib_wild");
-    strcpy(buff, str);
+    mux_strncpy(buff, str, LBUF_SIZE-1);
 
     // Separate name and attr portions at the first /.
     //

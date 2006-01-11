@@ -1,6 +1,6 @@
 // wild.cpp -- Wildcard routines.
 //
-// $Id: wild.cpp,v 1.9 2006-01-07 01:36:28 sdennis Exp $
+// $Id: wild.cpp,v 1.10 2006-01-11 04:19:53 jake Exp $
 //
 // Written by T. Alexander Popiel, 24 June 1993
 // Last modified by T. Alexander Popiel, 19 August 1993
@@ -210,8 +210,7 @@ static bool wild1(char *tstr, char *dstr, int arg)
     //
     if (!tstr[1])
     {
-        strncpy(arglist[arg], dstr, LBUF_SIZE - 1);
-        arglist[arg][LBUF_SIZE - 1] = '\0';
+        mux_strncpy(arglist[arg], dstr, LBUF_SIZE - 1);
         return true;
     }
 
@@ -321,9 +320,8 @@ static bool wild1(char *tstr, char *dstr, int arg)
             // Found a match!  Fill in all remaining arguments. First do the
             // '*'...
             //
-            strncpy(arglist[argpos], datapos,
+            mux_strncpy(arglist[argpos], datapos,
                             (dstr - datapos) - numextra);
-            arglist[argpos][(dstr - datapos) - numextra] = '\0';
             datapos = dstr - numextra;
             argpos++;
 

@@ -1,6 +1,6 @@
 // stringutil.h -- string utilities.
 //
-// $Id: stringutil.h,v 1.45 2006-01-10 03:31:40 sdennis Exp $
+// $Id: stringutil.h,v 1.46 2006-01-11 04:19:53 jake Exp $
 //
 #ifndef STRINGUTIL_H
 #define STRINGUTIL_H
@@ -148,6 +148,7 @@ void safe_copy_str(const char *src, char *buff, char **bufp, int max);
 void safe_copy_str_lbuf(const char *src, char *buff, char **bufp);
 size_t safe_copy_buf(const char *src, size_t nLen, char *buff, char **bufp);
 size_t safe_fill(char *buff, char **bufc, char chFile, size_t nSpaces);
+void mux_strncpy(char *dest, const char *src, size_t nSizeOfBuffer);
 extern bool matches_exit_from_list(char *, const char *);
 extern char *translate_string(const char *, bool);
 extern int mux_stricmp(const char *a, const char *b);

@@ -1,6 +1,6 @@
 // look.cpp -- Commands which look at things.
 //
-// $Id: look.cpp,v 1.47 2006-01-09 20:30:54 sdennis Exp $
+// $Id: look.cpp,v 1.48 2006-01-11 04:19:53 jake Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -514,7 +514,7 @@ static void look_exits(dbref player, dbref loc, const char *exit_name)
             {
                 if (exit_displayable(thing, player, key))
                 {
-                    strcpy(buff, Name(thing));
+                    mux_strncpy(buff, Name(thing), LBUF_SIZE-1);
                     for (e = buff; *e && *e != ';'; e++)
                     {
                         ; // Nothing.
@@ -1687,7 +1687,7 @@ void do_examine(dbref executor, dbref caller, dbref enactor, int key, char *name
             if (mudconf.read_rem_name)
             {
                 buf2 = alloc_lbuf("do_examine.pub_name");
-                strcpy(buf2, Name(thing));
+                mux_strncpy(buf2, Name(thing), LBUF_SIZE-1);
                 notify(executor,
                     tprintf("%s is owned by %s",
                     buf2, Name(Owner(thing))));
@@ -1737,7 +1737,7 @@ void do_examine(dbref executor, dbref caller, dbref enactor, int key, char *name
         pBoolExp = parse_boolexp(executor, buf2, true);
         buf = unparse_boolexp(executor, pBoolExp);
         free_boolexp(pBoolExp);
-        strcpy(buf2, Name(Owner(thing)));
+        mux_strncpy(buf2, Name(Owner(thing)), LBUF_SIZE-1);
         notify(executor, tprintf("Owner: %s  Key: %s %s: %d", buf2, buf, mudconf.many_coins, Pennies(thing)));
         free_lbuf(buf2);
         mudconf.many_coins[0] = savec;
@@ -1915,7 +1915,7 @@ void do_examine(dbref executor, dbref caller, dbref enactor, int key, char *name
         if (mudconf.read_rem_name)
         {
             buf2 = alloc_lbuf("do_examine.pub_name");
-            strcpy(buf2, Name(thing));
+            mux_strncpy(buf2, Name(thing), LBUF_SIZE-1);
             notify(executor, tprintf("%s is owned by %s", buf2, Name(Owner(thing))));
             free_lbuf(buf2);
         }
@@ -2300,7 +2300,7 @@ static void sweep_check(dbref player, dbref what, int key, bool is_loc)
         else
         {
             char *buf2 = alloc_lbuf("sweep_check.name");
-            strcpy(buf2, Name(what));
+            mux_strncpy(buf2, Name(what), LBUF_SIZE-1);
             for (bp = buf2; *bp && (*bp != ';'); bp++)
             {
                 ; // Nothing.
@@ -2487,20 +2487,20 @@ void do_decomp
     //
     if (qual && *qual)
     {
-        strcpy(thingname, qual);
+        mux_strncpy(thingname, qual, LBUF_SIZE-1);
     }
     else
     {
         if (key == DECOMP_DBREF)
         {
-            strcpy(thingname, tprintf("#%d",thing));
+            mux_strncpy(thingname, tprintf("#%d",thing), LBUF_SIZE-1);
         }
         else
         {
             switch (Typeof(thing))
             {
             case TYPE_THING:
-                strcpy(thingname, Name(thing));
+                mux_strncpy(thingname, Name(thing), LBUF_SIZE-1);
                 val = OBJECT_DEPOSIT(Pennies(thing));
                 notify(executor,
                     tprintf("@create %s=%d", translate_string(thingname, true),
@@ -2508,13 +2508,13 @@ void do_decomp
                 break;
 
             case TYPE_ROOM:
-                strcpy(thingname, "here");
+                mux_strncpy(thingname, "here", LBUF_SIZE-1);
                 notify(executor, tprintf("@dig/teleport %s",
                     translate_string(Name(thing), true)));
                 break;
 
             case TYPE_EXIT:
-                strcpy(thingname, Name(thing));
+                mux_strncpy(thingname, Name(thing), LBUF_SIZE-1);
                 notify(executor,
                     tprintf("@open %s", translate_string(thingname, true)));
                 for (got = thingname; *got; got++)
@@ -2530,11 +2530,11 @@ void do_decomp
             case TYPE_PLAYER:
                 if (executor == thing)
                 {
-                    strcpy(thingname, "me");
+                    mux_strncpy(thingname, "me", LBUF_SIZE-1);
                 }
                 else
                 {
-                    strcpy(thingname, Name(thing));
+                    mux_strncpy(thingname, Name(thing), LBUF_SIZE-1);
                 }
                 break;
             }
@@ -2594,7 +2594,7 @@ void do_decomp
             }
             else
             {
-                strcpy(buff, pattr->name);
+                mux_strncpy(buff, pattr->name, MBUF_SIZE-1);
                 notify(executor, tprintf("%c%s %s=%s", ((ca < A_USER_START) ?
                     '@' : '&'), buff, thingname, got));
                 for (np = indiv_attraccess_nametab; np->name; np++)

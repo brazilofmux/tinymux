@@ -2,7 +2,7 @@
  * File for most TCP socket-related code. Some socket-related code also exists
  * in netcommon.cpp, but most of it is here.
  *
- * $Id: bsd.cpp,v 1.86 2006-01-10 08:48:06 sdennis Exp $
+ * $Id: bsd.cpp,v 1.87 2006-01-11 04:19:53 jake Exp $
  */
 
 #include "copyright.h"
@@ -216,8 +216,8 @@ static DWORD WINAPI SlaveProc(LPVOID lpParameter)
 
                 // We have a host name.
                 //
-                strcpy(host, inet_ntoa(req.sa_in.sin_addr));
-                strcpy(token, hp->h_name);
+                mux_strncpy(host, inet_ntoa(req.sa_in.sin_addr), MAX_STRING-1);
+                mux_strncpy(token, hp->h_name, MAX_STRING-1);
 
                 // Setup ident port.
                 //
@@ -322,9 +322,9 @@ static DWORD WINAPI SlaveProc(LPVOID lpParameter)
                     if (iSlaveResult < SLAVE_RESULT_STACK_SIZE)
                     {
                         SlaveThreadInfo[iSlave].iDoing = __LINE__;
-                        strcpy(SlaveResults[iSlaveResult].host, host);
-                        strcpy(SlaveResults[iSlaveResult].token, token);
-                        strcpy(SlaveResults[iSlaveResult].ident, szIdent);
+                        mux_strncpy(SlaveResults[iSlaveResult].host, host, MAX_STRING-1);
+                        mux_strncpy(SlaveResults[iSlaveResult].token, token, MAX_STRING-1);
+                        mux_strncpy(SlaveResults[iSlaveResult].ident, szIdent, MAX_STRING-1);
                         iSlaveResult++;
                     }
                     else
@@ -405,9 +405,9 @@ static int get_slave_result(void)
         return 1;
     }
     iSlaveResult--;
-    strcpy(host, SlaveResults[iSlaveResult].host);
-    strcpy(token, SlaveResults[iSlaveResult].token);
-    strcpy(ident, SlaveResults[iSlaveResult].ident);
+    mux_strncpy(host, SlaveResults[iSlaveResult].host, MAX_STRING-1);
+    mux_strncpy(token, SlaveResults[iSlaveResult].token, MAX_STRING-1);
+    mux_strncpy(ident, SlaveResults[iSlaveResult].ident, MAX_STRING-1);
     ReleaseSemaphore(hSlaveResultStackSemaphore, 1, NULL);
 
     // At this point, we have a host name on our own stack.
@@ -423,8 +423,7 @@ static int get_slave_result(void)
             continue;
         }
 
-        strncpy(d->addr, token, 50);
-        d->addr[50] = '\0';
+        mux_strncpy(d->addr, token, 50);
         if (d->player != 0)
         {
             if (d->username[0])
@@ -450,8 +449,7 @@ static int get_slave_result(void)
             continue;
         }
 
-        strncpy(d->username, userid, 10);
-        d->username[10] = '\0';
+        mux_strncpy(d->username, userid, 10);
         if (d->player != 0)
         {
             atr_add_raw(d->player, A_LASTSITE, tprintf("%s@%s", d->username, d->addr));
@@ -1718,7 +1716,7 @@ DESC *new_connection(PortInfo *Port, int *piSocketError)
     }
 
     char *pBuffM2 = alloc_mbuf("new_connection.address");
-    strcpy(pBuffM2, inet_ntoa(addr.sin_addr));
+    mux_strncpy(pBuffM2, inet_ntoa(addr.sin_addr), MBUF_SIZE-1);
     unsigned short usPort = ntohs(addr.sin_port);
 
     DebugTotalSockets++;
@@ -2300,8 +2298,7 @@ DESC *initializesock(SOCKET s, struct sockaddr_in *a)
     d->quota = mudconf.cmd_quota_max;
     d->program_data = NULL;
     d->address = *a;
-    strncpy(d->addr, inet_ntoa(a->sin_addr), 50);
-    d->addr[50] = '\0';
+    mux_strncpy(d->addr, inet_ntoa(a->sin_addr), 50);
 
 #ifdef WIN32
     // protect adding the descriptor from the linked list from
@@ -4549,7 +4546,7 @@ void ProcessWindowsTCP(DWORD dwTimeout)
         else if (lpo == &lpo_welcome)
         {
             char *buff = alloc_mbuf("ProcessWindowsTCP.Premature");
-            strcpy(buff, inet_ntoa(d->address.sin_addr));
+            mux_strncpy(buff, inet_ntoa(d->address.sin_addr), MBUF_SIZE-1);
 
             // If the socket is invalid, the we were unable to queue a read
             // request, and the port was shutdown while this packet was in

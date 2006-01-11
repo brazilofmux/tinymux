@@ -1,6 +1,6 @@
 // vattr.cpp -- Manages the user-defined attributes.
 //
-// $Id: vattr.cpp,v 1.14 2006-01-09 04:22:28 sdennis Exp $
+// $Id: vattr.cpp,v 1.15 2006-01-11 04:19:53 jake Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -190,7 +190,7 @@ static void dbclean_CheckATtoANH(dbref executor)
                 // Convert name to upper case.
                 //
                 char Buffer[SBUF_SIZE];
-                strcpy(Buffer, pa->name);
+                mux_strncpy(Buffer, pa->name, SBUF_SIZE-1);
                 mux_strupr(Buffer);
 
                 // Fetch the attribute structure pointer -- which should match the one

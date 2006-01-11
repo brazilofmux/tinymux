@@ -1,6 +1,6 @@
 // mail.cpp
 //
-// $Id: mail.cpp,v 1.54 2006-01-10 00:23:26 sdennis Exp $
+// $Id: mail.cpp,v 1.55 2006-01-11 04:19:53 jake Exp $
 //
 // This code was taken from Kalkin's DarkZone code, which was
 // originally taken from PennMUSH 1.50 p10, and has been heavily modified
@@ -1276,7 +1276,7 @@ static char *make_namelist(dbref player, char *arg)
     char *names = alloc_lbuf("make_namelist.names");
     char *bp = names;
 
-    strcpy(oldarg, arg);
+    mux_strncpy(oldarg, arg, LBUF_SIZE-1);
 
     MUX_STRTOK_STATE tts;
     mux_strtok_src(&tts, oldarg);
@@ -1896,7 +1896,7 @@ static void do_mail_reply(dbref player, char *msg, bool all, int key)
         bp = names;
         *bp = '\0';
 
-        strcpy(oldlist, mp->tolist);
+        mux_strncpy(oldlist, mp->tolist, LBUF_SIZE-1);
 
         MUX_STRTOK_STATE tts;
         mux_strtok_src(&tts, oldlist);
@@ -1915,7 +1915,7 @@ static void do_mail_reply(dbref player, char *msg, bool all, int key)
         safe_chr('#', names, &bp);
         safe_ltoa(mp->from, names, &bp);
         *bp = '\0';
-        strcpy(tolist, names);
+        mux_strncpy(tolist, names, LBUF_SIZE-1);
         free_lbuf(names);
     }
     else
@@ -2623,7 +2623,7 @@ static void do_mail_stats(dbref player, char *name, int full)
             {
                 if (!tr && !tu)
                 {
-                    strcpy(last, mp->time);
+                    mux_strncpy(last, mp->time, 49);
                 }
                 if (Cleared(mp))
                 {
@@ -3629,7 +3629,7 @@ static void do_mail_quick(dbref player, char *arg1, char *arg2)
     char *bufDest = alloc_lbuf("do_mail_quick");
     char *bpSubject = bufDest;
 
-    strcpy(bpSubject, arg1);
+    mux_strncpy(bpSubject, arg1, LBUF_SIZE-1);
     parse_to(&bpSubject, '/', 1);
 
     if (!bpSubject)

@@ -1,6 +1,6 @@
 // command.cpp -- command parser and support routines.
 //
-// $Id: command.cpp,v 1.79 2006-01-09 05:46:37 sdennis Exp $
+// $Id: command.cpp,v 1.80 2006-01-11 04:19:53 jake Exp $
 //
 
 #include "copyright.h"
@@ -1723,7 +1723,7 @@ char *process_command
     {
         pOriginalCommand++;
     }
-    strcpy(preserve_cmd, pOriginalCommand);
+    mux_strncpy(preserve_cmd, pOriginalCommand, LBUF_SIZE-1);
     mudstate.debug_cmd = pOriginalCommand;
     mudstate.curr_cmd = preserve_cmd;
 
@@ -2035,8 +2035,7 @@ char *process_command
                     // All the switches given a command shouldn't exceed 200 chars together
                     char switch_buff[200];
                     char *switch_ptr;
-                    strncpy(switch_buff, pSlash, sizeof(switch_buff));
-                    switch_buff[sizeof(switch_buff)-1] = '\0';
+                    mux_strncpy(switch_buff, pSlash, sizeof(switch_buff)-1);
                     mux_strtok_src(&ttswitch, switch_buff);
                     mux_strtok_ctl(&ttswitch, "/");
                     switch_ptr = mux_strtok_parse(&ttswitch);

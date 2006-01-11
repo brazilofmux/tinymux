@@ -1,6 +1,6 @@
 // conf.cpp -- Set up configuration information and static data.
 //
-// $Id: conf.cpp,v 1.74 2006-01-09 07:50:39 sdennis Exp $
+// $Id: conf.cpp,v 1.75 2006-01-11 04:19:53 jake Exp $
 //
 
 #include "copyright.h"
@@ -64,7 +64,7 @@ void cf_init(void)
     mudconf.guest_nuker = GOD;
     mudconf.number_guests = 30;
     mudconf.min_guests = 1;
-    strcpy(mudconf.guest_prefix, "Guest");
+    mux_strncpy(mudconf.guest_prefix, "Guest", 31);
     mudconf.guest_file     = StringClone("text/guest.txt");
     mudconf.conn_file      = StringClone("text/connect.txt");
     mudconf.creg_file      = StringClone("text/register.txt");
@@ -84,11 +84,11 @@ void cf_init(void)
     mudconf.postdump_msg[0] = '\0';
     mudconf.fixed_home_msg[0] = '\0';
     mudconf.fixed_tel_msg[0] = '\0';
-    strcpy(mudconf.public_channel, "Public");
-    strcpy(mudconf.public_channel_alias, "pub");
-    strcpy(mudconf.guests_channel, "Guests");
-    strcpy(mudconf.guests_channel_alias, "g");
-    strcpy(mudconf.pueblo_msg, "</xch_mudtext><img xch_mode=html>");
+    mux_strncpy(mudconf.public_channel, "Public", 31);
+    mux_strncpy(mudconf.public_channel_alias, "pub", 31);
+    mux_strncpy(mudconf.guests_channel, "Guests", 31);
+    mux_strncpy(mudconf.guests_channel_alias, "g", 31);
+    mux_strncpy(mudconf.pueblo_msg, "</xch_mudtext><img xch_mode=html>", GBUF_SIZE-1);
     mudconf.art_rules = NULL;
     mudconf.indent_desc = false;
     mudconf.name_spaces = true;
@@ -211,9 +211,9 @@ void cf_init(void)
     mudconf.robot_flags.word[FLAG_WORD1] |= ROBOT;
 
     mudconf.vattr_flags = AF_ODARK;
-    strcpy(mudconf.mud_name, "MUX");
-    strcpy(mudconf.one_coin, "penny");
-    strcpy(mudconf.many_coins, "pennies");
+    mux_strncpy(mudconf.mud_name, "MUX", 31);
+    mux_strncpy(mudconf.one_coin, "penny", 31);
+    mux_strncpy(mudconf.many_coins, "pennies", 31);
     mudconf.timeslice.SetSeconds(1);
     mudconf.cmd_quota_max = 100;
     mudconf.cmd_quota_incr = 1;
@@ -269,7 +269,7 @@ void cf_init(void)
     mudstate.attr_next = A_USER_START;
     mudstate.debug_cmd = "< init >";
     mudstate.curr_cmd  = "< none >";
-    strcpy(mudstate.doing_hdr, "Doing");
+    mux_strncpy(mudstate.doing_hdr, "Doing", SIZEOF_DOING_STRING-1);
     mudstate.access_list = NULL;
     mudstate.suspect_list = NULL;
     mudstate.badname_head = NULL;
@@ -1564,7 +1564,7 @@ static CF_HAND(cf_hook)
 
     int retval = -1;
     memset(playbuff, '\0', sizeof(playbuff));
-    strncpy(playbuff, str, 200);
+    mux_strncpy(playbuff, str, 200);
     MUX_STRTOK_STATE tts;
     mux_strtok_src(&tts, playbuff);
     mux_strtok_ctl(&tts, " \t");
@@ -1583,7 +1583,7 @@ static CF_HAND(cf_hook)
     }
 
     *vp = cmdp->hookmask;
-    strncpy(playbuff, str, 200);
+    mux_strncpy(playbuff, str, 200);
     hookptr = mux_strtok_parse(&tts);
     while (hookptr != NULL)
     {
@@ -2005,7 +2005,7 @@ int cf_set(char *cp, char *ap, dbref player)
             if (!mudstate.bReadingConfiguration)
             {
                 buff = alloc_lbuf("cf_set");
-                strcpy(buff, ap);
+                mux_strncpy(buff, ap, LBUF_SIZE-1);
             }
             i = tp->interpreter(tp->loc, ap, tp->pExtra, tp->nExtra, player, cp);
             if (!mudstate.bReadingConfiguration)

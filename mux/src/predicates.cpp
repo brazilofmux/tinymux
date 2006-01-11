@@ -1,6 +1,6 @@
 // predicates.cpp
 //
-// $Id: predicates.cpp,v 1.77 2006-01-07 08:55:24 sdennis Exp $
+// $Id: predicates.cpp,v 1.78 2006-01-11 04:19:53 jake Exp $
 //
 
 #include "copyright.h"
@@ -615,7 +615,7 @@ void handle_ears(dbref thing, bool could_hear, bool can_hear)
     if (could_hear != can_hear)
     {
         buff = alloc_lbuf("handle_ears");
-        strcpy(buff, Name(thing));
+        mux_strncpy(buff, Name(thing), LBUF_SIZE-1);
         if (isExit(thing))
         {
             for (bp = buff; *bp && *bp != ';'; bp++)
@@ -1824,7 +1824,7 @@ bool get_obj_and_lock(dbref player, char *what, dbref *it, ATTR **attr, char *er
     int anum;
 
     tbuf = alloc_lbuf("get_obj_and_lock");
-    strcpy(tbuf, what);
+    mux_strncpy(tbuf, what, LBUF_SIZE-1);
     if (parse_thing_slash(player, tbuf, &str, it))
     {
         // <obj>/<lock> syntax, use the named lock.

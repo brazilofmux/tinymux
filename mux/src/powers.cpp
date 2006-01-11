@@ -1,6 +1,6 @@
 // powers.cpp -- Power manipulation routines.
 //
-// $Id: powers.cpp,v 1.15 2006-01-07 09:01:30 sdennis Exp $
+// $Id: powers.cpp,v 1.16 2006-01-11 04:19:53 jake Exp $
 //
 
 #include "copyright.h"
@@ -149,8 +149,7 @@ void init_powertab(void)
 
     for (fp = gen_powers; fp->powername; fp++)
     {
-        strncpy(nbuf, fp->powername, SBUF_SIZE);
-        nbuf[SBUF_SIZE-1] = '\0';
+        mux_strncpy(nbuf, fp->powername, SBUF_SIZE-1);
         mux_strlwr(nbuf);
 
         if (!hashfindLEN(nbuf, strlen(nbuf), &mudstate.powers_htab))
@@ -197,8 +196,7 @@ static POWERENT *find_power(dbref thing, char *powername)
     // Convert powername to canonical lowercase.
     //
     char *buff = alloc_sbuf("find_power");
-    strncpy(buff, powername, SBUF_SIZE);
-    buff[SBUF_SIZE-1] = '\0';
+    mux_strncpy(buff, powername, SBUF_SIZE-1);
     mux_strlwr(buff);
     POWERENT *p = (POWERENT *)hashfindLEN(buff, strlen(buff), &mudstate.powers_htab);
     free_sbuf(buff);

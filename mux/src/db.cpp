@@ -1,6 +1,6 @@
 // db.cpp
 //
-// $Id: db.cpp,v 1.88 2006-01-09 20:19:32 sdennis Exp $
+// $Id: db.cpp,v 1.89 2006-01-11 04:19:53 jake Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -288,7 +288,7 @@ int fwdlist_load(FWDLIST *fp, dbref player, char *atext)
     int count = 0;
     int errors = 0;
     bp = tp = alloc_lbuf("fwdlist_load.str");
-    strcpy(tp, atext);
+    mux_strncpy(tp, atext, LBUF_SIZE-1);
     do
     {
         // Skip spaces.

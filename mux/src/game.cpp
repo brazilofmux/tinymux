@@ -1,6 +1,6 @@
 // game.cpp
 //
-// $Id: game.cpp,v 1.95 2006-01-11 00:49:30 jake Exp $
+// $Id: game.cpp,v 1.96 2006-01-11 04:19:53 jake Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -1392,8 +1392,7 @@ void dump_database_internal(int dump_type)
         mux_sprintf(tmpfile, sizeof(tmpfile), "%s.#%d#.gz", mudconf.outdb, mudstate.epoch - 1);
         RemoveFile(tmpfile);
         mux_sprintf(tmpfile, sizeof(tmpfile), "%s.#%d#.gz", mudconf.outdb, mudstate.epoch);
-        strcpy(outfn, mudconf.outdb);
-        strcat(outfn, ".gz");
+        mux_sprintf(outfn, sizeof(outfn), "%s.gz", mudconf.outdb);
 
         f = popen(tprintf("%s > %s", mudconf.compress, tmpfile), POPEN_WRITE_OP);
         if (f)
@@ -1713,8 +1712,7 @@ static int load_game(int ccPageFile)
 
     if (mudconf.compress_db)
     {
-        strcpy(infile, mudconf.indb);
-        strcat(infile, ".gz");
+        mux_sprintf(infile, sizeof(infile), "%s.gz", mudconf.indb);
         if (stat(infile, &statbuf) == 0)
         {
             f = popen(tprintf(" %s < %s", mudconf.uncompress, infile), POPEN_READ_OP);
@@ -1728,7 +1726,7 @@ static int load_game(int ccPageFile)
 
     if (!compressed)
     {
-        strcpy(infile, mudconf.indb);
+        mux_strncpy(infile, mudconf.indb, sizeof(infile)-1);
         if (stat(infile, &statbuf) != 0)
         {
             // Indicate that we couldn't load because the input db didn't

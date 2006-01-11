@@ -1,6 +1,6 @@
 // flags.cpp -- Flag manipulation routines.
 //
-// $Id: flags.cpp,v 1.26 2006-01-08 17:01:38 sdennis Exp $
+// $Id: flags.cpp,v 1.27 2006-01-11 04:19:53 jake Exp $
 //
 
 #include "copyright.h"
@@ -465,8 +465,7 @@ void init_flagtab(void)
     for (FLAGNAMEENT *fp = gen_flag_names; fp->pOrigName; fp++)
     {
         fp->flagname = fp->pOrigName;
-        strncpy(nbuf, fp->pOrigName, SBUF_SIZE);
-        nbuf[SBUF_SIZE-1] = '\0';
+        mux_strncpy(nbuf, fp->pOrigName, SBUF_SIZE-1);
         mux_strlwr(nbuf);
         if (!hashfindLEN(nbuf, strlen(nbuf), &mudstate.flags_htab))
         {
@@ -666,7 +665,7 @@ char *decode_flags(dbref player, FLAGSET *fs)
 
     if (!Good_obj(player))
     {
-        strcpy(buf, "#-2 ERROR");
+        mux_strncpy(buf, "#-2 ERROR", SBUF_SIZE-1);
         return buf;
     }
     int flagtype = fs->word[FLAG_WORD1] & TYPE_MASK;
@@ -854,7 +853,7 @@ char *unparse_object_numonly(dbref target)
     char *buf = alloc_lbuf("unparse_object_numonly");
     if (target < 0)
     {
-        strcpy(buf, aszSpecialDBRefNames[-target]);
+        mux_strncpy(buf, aszSpecialDBRefNames[-target], LBUF_SIZE-1);
     }
     else if (!Good_obj(target))
     {
@@ -876,7 +875,7 @@ char *unparse_object(dbref player, dbref target, bool obey_myopic)
     char *buf = alloc_lbuf("unparse_object");
     if (NOPERM <= target && target < 0)
     {
-        strcpy(buf, aszSpecialDBRefNames[-target]);
+        mux_strncpy(buf, aszSpecialDBRefNames[-target], LBUF_SIZE-1);
     }
     else if (!Good_obj(target))
     {
@@ -907,7 +906,7 @@ char *unparse_object(dbref player, dbref target, bool obey_myopic)
         {
             // show only the name.
             //
-            strcpy(buf, Moniker(target));
+            mux_strncpy(buf, Moniker(target), LBUF_SIZE-1);
         }
     }
     return buf;

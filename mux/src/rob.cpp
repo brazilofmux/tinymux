@@ -1,6 +1,6 @@
 // rob.cpp -- Commands dealing with giving/taking/killing things or money.
 //
-// $Id: rob.cpp,v 1.5 2006-01-08 20:13:58 sdennis Exp $
+// $Id: rob.cpp,v 1.6 2006-01-11 04:19:53 jake Exp $
 //
 
 #include "copyright.h"
@@ -104,7 +104,7 @@ void do_kill
             notify_with_cause_ooc(victim, executor, buf1);
             if (Suspect(executor))
             {
-                strcpy(buf1, Name(executor));
+                mux_strncpy(buf1, Name(executor), LBUF_SIZE-1);
                 if (executor == Owner(executor))
                 {
                     raw_broadcast(WIZARD, "[Suspect] %s tried to kill %s(#%d).", buf1, Name(victim), victim);
@@ -112,7 +112,7 @@ void do_kill
                 else
                 {
                     buf2 = alloc_lbuf("do_kill.SUSP.failed");
-                    strcpy(buf2, Name(Owner(executor)));
+                    mux_strncpy(buf2, Name(Owner(executor)), LBUF_SIZE-1);
                     raw_broadcast(WIZARD, "[Suspect] %s <via %s(#%d)> tried to kill %s(#%d).",
                         buf2, buf1, executor, Name(victim), victim);
                     free_lbuf(buf2);
@@ -128,14 +128,14 @@ void do_kill
         buf2 = alloc_lbuf("do_kill.succ.2");
         if (Suspect(executor))
         {
-            strcpy(buf1, Name(executor));
+            mux_strncpy(buf1, Name(executor), LBUF_SIZE-1);
             if (executor == Owner(executor))
             {
                 raw_broadcast(WIZARD, "[Suspect] %s killed %s(#%d).", buf1, Name(victim), victim);
             }
             else
             {
-                strcpy(buf2, Name(Owner(executor)));
+                mux_strncpy(buf2, Name(Owner(executor)), LBUF_SIZE-1);
                 raw_broadcast(WIZARD, "[Suspect] %s <via %s(#%d)> killed %s(#%d).",
                     buf2, buf1, executor, Name(victim), victim);
             }
@@ -258,7 +258,7 @@ static void give_thing(dbref giver, dbref recipient, int key, char *what)
     if (!(key & GIVE_QUIET))
     {
         str = alloc_lbuf("do_give.thing.ok");
-        strcpy(str, Name(giver));
+        mux_strncpy(str, Name(giver), LBUF_SIZE-1);
         notify_with_cause_ooc(recipient, giver, tprintf("%s gave you %s.", str, Name(thing)));
         notify(giver, "Given.");
         notify_with_cause_ooc(thing, giver, tprintf("%s gave you to %s.", str, Name(recipient)));

@@ -1,6 +1,6 @@
 // netcommon.cpp
 //
-// $Id: netcommon.cpp,v 1.63 2006-01-08 20:09:10 sdennis Exp $
+// $Id: netcommon.cpp,v 1.64 2006-01-11 04:19:53 jake Exp $
 //
 // This file contains routines used by the networking code that do not
 // depend on the implementation of the networking code.  The network-specific
@@ -405,7 +405,7 @@ static const char *encode_iac(const char *szString)
                 }
                 else
                 {
-                    strcpy(pBuffer, pString);
+                    mux_strncpy(pBuffer, pString, 2*LBUF_SIZE-1);
                     return Buffer;
                 }
             }
@@ -613,7 +613,7 @@ static void set_userstring(char **userstring, const char *command)
         {
             *userstring = alloc_lbuf("set_userstring");
         }
-        strcpy(*userstring, command);
+        mux_strncpy(*userstring, command, LBUF_SIZE-1);
     }
 }
 
@@ -1868,7 +1868,7 @@ void do_doing(dbref executor, dbref caller, dbref enactor, int key, char *arg)
         }
         if (nValidDoing == 0)
         {
-            strcpy(mudstate.doing_hdr, "Doing");
+            mux_strncpy(mudstate.doing_hdr, "Doing", SIZEOF_DOING_STRING-1);
         }
         else
         {
@@ -2020,8 +2020,8 @@ static bool check_connect(DESC *d, char *msg)
                     free_lbuf(password);
                     return false;
                 }
-                strcpy(user, p);
-                strcpy(password, GUEST_PASSWORD);
+                mux_strncpy(user, p, LBUF_SIZE-1);
+                mux_strncpy(password, GUEST_PASSWORD, LBUF_SIZE-1);
                 isGuest = true;
             }
         }
@@ -2654,7 +2654,7 @@ static void list_sites(dbref player, SITE *site_list, const char *header_txt, in
     for (this0 = site_list; this0; this0 = this0->next)
     {
         str = (char *)stat_string(stat_type, this0->flag);
-        strcpy(buff1, inet_ntoa(this0->mask));
+        mux_strncpy(buff1, inet_ntoa(this0->mask), SBUF_SIZE-1);
         mux_sprintf(buff, MBUF_SIZE, "%-20s %-20s %s", inet_ntoa(this0->address), buff1,
             str);
         notify(player, buff);

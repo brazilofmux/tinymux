@@ -1,6 +1,6 @@
 // boolexp.cpp
 //
-// $Id: boolexp.cpp,v 1.19 2006-01-08 10:11:59 sdennis Exp $
+// $Id: boolexp.cpp,v 1.20 2006-01-11 04:19:53 jake Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -307,7 +307,7 @@ static BOOLEXP *test_atr(char *s)
     boolexp_type locktype;
 
     char *buff = alloc_lbuf("test_atr");
-    strcpy(buff, s);
+    mux_strncpy(buff, s, LBUF_SIZE-1);
     for (s = buff; *s && (*s != ':') && (*s != '/'); s++)
     {
         ; // Nothing.

@@ -1,6 +1,6 @@
 // player.cpp
 //
-// $Id: player.cpp,v 1.38 2006-01-08 20:26:18 sdennis Exp $
+// $Id: player.cpp,v 1.39 2006-01-11 04:19:53 jake Exp $
 //
 
 #include "copyright.h"
@@ -112,7 +112,7 @@ static void encrypt_logindata(char *atrbuf, LDATA *info)
         info->bad[0].host, info->bad[0].dtm,
         info->bad[1].host, info->bad[1].dtm,
         info->bad[2].host, info->bad[2].dtm);
-    strcpy(atrbuf, bp);
+    mux_strncpy(atrbuf, bp, LBUF_SIZE-1);
     free_lbuf(bp);
 }
 
