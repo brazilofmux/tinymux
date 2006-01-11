@@ -1,6 +1,6 @@
 // comsys.cpp
 //
-// $Id: comsys.cpp,v 1.50 2006-01-11 08:15:42 sdennis Exp $
+// $Id: comsys.cpp,v 1.51 2006-01-11 08:18:41 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -1726,15 +1726,15 @@ void do_createchannel(dbref executor, dbref caller, dbref enactor, int key, char
     size_t nNameNoANSI;
     char *pNameNoANSI;
     char Buffer[MAX_HEADER_LEN];
-    int nChannel = ANSI_TruncateToField(channel, sizeof(Buffer),
+    size_t nChannel = ANSI_TruncateToField(channel, sizeof(Buffer),
         Buffer, sizeof(Buffer), &vwChannel, ANSI_ENDGOAL_NORMAL);
     if (nChannel == vwChannel)
     {
         // The channel name does not contain ANSI, so first, we add some to
         // get the header.
         //
-        const int nMax = MAX_HEADER_LEN - (sizeof(ANSI_HILITE)-1)
-                       - (sizeof(ANSI_NORMAL)-1) - 2;
+        const size_t nMax = MAX_HEADER_LEN - (sizeof(ANSI_HILITE)-1)
+                          - (sizeof(ANSI_NORMAL)-1) - 2;
         if (nChannel > nMax)
         {
             nChannel = nMax;
