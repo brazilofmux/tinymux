@@ -1,6 +1,6 @@
 // netcommon.cpp
 //
-// $Id: netcommon.cpp,v 1.69 2006-01-11 21:19:18 sdennis Exp $
+// $Id: netcommon.cpp,v 1.70 2006-01-11 21:25:52 sdennis Exp $
 //
 // This file contains routines used by the networking code that do not
 // depend on the implementation of the networking code.  The network-specific
@@ -419,7 +419,7 @@ static const char *encode_iac(const char *szString)
 
                 // Add another IAC.
                 //
-                *pBuffer++ = NVT_IAC;
+                safe_copy_chr(NVT_IAC, Buffer, &pBuffer, sizeof(Buffer)-1);
             }
         }
     }
