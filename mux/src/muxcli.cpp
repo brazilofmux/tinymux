@@ -1,6 +1,6 @@
 // muxcli.cpp
 //
-// $Id: muxcli.cpp,v 1.5 2006-01-01 18:20:57 sdennis Exp $
+// $Id: muxcli.cpp,v 1.6 2006-01-11 11:19:54 jake Exp $
 //
 #include "copyright.h"
 #include <string.h>
@@ -99,7 +99,7 @@ void CLI_Process
             // We have a long option.
             //
             char *pEqual = strchr(p, '=');
-            int nLen;
+            size_t nLen;
             if (pEqual)
             {
                 nLen = pEqual - p;
