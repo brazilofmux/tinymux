@@ -1,6 +1,6 @@
 // player.cpp
 //
-// $Id: player.cpp,v 1.39 2006-01-11 04:19:53 jake Exp $
+// $Id: player.cpp,v 1.40 2006-01-11 21:51:31 jake Exp $
 //
 
 #include "copyright.h"
@@ -275,7 +275,7 @@ static const char *GenerateSalt(void)
     szSaltRaw[SALT_LENGTH] = '\0';
 
     static char szSaltEncoded[SHA1_PREFIX_LENGTH + ENCODED_SALT_LENGTH+1];
-    strcpy(szSaltEncoded, szSHA1Prefix);
+    mux_strncpy(szSaltEncoded, szSHA1Prefix, SHA1_PREFIX_LENGTH);
     EncodeBase64(SALT_LENGTH, szSaltRaw, szSaltEncoded + SHA1_PREFIX_LENGTH);
     return szSaltEncoded;
 }
@@ -441,7 +441,7 @@ const char *mux_crypt(const char *szPassword, const char *szSetting, int *piType
     // $SHA1$ssssssssssss$hhhhhhhhhhhhhhhhhhhhhhhhhhhh
     //
     static char buf[SHA1_PREFIX_LENGTH + ENCODED_SALT_LENGTH + 1 + ENCODED_HASH_LENGTH + 1 + 16];
-    strcpy(buf, szSHA1Prefix);
+    mux_strncpy(buf, szSHA1Prefix, SHA1_PREFIX_LENGTH);
     memcpy(buf + SHA1_PREFIX_LENGTH, pSaltField, nSaltField);
     buf[SHA1_PREFIX_LENGTH + nSaltField] = '$';
     EncodeBase64(20, szHashRaw, buf + SHA1_PREFIX_LENGTH + nSaltField + 1);
