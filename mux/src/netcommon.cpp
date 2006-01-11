@@ -1,6 +1,6 @@
 // netcommon.cpp
 //
-// $Id: netcommon.cpp,v 1.66 2006-01-11 10:48:43 jake Exp $
+// $Id: netcommon.cpp,v 1.67 2006-01-11 20:33:42 jake Exp $
 //
 // This file contains routines used by the networking code that do not
 // depend on the implementation of the networking code.  The network-specific
@@ -250,10 +250,10 @@ void clearstrings(DESC *d)
     }
 }
 
-static void add_to_output_queue(DESC *d, const char *b, int n)
+static void add_to_output_queue(DESC *d, const char *b, size_t n)
 {
     TBLOCK *tp;
-    int left;
+    size_t left;
 
     // Allocate an output buffer if needed.
     //
@@ -317,7 +317,7 @@ static void add_to_output_queue(DESC *d, const char *b, int n)
  * queue_write: Add text to the output queue for the indicated descriptor.
  */
 
-void queue_write_LEN(DESC *d, const char *b, int n)
+void queue_write_LEN(DESC *d, const char *b, size_t n)
 {
     if (n <= 0)
     {
@@ -329,8 +329,7 @@ void queue_write_LEN(DESC *d, const char *b, int n)
         process_output(d, false);
     }
 
-    int left = mudconf.output_limit - d->output_size - n;
-    if (left < 0)
+    if (d->output_size + n > mudconf.output_limit)
     {
         TBLOCK *tp = d->output_head;
         if (tp == NULL)
@@ -1429,7 +1428,7 @@ static char *trimmed_site(char *szName)
 {
     static char buff[MBUF_SIZE];
 
-    unsigned int nLen = strlen(szName);
+    size_t nLen = strlen(szName);
     if (  mudconf.site_chars <= 0
        || nLen <= mudconf.site_chars)
     {

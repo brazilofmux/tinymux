@@ -1,6 +1,6 @@
 // db.cpp
 //
-// $Id: db.cpp,v 1.92 2006-01-11 11:33:17 jake Exp $
+// $Id: db.cpp,v 1.93 2006-01-11 20:33:42 jake Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -1707,7 +1707,7 @@ static const char *atr_decode_flags_owner(const char *iattr, dbref *owner, int *
 // ---------------------------------------------------------------------------
 // atr_decode: Decode an attribute string.
 //
-static void atr_decode_LEN(const char *iattr, int nLen, char *oattr,
+static void atr_decode_LEN(const char *iattr, size_t nLen, char *oattr,
                            dbref thing, dbref *owner, int *flags, size_t *pLen)
 {
     // Default the owner
@@ -1832,7 +1832,7 @@ void atr_clr(dbref thing, int atr)
  * atr_add_raw, atr_add: add attribute of type atr to list
  */
 
-void atr_add_raw_LEN(dbref thing, int atr, const char *szValue, int nValue)
+void atr_add_raw_LEN(dbref thing, int atr, const char *szValue, size_t nValue)
 {
     if (!szValue || szValue[0] == '\0')
     {

@@ -1,6 +1,6 @@
 // funceval.cpp -- MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.112 2006-01-11 16:25:56 sdennis Exp $
+// $Id: funceval.cpp,v 1.113 2006-01-11 20:33:42 jake Exp $
 //
 
 #include "copyright.h"
@@ -1370,9 +1370,9 @@ FUNCTION(fun_table)
 
 // Code for objmem and playmem borrowed from PennMUSH 1.50
 //
-static int mem_usage(dbref thing)
+static size_t mem_usage(dbref thing)
 {
-    int k = sizeof(struct object) + strlen(Name(thing)) + 1;
+    size_t k = sizeof(struct object) + strlen(Name(thing)) + 1;
 
     char *as;
     for (int ca = atr_head(thing, &as); ca; ca = atr_next(&as))
@@ -1443,7 +1443,7 @@ FUNCTION(fun_playmem)
     {
         thing = executor;
     }
-    int tot = 0;
+    size_t tot = 0;
     dbref j;
     DO_WHOLE_DB(j)
     {

@@ -1,6 +1,6 @@
 // conf.cpp -- Set up configuration information and static data.
 //
-// $Id: conf.cpp,v 1.75 2006-01-11 04:19:53 jake Exp $
+// $Id: conf.cpp,v 1.76 2006-01-11 20:33:42 jake Exp $
 //
 
 #include "copyright.h"
@@ -1844,7 +1844,7 @@ static CONF conftable[] =
     {"number_guests",             cf_int,         CA_STATIC, CA_WIZARD,   &mudconf.number_guests,          NULL,               0},
     {"open_cost",                 cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.opencost,               NULL,               0},
     {"output_database",           cf_string_dyn,  CA_STATIC, CA_GOD,      (int *)&mudconf.outdb,           NULL, SIZEOF_PATHNAME},
-    {"output_limit",              cf_int,         CA_GOD,    CA_WIZARD,   &mudconf.output_limit,           NULL,               0},
+    {"output_limit",              cf_int,         CA_GOD,    CA_WIZARD,   (int *)&mudconf.output_limit,           NULL,               0},
     {"page_cost",                 cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.pagecost,               NULL,               0},
     {"paranoid_allocate",         cf_bool,        CA_GOD,    CA_WIZARD,   (int *)&mudconf.paranoid_alloc,  NULL,               0},
     {"parent_recursion_limit",    cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.parent_nest_lim,        NULL,               0},

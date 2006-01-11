@@ -1,6 +1,6 @@
 // interface.h
 //
-// $Id: interface.h,v 1.23 2006-01-08 06:21:55 sdennis Exp $
+// $Id: interface.h,v 1.24 2006-01-11 20:33:42 jake Exp $
 //
 
 #include "copyright.h"
@@ -237,7 +237,7 @@ extern void update_quotas(CLinearTimeAbsolute& tLast, const CLinearTimeAbsolute&
 extern void raw_notify(dbref, const char *);
 extern void raw_notify_newline(dbref);
 extern void clearstrings(DESC *);
-extern void queue_write_LEN(DESC *, const char *, int);
+extern void queue_write_LEN(DESC *, const char *, size_t);
 extern void queue_write(DESC *, const char *);
 extern void queue_string(DESC *, const char *);
 extern void freeqs(DESC *);

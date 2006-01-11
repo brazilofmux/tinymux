@@ -1,6 +1,6 @@
 // cque.cpp -- commands and functions for manipulating the command queue.
 //
-// $Id: cque.cpp,v 1.36 2006-01-08 16:56:22 sdennis Exp $
+// $Id: cque.cpp,v 1.37 2006-01-11 20:33:42 jake Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -66,7 +66,7 @@ static int add_to(dbref executor, int am, int attrnum)
     num += am;
 
     char buff[20];
-    int nlen = 0;
+    size_t nlen = 0;
     *buff = '\0';
     if (num)
     {

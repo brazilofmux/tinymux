@@ -1,6 +1,6 @@
 // mudconf.h
 //
-// $Id: mudconf.h,v 1.34 2005-12-29 17:47:40 sdennis Exp $
+// $Id: mudconf.h,v 1.35 2006-01-11 20:33:42 jake Exp $
 //
 
 #ifndef __CONF_H
@@ -145,7 +145,6 @@ struct confdata
     int     ntfy_nest_lim;      /* Max nesting of notifys */
     int     number_guests;      // number of guest characters allowed.
     int     opencost;           /* cost of @open command */
-    int     output_limit;       /* Max # chars queued for output */
     int     pagecost;           /* cost of @page command */
     int     parent_nest_lim;    /* Max levels of parents */
     int     paycheck;           /* players earn this much each day connected */
@@ -175,6 +174,7 @@ struct confdata
     int     restrict_home;	// Special condition to restrict 'home' command
 
     unsigned int    max_cache_size; /* Max size of attribute cache */
+    unsigned int    output_limit;   /* Max # chars queued for output */
     unsigned int    site_chars; // where to truncate site name.
 
     IntArray    ports;          // user ports.
