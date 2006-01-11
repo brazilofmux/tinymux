@@ -1,6 +1,6 @@
 // netcommon.cpp
 //
-// $Id: netcommon.cpp,v 1.65 2006-01-11 08:15:42 sdennis Exp $
+// $Id: netcommon.cpp,v 1.66 2006-01-11 10:48:43 jake Exp $
 //
 // This file contains routines used by the networking code that do not
 // depend on the implementation of the networking code.  The network-specific
@@ -74,7 +74,7 @@ void make_port_ulist(dbref player, char *buff, char **bufc)
         char *p = tmp;
         p += mux_ltoa(d->player, p);
         *p++ = ':';
-        p += mux_ltoa(d->descriptor, p);
+        p += mux_i64toa(d->descriptor, p);
 
         size_t n = p - tmp;
         if (!ItemToList_AddStringLEN(&itl, n, tmp))
