@@ -2,7 +2,7 @@
  * File for most TCP socket-related code. Some socket-related code also exists
  * in netcommon.cpp, but most of it is here.
  *
- * $Id: bsd.cpp,v 1.91 2006-01-11 20:51:31 sdennis Exp $
+ * $Id: bsd.cpp,v 1.92 2006-01-12 00:23:05 sdennis Exp $
  */
 
 #include "copyright.h"
@@ -3399,36 +3399,6 @@ void emergency_shutdown(void)
 // ---------------------------------------------------------------------------
 // Signal handling routines.
 //
-static void check_panicking(int sig)
-{
-    // If we are panicking, turn off signal catching and resignal.
-    //
-    if (mudstate.panicking)
-    {
-        for (int i = 0; i < NSIG; i++)
-        {
-            signal(i, SIG_DFL);
-        }
-#ifdef WIN32
-        UNUSED_PARAMETER(sig);
-        abort();
-#else // WIN32
-        kill(game_pid, sig);
-#endif // WIN32
-    }
-    mudstate.panicking = true;
-}
-
-static void unset_signals(void)
-{
-    int i;
-
-    for (i = 0; i < NSIG; i++)
-    {
-        signal(i, SIG_DFL);
-    }
-}
-
 #ifdef _SGI_SOURCE
 #define CAST_SIGNAL_FUNC (SIG_PF)
 #else // _SGI_SOURCE
@@ -3710,6 +3680,33 @@ void BuildSignalNamesTable(void)
             tsn->pShortName = StringClone(tprintf("SIG%03d", i));
         }
     }
+}
+
+static void unset_signals(void)
+{
+    const SIGNALTYPE *pst = aSigTypes;
+    while (pst->szSignal)
+    {
+        int sig = pst->iSignal;
+        signal(sig, SIG_DFL);
+    }
+}
+
+static void check_panicking(int sig)
+{
+    // If we are panicking, turn off signal catching and resignal.
+    //
+    if (mudstate.panicking)
+    {
+        unset_signals();
+#ifdef WIN32
+        UNUSED_PARAMETER(sig);
+        abort();
+#else // WIN32
+        kill(game_pid, sig);
+#endif // WIN32
+    }
+    mudstate.panicking = true;
 }
 
 static char *SignalDesc(int iSignal)
