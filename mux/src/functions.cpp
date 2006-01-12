@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.179 2006-01-11 20:51:31 sdennis Exp $
+// $Id: functions.cpp,v 1.180 2006-01-12 03:25:10 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -7074,9 +7074,9 @@ static void trim_right(char* str, SEP* sep)
         return;
     }
 
-    size_t cycle = sep->n - 1;
+    int cycle = static_cast<int>(sep->n - 1);
     size_t max = sep->n - 1;
-    size_t n = strlen(str);
+    int n = static_cast<int>(strlen(str));
     size_t base = n;
     n--;
     for ( ; n >= 0 && str[n] == sep->str[cycle]; n--)
