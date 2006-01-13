@@ -1,6 +1,6 @@
 // set.cpp -- Commands which set parameters.
 //
-// $Id: set.cpp,v 1.33 2006-01-11 08:15:42 sdennis Exp $
+// $Id: set.cpp,v 1.34 2006-01-13 23:41:22 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -126,7 +126,7 @@ void do_chzone
        && isRoom(zone)
        && !isRoom(thing))
     {
-        notify(executor, "Only rooms may have parent rooms.");
+        notify(executor, "Only rooms may be zoned to other rooms.");
         return;
     }
 
