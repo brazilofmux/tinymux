@@ -1,0 +1,15 @@
+The latest released version of TinyMUX is available via
+ftp://ftp.tinymux.org/TinyMUX/tinymux-2.3/26.  Support for 2.3 will
+continue until the end of 2006.
+
+The latest Beta version is available via
+http://www.tinymux.org/downloads.html.  The corresponding list of
+CHANGES is available on http://www.tinymux.org/changes.txt
+The Beta period for 2.4 is expected to continue until the end of March
+2006.
+
+TinyMUX 2.6 Alpha development has begun.
+
+
+Brazil
+
