@@ -1,6 +1,6 @@
 // eval.cpp -- Command evaluation and cracking.
 //
-// $Id: eval.cpp,v 1.39 2006-01-11 20:56:29 sdennis Exp $
+// $Id: eval.cpp,v 1.40 2006-01-17 04:36:52 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -1042,7 +1042,7 @@ void PopPointers(char **p, int nNeeded)
     pPtrsFrame->nptrs += nNeeded;
 }
 
-#define INTS_PER_FRAME ((LBUF_SIZE - sizeof(char *) - sizeof(int))/sizeof(int))
+#define INTS_PER_FRAME ((LBUF_SIZE - sizeof(char *) - sizeof(int))/sizeof(size_t))
 typedef struct tag_intsframe
 {
     int    nints;
