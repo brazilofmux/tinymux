@@ -1,6 +1,6 @@
 // object.cpp -- Low-level object manipulation routines.
 //
-// $Id: object.cpp,v 1.17 2006-01-11 08:15:42 sdennis Exp $
+// $Id: object.cpp,v 1.18 2006-01-19 00:41:01 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -409,7 +409,9 @@ static void destroy_bad_obj(dbref obj)
         halt_que(NOTHING, obj);
         nfy_que(obj, A_SEMAPHORE, NFY_DRAIN, 0);
         fwdlist_clr(obj);
+#ifdef DEPRECATED
         stack_clr(obj);
+#endif // DEPRECATED
         ReleaseAllResources(obj);
     }
     atr_free(obj);
@@ -463,7 +465,9 @@ void destroy_obj(dbref obj)
         // Remove forwardlists and stacks.
         //
         fwdlist_clr(obj);
+#ifdef DEPRECATED
         stack_clr(obj);
+#endif // DEPRECATED
     }
 
     // Compensate the owner for the object.

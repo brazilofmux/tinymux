@@ -1,6 +1,6 @@
 // db.h
 //
-// $Id: db.h,v 1.9 2006-01-11 08:15:42 sdennis Exp $
+// $Id: db.h,v 1.10 2006-01-19 00:41:01 sdennis Exp $
 //
 
 #ifndef __DB_H
@@ -151,7 +151,9 @@ struct object
     POWER   powers;     /* ALL: Powers on object */
     POWER   powers2;    /* ALL: even more powers */
 
+#ifdef DEPRECATED
     STACK   *stackhead; /* Every object has a stack. */
+#endif // DEPRECATED
 
     CLinearTimeDelta cpu_time_used; /* ALL: CPU time eaten */
 
@@ -189,7 +191,6 @@ extern OBJ *db;
 #define Flags3(t)       db[t].fs.word[FLAG_WORD3]
 #define Powers(t)       db[t].powers
 #define Powers2(t)      db[t].powers2
-#define Stack(t)        db[t].stackhead
 #define Home(t)         Link(t)
 #define Dropto(t)       Location(t)
 #define ThAttrib(t)     db[t].throttled_attributes
@@ -208,11 +209,15 @@ extern OBJ *db;
 #define s_Flags(t,f,n)      db[t].fs.word[f] = (n)
 #define s_Powers(t,n)       db[t].powers = (n)
 #define s_Powers2(t,n)      db[t].powers2 = (n)
-#define s_Stack(t,n)        db[t].stackhead = (n)
 #define s_Home(t,n)         s_Link(t,n)
 #define s_Dropto(t,n)       s_Location(t,n)
 #define s_ThAttrib(t,n)     db[t].throttled_attributes = (n);
 #define s_ThMail(t,n)       db[t].throttled_mail = (n);
+
+#ifdef DEPRECATED
+#define Stack(t)            db[t].stackhead
+#define s_Stack(t,n)        db[t].stackhead = (n)
+#endif // DEPRECATED
 
 int  Pennies(dbref);
 void s_Pennies(dbref, int);

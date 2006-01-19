@@ -1,6 +1,6 @@
 // db.cpp
 //
-// $Id: db.cpp,v 1.94 2006-01-11 20:51:31 sdennis Exp $
+// $Id: db.cpp,v 1.95 2006-01-19 00:41:01 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -2509,7 +2509,9 @@ static void initialize_objects(dbref first, dbref last)
         s_Next(thing, NOTHING);
         s_Zone(thing, NOTHING);
         s_Parent(thing, NOTHING);
+#ifdef DEPRECATED
         s_Stack(thing, NULL);
+#endif // DEPRECATED
         db[thing].cpu_time_used.Set100ns(0);
         db[thing].tThrottleExpired.Set100ns(0);
         s_ThAttrib(thing, 0);

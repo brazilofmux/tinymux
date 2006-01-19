@@ -1,6 +1,6 @@
 // functions.h -- declarations for functions & function processing.
 //
-// $Id: functions.h,v 1.20 2006-01-11 20:51:31 sdennis Exp $
+// $Id: functions.h,v 1.21 2006-01-19 00:41:01 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -124,7 +124,6 @@ XFUNCTION(fun_die);
 XFUNCTION(fun_dumping);
 XFUNCTION(fun_edefault);
 XFUNCTION(fun_elements);
-XFUNCTION(fun_empty);
 XFUNCTION(fun_encrypt);
 XFUNCTION(fun_entrances);
 XFUNCTION(fun_fcount);
@@ -141,14 +140,12 @@ XFUNCTION(fun_hastype);
 XFUNCTION(fun_ifelse);
 XFUNCTION(fun_inzone);
 XFUNCTION(fun_isword);
-XFUNCTION(fun_items);
 XFUNCTION(fun_last);
 XFUNCTION(fun_lit);
 XFUNCTION(fun_localize);
 XFUNCTION(fun_lparent);
 XFUNCTION(fun_lrand);
 XFUNCTION(fun_lrooms);
-XFUNCTION(fun_lstack);
 XFUNCTION(fun_mail);
 XFUNCTION(fun_mailfrom);
 XFUNCTION(fun_matchall);
@@ -159,12 +156,9 @@ XFUNCTION(fun_objeval);
 XFUNCTION(fun_objmem);
 XFUNCTION(fun_orflags);
 XFUNCTION(fun_pack);
-XFUNCTION(fun_peek);
 XFUNCTION(fun_pickrand);
 XFUNCTION(fun_playmem);
-XFUNCTION(fun_pop);
 XFUNCTION(fun_ports);
-XFUNCTION(fun_push);
 XFUNCTION(fun_regmatch);
 XFUNCTION(fun_regmatchi);
 XFUNCTION(fun_regrab);
@@ -187,6 +181,16 @@ XFUNCTION(fun_visible);
 XFUNCTION(fun_zfun);
 XFUNCTION(fun_zone);
 XFUNCTION(fun_zwho);
+
+#ifdef DEPRECATED
+XFUNCTION(fun_empty);
+XFUNCTION(fun_items);
+XFUNCTION(fun_lstack);
+XFUNCTION(fun_peek);
+XFUNCTION(fun_pop);
+XFUNCTION(fun_push);
+#endif // DEPRECATED
+
 #ifdef SIDE_EFFECT_FUNCTIONS
 XFUNCTION(fun_create);
 XFUNCTION(fun_emit);
@@ -199,6 +203,7 @@ XFUNCTION(fun_set);
 XFUNCTION(fun_tel);
 XFUNCTION(fun_textfile);
 #endif
+
 // In netcommon.cpp
 XFUNCTION(fun_doing);
 XFUNCTION(fun_host);

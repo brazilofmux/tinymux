@@ -57,6 +57,12 @@ QUERY_SLAVE = @QUERY_SLAVE@
 QUERYLIBS   = -ldbi
 SQLSLAVE    = @SQLSLAVE@
 
+# Deprecated Features. By default, this is off. This can be turned on by
+# running configure with --enable-deprecated. Features which are infrequently
+# used become deprecated and are eventually removed from the source.
+#
+DEPRECATED = @DEPRECATED@
+
 # Distribution source files
 D_SRC	= _build.cpp alloc.cpp attrcache.cpp boolexp.cpp bsd.cpp command.cpp \
 	comsys.cpp conf.cpp cque.cpp create.cpp db.cpp db_rw.cpp eval.cpp \
@@ -136,7 +142,7 @@ NET_O	= bsd.o
 AUX_SRC	= unsplit.cpp
 LIB_SRC = 
 LIB_INC = 
-ALLCXXFLAGS = $(CXXFLAGS) $(OPTIM) $(DEFS) $(COMPRESS_DEFS) $(BASED) $(MALLOC_DEFS) $(MOREDEFS) $(RLIM_F) $(MEMORY_BASED) $(WOD_REALMS) $(REALITY_LVLS) $(QUERY_SLAVE)
+ALLCXXFLAGS = $(CXXFLAGS) $(OPTIM) $(DEFS) $(COMPRESS_DEFS) $(BASED) $(MALLOC_DEFS) $(MOREDEFS) $(RLIM_F) $(MEMORY_BASED) $(WOD_REALMS) $(REALITY_LVLS) $(QUERY_SLAVE) $(DEPRECATED)
 
 #Auxiliary files
 A_INST	= README NOTES HIGHLIGHTS CREDITS CHANGES

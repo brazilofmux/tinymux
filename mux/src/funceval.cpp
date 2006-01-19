@@ -1,6 +1,6 @@
 // funceval.cpp -- MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.114 2006-01-11 20:51:31 sdennis Exp $
+// $Id: funceval.cpp,v 1.115 2006-01-19 00:41:01 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -3513,6 +3513,8 @@ FUNCTION(fun_lparent)
     ItemToList_Final(&pContext);
 }
 
+#ifdef DEPRECATED
+
 // stacksize - returns how many items are stuffed onto an object stack
 //
 static int stacksize(dbref doer)
@@ -3829,6 +3831,8 @@ FUNCTION(fun_push)
     mux_strncpy(sp->data, data, LBUF_SIZE-1);
     s_Stack(doer, sp);
 }
+
+#endif // DEPRECATED
 
 /* ---------------------------------------------------------------------------
  * fun_regmatch: Return 0 or 1 depending on whether or not a regular

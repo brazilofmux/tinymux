@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.180 2006-01-12 03:25:10 sdennis Exp $
+// $Id: functions.cpp,v 1.181 2006-01-19 00:41:01 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -8628,7 +8628,9 @@ static FUN builtin_function_list[] =
     {"ELEMENTS",    fun_elements,   MAX_ARG, 2,       4,         0, CA_PUBLIC},
     {"ELOCK",       fun_elock,      MAX_ARG, 2,       2,         0, CA_PUBLIC},
     {"EMIT",        fun_emit,       MAX_ARG, 1,       1,         0, CA_PUBLIC},
+#ifdef DEPRECATED
     {"EMPTY",       fun_empty,      MAX_ARG, 0,       1,         0, CA_PUBLIC},
+#endif // DEPRECATED
     {"ENCRYPT",     fun_encrypt,    MAX_ARG, 2,       2,         0, CA_PUBLIC},
     {"ENTRANCES",   fun_entrances,  MAX_ARG, 0,       4,         0, CA_PUBLIC},
     {"EQ",          fun_eq,         MAX_ARG, 2,       2,         0, CA_PUBLIC},
@@ -8695,7 +8697,9 @@ static FUN builtin_function_list[] =
     {"ISUB",        fun_isub,       MAX_ARG, 2,       2,         0, CA_PUBLIC},
     {"ISWORD",      fun_isword,     MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {"ITEMIZE",     fun_itemize,    MAX_ARG, 1,       4,         0, CA_PUBLIC},
+#ifdef DEPRECATED
     {"ITEMS",       fun_items,      MAX_ARG, 0,       1,         0, CA_PUBLIC},
+#endif // DEPRECATED
     {"ITER",        fun_iter,       MAX_ARG, 2,       4, FN_NOEVAL, CA_PUBLIC},
     {"ITEXT",       fun_itext,      MAX_ARG, 0,       1,         0, CA_PUBLIC},
     {"LADD",        fun_ladd,       MAX_ARG, 0,       2,         0, CA_PUBLIC},
@@ -8730,7 +8734,9 @@ static FUN builtin_function_list[] =
     {"LPOS",        fun_lpos,       MAX_ARG, 2,       2,         0, CA_PUBLIC},
     {"LRAND",       fun_lrand,      MAX_ARG, 3,       4,         0, CA_PUBLIC},
     {"LROOMS",      fun_lrooms,     MAX_ARG, 1,       3,         0, CA_PUBLIC},
+#ifdef DEPRECATED
     {"LSTACK",      fun_lstack,     MAX_ARG, 0,       1,         0, CA_PUBLIC},
+#endif // DEPRECATED
     {"LT",          fun_lt,         MAX_ARG, 2,       2,         0, CA_PUBLIC},
     {"LTE",         fun_lte,        MAX_ARG, 2,       2,         0, CA_PUBLIC},
     {"LWHO",        fun_lwho,       MAX_ARG, 0,       1,         0, CA_PUBLIC},
@@ -8772,7 +8778,9 @@ static FUN builtin_function_list[] =
     {"PACK",        fun_pack,       MAX_ARG, 1,       2,         0, CA_PUBLIC},
     {"PARENT",      fun_parent,     MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {"PARSE",       fun_iter,       MAX_ARG, 2,       4, FN_NOEVAL, CA_PUBLIC},
+#ifdef DEPRECATED
     {"PEEK",        fun_peek,       MAX_ARG, 0,       2,         0, CA_PUBLIC},
+#endif // DEPRECATED
     {"PEMIT",       fun_pemit,      MAX_ARG, 2,       2,         0, CA_PUBLIC},
     {"PFIND",       fun_pfind,      MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {"PI",          fun_pi,         MAX_ARG, 0,       0,         0, CA_PUBLIC},
@@ -8780,13 +8788,17 @@ static FUN builtin_function_list[] =
     {"PLAYMEM",     fun_playmem,    MAX_ARG, 0,       1,         0, CA_PUBLIC},
     {"PMATCH",      fun_pmatch,     MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {"POLL",        fun_poll,       MAX_ARG, 0,       0,         0, CA_PUBLIC},
+#ifdef DEPRECATED
     {"POP",         fun_pop,        MAX_ARG, 0,       2,         0, CA_PUBLIC},
+#endif // DEPRECATED
     {"PORTS",       fun_ports,      MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {"POS",         fun_pos,        MAX_ARG, 2,       2,         0, CA_PUBLIC},
     {"POSS",        fun_poss,       MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {"POWER",       fun_power,      MAX_ARG, 2,       2,         0, CA_PUBLIC},
     {"POWERS",      fun_powers,     MAX_ARG, 1,       1,         0, CA_PUBLIC},
+#ifdef DEPRECATED
     {"PUSH",        fun_push,       MAX_ARG, 1,       2,         0, CA_PUBLIC},
+#endif // DEPRECATED
     {"R",           fun_r,          MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {"RAND",        fun_rand,       MAX_ARG, 1,       2,         0, CA_PUBLIC},
     {"REGMATCH",    fun_regmatch,   MAX_ARG, 2,       3,         0, CA_PUBLIC},
