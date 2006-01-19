@@ -11960,6 +11960,7 @@ SUBSTITUTIONS (continued)
 
     %n, %N   Enactor's name.  See name(%#).
     %va-%vz  Contents of attribute va through vz
+    %=<attr> Equivalent to v(attr).
 
   Execution state substitutions:
 
