@@ -5924,17 +5924,6 @@ EMIT()
 
   Related Topics: @emit
 
-& EMPTY()
-EMPTY()
-
-  FUNCTION: empty([<object>])
-
-  This function completely empties the stack for the calling object. If
-  <object> is specified, and you control it, it empties the stack for
-  <object>.
-
-  Related Topics: lstack(), items(), peek(), pop(), push(), OBJECT STACK.
-
 & ENACTOR
 ENACTOR
 
@@ -6671,8 +6660,6 @@ FUNCTION CLASSES (continued)
 
   Side-Effect Functions:     CREATE EMIT LINK OEMIT PEMIT REMIT SET TEL
 
-  Stack:                     EMPTY ITEMS LSTACK PEEK POP PUSH
-
 { 'help function classes4' for more }
 
 & FUNCTION CLASSES4
@@ -6717,62 +6704,61 @@ FUNCTION LIST
     CORBOOL()   COS()       CRC32()     CREATE()    CTIME()     CTU()
     CWHO()      DEC()       DECRYPT()   DEFAULT()   DELETE()    DIE()
     DIGITTIME() DIST2D()    DIST3D()    DOING()     DUMPING()   E()
-    EDEFAULT()  EDIT()      ELEMENTS()  ELOCK()     EMIT()      EMPTY()
-    ENCRYPT()   ENTRANCES() EQ()        ERROR()     ESCAPE()    EVAL()
-    EXIT()      EXP()       EXPTIME()   EXTRACT()   FCOUNT()    FDEPTH()
-    FDIV()      FILTER()    FILTERBOOL()FINDABLE()  FIRST()     FLAGS()
-    FLOOR()     FLOORDIV()  FMOD()      FOLD()      FOREACH()   FULLNAME()
+    EDEFAULT()  EDIT()      ELEMENTS()  ELOCK()     EMIT()      ENCRYPT()
+    ENTRANCES() EQ()        ERROR()     ESCAPE()    EVAL()      EXIT()
+    EXP()       EXPTIME()   EXTRACT()   FCOUNT()    FDEPTH()    FDIV()
+    FILTER()    FILTERBOOL()FINDABLE()  FIRST()     FLAGS()     FLOOR()
+    FLOORDIV()  FMOD()      FOLD()      FOREACH()   FULLNAME()  GET()
 
 ("help function list2" for more)
 
 & FUNCTION LIST2
 FUNCTION LIST (continued)
 
-    GET()       GET_EVAL()  GRAB()      GRABALL()   GREP()      GREPI()
-    GT()        GTE()       HASATTR()   HASATTRP()  HASFLAG()   HASPOWER()
-    HASQUOTA()  HASRXLEVEL()HASTXLEVEL()HASTYPE()   HEIGHT()    HOME()
-    HOST()      IABS()      IADD()      IDIV()      IDLE()      IF()
-    IFELSE()    ILEV()      IMUL()      INC()       INDEX()     INSERT()
-    INZONE()    ISDBREF()   ISIGN()     ISINT()     ISNUM()     ISRAT()
-    ISUB()      ISWORD()    ITEMIZE()   ITEMS()     ITER()      LADD()
-    LAND()      LAST()      LATTR()     LATTRCMDS() LATTRP()    LCMDS()
-    LCON()      LCSTR()     LDELETE()   LEXITS()    LFLAGS()    LINK()
-    LIST()      LISTRLEVELS() LIT()     LJUST()     LN()        LNUM()
-    LOC()       LOCALIZE()  LOCATE()    LOCK()      LOG()       LOR()
-    LPARENT()   LPORTS()    LPOS()      LRAND()     LROOMS()    LSTACK()
-    LT()        LTE()       LWHO()      MAIL()      MAILFROM()  MAP()
-    MATCH()     MATCHALL()  MAX()       MEMBER()    MERGE()     MID()
-    MIN()       MIX()       MOD()       MONEY()     MONIKER()   MOTD()
-    MTIME()     MUDNAME()   MUL()       MUNGE()     NAME()      NEARBY()
-    NEQ()       NEXT()      NOT()       NULL()      NUM()       OBJ()
-    OBJEVAL()   OBJMEM()    OEMIT()     OR()        ORBOOL()    ORD()
-    ORFLAGS()   OWNER()     PACK()      PARENT()    PARSE()     PEEK()
+    GET_EVAL()  GRAB()      GRABALL()   GREP()      GREPI()     GT()
+    GTE()       HASATTR()   HASATTRP()  HASFLAG()   HASPOWER()  HASQUOTA()
+    HASRXLEVEL()HASTXLEVEL()HASTYPE()   HEIGHT()    HOME()      HOST()
+    IABS()      IADD()      IDIV()      IDLE()      IF()        IFELSE()
+    ILEV()      IMUL()      INC()       INDEX()     INSERT()    INZONE()
+    ISDBREF()   ISIGN()     ISINT()     ISNUM()     ISRAT()     ISUB()
+    ISWORD()    ITEMIZE()   ITEMS()     ITER()      LADD()      LAND()
+    LAST()      LATTR()     LATTRCMDS() LATTRP()    LCMDS()     LCON()
+    LCSTR()     LDELETE()   LEXITS()    LFLAGS()    LINK()      LIST()
+    LISTRLEVELS() LIT()     LJUST()     LN()        LNUM()      LOC()
+    LOCALIZE()  LOCATE()    LOCK()      LOG()       LOR()       LPARENT()
+    LPORTS()    LPOS()      LRAND()     LROOMS()    LT()        LTE()
+    LWHO()      MAIL()      MAILFROM()  MAP()       MATCH()     MATCHALL()
+    MAX()       MEMBER()    MERGE()     MID()       MIN()       MIX()
+    MOD()       MONEY()     MONIKER()   MOTD()      MTIME()     MUDNAME()
+    MUL()       MUNGE()     NAME()      NEARBY()    NEQ()       NEXT()
+    NOT()       NULL()      NUM()       OBJ()       OBJEVAL()   OBJMEM()
+    OEMIT()     OR()        ORBOOL()    ORD()       ORFLAGS()   OWNER()
+    PACK()      PARENT()    PARSE()     PEMIT()     PFIND()     PI()
 
 ("help function list3" for more)
 
 & FUNCTION LIST3
 FUNCTION LIST (continued)
 
-    PEMIT()     PFIND()     PI()        PICKRAND()  PLAYMEM()   PMATCH()
-    POLL()      POP()       PORTS()     POS()       POSS()      POWER()
-    POWERS()    PUSH()      R()         RAND()      REGMATCH()  REGMATCHI()
-    REGRAB()    REGRABALL() REGRABALLI()REGRABI()   REMAINDER() REMIT()
-    REMOVE()    REPEAT()    REPLACE()   REST()      REVERSE()   REVWORDS()
-    RIGHT()     RJUST()     RLOC()      ROMAN()     ROOM()      ROUND()
-    RXLEVEL()   S()         SCRAMBLE()  SEARCH()    SECS()      SECURE()
-    SET()       SETDIFF()   SETINTER()  SETQ()      SETR()      SETUNION()
-    SHA1()      SHL()       SHR()       SHUFFLE()   SIGN()      SIN()
-    SINGLETIME()SORT()      SORTBY()    SPACE()     SPELLNUM()  SPLICE()
-    SQRT()      SQUISH()    STARTSECS() STARTTIME() STATS()     STRCAT()
-    STRIP()     STRIPACCENTS() STRIPANSI() STRLEN() STRMATCH()  STRMEM()
-    STRTRUNC()  SUB()       SUBEVAL()   SUBJ()      SWITCH()    T()
-    TABLE()     TAN()       TEL()       TEXTFILE()  TIME()      TIMEFMT()
-    TRANSLATE() TRIM()      TRUNC()     TXLEVEL()   TYPE()      U()
-    UCSTR()     UDEFAULT()  ULOCAL()    UNPACK()    V()         VADD()
-    VALID()     VCROSS()    VDIM()      VDOT()      VERSION()   VISIBLE()
-    VMAG()      VMUL()      VSUB()      VUNIT()     WHERE()     WIDTH()
-    WORDPOS()   WORDS()     WRAP()      WRITETIME() XGET()      XOR()
-    ZFUN()      ZONE()      ZWHO()
+    PICKRAND()  PLAYMEM()   PMATCH()    POLL()      PORTS()     POS()
+    POSS()      POWER()     POWERS()    R()         RAND()      REGMATCH()
+    REGMATCHI() REGRAB()    REGRABALL() REGRABALLI()REGRABI()   REMAINDER()
+    REMIT()     REMOVE()    REPEAT()    REPLACE()   REST()      REVERSE()
+    REVWORDS()  RIGHT()     RJUST()     RLOC()      ROMAN()     ROOM()
+    ROUND()     RXLEVEL()   S()         SCRAMBLE()  SEARCH()    SECS()
+    SECURE()    SET()       SETDIFF()   SETINTER()  SETQ()      SETR()
+    SETUNION()  SHA1()      SHL()       SHR()       SHUFFLE()   SIGN()
+    SIN()       SINGLETIME()SORT()      SORTBY()    SPACE()     SPELLNUM()
+    SPLICE()    SQRT()      SQUISH()    STARTSECS() STARTTIME() STATS()
+    STRCAT()    STRIP()     STRIPACCENTS() STRIPANSI() STRLEN() STRMATCH()
+    STRMEM()    STRTRUNC()  SUB()       SUBEVAL()   SUBJ()      SWITCH()
+    T()         TABLE()     TAN()       TEL()       TEXTFILE()  TIME()
+    TIMEFMT()   TRANSLATE() TRIM()      TRUNC()     TXLEVEL()   TYPE()
+    U()         UCSTR()     UDEFAULT()  ULOCAL()    UNPACK()    V()
+    VADD()      VALID()     VCROSS()    VDIM()      VDOT()      VERSION()
+    VISIBLE()   VMAG()      VMUL()      VSUB()      VUNIT()     WHERE()
+    WIDTH()     WORDPOS()   WORDS()     WRAP()      WRITETIME() XGET()
+    XOR()       ZFUN()      ZONE()      ZWHO()
 
 & FUNCTIONS
 FUNCTIONS
@@ -7769,17 +7755,6 @@ ITEMIZE()
     > say [itemize(eggs bacon spam, ,&,;)]
     You say, "eggs; bacon; & spam"
 
-& ITEMS()
-ITEMS()
-
-  FUNCTION: items([<object>])
-
-  items() returns the number of items that the stack of the calling object
-  contains. If <object> is specified and you control it, then it returns the
-  number of items in the stack of that object.
-
-  Related Topics: lstack(), empty(), peek(), pop(), push(), OBJECT STACK.
-
 & ITER()
 ITER()
 
@@ -8639,17 +8614,6 @@ LROOMS()
     You say "#3 #12 #91 #82 #63"
 
   Related Topics: @dolist, lexits(), PARENT OBJECTS
-
-& LSTACK()
-LSTACK()
-
-  FUNCTION: lstack([<object>])
-
-  This function returns the contents of an object's stack as a list. If
-  <object> is not specified, then it returns the stack of the executing
-  object.
-
-  Related Topics: push(), pop(), peek(), empty(), items(), OBJECT STACK.
 
 & LT()
 LT()
@@ -9686,41 +9650,6 @@ OBJ()
 
   Related Topics: aposs(), poss(), subj(), SUBSTITUTIONS.
 
-& OBJECT STACK
-OBJECT STACK
-
-  NOTE: The object stack is completely different from the command stack
-  ('help stack').
-
-  A stack is a LIFO structure, meaning that the last, most recent thing you
-  place into it is the first thing you get out of it. You 'push' an item
-  onto the stack, and you can 'pop' it off, or merely take a 'peek' at it.
-  If you pushed the word 'foo', and then the word 'bar', and popped
-  something off the stack, you would first pop 'bar', then 'foo'. You pop
-  or peek in the reverse order that you pushed.
-
-  The object stack can hold any kind of information. In this manner they are
-  similar to r-registers, but are more flexible. There is a high limit to the
-  number of stack entries you can have (usually 100), and stack entries are
-  preserved until you pop them off or empty the stack.
-
-{ 'help OBJECT STACK2' for more }
-
-& OBJECT STACK2
-OBJECT STACK (continued)
-
-  Example:
-
-  > say [push(world!)][push(Hello)]We'll print these...
-  We'll print these...
-  > say [pop()] [pop()]
-  Hello world!
-
-  empty() is used to clear the stack, items() shows the number of entries in
-  the stack.
-
-  Related Topics: lstack(), empty(), items(), push(), peek(), pop().
-
 & OBJECT TYPES
 OBJECT TYPES
 
@@ -10081,20 +10010,6 @@ PARSE()
 
   Related Topics: @dolist, iter(), map().
 
-& PEEK()
-PEEK()
-
-  FUNCTION: peek([<object>], [<position>])
-
-  peek() returns an item from the caller's stack without removing it from
-  the stack. If <position> is specified, it returns the item from that
-  position in the stack (items in the stack are numbered with 0 being the most
-  recently push()ed item), otherwise, it returns position 0. If <object> is
-  specified and you control it, then it returns an item from <object>'s
-  stack.
-
-  Related Topics: lstack(), empty(), items(), pop(), push(), OBJECT STACK.
-
 & PEERING
 PEERING
 
@@ -10225,20 +10140,6 @@ POLL()
   set with the @poll command.
 
   Related Topics: doing()
-
-& POP()
-POP()
-
-  FUNCTION: pop([<object>[,<position>]])
-
-  pop() returns an item from the caller's stack and removes it from
-  the stack. If <position> is specified, it returns the item from that
-  position in the stack (items in the stack are numbered with 0 being the most
-  recently push()ed item) and removes it, otherwise, it returns position 0.
-  If <object> is specified and you control it, then it returns an item from
-  <object>'s stack.
-
-  Related Topics: lstack(), empty(), items(), peek(), push(), OBJECT STACK.
 
 & PORTS()
 PORTS()
@@ -10419,17 +10320,6 @@ PUPPETS
   @force fred="hi there.  -or-  #4342 "hi there.
 
   Related Topics: VERBOSE.
-
-& PUSH()
-PUSH()
-
-  FUNCTION: push(<data>)
-            push(<object>, <data>)
-
-  push() places <data> onto the calling object's stack. If the second form
-  is used, it places data onto <object>'s stack.
-
-  Related Topics: lstack(), empty(), items(), peek(), pop(), OBJECT STACK.
 
 & QUIET
 QUIET
