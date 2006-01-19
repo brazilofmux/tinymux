@@ -1,6 +1,6 @@
 // eval.cpp -- Command evaluation and cracking.
 //
-// $Id: eval.cpp,v 1.40 2006-01-17 04:36:52 sdennis Exp $
+// $Id: eval.cpp,v 1.41 2006-01-19 19:02:21 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -989,7 +989,7 @@ static const unsigned char isSpecial_L2[256] =
      18,  0,  0,  0,  0,  0,  0,  0,   0,  0,  0,  0,  0,  0,  0,  0, // 0x00-0x0F
       0,  0,  0,  0,  0,  0,  0,  0,   0,  0,  0,  0,  0,  0,  0,  0, // 0x10-0x1F
       0,  4,  0,  3,  0, 11,  0,  0,   0,  0,  0,  0,  0,  0,  0,  0, // 0x20-0x2F
-      1,  1,  1,  1,  1,  1,  1,  1,   1,  1,  0,  0,  0,  0,  0,  0, // 0x30-0x3F
+      1,  1,  1,  1,  1,  1,  1,  1,   1,  1,  0,  0,  0, 21,  0,  0, // 0x30-0x3F
      20,145,  7,  6,  0,  0,  0,  0,   0,  0,  0,  0,  9,147,140,144, // 0x40-0x4F
     143,130,  5,142,  8,  0,138,  0,   6,  0,  0,  0,  0,  0,  0,  0, // 0x50-0x5F
      20, 17,  7,  6,  0,  0,  0,  0,   0,  0,  0,  0,  9, 19, 12, 16, // 0x60-0x6F
@@ -1642,7 +1642,7 @@ void mux_exec( char *buff, char **bufc, dbref executor, dbref caller,
                                 nBufferAvailable -= nAttrGotten;
                             }
                         }
-                        else if (ch == '\0')
+                        else if ('\0' == *pdstr)
                         {
                             pdstr--;
                         }
@@ -1740,7 +1740,7 @@ void mux_exec( char *buff, char **bufc, dbref executor, dbref caller,
                             }
                             else
                             {
-                                safe_str((char *)poss[gender], buff, bufc);
+                                safe_str(poss[gender], buff, bufc);
                                 nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
                             }
                         }
@@ -1767,7 +1767,7 @@ void mux_exec( char *buff, char **bufc, dbref executor, dbref caller,
                             nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
                         }
                     }
-                    else
+                    else if (iCode <= 18)
                     {
                         if (iCode == 17)
                         {
@@ -1798,7 +1798,7 @@ void mux_exec( char *buff, char **bufc, dbref executor, dbref caller,
                                 nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
                             }
                         }
-                        else if (iCode == 18)
+                        else // if (iCode == 18)
                         {
                             // 00
                             // \0
@@ -1807,7 +1807,10 @@ void mux_exec( char *buff, char **bufc, dbref executor, dbref caller,
                             //
                             pdstr--;
                         }
-                        else if (iCode == 19)
+                    }
+                    else if (iCode <= 20)
+                    {
+                        if (iCode == 19)
                         {
                             // 4D
                             // M
@@ -1822,13 +1825,59 @@ void mux_exec( char *buff, char **bufc, dbref executor, dbref caller,
                             // 40
                             // @
                             //
-                            // iCode == '@'
                             // Caller DB number.
                             //
                             mux_scratch[0] = '#';
                             n = mux_ltoa(caller, mux_scratch+1);
                             safe_copy_buf(mux_scratch, n+1, buff, bufc);
                             nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
+                        }
+                    }
+                    else // if (iCode == 21)
+                    {
+                        // 3D
+                        // =
+                        //
+                        // %=<attr> like v(attr).
+                        //
+                        pdstr++;
+                        if ('<' == pdstr[0])
+                        {
+                            pdstr++;
+
+                            char *p2 = mux_scratch;
+                            while (  pdstr[0]
+                                  && '>' != pdstr[0])
+                            {
+                                safe_chr(pdstr[0], mux_scratch, &p2);
+                                pdstr++;
+                            }
+                            *p2 = '\0';
+                            if ('>' == pdstr[0])
+                            {
+                                if (mux_AttrNameInitialSet(mux_scratch[0]) && mux_scratch[1])
+                                {
+                                    ATTR *ap = atr_str(mux_scratch);
+                                    if (ap)
+                                    {
+                                        size_t nLen;
+                                        tbuf = atr_pget_LEN(executor, ap->number, &aowner, &aflags, &nLen);
+                                        if (See_attr(executor, executor, ap))
+                                        {
+                                            safe_copy_buf(tbuf, nLen, buff, bufc);
+                                        }
+                                        free_lbuf(tbuf);
+                                    }
+                                }
+                            }
+                            else
+                            {
+                                pdstr--;
+                            }
+                        }
+                        else if ('\0' == pdstr[0])
+                        {
+                            pdstr--;
                         }
                     }
                 }
