@@ -86,7 +86,7 @@ AC_ARG_ENABLE(
     if test "x$enableval" = "xno"; then
       AC_MSG_RESULT(no)
     else
-      DEPRECATED="-DDEPRECATED""
+      DEPRECATED="-DDEPRECATED"
       AC_MSG_RESULT(yes)
     fi
   ],
