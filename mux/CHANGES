@@ -3,7 +3,9 @@ Last Update:  January 2006
 
 Major changes that may affect performance and require softcode tweaks:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
- -- QQQ
+ -- Deprecated LSTACK(), POP(), PUSH(), PEEK(), EMPTY(), and ITEMS().
+    These functions are still available via the --enabled-deprecated
+    configuration switch.
 
 
 Feature Additions:
