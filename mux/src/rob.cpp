@@ -1,6 +1,6 @@
 // rob.cpp -- Commands dealing with giving/taking/killing things or money.
 //
-// $Id: rob.cpp,v 1.6 2006-01-11 04:19:53 jake Exp $
+// $Id: rob.cpp,v 1.7 2006-01-23 23:22:21 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -100,21 +100,21 @@ void do_kill
             //
             notify(executor, "Your murder attempt failed.");
             buf1 = alloc_lbuf("do_kill.failed");
-            mux_sprintf(buf1, LBUF_SIZE, "%s tried to kill you!", Name(executor));
+            mux_sprintf(buf1, LBUF_SIZE, "%s tried to kill you!", Moniker(executor));
             notify_with_cause_ooc(victim, executor, buf1);
             if (Suspect(executor))
             {
-                mux_strncpy(buf1, Name(executor), LBUF_SIZE-1);
+                mux_strncpy(buf1, Moniker(executor), LBUF_SIZE-1);
                 if (executor == Owner(executor))
                 {
-                    raw_broadcast(WIZARD, "[Suspect] %s tried to kill %s(#%d).", buf1, Name(victim), victim);
+                    raw_broadcast(WIZARD, "[Suspect] %s tried to kill %s(#%d).", buf1, Moniker(victim), victim);
                 }
                 else
                 {
                     buf2 = alloc_lbuf("do_kill.SUSP.failed");
-                    mux_strncpy(buf2, Name(Owner(executor)), LBUF_SIZE-1);
+                    mux_strncpy(buf2, Moniker(Owner(executor)), LBUF_SIZE-1);
                     raw_broadcast(WIZARD, "[Suspect] %s <via %s(#%d)> tried to kill %s(#%d).",
-                        buf2, buf1, executor, Name(victim), victim);
+                        buf2, buf1, executor, Moniker(victim), victim);
                     free_lbuf(buf2);
                 }
             }
@@ -128,20 +128,20 @@ void do_kill
         buf2 = alloc_lbuf("do_kill.succ.2");
         if (Suspect(executor))
         {
-            mux_strncpy(buf1, Name(executor), LBUF_SIZE-1);
+            mux_strncpy(buf1, Moniker(executor), LBUF_SIZE-1);
             if (executor == Owner(executor))
             {
-                raw_broadcast(WIZARD, "[Suspect] %s killed %s(#%d).", buf1, Name(victim), victim);
+                raw_broadcast(WIZARD, "[Suspect] %s killed %s(#%d).", buf1, Moniker(victim), victim);
             }
             else
             {
-                mux_strncpy(buf2, Name(Owner(executor)), LBUF_SIZE-1);
+                mux_strncpy(buf2, Moniker(Owner(executor)), LBUF_SIZE-1);
                 raw_broadcast(WIZARD, "[Suspect] %s <via %s(#%d)> killed %s(#%d).",
-                    buf2, buf1, executor, Name(victim), victim);
+                    buf2, buf1, executor, Moniker(victim), victim);
             }
         }
-        mux_sprintf(buf1, LBUF_SIZE, "You killed %s!", Name(victim));
-        mux_sprintf(buf2, LBUF_SIZE, "killed %s!", Name(victim));
+        mux_sprintf(buf1, LBUF_SIZE, "You killed %s!", Moniker(victim));
+        mux_sprintf(buf2, LBUF_SIZE, "killed %s!", Moniker(victim));
         if (!isPlayer(victim))
         {
             if (halt_que(NOTHING, victim) > 0)
@@ -156,7 +156,7 @@ void do_kill
 
         // notify victim
         //
-        mux_sprintf(buf1, LBUF_SIZE, "%s killed you!", Name(executor));
+        mux_sprintf(buf1, LBUF_SIZE, "%s killed you!", Moniker(executor));
         notify_with_cause_ooc(victim, executor, buf1);
 
         // Pay off the bonus.
@@ -232,7 +232,7 @@ static void give_thing(dbref giver, dbref recipient, int key, char *what)
     {
         sp = str = alloc_lbuf("do_give.gfail");
         safe_str("You can't give ", str, &sp);
-        safe_str(Name(thing), str, &sp);
+        safe_str(Moniker(thing), str, &sp);
         safe_str(" away.", str, &sp);
         *sp = '\0';
 
@@ -243,9 +243,9 @@ static void give_thing(dbref giver, dbref recipient, int key, char *what)
     if (!could_doit(thing, recipient, A_LRECEIVE))
     {
         sp = str = alloc_lbuf("do_give.rfail");
-        safe_str(Name(recipient), str, &sp);
+        safe_str(Moniker(recipient), str, &sp);
         safe_str(" doesn't want ", str, &sp);
-        safe_str(Name(thing), str, &sp);
+        safe_str(Moniker(thing), str, &sp);
         safe_chr('.', str, &sp);
         *sp = '\0';
 
@@ -258,10 +258,10 @@ static void give_thing(dbref giver, dbref recipient, int key, char *what)
     if (!(key & GIVE_QUIET))
     {
         str = alloc_lbuf("do_give.thing.ok");
-        mux_strncpy(str, Name(giver), LBUF_SIZE-1);
-        notify_with_cause_ooc(recipient, giver, tprintf("%s gave you %s.", str, Name(thing)));
+        mux_strncpy(str, Moniker(giver), LBUF_SIZE-1);
+        notify_with_cause_ooc(recipient, giver, tprintf("%s gave you %s.", str, Moniker(thing)));
         notify(giver, "Given.");
-        notify_with_cause_ooc(thing, giver, tprintf("%s gave you to %s.", str, Name(recipient)));
+        notify_with_cause_ooc(thing, giver, tprintf("%s gave you to %s.", str, Moniker(recipient)));
         free_lbuf(str);
     }
     did_it(giver, thing, A_DROP, NULL, A_ODROP, NULL, A_ADROP, (char **)NULL, 0);
@@ -296,7 +296,7 @@ static void give_money(dbref giver, dbref recipient, int key, int amount)
         }
         if (!could_doit(giver, recipient, A_LUSE))
         {
-            notify(giver, tprintf("%s won't take your money.", Name(recipient)));
+            notify(giver, tprintf("%s won't take your money.", Moniker(recipient)));
             return;
         }
     }
@@ -346,14 +346,14 @@ static void give_money(dbref giver, dbref recipient, int key, int amount)
     {
         if (amount == 1)
         {
-            notify(giver, tprintf("You give a %s to %s.", mudconf.one_coin, Name(recipient)));
-            notify_with_cause_ooc(recipient, giver, tprintf("%s gives you a %s.", Name(giver), mudconf.one_coin));
+            notify(giver, tprintf("You give a %s to %s.", mudconf.one_coin, Moniker(recipient)));
+            notify_with_cause_ooc(recipient, giver, tprintf("%s gives you a %s.", Moniker(giver), mudconf.one_coin));
         }
         else
         {
-            notify(giver, tprintf("You give %d %s to %s.", amount, mudconf.many_coins, Name(recipient)));
+            notify(giver, tprintf("You give %d %s to %s.", amount, mudconf.many_coins, Moniker(recipient)));
             notify_with_cause_ooc(recipient, giver, tprintf("%s gives you %d %s.",
-                Name(giver), amount, mudconf.many_coins));
+                Moniker(giver), amount, mudconf.many_coins));
         }
     }
 

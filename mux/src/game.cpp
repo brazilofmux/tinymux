@@ -1,6 +1,6 @@
 // game.cpp
 //
-// $Id: game.cpp,v 1.97 2006-01-11 20:51:31 sdennis Exp $
+// $Id: game.cpp,v 1.98 2006-01-23 23:22:21 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -514,11 +514,11 @@ static char *dflt_from_msg(dbref sender, dbref sendloc)
     safe_str("From ", tbuff, &tp);
     if (Good_obj(sendloc))
     {
-        safe_str(Name(sendloc), tbuff, &tp);
+        safe_str(Moniker(sendloc), tbuff, &tp);
     }
     else
     {
-        safe_str(Name(sender), tbuff, &tp);
+        safe_str(Moniker(sender), tbuff, &tp);
     }
     safe_chr(',', tbuff, &tp);
     *tp = '\0';
@@ -647,14 +647,14 @@ void notify_check(dbref target, dbref sender, const char *msg, int key)
             //
             tbuff = alloc_sbuf("notify_check.nospoof");
             safe_chr('[', msg_ns, &mp);
-            safe_str(Name(sender), msg_ns, &mp);
+            safe_str(Moniker(sender), msg_ns, &mp);
             mux_sprintf(tbuff, SBUF_SIZE, "(#%d)", sender);
             safe_str(tbuff, msg_ns, &mp);
 
             if (sender != Owner(sender))
             {
                 safe_chr('{', msg_ns, &mp);
-                safe_str(Name(Owner(sender)), msg_ns, &mp);
+                safe_str(Moniker(Owner(sender)), msg_ns, &mp);
                 safe_chr('}', msg_ns, &mp);
             }
             if (sender != mudstate.curr_enactor)
@@ -736,7 +736,7 @@ void notify_check(dbref target, dbref sender, const char *msg, int key)
                  && targetloc != Owner(target))))
         {
             tp = tbuff = alloc_lbuf("notify_check.puppet");
-            safe_str(Name(target), tbuff, &tp);
+            safe_str(Moniker(target), tbuff, &tp);
             safe_str("> ", tbuff, &tp);
             safe_str(msg_ns, tbuff, &tp);
             *tp = '\0';
@@ -1186,7 +1186,7 @@ void do_shutdown
         return;
     }
 
-    raw_broadcast(0, "GAME: Shutdown by %s", Name(Owner(executor)));
+    raw_broadcast(0, "GAME: Shutdown by %s", Moniker(Owner(executor)));
     STARTLOG(LOG_ALWAYS, "WIZ", "SHTDN");
     log_text("Shutdown by ");
     log_name(executor);

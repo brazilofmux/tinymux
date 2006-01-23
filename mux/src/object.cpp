@@ -1,6 +1,6 @@
 // object.cpp -- Low-level object manipulation routines.
 //
-// $Id: object.cpp,v 1.18 2006-01-19 00:41:01 sdennis Exp $
+// $Id: object.cpp,v 1.19 2006-01-23 23:22:21 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -521,7 +521,7 @@ void destroy_obj(dbref obj)
             {
                 notify(owner, tprintf(
                        "You get back your %d %s deposit for %s(#%d).",
-                        val, mudconf.one_coin, Name(obj), obj));
+                        val, mudconf.one_coin, Moniker(obj), obj));
             }
         }
         if (  mudconf.quotas
@@ -893,7 +893,7 @@ static void check_dead_refs(void)
                        && !Quiet(owner))
                     {
                         notify(owner, tprintf("Parent cleared on %s(#%d)",
-                            Name(i), i));
+                            Moniker(i), i));
                     }
                 }
                 else
@@ -925,7 +925,7 @@ static void check_dead_refs(void)
                        && !Quiet(owner))
                     {
                         notify(owner, tprintf("Zone cleared on %s(#%d)",
-                            Name(i), i));
+                            Moniker(i), i));
                     }
                 }
                 else
@@ -1048,7 +1048,7 @@ static void check_dead_refs(void)
                        && !Quiet(owner))
                     {
                         notify(owner, tprintf("Home reset on %s(#%d)",
-                            Name(i), i));
+                            Moniker(i), i));
                     }
                     else
                     {
@@ -1103,7 +1103,7 @@ static void check_dead_refs(void)
                            && !Quiet(owner))
                         {
                             notify(owner, tprintf("Dropto removed from %s(#%d)",
-                                Name(i), i));
+                                Moniker(i), i));
                         }
                     }
                     else
@@ -1688,7 +1688,7 @@ static void check_floating(void)
                 if (Good_owner(owner))
                 {
                     notify(owner, tprintf( "You own a floating room: %s(#%d)",
-                        Name(i), i));
+                        Moniker(i), i));
                 }
             }
             else

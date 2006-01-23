@@ -1,6 +1,6 @@
 // set.cpp -- Commands which set parameters.
 //
-// $Id: set.cpp,v 1.34 2006-01-13 23:41:22 sdennis Exp $
+// $Id: set.cpp,v 1.35 2006-01-23 23:22:21 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -890,11 +890,11 @@ void do_chown
             char *bp = buff;
 
             char *p;
-            p = tprintf("Owner of %s(#%d) changed from ", Name(thing), thing);
+            p = tprintf("Owner of %s(#%d) changed from ", Moniker(thing), thing);
             safe_str(p, buff, &bp);
-            p = tprintf("%s(#%d) to ", Name(nOwnerOrig), nOwnerOrig);
+            p = tprintf("%s(#%d) to ", Moniker(nOwnerOrig), nOwnerOrig);
             safe_str(p, buff, &bp);
-            p = tprintf("%s(#%d).", Name(nOwnerNew), nOwnerNew);
+            p = tprintf("%s(#%d).", Moniker(nOwnerNew), nOwnerNew);
             safe_str(p, buff, &bp);
             *bp = '\0';
             notify_quiet(executor, buff);
@@ -1871,8 +1871,8 @@ void do_use(dbref executor, dbref caller, dbref enactor, int key, char *object)
     {
         df_use = alloc_lbuf("do_use.use");
         df_ouse = alloc_lbuf("do_use.ouse");
-        mux_sprintf(df_use, LBUF_SIZE, "You use %s", Name(thing));
-        mux_sprintf(df_ouse, LBUF_SIZE, "uses %s", Name(thing));
+        mux_sprintf(df_use, LBUF_SIZE, "You use %s", Moniker(thing));
+        mux_sprintf(df_ouse, LBUF_SIZE, "uses %s", Moniker(thing));
         did_it(executor, thing, A_USE, df_use, A_OUSE, df_ouse, A_AUSE,
                (char **)NULL, 0);
         free_lbuf(df_use);

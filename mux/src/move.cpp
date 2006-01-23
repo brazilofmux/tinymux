@@ -1,6 +1,6 @@
 // move.cpp -- Routines for moving about.
 //
-// $Id: move.cpp,v 1.7 2006-01-07 19:26:08 sdennis Exp $
+// $Id: move.cpp,v 1.8 2006-01-23 23:22:21 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -94,7 +94,7 @@ static void process_leave_loc(dbref thing, dbref dest, dbref cause, bool canhear
 #else
             notify_except2(loc, thing, thing, cause,
 #endif /* REALITY_LVLS */
-                       tprintf("%s has left.", Name(thing)));
+                       tprintf("%s has left.", Moniker(thing)));
         }
     }
 }
@@ -168,7 +168,7 @@ static void process_enter_loc(dbref thing, dbref src, dbref cause, bool canhear,
 #else
         notify_except2(loc, thing, thing, cause,
 #endif /* REALITY_LVLS */
-                   tprintf("%s has arrived.", Name(thing)));
+                   tprintf("%s has arrived.", Moniker(thing)));
     }
 }
 
@@ -602,7 +602,7 @@ void do_move(dbref executor, dbref caller, dbref enactor, int key, char *directi
         {
             // Tell all
             //
-            notify_except(loc, executor, executor, tprintf("%s goes home.", Name(executor)), 0);
+            notify_except(loc, executor, executor, tprintf("%s goes home.", Moniker(executor)), 0);
         }
         // Give the player the messages
         //
@@ -728,7 +728,7 @@ void do_get(dbref executor, dbref caller, dbref enactor, int key, char *what)
             if (thingloc != playerloc)
             {
                 notify(thingloc, tprintf("%s was taken from you.",
-                    Name(thing)));
+                    Moniker(thing)));
             }
             move_via_generic(thing, executor, executor, 0);
             notify(thing, "Taken.");
@@ -848,7 +848,7 @@ void do_drop(dbref executor, dbref caller, dbref enactor, int key, char *name)
         if ((key & DROP_QUIET) && Controls(executor, thing))
             quiet = true;
         bp = buf = alloc_lbuf("do_drop.did_it");
-        safe_tprintf_str(buf, &bp, "dropped %s.", Name(thing));
+        safe_tprintf_str(buf, &bp, "dropped %s.", Moniker(thing));
         oattr = quiet ? 0 : A_ODROP;
         aattr = quiet ? 0 : A_ADROP;
         did_it(executor, thing, A_DROP, "Dropped.", oattr, buf,

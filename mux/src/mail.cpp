@@ -1,6 +1,6 @@
 // mail.cpp
 //
-// $Id: mail.cpp,v 1.60 2006-01-11 20:51:31 sdennis Exp $
+// $Id: mail.cpp,v 1.61 2006-01-23 23:22:21 sdennis Exp $
 //
 // This code was taken from Kalkin's DarkZone code, which was
 // originally taken from PennMUSH 1.50 p10, and has been heavily modified
@@ -1306,7 +1306,7 @@ static char *make_namelist(dbref player, char *arg)
                 {
                     safe_chr('!', names, &bp);
                 }
-                safe_str(Name(target), names, &bp);
+                safe_str(Moniker(target), names, &bp);
             }
         }
         else
@@ -1395,7 +1395,7 @@ static void do_mail_read(dbref player, char *msglist)
                 if (buff[LBUF_SIZE-1] != '\0')
                 {
                     STARTLOG(LOG_BUGS, "BUG", "MAIL");
-                    log_text(tprintf("do_mail_read: %s: Mail message %d truncated.", Name(player), mp->number));
+                    log_text(tprintf("do_mail_read: %s: Mail message %d truncated.", Moniker(player), mp->number));
                     ENDLOG;
                     buff[LBUF_SIZE-1] = '\0';
                 }
@@ -1407,7 +1407,7 @@ static void do_mail_read(dbref player, char *msglist)
                 ANSI_TruncateToField(mp->subject, sizeof(szSubjectBuffer),
                     szSubjectBuffer, 65, &iRealVisibleWidth, ANSI_ENDGOAL_NORMAL);
                 notify(player, tprintf("%-3d         From:  %-*s  At: %-25s  %s\r\nFldr   : %-2d Status: %s\r\nTo     : %-65s\r\nSubject: %s",
-                               i, PLAYER_NAME_LIMIT - 6, Name(mp->from),
+                               i, PLAYER_NAME_LIMIT - 6, Moniker(mp->from),
                                mp->time,
                                (Connected(mp->from) &&
                                (!Hidden(mp->from) || See_Hidden(player))) ?
@@ -1475,7 +1475,7 @@ static void do_mail_review(dbref player, char *name, char *msglist)
     if (  !msglist
        || !*msglist)
     {
-        notify(player, tprintf("--------------------   MAIL: %-25s   ------------------", Name(target)));
+        notify(player, tprintf("--------------------   MAIL: %-25s   ------------------", Moniker(target)));
         MailList ml(target);
         for (mp = ml.FirstItem(); !ml.IsEnd(); mp = ml.NextItem())
         {
@@ -1485,7 +1485,7 @@ static void do_mail_review(dbref player, char *name, char *msglist)
                 ANSI_TruncateToField(mp->subject, sizeof(szSubjectBuffer),
                     szSubjectBuffer, 25, &iRealVisibleWidth, ANSI_ENDGOAL_NORMAL);
                 size_t nSize = strlen(MessageFetch(mp->number));
-                const char *pFromName = Name(mp->from);
+                const char *pFromName = Moniker(mp->from);
                 notify(player, tprintf("[%s] %-3d (%4d) From: %-*s Sub: %s",
                                status_chars(mp),
                                i, nSize,
@@ -1516,7 +1516,7 @@ static void do_mail_review(dbref player, char *name, char *msglist)
                         szSubjectBuffer, 65, &iRealVisibleWidth, ANSI_ENDGOAL_NORMAL);
                     notify(player, DASH_LINE);
                     notify(player, tprintf("%-3d         From:  %-*s  At: %-25s  %s\r\nFldr   : %-2d Status: %s\r\nSubject: %s",
-                                   i, PLAYER_NAME_LIMIT - 6, Name(mp->from),
+                                   i, PLAYER_NAME_LIMIT - 6, Moniker(mp->from),
                                    mp->time,
                                    (Connected(mp->from) &&
                                    (!Hidden(mp->from) || See_Hidden(player))) ?
@@ -1610,7 +1610,7 @@ static void do_mail_list(dbref player, char *msglist, bool sub)
             {
                 time = mail_list_time(mp->time);
                 size_t nSize = strlen(MessageFetch(mp->number));
-                const char *pFromName = Name(mp->from);
+                const char *pFromName = Moniker(mp->from);
                 if (sub)
                 {
                     ANSI_TruncateToField(mp->subject, sizeof(szSubjectBuffer),
@@ -1845,7 +1845,7 @@ static void do_mail_fwd(dbref player, char *msg, char *tolist)
         notify(player, "MAIL: You can't forward non-existent messages.");
         return;
     }
-    do_expmail_start(player, tolist, tprintf("%s (fwd from %s)", mp->subject, Name(mp->from)));
+    do_expmail_start(player, tolist, tprintf("%s (fwd from %s)", mp->subject, Moniker(mp->from)));
     atr_add_raw(player, A_MAILMSG, MessageFetch(mp->number));
     const char *pValue = atr_get_raw(player, A_MAILFLAGS);
     int iFlag = M_FORWARD;
@@ -1937,7 +1937,7 @@ static void do_mail_reply(dbref player, char *msg, bool all, int key)
     }
     if (key & MAIL_QUOTE)
     {
-        const char *pFromName = Name(mp->from);
+        const char *pFromName = Moniker(mp->from);
         char *pMessageBody =
             tprintf("On %s, %s wrote:\r\n\r\n%s\r\n\r\n********** End of included message from %s\r\n",
                 pTime, pFromName, pMessage, pFromName);
@@ -2203,10 +2203,10 @@ static void send_mail
     //
     if (!silent)
     {
-        notify(player, tprintf("MAIL: You sent your message to %s.", Name(target)));
+        notify(player, tprintf("MAIL: You sent your message to %s.", Moniker(target)));
     }
 
-    notify(target, tprintf("MAIL: You have a new message from %s.", Name(player)));
+    notify(target, tprintf("MAIL: You have a new message from %s.", Moniker(player)));
     did_it(player, target, A_MAIL, NULL, 0, NULL, A_AMAIL, NULL, NOTHING);
 }
 
@@ -2226,7 +2226,7 @@ static void do_mail_nuke(dbref player)
         MailList ml(thing);
         ml.RemoveAll();
     }
-    log_text(tprintf("** MAIL PURGE ** done by %s(#%d)." ENDLINE, Name(player), player));
+    log_text(tprintf("** MAIL PURGE ** done by %s(#%d)." ENDLINE, Moniker(player), player));
     notify(player, "You annihilate the post office. All messages cleared.");
 }
 
@@ -2255,12 +2255,12 @@ static void do_mail_debug(dbref player, char *action, char *victim)
         }
         if (Wizard(target))
         {
-            notify(player, tprintf("Let %s clear their own @mail.", Name(target)));
+            notify(player, tprintf("Let %s clear their own @mail.", Moniker(target)));
             return;
         }
         do_mail_clear(target, NULL);
         do_mail_purge(target);
-        notify(player, tprintf("Mail cleared for %s(#%d).", Name(target), target));
+        notify(player, tprintf("Mail cleared for %s(#%d).", Moniker(target), target));
         return;
     }
     else if (string_prefix("sanity", action))
@@ -2301,17 +2301,17 @@ static void do_mail_debug(dbref player, char *action, char *victim)
                     if (bGoodReference)
                     {
                         notify(player, tprintf("%s(#%d) has mail, but is not a player.",
-                                 Name(mp->to), mp->to));
+                                 Moniker(mp->to), mp->to));
                     }
                     else
                     {
                         notify(player, tprintf("%s(#%d) is not a player, but has mail which refers to a non-existent mailbag item.",
-                             Name(mp->to), mp->to));
+                             Moniker(mp->to), mp->to));
                     }
                 }
                 else if (!bGoodReference)
                 {
-                    notify(player, tprintf("%s(#%d) has mail which refers to a non-existent mailbag item.", Name(mp->to), mp->to));
+                    notify(player, tprintf("%s(#%d) has mail which refers to a non-existent mailbag item.", Moniker(mp->to), mp->to));
                 }
             }
         }
@@ -2588,8 +2588,8 @@ static void do_mail_stats(dbref player, char *name, int full)
                 }
             }
         }
-        notify(player, tprintf("%s sent %d messages.", Name(target), fr));
-        notify(player, tprintf("%s has %d messages.", Name(target), tr));
+        notify(player, tprintf("%s sent %d messages.", Moniker(target), fr));
+        notify(player, tprintf("%s has %d messages.", Moniker(target), tr));
         return;
     }
 
@@ -2647,7 +2647,7 @@ static void do_mail_stats(dbref player, char *name, int full)
         }
     }
 
-    notify(player, tprintf("Mail statistics for %s:", Name(target)));
+    notify(player, tprintf("Mail statistics for %s:", Moniker(target)));
 
     if (full == 1)
     {
@@ -3345,7 +3345,7 @@ static void do_malias_list(dbref player, char *alias)
     safe_tprintf_str(buff, &bp, "MAIL: Alias *%s: ", m->name);
     for (int i = m->numrecep - 1; i > -1; i--)
     {
-        const char *p = Name(m->list[i]);
+        const char *p = Moniker(m->list[i]);
         if (strchr(p, ' '))
         {
             safe_chr('"', buff, &bp);
@@ -3397,7 +3397,7 @@ static void do_malias_list_all(dbref player)
                                m->name,
                                m->desc,
                                pSpaces,
-                               Name(m->owner));
+                               Moniker(m->owner));
             notify(player, p);
         }
     }
@@ -3992,7 +3992,7 @@ static void do_malias_add(dbref player, char *alias, char *person)
 
     m->list[m->numrecep] = thing;
     m->numrecep = m->numrecep + 1;
-    notify(player, tprintf("MAIL: %s added to %s", Name(thing), m->name));
+    notify(player, tprintf("MAIL: %s added to %s", Moniker(thing), m->name));
 }
 
 static void do_malias_remove(dbref player, char *alias, char *person)
@@ -4047,12 +4047,12 @@ static void do_malias_remove(dbref player, char *alias, char *person)
     {
         m->numrecep--;
         notify(player, tprintf("MAIL: %s removed from alias %s.",
-                   Name(thing), alias));
+                   Moniker(thing), alias));
     }
     else
     {
         notify(player, tprintf("MAIL: %s is not a member of alias %s.",
-                   Name(thing), alias));
+                   Moniker(thing), alias));
     }
 }
 
@@ -4167,7 +4167,7 @@ static void do_malias_adminlist(dbref player)
         char *pSpaces = Spaces(40 - m->desc_width);
         notify(player, tprintf("%-4d %-12s %s%s %-15.15s",
                        i, m->name, m->desc, pSpaces,
-                       Name(m->owner)));
+                       Moniker(m->owner)));
     }
 
     notify(player, "***** End of Mail Aliases *****");

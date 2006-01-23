@@ -1,6 +1,6 @@
 // look.cpp -- Commands which look at things.
 //
-// $Id: look.cpp,v 1.49 2006-01-11 20:51:31 sdennis Exp $
+// $Id: look.cpp,v 1.50 2006-01-23 23:22:21 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -514,13 +514,13 @@ static void look_exits(dbref player, dbref loc, const char *exit_name)
             {
                 if (exit_displayable(thing, player, key))
                 {
-                    mux_strncpy(buff, Name(thing), LBUF_SIZE-1);
+                    mux_strncpy(buff, Moniker(thing), LBUF_SIZE-1);
                     for (e = buff; *e && *e != ';'; e++)
                     {
                         ; // Nothing.
                     }
                     *e = '\0';
-                    notify(player, tprintf("%s leads to %s.", buff, Name(Location(thing))));
+                    notify(player, tprintf("%s leads to %s.", buff, Moniker(Location(thing))));
                 }
             }
         }
@@ -541,7 +541,7 @@ static void look_exits(dbref player, dbref loc, const char *exit_name)
                         safe_str("  ", buff, &e);
                     }
 
-                    for (s = Name(thing); *s && (*s != ';'); s++)
+                    for (s = Moniker(thing); *s && (*s != ';'); s++)
                     {
                         safe_chr(*s, buff1, &e1);
                     }
@@ -706,12 +706,13 @@ static void look_contents(dbref player, dbref loc, const char *contents_name, in
                         switch (style)
                         {
                         case CONTENTS_LOCAL:
-                            safe_str(Name(thing), html_buff, &html_cp);
+                            safe_str(Moniker(thing), html_buff, &html_cp);
                             break;
+
                         case CONTENTS_NESTED:
-                            safe_str(Name(Location(thing)), html_buff, &html_cp);
+                            safe_str(Moniker(Location(thing)), html_buff, &html_cp);
                             safe_str("'s ", html_buff, &html_cp);
-                            safe_str(Name(thing), html_buff, &html_cp);
+                            safe_str(Moniker(thing), html_buff, &html_cp);
                             break;
 
                         case CONTENTS_REMOTE:
@@ -1687,15 +1688,15 @@ void do_examine(dbref executor, dbref caller, dbref enactor, int key, char *name
             if (mudconf.read_rem_name)
             {
                 buf2 = alloc_lbuf("do_examine.pub_name");
-                mux_strncpy(buf2, Name(thing), LBUF_SIZE-1);
+                mux_strncpy(buf2, Moniker(thing), LBUF_SIZE-1);
                 notify(executor,
                     tprintf("%s is owned by %s",
-                    buf2, Name(Owner(thing))));
+                    buf2, Moniker(Owner(thing))));
                 free_lbuf(buf2);
             }
             else
             {
-                notify(executor, tprintf("Owned by %s", Name(Owner(thing))));
+                notify(executor, tprintf("Owned by %s", Moniker(Owner(thing))));
             }
             return;
         }
@@ -1737,7 +1738,7 @@ void do_examine(dbref executor, dbref caller, dbref enactor, int key, char *name
         pBoolExp = parse_boolexp(executor, buf2, true);
         buf = unparse_boolexp(executor, pBoolExp);
         free_boolexp(pBoolExp);
-        mux_strncpy(buf2, Name(Owner(thing)), LBUF_SIZE-1);
+        mux_strncpy(buf2, Moniker(Owner(thing)), LBUF_SIZE-1);
         notify(executor, tprintf("Owner: %s  Key: %s %s: %d", buf2, buf, mudconf.many_coins, Pennies(thing)));
         free_lbuf(buf2);
         mudconf.many_coins[0] = savec;
@@ -1915,13 +1916,13 @@ void do_examine(dbref executor, dbref caller, dbref enactor, int key, char *name
         if (mudconf.read_rem_name)
         {
             buf2 = alloc_lbuf("do_examine.pub_name");
-            mux_strncpy(buf2, Name(thing), LBUF_SIZE-1);
-            notify(executor, tprintf("%s is owned by %s", buf2, Name(Owner(thing))));
+            mux_strncpy(buf2, Moniker(thing), LBUF_SIZE-1);
+            notify(executor, tprintf("%s is owned by %s", buf2, Moniker(Owner(thing))));
             free_lbuf(buf2);
         }
         else
         {
-            notify(executor, tprintf("Owned by %s", Name(Owner(thing))));
+            notify(executor, tprintf("Owned by %s", Moniker(Owner(thing))));
         }
     }
 }
@@ -1971,7 +1972,7 @@ void do_inventory(dbref executor, dbref caller, dbref enactor, int key)
         {
             // Chop off first exit alias to display.
             //
-            for (s = Name(thing); *s && (*s != ';'); s++)
+            for (s = Moniker(thing); *s && (*s != ';'); s++)
             {
                 safe_chr(*s, buff, &e);
             }
@@ -2042,7 +2043,7 @@ void do_entrances(dbref executor, dbref caller, dbref enactor, int key, char *na
                 if (Location(i) == thing)
                 {
                     exit = unparse_object(executor, Exits(i), false);
-                    notify(executor, tprintf("%s (%s)", exit, Name(i)));
+                    notify(executor, tprintf("%s (%s)", exit, Moniker(i)));
                     free_lbuf(exit);
                     count++;
                 }
@@ -2277,7 +2278,7 @@ static void sweep_check(dbref player, dbref what, int key, bool is_loc)
         if (ispuppet)
         {
             safe_str("puppet(", buf, &bp);
-            safe_str(Name(Owner(what)), buf, &bp);
+            safe_str(Moniker(Owner(what)), buf, &bp);
             safe_str(") ", buf, &bp);
         }
 
@@ -2295,12 +2296,12 @@ static void sweep_check(dbref player, dbref what, int key, bool is_loc)
         if (!isExit(what))
         {
             notify(player, tprintf("  %s is listening. [%s]",
-                Name(what), buf));
+                Moniker(what), buf));
         }
         else
         {
             char *buf2 = alloc_lbuf("sweep_check.name");
-            mux_strncpy(buf2, Name(what), LBUF_SIZE-1);
+            mux_strncpy(buf2, Moniker(what), LBUF_SIZE-1);
             for (bp = buf2; *bp && (*bp != ';'); bp++)
             {
                 ; // Nothing.
@@ -2500,7 +2501,7 @@ void do_decomp
             switch (Typeof(thing))
             {
             case TYPE_THING:
-                mux_strncpy(thingname, Name(thing), LBUF_SIZE-1);
+                mux_strncpy(thingname, Moniker(thing), LBUF_SIZE-1);
                 val = OBJECT_DEPOSIT(Pennies(thing));
                 notify(executor,
                     tprintf("@create %s=%d", translate_string(thingname, true),
@@ -2510,11 +2511,11 @@ void do_decomp
             case TYPE_ROOM:
                 mux_strncpy(thingname, "here", LBUF_SIZE-1);
                 notify(executor, tprintf("@dig/teleport %s",
-                    translate_string(Name(thing), true)));
+                    translate_string(Moniker(thing), true)));
                 break;
 
             case TYPE_EXIT:
-                mux_strncpy(thingname, Name(thing), LBUF_SIZE-1);
+                mux_strncpy(thingname, Moniker(thing), LBUF_SIZE-1);
                 notify(executor,
                     tprintf("@open %s", translate_string(thingname, true)));
                 for (got = thingname; *got; got++)

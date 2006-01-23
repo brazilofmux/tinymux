@@ -1,6 +1,6 @@
 // wiz.cpp -- Wizard-only commands.
 //
-// $Id: wiz.cpp,v 1.18 2006-01-11 04:19:53 jake Exp $
+// $Id: wiz.cpp,v 1.19 2006-01-23 23:22:21 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -394,7 +394,7 @@ void do_toad
     //
     loc = Location(victim);
     buf = alloc_mbuf("do_toad");
-    const char *pVictimName = Name(victim);
+    const char *pVictimName = Moniker(victim);
     mux_sprintf(buf, MBUF_SIZE, "%s has been turned into a slimy toad!",
         pVictimName);
     notify_except2(loc, executor, victim, executor, buf);
@@ -496,7 +496,7 @@ void do_newpassword
     notify_quiet(executor, "Password changed.");
     char *buf = alloc_lbuf("do_newpassword");
     char *bp = buf;
-    safe_tprintf_str(buf, &bp, "Your password has been changed by %s.", Name(executor));
+    safe_tprintf_str(buf, &bp, "Your password has been changed by %s.", Moniker(executor));
     notify_quiet(victim, buf);
     free_lbuf(buf);
 }
@@ -559,7 +559,7 @@ void do_boot(dbref executor, dbref caller, dbref enactor, int key, char *name)
         log_text(" was @booted by ");
         log_name(executor);
         ENDLOG;
-        notify_quiet(executor, tprintf("You booted %s off!", Name(victim)));
+        notify_quiet(executor, tprintf("You booted %s off!", Moniker(victim)));
     }
 
     const char *buf;
@@ -569,7 +569,7 @@ void do_boot(dbref executor, dbref caller, dbref enactor, int key, char *name)
     }
     else
     {
-        buf = tprintf("%s gently shows you the door.", Name(executor));
+        buf = tprintf("%s gently shows you the door.", Moniker(executor));
     }
 
     if (key & BOOT_PORT)

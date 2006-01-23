@@ -1,6 +1,6 @@
 // predicates.cpp
 //
-// $Id: predicates.cpp,v 1.81 2006-01-11 20:51:31 sdennis Exp $
+// $Id: predicates.cpp,v 1.82 2006-01-23 23:22:21 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -615,7 +615,7 @@ void handle_ears(dbref thing, bool could_hear, bool can_hear)
     if (could_hear != can_hear)
     {
         buff = alloc_lbuf("handle_ears");
-        mux_strncpy(buff, Name(thing), LBUF_SIZE-1);
+        mux_strncpy(buff, Moniker(thing), LBUF_SIZE-1);
         if (isExit(thing))
         {
             for (bp = buff; *bp && *bp != ';'; bp++)
@@ -1478,7 +1478,7 @@ void do_restart(dbref executor, dbref caller, dbref enactor, int key)
         return;
     }
 
-    raw_broadcast(0, "GAME: Restart by %s, please wait.", Name(Owner(executor)));
+    raw_broadcast(0, "GAME: Restart by %s, please wait.", Moniker(Owner(executor)));
     STARTLOG(LOG_ALWAYS, "WIZ", "RSTRT");
     log_text("Restart by ");
     log_name(executor);
