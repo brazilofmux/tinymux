@@ -2192,6 +2192,7 @@ Related Topics: @name.
                                    setting drop-tos) or ABODE (for setting
                                    homes)
      MailLock:     Players:        controls who may @mail the player.
+     OpenLock:     All but Exits:  controls who may open an exit.
      PageLock:     Players:        controls who may page the player.
      ParentLock:   All:            controls who may make @parent links to the
                                    object.
