@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.181 2006-01-19 00:41:01 sdennis Exp $
+// $Id: functions.cpp,v 1.182 2006-01-27 21:22:28 jake Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -8842,6 +8842,7 @@ static FUN builtin_function_list[] =
     {"SIGN",        fun_sign,       MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {"SIN",         fun_sin,        MAX_ARG, 1,       2,         0, CA_PUBLIC},
     {"SINGLETIME",  fun_singletime, MAX_ARG, 1,       1,         0, CA_PUBLIC},
+    {"SITEINFO",    fun_siteinfo,   MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {"SORT",        fun_sort,       MAX_ARG, 1,       4,         0, CA_PUBLIC},
     {"SORTBY",      fun_sortby,     MAX_ARG, 2,       4,         0, CA_PUBLIC},
     {"SPACE",       fun_space,      MAX_ARG, 0,       1,         0, CA_PUBLIC},

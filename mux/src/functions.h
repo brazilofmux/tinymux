@@ -1,6 +1,6 @@
 // functions.h -- declarations for functions & function processing.
 //
-// $Id: functions.h,v 1.21 2006-01-19 00:41:01 sdennis Exp $
+// $Id: functions.h,v 1.22 2006-01-27 21:22:28 jake Exp $
 //
 
 #include "copyright.h"
@@ -209,6 +209,7 @@ XFUNCTION(fun_doing);
 XFUNCTION(fun_host);
 XFUNCTION(fun_motd);
 XFUNCTION(fun_poll);
+XFUNCTION(fun_siteinfo);
 // In quota.cpp
 XFUNCTION(fun_hasquota);
 

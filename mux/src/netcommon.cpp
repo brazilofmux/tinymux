@@ -1,6 +1,6 @@
 // netcommon.cpp
 //
-// $Id: netcommon.cpp,v 1.74 2006-01-11 22:25:17 sdennis Exp $
+// $Id: netcommon.cpp,v 1.75 2006-01-27 21:22:28 jake Exp $
 //
 // This file contains routines used by the networking code that do not
 // depend on the implementation of the networking code.  The network-specific
@@ -2896,6 +2896,87 @@ FUNCTION(fun_motd)
     UNUSED_PARAMETER(ncargs);
 
     safe_str(mudconf.motd_msg, buff, bufc);
+}
+
+// ---------------------------------------------------------------------------
+// fun_siteinfo: Return special site flags of player or port descriptor.
+//               Same output as wizard-accessible WHO.
+// ---------------------------------------------------------------------------
+FUNCTION(fun_siteinfo)
+{
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
+    if (!Wizard_Who(executor))
+    {
+        safe_noperm(buff, bufc);
+        return;
+    }
+
+    bool isPort = is_rational(fargs[0]);
+    bool bFound = false;
+    DESC *d;
+    if (isPort)
+    {
+        SOCKET s = mux_atol(fargs[0]);
+        DESC_ITER_CONN(d)
+        {
+            if (d->descriptor == s)
+            {
+                bFound = true;
+                break;
+            }
+        }
+    }
+    else
+    {
+        dbref victim = lookup_player(executor, fargs[0], true);
+        if (victim == NOTHING)
+        {
+            safe_str("#-1 PLAYER DOES NOT EXIST", buff, bufc);
+            return;
+        }
+        DESC_ITER_CONN(d)
+        {
+            if (d->player == victim)
+            {
+                bFound = true;
+                break;
+            }
+        }
+    }
+    if (bFound)
+    {
+        if (d->host_info & H_FORBIDDEN)
+        {
+            safe_chr('F', buff, bufc);
+        }
+        if (d->host_info & H_REGISTRATION)
+        {
+            safe_chr('R', buff, bufc);
+        }
+        if (d->host_info & H_SUSPECT)
+        {
+            safe_chr('+', buff, bufc);
+        }
+        if (d->host_info & H_GUEST)
+        {
+            safe_chr('G', buff, bufc);
+        }
+        return;
+    }
+    if (isPort)
+    {
+        safe_str("#-1 NOT AN ACTIVE PORT", buff, bufc);
+    }
+    else
+    {
+        safe_str("#-1 NOT A CONNECTED PLAYER", buff, bufc);
+    }
+
 }
 
 // fetch_cmds - Retrieve Player's number of commands entered.
