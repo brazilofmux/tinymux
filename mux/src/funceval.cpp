@@ -1,6 +1,6 @@
 // funceval.cpp -- MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.102 2006/01/07 22:38:13 sdennis Exp $
+// $Id: funceval.cpp,v 1.103 2006/01/27 23:43:27 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -3082,8 +3082,8 @@ FUNCTION(fun_unpack)
 
     // Convert symbols
     //
-    for (int iValue = MatchTable[(unsigned int)c]; 
-         iValue; 
+    for (int iValue = MatchTable[(unsigned int)c];
+         iValue;
          iValue = MatchTable[(unsigned int)c])
     {
         sum = iRadix * sum + iValue - 1;
