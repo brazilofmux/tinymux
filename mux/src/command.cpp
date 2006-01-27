@@ -1,6 +1,6 @@
 // command.cpp -- command parser and support routines.
 //
-// $Id: command.cpp,v 1.83 2006-01-11 20:51:31 sdennis Exp $
+// $Id: command.cpp,v 1.84 2006-01-27 23:44:24 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -4156,7 +4156,7 @@ void do_icmd(dbref player, dbref cause, dbref enactor, int key, char *name,
                         y = pt2 - atrpt + 1;
                         // Save the char that'll be nulled by mux_strncpy.
                         // (Even though it may be unneeded by this point.)
-                        char cSave = buff1[y]; 
+                        char cSave = buff1[y];
                         mux_strncpy(buff1, atrpt, y);
                         buff1[y] = cSave;
                         if (y == 1)

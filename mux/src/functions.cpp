@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.182 2006-01-27 21:22:28 jake Exp $
+// $Id: functions.cpp,v 1.183 2006-01-27 23:44:24 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -1257,7 +1257,7 @@ static void get_handler(char *buff, char **bufc, dbref executor, char *fargs[], 
     {
         return;
     }
- 
+
     if (  (pattr->flags & AF_IS_LOCK)
        || !bCanReadAttr(executor, thing, pattr, true))
     {
