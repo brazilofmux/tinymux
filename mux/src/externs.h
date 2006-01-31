@@ -1,6 +1,6 @@
 // externs.h -- Prototypes for externs not defined elsewhere.
 //
-// $Id: externs.h,v 1.64 2006/01/08 05:59:19 sdennis Exp $
+// $Id: externs.h,v 1.65 2006/01/31 00:17:26 sdennis Exp $
 //
 
 #ifndef EXTERNS_H
@@ -355,7 +355,7 @@ void atr_pop(void);
 int  atr_head(dbref, char **);
 int  atr_next(char **);
 int  init_dbfile(char *game_dir_file, char *game_pag_file, int nCachePages);
-void atr_cpy(dbref dest, dbref source);
+void atr_cpy(dbref dest, dbref source, bool bInternal);
 void atr_chown(dbref);
 void atr_clr(dbref, int);
 void atr_add_raw_LEN(dbref, int, const char *, int);

@@ -1,6 +1,6 @@
 // db.cpp
 //
-// $Id: db.cpp,v 1.77 2006/01/07 23:18:52 sdennis Exp $
+// $Id: db.cpp,v 1.78 2006/01/31 00:17:26 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -2284,7 +2284,7 @@ void atr_free(dbref thing)
  * atr_cpy: Copy all attributes from one object to another.
  */
 
-void atr_cpy(dbref dest, dbref source)
+void atr_cpy(dbref dest, dbref source, bool bInternal)
 {
     dbref owner = Owner(dest);
 
@@ -2308,7 +2308,8 @@ void atr_cpy(dbref dest, dbref source)
            && at)
         {
             if (  !(at->flags & (AF_INTERNAL|AF_NOCLONE))
-               && (  God(owner)
+               && (  bInternal
+                  || God(owner)
                   || (  !God(dest)
                      && !(aflags & AF_LOCK)
                      && (  (  Controls(owner, dest)
