@@ -1,6 +1,6 @@
 // db.cpp
 //
-// $Id: db.cpp,v 1.95 2006-01-19 00:41:01 sdennis Exp $
+// $Id: db.cpp,v 1.96 2006-01-31 00:16:23 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -2284,7 +2284,7 @@ void atr_free(dbref thing)
  * atr_cpy: Copy all attributes from one object to another.
  */
 
-void atr_cpy(dbref dest, dbref source)
+void atr_cpy(dbref dest, dbref source, bool bInternal)
 {
     dbref owner = Owner(dest);
 
@@ -2308,7 +2308,8 @@ void atr_cpy(dbref dest, dbref source)
            && at)
         {
             if (  !(at->flags & (AF_INTERNAL|AF_NOCLONE))
-               && (  God(owner)
+               && (  bInternal
+                  || God(owner)
                   || (  !God(dest)
                      && !(aflags & AF_LOCK)
                      && (  (  Controls(owner, dest)
