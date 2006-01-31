@@ -1,7 +1,10 @@
-// functions.cpp -- MUX function handlers.
-//
-// $Id: functions.cpp,v 1.183 2006-01-27 23:44:24 sdennis Exp $
-//
+/*! \file functions.cpp
+ *  MUX function handlers
+ *
+ * $Id: functions.cpp,v 1.184 2006-01-31 00:44:06 sdennis Exp $
+ *
+ */
+
 #include "copyright.h"
 #include "autoconf.h"
 #include "config.h"
@@ -4204,21 +4207,36 @@ static FUNCTION(fun_connrecord)
     safe_ltoa(mudstate.record_players, buff, bufc);
 }
 
-// ---------------------------------------------------------------------------
-// fun_fcount: Return the current function invocation counter.
-// ---------------------------------------------------------------------------
+/*! \brief Return current function invocation counter.
+ *
+ * If no argument is given, FCOUNT() returns the current function invocation
+ * counter which represents the number of functions invoked since the
+ * beginning of the queue cycle.
+ *
+ * If given an argument, FCOUNT() returns the number of invocations required
+ * to evaluate the argument.
+ *
+ * \param arg1     Optional subexpression.
+ * \return         function invocation counter for cycle or for given subexpression.
+ */
 
 FUNCTION(fun_fcount)
 {
-    UNUSED_PARAMETER(executor);
-    UNUSED_PARAMETER(caller);
-    UNUSED_PARAMETER(enactor);
-    UNUSED_PARAMETER(fargs);
-    UNUSED_PARAMETER(nfargs);
-    UNUSED_PARAMETER(cargs);
-    UNUSED_PARAMETER(ncargs);
-
-    safe_ltoa(mudstate.func_invk_ctr, buff, bufc);
+    if (0 == nfargs)
+    {
+        safe_ltoa(mudstate.func_invk_ctr, buff, bufc);
+    }
+    else if (1 == nfargs)
+    {
+        long ficBefore = mudstate.func_invk_ctr;
+        char *str = fargs[0];
+        char *bufc_save = *bufc;
+        mux_exec(buff, bufc, executor, caller, enactor,
+            EV_FCHECK | EV_STRIP_CURLY | EV_EVAL, &str, cargs, ncargs);
+        long ficAfter = mudstate.func_invk_ctr;
+        *bufc = bufc_save;
+        safe_ltoa(ficAfter-ficBefore, buff, bufc);
+    }
 }
 
 // ---------------------------------------------------------------------------
@@ -8641,7 +8659,7 @@ static FUN builtin_function_list[] =
     {"EXP",         fun_exp,        MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {"EXPTIME",     fun_exptime,    MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {"EXTRACT",     fun_extract,    MAX_ARG, 3,       5,         0, CA_PUBLIC},
-    {"FCOUNT",      fun_fcount,     MAX_ARG, 0,       0,         0, CA_PUBLIC},
+    {"FCOUNT",      fun_fcount,     MAX_ARG, 0,       1, FN_NOEVAL, CA_PUBLIC},
     {"FDEPTH",      fun_fdepth,     MAX_ARG, 0,       0,         0, CA_PUBLIC},
     {"FDIV",        fun_fdiv,       MAX_ARG, 2,       2,         0, CA_PUBLIC},
     {"FILTER",      fun_filter,     MAX_ARG, 2,       4,         0, CA_PUBLIC},
