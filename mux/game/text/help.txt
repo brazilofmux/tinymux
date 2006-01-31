@@ -6636,7 +6636,7 @@ FUNCTION CLASSES (continued)
   Logical:                   AND ANDBOOL CAND CANDBOOL COR CORBOOL LAND LOR
                              NOT OR ORBOOL T XOR
 
-  Miscellaneous:             @@ ANSI ART BEEP ERROR ISDBREF ISINT ISNUM
+  Miscellaneous:             @@ ANSI ART BEEP ERROR FCOUNT ISDBREF ISINT ISNUM
                              ISRAT ISWORD LIT NULL R SETQ SETR SUBEVAL
                              TEXTFILE
  
