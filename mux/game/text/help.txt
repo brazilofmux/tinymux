@@ -6257,10 +6257,12 @@ FAILURE
 & FCOUNT()
 FCOUNT()
 
-  FUNCTION: fcount()
+  FUNCTION: fcount([<expression>])
 
-  This function returns the current state of the function invocation
-  counter.  Softcode can use this result to guage its distance from the
+  Without an <expression>, this function returns the number of function
+  invocation since the beginning of the queue cycle.  With an <expression>,
+  this function returns the number of function invocations used by the
+  <expression>.  Softcode can use this result to guage its distance from the
   configured function invocation limit.
 
   Related Topics: fdepth(), function_invocation_limit in wizhelp
@@ -11477,6 +11479,20 @@ SINGLETIME()
     You say "1d"
 
   Related Topics: writetime(), exptime(), digittime(), secs(), time().
+
+& SITEINFO()
+SITEINFO()
+
+  FUNCTION: siteinfo(<player|port>)
+
+  Returns the site flags for <player|port> as seen on the WHO report.
+  These are F(forbidden), R(registration), +(suspect), and G(no guests).
+
+  If <player|port> is numeric, it's taken as a port number.  Otherwise, it's
+  treated as a player name.  If the named player is connected more than once,
+  the first connection is returned.
+
+  Related Topics: wizhelp WHO, wizhelp SITE LISTS.
 
 & SITEMON
 SITEMON
