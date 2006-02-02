@@ -1,6 +1,6 @@
 // mail.cpp
 //
-// $Id: mail.cpp,v 1.53 2006/01/07 19:44:56 sdennis Exp $
+// $Id: mail.cpp,v 1.54 2006/02/02 23:02:59 sdennis Exp $
 //
 // This code was taken from Kalkin's DarkZone code, which was
 // originally taken from PennMUSH 1.50 p10, and has been heavily modified
@@ -515,6 +515,7 @@ static int parse_folder(dbref player, char *folder_string)
 #define MAIL_INVALID_DBREF  3
 #define MAIL_INVALID_PLAYER 4
 #define MAIL_INVALID_SPEC   5
+#define MAIL_INVALID_PLAYER_OR_USING_MALIAS 6
 
 static char *mailmsg[] =
 {
@@ -523,7 +524,8 @@ static char *mailmsg[] =
     "MAIL: Invalid age",
     "MAIL: Invalid dbref #",
     "MAIL: Invalid player",
-    "MAIL: Invalid message specification"
+    "MAIL: Invalid message specification",
+    "MAIL: Invalid player or trying to send @mail to a @malias without a subject",
 };
 
 static bool parse_msglist(char *msglist, struct mail_selector *ms, dbref player)
@@ -716,7 +718,7 @@ static bool parse_msglist(char *msglist, struct mail_selector *ms, dbref player)
             ms->player = lookup_player(player, p, true);
             if (ms->player == NOTHING)
             {
-                notify(player, mailmsg[MAIL_INVALID_PLAYER]);
+                notify(player, mailmsg[MAIL_INVALID_PLAYER_OR_USING_MALIAS]);
                 return false;
             }
             break;
