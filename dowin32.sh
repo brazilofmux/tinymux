@@ -4,9 +4,9 @@
 # untaring a previous distribution.
 #
 OldBuild=27
-OldVersion=2.4.1.$OldBuild
+OldVersion=2.4.2.$OldBuild
 NewBuild=28
-NewVersion=2.4.1.$NewBuild
+NewVersion=2.4.2.$NewBuild
 
 ChangesDir=mux
 ReferenceDir=mux2.4_$OldBuild
