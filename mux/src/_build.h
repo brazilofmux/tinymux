@@ -1,6 +1,6 @@
 // _build.h
 //
-// $Id: _build.h,v 1.54 2006-01-10 16:48:00 sdennis Exp $
+// $Id: _build.h,v 1.55 2006-02-03 07:45:19 sdennis Exp $
 //
 #ifndef MUX_BUILD_NUM
 extern char szBuildNum[];
@@ -13,7 +13,7 @@ extern char szBuildDate[];
 #endif // MUX_BUILD_DATE
 
 #define MUX_VERSION       "2.6.0.1"          // Version number
-#define MUX_RELEASE_DATE  "2006-JAN-10"      // Source release date
+#define MUX_RELEASE_DATE  "2006-FEB-02"      // Source release date
 
 // Define if this release is qualified as ALPHA or BETA.
 //
