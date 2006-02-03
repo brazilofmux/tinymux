@@ -1,5 +1,5 @@
 TinyMUX 2.4:  CHANGES
-Last Update:  January 2006
+Last Update:  February 2006
 
 Major changes that may affect performance and require softcode tweaks:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -294,6 +294,15 @@ Performance Enhancements:
  -- Remove FindFirstKey() sanity checking from hashadd_LEN() to reduce
     the number of FindFirstKey() requests.
  -- Unroll CHashPage::FindFirstKey() and favor most common case.
+ -- Document OpenLock.
+ -- Guests now copy attributes from the proto-Guest (defined by
+    guest_char_num).
+ -- Fir %v parsing for a syntax error.
+ -- Fix appearance of RxLevel and TxLevel in examine.
+ -- Fix executor in Reality levels code so that is isn't always #0.
+ -- Improve error message for '@mail *name' where players might have
+    either mispelled the player name or attempted to use a @malias
+    without including the subject.
 
 
 Cosmetic Changes:
@@ -331,3 +340,10 @@ Miscellaneous:
     (and attributes on those objects) to be extracted from an offline
     flatfile.  The result is in an @decomp format suitable for quoting.
  -- Added some #defines around FiranMUX-specific behavior.
+ -- Freshen PATCHES.
+ -- Remove roughly one thousand level 4 warnings as reported by a mix of
+    compilers related to: 1) the relationship between function
+    definitions and their prototypes, 2) unreferenced parameters, and
+    3) a few static analysis warnings.  This was done primarily to
+    improve the chances of backpatching from TinyMUX 2.6 as the changes
+    are safe but numerous.
