@@ -1,19 +1,33 @@
 TinyMUX 2.6:  CHANGES
-Last Update:  January 2006
+Last Update:  February 2006
 
 Major changes that may affect performance and require softcode tweaks:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
  -- Deprecated LSTACK(), POP(), PUSH(), PEEK(), EMPTY(), and ITEMS().
     These functions are still available via the --enabled-deprecated
-    configuration switch.
+    configuration switch.  Requested by Ian.
+ -- Port code to the 64-bit edition of Windows XP.  Jake and Brazil.
 
 
 Feature Additions:
 ~~~~~~~~~~~~~~~~~
+ -- FCOUNT(<expression>) to tally function invocations in <expression>.
+    Requested by Ian.
+ -- Add SITEINFO() to return the site flags for a player or port.  Added
+    by Jake.
+ -- Use Moniker instead of name in enter/leave emits, rob, kill, @toad,
+    boot, and in other similar situations.
+ -- Add support for %=<attr> substitution. From TinyMUSH 3.
+ -- Use localtime_r() if available. By Brazil.
 
 
 Bug Fixes:
 ~~~~~~~~~
+ -- Fix over one thousand level 4 warnings.  Jake and Brazil.
+ -- Deprecate use of strcpy() and strncpy().  Jake and Brazil.
+ -- Use size_t where appropriate.  Jake and Brazil.
+ -- Deprecate use of sprintf().  By Brazil.
+ -- Deprecate use of localtime().  By Brazil.
 
 
 Performance Enhancements:
