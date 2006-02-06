@@ -517,7 +517,7 @@ void did_it_rlevel
     int i, *desclist, found_a_desc;
 
     char *preserve[MAX_GLOBAL_REGS];
-    int  preserve_len[MAX_GLOBAL_REGS];
+    size_t preserve_len[MAX_GLOBAL_REGS];
     bool need_pres = false;
 
     // Message to player.
