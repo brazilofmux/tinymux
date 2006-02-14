@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.166 2006/01/27 23:43:27 sdennis Exp $
+// $Id: functions.cpp,v 1.167 2006/02/14 19:50:24 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2005 Solid Vertical Domains, Ltd. All
@@ -4980,7 +4980,7 @@ static FUNCTION(fun_merge)
     // Do length checks first.
     //
     size_t n0 = strlen(fargs[0]);
-    size_t n1 = strlen(fargs[2]);
+    size_t n1 = strlen(fargs[1]);
     if (n0 != n1)
     {
         safe_str("#-1 STRING LENGTHS MUST BE EQUAL", buff, bufc);
