@@ -1,7 +1,7 @@
 /*! \file functions.cpp
  *  MUX function handlers
  *
- * $Id: functions.cpp,v 1.184 2006-01-31 00:44:06 sdennis Exp $
+ * $Id: functions.cpp,v 1.185 2006-02-14 19:51:27 sdennis Exp $
  *
  */
 
@@ -5007,7 +5007,7 @@ static FUNCTION(fun_merge)
     // Do length checks first.
     //
     size_t n0 = strlen(fargs[0]);
-    size_t n1 = strlen(fargs[2]);
+    size_t n1 = strlen(fargs[1]);
     if (n0 != n1)
     {
         safe_str("#-1 STRING LENGTHS MUST BE EQUAL", buff, bufc);
