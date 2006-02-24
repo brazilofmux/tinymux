@@ -1,6 +1,6 @@
 // timeutil.cpp -- CLinearTimeAbsolute and CLinearTimeDelta modules.
 //
-// $Id: timeutil.cpp,v 1.62 2006-01-11 05:42:18 sdennis Exp $
+// $Id: timeutil.cpp,v 1.63 2006-02-24 16:01:45 sdennis Exp $
 //
 // Date/Time code based on algorithms presented in "Calendrical Calculations",
 // Cambridge Press, 1998.
@@ -1455,17 +1455,6 @@ BOOL CalibrateQueryPerformance(void)
     {
         GetSystemTimeAsFileTime((struct _FILETIME *)&t);
 
-        // Estimate Error.
-        //
-        // x = y/m + b;
-        //
-        tError = Ticks2Seconds.Convert(li) + xIntercept - t;
-        if (  -TargetError < tError
-           && tError < TargetError)
-        {
-            bUseQueryPerformance = true;
-        }
-
         // x = y/m + b
         // m = dy/dx = (y1 - y0)/(x1 - x0)
         //
@@ -1474,15 +1463,33 @@ BOOL CalibrateQueryPerformance(void)
         INT64 dli = li - liInit;
         INT64 dt  =  t -  tInit;
 
-        CxyDiv Ticks2Freq;
+        bUseQueryPerformance = false;
+        if (  0 < dt
+           && 0 < dli)
+        {
+            CxyDiv Ticks2Freq;
+            Ticks2Freq.SetDenominator(dt);
+            INT64 liFreq = Ticks2Freq.Convert(dli);
+            if (0 < liFreq)
+            {
+                // Estimate error of prediction using previous line.
+                //
+                // x = y/m + b;
+                //
+                tError = Ticks2Seconds.Convert(li) + xIntercept - t;
 
-        Ticks2Freq.SetDenominator(dt);
-        INT64 liFreq = Ticks2Freq.Convert(dli);
-        Ticks2Seconds.SetDenominator(liFreq);
+                // Establish revised line, b = x - y/m
+                //
+                Ticks2Seconds.SetDenominator(liFreq);
+                xIntercept = t - Ticks2Seconds.Convert(li);
 
-        // Therefore, b = x - y/m
-        //
-        xIntercept = t - Ticks2Seconds.Convert(li);
+                if (  -TargetError < tError
+                   && tError < TargetError)
+                {
+                    bUseQueryPerformance = true;
+                }
+            }
+        }
         return true;
     }
     else
