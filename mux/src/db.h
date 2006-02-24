@@ -1,6 +1,6 @@
 // db.h
 //
-// $Id: db.h,v 1.8 2006/01/07 20:48:11 sdennis Exp $
+// $Id: db.h,v 1.9 2006/02/24 18:08:34 sdennis Exp $
 //
 
 #ifndef __DB_H
@@ -165,12 +165,16 @@ struct object
     char    *moniker;
 
 #ifdef MEMORY_BASED
-    ATRLIST *ahead;     /* The head of the attribute list. */
-    int at_count;       /* How many attributes do we have? */
+    ATRLIST *pALHead;   /* The head of the attribute list.       */
+    int      nALAlloc;  /* Size of the allocated attribute list. */
+    int      nALUsed;   /* Used portion of the attribute list.   */
 #else
     char    *name;
 #endif // MEMORY_BASED
 };
+
+const int INITIAL_ATRLIST_SIZE = 10;
+const int ATRLIST_CHUNK        = 20;
 
 extern OBJ *db;
 
