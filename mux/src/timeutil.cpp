@@ -1,7 +1,7 @@
 /*! \file timeutil.cpp
  *  CLinearTimeAbsolute and CLinearTimeDelta modules.
  *
- * $Id: timeutil.cpp,v 1.64 2006-02-28 08:10:15 sdennis Exp $
+ * $Id: timeutil.cpp,v 1.65 2006-02-28 08:12:41 sdennis Exp $
  *
  * Date/Time code based on algorithms presented in "Calendrical Calculations",
  * Cambridge Press, 1998.
@@ -1443,12 +1443,12 @@ static CxyDiv Ticks2Seconds;
 static INT64  xIntercept = 0;
 static INT64  liInit;
 static INT64  tInit;
-static INT64  liMinSampleError  = time_5ms;
-static INT64  liMinSampleError2 = time_5ms;
+static INT64  liMinSampleError  = 5*FACTOR_100NS_PER_MILLISECOND;
+static INT64  liMinSampleError2 = 5*FACTOR_100NS_PER_MILLISECOND;
 static bool   bQueryPerformanceAvailable = false;
 static bool   bUseQueryPerformance = false;
 
-const INT64 TargetError = time_5ms;
+const INT64 TargetError = 5*FACTOR_100NS_PER_MILLISECOND;
 
 /*! \brief Obtain a raw time sample.
  *
@@ -1550,7 +1550,7 @@ bool CalibrateQueryPerformance(void)
     INT64 t;
 
     bUseQueryPerformance = false;
-    if (GetReasonableTimeSample(t, lit))
+    if (GetReasonableTimeSample(t, li))
     {
         // x = y/m + b
         // m = dy/dx = (y1 - y0)/(x1 - x0)
