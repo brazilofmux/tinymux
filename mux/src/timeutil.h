@@ -1,6 +1,6 @@
 // timeutil.h -- CLinearTimeAbsolute, and CLinearTimeDelta modules.
 //
-// $Id: timeutil.h,v 1.20 2006-01-08 20:18:25 sdennis Exp $
+// $Id: timeutil.h,v 1.21 2006-02-28 08:10:15 sdennis Exp $
 //
 // Date/Time code based on algorithms presented in "Calendrical Calculations",
 // Cambridge Press, 1998.
@@ -162,6 +162,8 @@ extern const INT64 FACTOR_100NS_PER_HOUR;
 extern const INT64 FACTOR_100NS_PER_DAY;
 extern const INT64 FACTOR_100NS_PER_WEEK;
 
+const CLinearTimeDelta time_200us = 200*FACTOR_100NS_PER_MICROSECOND;
+const CLinearTimeDelta time_5ms   = 5*FACTOR_100NS_PER_MILLISECOND;
 const CLinearTimeDelta time_250ms = 250*FACTOR_100NS_PER_MILLISECOND;
 const CLinearTimeDelta time_1s    = FACTOR_100NS_PER_SECOND;
 const CLinearTimeDelta time_5s    = 5*FACTOR_100NS_PER_SECOND;
@@ -174,7 +176,7 @@ const CLinearTimeDelta time_1w    = FACTOR_100NS_PER_WEEK;
 
 extern void TIME_Initialize(void);
 #ifdef WIN32
-extern BOOL CalibrateQueryPerformance(void);
+extern bool CalibrateQueryPerformance(void);
 #endif
 
 #ifdef SMALLEST_INT_GTE_NEG_QUOTIENT
