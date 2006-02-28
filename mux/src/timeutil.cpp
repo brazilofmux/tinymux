@@ -1,7 +1,7 @@
 /*! \file timeutil.cpp
  *  CLinearTimeAbsolute and CLinearTimeDelta modules.
  *
- * $Id: timeutil.cpp,v 1.65 2006-02-28 08:12:41 sdennis Exp $
+ * $Id: timeutil.cpp,v 1.66 2006-02-28 08:23:50 sdennis Exp $
  *
  * Date/Time code based on algorithms presented in "Calendrical Calculations",
  * Cambridge Press, 1998.
@@ -1463,18 +1463,15 @@ const INT64 TargetError = 5*FACTOR_100NS_PER_MILLISECOND;
 
 DCL_INLINE bool GetTimeSample(INT64 &a, INT64 &t, INT64 &b)
 {
-    if (bQueryPerformanceAvailable)
+    if (QueryPerformanceCounter((LARGE_INTEGER *)&a))
     {
-        if (QueryPerformanceCounter((LARGE_INTEGER *)&a))
+        GetSystemTimeAsFileTime((struct _FILETIME *)&t);
+        if (QueryPerformanceCounter((LARGE_INTEGER *)&b))
         {
-            GetSystemTimeAsFileTime((struct _FILETIME *)&t);
-            if (QueryPerformanceCounter((LARGE_INTEGER *)&b))
-            {
-                return true;
-            }
+            return true;
         }
-        bQueryPerformanceAvailable = false;
     }
+    bQueryPerformanceAvailable = false;
     return false;
 }
 
