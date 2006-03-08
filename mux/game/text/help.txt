@@ -7217,7 +7217,7 @@ HEIGHT()
 
   Returns the height of the client window as reported by Telnet's Negotiate
   About Window Size (NAWS) option. For clients which do not negotiate the
-  NAWS option, a value of 78 is returned.
+  NAWS option, a value of 24 is returned.
 
   If <player|port> is numeric, it's taken as a port number (as shown in
   SESSION).  Otherwise, it's treated as a player name.  If the named player is
