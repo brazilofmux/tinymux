@@ -1,6 +1,6 @@
 // game.cpp
 //
-// $Id: game.cpp,v 1.92 2006/01/07 21:58:14 sdennis Exp $
+// $Id: game.cpp,v 1.93 2006/03/12 22:45:04 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -1600,7 +1600,7 @@ void fork_and_dump(int key)
     int child = 0;
     bool bChildExists = false;
     mudstate.dumping = true;
-    mudstate.dumped  = false;
+    mudstate.dumped  = 0;
     bool bAttemptFork = mudconf.fork_dump;
 #if !defined(HAVE_PREAD) \
  || !defined(HAVE_PWRITE)
@@ -1650,10 +1650,10 @@ void fork_and_dump(int key)
             mudstate.dumper = child;
             if (mudstate.dumper == mudstate.dumped)
             {
-                // The child process executed and exited before fork() returned to
-                // the parent process.  Without a process id, the parent's SIGCHLD
-                // handler could not be certain that the pid of the exiting
-                // process would match the pid of this child.
+                // The child process executed and exited before fork() returned
+                // to the parent process.  Without a process id, the parent's
+                // SIGCHLD handler could not be certain that the pid of the
+                // exiting process would match the pid of this child.
                 //
                 // At the this point, we can be sure, however, there's
                 // nothing much left to do.
