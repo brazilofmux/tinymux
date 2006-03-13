@@ -1,14 +1,19 @@
-// timeutil.cpp -- CLinearTimeAbsolute and CLinearTimeDelta modules.
-//
-// $Id: timeutil.cpp,v 1.49 2006/01/07 05:31:52 sdennis Exp $
-//
-// MUX 2.4
-// Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
-// rights not explicitly given are reserved.
-//
-// Date/Time code based on algorithms presented in "Calendrical Calculations",
-// Cambridge Press, 1998.
-//
+/*! \file timeutil.cpp
+ *  CLinearTimeAbsolute and CLinearTimeDelta modules.
+ *
+ * $Id: timeutil.cpp,v 1.50 2006/03/13 02:20:25 sdennis Exp $
+ *
+ * Date/Time code based on algorithms presented in "Calendrical Calculations",
+ * Cambridge Press, 1998.
+ *
+ * The two primary classes are CLinearTimeAbsolute and CLinearTimeDelta deal
+ * with civil time from a fixed Epoch and time differences generally,
+ * respectively.
+ *
+ * This file also contains code related to parsing date strings and glossing
+ * over time-related platform differences.
+ */
+
 #include "copyright.h"
 #include "autoconf.h"
 #include "config.h"
@@ -1424,13 +1429,100 @@ static CxyDiv Ticks2Seconds;
 static INT64  xIntercept = 0;
 static INT64  liInit;
 static INT64  tInit;
-static INT64  tError;
+static INT64  liMinSampleError  = 5*FACTOR_100NS_PER_MILLISECOND;
+static INT64  liMinSampleError2 = 5*FACTOR_100NS_PER_MILLISECOND;
 static bool   bQueryPerformanceAvailable = false;
 static bool   bUseQueryPerformance = false;
 
 const INT64 TargetError = 5*FACTOR_100NS_PER_MILLISECOND;
 
-BOOL CalibrateQueryPerformance(void)
+/*! \brief Obtain a raw time sample.
+ *
+ * Our intention here is to obtain a, t, and b in that order as quickly as
+ * possible. The two performance counter values bracket the system time.
+ *
+ * \param a        Leading performance counter.
+ * \param t        System Time from Windows.
+ * \param b        Trailing performance counter.
+ * \return         Whether above values are valid.
+ */
+
+DCL_INLINE bool GetTimeSample(INT64 &a, INT64 &t, INT64 &b)
+{
+    if (QueryPerformanceCounter((LARGE_INTEGER *)&a))
+    {
+        GetSystemTimeAsFileTime((struct _FILETIME *)&t);
+        if (QueryPerformanceCounter((LARGE_INTEGER *)&b))
+        {
+            return true;
+        }
+    }
+    bQueryPerformanceAvailable = false;
+    return false;
+}
+
+/*! \brief Attempt to obtain a reasonable time sample.
+ *
+ * If possible, we obtain a relatively recent system time and its
+ * corresponding performance counter.  We do care that t corresponds closely
+ * with li, however, it is not critically important that t or li represent
+ * the most accurate representation of current time.
+ *
+ * \param t        System Time from Windows.
+ * \param li       Corresponding performance counter.
+ * \return         Whether above values are valid.
+ */
+
+bool GetReasonableTimeSample(INT64 &t, INT64 &li)
+{
+    int i;
+    for (i = 0; i < 5; i++)
+    {
+        INT64 a, b;
+        if (  GetTimeSample(a, t, b)
+           && a < b)
+        {
+            INT64 d = b - a;
+            if (d < liMinSampleError)
+            {
+                liMinSampleError = d;
+                liMinSampleError2 = 2*d;
+            }
+            if (d < liMinSampleError2)
+            {
+                // Average first and last counter values.
+                //
+                li = a + (b-a)/2;
+                return true;
+            }
+
+            // A glitch might cause the difference between a and b to be
+            // unreasonably small, so we slowly open the minimum up again.
+            //
+            liMinSampleError++;
+            liMinSampleError2 += 2;
+        }
+    }
+    return false;
+}
+
+/*! \brief Develop a general correspondence between the system time and
+ *         high-resolution performance counters.
+ *
+ * Given high-quality time samples, we develop a linear relationship between
+ * system time and the performance counters.  System time is typically given
+ * at 10ms resolution, but the high-resolution performance counters
+ * potentially provide microsecond resolution.  Also, the high-resolution
+ * performance counters are more efficient to query.
+ *
+ * Since this calibration process occurs infrequently, performance is not an
+ * issue.  Typically, we save time in GetUTCLinearTime by doing more work
+ * here.
+ *
+ * \return         Whether to continue scheduling calibration.
+ */
+
+bool CalibrateQueryPerformance(void)
 {
     if (!bQueryPerformanceAvailable)
     {
@@ -1440,22 +1532,9 @@ BOOL CalibrateQueryPerformance(void)
     INT64 li;
     INT64 t;
 
-    MuxAlarm.SurrenderSlice();
-    if (QueryPerformanceCounter((LARGE_INTEGER *)&li))
+    bUseQueryPerformance = false;
+    if (GetReasonableTimeSample(t, li))
     {
-        GetSystemTimeAsFileTime((struct _FILETIME *)&t);
-
-        // Estimate Error.
-        //
-        // x = y/m + b;
-        //
-        tError = Ticks2Seconds.Convert(li) + xIntercept - t;
-        if (  -TargetError < tError
-           && tError < TargetError)
-        {
-            bUseQueryPerformance = true;
-        }
-
         // x = y/m + b
         // m = dy/dx = (y1 - y0)/(x1 - x0)
         //
@@ -1464,23 +1543,34 @@ BOOL CalibrateQueryPerformance(void)
         INT64 dli = li - liInit;
         INT64 dt  =  t -  tInit;
 
-        CxyDiv Ticks2Freq;
+        if (  0 < dt
+           && 0 < dli)
+        {
+            CxyDiv Ticks2Freq;
+            Ticks2Freq.SetDenominator(dt);
+            INT64 liFreq = Ticks2Freq.Convert(dli);
+            if (0 < liFreq)
+            {
+                // Estimate error of prediction using previous line.
+                //
+                // x = y/m + b;
+                //
+                INT64 tError = Ticks2Seconds.Convert(li) + xIntercept - t;
 
-        Ticks2Freq.SetDenominator(dt);
-        INT64 liFreq = Ticks2Freq.Convert(dli);
-        Ticks2Seconds.SetDenominator(liFreq);
+                // Establish revised line, b = x - y/m
+                //
+                Ticks2Seconds.SetDenominator(liFreq);
+                xIntercept = t - Ticks2Seconds.Convert(li);
 
-        // Therefore, b = x - y/m
-        //
-        xIntercept = t - Ticks2Seconds.Convert(li);
-        return true;
+                if (  -TargetError < tError
+                   && tError < TargetError)
+                {
+                    bUseQueryPerformance = true;
+                }
+            }
+        }
     }
-    else
-    {
-        bQueryPerformanceAvailable = false;
-        bUseQueryPerformance = false;
-        return false;
-    }
+    return true;
 }
 
 static void InitializeQueryPerformance(void)
@@ -1491,11 +1581,8 @@ static void InitializeQueryPerformance(void)
     if (QueryPerformanceFrequency((LARGE_INTEGER *)&liFreq))
     {
         Ticks2Seconds.SetDenominator(liFreq);
-
-        MuxAlarm.SurrenderSlice();
-        if (QueryPerformanceCounter((LARGE_INTEGER *)&liInit))
+        if (GetReasonableTimeSample(tInit, liInit))
         {
-            GetSystemTimeAsFileTime((struct _FILETIME *)&tInit);
             xIntercept = tInit - Ticks2Seconds.Convert(liInit);
             bQueryPerformanceAvailable = true;
         }
