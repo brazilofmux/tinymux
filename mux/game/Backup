@@ -44,10 +44,10 @@ else
     fi
 fi
 
-if [ `head -1 $RECENT_DB` = "+X992001" ]; then
+if [ `head -n 1 $RECENT_DB` = "+X992001" ]; then
     cp $RECENT_DB $GAME_DB
 else
-    if [ `head -1 $RECENT_DB` = "+X1031937" ]; then
+    if [ `head -n 1 $RECENT_DB` = "+X1031937" ]; then
         $BIN/dbconvert -d$DATA/$GDBM_DB -u -i$RECENT_DB -o$GAME_DB
     else
         echo "Unrecognized header in $RECENT_DB."
