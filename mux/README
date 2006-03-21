@@ -1,5 +1,5 @@
 TinyMUX 2.6:  README (Unix-based)
-Last Update:  January 2006
+Last Update:  March 2006
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 Congratulations and welcome to the README file for TinyMUX 2.6.  That 
 you have chosen to actually read the file is a sign of bravery equal to 
@@ -165,20 +165,21 @@ compiler that groks function prototypes. It is 64-bit 'clean' code.  It
 has been compiled and run successfully 'out of the box' on the following 
 platforms:
 
+AIX 4.3
+Cygwin
+Debian 2.1, 2.2, Sarge
+FreeBSD
+IRIX (Some versions)
+Linux Kernels 2.0.35 - 2.2.14
+Mac OS X.
+Mandrake 6.0, 7.0
+OpenBSD
+QNX
 RedHat 5.1, 5.2, 6.0
 Slackware 3.6, 4.0, 7.0, 10.0
 Solaris 2.4, 2.5, 2.6
-Mandrake 6.0, 7.0
-Linux Kernels 2.0.35 - 2.2.14
-IRIX (Some versions)
-Debian 2.1, 2.2, Sarge
-FreeBSD
-OpenBSD
-SuSE 6.2
-AIX 4.3
-Mac OS X.
-QNX
-Cygwin
+SuSE 6.2, 9.3
+Ubuntu 5.10
 
 If you get TinyMUX 2.6 working on another platform, please let us know
 about it!
