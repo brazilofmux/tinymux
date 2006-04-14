@@ -1,6 +1,6 @@
 // stringutil.cpp -- string utilities.
 //
-// $Id: stringutil.cpp,v 1.87 2006-01-11 20:51:31 sdennis Exp $
+// $Id: stringutil.cpp,v 1.88 2006-04-14 16:54:39 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -2592,10 +2592,12 @@ char *mux_ftoa(double r, bool bRounded, int frac)
     {
         nSize = 50;
     }
+
     if (bNegative)
     {
         *q++ = '-';
     }
+
     if (iDecimalPoint == 9999)
     {
         // Inf or NaN
@@ -2607,6 +2609,12 @@ char *mux_ftoa(double r, bool bRounded, int frac)
     {
         // Zero
         //
+        if (bNegative)
+        {
+            // If we laid down a minus sign, we should remove it.
+            //
+            q--;
+        }
         *q++ = '0';
         if (  bRounded
            && 0 < nRequest)

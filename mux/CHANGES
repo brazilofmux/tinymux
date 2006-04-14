@@ -1,5 +1,5 @@
 TinyMUX 2.6:  CHANGES
-Last Update:  February 2006
+Last Update:  April 2006
 
 Major changes that may affect performance and require softcode tweaks:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -28,6 +28,7 @@ Bug Fixes:
  -- Use size_t where appropriate.  Jake and Brazil.
  -- Deprecate use of sprintf().  By Brazil.
  -- Deprecate use of localtime().  By Brazil.
+ -- Fix 'round(-0.5,0)' --> '-0' to be '0' instead.
 
 
 Performance Enhancements:
