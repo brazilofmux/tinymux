@@ -1,6 +1,6 @@
 // stringutil.cpp -- string utilities.
 //
-// $Id: stringutil.cpp,v 1.73 2006/01/07 08:00:51 sdennis Exp $
+// $Id: stringutil.cpp,v 1.74 2006/04/14 16:55:58 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -2581,10 +2581,12 @@ char *mux_ftoa(double r, bool bRounded, int frac)
     {
         nSize = 50;
     }
+
     if (bNegative)
     {
         *q++ = '-';
     }
+
     if (iDecimalPoint == 9999)
     {
         // Inf or NaN
@@ -2596,6 +2598,12 @@ char *mux_ftoa(double r, bool bRounded, int frac)
     {
         // Zero
         //
+        if (bNegative)
+        {
+            // If we laid down a minus sign, we should remove it.
+            //
+            q--;
+        }
         *q++ = '0';
         if (  bRounded
            && 0 < nRequest)
