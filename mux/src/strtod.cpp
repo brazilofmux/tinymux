@@ -3607,7 +3607,7 @@ void mux_FPRestore(void)
 
 #else
 
-#ifndef _WIN64
+#if !defined(_WIN64) && !(defined(__APPLE__) && defined(__MACH__) && !defined(__i386__))
 #warning "No method of floating-point control was found, using dummy functions"
 #endif
 
