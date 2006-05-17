@@ -1,7 +1,7 @@
 /*! \file functions.cpp
  *  MUX function handlers
  *
- * $Id: functions.cpp,v 1.185 2006-02-14 19:51:27 sdennis Exp $
+ * $Id: functions.cpp,v 1.186 2006-05-17 17:25:25 sdennis Exp $
  *
  */
 
@@ -2642,6 +2642,31 @@ static FUNCTION(fun_cansee)
 }
 #endif
 
+typedef enum
+{
+    lconAny = 0,
+    lconPlayer,
+    lconObject,
+    lconConnect,
+    lconPuppet,
+    lconListen
+} lconSubset;
+
+static struct lconSubsetTable
+{
+    char      *name;
+    lconSubset subset;
+}
+SubsetTable[] =
+{
+    { "PLAYER",  lconPlayer },
+    { "OBJECT",  lconObject },
+    { "CONNECT", lconConnect},
+    { "PUPPET",  lconPuppet },
+    { "LISTEN",  lconListen },
+    { NULL,      lconAny    }
+};
+        
 /*
  * ---------------------------------------------------------------------------
  * * fun_lcon: Return a list of contents.
@@ -2655,16 +2680,40 @@ static FUNCTION(fun_lcon)
     UNUSED_PARAMETER(ncargs);
 
     dbref it = match_thing_quiet(executor, fargs[0]);
+
     if (!Good_obj(it))
     {
         safe_match_result(it, buff, bufc);
         return;
     }
+
     if (!Has_contents(it))
     {
         safe_nothing(buff, bufc);
         return;
     }
+
+    lconSubset i_subset = lconAny;
+    if (2 == nfargs)
+    {
+        // PLAYER  -- lists all TYPE players in the contents.
+        // OBJECT  -- lists all TYPE objects in the contents.
+        // CONNECT -- lists all connected players in the contents.
+        // PUPPET  -- lists all flag type 'PUPPET' in the contents.
+        // LISTEN  -- lists all listening things in the contents.
+
+        lconSubsetTable *p = SubsetTable;
+        while (NULL != p->name)
+        {
+            if (mux_stricmp(fargs[1], p->name) == 0)
+            {
+                i_subset = p->subset;
+                break;
+            }
+            p++;
+        }
+    }
+
     if (  Examinable(executor, it)
        || Location(executor) == it
        || it == enactor)
@@ -2685,6 +2734,23 @@ static FUNCTION(fun_lcon)
                    && !See_Hidden(executor))
                 {
                     continue;
+                }
+
+                if (lconAny != i_subset)
+                {
+                    if (  (  lconPlayer == i_subset
+                          && !isPlayer(thing))
+                       || (  lconObject == i_subset
+                          && isPlayer(thing))
+                       || (  lconConnect == i_subset
+                          && !Connected(thing))
+                       || (  lconPuppet == i_subset
+                          && !Puppet(thing))
+                       || (  lconListen == i_subset
+                          && !H_Listen(thing)))
+                    {
+                        continue;
+                    }
                 }
 
                 if (!ItemToList_AddInteger(&pContext, thing))
@@ -8730,7 +8796,7 @@ static FUN builtin_function_list[] =
     {"LISTRLEVELS", fun_listrlevels, MAX_ARG, 0,       0,         0, CA_PUBLIC},
 #endif
     {"LCMDS",       fun_lcmds,      MAX_ARG, 1,       3,         0, CA_PUBLIC},
-    {"LCON",        fun_lcon,       MAX_ARG, 1,       1,         0, CA_PUBLIC},
+    {"LCON",        fun_lcon,       MAX_ARG, 1,       2,         0, CA_PUBLIC},
     {"LCSTR",       fun_lcstr,            1, 1,       1,         0, CA_PUBLIC},
     {"LDELETE",     fun_ldelete,    MAX_ARG, 2,       3,         0, CA_PUBLIC},
     {"LEXITS",      fun_lexits,     MAX_ARG, 1,       1,         0, CA_PUBLIC},
