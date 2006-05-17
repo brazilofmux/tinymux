@@ -1,7 +1,7 @@
 /*! \file functions.cpp
  *  MUX function handlers
  *
- * $Id: functions.cpp,v 1.189 2006-05-17 22:40:48 sdennis Exp $
+ * $Id: functions.cpp,v 1.190 2006-05-17 22:50:38 sdennis Exp $
  *
  */
 
@@ -4601,7 +4601,7 @@ static FUNCTION(fun_lnum)
     else if (bot < top)
     {
         safe_ltoa(bot, buff, bufc);
-        for (i = bot+1; i <= top; i += step)
+        for (i = bot+step; i <= top; i += step)
         {
             print_sep(&sep, buff, bufc);
             char *p = *bufc;
@@ -4615,7 +4615,7 @@ static FUNCTION(fun_lnum)
     else if (top < bot)
     {
         safe_ltoa(bot, buff, bufc);
-        for (i = bot-1; i >= top; i -= step)
+        for (i = bot-step; i >= top; i -= step)
         {
             print_sep(&sep, buff, bufc);
             char *p = *bufc;
