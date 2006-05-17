@@ -1,7 +1,7 @@
 /*! \file functions.cpp
  *  MUX function handlers
  *
- * $Id: functions.cpp,v 1.188 2006-05-17 21:49:24 sdennis Exp $
+ * $Id: functions.cpp,v 1.189 2006-05-17 22:40:48 sdennis Exp $
  *
  */
 
@@ -4570,6 +4570,7 @@ static FUNCTION(fun_lnum)
     }
 
     int bot = 0, top;
+    int step = 1;
     if (nfargs == 1)
     {
         top = mux_atol(fargs[0]) - 1;
@@ -4582,6 +4583,14 @@ static FUNCTION(fun_lnum)
     {
         bot = mux_atol(fargs[0]);
         top = mux_atol(fargs[1]);
+        if (nfargs == 4)
+        {
+            step = mux_atol(fargs[3]);
+            if (step < 1)
+            {
+                step = 1;
+            }
+        }
     }
 
     int i;
@@ -4592,18 +4601,21 @@ static FUNCTION(fun_lnum)
     else if (bot < top)
     {
         safe_ltoa(bot, buff, bufc);
-        for (i = bot+1; i <= top; i++)
+        for (i = bot+1; i <= top; i += step)
         {
             print_sep(&sep, buff, bufc);
             char *p = *bufc;
             safe_ltoa(i, buff, bufc);
-            if (p == *bufc) return;
+            if (p == *bufc)
+            {
+                return;
+            }
         }
     }
     else if (top < bot)
     {
         safe_ltoa(bot, buff, bufc);
-        for (i = bot-1; i >= top; i--)
+        for (i = bot-1; i >= top; i -= step)
         {
             print_sep(&sep, buff, bufc);
             char *p = *bufc;
@@ -8806,7 +8818,7 @@ static FUN builtin_function_list[] =
     {"LIT",         fun_lit,              1, 1,       1, FN_NOEVAL, CA_PUBLIC},
     {"LJUST",       fun_ljust,      MAX_ARG, 2,       3,         0, CA_PUBLIC},
     {"LN",          fun_ln,         MAX_ARG, 1,       1,         0, CA_PUBLIC},
-    {"LNUM",        fun_lnum,       MAX_ARG, 0,       3,         0, CA_PUBLIC},
+    {"LNUM",        fun_lnum,       MAX_ARG, 0,       4,         0, CA_PUBLIC},
     {"LOC",         fun_loc,        MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {"LOCALIZE",    fun_localize,   MAX_ARG, 1,       1, FN_NOEVAL, CA_PUBLIC},
     {"LOCATE",      fun_locate,     MAX_ARG, 3,       3,         0, CA_PUBLIC},
