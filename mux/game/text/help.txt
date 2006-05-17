@@ -8328,7 +8328,7 @@ LN()
 & LNUM()
 LNUM()
 
-  FUNCTION: lnum(<number1>[,<number2>][,<sep>])
+  FUNCTION: lnum(<number1>[,<number2>[,<sep>]])
 
   If only given one argument, this function returns a list of numbers from
   0 to <number1>-1. If <number1> less than 1, nothing is returned.
