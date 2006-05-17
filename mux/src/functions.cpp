@@ -1,7 +1,7 @@
 /*! \file functions.cpp
  *  MUX function handlers
  *
- * $Id: functions.cpp,v 1.187 2006-05-17 17:46:11 sdennis Exp $
+ * $Id: functions.cpp,v 1.188 2006-05-17 21:49:24 sdennis Exp $
  *
  */
 
@@ -8834,7 +8834,7 @@ static FUN builtin_function_list[] =
     {"MERGE",       fun_merge,      MAX_ARG, 3,       3,         0, CA_PUBLIC},
     {"MID",         fun_mid,        MAX_ARG, 3,       3,         0, CA_PUBLIC},
     {"MIN",         fun_min,        MAX_ARG, 1, MAX_ARG,         0, CA_PUBLIC},
-    {"MIX",         fun_mix,        MAX_ARG, 3,      12,         0, CA_PUBLIC},
+    {"MIX",         fun_mix,        MAX_ARG, 2,      12,         0, CA_PUBLIC},
     {"MOD",         fun_mod,        MAX_ARG, 2,       2,         0, CA_PUBLIC},
     {"MONEY",       fun_money,      MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {"MONIKER",     fun_moniker,    MAX_ARG, 0,       1,         0, CA_PUBLIC},
