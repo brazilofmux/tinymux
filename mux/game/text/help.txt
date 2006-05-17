@@ -8314,7 +8314,7 @@ LN()
 & LNUM()
 LNUM()
 
-  FUNCTION: lnum(<number1>[,<number2>][,<sep>])
+  FUNCTION: lnum(<number1>[,<number2>[,<sep>[,<step>]]])
 
   If only given one argument, this function returns a list of numbers from
   0 to <number1>-1. If <number1> less than 1, nothing is returned.
@@ -8325,6 +8325,8 @@ LNUM()
   Negative integers are valid.
 
   <sep> is used as the separator character, if given.
+
+  The numbers in the list normally count by 1 unless <step> is provided.
 
   Examples:
     > say lnum(5)
@@ -9162,14 +9164,14 @@ MIN()
 & MIX()
 MIX()
 
-  FUNCTION: mix([<object>/]<attribute>,<list 1>,<list 2>[,<list N>][,<delim>])
+  FUNCTION: mix([<object>/]<attribute>, <list 1>[, <list 2>[,<list N>]][,<delim>])
   
-  This function is similar to map(), except it takes the arguments in the 
+  This function is similar to map(), except it takes the arguments in the
   lists and passes them into the attribute as %0 (for list1), %1 (for list2),
   up to %9 (for list10).  <delim> is used as the delimiter to separate items
-  in each of the lists.  If the number of lists is 2, the delimiter may be
-  optional, otherwise you are forced to provide a delimiter.  If no delimiter
-  is specified, it defaults to a space but only for the above condition.
+  in each of the lists.  If the number of lists is 2 or less, the delimiter
+  may be optional, otherwise you are forced to provide a delimiter.  If no
+  delimiter is specified, it defaults to a space but only for the above condition.
   The lists do NOT have to have the same number of elements.
   
   Examples:
