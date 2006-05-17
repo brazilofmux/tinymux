@@ -2948,7 +2948,8 @@ Related Topics: @name.
   COMMAND: @parent <object> [=<parent>]
 
   This command sets the parent of <object> to <parent> (or clears the parent
-  if <parent> is omitted.  You must control <object>, and must own <parent>.
+  if <parent> is omitted.  You must control <object> and must either own
+  <parent> or pass the ParentLock on a parent that is set PARENT_OK.
 
   Related Topics PARENT OBJECTS.
 
@@ -8004,10 +8005,19 @@ LCMDS()
 & LCON()
 LCON()
 
-  FUNCTION: lcon(<object>)
+  FUNCTION: lcon(<object>[, <subset>])
 
   Returns a space-separated list of the contents of <object> which are
   visible to the person running the function.
+
+  By default, all of the contents visible to the executor are returned;
+  however, the list may further restricted with a <subset>:
+
+    PLAYER  -- include only Player objects.
+    OBJECT  -- include only non-Player objects.
+    CONNECT -- include only Connected Players.
+    PUPPET  -- include only Puppets.
+    LISTEN  -- include only Listening objects.
 
   Example:
     > i
