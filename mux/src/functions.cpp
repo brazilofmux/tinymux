@@ -1,7 +1,7 @@
 /*! \file functions.cpp
  *  MUX function handlers
  *
- * $Id: functions.cpp,v 1.186 2006-05-17 17:25:25 sdennis Exp $
+ * $Id: functions.cpp,v 1.187 2006-05-17 17:46:11 sdennis Exp $
  *
  */
 
@@ -2696,11 +2696,11 @@ static FUNCTION(fun_lcon)
     lconSubset i_subset = lconAny;
     if (2 == nfargs)
     {
-        // PLAYER  -- lists all TYPE players in the contents.
-        // OBJECT  -- lists all TYPE objects in the contents.
-        // CONNECT -- lists all connected players in the contents.
-        // PUPPET  -- lists all flag type 'PUPPET' in the contents.
-        // LISTEN  -- lists all listening things in the contents.
+        // PLAYER  -- include only Player objects.
+        // OBJECT  -- include only non-Player objects.
+        // CONNECT -- include only Connected Players.
+        // PUPPET  -- include only Puppets.
+        // LISTEN  -- include only Listening objects.
 
         lconSubsetTable *p = SubsetTable;
         while (NULL != p->name)
