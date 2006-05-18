@@ -1,6 +1,6 @@
 // comsys.cpp
 //
-// $Id: comsys.cpp,v 1.42 2006/01/08 03:13:31 sdennis Exp $
+// $Id: comsys.cpp,v 1.43 2006/05/18 18:58:35 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -1600,7 +1600,7 @@ void do_delcom(dbref executor, dbref caller, dbref enactor, int key, char *arg1)
     {
         if (!strcmp(arg1, c->alias + i * ALIAS_SIZE))
         {
-            int itmp, found=0;
+            int itmp, found = 0;
             for (itmp = 0;itmp < c->numchannels; itmp++)
             {
                 if (!strcmp(c->channels[itmp],c->channels[i]))
@@ -1614,16 +1614,17 @@ void do_delcom(dbref executor, dbref caller, dbref enactor, int key, char *arg1)
             if (found <= 1)
             {
                 do_delcomchannel(executor, c->channels[i], false);
-                raw_notify(executor, tprintf("Channel %s deleted.", c->channels[i]));
+                raw_notify(executor, tprintf("Alias %s for channel %s deleted.",
+                    arg1, c->channels[i]));
                 MEMFREE(c->channels[i]);
             }
             else
             {
-                raw_notify(executor, tprintf("Alias for channel %s deleted.",
-                                           c->channels[i]));
+                raw_notify(executor, tprintf("Alias %s for channel %s deleted.",
+                    arg1, c->channels[i]));
             }
 
-            c->channels[i]=NULL;
+            c->channels[i] = NULL;
             c->numchannels--;
 
             for (; i < c->numchannels; i++)
