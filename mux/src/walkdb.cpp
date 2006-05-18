@@ -1,6 +1,6 @@
 // walkdb.cpp -- Support for commands that walk the entire db.
 //
-// $Id: walkdb.cpp,v 1.14 2006-01-11 04:19:53 jake Exp $
+// $Id: walkdb.cpp,v 1.15 2006-05-18 17:56:18 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -331,35 +331,38 @@ void do_chownall
     UNUSED_PARAMETER(enactor);
     UNUSED_PARAMETER(nargs);
 
-    int count;
-    dbref victim, recipient;
-
     init_match(executor, from, TYPE_PLAYER);
     match_neighbor();
     match_absolute();
     match_player();
-    if ((victim = noisy_match_result()) == NOTHING)
+
+    dbref victim = noisy_match_result();
+    if (NOTHING == victim)
     {
         return;
     }
+    else if (!isPlayer(victim))
+    {
+        notify(executor, "Victim must be a player.");
+        return;
+    }
 
-    if ((to != NULL) && *to)
+    dbref recipient = executor;
+    if (  NULL  != to
+       && to[0] != '\0')
     {
         init_match(executor, to, TYPE_PLAYER);
         match_neighbor();
         match_absolute();
         match_player();
-        if ((recipient = noisy_match_result()) == NOTHING)
+        recipient = noisy_match_result();
+        if (NOTHING == recipient)
         {
             return;
         }
     }
-    else
-    {
-        recipient = executor;
-    }
 
-    count = chown_all(victim, recipient, executor, key);
+    int count = chown_all(victim, recipient, executor, key);
     if (!Quiet(executor))
     {
         notify(executor, tprintf("%d objects @chowned.", count));
