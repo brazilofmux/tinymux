@@ -1,6 +1,6 @@
 // command.cpp -- command parser and support routines.
 //
-// $Id: command.cpp,v 1.84 2006-01-27 23:44:24 sdennis Exp $
+// $Id: command.cpp,v 1.85 2006-05-18 18:38:51 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -4226,6 +4226,12 @@ void do_train(dbref executor, dbref caller, dbref enactor, int key, char *string
 {
     UNUSED_PARAMETER(key);
 
+    if (0 < mudstate.train_nest_lev)
+    {
+        notify(executor, "Train cannot be used to teach command, train.");
+        return;
+    }
+    mudstate.train_nest_lev++;
     dbref loc = Location(executor);
     if (!Good_obj(loc))
     {
@@ -4242,6 +4248,7 @@ void do_train(dbref executor, dbref caller, dbref enactor, int key, char *string
     notify_all_from_inside(loc, executor, tprintf("%s types -=> %s",
         Moniker(executor), string));
     process_command(executor, caller, enactor, true, string, (char **)NULL, 0);
+    mudstate.train_nest_lev--;
 }
 
 void do_moniker(dbref executor, dbref caller, dbref enactor, int key,

@@ -1,6 +1,6 @@
 // mudconf.h
 //
-// $Id: mudconf.h,v 1.36 2006-01-11 20:51:31 sdennis Exp $
+// $Id: mudconf.h,v 1.37 2006-05-18 18:38:51 sdennis Exp $
 //
 
 #ifndef __CONF_H
@@ -91,7 +91,12 @@ struct confdata
     dbref   master_room;        // Room containing default cmds/exits/etc.
     dbref   start_home;         // initial HOME for players.
     dbref   start_room;         // initial location and home for players.
-    dbref   toad_recipient;     /* Default @toad recipient. */
+    dbref   toad_recipient;     // Default @toad recipient.
+    dbref   inherit_obj;	// Object to be inherited by all objects
+    dbref   inherit_room;	// Object inherited by ROOM objects
+    dbref   inherit_player;     // Object inherited by PLAYER objects
+    dbref   inherit_thing;      // Object inherited by THING objects
+    dbref   inherit_exit;       // Object inherited by EXIT objects
     int     active_q_chunk;     /* # cmds to run from queue when active */
     int     cache_pages;        // Size of hash page cache (in pages).
     int     check_interval;     /* interval between db check/cleans in secs */
@@ -126,6 +131,7 @@ struct confdata
     int     max_players;        /* Max # of connected players */
     int     min_guests;         // The # we should start nuking at.
     int     nStackLimit;        // Current stack limit.
+
 #ifdef REALITY_LVLS
     int     no_levels;          /* Number of reality levels */
     struct  rlevel_def {
@@ -341,8 +347,9 @@ struct statedata
     int     nHearNest;          // Current aahear depth.
     int     pipe_nest_lev;      // Number of piped commands.
     int     pcreates_this_hour; // Player creations possible this hour.
-    int     ntfy_nest_lev;      /* Current nesting of notifys */
-    int     record_players;     /* The maximum # of player logged on */
+    int     ntfy_nest_lev;      // Current nesting of notifys.
+    int     train_nest_lev;     // Current nesting of train.
+    int     record_players;     // The maximum # of player logged on.
     int     wild_invk_ctr;      // Regular Expression function calls.
     int     zone_nest_num;      /* Global current zone nest position */
     int     mstat_idrss[2];     /* Summed private data size */
