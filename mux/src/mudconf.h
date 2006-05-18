@@ -1,6 +1,6 @@
 // mudconf.h
 //
-// $Id: mudconf.h,v 1.34 2005/12/29 17:47:40 sdennis Exp $
+// $Id: mudconf.h,v 1.35 2006/05/18 18:43:44 sdennis Exp $
 //
 
 #ifndef __CONF_H
@@ -341,8 +341,9 @@ struct statedata
     int     nHearNest;          // Current aahear depth.
     int     pipe_nest_lev;      // Number of piped commands.
     int     pcreates_this_hour; // Player creations possible this hour.
-    int     ntfy_nest_lev;      /* Current nesting of notifys */
-    int     record_players;     /* The maximum # of player logged on */
+    int     ntfy_nest_lev;      // Current nesting of notifys.
+    int     train_nest_lev;     // Current nesting of train.
+    int     record_players;     // The maximum # of player logged on.
     int     wild_invk_ctr;      // Regular Expression function calls.
     int     zone_nest_num;      /* Global current zone nest position */
     int     mstat_idrss[2];     /* Summed private data size */

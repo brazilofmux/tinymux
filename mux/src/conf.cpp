@@ -1,6 +1,6 @@
 // conf.cpp -- Set up configuration information and static data.
 //
-// $Id: conf.cpp,v 1.70 2006/01/08 03:10:21 sdennis Exp $
+// $Id: conf.cpp,v 1.71 2006/05/18 18:43:44 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -301,6 +301,7 @@ void cf_init(void)
     mudstate.func_invk_ctr = 0;
     mudstate.wild_invk_ctr = 0;
     mudstate.ntfy_nest_lev = 0;
+    mudstate.train_nest_lev = 0;
     mudstate.lock_nest_lev = 0;
     mudstate.zone_nest_num = 0;
     mudstate.pipe_nest_lev = 0;
