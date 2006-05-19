@@ -1,6 +1,6 @@
 // db.cpp
 //
-// $Id: db.cpp,v 1.79 2006/02/24 18:08:34 sdennis Exp $
+// $Id: db.cpp,v 1.80 2006/05/19 16:54:38 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -1290,6 +1290,8 @@ int mkattr(dbref executor, char *buff)
     return -1;
 }
 
+#ifndef MEMORY_BASED
+
 /* ---------------------------------------------------------------------------
  * al_decode: Fetch an attribute number from an alist.
  */
@@ -1343,6 +1345,8 @@ static char *al_code(char *ap, int atrnum)
     *ap++ = (char)bits;
     return ap;
 }
+
+#endif // MEMORY_BASED
 
 /* ---------------------------------------------------------------------------
  * Commer: check if an object has any $-commands in its attributes.
