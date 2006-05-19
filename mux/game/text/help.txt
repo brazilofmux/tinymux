@@ -848,10 +848,14 @@ Related Topics: @name.
 
   COMMAND: @clone[/<switches>] <object>[=<newname/cost>]
 
-  Creates an exact duplicate of <object> that is owned by you and (for things
-  and exits) puts it in your current location.  You may have the object put
-  in your inventory (or your exitlist in the case of cloning exits) by using
-  the /inventory switch.
+  Creates a almost exact duplicate of <object> that is owned by you and (for
+  things and exits) puts it in your current location.  You may have the
+  object put in your inventory (or your exitlist in the case of cloning
+  exits) by using the /inventory switch.
+
+  The modification and creation times will necessarily be different.  Also,
+  depending on the parent lock and permissions, the possibility exists that
+  the clone object will be left unparented.
 
   You may clone your own objects, plus VISUAL objects owned by others.
   The INHERIT and WIZARD bits of the (new) object are cleared when the object
@@ -865,15 +869,15 @@ Related Topics: @name.
   If you clone a room with a drop-to, an attempt is made to link the drop-to
   to the same location.
 
-  If the original object was owned by you, then the ACLONE attribute is run
-  in the new attribute, otherwise the new object is set HALTED.  Exits and
-  contents of cloned objects are not cloned, and LOCKED attributes are not
-  copied.
-
 { 'help @clone2' for more }
 
 & @CLONE2
 @CLONE (continued)
+
+  If the original object was owned by you, then the ACLONE attribute is run
+  in the new attribute, otherwise the new object is set HALTED.  Exits and
+  contents of cloned objects are not cloned, and LOCKED attributes are not
+  copied.
 
   The following switches are available:
      /cost       - Treat the argument after the = as the cost of the new
