@@ -1,6 +1,6 @@
 // db.cpp
 //
-// $Id: db.cpp,v 1.97 2006-02-23 05:58:29 sdennis Exp $
+// $Id: db.cpp,v 1.98 2006-05-19 16:55:15 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -1290,6 +1290,8 @@ int mkattr(dbref executor, char *buff)
     return -1;
 }
 
+#ifndef MEMORY_BASED
+
 /* ---------------------------------------------------------------------------
  * al_decode: Fetch an attribute number from an alist.
  */
@@ -1343,6 +1345,8 @@ static char *al_code(char *ap, unsigned int atrnum)
     }
     return ap + i + 1;
 }
+
+#endif // MEMORY_BASED
 
 /* ---------------------------------------------------------------------------
  * Commer: check if an object has any $-commands in its attributes.
