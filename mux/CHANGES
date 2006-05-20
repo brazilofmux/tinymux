@@ -1,5 +1,5 @@
 TinyMUX 2.4:  CHANGES
-Last Update:  April 2006
+Last Update:  May 2006
 
 Major changes that may affect performance and require softcode tweaks:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -255,6 +255,8 @@ Bug Fixes:
  -- Fix recent typo in MERGE().
  -- On Win32, add more checking around use of GetPerformanceCounter().
  -- Fix 'round(-0.5,0)' --> '-0' to be '0' instead.
+ -- Disallow the train command from being used on itself.
+ -- Add protection to @chownall that victim be a player object.
 
 
 Performance Enhancements:
@@ -352,3 +354,5 @@ Miscellaneous:
     3) a few static analysis warnings.  This was done primarily to
     improve the chances of backpatching from TinyMUX 2.6 as the changes
     are safe but numerous.
+ -- Change 'Channel nn deleted' after delcom to 'Alias aa to channel nn
+    deleted'.
