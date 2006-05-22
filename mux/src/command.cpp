@@ -1,6 +1,6 @@
 // command.cpp -- command parser and support routines.
 //
-// $Id: command.cpp,v 1.73 2006/05/18 18:43:44 sdennis Exp $
+// $Id: command.cpp,v 1.74 2006/05/22 04:21:08 rmg Exp $
 //
 
 #include "copyright.h"
@@ -4226,12 +4226,14 @@ void do_train(dbref executor, dbref caller, dbref enactor, int key, char *string
     if (!Good_obj(loc))
     {
         notify(executor, "Bad location.");
+        mudstate.train_nest_lev--;
         return;
     }
     if (  !string
        || !*string)
     {
         notify(executor, "Train requires an argument.");
+        mudstate.train_nest_lev--;
         return;
     }
 
