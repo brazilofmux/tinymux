@@ -1,7 +1,7 @@
 /*! \file functions.cpp
  *  MUX function handlers
  *
- * $Id: functions.cpp,v 1.190 2006-05-17 22:50:38 sdennis Exp $
+ * $Id: functions.cpp,v 1.191 2006-05-22 14:55:19 sdennis Exp $
  *
  */
 
@@ -3784,27 +3784,34 @@ static FUNCTION(fun_haspower)
 #ifdef REALITY_LVLS
 static FUNCTION(fun_hasrxlevel)
 {
-    dbref player;
     dbref it;
     RLEVEL rl;
 
-    it = match_thing(player, fargs[0]);
-    if (!Good_obj(it)) {
+    it = match_thing(executor, fargs[0]);
+    if (!Good_obj(it))
+    {
         safe_str("#-1 NOT FOUND", buff, bufc);
         return;
     }
     rl = find_rlevel(fargs[1]);
-    if (!rl) {
+    if (!rl)
+    {
         safe_str("#-1 INVALID RLEVEL", buff, bufc);
         return;
     }
-    if (Examinable(player, it)) {
-        if ((RxLevel(it) & rl) == rl) {
+    if (Examinable(executor, it))
+    {
+        if ((RxLevel(it) & rl) == rl)
+        {
             safe_chr('1', buff, bufc);
-        } else {
+        }
+        else
+        {
             safe_chr('0', buff, bufc);
         }
-   } else {
+   }
+   else
+   {
         safe_str("#-1 PERMISSION DENIED", buff, bufc);
    }
 }
@@ -3815,22 +3822,30 @@ static FUNCTION(fun_hastxlevel)
     RLEVEL rl;
 
     it = match_thing(executor, fargs[0]);
-    if (!Good_obj(it)) {
+    if (!Good_obj(it))
+    {
         safe_str("#-1 NOT FOUND", buff, bufc);
         return;
     }
     rl = find_rlevel(fargs[1]);
-    if (!rl) {
+    if (!rl)
+    {
         safe_str("#-1 INVALID RLEVEL", buff, bufc);
         return;
     }
-    if (Examinable(executor, it)) {
-        if ((TxLevel(it) & rl) == rl) {
+    if (Examinable(executor, it))
+    {
+        if ((TxLevel(it) & rl) == rl)
+        {
             safe_chr('1', buff, bufc);
-        } else {
+        }
+        else
+        {
              safe_chr('0', buff, bufc);
         }
-   } else {
+   }
+   else
+   {
         safe_str("#-1 PERMISSION DENIED", buff, bufc);
    }
 }
