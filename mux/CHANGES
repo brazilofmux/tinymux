@@ -257,6 +257,8 @@ Bug Fixes:
  -- Fix 'round(-0.5,0)' --> '-0' to be '0' instead.
  -- Disallow the train command from being used on itself.
  -- Add protection to @chownall that victim be a player object.
+ -- Fix uninitialized variable in HASRXLEVEL(). It should have used
+    'executor' instead of 'player'.
 
 
 Performance Enhancements:
