@@ -6539,7 +6539,7 @@ FMOD()
 
   Example:
     > say fmod(6.1,2.5)
-    You say "1.1"
+    You say "1.0999999999999996"
 
   Related Topics: mod()
 
