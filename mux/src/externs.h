@@ -1,6 +1,6 @@
 // externs.h -- Prototypes for externs not defined elsewhere.
 //
-// $Id: externs.h,v 1.68 2006-01-31 00:16:23 sdennis Exp $
+// $Id: externs.h,v 1.69 2006-06-10 06:56:12 sdennis Exp $
 //
 
 #ifndef EXTERNS_H
@@ -812,7 +812,7 @@ extern PortInfo aMainGamePorts[MAX_LISTEN_PORTS];
 extern int      nMainGamePorts;
 
 #ifdef WIN32
-extern DWORD platform;
+extern bool bUseCompletionPorts;;
 #else // WIN32
 extern int maxd;
 #endif // WIN32

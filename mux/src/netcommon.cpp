@@ -1,6 +1,6 @@
 // netcommon.cpp
 //
-// $Id: netcommon.cpp,v 1.75 2006-01-27 21:22:28 jake Exp $
+// $Id: netcommon.cpp,v 1.76 2006-06-10 06:56:12 sdennis Exp $
 //
 // This file contains routines used by the networking code that do not
 // depend on the implementation of the networking code.  The network-specific
@@ -367,7 +367,7 @@ void queue_write_LEN(DESC *d, const char *b, size_t n)
     d->output_tot += n;
 
 #ifdef WIN32
-    if (  platform == VER_PLATFORM_WIN32_NT
+    if (  bUseCompletionPorts
        && !d->bWritePending
        && !d->bConnectionDropped)
     {

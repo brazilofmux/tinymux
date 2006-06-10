@@ -2,7 +2,7 @@
  * File for most TCP socket-related code. Some socket-related code also exists
  * in netcommon.cpp, but most of it is here.
  *
- * $Id: bsd.cpp,v 1.92 2006-01-12 00:23:05 sdennis Exp $
+ * $Id: bsd.cpp,v 1.93 2006-06-10 06:56:12 sdennis Exp $
  */
 
 #include "copyright.h"
@@ -66,7 +66,7 @@ HANDLE hGameProcess = INVALID_HANDLE_VALUE;
 FCANCELIO *fpCancelIo = NULL;
 FGETPROCESSTIMES *fpGetProcessTimes = NULL;
 HANDLE CompletionPort;    // IOs are queued up on this port
-DWORD platform;   // which version of Windows are we using?
+bool  bUseCompletionPorts = true;
 static OVERLAPPED lpo_aborted; // special to indicate a player has finished TCP IOs
 static OVERLAPPED lpo_aborted_final; // Finally free the descriptor.
 static OVERLAPPED lpo_shutdown; // special to indicate a player should do a shutdown
@@ -913,7 +913,7 @@ static void make_socket(PortInfo *Port)
     // If we are running Windows NT we must create a completion port,
     // and start up a listening thread for new connections
     //
-    if (platform == VER_PLATFORM_WIN32_NT)
+    if (bUseCompletionPorts)
     {
         int nRet;
 
@@ -2045,7 +2045,7 @@ void shutdownsock(DESC *d, int reason)
         scheduler.CancelTask(Task_ProcessCommand, d, 0);
 
 #ifdef WIN32
-        if (platform == VER_PLATFORM_WIN32_NT)
+        if (bUseCompletionPorts)
         {
             // Don't close down the socket twice.
             //
@@ -2236,7 +2236,7 @@ DESC *initializesock(SOCKET s, struct sockaddr_in *a)
     // protect adding the descriptor from the linked list from
     // any interference from socket shutdowns
     //
-    if (platform == VER_PLATFORM_WIN32_NT)
+    if (bUseCompletionPorts)
     {
         EnterCriticalSection(&csDescriptorList);
     }
@@ -2245,7 +2245,7 @@ DESC *initializesock(SOCKET s, struct sockaddr_in *a)
     d = alloc_desc("init_sock");
 
 #ifdef WIN32
-    if (platform == VER_PLATFORM_WIN32_NT)
+    if (bUseCompletionPorts)
     {
         LeaveCriticalSection(&csDescriptorList);
     }
@@ -2304,7 +2304,7 @@ DESC *initializesock(SOCKET s, struct sockaddr_in *a)
     // protect adding the descriptor from the linked list from
     // any interference from socket shutdowns
     //
-    if (platform == VER_PLATFORM_WIN32_NT)
+    if (bUseCompletionPorts)
     {
         EnterCriticalSection (&csDescriptorList);
     }
@@ -2324,7 +2324,7 @@ DESC *initializesock(SOCKET s, struct sockaddr_in *a)
 #ifdef WIN32
     // ok to continue now
     //
-    if (platform == VER_PLATFORM_WIN32_NT)
+    if (bUseCompletionPorts)
     {
         LeaveCriticalSection (&csDescriptorList);
 

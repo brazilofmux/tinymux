@@ -1,6 +1,6 @@
 // cque.cpp -- commands and functions for manipulating the command queue.
 //
-// $Id: cque.cpp,v 1.38 2006-01-11 20:51:31 sdennis Exp $
+// $Id: cque.cpp,v 1.39 2006-06-10 06:56:12 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -20,7 +20,7 @@ static CLinearTimeDelta GetProcessorUsage(void)
 {
     CLinearTimeDelta ltd;
 #ifdef WIN32
-    if (platform == VER_PLATFORM_WIN32_NT)
+    if (fpGetProcessTimes)
     {
         FILETIME ftCreate;
         FILETIME ftExit;

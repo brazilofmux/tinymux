@@ -1,6 +1,6 @@
 // game.cpp
 //
-// $Id: game.cpp,v 1.99 2006-03-12 22:41:58 sdennis Exp $
+// $Id: game.cpp,v 1.100 2006-06-10 06:56:12 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -2280,6 +2280,7 @@ long DebugTotalMemory = 0;
 #define CLI_DO_BASENAME    CLI_USER+9
 #define CLI_DO_PID_FILE    CLI_USER+10
 #define CLI_DO_ERRORPATH   CLI_USER+11
+#define CLI_DO_SELECT      CLI_USER+12
 
 static bool bMinDB = false;
 static bool bSyntaxError = false;
@@ -2291,7 +2292,7 @@ static bool bServerOption = false;
 #ifdef MEMORY_BASED
 #define NUM_CLI_OPTIONS 6
 #else
-#define NUM_CLI_OPTIONS 12
+#define NUM_CLI_OPTIONS 13
 #endif
 
 static CLI_OptionEntry OptionTable[NUM_CLI_OPTIONS] =
@@ -2308,6 +2309,9 @@ static CLI_OptionEntry OptionTable[NUM_CLI_OPTIONS] =
     { "u", CLI_NONE,     CLI_DO_UNLOAD      },
     { "d", CLI_REQUIRED, CLI_DO_BASENAME    },
 #endif // MEMORY_BASED
+#ifdef WIN32
+    { "n", CLI_NONE,     CLI_DO_SELECT      },
+#endif // WIN32
     { "p", CLI_REQUIRED, CLI_DO_PID_FILE    },
     { "e", CLI_REQUIRED, CLI_DO_ERRORPATH   }
 };
@@ -2342,6 +2346,12 @@ static void CLI_CallBack(CLI_OptionEntry *p, char *pValue)
             bServerOption = true;
             pErrorBasename = pValue;
             break;
+
+#ifdef WIN32
+        case CLI_DO_SELECT:
+            bUseCompletionPorts = false;
+            break;
+#endif // WIN32
 
 #ifndef MEMORY_BASED
         case CLI_DO_INFILE:
@@ -2765,7 +2775,7 @@ static void cpu_init(void)
     }
 }
 
-#endif
+#endif // __INTEL_COMPILER
 
 #define DBCONVERT_NAME1 "dbconvert"
 #define DBCONVERT_NAME2 "dbconvert.exe"
@@ -2865,6 +2875,9 @@ int DCL_CDECL main(int argc, char *argv[])
             fprintf(stderr, "  -h  Display this help." ENDLINE);
             fprintf(stderr, "  -p  Specify process ID file." ENDLINE);
             fprintf(stderr, "  -s  Start with a minimal database." ENDLINE);
+#ifdef WIN32
+            fprintf(stderr, "  -n  Disable use of NT I/O Completion Ports." ENDLINE);
+#endif // WIN32
             fprintf(stderr, "  -v  Display version string." ENDLINE ENDLINE);
         }
         return 1;
@@ -2893,50 +2906,51 @@ int DCL_CDECL main(int argc, char *argv[])
 #endif
 
 #ifdef WIN32
-    // Find which version of Windows we are using - Completion ports do
-    // not work with Windows 95/98
 
-    OSVERSIONINFO VersionInformation;
-
-    VersionInformation.dwOSVersionInfoSize = sizeof (VersionInformation);
-    GetVersionEx(&VersionInformation);
-    platform = VersionInformation.dwPlatformId;
     hGameProcess = GetCurrentProcess();
-    if (platform == VER_PLATFORM_WIN32_NT)
+
+    // Get a handle to the kernel32 DLL
+    //
+    HINSTANCE hInstKernel32 = LoadLibrary("kernel32");
+    if (!hInstKernel32)
     {
-        Log.WriteString("Running under Windows NT" ENDLINE);
-
-        // Get a handle to the kernel32 DLL
-        //
-        HINSTANCE hInstKernel32 = LoadLibrary("kernel32");
-        if (!hInstKernel32)
-        {
-            Log.WriteString("LoadLibrary of kernel32 for a CancelIo entry point failed. Cannot continue." ENDLINE);
-            return 1;
-        }
-
-        // Find the entry point for CancelIO so we can use it. This is done
-        // dynamically because Windows 95/98 doesn't have a CancelIO entry
-        // point. If it were done at load time, it would always fail on
-        // Windows 95/98...even though we don't use it or depend on it in
-        // that case.
-        //
-        fpCancelIo = (FCANCELIO *)GetProcAddress(hInstKernel32, "CancelIo");
-        if (fpCancelIo == NULL)
-        {
-            Log.WriteString("GetProcAddress of _CancelIo failed. Cannot continue." ENDLINE);
-            return 1;
-        }
-        fpGetProcessTimes = (FGETPROCESSTIMES *)GetProcAddress(hInstKernel32, "GetProcessTimes");
-        if (fpGetProcessTimes == NULL)
-        {
-            Log.WriteString("GetProcAddress of GetProcessTimes failed. Cannot continue." ENDLINE);
-            return 1;
-        }
+        Log.WriteString("LoadLibrary of kernel32 failed. Cannot use completion ports." ENDLINE);
+        bUseCompletionPorts = false;
     }
     else
     {
-        Log.WriteString("Running under Windows 95/98" ENDLINE);
+        if (bUseCompletionPorts)
+        {
+            // Find the entry point for CancelIO so we can use it. This is done
+            // dynamically because Windows 95/98 doesn't have a CancelIO entry
+            // point. If it were done at load time, it would always fail on
+            // Windows 95/98...even though we don't use it or depend on it in
+            // that case.
+            //
+            fpCancelIo = (FCANCELIO *)GetProcAddress(hInstKernel32, "CancelIo");
+            if (NULL == fpCancelIo)
+            {
+                Log.WriteString("GetProcAddress of _CancelIo failed." ENDLINE);
+                bUseCompletionPorts = false;
+            }
+        }
+
+        fpGetProcessTimes = (FGETPROCESSTIMES *)GetProcAddress(hInstKernel32, "GetProcessTimes");
+        if (NULL == fpGetProcessTimes)
+        {
+            // We can work with or without GetProcessTimes().
+            //
+            Log.WriteString("GetProcAddress of GetProcessTimes failed, but that's OK." ENDLINE);
+        }
+    }
+
+    if (bUseCompletionPorts)
+    {
+        Log.WriteString("Using NT I/O Completion Ports for networking." ENDLINE);
+    }
+    else
+    {
+        Log.WriteString("Using select() for networking." ENDLINE);
     }
 
     // Initialize WinSock.
@@ -3111,7 +3125,7 @@ int DCL_CDECL main(int argc, char *argv[])
     init_timer();
 
 #ifdef WIN32
-    if (platform == VER_PLATFORM_WIN32_NT)
+    if (bUseCompletionPorts)
     {
         process_output = process_outputNT;
         shovecharsNT(nMainGamePorts, aMainGamePorts);
@@ -3156,7 +3170,7 @@ int DCL_CDECL main(int argc, char *argv[])
 #ifdef WIN32
     // Critical section not needed any more.
     //
-    if (platform == VER_PLATFORM_WIN32_NT)
+    if (bUseCompletionPorts)
     {
         DeleteCriticalSection(&csDescriptorList);
     }
