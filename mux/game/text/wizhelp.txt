@@ -2818,38 +2818,45 @@ HOOK SETUP (continued)
 & HOOK_CMD
 HOOK_CMD
 
-  Config parameter: hook_cmd <command> <hooks/!hooks>
+  CONFIG PARAMETER: hook_cmd <command> <hooks/!hooks>
+
   This admin parameter allows you to specify multiple hooks for commands
   or attributes in the .conf file or online via @admin.  This is an
   alternative way to applying hooks besides the @hook command.
+
   The following hooks exist:
-         - before      set up functionality BEFORE a command executes.
-         - after       set up functionality AFTER a command executes.
-         - permit      establish functionary lock of attribute/command.
-         - ignore      establish ignore inheritance of attribute/command.
-         - igswitch    specifies if command bypasses failed /switch notices.
+
+    - before      set up functionality BEFORE a command executes.
+    - after       set up functionality AFTER a command executes.
+    - permit      establish functionary lock of attribute/command.
+    - ignore      establish ignore inheritance of attribute/command.
+    - igswitch    specifies if command bypasses failed /switch notices.
 
   For detailed information on how to set up hooks, please see wizhelp on:
-                                HOOK SETUP
+  hook setup.
 
-  Related Topics: @hook, hook_obj, HOOK SETUP.
+  Related Topics: @hook, hook_obj, hook setup.
 
 & HOOK_OBJ
 HOOK_OBJ
 
-  Config parameter: hook_obj <dbref>.  Default: -1
+  CONFIG PARAMETER: hook_obj <dbref>
+  Default: (none)
+
   Specifies the valid dbref# that the hook information is stored.  All
   hooks are in the form <prefix>_<command/attribute>.
+
   Attributes are stored in the form:
-          I_<command> - ignore configuration
-          P_<command> - permit configuration
-          A_<command> - after configuration
-          B_<command> - before configuration
+
+      I_<command> - ignore configuration
+      P_<command> - permit configuration
+      A_<command> - after configuration
+      B_<command> - before configuration
 
   For detailed information on how to set up hooks, please see wizhelp on:
-                                HOOK SETUP
+  hook setup.
 
-  Related Topics: @hook, hook_cmd, HOOK SETUP.
+  Related Topics: @hook, hook_cmd, hook setup.
 
 & HOSTNAMES
 HOSTNAMES
@@ -3994,9 +4001,10 @@ RESTRICT_HOME
   CONFIG PARAMETER: restrict_home <yes/no>
   DEFAULT: no
 
-  Specifies whether or not the HOME command can be hooked.
+  Specifies whether or not the HOME command can be hooked with @hook or
+  ignored with @icmd.
 
-  Related Topics:
+  Related Topics: hook setup, @hook, @icmd.
 
 & RETRY_LIMIT
 RETRY_LIMIT
