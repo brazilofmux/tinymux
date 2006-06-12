@@ -1,4 +1,4 @@
-Last Updated: January 2006
+Last Updated: June 2006
 
 Herein are extra notes for the Win32 distribution.  These notes do not apply
 well to the Unix distribution.
@@ -8,18 +8,18 @@ different archive tools (PKZip, JAR from ARJ, and tar/gzip).
 
 Unless you want to build the server yourself, you should use one of the binary
 distributions.  In the binary distributions, the server has been compiled for
-you using the Intel 9.0 compiler with aggressive, profile-guided
+you using the Intel 9.1 compiler with aggressive, profile-guided
 optimizations, vectorized loops, and CPU-aware dispatching.  You need at least
 a Pentium Pro or above to use these binaries.
 
-The source distribution is also provided.  If you have Visual C++, you can
-build your own binaries.  If you want to use Cygwin to compile the source,
-then don't use this distribution.  Instead, download one of the Unix
-distributions of MUX and follow the instructions contained there.
+However, a source distribution is also provided.  If you have Visual C++, you
+can build your own binaries.  If you want to use Cygwin to compile the source,
+then don't use either of the Win32 distributions.  Instead, download one of
+the Unix distributions of MUX and follow the instructions contained there.
 
 Regarding PKZip, you -must- use version 2.50 or use WinZip (www.winzip.com).
 You cannot use PKZip 2.04g.  PKZip 2.04g does not support long filenames.
-While PKZip 2.04g will unpack the distribution, your filenames will be
+So, while PKZip 2.04g will unpack the distribution, your filenames will be
 named incorrectly.  Use version 2.50 of PKZip or use WinZip.
 
 Regarding tar/gzip on Win32, I'm using the Cygwin version of these tools.
