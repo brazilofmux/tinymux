@@ -1,6 +1,6 @@
 // command.cpp -- command parser and support routines.
 //
-// $Id: command.cpp,v 1.86 2006-05-22 05:00:13 rmg Exp $
+// $Id: command.cpp,v 1.87 2006-06-17 08:01:36 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -854,7 +854,7 @@ void init_cmdtab(void)
 
     // Load attribute-setting commands.
     //
-    for (ap = attr; ap->name; ap++)
+    for (ap = AttrTable; ap->name; ap++)
     {
         if (ap->flags & AF_NOCMD)
         {
@@ -2511,7 +2511,7 @@ static void list_attrtable(dbref player)
     ITL itl;
     ItemToList_Init(&itl, buf, &bp);
     ItemToList_AddString(&itl, (char *)"Attributes:");
-    for (ap = attr; ap->name; ap++)
+    for (ap = AttrTable; ap->name; ap++)
     {
         if (See_attr(player, player, ap))
         {
@@ -2644,7 +2644,7 @@ static void list_cmdaccess(dbref player)
         }
     }
     free_sbuf(buff);
-    for (ap = attr; ap->name; ap++)
+    for (ap = AttrTable; ap->name; ap++)
     {
         if (ap->flags & AF_NOCMD)
         {
@@ -2848,7 +2848,7 @@ static void list_attraccess(dbref player)
     ATTR *ap;
 
     char *buff = alloc_sbuf("list_attraccess");
-    for (ap = attr; ap->name; ap++)
+    for (ap = AttrTable; ap->name; ap++)
     {
         if (bCanReadAttr(player, player, ap, false))
         {
@@ -2924,7 +2924,7 @@ CF_HAND(cf_acmd_access)
 
     ATTR *ap;
 
-    for (ap = attr; ap->name; ap++)
+    for (ap = AttrTable; ap->name; ap++)
     {
         size_t nBuffer;
         bool bValid;
@@ -4552,7 +4552,7 @@ void do_hook(dbref executor, dbref caller, dbref enactor, int key, char *name)
                 "--------------------------------",
                 "--------------------------------------------"));
             cbuff = alloc_sbuf("cbuff_hook");
-            for (ATTR *ap = attr; ap->name; ap++)
+            for (ATTR *ap = AttrTable; ap->name; ap++)
             {
                 if (ap->flags & AF_NOCMD)
                 {

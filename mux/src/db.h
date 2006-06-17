@@ -1,6 +1,6 @@
 // db.h
 //
-// $Id: db.h,v 1.11 2006-02-23 05:58:29 sdennis Exp $
+// $Id: db.h,v 1.12 2006-06-17 08:01:36 sdennis Exp $
 //
 
 #ifndef __DB_H
@@ -56,7 +56,7 @@ struct stack
 extern ATTR *atr_num(int anum);
 extern ATTR *atr_str(char *s);
 
-extern ATTR attr[];
+extern ATTR AttrTable[];
 
 extern ATTR **anum_table;
 #define anum_get(x) (anum_table[(x)])

@@ -1,6 +1,6 @@
 // db.cpp
 //
-// $Id: db.cpp,v 1.98 2006-05-19 16:55:15 sdennis Exp $
+// $Id: db.cpp,v 1.99 2006-06-17 08:01:36 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -29,7 +29,7 @@ struct atrcount
 
 // list of attributes
 //
-ATTR attr[] =
+ATTR AttrTable[] =
 {
     {"Aahear",      A_AAHEAR,   AF_ODARK | AF_NOPROG},
     {"Aclone",      A_ACLONE,   AF_ODARK | AF_NOPROG},
@@ -1049,7 +1049,7 @@ void init_attrtab(void)
     const unsigned char star = '*';
     mux_AttrNameSet[star] = true;
     mux_AttrNameInitialSet[star] = true;
-    for (a = attr; a->number; a++)
+    for (a = AttrTable; a->number; a++)
     {
         size_t nLen;
         bool bValid;
