@@ -3560,6 +3560,26 @@ void mux_FPRestore(void)
 
 #elif defined(WIN32) && !defined(_WIN64)
 
+#if (_MSC_VER >= 1400)
+static unsigned int cw;
+
+void mux_FPInit(void)
+{
+    _controlfp_s(&cw, 0, 0);
+}
+
+void mux_FPSet(void)
+{
+    // Set double-precision.
+    //
+    _controlfp_s(&cw, _PC_53, _MCW_PC);
+}
+
+void mux_FPRestore(void)
+{
+    _controlfp_s(&cw, _CW_DEFAULT, MCW_PC);
+}
+#else
 static unsigned origcw;
 
 void mux_FPInit(void)
@@ -3577,9 +3597,9 @@ void mux_FPSet(void)
 void mux_FPRestore(void)
 {
     const unsigned int maskall = 0xFFFFFFFF;
-
     _controlfp(origcw, maskall);
 }
+#endif // MSC_VER
 
 #elif defined(HAVE_FENV_H) \
    && defined(HAVE_FESETPREC) \
