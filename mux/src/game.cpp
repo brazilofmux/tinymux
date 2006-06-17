@@ -1,6 +1,6 @@
 // game.cpp
 //
-// $Id: game.cpp,v 1.100 2006-06-10 06:56:12 sdennis Exp $
+// $Id: game.cpp,v 1.101 2006-06-17 08:11:00 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -2290,7 +2290,7 @@ static char *pErrorBasename = "";
 static bool bServerOption = false;
 
 #ifdef MEMORY_BASED
-#define NUM_CLI_OPTIONS 6
+#define NUM_CLI_OPTIONS 7
 #else
 #define NUM_CLI_OPTIONS 13
 #endif
