@@ -1,6 +1,6 @@
 // stringutil.cpp -- string utilities.
 //
-// $Id: stringutil.cpp,v 1.88 2006-04-14 16:54:39 sdennis Exp $
+// $Id: stringutil.cpp,v 1.89 2006-06-19 04:09:03 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -3184,14 +3184,6 @@ void mux_strupr(char *a)
     }
 }
 
-#ifdef WIN32
-#define VSNPRINTF _vsnprintf
-#else // WIN32
-#ifdef NEED_VSPRINTF_DCL
-extern char *vsprintf(char *, char *, va_list);
-#endif // NEED_VSPRINTF_DCL
-#define VSNPRINTF vsnprintf
-#endif // WIN32
 
 // mux_vsnprintf - Is an sprintf-like function that will not overflow
 // a buffer of specific size. The size is give by count, and count
@@ -3229,7 +3221,19 @@ size_t DCL_CDECL mux_vsnprintf(char *buff, size_t count, const char *fmt, va_lis
     // pass garbage, but this possibility seems very unlikely.
     //
     size_t len;
-    int cc = VSNPRINTF(buff, count, fmt, va);
+#if defined(WIN32)
+#if (_MSC_VER >= 1400)
+    int cc = vsnprintf_s(buff, count, _TRUNCATE, fmt, va);
+#else // _MSC_VER
+    int cc = _vsnprintf(buff, count, fmt, va);
+#endif // _MSC_VER
+#else // WIN32
+#ifdef NEED_VSPRINTF_DCL
+	extern char *vsprintf(char *, char *, va_list);
+#endif // NEED_VSPRINTF_DCL
+
+    int cc = vsnprintf(buff, count, fmt, va);
+#endif // WIN32
     if (0 <= cc && static_cast<size_t>(cc) <= count-1)
     {
         len = cc;
