@@ -1,6 +1,6 @@
 // vattr.cpp -- Manages the user-defined attributes.
 //
-// $Id: vattr.cpp,v 1.16 2006-01-11 11:33:17 jake Exp $
+// $Id: vattr.cpp,v 1.17 2006-06-19 05:53:47 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -63,24 +63,29 @@ ATTR *vattr_define_LEN(char *pName, size_t nName, int number, int flags)
     }
 
     vp = (ATTR *)MEMALLOC(sizeof(ATTR));
-    ISOUTOFMEMORY(vp);
+    if (vp)
+    {
+        // NOTE: By using store_string, the only way to release the
+        // memory associated with a user attribute name is to @restart
+        // the game.
+        //
+        vp->name = store_string(pName);
+        vp->flags = flags;
+        vp->number = number;
 
-    // NOTE: By using store_string, the only way to release the
-    // memory associated with a user attribute name is to @restart
-    // the game.
-    //
-    vp->name = store_string(pName);
-    vp->flags = flags;
-    vp->number = number;
+        // This entry cannot already be in the hash table because we've checked it
+        // above with vattr_find_LEN.
+        //
+        UINT32 nHash = HASH_ProcessBuffer(0, pName, nName);
+        mudstate.vattr_name_htab.Insert(sizeof(number), nHash, &number);
 
-    // This entry cannot already be in the hash table because we've checked it
-    // above with vattr_find_LEN.
-    //
-    UINT32 nHash = HASH_ProcessBuffer(0, pName, nName);
-    mudstate.vattr_name_htab.Insert(sizeof(number), nHash, &number);
-
-    anum_extend(vp->number);
-    anum_set(vp->number, (ATTR *) vp);
+        anum_extend(vp->number);
+        anum_set(vp->number, (ATTR *) vp);
+    }
+    else
+    {
+        ISOUTOFMEMORY(vp);
+    }
     return vp;
 }
 
