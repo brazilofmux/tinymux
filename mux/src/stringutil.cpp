@@ -1,6 +1,6 @@
 // stringutil.cpp -- string utilities.
 //
-// $Id: stringutil.cpp,v 1.89 2006-06-19 04:09:03 sdennis Exp $
+// $Id: stringutil.cpp,v 1.90 2006-06-19 05:15:22 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -898,14 +898,16 @@ static char *ANSI_TransitionColorEscape
         Buffer[i+2] = 'i';
         i = i + 3;
     }
-    if (tmp.iForeground != acsNext->iForeground)
+    if (  tmp.iForeground != acsNext->iForeground
+       && acsNext->iForeground < ANSI_COLOR_INDEX_DEFAULT)
     {
         Buffer[i  ] = '%';
         Buffer[i+1] = 'x';
         Buffer[i+2] = cForegroundColors[acsNext->iForeground];
         i = i + 3;
     }
-    if (tmp.iBackground != acsNext->iBackground)
+    if (  tmp.iBackground != acsNext->iBackground
+       && acsNext->iBackground < ANSI_COLOR_INDEX_DEFAULT)
     {
         Buffer[i  ] = '%';
         Buffer[i+1] = 'x';
@@ -1301,7 +1303,8 @@ typedef struct
     char *p;
 } LITERAL_STRING_STRUCT;
 
-static LITERAL_STRING_STRUCT MU_Substitutes[] =
+#define NUM_MU_SUBS 14
+static LITERAL_STRING_STRUCT MU_Substitutes[NUM_MU_SUBS] =
 {
     { 1, " "  },  // 0
     { 1, " "  },  // 1
@@ -1409,7 +1412,8 @@ char *translate_string(const char *szString, bool bConvert)
             {
                 unsigned char ch = *pString++;
                 unsigned char code = MU_EscapeChar[ch];
-                if (code)
+                if (  0 < code
+                   && code < NUM_MU_SUBS)
                 {
                     // The following can look one ahead off the end of the
                     // current token (and even at the '\0' at the end of the
@@ -1874,9 +1878,15 @@ bool minmatch(char *str, char *target, int min)
 char *StringCloneLen(const char *str, size_t nStr)
 {
     char *buff = (char *)MEMALLOC(nStr+1);
-    ISOUTOFMEMORY(buff);
-    memcpy(buff, str, nStr);
-    buff[nStr] = '\0';
+    if (buff)
+    {
+        memcpy(buff, str, nStr);
+        buff[nStr] = '\0';
+    }
+    else
+    {
+        ISOUTOFMEMORY(buff);
+    }
     return buff;
 }
 
@@ -3229,7 +3239,7 @@ size_t DCL_CDECL mux_vsnprintf(char *buff, size_t count, const char *fmt, va_lis
 #endif // _MSC_VER
 #else // WIN32
 #ifdef NEED_VSPRINTF_DCL
-	extern char *vsprintf(char *, char *, va_list);
+    extern char *vsprintf(char *, char *, va_list);
 #endif // NEED_VSPRINTF_DCL
 
     int cc = vsnprintf(buff, count, fmt, va);
