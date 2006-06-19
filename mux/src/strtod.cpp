@@ -3579,7 +3579,7 @@ void mux_FPRestore(void)
 {
     _controlfp_s(&cw, _CW_DEFAULT, MCW_PC);
 }
-#else
+#else // _MSC_VER
 static unsigned origcw;
 
 void mux_FPInit(void)
@@ -3599,7 +3599,7 @@ void mux_FPRestore(void)
     const unsigned int maskall = 0xFFFFFFFF;
     _controlfp(origcw, maskall);
 }
-#endif // MSC_VER
+#endif // _MSC_VER
 
 #elif defined(HAVE_FENV_H) \
    && defined(HAVE_FESETPREC) \
