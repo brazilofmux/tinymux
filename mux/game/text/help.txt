@@ -3989,8 +3989,8 @@ ALIAS
   <alias> :<text> or <alias> ;<text>
 
   Example:
-    > pub Hello World!
-    [Public] Player say, "Hello World!"
+    > pub Hello, World!
+    [Public] Player say, "Hello, World!"
 
   Related Topics: allcom, comlist, addcom, delcom.
 
