@@ -4232,6 +4232,16 @@ SIGNAL_ACTION
   This configuration option cannot be changed after the server starts.  It
   can only be changed via the configuration file.
 
+& SIGNALS
+SIGNALS
+
+  From a shell, the following signals can be sent to the server:
+
+    SIGUSR1  - Server will restart (see @restart).
+    SIGUSR2  - Server will drop a flatfile (see @dump/flat).
+    SIGHUP   - Server will perform a normal dump (see @dump).
+    SIGTERM  - Server will shutodnw (see @shutdown).
+
 & SITE LISTS
 SITE LISTS
 
@@ -4590,7 +4600,7 @@ TOPICS
 
   CAUTIONS           CONFIG PARAMETERS  DEBUG FEATURES     FILES
   FLAGS              INHERITANCE        LOGGING            MASTER ROOM
-  PERMISSIONS        SEARCH CRITERIA    SITE LISTS
+  PERMISSIONS        SEARCH CRITERIA    SIGNALS            SITE LISTS
 
 & TRACE_OUTPUT_LIMIT
 TRACE_OUTPUT_LIMIT
