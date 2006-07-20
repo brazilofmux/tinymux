@@ -1,6 +1,6 @@
 // object.cpp -- Low-level object manipulation routines.
 //
-// $Id: object.cpp,v 1.19 2006-01-23 23:22:21 sdennis Exp $
+// $Id: object.cpp,v 1.20 2006-07-20 22:14:58 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -1639,15 +1639,10 @@ static void check_contents_chains(void)
 
 static void mark_place(dbref loc)
 {
-    dbref exit;
-
     // If already marked, exit.  Otherwise set marked.
     //
-    if (!Good_obj(loc))
-    {
-        return;
-    }
-    if (Marked(loc))
+    if (  !Good_obj(loc)
+       || Marked(loc))
     {
         return;
     }
@@ -1655,6 +1650,7 @@ static void mark_place(dbref loc)
 
     // Visit all places you can get to via exits from here.
     //
+    dbref exit;
     for (exit = Exits(loc); exit != NOTHING; exit = Next(exit))
     {
         if (Good_obj(Location(exit)))
@@ -1666,25 +1662,36 @@ static void mark_place(dbref loc)
 
 static void check_floating(void)
 {
-    dbref owner, i;
+    dbref i;
 
     // Mark everyplace you can get to via exits from the starting room.
     //
     Unmark_all(i);
     mark_place(mudconf.start_room);
 
-    // Look for rooms not marked and not set FLOATING.
+    // Mark every room you can get to from a floating room.
     //
     DO_WHOLE_DB(i)
     {
         if (  isRoom(i)
-           && !Floating(i)
+           && Floating(i)
+           && !Going(i))
+        {
+            mark_place(i);
+        }
+    }
+
+    // Look for unvisited rooms.
+    //
+    DO_WHOLE_DB(i)
+    {
+        if (  isRoom(i)
            && !Going(i)
            && !Marked(i))
         {
-            owner = Owner(i);
             if (!mudstate.bStandAlone)
             {
+                dbref owner = Owner(i);
                 if (Good_owner(owner))
                 {
                     notify(owner, tprintf( "You own a floating room: %s(#%d)",
