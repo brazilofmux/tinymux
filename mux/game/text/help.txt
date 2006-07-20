@@ -12327,13 +12327,13 @@ TOPICS
   HERE                     HOMES                    LINKING
   LISTENING                LISTS                    LOOPING
   ME                       MONEY                    MOVING
-  OBJECT STACK             OBJECT TYPES             PARENT OBJECTS
-  PARENT ROOMS             PIPING                   POWERS LIST
-  PUEBLO                   PUPPETS                  REGEXPS
-  ROBBERY                  SEARCH CLASSES           SEMAPHORES
-  SPOOFING                 STACK                    SUBSTITUTIONS
-  SUCCESS                  SWITCHES                 USER-DEFINED COMMANDS
-  VERBS                    WIZARDS                  ZONES
+  OBJECT TYPES             PARENT OBJECTS           PARENT ROOMS
+  PIPING                   POWERS LIST              PUEBLO
+  PUPPETS                  REGEXPS                  ROBBERY
+  SEARCH CLASSES           SEMAPHORES               SPOOFING
+  STACK                    SUBSTITUTIONS            SUCCESS
+  SWITCHES                 USER-DEFINED COMMANDS    VERBS
+  WIZARDS                  ZONES
 
 & TRACE
 TRACE
