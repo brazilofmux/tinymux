@@ -1,7 +1,7 @@
 /*! \file timeutil.cpp
  *  CLinearTimeAbsolute and CLinearTimeDelta modules.
  *
- * $Id: timeutil.cpp,v 1.67 2006-07-24 20:13:29 sdennis Exp $
+ * $Id: timeutil.cpp,v 1.68 2006-07-24 22:20:34 sdennis Exp $
  *
  * Date/Time code based on algorithms presented in "Calendrical Calculations",
  * Cambridge Press, 1998.
@@ -1877,7 +1877,7 @@ static time_t time_t_largest(void)
 #if defined(TIMEUTIL_TIME_T_MAX_VALUE)
     if (t < TIMEUTIL_TIME_T_MAX_VALUE)
     {
-        t = TIMEUTIL_TIME_T_MAX_VALUE;
+        t = static_cast<time_t>(TIMEUTIL_TIME_T_MAX_VALUE);
     }
 #endif
 #if defined(LOCALTIME_TIME_T_MAX_VALUE)
@@ -1890,7 +1890,7 @@ static time_t time_t_largest(void)
     //
     if (LOCALTIME_TIME_T_MAX_VALUE < t)
     {
-        t = LOCALTIME_TIME_T_MAX_VALUE;
+        t = static_cast<time_t>(LOCALTIME_TIME_T_MAX_VALUE);
     }
 #endif
     return t;
@@ -1911,13 +1911,13 @@ static time_t time_t_smallest(void)
 #if defined(TIMEUTIL_TIME_T_MIN_VALUE)
     if (t < TIMEUTIL_TIME_T_MIN_VALUE)
     {
-        t = TIMEUTIL_TIME_T_MIN_VALUE;
+        t = static_cast<time_t>(TIMEUTIL_TIME_T_MIN_VALUE);
     }
 #endif
 #if defined(LOCALTIME_TIME_T_MIN_VALUE)
     if (t < LOCALTIME_TIME_T_MIN_VALUE)
     {
-        t = LOCALTIME_TIME_T_MIN_VALUE;
+        t = static_cast<time_t>(LOCALTIME_TIME_T_MIN_VALUE);
     }
 #endif
     return t;
