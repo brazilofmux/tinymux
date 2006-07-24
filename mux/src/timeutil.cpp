@@ -1,7 +1,7 @@
 /*! \file timeutil.cpp
  *  CLinearTimeAbsolute and CLinearTimeDelta modules.
  *
- * $Id: timeutil.cpp,v 1.66 2006-02-28 08:23:50 sdennis Exp $
+ * $Id: timeutil.cpp,v 1.67 2006-07-24 20:13:29 sdennis Exp $
  *
  * Date/Time code based on algorithms presented in "Calendrical Calculations",
  * Cambridge Press, 1998.
@@ -1864,13 +1864,23 @@ static time_t time_t_midpoint(time_t tLower, time_t tUpper)
 
 static time_t time_t_largest(void)
 {
-    // Assuming 2's complement.
-    //
-    time_t tOne = 1;
-    int nBits = sizeof(time_t)*8;
-    time_t t = ~(tOne << (nBits-1));
+    time_t t;
+    if (8 == sizeof(time_t))
+    {
+        t = static_cast<time_t>(INT64_MAX_VALUE);
+    }
+    else
+    {
+        t = static_cast<time_t>(INT32_MAX_VALUE);
+    }
 
-#if defined(TIME_T_MAX_VALUE)
+#if defined(TIMEUTIL_TIME_T_MAX_VALUE)
+    if (t < TIMEUTIL_TIME_T_MAX_VALUE)
+    {
+        t = TIMEUTIL_TIME_T_MAX_VALUE;
+    }
+#endif
+#if defined(LOCALTIME_TIME_T_MAX_VALUE)
     // Windows cannot handle negative time_t values, and some versions have
     // an upper limit as well. Values which are too large cause an assert.
     //
@@ -1878,9 +1888,9 @@ static time_t time_t_largest(void)
     // time_t). In VS 2005, the limit is December 31, 2999, 23:59:59 UTC
     // (or 32535215999).
     //
-    if (TIME_T_MAX_VALUE < t)
+    if (LOCALTIME_TIME_T_MAX_VALUE < t)
     {
-        t = TIME_T_MAX_VALUE;
+        t = LOCALTIME_TIME_T_MAX_VALUE;
     }
 #endif
     return t;
@@ -1889,14 +1899,26 @@ static time_t time_t_largest(void)
 
 static time_t time_t_smallest(void)
 {
-#ifdef WIN32
-    time_t t = 0;
-#else
-    // Assuming 2's complement.
-    //
-    time_t tOne = 1;
-    int nBits = sizeof(time_t)*8;
-    time_t t = tOne << (nBits-1);
+    time_t t;
+    if (8 == sizeof(time_t))
+    {
+        t = static_cast<time_t>(INT64_MIN_VALUE);
+    }
+    else
+    {
+        t = static_cast<time_t>(INT32_MIN_VALUE);
+    }
+#if defined(TIMEUTIL_TIME_T_MIN_VALUE)
+    if (t < TIMEUTIL_TIME_T_MIN_VALUE)
+    {
+        t = TIMEUTIL_TIME_T_MIN_VALUE;
+    }
+#endif
+#if defined(LOCALTIME_TIME_T_MIN_VALUE)
+    if (t < LOCALTIME_TIME_T_MIN_VALUE)
+    {
+        t = LOCALTIME_TIME_T_MIN_VALUE;
+    }
 #endif
     return t;
 }

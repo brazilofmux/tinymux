@@ -1,6 +1,6 @@
 // timeutil.h -- CLinearTimeAbsolute, and CLinearTimeDelta modules.
 //
-// $Id: timeutil.h,v 1.21 2006-02-28 08:10:15 sdennis Exp $
+// $Id: timeutil.h,v 1.22 2006-07-24 20:13:29 sdennis Exp $
 //
 // Date/Time code based on algorithms presented in "Calendrical Calculations",
 // Cambridge Press, 1998.
@@ -153,8 +153,16 @@ extern CMuxAlarm MuxAlarm;
 #define FACTOR_100NS_PER_MILLISECOND 10000
 #ifdef WIN32
 #define EPOCH_OFFSET 116444736000000000i64
+#define EARLIEST_VALID_DATE (-9106390656000000000i64)
+#define LATEST_VALID_DATE   ( 9222834527999999999i64)
+#define TIMEUTIL_TIME_T_MIN_VALUE (-922283539200i64)
+#define TIMEUTIL_TIME_T_MAX_VALUE ( 910638979199i64)
 #else // WIN32
 #define EPOCH_OFFSET 116444736000000000ull
+#define EARLIEST_VALID_DATE (-9106390656000000000ull)
+#define LATEST_VALID_DATE   ( 9222834527999999999ull)
+#define TIMEUTIL_TIME_T_MIN_VALUE (-922283539200ull)
+#define TIMEUTIL_TIME_T_MAX_VALUE ( 910638979199ull)
 #endif // WIN32
 extern const INT64 FACTOR_100NS_PER_SECOND;
 extern const INT64 FACTOR_100NS_PER_MINUTE;

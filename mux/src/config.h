@@ -1,6 +1,6 @@
 // config.h
 //
-// $Id: config.h,v 1.21 2006-01-11 20:51:31 sdennis Exp $
+// $Id: config.h,v 1.22 2006-07-24 20:13:29 sdennis Exp $
 //
 
 #ifndef CONFIG_H
@@ -79,9 +79,10 @@ typedef unsigned __int64 UINT64;
 #define INT64_MIN_VALUE  (-9223372036854775807i64 - 1)
 #define UINT64_MAX_VALUE 0xffffffffffffffffui64
 
+#define LOCALTIME_TIME_T_MIN_VALUE 0
 #if (_MSC_VER >= 1400)
 // 1400 is Visual C++ 2005
-#define TIME_T_MAX_VALUE 32535215999ui64
+#define LOCALTIME_TIME_T_MAX_VALUE 32535215999ui64
 #define MUX_ULONG_PTR ULONG_PTR
 #define MUX_PULONG_PTR PULONG_PTR
 #elif (_MSC_VER >= 1200)
