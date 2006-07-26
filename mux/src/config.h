@@ -1,6 +1,6 @@
 // config.h
 //
-// $Id: config.h,v 1.14 2006/01/07 21:58:14 sdennis Exp $
+// $Id: config.h,v 1.15 2006/07/26 16:03:23 sdennis Exp $
 //
 
 #ifndef CONFIG_H
@@ -78,6 +78,12 @@ typedef unsigned __int64 UINT64;
 #define INT64_MAX_VALUE  9223372036854775807i64
 #define INT64_MIN_VALUE  (-9223372036854775807i64 - 1)
 #define UINT64_MAX_VALUE 0xffffffffffffffffui64
+
+#define LOCALTIME_TIME_T_MIN_VALUE 0
+#if (_MSC_VER >= 1400)
+// 1400 is Visual C++ 2005
+#define LOCALTIME_TIME_T_MAX_VALUE 32535215999ui64
+#endif
 
 #define SIZEOF_PATHNAME (_MAX_PATH + 1)
 #define SOCKET_WRITE(s,b,n,f) send(s,b,n,f)

@@ -1,7 +1,7 @@
 /*! \file timeutil.cpp
  *  CLinearTimeAbsolute and CLinearTimeDelta modules.
  *
- * $Id: timeutil.cpp,v 1.50 2006/03/13 02:20:25 sdennis Exp $
+ * $Id: timeutil.cpp,v 1.51 2006/07/26 16:03:24 sdennis Exp $
  *
  * Date/Time code based on algorithms presented in "Calendrical Calculations",
  * Cambridge Press, 1998.
@@ -1850,51 +1850,60 @@ static time_t time_t_midpoint(time_t tLower, time_t tUpper)
 
 static time_t time_t_largest(void)
 {
-    // Assuming 2's complement.
-    //
-    time_t tOne = 1;
-    int nBits = sizeof(time_t)*8;
-    time_t t = ~(tOne << (nBits-1));
-
-#ifdef WIN32
-#if (_MSC_VER >= 1400)
-    // Not only can Windows not handle negative time_t values, but it also
-    // cannot handle positive 64-bit values which are 'too large'.  Even
-    // though the interface to localtime() provides for a NULL return value
-    // for any unsupported arguments, with VS 2005, Microsoft has decided that
-    // an assert is more useful.
-    //
-    // The logic of their assert is based on private #defines which are not
-    // available to applications. Also, the values have changed from VS 2003
-    // (0x100000000000i64) to VS 2005 (32535215999). The latter corresponds to
-    // December 31, 2999, 23:59:59 UTC.
-    //
-    // The message here is that they really don't think anyone should be using
-    // localtime(), but if you do use it, they get to decide unilaterally and
-    // without hints whether your application is making reasonable calls.
-    //
-    const INT64 WIN_MAX__TIME64_T = 32535215999i64;
-    if (  4 < sizeof(time_t)
-       && WIN_MAX__TIME64_T < t)
+    time_t t;
+    if (8 == sizeof(time_t))
     {
-        t = WIN_MAX__TIME64_T;
+        t = static_cast<time_t>(INT64_MAX_VALUE);
+    }
+    else
+    {
+        t = static_cast<time_t>(INT32_MAX_VALUE);
+    }
+
+#if defined(TIMEUTIL_TIME_T_MAX_VALUE)
+    if (t < TIMEUTIL_TIME_T_MAX_VALUE)
+    {
+        t = static_cast<time_t>(TIMEUTIL_TIME_T_MAX_VALUE);
     }
 #endif
+#if defined(LOCALTIME_TIME_T_MAX_VALUE)
+    // Windows cannot handle negative time_t values, and some versions have
+    // an upper limit as well. Values which are too large cause an assert.
+    //
+    // In VS 2003, the limit is 0x100000000000i64 (beyond the size of a
+    // time_t). In VS 2005, the limit is December 31, 2999, 23:59:59 UTC
+    // (or 32535215999).
+    //
+    if (LOCALTIME_TIME_T_MAX_VALUE < t)
+    {
+        t = static_cast<time_t>(LOCALTIME_TIME_T_MAX_VALUE);
+    }
 #endif
     return t;
 }
 
-
 static time_t time_t_smallest(void)
 {
-#ifdef WIN32
-    time_t t = 0;
-#else
-    // Assuming 2's complement.
-    //
-    time_t tOne = 1;
-    int nBits = sizeof(time_t)*8;
-    time_t t = tOne << (nBits-1);
+    time_t t;
+    if (8 == sizeof(time_t))
+    {
+        t = static_cast<time_t>(INT64_MIN_VALUE);
+    }
+    else
+    {
+        t = static_cast<time_t>(INT32_MIN_VALUE);
+    }
+#if defined(TIMEUTIL_TIME_T_MIN_VALUE)
+    if (t < TIMEUTIL_TIME_T_MIN_VALUE)
+    {
+        t = static_cast<time_t>(TIMEUTIL_TIME_T_MIN_VALUE);
+    }
+#endif
+#if defined(LOCALTIME_TIME_T_MIN_VALUE)
+    if (t < LOCALTIME_TIME_T_MIN_VALUE)
+    {
+        t = static_cast<time_t>(LOCALTIME_TIME_T_MIN_VALUE);
+    }
 #endif
     return t;
 }

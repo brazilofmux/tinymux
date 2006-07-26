@@ -1,6 +1,6 @@
 // timeutil.h -- CLinearTimeAbsolute, and CLinearTimeDelta modules.
 //
-// $Id: timeutil.h,v 1.18 2006/03/13 02:20:25 sdennis Exp $
+// $Id: timeutil.h,v 1.19 2006/07/26 16:03:24 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -157,8 +157,16 @@ extern CMuxAlarm MuxAlarm;
 #define FACTOR_100NS_PER_MILLISECOND 10000
 #ifdef WIN32
 #define EPOCH_OFFSET 116444736000000000i64
+#define EARLIEST_VALID_DATE (-9106390656000000000i64)
+#define LATEST_VALID_DATE   ( 9222834527999999999i64)
+#define TIMEUTIL_TIME_T_MIN_VALUE (-922283539200i64)
+#define TIMEUTIL_TIME_T_MAX_VALUE ( 910638979199i64)
 #else // WIN32
 #define EPOCH_OFFSET 116444736000000000ull
+#define EARLIEST_VALID_DATE (-9106390656000000000ull)
+#define LATEST_VALID_DATE   ( 9222834527999999999ull)
+#define TIMEUTIL_TIME_T_MIN_VALUE (-922283539200ull)
+#define TIMEUTIL_TIME_T_MAX_VALUE ( 910638979199ull)
 #endif // WIN32
 extern const INT64 FACTOR_100NS_PER_SECOND;
 extern const INT64 FACTOR_100NS_PER_MINUTE;
