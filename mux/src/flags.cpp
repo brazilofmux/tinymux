@@ -1,6 +1,6 @@
 // flags.cpp -- Flag manipulation routines.
 //
-// $Id: flags.cpp,v 1.28 2006-06-17 08:02:15 sdennis Exp $
+// $Id: flags.cpp,v 1.29 2006-08-02 14:57:51 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -452,7 +452,8 @@ OBJENT object_types[8] =
     {"PLAYER",  'P', CA_PUBLIC, OF_CONTENTS|OF_LOCATION|OF_EXITS|OF_HOME|OF_OWNER|OF_SIBLINGS},
     {"TYPE5",   '+', CA_GOD,    0},
     {"GARBAGE", '-', CA_PUBLIC, OF_CONTENTS|OF_LOCATION|OF_EXITS|OF_HOME|OF_SIBLINGS},
-    {"GARBAGE", '#', CA_GOD,    0}
+    {"GARBAGE", '#', CA_GOD,    0},
+    {"GARBAGE", '=', CA_GOD,    0}
 };
 
 /* ---------------------------------------------------------------------------
