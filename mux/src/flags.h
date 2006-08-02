@@ -1,6 +1,6 @@
 // flags.h -- Object flags.
 //
-// $Id: flags.h,v 1.10 2006-01-07 21:53:26 sdennis Exp $
+// $Id: flags.h,v 1.11 2006-08-02 14:57:09 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -19,6 +19,7 @@
 #define TYPE_PLAYER   0x3
 /* Empty */
 #define TYPE_GARBAGE  0x5
+/* Empty */
 #define NOTYPE        0x7
 #define TYPE_MASK     0x7
 
