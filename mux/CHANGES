@@ -23,7 +23,7 @@ Feature Additions:
     method on Win32.
  -- Added support for 2-argument mix().
  -- Added optional third 'step' parameter to lnum().
- -- Added optional second argument for LCON() for subseting the returned
+ -- Added optional second argument for lcon() for subseting the returned
     list by type.
  -- The 'You own a floating room' message is only given for rooms which
     are not connected to either the player_startint_room or to a room
@@ -47,7 +47,7 @@ Bug Fixes:
     for dates earlier than Jan 1 1970 on 64-bit Unix.
  -- Fix @hook for goto command. Being unable to move also affected the
     ability to use other commands. Reported by K hall.
- -- Added checking to convsecs() to return '#-1 INVALID DATE" is first
+ -- Added checking to convsecs() to return '#-1 INVALID DATE" if first
     argument is outside the supported range.
 
 
