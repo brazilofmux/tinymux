@@ -2397,10 +2397,10 @@ Related Topics: @name.
 & @MOVE
 @MOVE
 
-  COMMAND:   @move <object> = <command-list>
+  COMMAND:   @move <object> = <message>
   ATTRIBUTE: Move
 
-  Sets the message that an object sees after it moves from one location to
+  Sets the <message> that an object sees after it moves from one location to
   another, whether by using an exit, entering or leaving an object,
   teleporting, or going home.
 
@@ -2709,10 +2709,10 @@ Related Topics: @name.
 & @OMOVE
 @OMOVE
 
-  COMMAND:   @omove <object> = <command-list>
+  COMMAND:   @omove <object> = <message>
   ATTRIBUTE: Move
 
-  Sets the message that others in the same location see after the object has
+  Sets the <message> that others in the same location see after the object has
   moved to that location from somewhere else, whether by using an exit,
   entering or leaving an object, teleporting, or going home.
 
