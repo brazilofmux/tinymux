@@ -263,6 +263,8 @@ Bug Fixes:
     for dates earlier than Jan 1 1970 on 64-bit Unix.
  -- Fix @hook for goto command. Being unable to move also affected the
     ability to use other commands. Reported by K hall.
+ -- Added checking to convsecs() to return '#-1 INVALID DATE" is first
+    argument is outside the supported range.
 
 
 Performance Enhancements:
