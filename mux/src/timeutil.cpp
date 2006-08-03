@@ -1,7 +1,7 @@
 /*! \file timeutil.cpp
  *  CLinearTimeAbsolute and CLinearTimeDelta modules.
  *
- * $Id: timeutil.cpp,v 1.68 2006-07-24 22:20:34 sdennis Exp $
+ * $Id: timeutil.cpp,v 1.69 2006-08-03 19:04:07 sdennis Exp $
  *
  * Date/Time code based on algorithms presented in "Calendrical Calculations",
  * Cambridge Press, 1998.
@@ -1403,10 +1403,20 @@ bool LinearTimeToFieldedTime(INT64 lt, FIELDEDTIME *ft)
     return true;
 }
 
-void CLinearTimeAbsolute::SetSecondsString(char *arg_szSeconds)
+bool CLinearTimeAbsolute::SetSecondsString(char *arg_szSeconds)
 {
-    ParseFractionalSecondsString(m_tAbsolute, arg_szSeconds);
-    m_tAbsolute += EPOCH_OFFSET;
+    INT64 t;
+    const INT64 tEarliest = EARLIEST_VALID_DATE;
+    const INT64 tLatest   = LATEST_VALID_DATE;
+    ParseFractionalSecondsString(t, arg_szSeconds);
+    t += EPOCH_OFFSET;
+    if (  tEarliest <= t
+       && t <= tLatest)
+    {
+        m_tAbsolute = t;
+        return true;
+    }
+    return false;
 }
 
 // OS Dependent Routines:
