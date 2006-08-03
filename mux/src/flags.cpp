@@ -1,6 +1,6 @@
 // flags.cpp -- Flag manipulation routines.
 //
-// $Id: flags.cpp,v 1.29 2006-08-02 14:57:51 sdennis Exp $
+// $Id: flags.cpp,v 1.30 2006-08-03 20:23:53 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -1004,7 +1004,7 @@ bool convert_flags(dbref player, char *flaglist, FLAGSET *fset, FLAG *p_type)
 {
     FLAG type = NOTYPE;
     FLAGSET flagmask;
-	memset(&flagmask, 0, sizeof(flagmask));
+    memset(&flagmask, 0, sizeof(flagmask));
     int i;
 
     char *s;
