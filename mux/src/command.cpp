@@ -1,6 +1,6 @@
 // command.cpp -- command parser and support routines.
 //
-// $Id: command.cpp,v 1.74 2006/05/22 04:21:08 rmg Exp $
+// $Id: command.cpp,v 1.75 2006/08/03 14:12:35 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -1775,6 +1775,7 @@ char *process_command
         // CmdCheck tests for @icmd. higcheck tests for i/p hooks.
         // Both from RhostMUSH.
         // cval/hval values: 0 normal, 1 disable, 2 ignore
+        //
         *check2 = (char)i;
         if (CmdCheck(executor))
         {
@@ -1784,17 +1785,30 @@ char *process_command
         {
             cval = cmdtest(Owner(executor), check2);
         }
+        else
+        {
+            cval = 0;
+        }
+
         if (cval == 0)
         {
             cval = zonecmdtest(executor, check2);
         }
+
         if (prefix_cmds[i]->hookmask & (HOOK_IGNORE|HOOK_PERMIT))
         {
             hval = higcheck(executor, caller, enactor, prefix_cmds[i], pCommand);
         }
-        if ((cval != 2) && (hval != 2))
+        else
         {
-            if (cval == 1 || hval == 1)
+            hval = 0;
+        }
+
+        if (  cval != 2
+           && hval != 2)
+        {
+            if (  cval == 1
+               || hval == 1)
             {
                 if (prefix_cmds[i]->hookmask & HOOK_AFAIL)
                 {
@@ -1837,7 +1851,8 @@ char *process_command
     {
         // CmdCheck tests for @icmd. higcheck tests for i/p hooks.
         // Both from RhostMUSH.
-        // cval/hval values: 0 normal, 1 disable, 2 ignore
+        // cval/hval values: 0 normal, 1 disable, 2 ignore.
+        //
         if (CmdCheck(executor))
         {
             cval = cmdtest(executor, "home");
@@ -1850,10 +1865,12 @@ char *process_command
         {
             cval = 0;
         }
+
         if (cval == 0)
         {
             cval = zonecmdtest(executor, "home");
         }
+
         if (cval != 2)
         {
             if (!check_access(executor, mudconf.restrict_home))
@@ -1887,6 +1904,7 @@ char *process_command
         // Both from RhostMUSH.
         // cval/hval values: 0 normal, 1 disable, 2 ignore
         // Master room exits are not affected.
+        //
         if (CmdCheck(executor))
         {
             cval = cmdtest(executor, "goto");
@@ -1899,15 +1917,23 @@ char *process_command
         {
             cval = 0;
         }
+
         if (cval == 0)
         {
             cval = zonecmdtest(executor, "goto");
         }
+
         if (goto_cmdp->hookmask & (HOOK_IGNORE|HOOK_PERMIT))
         {
             hval = higcheck(executor, caller, enactor, goto_cmdp, "goto");
         }
-        if ((cval != 2) && (hval != 2))
+        else
+        {
+            hval = 0;
+        }
+
+        if (  cval != 2
+           && hval != 2)
         {
             // Check for an exit name.
             //
@@ -2007,13 +2033,19 @@ char *process_command
         {
             cval = 0;
         }
+
         if (cval == 0)
         {
             cval = zonecmdtest(executor, cmdp->cmdname);
         }
+
         if (cmdp->hookmask & (HOOK_IGNORE|HOOK_PERMIT))
         {
             hval = higcheck(executor, caller, enactor, cmdp, LowerCaseCommand);
+        }
+        else
+        {
+            hval = 0;
         }
 
         // If the command contains a switch, but the command doesn't support
@@ -2155,18 +2187,28 @@ char *process_command
                 {
                     cval = 0;
                 }
+
                 if (cval == 0)
                 {
                     cval = zonecmdtest(executor, "leave");
                 }
+
                 cmdp = (CMDENT *)hashfindLEN((char *)"leave", strlen("leave"), &mudstate.command_htab);
+
                 if (cmdp->hookmask & (HOOK_IGNORE|HOOK_PERMIT))
                 {
                     hval = higcheck(executor, caller, enactor, cmdp, "leave");
                 }
-                if ((cval != 2) && (hval != 2))
+                else
                 {
-                    if (cval == 1 || hval == 1)
+                    hval = 0;
+                }
+
+                if (  cval != 2
+                   && hval != 2)
+                {
+                    if (  cval == 1
+                       || hval == 1)
                     {
                         if (cmdp->hookmask & HOOK_AFAIL)
                         {
@@ -2199,6 +2241,7 @@ char *process_command
                     // CmdCheck tests for @icmd. higcheck tests for i/p hooks.
                     // Both from RhostMUSH.
                     // cval/hval values: 0 normal, 1 disable, 2 ignore
+                    //
                     if (CmdCheck(executor))
                     {
                         cval = cmdtest(executor, "enter");
@@ -2211,18 +2254,28 @@ char *process_command
                     {
                         cval = 0;
                     }
+
                     if (cval == 0)
                     {
                         cval = zonecmdtest(executor, "enter");
                     }
+
                     cmdp = (CMDENT *)hashfindLEN((char *)"enter", strlen("enter"), &mudstate.command_htab);
+
                     if (cmdp->hookmask & (HOOK_IGNORE|HOOK_PERMIT))
                     {
                         hval = higcheck(executor, caller, enactor, cmdp, "enter");
                     }
-                    if ((cval != 2) && (hval != 2))
+                    else
                     {
-                        if (cval == 1 || hval == 1)
+                        hval = 0;
+                    }
+
+                    if (  cval != 2
+                       && hval != 2)
+                    {
+                        if (  cval == 1
+                           || hval == 1)
                         {
                             if (cmdp->hookmask & HOOK_AFAIL)
                             {
