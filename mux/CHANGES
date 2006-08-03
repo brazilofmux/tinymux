@@ -1,5 +1,5 @@
 TinyMUX 2.4:  CHANGES
-Last Update:  May 2006
+Last Update:  August 2006
 
 Major changes that may affect performance and require softcode tweaks:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -259,6 +259,10 @@ Bug Fixes:
  -- Add protection to @chownall that victim be a player object.
  -- Fix uninitialized variable in HASRXLEVEL(). It should have used
     'executor' instead of 'player'.
+ -- Fix time_t handling for 64-bit machines. Timezones could be wrong
+    for dates earlier than Jan 1 1970 on 64-bit Unix.
+ -- Fix @hook for goto command. Being unable to move also affected the
+    ability to use other commands. Reported by K hall.
 
 
 Performance Enhancements:
