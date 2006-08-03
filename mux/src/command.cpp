@@ -1,6 +1,6 @@
 // command.cpp -- command parser and support routines.
 //
-// $Id: command.cpp,v 1.88 2006-08-03 14:10:14 sdennis Exp $
+// $Id: command.cpp,v 1.89 2006-08-03 14:22:10 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -2022,6 +2022,7 @@ char *process_command
         // CmdCheck tests for @icmd. higcheck tests for i/p hooks.
         // Both from RhostMUSH.
         // cval/hval values: 0 normal, 1 disable, 2 ignore
+        //
         if (CmdCheck(executor))
         {
             cval = cmdtest(executor, cmdp->cmdname);
@@ -2176,6 +2177,7 @@ char *process_command
                 // CmdCheck tests for @icmd. higcheck tests for i/p hooks.
                 // Both from RhostMUSH.
                 // cval/hval values: 0 normal, 1 disable, 2 ignore
+                //
                 if (CmdCheck(executor))
                 {
                     cval = cmdtest(executor, "leave");
