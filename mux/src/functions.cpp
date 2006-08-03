@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.168 2006/05/22 14:38:51 sdennis Exp $
+// $Id: functions.cpp,v 1.169 2006/08/03 19:05:18 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2005 Solid Vertical Domains, Ltd. All
@@ -775,19 +775,25 @@ static FUNCTION(fun_convsecs)
     UNUSED_PARAMETER(ncargs);
 
     CLinearTimeAbsolute lta;
-    lta.SetSecondsString(fargs[0]);
-    if (  nfargs == 1
-       || mux_stricmp("utc", fargs[1]) != 0)
+    if (lta.SetSecondsString(fargs[0]))
     {
-        lta.UTC2Local();
+        if (  nfargs == 1
+           || mux_stricmp("utc", fargs[1]) != 0)
+        {
+            lta.UTC2Local();
+        }
+        int nPrecision = 0;
+        if (nfargs == 3)
+        {
+            nPrecision = mux_atol(fargs[2]);
+        }
+        char *temp = lta.ReturnDateString(nPrecision);
+        safe_str(temp, buff, bufc);
     }
-    int nPrecision = 0;
-    if (nfargs == 3)
+    else
     {
-        nPrecision = mux_atol(fargs[2]);
+        safe_str("#-1 INVALID DATE", buff, bufc);
     }
-    char *temp = lta.ReturnDateString(nPrecision);
-    safe_str(temp, buff, bufc);
 }
 
 // ---------------------------------------------------------------------------
