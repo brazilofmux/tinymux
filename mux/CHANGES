@@ -1,5 +1,5 @@
 TinyMUX 2.6:  CHANGES
-Last Update:  April 2006
+Last Update:  August 2006
 
 Major changes that may affect performance and require softcode tweaks:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -19,6 +19,16 @@ Feature Additions:
     boot, and in other similar situations.
  -- Add support for %=<attr> substitution. From TinyMUSH 3.
  -- Use localtime_r() if available. By Brazil.
+ -- Added command line switch (-n) to control choice of networking
+    method on Win32.
+ -- Added support for 2-argument mix().
+ -- Added optional third 'step' parameter to lnum().
+ -- Added optional second argument for LCON() for subseting the returned
+    list by type.
+ -- The 'You own a floating room' message is only given for rooms which
+    are not connected to either the player_startint_room or to a room
+    marked FLOATING. Previously, every room not connected to the
+    player_starting_room had to be marked FLOATING.
 
 
 Bug Fixes:
@@ -29,11 +39,21 @@ Bug Fixes:
  -- Deprecate use of sprintf().  By Brazil.
  -- Deprecate use of localtime().  By Brazil.
  -- Fix 'round(-0.5,0)' --> '-0' to be '0' instead.
+ -- Disallow the train command from being used on itself.
+ -- Add protection to @chownall that victim be a player object.
+ -- Fix uninitialized variable in HASRXLEVEL(). It should have used
+    'executor' instead of 'player'.
+ -- Fix time_t handling for 64-bit machines. Timezones could be wrong
+    for dates earlier than Jan 1 1970 on 64-bit Unix.
+ -- Fix @hook for goto command. Being unable to move also affected the
+    ability to use other commands. Reported by K hall.
 
 
 Performance Enhancements:
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
+ -- In MEMORY_BASED, avoid malloc() call each time an attribute is
+    added to an object.
 
 Cosmetic Changes:
 ~~~~~~~~~~~~~~~~
