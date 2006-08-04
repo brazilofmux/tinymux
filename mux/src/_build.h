@@ -1,6 +1,6 @@
 // _build.h
 //
-// $Id: _build.h,v 1.58 2006/08/04 05:56:53 sdennis Exp $
+// $Id: _build.h,v 1.59 2006/08/04 06:04:22 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 2005 Stephen Dennis.
@@ -23,4 +23,4 @@ extern char szBuildDate[];
 // Define if this release is qualified as ALPHA or BETA.
 //
 //#define ALPHA
-#define BETA
+//#define BETA
