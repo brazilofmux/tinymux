@@ -1,6 +1,6 @@
 // svdhash.cpp -- CHashPage, CHashFile, CHashTable modules.
 //
-// $Id: svdhash.cpp,v 1.54 2006-08-07 05:47:24 sdennis Exp $
+// $Id: svdhash.cpp,v 1.55 2006-08-07 05:56:07 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -1353,12 +1353,12 @@ bool CHashFile::InitializeDirectory(unsigned int n)
 {
     if (m_pDir)
     {
-        MEMFREE(m_pDir);
+        delete [] m_pDir;
         m_pDir = NULL;
     }
     if (m_hpCacheLookup)
     {
-        MEMFREE(m_hpCacheLookup);
+        delete [] m_hpCacheLookup;
         m_hpCacheLookup = NULL;
     }
 
@@ -1371,10 +1371,39 @@ bool CHashFile::InitializeDirectory(unsigned int n)
         n >>= 1;
     }
 
-    m_pDir = (HF_FILEOFFSET *)MEMALLOC(sizeof(HF_FILEOFFSET)*m_nDir);
-    ISOUTOFMEMORY(m_pDir);
-    m_hpCacheLookup = new int[m_nDir];
-    ISOUTOFMEMORY(m_hpCacheLookup);
+    m_pDir = NULL;
+    try
+    {
+        m_pDir = new HF_FILEOFFSET[m_nDir];
+    }
+    catch (...)
+    {
+        ; // Nothing.
+    }
+    if (NULL == m_pDir)
+    {
+        return false;
+    }
+
+    int *m_hpCacheLookup = NULL;
+    try
+    {
+        m_hpCacheLookup = new int[m_nDir];
+    }
+    catch (...)
+    {
+        ; // Nothing.
+    }
+
+    if (NULL == m_hpCacheLookup)
+    {
+        if (m_pDir)
+        {
+            delete [] m_pDir;
+            m_pDir = NULL;
+        }
+        return false;
+    }
 
     for (unsigned int i = 0; i < m_nDir; i++)
     {
@@ -1949,6 +1978,7 @@ bool CHashFile::DoubleDirectory(void)
 {
     unsigned int nNewDir     = 2 * m_nDir;
     UINT32       nNewDirDepth = m_nDirDepth + 1;
+
 
     HF_PFILEOFFSET pNewDir = NULL;
     try
