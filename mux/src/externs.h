@@ -1,6 +1,6 @@
 // externs.h -- Prototypes for externs not defined elsewhere.
 //
-// $Id: externs.h,v 1.69 2006-06-10 06:56:12 sdennis Exp $
+// $Id: externs.h,v 1.70 2006-08-07 02:06:01 sdennis Exp $
 //
 
 #ifndef EXTERNS_H
@@ -178,6 +178,8 @@ bool html_escape(const char *src, char *dest, char **destp);
 #define NUM_DUMP_TYPES   5
 void dump_database_internal(int);
 void fork_and_dump(int key);
+
+bool mux_fopen(FILE **pFile, const char *filename, const char *mode);
 
 /* From help.cpp */
 void helpindex_clean(int);

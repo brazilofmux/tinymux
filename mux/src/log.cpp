@@ -1,6 +1,6 @@
 // log.cpp -- Logging routines.
 //
-// $Id: log.cpp,v 1.11 2006-01-11 20:51:31 sdennis Exp $
+// $Id: log.cpp,v 1.12 2006-08-07 02:06:01 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -333,6 +333,7 @@ void do_log
             bValid = false;
         }
     }
+
     if (!bValid)
     {
         if (pFullName) free_lbuf(pFullName);
@@ -340,22 +341,24 @@ void do_log
         return;
     }
 
-    FILE *hFile = fopen(pFullName, "r");
-    if (hFile)
+    FILE *hFile;
+    if (mux_fopen(&hFile, pFullName, "r"))
     {
         fclose(hFile);
-        hFile = fopen(pFullName, "a");
-    }
-    if (hFile == NULL)
-    {
-        notify(executor, "Not a valid log file.");
-        if (pFullName) free_lbuf(pFullName);
-        return;
+        if (mux_fopen(&hFile, pFullName, "a"))
+        {
+            // Okay, at this point, the file exists.
+            //
+            fprintf(hFile, "%s" ENDLINE, pMessage);
+            fclose(hFile);
+            free_lbuf(pFullName);
+        }
     }
 
-    // Okay, at this point, the file exists.
-    //
-    fprintf(hFile, "%s" ENDLINE, pMessage);
-    fclose(hFile);
-    free_lbuf(pFullName);
+    notify(executor, "Not a valid log file.");
+    if (pFullName)
+    {
+        free_lbuf(pFullName);
+    }
+    return;
 }

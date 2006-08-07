@@ -1,6 +1,6 @@
 // comsys.cpp
 //
-// $Id: comsys.cpp,v 1.53 2006-05-18 18:57:37 sdennis Exp $
+// $Id: comsys.cpp,v 1.54 2006-08-07 02:06:01 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -78,8 +78,8 @@ void load_comsys(char *filename)
         comsys_table[i] = NULL;
     }
 
-    FILE *fp = fopen(filename, "rb");
-    if (!fp)
+    FILE *fp;
+    if (!mux_fopen(&fp, filename, "rb"))
     {
         Log.tinyprintf("Error: Couldn't find %s." ENDLINE, filename);
     }
@@ -120,8 +120,8 @@ void save_comsys(char *filename)
     char buffer[500];
 
     mux_sprintf(buffer, sizeof(buffer), "%s.#", filename);
-    FILE *fp = fopen(buffer, "wb");
-    if (!fp)
+    FILE *fp;
+    if (!mux_fopen(&fp, buffer, "wb"))
     {
         Log.tinyprintf("Unable to open %s for writing." ENDLINE, buffer);
         return;

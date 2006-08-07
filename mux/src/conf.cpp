@@ -1,6 +1,6 @@
 // conf.cpp -- Set up configuration information and static data.
 //
-// $Id: conf.cpp,v 1.78 2006-05-18 18:43:18 sdennis Exp $
+// $Id: conf.cpp,v 1.79 2006-08-07 02:06:01 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -1625,8 +1625,8 @@ static CF_HAND(cf_include)
         return -1;
     }
 
-    FILE *fp = fopen(str, "rb");
-    if (fp == NULL)
+    FILE *fp;
+    if (!mux_fopen(&fp, str, "rb"))
     {
         cf_log_notfound(player, cmd, "Config file", str);
         return -1;

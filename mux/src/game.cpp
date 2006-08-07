@@ -1,6 +1,6 @@
 // game.cpp
 //
-// $Id: game.cpp,v 1.101 2006-06-17 08:11:00 sdennis Exp $
+// $Id: game.cpp,v 1.102 2006-08-07 02:06:01 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -1327,21 +1327,22 @@ void dump_database_internal(int dump_type)
     if (0 < dump_type)
     {
         DUMP_PROCEDURE *dp = &DumpProcedures[dump_type];
+        bool bOpen;
 
         mux_sprintf(outfn, sizeof(outfn), "%s%s", *(dp->ppszOutputBase), dp->szOutputSuffix);
         if (dp->bUseTemporary)
         {
             mux_sprintf(tmpfile, sizeof(tmpfile), "%s.#%d#", outfn, mudstate.epoch);
             RemoveFile(tmpfile);
-            f = fopen(tmpfile, "wb");
+            bOpen = mux_fopen(&f, tmpfile, "wb");
         }
         else
         {
             RemoveFile(outfn);
-            f = fopen(outfn, "wb");
+            bOpen = mux_fopen(&f, outfn, "wb");
         }
 
-        if (f)
+        if (bOpen)
         {
             DebugTotalFiles++;
             setvbuf(f, NULL, _IOFBF, 16384);
@@ -1365,8 +1366,7 @@ void dump_database_internal(int dump_type)
         {
             if (mudconf.have_mailer)
             {
-                f = fopen(mudconf.mail_db, "wb");
-                if (f)
+                if (mux_fopen(&f, mudconf.mail_db, "wb"))
                 {
                     DebugTotalFiles++;
                     dump_mail(f);
@@ -1422,8 +1422,7 @@ void dump_database_internal(int dump_type)
         RemoveFile(tmpfile);
         mux_sprintf(tmpfile, sizeof(tmpfile), "%s.#%d#", mudconf.outdb, mudstate.epoch);
 
-        f = fopen(tmpfile, "wb");
-        if (f)
+        if (mux_fopen(&f, tmpfile, "wb"))
         {
             DebugTotalFiles++;
             setvbuf(f, NULL, _IOFBF, 16384);
@@ -1446,8 +1445,7 @@ void dump_database_internal(int dump_type)
 
     if (mudconf.have_mailer)
     {
-        f = fopen(mudconf.mail_db, "wb");
-        if (f)
+        if (mux_fopen(&f, mudconf.mail_db, "wb"))
         {
             DebugTotalFiles++;
             dump_mail(f);
@@ -1734,7 +1732,8 @@ static int load_game(int ccPageFile)
             //
             return LOAD_GAME_NO_INPUT_DB;
         }
-        if ((f = fopen(infile, "rb")) == NULL)
+
+        if (!mux_fopen(&f, infile, "rb"))
         {
             return LOAD_GAME_CANNOT_OPEN;
         }
@@ -1825,8 +1824,7 @@ static int load_game(int ccPageFile)
 
     if (mudconf.have_mailer)
     {
-        f = fopen(mudconf.mail_db, "rb");
-        if (f)
+        if (mux_fopen(&f, mudconf.mail_db, "rb"))
         {
             DebugTotalFiles++;
             setvbuf(f, NULL, _IOFBF, 16384);
@@ -2181,8 +2179,8 @@ static void dbconvert(void)
         }
     }
 
-    FILE *fpIn = fopen(standalone_infile, "rb");
-    if (!fpIn)
+    FILE *fpIn;
+    if (!mux_fopen(&fpIn, standalone_infile, "rb"))
     {
         exit(1);
     }
@@ -2210,8 +2208,8 @@ static void dbconvert(void)
 
     if (do_write)
     {
-        FILE *fpOut = fopen(standalone_outfile, "wb");
-        if (!fpOut)
+        FILE *fpOut;
+        if (!mux_fopen(&fpOut, standalone_outfile, "wb"))
         {
             exit(1);
         }
@@ -2244,8 +2242,8 @@ static void dbconvert(void)
 
 static void write_pidfile(const char *pFilename)
 {
-    FILE *fp = fopen(pFilename, "wb");
-    if (fp)
+    FILE *fp;
+    if (mux_fopen(&fp, pFilename, "wb"))
     {
         fprintf(fp, "%d" ENDLINE, game_pid);
         fclose(fp);
@@ -3202,3 +3200,27 @@ void init_rlimit(void)
 
 }
 #endif // HAVE_SETRLIMIT RLIMIT_NOFILE
+
+bool mux_fopen(FILE **pFile, const char *filename, const char *mode)
+{
+#if defined(WIN32) && (_MSC_VER >= 1400)
+    // 1400 is Visual C++ 2005
+    //
+    return (fopen_s(pFile, filename, mode) == 0);
+#else
+    if (pFile)
+    {
+        *pFile = NULL;
+        if (  NULL != filename
+           && NULL != mode)
+        {
+            *pFile = fopen(filename, mode);
+            if (NULL != *pFile)
+            {
+                return true;
+            }
+        }
+    }
+    return false;
+#endif // WIN32
+}

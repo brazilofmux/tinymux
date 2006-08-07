@@ -1,6 +1,6 @@
 // help.cpp -- Commands for giving help.
 //
-// $Id: help.cpp,v 1.18 2006-01-11 20:51:31 sdennis Exp $
+// $Id: help.cpp,v 1.19 2006-08-07 02:06:01 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -154,8 +154,8 @@ static int helpindex_read(int iHelpfile)
 
     help_indx entry;
 
-    FILE *fp = fopen(szTextFilename, "rb");
-    if (fp == NULL)
+    FILE *fp;
+    if (!mux_fopen(&fp, szTextFilename, "rb"))
     {
         STARTLOG(LOG_PROBLEMS, "HLP", "RINDX");
         char *p = alloc_lbuf("helpindex_read.LOG");
@@ -296,8 +296,8 @@ static bool ReportTopic(dbref executor, struct help_entry *htab_entry, int iHelp
     mux_sprintf(szTextFilename, sizeof(szTextFilename), "%s.txt", mudstate.aHelpDesc[iHelpfile].pBaseFilename);
 
     size_t offset = htab_entry->pos;
-    FILE *fp = fopen(szTextFilename, "rb");
-    if (fp == NULL)
+    FILE *fp;
+    if (!mux_fopen(&fp, szTextFilename, "rb"))
     {
         STARTLOG(LOG_PROBLEMS, "HLP", "OPEN");
         char *line = alloc_lbuf("ReportTopic.open");
@@ -308,6 +308,7 @@ static bool ReportTopic(dbref executor, struct help_entry *htab_entry, int iHelp
         return false;
     }
     DebugTotalFiles++;
+
     if (fseek(fp, static_cast<long>(offset), 0) < 0L)
     {
         STARTLOG(LOG_PROBLEMS, "HLP", "SEEK");

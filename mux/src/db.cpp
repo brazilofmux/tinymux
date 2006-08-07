@@ -1,6 +1,6 @@
 // db.cpp
 //
-// $Id: db.cpp,v 1.99 2006-06-17 08:01:36 sdennis Exp $
+// $Id: db.cpp,v 1.100 2006-08-07 02:06:01 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -3116,7 +3116,7 @@ void dump_restart_db(void)
     DESC *d;
     int version = 2;
 
-    f = fopen("restart.db", "wb");
+    mux_assert(mux_fopen(&f, "restart.db", "wb"));
     fprintf(f, "+V%d\n", version);
     putref(f, nMainGamePorts);
     for (int i = 0; i < nMainGamePorts; i++)
@@ -3159,14 +3159,8 @@ void dump_restart_db(void)
 
 void load_restart_db(void)
 {
-    DESC *d;
-    DESC *p;
-
-    int val;
-    char *temp, buf[8];
-
-    FILE *f = fopen("restart.db", "r");
-    if (!f)
+    FILE *f;
+    if (!mux_fopen(&f, "restart.db", "rb"))
     {
         mudstate.restarting = false;
         return;
@@ -3174,6 +3168,7 @@ void load_restart_db(void)
     DebugTotalFiles++;
     mudstate.restarting = true;
 
+    char buf[8];
     fgets(buf, 3, f);
     mux_assert(strncmp(buf, "+V", 2) == 0);
     int version = getref(f);
@@ -3213,8 +3208,11 @@ void load_restart_db(void)
         mudstate.record_players = 0;
     }
 
+    int val;
     while ((val = getref(f)) != 0)
     {
+        DESC *d;
+
         ndescriptors++;
         DebugTotalSockets++;
         d = alloc_desc("restart");
@@ -3251,7 +3249,7 @@ void load_restart_db(void)
             d->width = 78;
         }
 
-        temp = getstring_noalloc(f, true);
+        char *temp = getstring_noalloc(f, true);
         if (*temp)
         {
             d->output_prefix = alloc_lbuf("set_userstring");
@@ -3295,7 +3293,11 @@ void load_restart_db(void)
 
         if (descriptor_list)
         {
-            for (p = descriptor_list; p->next; p = p->next) ;
+            DESC *p;
+            for (p = descriptor_list; p->next; p = p->next)
+            {
+                ; // Nothing.
+            }
             d->prev = &p->next;
             p->next = d;
             d->next = NULL;

@@ -1,6 +1,6 @@
 // svdocache.cpp -- Attribute caching module.
 //
-// $Id: attrcache.cpp,v 1.25 2006-01-11 11:13:40 jake Exp $
+// $Id: attrcache.cpp,v 1.26 2006-08-07 02:06:01 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -63,7 +63,7 @@ void cache_redirect(void)
     {
         char TempFileName[20];
         mux_sprintf(TempFileName, sizeof(TempFileName), "$convtemp.%d", i);
-        TempFiles[i] = fopen(TempFileName, "wb+");
+        mux_assert(mux_fopen(&TempFiles[i], TempFileName, "wb+"));
         mux_assert(TempFiles[i]);
         setvbuf(TempFiles[i], NULL, _IOFBF, 16384);
     }
