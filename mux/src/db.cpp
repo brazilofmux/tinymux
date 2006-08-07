@@ -1,6 +1,6 @@
 // db.cpp
 //
-// $Id: db.cpp,v 1.100 2006-08-07 02:06:01 sdennis Exp $
+// $Id: db.cpp,v 1.101 2006-08-07 02:08:24 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -3209,10 +3209,9 @@ void load_restart_db(void)
     }
 
     int val;
+    DESC *d;
     while ((val = getref(f)) != 0)
     {
-        DESC *d;
-
         ndescriptors++;
         DebugTotalSockets++;
         d = alloc_desc("restart");
