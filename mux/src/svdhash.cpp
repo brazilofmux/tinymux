@@ -1,6 +1,6 @@
 // svdhash.cpp -- CHashPage, CHashFile, CHashTable modules.
 //
-// $Id: svdhash.cpp,v 1.53 2006-01-11 20:51:31 sdennis Exp $
+// $Id: svdhash.cpp,v 1.54 2006-08-07 05:47:24 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -1950,11 +1950,39 @@ bool CHashFile::DoubleDirectory(void)
     unsigned int nNewDir     = 2 * m_nDir;
     UINT32       nNewDirDepth = m_nDirDepth + 1;
 
-    HF_PFILEOFFSET pNewDir = (HF_PFILEOFFSET)MEMALLOC(sizeof(HF_FILEOFFSET)*nNewDir);
-    ISOUTOFMEMORY(pNewDir);
+    HF_PFILEOFFSET pNewDir = NULL;
+    try
+    {
+        pNewDir = new HF_FILEOFFSET[nNewDir];
+    }
+    catch (...)
+    {
+        ; // Nothing.
+    }
+    if (NULL == pNewDir)
+    {
+        return false;
+    }
 
-    int *pNewCacheLookup = new int[nNewDir];
-    ISOUTOFMEMORY(pNewCacheLookup);
+    int *pNewCacheLookup = NULL;
+    try
+    {
+        pNewCacheLookup = new int[nNewDir];
+    }
+    catch (...)
+    {
+        ; // Nothing.
+    }
+
+    if (NULL == pNewCacheLookup)
+    {
+        if (pNewDir)
+        {
+            delete [] pNewDir;
+            pNewDir = NULL;
+        }
+        return false;
+    }
 
     unsigned int iNewDir = 0;
     for (unsigned int iDir = 0; iDir < m_nDir; iDir++)
@@ -1971,10 +1999,10 @@ bool CHashFile::DoubleDirectory(void)
     //
     WriteDirectory();
 
-    MEMFREE(m_pDir);
+    delete [] m_pDir;
     m_pDir = pNewDir;
 
-    MEMFREE(m_hpCacheLookup);
+    delete [] m_hpCacheLookup;
     m_hpCacheLookup = pNewCacheLookup;
 
     m_nDirDepth = nNewDirDepth;
