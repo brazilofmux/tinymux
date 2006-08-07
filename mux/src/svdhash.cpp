@@ -1,6 +1,6 @@
 // svdhash.cpp -- CHashPage, CHashFile, CHashTable modules.
 //
-// $Id: svdhash.cpp,v 1.55 2006-08-07 05:56:07 sdennis Exp $
+// $Id: svdhash.cpp,v 1.56 2006-08-07 06:09:17 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -1556,7 +1556,10 @@ bool CHashFile::ReadDirectory(void)
 #ifdef WIN32
     cc = SetFilePointer(m_hDirFile, 0, 0, FILE_BEGIN);
     DWORD nRead;
-    ReadFile(m_hDirFile, m_pDir, sizeof(HF_FILEOFFSET)*m_nDir, &nRead, 0);
+    if (!ReadFile(m_hDirFile, m_pDir, sizeof(HF_FILEOFFSET)*m_nDir, &nRead, 0))
+    {
+        return false;
+    }
 #else // WIN32
 #ifdef HAVE_PREAD
     pread(m_hDirFile, m_pDir, sizeof(HF_FILEOFFSET)*m_nDir, 0);
