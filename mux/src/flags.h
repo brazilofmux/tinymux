@@ -1,6 +1,6 @@
 // flags.h -- Object flags.
 //
-// $Id: flags.h,v 1.11 2006-08-02 14:57:09 sdennis Exp $
+// $Id: flags.h,v 1.12 2006-08-09 04:06:57 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -87,6 +87,9 @@
 // Third word of flags
 //
 #if defined(WOD_REALMS) || defined(REALITY_LVLS)
+#if defined(FIRANMUX)
+#error "FIRANMUX is incompatible with both WOD_REALMS and REALITY_LVLS"
+#endif
 #define OBF          0x00000001      // Obfuscate Flag
 #define HSS          0x00000002      // Auspex/Heightened Senses Flag
 #define UMBRA        0x00000004      // Umbra, UMBRADESC
@@ -99,6 +102,9 @@
 #define PEERING      0x00000200      // Means the a looker is seeing a
                                      // different realm than they are in.
 #endif // WOD_REALMS
+#if defined(FIRANMUX)
+#define QUELL        0x00000004      // Temporarily discard wizardry.
+#endif // FIRANMUX
 
 #define SITEMON      0x00000400      // Sitemonitor Flag
 #define CMDCHECK     0x00000800      // Has @icmd set
@@ -248,8 +254,23 @@ extern char *MakeCanonicalFlagName
 #define Good_owner(x)       (Good_obj(x) && OwnsOthers(x))
 
 #define Staff(x)            (Wizard(x) || Royalty(x) || ((Flags2(x) & STAFF) != 0))
-#define Royalty(x)          ((Flags(x) & ROYALTY) || \
-                            ((Flags(Owner(x)) & ROYALTY) && Inherits(x)))
+#if defined(FIRANMUX)
+#define Royalty(x)          (  (  (Flags(x) & ROYALTY) \
+                               && (Flags3(x) & QUELL) == 0 \
+                               ) \
+                            || (  (  (Flags(Owner(x)) & ROYALTY) \
+                                  && (Flags3(Owner(x)) & QUELL) == 0 \
+                                  ) \
+                               && Inherits(x) \
+                               ) \
+                            )
+#else // FIRANMUX
+#define Royalty(x)          (  (Flags(x) & ROYALTY) \
+                            || (  (Flags(Owner(x)) & ROYALTY) \
+                               && Inherits(x) \
+                               ) \
+                            )
+#endif // FIRANMUX
 #define WizRoy(x)           (Royalty(x) || Wizard(x))
 #define Head(x)             ((Flags2(x) & HEAD_FLAG) != 0)
 #define Fixed(x)            ((Flags2(x) & FIXED) != 0)
@@ -263,8 +284,22 @@ extern char *MakeCanonicalFlagName
 #define Transparent(x)      ((Flags(x) & SEETHRU) != 0)
 #define Link_ok(x)          (((Flags(x) & LINK_OK) != 0) && Has_contents(x))
 #define Open_ok(x)          (((Flags2(x) & OPEN_OK) != 0) && Has_exits(x))
-#define Wizard(x)           ((Flags(x) & WIZARD) || \
-                            ((Flags(Owner(x)) & WIZARD) && Inherits(x)))
+#if defined(FIRANMUX)
+#define Wizard(x)           (  (Flags3(x) & QUELL) == 0 \
+                            && (  (Flags(x) & WIZARD) \
+                               || (  (Flags(Owner(x)) & WIZARD) \
+                                  && (Flags3(Owner(x)) & QUELL) == 0 \
+                                  && Inherits(x) \
+                                  ) \
+                               ) \
+                            )
+#else // FIRANMUX
+#define Wizard(x)           (  (Flags(x) & WIZARD) \
+                            || (  (Flags(Owner(x)) & WIZARD) \
+                               && Inherits(x) \
+                               ) \
+                            )
+#endif // FIRANMUX
 #define Dark(x)             (((Flags(x) & DARK) != 0) && (Wizard(x) || \
                             !(isPlayer(x) || (Puppet(x) && Has_contents(x)))))
 #define Jump_ok(x)          (((Flags(x) & JUMP_OK) != 0) && Has_contents(x))

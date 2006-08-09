@@ -1,6 +1,6 @@
 // flags.cpp -- Flag manipulation routines.
 //
-// $Id: flags.cpp,v 1.30 2006-08-03 20:23:53 sdennis Exp $
+// $Id: flags.cpp,v 1.31 2006-08-09 04:06:57 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -303,6 +303,9 @@ static FLAGBITENT fbeOpenOk         = { OPEN_OK,      'z',    FLAG_WORD2, 0,    
 static FLAGBITENT fbeParentOk       = { PARENT_OK,    'Y',    FLAG_WORD2, 0,                    fh_any};
 static FLAGBITENT fbePlayerMails    = { PLAYER_MAILS, ' ',    FLAG_WORD2, CA_GOD|CA_NO_DECOMP,  fh_god};
 static FLAGBITENT fbePuppet         = { PUPPET,       'p',    FLAG_WORD1, 0,                    fh_hear_bit};
+#if defined(FIRANMUX)
+static FLAGBITENT fbeQuell          = { QUELL,        ' ',    FLAG_WORD3, 0,                    fh_inherit};
+#endif // FIRANMUX
 static FLAGBITENT fbeQuiet          = { QUIET,        'Q',    FLAG_WORD1, 0,                    fh_any};
 static FLAGBITENT fbeRobot          = { ROBOT,        'r',    FLAG_WORD1, 0,                    fh_player_bit};
 static FLAGBITENT fbeRoyalty        = { ROYALTY,      'Z',    FLAG_WORD1, 0,                    fh_wiz};
@@ -441,6 +444,9 @@ FLAGNAMEENT gen_flag_names[] =
     {"MEDIUM",          true, &fbeMedium         },
     {"DEAD",            true, &fbeDead           },
 #endif // WOD_REALMS
+#if defined(FIRANMUX)
+    {"QUELL",           true, &fbeQuell          },
+#endif // FIRANMUX
     {NULL,             false, NULL}
 };
 
