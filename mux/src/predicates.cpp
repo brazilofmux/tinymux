@@ -1,6 +1,6 @@
 // predicates.cpp
 //
-// $Id: predicates.cpp,v 1.84 2006-08-09 07:11:23 sdennis Exp $
+// $Id: predicates.cpp,v 1.85 2006-08-09 19:32:37 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -2325,6 +2325,16 @@ void did_it(dbref player, dbref thing, int what, const char *def, int owhat,
                 *bp = '\0';
                 notify_html(player, buff);
             }
+#if defined(FIRANMUX)
+            else if (  A_DESC == what == A_DESC
+                    && Linewrap(player)
+                    && TYPE_PLAYER == Typeof(player)
+                    && (  !Linewrap(thing)
+                       || TYPE_PLAYER == Typeof(thing)))
+            {
+                notify(player, linewrap_desc(buff));
+            }
+#endif // FIRANMUX
             else
             {
                 notify(player, buff);
@@ -2363,7 +2373,9 @@ void did_it(dbref player, dbref thing, int what, const char *def, int owhat,
             mux_exec(buff, &bp, thing, player, player,
                      EV_EVAL | EV_FIGNORE | EV_FCHECK | EV_TOP, &str, args, nargs);
             *bp = '\0';
+#if !defined(FIRANMUX)
             if (*buff)
+#endif // FIRANMUX
             {
 #ifdef REALITY_LVLS
                 notify_except2_rlevel(loc, player, player, thing, tprintf("%s %s", Name(player), buff));
