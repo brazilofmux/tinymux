@@ -1,6 +1,6 @@
 // command.cpp -- command parser and support routines.
 //
-// $Id: command.cpp,v 1.89 2006-08-03 14:22:10 sdennis Exp $
+// $Id: command.cpp,v 1.90 2006-08-09 06:48:57 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -482,6 +482,7 @@ static NAMETAB switch_sw[] =
     {"all",             1,  CA_PUBLIC,  SWITCH_ANY},
     {"default",         1,  CA_PUBLIC,  SWITCH_DEFAULT},
     {"first",           1,  CA_PUBLIC,  SWITCH_ONE},
+    {"notify",          1,  CA_PUBLIC,  SWITCH_NOTIFY|SW_MULTIPLE},
     { NULL,             0,          0,  0}
 };
 

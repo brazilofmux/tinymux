@@ -1,6 +1,6 @@
 // externs.h -- Prototypes for externs not defined elsewhere.
 //
-// $Id: externs.h,v 1.70 2006-08-07 02:06:01 sdennis Exp $
+// $Id: externs.h,v 1.71 2006-08-09 06:48:57 sdennis Exp $
 //
 
 #ifndef EXTERNS_H
@@ -615,6 +615,8 @@ extern int anum_alc_top;
 #define SWITCH_DEFAULT  0   /* Use the configured default for switch */
 #define SWITCH_ANY      1   /* Execute all cases that match */
 #define SWITCH_ONE      2   /* Execute only first case that matches */
+#define SWITCH_MASK     3   /* Includes lower 2 bits */
+#define SWITCH_NOTIFY   4   /* Send an @notify after the @switch is completed */
 #define SWEEP_ME        1   /* Check my inventory */
 #define SWEEP_HERE      2   /* Check my location */
 #define SWEEP_COMMANDS  4   /* Check for $-commands */

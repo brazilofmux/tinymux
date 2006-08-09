@@ -1,6 +1,6 @@
 // walkdb.cpp -- Support for commands that walk the entire db.
 //
-// $Id: walkdb.cpp,v 1.15 2006-05-18 17:56:18 sdennis Exp $
+// $Id: walkdb.cpp,v 1.16 2006-08-09 06:48:57 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -68,6 +68,7 @@ void do_dolist(dbref executor, dbref caller, dbref enactor, int key,
                 cargs, ncargs, number);
         }
     }
+
     if (key & DOLIST_NOTIFY)
     {
         char *tbuf = alloc_lbuf("dolist.notify_cmd");

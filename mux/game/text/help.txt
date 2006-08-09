@@ -3481,10 +3481,11 @@ Related Topics: @name.
 
   The following switches are available:
 
-     /all   - (default) Perform the actionlists associated with all targets
+    /all    - (default) Perform the actionlists associated with all targets
               that match <string>.
-     /first - Perform only the actionlist associated with the first target
+    /first  - Perform only the actionlist associated with the first target
               that matches <string>.
+    /notify - Queues an '@notify' after all commands in the list.
 
   Related Topics: switch(), ifelse().
 

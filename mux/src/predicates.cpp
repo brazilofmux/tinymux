@@ -1,6 +1,6 @@
 // predicates.cpp
 //
-// $Id: predicates.cpp,v 1.82 2006-01-23 23:22:21 sdennis Exp $
+// $Id: predicates.cpp,v 1.83 2006-08-09 06:48:57 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -649,7 +649,7 @@ void handle_ears(dbref thing, bool could_hear, bool can_hear)
 //
 void do_switch
 (
-    dbref player,
+    dbref executor,
     dbref caller,
     dbref enactor,
     int   key,
@@ -666,21 +666,33 @@ void do_switch
         return;
     }
 
-    if (key == SWITCH_DEFAULT)
+    bool bMatchOne;
+    switch (key & SWITCH_MASK)
     {
+    case SWITCH_DEFAULT:
         if (mudconf.switch_df_all)
         {
-            key = SWITCH_ANY;
+            bMatchOne = false;
         }
         else
         {
-            key = SWITCH_ONE;
+            bMatchOne = true;
         }
+        break;
+
+    case SWITCH_ANY:
+        bMatchOne = false;
+        break;
+
+    case SWITCH_ONE:
+    default:
+        bMatchOne = true;
+        break;
     }
 
     // Now try a wild card match of buff with stuff in coms.
     //
-    bool any = false;
+    bool bAny = false;
     int a;
     char *buff, *bp, *str;
     buff = bp = alloc_lbuf("do_switch");
@@ -693,31 +705,43 @@ void do_switch
     {
         bp = buff;
         str = args[a];
-        mux_exec(buff, &bp, player, caller, enactor, EV_FCHECK | EV_EVAL | EV_TOP,
+        mux_exec(buff, &bp, executor, caller, enactor, EV_FCHECK | EV_EVAL | EV_TOP,
             &str, cargs, ncargs);
         *bp = '\0';
         if (wild_match(buff, expr))
         {
             char *tbuf = replace_tokens(args[a+1], NULL, NULL, expr);
-            wait_que(player, caller, enactor, false, lta, NOTHING, 0,
+            wait_que(executor, caller, enactor, false, lta, NOTHING, 0,
                 tbuf, cargs, ncargs, mudstate.global_regs);
             free_lbuf(tbuf);
-            if (key == SWITCH_ONE)
+            if (bMatchOne)
             {
                 free_lbuf(buff);
-                return;
+                goto SwitchNotify;
             }
-            any = true;
+            bAny = true;
         }
     }
     free_lbuf(buff);
     if (  a < nargs
-       && !any
+       && !bAny
        && args[a])
     {
         char *tbuf = replace_tokens(args[a], NULL, NULL, expr);
-        wait_que(player, caller, enactor, false, lta, NOTHING, 0, tbuf,
+        wait_que(executor, caller, enactor, false, lta, NOTHING, 0, tbuf,
             cargs, ncargs, mudstate.global_regs);
+        free_lbuf(tbuf);
+    }
+
+SwitchNotify:
+
+    if (key & SWITCH_NOTIFY)
+    {
+        char *tbuf = alloc_lbuf("switch.notify_cmd");
+        mux_strncpy(tbuf, "@notify/quiet me", LBUF_SIZE-1);
+        CLinearTimeAbsolute lta;
+        wait_que(executor, caller, enactor, false, lta, NOTHING, A_SEMAPHORE,
+            tbuf, cargs, ncargs, mudstate.global_regs);
         free_lbuf(tbuf);
     }
 }
