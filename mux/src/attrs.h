@@ -1,6 +1,6 @@
 // attrs.h -- Attribute definitions.
 //
-// $Id: attrs.h,v 1.6 2005-10-12 05:39:11 sdennis Exp $
+// $Id: attrs.h,v 1.7 2006-08-09 15:45:14 sdennis Exp $
 //
 
 #ifndef _ATTRS_H
@@ -197,8 +197,22 @@
                         // connections, time of logout.
 #define A_LMAIL     225 // Lock who may @mail you
 #define A_LOPEN     226 // Lock for controlling OPEN_OK locations
-// 227 - 239 unused
+
+// 227 - 237 unused
+
+#if defined(FIRANMUX)
+#define A_LEAD      238 /* Invoker lead message */
+#define A_OLEAD     239 /* Others lead message */
+// Conflicts with A_IDLETMOUT
+#define A_ALEAD     240 /* Lead action list */
+#endif // FIRANMUX
+
 #define A_IDLETMOUT 240 /* Idle message timeout */
+
+#if defined(FIRANMUX)
+// Conflicts with A_EXITFORMAT
+#define A_COLOR     241     /* Color of name of object in look commands */
+#endif // FIRANMUX
 
 #define A_EXITFORMAT 241
 #define A_CONFORMAT  242

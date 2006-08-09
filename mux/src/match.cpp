@@ -1,6 +1,6 @@
 // match.cpp -- Routines for parsing arguments.
 //
-// $Id: match.cpp,v 1.10 2006-01-11 21:06:12 sdennis Exp $
+// $Id: match.cpp,v 1.11 2006-08-09 15:45:14 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -540,7 +540,11 @@ dbref match_result(void)
         return md.match;
 
     default:
+#if defined(FIRANMUX)
+        return md.match;
+#else
         return AMBIGUOUS;
+#endif // FIRANMUX
     }
 }
 

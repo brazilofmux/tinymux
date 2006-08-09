@@ -1,6 +1,6 @@
 // flags.h -- Object flags.
 //
-// $Id: flags.h,v 1.13 2006-08-09 06:03:19 sdennis Exp $
+// $Id: flags.h,v 1.14 2006-08-09 15:45:14 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -103,7 +103,13 @@
                                      // different realm than they are in.
 #endif // WOD_REALMS
 #if defined(FIRANMUX)
+#define LINEWRAP     0x00000001      // Player linewraps.
+#define IMMOBILE     0x00000002      // Player immobile.
 #define QUELL        0x00000004      // Temporarily discard wizardry.
+#define WINTELNET    0x00000008      // Add extra \n for Win/Mac Telnet.
+#define REMOTEECHO   0x00000010      // Adds remote echo!
+#define RESTRICTED   0x00000020      // Player uses restricted commandset.
+#define PARENT       0x00000040      // Object is an official parent obj.
 #endif // FIRANMUX
 
 #define SITEMON      0x00000400      // Sitemonitor Flag
@@ -175,6 +181,9 @@ extern char *decode_flags(dbref, FLAGSET *);
 extern bool has_flag(dbref, dbref, char *);
 extern char *unparse_object(dbref, dbref, bool);
 extern char *unparse_object_numonly(dbref);
+#if defined(FIRANMUX)
+extern char *unparse_object_ansi(dbref, dbref, int);
+#endif // FIRANMUX
 extern bool convert_flags(dbref, char *, FLAGSET *, FLAG *);
 extern void decompile_flags(dbref, dbref, char *);
 extern char *MakeCanonicalFlagName
@@ -231,6 +240,12 @@ extern char *MakeCanonicalFlagName
 /* Marked(x)            - Check marked flag on X */
 /* See_attr(P,X.A,O,F)  - Can P see text attr A on X if attr has owner O */
 /* KeepAlive(x)         - Does the user want keepalives? */
+#if defined(FIRANMUX)
+/* WinTelnet(X)         - Is X running Windows or Mac Telnet? */
+/* RemoteEcho(X)        - Is X requiring the MUX to do the echoing? */
+/* Linewrap(x)          - Is X set Linewrap? */
+/* Restricted(x)        - Is X restricted to the restricted commandset? */
+#endif // FIRANMUX
 
 #define Typeof(x)           (Flags(x) & TYPE_MASK)
 #define God(x)              ((x) == GOD)
@@ -305,6 +320,7 @@ extern char *MakeCanonicalFlagName
                                && Inherits(x) \
                                ) \
                             )
+#define Dark(x)             ((Flags(x) & DARK) != 0)
 #else // FIRANMUX
 #define Wizard(x)           (  (Flags(x) & WIZARD) \
                             || (  (Flags(Owner(x)) & WIZARD) \
@@ -312,9 +328,9 @@ extern char *MakeCanonicalFlagName
                                ) \
                             )
 #define RealWizard(x)       (Wizard(x))
-#endif // FIRANMUX
 #define Dark(x)             (((Flags(x) & DARK) != 0) && (Wizard(x) || \
                             !(isPlayer(x) || (Puppet(x) && Has_contents(x)))))
+#endif // FIRANMUX
 #define Jump_ok(x)          (((Flags(x) & JUMP_OK) != 0) && Has_contents(x))
 #define Sticky(x)           ((Flags(x) & STICKY) != 0)
 #define Destroy_ok(x)       ((Flags(x) & DESTROY_OK) != 0)
@@ -359,6 +375,11 @@ extern char *MakeCanonicalFlagName
 #define Slave(x)            ((Flags2(Owner(x)) & SLAVE) != 0)
 #define Hidden(x)           ((Flags(x) & DARK) != 0)
 #define Blind(x)            ((Flags2(x) & BLIND) != 0)
+
+#if defined(FIRANMUX)
+#define WinTelnet(x)    ((Flags3(x) & WINTELNET) != 0)
+#define RemoteEcho(x)   ((Flags3(x) & REMOTEECHO) != 0)
+#endif // FIRANMUX
 
 #define H_Startup(x)        ((Flags(x) & HAS_STARTUP) != 0)
 #define H_Fwdlist(x)        ((Flags2(x) & HAS_FWDLIST) != 0)
@@ -426,5 +447,11 @@ extern char *MakeCanonicalFlagName
 #define Has_power(p,x)      (check_access((p),powers_nametab[x].flag))
 #define Html(x)             ((Flags2(x) & HTML) != 0)
 #define s_Html(x)           s_Flags((x), FLAG_WORD2, Flags2(x) | HTML)
+
+#if defined(FIRANMUX)
+#define Linewrap(x)   ((Flags3(x) & LINEWRAP) != 0)
+#define Immobile(x)   ((Flags3(x) & IMMOBILE) != 0)
+#define Restricted(x) ((Flags3(x) & RESTRICTED) != 0)
+#endif // FIRANMUX
 
 #endif // !__FLAGS_H

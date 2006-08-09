@@ -1,6 +1,6 @@
 // mudconf.h
 //
-// $Id: mudconf.h,v 1.38 2006-05-18 18:41:07 sdennis Exp $
+// $Id: mudconf.h,v 1.39 2006-08-09 15:45:14 sdennis Exp $
 //
 
 #ifndef __CONF_H
@@ -172,7 +172,7 @@ struct confdata
     int     waitcost;           /* cost of @wait (refunded when finishes) */
     int     wild_invk_lim;      // Max Regular Expression function calls.
     int     zone_nest_lim;      /* Max nesting of zones */
-    int     restrict_home;	// Special condition to restrict 'home' command
+    int     restrict_home;      // Special condition to restrict 'home' command
 
     unsigned int    max_cache_size; /* Max size of attribute cache */
     unsigned int    site_chars; // where to truncate site name.
@@ -187,10 +187,19 @@ struct confdata
     char    one_coin[32];       /* name of one coin (ie. "penny") */
     char    public_channel[32]; /* Name of public channel */
     char    public_channel_alias[32]; /* Name of public channel alias */
-    char    dump_msg[128];      /* Message displayed when @dump-ing */
+    char    dump_msg[256];      /* Message displayed when @dump-ing */
     char    fixed_home_msg[128];    /* Message displayed when going home and FIXED */
     char    fixed_tel_msg[128]; /* Message displayed when teleporting and FIXED */
-    char    postdump_msg[128];  /* Message displayed after @dump-ing */
+    char    postdump_msg[256];  /* Message displayed after @dump-ing */
+#ifdef FIRANMUX /* adam */
+    char    immobile_msg[128];  /* Message displayed to immobile players */
+#endif // FIRANMUX
+#ifdef FIRANMUX
+    char    sql_server[128];
+    char    sql_user[128];
+    char    sql_password[128];
+    char    sql_database[128];
+#endif // FIRANMUX
     char    downmotd_msg[GBUF_SIZE];    /* Settable 'logins disabled' message */
     char    fullmotd_msg[GBUF_SIZE];    /* Settable 'Too many players' message */
     char    motd_msg[GBUF_SIZE];    /* Wizard-settable login message */

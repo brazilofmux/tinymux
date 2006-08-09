@@ -1,6 +1,6 @@
 // command.cpp -- command parser and support routines.
 //
-// $Id: command.cpp,v 1.90 2006-08-09 06:48:57 sdennis Exp $
+// $Id: command.cpp,v 1.91 2006-08-09 15:45:14 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -621,7 +621,11 @@ static CMDENT_ONE_ARG command_table_one_arg[] =
     {"enter",         enter_sw,   CA_LOCATION,                0,  CS_ONE_ARG|CS_INTERP, 0, do_enter},
     {"examine",       examine_sw, CA_PUBLIC,                  0,  CS_ONE_ARG|CS_INTERP, 0, do_examine},
     {"get",           get_sw,     CA_LOCATION|CA_NO_GUEST,    0,  CS_ONE_ARG|CS_INTERP, 0, do_get},
+#if defined(FIRANMUX)
+    {"goto",          goto_sw,    CA_LOCATION|CA_NO_IMMOBILE, 0,  CS_ONE_ARG|CS_INTERP, 0, do_move},
+#else
     {"goto",          goto_sw,    CA_LOCATION,                0,  CS_ONE_ARG|CS_INTERP, 0, do_move},
+#endif // FIRANMUX
     {"look",          look_sw,    CA_LOCATION,        LOOK_LOOK,  CS_ONE_ARG|CS_INTERP, 0, do_look},
     {"outputprefix",  NULL,       CA_PUBLIC,         CMD_PREFIX,  CS_ONE_ARG,           0, logged_out1},
     {"outputsuffix",  NULL,       CA_PUBLIC,         CMD_SUFFIX,  CS_ONE_ARG,           0, logged_out1},
@@ -989,6 +993,10 @@ bool check_access(dbref player, int mask)
            || ((mask & CA_NO_SLAVE)   && Slave(player))
            || ((mask & CA_NO_SUSPECT) && Suspect(player))
            || ((mask & CA_NO_GUEST)   && Guest(player))
+#if defined(FIRANMUX)
+           // || ((mask & CA_NO_IMMOBILE) && Immobile(player))
+           || ((mask & CA_NO_RESTRICTED) && Restricted(player))
+#endif // FIRANMUX
            || ((mask & CA_NO_UNINS)   && Uninspected(player)))
         {
             return false;
@@ -2586,7 +2594,9 @@ static void list_attrtable(dbref player)
 NAMETAB access_nametab[] =
 {
     {"builder",               6, CA_WIZARD, CA_BUILDER},
+#if !defined(FIRANMUX)
     {"dark",                  4, CA_GOD,    CF_DARK},
+#endif // FIRANMUX
     {"disabled",              4, CA_GOD,    CA_DISABLED},
     {"global_build",          8, CA_PUBLIC, CA_GBL_BUILD},
     {"global_interp",         8, CA_PUBLIC, CA_GBL_INTERP},
@@ -2597,6 +2607,10 @@ NAMETAB access_nametab[] =
     {"need_contents",         6, CA_PUBLIC, CA_CONTENTS},
     {"need_player",           6, CA_PUBLIC, CA_PLAYER},
     {"no_haven",              4, CA_PUBLIC, CA_NO_HAVEN},
+#if defined(FIRANMUX)
+    {"no_immobile",           5, CA_WIZARD, CA_NO_IMMOBILE},
+    {"no_restricted",         6, CA_WIZARD, CA_NO_RESTRICTED},
+#endif // FIRANMUX
     {"no_robot",              4, CA_WIZARD, CA_NO_ROBOT},
     {"no_slave",              5, CA_PUBLIC, CA_NO_SLAVE},
     {"no_suspect",            5, CA_WIZARD, CA_NO_SUSPECT},

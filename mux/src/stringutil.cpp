@@ -1,6 +1,6 @@
 // stringutil.cpp -- string utilities.
 //
-// $Id: stringutil.cpp,v 1.90 2006-06-19 05:15:22 sdennis Exp $
+// $Id: stringutil.cpp,v 1.91 2006-08-09 15:45:14 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -3542,3 +3542,194 @@ CF_HAND(cf_art_rule)
     return 0;
 }
 
+#if defined(FIRANMUX)
+
+/* Lanyamod */
+long spec_strlen(char *str)
+{
+  long result = 0;
+  long index = 0;
+  while (str[index])
+    {
+      if (str[index] == 27)
+        {
+          while (str[index++] != 'm');
+          continue;
+        }
+      result++;
+      index++;
+    }
+  return result;
+}
+
+char * linewrap_general(char *strret, int field, char *left, char *right)
+{
+  char * str;
+  char * original;
+  char * ostr;
+  char * oori;
+  int tabsets[] = {1,9,17,25,33,41,49,57,65,73,81};
+  int leftmargin = 1; int rightmargin = 1+field;
+
+  int position = 1;
+  int index1 = 0; int index2 = 0;
+  int spacesleft;
+  int space_eaten = 1;
+  int line_indented = 0;
+  int skip_out = 0;
+
+  ostr = str = alloc_lbuf("linewrap_desc");
+  oori = original = alloc_lbuf("linewrap_desc2");
+  strcpy(original, strret);
+
+  for (;;) {
+    /* We're out of characters to parse.  Leave now. */
+    if (!original[index1]) break;
+
+    if (position == rightmargin)
+      {
+        line_indented = 0;
+        space_eaten = 0;
+        position = leftmargin;
+
+        safe_str(right,str,&ostr);
+        safe_str("\r\n",str,&ostr);
+        /* sprintf(str+index2,"%s\r\n",right);
+        index2 = index2 + 2 + strlen(right); */
+        continue;
+      }
+
+    if (position == leftmargin) {
+      if (!line_indented)
+        {
+          safe_str(left,str,&ostr);
+          /* sprintf(str+index2,"%s",left);
+          index2 = index2 + strlen(left);*/
+          line_indented = 1;
+        }
+      if (!space_eaten)
+        if (original[index1] == ' ')
+          {
+            index1++;
+            space_eaten = 1;
+            continue;
+          }
+    }
+
+    spacesleft = rightmargin - position;
+    {
+      int index3 = index1;
+      while (original[index3])
+        {
+          if (original[index3] == 27) {
+            while (original[index3++] != 'm');
+            continue;
+          }
+          if (mux_isspace(original[index3]))
+          {
+            break;
+          }
+          spacesleft--;
+          index3++;
+        }
+
+
+      if ((index3-index1) > field) skip_out = 1;
+      if (mux_isspace(original[index1])) skip_out = 0;
+
+      if (!skip_out)
+        if (spacesleft < 0)
+          {
+            int loop;
+            for (loop = rightmargin - position; loop; loop--)
+              /* str[index2++] = ' ';*/
+              safe_chr(' ',str,&ostr);
+            position = rightmargin;
+            continue;
+          }
+    }
+    switch (original[index1])
+      {
+      case 27:
+        do {
+          safe_chr(original[index1++],str,&ostr);
+          /* str[index2++] = original[index1++];*/
+        } while (original[index1] != 'm');
+        safe_chr('m',str,&ostr);
+        /* str[index2++] = 'm'; */
+        index1++;
+        break;
+
+      case '\r':
+        {
+          int loop;
+          for(loop = rightmargin-position; loop; loop--)
+            safe_chr(' ',str,&ostr);
+          /* str[index2++] = ' ';*/
+
+        }
+        position = rightmargin;
+        index1 = index1 + 2;
+        break;
+
+      case '\t':
+        {
+          int index3;
+          int difference;
+
+          index3 = 0;
+          difference = 0;
+
+          index1++;
+
+          for (;;)
+            {
+              if (tabsets[index3] > position) break;
+              index3++;
+            }
+
+          difference = (tabsets[index3] > rightmargin) ?
+            rightmargin - position : tabsets[index3] - position;
+
+          position = (tabsets[index3] > rightmargin) ?
+            rightmargin : tabsets[index3];
+
+          for(; difference; difference--)
+            {
+              safe_chr(' ',str,&ostr);
+              /*sprintf(str+index2," ");
+              index2++;*/
+            }
+          if (position == rightmargin) continue;
+          break;
+        }
+      default:
+        safe_chr(original[index1++],str,&ostr);
+        /*str[index2++] = original[index1++];*/
+        position++;
+      };
+  }
+
+  {
+    int loop;
+    for (loop = rightmargin - position; loop; loop--)
+      safe_chr(' ',str,&ostr);
+    /*str[index2++] = ' ';*/
+
+  }
+    safe_str(right,str,&ostr);
+    safe_chr(0,str,&ostr);
+    /* sprintf(str+index2,"%s",right);
+    index2 = index2 + strlen(right);*/
+    strcpy(strret,str);
+    free_lbuf(original);
+    free_lbuf(str);
+    return strret;
+}
+
+char *linewrap_desc(char *str)
+{
+    return linewrap_general(str, 70, "     ", "");
+}
+
+#endif // FIRANMUX

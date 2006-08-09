@@ -1,6 +1,6 @@
 // command.h -- declarations used by the command processor.
 //
-// $Id: command.h,v 1.16 2006-01-08 02:50:31 sdennis Exp $
+// $Id: command.h,v 1.17 2006-08-09 15:45:14 sdennis Exp $
 //
 
 #ifndef __COMMAND_H
@@ -313,7 +313,13 @@ extern NAMETAB list_names[];
 #define CA_NO_SUSPECT 0x00008000  /* Not by SUSPECT players */
 #define CA_NO_GUEST   0x00010000  /* Not by GUEST players */
 #define CA_NO_UNINS   0x00020000  /* Not by UNINSPECTED players */
+#if defined(FIRANMUX)
+#define CA_NO_IMMOBILE   0x00040000    /* Not by IMMOBILE players */
+#define CA_NO_RESTRICTED 0x00080000    /* Not by RESTRICTED players */
+#define CA_CANTBE_MASK (CA_NO_HAVEN|CA_NO_ROBOT|CA_NO_SLAVE|CA_NO_SUSPECT|CA_NO_GUEST|CA_NO_UNINS|CA_NO_IMMOBILE|CA_NO_RESTRICTED)
+#else
 #define CA_CANTBE_MASK (CA_NO_HAVEN|CA_NO_ROBOT|CA_NO_SLAVE|CA_NO_SUSPECT|CA_NO_GUEST|CA_NO_UNINS)
+#endif // FIRANMUX
 
 #define CA_MARKER0    0x00002000
 #define CA_MARKER1    0x00004000

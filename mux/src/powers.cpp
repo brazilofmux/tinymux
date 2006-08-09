@@ -1,6 +1,6 @@
 // powers.cpp -- Power manipulation routines.
 //
-// $Id: powers.cpp,v 1.16 2006-01-11 04:19:53 jake Exp $
+// $Id: powers.cpp,v 1.17 2006-08-09 15:45:14 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -103,7 +103,11 @@ static POWERENT gen_powers[] =
 {
     {"announce",        POW_ANNOUNCE,   0, 0,   ph_wiz},
     {"boot",            POW_BOOT,       0, 0,   ph_wiz},
+#if defined(FIRANMUX)
+    {"builder",         POW_BUILDER,    POWER_EXT,  0,  ph_any},
+#else
     {"builder",         POW_BUILDER,    POWER_EXT,  0,  ph_wiz},
+#endif // FIRANMUX
     {"chown_anything",  POW_CHOWN_ANY,  0, 0,   ph_wiz},
     {"comm_all",        POW_COMM_ALL,   0, 0,   ph_wiz},
     {"control_all",     POW_CONTROL_ALL,0, 0,   ph_god},
@@ -113,27 +117,43 @@ static POWERENT gen_powers[] =
     {"free_quota",      POW_FREE_QUOTA, 0, 0,   ph_wiz},
     {"guest",           POW_GUEST,      0, 0,   ph_god},
     {"halt",            POW_HALT,       0, 0,   ph_wiz},
+#if defined(FIRANMUX)
+    {"hide",            POW_HIDE,       0, 0,   ph_any},
+#else
     {"hide",            POW_HIDE,       0, 0,   ph_wiz},
+#endif // FIRANMUX
     {"idle",            POW_IDLE,       0, 0,   ph_wiz},
-#ifdef FIRANMUX
+#if defined(FIRANMUX)
     {"immutable",       POW_IMMUTABLE,  POWER_EXT, 0, ph_wiz},
-#endif
+#endif // FIRANMUX
     {"long_fingers",    POW_LONGFINGERS,0, 0,   ph_wiz},
+#if defined(FIRANMUX)
+    {"monitor",         POW_MONITOR,    0, 0,   ph_any},
+#else
     {"monitor",         POW_MONITOR,    0, 0,   ph_wiz},
+#endif // FIRANMUX
     {"no_destroy",      POW_NO_DESTROY, 0, 0,   ph_wiz},
     {"pass_locks",      POW_PASS_LOCKS, 0, 0,   ph_wiz},
     {"poll",            POW_POLL,       0, 0,   ph_wiz},
     {"prog",            POW_PROG,       0, 0,   ph_wiz},
     {"quota",           POW_CHG_QUOTAS, 0, 0,   ph_wiz},
     {"search",          POW_SEARCH,     0, 0,   ph_wiz},
+#if defined(FIRANMUX)
+    {"see_all",         POW_EXAM_ALL,   0, 0,   ph_any},
+#else
     {"see_all",         POW_EXAM_ALL,   0, 0,   ph_wiz},
+#endif // FIRANMUX
     {"see_hidden",      POW_SEE_HIDDEN, 0, 0,   ph_wiz},
     {"see_queue",       POW_SEE_QUEUE,  0, 0,   ph_wiz},
     {"siteadmin",       POW_SITEADMIN,  0, 0,   ph_wiz},
     {"stat_any",        POW_STAT_ANY,   0, 0,   ph_wiz},
     {"steal_money",     POW_STEAL,      0, 0,   ph_wiz},
     {"tel_anything",    POW_TEL_UNRST,  0, 0,   ph_wiz},
+#if defined(FIRANMUX)
+    {"tel_anywhere",    POW_TEL_ANYWHR, 0, 0,   ph_any},
+#else
     {"tel_anywhere",    POW_TEL_ANYWHR, 0, 0,   ph_wiz},
+#endif // FIRANMUX
     {"unkillable",      POW_UNKILLABLE, 0, 0,   ph_wiz},
     {NULL,              0,              0, 0,   0}
 };
