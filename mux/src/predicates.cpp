@@ -1,6 +1,6 @@
 // predicates.cpp
 //
-// $Id: predicates.cpp,v 1.83 2006-08-09 06:48:57 sdennis Exp $
+// $Id: predicates.cpp,v 1.84 2006-08-09 07:11:23 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -698,7 +698,9 @@ void do_switch
     buff = bp = alloc_lbuf("do_switch");
     CLinearTimeAbsolute lta;
     for (  a = 0;
-              a < nargs - 1
+              (  !bMatchOne
+              || !bAny)
+           && a < nargs - 1
            && args[a]
            && args[a + 1];
            a += 2)
@@ -714,14 +716,10 @@ void do_switch
             wait_que(executor, caller, enactor, false, lta, NOTHING, 0,
                 tbuf, cargs, ncargs, mudstate.global_regs);
             free_lbuf(tbuf);
-            if (bMatchOne)
-            {
-                free_lbuf(buff);
-                goto SwitchNotify;
-            }
             bAny = true;
         }
     }
+
     free_lbuf(buff);
     if (  a < nargs
        && !bAny
@@ -732,8 +730,6 @@ void do_switch
             cargs, ncargs, mudstate.global_regs);
         free_lbuf(tbuf);
     }
-
-SwitchNotify:
 
     if (key & SWITCH_NOTIFY)
     {
