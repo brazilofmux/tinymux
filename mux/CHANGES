@@ -30,6 +30,7 @@ Feature Additions:
     marked FLOATING. Previously, every room not connected to the
     player_starting_room had to be marked FLOATING.
  -- Added QUELL flag from Firan to temorarily supress Wizard powers.
+ -- Added @switch/notify.
 
 
 Bug Fixes:
