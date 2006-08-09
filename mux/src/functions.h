@@ -1,6 +1,6 @@
 // functions.h -- declarations for functions & function processing.
 //
-// $Id: functions.h,v 1.22 2006-01-27 21:22:28 jake Exp $
+// $Id: functions.h,v 1.23 2006-08-09 23:37:37 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -148,6 +148,11 @@ XFUNCTION(fun_lrand);
 XFUNCTION(fun_lrooms);
 XFUNCTION(fun_mail);
 XFUNCTION(fun_mailfrom);
+#if defined(FIRANMUX)
+XFUNCTION(fun_mailj);
+XFUNCTION(fun_mailsize);
+XFUNCTION(fun_mailsubj);
+#endif
 XFUNCTION(fun_matchall);
 XFUNCTION(fun_mix);
 XFUNCTION(fun_munge);
@@ -202,6 +207,9 @@ XFUNCTION(fun_cemit);
 XFUNCTION(fun_set);
 XFUNCTION(fun_tel);
 XFUNCTION(fun_textfile);
+#if defined(FIRANMUX)
+XFUNCTION(fun_setparent);
+#endif // FIRANMUX
 #endif
 
 // In netcommon.cpp

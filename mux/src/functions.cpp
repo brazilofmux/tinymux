@@ -1,7 +1,7 @@
 /*! \file functions.cpp
  *  MUX function handlers
  *
- * $Id: functions.cpp,v 1.192 2006-08-03 19:04:07 sdennis Exp $
+ * $Id: functions.cpp,v 1.193 2006-08-09 23:37:37 sdennis Exp $
  *
  */
 
@@ -21,6 +21,12 @@
 #ifdef REALITY_LVLS
 #include "levels.h"
 #endif /* REALITY_LVLS */
+
+#if defined(FIRANMUX)
+#include <mysql/mysql.h>
+
+extern MYSQL *mush_database;
+#endif // FIRANMUX
 
 UFUN *ufun_head;
 
@@ -1225,6 +1231,214 @@ static FUNCTION(fun_timefmt)
     }
     safe_str(p, buff, bufc);
 }
+
+
+#ifdef FIRANMUX /* lanya */
+/*
+ * ---------------------------------------------------------------------------
+ * * fun_format: format a string (linewrap) with str, field, left, right
+ */
+
+FUNCTION(fun_format)
+{
+  char * buf;
+  int fieldsize;
+
+  fieldsize = mux_atol(fargs[1]);
+  if ( (fieldsize < 1) || (fieldsize > 80) )
+    {
+      safe_str("#-1 ILLEGAL FIELDSIZE", buff, bufc);
+      return;
+    }
+
+  if ( (fieldsize + spec_strlen(fargs[2]) + spec_strlen(fargs[3])) > 79 )
+    {
+      safe_str("#-1 COMBINED FIELD TOO LARGE", buff, bufc);
+      return;
+    }
+
+  buf = alloc_lbuf("fun_format");
+  strcpy(buf,fargs[0]);
+  linewrap_general(buf,fieldsize,fargs[2],fargs[3]);
+  safe_str(buf,buff,bufc);
+  free_lbuf(buf);
+  return;
+}
+
+/*
+ * ---------------------------------------------------------------------------
+ * * text: return data from a file in game/text..
+ */
+
+FUNCTION(fun_text)
+{
+  char mybuffer[80];
+  FILE * textconf;
+  FILE * myfile;
+  int index;
+  int lastchar, thischar;
+
+  textconf = fopen("textfiles.conf","r");
+  
+  /* Can't open the file. */
+  if (!textconf) {
+    safe_str("#-1 TEXTFILES.CONF MISSING",buff,bufc);
+    return;
+  } 
+  
+  /* Did open the file.. */
+  while (fgets(mybuffer, 80, textconf)) {
+    index = 0;
+    while (mybuffer[index]) {
+      if (mybuffer[index] == '\n') 
+        mybuffer[index] = 0;
+      else
+        index++;
+    }
+
+    /* Found the file listed, did I? */
+    if (!strcmp(mybuffer, fargs[0])) {
+      myfile = fopen(fargs[0],"r");
+      if (!myfile) {
+        /* But not here!? */
+        fclose(textconf);
+        safe_str("#-1 FILE DOES NOT EXIST",buff,bufc);
+        return;
+      }
+
+      while (fgets(mybuffer, 80, myfile)) {
+        index = 0;
+        while (mybuffer[index]) 
+          if (mybuffer[index] == '\n') 
+            mybuffer[index] = 0;
+          else
+            index++;
+        
+        if (mybuffer[0] == '&') 
+          if (!strcasecmp(fargs[1]+strspn(fargs[1]," "), mybuffer+2)) {
+            /* At this point I've found the file and the entry */
+            while ((thischar = fgetc(myfile))!=EOF) {
+              if (thischar == '&') 
+                if (lastchar == 10) {
+                  fclose(textconf);
+                  fclose(myfile);
+                  return;
+                }
+              safe_chr(thischar, buff, bufc);
+              lastchar = thischar;
+            }
+            fclose(textconf);
+            fclose(myfile);
+            return;
+          }
+      }
+      fclose(textconf);
+      fclose(myfile);
+      safe_str("#-1 ENTRY NOT FOUND", buff, bufc);
+      return;
+    }
+  }
+  safe_str("#-1 FILE NOT LISTED",buff,bufc);
+  return;
+}
+
+FUNCTION(fun_setname)
+{
+        if (!fargs[0] || !fargs[1]) return;
+
+        /*
+         * THIS ASSUMES THAT key is NOT USED BY do_name();
+         */
+        do_name(executor, caller, enactor, -1, 2, fargs[0], fargs[1]);
+}
+
+FUNCTION(fun_trigger)
+{
+
+        do_trigger(executor, caller, enactor, 0, fargs[0], fargs+1, nfargs-1);
+}
+
+/*
+ * ---------------------------------------------------------------------------
+ * * successes: return the number of successes/botches from a bunch of 
+ * *            dice rolled Storyteller-style.
+ * * 
+ * * Algorithm:
+ * *   Roll some specified number of 10-sided dice.  For each die rolled,
+ * *   if the roll is greater than or equal to the target difficulty, then
+ * *   increment the total number of successes.  If the roll is a 1, then
+ * *   decrement the total number of successes.  Return the final successes
+ * *   count.
+ * * 
+ * *   If the number of dice is more than the difficulty, return 0 for
+ * *   any final result < 0 and return 1 for any final result = 0. 
+ * *   (Turn botches into simple failures. Turn failures into simple
+ * *   successes.)
+ */
+
+FUNCTION(fun_successes)
+{
+#define DIE_TO_ROLL 10
+
+  int num_dice, target_difficulty;
+  int successes = 0;
+  int i, roll;
+
+  /* requires two arguments always */
+  if (!fargs[0] || !fargs[1]) return;
+
+  /* first argument is the number of dice to roll */
+  num_dice = mux_atol(fargs[0]);
+
+  /* second argument is the target difficulty to roll against */
+  target_difficulty = mux_atol(fargs[1]);
+
+  /* check arguments for reasonable values:
+  ** if the number of dice is zero, just return 0 successes.
+  ** if the number of dice is negative, return an error.
+  ** if the number of dice is greater than 100, return an error (too much work).
+  ** else, go and do the roll.
+  ** Note: we don't care if the target difficulty is a reasonable number or not.
+  */
+  if ( num_dice == 0 ) {
+    safe_str("0", buff, bufc);
+  } else if ( num_dice < 0 ) {
+    safe_str("#-1 NUMBER OF DICE SHOULD BE > 0", buff, bufc);
+  } else if ( num_dice > 100 ) {
+    safe_str("#-2 THAT'S TOO MANY DICE FOR ME TO ROLL", buff, bufc);
+  } else {
+
+    /* roll some number of dice equal to num_dice
+    ** and count successes and botches
+    */
+    for (i=0; i<num_dice; i++) {
+      roll = RandomINT32(1, DIE_TO_ROLL);
+      if ( roll == 1 ) {
+        /* botch -- decrement successes */
+        --successes;
+      } 
+      else if ( roll >= target_difficulty ) {
+        /* success -- increment successes */
+        ++successes;
+      }
+      /* otherwise, no change in number of successes */
+    }
+
+    if ( num_dice > target_difficulty ) {
+      if ( successes < 0 ) {
+        successes = 0;
+      }
+      else if ( successes == 0 ) {
+        successes = 1;
+      }
+    }
+
+    /* "return" final number of successes (positive, negative, or zero) */
+    safe_tprintf_str(buff, bufc, "%d", successes);
+  }
+}
+
+#endif // FIRANMUX
 
 /*
  * ---------------------------------------------------------------------------
@@ -5667,6 +5881,236 @@ static FUNCTION(fun_choose)
     delete [] weights;
 }
 
+#if defined(FIRANMUX)
+
+/*
+ * ---------------------------------------------------------------------------
+ * * distribute: randomly distribute M total points into N total bins...
+ * *             each bin has an equal 'weight'.
+ * 
+ * syntax:   distribute(points, bins, outputsep)
+ * example:  distribute(100, 5, |) might return "25|16|17|22|20"
+ */
+FUNCTION(fun_distribute)
+{
+  char *points_arg, *bins_arg;  /* input param holders */
+
+  long points, bins;   /* numeric version of params */
+  long current_point;  /* loop variable */
+  long current_bin;    /* loop variable */
+  long which_bin;      /* random bin */
+  long *bin_array;     /* space for the bin array */
+
+  int points_is_valid, bins_is_valid;  /* booleans */
+
+  long points_limit = 1000000; /* 1 million */
+  long bins_limit   = 2000;    /* 2 thousand */
+
+  /* 0 = no buffers allocated */
+  /* 1 = arg buffers allocated (3) */
+  /* 2 = arg and array buffers allocated (4) */
+  int allocated = 0;  /* total kludge! */
+
+  /* get parameters and evaluate each of them */
+
+  SEP osep;
+  if (!OPTIONAL_DELIM(3, osep, DELIM_EVAL|DELIM_NULL|DELIM_CRLF|DELIM_STRING))
+  {
+    return;
+  }
+
+  points_arg    = alloc_lbuf("fun_distribute: points arg");
+  bins_arg      = alloc_lbuf("fun_distribute: bins arg");
+  allocated = 1;
+
+  strcpy(points_arg,    fargs[0]);
+  strcpy(bins_arg,      fargs[1]);
+
+  points_is_valid = (points_arg != NULL) && is_integer(points_arg, NULL);
+  bins_is_valid   = (bins_arg   != NULL) && is_integer(bins_arg, NULL);
+
+  if ( points_is_valid && bins_is_valid ) {
+    points = mux_atol(points_arg);
+    bins   = mux_atol(bins_arg);
+    
+    points_is_valid = (points >= 0);
+    bins_is_valid   = (bins   >  0);
+
+    if ( points_is_valid && bins_is_valid ) {
+      points_is_valid = (points <= points_limit);
+      bins_is_valid   = (bins   <= bins_limit);
+
+      if ( points_is_valid && bins_is_valid ) {
+        
+        /* allocate a big array buffer -- ignoring LBUFs and other niceties */
+        bin_array = (long *) malloc(bins * sizeof(long));
+        if ( bin_array == NULL ) {
+          safe_str("#-1 NOT ENOUGH MEMORY TO DISTRIBUTE", buff, bufc);
+        }
+        else {
+          allocated = 2;
+
+
+          /*** NOMINAL CASE ***/
+
+          /* initialize bins */
+          for ( current_bin = 0; current_bin < bins; current_bin++) {
+            bin_array[current_bin] = 0;
+          }
+          
+          /* distribute points over bin */
+          /* for each point, pick a random bin for it and 
+             increment that bin's count */
+
+          for (current_point = 0; current_point < points; current_point++) {
+            which_bin = RandomINT32(0, bins-1);
+            ++(bin_array[which_bin]);
+          }
+        
+          /* convert the array to real output */
+          bool first = true;
+          for (current_bin = 0; current_bin < bins; current_bin++) {
+            if (!first)
+            {
+              print_sep(&osep, buff, bufc);
+            }
+            first = false;
+            safe_tprintf_str(buff, bufc, "%ld", bin_array[current_bin]);
+          }
+        }
+      }
+      else { /*** process high range errors ***/
+        if ( ! points_is_valid ) {
+          safe_str("#-1 ARG1 IS WAY TOO HIGH", buff, bufc);
+        }
+        else if ( ! bins_is_valid ) {
+          safe_str("#-1 ARG2 IS WAY TOO HIGH", buff, bufc);
+        }
+        else {
+          safe_str("#-1 UNKNOWN HIGH RANGE ERROR", buff, bufc);
+        }
+      }
+    }
+    else { /*** process low range errors ***/
+      if ( ! points_is_valid ) {
+        safe_str("#-1 ARG1 MUST BE GREATER THAN OR EQUAL TO 0", buff, bufc);
+      }
+      else if ( ! bins_is_valid ) {
+        safe_str("#-1 ARG2 MUST BE GREATER THAN 0", buff, bufc);
+      }
+      else {
+        safe_str("#-1 UNKNOWN LOW RANGE ERROR", buff, bufc);
+      }
+    }
+  }
+  else { /*** process integer datatype errors ***/
+    if ( ! points_is_valid ) {
+      safe_str("#-1 ARG1 IS NOT AN INTEGER", buff, bufc);
+    }
+    else if ( ! bins_is_valid ) {
+      safe_str("#-1 ARG2 IS NOT AN INTEGER", buff, bufc);
+    }
+    else {
+      safe_str("#-1 UNKNOWN DATATYPE ERROR", buff, bufc);
+    }
+  }
+
+
+  /* free memory buffers based on value of allocated */
+
+  if ( allocated == 1 ) {
+    free_lbuf(points_arg);
+    free_lbuf(bins_arg);
+  }
+  else if ( allocated == 2 ) {
+    free_lbuf(points_arg);
+    free_lbuf(bins_arg);
+    free(bin_array);
+  }
+
+  return;
+}
+
+/* sql() function -- Rachel 'Jeanne' Blackman
+ *                   2003/09/30
+ *
+ * A more-or-less functionally equivalent version of
+ * TinyMUSH 3.1's sql() call. */
+FUNCTION(fun_sql)
+{
+   SEP sepRow, sepColumn;
+   char *curr, *cp, *dp, *str;
+   MYSQL_RES *result;
+   MYSQL_ROW row;
+   int num_fields;
+
+   if (  !OPTIONAL_DELIM(2, sepRow, DELIM_EVAL|DELIM_NULL|DELIM_CRLF|DELIM_STRING)
+      && !OPTIONAL_DELIM(3, sepColumn, DELIM_EVAL|DELIM_NULL|DELIM_CRLF|DELIM_STRING))
+   {
+      return;
+   }
+
+   dp = cp = curr = alloc_lbuf("fun_sql");
+   str = fargs[0];
+   mux_exec(curr, &dp, executor, caller, enactor,
+       EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, cargs, ncargs);
+   *dp = '\0';
+   cp = trim_space_sep(cp, &sepSpace);
+   if (!*cp)
+   {
+        free_lbuf(curr);
+        return;
+   }
+
+   if (!mush_database)
+   {
+      safe_str("#-1 NO DATABASE", buff, bufc);
+      return;
+   }
+
+   mysql_ping(mush_database);
+
+   if (mysql_real_query(mush_database,cp,strlen(cp))) {
+      free_lbuf(curr);
+      safe_str("#-1 QUERY ERROR",buff,bufc);
+      return;
+   }
+   
+   result = mysql_store_result(mush_database);
+   if (!result) {
+      free_lbuf(curr);
+      return;
+   }
+
+   num_fields = mysql_num_fields(result);
+
+   row = mysql_fetch_row(result);
+   while (row)
+   {
+      int loop;
+
+      for (loop = 0; loop < num_fields; loop++)
+      {
+          if (loop)
+          {
+             print_sep(&sepColumn, buff, bufc);
+          }
+          safe_str(row[loop],buff,bufc);
+      }
+      row = mysql_fetch_row(result);
+      if (row)
+      {
+         print_sep(&sepRow, buff, bufc);
+      }
+   }
+
+   free_lbuf(curr);
+
+   mysql_free_result(result);      
+}
+
+#endif // FIRANMUX
+
 /* ---------------------------------------------------------------------------
  * fun_filter: Iteratively perform a function with a list of arguments and
  *             return the arg, if the function evaluates to true using the arg.
@@ -8737,6 +9181,9 @@ static FUN builtin_function_list[] =
     {"DIGITTIME",   fun_digittime,  MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {"DIST2D",      fun_dist2d,     MAX_ARG, 4,       4,         0, CA_PUBLIC},
     {"DIST3D",      fun_dist3d,     MAX_ARG, 6,       6,         0, CA_PUBLIC},
+#if defined(FIRANMUX)
+    {"DISTRIBUTE",  fun_distribute, MAX_ARG, 2, MAX_ARG,         0, CA_PUBLIC},
+#endif // FIRANMUX
     {"DOING",       fun_doing,      MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {"DUMPING",     fun_dumping,    MAX_ARG, 0,       0,         0, CA_PUBLIC},
     {"E",           fun_e,          MAX_ARG, 0,       0,         0, CA_PUBLIC},
@@ -8771,6 +9218,9 @@ static FUN builtin_function_list[] =
     {"FMOD",        fun_fmod,       MAX_ARG, 2,       2,         0, CA_PUBLIC},
     {"FOLD",        fun_fold,       MAX_ARG, 2,       4,         0, CA_PUBLIC},
     {"FOREACH",     fun_foreach,    MAX_ARG, 2,       4,         0, CA_PUBLIC},
+#if defined(FIRANMUX)
+    {"FORMAT",      fun_format,     MAX_ARG, 4,       4,         0, CA_PUBLIC},
+#endif // FIRANMUX
     {"FULLNAME",    fun_fullname,   MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {"GET",         fun_get,        MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {"GET_EVAL",    fun_get_eval,   MAX_ARG, 1,       1,         0, CA_PUBLIC},
@@ -8859,6 +9309,11 @@ static FUN builtin_function_list[] =
     {"LWHO",        fun_lwho,       MAX_ARG, 0,       1,         0, CA_PUBLIC},
     {"MAIL",        fun_mail,       MAX_ARG, 0,       2,         0, CA_PUBLIC},
     {"MAILFROM",    fun_mailfrom,   MAX_ARG, 1,       2,         0, CA_PUBLIC},
+#if defined(FIRANMUX)
+    {"MAILJ",       fun_mailj,      MAX_ARG, 0, MAX_ARG,         0, CA_PUBLIC},
+    {"MAILSIZE",    fun_mailsize,   MAX_ARG, 1,       1,         0, CA_PUBLIC},
+    {"MAILSUBJ",    fun_mailsubj,   MAX_ARG, 0, MAX_ARG,         0, CA_PUBLIC},
+#endif // FIRANMUX
     {"MAP",         fun_map,        MAX_ARG, 2,       4,         0, CA_PUBLIC},
     {"MATCH",       fun_match,      MAX_ARG, 2,       3,         0, CA_PUBLIC},
     {"MATCHALL",    fun_matchall,   MAX_ARG, 2,       3,         0, CA_PUBLIC},
@@ -8949,8 +9404,15 @@ static FUN builtin_function_list[] =
     {"SET",         fun_set,        MAX_ARG, 2,       2,         0, CA_PUBLIC},
     {"SETDIFF",     fun_setdiff,    MAX_ARG, 2,       4,         0, CA_PUBLIC},
     {"SETINTER",    fun_setinter,   MAX_ARG, 2,       4,         0, CA_PUBLIC},
+#if defined(FIRANMUX)
+    {"SETPARENT",   fun_setparent,  MAX_ARG, 2,       2,         0, CA_PUBLIC},
+#endif // FIRANMUX
     {"SETQ",        fun_setq,       MAX_ARG, 2,       2,         0, CA_PUBLIC},
     {"SETR",        fun_setr,       MAX_ARG, 2,       2,         0, CA_PUBLIC},
+#if defined(FIRANMUX)
+    {"SETNAME",     fun_setname,    MAX_ARG, 2,       2,         0, CA_PUBLIC},
+    {"TRIGGER",     fun_trigger,    MAX_ARG, 1, MAX_ARG,         0, CA_PUBLIC},
+#endif // FIRANMUX
     {"SETUNION",    fun_setunion,   MAX_ARG, 2,       4,         0, CA_PUBLIC},
     {"SHA1",        fun_sha1,             1, 0,       1,         0, CA_PUBLIC},
     {"SHL",         fun_shl,        MAX_ARG, 2,       2,         0, CA_PUBLIC},
@@ -8965,6 +9427,9 @@ static FUN builtin_function_list[] =
     {"SPACE",       fun_space,      MAX_ARG, 0,       1,         0, CA_PUBLIC},
     {"SPELLNUM",    fun_spellnum,   MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {"SPLICE",      fun_splice,     MAX_ARG, 3,       5,         0, CA_PUBLIC},
+#if defined(FIRANMUX)
+    {"SQL",         fun_sql,        MAX_ARG, 1,       3,         0, CA_WIZARD},
+#endif // FIRANMUX
     {"SQRT",        fun_sqrt,       MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {"SQUISH",      fun_squish,     MAX_ARG, 0,       2,         0, CA_PUBLIC},
     {"STARTSECS",   fun_startsecs,  MAX_ARG, 0,       0,         0, CA_PUBLIC},
@@ -8981,11 +9446,17 @@ static FUN builtin_function_list[] =
     {"SUB",         fun_sub,        MAX_ARG, 2,       2,         0, CA_PUBLIC},
     {"SUBEVAL",     fun_subeval,    MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {"SUBJ",        fun_subj,       MAX_ARG, 1,       1,         0, CA_PUBLIC},
+#if defined(FIRANMUX)
+    {"SUCCESSES",   fun_successes,  MAX_ARG, 2,       2,         0, CA_PUBLIC},
+#endif // FIRANMUX
     {"SWITCH",      fun_switch,     MAX_ARG, 2, MAX_ARG, FN_NOEVAL, CA_PUBLIC},
     {"T",           fun_t,                1, 0,       1,         0, CA_PUBLIC},
     {"TABLE",       fun_table,      MAX_ARG, 1,       6,         0, CA_PUBLIC},
     {"TAN",         fun_tan,        MAX_ARG, 1,       2,         0, CA_PUBLIC},
     {"TEL",         fun_tel,        MAX_ARG, 2,       2,         0, CA_PUBLIC},
+#if defined(FIRANMUX)
+    {"TEXT",        fun_text,       MAX_ARG, 2,       2,         0, CA_PUBLIC},
+#endif // FIRANMUX
     {"TEXTFILE",    fun_textfile,   MAX_ARG, 2,       2,         0, CA_PUBLIC},
     {"TIME",        fun_time,       MAX_ARG, 0,       2,         0, CA_PUBLIC},
     {"TIMEFMT",     fun_timefmt,    MAX_ARG, 1,       2,         0, CA_PUBLIC},
