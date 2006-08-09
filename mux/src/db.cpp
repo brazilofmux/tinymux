@@ -1,6 +1,6 @@
 // db.cpp
 //
-// $Id: db.cpp,v 1.101 2006-08-07 02:08:24 sdennis Exp $
+// $Id: db.cpp,v 1.102 2006-08-09 20:10:23 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -198,8 +198,6 @@ ATTR AttrTable[] =
     {"VZ",          A_VA + 25,  AF_ODARK},
     {"VRML_URL",    A_VRML_URL, AF_ODARK | AF_NOPROG},
     {"HTDesc",      A_HTDESC,   AF_NOPROG},
-    // Added by D.Piper (del@doofer.org) 2000-APR
-    //
     {"Reason",      A_REASON,   AF_PRIVATE | AF_MDARK | AF_NOPROG | AF_NOCMD | AF_GOD},
 #ifdef GAME_DOOFERMUX
     {"RegInfo",     A_REGINFO,  AF_PRIVATE | AF_MDARK | AF_NOPROG | AF_NOCMD | AF_WIZARD},
@@ -209,8 +207,14 @@ ATTR AttrTable[] =
     {"*Privileges", A_PRIVS,    AF_DARK | AF_NOPROG | AF_NOCMD | AF_INTERNAL},
     {"*Money",      A_MONEY,    AF_DARK | AF_NOPROG | AF_NOCMD | AF_INTERNAL},
 #ifdef REALITY_LVLS
-    {"Rlevel",         A_RLEVEL,        AF_DARK | AF_NOPROG | AF_NOCMD | AF_INTERNAL},
+    {"Rlevel",      A_RLEVEL,   AF_DARK | AF_NOPROG | AF_NOCMD | AF_INTERNAL},
 #endif /* REALITY_LVLS */
+#if defined(FIRANMUX)
+    {"Color",       A_COLOR,    AF_ODARK}, 
+    {"Alead",       A_ALEAD,    AF_ODARK | AF_WIZARD},
+    {"Lead",        A_LEAD,     AF_ODARK | AF_NOPROG | AF_WIZARD},
+    {"Olead",       A_OLEAD,    AF_ODARK | AF_NOPROG | AF_WIZARD},
+#endif // FIRANMUX
     {NULL,          0,          0}
 };
 
