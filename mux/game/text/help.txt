@@ -10358,6 +10358,8 @@ QUELL
   QUELL flag set, they are for all intents and purposes just like a non-Wizard
   character.  This allows a Wizard to turn her wizbit on and off, sorta.
 
+  This flag is only available if FIRANMUX is enabled.
+
   Related Topics:
 
 & QUIET
