@@ -1,6 +1,6 @@
 // externs.h -- Prototypes for externs not defined elsewhere.
 //
-// $Id: externs.h,v 1.71 2006-08-09 06:48:57 sdennis Exp $
+// $Id: externs.h,v 1.72 2006-08-09 18:47:22 sdennis Exp $
 //
 
 #ifndef EXTERNS_H
@@ -74,6 +74,9 @@ void local_data_free(dbref);
 void load_mail(FILE *);
 int  dump_mail(FILE *);
 struct mail *mail_fetch(dbref, int);
+#if defined(FIRANMUX)
+struct mail *mail_fetch_folder(dbref, int, int);
+#endif // FIRANMUX
 
 // From netcommon.cpp.
 //
@@ -114,6 +117,11 @@ size_t *PushLengths(int nNeeded);
 void PopLengths(size_t *pi, int nNeeded);
 extern const signed char mux_RegisterSet[256];
 extern const char *ColorTable[256];
+
+#if defined(FIRANMUX)
+char *linewrap_desc(char *);
+char *linewrap_general(char *, int, char *, char *);
+#endif // FIRANMUX
 
 /* From game.cpp */
 #define notify(p,m)                         notify_check(p,p,m, MSG_PUP_ALWAYS|MSG_ME_ALL|MSG_F_DOWN)

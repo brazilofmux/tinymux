@@ -1,6 +1,6 @@
 // flags.cpp -- Flag manipulation routines.
 //
-// $Id: flags.cpp,v 1.31 2006-08-09 04:06:57 sdennis Exp $
+// $Id: flags.cpp,v 1.32 2006-08-09 18:47:22 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -10,6 +10,10 @@
 
 #include "command.h"
 #include "powers.h"
+#if defined(FIRANMUX)
+#include "attrs.h"
+#include "ansi.h"
+#endif // FIRANMUX
 
 /* ---------------------------------------------------------------------------
  * fh_any: set or clear indicated bit, no security checking
@@ -303,9 +307,6 @@ static FLAGBITENT fbeOpenOk         = { OPEN_OK,      'z',    FLAG_WORD2, 0,    
 static FLAGBITENT fbeParentOk       = { PARENT_OK,    'Y',    FLAG_WORD2, 0,                    fh_any};
 static FLAGBITENT fbePlayerMails    = { PLAYER_MAILS, ' ',    FLAG_WORD2, CA_GOD|CA_NO_DECOMP,  fh_god};
 static FLAGBITENT fbePuppet         = { PUPPET,       'p',    FLAG_WORD1, 0,                    fh_hear_bit};
-#if defined(FIRANMUX)
-static FLAGBITENT fbeQuell          = { QUELL,        ' ',    FLAG_WORD3, 0,                    fh_inherit};
-#endif // FIRANMUX
 static FLAGBITENT fbeQuiet          = { QUIET,        'Q',    FLAG_WORD1, 0,                    fh_any};
 static FLAGBITENT fbeRobot          = { ROBOT,        'r',    FLAG_WORD1, 0,                    fh_player_bit};
 static FLAGBITENT fbeRoyalty        = { ROYALTY,      'Z',    FLAG_WORD1, 0,                    fh_wiz};
@@ -357,6 +358,15 @@ static FLAGBITENT fbeMarker7        = { MARK_7,       '7',    FLAG_WORD3, 0,    
 static FLAGBITENT fbeMarker8        = { MARK_8,       '8',    FLAG_WORD3, 0,                    fh_god};
 static FLAGBITENT fbeMarker9        = { MARK_9,       '9',    FLAG_WORD3, 0,                    fh_god};
 #endif // WOD_REALMS
+#if defined(FIRANMUX)
+static FLAGBITENT fbeImmobile       = { IMMOBILE,     '#',    FLAG_WORD3, 0,                    fh_wiz};
+static FLAGBITENT fbeLineWrap       = { LINEWRAP,     '>',    FLAG_WORD3, 0,                    fh_any};
+static FLAGBITENT fbeQuell          = { QUELL,        ' ',    FLAG_WORD3, 0,                    fh_inherit};
+static FLAGBITENT fbeWinTelnet      = { WINTELNET,    ' ',    FLAG_WORD3, 0,                    fh_any};
+static FLAGBITENT fbeRemoteEcho     = { REMOTEECHO,   ' ',    FLAG_WORD3, 0,                    fh_any};
+static FLAGBITENT fbeRestricted     = { RESTRICTED,   '!',    FLAG_WORD3, CA_WIZARD,            fh_wiz};
+static FLAGBITENT fbeParent         = { PARENT,       '+',    FLAG_WORD3, 0,                    fh_any};
+#endif // FIRANMUX
 
 FLAGNAMEENT gen_flag_names[] =
 {
@@ -445,7 +455,13 @@ FLAGNAMEENT gen_flag_names[] =
     {"DEAD",            true, &fbeDead           },
 #endif // WOD_REALMS
 #if defined(FIRANMUX)
+    {"IMMOBILE",        true, &fbeImmobile       },
+    {"LINEWRAP",        true, &fbeLineWrap       },
     {"QUELL",           true, &fbeQuell          },
+    {"WINTELNET",       true, &fbeWinTelnet      },
+    {"REMOTEECHO",      true, &fbeRemoteEcho     },
+    {"RESTRICTED",      true, &fbeRestricted     },
+    {"PARENT",          true, &fbeParent         },
 #endif // FIRANMUX
     {NULL,             false, NULL}
 };
@@ -999,6 +1015,141 @@ CF_HAND(cf_flag_access)
     }
     return 0;
 }
+
+#if defined(FIRANMUX)
+
+/*
+ * ---------------------------------------------------------------------------
+ * * Return an lbuf pointing to the object name and possibly the db# and flags
+ *   with the name ANSI-enhanced
+ *
+ *   Revision History:
+ *   -----------------
+ *   02/27/1997  veren   Changed the way this processes.  Originally, it simply
+ *                       hilited the object name.  Now, it will first check to
+ *                       see if the object is defined with a COLOR attribute.
+ *                       If so, use that value (and evaluate if necessary) as
+ *                       the ANSI code to alter the object name with. Otherwise,
+ *                       simply hilite the object name, as before.
+ */
+
+char *unparse_object_ansi(dbref player, dbref target, int obey_myopic)
+{
+    char *buf, *bp, *fp, *ansi_code, *ac, *ap, *color_attr, *cp;
+    int exam, flags;
+    dbref owner;
+
+    /*
+     * Allocate memory buffers
+     */
+
+    ac = ansi_code = alloc_lbuf ("unparse_object_ansi");
+    bp = buf = alloc_lbuf("unparse_object_ansi2");
+    color_attr = alloc_lbuf("unparse_object_ansi3");
+
+    /*
+     * If object is NOTHING, HOME, or not a valid object, report it
+     *   as such.
+     */
+
+    if (target == NOTHING) {
+        strcpy(buf, "*NOTHING*");
+    } else if (target == HOME) {
+        strcpy(buf, "*HOME*");
+    } else if (!Good_obj(target)) {
+        sprintf(buf, "*ILLEGAL*(#%d)", target);
+    } else {
+
+        /*
+         * Otherwise, depending upon whether we care that player is set myopic,
+         *   use one or the other function to determine if we can see the DB #
+         *   and flags.
+         */
+
+        if (obey_myopic)
+            exam = MyopicExam(player, target);
+        else
+            exam = Examinable(player, target);
+
+        /*
+         * Get the value of the object's 'color' attribute.
+         */
+
+        atr_get_str(color_attr, target, A_COLOR, &owner, &flags);
+
+        /* If the object's COLOR attribute is not found, then check
+         *   the object's parent for a COLOR attribute...
+         */
+
+        if (!color_attr | !*color_attr)
+        {
+            atr_pget_str(color_attr, target, A_COLOR, &owner, 
+                    &flags);
+        }
+
+        /* If color attribute is not found, then just hilite.
+         *   Otherwise, make a copy of the attribute (so we don't
+         *   update the actual attribute), evaluate it, and then
+         *   send the result to be converted to ANSI codes a la
+         *   the function ansi().
+         */
+
+        if (!color_attr || !*color_attr) 
+        {
+            safe_str (ANSI_HILITE, buf, &bp);
+        }
+        else
+        {
+            cp = color_attr;
+            mux_exec(ansi_code, &ac, player, target, target, 
+                    EV_EVAL | EV_TOP | EV_FCHECK, &cp, NULL, 0);
+
+            for (ap=ansi_code; ap < ac; ap++)
+            {
+                const char *pColor = ColorTable[(unsigned char)*ap];
+                safe_str(pColor, buf, &bp);
+            }
+        }
+
+        /*
+         * The ANSI codes are already on the buffer.  Add to it the
+         *   object name and an ANSI_NORMAL code.
+         */
+
+        safe_str(Name(target), buf, &bp);
+        safe_str(ANSI_NORMAL, buf, &bp);
+
+        /*
+         * If we are supposed to see the flag and DB # information,
+         *   then print it out to the buffer.  Otherwise, end the 
+         *   string with a null-terminator only (sanity check).
+         */
+
+        if (exam ||
+            (Flags(target) & (CHOWN_OK | JUMP_OK | LINK_OK | DESTROY_OK)) ||
+            (Flags2(target) & ABODE)) 
+        {
+            fp= decode_flags(player, &(db[target].fs));
+            strcpy(bp, tprintf(" (#%d%s)", target, fp));
+            free_sbuf(fp);
+        }
+        else
+        {
+            safe_chr('\0', buf, &bp);
+        }
+    }
+
+    /*
+     * Free those lbufs!
+     */
+
+    free_lbuf(color_attr);
+    free_lbuf(ansi_code);
+
+    return buf;
+}
+#endif // FIRANMUX
+
 
 /*
  * ---------------------------------------------------------------------------
