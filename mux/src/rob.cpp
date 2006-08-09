@@ -1,6 +1,6 @@
 // rob.cpp -- Commands dealing with giving/taking/killing things or money.
 //
-// $Id: rob.cpp,v 1.7 2006-01-23 23:22:21 sdennis Exp $
+// $Id: rob.cpp,v 1.8 2006-08-09 06:03:19 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -91,7 +91,7 @@ void do_kill
             }
         }
 
-        if (  Wizard(victim)
+        if (  RealWizard(victim)
            || (  0 < mudconf.killguarantee
               && !(  RandomINT32(0, mudconf.killguarantee-1) < cost
                   || key == KILL_SLAY)))

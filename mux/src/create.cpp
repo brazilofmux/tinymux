@@ -1,6 +1,6 @@
 // create.cpp -- Commands that create new objects.
 //
-// $Id: create.cpp,v 1.23 2006-01-31 00:16:23 sdennis Exp $
+// $Id: create.cpp,v 1.24 2006-08-09 06:03:19 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -886,7 +886,7 @@ static bool can_destroy_player(dbref player, dbref victim)
         notify_quiet(player, "Sorry, no suicide allowed.");
         return false;
     }
-    if (Wizard(victim))
+    if (RealWizard(victim))
     {
         notify_quiet(player, "Even you can't do that!");
         return false;

@@ -1,6 +1,6 @@
 // object.cpp -- Low-level object manipulation routines.
 //
-// $Id: object.cpp,v 1.20 2006-07-20 22:14:58 sdennis Exp $
+// $Id: object.cpp,v 1.21 2006-08-09 06:03:19 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -978,7 +978,7 @@ static void check_dead_refs(void)
         {
             // Check for wizards
             //
-            if (Wizard(i))
+            if (RealWizard(i))
             {
                 if (isPlayer(i))
                 {
@@ -1576,25 +1576,26 @@ static void check_loc_contents(dbref loc)
             //
             if (check_type & DBCK_FULL)
             {
-                // Check for wizard command-handlers inside nonwiz. Just warn
-                // if we find one.
+                // Check for wizard command-handlers inside non-wizard. Just
+                // warn if we find one.
                 //
-                if (Wizard(obj) && !Wizard(loc))
+                if (  RealWizard(obj)
+                   && !Wizard(loc))
                 {
                     if (Commer(obj))
                     {
                         Log_simple_err(obj, loc,
-                            "Wizard command handling object inside nonwizard.");
+                            "Wizard command handling object inside non-wizard.");
                     }
                 }
 
-                // Check for nonwizard objects inside wizard objects.
+                // Check for non-wizard objects inside wizard objects.
                 //
-                if (  Wizard(loc)
+                if (  RealWizard(loc)
                    && !Wizard(obj)
                    && !Wizard(Owner(obj)))
                 {
-                    Log_simple_err(obj, loc, "Nonwizard object inside wizard.");
+                    Log_simple_err(obj, loc, "Non-wizard object inside wizard.");
                 }
             }
             Mark(obj);

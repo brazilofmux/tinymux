@@ -1,6 +1,6 @@
 // flags.h -- Object flags.
 //
-// $Id: flags.h,v 1.12 2006-08-09 04:06:57 sdennis Exp $
+// $Id: flags.h,v 1.13 2006-08-09 06:03:19 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -264,14 +264,21 @@ extern char *MakeCanonicalFlagName
                                && Inherits(x) \
                                ) \
                             )
+#define RealRoyalty(x)      (  (Flags(x) & ROYALTY) \
+                            || (  (Flags(Owner(x)) & ROYALTY) \
+                               && Inherits(x) \
+                               ) \
+                            )
 #else // FIRANMUX
 #define Royalty(x)          (  (Flags(x) & ROYALTY) \
                             || (  (Flags(Owner(x)) & ROYALTY) \
                                && Inherits(x) \
                                ) \
                             )
+#define RealRoyalty(x)      (Royalty(x))
 #endif // FIRANMUX
 #define WizRoy(x)           (Royalty(x) || Wizard(x))
+#define RealWizRoy(x)       (RealRoyalty(x) || RealWizard(x))
 #define Head(x)             ((Flags2(x) & HEAD_FLAG) != 0)
 #define Fixed(x)            ((Flags2(x) & FIXED) != 0)
 #define Uninspected(x)      ((Flags2(x) & UNINSPECTED) != 0)
@@ -293,12 +300,18 @@ extern char *MakeCanonicalFlagName
                                   ) \
                                ) \
                             )
+#define RealWizard(x)       (  (Flags(x) & WIZARD) \
+                            || (  (Flags(Owner(x)) & WIZARD) \
+                               && Inherits(x) \
+                               ) \
+                            )
 #else // FIRANMUX
 #define Wizard(x)           (  (Flags(x) & WIZARD) \
                             || (  (Flags(Owner(x)) & WIZARD) \
                                && Inherits(x) \
                                ) \
                             )
+#define RealWizard(x)       (Wizard(x))
 #endif // FIRANMUX
 #define Dark(x)             (((Flags(x) & DARK) != 0) && (Wizard(x) || \
                             !(isPlayer(x) || (Puppet(x) && Has_contents(x)))))

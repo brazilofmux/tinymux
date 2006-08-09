@@ -1,6 +1,6 @@
 // netcommon.cpp
 //
-// $Id: netcommon.cpp,v 1.76 2006-06-10 06:56:12 sdennis Exp $
+// $Id: netcommon.cpp,v 1.77 2006-08-09 06:03:19 sdennis Exp $
 //
 // This file contains routines used by the networking code that do not
 // depend on the implementation of the networking code.  The network-specific
@@ -2078,11 +2078,11 @@ static bool check_connect(DESC *d, char *msg)
         }
         else if (  (  (mudconf.control_flags & CF_LOGIN)
                    && (nplayers < mudconf.max_players))
-                || WizRoy(player)
+                || RealWizRoy(player)
                 || God(player))
         {
             if (  strncmp(command, "cd", 2) == 0
-               && (  Wizard(player)
+               && (  RealWizard(player)
                   || God(player)))
             {
                 db[player].fs.word[FLAG_WORD1] |= DARK;
