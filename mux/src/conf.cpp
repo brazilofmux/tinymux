@@ -1,6 +1,6 @@
 // conf.cpp -- Set up configuration information and static data.
 //
-// $Id: conf.cpp,v 1.79 2006-08-07 02:06:01 sdennis Exp $
+// $Id: conf.cpp,v 1.80 2006-08-09 19:57:53 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -21,7 +21,7 @@ typedef struct confparm
     int (*interpreter)(int *vp, char *str, void *pExtra, UINT32 nExtra,
                        dbref player, char *cmd); // routine to interp parameter
     int flags;              // control flags
-    int rperms;             // read permissino flags.
+    int rperms;             // read permission flags.
     int *loc;               // where to store value
     void *pExtra;           // extra pointer for interpreter
     UINT32 nExtra;          // extra data for interpreter
@@ -89,6 +89,13 @@ void cf_init(void)
     mux_strncpy(mudconf.guests_channel, "Guests", 31);
     mux_strncpy(mudconf.guests_channel_alias, "g", 31);
     mux_strncpy(mudconf.pueblo_msg, "</xch_mudtext><img xch_mode=html>", GBUF_SIZE-1);
+#if defined(FIRANMUX)
+    mux_strncpy(mudconf.immobile_msg, "You have been set immobile.", sizeof(mudconf.immobile_msg)-1);
+    mux_strncpy(mudconf.sql_server, "<server>", sizeof(mudconf.sql_server)-1);
+    mux_strncpy(mudconf.sql_user, "<user>", sizeof(mudconf.sql_user)-1);
+    mux_strncpy(mudconf.sql_password, "<pass>", sizeof(mudconf.sql_password)-1);
+    mux_strncpy(mudconf.sql_database, "<database>", sizeof(mudconf.sql_database)-1);
+#endif // FIRANMUX
     mudconf.art_rules = NULL;
     mudconf.indent_desc = false;
     mudconf.name_spaces = true;
@@ -1762,7 +1769,7 @@ static CONF conftable[] =
     {"down_file",                 cf_string_dyn,  CA_STATIC, CA_GOD,      (int *)&mudconf.down_file,       NULL, SIZEOF_PATHNAME},
     {"down_motd_message",         cf_string,      CA_GOD,    CA_WIZARD,   (int *)mudconf.downmotd_msg,     NULL,       GBUF_SIZE},
     {"dump_interval",             cf_int,         CA_GOD,    CA_WIZARD,   &mudconf.dump_interval,          NULL,               0},
-    {"dump_message",              cf_string,      CA_GOD,    CA_WIZARD,   (int *)mudconf.dump_msg,         NULL,             128},
+    {"dump_message",              cf_string,      CA_GOD,    CA_WIZARD,   (int *)mudconf.dump_msg,         NULL,             256},
     {"dump_offset",               cf_int,         CA_GOD,    CA_WIZARD,   &mudconf.dump_offset,            NULL,               0},
     {"earn_limit",                cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.paylimit,               NULL,               0},
     {"eval_comtitle",             cf_bool,        CA_GOD,    CA_PUBLIC,   (int *)&mudconf.eval_comtitle,   NULL,               0},
@@ -1862,7 +1869,7 @@ static CONF conftable[] =
     {"player_starting_home",      cf_dbref,       CA_GOD,    CA_PUBLIC,   &mudconf.start_home,             NULL,               0},
     {"player_starting_room",      cf_dbref,       CA_GOD,    CA_PUBLIC,   &mudconf.start_room,             NULL,               0},
     {"port",                      cf_int_array,   CA_STATIC, CA_PUBLIC,   (int *)&mudconf.ports,           NULL, MAX_LISTEN_PORTS},
-    {"postdump_message",          cf_string,      CA_GOD,    CA_WIZARD,   (int *)mudconf.postdump_msg,     NULL,             128},
+    {"postdump_message",          cf_string,      CA_GOD,    CA_WIZARD,   (int *)mudconf.postdump_msg,     NULL,             256},
     {"power_alias",               cf_poweralias,  CA_GOD,    CA_DISABLED, NULL,                            NULL,               0},
     {"pcreate_per_hour",          cf_int,         CA_STATIC, CA_PUBLIC,   (int *)&mudconf.pcreate_per_hour,NULL,               0},
     {"public_channel",            cf_string,      CA_STATIC, CA_PUBLIC,   (int *)mudconf.public_channel,   NULL,              32},
@@ -1935,6 +1942,15 @@ static CONF conftable[] =
     {"def_thing_rx",              cf_int,         CA_WIZARD, CA_PUBLIC,   (int *)&mudconf.def_thing_rx,    NULL,               0},
     {"def_thing_tx",              cf_int,         CA_WIZARD, CA_PUBLIC,   (int *)&mudconf.def_thing_tx,    NULL,               0},
 #endif /* REALITY_LVLS */
+
+#ifdef FIRANMUX /* adam */
+    {"immobile_message",          cf_string,      CA_WIZARD, CA_PUBLIC,   (int *)mudconf.immobile_msg,     NULL,             128},
+    {"sql_server",                cf_string,      CA_STATIC, CA_DISABLED, (int *)mudconf.sql_server,       NULL,             128},
+    {"sql_user",                  cf_string,      CA_STATIC, CA_DISABLED, (int *)mudconf.sql_user,         NULL,             128},
+    {"sql_password",              cf_string,      CA_STATIC, CA_DISABLED, (int *)mudconf.sql_password,     NULL,             128},
+    {"sql_database",              cf_string,      CA_STATIC, CA_DISABLED, (int *)mudconf.sql_database,     NULL,             128},
+#endif // FIRANMUX
+
     { NULL,                       NULL,           0,         0,           NULL,                            NULL,               0}
 };
 
