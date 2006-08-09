@@ -6423,12 +6423,15 @@ FLAG LIST2
   Without Realms Patch Flags:
     0 - MARKER0    |   1 - MARKER1    |   2 - MARKER2    |   3 - MARKER3
     4 - MARKER4    |   5 - MARKER5    |   6 - MARKER6    |   7 - MARKER7
-    8 - MARKER8    |   9 - MARKER9    |
+    8 - MARKER8    |   9 - MARKER9    |                  |
   ------------------------------------------------------------------------
   Realms Patch Flags:
     0 - FAE        |   1 - CHIMERA    |   2 - PEERING    |   3 - UMBRA
     4 - SHROUD     |   5 - MATRIX     |   6 - OBF        |   7 - HSS
-    8 - MEDIUM     |   9 - DEAD       |
+    8 - MEDIUM     |   9 - DEAD       |                  |
+  ------------------------------------------------------------------------
+  Firan Patch
+      - QUELL      |                  |                  |
   ------------------------------------------------------------------------
 
   For information on a particular flag, type 'help <flagname>'.
@@ -10339,6 +10342,23 @@ PUPPETS
   @force fred="hi there.  -or-  #4342 "hi there.
 
   Related Topics: VERBOSE.
+
+& QUELL
+QUELL
+
+  FLAG: QUELL()  ()
+
+  Any object set QUELL will disregard any WIZARD flag it has.  That is, objects
+  that do not have a WIZARD flag are not affected by the QUELL flag, and
+  objects that do have a WIZARD flag act as if they do not have it. QUELL also
+  prevents objects from inheriting WIZARD abilities from their owners.
+
+  The main purpose of this flag is to allow Wizards to temporarily become
+  "mortal" (non-wizardly) for purposes of testing code or whatnot.  With the
+  QUELL flag set, they are for all intents and purposes just like a non-Wizard
+  character.  This allows a Wizard to turn her wizbit on and off, sorta.
+
+  Related Topics:
 
 & QUIET
 QUIET
