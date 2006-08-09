@@ -1,6 +1,6 @@
 // netcommon.cpp
 //
-// $Id: netcommon.cpp,v 1.77 2006-08-09 06:03:19 sdennis Exp $
+// $Id: netcommon.cpp,v 1.78 2006-08-09 21:03:17 sdennis Exp $
 //
 // This file contains routines used by the networking code that do not
 // depend on the implementation of the networking code.  The network-specific
@@ -931,8 +931,13 @@ void announce_disconnect(dbref player, DESC *d, const char *reason)
         num++;
     }
 
+#ifdef FIRANMUX /* adam */
+    // Modified so that %# would be the dbref of the object which @booted you,
+    //  if such is the case.
+#else
     dbref temp = mudstate.curr_enactor;
     mudstate.curr_enactor = player;
+#endif
     dbref loc = Location(player);
 
     if (num < 2)
@@ -984,8 +989,13 @@ void announce_disconnect(dbref player, DESC *d, const char *reason)
         atr_pget_str_LEN(buf, player, A_ADISCONNECT, &aowner, &aflags, &nLen);
         if (nLen)
         {
+#if defined(FIRANMUX)
+            wait_que(player, player, mudstate.curr_enactor, false, lta, NOTHING,
+                0, buf, argv, 1, NULL);
+#else
             wait_que(player, player, player, false, lta, NOTHING, 0, buf,
                 argv, 1, NULL);
+#endif // FIRANMUX
         }
         if (mudconf.master_room != NOTHING)
         {
@@ -1088,7 +1098,9 @@ void announce_disconnect(dbref player, DESC *d, const char *reason)
         free_mbuf(mbuf);
     }
 
+#if !defined(FIRANMUX)
     mudstate.curr_enactor = temp;
+#endif // FIRANMUX
     desc_delhash(d);
 
     local_disconnect(player, num);
@@ -2304,7 +2316,12 @@ static void do_logged_out_internal(DESC *d, int key, char *arg)
     case CMD_DOING:
     case CMD_SESSION:
 
+#if defined(FIRANMUX)
+        queue_string(d, "This command is disabled on login.");
+        queue_write_LEN(d, "\r\n", 2);
+#else
         dump_users(d, arg, key);
+#endif // FIRANMUX
         break;
 
     case CMD_PREFIX:
