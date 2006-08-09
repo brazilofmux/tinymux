@@ -1,6 +1,6 @@
 // flags.h -- Object flags.
 //
-// $Id: flags.h,v 1.14 2006-08-09 15:45:14 sdennis Exp $
+// $Id: flags.h,v 1.15 2006-08-09 18:50:06 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -241,8 +241,6 @@ extern char *MakeCanonicalFlagName
 /* See_attr(P,X.A,O,F)  - Can P see text attr A on X if attr has owner O */
 /* KeepAlive(x)         - Does the user want keepalives? */
 #if defined(FIRANMUX)
-/* WinTelnet(X)         - Is X running Windows or Mac Telnet? */
-/* RemoteEcho(X)        - Is X requiring the MUX to do the echoing? */
 /* Linewrap(x)          - Is X set Linewrap? */
 /* Restricted(x)        - Is X restricted to the restricted commandset? */
 #endif // FIRANMUX
@@ -375,11 +373,6 @@ extern char *MakeCanonicalFlagName
 #define Slave(x)            ((Flags2(Owner(x)) & SLAVE) != 0)
 #define Hidden(x)           ((Flags(x) & DARK) != 0)
 #define Blind(x)            ((Flags2(x) & BLIND) != 0)
-
-#if defined(FIRANMUX)
-#define WinTelnet(x)    ((Flags3(x) & WINTELNET) != 0)
-#define RemoteEcho(x)   ((Flags3(x) & REMOTEECHO) != 0)
-#endif // FIRANMUX
 
 #define H_Startup(x)        ((Flags(x) & HAS_STARTUP) != 0)
 #define H_Fwdlist(x)        ((Flags2(x) & HAS_FWDLIST) != 0)

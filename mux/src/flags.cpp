@@ -1,6 +1,6 @@
 // flags.cpp -- Flag manipulation routines.
 //
-// $Id: flags.cpp,v 1.32 2006-08-09 18:47:22 sdennis Exp $
+// $Id: flags.cpp,v 1.33 2006-08-09 18:50:06 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -362,8 +362,6 @@ static FLAGBITENT fbeMarker9        = { MARK_9,       '9',    FLAG_WORD3, 0,    
 static FLAGBITENT fbeImmobile       = { IMMOBILE,     '#',    FLAG_WORD3, 0,                    fh_wiz};
 static FLAGBITENT fbeLineWrap       = { LINEWRAP,     '>',    FLAG_WORD3, 0,                    fh_any};
 static FLAGBITENT fbeQuell          = { QUELL,        ' ',    FLAG_WORD3, 0,                    fh_inherit};
-static FLAGBITENT fbeWinTelnet      = { WINTELNET,    ' ',    FLAG_WORD3, 0,                    fh_any};
-static FLAGBITENT fbeRemoteEcho     = { REMOTEECHO,   ' ',    FLAG_WORD3, 0,                    fh_any};
 static FLAGBITENT fbeRestricted     = { RESTRICTED,   '!',    FLAG_WORD3, CA_WIZARD,            fh_wiz};
 static FLAGBITENT fbeParent         = { PARENT,       '+',    FLAG_WORD3, 0,                    fh_any};
 #endif // FIRANMUX
@@ -458,8 +456,6 @@ FLAGNAMEENT gen_flag_names[] =
     {"IMMOBILE",        true, &fbeImmobile       },
     {"LINEWRAP",        true, &fbeLineWrap       },
     {"QUELL",           true, &fbeQuell          },
-    {"WINTELNET",       true, &fbeWinTelnet      },
-    {"REMOTEECHO",      true, &fbeRemoteEcho     },
     {"RESTRICTED",      true, &fbeRestricted     },
     {"PARENT",          true, &fbeParent         },
 #endif // FIRANMUX
