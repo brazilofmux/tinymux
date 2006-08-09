@@ -29,6 +29,7 @@ Feature Additions:
     are not connected to either the player_startint_room or to a room
     marked FLOATING. Previously, every room not connected to the
     player_starting_room had to be marked FLOATING.
+ -- Added QUELL flag from Firan to temorarily supress Wizard powers.
 
 
 Bug Fixes:
@@ -63,3 +64,4 @@ Cosmetic Changes:
 
 Miscellaneous:
 ~~~~~~~~~~~~~
+ -- Add mux_fopen() utility function to replace direct use of fopen().
