@@ -1,6 +1,6 @@
 // externs.h -- Prototypes for externs not defined elsewhere.
 //
-// $Id: externs.h,v 1.72 2006-08-09 18:47:22 sdennis Exp $
+// $Id: externs.h,v 1.73 2006-08-09 21:55:53 sdennis Exp $
 //
 
 #ifndef EXTERNS_H
@@ -76,6 +76,7 @@ int  dump_mail(FILE *);
 struct mail *mail_fetch(dbref, int);
 #if defined(FIRANMUX)
 struct mail *mail_fetch_folder(dbref, int, int);
+const char *MessageFetch(int number);
 #endif // FIRANMUX
 
 // From netcommon.cpp.

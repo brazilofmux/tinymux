@@ -1,6 +1,6 @@
 // mail.cpp
 //
-// $Id: mail.cpp,v 1.63 2006-08-09 20:18:21 sdennis Exp $
+// $Id: mail.cpp,v 1.64 2006-08-09 21:55:53 sdennis Exp $
 //
 // This code was taken from Kalkin's DarkZone code, which was
 // originally taken from PennMUSH 1.50 p10, and has been heavily modified
@@ -132,7 +132,7 @@ static void MessageReferenceDec(int number)
 // MessageFetch - returns the text for a particular message number. This
 // text should not be modified.
 //
-static const char *MessageFetch(int number)
+const char *MessageFetch(int number)
 {
     MessageReferenceCheck(number);
     if (mail_list[number].m_pMessage)

@@ -1,6 +1,6 @@
 // funceval.cpp -- MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.116 2006-01-27 23:44:24 sdennis Exp $
+// $Id: funceval.cpp,v 1.117 2006-08-09 21:55:53 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -18,6 +18,7 @@
 #include "functions.h"
 #include "misc.h"
 #include "pcre.h"
+#include "mail.h"
 #ifdef REALITY_LVLS
 #include "levels.h"
 #endif /* REALITY_LVLS */
@@ -309,6 +310,21 @@ FUNCTION(fun_link)
     }
     do_link(executor, caller, enactor, 0, 2, fargs[0], fargs[1]);
 }
+
+#if defined(FIRANMUX)
+FUNCTION(fun_setparent)
+{
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
+    if (check_command(executor, "@parent", buff, bufc))
+    {
+        return;
+    }
+    do_parent(executor, caller, enactor, 0, 2, fargs[0], fargs[1]);
+}
+#endif // FIRANMUX
 
 FUNCTION(fun_tel)
 {
@@ -1746,6 +1762,180 @@ FUNCTION(fun_mail)
     //
     safe_str("#-1 NO SUCH MESSAGE", buff, bufc);
 }
+
+#ifdef FIRANMUX
+FUNCTION(fun_mailsize)
+{
+	struct mail *mp;
+	dbref playerask;
+	int loop, subloop;
+	int totalsize;
+	int rc, uc, cc;
+	char *msgbuff;
+
+	if (nfargs != 1) {
+		safe_str("#-1 FUNCTION (MAILSIZE) EXPECTS 1 ARGUMENT", buff, bufc);
+		return;
+	}
+	if ((playerask = lookup_player(executor,fargs[0],1)) == NOTHING) {
+		safe_str("#-1 NO SUCH PLAYER", buff, bufc);
+		return;
+	}
+	else if ((executor != playerask) && !Wizard(executor)) {
+		safe_str("#-1 PERMISSION DENIED", buff, bufc);
+		return;
+	}
+
+	totalsize = 0;
+	for (loop = 0; loop < 16; loop++) {
+		count_mail(executor, loop, &rc, &uc, &cc);
+		for (subloop = 1; subloop <= (rc + uc + cc); subloop++) {
+			mp = mail_fetch_folder(executor, loop, subloop);
+			if (mp != NULL) {
+				msgbuff = alloc_lbuf("fun_mailsize");
+				strcpy(msgbuff, MessageFetch(mp->number));
+				totalsize += strlen(msgbuff);
+				free_lbuf(msgbuff);
+			}
+		}
+	}
+	safe_tprintf_str(buff, bufc, "%d", totalsize);
+	return;
+}
+
+FUNCTION(fun_mailsubj)
+{
+	struct mail *mp;
+	dbref playerask;
+	int num;
+
+	if ((nfargs != 1) && (nfargs != 2)) {
+		safe_str("#-1 FUNCTION (MAILFROM) EXPECTS 1 OR 2 ARGUMENTS", buff, bufc);
+		return;
+	}
+	if (nfargs == 1) {
+		playerask = executor;
+		num = atoi(fargs[0]);
+	} else {
+		if ((playerask = lookup_player(executor, fargs[0], 1)) == NOTHING) {
+			safe_str("#-1 NO SUCH PLAYER", buff, bufc);
+			return;
+		} else if ((executor != playerask) && !Wizard(executor)) {
+			safe_str("#-1 PERMISSION DENIED", buff, bufc);
+			return;
+		}
+		num = atoi(fargs[1]);
+	}
+
+	if ((num < 1) || (Typeof(playerask) != TYPE_PLAYER)) {
+		safe_str("#-1 NO SUCH MESSAGE", buff, bufc);
+		return;
+	}
+	mp = mail_fetch(playerask, num);
+	if (mp != NULL) {
+		safe_tprintf_str(buff, bufc, "%s", mp->subject);
+		return;
+	}
+	/*
+	 * ran off the end of the list without finding anything 
+	 */
+	safe_str("#-1 NO SUCH MESSAGE", buff, bufc);
+}
+
+FUNCTION(fun_mailj)
+{
+	/*
+	 * This function can take one of three formats: 1.  mail(num)  --> *
+	 * * * returns * message <num> for privs. 2.  mail(executor)  -->
+	 * returns  * *  * number of * messages for <executor>. 3.
+	 * mail(executor, num)  -->  * * * returns message <num> * for
+	 * <executor>. 
+	 */
+	/*
+	 * It can now take one more format: 4.  mail() --> returns number of
+	 * * * * * messages for executor 
+	 */
+
+	struct mail *mp;
+	dbref playerask;
+	int num, rc, uc, cc;
+        int loop;
+
+	/*
+	 * make sure we have the right number of arguments 
+	 */
+	if ((nfargs != 0) && (nfargs != 1) && (nfargs != 2)) {
+		safe_str("#-1 FUNCTION (MAIL) EXPECTS 0 OR 1 OR 2 ARGUMENTS", buff, bufc);
+		return;
+	}
+	if ((nfargs == 0) || !fargs[0] || !fargs[0][0]) {
+		uc = rc = cc = 0;
+		for (loop = 0; loop < 16; loop++) {   
+			int s_uc, s_rc, s_cc;
+
+			count_mail(playerask, loop, &s_rc, &s_uc, &s_cc);
+			rc += s_rc;
+			uc += s_uc;
+			cc += s_cc;
+		}
+		safe_tprintf_str(buff, bufc, "%d", rc + uc);
+		return;
+	}
+	if (nfargs == 1) {
+		if (!is_integer(fargs[0], NULL)) {
+			/*
+			 * handle the case of wanting to count the number of
+			 * * * * messages 
+			 */
+			if ((playerask = lookup_player(executor, fargs[0], 1)) == NOTHING) {
+				safe_str("#-1 NO SUCH PLAYER", buff, bufc);
+				return;
+			} else if ((executor != playerask) && !Wizard(executor)) {
+				safe_str("#-1 PERMISSION DENIED", buff, bufc);
+				return;
+			} else {
+				uc = rc = cc = 0;
+				for (loop = 0; loop < 16; loop++) {   
+					int s_uc, s_rc, s_cc;
+
+					count_mail(playerask, loop, &s_rc, &s_uc, &s_cc);
+					rc += s_rc;
+					uc += s_uc;
+					cc += s_cc;
+				}
+				safe_tprintf_str(buff, bufc, "%d %d %d", rc, uc, cc);
+				return;
+			}
+		} else {
+			playerask = executor;
+			num = atoi(fargs[0]);
+		}
+	} else {
+		if ((playerask = lookup_player(executor, fargs[0], 1)) == NOTHING) {
+			safe_str("#-1 NO SUCH PLAYER", buff, bufc);
+			return;
+		} else if ((executor != playerask) && !God(executor)) {
+			safe_str("#-1 PERMISSION DENIED", buff, bufc);
+			return;
+		}
+		num = atoi(fargs[1]);
+	}
+
+	if ((num < 1) || (Typeof(playerask) != TYPE_PLAYER)) {
+		safe_str("#-1 NO SUCH MESSAGE", buff, bufc);
+		return;
+	}
+	mp = mail_fetch(playerask, num);
+	if (mp != NULL) {
+		safe_str(MessageFetch(mp->number), buff, bufc);
+		return;
+	}
+	/*
+	 * ran off the end of the list without finding anything 
+	 */
+	safe_str("#-1 NO SUCH MESSAGE", buff, bufc);
+}
+#endif // FIRANMUX
 
 // This function can take these formats:
 //
