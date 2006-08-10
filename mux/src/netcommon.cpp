@@ -1,6 +1,6 @@
 // netcommon.cpp
 //
-// $Id: netcommon.cpp,v 1.78 2006-08-09 21:03:17 sdennis Exp $
+// $Id: netcommon.cpp,v 1.79 2006-08-10 18:54:22 sdennis Exp $
 //
 // This file contains routines used by the networking code that do not
 // depend on the implementation of the networking code.  The network-specific
@@ -2317,10 +2317,15 @@ static void do_logged_out_internal(DESC *d, int key, char *arg)
     case CMD_SESSION:
 
 #if defined(FIRANMUX)
-        queue_string(d, "This command is disabled on login.");
-        queue_write_LEN(d, "\r\n", 2);
+        if ((d->flags & DS_CONNECTED) == 0)
+        {
+            queue_string(d, "This command is disabled on login.");
+            queue_write_LEN(d, "\r\n", 2);
+        }
 #else
-        dump_users(d, arg, key);
+        {
+            dump_users(d, arg, key);
+        }
 #endif // FIRANMUX
         break;
 
