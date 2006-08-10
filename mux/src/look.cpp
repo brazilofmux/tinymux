@@ -1,6 +1,6 @@
 // look.cpp -- Commands which look at things.
 //
-// $Id: look.cpp,v 1.50 2006-01-23 23:22:21 sdennis Exp $
+// $Id: look.cpp,v 1.51 2006-08-10 00:11:32 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -698,7 +698,11 @@ static void look_contents(dbref player, dbref loc, const char *contents_name, in
                 if (can_see(player, thing, can_see_loc))
 #endif
                 {
+#if defined(FIRANMUX)
+                    buff = unparse_object_ansi(player, thing, true);
+#else
                     buff = unparse_object(player, thing, true);
+#endif // FIRANMUX
                     html_cp = html_buff;
                     if (Html(player))
                     {
@@ -1122,7 +1126,11 @@ static void look_simple(dbref player, dbref thing, bool obey_terse)
     int can_see_thing = Examinable(player, thing);
     if (can_see_thing)
     {
+#if defined(FIRANMUX)
+        char *buff = unparse_object_ansi(player, thing, true);
+#else
         char *buff = unparse_object(player, thing, true);
+#endif // FIRANMUX
         notify(player, buff);
         free_lbuf(buff);
     }
@@ -1238,7 +1246,11 @@ void look_in(dbref player, dbref loc, int key)
     {
         // Okay, no @NameFormat.  Show the normal name.
         //
+#if defined(FIRANMUX)
+        char *buff = unparse_object_ansi(player, loc, true);
+#else
         char *buff = unparse_object(player, loc, true);
+#endif // FIRANMUX
         if (Html(player))
         {
             notify_html(player, "<center><h3>");
@@ -1670,7 +1682,11 @@ void do_examine(dbref executor, dbref caller, dbref enactor, int key, char *name
 
     if (control)
     {
+#if defined(FIRANMUX)
+        buf2 = unparse_object_ansi(executor, thing, false);
+#else
         buf2 = unparse_object(executor, thing, false);
+#endif
         notify(executor, buf2);
         free_lbuf(buf2);
         if (mudconf.ex_flags)
@@ -1747,7 +1763,11 @@ void do_examine(dbref executor, dbref caller, dbref enactor, int key, char *name
         //
         if (mudconf.have_zones)
         {
+#if defined(FIRANMUX)
+            buf2 = unparse_object_ansi(executor, Zone(thing), false);
+#else
             buf2 = unparse_object(executor, Zone(thing), false);
+#endif // FIRANMUX
             notify(executor, tprintf("Zone: %s", buf2));
             free_lbuf(buf2);
         }
@@ -1757,7 +1777,11 @@ void do_examine(dbref executor, dbref caller, dbref enactor, int key, char *name
         loc = Parent(thing);
         if (loc != NOTHING)
         {
+#if defined(FIRANMUX)
+            buf2 = unparse_object_ansi(executor, loc, false);
+#else
             buf2 = unparse_object(executor, loc, false);
+#endif // FIRANMUX
             notify(executor, tprintf("Parent: %s", buf2));
             free_lbuf(buf2);
         }
@@ -1791,7 +1815,11 @@ void do_examine(dbref executor, dbref caller, dbref enactor, int key, char *name
             notify(executor, "Contents:");
             DOLIST(content, Contents(thing))
             {
+#if defined(FIRANMUX)
+                buf2 = unparse_object_ansi(executor, content, false);
+#else
                 buf2 = unparse_object(executor, content, false);
+#endif // FIRANMUX
                 notify(executor, buf2);
                 free_lbuf(buf2);
             }
@@ -1809,7 +1837,11 @@ void do_examine(dbref executor, dbref caller, dbref enactor, int key, char *name
                 notify(executor, "Exits:");
                 DOLIST(exit, Exits(thing))
                 {
+#if defined(FIRANMUX)
+                    buf2 = unparse_object_ansi(executor, exit, false);
+#else
                     buf2 = unparse_object(executor, exit, false);
+#endif // FIRANMUX
                     notify(executor, buf2);
                     free_lbuf(buf2);
                 }
@@ -1823,7 +1855,11 @@ void do_examine(dbref executor, dbref caller, dbref enactor, int key, char *name
             //
             if (Dropto(thing) != NOTHING)
             {
+#if defined(FIRANMUX)
                 buf2 = unparse_object(executor, Dropto(thing), false);
+#else
+                buf2 = unparse_object(executor, Dropto(thing), false);
+#endif // FIRANMUX
                 notify(executor, tprintf("Dropped objects go to: %s", buf2));
                 free_lbuf(buf2);
             }
@@ -1839,7 +1875,11 @@ void do_examine(dbref executor, dbref caller, dbref enactor, int key, char *name
                 notify(executor, "Exits:");
                 DOLIST(exit, Exits(thing))
                 {
+#if defined(FIRANMUX)
+                    buf2 = unparse_object_ansi(executor, exit, false);
+#else
                     buf2 = unparse_object(executor, exit, false);
+#endif // FIRANMUX
                     notify(executor, buf2);
                     free_lbuf(buf2);
                 }
@@ -1852,7 +1892,11 @@ void do_examine(dbref executor, dbref caller, dbref enactor, int key, char *name
             // Print home
             //
             loc = Home(thing);
+#if defined(FIRANMUX)
+            buf2 = unparse_object_ansi(executor, loc, false);
+#else
             buf2 = unparse_object(executor, loc, false);
+#endif // FIRANMUX
             notify(executor, tprintf("Home: %s", buf2));
             free_lbuf(buf2);
 
@@ -1864,14 +1908,22 @@ void do_examine(dbref executor, dbref caller, dbref enactor, int key, char *name
                   || Examinable(executor, thing)
                   || Linkable(executor, loc)))
             {
+#if defined(FIRANMUX)
+                buf2 = unparse_object_ansi(executor, loc, false);
+#else
                 buf2 = unparse_object(executor, loc, false);
+#endif // FIRANMUX
                 notify(executor, tprintf("Location: %s", buf2));
                 free_lbuf(buf2);
             }
             break;
 
         case TYPE_EXIT:
+#if defined(FIRANMUX)
+            buf2 = unparse_object_ansi(executor, Exits(thing), false);
+#else
             buf2 = unparse_object(executor, Exits(thing), false);
+#endif // FIRANMUX
             notify(executor, tprintf("Source: %s", buf2));
             free_lbuf(buf2);
 
@@ -1886,7 +1938,11 @@ void do_examine(dbref executor, dbref caller, dbref enactor, int key, char *name
                 break;
 
             default:
+#if defined(FIRANMUX)
+                buf2 = unparse_object_ansi(executor, Location(thing), false);
+#else
                 buf2 = unparse_object(executor, Location(thing), false);
+#endif // FIRANMUX
                 notify(executor, tprintf("Destination: %s", buf2));
                 free_lbuf(buf2);
                 break;
@@ -1957,7 +2013,11 @@ void do_inventory(dbref executor, dbref caller, dbref enactor, int key)
         notify(executor, "You are carrying:");
         DOLIST(thing, thing)
         {
+#if defined(FIRANMUX)
+            buff = unparse_object_ansi(executor, thing, true);
+#else
             buff = unparse_object(executor, thing, true);
+#endif // FIRANMUX
             notify(executor, buff);
             free_lbuf(buff);
         }
@@ -2042,7 +2102,11 @@ void do_entrances(dbref executor, dbref caller, dbref enactor, int key, char *na
             case TYPE_EXIT:
                 if (Location(i) == thing)
                 {
+#if defined(FIRANMUX)
+                    exit = unparse_object_ansi(executor, Exits(i), false);
+#else
                     exit = unparse_object(executor, Exits(i), false);
+#endif // FIRANMUX
                     notify(executor, tprintf("%s (%s)", exit, Moniker(i)));
                     free_lbuf(exit);
                     count++;
@@ -2051,7 +2115,11 @@ void do_entrances(dbref executor, dbref caller, dbref enactor, int key, char *na
             case TYPE_ROOM:
                 if (Dropto(i) == thing)
                 {
+#if defined(FIRANMUX)
+                    exit = unparse_object_ansi(executor, i, false);
+#else
                     exit = unparse_object(executor, i, false);
+#endif // FIRANMUX
                     notify(executor, tprintf("%s [dropto]", exit));
                     free_lbuf(exit);
                     count++;
@@ -2061,7 +2129,11 @@ void do_entrances(dbref executor, dbref caller, dbref enactor, int key, char *na
             case TYPE_PLAYER:
                 if (Home(i) == thing)
                 {
+#if defined(FIRANMUX)
+                    exit = unparse_object_ansi(executor, i, false);
+#else
                     exit = unparse_object(executor, i, false);
+#endif // FIRANMUX
                     notify(executor, tprintf("%s [home]", exit));
                     free_lbuf(exit);
                     count++;
@@ -2073,7 +2145,11 @@ void do_entrances(dbref executor, dbref caller, dbref enactor, int key, char *na
             //
             if (Parent(i) == thing)
             {
+#if defined(FIRANMUX)
+                exit = unparse_object_ansi(executor, i, false);
+#else
                 exit = unparse_object(executor, i, false);
+#endif // FIRANMUX
                 notify(executor, tprintf("%s [parent]", exit));
                 free_lbuf(exit);
                 count++;
@@ -2094,7 +2170,11 @@ void do_entrances(dbref executor, dbref caller, dbref enactor, int key, char *na
                     {
                         continue;
                     }
+#if defined(FIRANMUX)
+                    exit = unparse_object_ansi(executor, i, false);
+#else
                     exit = unparse_object(executor, i, false);
+#endif // FIRANMUX
                     notify(executor, tprintf("%s [forward]", exit));
                     free_lbuf(exit);
                     count++;
