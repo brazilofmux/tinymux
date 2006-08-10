@@ -1,6 +1,6 @@
 // db_rw.cpp
 //
-// $Id: db_rw.cpp,v 1.26 2006-01-11 20:51:31 sdennis Exp $
+// $Id: db_rw.cpp,v 1.27 2006-08-10 00:29:10 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -342,6 +342,19 @@ static bool get_list(FILE *f, dbref i)
             atr = getref(f);
             if (atr > 0)
             {
+#if defined(FIRANMUX_CONVERT)
+                switch (atr)
+                {
+                case A_COLOR_OLD:
+                    atr = A_COLOR;
+                    break;
+
+                case A_ALEAD_OLD:
+                    atr = A_ALEAD;
+                    break;
+                }
+#endif // FIRANMUX_CONVERT
+
                 // Store the attr
                 //
                 atr_add_raw(i, atr, getstring_noalloc(f, true));
