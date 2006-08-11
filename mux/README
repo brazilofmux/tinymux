@@ -1,5 +1,5 @@
 TinyMUX 2.4:  README (Unix-based)
-Last Update:  March 2006
+Last Update:  August 2006
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 Congratulations and welcome to the README file for TinyMUX 2.4.  That 
 you have chosen to actually read the file is a sign of bravery equal to 
@@ -132,7 +132,7 @@ As for the cases where you do find bugs, we would like you to take the time
 to send an E-mail with as much data as possible about the bug.  Each bug
 report we receive is rated both by its severity (how much pain it causes) and
 prioritized according to how beneficial it would be to fix it relative to the
-other bugs on the list.  Sometimes, this process is formalizes.  Sometimes,
+other bugs on the list.  Sometimes, this process is formalized.  Sometimes,
 due to lack of available time, it is ad-hoc.
 
 -- Please double check to be sure it really is a bug and not a new 
