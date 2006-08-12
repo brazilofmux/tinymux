@@ -78,6 +78,42 @@ AC_ARG_ENABLE(
 AC_SUBST(QUERY_SLAVE)
 AC_SUBST(SQLSLAVE)
 
+AC_MSG_CHECKING(whether to enable Firan MUX)
+AC_ARG_ENABLE(
+  [firanmux],
+  AC_HELP_STRING([--enable-firanmux], [enable Firan MUX (default is NO)]),
+  [
+    if test "x$enableval" = "xno"; then
+      AC_MSG_RESULT(no)
+    else
+      FIRANMUX="-DFIRANMUX"
+      FIRANLIBS="-lmysqlclient"
+      AC_MSG_RESULT(yes)
+    fi
+  ],
+  [
+    AC_MSG_RESULT(no)
+  ])
+AC_SUBST(FIRANMUX)
+AC_SUBST(FIRANLIBS)
+
+AC_MSG_CHECKING(whether to enable Firan MUX Conversion)
+AC_ARG_ENABLE(
+  [firanmuxconvert],
+  AC_HELP_STRING([--enable-firanmuxconvert], [enable Firan MUX Conversion (default is NO)]),
+  [
+    if test "x$enableval" = "xno"; then
+      AC_MSG_RESULT(no)
+    else
+      FIRANMUX_CONVERT="-DFIRANMUX_CONVERT"
+      AC_MSG_RESULT(yes)
+    fi
+  ],
+  [
+    AC_MSG_RESULT(no)
+  ])
+AC_SUBST(FIRANMUX_CONVERT)
+
 AC_MSG_CHECKING(whether to enable deprecated features)
 AC_ARG_ENABLE(
   [deprecated],

@@ -11,7 +11,7 @@ CC = @CC@
 CXX = @CXX@
 #CXXCPP = @CXXCPP@	# This is broken in autoconf.  Sigh.
 CXXCPP = $(CXX) -E
-LIBS = @LIBS@
+LIBS = @LIBS@ @FIRANLIBS@
 
 .SUFFIXES: .cpp
 
@@ -57,6 +57,21 @@ QUERY_SLAVE = @QUERY_SLAVE@
 QUERYLIBS   = -ldbi
 SQLSLAVE    = @SQLSLAVE@
 
+# Firan MUX. By default, this is off. This can be turned on by running
+# configure with --enable-firanmux. Firan MUX modifications are necessary
+# in order to run Firan's database.  Typically, --enable-memorybased is also
+# necessary.
+#
+FIRANMUX    = @FIRANMUX@
+
+# Firan MUX Conversion. By default, this is off. This can be turned on by
+# running configure with --enable-firanmuxconvert. Firan MUX modifications
+# are necessary in order convert Firan's old database.  This should only
+# be done once. Typically, --enable-memorybased and --enable-firanmux are
+# also necessary.
+#
+FIRANMUX_CONVERT = @FIRANMUX_CONVERT@
+
 # Deprecated Features. By default, this is off. This can be turned on by
 # running configure with --enable-deprecated. Features which are infrequently
 # used become deprecated and are eventually removed from the source.
@@ -69,18 +84,19 @@ D_SRC	= _build.cpp alloc.cpp attrcache.cpp boolexp.cpp bsd.cpp command.cpp \
 	file_c.cpp flags.cpp funceval.cpp functions.cpp funmath.cpp game.cpp \
 	help.cpp htab.cpp local.cpp log.cpp look.cpp mail.cpp match.cpp \
 	mguests.cpp move.cpp muxcli.cpp netcommon.cpp object.cpp \
-	predicates.cpp player.cpp player_c.cpp powers.cpp quota.cpp rob.cpp \
-	pcre.cpp set.cpp sha1.cpp speech.cpp sqlshared.cpp stringutil.cpp \
-	strtod.cpp svdrand.cpp svdhash.cpp svdreport.cpp timer.cpp \
-	timeutil.cpp unparse.cpp vattr.cpp walkdb.cpp wild.cpp wiz.cpp
+	predicates.cpp player.cpp player_c.cpp plusemail.cpp powers.cpp \
+	quota.cpp rob.cpp pcre.cpp set.cpp sha1.cpp speech.cpp sqlshared.cpp \
+	stringutil.cpp strtod.cpp svdrand.cpp svdhash.cpp svdreport.cpp \
+	timer.cpp timeutil.cpp unparse.cpp vattr.cpp walkdb.cpp wild.cpp \
+	wiz.cpp
 D_OBJ	= _build.o alloc.o attrcache.o boolexp.o bsd.o command.o comsys.o \
 	conf.o cque.o create.o db.o db_rw.o eval.o file_c.o flags.o \
 	funceval.o functions.o funmath.o game.o help.o htab.o local.o log.o \
 	look.o mail.o match.o mguests.o move.o muxcli.o netcommon.o object.o \
-	predicates.o player.o player_c.o powers.o quota.o rob.o pcre.o set.o \
-	sha1.o speech.o sqlshared.o stringutil.o strtod.o svdrand.o \
-	svdhash.o svdreport.o timer.o timeutil.o unparse.o vattr.o walkdb.o \
-	wild.o wiz.o
+	predicates.o player.o player_c.o plusemail.o powers.o quota.o rob.o \
+	pcre.o set.o sha1.o speech.o sqlshared.o stringutil.o strtod.o \
+	svdrand.o svdhash.o svdreport.o timer.o timeutil.o unparse.o vattr.o \
+	walkdb.o wild.o wiz.o
 
 # Version number routine
 VER_SRC	= version.cpp
@@ -142,7 +158,7 @@ NET_O	= bsd.o
 AUX_SRC	= unsplit.cpp
 LIB_SRC = 
 LIB_INC = 
-ALLCXXFLAGS = $(CXXFLAGS) $(OPTIM) $(DEFS) $(COMPRESS_DEFS) $(BASED) $(MALLOC_DEFS) $(MOREDEFS) $(RLIM_F) $(MEMORY_BASED) $(WOD_REALMS) $(REALITY_LVLS) $(QUERY_SLAVE) $(DEPRECATED)
+ALLCXXFLAGS = $(CXXFLAGS) $(OPTIM) $(DEFS) $(COMPRESS_DEFS) $(BASED) $(MALLOC_DEFS) $(MOREDEFS) $(RLIM_F) $(MEMORY_BASED) $(WOD_REALMS) $(REALITY_LVLS) $(QUERY_SLAVE) $(FIRANMUX) $(FIRANMUX_CONVERT) $(DEPRECATED)
 
 #Auxiliary files
 A_INST	= README NOTES HIGHLIGHTS CREDITS CHANGES
