@@ -31,6 +31,12 @@ Feature Additions:
     player_starting_room had to be marked FLOATING.
  -- Added QUELL flag from Firan to temorarily supress Wizard powers.
  -- Added @switch/notify.
+ -- Merge Firan MUX source modification and collected them under the
+    --enable-firanmux ./configuration switch. This also typically
+    requires the --enable-memorybased switch.
+ -- Added --enable-firanmuxconvert which turns on code to remap two
+    conflicting attribute numbers. The first database load will require
+    this switch, and then it should be turned off.
 
 
 Bug Fixes:
