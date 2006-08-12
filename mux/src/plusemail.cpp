@@ -177,8 +177,14 @@ int mod_email_sock_close(int sock)
     return close(sock);
 }
 
-void do_plusemail(dbref player, dbref cause, int key, char *arg1, char *arg2)
+void do_plusemail(dbref executor, dbref cause, dbref enactor, int key,
+                 int nfargs, char *arg1, char *arg2)
 {
+    UNUSED_PARAMETER(cause);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(key);
+    UNUSED_PARAMETER(nfargs);
+
     char *addy;
     char *subject;
     char *body, *bodyptr, *bodysrc;
@@ -188,13 +194,13 @@ void do_plusemail(dbref player, dbref cause, int key, char *arg1, char *arg2)
 
     if (!arg1 || !*arg1)
     {
-        notify(player, "+email: I don't know who you want to e-mail!");
+        notify(executor, "+email: I don't know who you want to e-mail!");
         return;
     }
 
     if (!arg2 || !*arg2)
     {
-        notify(player, "+email: Not sending an empty e-mail!");
+        notify(executor, "+email: Not sending an empty e-mail!");
         return;
     }
 
@@ -213,7 +219,7 @@ void do_plusemail(dbref player, dbref cause, int key, char *arg1, char *arg2)
 
     if (-1 == result)
     {
-        notify(player, tprintf("+email: Unable to resolve hostname %s!",
+        notify(executor, tprintf("+email: Unable to resolve hostname %s!",
             MAIL_SERVER));
         free_lbuf(addy);
         return;
@@ -225,10 +231,10 @@ void do_plusemail(dbref player, dbref cause, int key, char *arg1, char *arg2)
         // In almost every case, an immediate retry works.  Therefore, we give
         // it one more shot, before we give up.
         //
-        result = mod_email_sock_open(MAIL_SERVER,25,&mailsock);
+        result = mod_email_sock_open(MAIL_SERVER, 25, &mailsock);
         if (0 != result)
         {
-            notify(player, "+email: Unable to connect to mailserver, aborting!");
+            notify(executor, "+email: Unable to connect to mailserver, aborting!");
             free_lbuf(addy);
             return;
         }
@@ -237,7 +243,7 @@ void do_plusemail(dbref player, dbref cause, int key, char *arg1, char *arg2)
 
     bodyptr = body = alloc_lbuf("mod_email_do_email.body");
     bodysrc = arg2;
-    mux_exec(body, &bodyptr, player, player, player, 
+    mux_exec(body, &bodyptr, executor, executor, executor,
         EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &bodysrc, (char **)NULL, 0);
     *bodyptr = 0;
 
@@ -252,14 +258,14 @@ void do_plusemail(dbref player, dbref cause, int key, char *arg1, char *arg2)
     if (-1 == result)
     {
         mod_email_sock_close(mailsock);
-        notify(player,"+email: Connection to mailserver lost.");
+        notify(executor, "+email: Connection to mailserver lost.");
         return;
     }
 
     if (inputline[0] != '2')
     {
         mod_email_sock_close(mailsock);
-        notify(player,tprintf("+email: Invalid mailserver greeting (%s)",
+        notify(executor, tprintf("+email: Invalid mailserver greeting (%s)",
             inputline));
     }
         
@@ -278,13 +284,13 @@ void do_plusemail(dbref player, dbref cause, int key, char *arg1, char *arg2)
     if (result == -1)
     {
         mod_email_sock_close(mailsock);
-        notify(player,"+email: Connection to mailserver lost.");
+        notify(executor, "+email: Connection to mailserver lost.");
         return;
     }
 
     if ('2' != inputline[0])
     {
-        notify(player,tprintf("+email: Error response on EHLO (%s)",
+        notify(executor, tprintf("+email: Error response on EHLO (%s)",
             inputline));
     }
 
@@ -301,13 +307,13 @@ void do_plusemail(dbref player, dbref cause, int key, char *arg1, char *arg2)
     if (-1 == result)
     {
         mod_email_sock_close(mailsock);
-        notify(player,"+email: Connection to mailserver lost.");
+        notify(executor, "+email: Connection to mailserver lost.");
         return;
     }
 
     if ('2' != inputline[0])
     {
-        notify(player,tprintf("+email: Error response on MAIL FROM (%s)", 
+        notify(executor, tprintf("+email: Error response on MAIL FROM (%s)", 
             inputline));
     }
 
@@ -324,13 +330,13 @@ void do_plusemail(dbref player, dbref cause, int key, char *arg1, char *arg2)
     if (-1 == result)
     {
         mod_email_sock_close(mailsock);
-        notify(player,"+email: Connection to mailserver lost.");
+        notify(executor, "+email: Connection to mailserver lost.");
         return;
     }
 
     if ('2' != inputline[0])
     {
-        notify(player,tprintf("+email: Error response on RCPT TO (%s)",
+        notify(executor, tprintf("+email: Error response on RCPT TO (%s)",
             inputline));
         return;
     }
@@ -348,13 +354,13 @@ void do_plusemail(dbref player, dbref cause, int key, char *arg1, char *arg2)
     if (-1 == result)
     {
         mod_email_sock_close(mailsock);
-        notify(player,"+email: Connection to mailserver lost.");
+        notify(executor, "+email: Connection to mailserver lost.");
         return;
     }
 
     if ('3' != inputline[0])
     {
-        notify(player,tprintf("+email: Error response on DATA (%s)",
+        notify(executor, tprintf("+email: Error response on DATA (%s)",
             inputline));
         return;
     }
@@ -396,17 +402,17 @@ void do_plusemail(dbref player, dbref cause, int key, char *arg1, char *arg2)
     if (-1 == result)
     {
         mod_email_sock_close(mailsock);
-        notify(player,"+email: Connection to mailserver lost.");
+        notify(executor, "+email: Connection to mailserver lost.");
         return;
     }
 
     if ('2' != inputline[0])
     {
-        notify(player,tprintf("+email: Message rejected (%s)",inputline));
+        notify(executor, tprintf("+email: Message rejected (%s)",inputline));
     }
     else
     {
-        notify(player, tprintf("+email: Mail sent to %s (%s)", addy, &inputline[4])); 
+        notify(executor, tprintf("+email: Mail sent to %s (%s)", addy, &inputline[4])); 
     }
 
     mod_email_sock_printf(mailsock, "QUIT\n");
