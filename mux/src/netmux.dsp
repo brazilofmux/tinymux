@@ -225,6 +225,10 @@ SOURCE=.\player_c.cpp
 # End Source File
 # Begin Source File
 
+SOURCE=.\plusemail.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=.\powers.cpp
 # End Source File
 # Begin Source File
@@ -406,10 +410,6 @@ SOURCE=.\mudconf.h
 # Begin Source File
 
 SOURCE=.\muxcli.h
-# End Source File
-# Begin Source File
-
-SOURCE=.\crypt\patchlevel.h
 # End Source File
 # Begin Source File
 
