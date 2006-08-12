@@ -1,6 +1,6 @@
 // command.cpp -- command parser and support routines.
 //
-// $Id: command.cpp,v 1.91 2006-08-09 15:45:14 sdennis Exp $
+// $Id: command.cpp,v 1.92 2006-08-12 17:37:27 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -701,14 +701,17 @@ static CMDENT_TWO_ARG command_table_two_arg[] =
     {"@quota",       quota_sw,   CA_PUBLIC,                                        0,           CS_TWO_ARG|CS_INTERP, 0, do_quota},
     {"@robot",       NULL,       CA_NO_SLAVE|CA_GBL_BUILD|CA_NO_GUEST|CA_PLAYER,   PCRE_ROBOT,  CS_TWO_ARG,           0, do_pcreate},
 #ifdef REALITY_LVLS
-    {"@rxlevel",    NULL,       CA_WIZARD,                                        0,           CS_TWO_ARG|CS_INTERP, 0, do_rxlevel},
+    {"@rxlevel",     NULL,       CA_WIZARD,                                        0,           CS_TWO_ARG|CS_INTERP, 0, do_rxlevel},
 #endif
     {"@set",         set_sw,     CA_NO_SLAVE|CA_GBL_BUILD|CA_NO_GUEST,             0,           CS_TWO_ARG,           0, do_set},
     {"@teleport",    teleport_sw,CA_NO_GUEST,                                      TELEPORT_DEFAULT, CS_TWO_ARG|CS_INTERP, 0, do_teleport},
 #ifdef REALITY_LVLS
-    {"@txlevel",    NULL,       CA_WIZARD,                                        0,           CS_TWO_ARG|CS_INTERP, 0, do_txlevel},
+    {"@txlevel",     NULL,       CA_WIZARD,                                        0,           CS_TWO_ARG|CS_INTERP, 0, do_txlevel},
 #endif
     {"@toad",        toad_sw,    CA_WIZARD,                                        0,           CS_TWO_ARG|CS_INTERP, 0, do_toad},
+#if defined(FIRANMUX)
+    {"+email",       NULL,       CA_WIZARD,                                        0,           CS_TWO_ARG,           0, do_plusemail},
+#endif // FIRANMUX
     {"addcom",       NULL,       CA_NO_SLAVE,                                      0,           CS_TWO_ARG,           0, do_addcom},
     {"comtitle",     comtitle_sw,CA_NO_SLAVE,                                      0,           CS_TWO_ARG,           0, do_comtitle},
     {"give",         give_sw,    CA_LOCATION|CA_NO_GUEST,                          0,           CS_TWO_ARG|CS_INTERP, 0, do_give},

@@ -1,6 +1,6 @@
 // command.h -- declarations used by the command processor.
 //
-// $Id: command.h,v 1.17 2006-08-09 15:45:14 sdennis Exp $
+// $Id: command.h,v 1.18 2006-08-12 17:37:27 sdennis Exp $
 //
 
 #ifndef __COMMAND_H
@@ -153,6 +153,9 @@ CMD_ONE_ARG(do_hook);           // Set additional operations for a command
 CMD_TWO_ARG(do_flag);           // Rename a flag or remove flag aliases
 CMD_ONE_ARG(do_train);          // Display code to room, then execute
 CMD_TWO_ARG(do_moniker);        // Set accented, colorized name of object
+#if defined(FIRANMUX)
+CMD_TWO_ARG(do_plusemail);
+#endif // FIRANMUX
 
 typedef struct
 {
