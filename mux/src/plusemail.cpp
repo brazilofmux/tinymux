@@ -79,44 +79,59 @@ int mod_email_sock_readline(int sock, char *buffer, int maxlen)
     done = 0;
     pos = 0;
 
-    /* Check for data before giving up. */
-    if(select(sock+1, &read_fds, NULL, NULL, &tv) <= 0) {
+    // Check for data before giving up.
+    //
+    if (select(sock+1, &read_fds, NULL, NULL, &tv) <= 0)
+    {
         return 0;
     }
 
     done = 0;
-    if(!FD_ISSET(sock, &read_fds)) {
+    if(!FD_ISSET(sock, &read_fds))
+    {
         return 0;
     }
 
-    while(!done && (pos < maxlen)) {
+    while(!done && (pos < maxlen))
+    {
         char getme[2];
         int numread;
 
         numread = read(sock, &getme[0], 1);
-        if (numread != 0) {
+        if (numread != 0)
+        {
             possible_close = 0;
-            if (getme[0] != '\n') {
+            if (getme[0] != '\n')
+            {
                 *(buffer + pos) = getme[0];
                 pos++;
-            } else {
+            }
+            else
+            {
                 done = 1;
             }
-        } else {
-            if(possible_close) {
+        }
+        else
+        {
+            if (possible_close)
+            {
                 done = 1;
-            } else {
+            }
+            else
+            {
                 FD_ZERO(&read_fds);
                 FD_SET(sock, &read_fds);
                 /* wait up to 5 seconds */
                 tv.tv_sec = 1;
                 tv.tv_usec = 0;
                 /* Check for data before giving up. */
-                if(select(sock+1, &read_fds, NULL, NULL, &tv) <= 0) {
+                if (select(sock+1, &read_fds, NULL, NULL, &tv) <= 0)
+                {
                     done = 1;
                 }
 
-                if(FD_ISSET(sock, &read_fds)) {
+                if (FD_ISSET(sock, &read_fds))
+                {
                     possible_close = 1;
                 }
             }
@@ -136,8 +151,10 @@ int mod_email_sock_open(const char *conhostname, int port, int *sock)
     int mysock;
 
     conhost = gethostbyname(conhostname);
-    if (conhost == 0)
+    if (0 == conhost)
+    {
         return -1;
+    }
 
     name.sin_port = htons(port);
     name.sin_family = AF_INET;
@@ -145,7 +162,8 @@ int mod_email_sock_open(const char *conhostname, int port, int *sock)
     mysock = socket(AF_INET, SOCK_STREAM, 0);
     addr_len = sizeof(name);
    
-    if (connect(mysock, (struct sockaddr *)&name, addr_len) == -1) {
+    if (connect(mysock, (struct sockaddr *)&name, addr_len) == -1)
+    {
         return -2;
     }
 
@@ -161,191 +179,241 @@ int mod_email_sock_close(int sock)
 
 void do_plusemail(dbref player, dbref cause, int key, char *arg1, char *arg2)
 {
-        char *addy;
-        char *subject;
-        char *body, *bodyptr, *bodysrc;
-	int mailsock;
-	int result;
-	char inputline[LBUF_SIZE];
+    char *addy;
+    char *subject;
+    char *body, *bodyptr, *bodysrc;
+    int mailsock;
+    int result;
+    char inputline[LBUF_SIZE];
 
-	if (!arg1 || !*arg1) {
-		notify(player, "+email: I don't know who you want to e-mail!");
-		return;
-	}
+    if (!arg1 || !*arg1)
+    {
+        notify(player, "+email: I don't know who you want to e-mail!");
+        return;
+    }
 
-	if (!arg2 || !*arg2) {
-		notify(player, "+email: Not sending an empty e-mail!");
-		return;
-	}
+    if (!arg2 || !*arg2)
+    {
+        notify(player, "+email: Not sending an empty e-mail!");
+        return;
+    }
 
-	addy = alloc_lbuf("mod_email_do_email.headers");
-	strcpy(addy, arg1);
+    addy = alloc_lbuf("mod_email_do_email.headers");
+    strcpy(addy, arg1);
 
-        subject = strchr(addy,'/');
-        if (subject) {
-		*subject = 0;
-		subject++;
-	}
+    subject = strchr(addy,'/');
+    if (subject)
+    {
+        *subject = 0;
+        subject++;
+    }
 
-	mailsock = -1;
-	result = mod_email_sock_open(MAIL_SERVER,25,&mailsock);
+    mailsock = -1;
+    result = mod_email_sock_open(MAIL_SERVER,25,&mailsock);
 
-        if (result == -1) {
-		notify(player, tprintf("+email: Unable to resolve hostname %s!",
-			MAIL_SERVER));
-		free_lbuf(addy);
-		return;
-        }
-        else if (result == -2) {
+    if (-1 == result)
+    {
+        notify(player, tprintf("+email: Unable to resolve hostname %s!",
+            MAIL_SERVER));
+        free_lbuf(addy);
+        return;
+    }
+    else if (-2 == result)
+    {
 
-                /* Periodically, we get a failed connect, for reasons which elude me.
-		 * In almost every case, an immediate retry works.  Therefore, we give it
-		 * one more shot, before we give up. */
-
-		result = mod_email_sock_open(MAIL_SERVER,25,&mailsock);
-		if (result != 0) {
-			notify(player, "+email: Unable to connect to mailserver, aborting!");
-			free_lbuf(addy);
-			return;
-		}
-
-	}
-
-	bodyptr = body = alloc_lbuf("mod_email_do_email.body");
-	bodysrc = arg2;
-	mux_exec(body, &bodyptr, player, player, player, 
-            EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &bodysrc, (char **)NULL, 0);
-	*bodyptr = 0;
-
-        memset(inputline,0,LBUF_SIZE);
-        result = mod_email_sock_readline(mailsock,inputline,LBUF_SIZE - 1);
-        while ((result == 0) || (inputline[3] == '-')) {
-	   memset(inputline,0,LBUF_SIZE);
-           result = mod_email_sock_readline(mailsock,inputline,LBUF_SIZE - 1);
-        }
-        if (result == -1) {
-            mod_email_sock_close(mailsock);
-            notify(player,"+email: Connection to mailserver lost.");
+        // Periodically, we get a failed connect, for reasons which elude me.
+        // In almost every case, an immediate retry works.  Therefore, we give
+        // it one more shot, before we give up.
+        //
+        result = mod_email_sock_open(MAIL_SERVER,25,&mailsock);
+        if (0 != result)
+        {
+            notify(player, "+email: Unable to connect to mailserver, aborting!");
+            free_lbuf(addy);
             return;
         }
-        if (inputline[0] != '2') {
-            mod_email_sock_close(mailsock);
-            notify(player,tprintf("+email: Invalid mailserver greeting (%s)",
-		inputline));
-        }
+
+    }
+
+    bodyptr = body = alloc_lbuf("mod_email_do_email.body");
+    bodysrc = arg2;
+    mux_exec(body, &bodyptr, player, player, player, 
+        EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &bodysrc, (char **)NULL, 0);
+    *bodyptr = 0;
+
+    memset(inputline,0,LBUF_SIZE);
+    result = mod_email_sock_readline(mailsock,inputline,LBUF_SIZE - 1);
+    while ((result == 0) || (inputline[3] == '-'))
+    {
+        memset(inputline,0,LBUF_SIZE);
+        result = mod_email_sock_readline(mailsock,inputline,LBUF_SIZE - 1);
+    }
+
+    if (-1 == result)
+    {
+        mod_email_sock_close(mailsock);
+        notify(player,"+email: Connection to mailserver lost.");
+        return;
+    }
+
+    if (inputline[0] != '2')
+    {
+        mod_email_sock_close(mailsock);
+        notify(player,tprintf("+email: Invalid mailserver greeting (%s)",
+            inputline));
+    }
         
 
-	mod_email_sock_printf(mailsock, "EHLO %s\r\n", MAIL_EHLO);
+    mod_email_sock_printf(mailsock, "EHLO %s\r\n", MAIL_EHLO);
+    memset(inputline,0,LBUF_SIZE);
+    result = mod_email_sock_readline(mailsock,inputline,LBUF_SIZE - 1);
+    
+    while (  0 == result
+          || '-' == inputline[3])
+    {
         memset(inputline,0,LBUF_SIZE);
         result = mod_email_sock_readline(mailsock,inputline,LBUF_SIZE - 1);
-        while ((result == 0) || (inputline[3] == '-')) {
-	   memset(inputline,0,LBUF_SIZE);
-           result = mod_email_sock_readline(mailsock,inputline,LBUF_SIZE - 1);
-        }
-        if (result == -1) {
-            mod_email_sock_close(mailsock);
-            notify(player,"+email: Connection to mailserver lost.");
-            return;
-        }
-        if (inputline[0] != '2') {
-            notify(player,tprintf("+email: Error response on EHLO (%s)",
-		inputline));
-        }
+    }
+    
+    if (result == -1)
+    {
+        mod_email_sock_close(mailsock);
+        notify(player,"+email: Connection to mailserver lost.");
+        return;
+    }
 
-	mod_email_sock_printf(mailsock, "MAIL FROM:<%s>\r\n", MAIL_SENDADDR); 	
+    if ('2' != inputline[0])
+    {
+        notify(player,tprintf("+email: Error response on EHLO (%s)",
+            inputline));
+    }
+
+    mod_email_sock_printf(mailsock, "MAIL FROM:<%s>\r\n", MAIL_SENDADDR);   
+    memset(inputline,0,LBUF_SIZE);
+    result = mod_email_sock_readline(mailsock,inputline,LBUF_SIZE - 1);
+    while (  0 == result
+          || '-' == inputline[3])
+    {
         memset(inputline,0,LBUF_SIZE);
         result = mod_email_sock_readline(mailsock,inputline,LBUF_SIZE - 1);
-        while ((result == 0) || (inputline[3] == '-')) {
-	   memset(inputline,0,LBUF_SIZE);
-           result = mod_email_sock_readline(mailsock,inputline,LBUF_SIZE - 1);
-        }
-        if (result == -1) {
-            mod_email_sock_close(mailsock);
-            notify(player,"+email: Connection to mailserver lost.");
-            return;
-        }
-        if (inputline[0] != '2') {
-            notify(player,tprintf("+email: Error response on MAIL FROM (%s)", 
-		inputline));
-        }
+    }
 
-	mod_email_sock_printf(mailsock, "RCPT TO:<%s>\r\n", addy);
+    if (-1 == result)
+    {
+        mod_email_sock_close(mailsock);
+        notify(player,"+email: Connection to mailserver lost.");
+        return;
+    }
+
+    if ('2' != inputline[0])
+    {
+        notify(player,tprintf("+email: Error response on MAIL FROM (%s)", 
+            inputline));
+    }
+
+    mod_email_sock_printf(mailsock, "RCPT TO:<%s>\r\n", addy);
+    memset(inputline,0,LBUF_SIZE);
+    result = mod_email_sock_readline(mailsock,inputline,LBUF_SIZE - 1);
+    while (  0 == result
+          || '-' == inputline[3])
+    {
         memset(inputline,0,LBUF_SIZE);
         result = mod_email_sock_readline(mailsock,inputline,LBUF_SIZE - 1);
-        while ((result == 0) || (inputline[3] == '-')) {
-	   memset(inputline,0,LBUF_SIZE);
-           result = mod_email_sock_readline(mailsock,inputline,LBUF_SIZE - 1);
-        }
-        if (result == -1) {
-            mod_email_sock_close(mailsock);
-            notify(player,"+email: Connection to mailserver lost.");
-            return;
-        }
-        if (inputline[0] != '2') {
-            notify(player,tprintf("+email: Error response on RCPT TO (%s)",
-		inputline));
-            return;
-        }
+    }
 
-	mod_email_sock_printf(mailsock, "DATA\r\n");
+    if (-1 == result)
+    {
+        mod_email_sock_close(mailsock);
+        notify(player,"+email: Connection to mailserver lost.");
+        return;
+    }
+
+    if ('2' != inputline[0])
+    {
+        notify(player,tprintf("+email: Error response on RCPT TO (%s)",
+            inputline));
+        return;
+    }
+
+    mod_email_sock_printf(mailsock, "DATA\r\n");
+    memset(inputline,0,LBUF_SIZE);
+    result = mod_email_sock_readline(mailsock,inputline,LBUF_SIZE - 1);
+    while (  0 == result
+          || '-' == inputline[3])
+    {
         memset(inputline,0,LBUF_SIZE);
         result = mod_email_sock_readline(mailsock,inputline,LBUF_SIZE - 1);
-        while ((result == 0) || (inputline[3] == '-')) {
-	   memset(inputline,0,LBUF_SIZE);
-           result = mod_email_sock_readline(mailsock,inputline,LBUF_SIZE - 1);
-        }
-        if (result == -1) {
-            mod_email_sock_close(mailsock);
-            notify(player,"+email: Connection to mailserver lost.");
-            return;
-        }
-        if (inputline[0] != '3') {
-            notify(player,tprintf("+email: Error response on DATA (%s)",
-		inputline));
-            return;
-        }
+    }
 
-	mod_email_sock_printf(mailsock, "From: %s <%s>\r\n",  MAIL_SENDNAME, MAIL_SENDADDR);
-	mod_email_sock_printf(mailsock, "To: %s\r\n", addy);
-	mod_email_sock_printf(mailsock, "X-Mailer: TinyMUX %s\r\n", MUX_VERSION);
-	mod_email_sock_printf(mailsock, "Subject: %s\r\n\r\n", subject ? subject : MAIL_SUBJECT);
-	mod_email_sock_printf(mailsock, "%s\r\n", body);
-	mod_email_sock_printf(mailsock, "\r\n.\r\n");
+    if (-1 == result)
+    {
+        mod_email_sock_close(mailsock);
+        notify(player,"+email: Connection to mailserver lost.");
+        return;
+    }
+
+    if ('3' != inputline[0])
+    {
+        notify(player,tprintf("+email: Error response on DATA (%s)",
+            inputline));
+        return;
+    }
+
+    mod_email_sock_printf(mailsock, "From: %s <%s>\r\n",  MAIL_SENDNAME, MAIL_SENDADDR);
+    mod_email_sock_printf(mailsock, "To: %s\r\n", addy);
+    mod_email_sock_printf(mailsock, "X-Mailer: TinyMUX %s\r\n", MUX_VERSION);
+    mod_email_sock_printf(mailsock, "Subject: %s\r\n\r\n", subject ? subject : MAIL_SUBJECT);
+    mod_email_sock_printf(mailsock, "%s\r\n", body);
+    mod_email_sock_printf(mailsock, "\r\n.\r\n");
+    memset(inputline,0,LBUF_SIZE);
+    result = mod_email_sock_readline(mailsock,inputline,LBUF_SIZE - 1);
+    while (  0 == result
+          || '-' == inputline[3])
+    {
         memset(inputline,0,LBUF_SIZE);
         result = mod_email_sock_readline(mailsock,inputline,LBUF_SIZE - 1);
-        while ((result == 0) || (inputline[3] == '-')) {
-	   memset(inputline,0,LBUF_SIZE);
-           result = mod_email_sock_readline(mailsock,inputline,LBUF_SIZE - 1);
-           if (result > 0) {
-              if ((inputline[strlen(inputline) - 1] == '\n') || 
-                  (inputline[strlen(inputline) - 1] == '\r')) 
-                  inputline[strlen(inputline) - 1] = '0';
-              if ((inputline[strlen(inputline) - 1] == '\n') || 
-                  (inputline[strlen(inputline) - 1] == '\r')) 
-                  inputline[strlen(inputline) - 1] = '0';
-              if (strlen(inputline) == 0)
-                  result = 0;
-           }
-        }
-        if (result == -1) {
-            mod_email_sock_close(mailsock);
-            notify(player,"+email: Connection to mailserver lost.");
-            return;
-        }
-        if (inputline[0] != '2') {
-            notify(player,tprintf("+email: Message rejected (%s)",inputline));
-        }
-	else {
-	    notify(player, tprintf("+email: Mail sent to %s (%s)", addy, &inputline[4])); 
-	}
+        if (result > 0)
+        {
+            if (  '\n' == inputline[strlen(inputline) - 1]
+               || '\r' == inputline[strlen(inputline) - 1])
+            {
+                inputline[strlen(inputline) - 1] = '0';
+            }
+        
+            if (  '\n' == inputline[strlen(inputline) - 1]
+               || '\r' == inputline[strlen(inputline) - 1])
+            {
+                inputline[strlen(inputline) - 1] = '0';
+            }
+        
+            if (strlen(inputline) == 0)
+            {
+                result = 0;
+            }
+       }
+    }
 
+    if (-1 == result)
+    {
+        mod_email_sock_close(mailsock);
+        notify(player,"+email: Connection to mailserver lost.");
+        return;
+    }
 
-	mod_email_sock_printf(mailsock, "QUIT\n");
+    if ('2' != inputline[0])
+    {
+        notify(player,tprintf("+email: Message rejected (%s)",inputline));
+    }
+    else
+    {
+        notify(player, tprintf("+email: Mail sent to %s (%s)", addy, &inputline[4])); 
+    }
 
-	mod_email_sock_close(mailsock);
+    mod_email_sock_printf(mailsock, "QUIT\n");
+    mod_email_sock_close(mailsock);
 
-	free_lbuf(addy);
-	free_lbuf(body);
+    free_lbuf(addy);
+    free_lbuf(body);
 }
 
 #endif // FIRANMUX
