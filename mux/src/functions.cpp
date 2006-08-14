@@ -1,7 +1,7 @@
 /*! \file functions.cpp
  *  MUX function handlers
  *
- * $Id: functions.cpp,v 1.195 2006-08-14 18:52:24 sdennis Exp $
+ * $Id: functions.cpp,v 1.196 2006-08-14 19:09:02 sdennis Exp $
  *
  */
 
@@ -1256,8 +1256,7 @@ FUNCTION(fun_format)
     }
 
     char *buf = alloc_lbuf("fun_format");
-    char *bp = buf;   
-    safe_str(fargs[0], buf, &bp);
+    mux_strncpy(buf, fargs[0], LBUF_SIZE-1);
     linewrap_general(buf, fieldsize, fargs[2], fargs[3]);
     safe_str(buf, buff, bufc);
     free_lbuf(buf);
