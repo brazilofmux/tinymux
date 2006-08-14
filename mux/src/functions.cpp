@@ -1,7 +1,7 @@
 /*! \file functions.cpp
  *  MUX function handlers
  *
- * $Id: functions.cpp,v 1.196 2006-08-14 19:09:02 sdennis Exp $
+ * $Id: functions.cpp,v 1.197 2006-08-14 19:20:24 sdennis Exp $
  *
  */
 
@@ -1273,7 +1273,7 @@ FUNCTION(fun_text)
   FILE * textconf;
   FILE * myfile;
   int index;
-  int lastchar, thischar;
+  int lastchar = '\0', thischar;
 
   // Can't open the file.
   //
