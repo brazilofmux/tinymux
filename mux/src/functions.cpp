@@ -1,7 +1,7 @@
 /*! \file functions.cpp
  *  MUX function handlers
  *
- * $Id: functions.cpp,v 1.208 2006-08-14 22:48:29 sdennis Exp $
+ * $Id: functions.cpp,v 1.209 2006-08-14 23:00:29 sdennis Exp $
  *
  */
 
@@ -6010,75 +6010,73 @@ FUNCTION(fun_distribute)
  * TinyMUSH 3.1's sql() call. */
 FUNCTION(fun_sql)
 {
-   SEP sepRow, sepColumn;
-   char *curr, *cp, *dp, *str;
-   MYSQL_RES *result;
-   MYSQL_ROW row;
-   int num_fields;
+    SEP sepRow, sepColumn;
+    if (  !OPTIONAL_DELIM(2, sepRow, DELIM_EVAL|DELIM_NULL|DELIM_CRLF|DELIM_STRING)
+       && !OPTIONAL_DELIM(3, sepColumn, DELIM_EVAL|DELIM_NULL|DELIM_CRLF|DELIM_STRING))
+    {
+        return;
+    }
 
-   if (  !OPTIONAL_DELIM(2, sepRow, DELIM_EVAL|DELIM_NULL|DELIM_CRLF|DELIM_STRING)
-      && !OPTIONAL_DELIM(3, sepColumn, DELIM_EVAL|DELIM_NULL|DELIM_CRLF|DELIM_STRING))
-   {
-      return;
-   }
+    char *curr = alloc_lbuf("fun_sql");
+    char *dp = curr;
+    char *str = fargs[0];
+    mux_exec(curr, &dp, executor, caller, enactor,
+        EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, cargs, ncargs);
+    *dp = '\0';
 
-   dp = cp = curr = alloc_lbuf("fun_sql");
-   str = fargs[0];
-   mux_exec(curr, &dp, executor, caller, enactor,
-       EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, cargs, ncargs);
-   *dp = '\0';
-   cp = trim_space_sep(cp, &sepSpace);
-   if (!*cp)
-   {
+    char *cp = curr;
+    cp = trim_space_sep(cp, &sepSpace);
+    if (!*cp)
+    {
         free_lbuf(curr);
         return;
-   }
+    }
 
-   if (!mush_database)
-   {
-      safe_str("#-1 NO DATABASE", buff, bufc);
-      return;
-   }
+    if (!mush_database)
+    {
+        safe_str("#-1 NO DATABASE", buff, bufc);
+        return;
+    }
 
-   mysql_ping(mush_database);
+    mysql_ping(mush_database);
 
-   if (mysql_real_query(mush_database,cp,strlen(cp))) {
-      free_lbuf(curr);
-      safe_str("#-1 QUERY ERROR",buff,bufc);
-      return;
-   }
+    if (mysql_real_query(mush_database, cp, strlen(cp)))
+    {
+        free_lbuf(curr);
+        safe_str("#-1 QUERY ERROR", buff, bufc);
+        return;
+    }
    
-   result = mysql_store_result(mush_database);
-   if (!result) {
-      free_lbuf(curr);
-      return;
-   }
+    MYSQL_RES *result = mysql_store_result(mush_database);
+    if (!result)
+    {
+        free_lbuf(curr);
+        return;
+    }
 
-   num_fields = mysql_num_fields(result);
+    int num_fields = mysql_num_fields(result);
 
-   row = mysql_fetch_row(result);
-   while (row)
-   {
-      int loop;
+    MYSQL_ROW row = mysql_fetch_row(result);
+    while (row)
+    {
+        int loop;
+        for (loop = 0; loop < num_fields; loop++)
+        {
+            if (loop)
+            {
+                print_sep(&sepColumn, buff, bufc);
+            }
+            safe_str(row[loop], buff, bufc);
+        }
+        row = mysql_fetch_row(result);
+        if (row)
+        {
+            print_sep(&sepRow, buff, bufc);
+        }
+     }
 
-      for (loop = 0; loop < num_fields; loop++)
-      {
-          if (loop)
-          {
-             print_sep(&sepColumn, buff, bufc);
-          }
-          safe_str(row[loop],buff,bufc);
-      }
-      row = mysql_fetch_row(result);
-      if (row)
-      {
-         print_sep(&sepRow, buff, bufc);
-      }
-   }
-
-   free_lbuf(curr);
-
-   mysql_free_result(result);      
+     free_lbuf(curr);
+     mysql_free_result(result);      
 }
 
 #endif // FIRANMUX
