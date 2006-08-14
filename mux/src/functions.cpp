@@ -1,7 +1,7 @@
 /*! \file functions.cpp
  *  MUX function handlers
  *
- * $Id: functions.cpp,v 1.201 2006-08-14 19:34:53 sdennis Exp $
+ * $Id: functions.cpp,v 1.202 2006-08-14 19:37:26 sdennis Exp $
  *
  */
 
@@ -1330,9 +1330,9 @@ FUNCTION(fun_text)
                         int lastchar = '\0';
                         while ((thischar = fgetc(myfile)) != EOF)
                         {
-                            if (thischar == '&') 
+                            if ('&' == thischar) 
                             {
-                                if (lastchar == 10)
+                                if ('\n' == lastchar)
                                 {
                                     fclose(textconf);
                                     fclose(myfile);
