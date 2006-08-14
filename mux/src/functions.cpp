@@ -1,7 +1,7 @@
 /*! \file functions.cpp
  *  MUX function handlers
  *
- * $Id: functions.cpp,v 1.204 2006-08-14 20:45:02 sdennis Exp $
+ * $Id: functions.cpp,v 1.205 2006-08-14 22:04:36 sdennis Exp $
  *
  */
 
@@ -5941,32 +5941,37 @@ FUNCTION(fun_distribute)
   points_is_valid = (points_arg != NULL) && is_integer(points_arg, NULL);
   bins_is_valid   = (bins_arg   != NULL) && is_integer(bins_arg, NULL);
 
-  if ( points_is_valid && bins_is_valid ) {
+  if ( points_is_valid && bins_is_valid )
+  {
     points = mux_atol(points_arg);
     bins   = mux_atol(bins_arg);
     
     points_is_valid = (points >= 0);
     bins_is_valid   = (bins   >  0);
 
-    if ( points_is_valid && bins_is_valid ) {
+    if ( points_is_valid && bins_is_valid )
+    {
       points_is_valid = (points <= points_limit);
       bins_is_valid   = (bins   <= bins_limit);
 
-      if ( points_is_valid && bins_is_valid ) {
-        
+      if ( points_is_valid && bins_is_valid )
+      {
         /* allocate a big array buffer -- ignoring LBUFs and other niceties */
         bin_array = (long *) malloc(bins * sizeof(long));
-        if ( bin_array == NULL ) {
+        if ( bin_array == NULL )
+        {
           safe_str("#-1 NOT ENOUGH MEMORY TO DISTRIBUTE", buff, bufc);
         }
-        else {
+        else
+        {
           allocated = 2;
 
 
           /*** NOMINAL CASE ***/
 
           /* initialize bins */
-          for ( current_bin = 0; current_bin < bins; current_bin++) {
+          for ( current_bin = 0; current_bin < bins; current_bin++)
+          {
             bin_array[current_bin] = 0;
           }
           
@@ -5974,14 +5979,16 @@ FUNCTION(fun_distribute)
           /* for each point, pick a random bin for it and 
              increment that bin's count */
 
-          for (current_point = 0; current_point < points; current_point++) {
+          for (current_point = 0; current_point < points; current_point++)
+          {
             which_bin = RandomINT32(0, bins-1);
             ++(bin_array[which_bin]);
           }
         
           /* convert the array to real output */
           bool first = true;
-          for (current_bin = 0; current_bin < bins; current_bin++) {
+          for (current_bin = 0; current_bin < bins; current_bin++)
+          {
             if (!first)
             {
               print_sep(&osep, buff, bufc);
@@ -5991,56 +5998,70 @@ FUNCTION(fun_distribute)
           }
         }
       }
-      else { /*** process high range errors ***/
-        if ( ! points_is_valid ) {
+      else
+      {
+        /*** process high range errors ***/
+        if ( ! points_is_valid )
+        {
           safe_str("#-1 ARG1 IS WAY TOO HIGH", buff, bufc);
         }
-        else if ( ! bins_is_valid ) {
+        else if ( ! bins_is_valid )
+        {
           safe_str("#-1 ARG2 IS WAY TOO HIGH", buff, bufc);
         }
-        else {
+        else
+        {
           safe_str("#-1 UNKNOWN HIGH RANGE ERROR", buff, bufc);
         }
       }
     }
-    else { /*** process low range errors ***/
-      if ( ! points_is_valid ) {
+    else
+    {
+      /*** process low range errors ***/
+      if ( ! points_is_valid )
+      {
         safe_str("#-1 ARG1 MUST BE GREATER THAN OR EQUAL TO 0", buff, bufc);
       }
-      else if ( ! bins_is_valid ) {
+      else if ( ! bins_is_valid )
+      {
         safe_str("#-1 ARG2 MUST BE GREATER THAN 0", buff, bufc);
       }
-      else {
+      else
+      {
         safe_str("#-1 UNKNOWN LOW RANGE ERROR", buff, bufc);
       }
     }
   }
-  else { /*** process integer datatype errors ***/
-    if ( ! points_is_valid ) {
+  else
+  {
+    /*** process integer datatype errors ***/
+    if ( ! points_is_valid )
+    {
       safe_str("#-1 ARG1 IS NOT AN INTEGER", buff, bufc);
     }
-    else if ( ! bins_is_valid ) {
+    else if ( ! bins_is_valid )
+    {
       safe_str("#-1 ARG2 IS NOT AN INTEGER", buff, bufc);
     }
-    else {
+    else
+    {
       safe_str("#-1 UNKNOWN DATATYPE ERROR", buff, bufc);
     }
   }
 
-
   /* free memory buffers based on value of allocated */
 
-  if ( allocated == 1 ) {
+  if ( allocated == 1 )
+  {
     free_lbuf(points_arg);
     free_lbuf(bins_arg);
   }
-  else if ( allocated == 2 ) {
+  else if ( allocated == 2 )
+  {
     free_lbuf(points_arg);
     free_lbuf(bins_arg);
     free(bin_array);
   }
-
-  return;
 }
 
 /* sql() function -- Rachel 'Jeanne' Blackman
