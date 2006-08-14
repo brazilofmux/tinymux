@@ -1,6 +1,6 @@
 // functions.h -- declarations for functions & function processing.
 //
-// $Id: functions.h,v 1.23 2006-08-09 23:37:37 sdennis Exp $
+// $Id: functions.h,v 1.24 2006-08-14 20:45:02 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -209,6 +209,8 @@ XFUNCTION(fun_tel);
 XFUNCTION(fun_textfile);
 #if defined(FIRANMUX)
 XFUNCTION(fun_setparent);
+XFUNCTION(fun_setname);
+XFUNCTION(fun_trigger);
 #endif // FIRANMUX
 #endif
 

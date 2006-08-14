@@ -1,7 +1,7 @@
 /*! \file functions.cpp
  *  MUX function handlers
  *
- * $Id: functions.cpp,v 1.203 2006-08-14 20:04:03 sdennis Exp $
+ * $Id: functions.cpp,v 1.204 2006-08-14 20:45:02 sdennis Exp $
  *
  */
 
@@ -1376,66 +1376,78 @@ FUNCTION(fun_text)
  * *   successes.)
  */
 
-FUNCTION(fun_successes)
-{
 #define DIE_TO_ROLL 10
 
-  int num_dice, target_difficulty;
-  int successes = 0;
-  int i, roll;
+FUNCTION(fun_successes)
+{
+    int successes = 0;
+    int roll;
 
-  /* requires two arguments always */
-  if (!fargs[0] || !fargs[1]) return;
+    // First argument is the number of dice to roll.
+    // Second argument is the target difficulty to roll against.
+    //
+    int num_dice = mux_atol(fargs[0]);
+    int target_difficulty = mux_atol(fargs[1]);
 
-  /* first argument is the number of dice to roll */
-  num_dice = mux_atol(fargs[0]);
-
-  /* second argument is the target difficulty to roll against */
-  target_difficulty = mux_atol(fargs[1]);
-
-  /* check arguments for reasonable values:
-  ** if the number of dice is zero, just return 0 successes.
-  ** if the number of dice is negative, return an error.
-  ** if the number of dice is greater than 100, return an error (too much work).
-  ** else, go and do the roll.
-  ** Note: we don't care if the target difficulty is a reasonable number or not.
-  */
-  if ( num_dice == 0 ) {
-    safe_str("0", buff, bufc);
-  } else if ( num_dice < 0 ) {
-    safe_str("#-1 NUMBER OF DICE SHOULD BE > 0", buff, bufc);
-  } else if ( num_dice > 100 ) {
-    safe_str("#-2 THAT'S TOO MANY DICE FOR ME TO ROLL", buff, bufc);
-  } else {
-
-    /* roll some number of dice equal to num_dice
-    ** and count successes and botches
-    */
-    for (i=0; i<num_dice; i++) {
-      roll = RandomINT32(1, DIE_TO_ROLL);
-      if ( roll == 1 ) {
-        /* botch -- decrement successes */
-        --successes;
-      } 
-      else if ( roll >= target_difficulty ) {
-        /* success -- increment successes */
-        ++successes;
-      }
-      /* otherwise, no change in number of successes */
+    // Check arguments for reasonable values:
+    //
+    //   if the number of dice is zero, just return 0 successes.
+    //   if the number of dice is negative, return an error.
+    //   if the number of dice is greater than 100, return an error (too much work).
+    //   else, go and do the roll.
+    //
+    // Note: we don't care if the target difficulty is a reasonable number or not.
+    //
+    if (0 == num_dice)
+    {
+        safe_str("0", buff, bufc);
     }
-
-    if ( num_dice > target_difficulty ) {
-      if ( successes < 0 ) {
-        successes = 0;
-      }
-      else if ( successes == 0 ) {
-        successes = 1;
-      }
+    else if (num_dice < 0)
+    {
+        safe_str("#-1 NUMBER OF DICE SHOULD BE > 0", buff, bufc);
     }
+    else if (100 < num_dice)
+    {
+        safe_str("#-2 THAT'S TOO MANY DICE FOR ME TO ROLL", buff, bufc);
+    }
+    else
+    {
+        // Roll some number of dice equal to num_dice and count successes and botches
+        //
+        int i;
+        for (i = 0; i < num_dice; i++)
+        {
+            roll = RandomINT32(1, DIE_TO_ROLL);
+            if (1 == roll)
+            {
+                // Botch -- decrement successes.
+                //
+                --successes;
+            } 
+            else if (target_difficulty <= roll)
+            {
+                // Success -- increment successes.
+                //
+                ++successes;
+            }
+        }
 
-    /* "return" final number of successes (positive, negative, or zero) */
-    safe_tprintf_str(buff, bufc, "%d", successes);
-  }
+        if (target_difficulty < num_dice)
+        {
+            if (successes < 0)
+            {
+                successes = 0;
+            }
+            else if (successes == 0)
+            {
+                successes = 1;
+            }
+        }
+
+        // Return final number of successes (positive, negative, or zero).
+        //
+        safe_ltoa(successes, buff, bufc);
+    }
 }
 
 #endif // FIRANMUX
