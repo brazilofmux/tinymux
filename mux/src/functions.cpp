@@ -1,7 +1,7 @@
 /*! \file functions.cpp
  *  MUX function handlers
  *
- * $Id: functions.cpp,v 1.206 2006-08-14 22:10:05 sdennis Exp $
+ * $Id: functions.cpp,v 1.207 2006-08-14 22:44:01 sdennis Exp $
  *
  */
 
@@ -5905,161 +5905,92 @@ static FUNCTION(fun_choose)
  */
 FUNCTION(fun_distribute)
 {
-    char *points_arg, *bins_arg;  /* input param holders */
-
-    long points, bins;   /* numeric version of params */
-    long current_point;  /* loop variable */
-    long current_bin;    /* loop variable */
-    long which_bin;      /* random bin */
-    long *bin_array;     /* space for the bin array */
-
-    int points_is_valid, bins_is_valid;  /* booleans */
-
-    long points_limit = 1000000; /* 1 million */
-    long bins_limit   = 2000;    /* 2 thousand */
-
-    /* 0 = no buffers allocated */
-    /* 1 = arg buffers allocated (3) */
-    /* 2 = arg and array buffers allocated (4) */
-    int allocated = 0;  /* total kludge! */
-
-    /* get parameters and evaluate each of them */
-
+    // Get parameters and evaluate each of them.
+    //
     SEP osep;
     if (!OPTIONAL_DELIM(3, osep, DELIM_EVAL|DELIM_NULL|DELIM_CRLF|DELIM_STRING))
     {
         return;
     }
 
-    points_arg    = alloc_lbuf("fun_distribute: points arg");
-    bins_arg      = alloc_lbuf("fun_distribute: bins arg");
-    allocated = 1;
-
-    strcpy(points_arg,    fargs[0]);
-    strcpy(bins_arg,      fargs[1]);
-
-    points_is_valid = (points_arg != NULL) && is_integer(points_arg, NULL);
-    bins_is_valid   = (bins_arg   != NULL) && is_integer(bins_arg, NULL);
-
-    if ( points_is_valid && bins_is_valid )
+    // Validate arguments.
+    //
+    if (!is_integer(fargs[0], NULL))
     {
-        points = mux_atol(points_arg);
-        bins   = mux_atol(bins_arg);
-    
-        points_is_valid = (points >= 0);
-        bins_is_valid   = (bins   >  0);
+        safe_str("#-1 ARG1 IS NOT AN INTEGER", buff, bufc);
+        return;
+    }
 
-        if ( points_is_valid && bins_is_valid )
-        {
-            points_is_valid = (points <= points_limit);
-            bins_is_valid   = (bins   <= bins_limit);
+    if (!is_integer(fargs[1], NULL))
+    {
+        safe_str("#-1 ARG2 IS NOT AN INTEGER", buff, bufc);
+        return;
+    }
 
-            if ( points_is_valid && bins_is_valid )
-            {
-                /* allocate a big array buffer -- ignoring LBUFs and other niceties */
-                bin_array = (long *) malloc(bins * sizeof(long));
-                if ( bin_array == NULL )
-                {
-                    safe_str("#-1 NOT ENOUGH MEMORY TO DISTRIBUTE", buff, bufc);
-                }
-                else
-                {
-                    allocated = 2;
+    const long points_limit = 1000000;
+    long points = mux_atol(fargs[0]);
+    if (points < 0)
+    {
+        safe_str("#-1 ARG1 MUST BE GREATER THAN OR EQUAL TO 0", buff, bufc);
+        return;
+    }
+    else if (points_limit < points)
+    {
+        safe_str("#-1 ARG1 IS WAY TOO HIGH", buff, bufc);
+        return;
+    }
 
-                    /*** NOMINAL CASE ***/
+    const long bins_limit   = 2000;
+    long bins   = mux_atol(fargs[1]);
+    if (bins <= 0)
+    {
+        safe_str("#-1 ARG2 MUST BE GREATER THAN 0", buff, bufc);
+        return;
+    }
+    else if (bins_limit < bins)
+    {
+        safe_str("#-1 ARG2 IS WAY TOO HIGH", buff, bufc);
+        return;
+    }
 
-                    /* initialize bins */
-                    for ( current_bin = 0; current_bin < bins; current_bin++)
-                    {
-                        bin_array[current_bin] = 0;
-                    }
-          
-                    /* distribute points over bin */
-                    /* for each point, pick a random bin for it and 
-                       increment that bin's count */
-
-                    for (current_point = 0; current_point < points; current_point++)
-                    {
-                        which_bin = RandomINT32(0, bins-1);
-                        ++(bin_array[which_bin]);
-                    }
-
-                    /* convert the array to real output */
-                    bool first = true;
-                    for (current_bin = 0; current_bin < bins; current_bin++)
-                    {
-                        if (!first)
-                        {
-                            print_sep(&osep, buff, bufc);
-                        }
-                        first = false;
-                        safe_tprintf_str(buff, bufc, "%ld", bin_array[current_bin]);
-                    }
-                }
-            }
-            else
-            {
-                /*** process high range errors ***/
-                if ( ! points_is_valid )
-                {
-                    safe_str("#-1 ARG1 IS WAY TOO HIGH", buff, bufc);
-                }
-                else if ( ! bins_is_valid )
-                {
-                    safe_str("#-1 ARG2 IS WAY TOO HIGH", buff, bufc);
-                }
-                else
-                {
-                    safe_str("#-1 UNKNOWN HIGH RANGE ERROR", buff, bufc);
-                }
-            }
-        }
-        else
-        {
-            /*** process low range errors ***/
-            if ( ! points_is_valid )
-            {
-                safe_str("#-1 ARG1 MUST BE GREATER THAN OR EQUAL TO 0", buff, bufc);
-            }
-            else if ( ! bins_is_valid )
-            {
-                safe_str("#-1 ARG2 MUST BE GREATER THAN 0", buff, bufc);
-            }
-            else
-            {
-                safe_str("#-1 UNKNOWN LOW RANGE ERROR", buff, bufc);
-            }
-        }
+    long *bin_array = (long *)MEMALLOC(bins * sizeof(long));
+    if (NULL == bin_array)
+    {
+        safe_str("#-1 NOT ENOUGH MEMORY TO DISTRIBUTE", buff, bufc);
     }
     else
     {
-        /*** process integer datatype errors ***/
-        if ( ! points_is_valid )
+        // Initialize bins.
+        //
+        int current_bin;
+        for (current_bin = 0; current_bin < bins; current_bin++)
         {
-            safe_str("#-1 ARG1 IS NOT AN INTEGER", buff, bufc);
+            bin_array[current_bin] = 0;
         }
-        else if ( ! bins_is_valid )
-        {
-            safe_str("#-1 ARG2 IS NOT AN INTEGER", buff, bufc);
-        }
-        else
-        {
-            safe_str("#-1 UNKNOWN DATATYPE ERROR", buff, bufc);
-        }
-    }
 
-    /* free memory buffers based on value of allocated */
+        // Distribute points over bin.  For each point, pick a random bin for
+        // it and increment that bin's count.
+        //
+        int current_point;
+        for (current_point = 0; current_point < points; current_point++)
+        {
+            int which_bin = RandomINT32(0, bins-1);
+            ++(bin_array[which_bin]);
+        }
 
-    if ( allocated == 1 )
-    {
-        free_lbuf(points_arg);
-        free_lbuf(bins_arg);
-    }
-    else if ( allocated == 2 )
-    {
-        free_lbuf(points_arg);
-        free_lbuf(bins_arg);
-        free(bin_array);
+        // Convert the array to real output.
+        //
+        bool first = true;
+        for (current_bin = 0; current_bin < bins; current_bin++)
+        {
+            if (!first)
+            {
+                print_sep(&osep, buff, bufc);
+            }
+            first = false;
+            safe_ltoa(bin_array[current_bin], buff, bufc);
+        }
+        MEMFREE(bin_array);
     }
 }
 
