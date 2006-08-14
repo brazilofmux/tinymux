@@ -1,7 +1,7 @@
 /*! \file functions.cpp
  *  MUX function handlers
  *
- * $Id: functions.cpp,v 1.207 2006-08-14 22:44:01 sdennis Exp $
+ * $Id: functions.cpp,v 1.208 2006-08-14 22:48:29 sdennis Exp $
  *
  */
 
@@ -5927,8 +5927,8 @@ FUNCTION(fun_distribute)
         return;
     }
 
-    const long points_limit = 1000000;
-    long points = mux_atol(fargs[0]);
+    const int points_limit = 1000000;
+    int points = mux_atol(fargs[0]);
     if (points < 0)
     {
         safe_str("#-1 ARG1 MUST BE GREATER THAN OR EQUAL TO 0", buff, bufc);
@@ -5940,8 +5940,8 @@ FUNCTION(fun_distribute)
         return;
     }
 
-    const long bins_limit   = 2000;
-    long bins   = mux_atol(fargs[1]);
+    const int bins_limit   = 2000;
+    int bins   = mux_atol(fargs[1]);
     if (bins <= 0)
     {
         safe_str("#-1 ARG2 MUST BE GREATER THAN 0", buff, bufc);
@@ -5953,7 +5953,16 @@ FUNCTION(fun_distribute)
         return;
     }
 
-    long *bin_array = (long *)MEMALLOC(bins * sizeof(long));
+    int *bin_array = NULL;
+    try
+    {
+        bin_array = new int[bins];
+    }
+    catch (...)
+    {
+        ; // Nothing.
+    }
+
     if (NULL == bin_array)
     {
         safe_str("#-1 NOT ENOUGH MEMORY TO DISTRIBUTE", buff, bufc);
@@ -5990,7 +5999,7 @@ FUNCTION(fun_distribute)
             first = false;
             safe_ltoa(bin_array[current_bin], buff, bufc);
         }
-        MEMFREE(bin_array);
+        delete [] bin_array;
     }
 }
 
