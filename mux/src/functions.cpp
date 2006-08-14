@@ -1,7 +1,7 @@
 /*! \file functions.cpp
  *  MUX function handlers
  *
- * $Id: functions.cpp,v 1.209 2006-08-14 23:00:29 sdennis Exp $
+ * $Id: functions.cpp,v 1.210 2006-08-14 23:57:06 sdennis Exp $
  *
  */
 
@@ -9282,7 +9282,7 @@ static FUN builtin_function_list[] =
 #if defined(FIRANMUX)
     {"MAILJ",       fun_mailj,      MAX_ARG, 0, MAX_ARG,         0, CA_PUBLIC},
     {"MAILSIZE",    fun_mailsize,   MAX_ARG, 1,       1,         0, CA_PUBLIC},
-    {"MAILSUBJ",    fun_mailsubj,   MAX_ARG, 0, MAX_ARG,         0, CA_PUBLIC},
+    {"MAILSUBJ",    fun_mailsubj,   MAX_ARG, 1,       2,         0, CA_PUBLIC},
 #endif // FIRANMUX
     {"MAP",         fun_map,        MAX_ARG, 2,       4,         0, CA_PUBLIC},
     {"MATCH",       fun_match,      MAX_ARG, 2,       3,         0, CA_PUBLIC},
