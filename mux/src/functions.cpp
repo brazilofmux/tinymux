@@ -1,7 +1,7 @@
 /*! \file functions.cpp
  *  MUX function handlers
  *
- * $Id: functions.cpp,v 1.193 2006-08-09 23:37:37 sdennis Exp $
+ * $Id: functions.cpp,v 1.194 2006-08-14 18:41:58 sdennis Exp $
  *
  */
 
@@ -1278,11 +1278,11 @@ FUNCTION(fun_text)
   int index;
   int lastchar, thischar;
 
-  textconf = fopen("textfiles.conf","r");
-  
-  /* Can't open the file. */
-  if (!textconf) {
-    safe_str("#-1 TEXTFILES.CONF MISSING",buff,bufc);
+  // Can't open the file.
+  //
+  if (!mux_fopen(&textconf, "textfiles.conf", "r"))
+  {
+    safe_str("#-1 TEXTFILES.CONF MISSING", buff, bufc);
     return;
   } 
   
@@ -1298,8 +1298,8 @@ FUNCTION(fun_text)
 
     /* Found the file listed, did I? */
     if (!strcmp(mybuffer, fargs[0])) {
-      myfile = fopen(fargs[0],"r");
-      if (!myfile) {
+      if (!mux_fopen(&myfile, fargs[0], "r"))
+      {
         /* But not here!? */
         fclose(textconf);
         safe_str("#-1 FILE DOES NOT EXIST",buff,bufc);
