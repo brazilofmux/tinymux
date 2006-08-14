@@ -1,7 +1,7 @@
 /*! \file functions.cpp
  *  MUX function handlers
  *
- * $Id: functions.cpp,v 1.194 2006-08-14 18:41:58 sdennis Exp $
+ * $Id: functions.cpp,v 1.195 2006-08-14 18:52:24 sdennis Exp $
  *
  */
 
@@ -1233,36 +1233,34 @@ static FUNCTION(fun_timefmt)
 }
 
 
-#ifdef FIRANMUX /* lanya */
+#ifdef FIRANMUX
 /*
  * ---------------------------------------------------------------------------
  * * fun_format: format a string (linewrap) with str, field, left, right
  */
 
-FUNCTION(fun_format)
+FUNCTION(fun_format)   
 {
-  char * buf;
-  int fieldsize;
-
-  fieldsize = mux_atol(fargs[1]);
-  if ( (fieldsize < 1) || (fieldsize > 80) )
+    int fieldsize = mux_atol(fargs[1]);
+    if (  fieldsize < 1
+       || 80 < fieldsize)
     {
-      safe_str("#-1 ILLEGAL FIELDSIZE", buff, bufc);
-      return;
+        safe_str("#-1 ILLEGAL FIELDSIZE", buff, bufc);
+        return;
     }
 
-  if ( (fieldsize + spec_strlen(fargs[2]) + spec_strlen(fargs[3])) > 79 )
+    if (fieldsize + spec_strlen(fargs[2]) + spec_strlen(fargs[3]) > 79)
     {
-      safe_str("#-1 COMBINED FIELD TOO LARGE", buff, bufc);
-      return;
+        safe_str("#-1 COMBINED FIELD TOO LARGE", buff, bufc);
+        return;   
     }
 
-  buf = alloc_lbuf("fun_format");
-  strcpy(buf,fargs[0]);
-  linewrap_general(buf,fieldsize,fargs[2],fargs[3]);
-  safe_str(buf,buff,bufc);
-  free_lbuf(buf);
-  return;
+    char *buf = alloc_lbuf("fun_format");
+    char *bp = buf;   
+    safe_str(fargs[0], buf, &bp);
+    linewrap_general(buf, fieldsize, fargs[2], fargs[3]);
+    safe_str(buf, buff, bufc);
+    free_lbuf(buf);
 }
 
 /*
