@@ -1,7 +1,7 @@
 /*! \file functions.cpp
  *  MUX function handlers
  *
- * $Id: functions.cpp,v 1.197 2006-08-14 19:20:24 sdennis Exp $
+ * $Id: functions.cpp,v 1.198 2006-08-14 19:23:01 sdennis Exp $
  *
  */
 
@@ -1288,9 +1288,13 @@ FUNCTION(fun_text)
     index = 0;
     while (mybuffer[index]) {
       if (mybuffer[index] == '\n') 
+      {
         mybuffer[index] = 0;
+      }
       else
+      {
         index++;
+      }
     }
 
     /* Found the file listed, did I? */
@@ -1306,21 +1310,30 @@ FUNCTION(fun_text)
       while (fgets(mybuffer, 80, myfile)) {
         index = 0;
         while (mybuffer[index]) 
+        {
           if (mybuffer[index] == '\n') 
+          {
             mybuffer[index] = 0;
+          }
           else
+          {
             index++;
+          }
+        }
         
         if (mybuffer[0] == '&') 
+        {
           if (!strcasecmp(fargs[1]+strspn(fargs[1]," "), mybuffer+2)) {
             /* At this point I've found the file and the entry */
             while ((thischar = fgetc(myfile))!=EOF) {
               if (thischar == '&') 
+              {
                 if (lastchar == 10) {
                   fclose(textconf);
                   fclose(myfile);
                   return;
                 }
+              }
               safe_chr(thischar, buff, bufc);
               lastchar = thischar;
             }
@@ -1328,6 +1341,7 @@ FUNCTION(fun_text)
             fclose(myfile);
             return;
           }
+        }
       }
       fclose(textconf);
       fclose(myfile);
