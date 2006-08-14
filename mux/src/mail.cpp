@@ -1,6 +1,6 @@
 // mail.cpp
 //
-// $Id: mail.cpp,v 1.64 2006-08-09 21:55:53 sdennis Exp $
+// $Id: mail.cpp,v 1.65 2006-08-14 23:34:13 sdennis Exp $
 //
 // This code was taken from Kalkin's DarkZone code, which was
 // originally taken from PennMUSH 1.50 p10, and has been heavily modified
@@ -1990,27 +1990,6 @@ struct mail *mail_fetch(dbref player, int num)
     }
     return NULL;
 }
-
-#if defined(FIRANMUX)
-struct mail *mail_fetch_folder(dbref player, int folder, int num)
-{
-    int i = 0;
-    MailList ml(player);
-    struct mail *mp;
-    for (mp = ml.FirstItem(); !ml.IsEnd(); mp = ml.NextItem())
-    {
-        if (Folder(mp) == folder)
-        {
-            i++;
-            if (i == num)
-            {
-                return mp;
-            }
-        }
-    }
-    return NULL;
-}
-#endif // FIRANMUX
 
 const char *mail_fetch_message(dbref player, int num)
 {
