@@ -1,7 +1,7 @@
 /*! \file functions.cpp
  *  MUX function handlers
  *
- * $Id: functions.cpp,v 1.202 2006-08-14 19:37:26 sdennis Exp $
+ * $Id: functions.cpp,v 1.203 2006-08-14 20:04:03 sdennis Exp $
  *
  */
 
@@ -1356,22 +1356,6 @@ FUNCTION(fun_text)
     }
     fclose(textconf);
     safe_str("#-1 FILE NOT LISTED",buff,bufc);
-}
-
-FUNCTION(fun_setname)
-{
-        if (!fargs[0] || !fargs[1]) return;
-
-        /*
-         * THIS ASSUMES THAT key is NOT USED BY do_name();
-         */
-        do_name(executor, caller, enactor, -1, 2, fargs[0], fargs[1]);
-}
-
-FUNCTION(fun_trigger)
-{
-
-        do_trigger(executor, caller, enactor, 0, fargs[0], fargs+1, nfargs-1);
 }
 
 /*

@@ -1,6 +1,6 @@
 // funceval.cpp -- MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.117 2006-08-09 21:55:53 sdennis Exp $
+// $Id: funceval.cpp,v 1.118 2006-08-14 20:04:03 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -323,6 +323,34 @@ FUNCTION(fun_setparent)
         return;
     }
     do_parent(executor, caller, enactor, 0, 2, fargs[0], fargs[1]);
+}
+
+FUNCTION(fun_setname)
+{
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
+    if (  !fargs[0]
+       || !fargs[1]
+       || check_command(executor, "@name", buff, bufc))
+    {
+        return;
+    }
+    do_name(executor, caller, enactor, 0, 2, fargs[0], fargs[1]);
+}
+
+FUNCTION(fun_trigger)
+{
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
+    if (check_command(executor, "@trigger", buff, bufc))
+    {
+        return;
+    }
+    do_trigger(executor, caller, enactor, 0, fargs[0], fargs+1, nfargs-1);
 }
 #endif // FIRANMUX
 
