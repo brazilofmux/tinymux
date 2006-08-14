@@ -1,7 +1,7 @@
 /*! \file functions.cpp
  *  MUX function handlers
  *
- * $Id: functions.cpp,v 1.210 2006-08-14 23:57:06 sdennis Exp $
+ * $Id: functions.cpp,v 1.211 2006-08-14 23:58:58 sdennis Exp $
  *
  */
 
@@ -1239,7 +1239,7 @@ static FUNCTION(fun_timefmt)
  * * fun_format: format a string (linewrap) with str, field, left, right
  */
 
-FUNCTION(fun_format)   
+FUNCTION(fun_format)
 {
     int fieldsize = mux_atol(fargs[1]);
     if (  fieldsize < 1
@@ -1252,7 +1252,7 @@ FUNCTION(fun_format)
     if (fieldsize + spec_strlen(fargs[2]) + spec_strlen(fargs[3]) > 79)
     {
         safe_str("#-1 COMBINED FIELD TOO LARGE", buff, bufc);
-        return;   
+        return;
     }
 
     char *buf = alloc_lbuf("fun_format");
@@ -1276,15 +1276,15 @@ FUNCTION(fun_text)
         //
         safe_str("#-1 TEXTFILES.CONF MISSING", buff, bufc);
         return;
-    } 
-  
+    }
+
     char mybuffer[80];
     while (fgets(mybuffer, 80, textconf))
     {
         int index = 0;
         while (mybuffer[index])
         {
-            if (mybuffer[index] == '\n') 
+            if (mybuffer[index] == '\n')
             {
                 mybuffer[index] = 0;
             }
@@ -1309,9 +1309,9 @@ FUNCTION(fun_text)
             while (fgets(mybuffer, 80, myfile))
             {
                 index = 0;
-                while (mybuffer[index]) 
+                while (mybuffer[index])
                 {
-                    if (mybuffer[index] == '\n') 
+                    if (mybuffer[index] == '\n')
                     {
                         mybuffer[index] = 0;
                     }
@@ -1320,8 +1320,8 @@ FUNCTION(fun_text)
                         index++;
                     }
                 }
-        
-                if ('&' == mybuffer[0]) 
+
+                if ('&' == mybuffer[0])
                 {
                     if (!strcasecmp(fargs[1]+strspn(fargs[1]," "), mybuffer+2))
                     {
@@ -1330,7 +1330,7 @@ FUNCTION(fun_text)
                         int lastchar = '\0';
                         while ((thischar = fgetc(myfile)) != EOF)
                         {
-                            if ('&' == thischar) 
+                            if ('&' == thischar)
                             {
                                 if ('\n' == lastchar)
                                 {
@@ -1360,18 +1360,18 @@ FUNCTION(fun_text)
 
 /*
  * ---------------------------------------------------------------------------
- * * successes: return the number of successes/botches from a bunch of 
+ * * successes: return the number of successes/botches from a bunch of
  * *            dice rolled Storyteller-style.
- * * 
+ * *
  * * Algorithm:
  * *   Roll some specified number of 10-sided dice.  For each die rolled,
  * *   if the roll is greater than or equal to the target difficulty, then
  * *   increment the total number of successes.  If the roll is a 1, then
  * *   decrement the total number of successes.  Return the final successes
  * *   count.
- * * 
+ * *
  * *   If the number of dice is more than the difficulty, return 0 for
- * *   any final result < 0 and return 1 for any final result = 0. 
+ * *   any final result < 0 and return 1 for any final result = 0.
  * *   (Turn botches into simple failures. Turn failures into simple
  * *   successes.)
  */
@@ -1423,7 +1423,7 @@ FUNCTION(fun_successes)
                 // Botch -- decrement successes.
                 //
                 --successes;
-            } 
+            }
             else if (target_difficulty <= roll)
             {
                 // Success -- increment successes.
@@ -2898,7 +2898,7 @@ SubsetTable[] =
     { "LISTEN",  lconListen },
     { NULL,      lconAny    }
 };
-        
+
 /*
  * ---------------------------------------------------------------------------
  * * fun_lcon: Return a list of contents.
@@ -5899,7 +5899,7 @@ static FUNCTION(fun_choose)
  * ---------------------------------------------------------------------------
  * * distribute: randomly distribute M total points into N total bins...
  * *             each bin has an equal 'weight'.
- * 
+ *
  * syntax:   distribute(points, bins, outputsep)
  * example:  distribute(100, 5, |) might return "25|16|17|22|20"
  */
@@ -6046,7 +6046,7 @@ FUNCTION(fun_sql)
         safe_str("#-1 QUERY ERROR", buff, bufc);
         return;
     }
-   
+
     MYSQL_RES *result = mysql_store_result(mush_database);
     if (!result)
     {
@@ -6076,7 +6076,7 @@ FUNCTION(fun_sql)
      }
 
      free_lbuf(curr);
-     mysql_free_result(result);      
+     mysql_free_result(result);
 }
 
 #endif // FIRANMUX
