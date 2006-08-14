@@ -1,7 +1,7 @@
 /*! \file functions.cpp
  *  MUX function handlers
  *
- * $Id: functions.cpp,v 1.200 2006-08-14 19:28:53 sdennis Exp $
+ * $Id: functions.cpp,v 1.201 2006-08-14 19:34:53 sdennis Exp $
  *
  */
 
@@ -1269,24 +1269,19 @@ FUNCTION(fun_format)
 
 FUNCTION(fun_text)
 {
-    char mybuffer[80];
-    FILE * textconf;
-    FILE * myfile;
-    int index;
-    int lastchar = '\0', thischar;
-
-    // Can't open the file.
-    //
+    FILE *textconf;
     if (!mux_fopen(&textconf, "textfiles.conf", "r"))
     {
+        // Can't open the file.
+        //
         safe_str("#-1 TEXTFILES.CONF MISSING", buff, bufc);
-      return;
+        return;
     } 
   
-    /* Did open the file.. */
+    char mybuffer[80];
     while (fgets(mybuffer, 80, textconf))
     {
-        index = 0;
+        int index = 0;
         while (mybuffer[index])
         {
             if (mybuffer[index] == '\n') 
@@ -1302,6 +1297,7 @@ FUNCTION(fun_text)
         /* Found the file listed, did I? */
         if (!strcmp(mybuffer, fargs[0]))
         {
+            FILE *myfile;
             if (!mux_fopen(&myfile, fargs[0], "r"))
             {
                 /* But not here!? */
@@ -1325,12 +1321,14 @@ FUNCTION(fun_text)
                     }
                 }
         
-                if (mybuffer[0] == '&') 
+                if ('&' == mybuffer[0]) 
                 {
                     if (!strcasecmp(fargs[1]+strspn(fargs[1]," "), mybuffer+2))
                     {
                         /* At this point I've found the file and the entry */
-                        while ((thischar = fgetc(myfile))!=EOF)
+                        int thischar;
+                        int lastchar = '\0';
+                        while ((thischar = fgetc(myfile)) != EOF)
                         {
                             if (thischar == '&') 
                             {
@@ -1356,6 +1354,7 @@ FUNCTION(fun_text)
             return;
         }
     }
+    fclose(textconf);
     safe_str("#-1 FILE NOT LISTED",buff,bufc);
 }
 
