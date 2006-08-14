@@ -1,6 +1,6 @@
 // mail.cpp
 //
-// $Id: mail.cpp,v 1.65 2006-08-14 23:34:13 sdennis Exp $
+// $Id: mail.cpp,v 1.66 2006-08-14 23:41:38 sdennis Exp $
 //
 // This code was taken from Kalkin's DarkZone code, which was
 // originally taken from PennMUSH 1.50 p10, and has been heavily modified
@@ -2547,17 +2547,17 @@ static void do_mail_stats(dbref player, char *name, int full)
                     if (Cleared(mp))
                     {
                         fc++;
-                        cchars += strlen(MessageFetch(mp->number));
+                        cchars += strlen(MessageFetch(mp->number)) + 1;
                     }
                     else if (Read(mp))
                     {
                         fr++;
-                        fchars += strlen(MessageFetch(mp->number));
+                        fchars += strlen(MessageFetch(mp->number)) + 1;
                     }
                     else
                     {
                         fu++;
-                        tchars += strlen(MessageFetch(mp->number));
+                        tchars += strlen(MessageFetch(mp->number)) + 1;
                     }
                 }
             }
@@ -2620,7 +2620,7 @@ static void do_mail_stats(dbref player, char *name, int full)
                 }
                 if (full == 2)
                 {
-                    fchars += strlen(MessageFetch(mp->number));
+                    fchars += strlen(MessageFetch(mp->number)) + 1;
                 }
             }
             if (mp->to == target)
@@ -2643,7 +2643,7 @@ static void do_mail_stats(dbref player, char *name, int full)
                 }
                 if (full == 2)
                 {
-                    tchars += strlen(MessageFetch(mp->number));
+                    tchars += strlen(MessageFetch(mp->number)) + 1;
                 }
             }
         }
