@@ -1,7 +1,7 @@
 /*! \file functions.cpp
  *  MUX function handlers
  *
- * $Id: functions.cpp,v 1.199 2006-08-14 19:24:37 sdennis Exp $
+ * $Id: functions.cpp,v 1.200 2006-08-14 19:28:53 sdennis Exp $
  *
  */
 
@@ -1269,94 +1269,94 @@ FUNCTION(fun_format)
 
 FUNCTION(fun_text)
 {
-  char mybuffer[80];
-  FILE * textconf;
-  FILE * myfile;
-  int index;
-  int lastchar = '\0', thischar;
+    char mybuffer[80];
+    FILE * textconf;
+    FILE * myfile;
+    int index;
+    int lastchar = '\0', thischar;
 
-  // Can't open the file.
-  //
-  if (!mux_fopen(&textconf, "textfiles.conf", "r"))
-  {
-    safe_str("#-1 TEXTFILES.CONF MISSING", buff, bufc);
-    return;
-  } 
+    // Can't open the file.
+    //
+    if (!mux_fopen(&textconf, "textfiles.conf", "r"))
+    {
+        safe_str("#-1 TEXTFILES.CONF MISSING", buff, bufc);
+      return;
+    } 
   
-  /* Did open the file.. */
-  while (fgets(mybuffer, 80, textconf))
-  {
-    index = 0;
-    while (mybuffer[index])
+    /* Did open the file.. */
+    while (fgets(mybuffer, 80, textconf))
     {
-      if (mybuffer[index] == '\n') 
-      {
-        mybuffer[index] = 0;
-      }
-      else
-      {
-        index++;
-      }
-    }
-
-    /* Found the file listed, did I? */
-    if (!strcmp(mybuffer, fargs[0]))
-    {
-      if (!mux_fopen(&myfile, fargs[0], "r"))
-      {
-        /* But not here!? */
-        fclose(textconf);
-        safe_str("#-1 FILE DOES NOT EXIST",buff,bufc);
-        return;
-      }
-
-      while (fgets(mybuffer, 80, myfile))
-      {
         index = 0;
-        while (mybuffer[index]) 
+        while (mybuffer[index])
         {
-          if (mybuffer[index] == '\n') 
-          {
-            mybuffer[index] = 0;
-          }
-          else
-          {
-            index++;
-          }
-        }
-        
-        if (mybuffer[0] == '&') 
-        {
-          if (!strcasecmp(fargs[1]+strspn(fargs[1]," "), mybuffer+2))
-          {
-            /* At this point I've found the file and the entry */
-            while ((thischar = fgetc(myfile))!=EOF)
+            if (mybuffer[index] == '\n') 
             {
-              if (thischar == '&') 
-              {
-                if (lastchar == 10)
+                mybuffer[index] = 0;
+            }
+            else
+            {
+                index++;
+            }
+        }
+
+        /* Found the file listed, did I? */
+        if (!strcmp(mybuffer, fargs[0]))
+        {
+            if (!mux_fopen(&myfile, fargs[0], "r"))
+            {
+                /* But not here!? */
+                fclose(textconf);
+                safe_str("#-1 FILE DOES NOT EXIST",buff,bufc);
+                return;
+            }
+
+            while (fgets(mybuffer, 80, myfile))
+            {
+                index = 0;
+                while (mybuffer[index]) 
                 {
-                  fclose(textconf);
-                  fclose(myfile);
-                  return;
+                    if (mybuffer[index] == '\n') 
+                    {
+                        mybuffer[index] = 0;
+                    }
+                    else
+                    {
+                        index++;
+                    }
                 }
-              }
-              safe_chr(thischar, buff, bufc);
-              lastchar = thischar;
+        
+                if (mybuffer[0] == '&') 
+                {
+                    if (!strcasecmp(fargs[1]+strspn(fargs[1]," "), mybuffer+2))
+                    {
+                        /* At this point I've found the file and the entry */
+                        while ((thischar = fgetc(myfile))!=EOF)
+                        {
+                            if (thischar == '&') 
+                            {
+                                if (lastchar == 10)
+                                {
+                                    fclose(textconf);
+                                    fclose(myfile);
+                                    return;
+                                }
+                            }
+                            safe_chr(thischar, buff, bufc);
+                            lastchar = thischar;
+                        }
+                        fclose(textconf);
+                        fclose(myfile);
+                        return;
+                    }
+                }
             }
             fclose(textconf);
             fclose(myfile);
+            safe_str("#-1 ENTRY NOT FOUND", buff, bufc);
             return;
-          }
         }
-      }
-      fclose(textconf);
-      fclose(myfile);
-      safe_str("#-1 ENTRY NOT FOUND", buff, bufc);
-      return;
     }
-  }
-  safe_str("#-1 FILE NOT LISTED",buff,bufc);
+    safe_str("#-1 FILE NOT LISTED",buff,bufc);
 }
 
 FUNCTION(fun_setname)
