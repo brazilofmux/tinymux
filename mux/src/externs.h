@@ -1,6 +1,6 @@
 // externs.h -- Prototypes for externs not defined elsewhere.
 //
-// $Id: externs.h,v 1.74 2006-08-14 23:34:13 sdennis Exp $
+// $Id: externs.h,v 1.75 2006-08-15 03:03:20 sdennis Exp $
 //
 
 #ifndef EXTERNS_H
@@ -1034,5 +1034,6 @@ char *modSpeech(dbref player, char *message, bool bWhich, char *command);
 void stack_clr(dbref obj);
 #endif // DEPRECATED
 bool parse_and_get_attrib(dbref, char *[], char **, dbref *, char *, char **);
+void SimplifyColorLetters(char Out[8], char *pIn);
 
 #endif // EXTERNS_H

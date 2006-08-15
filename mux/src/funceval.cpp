@@ -1,6 +1,6 @@
 // funceval.cpp -- MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.121 2006-08-15 00:49:51 sdennis Exp $
+// $Id: funceval.cpp,v 1.122 2006-08-15 03:03:20 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -183,8 +183,9 @@ static const unsigned char ansi_have_table[256] =
     0, 0, 0, 0, 0, 0, 0, 0,  0, 0, 0, 0, 0, 0, 0, 0       // 0xF0-0xFF
 };
 
-static void SimplifyColorLetters(char *pOut, char *pIn)
+void SimplifyColorLetters(char Out[8], char *pIn)
 {
+    char *pOut = Out;
     if (  pIn[0] == 'n'
        && pIn[1] == '\0')
     {

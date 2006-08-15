@@ -1,6 +1,6 @@
 // flags.cpp -- Flag manipulation routines.
 //
-// $Id: flags.cpp,v 1.34 2006-08-15 02:15:42 sdennis Exp $
+// $Id: flags.cpp,v 1.35 2006-08-15 03:03:20 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -1058,24 +1058,41 @@ char *unparse_object_ansi(dbref player, dbref target, bool obey_myopic)
         //
         if ('\0' == color_attr[0]) 
         {
+            free_lbuf(color_attr);
             safe_str(ANSI_HILITE, buf, &bp);
         }
         else
         {
-            char *ansi_code = alloc_lbuf ("unparse_object_ansi3");
-            char *ac = ansi_code;
+            char *AnsiCodes = alloc_lbuf ("unparse_object_ansi3");
+            char *ac = AnsiCodes;
             char *cp = color_attr;
-            mux_exec(ansi_code, &ac, player, target, target, 
+            mux_exec(AnsiCodes, &ac, player, target, target, 
                     EV_EVAL | EV_TOP | EV_FCHECK, &cp, NULL, 0);
+            free_lbuf(color_attr);
 
-            for (char *ap = ansi_code; ap < ac; ap++)
+            char SimplifiedCodes[8];
+            SimplifyColorLetters(SimplifiedCodes, AnsiCodes);
+            free_lbuf(AnsiCodes);
+
+            char RawCodes[LBUF_SIZE];
+            char *pRawCodes = RawCodes;
+
+            for (char *pSimplifiedCodes = SimplifiedCodes; SimplifiedCodes[0]; pSimplifiedCodes++)
             {
-                const char *pColor = ColorTable[(unsigned char)*ap];
-                safe_str(pColor, buf, &bp);
+                const char *pColor = ColorTable[(unsigned char)SimplifiedCodes[0]];
+                if (pColor)
+                {
+                    safe_str(pColor, RawCodes, &pRawCodes);
+                }
             }
-            free_lbuf(ansi_code);
+            *pRawCodes = '\0';
+
+            size_t nVisualWidth;
+            size_t nBufferAvailable = LBUF_SIZE - (bp - buf) - 1;
+            size_t nLen = ANSI_TruncateToField(RawCodes, nBufferAvailable, bp,
+                LBUF_SIZE, &nVisualWidth, ANSI_ENDGOAL_NORMAL);
+            *bp += nLen;
         }
-        free_lbuf(color_attr);
 
         // The ANSI codes are already on the buffer.  Add to it the object name
         // and an ANSI_NORMAL code.
