@@ -1,6 +1,6 @@
 // flags.cpp -- Flag manipulation routines.
 //
-// $Id: flags.cpp,v 1.35 2006-08-15 03:03:20 sdennis Exp $
+// $Id: flags.cpp,v 1.36 2006-08-15 03:08:27 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -1077,9 +1077,9 @@ char *unparse_object_ansi(dbref player, dbref target, bool obey_myopic)
             char RawCodes[LBUF_SIZE];
             char *pRawCodes = RawCodes;
 
-            for (char *pSimplifiedCodes = SimplifiedCodes; SimplifiedCodes[0]; pSimplifiedCodes++)
+            for (char *pSimplifiedCodes = SimplifiedCodes; pSimplifiedCodes[0]; pSimplifiedCodes++)
             {
-                const char *pColor = ColorTable[(unsigned char)SimplifiedCodes[0]];
+                const char *pColor = ColorTable[(unsigned char)pSimplifiedCodes[0]];
                 if (pColor)
                 {
                     safe_str(pColor, RawCodes, &pRawCodes);
