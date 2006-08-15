@@ -1,6 +1,6 @@
 // svdhash.cpp -- CHashPage, CHashFile, CHashTable modules.
 //
-// $Id: svdhash.cpp,v 1.56 2006-08-07 06:09:17 sdennis Exp $
+// $Id: svdhash.cpp,v 1.57 2006-08-15 18:01:41 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -1385,7 +1385,7 @@ bool CHashFile::InitializeDirectory(unsigned int n)
         return false;
     }
 
-    int *m_hpCacheLookup = NULL;
+    m_hpCacheLookup = NULL;
     try
     {
         m_hpCacheLookup = new int[m_nDir];
