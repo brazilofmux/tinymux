@@ -1,6 +1,6 @@
 // flags.cpp -- Flag manipulation routines.
 //
-// $Id: flags.cpp,v 1.36 2006-08-15 03:08:27 sdennis Exp $
+// $Id: flags.cpp,v 1.37 2006-08-15 05:21:01 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -1063,7 +1063,7 @@ char *unparse_object_ansi(dbref player, dbref target, bool obey_myopic)
         }
         else
         {
-            char *AnsiCodes = alloc_lbuf ("unparse_object_ansi3");
+            char *AnsiCodes = alloc_lbuf("unparse_object_ansi3");
             char *ac = AnsiCodes;
             char *cp = color_attr;
             mux_exec(AnsiCodes, &ac, player, target, target, 
@@ -1074,24 +1074,14 @@ char *unparse_object_ansi(dbref player, dbref target, bool obey_myopic)
             SimplifyColorLetters(SimplifiedCodes, AnsiCodes);
             free_lbuf(AnsiCodes);
 
-            char RawCodes[LBUF_SIZE];
-            char *pRawCodes = RawCodes;
-
-            for (char *pSimplifiedCodes = SimplifiedCodes; pSimplifiedCodes[0]; pSimplifiedCodes++)
+            for (int i = 0; SimplifiedCodes[i]; i++)
             {
-                const char *pColor = ColorTable[(unsigned char)pSimplifiedCodes[0]];
+                const char *pColor = ColorTable[(unsigned char)SimplifiedCodes[i]];
                 if (pColor)
                 {
-                    safe_str(pColor, RawCodes, &pRawCodes);
+                    safe_str(pColor, buf, &bp);
                 }
             }
-            *pRawCodes = '\0';
-
-            size_t nVisualWidth;
-            size_t nBufferAvailable = LBUF_SIZE - (bp - buf) - 1;
-            size_t nLen = ANSI_TruncateToField(RawCodes, nBufferAvailable, bp,
-                LBUF_SIZE, &nVisualWidth, ANSI_ENDGOAL_NORMAL);
-            *bp += nLen;
         }
 
         // The ANSI codes are already on the buffer.  Add to it the object name
