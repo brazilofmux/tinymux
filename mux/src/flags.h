@@ -1,6 +1,6 @@
 // flags.h -- Object flags.
 //
-// $Id: flags.h,v 1.15 2006-08-09 18:50:06 sdennis Exp $
+// $Id: flags.h,v 1.16 2006-08-15 02:15:42 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -182,7 +182,7 @@ extern bool has_flag(dbref, dbref, char *);
 extern char *unparse_object(dbref, dbref, bool);
 extern char *unparse_object_numonly(dbref);
 #if defined(FIRANMUX)
-extern char *unparse_object_ansi(dbref, dbref, int);
+extern char *unparse_object_ansi(dbref, dbref, bool);
 #endif // FIRANMUX
 extern bool convert_flags(dbref, char *, FLAGSET *, FLAG *);
 extern void decompile_flags(dbref, dbref, char *);

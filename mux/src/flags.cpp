@@ -1,6 +1,6 @@
 // flags.cpp -- Flag manipulation routines.
 //
-// $Id: flags.cpp,v 1.33 2006-08-09 18:50:06 sdennis Exp $
+// $Id: flags.cpp,v 1.34 2006-08-15 02:15:42 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -911,6 +911,7 @@ char *unparse_object(dbref player, dbref target, bool obey_myopic)
         {
             exam = Examinable(player, target);
         }
+
         if (  exam
            || (Flags(target) & (CHOWN_OK | JUMP_OK | LINK_OK | DESTROY_OK))
            || (Flags2(target) & ABODE))
@@ -1029,119 +1030,87 @@ CF_HAND(cf_flag_access)
  *                       simply hilite the object name, as before.
  */
 
-char *unparse_object_ansi(dbref player, dbref target, int obey_myopic)
+char *unparse_object_ansi(dbref player, dbref target, bool obey_myopic)
 {
-    char *buf, *bp, *fp, *ansi_code, *ac, *ap, *color_attr, *cp;
-    int exam, flags;
-    dbref owner;
+    char *buf = alloc_lbuf("unparse_object_ansi");
+    char *bp = buf;
 
-    /*
-     * Allocate memory buffers
-     */
+    if (NOPERM <= target && target < 0)
+    {
+        mux_strncpy(buf, aszSpecialDBRefNames[-target], LBUF_SIZE-1);
+    }
+    else if (!Good_obj(target))
+    {
+        mux_sprintf(buf, LBUF_SIZE, "*ILLEGAL*(#%d)", target);
+    }
+    else
+    {
+        int flags;
+        dbref owner;
 
-    ac = ansi_code = alloc_lbuf ("unparse_object_ansi");
-    bp = buf = alloc_lbuf("unparse_object_ansi2");
-    color_attr = alloc_lbuf("unparse_object_ansi3");
+        // Get the value of the object's 'color' attribute (or on a parent).
+        //
+        char *color_attr = alloc_lbuf("unparse_object_ansi2");
+        atr_pget_str(color_attr, target, A_COLOR, &owner, &flags);
 
-    /*
-     * If object is NOTHING, HOME, or not a valid object, report it
-     *   as such.
-     */
-
-    if (target == NOTHING) {
-        strcpy(buf, "*NOTHING*");
-    } else if (target == HOME) {
-        strcpy(buf, "*HOME*");
-    } else if (!Good_obj(target)) {
-        sprintf(buf, "*ILLEGAL*(#%d)", target);
-    } else {
-
-        /*
-         * Otherwise, depending upon whether we care that player is set myopic,
-         *   use one or the other function to determine if we can see the DB #
-         *   and flags.
-         */
-
-        if (obey_myopic)
-            exam = MyopicExam(player, target);
-        else
-            exam = Examinable(player, target);
-
-        /*
-         * Get the value of the object's 'color' attribute.
-         */
-
-        atr_get_str(color_attr, target, A_COLOR, &owner, &flags);
-
-        /* If the object's COLOR attribute is not found, then check
-         *   the object's parent for a COLOR attribute...
-         */
-
-        if (!color_attr | !*color_attr)
+        // If color attribute is not found, then just hilite.  Otherwise,
+        // ansi()-fy it as directed.
+        //
+        if ('\0' == color_attr[0]) 
         {
-            atr_pget_str(color_attr, target, A_COLOR, &owner, 
-                    &flags);
-        }
-
-        /* If color attribute is not found, then just hilite.
-         *   Otherwise, make a copy of the attribute (so we don't
-         *   update the actual attribute), evaluate it, and then
-         *   send the result to be converted to ANSI codes a la
-         *   the function ansi().
-         */
-
-        if (!color_attr || !*color_attr) 
-        {
-            safe_str (ANSI_HILITE, buf, &bp);
+            safe_str(ANSI_HILITE, buf, &bp);
         }
         else
         {
-            cp = color_attr;
+            char *ansi_code = alloc_lbuf ("unparse_object_ansi3");
+            char *ac = ansi_code;
+            char *cp = color_attr;
             mux_exec(ansi_code, &ac, player, target, target, 
                     EV_EVAL | EV_TOP | EV_FCHECK, &cp, NULL, 0);
 
-            for (ap=ansi_code; ap < ac; ap++)
+            for (char *ap = ansi_code; ap < ac; ap++)
             {
                 const char *pColor = ColorTable[(unsigned char)*ap];
                 safe_str(pColor, buf, &bp);
             }
+            free_lbuf(ansi_code);
         }
+        free_lbuf(color_attr);
 
-        /*
-         * The ANSI codes are already on the buffer.  Add to it the
-         *   object name and an ANSI_NORMAL code.
-         */
-
+        // The ANSI codes are already on the buffer.  Add to it the object name
+        // and an ANSI_NORMAL code.
+        //
         safe_str(Name(target), buf, &bp);
         safe_str(ANSI_NORMAL, buf, &bp);
 
-        /*
-         * If we are supposed to see the flag and DB # information,
-         *   then print it out to the buffer.  Otherwise, end the 
-         *   string with a null-terminator only (sanity check).
-         */
-
-        if (exam ||
-            (Flags(target) & (CHOWN_OK | JUMP_OK | LINK_OK | DESTROY_OK)) ||
-            (Flags2(target) & ABODE)) 
+        // Otherwise, depending upon whether we care that player is set myopic,
+        // use one or the other function to determine if we can see the DB #
+        // and flags.
+        //
+        bool exam;
+        if (obey_myopic)
         {
-            fp= decode_flags(player, &(db[target].fs));
-            strcpy(bp, tprintf(" (#%d%s)", target, fp));
-            free_sbuf(fp);
+            exam = MyopicExam(player, target);
         }
         else
         {
-            safe_chr('\0', buf, &bp);
+            exam = Examinable(player, target);
         }
+
+        // If we are supposed to see the flag and DB # information, then print
+        // it out to the buffer.  Otherwise, end the string with a
+        // null-terminator only (sanity check).
+        ///
+        if (  exam
+           || (Flags(target) & (CHOWN_OK | JUMP_OK | LINK_OK | DESTROY_OK))
+           || (Flags2(target) & ABODE)) 
+        {
+            char *fp= decode_flags(player, &(db[target].fs));
+            safe_str(tprintf(" (#%d%s)", target, fp), buf, &bp);
+            free_sbuf(fp);
+        }
+        *bp = '\0';
     }
-
-    /*
-     * Free those lbufs!
-     */
-
-    free_lbuf(color_attr);
-    free_lbuf(ansi_code);
-
     return buf;
 }
 #endif // FIRANMUX
