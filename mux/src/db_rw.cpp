@@ -1,6 +1,6 @@
 // db_rw.cpp
 //
-// $Id: db_rw.cpp,v 1.27 2006-08-10 00:29:10 sdennis Exp $
+// $Id: db_rw.cpp,v 1.28 2006-08-16 22:24:42 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -602,7 +602,30 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
                 pName = MakeCanonicalAttributeName(tstr, &nName, &bValid);
                 if (bValid)
                 {
-                    vattr_define_LEN(pName, nName, anum, aflags);
+#if defined(FIRANMUX_CONVERT)
+                    {
+                        // Does this user attribute conflict with any built-in attribute names?
+                        //
+                        ATTR *a = (ATTR *)hashfindLEN(pName, nName, &mudstate.attr_name_htab);
+                        if (a)
+                        {
+                            Log.tinyprintf(ENDLINE "Renaming conflicting user attribute, %s, to FIRAN_%s." ENDLINE, i);
+                            char *p = alloc_lbuf("db_read");
+                            char *q = p;
+                            safe_str("FIRAN_", p, &q);
+                            safe_str(pName, p, &q);
+                            *q = '\0';
+
+                            pName = MakeCanonicalAttributeName(p, &nName, &bValid);
+                            free_lbuf(p);
+                        }
+                    }
+
+                    if (bValid)
+#endif // FIRANMUX_CONVERT
+                    {
+                        vattr_define_LEN(pName, nName, anum, aflags);
+                    }
                 }
             }
             else if (ch == 'X')
