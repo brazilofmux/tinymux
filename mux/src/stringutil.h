@@ -1,6 +1,6 @@
 // stringutil.h -- string utilities.
 //
-// $Id: stringutil.h,v 1.53 2006-08-09 23:37:37 sdennis Exp $
+// $Id: stringutil.h,v 1.54 2006-08-16 15:20:43 sdennis Exp $
 //
 #ifndef STRINGUTIL_H
 #define STRINGUTIL_H
@@ -217,9 +217,5 @@ typedef struct
 } PARSE_FLOAT_RESULT;
 
 extern bool ParseFloat(PARSE_FLOAT_RESULT *pfr, const char *str, bool bStrict = true);
-
-#if defined(FIRANMUX)
-long spec_strlen(char *str);
-#endif // FIRANMUX
 
 #endif // STRINGUTIL_H

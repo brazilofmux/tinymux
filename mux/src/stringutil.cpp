@@ -1,6 +1,6 @@
 // stringutil.cpp -- string utilities.
 //
-// $Id: stringutil.cpp,v 1.91 2006-08-09 15:45:14 sdennis Exp $
+// $Id: stringutil.cpp,v 1.92 2006-08-16 15:20:43 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -3543,24 +3543,6 @@ CF_HAND(cf_art_rule)
 }
 
 #if defined(FIRANMUX)
-
-/* Lanyamod */
-long spec_strlen(char *str)
-{
-  long result = 0;
-  long index = 0;
-  while (str[index])
-    {
-      if (str[index] == 27)
-        {
-          while (str[index++] != 'm');
-          continue;
-        }
-      result++;
-      index++;
-    }
-  return result;
-}
 
 char * linewrap_general(char *strret, int field, char *left, char *right)
 {

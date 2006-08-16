@@ -1,7 +1,7 @@
 /*! \file functions.cpp
  *  MUX function handlers
  *
- * $Id: functions.cpp,v 1.212 2006-08-15 00:47:13 sdennis Exp $
+ * $Id: functions.cpp,v 1.213 2006-08-16 15:20:43 sdennis Exp $
  *
  */
 
@@ -1249,7 +1249,10 @@ FUNCTION(fun_format)
         return;
     }
 
-    if (fieldsize + spec_strlen(fargs[2]) + spec_strlen(fargs[3]) > 79)
+    size_t n2, n3;
+    strip_ansi(fargs[2], &n2);
+    strip_ansi(fargs[3], &n3);
+    if (fieldsize + n2 + n3 > 79)
     {
         safe_str("#-1 COMBINED FIELD TOO LARGE", buff, bufc);
         return;
