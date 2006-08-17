@@ -1,6 +1,6 @@
 // stringutil.cpp -- string utilities.
 //
-// $Id: stringutil.cpp,v 1.94 2006-08-17 04:58:46 sdennis Exp $
+// $Id: stringutil.cpp,v 1.95 2006-08-17 05:07:25 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -3544,18 +3544,21 @@ CF_HAND(cf_art_rule)
 
 #if defined(FIRANMUX)
 
-char * linewrap_general(char *strret, int field, char *left, char *right)
+char *linewrap_general(char *strret, int field, char *left, char *right)
 {
-    int tabsets[] = {1,9,17,25,33,41,49,57,65,73,81};
+    int tabsets[] =
+    {
+        1, 9, 17, 25, 33, 41, 49, 57, 65, 73, 81
+    };
     int leftmargin = 1;
     int rightmargin = 1+field;
 
     int position = 1;
     int index1 = 0;
     int spacesleft;
-    int space_eaten = 1;
-    int line_indented = 0;
-    int skip_out = 0;
+    bool space_eaten = true;
+    bool line_indented = false;
+    bool skip_out = false;
 
     char *str = alloc_lbuf("linewrap_desc");
     char *ostr = str;
@@ -3572,14 +3575,12 @@ char * linewrap_general(char *strret, int field, char *left, char *right)
     
         if (position == rightmargin)
         {
-            line_indented = 0;
-            space_eaten = 0;
+            line_indented = false;
+            space_eaten = false;
             position = leftmargin;
         
             safe_str(right,str,&ostr);
             safe_str("\r\n",str,&ostr);
-            /* sprintf(str+index2,"%s\r\n",right);
-            index2 = index2 + 2 + strlen(right); */
             continue;
         }
     
@@ -3587,17 +3588,16 @@ char * linewrap_general(char *strret, int field, char *left, char *right)
         {
             if (!line_indented)
             {
-                safe_str(left,str,&ostr);
-                /* sprintf(str+index2,"%s",left);
-                index2 = index2 + strlen(left);*/
-                line_indented = 1;
+                safe_str(left, str, &ostr);
+                line_indented = true;
             }
+
             if (!space_eaten)
             {
                 if (original[index1] == ' ')
                 {
                     index1++;
-                    space_eaten = 1;
+                    space_eaten = true;
                     continue;
                 }
             }
@@ -3625,12 +3625,12 @@ char * linewrap_general(char *strret, int field, char *left, char *right)
         
             if ((index3-index1) > field)
             {
-                skip_out = 1;
+                skip_out = true;
             }
 
             if (mux_isspace(original[index1]))
             {
-                skip_out = 0;
+                skip_out = false;
             }
         
             if (!skip_out)
@@ -3639,8 +3639,9 @@ char * linewrap_general(char *strret, int field, char *left, char *right)
                 {
                     int loop;
                     for (loop = rightmargin - position; loop; loop--)
-                        /* str[index2++] = ' ';*/
+                    {
                         safe_chr(' ',str,&ostr);
+                    }
                     position = rightmargin;
                     continue;
                 }
@@ -3651,10 +3652,8 @@ char * linewrap_general(char *strret, int field, char *left, char *right)
         case ESC_CHAR:
             do {
                 safe_chr(original[index1++],str,&ostr);
-                /* str[index2++] = original[index1++];*/
             } while (original[index1] != 'm');
             safe_chr('m',str,&ostr);
-            /* str[index2++] = 'm'; */
             index1++;
             break;
         
@@ -3665,8 +3664,6 @@ char * linewrap_general(char *strret, int field, char *left, char *right)
                 {
                     safe_chr(' ',str,&ostr);
                 }
-                /* str[index2++] = ' ';*/
-            
             }
             position = rightmargin;
             index1 = index1 + 2;
@@ -3692,37 +3689,33 @@ char * linewrap_general(char *strret, int field, char *left, char *right)
                     rightmargin - position : tabsets[index3] - position;
             
                 position = (tabsets[index3] > rightmargin) ?
-    rightmargin : tabsets[index3];
+                    rightmargin : tabsets[index3];
             
                 for(; difference; difference--)
                 {
                     safe_chr(' ',str,&ostr);
-                    /*sprintf(str+index2," ");
-                    index2++;*/
                 }
-                if (position == rightmargin) continue;
+                if (position == rightmargin)
+                {
+                    continue;
+                }
                 break;
             }
         default:
             safe_chr(original[index1++],str,&ostr);
-            /*str[index2++] = original[index1++];*/
             position++;
         };
     }
 
     {
-      int loop;
-      for (loop = rightmargin - position; loop; loop--)
-      {
-          safe_chr(' ',str,&ostr);
-      }
-      /*str[index2++] = ' ';*/
-  
+        int loop;
+        for (loop = rightmargin - position; loop; loop--)
+        {
+            safe_chr(' ',str,&ostr);
+        }
     }
     safe_str(right,str,&ostr);
     safe_chr(0,str,&ostr);
-    /* sprintf(str+index2,"%s",right);
-    index2 = index2 + strlen(right);*/
     strcpy(strret,str);
     free_lbuf(original);
     free_lbuf(str);
