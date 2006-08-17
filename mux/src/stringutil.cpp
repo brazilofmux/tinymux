@@ -1,6 +1,6 @@
 // stringutil.cpp -- string utilities.
 //
-// $Id: stringutil.cpp,v 1.97 2006-08-17 05:20:04 sdennis Exp $
+// $Id: stringutil.cpp,v 1.98 2006-08-17 05:39:50 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -3550,6 +3550,7 @@ char *linewrap_general(char *strret, int field, char *left, char *right)
     {
         1, 9, 17, 25, 33, 41, 49, 57, 65, 73, 81
     };
+
     int leftmargin = 1;
     int rightmargin = 1+field;
 
@@ -3562,8 +3563,8 @@ char *linewrap_general(char *strret, int field, char *left, char *right)
 
     char *str = alloc_lbuf("linewrap_desc");
     char *ostr = str;
-    char *original = alloc_lbuf("linewrap_desc2");
-    mux_strncpy(original, strret, LBUF_SIZE-1);
+
+    const char *original = strret;
 
     for (;;)
     {
@@ -3661,7 +3662,7 @@ char *linewrap_general(char *strret, int field, char *left, char *right)
         case '\r':
             {
                 int loop;
-                for(loop = rightmargin-position; loop; loop--)
+                for (loop = rightmargin-position; loop; loop--)
                 {
                     safe_chr(' ', str, &ostr);
                 }
@@ -3692,7 +3693,7 @@ char *linewrap_general(char *strret, int field, char *left, char *right)
                 position = (rightmargin < tabsets[index3]) ?
                     rightmargin : tabsets[index3];
             
-                for(; difference; difference--)
+                for (; difference; difference--)
                 {
                     safe_chr(' ', str, &ostr);
                 }
@@ -3717,9 +3718,11 @@ char *linewrap_general(char *strret, int field, char *left, char *right)
     }
 
     safe_str(right, str, &ostr);
-    safe_chr(0, str, &ostr);
-    mux_strncpy(strret, str, LBUF_SIZE-1);
-    free_lbuf(original);
+    *ostr = '\0';
+
+    char *bp = strret;
+    safe_str(str, strret, &bp);
+
     free_lbuf(str);
     return strret;
 }
