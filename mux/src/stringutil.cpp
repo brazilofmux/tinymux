@@ -1,6 +1,6 @@
 // stringutil.cpp -- string utilities.
 //
-// $Id: stringutil.cpp,v 1.93 2006-08-16 15:27:58 sdennis Exp $
+// $Id: stringutil.cpp,v 1.94 2006-08-17 04:58:46 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -3551,16 +3551,15 @@ char * linewrap_general(char *strret, int field, char *left, char *right)
     int rightmargin = 1+field;
 
     int position = 1;
-    int index1 = 0; int index2 = 0;
+    int index1 = 0;
     int spacesleft;
     int space_eaten = 1;
     int line_indented = 0;
     int skip_out = 0;
 
     char *str = alloc_lbuf("linewrap_desc");
-    char *ostr = ostr;
+    char *ostr = str;
     char *original = alloc_lbuf("linewrap_desc2");
-    char *oori = original;
     strcpy(original, strret);
 
     for (;;)
