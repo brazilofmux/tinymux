@@ -1,6 +1,6 @@
 // stringutil.cpp -- string utilities.
 //
-// $Id: stringutil.cpp,v 1.96 2006-08-17 05:12:22 sdennis Exp $
+// $Id: stringutil.cpp,v 1.97 2006-08-17 05:20:04 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -3563,11 +3563,10 @@ char *linewrap_general(char *strret, int field, char *left, char *right)
     char *str = alloc_lbuf("linewrap_desc");
     char *ostr = str;
     char *original = alloc_lbuf("linewrap_desc2");
-    strcpy(original, strret);
+    mux_strncpy(original, strret, LBUF_SIZE-1);
 
     for (;;)
     {
-        /* We're out of characters to parse.  Leave now. */
         if (!original[index1])
         {
             break;
@@ -3580,7 +3579,7 @@ char *linewrap_general(char *strret, int field, char *left, char *right)
             position = leftmargin;
         
             safe_str(right, str, &ostr);
-            safe_str("\r\n",str,&ostr);
+            safe_str("\r\n", str, &ostr);
             continue;
         }
     
@@ -3594,7 +3593,7 @@ char *linewrap_general(char *strret, int field, char *left, char *right)
 
             if (!space_eaten)
             {
-                if (original[index1] == ' ')
+                if (' ' == original[index1])
                 {
                     index1++;
                     space_eaten = true;
@@ -3625,7 +3624,7 @@ char *linewrap_general(char *strret, int field, char *left, char *right)
         }
     
     
-        if ((index3-index1) > field)
+        if ((index3 - index1) > field)
         {
             skip_out = true;
         }
@@ -3642,7 +3641,7 @@ char *linewrap_general(char *strret, int field, char *left, char *right)
                 int loop;
                 for (loop = rightmargin - position; loop; loop--)
                 {
-                    safe_chr(' ',str,&ostr);
+                    safe_chr(' ', str, &ostr);
                 }
                 position = rightmargin;
                 continue;
@@ -3653,7 +3652,7 @@ char *linewrap_general(char *strret, int field, char *left, char *right)
         {
         case ESC_CHAR:
             do {
-                safe_chr(original[index1++],str,&ostr);
+                safe_chr(original[index1++], str, &ostr);
             } while (original[index1] != 'm');
             safe_chr('m',str,&ostr);
             index1++;
@@ -3664,7 +3663,7 @@ char *linewrap_general(char *strret, int field, char *left, char *right)
                 int loop;
                 for(loop = rightmargin-position; loop; loop--)
                 {
-                    safe_chr(' ',str,&ostr);
+                    safe_chr(' ', str, &ostr);
                 }
             }
             position = rightmargin;
@@ -3680,19 +3679,22 @@ char *linewrap_general(char *strret, int field, char *left, char *right)
             
                 for (;;)
                 {
-                    if (tabsets[index3] > position) break;
+                    if (position < tabsets[index3])
+                    {
+                        break;
+                    }
                     index3++;
                 }
             
-                difference = (tabsets[index3] > rightmargin) ?
+                difference = (rightmargin < tabsets[index3]) ?
                     rightmargin - position : tabsets[index3] - position;
             
-                position = (tabsets[index3] > rightmargin) ?
+                position = (rightmargin < tabsets[index3]) ?
                     rightmargin : tabsets[index3];
             
                 for(; difference; difference--)
                 {
-                    safe_chr(' ',str,&ostr);
+                    safe_chr(' ', str, &ostr);
                 }
 
                 if (position == rightmargin)
@@ -3702,7 +3704,7 @@ char *linewrap_general(char *strret, int field, char *left, char *right)
                 break;
             }
         default:
-            safe_chr(original[index1++],str,&ostr);
+            safe_chr(original[index1++], str, &ostr);
             position++;
             break;
         }
@@ -3711,12 +3713,12 @@ char *linewrap_general(char *strret, int field, char *left, char *right)
     int loop;
     for (loop = rightmargin - position; loop; loop--)
     {
-        safe_chr(' ',str,&ostr);
+        safe_chr(' ', str, &ostr);
     }
 
-    safe_str(right,str,&ostr);
-    safe_chr(0,str,&ostr);
-    strcpy(strret,str);
+    safe_str(right, str, &ostr);
+    safe_chr(0, str, &ostr);
+    mux_strncpy(strret, str, LBUF_SIZE-1);
     free_lbuf(original);
     free_lbuf(str);
     return strret;
