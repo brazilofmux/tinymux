@@ -1,6 +1,6 @@
 // stringutil.cpp -- string utilities.
 //
-// $Id: stringutil.cpp,v 1.95 2006-08-17 05:07:25 sdennis Exp $
+// $Id: stringutil.cpp,v 1.96 2006-08-17 05:12:22 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -3579,7 +3579,7 @@ char *linewrap_general(char *strret, int field, char *left, char *right)
             space_eaten = false;
             position = leftmargin;
         
-            safe_str(right,str,&ostr);
+            safe_str(right, str, &ostr);
             safe_str("\r\n",str,&ostr);
             continue;
         }
@@ -3604,49 +3604,51 @@ char *linewrap_general(char *strret, int field, char *left, char *right)
         }
     
         spacesleft = rightmargin - position;
+        int index3 = index1;
+        while (original[index3])
         {
-            int index3 = index1;
-            while (original[index3])
+            if (ESC_CHAR == original[index3])
             {
-                if (ESC_CHAR == original[index3])
+                while (original[index3++] != 'm')
                 {
-                    while (original[index3++] != 'm');
-                    continue;
+                    ; // Nothing.
                 }
-
-                if (mux_isspace(original[index3]))
-                {
-                    break;
-                }
-                spacesleft--;
-                index3++;
-            }
-        
-        
-            if ((index3-index1) > field)
-            {
-                skip_out = true;
+                continue;
             }
 
-            if (mux_isspace(original[index1]))
+            if (mux_isspace(original[index3]))
             {
-                skip_out = false;
+                break;
             }
-        
-            if (!skip_out)
+            spacesleft--;
+            index3++;
+        }
+    
+    
+        if ((index3-index1) > field)
+        {
+            skip_out = true;
+        }
+
+        if (mux_isspace(original[index1]))
+        {
+            skip_out = false;
+        }
+    
+        if (!skip_out)
+        {
+            if (spacesleft < 0)
             {
-                if (spacesleft < 0)
+                int loop;
+                for (loop = rightmargin - position; loop; loop--)
                 {
-                    int loop;
-                    for (loop = rightmargin - position; loop; loop--)
-                    {
-                        safe_chr(' ',str,&ostr);
-                    }
-                    position = rightmargin;
-                    continue;
+                    safe_chr(' ',str,&ostr);
                 }
+                position = rightmargin;
+                continue;
             }
         }
+
         switch (original[index1])
         {
         case ESC_CHAR:
@@ -3671,11 +3673,8 @@ char *linewrap_general(char *strret, int field, char *left, char *right)
         
         case '\t':
             {
-                int index3;
-                int difference;
-            
-                index3 = 0;
-                difference = 0;
+                int index3 = 0;
+                int difference = 0;
             
                 index1++;
             
@@ -3695,6 +3694,7 @@ char *linewrap_general(char *strret, int field, char *left, char *right)
                 {
                     safe_chr(' ',str,&ostr);
                 }
+
                 if (position == rightmargin)
                 {
                     continue;
@@ -3704,16 +3704,16 @@ char *linewrap_general(char *strret, int field, char *left, char *right)
         default:
             safe_chr(original[index1++],str,&ostr);
             position++;
-        };
-    }
-
-    {
-        int loop;
-        for (loop = rightmargin - position; loop; loop--)
-        {
-            safe_chr(' ',str,&ostr);
+            break;
         }
     }
+
+    int loop;
+    for (loop = rightmargin - position; loop; loop--)
+    {
+        safe_chr(' ',str,&ostr);
+    }
+
     safe_str(right,str,&ostr);
     safe_chr(0,str,&ostr);
     strcpy(strret,str);
