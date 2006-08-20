@@ -1,6 +1,6 @@
 // stringutil.cpp -- string utilities.
 //
-// $Id: stringutil.cpp,v 1.98 2006-08-17 05:39:50 sdennis Exp $
+// $Id: stringutil.cpp,v 1.99 2006-08-20 04:40:10 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -3609,7 +3609,8 @@ char *linewrap_general(char *strret, int field, char *left, char *right)
         {
             if (ESC_CHAR == original[index3])
             {
-                while (original[index3++] != 'm')
+                while (  original[index3]
+                      && original[index3++] != 'm')
                 {
                     ; // Nothing.
                 }
@@ -3654,7 +3655,8 @@ char *linewrap_general(char *strret, int field, char *left, char *right)
         case ESC_CHAR:
             do {
                 safe_chr(original[index1++], str, &ostr);
-            } while (original[index1] != 'm');
+            } while (  original[index1]
+                    && original[index1] != 'm');
             safe_chr('m',str,&ostr);
             index1++;
             break;
