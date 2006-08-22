@@ -1,6 +1,6 @@
 // command.cpp -- command parser and support routines.
 //
-// $Id: command.cpp,v 1.92 2006-08-12 17:37:27 sdennis Exp $
+// $Id: command.cpp,v 1.93 2006-08-22 06:38:31 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -621,6 +621,7 @@ static CMDENT_ONE_ARG command_table_one_arg[] =
     {"enter",         enter_sw,   CA_LOCATION,                0,  CS_ONE_ARG|CS_INTERP, 0, do_enter},
     {"examine",       examine_sw, CA_PUBLIC,                  0,  CS_ONE_ARG|CS_INTERP, 0, do_examine},
     {"get",           get_sw,     CA_LOCATION|CA_NO_GUEST,    0,  CS_ONE_ARG|CS_INTERP, 0, do_get},
+    {"take",          get_sw,     CA_LOCATION|CA_NO_GUEST,    0,  CS_ONE_ARG|CS_INTERP, 0, do_get},
 #if defined(FIRANMUX)
     {"goto",          goto_sw,    CA_LOCATION|CA_NO_IMMOBILE, 0,  CS_ONE_ARG|CS_INTERP, 0, do_move},
 #else
