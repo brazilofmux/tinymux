@@ -1,6 +1,6 @@
 // stringutil.cpp -- string utilities.
 //
-// $Id: stringutil.cpp,v 1.99 2006-08-20 04:40:10 sdennis Exp $
+// $Id: stringutil.cpp,v 1.100 2006-08-22 05:58:38 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -3724,6 +3724,7 @@ char *linewrap_general(char *strret, int field, char *left, char *right)
 
     char *bp = strret;
     safe_str(str, strret, &bp);
+    *bp = '\0';
 
     free_lbuf(str);
     return strret;
