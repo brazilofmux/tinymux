@@ -1,6 +1,6 @@
 // db_rw.cpp
 //
-// $Id: db_rw.cpp,v 1.29 2006-08-16 23:00:43 sdennis Exp $
+// $Id: db_rw.cpp,v 1.30 2006-08-22 05:16:57 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -609,7 +609,7 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
                         ATTR *a = (ATTR *)hashfindLEN(pName, nName, &mudstate.attr_name_htab);
                         if (a)
                         {
-                            Log.tinyprintf(ENDLINE "Renaming conflicting user attribute, %s, to FIRAN_%s." ENDLINE, pName, pName);
+                            Log.tinyprintf("Renaming conflicting user attribute, %s, to FIRAN_%s." ENDLINE, pName, pName);
                             char *p = alloc_lbuf("db_read");
                             char *q = p;
                             safe_str("FIRAN_", p, &q);
@@ -622,7 +622,7 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
                             a = vattr_find_LEN(pName, nName);
                             if (a)
                             {
-                                Log.tinyprintf(ENDLINE "ERROR: Renamed user attribute, %s, already exists." ENDLINE, pName);
+                                Log.tinyprintf("ERROR: Renamed user attribute, %s, already exists." ENDLINE, pName);
                             }
                         }
                     }
