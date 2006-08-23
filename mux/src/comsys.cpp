@@ -1,6 +1,6 @@
 // comsys.cpp
 //
-// $Id: comsys.cpp,v 1.54 2006-08-07 02:06:01 sdennis Exp $
+// $Id: comsys.cpp,v 1.55 2006-08-23 16:07:34 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -973,12 +973,16 @@ static void do_processcom(dbref player, char *arg1, char *arg2)
         raw_notify(player, "You are not listed as on that channel.  Delete this alias and readd.");
         return;
     }
+
+#if !defined(FIRANMUX)
     if (  Gagged(player)
        && !Wizard(player))
     {
         raw_notify(player, "GAGGED players may not speak on channels.");
         return;
     }
+#endif // FIRANMUX
+
     if (!strcmp(arg2, "on"))
     {
         do_joinchannel(player, ch);
