@@ -1,7 +1,7 @@
 /*! \file functions.cpp
  *  MUX function handlers
  *
- * $Id: functions.cpp,v 1.213 2006-08-16 15:20:43 sdennis Exp $
+ * $Id: functions.cpp,v 1.214 2006-08-24 01:24:07 sdennis Exp $
  *
  */
 
@@ -3354,6 +3354,7 @@ static FUNCTION(fun_pos)
         if (p)
         {
             i = p - pSrc + 1;
+           bSucceeded = true;
         }
     }
     else if (nPat > 1)
