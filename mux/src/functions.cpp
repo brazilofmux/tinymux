@@ -1,7 +1,7 @@
 /*! \file functions.cpp
  *  MUX function handlers
  *
- * $Id: functions.cpp,v 1.215 2006-08-24 01:32:23 sdennis Exp $
+ * $Id: functions.cpp,v 1.216 2006-08-24 20:48:42 sdennis Exp $
  *
  */
 
@@ -7528,18 +7528,19 @@ static FUNCTION(fun_isdbref)
     UNUSED_PARAMETER(executor);
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
-    UNUSED_PARAMETER(nfargs);
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
     bool bResult = false;
-
-    char *p = fargs[0];
-    if (NUMBER_TOKEN == p[0])
+    if (nfargs >= 1)
     {
-        p++;
-        dbref dbitem = parse_dbref(p);
-        bResult = Good_obj(dbitem);
+        char *p = fargs[0];
+        if (NUMBER_TOKEN == p[0])
+        {
+            p++;
+            dbref dbitem = parse_dbref(p);
+            bResult = Good_obj(dbitem);
+        }
     }
     safe_bool(bResult, buff, bufc);
 }
@@ -9230,7 +9231,7 @@ static FUN builtin_function_list[] =
     {"INSERT",      fun_insert,     MAX_ARG, 3,       4,         0, CA_PUBLIC},
     {"INUM",        fun_inum,       MAX_ARG, 0,       1,         0, CA_PUBLIC},
     {"INZONE",      fun_inzone,     MAX_ARG, 1,       1,         0, CA_PUBLIC},
-    {"ISDBREF",     fun_isdbref,    MAX_ARG, 1,       1,         0, CA_PUBLIC},
+    {"ISDBREF",     fun_isdbref,    MAX_ARG, 0,       1,         0, CA_PUBLIC},
     {"ISIGN",       fun_isign,      MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {"ISINT",       fun_isint,      MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {"ISNUM",       fun_isnum,      MAX_ARG, 1,       1,         0, CA_PUBLIC},
