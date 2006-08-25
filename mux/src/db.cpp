@@ -1,6 +1,6 @@
 // db.cpp
 //
-// $Id: db.cpp,v 1.102 2006-08-09 20:10:23 sdennis Exp $
+// $Id: db.cpp,v 1.103 2006-08-25 06:20:19 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -65,7 +65,7 @@ ATTR AttrTable[] =
     {"Comment",     A_COMMENT,  AF_MDARK | AF_WIZARD},
     {"ConFormat",   A_CONFORMAT, AF_ODARK | AF_NOPROG},
     {"Cost",        A_COST,     AF_ODARK | AF_NOPROG},
-    {"Created",     A_CREATED,  AF_GOD | AF_VISUAL | AF_NOPROG | AF_NOCMD},
+    {"Created",     A_CREATED,  AF_ODARK | AF_NOPROG | AF_NOCMD | AF_NOCLONE | AF_GOD},
     {"Daily",       A_DAILY,    AF_ODARK | AF_NOPROG},
     {"Desc",        A_DESC,     AF_VISUAL | AF_NOPROG},
     {"DefaultLock", A_LOCK,     AF_ODARK | AF_NOPROG | AF_NOCMD | AF_IS_LOCK},
@@ -112,7 +112,7 @@ ATTR AttrTable[] =
     {"Mailsucc",    A_MAIL,     AF_ODARK | AF_NOPROG},
     {"Mailto",      A_MAILTO,   AF_DARK | AF_NOPROG | AF_NOCMD | AF_INTERNAL},
     {"Mfail",       A_MFAIL,    AF_ODARK | AF_NOPROG},
-    {"Modified",    A_MODIFIED, AF_GOD | AF_VISUAL | AF_NOPROG | AF_NOCMD},
+    {"Modified",    A_MODIFIED, AF_ODARK | AF_NOPROG | AF_NOCMD | AF_NOCLONE | AF_GOD},
     {"Moniker",     A_MONIKER,  AF_ODARK | AF_NOPROG | AF_NOCMD | AF_CONST},
     {"Move",        A_MOVE,     AF_ODARK | AF_NOPROG},
     {"Name",        A_NAME,     AF_DARK | AF_NOPROG | AF_NOCMD | AF_INTERNAL},
