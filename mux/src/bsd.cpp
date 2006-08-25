@@ -2,7 +2,7 @@
  * File for most TCP socket-related code. Some socket-related code also exists
  * in netcommon.cpp, but most of it is here.
  *
- * $Id: bsd.cpp,v 1.79 2006/01/08 06:16:08 sdennis Exp $
+ * $Id: bsd.cpp,v 1.80 2006/08/25 19:49:14 sdennis Exp $
  */
 
 #include "copyright.h"
@@ -3281,7 +3281,7 @@ static void process_input_helper(DESC *d, char *pBytes, int nBytes)
     }
 
     if (  d->raw_input->cmd < p
-       && p < pend)
+       && p <= pend)
     {
         d->raw_input_at = p;
     }
