@@ -1,6 +1,6 @@
 // predicates.cpp
 //
-// $Id: predicates.cpp,v 1.85 2006-08-09 19:32:37 sdennis Exp $
+// $Id: predicates.cpp,v 1.86 2006-08-26 22:13:08 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -2326,11 +2326,11 @@ void did_it(dbref player, dbref thing, int what, const char *def, int owhat,
                 notify_html(player, buff);
             }
 #if defined(FIRANMUX)
-            else if (  A_DESC == what == A_DESC
+            else if (  A_DESC == what
                     && Linewrap(player)
-                    && TYPE_PLAYER == Typeof(player)
+                    && isPlayer(player)
                     && (  !Linewrap(thing)
-                       || TYPE_PLAYER == Typeof(thing)))
+                       || isPlayer(thing)))
             {
                 notify(player, linewrap_desc(buff));
             }
