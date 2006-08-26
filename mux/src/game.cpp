@@ -1,6 +1,6 @@
 // game.cpp
 //
-// $Id: game.cpp,v 1.103 2006-08-09 19:09:38 sdennis Exp $
+// $Id: game.cpp,v 1.104 2006-08-26 03:12:01 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -27,7 +27,7 @@
 #if defined(FIRANMUX)
 #include <mysql/mysql.h>
 
-MYSQL *mush_database;
+MYSQL *mush_database = NULL;
 #endif // FIRANMUX
 
 void do_dump(dbref executor, dbref caller, dbref enactor, int key)
@@ -2266,37 +2266,38 @@ static void write_pidfile(const char *pFilename)
 static void init_sql(void)
 {
     STARTLOG(LOG_STARTUP,"SQL","CONN");
-    log_text((char *)"Connecting: ");
+    log_text("Connecting: ");
     log_text(mudconf.sql_database);
-    log_text((char *)"@");
+    log_text("@");
     log_text(mudconf.sql_server);
-    log_text((char *)" as ");
+    log_text(" as ");
     log_text(mudconf.sql_user);
     ENDLOG;
     mush_database = mysql_init(NULL);
 
     if (mush_database)
     {
-       if (!mysql_real_connect(mush_database,mudconf.sql_server,
+       if (mysql_real_connect(mush_database,mudconf.sql_server,
                   mudconf.sql_user, mudconf.sql_password,
                   mudconf.sql_database, 0, NULL, 0))
        {
            STARTLOG(LOG_STARTUP,"SQL","CONN");
-           log_text((char *)"Unable to connect");
+           log_text("Connected to MySQL");
            ENDLOG;
-           mysql_close(mush_database);
        }
        else
        {
            STARTLOG(LOG_STARTUP,"SQL","CONN");
-           log_text((char *)"Connected to MySQL");
+           log_text("Unable to connect");
            ENDLOG;
+           mysql_close(mush_database);
+           mush_database = NULL;
        }
     }
     else
     {
        STARTLOG(LOG_STARTUP,"SQL","CONN");
-       log_text((char *)"MySQL Library unavailable");
+       log_text("MySQL Library unavailable");
        ENDLOG;
     }
 }
@@ -3191,8 +3192,9 @@ int DCL_CDECL main(int argc, char *argv[])
      if (mush_database)
      {
          mysql_close(mush_database);
+         mush_database = NULL;
          STARTLOG(LOG_STARTUP,"SQL","DISC");
-         log_text((char *)"SQL shut down");
+         log_text("SQL shut down");
          ENDLOG;
      }
 #endif // FIRANMUX
