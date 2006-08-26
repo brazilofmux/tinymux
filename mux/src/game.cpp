@@ -1,6 +1,6 @@
 // game.cpp
 //
-// $Id: game.cpp,v 1.104 2006-08-26 03:12:01 sdennis Exp $
+// $Id: game.cpp,v 1.105 2006-08-26 03:26:41 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -2273,32 +2273,36 @@ static void init_sql(void)
     log_text(" as ");
     log_text(mudconf.sql_user);
     ENDLOG;
-    mush_database = mysql_init(NULL);
 
-    if (mush_database)
+    if ('\0' != mudconf.sql_server[0])
     {
-       if (mysql_real_connect(mush_database,mudconf.sql_server,
-                  mudconf.sql_user, mudconf.sql_password,
-                  mudconf.sql_database, 0, NULL, 0))
-       {
+        mush_database = mysql_init(NULL);
+
+        if (mush_database)
+        {
+           if (mysql_real_connect(mush_database,mudconf.sql_server,
+                      mudconf.sql_user, mudconf.sql_password,
+                      mudconf.sql_database, 0, NULL, 0))
+           {
+               STARTLOG(LOG_STARTUP,"SQL","CONN");
+               log_text("Connected to MySQL");
+               ENDLOG;
+           }
+           else
+           {
+               STARTLOG(LOG_STARTUP,"SQL","CONN");
+               log_text("Unable to connect");
+               ENDLOG;
+               mysql_close(mush_database);
+               mush_database = NULL;
+           }
+        }
+        else
+        {
            STARTLOG(LOG_STARTUP,"SQL","CONN");
-           log_text("Connected to MySQL");
+           log_text("MySQL Library unavailable");
            ENDLOG;
-       }
-       else
-       {
-           STARTLOG(LOG_STARTUP,"SQL","CONN");
-           log_text("Unable to connect");
-           ENDLOG;
-           mysql_close(mush_database);
-           mush_database = NULL;
-       }
-    }
-    else
-    {
-       STARTLOG(LOG_STARTUP,"SQL","CONN");
-       log_text("MySQL Library unavailable");
-       ENDLOG;
+        }
     }
 }
 
