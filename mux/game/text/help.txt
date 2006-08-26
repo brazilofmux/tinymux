@@ -378,6 +378,18 @@ $-COMMANDS
 
   Related Topics: kill, @kill and @okill, BEING KILLED, IMMORTAL, WIZARD.
 
+& @ALEAD
+@ALEAD
+
+  COMMAND:   @alead <object> = <command list>
+  ATTRIBUTE: Alead
+
+  Sets the <command list> executed when object is lead.
+
+  This attribute is only available if FIRANMUX is enabled.
+
+  Related Topics: @lead, @olead.
+
 & @ALEAVE
 @ALEAVE
 
@@ -913,6 +925,21 @@ Related Topics: @name.
     @coflags: Set.
 
   Related Topics: @cpflags, @clist, CHANNEL OBJECT.
+
+& @COLOR
+@COLOR
+
+  COMMAND:   @color <object> = <color-code-list>
+  ATTRIBUTE: Color
+
+  Controls the colorization of an object's name.
+
+  Example:
+    @color me = hr
+
+  This attribute is only available if FIRANMUX is enabled.
+
+  Related Topics: ansi(), ANSI CODES, @moniker, moniker().
 
 & @CONFORMAT
 @CONFORMAT
@@ -1833,6 +1860,18 @@ Related Topics: @name.
   number of successful and failed connections.
   You can only display information about yourself.
 
+& @LEAD
+@LEAD
+
+  COMMAND:   @lead <object> = <message>
+  ATTRIBUTE: Lead
+
+  Sets the <message> seen by the object when it is lead.
+
+  This attribute is only available if FIRANMUX is enabled.
+
+  Related Topics: @alead, @olead.
+
 & @LEAVE
 @LEAVE
 
@@ -2666,6 +2705,18 @@ Related Topics: @name.
   Example: @okill guard = bashes in the guard's skull, killing him.
 
   Related Topics: kill, @akill, @kill, BEING KILLED, IMMORTAL, WIZARD.
+
+& @OLEAD
+@OLEAD
+
+  COMMAND:   @olead <object> = <message>
+  ATTRIBUTE: Olead
+
+  Sets the <message> seen by others when <object> is lead.
+
+  This attribute is only available if FIRANMUX is enabled.
+
+  Related Topics: @lead, @alead.
 
 & @OLEAVE
 @OLEAVE
@@ -5053,21 +5104,22 @@ COMMANDS (continued)
 
   @aahear      @aclone      @aconnect    @adescribe   @adfail      @adisconnect
   @adrop       @aefail      @aenter      @afail       @agfail      @ahear
-  @akill       @aleave      @alfail      @alias       @amail       @amhear
-  @amove       @apay        @arfail      @asuccess    @atfail      @atofail
-  @atport      @aufail      @ause        @away        @charges     @conformat
-  @cost        @daily       @descformat  @describe    @dfail       @drop
-  @ealias      @efail       @enter       @exitformat  @exitto      @fail
-  @filter      @forwardlist @gfail       @idesc       @idle        @idletimeout
-  @infilter    @inprefix    @kill        @lalias      @leave       @lfail
-  @listen      @mailsucc    @mfail       @moniker     @move        @nameformat
-  @odescribe   @odfail      @odrop       @oefail      @oenter      @ofail
-  @ogfail      @okill       @oleave      @olfail      @omove       @opay
-  @orfail      @osuccess    @otfail      @otofail     @otport      @oufail
-  @ouse        @oxenter     @oxleave     @oxtport     @pay         @prefix
-  @queuemax    @reject      @rfail       @runout      @saystring   @sex
-  @signature   @speechmod   @startup     @success     @tfail       @tofail
-  @tport       @ufail       @use
+  @akill       @alead       @aleave      @alfail      @alias       @amail
+  @amhear      @amove       @apay        @arfail      @asuccess    @atfail
+  @atofail     @atport      @aufail      @ause        @away        @charges
+  @color       @conformat   @cost        @daily       @descformat  @describe
+  @dfail       @drop        @ealias      @efail       @enter       @exitformat
+  @exitto      @fail        @filter      @forwardlist @gfail       @idesc
+  @idle        @idletimeout @infilter    @inprefix    @kill        @lalias
+  @lead        @leave       @lfail       @listen      @mailsucc    @mfail
+  @moniker     @move        @nameformat  @odescribe   @odfail      @odrop
+  @oefail      @oenter      @ofail       @ogfail      @okill       @olead
+  @oleave      @olfail      @omove       @opay        @orfail      @osuccess
+  @otfail      @otofail     @otport      @oufail      @ouse        @oxenter
+  @oxleave     @oxtport     @pay         @prefix      @queuemax    @reject
+  @rfail       @runout      @saystring   @sex         @signature   @speechmod
+  @startup     @success     @tfail       @tofail      @tport       @ufail
+  @use
 
 & COMP()
 COMP()
