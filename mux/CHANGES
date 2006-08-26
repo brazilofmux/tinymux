@@ -57,6 +57,13 @@ Bug Fixes:
     ability to use other commands. Reported by K hall.
  -- Added checking to convsecs() to return '#-1 INVALID DATE" if first
     argument is outside the supported range.
+ -- All but the last part of very Long lines from the network were
+    discarded when for very long lines, only the first part should be
+    saved.  Not a crashing bug.
+ -- Server should not attempt to @clone Created and Modified attributes.
+ -- Fix single-character case in pos(). It would never return success.
+    Bug introduced in 2.6. It does not appear in 2.4.
+ -- Change isdbref() to return '0' instead of '#-1 ISDBEF EXPECTS...'
 
 
 Performance Enhancements:
