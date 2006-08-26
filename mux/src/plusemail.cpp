@@ -249,10 +249,11 @@ void do_plusemail(dbref executor, dbref cause, dbref enactor, int key,
 
     memset(inputline, 0, LBUF_SIZE);
     result = mod_email_sock_readline(mailsock,inputline,LBUF_SIZE - 1);
-    while ((result == 0) || (inputline[3] == '-'))
+    while (  0 == result
+          || '-' == inputline[3])
     {
-        memset(inputline,0,LBUF_SIZE);
-        result = mod_email_sock_readline(mailsock,inputline,LBUF_SIZE - 1);
+        memset(inputline, 0, LBUF_SIZE);
+        result = mod_email_sock_readline(mailsock, inputline, LBUF_SIZE - 1);
     }
 
     if (-1 == result)
@@ -295,13 +296,13 @@ void do_plusemail(dbref executor, dbref cause, dbref enactor, int key,
     }
 
     mod_email_sock_printf(mailsock, "MAIL FROM:<%s>\r\n", mudconf.mail_sendaddr);   
-    memset(inputline,0,LBUF_SIZE);
-    result = mod_email_sock_readline(mailsock,inputline,LBUF_SIZE - 1);
+    memset(inputline, 0, LBUF_SIZE);
+    result = mod_email_sock_readline(mailsock, inputline, LBUF_SIZE - 1);
     while (  0 == result
           || '-' == inputline[3])
     {
-        memset(inputline,0,LBUF_SIZE);
-        result = mod_email_sock_readline(mailsock,inputline,LBUF_SIZE - 1);
+        memset(inputline, 0, LBUF_SIZE);
+        result = mod_email_sock_readline(mailsock, inputline, LBUF_SIZE - 1);
     }
 
     if (-1 == result)
@@ -318,13 +319,13 @@ void do_plusemail(dbref executor, dbref cause, dbref enactor, int key,
     }
 
     mod_email_sock_printf(mailsock, "RCPT TO:<%s>\r\n", addy);
-    memset(inputline,0,LBUF_SIZE);
-    result = mod_email_sock_readline(mailsock,inputline,LBUF_SIZE - 1);
+    memset(inputline, 0, LBUF_SIZE);
+    result = mod_email_sock_readline(mailsock, inputline, LBUF_SIZE - 1);
     while (  0 == result
           || '-' == inputline[3])
     {
-        memset(inputline,0,LBUF_SIZE);
-        result = mod_email_sock_readline(mailsock,inputline,LBUF_SIZE - 1);
+        memset(inputline, 0, LBUF_SIZE);
+        result = mod_email_sock_readline(mailsock, inputline, LBUF_SIZE - 1);
     }
 
     if (-1 == result)
@@ -342,13 +343,13 @@ void do_plusemail(dbref executor, dbref cause, dbref enactor, int key,
     }
 
     mod_email_sock_printf(mailsock, "DATA\r\n");
-    memset(inputline,0,LBUF_SIZE);
-    result = mod_email_sock_readline(mailsock,inputline,LBUF_SIZE - 1);
+    memset(inputline, 0, LBUF_SIZE);
+    result = mod_email_sock_readline(mailsock, inputline, LBUF_SIZE - 1);
     while (  0 == result
           || '-' == inputline[3])
     {
-        memset(inputline,0,LBUF_SIZE);
-        result = mod_email_sock_readline(mailsock,inputline,LBUF_SIZE - 1);
+        memset(inputline, 0, LBUF_SIZE);
+        result = mod_email_sock_readline(mailsock, inputline, LBUF_SIZE - 1);
     }
 
     if (-1 == result)
@@ -371,13 +372,13 @@ void do_plusemail(dbref executor, dbref cause, dbref enactor, int key,
     mod_email_sock_printf(mailsock, "Subject: %s\r\n\r\n", subject ? subject : mudconf.mail_subject);
     mod_email_sock_printf(mailsock, "%s\r\n", body);
     mod_email_sock_printf(mailsock, "\r\n.\r\n");
-    memset(inputline,0,LBUF_SIZE);
-    result = mod_email_sock_readline(mailsock,inputline,LBUF_SIZE - 1);
+    memset(inputline, 0, LBUF_SIZE);
+    result = mod_email_sock_readline(mailsock, inputline, LBUF_SIZE - 1);
     while (  0 == result
           || '-' == inputline[3])
     {
-        memset(inputline,0,LBUF_SIZE);
-        result = mod_email_sock_readline(mailsock,inputline,LBUF_SIZE - 1);
+        memset(inputline, 0, LBUF_SIZE);
+        result = mod_email_sock_readline(mailsock, inputline, LBUF_SIZE - 1);
         if (result > 0)
         {
             if (  '\n' == inputline[strlen(inputline) - 1]
