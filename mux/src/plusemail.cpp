@@ -51,9 +51,9 @@ int mod_email_sock_printf(SOCKET sock, char *format, ...)
     vsnprintf(mybuf, LBUF_SIZE, format, vargs);
     va_end(vargs);
 
-    result = write(sock, &mybuf[0], strlen(mybuf));
+    result = SOCKET_WRITE(sock, &mybuf[0], strlen(mybuf));
 
-    return(result);
+    return result;
 }
 
 /* Read a line of input from the socket */
@@ -80,37 +80,26 @@ int mod_email_sock_readline(SOCKET sock, char *buffer, int maxlen)
 
     // Check for data before giving up.
     //
-    if (select(sock+1, &read_fds, NULL, NULL, &tv) <= 0)
+    if (IS_SOCKET_ERROR(select(sock+1, &read_fds, NULL, NULL, &tv)))
     {
         return 0;
     }
 
     done = 0;
-    if(!FD_ISSET(sock, &read_fds))
+    if (!FD_ISSET(sock, &read_fds))
     {
         return 0;
     }
 
-    while(!done && (pos < maxlen))
+    while (  !done
+          && pos < maxlen)
     {
         char getme[2];
         int numread;
 
-        numread = read(sock, &getme[0], 1);
-        if (numread != 0)
-        {
-            possible_close = 0;
-            if (getme[0] != '\n')
-            {
-                *(buffer + pos) = getme[0];
-                pos++;
-            }
-            else
-            {
-                done = 1;
-            }
-        }
-        else
+        numread = SOCKET_READ(sock, &getme[0], 1);
+        if (  IS_SOCKET_ERROR(numread)
+           || 0 == numread)
         {
             if (possible_close)
             {
@@ -124,7 +113,7 @@ int mod_email_sock_readline(SOCKET sock, char *buffer, int maxlen)
                 tv.tv_sec = 1;
                 tv.tv_usec = 0;
                 /* Check for data before giving up. */
-                if (select(sock+1, &read_fds, NULL, NULL, &tv) <= 0)
+                if (IS_SOCKET_ERROR(select(sock+1, &read_fds, NULL, NULL, &tv)))
                 {
                     done = 1;
                 }
@@ -133,6 +122,19 @@ int mod_email_sock_readline(SOCKET sock, char *buffer, int maxlen)
                 {
                     possible_close = 1;
                 }
+            }
+        }
+        else
+        {
+            possible_close = 0;
+            if (getme[0] != '\n')
+            {
+                *(buffer + pos) = getme[0];
+                pos++;
+            }
+            else
+            {
+                done = 1;
             }
         }
     }
@@ -172,7 +174,7 @@ int mod_email_sock_open(const char *conhostname, int port, SOCKET *sock)
 
 int mod_email_sock_close(SOCKET sock)
 {
-    return close(sock);
+    return SOCKET_CLOSE(sock);
 }
 
 void do_plusemail(dbref executor, dbref cause, dbref enactor, int key,
