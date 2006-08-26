@@ -51,7 +51,7 @@ int mod_email_sock_printf(SOCKET sock, char *format, ...)
     vsnprintf(mybuf, LBUF_SIZE, format, vargs);
     va_end(vargs);
 
-    result = SOCKET_WRITE(sock, &mybuf[0], strlen(mybuf));
+    result = SOCKET_WRITE(sock, &mybuf[0], strlen(mybuf), 0);
 
     return result;
 }
@@ -97,7 +97,7 @@ int mod_email_sock_readline(SOCKET sock, char *buffer, int maxlen)
         char getme[2];
         int numread;
 
-        numread = SOCKET_READ(sock, &getme[0], 1);
+        numread = SOCKET_READ(sock, &getme[0], 1, 0);
         if (  IS_SOCKET_ERROR(numread)
            || 0 == numread)
         {
