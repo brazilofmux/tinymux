@@ -1,7 +1,7 @@
 /*! \file functions.cpp
  *  MUX function handlers
  *
- * $Id: functions.cpp,v 1.216 2006-08-24 20:48:42 sdennis Exp $
+ * $Id: functions.cpp,v 1.217 2006-08-26 17:17:50 sdennis Exp $
  *
  */
 
@@ -6014,9 +6014,15 @@ FUNCTION(fun_distribute)
  * TinyMUSH 3.1's sql() call. */
 FUNCTION(fun_sql)
 {
+    if (!mush_database)
+    {
+        safe_str("#-1 NO DATABASE", buff, bufc);
+        return;
+    }
+
     SEP sepRow, sepColumn;
     if (  !OPTIONAL_DELIM(2, sepRow, DELIM_EVAL|DELIM_NULL|DELIM_CRLF|DELIM_STRING)
-       && !OPTIONAL_DELIM(3, sepColumn, DELIM_EVAL|DELIM_NULL|DELIM_CRLF|DELIM_STRING))
+       || !OPTIONAL_DELIM(3, sepColumn, DELIM_EVAL|DELIM_NULL|DELIM_CRLF|DELIM_STRING))
     {
         return;
     }
@@ -6036,13 +6042,12 @@ FUNCTION(fun_sql)
         return;
     }
 
-    if (!mush_database)
+    if (mysql_ping(mush_database))
     {
-        safe_str("#-1 NO DATABASE", buff, bufc);
+        free_lbuf(curr);
+        safe_str("#-1 SQL UNAVAILABLE", buff, bufc);
         return;
     }
-
-    mysql_ping(mush_database);
 
     if (mysql_real_query(mush_database, cp, strlen(cp)))
     {
