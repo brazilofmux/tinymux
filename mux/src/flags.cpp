@@ -1,6 +1,6 @@
 // flags.cpp -- Flag manipulation routines.
 //
-// $Id: flags.cpp,v 1.37 2006-08-15 05:21:01 sdennis Exp $
+// $Id: flags.cpp,v 1.38 2006-08-26 08:22:28 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -125,9 +125,11 @@ static bool fh_privileged
 {
     if (!God(player))
     {
-        if (  !isPlayer(player)
+        if (  isPlayer(target)
+#if !defined(FIRANMUX)
+           || !isPlayer(player)
            || player != Owner(player)
-           || isPlayer(target)
+#endif // FIRANMUX
            || (db[player].fs.word[fflags] & flag) == 0)
         {
             return false;
