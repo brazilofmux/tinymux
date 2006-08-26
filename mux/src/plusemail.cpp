@@ -36,7 +36,7 @@
 /* Some basic Socket I/O crap I stole from another project of mine */
 
 /* Write a formatted string to a socket */
-int mod_email_sock_printf(SOCKET sock, char *format, ...)
+static int mod_email_sock_printf(SOCKET sock, char *format, ...)
 {
     va_list vargs;
     int result;
@@ -57,7 +57,7 @@ int mod_email_sock_printf(SOCKET sock, char *format, ...)
 }
 
 /* Read a line of input from the socket */
-int mod_email_sock_readline(SOCKET sock, char *buffer, int maxlen)
+static int mod_email_sock_readline(SOCKET sock, char *buffer, int maxlen)
 {
     fd_set read_fds;
     int done, pos;
@@ -144,7 +144,7 @@ int mod_email_sock_readline(SOCKET sock, char *buffer, int maxlen)
 }
 
 /* Open a socket to a specific host/port */
-int mod_email_sock_open(const char *conhostname, int port, SOCKET *sock)
+static int mod_email_sock_open(const char *conhostname, int port, SOCKET *sock)
 {
     struct hostent *conhost;
     struct sockaddr_in name;
@@ -172,7 +172,7 @@ int mod_email_sock_open(const char *conhostname, int port, SOCKET *sock)
     return 0;
 }
 
-int mod_email_sock_close(SOCKET sock)
+static int mod_email_sock_close(SOCKET sock)
 {
     return SOCKET_CLOSE(sock);
 }
