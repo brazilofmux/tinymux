@@ -1,7 +1,7 @@
 /*! \file functions.cpp
  *  MUX function handlers
  *
- * $Id: functions.cpp,v 1.217 2006-08-26 17:17:50 sdennis Exp $
+ * $Id: functions.cpp,v 1.218 2006-08-26 19:28:48 sdennis Exp $
  *
  */
 
@@ -6020,12 +6020,18 @@ FUNCTION(fun_sql)
         return;
     }
 
-    SEP sepRow, sepColumn;
-    if (  !OPTIONAL_DELIM(2, sepRow, DELIM_EVAL|DELIM_NULL|DELIM_CRLF|DELIM_STRING)
-       || !OPTIONAL_DELIM(3, sepColumn, DELIM_EVAL|DELIM_NULL|DELIM_CRLF|DELIM_STRING))
+    SEP sepRow;
+    if (!OPTIONAL_DELIM(2, sepRow, DELIM_EVAL|DELIM_NULL|DELIM_CRLF|DELIM_STRING))
     {
         return;
     }
+
+    SEP sepColumn = sepRow;
+    if (!OPTIONAL_DELIM(3, sepColumn, DELIM_EVAL|DELIM_NULL|DELIM_CRLF|DELIM_STRING|DELIM_INIT))
+    {
+        return;
+    }
+
 
     char *curr = alloc_lbuf("fun_sql");
     char *dp = curr;
