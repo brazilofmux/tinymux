@@ -1,6 +1,6 @@
 // game.cpp
 //
-// $Id: game.cpp,v 1.105 2006-08-26 03:26:41 sdennis Exp $
+// $Id: game.cpp,v 1.106 2006-08-26 05:56:05 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -3051,12 +3051,12 @@ int DCL_CDECL main(int argc, char *argv[])
     init_attrtab();
     init_version();
 
+    mudconf.config_file = StringClone(conffile);
+    cf_read();
+
 #if defined(FIRANMUX)
     init_sql();
 #endif // FIRANMUX
-
-    mudconf.config_file = StringClone(conffile);
-    cf_read();
 
     fcache_init();
     helpindex_init();
