@@ -1,6 +1,6 @@
 // attrs.h -- Attribute definitions.
 //
-// $Id: attrs.h,v 1.8 2006-08-10 00:29:10 sdennis Exp $
+// $Id: attrs.h,v 1.9 2006-08-26 22:06:55 sdennis Exp $
 //
 
 #ifndef _ATTRS_H
@@ -201,24 +201,13 @@
 // 227 - 235 unused
 
 #if defined(FIRANMUX)
-#define A_COLOR     236  /* Color of name of object in look commands */
-#define A_ALEAD     237 /* Lead action list */
-#define A_LEAD      238 /* Invoker lead message */
-#define A_OLEAD     239 /* Others lead message */
+#define A_COLOR      236 /* Color of name of object in look commands */
+#define A_ALEAD      237 /* Lead action list */
+#define A_LEAD       238 /* Invoker lead message */
+#define A_OLEAD      239 /* Others lead message */
 #endif // FIRANMUX
 
-#if defined(FIRANMUX_CONVERT)
-// Conflicts with A_IDLETMOUT
-#define A_ALEAD_OLD 240 /* Lead action list */
-#endif // FIRANMUX_CONVERT
-
-#define A_IDLETMOUT 240 /* Idle message timeout */
-
-#if defined(FIRANMUX_CONVERT)
-// Conflicts with A_EXITFORMAT
-#define A_COLOR_OLD 241     /* Color of name of object in look commands */
-#endif // FIRANMUX_CONVERT
-
+#define A_IDLETMOUT  240 /* Idle message timeout */
 #define A_EXITFORMAT 241
 #define A_CONFORMAT  242
 #define A_NAMEFORMAT 243
@@ -234,6 +223,12 @@
 #define A_LIST      253
 #define A_STRUCT    254
 #define A_TEMP      255
+
+#if defined(FIRANMUX_CONVERT)
+#define A_ALEAD_OLD      240  // Conflicts with A_IDLETMOUT
+#define A_COLOR_OLD      241  // Conflicts with A_EXITFORMAT
+#define A_EXITFORMAT_OLD 243  // Conflicts with A_NAMEFORMAT
+#endif // FIRANMUX_CONVERT
 
 #define A_USER_START    256     // Start of user-named attributes.
 

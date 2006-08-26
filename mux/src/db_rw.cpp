@@ -1,6 +1,6 @@
 // db_rw.cpp
 //
-// $Id: db_rw.cpp,v 1.30 2006-08-22 05:16:57 sdennis Exp $
+// $Id: db_rw.cpp,v 1.31 2006-08-26 22:06:55 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -351,6 +351,10 @@ static bool get_list(FILE *f, dbref i)
 
                 case A_ALEAD_OLD:
                     atr = A_ALEAD;
+                    break;
+
+                case A_EXITFORMAT_OLD:
+                    atr = A_EXITFORMAT;
                     break;
                 }
 #endif // FIRANMUX_CONVERT
