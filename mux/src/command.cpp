@@ -1,6 +1,6 @@
 // command.cpp -- command parser and support routines.
 //
-// $Id: command.cpp,v 1.94 2006-08-22 13:23:30 sdennis Exp $
+// $Id: command.cpp,v 1.95 2006-08-26 02:21:03 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -710,7 +710,7 @@ static CMDENT_TWO_ARG command_table_two_arg[] =
 #endif
     {"@toad",        toad_sw,    CA_WIZARD,                                        0,           CS_TWO_ARG|CS_INTERP, 0, do_toad},
 #if defined(FIRANMUX)
-    {"+email",       NULL,       CA_WIZARD,                                        0,           CS_TWO_ARG,           0, do_plusemail},
+    {"@email",       NULL,       CA_WIZARD,                                        0,           CS_TWO_ARG,           0, do_plusemail},
 #endif // FIRANMUX
     {"addcom",       NULL,       CA_NO_SLAVE,                                      0,           CS_TWO_ARG,           0, do_addcom},
     {"comtitle",     comtitle_sw,CA_NO_SLAVE,                                      0,           CS_TWO_ARG,           0, do_comtitle},

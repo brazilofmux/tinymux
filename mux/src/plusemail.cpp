@@ -1,8 +1,8 @@
-/* plusemail.cpp -- quicky module implementing Firan-like +email function.
+/* plusemail.cpp -- quicky module implementing Firan-like @email function.
  *
  * Rachel Blackman <sparks@noderunner.net>
  *
- * NOTE: For compatibility with Firan-code, make a +email alias which maps
+ * NOTE: For compatibility with Firan-code, make a @email alias which maps
  *       to @email.
  *
  * Config options:
@@ -33,22 +33,19 @@
 
 #include "externs.h"
 
-#define MAIL_SERVER     "localhost"
-#define MAIL_EHLO       "localhost"
-#define MAIL_SENDADDR   "<senders-address>"
-#define MAIL_SENDNAME   "<senders-name"
-#define MAIL_SUBJECT    "<subject>"
-
 /* Some basic Socket I/O crap I stole from another project of mine */
 
 /* Write a formatted string to a socket */
-int mod_email_sock_printf(int sock, char *format, ...)
+int mod_email_sock_printf(SOCKET sock, char *format, ...)
 {
     va_list vargs;
     int result;
     char mybuf[LBUF_SIZE];
 
-    if (sock == -1) return 0;
+    if (IS_INVALID_SOCKET(sock))
+    {
+        return 0;
+    }
 
     va_start(vargs, format);
     vsnprintf(mybuf, LBUF_SIZE, format, vargs);
@@ -60,15 +57,17 @@ int mod_email_sock_printf(int sock, char *format, ...)
 }
 
 /* Read a line of input from the socket */
-int mod_email_sock_readline(int sock, char *buffer, int maxlen)
+int mod_email_sock_readline(SOCKET sock, char *buffer, int maxlen)
 {
     fd_set read_fds;
     int done, pos;
-    int duration;
     struct timeval tv;
     int possible_close = 0;
 
-    if (sock == -1) return 0;
+    if (IS_INVALID_SOCKET(sock))
+    {
+        return 0;
+    }
 
     memset(buffer, 0, maxlen);
     FD_ZERO(&read_fds);
@@ -143,12 +142,11 @@ int mod_email_sock_readline(int sock, char *buffer, int maxlen)
 }
 
 /* Open a socket to a specific host/port */
-int mod_email_sock_open(const char *conhostname, int port, int *sock)
+int mod_email_sock_open(const char *conhostname, int port, SOCKET *sock)
 {
     struct hostent *conhost;
     struct sockaddr_in name;
     int addr_len;
-    int mysock;
 
     conhost = gethostbyname(conhostname);
     if (0 == conhost)
@@ -159,7 +157,7 @@ int mod_email_sock_open(const char *conhostname, int port, int *sock)
     name.sin_port = htons(port);
     name.sin_family = AF_INET;
     bcopy((char *)conhost->h_addr, (char *)&name.sin_addr, conhost->h_length);
-    mysock = socket(AF_INET, SOCK_STREAM, 0);
+    SOCKET mysock = socket(AF_INET, SOCK_STREAM, 0);
     addr_len = sizeof(name);
    
     if (connect(mysock, (struct sockaddr *)&name, addr_len) == -1)
@@ -172,7 +170,7 @@ int mod_email_sock_open(const char *conhostname, int port, int *sock)
     return 0;
 }
 
-int mod_email_sock_close(int sock)
+int mod_email_sock_close(SOCKET sock)
 {
     return close(sock);
 }
@@ -185,42 +183,43 @@ void do_plusemail(dbref executor, dbref cause, dbref enactor, int key,
     UNUSED_PARAMETER(key);
     UNUSED_PARAMETER(nfargs);
 
-    char *addy;
-    char *subject;
-    char *body, *bodyptr, *bodysrc;
-    int mailsock;
-    int result;
     char inputline[LBUF_SIZE];
+
+    if ('\0' == mudconf.mail_server[0])
+    {
+        notify(executor, "@email: Not configured");
+        return;
+    }
 
     if (!arg1 || !*arg1)
     {
-        notify(executor, "+email: I don't know who you want to e-mail!");
+        notify(executor, "@email: I don't know who you want to e-mail!");
         return;
     }
 
     if (!arg2 || !*arg2)
     {
-        notify(executor, "+email: Not sending an empty e-mail!");
+        notify(executor, "@email: Not sending an empty e-mail!");
         return;
     }
 
-    addy = alloc_lbuf("mod_email_do_email.headers");
+    char *addy = alloc_lbuf("mod_email_do_email.headers");
     strcpy(addy, arg1);
 
-    subject = strchr(addy,'/');
+    char *subject = strchr(addy,'/');
     if (subject)
     {
         *subject = 0;
         subject++;
     }
 
-    mailsock = -1;
-    result = mod_email_sock_open(MAIL_SERVER,25,&mailsock);
+    SOCKET mailsock = INVALID_SOCKET;
+    int result = mod_email_sock_open(mudconf.mail_server, 25, &mailsock);
 
     if (-1 == result)
     {
-        notify(executor, tprintf("+email: Unable to resolve hostname %s!",
-            MAIL_SERVER));
+        notify(executor, tprintf("@email: Unable to resolve hostname %s!",
+            mudconf.mail_server));
         free_lbuf(addy);
         return;
     }
@@ -231,23 +230,24 @@ void do_plusemail(dbref executor, dbref cause, dbref enactor, int key,
         // In almost every case, an immediate retry works.  Therefore, we give
         // it one more shot, before we give up.
         //
-        result = mod_email_sock_open(MAIL_SERVER, 25, &mailsock);
+        result = mod_email_sock_open(mudconf.mail_server, 25, &mailsock);
         if (0 != result)
         {
-            notify(executor, "+email: Unable to connect to mailserver, aborting!");
+            notify(executor, "@email: Unable to connect to mailserver, aborting!");
             free_lbuf(addy);
             return;
         }
 
     }
 
-    bodyptr = body = alloc_lbuf("mod_email_do_email.body");
-    bodysrc = arg2;
+    char *body = alloc_lbuf("mod_email_do_email.body");
+    char *bodyptr = body;
+    char *bodysrc = arg2;
     mux_exec(body, &bodyptr, executor, executor, executor,
         EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &bodysrc, (char **)NULL, 0);
     *bodyptr = 0;
 
-    memset(inputline,0,LBUF_SIZE);
+    memset(inputline, 0, LBUF_SIZE);
     result = mod_email_sock_readline(mailsock,inputline,LBUF_SIZE - 1);
     while ((result == 0) || (inputline[3] == '-'))
     {
@@ -258,43 +258,43 @@ void do_plusemail(dbref executor, dbref cause, dbref enactor, int key,
     if (-1 == result)
     {
         mod_email_sock_close(mailsock);
-        notify(executor, "+email: Connection to mailserver lost.");
+        notify(executor, "@email: Connection to mailserver lost.");
         return;
     }
 
     if (inputline[0] != '2')
     {
         mod_email_sock_close(mailsock);
-        notify(executor, tprintf("+email: Invalid mailserver greeting (%s)",
+        notify(executor, tprintf("@email: Invalid mailserver greeting (%s)",
             inputline));
     }
         
 
-    mod_email_sock_printf(mailsock, "EHLO %s\r\n", MAIL_EHLO);
-    memset(inputline,0,LBUF_SIZE);
-    result = mod_email_sock_readline(mailsock,inputline,LBUF_SIZE - 1);
+    mod_email_sock_printf(mailsock, "EHLO %s\r\n", mudconf.mail_ehlo);
+    memset(inputline, 0, LBUF_SIZE);
+    result = mod_email_sock_readline(mailsock, inputline, LBUF_SIZE - 1);
     
     while (  0 == result
           || '-' == inputline[3])
     {
-        memset(inputline,0,LBUF_SIZE);
-        result = mod_email_sock_readline(mailsock,inputline,LBUF_SIZE - 1);
+        memset(inputline, 0, LBUF_SIZE);
+        result = mod_email_sock_readline(mailsock, inputline, LBUF_SIZE - 1);
     }
     
-    if (result == -1)
+    if (-1 == result)
     {
         mod_email_sock_close(mailsock);
-        notify(executor, "+email: Connection to mailserver lost.");
+        notify(executor, "@email: Connection to mailserver lost.");
         return;
     }
 
     if ('2' != inputline[0])
     {
-        notify(executor, tprintf("+email: Error response on EHLO (%s)",
+        notify(executor, tprintf("@email: Error response on EHLO (%s)",
             inputline));
     }
 
-    mod_email_sock_printf(mailsock, "MAIL FROM:<%s>\r\n", MAIL_SENDADDR);   
+    mod_email_sock_printf(mailsock, "MAIL FROM:<%s>\r\n", mudconf.mail_sendaddr);   
     memset(inputline,0,LBUF_SIZE);
     result = mod_email_sock_readline(mailsock,inputline,LBUF_SIZE - 1);
     while (  0 == result
@@ -307,13 +307,13 @@ void do_plusemail(dbref executor, dbref cause, dbref enactor, int key,
     if (-1 == result)
     {
         mod_email_sock_close(mailsock);
-        notify(executor, "+email: Connection to mailserver lost.");
+        notify(executor, "@email: Connection to mailserver lost.");
         return;
     }
 
     if ('2' != inputline[0])
     {
-        notify(executor, tprintf("+email: Error response on MAIL FROM (%s)", 
+        notify(executor, tprintf("@email: Error response on MAIL FROM (%s)", 
             inputline));
     }
 
@@ -330,13 +330,13 @@ void do_plusemail(dbref executor, dbref cause, dbref enactor, int key,
     if (-1 == result)
     {
         mod_email_sock_close(mailsock);
-        notify(executor, "+email: Connection to mailserver lost.");
+        notify(executor, "@email: Connection to mailserver lost.");
         return;
     }
 
     if ('2' != inputline[0])
     {
-        notify(executor, tprintf("+email: Error response on RCPT TO (%s)",
+        notify(executor, tprintf("@email: Error response on RCPT TO (%s)",
             inputline));
         return;
     }
@@ -354,21 +354,21 @@ void do_plusemail(dbref executor, dbref cause, dbref enactor, int key,
     if (-1 == result)
     {
         mod_email_sock_close(mailsock);
-        notify(executor, "+email: Connection to mailserver lost.");
+        notify(executor, "@email: Connection to mailserver lost.");
         return;
     }
 
     if ('3' != inputline[0])
     {
-        notify(executor, tprintf("+email: Error response on DATA (%s)",
+        notify(executor, tprintf("@email: Error response on DATA (%s)",
             inputline));
         return;
     }
 
-    mod_email_sock_printf(mailsock, "From: %s <%s>\r\n",  MAIL_SENDNAME, MAIL_SENDADDR);
+    mod_email_sock_printf(mailsock, "From: %s <%s>\r\n",  mudconf.mail_sendname, mudconf.mail_sendaddr);
     mod_email_sock_printf(mailsock, "To: %s\r\n", addy);
     mod_email_sock_printf(mailsock, "X-Mailer: TinyMUX %s\r\n", MUX_VERSION);
-    mod_email_sock_printf(mailsock, "Subject: %s\r\n\r\n", subject ? subject : MAIL_SUBJECT);
+    mod_email_sock_printf(mailsock, "Subject: %s\r\n\r\n", subject ? subject : mudconf.mail_subject);
     mod_email_sock_printf(mailsock, "%s\r\n", body);
     mod_email_sock_printf(mailsock, "\r\n.\r\n");
     memset(inputline,0,LBUF_SIZE);
@@ -402,17 +402,17 @@ void do_plusemail(dbref executor, dbref cause, dbref enactor, int key,
     if (-1 == result)
     {
         mod_email_sock_close(mailsock);
-        notify(executor, "+email: Connection to mailserver lost.");
+        notify(executor, "@email: Connection to mailserver lost.");
         return;
     }
 
     if ('2' != inputline[0])
     {
-        notify(executor, tprintf("+email: Message rejected (%s)",inputline));
+        notify(executor, tprintf("@email: Message rejected (%s)",inputline));
     }
     else
     {
-        notify(executor, tprintf("+email: Mail sent to %s (%s)", addy, &inputline[4])); 
+        notify(executor, tprintf("@email: Mail sent to %s (%s)", addy, &inputline[4])); 
     }
 
     mod_email_sock_printf(mailsock, "QUIT\n");

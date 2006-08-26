@@ -1,6 +1,6 @@
 // mudconf.h
 //
-// $Id: mudconf.h,v 1.39 2006-08-09 15:45:14 sdennis Exp $
+// $Id: mudconf.h,v 1.40 2006-08-26 02:21:03 sdennis Exp $
 //
 
 #ifndef __CONF_H
@@ -199,6 +199,12 @@ struct confdata
     char    sql_user[128];
     char    sql_password[128];
     char    sql_database[128];
+
+    char    mail_server[128];
+    char    mail_ehlo[128];
+    char    mail_sendaddr[128];
+    char    mail_sendname[128];
+    char    mail_subject[128];
 #endif // FIRANMUX
     char    downmotd_msg[GBUF_SIZE];    /* Settable 'logins disabled' message */
     char    fullmotd_msg[GBUF_SIZE];    /* Settable 'Too many players' message */

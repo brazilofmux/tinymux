@@ -1,6 +1,6 @@
 // conf.cpp -- Set up configuration information and static data.
 //
-// $Id: conf.cpp,v 1.80 2006-08-09 19:57:53 sdennis Exp $
+// $Id: conf.cpp,v 1.81 2006-08-26 02:21:03 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -91,10 +91,15 @@ void cf_init(void)
     mux_strncpy(mudconf.pueblo_msg, "</xch_mudtext><img xch_mode=html>", GBUF_SIZE-1);
 #if defined(FIRANMUX)
     mux_strncpy(mudconf.immobile_msg, "You have been set immobile.", sizeof(mudconf.immobile_msg)-1);
-    mux_strncpy(mudconf.sql_server, "<server>", sizeof(mudconf.sql_server)-1);
-    mux_strncpy(mudconf.sql_user, "<user>", sizeof(mudconf.sql_user)-1);
-    mux_strncpy(mudconf.sql_password, "<pass>", sizeof(mudconf.sql_password)-1);
-    mux_strncpy(mudconf.sql_database, "<database>", sizeof(mudconf.sql_database)-1);
+    mudconf.sql_server[0]   = '\0';
+    mudconf.sql_user[0]     = '\0';
+    mudconf.sql_password[0] = '\0';
+    mudconf.sql_database[0] = '\0';
+    mudconf.mail_server[0]  = '\0';
+    mudconf.mail_ehlo[0]    = '\0';
+    mudconf.mail_sendaddr[0]= '\0';
+    mudconf.mail_sendname[0]= '\0';
+    mudconf.mail_subject[0] = '\0';
 #endif // FIRANMUX
     mudconf.art_rules = NULL;
     mudconf.indent_desc = false;
@@ -1949,6 +1954,11 @@ static CONF conftable[] =
     {"sql_user",                  cf_string,      CA_STATIC, CA_DISABLED, (int *)mudconf.sql_user,         NULL,             128},
     {"sql_password",              cf_string,      CA_STATIC, CA_DISABLED, (int *)mudconf.sql_password,     NULL,             128},
     {"sql_database",              cf_string,      CA_STATIC, CA_DISABLED, (int *)mudconf.sql_database,     NULL,             128},
+    {"mail_server",               cf_string,      CA_STATIC, CA_DISABLED, (int *)mudconf.mail_server,      NULL,             128},
+    {"mail_ehlo",                 cf_string,      CA_STATIC, CA_DISABLED, (int *)mudconf.mail_ehlo,        NULL,             128},
+    {"mail_sendaddr",             cf_string,      CA_STATIC, CA_DISABLED, (int *)mudconf.mail_sendaddr,    NULL,             128},
+    {"mail_sendname",             cf_string,      CA_STATIC, CA_DISABLED, (int *)mudconf.mail_sendname,    NULL,             128},
+    {"mail_subject",              cf_string,      CA_STATIC, CA_DISABLED, (int *)mudconf.mail_subject,     NULL,             128},
 #endif // FIRANMUX
 
     { NULL,                       NULL,           0,         0,           NULL,                            NULL,               0}
