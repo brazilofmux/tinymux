@@ -1,6 +1,6 @@
 // stringutil.cpp -- string utilities.
 //
-// $Id: stringutil.cpp,v 1.101 2006-08-25 14:57:46 sdennis Exp $
+// $Id: stringutil.cpp,v 1.102 2006-08-26 05:29:02 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -3657,11 +3657,8 @@ char *linewrap_general(char *strret, int field, char *left, char *right)
                 safe_chr(original[index1++], str, &ostr);
             } while (  original[index1]
                     && original[index1] != 'm');
-
-            if (original[index1])
-            {
-                index1++;
-            }
+            safe_chr('m',str,&ostr);
+            index1++;
             break;
         
         case '\r':
