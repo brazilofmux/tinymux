@@ -1,6 +1,6 @@
 // stringutil.cpp -- string utilities.
 //
-// $Id: stringutil.cpp,v 1.102 2006-08-26 05:29:02 sdennis Exp $
+// $Id: stringutil.cpp,v 1.103 2006-08-27 09:05:30 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -1079,7 +1079,8 @@ void ANSI_String_Copy
             // the rest of the physical field (given by the current
             // nField length).
             //
-            size_t nFieldEffective = nMax - 1; // Leave room for '\0'.
+            size_t nFieldAvailable = nMax - 1; // Leave room for '\0'.
+            size_t nFieldNeeded = 0;
 
             size_t nTransitionFinal = 0;
             if (pacOut->m_iEndGoal <= ANSI_ENDGOAL_NOBLEED)
@@ -1101,7 +1102,7 @@ void ANSI_String_Copy
                                                 &nTransitionFinal,
                                                 pacOut->m_iEndGoal);
 
-                    nFieldEffective -= nTransitionFinal;
+                    nFieldNeeded += nTransitionFinal;
                 }
             }
 
@@ -1114,19 +1115,19 @@ void ANSI_String_Copy
                                             &(pacIn->m_acs),
                                             &nTransition,
                                             pacOut->m_iEndGoal);
-            nFieldEffective -= nTransition;
+            nFieldNeeded += nTransition;
 
             // If we find that there is no room for any of the TEXT,
             // then we're done.
             //
             // TODO: The visual width test can be done further up to save time.
             //
-            if (  nFieldEffective <= nTokenLength0
-               || vw + nTokenLength0 > vwMax)
+            if (  nFieldAvailable <= nTokenLength0 + nFieldNeeded
+               || vwMax < vw + nTokenLength0)
             {
                 // We have reached the limits of the field.
                 //
-                if (nFieldEffective > 0)
+                if (nFieldNeeded < nFieldAvailable)
                 {
                     // There was enough physical room in the field, but
                     // we would have exceeded the maximum visual width
@@ -1143,15 +1144,15 @@ void ANSI_String_Copy
                     // Place just enough of the TEXT in the field.
                     //
                     size_t nTextToAdd = vwMax - vw;
-                    if (nTextToAdd < nFieldEffective)
+                    if (nFieldAvailable < nTextToAdd + nFieldNeeded)
                     {
-                        nFieldEffective = nTextToAdd;
+                        nTextToAdd = nFieldAvailable - nFieldNeeded;
                     }
-                    memcpy(pField, pacIn->m_p, nFieldEffective);
-                    pField += nFieldEffective;
-                    pacIn->m_p += nFieldEffective;
-                    pacIn->m_n -= nFieldEffective;
-                    vw += nFieldEffective;
+                    memcpy(pField, pacIn->m_p, nTextToAdd);
+                    pField += nTextToAdd;
+                    pacIn->m_p += nTextToAdd;
+                    pacIn->m_n -= nTextToAdd;
+                    vw += nTextToAdd;
                     pacOut->m_acs = pacIn->m_acs;
 
                     // Was this visual width limit related to the session or
