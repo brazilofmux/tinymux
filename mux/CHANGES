@@ -64,6 +64,11 @@ Bug Fixes:
  -- Fix single-character case in pos(). It would never return success.
     Bug introduced in 2.6. It does not appear in 2.4.
  -- Change isdbref() to return '0' instead of '#-1 ISDBEF EXPECTS...'
+ -- Fix ANSI overflow bug in ANSI_String_Copy() introduce by using an
+    unsigned size_t in place of a signed 'int'. Bug introduced in 2.6.
+ -- Add 'other half' of buffer overflow protection to a case in                  
+    process_cmdent().  Found and fixed by Sparks.
+
 
 
 Performance Enhancements:
