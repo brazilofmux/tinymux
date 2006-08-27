@@ -266,7 +266,7 @@ Bug Fixes:
  -- Added checking to convsecs() to return '#-1 INVALID DATE" is first
     argument is outside the supported range.
  -- Add 'other half' of buffer overflow protection to a case in
-    process_cmdent().
+    process_cmdent().  Found and fixed by Sparks.
 
 
 Performance Enhancements:
