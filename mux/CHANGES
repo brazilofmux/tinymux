@@ -265,6 +265,8 @@ Bug Fixes:
     ability to use other commands. Reported by K hall.
  -- Added checking to convsecs() to return '#-1 INVALID DATE" is first
     argument is outside the supported range.
+ -- Add 'other half' of buffer overflow protection to a case in
+    process_cmdent().
 
 
 Performance Enhancements:
