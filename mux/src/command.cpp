@@ -1,6 +1,6 @@
 // command.cpp -- command parser and support routines.
 //
-// $Id: command.cpp,v 1.95 2006-08-26 02:21:03 sdennis Exp $
+// $Id: command.cpp,v 1.96 2006-08-27 15:28:09 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -1747,7 +1747,8 @@ char *process_command
 
         p = pOriginalCommand;
         q = SpaceCompressCommand;
-        while (*p)
+        while (  *p
+              && q < SpaceCompressCommand + LBUF_SIZE)
         {
             while (  *p
                   && !mux_isspace(*p)
@@ -1755,11 +1756,14 @@ char *process_command
             {
                 *q++ = *p++;
             }
+
             while (mux_isspace(*p))
             {
                 p++;
             }
-            if (*p)
+
+            if (  *p
+               && q < SpaceCompressCommand + LBUF_SIZE)
             {
                 *q++ = ' ';
             }
