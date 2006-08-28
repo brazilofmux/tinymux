@@ -5100,15 +5100,15 @@ COMMANDS
 
   @@           @backup      @break       @cemit       @chown       @chzone
   @clone       @cpattr      @create      @decompile   @destroy     @dig
-  @doing       @dolist      @drain       @edit        @emit        @entrances
-  @femit       @find        @force       @fpose       @fsay        @halt
-  @if          @last        @link        @list        @listmotd    @lock
-  @mail        @mvattr      @name        @nemit       @notify      @npemit
-  @oemit       @open        @parent      @password    @pemit       @power
-  @program     @ps          @quitprogram @quota       @remit       @robot
-  @search      @set         @stats       @sweep       @switch      @teleport
-  @timecheck   @trigger     @unlink      @unlock      @verb        @wait
-  @wipe
+  @doing       @dolist      @drain       @edit        @email       @emit
+  @entrances   @femit       @find        @force       @fpose       @fsay
+  @halt        @if          @last        @link        @list        @listmotd
+  @lock        @mail        @mvattr      @name        @nemit       @notify
+  @npemit      @oemit       @open        @parent      @password    @pemit
+  @power       @program     @ps          @quitprogram @quota       @remit
+  @robot       @search      @set         @stats       @sweep       @switch
+  @teleport    @timecheck   @trigger     @unlink      @unlock      @verb
+  @wait        @wipe
 
 { 'help commands2' for more }
 
