@@ -33,9 +33,22 @@ Feature Additions:
  -- Added @switch/notify.
  -- Merge Firan MUX source modification and collected them under the
     --enable-firanmux ./configuration switch. This also typically
-    requires the --enable-memorybased switch.
- -- Added --enable-firanmuxconvert which turns on code to remap two
-    conflicting attribute numbers. The first database load will require
+    requires the --enable-memorybased switch. Some of the following
+    may eventually be enabled in the default build:
+
+    Attributes:  @alead, @lead, @olead, and @color
+    Commands:    @email
+    Permissions: no_immobile, no_restricted
+    Options:     immobile_message, sql_server, sql_user, sql_password,
+                 sql_database, mail_server, mail_ehlo, mail_sendaddr,
+                 mail_sendname, and mail_subject.
+    Flags:       LINEWRAP, IMMOBILE, RESTRICTED, and PARENT.
+    Functions:   sql(), setparent(), setname(), trigger(), mailsize(),
+                 mailsubj(), mailj(), text(), successes(), and
+                 distribute().
+
+ -- Added --enable-firanmuxconvert which turns on code to remap three
+    conflicting attribute numbers. The first database load requires
     this switch, and then it should be turned off.
 
 
@@ -64,11 +77,11 @@ Bug Fixes:
  -- Fix single-character case in pos(). It would never return success.
     Bug introduced in 2.6. It does not appear in 2.4.
  -- Change isdbref() to return '0' instead of '#-1 ISDBEF EXPECTS...'
- -- Fix ANSI overflow bug in ANSI_String_Copy() introduce by using an
+ -- Fix ANSI overflow bug in ANSI_String_Copy() introduced by using an
     unsigned size_t in place of a signed 'int'. Bug introduced in 2.6.
- -- Add 'other half' of buffer overflow protection to a case in                  
-    process_cmdent().  Found and fixed by Sparks.
-
+ -- Add 'other half' of buffer overflow protection to a case in
+    process_cmdent().  Without the other half, the first half causes a
+    crash instead of prventing it.  Found and fixed by Sparks.
 
 
 Performance Enhancements:
