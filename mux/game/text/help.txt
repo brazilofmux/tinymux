@@ -6498,8 +6498,9 @@ FLAG LIST2
     4 - SHROUD     |   5 - MATRIX     |   6 - OBF        |   7 - HSS
     8 - MEDIUM     |   9 - DEAD       |                  |
   ------------------------------------------------------------------------
-  Firan Patch
-      - QUELL      |                  |                  |
+  Firan-specific
+    # - IMMOBILE   |   > - LINEWRAP   |     - QUELL      |   ! - RESTRICTED
+    + - PARENT     |                  |                  |
   ------------------------------------------------------------------------
 
   For information on a particular flag, type 'help <flagname>'.
@@ -7501,6 +7502,18 @@ ILEV()
 
   Related Topics: iter(), list(), parse().
 
+& IMMOBILE
+IMMOBILE
+
+  FLAG: IMMOBILE()  (#)
+
+  Objects set IMMOBILE cannot move by any means, including using exits,
+  entering other objects, being picked up or dropped, or by @teleporting.
+
+  This flag is only available if FIRANMUX is enabled.
+
+  Related Topics:
+
 & IMMORTAL
 IMMORTAL
 
@@ -8199,6 +8212,18 @@ LIGHT
   visible even though the object itself is not.
 
   Related Topics:
+
+& LINEWRAP
+LINEWRAP
+
+  FLAG: LINEWRAP()  (>)
+
+  Objects set LINEWRAP show their descriptions in a formatted style using
+  code equivalent to that in format().
+
+  This flag is only available if FIRANMUX is enabled.
+
+  Related Topics: format().
 
 & LINK()
 LINK()
@@ -10000,6 +10025,19 @@ PAGE (continued)
   Related Topics: pose, say, whisper, :, ;, ", @pemit, @away, @idle,
       @idletimeout, @reject.
 
+& PARENT
+PARENT
+
+  FLAG: PARENT()  (+)
+
+  This flag is not associated with any hardcode behavior other than to record
+  that it is present or absent from an object. Softcode is free to use this
+  flag for any purpose it sees fit.
+
+  This flag is only available if FIRANMUX is enabled.
+
+  Related Topics:
+
 & PARENT OBJECTS
 PARENT OBJECTS
 
@@ -10861,6 +10899,29 @@ REST()
     You say "with!different!delimiters"
 
   Related Topics: first().
+
+& RESTRICTED
+RESTRICTED
+
+  FLAG: RESTRICTED()  (!)
+
+  Any object set RESTRICTED will have the number of commands available to use
+  greatly limited.  Generally, this flag works in conjunction with the
+  no_restricted access permission (see 'wizhelp PERMISSIONS', 'wizhelp
+  access', etc.) which is used to mark which commands can not be used by
+  RESTRICTED players (or objects).
+ 
+  Command access permissions can be viewed by a wizard using the '@list
+  permissions' command.  Commands marked 'no_restricted' in this list cannot
+  be used by RESTRICTED players or objects.
+ 
+  Note that a RESTRICTED Wizard character who later sets herself QUELL will
+  not be able to set herself un-RESTRICTED!  Fixing this will require the help
+  of a fully-powered wizard.  Be careful with this combination.
+
+  This flag is only available if FIRANMUX is enabled.
+
+  Related Topics: no_restricted
 
 & REVERSE()
 REVERSE()
