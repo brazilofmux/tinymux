@@ -6829,16 +6829,16 @@ FUNCTION LIST (continued)
     SECURE()    SET()       SETDIFF()   SETINTER()  SETQ()      SETR()
     SETUNION()  SHA1()      SHL()       SHR()       SHUFFLE()   SIGN()
     SIN()       SINGLETIME()SORT()      SORTBY()    SPACE()     SPELLNUM()
-    SPLICE()    SQRT()      SQUISH()    STARTSECS() STARTTIME() STATS()
-    STRCAT()    STRIP()     STRIPACCENTS() STRIPANSI() STRLEN() STRMATCH()
-    STRMEM()    STRTRUNC()  SUB()       SUBEVAL()   SUBJ()      SWITCH()
-    T()         TABLE()     TAN()       TEL()       TEXTFILE()  TIME()
-    TIMEFMT()   TRANSLATE() TRIM()      TRUNC()     TXLEVEL()   TYPE()
-    U()         UCSTR()     UDEFAULT()  ULOCAL()    UNPACK()    V()
-    VADD()      VALID()     VCROSS()    VDIM()      VDOT()      VERSION()
-    VISIBLE()   VMAG()      VMUL()      VSUB()      VUNIT()     WHERE()
-    WIDTH()     WORDPOS()   WORDS()     WRAP()      WRITETIME() XGET()
-    XOR()       ZFUN()      ZONE()      ZWHO()
+    SPLICE()    SQL()       SQRT()      SQUISH()    STARTSECS() STARTTIME()
+    STATS()     STRCAT()    STRIP()     STRIPACCENTS() STRIPANSI() STRLEN()
+    STRMATCH()  STRMEM()    STRTRUNC()  SUB()       SUBEVAL()   SUBJ()
+    SWITCH()    T()         TABLE()     TAN()       TEL()       TEXTFILE()
+    TIME()      TIMEFMT()   TRANSLATE() TRIM()      TRUNC()     TXLEVEL()
+    TYPE()      U()         UCSTR()     UDEFAULT()  ULOCAL()    UNPACK()
+    V()         VADD()      VALID()     VCROSS()    VDIM()      VDOT()
+    VERSION()   VISIBLE()   VMAG()      VMUL()      VSUB()      VUNIT()
+    WHERE()     WIDTH()     WORDPOS()   WORDS()     WRAP()      WRITETIME()
+    XGET()      XOR()       ZFUN()      ZONE()      ZWHO()
 
 & FUNCTIONS
 FUNCTIONS
@@ -11808,6 +11808,35 @@ SPOOFING
    Wizard gently shows you the door.
 
    *** Disconnected ***
+
+& SQL()
+SQL()
+
+  FUNCTION: sql(<query>[,<row-delim>[,<col-delim>]])
+
+  The sql() function uses a connection to a SQL database.  The <query>
+  parameter is given to SQL as if it were given at a normal SQL prompt.  By
+  default, the row delimiter, <row-delim>, defaults to a space, and the column
+  delimiter, <col-delim>, defaults to the row delimiter, <row-delim>.
+
+  Examples:
+
+    sql(select foo%,bar from mytable,~,|)
+
+  would turn into
+
+    1|aardvark~2|anteater~3|antelope
+
+  ...or whatever data happens to exist in SQL.  It is worth remembering both
+  that you must escape commas in the query portion of the function, and that
+  using this command is a bottleneck; the game cannot do anything else until
+  the query returns.  Normally this will not be an issue, but if you write
+  code doing 700 large SQL queries in a row, the game will almost certainly
+  lag.
+
+  The function is only available if FIRANMUX is enabled.
+
+  Related Topics:
 
 & SQRT()
 SQRT()
