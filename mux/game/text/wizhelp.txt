@@ -1791,12 +1791,13 @@ CONFIG PARAMETERS (continued)
 
   guest_nuker  guest_prefix  guest_site  guests_channel  guests_channel_alias
   have_comsys  have_mailer  have_zones  helpfile hook_cmd  hook_obj  hostnames
-  idle_interval  idle_timeout  idle_wiz_dark  include  indent_desc
-  initial_size  input_database  kill_guarantee_cost  kill_max_cost
-  kill_min_cost  lag_limit  lag_maximum  link_cost  list_access
+  idle_interval  idle_timeout  idle_wiz_dark  immobile_message  include
+  indent_desc  initial_size  input_database  kill_guarantee_cost
+  kill_max_cost  kill_min_cost  lag_limit  lag_maximum  link_cost  list_access
   lock_recursion_limit  log  log_options  logout_cmd_access  logout_cmd_alias
-  look_obey_terse  machine_command_cost  mail_database  mail_expiration
-  mail_per_hour  master_room  match_own_commands  max_cache_size  max_players
+  look_obey_terse  machine_command_cost  mail_database  mail_ehlo
+  mail_expiration  mail_per_hour   mail_sendaddr   mail_sendname   mail_server
+  mail_subject  master_room  match_own_commands  max_cache_size  max_players
   min_guests  money_name_plural  money_name_singular  motd_file  motd_message
   mud_name  newuser_file  nositemon_site  notify_recursion_limit
   number_guests  open_cost  output_database  output_limit  page_cost
@@ -1817,8 +1818,9 @@ CONFIG PARAMETERS (continued)
 
   robot_speech  room_flags  room_quota  run_startup  sacrifice_adjust
   sacrifice_factor  safe_wipe  safer_passwords  search_cost  see_owned_dark
-  signal_action  site_chars  space_compress  stack_limit  starting_money
-  starting_quota  status_file  suspect_site  sweep_dark  switch_default_all
+  signal_action  site_chars  space_compress  sql_database  sql_password
+  sql_server  sql_user  stack_limit  starting_money  starting_quota
+  status_file  suspect_site  sweep_dark  switch_default_all
   terse_shows_contents  terse_shows_exits  terse_shows_move_messages
   thing_flags  thing_quota  timeslice  toad_recipient  trace_output_limit
   trace_topdown  trust_site  uncompress_program  unowned_safe  use_http
@@ -2314,7 +2316,7 @@ FIXED_HOME_MESSAGE
   This configuration option cannot be changed after the server starts.  It
   can only be changed via the configuration file.
 
-  Related Topics: fixed_tel_message.
+  Related Topics: fixed_tel_message, immobile_message.
 
 & FIXED_TEL_MESSAGE
 FIXED_TEL_MESSAGE
@@ -2328,7 +2330,7 @@ FIXED_TEL_MESSAGE
   This configuration option cannot be changed after the server starts.  It
   can only be changed via the configuration file.
 
-  Related Topics: fixed_home_message.
+  Related Topics: fixed_home_message, immobile_message.
 
 & FLAGS
 FLAGS
@@ -2906,6 +2908,19 @@ IDLE_WIZ_DARK
   dark by this action will have a 'd' instead of a 'D' by their idle time
   in the privileged WHO listing.
 
+& IMMOBILE_MESSAGE
+IMMOBILE_MESSAGE
+
+  CONFIG PARAMETER: immobile_message <string>
+  DEFAULT: none
+
+  Specifies the string that is sent to a player when they try to move
+  while their IMMOBILE flag is set.
+
+  This configuration option is only available if FIRANMUX is enabled.
+
+  Related Topics: fixed_home_message, fixed_tel_message.
+
 & INCLUDE
 INCLUDE
 
@@ -3209,6 +3224,22 @@ MAIL_DATABASE
 
   Related Topics: have_mailer.
 
+& MAIL_EHLO
+MAIL_EHLO
+
+  CONFIG PARAMETER: mail_ehlo <string>
+  DEFAULT: None
+
+  Specifies the EHLO string to offer to the SMTP server.  This is typically
+  the DNS name of the sending host or something close, and SMTP servers are
+  likely to perform a reverse-DNS lookup on the sender's IP address, an MX
+  lookup on the EHLO string, and make some judgement as to whether the sender
+  is relaying mail.
+
+  This option is only available if FIRANMUX is enabled.
+
+  Related Topics: mail_sendaddr, mail_sendname, mail_server, and mail_subject.
+
 & MAIL_EXPIRATION
 MAIL_EXPIRATION
 
@@ -3231,6 +3262,54 @@ MAIL_PER_HOUR
   permitted.
 
   Related Topics: pcreate_per_hour, user_attr_per_hour
+
+& MAIL_SENDADDR
+MAIL_SENDADDR
+
+  CONFIG PARAMETER: mail_sendaddr <string>
+  DEFAULT: None
+
+  Specifies the E-mail address of the sender for outgoing E-mail.
+
+  This option is only available if FIRANMUX is enabled.
+
+  Related Topics: mail_ehlo, mail_sendname, mail_server, and mail_subject.
+
+& MAIL_SENDNAME
+MAIL_SENDNAME
+
+  CONFIG PARAMETER: mail_sendname <string>
+  DEFAULT: None
+
+  Specifies the sender's friendly name for outgoing E-mail.
+
+  This option is only available if FIRANMUX is enabled.
+
+  Related Topics: mail_ehlo, mail_sendaddr, mail_server, and mail_subject.
+
+& MAIL_SERVER
+MAIL_SERVER
+
+  CONFIG PARAMETER: mail_server <string>
+  DEFAULT: None
+
+  Specifies the host name of the SMTP server for outgoing E-mail.
+
+  This option is only available if FIRANMUX is enabled.
+
+  Related Topics: mail_ehlo, mail_sendaddr, mail_sendname, and mail_subject.
+
+& MAIL_SUBJECT
+MAIL_SUBJECT
+
+  CONFIG PARAMETER: mail_subject <string>
+  DEFAULT: None
+
+  Specifies the subject line for outgoing E-mail.
+
+  This option is only available if FIRANMUX is enabled.
+
+  Related Topics: mail_ehlo, mail_sendaddr, mail_sendname, and mail_server.
 
 & MARKED
 MARKED
@@ -4225,6 +4304,16 @@ SESSION
       It may also indicate network problems or that the player is generating
       output faster than the network or his client can process it.
 
+& SIGNALS
+SIGNALS
+
+  From a shell, the following signals can be sent to the server:
+
+    SIGUSR1  - Server will restart (see @restart).
+    SIGUSR2  - Server will drop a flatfile (see @dump/flat).
+    SIGHUP   - Server will perform a normal dump (see @dump).
+    SIGTERM  - Server will shutodnw (see @shutdown).
+
 & SIGNAL_ACTION
 SIGNAL_ACTION
 
@@ -4241,16 +4330,6 @@ SIGNAL_ACTION
 
   This configuration option cannot be changed after the server starts.  It
   can only be changed via the configuration file.
-
-& SIGNALS
-SIGNALS
-
-  From a shell, the following signals can be sent to the server:
-
-    SIGUSR1  - Server will restart (see @restart).
-    SIGUSR2  - Server will drop a flatfile (see @dump/flat).
-    SIGHUP   - Server will perform a normal dump (see @dump).
-    SIGTERM  - Server will shutodnw (see @shutdown).
 
 & SITE LISTS
 SITE LISTS
@@ -4377,6 +4456,54 @@ SPACE_COMPRESS
   Specifies whether or not extra spaces are to be removed from user input
   as it is processed.  If enabled, multiple spaces are compressed to a single
   space, and spaces at the ends of strings are removed.
+
+& SQL_DATABASE
+SQL_DATABASE
+
+  CONFIG PARAMETER: sql_database <string>
+  DEFAULT: None
+
+  Specifies the name of the SQL database.
+
+  This option is only available if FIRANMUX is enabled.
+
+  Related Topics: sql_user, sql_user, and sql_password.
+
+& SQL_PASSWORD
+SQL_PASSWORD
+
+  CONFIG PARAMETER: sql_password <string>
+  DEFAULT: None
+
+  Specifies the password for the SQL session.
+
+  This option is only available if FIRANMUX is enabled.
+
+  Related Topics: sql_server, sql_user, and sql_database.
+
+& SQL_SERVER
+SQL_SERVER
+
+  CONFIG PARAMETER: sql_server <string>
+  DEFAULT: None
+
+  Specifies the host name of the SQL server.
+
+  This option is only available if FIRANMUX is enabled.
+
+  Related Topics: sql_user, sql_password, and sql_database.
+
+& SQL_USER
+SQL_USER
+
+  CONFIG PARAMETER: sql_user <string>
+  DEFAULT: None
+
+  Specifies the user name for the SQL session.
+
+  This option is only available if FIRANMUX is enabled.
+
+  Related Topics: sql_server, sql_password, and sql_database.
 
 & STACK_LIMIT
 STACK_LIMIT
