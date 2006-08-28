@@ -3580,7 +3580,7 @@ PERMISSIONS
   This is a list of the valid permissions and their meanings:
 
     builder        - Must be Wizard, ROYALTY, or have the BUILDER power.
-    dark           - Feature is not shown but is still available.
+    dark           - Feature is not shown but is still available (1).
     disabled       - No one can use this feature.
 
 { 'wizhelp permissions2' for more }
@@ -3601,19 +3601,23 @@ PERMISSIONS (continued)
     need_player    - Only players may use this feature.
     no_haven       - Non-Wizard players with owners set HAVEN may not use this
                      feature.
+    no_immobile    - Non-Wizard players with owners set IMMOBILE may not use
+                     this feature (2).
+    no_restricted  - Non-Wizard players with owners set RESTRICTED may not use
+                     this feature (2).
     no_robot       - Non-Wizard players set ROBOT may not use this feature.
     no_slave       - Non-Wizard players with owners set SLAVE may not use this
                      feature.
-    no_suspect     - Non-Wizard players with owners set SUSPECT may not use
-                     this feature.
-    no_guest       - Non-Wizards must not possess the GUEST power in order to
-                     use this feature.
 
 { 'wizhelp permissions3' for more }
 
 & PERMISSIONS3
 PERMISSIONS (continued)
 
+    no_suspect     - Non-Wizard players with owners set SUSPECT may not use
+                     this feature.
+    no_guest       - Non-Wizards must not possess the GUEST power in order to
+                     use this feature.
     no_uninspected - Only things which have been inspected can use this
                      feature.
     robot          - Only players set ROBOT can use this feature.
@@ -3624,6 +3628,12 @@ PERMISSIONS (continued)
                      controllable via the @admin command.
     uninspected    - Only things marked uninspected can use this feature.
     wizard         - Only Wizards may use this feature.
+
+  Footnotes:
+
+    (1) The dark permission is not available if FIRANMUX is enabled.
+    (2) The no_immutable and no_restricted permissions are only available if
+        FIRANMUX is enabled.
 
 & PERMIT_SITE
 PERMIT_SITE
