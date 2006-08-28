@@ -29,7 +29,7 @@ Feature Additions:
     are not connected to either the player_startint_room or to a room
     marked FLOATING. Previously, every room not connected to the
     player_starting_room had to be marked FLOATING.
- -- Added QUELL flag from Firan to temorarily supress Wizard powers.
+ -- Added QUELL flag from Firan to temporarily suppressWizard powers.
  -- Added @switch/notify.
  -- Merge Firan MUX source modification and collected them under the
     --enable-firanmux ./configuration switch. This also typically
