@@ -31,7 +31,7 @@ Feature Additions:
     player_starting_room had to be marked FLOATING.
  -- Added QUELL flag from Firan to temporarily suppressWizard powers.
  -- Added @switch/notify.
- -- Merge Firan MUX source modification and collected them under the
+ -- Merged Firan MUX source modifications and collected them under the
     --enable-firanmux ./configuration switch. This also typically
     requires the --enable-memorybased switch. Some of the following
     may eventually be enabled in the default build:
@@ -81,7 +81,7 @@ Bug Fixes:
     unsigned size_t in place of a signed 'int'. Bug introduced in 2.6.
  -- Add 'other half' of buffer overflow protection to a case in
     process_cmdent().  Without the other half, the first half causes a
-    crash instead of prventing it.  Found and fixed by Sparks.
+    crash instead of preventing it.  Found and fixed by Sparks.
 
 
 Performance Enhancements:
