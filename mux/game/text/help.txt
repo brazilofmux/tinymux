@@ -13021,29 +13021,6 @@ WHERE()
 
   Related Topics: loc(), rloc().
 
-& WIDTH()
-WIDTH()
-
-  FUNCTION: width(<player|port>)
-
-  Returns the width of the client window as reported by Telnet's Negotiate
-  About Window Size (NAWS) option. For clients which do not negotiate the
-  NAWS option, a value of 78 is returned.
-
-  If <player|port> is numeric, it's taken as a port number (as shown in
-  SESSION).  Otherwise, it's treated as a player name.  If the named player is
-  connected more than once, the width of the session having the smallest idle
-  time is returned.
-
-  You and any object with the See_All @power may obtain the width of your
-  sessions.
-
-  Example:
-    > think width(me)
-    You say "122"
-
-  Related Topics: height().
-
 & WHISPER
 WHISPER
 
@@ -13072,6 +13049,29 @@ WHO
   <prefix> are listed.
 
   Related Topics: @doing.
+
+& WIDTH()
+WIDTH()
+
+  FUNCTION: width(<player|port>)
+
+  Returns the width of the client window as reported by Telnet's Negotiate
+  About Window Size (NAWS) option. For clients which do not negotiate the
+  NAWS option, a value of 78 is returned.
+
+  If <player|port> is numeric, it's taken as a port number (as shown in
+  SESSION).  Otherwise, it's treated as a player name.  If the named player is
+  connected more than once, the width of the session having the smallest idle
+  time is returned.
+
+  You and any object with the See_All @power may obtain the width of your
+  sessions.
+
+  Example:
+    > think width(me)
+    You say "122"
+
+  Related Topics: height().
 
 & WIZARD
 WIZARD
