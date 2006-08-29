@@ -1,7 +1,7 @@
 /*! \file functions.cpp
  *  MUX function handlers
  *
- * $Id: functions.cpp,v 1.218 2006-08-26 19:28:48 sdennis Exp $
+ * $Id: functions.cpp,v 1.219 2006-08-29 03:47:25 sdennis Exp $
  *
  */
 
@@ -5912,7 +5912,7 @@ FUNCTION(fun_distribute)
     // Get parameters and evaluate each of them.
     //
     SEP osep;
-    if (!OPTIONAL_DELIM(3, osep, DELIM_EVAL|DELIM_NULL|DELIM_CRLF|DELIM_STRING))
+    if (!OPTIONAL_DELIM(3, osep, DELIM_NULL|DELIM_CRLF|DELIM_STRING))
     {
         return;
     }
@@ -6021,13 +6021,13 @@ FUNCTION(fun_sql)
     }
 
     SEP sepRow;
-    if (!OPTIONAL_DELIM(2, sepRow, DELIM_EVAL|DELIM_NULL|DELIM_CRLF|DELIM_STRING))
+    if (!OPTIONAL_DELIM(2, sepRow, DELIM_NULL|DELIM_CRLF|DELIM_STRING))
     {
         return;
     }
 
     SEP sepColumn = sepRow;
-    if (!OPTIONAL_DELIM(3, sepColumn, DELIM_EVAL|DELIM_NULL|DELIM_CRLF|DELIM_STRING|DELIM_INIT))
+    if (!OPTIONAL_DELIM(3, sepColumn, DELIM_NULL|DELIM_CRLF|DELIM_STRING|DELIM_INIT))
     {
         return;
     }
