@@ -5845,16 +5845,15 @@ DISTRIBUTE()
 
   FUNCTION: distribute(<numpoints>, <bins>[, <delim>])
 
-  Returns, as a list, a random distribution of <numpoints> into an equally
-  weighted number of <bins>.
+  Returns, as a <delim> delimited list, a random distribution of <numpoints>
+  into an equally weighted number of <bins>.  <points> must be between 0 and
+  1,000,000, and <bins> must be between 1 and 2,000.
 
   Examples:
     > think distribute(100, 5, |)
     25|16|17|22|20
 
-  This function is only available if FIRANMUX is enabled.
-
-  Related Topics: choose().
+  Related Topics: choose(), die(), lrand(), rand().
 
 & DIV()
 DIV()
@@ -9098,7 +9097,8 @@ MAILJ()
   <player>.  Fourth form returns number of message for executor.
 
   The difference between this and mail() is that this returns one number and
-  mail() returns three.
+  mail() returns three. Also, mail() only accounts for the messages in the
+  inbox, while mailj() accounts for all messages in all folders.
 
   This function is only available if FIRANMUX is enabled and is likely to be
   deprecated in favor of mail().
