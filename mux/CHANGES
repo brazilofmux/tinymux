@@ -50,6 +50,7 @@ Feature Additions:
  -- Added --enable-firanmuxconvert which turns on code to remap three
     conflicting attribute numbers. The first database load requires
     this switch, and then it should be turned off.
+ -- Included distribute() in the default build.
 
 
 Bug Fixes:

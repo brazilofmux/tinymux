@@ -1,7 +1,7 @@
 /*! \file functions.cpp
  *  MUX function handlers
  *
- * $Id: functions.cpp,v 1.219 2006-08-29 03:47:25 sdennis Exp $
+ * $Id: functions.cpp,v 1.220 2006-08-29 04:20:05 sdennis Exp $
  *
  */
 
@@ -5897,8 +5897,6 @@ static FUNCTION(fun_choose)
     delete [] weights;
 }
 
-#if defined(FIRANMUX)
-
 /*
  * ---------------------------------------------------------------------------
  * * distribute: randomly distribute M total points into N total bins...
@@ -5932,28 +5930,15 @@ FUNCTION(fun_distribute)
     }
 
     const int points_limit = 1000000;
-    int points = mux_atol(fargs[0]);
-    if (points < 0)
-    {
-        safe_str("#-1 ARG1 MUST BE GREATER THAN OR EQUAL TO 0", buff, bufc);
-        return;
-    }
-    else if (points_limit < points)
-    {
-        safe_str("#-1 ARG1 IS WAY TOO HIGH", buff, bufc);
-        return;
-    }
-
     const int bins_limit   = 2000;
+    int points = mux_atol(fargs[0]);
     int bins   = mux_atol(fargs[1]);
-    if (bins <= 0)
+    if (  points < 0
+       || points_limit < points
+       || bins <= 0
+       || bins_limit < bins)
     {
-        safe_str("#-1 ARG2 MUST BE GREATER THAN 0", buff, bufc);
-        return;
-    }
-    else if (bins_limit < bins)
-    {
-        safe_str("#-1 ARG2 IS WAY TOO HIGH", buff, bufc);
+        safe_range(buff, bufc);
         return;
     }
 
@@ -6006,6 +5991,8 @@ FUNCTION(fun_distribute)
         delete [] bin_array;
     }
 }
+
+#if defined(FIRANMUX)
 
 /* sql() function -- Rachel 'Jeanne' Blackman
  *                   2003/09/30
@@ -9167,9 +9154,7 @@ static FUN builtin_function_list[] =
     {"DIGITTIME",   fun_digittime,  MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {"DIST2D",      fun_dist2d,     MAX_ARG, 4,       4,         0, CA_PUBLIC},
     {"DIST3D",      fun_dist3d,     MAX_ARG, 6,       6,         0, CA_PUBLIC},
-#if defined(FIRANMUX)
-    {"DISTRIBUTE",  fun_distribute, MAX_ARG, 2, MAX_ARG,         0, CA_PUBLIC},
-#endif // FIRANMUX
+    {"DISTRIBUTE",  fun_distribute, MAX_ARG, 2,       3,         0, CA_PUBLIC},
     {"DOING",       fun_doing,      MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {"DUMPING",     fun_dumping,    MAX_ARG, 0,       0,         0, CA_PUBLIC},
     {"E",           fun_e,          MAX_ARG, 0,       0,         0, CA_PUBLIC},
