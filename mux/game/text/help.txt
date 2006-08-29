@@ -8827,22 +8827,20 @@ LWHO()
 MAIL()
 
   FUNCTION: mail(<mail message #>)
-             mail(<player name>)
-             mail(<player>, <mail message #>)
-             mail()
+            mail(<player name>)
+            mail(<player>, <mail message #>)
+            mail()
 
-  The first form returns a message corresponding to that mail message
-  number in your MUX mailbox. This function can be used to forward
-  mail, or as a way to simply transfer mail messages to attributes
-  on an object.
+  The first form returns a message corresponding to that mail message number
+  in your MUX mailbox.  This function can be used to forward mail, or as a way
+  to simply transfer mail messages to attributes on an object.
 
-  The second form returns three numbers, corresponding to the number of
-  read, unread, and cleared messages <player> has.
-  The third form returns <player>'s <mail message #>. It works like
-  the first form except it applies to another player.
-  The last form returns the number of messages the evaluating player has.
-  Only wizards can use the second and third forms of the function
-  on other players.
+  The second form returns three numbers, corresponding to the number of read,
+  unread, and cleared messages <player> has.  The third form returns
+  <player>'s <mail message #>.  It works like the first form except it applies
+  to another player.  The last form returns the number of messages the
+  evaluating player has.  Only wizards can use the second and third forms of
+  the function on other players.
 
   Related Topics: @mail, mail-reading.
 
@@ -9086,6 +9084,50 @@ MAILFROM()
   specify mailfrom(<player>,<msg #>).
 
   Related Topics:
+
+& MAILJ()
+MAILJ()
+
+  FUNCTION: mailj(<num>)
+            mailj(<player>)
+            mailj(<player>, <num>)
+            mailj()
+
+  First form returns message <num> from executor mailbag.  Second form returns
+  number of messages for <player>.  Third form return message <num> for
+  <player>.  Fourth form returns number of message for executor.
+
+  The difference between this and mail() is that this returns one number and
+  mail() returns three.
+
+  This function is only available if FIRANMUX is enabled and is likely to be
+  deprecated in favor of mail().
+
+  Related Topics: mail()
+
+& MAILSIZE()
+MAILSIZE()
+
+  FUNCTION: mailsize(<player>)
+
+  Returns the size of <player>'s mailbag in bytes.
+
+  This function is only available if FIRANMUX is enabled.
+
+  Related Topics:
+
+& MAILSUBJ()
+MAILSUBJ()
+
+  FUNCTION: mailsubj(<num>)
+            mailsubj(<player>, <num>)
+
+  First form returns the subject line from the executor's <num>'th mail item.
+  Second form returns the subject line from the <player>'s <num>'th mail item.
+
+  This function is only available if FIRANMUX is enabled.
+
+  Related Topics: mail(), mailj().
 
 & MAP()
 MAP()
@@ -12266,6 +12308,26 @@ SUCCESS
 
   Related Topics: get, look, @asuccess, @lock, @osuccess, @success.
 
+& SUCCESSES()
+SUCCESSES()
+
+  FUNCTION: successes(<numdice>, <difficulty target>)
+
+  Returns a small integer representing the number of successes (a positive
+  number), the number of failures or fumbles (a negative number), or 0
+  indicating no successes or failures.
+
+  The first number passed to successes() is the number of dice (ten-sided dice
+  ranging 1 to 10) to be rolled.  The second number is the difficulty target
+  number that must be rolled to count that die as a "success".  The dice are
+  rolled and each die that is equal to or greater than the target number is
+  counted as a success.  Each die that rolls a '1' is counted as a failure.
+  The number returned from successes() is the successes minus the failures.
+
+  This function is only available if FIRANMUX is enabled.
+
+  Related Topics: choose(), die(), distribute(), lrand(), and rand().
+
 & SWITCH()
 SWITCH()
 
@@ -12427,6 +12489,30 @@ TERSE
   afail command list is still run.
 
   Related Topics: examine, look.
+
+& TEXT()
+TEXT()
+
+  FUNCTION: text(<filename>, <index>)
+
+  This function returns the text associated with an index from a file in a
+  help.txt format.  The exact path and name of the file should be specified,
+  and must match exactly the name of a file in game/textfiles.conf (for
+  security).
+
+  This allows you to, for example, create a file, game/text/rumors.txt, and
+  add an entry:
+
+    & beer
+    It is rumored that you can get free beer at the Rat in the Ale Tavern.
+
+  If textfiles.conf contains an entry for the file (text/rumors.txt), then you
+  can refer to the beer rumor using 'text(text/rumors.txt, beer)'.
+
+  This function is only available if FIRANMUX is enabled and is likely to be
+  deprecated in favor of textfile()..
+
+  Related Topics: textfile().
 
 & TEXTFILE()
 TEXTFILE()
