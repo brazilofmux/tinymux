@@ -1,6 +1,6 @@
 // db.cpp
 //
-// $Id: db.cpp,v 1.107 2006-08-30 04:10:23 sdennis Exp $
+// $Id: db.cpp,v 1.108 2006-08-30 04:13:31 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -210,7 +210,7 @@ ATTR AttrTable[] =
     {"Rlevel",      A_RLEVEL,   AF_DARK | AF_NOPROG | AF_NOCMD | AF_INTERNAL},
 #endif /* REALITY_LVLS */
 #if defined(FIRANMUX)
-    {"Color",       A_COLOR,    AF_ODARK}, 
+    {"Color",       A_COLOR,    AF_ODARK},
     {"Alead",       A_ALEAD,    AF_ODARK | AF_WIZARD},
     {"Lead",        A_LEAD,     AF_ODARK | AF_NOPROG | AF_WIZARD},
     {"Olead",       A_OLEAD,    AF_ODARK | AF_NOPROG | AF_WIZARD},
@@ -1918,7 +1918,7 @@ void atr_add_raw_LEN(dbref thing, int atr, const char *szValue, size_t nValue)
             if (db[thing].nALUsed < db[thing].nALAlloc)
             {
                 if (lo < db[thing].nALUsed)
-                {   
+                {
                     memmove( list + lo + 1,
                              list + lo,
                              (db[thing].nALUsed - lo) * sizeof(ATRLIST));
@@ -1939,7 +1939,7 @@ void atr_add_raw_LEN(dbref thing, int atr, const char *szValue, size_t nValue)
                 {
                     memcpy(list, db[thing].pALHead, lo * sizeof(ATRLIST));
                 }
-    
+
                 // Copy top part.
                 //
                 if (lo < db[thing].nALUsed)
