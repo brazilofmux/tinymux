@@ -1,6 +1,6 @@
 // db.h
 //
-// $Id: db.h,v 1.13 2006-08-30 03:41:31 sdennis Exp $
+// $Id: db.h,v 1.14 2006-08-30 07:06:21 sdennis Exp $
 //
 
 #ifndef __DB_H
@@ -176,7 +176,6 @@ struct object
 };
 
 const int INITIAL_ATRLIST_SIZE = 10;
-const int ATRLIST_CHUNK        = 20;
 
 extern OBJ *db;
 
