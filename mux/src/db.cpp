@@ -1,6 +1,6 @@
 // db.cpp
 //
-// $Id: db.cpp,v 1.110 2006-08-30 04:56:26 sdennis Exp $
+// $Id: db.cpp,v 1.111 2006-08-30 05:02:19 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -1882,7 +1882,8 @@ void atr_add_raw_LEN(dbref thing, int atr, const char *szValue, size_t nValue)
         {
             lo = hi + 1;
 
-            if (A_USER_START <= atr)
+            if (  A_USER_START <= atr
+               && db[thing].nALUsed < db[thing].nALAlloc)
             {
                 // The following is a short-circuited version of code further down.
                 //
