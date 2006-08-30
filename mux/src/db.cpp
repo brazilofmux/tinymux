@@ -1,6 +1,6 @@
 // db.cpp
 //
-// $Id: db.cpp,v 1.105 2006-08-30 03:46:14 sdennis Exp $
+// $Id: db.cpp,v 1.106 2006-08-30 04:04:50 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -1917,9 +1917,12 @@ void atr_add_raw_LEN(dbref thing, int atr, const char *szValue, size_t nValue)
             //
             if (db[thing].nALUsed < db[thing].nALAlloc)
             {
-                memmove( list + lo + 1,
-                         list + lo,
-                         (db[thing].nALUsed - lo) * sizeof(ATRLIST));
+                if (lo < db[thing].nALUsed)
+                {   
+                    memmove( list + lo + 1,
+                             list + lo,
+                             (db[thing].nALUsed - lo) * sizeof(ATRLIST));
+                }
             }
             else
             {
@@ -1980,37 +1983,40 @@ void atr_add_raw_LEN(dbref thing, int atr, const char *szValue, size_t nValue)
     }
 #endif // MEMORY_BASED
 
-    switch (atr)
+    if (atr < A_USER_START)
     {
-    case A_STARTUP:
+        switch (atr)
+        {
+        case A_STARTUP:
 
-        db[thing].fs.word[FLAG_WORD1] |= HAS_STARTUP;
-        break;
+            db[thing].fs.word[FLAG_WORD1] |= HAS_STARTUP;
+            break;
 
-    case A_DAILY:
+        case A_DAILY:
 
-        db[thing].fs.word[FLAG_WORD2] |= HAS_DAILY;
-        break;
+            db[thing].fs.word[FLAG_WORD2] |= HAS_DAILY;
+            break;
 
-    case A_FORWARDLIST:
+        case A_FORWARDLIST:
 
-        db[thing].fs.word[FLAG_WORD2] |= HAS_FWDLIST;
-        break;
+            db[thing].fs.word[FLAG_WORD2] |= HAS_FWDLIST;
+            break;
 
-    case A_LISTEN:
+        case A_LISTEN:
 
-        db[thing].fs.word[FLAG_WORD2] |= HAS_LISTEN;
-        break;
+            db[thing].fs.word[FLAG_WORD2] |= HAS_LISTEN;
+            break;
 
-    case A_TIMEOUT:
+        case A_TIMEOUT:
 
-        desc_reload(thing);
-        break;
+            desc_reload(thing);
+            break;
 
-    case A_QUEUEMAX:
+        case A_QUEUEMAX:
 
-        pcache_reload(thing);
-        break;
+            pcache_reload(thing);
+            break;
+        }
     }
 }
 
