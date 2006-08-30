@@ -1,6 +1,6 @@
 // db.cpp
 //
-// $Id: db.cpp,v 1.103 2006-08-25 06:20:19 sdennis Exp $
+// $Id: db.cpp,v 1.104 2006-08-30 03:41:31 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -1872,37 +1872,48 @@ void atr_add_raw_LEN(dbref thing, int atr, const char *szValue, size_t nValue)
     }
     else
     {
-        // Binary search for the attribute
+        // If this atr is newly allocated, or it comes from the flatfile, it
+        // will experience worst-case performance with a binary search, so we
+        // perform a quick check to see if it goes on the end.
         //
-        lo = 0;
-        hi = db[thing].nALUsed - 1;
-
         list = db[thing].pALHead;
-        while (lo <= hi)
+        hi   = db[thing].nALUsed - 1;
+        if (list[hi].number < atr)
         {
-            mid = ((hi - lo) >> 1) + lo;
-            if (list[mid].number > atr)
+            lo = hi + 1;
+        }
+        else
+        {
+            // Binary search for the attribute
+            //
+            lo = 0;
+            while (lo <= hi)
             {
-                hi = mid - 1;
-            }
-            else if (list[mid].number < atr)
-            {
-                lo = mid + 1;
-            }
-            else // if (list[mid].number == atr)
-            {
-                MEMFREE(list[mid].data);
-                list[mid].data = text;
-                list[mid].size = nValue + 1;
-                found = true;
-                break;
+                mid = ((hi - lo) >> 1) + lo;
+                if (list[mid].number > atr)
+                {
+                    hi = mid - 1;
+                }
+                else if (list[mid].number < atr)
+                {
+                    lo = mid + 1;
+                }
+                else // if (list[mid].number == atr)
+                {
+                    MEMFREE(list[mid].data);
+                    list[mid].data = text;
+                    list[mid].size = nValue + 1;
+                    found = true;
+                    break;
+                }
             }
         }
 
         if (!found)
         {
             // We didn't find it, and lo == hi + 1.  The attribute should be
-            // inserted between (0,hi) and (lo,nALUsed-1).
+            // inserted between (0,hi) and (lo,nALUsed-1) where hi may be -1
+            // and lo may be nALUsed.
             //
             if (db[thing].nALUsed < db[thing].nALAlloc)
             {
@@ -2787,11 +2798,12 @@ static const int action_table[2][4] =
     { 2,  1,  2,  2 }  // STATE_ESC
 };
 
-char *getstring_noalloc(FILE *f, int new_strings)
+char *getstring_noalloc(FILE *f, bool new_strings, size_t *pnBuffer)
 {
     static char buf[2*LBUF_SIZE + 20];
     int c = fgetc(f);
-    if (new_strings && c == '"')
+    if (  new_strings
+       && c == '"')
     {
         size_t nBufferLeft = sizeof(buf)-10;
         int iState = STATE_START;
@@ -2806,6 +2818,10 @@ char *getstring_noalloc(FILE *f, int new_strings)
                 // EOF or ERROR.
                 //
                 *pOutput = 0;
+                if (pnBuffer)
+                {
+                    *pnBuffer = pOutput - buf;
+                }
                 return buf;
             }
 
@@ -2856,6 +2872,10 @@ char *getstring_noalloc(FILE *f, int new_strings)
                     // Terminate parsing.
                     //
                     *pOutput = 0;
+                    if (pnBuffer)
+                    {
+                        *pnBuffer = pOutput - buf;
+                    }
                     return buf;
                 }
                 else
@@ -2874,6 +2894,10 @@ char *getstring_noalloc(FILE *f, int new_strings)
             if (nBufferLeft <= 0)
             {
                 *pOutput = 0;
+                if (pnBuffer)
+                {
+                    *pnBuffer = pOutput - buf;
+                }
                 return buf;
             }
         }
@@ -2891,7 +2915,7 @@ char *getstring_noalloc(FILE *f, int new_strings)
             {
                 // EOF or ERROR.
                 //
-                p[0] = 0;
+                p[0] = '\0';
             }
             else
             {
@@ -2912,6 +2936,10 @@ char *getstring_noalloc(FILE *f, int new_strings)
                     //
                     p[nLine-1] = '\0';
                 }
+            }
+            if (pnBuffer)
+            {
+                *pnBuffer = p - buf;
             }
             return buf;
         }
@@ -3205,7 +3233,11 @@ void load_restart_db(void)
     DebugTotalSockets += nMainGamePorts;
 
     mudstate.start_time.SetSeconds(getref(f));
-    strcpy(mudstate.doing_hdr, getstring_noalloc(f, true));
+
+    size_t nBuffer;
+    char *pBuffer = getstring_noalloc(f, true, &nBuffer);
+    memcpy(mudstate.doing_hdr, pBuffer, nBuffer=1);
+
     mudstate.record_players = getref(f);
     if (mudconf.reset_players)
     {
@@ -3252,30 +3284,35 @@ void load_restart_db(void)
             d->width = 78;
         }
 
-        char *temp = getstring_noalloc(f, true);
-        if (*temp)
+        size_t nBuffer;
+        char *temp = getstring_noalloc(f, true, &nBuffer);
+        if ('\0' != temp[0])
         {
             d->output_prefix = alloc_lbuf("set_userstring");
-            strcpy(d->output_prefix, temp);
+            memcpy(d->output_prefix, temp, nBuffer+1);
         }
         else
         {
             d->output_prefix = NULL;
         }
-        temp = getstring_noalloc(f, true);
-        if (*temp)
+
+        temp = getstring_noalloc(f, true, &nBuffer);
+        if ('\0' != temp)
         {
             d->output_suffix = alloc_lbuf("set_userstring");
-            strcpy(d->output_suffix, temp);
+            memcpy(d->output_suffix, temp, nBuffer+1);
         }
         else
         {
             d->output_suffix = NULL;
         }
 
-        strcpy(d->addr, getstring_noalloc(f, true));
-        strcpy(d->doing, getstring_noalloc(f, true));
-        strcpy(d->username, getstring_noalloc(f, true));
+        temp = getstring_noalloc(f, true, &nBuffer);
+        memcpy(d->addr, temp, nBuffer+1);
+        temp = getstring_noalloc(f, true, &nBuffer);
+        memcpy(d->doing, temp, &nBuffer);
+        temp = getstring_noalloc(f, true, &nBuffer);
+        memcpy(d->username, temp, &nBuffer);
 
         d->output_size = 0;
         d->output_tot = 0;

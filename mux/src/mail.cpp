@@ -1,6 +1,6 @@
 // mail.cpp
 //
-// $Id: mail.cpp,v 1.66 2006-08-14 23:41:38 sdennis Exp $
+// $Id: mail.cpp,v 1.67 2006-08-30 03:41:31 sdennis Exp $
 //
 // This code was taken from Kalkin's DarkZone code, which was
 // originally taken from PennMUSH 1.50 p10, and has been heavily modified
@@ -2815,6 +2815,8 @@ static void load_mail_V5(FILE *fp)
     int mail_top = getref(fp);
     mail_db_grow(mail_top + 1);
 
+    size_t nBuffer;
+    char  *pBuffer;
     char nbuf1[8];
     char *p = fgets(nbuf1, sizeof(nbuf1), fp);
     while (p && strncmp(nbuf1, "***", 3) != 0)
@@ -2827,10 +2829,12 @@ static void load_mail_V5(FILE *fp)
 
         mp->number  = getref(fp);
         MessageReferenceInc(mp->number);
-        mp->tolist  = StringClone(getstring_noalloc(fp, true));
-
-        mp->time    = StringClone(getstring_noalloc(fp, true));
-        mp->subject = StringClone(getstring_noalloc(fp, true));
+        pBuffer = getstring_noalloc(fp, true, &nBuffer);
+        mp->tolist  = StringCloneLen(pBuffer, nBuffer);
+        pBuffer = getstring_noalloc(fp, true, &nBuffer);
+        mp->time    = StringCloneLen(pBuffer, nBuffer);
+        pBuffer = getstring_noalloc(fp, true, &nBuffer);
+        mp->subject = StringCloneLen(pBuffer, nBuffer);
         mp->read    = getref(fp);
 
         MailList ml(mp->to);
@@ -2843,7 +2847,8 @@ static void load_mail_V5(FILE *fp)
     while (p && strncmp(nbuf1, "+++", 3))
     {
         int number = mux_atol(nbuf1);
-        new_mail_message(getstring_noalloc(fp, true), number);
+        pBuffer = getstring_noalloc(fp, true, &nBuffer);
+        new_mail_message(pBuffer, number);
         p = fgets(nbuf1, sizeof(nbuf1), fp);
     }
 }

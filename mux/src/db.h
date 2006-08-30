@@ -1,6 +1,6 @@
 // db.h
 //
-// $Id: db.h,v 1.12 2006-06-17 08:01:36 sdennis Exp $
+// $Id: db.h,v 1.13 2006-08-30 03:41:31 sdennis Exp $
 //
 
 #ifndef __DB_H
@@ -247,7 +247,7 @@ dbref    db_write(FILE *, int, int);
 void destroy_thing(dbref);
 void destroy_exit(dbref);
 void putstring(FILE *f, const char *s);
-char *getstring_noalloc(FILE *f, int new_strings);
+char *getstring_noalloc(FILE *f, bool new_strings, size_t *pnBuffer);
 void init_attrtab(void);
 
 #define DOLIST(thing,list) \

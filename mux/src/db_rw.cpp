@@ -1,6 +1,6 @@
 // db_rw.cpp
 //
-// $Id: db_rw.cpp,v 1.31 2006-08-26 22:06:55 sdennis Exp $
+// $Id: db_rw.cpp,v 1.32 2006-08-30 03:41:31 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -154,7 +154,17 @@ static BOOLEXP *getboolexp1(FILE *f)
     case '"':
         ungetc(c, f);
         buff = alloc_lbuf("getboolexp_quoted");
-        mux_strncpy(buff, getstring_noalloc(f, 1), LBUF_SIZE-1);
+        {
+            size_t nBuffer;
+            char *pBuffer = getstring_noalloc(f, true, &nBuffer);
+            if (LBUF_SIZE - 1 < nBuffer)
+            {
+                nBuffer = LBUF_SIZE - 1;
+                pBuffer[nBuffer] = '\0';
+            }
+            memcpy(buff, pBuffer, nBuffer+1);
+        }
+
         c = fgetc(f);
         if (c == EOF)
         {
@@ -187,8 +197,17 @@ static BOOLEXP *getboolexp1(FILE *f)
             {
                 b->type = BOOLEXP_ATR;
             }
+
             buff = alloc_lbuf("getboolexp1.attr_lock");
-            mux_strncpy(buff, getstring_noalloc(f, 1), LBUF_SIZE-1);
+            size_t nBuffer;
+            char *pBuffer = getstring_noalloc(f, true, &nBuffer);
+            if (LBUF_SIZE - 1 < nBuffer)
+            {
+                nBuffer = LBUF_SIZE - 1;
+                pBuffer[nBuffer] = '\0';
+            }
+            memcpy(buff, pBuffer, nBuffer+1);
+
             b->sub1 = (BOOLEXP *)StringClone(buff);
             free_lbuf(buff);
         }
@@ -361,13 +380,16 @@ static bool get_list(FILE *f, dbref i)
 
                 // Store the attr
                 //
-                atr_add_raw(i, atr, getstring_noalloc(f, true));
+                size_t nBuffer;
+                char *pBuffer = getstring_noalloc(f, true, &nBuffer);
+                atr_add_raw_LEN(i, atr, pBuffer, nBuffer);
             }
             else
             {
                 // Silently discard
                 //
-                getstring_noalloc(f, true);
+                size_t nBuffer;
+                (void)getstring_noalloc(f, true, &nBuffer);
             }
             break;
 
@@ -392,7 +414,10 @@ static bool get_list(FILE *f, dbref i)
 
             // We've found a bad spot.  I hope things aren't too bad.
             //
-            getstring_noalloc(f, true);
+            {
+                size_t nBuffer;
+                (void)getstring_noalloc(f, true, &nBuffer);
+            }
         }
     }
 }
@@ -524,6 +549,7 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
     BOOLEXP *tempbool;
     char *buff;
     size_t nVisualWidth;
+    size_t nBuffer;
 
     g_format = F_UNKNOWN;
     g_version = 0;
@@ -589,7 +615,7 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
                 // USER-NAMED ATTRIBUTE
                 //
                 anum = getref(f);
-                tstr = getstring_noalloc(f, true);
+                tstr = getstring_noalloc(f, true, &nBuffer);
                 if (mux_isdigit(*tstr))
                 {
                     aflags = 0;
@@ -645,7 +671,7 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
                 if (header_gotten)
                 {
                     Log.tinyprintf(ENDLINE "Duplicate MUX version header entry at object %d, ignored." ENDLINE, i);
-                    tstr = getstring_noalloc(f, 0);
+                    tstr = getstring_noalloc(f, false, &nBuffer);
                 }
                 else
                 {
@@ -675,7 +701,7 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
                 if (size_gotten)
                 {
                     Log.tinyprintf(ENDLINE "Duplicate size entry at object %d, ignored." ENDLINE, i);
-                    tstr = getstring_noalloc(f, 0);
+                    tstr = getstring_noalloc(f, false, &nBuffer);
                 }
                 else
                 {
@@ -690,7 +716,7 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
                 if (nextattr_gotten)
                 {
                     Log.tinyprintf(ENDLINE "Duplicate next free vattr entry at object %d, ignored." ENDLINE, i);
-                    tstr = getstring_noalloc(f, 0);
+                    tstr = getstring_noalloc(f, false, &nBuffer);
                 }
                 else
                 {
@@ -701,7 +727,7 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
             else
             {
                 Log.tinyprintf(ENDLINE "Unexpected character '%c' in MUX header near object #%d, ignored." ENDLINE, ch, i);
-                tstr = getstring_noalloc(f, 0);
+                tstr = getstring_noalloc(f, false, &nBuffer);
             }
             break;
 
@@ -711,7 +737,7 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
 
             if (read_name)
             {
-                tstr = getstring_noalloc(f, true);
+                tstr = getstring_noalloc(f, true, &nBuffer);
                 buff = alloc_lbuf("dbread.s_Name");
                 (void)ANSI_TruncateToField(tstr, MBUF_SIZE, buff, MBUF_SIZE,
                     &nVisualWidth, ANSI_ENDGOAL_NORMAL);
@@ -804,7 +830,7 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
             break;
 
         case '*':   // EOF marker
-            tstr = getstring_noalloc(f, 0);
+            tstr = getstring_noalloc(f, false, &nBuffer);
             if (strncmp(tstr, "**END OF DUMP***", 16))
             {
                 Log.tinyprintf(ENDLINE "Bad EOF marker at object #%d" ENDLINE, i);
