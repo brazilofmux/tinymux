@@ -1,6 +1,6 @@
 // db.cpp
 //
-// $Id: db.cpp,v 1.111 2006-08-30 05:02:19 sdennis Exp $
+// $Id: db.cpp,v 1.112 2006-08-30 06:22:40 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -1853,12 +1853,10 @@ void atr_add_raw_LEN(dbref thing, int atr, const char *szValue, size_t nValue)
     }
 
 #ifdef MEMORY_BASED
-    ATRLIST *list;
-    bool found = false;
-    int hi, lo, mid;
+    ATRLIST *list = db[thing].pALHead;
     char *text = StringCloneLen(szValue, nValue);
 
-    if (!db[thing].pALHead)
+    if (!list)
     {
         db[thing].nALAlloc = INITIAL_ATRLIST_SIZE;
         list = (ATRLIST *)MEMALLOC(db[thing].nALAlloc*sizeof(ATRLIST));
@@ -1868,7 +1866,6 @@ void atr_add_raw_LEN(dbref thing, int atr, const char *szValue, size_t nValue)
         list[0].number = atr;
         list[0].data = text;
         list[0].size = nValue + 1;
-        found = true;
     }
     else
     {
@@ -1876,23 +1873,13 @@ void atr_add_raw_LEN(dbref thing, int atr, const char *szValue, size_t nValue)
         // will experience worst-case performance with a binary search, so we
         // perform a quick check to see if it goes on the end.
         //
-        list = db[thing].pALHead;
-        hi   = db[thing].nALUsed - 1;
+        int lo;
+        int hi = db[thing].nALUsed - 1;
         if (list[hi].number < atr)
         {
+            // Attribute should be appended to the end of the list.
+            //
             lo = hi + 1;
-
-            if (  A_USER_START <= atr
-               && db[thing].nALUsed < db[thing].nALAlloc)
-            {
-                // The following is a short-circuited version of code further down.
-                //
-                db[thing].nALUsed++;
-                list[lo].data = text;
-                list[lo].number = atr;
-                list[lo].size = nValue + 1;
-                return;
-            }
         }
         else
         {
@@ -1901,7 +1888,7 @@ void atr_add_raw_LEN(dbref thing, int atr, const char *szValue, size_t nValue)
             lo = 0;
             while (lo <= hi)
             {
-                mid = ((hi - lo) >> 1) + lo;
+                int mid = ((hi - lo) >> 1) + lo;
                 if (list[mid].number > atr)
                 {
                     hi = mid - 1;
@@ -1915,60 +1902,58 @@ void atr_add_raw_LEN(dbref thing, int atr, const char *szValue, size_t nValue)
                     MEMFREE(list[mid].data);
                     list[mid].data = text;
                     list[mid].size = nValue + 1;
-                    found = true;
-                    break;
+                    goto FoundAttribute;
                 }
             }
         }
 
-        if (!found)
+        // We didn't find it, and lo == hi + 1.  The attribute should be
+        // inserted between (0,hi) and (lo,nALUsed-1) where hi may be -1
+        // and lo may be nALUsed.
+        //
+        if (db[thing].nALUsed < db[thing].nALAlloc)
         {
-            // We didn't find it, and lo == hi + 1.  The attribute should be
-            // inserted between (0,hi) and (lo,nALUsed-1) where hi may be -1
-            // and lo may be nALUsed.
-            //
-            if (db[thing].nALUsed < db[thing].nALAlloc)
+            if (lo < db[thing].nALUsed)
             {
-                if (lo < db[thing].nALUsed)
-                {
-                    memmove( list + lo + 1,
-                             list + lo,
-                             (db[thing].nALUsed - lo) * sizeof(ATRLIST));
-                }
+                memmove( list + lo + 1,
+                         list + lo,
+                         (db[thing].nALUsed - lo) * sizeof(ATRLIST));
             }
-            else
-            {
-                // Expand the list.
-                //
-                db[thing].nALAlloc += ATRLIST_CHUNK;
-                list = (ATRLIST *)MEMALLOC(db[thing].nALAlloc
-                     * sizeof(ATRLIST));
-                ISOUTOFMEMORY(list);
-
-                // Copy bottom part.
-                //
-                if (lo > 0)
-                {
-                    memcpy(list, db[thing].pALHead, lo * sizeof(ATRLIST));
-                }
-
-                // Copy top part.
-                //
-                if (lo < db[thing].nALUsed)
-                {
-                    memcpy( list + lo + 1,
-                            db[thing].pALHead + lo,
-                            (db[thing].nALUsed - lo) * sizeof(ATRLIST));
-                }
-                MEMFREE(db[thing].pALHead);
-                db[thing].pALHead = list;
-            }
-            db[thing].nALUsed++;
-            list[lo].data = text;
-            list[lo].number = atr;
-            list[lo].size = nValue + 1;
         }
+        else
+        {
+            // Expand the list.
+            //
+            db[thing].nALAlloc += ATRLIST_CHUNK;
+            list = (ATRLIST *)MEMALLOC(db[thing].nALAlloc
+                 * sizeof(ATRLIST));
+            ISOUTOFMEMORY(list);
+
+            // Copy bottom part.
+            //
+            if (lo > 0)
+            {
+                memcpy(list, db[thing].pALHead, lo * sizeof(ATRLIST));
+            }
+
+            // Copy top part.
+            //
+            if (lo < db[thing].nALUsed)
+            {
+                memcpy( list + lo + 1,
+                        db[thing].pALHead + lo,
+                        (db[thing].nALUsed - lo) * sizeof(ATRLIST));
+            }
+            MEMFREE(db[thing].pALHead);
+            db[thing].pALHead = list;
+        }
+        db[thing].nALUsed++;
+        list[lo].data = text;
+        list[lo].number = atr;
+        list[lo].size = nValue + 1;
     }
+
+FoundAttribute:
 
 #else // MEMORY_BASED
 
