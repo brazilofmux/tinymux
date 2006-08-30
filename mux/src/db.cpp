@@ -1,6 +1,6 @@
 // db.cpp
 //
-// $Id: db.cpp,v 1.108 2006-08-30 04:13:31 sdennis Exp $
+// $Id: db.cpp,v 1.109 2006-08-30 04:41:01 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -3303,7 +3303,7 @@ void load_restart_db(void)
         }
 
         temp = getstring_noalloc(f, true, &nBuffer);
-        if ('\0' != temp)
+        if ('\0' != temp[0])
         {
             d->output_suffix = alloc_lbuf("set_userstring");
             memcpy(d->output_suffix, temp, nBuffer+1);
