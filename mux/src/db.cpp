@@ -1,6 +1,6 @@
 // db.cpp
 //
-// $Id: db.cpp,v 1.114 2006-08-30 21:05:45 sdennis Exp $
+// $Id: db.cpp,v 1.115 2006-08-30 22:30:25 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -1100,6 +1100,34 @@ ATTR *atr_str(char *s)
     return a;
 }
 
+static int GrowFiftyPercent(int x, int low, int high)
+{
+    // Calcuate 150% of x clipping goal at INT_MAX.
+    //
+    int half = x >> 1;
+    int goal;
+    if (INT_MAX - half <= x)
+    {
+        goal = INT_MAX;
+    }
+    else
+    {
+        goal = x + half;
+    }
+
+    // Clip result between requested boundaries.
+    //
+    if (goal < low)
+    {
+        goal = low;
+    }
+    else if (high < goal)
+    {
+        goal = high;
+    }
+    return goal;
+}
+
 /* ---------------------------------------------------------------------------
  * anum_extend: Grow the attr num lookup table.
  */
@@ -1124,11 +1152,7 @@ void anum_extend(int newtop)
         delta = mudconf.init_size;
     }
 
-    int h = 2*anum_alc_top;
-    if (h < delta)
-    {
-        h = delta;
-    }
+    int h = GrowFiftyPercent(anum_alc_top, delta, INT_MAX);
 
     if (  anum_alc_top < h
        && newtop < h)
@@ -1930,7 +1954,8 @@ void atr_add_raw_LEN(dbref thing, int atr, const char *szValue, size_t nValue)
         {
             // Double the size of the list.
             //
-            db[thing].nALAlloc *= 2;
+            db[thing].nALAlloc = GrowFiftyPercent(db[thing].nALAlloc,
+                INITIAL_ATRLIST_SIZE, INT_MAX);
             list = (ATRLIST *)MEMALLOC(db[thing].nALAlloc
                  * sizeof(ATRLIST));
             ISOUTOFMEMORY(list);
