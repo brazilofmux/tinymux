@@ -1,6 +1,6 @@
 // db.cpp
 //
-// $Id: db.cpp,v 1.112 2006-08-30 06:22:40 sdennis Exp $
+// $Id: db.cpp,v 1.113 2006-08-30 07:05:10 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -1922,9 +1922,9 @@ void atr_add_raw_LEN(dbref thing, int atr, const char *szValue, size_t nValue)
         }
         else
         {
-            // Expand the list.
+            // Double the size of the list.
             //
-            db[thing].nALAlloc += ATRLIST_CHUNK;
+            db[thing].nALAlloc *= 2;
             list = (ATRLIST *)MEMALLOC(db[thing].nALAlloc
                  * sizeof(ATRLIST));
             ISOUTOFMEMORY(list);
