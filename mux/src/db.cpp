@@ -1,6 +1,6 @@
 // db.cpp
 //
-// $Id: db.cpp,v 1.104 2006-08-30 03:41:31 sdennis Exp $
+// $Id: db.cpp,v 1.105 2006-08-30 03:46:14 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -3310,9 +3310,9 @@ void load_restart_db(void)
         temp = getstring_noalloc(f, true, &nBuffer);
         memcpy(d->addr, temp, nBuffer+1);
         temp = getstring_noalloc(f, true, &nBuffer);
-        memcpy(d->doing, temp, &nBuffer);
+        memcpy(d->doing, temp, nBuffer+1);
         temp = getstring_noalloc(f, true, &nBuffer);
-        memcpy(d->username, temp, &nBuffer);
+        memcpy(d->username, temp, nBuffer+1);
 
         d->output_size = 0;
         d->output_tot = 0;
