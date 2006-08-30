@@ -1,6 +1,6 @@
 // db.cpp
 //
-// $Id: db.cpp,v 1.113 2006-08-30 07:05:10 sdennis Exp $
+// $Id: db.cpp,v 1.114 2006-08-30 21:05:45 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -1123,7 +1123,13 @@ void anum_extend(int newtop)
     {
         delta = mudconf.init_size;
     }
-    int h = anum_alc_top + delta;
+
+    int h = 2*anum_alc_top;
+    if (h < delta)
+    {
+        h = delta;
+    }
+
     if (  anum_alc_top < h
        && newtop < h)
     {
