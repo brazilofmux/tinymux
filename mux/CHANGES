@@ -93,6 +93,7 @@ Performance Enhancements:
     added to an object.
  -- Optimize atr_add_raw_LEN() to reduce Firan load time from 40 seconds
     to 15 seconds (which includes firan.db, mail.db, and comsys.db).
+    This translates to something upward of 28 MB/s.
 
 Cosmetic Changes:
 ~~~~~~~~~~~~~~~~
