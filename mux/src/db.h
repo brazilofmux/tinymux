@@ -1,6 +1,6 @@
 // db.h
 //
-// $Id: db.h,v 1.16 2006-08-31 21:31:58 sdennis Exp $
+// $Id: db.h,v 1.17 2006-08-31 21:50:35 sdennis Exp $
 //
 
 #ifndef __DB_H
@@ -247,7 +247,6 @@ void destroy_thing(dbref);
 void destroy_exit(dbref);
 void putstring(FILE *f, const char *s);
 char *getstring_noalloc(FILE *f, bool new_strings, size_t *pnBuffer);
-char *getstring_noalloc_noescape(FILE *f, size_t *pnBuffer);
 void init_attrtab(void);
 int GrowFiftyPercent(int x, int low, int high);
 
