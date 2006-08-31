@@ -2388,9 +2388,13 @@ FLOAT_PRECISION
   CONFIG PARAMETER: float_precision <places>
   DEFAULT: -1
 
-  When enabled (by setting to a non-zero number), this option limits the
-  precision of floating-point results.  For compatibility with existing
-  softcode, a value of 6 may be necessary, 
+  When enabled (by setting to a non-negative number), TinyMUX uses the useful
+  subset approach for floating-point results, and the precision of these
+  results are limited to the specified number of <places>. For compatibility
+  with existing softcode, a value of 6 may be necessary. 
+
+  By default, this option is disabled, and TinyMUX uses the full set approach
+  for floating-point results.
 
   Related Topics:
 
