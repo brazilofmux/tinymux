@@ -1779,43 +1779,44 @@ CONFIG PARAMETERS
   dump_interval  dump_message  dump_offset  earn_limit  eval_comtitle
   events_daily_hour  examine_flags  examine_public_attrs  exit_flags
   exit_quota  fascist_teleport  find_money_chance  fixed_home_message
-  fixed_tel_message  flag_access  flag_alias  flag_name  forbid_site
-  fork_dump  full_file  full_motd_message  function_access  function_alias
-  function_invocation_limit  function_recursion_limit  game_dir_file
-  game_pag_file  global_error_obj  good_name  guest_char_num  guest_file
+  fixed_tel_message  flag_access  flag_alias  flag_name  float_precision
+  forbid_site  fork_dump  full_file  full_motd_message  function_access
+  function_alias  function_invocation_limit  function_recursion_limit
+  game_dir_file  game_pag_file  global_error_obj  good_name  guest_char_num
 
 { 'wizhelp config parameters2' for more }
 
 & CONFIG PARAMETERS2
 CONFIG PARAMETERS (continued)
 
-  guest_nuker  guest_prefix  guest_site  guests_channel  guests_channel_alias
-  have_comsys  have_mailer  have_zones  helpfile hook_cmd  hook_obj  hostnames
-  idle_interval  idle_timeout  idle_wiz_dark  immobile_message  include
-  indent_desc  initial_size  input_database  kill_guarantee_cost
-  kill_max_cost  kill_min_cost  lag_limit  lag_maximum  link_cost  list_access
-  lock_recursion_limit  log  log_options  logout_cmd_access  logout_cmd_alias
-  look_obey_terse  machine_command_cost  mail_database  mail_ehlo
-  mail_expiration  mail_per_hour   mail_sendaddr   mail_sendname   mail_server
-  mail_subject  master_room  match_own_commands  max_cache_size  max_players
-  min_guests  money_name_plural  money_name_singular  motd_file  motd_message
-  mud_name  newuser_file  nositemon_site  notify_recursion_limit
-  number_guests  open_cost  output_database  output_limit  page_cost
-  paranoid_allocate  parent_recursion_limit  paycheck  pcreate_per_hour
-  pemit_any_object  pemit_far_players  permit_site  player_flags
-  player_listen  player_match_own_commands  player_name_spaces
-  player_queue_limit  player_quota  player_starting_home  player_starting_room
-  port  postdump_message  power_alias  public_channel  public_channel_alias
+  guest_file  guest_nuker  guest_prefix  guest_site  guests_channel
+  guests_channel_alias  have_comsys  have_mailer  have_zones  helpfile
+  hook_cmd  hook_obj  hostnames  idle_interval  idle_timeout  idle_wiz_dark
+  immobile_message  include  indent_desc  initial_size  input_database
+  kill_guarantee_cost  kill_max_cost  kill_min_cost  lag_limit  lag_maximum
+  link_cost  list_access  lock_recursion_limit  log  log_options
+  logout_cmd_access  logout_cmd_alias  look_obey_terse  machine_command_cost
+  mail_database  mail_ehlo  mail_expiration  mail_per_hour  mail_sendaddr
+  mail_sendname  mail_server  mail_subject  master_room  match_own_commands
+  max_cache_size  max_players  min_guests  money_name_plural
+  money_name_singular  motd_file  motd_message  mud_name  newuser_file
+  nositemon_site  notify_recursion_limit  number_guests  open_cost
+  output_database  output_limit  page_cost  paranoid_allocate
+  parent_recursion_limit  paycheck  pcreate_per_hour  pemit_any_object
+  pemit_far_players  permit_site  player_flags  player_listen
+  player_match_own_commands  player_name_spaces  player_queue_limit
+  player_quota  player_starting_home  player_starting_room  port
+  postdump_message  power_alias  public_channel  public_channel_alias
   public_flags  pueblo_message  queue_active_chunk  queue_idle_chunk
   quiet_look  quiet_whisper  quit_file  quotas  raw_helpfile  read_remote_desc
   read_remote_name  reality_level  register_create_file  register_site
-  reset_players  restrict_home  retry_limit  robot_cost  robot_flags
 
 { 'wizhelp config parameters3' for more }
 
 & CONFIG PARAMETERS3
 CONFIG PARAMETERS (continued)
 
+  reset_players  restrict_home  retry_limit  robot_cost  robot_flags
   robot_speech  room_flags  room_quota  run_startup  sacrifice_adjust
   sacrifice_factor  safe_wipe  safer_passwords  search_cost  see_owned_dark
   signal_action  site_chars  space_compress  sql_database  sql_password
@@ -2380,6 +2381,18 @@ FLAG_NAME
   useable within the conf file.  Use @flag to change them online.
 
   Related Topics: @flag
+
+& FLOAT_PRECISION
+FLOAT_PRECISION
+
+  CONFIG PARAMETER: float_precision <places>
+  DEFAULT: -1
+
+  When enabled (by setting to a non-zero number), this option limits the
+  precision of floating-point results.  For compatibility with existing
+  softcode, a value of 6 may be necessary, 
+
+  Related Topics:
 
 & FORBID_SITE
 FORBID_SITE
