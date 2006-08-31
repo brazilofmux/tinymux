@@ -1,6 +1,6 @@
 // db.cpp
 //
-// $Id: db.cpp,v 1.116 2006-08-31 06:07:28 sdennis Exp $
+// $Id: db.cpp,v 1.117 2006-08-31 21:31:58 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -2975,6 +2975,40 @@ char *getstring_noalloc(FILE *f, bool new_strings, size_t *pnBuffer)
             return buf;
         }
     }
+}
+
+char *getstring_noalloc_noescape(FILE *f, size_t *pnBuffer)
+{
+    static char buf[LBUF_SIZE];
+    size_t nBufferLeft = sizeof(buf) - 1;
+
+    // Fetch up to and including the next LF.
+    //
+    if (fgets(buf, static_cast<int>(nBufferLeft), f) == NULL)
+    {
+        // EOF or ERROR.
+        //
+        buf[0] = '\0';
+        if (pnBuffer)
+        {
+            *pnBuffer = 0;
+        }
+        return buf;
+    }
+
+    mux_assert('"' == buf[0]);
+
+    char *pFront = buf+1;
+    char *pQuote = strchr(pFront, '"');
+
+    mux_assert(NULL != pQuote);
+
+    *pQuote = '\0';
+    if (pnBuffer)
+    {
+        *pnBuffer = pQuote - pFront;
+    }
+    return pFront;
 }
 
 void putstring(FILE *f, const char *pRaw)

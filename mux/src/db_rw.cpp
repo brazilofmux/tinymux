@@ -1,6 +1,6 @@
 // db_rw.cpp
 //
-// $Id: db_rw.cpp,v 1.32 2006-08-30 03:41:31 sdennis Exp $
+// $Id: db_rw.cpp,v 1.33 2006-08-31 21:31:58 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -615,7 +615,7 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
                 // USER-NAMED ATTRIBUTE
                 //
                 anum = getref(f);
-                tstr = getstring_noalloc(f, true, &nBuffer);
+                tstr = getstring_noalloc_noescape(f, &nBuffer);
                 if (mux_isdigit(*tstr))
                 {
                     aflags = 0;
