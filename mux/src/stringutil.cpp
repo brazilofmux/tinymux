@@ -1,6 +1,6 @@
 // stringutil.cpp -- string utilities.
 //
-// $Id: stringutil.cpp,v 1.103 2006-08-27 09:05:30 sdennis Exp $
+// $Id: stringutil.cpp,v 1.104 2006-08-31 01:35:36 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -2582,21 +2582,36 @@ char *mux_ftoa(double r, bool bRounded, int frac)
     int iDecimalPoint = 0;
     int bNegative = 0;
     int mode = 0;
-    int nRequest = 50;
+    int nRequestMaximum = 50;
+    const int nRequestMinimum = -20;
+    int nRequest = nRequestMaximum;
+
+    // If float_precision is enabled, let it override nRequestMaximum.
+    //
+    if (0 <= mudconf.float_precision)
+    {
+        mode = 3;
+        if (mudconf.float_precision < nRequestMaximum)
+        {
+            nRequestMaximum = mudconf.float_precision;
+            nRequest        = mudconf.float_precision;
+        }
+    }
 
     if (bRounded)
     {
         mode = 3;
         nRequest = frac;
-        if (50 < nRequest)
+        if (nRequestMaximum < nRequest)
         {
-            nRequest = 50;
+            nRequest = nRequestMaximum;
         }
-        else if (nRequest < -20)
+        else if (nRequest < nRequestMinimum)
         {
-            nRequest = -20;
+            nRequest = nRequestMinimum;
         }
     }
+
     char *p = mux_dtoa(r, mode, nRequest, &iDecimalPoint, &bNegative, &rve);
     size_t nSize = rve - p;
     if (nSize > 50)

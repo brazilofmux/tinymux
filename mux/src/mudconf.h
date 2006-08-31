@@ -1,6 +1,6 @@
 // mudconf.h
 //
-// $Id: mudconf.h,v 1.40 2006-08-26 02:21:03 sdennis Exp $
+// $Id: mudconf.h,v 1.41 2006-08-31 01:35:36 sdennis Exp $
 //
 
 #ifndef __CONF_H
@@ -173,6 +173,7 @@ struct confdata
     int     wild_invk_lim;      // Max Regular Expression function calls.
     int     zone_nest_lim;      /* Max nesting of zones */
     int     restrict_home;      // Special condition to restrict 'home' command
+    int     float_precision;    // Maximum precision of float-to-string conversion.
 
     unsigned int    max_cache_size; /* Max size of attribute cache */
     unsigned int    site_chars; // where to truncate site name.

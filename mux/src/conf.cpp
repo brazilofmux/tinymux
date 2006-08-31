@@ -1,6 +1,6 @@
 // conf.cpp -- Set up configuration information and static data.
 //
-// $Id: conf.cpp,v 1.81 2006-08-26 02:21:03 sdennis Exp $
+// $Id: conf.cpp,v 1.82 2006-08-31 01:35:36 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -169,6 +169,7 @@ void cf_init(void)
     mudconf.sacfactor       = 5;
     mudconf.sacadjust       = -1;
     mudconf.trace_limit     = 200;
+    mudconf.float_precision = -1;
 
     mudconf.autozone        = true;
     mudconf.use_hostname    = true;
@@ -1790,6 +1791,7 @@ static CONF conftable[] =
     {"flag_access",               cf_flag_access, CA_GOD,    CA_DISABLED, NULL,                            NULL,               0},
     {"flag_alias",                cf_flagalias,   CA_GOD,    CA_DISABLED, NULL,                            NULL,               0},
     {"flag_name",                 cf_flag_name,   CA_GOD,    CA_DISABLED, NULL,                            NULL,               0},
+    {"float_precision",           cf_int,         CA_STATIC, CA_PUBLIC,   &mudconf.float_precision,        NULL,               0},
     {"forbid_site",               cf_site,        CA_GOD,    CA_DISABLED, (int *)&mudstate.access_list,    NULL,     H_FORBIDDEN},
 #ifndef WIN32
     {"fork_dump",                 cf_bool,        CA_GOD,    CA_WIZARD,   (int *)&mudconf.fork_dump,       NULL,               0},
