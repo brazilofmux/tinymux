@@ -1,6 +1,6 @@
 // timer.cpp -- Mini-task scheduler for timed events.
 //
-// $Id: timer.cpp,v 1.19 2006-01-07 07:25:27 sdennis Exp $
+// $Id: timer.cpp,v 1.20 2006-08-31 06:07:28 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -317,7 +317,6 @@ void do_timewarp(dbref executor, dbref caller, dbref enactor, int key, char *arg
 }
 
 #define INITIAL_TASKS 100
-#define EXTRA_TASKS    50
 
 CTaskHeap::CTaskHeap(void)
 {
@@ -365,7 +364,7 @@ bool CTaskHeap::Grow(void)
 {
     // Grow the heap.
     //
-    int n = m_nAllocated + EXTRA_TASKS;
+    int n = GrowFiftyPercent(m_nAllocated, INITIAL_TASKS, INT_MAX);
     PTASK_RECORD *p = new PTASK_RECORD[n];
     if (!p)
     {

@@ -1,6 +1,6 @@
 // db.h
 //
-// $Id: db.h,v 1.14 2006-08-30 07:06:21 sdennis Exp $
+// $Id: db.h,v 1.15 2006-08-31 06:07:28 sdennis Exp $
 //
 
 #ifndef __DB_H
@@ -248,6 +248,7 @@ void destroy_exit(dbref);
 void putstring(FILE *f, const char *s);
 char *getstring_noalloc(FILE *f, bool new_strings, size_t *pnBuffer);
 void init_attrtab(void);
+int GrowFiftyPercent(int x, int low, int high);
 
 #define DOLIST(thing,list) \
     for ((thing)=(list); \

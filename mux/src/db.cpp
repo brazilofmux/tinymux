@@ -1,6 +1,6 @@
 // db.cpp
 //
-// $Id: db.cpp,v 1.115 2006-08-30 22:30:25 sdennis Exp $
+// $Id: db.cpp,v 1.116 2006-08-31 06:07:28 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -1100,7 +1100,7 @@ ATTR *atr_str(char *s)
     return a;
 }
 
-static int GrowFiftyPercent(int x, int low, int high)
+int GrowFiftyPercent(int x, int low, int high)
 {
     // Calcuate 150% of x clipping goal at INT_MAX.
     //
