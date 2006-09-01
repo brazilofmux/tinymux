@@ -51,6 +51,7 @@ Feature Additions:
     conflicting attribute numbers. The first database load requires
     this switch, and then it should be turned off.
  -- Included distribute() in the default build.
+ -- Added float_precision configuration parameter.
 
 
 Bug Fixes:
