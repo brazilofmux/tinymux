@@ -1,0 +1,185 @@
+TinyMUX 2.6:  README (Unix-based)
+Last Update:  August 2006
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+Congratulations and welcome to the README file for TinyMUX 2.6.  That 
+you have chosen to actually read the file is a sign of bravery equal to 
+that of Beowulf facing Grendel or anyone who has ever faced the garden
+variety lumbering behemoth.  
+
+We know that README files are often turgid and vague, filled with 
+technobabble that ties the reader up needlessly in corundums of little 
+purpose.  Too often, the story  ends with someone spending a lot of time 
+with someone else in countless hours of consultation, all to type a few 
+lines that were there the whole time, buried beyond view.
+  
+In the past, this has resulted in README being tossed aside, unread, 
+unwanted, unloved, and probably bitter from the experience.  However, 
+because we want you to succeed, we are happy to provide a file that will, 
+in our sincerest hopes, provide you with enough information to make that 
+possible.  If not, it should be at least an entertaining read....
+
+The TinyMUX 2.6 README and supplemental documentation has been divided into 
+multiple files.  For discussion and instructions on how to do various 
+things associated with the care and feeding of your MUX, please refer to 
+the following files:
+
+  README              General information on the distribution, platforms it
+                      has been shown to run under out of the box, how to
+                      report bugs.
+
+  CHANGES             New features, commands, and bug fixes.
+
+  INSTALL             How to compile your game, step by step.
+
+  NOTES               All kinds of tidbits made much easier to find.  
+                      Known compiling issues and known fixes are located 
+                      here.  Known OSes that TinyMUX 2.6 will run on and 
+                      compiling issues.  Contains basic conversion 
+                      information. 
+  
+  docs/BACKUP         A file about the TinyMUX 2.6 Backup script.
+  
+  docs/CONFIGURATION  How to set up your MUX, including an explanation of 
+                      the common configuration items, as well as how to set 
+                      up your game so that your db files so that they are
+                      customized for your GAMENAME.
+  
+  docs/CONVERSION     How to convert a game from another type of server to
+                      TinyMUX.
+  
+  docs/CREDITS        The people who helped make this server possible.
+  
+  docs/GUESTS         How the current guest implementation works and how to
+                      set it up.
+  
+  docs/MEMORY         Explanations about how to set up disk and 
+                      memory-based operation plus tips on saving memory.
+  
+  docs/PATCHES        A very basic introduction to applying patches to the 
+                      server.
+
+===========================================================================
+        
+General Information:
+~~~~~~~~~~~~~~~~~~~
+TinyMUX 2.6 is written in a mix of C and C++ and is currently being developed
+on Win32, Debian, FreeBSD.  It is a continuation of the TinyMUX 1.x line of
+servers.
+
+The latest version of this code can generally be found running at:
+
+  brazilmux.tinymux.org 2860
+
+Refer to the file CHANGES for information about new features, commands, 
+and bug fixes.  NOTES now contains a LOT of small bits of info related 
+to running the server, as well as reminders about how to flatfile the 
+database for conversions and moving from site to site.
+
+Reminder of changes to dbconvert from MUX 1.x:
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+ - One of the major and important changes from MUX 1.x is the use of CHash
+   in the place of GDBM.  You will notice the changes primarily in the way 
+   dbconvert and the db_unload and db_load scripts work.  
+ 
+ - For disk-based games, dbconvert is the means by which the binary game data
+   is converted to flatfile format and back again.  The db_load and db_unload
+   scripts simplify the process for the user. 
+ 
+ - The syntax of the scripts is:
+   
+   - './db_load netmux netmux.flat netmux.db'
+     
+     This converts flatfiled database to binary for use by the server and 
+     would be done with dbconvert thus:
+     
+     ../bin/dbconvert -dnetmux -inetmux.flat -onetmux.db -l
+   
+   - './db_unload netmux netmux.db.new netmux.flat'
+     
+     This converts binary data to flatfile for would be done with dbconvert 
+     thus:
+     
+     ../bin/dbconvert -dnetmux -inetmux.db.new -onetmux.flat -u
+
+
+Conversions from Other Database Formats:
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Support for other database formats was removed circa TinyMUX 2.1. To import
+one of the following formats, you must first use dbconvert from TinyMUX 2.0
+before using the resulting flatfile with TinyMUX 2.6.
+
+   TinyMUX 1.4, 1.5, 1.6 (not beta)
+   TinyMUX(Win32Beta) 1.5, 1.6, 2.0
+   TinyMUSH 2.0 (all versions)
+   TinyMUSH 2.2.2, 2.2.3, 2.2.4 release version (not beta)
+   TinyMUSH 2.2.4U1 release version (not beta)
+
+BUGS! and bug reporting:
+~~~~~~~~~~~~~~~~~~~~~~~
+First things first....  Bugs happen in any large and complex piece of 
+code.  The important thing to understand is that the dev team has worked 
+very hard to ferret out and fix as many of the crashing/corrupting bugs 
+in the server as possible.  As part of the process, we also fixed a lot 
+of the legacy bugs from MUX 1.6 and before.  We intend to keep doing it.
+
+As you might expect, the complexion of the bug finds has changed over the
+years. We are finding much fewer crashing/corrupting bugs than before,
+and at the same time, the bugs we find are now more likely to be our own
+than legacy issues.
+
+As for the cases where you do find bugs, we would like you to take the time
+to send an E-mail with as much data as possible about the bug.  Each bug
+report we receive is rated both by its severity (how much pain it causes) and
+prioritized according to how beneficial it would be to fix it relative to the
+other bugs on the list.  Sometimes, this process is formalized.  Sometimes,
+due to lack of available time, it is ad-hoc.
+
+-- Please double check to be sure it really is a bug and not a new 
+   feature or design decision.  This is important to the process, as it  
+   may mean that something was missed in the documentation and needs to 
+   be made clearer.  This simple test is that if the server crashes, 
+   it's a bug and if you can't tell, consider it one.
+
+-- Try to reproduce and document the sequence of events that will 
+   demonstrate the bug.  This will help the dev team identify the problem 
+   sooner.  The 'log' configuration parameter may be very helpful in this
+   process.
+
+-- Send mail about it to: brazilofmux@gmail.com
+   If the bug crashes the mux, try to include the following information 
+   from running dbx (or gdb) on the resulting core file:
+     - Output of the 'where' command.
+     - Output of the 'dump' command for each procedure level.
+
+-- To use gdb or dbx, make sure you are in the game/ directory, and type
+
+        gdb bin/netmux core     OR      dbx bin/netmux core
+
+-- From there, simply type 'help' for help, or 'quit' to exit.
+
+Environment:
+~~~~~~~~~~~
+TinyMUX 2.6 should run on most Unixes with BSD-style sockets and a C++ 
+compiler that groks function prototypes. It is 64-bit 'clean' code.  It 
+has been compiled and run successfully 'out of the box' on the following 
+platforms:
+
+AIX 4.3
+Cygwin
+Debian 2.1, 2.2, Sarge
+FreeBSD
+IRIX (Some versions)
+Linux Kernels 2.0.35 - 2.2.14
+Mac OS X.
+Mandrake 6.0, 7.0
+OpenBSD
+QNX
+RedHat 5.1, 5.2, 6.0
+Slackware 3.6, 4.0, 7.0, 10.0
+Solaris 2.4, 2.5, 2.6
+SuSE 6.2, 9.3
+Ubuntu 5.10
+
+If you get TinyMUX 2.6 working on another platform, please let us know
+about it!

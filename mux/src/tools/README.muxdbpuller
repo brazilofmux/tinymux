@@ -1,0 +1,10 @@
+The db puller file will read in a standard MUX 2.x flatfile
+and output the specified dbref# in @decompile format.
+
+To compile, just type: gcc dbpuller.c -o dbpuller
+or...
+                        cc dbpuller.c -o dbpuller
+
+Syntax:  ./dbpuller muxflatfile <dbref#>
+Example: ./dbpuller netmux.db.FLAT 123
+

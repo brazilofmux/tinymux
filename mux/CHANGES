@@ -1,0 +1,105 @@
+TinyMUX 2.6:  CHANGES
+Last Update:  August 2006
+
+Major changes that may affect performance and require softcode tweaks:
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ -- Deprecated LSTACK(), POP(), PUSH(), PEEK(), EMPTY(), and ITEMS().
+    These functions are still available via the --enabled-deprecated
+    configuration switch.  Requested by Ian.
+ -- Port code to the 64-bit edition of Windows XP.  Jake and Brazil.
+
+
+Feature Additions:
+~~~~~~~~~~~~~~~~~
+ -- FCOUNT(<expression>) to tally function invocations in <expression>.
+    Requested by Ian.
+ -- Add SITEINFO() to return the site flags for a player or port.  Added
+    by Jake.
+ -- Use Moniker instead of name in enter/leave emits, rob, kill, @toad,
+    boot, and in other similar situations.
+ -- Add support for %=<attr> substitution. From TinyMUSH 3.
+ -- Use localtime_r() if available. By Brazil.
+ -- Added command line switch (-n) to control choice of networking
+    method on Win32.
+ -- Added support for 2-argument mix().
+ -- Added optional third 'step' parameter to lnum().
+ -- Added optional second argument for lcon() for subseting the returned
+    list by type.
+ -- The 'You own a floating room' message is only given for rooms which
+    are not connected to either the player_startint_room or to a room
+    marked FLOATING. Previously, every room not connected to the
+    player_starting_room had to be marked FLOATING.
+ -- Added QUELL flag from Firan to temporarily suppressWizard powers.
+ -- Added @switch/notify.
+ -- Merge Firan MUX source modification and collected them under the
+    --enable-firanmux ./configuration switch. This also typically
+    requires the --enable-memorybased switch. Some of the following
+    may eventually be enabled in the default build:
+
+    Attributes:  @alead, @lead, @olead, and @color
+    Commands:    @email
+    Permissions: no_immobile, no_restricted
+    Options:     immobile_message, sql_server, sql_user, sql_password,
+                 sql_database, mail_server, mail_ehlo, mail_sendaddr,
+                 mail_sendname, and mail_subject.
+    Flags:       LINEWRAP, IMMOBILE, RESTRICTED, and PARENT.
+    Functions:   sql(), setparent(), setname(), trigger(), mailsize(),
+                 mailsubj(), mailj(), text(), successes(), and
+                 distribute().
+
+ -- Added --enable-firanmuxconvert which turns on code to remap three
+    conflicting attribute numbers. The first database load requires
+    this switch, and then it should be turned off.
+ -- Included distribute() in the default build.
+ -- Added float_precision configuration parameter.
+
+
+Bug Fixes:
+~~~~~~~~~
+ -- Fix over one thousand level 4 warnings.  Jake and Brazil.
+ -- Deprecate use of strcpy() and strncpy().  Jake and Brazil.
+ -- Use size_t where appropriate.  Jake and Brazil.
+ -- Deprecate use of sprintf().  By Brazil.
+ -- Deprecate use of localtime().  By Brazil.
+ -- Fix 'round(-0.5,0)' --> '-0' to be '0' instead.
+ -- Disallow the train command from being used on itself.
+ -- Add protection to @chownall that victim be a player object.
+ -- Fix uninitialized variable in HASRXLEVEL(). It should have used
+    'executor' instead of 'player'.
+ -- Fix time_t handling for 64-bit machines. Timezones could be wrong
+    for dates earlier than Jan 1 1970 on 64-bit Unix.
+ -- Fix @hook for goto command. Being unable to move also affected the
+    ability to use other commands. Reported by K hall.
+ -- Added checking to convsecs() to return '#-1 INVALID DATE" if first
+    argument is outside the supported range.
+ -- All but the last part of very Long lines from the network were
+    discarded when for very long lines, only the first part should be
+    saved.  Not a crashing bug.
+ -- Server should not attempt to @clone Created and Modified attributes.
+ -- Fix single-character case in pos(). It would never return success.
+    Bug introduced in 2.6. It does not appear in 2.4.
+ -- Change isdbref() to return '0' instead of '#-1 ISDBEF EXPECTS...'
+ -- Fix ANSI overflow bug in ANSI_String_Copy() introduced by using an
+    unsigned size_t in place of a signed 'int'. Bug introduced in 2.6.
+ -- Add 'other half' of buffer overflow protection to a case in
+    process_cmdent().  Without the other half, the first half causes a
+    crash instead of prventing it.  Found and fixed by Sparks.
+ -- Remove double evaluation from distribute() and sql().
+
+
+Performance Enhancements:
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+ -- In MEMORY_BASED, avoid malloc() call each time an attribute is
+    added to an object.
+ -- Optimize atr_add_raw_LEN() to reduce Firan load time from 40 seconds
+    to 15 seconds (which includes firan.db, mail.db, and comsys.db).
+    This translates to something upward of 28 MB/s.
+
+Cosmetic Changes:
+~~~~~~~~~~~~~~~~
+
+
+Miscellaneous:
+~~~~~~~~~~~~~
+ -- Add mux_fopen() utility function to replace direct use of fopen().

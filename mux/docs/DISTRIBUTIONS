@@ -1,0 +1,40 @@
+TinyMUX 2.6:  DISTRIBUTIONS
+Last Update:  January 2006
+
+Where you can get TinyMUX 2.6:
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+TinyMUX 2.6 is developed by Stephen Dennis (brazilofmux@gmail.com) and a small 
+group of enthusiastic volunteers.  The server is simultaneously developed on 
+Win32 and Unix platforms.  For the latest version and updates, please look 
+at any of the following sites:
+
+ftp://ftp.tinymux.org/TinyMUX
+http://www.tinymux.org
+
+The MUX 2.6 Website contains the latest news about the server, developments,
+discussions, and help for users.  It is found at:
+
+http://www.tinymux.org
+
+
+Release Information:
+~~~~~~~~~~~~~~~~~~~
+
+Server development for TinyMUX is done by the scheme as listed below.
+These numbers will be reflected by the result of typing 'VERSION' on 
+the game
+
+2.x.x       Major Release level, where the first number in the series 
+            denotes a major change in the way the server works, or such 
+            sweeping changes to language that the server will be 
+            fundamentally changed.  
+
+2.1.x       Feature Release, where features are added, changed, removed.  
+
+2.x.1       Bug Release, where bugs are fixed and all previous patchlevels 
+            are included in the update
+
+2.x.x.px    Patch to an existing release.  These will be released as code 
+            to be applied using the 'patch' utility and will be released 
+            on an as needed basis.

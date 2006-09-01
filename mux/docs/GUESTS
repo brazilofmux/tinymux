@@ -1,0 +1,58 @@
+TinyMUX 2.6: GUESTS
+Last Update: January 2006
+
+This is information pertaining to the automated guests system in the 
+server.  These steps will help you get your guests configured:
+
+1. @pcreate a prototype guest character. 
+   The character name should be appropriately named, but the password 
+   is unimportant, since it will never connect. Once created to act like 
+   a parent object for the rest of the guest characters. 
+
+2. In your master account, edit netmux.conf and set the configuration 
+   parameter 'guest_char_num' to the database number of the prototype 
+   guest character.
+
+3. Set the config parameter 'guest_prefix' to whatever you want your guests
+   to be named (this defaults to 'Guest'). MUX keeps track of multiple 
+   guests by naming them using a numbering system: <prefix><number>. For 
+   example, Guest1, Guest2, Guest3, etc. People who wish to connect as a 
+   guest will have to use this prefix, for example, if 'guest_prefix' was 
+   set to 'Visitor', one would have to type 'connect visitor' to log in as 
+   a guest.
+
+4. Set 'number_guests' to the maximum number of guests you wish to support.
+   This number can be as small or as large as you wish.
+
+5. Optionally, set 'guest_nuker' to a wizard's database number, if you wish
+   to have a wizard other than #1 to nuke the guests.
+
+6. Make any settings on the prototype guest that you want all guests to 
+   have.  Include things like the amount of money, the zone, the parent, 
+   the basic lock, the enter lock, and all attributes. 
+
+
+Additional Information:
+~~~~~~~~~~~~~~~~~~~~~~
+
+MUX pcreates guest characters on the spot up to the number listed in the
+'number_guests'. If the new guest has the same name as a previous guest, 
+the previous guest character is nuked. Because of this, Guest1 can be a 
+volatile account more so than say ... Guest7.
+
+Guests always start off in the room specified by the player_starting_room.
+
+The file specified by the config parameter 'guest_file' is shown to every
+guest when they connect.  Edit this parameter and customize the file to 
+suit the needs of your game.
+
+You may wish to use the 'access' config parameter to bar guests from using 
+certain commands, using the 'no_guest' permission.
+
+All guests have the 'Guest' power, which is a marker you may use to test
+whether a player is a guest or not. Guests are also set ANSI and 
+NO_COMMAND.
+
+Guests coming from IPs set 'register_site' will not be able to connect to 
+the MUX.
+

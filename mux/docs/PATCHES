@@ -1,0 +1,61 @@
+TinyMUX 2.6:  PATCHES
+Last Update:  January 2006
+
+A Word About Patches for TinyMUX 2.6:
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+As part of the server development process, and especially during periods 
+where beta versions of the server have been release, the development 
+team will release patches.  These supplemental use the 'patch' utility 
+to make modifications to the source code of the server in preparation for 
+recompiling the game.
+
+When patches are released, especially during beta releases, that you keep 
+yourself informed about the changes to the server and any serious bugs that 
+may have been corrected by a given patch.  It is in the best interests of 
+your game to make sure that patches are applied, as many patches contain 
+fixes for crashing/corrupting bugs, as well as correcting weird and 
+dangerous behaviors in the TinyMUX program itself.
+
+Let us state that while patching a vanilla server with a patch release by 
+the development team is generally considered to be pretty easy, that unless 
+you have done it before and/or taken time to familiarize yourself with how 
+the patch utility works(type 'man patch' inside your shell account or read 
+the documentation for dopatch.exe provided with Win32 versions), then 
+we strongly advise having someone either walk you through the process or 
+do the work for you.  Improper use of patch can cause all kinds of grief 
+that you don't want to deal with.  
+
+Applying a patch:
+~~~~~~~~~~~~~~~~
+
+The absolute first thing that you should do before making server 
+modifications, is to assure that you have a recent and usable backup of the 
+database, all of your config, text, mail, and comsystem.  *We cannot stress 
+this enough*.  Shutdown the game and use the provided Backup script, or 
+db_load by hand.  In most cases, this is totally unneeded, but if something 
+goes wrong and you didn't, you won't be real happy.
+
+Unzip and move the patch file to the directory where you see the mux2.6/ 
+directory listed.
+
+At the prompt, type 'patch -p1 <patchfile'.  The actual file name of the
+patch  should be used or you'll get an error.
+
+From here, you will usually get to watch a lot of spam fly by as the patch 
+utility modifies the files to be updated.  You might occasionally get a 
+prompt, asking you for either information, or confirmation that you want 
+really do want something applied.  For the inexperienced, this is where 
+having an experienced person at hand to help you is invaluable.  If, at any 
+point in the process, you feel that you are in over your head, stop and get 
+help before continuing!
+
+After you have successfully patched the source code, then you recompile the 
+server as usual.
+
+If you have problems:
+~~~~~~~~~~~~~~~~~~~~
+
+If the patch fails and you were applying it to a standard beta or release
+version of TinyMUX 2.6, then collect the error messages and report it to
+brazilofmux@gmail.com following the bug reporting procedures in README.

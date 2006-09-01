@@ -1,0 +1,18 @@
+Ian's stuff:
+
+Things I did last patch yet to be added:
+Job 117
+Job 119
+Job 124
+Job 158
+
+Comments:
+    Isn't job 179 dead? The only thing not impliment is @assert.. and,
+    well, that might as well be @break not(blah).
+
+    Job 117 was fixed in my last patched but it never made its way into
+    MUX, so I'll include it here... (eventually)
+
+    Same thing with 119, fixed, submitted, ignored/overlooked.
+
+    And job 124.. sigh.
