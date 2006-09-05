@@ -44,10 +44,11 @@ else
     fi
 fi
 
-if [ `head -n 1 $RECENT_DB` = "+X992001" ]; then
+VERSION_LINE=`head -n 1 $RECENT_DB`
+if [ $VERSION_LINE = "+X992001" -o $VERSION_LINE = "+X992002" ]; then
     cp $RECENT_DB $GAME_DB
 else
-    if [ `head -n 1 $RECENT_DB` = "+X1031937" ]; then
+    if [ $VERSION_LINE = "+X1031937" -o $VERSION_LINE = "+X1031938" ]; then
         $BIN/dbconvert -d$DATA/$GDBM_DB -u -i$RECENT_DB -o$GAME_DB
     else
         echo "Unrecognized header in $RECENT_DB."

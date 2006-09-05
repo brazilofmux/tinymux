@@ -334,12 +334,9 @@ static BOOLEXP *getboolexp(FILE *f)
     int c = getc(f);
     mux_assert(c == '\n');
 
-    if (g_format == F_MUX)
+    if ((c = getc(f)) != '\n')
     {
-        if ((c = getc(f)) != '\n')
-        {
-            ungetc(c, f);
-        }
+        ungetc(c, f);
     }
     return b;
 }
@@ -692,6 +689,12 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
                     g_flags = g_version & ~V_MASK;
 
                     g_version &= V_MASK;
+                    if (  g_version < MIN_SUPPORTED_VERSION
+                       || MAX_SUPPORTED_VERSION < g_version)
+                    {
+                        Log.tinyprintf(ENDLINE "Unsupported flatfile version: %d." ENDLINE, g_version);
+                        return -1;
+                    }
                 }
             }
             else if (ch == 'S')

@@ -13,6 +13,7 @@
 #include "interface.h"
 #include "powers.h"
 #include "vattr.h"
+#include "ansi.h"
 
 #ifndef O_ACCMODE
 #define O_ACCMODE   (O_RDONLY|O_WRONLY|O_RDWR)
@@ -2790,25 +2791,31 @@ void putref(FILE *f, dbref ref)
 // Code 1 - NUL  (0x00)
 // Code 2 - '"'  (0x22)
 // Code 3 - '\\' (0x5C)
+// Code 4 - 'e'  (0x65) or 'E' (0x45)
+// Code 5 - 'n'  (0x6E) or 'N' (0x4E)
+// Code 6 - 'r'  (0x72) or 'R' (0x52)
+// Code 7 - 't'  (0x74) or 'T' (0x54)
 //
-static const unsigned char xlat_table[256] =
+static const unsigned char decode_table[256] =
 {
-    1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+//  0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F
+//
+    1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // 0
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // 1
+    0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // 2
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // 3
+    0, 0, 0, 0, 0, 4, 0, 0, 0, 0, 0, 0, 0, 0, 5, 0, // 4
+    0, 0, 6, 0, 7, 0, 0, 0, 0, 0, 0, 0, 3, 0, 0, 0, // 5
+    0, 0, 0, 0, 0, 4, 0, 0, 0, 0, 0, 0, 0, 0, 5, 0, // 6
+    0, 0, 6, 0, 7, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // 7
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // 8
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // 9
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // A
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // B
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // C
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // D
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // E
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0  // F
 };
 
 #define STATE_START     0
@@ -2820,13 +2827,17 @@ static const unsigned char xlat_table[256] =
 // Action 2 - Emit X. Move to START state.
 // Action 3 - Terminate parse.
 // Action 4 - Move to ESC state.
+// Action 5 - Emit ESC (0x1B). Move to START state.
+// Action 6 - Emit LF  (0x0A). Move to START state.
+// Action 7 - Emit CR  (0x0D). Move to START state.
+// Action 8 - Emit TAB (0x09). Move to START state.
 //
 
-static const int action_table[2][4] =
+static const int action_table[2][8] =
 {
-//   Any '\0' "   backslash
-    { 0,  1,  3,  4 }, // STATE_START
-    { 2,  1,  2,  2 }  // STATE_ESC
+//   Any  '\0' '"'  '\\' 'e'  'n'  'r'  't'
+    { 0,   1,   3,   4,   0,   0,   0,   0}, // STATE_START
+    { 2,   1,   2,   2,   5,   6,   7,   8}  // STATE_HAVE_ESC
 };
 
 char *getstring_noalloc(FILE *f, bool new_strings, size_t *pnBuffer)
@@ -2866,23 +2877,23 @@ char *getstring_noalloc(FILE *f, bool new_strings, size_t *pnBuffer)
                 char ch = *pInput++;
                 if (iState == STATE_START)
                 {
-                    if (xlat_table[(unsigned char)ch] == 0)
+                    if (decode_table[(unsigned char)ch] == 0)
                     {
-                        // As long as xlat_table[*p] is 0, just keep copying the characters.
+                        // As long as decode_table[*p] is 0, just keep copying the characters.
                         //
                         char *p = pOutput;
                         do
                         {
                             *pOutput++ = ch;
                             ch = *pInput++;
-                        } while (xlat_table[(unsigned char)ch] == 0);
+                        } while (decode_table[(unsigned char)ch] == 0);
                         nOutput = pOutput - p;
                     }
                 }
-                int iAction = action_table[iState][xlat_table[(unsigned char)ch]];
+                int iAction = action_table[iState][decode_table[(unsigned char)ch]];
                 if (iAction <= 2)
                 {
-                    if (iAction == 1)
+                    if (1 == iAction)
                     {
                         // Get Buffer and remain in the current state.
                         //
@@ -2890,7 +2901,7 @@ char *getstring_noalloc(FILE *f, bool new_strings, size_t *pnBuffer)
                     }
                     else
                     {
-                        // iAction == 2
+                        // 2 == iAction
                         // Emit X and move to START state.
                         //
                         *pOutput++ = ch;
@@ -2898,7 +2909,7 @@ char *getstring_noalloc(FILE *f, bool new_strings, size_t *pnBuffer)
                         iState = STATE_START;
                     }
                 }
-                else if (iAction == 3)
+                else if (3 == iAction)
                 {
                     // Terminate parsing.
                     //
@@ -2909,12 +2920,36 @@ char *getstring_noalloc(FILE *f, bool new_strings, size_t *pnBuffer)
                     }
                     return buf;
                 }
-                else
+                else if (4 == iAction)
                 {
-                    // iAction == 4
                     // Move to ESC state.
                     //
                     iState = STATE_HAVE_ESC;
+                }
+                else if (5 == iAction)
+                {
+                    *pOutput++ = ESC_CHAR;
+                    nOutput++;
+                    iState = STATE_START;
+                }
+                else if (6 == iAction)
+                {
+                    *pOutput++ = '\n';
+                    nOutput++;
+                    iState = STATE_START;
+                }
+                else if (7 == iAction)
+                {
+                    *pOutput++ = '\r';
+                    nOutput++;
+                    iState = STATE_START;
+                }
+                else
+                {
+                    // if (8 == iAction)
+                    *pOutput++ = '\t';
+                    nOutput++;
+                    iState = STATE_START;
                 }
             }
 
@@ -2977,6 +3012,37 @@ char *getstring_noalloc(FILE *f, bool new_strings, size_t *pnBuffer)
     }
 }
 
+// Code 0 - Any byte.
+// Code 1 - NUL  (0x00)
+// Code 2 - '"'  (0x22)
+// Code 3 - '\\' (0x5C)
+// Code 4 - ESC  (0x1B)
+// Code 5 - LF   (0x0A)
+// Code 6 - CR'  (0x0D)
+// Code 7 - TAB  (0x09)
+//
+static const unsigned char encode_table[256] =
+{
+//  0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F
+//
+    1, 0, 0, 0, 0, 0, 0, 0, 0, 7, 5, 0, 0, 6, 0, 0, // 0
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 0, 0, 0, 0, // 1
+    0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // 2
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // 3
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // 4
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 0, 0, 0, // 5
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // 6
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // 7
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // 8
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // 9
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // A
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // B
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // C
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // D
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // E
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0  // F
+};
+
 void putstring(FILE *f, const char *pRaw)
 {
     static char aBuffer[2*LBUF_SIZE+4];
@@ -2992,16 +3058,30 @@ void putstring(FILE *f, const char *pRaw)
         for (;;)
         {
             char ch;
-            while ((ch = xlat_table[(unsigned char)*pRaw]) == 0)
+            while ((ch = encode_table[(unsigned char)*pRaw]) == 0)
             {
                 *pBuffer++ = *pRaw++;
             }
-            if (ch == 1)
+
+            if (1 == ch)
             {
                 break;
             }
+
+            pRaw++;
+
+            switch (ch)
+            {
+            case 2: ch = '"'; break;
+            case 3: ch = '\\'; break;
+            case 4: ch = 'e'; break;
+            case 5: ch = 'n'; break;
+            case 6: ch = 'r'; break;
+            case 7: ch = 't'; break;
+            }
+    
             *pBuffer++ = '\\';
-            *pBuffer++ = *pRaw++;
+            *pBuffer++ = ch;
         }
     }
 
