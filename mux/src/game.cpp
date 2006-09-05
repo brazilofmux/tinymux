@@ -1,6 +1,6 @@
 // game.cpp
 //
-// $Id: game.cpp,v 1.106 2006/08/26 05:56:05 sdennis Exp $
+// $Id$
 //
 #include "copyright.h"
 #include "autoconf.h"

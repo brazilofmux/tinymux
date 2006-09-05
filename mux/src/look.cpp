@@ -1,6 +1,6 @@
 // look.cpp -- Commands which look at things.
 //
-// $Id: look.cpp,v 1.51 2006/08/10 00:11:32 sdennis Exp $
+// $Id$
 //
 #include "copyright.h"
 #include "autoconf.h"

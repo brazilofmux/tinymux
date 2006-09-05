@@ -1,6 +1,6 @@
 // flags.h -- Object flags.
 //
-// $Id: flags.h,v 1.16 2006/08/15 02:15:42 sdennis Exp $
+// $Id$
 //
 
 #include "copyright.h"

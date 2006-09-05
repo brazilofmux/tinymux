@@ -1,6 +1,6 @@
 // wiz.cpp -- Wizard-only commands.
 //
-// $Id: wiz.cpp,v 1.19 2006/01/23 23:22:21 sdennis Exp $
+// $Id$
 //
 
 #include "copyright.h"

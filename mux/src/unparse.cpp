@@ -1,6 +1,6 @@
 // unparse.cpp
 //
-// $Id: unparse.cpp,v 1.8 2006/01/08 20:26:18 sdennis Exp $
+// $Id$
 //
 
 #include "copyright.h"

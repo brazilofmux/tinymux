@@ -1,6 +1,6 @@
 // funceval.cpp -- MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.122 2006/08/15 03:03:20 sdennis Exp $
+// $Id$
 //
 
 #include "copyright.h"

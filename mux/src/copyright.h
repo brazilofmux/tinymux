@@ -1,6 +1,6 @@
 /* copyright.h */
 /* -*-C-*- */
-/* $Id: copyright.h,v 1.9 2006/01/01 18:20:57 sdennis Exp $ */
+/* $Id$ */
 
 /*
  * MUX Source Code (version 2.0 through 2.6).

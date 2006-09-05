@@ -1,6 +1,6 @@
 // svdrand.cpp -- Random Numbers.
 //
-// $Id: svdrand.cpp,v 1.10 2006/01/10 07:26:43 sdennis Exp $
+// $Id$
 //
 // Random Numbers from Makoto Matsumoto and Takuji Nishimura.
 //

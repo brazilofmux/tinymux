@@ -1,6 +1,6 @@
 // mudconf.h
 //
-// $Id: mudconf.h,v 1.41 2006/08/31 01:35:36 sdennis Exp $
+// $Id$
 //
 
 #ifndef __CONF_H

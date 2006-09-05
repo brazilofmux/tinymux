@@ -1,6 +1,6 @@
 // stringutil.h -- string utilities.
 //
-// $Id: stringutil.h,v 1.54 2006/08/16 15:20:43 sdennis Exp $
+// $Id$
 //
 #ifndef STRINGUTIL_H
 #define STRINGUTIL_H

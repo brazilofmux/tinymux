@@ -1,6 +1,6 @@
 // svdhash.cpp -- CHashPage, CHashFile, CHashTable modules.
 //
-// $Id: svdhash.cpp,v 1.57 2006/08/15 18:01:41 sdennis Exp $
+// $Id$
 //
 #include "copyright.h"
 #include "autoconf.h"

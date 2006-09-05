@@ -1,6 +1,6 @@
 // stringutil.cpp -- string utilities.
 //
-// $Id: stringutil.cpp,v 1.104 2006/08/31 01:35:36 sdennis Exp $
+// $Id$
 //
 #include "copyright.h"
 #include "autoconf.h"

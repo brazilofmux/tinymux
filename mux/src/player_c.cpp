@@ -1,7 +1,7 @@
 /*! \file player_c.cpp
  * Player cache routines.
  *
- * $Id: player_c.cpp,v 1.17 2006/01/07 09:16:04 sdennis Exp $
+ * $Id$
  *
  * Frequenty-used items which appear on every object generally find a home in
  * the db[] structure managed in db.cpp. However, there are a few items

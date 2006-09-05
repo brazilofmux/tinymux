@@ -1,6 +1,6 @@
 // svdocache.cpp -- Attribute caching module.
 //
-// $Id: attrcache.cpp,v 1.26 2006/08/07 02:06:01 sdennis Exp $
+// $Id$
 //
 #include "copyright.h"
 #include "autoconf.h"

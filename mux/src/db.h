@@ -1,6 +1,6 @@
 // db.h
 //
-// $Id: db.h,v 1.17 2006/08/31 21:50:35 sdennis Exp $
+// $Id$
 //
 
 #ifndef __DB_H

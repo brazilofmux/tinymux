@@ -1,6 +1,6 @@
 // muxcli.cpp
 //
-// $Id: muxcli.cpp,v 1.6 2006/01/11 11:19:54 jake Exp $
+// $Id$
 //
 #include "copyright.h"
 #include <string.h>

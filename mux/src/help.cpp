@@ -1,6 +1,6 @@
 // help.cpp -- Commands for giving help.
 //
-// $Id: help.cpp,v 1.19 2006/08/07 02:06:01 sdennis Exp $
+// $Id$
 //
 
 #include "copyright.h"

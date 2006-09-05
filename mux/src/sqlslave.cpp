@@ -1,6 +1,6 @@
 // sqlslave.cpp -- This slave does SQL queries.
 //
-// $Id: sqlslave.cpp,v 1.3 2006/01/02 07:34:42 sdennis Exp $
+// $Id$
 //
 #include "autoconf.h"
 #include "config.h"

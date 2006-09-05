@@ -1,6 +1,6 @@
 // htab.h - Structures and declarations needed for table hashing.
 //
-// $Id: htab.h,v 1.9 2005/10/27 06:27:53 sdennis Exp $
+// $Id$
 //
 
 #include "copyright.h"

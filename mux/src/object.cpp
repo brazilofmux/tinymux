@@ -1,6 +1,6 @@
 // object.cpp -- Low-level object manipulation routines.
 //
-// $Id: object.cpp,v 1.21 2006/08/09 06:03:19 sdennis Exp $
+// $Id$
 //
 
 #include "copyright.h"

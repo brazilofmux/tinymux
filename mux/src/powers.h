@@ -1,6 +1,6 @@
 // powers.h -- Object powers.
 //
-// $Id: powers.h,v 1.7 2005/10/24 15:48:36 sdennis Exp $
+// $Id$
 //
 
 #include "copyright.h"

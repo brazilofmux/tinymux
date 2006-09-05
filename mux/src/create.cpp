@@ -1,6 +1,6 @@
 // create.cpp -- Commands that create new objects.
 //
-// $Id: create.cpp,v 1.24 2006/08/09 06:03:19 sdennis Exp $
+// $Id$
 //
 
 #include "copyright.h"

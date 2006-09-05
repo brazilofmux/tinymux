@@ -1,6 +1,6 @@
 // svdhash.h -- CHashPage, CHashFile, CHashTable modules.
 //
-// $Id: svdhash.h,v 1.22 2006/01/11 20:51:31 sdennis Exp $
+// $Id$
 //
 #ifndef SVDHASH_H
 #define SVDHASH_H

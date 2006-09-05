@@ -1,6 +1,6 @@
 // eval.cpp -- Command evaluation and cracking.
 //
-// $Id: eval.cpp,v 1.41 2006/01/19 19:02:21 sdennis Exp $
+// $Id$
 //
 #include "copyright.h"
 #include "autoconf.h"

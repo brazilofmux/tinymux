@@ -1,6 +1,6 @@
 // vattr.cpp -- Manages the user-defined attributes.
 //
-// $Id: vattr.cpp,v 1.17 2006/06/19 05:53:47 sdennis Exp $
+// $Id$
 //
 #include "copyright.h"
 #include "autoconf.h"

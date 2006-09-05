@@ -1,6 +1,6 @@
 // config.h
 //
-// $Id: config.h,v 1.22 2006/07/24 20:13:29 sdennis Exp $
+// $Id$
 //
 
 #ifndef CONFIG_H

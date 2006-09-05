@@ -1,6 +1,6 @@
 // sqlshared.h -- Shared code between the main server and the sqlslave.
 //
-// $Id: sqlshared.h,v 1.2 2005/10/14 17:34:09 sdennis Exp $
+// $Id$
 //
 
 #ifndef SQLSHARED_H

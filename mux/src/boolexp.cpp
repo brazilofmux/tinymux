@@ -1,6 +1,6 @@
 // boolexp.cpp
 //
-// $Id: boolexp.cpp,v 1.21 2006/01/11 20:51:31 sdennis Exp $
+// $Id$
 //
 #include "copyright.h"
 #include "autoconf.h"

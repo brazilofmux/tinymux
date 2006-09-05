@@ -1,6 +1,6 @@
 // svdrand.h -- Random Numbers.
 //
-// $Id: svdrand.h,v 1.6 2006/01/01 18:20:57 sdennis Exp $
+// $Id$
 //
 // Random Numbers based on algorithms presented in "Numerical Recipes in C",
 // Cambridge Press, 1992.

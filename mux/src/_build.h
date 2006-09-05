@@ -1,6 +1,6 @@
 // _build.h
 //
-// $Id: _build.h,v 1.59 2006/09/01 22:36:24 sdennis Exp $
+// $Id$
 //
 #ifndef MUX_BUILD_NUM
 extern char szBuildNum[];

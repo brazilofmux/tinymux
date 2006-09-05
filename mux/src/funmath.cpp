@@ -1,6 +1,6 @@
 // funmath.cpp -- MUX math function handlers.
 //
-// $Id: funmath.cpp,v 1.11 2006/01/11 20:51:31 sdennis Exp $
+// $Id$
 //
 #include "copyright.h"
 #include "autoconf.h"

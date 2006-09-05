@@ -1,6 +1,6 @@
 // timer.cpp -- Mini-task scheduler for timed events.
 //
-// $Id: timer.cpp,v 1.20 2006/08/31 06:07:28 sdennis Exp $
+// $Id$
 //
 #include "copyright.h"
 #include "autoconf.h"

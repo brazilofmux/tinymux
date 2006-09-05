@@ -1,6 +1,6 @@
 // vattr.h -- Definitions for user-defined attributes.
 //
-// $Id: vattr.h,v 1.4 2006/01/11 11:33:17 jake Exp $
+// $Id$
 //
 
 extern ATTR *vattr_rename_LEN(char *pOldName, size_t nOldName, char *pNewName, size_t nNewName);

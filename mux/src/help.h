@@ -1,6 +1,6 @@
 // help.h
 //
-// $Id: help.h,v 1.2 2006/01/11 20:51:31 sdennis Exp $
+// $Id$
 //
 
 #define  TOPIC_NAME_LEN     30

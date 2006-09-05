@@ -1,6 +1,6 @@
 // alloc.h -- External definitions for memory allocation subsystem.
 //
-// $Id: alloc.h,v 1.5 2006/01/07 07:25:27 sdennis Exp $
+// $Id$
 //
 
 #ifndef M_ALLOC_H

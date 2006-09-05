@@ -1,6 +1,6 @@
 // rob.cpp -- Commands dealing with giving/taking/killing things or money.
 //
-// $Id: rob.cpp,v 1.8 2006/08/09 06:03:19 sdennis Exp $
+// $Id$
 //
 
 #include "copyright.h"

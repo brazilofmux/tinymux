@@ -1,6 +1,6 @@
 // attrcache.h
 //
-// $Id: attrcache.h,v 1.5 2006/01/11 11:13:40 jake Exp $
+// $Id$
 //
 
 #ifndef _ATTRCACHE_H

@@ -1,7 +1,7 @@
 /*! \file functions.cpp
  *  MUX function handlers
  *
- * $Id: functions.cpp,v 1.220 2006/08/29 04:20:05 sdennis Exp $
+ * $Id$
  *
  */
 

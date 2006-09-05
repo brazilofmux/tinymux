@@ -1,6 +1,6 @@
 // db.cpp
 //
-// $Id: db.cpp,v 1.118 2006/08/31 21:50:35 sdennis Exp $
+// $Id$
 //
 #include "copyright.h"
 #include "autoconf.h"
