@@ -18,6 +18,7 @@
 #define MALSIZE 16535
 /* This should be SBUF_SIZE + 1. If it's not, it'll coredump*/
 #define SBUFSIZE 65
+#define ESC_CHAR '\033'
 
 stricmp(char *buf1, char *buf2)
 {
@@ -205,31 +206,62 @@ int main(int argc, char **argv)
          }
          memset(spt3, '\0', MALSIZE);
          pt3 = spt3;
-         while ( *pt2 ) {
-            if ( *pt2 == '\\' ) {
+         while (*pt2)
+         {
+            char ch;
+            if (*pt2 == '\\')
+            {
                pt2++;
+               ch = *pt2;
+               switch (ch)
+               {
+               case 'n': ch = '\n'; break;
+               case 'r': ch = '\r'; break;
+               case 'e': ch = ESC_CHAR; break;
+               case 't': ch = '\t'; break;
+               }
             }
-            if ( *pt2 == '\t' ) {
-               pt2++;
-               *pt3 = '%';
-               pt3++;
-               *pt3 = 't';
-               pt3++;
+            else
+            {
+               ch = *pt2;
+               if (ch == '"')
+               {
+                   break;
+               }
             }
-            *pt3 = *pt2; 
             pt2++;
-            pt3++;
+
+            switch (ch)
+            {
+            case '\t':
+                *pt3 = '%';
+                pt3++;
+                *pt3 = 't';
+                pt3++;
+                break;
+
+            case '\n':
+                *pt3 = '%';
+                pt3++;
+                *pt3 = 'r';
+                pt3++;
+                break;
+
+            case '\r':
+                break;
+
+            default:
+                *pt3 = ch; 
+                pt3++;
+                break;
+            }
          }
          *pt3 = '\0';
-         if ( strlen(spt3) > 2) {
-            if ( *(pt3-2) == '"' ) {
-               *(pt3-2) = '\n';
-               *(pt3-1) = '\0';
-            } else if ( *(pt3-2) == '\r' ) {
-               *(pt3-2) = '%';
-               *(pt3-1) = 'r';
-               *pt3 = '\0';
-            }
+         if (strlen(spt3) > 2)
+         {
+             *pt3 = '\n';
+             pt3++;
+             *pt3 = '\0';
          }
          if ( *spt3 == '\r' && (strlen(spt3) <= 2) ) {
              strcpy(spt3, "%r");
