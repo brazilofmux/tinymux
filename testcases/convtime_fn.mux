@@ -1,0 +1,259 @@
+#
+# convtime_fn.mux - Test Cases for convtime().
+# $Id: convtime_fn.mux,v 1.8 2006/07/28 07:12:28 sdennis Exp $
+#
+# Strategy: The structure of the code under convtime() can be broken into the
+# core gregorian routines, the timezone routines, and the automagic date
+# string parser. Of these three, the timezone routines have proven the most
+# fragile of the three as it is the most affected by 32/64-bit, compiler, and
+# Operating System variations.
+#
+# The first battery of test cases attempt to cover the core gregorian routines
+# and bypass paths that would lead to timezone adjustments or the more powerful
+# date string parser.
+#
+# Another batch will use convtime() and convsecs() as a pair.
+#
+# Another batch of test cases will validate that timezone adjustments is
+# reasonable. This is tricky because the server that runs these tests could
+# potentially be in any timezone.
+#
+# Finally, the last batch of cases will attempt to cover general-case date
+# string parser.
+#
+@set test_convtime_fn=COMMANDS
+-
+@set test_convtime_fn=SAFE
+-
+@desc test_convtime_fn=
+  This object contains test cases for the convtime() function. It eases 
+  the demonstration of consistent behavior across builds and 
+  platforms.
+-
+&version test_convtime_fn=
+  $Id: convtime_fn.mux,v 1.8 2006/07/28 07:12:28 sdennis Exp $
+-
+&cmd.testconvtime test_convtime_fn=
+  $test convtime:@dolist lattr(me/tr.tc*)=@trig me/##=%#
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_convtime_fn=
+  @pemit %0=Begining convtime() test cases.
+-
+#
+# Test Case #1 - Leaving the timezone code paths out of the mix, test that
+#                every day in 2006 produces the correct UTC time stamp.
+#
+&tr.tc001 test_convtime_fn=
+  @if strmatch(
+        setr(0,sha1(
+            iter(lnum(1,31),convtime(jan ## 00:00:00 2006,utc)) 
+           [iter(lnum(1,28),convtime(feb ## 00:00:00 2006,utc))] 
+           [iter(lnum(1,31),convtime(mar ## 00:00:00 2006,utc))] 
+           [iter(lnum(1,30),convtime(apr ## 00:00:00 2006,utc))] 
+           [iter(lnum(1,31),convtime(may ## 00:00:00 2006,utc))] 
+           [iter(lnum(1,30),convtime(jun ## 00:00:00 2006,utc))] 
+           [iter(lnum(1,31),convtime(jul ## 00:00:00 2006,utc))] 
+           [iter(lnum(1,31),convtime(aug ## 00:00:00 2006,utc))] 
+           [iter(lnum(1,30),convtime(sep ## 00:00:00 2006,utc))] 
+           [iter(lnum(1,31),convtime(oct ## 00:00:00 2006,utc))] 
+           [iter(lnum(1,30),convtime(nov ## 00:00:00 2006,utc))] 
+           [iter(lnum(1,31),convtime(dec ## 00:00:00 2006,utc))] 
+          )
+        ),
+        9FE8D9AAA0AB16874BD7216A1C691186575C31CF
+      )=
+  {
+    @pemit %0=TC001: Every day in 2006 suceeded.
+  },
+  {
+    @pemit %0=TC001: At least one day in 2006 failed (%q0).
+  }
+-
+#
+# Test Case #2 - Leaving out timezone conversions, test that every day in 1970
+#                produces the correct UTC time stamp.
+#
+&tr.tc002 test_convtime_fn=
+  @if strmatch(
+        setr(0,sha1(
+            iter(lnum(1,31),convtime(jan ## 00:00:00 1970,utc)) 
+           [iter(lnum(1,28),convtime(feb ## 00:00:00 1970,utc))] 
+           [iter(lnum(1,31),convtime(mar ## 00:00:00 1970,utc))] 
+           [iter(lnum(1,30),convtime(apr ## 00:00:00 1970,utc))] 
+           [iter(lnum(1,31),convtime(may ## 00:00:00 1970,utc))] 
+           [iter(lnum(1,30),convtime(jun ## 00:00:00 1970,utc))] 
+           [iter(lnum(1,31),convtime(jul ## 00:00:00 1970,utc))] 
+           [iter(lnum(1,31),convtime(aug ## 00:00:00 1970,utc))] 
+           [iter(lnum(1,30),convtime(sep ## 00:00:00 1970,utc))] 
+           [iter(lnum(1,31),convtime(oct ## 00:00:00 1970,utc))] 
+           [iter(lnum(1,30),convtime(nov ## 00:00:00 1970,utc))] 
+           [iter(lnum(1,31),convtime(dec ## 00:00:00 1970,utc))] 
+          )
+        ),
+        BCCFCB1C5A25BE1A50E7579A2F28ACF4E34799B6
+      )=
+  {
+    @pemit %0=TC002: Every day in 1970 suceeded.
+  },
+  {
+    @pemit %0=TC002: At least one day in 1970 failed (%q0).
+  }
+-
+#
+# Test Case #3 - Leaving out timezone conversions, test that every day in 1969
+#                produces the correct UTC time stamp.
+#
+&tr.tc003 test_convtime_fn=
+  @if strmatch(
+        setr(0,sha1(
+            iter(lnum(1,31),convtime(jan ## 00:00:00 1969,utc)) 
+           [iter(lnum(1,28),convtime(feb ## 00:00:00 1969,utc))] 
+           [iter(lnum(1,31),convtime(mar ## 00:00:00 1969,utc))] 
+           [iter(lnum(1,30),convtime(apr ## 00:00:00 1969,utc))] 
+           [iter(lnum(1,31),convtime(may ## 00:00:00 1969,utc))] 
+           [iter(lnum(1,30),convtime(jun ## 00:00:00 1969,utc))] 
+           [iter(lnum(1,31),convtime(jul ## 00:00:00 1969,utc))] 
+           [iter(lnum(1,31),convtime(aug ## 00:00:00 1969,utc))] 
+           [iter(lnum(1,30),convtime(sep ## 00:00:00 1969,utc))] 
+           [iter(lnum(1,31),convtime(oct ## 00:00:00 1969,utc))] 
+           [iter(lnum(1,30),convtime(nov ## 00:00:00 1969,utc))] 
+           [iter(lnum(1,31),convtime(dec ## 00:00:00 1969,utc))] 
+          )
+        ),
+        095DE0A215B35BEC232FB806D3743EE3FB597AF4
+      )=
+  {
+    @pemit %0=TC003: Every day in 1969 suceeded.
+  },
+  {
+    @pemit %0=TC003: At least one day in 1969 failed (%q0).
+  }
+-
+#
+# Test Case #4 - Leaving out timezone conversions, test that every day in 1601
+#                produces the correct UTC time stamp.
+#
+&tr.tc004 test_convtime_fn=
+  @if strmatch(
+        setr(0,sha1(
+            iter(lnum(1,31),convtime(jan ## 00:00:00 1601,utc)) 
+           [iter(lnum(1,28),convtime(feb ## 00:00:00 1601,utc))] 
+           [iter(lnum(1,31),convtime(mar ## 00:00:00 1601,utc))] 
+           [iter(lnum(1,30),convtime(apr ## 00:00:00 1601,utc))] 
+           [iter(lnum(1,31),convtime(may ## 00:00:00 1601,utc))] 
+           [iter(lnum(1,30),convtime(jun ## 00:00:00 1601,utc))] 
+           [iter(lnum(1,31),convtime(jul ## 00:00:00 1601,utc))] 
+           [iter(lnum(1,31),convtime(aug ## 00:00:00 1601,utc))] 
+           [iter(lnum(1,30),convtime(sep ## 00:00:00 1601,utc))] 
+           [iter(lnum(1,31),convtime(oct ## 00:00:00 1601,utc))] 
+           [iter(lnum(1,30),convtime(nov ## 00:00:00 1601,utc))] 
+           [iter(lnum(1,31),convtime(dec ## 00:00:00 1601,utc))] 
+          )
+        ),
+        CF81EFE3EFA928E4D36D3574F2094A0D25274681
+      )=
+  {
+    @pemit %0=TC004: Every day in 1601 suceeded.
+  },
+  {
+    @pemit %0=TC004: At least one day in 1601 failed (%q0).
+  }
+-
+#
+# Test Case #5 - Leaving out timezone conversions, test that every day in 1600
+#                produces the correct UTC time stamp.
+#
+&tr.tc005 test_convtime_fn=
+  @if strmatch(
+        setr(0,sha1(
+            iter(lnum(1,31),convtime(jan ## 00:00:00 1600,utc)) 
+           [iter(lnum(1,28),convtime(feb ## 00:00:00 1600,utc))] 
+           [iter(lnum(1,31),convtime(mar ## 00:00:00 1600,utc))] 
+           [iter(lnum(1,30),convtime(apr ## 00:00:00 1600,utc))] 
+           [iter(lnum(1,31),convtime(may ## 00:00:00 1600,utc))] 
+           [iter(lnum(1,30),convtime(jun ## 00:00:00 1600,utc))] 
+           [iter(lnum(1,31),convtime(jul ## 00:00:00 1600,utc))] 
+           [iter(lnum(1,31),convtime(aug ## 00:00:00 1600,utc))] 
+           [iter(lnum(1,30),convtime(sep ## 00:00:00 1600,utc))] 
+           [iter(lnum(1,31),convtime(oct ## 00:00:00 1600,utc))] 
+           [iter(lnum(1,30),convtime(nov ## 00:00:00 1600,utc))] 
+           [iter(lnum(1,31),convtime(dec ## 00:00:00 1600,utc))] 
+          )
+        ),
+        603B4DF3A3F0289928666DEDC9ACC952A9E400A4
+      )=
+  {
+    @pemit %0=TC005: Every day in 1600 suceeded.
+  },
+  {
+    @pemit %0=TC005: At least one day in 1600 failed (%q0).
+  }
+-
+#
+# Test Case #6 - Leaving out timezone conversions, test that every day in year
+#                1 A.D. produces the correct UTC time stamp.
+#
+&tr.tc006 test_convtime_fn=
+  @if strmatch(
+        setr(0,sha1(
+            iter(lnum(1,31),convtime(jan ## 00:00:00 1,utc)) 
+           [iter(lnum(1,28),convtime(feb ## 00:00:00 1,utc))] 
+           [iter(lnum(1,31),convtime(mar ## 00:00:00 1,utc))] 
+           [iter(lnum(1,30),convtime(apr ## 00:00:00 1,utc))] 
+           [iter(lnum(1,31),convtime(may ## 00:00:00 1,utc))] 
+           [iter(lnum(1,30),convtime(jun ## 00:00:00 1,utc))] 
+           [iter(lnum(1,31),convtime(jul ## 00:00:00 1,utc))] 
+           [iter(lnum(1,31),convtime(aug ## 00:00:00 1,utc))] 
+           [iter(lnum(1,30),convtime(sep ## 00:00:00 1,utc))] 
+           [iter(lnum(1,31),convtime(oct ## 00:00:00 1,utc))] 
+           [iter(lnum(1,30),convtime(nov ## 00:00:00 1,utc))] 
+           [iter(lnum(1,31),convtime(dec ## 00:00:00 1,utc))] 
+          )
+        ),
+        D62426344636E8D947A7153C1E5F682104853197
+      )=
+  {
+    @pemit %0=TC006: Every day in 1 A.D. suceeded.
+  },
+  {
+    @pemit %0=TC006: At least one day in 1 A.D failed (%q0).
+  }
+-
+#
+# Test Case #7 - Leaving out timezone conversions, test that every day in year
+#                1 B.C. produces the correct UTC time stamp.
+#
+&tr.tc007 test_convtime_fn=
+  @if strmatch(
+        setr(0,sha1(
+            iter(lnum(1,31),convtime(jan ## 00:00:00 0,utc)) 
+           [iter(lnum(1,28),convtime(feb ## 00:00:00 0,utc))] 
+           [iter(lnum(1,31),convtime(mar ## 00:00:00 0,utc))] 
+           [iter(lnum(1,30),convtime(apr ## 00:00:00 0,utc))] 
+           [iter(lnum(1,31),convtime(may ## 00:00:00 0,utc))] 
+           [iter(lnum(1,30),convtime(jun ## 00:00:00 0,utc))] 
+           [iter(lnum(1,31),convtime(jul ## 00:00:00 0,utc))] 
+           [iter(lnum(1,31),convtime(aug ## 00:00:00 0,utc))] 
+           [iter(lnum(1,30),convtime(sep ## 00:00:00 0,utc))] 
+           [iter(lnum(1,31),convtime(oct ## 00:00:00 0,utc))] 
+           [iter(lnum(1,30),convtime(nov ## 00:00:00 0,utc))] 
+           [iter(lnum(1,31),convtime(dec ## 00:00:00 0,utc))] 
+          )
+        ),
+        F82F361B6C7D954AA4D86F964C10342E89D08F9F
+      )=
+  {
+    @pemit %0=TC007: Every day in 1 B.C. suceeded.
+  },
+  {
+    @pemit %0=TC007: At least one day in 1 B.C.failed (%q0).
+  }
+-
+&tr.tc999 test_convtime_fn=
+-
+#
+# End of Test Cases
+#

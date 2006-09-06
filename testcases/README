@@ -1,0 +1,5 @@
+This project holds testcases for TinyMUX. The code is formatted and must be
+unformatted before being quoted into a game.
+
+The unformat.pl program is located in the tool sub-directory. This requires
+Perl.
