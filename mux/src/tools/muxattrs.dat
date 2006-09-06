@@ -173,6 +173,10 @@ RegInfo 223
 ConnInfo 224 
 MailLock 225 
 OpenLock 226 
+Color 236
+Alead 237
+Lead  238
+Olead 239
 IdleTimeout 240 
 ExitFormat 241 
 ConFormat 242 
