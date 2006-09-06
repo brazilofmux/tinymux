@@ -554,7 +554,7 @@ void did_it_rlevel
                 buff = bp = alloc_lbuf("did_it.1");
                 str = d;
                 mux_exec(buff, &bp, thing, thing, player,
-                    AttrTrace(aflags) | EV_EVAL | EV_FIGNORE | EV_TOP, &str,
+                    AttrTrace(aflags)|EV_EVAL|EV_FIGNORE|EV_TOP, &str,
                     args, nargs);
                 *bp = '\0';
 
@@ -592,7 +592,7 @@ void did_it_rlevel
                 buff = bp = alloc_lbuf("did_it.1");
                 str = d;
                 mux_exec(buff, &bp, thing, thing, player,
-                    AttrTrace(aflags) | EV_EVAL | EV_FIGNORE | EV_TOP, &str,
+                    AttrTrace(aflags)|EV_EVAL|EV_FIGNORE|EV_TOP, &str,
                     args, nargs);
                 *bp = '\0';
 
@@ -635,7 +635,7 @@ void did_it_rlevel
           buff = bp = alloc_lbuf("did_it.1");
           str = d;
           mux_exec(buff, &bp, thing, thing, player,
-              AttrTrace(aflags) | EV_EVAL | EV_FIGNORE | EV_TOP, &str,
+              AttrTrace(aflags)|EV_EVAL|EV_FIGNORE|EV_TOP, &str,
               args, nargs);
           *bp = '\0';
           notify(player, buff);
@@ -662,7 +662,7 @@ void did_it_rlevel
             buff = bp = alloc_lbuf("did_it.2");
             str = d;
             mux_exec(buff, &bp, thing, thing, player,
-                AttrTrace(aflags) | EV_EVAL | EV_FIGNORE | EV_TOP, &str,
+                AttrTrace(aflags)|EV_EVAL|EV_FIGNORE|EV_TOP, &str,
                 args, nargs);
             *bp = '\0';
 
@@ -735,8 +735,8 @@ void did_it_rlevel
             free_lbuf(charges);
 
             CLinearTimeAbsolute lta;
-            wait_que(thing, player, player, 0, lta, NOTHING, 0, act, args,
-                 nargs, mudstate.global_regs);
+            wait_que(thing, player, player, AttrTrace(aflags, 0), false, lta,
+                NOTHING, 0, act, args, nargs, mudstate.global_regs);
         }
         free_lbuf(act);
     }

@@ -91,7 +91,7 @@ void make_portlist(dbref, dbref, char *, char **);
 /* From cque.cpp */
 int  nfy_que(dbref, int, int, int);
 int  halt_que(dbref, dbref);
-void wait_que(dbref executor, dbref caller, dbref enactor, bool,
+void wait_que(dbref executor, dbref caller, dbref enactor, int, bool,
     CLinearTimeAbsolute&, dbref, int, char *, char *[],int, char *[]);
 
 #ifndef WIN32
@@ -336,7 +336,7 @@ bool quick_wild(const char *, const char *);
 /* From command.cpp */
 bool check_access(dbref player, int mask);
 void set_prefix_cmds(void);
-char *process_command(dbref executor, dbref caller, dbref enactor, bool,
+char *process_command(dbref executor, dbref caller, dbref enactor, int, bool,
     char *, char *[], int);
 
 #define Protect(f) (cmdp->perms & f)

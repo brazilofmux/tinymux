@@ -158,7 +158,8 @@ static void Task_RunQueueEntry(void *pEntry, int iUnused)
                     CLinearTimeDelta ltdUsageBegin = GetProcessorUsage();
 
                     char *log_cmdbuf = process_command(executor, point->caller,
-                        point->enactor, false, cp, point->env, point->nargs);
+                        point->enactor, point->eval, false, cp, point->env,
+                        point->nargs);
 
                     CLinearTimeAbsolute ltaEnd;
                     ltaEnd.GetUTC();
@@ -649,7 +650,7 @@ void do_notify
 // ---------------------------------------------------------------------------
 // setup_que: Set up a queue entry.
 //
-static BQUE *setup_que(dbref executor, dbref caller, dbref enactor,
+static BQUE *setup_que(dbref executor, dbref caller, dbref enactor, int eval,
                        char *command, char *args[], int nargs, char *sargs[])
 {
     int a;
@@ -786,6 +787,7 @@ static BQUE *setup_que(dbref executor, dbref caller, dbref enactor,
     tmp->attr = 0;
     tmp->enactor = enactor;
     tmp->caller = caller;
+    tmp->eval = eval;
     tmp->nargs = nargs;
     return tmp;
 }
@@ -798,6 +800,7 @@ void wait_que
     dbref executor,
     dbref caller,
     dbref enactor,
+    int   eval,
     bool bTimed,
     CLinearTimeAbsolute &ltaWhen,
     dbref sem,
@@ -813,7 +816,7 @@ void wait_que
         return;
     }
 
-    BQUE *tmp = setup_que(executor, caller, enactor, command, args, nargs, sargs);
+    BQUE *tmp = setup_que(executor, caller, enactor, eval, command, args, nargs, sargs);
     if (!tmp)
     {
         return;
@@ -871,6 +874,7 @@ void sql_que
     dbref executor,
     dbref caller,
     dbref enactor,
+    int  eval,
     bool bTimed,
     CLinearTimeAbsolute &ltaWhen,
     dbref thing,
@@ -886,7 +890,7 @@ void sql_que
         return;
     }
 
-    BQUE *tmp = setup_que(executor, caller, enactor, command, args, nargs, sargs);
+    BQUE *tmp = setup_que(executor, caller, enactor, eval, command, args, nargs, sargs);
     if (!tmp)
     {
         return;
@@ -922,6 +926,7 @@ void do_wait
     dbref executor,
     dbref caller,
     dbref enactor,
+    int   eval,
     int key,
     char *event,
     char *cmd,
@@ -946,7 +951,7 @@ void do_wait
             ltd.SetSecondsString(event);
             ltaWhen += ltd;
         }
-        wait_que(executor, caller, enactor, true, ltaWhen, NOTHING, 0, cmd,
+        wait_que(executor, caller, enactor, eval, true, ltaWhen, NOTHING, 0, cmd,
             cargs, ncargs, mudstate.global_regs);
         return;
     }
@@ -1021,7 +1026,7 @@ void do_wait
             thing = NOTHING;
             bTimed = false;
         }
-        wait_que(executor, caller, enactor, bTimed, ltaWhen, thing, atr,
+        wait_que(executor, caller, enactor, eval, bTimed, ltaWhen, thing, atr,
             cmd, cargs, ncargs, mudstate.global_regs);
     }
 }
@@ -1035,6 +1040,7 @@ void do_query
     dbref executor,
     dbref caller,
     dbref enactor,
+    int   eval,
     int   key,
     char *dbref_attr,
     char *dbname_query,

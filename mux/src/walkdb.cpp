@@ -21,7 +21,7 @@ static void bind_and_queue(dbref executor, dbref caller, dbref enactor,
 {
     char *command = replace_tokens(action, argstr, mux_ltoa_t(number), NULL);
     CLinearTimeAbsolute lta;
-    wait_que(executor, caller, enactor, false, lta, NOTHING, 0, command,
+    wait_que(executor, caller, enactor, 0, false, lta, NOTHING, 0, command,
         cargs, ncargs, mudstate.global_regs);
     free_lbuf(command);
 }
@@ -32,7 +32,7 @@ static void bind_and_queue(dbref executor, dbref caller, dbref enactor,
 // New switches added 12/92, /space (default) delimits list using spaces,
 // and /delimit allows specification of a delimiter.
 //
-void do_dolist(dbref executor, dbref caller, dbref enactor, int key,
+void do_dolist(dbref executor, dbref caller, dbref enactor, int eval, int key,
                char *list, char *command, char *cargs[], int ncargs)
 {
     if (!list || *list == '\0')
@@ -74,8 +74,8 @@ void do_dolist(dbref executor, dbref caller, dbref enactor, int key,
         char *tbuf = alloc_lbuf("dolist.notify_cmd");
         mux_strncpy(tbuf, "@notify/quiet me", LBUF_SIZE-1);
         CLinearTimeAbsolute lta;
-        wait_que(executor, caller, enactor, false, lta, NOTHING, A_SEMAPHORE,
-            tbuf, cargs, ncargs, mudstate.global_regs);
+        wait_que(executor, caller, enactor, eval, false, lta, NOTHING,
+            A_SEMAPHORE, tbuf, cargs, ncargs, mudstate.global_regs);
         free_lbuf(tbuf);
     }
 }
@@ -1118,9 +1118,10 @@ void do_markall(dbref executor, dbref caller, dbref enactor, int key)
 // ---------------------------------------------------------------------------
 // do_apply_marked: Perform a command for each marked obj in the db.
 //
-void do_apply_marked( dbref executor, dbref caller, dbref enactor, int key,
-                      char *command, char *cargs[], int ncargs)
+void do_apply_marked( dbref executor, dbref caller, dbref enactor, int eval,
+                      int key, char *command, char *cargs[], int ncargs)
 {
+    UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(key);
 
     if (mudconf.control_flags & CF_DBCHECK)

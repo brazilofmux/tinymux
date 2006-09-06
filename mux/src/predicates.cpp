@@ -652,6 +652,7 @@ void do_switch
     dbref executor,
     dbref caller,
     dbref enactor,
+    int   eval,
     int   key,
     char *expr,
     char *args[],
@@ -707,13 +708,13 @@ void do_switch
     {
         bp = buff;
         str = args[a];
-        mux_exec(buff, &bp, executor, caller, enactor, EV_FCHECK | EV_EVAL | EV_TOP,
+        mux_exec(buff, &bp, executor, caller, enactor, eval|EV_FCHECK|EV_EVAL|EV_TOP,
             &str, cargs, ncargs);
         *bp = '\0';
         if (wild_match(buff, expr))
         {
             char *tbuf = replace_tokens(args[a+1], NULL, NULL, expr);
-            wait_que(executor, caller, enactor, false, lta, NOTHING, 0,
+            wait_que(executor, caller, enactor, eval, false, lta, NOTHING, 0,
                 tbuf, cargs, ncargs, mudstate.global_regs);
             free_lbuf(tbuf);
             bAny = true;
@@ -726,7 +727,7 @@ void do_switch
        && args[a])
     {
         char *tbuf = replace_tokens(args[a], NULL, NULL, expr);
-        wait_que(executor, caller, enactor, false, lta, NOTHING, 0, tbuf,
+        wait_que(executor, caller, enactor, eval, false, lta, NOTHING, 0, tbuf,
             cargs, ncargs, mudstate.global_regs);
         free_lbuf(tbuf);
     }
@@ -736,7 +737,7 @@ void do_switch
         char *tbuf = alloc_lbuf("switch.notify_cmd");
         mux_strncpy(tbuf, "@notify/quiet me", LBUF_SIZE-1);
         CLinearTimeAbsolute lta;
-        wait_que(executor, caller, enactor, false, lta, NOTHING, A_SEMAPHORE,
+        wait_que(executor, caller, enactor, eval, false, lta, NOTHING, A_SEMAPHORE,
             tbuf, cargs, ncargs, mudstate.global_regs);
         free_lbuf(tbuf);
     }
@@ -750,6 +751,7 @@ void do_if
     dbref player,
     dbref caller,
     dbref enactor,
+    int   eval,
     int   key,
     char *expr,
     char *args[],
@@ -770,14 +772,14 @@ void do_if
     CLinearTimeAbsolute lta;
     buff = bp = alloc_lbuf("do_if");
 
-    mux_exec(buff, &bp, player, caller, enactor, EV_FCHECK | EV_EVAL | EV_TOP,
+    mux_exec(buff, &bp, player, caller, enactor, eval|EV_FCHECK|EV_EVAL|EV_TOP,
         &expr, cargs, ncargs);
     int a = !xlate(buff);
     free_lbuf(buff);
 
     if (a < nargs)
     {
-        wait_que(player, caller, enactor, false, lta, NOTHING, 0, args[a],
+        wait_que(player, caller, enactor, eval, false, lta, NOTHING, 0, args[a],
             cargs, ncargs, mudstate.global_regs);
     }
 }
@@ -1199,9 +1201,9 @@ void handle_prog(DESC *d, char *message)
     int aflags, i;
     char *cmd = atr_get(d->player, A_PROGCMD, &aowner, &aflags);
     CLinearTimeAbsolute lta;
-    wait_que(d->program_data->wait_enactor, d->player, d->player, false, lta,
-        NOTHING, 0, cmd, (char **)&message, 1,
-        (char **)d->program_data->wait_regs);
+    wait_que(d->program_data->wait_enactor, d->player, d->player,
+        AttrTrace(aflags, 0), false, lta, NOTHING, 0, cmd, (char **)&message,
+        1, (char **)d->program_data->wait_regs);
 
     // First, set 'all' to a descriptor we find for this player.
     //
@@ -2428,7 +2430,9 @@ void did_it(dbref player, dbref thing, int what, const char *def, int owhat,
     {
         if (*(act = atr_pget(thing, awhat, &aowner, &aflags)))
         {
-            charges = atr_pget(thing, A_CHARGES, &aowner, &aflags);
+            dbref aowner2;
+            int   aflags2;
+            charges = atr_pget(thing, A_CHARGES, &aowner2, &aflags2);
             if (*charges)
             {
                 num = mux_atol(charges);
@@ -2439,7 +2443,7 @@ void did_it(dbref player, dbref thing, int what, const char *def, int owhat,
                     atr_add_raw(thing, A_CHARGES, buff);
                     free_sbuf(buff);
                 }
-                else if (*(buff = atr_pget(thing, A_RUNOUT, &aowner, &aflags)))
+                else if (*(buff = atr_pget(thing, A_RUNOUT, &aowner2, &aflags2)))
                 {
                     free_lbuf(act);
                     act = buff;
@@ -2454,8 +2458,8 @@ void did_it(dbref player, dbref thing, int what, const char *def, int owhat,
             }
             free_lbuf(charges);
             CLinearTimeAbsolute lta;
-            wait_que(thing, player, player, false, lta, NOTHING, 0, act,
-                args, nargs, mudstate.global_regs);
+            wait_que(thing, player, player, AttrTrace(aflags, 0), false, lta,
+                NOTHING, 0, act, args, nargs, mudstate.global_regs);
         }
         free_lbuf(act);
     }

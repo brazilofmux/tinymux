@@ -1106,7 +1106,7 @@ static char *hook_name(char *pCommand, int key)
  */
 
 static void process_cmdent(CMDENT *cmdp, char *switchp, dbref executor, dbref caller,
-            dbref enactor, bool interactive, char *arg, char *unp_command,
+            dbref enactor, int eval, bool interactive, char *arg, char *unp_command,
             char *cargs[], int ncargs)
 {
     // Perform object type checks.
@@ -1287,7 +1287,7 @@ static void process_cmdent(CMDENT *cmdp, char *switchp, dbref executor, dbref ca
             buf1 = bp = alloc_lbuf("process_cmdent");
             str = arg;
             mux_exec(buf1, &bp, executor, caller, enactor,
-                interp | EV_FCHECK | EV_TOP, &str, cargs, ncargs);
+                eval|interp|EV_FCHECK|EV_TOP, &str, cargs, ncargs);
             *bp = '\0';
         }
         else
@@ -1301,7 +1301,7 @@ static void process_cmdent(CMDENT *cmdp, char *switchp, dbref executor, dbref ca
         if (cmdp->callseq & CS_CMDARG)
         {
             (*(((CMDENT_ONE_ARG_CMDARG *)cmdp)->handler))(executor, caller,
-                enactor, key, buf1, cargs, ncargs);
+                enactor, eval, key, buf1, cargs, ncargs);
         }
         else if (cmdp->callseq & CS_ADDED)
         {
@@ -1373,8 +1373,9 @@ static void process_cmdent(CMDENT *cmdp, char *switchp, dbref executor, dbref ca
                       && wild(buff + 1, new0, aargs, NUM_ENV_VARS)))
                 {
                     CLinearTimeAbsolute lta;
-                    wait_que(add->thing, caller, executor, false, lta,
-                        NOTHING, 0, s, aargs, NUM_ENV_VARS, mudstate.global_regs);
+                    wait_que(add->thing, caller, executor,
+                        AttrTrace(aflags, 0), false, lta, NOTHING, 0, s,
+                        aargs, NUM_ENV_VARS, mudstate.global_regs);
                     for (i = 0; i < NUM_ENV_VARS; i++)
                     {
                         if (aargs[i])
@@ -1430,7 +1431,7 @@ static void process_cmdent(CMDENT *cmdp, char *switchp, dbref executor, dbref ca
         buf1 = bp = alloc_lbuf("process_cmdent.2");
         str = buf2;
         mux_exec(buf1, &bp, executor, caller, enactor,
-            EV_STRIP_CURLY | EV_FCHECK | EV_EVAL | EV_TOP, &str, cargs, ncargs);
+            eval|EV_STRIP_CURLY|EV_FCHECK|EV_EVAL|EV_TOP, &str, cargs, ncargs);
         *bp = '\0';
 
         if (cmdp->callseq & CS_ARGV)
@@ -1438,7 +1439,7 @@ static void process_cmdent(CMDENT *cmdp, char *switchp, dbref executor, dbref ca
             // Arg2 is ARGV style.  Go get the args.
             //
             parse_arglist(executor, caller, enactor, arg, '\0',
-                interp | EV_STRIP_LS | EV_STRIP_TS, args, MAX_ARG, cargs,
+                eval|interp|EV_STRIP_LS|EV_STRIP_TS, args, MAX_ARG, cargs,
                 ncargs, &nargs);
 
             // Call the correct command handler.
@@ -1446,7 +1447,7 @@ static void process_cmdent(CMDENT *cmdp, char *switchp, dbref executor, dbref ca
             if (cmdp->callseq & CS_CMDARG)
             {
                 (*(((CMDENT_TWO_ARG_ARGV_CMDARG *)cmdp)->handler))(executor,
-                    caller, enactor, key, buf1, args, nargs, cargs, ncargs);
+                    caller, enactor, eval, key, buf1, args, nargs, cargs, ncargs);
             }
             else
             {
@@ -1470,16 +1471,16 @@ static void process_cmdent(CMDENT *cmdp, char *switchp, dbref executor, dbref ca
                 buf2 = bp = alloc_lbuf("process_cmdent.3");
                 str = arg;
                 mux_exec(buf2, &bp, executor, caller, enactor,
-                    interp | EV_FCHECK | EV_TOP, &str, cargs, ncargs);
+                    eval|interp|EV_FCHECK|EV_TOP, &str, cargs, ncargs);
                 *bp = '\0';
             }
             else if (cmdp->callseq & CS_UNPARSE)
             {
-                buf2 = parse_to(&arg, '\0', interp | EV_TOP | EV_NO_COMPRESS);
+                buf2 = parse_to(&arg, '\0', eval|interp|EV_TOP|EV_NO_COMPRESS);
             }
             else
             {
-                buf2 = parse_to(&arg, '\0', interp | EV_STRIP_LS | EV_STRIP_TS | EV_TOP);
+                buf2 = parse_to(&arg, '\0', eval|interp|EV_STRIP_LS|EV_STRIP_TS|EV_TOP);
             }
 
             // Call the correct command handler.
@@ -1487,7 +1488,7 @@ static void process_cmdent(CMDENT *cmdp, char *switchp, dbref executor, dbref ca
             if (cmdp->callseq & CS_CMDARG)
             {
                 (*(((CMDENT_TWO_ARG_CMDARG *)cmdp)->handler))(executor,
-                    caller, enactor, key, buf1, buf2, cargs, ncargs);
+                    caller, enactor, eval, key, buf1, buf2, cargs, ncargs);
             }
             else
             {
@@ -1648,6 +1649,7 @@ char *process_command
     dbref executor,
     dbref caller,
     dbref enactor,
+    int   eval,
     bool  interactive,
     char *arg_command,
     char *args[],
@@ -1837,7 +1839,7 @@ char *process_command
                 return preserve_cmd;
             }
             process_cmdent(prefix_cmds[i], NULL, executor, caller, enactor,
-                interactive, pCommand, pCommand, args, nargs);
+                eval, interactive, pCommand, pCommand, args, nargs);
             if (mudstate.bStackLimitReached)
             {
                 STARTLOG(LOG_ALWAYS, "CMD", "SPAM");
@@ -2148,8 +2150,8 @@ char *process_command
                     arg++;
                 }
             }
-            process_cmdent(cmdp, pSlash, executor, caller, enactor, interactive,
-                arg, pCommand, args, nargs);
+            process_cmdent(cmdp, pSlash, executor, caller, enactor, eval,
+                interactive, arg, pCommand, args, nargs);
             if (mudstate.bStackLimitReached)
             {
                 STARTLOG(LOG_ALWAYS, "CMD", "SPAM");
@@ -2173,7 +2175,7 @@ char *process_command
     bp = LowerCaseCommand;
     str = pCommand;
     mux_exec(LowerCaseCommand, &bp, executor, caller, enactor,
-        EV_EVAL | EV_FCHECK | EV_STRIP_CURLY | EV_TOP, &str, args, nargs);
+        eval|EV_EVAL|EV_FCHECK|EV_STRIP_CURLY|EV_TOP, &str, args, nargs);
     *bp = '\0';
     bool succ = false;
 
@@ -4327,7 +4329,7 @@ void do_train(dbref executor, dbref caller, dbref enactor, int key, char *string
 
     notify_all_from_inside(loc, executor, tprintf("%s types -=> %s",
         Moniker(executor), string));
-    process_command(executor, caller, enactor, true, string, (char **)NULL, 0);
+    process_command(executor, caller, enactor, 0, true, string, (char **)NULL, 0);
     mudstate.train_nest_lev--;
 }
 

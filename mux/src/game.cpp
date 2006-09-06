@@ -286,8 +286,8 @@ static int atr_match1
         {
             match = 1;
             CLinearTimeAbsolute lta;
-            wait_que(thing, player, player, false, lta, NOTHING, 0, s,
-                args, NUM_ENV_VARS, mudstate.global_regs);
+            wait_que(thing, player, player, AttrTrace(aflags, 0), false, lta,
+                NOTHING, 0, s, args, NUM_ENV_VARS, mudstate.global_regs);
 
             for (int i = 0; i < NUM_ENV_VARS; i++)
             {

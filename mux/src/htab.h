@@ -29,6 +29,7 @@ struct bque
     dbref   executor;               // executor who will do command
     dbref   caller;                 // caller.
     dbref   enactor;                // enactor causing command (for %N)
+    int     eval;
     dbref   sem;                    // blocking semaphore
     int     attr;                   // blocking attribute
     int     nargs;                  // How many args I have

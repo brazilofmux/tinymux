@@ -263,8 +263,8 @@ void do_teleport
 // ---------------------------------------------------------------------------
 // do_force_prefixed: Interlude to do_force for the # command
 //
-void do_force_prefixed( dbref executor, dbref caller, dbref enactor, int key,
-                        char *command, char *args[], int nargs )
+void do_force_prefixed( dbref executor, dbref caller, dbref enactor, int eval,
+                        int key, char *command, char *args[], int nargs )
 {
     char *cp = parse_to(&command, ' ', 0);
     if (!command)
@@ -277,14 +277,14 @@ void do_force_prefixed( dbref executor, dbref caller, dbref enactor, int key,
     }
     if (*command)
     {
-        do_force(executor, caller, enactor, key, cp, command, args, nargs);
+        do_force(executor, caller, enactor, eval, key, cp, command, args, nargs);
     }
 }
 
 // ---------------------------------------------------------------------------
 // do_force: Force an object to do something.
 //
-void do_force( dbref executor, dbref caller, dbref enactor, int key,
+void do_force( dbref executor, dbref caller, dbref enactor, int eval, int key,
                char *what, char *command, char *args[], int nargs )
 {
     UNUSED_PARAMETER(enactor);
@@ -296,7 +296,7 @@ void do_force( dbref executor, dbref caller, dbref enactor, int key,
         // Force victim to do command.
         //
         CLinearTimeAbsolute lta;
-        wait_que(victim, caller, executor, false, lta, NOTHING, 0, command,
+        wait_que(victim, caller, executor, eval, false, lta, NOTHING, 0, command,
             args, nargs, mudstate.global_regs);
     }
 }

@@ -841,8 +841,8 @@ static void announce_connect(dbref player, DESC *d)
     dbref zone, obj;
     if (nLen)
     {
-        wait_que(player, player, player, false, lta, NOTHING, 0, buf,
-            (char **)NULL, 0, NULL);
+        wait_que(player, player, player, AttrTrace(aflags, 0), false, lta,
+            NOTHING, 0, buf, (char **)NULL, 0, NULL);
     }
     if (mudconf.master_room != NOTHING)
     {
@@ -850,16 +850,16 @@ static void announce_connect(dbref player, DESC *d)
             &aflags, &nLen);
         if (nLen)
         {
-            wait_que(mudconf.master_room, player, player, false, lta,
-                NOTHING, 0, buf, (char **)NULL, 0, NULL);
+            wait_que(mudconf.master_room, player, player, AttrTrace(aflags, 0),
+                false, lta, NOTHING, 0, buf, (char **)NULL, 0, NULL);
         }
         DOLIST(obj, Contents(mudconf.master_room))
         {
             atr_pget_str_LEN(buf, obj, A_ACONNECT, &aowner, &aflags, &nLen);
             if (nLen)
             {
-                wait_que(obj, player, player, false, lta, NOTHING, 0, buf,
-                    (char **)NULL, 0, NULL);
+                wait_que(obj, player, player, AttrTrace(aflags, 0), false, lta,
+                    NOTHING, 0, buf, (char **)NULL, 0, NULL);
             }
         }
     }
@@ -876,8 +876,8 @@ static void announce_connect(dbref player, DESC *d)
             atr_pget_str_LEN(buf, zone, A_ACONNECT, &aowner, &aflags, &nLen);
             if (nLen)
             {
-                wait_que(zone, player, player, false, lta, NOTHING, 0, buf,
-                    (char **)NULL, 0, NULL);
+                wait_que(zone, player, player, AttrTrace(aflags, 0), false,
+                    lta, NOTHING, 0, buf, (char **)NULL, 0, NULL);
             }
             break;
 
@@ -891,8 +891,8 @@ static void announce_connect(dbref player, DESC *d)
                     &nLen);
                 if (nLen)
                 {
-                    wait_que(obj, player, player, false, lta, NOTHING, 0,
-                        buf, (char **)NULL, 0, NULL);
+                    wait_que(obj, player, player, AttrTrace(aflags, 0), false,
+                        lta, NOTHING, 0, buf, (char **)NULL, 0, NULL);
                 }
             }
             break;
@@ -990,11 +990,12 @@ void announce_disconnect(dbref player, DESC *d, const char *reason)
         if (nLen)
         {
 #if defined(FIRANMUX)
-            wait_que(player, player, mudstate.curr_enactor, false, lta, NOTHING,
-                0, buf, argv, 1, NULL);
+            wait_que(player, player, mudstate.curr_enactor,
+                AttrTrace(aflags, 0), false, lta, NOTHING, 0, buf, argv, 1,
+                NULL);
 #else
-            wait_que(player, player, player, false, lta, NOTHING, 0, buf,
-                argv, 1, NULL);
+            wait_que(player, player, player, AttrTrace(aflags, 0), false,
+                lta, NOTHING, 0, buf, argv, 1, NULL);
 #endif // FIRANMUX
         }
         if (mudconf.master_room != NOTHING)
@@ -1003,8 +1004,9 @@ void announce_disconnect(dbref player, DESC *d, const char *reason)
                 &aflags, &nLen);
             if (nLen)
             {
-                wait_que(mudconf.master_room, player, player, false, lta,
-                    NOTHING, 0, buf, (char **)NULL, 0, NULL);
+                wait_que(mudconf.master_room, player, player,
+                    AttrTrace(aflags, 0), false, lta, NOTHING, 0, buf,
+                    (char **)NULL, 0, NULL);
             }
             DOLIST(obj, Contents(mudconf.master_room))
             {
@@ -1012,8 +1014,8 @@ void announce_disconnect(dbref player, DESC *d, const char *reason)
                     &nLen);
                 if (nLen)
                 {
-                    wait_que(obj, player, player, false, lta, NOTHING, 0,
-                        buf, (char **)NULL, 0, NULL);
+                    wait_que(obj, player, player, AttrTrace(aflags, 0), false,
+                        lta, NOTHING, 0, buf, (char **)NULL, 0, NULL);
                 }
             }
         }
@@ -1030,8 +1032,8 @@ void announce_disconnect(dbref player, DESC *d, const char *reason)
                     &nLen);
                 if (nLen)
                 {
-                    wait_que(zone, player, player, false, lta, NOTHING, 0,
-                        buf, (char **)NULL, 0, NULL);
+                    wait_que(zone, player, player, AttrTrace(aflags, 0),
+                        false, lta, NOTHING, 0, buf, (char **)NULL, 0, NULL);
                 }
                 break;
 
@@ -1045,8 +1047,9 @@ void announce_disconnect(dbref player, DESC *d, const char *reason)
                         &nLen);
                     if (nLen)
                     {
-                        wait_que(obj, player, player, false, lta, NOTHING,
-                            0, buf, (char **)NULL, 0, NULL);
+                        wait_que(obj, player, player, AttrTrace(aflags, 0),
+                            false, lta, NOTHING, 0, buf, (char **)NULL, 0,
+                            NULL);
                     }
                 }
                 break;
@@ -2393,7 +2396,7 @@ void do_command(DESC *d, char *command)
         MuxAlarm.Set(mudconf.max_cmdsecs);
 
         char *log_cmdbuf = process_command(d->player, d->player, d->player,
-            true, command, (char **)NULL, 0);
+            0, true, command, (char **)NULL, 0);
 
         CLinearTimeAbsolute ltaEnd;
         ltaEnd.GetUTC();
