@@ -8774,59 +8774,76 @@ static FUNCTION(fun_lflags)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    dbref target = match_thing_quiet(executor, fargs[0]);
-    if (!Good_obj(target))
+    dbref target;
+    ATTR  *pattr;
+    if (parse_attrib(executor, fargs[0], &target, &pattr))
     {
-        safe_match_result(target, buff, bufc);
-        return;
-    }
-    bool bFirst = true;
-    if (  mudconf.pub_flags
-       || Examinable(executor, target))
-    {
-        FLAGNAMEENT *fp;
-        for (fp = gen_flag_names; fp->flagname; fp++)
+        if (  pattr
+           && See_attr(executor, target, pattr))
         {
-            if (!fp->bPositive)
-            {
-                continue;
-            }
-            FLAGBITENT *fbe = fp->fbe;
-            if (db[target].fs.word[fbe->flagflag] & fbe->flagvalue)
-            {
-                if (  (  (fbe->listperm & CA_STAFF)
-                      && !Staff(executor))
-                   || (  (fbe->listperm & CA_ADMIN)
-                      && !WizRoy(executor))
-                   || (  (fbe->listperm & CA_WIZARD)
-                      && !Wizard(executor))
-                   || (  (fbe->listperm & CA_GOD)
-                      && !God(executor)))
-                {
-                    continue;
-                }
-                if (  isPlayer(target)
-                   && (fbe->flagvalue == CONNECTED)
-                   && (fbe->flagflag == FLAG_WORD2)
-                   && Hidden(target)
-                   && !See_Hidden(executor))
-                {
-                    continue;
-                }
-
-                if (!bFirst)
-                {
-                    safe_chr(' ', buff, bufc);
-                }
-                bFirst = false;
-
-                safe_str(fp->flagname, buff, bufc);
-            }
+            dbref aowner;
+            int   aflags;
+            atr_pget_info(target, pattr->number, &aowner, &aflags);
+            char xbuf[11];
+            decode_attr_flag_names(aflags, buff, bufc);
         }
     }
     else
     {
-        safe_noperm(buff, bufc);
+        target = match_thing_quiet(executor, fargs[0]);
+        if (!Good_obj(target))
+        {
+            safe_match_result(target, buff, bufc);
+            return;
+        }
+        bool bFirst = true;
+        if (  mudconf.pub_flags
+           || Examinable(executor, target))
+        {
+            FLAGNAMEENT *fp;
+            for (fp = gen_flag_names; fp->flagname; fp++)
+            {
+                if (!fp->bPositive)
+                {
+                    continue;
+                }
+                FLAGBITENT *fbe = fp->fbe;
+                if (db[target].fs.word[fbe->flagflag] & fbe->flagvalue)
+                {
+                    if (  (  (fbe->listperm & CA_STAFF)
+                          && !Staff(executor))
+                       || (  (fbe->listperm & CA_ADMIN)
+                          && !WizRoy(executor))
+                       || (  (fbe->listperm & CA_WIZARD)
+                          && !Wizard(executor))
+                       || (  (fbe->listperm & CA_GOD)
+                          && !God(executor)))
+                    {
+                        continue;
+                    }
+                    if (  isPlayer(target)
+                       && (fbe->flagvalue == CONNECTED)
+                       && (fbe->flagflag == FLAG_WORD2)
+                       && Hidden(target)
+                       && !See_Hidden(executor))
+                    {
+                        continue;
+                    }
+
+                    if (!bFirst)
+                    {
+                        safe_chr(' ', buff, bufc);
+                    }
+                    bFirst = false;
+
+                    safe_str(fp->flagname, buff, bufc);
+                }
+            }
+        }
+        else
+        {
+            safe_noperm(buff, bufc);
+        }
     }
 }
 

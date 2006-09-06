@@ -751,24 +751,25 @@ static void look_contents(dbref player, dbref loc, const char *contents_name, in
 
 typedef struct
 {
-    int mask;
-    char letter;
+    const int  mask;
+    const char letter;
+    const char * const name;
 } ATTR_DECODE_ENTRY, *PATTR_DECODE_ENTRY;
 
 static ATTR_DECODE_ENTRY attr_decode_table[NUM_ATTRIBUTE_CODES+1] =
 {
-    { AF_LOCK,    '+' },
-    { AF_NOPROG,  '$' },
-    { AF_CASE,    'C' },
-    { AF_HTML,    'H' },
-    { AF_PRIVATE, 'I' },
-    { AF_NOPARSE, 'P' },
-    { AF_REGEXP,  'R' },
-    { AF_TRACE,   'T' },
-    { AF_VISUAL,  'V' },
-    { AF_MDARK,   'M' },
-    { AF_WIZARD,  'W' },
-    { 0, 0 }
+    { AF_LOCK,    '+', "LOCK"    },
+    { AF_NOPROG,  '$', "NOPROG"  },
+    { AF_CASE,    'C', "CASE"    },
+    { AF_HTML,    'H', "HTML"    },
+    { AF_PRIVATE, 'I', "PRIVATE" },
+    { AF_NOPARSE, 'P', "NOPARSE" },
+    { AF_REGEXP,  'R', "REGEXP"  },
+    { AF_TRACE,   'T', "TRACE"   },
+    { AF_VISUAL,  'V', "VISUAL"  },
+    { AF_MDARK,   'M', "DARK"    },
+    { AF_WIZARD,  'W', "WIZARD"  },
+    { 0, 0, NULL }
 };
 
 size_t decode_attr_flags(int aflags, char buff[NUM_ATTRIBUTE_CODES+1])
@@ -784,6 +785,24 @@ size_t decode_attr_flags(int aflags, char buff[NUM_ATTRIBUTE_CODES+1])
     }
     buff[n] = '\0';
     return n;
+}
+
+void decode_attr_flag_names(int aflags, char *buf, char **bufc)
+{
+    PATTR_DECODE_ENTRY pEntry;
+    bool bFirst = true;
+    for (pEntry = attr_decode_table; pEntry->mask; pEntry++)
+    {
+        if (aflags & pEntry->mask)
+        {
+            safe_str(pEntry->name, buf, bufc);
+            if (!bFirst)
+            {
+                safe_chr(' ', buf, bufc);
+            }
+            bFirst = false;
+        }
+    }
 }
 
 static void view_atr

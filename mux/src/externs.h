@@ -220,6 +220,7 @@ void look_in(dbref,dbref, int);
 void show_vrml_url(dbref, dbref);
 #define NUM_ATTRIBUTE_CODES 11
 size_t decode_attr_flags(int aflags, char buff[NUM_ATTRIBUTE_CODES+1]);
+void   decode_attr_flag_names(int aflags, char *buf, char **bufc);
 
 /* From move.cpp */
 void move_object(dbref, dbref);
