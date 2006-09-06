@@ -1386,7 +1386,7 @@ void mux_exec( char *buff, char **bufc, dbref executor, dbref caller,
                            && !MuxAlarm.bAlarmed)
                         {
                             fp->fun(buff, &oldp, executor, caller, enactor,
-                                    fargs, nfargs, cargs, ncargs);
+                                    feval & EV_TRACE, fargs, nfargs, cargs, ncargs);
                         }
                         else
                         {

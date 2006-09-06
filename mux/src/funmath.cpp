@@ -2100,7 +2100,7 @@ FUNCTION(fun_cand)
         char *bp = temp;
         char *str = fargs[i];
         mux_exec(temp, &bp, executor, caller, enactor,
-            EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, cargs, ncargs);
+            eval|EV_STRIP_CURLY|EV_FCHECK|EV_EVAL, &str, cargs, ncargs);
         *bp = '\0';
         val = isTRUE(mux_atol(temp));
     }
@@ -2117,7 +2117,7 @@ FUNCTION(fun_cor)
         char *bp = temp;
         char *str = fargs[i];
         mux_exec(temp, &bp, executor, caller, enactor,
-            EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, cargs, ncargs);
+            eval|EV_STRIP_CURLY|EV_FCHECK|EV_EVAL, &str, cargs, ncargs);
         *bp = '\0';
         val = isTRUE(mux_atol(temp));
     }
@@ -2134,7 +2134,7 @@ FUNCTION(fun_candbool)
         char *bp = temp;
         char *str = fargs[i];
         mux_exec(temp, &bp, executor, caller, enactor,
-            EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, cargs, ncargs);
+            eval|EV_STRIP_CURLY|EV_FCHECK|EV_EVAL, &str, cargs, ncargs);
         *bp = '\0';
         val = xlate(temp);
     }
@@ -2151,7 +2151,7 @@ FUNCTION(fun_corbool)
         char *bp = temp;
         char *str = fargs[i];
         mux_exec(temp, &bp, executor, caller, enactor,
-            EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, cargs, ncargs);
+            eval|EV_STRIP_CURLY|EV_FCHECK|EV_EVAL, &str, cargs, ncargs);
         *bp = '\0';
         val = xlate(temp);
     }

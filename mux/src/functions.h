@@ -12,7 +12,7 @@ typedef struct tagFun
 {
     char *name;     // function name
     void (*fun)(char *buff, char **bufc, dbref executor, dbref caller,
-        dbref enactor, char *fargs[], int nfargs, char *cargs[],
+        dbref enactor, int eval, char *fargs[], int nfargs, char *cargs[],
         int ncargs);  // handler
     int maxArgsParsed;// Maximum number of arguments parsed.
     int minArgs;      // Minimum number of args needed or expected
@@ -67,6 +67,7 @@ bool delim_check
 (
     char *buff, char **bufc,
     dbref executor, dbref caller, dbref enactor,
+    int   eval,
     char *fargs[], int nfargs,
     char *cargs[], int ncargs,
     int sep_arg, SEP *sep, int dflags
@@ -84,18 +85,18 @@ int countwords(char *str, SEP *psep);
 //
 #define FUNCTION(x) \
     void x(char *buff, char **bufc, dbref executor, dbref caller,     \
-        dbref enactor, char *fargs[], int nfargs, char *cargs[],      \
-        int ncargs)
+        dbref enactor, int eval, char *fargs[], int nfargs,           \
+        char *cargs[], int ncargs)
 
 // This is for functions that take an optional delimiter character.
 //
 #define OPTIONAL_DELIM(iSep, Sep, dflags)                        \
-    delim_check(buff, bufc, executor, caller, enactor,           \
+    delim_check(buff, bufc, executor, caller, enactor, eval,     \
         fargs, nfargs, cargs, ncargs, (iSep), &(Sep), (dflags))
 
 #define XFUNCTION(x) void x(char *buff, char **bufc, dbref executor,    \
- dbref caller, dbref enactor, char *fargs[], int nfargs, char *cargs[],        \
- int ncargs)
+ dbref caller, dbref enactor, int eval, char *fargs[], int nfargs,      \
+ char *cargs[], int ncargs)
 
 // Interface for adding additional hardcode functions.
 //

@@ -448,6 +448,7 @@ bool delim_check
 (
     char *buff, char **bufc,
     dbref executor, dbref caller, dbref enactor,
+    int   eval,
     char *fargs[], int nfargs,
     char *cargs[], int ncargs,
     int sep_arg, SEP *sep, int dflags
@@ -470,7 +471,7 @@ bool delim_check
             char *str = tstr;
             char *bp = tstr = alloc_lbuf("delim_check");
             mux_exec(tstr, &bp, executor, caller, enactor,
-                     EV_EVAL | EV_FCHECK, &str, cargs, ncargs);
+                     eval|EV_EVAL|EV_FCHECK, &str, cargs, ncargs);
             *bp = '\0';
             tlen = bp - tstr;
         }
@@ -1572,7 +1573,7 @@ static FUNCTION(fun_subeval)
 
     char *str = fargs[0];
     mux_exec(buff, bufc, executor, caller, enactor,
-             EV_EVAL|EV_NO_LOCATION|EV_NOFCHECK|EV_FIGNORE|EV_NO_COMPRESS,
+             eval|EV_EVAL|EV_NO_LOCATION|EV_NOFCHECK|EV_FIGNORE|EV_NO_COMPRESS,
              &str, (char **)NULL, 0);
 }
 
@@ -1584,7 +1585,7 @@ static FUNCTION(fun_eval)
     if (nfargs == 1)
     {
         char *str = fargs[0];
-        mux_exec(buff, bufc, executor, caller, enactor, EV_EVAL, &str,
+        mux_exec(buff, bufc, executor, caller, enactor, eval|EV_EVAL, &str,
                  (char **)NULL, 0);
         return;
     }
@@ -1915,7 +1916,7 @@ static FUNCTION(fun_v)
     safe_sb_str(fargs[0], sbuf, &sbufc);
     *sbufc = '\0';
     str = sbuf;
-    mux_exec(buff, bufc, executor, caller, enactor, EV_EVAL|EV_FIGNORE, &str,
+    mux_exec(buff, bufc, executor, caller, enactor, eval|EV_EVAL|EV_FIGNORE, &str,
              cargs, ncargs);
     free_sbuf(sbuf);
 }
@@ -1930,7 +1931,7 @@ static FUNCTION(fun_s)
     UNUSED_PARAMETER(nfargs);
 
     char *str = fargs[0];
-    mux_exec(buff, bufc, executor, caller, enactor, EV_FIGNORE | EV_EVAL, &str,
+    mux_exec(buff, bufc, executor, caller, enactor, eval|EV_FIGNORE|EV_EVAL, &str,
              cargs, ncargs);
 }
 
@@ -4552,7 +4553,7 @@ FUNCTION(fun_fcount)
         char *str = fargs[0];
         char *bufc_save = *bufc;
         mux_exec(buff, bufc, executor, caller, enactor,
-            EV_FCHECK | EV_STRIP_CURLY | EV_EVAL, &str, cargs, ncargs);
+            eval|EV_FCHECK|EV_STRIP_CURLY|EV_EVAL, &str, cargs, ncargs);
         long ficAfter = mudstate.func_invk_ctr;
         *bufc = bufc_save;
         safe_ltoa(ficAfter-ficBefore, buff, bufc);
@@ -5526,7 +5527,7 @@ static FUNCTION(fun_iter)
     char *dp = curr;
     char *str = fargs[0];
     mux_exec(curr, &dp, executor, caller, enactor,
-        EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, cargs, ncargs);
+        eval|EV_STRIP_CURLY|EV_FCHECK|EV_EVAL, &str, cargs, ncargs);
     *dp = '\0';
     size_t ncp;
     char *cp = trim_space_sep_LEN(curr, dp-curr, &sep, &ncp);
@@ -5557,7 +5558,7 @@ static FUNCTION(fun_iter)
             NULL);
         str = buff2;
         mux_exec(buff, bufc, executor, caller, enactor,
-            EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, cargs, ncargs);
+            eval|EV_STRIP_CURLY|EV_FCHECK|EV_EVAL, &str, cargs, ncargs);
         free_lbuf(buff2);
     }
     mudstate.in_loop--;
@@ -5630,7 +5631,7 @@ static FUNCTION(fun_list)
     char *dp   = curr;
     str = fargs[0];
     mux_exec(curr, &dp, executor, caller, enactor,
-        EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, cargs, ncargs);
+        eval|EV_STRIP_CURLY|EV_FCHECK|EV_EVAL, &str, cargs, ncargs);
     size_t ncp;
     char *cp = trim_space_sep_LEN(curr, dp-curr, &sep, &ncp);
     if (!*cp)
@@ -5655,7 +5656,7 @@ static FUNCTION(fun_list)
         dp = result = alloc_lbuf("fun_list.2");
         str = buff2;
         mux_exec(result, &dp, executor, caller, enactor,
-            EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, cargs, ncargs);
+            eval|EV_STRIP_CURLY|EV_FCHECK|EV_EVAL, &str, cargs, ncargs);
         *dp = '\0';
         free_lbuf(buff2);
         notify(enactor, result);
@@ -6032,7 +6033,7 @@ FUNCTION(fun_sql)
     char *dp = curr;
     char *str = fargs[0];
     mux_exec(curr, &dp, executor, caller, enactor,
-        EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, cargs, ncargs);
+        eval|EV_STRIP_CURLY|EV_FCHECK|EV_EVAL, &str, cargs, ncargs);
     *dp = '\0';
 
     char *cp = curr;
@@ -6400,6 +6401,7 @@ static void switch_handler
 (
     char *buff, char **bufc,
     dbref executor, dbref caller, dbref enactor,
+    int   eval,
     char *fargs[], int nfargs,
     char *cargs[], int ncargs,
     bool bSwitch
@@ -6411,7 +6413,7 @@ static void switch_handler
     char *bp = mbuff;
     char *str = fargs[0];
     mux_exec(mbuff, &bp, executor, caller, enactor,
-        EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, cargs, ncargs);
+        eval|EV_STRIP_CURLY|EV_FCHECK|EV_EVAL, &str, cargs, ncargs);
     *bp = '\0';
 
     char *tbuff = alloc_lbuf("fun_switch.2");
@@ -6427,7 +6429,7 @@ static void switch_handler
         bp = tbuff;
         str = fargs[i];
         mux_exec(tbuff, &bp, executor, caller, enactor,
-            EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, cargs, ncargs);
+            eval|EV_STRIP_CURLY|EV_FCHECK|EV_EVAL, &str, cargs, ncargs);
         *bp = '\0';
 
         if (bSwitch ? wild_match(tbuff, mbuff) : strcmp(tbuff, mbuff) == 0)
@@ -6437,7 +6439,7 @@ static void switch_handler
             free_lbuf(mbuff);
             str = tbuff;
             mux_exec(buff, bufc, executor, caller, enactor,
-                EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, cargs, ncargs);
+                eval|EV_STRIP_CURLY|EV_FCHECK|EV_EVAL, &str, cargs, ncargs);
             free_lbuf(tbuff);
             return;
         }
@@ -6452,7 +6454,7 @@ static void switch_handler
         tbuff = replace_tokens(fargs[i], NULL, NULL, mbuff);
         str = tbuff;
         mux_exec(buff, bufc, executor, caller, enactor,
-            EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, cargs, ncargs);
+            eval|EV_STRIP_CURLY|EV_FCHECK|EV_EVAL, &str, cargs, ncargs);
         free_lbuf(tbuff);
     }
     free_lbuf(mbuff);
@@ -6469,6 +6471,7 @@ static FUNCTION(fun_switch)
     (
         buff, bufc,
         executor, caller, enactor,
+        eval,
         fargs, nfargs,
         cargs, ncargs,
         true
@@ -6481,6 +6484,7 @@ static FUNCTION(fun_case)
     (
         buff, bufc,
         executor, caller, enactor,
+        eval,
         fargs, nfargs,
         cargs, ncargs,
         false
@@ -7769,7 +7773,7 @@ static FUNCTION(fun_error)
         {
             char *arg = fargs[0];
             mux_exec(errbuff, &errbufc, mudconf.global_error_obj, caller, enactor,
-                EV_EVAL | EV_FCHECK | EV_STRIP_CURLY, &str, &arg, 1);
+                AttrTrace(aflags, EV_EVAL|EV_FCHECK|EV_STRIP_CURLY), &str, &arg, 1);
         }
         else
         {

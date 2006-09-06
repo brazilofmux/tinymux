@@ -1003,7 +1003,7 @@ FUNCTION(fun_objeval)
     char *bp = name;
     char *str = fargs[0];
     mux_exec(name, &bp, executor, caller, enactor,
-             EV_FCHECK | EV_STRIP_CURLY | EV_EVAL, &str, cargs, ncargs);
+             eval|EV_FCHECK|EV_STRIP_CURLY|EV_EVAL, &str, cargs, ncargs);
     *bp = '\0';
 
     dbref obj = match_thing_quiet(executor, name);
@@ -1026,7 +1026,7 @@ FUNCTION(fun_objeval)
     mudstate.nObjEvalNest++;
     str = fargs[1];
     mux_exec(buff, bufc, obj, executor, enactor,
-             EV_FCHECK | EV_STRIP_CURLY | EV_EVAL, &str, cargs, ncargs);
+             eval|EV_FCHECK|EV_STRIP_CURLY|EV_EVAL, &str, cargs, ncargs);
     mudstate.nObjEvalNest--;
 }
 
@@ -1042,7 +1042,7 @@ FUNCTION(fun_localize)
 
     char *str = fargs[0];
     mux_exec(buff, bufc, executor, caller, enactor,
-        EV_FCHECK | EV_STRIP_CURLY | EV_EVAL, &str, cargs, ncargs);
+        eval|EV_FCHECK|EV_STRIP_CURLY|EV_EVAL, &str, cargs, ncargs);
 
     restore_global_regs("fun_localize", preserve, preserve_len);
     PopLengths(preserve_len, MAX_GLOBAL_REGS);
@@ -1674,7 +1674,7 @@ FUNCTION(fun_ifelse)
     char *bp = lbuff;
     char *str = fargs[0];
     mux_exec(lbuff, &bp, executor, caller, enactor,
-        EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, cargs, ncargs);
+        eval|EV_STRIP_CURLY|EV_FCHECK|EV_EVAL, &str, cargs, ncargs);
     *bp = '\0';
 
     if (!xlate(lbuff))
@@ -1683,14 +1683,14 @@ FUNCTION(fun_ifelse)
         {
             str = fargs[2];
             mux_exec(buff, bufc, executor, caller, enactor,
-                EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, cargs, ncargs);
+                eval|EV_STRIP_CURLY|EV_FCHECK|EV_EVAL, &str, cargs, ncargs);
         }
     }
     else
     {
         str = fargs[1];
         mux_exec(buff, bufc, executor, caller, enactor,
-            EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, cargs, ncargs);
+            eval|EV_STRIP_CURLY|EV_FCHECK|EV_EVAL, &str, cargs, ncargs);
     }
     free_lbuf(lbuff);
 }
@@ -2160,8 +2160,10 @@ FUNCTION(fun_hasattrp)
 #define DEFAULT_EDEFAULT 2
 #define DEFAULT_UDEFAULT 4
 
-static void default_handler(char *buff, char **bufc, dbref executor, dbref caller, dbref enactor,
-                     char *fargs[], int nfargs, char *cargs[], int ncargs, int key)
+static void default_handler(char *buff, char **bufc, dbref executor,
+                            dbref caller, dbref enactor, int eval,
+                            char *fargs[], int nfargs, char *cargs[],
+                            int ncargs, int key)
 {
     // Evaluating the first argument.
     //
@@ -2169,7 +2171,7 @@ static void default_handler(char *buff, char **bufc, dbref executor, dbref calle
     char *bp = objattr;
     char *str = fargs[0];
     mux_exec(objattr, &bp, executor, caller, enactor,
-             EV_EVAL | EV_STRIP_CURLY | EV_FCHECK, &str, cargs, ncargs);
+             eval|EV_EVAL|EV_STRIP_CURLY|EV_FCHECK, &str, cargs, ncargs);
     *bp = '\0';
 
     // Parse the first argument as either <dbref>/<attrname> or <attrname>.
@@ -2218,7 +2220,7 @@ static void default_handler(char *buff, char **bufc, dbref executor, dbref calle
 
                         mux_exec(xargs[i], &bp2,
                             thing, caller, enactor,
-                            EV_STRIP_CURLY | EV_FCHECK | EV_EVAL,
+                            eval|EV_STRIP_CURLY|EV_FCHECK|EV_EVAL,
                             &str, cargs, ncargs);
                     }
 
@@ -2246,26 +2248,26 @@ static void default_handler(char *buff, char **bufc, dbref executor, dbref calle
     //
     str = fargs[1];
     mux_exec(buff, bufc, executor, caller, enactor,
-             EV_EVAL | EV_STRIP_CURLY | EV_FCHECK, &str, cargs, ncargs);
+             eval|EV_EVAL|EV_STRIP_CURLY|EV_FCHECK, &str, cargs, ncargs);
 }
 
 
 FUNCTION(fun_default)
 {
-    default_handler(buff, bufc, executor, caller, enactor, fargs, nfargs, cargs,
-        ncargs, DEFAULT_DEFAULT);
+    default_handler(buff, bufc, executor, caller, enactor, eval, fargs, nfargs,
+        cargs, ncargs, DEFAULT_DEFAULT);
 }
 
 FUNCTION(fun_edefault)
 {
-    default_handler(buff, bufc, executor, caller, enactor, fargs, nfargs, cargs,
-        ncargs, DEFAULT_EDEFAULT);
+    default_handler(buff, bufc, executor, caller, enactor, eval, fargs, nfargs,
+        cargs, ncargs, DEFAULT_EDEFAULT);
 }
 
 FUNCTION(fun_udefault)
 {
-    default_handler(buff, bufc, executor, caller, enactor, fargs, nfargs, cargs,
-        ncargs, DEFAULT_UDEFAULT);
+    default_handler(buff, bufc, executor, caller, enactor, eval, fargs, nfargs,
+        cargs, ncargs, DEFAULT_UDEFAULT);
 }
 
 /* ---------------------------------------------------------------------------
@@ -2668,7 +2670,7 @@ static int u_comp(const void *s1, const void *s2)
     result = bp = alloc_lbuf("u_comp");
     str = tbuf;
     mux_exec(result, &bp, ucomp_executor, ucomp_caller, ucomp_enactor,
-             EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, &(elems[0]), 2);
+             EV_STRIP_CURLY|EV_FCHECK|EV_EVAL, &str, &(elems[0]), 2);
     *bp = '\0';
     if (!result)
     {
@@ -3085,7 +3087,7 @@ FUNCTION(fun_foreach)
             mux_strncpy(atextbuf, atext, LBUF_SIZE-1);
             str = atextbuf;
             mux_exec(buff, bufc, thing, executor, enactor,
-                EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, &bp, 1);
+                AttrTrace(aflags, EV_STRIP_CURLY|EV_FCHECK|EV_EVAL), &str, &bp, 1);
         }
     }
     free_lbuf(atextbuf);
