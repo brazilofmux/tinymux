@@ -8211,8 +8211,10 @@ LEXITS()
 LFLAGS()
 
   FUNCTION: lflags(<object>)
+            lflags(<object>/<attr>)
 
-  Returns the flags of <object> written out with their actual names.
+  Returns the flags of <object> or the flags of <attr> on <object> written out
+  with their actual names.
 
   Example:
     > say flags(me)
