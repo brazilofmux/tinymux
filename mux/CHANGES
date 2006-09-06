@@ -53,7 +53,8 @@ Feature Additions:
  -- Included distribute() in the default build.
  -- Added float_precision configuration parameter.
  -- Added TRACE attribute flag which provide a finer-grain debugging
-    tool than @set'ing TRACE on the object.
+    tool than @set'ing TRACE on the object. Requested by Nixer.
+    Implemented by Brazil.
  -- Added escapes for CR, LF, TAB, and ESC to the flatfile format. This
     flatfile no longer contains a mix of CRLF and LF to confuse flatfile
     portability.
