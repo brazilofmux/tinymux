@@ -617,6 +617,7 @@ void flag_set(dbref target, dbref player, char *flag, int key)
         {
             nflag++;
         }
+
         if (*nflag == '\0')
         {
             bDone = true;

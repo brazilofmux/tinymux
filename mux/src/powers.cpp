@@ -251,57 +251,82 @@ bool decode_power(dbref player, char *powername, POWERSET *pset)
 
 void power_set(dbref target, dbref player, char *power, int key)
 {
-    // Trim spaces, and handle the negation character.
-    //
-    while (mux_isspace(*power))
-    {
-        power++;
-    }
+    bool bDone = false;
 
-    bool negate = false;
-    if (*power == '!')
+    do
     {
-        negate = true;
-        power++;
-    }
-    while (mux_isspace(*power))
-    {
-        power++;
-    }
-
-    // Make sure a power name was specified.
-    //
-    if (*power == '\0')
-    {
-        if (negate)
+        // Trim spaces, and handle the negation character.
+        //
+        while (mux_isspace(*power))
         {
-            notify(player, "You must specify a power to clear.");
+            power++;
+        }
+
+        bool bNegate = false;
+        if (*power == '!')
+        {
+            bNegate = true;
+            do
+            {
+                power++;
+            } while (mux_isspace(*power));
+        }
+
+        // Beginning of power name is now 'power'.
+        //
+        char *npower = power;
+        while (  *npower != '\0'
+              && !mux_isspace(*npower))
+        {
+            npower++;
+        }
+
+        if (*npower == '\0')
+        {
+            bDone = true;
         }
         else
         {
-            notify(player, "You must specify a power to set.");
+            *npower = '\0';
         }
-        return;
-    }
-    POWERENT *fp = find_power(target, power);
-    if (fp == NULL)
-    {
-        notify(player, "I don't understand that power.");
-        return;
-    }
 
-    // Invoke the power handler, and print feedback.
-    //
-    bool result = fp->handler(target, player, fp->powervalue,
-                 fp->powerpower, negate);
-    if (!result)
-    {
-        notify(player, NOPERM_MESSAGE);
-    }
-    else if (!(key & SET_QUIET) && !Quiet(player))
-    {
-        notify(player, (negate ? "Cleared." : "Set."));
-    }
+        // Make sure a power name was specified.
+        //
+        if (*power == '\0')
+        {
+            if (bNegate)
+            {
+                notify(player, "You must specify a power to clear.");
+            }
+            else
+            {
+                notify(player, "You must specify a power to set.");
+            }
+        }
+        else
+        {
+            POWERENT *fp = find_power(target, power);
+            if (fp == NULL)
+            {
+                notify(player, "I don't understand that power.");
+            }
+            else
+            {
+                // Invoke the power handler, and print feedback.
+                //
+                if (!fp->handler(target, player, fp->powervalue, fp->powerpower, bNegate))
+                {
+                    notify(player, NOPERM_MESSAGE);
+                }
+                else if (!(key & SET_QUIET) && !Quiet(player))
+                {
+                    notify(player, (bNegate ? "Cleared." : "Set."));
+                }
+            }
+        }
+        power = npower + 1;
+
+    } while (!bDone);
 }
 
 /* ---------------------------------------------------------------------------
