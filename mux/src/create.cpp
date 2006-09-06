@@ -252,7 +252,7 @@ void do_link
     //
     if (!where || !*where)
     {
-        do_unlink(executor, caller, enactor, key, what);
+        do_unlink(executor, caller, enactor, 0, key, what);
         return;
     }
 
@@ -894,10 +894,11 @@ static bool can_destroy_player(dbref player, dbref victim)
     return true;
 }
 
-void do_destroy(dbref executor, dbref caller, dbref enactor, int key, char *what)
+void do_destroy(dbref executor, dbref caller, dbref enactor, int eval, int key, char *what)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
 
     // You can destroy anything you control.
     //

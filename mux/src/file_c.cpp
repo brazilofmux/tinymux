@@ -67,10 +67,11 @@ static NAMETAB list_files[] =
     { NULL,              0,  0,          0}
 };
 
-void do_list_file(dbref executor, dbref caller, dbref enactor, int extra, char *arg)
+void do_list_file(dbref executor, dbref caller, dbref enactor, int eval, int extra, char *arg)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(extra);
 
     int flagvalue;

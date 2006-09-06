@@ -632,10 +632,11 @@ void move_exit(dbref player, dbref exit, bool divest, const char *failmsg, int h
  * do_move: Move from one place to another via exits or 'home'.
  */
 
-void do_move(dbref executor, dbref caller, dbref enactor, int key, char *direction)
+void do_move(dbref executor, dbref caller, dbref enactor, int eval, int key, char *direction)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
 
     dbref exit, loc;
     int i, quiet;
@@ -709,10 +710,11 @@ void do_move(dbref executor, dbref caller, dbref enactor, int key, char *directi
  * do_get: Get an object.
  */
 
-void do_get(dbref executor, dbref caller, dbref enactor, int key, char *what)
+void do_get(dbref executor, dbref caller, dbref enactor, int eval, int key, char *what)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
 
     dbref playerloc;
     if (  !Has_location(executor)
@@ -867,10 +869,11 @@ void do_get(dbref executor, dbref caller, dbref enactor, int key, char *what)
  * do_drop: Drop an object.
  */
 
-void do_drop(dbref executor, dbref caller, dbref enactor, int key, char *name)
+void do_drop(dbref executor, dbref caller, dbref enactor, int eval, int key, char *name)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
 
     dbref loc = Location(executor);
     if (!Good_obj(loc))
@@ -997,10 +1000,11 @@ void do_enter_internal(dbref player, dbref thing, bool quiet)
     }
 }
 
-void do_enter(dbref executor, dbref caller, dbref enactor, int key, char *what)
+void do_enter(dbref executor, dbref caller, dbref enactor, int eval, int key, char *what)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
 
     init_match(executor, what, TYPE_THING);
     match_neighbor();

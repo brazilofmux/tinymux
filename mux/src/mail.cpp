@@ -3696,7 +3696,7 @@ static void do_expmail_abort(dbref player)
     notify(player, "MAIL: Message aborted.");
 }
 
-void do_prepend(dbref executor, dbref caller, dbref enactor, int key, char *text)
+void do_prepend(dbref executor, dbref caller, dbref enactor, int eval, int key, char *text)
 {
     UNUSED_PARAMETER(key);
 
@@ -3718,7 +3718,7 @@ void do_prepend(dbref executor, dbref caller, dbref enactor, int key, char *text
         char *bpText = bufText;
         char *strText = text+1;
         mux_exec(bufText, &bpText, executor, caller, enactor,
-                 EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &strText, (char **)NULL, 0);
+                 eval|EV_STRIP_CURLY|EV_FCHECK|EV_EVAL, &strText, (char **)NULL, 0);
         *bpText = '\0';
 
         dbref aowner;
@@ -3754,7 +3754,7 @@ void do_prepend(dbref executor, dbref caller, dbref enactor, int key, char *text
     }
 }
 
-void do_postpend(dbref executor, dbref caller, dbref enactor, int key, char *text)
+void do_postpend(dbref executor, dbref caller, dbref enactor, int eval, int key, char *text)
 {
     UNUSED_PARAMETER(key);
 
@@ -3782,7 +3782,7 @@ void do_postpend(dbref executor, dbref caller, dbref enactor, int key, char *tex
         char *bpText = bufText;
         char *strText = text+1;
         mux_exec(bufText, &bpText, executor, caller, enactor,
-                 EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &strText, (char **)NULL, 0);
+                 eval|EV_STRIP_CURLY|EV_FCHECK|EV_EVAL, &strText, (char **)NULL, 0);
         *bpText = '\0';
 
         dbref aowner;

@@ -1181,12 +1181,14 @@ void do_shutdown
     dbref executor,
     dbref caller,
     dbref enactor,
+    int   eval,
     int   key,
     char *message
 )
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
 
     if (!Can_SiteAdmin(executor))
     {

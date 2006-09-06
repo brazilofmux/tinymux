@@ -1335,10 +1335,11 @@ void look_in(dbref player, dbref loc, int key)
     }
 }
 
-void do_look(dbref executor, dbref caller, dbref enactor, int key, char *name)
+void do_look(dbref executor, dbref caller, dbref enactor, int eval, int key, char *name)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
 
     int look_key = LK_SHOWATTR | LK_SHOWEXIT;
     if (!mudconf.terse_look)
@@ -1604,10 +1605,11 @@ static void exam_wildattrs
     }
 }
 
-void do_examine(dbref executor, dbref caller, dbref enactor, int key, char *name)
+void do_examine(dbref executor, dbref caller, dbref enactor, int eval, int key, char *name)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
 
     // This command is pointless if the player can't hear.
     //
@@ -2048,10 +2050,11 @@ void do_inventory(dbref executor, dbref caller, dbref enactor, int key)
     do_score(executor, caller, executor, 0);
 }
 
-void do_entrances(dbref executor, dbref caller, dbref enactor, int key, char *name)
+void do_entrances(dbref executor, dbref caller, dbref enactor, int eval, int key, char *name)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(key);
 
     dbref thing, i, j;
@@ -2397,10 +2400,11 @@ static void sweep_check(dbref player, dbref what, int key, bool is_loc)
     }
 }
 
-void do_sweep(dbref executor, dbref caller, dbref enactor, int key, char *where)
+void do_sweep(dbref executor, dbref caller, dbref enactor, int eval, int key, char *where)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
 
     dbref here, sweeploc;
     int where_key, what_key;

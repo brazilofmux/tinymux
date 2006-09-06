@@ -1587,10 +1587,11 @@ void do_addcom
     raw_notify(executor, tprintf("Channel %s added with alias %s.", channel, pValidAlias));
 }
 
-void do_delcom(dbref executor, dbref caller, dbref enactor, int key, char *arg1)
+void do_delcom(dbref executor, dbref caller, dbref enactor, int eval, int key, char *arg1)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(key);
 
     if (!mudconf.have_comsys)
@@ -1703,10 +1704,11 @@ void do_delcomchannel(dbref player, char *channel, bool bQuiet)
     }
 }
 
-void do_createchannel(dbref executor, dbref caller, dbref enactor, int key, char *channel)
+void do_createchannel(dbref executor, dbref caller, dbref enactor, int eval, int key, char *channel)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(key);
 
     if (select_channel(channel))
@@ -1789,10 +1791,11 @@ void do_createchannel(dbref executor, dbref caller, dbref enactor, int key, char
     raw_notify(executor, tprintf("Channel %s created.", newchannel->name));
 }
 
-void do_destroychannel(dbref executor, dbref caller, dbref enactor, int key, char *channel)
+void do_destroychannel(dbref executor, dbref caller, dbref enactor, int eval, int key, char *channel)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(key);
 
     struct channel *ch;
@@ -2032,12 +2035,14 @@ void do_comlist
     dbref executor,
     dbref caller,
     dbref enactor,
+    int   eval,
     int key,
     char* pattern
 )
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(key);
 
     if (!mudconf.have_comsys)
@@ -2127,15 +2132,16 @@ void do_clearcom(dbref executor, dbref caller, dbref enactor, int unused2)
     int i;
     for (i = (c->numchannels) - 1; i > -1; --i)
     {
-        do_delcom(executor, caller, enactor, 0, c->alias + i * ALIAS_SIZE);
+        do_delcom(executor, caller, enactor, 0, 0, c->alias + i * ALIAS_SIZE);
     }
 }
 
-void do_allcom(dbref executor, dbref caller, dbref enactor, int key, char *arg1)
+void do_allcom(dbref executor, dbref caller, dbref enactor, int eval, int key, char *arg1)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
     UNUSED_PARAMETER(key);
+    UNUSED_PARAMETER(eval);
 
     if (!mudconf.have_comsys)
     {
@@ -2185,10 +2191,11 @@ void sort_users(struct channel *ch)
     }
 }
 
-void do_channelwho(dbref executor, dbref caller, dbref enactor, int key, char *arg1)
+void do_channelwho(dbref executor, dbref caller, dbref enactor, int eval, int key, char *arg1)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(key);
 
     if (!mudconf.have_comsys)
@@ -2703,7 +2710,7 @@ void do_chopen
     }
     if (key == CSET_LIST)
     {
-        do_chanlist(executor, caller, enactor, 1, NULL);
+        do_chanlist(executor, caller, enactor, 0, 1, NULL);
         return;
     }
 
@@ -2944,12 +2951,14 @@ void do_chanlist
     dbref executor,
     dbref caller,
     dbref enactor,
+    int   eval,
     int   key,
     char *pattern
 )
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
 
     if (!mudconf.have_comsys)
     {

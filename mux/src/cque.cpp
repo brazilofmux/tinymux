@@ -352,10 +352,11 @@ int halt_que(dbref executor, dbref object)
 // ---------------------------------------------------------------------------
 // do_halt: Command interface to halt_que.
 //
-void do_halt(dbref executor, dbref caller, dbref enactor, int key, char *target)
+void do_halt(dbref executor, dbref caller, dbref enactor, int eval, int key, char *target)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
 
     dbref executor_targ, obj_targ;
 
@@ -1278,10 +1279,11 @@ int CallBack_ShowSQLQueries(PTASK_RECORD p)
 // ---------------------------------------------------------------------------
 // do_ps: tell executor what commands they have pending in the queue
 //
-void do_ps(dbref executor, dbref caller, dbref enactor, int key, char *target)
+void do_ps(dbref executor, dbref caller, dbref enactor, int eval, int key, char *target)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
 
     char *bufp;
     dbref executor_targ, obj_targ;
@@ -1410,10 +1412,11 @@ static int CallBack_Warp(PTASK_RECORD p)
 // ---------------------------------------------------------------------------
 // do_queue: Queue management
 //
-void do_queue(dbref executor, dbref caller, dbref enactor, int key, char *arg)
+void do_queue(dbref executor, dbref caller, dbref enactor, int eval, int key, char *arg)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
 
     if (key == QUEUE_KICK)
     {

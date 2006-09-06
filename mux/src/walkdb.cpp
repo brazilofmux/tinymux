@@ -82,10 +82,11 @@ void do_dolist(dbref executor, dbref caller, dbref enactor, int eval, int key,
 
 // Regular @find command
 //
-void do_find(dbref executor, dbref caller, dbref enactor, int key, char *name)
+void do_find(dbref executor, dbref caller, dbref enactor, int eval, int key, char *name)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(key);
 
     char *buff;
@@ -184,10 +185,11 @@ bool get_stats(dbref player, dbref who, STATS *info)
 
 // Reworked by R'nice
 //
-void do_stats(dbref executor, dbref caller, dbref enactor, int key, char *name)
+void do_stats(dbref executor, dbref caller, dbref enactor, int eval, int key, char *name)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
 
     dbref owner;
 
@@ -895,8 +897,10 @@ static void search_mark(dbref player, int key)
     return;
 }
 
-void do_search(dbref executor, dbref caller, dbref enactor, int key, char *arg)
+void do_search(dbref executor, dbref caller, dbref enactor, int eval, int key, char *arg)
 {
+    UNUSED_PARAMETER(eval);
+
     char *buff, *outbuf, *bp;
     dbref thing, from, to;
     SEARCH searchparm;

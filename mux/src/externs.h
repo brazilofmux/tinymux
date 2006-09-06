@@ -83,7 +83,7 @@ const char *MessageFetch(int number);
 void DCL_CDECL raw_broadcast(int, char *, ...);
 void list_siteinfo(dbref);
 void logged_out0(dbref executor, dbref caller, dbref enactor, int key);
-void logged_out1(dbref executor, dbref caller, dbref enactor, int key, char *arg);
+void logged_out1(dbref executor, dbref caller, dbref enactor, int eval, int key, char *arg);
 void init_logout_cmdtab(void);
 void desc_reload(dbref);
 void make_portlist(dbref, dbref, char *, char **);
@@ -777,7 +777,7 @@ void do_pemit_single
     int chPoseType,
     char *message
 );
-void do_say(dbref executor, dbref caller, dbref enactor, int key,
+void do_say(dbref executor, dbref caller, dbref enactor, int eval, int key,
                    char *message);
 
 int  boot_off(dbref player, const char *message);

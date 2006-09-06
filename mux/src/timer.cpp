@@ -273,8 +273,10 @@ void init_timer(void)
  * * do_timewarp: Adjust various internal timers.
  */
 
-void do_timewarp(dbref executor, dbref caller, dbref enactor, int key, char *arg)
+void do_timewarp(dbref executor, dbref caller, dbref enactor, int eval, int key, char *arg)
 {
+    UNUSED_PARAMETER(eval);
+
     int secs;
 
     secs = mux_atol(arg);
@@ -283,7 +285,7 @@ void do_timewarp(dbref executor, dbref caller, dbref enactor, int key, char *arg
     //
     if ((key == 0) || (key & TWARP_QUEUE))
     {
-        do_queue(executor, caller, enactor, QUEUE_WARP, arg);
+        do_queue(executor, caller, enactor, 0, QUEUE_WARP, arg);
     }
 
     // Once these are adjusted, we need to Cancel and reschedule the task.

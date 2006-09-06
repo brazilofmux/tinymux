@@ -920,11 +920,12 @@ void do_addcommand
     notify(player, tprintf("Command %s added.", pName));
 }
 
-void do_listcommands(dbref player, dbref caller, dbref enactor, int key,
-                     char *name)
+void do_listcommands(dbref player, dbref caller, dbref enactor, int eval,
+                     int key, char *name)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(key);
 
     CMDENT *old;
@@ -1232,10 +1233,11 @@ void handle_prog(DESC *d, char *message)
     free_lbuf(cmd);
 }
 
-void do_quitprog(dbref player, dbref caller, dbref enactor, int key, char *name)
+void do_quitprog(dbref player, dbref caller, dbref enactor, int eval, int key, char *name)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(key);
 
     dbref doer;

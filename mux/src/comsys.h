@@ -116,7 +116,6 @@ struct comuser *select_user(struct channel *ch, dbref player);
 char  *get_channel_from_alias();
 
 bool  do_comsystem(dbref who, char *cmd);
-void  do_chanlist(dbref executor, dbref caller, dbref enactor, int key, char *pattern);
 
 #define CHANNEL_PLAYER_JOIN     (0x00000001UL)
 #define CHANNEL_PLAYER_TRANSMIT (0x00000002UL)

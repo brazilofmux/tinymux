@@ -1391,7 +1391,7 @@ static void process_cmdent(CMDENT *cmdp, char *switchp, dbref executor, dbref ca
         else
         {
             (*(((CMDENT_ONE_ARG *)cmdp)->handler))(executor, caller,
-                enactor, key, buf1);
+                enactor, eval, key, buf1);
         }
 
         // Free the buffer if one was allocated.
@@ -1908,7 +1908,7 @@ char *process_command
                 notify(executor, mudconf.fixed_home_msg);
                 return preserve_cmd;
             }
-            do_move(executor, caller, enactor, 0, "home");
+            do_move(executor, caller, enactor, eval, 0, "home");
             mudstate.debug_cmd = cmdsave;
             return preserve_cmd;
         }
@@ -3808,11 +3808,12 @@ NAMETAB list_names[] =
     { NULL,                0,  0,          0}
 };
 
-void do_list(dbref executor, dbref caller, dbref enactor, int extra,
+void do_list(dbref executor, dbref caller, dbref enactor, int eval, int extra,
              char *arg)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(extra);
 
     MUX_STRTOK_STATE tts;
@@ -3921,11 +3922,12 @@ void do_list(dbref executor, dbref caller, dbref enactor, int extra,
     }
 }
 
-void do_break(dbref executor, dbref caller, dbref enactor, int key, char *arg1)
+void do_break(dbref executor, dbref caller, dbref enactor, int eval, int key, char *arg1)
 {
     UNUSED_PARAMETER(executor);
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(key);
 
     break_called = xlate(arg1);
@@ -4302,7 +4304,7 @@ void do_icmd(dbref player, dbref cause, dbref enactor, int key, char *name,
 // do_train: show someone else in the same room what code you're entering and the result
 // From RhostMUSH, changed to use notify_all_from_inside.
 //
-void do_train(dbref executor, dbref caller, dbref enactor, int key, char *string)
+void do_train(dbref executor, dbref caller, dbref enactor, int eval, int key, char *string)
 {
     UNUSED_PARAMETER(key);
 
@@ -4329,7 +4331,7 @@ void do_train(dbref executor, dbref caller, dbref enactor, int key, char *string
 
     notify_all_from_inside(loc, executor, tprintf("%s types -=> %s",
         Moniker(executor), string));
-    process_command(executor, caller, enactor, 0, true, string, (char **)NULL, 0);
+    process_command(executor, caller, enactor, eval, true, string, (char **)NULL, 0);
     mudstate.train_nest_lev--;
 }
 
@@ -4436,10 +4438,11 @@ static void hook_loop(dbref executor, CMDENT *cmdp, char *s_ptr, char *s_ptrbuff
     notify(executor, tprintf(pFmt, pCmd, s_ptrbuff));
 }
 
-void do_hook(dbref executor, dbref caller, dbref enactor, int key, char *name)
+void do_hook(dbref executor, dbref caller, dbref enactor, int eval, int key, char *name)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
 
     bool negate, found;
     char *s_ptr, *s_ptrbuff, *cbuff, *p;

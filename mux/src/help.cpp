@@ -403,10 +403,11 @@ static bool ValidateHelpFileIndex(int iHelpfile)
  * * do_help: display information from new-format news and help files
  */
 
-void do_help(dbref executor, dbref caller, dbref enactor, int key, char *message)
+void do_help(dbref executor, dbref caller, dbref enactor, int eval, int key, char *message)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
 
     int iHelpfile = key;
 

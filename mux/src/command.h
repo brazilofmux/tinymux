@@ -7,7 +7,7 @@
 #define __COMMAND_H
 
 #define CMD_NO_ARG(name)              extern void name(dbref executor, dbref caller, dbref enactor, int)
-#define CMD_ONE_ARG(name)             extern void name(dbref executor, dbref caller, dbref enactor, int, char *)
+#define CMD_ONE_ARG(name)             extern void name(dbref executor, dbref caller, dbref enactor, int eval, int, char *)
 #define CMD_ONE_ARG_CMDARG(name)      extern void name(dbref executor, dbref caller, dbref enactor, int eval, int, char *, char *[], int)
 #define CMD_TWO_ARG(name)             extern void name(dbref executor, dbref caller, dbref enactor, int, int, char *, char *)
 #define CMD_TWO_ARG_CMDARG(name)      extern void name(dbref executor, dbref caller, dbref enactor, int eval, int, char *, char *, char*[], int)
@@ -176,7 +176,7 @@ typedef struct
     int     extra;
     int     callseq;
     int     hookmask;
-    void    (*handler)(dbref executor, dbref caller, dbref enactor, int, char *);
+    void    (*handler)(dbref executor, dbref caller, dbref enactor, int eval, int, char *);
 } CMDENT_ONE_ARG;
 
 typedef struct

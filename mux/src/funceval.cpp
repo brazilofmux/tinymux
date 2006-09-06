@@ -416,7 +416,7 @@ FUNCTION(fun_emit)
     {
         return;
     }
-    do_say(executor, caller, enactor, SAY_EMIT, fargs[0]);
+    do_say(executor, caller, enactor, 0, SAY_EMIT, fargs[0]);
 }
 
 FUNCTION(fun_remit)

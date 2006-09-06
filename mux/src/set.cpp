@@ -527,10 +527,11 @@ void do_lock
  * * Remove a lock from an object of attribute.
  */
 
-void do_unlock(dbref executor, dbref caller, dbref enactor, int key, char *name)
+void do_unlock(dbref executor, dbref caller, dbref enactor, int eval, int key, char *name)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
 
     dbref thing;
     ATTR *ap;
@@ -588,11 +589,12 @@ void do_unlock(dbref executor, dbref caller, dbref enactor, int key, char *name)
  * * do_unlink: Unlink an exit from its destination or remove a dropto.
  */
 
-void do_unlink(dbref executor, dbref caller, dbref enactor, int key, char *name)
+void do_unlink(dbref executor, dbref caller, dbref enactor, int eval, int key, char *name)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
     UNUSED_PARAMETER(key);
+    UNUSED_PARAMETER(eval);
 
     dbref exit;
 
@@ -1724,10 +1726,11 @@ void do_edit(dbref executor, dbref caller, dbref enactor, int key, char *it,
     }
 }
 
-void do_wipe(dbref executor, dbref caller, dbref enactor, int key, char *it)
+void do_wipe(dbref executor, dbref caller, dbref enactor, int eval, int key, char *it)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(key);
 
     dbref thing;
@@ -1818,10 +1821,11 @@ void do_trigger(dbref executor, dbref caller, dbref enactor, int key,
     }
 }
 
-void do_use(dbref executor, dbref caller, dbref enactor, int key, char *object)
+void do_use(dbref executor, dbref caller, dbref enactor, int eval, int key, char *object)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(key);
 
     char *df_use, *df_ouse, *temp;

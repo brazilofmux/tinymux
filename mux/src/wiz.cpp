@@ -501,10 +501,11 @@ void do_newpassword
     free_lbuf(buf);
 }
 
-void do_boot(dbref executor, dbref caller, dbref enactor, int key, char *name)
+void do_boot(dbref executor, dbref caller, dbref enactor, int eval, int key, char *name)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
 
     if (!Can_Boot(executor))
     {
@@ -586,11 +587,12 @@ void do_boot(dbref executor, dbref caller, dbref enactor, int key, char *name)
 // ---------------------------------------------------------------------------
 // do_poor: Reduce the wealth of anyone over a specified amount.
 //
-void do_poor(dbref executor, dbref caller, dbref enactor, int key, char *arg1)
+void do_poor(dbref executor, dbref caller, dbref enactor, int eval, int key, char *arg1)
 {
     UNUSED_PARAMETER(executor);
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(key);
 
     if (!is_rational(arg1))
@@ -617,10 +619,11 @@ void do_poor(dbref executor, dbref caller, dbref enactor, int key, char *arg1)
 // ---------------------------------------------------------------------------
 // do_cut: Chop off a contents or exits chain after the named item.
 //
-void do_cut(dbref executor, dbref caller, dbref enactor, int key, char *thing)
+void do_cut(dbref executor, dbref caller, dbref enactor, int eval, int key, char *thing)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(key);
 
     dbref object = match_controlled(executor, thing);
@@ -634,10 +637,11 @@ void do_cut(dbref executor, dbref caller, dbref enactor, int key, char *thing)
 // --------------------------------------------------------------------------
 // do_motd: Wizard-settable message of the day (displayed on connect)
 //
-void do_motd(dbref executor, dbref caller, dbref enactor, int key, char *message)
+void do_motd(dbref executor, dbref caller, dbref enactor, int eval, int key, char *message)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
 
     bool is_brief = false;
 
@@ -748,10 +752,11 @@ NAMETAB enable_names[] =
     { NULL,             0,  0,          0}
 };
 
-void do_global(dbref executor, dbref caller, dbref enactor, int key, char *flag)
+void do_global(dbref executor, dbref caller, dbref enactor, int eval, int key, char *flag)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
 
     // Set or clear the indicated flag.
     //

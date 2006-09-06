@@ -133,7 +133,7 @@ static const char *announce_msg = "Announcement: ";
 static const char *broadcast_msg = "Broadcast: ";
 static const char *admin_msg = "Admin: ";
 
-void do_think(dbref executor, dbref caller, dbref enactor, int key,
+void do_think(dbref executor, dbref caller, dbref enactor, int eval, int key,
     char *message)
 {
     UNUSED_PARAMETER(key);
@@ -142,17 +142,18 @@ void do_think(dbref executor, dbref caller, dbref enactor, int key,
 
     buf = bp = alloc_lbuf("do_think");
     str = message;
-    mux_exec(buf, &bp, executor, caller, enactor, EV_FCHECK | EV_EVAL | EV_TOP,
+    mux_exec(buf, &bp, executor, caller, enactor, eval|EV_FCHECK|EV_EVAL|EV_TOP,
          &str, (char **)NULL, 0);
     *bp = '\0';
     notify(executor, buf);
     free_lbuf(buf);
 }
 
-void do_say(dbref executor, dbref caller, dbref enactor, int key, char *message)
+void do_say(dbref executor, dbref caller, dbref enactor, int eval, int key, char *message)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
 
     // Make sure speaker is somewhere if speaking in a place
     //
@@ -342,11 +343,12 @@ void do_say(dbref executor, dbref caller, dbref enactor, int key, char *message)
 }
 
 
-void do_shout(dbref executor, dbref caller, dbref enactor, int key,
+void do_shout(dbref executor, dbref caller, dbref enactor, int eval, int key,
     char *message)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
 
     char *p;
     char *buf2, *bp;

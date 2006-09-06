@@ -1813,10 +1813,11 @@ static char *MakeCanonicalDoing(char *pDoing, size_t *pnValidDoing, bool *pbVali
 // do_doing: Set the doing string that appears in the WHO report.
 // Idea from R'nice@TinyTIM.
 //
-void do_doing(dbref executor, dbref caller, dbref enactor, int key, char *arg)
+void do_doing(dbref executor, dbref caller, dbref enactor, int eval, int key, char *arg)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
 
     // Make sure there can be no embedded newlines from %r
     //
@@ -2506,7 +2507,7 @@ void do_command(DESC *d, char *command)
     mudstate.debug_cmd = cmdsave;
 }
 
-void logged_out1(dbref executor, dbref caller, dbref enactor, int key, char *arg)
+void logged_out1(dbref executor, dbref caller, dbref enactor, int eval, int key, char *arg)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
@@ -2547,7 +2548,7 @@ void logged_out1(dbref executor, dbref caller, dbref enactor, int key, char *arg
 
 void logged_out0(dbref executor, dbref caller, dbref enactor, int key)
 {
-    logged_out1(executor, caller, enactor, key, "");
+    logged_out1(executor, caller, enactor, 0, key, "");
 }
 
 void Task_ProcessCommand(void *arg_voidptr, int arg_iInteger)
