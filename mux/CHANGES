@@ -1,5 +1,5 @@
 TinyMUX 2.6:  CHANGES
-Last Update:  August 2006
+Last Update:  September 2006
 
 Major changes that may affect performance and require softcode tweaks:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -52,6 +52,11 @@ Feature Additions:
     this switch, and then it should be turned off.
  -- Included distribute() in the default build.
  -- Added float_precision configuration parameter.
+ -- Added TRACE attribute flag which provide a finer-grain debugging
+    tool than @set'ing TRACE on the object.
+ -- Added escapes for CR, LF, TAB, and ESC to the flatfile format. This
+    flatfile no longer contains a mix of CRLF and LF to confuse flatfile
+    portability.
 
 
 Bug Fixes:
