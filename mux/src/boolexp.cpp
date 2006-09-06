@@ -183,6 +183,7 @@ bool eval_boolexp(dbref player, dbref thing, dbref from, BOOLEXP *b)
         {
             bCheck = true;
         }
+
         if (bCheck)
         {
             char **preserve = NULL;
@@ -194,7 +195,7 @@ bool eval_boolexp(dbref player, dbref thing, dbref from, BOOLEXP *b)
             buff2 = bp = alloc_lbuf("eval_boolexp");
             str = buff;
             mux_exec(buff2, &bp, source, player, player,
-                EV_FIGNORE | EV_EVAL | EV_FCHECK | EV_TOP, &str,
+                AttrTrace(aflags, EV_FIGNORE|EV_EVAL|EV_FCHECK|EV_TOP), &str,
                 (char **)NULL, 0);
             *bp = '\0';
 

@@ -1038,8 +1038,8 @@ static bool process_hook(dbref executor, dbref thing, char *s_uselock, ATTR *hk_
             char *buff, *bufc;
             bufc = buff = alloc_lbuf("process_hook");
             char *str = atext;
-            mux_exec(buff, &bufc, thing, executor, executor, EV_FCHECK | EV_EVAL, &str,
-                (char **)NULL, 0);
+            mux_exec(buff, &bufc, thing, executor, executor,
+                AttrTrace(aflags, EV_FCHECK|EV_EVAL), &str, (char **)NULL, 0);
             free_lbuf(atext);
             *bufc = '\0';
             if (save_flg)
@@ -2444,7 +2444,7 @@ char *process_command
             char *errbufc = errbuff;
             str = errtext;
             mux_exec(errbuff, &errbufc, mudconf.global_error_obj, caller, enactor,
-                EV_EVAL | EV_FCHECK | EV_STRIP_CURLY | EV_TOP, &str,
+                AttrTrace(aflags, EV_EVAL|EV_FCHECK|EV_STRIP_CURLY|EV_TOP), &str,
                 &pCommand, 1);
             notify(executor, errbuff);
             free_lbuf(errtext);
@@ -2915,6 +2915,7 @@ NAMETAB indiv_attraccess_nametab[] =
     {"no_command",          4,  CA_PUBLIC,  AF_NOPROG},
     {"no_inherit",          4,  CA_PUBLIC,  AF_PRIVATE},
     {"regexp",              1,  CA_PUBLIC,  AF_REGEXP},
+    {"trace",               1,  CA_PUBLIC,  AF_TRACE},
     {"visual",              1,  CA_PUBLIC,  AF_VISUAL},
     {"wizard",              1,  CA_WIZARD,  AF_WIZARD},
     { NULL,                 0,          0,          0}

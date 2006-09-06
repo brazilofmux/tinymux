@@ -2316,7 +2316,8 @@ void did_it(dbref player, dbref thing, int what, const char *def, int owhat,
             buff = bp = alloc_lbuf("did_it.1");
             str = d;
             mux_exec(buff, &bp, thing, player, player,
-                EV_EVAL | EV_FIGNORE | EV_FCHECK | EV_TOP, &str, args, nargs);
+                AttrTrace(aflags, EV_EVAL|EV_FIGNORE|EV_FCHECK|EV_TOP),
+                &str, args, nargs);
             *bp = '\0';
             if (  (aflags & AF_HTML)
                && Html(player))
@@ -2371,7 +2372,8 @@ void did_it(dbref player, dbref thing, int what, const char *def, int owhat,
             buff = bp = alloc_lbuf("did_it.2");
             str = d;
             mux_exec(buff, &bp, thing, player, player,
-                     EV_EVAL | EV_FIGNORE | EV_FCHECK | EV_TOP, &str, args, nargs);
+                 AttrTrace(aflags, EV_EVAL|EV_FIGNORE|EV_FCHECK|EV_TOP),
+                 &str, args, nargs);
             *bp = '\0';
 #if !defined(FIRANMUX)
             if (*buff)

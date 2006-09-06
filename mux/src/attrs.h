@@ -26,8 +26,15 @@
 #define AF_NOCLONE  0x00010000UL // Don't copy this attr when cloning.
 #define AF_CONST    0x00020000UL // No one can change it (set by server).
 #define AF_CASE     0x00040000UL // Regexp matches are case-sensitive.
-#define AF_ISUSED   0x00080000UL // Used to make efficient sweeps of stale
+#define AF_TRACE    0x00080000UL // Trace evaluation of this attribute.
+#define AF_ISUSED   0x10000000UL // Used to make efficient sweeps of stale
                                  // attributes.
+
+// Allow AF_TRACE in x to control the EV_TRACE bit in y.
+//
+#define AttrTrace(x, y) ( ((x) & AF_TRACE)   \
+                        ? ((y) | EV_TRACE)   \
+                        : ((y) & ~EV_TRACE))
 
 #define A_OSUCC     1   /* Others success message */
 #define A_OFAIL     2   /* Others fail message */

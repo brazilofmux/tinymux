@@ -1047,13 +1047,13 @@ char *unparse_object_ansi(dbref player, dbref target, bool obey_myopic)
     }
     else
     {
-        int flags;
-        dbref owner;
+        int   aflags;
+        dbref aowner;
 
         // Get the value of the object's 'color' attribute (or on a parent).
         //
         char *color_attr = alloc_lbuf("unparse_object_ansi2");
-        atr_pget_str(color_attr, target, A_COLOR, &owner, &flags);
+        atr_pget_str(color_attr, target, A_COLOR, &aowner, &aflags);
 
         // If color attribute is not found, then just hilite.  Otherwise,
         // ansi()-fy it as directed.
@@ -1069,7 +1069,7 @@ char *unparse_object_ansi(dbref player, dbref target, bool obey_myopic)
             char *ac = AnsiCodes;
             char *cp = color_attr;
             mux_exec(AnsiCodes, &ac, player, target, target, 
-                    EV_EVAL | EV_TOP | EV_FCHECK, &cp, NULL, 0);
+                    AttrTrace(aflags, EV_EVAL|EV_TOP|EV_FCHECK), &cp, NULL, 0);
             free_lbuf(color_attr);
 
             char SimplifiedCodes[8];

@@ -197,7 +197,8 @@ static int add_mail_message(dbref player, char *message)
     char *execstr = bp;
     char *str = atrstr;
     mux_exec(execstr, &bp, player, player, player,
-             EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, (char **)NULL, 0);
+         AttrTrace(aflags, EV_STRIP_CURLY|EV_FCHECK|EV_EVAL), &str,
+         (char **)NULL, 0);
     *bp = '\0';
 
     // Save message body and return a reference to it.
@@ -2076,8 +2077,8 @@ static void mail_return(dbref player, dbref target)
         str2 = bp = alloc_lbuf("mail_return");
         buf = str;
         mux_exec(str2, &bp, target, player, player,
-                 EV_FCHECK | EV_EVAL | EV_TOP | EV_NO_LOCATION, &buf,
-                 (char **)NULL, 0);
+             AttrTrace(aflags, EV_FCHECK|EV_EVAL|EV_TOP|EV_NO_LOCATION), &buf,
+             (char **)NULL, 0);
         *bp = '\0';
         if (*str2)
         {

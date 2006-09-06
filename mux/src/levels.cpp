@@ -554,7 +554,8 @@ void did_it_rlevel
                 buff = bp = alloc_lbuf("did_it.1");
                 str = d;
                 mux_exec(buff, &bp, thing, thing, player,
-                    EV_EVAL | EV_FIGNORE | EV_TOP, &str, args, nargs);
+                    AttrTrace(aflags) | EV_EVAL | EV_FIGNORE | EV_TOP, &str,
+                    args, nargs);
                 *bp = '\0';
 
                 if (  A_HTDESC == desclist[i]
@@ -591,7 +592,8 @@ void did_it_rlevel
                 buff = bp = alloc_lbuf("did_it.1");
                 str = d;
                 mux_exec(buff, &bp, thing, thing, player,
-                    EV_EVAL | EV_FIGNORE | EV_TOP, &str, args, nargs);
+                    AttrTrace(aflags) | EV_EVAL | EV_FIGNORE | EV_TOP, &str,
+                    args, nargs);
                 *bp = '\0';
 
                 if (  A_HTDESC == what
@@ -632,7 +634,9 @@ void did_it_rlevel
           }
           buff = bp = alloc_lbuf("did_it.1");
           str = d;
-          mux_exec(buff, &bp, thing, thing, player, EV_EVAL | EV_FIGNORE |EV_TOP, &str, args, nargs);
+          mux_exec(buff, &bp, thing, thing, player,
+              AttrTrace(aflags) | EV_EVAL | EV_FIGNORE | EV_TOP, &str,
+              args, nargs);
           *bp = '\0';
           notify(player, buff);
           free_lbuf(buff);
@@ -657,7 +661,9 @@ void did_it_rlevel
             }
             buff = bp = alloc_lbuf("did_it.2");
             str = d;
-            mux_exec(buff, &bp, thing, thing, player, EV_EVAL | EV_FIGNORE | EV_TOP, &str, args, nargs);
+            mux_exec(buff, &bp, thing, thing, player,
+                AttrTrace(aflags) | EV_EVAL | EV_FIGNORE | EV_TOP, &str,
+                args, nargs);
             *bp = '\0';
 
             if (*buff)

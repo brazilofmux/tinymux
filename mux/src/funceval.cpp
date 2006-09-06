@@ -30,7 +30,17 @@
  * credit is due.
  */
 
-bool parse_and_get_attrib(dbref executor, char *fargs[], char **atext, dbref *thing, char *buff, char **bufc)
+bool parse_and_get_attrib
+(
+    dbref   executor,
+    char   *fargs[],
+    char  **atext,
+    dbref  *thing,
+    dbref  *paowner,
+    dbref  *paflags,
+    char   *buff,
+    char  **bufc
+)
 {
     ATTR *ap;
 
@@ -57,9 +67,7 @@ bool parse_and_get_attrib(dbref executor, char *fargs[], char **atext, dbref *th
         return false;
     }
 
-    dbref aowner;
-    int aflags;
-    *atext = atr_pget(*thing, ap->number, &aowner, &aflags);
+    *atext = atr_pget(*thing, ap->number, paowner, paflags);
     if (!*atext)
     {
         return false;
@@ -1145,7 +1153,8 @@ FUNCTION(fun_zfun)
     }
     char *str = tbuf1;
     mux_exec(buff, bufc, zone, executor, enactor,
-             EV_EVAL | EV_STRIP_CURLY | EV_FCHECK, &str, &(fargs[1]), nfargs - 1);
+       AttrTrace(aflags, EV_EVAL|EV_STRIP_CURLY|EV_FCHECK), &str,
+        &(fargs[1]), nfargs - 1);
     free_lbuf(tbuf1);
 }
 
@@ -2192,7 +2201,8 @@ static void default_handler(char *buff, char **bufc, dbref executor, dbref calle
             case DEFAULT_EDEFAULT:
                 str = atr_gotten;
                 mux_exec(buff, bufc, thing, executor, executor,
-                     EV_FIGNORE | EV_EVAL, &str, (char **)NULL, 0);
+                     AttrTrace(aflags, EV_FIGNORE|EV_EVAL), &str,
+                     (char **)NULL, 0);
                 break;
 
             case DEFAULT_UDEFAULT:
@@ -2214,7 +2224,8 @@ static void default_handler(char *buff, char **bufc, dbref executor, dbref calle
 
                     str = atr_gotten;
                     mux_exec(buff, bufc, thing, caller, enactor,
-                        EV_FCHECK | EV_EVAL, &str, xargs, nxargs);
+                        AttrTrace(aflags, EV_FCHECK|EV_EVAL), &str, xargs,
+                        nxargs);
 
                     for (i = 0; i < nxargs; i++)
                     {
@@ -2759,7 +2770,9 @@ FUNCTION(fun_sortby)
 
     char *atext;
     dbref thing;
-    if (!parse_and_get_attrib(executor, fargs, &atext, &thing, buff, bufc))
+    dbref aowner;
+    int   aflags;
+    if (!parse_and_get_attrib(executor, fargs, &atext, &thing, &aowner, &aflags, buff, bufc))
     {
         return;
     }
@@ -2918,7 +2931,9 @@ FUNCTION(fun_mix)
     //
     dbref thing;
     char *atext;
-    if (!parse_and_get_attrib(executor, fargs, &atext, &thing, buff, bufc))
+    dbref aowner;
+    int   aflags;
+    if (!parse_and_get_attrib(executor, fargs, &atext, &thing, &aowner, &aflags, buff, bufc))
     {
         return;
     }
@@ -2966,7 +2981,8 @@ FUNCTION(fun_mix)
         mux_strncpy(atextbuf, atext, LBUF_SIZE-1);
         str = atextbuf;
         mux_exec(buff, bufc, thing, executor, enactor,
-            EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, &(os[0]), lastn);
+            AttrTrace(aflags, EV_STRIP_CURLY|EV_FCHECK|EV_EVAL), &str,
+            &(os[0]), lastn);
     }
     free_lbuf(atext);
     free_lbuf(atextbuf);
@@ -2994,7 +3010,9 @@ FUNCTION(fun_foreach)
 
     char *atext;
     dbref thing;
-    if (!parse_and_get_attrib(executor, fargs, &atext, &thing, buff, bufc))
+    dbref aowner;
+    int   aflags;
+    if (!parse_and_get_attrib(executor, fargs, &atext, &thing, &aowner, &aflags, buff, bufc))
     {
         return;
     }
@@ -3051,7 +3069,7 @@ FUNCTION(fun_foreach)
             mux_strncpy(atextbuf, atext, LBUF_SIZE-1);
             str = atextbuf;
             mux_exec(buff, bufc, thing, executor, enactor,
-                EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, &bp, 1);
+                AttrTrace(aflags, EV_STRIP_CURLY|EV_FCHECK|EV_EVAL), &str, &bp, 1);
             prev = cbuf[0];
         }
     }
@@ -3090,7 +3108,9 @@ FUNCTION(fun_munge)
     //
     char *atext;
     dbref thing;
-    if (!parse_and_get_attrib(executor, fargs, &atext, &thing, buff, bufc))
+    dbref aowner;
+    int   aflags;
+    if (!parse_and_get_attrib(executor, fargs, &atext, &thing, &aowner, &aflags, buff, bufc))
     {
         return;
     }
@@ -3131,7 +3151,7 @@ FUNCTION(fun_munge)
     uargs[0] = fargs[1];
     uargs[1] = sep.str;
     mux_exec(rlist, &bp, executor, caller, enactor,
-             EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, uargs, 2);
+             AttrTrace(aflags, EV_STRIP_CURLY|EV_FCHECK|EV_EVAL), &str, uargs, 2);
     *bp = '\0';
 
     // Now that we have our result, put it back into array form.

@@ -1512,8 +1512,8 @@ static void get_handler(char *buff, char **bufc, dbref executor, char *fargs[], 
        || key == GET_GEVAL)
     {
         char *str = atr_gotten;
-        mux_exec(buff, bufc, thing, executor, executor, EV_FIGNORE | EV_EVAL,
-                    &str, (char **)NULL, 0);
+        mux_exec(buff, bufc, thing, executor, executor,
+            AttrTrace(aflags, EV_FIGNORE|EV_EVAL), &str, (char **)NULL, 0);
     }
     else
     {
@@ -1613,7 +1613,9 @@ static void do_ufun(char *buff, char **bufc, dbref executor, dbref caller,
 
     char *atext;
     dbref thing;
-    if (!parse_and_get_attrib(executor, fargs, &atext, &thing, buff, bufc))
+    dbref aowner;
+    int   aflags;
+    if (!parse_and_get_attrib(executor, fargs, &atext, &thing, &aowner, &aflags, buff, bufc))
     {
         return;
     }
@@ -1632,7 +1634,8 @@ static void do_ufun(char *buff, char **bufc, dbref executor, dbref caller,
     // Evaluate it using the rest of the passed function args.
     //
     char *str = atext;
-    mux_exec(buff, bufc, thing, executor, enactor, EV_FCHECK | EV_EVAL,
+    mux_exec(buff, bufc, thing, executor, enactor,
+        AttrTrace(aflags, EV_FCHECK|EV_EVAL),
         &str, &(fargs[1]), nfargs - 1);
     free_lbuf(atext);
 
@@ -5702,7 +5705,9 @@ static FUNCTION(fun_fold)
 
     char *atext;
     dbref thing;
-    if (!parse_and_get_attrib(executor, fargs, &atext, &thing, buff, bufc))
+    dbref aowner;
+    int   aflags;
+    if (!parse_and_get_attrib(executor, fargs, &atext, &thing, &aowner, &aflags, buff, bufc))
     {
         return;
     }
@@ -5726,7 +5731,8 @@ static FUNCTION(fun_fold)
         result = bp = alloc_lbuf("fun_fold");
         str = atextbuf;
         mux_exec(result, &bp, thing, executor, enactor,
-            EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, clist, 2);
+            AttrTrace(aflags, EV_STRIP_CURLY|EV_FCHECK|EV_EVAL), &str,
+            clist, 2);
         *bp = '\0';
     }
     else
@@ -5736,7 +5742,8 @@ static FUNCTION(fun_fold)
         result = bp = alloc_lbuf("fun_fold");
         str = atextbuf;
         mux_exec(result, &bp, thing, executor, enactor,
-            EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, clist, 2);
+            AttrTrace(aflags, EV_STRIP_CURLY|EV_FCHECK|EV_EVAL), &str,
+            clist, 2);
         *bp = '\0';
     }
 
@@ -5753,7 +5760,8 @@ static FUNCTION(fun_fold)
         bp = result;
         str = atextbuf;
         mux_exec(result, &bp, thing, executor, enactor,
-            EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, clist, 2);
+            AttrTrace(aflags, EV_STRIP_CURLY|EV_FCHECK|EV_EVAL), &str,
+            clist, 2);
         *bp = '\0';
         mux_strncpy(rstore, result, LBUF_SIZE-1);
     }
@@ -6101,7 +6109,9 @@ static void filter_handler(char *buff, char **bufc, dbref executor, dbref enacto
 {
     char *atext;
     dbref thing;
-    if (!parse_and_get_attrib(executor, fargs, &atext, &thing, buff, bufc))
+    dbref aowner;
+    int   aflags;
+    if (!parse_and_get_attrib(executor, fargs, &atext, &thing, &aowner, &aflags, buff, bufc))
     {
         return;
     }
@@ -6122,7 +6132,8 @@ static void filter_handler(char *buff, char **bufc, dbref executor, dbref enacto
         char *bp = result;
         char *str = atextbuf;
         mux_exec(result, &bp, thing, executor, enactor,
-            EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, &objstring, 1);
+            AttrTrace(aflags, EV_STRIP_CURLY|EV_FCHECK|EV_EVAL), &str,
+            &objstring, 1);
         *bp = '\0';
 
         if (  (  bBool
@@ -6200,7 +6211,9 @@ static FUNCTION(fun_map)
 
     char *atext;
     dbref thing;
-    if (!parse_and_get_attrib(executor, fargs, &atext, &thing, buff, bufc))
+    dbref aowner;
+    int   aflags;
+    if (!parse_and_get_attrib(executor, fargs, &atext, &thing, &aowner, &aflags, buff, bufc))
     {
         return;
     }
@@ -6224,7 +6237,8 @@ static FUNCTION(fun_map)
         mux_strncpy(atextbuf, atext, LBUF_SIZE-1);
         str = atextbuf;
         mux_exec(buff, bufc, thing, executor, enactor,
-            EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, &objstring, 1);
+            AttrTrace(aflags, EV_STRIP_CURLY|EV_FCHECK|EV_EVAL), &str,
+            &objstring, 1);
     }
     free_lbuf(atext);
     free_lbuf(atextbuf);
@@ -7760,7 +7774,8 @@ static FUNCTION(fun_error)
         else
         {
             mux_exec(errbuff, &errbufc, mudconf.global_error_obj, caller, enactor,
-                EV_EVAL | EV_FCHECK | EV_STRIP_CURLY, &str, (char **)NULL, 0);
+                AttrTrace(aflags, EV_EVAL|EV_FCHECK|EV_STRIP_CURLY),
+                &str, (char **)NULL, 0);
         }
         safe_str(errbuff, buff, bufc);
         free_lbuf(errtext);

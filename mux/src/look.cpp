@@ -478,8 +478,8 @@ static void look_exits(dbref player, dbref loc, const char *exit_name)
         save_and_clear_global_regs("look_exits_save", preserve, preserve_len);
 
         mux_exec(FormatOutput, &tPtr, loc, player, player,
-                EV_FCHECK | EV_EVAL | EV_TOP,
-                &ExitFormat, &VisibleObjectList, 1);
+            AttrTrace(aflags, EV_FCHECK|EV_EVAL|EV_TOP),
+            &ExitFormat, &VisibleObjectList, 1);
 
         restore_global_regs("look_exits_restore", preserve, preserve_len);
         notify(player, FormatOutput);
@@ -654,8 +654,8 @@ static void look_contents(dbref player, dbref loc, const char *contents_name, in
         save_and_clear_global_regs("look_contents_save", preserve, preserve_len);
 
         mux_exec(FormatOutput, &tPtr, loc, player, player,
-                EV_FCHECK | EV_EVAL | EV_TOP,
-                &ContentsFormat, ParameterList, 2);
+            AttrTrace(aflags, EV_FCHECK|EV_EVAL|EV_TOP),
+            &ContentsFormat, ParameterList, 2);
 
         restore_global_regs("look_contents_restore", preserve, preserve_len);
         notify(player, FormatOutput);
@@ -764,6 +764,7 @@ static ATTR_DECODE_ENTRY attr_decode_table[NUM_ATTRIBUTE_CODES+1] =
     { AF_PRIVATE, 'I' },
     { AF_NOPARSE, 'P' },
     { AF_REGEXP,  'R' },
+    { AF_TRACE,   'T' },
     { AF_VISUAL,  'V' },
     { AF_MDARK,   'M' },
     { AF_WIZARD,  'W' },
@@ -994,11 +995,11 @@ static bool show_a_desc(dbref player, dbref loc)
 
     bool ret = false;
 
-    dbref aowner;
-    int aflags;
+    dbref aowner1;
+    int   aflags1;
     bool indent = (isRoom(loc) && mudconf.indent_desc && atr_get_raw(loc, A_DESC));
 
-    char *DescFormatBuffer = atr_pget(loc, A_DESCFORMAT, &aowner, &aflags);
+    char *DescFormatBuffer = atr_pget(loc, A_DESCFORMAT, &aowner1, &aflags1);
     char *DescFormat = DescFormatBuffer;
     if (*DescFormat)
     {
@@ -1007,13 +1008,15 @@ static bool show_a_desc(dbref player, dbref loc)
 
         ATTR *cattr = atr_num(iDescDefault);
 
-        char *tbuf1 = atr_pget(loc, iDescDefault, &aowner, &aflags);
+        dbref aowner2;
+        int   aflags2;
+        char *tbuf1 = atr_pget(loc, iDescDefault, &aowner2, &aflags2);
         char *str = tbuf1;
         char *temp = alloc_lbuf("look_description.ET");
         char *bp = temp;
         mux_exec(temp, &bp, loc, player, player,
-               EV_FCHECK | EV_EVAL | EV_TOP,
-               &str, (char **)NULL, 0);
+            AttrTrace(aflags2, EV_FCHECK|EV_EVAL|EV_TOP),
+            &str, (char **)NULL, 0);
         *bp = '\0';
 
         char *attrname = alloc_lbuf("look_description.AN");
@@ -1025,8 +1028,8 @@ static bool show_a_desc(dbref player, dbref loc)
             { temp, attrname };
 
         mux_exec(FormatOutput, &tPtr, loc, player, player,
-                EV_FCHECK | EV_EVAL | EV_TOP,
-                &DescFormat, ParameterList, 2);
+            AttrTrace(aflags1, EV_FCHECK|EV_EVAL|EV_TOP),
+            &DescFormat, ParameterList, 2);
 
         notify(player, FormatOutput);
 #ifdef REALITY_LVLS
@@ -1047,7 +1050,7 @@ static bool show_a_desc(dbref player, dbref loc)
         char *got;
         if (Html(player))
         {
-            got = atr_pget(loc, A_HTDESC, &aowner, &aflags);
+            got = atr_pget(loc, A_HTDESC, &aowner1, &aflags1);
             if (*got)
             {
 #ifdef REALITY_LVLS
@@ -1060,7 +1063,7 @@ static bool show_a_desc(dbref player, dbref loc)
             else
             {
                 free_lbuf(got);
-                got = atr_pget(loc, iDescDefault, &aowner, &aflags);
+                got = atr_pget(loc, iDescDefault, &aowner1, &aflags1);
                 if (*got)
                 {
                     if (indent)
@@ -1080,7 +1083,7 @@ static bool show_a_desc(dbref player, dbref loc)
                 }
             }
         }
-        else if (*(got = atr_pget(loc, iDescDefault, &aowner, &aflags)))
+        else if (*(got = atr_pget(loc, iDescDefault, &aowner1, &aflags1)))
         {
             if (indent)
             {
@@ -1234,8 +1237,8 @@ void look_in(dbref player, dbref loc, int key)
         save_and_clear_global_regs("look_in_save", preserve, preserve_len);
 
         mux_exec(FormatOutput, &tPtr, loc, player, player,
-                EV_FCHECK | EV_EVAL | EV_TOP,
-                &NameFormat, 0, 0);
+            AttrTrace(aflags, EV_FCHECK|EV_EVAL|EV_TOP),
+            &NameFormat, 0, 0);
 
         restore_global_regs("look_in_restore", preserve, preserve_len);
         notify(player, FormatOutput);

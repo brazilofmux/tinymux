@@ -218,7 +218,7 @@ void log_type_and_name(dbref);
 /* From look.cpp */
 void look_in(dbref,dbref, int);
 void show_vrml_url(dbref, dbref);
-#define NUM_ATTRIBUTE_CODES 10
+#define NUM_ATTRIBUTE_CODES 11
 size_t decode_attr_flags(int aflags, char buff[NUM_ATTRIBUTE_CODES+1]);
 
 /* From move.cpp */
@@ -672,6 +672,7 @@ extern int anum_alc_top;
 #define EV_NO_COMPRESS  0x00040000  /* Don't compress spaces. */
 #define EV_NO_LOCATION  0x00080000  /* Supresses %l */
 #define EV_NOFCHECK     0x00100000  /* Do not evaluate functions! */
+#define EV_TRACE        0x00200000  /* Request a trace of this call to eval */
 
 /* Message forwarding directives */
 
@@ -1033,7 +1034,7 @@ char *modSpeech(dbref player, char *message, bool bWhich, char *command);
 #ifdef DEPRECATED
 void stack_clr(dbref obj);
 #endif // DEPRECATED
-bool parse_and_get_attrib(dbref, char *[], char **, dbref *, char *, char **);
+bool parse_and_get_attrib(dbref, char *[], char **, dbref *, dbref *, int *, char *, char **);
 void SimplifyColorLetters(char Out[8], char *pIn);
 
 #endif // EXTERNS_H

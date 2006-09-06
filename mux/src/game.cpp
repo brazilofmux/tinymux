@@ -418,7 +418,8 @@ static bool check_filter(dbref object, dbref player, int filter, const char *msg
     nbuf = dp = alloc_lbuf("check_filter");
     str = buf;
     mux_exec(nbuf, &dp, object, player, player,
-             EV_FIGNORE | EV_EVAL | EV_TOP, &str, (char **)NULL, 0);
+        AttrTrace(aflags, EV_FIGNORE|EV_EVAL|EV_TOP), &str,
+        (char **)NULL, 0);
     *dp = '\0';
     dp = nbuf;
     free_lbuf(buf);
@@ -494,7 +495,8 @@ static char *add_prefix(dbref object, dbref player, int prefix,
         nbuf = cp = alloc_lbuf("add_prefix");
         str = buf;
         mux_exec(nbuf, &cp, object, player, player,
-                 EV_FIGNORE | EV_EVAL | EV_TOP, &str, (char **)NULL, 0);
+            AttrTrace(aflags, EV_FIGNORE|EV_EVAL|EV_TOP), &str,
+            (char **)NULL, 0);
         free_lbuf(buf);
 
         restore_global_regs("add_prefix_restore", preserve, preserve_len);

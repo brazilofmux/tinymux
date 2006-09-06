@@ -720,7 +720,7 @@ TryAgain:
 // modified.
 //
 char *parse_arglist( dbref executor, dbref caller, dbref enactor, char *dstr,
-                     char delim, dbref eval, char *fargs[], dbref nfargs,
+                     char delim, int eval, char *fargs[], dbref nfargs,
                      char *cargs[], dbref ncargs, int *nArgsParsed )
 {
     char *rstr, *tstr, *bp, *str;
@@ -1126,7 +1126,7 @@ void mux_exec( char *buff, char **bufc, dbref executor, dbref caller,
     int at_space = 1;
     int gender = -1;
 
-    bool is_trace = Trace(executor) && !(eval & EV_NOTRACE);
+    bool is_trace = (Trace(executor) || (eval & EV_TRACE)) && !(eval & EV_NOTRACE);
     bool is_top = false;
 
     // Extend the buffer if we need to.
@@ -1363,8 +1363,8 @@ void mux_exec( char *buff, char **bufc, dbref executor, dbref caller,
                             save_global_regs("eval_save", preserve, preserve_len);
                         }
 
-                        mux_exec(buff, &oldp, i, executor, enactor, feval,
-                                 &TempPtr, fargs, nfargs);
+                        mux_exec(buff, &oldp, i, executor, enactor,
+                            AttrTrace(aflags, feval), &TempPtr, fargs, nfargs);
 
                         if (ufp->flags & FN_PRES)
                         {
