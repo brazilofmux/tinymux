@@ -59,7 +59,7 @@ Feature Additions:
     flatfile no longer contains a mix of CRLF and LF to confuse flatfile
     portability.
  -- Add lflags(<obj>/<attr>) form similar to flags(<obj>/<attr>).
-
+ -- @power will accept multiple power changes in one command.
 
 Bug Fixes:
 ~~~~~~~~~

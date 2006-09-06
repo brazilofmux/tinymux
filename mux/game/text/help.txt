@@ -3084,7 +3084,7 @@ Related Topics: @name.
 & @POWER
 @POWER
 
-  COMMAND: @power <object>=[!]<power>
+  COMMAND: @power <object>=[!]<power> [[!]<power> [...]]
 
   This command allows the granting of special powers to objects of any type.
 
@@ -3359,7 +3359,7 @@ Related Topics: @name.
 & @SET
 @SET
 
-  COMMAND: @set[/<switch>] <object>=[!]<flag1> [!][<flag2>
+  COMMAND: @set[/<switch>] <object>=[!]<flag1> [[!][<flag2> [...]]
            @set[/<switch>] <object>=<attribute>:<value>
            @set[/<switch>] <object>=<attribute>:_<fromobj>/<fromattr>
            @set[/<switch>] <object>/<attr>=[!]<attrflag>
