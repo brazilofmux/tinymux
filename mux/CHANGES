@@ -58,6 +58,7 @@ Feature Additions:
  -- Added escapes for CR, LF, TAB, and ESC to the flatfile format. This
     flatfile no longer contains a mix of CRLF and LF to confuse flatfile
     portability.
+ -- Add lflags(<obj>/<attr>) form similar to flags(<obj>/<attr>).
 
 
 Bug Fixes:
