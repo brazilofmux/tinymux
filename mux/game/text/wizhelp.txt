@@ -69,6 +69,13 @@
   'wizhelp config parameters' for a list of the config parameters that
   may be set.
 
+  By default, only #1 can use @admin, but like most commands, this can be
+  configured with 'access'.  The wrinkle is that each <param> has its own
+  permissions which would prevent @admin from being useful to anyone but #1
+  without also changine the <param>'s permissions with 'config_access'.
+
+  Related Topics: access, config_access.
+
 & @ALLOWANCE
 @ALLOWANCE
 
