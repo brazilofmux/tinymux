@@ -398,31 +398,42 @@ bool atr_match
  * optionally notify the contents, neighbors, and location also.
  */
 
-static bool check_filter(dbref object, dbref player, int filter, const char *msg)
+static bool check_filter(dbref object, dbref player, int filter, const char *msg_arg)
 {
     int aflags;
     dbref aowner;
-    char *buf, *nbuf, *cp, *dp, *str;
-
-    buf = atr_pget(object, filter, &aowner, &aflags);
+    char *buf = atr_pget(object, filter, &aowner, &aflags);
     if (!*buf)
     {
         free_lbuf(buf);
         return true;
     }
+
+    // Strip ANSI from msg.
+    //
+    char *msg = alloc_lbuf("check_filter.msg");
+    char *mp = msg;
+    size_t nmsg;
+    char *msg_stripped = strip_ansi(msg_arg, &nmsg);
+    safe_copy_buf(msg_stripped, nmsg, msg, &mp);
+    *mp = '\0';
+
     char **preserve = NULL;
     size_t *preserve_len = NULL;
     preserve = PushPointers(MAX_GLOBAL_REGS);
     preserve_len = PushLengths(MAX_GLOBAL_REGS);
     save_global_regs("check_filter_save", preserve, preserve_len);
-    nbuf = dp = alloc_lbuf("check_filter");
-    str = buf;
+
+    char *nbuf = alloc_lbuf("check_filter");
+    char *dp = nbuf;
+    char *str = buf;
     mux_exec(nbuf, &dp, object, player, player,
         AttrTrace(aflags, EV_FIGNORE|EV_EVAL|EV_TOP), &str,
         (char **)NULL, 0);
     *dp = '\0';
     dp = nbuf;
     free_lbuf(buf);
+
     restore_global_regs("check_filter_restore", preserve, preserve_len);
     PopLengths(preserve_len, MAX_GLOBAL_REGS);
     PopPointers(preserve, MAX_GLOBAL_REGS);
@@ -431,12 +442,13 @@ static bool check_filter(dbref object, dbref player, int filter, const char *msg
     {
         do
         {
-            cp = parse_to(&dp, ',', EV_STRIP_CURLY);
+            char *cp = parse_to(&dp, ',', EV_STRIP_CURLY);
             mudstate.wild_invk_ctr = 0;
             if (  MuxAlarm.bAlarmed
                || quick_wild(cp, msg))
             {
                 free_lbuf(nbuf);
+                free_lbuf(msg);
                 return false;
             }
         } while (dp != NULL);
@@ -448,7 +460,7 @@ static bool check_filter(dbref object, dbref player, int filter, const char *msg
         {
             int erroffset;
             const char *errptr;
-            cp = parse_to(&dp, ',', EV_STRIP_CURLY);
+            char *cp = parse_to(&dp, ',', EV_STRIP_CURLY);
             pcre *re;
             if (  !MuxAlarm.bAlarmed
                && (re = pcre_compile(cp, case_opt, &errptr, &erroffset, NULL)) != NULL)
@@ -461,6 +473,7 @@ static bool check_filter(dbref object, dbref player, int filter, const char *msg
                 {
                     MEMFREE(re);
                     free_lbuf(nbuf);
+                    free_lbuf(msg);
                     return false;
                 }
                 MEMFREE(re);
@@ -468,6 +481,7 @@ static bool check_filter(dbref object, dbref player, int filter, const char *msg
         } while (dp != NULL);
     }
     free_lbuf(nbuf);
+    free_lbuf(msg);
     return true;
 }
 
