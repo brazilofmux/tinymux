@@ -625,7 +625,7 @@ extern int anum_alc_top;
 #define SWITCH_ANY      1   /* Execute all cases that match */
 #define SWITCH_ONE      2   /* Execute only first case that matches */
 #define SWITCH_MASK     3   /* Includes lower 2 bits */
-#define SWITCH_NOTIFY   4   /* Send an @notify after the @switch is completed */
+#define SWITCH_NOTIFY   4   /* Send a @notify after the @switch is completed */
 #define SWEEP_ME        1   /* Check my inventory */
 #define SWEEP_HERE      2   /* Check my location */
 #define SWEEP_COMMANDS  4   /* Check for $-commands */
@@ -643,6 +643,7 @@ extern int anum_alc_top;
 #define TIMECHK_LOG     4   /* Write info to log */
 #define TOAD_NO_CHOWN   1   /* Don't change ownership */
 #define TRIG_QUIET      1   /* Don't display 'Triggered.' message. */
+#define TRIG_NOTIFY     2   /* Send a @notify after the @trigger is completed. */
 #define TWARP_QUEUE     1   /* Warp the wait and sem queues */
 #define TWARP_DUMP      2   /* Warp the dump interval */
 #define TWARP_CLEAN     4   /* Warp the cleaning interval */

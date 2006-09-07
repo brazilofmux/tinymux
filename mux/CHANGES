@@ -60,6 +60,8 @@ Feature Additions:
     portability.
  -- Add lflags(<obj>/<attr>) form similar to flags(<obj>/<attr>).
  -- @power will accept multiple power changes in one command.
+ -- Add @trigger/notify.
+
 
 Bug Fixes:
 ~~~~~~~~~

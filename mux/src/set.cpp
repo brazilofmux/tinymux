@@ -1793,9 +1793,6 @@ void do_wipe(dbref executor, dbref caller, dbref enactor, int eval, int key, cha
 void do_trigger(dbref executor, dbref caller, dbref enactor, int key,
                 char *object, char *argv[], int nargs)
 {
-    UNUSED_PARAMETER(caller);
-    UNUSED_PARAMETER(enactor);
-
     dbref thing;
     ATTR *pattr;
 
@@ -1805,6 +1802,7 @@ void do_trigger(dbref executor, dbref caller, dbref enactor, int key,
         notify_quiet(executor, "No match.");
         return;
     }
+
     if (!Controls(executor, thing))
     {
         notify_quiet(executor, NOPERM_MESSAGE);
@@ -1812,8 +1810,16 @@ void do_trigger(dbref executor, dbref caller, dbref enactor, int key,
     }
     did_it(executor, thing, 0, NULL, 0, NULL, pattr->number, argv, nargs);
 
-    // TODO: Be more descriptive as to what was triggered?
-    //
+    if (key & TRIG_NOTIFY)
+    {
+        char *tbuf = alloc_lbuf("trigger.notify_cmd");
+        mux_strncpy(tbuf, "@notify/quiet me", LBUF_SIZE-1);
+        CLinearTimeAbsolute lta;
+        wait_que(executor, caller, enactor, 0, false, lta, NOTHING, A_SEMAPHORE,
+            tbuf, (char **)NULL, 0, mudstate.global_regs);
+        free_lbuf(tbuf);
+    }
+
     if (  !(key & TRIG_QUIET)
        && !Quiet(executor))
     {

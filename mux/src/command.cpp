@@ -511,6 +511,7 @@ static NAMETAB toad_sw[] =
 static NAMETAB trig_sw[] =
 {
     {"quiet",           1,  CA_PUBLIC,  TRIG_QUIET},
+    {"notify",          1,  CA_PUBLIC,  TRIG_NOTIFY|SW_MULTIPLE},
     { NULL,             0,          0,  0}
 };
 

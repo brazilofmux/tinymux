@@ -1263,7 +1263,7 @@ Related Topics: @name.
   If present, <switch> can be any of:
     /space   - (Default) List elements are separated by spaces.
     /delimit - List elements are separated by <delimiter>.
-    /notify  - Queues an '@notify' after all commands in the list.
+    /notify  - Queues a '@notify' after all commands in the list.
 
   This command is particularly handy with lcon() and lexits(). A few examples:
 
@@ -3651,7 +3651,8 @@ Related Topics: @name.
   are set to the supplied parameters.
 
   The @trigger command supports the following switch:
-     quiet      - Inhibit 'Triggered.' acknowledgement messages.
+    /quiet   - Inhibits 'Triggered.' acknowledgement messages.
+    /notify  - Queues a '@notify' after all commands in the list.
 
   Related Topics: LOOPING.
 
