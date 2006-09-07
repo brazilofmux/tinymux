@@ -346,7 +346,16 @@ static bool ReportTopic(dbref executor, struct help_entry *htab_entry, int iHelp
             safe_str(line, result, &bp);
         }
     }
+
+    // Zap trailing CRLF if present.
+    //
+    if (  result < bp
+       && '\n' == bp[-1])
+    {
+        bp--;
+    }
     *bp = '\0';
+
     if (fclose(fp) == 0)
     {
         DebugTotalFiles--;
