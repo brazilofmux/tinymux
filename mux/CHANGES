@@ -106,6 +106,7 @@ Bug Fixes:
     attribute for an empty list.
  -- Strip ANSI from messages before matching messages against @filter
     and @infilter patterns.
+ -- Zap trailing NL in help topics.
 
 
 Performance Enhancements:
