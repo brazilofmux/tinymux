@@ -101,6 +101,7 @@ Bug Fixes:
     process_cmdent().  Without the other half, the first half causes a
     crash instead of prventing it.  Found and fixed by Sparks.
  -- Remove double evaluation from distribute() and sql().
+ -- Save/Restore global registers while executing @descformat.
 
 
 Performance Enhancements:
