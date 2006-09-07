@@ -9165,11 +9165,12 @@ MAILSUBJ()
 & MAP()
 MAP()
 
-  FUNCTION: map([<obj>/]<attr>,<list>[,<input delim>[,<output delim>]])
+  FUNCTION: map([<obj>/]<attr>,<list>[,<input delim>[,<output delim>[,<arg1>[,<arg2>[,...]]]]])
 
   This function is nearly identical to an iter() operating on u() function.
   Each member of <list> is passed to the result of fetching <attr> as %0, and
-  the results are used to form a new list.
+  the results are used to form a new list.  Arguments %1, %2, ... are taken
+  from <arg1>, <arg2>, ... respectively, if present.
 
   In addition to any single character, <output delim> can also be the null-
   delimiter, @@, or a newline, %r.  By default, input and output delimiters
