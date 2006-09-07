@@ -3064,6 +3064,7 @@ Related Topics: @name.
   specified by dbref number. This can be combined with other switches.
 
   The following switches are also available:
+
     /contents - Send the message to the contents of the named object.
     /html     - Send the message in HTML format (Pueblo).
     /noeval   - Do not parse the message.
@@ -7429,6 +7430,19 @@ HSS
 
   Related Topics: OBF
 
+& HTML
+HTML
+
+  FLAG: HTML(()  ()
+
+  This flag is normally set as part a negotiation with any Pueblo-aware
+  client.  It causes certain HTML-esque tags to be added around certain kinds
+  of output.  A Pueblo-aware client recognizes these tags and changes the
+  appearance of the intervening text accordingly.
+
+  Related Topics: PUEBLO
+
+
 & IABS()
 IABS()
 
@@ -10517,8 +10531,9 @@ PUEBLO
        Pueblo.
   @pemit/html and @emit/html allow outputting unescaped HTML strings.
 
-  Related Topics: Please see http://www.chaco.com/pueblo/doc/enhancing.html
-      for more details.
+  Please see http://www.chaco.com/pueblo/doc/enhancing.html for more details.
+
+  Related Topics: HTML.
 
 & PUPPET
 PUPPET
