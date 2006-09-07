@@ -6578,7 +6578,7 @@ static FUNCTION(fun_map)
     //
     char *map_args[10];
     int   map_nargs = 1;
-    for (int iArg = 5; iArg < nfargs; iArg++)
+    for (int iArg = 4; iArg < nfargs; iArg++)
     {
         map_args[map_nargs++] = fargs[iArg];
     }
