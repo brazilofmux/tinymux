@@ -62,6 +62,8 @@ Feature Additions:
  -- @power will accept multiple power changes in one command.
  -- Add @trigger/notify.
  -- Added etimefmt().
+ -- Added nine additional parameters to map() which (if present) are
+    passed in as arguments %1-%9.  Suggested by Ian.
 
 
 Bug Fixes:
