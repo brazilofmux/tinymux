@@ -174,6 +174,7 @@ struct confdata
     int     zone_nest_lim;      /* Max nesting of zones */
     int     restrict_home;      // Special condition to restrict 'home' command
     int     float_precision;    // Maximum precision of float-to-string conversion.
+    int     lbuf_size;          // LBUF_SIZE accessible to softcode.
 
     unsigned int    max_cache_size; /* Max size of attribute cache */
     unsigned int    site_chars; // where to truncate site name.

@@ -268,6 +268,7 @@ void cf_init(void)
     mudconf.mail_per_hour = 50;
     mudconf.vattr_per_hour = 5000;
     mudconf.pcreate_per_hour = 100;
+    mudconf.lbuf_size = LBUF_SIZE;
 
     mudstate.events_flag = 0;
     mudstate.bReadingConfiguration = false;
@@ -1831,6 +1832,7 @@ static CONF conftable[] =
     {"kill_max_cost",             cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.killmax,                NULL,               0},
     {"kill_min_cost",             cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.killmin,                NULL,               0},
     {"lag_maximum",               cf_seconds,     CA_GOD,    CA_WIZARD,   (int *)&mudconf.rpt_cmdsecs,     NULL,               0},
+    {"lbuf_size",                 cf_int,       CA_DISABLED, CA_PUBLIC,   (int *)&mudconf.lbuf_size,       NULL,               0},
     {"link_cost",                 cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.linkcost,               NULL,               0},
     {"list_access",               cf_ntab_access, CA_GOD,    CA_DISABLED, (int *)list_names,               access_nametab,     0},
     {"lock_recursion_limit",      cf_int,         CA_WIZARD, CA_PUBLIC,   &mudconf.lock_nest_lim,          NULL,               0},
@@ -2015,7 +2017,6 @@ CF_HAND(cf_cf_access)
 int cf_set(char *cp, char *ap, dbref player)
 {
     CONF *tp;
-    int i;
     char *buff = 0;
 
     // Search the config parameter table for the command. If we find
@@ -2025,46 +2026,52 @@ int cf_set(char *cp, char *ap, dbref player)
     {
         if (!strcmp(tp->pname, cp))
         {
-            if (  !mudstate.bReadingConfiguration
-               && !check_access(player, tp->flags))
+            int i = -1;
+            if (  (tp->flags & CA_DISABLED) == 0
+               && (  mudstate.bReadingConfiguration
+                  || check_access(player, tp->flags)))
+            {
+                if (!mudstate.bReadingConfiguration)
+                {
+                    buff = alloc_lbuf("cf_set");
+                    mux_strncpy(buff, ap, LBUF_SIZE-1);
+                }
+
+                i = tp->interpreter(tp->loc, ap, tp->pExtra, tp->nExtra, player, cp);
+
+                if (!mudstate.bReadingConfiguration)
+                {
+                    STARTLOG(LOG_CONFIGMODS, "CFG", "UPDAT");
+                    log_name(player);
+                    log_text(" entered config directive: ");
+                    log_text(cp);
+                    log_text(" with args '");
+                    log_text(buff);
+                    log_text("'.  Status: ");
+                    switch (i)
+                    {
+                    case 0:
+                        log_text("Success.");
+                        break;
+
+                    case 1:
+                        log_text("Partial success.");
+                        break;
+
+                    case -1:
+                        log_text("Failure.");
+                        break;
+
+                    default:
+                        log_text("Strange.");
+                    }
+                    ENDLOG;
+                    free_lbuf(buff);
+                }
+            }
+            else  if (!mudstate.bReadingConfiguration)
             {
                 notify(player, NOPERM_MESSAGE);
-                return -1;
-            }
-            if (!mudstate.bReadingConfiguration)
-            {
-                buff = alloc_lbuf("cf_set");
-                mux_strncpy(buff, ap, LBUF_SIZE-1);
-            }
-            i = tp->interpreter(tp->loc, ap, tp->pExtra, tp->nExtra, player, cp);
-            if (!mudstate.bReadingConfiguration)
-            {
-                STARTLOG(LOG_CONFIGMODS, "CFG", "UPDAT");
-                log_name(player);
-                log_text(" entered config directive: ");
-                log_text(cp);
-                log_text(" with args '");
-                log_text(buff);
-                log_text("'.  Status: ");
-                switch (i)
-                {
-                case 0:
-                    log_text("Success.");
-                    break;
-
-                case 1:
-                    log_text("Partial success.");
-                    break;
-
-                case -1:
-                    log_text("Failure.");
-                    break;
-
-                default:
-                    log_text("Strange.");
-                }
-                ENDLOG;
-                free_lbuf(buff);
             }
             return i;
         }
