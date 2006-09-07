@@ -736,7 +736,6 @@ void do_switch
     {
         char *tbuf = alloc_lbuf("switch.notify_cmd");
         mux_strncpy(tbuf, "@notify/quiet me", LBUF_SIZE-1);
-        CLinearTimeAbsolute lta;
         wait_que(executor, caller, enactor, eval, false, lta, NOTHING, A_SEMAPHORE,
             tbuf, cargs, ncargs, mudstate.global_regs);
         free_lbuf(tbuf);
@@ -2238,6 +2237,10 @@ bool exit_visible(dbref exit, dbref player, int key)
 //
 bool exit_displayable(dbref exit, dbref player, int key)
 {
+#ifndef WOD_REALMS
+    UNUSED_PARAMETER(player);
+#endif // WOD_REALMS
+
     // Dark exit
     //
     if (Dark(exit))

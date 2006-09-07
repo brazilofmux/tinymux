@@ -2511,6 +2511,7 @@ void logged_out1(dbref executor, dbref caller, dbref enactor, int eval, int key,
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
 
     // PUEBLOCLIENT affects all the player's connections.
     //
@@ -2777,6 +2778,7 @@ FUNCTION(fun_doing)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(nfargs);
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
@@ -2838,6 +2840,7 @@ FUNCTION(fun_host)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(nfargs);
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
@@ -2902,6 +2905,7 @@ FUNCTION(fun_poll)
     UNUSED_PARAMETER(executor);
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(fargs);
     UNUSED_PARAMETER(nfargs);
     UNUSED_PARAMETER(cargs);
@@ -2915,6 +2919,7 @@ FUNCTION(fun_motd)
     UNUSED_PARAMETER(executor);
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(fargs);
     UNUSED_PARAMETER(nfargs);
     UNUSED_PARAMETER(cargs);
@@ -2931,6 +2936,7 @@ FUNCTION(fun_siteinfo)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(nfargs);
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);

@@ -9055,7 +9055,6 @@ static FUNCTION(fun_lflags)
             dbref aowner;
             int   aflags;
             atr_pget_info(target, pattr->number, &aowner, &aflags);
-            char xbuf[11];
             decode_attr_flag_names(aflags, buff, bufc);
         }
     }
