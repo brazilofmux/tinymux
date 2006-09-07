@@ -6461,7 +6461,7 @@ FUNCTION(fun_sql)
  */
 
 static void filter_handler(char *buff, char **bufc, dbref executor, dbref enactor,
-                    char *fargs[], SEP *psep, SEP *posep, bool bBool)
+                    char *fargs[], int nfargs, SEP *psep, SEP *posep, bool bBool)
 {
     char *atext;
     dbref thing;
@@ -6470,6 +6470,15 @@ static void filter_handler(char *buff, char **bufc, dbref executor, dbref enacto
     if (!parse_and_get_attrib(executor, fargs, &atext, &thing, &aowner, &aflags, buff, bufc))
     {
         return;
+    }
+
+    // Process optional arguments %1-%9.
+    //
+    char *filter_args[10];
+    int   filter_nargs = 1;
+    for (int iArg = 4; iArg < nfargs; iArg++)
+    {
+        filter_args[filter_nargs++] = fargs[iArg];
     }
 
     // Now iteratively eval the attrib with the argument list.
@@ -6487,9 +6496,10 @@ static void filter_handler(char *buff, char **bufc, dbref executor, dbref enacto
         mux_strncpy(atextbuf, atext, LBUF_SIZE-1);
         char *bp = result;
         char *str = atextbuf;
+        filter_args[0] = objstring;
         mux_exec(result, &bp, thing, executor, enactor,
             AttrTrace(aflags, EV_STRIP_CURLY|EV_FCHECK|EV_EVAL), &str,
-            &objstring, 1);
+            filter_args, filter_nargs);
         *bp = '\0';
 
         if (  (  bBool
@@ -6523,7 +6533,7 @@ static FUNCTION(fun_filter)
     {
         return;
     }
-    filter_handler(buff, bufc, executor, enactor, fargs, &sep, &osep, false);
+    filter_handler(buff, bufc, executor, enactor, fargs, nfargs, &sep, &osep, false);
 }
 
 static FUNCTION(fun_filterbool)
@@ -6538,7 +6548,7 @@ static FUNCTION(fun_filterbool)
     {
         return;
     }
-    filter_handler(buff, bufc, executor, enactor, fargs, &sep, &osep, true);
+    filter_handler(buff, bufc, executor, enactor, fargs, nfargs, &sep, &osep, true);
 }
 
 /* ---------------------------------------------------------------------------
@@ -9616,8 +9626,8 @@ static FUN builtin_function_list[] =
     {"FCOUNT",      fun_fcount,     MAX_ARG, 0,       1, FN_NOEVAL, CA_PUBLIC},
     {"FDEPTH",      fun_fdepth,     MAX_ARG, 0,       0,         0, CA_PUBLIC},
     {"FDIV",        fun_fdiv,       MAX_ARG, 2,       2,         0, CA_PUBLIC},
-    {"FILTER",      fun_filter,     MAX_ARG, 2,       4,         0, CA_PUBLIC},
-    {"FILTERBOOL",  fun_filterbool, MAX_ARG, 2,       4,         0, CA_PUBLIC},
+    {"FILTER",      fun_filter,     MAX_ARG, 2,      13,         0, CA_PUBLIC},
+    {"FILTERBOOL",  fun_filterbool, MAX_ARG, 2,      13,         0, CA_PUBLIC},
     {"FINDABLE",    fun_findable,   MAX_ARG, 2,       2,         0, CA_PUBLIC},
     {"FIRST",       fun_first,      MAX_ARG, 0,       2,         0, CA_PUBLIC},
     {"FLAGS",       fun_flags,      MAX_ARG, 1,       1,         0, CA_PUBLIC},
