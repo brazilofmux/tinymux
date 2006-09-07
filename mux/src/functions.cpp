@@ -6574,12 +6574,20 @@ static FUNCTION(fun_map)
         return;
     }
 
+    // Process optional arguments %1-%9.
+    //
+    char *map_args[10];
+    int   map_nargs = 1;
+    for (int iArg = 5; iArg < nfargs; iArg++)
+    {
+        map_args[map_nargs++] = fargs[iArg];
+    }
+
     // Now process the list one element at a time.
     //
     char *cp = trim_space_sep(fargs[1], &sep);
     char *atextbuf = alloc_lbuf("fun_map");
     bool first = true;
-    char *objstring, *str;
     while (  cp
           && mudstate.func_invk_ctr < mudconf.func_invk_lim
           && !MuxAlarm.bAlarmed)
@@ -6589,12 +6597,13 @@ static FUNCTION(fun_map)
             print_sep(&osep, buff, bufc);
         }
         first = false;
-        objstring = split_token(&cp, &sep);
+        char *objstring = split_token(&cp, &sep);
         mux_strncpy(atextbuf, atext, LBUF_SIZE-1);
-        str = atextbuf;
+        char *str = atextbuf;
+        map_args[0] = objstring;
         mux_exec(buff, bufc, thing, executor, enactor,
             AttrTrace(aflags, EV_STRIP_CURLY|EV_FCHECK|EV_EVAL), &str,
-            &objstring, 1);
+            map_args, map_nargs);
     }
     free_lbuf(atext);
     free_lbuf(atextbuf);
@@ -9713,7 +9722,7 @@ static FUN builtin_function_list[] =
     {"MAILSIZE",    fun_mailsize,   MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {"MAILSUBJ",    fun_mailsubj,   MAX_ARG, 1,       2,         0, CA_PUBLIC},
 #endif // FIRANMUX
-    {"MAP",         fun_map,        MAX_ARG, 2,       4,         0, CA_PUBLIC},
+    {"MAP",         fun_map,        MAX_ARG, 2,      13,         0, CA_PUBLIC},
     {"MATCH",       fun_match,      MAX_ARG, 2,       3,         0, CA_PUBLIC},
     {"MATCHALL",    fun_matchall,   MAX_ARG, 2,       3,         0, CA_PUBLIC},
     {"MAX",         fun_max,        MAX_ARG, 1, MAX_ARG,         0, CA_PUBLIC},
