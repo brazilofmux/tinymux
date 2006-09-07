@@ -1109,7 +1109,11 @@ void SetupPorts(int *pnPorts, PortInfo aPorts[], IntArray *pia)
         }
     }
 
-    if (0 == iListening)
+    // If we were asked to listen on at least one port, but we aren't
+    // listening to at least one port, we should bring the game down.
+    //
+    if (  0 < *pnPorts
+       && 0 == iListening)
     {
 #ifdef WIN32
         WSACleanup();
