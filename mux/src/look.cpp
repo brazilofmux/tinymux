@@ -751,9 +751,9 @@ static void look_contents(dbref player, dbref loc, const char *contents_name, in
 
 typedef struct
 {
-    const int  mask;
-    const char letter;
-    const char * const name;
+    int  mask;
+    char letter;
+    char *name;
 } ATTR_DECODE_ENTRY, *PATTR_DECODE_ENTRY;
 
 static ATTR_DECODE_ENTRY attr_decode_table[NUM_ATTRIBUTE_CODES+1] =
