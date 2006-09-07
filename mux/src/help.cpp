@@ -327,11 +327,24 @@ static bool ReportTopic(dbref executor, struct help_entry *htab_entry, int iHelp
     char *bp = result;
     for (;;)
     {
-        if (  fgets(line, LBUF_SIZE - 1, fp) == NULL
+        if (  fgets(line, LBUF_SIZE - 2, fp) == NULL
            || line[0] == '&'
            || line[0] == '\0')
         {
             break;
+        }
+
+        // Transform LF into CRLF to be telnet-friendly.
+        //
+        size_t len = strlen(line);
+        if (  0 < len
+           && '\n' == line[len-1]
+           && (  1 == len
+              || '\r' != line[len-2]))
+        {
+            line[len-1] = '\r';
+            line[len  ] = '\n';
+            line[len+1] = '\0';
         }
 
         bool bEval = mudstate.aHelpDesc[iHelpfile].bEval;
@@ -349,10 +362,11 @@ static bool ReportTopic(dbref executor, struct help_entry *htab_entry, int iHelp
 
     // Zap trailing CRLF if present.
     //
-    if (  result < bp
+    if (  result < bp - 1
+       && '\r' == bp[-2]
        && '\n' == bp[-1])
     {
-        bp--;
+        bp -= 2;
     }
     *bp = '\0';
 
