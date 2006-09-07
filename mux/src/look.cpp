@@ -1022,6 +1022,12 @@ static bool show_a_desc(dbref player, dbref loc)
     char *DescFormat = DescFormatBuffer;
     if (*DescFormat)
     {
+        char **preserve = NULL;
+        size_t *preserve_len = NULL;
+        preserve = PushPointers(MAX_GLOBAL_REGS);
+        preserve_len = PushLengths(MAX_GLOBAL_REGS);
+        save_global_regs("eval_boolexp_save", preserve, preserve_len);
+
         char *FormatOutput = alloc_lbuf("look_description.FO");
         char *tPtr = FormatOutput;
 
@@ -1061,6 +1067,10 @@ static bool show_a_desc(dbref player, dbref loc)
         free_lbuf(attrname);
         free_lbuf(FormatOutput);
         free_lbuf(temp);
+
+        restore_global_regs("eval_boolexp_save", preserve, preserve_len);
+        PopLengths(preserve_len, MAX_GLOBAL_REGS);
+        PopPointers(preserve, MAX_GLOBAL_REGS);
 
         ret = true;
     }
