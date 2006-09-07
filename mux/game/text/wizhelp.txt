@@ -1794,7 +1794,7 @@ CONFIG PARAMETERS (continued)
   hook_cmd  hook_obj  hostnames  idle_interval  idle_timeout  idle_wiz_dark
   immobile_message  include  indent_desc  initial_size  input_database
   kill_guarantee_cost  kill_max_cost  kill_min_cost  lag_limit  lag_maximum
-  link_cost  list_access  lock_recursion_limit  log  log_options
+  lbuf_size  link_cost  list_access  lock_recursion_limit  log  log_options
   logout_cmd_access  logout_cmd_alias  look_obey_terse  machine_command_cost
   mail_database  mail_ehlo  mail_expiration  mail_per_hour  mail_sendaddr
   mail_sendname  mail_server  mail_subject  master_room  match_own_commands
@@ -3076,6 +3076,22 @@ LAG_MAXIMUM
      @admin lag_maximum=0.750
 
   Related Topics: lag_limit
+
+& LBUF_SIZE
+LBUF_SIZE
+
+  CONFIG PARAMETER: lbuf_size <bytes>
+  DEFAULT: 8000
+
+  This provides softcode access to the LBUF_SIZE compile-time #define.  It is
+  not changeable as a configuration option at startup or during run-time,
+  although it is changable at compile-time.
+
+  Examples:
+     > think config(lbuf_size)
+     8000
+
+  Related Topics:
 
 & LINK_COST
 LINK_COST
