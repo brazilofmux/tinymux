@@ -107,6 +107,9 @@ Bug Fixes:
  -- Strip ANSI from messages before matching messages against @filter
     and @infilter patterns.
  -- Zap trailing NL in help topics.
+ -- Added help topic for HTML flag.
+ -- When listening on multiple ports, continue to run the server as long
+    as one of the requested ports is available.
 
 
 Performance Enhancements:
