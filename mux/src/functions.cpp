@@ -584,6 +584,7 @@ static FUNCTION(fun_words)
 static FUNCTION(fun_flags)
 {
     UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(nfargs);
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
@@ -635,6 +636,7 @@ static FUNCTION(fun_rand)
     UNUSED_PARAMETER(executor);
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
@@ -698,6 +700,7 @@ static FUNCTION(fun_time)
     UNUSED_PARAMETER(executor);
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
@@ -736,6 +739,7 @@ static FUNCTION(fun_secs)
     UNUSED_PARAMETER(executor);
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
@@ -777,6 +781,7 @@ static FUNCTION(fun_convsecs)
     UNUSED_PARAMETER(executor);
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
@@ -825,6 +830,7 @@ static FUNCTION(fun_convtime)
     UNUSED_PARAMETER(executor);
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
@@ -862,6 +868,7 @@ static FUNCTION(fun_starttime)
     UNUSED_PARAMETER(executor);
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(fargs);
     UNUSED_PARAMETER(nfargs);
     UNUSED_PARAMETER(cargs);
@@ -920,6 +927,7 @@ static FUNCTION(fun_timefmt)
     UNUSED_PARAMETER(executor);
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
@@ -1238,6 +1246,8 @@ static FUNCTION(fun_etimefmt)
     UNUSED_PARAMETER(executor);
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
+    UNUSED_PARAMETER(nfargs);
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
@@ -1801,6 +1811,7 @@ static FUNCTION(fun_get)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(nfargs);
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
@@ -1812,6 +1823,7 @@ static FUNCTION(fun_xget)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(nfargs);
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
@@ -1829,6 +1841,7 @@ static FUNCTION(fun_get_eval)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(nfargs);
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
@@ -1923,12 +1936,14 @@ static void do_ufun(char *buff, char **bufc, dbref executor, dbref caller,
 
 static FUNCTION(fun_u)
 {
+    UNUSED_PARAMETER(eval);
     do_ufun(buff, bufc, executor, caller, enactor, fargs, nfargs, cargs,
             ncargs, false);
 }
 
 static FUNCTION(fun_ulocal)
 {
+    UNUSED_PARAMETER(eval);
     do_ufun(buff, bufc, executor, caller, enactor, fargs, nfargs, cargs,
             ncargs, true);
 }
@@ -1941,6 +1956,7 @@ static FUNCTION(fun_ulocal)
 static FUNCTION(fun_parent)
 {
     UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(nfargs);
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
@@ -1972,6 +1988,7 @@ static FUNCTION(fun_mid)
     UNUSED_PARAMETER(executor);
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(nfargs);
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
@@ -2025,6 +2042,7 @@ static FUNCTION(fun_right)
     UNUSED_PARAMETER(executor);
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(nfargs);
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
@@ -2214,6 +2232,7 @@ static FUNCTION(fun_s)
 static FUNCTION(fun_con)
 {
     UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(nfargs);
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
@@ -2251,6 +2270,7 @@ static FUNCTION(fun_exit)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(nfargs);
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
@@ -2298,6 +2318,7 @@ static FUNCTION(fun_next)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(nfargs);
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
@@ -2362,6 +2383,7 @@ static FUNCTION(fun_next)
 static FUNCTION(fun_loc)
 {
     UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(nfargs);
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
@@ -2389,6 +2411,7 @@ static FUNCTION(fun_loc)
 static FUNCTION(fun_where)
 {
     UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(nfargs);
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
@@ -2416,6 +2439,7 @@ static FUNCTION(fun_where)
 static FUNCTION(fun_rloc)
 {
     UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(nfargs);
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
@@ -2462,6 +2486,7 @@ static FUNCTION(fun_rloc)
 static FUNCTION(fun_room)
 {
     UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(nfargs);
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
@@ -2508,6 +2533,7 @@ static FUNCTION(fun_owner)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(nfargs);
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
@@ -2552,6 +2578,7 @@ static FUNCTION(fun_controls)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(nfargs);
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
@@ -2582,6 +2609,7 @@ static FUNCTION(fun_fullname)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(nfargs);
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
@@ -2613,6 +2641,7 @@ static FUNCTION(fun_name)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(nfargs);
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
@@ -2688,6 +2717,7 @@ static FUNCTION(fun_strmatch)
     UNUSED_PARAMETER(executor);
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(nfargs);
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
@@ -2845,6 +2875,7 @@ static FUNCTION(fun_index)
     UNUSED_PARAMETER(executor);
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(nfargs);
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
@@ -2922,6 +2953,7 @@ static FUNCTION(fun_cat)
 {
     UNUSED_PARAMETER(executor);
     UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(enactor);
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
@@ -2942,6 +2974,7 @@ static FUNCTION(fun_version)
     UNUSED_PARAMETER(executor);
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(fargs);
     UNUSED_PARAMETER(nfargs);
     UNUSED_PARAMETER(cargs);
@@ -2955,6 +2988,7 @@ static FUNCTION(fun_strlen)
     UNUSED_PARAMETER(executor);
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
@@ -2971,6 +3005,7 @@ static FUNCTION(fun_strmem)
     UNUSED_PARAMETER(executor);
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
@@ -2986,6 +3021,7 @@ static FUNCTION(fun_num)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(nfargs);
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
@@ -3048,6 +3084,7 @@ static FUNCTION(fun_pmatch)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(nfargs);
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
@@ -3059,6 +3096,7 @@ static FUNCTION(fun_pfind)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(nfargs);
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
@@ -3076,6 +3114,7 @@ static FUNCTION(fun_comp)
     UNUSED_PARAMETER(executor);
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(nfargs);
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
@@ -3185,6 +3224,7 @@ SubsetTable[] =
 static FUNCTION(fun_lcon)
 {
     UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(nfargs);
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
@@ -3287,6 +3327,7 @@ static FUNCTION(fun_lcon)
 static FUNCTION(fun_lexits)
 {
     UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(nfargs);
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
@@ -3365,6 +3406,7 @@ FUNCTION(fun_entrances)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
@@ -3522,6 +3564,7 @@ static FUNCTION(fun_home)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(nfargs);
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
@@ -3562,6 +3605,7 @@ static FUNCTION(fun_money)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(nfargs);
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
@@ -3592,6 +3636,7 @@ static FUNCTION(fun_pos)
     UNUSED_PARAMETER(executor);
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(nfargs);
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
@@ -3660,6 +3705,7 @@ static FUNCTION(fun_lpos)
     UNUSED_PARAMETER(executor);
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(nfargs);
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
@@ -4002,6 +4048,7 @@ static FUNCTION(fun_secure)
     UNUSED_PARAMETER(executor);
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(nfargs);
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
@@ -4056,6 +4103,7 @@ static FUNCTION(fun_escape)
     UNUSED_PARAMETER(executor);
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(fargs);
     UNUSED_PARAMETER(nfargs);
     UNUSED_PARAMETER(cargs);
@@ -4141,6 +4189,7 @@ static FUNCTION(fun_type)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(nfargs);
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
@@ -4223,6 +4272,7 @@ static bool atr_has_flag
 static FUNCTION(fun_hasflag)
 {
     UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(nfargs);
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
@@ -4270,6 +4320,7 @@ static FUNCTION(fun_hasflag)
 static FUNCTION(fun_haspower)
 {
     UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(nfargs);
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
@@ -4445,6 +4496,7 @@ static FUNCTION(fun_txlevel)
 static FUNCTION(fun_powers)
 {
     UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(nfargs);
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
@@ -4474,6 +4526,7 @@ static FUNCTION(fun_delete)
     UNUSED_PARAMETER(executor);
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(nfargs);
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
@@ -4532,6 +4585,7 @@ static FUNCTION(fun_lock)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(nfargs);
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
@@ -4568,6 +4622,7 @@ static FUNCTION(fun_lock)
 static FUNCTION(fun_elock)
 {
     UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(nfargs);
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
@@ -4630,6 +4685,7 @@ static FUNCTION(fun_lwho)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
@@ -4655,6 +4711,7 @@ static FUNCTION(fun_lports)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(fargs);
     UNUSED_PARAMETER(nfargs);
     UNUSED_PARAMETER(cargs);
@@ -4671,6 +4728,7 @@ static FUNCTION(fun_nearby)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(nfargs);
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
@@ -4724,6 +4782,7 @@ static FUNCTION(fun_obj)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(nfargs);
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
@@ -4735,6 +4794,7 @@ static FUNCTION(fun_poss)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(nfargs);
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
@@ -4746,6 +4806,7 @@ static FUNCTION(fun_subj)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(nfargs);
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
@@ -4757,6 +4818,7 @@ static FUNCTION(fun_aposs)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(nfargs);
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
@@ -4774,6 +4836,7 @@ static FUNCTION(fun_mudname)
     UNUSED_PARAMETER(executor);
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(fargs);
     UNUSED_PARAMETER(nfargs);
     UNUSED_PARAMETER(cargs);
@@ -4791,6 +4854,7 @@ static FUNCTION(fun_connrecord)
     UNUSED_PARAMETER(executor);
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(fargs);
     UNUSED_PARAMETER(nfargs);
     UNUSED_PARAMETER(cargs);
@@ -4840,6 +4904,7 @@ FUNCTION(fun_fdepth)
     UNUSED_PARAMETER(executor);
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(fargs);
     UNUSED_PARAMETER(nfargs);
     UNUSED_PARAMETER(cargs);
@@ -4856,6 +4921,7 @@ static FUNCTION(fun_ctime)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
@@ -4890,6 +4956,7 @@ static FUNCTION(fun_mtime)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
@@ -4923,6 +4990,7 @@ static FUNCTION(fun_moniker)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
@@ -5027,6 +5095,7 @@ static FUNCTION(fun_lcstr)
     UNUSED_PARAMETER(executor);
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(nfargs);
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
@@ -5039,6 +5108,7 @@ static FUNCTION(fun_ucstr)
     UNUSED_PARAMETER(executor);
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(nfargs);
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
@@ -5051,6 +5121,7 @@ static FUNCTION(fun_capstr)
     UNUSED_PARAMETER(executor);
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(nfargs);
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
@@ -5198,6 +5269,7 @@ static FUNCTION(fun_lattr)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(nfargs);
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
@@ -5209,6 +5281,7 @@ static FUNCTION(fun_lattrp)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(nfargs);
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
@@ -5223,6 +5296,7 @@ static FUNCTION(fun_attrcnt)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(nfargs);
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
@@ -5346,6 +5420,7 @@ static FUNCTION(fun_reverse)
     UNUSED_PARAMETER(executor);
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(nfargs);
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
@@ -5414,6 +5489,7 @@ static FUNCTION(fun_after)
     UNUSED_PARAMETER(executor);
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
@@ -5461,6 +5537,7 @@ static FUNCTION(fun_before)
     UNUSED_PARAMETER(executor);
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
@@ -5512,6 +5589,7 @@ static FUNCTION(fun_before)
 
 static FUNCTION(fun_search)
 {
+    UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
@@ -5557,6 +5635,7 @@ static FUNCTION(fun_stats)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
@@ -5601,6 +5680,7 @@ static FUNCTION(fun_merge)
     UNUSED_PARAMETER(executor);
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(nfargs);
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
@@ -5712,6 +5792,7 @@ static FUNCTION(fun_repeat)
     UNUSED_PARAMETER(executor);
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(nfargs);
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
@@ -5871,6 +5952,7 @@ static FUNCTION(fun_itext)
     UNUSED_PARAMETER(executor);
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
@@ -5882,6 +5964,7 @@ static FUNCTION(fun_inum)
     UNUSED_PARAMETER(executor);
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
@@ -5944,6 +6027,7 @@ static FUNCTION(fun_ilev)
     UNUSED_PARAMETER(executor);
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(fargs);
     UNUSED_PARAMETER(nfargs);
     UNUSED_PARAMETER(cargs);
@@ -6526,6 +6610,7 @@ static FUNCTION(fun_edit)
     UNUSED_PARAMETER(executor);
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(nfargs);
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
@@ -6545,6 +6630,7 @@ static FUNCTION(fun_locate)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(nfargs);
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
@@ -6772,6 +6858,7 @@ static FUNCTION(fun_space)
     UNUSED_PARAMETER(executor);
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
@@ -6808,6 +6895,7 @@ static FUNCTION(fun_height)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(nfargs);
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
@@ -6858,6 +6946,7 @@ static FUNCTION(fun_width)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(nfargs);
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
@@ -6912,6 +7001,7 @@ static FUNCTION(fun_idle)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(nfargs);
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
@@ -6962,6 +7052,7 @@ static FUNCTION(fun_conn)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(nfargs);
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
@@ -7694,6 +7785,7 @@ static FUNCTION(fun_ljust)
     UNUSED_PARAMETER(executor);
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
@@ -7705,6 +7797,7 @@ static FUNCTION(fun_rjust)
     UNUSED_PARAMETER(executor);
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
@@ -7716,6 +7809,7 @@ static FUNCTION(fun_center)
     UNUSED_PARAMETER(executor);
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
@@ -7731,6 +7825,7 @@ static FUNCTION(fun_setq)
     UNUSED_PARAMETER(executor);
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(nfargs);
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
@@ -7759,6 +7854,7 @@ static FUNCTION(fun_setr)
     UNUSED_PARAMETER(executor);
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(nfargs);
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
@@ -7788,6 +7884,7 @@ static FUNCTION(fun_r)
     UNUSED_PARAMETER(executor);
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(nfargs);
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
@@ -7815,6 +7912,7 @@ static FUNCTION(fun_isdbref)
     UNUSED_PARAMETER(executor);
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
@@ -7968,6 +8066,7 @@ static FUNCTION(fun_config)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
@@ -8006,6 +8105,7 @@ static FUNCTION(fun_bittype)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
@@ -8028,6 +8128,7 @@ static FUNCTION(fun_bittype)
 static FUNCTION(fun_error)
 {
     UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
@@ -8067,6 +8168,7 @@ static FUNCTION(fun_strip)
     UNUSED_PARAMETER(executor);
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
@@ -8196,6 +8298,7 @@ static FUNCTION(fun_wrap)
     UNUSED_PARAMETER(executor);
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
@@ -8634,6 +8737,7 @@ static FUNCTION(fun_digittime)
     UNUSED_PARAMETER(executor);
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(nfargs);
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
@@ -8650,6 +8754,7 @@ static FUNCTION(fun_singletime)
     UNUSED_PARAMETER(executor);
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(nfargs);
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
@@ -8666,6 +8771,7 @@ static FUNCTION(fun_exptime)
     UNUSED_PARAMETER(executor);
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(nfargs);
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
@@ -8682,6 +8788,7 @@ static FUNCTION(fun_writetime)
     UNUSED_PARAMETER(executor);
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(nfargs);
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
@@ -8697,6 +8804,7 @@ static FUNCTION(fun_cmds)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(nfargs);
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
@@ -8744,6 +8852,7 @@ static FUNCTION(fun_startsecs)
     UNUSED_PARAMETER(executor);
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(fargs);
     UNUSED_PARAMETER(nfargs);
     UNUSED_PARAMETER(cargs);
@@ -8762,6 +8871,7 @@ static FUNCTION(fun_conntotal)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(nfargs);
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
@@ -8789,6 +8899,7 @@ static FUNCTION(fun_connmax)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(nfargs);
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
@@ -8817,6 +8928,7 @@ static FUNCTION(fun_connlast)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(nfargs);
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
@@ -8839,6 +8951,7 @@ static FUNCTION(fun_connnum)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(nfargs);
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
@@ -8866,6 +8979,7 @@ static FUNCTION(fun_connleft)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(nfargs);
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
@@ -8889,6 +9003,7 @@ static FUNCTION(fun_lattrcmds)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(nfargs);
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
@@ -9041,6 +9156,7 @@ static FUNCTION(fun_lflags)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(nfargs);
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
@@ -9135,6 +9251,7 @@ static FUNCTION(fun_art)
     UNUSED_PARAMETER(executor);
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(nfargs);
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
@@ -9182,6 +9299,7 @@ static FUNCTION(fun_ord)
     UNUSED_PARAMETER(executor);
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(nfargs);
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
@@ -9210,6 +9328,7 @@ static FUNCTION(fun_chr)
     UNUSED_PARAMETER(executor);
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(nfargs);
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
@@ -9243,6 +9362,7 @@ static FUNCTION(fun_stripaccents)
     UNUSED_PARAMETER(executor);
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(nfargs);
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
@@ -9343,6 +9463,7 @@ static FUNCTION(fun_accent)
     UNUSED_PARAMETER(executor);
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(nfargs);
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
