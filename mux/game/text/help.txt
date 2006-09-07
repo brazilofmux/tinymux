@@ -6178,6 +6178,36 @@ ESCAPE()
 
   Related Topics: secure().
 
+& ETIMEFMT()
+ETIMEFMT()
+
+  FUNCTION: etimefmt(<format>, <secs>)
+
+  Escape sequences in <format> are expanded out.  All escape sequences start
+  with a $.  Any unrecognized codes or other text is returned unchanged.  An
+  optional field width may be given after the initial $ (but before any
+  modifier or format letters).  All values are right-justified within the
+  specified field.
+
+  Modifier letters (can be used together):
+
+   x - Value is suffixed with the corresponding units (s, m, h, or d).
+   z - Enter escape becomes blank of corresponding value is zero.
+
+  Format letters:
+
+  $s - Seconds                   $S - Seconds, left-padded with zeroes.
+  $m - Minutes.                  $M - Minutes, left-padded with zeroes.
+  $h - Hours.                    $H - Hours, left-padded with zeroes.
+  $d - Days.                     $D - Days, left-padded with zeros.
+  $n - Newline                   $$ - $ character
+
+  Example:
+    > think etimefmt($2h:$2M, 3700)
+     1:01
+
+  Related Topics: convtime(), convsecs(), timefmt().
+
 & EVAL()
 EVAL()
 
@@ -6774,7 +6804,7 @@ FUNCTION CLASSES (continued)
                              STRIPANSI STRLEN STRMATCH STRMEM STRTRUNC SWITCH
                              TRANSLATE TRIM UCSTR WORDPOS WRAP
 
-  Time:                      CONVSECS CONVTIME DIGITTIME EXPTIME SECS
+  Time:                      CONVSECS CONVTIME DIGITTIME ETIMEFMT EXPTIME SECS
                              SINGLETIME STARTSECS STARTTIME TIME TIMEFMT 
                              WRITETIME
 
@@ -6804,62 +6834,62 @@ FUNCTION LIST
     CWHO()      DEC()       DECRYPT()   DEFAULT()   DELETE()    DIE()
     DIGITTIME() DIST2D()    DIST3D()    DISTRIBUTE()DOING()     DUMPING()
     E()         EDEFAULT()  EDIT()      ELEMENTS()  ELOCK()     EMIT()
-    ENCRYPT()   ENTRANCES() EQ()        ERROR()     ESCAPE()    EVAL()
-    EXIT()      EXP()       EXPTIME()   EXTRACT()   FCOUNT()    FDEPTH()
-    FDIV()      FILTER()    FILTERBOOL()FINDABLE()  FIRST()     FLAGS()
-    FLOOR()     FLOORDIV()  FMOD()      FOLD()      FOREACH()   FULLNAME()
+    ENCRYPT()   ENTRANCES() EQ()        ERROR()     ESCAPE()    ETIMEFMT()
+    EVAL()      EXIT()      EXP()       EXPTIME()   EXTRACT()   FCOUNT()
+    FDEPTH()    FDIV()      FILTER()    FILTERBOOL()FINDABLE()  FIRST()
+    FLAGS()     FLOOR()     FLOORDIV()  FMOD()      FOLD()      FOREACH()
 
 ("help function list2" for more)
 
 & FUNCTION LIST2
 FUNCTION LIST (continued)
 
-    GET()       GET_EVAL()  GRAB()      GRABALL()   GREP()      GREPI()
-    GT()        GTE()       HASATTR()   HASATTRP()  HASFLAG()   HASPOWER()
-    HASQUOTA()  HASRXLEVEL()HASTXLEVEL()HASTYPE()   HEIGHT()    HOME()
-    HOST()      IABS()      IADD()      IDIV()      IDLE()      IF()
-    IFELSE()    ILEV()      IMUL()      INC()       INDEX()     INSERT()
-    INZONE()    ISDBREF()   ISIGN()     ISINT()     ISNUM()     ISRAT()
-    ISUB()      ISWORD()    ITEMIZE()   ITEMS()     ITER()      LADD()
-    LAND()      LAST()      LATTR()     LATTRCMDS() LATTRP()    LCMDS()
-    LCON()      LCSTR()     LDELETE()   LEXITS()    LFLAGS()    LINK()
-    LIST()      LISTRLEVELS() LIT()     LJUST()     LN()        LNUM()
-    LOC()       LOCALIZE()  LOCATE()    LOCK()      LOG()       LOR()
-    LPARENT()   LPORTS()    LPOS()      LRAND()     LROOMS()    LT()
-    LTE()       LWHO()      MAIL()      MAILFROM()  MAILSIZE()  MAILJ()
-    MAILSUBJ()  MAP()       MATCH()     MATCHALL()  MAX()       MEMBER()
-    MERGE()     MID()       MIN()       MIX()       MOD()       MONEY()
-    MONIKER()   MOTD()      MTIME()     MUDNAME()   MUL()       MUNGE()
-    NAME()      NEARBY()    NEQ()       NEXT()      NOT()       NULL()
-    NUM()       OBJ()       OBJEVAL()   OBJMEM()    OEMIT()     OR()
-    ORBOOL()    ORD()       ORFLAGS()   OWNER()     PACK()      PARENT()
+    FULLNAME()  GET()       GET_EVAL()  GRAB()      GRABALL()   GREP()
+    GREPI()     GT()        GTE()       HASATTR()   HASATTRP()  HASFLAG()
+    HASPOWER()  HASQUOTA()  HASRXLEVEL()HASTXLEVEL()HASTYPE()   HEIGHT()
+    HOME()      HOST()      IABS()      IADD()      IDIV()      IDLE()
+    IF()        IFELSE()    ILEV()      IMUL()      INC()       INDEX()
+    INSERT()    INZONE()    ISDBREF()   ISIGN()     ISINT()     ISNUM()
+    ISRAT()     ISUB()      ISWORD()    ITEMIZE()   ITEMS()     ITER()
+    LADD()      LAND()      LAST()      LATTR()     LATTRCMDS() LATTRP()
+    LCMDS()     LCON()      LCSTR()     LDELETE()   LEXITS()    LFLAGS()
+    LINK()      LIST()      LISTRLEVELS() LIT()     LJUST()     LN()
+    LNUM()      LOC()       LOCALIZE()  LOCATE()    LOCK()      LOG()
+    LOR()       LPARENT()   LPORTS()    LPOS()      LRAND()     LROOMS()
+    LT()        LTE()       LWHO()      MAIL()      MAILFROM()  MAILSIZE()
+    MAILJ()     MAILSUBJ()  MAP()       MATCH()     MATCHALL()  MAX()
+    MEMBER()    MERGE()     MID()       MIN()       MIX()       MOD()
+    MONEY()     MONIKER()   MOTD()      MTIME()     MUDNAME()   MUL()
+    MUNGE()     NAME()      NEARBY()    NEQ()       NEXT()      NOT()
+    NULL()      NUM()       OBJ()       OBJEVAL()   OBJMEM()    OEMIT()
+    OR()        ORBOOL()    ORD()       ORFLAGS()   OWNER()     PACK()
 
 ("help function list3" for more)
 
 & FUNCTION LIST3
 FUNCTION LIST (continued)
 
-    PARSE()     PEMIT()     PFIND()     PI()        PICKRAND()  PLAYMEM()
-    PMATCH()    POLL()      PORTS()     POS()       POSS()      POWER()
-    POWERS()    R()         RAND()      REGMATCH()  REGMATCHI() REGRAB()
-    REGRABALL() REGRABALLI()REGRABI()   REMAINDER() REMIT()     REMOVE()
-    REPEAT()    REPLACE()   REST()      REVERSE()   REVWORDS()  RIGHT()
-    RJUST()     RLOC()      ROMAN()     ROOM()      ROUND()     RXLEVEL()
-    S()         SCRAMBLE()  SEARCH()    SECS()      SECURE()    SET()
-    SETDIFF()   SETINTER()  SETNAME()   SETPARENT() SETQ()      SETR()
-    SETUNION()  SHA1()      SHL()       SHR()       SHUFFLE()   SIGN()
-    SIN()       SINGLETIME()SORT()      SORTBY()    SPACE()     SPELLNUM()
-    SPLICE()    SQL()       SQRT()      SQUISH()    STARTSECS() STARTTIME()
-    STATS()     STRCAT()    STRIP()     STRIPACCENTS() STRIPANSI() STRLEN()
-    STRMATCH()  STRMEM()    STRTRUNC()  SUB()       SUBEVAL()   SUBJ()
-    SUCCESSES() SWITCH()    T()         TABLE()     TAN()       TEL()
-    TEXT()      TEXTFILE()  TIME()      TIMEFMT()   TRANSLATE() TRIGGER()
-    TRIM()      TRUNC()     TXLEVEL()   TYPE()      U()         UCSTR()
-    UDEFAULT()  ULOCAL()    UNPACK()    V()         VADD()      VALID()
-    VCROSS()    VDIM()      VDOT()      VERSION()   VISIBLE()   VMAG()
-    VMUL()      VSUB()      VUNIT()     WHERE()     WIDTH()     WORDPOS()
-    WORDS()     WRAP()      WRITETIME() XGET()      XOR()       ZFUN()
-    ZONE()      ZWHO()
+    PARENT()    PARSE()     PEMIT()     PFIND()     PI()        PICKRAND()
+    PLAYMEM()   PMATCH()    POLL()      PORTS()     POS()       POSS()
+    POWER()     POWERS()    R()         RAND()      REGMATCH()  REGMATCHI()
+    REGRAB()    REGRABALL() REGRABALLI()REGRABI()   REMAINDER() REMIT()
+    REMOVE()    REPEAT()    REPLACE()   REST()      REVERSE()   REVWORDS()
+    RIGHT()     RJUST()     RLOC()      ROMAN()     ROOM()      ROUND()
+    RXLEVEL()   S()         SCRAMBLE()  SEARCH()    SECS()      SECURE()
+    SET()       SETDIFF()   SETINTER()  SETNAME()   SETPARENT() SETQ()
+    SETR()      SETUNION()  SHA1()      SHL()       SHR()       SHUFFLE()
+    SIGN()      SIN()       SINGLETIME()SORT()      SORTBY()    SPACE()
+    SPELLNUM()  SPLICE()    SQL()       SQRT()      SQUISH()    STARTSECS()
+    STARTTIME() STATS()     STRCAT()    STRIP()     STRIPACCENTS() STRIPANSI()
+    STRLEN()    STRMATCH()  STRMEM()    STRTRUNC()  SUB()       SUBEVAL()
+    SUBJ()      SUCCESSES() SWITCH()    T()         TABLE()     TAN()
+    TEL()       TEXT()      TEXTFILE()  TIME()      TIMEFMT()   TRANSLATE()
+    TRIGGER()   TRIM()      TRUNC()     TXLEVEL()   TYPE()      U()
+    UCSTR()     UDEFAULT()  ULOCAL()    UNPACK()    V()         VADD()
+    VALID()     VCROSS()    VDIM()      VDOT()      VERSION()   VISIBLE()
+    VMAG()      VMUL()      VSUB()      VUNIT()     WHERE()     WIDTH()
+    WORDPOS()   WORDS()     WRAP()      WRITETIME() XGET()      XOR()
+    ZFUN()      ZONE()      ZWHO()
 
 & FUNCTIONS
 FUNCTIONS
@@ -12626,7 +12656,7 @@ TIMEFMT()
     > think timefmt($A\, the $dth day of $B.)
     Monday, the 17th day of July.
 
-  Related Topics: convtime(), convsecs().
+  Related Topics: convtime(), convsecs(), etimefmt().
 
 & TOPICS
 TOPICS

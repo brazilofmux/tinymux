@@ -61,6 +61,7 @@ Feature Additions:
  -- Add lflags(<obj>/<attr>) form similar to flags(<obj>/<attr>).
  -- @power will accept multiple power changes in one command.
  -- Add @trigger/notify.
+ -- Added etimefmt().
 
 
 Bug Fixes:

@@ -3552,7 +3552,7 @@ static size_t LeftJustifyString(char *field, size_t nWidth, const char *value)
     return nWidth;
 }
 
-static size_t RightJustifyNumber(char *field, size_t nWidth, INT64 value)
+size_t RightJustifyNumber(char *field, size_t nWidth, INT64 value, char chFill)
 {
     char   buffer[22];
     size_t nReturn = 0;
@@ -3564,7 +3564,7 @@ static size_t RightJustifyNumber(char *field, size_t nWidth, INT64 value)
             nReturn = n;
             if (n < nWidth)
             {
-                memset(field, ' ', nWidth-n);
+                memset(field, chFill, nWidth-n);
                 field += nWidth-n;
                 nReturn = nWidth;
             }
@@ -3588,14 +3588,14 @@ static void list_hashstat(dbref player, const char *tab_name, CHashTable *htab)
     char buff[MBUF_SIZE];
     char *p = buff;
 
-    p += LeftJustifyString(p,  15, tab_name); *p++ = ' ';
-    p += RightJustifyNumber(p,  4, hashsize); *p++ = ' ';
-    p += RightJustifyNumber(p,  6, entries);  *p++ = ' ';
-    p += RightJustifyNumber(p,  9, deletes);  *p++ = ' ';
-    p += RightJustifyNumber(p, 11, scans);    *p++ = ' ';
-    p += RightJustifyNumber(p, 11, hits);     *p++ = ' ';
-    p += RightJustifyNumber(p, 11, checks);   *p++ = ' ';
-    p += RightJustifyNumber(p,  4, max_scan); *p = '\0';
+    p += LeftJustifyString(p,  15, tab_name);      *p++ = ' ';
+    p += RightJustifyNumber(p,  4, hashsize, ' '); *p++ = ' ';
+    p += RightJustifyNumber(p,  6, entries,  ' '); *p++ = ' ';
+    p += RightJustifyNumber(p,  9, deletes,  ' '); *p++ = ' ';
+    p += RightJustifyNumber(p, 11, scans,    ' '); *p++ = ' ';
+    p += RightJustifyNumber(p, 11, hits,     ' '); *p++ = ' ';
+    p += RightJustifyNumber(p, 11, checks,   ' '); *p++ = ' ';
+    p += RightJustifyNumber(p,  4, max_scan, ' '); *p = '\0';
     raw_notify(player, buff);
 }
 

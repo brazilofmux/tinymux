@@ -1233,6 +1233,277 @@ static FUNCTION(fun_timefmt)
     safe_str(p, buff, bufc);
 }
 
+static FUNCTION(fun_etimefmt)
+{
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
+    CLinearTimeDelta ltd;
+    ltd.SetSecondsString(fargs[1]);
+
+    long seconds = ltd.ReturnSeconds();
+    long minutes = seconds/60;
+    seconds -= 60*minutes;
+    long hours   = minutes/60;
+    minutes -= 60*hours;
+    long days    = hours/24;
+    hours -= 24*days;
+
+    char *q;
+    char *p = fargs[0];
+    while ((q = strchr(p, '$')) != NULL)
+    {
+        size_t nLen = q - p;
+        safe_copy_buf(p, nLen, buff, bufc);
+        p = q;
+
+        // Now, p points to a '$'.
+        //
+        p++;
+        int ch = *p++;
+
+        // Look for a field width.
+        //
+        bool bHasWidth = false;
+        int width = 0;
+        if (mux_isdigit(ch))
+        {
+            bHasWidth = true;
+            do
+            {
+                width = 10 * width + (ch - '0');
+                ch = *p++;
+            } while (mux_isdigit(ch));
+
+            if (11 < width)
+            {
+                width = 11;
+            }
+        }
+            
+        // Handle modifiers
+        //
+        bool bDoSuffix = false;
+        bool bZeroIsBlank = false;
+        while (  'z' == mux_tolower(ch)
+              || 'x' == mux_tolower(ch))
+        {
+            switch (mux_tolower(ch))
+            {
+            case 'x':
+                bDoSuffix = true;
+                break;
+
+            case 'z':
+                bZeroIsBlank = true;
+                break;
+            }
+            ch = *p++;
+        }
+
+        char field[MBUF_SIZE];
+        size_t n = 0;
+
+        // Handle format letter.
+        //
+        switch (ch)
+        {
+        case 's': // $s - The number of seconds.
+            if (  0 != seconds
+               || !bZeroIsBlank)
+            {
+                if (bHasWidth)
+                {
+                    n = RightJustifyNumber(field, width, seconds, ' ');
+                    field[n] = '\0';
+                    safe_str(field, buff, bufc);
+                }
+                else
+                {
+                    safe_ltoa(seconds, buff, bufc);
+                }
+
+                if (bDoSuffix)
+                {
+                    safe_chr('s', buff, bufc);
+                }
+            }
+            break;
+
+        case 'S': // $S - The number of seconds, left-padded with zero.
+            if (  0 != seconds
+               || !bZeroIsBlank)
+            {
+                if (bHasWidth)
+                {
+                    n = RightJustifyNumber(field, width, seconds, '0');
+                    field[n] = '\0';
+                    safe_str(field, buff, bufc);
+                }
+                else
+                {
+                    safe_ltoa(seconds, buff, bufc);
+                }
+
+                if (bDoSuffix)
+                {
+                    safe_chr('s', buff, bufc);
+                }
+            }
+            break;
+
+        case 'm': // $m - The number of minutes.
+            if (  0 != minutes
+               || !bZeroIsBlank)
+            {
+                if (bHasWidth)
+                {
+                    n = RightJustifyNumber(field, width, minutes, ' ');
+                    field[n] = '\0';
+                    safe_str(field, buff, bufc);
+                }
+                else
+                {
+                    safe_ltoa(minutes, buff, bufc);
+                }
+
+                if (bDoSuffix)
+                {
+                    safe_chr('m', buff, bufc);
+                }
+            }
+            break;
+
+        case 'M': // $M - The number of minutes, left-padded with zero.
+            if (  0 != minutes
+               || !bZeroIsBlank)
+            {
+                if (bHasWidth)
+                {
+                    n = RightJustifyNumber(field, width, minutes, '0');
+                    field[n] = '\0';
+                    safe_str(field, buff, bufc);
+                }
+                else
+                {
+                    safe_ltoa(minutes, buff, bufc);
+                }
+
+                if (bDoSuffix)
+                {
+                    safe_chr('m', buff, bufc);
+                }
+            }
+            break;
+
+        case 'h': // $h - The number of hours.
+            if (  0 != hours
+               || !bZeroIsBlank)
+            {
+                if (bHasWidth)
+                {
+                    n = RightJustifyNumber(field, width, hours, ' ');
+                    field[n] = '\0';
+                    safe_str(field, buff, bufc);
+                }
+                else
+                {
+                    safe_ltoa(hours, buff, bufc);
+                }
+
+                if (bDoSuffix)
+                {
+                    safe_chr('h', buff, bufc);
+                }
+            }
+            break;
+
+        case 'H': // $H - The number of hours, left-padded with zero.
+            if (  0 != hours
+               || !bZeroIsBlank)
+            {
+                if (bHasWidth)
+                {
+                    n = RightJustifyNumber(field, width, hours, '0');
+                    field[n] = '\0';
+                    safe_str(field, buff, bufc);
+                }
+                else
+                {
+                    safe_ltoa(hours, buff, bufc);
+                }
+
+                if (bDoSuffix)
+                {
+                    safe_chr('h', buff, bufc);
+                }
+            }
+            break;
+
+        case 'd': // $d - The number of days.
+            if (  0 != days
+               || !bZeroIsBlank)
+            {
+                if (bHasWidth)
+                {
+                    n = RightJustifyNumber(field, width, days, ' ');
+                    field[n] = '\0';
+                    safe_str(field, buff, bufc);
+                }
+                else
+                {
+                    safe_ltoa(days, buff, bufc);
+                }
+
+                if (bDoSuffix)
+                {
+                    safe_chr('d', buff, bufc);
+                }
+            }
+            break;
+
+        case 'D': // $D - The number of days, left-padded with zero.
+            if (  0 != days
+               || !bZeroIsBlank)
+            {
+                if (bHasWidth)
+                {
+                    n = RightJustifyNumber(field, width, days, '0');
+                    field[n] = '\0';
+                    safe_str(field, buff, bufc);
+                }
+                else
+                {
+                    safe_ltoa(days, buff, bufc);
+                }
+
+                if (bDoSuffix)
+                {
+                    safe_chr('d', buff, bufc);
+                }
+            }
+            break;
+
+        case 'n': // $n - Newline.
+            safe_str("\r\n", buff, bufc);
+            break;
+
+        case '$': // $$
+            safe_chr(ch, buff, bufc);
+            break;
+
+        default:
+            safe_chr('$', buff, bufc);
+            p = q + 1;
+            break;
+        }
+    }
+    safe_str(p, buff, bufc);
+}
+
 
 #ifdef FIRANMUX
 /*
@@ -9207,6 +9478,7 @@ static FUN builtin_function_list[] =
     {"EQ",          fun_eq,         MAX_ARG, 2,       2,         0, CA_PUBLIC},
     {"ERROR",       fun_error,            1, 0,       1,         0, CA_PUBLIC},
     {"ESCAPE",      fun_escape,           1, 1,       1,         0, CA_PUBLIC},
+    {"ETIMEFMT",    fun_etimefmt,   MAX_ARG, 2,       2,         0, CA_PUBLIC},
     {"EVAL",        fun_eval,       MAX_ARG, 1,       2,         0, CA_PUBLIC},
     {"EXIT",        fun_exit,       MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {"EXP",         fun_exp,        MAX_ARG, 1,       1,         0, CA_PUBLIC},
