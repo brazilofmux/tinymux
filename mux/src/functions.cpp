@@ -6483,42 +6483,44 @@ static void filter_handler(char *buff, char **bufc, dbref executor, dbref enacto
 
     // Now iteratively eval the attrib with the argument list.
     //
-    char *curr = trim_space_sep(fargs[1], psep);
-    char *cp = curr;
-    char *atextbuf = alloc_lbuf("fun_filter");
-    char *result = alloc_lbuf("fun_filter");
-    bool bFirst = true;
-    while (  cp
-          && mudstate.func_invk_ctr < mudconf.func_invk_lim
-          && !MuxAlarm.bAlarmed)
+    char *cp = trim_space_sep(fargs[1], psep);
+    if ('\0' != cp[0])
     {
-        char *objstring = split_token(&cp, psep);
-        mux_strncpy(atextbuf, atext, LBUF_SIZE-1);
-        char *bp = result;
-        char *str = atextbuf;
-        filter_args[0] = objstring;
-        mux_exec(result, &bp, thing, executor, enactor,
-            AttrTrace(aflags, EV_STRIP_CURLY|EV_FCHECK|EV_EVAL), &str,
-            filter_args, filter_nargs);
-        *bp = '\0';
-
-        if (  (  bBool
-              && xlate(result))
-           || (  !bBool
-              && result[0] == '1'
-              && result[1] == '\0'))
+        char *atextbuf = alloc_lbuf("fun_filter");
+        char *result = alloc_lbuf("fun_filter");
+        bool bFirst = true;
+        while (  cp
+              && mudstate.func_invk_ctr < mudconf.func_invk_lim
+              && !MuxAlarm.bAlarmed)
         {
-            if (!bFirst)
+            char *objstring = split_token(&cp, psep);
+            mux_strncpy(atextbuf, atext, LBUF_SIZE-1);
+            char *bp = result;
+            char *str = atextbuf;
+            filter_args[0] = objstring;
+            mux_exec(result, &bp, thing, executor, enactor,
+                AttrTrace(aflags, EV_STRIP_CURLY|EV_FCHECK|EV_EVAL), &str,
+                filter_args, filter_nargs);
+            *bp = '\0';
+    
+            if (  (  bBool
+                  && xlate(result))
+               || (  !bBool
+                  && result[0] == '1'
+                  && result[1] == '\0'))
             {
-                print_sep(posep, buff, bufc);
+                if (!bFirst)
+                {
+                    print_sep(posep, buff, bufc);
+                }
+                safe_str(objstring, buff, bufc);
+                bFirst = false;
             }
-            safe_str(objstring, buff, bufc);
-            bFirst = false;
         }
+        free_lbuf(result);
+        free_lbuf(atextbuf);
     }
-    free_lbuf(result);
     free_lbuf(atext);
-    free_lbuf(atextbuf);
 }
 
 static FUNCTION(fun_filter)
@@ -6596,27 +6598,30 @@ static FUNCTION(fun_map)
     // Now process the list one element at a time.
     //
     char *cp = trim_space_sep(fargs[1], &sep);
-    char *atextbuf = alloc_lbuf("fun_map");
-    bool first = true;
-    while (  cp
-          && mudstate.func_invk_ctr < mudconf.func_invk_lim
-          && !MuxAlarm.bAlarmed)
+    if ('\0' != cp[0])
     {
-        if (!first)
+        char *atextbuf = alloc_lbuf("fun_map");
+        bool first = true;
+        while (  cp
+              && mudstate.func_invk_ctr < mudconf.func_invk_lim
+              && !MuxAlarm.bAlarmed)
         {
-            print_sep(&osep, buff, bufc);
+            if (!first)
+            {
+                print_sep(&osep, buff, bufc);
+            }
+            first = false;
+            char *objstring = split_token(&cp, &sep);
+            mux_strncpy(atextbuf, atext, LBUF_SIZE-1);
+            char *str = atextbuf;
+            map_args[0] = objstring;
+            mux_exec(buff, bufc, thing, executor, enactor,
+                AttrTrace(aflags, EV_STRIP_CURLY|EV_FCHECK|EV_EVAL), &str,
+                map_args, map_nargs);
         }
-        first = false;
-        char *objstring = split_token(&cp, &sep);
-        mux_strncpy(atextbuf, atext, LBUF_SIZE-1);
-        char *str = atextbuf;
-        map_args[0] = objstring;
-        mux_exec(buff, bufc, thing, executor, enactor,
-            AttrTrace(aflags, EV_STRIP_CURLY|EV_FCHECK|EV_EVAL), &str,
-            map_args, map_nargs);
+        free_lbuf(atextbuf);
     }
     free_lbuf(atext);
-    free_lbuf(atextbuf);
 }
 
 /*

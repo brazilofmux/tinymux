@@ -102,6 +102,8 @@ Bug Fixes:
     crash instead of prventing it.  Found and fixed by Sparks.
  -- Remove double evaluation from distribute() and sql().
  -- Save/Restore global registers while executing @descformat.
+ -- Fix map(), filter(), and filterbool() to avoid evaluating the given
+    attribute for an empty list.
 
 
 Performance Enhancements:
