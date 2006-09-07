@@ -609,7 +609,8 @@ void boot_sqlslave(dbref executor, dbref caller, dbref enactor, int)
         CleanUpSQLSlaveSocket();
         goto failure;
     }
-    if (maxd <= sqlslave_socket)
+    if (  !IS_INVALID_SOCKET(sqlslave_socket)
+       && maxd <= sqlslave_socket)
     {
         maxd = sqlslave_socket + 1;
     }
@@ -733,7 +734,8 @@ void boot_slave(dbref executor, dbref caller, dbref enactor, int)
         CleanUpSlaveSocket();
         goto failure;
     }
-    if (maxd <= slave_socket)
+    if (  !IS_INVALID_SOCKET(slave_socket)
+       && maxd <= slave_socket)
     {
         maxd = slave_socket + 1;
     }
@@ -908,6 +910,8 @@ static void make_socket(PortInfo *Port)
     struct sockaddr_in server;
     int opt = 1;
 
+    Port->socket = INVALID_SOCKET;
+
 #ifdef WIN32
 
     // If we are running Windows NT we must create a completion port,
@@ -924,8 +928,7 @@ static void make_socket(PortInfo *Port)
         if (!CompletionPort)
         {
             Log.tinyprintf("Error %ld on CreateIoCompletionPort" ENDLINE,  GetLastError());
-            WSACleanup();     // clean up
-            exit(1);
+            return;
         }
 
         // Initialize the critical section
@@ -939,11 +942,12 @@ static void make_socket(PortInfo *Port)
         // Create a TCP/IP stream socket
         //
         s = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
-        if (s == INVALID_SOCKET)
+        if (IS_INVALID_SOCKET(s))
         {
             log_perror("NET", "FAIL", NULL, "creating master socket");
-            exit(3);
+            return;
         }
+
         DebugTotalSockets++;
         if (setsockopt(s, SOL_SOCKET, SO_REUSEADDR, (char *)&opt, sizeof(opt)) < 0)
         {
@@ -968,8 +972,7 @@ static void make_socket(PortInfo *Port)
                 DebugTotalSockets--;
             }
             s = INVALID_SOCKET;
-            WSACleanup();     // clean up
-            exit(1);
+            return;
         }
 
         // Set the socket to listen
@@ -979,8 +982,7 @@ static void make_socket(PortInfo *Port)
         if (nRet)
         {
             Log.tinyprintf("Error %ld on Win32: listen" ENDLINE, SOCKET_LAST_ERROR);
-            WSACleanup();
-            exit(1);
+            return;
         }
 
         // Create the MUD listening thread
@@ -989,8 +991,7 @@ static void make_socket(PortInfo *Port)
         if (NULL == hThread)
         {
             log_perror("NET", "FAIL", "CreateThread", "setsockopt");
-            WSACleanup();
-            exit(1);
+            return;
         }
 
         Port->socket = s;
@@ -1003,19 +1004,19 @@ static void make_socket(PortInfo *Port)
     if (IS_INVALID_SOCKET(s))
     {
         log_perror("NET", "FAIL", NULL, "creating master socket");
-#ifdef WIN32
-        WSACleanup();
-#endif // WIN32
-        exit(3);
+        return;
     }
+
     DebugTotalSockets++;
     if (setsockopt(s, SOL_SOCKET, SO_REUSEADDR, (char *)&opt, sizeof(opt)) < 0)
     {
         log_perror("NET", "FAIL", NULL, "setsockopt");
     }
+
     server.sin_family = AF_INET;
     server.sin_addr.s_addr = INADDR_ANY;
     server.sin_port = htons((unsigned short)(Port->port));
+
     int cc  = bind(s, (struct sockaddr *)&server, sizeof(server));
     if (IS_SOCKET_ERROR(cc))
     {
@@ -1025,11 +1026,9 @@ static void make_socket(PortInfo *Port)
             DebugTotalSockets--;
         }
         s = INVALID_SOCKET;
-#ifdef WIN32
-        WSACleanup();
-#endif // WIN32
-        exit(4);
+        return;
     }
+
     listen(s, SOMAXCONN);
     Port->socket = s;
     Log.tinyprintf("Listening on port %d" ENDLINE, Port->port);
@@ -1093,15 +1092,30 @@ void SetupPorts(int *pnPorts, PortInfo aPorts[], IntArray *pia)
         }
     }
 
-#ifndef WIN32
+    // Assert that we are listening on at least one port.
+    //
+    int iListening = 0;
     for (i = 0; i < *pnPorts; i++)
     {
-        if (maxd <= aPorts[i].socket)
+        if (!IS_INVALID_SOCKET(aPorts[i].socket))
         {
-            maxd = aPorts[i].socket + 1;
+            iListening++;
+#ifndef WIN32
+            if (maxd <= aPorts[i].socket)
+            {
+                maxd = aPorts[i].socket + 1;
+            }
+#endif // WIN32
         }
     }
-#endif
+
+    if (0 == iListening)
+    {
+#ifdef WIN32
+        WSACleanup();
+#endif // WIN32
+        exit(1);
+    }
 }
 
 #ifdef WIN32
@@ -1640,7 +1654,8 @@ void shovechars(int nPorts, PortInfo aPorts[])
                         log_perror("NET", "FAIL", NULL, "new_connection");
                     }
                 }
-                else if (maxd <= newd->descriptor)
+                else if (  !IS_INVALID_SOCKET(newd->descriptor)
+                        && maxd <= newd->descriptor)
                 {
                     maxd = newd->descriptor + 1;
                 }
