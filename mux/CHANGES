@@ -104,6 +104,8 @@ Bug Fixes:
  -- Save/Restore global registers while executing @descformat.
  -- Fix map(), filter(), and filterbool() to avoid evaluating the given
     attribute for an empty list.
+ -- Strip ANSI from messages before matching messages against @filter
+    and @infilter patterns.
 
 
 Performance Enhancements:
