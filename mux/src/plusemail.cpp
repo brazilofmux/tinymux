@@ -30,7 +30,6 @@
 static int mod_email_sock_printf(SOCKET sock, char *format, ...)
 {
     va_list vargs;
-    int result;
     char mybuf[LBUF_SIZE];
 
     if (IS_INVALID_SOCKET(sock))
@@ -42,9 +41,7 @@ static int mod_email_sock_printf(SOCKET sock, char *format, ...)
     mux_vsnprintf(mybuf, LBUF_SIZE, format, vargs);
     va_end(vargs);
 
-    result = SOCKET_WRITE(sock, &mybuf[0], strlen(mybuf), 0);
-
-    return result;
+    return SOCKET_WRITE(sock, &mybuf[0], strlen(mybuf), 0);
 }
 
 /* Read a line of input from the socket */
