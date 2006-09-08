@@ -23,7 +23,7 @@
 #endif /* REALITY_LVLS */
 
 #if defined(FIRANMUX)
-#include <mysql/mysql.h>
+#include <mysql.h>
 
 extern MYSQL *mush_database;
 #endif // FIRANMUX
@@ -1608,7 +1608,7 @@ FUNCTION(fun_text)
 
                 if ('&' == mybuffer[0])
                 {
-                    if (!strcasecmp(fargs[1]+strspn(fargs[1]," "), mybuffer+2))
+                    if (!mux_stricmp(fargs[1]+strspn(fargs[1]," "), mybuffer+2))
                     {
                         /* At this point I've found the file and the entry */
                         int thischar;

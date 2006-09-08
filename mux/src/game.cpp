@@ -25,7 +25,7 @@
 #endif /* REALITY_LVLS */
 
 #if defined(FIRANMUX)
-#include <mysql/mysql.h>
+#include <mysql.h>
 
 MYSQL *mush_database = NULL;
 #endif // FIRANMUX

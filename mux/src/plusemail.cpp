@@ -18,19 +18,6 @@
 
 #if defined(FIRANMUX)
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <stdarg.h>
-#include <sys/time.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <netdb.h>
-#include <unistd.h>
-#include <string.h>
-#include <fcntl.h>
-#include <errno.h>
-
 #include "externs.h"
 
 /* Some basic Socket I/O crap I stole from another project of mine */
@@ -48,7 +35,7 @@ static int mod_email_sock_printf(SOCKET sock, char *format, ...)
     }
 
     va_start(vargs, format);
-    vsnprintf(mybuf, LBUF_SIZE, format, vargs);
+    mux_vsnprintf(mybuf, LBUF_SIZE, format, vargs);
     va_end(vargs);
 
     result = SOCKET_WRITE(sock, &mybuf[0], strlen(mybuf), 0);
@@ -158,7 +145,7 @@ static int mod_email_sock_open(const char *conhostname, int port, SOCKET *sock)
 
     name.sin_port = htons(port);
     name.sin_family = AF_INET;
-    bcopy((char *)conhost->h_addr, (char *)&name.sin_addr, conhost->h_length);
+    memcpy((char *)&name.sin_addr, (char *)conhost->h_addr, conhost->h_length);
     SOCKET mysock = socket(AF_INET, SOCK_STREAM, 0);
     addr_len = sizeof(name);
    
