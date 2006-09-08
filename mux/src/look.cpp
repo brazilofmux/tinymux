@@ -1890,7 +1890,7 @@ void do_examine(dbref executor, dbref caller, dbref enactor, int eval, int key, 
             if (Dropto(thing) != NOTHING)
             {
 #if defined(FIRANMUX)
-                buf2 = unparse_object(executor, Dropto(thing), false);
+                buf2 = unparse_object_ansi(executor, Dropto(thing), false);
 #else
                 buf2 = unparse_object(executor, Dropto(thing), false);
 #endif // FIRANMUX
