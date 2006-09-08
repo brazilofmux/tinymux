@@ -3670,11 +3670,9 @@ char *linewrap_general(char *strret, int field, char *left, char *right)
         {
         case ESC_CHAR:
             do {
-                safe_chr(original[index1++], str, &ostr);
-            } while (  original[index1]
-                    && original[index1] != 'm');
-            safe_chr('m',str,&ostr);
-            index1++;
+                safe_chr(original[index1], str, &ostr);
+            } while (  original[index1++] != 'm'
+                    && original[index1]);
             break;
         
         case '\r':
