@@ -18,6 +18,10 @@
 
 #if defined(FIRANMUX)
 
+#ifndef WIN32
+#include <netdb.h>
+#endif
+
 #include "externs.h"
 
 /* Some basic Socket I/O crap I stole from another project of mine */
