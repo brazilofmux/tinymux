@@ -877,7 +877,7 @@ void dispatch_CacheTick(void *pUnused, int iUnused);
 //    heap.
 //
 // If you ever re-implement this object using another data structure,
-// please remember to maintain the properties properties.
+// please remember to maintain this property.
 //
 typedef void FTASK(void *, int);
 
