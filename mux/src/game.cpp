@@ -2283,17 +2283,17 @@ static void write_pidfile(const char *pFilename)
 #ifdef FIRANMUX
 static void init_sql(void)
 {
-    STARTLOG(LOG_STARTUP,"SQL","CONN");
-    log_text("Connecting: ");
-    log_text(mudconf.sql_database);
-    log_text("@");
-    log_text(mudconf.sql_server);
-    log_text(" as ");
-    log_text(mudconf.sql_user);
-    ENDLOG;
-
     if ('\0' != mudconf.sql_server[0])
     {
+        STARTLOG(LOG_STARTUP,"SQL","CONN");
+        log_text("Connecting: ");
+        log_text(mudconf.sql_database);
+        log_text("@");
+        log_text(mudconf.sql_server);
+        log_text(" as ");
+        log_text(mudconf.sql_user);
+        ENDLOG;
+
         mush_database = mysql_init(NULL);
 
         if (mush_database)
