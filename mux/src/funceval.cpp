@@ -2708,17 +2708,10 @@ static int u_comp(const void *s1, const void *s2)
     result = bp = alloc_lbuf("u_comp");
     str = tbuf;
     mux_exec(result, &bp, ucomp_executor, ucomp_caller, ucomp_enactor,
-             EV_STRIP_CURLY|EV_FCHECK|EV_EVAL, &str, &(elems[0]), 2);
+             EV_STRIP_CURLY|EV_FCHECK|EV_EVAL, &str, elems, 2);
     *bp = '\0';
-    if (!result)
-    {
-        n = 0;
-    }
-    else
-    {
-        n = mux_atol(result);
-        free_lbuf(result);
-    }
+    n = mux_atol(result);
+    free_lbuf(result);
     free_lbuf(tbuf);
     return n;
 }
