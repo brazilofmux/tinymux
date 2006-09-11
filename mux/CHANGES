@@ -271,6 +271,7 @@ Bug Fixes:
  -- Issue 71: mix() doesn't include a function-invocation test.
  -- Fix SIGSEGV when udefault() gets more than 12 arguments. Fixed by
     Alierak.
+ -- %v accepts accented characters (Issue 91).  Found by Alierak.
 
 
 Performance Enhancements:
