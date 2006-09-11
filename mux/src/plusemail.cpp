@@ -47,6 +47,8 @@ static int mod_email_sock_printf(SOCKET sock, char *format, ...)
 /* Read a line of input from the socket */
 static int mod_email_sock_readline(SOCKET sock, char *buffer, int maxlen)
 {
+    buffer[0] = '\0';
+
     if (IS_INVALID_SOCKET(sock))
     {
         return 0;
