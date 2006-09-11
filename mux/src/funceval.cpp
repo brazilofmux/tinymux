@@ -2961,7 +2961,7 @@ FUNCTION(fun_mix)
         lastn = nfargs - 2;
     }
 
-    // Get the attribute, check the permissions.
+    // Get the attribute. Check the permissions.
     //
     dbref thing;
     char *atext;
@@ -2972,34 +2972,35 @@ FUNCTION(fun_mix)
         return;
     }
 
-    char *cp[10];
-    int i;
-    for (i = 0; i < lastn; i++)
-    {
-        cp[i] = NULL;
-    }
-
     // Process the lists, one element at a time.
     //
+    int i;
+    char *cp[NUM_ENV_VARS];
     for (i = 0; i < lastn; i++)
     {
         cp[i] = trim_space_sep(fargs[i+1], &sep);
     }
-    int twords;
+
     int nwords = countwords(cp[0], &sep);
     for (i = 1; i < lastn; i++)
     {
-        twords = countwords(cp[i], &sep);
-        if (twords > nwords)
+        int twords = countwords(cp[i], &sep);
+        if (nwords < twords)
         {
            nwords = twords;
         }
     }
+
     char *atextbuf = alloc_lbuf("fun_mix");
-    char *str, *os[10];
+    char *os[NUM_ENV_VARS];
     bool bFirst = true;
-    for (int wc = 0; wc < nwords && !MuxAlarm.bAlarmed; wc++)
+    for (  int wc = 0;
+           wc < nwords
+        && mudstate.func_invk_ctr < mudconf.func_invk_lim
+        && !MuxAlarm.bAlarmed;
+           wc++)
     {
+        char empty[2] = "";
         if (!bFirst)
         {
             print_sep(&sep, buff, bufc);
@@ -3008,15 +3009,20 @@ FUNCTION(fun_mix)
         {
             bFirst = false;
         }
+
         for (i = 0; i < lastn; i++)
         {
             os[i] = split_token(&cp[i], &sep);
+            if (NULL == os[i])
+            {
+                os[i] = empty;
+            }
         }
         mux_strncpy(atextbuf, atext, LBUF_SIZE-1);
-        str = atextbuf;
+        char *str = atextbuf;
         mux_exec(buff, bufc, thing, executor, enactor,
             AttrTrace(aflags, EV_STRIP_CURLY|EV_FCHECK|EV_EVAL), &str,
-            &(os[0]), lastn);
+            os, lastn);
     }
     free_lbuf(atext);
     free_lbuf(atextbuf);
