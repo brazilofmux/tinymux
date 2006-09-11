@@ -1,6 +1,6 @@
 // funceval.cpp -- MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.103 2006/01/27 23:43:27 sdennis Exp $
+// $Id: funceval.cpp,v 1.104 2006/09/11 05:39:36 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -2688,7 +2688,7 @@ FUNCTION(fun_mix)
     char *atextbuf = alloc_lbuf("fun_mix");
     char *str, *os[10];
     bool bFirst = true;
-    for (int wc = 0; wc < nwords && !MuxAlarm.bAlarmed; wc++)
+    for (int wc = 0; wc < nwords && mudstate.func_invk_ctr < mudconf.func_invk_lim && !MuxAlarm.bAlarmed; wc++)
     {
         if (!bFirst)
         {

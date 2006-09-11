@@ -1,5 +1,5 @@
 TinyMUX 2.4:  CHANGES
-Last Update:  August 2006
+Last Update:  September 2006
 
 Major changes that may affect performance and require softcode tweaks:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -267,6 +267,7 @@ Bug Fixes:
     argument is outside the supported range.
  -- Add 'other half' of buffer overflow protection to a case in
     process_cmdent().  Found and fixed by Sparks.
+ -- Issue 71: mix() doesn't include a function-invocation test.
 
 
 Performance Enhancements:
