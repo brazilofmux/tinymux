@@ -2975,22 +2975,19 @@ FUNCTION(fun_mix)
     // Process the lists, one element at a time.
     //
     int i;
+    int nwords = 0;
     char *cp[NUM_ENV_VARS];
     for (i = 0; i < lastn; i++)
     {
         cp[i] = trim_space_sep(fargs[i+1], &sep);
-    }
-
-    int nwords = countwords(cp[0], &sep);
-    for (i = 1; i < lastn; i++)
-    {
         int twords = countwords(cp[i], &sep);
         if (nwords < twords)
         {
-           nwords = twords;
+            nwords = twords;
         }
     }
 
+    char empty[1] = "";
     char *atextbuf = alloc_lbuf("fun_mix");
     char *os[NUM_ENV_VARS];
     bool bFirst = true;
@@ -3000,7 +2997,6 @@ FUNCTION(fun_mix)
         && !MuxAlarm.bAlarmed;
            wc++)
     {
-        char empty[2] = "";
         if (!bFirst)
         {
             print_sep(&sep, buff, bufc);
