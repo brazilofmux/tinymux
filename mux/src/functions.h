@@ -175,6 +175,7 @@ XFUNCTION(fun_scramble);
 XFUNCTION(fun_shuffle);
 XFUNCTION(fun_sortby);
 XFUNCTION(fun_squish);
+XFUNCTION(fun_step);
 XFUNCTION(fun_strcat);
 XFUNCTION(fun_stripansi);
 XFUNCTION(fun_strtrunc);
