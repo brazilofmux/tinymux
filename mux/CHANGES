@@ -112,6 +112,7 @@ Bug Fixes:
  -- When listening on multiple ports, continue to run the server as long
     as one of the requested ports is available.
  -- mix() doesn't include a function-invocation test (Issue 71).
+ -- Examples in help topics show old-style 'say' (Issue 72).
 
 
 Performance Enhancements:

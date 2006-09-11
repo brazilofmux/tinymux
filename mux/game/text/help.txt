@@ -3863,11 +3863,11 @@ ABS()
 
   Examples:
     > say abs(4)
-    You say "4"
+    You say, "4"
     > say abs(-4)
-    You say "4"
+    You say, "4"
     > say abs(0)
-    You say "0"
+    You say, "0"
 
   Related Topics: iabs(), isign(), sign().
 
@@ -3965,13 +3965,13 @@ ACOS()
 
   Examples:
     > say acos(0)
-    You say "1.570796"
+    You say, "1.570796"
     > say acos(1)
-    You say "0"
+    You say, "0"
     > say acos(0.707101)
-    You say "0.785406"
+    You say, "0.785406"
     > say acos(0.866025)
-    You say "0.5236"
+    You say, "0.5236"
 
   Related Topics: asin(), atan(), cos(), pi(), sin(), tan().
 
@@ -3986,9 +3986,9 @@ ADD()
 
   Example:
     > say add(2,4)
-    You say "6"
+    You say, "6"
     > say add(5,3,7,-4)
-    You say "11"
+    You say, "11"
 
   Related Topics: dec(), iadd(), idiv(), imul(), inc(), isub(),
             fdiv(), mod(), mul(), sub().
@@ -4031,11 +4031,11 @@ AFTER()
 
   Examples:
     > say after(This is a test,a)
-    You say " test"
+    You say, " test"
     > say after(This is a test,is)
-    You say " is a test"
+    You say, " is a test"
     > say after(This is a test, nope)
-    You say ""
+    You say, ""
 
   Related Topics: before(), first(), rest().
 
@@ -4270,17 +4270,17 @@ ART()
 
   Example:
     > say art(TinyMUX)
-    You say "a"
+    You say, "a"
     > say art(umbrella)
-    You say "an"
+    You say, "an"
     > say art(unicycle)
-    You say "a"
+    You say, "a"
     > say art(ytterbium)
-    You say "an"
+    You say, "an"
     > say art(one-sided)
-    You say "a"
+    You say, "a"
     > say art(avocado)
-    You say "an"
+    You say, "an"
 
   Related Topics: article_rule.
 
@@ -4524,11 +4524,11 @@ BEFORE()
 
   Examples:
     > say before(This is a test,a)
-    You say "This is "
+    You say, "This is "
     > say before(This is a test,is)
-    You say "Th"
+    You say, "Th"
     > say before(This is a test, nope)
-    You say "This is a test"
+    You say, "This is a test"
 
   Related Topics: after(), first(), rest().
 
@@ -4764,7 +4764,7 @@ CAPSTR()
 
   Example:
     > say capstr(this is a string I want capitalized)
-    You say "This is a string I want capitalized"
+    You say, "This is a string I want capitalized"
 
   Related Topics: lcstr(), ucstr().
 
@@ -4793,9 +4793,9 @@ CAT()
 
   Example:
     > say cat(this is, a test)
-    You say "this is a test"
+    You say, "this is a test"
     > say cat(This is,another,test of the,CAT function)
-    You say "This is another test of the CAT function"
+    You say, "This is another test of the CAT function"
 
   Related Topics:
 
@@ -4809,15 +4809,15 @@ CEIL()
 
   Examples:
     > say ceil(5)
-    You say "5"
+    You say, "5"
     > say ceil(5.2)
-    You say "6"
+    You say, "6"
     > say ceil(5.8)
-    You say "6"
+    You say, "6"
     > say ceil(-5)
-    You say "-5"
+    You say, "-5"
     > say ceil(-5.2)
-    You say "-5"
+    You say, "-5"
 
   Related Topics: fdiv(), floor(), idiv(), mod(), round(), trunc().
 
@@ -4853,9 +4853,9 @@ CENTER()
  
   Example:
     > say center(a,5,-)
-    You say "--a--"
+    You say, "--a--"
     > say center(*BAMF*,15)
-    You say "    *BAMF*     "
+    You say, "    *BAMF*     "
     > say center(%xh%xrR%xgG%xbB,31,%xy--%xm+)
     --+--+--+--+--RGB+--+--+--+--+-
 
@@ -4986,9 +4986,9 @@ CMDS()
 
   Example:
     > say cmds(me)
-    You say "100"
+    You say, "100"
     > say cmds(me)
-    You say "101"
+    You say, "101"
 
   Related Topics:
 
@@ -5018,7 +5018,7 @@ COMALIAS()
 
   Example:
     > say comalias(me,Public)
-    You say "pub"
+    You say, "pub"
 
   Related Topics: channels(), comtitle(). cwho().
 
@@ -5252,7 +5252,7 @@ COMTITLE()
 
   Example:
     > say comtitle(me,Public)
-    You say "The mighty Wizard"
+    You say, "The mighty Wizard"
 
   Related Topics: channels(), comalias(), cwho()
 
@@ -5307,11 +5307,11 @@ CONN()
     Evinar                00:12   6m  Idle. :)
     3 Players logged in.
     > say conn(wiz)
-    You say "251"
+    You say, "251"
     > say conn(e)
-    You say "770"
+    You say, "770"
     > say conn(frobozz)
-    You say "-1"
+    You say, "-1"
 
   Related Topics: WHO, idle(), lwho().
 
@@ -5420,11 +5420,11 @@ CONTROLS()
 
   Examples:
   > say controls(me,me)
-  You say "1"
+  You say, "1"
   > say controls(me,#1)
-  You say "0"
+  You say, "0"
   > say controls(#1,me)
-  You say "1"
+  You say, "1"
 
   Related Topics: CONTROL.
 
@@ -5455,13 +5455,13 @@ CONVSECS()
 
   Example:
     > say secs()
-    You say "957558109"
+    You say, "957558109"
     > say secs(local)
-    You say "957532909"
+    You say, "957532909"
     > say convsecs(957558109)
-    You say "Fri May 05 13:21:49 2000"
+    You say, "Fri May 05 13:21:49 2000"
     > say convsecs(957532909, utc)
-    You say "Fri May 05 13:21:49 2000"
+    You say, "Fri May 05 13:21:49 2000"
 
   Related Topics: convtime(), secs(), time().
 
@@ -5502,21 +5502,21 @@ CONVTIME()
 
   Examples:
     > say time()
-    You say "Wed Jun 24 10:22:54 1992"
+    You say, "Wed Jun 24 10:22:54 1992"
     > say convtime(Wed Jun 24 10:22:54 1992)
-    You say "709406574"
+    You say, "709406574"
     > say convtime(Wed Jun 24 10:22:54 1992, utc)
-    You say "709381374"
+    You say, "709381374"
     > say convtime(June 24th 1992 10:22:54.0001am Z)
-    You say "709381374"
+    You say, "709381374"
     > say convtime(Wed 24 Jun 1992 10:22:54 -0700)
-    You say "709406574"
+    You say, "709406574"
     > say convtime(2001-01-01T100000Q)
-    You say "978357600"
+    You say, "978357600"
     > say convtime(-1605-120T123456M)
-    You say "-112805738704"
+    You say, "-112805738704"
     > say convtime(23456W12-1T123456T)
-    You say "678039276896"
+    You say, "678039276896"
 
   Related Topics: convsecs(), secs(), time().
 
@@ -5558,13 +5558,13 @@ COS()
 
   Examples:
     > say cos(0)
-    You say "1"
+    You say, "1"
     > say cos(fdiv(pi(),2))
-    You say "0"
+    You say, "0"
     > say cos(fdiv(pi(),4))
-    You say "0.707107"
+    You say, "0.707107"
     > say cos(fdiv(pi(),6))
-    You say "0.866025"
+    You say, "0.866025"
 
   Related Topics: acos(), asin(), atan(), pi(), sin(), tan().
 
@@ -5665,7 +5665,7 @@ CWHO()
 
   Example:
     > say cwho(Public)
-    You say "#13 #11"
+    You say, "#13 #11"
 
   Related Topics: alias, channels(), comalias(), comtitle().
 
@@ -5727,10 +5727,10 @@ DEFAULT()
   Examples:
     > &TEST me=apple orange banana
     > say default(me/Test, No fruits!)
-    You say "apple orange banana"
+    You say, "apple orange banana"
     > &TEST ME
     > say default(me/Test, No fruits!)
-    You say "No fruits!"
+    You say, "No fruits!"
 
   Related Topics: get(), get_eval(), u(), edefault(), udefault().
 
@@ -5763,9 +5763,9 @@ DELETE()
 
   Example:
     > say delete(abcdefgh, 3, 2)
-    You say "abcfgh"
+    You say, "abcfgh"
     > say delete(Would you like coffee or perhaps tea?, 15, 18)
-    You say "Would you like tea?"
+    You say, "Would you like tea?"
 
   Related Topics:
 
@@ -5808,9 +5808,9 @@ DIGITTIME()
 
   Example:
     > say digittime(2345)
-    You say "00:39"
+    You say, "00:39"
     > say digittime(123456)
-    You say "1d 10:18"
+    You say, "1d 10:18"
 
   Related Topics: writetime(), singletime(), exptime(), secs(), time().
 
@@ -5824,7 +5824,7 @@ DIST2D()
 
   Example:
     > say dist2d(0,0,3,4)
-    You say "5"
+    You say, "5"
 
   Related Topics: dist3d()
 
@@ -5838,7 +5838,7 @@ DIST3D()
 
   Example:
     > say dist3d(0,0,0,10,15,20)
-    You say "27"
+    You say, "27"
 
   Related Topics: dist2d()
 
@@ -5936,7 +5936,7 @@ E()
 
   Example:
     > say e()
-    You say "2.718281828"
+    You say, "2.718281828"
 
   Related Topics: exp(), ln(), log(), power().
 
@@ -5954,10 +5954,10 @@ EDEFAULT()
   Example:
     > &TEST me=You have lost [rand(10)] marbles.
     > say edefault(me/Test,You have no marbles.)
-    You say "You have lost 6 marbles."
+    You say, "You have lost 6 marbles."
     > &TEST me
     > say edefault(me/Test,You have no marbles.)
-    You say "You have no marbles."
+    You say, "You have no marbles."
 
   Related Topics: get(), get_eval(), u(), default(), udefault().
 
@@ -5972,9 +5972,9 @@ EDIT()
 
   Examples:
     > say edit(This is a test,is,x)
-    You say "Thx x a test"
+    You say, "Thx x a test"
     > say edit(Atlantic,^,Trans)
-    You say "TransAtlantic"
+    You say, "TransAtlantic"
 
   Related Topics: @edit.
 
@@ -5990,9 +5990,9 @@ ELEMENTS()
 
   Examples:
     > say elements(Foo Ack Beep Moo Zot,2 4)
-    You say "Ack Moo"
+    You say, "Ack Moo"
     > say elements(Foof|Ack|Beep|Moo,3 1,|)
-    You say "Beep|Foof"
+    You say, "Beep|Foof"
 
   Related Topics:
 
@@ -6124,11 +6124,11 @@ EQ()
 
   Example:
     > say eq(1,-1)
-    You say "0"
+    You say, "0"
     > say eq(5,5)
-    You say "1"
+    You say, "1"
     > say eq(foo, bar)
-    You say "1"
+    You say, "1"
 
   Related Topics: BOOLEAN VALUES, lt(), lte(), gte(), gt(), neq().
 
@@ -6144,7 +6144,7 @@ ERROR()
 
   Example:
     > say error()
-    You say "Huh?  (Type 'help' for help.)"
+    You say, "Huh?  (Type 'help' for help.)"
 
     > say error(@pmit)
     You typed '@pmit'.
@@ -6307,11 +6307,11 @@ EXP()
 
   Examples:
     > say exp(0)
-    You say "1"
+    You say, "1"
     > say exp(1)
-    You say "2.718282"
+    You say, "2.718282"
     > say exp(2)
-    You say "7.389056"
+    You say, "7.389056"
 
   Related Topics: e(), log(), ln(), power().
 
@@ -6329,11 +6329,11 @@ EXPTIME()
 
   Example:
     > say exptime(45)
-    You say "45s"
+    You say, "45s"
     > say exptime(12345)
-    You say "3h 25m 45s"
+    You say, "3h 25m 45s"
     > say exptime(123456)
-    You say "1d 10h 17m 36s"
+    You say, "1d 10h 17m 36s"
 
   Related Topics: writetime(), singletime(), digittime(), secs(), time().
 
@@ -6351,9 +6351,9 @@ EXTRACT()
 
   Examples:
     > say extract(This is a really neat example, 4, 2)
-    You say "really neat"
+    You say, "really neat"
     > say extract(Another@funky@test@for@extract, 3, 3, @)
-    You say "test@for@extract"
+    You say, "test@for@extract"
 
   Related Topics: index(), insert(), ldelete(), replace().
 
@@ -6409,17 +6409,17 @@ FDIV()
 
   Examples:
     > say fdiv(15,3)
-    You say "5"
+    You say, "5"
     > say fdiv(16,3)
-    You say "5.333333"
+    You say, "5.333333"
     > say fdiv(17,3)
-    You say "5.666667"
+    You say, "5.666667"
     > say fdiv(18,3)
-    You say "6"
+    You say, "6"
     > say fdiv(-17,3)
-    You say "-5.666667"
+    You say, "-5.666667"
     > say fdiv(10,3.5)
-    You say "2.857143"
+    You say, "2.857143"
 
   Related Topics: add(), mod(), mul(), round(), sub(), trunc().
 
@@ -6438,7 +6438,7 @@ FILTER()
   Examples:
     > &IS_ODD object=mod(%0,2)
     > say filter(object/is_odd,1 2 3 4 5)
-    You say "1 3 5"
+    You say, "1 3 5"
 
   Related Topics: u(), map(), fold()
 
@@ -6457,7 +6457,7 @@ FILTERBOOL()
   Examples:
     > &IS_ODD object=mod(%0,2)
     > say filterbool(object/is_odd,1 2 3 4 5)
-    You say "1 3 5"
+    You say, "1 3 5"
 
   Related Topics: u(), map(), fold()
 
@@ -6486,11 +6486,11 @@ FIRST()
 
   Example:
     > say first(This is a test)
-    You say "This"
+    You say, "This"
     > say first(Would you like coffee, or perhaps tea)
-    You say "Would"
+    You say, "Would"
     > say first(List&with&nonstandard&delimiters,&)
-    You say "List"
+    You say, "List"
 
   Related Topics: rest().
 
@@ -6604,15 +6604,15 @@ FLOOR()
 
   Examples:
     > say floor(5)
-    You say "5"
+    You say, "5"
     > say floor(5.2)
-    You say "5"
+    You say, "5"
     > say floor(5.8)
-    You say "5"
+    You say, "5"
     > say floor(-5)
-    You say "-5"
+    You say, "-5"
     > say floor(-5.2)
-    You say "-6"
+    You say, "-6"
 
   Related Topics: ceil(), fdiv(), mod(), round(), trunc().
 
@@ -6637,15 +6637,15 @@ FLOORDIV()
 
   Examples:
     > say floordiv(15,3)
-    You say "5"
+    You say, "5"
     > say floordiv(16,3)
-    You say "5"
+    You say, "5"
     > say floordiv(17,3)
-    You say "5"
+    You say, "5"
     > say floordiv(18,3)
-    You say "6"
+    You say, "6"
     > say floordiv(-17,3)
-    You say "-6"
+    You say, "-6"
 
   Related Topics: fdiv(), iadd(), idiv(), imul(), isub(), mod(),
                   remainder().
@@ -6660,7 +6660,7 @@ FMOD()
 
   Example:
     > say fmod(6.1,2.5)
-    You say "1.0999999999999996"
+    You say, "1.0999999999999996"
 
   Related Topics: mod()
 
@@ -6683,10 +6683,10 @@ FOLD()
   Examples:
     > &REP_NUM object=[%0][repeat(%1,%1)]
     > say fold(object/rep_num,1 2 3 4 5,->)
-    You say "->122333444455555"
+    You say, "->122333444455555"
     > &ADD_NUMS object=add(%0,%1)
     > say fold(object/add_nums,1 2 3 4 5)
-    You say "15"
+    You say, "15"
 
   Related Topics: u(), iter(), map(), filter()
 
@@ -7009,9 +7009,9 @@ GET_EVAL()
     > @vb test = VB from test
     > @vb me = VB from me
     > say get(test/va)
-    You say "This is a get_eval test on %n. The vb is [get(me/vb)]"
+    You say, "This is a get_eval test on %n. The vb is [get(me/vb)]"
     > say get_eval(test/va)
-    You say "This is a get_eval test on Foobar. The vb is VB from test"
+    You say, "This is a get_eval test on Foobar. The vb is VB from test"
 
   Related Topics: get(), eval(), u(), v(), xget().
 
@@ -7081,9 +7081,9 @@ GRAB()
 
   Examples:
     > say grab(This is a new test,?e*)
-    You say "new"
+    You say, "new"
     > say grab(Holodeck:#10~Airlock:#58~Dorm:#12~Brig:#83,Airlock:*,~)
-    You say "Airlock:#58"
+    You say, "Airlock:#58"
 
   Related Topics: graball(), LISTS, member(), match(), regrab().
 
@@ -7100,9 +7100,9 @@ GRABALL()
 
   Examples:
     > say graball(This is a test of a test,test)
-    You say "test test"
+    You say, "test test"
     > say graball(This is testing a test,tes*)
-    You say "testing test"
+    You say, "testing test"
 
   Related Topics: grab(), LISTS, regrab(), regraball().
 
@@ -7145,13 +7145,13 @@ GT()
 
   Example:
     > say gt(4,5)
-    You say "0"
+    You say, "0"
     > say gt(5,5)
-    You say "0"
+    You say, "0"
     > say gt(6,5)
-    You say "1"
+    You say, "1"
     > say gt(foo, bar)
-    You say "0"
+    You say, "0"
 
   Related Topics: BOOLEAN VALUES, lt(), lte(), gte(), eq(), neq().
 
@@ -7168,13 +7168,13 @@ GTE()
 
   Example:
     > say gte(4,5)
-    You say "0"
+    You say, "0"
     > say gte(5,5)
-    You say "1"
+    You say, "1"
     > say gte(6,5)
-    You say "1"
+    You say, "1"
     > say gte(foo, bar)
-    You say "1"
+    You say, "1"
 
   Related Topics: BOOLEAN VALUES, lt(), lte(), gt(), eq(), neq().
 
@@ -7230,9 +7230,9 @@ HASFLAG()
 
   Example:
     > say hasflag(me, wizard)
-    You say "0"
+    You say, "0"
     > say hasflag(me, connect)
-    You say "1"
+    You say, "1"
 
   Related Topics:
 
@@ -7247,9 +7247,9 @@ HASPOWER()
 
   Example:
     > say haspower(me, announce)
-    You say "0"
+    You say, "0"
     > say hasflag(me, extended_who)
-    You say "1"
+    You say, "1"
 
   Related Topics: powers()
 
@@ -7267,9 +7267,9 @@ HASQUOTA()
 
   Example:
     > say hasquota(me, 100)
-    You say "0"
+    You say, "0"
     > say hasquota(me, 1)
-    You say "1"
+    You say, "1"
 
   Related Topics: @quota
 
@@ -7287,7 +7287,7 @@ HASRXLEVEL()
 
   Example: 
     > say hasrxlevel(me,real)
-    You say '1'.
+    You say, '1'.
 
   Related Topics: hastxlevel(), rxlevel(), txlevel(), listrlevels()
 
@@ -7305,7 +7305,7 @@ HASTXLEVEL()
 
   Example: 
     > say hastxlevel(me,real)
-    You say '1'.
+    You say, '1'.
 
   Related Topics: hasrxlevel(), rxlevel(), txlevel(), listrlevels()
 
@@ -7360,7 +7360,7 @@ HEIGHT()
 
   Example:
     > think height(me)
-    You say "26"
+    You say, "26"
 
   Related Topics: width().
 
@@ -7389,7 +7389,7 @@ HOME()
     Home: Mortal's Room(#367R)
     Location: The Town Square
     > say home(me)
-    You say "#367"
+    You say, "#367"
 
   Related Topics:
 
@@ -7452,11 +7452,11 @@ IABS()
 
   Examples:
     > say iabs(4)
-    You say "4"
+    You say, "4"
     > say iabs(-4)
-    You say "4"
+    You say, "4"
     > say iabs(0)
-    You say "0"
+    You say, "0"
 
   Related Topics: abs(), isign(), sign().
 
@@ -7471,9 +7471,9 @@ IADD()
 
   Example:
     > say iadd(2,4)
-    You say "6"
+    You say, "6"
     > say iadd(5,3,7,-4)
-    You say "11"
+    You say, "11"
 
   Related Topics: add(), dec(), idiv(), imul(), inc(), isub(), mod(),
             mul(), sub().
@@ -7498,15 +7498,15 @@ IDIV()
 
   Examples:
     > say idiv(15,3)
-    You say "5"
+    You say, "5"
     > say idiv(16,3)
-    You say "5"
+    You say, "5"
     > say idiv(17,3)
-    You say "5"
+    You say, "5"
     > say idiv(18,3)
-    You say "6"
+    You say, "6"
     > say idiv(-17,3)
-    You say "-5"
+    You say, "-5"
 
   Related Topics: iadd(), imul(), isub(), fdiv(), floordiv(), fmod(), mod(),
                   remainder().
@@ -7532,11 +7532,11 @@ IDLE()
     Evinar                00:12   6m
     3 Players logged in.
     > say idle(wiz)
-    You say "6"
+    You say, "6"
     > say idle(e)
-    You say "371"
+    You say, "371"
     > say idle(frobozz)
-    You say "-1"
+    You say, "-1"
 
   Related Topics: WHO, conn(), lwho().
 
@@ -7604,9 +7604,9 @@ IMUL()
 
   Examples:
     > say imul(3,5)
-    You say "15"
+    You say, "15"
     > say imul(3,5,-2)
-    You say "-30"
+    You say, "-30"
 
   Related Topics: add(), fdiv(), iadd(), idiv(), isub(), mod(), mul(),
             round(), sub(), trunc().
@@ -7693,9 +7693,9 @@ INSERT()
 
   Examples:
     > say insert(This is a test, 4, new)
-    You say "This is a new test"
+    You say, "This is a new test"
     > say insert(Yet@Another@List, 3, Funky, @)
-    You say "Yet@Another@Funky@List"
+    You say, "Yet@Another@Funky@List"
 
   Related Topics: extract(), ldelete(), replace().
 
@@ -7762,11 +7762,11 @@ ISDBREF()
 
   Example:
      > say isdbref(#-1)
-     You say "0"
+     You say, "0"
      > say isdbref(#1)
-     You say "1"
+     You say, "1"
      > say isdbref(This is not a dbref)
-     You say "0"
+     You say, "0"
 
   Related Topics: BOOLEAN VALUES, isint, isnum(), israt(), isword().
 
@@ -7780,13 +7780,13 @@ ISIGN()
 
   Examples:
     > say isign(-4)
-    You say "-1"
+    You say, "-1"
     > say isign(4)
-    You say "1"
+    You say, "1"
     > say isign(0)
-    You say "0"
+    You say, "0"
     > say isign(-1)
-    You say "-1"
+    You say, "-1"
 
   Related Topics: abs(), iabs(), sign().
 
@@ -7801,11 +7801,11 @@ ISINT()
 
   Example:
      > say isint(22223.0000)
-     You say "0"
+     You say, "0"
      > say isint(+77)
-     You say "1"
+     You say, "1"
      > say isint(22 L)
-     You say "0"
+     You say, "0"
 
   Related Topics: BOOLEAN VALUES, isdbref, isnum(), israt(), isword().
 
@@ -7823,17 +7823,17 @@ ISNUM()
 
   Example:
      > say isnum(22223.0000)
-     You say "1"
+     You say, "1"
      > say isnum(10E-20)
-     You say "1"
+     You say, "1"
      > say isnum(+77)
-     You say "1"
+     You say, "1"
      >say isnum(+Inf)
-     You say "1"
+     You say, "1"
      > say isnum(22 L)
-     You say "0"
+     You say, "0"
      >say isnum(Bad Numbers!)
-     You say "0"
+     You say, "0"
 
   Related Topics: BOOLEAN VALUES, isdbref(), isint(), israt(), isword().
 
@@ -7852,11 +7852,11 @@ ISRAT()
 
   Example:
      > say israt(22223.0000)
-     You say "1"
+     You say, "1"
      > say israt(+77)
-     You say "1"
+     You say, "1"
      > say israt(1E20)
-     You say "0"
+     You say, "0"
 
   Related Topics: BOOLEAN VALUES, isdbref(), isint(), isnum(), isword().
 
@@ -7871,7 +7871,7 @@ ISUB()
 
   Example:
     > say isub(5,2)
-    You say "3"
+    You say, "3"
 
   Related Topics: add(), dec(), iadd(), idiv(), imul(), inc(), mod(),
             sub().
@@ -7936,13 +7936,13 @@ ITER()
 
   Examples:
     > say iter(This is a test,strlen(##))
-    You say "4 2 1 4"
+    You say, "4 2 1 4"
     > say iter(lnum(10),mul(mul(##,##),10))
-    You say "0 10 40 90 160 250 360 490 640 810"
+    You say, "0 10 40 90 160 250 360 490 640 810"
     > say iter(lcon(me),[name(##)]..[money(##)])
-    You say "test..1 t1..1 radio..1 The Wizard's Pointy Hat..1"
+    You say, "test..1 t1..1 radio..1 The Wizard's Pointy Hat..1"
     > say iter(Was it a cat I saw,[words(##)] #@,s)
-    You say "1 1 4 2 1 3"
+    You say, "1 1 4 2 1 3"
 
   Related Topics: @dolist, ilev(), inum(), itext(), list(), parse(), step()
 
@@ -8069,9 +8069,9 @@ LAST()
 
   Examples:
     > say last(This is a test)
-    You say "test"
+    You say, "test"
     > say last(Happy-Fun-Test-Thing,-)
-    You say "Thing"
+    You say, "Thing"
 
   Related Topics: first(), rest().
 
@@ -8094,9 +8094,9 @@ LATTR()
     Domain:Abusees
     ....
     > say lattr(me)
-    You say "Desc VC VE Last VV Domain"
+    You say, "Desc VC VE Last VV Domain"
     > say lattr(me/v*)
-    You say "VC VE VV"
+    You say, "VC VE VV"
 
   Related Topics: attrcnt(), @dolist, lattrp().
 
@@ -8114,7 +8114,7 @@ LATTRCMDS()
     > &CMD2 me=$command2:@pemit me=blah blah
     Set.
     > say lattrcmds(me)
-    You say "CMD1 CMD2"
+    You say, "CMD1 CMD2"
 
   Related Topics: lcmds().
 
@@ -8149,11 +8149,11 @@ LCMDS()
     > &CMD3 me=^* says *:@pemit me=You heard something
     Set.
     > say lcmds(me)
-    You say "command1 command #2 *"
+    You say, "command1 command #2 *"
     > say lcmds(me,|,$)
-    You say "command1|command #2 *"
+    You say, "command1|command #2 *"
     > say lcmds(me,|,^)
-    You say "* says *"
+    You say, "* says *"
 
   Related Topics: lattrcmds().
 
@@ -8181,7 +8181,7 @@ LCON()
     The Wizard's Pointy Hat(#188SO)
     You have 42463 clams.
     > say lcon(me)
-    You say "#366 #223 #188"
+    You say, "#366 #223 #188"
 
   Related Topics: lexits(), @dolist.
 
@@ -8194,7 +8194,7 @@ LCSTR()
 
   Example:
     > say lcstr(This is something I want to TEST)
-    You say "this is something i want to test"
+    You say, "this is something i want to test"
 
   Related Topics: capstr(), ucstr().
 
@@ -8209,9 +8209,9 @@ LDELETE()
 
   Examples:
     > say ldelete(This is not a test, 3)
-    You say "This is a test"
+    You say, "This is a test"
     > say ldelete(Yet@Another@Mundane@List, 3, @)
-    You say "Yet@Another@List"
+    You say, "Yet@Another@List"
 
   Related Topics: extract(), insert(), replace().
 
@@ -8250,7 +8250,7 @@ LEXITS()
     Obvious exits:
     foo  up  southeast  sw  north
     > say lexits(here)
-    You say "#302 #10 #9 #8 #6"
+    You say, "#302 #10 #9 #8 #6"
 
   Related Topics: lcon(), @dolist, PARENT OBJECTS.
 
@@ -8265,9 +8265,9 @@ LFLAGS()
 
   Example:
     > say flags(me)
-    You say "PXNWcis"
+    You say, "PXNWcis"
     > say lflags(me)
-    You say "ANSI NOSPOOF WIZARD CONNECTED IMMORTAL SAFE"
+    You say, "ANSI NOSPOOF WIZARD CONNECTED IMMORTAL SAFE"
 
   Related Topics: flags(), type().
 
@@ -8368,7 +8368,7 @@ LISTENING
     > @set test=monitor
     test grows ears and can now hear.
     > say foo bar
-    You say "foo bar"
+    You say, "foo bar"
     test says "I got a foo with bar!."
 
   Related Topics: @ahear, @listen, @set.
@@ -8386,7 +8386,7 @@ LISTRLEVELS()
 
   Example:
     > say listrlevels()
-    You say "Real Shadow Auf Umbra"
+    You say, "Real Shadow Auf Umbra"
 
 & LISTS
 LISTS
@@ -8447,13 +8447,13 @@ LJUST()
 
   Examples:
     > say -[ljust(foo,6)]-
-    You say "-foo   -"
+    You say, "-foo   -"
     > say %r0[ljust(foo,6)]7%r01234567
-    You say "
+    You say, "
     0foo   7
     01234567"
     > say =[ljust(bar,5,.)]=
-    You say "=bar..="
+    You say, "=bar..="
     > say ljust(%xh%xrR%xgG%xbB,31,%xy--%xm+)
     RGB--+--+--+--+--+--+--+--+--+-
 
@@ -8470,13 +8470,13 @@ LN()
 
   Examples:
     > say ln(0)
-    You say "-Inf"
+    You say, "-Inf"
     > say ln(1)
-    You say "0"
+    You say, "0"
     > say ln(e())
-    You say "1"
+    You say, "1"
     > say ln(10)
-    You say "2.302585"
+    You say, "2.302585"
 
   Related Topics: e(), exp(), log(), power().
 
@@ -8499,13 +8499,13 @@ LNUM()
 
   Examples:
     > say lnum(5)
-    You say "0 1 2 3 4"
+    You say, "0 1 2 3 4"
     > say lnum(3,7)
-    You say "3 4 5 6 7"
+    You say, "3 4 5 6 7"
     > say lnum(4,-2,|)
-    You say "4|3|2|1|0|-1|-2"
+    You say, "4|3|2|1|0|-1|-2"
     > say lnum(2,6,@@)
-    You say "23456"
+    You say, "23456"
 
   Related Topics:
 
@@ -8526,15 +8526,15 @@ LOC()
     Contents:
     hat(#368)
     > say loc(me)
-    You say "#367"
+    You say, "#367"
     > enter hat
     hat(#368)
     Contents:
     cat(#325)
     > say loc(me)
-    You say "#368"
+    You say, "#368"
     > say loc(here)
-    You say "#367"
+    You say, "#367"
 
   Related Topics: rloc(), room(), where().
 
@@ -8611,13 +8611,13 @@ LOCATE() (continued)
     Nullspace(#250R)
     test1(#382)
     > say locate(me,test,i)                > say locate(me,tes,in)
-    You say "#376"                         You say "#-2"
+    You say, "#376"                         You say, "#-2"
     > say locate(me,test,n)                > say locate(here,tes,*)
-    You say "#382"                         You say "#382"
+    You say, "#382"                         You say, "#382"
     > say locate(me,test1,in)              > say locate(me,out,e)
-    You say "#378"                         You say "#252"
+    You say, "#378"                         You say, "#252"
     > say locate(me,test1,in)              > say locate(me,here,*)
-    You say "#382"                         You say "#250"
+    You say, "#382"                         You say, "#250"
 
   Related Topics: num(), PARENT OBJECTS.
 
@@ -8642,13 +8642,13 @@ LOG()
 
   Examples:
     > say log(0)
-    You say "-Inf"
+    You say, "-Inf"
     > say log(1)
-    You say "0"
+    You say, "0"
     > say log(10)
-    You say "1"
+    You say, "1"
     > say log(e())
-    You say "0.434294"
+    You say, "0.434294"
 
   Related Topics: e(), exp(), ln(), power().
 
@@ -8739,7 +8739,7 @@ LPORTS()
     Wizard                00:32   6s  
     3 Players logged in.
     > say lports()
-    You say "#226:20 #271:5 #1:6"
+    You say, "#226:20 #271:5 #1:6"
 
   Related Topics: lwho(), WHO, DOING, conn(), idle().
 
@@ -8757,7 +8757,7 @@ LPOS()
 
   Example:
     > say lpos(a-bc-def-g,-)
-    You say "1 4 8"
+    You say, "1 4 8"
 
 & LRAND()
 LRAND()
@@ -8795,7 +8795,7 @@ LROOMS()
     Obvious exits:
     foo  up  southeast  sw  north
     > say lrooms(here,1)
-    You say "#3 #12 #91 #82 #63"
+    You say, "#3 #12 #91 #82 #63"
 
   Related Topics: @dolist, lexits(), PARENT OBJECTS
 
@@ -8812,13 +8812,13 @@ LT()
 
   Example:
     > say lt(4,5)
-    You say "1"
+    You say, "1"
     > say lt(5,5)
-    You say "0"
+    You say, "0"
     > say lt(6,5)
-    You say "0"
+    You say, "0"
     > say lt(foo, bar)
-    You say "0"
+    You say, "0"
 
   Related Topics: BOOLEAN VALUES, lte(), gte(), gt(), eq(), neq().
 
@@ -8835,13 +8835,13 @@ LTE()
 
   Example:
     > say lte(4,5)
-    You say "1"
+    You say, "1"
     > say lte(5,5)
-    You say "1"
+    You say, "1"
     > say lte(6,5)
-    You say "0"
+    You say, "0"
     > say lte(foo, bar)
-    You say "1"
+    You say, "1"
 
   Related Topics: BOOLEAN VALUES, lt(), gte(), gt(), eq(), neq().
 
@@ -8863,11 +8863,11 @@ LWHO()
     Wizard                00:32   6s  
     3 Players logged in.
     > say lwho()
-    You say "#226 #271 #1"
+    You say, "#226 #271 #1"
     > say lwho(0)
-    You say "#226 #271 #1"
+    You say, "#226 #271 #1"
     > say lwho(1)
-    You say "#226:20 #271:5 #1:6"
+    You say, "#226:20 #271:5 #1:6"
 
   Related Topics: cwho(), conn(), DOING, idle(), WHO, zwho().
 
@@ -9195,7 +9195,7 @@ MAP()
   Examples:
     > &ADD_ONE object=add(%0,1)
     > say map(object/add_one,1 2 3 4 5)
-    You say "2 3 4 5 6"
+    You say, "2 3 4 5 6"
 
   Related Topics: filter(), fold(), ilev(), iter(), itext(), inum(), parse(),
                   u().
@@ -9218,15 +9218,15 @@ MATCH()
 
   Examples:
     > say match(This is a test, test)
-    You say "4"
+    You say, "4"
     > say match(This is a test, is)
-    You say "2"
+    You say, "2"
     > say match(This is a test, *is*)
-    You say "1"
+    You say, "1"
     > say match(This is a test, *not*)
-    You say "0"
+    You say, "0"
     > say match(This is a test, is a)
-    You say "0"
+    You say, "0"
 
   Related Topics: LISTS, member(), strmatch().
 
@@ -9241,9 +9241,9 @@ MATCHALL()
 
   Examples:
     > say matchall(This is a test of a test,test)
-    You say "4 7"
+    You say, "4 7"
     > say matchall(This is testing a test,tes*)
-    You say "3 5"
+    You say, "3 5"
 
   Related Topics: LISTS, match(), strmatch().
 
@@ -9267,9 +9267,9 @@ MAX()
 
   Examples:
     > say max(2,4)
-    You say "4"
+    You say, "4"
     > say max(-100,50,0,25)
-    You say "50"
+    You say, "50"
 
   Related Topics: min()
 
@@ -9305,13 +9305,13 @@ MEMBER()
 
   Example:
     > say member(This is a member test, member)
-    You say "4"
+    You say, "4"
     > say member(This is a member test, Member)
-    You say "0"
+    You say, "0"
     > say member(This is a member test, *e*)
-    You say "0"
+    You say, "0"
     > say member(This is a member test, is a)
-    You say "0"
+    You say, "0"
 
   Related Topics: LISTS, match(), strmatch().
 
@@ -9368,9 +9368,9 @@ MIN()
 
   Examples:
     > say min(2,4)
-    You say "2"
+    You say, "2"
     > say min(-100,50,0,25)
-    You say "-100"
+    You say, "-100"
 
   Related Topics: max()
 
@@ -9391,13 +9391,13 @@ MIX()
     > &do_math me=[add(%0,%1)]
     > &do_moremath me=[add(%0,%1,%2,%3,%4,%5,%6,%7,%8,%9)]
     > say mix(do_math,1 2 3 4 5,2 4 6 8 10)
-    You say "3 6 9 12 15"
+    You say, "3 6 9 12 15"
     > say mix(do_math,1@2@3@4@5,2@4@6@8@10,@)
-    You say "3@6@9@12@15"
+    You say, "3@6@9@12@15"
     > say mix(do_math,1 2 3 4 5,7 9)
-    You say "8 11 3 4 5"
+    You say, "8 11 3 4 5"
     > say mix(do_moremath,1,2,3,4,5,6,7 8,9 10 11 12,)
-    You say "37 18 11 12"
+    You say, "37 18 11 12"
   
   Related Topics: elements(), iter(), list(), map(), merge(), step()
 
@@ -9433,13 +9433,13 @@ MOD()
 
   Example:
     > say mod(-9,5)
-    You say "1"
+    You say, "1"
     > say mod(-9,-5)
-    You say "-4"
+    You say, "-4"
     > say mod(17,3)
-    You say "2"
+    You say, "2"
     > say mod(18,3)
-    You say "0"
+    You say, "0"
 
   Related Topics: floordiv(), iadd(), idiv(), imul(), isub(),
                   remainder().
@@ -9470,7 +9470,7 @@ MONEY()
     > score
     You have 1052 clams.
     > say money(me)
-    You say "1052"
+    You say, "1052"
     > exam sac test
     Sac Test(#287V)
     Type: THING Flags: VISUAL
@@ -9478,7 +9478,7 @@ MONEY()
     Home: Limbo(#0RLDAJ)
     Location: The Town Square
     > say money(sac test)
-    You say "20"
+    You say, "20"
 
   Related Topics:
 
@@ -9644,7 +9644,7 @@ MUDNAME()
 
   Example:
     > say mudname()
-    You say "TestMUX"
+    You say, "TestMUX"
 
   Related Topics:
 
@@ -9659,9 +9659,9 @@ MUL()
 
   Example:
     > say mul(3,5)
-    You say "15"
+    You say, "15"
     > say mul(3,5,-2)
-    You say "-30"
+    You say, "-30"
 
   Related Topics: add(), fdiv(), iadd(), idiv(), imul(), isub(),
             mod(), round(), sub(), trunc().
@@ -9740,11 +9740,11 @@ NEQ()
 
   Examples:
     > say neq(1,-1)
-    You say "1"
+    You say, "1"
     > say neq(5,5)
-    You say "0"
+    You say, "0"
     > say neq(foo, bar)
-    You say "0"
+    You say, "0"
 
   Related Topics: BOOLEAN VALUES, lt(), lte(), gte(), gt(), eq(), not().
 
@@ -10200,15 +10200,15 @@ PARENT()
 
   Example:
     > say parent(me)
-    You say "#-1"
+    You say, "#-1"
     > say My va is [v(va)].
-    You say "My va is "
+    You say, "My va is "
     > @parent me=test
     Parent set.
     > say parent(me)
-    You say "#323"
+    You say, "#323"
     > say My va is [v(va)].
-    You say "My va is Testing 123"
+    You say, "My va is Testing 123"
 
   Related Topics: @parent, PARENT OBJECTS.
 
@@ -10245,9 +10245,9 @@ PARSE()
 
   Examples:
     > say parse(1 2 3 4 5,add(##,1))
-    You say "2 3 4 5 6"
+    You say, "2 3 4 5 6"
     > say parse(This|is|a|string|length|test,strlen(##),|)
-    You say "4 2 1 6 6 4"
+    You say, "4 2 1 6 6 4"
 
   Related Topics: @dolist, iter(), map().
 
@@ -10287,7 +10287,7 @@ PI()
 
   Example:
     > say pi()
-    You say "3.141592654"
+    You say, "3.141592654"
 
   Related Topics: acos(), asin(), atan(), cos(), sin(), tan().
 
@@ -10302,7 +10302,7 @@ PICKRAND()
 
   Example:
     > say pickrand(foo bar baz)
-    You say "bar"
+    You say, "bar"
 
   Related Topics: die(), lrand(), rand(), shuffle()
 
@@ -10324,7 +10324,7 @@ PIPING
                   %1/Description=[translate(%|,1)]
   > &SAYDESC me=$+saydesc *:look %0 ;| say %r%|
   > +saydesc me
-  You say "
+  You say, "
   Idoru(#5PXMWc)
   You see nothing special.
   "
@@ -10456,19 +10456,19 @@ POWER()
 
   Examples:
     > say power(2,3)
-    You say "8"
+    You say, "8"
     > say power(9, 0.5)
-    You say "3"
+    You say, "3"
     > say power(100,pi())
-    You say "1919487.5835776979"
+    You say, "1919487.5835776979"
     > say power(5, 0)
-    You say "1"
+    You say, "1"
     > say power(0, 0)
-    You say "1"
+    You say, "1"
     > say power(2,-3)
-    You say "0.125"
+    You say, "0.125"
     > say power(0,-1)
-    You say "+Inf"
+    You say, "+Inf"
 
   Related Topics: exp(), ln(), log(), sqrt()
 
@@ -10629,11 +10629,11 @@ RAND()
 
   Example:
     > say rand(10)
-    You say "6"
+    You say, "6"
     > say rand(10)
-    You say "1"
+    You say, "1"
     > say rand(-1,2)
-    You say "0"
+    You say, "0"
 
   Related Topics: die(), lrand(), pickrand(), shuffle()
 
@@ -10916,13 +10916,13 @@ REMAINDER()
 
   Example:
     > say remainder(-9,5)
-    You say "-4"
+    You say, "-4"
     > say remainder(-9,-5)
-    You say "-4"
+    You say, "-4"
     > say remainder(17,3)
-    You say "2"
+    You say, "2"
     > say remainder(18,3)
-    You say "0"
+    You say, "0"
 
   Related Topics: iadd(), idiv(), imul(), isub(), floordiv(), fmod(),
                   mod().
@@ -10948,13 +10948,13 @@ REMOVE()
 
   Example:
     > say remove(this is a test, is)
-    You say "this a test"
+    You say, "this a test"
     > say remove(You can't remove, this)
-    You say "You can't remove"
+    You say, "You can't remove"
     > say remove(You can't remove multiple words, You can't)
-    You say "#-1 CAN ONLY DELETE ONE ELEMENT"
+    You say, "#-1 CAN ONLY DELETE ONE ELEMENT"
     > say remove(How about an o-separated list, w ab, o)
-    You say "Hout an o-separated list"
+    You say, "Hout an o-separated list"
 
   Related Topics:
 
@@ -10987,9 +10987,9 @@ REPLACE()
 
   Examples:
     > say replace(This is a test, 4, quiz)
-    You say "This is a quiz"
+    You say, "This is a quiz"
     > say replace(Yet@Another@Mundane@List, 3, Funky, @)
-    You say "Yet@Another@Funky@List"
+    You say, "Yet@Another@Funky@List"
 
   Related Topics: extract(), insert(), ldelete().
 
@@ -11006,11 +11006,11 @@ REST()
 
   Example:
     > say rest(This is a test)
-    You say "is a test"
+    You say, "is a test"
     > say rest(Would you like coffee, or perhaps tea)
-    You say "you like coffee, or perhaps tea"
+    You say, "you like coffee, or perhaps tea"
     > say rest(List!with!different!delimiters,!)
-    You say "with!different!delimiters"
+    You say, "with!different!delimiters"
 
   Related Topics: first().
 
@@ -11046,11 +11046,11 @@ REVERSE()
 
   Examples:
     > say reverse(This is a test)
-    You say "tset a si sihT"
+    You say, "tset a si sihT"
     > say reverse(This is a test, Really...)
-    You say "...yllaeR ,tset a si sihT"
+    You say, "...yllaeR ,tset a si sihT"
     > say reverse(A man, a plan, a canal -- Panama!)
-    You say "!amanaP -- lanac a ,nalp a ,nam A"
+    You say, "!amanaP -- lanac a ,nalp a ,nam A"
 
   Related Topics: revwords().
 
@@ -11067,9 +11067,9 @@ REVWORDS()
 
   Examples:
     > say revwords(This is a test. Really...)
-    You say "Really... test. a is This"
+    You say, "Really... test. a is This"
     > say revwords(Was it a cat I saw?)
-    You say "saw? I cat a it Was"
+    You say, "saw? I cat a it Was"
 
   Related Topics: reverse().
 
@@ -11108,13 +11108,13 @@ RJUST()
 
   Examples:
     > say -[rjust(foo,6)]-
-    You say "-   foo-"
+    You say, "-   foo-"
     > say %r0[rjust(foo,6)]7%r01234567
-    You say "
+    You say, "
     0   foo7
     01234567"
     > say =[rjust(bar,5,.)]=
-    You say "=..bar="
+    You say, "=..bar="
     > say rjust(%xh%xrR%xgG%xbB,31,%xy--%xm+)
     --+--+--+--+--+--+--+--+--+-RGB
 
@@ -11204,11 +11204,11 @@ ROOM()
     Mortal's Room(#367R)
     A bare room with nothing in it but a bed and a chair.
     > say I am in [room(me)], the cat is in room [room(cat)].
-    You say "I am in #367, the cat is in room #367."
+    You say, "I am in #367, the cat is in room #367."
     > @fo hat=get cat
     cat has left.
     > say The cat is in [loc(#325)] within room [room(#325)].
-    You say "The cat is in #368 within room #367."
+    You say, "The cat is in #368 within room #367."
 
   Related Topics: loc(), UNFINDABLE.
 
@@ -11223,15 +11223,15 @@ ROUND()
 
   Examples:
     > say round(5.123,1)
-    You say "5.1"
+    You say, "5.1"
     > say round(9.8765,3)
-    You say "9.877"
+    You say, "9.877"
     > say round(5.5,0)
-    You say "6"
+    You say, "6"
     > say round(-5.5,0)
-    You say "-6"
+    You say, "-6"
     > say round(520,-3)
-    You say "1000"
+    You say, "1000"
 
   Related Topics: fdiv(), floor(), mod(), trunc().
 
@@ -11261,7 +11261,7 @@ RXLEVEL()
 
   Example:
     > say rxlevel(me)
-    You say 'Real'.
+    You say, 'Real'.
 
   Related Topics: hasrxlevel(), hastxlevel(), txlevel(), listrlevels()
 
@@ -11333,7 +11333,7 @@ SCRAMBLE()
 
   Example:
     > say scramble(abcdef)
-    You say "cfaedb"
+    You say, "cfaedb"
 
   Related Topics: shuffle()
 
@@ -11387,13 +11387,13 @@ SEARCH()
 
   Examples:
     > say search()
-    You say "#226 #289 #325 #364 #368 #369"
+    You say, "#226 #289 #325 #364 #368 #369"
     > @stats me
     6 objects = 0 rooms, 0 exits, 5 things, 1 players. (0 garbage)
     > say search(eval=\[eq(money(##),1)\])
-    You say "#289 #325 #364 #368 #369"
+    You say, "#289 #325 #364 #368 #369"
     > say search(player=wizard)
-    You say "#1"
+    You say, "#1"
 
   Related Topics: @search, SEARCH CLASSES.
 
@@ -11422,12 +11422,12 @@ SECS()
 
   Example:
      > say secs()
-     You say "957557434"
+     You say, "957557434"
      ... wait a bit ...
      > say secs()
-     You say "957557447"
+     You say, "957557447"
      > say secs(local,5)
-     You say "957532580.09348"
+     You say, "957532580.09348"
 
   Related Topics: convsecs(), convtime(), time().
 
@@ -11446,9 +11446,9 @@ SECURE()
 
     > @va me=Sneak a peek at Wiz's desc... [get(#1/desc)]
     > say secure(%va)
-    You say "Sneak a peek at Wiz's desc...  get #1/desc  "
+    You say, "Sneak a peek at Wiz's desc...  get #1/desc  "
     > say secure($foobar:this {is} a really, tough ; test.)
-    You say " foobar:this is a really tough   test."
+    You say, " foobar:this is a really tough   test."
 
   Note: 'say secure(Sneak a peek at Wiz's desc... [get(#1/desc)])' does not
   produce the expected result because the argument is evaluated BEFORE being
@@ -11623,7 +11623,7 @@ SETQ()
   Example:
     > &TEST me=Test on [mudname()] at [time()].
     > say [setq(0,u(TEST))]'[r(0)]' has length [strlen(r(0))].
-    You say "'Test on TestMUX at Tue Feb 23 17:00:51 1993.' has length 45."
+    You say, "'Test on TestMUX at Tue Feb 23 17:00:51 1993.' has length 45."
 
   Related Topics: r(), setr().
 
@@ -11722,7 +11722,7 @@ SHUFFLE()
 
   Example:
     > say shuffle(foo bar baz gleep)
-    You say "baz foo gleep bar"
+    You say, "baz foo gleep bar"
 
   Related Topics: die(), lrand(), pickrand(), rand()
 
@@ -11736,13 +11736,13 @@ SIGN()
 
   Examples:
     > say sign(-4.2)
-    You say "-1"
+    You say, "-1"
     > say sign(4.2)
-    You say "1"
+    You say, "1"
     > say sign(0.0)
-    You say "0"
+    You say, "0"
     > say sign(-1.3)
-    You say "-1"
+    You say, "-1"
 
   Related Topics: abs(), iabs(), isign().
 
@@ -11759,13 +11759,13 @@ SIN()
 
   Examples:
     > say sin(270,d)
-    You say "-1"
+    You say, "-1"
     > say sin(fdiv(pi(),2))
-    You say "1"
+    You say, "1"
     > say sin(fdiv(pi(),4))
-    You say "0.707107"
+    You say, "0.707107"
     > say sin(fdiv(pi(),6))
-    You say "0.5"
+    You say, "0.5"
 
   Related Topics: acos(), asin(), atan(), cos(), pi(), tan().
 
@@ -11779,11 +11779,11 @@ SINGLETIME()
 
   Example:
     > say singletime(45)
-    You say "45s"
+    You say, "45s"
     > say singletime(12345)
-    You say "3h"
+    You say, "3h"
     > say singletime(123456)
-    You say "1d"
+    You say, "1d"
 
   Related Topics: writetime(), exptime(), digittime(), secs(), time().
 
@@ -11843,11 +11843,11 @@ SORT()
 
   Examples:
     > say sort(This is a test)
-    You say "This a is test"
+    You say, "This a is test"
     > say sort(98 100 99 101,n)
-    You say "98 99 100 101"
+    You say, "98 99 100 101"
     > say sort(foo-bar-bletch,,-,|)
-    You say "bar|bletch|foo"
+    You say, "bar|bletch|foo"
 
   Related Topics: munge, sortby
 
@@ -11864,12 +11864,12 @@ SORTBY()
   A simple example, which imitates a normal alphabetic sort:
     > &ALPHASORT test=[comp(%0,%1)]
     > say [sortby(test/ALPHASORT,foo bar baz)]
-    You say "bar baz foo"
+    You say, "bar baz foo"
 
   A slightly more complicated sort. #1 is "God", #2 is "Amby", "#3" is "Bob":
     > &NAMESORT me=[comp(name(%0),name(%1))]
     > say [sortby(NAMESORT,#1 #2 #3)]
-    You say "#2 #3 #1"
+    You say, "#2 #3 #1"
 
   Warning: the function invocation limit applies to this function. If
   this limit is exceeded, the function will fail _silently_. List and
@@ -11890,9 +11890,9 @@ SPACE()
 
   Examples:
     > say space(4)
-    You say "    "
+    You say, "    "
     > say edit(Foo bar bletch, space(), X)
-    You say "FooXbarXbletch"
+    You say, "FooXbarXbletch"
 
   Related Topics:
 
@@ -11989,13 +11989,13 @@ SQRT()
 
   Examples:
     > say sqrt(2)
-    You say "1.414214"
+    You say, "1.414214"
     > say sqrt(100)
-    You say "10"
+    You say, "10"
     > say sqrt(0)
-    You say "0"
+    You say, "0"
     > say sqrt(-1)
-    You say "Ind"
+    You say, "Ind"
 
   Related Topics: power().
 
@@ -12033,7 +12033,7 @@ STACK
     > @ahear item = "-->[v(1)]<-- bar -->[v(0)]<--
     Set.
     > say Fee fie foo fum
-    You say "Fee fie foo fum"
+    You say, "Fee fie foo fum"
     item says "-->fum"<-- bar -->Wizard says "Fee fie<--"
 
 & STAFF
@@ -12059,7 +12059,7 @@ STARTSECS()
 
   Example:
     > say startsecs()
-    You say "959093815"
+    You say, "959093815"
 
   Related Topics: secs().
 
@@ -12073,7 +12073,7 @@ STARTTIME()
 
   Example:
     > say starttime()
-    You say "Sat Dec  7 00:09:13 1991
+    You say, "Sat Dec  7 00:09:13 1991
 
   Related Topics: convtime().
 
@@ -12096,9 +12096,9 @@ STATS()
     > @stats me
     6 objects = 0 rooms, 0 exits, 5 things, 1 players. (0 garbage)
     > say stats(me)
-    You say "6 0 0 5 1 0"
+    You say, "6 0 0 5 1 0"
     > say stats()
-    You say "377 51 165 134 20 7"
+    You say, "377 51 165 134 20 7"
     > @stats/all
     377 objects = 51 rooms, 165 exits, 134 things, 20 players. (7 garbage)
 
@@ -12166,9 +12166,9 @@ STRIP()
   
   Examples:
     > say strip(This is a test,is)
-    You say "Th  a tet"
+    You say, "Th  a tet"
     > say strip(abcdefgABCDEFG,azGy!7$B)
-    You say "bcdefgACDEF"
+    You say, "bcdefgACDEF"
   
   Related Topics: @edit, edit().
 
@@ -12200,9 +12200,9 @@ STRLEN()
 
   Example:
     > say strlen(This is a test)
-    You say "14"
+    You say, "14"
     > say strlen(Would you like coffee, or perhaps tea)
-    You say "37"
+    You say, "37"
 
   Related Topics: strmem().
 
@@ -12222,11 +12222,11 @@ STRMATCH()
 
   Examples:
     > say strmatch(This is a test,*Test)
-    You say "1"
+    You say, "1"
     > say strmatch(This is a test,*This)
-    You say "0"
+    You say, "0"
     > say strmatch(This is a test,*is*is*)
-    You say "1"
+    You say, "1"
 
   Related Topics: match(), member(), regmatch().
 
@@ -12239,9 +12239,9 @@ STRMEM()
 
   Example:
     > say strmem(This is a test)
-    You say "14"
+    You say, "14"
     > say strmem(Would you like coffee, or perhaps tea)
-    You say "37"
+    You say, "37"
 
   Related Topics: strlen().
 
@@ -12267,7 +12267,7 @@ SUB()
 
   Example:
     > say sub(5,2)
-    You say "3"
+    You say, "3"
 
   Related Topics: add(), dec(), iadd(), idiv(), imul(), inc(), isub(),
             fdiv(), mod(), mul().
@@ -12426,13 +12426,13 @@ SWITCH()
 
   Example:
     > say switch(c,*a*,A,*b*,B,*c*,C,*d*,D,E)
-    You say "C"
+    You say, "C"
     > say switch(f,*a*,A,*b*,B,*c*,C,*d*,D,E)
-    You say "E"
+    You say, "E"
     > say switch(cab,*a*,A,*b*,B,*c*,C,*d*,D,E)
-    You say "A"
+    You say, "A"
     > say switch(f,*a*,A,*b*,B,*c*,C,*d*,D)
-    You say ""
+    You say, ""
 
   Related Topics: @switch, match(), ifelse(), case().
 
@@ -12535,11 +12535,11 @@ TAN()
 
   Examples:
     > say tan(0)
-    You say "0"
+    You say, "0"
     > say tan(1)
-    You say "1.557408"
+    You say, "1.557408"
     > say tan(fdiv(pi(),4))
-    You say "1"
+    You say, "1"
 
   Related Topics: acos(), asin(), atan(), cos(), pi(), sin().
 
@@ -12662,9 +12662,9 @@ TIME()
 
   Example:
     > say time()
-    You say "Fri May 05 13:05:39 2000"
+    You say, "Fri May 05 13:05:39 2000"
     > say time(utc,3)
-    You say "Fri May 05 20:05:39.667 2000"
+    You say, "Fri May 05 20:05:39.667 2000"
 
   Related Topics: convsecs(), convtime(), secs().
 
@@ -12837,11 +12837,11 @@ TRIM()
 
   Example:
     > say trim(;;;Wacka;;;,,;)
-    You say "Wacka"
+    You say, "Wacka"
     > say trim(%b%b%b Polly Parrot %b%b%b%b,r)
-    You say "    Polly Parrot"
+    You say, "    Polly Parrot"
     > say trim(---Trim Rules!---,l,-)
-    You say "Trim Rules!---"
+    You say, "Trim Rules!---"
 
   Related Topics: center(), ljust(), rjust().
 
@@ -12855,15 +12855,15 @@ TRUNC()
 
   Examples:
     > say trunc(5)
-    You say "5"
+    You say, "5"
     > say trunc(5.2)
-    You say "5"
+    You say, "5"
     > say trunc(5.8)
-    You say "5"
+    You say, "5"
     > say trunc(-5)
-    You say "-5"
+    You say, "-5"
     > say trunc(-5.2)
-    You say "-5"
+    You say, "-5"
 
   Related Topics: fdiv(), floor(), mod(), round().
 
@@ -12881,7 +12881,7 @@ TXLEVEL()
 
   Example:
     > say txlevel(me)
-    You say 'Real'.
+    You say, 'Real'.
 
   Related Topics: hasrxlevel(), hastxlevel(), rxlevel(), listrlevels()
 
@@ -12895,9 +12895,9 @@ TYPE()
 
   Example:
     > say type(me)
-    You say "PLAYER"
+    You say, "PLAYER"
     > say type(here)
-    You say "ROOM"
+    You say, "ROOM"
 
   Related Topics: hastype().
 
@@ -12918,11 +12918,11 @@ U()
     > @va me=Word is [extract(v(vb),add(%0,1),1)], arg2 is %1.
     > @vb me=This is a test of the u function.
     > say u(va,4,Testing 123)
-    You say "Word is of, arg2 is Testing 123."
+    You say, "Word is of, arg2 is Testing 123."
     > say u(va,7)
-    You say "Word is function., arg2 is ."
+    You say, "Word is function., arg2 is ."
     > say u(me/va,6,Foobar)
-    You say "Word is u, arg2 is Foobar."
+    You say, "Word is u, arg2 is Foobar."
 
   Related Topics: s(), v(), get(), get_eval(), map(), ulocal().
 
@@ -12935,7 +12935,7 @@ UCSTR()
 
   Example:
     > say ucstr(This is a test, really!)
-    You say "THIS IS A TEST, REALLY!"
+    You say, "THIS IS A TEST, REALLY!"
 
   Related Topics: capstr(), lcstr().
 
@@ -12956,10 +12956,10 @@ UDEFAULT()
   Examples:
     > &TEST me=[center(%0,5,*)]
     > say udefault(Test,-- BOOM --,ACK)
-    You say "*ACK*"
+    You say, "*ACK*"
     > &TEST me
     > say udefault(me/Test,-- BOOM --,ACK)
-    You say "-- BOOM --"
+    You say, "-- BOOM --"
 
   Related Topics: get(), get_eval(), u(), default(), edefault().
 
@@ -12995,12 +12995,12 @@ ULOCAL() (continued)
     > &SUB-FUNCTION me=[setq(0,v(FRUIT))][extract(%q0,match(%q0,%0),1)]
     > &TOP-FUNCTION me=[setq(0,are delicious!)][ulocal(SUB-FUNCTION,%0)] %q0
     > say u(TOP-FUNCTION,b*)
-    You say "bananas are delicious!"
+    You say, "bananas are delicious!"
 
   If SUB-FUNCTION had been called with u() instead of ulocal():
     > &TOP-FUNCTION me=[setq(0,are delicious!)][u(SUB-FUNCTION,%0)] %q0
     > say u(TOP-FUNCTION,b*)
-    You say "bananas apples bananas oranges pears"
+    You say, "bananas apples bananas oranges pears"
 
   In this second example, in SUB-FUNCTION, %q0 was set to "apples bananas
   oranges pears", so that when the u() "returned" and TOP-FUNCTION evaluated
@@ -13243,7 +13243,7 @@ VERSION()
      MUX 2.2.0.44 #1 [ALPHA]
      Build date: Tue Oct  1 11:47:16 PDT 2002
      > say version()
-     You say "MUX 2.2.0.44 #1 [ALPHA]"
+     You say, "MUX 2.2.0.44 #1 [ALPHA]"
 
   Related Topics:
 
@@ -13395,7 +13395,7 @@ WIDTH()
 
   Example:
     > think width(me)
-    You say "122"
+    You say, "122"
 
   Related Topics: height().
 
@@ -13436,13 +13436,13 @@ WORDPOS()
 
   Example:
     > say wordpos(This is a test, 4)
-    You say "1"
+    You say, "1"
     > say wordpos(This is a test, 5)
-    You say "2"
+    You say, "2"
     > say wordpos(This is a test, 6)
-    You say "2"
+    You say, "2"
     > say wordpos(This is a test, 20)
-    You say "#-1"
+    You say, "#-1"
 
   Related Topics: member(), pos().
 
@@ -13456,11 +13456,11 @@ WORDS()
 
   Example:
     > say words(This is a test)
-    You say "4"
+    You say, "4"
     say words(Would you like coffee or perhaps tea?)
-    > You say "7"
+    > You say, "7"
     say words(This:is:a:colon:separated:list,:)
-    > You say "6"
+    > You say, "6"
 
   Related Topics:
 
@@ -13523,11 +13523,11 @@ WRITETIME()
 
   Example:
     > say writetime(45)
-    You say "45 seconds"
+    You say, "45 seconds"
     > say writetime(12345)
-    You say "3 hours 25 minutes 45 seconds"
+    You say, "3 hours 25 minutes 45 seconds"
     > say writetime(123456)
-    You say "1 day 10 hours 17 minutes 36 seconds"
+    You say, "1 day 10 hours 17 minutes 36 seconds"
 
   Related Topics: digittime(), exptime(), secs(), singletime(), time().
 
