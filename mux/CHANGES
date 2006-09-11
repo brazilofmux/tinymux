@@ -108,6 +108,7 @@ Feature Additions:
  -- Add support for ae and AE ligatures in accent().
  -- Added WIDTH() and HEIGHT().
  -- Added FMOD().
+ -- Accept flatfile v2 from TinyMUX 2.6.
 
 
 Bug Fixes:
