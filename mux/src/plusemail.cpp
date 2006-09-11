@@ -127,7 +127,7 @@ static int mod_email_sock_readline(SOCKET sock, char *buffer, int maxlen)
     }
     buffer[pos] = '\0';
 
-    return strlen(buffer);
+    return pos;
 }
 
 /* Open a socket to a specific host/port */
@@ -353,24 +353,15 @@ void do_plusemail(dbref executor, dbref cause, dbref enactor, int key,
     do
     {
         result = mod_email_sock_readline(mailsock, inputline, LBUF_SIZE - 1);
-        if (result > 0)
+
+        // Remove trailing CR and LF characters.
+        //
+        while (  0 < result
+              && (  '\n' == inputline[result-1]
+                 || '\r' == inputline[result-1]))
         {
-            if (  '\n' == inputline[strlen(inputline) - 1]
-               || '\r' == inputline[strlen(inputline) - 1])
-            {
-                inputline[strlen(inputline) - 1] = '\0';
-            }
-        
-            if (  '\n' == inputline[strlen(inputline) - 1]
-               || '\r' == inputline[strlen(inputline) - 1])
-            {
-                inputline[strlen(inputline) - 1] = '\0';
-            }
-        
-            if (strlen(inputline) == 0)
-            {
-                result = 0;
-            }
+            result--;
+            inputline[result] = '\0';
         }
     } while (  0 == result
             || '-' == inputline[3]);
