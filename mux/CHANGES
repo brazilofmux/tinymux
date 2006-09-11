@@ -122,6 +122,7 @@ Bug Fixes:
  -- @email - mod_email_sock_readline() adds a '\0' one position too far
     (Issue 87).
  -- @email - Remove unnecessary zeroing of buffers (Issue 80).
+ -- @email - Typo in do_plusmail of '0' instead of '\0' (Issue 90).
 
 
 Performance Enhancements:

@@ -358,13 +358,13 @@ void do_plusemail(dbref executor, dbref cause, dbref enactor, int key,
             if (  '\n' == inputline[strlen(inputline) - 1]
                || '\r' == inputline[strlen(inputline) - 1])
             {
-                inputline[strlen(inputline) - 1] = '0';
+                inputline[strlen(inputline) - 1] = '\0';
             }
         
             if (  '\n' == inputline[strlen(inputline) - 1]
                || '\r' == inputline[strlen(inputline) - 1])
             {
-                inputline[strlen(inputline) - 1] = '0';
+                inputline[strlen(inputline) - 1] = '\0';
             }
         
             if (strlen(inputline) == 0)
