@@ -126,7 +126,7 @@ static int mod_email_sock_readline(SOCKET sock, char *buffer, int maxlen)
             }
         }
     }
-    *(buffer + pos + 1) = 0;
+    *(buffer + pos) = 0;
 
     return strlen(buffer);
 }
