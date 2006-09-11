@@ -116,6 +116,8 @@ Bug Fixes:
  -- Attribute-level tracing does not report sortby() comparisons
     (Issue 73).
  -- @email help doesn't mention @mail addy/subject=body form (Issue 86).
+ -- @email - do {} while () to simplify the sources and reduce the sizeof the
+    program (Issue 79).
 
 
 Performance Enhancements:
