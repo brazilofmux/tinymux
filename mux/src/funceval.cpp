@@ -3029,6 +3029,78 @@ FUNCTION(fun_mix)
 }
 
 /* ---------------------------------------------------------------------------
+ * fun_step: A little like a fusion of iter() and mix(), it takes elements
+ * of a list X at a time and passes them into a single function as %0, %1,
+ * etc.   step(<attribute>,<list>,<step size>,<delim>,<outdelim>)
+ */
+
+FUNCTION(fun_step)
+{
+    int i;
+
+    SEP isep;
+    if (!OPTIONAL_DELIM(4, isep, DELIM_DFLT|DELIM_STRING))
+    {
+        return;
+    }
+
+    SEP osep = isep;
+    if (!OPTIONAL_DELIM(5, osep, DELIM_NULL|DELIM_CRLF|DELIM_INIT|DELIM_STRING))
+    {
+        return;
+    }
+
+    int step_size = mux_atol(fargs[2]);
+    if (  step_size < 1
+       || NUM_ENV_VARS < step_size)
+    {
+        notify(executor, "Illegal step size.");
+        return;
+    }
+
+    // Get attribute. Check permissions.
+    //
+    char *atext;
+    dbref thing;
+    dbref aowner;
+    int   aflags;
+    if (!parse_and_get_attrib(executor, fargs, &atext, &thing, &aowner, &aflags, buff, bufc))
+    {
+        return;
+    }
+
+    char *cp = trim_space_sep(fargs[1], &isep);
+
+    char *atextbuf = alloc_lbuf("fun_step");
+    char *os[NUM_ENV_VARS];
+    bool bFirst = true;
+    while (  cp
+          && mudstate.func_invk_ctr < mudconf.func_invk_lim
+          && !MuxAlarm.bAlarmed)
+    {
+        if (!bFirst)
+        {
+            print_sep(&osep, buff, bufc);
+        }
+        else
+        {
+            bFirst = false;
+        }
+
+        for (i = 0; cp && i < step_size; i++)
+        {
+            os[i] = split_token(&cp, &isep);
+        }
+        mux_strncpy(atextbuf, atext, LBUF_SIZE-1);
+        char *str = atextbuf;
+        mux_exec(buff, bufc, executor, caller, enactor,
+             AttrTrace(aflags, EV_STRIP_CURLY|EV_FCHECK|EV_EVAL), &str, os, i);
+    }
+    free_lbuf(atext);
+    free_lbuf(atextbuf);
+}
+
+/* ---------------------------------------------------------------------------
  * fun_foreach: like map(), but it operates on a string, rather than on a list,
  * calling a user-defined function for each character in the string.
  * No delimiter is inserted between the results.

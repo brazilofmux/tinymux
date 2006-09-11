@@ -68,6 +68,7 @@ Feature Additions:
     (if present) are passed in as arguments %1-%9.  Suggested by Ronan.
  -- Added lbuf_size as a read-only configuration option so that
     config(lbuf_size) can report it to softcode.
+ -- Added STEP() following TinyMUSH and RhostMUSH (Issue 1).
 
 
 Bug Fixes:
@@ -110,7 +111,7 @@ Bug Fixes:
  -- Added help topic for HTML flag.
  -- When listening on multiple ports, continue to run the server as long
     as one of the requested ports is available.
- -- Issue 71: mix() doesn't include a function-invocation test.
+ -- mix() doesn't include a function-invocation test (Issue 71).
 
 
 Performance Enhancements:

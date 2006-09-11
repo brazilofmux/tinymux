@@ -6755,7 +6755,7 @@ FUNCTION CLASSES (continued)
                              ITER LADD LAST LDELETE LIST LNUM LRAND MAP MATCH
                              MATCHALL MEMBER MIX MUNGE PARSE PICKRAND REMOVE
                              REST REVWORDS SETDIFF SETINTER SETUNION SHUFFLE
-                             SORT SORTBY SPLICE TABLE WORDS
+                             SORT SORTBY SPLICE STEP TABLE WORDS
 
   Logarithms:                E EXP LOG LN
 
@@ -6883,16 +6883,16 @@ FUNCTION LIST (continued)
     SETR()      SETUNION()  SHA1()      SHL()       SHR()       SHUFFLE()
     SIGN()      SIN()       SINGLETIME()SORT()      SORTBY()    SPACE()
     SPELLNUM()  SPLICE()    SQL()       SQRT()      SQUISH()    STARTSECS()
-    STARTTIME() STATS()     STRCAT()    STRIP()     STRIPACCENTS() STRIPANSI()
-    STRLEN()    STRMATCH()  STRMEM()    STRTRUNC()  SUB()       SUBEVAL()
-    SUBJ()      SUCCESSES() SWITCH()    T()         TABLE()     TAN()
-    TEL()       TEXT()      TEXTFILE()  TIME()      TIMEFMT()   TRANSLATE()
-    TRIGGER()   TRIM()      TRUNC()     TXLEVEL()   TYPE()      U()
-    UCSTR()     UDEFAULT()  ULOCAL()    UNPACK()    V()         VADD()
-    VALID()     VCROSS()    VDIM()      VDOT()      VERSION()   VISIBLE()
-    VMAG()      VMUL()      VSUB()      VUNIT()     WHERE()     WIDTH()
-    WORDPOS()   WORDS()     WRAP()      WRITETIME() XGET()      XOR()
-    ZFUN()      ZONE()      ZWHO()
+    STARTTIME() STATS()     STEP()      STRCAT()    STRIP()     STRIPACCENTS()
+    STRIPANSI() STRLEN()    STRMATCH()  STRMEM()    STRTRUNC()  SUB()
+    SUBEVAL()   SUBJ()      SUCCESSES() SWITCH()    T()         TABLE()
+    TAN()       TEL()       TEXT()      TEXTFILE()  TIME()      TIMEFMT()
+    TRANSLATE() TRIGGER()   TRIM()      TRUNC()     TXLEVEL()   TYPE()
+    U()         UCSTR()     UDEFAULT()  ULOCAL()    UNPACK()    V()
+    VADD()      VALID()     VCROSS()    VDIM()      VDOT()      VERSION()
+    VISIBLE()   VMAG()      VMUL()      VSUB()      VUNIT()     WHERE()
+    WIDTH()     WORDPOS()   WORDS()     WRAP()      WRITETIME() XGET()
+    XOR()       ZFUN()      ZONE()      ZWHO()
 
 & FUNCTIONS
 FUNCTIONS
@@ -7944,7 +7944,7 @@ ITER()
     > say iter(Was it a cat I saw,[words(##)] #@,s)
     You say "1 1 4 2 1 3"
 
-  Related Topics: @dolist, ilev(), inum(), itext(), list(), parse().
+  Related Topics: @dolist, ilev(), inum(), itext(), list(), parse(), step()
 
 & ITEXT()
 ITEXT()
@@ -9399,7 +9399,7 @@ MIX()
     > say mix(do_moremath,1,2,3,4,5,6,7 8,9 10 11 12,)
     You say "37 18 11 12"
   
-  Related Topics: map(), iter(), merge(), elements(), list().
+  Related Topics: elements(), iter(), list(), map(), merge(), step()
 
 & MOD()
 MOD()
@@ -12103,6 +12103,33 @@ STATS()
     377 objects = 51 rooms, 165 exits, 134 things, 20 players. (7 garbage)
 
   Related Topics: @stats.
+
+& STEP()
+STEP()
+
+  FUNCTION: step([<object>/]<attribute>,<list>,<step size>[,<input delim>[,<output delim>]])
+
+  <list> is a <input delim>-separated list of strings (e.g., A B C).
+
+  This is something of a cross between iter() and map() in that it breaks
+  the given <list> down into <step size> chunks and evalutes
+  [<object>]/<attribute> passes these elements to <attribute> as arguments
+  %0, %1, etc. The number of elements in <list> does not need to be
+  evenly-disible by <step size>.
+
+  If no <input delim> is given, the default is a space. Likewise, if no
+  <output delim> is given, the default is the <input delim>. The <step size>
+  can range from 1 to 10. A <step size> of 1 is equivalent to use map().
+
+  Examples:
+    > &print_line me = %r%0 -- %1 -- %2
+    > say step(print_line,1 2 3 4 5 6 7 8,3)
+    You say, "
+    1 -- 2 -- 3
+    4 -- 5 -- 6
+    7 -- 8 --"
+
+  Related Topics: iter(), map(), mix(), list().
 
 & STICKY
 STICKY
