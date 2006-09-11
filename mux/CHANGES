@@ -126,6 +126,7 @@ Bug Fixes:
  -- @email - Unnecessary strlen() (Issue 81).
  -- @email - do_plusmail loops look at undefined bytes if inputline is 1, 2,
     or 3 bytes long (Issue 89). 
+ -- @email - Memory leaks (Issue 84).
 
 
 Performance Enhancements:

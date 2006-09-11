@@ -247,6 +247,8 @@ void do_plusemail(dbref executor, dbref cause, dbref enactor, int key,
     {
         mod_email_sock_close(mailsock);
         notify(executor, "@email: Connection to mailserver lost.");
+        free_lbuf(body);
+        free_lbuf(addy);
         return;
     }
 
@@ -271,6 +273,8 @@ void do_plusemail(dbref executor, dbref cause, dbref enactor, int key,
     {
         mod_email_sock_close(mailsock);
         notify(executor, "@email: Connection to mailserver lost.");
+        free_lbuf(body);
+        free_lbuf(addy);
         return;
     }
 
@@ -293,6 +297,8 @@ void do_plusemail(dbref executor, dbref cause, dbref enactor, int key,
     {
         mod_email_sock_close(mailsock);
         notify(executor, "@email: Connection to mailserver lost.");
+        free_lbuf(body);
+        free_lbuf(addy);
         return;
     }
 
@@ -315,6 +321,8 @@ void do_plusemail(dbref executor, dbref cause, dbref enactor, int key,
     {
         mod_email_sock_close(mailsock);
         notify(executor, "@email: Connection to mailserver lost.");
+        free_lbuf(body);
+        free_lbuf(addy);
         return;
     }
 
@@ -322,6 +330,8 @@ void do_plusemail(dbref executor, dbref cause, dbref enactor, int key,
     {
         notify(executor, tprintf("@email: Error response on RCPT TO (%s)",
             inputline));
+        free_lbuf(body);
+        free_lbuf(addy);
         return;
     }
 
@@ -338,6 +348,8 @@ void do_plusemail(dbref executor, dbref cause, dbref enactor, int key,
     {
         mod_email_sock_close(mailsock);
         notify(executor, "@email: Connection to mailserver lost.");
+        free_lbuf(body);
+        free_lbuf(addy);
         return;
     }
 
@@ -345,6 +357,8 @@ void do_plusemail(dbref executor, dbref cause, dbref enactor, int key,
     {
         notify(executor, tprintf("@email: Error response on DATA (%s)",
             inputline));
+        free_lbuf(body);
+        free_lbuf(addy);
         return;
     }
 
@@ -376,6 +390,8 @@ void do_plusemail(dbref executor, dbref cause, dbref enactor, int key,
     {
         mod_email_sock_close(mailsock);
         notify(executor, "@email: Connection to mailserver lost.");
+        free_lbuf(body);
+        free_lbuf(addy);
         return;
     }
 
@@ -391,8 +407,8 @@ void do_plusemail(dbref executor, dbref cause, dbref enactor, int key,
     mod_email_sock_printf(mailsock, "QUIT\n");
     mod_email_sock_close(mailsock);
 
-    free_lbuf(addy);
     free_lbuf(body);
+    free_lbuf(addy);
 }
 
 #endif // FIRANMUX
