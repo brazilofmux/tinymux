@@ -9858,6 +9858,7 @@ static FUN builtin_function_list[] =
     {"STARTSECS",   fun_startsecs,  MAX_ARG, 0,       0,         0, CA_PUBLIC},
     {"STARTTIME",   fun_starttime,  MAX_ARG, 0,       0,         0, CA_PUBLIC},
     {"STATS",       fun_stats,      MAX_ARG, 0,       1,         0, CA_PUBLIC},
+    {"STEP",        fun_step,       MAX_ARG, 3,       5,         0, CA_PUBLIC},
     {"STRCAT",      fun_strcat,     MAX_ARG, 0, MAX_ARG,         0, CA_PUBLIC},
     {"STRIP",       fun_strip,      MAX_ARG, 1,       2,         0, CA_PUBLIC},
     {"STRIPACCENTS",fun_stripaccents, MAX_ARG, 1,     1,         0, CA_PUBLIC},
