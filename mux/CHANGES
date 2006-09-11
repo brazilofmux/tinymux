@@ -269,6 +269,8 @@ Bug Fixes:
  -- Add 'other half' of buffer overflow protection to a case in
     process_cmdent().  Found and fixed by Sparks.
  -- Issue 71: mix() doesn't include a function-invocation test.
+ -- Fix SIGSEGV when udefault() gets more than 12 arguments. Fixed by
+    Alierak.
 
 
 Performance Enhancements:
@@ -322,8 +324,6 @@ Performance Enhancements:
     without including the subject.
  -- In MEMORY_BASED, avoid malloc() call each time an attribute is
     added to an object.
- -- Fix SIGSEGV when udefault() gets more than 12 arguments. Fixed by
-    Alierak.
 
 
 Cosmetic Changes:
