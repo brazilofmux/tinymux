@@ -24,9 +24,8 @@
 
 #include "externs.h"
 
-/* Some basic Socket I/O crap I stole from another project of mine */
-
-/* Write a formatted string to a socket */
+// Write a formatted string to a socket.
+//
 static int mod_email_sock_printf(SOCKET sock, char *format, ...)
 {
     va_list vargs;
@@ -44,7 +43,8 @@ static int mod_email_sock_printf(SOCKET sock, char *format, ...)
     return SOCKET_WRITE(sock, &mybuf[0], strlen(mybuf), 0);
 }
 
-/* Read a line of input from the socket */
+// Read a line of input from the socket.
+//
 static int mod_email_sock_readline(SOCKET sock, char *buffer, int maxlen)
 {
     buffer[0] = '\0';
@@ -58,7 +58,7 @@ static int mod_email_sock_readline(SOCKET sock, char *buffer, int maxlen)
     FD_ZERO(&read_fds);
     FD_SET(sock, &read_fds);
 
-    // Wait up to 1 seconds.
+    // Wait up to 1 second.
     //
     struct timeval tv;
     tv.tv_sec  = 1;
@@ -98,11 +98,13 @@ static int mod_email_sock_readline(SOCKET sock, char *buffer, int maxlen)
                 FD_ZERO(&read_fds);
                 FD_SET(sock, &read_fds);
 
-                /* wait up to 5 seconds */
-                tv.tv_sec = 1;
+                // Wait up to 1 second.
+                //
+                tv.tv_sec  = 1;
                 tv.tv_usec = 0;
 
-                /* Check for data before giving up. */
+                // Check for data before giving up.
+                //
                 if (IS_SOCKET_ERROR(select(sock+1, &read_fds, NULL, NULL, &tv)))
                 {
                     done = true;
@@ -132,7 +134,8 @@ static int mod_email_sock_readline(SOCKET sock, char *buffer, int maxlen)
     return pos;
 }
 
-/* Open a socket to a specific host/port */
+// Open a socket to a specific host/port.
+//
 static int mod_email_sock_open(const char *conhostname, int port, SOCKET *sock)
 {
     struct hostent *conhost;

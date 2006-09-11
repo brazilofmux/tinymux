@@ -132,6 +132,7 @@ Bug Fixes:
  -- @email - initialize input buffer to the empty string to cover
     return(0) error cases.  Probably introduced by Issue 80 fix.  Fixed
     by Alierak.
+ -- @email - Comment doesn't match code (Issue 82).
 
 
 Performance Enhancements:
