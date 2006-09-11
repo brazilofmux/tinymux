@@ -240,7 +240,8 @@ void do_plusemail(dbref executor, dbref cause, dbref enactor, int key,
     {
         result = mod_email_sock_readline(mailsock, inputline, LBUF_SIZE - 1);
     } while (  0 == result
-            || '-' == inputline[3]);
+            || (  3 < result
+               && '-' == inputline[3]));
 
     if (-1 == result)
     {
@@ -263,7 +264,8 @@ void do_plusemail(dbref executor, dbref cause, dbref enactor, int key,
     {
         result = mod_email_sock_readline(mailsock, inputline, LBUF_SIZE - 1);
     } while (  0 == result
-            || '-' == inputline[3]);
+            || (  3 < result
+               && '-' == inputline[3]));
     
     if (-1 == result)
     {
@@ -284,7 +286,8 @@ void do_plusemail(dbref executor, dbref cause, dbref enactor, int key,
     {
         result = mod_email_sock_readline(mailsock, inputline, LBUF_SIZE - 1);
     } while (  0 == result
-            || '-' == inputline[3]);
+            || (  3 < result
+               && '-' == inputline[3]));
 
     if (-1 == result)
     {
@@ -305,7 +308,8 @@ void do_plusemail(dbref executor, dbref cause, dbref enactor, int key,
     {
         result = mod_email_sock_readline(mailsock, inputline, LBUF_SIZE - 1);
     } while (  0 == result
-            || '-' == inputline[3]);
+            || (  3 < result
+               && '-' == inputline[3]));
 
     if (-1 == result)
     {
@@ -327,7 +331,8 @@ void do_plusemail(dbref executor, dbref cause, dbref enactor, int key,
     {
         result = mod_email_sock_readline(mailsock, inputline, LBUF_SIZE - 1);
     } while (  0 == result
-            || '-' == inputline[3]);
+            || (  3 < result
+               && '-' == inputline[3]));
 
     if (-1 == result)
     {
@@ -364,7 +369,8 @@ void do_plusemail(dbref executor, dbref cause, dbref enactor, int key,
             inputline[result] = '\0';
         }
     } while (  0 == result
-            || '-' == inputline[3]);
+            || (  3 < result
+               && '-' == inputline[3]));
 
     if (-1 == result)
     {

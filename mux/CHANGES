@@ -124,6 +124,8 @@ Bug Fixes:
  -- @email - Remove unnecessary zeroing of buffers (Issue 80).
  -- @email - Typo in do_plusmail of '0' instead of '\0' (Issue 90).
  -- @email - Unnecessary strlen() (Issue 81).
+ -- @email - do_plusmail loops look at undefined bytes if inputline is 1, 2,
+    or 3 bytes long (Issue 89). 
 
 
 Performance Enhancements:
