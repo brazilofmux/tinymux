@@ -127,8 +127,11 @@ Bug Fixes:
  -- @email - do_plusmail loops look at undefined bytes if inputline is
     1, 2, or 3 bytes long (Issue 89). 
  -- @email - Memory leaks (Issue 84).
- -- Fix SIGSEGV when udefault() gets more than 12 arguments. Fixed by
+ -- Fix SIGSEGV when udefault() gets more than 12 arguments.  Fixed by
     Alierak.
+ -- @email - initialize input buffer to the empty string to cover
+    return(0) error cases.  Probably introduced by Issue 80 fix.  Fixed
+    by Alierak.
 
 
 Performance Enhancements:
