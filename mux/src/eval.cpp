@@ -1625,7 +1625,7 @@ void mux_exec( char *buff, char **bufc, dbref executor, dbref caller,
                         // Variable attribute.
                         //
                         pdstr++;
-                        if (mux_isalpha(*pdstr))
+                        if (mux_isazAZ(*pdstr))
                         {
                             i = A_VA + mux_toupper(*pdstr) - 'A';
                             size_t nAttrGotten;

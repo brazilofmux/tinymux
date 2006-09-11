@@ -133,6 +133,7 @@ Bug Fixes:
     return(0) error cases.  Probably introduced by Issue 80 fix.  Fixed
     by Alierak.
  -- @email - Comment doesn't match code (Issue 82).
+ -- %v accepts accented characters (Issue 91).  Found by Alierak.
 
 
 Performance Enhancements:
