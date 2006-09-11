@@ -1,16 +1,16 @@
-/* plusemail.cpp -- quicky module implementing Firan-like @email function.
- *
- * Rachel Blackman <sparks@noderunner.net>
- *
- * NOTE: For compatibility with Firan-code, make a @email alias which maps
- *       to @email.
- *
- * Config options:
- *     email_server               SMTP server to use (mail.bar.com)
- *     email_sender_address       return address (foo@bar.com)
- *     email_sender_name          RFC822 'name' (FooMUSH)
- *     email_default_subject      Default subject link (FooMUSH Mail)
- */
+// plusmail.cpp -- Quicky module implementing Firan-like @email function.
+//
+// $Id$
+//
+// Rachel Blackman <sparks@noderunner.net>
+//
+// Config options:
+//     mail_server               SMTP server to use (mail.bar.com)
+//     mail_ehlo                 ehlo server (my.baz.com)
+//     mail_sendaddr             return address (foo@bar.com)
+//     mail_sendname             RFC822 'name' (FooMUSH)
+//     mail_subject              Defaults subject link (FooMUSH Mail)
+//
 
 #include "autoconf.h"
 #include "config.h"
@@ -199,7 +199,7 @@ void do_plusemail(dbref executor, dbref cause, dbref enactor, int key,
     char *subject = strchr(addy,'/');
     if (subject)
     {
-        *subject = 0;
+        *subject = '\0';
         subject++;
     }
 

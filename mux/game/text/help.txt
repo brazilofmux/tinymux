@@ -1385,10 +1385,11 @@ Related Topics: @name.
 & @EMAIL
 @EMAIL
 
-  COMMAND: @email <address>=<body>
+  COMMAND: @email <address>[/<subject>]=<body>
 
-  Sends an E-mail to <address> containing given <body>.  The subject is
-  controlled by a configuration option.
+  Sends an E-mail to <address> containing given <body>.  The default subject
+  is controller by the mail_subject configuration option, but <subject>, if
+  given, overrides the default.
 
   This command is only available if FIRANMUX is enabled, and will not work
   unless configured properly.  See configuration options in wizhelp.

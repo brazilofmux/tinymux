@@ -115,6 +115,7 @@ Bug Fixes:
  -- Examples in help topics show old-style 'say' (Issue 72).
  -- Attribute-level tracing does not report sortby() comparisons
     (Issue 73).
+ -- @email help doesn't mention @mail addy/subject=body form (Issue 86).
 
 
 Performance Enhancements:
