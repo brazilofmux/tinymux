@@ -2685,6 +2685,7 @@ static char  ucomp_buff[LBUF_SIZE];
 static dbref ucomp_executor;
 static dbref ucomp_caller;
 static dbref ucomp_enactor;
+static int   ucomp_aflags;
 
 static int u_comp(const void *s1, const void *s2)
 {
@@ -2708,7 +2709,7 @@ static int u_comp(const void *s1, const void *s2)
     result = bp = alloc_lbuf("u_comp");
     str = tbuf;
     mux_exec(result, &bp, ucomp_executor, ucomp_caller, ucomp_enactor,
-             EV_STRIP_CURLY|EV_FCHECK|EV_EVAL, &str, elems, 2);
+             AttrTrace(ucomp_aflags, EV_STRIP_CURLY|EV_FCHECK|EV_EVAL), &str, elems, 2);
     *bp = '\0';
     n = mux_atol(result);
     free_lbuf(result);
@@ -2814,6 +2815,7 @@ FUNCTION(fun_sortby)
     ucomp_executor = thing;
     ucomp_caller   = executor;
     ucomp_enactor  = enactor;
+    ucomp_aflags   = aflags;
 
     char *list = alloc_lbuf("fun_sortby");
     mux_strncpy(list, fargs[1], LBUF_SIZE-1);
