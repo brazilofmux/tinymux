@@ -351,7 +351,7 @@ void do_plusemail(dbref executor, dbref cause, dbref enactor, int key,
 
     mod_email_sock_printf(mailsock, "From: %s <%s>\r\n",  mudconf.mail_sendname, mudconf.mail_sendaddr);
     mod_email_sock_printf(mailsock, "To: %s\r\n", addy);
-    mod_email_sock_printf(mailsock, "X-Mailer: TinyMUX %s\r\n", MUX_VERSION);
+    mod_email_sock_printf(mailsock, "X-Mailer: TinyMUX %s\r\n", mudstate.short_ver);
     mod_email_sock_printf(mailsock, "Subject: %s\r\n\r\n", subject ? subject : mudconf.mail_subject);
     mod_email_sock_printf(mailsock, "%s\r\n", body);
     mod_email_sock_printf(mailsock, "\r\n.\r\n");
