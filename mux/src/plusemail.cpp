@@ -47,24 +47,20 @@ static int mod_email_sock_printf(SOCKET sock, char *format, ...)
 /* Read a line of input from the socket */
 static int mod_email_sock_readline(SOCKET sock, char *buffer, int maxlen)
 {
-    fd_set read_fds;
-    int done, pos;
-    struct timeval tv;
-    int possible_close = 0;
-
     if (IS_INVALID_SOCKET(sock))
     {
         return 0;
     }
 
-    memset(buffer, 0, maxlen);
+    fd_set read_fds;
     FD_ZERO(&read_fds);
     FD_SET(sock, &read_fds);
-    /* wait up to 1 seconds */
-    tv.tv_sec = 1;
+
+    // Wait up to 1 seconds.
+    //
+    struct timeval tv;
+    tv.tv_sec  = 1;
     tv.tv_usec = 0;
-    done = 0;
-    pos = 0;
 
     // Check for data before giving up.
     //
@@ -73,60 +69,63 @@ static int mod_email_sock_readline(SOCKET sock, char *buffer, int maxlen)
         return 0;
     }
 
-    done = 0;
     if (!FD_ISSET(sock, &read_fds))
     {
         return 0;
     }
 
+    bool done = false;
+    bool possible_close = false;
+    int  pos = 0;
+
     while (  !done
           && pos < maxlen)
     {
         char getme[2];
-        int numread;
 
-        numread = SOCKET_READ(sock, &getme[0], 1, 0);
+        int numread = SOCKET_READ(sock, &getme[0], 1, 0);
         if (  IS_SOCKET_ERROR(numread)
            || 0 == numread)
         {
             if (possible_close)
             {
-                done = 1;
+                done = true;
             }
             else
             {
                 FD_ZERO(&read_fds);
                 FD_SET(sock, &read_fds);
+
                 /* wait up to 5 seconds */
                 tv.tv_sec = 1;
                 tv.tv_usec = 0;
+
                 /* Check for data before giving up. */
                 if (IS_SOCKET_ERROR(select(sock+1, &read_fds, NULL, NULL, &tv)))
                 {
-                    done = 1;
+                    done = true;
                 }
 
                 if (FD_ISSET(sock, &read_fds))
                 {
-                    possible_close = 1;
+                    possible_close = true;
                 }
             }
         }
         else
         {
-            possible_close = 0;
+            possible_close = false;
             if (getme[0] != '\n')
             {
-                *(buffer + pos) = getme[0];
-                pos++;
+                buffer[pos++] = getme[0];
             }
             else
             {
-                done = 1;
+                done = true;
             }
         }
     }
-    *(buffer + pos) = 0;
+    buffer[pos] = '\0';
 
     return strlen(buffer);
 }
@@ -239,8 +238,7 @@ void do_plusemail(dbref executor, dbref cause, dbref enactor, int key,
 
     do
     {
-        memset(inputline, 0, LBUF_SIZE);
-        result = mod_email_sock_readline(mailsock,inputline,LBUF_SIZE - 1);
+        result = mod_email_sock_readline(mailsock, inputline, LBUF_SIZE - 1);
     } while (  0 == result
             || '-' == inputline[3]);
 
@@ -263,7 +261,6 @@ void do_plusemail(dbref executor, dbref cause, dbref enactor, int key,
 
     do
     {
-        memset(inputline, 0, LBUF_SIZE);
         result = mod_email_sock_readline(mailsock, inputline, LBUF_SIZE - 1);
     } while (  0 == result
             || '-' == inputline[3]);
@@ -285,7 +282,6 @@ void do_plusemail(dbref executor, dbref cause, dbref enactor, int key,
 
     do
     {
-        memset(inputline, 0, LBUF_SIZE);
         result = mod_email_sock_readline(mailsock, inputline, LBUF_SIZE - 1);
     } while (  0 == result
             || '-' == inputline[3]);
@@ -307,7 +303,6 @@ void do_plusemail(dbref executor, dbref cause, dbref enactor, int key,
 
     do
     {
-        memset(inputline, 0, LBUF_SIZE);
         result = mod_email_sock_readline(mailsock, inputline, LBUF_SIZE - 1);
     } while (  0 == result
             || '-' == inputline[3]);
@@ -330,7 +325,6 @@ void do_plusemail(dbref executor, dbref cause, dbref enactor, int key,
 
     do
     {
-        memset(inputline, 0, LBUF_SIZE);
         result = mod_email_sock_readline(mailsock, inputline, LBUF_SIZE - 1);
     } while (  0 == result
             || '-' == inputline[3]);
@@ -358,7 +352,6 @@ void do_plusemail(dbref executor, dbref cause, dbref enactor, int key,
 
     do
     {
-        memset(inputline, 0, LBUF_SIZE);
         result = mod_email_sock_readline(mailsock, inputline, LBUF_SIZE - 1);
         if (result > 0)
         {

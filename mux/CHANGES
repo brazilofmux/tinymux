@@ -121,6 +121,7 @@ Bug Fixes:
  -- @email - MUX_VERSION replaced with mudstate.short_ver (Issue 78).
  -- @email - mod_email_sock_readline() adds a '\0' one position too far
     (Issue 87).
+ -- @email - Remove unnecessary zeroing of buffers (Issue 80).
 
 
 Performance Enhancements:
