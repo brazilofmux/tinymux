@@ -116,17 +116,19 @@ Bug Fixes:
  -- Attribute-level tracing does not report sortby() comparisons
     (Issue 73).
  -- @email help doesn't mention @mail addy/subject=body form (Issue 86).
- -- @email - do {} while () to simplify the sources and reduce the sizeof the
-    program (Issue 79).
+ -- @email - do {} while () to simplify the sources and reduce the
+    sizeof the program (Issue 79).
  -- @email - MUX_VERSION replaced with mudstate.short_ver (Issue 78).
  -- @email - mod_email_sock_readline() adds a '\0' one position too far
     (Issue 87).
  -- @email - Remove unnecessary zeroing of buffers (Issue 80).
  -- @email - Typo in do_plusmail of '0' instead of '\0' (Issue 90).
  -- @email - Unnecessary strlen() (Issue 81).
- -- @email - do_plusmail loops look at undefined bytes if inputline is 1, 2,
-    or 3 bytes long (Issue 89). 
+ -- @email - do_plusmail loops look at undefined bytes if inputline is
+    1, 2, or 3 bytes long (Issue 89). 
  -- @email - Memory leaks (Issue 84).
+ -- Fix SIGSEGV when udefault() gets more than 12 arguments. Fixed by
+    Alierak.
 
 
 Performance Enhancements:
