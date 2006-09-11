@@ -1,6 +1,6 @@
 // funceval.cpp -- MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.104 2006/09/11 05:39:36 sdennis Exp $
+// $Id: funceval.cpp,v 1.105 2006/09/11 21:13:47 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -1940,7 +1940,7 @@ static void default_handler(char *buff, char **bufc, dbref executor, dbref calle
 
             case DEFAULT_UDEFAULT:
                 {
-                    char *xargs[NUM_ENV_VARS];
+                    char *xargs[MAX_ARG];
                     int  nxargs = nfargs-2;
                     int  i;
                     for (i = 0; i < nxargs; i++)

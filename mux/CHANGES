@@ -321,6 +321,8 @@ Performance Enhancements:
     without including the subject.
  -- In MEMORY_BASED, avoid malloc() call each time an attribute is
     added to an object.
+ -- Fix SIGSEGV when udefault() gets more than 12 arguments. Fixed by
+    Alierak.
 
 
 Cosmetic Changes:
