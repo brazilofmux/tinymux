@@ -2243,7 +2243,7 @@ static void default_handler(char *buff, char **bufc, dbref executor,
 
             case DEFAULT_UDEFAULT:
                 {
-                    char *xargs[NUM_ENV_VARS];
+                    char *xargs[MAX_ARG];
                     int  nxargs = nfargs-2;
                     int  i;
                     for (i = 0; i < nxargs; i++)
