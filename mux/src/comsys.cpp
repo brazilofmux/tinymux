@@ -25,7 +25,7 @@ static comsys_t *comsys_table[NUM_COMSYS];
 #define DFLT_RECALL_REQUEST 10
 #define MAX_RECALL_REQUEST  200
 
-// Return value must be free_lbuf'ed.
+// Return value is a static buffer provided by RemoveSetOfCharacters.
 //
 static char *RestrictTitleValue(char *pTitleRequest)
 {
