@@ -1735,6 +1735,7 @@ DESC *new_connection(PortInfo *Port, int *piSocketError)
     if (IS_INVALID_SOCKET(newsock))
     {
         *piSocketError = SOCKET_LAST_ERROR;
+        mudstate.debug_cmd = cmdsave;
         return 0;
     }
 
@@ -1840,11 +1841,10 @@ DESC *new_connection(PortInfo *Port, int *piSocketError)
         SiteMonSend(newsock, pBuffM2, d, "Connection");
 
         welcome_user(d);
-        mudstate.debug_cmd = cmdsave;
     }
     free_mbuf(pBuffM2);
-    mudstate.debug_cmd = cmdsave;
     *piSocketError = SOCKET_LAST_ERROR;
+    mudstate.debug_cmd = cmdsave;
     return d;
 }
 
