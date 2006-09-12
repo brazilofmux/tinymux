@@ -139,6 +139,13 @@ Bug Fixes:
     by Alierak.
  -- @email - Subject and recipient address may contain CRLF sequences
     (Issue 77). Found by Alierak.
+ -- Fix theoretical crash if DNS slave returns half a result.  Found and
+    fixed by Alierak.
+ -- Fix lbuf leak from Issue 88 fix.  Found and fixed by Alierak.
+ -- All return paths from process_command(), new_connection(), and
+    check_connect() must restore mudstate.debug_cmd.  Found and fixed
+    by Alierak.
+ -- Multiple addcom gives no warning (Issue 93). Fixed addcom topic.
 
 
 Performance Enhancements:
@@ -149,6 +156,9 @@ Performance Enhancements:
  -- Optimize atr_add_raw_LEN() to reduce Firan load time from 40 seconds
     to 15 seconds (which includes firan.db, mail.db, and comsys.db).
     This translates to something upward of 28 MB/s.
+ -- Optimize do_comsystem() ability to recognize what is not an alias.
+    Alierak.
+
 
 Cosmetic Changes:
 ~~~~~~~~~~~~~~~~

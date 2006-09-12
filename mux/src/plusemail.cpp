@@ -83,7 +83,7 @@ static int mod_email_sock_printf(SOCKET sock, char *format, ...)
     }
 
     va_start(vargs, format);
-    mux_vsnprintf(mybuf, LBUF_SIZE, format, vargs);
+    mux_vsnprintf(mybuf, sizeof(mybuf), format, vargs);
     va_end(vargs);
 
     return SOCKET_WRITE(sock, &mybuf[0], strlen(mybuf), 0);
