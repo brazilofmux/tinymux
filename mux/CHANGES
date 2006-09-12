@@ -137,6 +137,8 @@ Bug Fixes:
  -- sortby() breaks when nested (Issue 88).  Found by Alierak.
  -- @email - Config options may contain CRLF sequences (Issue 76). Found
     by Alierak.
+ -- @email - Subject and recipient address may contain CRLF sequences
+    (Issue 77). Found by Alierak.
 
 
 Performance Enhancements:
