@@ -135,6 +135,8 @@ Bug Fixes:
  -- @email - Comment doesn't match code (Issue 82).
  -- %v accepts accented characters (Issue 91).  Found by Alierak.
  -- sortby() breaks when nested (Issue 88).  Found by Alierak.
+ -- @email - Config options may contain CRLF sequences (Issue 76). Found
+    by Alierak.
 
 
 Performance Enhancements:

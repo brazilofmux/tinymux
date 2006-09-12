@@ -24,6 +24,52 @@
 
 #include "externs.h"
 
+// Transform CRLF runs to a space.
+//
+char *ConvertCRLFtoSpace(char *pString)
+{
+    static char buf[LBUF_SIZE];
+    char *bp = buf;
+
+    // Skip any leading CRLF.
+    //
+    while (  '\r' == *pString
+          || '\n' == *pString)
+    {
+        pString++;
+    }
+
+    bool bFirst = true;
+    while (*pString)
+    {
+        if (!bFirst)
+        {
+            safe_chr(' ', buf, &bp);
+        }
+        else
+        {
+            bFirst = false;
+        }
+
+        while (  *pString
+              && '\r' != *pString
+              && '\n' != *pString)
+        {
+            safe_chr(*pString, buf, &bp);
+        }
+
+        // Skip any CRLF.
+        //
+        while (  '\r' == *pString
+              || '\n' == *pString)
+        {
+            pString++;
+        }
+    }
+    *bp = '\0';
+    return buf;
+}
+
 // Write a formatted string to a socket.
 //
 static int mod_email_sock_printf(SOCKET sock, char *format, ...)
@@ -153,14 +199,14 @@ static int mod_email_sock_open(const char *conhostname, int port, SOCKET *sock)
     memcpy((char *)&name.sin_addr, (char *)conhost->h_addr, conhost->h_length);
     SOCKET mysock = socket(AF_INET, SOCK_STREAM, 0);
     addr_len = sizeof(name);
-   
+
     if (connect(mysock, (struct sockaddr *)&name, addr_len) == -1)
     {
         return -2;
     }
 
     *sock = mysock;
- 
+
     return 0;
 }
 
@@ -207,31 +253,30 @@ void do_plusemail(dbref executor, dbref cause, dbref enactor, int key,
         subject++;
     }
 
+    char *pMailServer = ConvertCRLFtoSpace(mudconf.mail_server);
     SOCKET mailsock = INVALID_SOCKET;
-    int result = mod_email_sock_open(mudconf.mail_server, 25, &mailsock);
+    int result = mod_email_sock_open(pMailServer, 25, &mailsock);
 
     if (-1 == result)
     {
         notify(executor, tprintf("@email: Unable to resolve hostname %s!",
-            mudconf.mail_server));
+            pMailServer));
         free_lbuf(addy);
         return;
     }
     else if (-2 == result)
     {
-
         // Periodically, we get a failed connect, for reasons which elude me.
         // In almost every case, an immediate retry works.  Therefore, we give
         // it one more shot, before we give up.
         //
-        result = mod_email_sock_open(mudconf.mail_server, 25, &mailsock);
+        result = mod_email_sock_open(pMailServer, 25, &mailsock);
         if (0 != result)
         {
             notify(executor, "@email: Unable to connect to mailserver, aborting!");
             free_lbuf(addy);
             return;
         }
-
     }
 
     char *body = alloc_lbuf("mod_email_do_email.body");
@@ -257,15 +302,14 @@ void do_plusemail(dbref executor, dbref cause, dbref enactor, int key,
         return;
     }
 
-    if (inputline[0] != '2')
+    if ('2' != inputline[0])
     {
         mod_email_sock_close(mailsock);
         notify(executor, tprintf("@email: Invalid mailserver greeting (%s)",
             inputline));
     }
-        
 
-    mod_email_sock_printf(mailsock, "EHLO %s\r\n", mudconf.mail_ehlo);
+    mod_email_sock_printf(mailsock, "EHLO %s\r\n", ConvertCRLFtoSpace(mudconf.mail_ehlo));
 
     do
     {
@@ -273,7 +317,7 @@ void do_plusemail(dbref executor, dbref cause, dbref enactor, int key,
     } while (  0 == result
             || (  3 < result
                && '-' == inputline[3]));
-    
+
     if (-1 == result)
     {
         mod_email_sock_close(mailsock);
@@ -289,7 +333,7 @@ void do_plusemail(dbref executor, dbref cause, dbref enactor, int key,
             inputline));
     }
 
-    mod_email_sock_printf(mailsock, "MAIL FROM:<%s>\r\n", mudconf.mail_sendaddr);   
+    mod_email_sock_printf(mailsock, "MAIL FROM:<%s>\r\n", ConvertCRLFtoSpace(mudconf.mail_sendaddr));
 
     do
     {
@@ -309,7 +353,7 @@ void do_plusemail(dbref executor, dbref cause, dbref enactor, int key,
 
     if ('2' != inputline[0])
     {
-        notify(executor, tprintf("@email: Error response on MAIL FROM (%s)", 
+        notify(executor, tprintf("@email: Error response on MAIL FROM (%s)",
             inputline));
     }
 
@@ -367,12 +411,14 @@ void do_plusemail(dbref executor, dbref cause, dbref enactor, int key,
         return;
     }
 
-    mod_email_sock_printf(mailsock, "From: %s <%s>\r\n",  mudconf.mail_sendname, mudconf.mail_sendaddr);
+    char *pSendName = StringClone(ConvertCRLFtoSpace(mudconf.mail_sendname));
+    mod_email_sock_printf(mailsock, "From: %s <%s>\r\n",  pSendName, ConvertCRLFtoSpace(mudconf.mail_sendaddr));
     mod_email_sock_printf(mailsock, "To: %s\r\n", addy);
     mod_email_sock_printf(mailsock, "X-Mailer: TinyMUX %s\r\n", mudstate.short_ver);
-    mod_email_sock_printf(mailsock, "Subject: %s\r\n\r\n", subject ? subject : mudconf.mail_subject);
+    mod_email_sock_printf(mailsock, "Subject: %s\r\n\r\n", subject ? subject : ConvertCRLFtoSpace(mudconf.mail_subject));
     mod_email_sock_printf(mailsock, "%s\r\n", body);
     mod_email_sock_printf(mailsock, "\r\n.\r\n");
+    MEMFREE(pSendName);
 
     do
     {
@@ -406,7 +452,7 @@ void do_plusemail(dbref executor, dbref cause, dbref enactor, int key,
     }
     else
     {
-        notify(executor, tprintf("@email: Mail sent to %s (%s)", addy, &inputline[4])); 
+        notify(executor, tprintf("@email: Mail sent to %s (%s)", addy, &inputline[4]));
     }
 
     mod_email_sock_printf(mailsock, "QUIT\n");
