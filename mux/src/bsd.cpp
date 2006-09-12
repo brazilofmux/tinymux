@@ -847,6 +847,10 @@ static int get_slave_result(void)
         goto Done;
     }
     p = strchr(buf, '\n');
+    if (!p)
+    {
+        goto Done;
+    }
     *p = '\0';
     if (mudconf.use_hostname)
     {
