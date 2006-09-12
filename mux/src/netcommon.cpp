@@ -2037,6 +2037,7 @@ static bool check_connect(DESC *d, char *msg)
                     free_lbuf(command);
                     free_lbuf(user);
                     free_lbuf(password);
+                    mudstate.debug_cmd = cmdsave;
                     return false;
                 }
 
@@ -2046,6 +2047,7 @@ static bool check_connect(DESC *d, char *msg)
                     free_lbuf(command);
                     free_lbuf(user);
                     free_lbuf(password);
+                    mudstate.debug_cmd = cmdsave;
                     return false;
                 }
                 mux_strncpy(user, p, LBUF_SIZE-1);
