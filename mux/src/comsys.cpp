@@ -2616,34 +2616,29 @@ bool test_receive_access(dbref player, struct channel *chan)
 //
 bool do_comsystem(dbref who, char *cmd)
 {
-    char *t;
-    char *alias = alloc_lbuf("do_comsystem");
-    char *s = alias;
-    for (t = cmd; *t && *t != ' ' && s < alias + LBUF_SIZE; *s++ = *t++)
+    char *t = strchr(cmd, ' ');
+    if (  !t
+       || t - cmd > MAX_ALIAS_LEN
+       || t[1] == '\0')
     {
-        ; // Nothing.
+        // doesn't fit the pattern of "alias message"
+        return true;
     }
 
-    *s = '\0';
-
-    if (*t)
-    {
-        t++;
-    }
+    char alias[ALIAS_SIZE];
+    memcpy(alias, cmd, t - cmd);
+    alias[t - cmd] = '\0';
 
     char *ch = get_channel_from_alias(who, alias);
-    if (  ch[0] != '\0'
-       && t[0] != '\0')
+    if (ch[0] == '\0')
     {
-        do_processcom(who, ch, t);
-        free_lbuf(alias);
-        return false;
+        // not really an alias after all
+        return true;
     }
-    else
-    {
-        free_lbuf(alias);
-    }
-    return true;
+
+    t++;
+    do_processcom(who, ch, t);
+    return false;
 }
 
 void do_cemit
