@@ -28,7 +28,7 @@ extern const unsigned char mux_StripAccents[256];
 #define mux_isprint(x) (mux_isprint[(unsigned char)(x)])
 #define mux_isdigit(x) (mux_isdigit[(unsigned char)(x)])
 #define mux_isxdigit(x)(mux_isxdigit[(unsigned char)(x)])
-#define mux_isazAZ(x) (mux_isazAZ[(unsigned char)(x)])
+#define mux_isazAZ(x)  (mux_isazAZ[(unsigned char)(x)])
 #define mux_isalpha(x) (mux_isalpha[(unsigned char)(x)])
 #define mux_isalnum(x) (mux_isalnum[(unsigned char)(x)])
 #define mux_islower(x) (mux_islower[(unsigned char)(x)])

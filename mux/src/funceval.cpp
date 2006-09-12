@@ -2681,20 +2681,17 @@ FUNCTION(fun_pickrand)
 
 // sortby() code borrowed from TinyMUSH 2.2
 //
-static char  ucomp_buff[LBUF_SIZE];
-static dbref ucomp_executor;
-static dbref ucomp_caller;
-static dbref ucomp_enactor;
-static int   ucomp_aflags;
-
-static int u_comp(const void *s1, const void *s2)
+typedef struct
 {
-    // Note that this function is for use in conjunction with our own
-    // sane_qsort routine, NOT with the standard library qsort!
-    //
-    char *result, *tbuf, *elems[2], *bp, *str;
-    int n;
+    char  *buff;;
+    dbref executor;
+    dbref caller;
+    dbref enactor;
+    int   aflags;
+} ucomp_context;
 
+static int u_comp(ucomp_context *pctx, const void *s1, const void *s2)
+{
     if (  mudstate.func_invk_ctr > mudconf.func_invk_lim
        || mudstate.func_nest_lev > mudconf.func_nest_lim
        || MuxAlarm.bAlarmed)
@@ -2702,24 +2699,23 @@ static int u_comp(const void *s1, const void *s2)
         return 0;
     }
 
-    tbuf = alloc_lbuf("u_comp");
-    elems[0] = (char *)s1;
-    elems[1] = (char *)s2;
-    mux_strncpy(tbuf, ucomp_buff, LBUF_SIZE-1);
-    result = bp = alloc_lbuf("u_comp");
-    str = tbuf;
-    mux_exec(result, &bp, ucomp_executor, ucomp_caller, ucomp_enactor,
-             AttrTrace(ucomp_aflags, EV_STRIP_CURLY|EV_FCHECK|EV_EVAL), &str, elems, 2);
+    char *elems[2] = { (char *)s1, (char *)s2 };
+
+    char *tbuf = alloc_lbuf("u_comp");
+    mux_strncpy(tbuf, pctx->buff, LBUF_SIZE-1);
+    char *result = alloc_lbuf("u_comp");
+    char *bp = result;
+    char *str = tbuf;
+    mux_exec(result, &bp, pctx->executor, pctx->caller, pctx->enactor,
+             AttrTrace(pctx->aflags, EV_STRIP_CURLY|EV_FCHECK|EV_EVAL), &str, elems, 2);
     *bp = '\0';
-    n = mux_atol(result);
+    int n = mux_atol(result);
     free_lbuf(result);
     free_lbuf(tbuf);
     return n;
 }
 
-typedef int PV(const void *, const void *);
-
-static void sane_qsort(void *array[], int left, int right, PV compare)
+static void sane_qsort(ucomp_context *pctx, void *array[], int left, int right)
 {
     // Andrew Molitor's qsort, which doesn't require transitivity between
     // comparisons (essential for preventing crashes due to boneheads
@@ -2745,12 +2741,12 @@ loop:
     array[left] = tmp;
 
     last = left;
-    for (i = left + 1; i <= right; i++) {
-
+    for (i = left + 1; i <= right; i++)
+    {
         // Walk the array, looking for stuff that's less than our
         // pivot. If it is, swap it with the next thing along
         //
-        if ((*compare) (array[i], array[left]) < 0)
+        if (u_comp(pctx, array[i], array[left]) < 0)
         {
             last++;
             if (last == i)
@@ -2774,15 +2770,15 @@ loop:
     // At this point everything underneath the 'last' index is < the
     // entry at 'last' and everything above it is not < it.
     //
-    if ((last - left) < (right - last))
+    if (last - left < right - last)
     {
-        sane_qsort(array, left, last - 1, compare);
+        sane_qsort(pctx, array, left, last - 1);
         left = last + 1;
         goto loop;
     }
     else
     {
-        sane_qsort(array, last + 1, right, compare);
+        sane_qsort(pctx, array, last + 1, right);
         right = last - 1;
         goto loop;
     }
@@ -2811,11 +2807,13 @@ FUNCTION(fun_sortby)
         return;
     }
 
-    mux_strncpy(ucomp_buff, atext, sizeof(ucomp_buff)-1);
-    ucomp_executor = thing;
-    ucomp_caller   = executor;
-    ucomp_enactor  = enactor;
-    ucomp_aflags   = aflags;
+    ucomp_context ctx;
+    ctx.buff = alloc_lbuf("fun_sortby.ctx");
+    mux_strncpy(ctx.buff, atext, LBUF_SIZE-1);
+    ctx.executor = thing;
+    ctx.caller   = executor;
+    ctx.enactor  = enactor;
+    ctx.aflags   = aflags;
 
     char *list = alloc_lbuf("fun_sortby");
     mux_strncpy(list, fargs[1], LBUF_SIZE-1);
@@ -2824,7 +2822,7 @@ FUNCTION(fun_sortby)
 
     if (nptrs > 1)
     {
-        sane_qsort((void **)ptrs, 0, nptrs - 1, u_comp);
+        sane_qsort(&ctx, (void **)ptrs, 0, nptrs - 1);
     }
 
     arr2list(ptrs, nptrs, buff, bufc, &osep);
