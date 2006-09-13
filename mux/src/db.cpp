@@ -2821,7 +2821,6 @@ static const unsigned char decode_table[256] =
 #define STATE_START     0
 #define STATE_HAVE_ESC  1
 
-
 // Action 0 - Emit X.
 // Action 1 - Get a Buffer.
 // Action 2 - Emit X. Move to START state.

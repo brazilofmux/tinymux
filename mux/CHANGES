@@ -146,6 +146,12 @@ Bug Fixes:
     check_connect() must restore mudstate.debug_cmd.  Found and fixed
     by Alierak.
  -- Multiple addcom gives no warning (Issue 93). Fixed addcom topic.
+ -- @email - Message body may be too long to append CRLF.CRLF (Issue 74).
+    Found by Alierak.
+ -- @email needs to handle CRLF.CRLF in message body (Issue 75).  Found by
+    Alierak.
+ -- @email - Accents could affect message validity (Issue 85).  Found by
+    Alierak.
 
 
 Performance Enhancements:
