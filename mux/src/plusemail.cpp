@@ -56,6 +56,7 @@ char *ConvertCRLFtoSpace(char *pString)
               && '\n' != *pString)
         {
             safe_chr(*pString, buf, &bp);
+            pString++;
         }
 
         // Skip any CRLF.
