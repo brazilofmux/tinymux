@@ -152,6 +152,7 @@ Bug Fixes:
     Alierak.
  -- @email - Accents could affect message validity (Issue 85).  Found by
     Alierak.
+ -- Allow addcom to channel names containing spaces (Issue 58).
 
 
 Performance Enhancements:

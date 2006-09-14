@@ -1469,7 +1469,7 @@ void do_addcom
     int   key,
     int   nargs,
     char *arg1,
-    char *arg2
+    char *channel
 )
 {
     UNUSED_PARAMETER(caller);
@@ -1490,22 +1490,11 @@ void do_addcom
         raw_notify(executor, "You need to specify a valid alias.");
         return;
     }
-    char *s = arg2;
-    if (!*s)
+    if ('\0' == channel[0])
     {
         raw_notify(executor, "You need to specify a channel.");
         return;
     }
-    char channel[MAX_CHANNEL_LEN+1];
-    char *t = channel;
-    while (*s && ((t - channel) < MAX_CHANNEL_LEN))
-    {
-        if (*s != ' ')
-            *t++ = *s++;
-        else
-            s++;
-    }
-    *t = '\0';
 
     int i, j, where;
     char *na;
@@ -1716,11 +1705,13 @@ void do_createchannel(dbref executor, dbref caller, dbref enactor, int eval, int
         raw_notify(executor, tprintf("Channel %s already exists.", channel));
         return;
     }
-    if (!*channel)
+
+    if ('\0' == channel[0])
     {
         raw_notify(executor, "You must specify a channel to create.");
         return;
     }
+
     if (!Comm_All(executor))
     {
         raw_notify(executor, NOPERM_MESSAGE);
