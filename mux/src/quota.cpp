@@ -1,6 +1,6 @@
 // quota.cpp -- Quota Management Commands.
 //
-// $Id: quota.cpp,v 1.7 2006/01/07 08:32:45 sdennis Exp $
+// $Id: quota.cpp,v 1.8 2006/09/14 17:40:29 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -307,7 +307,9 @@ FUNCTION(fun_hasquota)
     {
         int aflags;
         dbref aowner;
-        int rq = mux_atol(atr_get(who, A_RQUOTA, &aowner, &aflags));
+        char *quota = atr_get(who, A_RQUOTA, &aowner, &aflags);
+        int rq = mux_atol(quota);
+        free_lbuf(quota);
         bResult = (rq >= mux_atol(fargs[1]));
     }
     safe_bool(bResult, buff, bufc);
