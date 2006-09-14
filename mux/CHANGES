@@ -148,14 +148,16 @@ Bug Fixes:
  -- Multiple addcom gives no warning (Issue 93). Fixed addcom topic.
  -- @email - Message body may be too long to append CRLF.CRLF (Issue 74).
     Found by Alierak.
- -- @email needs to handle CRLF.CRLF in message body (Issue 75).  Found by
-    Alierak.
+ -- @email needs to handle CRLF.CRLF in message body (Issue 75).  Found
+    by Alierak.
  -- @email - Accents could affect message validity (Issue 85).  Found by
     Alierak.
  -- Allow addcom to channel names containing spaces (Issue 58).
- -- Fix channels() help topic (Issue 54).  The channels() implementation
-    doesn't not return a comma-space separated list, but a
-    space-only separated list.
+ -- Fixed channels() help topic (Issue 54).  The channels()
+    implementation doesn't not return a comma-space separated list, but
+    a space-only separated list.
+ -- Fixed an lbuf leak in hasquota() introduced in TinyMUX 2.1. Bug
+    found by Alierak.
 
 
 Performance Enhancements:
