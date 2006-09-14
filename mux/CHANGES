@@ -153,6 +153,9 @@ Bug Fixes:
  -- @email - Accents could affect message validity (Issue 85).  Found by
     Alierak.
  -- Allow addcom to channel names containing spaces (Issue 58).
+ -- Fix channels() help topic (Issue 54).  The channels() implementation
+    doesn't not return a comma-space separated list, but a
+    space-only separated list.
 
 
 Performance Enhancements:

@@ -4892,9 +4892,9 @@ CHANNELS()
 
   Example:
     > say channels()
-    You say, "Wizard, Staff, Guest, Public, Code"
+    You say, "Wizard Staff Guest Public Code"
     > say channels(#1)
-    You say, "Wizard, Staff, Guest, Public"
+    You say, "Wizard Staff Guest Public"
     > say channels(me)
     You say, "Code"
 
