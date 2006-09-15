@@ -799,9 +799,9 @@ Related Topics: @name.
   original owners.
 
   Without the /preserve switch, CHOWN_OK, WIZARD, ROYALTY, INHERIT, and all
-  @powers are stripped.  With /preserve, ROYALTY and INHERIT are preserved
-  (albeit with warnings).  #1 can use /preserve to further preserve WIZARD and
-  @powers.
+  @powers are stripped and HALT is set.  With /preserve, ROYALTY and INHERIT
+  are preserved (albeit with warnings).  #1 can use /preserve to further
+  preserve WIZARD and @powers.
 
   The second form changes the ownership of the indicated attribute on <object>
   to <player>.  The default is the owner of the object.  You may only @chown
