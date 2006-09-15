@@ -250,10 +250,12 @@ int chown_all(dbref from_player, dbref to_player, dbref acting_player, int key)
     {
         from_player = Owner(from_player);
     }
+
     if (!isPlayer(to_player))
     {
         to_player = Owner(to_player);
     }
+
     int count     = 0;
     if (  God(from_player)
        && !God(acting_player))
@@ -265,6 +267,32 @@ int chown_all(dbref from_player, dbref to_player, dbref acting_player, int key)
         int i;
         int quota_out = 0;
         int quota_in  = 0;
+
+        FLAG clearflag1 = 0;
+        FLAG setflag1 = 0;
+        bool bClearPowers = true;
+
+        // Always strip CHOWN_OK and set HALT.
+        //
+        clearflag1 |= CHOWN_OK|WIZARD|ROYALTY|INHERIT;
+        setflag1   |= HALT;
+        if (key & CHOWN_PRESERVE)
+        {
+            // Don't strip ROYALTY or INHERIT if /preserve is used.
+            //
+            clearflag1 &= ~(ROYALTY|INHERIT);
+            if (God(acting_player))
+            {
+                // Don't strip WIZARD if #1 uses /preserve
+                //
+                clearflag1 &= ~WIZARD;
+
+                // Reset @powers when someone besides #1 uses /preserve.
+                //
+                bClearPowers = false;
+            }
+        }
+
         DO_WHOLE_DB(i)
         {
             if (  Owner(i) == from_player
@@ -303,13 +331,26 @@ int chown_all(dbref from_player, dbref to_player, dbref acting_player, int key)
 
                     s_Owner(i, to_player);
                 }
-                s_Flags(i, FLAG_WORD1,
-                    (Flags(i) & ~(CHOWN_OK | INHERIT)) | HALT);
 
                 if (key & CHOWN_NOZONE)
                 {
                     s_Zone(i, NOTHING);
                 }
+
+                if (bClearPowers)
+                {
+                    // Reset @powers.
+                    //
+                    s_Powers(i, 0);
+                    s_Powers2(i, 0);
+                }
+                db[i].fs.word[FLAG_WORD1] &= ~clearflag1;
+                db[i].fs.word[FLAG_WORD1] |= setflag1;
+
+                // Always halt the queue.
+                //
+                halt_que(NOTHING, i);
+
                 count++;
             }
         }

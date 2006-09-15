@@ -179,11 +179,15 @@
 & @CHOWNALL
 @CHOWNALL
 
-  COMMAND: @chownall <victim>[=<recipient>]
+  COMMAND: @chownall[/preserve] <victim>[=<recipient>]
 
   Changes the ownership of all of the victim's objects, rooms, and exits to
   the indicated recipient (or to the wizard performing the @chownall if
   no recipient is specified).  All objects, rooms, and exits are set HALTED.
+
+  Without the /preserve switch, CHOWN_OK, WIZARD, ROYALTY, INHERIT, and all
+  @powers are stripped and HALT is set.  With /preserve, ROYALTY and INHERIT
+  are preserved.  #1 can use /preserve to further preserve WIZARD and @powers.
 
   Related Topics: @chown.
 
