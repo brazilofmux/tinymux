@@ -670,7 +670,6 @@ void do_chown
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
-    UNUSED_PARAMETER(key);
     UNUSED_PARAMETER(nargs);
 
     dbref nOwnerOrig, nOwnerNew, thing;
@@ -875,17 +874,73 @@ void do_chown
         {
             add_quota(nOwnerOrig, quota);
         }
+
         if (!God(executor))
         {
             nOwnerNew = Owner(nOwnerNew);
         }
+
         s_Owner(thing, nOwnerNew);
         atr_chown(thing);
-        db[thing].fs.word[FLAG_WORD1] &= ~(CHOWN_OK | INHERIT);
-        db[thing].fs.word[FLAG_WORD1] |= HALT;
-        s_Powers(thing, 0);
-        s_Powers2(thing, 0);
+
+        FLAG clearflag1 = 0;
+        FLAG setflag1 = 0;
+
+        // Always strip CHOWN_OK and set HALT.
+        //
+        clearflag1 |= CHOWN_OK|WIZARD|ROYALTY|INHERIT;
+        setflag1   |= HALT;
+        if (key & CHOWN_PRESERVE)
+        {
+            // Don't strip ROYALTY or INHERIT if /preserve is used.
+            //
+            clearflag1 &= ~(ROYALTY|INHERIT);
+            if (God(executor))
+            {
+                // Don't strip WIZARD if #1 uses /preserve
+                //
+                clearflag1 &= ~WIZARD;
+            }
+            else
+            {
+                // Reset @powers when someone besides #1 uses /preserve.
+                //
+                s_Powers(thing, 0);
+                s_Powers2(thing, 0);
+            }
+        }
+        else
+        {
+            // Reset @powers if /preserve isn't given.
+            //
+            s_Powers(thing, 0);
+            s_Powers2(thing, 0);
+        }
+        db[thing].fs.word[FLAG_WORD1] &= ~clearflag1;
+        db[thing].fs.word[FLAG_WORD1] |= setflag1;
+
+        // Always halt the queue.
+        //
         halt_que(NOTHING, thing);
+
+        // Warn if ROYALTY is left set.
+        //
+        if (ROYALTY & db[thing].fs.word[FLAG_WORD1])
+        {
+            notify_quiet(executor,
+                tprintf("Warning: @chown/preserve on %s(#%d) leaves ROYALTY priviledge intact.",
+                Moniker(thing), thing));
+        }
+
+        // Warn if INHERIT is left set.
+        //
+        if (INHERIT & db[thing].fs.word[FLAG_WORD1])
+        {
+            notify_quiet(executor,
+                tprintf("Warning: @chown/preserve on %s(#%d) leaves INHERIT priviledge intact.",
+                Moniker(thing), thing));
+        }
+
         if (!Quiet(executor))
         {
             char *buff = alloc_lbuf("do_chown.notify");

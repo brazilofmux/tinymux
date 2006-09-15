@@ -69,6 +69,7 @@ Feature Additions:
  -- Added lbuf_size as a read-only configuration option so that
     config(lbuf_size) can report it to softcode.
  -- Added STEP() following TinyMUSH and RhostMUSH (Issue 1).
+ -- Add /preserve switch to @chown.
 
 
 Bug Fixes:

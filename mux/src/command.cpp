@@ -55,6 +55,12 @@ static NAMETAB cemit_sw[] =
     { NULL,             0,          0,  0}
 };
 
+static NAMETAB chown_sw[] =
+{
+    {"preserve",        1,  CA_PUBLIC,  CHOWN_PRESERVE},
+    { NULL,             0,          0,  0}
+};
+
 static NAMETAB clone_sw[] =
 {
     {"cost",            1,  CA_PUBLIC,  CLONE_SET_COST},
@@ -664,7 +670,7 @@ static CMDENT_TWO_ARG command_table_two_arg[] =
     {"@ccharge",     NULL,       CA_NO_SLAVE|CA_NO_GUEST,                          1,           CS_TWO_ARG,           0, do_editchannel},
     {"@cchown",      NULL,       CA_NO_SLAVE|CA_NO_GUEST,                          0,           CS_TWO_ARG,           0, do_editchannel},
     {"@cemit",       cemit_sw,   CA_NO_SLAVE|CA_NO_GUEST,                          0,           CS_TWO_ARG,           0, do_cemit},
-    {"@chown",       NULL,       CA_NO_SLAVE|CA_NO_GUEST|CA_GBL_BUILD,             CHOWN_ONE,   CS_TWO_ARG|CS_INTERP, 0, do_chown},
+    {"@chown",       chown_sw,   CA_NO_SLAVE|CA_NO_GUEST|CA_GBL_BUILD,             CHOWN_ONE,   CS_TWO_ARG|CS_INTERP, 0, do_chown},
     {"@chownall",    NULL,       CA_WIZARD|CA_GBL_BUILD,                           CHOWN_ALL,   CS_TWO_ARG|CS_INTERP, 0, do_chownall},
     {"@chzone",      NULL,       CA_NO_SLAVE|CA_NO_GUEST|CA_GBL_BUILD,             0,           CS_TWO_ARG|CS_INTERP, 0, do_chzone},
     {"@clone",       clone_sw,   CA_NO_SLAVE|CA_GBL_BUILD|CA_CONTENTS|CA_NO_GUEST, 0,           CS_TWO_ARG|CS_INTERP, 0, do_clone},

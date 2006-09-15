@@ -783,28 +783,31 @@ Related Topics: @name.
 & @CHOWN
 @CHOWN
 
-  COMMAND: @chown <object>[=<player>]
-           @chown <object>/<attr>[=<player>]
+  COMMAND: @chown[/preserve] <object>[=<player>]
+           @chown[/preserve] <object>/<attr>[=<player>]
 
-  The first form changes the ownership of <object> to <player> (default is
-  to yourself).  Objects may be things, rooms or exits. To chown things, you
-  have to be carrying the thing. For rooms or exits, you have to be in the
-  room. Objects must have the CHOWN_OK flag set before they may be @chowned.
-  In a room, the command used must be @chown here = <name>, and for an object,
-  you must be very specific.
-
-  The second form changes the ownership of the indicated attribute on <object>
-  to <player> (default is the owner of the object).  You may only @chown
-  unlocked attributes.  You may @chown unlocked attributes on objects that
-  you own to yourself, and you may also @chown attributes that you own on
-  objects owned by others to the owner of the object.
+  The first form changes the ownership of <object> to <player>.  By default,
+  this is yourself.  Objects may be things, rooms or exits.  To @chown things,
+  you have to be carrying the thing.  For rooms or exits, you have to be in
+  the room.  Objects must have the CHOWN_OK flag set before they may be
+  @chowned.  In a room, the command used must be @chown here=<name>, and for
+  an object, you must be very specific.  Players can't be @chowned; they
+  always own themselves.
 
   When an object is @chowned, all unlocked attributes on the object are
-  automatically @chowned as well, locked attributes remain owned by their
+  automatically @chowned as well.  Locked attributes remain owned by their
   original owners.
 
-  The HALTED flag is automatically set on the new copy of the object.
-  Players can't be @chowned; they always own themselves.
+  Without the /preserve switch, CHOWN_OK, WIZARD, ROYALTY, INHERIT, and all
+  @powers are stripped.  With /preserve, ROYALTY and INHERIT are preserved
+  (albeit with warnings).  #1 can use /preserve to further preserve WIZARD and
+  @powers.
+
+  The second form changes the ownership of the indicated attribute on <object>
+  to <player>.  The default is the owner of the object.  You may only @chown
+  unlocked attributes.  You may @chown unlocked attributes on objects that you
+  own to yourself, and you may also @chown attributes that you own on objects
+  owned by others to the owner of the object.
 
   Related Topics: @lock, @Unlock, CHOWN_OK, ATTRIBUTE OWNERSHIP.
 
