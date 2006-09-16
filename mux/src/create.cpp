@@ -595,7 +595,6 @@ void do_clone
     UNUSED_PARAMETER(nargs);
 
     dbref clone, thing, new_owner, loc;
-    FLAG rmv_flags;
     int cost;
 
     if ((key & CLONE_INVENTORY) || !Has_location(executor))
@@ -716,14 +715,29 @@ void do_clone
     //
     s_Pennies(clone, OBJECT_ENDOWMENT(cost));
 
-    // Clear out problem flags from the original
+    // Strip flags subject to /inherit and /nostrip.
     //
-    rmv_flags = WIZARD;
-    if (!(key & CLONE_INHERIT) || !Inherits(executor))
+    FLAG clearflag1 = IMMORTAL|WIZARD|ROYALTY|INHERIT;
+    if (key & CLONE_NOSTRIP)
     {
-        rmv_flags |= INHERIT | IMMORTAL;
+        // Don't strip ROYALTY, INHERIT, or IMMORTAL if /nostrip is used.
+        //
+        clearflag1 &= ~(ROYALTY|INHERIT|IMMORTAL);
+        if (God(executor))
+        {
+            // Don't strip WIZARD if #1 uses /nostrip
+            //
+            clearflag1 &= ~WIZARD;
+        }
     }
-    s_Flags(clone, FLAG_WORD1, Flags(thing) & ~rmv_flags);
+    else if (  (key & CLONE_INHERIT)
+            && Inherits(executor))
+    {
+        clearflag1 &= ~(INHERIT);
+    }
+    s_Flags(clone, FLAG_WORD1, Flags(thing) & ~clearflag1);
+    s_Flags(clone, FLAG_WORD2, Flags2(thing));
+    s_Flags(clone, FLAG_WORD3, Flags3(thing));
 
     // Tell creator about it
     //

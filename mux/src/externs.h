@@ -406,7 +406,7 @@ extern int anum_alc_top;
 #define CEMIT_NOHEADER  1   /* Channel emit without header */
 #define CHOWN_ONE       1   /* item = new_owner */
 #define CHOWN_ALL       2   /* old_owner = new_owner */
-#define CHOWN_PRESERVE  4   /* Don't strip (most) flags from object */
+#define CHOWN_NOSTRIP   4   /* Don't strip (most) flags from object */
 #define CHOWN_NOZONE    8   /* Strip zones from objects */
 #define CLIST_FULL      1   /* Full listing of channels */
 #define CLIST_HEADERS   2   /* Lists channel headers, like "[Public]" */
@@ -418,6 +418,7 @@ extern int anum_alc_top;
 #define CLONE_SET_LOC   16  /* ARG2 is location of cloned object */
 #define CLONE_SET_NAME  32  /* ARG2 is alternate name of cloned object */
 #define CLONE_FROM_PARENT 64 /* Set parent on obj instd of cloning attrs */
+#define CLONE_NOSTRIP   128 // Don't strip (most) flags from object.
 #define CBOOT_QUIET     1   // Cboot without a message
 #define COMTITLE_ON     1   // Turn Comtitles on.
 #define COMTITLE_OFF    2   // Turn Comtitles off.

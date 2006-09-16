@@ -276,18 +276,18 @@ int chown_all(dbref from_player, dbref to_player, dbref acting_player, int key)
         //
         clearflag1 |= CHOWN_OK|WIZARD|ROYALTY|INHERIT;
         setflag1   |= HALT;
-        if (key & CHOWN_PRESERVE)
+        if (key & CHOWN_NOSTRIP)
         {
-            // Don't strip ROYALTY or INHERIT if /preserve is used.
+            // Don't strip ROYALTY or INHERIT if /nostrip is used.
             //
             clearflag1 &= ~(ROYALTY|INHERIT);
             if (God(acting_player))
             {
-                // Don't strip WIZARD if #1 uses /preserve
+                // Don't strip WIZARD if #1 uses /nostrip
                 //
                 clearflag1 &= ~WIZARD;
 
-                // Reset @powers when someone besides #1 uses /preserve.
+                // Reset @powers when someone besides #1 uses /nostrip.
                 //
                 bClearPowers = false;
             }

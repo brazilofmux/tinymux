@@ -783,8 +783,8 @@ Related Topics: @name.
 & @CHOWN
 @CHOWN
 
-  COMMAND: @chown[/preserve] <object>[=<player>]
-           @chown[/preserve] <object>/<attr>[=<player>]
+  COMMAND: @chown[/nostrip] <object>[=<player>]
+           @chown           <object>/<attr>[=<player>]
 
   The first form changes the ownership of <object> to <player>.  By default,
   this is yourself.  Objects may be things, rooms or exits.  To @chown things,
@@ -798,9 +798,9 @@ Related Topics: @name.
   automatically @chowned as well.  Locked attributes remain owned by their
   original owners.
 
-  Without the /preserve switch, CHOWN_OK, WIZARD, ROYALTY, INHERIT, and all
-  @powers are stripped and HALT is set.  With /preserve, ROYALTY and INHERIT
-  are preserved (albeit with warnings).  #1 can use /preserve to further
+  Without the /nostrip switch, CHOWN_OK, WIZARD, ROYALTY, INHERIT, and all
+  @powers are stripped and HALT is set.  With /nostrip, ROYALTY and INHERIT
+  are preserved (albeit with warnings).  #1 can use /nostrip to further
   preserve WIZARD and @powers.
 
   The second form changes the ownership of the indicated attribute on <object>
@@ -900,9 +900,13 @@ Related Topics: @name.
      /inherit    - Don't reset the INHERIT bit on the new object.
      /inventory  - Create the new object in your inventory (or your exitlist,
                    in the case of cloning exits).
+     /nostrip    - INHERIT, ROYALTY, IMMORTAL, and if #1, WIZARD are not
+                   excluded from the new object.
      /location   - Create the new object in your location (default).
      /parent     - Set the new object's parent to be the template object and
                    don't copy the attributes.
+     /preserve   - Let the existing owner own the clone. Existing owner must
+                   be controlable.
 
   Related Topics: @create, @decompile, @destroy, VISUAL.
 

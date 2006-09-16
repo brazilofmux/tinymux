@@ -57,7 +57,7 @@ static NAMETAB cemit_sw[] =
 
 static NAMETAB chown_sw[] =
 {
-    {"preserve",        1,  CA_PUBLIC,  CHOWN_PRESERVE},
+    {"nostrip",         1,  CA_PUBLIC,  CHOWN_NOSTRIP},
     { NULL,             0,          0,  0}
 };
 
@@ -67,6 +67,7 @@ static NAMETAB clone_sw[] =
     {"inherit",         3,  CA_PUBLIC,  CLONE_INHERIT|SW_MULTIPLE},
     {"inventory",       3,  CA_PUBLIC,  CLONE_INVENTORY},
     {"location",        1,  CA_PUBLIC,  CLONE_LOCATION},
+    {"nostrip",         2,  CA_WIZARD,  CLONE_NOSTRIP|SW_MULTIPLE},
     {"parent",          2,  CA_PUBLIC,  CLONE_FROM_PARENT|SW_MULTIPLE},
     {"preserve",        2,  CA_WIZARD,  CLONE_PRESERVE|SW_MULTIPLE},
     { NULL,             0,          0,  0}

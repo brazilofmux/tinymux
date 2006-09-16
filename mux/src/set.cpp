@@ -890,20 +890,20 @@ void do_chown
         //
         clearflag1 |= CHOWN_OK|WIZARD|ROYALTY|INHERIT;
         setflag1   |= HALT;
-        if (key & CHOWN_PRESERVE)
+        if (key & CHOWN_NOSTRIP)
         {
-            // Don't strip ROYALTY or INHERIT if /preserve is used.
+            // Don't strip ROYALTY or INHERIT if /nostrip is used.
             //
             clearflag1 &= ~(ROYALTY|INHERIT);
             if (God(executor))
             {
-                // Don't strip WIZARD if #1 uses /preserve
+                // Don't strip WIZARD if #1 uses /nostrip
                 //
                 clearflag1 &= ~WIZARD;
             }
             else
             {
-                // Reset @powers when someone besides #1 uses /preserve.
+                // Reset @powers when someone besides #1 uses /nostrip.
                 //
                 s_Powers(thing, 0);
                 s_Powers2(thing, 0);
@@ -911,7 +911,7 @@ void do_chown
         }
         else
         {
-            // Reset @powers if /preserve isn't given.
+            // Reset @powers if /nostrip isn't given.
             //
             s_Powers(thing, 0);
             s_Powers2(thing, 0);
@@ -928,7 +928,7 @@ void do_chown
         if (ROYALTY & db[thing].fs.word[FLAG_WORD1])
         {
             notify_quiet(executor,
-                tprintf("Warning: @chown/preserve on %s(#%d) leaves ROYALTY priviledge intact.",
+                tprintf("Warning: @chown/nostrip on %s(#%d) leaves ROYALTY priviledge intact.",
                 Moniker(thing), thing));
         }
 
@@ -937,7 +937,7 @@ void do_chown
         if (INHERIT & db[thing].fs.word[FLAG_WORD1])
         {
             notify_quiet(executor,
-                tprintf("Warning: @chown/preserve on %s(#%d) leaves INHERIT priviledge intact.",
+                tprintf("Warning: @chown/nostrip on %s(#%d) leaves INHERIT priviledge intact.",
                 Moniker(thing), thing));
         }
 
