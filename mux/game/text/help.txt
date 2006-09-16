@@ -12486,7 +12486,7 @@ TABLE ()
     > think table(the quick brown fox,10,25, ,|)
     the       |quick
     brown     |fox
-    > think table(foo bar baz,101,25,0,|,.\,)
+    > think table(foo bar baz,10,25,,|,.\,)
     foo.,.,.,.|bar.,.,.,.
     baz.,.,.,.
 
