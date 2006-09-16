@@ -69,7 +69,7 @@ Feature Additions:
  -- Added lbuf_size as a read-only configuration option so that
     config(lbuf_size) can report it to softcode.
  -- Added STEP() following TinyMUSH and RhostMUSH (Issue 1).
- -- Add /preserve switch to @chown and @chownall.
+ -- Add /nostrip switch to @chown, @chownall, and @clone.
 
 
 Bug Fixes:
@@ -159,6 +159,7 @@ Bug Fixes:
     a space-only separated list.
  -- Fixed an lbuf leak in hasquota() introduced in TinyMUX 2.1. Bug
     found and fixed by Alierak.
+ -- Document @clone/preserve switch.
 
 
 Performance Enhancements:
