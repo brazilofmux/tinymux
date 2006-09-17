@@ -651,8 +651,7 @@ static const ANSI_ColorState acsRestingStates[3] =
     {true,  false, false, false, false, ANSI_COLOR_INDEX_DEFAULT, ANSI_COLOR_INDEX_DEFAULT}
 };
 
-static void ANSI_Parse_m(ANSI_ColorState *pacsCurrent, size_t nANSI, const char *pANSI,
-                  bool *pbSawNormal)
+static void ANSI_Parse_m(ANSI_ColorState *pacsCurrent, size_t nANSI, const char *pANSI)
 {
     // If the last character isn't an 'm', then it's an ANSI sequence we
     // don't support, yet. TODO: There should be a ANSI_Parse() function
@@ -691,7 +690,6 @@ static void ANSI_Parse_m(ANSI_ColorState *pacsCurrent, size_t nANSI, const char 
                     // Normal.
                     //
                     *pacsCurrent = acsRestingStates[ANSI_ENDGOAL_NORMAL];
-                    *pbSawNormal = true;
                     break;
 
                 case 1:
@@ -952,7 +950,6 @@ void ANSI_String_In_Init
     pacIn->m_acs = acsRestingStates[iEndGoal];
     pacIn->m_p   = szString;
     pacIn->m_n   = strlen(szString);
-    pacIn->m_bSawNormal = false;
 }
 
 void ANSI_String_Out_Init
@@ -1011,7 +1008,7 @@ void ANSI_String_Skip
             {
                 // Process ANSI
                 //
-                ANSI_Parse_m(&(pacIn->m_acs), nTokenLength1, pacIn->m_p, &(pacIn->m_bSawNormal));
+                ANSI_Parse_m(&(pacIn->m_acs), nTokenLength1, pacIn->m_p);
                 pacIn->m_p     += nTokenLength1;
                 pacIn->m_n     -= nTokenLength1;
             }
@@ -1020,7 +1017,7 @@ void ANSI_String_Skip
         {
             // Process ANSI
             //
-            ANSI_Parse_m(&(pacIn->m_acs), nTokenLength0, pacIn->m_p, &(pacIn->m_bSawNormal));
+            ANSI_Parse_m(&(pacIn->m_acs), nTokenLength0, pacIn->m_p);
             pacIn->m_n     -= nTokenLength0;
             pacIn->m_p     += nTokenLength0;
         }
@@ -1217,7 +1214,7 @@ void ANSI_String_Copy
             {
                 // Process ANSI
                 //
-                ANSI_Parse_m(&(pacIn->m_acs), nTokenLength1, pacIn->m_p, &(pacIn->m_bSawNormal));
+                ANSI_Parse_m(&(pacIn->m_acs), nTokenLength1, pacIn->m_p);
                 pacIn->m_p += nTokenLength1;
                 pacIn->m_n -= nTokenLength1;
             }
@@ -1226,7 +1223,7 @@ void ANSI_String_Copy
         {
             // Process ANSI
             //
-            ANSI_Parse_m(&(pacIn->m_acs), nTokenLength0, pacIn->m_p, &(pacIn->m_bSawNormal));
+            ANSI_Parse_m(&(pacIn->m_acs), nTokenLength0, pacIn->m_p);
             pacIn->m_n -= nTokenLength0;
             pacIn->m_p += nTokenLength0;
         }
@@ -1412,7 +1409,6 @@ char *translate_string(const char *szString, bool bConvert)
     ANSI_ColorState acsPrevious;
     acsCurrent = acsRestingStates[ANSI_ENDGOAL_NOBLEED];
     acsPrevious = acsCurrent;
-    bool bSawNormal = false;
     const unsigned char *MU_EscapeChar = (bConvert)? MU_EscapeConvert : MU_EscapeNoConvert;
     while (nString)
     {
@@ -1464,7 +1460,7 @@ char *translate_string(const char *szString, bool bConvert)
             {
                 // Process ANSI
                 //
-                ANSI_Parse_m(&acsCurrent, nTokenLength1, pString, &bSawNormal);
+                ANSI_Parse_m(&acsCurrent, nTokenLength1, pString);
                 pString += nTokenLength1;
                 nString -= nTokenLength1;
             }
@@ -1473,7 +1469,7 @@ char *translate_string(const char *szString, bool bConvert)
         {
             // Process ANSI
             //
-            ANSI_Parse_m(&acsCurrent, nTokenLength0, pString, &bSawNormal);
+            ANSI_Parse_m(&acsCurrent, nTokenLength0, pString);
             nString -= nTokenLength0;
             pString += nTokenLength0;
         }
@@ -3770,6 +3766,62 @@ char *linewrap_general(char *strret, int field, char *left, char *right)
 char *linewrap_desc(char *str)
 {
     return linewrap_general(str, 70, "     ", "");
+}
+
+mux_string::mux_string(void)
+{
+    m_n = 0;
+}
+
+void mux_string::import(size_t n, const char *str)
+{
+    m_n = 0;
+
+    while (n)
+    {
+        ANSI_ColorState acs = acsRestingStates[ANSI_ENDGOAL_NORMAL];
+        size_t nTokenLength0;
+        size_t nTokenLength1;
+        int iType = ANSI_lex(n, str, &nTokenLength0, &nTokenLength1);
+
+        if (iType == TOKEN_TEXT_ANSI)
+        {
+            // Process TEXT
+            //
+            size_t nTextToLoad nTokenLength0;
+            if (sizeof(m_ach) - m_n - 1 < nTextToLoad)
+            {
+                nTextToLoad = sizeof(m_ach) - 1;
+            }
+
+            memcpy(m_ach, str, nTextToLoad);
+            for (int i = 0; i < nTextToLoad; i++)
+            {
+                m_acs[m_n+i] = acs;
+            }
+            m_n += nTextToLoad;
+            str += nTokenLength0;
+            n   -= nTokenLength0;
+
+            if (nTokenLength1)
+            {
+                // Process ANSI
+                //
+                ANSI_Parse_m(&acs, nTokenLength1, str);
+                str += nTokenLength1;
+                n   -= nTokenLength1;
+            }
+        }
+        else if (nTokenLength1)
+        {
+            // Process ANSI
+            //
+            ANSI_Parse_m(&acs, nTokenLength1, str);
+            str += nTokenLength1;
+            n   -= nTokenLength1;
+        }
+    }
+    a_ch[m_n] = '\0';
 }
 
 #endif // FIRANMUX

@@ -96,7 +96,6 @@ struct ANSI_In_Context
     ANSI_ColorState m_acs;
     const char     *m_p;
     size_t          m_n;
-    bool            m_bSawNormal;
 };
 
 struct ANSI_Out_Context
@@ -219,5 +218,17 @@ typedef struct
 } PARSE_FLOAT_RESULT;
 
 extern bool ParseFloat(PARSE_FLOAT_RESULT *pfr, const char *str, bool bStrict = true);
+
+class mux_string
+{
+private:
+    size_t          m_n;
+    char            m_ach[LBUF_SIZE];
+    ANSI_ColorState m_acs[LBUF_SIZE];
+
+public:
+    mux_string(void);
+    void import(size_t n, const char *str);
+};
 
 #endif // STRINGUTIL_H
