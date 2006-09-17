@@ -3780,48 +3780,49 @@ void mux_string::import(size_t n, const char *str)
     while (n)
     {
         ANSI_ColorState acs = acsRestingStates[ANSI_ENDGOAL_NORMAL];
-        size_t nTokenLength0;
-        size_t nTokenLength1;
-        int iType = ANSI_lex(n, str, &nTokenLength0, &nTokenLength1);
+        size_t nToken0;
+        size_t nToken1;
+        int iType = ANSI_lex(n, str, &nToken0, &nToken1);
 
         if (iType == TOKEN_TEXT_ANSI)
         {
             // Process TEXT
             //
-            size_t nTextToLoad nTokenLength0;
+            size_t nTextToLoad nToken0;
             if (sizeof(m_ach) - m_n - 1 < nTextToLoad)
             {
                 nTextToLoad = sizeof(m_ach) - 1;
             }
 
+            // Copy text and replicate corresponding color state.
+            //
             memcpy(m_ach, str, nTextToLoad);
             for (int i = 0; i < nTextToLoad; i++)
             {
                 m_acs[m_n+i] = acs;
             }
-            m_n += nTextToLoad;
-            str += nTokenLength0;
-            n   -= nTokenLength0;
 
-            if (nTokenLength1)
-            {
-                // Process ANSI
-                //
-                ANSI_Parse_m(&acs, nTokenLength1, str);
-                str += nTokenLength1;
-                n   -= nTokenLength1;
-            }
+            m_n += nTextToLoad;
+            str += nToken0;
+            n   -= nToken0;
+
+            nToken0 = nToken1;
         }
-        else if (nTokenLength1)
+
+        if (nToken0)
         {
             // Process ANSI
             //
-            ANSI_Parse_m(&acs, nTokenLength1, str);
-            str += nTokenLength1;
-            n   -= nTokenLength1;
+            ANSI_Parse_m(&acs, nToken0, str);
+            str += nToken0;
+            n   -= nToken0;
         }
     }
     a_ch[m_n] = '\0';
+}
+
+void mux_string::export(char *buff, char **bufc)
+{
 }
 
 #endif // FIRANMUX
