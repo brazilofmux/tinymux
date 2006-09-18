@@ -1038,6 +1038,20 @@ static void make_socket(PortInfo *Port)
     Log.tinyprintf("Listening on port %d" ENDLINE, Port->port);
 }
 
+#ifndef WIN32
+
+bool ValidSocket(SOCKET s)
+{
+    struct stat fstatbuf;
+    if (fstat(s, &fstatbuf) < 0)
+    {
+        return false;
+    }
+    return true;
+}
+
+#endif // WIN32
+
 void SetupPorts(int *pnPorts, PortInfo aPorts[], IntArray *pia)
 {
     // Any existing open port which does not appear in the requested set
@@ -1056,6 +1070,7 @@ void SetupPorts(int *pnPorts, PortInfo aPorts[], IntArray *pia)
                 break;
             }
         }
+
         if (!bFound)
         {
             if (SOCKET_CLOSE(aPorts[i].socket) == 0)
@@ -1087,37 +1102,36 @@ void SetupPorts(int *pnPorts, PortInfo aPorts[], IntArray *pia)
                 break;
             }
         }
+
         if (!bFound)
         {
-            k = *pnPorts;
-            (*pnPorts)++;
-            aPorts[k].port = pia->pi[j];
-            make_socket(aPorts+k);
-        }
-    }
-
-    // Assert that we are listening on at least one port.
-    //
-    int iListening = 0;
-    for (i = 0; i < *pnPorts; i++)
-    {
-        if (!IS_INVALID_SOCKET(aPorts[i].socket))
-        {
-            iListening++;
+            PortInfo t;
+            t.port = pia->pi[j];
+            make_socket(&t);
+            if (  !IS_INVALID_SOCKET(t.socket)
 #ifndef WIN32
-            if (maxd <= aPorts[i].socket)
-            {
-                maxd = aPorts[i].socket + 1;
-            }
+               && ValidSocket(t.socket)
 #endif // WIN32
+               )
+            {
+#ifndef WIN32
+                if (maxd <= t.socket)
+                {
+                    maxd = t.socket + 1;
+                }
+#endif // WIN32
+                k = *pnPorts;
+                (*pnPorts)++;
+                aPorts[k] = t;
+            }
         }
     }
 
     // If we were asked to listen on at least one port, but we aren't
     // listening to at least one port, we should bring the game down.
     //
-    if (  0 < *pnPorts
-       && 0 == iListening)
+    if (  0 < pia->n
+       && 0 == *pnPorts)
     {
 #ifdef WIN32
         WSACleanup();
@@ -1441,16 +1455,6 @@ void shovecharsNT(int nPorts, PortInfo aPorts[])
 }
 
 #else // WIN32
-
-bool ValidSocket(SOCKET s)
-{
-    struct stat fstatbuf;
-    if (fstat(s, &fstatbuf) < 0)
-    {
-        return false;
-    }
-    return true;
-}
 
 void shovechars(int nPorts, PortInfo aPorts[])
 {
