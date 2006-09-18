@@ -229,7 +229,7 @@ private:
 public:
     mux_string(void);
     void import(size_t n, const char *str);
-    void export(char *buf, char **bufc);
+    void copy(char *buf, char **bufc);
 };
 
 #endif // STRINGUTIL_H

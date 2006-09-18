@@ -3821,7 +3821,7 @@ void mux_string::import(size_t n, const char *str)
     a_ch[m_n] = '\0';
 }
 
-void mux_string::export(char *buff, char **bufc)
+void mux_string::copy(char *buff, char **bufc)
 {
 }
 
