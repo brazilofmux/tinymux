@@ -288,7 +288,7 @@ int QueueMax(dbref player)
 
 /*! \brief Returns how many coins are in a player's purse.
  *
- * \param player   dbref of player object.
+ * \param obj      dbref of player object.
  * \return         None.
  */
 
@@ -316,7 +316,7 @@ int Pennies(dbref obj)
  * This changes the number of coins a player holds and sets this attribute
  * as dirty so that it will be updated in the attribute database later.
  *
- * \param player   dbref of player object responsible for command.
+ * \param obj      dbref of player object responsible for command.
  * \param howfew   Number of coins
  * \return         None.
  */

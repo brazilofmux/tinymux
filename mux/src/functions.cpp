@@ -4872,8 +4872,6 @@ static FUNCTION(fun_connrecord)
  * If given an argument, FCOUNT() returns the number of invocations required
  * to evaluate the argument.
  *
- * \param arg1     Optional subexpression.
- * \return         function invocation counter for cycle or for given subexpression.
  */
 
 FUNCTION(fun_fcount)

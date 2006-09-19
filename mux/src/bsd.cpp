@@ -2751,7 +2751,7 @@ static void SetHimState(DESC *d, unsigned char chOption, int iHimState)
  *
  * \param d         Player connection context.
  * \param chOption  Telnet Option.
- * \param iHimState One of the six option negotiation states.
+ * \param iUsState  One of the six option negotiation states.
  * \return          None.
  */
 
