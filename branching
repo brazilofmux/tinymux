@@ -59,6 +59,11 @@ bug fixes.  Each release branch may require a slightly different fix, but
 typically the fix from the most-recently released branch is merged back into
 the trunk, and propagated back down the dev tree.
 
-That is the Grand Scheme. At the moment, however, instead of a Grand Scheme,
-we have only the main trunk, and tagged builds. Every developer commits their
-changes directly into the main trunk.
+Rather than associate each leaf branch directly with a developer, it is also
+possible to create an arbitrary number.  Each developer can then pick for
+themselves which leaf they will work in.  This approach would tend to scale
+better.
+
+So, that is the Grand Scheme. At the moment, however, instead of a Grand
+Scheme, we have only the main trunk, and tagged builds. Every developer
+commits their changes directly into the main trunk.
