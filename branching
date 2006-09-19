@@ -1,0 +1,63 @@
+Branching Policy:
+
+Generally, neither the number of developers nor the rate of change is so high
+as to justify a highly-organized branching regime.  Also, a significant part
+of the quality assurance feedback originates externally, so it is not
+practical to assume a highly-organized QA function either.
+
+Since TinyMUX is developed for Win32 and various flavors of Unix, it isn't
+possible to know whether code that compiles and runs on one platform will
+necessarily compile and run on another.  On the other hand, not all developers
+have access to all platforms and are unable to completely verify their changes.
+
+Nevertheless, it makes sense to describe the Grand Unified Scheme for
+Branching, and then argue why it can be collapsed and special-cased.
+
+
+        ----2.6.0---2.6.1
+       /
+-----------------------------------------------------
+trunk   \
+         \  dev
+          \-----------------------
+           \
+            \  dev_foo
+             ----------
+
+In the Grand Scheme, the trunk is never released, and the only changes allowed
+are merges from other branches.  It's useful to first classify branches
+besides the trunk into development-side branches and release-side branches.
+The development-side branches can be organized into a promotion tree like so:
+
+              trunk
+                |
+                |
+               dev
+                |
+                |------------------
+                |        |        |
+             dev_foo  dev_bar  dev_baz
+
+
+An individual developer (e.g., bar) would make changes in branch dev_bar, test
+their changes on Win32 and some flavors of Unix.  There is still a strong
+desire to see simple changes committed individually -- changes which address
+the code in only one dimension to make it easier for others to code review the
+changes.  There is also a strong desire to avoid braking the build in these
+private branches, however, the only person affected by a broken build is the
+developer who broke it.
+
+Periodically, changes made on dev_foo, dev_bar, and dev_baz branches are
+merged into the dev branch, and periodically, changes from dev are merged into
+the trunk.  Likewise, changes brought into dev are periodically merged down
+into dev_foo, dev_bar, and dev_baz.
+
+The other class of branches are the release-side branches. Periodically, a
+release branch is created from the trunk.  Packaging considerations may
+require certain minor changes.  Maintenance of a release can be supported with
+bug fixes.  Each release branch may require a slightly different fix, but
+typically the fix from the most-recently released branch is merged back into
+the trunk, and propagated back down the dev tree.
+
+That is the Grand Scheme. At the moment, however, we have a main trunk, and
+tagged builds.
