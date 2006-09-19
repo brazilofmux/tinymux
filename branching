@@ -66,6 +66,11 @@ bug fixes.  Each release branch may require a slightly different fix, but
 typically the fix from the most-recently released branch is merged back into
 the trunk, and propagated back down the dev tree.
 
+Of course, with all this merging up and down the tree, there is always the
+potential for merge conflicts, and these would need to be resolved manually.
+Any change to the code should be made in exactly one branch and then allowed
+to propagate to everywhere else along with the other changes.
+
 Rather than associate each leaf branch directly with a developer, it is also
 possible to create an arbitrary number.  Each developer can then pick for
 themselves which leaf they will work in.  This approach would tend to scale
