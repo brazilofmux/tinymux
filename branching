@@ -79,3 +79,12 @@ better.
 At the moment, however, instead of a Grand Scheme, we have only the main
 trunk, and tagged builds. Every developer commits their changes directly into
 the main trunk.
+
+In the current scheme, a single person is the gate-keeper.  Patches flow to
+this person, and changes made to the repository are at risk of being reverted.
+In a more developed branching scheme, control of work is formalized in the
+Issue database, and no changes (no matter how mudane) are made unless there is
+an Issue that cover and approves it (no matter how mudane).  Furthermore,
+instead of a single gate-keeper, each leaf branch can have its own
+gate-keeper, impose its own rules, fulfil its internal QA function in its own
+way.
