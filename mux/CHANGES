@@ -161,7 +161,8 @@ Bug Fixes:
     found and fixed by Alierak.
  -- Document @clone/preserve switch.
  -- Issue 167: cque.cpp(1444) : warning C6244: Local declaration of
-    'ltdWarp' hides previous declaration.
+    'ltdWarp' hides previous declaration.  @timewarp/queue would have
+    ignored <secs> and become a no-op.
 
 
 Performance Enhancements:
