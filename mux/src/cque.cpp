@@ -1441,7 +1441,6 @@ void do_queue(dbref executor, dbref caller, dbref enactor, int eval, int key, ch
     else if (key == QUEUE_WARP)
     {
         int iWarp = mux_atol(arg);
-        CLinearTimeDelta ltdWarp;
         ltdWarp.SetSeconds(iWarp);
         if (scheduler.GetMinPriority() <= PRIORITY_CF_DEQUEUE_DISABLED)
         {
