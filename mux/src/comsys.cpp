@@ -165,19 +165,19 @@ static char *MakeCanonicalComAlias
         {
             return NULL;
         }
-		n++;
+        n++;
     }
 
     if (n < 1)
     {
         return NULL;
     }
-	else if (MAX_ALIAS_LEN < n)
-	{
-		n = MAX_ALIAS_LEN;
-	}
-	memcpy(Buffer, pAlias, n);
-	Buffer[n] = '\0';
+    else if (MAX_ALIAS_LEN < n)
+    {
+        n = MAX_ALIAS_LEN;
+    }
+    memcpy(Buffer, pAlias, n);
+    Buffer[n] = '\0';
     *nValidAlias = n;
     *bValidAlias = true;
     return Buffer;
@@ -3005,16 +3005,19 @@ void do_chanlist
         && actualEntries < entries;
            ch = (struct channel *)hash_nextentry(&mudstate.channel_htab))
     {
-            if (  !bWild
-               || quick_wild(pattern, ch->name))
-            {
-                charray[actualEntries].name = ch->name;
-                charray[actualEntries].ptr = ch;
-                actualEntries++;
-            }
+        if (  !bWild
+           || quick_wild(pattern, ch->name))
+        {
+            charray[actualEntries].name = ch->name;
+            charray[actualEntries].ptr = ch;
+            actualEntries++;
+        }
     }
 
-    qsort(charray, actualEntries, sizeof(struct chanlist_node), chanlist_comp);
+    if (0 < actualEntries)
+    {
+        qsort(charray, actualEntries, sizeof(struct chanlist_node), chanlist_comp);
+    }
 
     for (size_t i = 0; i < actualEntries; i++)
     {

@@ -7195,7 +7195,7 @@ static int DCL_CDECL i64_comp(const void *s1, const void *s2)
 
 static void do_asort(char *s[], int n, int sort_type)
 {
-    if (  n < 0
+    if (  n <= 0
        || LBUF_SIZE <= n)
     {
         return;
