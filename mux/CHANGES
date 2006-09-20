@@ -160,6 +160,8 @@ Bug Fixes:
  -- Fixed an lbuf leak in hasquota() introduced in TinyMUX 2.1. Bug
     found and fixed by Alierak.
  -- Document @clone/preserve switch.
+ -- Issue 167: cque.cpp(1444) : warning C6244: Local declaration of
+    'ltdWarp' hides previous declaration.
 
 
 Performance Enhancements:
