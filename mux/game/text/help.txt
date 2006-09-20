@@ -906,7 +906,7 @@ Related Topics: @name.
      /parent     - Set the new object's parent to be the template object and
                    don't copy the attributes.
      /preserve   - Let the existing owner own the clone. Existing owner must
-                   be controlable.
+                   be controllable.
 
   Related Topics: @create, @decompile, @destroy, VISUAL.
 
