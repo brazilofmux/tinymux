@@ -1275,11 +1275,11 @@ static Bigint *d2b(double d, int *e, int *bits)
 
 static double ratio(Bigint *a, Bigint *b)
 {
-    double da, db;
+    double lcl_da, lcl_db;
     int k, ka, kb;
 
-    dval(da) = b2d(a, &ka);
-    dval(db) = b2d(b, &kb);
+    dval(lcl_da) = b2d(a, &ka);
+    dval(lcl_db) = b2d(b, &kb);
 #ifdef Pack_32
     k = ka - kb + 32*(a->wds - b->wds);
 #else
@@ -1288,33 +1288,33 @@ static double ratio(Bigint *a, Bigint *b)
 #ifdef IBM
     if (k > 0)
     {
-        word0(da) += (k >> 2)*Exp_msk1;
+        word0(lcl_da) += (k >> 2)*Exp_msk1;
         if (k &= 3)
         {
-            dval(da) *= 1 << k;
+            dval(lcl_da) *= 1 << k;
         }
     }
     else
     {
         k = -k;
-        word0(db) += (k >> 2)*Exp_msk1;
+        word0(lcl_db) += (k >> 2)*Exp_msk1;
         if (k &= 3)
         {
-            dval(db) *= 1 << k;
+            dval(lcl_db) *= 1 << k;
         }
     }
 #else
     if (k > 0)
     {
-        word0(da) += k*Exp_msk1;
+        word0(lcl_da) += k*Exp_msk1;
     }
     else
     {
         k = -k;
-        word0(db) += k*Exp_msk1;
+        word0(lcl_db) += k*Exp_msk1;
     }
 #endif
-    return dval(da) / dval(db);
+    return dval(lcl_da) / dval(lcl_db);
 }
 
 static CONST double tens[] =
