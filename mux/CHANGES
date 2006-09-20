@@ -160,11 +160,11 @@ Bug Fixes:
  -- Fixed an lbuf leak in hasquota() introduced in TinyMUX 2.1. Bug
     found and fixed by Alierak.
  -- Document @clone/preserve switch.
- -- Issue 167: Local declaration of ltdWarp in cque.cpp hid global
-    declaration.  @timewarp/queue would have ignored <secs> and become
-    a no-op.
- -- Issue 125 and 159: Protect qsort() from invalid arguments that
-    should not happen.
+ -- Local declaration of ltdWarp in cque.cpp hid global declaration.
+    @timewarp/queue would have ignored <secs> and become a no-op
+    (Issue 167).
+ -- Protect qsort() from invalid arguments that should not happen
+    (Issue 125 and 159).
 
 
 Performance Enhancements:
