@@ -1719,9 +1719,9 @@ Related Topics: @name.
 
   Example:
     > @htdesc me=<IMG SRC="http://www.fakeserver.com/image.png">
-	 > @set me/htdesc = html
+    > @set me/htdesc = html
 
-  See also: Pueblo, @set, HTML
+  See also: PUEBLO, @set, HTML
   
 & @IDESC
 @IDESC
@@ -3829,7 +3829,7 @@ Related Topics: @name.
   Sets the URL of a VRML page to be shown to Pueblo users when they connect
   in location.
 
-  See also: Pueblo, HTML, @htdesc
+  See also: PUEBLO, HTML, @htdesc
   
 & @WAIT
 @WAIT
@@ -7483,7 +7483,7 @@ HTML
   of output.  A Pueblo-aware client recognizes these tags and changes the
   appearance of the intervening text accordingly.
 
-  Related Topics: PUEBLO
+  Related Topics: PUEBLO, @htdesc
 
 
 & IABS()
@@ -10576,7 +10576,7 @@ PUEBLO
 
   Please see http://www.chaco.com/pueblo/doc/enhancing.html for more details.
 
-  Related Topics: HTML.
+  Related Topics: HTML, @htdesc, @vrml_url
 
 & PUPPET
 PUPPET
