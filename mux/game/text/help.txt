@@ -1699,6 +1699,30 @@ Related Topics: @name.
 
   Related Topics: @drain, @notify, kill, HALTED, SEMAPHORES.
 
+& @HTDESC
+@HTDESC
+
+  COMMAND: @htdesc <object> = <message>
+  ATTRIBUTE: HTDesc
+
+  Sets the HTML description for <object> to be shown when a player with the
+  HTML flag looks at the object. If there is no HTDesc set, then the player
+  is shown the regular description from Desc.
+
+  You may place regular, raw HTML in the @htdesc, however if you do so you 
+  should set the HTML flag on the object. Without the flag any '<' characters 
+  are translated to '&lt;' and any '>' are translated to '&gt;'. If this
+  occurs, the browser will display the '<' and '>' characters instead of 
+  handling them as HTML tags.
+  
+  Functions and %-substitutions are evaluated in this attribute.
+
+  Example:
+    > @htdesc me=<IMG SRC="http://www.fakeserver.com/image.png">
+	 > @set me/htdesc = html
+
+  See also: Pueblo, @set, HTML
+  
 & @IDESC
 @IDESC
 
@@ -3796,6 +3820,17 @@ Related Topics: @name.
 
   Related Topics: locate().
 
+& @VRML_URL
+@VRML_URL
+
+  Command: @vrml_url <location> = <url>
+  Attribute: VRML_URL
+
+  Sets the URL of a VRML page to be shown to Pueblo users when they connect
+  in location.
+
+  See also: Pueblo, HTML, @htdesc
+  
 & @WAIT
 @WAIT
 
@@ -4398,14 +4433,13 @@ ATTRIBUTE FLAGS
 
     html (H)       - Emits from attr, oattr, aattr are not HTML-escaped.
 
+    no_inherit (I) - This attribute is not inherited by children of the
+                     object.
 
 { 'help attribute flags2' for more }
 
 & ATTRIBUTE FLAGS2
 ATTRIBUTE FLAGS (cont)
-
-    no_inherit (I) - This attribute is not inherited by children of the
-                     object.
 
     locked (+)     - The attribute is locked, it does not change
                      ownership when the object is @chowned and may not
@@ -4419,7 +4453,9 @@ ATTRIBUTE FLAGS (cont)
 
     regexp (R)     - $-command matching on this attribute uses
                      PCRE-style regular expressions.
-
+							
+    trace (T)      - The attribute will return trace output.
+	 
     visual (V)     - The attribute is visible to anyone who examines
                      you.  Note that the predefined attributes DESC,
                      SEX, and LAST are always VISUAL 
@@ -5111,13 +5147,13 @@ COMMANDS
   @clone       @cpattr      @create      @decompile   @destroy     @dig
   @doing       @dolist      @drain       @edit        @email       @emit
   @entrances   @femit       @find        @force       @fpose       @fsay
-  @halt        @if          @last        @link        @list        @listmotd
-  @lock        @mail        @mvattr      @name        @nemit       @notify
-  @npemit      @oemit       @open        @parent      @password    @pemit
-  @power       @program     @ps          @quitprogram @quota       @remit
-  @robot       @search      @set         @stats       @sweep       @switch
-  @teleport    @timecheck   @trigger     @unlink      @unlock      @verb
-  @wait        @wipe
+  @halt        @htdesc      @if          @last        @link        @list
+  @listmotd    @lock        @mail        @mvattr      @name        @nemit
+  @notify      @npemit      @oemit       @open        @parent      @password
+  @pemit       @power       @program     @ps          @quitprogram @quota
+  @remit       @robot       @search      @set         @stats       @sweep
+  @switch      @teleport    @timecheck   @trigger     @unlink      @unlock
+  @verb        @vrml_url    @wait        @wipe
 
 { 'help commands2' for more }
 
@@ -12762,7 +12798,15 @@ TRACE (continued)
   followed by the 'smaller' evaluations needed to perform it), then the total
   number of trace output lines that may be produced by an evaluation is limited
   to 200.  Bottom-up trace output is not limited.
+  
+  Trace may also be set on a specific attribute, thus narrowing down the scope
+  of the trace output to results from that specific object/attribute
+  combination.
 
+  Example:
+    > @set object/attribute = trace
+	 
+ 
   Related Topics: VERBOSE.
 
 & TRAIN
