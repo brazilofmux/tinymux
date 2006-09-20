@@ -1,6 +1,6 @@
 // cque.cpp -- commands and functions for manipulating the command queue.
 //
-// $Id: cque.cpp,v 1.35 2006/01/07 23:46:32 sdennis Exp $
+// $Id: cque.cpp,v 1.36 2006/09/20 02:50:04 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -1436,7 +1436,6 @@ void do_queue(dbref executor, dbref caller, dbref enactor, int key, char *arg)
     else if (key == QUEUE_WARP)
     {
         int iWarp = mux_atol(arg);
-        CLinearTimeDelta ltdWarp;
         ltdWarp.SetSeconds(iWarp);
         if (scheduler.GetMinPriority() <= PRIORITY_CF_DEQUEUE_DISABLED)
         {
