@@ -2994,72 +2994,78 @@ void do_chanlist
         entries = MAX_SUPPORTED_NUM_ENTRIES;
     }
 
-    struct chanlist_node* charray = (chanlist_node*)MEMALLOC(sizeof(chanlist_node)*entries);
-    ISOUTOFMEMORY(charray);
-
-    // Arrayify all the channels
-    //
-    size_t  actualEntries;
-    for (  actualEntries = 0, ch = (struct channel *)hash_firstentry(&mudstate.channel_htab);
-           ch
-        && actualEntries < entries;
-           ch = (struct channel *)hash_nextentry(&mudstate.channel_htab))
+    if (0 < entries)
     {
-        if (  !bWild
-           || quick_wild(pattern, ch->name))
+        struct chanlist_node* charray =
+            (chanlist_node*)MEMALLOC(sizeof(chanlist_node)*entries);
+
+        if (charray)
         {
-            charray[actualEntries].name = ch->name;
-            charray[actualEntries].ptr = ch;
-            actualEntries++;
-        }
-    }
-
-    if (0 < actualEntries)
-    {
-        qsort(charray, actualEntries, sizeof(struct chanlist_node), chanlist_comp);
-    }
-
-    for (size_t i = 0; i < actualEntries; i++)
-    {
-        ch = charray[i].ptr;
-        if (  Comm_All(executor)
-           || (ch->type & CHANNEL_PUBLIC)
-           || Controls(executor, ch->charge_who))
-        {
-            char *pBuffer;
-            if (key & CLIST_HEADERS)
+            // Arrayify all the channels
+            //
+            size_t actualEntries = 0;
+            for (  ch = (struct channel *)hash_firstentry(&mudstate.channel_htab);
+                   ch
+                && actualEntries < entries;
+                   ch = (struct channel *)hash_nextentry(&mudstate.channel_htab))
             {
-                pBuffer = ch->header;
-            }
-            else
-            {
-                atrstr = atr_pget(ch->chan_obj, A_DESC, &owner, &flags);
-                if (  NOTHING == ch->chan_obj
-                   || !*atrstr)
+                if (  !bWild
+                   || quick_wild(pattern, ch->name))
                 {
-                    mux_strncpy(buf, "No description.", MBUF_SIZE-1);
+                    charray[actualEntries].name = ch->name;
+                    charray[actualEntries].ptr = ch;
+                    actualEntries++;
                 }
-                else
-                {
-                    mux_sprintf(buf, MBUF_SIZE, "%-54.54s", atrstr);
-                }
-                free_lbuf(atrstr);
-
-                pBuffer = buf;
             }
 
-            char *ownername_ansi = ANSI_TruncateAndPad_sbuf(Moniker(ch->charge_who), 15);
-            mux_sprintf(temp, MBUF_SIZE, "%c%c%c %-13.13s %s %-45.45s",
-                (ch->type & (CHANNEL_PUBLIC)) ? 'P' : '-',
-                (ch->type & (CHANNEL_LOUD)) ? 'L' : '-',
-                (ch->type & (CHANNEL_SPOOF)) ? 'S' : '-',
-                ch->name, ownername_ansi, pBuffer);
-            free_sbuf(ownername_ansi);
+            if (0 < actualEntries)
+            {
+                qsort(charray, actualEntries, sizeof(struct chanlist_node), chanlist_comp);
 
-            raw_notify(executor, temp);
+                for (size_t i = 0; i < actualEntries; i++)
+                {
+                    ch = charray[i].ptr;
+                    if (  Comm_All(executor)
+                       || (ch->type & CHANNEL_PUBLIC)
+                       || Controls(executor, ch->charge_who))
+                    {
+                        char *pBuffer;
+                        if (key & CLIST_HEADERS)
+                        {
+                            pBuffer = ch->header;
+                        }
+                        else
+                        {
+                            atrstr = atr_pget(ch->chan_obj, A_DESC, &owner, &flags);
+                            if (  NOTHING == ch->chan_obj
+                               || !*atrstr)
+                            {
+                                mux_strncpy(buf, "No description.", MBUF_SIZE-1);
+                            }
+                            else
+                            {
+                                mux_sprintf(buf, MBUF_SIZE, "%-54.54s", atrstr);
+                            }
+                            free_lbuf(atrstr);
+
+                            pBuffer = buf;
+                        }
+
+                        char *ownername_ansi = ANSI_TruncateAndPad_sbuf(Moniker(ch->charge_who), 15);
+                        mux_sprintf(temp, MBUF_SIZE, "%c%c%c %-13.13s %s %-45.45s",
+                            (ch->type & (CHANNEL_PUBLIC)) ? 'P' : '-',
+                            (ch->type & (CHANNEL_LOUD)) ? 'L' : '-',
+                            (ch->type & (CHANNEL_SPOOF)) ? 'S' : '-',
+                            ch->name, ownername_ansi, pBuffer);
+                        free_sbuf(ownername_ansi);
+
+                        raw_notify(executor, temp);
+                    }
+                }
+            }
+            MEMFREE(charray);
         }
     }
-    MEMFREE(charray);
     free_mbuf(temp);
     free_mbuf(buf);
     raw_notify(executor, "-- End of list of Channels --");
