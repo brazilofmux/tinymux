@@ -162,6 +162,14 @@ Bug Fixes:
  -- Document @clone/preserve switch.
  -- Update TRACE helpfile for new attribute flag functionality (Issue 104). 
  -- Add @htdesc and @vrml_url documentation (Issue 44).
+ -- Local declaration of ltdWarp in cque.cpp hid global declaration.
+    @timewarp/queue would have ignored <secs> and become a no-op
+    (Issue 167).
+ -- @timewarp/queue advanced a queued command's displayed time (as seen
+    by @ps), but did not update the run time of the underlying task, so
+    the command did not execute any sooner (Issue 172).
+ -- Protect qsort() from invalid arguments that should not happen
+    (Issue 125 and 159).
 
 Performance Enhancements:
 ~~~~~~~~~~~~~~~~~~~~~~~~

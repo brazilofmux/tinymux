@@ -968,10 +968,10 @@ static void make_socket(PortInfo *Port)
         //
         nRet = bind(s, (LPSOCKADDR) &server, sizeof server);
 
-        if (nRet == SOCKET_ERROR)
+        if (IS_SOCKET_ERROR(nRet))
         {
             Log.tinyprintf("Error %ld on Win32: bind" ENDLINE, SOCKET_LAST_ERROR);
-            if (closesocket(s) == 0)
+            if (SOCKET_CLOSE(s) == 0)
             {
                 DebugTotalSockets--;
             }
@@ -986,6 +986,11 @@ static void make_socket(PortInfo *Port)
         if (nRet)
         {
             Log.tinyprintf("Error %ld on Win32: listen" ENDLINE, SOCKET_LAST_ERROR);
+            if (SOCKET_CLOSE(s) == 0)
+            {
+                DebugTotalSockets--;
+            }
+            s = INVALID_SOCKET;
             return;
         }
 
@@ -995,6 +1000,11 @@ static void make_socket(PortInfo *Port)
         if (NULL == hThread)
         {
             log_perror("NET", "FAIL", "CreateThread", "setsockopt");
+            if (SOCKET_CLOSE(s) == 0)
+            {
+                DebugTotalSockets--;
+            }
+            s = INVALID_SOCKET;
             return;
         }
 
@@ -1105,24 +1115,22 @@ void SetupPorts(int *pnPorts, PortInfo aPorts[], IntArray *pia)
 
         if (!bFound)
         {
-            PortInfo t;
-            t.port = pia->pi[j];
-            make_socket(&t);
-            if (  !IS_INVALID_SOCKET(t.socket)
+            k = *pnPorts;
+            aPorts[k].port = pia->pi[j];
+            make_socket(aPorts+k);
+            if (  !IS_INVALID_SOCKET(aPorts[k].socket)
 #ifndef WIN32
-               && ValidSocket(t.socket)
+               && ValidSocket(aPorts[k].socket)
 #endif // WIN32
                )
             {
 #ifndef WIN32
-                if (maxd <= t.socket)
+                if (maxd <= aPorts[k].socket)
                 {
-                    maxd = t.socket + 1;
+                    maxd = aPorts[k].socket + 1;
                 }
 #endif // WIN32
-                k = *pnPorts;
                 (*pnPorts)++;
-                aPorts[k] = t;
             }
         }
     }
@@ -2751,7 +2759,7 @@ static void SetHimState(DESC *d, unsigned char chOption, int iHimState)
  *
  * \param d         Player connection context.
  * \param chOption  Telnet Option.
- * \param iHimState One of the six option negotiation states.
+ * \param iUsState  One of the six option negotiation states.
  * \return          None.
  */
 

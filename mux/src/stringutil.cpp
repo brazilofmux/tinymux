@@ -1,7 +1,10 @@
-// stringutil.cpp -- string utilities.
-//
-// $Id$
-//
+/*! \file stringutil.cpp
+ *  String utility functions.
+ *
+ * $Id$
+ *
+ */
+
 #include "copyright.h"
 #include "autoconf.h"
 #include "config.h"
@@ -3768,10 +3771,30 @@ char *linewrap_desc(char *str)
     return linewrap_general(str, 70, "     ", "");
 }
 
+#endif // FIRANMUX
+
+/*! \brief Constructs mux_string object.
+ *
+ * This constructor puts the mux_string object into an initial, reasonable,
+ * and empty state.
+ *
+ * \return         None.
+ */
+
 mux_string::mux_string(void)
 {
     m_n = 0;
 }
+
+/*! \brief Import ANSI string.
+ *
+ * Parses the given ANSI string into a form which can be more-easily
+ * navigated.
+ *
+ * \param n        Length of string, str.
+ * \param str      ANSI-color encoded string to import.
+ * \return         None.
+ */
 
 void mux_string::import(size_t n, const char *str)
 {
@@ -3788,7 +3811,7 @@ void mux_string::import(size_t n, const char *str)
         {
             // Process TEXT
             //
-            size_t nTextToLoad nToken0;
+            size_t nTextToLoad = nToken0;
             if (sizeof(m_ach) - m_n - 1 < nTextToLoad)
             {
                 nTextToLoad = sizeof(m_ach) - 1;
@@ -3818,11 +3841,17 @@ void mux_string::import(size_t n, const char *str)
             n   -= nToken0;
         }
     }
-    a_ch[m_n] = '\0';
+    m_ach[m_n] = '\0';
 }
+
+/*! \brief Generates ANSI string from internal form.
+ *
+ * \param buff     Pointer to beginning of lbuf.
+ * \param bufc     Pointer to current position.
+ * \return         None.
+ */
 
 void mux_string::copy(char *buff, char **bufc)
 {
 }
 
-#endif // FIRANMUX
