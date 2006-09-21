@@ -274,8 +274,8 @@ Bug Fixes:
  -- %v accepts accented characters (Issue 91).  Found by Alierak.
  -- Fixed an lbuf leak in hasquota() introduced in TinyMUX 2.1. Bug
     found and fixed by Alierak.
- -- Issue 167: cque.cpp(1444) : warning C6244: Local declaration of
-    'ltdWarp' hides previous declaration.
+ -- Backpatch @timewarp/queue <secs> fixes from TinyMUX 2.6 (Issues 167
+    and 172).
 
 
 Performance Enhancements:
