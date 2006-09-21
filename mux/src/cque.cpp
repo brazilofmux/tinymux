@@ -1,6 +1,6 @@
 // cque.cpp -- commands and functions for manipulating the command queue.
 //
-// $Id: cque.cpp,v 1.36 2006/09/20 02:50:04 sdennis Exp $
+// $Id: cque.cpp,v 1.37 2006/09/21 14:30:13 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -1399,6 +1399,7 @@ static int CallBack_Warp(PTASK_RECORD p)
         if (point->IsTimed)
         {
             point->waittime -= ltdWarp;
+            p->ltaWhen -= ltdWarp;
             return IU_UPDATE_TASK;
         }
     }
