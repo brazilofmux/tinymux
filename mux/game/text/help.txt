@@ -98,8 +98,8 @@ $-COMMANDS
   COMMAND: ;<message>
 
   This command is much like the ':' command, except that no space is inserted
-  between your name and the action. 
- 
+  between your name and the action.
+
   Example:
     > ;'s watch beeps.
     Player's watch beeps.
@@ -731,10 +731,10 @@ Related Topics: @name.
 
   Deletes <channel> permanently from the comsystem database. It does not
   destroy all aliases that exist for <channel> -- those are left to the
-  owners of those aliases. Players are notified both at login when they   
-  own aliases for which a channel no longer exists and when they try to 
-  use them. Even if a Channel is destroyed and then recreated, the alias 
-  will still be non functioning. The alias must be removed with the 
+  owners of those aliases. Players are notified both at login when they
+  own aliases for which a channel no longer exists and when they try to
+  use them. Even if a Channel is destroyed and then recreated, the alias
+  will still be non functioning. The alias must be removed with the
   'delcom' command and added with the 'addcom' command.
 
   Example:
@@ -1064,7 +1064,7 @@ Related Topics: @name.
               <value>. <value> may contain color.
     object  - Sets the channel object to <value>. You must create an object
               before associating a channel with it.
-    log     - Sets the maximum number of channel messages to log. 
+    log     - Sets the maximum number of channel messages to log.
               The channel must have an object.
 
   You can set a description for the channel by changing the description
@@ -1709,12 +1709,12 @@ Related Topics: @name.
   HTML flag looks at the object. If there is no HTDesc set, then the player
   is shown the regular description from Desc.
 
-  You may place regular, raw HTML in the @htdesc, however if you do so you 
-  should set the HTML flag on the object. Without the flag any '<' characters 
+  You may place regular, raw HTML in the @htdesc, however if you do so you
+  should set the HTML flag on the object. Without the flag any '<' characters
   are translated to '&lt;' and any '>' are translated to '&gt;'. If this
-  occurs, the browser will display the '<' and '>' characters instead of 
+  occurs, the browser will display the '<' and '>' characters instead of
   handling them as HTML tags.
-  
+
   Functions and %-substitutions are evaluated in this attribute.
 
   Example:
@@ -1722,7 +1722,7 @@ Related Topics: @name.
     > @set me/htdesc = html
 
   See also: PUEBLO, @set, HTML
-  
+
 & @IDESC
 @IDESC
 
@@ -3397,7 +3397,7 @@ Related Topics: @name.
            @set[/<switch>] <object>=<attribute>:_<fromobj>/<fromattr>
            @set[/<switch>] <object>/<attr>=[!]<attrflag>
 
-  The first form sets (or clears) the indicated flag or flags on <object>, 
+  The first form sets (or clears) the indicated flag or flags on <object>,
   the second form sets the <attribute> attribute on <object> to <value>,
   creating a new user-named attribute if there is no attribute named
   <attribute>.  The third form copies an attribute from another object, and
@@ -3475,9 +3475,9 @@ Related Topics: @name.
   Sets a filter to be applied to all of <object>'s speech. <string> is
   evaluated with the original speech as %0 and the command as %1. It is
   then displayed in place of the original speech. You can use this to
-  colorize each word of what you say, say things backwards, etc. 
+  colorize each word of what you say, say things backwards, etc.
 
-  @speechmod affects: "  \\  ;  :  page  pose  say  whisper  @fpose  
+  @speechmod affects: "  \\  ;  :  page  pose  say  whisper  @fpose
      @fsay  @wall  on-channel speech
 
   %1 may be one of: channel  channel/pose  page  pose  say  whisper
@@ -3830,7 +3830,7 @@ Related Topics: @name.
   in location.
 
   See also: PUEBLO, HTML, @htdesc
-  
+
 & @WAIT
 @WAIT
 
@@ -3918,7 +3918,7 @@ ABS()
 ACCENT()
 
   FUNCTION: accent(<string>, <template>)
-  
+
   The accent() function will return <string>, with characters in it
   possibly changed to accented ones according to <template>. Both
   arguments must be the same number of characters.
@@ -3937,7 +3937,7 @@ ACCENT() (continued)
   <template> is checked according to the table below, and a replacement
   done. If either the current <string> or <template> characters aren't
   in the table, the <string> character is passed through unchanged.
- 
+
   Accent                         Template   String
   Name       Description         Character  Character
   -----------------------------------------------------------------
@@ -3963,7 +3963,7 @@ ACCENT() (continued)
 
   These are non-accent special characters, mostly punctuation and
   non-roman letters.
- 
+
                       Template   String
   Description         Character  Character
   --------------------------------------------------------------
@@ -3981,8 +3981,8 @@ ACCENT() (continued)
 
     > think accent(Aule, ---:)
     Aul(e-with-diaeresis)
- 
-    > think accent(The Nina was a ship, The Ni~a was a ship) 
+
+    > think accent(The Nina was a ship, The Ni~a was a ship)
     The Ni(n-with-~)a was a ship
 
 ("help accent4" for more)
@@ -4220,19 +4220,19 @@ ANSI CODES
 
 & ANSI SUBSTITUTION
 ANSI SUBSTITUTION
-  
-  The percent substitution %x<color code> can be used instead of 
-  ansi(), and is more efficient. 
- 
+
+  The percent substitution %x<color code> can be used instead of
+  ansi(), and is more efficient.
+
   For example, the equivalent to [ansi(rBf,Color!)] would be:
   %xr%xB%xfColor!%xn
- 
-  The %xn (to return to normal) is not necessary, but if it is not 
+
+  The %xn (to return to normal) is not necessary, but if it is not
   specified the ansi color codes will continue to the end of the string.
 
   %x is preferred, however %c may also be used. They are equivalent.
 
-  Related Topics: ansi(), ANSI CODES  
+  Related Topics: ansi(), ANSI CODES
 
 & ANSI()
 ANSI()
@@ -4453,12 +4453,12 @@ ATTRIBUTE FLAGS (cont)
 
     regexp (R)     - $-command matching on this attribute uses
                      PCRE-style regular expressions.
-							
+
     trace (T)      - The attribute will return trace output.
-	 
+
     visual (V)     - The attribute is visible to anyone who examines
                      you.  Note that the predefined attributes DESC,
-                     SEX, and LAST are always VISUAL 
+                     SEX, and LAST are always VISUAL
 
     wizard (W)     - Only wizards can modify this attribute.
 
@@ -4609,7 +4609,7 @@ BITTYPE()
   This function is from RhostMUSH, there is no 6 because MUX has no
   equivalent for Rhost's Immortal.
 
-  Related Topics: hasflag(), orflags(), andflags(). 
+  Related Topics: hasflag(), orflags(), andflags().
 
 & BLIND
 BLIND
@@ -4743,7 +4743,7 @@ BXOR()
   on in the result.
 
      > think bxor(922,785)
-     139 
+     139
 
   Related Topics: shl(), shr(), band(), bnand(), bor().
 
@@ -4879,7 +4879,7 @@ CEMIT()
 CENTER()
 
   FUNCTION: center(<string>, <width>[, <fill>])
- 
+
   This function centers <string> within a <width>-sized field.
 
   The background of this field is specified by a repeating pattern of <fill>
@@ -4893,7 +4893,7 @@ CENTER()
 
   If the visual width of <string> is longer than <width> characters, it is
   truncated to fit.
- 
+
   Example:
     > say center(a,5,-)
     You say, "--a--"
@@ -4917,9 +4917,9 @@ CHANNEL OBJECT
   override the equivalent lock. The flags are set by default, so you will
   have to clear them before your locks work.
 
-  The join lock for a channel is a normal @lock on the channel object. 
-  The transmit lock for a channel is a use @lock on the channel object.  
-  The receive lock for a channel is an enter @lock on the channel object. 
+  The join lock for a channel is a normal @lock on the channel object.
+  The transmit lock for a channel is a use @lock on the channel object.
+  The receive lock for a channel is an enter @lock on the channel object.
   The description of a channel is the @desc of the channel object.
 
   Related Topics: @ccreate, @create, @cset.
@@ -5268,7 +5268,7 @@ COMTITLE
            comtitle[/<option>] <alias>
 
   This command allows you to prefix your name on a channel with a title.
-  The second form contains a switch that allow you to turn on or off 
+  The second form contains a switch that allow you to turn on or off
   the ability to see comtitles. <option> can be on of the following:
 
     on      - comtitles are shown to you.
@@ -5659,7 +5659,7 @@ Stephen Dennis (AKA Brazil). There is a more complete list of credits
 in the README files for the server itself.
 
 See http://www.tinymux.com for an on-line version of these README files.
- 
+
 & CTIME()
 CTIME()
 
@@ -6127,7 +6127,7 @@ ENTER_OK
 ENTRANCES()
 
   FUNCTION: entrances([<loc>[,<type>[,<low>[,<high>]]]])
- 
+
   Returns a space-separated list of links from elsewhere to <loc>.  The
   results may include exits and drop-to's leading to <loc> as well as players
   and objects whose home is <loc>.  Unlike @entrances, entrances() does not
@@ -6136,7 +6136,7 @@ ENTRANCES()
   E (exit), T (thing), R (room), P (player).  There is a search cost to this
   function.  <low> and <high> can be used to indicate where to start and stop
   the search, respectively.
- 
+
   You may only use this command on locations that you control, or else the
   results will be limited to items you can examine.
 
@@ -6145,13 +6145,13 @@ ENTRANCES()
     <type> -  A (all).
     <low>  -  beginning of database.
     <high> -  end of database.
- 
+
   Examples:
     > say entrances()           <- all links to here
     > say entrances(object)     <- all links to object
     > say entrances(here,tp)    <- everything that lives here
     > say entrances(me,a,1000)  <- all links to me from #1000 and above.
- 
+
   Related Topics: @entrances, @link, link(), children(), lexits().
 
 & EQ()
@@ -6192,7 +6192,7 @@ ERROR()
     > say error(@pmit)
     You typed '@pmit'.
 
-  Related Topics: 
+  Related Topics:
 
 & ESCAPE()
 ESCAPE()
@@ -6772,7 +6772,7 @@ FULLNAME()
 
 & FUNCTION CLASSES
 FUNCTION CLASSES
- 
+
   Arithmetic:                ABS ADD BAND BNAND BOR BXOR CEIL CRC32 DEC DIE
                              DISTRIBUTE FDIV FLOORDIV FMOD IABS IADD IDIV IMUL
                              INC ISIGN ISUB MOD MUL PACK POWER RAND REMAINDER
@@ -6808,7 +6808,7 @@ FUNCTION CLASSES (continued)
   Miscellaneous:             @@ ANSI ART BEEP ERROR FCOUNT ISDBREF ISINT ISNUM
                              ISRAT ISWORD LIT NULL R SETQ SETR SUBEVAL
                              TEXT TEXTFILE
- 
+
 { 'help function classes3' for more }
 
 & FUNCTION CLASSES3
@@ -6851,7 +6851,7 @@ FUNCTION CLASSES (continued)
                              TRANSLATE TRIM UCSTR WORDPOS WRAP
 
   Time:                      CONVSECS CONVTIME DIGITTIME ETIMEFMT EXPTIME SECS
-                             SINGLETIME STARTSECS STARTTIME TIME TIMEFMT 
+                             SINGLETIME STARTSECS STARTTIME TIME TIMEFMT
                              WRITETIME
 
   Trigonometric:             ACOS ASIN ATAN COS CTU DIST2D DIST3D PI SIN TAN
@@ -6864,7 +6864,7 @@ FUNCTION CLASSES (continued)
 
 & FUNCTION LIST
 FUNCTION LIST
- 
+
   Help is available for the following functions:
 
     @@()        ABS()       ACCENT()    ACOS()      ADD()       AFTER()
@@ -7328,7 +7328,7 @@ HASRXLEVEL()
   NOTE: This function is not available unless reality levels was enabled at
   compile-time.
 
-  Example: 
+  Example:
     > say hasrxlevel(me,real)
     You say, '1'.
 
@@ -7346,7 +7346,7 @@ HASTXLEVEL()
   NOTE: This function is not available unless reality levels was enabled at
   compile-time.
 
-  Example: 
+  Example:
     > say hastxlevel(me,real)
     You say, '1'.
 
@@ -7758,16 +7758,16 @@ INUM()
   string before it is evaluated, itext(), inum(), and ilev() substitute their
   values as part of evaluation. In this way, the use of these functions is
   safer than the ## and #@ substitutions and is therefore preferred.
-   
+
   > say [iter(red blue green,iter(fish shoe, #@:##))]
   You say, "1:red 1:red 2:blue 2:blue 3:green 3:green"
-   
+
   > say [iter(red blue green,iter(fish shoe, [inum(1)]:[itext(1)]))]
   You say, "1:red 1:red 2:blue 2:blue 3:green 3:green"
-   
+
   > say [iter(red blue green,iter(fish shoe, [inum(0)]:[itext(0)]))]
   You say, "1:fish 2:shoe 1:fish 2:shoe 1:fish 2:shoe"
-   
+
   > say [iter(red blue green,iter(fish shoe, [itext(1)]:[itext(0)]))]
   You say, "red:fish red:shoe blue:fish blue:shoe green:fish green:shoe"
 
@@ -7857,7 +7857,7 @@ ISNUM()
 
   FUNCTION: isnum(<string>)
 
-  This function will return 1 (TRUE) if the argument is a valid number and 
+  This function will return 1 (TRUE) if the argument is a valid number and
   0 (FALSE) otherwise. This definition of a number includes scientific
   notation as well as a certain case-insensitive 'special words': NaN, -Inf,
   +Inf, and Ind.
@@ -8005,16 +8005,16 @@ ITEXT()
   string before it is evaluated, itext(), inum(), and ilev() substitute their
   values as part of evaluation. In this way, the use of these functions is
   safer than the ## and #@ substitutions and is therefore preferred.
-   
+
   > say [iter(red blue green,iter(fish shoe, #@:##))]
   You say, "1:red 1:red 2:blue 2:blue 3:green 3:green"
-   
+
   > say [iter(red blue green,iter(fish shoe, [inum(1)]:[itext(1)]))]
   You say, "1:red 1:red 2:blue 2:blue 3:green 3:green"
-   
+
   > say [iter(red blue green,iter(fish shoe, [inum(0)]:[itext(0)]))]
   You say, "1:fish 2:shoe 1:fish 2:shoe 1:fish 2:shoe"
-   
+
   > say [iter(red blue green,iter(fish shoe, [itext(1)]:[itext(0)]))]
   You say, "red:fish red:shoe blue:fish blue:shoe green:fish green:shoe"
 
@@ -8777,9 +8777,9 @@ LPORTS()
   Example:
     > WHO
     Player Name          On For Idle  Doing
-    Mortal                00:11   0s  
-    Evinar                00:12   6m  
-    Wizard                00:32   6s  
+    Mortal                00:11   0s
+    Evinar                00:12   6m
+    Wizard                00:32   6s
     3 Players logged in.
     > say lports()
     You say, "#226:20 #271:5 #1:6"
@@ -8901,9 +8901,9 @@ LWHO()
   Example:
     > WHO
     Player Name          On For Idle  Doing
-    Mortal                00:11   0s  
-    Evinar                00:12   6m  
-    Wizard                00:32   6s  
+    Mortal                00:11   0s
+    Evinar                00:12   6m
+    Wizard                00:32   6s
     3 Players logged in.
     > say lwho()
     You say, "#226 #271 #1"
@@ -9421,7 +9421,7 @@ MIN()
 MIX()
 
   FUNCTION: mix([<object>/]<attribute>, <list 1>[, <list 2>[,<list N>]][,<delim>])
-  
+
   This function is similar to map(), except it takes the arguments in the
   lists and passes them into the attribute as %0 (for list1), %1 (for list2),
   up to %9 (for list10).  <delim> is used as the delimiter to separate items
@@ -9429,7 +9429,7 @@ MIX()
   may be optional, otherwise you are forced to provide a delimiter.  If no
   delimiter is specified, it defaults to a space but only for the above condition.
   The lists do NOT have to have the same number of elements.
-  
+
   Examples:
     > &do_math me=[add(%0,%1)]
     > &do_moremath me=[add(%0,%1,%2,%3,%4,%5,%6,%7,%8,%9)]
@@ -9441,7 +9441,7 @@ MIX()
     You say, "8 11 3 4 5"
     > say mix(do_moremath,1,2,3,4,5,6,7 8,9 10 11 12,)
     You say, "37 18 11 12"
-  
+
   Related Topics: elements(), iter(), list(), map(), merge(), step()
 
 & MOD()
@@ -9984,7 +9984,7 @@ OPAQUE
 & OPEN_OK
 OPEN_OK
 
-  FLAG: OPEN_OK(z)  
+  FLAG: OPEN_OK(z)
 
   If a location is OPEN_OK, anyone who passes the OpenLock can open
   exits from it (but not to it). It has no meaning for exits.
@@ -10145,7 +10145,7 @@ PAGE (continued)
     > page me=;'s character tests.
     From afar, Foo's character tests.
     Long distance to Foo: Foo's character tests.
-    
+
   If your Idle attribute is set to something, then it is sent to anyone who
   successfully pages you after you have become idle by the period set by your
   @idletimeout.  This is useful for when you are away from your terminal for
@@ -10464,7 +10464,7 @@ POSE
   Displays <message> to everyone in your current room, preceded by your name
   and optionally a space.
 
-  Example: 
+  Example:
     >pose jumps for joy.
       Player jumps for joy.
 
@@ -11067,11 +11067,11 @@ RESTRICTED
   no_restricted access permission (see 'wizhelp PERMISSIONS', 'wizhelp
   access', etc.) which is used to mark which commands can not be used by
   RESTRICTED players (or objects).
- 
+
   Command access permissions can be viewed by a wizard using the '@list
   permissions' command.  Commands marked 'no_restricted' in this list cannot
   be used by RESTRICTED players or objects.
- 
+
   Note that a RESTRICTED Wizard character who later sets herself QUELL will
   not be able to set herself un-RESTRICTED!  Fixing this will require the help
   of a fully-powered wizard.  Be careful with this combination.
@@ -12201,18 +12201,18 @@ STRCAT()
 STRIP()
 
   FUNCTION: strip(<string1>[,<string2>])
-  
+
   This function strips out every occurrence of every character of <string2>
   from <string1> and returns <string1>.  If <string2> is empty or not given,
   <string1> is returned, stripped of ANSI codes. The strip function is case
   sensitive.
-  
+
   Examples:
     > say strip(This is a test,is)
     You say, "Th  a tet"
     > say strip(abcdefgABCDEFG,azGy!7$B)
     You say, "bcdefgACDEF"
-  
+
   Related Topics: @edit, edit().
 
 & STRIPACCENTS()
@@ -12417,7 +12417,7 @@ SUBSTITUTIONS (continued)
   Note that %<whatever> is equivalent to [v(<whatever>)], but is more
   efficient.
 
-  Related Topics: ANSI(), ANSI CODES, ANSI SUBSTITUTION, GENDER, V(). 
+  Related Topics: ANSI(), ANSI CODES, ANSI SUBSTITUTION, GENDER, V().
 
 & SUCCESS
 SUCCESS
@@ -12798,15 +12798,14 @@ TRACE (continued)
   followed by the 'smaller' evaluations needed to perform it), then the total
   number of trace output lines that may be produced by an evaluation is limited
   to 200.  Bottom-up trace output is not limited.
-  
+
   Trace may also be set on a specific attribute, thus narrowing down the scope
   of the trace output to results from that specific object/attribute
   combination.
 
   Example:
     > @set object/attribute = trace
-	 
- 
+
   Related Topics: VERBOSE.
 
 & TRAIN
@@ -12816,12 +12815,12 @@ TRAIN
 
   The train command is used to output to your location exactly what you
   have typed, then execute it.  The output is not parsed and is taken
-  verbatim and displayed as is. 
+  verbatim and displayed as is.
 
   Example:
     > train @emit To do addition, type:  say add(1,1) = 2
     YourName types -=> @emit To do addition, type: say add(1,1) = 2
-    To do addition, type: say add(1,1) = 2                         
+    To do addition, type: say add(1,1) = 2
 
   Related Topics: @emit, pose, @pemit, think
 
@@ -13525,7 +13524,7 @@ WRAP()
   width.  Words are separated by spaces. If a word in the text is longer than
   a single line, it is simply broken at the end of the line.  Tabs are
   expanded to 8 spaces, and %r's are treated as a force to the next line,
-  overriding the logic of the word wrapping. 
+  overriding the logic of the word wrapping.
 
   The <just> argument may be Left, Right, or Center. Only the first
   character of the argument is significant. <just> defaults to Left.
@@ -13551,8 +13550,8 @@ WRAP() (continued)
   |       you? |
 
   > @emit DESC: [wrap(get(me/desc), 10, left,,,6)]
-  DESC: You see 
-        before 
+  DESC: You see
+        before
         you a
         stranger.
 
