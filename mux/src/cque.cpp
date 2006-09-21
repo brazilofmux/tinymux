@@ -1403,6 +1403,7 @@ static int CallBack_Warp(PTASK_RECORD p)
         if (point->IsTimed)
         {
             point->waittime -= ltdWarp;
+            p->ltaWhen -= ltdWarp;
             return IU_UPDATE_TASK;
         }
     }
