@@ -7214,53 +7214,59 @@ static void do_asort(char *s[], int n, int sort_type)
 
     case NUMERIC_LIST:
         i64p = (i64_rec *) MEMALLOC(n * sizeof(i64_rec));
-        ISOUTOFMEMORY(i64p);
-        for (i = 0; i < n; i++)
+        if (NULL != i64p)
         {
-            i64p[i].str = s[i];
-            i64p[i].data = mux_atoi64(s[i]);
+            for (i = 0; i < n; i++)
+            {
+                i64p[i].str = s[i];
+                i64p[i].data = mux_atoi64(s[i]);
+            }
+            qsort(i64p, n, sizeof(i64_rec), i64_comp);
+            for (i = 0; i < n; i++)
+            {
+                s[i] = i64p[i].str;
+            }
+            MEMFREE(i64p);
+            i64p = NULL;
         }
-        qsort(i64p, n, sizeof(i64_rec), i64_comp);
-        for (i = 0; i < n; i++)
-        {
-            s[i] = i64p[i].str;
-        }
-        MEMFREE(i64p);
-        i64p = NULL;
         break;
 
     case DBREF_LIST:
         ip = (i_rec *) MEMALLOC(n * sizeof(i_rec));
-        ISOUTOFMEMORY(ip);
-        for (i = 0; i < n; i++)
+        if (NULL != ip)
         {
-            ip[i].str = s[i];
-            ip[i].data = dbnum(s[i]);
+            for (i = 0; i < n; i++)
+            {
+                ip[i].str = s[i];
+                ip[i].data = dbnum(s[i]);
+            }
+            qsort(ip, n, sizeof(i_rec), i_comp);
+            for (i = 0; i < n; i++)
+            {
+                s[i] = ip[i].str;
+            }
+            MEMFREE(ip);
+            ip = NULL;
         }
-        qsort(ip, n, sizeof(i_rec), i_comp);
-        for (i = 0; i < n; i++)
-        {
-            s[i] = ip[i].str;
-        }
-        MEMFREE(ip);
-        ip = NULL;
         break;
 
     case FLOAT_LIST:
         fp = (f_rec *) MEMALLOC(n * sizeof(f_rec));
-        ISOUTOFMEMORY(fp);
-        for (i = 0; i < n; i++)
+        if (NULL != fp)
         {
-            fp[i].str = s[i];
-            fp[i].data = mux_atof(s[i], false);
+            for (i = 0; i < n; i++)
+            {
+                fp[i].str = s[i];
+                fp[i].data = mux_atof(s[i], false);
+            }
+            qsort(fp, n, sizeof(f_rec), f_comp);
+            for (i = 0; i < n; i++)
+            {
+                s[i] = fp[i].str;
+            }
+            MEMFREE(fp);
+            fp = NULL;
         }
-        qsort(fp, n, sizeof(f_rec), f_comp);
-        for (i = 0; i < n; i++)
-        {
-            s[i] = fp[i].str;
-        }
-        MEMFREE(fp);
-        fp = NULL;
         break;
 
     case CI_ASCII_LIST:
