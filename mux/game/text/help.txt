@@ -8049,8 +8049,13 @@ KEY
   FLAG: KEY(K)  ()
 
   When an object (of any type) is KEYed, non-player objects (e.g., puppets)
-  fail any locks that would have been tested.  This could affect many, many
-  kinds of actions including the ability to pick up, give, enter, or pemit.
+  fail any locks that would have been tested.  This could affect many kinds of
+  actions including the ability to pick up, give, enter, or pemit.
+
+  It is equivalent to the following @lock:
+
+    &ISPLAYER obj=hastype(%#,PLAYER)
+    @lock/... obj=ISPLAYER/1
 
   Because locks are not always tested (e.g., if there is a controlling
   relationship), and they are not necessarily tested at predictable times,
