@@ -117,15 +117,15 @@ void *hashfindLEN(const void *pKey, size_t nKey, CHashTable *htab)
  * \param nKey     Size (in bytes) of the above Key.
  * \param pData    Pointer to Data part of (Key, Data) pair.
  * \param htab     Hash Table.
- * \return         -1 for failure. 0 for success.
+ * \return         false for failure. true for success.
  */
 
-int hashaddLEN(const void *pKey, size_t nKey, void *pData, CHashTable *htab)
+bool hashaddLEN(const void *pKey, size_t nKey, void *pData, CHashTable *htab)
 {
     if (  pKey == NULL
        || nKey <= 0)
     {
-        return -1;
+        return false;
     }
 
     UINT32 nHash = HASH_ProcessBuffer(0, pKey, nKey);
@@ -134,7 +134,7 @@ int hashaddLEN(const void *pKey, size_t nKey, void *pData, CHashTable *htab)
     memcpy(htab_rec.aKey, pKey, nKey);
     size_t nRecord = nKey + sizeof(void *);
     htab->Insert((HP_HEAPLENGTH)nRecord, nHash, &htab_rec);
-    return 0;
+    return true;
 }
 
 /*! \brief Removes a (Key, Data) pair from a hash table.

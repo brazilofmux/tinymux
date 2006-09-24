@@ -241,27 +241,71 @@ void fwdlist_set(dbref thing, FWDLIST *ifp)
 
     // Copy input forwardlist to a correctly-sized buffer.
     //
-    FWDLIST *fp = (FWDLIST *)MEMALLOC(sizeof(int) * ((ifp->count) + 1));
+
+    FWDLIST *fp = NULL;
+    try
+    {
+        fp = new FWDLIST;
+    }
+    catch (...)
+    {
+        ; // Nothing.
+    }
+    
     if (NULL != fp)
     {
-        for (int i = 0; i < ifp->count; i++)
+        fp->data = NULL;
+        try
         {
-            fp->data[i] = ifp->data[i];
+            fp->data = new int[ifp->count];
         }
-        fp->count = ifp->count;
-
-        // Replace an existing forwardlist, or add a new one.
-        //
-        FWDLIST *xfp = fwdlist_get(thing);
-        if (xfp)
+        catch (...)
         {
-            MEMFREE(xfp);
-            xfp = NULL;
-            hashreplLEN(&thing, sizeof(thing), fp, &mudstate.fwdlist_htab);
+            ; // Nothing.
+        }
+
+        if (NULL != fp->data)
+        {
+            for (int i = 0; i < ifp->count; i++)
+            {
+                fp->data[i] = ifp->data[i];
+            }
+            fp->count = ifp->count;
+
+            // Replace an existing forwardlist, or add a new one.
+            //
+            bool bDone = false;
+            FWDLIST *xfp = fwdlist_get(thing);
+            if (xfp)
+            {
+                if (xfp->data)
+                {
+                    delete [] xfp->data;
+                }
+                delete xfp;
+                xfp = NULL;
+
+                bDone = hashreplLEN(&thing, sizeof(thing), fp, &mudstate.fwdlist_htab);
+            }
+            else
+            {
+                bDone = hashaddLEN(&thing, sizeof(thing), fp, &mudstate.fwdlist_htab);
+            }
+
+            // If addition or replacement failed, don't leak new forward list.
+            //
+            if (!bDone)
+            {
+                if (fp->data)
+                {
+                    delete [] fp->data;
+                }
+                delete fp;
+            }
         }
         else
         {
-            hashaddLEN(&thing, sizeof(thing), fp, &mudstate.fwdlist_htab);
+            ISOUTOFMEMORY(fp->data);
         }
     }
     else
@@ -277,8 +321,13 @@ void fwdlist_clr(dbref thing)
     FWDLIST *xfp = fwdlist_get(thing);
     if (xfp)
     {
-        MEMFREE(xfp);
+        if (xfp->data)
+        {
+            delete [] xfp->data;
+        }
+        delete xfp;
         xfp = NULL;
+
         hashdeleteLEN(&thing, sizeof(thing), &mudstate.fwdlist_htab);
     }
 }
@@ -287,74 +336,117 @@ void fwdlist_clr(dbref thing)
  * fwdlist_load: Load text into a forwardlist.
  */
 
-int fwdlist_load(FWDLIST *fp, dbref player, char *atext)
+FWDLIST *fwdlist_load(dbref player, char *atext)
 {
-    dbref target;
-    char *tp, *bp, *dp;
-    bool fail;
-
-    int count = 0;
-    int errors = 0;
-    bp = tp = alloc_lbuf("fwdlist_load.str");
-    mux_strncpy(tp, atext, LBUF_SIZE-1);
-    do
+    FWDLIST *fp = NULL;
+    try
     {
-        // Skip spaces.
-        //
-        for (; mux_isspace(*bp); bp++)
+        fp = new FWDLIST;
+    }
+    catch (...)
+    {
+        ; // Nothing.
+    }
+
+    if (NULL != fp)
+    {
+        fp->count = 0;
+        fp->data = NULL;
+        try
+        {
+            fp->data = new int[LBUF_SIZE/2];
+        }
+        catch (...)
         {
             ; // Nothing.
         }
 
-        // Remember string.
-        //
-        for (dp = bp; *bp && !mux_isspace(*bp); bp++)
+        if (NULL != fp->data)
         {
-            ; // Nothing.
-        }
+            char *tp = alloc_lbuf("fwdlist_load.str");
+            char *bp = tp;
+            mux_strncpy(tp, atext, LBUF_SIZE-1);
 
-        // Terminate string.
-        //
-        if (*bp)
-        {
-            *bp++ = '\0';
-        }
+            int count = 0;
 
-        if (  *dp++ == '#'
-           && mux_isdigit(*dp))
-        {
-            target = mux_atol(dp);
-            if (mudstate.bStandAlone)
+            do
             {
-                fail = !Good_obj(target);
-            }
-            else
-            {
-                fail = (  !Good_obj(target)
-                       || (  !God(player)
-                          && !Controls(player, target)
-                          && (  !Link_ok(target)
-                             || !could_doit(player, target, A_LLINK))));
-            }
-            if (fail)
-            {
-                if (!mudstate.bStandAlone)
+                // Skip spaces.
+                //
+                for (; mux_isspace(*bp); bp++)
                 {
-                    notify(player,
-                        tprintf("Cannot forward to #%d: Permission denied.",
-                        target));
+                    ; // Nothing.
                 }
-                errors++;
+
+                // Remember string.
+                //
+                char *dp;
+                for (dp = bp; *bp && !mux_isspace(*bp); bp++)
+                {
+                    ; // Nothing.
+                }
+
+                // Terminate string.
+                //
+                if (*bp)
+                {
+                    *bp++ = '\0';
+                }
+
+                if (  *dp++ == '#'
+                   && mux_isdigit(*dp))
+                {
+                    bool fail;
+                    dbref target = mux_atol(dp);
+                    if (mudstate.bStandAlone)
+                    {
+                        fail = !Good_obj(target);
+                    }
+                    else
+                    {
+                        fail = (  !Good_obj(target)
+                               || (  !God(player)
+                                  && !Controls(player, target)
+                                  && (  !Link_ok(target)
+                                     || !could_doit(player, target, A_LLINK))));
+                    }
+
+                    if (fail)
+                    {
+                        if (!mudstate.bStandAlone)
+                        {
+                            notify(player,
+                                tprintf("Cannot forward to #%d: Permission denied.",
+                                target));
+                        }
+                    }
+                    else
+                    {
+                        fp->data[count++] = target;
+                    }
+                }
+            } while (*bp);
+
+            free_lbuf(tp);
+
+            if (0 < count)
+            {
+                fp->count = count;
             }
             else
             {
-                fp->data[count++] = target;
+                delete [] fp->data;
+                delete fp;
+                fp = NULL;
             }
         }
-    } while (*bp && count < 1000);
-    free_lbuf(tp);
-    fp->count = count;
-    return errors;
+        else
+        {
+            delete fp;
+            fp = NULL;
+        }
+    }
+    return fp;
 }
 
 /* ---------------------------------------------------------------------------
@@ -366,7 +458,8 @@ int fwdlist_rewrite(FWDLIST *fp, char *atext)
     int count = 0;
     atext[0] = '\0';
 
-    if (fp && fp->count)
+    if (  fp
+       && fp->count)
     {
         char *bp = atext;
         ITL pContext;
@@ -396,28 +489,31 @@ bool fwdlist_ck(dbref player, dbref thing, int anum, char *atext)
         return true;
     }
 
-    FWDLIST *fp;
-    int count = 0;
-
-    if (atext && *atext)
+    FWDLIST *fp = NULL;
+    if (  NULL != atext
+       && '\0' != atext[0])
     {
-        fp = (FWDLIST *) alloc_lbuf("fwdlist_ck.fp");
-        fwdlist_load(fp, player, atext);
-    }
-    else
-    {
-        fp = NULL;
+        fp = fwdlist_load(player, atext);
     }
 
     // Set the cached forwardlist.
     //
     fwdlist_set(thing, fp);
-    count = fwdlist_rewrite(fp, atext);
-    if (fp)
+    int count = fwdlist_rewrite(fp, atext);
+
+    if (NULL != fp)
     {
-        free_lbuf(fp);
+        if (NULL != fp->data)
+        {
+            delete [] fp->data;
+        }
+        delete fp;
+        fp = NULL;
     }
-    return ((count > 0) || !atext || !*atext);
+
+    return (  count > 0
+           || NULL == atext
+           || '\0' == atext[0]);
 }
 
 FWDLIST *fwdlist_get(dbref thing)
@@ -425,14 +521,10 @@ FWDLIST *fwdlist_get(dbref thing)
     static FWDLIST *fp = NULL;
     if (mudstate.bStandAlone)
     {
-        if (!fp)
-        {
-            fp = (FWDLIST *) alloc_lbuf("fwdlist_get");
-        }
         dbref aowner;
         int   aflags;
         char *tp = atr_get(thing, A_FORWARDLIST, &aowner, &aflags);
-        fwdlist_load(fp, GOD, tp);
+        fp = fwdlist_load(GOD, tp);
         free_lbuf(tp);
     }
     else

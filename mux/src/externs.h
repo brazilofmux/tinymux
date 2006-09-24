@@ -356,7 +356,7 @@ void s_Moniker(dbref thing, const char *s);
 const char *Name(dbref thing);
 const char *PureName(dbref thing);
 const char *Moniker(dbref thing);
-int  fwdlist_load(FWDLIST *, dbref, char *);
+FWDLIST *fwdlist_load(dbref player, char *atext);
 void fwdlist_set(dbref, FWDLIST *);
 void fwdlist_clr(dbref);
 int  fwdlist_rewrite(FWDLIST *, char *);

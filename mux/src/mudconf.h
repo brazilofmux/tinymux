@@ -307,7 +307,7 @@ typedef struct forward_list FWDLIST;
 struct forward_list
 {
     int count;
-    int data[1000];
+    int *data;
 };
 
 #define MAX_ITEXT 100

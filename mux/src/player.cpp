@@ -748,7 +748,7 @@ bool add_player_name(dbref player, const char *name)
         ISOUTOFMEMORY(p);
 
         *p = player;
-        stat = (hashaddLEN(temp, strlen(temp), p, &mudstate.player_htab) >= 0);
+        stat = hashaddLEN(temp, strlen(temp), p, &mudstate.player_htab);
         free_lbuf(temp);
     }
     return stat;
