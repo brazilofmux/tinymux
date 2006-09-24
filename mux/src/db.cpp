@@ -230,12 +230,10 @@ char *aszSpecialDBRefNames[1-NOPERM] =
 
 void fwdlist_set(dbref thing, FWDLIST *ifp)
 {
-    FWDLIST *fp, *xfp;
-    int i;
-
     // If fwdlist is null, clear.
     //
-    if (!ifp || (ifp->count <= 0))
+    if (  NULL == ifp
+       || ifp->count <= 0)
     {
         fwdlist_clr(thing);
         return;
@@ -243,27 +241,32 @@ void fwdlist_set(dbref thing, FWDLIST *ifp)
 
     // Copy input forwardlist to a correctly-sized buffer.
     //
-    fp = (FWDLIST *)MEMALLOC(sizeof(int) * ((ifp->count) + 1));
-    ISOUTOFMEMORY(fp);
-
-    for (i = 0; i < ifp->count; i++)
+    FWDLIST *fp = (FWDLIST *)MEMALLOC(sizeof(int) * ((ifp->count) + 1));
+    if (NULL != fp)
     {
-        fp->data[i] = ifp->data[i];
-    }
-    fp->count = ifp->count;
+        for (int i = 0; i < ifp->count; i++)
+        {
+            fp->data[i] = ifp->data[i];
+        }
+        fp->count = ifp->count;
 
-    // Replace an existing forwardlist, or add a new one.
-    //
-    xfp = fwdlist_get(thing);
-    if (xfp)
-    {
-        MEMFREE(xfp);
-        xfp = NULL;
-        hashreplLEN(&thing, sizeof(thing), fp, &mudstate.fwdlist_htab);
+        // Replace an existing forwardlist, or add a new one.
+        //
+        FWDLIST *xfp = fwdlist_get(thing);
+        if (xfp)
+        {
+            MEMFREE(xfp);
+            xfp = NULL;
+            hashreplLEN(&thing, sizeof(thing), fp, &mudstate.fwdlist_htab);
+        }
+        else
+        {
+            hashaddLEN(&thing, sizeof(thing), fp, &mudstate.fwdlist_htab);
+        }
     }
     else
     {
-        hashaddLEN(&thing, sizeof(thing), fp, &mudstate.fwdlist_htab);
+        ISOUTOFMEMORY(fp);
     }
 }
 
