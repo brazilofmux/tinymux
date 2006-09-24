@@ -257,7 +257,7 @@ void fwdlist_set(dbref thing, FWDLIST *ifp)
         fp->data = NULL;
         try
         {
-            fp->data = new int[ifp->count];
+            fp->data = new dbref[ifp->count];
         }
         catch (...)
         {
@@ -354,7 +354,7 @@ FWDLIST *fwdlist_load(dbref player, char *atext)
         fp->data = NULL;
         try
         {
-            fp->data = new int[LBUF_SIZE/2];
+            fp->data = new dbref[LBUF_SIZE/2];
         }
         catch (...)
         {
