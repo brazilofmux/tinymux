@@ -1504,28 +1504,43 @@ static int add_helpfile(dbref player, char *cmd, char *str, bool bRaw)
 
     // Build up Command Entry.
     //
-    CMDENT_ONE_ARG *cmdp = (CMDENT_ONE_ARG *)MEMALLOC(sizeof(CMDENT_ONE_ARG));
-    ISOUTOFMEMORY(cmdp);
+    CMDENT_ONE_ARG *cmdp = NULL;
+    try
+    {
+        cmdp = new CMDENT_ONE_ARG;
+    }
+    catch (...)
+    {
+        ; // Nothing.
+    }
 
-    cmdp->callseq = CS_ONE_ARG;
-    cmdp->cmdname = StringClone(pCmdName);
-    cmdp->extra = mudstate.nHelpDesc;
-    cmdp->handler = do_help;
-    cmdp->hookmask = 0;
-    cmdp->perms = CA_PUBLIC;
-    cmdp->switches = NULL;
+    if (NULL != cmdp)
+    {
+        cmdp->callseq = CS_ONE_ARG;
+        cmdp->cmdname = StringClone(pCmdName);
+        cmdp->extra = mudstate.nHelpDesc;
+        cmdp->handler = do_help;
+        cmdp->hookmask = 0;
+        cmdp->perms = CA_PUBLIC;
+        cmdp->switches = NULL;
 
-    // TODO: If a command is deleted with one or both of the two
-    // hashdeleteLEN() calls below, what guarantee do we have that parts of
-    // the command weren't dynamically allocated.  This might leak memory.
-    //
-    char *p = cmdp->cmdname;
-    hashdeleteLEN(p, strlen(p), &mudstate.command_htab);
-    hashaddLEN(p, strlen(p), cmdp, &mudstate.command_htab);
+        // TODO: If a command is deleted with one or both of the two
+        // hashdeleteLEN() calls below, what guarantee do we have that parts
+        // of the command weren't dynamically allocated.  This might leak
+        // memory.
+        //
+        char *p = cmdp->cmdname;
+        hashdeleteLEN(p, strlen(p), &mudstate.command_htab);
+        hashaddLEN(p, strlen(p), cmdp, &mudstate.command_htab);
 
-    p = tprintf("__%s", cmdp->cmdname);
-    hashdeleteLEN(p, strlen(p), &mudstate.command_htab);
-    hashaddLEN(p, strlen(p), cmdp, &mudstate.command_htab);
+        p = tprintf("__%s", cmdp->cmdname);
+        hashdeleteLEN(p, strlen(p), &mudstate.command_htab);
+        hashaddLEN(p, strlen(p), cmdp, &mudstate.command_htab);
+    }
+    else
+    {
+        ISOUTOFMEMORY(cmdp);
+    }
 
     mudstate.nHelpDesc++;
 
