@@ -1134,7 +1134,7 @@ int GrowFiftyPercent(int x, int low, int high)
  */
 
 ATTR **anum_table = NULL;
-int anum_alc_top = 0;
+int anum_alc_top = -1;
 
 void anum_extend(int newtop)
 {
@@ -1162,30 +1162,28 @@ void anum_extend(int newtop)
     }
 
     int i;
-    ATTR **anum_table2;
-    if (anum_table == NULL)
+    ATTR **anum_table2 = (ATTR **) MEMALLOC((newtop + 1) * sizeof(ATTR *));
+    if (NULL != anum_table2)
     {
-        anum_table = (ATTR **) MEMALLOC((newtop + 1) * sizeof(ATTR *));
-        ISOUTOFMEMORY(anum_table);
-        for (i = 0; i <= newtop; i++)
-        {
-            anum_table[i] = NULL;
-        }
-    }
-    else
-    {
-        anum_table2 = (ATTR **) MEMALLOC((newtop + 1) * sizeof(ATTR *));
-        ISOUTOFMEMORY(anum_table2);
-        for (i = 0; i <= anum_alc_top; i++)
-        {
-            anum_table2[i] = anum_table[i];
-        }
         for (i = anum_alc_top + 1; i <= newtop; i++)
         {
             anum_table2[i] = NULL;
         }
-        MEMFREE((char *)anum_table);
+
+        if (NULL != anum_table)
+        {
+            for (i = 0; i <= anum_alc_top; i++)
+            {
+                anum_table2[i] = anum_table[i];
+            }
+
+            MEMFREE((char *)anum_table);
+        }
         anum_table = anum_table2;
+    }
+    else
+    {
+        ISOUTOFMEMORY(anum_table2);
     }
     anum_alc_top = newtop;
 }
