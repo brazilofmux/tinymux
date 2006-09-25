@@ -37,7 +37,6 @@ Feature Additions:
     may eventually be enabled in the default build:
 
     Attributes:  @alead, @lead, @olead, and @color
-    Commands:    @email
     Permissions: no_immobile, no_restricted
     Options:     immobile_message, sql_server, sql_user, sql_password,
                  sql_database, mail_server, mail_ehlo, mail_sendaddr,
@@ -47,6 +46,7 @@ Feature Additions:
                  mailsubj(), mailj(), text(), successes(), and
                  distribute().
 
+ -- Added @email command from Firan MUX to the default build.
  -- Added --enable-firanmuxconvert which turns on code to remap three
     conflicting attribute numbers. The first database load requires
     this switch, and then it should be turned off.

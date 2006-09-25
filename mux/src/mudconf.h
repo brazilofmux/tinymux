@@ -201,13 +201,14 @@ struct confdata
     char    sql_user[128];
     char    sql_password[128];
     char    sql_database[128];
+#endif // FIRANMUX
 
     char    mail_server[128];
     char    mail_ehlo[128];
     char    mail_sendaddr[128];
     char    mail_sendname[128];
     char    mail_subject[128];
-#endif // FIRANMUX
+
     char    downmotd_msg[GBUF_SIZE];    /* Settable 'logins disabled' message */
     char    fullmotd_msg[GBUF_SIZE];    /* Settable 'Too many players' message */
     char    motd_msg[GBUF_SIZE];    /* Wizard-settable login message */

@@ -1398,8 +1398,8 @@ Related Topics: @name.
   is controller by the mail_subject configuration option, but <subject>, if
   given, overrides the default.
 
-  This command is only available if FIRANMUX is enabled, and will not work
-  unless configured properly.  See configuration options in wizhelp.
+  This command will not work unless configured properly.  See configuration
+  options in wizhelp.
 
   Related Topics: mail_server, mail_ehlo, mail_sendaddr, mail_sendname,
                   mail_subject
