@@ -1198,6 +1198,11 @@ ATTR *atr_str(char *s)
 
 int GrowFiftyPercent(int x, int low, int high)
 {
+    if (x < 0)
+    {
+        x = 0;
+    }
+
     // Calcuate 150% of x clipping goal at INT_MAX.
     //
     int half = x >> 1;
