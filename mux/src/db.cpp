@@ -1255,8 +1255,7 @@ void anum_extend(int newtop)
 
     int h = GrowFiftyPercent(anum_alc_top, delta, INT_MAX);
 
-    if (  anum_alc_top < h
-       && newtop < h)
+    if newtop < h)
     {
         newtop = h;
     }
