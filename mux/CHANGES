@@ -170,6 +170,13 @@ Bug Fixes:
     the command did not execute any sooner (Issue 172).
  -- Protect qsort() from invalid arguments that should not happen
     (Issue 125 and 159).
+ -- Add 'GameFull' reason which should never be referenced, but it
+    suppresses a compiler warning (Issue 148).
+ -- Remove arbitrary constant, 1000, and re-work @forwardlist codepaths
+    (Issue 168 and 175).
+ -- Suppress compiler warning in anum_extend() and compact code
+    (Issues 169 and 170).
+ -- Suppress compiler warning in add_helpfile() (Issue 165).
 
 
 Performance Enhancements:
