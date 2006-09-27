@@ -153,9 +153,7 @@ CMD_ONE_ARG(do_hook);           // Set additional operations for a command
 CMD_TWO_ARG(do_flag);           // Rename a flag or remove flag aliases
 CMD_ONE_ARG(do_train);          // Display code to room, then execute
 CMD_TWO_ARG(do_moniker);        // Set accented, colorized name of object
-#if defined(FIRANMUX)
 CMD_TWO_ARG(do_plusemail);
-#endif // FIRANMUX
 
 typedef struct
 {
