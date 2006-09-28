@@ -177,6 +177,9 @@ Bug Fixes:
  -- Suppress compiler warning in anum_extend() and compact code
     (Issues 169 and 170).
  -- Suppress compiler warning in add_helpfile() (Issue 165).
+ -- Add checking and warning messages for next free attribute, range of
+    numbers used with names, and range of numbers used with objects
+    (Issues 176, 180, and 181).
 
 
 Performance Enhancements:
