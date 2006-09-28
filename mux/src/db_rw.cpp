@@ -865,19 +865,19 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
                 //
                 if (g_max_nam_atr < g_max_obj_atr)
                 {
-                    Log.tinyprintf("Warning: One or more attribute values are unnamed. Did you use ./Backup on a running game?" ENDLINE);
+                    Log.tinyprintf(ENDLINE "Warning: One or more attribute values are unnamed. Did you use ./Backup on a running game?");
                 }
 
                 if (!nextattr_gotten)
                 {
-                    Log.tinyprintf("Warning: Missing +N<next free>. Adjusting." ENDLINE);
+                    Log.tinyprintf(ENDLINE "Warning: Missing +N<next free>. Adjusting.");
                 }
 
                 if (mudstate.attr_next <= g_max_nam_atr)
                 {
                     if (nextattr_gotten)
                     {
-                        Log.tinyprintf("Warning: +N<next free attr> conflicts with existing attribute names. Adjusting." ENDLINE);
+                        Log.tinyprintf(ENDLINE "Warning: +N<next free attr> conflicts with existing attribute names. Adjusting.");
                     }
                     mudstate.attr_next = g_max_nam_atr + 1;
                 }
@@ -886,7 +886,7 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
                 {
                     if (nextattr_gotten)
                     {
-                        Log.tinyprintf("Warning: +N<next free attr> conflicts object attribute numbers. Adjusting." ENDLINE);
+                        Log.tinyprintf(ENDLINE "Warning: +N<next free attr> conflicts object attribute numbers. Adjusting.");
                     }
                     mudstate.attr_next = g_max_nam_atr + 1;
                 }
@@ -901,7 +901,7 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
                 {
                     if (nextattr_gotten)
                     {
-                        Log.tinyprintf("Info: +N<next free attr> can be safely adjusted down." ENDLINE);
+                        Log.tinyprintf(ENDLINE "Info: +N<next free attr> can be safely adjusted down.");
                     }
                     mudstate.attr_next = max_atr + 1;
                 }
