@@ -610,7 +610,7 @@ void do_plusemail(dbref executor, dbref cause, dbref enactor, int key,
             inputline));
     }
 
-    mod_email_sock_printf(mailsock, "RCPT TO:<%s>\r\n", addy);
+    mod_email_sock_printf(mailsock, "RCPT TO:<%s>\r\n", ConvertCRLFtoSpace(addy));
 
     do
     {
@@ -668,7 +668,7 @@ void do_plusemail(dbref executor, dbref cause, dbref enactor, int key,
     mod_email_sock_printf(mailsock, "From: %s <%s>\r\n",  pSendName, ConvertCRLFtoSpace(mudconf.mail_sendaddr));
     MEMFREE(pSendName);
 
-    mod_email_sock_printf(mailsock, "To: %s\r\n", addy);
+    mod_email_sock_printf(mailsock, "To: %s\r\n", ConvertCRLFtoSpace(addy));
     mod_email_sock_printf(mailsock, "X-Mailer: TinyMUX %s\r\n", mudstate.short_ver);
     mod_email_sock_printf(mailsock, "Subject: %s\r\n\r\n", ConvertCRLFtoSpace(subject));
 
@@ -708,7 +708,7 @@ void do_plusemail(dbref executor, dbref cause, dbref enactor, int key,
     }
     else
     {
-        notify(executor, tprintf("@email: Mail sent to %s (%s)", addy, &inputline[4]));
+        notify(executor, tprintf("@email: Mail sent to %s (%s)", ConvertCRLFtoSpace(addy), &inputline[4]));
     }
 
     mod_email_sock_printf(mailsock, "QUIT\n");
