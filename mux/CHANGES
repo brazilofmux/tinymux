@@ -177,6 +177,7 @@ Bug Fixes:
  -- Suppress compiler warning in anum_extend() and compact code
     (Issues 169 and 170).
  -- Suppress compiler warning in add_helpfile() (Issue 165).
+ -- Corrected 'shutodnw' typo in 'wizhelp signals' (Issue 177).
 
 
 Performance Enhancements:
