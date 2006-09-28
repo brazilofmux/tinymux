@@ -341,6 +341,9 @@ static BOOLEXP *getboolexp(FILE *f)
     return b;
 }
 
+int g_max_nam_atr = INT_MIN;
+int g_max_obj_atr = INT_MIN;
+
 /* ---------------------------------------------------------------------------
  * get_list: Read attribute list from flat file.
  */
@@ -374,6 +377,13 @@ static bool get_list(FILE *f, dbref i)
                     break;
                 }
 #endif // FIRANMUX_CONVERT
+
+                // Maximum attribute number across all objects.
+                //
+                if (g_max_obj_atr < atr)
+                {
+                    g_max_obj_atr = atr;
+                }
 
                 // Store the attr
                 //
@@ -551,6 +561,9 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
     g_format = F_UNKNOWN;
     g_version = 0;
     g_flags = 0;
+    g_max_nam_atr = INT_MIN;
+    g_max_obj_atr = INT_MIN;
+
 
     bool header_gotten = false;
     bool size_gotten = false;
@@ -657,6 +670,13 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
                     if (bValid)
 #endif // FIRANMUX_CONVERT
                     {
+                        // Maximum attribute number across all names.
+                        //
+                        if (g_max_nam_atr < anum)
+                        {
+                            g_max_nam_atr = anum;
+                        }
+
                         vattr_define_LEN(pName, nName, anum, aflags);
                     }
                 }
@@ -841,6 +861,51 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
             }
             else
             {
+                // Attribute number warnings.
+                //
+                if (g_max_nam_atr < g_max_obj_atr)
+                {
+                    Log.tinyprintf("Warning: One or more attribute values are unnamed. Did you use ./Backup on a running game?" ENDLINE);
+                }
+
+                if (!nextattr_gotten)
+                {
+                    Log.tinyprintf("Warning: Missing +N<next free>. Adjusting." ENDLINE);
+                }
+
+                if (mudstate.attr_next <= g_max_nam_atr)
+                {
+                    if (nextattr_gotten)
+                    {
+                        Log.tinyprintf("Warning: +N<next free attr> conflicts with existing attribute names. Adjusting." ENDLINE);
+                    }
+                    mudstate.attr_next = g_max_nam_atr + 1;
+                }
+
+                if (mudstate.attr_next <= g_max_obj_atr)
+                {
+                    if (nextattr_gotten)
+                    {
+                        Log.tinyprintf("Warning: +N<next free attr> conflicts object attribute numbers. Adjusting." ENDLINE);
+                    }
+                    mudstate.attr_next = g_max_nam_atr + 1;
+                }
+
+                int max_atr = g_max_nam_atr;
+                if (max_atr < g_max_obj_atr)
+                {
+                    max_atr = g_max_obj_atr;
+                }
+
+                if (max_atr + 1 < mudstate.attr_next)
+                {
+                    if (nextattr_gotten)
+                    {
+                        Log.tinyprintf("Info: +N<next free attr> can be safely adjusted down." ENDLINE);
+                    }
+                    mudstate.attr_next = max_atr + 1;
+                }
+
                 *db_version = g_version;
                 *db_format = g_format;
                 *db_flags = g_flags;
