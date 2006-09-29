@@ -384,16 +384,15 @@
 
   Command: @flag[/<switch>] <oldflag>[=<newflag>]
 
-  This command either removes aliases of existing flags, or renames the
-  flag.  For example, if you rename CONNECTED to BOBTHEWIZ, then
-  whenever you reference the previous 'CONNECTED' flag, it will be seen
-  as 'BOBTHEWIZ' instead.  This does not affect the character of 'c'
-  for the flag, only the name of it.  This takes effect until the server
-  is shutdown or rebooted.  To make a permanent addition, you need to
-  use the 'flag_name' config parameter in the conf file.
-  The flag name must be no less than three characters, no greater than
-  15 characters, and can not be a previously existing flag name.  If
-  such a condition exists, it will return an error.
+  This command either removes aliases of existing flags, or renames the flag.
+  For example, if you rename CONNECTED to BOBTHEWIZ, then whenever you
+  reference the previous 'CONNECTED' flag, it will be seen as 'BOBTHEWIZ'
+  instead.  This does not affect the character of 'c' for the flag, only the
+  name of it.  This takes effect until the server is shutdown or rebooted.
+  To make a permanent addition, you need to use the 'flag_name' config
+  parameter in the conf file.  The flag name must be between 1 and 63
+  characters, inclusively, and can not be a previously existing flag name.
+  If such a condition exists, it will return an error.
 
   Switches:
      /remove - used to remove a flag's alias.
@@ -402,8 +401,8 @@
     @flag/remove con (removes alias 'con' for 'connected')
     @flag connect=bobthewiz (renames 'connected' to 'bobthewiz')
 
-  Note: the previous naming conventions are referenced automatically as
-        aliases for the flag unless specifically removed.
+  Note: The previous naming conventions are referenced automatically as
+  aliases for the flag unless specifically removed.
 
   Related Topics: flag_name.
 

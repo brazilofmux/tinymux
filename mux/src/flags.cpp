@@ -554,7 +554,8 @@ char *MakeCanonicalFlagName
         nName++;
     }
     *p = '\0';
-    if (nName < SBUF_SIZE)
+    if (  0 < nName
+       && nName < SBUF_SIZE)
     {
         *pnName = nName;
         *pbValid = true;
