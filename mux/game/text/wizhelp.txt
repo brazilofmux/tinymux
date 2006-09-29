@@ -4356,7 +4356,7 @@ SIGNALS
     SIGUSR1  - Server will restart (see @restart).
     SIGUSR2  - Server will drop a flatfile (see @dump/flat).
     SIGHUP   - Server will perform a normal dump (see @dump).
-    SIGTERM  - Server will shutodnw (see @shutdown).
+    SIGTERM  - Server will shutdown (see @shutdown).
 
 & SIGNAL_ACTION
 SIGNAL_ACTION
