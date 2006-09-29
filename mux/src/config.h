@@ -113,7 +113,6 @@ typedef unsigned __int64 UINT64;
 #define pclose      _pclose
 #define mux_tzset   _tzset
 #define mux_getpid  _getpid
-#define mux_open    _open
 #define mux_close   _close
 #define mux_read    _read
 #define mux_write   _write
@@ -158,7 +157,6 @@ typedef int SOCKET;
 
 #define mux_tzset   tzset
 #define mux_getpid  getpid
-#define mux_open    open
 #define mux_close   close
 #define mux_read    read
 #define mux_write   write

@@ -101,16 +101,12 @@ static FBLOCK *fcache_fill(FBLOCK *fp, char ch)
 
 static int fcache_read(FBLOCK **cp, char *filename)
 {
-    int n, nmax, tchars, fd;
-    char *buff;
-    FBLOCK *fp, *tfp;
-
     // Free a prior buffer chain.
     //
-    fp = *cp;
+    FBLOCK *fp = *cp;
     while (fp != NULL)
     {
-        tfp = fp->hdr.nxt;
+        FBLOCK *tfp = fp->hdr.nxt;
         free_mbuf(fp);
         fp = tfp;
     }
@@ -118,7 +114,9 @@ static int fcache_read(FBLOCK **cp, char *filename)
 
     // Read the text file into a new chain.
     //
-    if ((fd = mux_open(filename, O_RDONLY|O_BINARY)) == -1)
+    int   fd;
+    char *buff;
+    if (!mux_open(&fd, filename, O_RDONLY|O_BINARY))
     {
         // Failure: log the event
         //
@@ -139,14 +137,14 @@ static int fcache_read(FBLOCK **cp, char *filename)
     fp->hdr.nxt = NULL;
     fp->hdr.nchars = 0;
     *cp = fp;
-    tchars = 0;
+    int tchars = 0;
 
     // Process the file, one lbuf at a time.
     //
-    nmax = mux_read(fd, buff, LBUF_SIZE);
+    int nmax = mux_read(fd, buff, LBUF_SIZE);
     while (nmax > 0)
     {
-        for (n = 0; n < nmax; n++)
+        for (int n = 0; n < nmax; n++)
         {
             switch (buff[n])
             {
