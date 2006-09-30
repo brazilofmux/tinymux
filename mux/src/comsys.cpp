@@ -87,7 +87,8 @@ void load_comsys(char *filename)
     {
         DebugTotalFiles++;
         Log.tinyprintf("LOADING: %s" ENDLINE, filename);
-        if (fscanf(fp, "*** Begin %s ***\n", buffer) == 1 && !strcmp(buffer, "CHANNELS"))
+        if (  fgets(buffer, sizeof(buffer), fp)
+           && strcmp(buffer, "*** Begin CHANNELS ***\n") == 0)
         {
             load_channels(fp);
         }
@@ -97,7 +98,8 @@ void load_comsys(char *filename)
             return;
         }
 
-        if (fscanf(fp, "*** Begin %s ***\n", buffer) == 1 && !strcmp(buffer, "COMSYS"))
+        if (  fgets(buffer, sizeof(buffer), fp)
+           && strcmp(buffer, "*** Begin COMSYS ***\n") == 0)
         {
             load_comsystem(fp);
         }
