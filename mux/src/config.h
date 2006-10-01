@@ -122,7 +122,6 @@ typedef unsigned __int64 UINT64;
 
 #define DCL_CDECL
 #define DCL_INLINE inline
-#define INVALID_HANDLE_VALUE (-1)
 #ifndef O_BINARY
 #define O_BINARY 0
 #endif // O_BINARY

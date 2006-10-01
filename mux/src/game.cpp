@@ -3317,7 +3317,7 @@ bool mux_open(int *pfh, const char *filename, int oflag)
 {
     if (NULL != pfh)
     {
-        *pfh = INVALID_HANDLE_VALUE;
+        *pfh = MUX_OPEN_INVALID_HANDLE_VALUE;
         if (NULL != filename)
         {
 #if defined(WIN32) && (_MSC_VER >= 1400)
