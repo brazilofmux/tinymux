@@ -232,7 +232,9 @@ static bool ReadListOfNumbers(FILE *fp, int cnt, int anum[])
         char *p = buffer;
         for (int i = 0; i < cnt; i++)
         {
-            if (mux_isdigit(*p))
+            if (  mux_isdigit(p[0])
+               || (  '-' == p[0]
+                  && mux_isdigit(p[1])))
             {
                 anum[i] = mux_atol(p);
                 do
@@ -243,10 +245,6 @@ static bool ReadListOfNumbers(FILE *fp, int cnt, int anum[])
                 if (' ' == *p)
                 {
                     p++;
-                }
-                else
-                {
-                    return false;
                 }
             }
             else
