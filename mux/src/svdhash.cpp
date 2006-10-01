@@ -1302,8 +1302,13 @@ CHashFile::CHashFile(void)
 
 void CHashFile::Init(void)
 {
+#ifdef WIN32
     m_hDirFile = INVALID_HANDLE_VALUE;
     m_hPageFile = INVALID_HANDLE_VALUE;
+#else
+    m_hDirFile = MUX_OPEN_INVALID_HANDLE_VALUE;
+    m_hPageFile = MUX_OPEN_INVALID_HANDLE_VALUE;
+#endif
     m_nDir = 0;
     m_nDirDepth = 0;
     m_pDir = NULL;
@@ -1334,7 +1339,7 @@ void CHashFile::WriteDirectory(void)
 #else // WIN32
 void CHashFile::WriteDirectory(void)
 {
-    if (INVALID_HANDLE_VALUE == m_hDirFile)
+    if (MUX_OPEN_INVALID_HANDLE_VALUE == m_hDirFile)
     {
         return;
     }
@@ -1721,7 +1726,11 @@ int CHashFile::Open(const char *szDirFile, const char *szPageFile, int nCachePag
 
 void CHashFile::Sync(void)
 {
+#ifdef WIN32
     if (INVALID_HANDLE_VALUE != m_hPageFile)
+#else
+    if (MUX_OPEN_INVALID_HANDLE_VALUE != m_hPageFile)
+#endif
     {
         cs_syncs++;
         bool bAllFlushed = true;
@@ -1749,7 +1758,11 @@ void CHashFile::Sync(void)
 #endif // DO_COMMIT
     }
 #ifdef DO_COMMIT
+#ifdef WIN32
     if (  INVALID_HANDLE_VALUE != m_hDirFile
+#else
+    if (  MUX_OPEN_INVALID_HANDLE_VALUE != m_hDirFile
+#endif
        && !mudstate.bStandAlone)
     {
 #ifdef WIN32
@@ -1763,7 +1776,11 @@ void CHashFile::Sync(void)
 
 void CHashFile::CloseAll(void)
 {
+#ifdef WIN32
     if (INVALID_HANDLE_VALUE != m_hPageFile)
+#else
+    if (MUX_OPEN_INVALID_HANDLE_VALUE != m_hPageFile)
+#endif
     {
         Sync();
         if (m_pDir)
@@ -1784,7 +1801,11 @@ void CHashFile::CloseAll(void)
 #endif // WIN32
     }
 
+#ifdef WIN32
     if (INVALID_HANDLE_VALUE != m_hDirFile)
+#else
+    if (MUX_OPEN_INVALID_HANDLE_VALUE != m_hDirFile)
+#endif
     {
 #ifdef WIN32
         CloseHandle(m_hDirFile);
