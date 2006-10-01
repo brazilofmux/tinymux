@@ -224,22 +224,62 @@ static bool ParseChannelLine(char *pBuffer, char *pAlias5, char **ppChannelName)
     return true;
 }
 
+static bool ReadListOfNumbers(FILE *fp, int cnt, int anum[])
+{
+    char buffer[200];
+    if (fgets(buffer, sizeof(buffer), fp))
+    {
+        char *p = buffer;
+        for (int i = 0; i < cnt; i++)
+        {
+            if (mux_isdigit(*p))
+            {
+                anum[i] = mux_atol(p);
+                do
+                {
+                    p++;
+                } while (mux_isdigit(*p));
+
+                if (' ' == *p)
+                {
+                    p++;
+                }
+                else
+                {
+                    return false;
+                }
+            }
+            else
+            {
+                return false;
+            }
+        }
+
+        if ('\n' == *p)
+        {
+            return true;
+        }
+    }
+    return false;
+}
+
 void load_channels(FILE *fp)
 {
     int i, j;
+    int anum[2];
     char buffer[LBUF_SIZE];
     comsys_t *c;
 
     int np = 0;
-    int cc = fscanf(fp, "%d\n", &np);
-    mux_assert(1 == cc);
+    mux_assert(ReadListOfNumbers(fp, 1, &np));
     for (i = 0; i < np; i++)
     {
         c = create_new_comsys();
         c->who = 0;
         c->numchannels = 0;
-        cc = fscanf(fp, "%d %d\n", &(c->who), &(c->numchannels));
-        mux_assert(2 == cc);
+        mux_assert(ReadListOfNumbers(fp, 2, anum));
+        c->who = anum[0];
+        c->numchannels = anum[1];
         c->maxchannels = c->numchannels;
         if (c->maxchannels > 0)
         {
@@ -536,9 +576,8 @@ void load_comsystem(FILE *fp)
         {
             return;
         }
-        int cc;
-        cc = fscanf(fp, "%d\n", &nc);
-        mux_assert(1 == cc);
+
+        mux_assert(ReadListOfNumbers(fp, 1, &nc));
     }
     else
     {
@@ -549,6 +588,8 @@ void load_comsystem(FILE *fp)
 
     for (i = 0; i < nc; i++)
     {
+        int anum[10];
+
         ch = (struct channel *)MEMALLOC(sizeof(struct channel));
         ISOUTOFMEMORY(ch);
 
@@ -597,19 +638,29 @@ void load_comsystem(FILE *fp)
         int cc;
         if (ver >= 1)
         {
-            cc = fscanf(fp, "%d %d %d %d %d %d %d %d\n",
-                &(ch->type), &(ch->temp1), &(ch->temp2),
-                &(ch->charge), &(ch->charge_who),
-                &(ch->amount_col), &(ch->num_messages), &(ch->chan_obj));
-            mux_assert(8 == cc);
+            mux_assert(ReadListOfNumbers(fp, 8, anum));
+            ch->type         = anum[0];
+            ch->temp1        = anum[1];
+            ch->temp2        = anum[2];
+            ch->charge       = anum[3];
+            ch->charge_who   = anum[4];
+            ch->amount_col   = anum[5];
+            ch->num_messages = anum[6];
+            ch->chan_obj     = anum[7];
         }
         else
         {
-            cc = fscanf(fp, "%d %d %d %d %d %d %d %d %d %d\n",
-                &(ch->type), &(dummy), &(ch->temp1), &(ch->temp2),
-                &(dummy), &(ch->charge), &(ch->charge_who),
-                &(ch->amount_col), &(ch->num_messages), &(ch->chan_obj));
-            mux_assert(10 == cc);
+            mux_assert(ReadListOfNumbers(fp, 10, anum));
+            ch->type         = anum[0];
+            // anum[1] is not used.
+            ch->temp1        = anum[2];
+            ch->temp2        = anum[3];
+            // anum[4] is not used.
+            ch->charge       = anum[5];
+            ch->charge_who   = anum[6];
+            ch->amount_col   = anum[7];
+            ch->num_messages = anum[8];
+            ch->chan_obj     = anum[9];
         }
 
         if (ver <= 1)
@@ -633,8 +684,7 @@ void load_comsystem(FILE *fp)
         }
 
         ch->num_users = 0;
-        cc =fscanf(fp, "%d\n", &(ch->num_users));
-        mux_assert(1 == cc);
+        mux_assert(ReadListOfNumbers(fp, 1, &(ch->num_users)));
         ch->max_users = ch->num_users;
         if (ch->num_users > 0)
         {
@@ -651,32 +701,29 @@ void load_comsystem(FILE *fp)
                 t_user.bUserIsOn = false;
                 t_user.ComTitleStatus = false;
 
-                int iUserIsOn;
                 if (ver == 3)
                 {
-                    int iComTitleStatus;
-                    cc = fscanf(fp, "%d %d %d\n", &(t_user.who), &iUserIsOn,
-                        &iComTitleStatus);
-                    mux_assert(3 == cc);
-                    t_user.bUserIsOn = (iUserIsOn ? true : false);
-                    t_user.ComTitleStatus = (iComTitleStatus ? true : false);
+                    mux_assert(ReadListOfNumbers(fp, 3, anum));
+                    t_user.who = anum[0];
+                    t_user.bUserIsOn = (anum[1] ? true : false);
+                    t_user.ComTitleStatus = (anum[2] ? true : false);
                 }
                 else
                 {
                     t_user.ComTitleStatus = true;
                     if (ver)
                     {
-                        cc = fscanf(fp, "%d %d\n", &(t_user.who), &iUserIsOn);
-                        mux_assert(2 == cc);
-                        t_user.bUserIsOn = (iUserIsOn ? true : false);
+                        mux_assert(ReadListOfNumbers(fp, 2, anum));
+                        t_user.who = anum[0];
+                        t_user.bUserIsOn = (anum[1] ? true : false);
                     }
                     else
                     {
-                        cc = fscanf(fp, "%d %d %d", &(t_user.who), &(dummy), &(dummy));
-                        mux_assert(3 == cc);
-                        cc = fscanf(fp, "%d\n", &iUserIsOn);
-                        mux_assert(1 == cc);
-                        t_user.bUserIsOn = (iUserIsOn ? true : false);
+                        mux_assert(ReadListOfNumbers(fp, 4, anum));
+                        t_user.who = anum[0];
+                        // anum[1] is not used.
+                        // anum[2] is not used.
+                        t_user.bUserIsOn = (anum[3] ? true : false);
                     }
                 }
 
