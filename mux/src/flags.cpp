@@ -884,7 +884,17 @@ char *unparse_object_numonly(dbref target)
     }
     else
     {
-        mux_sprintf(buf, LBUF_SIZE, "%.200s(#%d)", Name(target), target);
+        // Leave 100 bytes on the end for the dbref.
+        //
+        size_t vw;
+        size_t nLen = ANSI_TruncateToField(Name(target), LBUF_SIZE-100,
+            buf, LBUF_SIZE, &vw, ANSI_ENDGOAL_NORMAL);
+        char *bp = buf + nLen;
+
+        safe_str("(#", buf, &bp);
+        safe_ltoa(target, buf, &bp);
+        safe_chr(')', buf, &bp);
+        *bp = '\0';
     }
     return buf;
 }
@@ -923,7 +933,20 @@ char *unparse_object(dbref player, dbref target, bool obey_myopic)
             // show everything
             //
             char *fp = decode_flags(player, &(db[target].fs));
-            mux_sprintf(buf, LBUF_SIZE, "%.200s(#%d%s)", Moniker(target), target, fp);
+
+            // Leave 100 bytes on the end for the dbref and flags.
+            //
+            size_t vw;
+            size_t nLen = ANSI_TruncateToField(Moniker(target), LBUF_SIZE-100,
+                buf, LBUF_SIZE, &vw, ANSI_ENDGOAL_NORMAL);
+            char *bp = buf + nLen;
+
+            safe_str("(#", buf, &bp);
+            safe_ltoa(target, buf, &bp);
+            safe_str(fp, buf, &bp);
+            safe_chr(')', buf, &bp);
+            *bp = '\0';
+            
             free_sbuf(fp);
         }
         else
