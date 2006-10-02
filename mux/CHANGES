@@ -190,6 +190,7 @@ Bug Fixes:
  -- Fixed color leak in object names for @find, examine, inventory, and
     look when length of ANSI sequence exceeded 200 byte (Issue 184).
     Reported by K Hall.  Not a crashing issue.
+ -- Suppress compiler warnings in player.cpp (Issue 143 and 144).
 
 
 Performance Enhancements:
