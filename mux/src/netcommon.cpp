@@ -260,13 +260,20 @@ static void add_to_output_queue(DESC *d, const char *b, size_t n)
     if (d->output_head == NULL)
     {
         tp = (TBLOCK *)MEMALLOC(OUTPUT_BLOCK_SIZE);
-        ISOUTOFMEMORY(tp);
-        tp->hdr.nxt = NULL;
-        tp->hdr.start = tp->data;
-        tp->hdr.end = tp->data;
-        tp->hdr.nchars = 0;
-        d->output_head = tp;
-        d->output_tail = tp;
+        if (NULL != tp)
+        {
+            tp->hdr.nxt = NULL;
+            tp->hdr.start = tp->data;
+            tp->hdr.end = tp->data;
+            tp->hdr.nchars = 0;
+
+            d->output_head = tp;
+            d->output_tail = tp;
+        }
+        else
+        {
+            ISOUTOFMEMORY(tp);
+        }
     }
     else
     {
@@ -301,14 +308,22 @@ static void add_to_output_queue(DESC *d, const char *b, size_t n)
                 b += left;
                 n -= left;
             }
+
             tp = (TBLOCK *)MEMALLOC(OUTPUT_BLOCK_SIZE);
-            ISOUTOFMEMORY(tp);
-            tp->hdr.nxt = NULL;
-            tp->hdr.start = tp->data;
-            tp->hdr.end = tp->data;
-            tp->hdr.nchars = 0;
-            d->output_tail->hdr.nxt = tp;
-            d->output_tail = tp;
+            if (NULL != tp)
+            {
+                tp->hdr.nxt = NULL;
+                tp->hdr.start = tp->data;
+                tp->hdr.end = tp->data;
+                tp->hdr.nchars = 0;
+
+                d->output_tail->hdr.nxt = tp;
+                d->output_tail = tp;
+            }
+            else
+            {
+                ISOUTOFMEMORY(tp);
+            }
         }
     } while (n > 0);
 }
