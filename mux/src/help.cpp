@@ -37,7 +37,7 @@ void helpindex_clean(int iHelpfile)
     {
         MEMFREE(htab_entry->key);
         htab_entry->key = NULL;
-        MEMFREE(htab_entry);
+        delete htab_entry;
         htab_entry = NULL;
     }
     delete mudstate.aHelpDesc[iHelpfile].ht;
@@ -188,24 +188,36 @@ static int helpindex_read(int iHelpfile)
             {
                 continue;
             }
-            struct help_entry *htab_entry = (struct help_entry *)MEMALLOC(sizeof(struct help_entry));
-            ISOUTOFMEMORY(htab_entry);
-            htab_entry->pos = entry.pos;
-            htab_entry->original = bOriginal;
-            bOriginal = false;
-            htab_entry->key = StringCloneLen(entry.topic, nTopic);
 
-            if (!hashfindLEN(entry.topic, nTopic, htab))
+            struct help_entry *htab_entry = NULL;
+            try
             {
-                hashaddLEN(entry.topic, nTopic, htab_entry, htab);
-                count++;
+                htab_entry = new struct help_entry;
             }
-            else
+            catch (...)
             {
-                MEMFREE(htab_entry->key);
-                htab_entry->key = NULL;
-                MEMFREE(htab_entry);
-                htab_entry = NULL;
+                ; // Nothing.
+            }
+
+            if (NULL != htab_entry)
+            {
+                htab_entry->pos = entry.pos;
+                htab_entry->original = bOriginal;
+                bOriginal = false;
+                htab_entry->key = StringCloneLen(entry.topic, nTopic);
+
+                if (!hashfindLEN(entry.topic, nTopic, htab))
+                {
+                    hashaddLEN(entry.topic, nTopic, htab_entry, htab);
+                    count++;
+                }
+                else
+                {
+                    MEMFREE(htab_entry->key);
+                    htab_entry->key = NULL;
+                    delete htab_entry;
+                    htab_entry = NULL;
+                }
             }
         }
     }

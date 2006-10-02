@@ -192,6 +192,7 @@ Bug Fixes:
     Reported by K Hall.  Not a crashing issue.
  -- Suppress compiler warnings in player.cpp (Issue 143 and 144).
  -- Suppress compiler warnings in stringutil.cpp (Issue 109).
+ -- Suppress compiler warnings in help.cpp (Issue 132).
 
 
 Performance Enhancements:
