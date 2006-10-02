@@ -191,6 +191,7 @@ Bug Fixes:
     look when length of ANSI sequence exceeded 200 byte (Issue 184).
     Reported by K Hall.  Not a crashing issue.
  -- Suppress compiler warnings in player.cpp (Issue 143 and 144).
+ -- Suppress compiler warnings in stringutil.cpp (Issue 109).
 
 
 Performance Enhancements:
