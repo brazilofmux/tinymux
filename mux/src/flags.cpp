@@ -1,6 +1,6 @@
 // flags.cpp -- Flag manipulation routines.
 //
-// $Id: flags.cpp,v 1.24 2006/01/07 23:01:36 sdennis Exp $
+// $Id: flags.cpp,v 1.25 2006/10/02 02:43:41 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -862,7 +862,17 @@ char *unparse_object_numonly(dbref target)
     }
     else
     {
-        sprintf(buf, "%.200s(#%d)", Name(target), target);
+        // Leave 100 bytes on the end for the dbref.
+        //
+        int vw;
+        size_t nLen = ANSI_TruncateToField(Name(target), LBUF_SIZE-100,
+            buf, LBUF_SIZE, &vw, ANSI_ENDGOAL_NORMAL);
+        char *bp = buf + nLen;
+
+        safe_str("(#", buf, &bp);
+        safe_ltoa(target, buf, &bp);
+        safe_chr(')', buf, &bp);
+        *bp = '\0';
     }
     return buf;
 }
@@ -900,7 +910,20 @@ char *unparse_object(dbref player, dbref target, bool obey_myopic)
             // show everything
             //
             char *fp = decode_flags(player, &(db[target].fs));
-            sprintf(buf, "%.200s(#%d%s)", Moniker(target), target, fp);
+
+            // Leave 100 bytes on the end for the dbref and flags.
+            //
+            int vw;
+            size_t nLen = ANSI_TruncateToField(Moniker(target), LBUF_SIZE-100,
+                buf, LBUF_SIZE, &vw, ANSI_ENDGOAL_NORMAL);
+            char *bp = buf + nLen;
+
+            safe_str("(#", buf, &bp);
+            safe_ltoa(target, buf, &bp);
+            safe_str(fp, buf, &bp);
+            safe_chr(')', buf, &bp);
+            *bp = '\0';
+
             free_sbuf(fp);
         }
         else
