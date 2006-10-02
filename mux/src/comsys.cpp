@@ -553,7 +553,7 @@ static char *get_channel_from_alias(dbref player, char *alias)
 
 void load_comsystem(FILE *fp)
 {
-    int i, j, dummy;
+    int i, j;
     int ver = 0;
     struct channel *ch;
     char temp[LBUF_SIZE];
@@ -633,7 +633,6 @@ void load_comsystem(FILE *fp)
         ch->num_messages = 0;
         ch->chan_obj     = NOTHING;
 
-        int cc;
         if (ver >= 1)
         {
             mux_assert(ReadListOfNumbers(fp, 8, anum));
