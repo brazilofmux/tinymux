@@ -49,7 +49,7 @@ extern void pool_reset(void);
 
 #define safe_copy_chr(src, buff, bufp, nSizeOfBuffer) \
 { \
-    if ((*bufp - buff) < nSizeOfBuffer) \
+    if ((size_t)(*bufp - buff) < nSizeOfBuffer) \
     { \
         **bufp = src; \
         (*bufp)++; \
