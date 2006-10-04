@@ -1,5 +1,5 @@
 TinyMUX 2.6:  CHANGES
-Last Update:  September 2006
+Last Update:  October 2006
 
 Major changes that may affect performance and require softcode tweaks:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -126,7 +126,7 @@ Bug Fixes:
  -- @email - Typo in do_plusmail of '0' instead of '\0' (Issue 90).
  -- @email - Unnecessary strlen() (Issue 81).
  -- @email - do_plusmail loops look at undefined bytes if inputline is
-    1, 2, or 3 bytes long (Issue 89). 
+    1, 2, or 3 bytes long (Issue 89).
  -- @email - Memory leaks (Issue 84).
  -- Fix SIGSEGV when udefault() gets more than 12 arguments.  Fixed by
     Alierak.
@@ -160,7 +160,7 @@ Bug Fixes:
  -- Fixed an lbuf leak in hasquota() introduced in TinyMUX 2.1. Bug
     found and fixed by Alierak.
  -- Document @clone/preserve switch.
- -- Update TRACE helpfile for new attribute flag functionality (Issue 104). 
+ -- Update TRACE helpfile for new attribute flag functionality (Issue 104).
  -- Add @htdesc and @vrml_url documentation (Issue 44).
  -- Local declaration of ltdWarp in cque.cpp hid global declaration.
     @timewarp/queue would have ignored <secs> and become a no-op
@@ -181,6 +181,19 @@ Bug Fixes:
  -- Add checking and warning messages for next free attribute, range of
     numbers used with names, and range of numbers used with objects
     (Issues 176, 180, and 181).
+ -- Require flagnames to be at least 1 character (Issue 183).
+ -- Fix @flag wizhelp topic (Issue 182).
+ -- Suppress compiler warning in conf.cpp (Issue 164).
+ -- Suppress compiler warning in command.cpp (Issue 149).
+ -- Write mux_open() to avoid direct use of open() (Issue 121).
+ -- Remove all calls to fscanf() in mail.cpp and comsys.cpp (Issue 119).
+ -- Fixed color leak in object names for @find, examine, inventory, and
+    look when length of ANSI sequence exceeded 200 byte (Issue 184).
+    Reported by K Hall.  Not a crashing issue.
+ -- Suppress compiler warnings in player.cpp (Issue 143 and 144).
+ -- Suppress compiler warnings in stringutil.cpp (Issue 109).
+ -- Suppress compiler warnings in help.cpp (Issue 132).
+ -- Suppress compiler warnings in netcommon.cpp (Issues 141 and 142).
 
 
 Performance Enhancements:

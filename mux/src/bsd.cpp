@@ -465,7 +465,7 @@ void CleanUpSlaveSocket(void)
     if (!IS_INVALID_SOCKET(slave_socket))
     {
         shutdown(slave_socket, SD_BOTH);
-        if (mux_close(slave_socket) == 0)
+        if (SOCKET_CLOSE(slave_socket) == 0)
         {
             DebugTotalSockets--;
         }
@@ -489,7 +489,7 @@ void CleanUpSQLSlaveSocket(void)
     if (!IS_INVALID_SOCKET(sqlslave_socket))
     {
         shutdown(sqlslave_socket, SD_BOTH);
-        if (mux_close(sqlslave_socket) == 0)
+        if (SOCKET_CLOSE(sqlslave_socket) == 0)
         {
             DebugTotalSockets--;
         }

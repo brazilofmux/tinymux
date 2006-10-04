@@ -883,21 +883,35 @@ void init_cmdtab(void)
             continue;
         }
 
-        CMDENT_TWO_ARG *cp2a;
-        cp2a = (CMDENT_TWO_ARG *)MEMALLOC(sizeof(CMDENT_TWO_ARG));
-        ISOUTOFMEMORY(cp2a);
-        cp2a->cmdname = StringClone(cbuff);
-        cp2a->perms = CA_NO_GUEST | CA_NO_SLAVE;
-        cp2a->switches = NULL;
-        if (ap->flags & (AF_WIZARD | AF_MDARK))
+        CMDENT_TWO_ARG *cp2a = NULL;
+        try
         {
-            cp2a->perms |= CA_WIZARD;
+            cp2a = new CMDENT_TWO_ARG;
         }
-        cp2a->extra = ap->number;
-        cp2a->callseq = CS_TWO_ARG;
-        cp2a->hookmask = 0;
-        cp2a->handler = do_setattr;
-        hashaddLEN(cp2a->cmdname, nBuffer, cp2a, &mudstate.command_htab);
+        catch (...)
+        {
+            ; // Nothing.
+        }
+
+        if (NULL != cp2a)
+        {
+            cp2a->cmdname = StringClone(cbuff);
+            cp2a->perms = CA_NO_GUEST | CA_NO_SLAVE;
+            cp2a->switches = NULL;
+            if (ap->flags & (AF_WIZARD | AF_MDARK))
+            {
+                cp2a->perms |= CA_WIZARD;
+            }
+            cp2a->extra = ap->number;
+            cp2a->callseq = CS_TWO_ARG;
+            cp2a->hookmask = 0;
+            cp2a->handler = do_setattr;
+            hashaddLEN(cp2a->cmdname, nBuffer, cp2a, &mudstate.command_htab);
+        }
+        else
+        {
+            ISOUTOFMEMORY(cp2a);
+        }
     }
 
     // Load the builtin commands

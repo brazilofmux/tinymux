@@ -50,9 +50,8 @@ void SeedRandomNumberGenerator(void)
     // Try to seed the PRNG from /dev/urandom
     // If it doesn't work, just seed the normal way
     //
-    int fd = mux_open("/dev/urandom", O_RDONLY);
-
-    if (fd >= 0)
+    int fd;
+    if (mux_open(&fd, "/dev/urandom", O_RDONLY))
     {
         int len = mux_read(fd, aRandomSystemBytes, sizeof aRandomSystemBytes);
         mux_close(fd);

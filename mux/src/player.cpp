@@ -734,21 +734,50 @@ bool add_player_name(dbref player, const char *name)
 
         // It's an alias (or an incorrect entry). Clobber it.
         //
-        MEMFREE(p);
-        p = (dbref *)MEMALLOC(sizeof(int));
-        ISOUTOFMEMORY(p);
+        delete p;
 
-        *p = player;
-        stat = hashreplLEN(temp, strlen(temp), p, &mudstate.player_htab);
+        p = NULL;
+        try
+        {
+            p = new dbref;
+        }
+        catch (...)
+        {
+            ; // Nothing.
+        }
+
+        if (NULL != p)
+        {
+            *p = player;
+            stat = hashreplLEN(temp, strlen(temp), p, &mudstate.player_htab);
+        }
+        else
+        {
+            ISOUTOFMEMORY(p);
+        }
         free_lbuf(temp);
     }
     else
     {
-        p = (dbref *)MEMALLOC(sizeof(int));
-        ISOUTOFMEMORY(p);
+        p = NULL;
+        try
+        {
+            p = new dbref;
+        }
+        catch (...)
+        {
+            ; // Nothing.
+        }
 
-        *p = player;
-        stat = hashaddLEN(temp, strlen(temp), p, &mudstate.player_htab);
+        if (NULL != p)
+        {
+            *p = player;
+            stat = hashaddLEN(temp, strlen(temp), p, &mudstate.player_htab);
+        }
+        else
+        {
+            ISOUTOFMEMORY(p);
+        }
         free_lbuf(temp);
     }
     return stat;
@@ -772,7 +801,7 @@ bool delete_player_name(dbref player, const char *name)
         free_lbuf(temp);
         return false;
     }
-    MEMFREE(p);
+    delete p;
     p = NULL;
     hashdeleteLEN(temp, strlen(temp), &mudstate.player_htab);
     free_lbuf(temp);
@@ -879,11 +908,26 @@ void badname_add(char *bad_name)
 {
     // Make a new node and link it in at the top.
     //
-    BADNAME *bp = (BADNAME *)MEMALLOC(sizeof(BADNAME));
-    ISOUTOFMEMORY(bp);
-    bp->name = StringClone(bad_name);
-    bp->next = mudstate.badname_head;
-    mudstate.badname_head = bp;
+    BADNAME *bp = NULL;
+    try
+    {
+        bp = new BADNAME;
+    }
+    catch (...)
+    {
+        ; // Nothing.
+    }
+
+    if (NULL != bp)
+    {
+        bp->name = StringClone(bad_name);
+        bp->next = mudstate.badname_head;
+        mudstate.badname_head = bp;
+    }
+    else
+    {
+        ISOUTOFMEMORY(bp);
+    }
 }
 
 void badname_remove(char *bad_name)
@@ -906,7 +950,7 @@ void badname_remove(char *bad_name)
             }
             MEMFREE(bp->name);
             bp->name = NULL;
-            MEMFREE(bp);
+            delete bp;
             bp = NULL;
             return;
         }

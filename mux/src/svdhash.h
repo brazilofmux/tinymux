@@ -289,8 +289,10 @@ private:
     CLinearTimeAbsolute m_ltaStarted;
 #ifdef WIN32
     CRITICAL_SECTION csLog;
-#endif // WIN32
     HANDLE m_hFile;
+#else
+    int    m_fdFile;
+#endif // WIN32
     size_t m_nSize;
     size_t m_nBuffer;
     char m_aBuffer[SIZEOF_LOG_BUFFER];
@@ -300,7 +302,7 @@ private:
     char m_szPrefix[32];
     char m_szFilename[SIZEOF_PATHNAME];
 
-    void CreateLogFile(void);
+    bool CreateLogFile(void);
     void AppendLogFile(void);
     void CloseLogFile(void);
 public:

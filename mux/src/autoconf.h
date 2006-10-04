@@ -11,6 +11,7 @@
 
 #include <malloc.h>
 #include <crtdbg.h>
+#include <share.h>
 
 /* ---------------------------------------------------------------------------
  * Configuration section:

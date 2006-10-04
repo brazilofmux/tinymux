@@ -187,7 +187,9 @@ bool html_escape(const char *src, char *dest, char **destp);
 void dump_database_internal(int);
 void fork_and_dump(int key);
 
+#define MUX_OPEN_INVALID_HANDLE_VALUE (-1)
 bool mux_fopen(FILE **pFile, const char *filename, const char *mode);
+bool mux_open(int *pfh, const char *filename, int oflag);
 
 /* From help.cpp */
 void helpindex_clean(int);

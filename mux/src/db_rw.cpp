@@ -891,7 +891,12 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
                     mudstate.attr_next = g_max_nam_atr + 1;
                 }
 
-                int max_atr = g_max_nam_atr;
+                int max_atr = A_USER_START;
+                if (max_atr < g_max_nam_atr)
+                {
+                    max_atr = g_max_nam_atr;
+                }
+
                 if (max_atr < g_max_obj_atr)
                 {
                     max_atr = g_max_obj_atr;

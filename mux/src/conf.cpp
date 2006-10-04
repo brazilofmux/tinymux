@@ -1400,8 +1400,21 @@ static CF_HAND(cf_site)
 
     // Parse the access entry and allocate space for it.
     //
-    SITE *site = (SITE *)MEMALLOC(sizeof(SITE));
-    ISOUTOFMEMORY(site);
+    SITE *site = NULL;
+    try
+    {
+        site = new SITE;
+    }
+    catch (...)
+    {
+        ; // Nothing.
+    }
+
+    if (NULL == site)
+    {
+        cf_log_syntax(player, cmd, "Out of memory.");
+        return -1;
+    }
 
     // Initialize the site entry.
     //

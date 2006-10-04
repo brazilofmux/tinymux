@@ -144,41 +144,18 @@ DEFS =
 MORELIBS	= -lm
 #MORELIBS	= -lm -lnsl -lsocket -L/usr/ucblib -lucb	# Mips
 
-# Select the networking support you have.  Currently only BSD networking
-# is supported.
-#
-# ----- BSD networking
-NET_S	= bsd.cpp
-NET_O	= bsd.o
-
 # ================== END OF CONFIGURATION SECTION =================
 
 # Auxiliary source files: only used by offline utilities.
 #
 AUX_SRC	= unsplit.cpp
-LIB_SRC = 
-LIB_INC = 
-ALLCXXFLAGS = $(CXXFLAGS) $(OPTIM) $(DEFS) $(COMPRESS_DEFS) $(BASED) $(MALLOC_DEFS) $(MOREDEFS) $(RLIM_F) $(MEMORY_BASED) $(WOD_REALMS) $(REALITY_LVLS) $(QUERY_SLAVE) $(FIRANMUX) $(FIRANMUX_CONVERT) $(DEPRECATED)
-
-#Auxiliary files
-A_INST	= README NOTES HIGHLIGHTS CREDITS CHANGES
-A_TXT	= badsite.txt connect.txt create_reg.txt down.txt guest.txt help.txt \
-	  motd.txt news.txt newuser.txt quit.txt register.txt wizhelp.txt \
-	  wizmotd.txt full.txt plushelp.txt wiznews.txt
-A_SH	= db_load db_unload db_check buildnum.sh
-A_RT	= Startmux mux.config
-A_CONF	= netmux.conf alias.conf compat.conf
-A_MISC	= buildnum.data
-A_VMS	= vms_dbm.cpp vms_dbm.h startmux.com compile.com link.com
-A_AUTO	= configure configure.in autoconf.h.in Makefile.in .depend
-AUXIL	= $(A_INST) $(A_TXT) $(A_SH) $(A_CONF) $(A_MISC) $(A_RT) $(A_VMS) \
-	  $(A_AUTO)
+ALLCXXFLAGS = $(CXXFLAGS) $(OPTIM) $(DEFS) $(MEMORY_BASED) $(WOD_REALMS) $(REALITY_LVLS) $(QUERY_SLAVE) $(FIRANMUX) $(FIRANMUX_CONVERT) $(DEPRECATED)
 
 # Compiliation source files.
 #
-ALLSRC	= $(D_SRC) $(REALITY_SRC) $(VER_SRC) $(AUX_SRC) $(LIB_SRC)
-SRC	= $(D_SRC) $(REALITY_SRC) $(MALLOC_S)
-OBJ	= $(D_OBJ) $(REALITY_OBJ) $(MALLOC_O)
+ALLSRC	= $(D_SRC) $(REALITY_SRC) $(VER_SRC) $(AUX_SRC)
+SRC	= $(D_SRC) $(REALITY_SRC)
+OBJ	= $(D_OBJ) $(REALITY_OBJ)
 
 .cpp.o:
 	$(CXX) $(ALLCXXFLAGS) -c $<
@@ -206,7 +183,7 @@ netmux: $(OBJ) $(VER_SRC)
 	$(CXX) $(ALLCXXFLAGS) -o netmux $(OBJ) $(VER_OBJ) $(LIBS) $(MORELIBS)
 
 depend: $(ALLSRC) unsplit
-	for i in $(D_SRC) $(SA_SRC) $(AUX_SRC) $(LIB_SRC) $(MALLOC_S) slave.cpp sqlslave.cpp sqlshared.cpp ; do $(CXXCPP) $(ALLCXXFLAGS) -M $$i; done | sed -e 's:/usr[^ ]*[ ]*::g' | ./unsplit > .depend~
+	for i in $(D_SRC) $(AUX_SRC) slave.cpp sqlslave.cpp sqlshared.cpp ; do $(CXXCPP) $(ALLCXXFLAGS) -M $$i; done | sed -e 's:/usr[^ ]*[ ]*::g' | ./unsplit > .depend~
 	mv .depend~ .depend
 
 realclean:

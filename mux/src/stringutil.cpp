@@ -3567,16 +3567,39 @@ CF_HAND(cf_art_rule)
 
     pcre_extra *study = pcre_study(reNewRegexp, 0, &errptr);
 
-    // Push new rule at head of list.
     ArtRuleset** arRules = (ArtRuleset **) vp;
-    ArtRuleset* arNewRule = (ArtRuleset *) MEMALLOC(sizeof(ArtRuleset));
 
-    arNewRule->m_pNextRule = *arRules;
-    arNewRule->m_bUseAn = bUseAn;
-    arNewRule->m_pRegexp = reNewRegexp;
-    arNewRule->m_pRegexpStudy = study;
+    ArtRuleset* arNewRule = NULL;
+    try
+    {
+        arNewRule = new ArtRuleset;
+    }
+    catch (...)
+    {
+        ; // Nothing.
+    }
 
-    *arRules = arNewRule;
+    if (NULL != arNewRule)
+    {
+        // Push new rule at head of list.
+        //
+        arNewRule->m_pNextRule = *arRules;
+        arNewRule->m_bUseAn = bUseAn;
+        arNewRule->m_pRegexp = reNewRegexp;
+        arNewRule->m_pRegexpStudy = study;
+        *arRules = arNewRule;
+    }
+    else
+    {
+        MEMFREE(reNewRegexp);
+        if (study)
+        {
+            MEMFREE(study);
+        }
+        cf_log_syntax(player, cmd, "Out of memory.");
+        return -1;
+    }
+
     return 0;
 }
 

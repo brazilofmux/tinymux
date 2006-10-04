@@ -1221,8 +1221,8 @@ void do_shutdown
     log_text(message);
     ENDLOG;
 
-    int fd = mux_open(mudconf.status_file, O_RDWR | O_CREAT | O_TRUNC | O_BINARY, 0600);
-    if (fd != -1)
+    int fd;
+    if (mux_open(&fd, mudconf.status_file, O_RDWR|O_CREAT|O_TRUNC|O_BINARY))
     {
         mux_write(fd, message, static_cast<unsigned int>(strlen(message)));
         mux_write(fd, ENDLINE, sizeof(ENDLINE)-1);
@@ -3291,24 +3291,47 @@ void init_rlimit(void)
 
 bool mux_fopen(FILE **pFile, const char *filename, const char *mode)
 {
-#if defined(WIN32) && (_MSC_VER >= 1400)
-    // 1400 is Visual C++ 2005
-    //
-    return (fopen_s(pFile, filename, mode) == 0);
-#else
     if (pFile)
     {
         *pFile = NULL;
         if (  NULL != filename
            && NULL != mode)
         {
+#if defined(WIN32) && (_MSC_VER >= 1400)
+            // 1400 is Visual C++ 2005
+            //
+            return (fopen_s(pFile, filename, mode) == 0);
+#else
             *pFile = fopen(filename, mode);
             if (NULL != *pFile)
             {
                 return true;
             }
+#endif // WIN32
         }
     }
     return false;
-#endif // WIN32
+}
+
+bool mux_open(int *pfh, const char *filename, int oflag)
+{
+    if (NULL != pfh)
+    {
+        *pfh = MUX_OPEN_INVALID_HANDLE_VALUE;
+        if (NULL != filename)
+        {
+#if defined(WIN32) && (_MSC_VER >= 1400)
+            // 1400 is Visual C++ 2005
+            //
+            return (_sopen_s(pfh, filename, oflag, _SH_DENYNO, _S_IREAD|_S_IWRITE) == 0);
+#elif defined(win32)
+            *pfh = _open(filename, oflag, _S_IREAD|_S_IWRITE);
+            return (0 <= *pfh);
+#else
+            *pfh = open(filename, oflag, 0600);
+            return (0 <= *pfh);
+#endif
+        }
+    }
+    return false;
 }
