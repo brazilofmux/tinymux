@@ -1885,10 +1885,10 @@ static time_t time_t_largest(void)
     }
 
 #if defined(TIMEUTIL_TIME_T_MAX_VALUE)
-    const time_t tmv = TIMEUTIL_TIME_T_MAX_VALUE;
-    if (t < tmv)
+    INT64 t64 = static_cast<INT64>(t);
+    if (TIMEUTIL_TIME_T_MAX_VALUE < t64)
     {
-        t = tmv;
+        t = static_cast<time_t>(TIMEUTIL_TIME_T_MAX_VALUE);
     }
 #endif
 #if defined(LOCALTIME_TIME_T_MAX_VALUE)
@@ -1920,10 +1920,10 @@ static time_t time_t_smallest(void)
         t = static_cast<time_t>(INT32_MIN_VALUE);
     }
 #if defined(TIMEUTIL_TIME_T_MIN_VALUE)
-    const time_t tmv = TIMEUTIL_TIME_T_MIN_VALUE;
-    if (t < tmv)
+    INT64 t64 = static_cast<INT64>(t);
+    if (t64 < TIMEUTIL_TIME_T_MIN_VALUE)
     {
-        t = tmv;
+        t = static_cast<time_t>(TIMEUTIL_TIME_T_MIN_VALUE);
     }
 #endif
 #if defined(LOCALTIME_TIME_T_MIN_VALUE)
