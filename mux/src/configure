@@ -8261,15 +8261,19 @@ cat confdefs.h >>conftest.$ac_ext
 cat >>conftest.$ac_ext <<_ACEOF
 /* end confdefs.h.  */
 
-double rZero = 0.0;
 int main(int argc, char *argv[])
 {
-   double r = -1e-125;
-   long long i64;
-   *(double *)&i64 = r;
-   if (i64 == 0xA5FB13AC9AAF4C0Full)
+   const double d_in = -1e-125;
+   const unsigned long long i64_out = 0xA5FB13AC9AAF4C0Full;
+   union
    {
-      return 0;
+       unsigned long long i64;
+       double             d;
+   } u;
+   u.d = d_in;
+   if (u.i64 == i64_out)
+   {
+       return 0;
    }
    return 1;
 }
@@ -8333,12 +8337,17 @@ cat >>conftest.$ac_ext <<_ACEOF
 double rZero = 0.0;
 int main(int argc, char *argv[])
 {
-   double r;
-   long long i64;
+   double d_in;
+   const unsigned long long i64_out = 0x7FF0000000000000ull;
+   union
+   {
+       unsigned long long i64;
+       double             d;
+   } u;
    signal(SIGFPE, SIG_IGN);
-   r = 1.0/rZero;
-   *(double *)&i64 = r;
-   if (i64 == 0x7FF0000000000000ull)
+   d_in = 1.0/rZero;
+   u.d = d_in;
+   if (u.i64 == i64_out)
    {
       return 0;
    }
