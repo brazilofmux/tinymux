@@ -1,7 +1,14 @@
-// boolexp.cpp
-//
-// $Id$
-//
+/*! \file boolexp.cpp
+ *  Boolean Expressions for @locks
+ *
+ * $Id$
+ *
+ * The functions here evaluate and organize boolean expressions used in
+ * @Locks.  @lock evaluation contains one of server's the three parsers.  The
+ * other two parsers are for functions (see eval.cpp) and commands (see
+ * command.cpp).
+ */
+
 #include "copyright.h"
 #include "autoconf.h"
 #include "config.h"
