@@ -1878,13 +1878,14 @@ FUNCTION(fun_power)
         mux_FPRestore();
         val = pow(val1, val2);
         mux_FPSet();
+        fval(buff, bufc, val);
     }
 #else
     mux_FPRestore();
     val = pow(val1, val2);
     mux_FPSet();
-#endif
     fval(buff, bufc, val);
+#endif
 }
 
 FUNCTION(fun_fmod)
@@ -1911,13 +1912,14 @@ FUNCTION(fun_fmod)
         mux_FPRestore();
         val = fmod(val1, val2);
         mux_FPSet();
+        fval(buff, bufc, val);
     }
 #else
     mux_FPRestore();
     val = fmod(val1, val2);
     mux_FPSet();
-#endif
     fval(buff, bufc, val);
+#endif
 }
 
 FUNCTION(fun_ln)
