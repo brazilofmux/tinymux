@@ -1,7 +1,7 @@
 /*! \file timeutil.cpp
  *  CLinearTimeAbsolute and CLinearTimeDelta modules.
  *
- * $Id: timeutil.cpp,v 1.53 2006/08/07 15:31:03 sdennis Exp $
+ * $Id: timeutil.cpp,v 1.54 2006/10/05 06:08:02 sdennis Exp $
  *
  * Date/Time code based on algorithms presented in "Calendrical Calculations",
  * Cambridge Press, 1998.
@@ -1871,7 +1871,8 @@ static time_t time_t_largest(void)
     }
 
 #if defined(TIMEUTIL_TIME_T_MAX_VALUE)
-    if (t < TIMEUTIL_TIME_T_MAX_VALUE)
+    INT64 t64 = static_cast<INT64>(t);
+    if (TIMEUTIL_TIME_T_MAX_VALUE < t64)
     {
         t = static_cast<time_t>(TIMEUTIL_TIME_T_MAX_VALUE);
     }
@@ -1904,7 +1905,8 @@ static time_t time_t_smallest(void)
         t = static_cast<time_t>(INT32_MIN_VALUE);
     }
 #if defined(TIMEUTIL_TIME_T_MIN_VALUE)
-    if (t < TIMEUTIL_TIME_T_MIN_VALUE)
+    INT64 t64 = static_cast<INT64>(t);
+    if (t64 < TIMEUTIL_TIME_T_MIN_VALUE)
     {
         t = static_cast<time_t>(TIMEUTIL_TIME_T_MIN_VALUE);
     }
