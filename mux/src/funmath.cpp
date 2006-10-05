@@ -1,6 +1,6 @@
 // funmath.cpp -- MUX math function handlers.
 //
-// $Id: funmath.cpp,v 1.5 2006/01/07 21:19:40 sdennis Exp $
+// $Id: funmath.cpp,v 1.6 2006/10/05 06:07:42 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2005 Solid Vertical Domains, Ltd. All
@@ -1773,13 +1773,14 @@ FUNCTION(fun_power)
         mux_FPRestore();
         val = pow(val1, val2);
         mux_FPSet();
+        fval(buff, bufc, val);
     }
 #else
     mux_FPRestore();
     val = pow(val1, val2);
     mux_FPSet();
-#endif
     fval(buff, bufc, val);
+#endif
 }
 
 FUNCTION(fun_fmod)
@@ -1805,13 +1806,14 @@ FUNCTION(fun_fmod)
         mux_FPRestore();
         val = fmod(val1, val2);
         mux_FPSet();
+        fval(buff, bufc, val);
     }
 #else
     mux_FPRestore();
     val = fmod(val1, val2);
     mux_FPSet();
-#endif
     fval(buff, bufc, val);
+#endif
 }
 
 FUNCTION(fun_ln)
