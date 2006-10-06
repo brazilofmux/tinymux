@@ -723,8 +723,8 @@ void CLinearTimeDelta::SetTimeValueStruct(struct timeval *tv)
 //
 
 char *DayOfWeekString[7] = { "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat" };
-static const char daystab[] = { 31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };
-const char *monthtab[] =
+static const char daystab[12] = { 31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };
+const char *monthtab[12] =
 {
     "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
 };

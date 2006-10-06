@@ -1008,6 +1008,34 @@ static FUNCTION(fun_timefmt)
         }
     }
 
+    const char *pValidLongMonth = NULL;
+    const char *pValidShortMonth = NULL;
+    if (  1 <= ft.iMonth
+       && ft.iMonth <= 12)
+    {
+        pValidLongMonth = MonthTableLong[ft.iMonth-1];
+        pValidShortMonth = monthtab[ft.iMonth-1];
+    }
+    else
+    {
+        pValidLongMonth = "";
+        pValidShortMonth = "";
+    }
+
+    const char *pValidLongDayOfWeek = NULL;
+    const char *pValidShortDayOfWeek = NULL;
+    if (  0 <= ft.iDayOfWeek
+       && ft.iDayOfWeek <= 6)
+    {
+        pValidLongDayOfWeek = DayOfWeekStringLong[ft.iDayOfWeek];
+        pValidShortDayOfWeek = DayOfWeekString[ft.iDayOfWeek];
+    }
+    else
+    {
+        pValidLongDayOfWeek = "";
+        pValidShortDayOfWeek = "";
+    }
+
     char *q;
     char *p = fargs[0];
     while ((q = strchr(p, '$')) != NULL)
@@ -1035,20 +1063,20 @@ static FUNCTION(fun_timefmt)
         switch (ch)
         {
         case 'a': // $a - Abbreviated weekday name
-            safe_str(DayOfWeekString[ft.iDayOfWeek], buff, bufc);
+            safe_str(pValidShortDayOfWeek, buff, bufc);
             break;
 
         case 'A': // $A - Full weekday name
-            safe_str(DayOfWeekStringLong[ft.iDayOfWeek], buff, bufc);
+            safe_str(pValidLongDayOfWeek, buff, bufc);
             break;
 
         case 'b': // $b - Abbreviated month name
         case 'h':
-            safe_str(monthtab[ft.iMonth-1], buff, bufc);
+            safe_str(pValidShortMonth, buff, bufc);
             break;
 
         case 'B': // $B - Full month name
-            safe_str(MonthTableLong[ft.iMonth-1], buff, bufc);
+            safe_str(pValidLongMonth, buff, bufc);
             break;
 
         case 'c': // $c - Date and time
@@ -1057,8 +1085,8 @@ static FUNCTION(fun_timefmt)
                 // Long version.
                 //
                 safe_tprintf_str(buff, bufc, "%s, %s %d, %d, %02d:%02d:%02d",
-                    DayOfWeekStringLong[ft.iDayOfWeek],
-                    MonthTableLong[ft.iMonth-1],
+                    pValidLongDayOfWeek,
+                    pValidLongMonth,
                     ft.iDayOfMonth, ft.iYear, ft.iHour, ft.iMinute,
                     ft.iSecond);
             }
@@ -1081,8 +1109,8 @@ static FUNCTION(fun_timefmt)
             if (iOption == '#')
             {
                 safe_tprintf_str(buff, bufc, "%s, %s %d, %d",
-                    DayOfWeekStringLong[ft.iDayOfWeek],
-                    MonthTableLong[ft.iMonth-1],
+                    pValidLongDayOfWeek,
+                    pValidLongMonth,
                     ft.iDayOfMonth, ft.iYear);
                 break;
             }
@@ -6197,10 +6225,36 @@ static FUNCTION(fun_choose)
         return;
     }
 
-    char **elems = new char *[LBUF_SIZE/2];
-    ISOUTOFMEMORY(elems);
-    char **weights = new char *[LBUF_SIZE/2];
-    ISOUTOFMEMORY(weights);
+    char **elems = NULL;
+    try
+    {
+        elems = new char *[LBUF_SIZE/2];
+    }
+    catch (...)
+    {
+        ; // Nothing.
+    }
+
+    if (NULL == elems)
+    {
+        return;
+    }
+
+    char **weights = NULL;
+    try
+    {
+        weights = new char *[LBUF_SIZE/2];
+    }
+    catch (...)
+    {
+        ; // Nothing.
+    }
+
+    if (NULL == weights)
+    {
+        delete [] elems;
+        return;
+    }
 
     int n_elems   = list2arr(elems, LBUF_SIZE/2, fargs[0], &isep);
     int n_weights = list2arr(weights, LBUF_SIZE/2, fargs[1], &sepSpace);
@@ -7320,10 +7374,36 @@ static void handle_sets
     SEP  *posep
 )
 {
-    char **ptrs1 = new char *[LBUF_SIZE];
-    ISOUTOFMEMORY(ptrs1);
-    char **ptrs2 = new char *[LBUF_SIZE];
-    ISOUTOFMEMORY(ptrs2);
+    char **ptrs1 = NULL;
+    try
+    {
+        ptrs1 = new char *[LBUF_SIZE];
+    }
+    catch (...)
+    {
+        ; // Nothing.
+    }
+
+    if (NULL == ptrs1)
+    {
+        return;
+    }
+
+    char **ptrs2 = NULL;
+    try
+    {
+        ptrs2 = new char *[LBUF_SIZE];
+    }
+    catch (...)
+    {
+        ; // Nothing.
+    }
+
+    if (NULL == ptrs2)
+    {
+        delete [] ptrs1;
+        return;
+    }
 
     int val;
 
@@ -8533,11 +8613,19 @@ static void GeneralTimeConversion
     char *p = Buffer;
     int iValue;
 
+    if (  iStartBase < 0
+       || N_RADIX_ENTRIES <= iStartBase
+       || iEndBase < 0
+       || N_RADIX_ENTRIES <= iEndBase)
+    {
+        *p++ = '\0';
+        return;
+    }
+         
     for (int i = iStartBase; i <= iEndBase; i++)
     {
         if (reTable[i].iBase <= Seconds || i == iEndBase)
         {
-
             // Division and remainder.
             //
             iValue = Seconds/reTable[i].iBase;
@@ -9509,11 +9597,11 @@ static FUNCTION(fun_accent)
     while (*p)
     {
         unsigned char ch = '\0';
-        unsigned char ch0 = AccentCombo1[*p];
-        if (ch0)
+        unsigned char ch0 = AccentCombo1[(unsigned char)*p];
+        if (0 < ch0)
         {
-            unsigned char ch1 = AccentCombo2[*q];
-            if (ch1)
+            unsigned char ch1 = AccentCombo2[(unsigned char)*q];
+            if (0 < ch1)
             {
                 ch  = AccentCombo3[ch0-1][ch1];
             }
@@ -10069,8 +10157,22 @@ void do_function
 
     if (!ufp)
     {
-        ufp = (UFUN *) MEMALLOC(sizeof(UFUN));
-        ISOUTOFMEMORY(ufp);
+        ufp = NULL;
+        try
+        {
+            ufp = new UFUN;
+        }
+        catch (...)
+        {
+            ; // Nothing.
+        }
+
+        if (NULL == ufp)
+        {
+            free_sbuf(np);
+            return;
+        }
+
         ufp->name = StringClone(np);
         mux_strupr(ufp->name);
         ufp->obj = obj;
