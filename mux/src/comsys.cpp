@@ -1,7 +1,11 @@
-// comsys.cpp
-//
-// $Id$
-//
+/*! \file comsys.cpp
+ *  Channel Communication System.
+ *
+ * $Id$
+ *
+ * The functions here manage channels and channel membership.
+ */
+
 #include "copyright.h"
 #include "autoconf.h"
 #include "config.h"

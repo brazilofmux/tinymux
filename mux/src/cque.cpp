@@ -1,7 +1,12 @@
-// cque.cpp -- commands and functions for manipulating the command queue.
-//
-// $Id$
-//
+/*! \file cque.cpp
+ *  Commands and functions for manipulating the command queue.
+ *
+ * $Id$
+ *
+ * This forms the upper-level command list queue, and includes timed commands
+ * and semaphores.  The lower-level task implementation is found in timer.cpp.
+ */
+
 #include "copyright.h"
 #include "autoconf.h"
 #include "config.h"

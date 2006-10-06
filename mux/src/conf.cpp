@@ -1,7 +1,11 @@
-// conf.cpp -- Set up configuration information and static data.
-//
-// $Id$
-//
+/*! \file conf.cpp
+ *  Set up configuration information and static data.
+ *
+ * $Id$
+ *
+ * This parses the configuration files and controls configuration options used
+ * to control the server and its behavior.
+ */
 
 #include "copyright.h"
 #include "autoconf.h"
