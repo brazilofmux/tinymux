@@ -1764,7 +1764,10 @@ void do_createchannel(dbref executor, dbref caller, dbref enactor, int eval, int
         return;
     }
     struct channel *newchannel = (struct channel *)MEMALLOC(sizeof(struct channel));
-    ISOUTOFMEMORY(newchannel);
+    if (NULL == newchannel)
+    {
+        return;
+    }
 
     size_t vwChannel;
     size_t nNameNoANSI;
@@ -2142,13 +2145,16 @@ void do_channelnuke(dbref player)
             num_channels--;
             hashdeleteLEN(ch->name, strlen(ch->name), &mudstate.channel_htab);
 
-            for (j = 0; j < ch->num_users; j++)
+            if (NULL != ch->users)
             {
-                MEMFREE(ch->users[j]);
-                ch->users[j] = NULL;
+                for (j = 0; j < ch->num_users; j++)
+                {
+                    MEMFREE(ch->users[j]);
+                    ch->users[j] = NULL;
+                }
+                MEMFREE(ch->users);
+                ch->users = NULL;
             }
-            MEMFREE(ch->users);
-            ch->users = NULL;
             MEMFREE(ch);
             ch = NULL;
         }
