@@ -1204,16 +1204,31 @@ void do_apply_marked( dbref executor, dbref caller, dbref enactor, int eval,
 //
 void olist_push(void)
 {
-    OLSTK *ol = (OLSTK *)MEMALLOC(sizeof(OLSTK));
-    ISOUTOFMEMORY(ol);
-    ol->next = mudstate.olist;
-    mudstate.olist = ol;
+    OLSTK *ol = NULL;
+    try
+    {
+        ol = new OLSTK;
+    }
+    catch (...)
+    {
+        ; // Nothing.
+    }
 
-    ol->head = NULL;
-    ol->tail = NULL;
-    ol->cblock = NULL;
-    ol->count = 0;
-    ol->citm = 0;
+    if (NULL != ol)
+    {
+        ol->next = mudstate.olist;
+        mudstate.olist = ol;
+
+        ol->head = NULL;
+        ol->tail = NULL;
+        ol->cblock = NULL;
+        ol->count = 0;
+        ol->citm = 0;
+    }
+    else
+    {
+        ISOUTOFMEMORY(ol);
+    }
 }
 
 // olist_pop: Pop one entire list off the object list stack.
@@ -1227,7 +1242,7 @@ void olist_pop(void)
         onext = op->next;
         free_lbuf(op);
     }
-    MEMFREE(mudstate.olist);
+    delete mudstate.olist;
     mudstate.olist = ol;
 }
 
