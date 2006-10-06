@@ -3335,3 +3335,16 @@ bool mux_open(int *pfh, const char *filename, int oflag)
     }
     return false;
 }
+
+const char *mux_strerror(int errnum)
+{
+#if defined(WIN32) && (_MSC_VER >= 1400)
+    // 1400 is Visual C++ 2005
+    //
+    static char buffer[80];
+    strerror_s(buffer, sizeof(buffer), errnum);
+    return buffer;
+#else
+    return strerror(errnum);
+#endif
+}

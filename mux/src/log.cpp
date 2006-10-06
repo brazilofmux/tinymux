@@ -128,7 +128,7 @@ void log_perror(const char *primary, const char *secondary, const char *extra, c
     //
     Log.WriteString(failing_object);
     Log.WriteString(": ");
-    Log.WriteString(strerror(errno));
+    Log.WriteString(mux_strerror(errno));
 #ifndef WIN32
     Log.WriteString(ENDLINE);
 #endif // !WIN32
