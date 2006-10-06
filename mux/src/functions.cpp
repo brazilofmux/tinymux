@@ -1024,8 +1024,7 @@ static FUNCTION(fun_timefmt)
 
     const char *pValidLongDayOfWeek = NULL;
     const char *pValidShortDayOfWeek = NULL;
-    if (  0 <= ft.iDayOfWeek
-       && ft.iDayOfWeek <= 6)
+    if (ft.iDayOfWeek <= 6)
     {
         pValidLongDayOfWeek = DayOfWeekStringLong[ft.iDayOfWeek];
         pValidShortDayOfWeek = DayOfWeekString[ft.iDayOfWeek];
