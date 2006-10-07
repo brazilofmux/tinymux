@@ -1495,18 +1495,43 @@ static int add_helpfile(dbref player, char *cmd, char *str, bool bRaw)
     {
         mudstate.mHelpDesc = 4;
         mudstate.nHelpDesc = 0;
-        mudstate.aHelpDesc = (HELP_DESC *)MEMALLOC(sizeof(HELP_DESC)
-            *mudstate.mHelpDesc);
-        ISOUTOFMEMORY(mudstate.aHelpDesc);
+        try
+        {
+            mudstate.aHelpDesc = new HELP_DESC[mudstate.mHelpDesc];
+        }
+        catch (...)
+        {
+            ; // Nothing.
+        }
+
+        if (NULL == mudstate.aHelpDesc)
+        {
+            cf_log_syntax(player, cmd, "Out of Memory.");
+            return -1;
+        }
     }
     else if (mudstate.mHelpDesc <= mudstate.nHelpDesc)
     {
         int newsize = mudstate.mHelpDesc + 4;
-        HELP_DESC *q = (HELP_DESC *)MEMALLOC(sizeof(HELP_DESC)*newsize);
-        ISOUTOFMEMORY(q);
+        HELP_DESC *q = NULL;
+        try
+        {
+            q = new HELP_DESC[newsize];
+        }
+        catch (...)
+        {
+            ; // Nothing.
+        }
+
+        if (NULL == mudstate.aHelpDesc)
+        {
+            cf_log_syntax(player, cmd, "Out of Memory.");
+            return -1;
+        }
+
         memset(q, 0, sizeof(HELP_DESC)*newsize);
         memcpy(q, mudstate.aHelpDesc, sizeof(HELP_DESC)*mudstate.mHelpDesc);
-        MEMFREE(mudstate.aHelpDesc);
+        delete [] mudstate.aHelpDesc;
         mudstate.aHelpDesc = q;
         mudstate.mHelpDesc = newsize;
     }
