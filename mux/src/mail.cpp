@@ -1393,15 +1393,11 @@ static void do_mail_read(dbref player, char *msglist)
                 // Read it.
                 //
                 j++;
-                buff[LBUF_SIZE-1] = '\0';
-                strncpy(buff, MessageFetch(mp->number), LBUF_SIZE);
-                if (buff[LBUF_SIZE-1] != '\0')
-                {
-                    STARTLOG(LOG_BUGS, "BUG", "MAIL");
-                    log_text(tprintf("do_mail_read: %s: Mail message %d truncated.", Moniker(player), mp->number));
-                    ENDLOG;
-                    buff[LBUF_SIZE-1] = '\0';
-                }
+
+                char *bp = buff;
+                safe_str(MessageFetch(mp->number), buff, &bp);
+                *bp = '\0';
+
                 notify(player, DASH_LINE);
                 status = status_string(mp);
                 names = make_namelist(player, mp->tolist);
