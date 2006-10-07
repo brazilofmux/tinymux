@@ -6,7 +6,7 @@
  * The functions here crack command lists into commands, decode switches, and
  * match commands to built-in and softcoded commands.  This is one of the
  * three parsers in the server.  The other two parsers are for functions
- * (see eval.cpp) and @locks (boolexp.cpp).
+ * (see eval.cpp) and locks (boolexp.cpp).
  */
 
 #include "copyright.h"

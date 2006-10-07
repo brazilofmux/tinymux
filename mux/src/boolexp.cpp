@@ -4,7 +4,7 @@
  * $Id$
  *
  * The functions here evaluate and organize boolean expressions used in
- * @Locks.  @lock evaluation contains one of server's the three parsers.  The
+ * locks.  Lock evaluation contains one of server's the three parsers.  The
  * other two parsers are for functions (see eval.cpp) and commands (see
  * command.cpp).
  */
