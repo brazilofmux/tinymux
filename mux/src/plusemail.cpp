@@ -493,9 +493,11 @@ void do_plusemail(dbref executor, dbref cause, dbref enactor, int key,
     }
 
     char *addy = alloc_lbuf("mod_email_do_email.headers");
-    strcpy(addy, arg1);
+    char *bp = addy;
+    safe_str(arg1, addy, &bp);
+    *bp = '\0';
 
-    char *subject = strchr(addy,'/');
+    char *subject = strchr(addy, '/');
     if (subject)
     {
         *subject = '\0';

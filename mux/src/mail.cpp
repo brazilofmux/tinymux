@@ -24,7 +24,7 @@
 #define SIZEOF_MALIASDESC (WIDTHOF_MALIASDESC*2)
 
 #define MAX_MALIAS_MEMBERSHIP 100
-struct malias
+typedef struct malias
 {
     int  owner;
     int  numrecep;
@@ -32,13 +32,13 @@ struct malias
     char *desc;
     size_t desc_width; // The visual width of the Mail Alias Description.
     dbref list[MAX_MALIAS_MEMBERSHIP];
-};
+} malias_t;
 
 static int ma_size = 0;
 static int ma_top = 0;
 
-static struct malias **malias   = NULL;
-static MAILBODY      *mail_list = NULL;
+static malias_t **malias   = NULL;
+static MAILBODY *mail_list = NULL;
 
 // Handling functions for the database of mail messages.
 //
@@ -1203,7 +1203,7 @@ static char *MakeCanonicalMailAlias
 #define GMA_FOUND       2
 #define GMA_INVALIDFORM 3
 
-static struct malias *get_malias(dbref player, char *alias, int *pnResult)
+static malias_t *get_malias(dbref player, char *alias, int *pnResult)
 {
     *pnResult = GMA_INVALIDFORM;
     if (!alias)
@@ -1238,7 +1238,7 @@ static struct malias *get_malias(dbref player, char *alias, int *pnResult)
         {
             for (int i = 0; i < ma_top; i++)
             {
-                struct malias *m = malias[i];
+                malias_t *m = malias[i];
                 if (  m->owner == player
                    || m->owner == GOD
                    || ExpMail(player))
@@ -1393,15 +1393,11 @@ static void do_mail_read(dbref player, char *msglist)
                 // Read it.
                 //
                 j++;
-                buff[LBUF_SIZE-1] = '\0';
-                strncpy(buff, MessageFetch(mp->number), LBUF_SIZE);
-                if (buff[LBUF_SIZE-1] != '\0')
-                {
-                    STARTLOG(LOG_BUGS, "BUG", "MAIL");
-                    log_text(tprintf("do_mail_read: %s: Mail message %d truncated.", Moniker(player), mp->number));
-                    ENDLOG;
-                    buff[LBUF_SIZE-1] = '\0';
-                }
+
+                char *bp = buff;
+                safe_str(MessageFetch(mp->number), buff, &bp);
+                *bp = '\0';
+
                 notify(player, DASH_LINE);
                 status = status_string(mp);
                 names = make_namelist(player, mp->tolist);
@@ -1654,7 +1650,7 @@ void do_mail_purge(dbref player)
 static char *make_numlist(dbref player, char *arg, bool bBlind)
 {
     char *tail, spot;
-    struct malias *m;
+    malias_t *m;
     dbref target;
     int nRecip = 0;
     dbref aRecip[(LBUF_SIZE+1)/2];
@@ -2154,8 +2150,22 @@ static void send_mail
 
     // Initialize the appropriate fields.
     //
-    struct mail *newp = (struct mail *)MEMALLOC(sizeof(struct mail));
-    ISOUTOFMEMORY(newp);
+    struct mail *newp = NULL;
+    try
+    {
+        newp = new struct mail;
+    }
+    catch (...)
+    {
+        ; // Nothing.
+    }
+    
+    if (NULL == newp)
+    {
+        notify(player, "MAIL: Out of memory.");
+        return;
+    }
+
     newp->to = target;
 
     // HACK: Allow @mail/quick, if player is an object, then the
@@ -2268,8 +2278,22 @@ static void do_mail_debug(dbref player, char *action, char *victim)
     }
     else if (string_prefix("sanity", action))
     {
-        int *ai = (int *)MEMALLOC(mudstate.mail_db_top * sizeof(int));
-        ISOUTOFMEMORY(ai);
+        int *ai = NULL;
+        try
+        {
+            ai = new int[mudstate.mail_db_top];
+        }
+        catch (...)
+        {
+            ; // Nothing.
+        }
+        
+        if (NULL == ai)
+        {
+            notify(player, "Out of memory.");
+            return;
+        }
+
         memset(ai, 0, mudstate.mail_db_top * sizeof(int));
 
         DO_WHOLE_DB(thing)
@@ -2346,7 +2370,8 @@ static void do_mail_debug(dbref player, char *action, char *victim)
                 notify(player, "Some mailbag items are referred to less often than the mailbag item indicates.");
             }
         }
-        MEMFREE(ai);
+
+        delete [] ai;
         ai = NULL;
         notify(player, "Mail sanity check completed.");
     }
@@ -2357,8 +2382,22 @@ static void do_mail_debug(dbref player, char *action, char *victim)
         if (mail_list)
         {
             notify(player, tprintf("Re-counting mailbag reference counts."));
-            int *ai = (int *)MEMALLOC(mudstate.mail_db_top * sizeof(int));
-            ISOUTOFMEMORY(ai);
+            int *ai = NULL;
+            try
+            {
+                ai = new int[mudstate.mail_db_top];
+            }
+            catch (...)
+            {
+                ; // Nothing.
+            }
+            
+            if (NULL == ai)
+            {
+                notify(player, "Out of memory.");
+                return;
+            }
+
             memset(ai, 0, mudstate.mail_db_top * sizeof(int));
 
             DO_WHOLE_DB(thing)
@@ -2392,7 +2431,8 @@ static void do_mail_debug(dbref player, char *action, char *victim)
             {
                 notify(player, "Some reference counts were wrong [FIXED].");
             }
-            MEMFREE(ai);
+
+            delete [] ai;
             ai = NULL;
         }
 
@@ -2742,7 +2782,7 @@ static void do_mail_stub(dbref player, char *arg1, char *arg2)
 static void malias_write(FILE *fp)
 {
     int i, j;
-    struct malias *m;
+    malias_t *m;
 
     putref(fp, ma_top);
     for (i = 0; i < ma_top; i++)
@@ -2820,10 +2860,26 @@ static void load_mail_V5(FILE *fp)
     char  *pBuffer;
     char nbuf1[8];
     char *p = fgets(nbuf1, sizeof(nbuf1), fp);
-    while (p && strncmp(nbuf1, "***", 3) != 0)
+    while (  p
+          && strncmp(nbuf1, "***", 3) != 0)
     {
-        struct mail *mp = (struct mail *)MEMALLOC(sizeof(struct mail));
-        ISOUTOFMEMORY(mp);
+        struct mail *mp = NULL;
+        try
+        {
+            mp = new struct mail;
+        }
+        catch (...)
+        {
+            ; // Nothing.
+        }
+        
+        if (NULL == mp)
+        {
+            STARTLOG(LOG_BUGS, "BUG", "MAIL");
+            log_text("Out of memory.");
+            ENDLOG;
+            return;
+        }
 
         mp->to      = mux_atol(nbuf1);
         mp->from    = getref(fp);
@@ -2902,12 +2958,26 @@ static void malias_read(FILE *fp)
         return;
     }
     char buffer[LBUF_SIZE];
-    struct malias *m;
 
     ma_size = ma_top = i;
 
-    malias = (struct malias **)MEMALLOC(sizeof(struct malias *) * ma_size);
-    ISOUTOFMEMORY(malias);
+    malias = NULL;
+    try
+    {
+        malias = new malias_t *[ma_size];
+    }
+    catch (...)
+    {
+        ; // Nothing.
+    }
+
+    if (NULL == malias)
+    {
+        STARTLOG(LOG_BUGS, "BUG", "MAIL");
+        log_text("Out of memory.");
+        ENDLOG;
+        return;
+    }
 
     for (i = 0; i < ma_top; i++)
     {
@@ -2918,12 +2988,34 @@ static void malias_read(FILE *fp)
             // We've hit the end of the file. Set the last recognized
             // @malias, and give up.
             //
+            STARTLOG(LOG_BUGS, "BUG", "MAIL");
+            log_text("Unexpected end of file. Mail bag truncated.");
+            ENDLOG;
+
             ma_top = i;
             return;
         }
 
-        m = (struct malias *)MEMALLOC(sizeof(struct malias));
-        ISOUTOFMEMORY(m);
+        malias_t *m = NULL;
+        try
+        {
+            m = new malias_t;
+        }
+        catch (...)
+        {
+            ; // Nothing.
+        }
+        
+        if (NULL == m)
+        {
+            STARTLOG(LOG_BUGS, "BUG", "MAIL");
+            log_text("Out of memory. Mail bag truncated.");
+            ENDLOG;
+
+            ma_top = i;
+            return;
+        }
+
         malias[i] = m;
 
         char *p = strchr(buffer, ' ');
@@ -3120,7 +3212,7 @@ static void do_malias_send
 )
 {
     int nResult;
-    struct malias *m = get_malias(player, tolist, &nResult);
+    malias_t *m = get_malias(player, tolist, &nResult);
     if (nResult == GMA_INVALIDFORM)
     {
         notify(player, tprintf("MAIL: I can't figure out from '%s' who you want to mail to.", tolist));
@@ -3161,7 +3253,7 @@ static void do_malias_send
 
 static void do_malias_create(dbref player, char *alias, char *tolist)
 {
-    struct malias **nm;
+    malias_t **nm;
     int nResult;
     get_malias(player, alias, &nResult);
 
@@ -3176,29 +3268,73 @@ static void do_malias_create(dbref player, char *alias, char *tolist)
         return;
     }
 
+    malias_t *pt = NULL;
+    try
+    {
+        pt = new malias_t;
+    }
+    catch (...)
+    {
+        ; // Nothing.
+    }
+    
+    if (NULL == pt)
+    {
+        notify(player, "MAIL: Out of memory.");
+        return;
+    }
+
     int i = 0;
     if (!ma_size)
     {
         ma_size = MA_INC;
-        malias = (struct malias **)MEMALLOC(sizeof(struct malias *) * ma_size);
-        ISOUTOFMEMORY(malias);
+        malias = NULL;
+        try
+        {
+            malias = new malias_t *[ma_size];
+        }
+        catch (...)
+        {
+            ; // Nothing.
+        }
+
+        if (NULL == malias)
+        {
+            notify(player, "MAIL: Out of memory.");
+            delete pt;
+            return;
+        }
     }
     else if (ma_top >= ma_size)
     {
         ma_size += MA_INC;
-        nm = (struct malias **)MEMALLOC(sizeof(struct malias *) * (ma_size));
-        ISOUTOFMEMORY(nm);
+        nm = NULL;
+        try
+        {
+            nm = new malias_t *[ma_size];
+        }
+        catch (...)
+        {
+            ; // Nothing.
+        }
+
+        if (NULL == nm)
+        {
+            notify(player, "MAIL: Out of memory.");
+            delete pt;
+            return;
+        }
 
         for (i = 0; i < ma_top; i++)
         {
             nm[i] = malias[i];
         }
-        MEMFREE(malias);
+
+        delete [] malias;
         malias = nm;
     }
-    malias[ma_top] = (struct malias *)MEMALLOC(sizeof(struct malias));
-    ISOUTOFMEMORY(malias[ma_top]);
 
+    malias[ma_top] = pt;
 
     // Parse the player list.
     //
@@ -3332,7 +3468,7 @@ static void do_malias_create(dbref player, char *alias, char *tolist)
 static void do_malias_list(dbref player, char *alias)
 {
     int nResult;
-    struct malias *m = get_malias(player, alias, &nResult);
+    malias_t *m = get_malias(player, alias, &nResult);
     if (nResult == GMA_NOTFOUND)
     {
         notify(player, tprintf("MAIL: Alias '%s' not found.", alias));
@@ -3390,7 +3526,7 @@ static void do_malias_list_all(dbref player)
     bool notified = false;
     for (int i = 0; i < ma_top; i++)
     {
-        struct malias *m = malias[i];
+        malias_t *m = malias[i];
         if (  m->owner == GOD
            || m->owner == player
            || God(player))
@@ -3872,7 +4008,7 @@ static void do_mail_proof(dbref player)
 static void do_malias_desc(dbref player, char *alias, char *desc)
 {
     int nResult;
-    struct malias *m = get_malias(player, alias, &nResult);
+    malias_t *m = get_malias(player, alias, &nResult);
     if (nResult == GMA_NOTFOUND)
     {
         notify(player, tprintf("MAIL: Alias '%s' not found.", alias));
@@ -3922,7 +4058,7 @@ static void do_malias_chown(dbref player, char *alias, char *owner)
     }
 
     int nResult;
-    struct malias *m = get_malias(player, alias, &nResult);
+    malias_t *m = get_malias(player, alias, &nResult);
     if (nResult == GMA_NOTFOUND)
     {
         notify(player, tprintf("MAIL: Alias '%s' not found.", alias));
@@ -3945,7 +4081,7 @@ static void do_malias_chown(dbref player, char *alias, char *owner)
 static void do_malias_add(dbref player, char *alias, char *person)
 {
     int nResult;
-    struct malias *m = get_malias(player, alias, &nResult);
+    malias_t *m = get_malias(player, alias, &nResult);
     if (nResult == GMA_NOTFOUND)
     {
         notify(player, tprintf("MAIL: Alias '%s' not found.", alias));
@@ -4006,7 +4142,7 @@ static void do_malias_add(dbref player, char *alias, char *person)
 static void do_malias_remove(dbref player, char *alias, char *person)
 {
     int nResult;
-    struct malias *m = get_malias(player, alias, &nResult);
+    malias_t *m = get_malias(player, alias, &nResult);
     if (nResult == GMA_NOTFOUND)
     {
         notify(player, tprintf("MAIL: Alias '%s' not found.", alias));
@@ -4067,7 +4203,7 @@ static void do_malias_remove(dbref player, char *alias, char *person)
 static void do_malias_rename(dbref player, char *alias, char *newname)
 {
     int nResult;
-    struct malias *m = get_malias(player, newname, &nResult);
+    malias_t *m = get_malias(player, newname, &nResult);
     if (nResult == GMA_FOUND)
     {
         notify(player, "MAIL: That name already exists!");
@@ -4115,7 +4251,7 @@ static void do_malias_rename(dbref player, char *alias, char *newname)
 static void do_malias_delete(dbref player, char *alias)
 {
     int nResult;
-    struct malias *m = get_malias(player, alias, &nResult);
+    malias_t *m = get_malias(player, alias, &nResult);
     if (nResult == GMA_NOTFOUND)
     {
         notify(player, tprintf("MAIL: Alias '%s' not found.", alias));
@@ -4166,7 +4302,7 @@ static void do_malias_adminlist(dbref player)
     notify(player,
       "Num  Name         Description                              Owner");
 
-    struct malias *m;
+    malias_t *m;
     int i;
 
     for (i = 0; i < ma_top; i++)
@@ -4194,7 +4330,7 @@ static void do_malias_status(dbref player)
     }
 }
 
-static void malias_cleanup1(struct malias *m, dbref target)
+static void malias_cleanup1(malias_t *m, dbref target)
 {
     int count = 0;
     dbref j;
@@ -4273,7 +4409,7 @@ static void do_mail_retract(dbref player, char *name, char *msglist)
     if (*name == '*')
     {
         int pnResult;
-        struct malias *m = get_malias(player, name, &pnResult);
+        malias_t *m = get_malias(player, name, &pnResult);
         if (pnResult == GMA_NOTFOUND)
         {
             notify(player, tprintf("MAIL: Mail alias %s not found.", name));
@@ -4550,7 +4686,7 @@ void MailList::RemoveItem(void)
     m_mi->time = NULL;
     MEMFREE(m_mi->tolist);
     m_mi->tolist = NULL;
-    MEMFREE(m_mi);
+    delete m_mi;
 
     m_mi = miNext;
     m_bRemoved = true;
@@ -4610,7 +4746,7 @@ void MailList::RemoveAll(void)
         mi->tolist = NULL;
         MEMFREE(mi->time);
         mi->time = NULL;
-        MEMFREE(mi);
+        delete mi;
     }
     m_mi = NULL;
 }

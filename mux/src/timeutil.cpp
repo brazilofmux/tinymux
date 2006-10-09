@@ -723,8 +723,8 @@ void CLinearTimeDelta::SetTimeValueStruct(struct timeval *tv)
 //
 
 char *DayOfWeekString[7] = { "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat" };
-static const char daystab[] = { 31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };
-const char *monthtab[] =
+static const char daystab[12] = { 31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };
+const char *monthtab[12] =
 {
     "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
 };
@@ -1885,7 +1885,8 @@ static time_t time_t_largest(void)
     }
 
 #if defined(TIMEUTIL_TIME_T_MAX_VALUE)
-    if (t < TIMEUTIL_TIME_T_MAX_VALUE)
+    INT64 t64 = static_cast<INT64>(t);
+    if (TIMEUTIL_TIME_T_MAX_VALUE < t64)
     {
         t = static_cast<time_t>(TIMEUTIL_TIME_T_MAX_VALUE);
     }
@@ -1919,7 +1920,8 @@ static time_t time_t_smallest(void)
         t = static_cast<time_t>(INT32_MIN_VALUE);
     }
 #if defined(TIMEUTIL_TIME_T_MIN_VALUE)
-    if (t < TIMEUTIL_TIME_T_MIN_VALUE)
+    INT64 t64 = static_cast<INT64>(t);
+    if (t64 < TIMEUTIL_TIME_T_MIN_VALUE)
     {
         t = static_cast<time_t>(TIMEUTIL_TIME_T_MIN_VALUE);
     }

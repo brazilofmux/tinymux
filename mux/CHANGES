@@ -194,6 +194,20 @@ Bug Fixes:
  -- Suppress compiler warnings in stringutil.cpp (Issue 109).
  -- Suppress compiler warnings in help.cpp (Issue 132).
  -- Suppress compiler warnings in netcommon.cpp (Issues 141 and 142).
+ -- Fixed uninitialized variables in fun_fmod() and fun_power() for
+    non-typical build.
+ -- Fix two configuration tests that broke with gcc 4.1.2.
+ -- Avoid using strerror() directly (Issue 120).
+ -- Fix compiler warnings in strtod.cpp (Issues 113, 114, and 115).
+ -- Fix compiler warnings in functions.cpp (Issues 123, 124, 126, 127,
+    128, 129, 130, and 131).
+ -- Fix compiler warnings in funceval.cpp (Issue 122).
+ -- Fix compiler warnings in comsys.cpp (Issues 157 and 158).
+ -- Avoid using strncpy (Issue 118).
+ -- Fix compiler warnings in mail.cpp (Issues 133, 134, 135, 136, 137,
+    138, 139, and 140).
+ -- Fix compiler warnings in conf.cpp (Issue 162, 163, and 166).
+ -- Fixed double lbuf_free() introduced in 2.6.0.3 (Issue 188).
 
 
 Performance Enhancements:
@@ -215,3 +229,5 @@ Cosmetic Changes:
 Miscellaneous:
 ~~~~~~~~~~~~~
  -- Add mux_fopen() utility function to replace direct use of fopen().
+ -- Updated config.guess, config.sub, and configure to later versions.
+ -- Updated to autoconf 2.60a.

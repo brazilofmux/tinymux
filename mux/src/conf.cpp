@@ -1,7 +1,11 @@
-// conf.cpp -- Set up configuration information and static data.
-//
-// $Id$
-//
+/*! \file conf.cpp
+ *  Set up configuration information and static data.
+ *
+ * $Id$
+ *
+ * This parses the configuration files and controls configuration options used
+ * to control the server and its behavior.
+ */
 
 #include "copyright.h"
 #include "autoconf.h"
@@ -458,10 +462,23 @@ static CF_HAND(cf_int_array)
     UNUSED_PARAMETER(player);
     UNUSED_PARAMETER(cmd);
 
-    int *aPorts = (int *)MEMALLOC(nExtra*sizeof(int));
-    ISOUTOFMEMORY(aPorts);
-    unsigned int nPorts = 0;
+    int *aPorts = NULL;
+    try
+    {
+        aPorts = new int[nExtra];
+    }
+    catch (...)
+    {
+        ; // Nothing.
+    }
 
+    if (NULL == aPorts)
+    {
+        cf_log_syntax(player, cmd, "Out of memory.");
+        return -1;
+    }
+
+    unsigned int nPorts = 0;
     char *p;
     MUX_STRTOK_STATE tts;
     mux_strtok_src(&tts, str);
@@ -479,20 +496,36 @@ static CF_HAND(cf_int_array)
     IntArray *pia = (IntArray *)vp;
     if (nPorts)
     {
+        int *q = NULL;
+        try
+        {
+            q = new int[nPorts];
+        }
+        catch (...)
+        {
+            ; // Nothing.
+        }
+
+        if (NULL == q)
+        {
+            cf_log_syntax(player, cmd, "Out of memory.");
+            return -1;
+        }
+
         if (pia->pi)
         {
-            MEMFREE(pia->pi);
+            delete [] pia->pi;
             pia->pi = NULL;
         }
-        pia->pi = (int *)MEMALLOC(nPorts * sizeof(int));
-        ISOUTOFMEMORY(pia->pi);
+
+        pia->pi = q;
         pia->n = nPorts;
         for (unsigned int i = 0; i < nPorts; i++)
         {
             pia->pi[i] = aPorts[i];
         }
     }
-    MEMFREE(aPorts);
+    delete [] aPorts;
     return 0;
 }
 
@@ -1491,18 +1524,43 @@ static int add_helpfile(dbref player, char *cmd, char *str, bool bRaw)
     {
         mudstate.mHelpDesc = 4;
         mudstate.nHelpDesc = 0;
-        mudstate.aHelpDesc = (HELP_DESC *)MEMALLOC(sizeof(HELP_DESC)
-            *mudstate.mHelpDesc);
-        ISOUTOFMEMORY(mudstate.aHelpDesc);
+        try
+        {
+            mudstate.aHelpDesc = new HELP_DESC[mudstate.mHelpDesc];
+        }
+        catch (...)
+        {
+            ; // Nothing.
+        }
+
+        if (NULL == mudstate.aHelpDesc)
+        {
+            cf_log_syntax(player, cmd, "Out of memory.");
+            return -1;
+        }
     }
     else if (mudstate.mHelpDesc <= mudstate.nHelpDesc)
     {
         int newsize = mudstate.mHelpDesc + 4;
-        HELP_DESC *q = (HELP_DESC *)MEMALLOC(sizeof(HELP_DESC)*newsize);
-        ISOUTOFMEMORY(q);
+        HELP_DESC *q = NULL;
+        try
+        {
+            q = new HELP_DESC[newsize];
+        }
+        catch (...)
+        {
+            ; // Nothing.
+        }
+
+        if (NULL == mudstate.aHelpDesc)
+        {
+            cf_log_syntax(player, cmd, "Out of memory.");
+            return -1;
+        }
+
         memset(q, 0, sizeof(HELP_DESC)*newsize);
         memcpy(q, mudstate.aHelpDesc, sizeof(HELP_DESC)*mudstate.mHelpDesc);
-        MEMFREE(mudstate.aHelpDesc);
+        delete [] mudstate.aHelpDesc;
         mudstate.aHelpDesc = q;
         mudstate.mHelpDesc = newsize;
     }

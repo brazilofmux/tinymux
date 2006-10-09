@@ -3229,10 +3229,36 @@ FUNCTION(fun_munge)
     char *list1, *list2, *rlist, *bp, *str;
     char *uargs[2];
 
-    char **ptrs1 = new char *[LBUF_SIZE / 2];
-    ISOUTOFMEMORY(ptrs1);
-    char **ptrs2 = new char *[LBUF_SIZE / 2];
-    ISOUTOFMEMORY(ptrs2);
+    char **ptrs1 = NULL;
+    try
+    {
+        ptrs1 = new char *[LBUF_SIZE / 2];
+    }
+    catch (...)
+    {
+        ; // Nothing.
+    }
+
+    if (NULL == ptrs1)
+    {
+        return;
+    }
+
+    char **ptrs2 = NULL;
+    try
+    {
+        ptrs2 = new char *[LBUF_SIZE / 2];
+    }
+    catch (...)
+    {
+        ; // Nothing.
+    }
+
+    if (NULL == ptrs2)
+    {
+        delete [] ptrs1;
+        return;
+    }
 
     // Copy our lists and chop them up.
     //

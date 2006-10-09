@@ -128,7 +128,7 @@ void log_perror(const char *primary, const char *secondary, const char *extra, c
     //
     Log.WriteString(failing_object);
     Log.WriteString(": ");
-    Log.WriteString(strerror(errno));
+    Log.WriteString(mux_strerror(errno));
 #ifndef WIN32
     Log.WriteString(ENDLINE);
 #endif // !WIN32
@@ -336,7 +336,10 @@ void do_log
 
     if (!bValid)
     {
-        if (pFullName) free_lbuf(pFullName);
+        if (pFullName)
+        {
+            free_lbuf(pFullName);
+        }
         notify(executor, "Syntax: @log file=message");
         return;
     }
@@ -349,16 +352,14 @@ void do_log
         {
             // Okay, at this point, the file exists.
             //
+            free_lbuf(pFullName);
             fprintf(hFile, "%s" ENDLINE, pMessage);
             fclose(hFile);
-            free_lbuf(pFullName);
+            return;
         }
     }
+    free_lbuf(pFullName);
 
     notify(executor, "Not a valid log file.");
-    if (pFullName)
-    {
-        free_lbuf(pFullName);
-    }
     return;
 }

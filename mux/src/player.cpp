@@ -702,7 +702,7 @@ void do_last(dbref executor, dbref caller, dbref enactor, int eval, int key, cha
 
 bool add_player_name(dbref player, const char *name)
 {
-    bool stat;
+    bool stat = false;
     char *temp, *tp;
 
     // Convert to all lowercase.

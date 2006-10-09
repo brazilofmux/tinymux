@@ -1,7 +1,13 @@
-// command.cpp -- command parser and support routines.
-//
-// $Id$
-//
+/*! \file command.cpp
+ *  Command parser and support routines.
+ *
+ * $Id$
+ *
+ * The functions here crack command lists into commands, decode switches, and
+ * match commands to built-in and softcoded commands.  This is one of the
+ * three parsers in the server.  The other two parsers are for functions
+ * (see eval.cpp) and locks (boolexp.cpp).
+ */
 
 #include "copyright.h"
 #include "autoconf.h"

@@ -1357,6 +1357,11 @@ static CONST double tinytens[] = { 1e-16, 1e-32 };
 #endif
 #endif
 
+DCL_INLINE int FltRounds(void)
+{
+    return Flt_Rounds;
+}
+
 double mux_strtod(CONST char *s00, char **se)
 {
 #ifdef Avoid_Underflow
@@ -1569,10 +1574,10 @@ ret0:
         dval(rv) = tens[k - 9] * dval(rv) + z;
     }
     bd0 = 0;
-    if (nd <= DBL_DIG
+    if (  nd <= DBL_DIG
 #ifndef RND_PRODQUOT
 #ifndef Honor_FLT_ROUNDS
-        && Flt_Rounds == 1
+        && 1 == FltRounds()
 #endif
 #endif
             )
@@ -2261,7 +2266,7 @@ drop_down:
                 aadj1 += 0.5;
             }
 #else
-            if (Flt_Rounds == 0)
+            if (0 == FltRounds())
             {
                 aadj1 += 0.5;
             }

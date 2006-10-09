@@ -1,7 +1,17 @@
-// svdocache.cpp -- Attribute caching module.
-//
-// $Id$
-//
+/*! \file attrcache.cpp
+ *  Attribute caching module.
+ *
+ * $Id$
+ *
+ * The functions here manage the upper-level attribute value cache for
+ * disk-based mode. It's not used in memory-based builds. The lower-level
+ * cache is managed in svdhash.cpp
+ *
+ * The upper-level cache is organized by a CHashTable and a linked list. The
+ * former allows random access while the linked list helps find the
+ * least-recently-used attribute.
+ */
+
 #include "copyright.h"
 #include "autoconf.h"
 #include "config.h"
