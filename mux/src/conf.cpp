@@ -474,7 +474,7 @@ static CF_HAND(cf_int_array)
 
     if (NULL == aPorts)
     {
-        cf_log_syntax(player, cmd, "Out of Memory.");
+        cf_log_syntax(player, cmd, "Out of memory.");
         return -1;
     }
 
@@ -508,7 +508,7 @@ static CF_HAND(cf_int_array)
 
         if (NULL == q)
         {
-            cf_log_syntax(player, cmd, "Out of Memory.");
+            cf_log_syntax(player, cmd, "Out of memory.");
             return -1;
         }
 
@@ -1535,7 +1535,7 @@ static int add_helpfile(dbref player, char *cmd, char *str, bool bRaw)
 
         if (NULL == mudstate.aHelpDesc)
         {
-            cf_log_syntax(player, cmd, "Out of Memory.");
+            cf_log_syntax(player, cmd, "Out of memory.");
             return -1;
         }
     }
@@ -1554,7 +1554,7 @@ static int add_helpfile(dbref player, char *cmd, char *str, bool bRaw)
 
         if (NULL == mudstate.aHelpDesc)
         {
-            cf_log_syntax(player, cmd, "Out of Memory.");
+            cf_log_syntax(player, cmd, "Out of memory.");
             return -1;
         }
 

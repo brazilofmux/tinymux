@@ -1770,6 +1770,7 @@ void do_createchannel(dbref executor, dbref caller, dbref enactor, int eval, int
     struct channel *newchannel = (struct channel *)MEMALLOC(sizeof(struct channel));
     if (NULL == newchannel)
     {
+        raw_notify(executor, "Out of memory.");
         return;
     }
 
