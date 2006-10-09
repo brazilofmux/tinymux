@@ -194,6 +194,7 @@ Bug Fixes:
  -- Suppress compiler warnings in stringutil.cpp (Issue 109).
  -- Suppress compiler warnings in help.cpp (Issue 132).
  -- Suppress compiler warnings in netcommon.cpp (Issues 141 and 142).
+ -- Fixed double lbuf_free() introduced in 2.6.0.3 (Issue 188).
 
 
 Performance Enhancements:
