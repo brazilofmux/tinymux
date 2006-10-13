@@ -1795,7 +1795,6 @@ typedef succ_list *succ_table;
 
 succ_list **create_succ_table();
 int read_success_table(succ_list **table);
-void print_succ_table(succ_list list);
 short int valid_success_line(char *s);
 void strip_newline(char *s);
 int getnumber(char *s);
@@ -1941,15 +1940,6 @@ int read_success_table(succ_list **table){
   fclose(infile);
   free(buffer);
   return entries_read;
-}
-
-/* Print one row of the success table for testing purposes */
-void print_succ_table(succ_list list){
-  while(list != NULL){
-    printf("%d ", list->data);
-    list = list->next;
-  }
-  printf("\n");
 }
 
 /* Verify that a particular line is a valid entry in the success table */
