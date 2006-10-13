@@ -1812,8 +1812,8 @@ short int lookup_succ_table(succ_list_node *table, int randnum);
 /* #define DEBUG */
 #define DIE_TO_ROLL 1000
 #define OLDSUCC_DIE_TO_ROLL 10
-#define NO_ERROR 0
-#define MEM_ERROR 1
+#define ERRORLESS   0
+#define MEM_ERROR   1
 #define TABLE_ERROR 2
 
 /* The table currently in use */
@@ -1829,7 +1829,7 @@ int successes_last_error;
 
 /* Create a success table in memory and return it */
 succ_list **create_succ_table(){
-  successes_last_error = NO_ERROR;
+  successes_last_error = ERRORLESS;
   succ_list **table = (succ_list **)malloc(sizeof(succ_list *) * MAXDICE);
   if(table == NULL){
     successes_last_error = MEM_ERROR;
