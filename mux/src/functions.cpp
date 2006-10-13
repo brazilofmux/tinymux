@@ -1764,6 +1764,17 @@ FUNCTION(fun_successes)
     }
 }
 
+/*
+ * MUX command to trigger a table reload (@readsuccesses)
+ */
+void do_readsuccesses(dbref executor, dbref caller, dbref enactor, int key)
+{
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(key);
+}
+
 #else
 
 #define MAXDICE 11
@@ -1793,18 +1804,10 @@ void reload_succ_table();
 void success_tellplayer(dbref player, char *message);
 void free_success_table(succ_list **table);
 void free_succ_list(succ_list list);
-void do_readsuccesses(dbref player, dbref cause, int key);
 int getrand(int num);
 short int getsuccs(short int dice, short int diff, int randnum);
 short int simple_success(int diff);
 short int lookup_succ_table(succ_list_node *table, int randnum);
-
-#define FUNCTION(x)     \
-        void x(buff, bufc, player, cause, fargs, nfargs, cargs, ncargs) \
-        char *buff, **bufc; \
-        dbref player, cause; \
-        char *fargs[], *cargs[]; \
-        int nfargs, ncargs;
 
 /* #define DEBUG */
 #define DIE_TO_ROLL 1000
@@ -1912,9 +1915,9 @@ int read_success_table(succ_list **table){
     }
     
     /* Parse the dice and diff values from the input */
-    i = atoi(tok) - 1;
+    i = mux_atol(tok) - 1;
     tok = (char *)strtok(NULL, " ");
-    j = atoi(tok) - 1;
+    j = mux_atol(tok) - 1;
     
     /* Create the linked list for this dice/diff pair, beginning
        with the initial successes */
@@ -1924,13 +1927,13 @@ int read_success_table(succ_list **table){
       successes_last_error = MEM_ERROR;
       return entries_read;
     }
-    list->data = atoi((char *)strtok(NULL, " "));
+    list->data = mux_atol((char *)strtok(NULL, " "));
     list->next = NULL;
     table[i][j] = list;
     
     /* Add the boundary condition values */
     while((tok = (char *)strtok(NULL, " ")) != NULL){
-      succ_add_data(table[i][j], atoi(tok));
+      succ_add_data(table[i][j], mux_atol(tok));
     }
     entries_read++;
   } while (!feof(infile));
@@ -1996,12 +1999,12 @@ int getnumber(char *s){
   }
   t = s;
   while(*t != '\0'){
-    if(!isdigit(*t))
+    if(!mux_isdigit(*t))
       return -1;
     t++;
   }
   
-  return atoi(s);
+  return mux_atol(s);
 }
 
 /* A function to add boundary values to the linked list */
@@ -2094,10 +2097,10 @@ FUNCTION(fun_successes)
   if (!fargs[0] || !fargs[1]) return;
 
   /* first argument is the number of dice to roll */
-  num_dice = atoi(fargs[0]);
+  num_dice = mux_atol(fargs[0]);
 
   /* second argument is the difficulty to roll against */
-  difficulty = atoi(fargs[1]);
+  difficulty = mux_atol(fargs[1]);
   
   /* generate a random number */
   roll = getrand(DIE_TO_ROLL);
@@ -2120,19 +2123,22 @@ FUNCTION(fun_successes)
 /*
  * MUX command to trigger a table reload (@readsuccesses)
  */
-void do_readsuccesses(player, cause, key)
-     dbref player, cause;
-     int key;
+void do_readsuccesses(dbref executor, dbref caller, dbref enactor, int key)
 {
-  reload_succ_table(player);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(key);
+
+    reload_succ_table(executor);
 }
 
 /*
  * Get a random number based on whatever formula we're using at the moment
  * Currently, that's the getrandom() function
  */
-int getrand(int num){
-  int random = getrandom(num);
+int getrand(int num)
+{
+    return RandomINT32(0, num-1);
 }
 
 /* A simple function to trigger the lookup: Translates the dice, diff
