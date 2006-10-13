@@ -1785,7 +1785,7 @@ void do_readsuccesses(dbref executor, dbref caller, dbref enactor, int key)
 #define dbref int
 
 typedef struct list_node {
-  short int data;
+  int data;
   struct list_node * next;
 } succ_list_node;
 
@@ -1795,7 +1795,7 @@ typedef succ_list *succ_table;
 
 succ_list **create_succ_table();
 int read_success_table(succ_list **table);
-short int valid_success_line(char *s);
+int valid_success_line(char *s);
 void strip_newline(char *s);
 int getnumber(char *s);
 void succ_add_data(succ_list list, int data);
@@ -1804,9 +1804,9 @@ void success_tellplayer(dbref player, char *message);
 void free_success_table(succ_list **table);
 void free_succ_list(succ_list list);
 int getrand(int num);
-short int getsuccs(short int dice, short int diff, int randnum);
-short int simple_success(int diff);
-short int lookup_succ_table(succ_list_node *table, int randnum);
+int getsuccs(int dice, int diff, int randnum);
+int simple_success(int diff);
+int lookup_succ_table(succ_list_node *table, int randnum);
 
 /* #define DEBUG */
 #define DIE_TO_ROLL 1000
@@ -1943,13 +1943,13 @@ int read_success_table(succ_list **table){
 }
 
 /* Verify that a particular line is a valid entry in the success table */
-short int valid_success_line(char *s){
+int valid_success_line(char *s){
   char *t = (char *) malloc(MAX_BUFFER_SIZE);
   strcpy(t, s);
   int lastnum = -1;
   int num = -1;
   char *tok = NULL;
-  short int retval = 1;
+  int retval = 1;
   tok = (char *)strtok(t, " ");
   if(tok == NULL)
     retval = 0;
@@ -2079,9 +2079,9 @@ void free_succ_list(succ_list list){
 
 FUNCTION(fun_successes)
 {
-  short int num_dice, difficulty;
-  short int successes = 0;
-  short int roll = 0;
+  int num_dice, difficulty;
+  int successes = 0;
+  int roll = 0;
 
   /* required two arguments always */
   if (!fargs[0] || !fargs[1]) return;
@@ -2140,7 +2140,7 @@ int getrand(int num)
    over the max, roll one die. If it's over the diff, add a success.
    If the diff is higher than MAXDIFF, return 0 successes.
 */
-short int getsuccs(short int dice, short int diff, int randnum){
+int getsuccs(int dice, int diff, int randnum){
 
   int extra_successes = 0;
 
@@ -2173,7 +2173,7 @@ short int getsuccs(short int dice, short int diff, int randnum){
  * Roll a 10-sided die. If it's equal to or higher than the difficulty,
  * return true.
  */
-short int simple_success(int diff){
+int simple_success(int diff){
   int rand = getrand(OLDSUCC_DIE_TO_ROLL) + 1;
   return rand >= diff;
 }
@@ -2184,8 +2184,8 @@ short int simple_success(int diff){
    If given an invalid table, it will return -100;
    If the number is larger than the largest boundary, it will return -200.
 */
-short int lookup_succ_table(succ_list_node *table, int randnum){
-  short int succs;
+int lookup_succ_table(succ_list_node *table, int randnum){
+  int succs;
   succ_list_node *mover = table;
   if(mover == NULL){
     return -100;
