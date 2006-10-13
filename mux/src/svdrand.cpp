@@ -163,7 +163,7 @@ INT32 RandomINT32(INT32 lLow, INT32 lHigh)
     //
 
     // In order to be perfectly conservative about not introducing any
-    // further sources of statistical bias, we're going to call getrand()
+    // further sources of statistical bias, we're going to call genrand()
     // until we get a number less than the greatest representable
     // multiple of x. We'll then return n mod x.
     //
@@ -173,7 +173,7 @@ INT32 RandomINT32(INT32 lLow, INT32 lHigh)
     //      P(UINT32_MAX_VALUE - n < UINT32_MAX_VALUE % x) < 0.5, for any x.
     //
     // So even for the least desireable x, the average number of times
-    // we will call getrand() is less than 2.
+    // we will call genrand() is less than 2.
     //
     UINT32 n;
     UINT32 nLimit = UINT32_MAX_VALUE - (UINT32_MAX_VALUE%x);
