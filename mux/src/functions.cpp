@@ -1998,15 +1998,17 @@ static int read_success_table(succ_list **table)
         {
             successes_last_error = TABLE_ERROR;
             fclose(infile);
+            free(buffer);
             return entries_read;
         }
         
         tok = (char *)strtok(buffer, " ");
-        if (tok == NULL)
+        if (NULL == tok)
         {
             fprintf(stderr, "error: success table malformed\n");
             successes_last_error = TABLE_ERROR;
             fclose(infile);
+            free(buffer);
             return 0;
         }
         
@@ -2023,6 +2025,7 @@ static int read_success_table(succ_list **table)
         {
             successes_last_error = MEM_ERROR;
             fclose(infile);
+            free(buffer);
             return entries_read;
         }
         list->data = mux_atol((char *)strtok(NULL, " "));
