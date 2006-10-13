@@ -1944,23 +1944,22 @@ static void succ_add_data(succ_list list, int data)
 static int read_success_table(succ_list **table)
 {
     int i, j;
-    char *buffer, *tok;
-    FILE *infile;
+    char *tok;
     succ_list list = NULL;
     int entries_read = 0;
     
     /* Open up the successes file and a buffer */
-    infile = fopen(SUCCTABLE_FILE, "r");
-    buffer = (char *) malloc(MAX_BUFFER_SIZE);
-    
+    FILE *infile = fopen(SUCCTABLE_FILE, "r");
     if (NULL == infile)
     {
         successes_last_error = TABLE_ERROR;
         return 0;
     }
     
+    char *buffer = (char *) malloc(MAX_BUFFER_SIZE);
     if (NULL == buffer)
     {
+        fclose(infile);
         successes_last_error = MEM_ERROR;
         return 0;
     }
@@ -1998,6 +1997,7 @@ static int read_success_table(succ_list **table)
         if (!valid_success_line(buffer))
         {
             successes_last_error = TABLE_ERROR;
+            fclose(infile);
             return entries_read;
         }
         
@@ -2006,6 +2006,7 @@ static int read_success_table(succ_list **table)
         {
             fprintf(stderr, "error: success table malformed\n");
             successes_last_error = TABLE_ERROR;
+            fclose(infile);
             return 0;
         }
         
@@ -2021,6 +2022,7 @@ static int read_success_table(succ_list **table)
         if (NULL == list)
         {
             successes_last_error = MEM_ERROR;
+            fclose(infile);
             return entries_read;
         }
         list->data = mux_atol((char *)strtok(NULL, " "));
@@ -2063,10 +2065,9 @@ static void free_succ_list(succ_list list)
 /* Remove a success table from memory. */
 static void free_success_table(succ_list **table)
 {
-    int i, j;
-    for (i = 0; i < MAXDICE; i++)
+    for (int i = 0; i < MAXDICE; i++)
     {
-        for (j = 0; j < MAXDIFF; j++)
+        for (int j = 0; j < MAXDIFF; j++)
         {
             free_succ_list(table[i][j]);
         }
