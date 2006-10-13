@@ -1541,8 +1541,8 @@ static FUNCTION(fun_etimefmt)
     safe_str(p, buff, bufc);
 }
 
+#if defined(FIRANMUX)
 
-#ifdef FIRANMUX
 /*
  * ---------------------------------------------------------------------------
  * * fun_format: format a string (linewrap) with str, field, left, right
@@ -1670,6 +1670,8 @@ FUNCTION(fun_text)
     safe_str("#-1 FILE NOT LISTED",buff,bufc);
 }
 
+#if 1
+
 /*
  * ---------------------------------------------------------------------------
  * * successes: return the number of successes/botches from a bunch of
@@ -1761,6 +1763,449 @@ FUNCTION(fun_successes)
         safe_ltoa(successes, buff, bufc);
     }
 }
+
+#else
+
+#define MAXDICE 11
+#define MAXDIFF 10
+#define RANDMAX 1000
+#define SUCCTABLE_FILE "succtable.txt"
+#define MAX_BUFFER_SIZE 80
+#define dbref int
+
+typedef struct list_node {
+  short int data;
+  struct list_node * next;
+} succ_list_node;
+
+typedef succ_list_node *succ_list;
+
+typedef succ_list *succ_table;
+
+succ_list **create_succ_table();
+int read_success_table(succ_list **table);
+void print_succ_table(succ_list list);
+short int valid_success_line(char *s);
+void strip_newline(char *s);
+int getnumber(char *s);
+void succ_add_data(succ_list list, int data);
+void reload_succ_table();
+void success_tellplayer(dbref player, char *message);
+void free_success_table(succ_list **table);
+void free_succ_list(succ_list list);
+void do_readsuccesses(dbref player, dbref cause, int key);
+int getrand(int num);
+short int getsuccs(short int dice, short int diff, int randnum);
+short int simple_success(int diff);
+short int lookup_succ_table(succ_list_node *table, int randnum);
+
+#define FUNCTION(x)     \
+        void x(buff, bufc, player, cause, fargs, nfargs, cargs, ncargs) \
+        char *buff, **bufc; \
+        dbref player, cause; \
+        char *fargs[], *cargs[]; \
+        int nfargs, ncargs;
+
+/* #define DEBUG */
+#define DIE_TO_ROLL 1000
+#define OLDSUCC_DIE_TO_ROLL 10
+#define NO_ERROR 0
+#define MEM_ERROR 1
+#define TABLE_ERROR 2
+
+/* The table currently in use */
+succ_list **current_table = NULL;
+
+/* 
+   The last error thrown by a successes function 
+   0 = no error
+   1 = memory allocation error
+   2 = table read error
+*/
+int successes_last_error;
+
+/* Create a success table in memory and return it */
+succ_list **create_succ_table(){
+  successes_last_error = NO_ERROR;
+  succ_list **table = (succ_list **)malloc(sizeof(succ_list *) * MAXDICE);
+  if(table == NULL){
+    successes_last_error = MEM_ERROR;
+    return NULL;
+  }
+  
+  int i, j;
+  
+  for(i = 0; i < MAXDICE; i++){
+    table[i] = (succ_list_node **)malloc(sizeof(succ_list) * MAXDIFF);
+    if(table[i] == NULL){
+      successes_last_error = MEM_ERROR;
+      return NULL;
+    }
+    for(j = 0; j < MAXDIFF; j++){
+      table[i][j] = NULL;
+    }
+  }
+
+  return table;
+}
+
+/* Fill the table with values from the file */
+/* Returns the number of entries made. */
+int read_success_table(succ_list **table){
+  int i, j;
+  char *buffer, *tok;
+  FILE *infile;
+  succ_list list = NULL;
+  int entries_read = 0;
+  
+  /* Open up the successes file and a buffer */
+  infile = fopen(SUCCTABLE_FILE, "r");
+  buffer = (char *) malloc(MAX_BUFFER_SIZE);
+  
+  if(infile == NULL){
+    successes_last_error = TABLE_ERROR;
+    return 0;
+  }
+  
+  if(buffer == NULL){
+    successes_last_error = MEM_ERROR;
+    return 0;
+  }
+  
+  /* Read in values for table of the following format, one per line:
+     i j x a b c d e ... n
+     Where i = dice, j = difficulty, x = successes on best-case
+     and a ... n are boundaries for each level
+     For example:
+     2 4 3 10 30 50 70 90 100
+     Means: (Assuming a base of 100 for the roll)
+     For a roll of 2 dice on difficulty 4,
+     0-->9:       3
+     10-->29:  2
+     30-->49:  1
+     50-->69:  0
+     70-->89: -1
+     90-->99: -2
+  */
+
+  do {
+    memset(buffer, 0, MAX_BUFFER_SIZE);
+    fgets(buffer, MAX_BUFFER_SIZE, infile);
+    
+    if(buffer[0] == '\n' || buffer[0] == '\0') {
+      /* Skip blank line */
+      continue;
+    }
+ 
+    strip_newline(buffer);
+    
+    if(!valid_success_line(buffer)){
+      successes_last_error = TABLE_ERROR;
+      return entries_read;
+    }
+    
+    tok = (char *)strtok(buffer, " ");
+    if(tok == NULL){
+      fprintf(stderr, "error: success table malformed\n");
+      successes_last_error = TABLE_ERROR;
+      return 0;
+    }
+    
+    /* Parse the dice and diff values from the input */
+    i = atoi(tok) - 1;
+    tok = (char *)strtok(NULL, " ");
+    j = atoi(tok) - 1;
+    
+    /* Create the linked list for this dice/diff pair, beginning
+       with the initial successes */
+    
+    list = (succ_list) malloc(sizeof(succ_list));
+    if(list == NULL){
+      successes_last_error = MEM_ERROR;
+      return entries_read;
+    }
+    list->data = atoi((char *)strtok(NULL, " "));
+    list->next = NULL;
+    table[i][j] = list;
+    
+    /* Add the boundary condition values */
+    while((tok = (char *)strtok(NULL, " ")) != NULL){
+      succ_add_data(table[i][j], atoi(tok));
+    }
+    entries_read++;
+  } while (!feof(infile));
+  
+  fclose(infile);
+  free(buffer);
+  return entries_read;
+}
+
+/* Print one row of the success table for testing purposes */
+void print_succ_table(succ_list list){
+  while(list != NULL){
+    printf("%d ", list->data);
+    list = list->next;
+  }
+  printf("\n");
+}
+
+/* Verify that a particular line is a valid entry in the success table */
+short int valid_success_line(char *s){
+  char *t = (char *) malloc(MAX_BUFFER_SIZE);
+  strcpy(t, s);
+  int lastnum = -1;
+  int num = -1;
+  char *tok = NULL;
+  short int retval = 1;
+  tok = (char *)strtok(t, " ");
+  if(tok == NULL)
+    retval = 0;
+  else if(getnumber(tok) == -1)
+    retval = 0;
+  else if(getnumber((char *)strtok(NULL, " ")) == -1)
+    retval = 0;
+  else if(getnumber((char *)strtok(NULL, " ")) == -1)
+    retval = 0;
+
+  if(retval){
+    while((tok = (char *)strtok(NULL, " ")) != NULL){
+      num = getnumber(tok);
+      if(num <= lastnum){
+        retval = 0;
+        break;
+      }
+      lastnum = num;
+    }
+  }
+  free(t);
+  return retval;
+}
+
+/* Strip out the newline character */
+void strip_newline(char *s){
+     while((*s != '\n') && (*s != '\0'))
+        s++;
+     *s = '\0';
+}
+
+/* Convert a string to a number, return -1 if it's invalid */     
+int getnumber(char *s){
+  char *t;
+  if(s == NULL){
+    return -1;
+  }
+  t = s;
+  while(*t != '\0'){
+    if(!isdigit(*t))
+      return -1;
+    t++;
+  }
+  
+  return atoi(s);
+}
+
+/* A function to add boundary values to the linked list */
+void succ_add_data(succ_list list, int data){
+  succ_list mover = list;
+  if(mover == NULL){
+    successes_last_error = TABLE_ERROR;
+    return;
+  }
+  while(mover->next != NULL){
+    mover = mover->next;
+  }
+  list = (succ_list) malloc(sizeof(succ_list));
+  if(list == NULL){
+    successes_last_error = MEM_ERROR;
+  }
+  list->next = NULL;
+  list->data = data;
+  mover->next = list;
+}
+
+/* The main function to load a success table into memory. Could be on startup
+   or replacing a current one. If the table is invalid, it will not replace 
+   a working one. */
+void reload_succ_table(dbref player){
+    succ_list **table = create_succ_table();
+    succ_list list = NULL;
+    int lines = -1;
+    char name[80];
+    if(player == -1){
+       sprintf(name, "Nobody");
+    } else {
+       sprintf(name, "#%d", player);
+    }
+    lines = read_success_table(table);
+    if(!successes_last_error){
+       if(current_table != NULL)
+          free_success_table(current_table);
+       current_table = table;
+       char s[80];
+       sprintf(s, "successes: table reloaded by %s (%d entries)", name, lines);
+       success_tellplayer(player, s);
+    } else {
+       free_success_table(table);
+       char s[80];
+       sprintf(s, "successes: table reload by %s failed after %d entries", name, lines);
+       success_tellplayer(player, s);
+       if(current_table == NULL)
+          fprintf(stderr, "No success table loaded. Do not run code.\n");
+    }
+}
+
+/* Notify the player and log it. */
+void success_tellplayer(dbref player, char *message){
+     fprintf(stderr, "%s\n",message);
+     notify(player, message);
+}
+
+/* Remove a success table from memory. */
+void free_success_table(succ_list **table){
+   int i, j;
+   for(i = 0; i < MAXDICE; i++){
+      for(j = 0; j < MAXDIFF; j++){
+         free_succ_list(table[i][j]);
+      }
+      free(table[i]);
+   }
+   free(table);
+}
+
+/* Remove a particular section of the success table from memory. */
+void free_succ_list(succ_list list){
+     if(list != NULL){
+        if(list->next != NULL){
+           free_succ_list(list->next);
+        }
+        free(list);
+     }
+}
+
+/* The MUX-style function */
+
+FUNCTION(fun_successes)
+{
+  short int num_dice, difficulty;
+  short int successes = 0;
+  short int roll = 0;
+
+  /* required two arguments always */
+  if (!fargs[0] || !fargs[1]) return;
+
+  /* first argument is the number of dice to roll */
+  num_dice = atoi(fargs[0]);
+
+  /* second argument is the difficulty to roll against */
+  difficulty = atoi(fargs[1]);
+  
+  /* generate a random number */
+  roll = getrand(DIE_TO_ROLL);
+
+  /* go thread in the values to the getsuccs() function, which will generate
+     our result */
+  successes = getsuccs(num_dice, difficulty, roll);
+
+  /* if the function generated an error, it will put it in the buffer
+     and return -200. If all went well, "return" the successes
+     (positive, negative or zero) */
+     
+  if(successes == -200){
+    safe_tprintf_str(buff, bufc, "#-1 NO SUCCESS TABLE LOADED");
+  } else {
+    safe_tprintf_str(buff, bufc, "%d", successes);
+  }
+}
+
+/*
+ * MUX command to trigger a table reload (@readsuccesses)
+ */
+void do_readsuccesses(player, cause, key)
+     dbref player, cause;
+     int key;
+{
+  reload_succ_table(player);
+}
+
+/*
+ * Get a random number based on whatever formula we're using at the moment
+ * Currently, that's the getrandom() function
+ */
+int getrand(int num){
+  int random = getrandom(num);
+}
+
+/* A simple function to trigger the lookup: Translates the dice, diff
+   and random number into an entry point for the table and retrieves
+   the appropriate number of successes.
+   If the request is for a result outside of the table, use the following
+   simple algorithm:
+   Get the result from this algorithm with MAXDICE, then, for every die
+   over the max, roll one die. If it's over the diff, add a success.
+   If the diff is higher than MAXDIFF, return 0 successes.
+*/
+short int getsuccs(short int dice, short int diff, int randnum){
+
+  int extra_successes = 0;
+
+  if(dice <= 0)
+    return 0;
+  if(diff <= 0)
+    return dice;
+
+  if(diff > MAXDIFF){
+    return 0;
+  }
+  if(dice > MAXDICE){
+    int i;
+    for(i = MAXDICE; i < dice; i++){
+      if(simple_success(diff)){
+        extra_successes++;
+      }
+    }
+    dice = MAXDICE;
+  }
+
+  if(current_table == NULL)
+    return -200;
+
+  return lookup_succ_table(current_table[dice - 1][diff - 1], randnum) +
+    extra_successes;
+}
+
+/*
+ * Roll a 10-sided die. If it's equal to or higher than the difficulty,
+ * return true.
+ */
+short int simple_success(int diff){
+  int rand = getrand(OLDSUCC_DIE_TO_ROLL) + 1;
+  return rand >= diff;
+}
+
+/* The lookup function: Given a table in the form of table[dice][diff]
+   and a given number this function returns the number of successes
+   corresponding to that number in the table.
+   If given an invalid table, it will return -100;
+   If the number is larger than the largest boundary, it will return -200.
+*/
+short int lookup_succ_table(succ_list_node *table, int randnum){
+  short int succs;
+  succ_list_node *mover = table;
+  if(mover == NULL){
+    return -100;
+  }
+  succs = mover->data;
+  while(mover->next != NULL){
+    mover = mover->next;
+    if(randnum < mover->data){
+      return succs;
+    }
+    succs--;
+  }
+  return -200;
+}
+
+#endif
 
 #endif // FIRANMUX
 

@@ -571,6 +571,9 @@ static CMDENT_NO_ARG command_table_no_arg[] =
     {"@dump",       dump_sw,    CA_WIZARD,   0,          CS_NO_ARGS, 0, do_dump},
     {"@mark_all",   markall_sw, CA_WIZARD,   MARK_SET,   CS_NO_ARGS, 0, do_markall},
     {"@readcache",  NULL,       CA_WIZARD,   0,          CS_NO_ARGS, 0, do_readcache},
+#if defined(FIRANMUX)
+    {"@readsuccesses",  NULL,   CA_WIZARD,   0,          CS_NO_ARGS, 0, do_readsuccesses},
+#endif // FIRAMUX
     {"@restart",    NULL,       CA_NO_GUEST|CA_NO_SLAVE, 0, CS_NO_ARGS, 0, do_restart},
 #ifndef WIN32
     {"@startslave", NULL,       CA_WIZARD,   0,          CS_NO_ARGS, 0, boot_slave},
