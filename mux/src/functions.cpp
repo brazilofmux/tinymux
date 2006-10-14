@@ -2085,7 +2085,6 @@ static void free_success_table(succ_list **table)
 static void reload_succ_table(dbref player)
 {
     succ_list **table = create_succ_table();
-    succ_list list = NULL;
     int lines = -1;
     char name[80];
     if (-1 == player)
