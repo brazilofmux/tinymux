@@ -2055,13 +2055,11 @@ static void success_tellplayer(dbref player, char *message)
 /* Remove a particular section of the success table from memory. */
 static void free_succ_list(succ_list list)
 {
-    if (NULL != list)
+    while (NULL != list)
     {
-        if (NULL != list->next)
-        {
-            free_succ_list(list->next);
-        }
+        succ_list np = list->next;
         free(list);
+        list = np;
     }
 }
 
