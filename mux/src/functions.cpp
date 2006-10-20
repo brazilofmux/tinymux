@@ -1992,7 +1992,7 @@ void reload_succ_table(dbref player)
     }
     else
     {
-        safe_str(tprintf("#%d", player), name, &bp);
+        safe_tprintf_str(name, &bp, "#%d", player);
     }
     *bp = '\0';
     
@@ -2037,21 +2037,22 @@ static int simple_success(int diff)
    If the number is larger than the largest boundary, it will return
    NUMBER_TOO_LARGE.
 */
-static int lookup_succ_table(succ_list_node *table, int randnum)
+static int lookup_succ_table(succ_list_node *table, int *psucc)
 {
-    int succs;
-    succ_list_node *mover = table;
-    if (NULL == mover)
+    if (NULL == table)
     {
         return INVALID_TABLE;
     }
-    succs = mover->data;
-    while (NULL != mover->next)
+
+    int randnum = RandomINT32(0, DIE_TO_ROLL-1);
+    int succs = table->data;
+    while (NULL != table->next)
     {
-        mover = mover->next;
-        if (randnum < mover->data)
+        table = table->next;
+        if (randnum < table->data)
         {
-            return succs;
+            *psucc = succs;
+            return 0;
         }
         succs--;
     }
@@ -2067,19 +2068,22 @@ static int lookup_succ_table(succ_list_node *table, int randnum)
    over the max, roll one die. If it's over the diff, add a success.
    If the diff is higher than MAXDIFF, return 0 successes.
 */
-static int getsuccs(int dice, int diff)
+static int getsuccs(int dice, int diff, int *psucc)
 {
     if (dice <= 0)
     {
+        *psucc = 0;
         return 0;
     }
     
     if (diff <= 0)
     {
-        return dice;
+        *psucc = dice;
+        return 0;
     }
     else if (diff > MAXDIFF)
     {
+        *psucc = 0;
         return 0;
     }
 
@@ -2101,41 +2105,50 @@ static int getsuccs(int dice, int diff)
         dice = MAXDICE;
     }
 
-    int roll = RandomINT32(0, DIE_TO_ROLL-1);
-    return lookup_succ_table(current_table[dice - 1][diff - 1], roll) +
-        extra_successes;
+    int succs;
+    succ_list_node *node = current_table[dice-1][diff-1];
+    int err = lookup_succ_table(node, &succs);
+    if (0 == err)
+    {
+        *psucc = succs + extra_successes;
+    }
+    return err;
 }
 
 /* The MUX-style function */
 
 FUNCTION(fun_successes)
 {
-    /* first argument is the number of dice to roll */
-    int num_dice = mux_atol(fargs[0]);
-    
-    /* second argument is the difficulty to roll against */
+    // Number of dice and difficulty.
+    //
+    if (  !is_integer(fargs[0], NULL)
+       || !is_integer(fargs[1], NULL))
+    {
+        safe_str("#-1 ARGUMENTS MUST BE INTEGERS", buff, bufc);
+        return;
+    }
+
+    int num_dice   = mux_atol(fargs[0]);
     int difficulty = mux_atol(fargs[1]);
     
-    // Go thread in the values to the getsuccs() function, which will generate
-    // our result.
-    //
-    int successes = getsuccs(num_dice, difficulty);
-    
-    /* if the function generated an error, it will put it in the buffer
-    and return NUMBER_TOO_LARGE. If all went well, "return" the successes
-    (positive, negative or zero) */
-    
-    if (INVALID_TABLE == successes)
+    int successes;
+    switch (getsuccs(num_dice, difficulty, &successes))
     {
-        safe_tprintf_str(buff, bufc, "#-1 NO SUCCESS TABLE LOADED");
-    }
-    else if (NUMBER_TOO_LARGE == successes)
-    {
-        safe_tprintf_str(buff, bufc, "#-1 INVALID SUCCESS TABLE LOADED");
-    }
-    else
-    {
+    case 0:
         safe_tprintf_str(buff, bufc, "%d", successes);
+        break;
+
+    case INVALID_TABLE:
+        safe_str("#-1 NO SUCCESS TABLE LOADED", buff, bufc);
+        break;
+
+    case NUMBER_TOO_LARGE:
+        safe_str("#-1 INVALID SUCCESS TABLE LOADED", buff, bufc);
+        break;
+
+    default:
+        safe_str("#-1 UNKNOWN ERROR", buff, bufc);
+        break;
     }
 }
 
