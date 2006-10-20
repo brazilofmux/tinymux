@@ -1320,7 +1320,7 @@ static FUNCTION(fun_etimefmt)
                 width = 11;
             }
         }
-            
+
         // Handle modifiers
         //
         bool bDoSuffix = false;
@@ -1692,7 +1692,7 @@ FUNCTION(fun_text)
 
 #define DIE_TO_ROLL 10
 
-FUNCTION(fun_successes)   
+FUNCTION(fun_successes)
 {
     int successes = 0;
     int roll;
@@ -1711,9 +1711,9 @@ FUNCTION(fun_successes)
     //   else, go and do the roll.
     //
     // Note: we don't care if the target difficulty is a reasonable number or not.
-    //  
+    //
     if (0 == num_dice)
-    {   
+    {
         safe_str("0", buff, bufc);
     }
     else if (num_dice < 0)
@@ -1721,25 +1721,25 @@ FUNCTION(fun_successes)
         safe_str("#-1 NUMBER OF DICE SHOULD BE > 0", buff, bufc);
     }
     else if (100 < num_dice)
-    {   
+    {
         safe_str("#-2 THAT'S TOO MANY DICE FOR ME TO ROLL", buff, bufc);
     }
     else
-    {   
+    {
         // Roll some number of dice equal to num_dice and count successes and botches
         //
         int i;
         for (i = 0; i < num_dice; i++)
-        {   
+        {
             roll = RandomINT32(1, DIE_TO_ROLL);
             if (1 == roll)
-            {   
+            {
                 // Botch -- decrement successes.
                 //
                 --successes;
             }
             else if (target_difficulty <= roll)
-            {   
+            {
                 // Success -- increment successes.
                 //
                 ++successes;
@@ -1747,13 +1747,13 @@ FUNCTION(fun_successes)
         }
 
         if (target_difficulty < num_dice)
-        {   
+        {
             if (successes < 0)
-            {   
+            {
                 successes = 0;
             }
             else if (successes == 0)
-            {   
+            {
                 successes = 1;
             }
         }
@@ -1935,7 +1935,7 @@ static int simple_success(int diff)
    If the number is larger than the largest boundary, it will return
    NUMBER_TOO_LARGE.
 */
-static int lookup_succ_table(dice_node *row, int *psucc)
+static int lookup_succ_table(const dice_node *row, int *psucc)
 {
     int randnum = RandomINT32(0, DIE_TO_ROLL-1);
     int succs = row->maxsuccs;
@@ -1967,7 +1967,7 @@ static int getsuccs(int dice, int diff, int *psucc)
         *psucc = 0;
         return 0;
     }
-    
+
     if (diff <= 0)
     {
         *psucc = dice;
@@ -1978,7 +1978,7 @@ static int getsuccs(int dice, int diff, int *psucc)
         *psucc = 0;
         return 0;
     }
-    
+
     int extra_successes = 0;
     if (MAXDICE < dice)
     {
@@ -1993,7 +1993,7 @@ static int getsuccs(int dice, int diff, int *psucc)
     }
 
     int succs;
-    dice_node *node = &dice_table[dice-1][diff-1];
+    const dice_node *node = &dice_table[dice-1][diff-1];
     int err = lookup_succ_table(node, &succs);
     if (0 == err)
     {
@@ -2017,7 +2017,7 @@ FUNCTION(fun_successes)
 
     int num_dice   = mux_atol(fargs[0]);
     int difficulty = mux_atol(fargs[1]);
-    
+
     int successes;
     switch (getsuccs(num_dice, difficulty, &successes))
     {
@@ -6828,7 +6828,7 @@ static void filter_handler(char *buff, char **bufc, dbref executor, dbref enacto
                 AttrTrace(aflags, EV_STRIP_CURLY|EV_FCHECK|EV_EVAL), &str,
                 filter_args, filter_nargs);
             *bp = '\0';
-    
+
             if (  (  bBool
                   && xlate(result))
                || (  !bBool
@@ -8895,7 +8895,7 @@ static void GeneralTimeConversion
         *p++ = '\0';
         return;
     }
-         
+
     for (int i = iStartBase; i <= iEndBase; i++)
     {
         if (reTable[i].iBase <= Seconds || i == iEndBase)
