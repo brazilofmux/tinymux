@@ -1779,7 +1779,7 @@ typedef struct dice_node
     int bound[MAXBOUND];
 } dice_node;
 
-dice_node dice_table[MAXDICE][MAXDIFF] =
+static const dice_node dice_table[MAXDICE][MAXDIFF] =
 {
     {   // Dice 1                                           // Difficulty
         {  2, { 205, 765, 970, 998, 1000, -1 } },           //  1
