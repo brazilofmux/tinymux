@@ -1670,7 +1670,7 @@ FUNCTION(fun_text)
     safe_str("#-1 FILE NOT LISTED",buff,bufc);
 }
 
-#if 1
+#if 0
 
 /*
  * ---------------------------------------------------------------------------
@@ -1939,6 +1939,12 @@ static void succ_add_data(succ_list list, int data)
     mover->next = list;
 }
 
+/* Log a message using whatever mechanism this server uses */
+static void success_log_message(const char *message)
+{
+    Log.tinyprintf("%s" ENDLINE,message);
+}
+
 /* Fill the table with values from the file */
 /* Returns the number of entries made. */
 static int read_success_table(succ_list **table)
@@ -1997,18 +2003,18 @@ static int read_success_table(succ_list **table)
         if (!valid_success_line(buffer))
         {
             successes_last_error = TABLE_ERROR;
-            fclose(infile);
             free(buffer);
+            fclose(infile);
             return entries_read;
         }
         
         tok = (char *)strtok(buffer, " ");
         if (NULL == tok)
         {
-            fprintf(stderr, "error: success table malformed\n");
+            success_log_message("error: success table malformed");
             successes_last_error = TABLE_ERROR;
-            fclose(infile);
             free(buffer);
+            fclose(infile);
             return 0;
         }
         
@@ -2024,8 +2030,8 @@ static int read_success_table(succ_list **table)
         if (NULL == list)
         {
             successes_last_error = MEM_ERROR;
-            fclose(infile);
             free(buffer);
+            fclose(infile);
             return entries_read;
         }
         list->data = mux_atol((char *)strtok(NULL, " "));
@@ -2040,15 +2046,15 @@ static int read_success_table(succ_list **table)
         entries_read++;
     } while (!feof(infile));
     
-    fclose(infile);
     free(buffer);
+    fclose(infile);
     return entries_read;
 }
 
 /* Notify the player and log it. */
-static void success_tellplayer(dbref player, char *message)
+static void tell_player_and_log(dbref player, const char *message)
 {
-    fprintf(stderr, "%s\n",message);
+    success_log_message(message);
     notify(player, message);
 }
 
@@ -2080,19 +2086,21 @@ static void free_success_table(succ_list **table)
 /* The main function to load a success table into memory. Could be on startup
    or replacing a current one. If the table is invalid, it will not replace 
    a working one. */
-static void reload_succ_table(dbref player)
+void reload_succ_table(dbref player)
 {
     succ_list **table = create_succ_table();
     int lines = -1;
-    char name[80];
-    if (-1 == player)
+    char *name = alloc_lbuf("success_loading_name");
+    char *bp = name;
+    if (NOTHING == player)
     {
-        sprintf(name, "Nobody");
+        safe_str("Nobody", name, &bp);
     }
     else
     {
-        sprintf(name, "#%d", player);
+        safe_str(tprintf("#%d", player), name, &bp);
     }
+    *bp = '\0';
     
     lines = read_success_table(table);
     if (!successes_last_error)
@@ -2102,21 +2110,20 @@ static void reload_succ_table(dbref player)
             free_success_table(current_table);
         }
         current_table = table;
-        char s[80];
-        sprintf(s, "successes: table reloaded by %s (%d entries)", name, lines);
-        success_tellplayer(player, s);
+        tell_player_and_log(player,
+            tprintf("successes: table reloaded by %s (%d entries)", name, lines));
     }
     else
     {
         free_success_table(table);
-        char s[80];
-        sprintf(s, "successes: table reload by %s failed after %d entries", name, lines);
-        success_tellplayer(player, s);
+        tell_player_and_log(player,
+            tprintf("successes: table reload by %s failed after %d entries", name, lines));
         if (NULL == current_table)
         {
-            fprintf(stderr, "No success table loaded. Do not run code.\n");
+            success_log_message("No success table loaded. Do not run code.");
         }
     }
+    free_lbuf(name);
 }
 
 /*
