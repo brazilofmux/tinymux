@@ -1670,113 +1670,6 @@ FUNCTION(fun_text)
     safe_str("#-1 FILE NOT LISTED",buff,bufc);
 }
 
-#if 0
-
-/*
- * ---------------------------------------------------------------------------
- * * successes: return the number of successes/botches from a bunch of
- * *            dice rolled Storyteller-style.
- * *
- * * Algorithm:
- * *   Roll some specified number of 10-sided dice.  For each die rolled,
- * *   if the roll is greater than or equal to the target difficulty, then
- * *   increment the total number of successes.  If the roll is a 1, then
- * *   decrement the total number of successes.  Return the final successes
- * *   count.
- * *
- * *   If the number of dice is more than the difficulty, return 0 for
- * *   any final result < 0 and return 1 for any final result = 0.
- * *   (Turn botches into simple failures. Turn failures into simple
- * *   successes.)
- */
-
-#define DIE_TO_ROLL 10
-
-FUNCTION(fun_successes)
-{
-    int successes = 0;
-    int roll;
-
-    // First argument is the number of dice to roll.
-    // Second argument is the target difficulty to roll against.
-    //
-    int num_dice = mux_atol(fargs[0]);
-    int target_difficulty = mux_atol(fargs[1]);
-
-    // Check arguments for reasonable values:
-    //
-    //   if the number of dice is zero, just return 0 successes.
-    //   if the number of dice is negative, return an error.
-    //   if the number of dice is greater than 100, return an error (too much work).
-    //   else, go and do the roll.
-    //
-    // Note: we don't care if the target difficulty is a reasonable number or not.
-    //
-    if (0 == num_dice)
-    {
-        safe_str("0", buff, bufc);
-    }
-    else if (num_dice < 0)
-    {
-        safe_str("#-1 NUMBER OF DICE SHOULD BE > 0", buff, bufc);
-    }
-    else if (100 < num_dice)
-    {
-        safe_str("#-2 THAT'S TOO MANY DICE FOR ME TO ROLL", buff, bufc);
-    }
-    else
-    {
-        // Roll some number of dice equal to num_dice and count successes and botches
-        //
-        int i;
-        for (i = 0; i < num_dice; i++)
-        {
-            roll = RandomINT32(1, DIE_TO_ROLL);
-            if (1 == roll)
-            {
-                // Botch -- decrement successes.
-                //
-                --successes;
-            }
-            else if (target_difficulty <= roll)
-            {
-                // Success -- increment successes.
-                //
-                ++successes;
-            }
-        }
-
-        if (target_difficulty < num_dice)
-        {
-            if (successes < 0)
-            {
-                successes = 0;
-            }
-            else if (successes == 0)
-            {
-                successes = 1;
-            }
-        }
-
-        // Return final number of successes (positive, negative, or zero).
-        //
-        safe_ltoa(successes, buff, bufc);
-    }
-}
-
-/*
- * MUX command to trigger a table reload (@readsuccesses)
- */
-void do_readsuccesses(dbref executor, dbref caller, dbref enactor, int key)
-{
-    UNUSED_PARAMETER(executor);
-    UNUSED_PARAMETER(caller);
-    UNUSED_PARAMETER(enactor);
-    UNUSED_PARAMETER(key);
-}
-
-#else
-
 // Strip out the newline character.
 //
 static void strip_newline(char *s)
@@ -1808,6 +1701,9 @@ typedef succ_list *succ_table;
 #define RANDMAX 1000
 #define SUCCTABLE_FILE "succtable.txt"
 #define MAX_BUFFER_SIZE 80
+#define INVALID_TABLE -100
+#define NUMBER_TOO_LARGE -200
+
 
 /* The table currently in use */
 succ_list **current_table = NULL;
@@ -2137,8 +2033,9 @@ static int simple_success(int diff)
 /* The lookup function: Given a table in the form of table[dice][diff]
    and a given number this function returns the number of successes
    corresponding to that number in the table.
-   If given an invalid table, it will return -100;
-   If the number is larger than the largest boundary, it will return -200.
+   If given an invalid table, it will return INVALID_TABLE;
+   If the number is larger than the largest boundary, it will return
+   NUMBER_TOO_LARGE.
 */
 static int lookup_succ_table(succ_list_node *table, int randnum)
 {
@@ -2146,7 +2043,7 @@ static int lookup_succ_table(succ_list_node *table, int randnum)
     succ_list_node *mover = table;
     if (NULL == mover)
     {
-        return -100;
+        return INVALID_TABLE;
     }
     succs = mover->data;
     while (NULL != mover->next)
@@ -2158,7 +2055,7 @@ static int lookup_succ_table(succ_list_node *table, int randnum)
         }
         succs--;
     }
-    return -200;
+    return NUMBER_TOO_LARGE;
 }
 
 /* A simple function to trigger the lookup: Translates the dice, diff
@@ -2188,7 +2085,7 @@ static int getsuccs(int dice, int diff)
 
     if (NULL == current_table)
     {
-        return -200;
+        return INVALID_TABLE;
     }
     
     int extra_successes = 0;
@@ -2225,12 +2122,16 @@ FUNCTION(fun_successes)
     int successes = getsuccs(num_dice, difficulty);
     
     /* if the function generated an error, it will put it in the buffer
-    and return -200. If all went well, "return" the successes
+    and return NUMBER_TOO_LARGE. If all went well, "return" the successes
     (positive, negative or zero) */
     
-    if (-200 == successes)
+    if (INVALID_TABLE == successes)
     {
         safe_tprintf_str(buff, bufc, "#-1 NO SUCCESS TABLE LOADED");
+    }
+    else if (NUMBER_TOO_LARGE == successes)
+    {
+        safe_tprintf_str(buff, bufc, "#-1 INVALID SUCCESS TABLE LOADED");
     }
     else
     {
@@ -2249,8 +2150,6 @@ void do_readsuccesses(dbref executor, dbref caller, dbref enactor, int key)
 
     reload_succ_table(executor);
 }
-
-#endif
 
 #endif // FIRANMUX
 
