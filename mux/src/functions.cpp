@@ -1831,9 +1831,7 @@ static succ_list **create_succ_table(void)
         return NULL;
     }
     
-    int i, j;
-    
-    for (i = 0; i < MAXDICE; i++)
+    for (int i = 0; i < MAXDICE; i++)
     {
         table[i] = (succ_list_node **)malloc(sizeof(succ_list) * MAXDIFF);
         if (NULL == table[i])
@@ -1841,7 +1839,7 @@ static succ_list **create_succ_table(void)
             successes_last_error = MEM_ERROR;
             return NULL;
         }
-        for(j = 0; j < MAXDIFF; j++)
+        for (int j = 0; j < MAXDIFF; j++)
         {
             table[i][j] = NULL;
         }
@@ -2127,21 +2125,12 @@ void reload_succ_table(dbref player)
 }
 
 /*
- * Get a random number based on whatever formula we're using at the moment
- * Currently, that's the getrandom() function
- */
-static int getrand(int num)
-{
-    return RandomINT32(0, num-1);
-}
-
-/*
  * Roll a 10-sided die. If it's equal to or higher than the difficulty,
  * return true.
  */
 static int simple_success(int diff)
 {
-    int rand = getrand(OLDSUCC_DIE_TO_ROLL) + 1;
+    int rand = RandomINT32(1, OLDSUCC_DIE_TO_ROLL);
     return rand >= diff;
 }
 
@@ -2181,7 +2170,7 @@ static int lookup_succ_table(succ_list_node *table, int randnum)
    over the max, roll one die. If it's over the diff, add a success.
    If the diff is higher than MAXDIFF, return 0 successes.
 */
-static int getsuccs(int dice, int diff, int randnum)
+static int getsuccs(int dice, int diff)
 {
     if (dice <= 0)
     {
@@ -2196,6 +2185,11 @@ static int getsuccs(int dice, int diff, int randnum)
     {
         return 0;
     }
+
+    if (NULL == current_table)
+    {
+        return -200;
+    }
     
     int extra_successes = 0;
     if (MAXDICE < dice)
@@ -2209,13 +2203,9 @@ static int getsuccs(int dice, int diff, int randnum)
         }
         dice = MAXDICE;
     }
-    
-    if (NULL == current_table)
-    {
-        return -200;
-    }
-    
-    return lookup_succ_table(current_table[dice - 1][diff - 1], randnum) +
+
+    int roll = RandomINT32(0, DIE_TO_ROLL-1);
+    return lookup_succ_table(current_table[dice - 1][diff - 1], roll) +
         extra_successes;
 }
 
@@ -2229,13 +2219,10 @@ FUNCTION(fun_successes)
     /* second argument is the difficulty to roll against */
     int difficulty = mux_atol(fargs[1]);
     
-    /* generate a random number */
-    int roll = getrand(DIE_TO_ROLL);
-    
     // Go thread in the values to the getsuccs() function, which will generate
     // our result.
     //
-    int successes = getsuccs(num_dice, difficulty, roll);
+    int successes = getsuccs(num_dice, difficulty);
     
     /* if the function generated an error, it will put it in the buffer
     and return -200. If all went well, "return" the successes
