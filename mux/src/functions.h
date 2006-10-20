@@ -80,7 +80,6 @@ char *trim_space_sep_LEN(char *str, size_t nStr, SEP *psep, size_t *nTrim);
 char *next_token(char *str, SEP *psep);
 char *split_token(char **sp, SEP *psep);
 int countwords(char *str, SEP *psep);
-void reload_succ_table(dbref player);
 
 // This is the prototype for functions
 //

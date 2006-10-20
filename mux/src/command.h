@@ -109,9 +109,6 @@ CMD_ONE_ARG(do_ps);             /* List contents of queue */
 CMD_ONE_ARG(do_queue);          /* Force queue processing */
 CMD_TWO_ARG(do_quota);          /* Set or display quotas */
 CMD_NO_ARG(do_readcache);       /* Reread text file cache */
-#if defined(FIRANMUX)
-CMD_NO_ARG(do_readsuccesses);   /* Reread text file cache */
-#endif // FIRANMUX
 CMD_NO_ARG(do_restart);         /* Restart the game. */
 CMD_NO_ARG(do_backup);          /* Backup the database and restart */
 CMD_ONE_ARG(do_say);            /* Messages to all */

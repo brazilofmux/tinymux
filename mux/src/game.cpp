@@ -3078,7 +3078,6 @@ int DCL_CDECL main(int argc, char *argv[])
 
 #if defined(FIRANMUX)
     init_sql();
-    reload_succ_table(NOTHING);
 #endif // FIRANMUX
 
     fcache_init();

@@ -1670,355 +1670,254 @@ FUNCTION(fun_text)
     safe_str("#-1 FILE NOT LISTED",buff,bufc);
 }
 
-// Strip out the newline character.
-//
-static void strip_newline(char *s)
+#if 1
+
+/*
+ * ---------------------------------------------------------------------------
+ * * successes: return the number of successes/botches from a bunch of
+ * *            dice rolled Storyteller-style.
+ * *
+ * * Algorithm:
+ * *   Roll some specified number of 10-sided dice.  For each die rolled,
+ * *   if the roll is greater than or equal to the target difficulty, then
+ * *   increment the total number of successes.  If the roll is a 1, then
+ * *   decrement the total number of successes.  Return the final successes
+ * *   count.
+ * *
+ * *   If the number of dice is more than the difficulty, return 0 for
+ * *   any final result < 0 and return 1 for any final result = 0.
+ * *   (Turn botches into simple failures. Turn failures into simple
+ * *   successes.)
+ */
+
+#define DIE_TO_ROLL 10
+
+FUNCTION(fun_successes)   
 {
-    while (  '\n' != *s
-          && '\0' != *s)
-    {
-        s++;
+    int successes = 0;
+    int roll;
+
+    // First argument is the number of dice to roll.
+    // Second argument is the target difficulty to roll against.
+    //
+    int num_dice = mux_atol(fargs[0]);
+    int target_difficulty = mux_atol(fargs[1]);
+
+    // Check arguments for reasonable values:
+    //
+    //   if the number of dice is zero, just return 0 successes.
+    //   if the number of dice is negative, return an error.
+    //   if the number of dice is greater than 100, return an error (too much work).
+    //   else, go and do the roll.
+    //
+    // Note: we don't care if the target difficulty is a reasonable number or not.
+    //  
+    if (0 == num_dice)
+    {   
+        safe_str("0", buff, bufc);
     }
-    *s = '\0';
+    else if (num_dice < 0)
+    {
+        safe_str("#-1 NUMBER OF DICE SHOULD BE > 0", buff, bufc);
+    }
+    else if (100 < num_dice)
+    {   
+        safe_str("#-2 THAT'S TOO MANY DICE FOR ME TO ROLL", buff, bufc);
+    }
+    else
+    {   
+        // Roll some number of dice equal to num_dice and count successes and botches
+        //
+        int i;
+        for (i = 0; i < num_dice; i++)
+        {   
+            roll = RandomINT32(1, DIE_TO_ROLL);
+            if (1 == roll)
+            {   
+                // Botch -- decrement successes.
+                //
+                --successes;
+            }
+            else if (target_difficulty <= roll)
+            {   
+                // Success -- increment successes.
+                //
+                ++successes;
+            }
+        }
+
+        if (target_difficulty < num_dice)
+        {   
+            if (successes < 0)
+            {   
+                successes = 0;
+            }
+            else if (successes == 0)
+            {   
+                successes = 1;
+            }
+        }
+
+        // Return final number of successes (positive, negative, or zero).
+        //
+        safe_ltoa(successes, buff, bufc);
+    }
 }
 
-typedef struct list_node
-{
-  int               data;
-  struct list_node *next;
-} succ_list_node;
+#else
 
-typedef succ_list_node *succ_list;
-typedef succ_list *succ_table;
+// fun_successes
+//
+
+#define MAXDICE 11
+#define MAXDIFF 10
+#define MAXBOUND 13
+
+typedef struct dice_node
+{
+    int maxsuccs;
+    int bound[MAXBOUND];
+} dice_node;
+
+dice_node dice_table[MAXDICE][MAXDIFF] =
+{
+    {   // Dice 1                                           // Difficulty
+        {  2, { 205, 765, 970, 998, 1000, -1 } },           //  1
+        {  2, { 185, 714, 960, 997, 1000, -1 } },           //  2
+        {  2, { 165, 664, 950, 997, 1000, -1 } },           //  3
+        {  2, { 145, 613, 940, 996, 1000, -1 } },           //  4
+        {  2, { 113, 519, 893, 989, 999, 1000, -1 } },      //  5
+        {  2, {  85, 433, 838, 977, 998, 1000, -1 } },      //  6
+        {  2, {  62, 355, 776, 961, 997, 1000, -1 } },      //  7
+        {  2, {  42, 285, 710, 939, 994, 1000, -1 } },      //  8
+        {  2, {  17, 177, 606, 901, 988, 999, 1000, -1 } }, //  9
+        {  2, {   4,  84, 491, 850, 978, 999, 1000, -1 } }, // 10
+    },
+    {   // Dice 2                                                // Difficulty
+        {  3, { 171, 674, 937, 994, 1000, -1 } },                //  1
+        {  3, { 140, 585, 900, 988, 999, 1000, -1 } },           //  2
+        {  3, { 111, 502, 857, 981, 999, 1000, -1 } },           //  3
+        {  3, {  86, 423, 807, 973, 998, 1000, -1 } },           //  4
+        {  3, {  58, 321, 711, 942, 994, 1000, -1 } },           //  5
+        {  3, {  37, 235, 607, 898, 987, 999, 1000, -1 } },      //  6
+        {  3, {  22, 164, 502, 841, 973, 998, 1000, -1 } },      //  7
+        {  3, {   8,  84, 356, 748, 948, 995, 1000, -1 } },      //  8
+        {  3, {   2,  32, 214, 631, 908, 989, 999, 1000, -1 } }, //  9
+        {  2, {   9, 107, 512, 857, 979, 999, 1000, -1 } },      // 10
+    },
+    {   // Dice 3                                                // Difficulty
+        {  4, { 144, 592, 894, 984, 999, 1000, -1 } },           //  1
+        {  4, { 106, 477, 823, 967, 997, 1000, -1 } },           //  2
+        {  4, {  75, 375, 741, 941, 993, 1000, -1 } },           //  3
+        {  4, {  51, 286, 651, 906, 988, 999, 1000, -1 } },      //  4
+        {  4, {  30, 193, 521, 829, 969, 997, 1000, -1 } },      //  5
+        {  4, {  16, 122, 396, 733, 936, 992, 999, -1 } },       //  6
+        {  4, {   5,  56, 248, 588, 875, 980, 998, 1000, -1 } }, //  7
+        {  4, {   1,  19, 129, 423, 783, 956, 996, 1000, -1 } }, //  8
+        {  3, {   5,  56, 272, 670, 920, 990, 1000, -1 } },      //  9
+        {  3, {   1,  19, 150, 548, 870, 981, 999, 1000, -1 } }, // 10
+    },
+    {   // Dice 4                                                     // Difficulty
+        {  5, { 120, 519, 845, 970, 996, 1000, -1 } },                //  1
+        {  5, {  80, 386, 739, 932, 989, 999, 1000, -1 } },           //  2
+        {  5, {  51, 277, 622, 876, 976, 997, 1000, -1 } },           //  3
+        {  5, {  30, 191, 503, 802, 954, 995, 1000, -1 } },           //  4
+        {  5, {  15, 113, 361, 679, 901, 983, 998, 1000, -1 } },      //  5
+        {  5, {   5,  49, 211, 509, 803, 956, 995, 1000, -1 } },      //  6
+        {  5, {   1,  16, 101, 333, 663, 903, 985, 999, 1000, -1 } }, //  7
+        {  4, {   4,  41, 192, 503, 822, 965, 997, 1000, -1 } },      //  8
+        {  4, {   1,  15,  96, 347, 717, 933, 992, 1000, -1 } },      //  9
+        {  3, {   3,  33, 193, 582, 882, 983, 999, 1000, -1 } },      // 10
+    },
+    {   // Dice 5                                                     // Difficulty
+        {  5, { 353, 752, 942, 991, 999, 1000, -1 } },                //  1
+        {  5, { 212, 587, 863, 972, 997, 1000, -1 } },                //  2
+        {  5, { 120, 428, 754, 934, 990, 999, 1000, -1 } },           //  3
+        {  5, {  63, 290, 621, 872, 976, 998, 1000, -1 } },           //  4
+        {  5, {  28, 168, 454, 759, 937, 992, 999, -1 } },            //  5
+        {  5, {  11,  86, 300, 615, 870, 977, 998, 1000, -1 } },      //  6
+        {  5, {   4,  38, 173, 453, 766, 948, 994, 1000, -1 } },      //  7
+        {  5, {   1,  13,  83, 291, 625, 895, 986, 999, 1000, -1 } }, //  8
+        {  4, {   3,  29, 151, 451, 811, 969, 998, 1000, -1 } },      //  9
+        {  3, {   5,  50, 256, 686, 938, 995, 1000, -1 } },           // 10
+    },
+    {   // Dice 6                                                     // Difficulty
+        {  6, { 296, 687, 911, 983, 998, 1000, -1 } },                //  1
+        {  6, { 160, 496, 796, 946, 991, 999, 1000, -1 } },           //  2
+        {  6, {  81, 328, 648, 875, 972, 996, 1000, -1 } },           //  3
+        {  6, {  38, 198, 486, 770, 933, 989, 999, 1000, -1 } },      //  4
+        {  6, {  14, 100, 315, 610, 850, 965, 996, 1000, -1 } },      //  5
+        {  6, {   5,  43, 178, 436, 725, 916, 986, 999, 1000, -1 } }, //  6
+        {  6, {   1,  15,  85, 271, 562, 830, 964, 996, 1000, -1 } }, //  7
+        {  5, {   4,  32, 139, 381, 698, 919, 990, 999, 1000, -1 } }, //  8
+        {  5, {   1,   8,  52, 207, 519, 840, 975, 998, 1000, -1 } }, //  9
+        {  4, {   1,  10,  72, 302, 713, 944, 996, 1000, -1 } },      // 10
+    },
+    {   // Dice 7                                                     // Difficulty
+        {  7, { 261, 643, 887, 976, 997, 1000, -1 } },                //  1
+        {  7, { 128, 429, 738, 918, 983, 998, 1000, -1 } },           //  2
+        {  7, {  58, 258, 559, 814, 947, 990, 999, 1000, -1 } },      //  3
+        {  7, {  23, 138, 381, 669, 877, 971, 996, 1000, -1 } },      //  4
+        {  7, {   8,  62, 222, 486, 753, 922, 986, 999, 1000, -1 } }, //  5
+        {  7, {   2,  23, 110, 309, 588, 831, 959, 995, 1000, -1 } }, //  6
+        {  6, {   6,  39, 150, 378, 669, 891, 983, 999, 1000, -1 } }, //  7
+        {  6, {   1,  11,  60, 207, 480, 782, 957, 997, 1000, -1 } }, //  8
+        {  5, {   2,  15,  81, 274, 608, 901, 991, 1000, -1 } },      //  9
+        {  4, {   2,  15,  95, 364, 799, 978, 1000, -1 } },           // 10
+    },
+    {   // Dice 8                                                          // Difficulty
+        {  8, { 218, 580, 847, 962, 993, 999, 1000, -1 } },                //  1
+        {  8, {  97, 356, 663, 874, 967, 994, 999, 1000, -1 } },           //  2
+        {  8, {  39, 193, 461, 731, 904, 976, 996, 1000, -1 } },           //  3
+        {  8, {  14,  92, 283, 552, 793, 933, 986, 998, 1000, -1 } },      //  4
+        {  8, {   4,  36, 144, 357, 623, 840, 955, 992, 999, 1000, -1 } }, //  5
+        {  8, {   1,  11,  61, 196, 429, 693, 886, 975, 997, 1000, -1 } }, //  6
+        {  7, {   3,  20,  87, 248, 504, 766, 932, 990, 1000, -1 } },      //  7
+        {  6, {   5,  28, 112, 303, 587, 845, 972, 998, 1000, -1 } },      //  8
+        {  6, {   1,   6,  33, 133, 365, 689, 929, 994, 1000, -1 } },      //  9
+        {  4, {   4,  31, 146, 447, 838, 984, 1000, -1 } },                // 10
+    },
+    {   // Dice 9                                                          // Difficulty
+        {  9, { 193, 539, 818, 950, 990, 999, 1000, -1 } },                //  1
+        {  9, {  77, 304, 603, 834, 950, 989, 998, 1000, -1 } },           //  2
+        {  9, {  28, 149, 386, 657, 858, 958, 991, 999, 1000, -1 } },      //  3
+        {  9, {   9,  63, 212, 455, 708, 885, 969, 995, 1000, -1 } },      //  4
+        {  9, {   2,  22,  97, 266, 512, 752, 910, 979, 997, 1000, -1 } }, //  5
+        {  8, {   6,  36, 128, 315, 568, 800, 938, 990, 999, 1000, -1 } }, //  6
+        {  8, {   1,  10,  48, 157, 364, 629, 852, 967, 997, 1000, -1 } }, //  7
+        {  7, {   2,  13,  57, 182, 414, 699, 911, 991, 1000, -1 } },      //  8
+        {  6, {   1,  10,  52, 182, 447, 771, 969, 1000, -1 } },           //  9
+        {  5, {   1,   6,  42, 184, 526, 919, 1000, -1 } },                // 10
+    },
+    {   // Dice 10                                                              // Difficulty
+        { 10, { 161, 483, 772, 928, 984, 997, 1000, -1 } },                     //  1
+        { 10, {  58, 249, 530, 778, 922, 980, 996, 1000, -1 } },                //  2
+        { 10, {  19, 109, 309, 569, 793, 925, 980, 996, 1000, -1 } },           //  3
+        { 10, {   5,  41, 152, 356, 605, 813, 935, 984, 997, 1000, -1 } },      //  4
+        { 10, {   1,  12,  60, 183, 392, 635, 833, 946, 988, 999, 1000, -1 } }, //  5
+        {  9, {   3,  19,  76, 209, 424, 668, 859, 960, 994, 1000, -1 } },      //  6
+        {  8, {   4,  23,  86, 229, 456, 707, 892, 977, 998, 1000, -1 } },      //  7
+        {  8, {   1,   5,  25,  91, 244, 491, 756, 932, 993, 1000, -1 } },      //  8
+        {  6, {   4,  22,  87, 252, 533, 824, 978, 1000, -1 } },                //  9
+        {  5, {   2,  13,  68, 247, 597, 935, 1000, -1 } },                     // 10
+    },
+    {   // Dice 11                                                                   // Difficulty
+        { 11, { 135, 430, 725, 903, 975, 995, 999, 1000, -1 } },                     //  1
+        { 11, {  44, 202, 461, 718, 887, 966, 992, 999, 1000, -1 } },                //  2
+        { 11, {  13,  80, 244, 484, 720, 882, 963, 991, 999, 1000, -1 } },           //  3
+        { 11, {   3,  26, 107, 273, 504, 728, 885, 964, 992, 999, 1000, -1 } },      //  4
+        { 11, {   1,   7,  37, 123, 290, 517, 737, 891, 968, 994, 999, 1000, -1 } }, //  5
+        { 10, {   1,  10,  43, 133, 302, 530, 751, 903, 975, 996, 1000, -1 } },      //  6
+        {  9, {   2,  11,  45, 136, 309, 544, 772, 922, 985, 999, 1000, -1 } },      //  7
+        {  8, {   2,  10,  42, 132, 311, 562, 803, 949, 995, 1000, -1 } },           //  8
+        {  7, {   1,   7,  34, 118, 305, 587, 853, 982, 1000, -1 } },                //  9
+        {  5, {   3,  19,  87, 284, 633, 942, 1000, -1 } },                          // 10
+    },
+};
 
 #define DIE_TO_ROLL 1000
 #define OLDSUCC_DIE_TO_ROLL 10
-#define ERRORLESS   0
-#define MEM_ERROR   1
-#define TABLE_ERROR 2
-#define MAXDICE 11
-#define MAXDIFF 10
-#define RANDMAX 1000
-#define SUCCTABLE_FILE "succtable.txt"
-#define MAX_BUFFER_SIZE 80
-#define INVALID_TABLE -100
 #define NUMBER_TOO_LARGE -200
-
-
-/* The table currently in use */
-succ_list **current_table = NULL;
-
-/* 
-   The last error thrown by a successes function 
-   0 = no error
-   1 = memory allocation error
-   2 = table read error
-*/
-int successes_last_error;
-
-/* Create a success table in memory and return it */
-static succ_list **create_succ_table(void)
-{
-    successes_last_error = ERRORLESS;
-    succ_list **table = (succ_list **)malloc(sizeof(succ_list *) * MAXDICE);
-    if (NULL == table)
-    {
-        successes_last_error = MEM_ERROR;
-        return NULL;
-    }
-    
-    for (int i = 0; i < MAXDICE; i++)
-    {
-        table[i] = (succ_list_node **)malloc(sizeof(succ_list) * MAXDIFF);
-        if (NULL == table[i])
-        {
-            successes_last_error = MEM_ERROR;
-            return NULL;
-        }
-        for (int j = 0; j < MAXDIFF; j++)
-        {
-            table[i][j] = NULL;
-        }
-    }
-    return table;
-}
-
-/* Convert a string to a number, return -1 if it's invalid */
-static int getnumber(char *s)
-{
-    if (NULL == s)
-    {
-        return -1;
-    }
-    
-    char *t = s;
-    while (*t != '\0')
-    {
-        if (!mux_isdigit(*t))
-        {
-            return -1;
-        }
-        t++;
-    }
-    
-    return mux_atol(s);
-}
-
-/* Verify that a particular line is a valid entry in the success table */
-static int valid_success_line(char *s)
-{
-    char *t = (char *) malloc(MAX_BUFFER_SIZE);
-    strcpy(t, s);
-    int lastnum = -1;
-    int num = -1;
-    char *tok = NULL;
-    int retval = 1;
-    tok = (char *)strtok(t, " ");
-    
-    if (NULL == tok)
-    {
-        retval = 0;
-    }
-    else if (getnumber(tok) == -1)
-    {
-        retval = 0;
-    }
-    else if (getnumber((char *)strtok(NULL, " ")) == -1)
-    {
-        retval = 0;
-    }
-    else if (getnumber((char *)strtok(NULL, " ")) == -1)
-    {
-        retval = 0;
-    }
-    
-    if (retval)
-    {
-        while ((tok = (char *)strtok(NULL, " ")) != NULL)
-        {
-            num = getnumber(tok);
-            if (num <= lastnum)
-            {
-                retval = 0;
-                break;
-            }
-            lastnum = num;
-        }
-    }
-    free(t);
-    return retval;
-}
-
-/* A function to add boundary values to the linked list */
-static void succ_add_data(succ_list list, int data)
-{
-    succ_list mover = list;
-    if (mover == NULL)
-    {
-        successes_last_error = TABLE_ERROR;
-        return;
-    }
-    
-    while (NULL != mover->next)
-    {
-        mover = mover->next;
-    }
-    list = (succ_list) malloc(sizeof(succ_list));
-    if (NULL == list)
-    {
-        successes_last_error = MEM_ERROR;
-    }
-    list->next = NULL;
-    list->data = data;
-    mover->next = list;
-}
-
-/* Log a message using whatever mechanism this server uses */
-static void success_log_message(const char *message)
-{
-    Log.tinyprintf("%s" ENDLINE,message);
-}
-
-/* Fill the table with values from the file */
-/* Returns the number of entries made. */
-static int read_success_table(succ_list **table)
-{
-    int i, j;
-    char *tok;
-    succ_list list = NULL;
-    int entries_read = 0;
-    
-    /* Open up the successes file and a buffer */
-    FILE *infile = fopen(SUCCTABLE_FILE, "r");
-    if (NULL == infile)
-    {
-        successes_last_error = TABLE_ERROR;
-        return 0;
-    }
-    
-    char *buffer = (char *) malloc(MAX_BUFFER_SIZE);
-    if (NULL == buffer)
-    {
-        fclose(infile);
-        successes_last_error = MEM_ERROR;
-        return 0;
-    }
-    
-    /* Read in values for table of the following format, one per line:
-    i j x a b c d e ... n
-    Where i = dice, j = difficulty, x = successes on best-case
-    and a ... n are boundaries for each level
-    For example:
-    2 4 3 10 30 50 70 90 100
-    Means: (Assuming a base of 100 for the roll)
-    For a roll of 2 dice on difficulty 4,
-    0-->9:       3
-    10-->29:  2
-    30-->49:  1
-    50-->69:  0
-    70-->89: -1
-    90-->99: -2
-    */
-    
-    do
-    {
-        memset(buffer, 0, MAX_BUFFER_SIZE);
-        fgets(buffer, MAX_BUFFER_SIZE, infile);
-        
-        if (  '\n' == buffer[0]
-            || '\0' == buffer[0])
-        {
-            /* Skip blank line */
-            continue;
-        }
-        
-        strip_newline(buffer);
-        
-        if (!valid_success_line(buffer))
-        {
-            successes_last_error = TABLE_ERROR;
-            free(buffer);
-            fclose(infile);
-            return entries_read;
-        }
-        
-        tok = (char *)strtok(buffer, " ");
-        if (NULL == tok)
-        {
-            success_log_message("error: success table malformed");
-            successes_last_error = TABLE_ERROR;
-            free(buffer);
-            fclose(infile);
-            return 0;
-        }
-        
-        /* Parse the dice and diff values from the input */
-        i = mux_atol(tok) - 1;
-        tok = (char *)strtok(NULL, " ");
-        j = mux_atol(tok) - 1;
-        
-        /* Create the linked list for this dice/diff pair, beginning
-        with the initial successes */
-        
-        list = (succ_list) malloc(sizeof(succ_list));
-        if (NULL == list)
-        {
-            successes_last_error = MEM_ERROR;
-            free(buffer);
-            fclose(infile);
-            return entries_read;
-        }
-        list->data = mux_atol((char *)strtok(NULL, " "));
-        list->next = NULL;
-        table[i][j] = list;
-        
-        /* Add the boundary condition values */
-        while ((tok = (char *)strtok(NULL, " ")) != NULL)
-        {
-            succ_add_data(table[i][j], mux_atol(tok));
-        }
-        entries_read++;
-    } while (!feof(infile));
-    
-    free(buffer);
-    fclose(infile);
-    return entries_read;
-}
-
-/* Notify the player and log it. */
-static void tell_player_and_log(dbref player, const char *message)
-{
-    success_log_message(message);
-    notify(player, message);
-}
-
-/* Remove a particular section of the success table from memory. */
-static void free_succ_list(succ_list list)
-{
-    while (NULL != list)
-    {
-        succ_list np = list->next;
-        free(list);
-        list = np;
-    }
-}
-
-/* Remove a success table from memory. */
-static void free_success_table(succ_list **table)
-{
-    for (int i = 0; i < MAXDICE; i++)
-    {
-        for (int j = 0; j < MAXDIFF; j++)
-        {
-            free_succ_list(table[i][j]);
-        }
-        free(table[i]);
-    }
-    free(table);
-}
-
-/* The main function to load a success table into memory. Could be on startup
-   or replacing a current one. If the table is invalid, it will not replace 
-   a working one. */
-void reload_succ_table(dbref player)
-{
-    succ_list **table = create_succ_table();
-    int lines = -1;
-    char *name = alloc_lbuf("success_loading_name");
-    char *bp = name;
-    if (NOTHING == player)
-    {
-        safe_str("Nobody", name, &bp);
-    }
-    else
-    {
-        safe_tprintf_str(name, &bp, "#%d", player);
-    }
-    *bp = '\0';
-    
-    lines = read_success_table(table);
-    if (!successes_last_error)
-    {
-        if (NULL != current_table)
-        {
-            free_success_table(current_table);
-        }
-        current_table = table;
-        tell_player_and_log(player,
-            tprintf("successes: table reloaded by %s (%d entries)", name, lines));
-    }
-    else
-    {
-        free_success_table(table);
-        tell_player_and_log(player,
-            tprintf("successes: table reload by %s failed after %d entries", name, lines));
-        if (NULL == current_table)
-        {
-            success_log_message("No success table loaded. Do not run code.");
-        }
-    }
-    free_lbuf(name);
-}
 
 /*
  * Roll a 10-sided die. If it's equal to or higher than the difficulty,
@@ -2033,23 +1932,16 @@ static int simple_success(int diff)
 /* The lookup function: Given a table in the form of table[dice][diff]
    and a given number this function returns the number of successes
    corresponding to that number in the table.
-   If given an invalid table, it will return INVALID_TABLE;
    If the number is larger than the largest boundary, it will return
    NUMBER_TOO_LARGE.
 */
-static int lookup_succ_table(succ_list_node *table, int *psucc)
+static int lookup_succ_table(dice_node *row, int *psucc)
 {
-    if (NULL == table)
-    {
-        return INVALID_TABLE;
-    }
-
     int randnum = RandomINT32(0, DIE_TO_ROLL-1);
-    int succs = table->data;
-    while (NULL != table->next)
+    int succs = row->maxsuccs;
+    for (int i = 0; i < MAXBOUND && 0 < row->bound[i]; i++)
     {
-        table = table->next;
-        if (randnum < table->data)
+        if (randnum < row->bound[i])
         {
             *psucc = succs;
             return 0;
@@ -2081,15 +1973,10 @@ static int getsuccs(int dice, int diff, int *psucc)
         *psucc = dice;
         return 0;
     }
-    else if (diff > MAXDIFF)
+    else if (MAXDIFF < diff)
     {
         *psucc = 0;
         return 0;
-    }
-
-    if (NULL == current_table)
-    {
-        return INVALID_TABLE;
     }
     
     int extra_successes = 0;
@@ -2106,7 +1993,7 @@ static int getsuccs(int dice, int diff, int *psucc)
     }
 
     int succs;
-    succ_list_node *node = current_table[dice-1][diff-1];
+    dice_node *node = &dice_table[dice-1][diff-1];
     int err = lookup_succ_table(node, &succs);
     if (0 == err)
     {
@@ -2138,12 +2025,8 @@ FUNCTION(fun_successes)
         safe_tprintf_str(buff, bufc, "%d", successes);
         break;
 
-    case INVALID_TABLE:
-        safe_str("#-1 NO SUCCESS TABLE LOADED", buff, bufc);
-        break;
-
     case NUMBER_TOO_LARGE:
-        safe_str("#-1 INVALID SUCCESS TABLE LOADED", buff, bufc);
+        safe_str("#-1 INVALID SUCCESS TABLE", buff, bufc);
         break;
 
     default:
@@ -2152,17 +2035,7 @@ FUNCTION(fun_successes)
     }
 }
 
-/*
- * MUX command to trigger a table reload (@readsuccesses)
- */
-void do_readsuccesses(dbref executor, dbref caller, dbref enactor, int key)
-{
-    UNUSED_PARAMETER(caller);
-    UNUSED_PARAMETER(enactor);
-    UNUSED_PARAMETER(key);
-
-    reload_succ_table(executor);
-}
+#endif
 
 #endif // FIRANMUX
 
