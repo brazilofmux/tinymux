@@ -276,6 +276,14 @@ Bug Fixes:
     found and fixed by Alierak.
  -- Backpatch @timewarp/queue <secs> fixes from TinyMUX 2.6 (Issues 167
     and 172).
+ -- Updated configure, configure.guess, and configure.sub.
+ -- Fixed color leak in object names for @find, examine, inventory, and
+    look when length of ANSI sequence exceeded 200 byte (Issue 184).
+    Reported by K Hall.  Not a crashing issue. 
+ -- Fix two configuration tests related to IEEE floating-point that
+    broke with gcc 4.1.2.
+ -- Fixed uninitialized variables in fun_fmod() and fun_power() for
+    non-typical build.
 
 
 Performance Enhancements:
