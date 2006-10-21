@@ -70,6 +70,7 @@ Feature Additions:
     config(lbuf_size) can report it to softcode.
  -- Added STEP() following TinyMUSH and RhostMUSH (Issue 1).
  -- Add /nostrip switch to @chown, @chownall, and @clone.
+ -- Add new successes() code from Jon@Firan.
 
 
 Bug Fixes:
@@ -208,6 +209,7 @@ Bug Fixes:
     138, 139, and 140).
  -- Fix compiler warnings in conf.cpp (Issue 162, 163, and 166).
  -- Fixed double lbuf_free() introduced in 2.6.0.3 (Issue 188).
+ -- Fixed compiler warnings in alloc.cpp (Issue 146 and 147).
 
 
 Performance Enhancements:

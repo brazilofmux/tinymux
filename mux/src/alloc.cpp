@@ -212,8 +212,22 @@ char *pool_alloc(int poolnum, const char *tag, const char *file, const int line)
             pools[poolnum].tot_alloc = pools[poolnum].num_alloc;
         }
 
-        ph = (POOLHDR *)MEMALLOC(pools[poolnum].pool_alloc_size);
-        ISOUTOFMEMORY(ph);
+        ph = NULL;
+        try
+        {
+            ph = reinterpret_cast<POOLHDR *>(new char[pools[poolnum].pool_alloc_size]);
+        }
+        catch (...)
+        {
+            ; // Nothing.
+        }
+
+        if (NULL == ph)
+        {
+            ISOUTOFMEMORY(ph);
+            return NULL;
+        }
+
         p = (char *)(ph + 1);
         pf = (POOLFTR *)(p + pools[poolnum].pool_client_size);
 
@@ -297,9 +311,22 @@ char *pool_alloc_lbuf(const char *tag, const char *file, const int line)
             pools[POOL_LBUF].tot_alloc = pools[POOL_LBUF].num_alloc;
         }
 
-        ph = (POOLHDR *)MEMALLOC(LBUF_SIZE + sizeof(POOLHDR)
-           + sizeof(POOLFTR));
-        ISOUTOFMEMORY(ph);
+        ph = NULL;
+        try
+        {
+            ph = reinterpret_cast<POOLHDR *>(new char[LBUF_SIZE + sizeof(POOLHDR) + sizeof(POOLFTR)]);
+        }
+        catch (...)
+        {
+            ; // Nothing.
+        }
+
+        if (NULL == ph)
+        {
+            ISOUTOFMEMORY(ph);
+            return NULL;
+        }
+
         p = (char *)(ph + 1);
         pf = (POOLFTR *)(p + LBUF_SIZE);
 
@@ -575,7 +602,8 @@ void pool_reset(void)
             unsigned int *ibuf = (unsigned int *)h;
             if (*ibuf == pools[i].poolmagic)
             {
-                MEMFREE(ph);
+                char *p = reinterpret_cast<char *>(ph);
+                delete [] p;
                 ph = NULL;
             }
             else
