@@ -3766,7 +3766,8 @@ char *linewrap_general(char *strret, int field, char *left, char *right)
                 break;
             }
         default:
-            safe_chr(original[index1++], str, &ostr);
+            safe_chr(original[index1], str, &ostr);
+            index1++;
             position++;
             break;
         }
