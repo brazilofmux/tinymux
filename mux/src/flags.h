@@ -173,20 +173,20 @@ typedef struct flagset
     FLAG  word[3];
 } FLAGSET;
 
-extern void init_flagtab(void);
-extern void display_flagtab(dbref);
-extern void flag_set(dbref, dbref, char *, int);
-extern char *flag_description(dbref, dbref);
-extern char *decode_flags(dbref, FLAGSET *);
-extern bool has_flag(dbref, dbref, char *);
-extern char *unparse_object(dbref, dbref, bool);
-extern char *unparse_object_numonly(dbref);
+void init_flagtab(void);
+void display_flagtab(dbref);
+void flag_set(dbref, dbref, char *, int);
+char *flag_description(dbref, dbref);
+char *decode_flags(dbref, FLAGSET *);
+bool has_flag(dbref, dbref, char *);
+char *unparse_object(dbref player, dbref target, bool obey_myopic, bool bAddColor = false);
+char *unparse_object_numonly(dbref);
 #if defined(FIRANMUX)
-extern char *unparse_object_ansi(dbref, dbref, bool);
+char *unparse_object_ansi(dbref, dbref, bool);
 #endif // FIRANMUX
-extern bool convert_flags(dbref, char *, FLAGSET *, FLAG *);
-extern void decompile_flags(dbref, dbref, char *);
-extern char *MakeCanonicalFlagName
+bool convert_flags(dbref, char *, FLAGSET *, FLAG *);
+void decompile_flags(dbref, dbref, char *);
+char *MakeCanonicalFlagName
 (
     const char *pName,
     int *pnName,
