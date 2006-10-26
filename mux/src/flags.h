@@ -181,9 +181,6 @@ char *decode_flags(dbref, FLAGSET *);
 bool has_flag(dbref, dbref, char *);
 char *unparse_object(dbref player, dbref target, bool obey_myopic, bool bAddColor = false);
 char *unparse_object_numonly(dbref);
-#if defined(FIRANMUX)
-char *unparse_object_ansi(dbref, dbref, bool);
-#endif // FIRANMUX
 bool convert_flags(dbref, char *, FLAGSET *, FLAG *);
 void decompile_flags(dbref, dbref, char *);
 char *MakeCanonicalFlagName

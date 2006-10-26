@@ -1027,14 +1027,6 @@ char *unparse_object(dbref player, dbref target, bool obey_myopic, bool bAddColo
     return buf;
 }
 
-#if defined(FIRANMUX)
-
-char *unparse_object_ansi(dbref player, dbref target, bool obey_myopic)
-{
-    return unparse_object(player, target, obey_myopic, true);
-}
-#endif // FIRANMUX
-
 
 /* ---------------------------------------------------------------------------
  * cf_flag_access: Modify who can set a flag.
