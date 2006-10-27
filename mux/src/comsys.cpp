@@ -1976,7 +1976,7 @@ static void do_listchannels(dbref player)
     {
         raw_notify(player, "Warning: Only public channels and your channels will be shown.");
     }
-    raw_notify(player, "*** Channel      --Flags--  Obj   Own   Charge  Balance  Users   Messages");
+    raw_notify(player, "*** Channel      --Flags--    Obj     Own   Charge  Balance  Users   Messages");
 
     for (ch = (struct channel *)hash_firstentry(&mudstate.channel_htab);
          ch; ch = (struct channel *)hash_nextentry(&mudstate.channel_htab))
@@ -1985,7 +1985,7 @@ static void do_listchannels(dbref player)
            || (ch->type & CHANNEL_PUBLIC)
            || Controls(player, ch->charge_who))
         {
-            mux_sprintf(temp, sizeof(temp), "%c%c%c %-13.13s %c%c%c/%c%c%c %5d %5d %8d %8d %6d %10d",
+            mux_sprintf(temp, sizeof(temp), "%c%c%c %-13.13s %c%c%c/%c%c%c %7d %7d %8d %8d %6d %10d",
                 (ch->type & CHANNEL_PUBLIC) ? 'P' : '-',
                 (ch->type & CHANNEL_LOUD) ? 'L' : '-',
                 (ch->type & CHANNEL_SPOOF) ? 'S' : '-',

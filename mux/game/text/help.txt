@@ -12425,8 +12425,8 @@ SUBSTITUTIONS (continued)
 
     %|      A string piped from the previous command in a pipe.
 
-  Note that %<whatever> is equivalent to [v(<whatever>)], but is more
-  efficient.
+  Note that %va-%vz and %=<name> above are equivalent to [v(a)]-[v(z)]
+  and [v(<name>)], respectively, but are more efficient.
 
   Related Topics: ANSI(), ANSI CODES, ANSI SUBSTITUTION, GENDER, V().
 

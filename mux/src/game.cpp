@@ -180,14 +180,36 @@ static int atr_match1
     }
 
     int match = 0;
-    if (  AMATCH_CMD == type
-       && mudstate.bfNoCommands.IsSet(parent))
+    if (  (  AMATCH_CMD    == type
+          && mudstate.bfNoCommands.IsSet(parent))
+       || (  AMATCH_LISTEN == type
+          && mudstate.bfNoListens.IsSet(parent)))
     {
-        return match;
-    }
-    else if ( AMATCH_LISTEN == type
-            && mudstate.bfNoListens.IsSet(parent))
-    {
+        // We may need to process the hash_insert to support exclusion of
+        // this parent's $-commands before we return no matches.
+        //
+        if (hash_insert)
+        {
+            // Because we know this object contains no commands, there is no
+            // need to look at the attribute values.
+            //
+            char *as;
+            atr_push();
+            for (int atr = atr_head(parent, &as); atr; atr = atr_next(&as))
+            {
+                ATTR *ap = atr_num(atr);
+
+                if (  ap
+                   && 0 == (ap->flags & AF_NOPROG)
+                   && (  !check_exclude
+                      || (  0 == (ap->flags & AF_PRIVATE)
+                         && !hashfindLEN(&(ap->number), sizeof(ap->number), &mudstate.parent_htab))))
+                {
+                    hashaddLEN(&(ap->number), sizeof(ap->number), &atr, &mudstate.parent_htab);
+                }
+            }
+            atr_pop();
+        }
         return match;
     }
 
@@ -217,14 +239,10 @@ static int atr_match1
         char buff[LBUF_SIZE];
         atr_get_str(buff, parent, atr, &aowner, &aflags);
 
-        if (aflags & AF_NOPROG)
-        {
-            continue;
-        }
-
         char *s = NULL;
-        if (  AMATCH_CMD    == buff[0]
-           || AMATCH_LISTEN == buff[0])
+        if (  0 == (aflags & AF_NOPROG)
+           &&  (  AMATCH_CMD    == buff[0]
+               || AMATCH_LISTEN == buff[0]))
         {
             s = strchr(buff+1, ':');
             if (s)
@@ -257,6 +275,11 @@ static int atr_match1
         if (hash_insert)
         {
             hashaddLEN(&(ap->number), sizeof(ap->number), &atr, &mudstate.parent_htab);
+        }
+
+        if (aflags & AF_NOPROG)
+        {
+            continue;
         }
 
         // Check for the leadin character after excluding the attrib.
@@ -3214,7 +3237,7 @@ int DCL_CDECL main(int argc, char *argv[])
     shovechars(nMainGamePorts, aMainGamePorts);
 #endif // WIN32
 
-#ifdef FIRANMUX_SQL
+#ifdef FIRANMUX
      if (mush_database)
      {
          mysql_close(mush_database);

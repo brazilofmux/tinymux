@@ -1368,6 +1368,24 @@ static char *status_string(struct mail *mp)
     return tbuf1;
 }
 
+
+static void GetFromField(dbref target, char szFrom[MBUF_SIZE])
+{
+    size_t vw = 0;
+    size_t nFrom = ANSI_TruncateToField(Moniker(target), sizeof(szFrom)-16,
+        szFrom, 16, &vw, ANSI_ENDGOAL_NORMAL);
+
+    while (  vw < 16
+          && nFrom < MBUF_SIZE)
+    {
+        szFrom[nFrom] = ' ';
+        nFrom++;
+        vw++;
+    }
+    szFrom[nFrom] = '\0';
+}
+
+
 static void do_mail_read(dbref player, char *msglist)
 {
     struct mail_selector ms;
@@ -1401,12 +1419,17 @@ static void do_mail_read(dbref player, char *msglist)
                 notify(player, DASH_LINE);
                 status = status_string(mp);
                 names = make_namelist(player, mp->tolist);
+
+                char szFromName[MBUF_SIZE];
+                GetFromField(mp->from, szFromName);
+
                 char szSubjectBuffer[MBUF_SIZE];
                 size_t iRealVisibleWidth;
                 ANSI_TruncateToField(mp->subject, sizeof(szSubjectBuffer),
                     szSubjectBuffer, 65, &iRealVisibleWidth, ANSI_ENDGOAL_NORMAL);
-                notify(player, tprintf("%-3d         From:  %-*s  At: %-25s  %s\r\nFldr   : %-2d Status: %s\r\nTo     : %-65s\r\nSubject: %s",
-                               i, PLAYER_NAME_LIMIT - 6, Moniker(mp->from),
+
+                notify(player, tprintf("%-3d         From:  %s  At: %-25s  %s\r\nFldr   : %-2d Status: %s\r\nTo     : %-65s\r\nSubject: %s",
+                               i, szFromName,
                                mp->time,
                                (Connected(mp->from) &&
                                (!Hidden(mp->from) || See_Hidden(player))) ?
@@ -1481,14 +1504,17 @@ static void do_mail_review(dbref player, char *name, char *msglist)
             if (mp->from == player)
             {
                 i++;
+
+                char szFromName[MBUF_SIZE];
+                GetFromField(mp->from, szFromName);
+
                 ANSI_TruncateToField(mp->subject, sizeof(szSubjectBuffer),
                     szSubjectBuffer, 25, &iRealVisibleWidth, ANSI_ENDGOAL_NORMAL);
                 size_t nSize = strlen(MessageFetch(mp->number));
-                const char *pFromName = Moniker(mp->from);
-                notify(player, tprintf("[%s] %-3d (%4d) From: %-*s Sub: %s",
+                notify(player, tprintf("[%s] %-3d (%4d) From: %s Sub: %s",
                                status_chars(mp),
                                i, nSize,
-                               PLAYER_NAME_LIMIT - 6, pFromName,
+                               szFromName,
                                szSubjectBuffer));
             }
         }
@@ -1511,11 +1537,16 @@ static void do_mail_review(dbref player, char *name, char *msglist)
                     j++;
                     char *status = status_string(mp);
                     const char *str = MessageFetch(mp->number);
+
+                    char szFromName[MBUF_SIZE];
+                    GetFromField(mp->from, szFromName);
+
                     ANSI_TruncateToField(mp->subject, sizeof(szSubjectBuffer),
                         szSubjectBuffer, 65, &iRealVisibleWidth, ANSI_ENDGOAL_NORMAL);
+
                     notify(player, DASH_LINE);
-                    notify(player, tprintf("%-3d         From:  %-*s  At: %-25s  %s\r\nFldr   : %-2d Status: %s\r\nSubject: %s",
-                                   i, PLAYER_NAME_LIMIT - 6, Moniker(mp->from),
+                    notify(player, tprintf("%-3d         From:  %s  At: %-25s  %s\r\nFldr   : %-2d Status: %s\r\nSubject: %s",
+                                   i, szFromName,
                                    mp->time,
                                    (Connected(mp->from) &&
                                    (!Hidden(mp->from) || See_Hidden(player))) ?
@@ -1609,19 +1640,22 @@ static void do_mail_list(dbref player, char *msglist, bool sub)
             {
                 time = mail_list_time(mp->time);
                 size_t nSize = strlen(MessageFetch(mp->number));
-                const char *pFromName = Moniker(mp->from);
+
+                char szFromName[MBUF_SIZE];
+                GetFromField(mp->from, szFromName);
+
                 if (sub)
                 {
                     ANSI_TruncateToField(mp->subject, sizeof(szSubjectBuffer),
                         szSubjectBuffer, 25, &iRealVisibleWidth, ANSI_ENDGOAL_NORMAL);
 
-                    notify(player, tprintf("[%s] %-3d (%4d) From: %-*s Sub: %s",
-                        status_chars(mp), i, nSize, PLAYER_NAME_LIMIT - 6, pFromName, szSubjectBuffer));
+                    notify(player, tprintf("[%s] %-3d (%4d) From: %s Sub: %s",
+                        status_chars(mp), i, nSize, szFromName, szSubjectBuffer));
                 }
                 else
                 {
-                    notify(player, tprintf("[%s] %-3d (%4d) From: %-*s At: %s %s",
-                        status_chars(mp), i, nSize, PLAYER_NAME_LIMIT - 6, pFromName, time,
+                    notify(player, tprintf("[%s] %-3d (%4d) From: %s At: %s %s",
+                        status_chars(mp), i, nSize, szFromName, time,
                             ((Connected(mp->from) && (!Hidden(mp->from) || See_Hidden(player))) ? "Conn" : " ")));
                 }
                 free_lbuf(time);
@@ -3994,9 +4028,12 @@ static void do_mail_proof(dbref player)
         sizeof(szSubjectBuffer), szSubjectBuffer, 35,
         &iRealVisibleWidth, ANSI_ENDGOAL_NORMAL);
 
+    char szFromName[MBUF_SIZE];
+    GetFromField(player, szFromName);
+
     notify(player, DASH_LINE);
-    notify(player, tprintf("From:  %-*s  Subject: %s\nTo: %s",
-            PLAYER_NAME_LIMIT - 6, Name(player), szSubjectBuffer, names));
+    notify(player, tprintf("From:  %s  Subject: %s\nTo: %s",
+            szFromName, szSubjectBuffer, names));
     notify(player, DASH_LINE);
     notify(player, pMailMsg);
     notify(player, DASH_LINE);

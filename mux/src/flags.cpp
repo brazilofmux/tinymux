@@ -12,8 +12,8 @@
 #include "powers.h"
 #if defined(FIRANMUX)
 #include "attrs.h"
-#include "ansi.h"
 #endif // FIRANMUX
+#include "ansi.h"
 
 /* ---------------------------------------------------------------------------
  * fh_any: set or clear indicated bit, no security checking
@@ -899,11 +899,43 @@ char *unparse_object_numonly(dbref target)
     return buf;
 }
 
+#if defined(FIRANMUX)
+static bool AcquireColor(dbref player, dbref target, char SimplifiedCodes[8])
+{
+    int   aflags;
+    dbref aowner;
+
+    // Get the value of the object's '@color' attribute (or on a parent).
+    //
+    char *color_attr = alloc_lbuf("AcquireColor.1");
+    atr_pget_str(color_attr, target, A_COLOR, &aowner, &aflags);
+
+    if ('\0' == color_attr[0]) 
+    {
+        free_lbuf(color_attr);
+        return false;
+    }
+    else
+    {
+        char *AnsiCodes = alloc_lbuf("AcquireColor.2");
+        char *ac = AnsiCodes;
+        char *cp = color_attr;
+        mux_exec(AnsiCodes, &ac, player, target, target, 
+                AttrTrace(aflags, EV_EVAL|EV_TOP|EV_FCHECK), &cp, NULL, 0);
+        free_lbuf(color_attr);
+
+        SimplifyColorLetters(SimplifiedCodes, AnsiCodes);
+        free_lbuf(AnsiCodes);
+        return true;
+    }
+}
+#endif // FIRANMUX
+
 /*
  * ---------------------------------------------------------------------------
  * * Return an lbuf pointing to the object name and possibly the db# and flags
  */
-char *unparse_object(dbref player, dbref target, bool obey_myopic)
+char *unparse_object(dbref player, dbref target, bool obey_myopic, bool bAddColor)
 {
     char *buf = alloc_lbuf("unparse_object");
     if (NOPERM <= target && target < 0)
@@ -926,20 +958,62 @@ char *unparse_object(dbref player, dbref target, bool obey_myopic)
             exam = Examinable(player, target);
         }
 
+        // Leave and extra 100 bytes for the dbref and flags at the end and
+        // color at the beginning if necessary..
+        //
+        size_t vw;
+        size_t nLen = ANSI_TruncateToField(Moniker(target), LBUF_SIZE-100,
+            buf, LBUF_SIZE, &vw, ANSI_ENDGOAL_NORMAL);
+
+        char *bp = buf + nLen;
+        
+#if defined(FIRANMUX)
+        if (  vw == nLen
+           && bAddColor)
+        {
+            // There is no color in the name, so look for @color, or highlight.
+            //
+            char *buf2 = alloc_lbuf("unparse_object.color");
+            char *bp2  = buf2;
+
+            char SimplifiedCodes[8];
+            if (AcquireColor(player, target, SimplifiedCodes))
+            {
+                for (int i = 0; SimplifiedCodes[i]; i++)
+                {
+                    const char *pColor = ColorTable[(unsigned char)SimplifiedCodes[i]];
+                    if (pColor)
+                    {
+                        safe_str(pColor, buf2, &bp2);
+                    }
+                }
+            }
+            else
+            {
+                safe_str(ANSI_HILITE, buf2, &bp2);
+            }
+
+            *bp = '\0';
+            safe_str(buf, buf2, &bp2);
+            safe_str(ANSI_NORMAL, buf2, &bp2);
+
+            // Swap buffers.
+            //
+            free_lbuf(buf);
+            buf = buf2;
+            bp  = bp2;
+        }
+#else
+        UNREFERENCED_PARAMETER(bAddColor);
+#endif // FIRANMUX
+
         if (  exam
            || (Flags(target) & (CHOWN_OK | JUMP_OK | LINK_OK | DESTROY_OK))
            || (Flags2(target) & ABODE))
         {
-            // show everything
+            // Show everything.
             //
             char *fp = decode_flags(player, &(db[target].fs));
-
-            // Leave 100 bytes on the end for the dbref and flags.
-            //
-            size_t vw;
-            size_t nLen = ANSI_TruncateToField(Moniker(target), LBUF_SIZE-100,
-                buf, LBUF_SIZE, &vw, ANSI_ENDGOAL_NORMAL);
-            char *bp = buf + nLen;
 
             safe_str("(#", buf, &bp);
             safe_ltoa(target, buf, &bp);
@@ -949,15 +1023,10 @@ char *unparse_object(dbref player, dbref target, bool obey_myopic)
             
             free_sbuf(fp);
         }
-        else
-        {
-            // show only the name.
-            //
-            mux_strncpy(buf, Moniker(target), LBUF_SIZE-1);
-        }
     }
     return buf;
 }
+
 
 /* ---------------------------------------------------------------------------
  * cf_flag_access: Modify who can set a flag.
@@ -1039,116 +1108,6 @@ CF_HAND(cf_flag_access)
     }
     return 0;
 }
-
-#if defined(FIRANMUX)
-
-/*
- * ---------------------------------------------------------------------------
- * * Return an lbuf pointing to the object name and possibly the db# and flags
- *   with the name ANSI-enhanced
- *
- *   Revision History:
- *   -----------------
- *   02/27/1997  veren   Changed the way this processes.  Originally, it simply
- *                       hilited the object name.  Now, it will first check to
- *                       see if the object is defined with a COLOR attribute.
- *                       If so, use that value (and evaluate if necessary) as
- *                       the ANSI code to alter the object name with. Otherwise,
- *                       simply hilite the object name, as before.
- */
-
-char *unparse_object_ansi(dbref player, dbref target, bool obey_myopic)
-{
-    char *buf = alloc_lbuf("unparse_object_ansi");
-    char *bp = buf;
-
-    if (NOPERM <= target && target < 0)
-    {
-        mux_strncpy(buf, aszSpecialDBRefNames[-target], LBUF_SIZE-1);
-    }
-    else if (!Good_obj(target))
-    {
-        mux_sprintf(buf, LBUF_SIZE, "*ILLEGAL*(#%d)", target);
-    }
-    else
-    {
-        int   aflags;
-        dbref aowner;
-
-        // Get the value of the object's 'color' attribute (or on a parent).
-        //
-        char *color_attr = alloc_lbuf("unparse_object_ansi2");
-        atr_pget_str(color_attr, target, A_COLOR, &aowner, &aflags);
-
-        // If color attribute is not found, then just hilite.  Otherwise,
-        // ansi()-fy it as directed.
-        //
-        if ('\0' == color_attr[0]) 
-        {
-            free_lbuf(color_attr);
-            safe_str(ANSI_HILITE, buf, &bp);
-        }
-        else
-        {
-            char *AnsiCodes = alloc_lbuf("unparse_object_ansi3");
-            char *ac = AnsiCodes;
-            char *cp = color_attr;
-            mux_exec(AnsiCodes, &ac, player, target, target, 
-                    AttrTrace(aflags, EV_EVAL|EV_TOP|EV_FCHECK), &cp, NULL, 0);
-            free_lbuf(color_attr);
-
-            char SimplifiedCodes[8];
-            SimplifyColorLetters(SimplifiedCodes, AnsiCodes);
-            free_lbuf(AnsiCodes);
-
-            for (int i = 0; SimplifiedCodes[i]; i++)
-            {
-                const char *pColor = ColorTable[(unsigned char)SimplifiedCodes[i]];
-                if (pColor)
-                {
-                    safe_str(pColor, buf, &bp);
-                }
-            }
-        }
-
-        // The ANSI codes are already on the buffer.  Add to it the object name
-        // and an ANSI_NORMAL code.
-        //
-        safe_str(Name(target), buf, &bp);
-        safe_str(ANSI_NORMAL, buf, &bp);
-
-        // Otherwise, depending upon whether we care that player is set myopic,
-        // use one or the other function to determine if we can see the DB #
-        // and flags.
-        //
-        bool exam;
-        if (obey_myopic)
-        {
-            exam = MyopicExam(player, target);
-        }
-        else
-        {
-            exam = Examinable(player, target);
-        }
-
-        // If we are supposed to see the flag and DB # information, then print
-        // it out to the buffer.  Otherwise, end the string with a
-        // null-terminator only (sanity check).
-        ///
-        if (  exam
-           || (Flags(target) & (CHOWN_OK | JUMP_OK | LINK_OK | DESTROY_OK))
-           || (Flags2(target) & ABODE)) 
-        {
-            char *fp= decode_flags(player, &(db[target].fs));
-            safe_str(tprintf(" (#%d%s)", target, fp), buf, &bp);
-            free_sbuf(fp);
-        }
-        *bp = '\0';
-    }
-    return buf;
-}
-#endif // FIRANMUX
-
 
 /*
  * ---------------------------------------------------------------------------
