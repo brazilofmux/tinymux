@@ -3237,7 +3237,7 @@ int DCL_CDECL main(int argc, char *argv[])
     shovechars(nMainGamePorts, aMainGamePorts);
 #endif // WIN32
 
-#ifdef FIRANMUX_SQL
+#ifdef FIRANMUX
      if (mush_database)
      {
          mysql_close(mush_database);
