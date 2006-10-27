@@ -210,6 +210,8 @@ Bug Fixes:
  -- Fix compiler warnings in conf.cpp (Issue 162, 163, and 166).
  -- Fixed double lbuf_free() introduced in 2.6.0.3 (Issue 188).
  -- Fixed compiler warnings in alloc.cpp (Issue 146 and 147).
+ -- Fixed infinite loop in linewrap_general() resulting from safe_chr()
+    being a macro instead of a function.
  -- Fixed subtle $-command exclusion (Issue 193).
  -- Fixed @color interactions with @name and @moniker (Issue 194).
  -- Fixed v() references in 'help substitutions3' (Issue 195).
