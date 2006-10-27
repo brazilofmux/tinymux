@@ -210,6 +210,11 @@ Bug Fixes:
  -- Fix compiler warnings in conf.cpp (Issue 162, 163, and 166).
  -- Fixed double lbuf_free() introduced in 2.6.0.3 (Issue 188).
  -- Fixed compiler warnings in alloc.cpp (Issue 146 and 147).
+ -- Fixed subtle $-command exclusion (Issue 193).
+ -- Fixed @color interactions with @name and @moniker (Issue 194).
+ -- Fixed v() references in 'help substitutions3' (Issue 195).
+ -- @clist/full column alignment with six-digit dbrefs (Issue 196).
+ -- @mail index listing alignment with @moniker (Issue 197).
 
 
 Performance Enhancements:
