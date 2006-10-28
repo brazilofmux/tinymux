@@ -1830,25 +1830,23 @@ static void dump_info(DESC *arg_desc)
     char *buf = alloc_lbuf("dump_info");
     char *bp  = buf;
 
+    int  i;
     bool bFirst = true;
     safe_str("Patches: ", buf, &bp);
-    if (0 < nDumpInfoTable)
+    for (i = 0; i < nDumpInfoTable; i++)
     {
-        for (int i = 0; i < nDumpInfoTable; i++)
+        if (!bFirst)
         {
-            if (!bFirst)
-            {
-                safe_chr(' ', buf, &bp);
-            }
-            else
-            {
-                bFirst = false;
-            }
-            safe_str(DumpInfoTable[i], buf, &bp);
+            safe_chr(' ', buf, &bp);
         }
+        else
+        {
+            bFirst = false;
+        }
+        safe_str(DumpInfoTable[i], buf, &bp);
     }
 
-    for (int i = 0; i < nLocalDumpInfoTable; i++)
+    for (i = 0; i < nLocalDumpInfoTable; i++)
     {
         if (!bFirst)
         {
