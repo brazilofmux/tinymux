@@ -1004,7 +1004,7 @@ char *unparse_object(dbref player, dbref target, bool obey_myopic, bool bAddColo
             bp  = bp2;
         }
 #else
-        UNREFERENCED_PARAMETER(bAddColor);
+        UNUSED_PARAMETER(bAddColor);
 #endif // FIRANMUX
 
         if (  exam
