@@ -217,6 +217,8 @@ Bug Fixes:
  -- Fixed v() references in 'help substitutions3' (Issue 195).
  -- @clist/full column alignment with six-digit dbrefs (Issue 196).
  -- @mail index listing alignment with @moniker (Issue 197).
+ -- Added local.cpp hook to affect INFO and populate Patches: line
+    with other compile-time switches besides WOD_REALMS (Issue 51).
 
 
 Performance Enhancements:
