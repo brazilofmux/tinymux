@@ -922,6 +922,7 @@ static bool AcquireColor(dbref player, dbref target, char SimplifiedCodes[8])
         char *cp = color_attr;
         mux_exec(AnsiCodes, &ac, player, target, target, 
                 AttrTrace(aflags, EV_EVAL|EV_TOP|EV_FCHECK), &cp, NULL, 0);
+        *ac = '\0';
         free_lbuf(color_attr);
 
         SimplifyColorLetters(SimplifiedCodes, AnsiCodes);
@@ -1019,10 +1020,10 @@ char *unparse_object(dbref player, dbref target, bool obey_myopic, bool bAddColo
             safe_ltoa(target, buf, &bp);
             safe_str(fp, buf, &bp);
             safe_chr(')', buf, &bp);
-            *bp = '\0';
             
             free_sbuf(fp);
         }
+        *bp = '\0';
     }
     return buf;
 }
