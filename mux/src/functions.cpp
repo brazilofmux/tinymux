@@ -10202,7 +10202,7 @@ static FUN builtin_function_list[] =
     {"SUB",         fun_sub,        MAX_ARG, 2,       2,         0, CA_PUBLIC},
     {"SUBEVAL",     fun_subeval,    MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {"SUBJ",        fun_subj,       MAX_ARG, 1,       1,         0, CA_PUBLIC},
-    {"SUCCESSES",   fun_successes,  MAX_ARG, 2,      32,         0, CA_PUBLIC},
+    {"SUCCESSES",   fun_successes,  MAX_ARG, 2,       3,         0, CA_PUBLIC},
     {"SWITCH",      fun_switch,     MAX_ARG, 2, MAX_ARG, FN_NOEVAL, CA_PUBLIC},
     {"T",           fun_t,                1, 0,       1,         0, CA_PUBLIC},
     {"TABLE",       fun_table,      MAX_ARG, 1,       6,         0, CA_PUBLIC},
