@@ -71,6 +71,7 @@ Feature Additions:
  -- Added STEP() following TinyMUSH and RhostMUSH (Issue 1).
  -- Add /nostrip switch to @chown, @chownall, and @clone.
  -- Add new successes() code from Jon@Firan.
+ -- Combine old and new versions of SUCCESSES().
 
 
 Bug Fixes:
