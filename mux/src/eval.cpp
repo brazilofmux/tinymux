@@ -1042,42 +1042,42 @@ void PopPointers(char **p, int nNeeded)
     pPtrsFrame->nptrs += nNeeded;
 }
 
-#define INTS_PER_FRAME ((LBUF_SIZE - sizeof(char *) - sizeof(int))/sizeof(size_t))
-typedef struct tag_intsframe
+#define REFS_PER_FRAME ((LBUF_SIZE - sizeof(void *) - sizeof(int))/sizeof(void *))
+typedef struct tag_refsframe
 {
-    int    nints;
-    size_t ints[INTS_PER_FRAME];
-    struct tag_intsframe *next;
-} IntsFrame;
+    int      nrefs;
+    reg_ref *refs[REFS_PER_FRAME];
+    struct tag_refsframe *next;
+} RefsFrame;
 
-static IntsFrame *pIntsFrame = NULL;
+static RefsFrame *pRefsFrame = NULL;
 
-size_t *PushLengths(int nNeeded)
+reg_ref **PushRegisters(int nNeeded)
 {
-    if (  !pIntsFrame
-       || pIntsFrame->nints < nNeeded)
+    if (  !pRefsFrame
+       || pRefsFrame->nrefs < nNeeded)
     {
-        IntsFrame *p = (IntsFrame *)alloc_lbuf("PushLengths");
-        p->next = pIntsFrame;
-        p->nints = INTS_PER_FRAME;
-        pIntsFrame = p;
+        RefsFrame *p = (RefsFrame *)alloc_lbuf("PushRegisters");
+        p->next = pRefsFrame;
+        p->nrefs = REFS_PER_FRAME;
+        pRefsFrame = p;
     }
-    pIntsFrame->nints -= nNeeded;
-    return pIntsFrame->ints + pIntsFrame->nints;
+    pRefsFrame->nrefs -= nNeeded;
+    return pRefsFrame->refs + pRefsFrame->nrefs;
 }
 
-void PopLengths(size_t *pi, int nNeeded)
+void PopRegisters(reg_ref **p, int nNeeded)
 {
-    UNUSED_PARAMETER(pi);
+    UNUSED_PARAMETER(p);
 
-    if (pIntsFrame->nints == INTS_PER_FRAME)
+    if (pRefsFrame->nrefs == REFS_PER_FRAME)
     {
-        IntsFrame *p = pIntsFrame->next;
-        free_lbuf((char *)pIntsFrame);
-        pIntsFrame = p;
+        RefsFrame *q = pRefsFrame->next;
+        free_lbuf((char *)pRefsFrame);
+        pRefsFrame = q;
     }
-    //mux_assert(pi == pIntsFrame->ints + pIntsFrame->nints);
-    pIntsFrame->nints += nNeeded;
+    //mux_assert(p == pRefsFrame->refs + pRefsFrame->nrefs);
+    pRefsFrame->nrefs += nNeeded;
 }
 
 void mux_exec( char *buff, char **bufc, dbref executor, dbref caller,
@@ -1353,14 +1353,12 @@ void mux_exec( char *buff, char **bufc, dbref executor, dbref caller,
                         }
                         TempPtr = tstr;
 
-                        char **preserve = NULL;
-                        size_t *preserve_len = NULL;
+                        reg_ref **preserve = NULL;
 
                         if (ufp->flags & FN_PRES)
                         {
-                            preserve = PushPointers(MAX_GLOBAL_REGS);
-                            preserve_len = PushLengths(MAX_GLOBAL_REGS);
-                            save_global_regs("eval_save", preserve, preserve_len);
+                            preserve = PushRegisters(MAX_GLOBAL_REGS);
+                            save_global_regs(preserve);
                         }
 
                         mux_exec(buff, &oldp, i, executor, enactor,
@@ -1368,11 +1366,9 @@ void mux_exec( char *buff, char **bufc, dbref executor, dbref caller,
 
                         if (ufp->flags & FN_PRES)
                         {
-                            restore_global_regs("eval_restore", preserve, preserve_len);
-                            PopLengths(preserve_len, MAX_GLOBAL_REGS);
-                            PopPointers(preserve, MAX_GLOBAL_REGS);
+                            restore_global_regs(preserve);
+                            PopRegisters(preserve, MAX_GLOBAL_REGS);
                             preserve = NULL;
-                            preserve_len = NULL;
                         }
                         free_lbuf(tstr);
                     }
@@ -1484,11 +1480,11 @@ void mux_exec( char *buff, char **bufc, dbref executor, dbref caller,
                     if (  0 <= i
                        && i < MAX_GLOBAL_REGS)
                     {
-                        if (  mudstate.glob_reg_len[i] > 0
-                           && mudstate.global_regs[i])
+                        if (  mudstate.global_regs[i]
+                           && mudstate.global_regs[i]->reg_len > 0)
                         {
-                            safe_copy_buf(mudstate.global_regs[i],
-                                mudstate.glob_reg_len[i], buff, bufc);
+                            safe_copy_buf(mudstate.global_regs[i]->reg_ptr,
+                                mudstate.global_regs[i]->reg_len, buff, bufc);
                             nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
                         }
                     }
@@ -2144,83 +2140,94 @@ void mux_exec( char *buff, char **bufc, dbref executor, dbref caller,
 
 void save_global_regs
 (
-    const char *funcname,
-    char *preserve[],
-    size_t preserve_len[]
+    reg_ref *preserve[]
 )
 {
-    UNUSED_PARAMETER(funcname);
-
-    int i;
-
-    for (i = 0; i < MAX_GLOBAL_REGS; i++)
+    for (int i = 0; i < MAX_GLOBAL_REGS; i++)
     {
         if (mudstate.global_regs[i])
         {
-            preserve[i] = alloc_lbuf(funcname);
-            size_t n = mudstate.glob_reg_len[i];
-            memcpy(preserve[i], mudstate.global_regs[i], n);
-            preserve[i][n] = '\0';
-            preserve_len[i] = n;
+            RegAddRef(mudstate.global_regs[i]);
         }
-        else
-        {
-            preserve[i] = NULL;
-            preserve_len[i] = 0;
-        }
+        preserve[i] = mudstate.global_regs[i];
     }
 }
 
 void save_and_clear_global_regs
 (
-    const char *funcname,
-    char *preserve[],
-    size_t preserve_len[]
+    reg_ref *preserve[]
 )
 {
-    UNUSED_PARAMETER(funcname);
-
-    int i;
-
-    for (i = 0; i < MAX_GLOBAL_REGS; i++)
+    for (int i = 0; i < MAX_GLOBAL_REGS; i++)
     {
         preserve[i] = mudstate.global_regs[i];
-        preserve_len[i] = mudstate.glob_reg_len[i];
-
         mudstate.global_regs[i] = NULL;
-        mudstate.glob_reg_len[i] = 0;
     }
 }
 
 void restore_global_regs
 (
-    const char *funcname,
-    char *preserve[],
-    size_t preserve_len[]
+    reg_ref *preserve[]
 )
 {
-    UNUSED_PARAMETER(funcname);
-
-    int i;
-
-    for (i = 0; i < MAX_GLOBAL_REGS; i++)
+    for (int i = 0; i < MAX_GLOBAL_REGS; i++)
     {
+        if (mudstate.global_regs[i])
+        {
+            RegRelease(mudstate.global_regs[i]);
+            mudstate.global_regs[i] = NULL;
+        }
+
         if (preserve[i])
         {
-            if (mudstate.global_regs[i])
-            {
-                free_lbuf(mudstate.global_regs[i]);
-            }
             mudstate.global_regs[i] = preserve[i];
-            mudstate.glob_reg_len[i] = preserve_len[i];
-        }
-        else
-        {
-            if (mudstate.global_regs[i])
-            {
-                mudstate.global_regs[i][0] = '\0';
-            }
-            mudstate.glob_reg_len[i] = 0;
+            preserve[i] = NULL;
         }
     }
+}
+
+void BufAddRef(lbuf_ref *lbufref)
+{
+    lbufref->refcount++;
+}
+
+void BufRelease(lbuf_ref *lbufref)
+{
+    lbufref->refcount--;
+    if (0 == lbufref->refcount)
+    {
+        free_lbuf(lbufref->lbuf_ptr);
+        free_lbufref(lbufref);
+    }
+}
+
+void RegAddRef(reg_ref *regref)
+{
+    regref->refcount++;
+}
+
+void RegRelease(reg_ref *regref)
+{
+    regref->refcount--;
+    if (0 == regref->refcount)
+    {
+        BufRelease(regref->lbuf_ref);
+        free_regref(regref);
+    }
+}
+
+void RegAssign(reg_ref **regref, size_t n, char *lbuf)
+{
+    if (NULL != *regref)
+    {
+        RegRelease(*regref);
+        *regref = NULL;
+    }
+    *regref = alloc_regref("RegAssign");
+    (*regref)->lbuf_ref = alloc_lbufref("RegAssign");
+    (*regref)->lbuf_ref->lbuf_ptr = lbuf;
+    (*regref)->lbuf_ref->refcount = 1;
+    (*regref)->refcount = 1;
+    (*regref)->reg_len  = n;
+    (*regref)->reg_ptr  = lbuf;
 }

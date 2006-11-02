@@ -193,11 +193,9 @@ bool eval_boolexp(dbref player, dbref thing, dbref from, BOOLEXP *b)
 
         if (bCheck)
         {
-            char **preserve = NULL;
-            size_t *preserve_len = NULL;
-            preserve = PushPointers(MAX_GLOBAL_REGS);
-            preserve_len = PushLengths(MAX_GLOBAL_REGS);
-            save_global_regs("eval_boolexp_save", preserve, preserve_len);
+            reg_ref **preserve = NULL;
+            preserve = PushRegisters(MAX_GLOBAL_REGS);
+            save_global_regs(preserve);
 
             buff2 = bp = alloc_lbuf("eval_boolexp");
             str = buff;
@@ -206,9 +204,8 @@ bool eval_boolexp(dbref player, dbref thing, dbref from, BOOLEXP *b)
                 (char **)NULL, 0);
             *bp = '\0';
 
-            restore_global_regs("eval_boolexp_save", preserve, preserve_len);
-            PopLengths(preserve_len, MAX_GLOBAL_REGS);
-            PopPointers(preserve, MAX_GLOBAL_REGS);
+            restore_global_regs(preserve);
+            PopRegisters(preserve, MAX_GLOBAL_REGS);
 
             bCheck = !string_compare(buff2, (char *)b->sub1);
             free_lbuf(buff2);

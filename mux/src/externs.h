@@ -93,8 +93,7 @@ void make_portlist(dbref, dbref, char *, char **);
 int  nfy_que(dbref, int, int, int);
 int  halt_que(dbref, dbref);
 void wait_que(dbref executor, dbref caller, dbref enactor, int, bool,
-    CLinearTimeAbsolute&, dbref, int, char *, int, char *[],
-    size_t [], char *[]);
+    CLinearTimeAbsolute&, dbref, int, char *, int, char *[], reg_ref *[]);
 
 #ifndef WIN32
 extern "C" char *crypt(const char *inptr, const char *inkey);
@@ -110,13 +109,22 @@ int get_gender(dbref);
 void mux_exec(char *buff, char **bufc, dbref executor, dbref caller,
               dbref enactor, int eval, char **dstr, char *cargs[],
               int ncargs);
-void save_global_regs(const char *, char *[], size_t []);
-void save_and_clear_global_regs(const char *, char *[], size_t[]);
-void restore_global_regs(const char *, char *[], size_t []);
+
+void RegAddRef(reg_ref *regref);
+void BufRelease(lbuf_ref *lbufref);
+void RegAddRef(reg_ref *regref);
+void RegRelease(reg_ref *regref);
+void RegAssign(reg_ref **regref, size_t n, char *lbuf);
+
+void save_global_regs(reg_ref *preserve[]);
+void save_and_clear_global_regs(reg_ref *preserve[]);
+void restore_global_regs(reg_ref *preserve[]);
+
 char **PushPointers(int nNeeded);
 void PopPointers(char **p, int nNeeded);
-size_t *PushLengths(int nNeeded);
-void PopLengths(size_t *pi, int nNeeded);
+reg_ref **PushRegisters(int nNeeded);
+void PopRegisters(reg_ref **p, int nNeeded);
+
 extern const signed char mux_RegisterSet[256];
 extern const char *ColorTable[256];
 

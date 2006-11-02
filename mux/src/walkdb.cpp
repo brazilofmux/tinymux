@@ -24,7 +24,7 @@ static void bind_and_queue(dbref executor, dbref caller, dbref enactor,
     wait_que(executor, caller, enactor, 0, false, lta, NOTHING, 0,
         command,
         ncargs, cargs,
-        mudstate.glob_reg_len, mudstate.global_regs);
+        mudstate.global_regs);
     free_lbuf(command);
 }
 
@@ -80,7 +80,7 @@ void do_dolist(dbref executor, dbref caller, dbref enactor, int eval, int key,
             A_SEMAPHORE,
             tbuf,
             ncargs, cargs,
-            mudstate.glob_reg_len, mudstate.global_regs);
+            mudstate.global_regs);
         free_lbuf(tbuf);
     }
 }

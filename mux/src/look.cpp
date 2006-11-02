@@ -473,15 +473,16 @@ static void look_exits(dbref player, dbref loc, const char *exit_name)
         char *FormatOutput = alloc_lbuf("look_exits.FO");
         tPtr = FormatOutput;
 
-        char *preserve[MAX_GLOBAL_REGS];
-        size_t preserve_len[MAX_GLOBAL_REGS];
-        save_and_clear_global_regs("look_exits_save", preserve, preserve_len);
+        reg_ref **preserve = NULL;
+        preserve = PushRegisters(MAX_GLOBAL_REGS);
+        save_and_clear_global_regs(preserve);
 
         mux_exec(FormatOutput, &tPtr, loc, player, player,
             AttrTrace(aflags, EV_FCHECK|EV_EVAL|EV_TOP),
             &ExitFormat, &VisibleObjectList, 1);
 
-        restore_global_regs("look_exits_restore", preserve, preserve_len);
+        restore_global_regs(preserve);
+        PopRegisters(preserve, MAX_GLOBAL_REGS);
         notify(player, FormatOutput);
 
         free_lbuf(FormatOutput);
@@ -649,15 +650,16 @@ static void look_contents(dbref player, dbref loc, const char *contents_name, in
         char* ParameterList[] =
             { VisibleObjectList, ContentsNameScratch };
 
-        char *preserve[MAX_GLOBAL_REGS];
-        size_t preserve_len[MAX_GLOBAL_REGS];
-        save_and_clear_global_regs("look_contents_save", preserve, preserve_len);
+        reg_ref **preserve = NULL;
+        preserve = PushRegisters(MAX_GLOBAL_REGS);
+        save_and_clear_global_regs(preserve);
 
         mux_exec(FormatOutput, &tPtr, loc, player, player,
             AttrTrace(aflags, EV_FCHECK|EV_EVAL|EV_TOP),
             &ContentsFormat, ParameterList, 2);
 
-        restore_global_regs("look_contents_restore", preserve, preserve_len);
+        restore_global_regs(preserve);
+        PopRegisters(preserve, MAX_GLOBAL_REGS);
         notify(player, FormatOutput);
 
         free_lbuf(FormatOutput);
@@ -1018,11 +1020,9 @@ static bool show_a_desc(dbref player, dbref loc)
     char *DescFormat = DescFormatBuffer;
     if (*DescFormat)
     {
-        char **preserve = NULL;
-        size_t *preserve_len = NULL;
-        preserve = PushPointers(MAX_GLOBAL_REGS);
-        preserve_len = PushLengths(MAX_GLOBAL_REGS);
-        save_global_regs("eval_boolexp_save", preserve, preserve_len);
+        reg_ref **preserve = NULL;
+        preserve = PushRegisters(MAX_GLOBAL_REGS);
+        save_global_regs(preserve);
 
         char *FormatOutput = alloc_lbuf("look_description.FO");
         char *tPtr = FormatOutput;
@@ -1064,9 +1064,8 @@ static bool show_a_desc(dbref player, dbref loc)
         free_lbuf(FormatOutput);
         free_lbuf(temp);
 
-        restore_global_regs("eval_boolexp_save", preserve, preserve_len);
-        PopLengths(preserve_len, MAX_GLOBAL_REGS);
-        PopPointers(preserve, MAX_GLOBAL_REGS);
+        restore_global_regs(preserve);
+        PopRegisters(preserve, MAX_GLOBAL_REGS);
 
         ret = true;
     }
@@ -1253,15 +1252,16 @@ void look_in(dbref player, dbref loc, int key)
         char *FormatOutput = alloc_lbuf("look_name.FO");
         char *tPtr = FormatOutput;
 
-        char *preserve[MAX_GLOBAL_REGS];
-        size_t preserve_len[MAX_GLOBAL_REGS];
-        save_and_clear_global_regs("look_in_save", preserve, preserve_len);
+        reg_ref **preserve = NULL;
+        preserve = PushRegisters(MAX_GLOBAL_REGS);
+        save_and_clear_global_regs(preserve);
 
         mux_exec(FormatOutput, &tPtr, loc, player, player,
             AttrTrace(aflags, EV_FCHECK|EV_EVAL|EV_TOP),
             &NameFormat, 0, 0);
 
-        restore_global_regs("look_in_restore", preserve, preserve_len);
+        restore_global_regs(preserve);
+        PopRegisters(preserve, MAX_GLOBAL_REGS);
         notify(player, FormatOutput);
 
         free_lbuf(FormatOutput);

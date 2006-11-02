@@ -2175,13 +2175,11 @@ static void do_ufun(char *buff, char **bufc, dbref executor, dbref caller,
 
     // If we're evaluating locally, preserve the global registers.
     //
-    char **preserve = NULL;
-    size_t *preserve_len = NULL;
+    reg_ref **preserve = NULL;
     if (is_local)
     {
-        preserve = PushPointers(MAX_GLOBAL_REGS);
-        preserve_len = PushLengths(MAX_GLOBAL_REGS);
-        save_global_regs("fun_ulocal_save", preserve, preserve_len);
+        preserve = PushRegisters(MAX_GLOBAL_REGS);
+        save_global_regs(preserve);
     }
 
     // Evaluate it using the rest of the passed function args.
@@ -2196,9 +2194,8 @@ static void do_ufun(char *buff, char **bufc, dbref executor, dbref caller,
     //
     if (is_local)
     {
-        restore_global_regs("fun_ulocal_restore", preserve, preserve_len);
-        PopLengths(preserve_len, MAX_GLOBAL_REGS);
-        PopPointers(preserve, MAX_GLOBAL_REGS);
+        restore_global_regs(preserve);
+        PopRegisters(preserve, MAX_GLOBAL_REGS);
     }
 }
 
@@ -8187,13 +8184,10 @@ static FUNCTION(fun_setq)
     }
     else
     {
-        if (!mudstate.global_regs[regnum])
-        {
-            mudstate.global_regs[regnum] = alloc_lbuf("fun_setq");
-        }
+        char *p = alloc_lbuf("fun_setq");
         size_t n = strlen(fargs[1]);
-        memcpy(mudstate.global_regs[regnum], fargs[1], n+1);
-        mudstate.glob_reg_len[regnum] = n;
+        memcpy(p, fargs[1], n+1);
+        RegAssign(&mudstate.global_regs[regnum], n, p);
     }
 }
 
@@ -8216,13 +8210,10 @@ static FUNCTION(fun_setr)
     }
     else
     {
-        if (!mudstate.global_regs[regnum])
-        {
-            mudstate.global_regs[regnum] = alloc_lbuf("fun_setq");
-        }
+        char *p = alloc_lbuf("fun_setq");
         size_t n = strlen(fargs[1]);
-        memcpy(mudstate.global_regs[regnum], fargs[1], n+1);
-        mudstate.glob_reg_len[regnum] = n;
+        memcpy(p, fargs[1], n+1);
+        RegAssign(&mudstate.global_regs[regnum], n, p);
         safe_copy_buf(fargs[1], n, buff, bufc);
     }
 }
@@ -8246,8 +8237,8 @@ static FUNCTION(fun_r)
     }
     else if (mudstate.global_regs[regnum])
     {
-        safe_copy_buf(mudstate.global_regs[regnum],
-            mudstate.glob_reg_len[regnum], buff, bufc);
+        safe_copy_buf(mudstate.global_regs[regnum]->reg_ptr,
+            mudstate.global_regs[regnum]->reg_len, buff, bufc);
     }
 }
 

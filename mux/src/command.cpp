@@ -1053,13 +1053,11 @@ static bool process_hook(dbref executor, dbref thing, char *s_uselock, ATTR *hk_
         char *atext = atr_get(thing, anum, &aowner, &aflags);
         if (atext[0] && !(aflags & AF_NOPROG))
         {
-            char **preserve = NULL;
-            size_t *preserve_len = NULL;
+            reg_ref **preserve = NULL;
             if (save_flg)
             {
-                preserve = PushPointers(MAX_GLOBAL_REGS);
-                preserve_len = PushLengths(MAX_GLOBAL_REGS);
-                save_global_regs("process_hook.save", preserve, preserve_len);
+                preserve = PushRegisters(MAX_GLOBAL_REGS);
+                save_global_regs(preserve);
             }
             char *buff, *bufc;
             bufc = buff = alloc_lbuf("process_hook");
@@ -1070,9 +1068,8 @@ static bool process_hook(dbref executor, dbref thing, char *s_uselock, ATTR *hk_
             *bufc = '\0';
             if (save_flg)
             {
-                restore_global_regs("process_hook.save", preserve, preserve_len);
-                PopLengths(preserve_len, MAX_GLOBAL_REGS);
-                PopPointers(preserve, MAX_GLOBAL_REGS);
+                restore_global_regs(preserve);
+                PopRegisters(preserve, MAX_GLOBAL_REGS);
             }
             retval = xlate(buff);
             free_lbuf(buff);
@@ -1403,7 +1400,7 @@ static void process_cmdent(CMDENT *cmdp, char *switchp, dbref executor, dbref ca
                         AttrTrace(aflags, 0), false, lta, NOTHING, 0,
                         s,
                         NUM_ENV_VARS, aargs,
-                        mudstate.glob_reg_len,mudstate.global_regs);
+                        mudstate.global_regs);
 
                     for (i = 0; i < NUM_ENV_VARS; i++)
                     {

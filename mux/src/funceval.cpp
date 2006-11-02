@@ -1055,19 +1055,16 @@ FUNCTION(fun_localize)
 {
     UNUSED_PARAMETER(nfargs);
 
-    char **preserve = NULL;
-    size_t *preserve_len = NULL;
-    preserve = PushPointers(MAX_GLOBAL_REGS);
-    preserve_len = PushLengths(MAX_GLOBAL_REGS);
-    save_global_regs("fun_localize", preserve, preserve_len);
+    reg_ref **preserve = NULL;
+    preserve = PushRegisters(MAX_GLOBAL_REGS);
+    save_global_regs(preserve);
 
     char *str = fargs[0];
     mux_exec(buff, bufc, executor, caller, enactor,
         eval|EV_FCHECK|EV_STRIP_CURLY|EV_EVAL, &str, cargs, ncargs);
 
-    restore_global_regs("fun_localize", preserve, preserve_len);
-    PopLengths(preserve_len, MAX_GLOBAL_REGS);
-    PopPointers(preserve, MAX_GLOBAL_REGS);
+    restore_global_regs(preserve);
+    PopRegisters(preserve, MAX_GLOBAL_REGS);
 }
 
 FUNCTION(fun_null)
@@ -4341,14 +4338,13 @@ static void real_regmatch(const char *search, const char *pattern, char *registe
            && qregs[i][1] == '\0'
            && curq < MAX_GLOBAL_REGS)
         {
-            if (!mudstate.global_regs[curq])
-            {
-                mudstate.global_regs[curq] = alloc_lbuf("fun_regmatch");
-            }
-            int len;
-            len = pcre_copy_substring(search, ovec, matches, i,
-                                      mudstate.global_regs[curq], LBUF_SIZE);
-            mudstate.glob_reg_len[curq] = (len > 0 ? len : 0);
+            char *p = alloc_lbuf("fun_regmatch");
+            int len = pcre_copy_substring(search, ovec, matches, i, p,
+                LBUF_SIZE);
+            len = (len > 0 ? len : 0);
+
+            size_t n = len;
+            RegAssign(&mudstate.global_regs[curq], n, p);
         }
     }
     MEMFREE(re);

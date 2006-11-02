@@ -1873,7 +1873,7 @@ void do_trigger(dbref executor, dbref caller, dbref enactor, int key,
         wait_que(executor, caller, enactor, 0, false, lta, NOTHING, A_SEMAPHORE,
             tbuf,
             0, NULL,
-            mudstate.glob_reg_len, mudstate.global_regs);
+            mudstate.global_regs);
         free_lbuf(tbuf);
     }
 
