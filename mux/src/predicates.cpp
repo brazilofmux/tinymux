@@ -1225,7 +1225,7 @@ void handle_prog(DESC *d, char *message)
         {
             if (all->program_data->wait_regs[i])
             {
-                free_lbuf(all->program_data->wait_regs[i]);
+                RegRelease(all->program_data->wait_regs[i]);
                 all->program_data->wait_regs[i] = NULL;
             }
         }
@@ -1303,7 +1303,7 @@ void do_quitprog(dbref player, dbref caller, dbref enactor, int eval, int key, c
         {
             if (d->program_data->wait_regs[i])
             {
-                free_lbuf(d->program_data->wait_regs[i]);
+                RegRelease(d->program_data->wait_regs[i]);
                 d->program_data->wait_regs[i] = NULL;
             }
         }
