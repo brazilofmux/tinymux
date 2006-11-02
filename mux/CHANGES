@@ -232,6 +232,9 @@ Performance Enhancements:
     This translates to something upward of 28 MB/s.
  -- Optimize do_comsystem() ability to recognize what is not an alias.
     Alierak.
+ -- Added reference counting to global registers which should improve
+    and greatly reduce memory usage for games which use the queue
+    heavily.
 
 
 Cosmetic Changes:

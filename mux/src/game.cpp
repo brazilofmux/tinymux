@@ -3079,8 +3079,8 @@ int DCL_CDECL main(int argc, char *argv[])
 
     pool_init(POOL_DESC, sizeof(DESC));
     pool_init(POOL_QENTRY, sizeof(BQUE));
-    pool_init(POOL_LBUFREF, sizeof(LBUFREF));
-    pool_init(POOL_REGREF, sizeof(REGREF));
+    pool_init(POOL_LBUFREF, sizeof(lbuf_ref));
+    pool_init(POOL_REGREF, sizeof(reg_ref));
     tcache_init();
     pcache_init();
     cf_init();

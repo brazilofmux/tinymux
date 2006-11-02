@@ -2211,7 +2211,7 @@ void RegRelease(reg_ref *regref)
     regref->refcount--;
     if (0 == regref->refcount)
     {
-        BufRelease(regref->lbuf_ref);
+        BufRelease(regref->lbuf);
         free_regref(regref);
     }
 }
@@ -2258,7 +2258,7 @@ void RegAssign(reg_ref **regref, size_t n, const char *ptr)
     // Use same last lbuf.
     //
     BufAddRef(last_lbufref);
-    (*regref)->lbuf_ref = last_lbufref;
+    (*regref)->lbuf = last_lbufref;
 
     memcpy(last_ptr, ptr, n+1);
     (*regref)->reg_len  = n;

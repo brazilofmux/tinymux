@@ -36,21 +36,21 @@ extern void list_bufstats(dbref);
 extern void list_buftrace(dbref);
 extern void pool_reset(void);
 
-#define alloc_lbuf(s)   pool_alloc_lbuf(s, __FILE__, __LINE__)
-#define free_lbuf(b)    pool_free_lbuf((char *)(b), __FILE__, __LINE__)
-#define alloc_mbuf(s)   pool_alloc(POOL_MBUF,s, __FILE__, __LINE__)
-#define free_mbuf(b)    pool_free(POOL_MBUF,(char *)(b), __FILE__, __LINE__)
-#define alloc_sbuf(s)   pool_alloc(POOL_SBUF,s, __FILE__, __LINE__)
-#define free_sbuf(b)    pool_free(POOL_SBUF,(char *)(b), __FILE__, __LINE__)
-#define alloc_bool(s)   (struct boolexp *)pool_alloc(POOL_BOOL,s, __FILE__, __LINE__)
-#define free_bool(b)    pool_free(POOL_BOOL,(char *)(b), __FILE__, __LINE__)
-#define alloc_qentry(s) (BQUE *)pool_alloc(POOL_QENTRY,s, __FILE__, __LINE__)
-#define free_qentry(b)  pool_free(POOL_QENTRY,(char *)(b), __FILE__, __LINE__)
-#define alloc_pcache(s) (PCACHE *)pool_alloc(POOL_PCACHE,s, __FILE__, __LINE__)
-#define free_pcache(b)  pool_free(POOL_PCACHE,(char *)(b), __FILE__, __LINE__)
-#define alloc_lbufref(s) (LBUFREF *)pool_alloc(POOL_LBUFREF,s, __FILE__, __LINE__)
+#define alloc_lbuf(s)    pool_alloc_lbuf(s, __FILE__, __LINE__)
+#define free_lbuf(b)     pool_free_lbuf((char *)(b), __FILE__, __LINE__)
+#define alloc_mbuf(s)    pool_alloc(POOL_MBUF,s, __FILE__, __LINE__)
+#define free_mbuf(b)     pool_free(POOL_MBUF,(char *)(b), __FILE__, __LINE__)
+#define alloc_sbuf(s)    pool_alloc(POOL_SBUF,s, __FILE__, __LINE__)
+#define free_sbuf(b)     pool_free(POOL_SBUF,(char *)(b), __FILE__, __LINE__)
+#define alloc_bool(s)    (struct boolexp *)pool_alloc(POOL_BOOL,s, __FILE__, __LINE__)
+#define free_bool(b)     pool_free(POOL_BOOL,(char *)(b), __FILE__, __LINE__)
+#define alloc_qentry(s)  (BQUE *)pool_alloc(POOL_QENTRY,s, __FILE__, __LINE__)
+#define free_qentry(b)   pool_free(POOL_QENTRY,(char *)(b), __FILE__, __LINE__)
+#define alloc_pcache(s)  (PCACHE *)pool_alloc(POOL_PCACHE,s, __FILE__, __LINE__)
+#define free_pcache(b)   pool_free(POOL_PCACHE,(char *)(b), __FILE__, __LINE__)
+#define alloc_lbufref(s) (lbuf_ref *)pool_alloc(POOL_LBUFREF,s, __FILE__, __LINE__)
 #define free_lbufref(b)  pool_free(POOL_LBUFREF,(char *)(b), __FILE__, __LINE__)
-#define alloc_regref(s)  (REGREF *)pool_alloc(POOL_REGREF,s, __FILE__, __LINE__)
+#define alloc_regref(s)  (reg_ref *)pool_alloc(POOL_REGREF,s, __FILE__, __LINE__)
 #define free_regref(b)   pool_free(POOL_REGREF,(char *)(b), __FILE__, __LINE__)
 
 #define safe_copy_chr(src, buff, bufp, nSizeOfBuffer) \
@@ -70,18 +70,18 @@ extern void pool_reset(void);
 #define safe_mb_str(s,b,p)  safe_copy_str(s,b,p,(MBUF_SIZE-1))
 #define safe_mb_chr(c,b,p)  safe_copy_chr(c,b,p,(MBUF_SIZE-1))
 
-typedef struct lbuf_ref
+struct lbuf_ref
 {
     int      refcount;
     char    *lbuf_ptr;
-} LBUFREF;
+};
 
-typedef struct reg_ref
+struct reg_ref
 {
     int      refcount;
-    LBUFREF *lbuf_ref;
+    lbuf_ref *lbuf;
     size_t   reg_len;
     char    *reg_ptr;
-} REGREF;
+};
 
 #endif // M_ALLOC_H
