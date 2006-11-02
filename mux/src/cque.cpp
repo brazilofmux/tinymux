@@ -745,10 +745,6 @@ static BQUE *setup_que
             {
                 tlen += sargs_len[a] + 1;
             }
-            else
-            {
-                tlen++;
-            }
         }
     }
 
@@ -800,11 +796,6 @@ static BQUE *setup_que
                 memcpy(tptr, sargs[a], sargs_len[a]+1);
                 tmp->scr[a] = tptr;
                 tptr += sargs_len[a] + 1;
-            }
-            else
-            {
-                *tptr = '\0';
-                tptr++;
             }
         }
     }
