@@ -460,6 +460,7 @@ static bool check_filter(dbref object, dbref player, int filter, const char *msg
 
     restore_global_regs(preserve);
     PopRegisters(preserve, MAX_GLOBAL_REGS);
+    preserve = NULL;
 
     if (!(aflags & AF_REGEXP))
     {

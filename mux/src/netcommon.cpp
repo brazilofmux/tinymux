@@ -1791,7 +1791,7 @@ static const char *DumpInfoTable[] =
     "WOD_REALMS",
 #endif
 #if defined(REALITY_LVLS)
-    "REALITY_LVLS"
+    "REALITY_LVLS",
 #endif
 #if defined(MEMORY_BASED)
     "MEMORY_BASED",
