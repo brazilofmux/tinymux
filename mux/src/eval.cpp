@@ -2216,18 +2216,52 @@ void RegRelease(reg_ref *regref)
     }
 }
 
-void RegAssign(reg_ref **regref, size_t n, char *lbuf)
+lbuf_ref *last_lbufref = NULL;
+size_t    last_left    = 0;
+char     *last_ptr     = NULL;
+
+void RegAssign(reg_ref **regref, size_t n, const char *ptr)
 {
+    // Put any previous register value out of the way.
+    //
     if (NULL != *regref)
     {
         RegRelease(*regref);
         *regref = NULL;
     }
+
+    // Let go of the last lbuf if we can't use it.
+    //
+    if (  NULL != last_lbufref
+       && last_left < n + 1)
+    {
+        BufRelease(last_lbufref);
+        last_lbufref = NULL;
+    }
+
+    // Grab a new, fresh lbuf if we don't have one.
+    //
+    if (NULL == last_lbufref)
+    {
+        last_lbufref = alloc_lbufref("RegAssign");
+        last_lbufref->refcount = 1;
+        last_ptr  = alloc_lbuf("RegAssign");
+        last_lbufref->lbuf_ptr = last_ptr;
+        last_left = LBUF_SIZE;
+    }
+
+    // New register reference.
+    //
     *regref = alloc_regref("RegAssign");
-    (*regref)->lbuf_ref = alloc_lbufref("RegAssign");
-    (*regref)->lbuf_ref->lbuf_ptr = lbuf;
-    (*regref)->lbuf_ref->refcount = 1;
     (*regref)->refcount = 1;
+
+    // Use same last lbuf.
+    //
+    BufAddRef(last_lbufref);
+    (*regref)->lbuf_ref = last_lbufref;
+
+    memcpy(last_ptr, ptr, n+1);
     (*regref)->reg_len  = n;
-    (*regref)->reg_ptr  = lbuf;
+    (*regref)->reg_ptr  = last_ptr;
+    last_ptr += n+1;
 }

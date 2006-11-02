@@ -4345,6 +4345,7 @@ static void real_regmatch(const char *search, const char *pattern, char *registe
 
             size_t n = len;
             RegAssign(&mudstate.global_regs[curq], n, p);
+            free_lbuf(p);
         }
     }
     MEMFREE(re);

@@ -8184,10 +8184,8 @@ static FUNCTION(fun_setq)
     }
     else
     {
-        char *p = alloc_lbuf("fun_setq");
         size_t n = strlen(fargs[1]);
-        memcpy(p, fargs[1], n+1);
-        RegAssign(&mudstate.global_regs[regnum], n, p);
+        RegAssign(&mudstate.global_regs[regnum], n, fargs[1]);
     }
 }
 
@@ -8210,10 +8208,8 @@ static FUNCTION(fun_setr)
     }
     else
     {
-        char *p = alloc_lbuf("fun_setq");
         size_t n = strlen(fargs[1]);
-        memcpy(p, fargs[1], n+1);
-        RegAssign(&mudstate.global_regs[regnum], n, p);
+        RegAssign(&mudstate.global_regs[regnum], n, fargs[1]);
         safe_copy_buf(fargs[1], n, buff, bufc);
     }
 }

@@ -114,7 +114,7 @@ void RegAddRef(reg_ref *regref);
 void BufRelease(lbuf_ref *lbufref);
 void RegAddRef(reg_ref *regref);
 void RegRelease(reg_ref *regref);
-void RegAssign(reg_ref **regref, size_t n, char *lbuf);
+void RegAssign(reg_ref **regref, size_t n, const char *ptr);
 
 void save_global_regs(reg_ref *preserve[]);
 void save_and_clear_global_regs(reg_ref *preserve[]);
