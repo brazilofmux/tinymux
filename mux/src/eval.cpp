@@ -2264,4 +2264,5 @@ void RegAssign(reg_ref **regref, size_t n, const char *ptr)
     (*regref)->reg_len  = n;
     (*regref)->reg_ptr  = last_ptr;
     last_ptr += n+1;
+    last_left -= n+1;
 }
