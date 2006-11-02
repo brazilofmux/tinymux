@@ -736,7 +736,10 @@ void did_it_rlevel
 
             CLinearTimeAbsolute lta;
             wait_que(thing, player, player, AttrTrace(aflags, 0), false, lta,
-                NOTHING, 0, act, args, nargs, mudstate.global_regs);
+                NOTHING, 0,
+                act,
+                nargs, args,
+                mudstate.glob_reg_len, mudstate.global_regs);
         }
         free_lbuf(act);
     }

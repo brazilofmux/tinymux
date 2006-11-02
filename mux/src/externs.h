@@ -93,7 +93,8 @@ void make_portlist(dbref, dbref, char *, char **);
 int  nfy_que(dbref, int, int, int);
 int  halt_que(dbref, dbref);
 void wait_que(dbref executor, dbref caller, dbref enactor, int, bool,
-    CLinearTimeAbsolute&, dbref, int, char *, char *[],int, char *[]);
+    CLinearTimeAbsolute&, dbref, int, char *, int, char *[],
+    size_t [], char *[]);
 
 #ifndef WIN32
 extern "C" char *crypt(const char *inptr, const char *inkey);

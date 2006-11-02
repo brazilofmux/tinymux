@@ -81,9 +81,11 @@ typedef struct text_block
 } TBLOCK;
 
 typedef struct prog_data PROG;
-struct prog_data {
-    dbref wait_enactor;
-    char *wait_regs[MAX_GLOBAL_REGS];
+struct prog_data
+{
+    dbref  wait_enactor;
+    size_t wait_regs_len[MAX_GLOBAL_REGS];
+    char  *wait_regs[MAX_GLOBAL_REGS];
 };
 
 // Input state

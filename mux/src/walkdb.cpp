@@ -21,8 +21,10 @@ static void bind_and_queue(dbref executor, dbref caller, dbref enactor,
 {
     char *command = replace_tokens(action, argstr, mux_ltoa_t(number), NULL);
     CLinearTimeAbsolute lta;
-    wait_que(executor, caller, enactor, 0, false, lta, NOTHING, 0, command,
-        cargs, ncargs, mudstate.global_regs);
+    wait_que(executor, caller, enactor, 0, false, lta, NOTHING, 0,
+        command,
+        ncargs, cargs,
+        mudstate.glob_reg_len, mudstate.global_regs);
     free_lbuf(command);
 }
 
@@ -75,7 +77,10 @@ void do_dolist(dbref executor, dbref caller, dbref enactor, int eval, int key,
         mux_strncpy(tbuf, "@notify/quiet me", LBUF_SIZE-1);
         CLinearTimeAbsolute lta;
         wait_que(executor, caller, enactor, eval, false, lta, NOTHING,
-            A_SEMAPHORE, tbuf, cargs, ncargs, mudstate.global_regs);
+            A_SEMAPHORE,
+            tbuf,
+            ncargs, cargs,
+            mudstate.glob_reg_len, mudstate.global_regs);
         free_lbuf(tbuf);
     }
 }

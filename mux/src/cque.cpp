@@ -656,8 +656,18 @@ void do_notify
 // ---------------------------------------------------------------------------
 // setup_que: Set up a queue entry.
 //
-static BQUE *setup_que(dbref executor, dbref caller, dbref enactor, int eval,
-                       char *command, char *args[], int nargs, char *sargs[])
+static BQUE *setup_que
+(
+    dbref  executor,
+    dbref  caller,
+    dbref  enactor,
+    int    eval,
+    char  *command,
+    int    nargs,
+    char  *args[],
+    size_t sargs_len[],
+    char  *sargs[]
+)
 {
     int a;
     BQUE *tmp;
@@ -706,17 +716,18 @@ static BQUE *setup_que(dbref executor, dbref caller, dbref enactor, int eval,
     size_t tlen = 0;
     static size_t nCommand;
     static size_t nLenEnv[NUM_ENV_VARS];
-    static size_t nLenRegs[MAX_GLOBAL_REGS];
 
     if (command)
     {
         nCommand = strlen(command) + 1;
         tlen = nCommand;
     }
+
     if (nargs > NUM_ENV_VARS)
     {
         nargs = NUM_ENV_VARS;
     }
+
     for (a = 0; a < nargs; a++)
     {
         if (args[a])
@@ -725,14 +736,14 @@ static BQUE *setup_que(dbref executor, dbref caller, dbref enactor, int eval,
             tlen += nLenEnv[a];
         }
     }
+
     if (sargs)
     {
         for (a = 0; a < MAX_GLOBAL_REGS; a++)
         {
             if (sargs[a])
             {
-                nLenRegs[a] = strlen(sargs[a]) + 1;
-                tlen += nLenRegs[a];
+                tlen += sargs_len[a] + 1;
             }
         }
     }
@@ -778,9 +789,9 @@ static BQUE *setup_que(dbref executor, dbref caller, dbref enactor, int eval,
         {
             if (sargs[a])
             {
-                memcpy(tptr, sargs[a], nLenRegs[a]);
+                memcpy(tptr, sargs[a], sargs_len[a]+1);
                 tmp->scr[a] = tptr;
-                tptr += nLenRegs[a];
+                tptr += sargs_len[a] + 1;
             }
         }
     }
@@ -803,18 +814,19 @@ static BQUE *setup_que(dbref executor, dbref caller, dbref enactor, int eval,
 //
 void wait_que
 (
-    dbref executor,
-    dbref caller,
-    dbref enactor,
-    int   eval,
-    bool bTimed,
+    dbref  executor,
+    dbref  caller,
+    dbref  enactor,
+    int    eval,
+    bool   bTimed,
     CLinearTimeAbsolute &ltaWhen,
-    dbref sem,
-    int   attr,
-    char *command,
-    char *args[],
-    int   nargs,
-    char *sargs[]
+    dbref  sem,
+    int    attr,
+    char  *command,
+    int    nargs,
+    char  *args[],
+    size_t sargs_len[],
+    char  *sargs[]
 )
 {
     if (!(mudconf.control_flags & CF_INTERP))
@@ -822,7 +834,11 @@ void wait_que
         return;
     }
 
-    BQUE *tmp = setup_que(executor, caller, enactor, eval, command, args, nargs, sargs);
+    BQUE *tmp = setup_que(executor, caller, enactor, eval,
+        command,
+        nargs, args,
+        sargs_len, sargs);
+
     if (!tmp)
     {
         return;
@@ -886,8 +902,9 @@ void sql_que
     dbref thing,
     int   attr,
     char *command,
-    char *args[],
     int   nargs,
+    char *args[],
+    size_t sargs_len[],
     char *sargs[]
 )
 {
@@ -896,7 +913,11 @@ void sql_que
         return;
     }
 
-    BQUE *tmp = setup_que(executor, caller, enactor, eval, command, args, nargs, sargs);
+    BQUE *tmp = setup_que(executor, caller, enactor, eval,
+        command,
+        nargs, args,
+        sargs_len, sargs);
+
     if (!tmp)
     {
         return;
@@ -957,8 +978,10 @@ void do_wait
             ltd.SetSecondsString(event);
             ltaWhen += ltd;
         }
-        wait_que(executor, caller, enactor, eval, true, ltaWhen, NOTHING, 0, cmd,
-            cargs, ncargs, mudstate.global_regs);
+        wait_que(executor, caller, enactor, eval, true, ltaWhen, NOTHING, 0,
+            cmd,
+            ncargs, cargs,
+            mudstate.glob_reg_len, mudstate.global_regs);
         return;
     }
 
@@ -1033,7 +1056,9 @@ void do_wait
             bTimed = false;
         }
         wait_que(executor, caller, enactor, eval, bTimed, ltaWhen, thing, atr,
-            cmd, cargs, ncargs, mudstate.global_regs);
+            cmd,
+            ncargs, cargs,
+            mudstate.glob_reg_len, mudstate.global_regs);
     }
 }
 

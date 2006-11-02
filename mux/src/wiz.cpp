@@ -296,8 +296,10 @@ void do_force( dbref executor, dbref caller, dbref enactor, int eval, int key,
         // Force victim to do command.
         //
         CLinearTimeAbsolute lta;
-        wait_que(victim, caller, executor, eval, false, lta, NOTHING, 0, command,
-            args, nargs, mudstate.global_regs);
+        wait_que(victim, caller, executor, eval, false, lta, NOTHING, 0,
+            command,
+            nargs, args,
+            mudstate.glob_reg_len, mudstate.global_regs);
     }
 }
 

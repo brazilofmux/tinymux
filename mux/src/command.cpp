@@ -1400,8 +1400,11 @@ static void process_cmdent(CMDENT *cmdp, char *switchp, dbref executor, dbref ca
                 {
                     CLinearTimeAbsolute lta;
                     wait_que(add->thing, caller, executor,
-                        AttrTrace(aflags, 0), false, lta, NOTHING, 0, s,
-                        aargs, NUM_ENV_VARS, mudstate.global_regs);
+                        AttrTrace(aflags, 0), false, lta, NOTHING, 0,
+                        s,
+                        NUM_ENV_VARS, aargs,
+                        mudstate.glob_reg_len,mudstate.global_regs);
+
                     for (i = 0; i < NUM_ENV_VARS; i++)
                     {
                         if (aargs[i])
