@@ -745,6 +745,10 @@ static BQUE *setup_que
             {
                 tlen += sargs_len[a] + 1;
             }
+            else
+            {
+                tlen++;
+            }
         }
     }
 
@@ -762,6 +766,7 @@ static BQUE *setup_que
         tmp->comm = tptr;
         tptr += nCommand;
     }
+
     for (a = 0; a < nargs; a++)
     {
         if (args[a])
@@ -775,14 +780,17 @@ static BQUE *setup_que
             tmp->env[a] = NULL;
         }
     }
+
     for ( ; a < NUM_ENV_VARS; a++)
     {
         tmp->env[a] = NULL;
     }
+
     for (a = 0; a < MAX_GLOBAL_REGS; a++)
     {
         tmp->scr[a] = NULL;
     }
+
     if (sargs)
     {
         for (a = 0; a < MAX_GLOBAL_REGS; a++)
@@ -792,6 +800,11 @@ static BQUE *setup_que
                 memcpy(tptr, sargs[a], sargs_len[a]+1);
                 tmp->scr[a] = tptr;
                 tptr += sargs_len[a] + 1;
+            }
+            else
+            {
+                *tptr = '\0';
+                tptr++;
             }
         }
     }
