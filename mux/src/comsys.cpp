@@ -1,6 +1,6 @@
 // comsys.cpp
 //
-// $Id: comsys.cpp,v 1.43 2006/05/18 18:58:35 sdennis Exp $
+// $Id: comsys.cpp,v 1.44 2006/11/03 19:38:18 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -1699,11 +1699,6 @@ void do_createchannel(dbref executor, dbref caller, dbref enactor, int key, char
     UNUSED_PARAMETER(enactor);
     UNUSED_PARAMETER(key);
 
-    if (select_channel(channel))
-    {
-        raw_notify(executor, tprintf("Channel %s already exists.", channel));
-        return;
-    }
     if (!*channel)
     {
         raw_notify(executor, "You must specify a channel to create.");
@@ -1756,6 +1751,13 @@ void do_createchannel(dbref executor, dbref caller, dbref enactor, int key, char
     }
     memcpy(newchannel->name, pNameNoANSI, nNameNoANSI);
     newchannel->name[nNameNoANSI] = '\0';
+
+    if (select_channel(newchannel->name))
+    {
+        raw_notify(executor, tprintf("Channel %s already exists.", newchannel->name));
+        MEMFREE(newchannel);
+        return;
+    }
 
     newchannel->type = 127;
     newchannel->temp1 = 0;
