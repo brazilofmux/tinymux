@@ -3577,7 +3577,7 @@ static void list_vattrs(dbref player, char *s_mask)
     free_lbuf(buff);
 }
 
-static size_t LeftJustifyString(char *field, size_t nWidth, const char *value)
+size_t LeftJustifyString(char *field, size_t nWidth, const char *value)
 {
     size_t n = strlen(value);
     if (n > nWidth)
@@ -3625,34 +3625,34 @@ static void list_hashstat(dbref player, const char *tab_name, CHashTable *htab)
     char buff[MBUF_SIZE];
     char *p = buff;
 
-    p += LeftJustifyString(p,  15, tab_name);      *p++ = ' ';
+    p += LeftJustifyString(p,  13, tab_name);      *p++ = ' ';
     p += RightJustifyNumber(p,  4, hashsize, ' '); *p++ = ' ';
     p += RightJustifyNumber(p,  6, entries,  ' '); *p++ = ' ';
-    p += RightJustifyNumber(p,  9, deletes,  ' '); *p++ = ' ';
-    p += RightJustifyNumber(p, 11, scans,    ' '); *p++ = ' ';
-    p += RightJustifyNumber(p, 11, hits,     ' '); *p++ = ' ';
-    p += RightJustifyNumber(p, 11, checks,   ' '); *p++ = ' ';
+    p += RightJustifyNumber(p,  7, deletes,  ' '); *p++ = ' ';
+    p += RightJustifyNumber(p, 13, scans,    ' '); *p++ = ' ';
+    p += RightJustifyNumber(p, 13, hits,     ' '); *p++ = ' ';
+    p += RightJustifyNumber(p, 13, checks,   ' '); *p++ = ' ';
     p += RightJustifyNumber(p,  4, max_scan, ' '); *p = '\0';
     raw_notify(player, buff);
 }
 
 static void list_hashstats(dbref player)
 {
-    raw_notify(player, "Hash Stats      Size Entries Deleted      Lookups        Hits     Checks Longest");
+    raw_notify(player, "Hash Stats    Size    Num     Del       Lookups          Hits        Probes Long");
     list_hashstat(player, "Commands", &mudstate.command_htab);
-    list_hashstat(player, "Logged-out Cmds", &mudstate.logout_cmd_htab);
+    list_hashstat(player, "Logout Cmds", &mudstate.logout_cmd_htab);
     list_hashstat(player, "Functions", &mudstate.func_htab);
     list_hashstat(player, "Flags", &mudstate.flags_htab);
     list_hashstat(player, "Powers", &mudstate.powers_htab);
-    list_hashstat(player, "Attr names", &mudstate.attr_name_htab);
-    list_hashstat(player, "Vattr names", &mudstate.vattr_name_htab);
+    list_hashstat(player, "Attr Names", &mudstate.attr_name_htab);
+    list_hashstat(player, "Vattr Names", &mudstate.vattr_name_htab);
     list_hashstat(player, "Player Names", &mudstate.player_htab);
-    list_hashstat(player, "Net Descriptors", &mudstate.desc_htab);
-    list_hashstat(player, "Forwardlists", &mudstate.fwdlist_htab);
-    list_hashstat(player, "Overlaid $-cmds", &mudstate.parent_htab);
-    list_hashstat(player, "Mail messages", &mudstate.mail_htab);
-    list_hashstat(player, "Channel names", &mudstate.channel_htab);
-    list_hashstat(player, "Attribute Cache", &mudstate.acache_htab);
+    list_hashstat(player, "Net Descr.", &mudstate.desc_htab);
+    list_hashstat(player, "Fwd. lists", &mudstate.fwdlist_htab);
+    list_hashstat(player, "Excl. $-cmds", &mudstate.parent_htab);
+    list_hashstat(player, "Mail Messages", &mudstate.mail_htab);
+    list_hashstat(player, "Channel Names", &mudstate.channel_htab);
+    list_hashstat(player, "Attr. Cache", &mudstate.acache_htab);
     for (int i = 0; i < mudstate.nHelpDesc; i++)
     {
         list_hashstat(player, mudstate.aHelpDesc[i].pBaseFilename,

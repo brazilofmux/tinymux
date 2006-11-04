@@ -352,6 +352,7 @@ bool check_access(dbref player, int mask);
 void set_prefix_cmds(void);
 char *process_command(dbref executor, dbref caller, dbref enactor, int, bool,
     char *, char *[], int);
+size_t LeftJustifyString(char *field, size_t nWidth, const char *value);
 size_t RightJustifyNumber(char *field, size_t nWidth, INT64 value, char chFill);
 
 #define Protect(f) (cmdp->perms & f)
