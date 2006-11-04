@@ -1,6 +1,6 @@
 // cque.cpp -- commands and functions for manipulating the command queue.
 //
-// $Id: cque.cpp,v 1.37 2006/09/21 14:30:13 sdennis Exp $
+// $Id: cque.cpp,v 1.38 2006/11/04 00:22:04 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -222,10 +222,10 @@ static void Task_RunQueueEntry(void *pEntry, int iUnused)
             mudstate.inpipe = false;
             mudstate.poutobj = NOTHING;
         }
-        MEMFREE(point->text);
-        point->text = NULL;
-        free_qentry(point);
     }
+    MEMFREE(point->text);
+    point->text = NULL;
+    free_qentry(point);
 
     for (int i = 0; i < MAX_GLOBAL_REGS; i++)
     {
