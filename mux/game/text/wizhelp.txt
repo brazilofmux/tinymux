@@ -4613,9 +4613,14 @@ SUSPECT
 
   FLAG: SUSPECT(u) (players)
 
-  When set on a player, causes connects, disconnects, name changes, kills,
-  and attempted kills to be reported to all connected wizards.
+  When set on a player, causes connects, disconnects, name changes, kills, and
+  attempted kills to be reported to all connected wizards.  All commands from
+  a SUSPECT-set player are potentially logged as controlled by the 'log'
+  configuration option.
+
   This flag is only visible and settable by wizards.
+
+  Related Topics: log
 
 & SUSPECT_SITE
 SUSPECT_SITE

@@ -224,6 +224,9 @@ Bug Fixes:
     a bad object by the time the queued entry is executed.
  -- Issue 206: Prevent @ccreate from creating channels with duplicate
     names.
+ -- Issue 199: wizhelp SUSPECT should describe that all commands from
+    SUSPECT-set players are logged as controlled by the 'log'
+    configuration option.
 
 
 Performance Enhancements:
