@@ -110,6 +110,7 @@ static void Task_RunQueueEntry(void *pEntry, int iUnused)
                     RegRelease(mudstate.global_regs[i]);
                 }
                 mudstate.global_regs[i] = point->scr[i];
+                point->scr[i] = NULL;
             }
 
             char *command = point->comm;
@@ -218,19 +219,26 @@ static void Task_RunQueueEntry(void *pEntry, int iUnused)
             mudstate.inpipe = false;
             mudstate.poutobj = NOTHING;
         }
-        MEMFREE(point->text);
-        point->text = NULL;
-        free_qentry(point);
     }
 
     for (int i = 0; i < MAX_GLOBAL_REGS; i++)
     {
+        if (point->scr[i])
+        {
+            RegRelease(point->scr[i]);
+            point->scr[i] = NULL;
+        }
+
         if (mudstate.global_regs[i])
         {
             RegRelease(mudstate.global_regs[i]);
             mudstate.global_regs[i] = NULL;
         }
     }
+
+    MEMFREE(point->text);
+    point->text = NULL;
+    free_qentry(point);
 }
 
 // ---------------------------------------------------------------------------
@@ -311,6 +319,16 @@ static int CallBack_HaltQueue(PTASK_RECORD p)
             {
                 add_to(point->sem, -1, point->attr);
             }
+
+            for (int i = 0; i < MAX_GLOBAL_REGS; i++)
+            {
+                if (point->scr[i])
+                {
+                    RegRelease(point->scr[i]);
+                    point->scr[i] = NULL;
+                }
+            }
+
             MEMFREE(point->text);
             point->text = NULL;
             free_qentry(point);
@@ -450,9 +468,20 @@ static int CallBack_NotifySemaphoreDrainOrAll(PTASK_RECORD p)
                 //
                 giveto(point->executor, mudconf.waitcost);
                 a_Queue(Owner(point->executor), -1);
+
+                for (int i = 0; i < MAX_GLOBAL_REGS; i++)
+                {
+                    if (point->scr[i])
+                    {
+                        RegRelease(point->scr[i]);
+                        point->scr[i] = NULL;
+                    }
+                }
+
                 MEMFREE(point->text);
                 point->text = NULL;
                 free_qentry(point);
+
                 return IU_REMOVE_TASK;
             }
             else
