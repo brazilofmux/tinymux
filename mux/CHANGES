@@ -222,6 +222,8 @@ Bug Fixes:
     with other compile-time switches besides WOD_REALMS (Issue 51).
  -- Fix unlikely memory leak if executor of a queue task happens to be
     a bad object by the time the queued entry is executed.
+ -- Issue 206: Prevent @ccreate from creating channels with duplicate
+    names.
 
 
 Performance Enhancements:
