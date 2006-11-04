@@ -239,6 +239,8 @@ Performance Enhancements:
  -- Added reference counting to global registers which should improve
     performance and greatly reduce memory usage for games which use the
     queue heavily.
+ -- Issue 207: Maintain message length in mail bag to avoid touching
+    mail body.
 
 
 Cosmetic Changes:

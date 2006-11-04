@@ -77,6 +77,7 @@ int  dump_mail(FILE *);
 struct mail *mail_fetch(dbref, int);
 #if defined(FIRANMUX)
 const char *MessageFetch(int number);
+const size_t MessageFetchSize(int number);
 #endif // FIRANMUX
 
 // From netcommon.cpp.
