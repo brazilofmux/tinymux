@@ -943,6 +943,7 @@ public:
     CTaskHeap();
     ~CTaskHeap();
 
+    void Shrink(void);
     void Insert(PTASK_RECORD, SCHCMP *);
     PTASK_RECORD PeekAtTopmost(void);
     PTASK_RECORD RemoveTopmost(SCHCMP *);
@@ -976,6 +977,7 @@ public:
     int  RunTasks(const CLinearTimeAbsolute& tNow);
     void ReadyTasks(const CLinearTimeAbsolute& tNow);
     void CancelTask(FTASK *fpTask, void *arg_voidptr, int arg_Integer);
+    void Shrink(void);
 
     void SetMinPriority(int arg_minPriority);
     int  GetMinPriority(void) { return m_minPriority; }

@@ -367,19 +367,60 @@ bool CTaskHeap::Grow(void)
     // Grow the heap.
     //
     int n = GrowFiftyPercent(m_nAllocated, INITIAL_TASKS, INT_MAX);
-    PTASK_RECORD *p = new PTASK_RECORD[n];
+    PTASK_RECORD *p = NULL;
+    try
+    {
+        p = new PTASK_RECORD[n];
+    }
+    catch (...)
+    {
+        ; // Nothing.
+    }
+
     if (!p)
     {
         return false;
     }
 
-    memcpy(p, m_pHeap, sizeof(PTASK_RECORD)*m_nAllocated);
+    memcpy(p, m_pHeap, sizeof(PTASK_RECORD)*m_nCurrent);
     m_nAllocated = n;
     delete [] m_pHeap;
     m_pHeap = p;
 
     return true;
 }
+
+void CTaskHeap::Shrink(void)
+{
+    // Shrink the heap.
+    //
+    int n = ShrinkFiftyPercent(m_nAllocated, INITIAL_TASKS);
+    if (n < m_nCurrent)
+    {
+        return;
+    }
+
+    PTASK_RECORD *p = NULL;
+    try
+    {
+        p = new PTASK_RECORD[n];
+    }
+    catch (...)
+    {
+        ; // Nothing.
+    }
+
+    if (!p)
+    {
+        return;
+    }
+
+    memcpy(p, m_pHeap, sizeof(PTASK_RECORD)*m_nCurrent);
+    m_nAllocated = n;
+    delete [] m_pHeap;
+    m_pHeap = p;
+}
+
 
 PTASK_RECORD CTaskHeap::PeekAtTopmost(void)
 {
@@ -776,4 +817,10 @@ void CTaskHeap::Remake(SCHCMP *pfCompare)
 void CScheduler::SetMinPriority(int arg_minPriority)
 {
     m_minPriority = arg_minPriority;
+}
+
+void CScheduler::Shrink(void)
+{
+    m_WhenHeap.Shrink();
+    m_PriorityHeap.Shrink();
 }

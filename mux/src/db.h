@@ -249,6 +249,7 @@ void putstring(FILE *f, const char *s);
 char *getstring_noalloc(FILE *f, bool new_strings, size_t *pnBuffer);
 void init_attrtab(void);
 int GrowFiftyPercent(int x, int low, int high);
+int ShrinkFiftyPercent(int x, int low);
 
 #define DOLIST(thing,list) \
     for ((thing)=(list); \
