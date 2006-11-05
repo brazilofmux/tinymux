@@ -1196,26 +1196,6 @@ ATTR *atr_str(char *s)
     return a;
 }
 
-int ShrinkFiftyPercent(int x, int low)
-{
-    if (x < 0)
-    {
-        x = 0;
-    }
-
-    // Calculate 50% of x.
-    //
-    int goal = x >> 1;
-
-    // Clip result above requested minimum.
-    //
-    if (goal < low)
-    {
-        goal = low;
-    }
-    return goal;
-}
-
 int GrowFiftyPercent(int x, int low, int high)
 {
     if (x < 0)

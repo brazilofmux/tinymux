@@ -394,7 +394,7 @@ void CTaskHeap::Shrink(void)
 {
     // Shrink the heap.
     //
-    int n = ShrinkFiftyPercent(m_nAllocated, INITIAL_TASKS);
+    int n = m_nAllocated/2;
     if (  n <= INITIAL_TASKS
        || n <= m_nCurrent)
     {
