@@ -12443,20 +12443,25 @@ SUCCESS
 & SUCCESSES()
 SUCCESSES()
 
-  FUNCTION: successes(<numdice>, <difficulty target>)
+  FUNCTION: successes(<numdice>, <difficulty target>[, <version>])
 
-  Returns a small integer representing the number of successes (a positive
+  Returns an integer representing the number of successes (a positive
   number), the number of failures or fumbles (a negative number), or 0
   indicating no successes or failures.
 
-  The first number passed to successes() is the number of dice (ten-sided dice
-  ranging 1 to 10) to be rolled.  The second number is the difficulty target
-  number that must be rolled to count that die as a "success".  The dice are
-  rolled and each die that is equal to or greater than the target number is
-  counted as a success.  Each die that rolls a '1' is counted as a failure.
-  The number returned from successes() is the successes minus the failures.
+  <version>       Description:
 
-  This function is only available if FIRANMUX is enabled.
+     0            The first number passed to successes() is the number of dice
+                  (ten-sided dice ranging 1 to 10) to be rolled.  The second
+                  number is the difficulty target number that must be rolled
+                  to count that die as a "success".  The dice are rolled and
+                  each die that is equal to or greater than the target number
+                  is counted as a success.  Each die that rolls a '1' is
+                  counted as a failure.  The number returned from successes()
+                  is the successes minus the failures.
+
+     1 (default)  Similar outcome to above, but expressed internally as a
+                  large table with some of the harsher edges smoothed over.
 
   Related Topics: choose(), die(), distribute(), lrand(), and rand().
 

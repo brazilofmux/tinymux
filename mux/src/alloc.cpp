@@ -63,7 +63,7 @@ typedef struct pooldata
 static POOL pools[NUM_POOLS];
 static const char *poolnames[] =
 {
-    "Lbufs", "Sbufs", "Mbufs", "Bools", "Descs", "Qentries", "Pcaches"
+    "Lbufs", "Sbufs", "Mbufs", "Bools", "Descs", "Qentries", "Pcaches", "Lbufref", "Regref"
 };
 
 void pool_init(int poolnum, int poolsize)
@@ -553,26 +553,18 @@ static void pool_trace(dbref player, int poolnum, const char *text)
 
 void list_bufstats(dbref player)
 {
-    char buff[MBUF_SIZE];
-
-    notify(player, "Buffer Stats  Size     InUse     Total        Allocs   Lost");
-
-    int i;
-    for (i = 0; i < NUM_POOLS; i++)
+    notify(player, "Buffer Stats  Size      InUse      Total           Allocs   Lost");
+    for (int i = 0; i < NUM_POOLS; i++)
     {
-        char szNumAlloc[22];
-        char szMaxAlloc[22];
-        char szTotAlloc[22];
-        char szNumLost[22];
+        char buff[MBUF_SIZE];
+        char *p = buff;
 
-        mux_i64toa(pools[i].num_alloc, szNumAlloc);
-        mux_i64toa(pools[i].max_alloc, szMaxAlloc);
-        mux_i64toa(pools[i].tot_alloc, szTotAlloc);
-        mux_i64toa(pools[i].num_lost,  szNumLost);
-
-        mux_sprintf(buff, MBUF_SIZE, "%-12s %5u%10s%10s%14s%7s",
-            poolnames[i], pools[i].pool_client_size,
-            szNumAlloc, szMaxAlloc, szTotAlloc, szNumLost);
+        p += LeftJustifyString(p,  12, poolnames[i]);                   *p++ = ' ';
+        p += RightJustifyNumber(p,  5, pools[i].pool_client_size, ' '); *p++ = ' ';
+        p += RightJustifyNumber(p, 10, pools[i].num_alloc,        ' '); *p++ = ' ';
+        p += RightJustifyNumber(p, 10, pools[i].max_alloc,        ' '); *p++ = ' ';
+        p += RightJustifyNumber(p, 16, pools[i].tot_alloc,        ' '); *p++ = ' ';
+        p += RightJustifyNumber(p,  6, pools[i].num_lost,         ' '); *p++ = '\0';
         notify(player, buff);
     }
 }

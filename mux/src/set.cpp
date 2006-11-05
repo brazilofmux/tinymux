@@ -1871,7 +1871,9 @@ void do_trigger(dbref executor, dbref caller, dbref enactor, int key,
         mux_strncpy(tbuf, "@notify/quiet me", LBUF_SIZE-1);
         CLinearTimeAbsolute lta;
         wait_que(executor, caller, enactor, 0, false, lta, NOTHING, A_SEMAPHORE,
-            tbuf, (char **)NULL, 0, mudstate.global_regs);
+            tbuf,
+            0, NULL,
+            mudstate.global_regs);
         free_lbuf(tbuf);
     }
 

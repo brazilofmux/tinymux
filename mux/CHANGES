@@ -1,5 +1,5 @@
 TinyMUX 2.6:  CHANGES
-Last Update:  October 2006
+Last Update:  November 2006
 
 Major changes that may affect performance and require softcode tweaks:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -71,6 +71,7 @@ Feature Additions:
  -- Added STEP() following TinyMUSH and RhostMUSH (Issue 1).
  -- Add /nostrip switch to @chown, @chownall, and @clone.
  -- Add new successes() code from Jon@Firan.
+ -- Combine old and new versions of SUCCESSES().
 
 
 Bug Fixes:
@@ -217,6 +218,12 @@ Bug Fixes:
  -- Fixed v() references in 'help substitutions3' (Issue 195).
  -- @clist/full column alignment with six-digit dbrefs (Issue 196).
  -- @mail index listing alignment with @moniker (Issue 197).
+ -- Added local.cpp hook to affect INFO and populate Patches: line
+    with other compile-time switches besides WOD_REALMS (Issue 51).
+ -- Fix unlikely memory leak if executor of a queue task happens to be
+    a bad object by the time the queued entry is executed.
+ -- Issue 206: Prevent @ccreate from creating channels with duplicate
+    names.
 
 
 Performance Enhancements:
@@ -229,10 +236,15 @@ Performance Enhancements:
     This translates to something upward of 28 MB/s.
  -- Optimize do_comsystem() ability to recognize what is not an alias.
     Alierak.
+ -- Added reference counting to global registers which should improve
+    performance and greatly reduce memory usage for games which use the
+    queue heavily.
 
 
 Cosmetic Changes:
 ~~~~~~~~~~~~~~~~
+ -- Increased width of certain columns in @list hashstats (Requests,
+    Hits, and Checks) and @list allocations (Allocs).
 
 
 Miscellaneous:

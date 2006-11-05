@@ -2053,7 +2053,7 @@ void shutdownsock(DESC *d, int reason)
             {
                 if (d->program_data->wait_regs[i])
                 {
-                    free_lbuf(d->program_data->wait_regs[i]);
+                    RegRelease(d->program_data->wait_regs[i]);
                     d->program_data->wait_regs[i] = NULL;
                 }
             }

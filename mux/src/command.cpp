@@ -1053,13 +1053,11 @@ static bool process_hook(dbref executor, dbref thing, char *s_uselock, ATTR *hk_
         char *atext = atr_get(thing, anum, &aowner, &aflags);
         if (atext[0] && !(aflags & AF_NOPROG))
         {
-            char **preserve = NULL;
-            size_t *preserve_len = NULL;
+            reg_ref **preserve = NULL;
             if (save_flg)
             {
-                preserve = PushPointers(MAX_GLOBAL_REGS);
-                preserve_len = PushLengths(MAX_GLOBAL_REGS);
-                save_global_regs("process_hook.save", preserve, preserve_len);
+                preserve = PushRegisters(MAX_GLOBAL_REGS);
+                save_global_regs(preserve);
             }
             char *buff, *bufc;
             bufc = buff = alloc_lbuf("process_hook");
@@ -1070,9 +1068,8 @@ static bool process_hook(dbref executor, dbref thing, char *s_uselock, ATTR *hk_
             *bufc = '\0';
             if (save_flg)
             {
-                restore_global_regs("process_hook.save", preserve, preserve_len);
-                PopLengths(preserve_len, MAX_GLOBAL_REGS);
-                PopPointers(preserve, MAX_GLOBAL_REGS);
+                restore_global_regs(preserve);
+                PopRegisters(preserve, MAX_GLOBAL_REGS);
             }
             retval = xlate(buff);
             free_lbuf(buff);
@@ -1400,8 +1397,11 @@ static void process_cmdent(CMDENT *cmdp, char *switchp, dbref executor, dbref ca
                 {
                     CLinearTimeAbsolute lta;
                     wait_que(add->thing, caller, executor,
-                        AttrTrace(aflags, 0), false, lta, NOTHING, 0, s,
-                        aargs, NUM_ENV_VARS, mudstate.global_regs);
+                        AttrTrace(aflags, 0), false, lta, NOTHING, 0,
+                        s,
+                        NUM_ENV_VARS, aargs,
+                        mudstate.global_regs);
+
                     for (i = 0; i < NUM_ENV_VARS; i++)
                     {
                         if (aargs[i])
@@ -3577,7 +3577,7 @@ static void list_vattrs(dbref player, char *s_mask)
     free_lbuf(buff);
 }
 
-static size_t LeftJustifyString(char *field, size_t nWidth, const char *value)
+size_t LeftJustifyString(char *field, size_t nWidth, const char *value)
 {
     size_t n = strlen(value);
     if (n > nWidth)
@@ -3625,34 +3625,34 @@ static void list_hashstat(dbref player, const char *tab_name, CHashTable *htab)
     char buff[MBUF_SIZE];
     char *p = buff;
 
-    p += LeftJustifyString(p,  15, tab_name);      *p++ = ' ';
+    p += LeftJustifyString(p,  13, tab_name);      *p++ = ' ';
     p += RightJustifyNumber(p,  4, hashsize, ' '); *p++ = ' ';
     p += RightJustifyNumber(p,  6, entries,  ' '); *p++ = ' ';
-    p += RightJustifyNumber(p,  9, deletes,  ' '); *p++ = ' ';
-    p += RightJustifyNumber(p, 11, scans,    ' '); *p++ = ' ';
-    p += RightJustifyNumber(p, 11, hits,     ' '); *p++ = ' ';
-    p += RightJustifyNumber(p, 11, checks,   ' '); *p++ = ' ';
+    p += RightJustifyNumber(p,  7, deletes,  ' '); *p++ = ' ';
+    p += RightJustifyNumber(p, 13, scans,    ' '); *p++ = ' ';
+    p += RightJustifyNumber(p, 13, hits,     ' '); *p++ = ' ';
+    p += RightJustifyNumber(p, 13, checks,   ' '); *p++ = ' ';
     p += RightJustifyNumber(p,  4, max_scan, ' '); *p = '\0';
     raw_notify(player, buff);
 }
 
 static void list_hashstats(dbref player)
 {
-    raw_notify(player, "Hash Stats      Size Entries Deleted      Lookups        Hits     Checks Longest");
+    raw_notify(player, "Hash Stats    Size    Num     Del       Lookups          Hits        Probes Long");
     list_hashstat(player, "Commands", &mudstate.command_htab);
-    list_hashstat(player, "Logged-out Cmds", &mudstate.logout_cmd_htab);
+    list_hashstat(player, "Logout Cmds", &mudstate.logout_cmd_htab);
     list_hashstat(player, "Functions", &mudstate.func_htab);
     list_hashstat(player, "Flags", &mudstate.flags_htab);
     list_hashstat(player, "Powers", &mudstate.powers_htab);
-    list_hashstat(player, "Attr names", &mudstate.attr_name_htab);
-    list_hashstat(player, "Vattr names", &mudstate.vattr_name_htab);
+    list_hashstat(player, "Attr Names", &mudstate.attr_name_htab);
+    list_hashstat(player, "Vattr Names", &mudstate.vattr_name_htab);
     list_hashstat(player, "Player Names", &mudstate.player_htab);
-    list_hashstat(player, "Net Descriptors", &mudstate.desc_htab);
-    list_hashstat(player, "Forwardlists", &mudstate.fwdlist_htab);
-    list_hashstat(player, "Overlaid $-cmds", &mudstate.parent_htab);
-    list_hashstat(player, "Mail messages", &mudstate.mail_htab);
-    list_hashstat(player, "Channel names", &mudstate.channel_htab);
-    list_hashstat(player, "Attribute Cache", &mudstate.acache_htab);
+    list_hashstat(player, "Net Descr.", &mudstate.desc_htab);
+    list_hashstat(player, "Fwd. lists", &mudstate.fwdlist_htab);
+    list_hashstat(player, "Excl. $-cmds", &mudstate.parent_htab);
+    list_hashstat(player, "Mail Messages", &mudstate.mail_htab);
+    list_hashstat(player, "Channel Names", &mudstate.channel_htab);
+    list_hashstat(player, "Attr. Cache", &mudstate.acache_htab);
     for (int i = 0; i < mudstate.nHelpDesc; i++)
     {
         list_hashstat(player, mudstate.aHelpDesc[i].pBaseFilename,

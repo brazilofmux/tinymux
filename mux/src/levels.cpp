@@ -516,8 +516,7 @@ void did_it_rlevel
     int num, aflags;
     int i, *desclist, found_a_desc;
 
-    char *preserve[MAX_GLOBAL_REGS];
-    size_t preserve_len[MAX_GLOBAL_REGS];
+    reg_ref **preserve = NULL;
     bool need_pres = false;
 
     // Message to player.
@@ -549,12 +548,13 @@ void did_it_rlevel
                 if (!need_pres)
                 {
                     need_pres = true;
-                    save_global_regs("did_it_save", preserve, preserve_len);
+                    preserve = PushRegisters(MAX_GLOBAL_REGS);
+                    save_global_regs(preserve);
                 }
                 buff = bp = alloc_lbuf("did_it.1");
                 str = d;
                 mux_exec(buff, &bp, thing, thing, player,
-                    AttrTrace(aflags)|EV_EVAL|EV_FIGNORE|EV_TOP, &str,
+                    AttrTrace(aflags, EV_EVAL|EV_FIGNORE|EV_TOP), &str,
                     args, nargs);
                 *bp = '\0';
 
@@ -587,12 +587,13 @@ void did_it_rlevel
                 if (!need_pres)
                 {
                     need_pres = true;
-                    save_global_regs("did_it_save", preserve, preserve_len);
+                    preserve = PushRegisters(MAX_GLOBAL_REGS);
+                    save_global_regs(preserve);
                 }
                 buff = bp = alloc_lbuf("did_it.1");
                 str = d;
                 mux_exec(buff, &bp, thing, thing, player,
-                    AttrTrace(aflags)|EV_EVAL|EV_FIGNORE|EV_TOP, &str,
+                    AttrTrace(aflags, EV_EVAL|EV_FIGNORE|EV_TOP), &str,
                     args, nargs);
                 *bp = '\0';
 
@@ -630,12 +631,13 @@ void did_it_rlevel
           if (!need_pres)
           {
              need_pres = true;
-             save_global_regs("did_it_save", preserve, preserve_len);
+             preserve = PushRegisters(MAX_GLOBAL_REGS);
+             save_global_regs(preserve);
           }
           buff = bp = alloc_lbuf("did_it.1");
           str = d;
           mux_exec(buff, &bp, thing, thing, player,
-              AttrTrace(aflags)|EV_EVAL|EV_FIGNORE|EV_TOP, &str,
+              AttrTrace(aflags, EV_EVAL|EV_FIGNORE|EV_TOP), &str,
               args, nargs);
           *bp = '\0';
           notify(player, buff);
@@ -657,12 +659,13 @@ void did_it_rlevel
             if (!need_pres)
             {
                 need_pres = true;
-                save_global_regs("did_it_save", preserve, preserve_len);
+                preserve = PushRegisters(MAX_GLOBAL_REGS);
+                save_global_regs(preserve);
             }
             buff = bp = alloc_lbuf("did_it.2");
             str = d;
             mux_exec(buff, &bp, thing, thing, player,
-                AttrTrace(aflags)|EV_EVAL|EV_FIGNORE|EV_TOP, &str,
+                AttrTrace(aflags, EV_EVAL|EV_FIGNORE|EV_TOP), &str,
                 args, nargs);
             *bp = '\0';
 
@@ -693,7 +696,8 @@ void did_it_rlevel
     //
     if (need_pres)
     {
-        restore_global_regs("did_it_restore", preserve, preserve_len);
+        restore_global_regs(preserve);
+        PopRegisters(preserve, MAX_GLOBAL_REGS);
     }
 
     // Do the action attribute.
@@ -736,7 +740,10 @@ void did_it_rlevel
 
             CLinearTimeAbsolute lta;
             wait_que(thing, player, player, AttrTrace(aflags, 0), false, lta,
-                NOTHING, 0, act, args, nargs, mudstate.global_regs);
+                NOTHING, 0,
+                act,
+                nargs, args,
+                mudstate.global_regs);
         }
         free_lbuf(act);
     }

@@ -331,7 +331,6 @@ void cf_init(void)
     for (i = 0; i < MAX_GLOBAL_REGS; i++)
     {
         mudstate.global_regs[i] = NULL;
-        mudstate.glob_reg_len[i] = 0;
     }
     mudstate.nObjEvalNest = 0;
     mudstate.in_loop = 0;

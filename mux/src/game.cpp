@@ -310,7 +310,10 @@ static int atr_match1
             match = 1;
             CLinearTimeAbsolute lta;
             wait_que(thing, player, player, AttrTrace(aflags, 0), false, lta,
-                NOTHING, 0, s, args, NUM_ENV_VARS, mudstate.global_regs);
+                NOTHING, 0,
+                s,
+                NUM_ENV_VARS, args,
+                mudstate.global_regs);
 
             for (int i = 0; i < NUM_ENV_VARS; i++)
             {
@@ -441,11 +444,9 @@ static bool check_filter(dbref object, dbref player, int filter, const char *msg
     safe_copy_buf(msg_stripped, nmsg, msg, &mp);
     *mp = '\0';
 
-    char **preserve = NULL;
-    size_t *preserve_len = NULL;
-    preserve = PushPointers(MAX_GLOBAL_REGS);
-    preserve_len = PushLengths(MAX_GLOBAL_REGS);
-    save_global_regs("check_filter_save", preserve, preserve_len);
+    reg_ref **preserve = NULL;
+    preserve = PushRegisters(MAX_GLOBAL_REGS);
+    save_global_regs(preserve);
 
     char *nbuf = alloc_lbuf("check_filter");
     char *dp = nbuf;
@@ -457,9 +458,9 @@ static bool check_filter(dbref object, dbref player, int filter, const char *msg
     dp = nbuf;
     free_lbuf(buf);
 
-    restore_global_regs("check_filter_restore", preserve, preserve_len);
-    PopLengths(preserve_len, MAX_GLOBAL_REGS);
-    PopPointers(preserve, MAX_GLOBAL_REGS);
+    restore_global_regs(preserve);
+    PopRegisters(preserve, MAX_GLOBAL_REGS);
+    preserve = NULL;
 
     if (!(aflags & AF_REGEXP))
     {
@@ -523,11 +524,9 @@ static char *add_prefix(dbref object, dbref player, int prefix,
     }
     else
     {
-        char **preserve = NULL;
-        size_t *preserve_len = NULL;
-        preserve = PushPointers(MAX_GLOBAL_REGS);
-        preserve_len = PushLengths(MAX_GLOBAL_REGS);
-        save_global_regs("add_prefix_save", preserve, preserve_len);
+        reg_ref **preserve = NULL;
+        preserve = PushRegisters(MAX_GLOBAL_REGS);
+        save_global_regs(preserve);
 
         nbuf = cp = alloc_lbuf("add_prefix");
         str = buf;
@@ -536,9 +535,8 @@ static char *add_prefix(dbref object, dbref player, int prefix,
             (char **)NULL, 0);
         free_lbuf(buf);
 
-        restore_global_regs("add_prefix_restore", preserve, preserve_len);
-        PopLengths(preserve_len, MAX_GLOBAL_REGS);
-        PopPointers(preserve, MAX_GLOBAL_REGS);
+        restore_global_regs(preserve);
+        PopRegisters(preserve, MAX_GLOBAL_REGS);
 
         buf = nbuf;
     }
@@ -3082,6 +3080,8 @@ int DCL_CDECL main(int argc, char *argv[])
 
     pool_init(POOL_DESC, sizeof(DESC));
     pool_init(POOL_QENTRY, sizeof(BQUE));
+    pool_init(POOL_LBUFREF, sizeof(lbuf_ref));
+    pool_init(POOL_REGREF, sizeof(reg_ref));
     tcache_init();
     pcache_init();
     cf_init();
@@ -3185,13 +3185,6 @@ int DCL_CDECL main(int argc, char *argv[])
     hashreset(&mudstate.fwdlist_htab);
     hashreset(&mudstate.desc_htab);
 
-    int i;
-    for (i = 0; i < MAX_GLOBAL_REGS; i++)
-    {
-        mudstate.global_regs[i] = alloc_lbuf("main.global_reg");
-        mudstate.glob_reg_len[i] = 0;
-    }
-
     ValidateConfigurationDbrefs();
     process_preload();
 
@@ -3269,6 +3262,7 @@ int DCL_CDECL main(int argc, char *argv[])
     // Go ahead and explicitly free the memory for these things so
     // that it's easy to spot unintentional memory leaks.
     //
+    int i;
     for (i = 0; i < mudstate.nHelpDesc; i++)
     {
         helpindex_clean(i);

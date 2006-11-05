@@ -370,7 +370,6 @@ struct statedata
     int     mstat_secs[2];      /* Time of samples */
     int     inum[MAX_ITEXT];    // Number of iter(). Equivalent to #@.
     int     *guest_free;        /* Table to keep track of free guests */
-    size_t  glob_reg_len[MAX_GLOBAL_REGS];  /* Length of strs */
     size_t  mod_alist_len;      /* Length of mod_alist */
     size_t  mod_size;           /* Length of modified buffer */
 
@@ -383,9 +382,9 @@ struct statedata
     char    *pout;              /* The output of the pipe used in %| */
     char    *poutbufc;          /* Buffer position for poutnew */
     char    *poutnew;           /* The output being build by the current command */
-    char    *global_regs[MAX_GLOBAL_REGS];  /* Global registers */
     char    *itext[MAX_ITEXT];  // Text of iter(). Equivalent to ##.
 
+    reg_ref *global_regs[MAX_GLOBAL_REGS];  /* Global registers */
     ALIST   iter_alist;         /* Attribute list for iterations */
     BADNAME *badname_head;      /* List of disallowed names */
     HELP_DESC *aHelpDesc;       // Table of help files hashes.

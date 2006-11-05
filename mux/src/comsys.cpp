@@ -1750,12 +1750,6 @@ void do_createchannel(dbref executor, dbref caller, dbref enactor, int eval, int
     UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(key);
 
-    if (select_channel(channel))
-    {
-        raw_notify(executor, tprintf("Channel %s already exists.", channel));
-        return;
-    }
-
     if ('\0' == channel[0])
     {
         raw_notify(executor, "You must specify a channel to create.");
@@ -1767,6 +1761,7 @@ void do_createchannel(dbref executor, dbref caller, dbref enactor, int eval, int
         raw_notify(executor, NOPERM_MESSAGE);
         return;
     }
+
     struct channel *newchannel = (struct channel *)MEMALLOC(sizeof(struct channel));
     if (NULL == newchannel)
     {
@@ -1807,12 +1802,21 @@ void do_createchannel(dbref executor, dbref caller, dbref enactor, int eval, int
         memcpy(newchannel->header, Buffer, nChannel+1);
         pNameNoANSI = strip_ansi(Buffer, &nNameNoANSI);
     }
+
     if (nNameNoANSI > MAX_CHANNEL_LEN)
     {
         nNameNoANSI = MAX_CHANNEL_LEN;
     }
+
     memcpy(newchannel->name, pNameNoANSI, nNameNoANSI);
     newchannel->name[nNameNoANSI] = '\0';
+
+    if (select_channel(newchannel->name))
+    {
+        raw_notify(executor, tprintf("Channel %s already exists.", newchannel->name));
+        MEMFREE(newchannel);
+        return;
+    }
 
     newchannel->type = 127;
     newchannel->temp1 = 0;

@@ -68,6 +68,7 @@ void local_disconnect(dbref, int);
 void local_data_create(dbref);
 void local_data_clone(dbref, dbref);
 void local_data_free(dbref);
+const char **local_get_info_table(void);
 
 // From mail.cpp.
 //
@@ -92,7 +93,7 @@ void make_portlist(dbref, dbref, char *, char **);
 int  nfy_que(dbref, int, int, int);
 int  halt_que(dbref, dbref);
 void wait_que(dbref executor, dbref caller, dbref enactor, int, bool,
-    CLinearTimeAbsolute&, dbref, int, char *, char *[],int, char *[]);
+    CLinearTimeAbsolute&, dbref, int, char *, int, char *[], reg_ref *[]);
 
 #ifndef WIN32
 extern "C" char *crypt(const char *inptr, const char *inkey);
@@ -108,13 +109,22 @@ int get_gender(dbref);
 void mux_exec(char *buff, char **bufc, dbref executor, dbref caller,
               dbref enactor, int eval, char **dstr, char *cargs[],
               int ncargs);
-void save_global_regs(const char *, char *[], size_t []);
-void save_and_clear_global_regs(const char *, char *[], size_t[]);
-void restore_global_regs(const char *, char *[], size_t []);
+
+void RegAddRef(reg_ref *regref);
+void BufRelease(lbuf_ref *lbufref);
+void RegAddRef(reg_ref *regref);
+void RegRelease(reg_ref *regref);
+void RegAssign(reg_ref **regref, size_t n, const char *ptr);
+
+void save_global_regs(reg_ref *preserve[]);
+void save_and_clear_global_regs(reg_ref *preserve[]);
+void restore_global_regs(reg_ref *preserve[]);
+
 char **PushPointers(int nNeeded);
 void PopPointers(char **p, int nNeeded);
-size_t *PushLengths(int nNeeded);
-void PopLengths(size_t *pi, int nNeeded);
+reg_ref **PushRegisters(int nNeeded);
+void PopRegisters(reg_ref **p, int nNeeded);
+
 extern const signed char mux_RegisterSet[256];
 extern const char *ColorTable[256];
 
@@ -342,6 +352,7 @@ bool check_access(dbref player, int mask);
 void set_prefix_cmds(void);
 char *process_command(dbref executor, dbref caller, dbref enactor, int, bool,
     char *, char *[], int);
+size_t LeftJustifyString(char *field, size_t nWidth, const char *value);
 size_t RightJustifyNumber(char *field, size_t nWidth, INT64 value, char chFill);
 
 #define Protect(f) (cmdp->perms & f)

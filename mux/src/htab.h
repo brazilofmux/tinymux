@@ -36,7 +36,7 @@ struct bque
     char    *text;                  // buffer for comm, env, and scr text
     char    *comm;                  // command
     char    *env[NUM_ENV_VARS];     // environment vars
-    char    *scr[MAX_GLOBAL_REGS];  // temp vars
+    reg_ref *scr[MAX_GLOBAL_REGS];  // temp vars
     bool    IsTimed;                // Is there a waittime time on this entry?
 };
 
