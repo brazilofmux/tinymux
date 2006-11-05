@@ -241,6 +241,8 @@ Performance Enhancements:
     queue heavily.
  -- Issue 207: Maintain message length in mail bag to avoid touching
     mail body.
+ -- Issue 201: Trim priority queue data structures during @dbck to save
+    memory.
 
 
 Cosmetic Changes:
