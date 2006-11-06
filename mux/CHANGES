@@ -224,6 +224,9 @@ Bug Fixes:
     a bad object by the time the queued entry is executed.
  -- Issue 206: Prevent @ccreate from creating channels with duplicate
     names.
+ -- Issue 199: wizhelp SUSPECT should describe that all commands from
+    SUSPECT-set players are logged as controlled by the 'log'
+    configuration option.
 
 
 Performance Enhancements:
@@ -239,6 +242,10 @@ Performance Enhancements:
  -- Added reference counting to global registers which should improve
     performance and greatly reduce memory usage for games which use the
     queue heavily.
+ -- Issue 207: Maintain message length in mail bag to avoid touching
+    mail body.
+ -- Issue 201: Trim priority queue data structures during @dbck to save
+    memory.
 
 
 Cosmetic Changes:

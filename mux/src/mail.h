@@ -85,8 +85,9 @@ struct muser
 typedef struct mail_body MAILBODY;
 struct mail_body
 {
-    char *m_pMessage;
-    int   m_nRefs;
+    size_t m_nMessage;
+    char  *m_pMessage;
+    int    m_nRefs;
 };
 
 class MailList

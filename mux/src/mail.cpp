@@ -85,6 +85,7 @@ static void mail_db_grow(int newtop)
     for (int i = mudstate.mail_db_top; i < newtop; i++)
     {
         mail_list[i].m_nRefs = 0;
+        mail_list[i].m_nMessage = 0;
         mail_list[i].m_pMessage = NULL;
     }
     mudstate.mail_db_top = newtop;
@@ -100,7 +101,7 @@ static DCL_INLINE void MessageReferenceInc(int number)
 
 // MessageReferenceCheck - Checks whether the reference count for
 // any particular message indicates that the message body should be
-// freed. Also checks that if a message point is null, that the
+// freed. Also checks that if a message pointer is null, that the
 // reference count is zero.
 //
 static void MessageReferenceCheck(int number)
@@ -112,11 +113,14 @@ static void MessageReferenceCheck(int number)
         {
             MEMFREE(m.m_pMessage);
             m.m_pMessage = NULL;
+            m.m_nMessage = 0;
         }
     }
+
     if (m.m_pMessage == NULL)
     {
         m.m_nRefs = 0;
+        m.m_nMessage = 0;
     }
 }
 
@@ -145,6 +149,19 @@ const char *MessageFetch(int number)
     }
 }
 
+size_t MessageFetchSize(int number)
+{
+    MessageReferenceCheck(number);
+    if (mail_list[number].m_pMessage)
+    {
+        return mail_list[number].m_nMessage;
+    }
+    else
+    {
+        return 0;
+    }
+}
+
 // This function returns a reference to the message and the the
 // reference count is increased to reflect that.
 //
@@ -156,20 +173,22 @@ static int MessageAdd(char *pMessage)
     for (i = 0; i < mudstate.mail_db_top; i++)
     {
         pm = &mail_list[i];
-        if (pm->m_pMessage == NULL)
+        if (NULL == pm->m_pMessage)
         {
             pm->m_nRefs = 0;
             bFound = true;
             break;
         }
     }
+
     if (!bFound)
     {
         mail_db_grow(i + 1);
     }
 
     pm = &mail_list[i];
-    pm->m_pMessage = StringClone(pMessage);
+    pm->m_nMessage = strlen(pMessage);
+    pm->m_pMessage = StringCloneLen(pMessage, pm->m_nMessage);
     MessageReferenceInc(i);
     return i;
 }
@@ -217,7 +236,8 @@ static bool MessageAddWithNumber(int i, char *pMessage)
     mail_db_grow(i+1);
 
     MAILBODY *pm = &mail_list[i];
-    pm->m_pMessage = StringClone(pMessage);
+    pm->m_nMessage = strlen(pMessage);
+    pm->m_pMessage = StringCloneLen(pMessage, pm->m_nMessage);
     return true;
 }
 
@@ -1510,7 +1530,7 @@ static void do_mail_review(dbref player, char *name, char *msglist)
 
                 ANSI_TruncateToField(mp->subject, sizeof(szSubjectBuffer),
                     szSubjectBuffer, 25, &iRealVisibleWidth, ANSI_ENDGOAL_NORMAL);
-                size_t nSize = strlen(MessageFetch(mp->number));
+                size_t nSize = MessageFetchSize(mp->number);
                 notify(player, tprintf("[%s] %-3d (%4d) From: %s Sub: %s",
                                status_chars(mp),
                                i, nSize,
@@ -1639,7 +1659,7 @@ static void do_mail_list(dbref player, char *msglist, bool sub)
             if (mail_match(mp, ms, i))
             {
                 time = mail_list_time(mp->time);
-                size_t nSize = strlen(MessageFetch(mp->number));
+                size_t nSize = MessageFetchSize(mp->number);
 
                 char szFromName[MBUF_SIZE];
                 GetFromField(mp->from, szFromName);
@@ -2622,17 +2642,17 @@ static void do_mail_stats(dbref player, char *name, int full)
                     if (Cleared(mp))
                     {
                         fc++;
-                        cchars += strlen(MessageFetch(mp->number)) + 1;
+                        cchars += MessageFetchSize(mp->number) + 1;
                     }
                     else if (Read(mp))
                     {
                         fr++;
-                        fchars += strlen(MessageFetch(mp->number)) + 1;
+                        fchars += MessageFetchSize(mp->number) + 1;
                     }
                     else
                     {
                         fu++;
-                        tchars += strlen(MessageFetch(mp->number)) + 1;
+                        tchars += MessageFetchSize(mp->number) + 1;
                     }
                 }
             }
@@ -2695,7 +2715,7 @@ static void do_mail_stats(dbref player, char *name, int full)
                 }
                 if (full == 2)
                 {
-                    fchars += strlen(MessageFetch(mp->number)) + 1;
+                    fchars += MessageFetchSize(mp->number) + 1;
                 }
             }
             if (mp->to == target)
@@ -2718,7 +2738,7 @@ static void do_mail_stats(dbref player, char *name, int full)
                 }
                 if (full == 2)
                 {
-                    tchars += strlen(MessageFetch(mp->number)) + 1;
+                    tchars += MessageFetchSize(mp->number) + 1;
                 }
             }
         }

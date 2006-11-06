@@ -77,6 +77,7 @@ int  dump_mail(FILE *);
 struct mail *mail_fetch(dbref, int);
 #if defined(FIRANMUX)
 const char *MessageFetch(int number);
+size_t MessageFetchSize(int number);
 #endif // FIRANMUX
 
 // From netcommon.cpp.
@@ -110,10 +111,35 @@ void mux_exec(char *buff, char **bufc, dbref executor, dbref caller,
               dbref enactor, int eval, char **dstr, char *cargs[],
               int ncargs);
 
-void RegAddRef(reg_ref *regref);
-void BufRelease(lbuf_ref *lbufref);
-void RegAddRef(reg_ref *regref);
-void RegRelease(reg_ref *regref);
+DCL_INLINE void BufAddRef(lbuf_ref *lbufref)
+{
+    lbufref->refcount++;
+}
+
+DCL_INLINE void BufRelease(lbuf_ref *lbufref)
+{
+    lbufref->refcount--;
+    if (0 == lbufref->refcount)
+    {
+        free_lbuf(lbufref->lbuf_ptr);
+        free_lbufref(lbufref);
+    }
+}
+
+DCL_INLINE void RegAddRef(reg_ref *regref)
+{
+    regref->refcount++;
+}
+
+DCL_INLINE void RegRelease(reg_ref *regref)
+{
+    regref->refcount--;
+    if (0 == regref->refcount)
+    {
+        BufRelease(regref->lbuf);
+        free_regref(regref);
+    }
+}
 void RegAssign(reg_ref **regref, size_t n, const char *ptr);
 
 void save_global_regs(reg_ref *preserve[]);
@@ -942,6 +968,7 @@ public:
     CTaskHeap();
     ~CTaskHeap();
 
+    void Shrink(void);
     void Insert(PTASK_RECORD, SCHCMP *);
     PTASK_RECORD PeekAtTopmost(void);
     PTASK_RECORD RemoveTopmost(SCHCMP *);
@@ -975,6 +1002,7 @@ public:
     int  RunTasks(const CLinearTimeAbsolute& tNow);
     void ReadyTasks(const CLinearTimeAbsolute& tNow);
     void CancelTask(FTASK *fpTask, void *arg_voidptr, int arg_Integer);
+    void Shrink(void);
 
     void SetMinPriority(int arg_minPriority);
     int  GetMinPriority(void) { return m_minPriority; }
