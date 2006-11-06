@@ -2186,36 +2186,6 @@ void restore_global_regs
     }
 }
 
-void BufAddRef(lbuf_ref *lbufref)
-{
-    lbufref->refcount++;
-}
-
-void BufRelease(lbuf_ref *lbufref)
-{
-    lbufref->refcount--;
-    if (0 == lbufref->refcount)
-    {
-        free_lbuf(lbufref->lbuf_ptr);
-        free_lbufref(lbufref);
-    }
-}
-
-void RegAddRef(reg_ref *regref)
-{
-    regref->refcount++;
-}
-
-void RegRelease(reg_ref *regref)
-{
-    regref->refcount--;
-    if (0 == regref->refcount)
-    {
-        BufRelease(regref->lbuf);
-        free_regref(regref);
-    }
-}
-
 lbuf_ref *last_lbufref = NULL;
 size_t    last_left    = 0;
 char     *last_ptr     = NULL;

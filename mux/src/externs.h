@@ -111,10 +111,35 @@ void mux_exec(char *buff, char **bufc, dbref executor, dbref caller,
               dbref enactor, int eval, char **dstr, char *cargs[],
               int ncargs);
 
-void RegAddRef(reg_ref *regref);
-void BufRelease(lbuf_ref *lbufref);
-void RegAddRef(reg_ref *regref);
-void RegRelease(reg_ref *regref);
+DCL_INLINE void BufAddRef(lbuf_ref *lbufref)
+{
+    lbufref->refcount++;
+}
+
+DCL_INLINE void BufRelease(lbuf_ref *lbufref)
+{
+    lbufref->refcount--;
+    if (0 == lbufref->refcount)
+    {
+        free_lbuf(lbufref->lbuf_ptr);
+        free_lbufref(lbufref);
+    }
+}
+
+DCL_INLINE void RegAddRef(reg_ref *regref)
+{
+    regref->refcount++;
+}
+
+DCL_INLINE void RegRelease(reg_ref *regref)
+{
+    regref->refcount--;
+    if (0 == regref->refcount)
+    {
+        BufRelease(regref->lbuf);
+        free_regref(regref);
+    }
+}
 void RegAssign(reg_ref **regref, size_t n, const char *ptr);
 
 void save_global_regs(reg_ref *preserve[]);
