@@ -1444,7 +1444,10 @@ void do_prog
     for (int i = 0; i < MAX_GLOBAL_REGS; i++)
     {
         program->wait_regs[i] = mudstate.global_regs[i];
-        RegAddRef(mudstate.global_regs[i]);
+        if (mudstate.global_regs[i])
+        {
+            RegAddRef(mudstate.global_regs[i]);
+        }
     }
 
     // Now, start waiting.
