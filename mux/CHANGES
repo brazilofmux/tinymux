@@ -29,7 +29,7 @@ Feature Additions:
     are not connected to either the player_startint_room or to a room
     marked FLOATING. Previously, every room not connected to the
     player_starting_room had to be marked FLOATING.
- -- Added QUELL flag from Firan to temporarily suppressWizard powers.
+ -- Added QUELL flag from Firan to temporarily suppress Wizard powers.
  -- Added @switch/notify.
  -- Merge Firan MUX source modification and collected them under the
     --enable-firanmux ./configuration switch. This also typically
@@ -195,7 +195,8 @@ Bug Fixes:
  -- Suppress compiler warnings in player.cpp (Issue 143 and 144).
  -- Suppress compiler warnings in stringutil.cpp (Issue 109).
  -- Suppress compiler warnings in help.cpp (Issue 132).
- -- Suppress compiler warnings in netcommon.cpp (Issues 141 and 142).
+ -- Suppress compiler warnings in netcommon.cpp (Issues 141, 142, and
+    210).
  -- Fixed uninitialized variables in fun_fmod() and fun_power() for
     non-typical build.
  -- Fix two configuration tests that broke with gcc 4.1.2.
@@ -222,11 +223,11 @@ Bug Fixes:
     with other compile-time switches besides WOD_REALMS (Issue 51).
  -- Fix unlikely memory leak if executor of a queue task happens to be
     a bad object by the time the queued entry is executed.
- -- Issue 206: Prevent @ccreate from creating channels with duplicate
-    names.
- -- Issue 199: wizhelp SUSPECT should describe that all commands from
-    SUSPECT-set players are logged as controlled by the 'log'
-    configuration option.
+ -- Prevent @ccreate from creating channels with duplicate names (Issue
+    206).
+ -- Wizhelp SUSPECT should describe that all commands from SUSPECT-set
+    players are logged as controlled by the 'log' configuration option
+    (Issue 199).
 
 
 Performance Enhancements:
