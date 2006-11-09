@@ -1811,7 +1811,8 @@ static const char *DumpInfoTable[] =
 static void dump_info(DESC *arg_desc)
 {
     int nDumpInfoTable = 0;
-    while (NULL != DumpInfoTable[nDumpInfoTable])
+    while (  nDumpInfoTable < sizeof(DumpInfoTable)/sizeof(DumpInfoTable[0])
+          && NULL != DumpInfoTable[nDumpInfoTable])
     {
         nDumpInfoTable++;
     }
