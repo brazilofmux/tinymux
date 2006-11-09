@@ -1787,14 +1787,8 @@ static void dump_users(DESC *e, char *match, int key)
 
 static const char *DumpInfoTable[] =
 {
-#if defined(WOD_REALMS)
-    "WOD_REALMS",
-#endif
-#if defined(REALITY_LVLS)
-    "REALITY_LVLS",
-#endif
-#if defined(MEMORY_BASED)
-    "MEMORY_BASED",
+#if defined(DEPRECATED)
+    "DEPRECATED",
 #endif
 #if defined(FIRANMUX)
     "FIRANMUX",
@@ -1802,8 +1796,14 @@ static const char *DumpInfoTable[] =
 #if defined(FIRANMUX_CONVERT)
     "FIRANMUX_CONVERT",
 #endif
-#if defined(DEPRECATED)
-    "DEPRECATED",
+#if defined(MEMORY_BASED)
+    "MEMORY_BASED",
+#endif
+#if defined(REALITY_LVLS)
+    "REALITY_LVLS",
+#endif
+#if defined(WOD_REALMS)
+    "WOD_REALMS",
 #endif
     NULL
 };
