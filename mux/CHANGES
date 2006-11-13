@@ -228,6 +228,7 @@ Bug Fixes:
  -- Wizhelp SUSPECT should describe that all commands from SUSPECT-set
     players are logged as controlled by the 'log' configuration option
     (Issue 199).
+ -- Update PATCHES file (Issue 189).
 
 
 Performance Enhancements:

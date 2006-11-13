@@ -1,46 +1,66 @@
 TinyMUX 2.6:  PATCHES
-Last Update:  January 2006
+Last Update:  November 2006
 
 A Word About Patches for TinyMUX 2.6:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-As part of the server development process, and especially during periods 
-where beta versions of the server have been release, the development 
-team will release patches.  These supplemental use the 'patch' utility 
-to make modifications to the source code of the server in preparation for 
-recompiling the game.
+Changes are distributed in the form of patches, and these occur
+most-frequently during the Alpha and Beta periods of the server's
+development.  These 'patch' files are applied to your server's
+source code using the 'patch' utility.
 
-When patches are released, especially during beta releases, that you keep 
-yourself informed about the changes to the server and any serious bugs that 
-may have been corrected by a given patch.  It is in the best interests of 
-your game to make sure that patches are applied, as many patches contain 
-fixes for crashing/corrupting bugs, as well as correcting weird and 
-dangerous behaviors in the TinyMUX program itself.
+Keep yourself informed about changes to the server and pay particular
+attention to any serious bugs that may have been corrected by a patch.
+It is in the best interests of your game to make sure that patches are
+applied, as many patches contain fixes for crashing/corrupting bugs, as
+well as correcting weird and dangerous behaviors in the MUX program
+itself.
 
-Let us state that while patching a vanilla server with a patch release by 
-the development team is generally considered to be pretty easy, that unless 
-you have done it before and/or taken time to familiarize yourself with how 
-the patch utility works(type 'man patch' inside your shell account or read 
-the documentation for dopatch.exe provided with Win32 versions), then 
-we strongly advise having someone either walk you through the process or 
-do the work for you.  Improper use of patch can cause all kinds of grief 
-that you don't want to deal with.  
+Let us state that while patching a vanilla server with a patch released
+by the development team is generally considered to be pretty easy, that
+unless you have done it before and/or taken time to familiarize yourself
+with how the patch utility works (type 'man patch' inside your shell
+account or read the documentation for dopatch.exe provided with Win32
+versions), then we strongly advise having someone either walk you
+through the process or do the work for you.  Improper use of patch can
+cause all kinds of grief that you don't want to deal with.  
 
 Applying a patch:
 ~~~~~~~~~~~~~~~~
 
-The absolute first thing that you should do before making server 
-modifications, is to assure that you have a recent and usable backup of the 
-database, all of your config, text, mail, and comsystem.  *We cannot stress 
-this enough*.  Shutdown the game and use the provided Backup script, or 
-db_load by hand.  In most cases, this is totally unneeded, but if something 
-goes wrong and you didn't, you won't be real happy.
+Before doing anything else, you should assure yourself that have a
+recent and usable backup of the database, all of your config, text,
+mail, and comsystem.  Shutdown the game and use the provided Backup
+script, or db_load by hand.  See BACKUP.  In most cases, this is
+totally unneeded, but if something goes wrong and you didn't, you won't
+be real happy.
 
-Unzip and move the patch file to the directory where you see the mux2.6/ 
-directory listed.
+ 1. Download the patch file to your local shell account somewhere. The
+    location is not critical.
 
-At the prompt, type 'patch -p1 <patchfile'.  The actual file name of the
-patch  should be used or you'll get an error.
+    The patch file mux-2.6.1.25-2.6.1.26.unix.patch.gz will patch from
+    version 2.6.1.25 to version 2.6.1.26. This patch file is compressed
+    using gzip.
+
+ 2. Optionally, you can decompress the patch files with 'gzip -d' like
+    so:
+
+    gzip -d mux-2.6.1.25-2.6.1.26.unix.patch.gz
+
+    This will change the filename to mux-2.6.1.25-2.6.1.26.unix.patch.
+
+ 3. Change to your game's top-most directory.  For example,
+
+    cd mux2.6
+
+ 4. Apply the patch as follows:
+
+    zcat < ../mux-2.6.1.25-2.6.1.26.unix.patch.gz | patch -p0
+
+    Or, if you optionally decompressed the patch as described in step
+    2, apply the patch as follows:
+
+    patch -p0 < ../mux-2.6.1.25-2.6.1.26.unix.patch
 
 From here, you will usually get to watch a lot of spam fly by as the patch 
 utility modifies the files to be updated.  You might occasionally get a 
