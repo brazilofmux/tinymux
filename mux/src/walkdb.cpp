@@ -265,7 +265,7 @@ int chown_all(dbref from_player, dbref to_player, dbref acting_player, int key)
     if (  God(from_player)
        && !God(acting_player))
     {
-        notify(acting_player, "Permission denied.");
+        notify(acting_player, NOPERM_MESSAGE);
     }
     else
     {
