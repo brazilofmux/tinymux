@@ -1,5 +1,5 @@
 TinyMUX 2.4:  PATCHES
-Last Update:  January 2006
+Last Update:  November 2006
 
 A Word About Patches for TinyMUX 2.4:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -39,7 +39,7 @@ be real happy.
     location is not critical.
 
     The patch file mux-2.4.1.25-2.4.1.26.unix.patch.gz will patch from
-    version 2.4.1.25 to version 2.4.1.26. This patch file is compress
+    version 2.4.1.25 to version 2.4.1.26. This patch file is compressed
     using gzip.
 
  2. Optionally, you can decompress the patch files with 'gzip -d' like
