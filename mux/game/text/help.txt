@@ -5658,7 +5658,7 @@ TinyMUX 2.6 is based on TinyMUX 2.4. It is currently maintained by
 Stephen Dennis (AKA Brazil). There is a more complete list of credits
 in the README files for the server itself.
 
-See http://www.tinymux.com for an on-line version of these README files.
+See http://www.tinymux.org for an on-line version of these README files.
 
 & CTIME()
 CTIME()
