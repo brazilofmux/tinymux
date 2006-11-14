@@ -195,8 +195,8 @@ Bug Fixes:
  -- Suppress compiler warnings in player.cpp (Issue 143 and 144).
  -- Suppress compiler warnings in stringutil.cpp (Issue 109).
  -- Suppress compiler warnings in help.cpp (Issue 132).
- -- Suppress compiler warnings in netcommon.cpp (Issues 141, 142, and
-    210).
+ -- Suppress compiler warnings in netcommon.cpp (Issues 141, 142, 186,
+    and 210).
  -- Fixed uninitialized variables in fun_fmod() and fun_power() for
     non-typical build.
  -- Fix two configuration tests that broke with gcc 4.1.2.
