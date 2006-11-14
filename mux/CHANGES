@@ -185,7 +185,7 @@ Bug Fixes:
     (Issues 176, 180, and 181).
  -- Require flagnames to be at least 1 character (Issue 183).
  -- Fix @flag wizhelp topic (Issue 182).
- -- Suppress compiler warning in conf.cpp (Issue 164).
+ -- Suppress compiler warning in conf.cpp (Issues 161 and 164).
  -- Suppress compiler warning in command.cpp (Issue 149).
  -- Write mux_open() to avoid direct use of open() (Issue 121).
  -- Remove all calls to fscanf() in mail.cpp and comsys.cpp (Issue 119).

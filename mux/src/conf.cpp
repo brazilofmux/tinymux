@@ -60,8 +60,14 @@ void cf_init(void)
 
     mudconf.ports.n = 1;
     mudconf.ports.pi = (int *)MEMALLOC(sizeof(int));
-    ISOUTOFMEMORY(mudconf.ports.pi);
-    mudconf.ports.pi[0] = 2860;
+    if (mudconf.ports.pi)
+    {
+        mudconf.ports.pi[0] = 2860;
+    }
+    else
+    {
+        ISOUTOFMEMORY(mudconf.ports.pi);
+    }
 
     mudconf.init_size = 1000;
     mudconf.guest_char = -1;
