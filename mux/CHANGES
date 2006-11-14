@@ -205,7 +205,7 @@ Bug Fixes:
  -- Fix compiler warnings in functions.cpp (Issues 123, 124, 126, 127,
     128, 129, 130, and 131).
  -- Fix compiler warnings in funceval.cpp (Issue 122).
- -- Fix compiler warnings in comsys.cpp (Issues 157 and 158).
+ -- Fix compiler warnings in comsys.cpp (Issues 151, 157 and 158).
  -- Avoid using strncpy (Issue 118).
  -- Fix compiler warnings in mail.cpp (Issues 133, 134, 135, 136, 137,
     138, 139, and 140).

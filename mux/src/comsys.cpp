@@ -396,14 +396,19 @@ void save_channels(FILE *fp)
 comsys_t *create_new_comsys(void)
 {
     comsys_t *c = (comsys_t *)MEMALLOC(sizeof(comsys_t));
-    ISOUTOFMEMORY(c);
-
-    c->who         = NOTHING;
-    c->numchannels = 0;
-    c->maxchannels = 0;
-    c->alias       = NULL;
-    c->channels    = NULL;
-    c->next        = NULL;
+    if (c)
+    {
+        c->who         = NOTHING;
+        c->numchannels = 0;
+        c->maxchannels = 0;
+        c->alias       = NULL;
+        c->channels    = NULL;
+        c->next        = NULL;
+    }
+    else
+    {
+        ISOUTOFMEMORY(c);
+    }
     return c;
 }
 
