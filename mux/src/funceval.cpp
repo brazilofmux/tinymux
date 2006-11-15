@@ -3816,13 +3816,39 @@ FUNCTION(fun_valid)
     {
         bValid = false;
     }
+    else if (!mux_stricmp(fargs[0], "attrname"))
+    {
+        MakeCanonicalAttributeName(fargs[1], &nValidName, &bValid);
+    }
+    else if (!mux_stricmp(fargs[0], "comalias"))
+    {
+        MakeCanonicalComAlias(fargs[1], &nValidName, &bValid);
+    }
+    else if (!mux_stricmp(fargs[0], "doing"))
+    {
+        MakeCanonicalDoing(fargs[1], &nValidName, &bValid);
+    }
+    else if (!mux_stricmp(fargs[0], "exitname"))
+    {
+        MakeCanonicalExitName(fargs[1], &nValidName, &bValid);
+    }
+    else if (!mux_stricmp(fargs[0], "malias"))
+    {
+        MakeCanonicalMailAlias(fargs[1], &nValidName, &bValid);
+    }
+    else if (!mux_stricmp(fargs[0], "maliasdesc"))
+    {
+        size_t vw;
+        MakeCanonicalMailAliasDesc(fargs[1], &nValidName, &bValid, &vw);
+    }
     else if (!mux_stricmp(fargs[0], "name"))
     {
         MakeCanonicalObjectName(fargs[1], &nValidName, &bValid);
     }
-    else if (!mux_stricmp(fargs[0], "attrname"))
+    else if (!mux_stricmp(fargs[0], "password"))
     {
-        MakeCanonicalAttributeName(fargs[1], &nValidName, &bValid);
+        const char *msg;
+        bValid = ok_password(fargs[1], &msg);
     }
     else if (!mux_stricmp(fargs[0], "playername"))
     {

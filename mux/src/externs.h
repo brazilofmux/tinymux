@@ -75,6 +75,21 @@ const char **local_get_info_table(void);
 void load_mail(FILE *);
 int  dump_mail(FILE *);
 struct mail *mail_fetch(dbref, int);
+char *MakeCanonicalMailAlias
+(
+    char   *pMailAlias,
+    size_t *pnValidMailAlias,
+    bool   *pbValidMailAlias
+);
+
+char *MakeCanonicalMailAliasDesc
+(
+    char   *pMailAliasDesc,
+    size_t *pnValidMailAliasDesc,
+    bool   *pbValidMailAliasDesc,
+    size_t *pnVisualWidth
+);
+
 #if defined(FIRANMUX)
 const char *MessageFetch(int number);
 size_t MessageFetchSize(int number);
@@ -89,6 +104,7 @@ void logged_out1(dbref executor, dbref caller, dbref enactor, int eval, int key,
 void init_logout_cmdtab(void);
 void desc_reload(dbref);
 void make_portlist(dbref, dbref, char *, char **);
+char *MakeCanonicalDoing(char *pDoing, size_t *pnValidDoing, bool *pbValidDoing);
 
 /* From cque.cpp */
 int  nfy_que(dbref, int, int, int);

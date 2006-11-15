@@ -114,6 +114,12 @@ struct channel *select_channel(char *channel);
 struct comuser *select_user(struct channel *ch, dbref player);
 
 char  *get_channel_from_alias();
+char *MakeCanonicalComAlias
+(
+    const char *pAlias,
+    size_t *nValidAlias,
+    bool *bValidAlias
+);
 
 bool  do_comsystem(dbref who, char *cmd);
 

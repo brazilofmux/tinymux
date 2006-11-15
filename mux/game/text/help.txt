@@ -13203,9 +13203,15 @@ VALID()
 
   Possible values for <category>:
 
-     name        Test for object name.
-     playername  Test for player name.
-     attrname    Test for attribute name.
+     attrname    Validates attribute name.
+     comalias    Validates comsys alias.
+     doing       Validates @doing string.
+     exitname    Validates exit name.
+     name        Validates object name.
+     password    Validates for password rules.
+     playername  Validates player name for @name and @alias.
+     malias      Validates @malias name.
+     maliasdesc  Validates @malias description.
 
   Valid() does not check the database for existence and it does not guarantee
   that an attempt to use such an object will succeed. It only looks at

@@ -148,7 +148,7 @@ void save_comsys(char *filename)
 
 // Aliases must be between 1 and 5 characters. No spaces. No ANSI.
 //
-static char *MakeCanonicalComAlias
+char *MakeCanonicalComAlias
 (
     const char *pAlias,
     size_t *nValidAlias,
