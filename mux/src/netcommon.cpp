@@ -273,6 +273,7 @@ static void add_to_output_queue(DESC *d, const char *b, size_t n)
         else
         {
             ISOUTOFMEMORY(tp);
+            return;
         }
     }
     else
@@ -323,6 +324,7 @@ static void add_to_output_queue(DESC *d, const char *b, size_t n)
             else
             {
                 ISOUTOFMEMORY(tp);
+                return;
             }
         }
     } while (n > 0);

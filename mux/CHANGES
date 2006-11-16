@@ -185,7 +185,7 @@ Bug Fixes:
     (Issues 176, 180, and 181).
  -- Require flagnames to be at least 1 character (Issue 183).
  -- Fix @flag wizhelp topic (Issue 182).
- -- Suppress compiler warning in conf.cpp (Issue 164).
+ -- Suppress compiler warning in conf.cpp (Issues 161 and 164).
  -- Suppress compiler warning in command.cpp (Issue 149).
  -- Write mux_open() to avoid direct use of open() (Issue 121).
  -- Remove all calls to fscanf() in mail.cpp and comsys.cpp (Issue 119).
@@ -195,8 +195,8 @@ Bug Fixes:
  -- Suppress compiler warnings in player.cpp (Issue 143 and 144).
  -- Suppress compiler warnings in stringutil.cpp (Issue 109).
  -- Suppress compiler warnings in help.cpp (Issue 132).
- -- Suppress compiler warnings in netcommon.cpp (Issues 141, 142, and
-    210).
+ -- Suppress compiler warnings in netcommon.cpp (Issues 141, 142, 186,
+    and 210).
  -- Fixed uninitialized variables in fun_fmod() and fun_power() for
     non-typical build.
  -- Fix two configuration tests that broke with gcc 4.1.2.
@@ -205,7 +205,7 @@ Bug Fixes:
  -- Fix compiler warnings in functions.cpp (Issues 123, 124, 126, 127,
     128, 129, 130, and 131).
  -- Fix compiler warnings in funceval.cpp (Issue 122).
- -- Fix compiler warnings in comsys.cpp (Issues 157 and 158).
+ -- Fix compiler warnings in comsys.cpp (Issues 151, 157 and 158).
  -- Avoid using strncpy (Issue 118).
  -- Fix compiler warnings in mail.cpp (Issues 133, 134, 135, 136, 137,
     138, 139, and 140).
@@ -228,6 +228,8 @@ Bug Fixes:
  -- Wizhelp SUSPECT should describe that all commands from SUSPECT-set
     players are logged as controlled by the 'log' configuration option
     (Issue 199).
+ -- @moniker without any argument gave 'I don't see that here.' followed by
+    'Permission denied.'.  (Issue 40).
  -- Update PATCHES file (Issue 189).
 
 

@@ -3868,7 +3868,7 @@ void do_list(dbref executor, dbref caller, dbref enactor, int eval, int extra,
         }
         else
         {
-            notify(executor, "Permission denied");
+            notify(executor, NOPERM_MESSAGE);
         }
         return;
     }
@@ -4382,10 +4382,14 @@ void do_moniker(dbref executor, dbref caller, dbref enactor, int key,
     UNUSED_PARAMETER(nfargs);
 
     dbref thing = match_thing(executor, name);
-    if ( !(  Good_obj(thing)
-          && Controls(executor, thing)))
+    if (!Good_obj(thing))
     {
-        notify(executor, "Permission denied.");
+        return;
+    }
+
+    if (!Controls(executor, thing))
+    {
+        notify(executor, NOPERM_MESSAGE);
         return;
     }
 
