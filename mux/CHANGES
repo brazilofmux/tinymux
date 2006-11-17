@@ -1,5 +1,5 @@
 TinyMUX 2.4:  CHANGES
-Last Update:  September 2006
+Last Update:  November 2006
 
 Major changes that may affect performance and require softcode tweaks:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -284,6 +284,8 @@ Bug Fixes:
     broke with gcc 4.1.2.
  -- Fixed uninitialized variables in fun_fmod() and fun_power() for
     non-typical build.
+ -- RxLevel and TxLevel were reverse in @examine which would have lead
+    to much confusion in using reality-levels (Issue 62).
 
 
 Performance Enhancements:
