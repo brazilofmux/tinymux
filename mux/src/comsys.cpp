@@ -3,7 +3,8 @@
  *
  * $Id$
  *
- * The functions here manage channels and channel membership.
+ * The functions here manage channels, channel membership, the comsys.db, and
+ * the interaction of players and other objects with channels.
  */
 
 #include "copyright.h"
@@ -148,7 +149,7 @@ void save_comsys(char *filename)
 
 // Aliases must be between 1 and 5 characters. No spaces. No ANSI.
 //
-static char *MakeCanonicalComAlias
+char *MakeCanonicalComAlias
 (
     const char *pAlias,
     size_t *nValidAlias,
