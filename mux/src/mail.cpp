@@ -1178,11 +1178,11 @@ static void do_mail_file(dbref player, char *msglist, char *folder)
 // letters, and digits. No leading digits. No symbols. No ANSI. Length is
 // limited to SIZEOF_MALIAS-1. Case is preserved.
 //
-static char *MakeCanonicalMailAlias
+char *MakeCanonicalMailAlias
 (
-    char *pMailAlias,
+    char   *pMailAlias,
     size_t *pnValidMailAlias,
-    bool *pbValidMailAlias
+    bool   *pbValidMailAlias
 )
 {
     static char Buffer[SIZEOF_MALIAS];
@@ -2969,11 +2969,11 @@ static void load_mail_V5(FILE *fp)
 // Length is limited to SIZEOF_MALIASDESC-1. Visual width is limited to
 // WIDTHOF_MALIASDESC. Case is preserved.
 //
-static char *MakeCanonicalMailAliasDesc
+char *MakeCanonicalMailAliasDesc
 (
-    char *pMailAliasDesc,
+    char   *pMailAliasDesc,
     size_t *pnValidMailAliasDesc,
-    bool *pbValidMailAliasDesc,
+    bool   *pbValidMailAliasDesc,
     size_t *pnVisualWidth
 )
 {

@@ -1897,7 +1897,7 @@ static void dump_info(DESC *arg_desc)
     queue_write(arg_desc, "\r\n### End INFO\r\n");
 }
 
-static char *MakeCanonicalDoing(char *pDoing, size_t *pnValidDoing, bool *pbValidDoing)
+char *MakeCanonicalDoing(char *pDoing, size_t *pnValidDoing, bool *pbValidDoing)
 {
     *pnValidDoing = 0;
     *pbValidDoing = false;
