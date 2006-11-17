@@ -1,7 +1,11 @@
-// create.cpp -- Commands that create new objects.
-//
-// $Id$
-//
+/*! \file create.cpp
+ *  Commands that create new objects.
+ *
+ * $Id$
+ *
+ * This affects creation and destruction of all object types as well as their
+ * initial and final relationships with other objects.
+ */
 
 #include "copyright.h"
 #include "autoconf.h"

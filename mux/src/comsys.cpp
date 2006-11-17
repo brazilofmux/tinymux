@@ -3,7 +3,8 @@
  *
  * $Id$
  *
- * The functions here manage channels and channel membership.
+ * The functions here manage channels, channel membership, the comsys.db, and
+ * the interaction of players and other objects with channels.
  */
 
 #include "copyright.h"
