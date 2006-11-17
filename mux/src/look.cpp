@@ -1802,10 +1802,10 @@ void do_examine(dbref executor, dbref caller, dbref enactor, int eval, int key, 
         /* Show Rx and Tx levels */
 
         buf2 = rxlevel_description(executor, thing);
-        notify(executor, tprintf("TxLevel: %s", buf2));
+        notify(executor, tprintf("RxLevel: %s", buf2));
         free_mbuf(buf2);
         buf2 = txlevel_description(executor, thing);
-        notify(executor, tprintf("RxLevel: %s", buf2));
+        notify(executor, tprintf("TxLevel: %s", buf2));
         free_mbuf(buf2);
 #endif /* REALITY_LVLS */
     }
