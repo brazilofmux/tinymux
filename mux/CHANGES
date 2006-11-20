@@ -268,3 +268,4 @@ Miscellaneous:
  -- Updated config.guess, config.sub, and configure to later versions.
  -- Updated to autoconf 2.60a.
  -- Refer to tinymux.org instead of tinymux.com.
+ -- Added SQL readme (Issue 47).
