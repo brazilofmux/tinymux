@@ -1,0 +1,71 @@
+TinyMUX 2.6:  SQL
+Last Update:  November 2006
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+When enabling the Firan support (by doing ./configure --enable-firan) in
+TinyMUX 2.6 and intending to use SQL, there are some things to setup or
+consider.
+
+1) Once you have run './configure --enable-firanmux' you will need to sure
+   that TinyMUX 2.6 can locate the mysql.h and libmysqlclient.a files.  If
+   they are in their default locations then TinyMUX 2.6 can locate and include
+   them automatically without changes required.  The default locations are
+   <DEFAULT LOCATIONS>.
+
+   If the files are not in the default location you will need to first locate
+   them.  Often 'locate mysql.h' and 'locate libmysqlclient.a' will work on a
+   linux/unix system.  You can also do 'find / -name mysql.h' and
+   'find / -name libmysqlclient.a'. Once located you will need to edit the
+   Makefile file and make a couple of changes. For this example I'll use the
+   locations of these files on a FreeBSD system.
+
+      mysql.h : /usr/local/include/mysql/mysql.h
+      libmysqlclient.a : /usr/local/lib/mysql/libmysqlclient.a
+
+   First you will need to locate the LIBS line in the Makefile, and change it
+   to the following.  Remember to change '/usr/local/lib/mysql' to the
+   appropriate location for your system:
+
+      LIBS = -L/usr/local/lib/mysql -lm -lcrypt -lmysqlclient
+
+   Then you'll need to locate the OPTIM line in the Makefile, and change it to
+   the following. Remember to change '/usr/local/include' to the appropriate
+   location for your syste:
+
+      OPTIM = -g -O -I/usr/local/include
+
+   Once done, continue compiling as normal using 'make depend' and then
+   'make'.
+
+
+2) Once the game has been compiled you will need to add four configuration
+   options to the .conf file.  The four are listed below:
+
+      sql_database <name of database>
+      sql_server <localhost or address>
+      sql_user <MySQL username>
+      sql_password <MySQL password>
+
+
+3) Start the game and check the log file. You should two entries like the
+   following:
+
+      SQL/CONN : Connecting: <database>@<address> as <user>
+      SQL/CONN : Connected to MySQL
+
+   You can use the sql() function to perform MySQL queries.  See 'help sql()'.
+
+
+4) The SQL code enabled with --enable-firanmux runs synchronous with the
+   TinyMUX process.  That means that in the game when you use the sql()
+   function to make a query, the whole game waits on the query to finish.  If
+   you're on a server which is not overloaded and has good, free resources and
+   where the MySQL server is running on the same machine then this should not
+   be a problem as long as the MySQL server remains running.  If the server is
+   overloaded and therefore slow or if the MySQL server is on a different
+   machine, then there can be a delay in getting the results.  That delay will
+   mean the whole game hangs while waiting.
+
+   When using the SQL functionality bear this potential problem in mind.  You
+   should test your game with the SQL functionality first before using it in a
+   live environment.
