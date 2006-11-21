@@ -230,8 +230,8 @@ Bug Fixes:
  -- Wizhelp SUSPECT should describe that all commands from SUSPECT-set
     players are logged as controlled by the 'log' configuration option
     (Issue 199).
- -- @moniker without any argument gave 'I don't see that here.' followed by
-    'Permission denied.'.  (Issue 40).
+ -- @moniker without any argument gave 'I don't see that here.'
+    followed by 'Permission denied.' (Issue 40).
  -- Update PATCHES file (Issue 189).
  -- RxLevel and TxLevel were reversed in @examine leading to much
     confusion in using reality levels (Issue 62).
@@ -269,3 +269,4 @@ Miscellaneous:
  -- Updated to autoconf 2.60a.
  -- Refer to tinymux.org instead of tinymux.com.
  -- Added SQL readme (Issue 47).
+ -- Updated to doxygen 1.5.1.
