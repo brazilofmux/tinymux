@@ -2213,7 +2213,7 @@ static void send_mail
     {
         ; // Nothing.
     }
-    
+
     if (NULL == newp)
     {
         notify(player, "MAIL: Out of memory.");
@@ -2341,7 +2341,7 @@ static void do_mail_debug(dbref player, char *action, char *victim)
         {
             ; // Nothing.
         }
-        
+
         if (NULL == ai)
         {
             notify(player, "Out of memory.");
@@ -2445,7 +2445,7 @@ static void do_mail_debug(dbref player, char *action, char *victim)
             {
                 ; // Nothing.
             }
-            
+
             if (NULL == ai)
             {
                 notify(player, "Out of memory.");
@@ -2926,7 +2926,7 @@ static void load_mail_V5(FILE *fp)
         {
             ; // Nothing.
         }
-        
+
         if (NULL == mp)
         {
             STARTLOG(LOG_BUGS, "BUG", "MAIL");
@@ -3059,7 +3059,7 @@ static void malias_read(FILE *fp)
         {
             ; // Nothing.
         }
-        
+
         if (NULL == m)
         {
             STARTLOG(LOG_BUGS, "BUG", "MAIL");
@@ -3331,7 +3331,7 @@ static void do_malias_create(dbref player, char *alias, char *tolist)
     {
         ; // Nothing.
     }
-    
+
     if (NULL == pt)
     {
         notify(player, "MAIL: Out of memory.");

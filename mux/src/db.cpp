@@ -251,7 +251,7 @@ void fwdlist_set(dbref thing, FWDLIST *ifp)
     {
         ; // Nothing.
     }
-    
+
     if (NULL != fp)
     {
         fp->data = NULL;
@@ -3175,7 +3175,7 @@ void putstring(FILE *f, const char *pRaw)
             case 6: ch = 'r'; break;
             case 7: ch = 't'; break;
             }
-    
+
             *pBuffer++ = '\\';
             *pBuffer++ = ch;
         }

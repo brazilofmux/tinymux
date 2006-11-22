@@ -658,7 +658,7 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
 
                             pName = MakeCanonicalAttributeName(p, &nName, &bValid);
                             free_lbuf(p);
-                            
+
                             a = vattr_find_LEN(pName, nName);
                             if (a)
                             {

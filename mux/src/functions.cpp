@@ -3274,12 +3274,12 @@ static FUNCTION(fun_strmem)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-   size_t n = 0;
-   if (nfargs >= 1)
-   {
-       n = strlen(fargs[0]);
-   }
-   safe_ltoa(static_cast<long>(n), buff, bufc);
+    size_t n = 0;
+    if (nfargs >= 1)
+    {
+        n = strlen(fargs[0]);
+    }
+    safe_ltoa(static_cast<long>(n), buff, bufc);
 }
 
 static FUNCTION(fun_num)
@@ -4636,11 +4636,11 @@ static FUNCTION(fun_hasrxlevel)
         {
             safe_chr('0', buff, bufc);
         }
-   }
-   else
-   {
+    }
+    else
+    {
         safe_str("#-1 PERMISSION DENIED", buff, bufc);
-   }
+    }
 }
 
 static FUNCTION(fun_hastxlevel)
@@ -4670,33 +4670,44 @@ static FUNCTION(fun_hastxlevel)
         {
              safe_chr('0', buff, bufc);
         }
-   }
-   else
-   {
+    }
+    else
+    {
         safe_str("#-1 PERMISSION DENIED", buff, bufc);
-   }
+    }
 }
 
 static FUNCTION(fun_listrlevels)
 {
-   int i, add_space, cmp_x, cmp_y, cmp_z;
+    int i, add_space;
 
-   cmp_x = sizeof(mudconf.reality_level);
-   cmp_y = sizeof(mudconf.reality_level[0]);
-   if ( cmp_y == 0 )
-      cmp_z = 0;
-   else
-      cmp_z = cmp_x / cmp_y;
-   if ( mudconf.no_levels < 1 ) {
-      safe_str("#-1 NO REALITY LEVELS DEFINED", buff, bufc);
-   } else {
-      for (add_space = i = 0; (i < mudconf.no_levels) && (i < cmp_z); ++i) {
-         if(add_space)
-            safe_chr(' ', buff, bufc);
-         safe_str(mudconf.reality_level[i].name, buff, bufc);
-         add_space = 1;
-      }
-   }
+    int cmp_z;
+    int cmp_x = sizeof(mudconf.reality_level);
+    int cmp_y = sizeof(mudconf.reality_level[0]);
+    if (0 == cmp_y)
+    {
+        cmp_z = 0;
+    }
+    else
+    {
+        cmp_z = cmp_x / cmp_y;
+    }
+    if (mudconf.no_levels < 1)
+    {
+        safe_str("#-1 NO REALITY LEVELS DEFINED", buff, bufc);
+    }
+    else
+    {
+        for (add_space = i = 0; i < mudconf.no_levels && i < cmp_z; i++)
+        {
+            if (add_space)
+	    {
+                safe_chr(' ', buff, bufc);
+	    }
+            safe_str(mudconf.reality_level[i].name, buff, bufc);
+            add_space = 1;
+        }
+    }
 }
 
 static FUNCTION(fun_rxlevel)
@@ -8420,20 +8431,32 @@ static FUNCTION(fun_config)
 //
 static int return_bit(dbref player)
 {
-   if (God(player))
-      return 7;
-   // 6 is Rhost Immortal. We don't have an equivalent (yet?).
-   if (Wizard(player))
-      return 5;
-   if (Royalty(player))
-      return 4;
-   if (Staff(player) || Builder(player))
-      return 3;
-   if (Head(player) || Immortal(player))
-      return 2;
-   if (!(Uninspected(player) || Guest(player)))
-      return 1;
-   return 0;
+    if (God(player))
+    {
+        return 7;
+    }
+    // 6 is Rhost Immortal. We don't have an equivalent (yet?).
+    if (Wizard(player))
+    {
+        return 5;
+    }
+    if (Royalty(player))
+    {
+        return 4;
+    }
+    if (Staff(player) || Builder(player))
+    {
+        return 3;
+    }
+    if (Head(player) || Immortal(player))
+    {
+        return 2;
+    }
+    if (!(Uninspected(player) || Guest(player)))
+    {
+        return 1;
+    }
+    return 0;
 }
 
 static FUNCTION(fun_bittype)
