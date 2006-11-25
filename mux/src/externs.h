@@ -153,6 +153,7 @@ DCL_INLINE void RegAddRef(reg_ref *regref)
 
 DCL_INLINE void RegRelease(reg_ref *regref)
 {
+    mux_assert(NULL != regref);
     regref->refcount--;
     if (0 == regref->refcount)
     {
