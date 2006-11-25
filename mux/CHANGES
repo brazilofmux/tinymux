@@ -235,6 +235,8 @@ Bug Fixes:
  -- Update PATCHES file (Issue 189).
  -- RxLevel and TxLevel were reversed in @examine leading to much
     confusion in using reality levels (Issue 62).
+ -- Fixed crash due to failure to clear @program data after logout
+    (Issue 217).  Found and fixed by Alierak.
 
 
 Performance Enhancements:

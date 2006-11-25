@@ -2058,9 +2058,9 @@ void shutdownsock(DESC *d, int reason)
                 }
             }
             MEMFREE(d->program_data);
-            d->program_data = NULL;
             atr_clr(d->player, A_PROGCMD);
         }
+        d->program_data = NULL;
     }
     if (reason == R_LOGOUT)
     {
