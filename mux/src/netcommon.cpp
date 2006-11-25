@@ -2268,10 +2268,17 @@ static bool check_connect(DESC *d, char *msg)
             //
             DESC_ITER_PLAYER(player, d2)
             {
-                if (d2->program_data != NULL)
+                if (  NULL != d2->program_data
+                   && NULL == d->program_data)
                 {
                     d->program_data = d2->program_data;
-                    break;
+                }
+                else if (NULL != d2->program_data)
+                {
+                    // Enforce that all program_data pointers for this player
+                    // are the same.
+                    // 
+                    mux_assert(d->program_data == d2->program_data);
                 }
             }
 
@@ -2306,7 +2313,7 @@ static bool check_connect(DESC *d, char *msg)
 
             // If stuck in an @prog, show the prompt.
             //
-            if (d->program_data != NULL)
+            if (NULL != d->program_data)
             {
                 queue_write_LEN(d, ">\377\371", 3);
             }

@@ -108,6 +108,7 @@ static void Task_RunQueueEntry(void *pEntry, int iUnused)
                 if (mudstate.global_regs[i])
                 {
                     RegRelease(mudstate.global_regs[i]);
+                    mudstate.global_regs[i] = NULL;
                 }
                 mudstate.global_regs[i] = point->scr[i];
                 point->scr[i] = NULL;

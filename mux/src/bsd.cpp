@@ -2045,9 +2045,12 @@ void shutdownsock(DESC *d, int reason)
     if (d->program_data != NULL)
     {
         num = 0;
-        DESC_ITER_PLAYER(d->player, dtemp) num++;
+        DESC_ITER_PLAYER(d->player, dtemp)
+        {
+            num++;
+        }
 
-        if (num == 0)
+        if (num <= 1)
         {
             for (i = 0; i < MAX_GLOBAL_REGS; i++)
             {
@@ -2062,6 +2065,7 @@ void shutdownsock(DESC *d, int reason)
             atr_clr(d->player, A_PROGCMD);
         }
     }
+
     if (reason == R_LOGOUT)
     {
         d->connected_at.GetUTC();
