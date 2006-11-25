@@ -2050,7 +2050,7 @@ void shutdownsock(DESC *d, int reason)
             num++;
         }
 
-        if (num <= 1)
+        if (0 == num)
         {
             for (i = 0; i < MAX_GLOBAL_REGS; i++)
             {
