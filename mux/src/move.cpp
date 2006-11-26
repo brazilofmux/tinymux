@@ -367,7 +367,7 @@ static void move_via_exit(dbref thing, dbref dest, dbref cause, dbref exit, int 
     int aattr = (hush & HUSH_EXIT) ? 0 : A_ASUCC;
 #else
     // Dark wizards don't trigger OSUCC/ASUCC
-    bool quiet = (  (Wizard(thing) && Dark(thing)) 
+    bool quiet = (  (Wizard(thing) && Dark(thing))
                  || (hush & HUSH_EXIT));
     int aattr = quiet ? 0 : A_ASUCC;
 #endif // FIRANMUX

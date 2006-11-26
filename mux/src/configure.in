@@ -268,9 +268,9 @@ int main(int argc, char *argv[])
    } u;
    u.d = d_in;
    if (u.i64 == i64_out)
-   {   
+   {
        return 0;
-   }  
+   }
    return 1;
 }
 ],AC_DEFINE(HAVE_IEEE_FP_FORMAT),AC_DEFINE(NO_IEEE_FP_FORMAT),AC_DEFINE(NO_IEEE_FP_FORMAT))
@@ -371,7 +371,7 @@ AC_TRY_RUN([
 #include <sys/uio.h>
 #include <unistd.h>
 main() { pwrite(0, "abc", 3, 0); exit(0); }],
-pwrite_works=yes, 
+pwrite_works=yes,
 pwrite_works=no,)
 
 if test $pwrite_works = yes; then

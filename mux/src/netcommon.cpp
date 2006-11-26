@@ -2277,7 +2277,7 @@ static bool check_connect(DESC *d, char *msg)
                 {
                     // Enforce that all program_data pointers for this player
                     // are the same.
-                    // 
+                    //
                     mux_assert(d->program_data == d2->program_data);
                 }
             }

@@ -4701,9 +4701,9 @@ static FUNCTION(fun_listrlevels)
         for (add_space = i = 0; i < mudconf.no_levels && i < cmp_z; i++)
         {
             if (add_space)
-	    {
+            {
                 safe_chr(' ', buff, bufc);
-	    }
+            }
             safe_str(mudconf.reality_level[i].name, buff, bufc);
             add_space = 1;
         }

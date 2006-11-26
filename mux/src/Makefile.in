@@ -160,7 +160,7 @@ OBJ	= $(D_OBJ) $(REALITY_OBJ)
 .cpp.o:
 	$(CXX) $(ALLCXXFLAGS) -c $<
 
-all: netmux slave $(SQLSLAVE) links 
+all: netmux slave $(SQLSLAVE) links
 
 links: netmux slave $(SQLSLAVE)
 	cd ../game/bin ; rm -f dbconvert ; ln -s ../../src/netmux dbconvert
