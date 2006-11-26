@@ -2,7 +2,7 @@
  * File for most TCP socket-related code. Some socket-related code also exists
  * in netcommon.cpp, but most of it is here.
  *
- * $Id: bsd.cpp,v 1.80 2006/08/25 19:49:14 sdennis Exp $
+ * $Id: bsd.cpp,v 1.81 2006/11/26 05:05:21 sdennis Exp $
  */
 
 #include "copyright.h"
@@ -1997,9 +1997,9 @@ void shutdownsock(DESC *d, int reason)
                 }
             }
             MEMFREE(d->program_data);
-            d->program_data = NULL;
             atr_clr(d->player, A_PROGCMD);
         }
+        d->program_data = NULL;
     }
     if (reason == R_LOGOUT)
     {
