@@ -2186,12 +2186,17 @@ void restore_global_regs
     }
 }
 
-lbuf_ref *last_lbufref = NULL;
-size_t    last_left    = 0;
-char     *last_ptr     = NULL;
+static lbuf_ref *last_lbufref = NULL;
+static size_t    last_left    = 0;
+static char     *last_ptr     = NULL;
 
-void RegAssign(reg_ref **regref, size_t n, const char *ptr)
+void RegAssign(reg_ref **regref, size_t nLength, const char *ptr)
 {
+    mux_assert(NULL != regref);
+    mux_assert(NULL != ptr);
+    mux_assert(nLength < LBUF_SIZE);
+    mux_assert('\0' == ptr[nLength]);
+
     // Put any previous register value out of the way.
     //
     if (NULL != *regref)
@@ -2202,37 +2207,45 @@ void RegAssign(reg_ref **regref, size_t n, const char *ptr)
 
     // Let go of the last lbuf if we can't use it.
     //
+    size_t nSize = nLength + 1;
     if (  NULL != last_lbufref
-       && last_left < n + 1)
+       && last_left < nSize)
     {
         BufRelease(last_lbufref);
         last_lbufref = NULL;
+        last_left    = 0;
+        last_ptr     = NULL;
     }
 
     // Grab a new, fresh lbuf if we don't have one.
     //
     if (NULL == last_lbufref)
     {
+        last_ptr = alloc_lbuf("RegAssign");
+        last_left = LBUF_SIZE;
+
+        // Fill in new lbufref.
+        //
         last_lbufref = alloc_lbufref("RegAssign");
         last_lbufref->refcount = 1;
-        last_ptr  = alloc_lbuf("RegAssign");
         last_lbufref->lbuf_ptr = last_ptr;
-        last_left = LBUF_SIZE;
     }
 
-    // New register reference.
+    // Use last lbuf.
+    //
+    char *p = last_ptr;
+    memcpy(last_ptr, ptr, nSize);
+    last_ptr[nLength] = '\0';
+    last_ptr  += nSize;
+    last_left -= nSize;
+
+    // Fill in new regref.
     //
     *regref = alloc_regref("RegAssign");
     (*regref)->refcount = 1;
+    (*regref)->lbuf     = last_lbufref;
+    (*regref)->reg_len  = nLength;
+    (*regref)->reg_ptr  = p;
 
-    // Use same last lbuf.
-    //
     BufAddRef(last_lbufref);
-    (*regref)->lbuf = last_lbufref;
-
-    memcpy(last_ptr, ptr, n+1);
-    (*regref)->reg_len  = n;
-    (*regref)->reg_ptr  = last_ptr;
-    last_ptr += n+1;
-    last_left -= n+1;
 }

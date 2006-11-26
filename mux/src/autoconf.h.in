@@ -163,7 +163,7 @@
 /* Define if pread exists */
 #undef HAVE_PREAD
 /* Define if pwrite exists */
-#undef HAVE_PWRITE 
+#undef HAVE_PWRITE
 
 /* ---------------------------------------------------------------------------
  * Setup section:

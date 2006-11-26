@@ -1219,24 +1219,28 @@ void handle_prog(DESC *d, char *message)
     //
     DESC *all = (DESC *)hashfindLEN(&(d->player), sizeof(d->player), &mudstate.desc_htab) ;
 
-    if (all && all->program_data)
+    if (  all
+       && all->program_data)
     {
+        PROG *program = all->program_data;
         for (i = 0; i < MAX_GLOBAL_REGS; i++)
         {
-            if (all->program_data->wait_regs[i])
+            if (program->wait_regs[i])
             {
-                RegRelease(all->program_data->wait_regs[i]);
-                all->program_data->wait_regs[i] = NULL;
+                RegRelease(program->wait_regs[i]);
+                program->wait_regs[i] = NULL;
             }
         }
-
-        MEMFREE(all->program_data);
-        all->program_data = NULL;
 
         // Set info for all player descriptors to NULL
         //
         DESC_ITER_PLAYER(d->player, all)
+        {
+            mux_assert(program == all->program_data);
             all->program_data = NULL;
+        }
+
+        MEMFREE(program);
     }
     atr_clr(d->player, A_PROGCMD);
     free_lbuf(cmd);
@@ -1282,7 +1286,7 @@ void do_quitprog(dbref player, dbref caller, dbref enactor, int eval, int key, c
     bool isprog = false;
     DESC_ITER_PLAYER(doer, d)
     {
-        if (d->program_data != NULL)
+        if (NULL != d->program_data)
         {
             isprog = true;
         }
@@ -1297,25 +1301,28 @@ void do_quitprog(dbref player, dbref caller, dbref enactor, int eval, int key, c
     d = (DESC *)hashfindLEN(&doer, sizeof(doer), &mudstate.desc_htab);
     int i;
 
-    if (d && d->program_data)
+    if (  d
+       && d->program_data)
     {
+        PROG *program = d->program_data;
         for (i = 0; i < MAX_GLOBAL_REGS; i++)
         {
-            if (d->program_data->wait_regs[i])
+            if (program->wait_regs[i])
             {
-                RegRelease(d->program_data->wait_regs[i]);
-                d->program_data->wait_regs[i] = NULL;
+                RegRelease(program->wait_regs[i]);
+                program->wait_regs[i] = NULL;
             }
         }
-        MEMFREE(d->program_data);
-        d->program_data = NULL;
 
         // Set info for all player descriptors to NULL.
         //
         DESC_ITER_PLAYER(doer, d)
         {
+            mux_assert(program == d->program_data);
             d->program_data = NULL;
         }
+
+        MEMFREE(program);
     }
 
     atr_clr(doer, A_PROGCMD);

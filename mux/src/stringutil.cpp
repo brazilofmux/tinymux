@@ -3633,18 +3633,18 @@ char *linewrap_general(char *strret, int field, char *left, char *right)
         {
             break;
         }
-    
+
         if (position == rightmargin)
         {
             line_indented = false;
             space_eaten = false;
             position = leftmargin;
-        
+
             safe_str(right, str, &ostr);
             safe_str("\r\n", str, &ostr);
             continue;
         }
-    
+
         if (position == leftmargin)
         {
             if (!line_indented)
@@ -3663,7 +3663,7 @@ char *linewrap_general(char *strret, int field, char *left, char *right)
                 }
             }
         }
-    
+
         spacesleft = rightmargin - position;
         int index3 = index1;
         while (original[index3])
@@ -3685,8 +3685,7 @@ char *linewrap_general(char *strret, int field, char *left, char *right)
             spacesleft--;
             index3++;
         }
-    
-    
+
         if ((index3 - index1) > field)
         {
             skip_out = true;
@@ -3696,7 +3695,7 @@ char *linewrap_general(char *strret, int field, char *left, char *right)
         {
             skip_out = false;
         }
-    
+
         if (!skip_out)
         {
             if (spacesleft < 0)
@@ -3719,7 +3718,7 @@ char *linewrap_general(char *strret, int field, char *left, char *right)
             } while (  original[index1++] != 'm'
                     && original[index1]);
             break;
-        
+
         case '\r':
             {
                 int loop;
@@ -3731,14 +3730,14 @@ char *linewrap_general(char *strret, int field, char *left, char *right)
             position = rightmargin;
             index1 = index1 + 2;
             break;
-        
+
         case '\t':
             {
                 int index3 = 0;
                 int difference = 0;
-            
+
                 index1++;
-            
+
                 for (;;)
                 {
                     if (position < tabsets[index3])
@@ -3747,13 +3746,13 @@ char *linewrap_general(char *strret, int field, char *left, char *right)
                     }
                     index3++;
                 }
-            
+
                 difference = (rightmargin < tabsets[index3]) ?
                     rightmargin - position : tabsets[index3] - position;
-            
+
                 position = (rightmargin < tabsets[index3]) ?
                     rightmargin : tabsets[index3];
-            
+
                 for (; difference; difference--)
                 {
                     safe_chr(' ', str, &ostr);

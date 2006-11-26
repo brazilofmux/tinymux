@@ -178,8 +178,6 @@ struct descriptor_data
   int width;
   int height;
   int quota;
-  int wait_for_input;       /* Used by @prog */
-  dbref wait_enactor;       /* Used by @prog */
   PROG *program_data;
   struct descriptor_data *hashnext;
   struct descriptor_data *next;

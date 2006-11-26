@@ -910,7 +910,7 @@ static bool AcquireColor(dbref player, dbref target, char SimplifiedCodes[8])
     char *color_attr = alloc_lbuf("AcquireColor.1");
     atr_pget_str(color_attr, target, A_COLOR, &aowner, &aflags);
 
-    if ('\0' == color_attr[0]) 
+    if ('\0' == color_attr[0])
     {
         free_lbuf(color_attr);
         return false;
@@ -920,7 +920,7 @@ static bool AcquireColor(dbref player, dbref target, char SimplifiedCodes[8])
         char *AnsiCodes = alloc_lbuf("AcquireColor.2");
         char *ac = AnsiCodes;
         char *cp = color_attr;
-        mux_exec(AnsiCodes, &ac, player, target, target, 
+        mux_exec(AnsiCodes, &ac, player, target, target,
                 AttrTrace(aflags, EV_EVAL|EV_TOP|EV_FCHECK), &cp, NULL, 0);
         *ac = '\0';
         free_lbuf(color_attr);
@@ -967,7 +967,7 @@ char *unparse_object(dbref player, dbref target, bool obey_myopic, bool bAddColo
             buf, LBUF_SIZE, &vw, ANSI_ENDGOAL_NORMAL);
 
         char *bp = buf + nLen;
-        
+
 #if defined(FIRANMUX)
         if (  vw == nLen
            && bAddColor)
@@ -1020,7 +1020,7 @@ char *unparse_object(dbref player, dbref target, bool obey_myopic, bool bAddColo
             safe_ltoa(target, buf, &bp);
             safe_str(fp, buf, &bp);
             safe_chr(')', buf, &bp);
-            
+
             free_sbuf(fp);
         }
         *bp = '\0';

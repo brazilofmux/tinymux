@@ -1003,19 +1003,19 @@ static bool ParseThreeLetters(const char **pp, int *piHash)
 static void ParseDecimalSeconds(size_t n, const char *p, unsigned short *iMilli,
                          unsigned short *iMicro, unsigned short *iNano)
 {
-   char aBuffer[10];
-   if (n > sizeof(aBuffer) - 1)
-   {
-       n = sizeof(aBuffer) - 1;
-   }
-   memcpy(aBuffer, p, n);
-   memset(aBuffer + n, '0', sizeof(aBuffer) - n - 1);
-   aBuffer[sizeof(aBuffer) - 1] = '\0';
-   long ns = mux_atol(aBuffer);
-   *iNano = static_cast<unsigned short>(ns % 1000);
-   ns /= 1000;
-   *iMicro = static_cast<unsigned short>(ns % 1000);
-   *iMilli = static_cast<unsigned short>(ns / 1000);
+    char aBuffer[10];
+    if (n > sizeof(aBuffer) - 1)
+    {
+        n = sizeof(aBuffer) - 1;
+    }
+    memcpy(aBuffer, p, n);
+    memset(aBuffer + n, '0', sizeof(aBuffer) - n - 1);
+    aBuffer[sizeof(aBuffer) - 1] = '\0';
+    long ns = mux_atol(aBuffer);
+    *iNano = static_cast<unsigned short>(ns % 1000);
+    ns /= 1000;
+    *iMicro = static_cast<unsigned short>(ns % 1000);
+    *iMilli = static_cast<unsigned short>(ns / 1000);
 }
 
 static bool do_convtime(const char *str, FIELDEDTIME *ft)
