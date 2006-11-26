@@ -239,6 +239,7 @@ Bug Fixes:
     list() (Issue 216). MAX_ITEXT is 100, but raising the function
     recursion limit above that leaves iter() and list() open to step
     on nearby mudstate structures including help and global_registers.
+ -- Disable WHO in Firan build (Issue 218).
 
 
 Performance Enhancements:

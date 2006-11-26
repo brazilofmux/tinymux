@@ -2453,6 +2453,7 @@ static void do_logged_out_internal(DESC *d, int key, char *arg)
             queue_string(d, "This command is disabled on login.");
             queue_write_LEN(d, "\r\n", 2);
         }
+        else
 #endif // FIRANMUX
         {
             dump_users(d, arg, key);
