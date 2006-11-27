@@ -502,13 +502,14 @@ void did_it_rlevel
 (
     dbref player,
     dbref thing,
-    int what,
+    int   what,
     const char *def,
-    int owhat,
+    int   owhat,
     const char *odef,
-    int awhat,
+    int   awhat,
+    int   ctrl_flags,
     char *args[],
-    int nargs
+    int   nargs
 )
 {
     char *d, *buff, *act, *charges, *bp, *str;
@@ -532,7 +533,7 @@ void did_it_rlevel
             // Ok, if it's A_DESC, we need to check against A_IDESC.
             //
             if (  A_IDESC == what
-               && desclist[i] == A_DESC)
+               && A_DESC == desclist[i])
             {
                 d = atr_pget(thing, A_IDESC, &aowner, &aflags);
             }
@@ -540,6 +541,7 @@ void did_it_rlevel
             {
                 d = atr_pget(thing, desclist[i], &aowner, &aflags);
             }
+
             if (*d)
             {
                 // No need for the 'def' message.
@@ -573,6 +575,7 @@ void did_it_rlevel
             }
             free_lbuf(d);
         }
+
         if (!found_a_desc)
         {
             // No desc found... try the default desc (again).
@@ -671,15 +674,29 @@ void did_it_rlevel
 
             if (*buff)
             {
-                notify_except2_rlevel2(loc, player, player, thing,
-                    tprintf("%s %s", Name(player), buff));
+                if (aflags & AF_NONAME)
+                {
+                    notify_except2_rlevel2(loc, player, player, thing, buff);
+                }
+                else
+                {
+                    notify_except2_rlevel2(loc, player, player, thing,
+                        tprintf("%s %s", Name(player), buff));
+                }
             }
             free_lbuf(buff);
         }
         else if (odef)
         {
-            notify_except2_rlevel2(loc, player, player, thing,
-                tprintf("%s %s", Name(player), odef));
+            if (ctrl_flags & VERB_NONAME)
+            {
+                notify_except2_rlevel2(loc, player, player, thing, odef);
+            }
+            else
+            {
+                notify_except2_rlevel2(loc, player, player, thing,
+                    tprintf("%s %s", Name(player), odef));
+            }
         }
         free_lbuf(d);
     }
@@ -688,8 +705,15 @@ void did_it_rlevel
             && Has_location(player)
             && Good_obj(loc = Location(player)))
     {
-        notify_except2_rlevel2(loc, player, player, thing,
-            tprintf("%s %s", Name(player), odef));
+        if (ctrl_flags & VERB_NONAME)
+        {
+            notify_except2_rlevel2(loc, player, player, thing, odef);
+        }
+        else
+        {
+            notify_except2_rlevel2(loc, player, player, thing,
+                tprintf("%s %s", Name(player), odef));
+        }
     }
 
     // If we preserved the state of the global registers, restore them.

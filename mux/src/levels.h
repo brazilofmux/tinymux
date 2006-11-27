@@ -10,15 +10,27 @@
 
 #define IsReal(R, T) ((R) == (T) || (RxLevel(R) & TxLevel(T)))
 
-extern RLEVEL   RxLevel(dbref);
-extern RLEVEL   TxLevel(dbref);
-extern void     notify_except_rlevel(dbref, dbref, dbref, const char *, int);
-extern void     notify_except2_rlevel(dbref, dbref, dbref, dbref,const char *);
-extern void     notify_except2_rlevel2(dbref, dbref, dbref, dbref,const char *);
-extern char *   rxlevel_description(dbref, dbref);
-extern char *   txlevel_description(dbref, dbref);
-extern void     decompile_rlevels(dbref, dbref, char *);
-extern RLEVEL   find_rlevel(char *);
-extern void     did_it_rlevel(dbref, dbref, int, const char *, int,const char *, int, char *[], int);
+RLEVEL   RxLevel(dbref);
+RLEVEL   TxLevel(dbref);
+void     notify_except_rlevel(dbref, dbref, dbref, const char *, int);
+void     notify_except2_rlevel(dbref, dbref, dbref, dbref,const char *);
+void     notify_except2_rlevel2(dbref, dbref, dbref, dbref,const char *);
+char *   rxlevel_description(dbref, dbref);
+char *   txlevel_description(dbref, dbref);
+void     decompile_rlevels(dbref, dbref, char *);
+RLEVEL   find_rlevel(char *);
+void did_it_rlevel
+(
+    dbref player,
+    dbref thing,
+    int   what,
+    const char *def,
+    int   owhat,
+    const char *odef,
+    int   awhat,
+    int   ctrl_flags,
+    char *args[],
+    int   nargs
+);
 
-#endif /* __LEVELS_H */
+#endif // __LEVELS_H
