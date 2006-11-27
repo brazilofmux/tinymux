@@ -2517,21 +2517,32 @@ void do_editchannel
     case 0:
         {
             dbref who = lookup_player(executor, arg2, true);
-            if (NOTHING == who)
+            if (Good_obj(who))
             {
-                raw_notify(executor, "Invalid player.");
+                ch->charge_who = Owner(who);
+                raw_notify(executor, "Set.");
             }
             else
             {
-                ch->charge_who = who;
-                raw_notify(executor, "Set.");
+                raw_notify(executor, "Invalid player.");
             }
         }
         break;
 
     case 1:
-        ch->charge = mux_atol(arg2);
-        raw_notify(executor, "Set.");
+        {
+            int c_charge = mux_atol(arg2);
+            if (  0 <= c_charge
+               && c_charge <= MAX_COST)
+            {
+                ch->charge = c_charge;
+                raw_notify(executor, "Set.");
+            }
+            else
+            {
+                raw_notify(executor, "That is not a reasonable cost.");
+            }
+        }
         break;
 
     case 3:

@@ -2066,7 +2066,7 @@ static void process_preload(void)
         {
             ITER_PARENTS(thing, parent, lev)
             {
-                if (Flags(thing) & HAS_STARTUP)
+                if (H_Startup(thing))
                 {
                     did_it(Owner(thing), thing, 0, NULL, 0, NULL, A_STARTUP,
                         0, NULL, 0);

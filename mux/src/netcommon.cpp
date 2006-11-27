@@ -1472,7 +1472,7 @@ void check_events(void)
 
             ITER_PARENTS(thing, parent, lev)
             {
-                if (Flags2(thing) & HAS_DAILY)
+                if (H_Daily(thing))
                 {
                     did_it(Owner(thing), thing, 0, NULL, 0, NULL, A_DAILY, 0,
                         NULL, 0);
