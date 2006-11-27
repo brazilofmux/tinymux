@@ -193,7 +193,7 @@ struct confdata
     char    fixed_home_msg[128];    /* Message displayed when going home and FIXED */
     char    fixed_tel_msg[128]; /* Message displayed when teleporting and FIXED */
     char    postdump_msg[256];  /* Message displayed after @dump-ing */
-#ifdef FIRANMUX /* adam */
+#ifdef FIRANMUX
     char    immobile_msg[128];  /* Message displayed to immobile players */
 #endif // FIRANMUX
 #ifdef FIRANMUX

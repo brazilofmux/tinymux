@@ -963,7 +963,7 @@ void announce_disconnect(dbref player, DESC *d, const char *reason)
         num++;
     }
 
-#ifdef FIRANMUX /* adam */
+#ifdef FIRANMUX
     // Modified so that %# would be the dbref of the object which @booted you,
     //  if such is the case.
 #else
