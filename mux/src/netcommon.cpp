@@ -25,7 +25,7 @@
 #include "svdreport.h"
 #ifdef REALITY_LVLS
 #include "levels.h"
-#endif /* REALITY_LVLS */
+#endif // REALITY_LVLS
 
 
 /* ---------------------------------------------------------------------------
@@ -852,7 +852,7 @@ static void announce_connect(dbref player, DESC *d)
         notify_except_rlevel(loc, player, player, buf, 0);
 #else
     notify_check(player, player, buf, key);
-#endif /* REALITY_LVLS */
+#endif // REALITY_LVLS
     atr_pget_str_LEN(buf, player, A_ACONNECT, &aowner, &aflags, &nLen);
     CLinearTimeAbsolute lta;
     dbref zone, obj;
@@ -996,7 +996,7 @@ void announce_disconnect(dbref player, DESC *d, const char *reason)
             notify_except_rlevel(loc, player, player, buf, 0);
 #else
         notify_check(player, player, buf, key);
-#endif /* REALITY_LVLS */
+#endif // REALITY_LVLS
 
         if (mudconf.have_mailer)
         {
@@ -1142,7 +1142,7 @@ void announce_disconnect(dbref player, DESC *d, const char *reason)
             notify_except_rlevel(loc, player, player, mbuf, 0);
 #else
         notify_check(player, player, mbuf, key);
-#endif /* REALITY_LVLS */
+#endif // REALITY_LVLS
         raw_broadcast(MONITOR, "GAME: %s has partially disconnected.",
             Moniker(player));
         free_mbuf(mbuf);
@@ -1474,7 +1474,8 @@ void check_events(void)
             {
                 if (Flags2(thing) & HAS_DAILY)
                 {
-                    did_it(Owner(thing), thing, 0, NULL, 0, NULL, A_DAILY, (char **)NULL, 0);
+                    did_it(Owner(thing), thing, 0, NULL, 0, NULL, A_DAILY, 0,
+                        NULL, 0);
                     break;
                 }
             }
@@ -2528,7 +2529,7 @@ void do_command(DESC *d, char *command)
         MuxAlarm.Set(mudconf.max_cmdsecs);
 
         char *log_cmdbuf = process_command(d->player, d->player, d->player,
-            0, true, command, (char **)NULL, 0);
+            0, true, command, NULL, 0);
 
         CLinearTimeAbsolute ltaEnd;
         ltaEnd.GetUTC();

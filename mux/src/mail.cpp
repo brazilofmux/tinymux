@@ -217,7 +217,7 @@ static int add_mail_message(dbref player, char *message)
     char *str = atrstr;
     mux_exec(execstr, &bp, player, player, player,
          AttrTrace(aflags, EV_STRIP_CURLY|EV_FCHECK|EV_EVAL), &str,
-         (char **)NULL, 0);
+         NULL, 0);
     *bp = '\0';
 
     // Save message body and return a reference to it.
@@ -2128,7 +2128,7 @@ static void mail_return(dbref player, dbref target)
         buf = str;
         mux_exec(str2, &bp, target, player, player,
              AttrTrace(aflags, EV_FCHECK|EV_EVAL|EV_TOP|EV_NO_LOCATION), &buf,
-             (char **)NULL, 0);
+             NULL, 0);
         *bp = '\0';
         if (*str2)
         {
@@ -2274,7 +2274,7 @@ static void send_mail
     }
 
     notify(target, tprintf("MAIL: You have a new message from %s.", Moniker(player)));
-    did_it(player, target, A_MAIL, NULL, 0, NULL, A_AMAIL, NULL, NOTHING);
+    did_it(player, target, A_MAIL, NULL, 0, NULL, A_AMAIL, 0, NULL, NOTHING);
 }
 
 static void do_mail_nuke(dbref player)
@@ -3908,7 +3908,7 @@ void do_prepend(dbref executor, dbref caller, dbref enactor, int eval, int key, 
         char *bpText = bufText;
         char *strText = text+1;
         mux_exec(bufText, &bpText, executor, caller, enactor,
-                 eval|EV_STRIP_CURLY|EV_FCHECK|EV_EVAL, &strText, (char **)NULL, 0);
+                 eval|EV_STRIP_CURLY|EV_FCHECK|EV_EVAL, &strText, NULL, 0);
         *bpText = '\0';
 
         dbref aowner;
@@ -3972,7 +3972,7 @@ void do_postpend(dbref executor, dbref caller, dbref enactor, int eval, int key,
         char *bpText = bufText;
         char *strText = text+1;
         mux_exec(bufText, &bpText, executor, caller, enactor,
-                 eval|EV_STRIP_CURLY|EV_FCHECK|EV_EVAL, &strText, (char **)NULL, 0);
+                 eval|EV_STRIP_CURLY|EV_FCHECK|EV_EVAL, &strText, NULL, 0);
         *bpText = '\0';
 
         dbref aowner;

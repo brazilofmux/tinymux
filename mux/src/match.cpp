@@ -12,7 +12,7 @@
 #include "powers.h"
 #ifdef REALITY_LVLS
 #include "levels.h"
-#endif /* REALITY_LVLS */
+#endif // REALITY_LVLS
 
 const char *NOMATCH_MESSAGE      = "I don't see that here.";
 const char *AMBIGUOUS_MESSAGE    = "I don't know which one you mean!";
@@ -36,11 +36,16 @@ static MSTATE md;
 static void promote_match(dbref what, int confidence)
 {
 #ifdef REALITY_LVLS
-    // Check is the object is visible
-    if(Good_obj(what) && (confidence & CON_LOCAL) &&
-      !IsReal(md.player, what) && what != Location(md.player))
+    // Check is the object is visible.
+    //
+    if(  Good_obj(what)
+      && (confidence & CON_LOCAL)
+      && !IsReal(md.player, what)
+      && what != Location(md.player))
+    {
         return;
-#endif /* REALITY_LVLS */
+    }
+#endif // REALITY_LVLS
     // Check for type and locks, if requested.
     //
     if (md.pref_type != NOTYPE)

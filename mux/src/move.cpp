@@ -14,7 +14,7 @@
 #include "powers.h"
 #ifdef REALITY_LVLS
 #include "levels.h"
-#endif /* REALITY_LVLS */
+#endif // REALITY_LVLS
 
 /* ---------------------------------------------------------------------------
  * process_leave_loc: Generate messages and actions resulting from leaving a
@@ -53,7 +53,7 @@ static void process_leave_loc(dbref thing, dbref dest, dbref cause, bool canhear
     bool quiet = (  (hush & HUSH_LEAVE) || !IsReal(loc, thing)
 #else
     bool quiet = (  (hush & HUSH_LEAVE)
-#endif /* REALITY_LVLS */
+#endif // REALITY_LVLS
                  || (  !Wizard(loc)
                     && (  Dark(thing)
                        || Dark(loc))
@@ -64,14 +64,13 @@ static void process_leave_loc(dbref thing, dbref dest, dbref cause, bool canhear
     int oattr = quiet ? 0 : A_OLEAVE;
     int aattr = quiet ? 0 : A_ALEAVE;
     int pattr = (!mudconf.terse_movemsg && Terse(thing)) ? 0 : A_LEAVE;
-    did_it(thing, loc, pattr, NULL, oattr, NULL, aattr,
-           (char **)NULL, 0);
+    did_it(thing, loc, pattr, NULL, oattr, NULL, aattr, 0, NULL, 0);
 
     // Do OXENTER for receiving room
     //
     if ((dest != NOTHING) && !quiet)
     {
-        did_it(thing, dest, 0, NULL, A_OXENTER, NULL, 0, (char **)NULL, 0);
+        did_it(thing, dest, 0, NULL, A_OXENTER, NULL, 0, 0, NULL, 0);
     }
 
     // Display the 'has left' message if we meet any of the following
@@ -97,7 +96,7 @@ static void process_leave_loc(dbref thing, dbref dest, dbref cause, bool canhear
             notify_except2_rlevel(loc, thing, thing, cause,
 #else
             notify_except2(loc, thing, thing, cause,
-#endif /* REALITY_LVLS */
+#endif // REALITY_LVLS
                        tprintf("%s has left.", Moniker(thing)));
         }
     }
@@ -132,7 +131,7 @@ static void process_enter_loc(dbref thing, dbref src, dbref cause, bool canhear,
     bool quiet = (  (hush & HUSH_ENTER) || !IsReal(loc, thing)
 #else
     bool quiet = (  (hush & HUSH_ENTER)
-#endif /* REALITY_LVLS */
+#endif // REALITY_LVLS
                  || (  !Wizard(loc)
                     && (  Dark(thing)
                        || Dark(loc))
@@ -152,15 +151,14 @@ static void process_enter_loc(dbref thing, dbref src, dbref cause, bool canhear,
 #endif // FIRANMUX
     int pattr = (!mudconf.terse_movemsg && Terse(thing)) ? 0 : A_ENTER;
 
-    did_it(thing, loc, pattr, NULL, oattr, NULL, aattr,
-           (char **)NULL, 0);
+    did_it(thing, loc, pattr, NULL, oattr, NULL, aattr, 0, NULL, 0);
 
     // Do OXLEAVE for sending room.
     //
     if (  src != NOTHING
        && !quiet)
     {
-        did_it(thing, src, 0, NULL, A_OXLEAVE, NULL, 0, (char **)NULL, 0);
+        did_it(thing, src, 0, NULL, A_OXLEAVE, NULL, 0, 0, NULL, 0);
     }
 
     // Display the 'has arrived' message if we meet all of the following
@@ -183,7 +181,7 @@ static void process_enter_loc(dbref thing, dbref src, dbref cause, bool canhear,
         notify_except2_rlevel(loc, thing, thing, cause,
 #else
         notify_except2(loc, thing, thing, cause,
-#endif /* REALITY_LVLS */
+#endif // REALITY_LVLS
                    tprintf("%s has arrived.", Moniker(thing)));
     }
 }
@@ -338,12 +336,10 @@ void move_via_generic(dbref thing, dbref dest, dbref cause, int hush)
     bool canhear = Hearer(thing);
     process_leave_loc(thing, dest, cause, canhear, hush);
     move_object(thing, dest);
-    did_it(thing, thing, A_MOVE, NULL, A_OMOVE, NULL, A_AMOVE,
-           (char **)NULL, 0);
+    did_it(thing, thing, A_MOVE, NULL, A_OMOVE, NULL, A_AMOVE, 0, NULL, 0);
 
 #if defined(FIRANMUX)
-    did_it(thing, thing, A_LEAD, NULL, A_OLEAD, NULL, A_ALEAD,
-           (char **)NULL, 0);
+    did_it(thing, thing, A_LEAD, NULL, A_OLEAD, NULL, A_ALEAD, 0, NULL, 0);
 #endif // FIRANMUX
 
     process_enter_loc(thing, src, cause, canhear, hush);
@@ -374,8 +370,7 @@ static void move_via_exit(dbref thing, dbref dest, dbref cause, dbref exit, int 
 
     int oattr = quiet ? 0 : A_OSUCC;
     int pattr = (!mudconf.terse_movemsg && Terse(thing)) ? 0 : A_SUCC;
-    did_it(thing, exit, pattr, NULL, oattr, NULL, aattr,
-           (char **)NULL, 0);
+    did_it(thing, exit, pattr, NULL, oattr, NULL, aattr, 0, NULL, 0);
     process_leave_loc(thing, dest, cause, canhear, hush);
     move_object(thing, dest);
 
@@ -387,15 +382,12 @@ static void move_via_exit(dbref thing, dbref dest, dbref cause, dbref exit, int 
 
     oattr = quiet ? 0 : A_ODROP;
     pattr = (!mudconf.terse_movemsg && Terse(thing)) ? 0 : A_DROP;
-    did_it(thing, exit, pattr, NULL, oattr, NULL, aattr,
-           (char **)NULL, 0);
+    did_it(thing, exit, pattr, NULL, oattr, NULL, aattr, 0, NULL, 0);
 
-    did_it(thing, thing, A_MOVE, NULL, A_OMOVE, NULL, A_AMOVE,
-           (char **)NULL, 0);
+    did_it(thing, thing, A_MOVE, NULL, A_OMOVE, NULL, A_AMOVE, 0, NULL, 0);
 
 #if defined(FIRANMUX)
-    did_it(thing, thing, A_LEAD, NULL, A_OLEAD, NULL, A_ALEAD,
-           (char **)NULL, 0);
+    did_it(thing, thing, A_LEAD, NULL, A_OLEAD, NULL, A_ALEAD, 0, NULL, 0);
 #endif
 
     process_enter_loc(thing, src, cause, canhear, hush);
@@ -432,7 +424,7 @@ bool move_via_teleport(dbref thing, dbref dest, dbref cause, int hush)
                 }
                 did_it(thing, src,
                        A_TOFAIL, failmsg, A_OTOFAIL, NULL,
-                       A_ATOFAIL, (char **)NULL, 0);
+                       A_ATOFAIL, 0, NULL, 0);
                 return false;
             }
             if (isRoom(curr))
@@ -456,7 +448,7 @@ bool move_via_teleport(dbref thing, dbref dest, dbref cause, int hush)
     if (!(hush & HUSH_LEAVE))
     {
         did_it(thing, thing, 0, NULL, A_OXTPORT, NULL, 0,
-            (char **)NULL, 0);
+            0, NULL, 0);
     }
     process_leave_loc(thing, dest, NOTHING, canhear, hush);
 
@@ -465,14 +457,14 @@ bool move_via_teleport(dbref thing, dbref dest, dbref cause, int hush)
     if (!(hush & HUSH_ENTER))
     {
         did_it(thing, thing, A_TPORT, NULL, A_OTPORT, NULL, A_ATPORT,
-            (char **)NULL, 0);
+            0, NULL, 0);
     }
     did_it(thing, thing, A_MOVE, NULL, A_OMOVE, NULL, A_AMOVE,
-        (char **)NULL, 0);
+        0, NULL, 0);
 
 #if defined(FIRANMUX)
     did_it(thing, thing, A_LEAD, NULL, A_OLEAD, NULL, A_ALEAD,
-           (char **)NULL, 0);
+           0, NULL, 0);
 #endif // FIRANMUX
 
     process_enter_loc(thing, src, NOTHING, canhear, hush);
@@ -495,7 +487,7 @@ static dbref get_exit_dest(dbref executor, dbref exit)
     char *ref = result;
     char *str = atr_gotten;
     mux_exec(result, &ref, exit, executor, executor,
-        AttrTrace(aflags, EV_FCHECK|EV_EVAL), &str, (char **)NULL, 0);
+        AttrTrace(aflags, EV_FCHECK|EV_EVAL), &str, NULL, 0);
     free_lbuf(atr_gotten);
 
     dbref dest = NOTHING;
@@ -624,7 +616,7 @@ void move_exit(dbref player, dbref exit, bool divest, const char *failmsg, int h
             oattr = A_OFAIL;
             aattr = A_AFAIL;
         }
-        did_it(player, exit, A_FAIL, failmsg, oattr, NULL, aattr, (char **)NULL, 0);
+        did_it(player, exit, A_FAIL, failmsg, oattr, NULL, aattr, 0, NULL, 0);
     }
 }
 
@@ -808,7 +800,7 @@ void do_get(dbref executor, dbref caller, dbref enactor, int eval, int key, char
             oattr = quiet ? 0 : A_OSUCC;
             aattr = quiet ? 0 : A_ASUCC;
             did_it(executor, thing, A_SUCC, "Taken.", oattr, NULL,
-                   aattr, (char **)NULL, 0);
+                   aattr, 0, NULL, 0);
         }
         else
         {
@@ -823,7 +815,7 @@ void do_get(dbref executor, dbref caller, dbref enactor, int eval, int key, char
                 failmsg = "You can't pick that up.";
             }
             did_it(executor, thing, A_FAIL, failmsg, oattr, NULL, aattr,
-                (char **)NULL, 0);
+                0, NULL, 0);
         }
         break;
 
@@ -910,7 +902,7 @@ void do_drop(dbref executor, dbref caller, dbref enactor, int eval, int key, cha
            || !could_doit(executor, thing, A_LDROP))
         {
             did_it(executor, thing, A_DFAIL, "You can't drop that.",
-                   A_ODFAIL, NULL, A_ADFAIL, (char **)NULL, 0);
+                   A_ODFAIL, NULL, A_ADFAIL, 0, NULL, 0);
             return;
         }
 
@@ -926,7 +918,7 @@ void do_drop(dbref executor, dbref caller, dbref enactor, int eval, int key, cha
         oattr = quiet ? 0 : A_ODROP;
         aattr = quiet ? 0 : A_ADROP;
         did_it(executor, thing, A_DROP, "Dropped.", oattr, buf,
-               aattr, (char **)NULL, 0);
+               aattr, 0, NULL, 0);
         free_lbuf(buf);
 
         // Process droptos
@@ -977,7 +969,7 @@ void do_enter_internal(dbref player, dbref thing, bool quiet)
         oattr = quiet ? 0 : A_OEFAIL;
         aattr = quiet ? 0 : A_AEFAIL;
         did_it(player, thing, A_EFAIL, NOPERM_MESSAGE,
-               oattr, NULL, aattr, (char **)NULL, 0);
+               oattr, NULL, aattr, 0, NULL, 0);
     }
     else if (player == thing)
     {
@@ -996,7 +988,7 @@ void do_enter_internal(dbref player, dbref thing, bool quiet)
         oattr = quiet ? 0 : A_OEFAIL;
         aattr = quiet ? 0 : A_AEFAIL;
         did_it(player, thing, A_EFAIL, "You can't enter that.",
-               oattr, NULL, aattr, (char **)NULL, 0);
+               oattr, NULL, aattr, 0, NULL, 0);
     }
 }
 
@@ -1063,6 +1055,6 @@ void do_leave(dbref executor, dbref caller, dbref enactor, int key)
         int oattr = quiet ? 0 : A_OLFAIL;
         int aattr = quiet ? 0 : A_ALFAIL;
         did_it(executor, loc, A_LFAIL, "You can't leave.",
-               oattr, NULL, aattr, (char **)NULL, 0);
+               oattr, NULL, aattr, 0, NULL, 0);
     }
 }

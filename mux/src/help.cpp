@@ -364,7 +364,7 @@ static bool ReportTopic(dbref executor, struct help_entry *htab_entry, int iHelp
         {
             char *str = line;
             mux_exec(result, &bp, executor, executor, executor,
-                     EV_NO_COMPRESS | EV_FIGNORE | EV_EVAL, &str, (char **)NULL, 0);
+                EV_NO_COMPRESS | EV_FIGNORE | EV_EVAL, &str, NULL, 0);
         }
         else
         {

@@ -143,7 +143,7 @@ void do_think(dbref executor, dbref caller, dbref enactor, int eval, int key,
     buf = bp = alloc_lbuf("do_think");
     str = message;
     mux_exec(buf, &bp, executor, caller, enactor, eval|EV_FCHECK|EV_EVAL|EV_TOP,
-         &str, (char **)NULL, 0);
+         &str, NULL, 0);
     *bp = '\0';
     notify(executor, buf);
     free_lbuf(buf);
@@ -563,7 +563,7 @@ static void page_return(dbref player, dbref target, const char *tag,
         buf = str;
         mux_exec(str2, &bp, target, player, player,
              AttrTrace(aflags, EV_FCHECK|EV_EVAL|EV_TOP|EV_NO_LOCATION),
-             &buf, (char **)NULL, 0);
+             &buf, NULL, 0);
         *bp = '\0';
         if (*str2)
         {

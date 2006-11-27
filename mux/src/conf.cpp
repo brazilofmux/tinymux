@@ -151,7 +151,7 @@ void cf_init(void)
     mudconf.def_exit_tx = 1;
     mudconf.def_thing_rx = 1;
     mudconf.def_thing_tx = 1;
-#endif /* REALITY_LVLS */
+#endif // REALITY_LVLS
     mudconf.start_quota = 20;
     mudconf.site_chars = 25;
     mudconf.payfind = 0;
@@ -456,7 +456,7 @@ CF_HAND(cf_rlevel)
     mc->no_levels++;
     return 0;
 }
-#endif /* REALITY_LVLS */
+#endif // REALITY_LVLS
 
 // ---------------------------------------------------------------------------
 // cf_int_array: Setup array of integers.
@@ -2041,9 +2041,9 @@ static CONF conftable[] =
     {"def_exit_tx",               cf_int,         CA_WIZARD, CA_PUBLIC,   (int *)&mudconf.def_exit_tx,     NULL,               0},
     {"def_thing_rx",              cf_int,         CA_WIZARD, CA_PUBLIC,   (int *)&mudconf.def_thing_rx,    NULL,               0},
     {"def_thing_tx",              cf_int,         CA_WIZARD, CA_PUBLIC,   (int *)&mudconf.def_thing_tx,    NULL,               0},
-#endif /* REALITY_LVLS */
+#endif // REALITY_LVLS
 
-#ifdef FIRANMUX /* adam */
+#ifdef FIRANMUX
     {"immobile_message",          cf_string,      CA_WIZARD, CA_PUBLIC,   (int *)mudconf.immobile_msg,     NULL,             128},
     {"sql_server",                cf_string,      CA_STATIC, CA_DISABLED, (int *)mudconf.sql_server,       NULL,             128},
     {"sql_user",                  cf_string,      CA_STATIC, CA_DISABLED, (int *)mudconf.sql_user,         NULL,             128},

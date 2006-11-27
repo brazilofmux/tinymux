@@ -22,7 +22,7 @@
 #include "help.h"
 #ifdef REALITY_LVLS
 #include "levels.h"
-#endif /* REALITY_LVLS */
+#endif // REALITY_LVLS
 
 #if defined(FIRANMUX)
 #include <mysql.h>
@@ -453,7 +453,7 @@ static bool check_filter(dbref object, dbref player, int filter, const char *msg
     char *str = buf;
     mux_exec(nbuf, &dp, object, player, player,
         AttrTrace(aflags, EV_FIGNORE|EV_EVAL|EV_TOP), &str,
-        (char **)NULL, 0);
+        NULL, 0);
     *dp = '\0';
     dp = nbuf;
     free_lbuf(buf);
@@ -532,7 +532,7 @@ static char *add_prefix(dbref object, dbref player, int prefix,
         str = buf;
         mux_exec(nbuf, &cp, object, player, player,
             AttrTrace(aflags, EV_FIGNORE|EV_EVAL|EV_TOP), &str,
-            (char **)NULL, 0);
+            NULL, 0);
         free_lbuf(buf);
 
         restore_global_regs(preserve);
@@ -829,14 +829,14 @@ void notify_check(dbref target, dbref sender, const char *msg, int key)
             mudstate.nHearNest++;
             if (sender != target)
             {
-                did_it(sender, target, 0, NULL, 0, NULL, A_AHEAR, args, nargs);
+                did_it(sender, target, 0, NULL, 0, NULL, A_AHEAR, 0, args, nargs);
             }
             else
             {
-                did_it(sender, target, 0, NULL, 0, NULL, A_AMHEAR, args,
+                did_it(sender, target, 0, NULL, 0, NULL, A_AMHEAR, 0, args,
                     nargs);
             }
-            did_it(sender, target, 0, NULL, 0, NULL, A_AAHEAR, args, nargs);
+            did_it(sender, target, 0, NULL, 0, NULL, A_AAHEAR, 0, args, nargs);
             mudstate.nHearNest--;
         }
 
@@ -1922,7 +1922,7 @@ bool list_check
 #else
         if (  thing != player
            && !No_Command(thing))
-#endif /* REALITY_LVLS */
+#endif // REALITY_LVLS
         {
             bMatch |= atr_match(thing, player, type, str, raw_str, check_parent);
         }
@@ -2069,7 +2069,7 @@ static void process_preload(void)
                 if (Flags(thing) & HAS_STARTUP)
                 {
                     did_it(Owner(thing), thing, 0, NULL, 0, NULL, A_STARTUP,
-                        (char **)NULL, 0);
+                        0, NULL, 0);
 
                     // Process queue entries as we add them.
                     //

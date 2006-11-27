@@ -887,7 +887,7 @@ void search_perform(dbref executor, dbref caller, dbref enactor, SEARCH *parm)
             result = bp = alloc_lbuf("search_perform");
             str = buff2;
             mux_exec(result, &bp, executor, caller, enactor,
-                EV_FCHECK | EV_EVAL | EV_NOTRACE, &str, (char **)NULL, 0);
+                EV_FCHECK | EV_EVAL | EV_NOTRACE, &str, NULL, 0);
             *bp = '\0';
             free_lbuf(buff2);
             if (!*result || !xlate(result))

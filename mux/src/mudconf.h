@@ -141,7 +141,7 @@ struct confdata
     RLEVEL  def_exit_tx;        /* Default exit TX level */
     RLEVEL  def_thing_rx;       /* Default thing RX level */
     RLEVEL  def_thing_tx;       /* Default thing TX level */
-#endif /* REALITY_LVLS */
+#endif // REALITY_LVLS
     int     ntfy_nest_lim;      /* Max nesting of notifys */
     int     number_guests;      // number of guest characters allowed.
     int     opencost;           /* cost of @open command */

@@ -21,7 +21,7 @@
 #include "mail.h"
 #ifdef REALITY_LVLS
 #include "levels.h"
-#endif /* REALITY_LVLS */
+#endif // REALITY_LVLS
 
 /* Note: Many functions in this file have been taken, whole or in part, from
  * PennMUSH 1.50, and TinyMUSH 2.2, for softcode compatibility. The
@@ -2234,7 +2234,7 @@ static void default_handler(char *buff, char **bufc, dbref executor,
                 str = atr_gotten;
                 mux_exec(buff, bufc, thing, executor, executor,
                      AttrTrace(aflags, EV_FIGNORE|EV_EVAL), &str,
-                     (char **)NULL, 0);
+                     NULL, 0);
                 break;
 
             case DEFAULT_UDEFAULT:

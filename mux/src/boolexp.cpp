@@ -201,7 +201,7 @@ bool eval_boolexp(dbref player, dbref thing, dbref from, BOOLEXP *b)
             str = buff;
             mux_exec(buff2, &bp, source, player, player,
                 AttrTrace(aflags, EV_FIGNORE|EV_EVAL|EV_FCHECK|EV_TOP), &str,
-                (char **)NULL, 0);
+                NULL, 0);
             *bp = '\0';
 
             restore_global_regs(preserve);

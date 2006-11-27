@@ -20,7 +20,7 @@
 #include "pcre.h"
 #ifdef REALITY_LVLS
 #include "levels.h"
-#endif /* REALITY_LVLS */
+#endif // REALITY_LVLS
 
 #if defined(FIRANMUX)
 #include <mysql.h>
@@ -2063,7 +2063,7 @@ static void get_handler(char *buff, char **bufc, dbref executor, char *fargs[], 
     {
         char *str = atr_gotten;
         mux_exec(buff, bufc, thing, executor, executor,
-            AttrTrace(aflags, EV_FIGNORE|EV_EVAL), &str, (char **)NULL, 0);
+            AttrTrace(aflags, EV_FIGNORE|EV_EVAL), &str, NULL, 0);
     }
     else
     {
@@ -2126,7 +2126,7 @@ static FUNCTION(fun_subeval)
     char *str = fargs[0];
     mux_exec(buff, bufc, executor, caller, enactor,
              eval|EV_EVAL|EV_NO_LOCATION|EV_NOFCHECK|EV_FIGNORE|EV_NO_COMPRESS,
-             &str, (char **)NULL, 0);
+             &str, NULL, 0);
 }
 
 static FUNCTION(fun_eval)
@@ -2138,7 +2138,7 @@ static FUNCTION(fun_eval)
     {
         char *str = fargs[0];
         mux_exec(buff, bufc, executor, caller, enactor, eval|EV_EVAL, &str,
-                 (char **)NULL, 0);
+                 NULL, 0);
         return;
     }
     if (!*fargs[0] || !*fargs[1])
@@ -3450,7 +3450,7 @@ static FUNCTION(fun_cansee)
         bResult = (!Dark(lookee) && IsReal(looker, lookee));
 #else
         bResult = !Dark(lookee);
-#endif /* REALITY_LVLS */
+#endif // REALITY_LVLS
     }
     safe_bool(bResult, buff, bufc);
 }
@@ -4767,7 +4767,7 @@ static FUNCTION(fun_txlevel)
     else
         safe_str("#-1 PERMISSION DENIED", buff, bufc);
 }
-#endif /* REALITY_LVLS */
+#endif // REALITY_LVLS
 
 static FUNCTION(fun_powers)
 {
@@ -5050,7 +5050,7 @@ static void process_sex(dbref player, char *what, const char *token, char *buff,
     else
     {
         char *str = (char *)token;
-        mux_exec(buff, bufc, it, it, it, EV_EVAL, &str, (char **)NULL, 0);
+        mux_exec(buff, bufc, it, it, it, EV_EVAL, &str, NULL, 0);
     }
 }
 
@@ -8531,7 +8531,7 @@ static FUNCTION(fun_error)
         {
             mux_exec(errbuff, &errbufc, mudconf.global_error_obj, caller, enactor,
                 AttrTrace(aflags, EV_EVAL|EV_FCHECK|EV_STRIP_CURLY),
-                &str, (char **)NULL, 0);
+                &str, NULL, 0);
         }
         safe_str(errbuff, buff, bufc);
         free_lbuf(errtext);
@@ -10025,7 +10025,7 @@ static FUN builtin_function_list[] =
 #ifdef REALITY_LVLS
     {"HASRXLEVEL",  fun_hasrxlevel, MAX_ARG, 2,       2,         0, CA_PUBLIC},
     {"HASTXLEVEL",  fun_hastxlevel, MAX_ARG, 2,       2,         0, CA_PUBLIC},
-#endif /* REALITY_LVLS */
+#endif // REALITY_LVLS
     {"HASTYPE",     fun_hastype,    MAX_ARG, 2,       2,         0, CA_PUBLIC},
     {"HEIGHT",      fun_height,     MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {"HOME",        fun_home,       MAX_ARG, 1,       1,         0, CA_PUBLIC},
@@ -10182,7 +10182,7 @@ static FUN builtin_function_list[] =
     {"ROUND",       fun_round,      MAX_ARG, 2,       2,         0, CA_PUBLIC},
 #ifdef REALITY_LVLS
     {"RXLEVEL",     fun_rxlevel,    MAX_ARG, 1,       1,         0, CA_PUBLIC},
-#endif /* REALITY_LVLS */
+#endif // REALITY_LVLS
     {"S",           fun_s,                1, 1,       1,         0, CA_PUBLIC},
     {"SCRAMBLE",    fun_scramble,   MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {"SEARCH",      fun_search,           1, 0,       1,         0, CA_PUBLIC},
@@ -10251,7 +10251,7 @@ static FUN builtin_function_list[] =
     {"TRUNC",       fun_trunc,      MAX_ARG, 1,       1,         0, CA_PUBLIC},
 #ifdef REALITY_LVLS
     {"TXLEVEL",     fun_txlevel,    MAX_ARG, 1,       1,         0, CA_PUBLIC},
-#endif /* REALITY_LVLS */
+#endif // REALITY_LVLS
     {"TYPE",        fun_type,       MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {"U",           fun_u,          MAX_ARG, 1, MAX_ARG,         0, CA_PUBLIC},
     {"UCSTR",       fun_ucstr,            1, 1,       1,         0, CA_PUBLIC},

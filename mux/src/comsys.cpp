@@ -898,7 +898,7 @@ static void BuildChannelMessage
             mux_strncpy(TempToEval, user->title, LBUF_SIZE-1);
             char *q = TempToEval;
             mux_exec(*messNormal, &mnptr, user->who, user->who, user->who,
-                EV_FCHECK | EV_EVAL | EV_TOP, &q, (char **)NULL, 0);
+                EV_FCHECK | EV_EVAL | EV_TOP, &q, NULL, 0);
         }
         else
         {

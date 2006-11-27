@@ -144,7 +144,7 @@ static void do_teleport_single
             }
             did_it(victim, destination,
                    A_TFAIL, "You can't teleport there!",
-                   A_OTFAIL, 0, A_ATFAIL, (char **)NULL, 0);
+                   A_OTFAIL, 0, A_ATFAIL, 0, NULL, 0);
             return;
         }
 
@@ -176,7 +176,7 @@ static void do_teleport_single
             }
             did_it(victim, destination,
                    A_TFAIL, "You can't teleport there!",
-                   A_OTFAIL, 0, A_ATFAIL, (char **)NULL, 0);
+                   A_OTFAIL, 0, A_ATFAIL, 0, NULL, 0);
             return;
         }
         else

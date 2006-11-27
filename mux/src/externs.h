@@ -349,7 +349,9 @@ bool locatable(dbref, dbref, dbref);
 bool nearby(dbref, dbref);
 bool exit_visible(dbref, dbref, int);
 bool exit_displayable(dbref, dbref, int);
-void did_it(dbref, dbref, int, const char *, int, const char *, int, char *[], int);
+void did_it(dbref player, dbref thing, int what, const char *def, int owhat,
+            const char *odef, int awhat, int ctrl_flags,
+            char *args[], int nargs);
 bool bCanReadAttr(dbref executor, dbref target, ATTR *tattr, bool bParentCheck);
 bool bCanSetAttr(dbref executor, dbref target, ATTR *tattr);
 bool bCanLockAttr(dbref executor, dbref target, ATTR *tattr);
@@ -716,6 +718,7 @@ extern int anum_alc_top;
 #define TWARP_IDLE      8   /* Warp the idle check interval */
 /* empty       16 */
 #define TWARP_EVENTS    32  /* Warp the events checking interval */
+#define VERB_NONAME     1   // Do not preprend name to odefault.
 #define WAIT_UNTIL      1   // Absolute UTC seconds instead of delta.
 
 /* Hush codes for movement messages */

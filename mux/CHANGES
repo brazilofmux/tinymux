@@ -76,6 +76,7 @@ Feature Additions:
     tests to VALID() (Issue 211).
  -- Added no_name attribute flag to suppress name on oattribute emits
     (Issue 220).
+ -- Added /no_name switch to @verb (Issue 221).
 
 
 Bug Fixes:

@@ -801,8 +801,7 @@ void do_clone
         {
             s_Parent(clone, Parent(thing));
         }
-        did_it(executor, clone, 0, NULL, 0, NULL, A_ACLONE,
-               (char **)NULL, 0);
+        did_it(executor, clone, 0, NULL, 0, NULL, A_ACLONE, 0, NULL, 0);
     }
     else
     {

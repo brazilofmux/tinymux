@@ -1863,7 +1863,7 @@ void do_trigger(dbref executor, dbref caller, dbref enactor, int key,
         notify_quiet(executor, NOPERM_MESSAGE);
         return;
     }
-    did_it(executor, thing, 0, NULL, 0, NULL, pattr->number, argv, nargs);
+    did_it(executor, thing, 0, NULL, 0, NULL, pattr->number, 0, argv, nargs);
 
     if (key & TRIG_NOTIFY)
     {
@@ -1915,7 +1915,7 @@ void do_use(dbref executor, dbref caller, dbref enactor, int eval, int key, char
     {
         did_it(executor, thing, A_UFAIL,
                "You can't figure out how to use that.",
-               A_OUFAIL, NULL, A_AUFAIL, (char **)NULL, 0);
+               A_OUFAIL, NULL, A_AUFAIL, 0, NULL, 0);
         return;
     }
     temp = alloc_lbuf("do_use");
@@ -1940,8 +1940,8 @@ void do_use(dbref executor, dbref caller, dbref enactor, int eval, int key, char
         df_ouse = alloc_lbuf("do_use.ouse");
         mux_sprintf(df_use, LBUF_SIZE, "You use %s", Moniker(thing));
         mux_sprintf(df_ouse, LBUF_SIZE, "uses %s", Moniker(thing));
-        did_it(executor, thing, A_USE, df_use, A_OUSE, df_ouse, A_AUSE,
-               (char **)NULL, 0);
+        did_it(executor, thing, A_USE, df_use, A_OUSE, df_ouse, A_AUSE, 0,
+            NULL, 0);
         free_lbuf(df_use);
         free_lbuf(df_ouse);
     }

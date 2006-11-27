@@ -530,8 +530,13 @@ static NAMETAB trig_sw[] =
 
 static NAMETAB wait_sw[] =
 {
-    {"until",           1,  CA_PUBLIC, WAIT_UNTIL},
-    { NULL,             0,          0,  0}
+    {"until",           1,  CA_PUBLIC,   WAIT_UNTIL},
+    { NULL,             0,          0,   0}
+};
+
+static NAMETAB verb_sw[] =
+{
+    {"no_name",         3,  CA_PUBLIC,   VERB_NONAME},
 };
 
 static NAMETAB wall_sw[] =
@@ -744,7 +749,7 @@ static CMDENT_TWO_ARG_ARGV command_table_two_arg_argv[] =
     {"@mvattr",     NULL,       CA_NO_SLAVE|CA_NO_GUEST|CA_GBL_BUILD, 0,  CS_TWO_ARG|CS_ARGV,             0, do_mvattr},
     {"@open",       open_sw,    CA_NO_SLAVE|CA_GBL_BUILD|CA_NO_GUEST, 0,  CS_TWO_ARG|CS_ARGV|CS_INTERP,   0, do_open},
     {"@trigger",    trig_sw,    CA_GBL_INTERP,                        0,  CS_TWO_ARG|CS_ARGV,             0, do_trigger},
-    {"@verb",       NULL,       CA_GBL_INTERP|CA_NO_SLAVE,            0,  CS_TWO_ARG|CS_ARGV|CS_INTERP|CS_STRIP_AROUND, 0, do_verb},
+    {"@verb",       verb_sw,    CA_GBL_INTERP|CA_NO_SLAVE,            0,  CS_TWO_ARG|CS_ARGV|CS_INTERP|CS_STRIP_AROUND, 0, do_verb},
     {NULL,          NULL,       0,                                    0,  0,              0, NULL}
 };
 
@@ -1063,7 +1068,7 @@ static bool process_hook(dbref executor, dbref thing, char *s_uselock, ATTR *hk_
             bufc = buff = alloc_lbuf("process_hook");
             char *str = atext;
             mux_exec(buff, &bufc, thing, executor, executor,
-                AttrTrace(aflags, EV_FCHECK|EV_EVAL), &str, (char **)NULL, 0);
+                AttrTrace(aflags, EV_FCHECK|EV_EVAL), &str, NULL, 0);
             free_lbuf(atext);
             *bufc = '\0';
             if (save_flg)
@@ -3782,7 +3787,7 @@ static void list_rlevels(dbref player)
                 mudconf.reality_level[i].attr));
     raw_notify(player, "--Completed.");
 }
-#endif /* REALITY_LVLS */
+#endif // REALITY_LVLS
 
 // ---------------------------------------------------------------------------
 // do_list: List information stored in internal structures.
@@ -4370,7 +4375,7 @@ void do_train(dbref executor, dbref caller, dbref enactor, int eval, int key, ch
 
     notify_all_from_inside(loc, executor, tprintf("%s types -=> %s",
         Moniker(executor), string));
-    process_command(executor, caller, enactor, eval, true, string, (char **)NULL, 0);
+    process_command(executor, caller, enactor, eval, true, string, NULL, 0);
     mudstate.train_nest_lev--;
 }
 

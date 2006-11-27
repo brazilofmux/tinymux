@@ -209,7 +209,7 @@ ATTR AttrTable[] =
     {"*Money",      A_MONEY,    AF_DARK | AF_NOPROG | AF_NOCMD | AF_INTERNAL},
 #ifdef REALITY_LVLS
     {"Rlevel",      A_RLEVEL,   AF_DARK | AF_NOPROG | AF_NOCMD | AF_INTERNAL},
-#endif /* REALITY_LVLS */
+#endif // REALITY_LVLS
 #if defined(FIRANMUX)
     {"Color",       A_COLOR,    AF_ODARK},
     {"Alead",       A_ALEAD,    AF_ODARK | AF_WIZARD},

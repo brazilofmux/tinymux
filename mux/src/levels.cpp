@@ -748,4 +748,4 @@ void did_it_rlevel
         free_lbuf(act);
     }
 }
-#endif /* REALITY_LVLS */
+#endif // REALITY_LVLS

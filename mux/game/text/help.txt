@@ -3778,21 +3778,32 @@ Related Topics: @name.
 @VERB (continued)
 
   Here is a description of the arguments to @verb:
+
     victim - The object that is searched for attributes, and which runs the
              <awhat> attribute if it is found.
+
     actor  - The object that 'did' the verb, this is the value for %#/%n/etc
              in substitutions, and this object's name is included in the
              message to others in the same location.
+
     what   - The name of the attribute containing the message to be delivered
              to the actor.
+
     whatd  - The message to deliver to the actor if the victim does not have a
              <what> attribute, or if it cannot be read.
-    owhat  - The name of the attribute containing the message (prefixed by the
-             actor's name) that is sent to everyone in the room with the actor.
-    owhatd - The message (prefixed by the actor's name) to deliver to others
-             in the room with the actor if the victim does not have an <owhat>
-             attribute, or it cannot be read.
+
+    owhat  - The name of the attribute containing the message that is sent to
+             everyone in the room with the actor.  The message is prefixed
+             by the actor's name unless no_name flag is present on the
+             attribute.
+
+    owhatd - The message to deliver to others in the room with the actor if
+             the victim does not have an <owhat> attribute, or it cannot be
+             read.  The message is prefixed by the actor's name unless
+             /no_name switch is specified.
+
     awhat  - The name of the attribute that is to be executed by the victim.
+
     args   - The comma-separated arguments to be passed for substitution
              (%0-%9).  If there is more than one argument, enclose all the
              arguments within curly braces.  Any argument that contains an
@@ -4446,7 +4457,7 @@ ATTRIBUTE FLAGS (cont)
                      be modified.
 
     no_name (N)    - If set on an @o-attr, don't prepend the name of the
-                     enactor.
+                     enactor.  This also affects @verb behavior.
 
     no_parse (P)   - $-commands and ^-listens matching is performed against
                      the unparsed (non-evaluated) string.
@@ -4470,7 +4481,7 @@ ATTRIBUTE FLAGS (cont)
 
     wizard (W)     - Only wizards can modify this attribute.
 
-  Related Topics: examine, ATTRIBUTE OWNERSHIP
+  Related Topics: ATTRIBUTE OWNERSHIP, examine, @verb.
 
 & ATTRIBUTE OWNERSHIP
 ATTRIBUTE OWNERSHIP
