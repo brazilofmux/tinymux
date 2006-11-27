@@ -4433,17 +4433,20 @@ ATTRIBUTE FLAGS
 
     html (H)       - Emits from attr, oattr, aattr are not HTML-escaped.
 
-    no_inherit (I) - This attribute is not inherited by children of the
-                     object.
-
 { 'help attribute flags2' for more }
 
 & ATTRIBUTE FLAGS2
 ATTRIBUTE FLAGS (cont)
 
+    no_inherit (I) - This attribute is not inherited by children of the
+                     object.
+
     locked (+)     - The attribute is locked, it does not change
                      ownership when the object is @chowned and may not
                      be modified.
+
+    no_name (N)    - If set on an @o-attr, don't prepend the name of the
+                     enactor.
 
     no_parse (P)   - $-commands and ^-listens matching is performed against
                      the unparsed (non-evaluated) string.
@@ -4456,12 +4459,16 @@ ATTRIBUTE FLAGS (cont)
 
     trace (T)      - The attribute will return trace output.
 
+{ 'help attribute flags3' for more }
+
+& ATTRIBUTE FLAGS3
+ATTRIBUTE FLAGS (cont)
+
     visual (V)     - The attribute is visible to anyone who examines
                      you.  Note that the predefined attributes DESC,
                      SEX, and LAST are always VISUAL
 
     wizard (W)     - Only wizards can modify this attribute.
-
 
   Related Topics: examine, ATTRIBUTE OWNERSHIP
 
