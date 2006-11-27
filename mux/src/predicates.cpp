@@ -2381,7 +2381,7 @@ void did_it(dbref player, dbref thing, int what, const char *def, int owhat,
 
     // message to neighbors.
     //
-    if (  owhat > 0
+    if (  0 < owhat
        && Has_location(player)
        && Good_obj(loc = Location(player)))
     {
@@ -2405,9 +2405,25 @@ void did_it(dbref player, dbref thing, int what, const char *def, int owhat,
 #endif // FIRANMUX
             {
 #ifdef REALITY_LVLS
-                notify_except2_rlevel(loc, player, player, thing, tprintf("%s %s", Name(player), buff));
+                if (aflags & AF_NONAME)
+                {
+                    notify_except2_rlevel(loc, player, player, thing, buff);
+                }
+                else
+                {
+                    notify_except2_rlevel(loc, player, player, thing,
+                        tprintf("%s %s", Name(player), buff));
+                }
 #else
-                notify_except2(loc, player, player, thing, tprintf("%s %s", Name(player), buff));
+                if (aflags & AF_NONAME)
+                {
+                    notify_except2(loc, player, player, thing, buff);
+                }
+                else
+                {
+                    notify_except2(loc, player, player, thing,
+                        tprintf("%s %s", Name(player), buff));
+                }
 #endif /* REALITY_LVLS */
             }
             free_lbuf(buff);
@@ -2442,12 +2458,13 @@ void did_it(dbref player, dbref thing, int what, const char *def, int owhat,
         PopRegisters(preserve, MAX_GLOBAL_REGS);
     }
 
-    // do the action attribute.
+    // Do the action attribute.
     //
 #ifdef REALITY_LVLS
-    if (awhat > 0 && IsReal(thing, player))
+    if (  0 < awhat
+       && IsReal(thing, player))
 #else
-    if (awhat > 0)
+    if (0 < awhat)
 #endif /* REALITY_LVLS */
     {
         if (*(act = atr_pget(thing, awhat, &aowner, &aflags)))

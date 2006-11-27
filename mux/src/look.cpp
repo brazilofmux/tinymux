@@ -761,6 +761,7 @@ static ATTR_DECODE_ENTRY attr_decode_table[NUM_ATTRIBUTE_CODES+1] =
     { AF_CASE,    'C', "CASE"    },
     { AF_HTML,    'H', "HTML"    },
     { AF_PRIVATE, 'I', "PRIVATE" },
+    { AF_NONAME,  'N', "NONAME"  },
     { AF_NOPARSE, 'P', "NOPARSE" },
     { AF_REGEXP,  'R', "REGEXP"  },
     { AF_TRACE,   'T', "TRACE"   },

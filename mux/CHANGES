@@ -74,6 +74,8 @@ Feature Additions:
  -- Combine old and new versions of SUCCESSES().
  -- Added comalias, doing, exitname, malias, maliasdesc, and password
     tests to VALID() (Issue 211).
+ -- Added no_name attribute flag to suppress name on oattribute emits
+    (Issue 220).
 
 
 Bug Fixes:

@@ -27,6 +27,7 @@
 #define AF_CONST    0x00020000UL // No one can change it (set by server).
 #define AF_CASE     0x00040000UL // Regexp matches are case-sensitive.
 #define AF_TRACE    0x00080000UL // Trace evaluation of this attribute.
+#define AF_NONAME   0x00400000UL // Supress name in oattr cases.
 #define AF_ISUSED   0x10000000UL // Used to make efficient sweeps of stale
                                  // attributes.
 

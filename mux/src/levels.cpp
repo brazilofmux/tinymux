@@ -649,7 +649,7 @@ void did_it_rlevel
 
     // Message to neighbors.
     //
-    if (  owhat > 0
+    if (  0 < owhat
        && Has_location(player)
        && Good_obj(loc = Location(player)))
     {

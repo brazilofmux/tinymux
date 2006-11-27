@@ -281,7 +281,7 @@ void log_type_and_name(dbref);
 /* From look.cpp */
 void look_in(dbref,dbref, int);
 void show_vrml_url(dbref, dbref);
-#define NUM_ATTRIBUTE_CODES 11
+#define NUM_ATTRIBUTE_CODES 12
 size_t decode_attr_flags(int aflags, char buff[NUM_ATTRIBUTE_CODES+1]);
 void   decode_attr_flag_names(int aflags, char *buf, char **bufc);
 
