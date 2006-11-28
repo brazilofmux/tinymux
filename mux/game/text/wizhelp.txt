@@ -127,9 +127,9 @@
 
   Note that changes to user-named attributes performed by this command
   are permanent and do not need to be performed each time the MUX is
-  restarted.
+  restarted. Further this also only affects user-named attributes. 
 
-  Related Topics: attribute permissions
+  Related Topics: attribute permissions, attr_access
 
 & @BACKUP
 @BACKUP

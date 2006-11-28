@@ -245,6 +245,7 @@ Bug Fixes:
  -- Disable WHO in Firan build (Issue 218).
  -- Fixed crash due to failure to clear @program data after logout
     (Issue 217).  Found and fixed by Alierak.
+ -- Updated 'wizhelp @attribute' for clarity (Issue 190).
 
 
 Performance Enhancements:
