@@ -1366,6 +1366,30 @@ void look_in(dbref player, dbref loc, int key)
     }
 }
 
+static void look_here
+(
+    dbref executor,
+    dbref thing,
+    int   key,
+    int   look_key
+)
+{
+    if (Good_obj(thing))
+    {
+        if (key & LOOK_OUTSIDE)
+        {
+            if (  isRoom(thing)
+               || Opaque(thing))
+            {
+                notify_quiet(executor, "You can't look outside.");
+                return;
+            }
+            thing = Location(thing);
+        }
+        look_in(executor, thing, look_key);
+    }
+}
+
 void do_look(dbref executor, dbref caller, dbref enactor, int eval, int key, char *name)
 {
     UNUSED_PARAMETER(caller);
@@ -1380,23 +1404,10 @@ void do_look(dbref executor, dbref caller, dbref enactor, int eval, int key, cha
 
     dbref loc = Location(executor);
     dbref thing;
-    if (!name || !*name)
+    if (  NULL == name
+       || '\0' == name[0])
     {
-        thing = loc;
-        if (Good_obj(thing))
-        {
-            if (key & LOOK_OUTSIDE)
-            {
-                if (  isRoom(thing)
-                   || Opaque(thing))
-                {
-                    notify_quiet(executor, "You can't look outside.");
-                    return;
-                }
-                thing = Location(thing);
-            }
-            look_in(executor, thing, look_key);
-        }
+        look_here(executor, loc, key, look_key);
         return;
     }
 
@@ -1423,6 +1434,15 @@ void do_look(dbref executor, dbref caller, dbref enactor, int eval, int key, cha
     {
         thing = match_status(executor, match_possessed(executor,
             ((key & LOOK_OUTSIDE) ? loc : executor), name, thing, false));
+    }
+
+    // If the matching picked our current location, that's handled
+    // differently.
+    //
+    if (thing == loc)
+    {
+        look_here(executor, loc, key, look_key);
+        return;
     }
 
     // If we found something, go handle it.

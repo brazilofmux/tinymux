@@ -247,6 +247,7 @@ Bug Fixes:
  -- Disable WHO in Firan build (Issue 218).
  -- Fixed crash due to failure to clear @program data after logout
     (Issue 217).  Found and fixed by Alierak.
+ -- Fixed cases of look and @idesc interaction (Issue 45).
 
 
 Performance Enhancements:
