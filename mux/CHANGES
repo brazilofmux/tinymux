@@ -77,8 +77,8 @@ Feature Additions:
  -- Added no_name attribute flag to suppress name on oattribute emits
     (Issue 220).
  -- Added /no_name switch to @verb (Issue 221).
- -- Disallow negative charge for channels (Issue 222).  Found by
-    Alierak.
+ -- Added stripped_flags configuration option (Issue 200).  This
+    affects guests, @chown, @chownall, and @clone.
 
 
 Bug Fixes:
@@ -247,6 +247,8 @@ Bug Fixes:
  -- Disable WHO in Firan build (Issue 218).
  -- Fixed crash due to failure to clear @program data after logout
     (Issue 217).  Found and fixed by Alierak.
+ -- Disallow negative charge for channels (Issue 222).  Found by
+    Alierak.
  -- Fixed cases of look and @idesc interaction (Issue 45).
 
 

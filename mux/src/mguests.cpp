@@ -163,14 +163,19 @@ const char *CGuests::Create(DESC *d)
                 AddToGuestChannel(guest_player);
             }
 
-            // Reset the flags back to the default.
+            // Strip flags, enforce PLAYER type.
             //
-            db[guest_player].fs = mudconf.player_flags;
+            FLAGSET fs;
+            fs.word[FLAG_WORD1] = TYPE_PLAYER
+                                |  (  Flags(mudconf.guest_char)
+                                   & ~TYPE_MASK
+                                   & ~mudconf.stripped_flags.word[FLAG_WORD1]);
+            fs.word[FLAG_WORD2] = Flags2(mudconf.guest_char)
+                                & ~mudconf.stripped_flags.word[FLAG_WORD2];
+            fs.word[FLAG_WORD3] = Flags3(mudconf.guest_char)
+                                & ~mudconf.stripped_flags.word[FLAG_WORD3];
 
-            // Add the type and remove wizard.
-            //
-            db[guest_player].fs.word[FLAG_WORD1] |= TYPE_PLAYER;
-            db[guest_player].fs.word[FLAG_WORD1] &= ~WIZARD;
+            db[guest_player].fs = fs;
 
             // Make sure they're a guest.
             //
@@ -316,7 +321,19 @@ dbref CGuests::MakeGuestChar(void)
     AddToGuestChannel(player);
     s_Guest(player);
     move_object(player, mudconf.start_room);
-    db[player].fs.word[FLAG_WORD1] &= ~WIZARD;
+
+    // Strip flags.
+    //
+    FLAGSET fs;
+    fs.word[FLAG_WORD1] = Flags(mudconf.guest_char)
+                        & ~mudconf.stripped_flags.word[FLAG_WORD1];
+    fs.word[FLAG_WORD2] = Flags2(mudconf.guest_char)
+                        & ~mudconf.stripped_flags.word[FLAG_WORD2];
+    fs.word[FLAG_WORD3] = Flags3(mudconf.guest_char)
+                        & ~mudconf.stripped_flags.word[FLAG_WORD3];
+
+    db[player].fs = fs;
+
     s_Pennies(player, Pennies(mudconf.guest_char));
     s_Zone(player, Zone(mudconf.guest_char));
     s_Parent(player, Parent(mudconf.guest_char));

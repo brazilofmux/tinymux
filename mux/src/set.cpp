@@ -139,11 +139,15 @@ void do_chzone
         // inconvenient -- although this may pose a bit of a security risk. Be
         // careful when @chzone'ing wizard or royal players.
         //
-        Flags(thing) &= ~(WIZARD | ROYALTY | INHERIT);
+        for (int i = FLAG_WORD1; i <= FLAG_WORD3; i++)
+        {
+            s_Flags(thing, i, Flags(thing) & ~mudconf.stripped_flags.word[i]);
+        }
 
         // Wipe out all powers.
         //
         Powers(thing) = 0;
+        Powers2(thing) = 0;
     }
     notify(executor, "Zone changed.");
 }
@@ -883,13 +887,10 @@ void do_chown
         s_Owner(thing, nOwnerNew);
         atr_chown(thing);
 
-        FLAG clearflag1 = 0;
-        FLAG setflag1 = 0;
-
         // Always strip CHOWN_OK and set HALT.
         //
-        clearflag1 |= CHOWN_OK|WIZARD|ROYALTY|INHERIT;
-        setflag1   |= HALT;
+        FLAG clearflag1 = CHOWN_OK | mudconf.stripped_flags.word[FLAG_WORD1];
+        FLAG setflag1   = HALT;
         if (key & CHOWN_NOSTRIP)
         {
             // Don't strip ROYALTY or INHERIT if /nostrip is used.
@@ -916,8 +917,9 @@ void do_chown
             s_Powers(thing, 0);
             s_Powers2(thing, 0);
         }
-        db[thing].fs.word[FLAG_WORD1] &= ~clearflag1;
-        db[thing].fs.word[FLAG_WORD1] |= setflag1;
+        s_Flags(thing, FLAG_WORD1, (Flags(thing) & ~clearflag1) | setflag1);
+        s_Flags(thing, FLAG_WORD2, Flags2(thing) & ~mudconf.stripped_flags.word[FLAG_WORD2]);
+        s_Flags(thing, FLAG_WORD3, Flags3(thing) & ~mudconf.stripped_flags.word[FLAG_WORD3]);
 
         // Always halt the queue.
         //

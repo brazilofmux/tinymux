@@ -230,8 +230,12 @@ void cf_init(void)
         mudconf.exit_flags.word[i] = 0;
         mudconf.thing_flags.word[i] = 0;
         mudconf.robot_flags.word[i] = 0;
+        mudconf.stripped_flags.word[i] = 0;
     }
     mudconf.robot_flags.word[FLAG_WORD1] |= ROBOT;
+    mudconf.stripped_flags.word[FLAG_WORD1] = IMMORTAL | INHERIT | ROYALTY | WIZARD;
+    mudconf.stripped_flags.word[FLAG_WORD2] = BLIND | CONNECTED | GAGGED
+         | HEAD_FLAG | SLAVE | STAFF | SUSPECT | UNINSPECTED;
 
     mudconf.vattr_flags = AF_ODARK;
     mux_strncpy(mudconf.mud_name, "MUX", 31);
@@ -2009,6 +2013,7 @@ static CONF conftable[] =
     {"starting_money",            cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.paystart,               NULL,               0},
     {"starting_quota",            cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.start_quota,            NULL,               0},
     {"status_file",               cf_string_dyn,  CA_STATIC, CA_GOD,      (int *)&mudconf.status_file,     NULL, SIZEOF_PATHNAME},
+    {"stripped_flags",            cf_set_flags,   CA_GOD,    CA_DISABLED, (int *)&mudconf.stripped_flags,  NULL,               0},
     {"suspect_site",              cf_site,        CA_GOD,    CA_DISABLED, (int *)&mudstate.suspect_list,   NULL,       H_SUSPECT},
     {"sweep_dark",                cf_bool,        CA_GOD,    CA_PUBLIC,   (int *)&mudconf.sweep_dark,      NULL,               0},
     {"switch_default_all",        cf_bool,        CA_GOD,    CA_PUBLIC,   (int *)&mudconf.switch_df_all,   NULL,               0},

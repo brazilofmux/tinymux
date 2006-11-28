@@ -1831,7 +1831,7 @@ CONFIG PARAMETERS (continued)
   sacrifice_factor  safe_wipe  safer_passwords  search_cost  see_owned_dark
   signal_action  site_chars  space_compress  sql_database  sql_password
   sql_server  sql_user  stack_limit  starting_money  starting_quota
-  status_file  suspect_site  sweep_dark  switch_default_all
+  status_file  stripped_flags  suspect_site  sweep_dark  switch_default_all
   terse_shows_contents  terse_shows_exits  terse_shows_move_messages
   thing_flags  thing_quota  timeslice  toad_recipient  trace_output_limit
   trace_topdown  trust_site  uncompress_program  unowned_safe  use_http
@@ -4607,6 +4607,19 @@ STATUS_FILE
 
   This configuration option cannot be changed after the server starts.  It
   can only be changed via the configuration file.
+
+& STRIPPED_FLAGS
+STRIPPED_FLAGS
+
+  CONFIG PARAMETER: stripped_flags <flags>
+  DEFAULT: IMMORTAL INHERIT ROYALTY WIZARD BLIND CONNECTED GAGGED HEAD_FLAG
+           SLAVE STAFF SUSPECT UNINSPECTED
+
+  Modifies the set of flags that are stripped from objects during @chown,
+  @chownall, @clone, @chzone, and guest creation.  Flags prefixed by a !
+  remove the indicated flag from the set.
+
+  Related Topics: @chown, @chownall, @chzone, @clone.
 
 & SUSPECT
 SUSPECT

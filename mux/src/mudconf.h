@@ -248,6 +248,7 @@ struct confdata
     FLAGSET robot_flags;        /* Flags robots start with */
     FLAGSET room_flags;         /* Flags rooms start with */
     FLAGSET thing_flags;        /* Flags things start with */
+    FLAGSET stripped_flags;     // Flags stripped by @chown, @chownall, and @clone.
 
     ArtRuleset* art_rules;      /* Rulesets for defining exceptions. */
 };
