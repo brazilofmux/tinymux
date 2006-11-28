@@ -2192,10 +2192,12 @@ static char     *last_ptr     = NULL;
 
 void RegAssign(reg_ref **regref, size_t nLength, const char *ptr)
 {
-    mux_assert(NULL != regref);
-    mux_assert(NULL != ptr);
-    mux_assert(nLength < LBUF_SIZE);
-    mux_assert('\0' == ptr[nLength]);
+    if (  NULL == regref
+       || NULL == ptr
+       || LBUF_SIZE <= nLength)
+    {
+        return;
+    }
 
     // Put any previous register value out of the way.
     //
