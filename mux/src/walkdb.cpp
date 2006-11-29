@@ -277,7 +277,7 @@ int chown_all(dbref from_player, dbref to_player, dbref acting_player, int key)
         FLAGSET setflags;
         bool    bClearPowers;
 
-        ChownSets(clearflags.word, setflags.word, &bClearPowers, acting_player, key);
+        TranslateFlags_Chown(clearflags.word, setflags.word, &bClearPowers, acting_player, key);
 
         DO_WHOLE_DB(i)
         {

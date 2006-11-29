@@ -653,7 +653,51 @@ void do_unlink(dbref executor, dbref caller, dbref enactor, int eval, int key, c
     }
 }
 
-void ChownSets
+void TranslateFlags_Clone
+(
+    FLAG     aClearFlags[3],
+    dbref    executor,
+    int      key
+)
+{
+    if (key & CLONE_NOSTRIP)
+    {
+        if (God(executor))
+        {
+            // #1 using /nostrip causes nothing to be stripped.
+            //
+            aClearFlags[FLAG_WORD1] = 0;
+        }
+        else
+        {
+            // With #1 powers, /nostrip still strips the WIZARD bit.
+            //
+            aClearFlags[FLAG_WORD1] = WIZARD;
+        }
+        aClearFlags[FLAG_WORD2] = 0;
+        aClearFlags[FLAG_WORD3] = 0;
+    }
+    else
+    {
+        if (  (key & CLONE_INHERIT)
+           && Inherits(executor))
+        {
+            // The /inherit switch specifically allows INHERIT powers through.
+            //
+            aClearFlags[FLAG_WORD1] = (WIZARD | mudconf.stripped_flags.word[FLAG_WORD1]) & ~(INHERIT);
+        }
+        else
+        {
+            // Normally WIZARD and the other stripped_flags are removed.
+            //
+            aClearFlags[FLAG_WORD1] = WIZARD | mudconf.stripped_flags.word[FLAG_WORD1];
+        }
+        aClearFlags[FLAG_WORD2] = mudconf.stripped_flags.word[FLAG_WORD2];
+        aClearFlags[FLAG_WORD3] = mudconf.stripped_flags.word[FLAG_WORD3];
+    }
+}
+
+void TranslateFlags_Chown
 (
     FLAG     aClearFlags[3],
     FLAG     aSetFlags[3],
@@ -955,7 +999,7 @@ void do_chown
         FLAGSET setflags;
         bool    bClearPowers;
 
-        ChownSets(clearflags.word, setflags.word, &bClearPowers, executor, key);
+        TranslateFlags_Chown(clearflags.word, setflags.word, &bClearPowers, executor, key);
 
         SetClearFlags(thing, clearflags.word, setflags.word);
         if (bClearPowers)

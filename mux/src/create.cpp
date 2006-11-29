@@ -727,26 +727,8 @@ void do_clone
     //
     s_Pennies(clone, OBJECT_ENDOWMENT(cost));
 
-    // Strip flags subject to /inherit, /nostrip, and stripped_flags.
-    // Regardless of stripped_flags, only #1 can clone WIZARD bit.
-    //
-    FLAGSET clearflags = { 0, 0, 0};
-    if (0 == (key & CLONE_NOSTRIP))
-    {
-        clearflags = mudconf.stripped_flags;
-
-        if (  (key & CLONE_INHERIT)
-           && Inherits(executor))
-        {
-            clearflags.word[FLAG_WORD1] &= ~(INHERIT);
-        }
-    }
-
-    if (!God(executor))
-    {
-        clearflags.word[FLAG_WORD1] |= WIZARD;
-    }
-
+    FLAGSET clearflags;
+    TranslateFlags_Clone(clearflags.word, executor, key);
     SetClearFlags(clone, clearflags.word, NULL);
 
     // Tell creator about it

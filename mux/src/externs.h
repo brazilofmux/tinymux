@@ -372,7 +372,13 @@ dbref match_controlled_handler(dbref player, const char *name, bool bQuiet);
 #define match_controlled(player,name)       match_controlled_handler(player, name, false)
 #define match_controlled_quiet(player,name) match_controlled_handler(player, name, true)
 void set_modified(dbref thing);
-void ChownSets
+void TranslateFlags_Clone
+(
+    FLAG     aClearFlags[3],
+    dbref    executor,
+    int      key
+);
+void TranslateFlags_Chown
 (
     FLAG     aClearFlags[3],
     FLAG     aSetFlags[3],
