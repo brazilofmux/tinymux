@@ -798,10 +798,18 @@ Related Topics: @name.
   automatically @chowned as well.  Locked attributes remain owned by their
   original owners.
 
-  Without the /nostrip switch, CHOWN_OK, WIZARD, ROYALTY, INHERIT, and all
-  @powers are stripped and HALT is set.  With /nostrip, ROYALTY and INHERIT
-  are preserved (albeit with warnings).  #1 can use /nostrip to further
-  preserve WIZARD and @powers.
+  Without the /nostrip switch, CHOWN_OK, all flags specified in the
+  stripped_flags configuration option, and all @powers are stripped.  Also,
+  HALT is set.  With /nostrip, ROYALTY and INHERIT are preserved (albeit with
+  warnings).  #1 can use /nostrip to further preserve WIZARD and @powers.
+  
+  By default, stripped_flags includes: BLIND, CONNECTED, GAGGED, HEAD_FLAG,
+  IMMORTAL, INHERIT, ROYALTY, SLAVE, STAFF, SUSPECT, UNINSPECTED, and WIZARD.
+
+{ 'help @chown2' for more }
+
+& @CHOWN2
+@CHOWN (continued)
 
   The second form changes the ownership of the indicated attribute on <object>
   to <player>.  The default is the owner of the object.  You may only @chown
@@ -809,25 +817,28 @@ Related Topics: @name.
   own to yourself, and you may also @chown attributes that you own on objects
   owned by others to the owner of the object.
 
-  Related Topics: @lock, @Unlock, CHOWN_OK, ATTRIBUTE OWNERSHIP.
+  Related Topics: ATTRIBUTE OWNERSHIP, CHOWN_OK, @lock, stripped_flags, and
+                  @unlock.
 
 & @CHZONE
 @CHZONE
 
   COMMAND: @chzone <object>=<zone object>.
 
-  Changes the zone of <object> to <zone object>. If <zone object> is "none",
+  Changes the zone of <object> to <zone object>.  If <zone object> is "none",
   the zone is reset to NOTHING.
 
   @chzone'ing a player does not automatically change the zone of their
-  objects. Anyone may reset the zone of an object they own; <zone object>
-  must either be "none", or must be owned by them. Only wizards may @chzone
-  an object to an arbitrary zone object. Players may @chzone themselves to
-  an object they own; otherwise, only wizards may @chzone players.
-  @chzone'ing resets the WIZARD, ROYALTY, and INHERIT flags on non-player
-  objects.
+  objects.  Anyone may reset the zone of an object they own; <zone object>
+  must either be "none", or must be owned by them.  Only wizards may @chzone
+  an object to an arbitrary zone object.  Players may @chzone themselves to
+  an object they own; otherwise, only wizards may @chzone players.  For
+  non-player objects, @chzone'ing strips all flags in the stripped_flags.
 
-  Related Topics: ZONE OBJECTS
+  By default, stripped_flags includes: BLIND, CONNECTED, GAGGED, HEAD_FLAG,
+  IMMORTAL, INHERIT, ROYALTY, SLAVE, STAFF, SUSPECT, UNINSPECTED, and WIZARD.
+
+  Related Topics: stripped_flags, ZONE OBJECTS
 
 & @CLIST
 @CLIST
@@ -873,21 +884,24 @@ Related Topics: @name.
   the clone object will be left unparented.
 
   You may clone your own objects, plus VISUAL objects owned by others.
-  The INHERIT and WIZARD bits of the (new) object are cleared when the object
-  is cloned.  If <newname> is specified, it is used as the name instead of
-  the original name.
+  Typically, INHERIT, WIZARD, and other flags in the stripped_flags
+  configuration option are not cloned.  Powers are never cloned.  If <newname>
+  is specified, it is used as the name instead of the original name.
+
+  By default, stripped_flags includes: BLIND, CONNECTED, GAGGED, HEAD_FLAG,
+  IMMORTAL, INHERIT, ROYALTY, SLAVE, STAFF, SUSPECT, UNINSPECTED, and WIZARD.
 
   If you clone a linked exit, an attempt is made to link the clone to the
   same location.  Except when using the /inventory switch, you can only clone
   exits when you own your current location.
 
-  If you clone a room with a drop-to, an attempt is made to link the drop-to
-  to the same location.
-
 { 'help @clone2' for more }
 
 & @CLONE2
 @CLONE (continued)
+
+  If you clone a room with a drop-to, an attempt is made to link the drop-to
+  to the same location.
 
   If the original object was owned by you, then the ACLONE attribute is run
   in the new attribute, otherwise the new object is set HALTED.  Exits and
@@ -895,20 +909,32 @@ Related Topics: @name.
   copied.
 
   The following switches are available:
+
      /cost       - Treat the argument after the = as the cost of the new
                    object, not the name.
+
      /inherit    - Don't reset the INHERIT bit on the new object.
+
      /inventory  - Create the new object in your inventory (or your exitlist,
                    in the case of cloning exits).
-     /nostrip    - INHERIT, ROYALTY, IMMORTAL, and if #1, WIZARD are not
-                   excluded from the new object.
+
+     /nostrip    - Flags in the stripped_flags set are not stripped except
+                   that only #1 is allowed to clone WIZARD.
+
      /location   - Create the new object in your location (default).
+
+{ 'help @clone3' for more }
+
+& @CLONE3
+@CLONE (continued)
+
      /parent     - Set the new object's parent to be the template object and
                    don't copy the attributes.
+
      /preserve   - Let the existing owner own the clone. Existing owner must
                    be controllable.
 
-  Related Topics: @create, @decompile, @destroy, VISUAL.
+  Related Topics: @create, @decompile, @destroy, stripped_flags, VISUAL.
 
 & @COFLAGS
 @COFLAGS
@@ -4447,7 +4473,7 @@ ATTRIBUTE FLAGS
 { 'help attribute flags2' for more }
 
 & ATTRIBUTE FLAGS2
-ATTRIBUTE FLAGS (cont)
+ATTRIBUTE FLAGS (continued)
 
     no_inherit (I) - This attribute is not inherited by children of the
                      object.
@@ -4473,7 +4499,7 @@ ATTRIBUTE FLAGS (cont)
 { 'help attribute flags3' for more }
 
 & ATTRIBUTE FLAGS3
-ATTRIBUTE FLAGS (cont)
+ATTRIBUTE FLAGS (continued)
 
     visual (V)     - The attribute is visible to anyone who examines
                      you.  Note that the predefined attributes DESC,

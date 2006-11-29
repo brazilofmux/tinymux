@@ -185,9 +185,13 @@
   the indicated recipient (or to the wizard performing the @chownall if
   no recipient is specified).  All objects, rooms, and exits are set HALTED.
 
-  Without the /nostrip switch, CHOWN_OK, WIZARD, ROYALTY, INHERIT, and all
-  @powers are stripped and HALT is set.  With /nostrip, ROYALTY and INHERIT
-  are preserved.  #1 can use /nostrip to further preserve WIZARD and @powers.
+  Without the /nostrip switch, CHOWN_OK, all flags specified in the
+  stripped_flags configuration option, and all @powers are stripped.  Also,
+  HALT is set.  With /nostrip, ROYALTY and INHERIT are preserved.  #1 can use
+  /nostrip to further preserve WIZARD and @powers.
+  
+  By default, stripped_flags includes: BLIND, CONNECTED, GAGGED, HEAD_FLAG,
+  IMMORTAL, INHERIT, ROYALTY, SLAVE, STAFF, SUSPECT, UNINSPECTED, and WIZARD.
 
   Related Topics: @chown.
 
@@ -4612,8 +4616,8 @@ STATUS_FILE
 STRIPPED_FLAGS
 
   CONFIG PARAMETER: stripped_flags <flags>
-  DEFAULT: IMMORTAL INHERIT ROYALTY WIZARD BLIND CONNECTED GAGGED HEAD_FLAG
-           SLAVE STAFF SUSPECT UNINSPECTED
+  DEFAULT: BLIND CONNECTED GAGGED HEAD_FLAG IMMORTAL INHERIT
+           ROYALTY SLAVE STAFF SUSPECT UNINSPECTED WIZARD
 
   Modifies the set of flags that are stripped from objects during @chown,
   @chownall, @clone, @chzone, and guest creation.  Flags prefixed by a !

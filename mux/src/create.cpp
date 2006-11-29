@@ -719,29 +719,30 @@ void do_clone
     //
     s_Pennies(clone, OBJECT_ENDOWMENT(cost));
 
-    // Strip flags subject to /inherit and /nostrip.
+    // Strip flags subject to /inherit, /nostrip, and stripped_flags.
+    // Regardless of stripped_flags, only #1 can clone WIZARD bit.
     //
-    FLAG clearflag1 = IMMORTAL|WIZARD|ROYALTY|INHERIT;
-    if (key & CLONE_NOSTRIP)
+    FLAGSET clearflags = { 0, 0, 0};
+    if (0 == (key & CLONE_NOSTRIP))
     {
-        // Don't strip ROYALTY, INHERIT, or IMMORTAL if /nostrip is used.
-        //
-        clearflag1 &= ~(ROYALTY|INHERIT|IMMORTAL);
-        if (God(executor))
+        clearflags = mudconf.stripped_flags;
+
+        if (  (key & CLONE_INHERIT)
+           && Inherits(executor))
         {
-            // Don't strip WIZARD if #1 uses /nostrip
-            //
-            clearflag1 &= ~WIZARD;
+            clearflags.word[FLAG_WORD1] &= ~(INHERIT);
         }
     }
-    else if (  (key & CLONE_INHERIT)
-            && Inherits(executor))
+
+    if (!God(executor))
     {
-        clearflag1 &= ~(INHERIT);
+        clearflags.word[FLAG_WORD1] |= WIZARD;
     }
-    s_Flags(clone, FLAG_WORD1, Flags(thing) & ~clearflag1);
-    s_Flags(clone, FLAG_WORD2, Flags2(thing));
-    s_Flags(clone, FLAG_WORD3, Flags3(thing));
+    
+    for (int i = FLAG_WORD1; i <= FLAG_WORD3; i++)
+    {
+        s_Flags(clone, i, db[thing].fs.word[i] & ~clearflags.word[i]);
+    }
 
     // Tell creator about it
     //
