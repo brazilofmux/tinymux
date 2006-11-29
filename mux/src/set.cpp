@@ -139,10 +139,7 @@ void do_chzone
         // inconvenient -- although this may pose a bit of a security risk. Be
         // careful when @chzone'ing wizard or royal players.
         //
-        for (int i = FLAG_WORD1; i <= FLAG_WORD3; i++)
-        {
-            db[thing].fs.word[i] &= ~mudconf.stripped_flags.word[i];
-        }
+        SetClearFlags(thing, mudconf.stripped_flags.word, NULL);
 
         // Wipe out all powers.
         //
@@ -701,7 +698,12 @@ void ChownSets
     aSetFlags[FLAG_WORD3] = 0;
 }
 
-void SetClearFlags(dbref thing, FLAG aClearFlags[3], FLAG aSetFlags[3])
+void SetClearFlags
+(
+    dbref thing,
+    FLAG aClearFlags[3],
+    FLAG aSetFlags[3]
+)
 {
     int j;
     for (j = FLAG_WORD1; j <= FLAG_WORD3; j++)
