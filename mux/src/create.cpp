@@ -601,18 +601,26 @@ void do_clone
     dbref clone, thing, new_owner, loc;
     int cost;
 
-    if ((key & CLONE_INVENTORY) || !Has_location(executor))
+    if (  (key & CLONE_INVENTORY)
+       || !Has_location(executor))
+    {
         loc = executor;
+    }
     else
+    {
         loc = Location(executor);
+    }
 
     if (!Good_obj(loc))
+    {
         return;
+    }
 
     init_match(executor, name, NOTYPE);
     match_everything(0);
     thing = noisy_match_result();
-    if ((thing == NOTHING) || (thing == AMBIGUOUS))
+    if (  NOTHING == thing
+       || AMBIGUOUS == thing)
     {
         return;
     }
@@ -739,10 +747,7 @@ void do_clone
         clearflags.word[FLAG_WORD1] |= WIZARD;
     }
 
-    for (int i = FLAG_WORD1; i <= FLAG_WORD3; i++)
-    {
-        s_Flags(clone, i, db[thing].fs.word[i] & ~clearflags.word[i]);
-    }
+    SetClearFlags(clone, clearflags.word, NULL);
 
     // Tell creator about it
     //

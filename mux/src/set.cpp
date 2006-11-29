@@ -141,7 +141,7 @@ void do_chzone
         //
         for (int i = FLAG_WORD1; i <= FLAG_WORD3; i++)
         {
-            s_Flags(thing, i, Flags(thing) & ~mudconf.stripped_flags.word[i]);
+            db[thing].fs.word[i] &= ~mudconf.stripped_flags.word[i];
         }
 
         // Wipe out all powers.
@@ -656,6 +656,68 @@ void do_unlink(dbref executor, dbref caller, dbref enactor, int eval, int key, c
     }
 }
 
+void ChownSets
+(
+    FLAG     aClearFlags[3],
+    FLAG     aSetFlags[3],
+    bool    *bClearPowers,
+    dbref    executor,
+    int      key
+)
+{
+    if (key & CHOWN_NOSTRIP)
+    {
+        if (God(executor))
+        {
+            // #1 using /nostrip only clears CHOWN_OK and sets HALT.
+            //
+            aClearFlags[FLAG_WORD1] = CHOWN_OK;
+            *bClearPowers = false;
+        }
+        else
+        {
+            // With /nostrip, CHOWN_OK and WIZARD are cleared, HALT is
+            // set, and powers are cleared.
+            //
+            aClearFlags[FLAG_WORD1] = CHOWN_OK | WIZARD;
+            *bClearPowers = true;
+        }
+        aClearFlags[FLAG_WORD2] = 0;
+        aClearFlags[FLAG_WORD3] = 0;
+    }
+    else
+    {
+        // Without /nostrip, CHOWN_OK, WIZARD, and stripped_flags are
+        // cleared, HALT is set, powers are cleared.
+        //
+        aClearFlags[FLAG_WORD1] = CHOWN_OK | WIZARD
+                                | mudconf.stripped_flags.word[FLAG_WORD1];
+        aClearFlags[FLAG_WORD2] = mudconf.stripped_flags.word[FLAG_WORD2];
+        aClearFlags[FLAG_WORD3] = mudconf.stripped_flags.word[FLAG_WORD3];
+        *bClearPowers = true;
+    }
+    aSetFlags[FLAG_WORD1] = HALT;
+    aSetFlags[FLAG_WORD2] = 0;
+    aSetFlags[FLAG_WORD3] = 0;
+}
+
+void SetClearFlags(dbref thing, FLAG aClearFlags[3], FLAG aSetFlags[3])
+{
+    int j;
+    for (j = FLAG_WORD1; j <= FLAG_WORD3; j++)
+    {
+        if (NULL != aClearFlags)
+        {
+            db[thing].fs.word[j] &= ~aClearFlags[j];
+        }
+
+        if (NULL != aSetFlags)
+        {
+            db[thing].fs.word[j] |= aSetFlags[j];
+        }
+    }
+}
+
 /*
  * ---------------------------------------------------------------------------
  * * do_chown: Change ownership of an object or attribute.
@@ -887,39 +949,18 @@ void do_chown
         s_Owner(thing, nOwnerNew);
         atr_chown(thing);
 
-        // Always strip CHOWN_OK and set HALT.
-        //
-        FLAG clearflag1 = CHOWN_OK | mudconf.stripped_flags.word[FLAG_WORD1];
-        FLAG setflag1   = HALT;
-        if (key & CHOWN_NOSTRIP)
+        FLAGSET clearflags;
+        FLAGSET setflags;
+        bool    bClearPowers;
+
+        ChownSets(clearflags.word, setflags.word, &bClearPowers, executor, key);
+
+        SetClearFlags(thing, clearflags.word, setflags.word);
+        if (bClearPowers)
         {
-            // Don't strip ROYALTY or INHERIT if /nostrip is used.
-            //
-            clearflag1 &= ~(ROYALTY|INHERIT);
-            if (God(executor))
-            {
-                // Don't strip WIZARD if #1 uses /nostrip
-                //
-                clearflag1 &= ~WIZARD;
-            }
-            else
-            {
-                // Reset @powers when someone besides #1 uses /nostrip.
-                //
-                s_Powers(thing, 0);
-                s_Powers2(thing, 0);
-            }
-        }
-        else
-        {
-            // Reset @powers if /nostrip isn't given.
-            //
             s_Powers(thing, 0);
             s_Powers2(thing, 0);
         }
-        s_Flags(thing, FLAG_WORD1, (Flags(thing) & ~clearflag1) | setflag1);
-        s_Flags(thing, FLAG_WORD2, Flags2(thing) & ~mudconf.stripped_flags.word[FLAG_WORD2]);
-        s_Flags(thing, FLAG_WORD3, Flags3(thing) & ~mudconf.stripped_flags.word[FLAG_WORD3]);
 
         // Always halt the queue.
         //

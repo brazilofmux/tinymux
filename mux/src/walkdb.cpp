@@ -261,7 +261,7 @@ int chown_all(dbref from_player, dbref to_player, dbref acting_player, int key)
         to_player = Owner(to_player);
     }
 
-    int count     = 0;
+    int count = 0;
     if (  God(from_player)
        && !God(acting_player))
     {
@@ -273,28 +273,11 @@ int chown_all(dbref from_player, dbref to_player, dbref acting_player, int key)
         int quota_out = 0;
         int quota_in  = 0;
 
-        bool bClearPowers = true;
+        FLAGSET clearflags;
+        FLAGSET setflags;
+        bool    bClearPowers;
 
-        // Always strip CHOWN_OK and set HALT.
-        //
-        FLAG clearflag1 = CHOWN_OK | mudconf.stripped_flags.word[FLAG_WORD1];
-        FLAG setflag1   = HALT;
-        if (key & CHOWN_NOSTRIP)
-        {
-            // Don't strip ROYALTY or INHERIT if /nostrip is used.
-            //
-            clearflag1 &= ~(ROYALTY|INHERIT);
-            if (God(acting_player))
-            {
-                // Don't strip WIZARD if #1 uses /nostrip
-                //
-                clearflag1 &= ~WIZARD;
-
-                // Reset @powers when someone besides #1 uses /nostrip.
-                //
-                bClearPowers = false;
-            }
-        }
+        ChownSets(clearflags.word, setflags.word, &bClearPowers, acting_player, key);
 
         DO_WHOLE_DB(i)
         {
@@ -340,17 +323,12 @@ int chown_all(dbref from_player, dbref to_player, dbref acting_player, int key)
                     s_Zone(i, NOTHING);
                 }
 
+                SetClearFlags(i, clearflags.word, setflags.word);
                 if (bClearPowers)
                 {
-                    // Reset @powers.
-                    //
                     s_Powers(i, 0);
                     s_Powers2(i, 0);
                 }
-
-                s_Flags(i, FLAG_WORD1, (Flags(i) & ~clearflag1) | setflag1);
-                s_Flags(i, FLAG_WORD2, Flags2(i) & ~mudconf.stripped_flags.word[FLAG_WORD2]);
-                s_Flags(i, FLAG_WORD3, Flags3(i) & ~mudconf.stripped_flags.word[FLAG_WORD3]);
 
                 // Always halt the queue.
                 //

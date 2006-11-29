@@ -372,6 +372,15 @@ dbref match_controlled_handler(dbref player, const char *name, bool bQuiet);
 #define match_controlled(player,name)       match_controlled_handler(player, name, false)
 #define match_controlled_quiet(player,name) match_controlled_handler(player, name, true)
 void set_modified(dbref thing);
+void ChownSets
+(
+    FLAG     aClearFlags[3],
+    FLAG     aSetFlags[3],
+    bool    *bClearPowers,
+    dbref    executor,
+    int      key
+);
+void SetClearFlags(dbref thing, FLAG aClearFlags[3], FLAG aSetFlags[3]);
 
 /* From boolexp.cpp */
 bool eval_boolexp(dbref, dbref, dbref, BOOLEXP *);
