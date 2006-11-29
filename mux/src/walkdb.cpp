@@ -349,8 +349,8 @@ int chown_all(dbref from_player, dbref to_player, dbref acting_player, int key)
                 }
 
                 s_Flags(i, FLAG_WORD1, (Flags(i) & ~clearflag1) | setflag1);
-                s_Flags(i, FLAG_WORD2, Flags2(i) & mudconf.stripped_flags.word[FLAG_WORD2]);
-                s_Flags(i, FLAG_WORD3, Flags3(i) & mudconf.stripped_flags.word[FLAG_WORD3]);
+                s_Flags(i, FLAG_WORD2, Flags2(i) & ~mudconf.stripped_flags.word[FLAG_WORD2]);
+                s_Flags(i, FLAG_WORD3, Flags3(i) & ~mudconf.stripped_flags.word[FLAG_WORD3]);
 
                 // Always halt the queue.
                 //

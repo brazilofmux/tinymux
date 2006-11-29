@@ -738,7 +738,7 @@ void do_clone
     {
         clearflags.word[FLAG_WORD1] |= WIZARD;
     }
-    
+
     for (int i = FLAG_WORD1; i <= FLAG_WORD3; i++)
     {
         s_Flags(clone, i, db[thing].fs.word[i] & ~clearflags.word[i]);
