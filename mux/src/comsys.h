@@ -21,6 +21,7 @@ struct chanentry
 #define MAX_TITLE_LEN   200
 #define MAX_ALIAS_LEN   5
 #define ALIAS_SIZE      (MAX_ALIAS_LEN+1)
+#define MAX_COST        32767
 
 struct comuser
 {

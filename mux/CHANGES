@@ -77,6 +77,8 @@ Feature Additions:
  -- Added no_name attribute flag to suppress name on oattribute emits
     (Issue 220).
  -- Added /no_name switch to @verb (Issue 221).
+ -- Disallow negative charge for channels (Issue 222).  Found by
+    Alierak.
 
 
 Bug Fixes:
@@ -245,6 +247,7 @@ Bug Fixes:
  -- Disable WHO in Firan build (Issue 218).
  -- Fixed crash due to failure to clear @program data after logout
     (Issue 217).  Found and fixed by Alierak.
+ -- Fixed cases of look and @idesc interaction (Issue 45).
  -- Updated 'wizhelp @attribute' for clarity (Issue 190).
 
 

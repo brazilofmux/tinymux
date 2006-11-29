@@ -371,9 +371,10 @@ char *MakeCanonicalFlagName
 #define Hidden(x)           ((Flags(x) & DARK) != 0)
 #define Blind(x)            ((Flags2(x) & BLIND) != 0)
 
-#define H_Startup(x)        ((Flags(x) & HAS_STARTUP) != 0)
+#define H_Daily(x)          ((Flags2(x) & HAS_DAILY) != 0)
 #define H_Fwdlist(x)        ((Flags2(x) & HAS_FWDLIST) != 0)
 #define H_Listen(x)         ((Flags2(x) & HAS_LISTEN) != 0)
+#define H_Startup(x)        ((Flags(x) & HAS_STARTUP) != 0)
 
 #define s_Halted(x)         s_Flags((x), FLAG_WORD1, Flags(x) | HALT)
 #define s_Going(x)          s_Flags((x), FLAG_WORD1, Flags(x) | GOING)

@@ -129,39 +129,47 @@ void mux_exec(char *buff, char **bufc, dbref executor, dbref caller,
 
 DCL_INLINE void BufAddRef(lbuf_ref *lbufref)
 {
-    mux_assert(NULL != lbufref);
-    lbufref->refcount++;
+    if (NULL != lbufref)
+    {
+        lbufref->refcount++;
+    }
 }
 
 DCL_INLINE void BufRelease(lbuf_ref *lbufref)
 {
-    mux_assert(NULL != lbufref);
-    lbufref->refcount--;
-    if (0 == lbufref->refcount)
+    if (NULL != lbufref)
     {
-        free_lbuf(lbufref->lbuf_ptr);
-        lbufref->lbuf_ptr = NULL;
-        free_lbufref(lbufref);
+        lbufref->refcount--;
+        if (0 == lbufref->refcount)
+        {
+            free_lbuf(lbufref->lbuf_ptr);
+            lbufref->lbuf_ptr = NULL;
+            free_lbufref(lbufref);
+        }
     }
 }
 
 DCL_INLINE void RegAddRef(reg_ref *regref)
 {
-    mux_assert(NULL != regref);
-    regref->refcount++;
+    if (NULL != regref)
+    {
+        regref->refcount++;
+    }
 }
 
 DCL_INLINE void RegRelease(reg_ref *regref)
 {
-    mux_assert(NULL != regref);
-    regref->refcount--;
-    if (0 == regref->refcount)
+    if (NULL != regref)
     {
-        BufRelease(regref->lbuf);
-        regref->lbuf    = NULL;
-        regref->reg_ptr = NULL;
-        regref->reg_len = 0;
-        free_regref(regref);
+        regref->refcount--;
+        if (0 == regref->refcount)
+        {
+            BufRelease(regref->lbuf);
+            regref->lbuf    = NULL;
+            regref->reg_ptr = NULL;
+            regref->reg_len = 0;
+            free_regref(regref);
+        }
     }
 }
 void RegAssign(reg_ref **regref, size_t nLength, const char *ptr);
