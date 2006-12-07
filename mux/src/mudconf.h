@@ -402,7 +402,9 @@ struct statedata
     CLinearTimeAbsolute start_time;     /* When was MUX started */
     CLinearTimeAbsolute tThrottleExpired; // How much time is left in this hour of throttling.
 
+#if !defined(MEMORY_BASED)
     CHashTable acache_htab;     // Attribute Cache
+#endif // MEMORY_BASED
     CHashTable attr_name_htab;  /* Attribute names hashtable */
     CHashTable channel_htab;    /* Channels hashtable */
     CHashTable command_htab;    /* Commands hashtable */

@@ -17,6 +17,8 @@
 #include "config.h"
 #include "externs.h"
 
+#if !defined(MEMORY_BASED)
+
 static CHashFile hfAttributeFile;
 static bool cache_initted = false;
 
@@ -485,3 +487,5 @@ void cache_del(Aname *nam)
         }
     }
 }
+
+#endif // MEMORY_BASED

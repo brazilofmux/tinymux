@@ -1,5 +1,5 @@
 TinyMUX 2.6:  CHANGES
-Last Update:  November 2006
+Last Update:  December 2006
 
 Major changes that may affect performance and require softcode tweaks:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -251,6 +251,8 @@ Bug Fixes:
     Alierak.
  -- Fixed cases of look and @idesc interaction (Issue 45).
  -- Updated 'wizhelp @attribute' for clarity (Issue 190).
+ -- Removed 'Attr. Cache' row from @list hashstats report for
+    memory-based build (Issue 226).
 
 
 Performance Enhancements:

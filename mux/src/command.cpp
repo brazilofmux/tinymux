@@ -3658,7 +3658,9 @@ static void list_hashstats(dbref player)
     list_hashstat(player, "Excl. $-cmds", &mudstate.parent_htab);
     list_hashstat(player, "Mail Messages", &mudstate.mail_htab);
     list_hashstat(player, "Channel Names", &mudstate.channel_htab);
+#if !defined(MEMORY_BASED)
     list_hashstat(player, "Attr. Cache", &mudstate.acache_htab);
+#endif // MEMORY_BASED
     for (int i = 0; i < mudstate.nHelpDesc; i++)
     {
         list_hashstat(player, mudstate.aHelpDesc[i].pBaseFilename,
