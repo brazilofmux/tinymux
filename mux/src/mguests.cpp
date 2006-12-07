@@ -163,19 +163,25 @@ const char *CGuests::Create(DESC *d)
                 AddToGuestChannel(guest_player);
             }
 
+            // Copy flags from guest prototype.
+            //
+            db[guest_player].fs = db[mudconf.guest_char].fs;
+
             // Strip flags, enforce PLAYER type.
             //
-            FLAGSET fs;
-            fs.word[FLAG_WORD1] = TYPE_PLAYER
-                                |  (  Flags(mudconf.guest_char)
-                                   & ~TYPE_MASK
-                                   & ~mudconf.stripped_flags.word[FLAG_WORD1]);
-            fs.word[FLAG_WORD2] = Flags2(mudconf.guest_char)
-                                & ~mudconf.stripped_flags.word[FLAG_WORD2];
-            fs.word[FLAG_WORD3] = Flags3(mudconf.guest_char)
-                                & ~mudconf.stripped_flags.word[FLAG_WORD3];
+            FLAG aClearFlags[3];
+            FLAG aSetFlags[3];
 
-            db[guest_player].fs = fs;
+            aClearFlags[FLAG_WORD1] = WIZARD
+                                    | TYPE_MASK
+                                    | mudconf.stripped_flags.word[FLAG_WORD1];
+            aClearFlags[FLAG_WORD2] = mudconf.stripped_flags.word[FLAG_WORD2];
+            aClearFlags[FLAG_WORD3] = mudconf.stripped_flags.word[FLAG_WORD3];
+            aSetFlags[FLAG_WORD1] = TYPE_PLAYER;
+            aSetFlags[FLAG_WORD2] = 0;
+            aSetFlags[FLAG_WORD3] = 0;
+
+            SetClearFlags(guest_player, aClearFlags, aSetFlags);
 
             // Make sure they're a guest.
             //
@@ -322,17 +328,20 @@ dbref CGuests::MakeGuestChar(void)
     s_Guest(player);
     move_object(player, mudconf.start_room);
 
+    // Copy flags from guest prototype.
+    //
+    db[player].fs = db[mudconf.guest_char].fs;
+
     // Strip flags.
     //
-    FLAGSET fs;
-    fs.word[FLAG_WORD1] = Flags(mudconf.guest_char)
-                        & ~mudconf.stripped_flags.word[FLAG_WORD1];
-    fs.word[FLAG_WORD2] = Flags2(mudconf.guest_char)
-                        & ~mudconf.stripped_flags.word[FLAG_WORD2];
-    fs.word[FLAG_WORD3] = Flags3(mudconf.guest_char)
-                        & ~mudconf.stripped_flags.word[FLAG_WORD3];
+    FLAG aClearFlags[3];
 
-    db[player].fs = fs;
+    aClearFlags[FLAG_WORD1] = WIZARD
+                            | mudconf.stripped_flags.word[FLAG_WORD1];
+    aClearFlags[FLAG_WORD2] = mudconf.stripped_flags.word[FLAG_WORD2];
+    aClearFlags[FLAG_WORD3] = mudconf.stripped_flags.word[FLAG_WORD3];
+
+    SetClearFlags(player, aClearFlags, NULL);
 
     s_Pennies(player, Pennies(mudconf.guest_char));
     s_Zone(player, Zone(mudconf.guest_char));
