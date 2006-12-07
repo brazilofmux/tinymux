@@ -284,7 +284,7 @@ Miscellaneous:
 ~~~~~~~~~~~~~
  -- Add mux_fopen() utility function to replace direct use of fopen().
  -- Updated config.guess, config.sub, and configure to later versions.
- -- Updated to autoconf 2.60a.
+ -- Updated to autoconf 2.61.
  -- Refer to tinymux.org instead of tinymux.com.
  -- Added SQL readme (Issue 47).
  -- Updated to doxygen 1.5.1.
