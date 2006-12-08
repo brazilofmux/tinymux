@@ -1263,7 +1263,7 @@ static void process_cmdent(CMDENT *cmdp, char *switchp, dbref executor, dbref ca
         // just do EV_STRIP_CURLY and remove the SW_NOEVAL from the
         // 'key'.
         //
-        interp = EV_STRIP_CURLY;
+        interp = 0;
         key &= ~SW_NOEVAL;
     }
     else if (  (cmdp->callseq & CS_INTERP)

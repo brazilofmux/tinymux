@@ -253,6 +253,8 @@ Bug Fixes:
  -- Updated 'wizhelp @attribute' for clarity (Issue 190).
  -- Removed 'Attr. Cache' row from @list hashstats report for
     memory-based build (Issue 226).
+ -- page, say, @pemit, and pose with /noeval would strip curly braces
+    (Issue 225).
 
 
 Performance Enhancements:
