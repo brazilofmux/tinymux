@@ -1063,6 +1063,8 @@ void CHashPage::GetRange
     nEnd   = nBase | ~ulMask;
 }
 
+#if !defined(MEMORY_BASED)
+
 #ifdef WIN32
 bool CHashPage::WritePage(HANDLE hFile, HF_FILEOFFSET oWhere)
 {
@@ -1196,6 +1198,8 @@ bool CHashPage::ReadPage(HANDLE hFile, HF_FILEOFFSET oWhere)
 }
 #endif // WIN32
 
+#endif // MEMORY_BASED
+
 UINT32 CHashPage::GetDepth(void)
 {
     return m_pHeader->m_nDepth;
@@ -1291,6 +1295,8 @@ UINT32 CHashPage::FindNext(HP_PHEAPLENGTH pnRecord, void *pRecord)
     }
     return HP_DIR_EMPTY;
 }
+
+#if !defined(MEMORY_BASED)
 
 CHashFile::CHashFile(void)
 {
@@ -2310,6 +2316,8 @@ int CHashFile::ReadCache(UINT32 iFileDir, int *phits)
     }
     return -1;
 }
+
+#endif // MEMORY_BASED
 
 CHashTable::CHashTable(void)
 {

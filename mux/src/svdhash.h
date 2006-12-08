@@ -108,8 +108,10 @@ typedef struct tagHPHeapNode
 
 #define HP_MIN_HEAP_ALLOC HP_SIZEOF_HEAPNODE
 
+#if !defined(MEMORY_BASED)
 typedef unsigned long HF_FILEOFFSET, *HF_PFILEOFFSET;
 #define HF_SIZEOF_FILEOFFSET sizeof(HF_FILEOFFSET)
+#endif // MEMORY_BASED
 
 class CHashPage
 {
@@ -160,8 +162,10 @@ public:
     void HeapFree(UINT32 iDir);
     void HeapUpdate(UINT32 iDir, HP_HEAPLENGTH nRecord, void *pRecord);
 
+#if !defined(MEMORY_BASED)
     bool WritePage(HANDLE hFile, HF_FILEOFFSET oWhere);
     bool ReadPage(HANDLE hFile, HF_FILEOFFSET oWhere);
+#endif // MEMORY_BASED
 
     UINT32 GetDepth(void);
     bool Split(CHashPage &hp0, CHashPage &hp1);
@@ -170,9 +174,10 @@ public:
     void GetRange(UINT32 arg_nDirDepth, UINT32 &nStart, UINT32 &nEnd);
 };
 
-
 #define HF_FIND_FIRST  HP_DIR_EMPTY
 #define HF_FIND_END    HP_DIR_EMPTY
+
+#if !defined(MEMORY_BASED)
 
 #define HF_CACHE_EMPTY       0
 #define HF_CACHE_CLEAN       1
@@ -237,6 +242,8 @@ public:
     void Tick(void);
     ~CHashFile(void);
 };
+
+#endif // MEMORY_BASED
 
 typedef CHashPage *pCHashPage;
 
