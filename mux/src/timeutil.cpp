@@ -1937,7 +1937,7 @@ static time_t time_t_smallest(void)
 
 static bool mux_localtime(struct tm *ptm_arg, const time_t *pt_arg)
 {
-#if defined(WIN32) && (_MSC_VER >= 1400)
+#if defined(WIN32) && !defined(__INTEL_COMPILER) && (_MSC_VER >= 1400)
     // 1400 is Visual C++ 2005
     //
     return (_localtime64_s(ptm_arg, pt_arg) == 0);
