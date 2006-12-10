@@ -261,6 +261,7 @@ Bug Fixes:
     by Alierak.
  -- Fixed lbuf leak when @hook attribute is empty (Issue 229).  Found
     and fixed by Alierak.
+ -- Fixed build error in version.cpp (Issue 230).
 
 
 Performance Enhancements:
