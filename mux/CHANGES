@@ -255,6 +255,8 @@ Bug Fixes:
     memory-based build (Issue 226).
  -- page, say, @pemit, and pose with /noeval would strip curly braces
     (Issue 225).
+ -- Version and error strings containing the label 'Win32' were used
+    in Win64 builds of TinyMUX (Issue 228).
 
 
 Performance Enhancements:

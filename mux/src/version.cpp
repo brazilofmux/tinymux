@@ -26,7 +26,25 @@ void do_version(dbref executor, dbref caller, dbref enactor, int extra)
 
 void build_version(void)
 {
-#ifdef WIN32
+#ifdef defined(WIN64)
+#if defined(ALPHA)
+        mux_sprintf(mudstate.version, sizeof(mudstate.version),
+            "MUX %s for Win64 #%s [ALPHA]", MUX_VERSION, MUX_BUILD_NUM);
+        mux_sprintf(mudstate.short_ver, sizeof(mudstate.short_ver),
+            "MUX %s Alpha Win64", MUX_VERSION);
+#elif defined(BETA)
+        mux_sprintf(mudstate.version, sizeof(mudstate.version),
+            "MUX %s for Win64 #%s [BETA]", MUX_VERSION, MUX_BUILD_NUM);
+        mux_sprintf(mudstate.short_ver, sizeof(mudstate.short_ver),
+            "MUX %s Beta Win64", MUX_VERSION);
+#else // RELEASED
+        mux_sprintf(mudstate.version, sizeof(mudstate.version),
+            "MUX %s for Win64 #%s [%s]", MUX_VERSION, MUX_BUILD_NUM,
+            MUX_RELEASE_DATE);
+        mux_sprintf(mudstate.short_ver, sizeof(mudstate.short_ver),
+            "MUX %s Win64", MUX_VERSION);
+#endif // ALPHA, BETA, RELEASED
+#elif defined(WIN32)
 #if defined(ALPHA)
         mux_sprintf(mudstate.version, sizeof(mudstate.version),
             "MUX %s for Win32 #%s [ALPHA]", MUX_VERSION, MUX_BUILD_NUM);
