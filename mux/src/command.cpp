@@ -1069,7 +1069,6 @@ static bool process_hook(dbref executor, dbref thing, char *s_uselock, ATTR *hk_
             char *str = atext;
             mux_exec(buff, &bufc, thing, executor, executor,
                 AttrTrace(aflags, EV_FCHECK|EV_EVAL), &str, NULL, 0);
-            free_lbuf(atext);
             *bufc = '\0';
             if (save_flg)
             {
@@ -1079,6 +1078,7 @@ static bool process_hook(dbref executor, dbref thing, char *s_uselock, ATTR *hk_
             retval = xlate(buff);
             free_lbuf(buff);
         }
+        free_lbuf(atext);
     }
     return retval;
 }

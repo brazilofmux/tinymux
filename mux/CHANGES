@@ -257,6 +257,8 @@ Bug Fixes:
     (Issue 225).
  -- Fixed potential lbuf leak in munge() (Issue 227).  Found and fixed
     by Alierak.
+ -- Fixed lbuf leak when @hook attribute is empty (Issue 229).  Found
+    and fixed by Alierak.
 
 
 Performance Enhancements:
