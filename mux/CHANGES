@@ -1,5 +1,5 @@
 TinyMUX 2.4:  CHANGES
-Last Update:  November 2006
+Last Update:  December 2006
 
 Major changes that may affect performance and require softcode tweaks:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -174,7 +174,7 @@ Bug Fixes:
     disabled.
  -- Limit the number of pcreates permitted per hour to be controlled by
     pcreate_per_hour configuration option.
- -- When a user disconnect or connects, announce their presence on a 
+ -- When a user disconnect or connects, announce their presence on a
     channel once regardless of how many aliases they have for that
     channel.
  -- Add case-insensitive sort option to sort().
@@ -279,13 +279,15 @@ Bug Fixes:
  -- Updated configure, configure.guess, and configure.sub.
  -- Fixed color leak in object names for @find, examine, inventory, and
     look when length of ANSI sequence exceeded 200 byte (Issue 184).
-    Reported by K Hall.  Not a crashing issue. 
+    Reported by K Hall.  Not a crashing issue.
  -- Fix two configuration tests related to IEEE floating-point that
     broke with gcc 4.1.2.
  -- Fixed uninitialized variables in fun_fmod() and fun_power() for
     non-typical build.
  -- RxLevel and TxLevel were reverse in @examine which would have lead
     to much confusion in using reality-levels (Issue 62).
+ -- Fixed lbuf leak when @hook attribute is empty (Issue 229).  Found
+    and fixed by Alierak.
 
 
 Performance Enhancements:

@@ -1,6 +1,6 @@
 // command.cpp -- command parser and support routines.
 //
-// $Id: command.cpp,v 1.77 2006/08/27 15:30:00 sdennis Exp $
+// $Id: command.cpp,v 1.78 2006/12/10 08:29:42 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -1028,7 +1028,6 @@ static bool process_hook(dbref executor, dbref thing, char *s_uselock, ATTR *hk_
             char *str = atext;
             mux_exec(buff, &bufc, thing, executor, executor, EV_FCHECK | EV_EVAL, &str,
                 (char **)NULL, 0);
-            free_lbuf(atext);
             *bufc = '\0';
             if (save_flg)
             {
@@ -1039,6 +1038,7 @@ static bool process_hook(dbref executor, dbref thing, char *s_uselock, ATTR *hk_
             retval = xlate(buff);
             free_lbuf(buff);
         }
+        free_lbuf(atext);
     }
     return retval;
 }
