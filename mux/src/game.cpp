@@ -2489,7 +2489,7 @@ static void CLI_CallBack(CLI_OptionEntry *p, char *pValue)
     }
 }
 
-#if defined(__INTEL_COMPILER)
+#if defined(__INTEL_COMPILER) && defined(_M_IX86)
 
 #define CPU_FD_ID 0x00200000UL
 
@@ -2874,7 +2874,7 @@ static void cpu_init(void)
 
 int DCL_CDECL main(int argc, char *argv[])
 {
-#if defined(__INTEL_COMPILER)
+#if defined(__INTEL_COMPILER) && defined(_M_IX86)
     cpu_init();
 #endif
 
@@ -3314,7 +3314,7 @@ bool mux_fopen(FILE **pFile, const char *filename, const char *mode)
         if (  NULL != filename
            && NULL != mode)
         {
-#if defined(WIN32) && (_MSC_VER >= 1400)
+#if defined(WIN32) && !defined(__INTEL_COMPILER) && (_MSC_VER >= 1400)
             // 1400 is Visual C++ 2005
             //
             return (fopen_s(pFile, filename, mode) == 0);
@@ -3337,7 +3337,7 @@ bool mux_open(int *pfh, const char *filename, int oflag)
         *pfh = MUX_OPEN_INVALID_HANDLE_VALUE;
         if (NULL != filename)
         {
-#if defined(WIN32) && (_MSC_VER >= 1400)
+#if defined(WIN32) && !defined(__INTEL_COMPILER) && (_MSC_VER >= 1400)
             // 1400 is Visual C++ 2005
             //
             return (_sopen_s(pfh, filename, oflag, _SH_DENYNO, _S_IREAD|_S_IWRITE) == 0);
@@ -3355,7 +3355,7 @@ bool mux_open(int *pfh, const char *filename, int oflag)
 
 const char *mux_strerror(int errnum)
 {
-#if defined(WIN32) && (_MSC_VER >= 1400)
+#if defined(WIN32) && !defined(__INTEL_COMPILER) && (_MSC_VER >= 1400)
     // 1400 is Visual C++ 2005
     //
     static char buffer[80];

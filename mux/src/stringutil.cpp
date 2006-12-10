@@ -3270,7 +3270,7 @@ size_t DCL_CDECL mux_vsnprintf(char *buff, size_t count, const char *fmt, va_lis
     //
     size_t len;
 #if defined(WIN32)
-#if (_MSC_VER >= 1400)
+#if !defined(__INTEL_COMPILER) && (_MSC_VER >= 1400)
     int cc = vsnprintf_s(buff, count, _TRUNCATE, fmt, va);
 #else // _MSC_VER
     int cc = _vsnprintf(buff, count, fmt, va);

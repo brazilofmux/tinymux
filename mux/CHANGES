@@ -255,6 +255,8 @@ Bug Fixes:
     memory-based build (Issue 226).
  -- page, say, @pemit, and pose with /noeval would strip curly braces
     (Issue 225).
+ -- Version and error strings containing the label 'Win32' were used
+    in Win64 builds of TinyMUX (Issue 228).
  -- Fixed potential lbuf leak in munge() (Issue 227).  Found and fixed
     by Alierak.
  -- Fixed lbuf leak when @hook attribute is empty (Issue 229).  Found

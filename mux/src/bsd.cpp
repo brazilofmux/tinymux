@@ -972,7 +972,7 @@ static void make_socket(PortInfo *Port)
 
         if (IS_SOCKET_ERROR(nRet))
         {
-            Log.tinyprintf("Error %ld on Win32: bind" ENDLINE, SOCKET_LAST_ERROR);
+            Log.tinyprintf("Error %ld on bind" ENDLINE, SOCKET_LAST_ERROR);
             if (SOCKET_CLOSE(s) == 0)
             {
                 DebugTotalSockets--;
@@ -987,7 +987,7 @@ static void make_socket(PortInfo *Port)
 
         if (nRet)
         {
-            Log.tinyprintf("Error %ld on Win32: listen" ENDLINE, SOCKET_LAST_ERROR);
+            Log.tinyprintf("Error %ld on listen" ENDLINE, SOCKET_LAST_ERROR);
             if (SOCKET_CLOSE(s) == 0)
             {
                 DebugTotalSockets--;
