@@ -13,6 +13,7 @@ docs/PATCHES
 docs/REALMS
 game/alias.conf
 game/bin/netmux.exe
+game/bin/win64/netmux.exe
 game/compat.conf
 game/data/db_load.bat
 game/data/db_unload.bat
