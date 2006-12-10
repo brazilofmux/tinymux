@@ -3237,6 +3237,7 @@ FUNCTION(fun_munge)
 
     if (NULL == ptrs1)
     {
+        free_lbuf(atext);
         return;
     }
 
@@ -3252,6 +3253,7 @@ FUNCTION(fun_munge)
 
     if (NULL == ptrs2)
     {
+        free_lbuf(atext);
         delete [] ptrs1;
         return;
     }
