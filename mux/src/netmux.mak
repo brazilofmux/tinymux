@@ -1,7 +1,8 @@
-# Microsoft Developer Studio Generated NMAKE File, Based on netmux.dsp
+# Makefile for building AMD64 version with Intel 9.1 Compiler.
+#
 !IF "$(CFG)" == ""
-CFG=netmux - Win64 Debug
-!MESSAGE No configuration specified. Defaulting to netmux - Win64 Debug.
+CFG=netmux - Win64 Release
+!MESSAGE No configuration specified. Defaulting to netmux - Win64 Release.
 !ENDIF 
 
 !IF "$(CFG)" != "netmux - Win64 Release" && "$(CFG)" != "netmux - Win64 Debug"
@@ -13,8 +14,8 @@ CFG=netmux - Win64 Debug
 !MESSAGE 
 !MESSAGE Possible choices for configuration are:
 !MESSAGE 
-!MESSAGE "netmux - Win64 Release" (based on "Win64 (x86) Console Application")
-!MESSAGE "netmux - Win64 Debug" (based on "Win64 (x86) Console Application")
+!MESSAGE "netmux - Win64 Release"
+!MESSAGE "netmux - Win64 Debug"
 !MESSAGE 
 !ERROR An invalid configuration is specified.
 !ENDIF 
@@ -119,23 +120,6 @@ CPP_PROJ=/nologo /MT /W3 /GX /Ot /Oa /Og /Oi /Ob2 /Gy /D "NDEBUG" /D "WIN32" /D 
    $(CPP_PROJ) $< 
 <<
 
-.c{$(INTDIR)}.sbr::
-   $(CPP) @<<
-   $(CPP_PROJ) $< 
-<<
-
-.cpp{$(INTDIR)}.sbr::
-   $(CPP) @<<
-   $(CPP_PROJ) $< 
-<<
-
-.cxx{$(INTDIR)}.sbr::
-   $(CPP) @<<
-   $(CPP_PROJ) $< 
-<<
-
-RSC=rc.exe
-
 LINK32=xilink.exe
 LINK32_FLAGS=kernel32.lib user32.lib gdi32.lib wsock32.lib /nologo /version:2.4 /subsystem:console /incremental:no /pdb:"$(OUTDIR)\netmux.pdb" /machine:amd64 /out:"$(OUTDIR)\netmux.exe" 
 LINK32_OBJS= \
@@ -214,119 +198,63 @@ ALL : "$(OUTDIR)\netmux.exe" "$(OUTDIR)\netmux.bsc"
 
 CLEAN :
 	-@erase "$(INTDIR)\_build.obj"
-	-@erase "$(INTDIR)\_build.sbr"
 	-@erase "$(INTDIR)\alloc.obj"
-	-@erase "$(INTDIR)\alloc.sbr"
 	-@erase "$(INTDIR)\attrcache.obj"
-	-@erase "$(INTDIR)\attrcache.sbr"
 	-@erase "$(INTDIR)\boolexp.obj"
-	-@erase "$(INTDIR)\boolexp.sbr"
 	-@erase "$(INTDIR)\bsd.obj"
-	-@erase "$(INTDIR)\bsd.sbr"
 	-@erase "$(INTDIR)\command.obj"
-	-@erase "$(INTDIR)\command.sbr"
 	-@erase "$(INTDIR)\comsys.obj"
-	-@erase "$(INTDIR)\comsys.sbr"
 	-@erase "$(INTDIR)\conf.obj"
-	-@erase "$(INTDIR)\conf.sbr"
 	-@erase "$(INTDIR)\cque.obj"
-	-@erase "$(INTDIR)\cque.sbr"
 	-@erase "$(INTDIR)\create.obj"
-	-@erase "$(INTDIR)\create.sbr"
 	-@erase "$(INTDIR)\db.obj"
-	-@erase "$(INTDIR)\db.sbr"
 	-@erase "$(INTDIR)\db_rw.obj"
-	-@erase "$(INTDIR)\db_rw.sbr"
 	-@erase "$(INTDIR)\eval.obj"
-	-@erase "$(INTDIR)\eval.sbr"
 	-@erase "$(INTDIR)\file_c.obj"
-	-@erase "$(INTDIR)\file_c.sbr"
 	-@erase "$(INTDIR)\flags.obj"
-	-@erase "$(INTDIR)\flags.sbr"
 	-@erase "$(INTDIR)\funceval.obj"
-	-@erase "$(INTDIR)\funceval.sbr"
 	-@erase "$(INTDIR)\functions.obj"
-	-@erase "$(INTDIR)\functions.sbr"
 	-@erase "$(INTDIR)\funmath.obj"
-	-@erase "$(INTDIR)\funmath.sbr"
 	-@erase "$(INTDIR)\game.obj"
-	-@erase "$(INTDIR)\game.sbr"
 	-@erase "$(INTDIR)\help.obj"
-	-@erase "$(INTDIR)\help.sbr"
 	-@erase "$(INTDIR)\htab.obj"
-	-@erase "$(INTDIR)\htab.sbr"
 	-@erase "$(INTDIR)\levels.obj"
-	-@erase "$(INTDIR)\levels.sbr"
 	-@erase "$(INTDIR)\local.obj"
-	-@erase "$(INTDIR)\local.sbr"
 	-@erase "$(INTDIR)\log.obj"
-	-@erase "$(INTDIR)\log.sbr"
 	-@erase "$(INTDIR)\look.obj"
-	-@erase "$(INTDIR)\look.sbr"
 	-@erase "$(INTDIR)\mail.obj"
-	-@erase "$(INTDIR)\mail.sbr"
 	-@erase "$(INTDIR)\match.obj"
-	-@erase "$(INTDIR)\match.sbr"
 	-@erase "$(INTDIR)\mguests.obj"
-	-@erase "$(INTDIR)\mguests.sbr"
 	-@erase "$(INTDIR)\move.obj"
-	-@erase "$(INTDIR)\move.sbr"
 	-@erase "$(INTDIR)\muxcli.obj"
-	-@erase "$(INTDIR)\muxcli.sbr"
 	-@erase "$(INTDIR)\netcommon.obj"
-	-@erase "$(INTDIR)\netcommon.sbr"
 	-@erase "$(INTDIR)\object.obj"
-	-@erase "$(INTDIR)\object.sbr"
 	-@erase "$(INTDIR)\pcre.obj"
-	-@erase "$(INTDIR)\pcre.sbr"
 	-@erase "$(INTDIR)\player.obj"
-	-@erase "$(INTDIR)\player.sbr"
 	-@erase "$(INTDIR)\player_c.obj"
-	-@erase "$(INTDIR)\player_c.sbr"
 	-@erase "$(INTDIR)\plusemail.obj"
-	-@erase "$(INTDIR)\plusemail.sbr"
 	-@erase "$(INTDIR)\powers.obj"
-	-@erase "$(INTDIR)\powers.sbr"
 	-@erase "$(INTDIR)\predicates.obj"
-	-@erase "$(INTDIR)\predicates.sbr"
 	-@erase "$(INTDIR)\quota.obj"
-	-@erase "$(INTDIR)\quota.sbr"
 	-@erase "$(INTDIR)\rob.obj"
-	-@erase "$(INTDIR)\rob.sbr"
 	-@erase "$(INTDIR)\set.obj"
-	-@erase "$(INTDIR)\set.sbr"
 	-@erase "$(INTDIR)\sha1.obj"
-	-@erase "$(INTDIR)\sha1.sbr"
 	-@erase "$(INTDIR)\speech.obj"
-	-@erase "$(INTDIR)\speech.sbr"
 	-@erase "$(INTDIR)\stringutil.obj"
-	-@erase "$(INTDIR)\stringutil.sbr"
 	-@erase "$(INTDIR)\strtod.obj"
-	-@erase "$(INTDIR)\strtod.sbr"
 	-@erase "$(INTDIR)\svdhash.obj"
-	-@erase "$(INTDIR)\svdhash.sbr"
 	-@erase "$(INTDIR)\svdrand.obj"
-	-@erase "$(INTDIR)\svdrand.sbr"
 	-@erase "$(INTDIR)\svdreport.obj"
-	-@erase "$(INTDIR)\svdreport.sbr"
 	-@erase "$(INTDIR)\timer.obj"
-	-@erase "$(INTDIR)\timer.sbr"
 	-@erase "$(INTDIR)\timeutil.obj"
-	-@erase "$(INTDIR)\timeutil.sbr"
 	-@erase "$(INTDIR)\unparse.obj"
-	-@erase "$(INTDIR)\unparse.sbr"
 	-@erase "$(INTDIR)\vattr.obj"
-	-@erase "$(INTDIR)\vattr.sbr"
 	-@erase "$(INTDIR)\vc60.idb"
 	-@erase "$(INTDIR)\vc60.pdb"
 	-@erase "$(INTDIR)\version.obj"
-	-@erase "$(INTDIR)\version.sbr"
 	-@erase "$(INTDIR)\walkdb.obj"
-	-@erase "$(INTDIR)\walkdb.sbr"
 	-@erase "$(INTDIR)\wild.obj"
-	-@erase "$(INTDIR)\wild.sbr"
 	-@erase "$(INTDIR)\wiz.obj"
-	-@erase "$(INTDIR)\wiz.sbr"
 	-@erase "$(OUTDIR)\netmux.bsc"
 	-@erase "$(OUTDIR)\netmux.exe"
 	-@erase "$(OUTDIR)\netmux.ilk"
@@ -355,23 +283,6 @@ CPP_PROJ=/nologo /MTd /W3 /GX /Zi /Od /D "_DEBUG" /D "WIN32" /D "WIN64" /D "_CON
    $(CPP) @<<
    $(CPP_PROJ) $< 
 <<
-
-.c{$(INTDIR)}.sbr::
-   $(CPP) @<<
-   $(CPP_PROJ) $< 
-<<
-
-.cpp{$(INTDIR)}.sbr::
-   $(CPP) @<<
-   $(CPP_PROJ) $< 
-<<
-
-.cxx{$(INTDIR)}.sbr::
-   $(CPP) @<<
-   $(CPP_PROJ) $< 
-<<
-
-RSC=rc.exe
 
 LINK32=xilink.exe
 LINK32_FLAGS=kernel32.lib user32.lib gdi32.lib wsock32.lib /nologo /subsystem:console /incremental:yes /pdb:"$(OUTDIR)\netmux.pdb" /debug /machine:amd64 /out:"$(OUTDIR)\netmux.exe" /pdbtype:sept 
@@ -453,283 +364,282 @@ LINK32_OBJS= \
 !IF "$(CFG)" == "netmux - Win64 Release" || "$(CFG)" == "netmux - Win64 Debug"
 SOURCE=.\_build.cpp
 
-"$(INTDIR)\_build.obj"	"$(INTDIR)\_build.sbr" : $(SOURCE) "$(INTDIR)"
+"$(INTDIR)\_build.obj": $(SOURCE) "$(INTDIR)"
 
 
 SOURCE=.\alloc.cpp
 
-"$(INTDIR)\alloc.obj"	"$(INTDIR)\alloc.sbr" : $(SOURCE) "$(INTDIR)"
+"$(INTDIR)\alloc.obj": $(SOURCE) "$(INTDIR)"
 
 
 SOURCE=.\attrcache.cpp
 
-"$(INTDIR)\attrcache.obj"	"$(INTDIR)\attrcache.sbr" : $(SOURCE) "$(INTDIR)"
+"$(INTDIR)\attrcache.obj": $(SOURCE) "$(INTDIR)"
 
 
 SOURCE=.\boolexp.cpp
 
-"$(INTDIR)\boolexp.obj"	"$(INTDIR)\boolexp.sbr" : $(SOURCE) "$(INTDIR)"
+"$(INTDIR)\boolexp.obj": $(SOURCE) "$(INTDIR)"
 
 
 SOURCE=.\bsd.cpp
 
-"$(INTDIR)\bsd.obj"	"$(INTDIR)\bsd.sbr" : $(SOURCE) "$(INTDIR)"
+"$(INTDIR)\bsd.obj": $(SOURCE) "$(INTDIR)"
 
 
 SOURCE=.\command.cpp
 
-"$(INTDIR)\command.obj"	"$(INTDIR)\command.sbr" : $(SOURCE) "$(INTDIR)"
+"$(INTDIR)\command.obj": $(SOURCE) "$(INTDIR)"
 
 
 SOURCE=.\comsys.cpp
 
-"$(INTDIR)\comsys.obj"	"$(INTDIR)\comsys.sbr" : $(SOURCE) "$(INTDIR)"
+"$(INTDIR)\comsys.obj": $(SOURCE) "$(INTDIR)"
 
 
 SOURCE=.\conf.cpp
 
-"$(INTDIR)\conf.obj"	"$(INTDIR)\conf.sbr" : $(SOURCE) "$(INTDIR)"
+"$(INTDIR)\conf.obj": $(SOURCE) "$(INTDIR)"
 
 
 SOURCE=.\cque.cpp
 
-"$(INTDIR)\cque.obj"	"$(INTDIR)\cque.sbr" : $(SOURCE) "$(INTDIR)"
+"$(INTDIR)\cque.obj": $(SOURCE) "$(INTDIR)"
 
 
 SOURCE=.\create.cpp
 
-"$(INTDIR)\create.obj"	"$(INTDIR)\create.sbr" : $(SOURCE) "$(INTDIR)"
+"$(INTDIR)\create.obj": $(SOURCE) "$(INTDIR)"
 
 
 SOURCE=.\db.cpp
 
-"$(INTDIR)\db.obj"	"$(INTDIR)\db.sbr" : $(SOURCE) "$(INTDIR)"
+"$(INTDIR)\db.obj": $(SOURCE) "$(INTDIR)"
 
 
 SOURCE=.\db_rw.cpp
 
-"$(INTDIR)\db_rw.obj"	"$(INTDIR)\db_rw.sbr" : $(SOURCE) "$(INTDIR)"
+"$(INTDIR)\db_rw.obj": $(SOURCE) "$(INTDIR)"
 
 
 SOURCE=.\eval.cpp
 
-"$(INTDIR)\eval.obj"	"$(INTDIR)\eval.sbr" : $(SOURCE) "$(INTDIR)"
+"$(INTDIR)\eval.obj": $(SOURCE) "$(INTDIR)"
 
 
 SOURCE=.\file_c.cpp
 
-"$(INTDIR)\file_c.obj"	"$(INTDIR)\file_c.sbr" : $(SOURCE) "$(INTDIR)"
+"$(INTDIR)\file_c.obj": $(SOURCE) "$(INTDIR)"
 
 
 SOURCE=.\flags.cpp
 
-"$(INTDIR)\flags.obj"	"$(INTDIR)\flags.sbr" : $(SOURCE) "$(INTDIR)"
+"$(INTDIR)\flags.obj": $(SOURCE) "$(INTDIR)"
 
 
 SOURCE=.\funceval.cpp
 
-"$(INTDIR)\funceval.obj"	"$(INTDIR)\funceval.sbr" : $(SOURCE) "$(INTDIR)"
+"$(INTDIR)\funceval.obj": $(SOURCE) "$(INTDIR)"
 
 
 SOURCE=.\functions.cpp
 
-"$(INTDIR)\functions.obj"	"$(INTDIR)\functions.sbr" : $(SOURCE) "$(INTDIR)"
+"$(INTDIR)\functions.obj": $(SOURCE) "$(INTDIR)"
 
 
 SOURCE=.\funmath.cpp
 
-"$(INTDIR)\funmath.obj"	"$(INTDIR)\funmath.sbr" : $(SOURCE) "$(INTDIR)"
+"$(INTDIR)\funmath.obj": $(SOURCE) "$(INTDIR)"
 
 
 SOURCE=.\game.cpp
 
-"$(INTDIR)\game.obj"	"$(INTDIR)\game.sbr" : $(SOURCE) "$(INTDIR)"
+"$(INTDIR)\game.obj": $(SOURCE) "$(INTDIR)"
 
 
 SOURCE=.\help.cpp
 
-"$(INTDIR)\help.obj"	"$(INTDIR)\help.sbr" : $(SOURCE) "$(INTDIR)"
+"$(INTDIR)\help.obj": $(SOURCE) "$(INTDIR)"
 
 
 SOURCE=.\htab.cpp
 
-"$(INTDIR)\htab.obj"	"$(INTDIR)\htab.sbr" : $(SOURCE) "$(INTDIR)"
+"$(INTDIR)\htab.obj": $(SOURCE) "$(INTDIR)"
 
 
 SOURCE=.\levels.cpp
 
-"$(INTDIR)\levels.obj"	"$(INTDIR)\levels.sbr" : $(SOURCE) "$(INTDIR)"
+"$(INTDIR)\levels.obj": $(SOURCE) "$(INTDIR)"
 
 
 SOURCE=.\local.cpp
 
-"$(INTDIR)\local.obj"	"$(INTDIR)\local.sbr" : $(SOURCE) "$(INTDIR)"
+"$(INTDIR)\local.obj": $(SOURCE) "$(INTDIR)"
 
 
 SOURCE=.\log.cpp
 
-"$(INTDIR)\log.obj"	"$(INTDIR)\log.sbr" : $(SOURCE) "$(INTDIR)"
+"$(INTDIR)\log.obj": $(SOURCE) "$(INTDIR)"
 
 
 SOURCE=.\look.cpp
 
-"$(INTDIR)\look.obj"	"$(INTDIR)\look.sbr" : $(SOURCE) "$(INTDIR)"
+"$(INTDIR)\look.obj": $(SOURCE) "$(INTDIR)"
 
 
 SOURCE=.\mail.cpp
 
-"$(INTDIR)\mail.obj"	"$(INTDIR)\mail.sbr" : $(SOURCE) "$(INTDIR)"
+"$(INTDIR)\mail.obj": $(SOURCE) "$(INTDIR)"
 
 
 SOURCE=.\match.cpp
 
-"$(INTDIR)\match.obj"	"$(INTDIR)\match.sbr" : $(SOURCE) "$(INTDIR)"
+"$(INTDIR)\match.obj": $(SOURCE) "$(INTDIR)"
 
 
 SOURCE=.\mguests.cpp
 
-"$(INTDIR)\mguests.obj"	"$(INTDIR)\mguests.sbr" : $(SOURCE) "$(INTDIR)"
+"$(INTDIR)\mguests.obj": $(SOURCE) "$(INTDIR)"
 
 
 SOURCE=.\move.cpp
 
-"$(INTDIR)\move.obj"	"$(INTDIR)\move.sbr" : $(SOURCE) "$(INTDIR)"
+"$(INTDIR)\move.obj": $(SOURCE) "$(INTDIR)"
 
 
 SOURCE=.\muxcli.cpp
 
-"$(INTDIR)\muxcli.obj"	"$(INTDIR)\muxcli.sbr" : $(SOURCE) "$(INTDIR)"
+"$(INTDIR)\muxcli.obj": $(SOURCE) "$(INTDIR)"
 
 
 SOURCE=.\netcommon.cpp
 
-"$(INTDIR)\netcommon.obj"	"$(INTDIR)\netcommon.sbr" : $(SOURCE) "$(INTDIR)"
+"$(INTDIR)\netcommon.obj": $(SOURCE) "$(INTDIR)"
 
 
 SOURCE=.\object.cpp
 
-"$(INTDIR)\object.obj"	"$(INTDIR)\object.sbr" : $(SOURCE) "$(INTDIR)"
+"$(INTDIR)\object.obj": $(SOURCE) "$(INTDIR)"
 
 
 SOURCE=.\pcre.cpp
 
-"$(INTDIR)\pcre.obj"	"$(INTDIR)\pcre.sbr" : $(SOURCE) "$(INTDIR)"
+"$(INTDIR)\pcre.obj": $(SOURCE) "$(INTDIR)"
 
 
 SOURCE=.\player.cpp
 
-"$(INTDIR)\player.obj"	"$(INTDIR)\player.sbr" : $(SOURCE) "$(INTDIR)"
+"$(INTDIR)\player.obj": $(SOURCE) "$(INTDIR)"
 
 
 SOURCE=.\player_c.cpp
 
-"$(INTDIR)\player_c.obj"	"$(INTDIR)\player_c.sbr" : $(SOURCE) "$(INTDIR)"
+"$(INTDIR)\player_c.obj": $(SOURCE) "$(INTDIR)"
 
 
 SOURCE=.\plusemail.cpp
 
-"$(INTDIR)\plusemail.obj"	"$(INTDIR)\plusemail.sbr" : $(SOURCE) "$(INTDIR)"
+"$(INTDIR)\plusemail.obj": $(SOURCE) "$(INTDIR)"
 
 
 SOURCE=.\powers.cpp
 
-"$(INTDIR)\powers.obj"	"$(INTDIR)\powers.sbr" : $(SOURCE) "$(INTDIR)"
+"$(INTDIR)\powers.obj": $(SOURCE) "$(INTDIR)"
 
 
 SOURCE=.\predicates.cpp
 
-"$(INTDIR)\predicates.obj"	"$(INTDIR)\predicates.sbr" : $(SOURCE) "$(INTDIR)"
+"$(INTDIR)\predicates.obj": $(SOURCE) "$(INTDIR)"
 
 
 SOURCE=.\quota.cpp
 
-"$(INTDIR)\quota.obj"	"$(INTDIR)\quota.sbr" : $(SOURCE) "$(INTDIR)"
+"$(INTDIR)\quota.obj": $(SOURCE) "$(INTDIR)"
 
 
 SOURCE=.\rob.cpp
 
-"$(INTDIR)\rob.obj"	"$(INTDIR)\rob.sbr" : $(SOURCE) "$(INTDIR)"
+"$(INTDIR)\rob.obj": $(SOURCE) "$(INTDIR)"
 
 
 SOURCE=.\set.cpp
 
-"$(INTDIR)\set.obj"	"$(INTDIR)\set.sbr" : $(SOURCE) "$(INTDIR)"
+"$(INTDIR)\set.obj": $(SOURCE) "$(INTDIR)"
 
 
 SOURCE=.\sha1.cpp
 
-"$(INTDIR)\sha1.obj"	"$(INTDIR)\sha1.sbr" : $(SOURCE) "$(INTDIR)"
+"$(INTDIR)\sha1.obj": $(SOURCE) "$(INTDIR)"
 
 
 SOURCE=.\speech.cpp
 
-"$(INTDIR)\speech.obj"	"$(INTDIR)\speech.sbr" : $(SOURCE) "$(INTDIR)"
+"$(INTDIR)\speech.obj": $(SOURCE) "$(INTDIR)"
 
 
 SOURCE=.\stringutil.cpp
 
-"$(INTDIR)\stringutil.obj"	"$(INTDIR)\stringutil.sbr" : $(SOURCE) "$(INTDIR)"
+"$(INTDIR)\stringutil.obj": $(SOURCE) "$(INTDIR)"
 
 
 SOURCE=.\strtod.cpp
 
-"$(INTDIR)\strtod.obj"	"$(INTDIR)\strtod.sbr" : $(SOURCE) "$(INTDIR)"
+"$(INTDIR)\strtod.obj": $(SOURCE) "$(INTDIR)"
 
 
 SOURCE=.\svdhash.cpp
 
-"$(INTDIR)\svdhash.obj"	"$(INTDIR)\svdhash.sbr" : $(SOURCE) "$(INTDIR)"
+"$(INTDIR)\svdhash.obj": $(SOURCE) "$(INTDIR)"
 
 
 SOURCE=.\svdrand.cpp
 
-"$(INTDIR)\svdrand.obj"	"$(INTDIR)\svdrand.sbr" : $(SOURCE) "$(INTDIR)"
+"$(INTDIR)\svdrand.obj": $(SOURCE) "$(INTDIR)"
 
 
 SOURCE=.\svdreport.cpp
 
-"$(INTDIR)\svdreport.obj"	"$(INTDIR)\svdreport.sbr" : $(SOURCE) "$(INTDIR)"
+"$(INTDIR)\svdreport.obj": $(SOURCE) "$(INTDIR)"
 
 
 SOURCE=.\timer.cpp
 
-"$(INTDIR)\timer.obj"	"$(INTDIR)\timer.sbr" : $(SOURCE) "$(INTDIR)"
+"$(INTDIR)\timer.obj": $(SOURCE) "$(INTDIR)"
 
 
 SOURCE=.\timeutil.cpp
 
-"$(INTDIR)\timeutil.obj"	"$(INTDIR)\timeutil.sbr" : $(SOURCE) "$(INTDIR)"
+"$(INTDIR)\timeutil.obj": $(SOURCE) "$(INTDIR)"
 
 
 SOURCE=.\unparse.cpp
 
-"$(INTDIR)\unparse.obj"	"$(INTDIR)\unparse.sbr" : $(SOURCE) "$(INTDIR)"
+"$(INTDIR)\unparse.obj": $(SOURCE) "$(INTDIR)"
 
 
 SOURCE=.\vattr.cpp
 
-"$(INTDIR)\vattr.obj"	"$(INTDIR)\vattr.sbr" : $(SOURCE) "$(INTDIR)"
+"$(INTDIR)\vattr.obj": $(SOURCE) "$(INTDIR)"
 
 
 SOURCE=.\version.cpp
 
-"$(INTDIR)\version.obj"	"$(INTDIR)\version.sbr" : $(SOURCE) "$(INTDIR)"
+"$(INTDIR)\version.obj": $(SOURCE) "$(INTDIR)"
 
 
 SOURCE=.\walkdb.cpp
 
-"$(INTDIR)\walkdb.obj"	"$(INTDIR)\walkdb.sbr" : $(SOURCE) "$(INTDIR)"
+"$(INTDIR)\walkdb.obj": $(SOURCE) "$(INTDIR)"
 
 
 SOURCE=.\wild.cpp
 
-"$(INTDIR)\wild.obj"	"$(INTDIR)\wild.sbr" : $(SOURCE) "$(INTDIR)"
+"$(INTDIR)\wild.obj": $(SOURCE) "$(INTDIR)"
 
 
 SOURCE=.\wiz.cpp
 
-"$(INTDIR)\wiz.obj"	"$(INTDIR)\wiz.sbr" : $(SOURCE) "$(INTDIR)"
-
+"$(INTDIR)\wiz.obj": $(SOURCE) "$(INTDIR)"
 
 
 !ENDIF 
