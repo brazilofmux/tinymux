@@ -186,8 +186,8 @@
 typedef int     dbref;
 typedef int     FLAG;
 typedef int     POWER;
-#ifdef REALITY_LVLS   
-typedef unsigned int RLEVEL;   
+#ifdef REALITY_LVLS
+typedef unsigned int RLEVEL;
 #endif // REALITY_LVLS
 typedef char    boolexp_type;
 typedef char    IBUF[16];
