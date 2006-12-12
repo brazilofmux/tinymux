@@ -321,7 +321,7 @@ char *ConvertCRLFtoSpace(const char *pString)
 
 // Write a formatted string to a socket.
 //
-static int mod_email_sock_printf(SOCKET sock, char *format, ...)
+static int DCL_CDECL mod_email_sock_printf(SOCKET sock, char *format, ...)
 {
     va_list vargs;
     char mybuf[2*LBUF_SIZE];
