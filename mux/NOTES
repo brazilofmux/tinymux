@@ -21,12 +21,12 @@ Handy Stuff:
  - Always be sure to ftp files in 'binary' mode.  Otherwise, you can expect
    your data to be unusable.
 
- - Default GAMENAME will be netmux. If you changed the GAMENAME in mux.config,
-   be sure to change the filenames in GAMENAME.conf as well, otherwise, the
-   TinyMUX and (perhaps more importantly) ./Backup won't be able to find your
-   DB.
+ - Default GAMENAME will be netmux.  If you changed the GAMENAME in
+   mux.config, be sure to change the filenames in GAMENAME.conf as well,
+   otherwise, the TinyMUX and (perhaps more importantly) ./Backup won't be
+   able to find your DB.
 
- - Read 'wizhelp config parameters' when you get the TinyMUX started. If you
+ - Read 'wizhelp config parameters' when you get the TinyMUX started.  If you
    are porting from PennMUSH, for example, where the master room is set
    as #2, you would have to place the config parameter 'master_room #2' in
    your configuration file.
@@ -89,7 +89,7 @@ On Making Backups:
 
  - TinyMUX 2.6 includes a backup script.  It produces a flatfile with the
    name GAMENAME.DATE.tar.gz that contains both the mail.db and comsys.db
-   which will appear in the game directory. To make use of the Backup
+   which will appear in the game directory.  To make use of the Backup
    script:
 
      - @shutdown the game.
