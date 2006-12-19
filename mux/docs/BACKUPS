@@ -4,11 +4,11 @@ Last Update:  December 2006
 The importance of good backups:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Experienced MUX users will tell you that having a good, recent backup of your
-database, configuration files, text files, mail db and comsys db is the best
-defense against data loss.  In a perfect world, we wouldn't have to deal with
-random accidents or malicious attacks that wipe out data, but there are an
-unfortunate number of cases where these events occur and entire games have
+Experienced TinyMUX users will tell you that having a good, recent backup of
+your database, configuration files, text files, mail db and comsys db is the
+best defense against data loss.  In a perfect world, we wouldn't have to deal
+with random accidents or malicious attacks that wipe out data, but there are
+an unfortunate number of cases where these events occur and entire games have
 disappeared forever because of it.
 
 Making a backup:

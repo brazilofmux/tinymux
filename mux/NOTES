@@ -23,7 +23,7 @@ Handy Stuff:
 
  - Default GAMENAME will be netmux.  If you changed the GAMENAME in
    mux.config, be sure to change the filenames in GAMENAME.conf as well,
-   otherwise, the TinyMUX and (perhaps more importantly) ./Backup won't be
+   otherwise, the TinyMUX and (perhaps more importantly), ./Backup won't be
    able to find your DB.
 
  - Read 'wizhelp config parameters' when you get the TinyMUX started.  If you
