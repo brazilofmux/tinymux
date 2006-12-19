@@ -1,21 +1,30 @@
-Last Updated: June 2006
+TinyMUX 2.6:  README (Win32/64-based)
+Last Updated: December 2006
 
-Herein are extra notes for the Win32 distribution.  These notes do not apply
-well to the Unix distribution.
+Herein are extra notes for the Win32/64 distribution.  These notes do not
+apply well to the Unix distribution.
 
-There are two different Win32 distributions (binary and source) using three
+There are two different Win32/64 distributions (binary and source) using three
 different archive tools (PKZip, JAR from ARJ, and tar/gzip).
 
 Unless you want to build the server yourself, you should use one of the binary
 distributions.  In the binary distributions, the server has been compiled for
 you using the Intel 9.1 compiler with aggressive, profile-guided
 optimizations, vectorized loops, and CPU-aware dispatching.  You need at least
-a Pentium Pro or above to use these binaries.
+a Pentium Pro or above to use these binaries.  The pre-built Win32 binary
+works on everything from Windows 98 through Windows Vista, however it does not
+work with Windows 95 or Windows 95SR2.  The pre-built Win64 binary works on
+the 64-bit editions of Windows 2003 Server, Windows XP, and Windows Vista.
+IA-64 is not supported.
 
-However, a source distribution is also provided.  If you have Visual C++, you
-can build your own binaries.  If you want to use Cygwin to compile the source,
-then don't use either of the Win32 distributions.  Instead, download one of
-the Unix distributions of MUX and follow the instructions contained there.
+A source distribution is provided, and with the right compiler, it should be
+possible to build for Windows 95, Windows 95SR2, and IA-64 platforms (or any
+of the above supported platforms).  The sources have been successfully
+compiled with Visual C 98 (part of Visual Studio 6.0), Visual Studio 2003.NET,
+Visual Studio 2005, as well as the Intel 9.1 C/C++ Compiler.  If you want to
+use Cygwin to compile the source, then don't use any of the Win32
+distributions.  Instead, download one of the Unix distributions of TinyMUX and
+follow the instructions contained there.
 
 Regarding PKZip, you -must- use version 2.50 or use WinZip (www.winzip.com).
 You cannot use PKZip 2.04g.  PKZip 2.04g does not support long filenames.
@@ -25,11 +34,10 @@ named incorrectly.  Use version 2.50 of PKZip or use WinZip.
 Regarding tar/gzip on Win32, I'm using the Cygwin version of these tools.
 You can use Cygwin tools to unpack the Win32 distribution. However, as
 mentioned above, you should not be using the Win32 distribution if you want
-to use Cygwin to compile MUX.
+to use Cygwin to compile TinyMUX 2.6.
 
 Regarding JAR from ARJ Software, this archiving tool produces the smallest
 files. It's available via http://www.arjsoftware.com/jar.htm.
-
 
 
 To use a binary distribution:
@@ -38,13 +46,13 @@ To use a binary distribution:
    following lines (depending on which archiving program you have choosen to
    use).
 
-        jar32 x mux-2.6.0.1.win32.bin.j
-        tar xzf mux-2.6.0.1.win32.bin.tar.gz
-        pkzip -extract -directories mux-2.6.0.1.win32.bin.zip
+        jar32 x mux-2.6.0.18.win32.bin.j
+        tar xzf mux-2.6.0.18.win32.bin.tar.gz
+        pkzip -extract -directories mux-2.6.0.18.win32.bin.zip
 
    -OR-
 
-   Unpack the mux-2.6.0.1.win32.bin.zip using WinZip.
+   Unpack the mux-2.6.0.18.win32.bin.zip using WinZip.
 
 2. cd mux2.6/game
 
@@ -60,20 +68,19 @@ To use a binary distribution:
        startmux
 
 
-
 To use a source distribution:
 
 1. Open a Command Prompt window and unpack the distribution using one of the
    following lines (depending on which archiving program you have choosen to
    use).
 
-        jar32 x mux-2.6.0.1.win32.src.j
-        tar xzf mux-2.6.0.1.win32.src.tar.gz
-        pkzip -extract -directories mux-2.6.0.1.win32.src.zip
+        jar32 x mux-2.6.0.18.win32.src.j
+        tar xzf mux-2.6.0.18.win32.src.tar.gz
+        pkzip -extract -directories mux-2.6.0.18.win32.src.zip
 
    -OR-
 
-   Unpack the mux-2.6.0.1.win32.src.zip using WinZip.
+   Unpack the mux-2.6.0.18.win32.src.zip using WinZip.
 
 2. Start Visual C++ and open the workspace file (mux2.6/src/netmux.dsw).
 
@@ -94,9 +101,10 @@ To use a source distribution:
 
 To load an existing database:
 
-For MUX, all transfers between Unix and Win32 must be performed in -BINARY-
-mode or the copy of your database will be corrupted and you'll get a failed
-assertion message in db_rw.cpp when the server tries to load your database.
+For TinyMUX, all transfers between Unix and Win32 must be performed in
+_BINARY_ mode or the copy of your database will be corrupted and you'll get a
+failed assertion message in db_rw.cpp when the server tries to load your
+database.
 
 So, if you're using FTP, be sure to use 'binary' command. If you compresssed
 your database with tar/gzip, and are using WinZip to uncompress it on

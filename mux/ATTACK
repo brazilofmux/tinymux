@@ -1,18 +1,18 @@
 TinyMUX 2.6: ATTACK
-Last Update: January 2006
+Last Update: December 2006
 
-You should familiarize yourself with defensive procedures that serve to
-thwart the effects of attacks.  Don't wait until an attack is mounted
-against your game to begin learning how to defend it against an
-attacker.  Practice for this eventuality now.
+You should familiarize yourself with defensive procedures that serve to thwart
+the effects of attacks.  Don't wait until an attack is mounted against your
+game to begin learning how to defend it against an attacker.  Practice for
+this eventuality now.
 
 Player Creation:
 ----------------
 
-If you are running an open game, it is possible for an automated script
-to create players faster than you can can destroy them.  Even if a group
-of people are doing it manually, the odds are they can create player
-objects faster than you can destroy them.
+If you are running an open game, it is possible for an automated script to
+create players faster than you can can destroy them.  Even if a group of
+people are doing it manually, the odds are they can create player objects
+faster than you can destroy them.
 
 As a WIZARD, there are a few remedies available to you:
 
@@ -25,9 +25,9 @@ As #1, there are some additional remedies available to you:
 @aahear attack:
 ---------------
 
-With MUX 2.2 and later, the @aahear exploit is no longer as useful to
-attackers as it once was.  This attack was usually mixed with other
-forms of attack to obscure it.
+With TinyMUX 2.2 and later, the @aahear exploit is no longer as useful to
+attackers as it once was.  This attack was usually mixed with other forms of
+attack to obscure it.
 
 @pemit/page attack:
 -------------------
@@ -56,8 +56,8 @@ As a WIZARD or #1, there are a few remedies available to you:
 Attribute attack:
 -----------------
 
-The server will not allow more than a few thousand attributes per
-object.  This attack is no longer feasible.
+The server will not allow more than a few thousand attributes per object.
+This attack is no longer feasible.
 
 
 Attribute Name Attack:
@@ -73,8 +73,8 @@ still needs to keep an eye on attribute names as described below in
 @Mail Attack:
 -------------
 
-Mortals are not allowed to send more than 50 @mails per hour.  However,
-the site admin still needs to keep an eye on the size of @mail.  See
+Mortals are not allowed to send more than 50 @mails per hour.  However, the
+site admin still needs to keep an eye on the size of @mail.  See
 'wizhelp mail_per_hour'.
 
 
