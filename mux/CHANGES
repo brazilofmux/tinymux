@@ -1,301 +1,31 @@
-TinyMUX 2.6:  CHANGES
+TinyMUX 2.7:  CHANGES
 Last Update:  December 2006
 
 Major changes that may affect performance and require softcode tweaks:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
- -- Deprecated LSTACK(), POP(), PUSH(), PEEK(), EMPTY(), and ITEMS().
-    These functions are still available via the --enabled-deprecated
-    configuration switch.  Requested by Ian.
- -- Port code to the 64-bit edition of Windows XP.  Jake and Brazil.
+ -- Placeholder.
 
 
 Feature Additions:
 ~~~~~~~~~~~~~~~~~
- -- FCOUNT(<expression>) to tally function invocations in <expression>.
-    Requested by Ian.
- -- Add SITEINFO() to return the site flags for a player or port.  Added
-    by Jake.
- -- Use Moniker instead of name in enter/leave emits, rob, kill, @toad,
-    boot, and in other similar situations.
- -- Add support for %=<attr> substitution. From TinyMUSH 3.
- -- Use localtime_r() if available. By Brazil.
- -- Added command line switch (-n) to control choice of networking
-    method on Win32.
- -- Added support for 2-argument mix().
- -- Added optional third 'step' parameter to lnum().
- -- Added optional second argument for lcon() for subseting the returned
-    list by type.
- -- The 'You own a floating room' message is only given for rooms which
-    are not connected to either the player_startint_room or to a room
-    marked FLOATING. Previously, every room not connected to the
-    player_starting_room had to be marked FLOATING.
- -- Added QUELL flag from Firan to temporarily suppress Wizard powers.
- -- Added @switch/notify.
- -- Merge Firan MUX source modification and collected them under the
-    --enable-firanmux ./configuration switch. This also typically
-    requires the --enable-memorybased switch. Some of the following
-    may eventually be enabled in the default build:
-
-    Attributes:  @alead, @lead, @olead, and @color
-    Permissions: no_immobile, no_restricted
-    Options:     immobile_message, sql_server, sql_user, sql_password,
-                 sql_database, mail_server, mail_ehlo, mail_sendaddr,
-                 mail_sendname, and mail_subject.
-    Flags:       LINEWRAP, IMMOBILE, RESTRICTED, and PARENT.
-    Functions:   sql(), setparent(), setname(), trigger(), mailsize(),
-                 mailsubj(), mailj(), text(), successes(), and
-                 distribute().
-
- -- Added @email command from Firan MUX to the default build.
- -- Added --enable-firanmuxconvert which turns on code to remap three
-    conflicting attribute numbers. The first database load requires
-    this switch, and then it should be turned off.
- -- Included distribute() in the default build.
- -- Added float_precision configuration parameter.
- -- Added TRACE attribute flag which provide a finer-grain debugging
-    tool than @set'ing TRACE on the object. Requested by Nixer.
-    Implemented by Brazil.
- -- Added escapes for CR, LF, TAB, and ESC to the flatfile format. This
-    flatfile no longer contains a mix of CRLF and LF to confuse flatfile
-    portability.
- -- Add lflags(<obj>/<attr>) form similar to flags(<obj>/<attr>).
- -- @power will accept multiple power changes in one command.
- -- Add @trigger/notify.
- -- Added etimefmt().
- -- Added nine additional parameters to map() which (if present) are
-    passed in as arguments %1-%9.  Suggested by Ian.
- -- Added nine additional parameters to filter() and filterbool() which
-    (if present) are passed in as arguments %1-%9.  Suggested by Ronan.
- -- Added lbuf_size as a read-only configuration option so that
-    config(lbuf_size) can report it to softcode.
- -- Added STEP() following TinyMUSH and RhostMUSH (Issue 1).
- -- Add /nostrip switch to @chown, @chownall, and @clone.
- -- Add new successes() code from Jon@Firan.
- -- Combine old and new versions of SUCCESSES().
- -- Added comalias, doing, exitname, malias, maliasdesc, and password
-    tests to VALID() (Issue 211).
- -- Added no_name attribute flag to suppress name on oattribute emits
-    (Issue 220).
- -- Added /no_name switch to @verb (Issue 221).
- -- Added stripped_flags configuration option (Issue 200).  This
-    affects guests, @chown, @chownall, and @clone.
+ -- Placeholder.
 
 
 Bug Fixes:
 ~~~~~~~~~
- -- Fix over one thousand level 4 warnings.  Jake and Brazil.
- -- Deprecate use of strcpy() and strncpy().  Jake and Brazil.
- -- Use size_t where appropriate.  Jake and Brazil.
- -- Deprecate use of sprintf().  By Brazil.
- -- Deprecate use of localtime().  By Brazil.
- -- Fix 'round(-0.5,0)' --> '-0' to be '0' instead.
- -- Disallow the train command from being used on itself.
- -- Add protection to @chownall that victim be a player object.
- -- Fix uninitialized variable in HASRXLEVEL(). It should have used
-    'executor' instead of 'player'.
- -- Fix time_t handling for 64-bit machines. Timezones could be wrong
-    for dates earlier than Jan 1 1970 on 64-bit Unix.
- -- Fix @hook for goto command. Being unable to move also affected the
-    ability to use other commands. Reported by K hall.
- -- Added checking to convsecs() to return '#-1 INVALID DATE" if first
-    argument is outside the supported range.
- -- All but the last part of very Long lines from the network were
-    discarded when for very long lines, only the first part should be
-    saved.  Not a crashing bug.
- -- Server should not attempt to @clone Created and Modified attributes.
- -- Fix single-character case in pos(). It would never return success.
-    Bug introduced in 2.6. It does not appear in 2.4.
- -- Change isdbref() to return '0' instead of '#-1 ISDBEF EXPECTS...'
- -- Fix ANSI overflow bug in ANSI_String_Copy() introduced by using an
-    unsigned size_t in place of a signed 'int'. Bug introduced in 2.6.
- -- Add 'other half' of buffer overflow protection to a case in
-    process_cmdent().  Without the other half, the first half causes a
-    crash instead of prventing it.  Found and fixed by Sparks.
- -- Remove double evaluation from distribute() and sql().
- -- Save/Restore global registers while executing @descformat.
- -- Fix map(), filter(), and filterbool() to avoid evaluating the given
-    attribute for an empty list.
- -- Strip ANSI from messages before matching messages against @filter
-    and @infilter patterns.
- -- Zap trailing NL in help topics.
- -- Added help topic for HTML flag.
- -- When listening on multiple ports, continue to run the server as long
-    as one of the requested ports is available.
- -- mix() doesn't include a function-invocation test (Issue 71).
- -- Examples in help topics show old-style 'say' (Issue 72).
- -- Attribute-level tracing does not report sortby() comparisons
-    (Issue 73).
- -- @email help doesn't mention @mail addy/subject=body form (Issue 86).
- -- @email - do {} while () to simplify the sources and reduce the
-    sizeof the program (Issue 79).
- -- @email - MUX_VERSION replaced with mudstate.short_ver (Issue 78).
- -- @email - mod_email_sock_readline() adds a '\0' one position too far
-    (Issue 87).
- -- @email - Remove unnecessary zeroing of buffers (Issue 80).
- -- @email - Typo in do_plusmail of '0' instead of '\0' (Issue 90).
- -- @email - Unnecessary strlen() (Issue 81).
- -- @email - do_plusmail loops look at undefined bytes if inputline is
-    1, 2, or 3 bytes long (Issue 89).
- -- @email - Memory leaks (Issue 84).
- -- Fix SIGSEGV when udefault() gets more than 12 arguments.  Fixed by
-    Alierak.
- -- @email - initialize input buffer to the empty string to cover
-    return(0) error cases.  Probably introduced by Issue 80 fix.  Fixed
-    by Alierak.
- -- @email - Comment doesn't match code (Issue 82).
- -- %v accepts accented characters (Issue 91).  Found by Alierak.
- -- sortby() breaks when nested (Issue 88).  Found by Alierak.
- -- @email - Config options may contain CRLF sequences (Issue 76). Found
-    by Alierak.
- -- @email - Subject and recipient address may contain CRLF sequences
-    (Issue 77). Found by Alierak.
- -- Fix theoretical crash if DNS slave returns half a result.  Found and
-    fixed by Alierak.
- -- Fix lbuf leak from Issue 88 fix.  Found and fixed by Alierak.
- -- All return paths from process_command(), new_connection(), and
-    check_connect() must restore mudstate.debug_cmd.  Found and fixed
-    by Alierak.
- -- Multiple addcom gives no warning (Issue 93). Fixed addcom topic.
- -- @email - Message body may be too long to append CRLF.CRLF (Issue 74).
-    Found by Alierak.
- -- @email needs to handle CRLF.CRLF in message body (Issue 75).  Found
-    by Alierak.
- -- @email - Accents could affect message validity (Issue 85).  Found by
-    Alierak.
- -- Allow addcom to channel names containing spaces (Issue 58).
- -- Fixed channels() help topic (Issue 54).  The channels()
-    implementation doesn't not return a comma-space separated list, but
-    a space-only separated list.
- -- Fixed an lbuf leak in hasquota() introduced in TinyMUX 2.1. Bug
-    found and fixed by Alierak.
- -- Document @clone/preserve switch.
- -- Update TRACE helpfile for new attribute flag functionality (Issue 104).
- -- Add @htdesc and @vrml_url documentation (Issue 44).
- -- Local declaration of ltdWarp in cque.cpp hid global declaration.
-    @timewarp/queue would have ignored <secs> and become a no-op
-    (Issue 167).
- -- @timewarp/queue advanced a queued command's displayed time (as seen
-    by @ps), but did not update the run time of the underlying task, so
-    the command did not execute any sooner (Issue 172).
- -- Protect qsort() from invalid arguments that should not happen
-    (Issue 125 and 159).
- -- Add 'GameFull' reason which should never be referenced, but it
-    suppresses a compiler warning (Issue 148).
- -- Remove arbitrary constant, 1000, and re-work @forwardlist codepaths
-    (Issue 168 and 175).
- -- Suppress compiler warning in anum_extend() and compact code
-    (Issues 169 and 170).
- -- Suppress compiler warning in add_helpfile() (Issue 165).
- -- Corrected 'shutodnw' typo in 'wizhelp signals' (Issue 177).
- -- Add checking and warning messages for next free attribute, range of
-    numbers used with names, and range of numbers used with objects
-    (Issues 176, 180, and 181).
- -- Require flagnames to be at least 1 character (Issue 183).
- -- Fix @flag wizhelp topic (Issue 182).
- -- Suppress compiler warning in conf.cpp (Issues 161 and 164).
- -- Suppress compiler warning in command.cpp (Issue 149).
- -- Write mux_open() to avoid direct use of open() (Issue 121).
- -- Remove all calls to fscanf() in mail.cpp and comsys.cpp (Issue 119).
- -- Fixed color leak in object names for @find, examine, inventory, and
-    look when length of ANSI sequence exceeded 200 byte (Issue 184).
-    Reported by K Hall.  Not a crashing issue.
- -- Suppress compiler warnings in player.cpp (Issue 143 and 144).
- -- Suppress compiler warnings in stringutil.cpp (Issue 109).
- -- Suppress compiler warnings in help.cpp (Issue 132).
- -- Suppress compiler warnings in netcommon.cpp (Issues 141, 142, 186,
-    and 210).
- -- Fixed uninitialized variables in fun_fmod() and fun_power() for
-    non-typical build.
- -- Fix two configuration tests that broke with gcc 4.1.2.
- -- Avoid using strerror() directly (Issue 120).
- -- Fix compiler warnings in strtod.cpp (Issues 113, 114, and 115).
- -- Fix compiler warnings in functions.cpp (Issues 123, 124, 126, 127,
-    128, 129, 130, and 131).
- -- Fix compiler warnings in funceval.cpp (Issue 122).
- -- Fix compiler warnings in comsys.cpp (Issues 151, 157 and 158).
- -- Avoid using strncpy (Issue 118).
- -- Fix compiler warnings in mail.cpp (Issues 133, 134, 135, 136, 137,
-    138, 139, and 140).
- -- Fix compiler warnings in conf.cpp (Issue 162, 163, and 166).
- -- Fixed double lbuf_free() introduced in 2.6.0.3 (Issue 188).
- -- Fixed compiler warnings in alloc.cpp (Issue 146 and 147).
- -- Fixed infinite loop in linewrap_general() resulting from safe_chr()
-    being a macro instead of a function.
- -- Fixed subtle $-command exclusion (Issue 193).
- -- Fixed @color interactions with @name and @moniker (Issue 194).
- -- Fixed v() references in 'help substitutions3' (Issue 195).
- -- @clist/full column alignment with six-digit dbrefs (Issue 196).
- -- @mail index listing alignment with @moniker (Issue 197).
- -- Added local.cpp hook to affect INFO and populate Patches: line
-    with other compile-time switches besides WOD_REALMS (Issue 51).
- -- Fix unlikely memory leak if executor of a queue task happens to be
-    a bad object by the time the queued entry is executed.
- -- Prevent @ccreate from creating channels with duplicate names (Issue
-    206).
- -- Wizhelp SUSPECT should describe that all commands from SUSPECT-set
-    players are logged as controlled by the 'log' configuration option
-    (Issue 199).
- -- @moniker without any argument gave 'I don't see that here.'
-    followed by 'Permission denied.' (Issue 40).
- -- Update PATCHES file (Issue 189).
- -- RxLevel and TxLevel were reversed in @examine leading to much
-    confusion in using reality levels (Issue 62).
- -- Added separate recursion limit protection on nesting of iter() and
-    list() (Issue 216). MAX_ITEXT is 100, but raising the function
-    recursion limit above that leaves iter() and list() open to step
-    on nearby mudstate structures including help and global_registers.
- -- Disable WHO in Firan build (Issue 218).
- -- Fixed crash due to failure to clear @program data after logout
-    (Issue 217).  Found and fixed by Alierak.
- -- Disallow negative charge for channels (Issue 222).  Found by
-    Alierak.
- -- Fixed cases of look and @idesc interaction (Issue 45).
- -- Updated 'wizhelp @attribute' for clarity (Issue 190).
- -- Removed 'Attr. Cache' row from @list hashstats report for
-    memory-based build (Issue 226).
- -- page, say, @pemit, and pose with /noeval would strip curly braces
-    (Issue 225).
- -- Version and error strings containing the label 'Win32' were used
-    in Win64 builds of TinyMUX (Issue 228).
- -- Fixed potential lbuf leak in munge() (Issue 227).  Found and fixed
-    by Alierak.
- -- Fixed lbuf leak when @hook attribute is empty (Issue 229).  Found
-    and fixed by Alierak.
- -- Fixed build error in version.cpp (Issue 230).
+ -- Placeholder.
 
 
 Performance Enhancements:
 ~~~~~~~~~~~~~~~~~~~~~~~~
-
- -- In MEMORY_BASED, avoid malloc() call each time an attribute is
-    added to an object.
- -- Optimize atr_add_raw_LEN() to reduce Firan load time from 40 seconds
-    to 15 seconds (which includes firan.db, mail.db, and comsys.db).
-    This translates to something upward of 28 MB/s.
- -- Optimize do_comsystem() ability to recognize what is not an alias.
-    Alierak.
- -- Added reference counting to global registers which should improve
-    performance and greatly reduce memory usage for games which use the
-    queue heavily.
- -- Issue 207: Maintain message length in mail bag to avoid touching
-    mail body.
- -- Issue 201: Trim priority queue data structures during @dbck to save
-    memory.
+ -- Placeholder.
 
 
 Cosmetic Changes:
 ~~~~~~~~~~~~~~~~
- -- Increased width of certain columns in @list hashstats (Requests,
-    Hits, and Checks) and @list allocations (Allocs).
+ -- Placeholder.
 
 
 Miscellaneous:
 ~~~~~~~~~~~~~
- -- Add mux_fopen() utility function to replace direct use of fopen().
- -- Updated config.guess, config.sub, and configure to later versions.
- -- Updated to autoconf 2.61.
- -- Refer to tinymux.org instead of tinymux.com.
- -- Added SQL readme (Issue 47).
- -- Updated to doxygen 1.5.1.
- -- Freshened ATTACK, BACKUPS, BETA, CREDITS, NOTES, README, and
-    readme.txt.
+ -- Placeholder.
