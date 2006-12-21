@@ -1,5 +1,5 @@
 TinyMUX 2.6: CONVERSION
-Last Update: January 2006
+Last Update: December 2006
 
 Conversions from Other Database Formats:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -12,20 +12,20 @@ Upgrading An Existing TinyMUX:
  - @shutdown the game. Make a flatfile of your DB and move it to a safe
    location.
 
- - Compile TinyMUX 2.4 per INSTALL.  Note that TinyMUX 2.4 untars into a
+ - Compile TinyMUX 2.6 per INSTALL.  Note that TinyMUX 2.6 untars into a
    seperate directory.
 
- - Copy the flatfile to game/data in the TinyMUX 2.4 directory and use
+ - Copy the flatfile to game/data in the TinyMUX 2.6 directory and use
    db_load to convert the database to binary.
 
  - Copy .txt files to text/
 
  - Copy existing mux.config
 
- - **Important** Your old GAMENAME.conf file will not work under TinyMUX 2.4
+ - **Important** Your old GAMENAME.conf file will not work under TinyMUX 2.6
    if you are converting from a version prior to TinyMUX 2.0.
 
-   To make a proper file, you must edit the GAMENAME.conf in the TinyMUX 2.4
+   To make a proper file, you must edit the GAMENAME.conf in the TinyMUX 2.6
    game/ and add in the config parameters.
 
  - You can save a little time by 'cat oldfile >> newfile' and using
