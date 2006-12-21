@@ -1,7 +1,7 @@
-TinyMUX 2.6:  PATCHES
-Last Update:  November 2006
+TinyMUX 2.7:  PATCHES
+Last Update:  December 2006
 
-A Word About Patches for TinyMUX 2.6:
+A Word About Patches for TinyMUX 2.7:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Changes are distributed in the form of patches, and these occur
@@ -46,29 +46,29 @@ and you didn't, you won't be real happy.
  1. Download the patch file to your local shell account somewhere. The
     location is not critical.
 
-    The patch file mux-2.6.1.25-2.6.1.26.unix.patch.gz will patch from
-    version 2.6.1.25 to version 2.6.1.26. This patch file is compressed
+    The patch file mux-2.7.0.1-2.7.0.2.unix.patch.gz will patch from
+    version 2.7.0.1 to version 2.7.0.2. This patch file is compressed
     using gzip.
 
  2. Optionally, you can decompress the patch files with 'gzip -d' like
     so:
 
-    gzip -d mux-2.6.1.25-2.6.1.26.unix.patch.gz
+    gzip -d mux-2.7.0.1-2.7.0.2.unix.patch.gz
 
-    This will change the filename to mux-2.6.1.25-2.6.1.26.unix.patch.
+    This will change the filename to mux-2.7.0.1-2.7.0.2.unix.patch.
 
  3. Change to your game's top-most directory.  For example,
 
-    cd mux2.6
+    cd mux2.7
 
  4. Apply the patch as follows:
 
-    zcat < ../mux-2.6.1.25-2.6.1.26.unix.patch.gz | patch -p0
+    zcat < ../mux-2.7.0.1-2.7.0.2.unix.patch.gz | patch -p0
 
     Or, if you optionally decompressed the patch as described in step
     2, apply the patch as follows:
 
-    patch -p0 < ../mux-2.6.1.25-2.6.1.26.unix.patch
+    patch -p0 < ../mux-2.7.0.1-2.7.0.2.unix.patch
 
 From here, you will usually get to watch a lot of spam fly by as the patch
 utility modifies the files to be updated.  You might occasionally get a
@@ -85,5 +85,5 @@ If you have problems:
 ~~~~~~~~~~~~~~~~~~~~
 
 If the patch fails and you were applying it to a standard beta or release
-version of TinyMUX 2.6, then collect the error messages and report it to
+version of TinyMUX 2.7, then collect the error messages and report it to
 brazilofmux@gmail.com following the bug reporting procedures in README.

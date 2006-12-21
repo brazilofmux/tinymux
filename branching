@@ -15,21 +15,24 @@ Nevertheless, it makes sense to describe the Grand Unified Scheme for
 Branching, and then argue why it can be collapsed and special-cased.
 
 
-        ----2.6.0---2.6.1
+        ----2.7.0---2.7.1
        /
 -----------------------------------------------------
 trunk   \
          \  dev
           ------------------------
              \
-              \  dev_foo
-               ----------
+              \  dev_alierak
+               -------------
                 \
-                 \  dev_bar
-                  ----------
+                 \  dev_brazil
+                  ------------
                    \
-                    \  dev_baz
-                     ----------
+                    \  dev_firan
+                     -----------
+                      \
+                       \  dev_ronan
+                        -----------
 
 In the Grand Scheme, the trunk is never released, and the only changes allowed
 are merges from other branches.  It's useful to first classify branches
@@ -41,23 +44,24 @@ The development-side branches can be organized into a promotion tree like so:
                 |
                dev
                 |
-                |------------------
-                |        |        |
-             dev_foo  dev_bar  dev_baz
+                |------------------------------------
+                |            |           |          |
+             dev_alierak  dev_brazil  dev_firan  dev_ronan
 
 
-An individual developer (e.g., bar) would make changes in branch dev_bar, test
-their changes on Win32 and some flavors of Unix.  There is still a strong
+An individual developer (e.g., brazil) would make changes in branch dev_brazil,
+test their changes on Win32 and some flavors of Unix.  There is still a strong
 desire to see simple changes committed individually -- changes which address
 the code in only one dimension to make it easier for others to code review the
 changes.  There is also a strong desire to avoid breaking the build in these
 private branches, however, the only person affected by a broken build is the
 developer who broke it.
 
-Periodically, changes made on dev_foo, dev_bar, and dev_baz branches are
-merged into the dev branch, and periodically, changes from dev are merged into
-the trunk.  Likewise, changes brought into dev are periodically merged down
-into dev_foo, dev_bar, and dev_baz.
+Periodically, changes made on dev_alierak, dev_brazil, dev_firan, and
+dev_ronan branches are merged into the dev branch, and periodically, changes
+from dev are merged into the trunk.  Likewise, changes brought into dev are
+periodically merged down into dev_alierak, dev_brazil, dev_firan, and
+dev_ronan.
 
 The other class of branches are the release-side branches. Periodically, a
 release branch is created from the trunk.  Packaging considerations may
