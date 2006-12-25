@@ -1,8 +1,8 @@
-TinyMUX 2.6:  LOCAL
-Last Update:  January 2006
+TinyMUX 2.7:  LOCAL
+Last Update:  December 2006
 
-Notes on MUX's local.cpp extensions
------------------------------------
+Notes on TinyMUX's local.cpp extensions
+---------------------------------------
 
 The local.cpp file contains several functions to enable the extension of the
 server source code (aka hardcode).  These functions provide an interface to
