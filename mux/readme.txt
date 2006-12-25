@@ -1,4 +1,4 @@
-TinyMUX 2.6:  README (Win32/64-based)
+TinyMUX 2.7:  README (Win32/64-based)
 Last Updated: December 2006
 
 Herein are extra notes for the Win32/64 distribution.  These notes do not
@@ -34,7 +34,7 @@ named incorrectly.  Use version 2.50 of PKZip or use WinZip.
 Regarding tar/gzip on Win32, I'm using the Cygwin version of these tools.
 You can use Cygwin tools to unpack the Win32 distribution. However, as
 mentioned above, you should not be using the Win32 distribution if you want
-to use Cygwin to compile TinyMUX 2.6.
+to use Cygwin to compile TinyMUX 2.7.
 
 Regarding JAR from ARJ Software, this archiving tool produces the smallest
 files. It's available via http://www.arjsoftware.com/jar.htm.
@@ -46,15 +46,15 @@ To use a binary distribution:
    following lines (depending on which archiving program you have choosen to
    use).
 
-        jar32 x mux-2.6.0.18.win32.bin.j
-        tar xzf mux-2.6.0.18.win32.bin.tar.gz
-        pkzip -extract -directories mux-2.6.0.18.win32.bin.zip
+        jar32 x mux-2.7.0.1.win32.bin.j
+        tar xzf mux-2.7.0.1.win32.bin.tar.gz
+        pkzip -extract -directories mux-2.7.0.1.win32.bin.zip
 
    -OR-
 
-   Unpack the mux-2.6.0.18.win32.bin.zip using WinZip.
+   Unpack the mux-2.7.0.1.win32.bin.zip using WinZip.
 
-2. cd mux2.6/game
+2. cd mux2.7/game
 
 3. Possibly edit netmux.conf and mux.config to tweak the configuration.
 
@@ -74,19 +74,19 @@ To use a source distribution:
    following lines (depending on which archiving program you have choosen to
    use).
 
-        jar32 x mux-2.6.0.18.win32.src.j
-        tar xzf mux-2.6.0.18.win32.src.tar.gz
-        pkzip -extract -directories mux-2.6.0.18.win32.src.zip
+        jar32 x mux-2.7.0.1.win32.src.j
+        tar xzf mux-2.7.0.1.win32.src.tar.gz
+        pkzip -extract -directories mux-2.7.0.1.win32.src.zip
 
    -OR-
 
-   Unpack the mux-2.6.0.18.win32.src.zip using WinZip.
+   Unpack the mux-2.7.0.1.win32.src.zip using WinZip.
 
-2. Start Visual C++ and open the workspace file (mux2.6/src/netmux.dsw).
+2. Start Visual C++ and open the workspace file (mux2.7/src/netmux.dsw).
 
 3. Within Visual C++, Do a batch build in order to produce netmux.exe.  The
-   non-debug version will be placed in mux2.6/src/bin_release and must be
-   copied over to mux2.6/game/bin.
+   non-debug version will be placed in mux2.7/src/bin_release and must be
+   copied over to mux2.7/game/bin.
 
 4. Start the server with the following:
 
