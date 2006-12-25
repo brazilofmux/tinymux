@@ -5698,7 +5698,7 @@ CREATE()
 
   Topic: CREDITS
 
-TinyMUX 2.6 is based on TinyMUX 2.4. It is currently maintained by
+TinyMUX 2.7 is based on TinyMUX 2.6. It is currently maintained by
 Stephen Dennis (AKA Brazil). There is a more complete list of credits
 in the README files for the server itself.
 
