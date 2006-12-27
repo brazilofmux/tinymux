@@ -262,6 +262,7 @@ Bug Fixes:
  -- Fixed lbuf leak when @hook attribute is empty (Issue 229).  Found
     and fixed by Alierak.
  -- Fixed build error in version.cpp (Issue 230).
+ -- INFO should show 'Patches' or 'INFO 1', but not both (Issue 236).
 
 
 Performance Enhancements:
