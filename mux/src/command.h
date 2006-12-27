@@ -143,7 +143,8 @@ CMD_NO_ARG(do_dbclean);         /* Remove stale vattr entries */
 CMD_TWO_ARG(do_addcommand);     /* Add or replace a global command */
 CMD_TWO_ARG(do_delcommand);     /* Delete an added global command */
 CMD_ONE_ARG(do_listcommands);   /* List added global commands */
-CMD_ONE_ARG(do_break);          /* Stop evaluating an action list */
+CMD_TWO_ARG_CMDARG(do_assert);  /* Stop evaluating an action list */
+CMD_TWO_ARG_CMDARG(do_break);   /* Stop evaluating an action list */
 #ifdef REALITY_LVLS
 CMD_TWO_ARG(do_rxlevel);        /* set Rx Levels */
 CMD_TWO_ARG(do_txlevel);        /* set Tx Levels */

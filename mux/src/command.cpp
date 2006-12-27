@@ -596,7 +596,6 @@ static CMDENT_NO_ARG command_table_no_arg[] =
 static CMDENT_ONE_ARG command_table_one_arg[] =
 {
     {"@boot",         boot_sw,    CA_NO_GUEST|CA_NO_SLAVE,    0,  CS_ONE_ARG|CS_INTERP, 0, do_boot},
-    {"@break",        NULL,       CA_PUBLIC,                  0,  CS_ONE_ARG,           0, do_break},
     {"@ccreate",      NULL,       CA_NO_SLAVE|CA_NO_GUEST,    0,  CS_ONE_ARG,           0, do_createchannel},
     {"@cdestroy",     NULL,       CA_NO_SLAVE|CA_NO_GUEST,    0,  CS_ONE_ARG,           0, do_destroychannel},
     {"@clist",        clist_sw,   CA_NO_SLAVE,                0,  CS_ONE_ARG,           0, do_chanlist},
@@ -755,13 +754,15 @@ static CMDENT_TWO_ARG_ARGV command_table_two_arg_argv[] =
 
 static CMDENT_TWO_ARG_CMDARG command_table_two_arg_cmdarg[] =
 {
-    {"@dolist", dolist_sw,  CA_GBL_INTERP,  0,      CS_TWO_ARG|CS_CMDARG|CS_NOINTERP|CS_STRIP_AROUND, 0, do_dolist},
-    {"@force",  NULL,       CA_NO_SLAVE|CA_GBL_INTERP|CA_NO_GUEST,    0,    CS_TWO_ARG|CS_INTERP|CS_CMDARG, 0, do_force},
+    {"@assert", NULL,       CA_PUBLIC,     0, CS_TWO_ARG|CS_CMDARG|CS_NOINTERP|CS_STRIP_AROUND, 0, do_assert},
+    {"@break",  NULL,       CA_PUBLIC,     0, CS_TWO_ARG|CS_CMDARG|CS_NOINTERP|CS_STRIP_AROUND, 0, do_break},
+    {"@dolist", dolist_sw,  CA_GBL_INTERP, 0, CS_TWO_ARG|CS_CMDARG|CS_NOINTERP|CS_STRIP_AROUND, 0, do_dolist},
+    {"@force",  NULL,       CA_NO_SLAVE|CA_GBL_INTERP|CA_NO_GUEST, 0, CS_TWO_ARG|CS_INTERP|CS_CMDARG, 0, do_force},
 #ifdef QUERY_SLAVE
-    {"@query",  query_sw,   CA_WIZARD,      0,      CS_TWO_ARG|CS_INTERP|CS_CMDARG,                   0, do_query},
+    {"@query",  query_sw,   CA_WIZARD,     0, CS_TWO_ARG|CS_INTERP|CS_CMDARG,                   0, do_query},
 #endif
-    {"@wait",   wait_sw,    CA_GBL_INTERP,  0,      CS_TWO_ARG|CS_CMDARG|CS_NOINTERP|CS_STRIP_AROUND, 0, do_wait},
-    {NULL,      NULL,       0,              0,      0,              0, NULL}
+    {"@wait",   wait_sw,    CA_GBL_INTERP, 0, CS_TWO_ARG|CS_CMDARG|CS_NOINTERP|CS_STRIP_AROUND, 0, do_wait},
+    {NULL,      NULL,       0,             0, 0,                                                0, NULL}
 };
 
 static CMDENT_TWO_ARG_ARGV_CMDARG command_table_two_arg_argv_cmdarg[] =
@@ -3968,15 +3969,44 @@ void do_list(dbref executor, dbref caller, dbref enactor, int eval, int extra,
     }
 }
 
-void do_break(dbref executor, dbref caller, dbref enactor, int eval, int key, char *arg1)
+void do_assert(dbref executor, dbref caller, dbref enactor, int eval, int key,
+               char *arg1, char *command, char *cargs[], int ncargs)
 {
-    UNUSED_PARAMETER(executor);
-    UNUSED_PARAMETER(caller);
-    UNUSED_PARAMETER(enactor);
-    UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(key);
 
-    break_called = xlate(arg1);
+    if (!xlate(arg1))
+    {
+        break_called = true;
+        if (  NULL != command
+           && '\0' != command[0])
+        {
+            CLinearTimeAbsolute lta;
+            wait_que(executor, caller, enactor, eval, false, lta, NOTHING, 0,
+                command,
+                ncargs, cargs,
+                mudstate.global_regs);
+        }
+    }
+}
+
+void do_break(dbref executor, dbref caller, dbref enactor, int eval, int key,
+              char *arg1, char *command, char *cargs[], int ncargs)
+{
+    UNUSED_PARAMETER(key);
+
+    if (xlate(arg1))
+    {
+        break_called = true;
+        if (  NULL != command
+           && '\0' != command[0])
+        {
+            CLinearTimeAbsolute lta;
+            wait_que(executor, caller, enactor, eval, false, lta, NOTHING, 0,
+                command,
+                ncargs, cargs,
+                mudstate.global_regs);
+        }
+    }
 }
 
 // do_icmd: Ignore or disable commands on a per-player or per-room basis.

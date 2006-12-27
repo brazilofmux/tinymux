@@ -8,7 +8,8 @@ Major changes that may affect performance and require softcode tweaks:
 
 Feature Additions:
 ~~~~~~~~~~~~~~~~~
- -- Placeholder.
+ -- Support optional action list with @break.  Add corresponding
+    @assert command. (Issue 36).
 
 
 Bug Fixes:
