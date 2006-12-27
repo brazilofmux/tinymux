@@ -656,7 +656,7 @@ static CMDENT_ONE_ARG command_table_one_arg[] =
     {"train",         NULL,       CA_PUBLIC,                  0,  CS_ONE_ARG,           0, do_train},
     {"use",           NULL,       CA_NO_SLAVE|CA_GBL_INTERP,  0,  CS_ONE_ARG|CS_INTERP, 0, do_use},
     {"who",           NULL,       CA_PUBLIC,            CMD_WHO,  CS_ONE_ARG,           0, logged_out1},
-    {"\\",            NULL,       CA_NO_GUEST|CA_LOCATION|CF_DARK|CA_NO_SLAVE,  SAY_PREFIX, CS_ONE_ARG|CS_INTERP,   0, do_say},
+    {"\\",            NULL,       CA_NO_GUEST|CA_LOCATION|CF_DARK|CA_NO_SLAVE,  SAY_PREFIX, CS_ONE_ARG|CS_INTERP|CS_LEADIN,   0, do_say},
     {":",             NULL,       CA_LOCATION|CF_DARK|CA_NO_SLAVE,  SAY_PREFIX, CS_ONE_ARG|CS_INTERP|CS_LEADIN, 0, do_say},
     {";",             NULL,       CA_LOCATION|CF_DARK|CA_NO_SLAVE,  SAY_PREFIX, CS_ONE_ARG|CS_INTERP|CS_LEADIN, 0, do_say},
     {"\"",            NULL,       CA_LOCATION|CF_DARK|CA_NO_SLAVE,  SAY_PREFIX, CS_ONE_ARG|CS_INTERP|CS_LEADIN, 0, do_say},
@@ -1314,6 +1314,14 @@ static void process_cmdent(CMDENT *cmdp, char *switchp, dbref executor, dbref ca
         {
             buf1 = bp = alloc_lbuf("process_cmdent");
             str = arg;
+            // Copy and skip first character for CS_LEADIN, to
+            // prevent the \ prefix command from escaping part of
+            // its argument.
+            //
+            if (cmdp->callseq & CS_LEADIN)
+            {
+                *bp++ = *str++;
+            }
             mux_exec(buf1, &bp, executor, caller, enactor,
                 eval|interp|EV_FCHECK|EV_TOP, &str, cargs, ncargs);
             *bp = '\0';

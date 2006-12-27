@@ -13,7 +13,8 @@ Feature Additions:
 
 Bug Fixes:
 ~~~~~~~~~
- -- Placeholder.
+ -- Using \ as a shortcut to @emit no longer causes the beginning of the
+    message to be escaped (Issue 219).
 
 
 Performance Enhancements:
