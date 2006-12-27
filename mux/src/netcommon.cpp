@@ -1898,7 +1898,7 @@ static void dump_info(DESC *arg_desc)
         *bp = '\0';
         queue_write(arg_desc, buf);
         free_lbuf(buf);
-        queue_write(arg_desc, "### End INFO\r\n");
+        queue_write(arg_desc, "\r\n");
     }
     queue_write(arg_desc, "### End INFO\r\n");
 }
