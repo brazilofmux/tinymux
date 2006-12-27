@@ -124,9 +124,10 @@ static void open_exit(dbref player, dbref loc, char *direction, char *linkto)
     }
 }
 
-void do_open(dbref executor, dbref caller, dbref enactor, int key,
+void do_open(dbref executor, dbref caller, dbref enactor, int eval, int key,
              char *direction, char *links[], int nlinks)
 {
+    UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
 
@@ -490,9 +491,10 @@ void do_parent
 // ---------------------------------------------------------------------------
 // do_dig: Create a new room.
 //
-void do_dig(dbref executor, dbref caller, dbref enactor, int key, char *name,
-            char *args[], int nargs)
+void do_dig(dbref executor, dbref caller, dbref enactor, int eval, int key,
+            char *name, char *args[], int nargs)
 {
+    UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(caller);
 
     // we don't need to know player's location!  hooray!
