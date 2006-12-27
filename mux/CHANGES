@@ -301,3 +301,4 @@ Miscellaneous:
  -- Updated to doxygen 1.5.1.
  -- Freshened ATTACK, BACKUPS, BETA, CREDITS, NOTES, README, and
     readme.txt.
+ -- Documented Lbufref and Regref pools in 'wizhelp @list alloc'.

@@ -658,6 +658,9 @@
     Descs    - Network descriptors, one is used for each connected player.
     Qentries - Queue entries, one is used for each command placed on the
                queue. (@wait, @trigger, @switch, @dolist, etc).
+    Lbufrefs - Reference counting structures for the lbufs that hold global
+               r-register contents.
+    Regrefs  - Reference counting structures for global r-registers.
 
   Related Topics: @list buffers.
 
