@@ -1861,41 +1861,46 @@ static void dump_info(DESC *arg_desc)
     queue_write(arg_desc, tprintf("Size: %d\r\n", mudstate.db_top));
     queue_write(arg_desc, tprintf("Version: %s\r\n", mudstate.short_ver));
 
-    char *buf = alloc_lbuf("dump_info");
-    char *bp  = buf;
-
-    int  i;
-    bool bFirst = true;
-    safe_str("Patches: ", buf, &bp);
-    for (i = 0; i < nDumpInfoTable; i++)
+    if (  0 != nDumpInfoTable
+       || 0 != nLocalDumpInfoTable)
     {
-        if (!bFirst)
-        {
-            safe_chr(' ', buf, &bp);
-        }
-        else
-        {
-            bFirst = false;
-        }
-        safe_str(DumpInfoTable[i], buf, &bp);
-    }
+        char *buf = alloc_lbuf("dump_info");
+        char *bp  = buf;
 
-    for (i = 0; i < nLocalDumpInfoTable; i++)
-    {
-        if (!bFirst)
+        int  i;
+        bool bFirst = true;
+        safe_str("Patches: ", buf, &bp);
+        for (i = 0; i < nDumpInfoTable; i++)
         {
-            safe_chr(' ', buf, &bp);
+            if (!bFirst)
+            {
+                safe_chr(' ', buf, &bp);
+            }
+            else
+            {
+                bFirst = false;
+            }
+            safe_str(DumpInfoTable[i], buf, &bp);
         }
-        else
+
+        for (i = 0; i < nLocalDumpInfoTable; i++)
         {
-            bFirst = false;
+            if (!bFirst)
+            {
+                safe_chr(' ', buf, &bp);
+            }
+            else
+            {
+                bFirst = false;
+            }
+            safe_str(LocalDumpInfoTable[i], buf, &bp);
         }
-        safe_str(LocalDumpInfoTable[i], buf, &bp);
+        *bp = '\0';
+        queue_write(arg_desc, buf);
+        free_lbuf(buf);
+        queue_write(arg_desc, "### End INFO\r\n");
     }
-    *bp = '\0';
-    queue_write(arg_desc, buf);
-    free_lbuf(buf);
-    queue_write(arg_desc, "\r\n### End INFO\r\n");
+    queue_write(arg_desc, "### End INFO\r\n");
 }
 
 char *MakeCanonicalDoing(char *pDoing, size_t *pnValidDoing, bool *pbValidDoing)

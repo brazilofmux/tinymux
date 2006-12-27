@@ -13,7 +13,7 @@ Feature Additions:
 
 Bug Fixes:
 ~~~~~~~~~
- -- Placeholder.
+ -- INFO should show 'Patches' or 'INFO 1', but not both (Issue 236).
 
 
 Performance Enhancements:
