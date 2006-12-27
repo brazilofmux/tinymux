@@ -1483,7 +1483,7 @@ static void process_cmdent(CMDENT *cmdp, char *switchp, dbref executor, dbref ca
             else
             {
                 (*(((CMDENT_TWO_ARG_ARGV *)cmdp)->handler))(executor, caller,
-                    enactor, key, buf1, args, nargs);
+                    enactor, eval, key, buf1, args, nargs);
             }
 
             // Free the argument buffers.
@@ -3983,9 +3983,10 @@ void do_break(dbref executor, dbref caller, dbref enactor, int eval, int key, ch
 // Used with express permission of RhostMUSH developers.
 // Bludgeoned into MUX by Jake Nelson 7/2002.
 //
-void do_icmd(dbref player, dbref cause, dbref enactor, int key, char *name,
-             char *args[], int nargs)
+void do_icmd(dbref player, dbref cause, dbref enactor, int eval, int key,
+             char *name, char *args[], int nargs)
 {
+    UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(cause);
     UNUSED_PARAMETER(enactor);
 

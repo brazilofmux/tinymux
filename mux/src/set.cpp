@@ -1318,9 +1318,10 @@ void do_setattr
     set_attr_internal(executor, thing, attrnum, attrtext, 0);
 }
 
-void do_cpattr(dbref executor, dbref caller, dbref enactor, int key,
+void do_cpattr(dbref executor, dbref caller, dbref enactor, int eval, int key,
                char *oldpair, char *newpair[], int nargs)
 {
+    UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(key);
 
     int i;
@@ -1373,9 +1374,10 @@ void do_cpattr(dbref executor, dbref caller, dbref enactor, int key,
 }
 
 
-void do_mvattr(dbref executor, dbref caller, dbref enactor, int key,
+void do_mvattr(dbref executor, dbref caller, dbref enactor, int eval, int key,
                char *what, char *args[], int nargs)
 {
+    UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
     UNUSED_PARAMETER(key);
@@ -1781,9 +1783,10 @@ static void edit_string_ansi(char *src, char **dst, char **returnstr, char *from
     }
 }
 
-void do_edit(dbref executor, dbref caller, dbref enactor, int key, char *it,
-             char *args[], int nargs)
+void do_edit(dbref executor, dbref caller, dbref enactor, int eval, int key,
+             char *it, char *args[], int nargs)
 {
+    UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
     UNUSED_PARAMETER(key);
@@ -1934,7 +1937,7 @@ void do_wipe(dbref executor, dbref caller, dbref enactor, int eval, int key, cha
     }
 }
 
-void do_trigger(dbref executor, dbref caller, dbref enactor, int key,
+void do_trigger(dbref executor, dbref caller, dbref enactor, int eval, int key,
                 char *object, char *argv[], int nargs)
 {
     dbref thing;
@@ -1959,7 +1962,7 @@ void do_trigger(dbref executor, dbref caller, dbref enactor, int key,
         char *tbuf = alloc_lbuf("trigger.notify_cmd");
         mux_strncpy(tbuf, "@notify/quiet me", LBUF_SIZE-1);
         CLinearTimeAbsolute lta;
-        wait_que(executor, caller, enactor, 0, false, lta, NOTHING, A_SEMAPHORE,
+        wait_que(executor, caller, enactor, eval, false, lta, NOTHING, A_SEMAPHORE,
             tbuf,
             0, NULL,
             mudstate.global_regs);

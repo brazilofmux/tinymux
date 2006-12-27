@@ -263,6 +263,7 @@ Bug Fixes:
     and fixed by Alierak.
  -- Fixed build error in version.cpp (Issue 230).
  -- INFO should show 'Patches' or 'INFO 1', but not both (Issue 236).
+ -- @dolist and @trig were not passing TRACE bit through (Issue 237).
 
 
 Performance Enhancements:
