@@ -28,4 +28,4 @@ Cosmetic Changes:
 
 Miscellaneous:
 ~~~~~~~~~~~~~
- -- Placeholder.
+ -- Documented Lbufref and Regref pools in 'help @list alloc'.
