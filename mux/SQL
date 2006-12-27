@@ -1,14 +1,14 @@
-TinyMUX 2.6:  SQL
-Last Update:  November 2006
+TinyMUX 2.7:  SQL
+Last Update:  December 2006
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 When enabling the Firan support (by doing ./configure --enable-firan) in
-TinyMUX 2.6 and intending to use SQL, there are some things to setup or
+TinyMUX 2.7 and intending to use SQL, there are some things to setup or
 consider.
 
 1) Once you have run './configure --enable-firanmux' you will need to sure
-   that TinyMUX 2.6 can locate the mysql.h and libmysqlclient.a files.  If
-   they are in their default locations then TinyMUX 2.6 can locate and include
+   that TinyMUX 2.7 can locate the mysql.h and libmysqlclient.a files.  If
+   they are in their default locations then TinyMUX 2.7 can locate and include
    them automatically without changes required.  The default locations are
    <DEFAULT LOCATIONS>.
 

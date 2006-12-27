@@ -3,7 +3,7 @@
 /* $Id$ */
 
 /*
- * MUX Source Code (version 2.0 through 2.6).
+ * MUX Source Code (version 2.0 through 2.7).
  * Copyright (C) 1999-2004 by Solid Vertical Domains, Ltd.
  * Copyright (C) 2005-2006 Stephen Dennis
  *
@@ -48,7 +48,7 @@
  * MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
  *
- * TinyMUX 2.6 Copyright: The Artistic License
+ * TinyMUX 2.7 Copyright: The Artistic License
  *
  * Preamble
  *
