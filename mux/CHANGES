@@ -28,4 +28,4 @@ Cosmetic Changes:
 
 Miscellaneous:
 ~~~~~~~~~~~~~
- -- Documented Lbufref and Regref pools in 'help @list alloc'.
+ -- Documented Lbufref and Regref pools in 'wizhelp @list alloc'.
