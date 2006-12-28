@@ -179,7 +179,7 @@ static void Task_RunQueueEntry(void *pEntry, int iUnused)
                     db[executor].cpu_time_used += ltd;
 
                     ltd = ltaEnd - ltaBegin;
-                    if (ltd > mudconf.rpt_cmdsecs)
+                    if (mudconf.rpt_cmdsecs < ltd)
                     {
                         STARTLOG(LOG_PROBLEMS, "CMD", "CPU");
                         log_name_and_loc(executor);
@@ -565,7 +565,7 @@ int nfy_que(dbref sem, int attr, int key, int count)
     }
 
     Notify_Num_Done = 0;
-    if (cSemaphore > 0)
+    if (0 < cSemaphore)
     {
         Notify_Key     = key;
         Notify_Sem     = sem;
@@ -661,7 +661,8 @@ void do_notify
         {
             loccount = 1;
         }
-        if (loccount > 0)
+
+        if (0 < loccount)
         {
             nfy_que(thing, atr, key, loccount);
             if (  (!(Quiet(executor) || Quiet(thing)))
@@ -719,7 +720,7 @@ static BQUE *setup_que
     // limited to QUEUE_QUOTA. -mnp
     //
     a = QueueMax(Owner(executor));
-    if (a_Queue(Owner(executor), 1) > a)
+    if (a < a_Queue(Owner(executor), 1))
     {
         a_Queue(Owner(executor), -1);
 
@@ -748,7 +749,7 @@ static BQUE *setup_que
         tlen = nCommand;
     }
 
-    if (nargs > NUM_ENV_VARS)
+    if (NUM_ENV_VARS < nargs)
     {
         nargs = NUM_ENV_VARS;
     }
@@ -1501,7 +1502,7 @@ void do_queue(dbref executor, dbref caller, dbref enactor, int eval, int key, ch
         {
             return;
         }
-        if (iWarp > 0)
+        if (0 < iWarp)
         {
             notify(executor, tprintf("WaitQ timer advanced %d seconds.", iWarp));
         }
