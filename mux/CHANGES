@@ -8,7 +8,8 @@ Major changes that may affect performance and require softcode tweaks:
 
 Feature Additions:
 ~~~~~~~~~~~~~~~~~
- -- Placeholder.
+ -- Help files support PennMUSH-style multiple topics for each help entry;
+    consecutive &FOO lines refer to the same content (Issue 238).
 
 
 Bug Fixes:
@@ -19,7 +20,8 @@ Bug Fixes:
 
 Performance Enhancements:
 ~~~~~~~~~~~~~~~~~~~~~~~~
- -- Placeholder.
+ -- Help entries use less memory (specific improvements described in
+    Issue 238 comments).
 
 
 Cosmetic Changes:
