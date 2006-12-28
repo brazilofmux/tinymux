@@ -46,14 +46,12 @@ void helpindex_clean(int iHelpfile)
     mudstate.aHelpDesc[iHelpfile].ht = NULL;
 }
 
-static bool bHaveTopic;
 static size_t pos;
 static int lineno;
 static int ntopics;
 static FILE *rfp;
 
 static char Line[LBUF_SIZE];
-static size_t nLine;
 
 static void HelpIndex_Start(FILE *fp)
 {
@@ -61,80 +59,61 @@ static void HelpIndex_Start(FILE *fp)
     lineno = 0;
     ntopics = 0;
     rfp = fp;
-    bHaveTopic = false;
-    nLine = 0;
 }
 
 static bool HelpIndex_Read(size_t *pPos, char **pTopic)
 {
-    *pPos = 0L;
-    *pTopic = NULL;
+    size_t nLine = 0;
 
-    for (;;)
+    while (nLine == 0 || Line[0] != '&')
     {
-        while (nLine == 0)
+        if (fgets(Line, LBUF_SIZE-2, rfp) == NULL)
         {
-            if (fgets(Line, LBUF_SIZE-2, rfp) == NULL)
-            {
-                if (bHaveTopic)
-                {
-                    bHaveTopic = false;
-                    return true;
-                }
-                return false;
-            }
-            ++lineno;
-
-            nLine = strlen(Line);
-            if (  nLine > 0
-               && Line[nLine - 1] != '\n')
-            {
-                Log.tinyprintf("HelpIndex_Read, line %d: line too long\n", lineno);
-            }
+            *pPos = 0L;
+            *pTopic = NULL;
+            return false;
         }
+        ++lineno;
 
-        if (Line[0] == '&')
+        nLine = strlen(Line);
+            pos += nLine;
+        if (  nLine > 0
+           && Line[nLine - 1] != '\n')
         {
-            if (bHaveTopic)
-            {
-                bHaveTopic = false;
-                return true;
-            }
-
-            ++ntopics;
-            char *topic = Line + 1;
-            while (  *topic == ' '
-                  || *topic == '\t'
-                  || *topic == '\r')
-            {
-                topic++;
-            }
-
-            char sane_topic[TOPIC_NAME_LEN+1];
-
-            char   *s = topic;
-            size_t  i = 0;
-            while (  *s != '\n'
-                  && *s != '\r'
-                  && *s != '\0'
-                  && i < TOPIC_NAME_LEN)
-            {
-                if (  *s != ' '
-                   || (  0 < i
-                      && sane_topic[i-1] != ' '))
-                {
-                    sane_topic[i++] = *s;
-                }
-                s++;
-            }
-            sane_topic[i] = '\0';
-            *pTopic = StringClone(sane_topic);
-            *pPos = pos + nLine;
-            bHaveTopic = true;
+            Log.tinyprintf("HelpIndex_Read, line %d: line too long\n", lineno);
         }
-        pos += nLine;
-        nLine = 0;
     }
+
+    ++ntopics;
+    char *topic = Line + 1;
+    while (  *topic == ' '
+          || *topic == '\t'
+          || *topic == '\r')
+    {
+        topic++;
+    }
+
+    char sane_topic[TOPIC_NAME_LEN+1];
+
+    char   *s = topic;
+    size_t  i = 0;
+    while (  *s != '\n'
+          && *s != '\r'
+          && *s != '\0'
+          && i < TOPIC_NAME_LEN)
+    {
+        if (  *s != ' '
+           || (  0 < i
+              && sane_topic[i-1] != ' '))
+        {
+            sane_topic[i++] = *s;
+        }
+        s++;
+    }
+    sane_topic[i] = '\0';
+    *pTopic = StringClone(sane_topic);
+    *pPos = pos;
+    return true;
 }
 
 static void HelpIndex_End(void)
@@ -355,14 +334,27 @@ static bool ReportTopic(dbref executor, struct help_entry *htab_entry, int iHelp
     }
     char *line = alloc_lbuf("ReportTopic");
     char *bp = result;
+    bool bInTopicAliases = true;
     for (;;)
     {
         if (  fgets(line, LBUF_SIZE - 2, fp) == NULL
-           || line[0] == '&'
            || line[0] == '\0')
         {
             break;
         }
+
+        if (line[0] == '&')
+        {
+            if (bInTopicAliases)
+            {
+                continue;
+            }
+            else
+            {
+                break;
+            }
+        }
+        bInTopicAliases = false;
 
         // Transform LF into CRLF to be telnet-friendly.
         //
