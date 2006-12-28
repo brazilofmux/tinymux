@@ -8,12 +8,14 @@ Major changes that may affect performance and require softcode tweaks:
 
 Feature Additions:
 ~~~~~~~~~~~~~~~~~
- -- Placeholder.
+ -- Support optional action list with @break.  Add corresponding
+    @assert command. (Issue 36).
 
 
 Bug Fixes:
 ~~~~~~~~~
- -- Placeholder.
+ -- INFO should show 'Patches' or 'INFO 1', but not both (Issue 236).
+ -- @dolist and @trig were not passing TRACE bit through (Issue 237).
 
 
 Performance Enhancements:
