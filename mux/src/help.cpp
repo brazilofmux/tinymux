@@ -67,6 +67,9 @@ static void HelpIndex_Start(FILE *fp)
 
 static bool HelpIndex_Read(size_t *pPos, char **pTopic)
 {
+    *pPos = 0L;
+    *pTopic = NULL;
+
     for (;;)
     {
         while (nLine == 0)
@@ -199,6 +202,8 @@ static int helpindex_read(int iHelpfile)
                 {
                     continue;
                 }
+
+                hashdeleteLEN(topic, nTopic, htab);
 
                 if (htab_entry->key)
                 {
