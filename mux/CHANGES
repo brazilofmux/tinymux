@@ -32,3 +32,5 @@ Cosmetic Changes:
 Miscellaneous:
 ~~~~~~~~~~~~~
  -- Documented Lbufref and Regref pools in 'wizhelp @list alloc'.
+ -- Documented use of a single backslash as a proper shortcut to
+    @emit (Issue 219).

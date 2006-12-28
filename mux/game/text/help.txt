@@ -13771,15 +13771,15 @@ ZWHO()
 
   Related Topics: inzone(), ZONES.
 
-& \\
-\\
+& \
+\
 
-  COMMAND: \\<message>
+  COMMAND: \<message>
 
   Outputs <message> to everyone in your current room without embellishment.
 
   Example:
-    >\\A chill falls over the room.
+    >\A chill falls over the room.
     A chill falls over the room.
 
   Related Topics: @emit, @oemit, NOSPOOF.
