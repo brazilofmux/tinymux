@@ -125,7 +125,7 @@ static bool HelpIndex_Read(size_t *pPos, char **pTopic)
                 s++;
             }
             sane_topic[i] = '\0';
-	    *pTopic = StringClone(sane_topic);
+            *pTopic = StringClone(sane_topic);
             *pPos = pos + nLine;
             bHaveTopic = true;
         }
@@ -190,25 +190,25 @@ static int helpindex_read(int iHelpfile)
                 continue;
             }
 
-	    struct help_entry *htab_entry =
-	      (struct help_entry *)hashfindLEN(topic, nTopic, htab);
+            struct help_entry *htab_entry =
+              (struct help_entry *)hashfindLEN(topic, nTopic, htab);
 
             if (htab_entry)
             {
                 if (!bOriginal)
                 {
-		    continue;
+                    continue;
                 }
 
                 if (htab_entry->key)
                 {
                     MEMFREE(htab_entry->key);
-		    htab_entry->key = NULL;
-		    Log.tinyprintf("helpindex_read: duplicate %s entries for %s\n", szTextFilename, topic);
-		}
-		delete htab_entry;
-		htab_entry = NULL;
-	    }
+                    htab_entry->key = NULL;
+                    Log.tinyprintf("helpindex_read: duplicate %s entries for %s\n", szTextFilename, topic);
+                }
+                delete htab_entry;
+                htab_entry = NULL;
+            }
 
             try
             {
@@ -225,7 +225,7 @@ static int helpindex_read(int iHelpfile)
                 htab_entry->key = bOriginal ? topic : NULL;
                 bOriginal = false;
 
-		hashaddLEN(topic, nTopic, htab_entry, htab);
+                hashaddLEN(topic, nTopic, htab_entry, htab);
             }
         }
 
