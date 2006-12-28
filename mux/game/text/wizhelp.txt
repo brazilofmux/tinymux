@@ -4687,19 +4687,6 @@ TERSE_SHOWS_CONTENTS
   Related Topics: look_obey_terse, terse_shows_exits,
                   terse_shows_move_messages.
 
-& TERSE_SHOWS_CONTENTS
-TERSE_SHOWS_CONTENTS
-
-  CONFIG PARAMETER: terse_shows_contents <yes/no>
-  DEFAULT: yes
-
-  Indicates whether or not to suppress the listing of a location's contents
-  when producing TERSE output (whether from an automatic look or a 'real'
-  look if look_obey_terse is turned on.
-
-  Related Topics: look_obey_terse, terse_shows_exits,
-                  terse_shows_move_messages.
-
 & TERSE_SHOWS_EXITS
 TERSE_SHOWS_EXITS
 
