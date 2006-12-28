@@ -524,6 +524,39 @@ Related Topics: @name.
 
   Related Topics: give, @agfail, @gfail, @ogfail, @orfail, @rfail, @lock.
 
+& @ASSERT
+@ASSERT
+
+  COMMAND: @assert <boolean>[=<action list>]
+
+  @assert stops the execution of further commands in the current action
+  list if its argument is a false value.  It doesn't affect new queue
+  entries made by previous commands in the action list.  Very useful to
+  people who don't like @switch.  If <action list> is given, they are
+  executed instead of the rest of the commands in the current action list.
+
+  Examples:
+    > @va obj=$testme *:@pemit %#=Before;@assert %0;@pemit %#=After
+    > testme 1
+    Before
+    After
+    > testme 0
+    Before
+
+    > @force me={@switch 1=1,think 3rd;think 1st;@assert 0;think 2nd}
+    1st
+    3rd
+
+  In the last example, the @switch is run, which queues 'think 3rd',
+  'think 1st' is run, displaying '1st', command execution is broken
+  (so we never 'think 2nd', and then the queued 'think 3rd' is run,
+  displaying '3rd'.
+
+  If you follow that, you have a very good understanding of the
+  TinyMUX queue.
+
+  Related Topics: @break, BOOLEAN VALUES
+
 & @ASUCCESS
 @ASUCCESS
 
@@ -630,12 +663,13 @@ Related Topics: @name.
 & @BREAK
 @BREAK
 
-  COMMAND: @break <boolean>
+  COMMAND: @break <boolean>[=<action list>]
 
   @break stops the execution of further commands in the current action
-  list if its argument is a true value. It doesn't affect new queue
-  entries made by previous commands in the action list. Very useful to
-  people who don't like @switch.
+  list if its argument is a true value.  It doesn't affect new queue
+  entries made by previous commands in the action list.  Very useful to
+  people who don't like @switch. If <action list> is given, they are
+  executed instead of the rest of the commands in the current action list.
 
   Examples:
     > @va obj=$testme *:@pemit %#=Before;@break %0;@pemit %#=After
@@ -655,9 +689,9 @@ Related Topics: @name.
   displaying '3rd'.
 
   If you follow that, you have a very good understanding of the
-  TinyMUX queue. :)
+  TinyMUX queue.
 
-  Related Topics: BOOLEAN VALUES
+  Related Topics: @assert, BOOLEAN VALUES
 
 & @CBOOT
 @CBOOT
@@ -5187,17 +5221,17 @@ COMMANDS
   version      whisper      WHO          "            :            ;
   &            #            \\
 
-  @@           @backup      @break       @cemit       @chown       @chzone
-  @clone       @cpattr      @create      @decompile   @destroy     @dig
-  @doing       @dolist      @drain       @edit        @email       @emit
-  @entrances   @femit       @find        @force       @fpose       @fsay
-  @halt        @htdesc      @if          @last        @link        @list
-  @listmotd    @lock        @mail        @mvattr      @name        @nemit
-  @notify      @npemit      @oemit       @open        @parent      @password
-  @pemit       @power       @program     @ps          @quitprogram @quota
-  @remit       @robot       @search      @set         @stats       @sweep
-  @switch      @teleport    @timecheck   @trigger     @unlink      @unlock
-  @verb        @vrml_url    @wait        @wipe
+  @@           @assert      @backup      @break       @cemit       @chown
+  @chzone      @clone       @cpattr      @create      @decompile   @destroy
+  @dig         @doing       @dolist      @drain       @edit        @email
+  @emit        @entrances   @femit       @find        @force       @fpose
+  @fsay        @halt        @htdesc      @if          @last        @link
+  @list        @listmotd    @lock        @mail        @mvattr      @name
+  @nemit       @notify      @npemit      @oemit       @open        @parent
+  @password    @pemit       @power       @program     @ps          @quitprogram
+  @quota       @remit       @robot       @search      @set         @stats
+  @sweep       @switch      @teleport    @timecheck   @trigger     @unlink
+  @unlock      @verb        @vrml_url    @wait        @wipe
 
 { 'help commands2' for more }
 

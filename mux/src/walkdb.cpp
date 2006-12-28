@@ -16,12 +16,12 @@
 // Cmds run in low-prio Q after a 1 sec delay for the first one.
 //
 static void bind_and_queue(dbref executor, dbref caller, dbref enactor,
-                           char *action, char *argstr, char *cargs[],
+                           int eval, char *action, char *argstr, char *cargs[],
                            int ncargs, int number)
 {
     char *command = replace_tokens(action, argstr, mux_ltoa_t(number), NULL);
     CLinearTimeAbsolute lta;
-    wait_que(executor, caller, enactor, 0, false, lta, NOTHING, 0,
+    wait_que(executor, caller, enactor, eval, false, lta, NOTHING, 0,
         command,
         ncargs, cargs,
         mudstate.global_regs);
@@ -66,7 +66,7 @@ void do_dolist(dbref executor, dbref caller, dbref enactor, int eval, int key,
         {
             number++;
             objstring = parse_to(&curr, delimiter, EV_STRIP_CURLY);
-            bind_and_queue(executor, caller, enactor, command, objstring,
+            bind_and_queue(executor, caller, enactor, eval, command, objstring,
                 cargs, ncargs, number);
         }
     }
@@ -1167,7 +1167,7 @@ void do_apply_marked( dbref executor, dbref caller, dbref enactor, int eval,
             buff[0] = '#';
             mux_ltoa(i, buff+1);
             number++;
-            bind_and_queue(executor, caller, enactor, command, buff,
+            bind_and_queue(executor, caller, enactor, eval, command, buff,
                 cargs, ncargs, number);
         }
     }

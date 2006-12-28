@@ -2539,9 +2539,10 @@ void did_it(dbref player, dbref thing, int what, const char *def, int owhat,
  * do_verb: Command interface to did_it.
  */
 
-void do_verb(dbref executor, dbref caller, dbref enactor, int key,
+void do_verb(dbref executor, dbref caller, dbref enactor, int eval, int key,
              char *victim_str, char *args[], int nargs)
 {
+    UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(key);
 

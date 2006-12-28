@@ -8,12 +8,16 @@ Major changes that may affect performance and require softcode tweaks:
 
 Feature Additions:
 ~~~~~~~~~~~~~~~~~
+ -- Support optional action list with @break.  Add corresponding
+    @assert command. (Issue 36).
  -- Help files support PennMUSH-style multiple topics for each help entry;
     consecutive &FOO lines refer to the same content (Issue 238).
 
 
 Bug Fixes:
 ~~~~~~~~~
+ -- INFO should show 'Patches' or 'INFO 1', but not both (Issue 236).
+ -- @dolist and @trig were not passing TRACE bit through (Issue 237).
  -- Using \ as a shortcut to @emit no longer causes the beginning of the
     message to be escaped (Issue 219).
 

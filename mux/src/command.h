@@ -11,7 +11,7 @@
 #define CMD_ONE_ARG_CMDARG(name)      extern void name(dbref executor, dbref caller, dbref enactor, int eval, int, char *, char *[], int)
 #define CMD_TWO_ARG(name)             extern void name(dbref executor, dbref caller, dbref enactor, int, int, char *, char *)
 #define CMD_TWO_ARG_CMDARG(name)      extern void name(dbref executor, dbref caller, dbref enactor, int eval, int, char *, char *, char*[], int)
-#define CMD_TWO_ARG_ARGV(name)        extern void name(dbref executor, dbref caller, dbref enactor, int, char *, char *[], int)
+#define CMD_TWO_ARG_ARGV(name)        extern void name(dbref executor, dbref caller, dbref enactor, int eval, int, char *, char *[], int)
 #define CMD_TWO_ARG_ARGV_CMDARG(name) extern void name(dbref executor, dbref caller, dbref enactor, int eval, int, char *, char *[], int, char*[], int)
 
 /* Command function handlers */
@@ -143,7 +143,8 @@ CMD_NO_ARG(do_dbclean);         /* Remove stale vattr entries */
 CMD_TWO_ARG(do_addcommand);     /* Add or replace a global command */
 CMD_TWO_ARG(do_delcommand);     /* Delete an added global command */
 CMD_ONE_ARG(do_listcommands);   /* List added global commands */
-CMD_ONE_ARG(do_break);          /* Stop evaluating an action list */
+CMD_TWO_ARG_CMDARG(do_assert);  /* Stop evaluating an action list */
+CMD_TWO_ARG_CMDARG(do_break);   /* Stop evaluating an action list */
 #ifdef REALITY_LVLS
 CMD_TWO_ARG(do_rxlevel);        /* set Rx Levels */
 CMD_TWO_ARG(do_txlevel);        /* set Tx Levels */
@@ -218,7 +219,7 @@ typedef struct
     int     extra;
     int     callseq;
     int     hookmask;
-    void    (*handler)(dbref executor, dbref caller, dbref enactor, int, char *, char *[], int);
+    void    (*handler)(dbref executor, dbref caller, dbref enactor, int eval, int, char *, char *[], int);
 } CMDENT_TWO_ARG_ARGV;
 
 typedef struct
