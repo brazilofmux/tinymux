@@ -17,10 +17,9 @@
 //
 struct help_entry
 {
-    size_t pos;       // Position, copied from help_indx
-    char   original;  // 1 for the longest name for a topic. 0 for
-                      // abbreviations.
-    char *key;        // The key this is stored under.
+    size_t pos;       // Position in file.
+    char *key;        // The key this is stored under. NULL if this is an
+                      // automatically generated initial substring alias.
 };
 
 void helpindex_clean(int iHelpfile)
@@ -35,8 +34,11 @@ void helpindex_clean(int iHelpfile)
          htab_entry;
          htab_entry = (struct help_entry *)hash_nextentry(htab))
     {
-        MEMFREE(htab_entry->key);
-        htab_entry->key = NULL;
+        if (htab_entry->key)
+        {
+            MEMFREE(htab_entry->key);
+            htab_entry->key = NULL;
+        }
         delete htab_entry;
         htab_entry = NULL;
     }
@@ -50,8 +52,7 @@ static int lineno;
 static int ntopics;
 static FILE *rfp;
 
-#define LINE_SIZE 4096
-static char Line[LINE_SIZE + 1];
+static char Line[LBUF_SIZE];
 static size_t nLine;
 
 static void HelpIndex_Start(FILE *fp)
@@ -64,17 +65,16 @@ static void HelpIndex_Start(FILE *fp)
     nLine = 0;
 }
 
-static bool HelpIndex_Read(help_indx *pEntry)
+static bool HelpIndex_Read(size_t *pPos, char **pTopic)
 {
     for (;;)
     {
         while (nLine == 0)
         {
-            if (fgets(Line, LINE_SIZE, rfp) == NULL)
+            if (fgets(Line, LBUF_SIZE-2, rfp) == NULL)
             {
                 if (bHaveTopic)
                 {
-                    pEntry->len = (int)(pos - pEntry->pos);
                     bHaveTopic = false;
                     return true;
                 }
@@ -94,7 +94,6 @@ static bool HelpIndex_Read(help_indx *pEntry)
         {
             if (bHaveTopic)
             {
-                pEntry->len = (int)(pos - pEntry->pos);
                 bHaveTopic = false;
                 return true;
             }
@@ -108,7 +107,7 @@ static bool HelpIndex_Read(help_indx *pEntry)
                 topic++;
             }
 
-            memset(pEntry->topic, 0, sizeof(pEntry->topic));
+            char sane_topic[TOPIC_NAME_LEN+1];
 
             char   *s = topic;
             size_t  i = 0;
@@ -119,14 +118,15 @@ static bool HelpIndex_Read(help_indx *pEntry)
             {
                 if (  *s != ' '
                    || (  0 < i
-                      && pEntry->topic[i-1] != ' '))
+                      && sane_topic[i-1] != ' '))
                 {
-                    pEntry->topic[i++] = *s;
+                    sane_topic[i++] = *s;
                 }
                 s++;
             }
-            pEntry->topic[i] = '\0';
-            pEntry->pos = pos + nLine;
+            sane_topic[i] = '\0';
+	    *pTopic = StringClone(sane_topic);
+            *pPos = pos + nLine;
             bHaveTopic = true;
         }
         pos += nLine;
@@ -152,7 +152,8 @@ static int helpindex_read(int iHelpfile)
     char szTextFilename[SBUF_SIZE+8];
     mux_sprintf(szTextFilename, sizeof(szTextFilename), "%s.txt", mudstate.aHelpDesc[iHelpfile].pBaseFilename);
 
-    help_indx entry;
+    char *topic;
+    size_t pos;
 
     FILE *fp;
     if (!mux_fopen(&fp, szTextFilename, "rb"))
@@ -168,7 +169,7 @@ static int helpindex_read(int iHelpfile)
     DebugTotalFiles++;
     int count = 0;
     HelpIndex_Start(fp);
-    while (HelpIndex_Read(&entry))
+    while (HelpIndex_Read(&pos, &topic))
     {
         // Convert the entry to all lowercase letters and add all leftmost
         // substrings.
@@ -178,18 +179,37 @@ static int helpindex_read(int iHelpfile)
         // we do not associate prefixes with this topic if they have already
         // been used on a previous topic.
         //
-        mux_strlwr(entry.topic);
+        mux_strlwr(topic);
         bool bOriginal = true; // First is the longest.
-        size_t nTopic = strlen(entry.topic);
+        size_t nTopic = strlen(topic);
 
-        for (nTopic = strlen(entry.topic); nTopic > 0; nTopic--)
+        for (nTopic = strlen(topic); nTopic > 0; nTopic--)
         {
-            if (mux_isspace(entry.topic[nTopic-1]))
+            if (mux_isspace(topic[nTopic-1]))
             {
                 continue;
             }
 
-            struct help_entry *htab_entry = NULL;
+	    struct help_entry *htab_entry =
+	      (struct help_entry *)hashfindLEN(topic, nTopic, htab);
+
+            if (htab_entry)
+            {
+                if (!bOriginal)
+                {
+		    continue;
+                }
+
+                if (htab_entry->key)
+                {
+                    MEMFREE(htab_entry->key);
+		    htab_entry->key = NULL;
+		    Log.tinyprintf("helpindex_read: duplicate %s entries for %s\n", szTextFilename, topic);
+		}
+		delete htab_entry;
+		htab_entry = NULL;
+	    }
+
             try
             {
                 htab_entry = new struct help_entry;
@@ -199,26 +219,19 @@ static int helpindex_read(int iHelpfile)
                 ; // Nothing.
             }
 
-            if (NULL != htab_entry)
+            if (htab_entry)
             {
-                htab_entry->pos = entry.pos;
-                htab_entry->original = bOriginal;
+                htab_entry->pos = pos;
+                htab_entry->key = bOriginal ? topic : NULL;
                 bOriginal = false;
-                htab_entry->key = StringCloneLen(entry.topic, nTopic);
 
-                if (!hashfindLEN(entry.topic, nTopic, htab))
-                {
-                    hashaddLEN(entry.topic, nTopic, htab_entry, htab);
-                    count++;
-                }
-                else
-                {
-                    MEMFREE(htab_entry->key);
-                    htab_entry->key = NULL;
-                    delete htab_entry;
-                    htab_entry = NULL;
-                }
+		hashaddLEN(topic, nTopic, htab_entry, htab);
             }
+        }
+
+        if (bOriginal)
+        {
+            MEMFREE(topic);
         }
     }
     HelpIndex_End();
@@ -274,7 +287,7 @@ static void ReportMatchedTopics(dbref executor, const char *topic, CHashTable *h
          htab_entry = (struct help_entry *)hash_nextentry(htab))
     {
         mudstate.wild_invk_ctr = 0;
-        if (  htab_entry->original
+        if (  htab_entry->key
            && quick_wild(topic, htab_entry->key))
         {
             if (!matched)
