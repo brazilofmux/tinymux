@@ -797,6 +797,10 @@ static void announce_connect(dbref player, DESC *d)
     // Reset vacation flag.
     //
     s_Flags(player, FLAG_WORD2, Flags2(player) & ~VACATION);
+    if (Guest(player))
+    {
+        db[player].fs.word[FLAG_WORD1] &= ~DARK;
+    }
 
     char *pRoomAnnounceFmt;
     char *pMonitorAnnounceFmt;
@@ -948,10 +952,6 @@ static void announce_connect(dbref player, DESC *d)
     }
     look_in(player, Location(player), (LK_SHOWEXIT|LK_OBEYTERSE|LK_SHOWVRML));
     mudstate.curr_enactor = temp;
-    if (Guest(player))
-    {
-        db[player].fs.word[FLAG_WORD1] &= ~DARK;
-    }
 }
 
 void announce_disconnect(dbref player, DESC *d, const char *reason)
