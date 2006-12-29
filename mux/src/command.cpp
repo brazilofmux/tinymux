@@ -537,6 +537,7 @@ static NAMETAB wait_sw[] =
 static NAMETAB verb_sw[] =
 {
     {"no_name",         3,  CA_PUBLIC,   VERB_NONAME},
+    { NULL,             0,          0,   0}
 };
 
 static NAMETAB wall_sw[] =
