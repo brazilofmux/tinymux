@@ -25,10 +25,11 @@ struct help_entry
 void helpindex_clean(int iHelpfile)
 {
     CHashTable *htab = mudstate.aHelpDesc[iHelpfile].ht;
-    if (htab == NULL)
+    if (NULL == htab)
     {
         return;
     }
+
     struct help_entry *htab_entry;
     for (htab_entry = (struct help_entry *)hash_firstentry(htab);
          htab_entry;
@@ -65,7 +66,8 @@ static bool HelpIndex_Read(size_t *pPos, char **pTopic)
 {
     size_t nLine = 0;
 
-    while (nLine == 0 || Line[0] != '&')
+    while (  0 == nLine
+          || '&' != Line[0])
     {
         if (fgets(Line, LBUF_SIZE-2, rfp) == NULL)
         {
@@ -76,9 +78,9 @@ static bool HelpIndex_Read(size_t *pPos, char **pTopic)
         ++lineno;
 
         nLine = strlen(Line);
-            pos += nLine;
-        if (  nLine > 0
-           && Line[nLine - 1] != '\n')
+        pos += nLine;
+        if (  0 < nLine
+           && '\n' != Line[nLine - 1])
         {
             Log.tinyprintf("HelpIndex_Read, line %d: line too long\n", lineno);
         }
@@ -86,9 +88,9 @@ static bool HelpIndex_Read(size_t *pPos, char **pTopic)
 
     ++ntopics;
     char *topic = Line + 1;
-    while (  *topic == ' '
-          || *topic == '\t'
-          || *topic == '\r')
+    while (  ' '  == *topic
+          || '\t' == *topic
+          || '\r' == *topic)
     {
         topic++;
     }
@@ -97,14 +99,14 @@ static bool HelpIndex_Read(size_t *pPos, char **pTopic)
 
     char   *s = topic;
     size_t  i = 0;
-    while (  *s != '\n'
-          && *s != '\r'
-          && *s != '\0'
+    while (  '\n' != *s
+          && '\r' != *s
+          && '\0' != *s
           && i < TOPIC_NAME_LEN)
     {
-        if (  *s != ' '
+        if (  ' ' != *s
            || (  0 < i
-              && sane_topic[i-1] != ' '))
+              && ' ' != sane_topic[i-1]))
         {
             sane_topic[i++] = *s;
         }
@@ -132,7 +134,8 @@ static int helpindex_read(int iHelpfile)
     CHashTable *htab = mudstate.aHelpDesc[iHelpfile].ht;
 
     char szTextFilename[SBUF_SIZE+8];
-    mux_sprintf(szTextFilename, sizeof(szTextFilename), "%s.txt", mudstate.aHelpDesc[iHelpfile].pBaseFilename);
+    mux_sprintf(szTextFilename, sizeof(szTextFilename), "%s.txt",
+        mudstate.aHelpDesc[iHelpfile].pBaseFilename);
 
     char *topic;
     size_t pos;
@@ -165,7 +168,7 @@ static int helpindex_read(int iHelpfile)
         bool bOriginal = true; // First is the longest.
         size_t nTopic = strlen(topic);
 
-        for (nTopic = strlen(topic); nTopic > 0; nTopic--)
+        for (nTopic = strlen(topic); 0 < nTopic; nTopic--)
         {
             if (mux_isspace(topic[nTopic-1]))
             {
@@ -338,12 +341,12 @@ static bool ReportTopic(dbref executor, struct help_entry *htab_entry, int iHelp
     for (;;)
     {
         if (  fgets(line, LBUF_SIZE - 2, fp) == NULL
-           || line[0] == '\0')
+           || '\0' == line[0])
         {
             break;
         }
 
-        if (line[0] == '&')
+        if ('&' == line[0])
         {
             if (bInTopicAliases)
             {
