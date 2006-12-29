@@ -20,6 +20,8 @@ Bug Fixes:
  -- @dolist and @trig were not passing TRACE bit through (Issue 237).
  -- Using \ as a shortcut to @emit no longer causes the beginning of the
     message to be escaped (Issue 219).
+ -- @verb/no_name used unterminated verb_sw table (Issued 243).
+ -- Guest objects left DARK through announcement code (Issue 244).
 
 
 Performance Enhancements:
