@@ -83,56 +83,6 @@ static bool sp_ok(dbref player)
     return true;
 }
 
-static void wall_broadcast(int target, dbref player, char *message)
-{
-    DESC *d;
-    DESC_ITER_CONN(d)
-    {
-        switch (target)
-        {
-        case SHOUT_WIZARD:
-
-            if (Wizard(d->player))
-            {
-                notify_with_cause(d->player, player, message);
-            }
-            break;
-
-        case SHOUT_ADMIN:
-
-            if (WizRoy(d->player))
-            {
-                notify_with_cause(d->player, player, message);
-            }
-            break;
-
-        default:
-
-            notify_with_cause(d->player, player, message);
-            break;
-        }
-    }
-}
-
-static void say_shout(int target, const char *prefix, int flags,
-    dbref player, char *message)
-{
-    char *p;
-    if (flags & SAY_NOTAG)
-    {
-        p = tprintf("%s%s", Moniker(player), message);
-    }
-    else
-    {
-        p = tprintf("%s%s%s", prefix, Moniker(player), message);
-    }
-    wall_broadcast(target, player, p);
-}
-
-static const char *announce_msg = "Announcement: ";
-static const char *broadcast_msg = "Broadcast: ";
-static const char *admin_msg = "Admin: ";
-
 void do_think(dbref executor, dbref caller, dbref enactor, int eval, int key,
     char *message)
 {
@@ -168,8 +118,8 @@ void do_say(dbref executor, dbref caller, dbref enactor, int eval, int key, char
 
     // Convert prefix-coded messages into the normal type
     //
-    say_flags = key & (SAY_NOEVAL | SAY_NOTAG | SAY_HERE | SAY_ROOM | SAY_HTML);
-    key &= ~(SAY_NOEVAL | SAY_NOTAG | SAY_HERE | SAY_ROOM | SAY_HTML);
+    say_flags = key & (SAY_NOEVAL | SAY_HERE | SAY_ROOM | SAY_HTML);
+    key &= ~(SAY_NOEVAL | SAY_HERE | SAY_ROOM | SAY_HTML);
 
     if (key == SAY_PREFIX)
     {
@@ -342,6 +292,40 @@ void do_say(dbref executor, dbref caller, dbref enactor, int eval, int key, char
     }
 }
 
+static void wall_broadcast(int target, dbref player, char *message)
+{
+    DESC *d;
+    DESC_ITER_CONN(d)
+    {
+        switch (target)
+        {
+        case SHOUT_WIZARD:
+
+            if (Wizard(d->player))
+            {
+                notify_with_cause(d->player, player, message);
+            }
+            break;
+
+        case SHOUT_ADMIN:
+
+            if (WizRoy(d->player))
+            {
+                notify_with_cause(d->player, player, message);
+            }
+            break;
+
+        default:
+
+            notify_with_cause(d->player, player, message);
+            break;
+        }
+    }
+}
+
+static const char *announce_msg = "Announcement: ";
+static const char *broadcast_msg = "Broadcast: ";
+static const char *admin_msg = "Admin: ";
 
 void do_shout(dbref executor, dbref caller, dbref enactor, int eval, int key,
     char *message)
@@ -350,189 +334,117 @@ void do_shout(dbref executor, dbref caller, dbref enactor, int eval, int key,
     UNUSED_PARAMETER(enactor);
     UNUSED_PARAMETER(eval);
 
-    char *p;
+    char *p, *messageNew = NULL;
     char *buf2, *bp;
-    int say_flags = key & (SAY_NOTAG | SAY_HERE | SAY_ROOM | SAY_HTML);
-    key &= ~(SAY_NOTAG | SAY_HERE | SAY_ROOM | SAY_HTML);
-
-    // Parse speechmod if present.
-    //
-    char *messageNew = modSpeech(executor, message, true, "@wall");
-    if (messageNew)
-    {
-        message = messageNew;
-    }
+    bool bNoTag = (key & SHOUT_NOTAG)   ? true : false;
+    bool bEmit  = (key & SHOUT_EMIT)    ? true : false;
+    bool bPose  = (key & SHOUT_POSE)    ? true : false;
+    bool bSpace = !bEmit;
+    key &= ~(SHOUT_NOTAG | SHOUT_POSE | SHOUT_EMIT);
+    static const char *prefix, *loghead, *logtext1, *logsay, *saystring;
 
     switch (key)
     {
-    case SHOUT_SHOUT:
-        switch (*message)
-        {
-        case ':':
-            message[0] = ' ';
-            say_shout(0, announce_msg, say_flags, executor, message);
-            break;
-
-        case ';':
-            message++;
-            say_shout(0, announce_msg, say_flags, executor, message);
-            break;
-
-        case '"':
-            message++;
-
-        default:
-            buf2 = alloc_lbuf("do_shout.shout");
-            bp = buf2;
-            safe_str(" shouts, \"", buf2, &bp);
-            safe_str(message, buf2, &bp);
-            safe_chr('"', buf2, &bp);
-            *bp = '\0';
-            say_shout(0, announce_msg, say_flags, executor, buf2);
-            free_lbuf(buf2);
-        }
-        STARTLOG(LOG_SHOUTS, "WIZ", "SHOUT");
-        log_name(executor);
-        log_text(" shouts: ");
-        log_text(message);
-        ENDLOG;
+    case SHOUT_DEFAULT:
+        prefix = announce_msg;
+        loghead = "SHOUT";
+        logtext1 = " WALL";
+        logsay = " shouts: ";
+        saystring = "shouts, \"";
         break;
 
-    case SHOUT_WIZSHOUT:
-        switch (*message)
-        {
-        case ':':
-            message[0] = ' ';
-            say_shout(SHOUT_WIZARD, broadcast_msg, say_flags, executor,
-                  message);
-            break;
-        case ';':
-            message++;
-            say_shout(SHOUT_WIZARD, broadcast_msg, say_flags, executor,
-                  message);
-            break;
-        case '"':
-            message++;
-        default:
-            buf2 = alloc_lbuf("do_shout.wizshout");
-            bp = buf2;
-            safe_str(" says, \"", buf2, &bp);
-            safe_str(message, buf2, &bp);
-            safe_chr('"', buf2, &bp);
-            *bp = '\0';
-            say_shout(SHOUT_WIZARD, broadcast_msg, say_flags, executor, buf2);
-            free_lbuf(buf2);
-        }
-        STARTLOG(LOG_SHOUTS, "WIZ", "BCAST");
-        log_name(executor);
-        log_text(" broadcasts: '");
-        log_text(message);
-        log_text("'");
-        ENDLOG;
+    case SHOUT_WIZARD:
+        prefix = broadcast_msg;
+        loghead = "BCAST";
+        logtext1 = " WIZ";
+        logsay = " broadcasts: ";
+        saystring = "says, \"";
         break;
 
-    case SHOUT_ADMINSHOUT:
-        switch (*message)
-        {
-        case ':':
-            message[0] = ' ';
-            say_shout(SHOUT_ADMIN, admin_msg, say_flags, executor,
-                  message);
-            break;
-        case ';':
-            message++;
-            say_shout(SHOUT_ADMIN, admin_msg, say_flags, executor,
-                  message);
-            break;
-        case '"':
-            message++;
-        default:
-            buf2 = alloc_lbuf("do_shout.adminshout");
-            bp = buf2;
-            safe_str(" says, \"", buf2, &bp);
-            safe_str(message, buf2, &bp);
-            safe_chr('"', buf2, &bp);
-            *bp = '\0';
-            say_shout(SHOUT_ADMIN, admin_msg, say_flags, executor,
-                  buf2);
-            free_lbuf(buf2);
-        }
-        STARTLOG(LOG_SHOUTS, "WIZ", "ASHOUT");
-        log_name(executor);
-        log_text(" yells: ");
-        log_text(message);
-        ENDLOG;
-        break;
-
-    case SHOUT_WALLPOSE:
-        if (say_flags & SAY_NOTAG)
-        {
-            p = tprintf("%s %s", Moniker(executor), message);
-        }
-        else
-        {
-            p = tprintf("Announcement: %s %s", Moniker(executor),
-                message);
-        }
-        wall_broadcast(0, executor, p);
-        STARTLOG(LOG_SHOUTS, "WIZ", "SHOUT");
-        log_name(executor);
-        log_text(" WALLposes: ");
-        log_text(message);
-        ENDLOG;
-        break;
-
-    case SHOUT_WIZPOSE:
-        if (say_flags & SAY_NOTAG)
-        {
-            p = tprintf("%s %s", Moniker(executor), message);
-        }
-        else
-        {
-            p = tprintf("Broadcast: %s %s", Moniker(executor), message);
-        }
-        wall_broadcast(SHOUT_WIZARD, executor, p);
-        STARTLOG(LOG_SHOUTS, "WIZ", "BCAST");
-        log_name(executor);
-        log_text(" WIZposes: ");
-        log_text(message);
-        ENDLOG;
-        break;
-
-    case SHOUT_WALLEMIT:
-        if (say_flags & SAY_NOTAG)
-        {
-            p = tprintf("%s", message);
-        }
-        else
-        {
-            p = tprintf("Announcement: %s", message);
-        }
-        wall_broadcast(0, executor, p);
-        STARTLOG(LOG_SHOUTS, "WIZ", "SHOUT");
-        log_name(executor);
-        log_text(" WALLemits: ");
-        log_text(message);
-        ENDLOG;
-        break;
-
-    case SHOUT_WIZEMIT:
-        if (say_flags & SAY_NOTAG)
-        {
-            p = tprintf("%s", message);
-        }
-        else
-        {
-            p = tprintf("Broadcast: %s", message);
-        }
-        wall_broadcast(SHOUT_WIZARD, executor, p);
-        STARTLOG(LOG_SHOUTS, "WIZ", "BCAST");
-        log_name(executor);
-        log_text(" WIZemit: ");
-        log_text(message);
-        ENDLOG;
+    case SHOUT_ADMIN:
+        prefix = admin_msg;
+        loghead = "ASHOUT";
+        logtext1 = " ADMIN";
+        logsay = " yells: ";
+        saystring = "says, \"";
         break;
     }
+
+    if (bNoTag)
+    {
+        prefix = "";
+    }
+
+    if (bEmit || bPose)
+    {
+        // Parse speechmod if present.
+        //
+        messageNew = modSpeech(executor, message, true, "@wall");
+        if (messageNew)
+        {
+            message = messageNew;
+        }
+        p = tprintf("%s%s%s%s", prefix, bEmit ? "" : Moniker(executor), bSpace ? " " : "", message);
+        wall_broadcast(key, executor, p);
+    }
+    else
+    {
+        switch (*message)
+        {
+        case ';':
+            bSpace = false;
+
+        case ':':
+            bPose = true;
+
+        case '"':
+            message++;
+
+        default:
+            // Parse speechmod if present.
+            //
+            messageNew = modSpeech(executor, message, true, "@wall");
+            if (messageNew)
+            {
+                message = messageNew;
+            }
+            if (!bPose)
+            {
+                buf2 = alloc_lbuf("do_shout");
+                bp = buf2;
+                safe_str(saystring, buf2, &bp);
+                safe_str(message, buf2, &bp);
+                safe_chr('"', buf2, &bp);
+                *bp = '\0';
+            }
+            p = tprintf("%s%s%s%s", prefix, bEmit ? "" : Moniker(executor), bSpace ? " " : "", bPose ? message : buf2);
+            wall_broadcast(key, executor, p);
+            if (!bPose)
+            {
+                free_lbuf(buf2);
+            }
+            break;
+        }
+    }
+    STARTLOG(LOG_SHOUTS, "WIZ", loghead);
+    log_name(executor);
+    if (bEmit)
+    {
+        log_text(logtext1);
+        log_text("emits: ");
+    }
+    else if (bPose)
+    {
+        log_text(logtext1);
+        log_text("poses: ");
+    }
+    else
+    {
+        log_text(logsay);
+    }
+    log_text(message);
+    ENDLOG;
+
     if (messageNew)
     {
         free_lbuf(messageNew);
