@@ -536,7 +536,7 @@ static NAMETAB wait_sw[] =
 static NAMETAB verb_sw[] =
 {
     {"no_name",         3,  CA_PUBLIC,   VERB_NONAME},
-    { NULL,             0,          0,  0}
+    { NULL,             0,          0,   0}
 };
 
 static NAMETAB wall_sw[] =
@@ -546,7 +546,7 @@ static NAMETAB wall_sw[] =
     {"no_prefix",       1,  CA_ANNOUNCE, SHOUT_NOTAG|SW_MULTIPLE},
     {"pose",            1,  CA_ANNOUNCE, SHOUT_POSE|SW_MULTIPLE},
     {"wizard",          1,  CA_ANNOUNCE, SHOUT_WIZARD|SW_MULTIPLE},
-    { NULL,             0,          0,  0}
+    { NULL,             0,          0,   0}
 };
 
 static NAMETAB warp_sw[] =
