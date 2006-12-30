@@ -12,6 +12,8 @@ Feature Additions:
     @assert command. (Issue 36).
  -- Help files support PennMUSH-style multiple topics for each help entry;
     consecutive &FOO lines refer to the same content (Issue 238).
+ -- Add lpad(), cpad(), and rpad() functions to duplicate previous
+    non-truncating ljust(), center(), and rjust functionality (Issue 13).
 
 
 Bug Fixes:

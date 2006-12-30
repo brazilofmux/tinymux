@@ -4980,7 +4980,7 @@ CENTER()
     > say center(%xh%xrR%xgG%xbB,31,%xy--%xm+)
     --+--+--+--+--RGB+--+--+--+--+-
 
-  Related Topics: ljust(), rjust().
+  Related Topics: cpad(), ljust(), lpad(), rjust(), rpad().
 
 & CHANNEL OBJECT
 CHANNEL OBJECT
@@ -5697,6 +5697,35 @@ COSTS
   and how much they cost.
 
   Related Topics: @list.
+
+& CPAD()
+CPAD()
+
+  FUNCTION: cpad(<string>, <width>[, <fill>])
+
+  This function centers <string> within a <width>-sized field.
+
+  The background of this field is specified by a repeating pattern of <fill>
+  characters. The origin of this repeating pattern is at the first position
+  of the field. Another way of saying this is that the repeating pattern
+  starts in first position and repeats to the right. The last <fill> pattern
+  may be truncated.
+
+  By default, <fill> is a single, normal-colored space. The color of
+  <string> and <fill> is maintained.
+
+  Unlike center(), if the visual width of <string> is longer than <width> 
+  characters, it is not truncated to fit.
+
+  Example:
+    > say cpad(a,5,-)
+    You say, "--a--"
+    > say cpad(*BAMF*,15)
+    You say, "    *BAMF*     "
+    > say cpad(%xh%xrR%xgG%xbB,31,%xy--%xm+)
+    --+--+--+--+--RGB+--+--+--+--+-
+
+  Related Topics: center(), ljust(), lpad(), rjust(), rpad().
 
 & CRC32()
 CRC32()
@@ -6919,12 +6948,12 @@ FUNCTION CLASSES (continued)
 FUNCTION CLASSES (continued)
 
   Strings:                   ACCENT AFTER ALPHAMAX ALPHAMIN BEFORE CAPSTR CASE
-                             CAT CENTER CHR COMP DECRYPT DELETE EDIT ENCRYPT
-                             ESCAPE GRAB GRABALL IF IFELSE LCSTR LJUST LPOS
-                             MERGE MID ORD POS REGMATCH REGMATCHI REGRAB
-                             REGRABALL REGRABALLI REGRABI REPEAT REPLACE
-                             REVERSE RIGHT RJUST ROMAN SCRAMBLE SECURE SPACE
-                             SPELLNUM SQUISH STRCAT STRIP STRIPACCENTS
+                             CAT CENTER CHR COMP CPAD DECRYPT DELETE EDIT
+                             ENCRYPT ESCAPE GRAB GRABALL IF IFELSE LCSTR LJUST
+                             LPAD LPOS MERGE MID ORD POS REGMATCH REGMATCHI
+                             REGRAB REGRABALL REGRABALLI REGRABI REPEAT REPLACE
+                             REVERSE RIGHT RJUST ROMAN RPAD SCRAMBLE SECURE
+                             SPACE SPELLNUM SQUISH STRCAT STRIP STRIPACCENTS
                              STRIPANSI STRLEN STRMATCH STRMEM STRTRUNC SWITCH
                              TRANSLATE TRIM UCSTR WORDPOS WRAP
 
@@ -8589,7 +8618,7 @@ LJUST()
     > say ljust(%xh%xrR%xgG%xbB,31,%xy--%xm+)
     RGB--+--+--+--+--+--+--+--+--+-
 
-  Related Topics: center(), rjust().
+  Related Topics: center(), cpad(), lpad(), rjust(), rpad().
 
 & LN()
 LN()
@@ -8844,6 +8873,41 @@ LOR()
     You say, "1"
 
   Related Topics: land(), not(), or(), t().
+
+& LPAD()
+LPAD()
+
+  FUNCTION: lpad(<string>, <width>[, <fill>])
+
+  This function left-justifies <string> within a <width>-sized field. That
+  is, it positions <string> visually in the left-most part of a
+  <width>-sized field.
+
+  The background of this field is specified by a repeating pattern of <fill>
+  characters. The origin of this repeating pattern is at the first position
+  of the field. Another way of saying this is that the repeating pattern
+  starts in first position and repeats to the right. The last <fill> pattern
+  may be truncated.
+
+  By default, <fill> is a single, normal-colored space. The color of
+  <string> and <fill> is maintained.
+
+  Unlike ljust(), if the visual width of <string> is longer than <width> 
+  characters, it is not truncated to fit.
+
+  Examples:
+    > say -[lpad(foo,6)]-
+    You say, "-foo   -"
+    > say %r0[lpad(foo,6)]7%r01234567
+    You say, "
+    0foo   7
+    01234567"
+    > say =[lpad(bar,5,.)]=
+    You say, "=bar..="
+    > say lpad(%xh%xrR%xgG%xbB,31,%xy--%xm+)
+    RGB--+--+--+--+--+--+--+--+--+-
+
+  Related Topics: center(), cpad(), ljust(), rjust(), rpad().
 
 & LPARENT()
 LPARENT()
@@ -11250,7 +11314,7 @@ RJUST()
     > say rjust(%xh%xrR%xgG%xbB,31,%xy--%xm+)
     --+--+--+--+--+--+--+--+--+-RGB
 
-  Related Topics: center(), ljust().
+  Related Topics: center(), cpad(), ljust(), lpad(), rpad().
 
 & RLOC()
 RLOC()
@@ -11378,6 +11442,41 @@ ROYALTY
   This flag may only be set by a wizard.
 
   Related Topics:
+
+& RPAD()
+RPAD()
+
+  FUNCTION: rpad(<string>, <width>[, <fill>])
+
+  This function right-justifies <string> within a <width>-sized field. That
+  is, it positions <string> visually in the right-most part of a
+  <width>-sized field.
+
+  The background of this field is specified by a repeating pattern of <fill>
+  characters. The origin of this repeating pattern is at the first position
+  of the field. Another way of saying this is that the repeating pattern
+  starts in first position and repeats to the right. The last <fill> pattern
+  may be truncated.
+
+  By default, <fill> is a single, normal-colored space. The color of
+  <string> and <fill> is maintained.
+
+  Unlike rjust(), if the visual width of <string> is longer than <width>
+  characters, it is not truncated to fit.
+
+  Examples:
+    > say -[rpad(foo,6)]-
+    You say, "-   foo-"
+    > say %r0[rpad(foo,6)]7%r01234567
+    You say, "
+    0   foo7
+    01234567"
+    > say =[rpad(bar,5,.)]=
+    You say, "=..bar="
+    > say rpad(%xh%xrR%xgG%xbB,31,%xy--%xm+)
+    --+--+--+--+--+--+--+--+--+-RGB
+
+  Related Topics: center(), cpad(), ljust(), lpad(), rjust().
 
 & RXLEVEL()
 RXLEVEL()
