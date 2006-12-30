@@ -343,31 +343,30 @@ void do_shout(dbref executor, dbref caller, dbref enactor, int eval, int key,
     key &= ~(SHOUT_NOTAG | SHOUT_POSE | SHOUT_EMIT);
     static const char *prefix, *loghead, *logtext1, *logsay, *saystring;
 
-    switch (key)
+    if (key & SHOUT_ADMIN)
     {
-    case SHOUT_DEFAULT:
-        prefix = announce_msg;
-        loghead = "SHOUT";
-        logtext1 = " WALL";
-        logsay = " shouts: ";
-        saystring = "shouts, \"";
-        break;
-
-    case SHOUT_WIZARD:
-        prefix = broadcast_msg;
-        loghead = "BCAST";
-        logtext1 = " WIZ";
-        logsay = " broadcasts: ";
-        saystring = "says, \"";
-        break;
-
-    case SHOUT_ADMIN:
+        key = SHOUT_ADMIN;      // @wall/wiz/admin is treated as @wall/admin
         prefix = admin_msg;
         loghead = "ASHOUT";
         logtext1 = " ADMIN";
         logsay = " yells: ";
         saystring = "says, \"";
-        break;
+    } 
+    else if (key & SHOUT_WIZARD)
+    {
+        prefix = broadcast_msg;
+        loghead = "BCAST";
+        logtext1 = " WIZ";
+        logsay = " broadcasts: ";
+        saystring = "says, \"";
+    }
+    else
+    {
+        prefix = announce_msg;
+        loghead = "SHOUT";
+        logtext1 = " WALL";
+        logsay = " shouts: ";
+        saystring = "shouts, \"";
     }
 
     if (bNoTag)
@@ -375,56 +374,48 @@ void do_shout(dbref executor, dbref caller, dbref enactor, int eval, int key,
         prefix = "";
     }
 
-    if (bEmit || bPose)
-    {
-        // Parse speechmod if present.
-        //
-        messageNew = modSpeech(executor, message, true, "@wall");
-        if (messageNew)
-        {
-            message = messageNew;
-        }
-        p = tprintf("%s%s%s%s", prefix, bEmit ? "" : Moniker(executor), bSpace ? " " : "", message);
-        wall_broadcast(key, executor, p);
-    }
-    else
+    if (!( bEmit 
+        || bPose))
     {
         switch (*message)
         {
         case ';':
             bSpace = false;
+            // FALL THROUGH
 
         case ':':
             bPose = true;
+            // FALL THROUGH
 
         case '"':
             message++;
-
-        default:
-            // Parse speechmod if present.
-            //
-            messageNew = modSpeech(executor, message, true, "@wall");
-            if (messageNew)
-            {
-                message = messageNew;
-            }
-            if (!bPose)
-            {
-                buf2 = alloc_lbuf("do_shout");
-                bp = buf2;
-                safe_str(saystring, buf2, &bp);
-                safe_str(message, buf2, &bp);
-                safe_chr('"', buf2, &bp);
-                *bp = '\0';
-            }
-            p = tprintf("%s%s%s%s", prefix, bEmit ? "" : Moniker(executor), bSpace ? " " : "", bPose ? message : buf2);
-            wall_broadcast(key, executor, p);
-            if (!bPose)
-            {
-                free_lbuf(buf2);
-            }
             break;
         }
+    }
+    // Parse speechmod if present.
+    //
+    messageNew = modSpeech(executor, message, true, "@wall");
+    if (messageNew)
+    {
+        message = messageNew;
+    }
+    if (!( bEmit 
+        || bPose))
+    {
+        buf2 = alloc_lbuf("do_shout");
+        bp = buf2;
+        safe_str(saystring, buf2, &bp);
+        safe_str(message, buf2, &bp);
+        safe_chr('"', buf2, &bp);
+        *bp = '\0';
+    }
+    p = tprintf("%s%s%s%s", prefix, bEmit ? "" : Moniker(executor), 
+        bSpace ? " " : "", (bEmit || bPose) ? message : buf2);
+    wall_broadcast(key, executor, p);
+    if (!( bEmit 
+        || bPose))
+    {
+        free_lbuf(buf2);
     }
     STARTLOG(LOG_SHOUTS, "WIZ", loghead);
     log_name(executor);
