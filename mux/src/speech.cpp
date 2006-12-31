@@ -334,11 +334,10 @@ void do_shout(dbref executor, dbref caller, dbref enactor, int eval, int key,
     UNUSED_PARAMETER(enactor);
     UNUSED_PARAMETER(eval);
 
-    char *p, *messageNew = NULL;
-    char *buf2, *bp;
+    char *p = NULL, *messageNew = NULL, *buf2 = NULL, *bp = NULL;
     bool bNoTag = (key & SHOUT_NOTAG)   ? true : false;
     bool bEmit  = (key & SHOUT_EMIT)    ? true : false;
-    bool bPose  = (key & SHOUT_POSE)    ? true : false;
+    bool bPose  = (key & SHOUT_POSE)    ? true : bEmit;
     bool bSpace = !bEmit;
     key &= ~(SHOUT_NOTAG | SHOUT_POSE | SHOUT_EMIT);
     static const char *prefix, *loghead, *logtext1, *logsay, *saystring;
@@ -374,8 +373,7 @@ void do_shout(dbref executor, dbref caller, dbref enactor, int eval, int key,
         prefix = "";
     }
 
-    if (!( bEmit 
-        || bPose))
+    if (!bPose)
     {
         switch (*message)
         {
@@ -399,8 +397,7 @@ void do_shout(dbref executor, dbref caller, dbref enactor, int eval, int key,
     {
         message = messageNew;
     }
-    if (!( bEmit 
-        || bPose))
+    if (!bPose)
     {
         buf2 = alloc_lbuf("do_shout");
         bp = buf2;
@@ -410,10 +407,9 @@ void do_shout(dbref executor, dbref caller, dbref enactor, int eval, int key,
         *bp = '\0';
     }
     p = tprintf("%s%s%s%s", prefix, bEmit ? "" : Moniker(executor), 
-        bSpace ? " " : "", (bEmit || bPose) ? message : buf2);
+        bSpace ? " " : "", bPose ? message : buf2);
     wall_broadcast(key, executor, p);
-    if (!( bEmit 
-        || bPose))
+    if (!bPose)
     {
         free_lbuf(buf2);
     }
