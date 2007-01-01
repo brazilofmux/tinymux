@@ -1,5 +1,5 @@
 TinyMUX 2.6:  CHANGES
-Last Update:  December 2006
+Last Update:  January 2007
 
 Major changes that may affect performance and require softcode tweaks:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -265,6 +265,8 @@ Bug Fixes:
  -- INFO should show 'Patches' or 'INFO 1', but not both (Issue 236).
  -- @dolist and @trig were not passing TRACE bit through (Issue 237).
  -- @verb/no_name used unterminated verb_sw table (Issued 243).
+ -- Fix typo in do_say() which left a bit-wise instead of a logical
+    AND operation (Issue 245).
 
 
 Performance Enhancements:
