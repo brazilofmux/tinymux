@@ -350,7 +350,7 @@ void do_shout(dbref executor, dbref caller, dbref enactor, int eval, int key,
         logtext1 = " ADMIN";
         logsay = " yells: ";
         saystring = "says, \"";
-    } 
+    }
     else if (key & SHOUT_WIZARD)
     {
         prefix = broadcast_msg;
@@ -406,7 +406,7 @@ void do_shout(dbref executor, dbref caller, dbref enactor, int eval, int key,
         safe_chr('"', buf2, &bp);
         *bp = '\0';
     }
-    p = tprintf("%s%s%s%s", prefix, bEmit ? "" : Moniker(executor), 
+    p = tprintf("%s%s%s%s", prefix, bEmit ? "" : Moniker(executor),
         bSpace ? " " : "", bPose ? message : buf2);
     wall_broadcast(key, executor, p);
     if (!bPose)

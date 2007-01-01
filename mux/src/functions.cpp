@@ -8019,7 +8019,7 @@ static void centerjustcombo
     size_t nStr = ANSI_TruncateToField(fargs[0], sizeof(aStr), aStr,
         bTrunc ? width : LBUF_SIZE, &vwStr, ANSI_ENDGOAL_NORMAL);
 
-    // If there's no need to pad, then we are done. ANSI_TruncateToField 
+    // If there's no need to pad, then we are done. ANSI_TruncateToField
     // ensures that it's not too long.
     //
     if (width <= vwStr)
