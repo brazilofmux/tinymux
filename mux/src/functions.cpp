@@ -302,50 +302,69 @@ char *split_token(char **sp, SEP *psep)
 #define CI_ASCII_LIST   16
 #define ALL_LIST        (ASCII_LIST|NUMERIC_LIST|DBREF_LIST|FLOAT_LIST)
 
-static int autodetect_list(char *ptrs[], int nitems)
+class AutoDetect
 {
-    int could_be = ALL_LIST;
-    for (int i = 0; i < nitems; i++)
+private:
+    int m_CouldBe;
+
+public:
+    AutoDetect(void);
+    void ExamineList(int nitems, char *ptrs[]);
+    int GetType(void);
+};
+
+AutoDetect::AutoDetect(void)
+{
+    m_CouldBe = ALL_LIST;
+}
+
+void AutoDetect::ExamineList(int nitems, char *ptrs[])
+{
+    for (int i = 0; i < nitems && ASCII_LIST != m_CouldBe; i++)
     {
         char *p = ptrs[i];
         if (p[0] != NUMBER_TOKEN)
         {
-            could_be &= ~DBREF_LIST;
-        }
-        if (  (could_be & DBREF_LIST)
-           && !is_integer(p+1, NULL))
-        {
-            could_be &= ~(DBREF_LIST|NUMERIC_LIST|FLOAT_LIST);
-        }
-        if (  (could_be & FLOAT_LIST)
-           && !is_real(p))
-        {
-            could_be &= ~(NUMERIC_LIST|FLOAT_LIST);
-        }
-        if (  (could_be & NUMERIC_LIST)
-           && !is_integer(p, NULL))
-        {
-            could_be &= ~NUMERIC_LIST;
+            m_CouldBe &= ~DBREF_LIST;
         }
 
-        if (could_be == ASCII_LIST)
+        if (  (m_CouldBe & DBREF_LIST)
+           && !is_integer(p+1, NULL))
         {
-            return ASCII_LIST;
+            m_CouldBe &= ~(DBREF_LIST|NUMERIC_LIST|FLOAT_LIST);
+        }
+
+        if (  (m_CouldBe & FLOAT_LIST)
+           && !is_real(p))
+        {
+            m_CouldBe &= ~(NUMERIC_LIST|FLOAT_LIST);
+        }
+
+        if (  (m_CouldBe & NUMERIC_LIST)
+           && !is_integer(p, NULL))
+        {
+            m_CouldBe &= ~NUMERIC_LIST;
         }
     }
-    if (could_be & NUMERIC_LIST)
+
+    if (m_CouldBe & NUMERIC_LIST)
     {
-        return NUMERIC_LIST;
+        m_CouldBe = NUMERIC_LIST;
     }
-    else if (could_be & FLOAT_LIST)
+    else if (m_CouldBe & FLOAT_LIST)
     {
-        return FLOAT_LIST;
+        m_CouldBe = FLOAT_LIST;
     }
-    else if (could_be & DBREF_LIST)
+    else if (m_CouldBe & DBREF_LIST)
     {
-        return DBREF_LIST;
+        m_CouldBe = DBREF_LIST;
     }
-    return ASCII_LIST;
+    m_CouldBe = ASCII_LIST;
+}
+
+int AutoDetect::GetType(void)
+{
+    return m_CouldBe;
 }
 
 static int get_list_type
@@ -357,25 +376,33 @@ static int get_list_type
     int nitems
 )
 {
-    if (nfargs >= type_pos)
+    if (type_pos <= nfargs)
     {
-        switch (mux_tolower(*fargs[type_pos - 1]))
+        switch (mux_tolower(fargs[type_pos-1][0]))
         {
         case 'd':
             return DBREF_LIST;
+
         case 'n':
             return NUMERIC_LIST;
+
         case 'f':
             return FLOAT_LIST;
+
         case 'i':
             return CI_ASCII_LIST;
+
         case '\0':
-            return autodetect_list(ptrs, nitems);
+            break;
+
         default:
             return ASCII_LIST;
         }
     }
-    return autodetect_list(ptrs, nitems);
+
+    AutoDetect ad;
+    ad.ExamineList(nitems, ptrs);
+    return ad.GetType();
 }
 
 int list2arr(char *arr[], int maxlen, char *list, SEP *psep)
