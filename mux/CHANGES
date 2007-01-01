@@ -1,5 +1,5 @@
 TinyMUX 2.4:  CHANGES
-Last Update:  December 2006
+Last Update:  Januar 2007
 
 Major changes that may affect performance and require softcode tweaks:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -288,6 +288,8 @@ Bug Fixes:
     to much confusion in using reality-levels (Issue 62).
  -- Fixed lbuf leak when @hook attribute is empty (Issue 229).  Found
     and fixed by Alierak.
+ -- Fix typo in do_say() which left a bit-wise instead of a logical
+    AND operation (Issue 245).
 
 
 Performance Enhancements:

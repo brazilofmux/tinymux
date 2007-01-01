@@ -1,6 +1,6 @@
 // speech.cpp -- Commands which involve speaking.
 //
-// $Id: speech.cpp,v 1.22 2006/01/07 08:10:56 sdennis Exp $
+// $Id: speech.cpp,v 1.23 2007/01/01 19:19:29 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -158,7 +158,7 @@ void do_say(dbref executor, dbref caller, dbref enactor, int key, char *message)
     //
     dbref loc = where_is(executor);
     if ( !(  Good_obj(loc)
-            & sp_ok(executor)))
+          && sp_ok(executor)))
     {
         return;
     }
