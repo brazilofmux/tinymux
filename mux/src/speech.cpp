@@ -159,7 +159,7 @@ void do_say(dbref executor, dbref caller, dbref enactor, int eval, int key, char
     //
     dbref loc = where_is(executor);
     if ( !(  Good_obj(loc)
-            & sp_ok(executor)))
+          && sp_ok(executor)))
     {
         return;
     }

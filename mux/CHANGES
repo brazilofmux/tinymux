@@ -1,5 +1,5 @@
 TinyMUX 2.7:  CHANGES
-Last Update:  December 2006
+Last Update:  January 2007
 
 Major changes that may affect performance and require softcode tweaks:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -20,6 +20,8 @@ Bug Fixes:
  -- @dolist and @trig were not passing TRACE bit through (Issue 237).
  -- Using \ as a shortcut to @emit no longer causes the beginning of the
     message to be escaped (Issue 219).
+ -- Fix typo in do_say() which left a bit-wise instead of a logical
+    AND operation (Issue 245).
 
 
 Performance Enhancements:
