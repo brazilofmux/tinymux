@@ -524,6 +524,39 @@ Related Topics: @name.
 
   Related Topics: give, @agfail, @gfail, @ogfail, @orfail, @rfail, @lock.
 
+& @ASSERT
+@ASSERT
+
+  COMMAND: @assert <boolean>[=<action list>]
+
+  @assert stops the execution of further commands in the current action
+  list if its argument is a false value.  It doesn't affect new queue
+  entries made by previous commands in the action list.  Very useful to
+  people who don't like @switch.  If <action list> is given, they are
+  executed instead of the rest of the commands in the current action list.
+
+  Examples:
+    > @va obj=$testme *:@pemit %#=Before;@assert %0;@pemit %#=After
+    > testme 1
+    Before
+    After
+    > testme 0
+    Before
+
+    > @force me={@switch 1=1,think 3rd;think 1st;@assert 0;think 2nd}
+    1st
+    3rd
+
+  In the last example, the @switch is run, which queues 'think 3rd',
+  'think 1st' is run, displaying '1st', command execution is broken
+  (so we never 'think 2nd', and then the queued 'think 3rd' is run,
+  displaying '3rd'.
+
+  If you follow that, you have a very good understanding of the
+  TinyMUX queue.
+
+  Related Topics: @break, BOOLEAN VALUES
+
 & @ASUCCESS
 @ASUCCESS
 
@@ -630,12 +663,13 @@ Related Topics: @name.
 & @BREAK
 @BREAK
 
-  COMMAND: @break <boolean>
+  COMMAND: @break <boolean>[=<action list>]
 
   @break stops the execution of further commands in the current action
-  list if its argument is a true value. It doesn't affect new queue
-  entries made by previous commands in the action list. Very useful to
-  people who don't like @switch.
+  list if its argument is a true value.  It doesn't affect new queue
+  entries made by previous commands in the action list.  Very useful to
+  people who don't like @switch. If <action list> is given, they are
+  executed instead of the rest of the commands in the current action list.
 
   Examples:
     > @va obj=$testme *:@pemit %#=Before;@break %0;@pemit %#=After
@@ -655,9 +689,9 @@ Related Topics: @name.
   displaying '3rd'.
 
   If you follow that, you have a very good understanding of the
-  TinyMUX queue. :)
+  TinyMUX queue.
 
-  Related Topics: BOOLEAN VALUES
+  Related Topics: @assert, BOOLEAN VALUES
 
 & @CBOOT
 @CBOOT
@@ -802,7 +836,7 @@ Related Topics: @name.
   stripped_flags configuration option, and all @powers are stripped.  Also,
   HALT is set.  With /nostrip, ROYALTY and INHERIT are preserved (albeit with
   warnings).  #1 can use /nostrip to further preserve WIZARD and @powers.
-  
+
   By default, stripped_flags includes: BLIND, CONNECTED, GAGGED, HEAD_FLAG,
   IMMORTAL, INHERIT, ROYALTY, SLAVE, STAFF, SUSPECT, UNINSPECTED, and WIZARD.
 
@@ -4946,7 +4980,7 @@ CENTER()
     > say center(%xh%xrR%xgG%xbB,31,%xy--%xm+)
     --+--+--+--+--RGB+--+--+--+--+-
 
-  Related Topics: ljust(), rjust().
+  Related Topics: cpad(), ljust(), lpad(), rjust(), rpad().
 
 & CHANNEL OBJECT
 CHANNEL OBJECT
@@ -5187,17 +5221,17 @@ COMMANDS
   version      whisper      WHO          "            :            ;
   &            #            \\
 
-  @@           @backup      @break       @cemit       @chown       @chzone
-  @clone       @cpattr      @create      @decompile   @destroy     @dig
-  @doing       @dolist      @drain       @edit        @email       @emit
-  @entrances   @femit       @find        @force       @fpose       @fsay
-  @halt        @htdesc      @if          @last        @link        @list
-  @listmotd    @lock        @mail        @mvattr      @name        @nemit
-  @notify      @npemit      @oemit       @open        @parent      @password
-  @pemit       @power       @program     @ps          @quitprogram @quota
-  @remit       @robot       @search      @set         @stats       @sweep
-  @switch      @teleport    @timecheck   @trigger     @unlink      @unlock
-  @verb        @vrml_url    @wait        @wipe
+  @@           @assert      @backup      @break       @cemit       @chown
+  @chzone      @clone       @cpattr      @create      @decompile   @destroy
+  @dig         @doing       @dolist      @drain       @edit        @email
+  @emit        @entrances   @femit       @find        @force       @fpose
+  @fsay        @halt        @htdesc      @if          @last        @link
+  @list        @listmotd    @lock        @mail        @mvattr      @name
+  @nemit       @notify      @npemit      @oemit       @open        @parent
+  @password    @pemit       @power       @program     @ps          @quitprogram
+  @quota       @remit       @robot       @search      @set         @stats
+  @sweep       @switch      @teleport    @timecheck   @trigger     @unlink
+  @unlock      @verb        @vrml_url    @wait        @wipe
 
 { 'help commands2' for more }
 
@@ -5663,6 +5697,35 @@ COSTS
   and how much they cost.
 
   Related Topics: @list.
+
+& CPAD()
+CPAD()
+
+  FUNCTION: cpad(<string>, <width>[, <fill>])
+
+  This function centers <string> within a <width>-sized field.
+
+  The background of this field is specified by a repeating pattern of <fill>
+  characters. The origin of this repeating pattern is at the first position
+  of the field. Another way of saying this is that the repeating pattern
+  starts in first position and repeats to the right. The last <fill> pattern
+  may be truncated.
+
+  By default, <fill> is a single, normal-colored space. The color of
+  <string> and <fill> is maintained.
+
+  Unlike center(), if the visual width of <string> is longer than <width>
+  characters, it is not truncated to fit.
+
+  Example:
+    > say cpad(a,5,-)
+    You say, "--a--"
+    > say cpad(*BAMF*,15)
+    You say, "    *BAMF*     "
+    > say cpad(%xh%xrR%xgG%xbB,31,%xy--%xm+)
+    --+--+--+--+--RGB+--+--+--+--+-
+
+  Related Topics: center(), ljust(), lpad(), rjust(), rpad().
 
 & CRC32()
 CRC32()
@@ -6885,12 +6948,12 @@ FUNCTION CLASSES (continued)
 FUNCTION CLASSES (continued)
 
   Strings:                   ACCENT AFTER ALPHAMAX ALPHAMIN BEFORE CAPSTR CASE
-                             CAT CENTER CHR COMP DECRYPT DELETE EDIT ENCRYPT
-                             ESCAPE GRAB GRABALL IF IFELSE LCSTR LJUST LPOS
-                             MERGE MID ORD POS REGMATCH REGMATCHI REGRAB
-                             REGRABALL REGRABALLI REGRABI REPEAT REPLACE
-                             REVERSE RIGHT RJUST ROMAN SCRAMBLE SECURE SPACE
-                             SPELLNUM SQUISH STRCAT STRIP STRIPACCENTS
+                             CAT CENTER CHR COMP CPAD DECRYPT DELETE EDIT
+                             ENCRYPT ESCAPE GRAB GRABALL IF IFELSE LCSTR LJUST
+                             LPAD LPOS MERGE MID ORD POS REGMATCH REGMATCHI
+                             REGRAB REGRABALL REGRABALLI REGRABI REPEAT REPLACE
+                             REVERSE RIGHT RJUST ROMAN RPAD SCRAMBLE SECURE
+                             SPACE SPELLNUM SQUISH STRCAT STRIP STRIPACCENTS
                              STRIPANSI STRLEN STRMATCH STRMEM STRTRUNC SWITCH
                              TRANSLATE TRIM UCSTR WORDPOS WRAP
 
@@ -6920,66 +6983,67 @@ FUNCTION LIST
     CMDS()      COLUMNS()   COMALIAS()  COMP()      COMTITLE()  CON()
     CONFIG()    CONN()      CONNLAST()  CONNLEFT()  CONNMAX()   CONNNUM()
     CONNRECORD()CONNTOTAL() CONTROLS()  CONVSECS()  CONVTIME()  COR()
-    CORBOOL()   COS()       CRC32()     CREATE()    CTIME()     CTU()
-    CWHO()      DEC()       DECRYPT()   DEFAULT()   DELETE()    DIE()
-    DIGITTIME() DIST2D()    DIST3D()    DISTRIBUTE()DOING()     DUMPING()
-    E()         EDEFAULT()  EDIT()      ELEMENTS()  ELOCK()     EMIT()
-    ENCRYPT()   ENTRANCES() EQ()        ERROR()     ESCAPE()    ETIMEFMT()
-    EVAL()      EXIT()      EXP()       EXPTIME()   EXTRACT()   FCOUNT()
-    FDEPTH()    FDIV()      FILTER()    FILTERBOOL()FINDABLE()  FIRST()
-    FLAGS()     FLOOR()     FLOORDIV()  FMOD()      FOLD()      FOREACH()
+    CORBOOL()   COS()       CPAD()      CRC32()     CREATE()    CTIME()
+    CTU()       CWHO()      DEC()       DECRYPT()   DEFAULT()   DELETE()
+    DIE()       DIGITTIME() DIST2D()    DIST3D()    DISTRIBUTE()DOING()
+    DUMPING()   E()         EDEFAULT()  EDIT()      ELEMENTS()  ELOCK()
+    EMIT()      ENCRYPT()   ENTRANCES() EQ()        ERROR()     ESCAPE()
+    ETIMEFMT()  EVAL()      EXIT()      EXP()       EXPTIME()   EXTRACT()
+    FCOUNT()    FDEPTH()    FDIV()      FILTER()    FILTERBOOL()FINDABLE()
+    FIRST()     FLAGS()     FLOOR()     FLOORDIV()  FMOD()      FOLD()
 
 ("help function list2" for more)
 
 & FUNCTION LIST2
 FUNCTION LIST (continued)
 
-    FULLNAME()  GET()       GET_EVAL()  GRAB()      GRABALL()   GREP()
-    GREPI()     GT()        GTE()       HASATTR()   HASATTRP()  HASFLAG()
-    HASPOWER()  HASQUOTA()  HASRXLEVEL()HASTXLEVEL()HASTYPE()   HEIGHT()
-    HOME()      HOST()      IABS()      IADD()      IDIV()      IDLE()
-    IF()        IFELSE()    ILEV()      IMUL()      INC()       INDEX()
-    INSERT()    INZONE()    ISDBREF()   ISIGN()     ISINT()     ISNUM()
-    ISRAT()     ISUB()      ISWORD()    ITEMIZE()   ITEMS()     ITER()
-    LADD()      LAND()      LAST()      LATTR()     LATTRCMDS() LATTRP()
-    LCMDS()     LCON()      LCSTR()     LDELETE()   LEXITS()    LFLAGS()
-    LINK()      LIST()      LISTRLEVELS() LIT()     LJUST()     LN()
-    LNUM()      LOC()       LOCALIZE()  LOCATE()    LOCK()      LOG()
-    LOR()       LPARENT()   LPORTS()    LPOS()      LRAND()     LROOMS()
-    LT()        LTE()       LWHO()      MAIL()      MAILFROM()  MAILSIZE()
-    MAILJ()     MAILSUBJ()  MAP()       MATCH()     MATCHALL()  MAX()
-    MEMBER()    MERGE()     MID()       MIN()       MIX()       MOD()
-    MONEY()     MONIKER()   MOTD()      MTIME()     MUDNAME()   MUL()
-    MUNGE()     NAME()      NEARBY()    NEQ()       NEXT()      NOT()
-    NULL()      NUM()       OBJ()       OBJEVAL()   OBJMEM()    OEMIT()
-    OR()        ORBOOL()    ORD()       ORFLAGS()   OWNER()     PACK()
+    FOREACH()   FULLNAME()  GET()       GET_EVAL()  GRAB()      GRABALL()
+    GREP()      GREPI()     GT()        GTE()       HASATTR()   HASATTRP()
+    HASFLAG()   HASPOWER()  HASQUOTA()  HASRXLEVEL()HASTXLEVEL()HASTYPE()
+    HEIGHT()    HOME()      HOST()      IABS()      IADD()      IDIV()
+    IDLE()      IF()        IFELSE()    ILEV()      IMUL()      INC()
+    INDEX()     INSERT()    INZONE()    ISDBREF()   ISIGN()     ISINT()
+    ISNUM()     ISRAT()     ISUB()      ISWORD()    ITEMIZE()   ITEMS()
+    ITER()      LADD()      LAND()      LAST()      LATTR()     LATTRCMDS()
+    LATTRP()    LCMDS()     LCON()      LCSTR()     LDELETE()   LEXITS()
+    LFLAGS()    LINK()      LIST()      LISTRLEVELS() LIT()     LJUST()
+    LN()        LNUM()      LOC()       LOCALIZE()  LOCATE()    LOCK()
+    LOG()       LOR()       LPAD()      LPARENT()   LPORTS()    LPOS()
+    LRAND()     LROOMS()    LT()        LTE()       LWHO()      MAIL()
+    MAILFROM()  MAILSIZE()  MAILJ()     MAILSUBJ()  MAP()       MATCH()
+    MATCHALL()  MAX()       MEMBER()    MERGE()     MID()       MIN()
+    MIX()       MOD()       MONEY()     MONIKER()   MOTD()      MTIME()
+    MUDNAME()   MUL()       MUNGE()     NAME()      NEARBY()    NEQ()
+    NEXT()      NOT()       NULL()      NUM()       OBJ()       OBJEVAL()
+    OBJMEM()    OEMIT()     OR()        ORBOOL()    ORD()       ORFLAGS()
 
 ("help function list3" for more)
 
 & FUNCTION LIST3
 FUNCTION LIST (continued)
 
-    PARENT()    PARSE()     PEMIT()     PFIND()     PI()        PICKRAND()
-    PLAYMEM()   PMATCH()    POLL()      PORTS()     POS()       POSS()
-    POWER()     POWERS()    R()         RAND()      REGMATCH()  REGMATCHI()
-    REGRAB()    REGRABALL() REGRABALLI()REGRABI()   REMAINDER() REMIT()
-    REMOVE()    REPEAT()    REPLACE()   REST()      REVERSE()   REVWORDS()
-    RIGHT()     RJUST()     RLOC()      ROMAN()     ROOM()      ROUND()
-    RXLEVEL()   S()         SCRAMBLE()  SEARCH()    SECS()      SECURE()
-    SET()       SETDIFF()   SETINTER()  SETNAME()   SETPARENT() SETQ()
-    SETR()      SETUNION()  SHA1()      SHL()       SHR()       SHUFFLE()
-    SIGN()      SIN()       SINGLETIME()SORT()      SORTBY()    SPACE()
-    SPELLNUM()  SPLICE()    SQL()       SQRT()      SQUISH()    STARTSECS()
-    STARTTIME() STATS()     STEP()      STRCAT()    STRIP()     STRIPACCENTS()
-    STRIPANSI() STRLEN()    STRMATCH()  STRMEM()    STRTRUNC()  SUB()
-    SUBEVAL()   SUBJ()      SUCCESSES() SWITCH()    T()         TABLE()
-    TAN()       TEL()       TEXT()      TEXTFILE()  TIME()      TIMEFMT()
-    TRANSLATE() TRIGGER()   TRIM()      TRUNC()     TXLEVEL()   TYPE()
-    U()         UCSTR()     UDEFAULT()  ULOCAL()    UNPACK()    V()
-    VADD()      VALID()     VCROSS()    VDIM()      VDOT()      VERSION()
-    VISIBLE()   VMAG()      VMUL()      VSUB()      VUNIT()     WHERE()
-    WIDTH()     WORDPOS()   WORDS()     WRAP()      WRITETIME() XGET()
-    XOR()       ZFUN()      ZONE()      ZWHO()
+    OWNER()     PACK()      PARENT()    PARSE()     PEMIT()     PFIND()
+    PI()        PICKRAND()  PLAYMEM()   PMATCH()    POLL()      PORTS()
+    POS()       POSS()      POWER()     POWERS()    R()         RAND()
+    REGMATCH()  REGMATCHI() REGRAB()    REGRABALL() REGRABALLI()REGRABI()
+    REMAINDER() REMIT()     REMOVE()    REPEAT()    REPLACE()   REST()
+    REVERSE()   REVWORDS()  RIGHT()     RJUST()     RLOC()      ROMAN()
+    ROOM()      ROUND()     RPAD()      RXLEVEL()   S()         SCRAMBLE()
+    SEARCH()    SECS()      SECURE()    SET()       SETDIFF()   SETINTER()
+    SETNAME()   SETPARENT() SETQ()      SETR()      SETUNION()  SHA1()
+    SHL()       SHR()       SHUFFLE()   SIGN()      SIN()       SINGLETIME()
+    SORT()      SORTBY()    SPACE()     SPELLNUM()  SPLICE()    SQL()
+    SQRT()      SQUISH()    STARTSECS() STARTTIME() STATS()     STEP()
+    STRCAT()    STRIP()     STRIPACCENTS()          STRIPANSI() STRLEN()
+    STRMATCH()  STRMEM()    STRTRUNC()  SUB()       SUBEVAL()   SUBJ()
+    SUCCESSES() SWITCH()    T()         TABLE()     TAN()       TEL()
+    TEXT()      TEXTFILE()  TIME()      TIMEFMT()   TRANSLATE() TRIGGER()
+    TRIM()      TRUNC()     TXLEVEL()   TYPE()      U()         UCSTR()
+    UDEFAULT()  ULOCAL()    UNPACK()    V()         VADD()      VALID()
+    VCROSS()    VDIM()      VDOT()      VERSION()   VISIBLE()   VMAG()
+    VMUL()      VSUB()      VUNIT()     WHERE()     WIDTH()     WORDPOS()
+    WORDS()     WRAP()      WRITETIME() XGET()      XOR()       ZFUN()
+    ZONE()      ZWHO()
 
 & FUNCTIONS
 FUNCTIONS
@@ -8555,7 +8619,7 @@ LJUST()
     > say ljust(%xh%xrR%xgG%xbB,31,%xy--%xm+)
     RGB--+--+--+--+--+--+--+--+--+-
 
-  Related Topics: center(), rjust().
+  Related Topics: center(), cpad(), lpad(), rjust(), rpad().
 
 & LN()
 LN()
@@ -8810,6 +8874,41 @@ LOR()
     You say, "1"
 
   Related Topics: land(), not(), or(), t().
+
+& LPAD()
+LPAD()
+
+  FUNCTION: lpad(<string>, <width>[, <fill>])
+
+  This function left-justifies <string> within a <width>-sized field. That
+  is, it positions <string> visually in the left-most part of a
+  <width>-sized field.
+
+  The background of this field is specified by a repeating pattern of <fill>
+  characters. The origin of this repeating pattern is at the first position
+  of the field. Another way of saying this is that the repeating pattern
+  starts in first position and repeats to the right. The last <fill> pattern
+  may be truncated.
+
+  By default, <fill> is a single, normal-colored space. The color of
+  <string> and <fill> is maintained.
+
+  Unlike ljust(), if the visual width of <string> is longer than <width>
+  characters, it is not truncated to fit.
+
+  Examples:
+    > say -[lpad(foo,6)]-
+    You say, "-foo   -"
+    > say %r0[lpad(foo,6)]7%r01234567
+    You say, "
+    0foo   7
+    01234567"
+    > say =[lpad(bar,5,.)]=
+    You say, "=bar..="
+    > say lpad(%xh%xrR%xgG%xbB,31,%xy--%xm+)
+    RGB--+--+--+--+--+--+--+--+--+-
+
+  Related Topics: center(), cpad(), ljust(), rjust(), rpad().
 
 & LPARENT()
 LPARENT()
@@ -11216,7 +11315,7 @@ RJUST()
     > say rjust(%xh%xrR%xgG%xbB,31,%xy--%xm+)
     --+--+--+--+--+--+--+--+--+-RGB
 
-  Related Topics: center(), ljust().
+  Related Topics: center(), cpad(), ljust(), lpad(), rpad().
 
 & RLOC()
 RLOC()
@@ -11344,6 +11443,41 @@ ROYALTY
   This flag may only be set by a wizard.
 
   Related Topics:
+
+& RPAD()
+RPAD()
+
+  FUNCTION: rpad(<string>, <width>[, <fill>])
+
+  This function right-justifies <string> within a <width>-sized field. That
+  is, it positions <string> visually in the right-most part of a
+  <width>-sized field.
+
+  The background of this field is specified by a repeating pattern of <fill>
+  characters. The origin of this repeating pattern is at the first position
+  of the field. Another way of saying this is that the repeating pattern
+  starts in first position and repeats to the right. The last <fill> pattern
+  may be truncated.
+
+  By default, <fill> is a single, normal-colored space. The color of
+  <string> and <fill> is maintained.
+
+  Unlike rjust(), if the visual width of <string> is longer than <width>
+  characters, it is not truncated to fit.
+
+  Examples:
+    > say -[rpad(foo,6)]-
+    You say, "-   foo-"
+    > say %r0[rpad(foo,6)]7%r01234567
+    You say, "
+    0   foo7
+    01234567"
+    > say =[rpad(bar,5,.)]=
+    You say, "=..bar="
+    > say rpad(%xh%xrR%xgG%xbB,31,%xy--%xm+)
+    --+--+--+--+--+--+--+--+--+-RGB
+
+  Related Topics: center(), cpad(), ljust(), lpad(), rjust().
 
 & RXLEVEL()
 RXLEVEL()
@@ -13771,15 +13905,15 @@ ZWHO()
 
   Related Topics: inzone(), ZONES.
 
-& \\
-\\
+& \
+\
 
-  COMMAND: \\<message>
+  COMMAND: \<message>
 
   Outputs <message> to everyone in your current room without embellishment.
 
   Example:
-    >\\A chill falls over the room.
+    >\A chill falls over the room.
     A chill falls over the room.
 
   Related Topics: @emit, @oemit, NOSPOOF.

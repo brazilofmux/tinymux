@@ -7974,7 +7974,8 @@ static void centerjustcombo
     char *buff,
     char **bufc,
     char *fargs[],
-    int nfargs
+    int nfargs,
+    bool bTrunc
 )
 {
     // Width must be a number.
@@ -8016,13 +8017,12 @@ static void centerjustcombo
     size_t vwStr;
     char aStr[LBUF_SIZE];
     size_t nStr = ANSI_TruncateToField(fargs[0], sizeof(aStr), aStr,
-        width, &vwStr, ANSI_ENDGOAL_NORMAL);
+        bTrunc ? width : LBUF_SIZE, &vwStr, ANSI_ENDGOAL_NORMAL);
 
-    // If the visual width of the text fits exactly into the field,
-    // then we are done. ANSI_TruncateToField insures that it's
-    // never larger.
+    // If there's no need to pad, then we are done. ANSI_TruncateToField
+    // ensures that it's not too long.
     //
-    if (vwStr == width)
+    if (width <= vwStr)
     {
         safe_copy_buf(aStr, nStr, buff, bufc);
         return;
@@ -8167,7 +8167,7 @@ static FUNCTION(fun_ljust)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    centerjustcombo(CJC_LJUST, buff, bufc, fargs, nfargs);
+    centerjustcombo(CJC_LJUST, buff, bufc, fargs, nfargs, true);
 }
 
 static FUNCTION(fun_rjust)
@@ -8179,7 +8179,7 @@ static FUNCTION(fun_rjust)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    centerjustcombo(CJC_RJUST, buff, bufc, fargs, nfargs);
+    centerjustcombo(CJC_RJUST, buff, bufc, fargs, nfargs, true);
 }
 
 static FUNCTION(fun_center)
@@ -8191,7 +8191,43 @@ static FUNCTION(fun_center)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    centerjustcombo(CJC_CENTER, buff, bufc, fargs, nfargs);
+    centerjustcombo(CJC_CENTER, buff, bufc, fargs, nfargs, true);
+}
+
+static FUNCTION(fun_lpad)
+{
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
+    centerjustcombo(CJC_LJUST, buff, bufc, fargs, nfargs, false);
+}
+
+static FUNCTION(fun_rpad)
+{
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
+    centerjustcombo(CJC_RJUST, buff, bufc, fargs, nfargs, false);
+}
+
+static FUNCTION(fun_cpad)
+{
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
+    centerjustcombo(CJC_CENTER, buff, bufc, fargs, nfargs, false);
 }
 
 /* ---------------------------------------------------------------------------
@@ -8821,7 +8857,7 @@ static FUNCTION(fun_wrap)
         jargs[0] = mbuf;
         jargs[1] = mux_ltoa_t(i == 0 ? nFirstWidth : nWidth);
         safe_str(pLeft,buff,bufc);
-        centerjustcombo(iJustKey, buff, bufc, jargs, 2);
+        centerjustcombo(iJustKey, buff, bufc, jargs, 2, true);
         safe_str(pRight, buff, bufc);
 
         i += nLength;
@@ -9956,6 +9992,7 @@ static FUN builtin_function_list[] =
     {"COR",         fun_cor,        MAX_ARG, 0, MAX_ARG, FN_NOEVAL, CA_PUBLIC},
     {"CORBOOL",     fun_corbool,    MAX_ARG, 0, MAX_ARG, FN_NOEVAL, CA_PUBLIC},
     {"COS",         fun_cos,        MAX_ARG, 1,       2,         0, CA_PUBLIC},
+    {"CPAD",        fun_cpad,       MAX_ARG, 2,       3,         0, CA_PUBLIC},
     {"CRC32",       fun_crc32,      MAX_ARG, 0, MAX_ARG,         0, CA_PUBLIC},
     {"CREATE",      fun_create,     MAX_ARG, 2,       3,         0, CA_PUBLIC},
     {"CTIME",       fun_ctime,      MAX_ARG, 0,       1,         0, CA_PUBLIC},
@@ -10083,6 +10120,7 @@ static FUN builtin_function_list[] =
     {"LOCK",        fun_lock,       MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {"LOG",         fun_log,        MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {"LOR",         fun_lor,        MAX_ARG, 0,       2,         0, CA_PUBLIC},
+    {"LPAD",        fun_lpad,       MAX_ARG, 2,       3,         0, CA_PUBLIC},
     {"LPARENT",     fun_lparent,    MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {"LPORTS",      fun_lports,     MAX_ARG, 0,       0,         0, CA_WIZARD},
     {"LPOS",        fun_lpos,       MAX_ARG, 2,       2,         0, CA_PUBLIC},
@@ -10180,6 +10218,7 @@ static FUN builtin_function_list[] =
     {"ROMAN",       fun_roman,      MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {"ROOM",        fun_room,       MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {"ROUND",       fun_round,      MAX_ARG, 2,       2,         0, CA_PUBLIC},
+    {"RPAD",        fun_rpad,       MAX_ARG, 2,       3,         0, CA_PUBLIC},
 #ifdef REALITY_LVLS
     {"RXLEVEL",     fun_rxlevel,    MAX_ARG, 1,       1,         0, CA_PUBLIC},
 #endif // REALITY_LVLS

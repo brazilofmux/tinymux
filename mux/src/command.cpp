@@ -22,7 +22,6 @@
 #include "mguests.h"
 #include "powers.h"
 #include "vattr.h"
-#include "help.h"
 #include "pcre.h"
 
 // Switch tables for the various commands.
@@ -537,16 +536,17 @@ static NAMETAB wait_sw[] =
 static NAMETAB verb_sw[] =
 {
     {"no_name",         3,  CA_PUBLIC,   VERB_NONAME},
+    { NULL,             0,          0,   0}
 };
 
 static NAMETAB wall_sw[] =
 {
-    {"admin",           1,  CA_ADMIN,    SHOUT_ADMINSHOUT},
-    {"emit",            1,  CA_ANNOUNCE, SHOUT_WALLEMIT},
-    {"no_prefix",       1,  CA_ANNOUNCE, SAY_NOTAG|SW_MULTIPLE},
-    {"pose",            1,  CA_ANNOUNCE, SHOUT_WALLPOSE},
-    {"wizard",          1,  CA_ANNOUNCE, SHOUT_WIZSHOUT|SW_MULTIPLE},
-    { NULL,             0,          0,  0}
+    {"admin",           1,  CA_ADMIN,    SHOUT_ADMIN|SW_MULTIPLE},
+    {"emit",            1,  CA_ANNOUNCE, SHOUT_EMIT|SW_MULTIPLE},
+    {"no_prefix",       1,  CA_ANNOUNCE, SHOUT_NOTAG|SW_MULTIPLE},
+    {"pose",            1,  CA_ANNOUNCE, SHOUT_POSE|SW_MULTIPLE},
+    {"wizard",          1,  CA_ANNOUNCE, SHOUT_WIZARD|SW_MULTIPLE},
+    { NULL,             0,          0,   0}
 };
 
 static NAMETAB warp_sw[] =
@@ -596,7 +596,6 @@ static CMDENT_NO_ARG command_table_no_arg[] =
 static CMDENT_ONE_ARG command_table_one_arg[] =
 {
     {"@boot",         boot_sw,    CA_NO_GUEST|CA_NO_SLAVE,    0,  CS_ONE_ARG|CS_INTERP, 0, do_boot},
-    {"@break",        NULL,       CA_PUBLIC,                  0,  CS_ONE_ARG,           0, do_break},
     {"@ccreate",      NULL,       CA_NO_SLAVE|CA_NO_GUEST,    0,  CS_ONE_ARG,           0, do_createchannel},
     {"@cdestroy",     NULL,       CA_NO_SLAVE|CA_NO_GUEST,    0,  CS_ONE_ARG,           0, do_destroychannel},
     {"@clist",        clist_sw,   CA_NO_SLAVE,                0,  CS_ONE_ARG,           0, do_chanlist},
@@ -630,7 +629,7 @@ static CMDENT_ONE_ARG command_table_one_arg[] =
     {"@timewarp",     warp_sw,    CA_WIZARD,                  0,  CS_ONE_ARG|CS_INTERP, 0, do_timewarp},
     {"@unlink",       NULL,       CA_NO_SLAVE|CA_GBL_BUILD,   0,  CS_ONE_ARG|CS_INTERP, 0, do_unlink},
     {"@unlock",       lock_sw,    CA_NO_SLAVE,                0,  CS_ONE_ARG|CS_INTERP, 0, do_unlock},
-    {"@wall",         wall_sw,    CA_ANNOUNCE,      SHOUT_SHOUT,  CS_ONE_ARG|CS_INTERP, 0, do_shout},
+    {"@wall",         wall_sw,    CA_ANNOUNCE,     SHOUT_DEFAULT, CS_ONE_ARG|CS_INTERP, 0, do_shout},
     {"@wipe",         NULL,       CA_NO_SLAVE|CA_NO_GUEST|CA_GBL_BUILD, 0,  CS_ONE_ARG|CS_INTERP,   0, do_wipe},
     {"allcom",        NULL,       CA_NO_SLAVE,                0,  CS_ONE_ARG,           0, do_allcom},
     {"comlist",       NULL,       CA_NO_SLAVE,                0,  CS_ONE_ARG,           0, do_comlist},
@@ -656,7 +655,7 @@ static CMDENT_ONE_ARG command_table_one_arg[] =
     {"train",         NULL,       CA_PUBLIC,                  0,  CS_ONE_ARG,           0, do_train},
     {"use",           NULL,       CA_NO_SLAVE|CA_GBL_INTERP,  0,  CS_ONE_ARG|CS_INTERP, 0, do_use},
     {"who",           NULL,       CA_PUBLIC,            CMD_WHO,  CS_ONE_ARG,           0, logged_out1},
-    {"\\",            NULL,       CA_NO_GUEST|CA_LOCATION|CF_DARK|CA_NO_SLAVE,  SAY_PREFIX, CS_ONE_ARG|CS_INTERP,   0, do_say},
+    {"\\",            NULL,       CA_NO_GUEST|CA_LOCATION|CF_DARK|CA_NO_SLAVE,  SAY_PREFIX, CS_ONE_ARG|CS_INTERP|CS_LEADIN,   0, do_say},
     {":",             NULL,       CA_LOCATION|CF_DARK|CA_NO_SLAVE,  SAY_PREFIX, CS_ONE_ARG|CS_INTERP|CS_LEADIN, 0, do_say},
     {";",             NULL,       CA_LOCATION|CF_DARK|CA_NO_SLAVE,  SAY_PREFIX, CS_ONE_ARG|CS_INTERP|CS_LEADIN, 0, do_say},
     {"\"",            NULL,       CA_LOCATION|CF_DARK|CA_NO_SLAVE,  SAY_PREFIX, CS_ONE_ARG|CS_INTERP|CS_LEADIN, 0, do_say},
@@ -755,13 +754,15 @@ static CMDENT_TWO_ARG_ARGV command_table_two_arg_argv[] =
 
 static CMDENT_TWO_ARG_CMDARG command_table_two_arg_cmdarg[] =
 {
-    {"@dolist", dolist_sw,  CA_GBL_INTERP,  0,      CS_TWO_ARG|CS_CMDARG|CS_NOINTERP|CS_STRIP_AROUND, 0, do_dolist},
-    {"@force",  NULL,       CA_NO_SLAVE|CA_GBL_INTERP|CA_NO_GUEST,    0,    CS_TWO_ARG|CS_INTERP|CS_CMDARG, 0, do_force},
+    {"@assert", NULL,       CA_PUBLIC,     0, CS_TWO_ARG|CS_CMDARG|CS_NOINTERP|CS_STRIP_AROUND, 0, do_assert},
+    {"@break",  NULL,       CA_PUBLIC,     0, CS_TWO_ARG|CS_CMDARG|CS_NOINTERP|CS_STRIP_AROUND, 0, do_break},
+    {"@dolist", dolist_sw,  CA_GBL_INTERP, 0, CS_TWO_ARG|CS_CMDARG|CS_NOINTERP|CS_STRIP_AROUND, 0, do_dolist},
+    {"@force",  NULL,       CA_NO_SLAVE|CA_GBL_INTERP|CA_NO_GUEST, 0, CS_TWO_ARG|CS_INTERP|CS_CMDARG, 0, do_force},
 #ifdef QUERY_SLAVE
-    {"@query",  query_sw,   CA_WIZARD,      0,      CS_TWO_ARG|CS_INTERP|CS_CMDARG,                   0, do_query},
+    {"@query",  query_sw,   CA_WIZARD,     0, CS_TWO_ARG|CS_INTERP|CS_CMDARG,                   0, do_query},
 #endif
-    {"@wait",   wait_sw,    CA_GBL_INTERP,  0,      CS_TWO_ARG|CS_CMDARG|CS_NOINTERP|CS_STRIP_AROUND, 0, do_wait},
-    {NULL,      NULL,       0,              0,      0,              0, NULL}
+    {"@wait",   wait_sw,    CA_GBL_INTERP, 0, CS_TWO_ARG|CS_CMDARG|CS_NOINTERP|CS_STRIP_AROUND, 0, do_wait},
+    {NULL,      NULL,       0,             0, 0,                                                0, NULL}
 };
 
 static CMDENT_TWO_ARG_ARGV_CMDARG command_table_two_arg_argv_cmdarg[] =
@@ -1314,6 +1315,14 @@ static void process_cmdent(CMDENT *cmdp, char *switchp, dbref executor, dbref ca
         {
             buf1 = bp = alloc_lbuf("process_cmdent");
             str = arg;
+            // Copy and skip first character for CS_LEADIN, to
+            // prevent the \ prefix command from escaping part of
+            // its argument.
+            //
+            if (cmdp->callseq & CS_LEADIN)
+            {
+                *bp++ = *str++;
+            }
             mux_exec(buf1, &bp, executor, caller, enactor,
                 eval|interp|EV_FCHECK|EV_TOP, &str, cargs, ncargs);
             *bp = '\0';
@@ -1483,7 +1492,7 @@ static void process_cmdent(CMDENT *cmdp, char *switchp, dbref executor, dbref ca
             else
             {
                 (*(((CMDENT_TWO_ARG_ARGV *)cmdp)->handler))(executor, caller,
-                    enactor, key, buf1, args, nargs);
+                    enactor, eval, key, buf1, args, nargs);
             }
 
             // Free the argument buffers.
@@ -3968,24 +3977,54 @@ void do_list(dbref executor, dbref caller, dbref enactor, int eval, int extra,
     }
 }
 
-void do_break(dbref executor, dbref caller, dbref enactor, int eval, int key, char *arg1)
+void do_assert(dbref executor, dbref caller, dbref enactor, int eval, int key,
+               char *arg1, char *command, char *cargs[], int ncargs)
 {
-    UNUSED_PARAMETER(executor);
-    UNUSED_PARAMETER(caller);
-    UNUSED_PARAMETER(enactor);
-    UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(key);
 
-    break_called = xlate(arg1);
+    if (!xlate(arg1))
+    {
+        break_called = true;
+        if (  NULL != command
+           && '\0' != command[0])
+        {
+            CLinearTimeAbsolute lta;
+            wait_que(executor, caller, enactor, eval, false, lta, NOTHING, 0,
+                command,
+                ncargs, cargs,
+                mudstate.global_regs);
+        }
+    }
+}
+
+void do_break(dbref executor, dbref caller, dbref enactor, int eval, int key,
+              char *arg1, char *command, char *cargs[], int ncargs)
+{
+    UNUSED_PARAMETER(key);
+
+    if (xlate(arg1))
+    {
+        break_called = true;
+        if (  NULL != command
+           && '\0' != command[0])
+        {
+            CLinearTimeAbsolute lta;
+            wait_que(executor, caller, enactor, eval, false, lta, NOTHING, 0,
+                command,
+                ncargs, cargs,
+                mudstate.global_regs);
+        }
+    }
 }
 
 // do_icmd: Ignore or disable commands on a per-player or per-room basis.
 // Used with express permission of RhostMUSH developers.
 // Bludgeoned into MUX by Jake Nelson 7/2002.
 //
-void do_icmd(dbref player, dbref cause, dbref enactor, int key, char *name,
-             char *args[], int nargs)
+void do_icmd(dbref player, dbref cause, dbref enactor, int eval, int key,
+             char *name, char *args[], int nargs)
 {
+    UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(cause);
     UNUSED_PARAMETER(enactor);
 
