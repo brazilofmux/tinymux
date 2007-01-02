@@ -1504,8 +1504,9 @@ FUNCTION(fun_vunit)
 
         // Calculate the magnitude.
         //
+        int i;
         double res = 0.0;
-        for (int i = 0; i < n; i++)
+        for (i = 0; i < n; i++)
         {
             double tmp = mux_atof(v1[i]);
             res += tmp * tmp;
@@ -1518,9 +1519,10 @@ FUNCTION(fun_vunit)
             delete [] v1;
             return;
         }
+
         for (i = 0; i < n; i++)
         {
-            if (i != 0)
+            if (0 != i)
             {
                 print_sep(&sep, buff, bufc);
             }
