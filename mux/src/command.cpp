@@ -536,16 +536,17 @@ static NAMETAB wait_sw[] =
 static NAMETAB verb_sw[] =
 {
     {"no_name",         3,  CA_PUBLIC,   VERB_NONAME},
+    { NULL,             0,          0,   0}
 };
 
 static NAMETAB wall_sw[] =
 {
-    {"admin",           1,  CA_ADMIN,    SHOUT_ADMINSHOUT},
-    {"emit",            1,  CA_ANNOUNCE, SHOUT_WALLEMIT},
-    {"no_prefix",       1,  CA_ANNOUNCE, SAY_NOTAG|SW_MULTIPLE},
-    {"pose",            1,  CA_ANNOUNCE, SHOUT_WALLPOSE},
-    {"wizard",          1,  CA_ANNOUNCE, SHOUT_WIZSHOUT|SW_MULTIPLE},
-    { NULL,             0,          0,  0}
+    {"admin",           1,  CA_ADMIN,    SHOUT_ADMIN|SW_MULTIPLE},
+    {"emit",            1,  CA_ANNOUNCE, SHOUT_EMIT|SW_MULTIPLE},
+    {"no_prefix",       1,  CA_ANNOUNCE, SHOUT_NOTAG|SW_MULTIPLE},
+    {"pose",            1,  CA_ANNOUNCE, SHOUT_POSE|SW_MULTIPLE},
+    {"wizard",          1,  CA_ANNOUNCE, SHOUT_WIZARD|SW_MULTIPLE},
+    { NULL,             0,          0,   0}
 };
 
 static NAMETAB warp_sw[] =
@@ -628,7 +629,7 @@ static CMDENT_ONE_ARG command_table_one_arg[] =
     {"@timewarp",     warp_sw,    CA_WIZARD,                  0,  CS_ONE_ARG|CS_INTERP, 0, do_timewarp},
     {"@unlink",       NULL,       CA_NO_SLAVE|CA_GBL_BUILD,   0,  CS_ONE_ARG|CS_INTERP, 0, do_unlink},
     {"@unlock",       lock_sw,    CA_NO_SLAVE,                0,  CS_ONE_ARG|CS_INTERP, 0, do_unlock},
-    {"@wall",         wall_sw,    CA_ANNOUNCE,      SHOUT_SHOUT,  CS_ONE_ARG|CS_INTERP, 0, do_shout},
+    {"@wall",         wall_sw,    CA_ANNOUNCE,     SHOUT_DEFAULT, CS_ONE_ARG|CS_INTERP, 0, do_shout},
     {"@wipe",         NULL,       CA_NO_SLAVE|CA_NO_GUEST|CA_GBL_BUILD, 0,  CS_ONE_ARG|CS_INTERP,   0, do_wipe},
     {"allcom",        NULL,       CA_NO_SLAVE,                0,  CS_ONE_ARG,           0, do_allcom},
     {"comlist",       NULL,       CA_NO_SLAVE,                0,  CS_ONE_ARG,           0, do_comlist},

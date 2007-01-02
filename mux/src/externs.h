@@ -679,16 +679,8 @@ extern int anum_alc_top;
 #define SAY_PREFIX      4   /* first char indicates formatting */
 #define SAY_EMIT        5   /* emit in current room */
 #define SAY_NOEVAL      8   // Don't eval message
-#define SHOUT_SHOUT     1   /* shout to all logged-in players */
-#define SHOUT_WALLPOSE  2   /* Pose to all logged-in players */
-#define SHOUT_WALLEMIT  3   /* Emit to all logged-in players */
-#define SHOUT_WIZSHOUT  4   /* shout to all logged-in wizards */
-#define SHOUT_WIZPOSE   5   /* Pose to all logged-in wizards */
-#define SHOUT_WIZEMIT   6   /* Emit to all logged-in wizards */
-#define SHOUT_ADMINSHOUT 7  /* Emit to all wizards or royalty */
 //#define SAY_GRIPE       16  /* Complain to management */
 //#define SAY_NOTE        17  /* Comment to log for wizards */
-#define SAY_NOTAG       32  /* Don't put Broadcast: in front (additive) */
 #define SAY_HERE        64  /* Output to current location */
 #define SAY_ROOM        128 /* Output to containing room */
 #define SAY_HTML        256 /* Don't output a newline */
@@ -696,6 +688,9 @@ extern int anum_alc_top;
 #define SHOUT_DEFAULT   0   /* Default @wall message */
 #define SHOUT_WIZARD    1   /* @wizwall */
 #define SHOUT_ADMIN     2   /* @wall/admin */
+#define SHOUT_NOTAG     4   /* Don't put Broadcast: in front (additive) */
+#define SHOUT_EMIT      8   // Don't display name
+#define SHOUT_POSE      16  // Pose @wall message
 #define SHUTDN_NORMAL   0   /* Normal shutdown */
 #define SHUTDN_PANIC    1   /* Write a panic dump file */
 #define SHUTDN_EXIT     2   /* Exit from shutdown code */
