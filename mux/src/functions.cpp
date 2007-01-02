@@ -305,7 +305,7 @@ char *split_token(char **sp, SEP *psep)
 class AutoDetect
 {
 private:
-    int m_CouldBe;
+    int    m_CouldBe;
 
 public:
     AutoDetect(void);
@@ -370,10 +370,10 @@ int AutoDetect::GetType(void)
 static int get_list_type
 (
     char *fargs[],
-    int nfargs,
-    int type_pos,
+    int   nfargs,
+    int   type_pos,
     char *ptrs[],
-    int nitems
+    int   nitems
 )
 {
     if (type_pos <= nfargs)
@@ -405,7 +405,7 @@ static int get_list_type
     return ad.GetType();
 }
 
-int list2arr(char *arr[], int maxlen, char *list, SEP *psep)
+int list2arr(char *arr[], int maxcount, char *list, SEP *psep)
 {
     list = trim_space_sep(list, psep);
     if (list[0] == '\0')
@@ -414,7 +414,7 @@ int list2arr(char *arr[], int maxlen, char *list, SEP *psep)
     }
     char *p = split_token(&list, psep);
     int i;
-    for (i = 0; p && i < maxlen; i++, p = split_token(&list, psep))
+    for (i = 0; p && i < maxcount; i++, p = split_token(&list, psep))
     {
         arr[i] = p;
     }
@@ -437,7 +437,8 @@ void arr2list(char *arr[], int alen, char *list, char **bufc, SEP *psep)
 
 static int dbnum(char *dbr)
 {
-    if (dbr[0] != '#' || dbr[1] == '\0')
+    if (  '#'  != dbr[0]
+       || '\0' == dbr[1])
     {
         return 0;
     }
@@ -453,14 +454,17 @@ static int dbnum(char *dbr)
 
 static bool nearby_or_control(dbref player, dbref thing)
 {
-    if (!Good_obj(player) || !Good_obj(thing))
+    if (  !Good_obj(player)
+       || !Good_obj(thing))
     {
         return false;
     }
+
     if (Controls(player, thing))
     {
         return true;
     }
+
     if (!nearby(player, thing))
     {
         return false;
@@ -493,6 +497,7 @@ bool delim_check
         {
             dflags &= ~DELIM_EVAL;
         }
+
         if (dflags & DELIM_EVAL)
         {
             char *str = tstr;
@@ -7674,7 +7679,7 @@ static void handle_sets
     char **ptrs1 = NULL;
     try
     {
-        ptrs1 = new char *[LBUF_SIZE];
+        ptrs1 = new char *[LBUF_SIZE/2];
     }
     catch (...)
     {
@@ -7689,7 +7694,7 @@ static void handle_sets
     char **ptrs2 = NULL;
     try
     {
-        ptrs2 = new char *[LBUF_SIZE];
+        ptrs2 = new char *[LBUF_SIZE/2];
     }
     catch (...)
     {
@@ -7706,12 +7711,12 @@ static void handle_sets
 
     char *list1 = alloc_lbuf("fun_setunion.1");
     mux_strncpy(list1, fargs[0], LBUF_SIZE-1);
-    int n1 = list2arr(ptrs1, LBUF_SIZE, list1, psep);
+    int n1 = list2arr(ptrs1, LBUF_SIZE/2, list1, psep);
     do_asort(ptrs1, n1, ASCII_LIST);
 
     char *list2 = alloc_lbuf("fun_setunion.2");
     mux_strncpy(list2, fargs[1], LBUF_SIZE-1);
-    int n2 = list2arr(ptrs2, LBUF_SIZE, list2, psep);
+    int n2 = list2arr(ptrs2, LBUF_SIZE/2, list2, psep);
     do_asort(ptrs2, n2, ASCII_LIST);
 
     int i1 = 0;
@@ -7742,8 +7747,8 @@ static void handle_sets
         {
             // Skip over duplicates.
             //
-            if (  i1 > 0
-               || i2 > 0)
+            if (  0 < i1
+               || 0 < i2)
             {
                 while (  i1 < n1
                       && oldp
@@ -7751,6 +7756,7 @@ static void handle_sets
                 {
                     i1++;
                 }
+
                 while (  i2 < n2
                       && oldp
                       && strcmp(ptrs2[i2], oldp) == 0)
@@ -7768,6 +7774,7 @@ static void handle_sets
                 {
                     print_sep(posep, buff, bufc);
                 }
+
                 bFirst = false;
                 if (strcmp(ptrs1[i1], ptrs2[i2]) < 0)
                 {
@@ -7953,6 +7960,7 @@ static FUNCTION(fun_setunion)
     {
         return;
     }
+
     handle_sets(fargs, buff, bufc, SET_UNION, &sep, &osep);
 }
 
@@ -7969,6 +7977,7 @@ static FUNCTION(fun_setdiff)
     {
         return;
     }
+
     handle_sets(fargs, buff, bufc, SET_DIFF, &sep, &osep);
 }
 
@@ -7985,6 +7994,7 @@ static FUNCTION(fun_setinter)
     {
         return;
     }
+
     handle_sets(fargs, buff, bufc, SET_INTERSECT, &sep, &osep);
 }
 
