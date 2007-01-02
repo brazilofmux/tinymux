@@ -1427,9 +1427,6 @@ FUNCTION(fun_vmag)
         return;
     }
 
-    int n, i;
-    double tmp, res = 0.0;
-
     // Split the list up, or return if the list is empty.
     //
     if (!fargs[0] || !*fargs[0])
@@ -1437,32 +1434,43 @@ FUNCTION(fun_vmag)
         return;
     }
 
-    char **v1 = new char *[LBUF_SIZE];
-    ISOUTOFMEMORY(v1);
-
-    n = list2arr(v1, LBUF_SIZE, fargs[0], &sep);
-
-    // Calculate the magnitude.
-    //
-    for (i = 0; i < n; i++)
+    char **v1 = NULL;
+    try
     {
-        tmp = mux_atof(v1[i]);
-        res += tmp * tmp;
+        v1 = new char *[LBUF_SIZE/2];
+    }
+    catch (...)
+    {
+        ; // Nothing.
     }
 
-    if (res > 0)
+    if (NULL != v1)
     {
-        mux_FPRestore();
-        double result = sqrt(res);
-        mux_FPSet();
+        int n = list2arr(v1, LBUF_SIZE/2, fargs[0], &sep);
 
-        fval(buff, bufc, result);
+        // Calculate the magnitude.
+        //
+        double res = 0.0;
+        for (int i = 0; i < n; i++)
+        {
+            double tmp = mux_atof(v1[i]);
+            res += tmp * tmp;
+        }
+
+        if (res > 0)
+        {
+            mux_FPRestore();
+            double result = sqrt(res);
+            mux_FPSet();
+
+            fval(buff, bufc, result);
+        }
+        else
+        {
+            safe_chr('0', buff, bufc);
+        }
+        delete [] v1;
     }
-    else
-    {
-        safe_chr('0', buff, bufc);
-    }
-    delete [] v1;
 }
 
 FUNCTION(fun_vunit)
@@ -1473,9 +1481,6 @@ FUNCTION(fun_vunit)
         return;
     }
 
-    int n, i;
-    double tmp, res = 0.0;
-
     // Split the list up, or return if the list is empty.
     //
     if (!fargs[0] || !*fargs[0])
@@ -1483,40 +1488,51 @@ FUNCTION(fun_vunit)
         return;
     }
 
-    char **v1 = new char *[LBUF_SIZE];
-    ISOUTOFMEMORY(v1);
-
-    n = list2arr(v1, LBUF_SIZE, fargs[0], &sep);
-
-    // Calculate the magnitude.
-    //
-    for (i = 0; i < n; i++)
+    char **v1 = NULL;
+    try
     {
-        tmp = mux_atof(v1[i]);
-        res += tmp * tmp;
+        v1 = new char *[LBUF_SIZE/2];
+    }
+    catch (...)
+    {
+        ; // Nothing.
     }
 
-    if (res <= 0)
+    if (NULL != v1)
     {
-        safe_str("#-1 CAN'T MAKE UNIT VECTOR FROM ZERO-LENGTH VECTOR",
-            buff, bufc);
-        delete [] v1;
-        return;
-    }
-    for (i = 0; i < n; i++)
-    {
-        if (i != 0)
+        int n = list2arr(v1, LBUF_SIZE/2, fargs[0], &sep);
+
+        // Calculate the magnitude.
+        //
+        double res = 0.0;
+        for (int i = 0; i < n; i++)
         {
-            print_sep(&sep, buff, bufc);
+            double tmp = mux_atof(v1[i]);
+            res += tmp * tmp;
         }
 
-        mux_FPRestore();
-        double result = sqrt(res);
-        mux_FPSet();
+        if (res <= 0)
+        {
+            safe_str("#-1 CAN'T MAKE UNIT VECTOR FROM ZERO-LENGTH VECTOR",
+                buff, bufc);
+            delete [] v1;
+            return;
+        }
+        for (i = 0; i < n; i++)
+        {
+            if (i != 0)
+            {
+                print_sep(&sep, buff, bufc);
+            }
 
-        fval(buff, bufc, mux_atof(v1[i]) / result);
+            mux_FPRestore();
+            double result = sqrt(res);
+            mux_FPSet();
+
+            fval(buff, bufc, mux_atof(v1[i]) / result);
+        }
+        delete [] v1;
     }
-    delete [] v1;
 }
 
 FUNCTION(fun_floor)
