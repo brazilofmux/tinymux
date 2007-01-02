@@ -1,7 +1,15 @@
-// funceval.cpp -- MUX function handlers.
-//
-// $Id$
-//
+/*! \file funceval.cpp
+ *  MUX function handlers.
+ *
+ * $Id$
+ *
+ * This file began as a place to put function handlers ported from other
+ * MU* servers, but has also become home to miscellaneous new functions.
+ * These handlers include side-effect functions, comsys / mail functions,
+ * ansi functions, zone functions, encrypt / decrypt, random functions,
+ * some text-formatting and list-munging functions, deprecated stack
+ * functions, regexp functions, etc.
+ */
 
 #include "copyright.h"
 #include "autoconf.h"

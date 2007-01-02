@@ -1,7 +1,10 @@
-// funmath.cpp -- MUX math function handlers.
-//
-// $Id$
-//
+/*! \file funmath.cpp
+ *  MUX math function handlers.
+ *
+ * $Id$
+ *
+ */
+
 #include "copyright.h"
 #include "autoconf.h"
 #include "config.h"
