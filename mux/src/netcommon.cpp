@@ -2153,10 +2153,12 @@ static bool check_connect(DESC *d, char *msg)
                     command, user, password, cmdsave);
                 return false;
             }
-            if (  mudconf.guest_char != NOTHING
-               && (mudconf.control_flags & CF_LOGIN))
+
+            if (mudconf.control_flags & CF_LOGIN)
             {
-                if (!(mudconf.control_flags & CF_GUEST))
+                if (  mudconf.number_guests <= 0
+                   || !Good_obj(mudconf.guest_char)
+                   || !(mudconf.control_flags & CF_GUEST))
                 {
                     queue_write(d, "Guest logins are disabled.\r\n");
                     free_lbuf(command);
@@ -2168,7 +2170,6 @@ static bool check_connect(DESC *d, char *msg)
 
                 if ((p = Guest.Create(d)) == NULL)
                 {
-                    queue_write(d, "All guests are tied up, please try again later.\r\n");
                     free_lbuf(command);
                     free_lbuf(user);
                     free_lbuf(password);

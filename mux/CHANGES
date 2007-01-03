@@ -26,6 +26,7 @@ Bug Fixes:
  -- Guest objects left DARK through announcement code (Issue 244).
  -- @wall evaluated a speechmod before processing the message (Issue 16).
  -- @wall's switches did not interact properly (Issue 30).
+ -- Corrected error messages for failed guest logins (Issue 246).
 
 
 Performance Enhancements:

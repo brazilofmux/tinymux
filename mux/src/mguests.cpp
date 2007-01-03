@@ -115,13 +115,6 @@ void CGuests::SizeGuests(int nMin)
 
 const char *CGuests::Create(DESC *d)
 {
-    // We don't have a main guest character, break out.
-    //
-    if (!Good_obj(mudconf.guest_char))
-    {
-        return NULL;
-    }
-
     // If we have a guest character, let's use it
     //
     int i;
@@ -139,6 +132,7 @@ const char *CGuests::Create(DESC *d)
             guest_player = Guests[i] = MakeGuestChar();
             if (guest_player == NOTHING)
             {
+                queue_string(d, "Error creating guest, please try again later.\n");
                 return NULL;
             }
             else
@@ -210,13 +204,13 @@ const char *CGuests::Create(DESC *d)
 
     if (nGuests >= mudconf.number_guests)
     {
-        queue_string(d, "Sorry, All guests are currently busy. Try again later.\n");
+        queue_string(d, "All guests are currently busy, please try again later.\n");
         return NULL;
     }
     dbref newGuest = MakeGuestChar();
     if (newGuest == NOTHING)
     {
-        queue_string(d, "GAME: Error creating guest, please try again later.\n");
+        queue_string(d, "Error creating guest, please try again later.\n");
         return NULL;
     }
     SizeGuests(nGuests+1);
