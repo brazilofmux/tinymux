@@ -1,7 +1,7 @@
 /*! \file announce.c
  * \brief Port announcer.
  *
- * $Id$
+ * $Id $
  *
  * \verbatim
  *      announce - sits listening on a port, and whenever anyone connects
