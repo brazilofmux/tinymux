@@ -32,6 +32,8 @@ Performance Enhancements:
 ~~~~~~~~~~~~~~~~~~~~~~~~
  -- Help entries use less memory (specific improvements described in
     Issue 238 comments).
+ -- munge() translates results through a hash table instead of
+    repeated linear searching (Issue 247).
 
 
 Cosmetic Changes:
