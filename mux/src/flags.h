@@ -1,7 +1,9 @@
-// flags.h -- Object flags.
-//
-// $Id$
-//
+/*! \file flags.h
+ * \brief Object flags.
+ *
+ * $Id$
+ *
+ */
 
 #include "copyright.h"
 

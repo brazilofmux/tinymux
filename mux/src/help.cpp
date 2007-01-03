@@ -1,7 +1,9 @@
-// help.cpp -- Commands for giving help.
-//
-// $Id$
-//
+/*! \file help.cpp
+ * \brief In-game help system.
+ *
+ * $Id$
+ *
+ */
 
 #include "copyright.h"
 #include "autoconf.h"

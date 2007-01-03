@@ -1,5 +1,5 @@
 /*! \file funmath.cpp
- *  MUX math function handlers.
+ * \brief MUX math function handlers.
  *
  * $Id$
  *

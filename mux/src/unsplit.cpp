@@ -1,7 +1,9 @@
-// unsplit.cpp -- Filter for re-combining continuation lines.
-//
-// $Id$
-//
+/*! \file unsplit.cpp
+ * \brief Filter for re-combining continuation lines.
+ *
+ * $Id$
+ *
+ */
 
 #include "copyright.h"
 

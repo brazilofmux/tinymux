@@ -1,14 +1,16 @@
-// ansi.h
-//
-// $Id$ */
-//
-// ANSI control codes for various neat-o terminal effects
-//
-// Some older versions of Ultrix don't appear to be able to handle these
-// escape sequences. If lowercase 'a's are being stripped from @doings,
-// and/or the output of the ANSI flag is screwed up, you have the Ultrix
-// problem.
-//
+/*! \file ansi.h
+ * \brief ANSI control codes for various neat-o terminal effects
+ *
+ * $Id$
+ *
+ */
+
+/*
+ * Some older versions of Ultrix don't appear to be able to handle these
+ * escape sequences. If lowercase 'a's are being stripped from @doings,
+ * and/or the output of the ANSI flag is screwed up, you have the Ultrix
+ * problem.
+ */
 
 #ifndef _ANSI_H
 #define _ANSI_H

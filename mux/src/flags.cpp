@@ -1,5 +1,5 @@
 /*! \file flags.cpp
- *  Flag manipulation routines.
+ * \brief Flag manipulation routines.
  *
  * $Id$
  *

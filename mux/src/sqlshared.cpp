@@ -1,7 +1,10 @@
-// sqlshared.cpp -- Shared code between the main server and the sqlslave.
-//
-// $Id$
-//
+/*! \file sqlshared.cpp
+ * \brief Shared code between the main server and the sqlslave.
+ *
+ * $Id$
+ *
+ */
+
 #include "autoconf.h"
 #include "config.h"
 

@@ -1,7 +1,12 @@
-#ifdef REALITY_LVLS
-/*
- * levels.cpp - Reality levels stuff
+/*! \file levels.cpp
+ * \brief Reality levels stuff.
+ *
+ * $Id$
+ *
+ * See mux/REALITY.SETUP in the distribution.
  */
+
+#ifdef REALITY_LVLS
 
 #include "copyright.h"
 #include "autoconf.h"

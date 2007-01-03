@@ -1,13 +1,14 @@
 /*! \file player_c.cpp
- * Player cache routines.
+ * \brief Player cache routines.
  *
  * $Id$
  *
- * Frequenty-used items which appear on every object generally find a home in
- * the db[] structure managed in db.cpp. However, there are a few items
- * related only to players which are still accessed frequently enough that
- * they should be cached. These items are money, current number of queued
- * commands, and the limit on the number of queued commands.
+ * Frequently-used items which appear on every object generally find a
+ * home in the db[] structure managed in db.cpp.  However, there are a
+ * few items related only to players which are still accessed
+ * frequently enough that they should be cached.  These items are
+ * money, current number of queued commands, and the limit on the
+ * number of queued commands.
  */
 
 #include "copyright.h"

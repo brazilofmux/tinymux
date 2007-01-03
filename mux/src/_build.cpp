@@ -1,5 +1,5 @@
 /*! \file _build.cpp
- *  Build-identifying declarations.
+ * \brief Build-identifying declarations.
  *
  * $Id$
  *

@@ -1,7 +1,9 @@
-// funmath.h -- declarations for math-related functions.
-//
-// $Id$
-//
+/*! \file funmath.h
+ * \brief declarations for math-related functions.
+ *
+ * $Id$
+ *
+ */
 
 #include "copyright.h"
 

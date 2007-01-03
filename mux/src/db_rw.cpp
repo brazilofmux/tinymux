@@ -1,5 +1,5 @@
 /*! \file db_rw.cpp
- *  Flatfile implementation.
+ * \brief Flatfile implementation.
  *
  * $Id$
  */

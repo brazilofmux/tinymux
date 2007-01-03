@@ -1,5 +1,5 @@
 /*! \file htab.cpp
- *  Table hashing routines.
+ * \brief Table hashing routines.
  *
  * $Id$
  *

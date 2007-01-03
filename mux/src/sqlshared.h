@@ -1,7 +1,9 @@
-// sqlshared.h -- Shared code between the main server and the sqlslave.
-//
-// $Id$
-//
+/*! \file sqlshared.h
+ * \brief Shared code between the main server and the sqlslave.
+ *
+ * $Id$
+ *
+ */
 
 #ifndef SQLSHARED_H
 #define SQLSHARED_H

@@ -1,7 +1,10 @@
-// svdhash.cpp -- CHashPage, CHashFile, CHashTable modules.
-//
-// $Id$
-//
+/*! \file svdhash.cpp
+ * \brief CHashPage, CHashFile, CHashTable modules.
+ *
+ * $Id$
+ *
+ */
+
 #include "copyright.h"
 #include "autoconf.h"
 #include "config.h"

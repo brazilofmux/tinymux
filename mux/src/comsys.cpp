@@ -1,5 +1,5 @@
 /*! \file comsys.cpp
- *  Channel Communication System.
+ * \brief Channel Communication System.
  *
  * $Id$
  *

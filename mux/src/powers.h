@@ -1,7 +1,9 @@
-// powers.h -- Object powers.
-//
-// $Id$
-//
+/*! \file powers.h
+ * \brief Object powers.
+ *
+ * $Id$
+ *
+ */
 
 #include "copyright.h"
 

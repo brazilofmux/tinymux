@@ -1,7 +1,10 @@
-// timer.cpp -- Mini-task scheduler for timed events.
-//
-// $Id$
-//
+/*! \file timer.cpp
+ * \brief Mini-task scheduler for timed events.
+ *
+ * $Id$
+ *
+ */
+
 #include "copyright.h"
 #include "autoconf.h"
 #include "config.h"

@@ -1,11 +1,13 @@
-/*************************************************
-*       Perl-Compatible Regular Expressions      *
-*************************************************/
-
-/* Copyright (c) 1997-2003 University of Cambridge */
-
-/* Modified a bit by Shawn Wagner for inclusion in MUX. See
-   pcre.cpp for details. */
+/*! \file pcre.h
+ * \brief Perl-Compatible Regular Expressions
+ *
+ * $Id$
+ *
+ * Copyright (c) 1997-2003 University of Cambridge
+ *
+ * Modified a bit by Shawn Wagner for inclusion in MUX. See
+ * pcre.cpp for details.
+ */
 
 #ifndef _PCRE_H
 #define _PCRE_H

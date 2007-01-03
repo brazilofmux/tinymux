@@ -1,5 +1,5 @@
 /*! \file eval.cpp
- *  Expression and function evaluation.
+ * \brief Expression and function evaluation.
  *
  * $Id$
  *

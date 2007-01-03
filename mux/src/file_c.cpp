@@ -1,5 +1,5 @@
 /*! \file file_c.cpp
- *  File cache management.
+ * \brief File cache management.
  *
  * $Id$
  *

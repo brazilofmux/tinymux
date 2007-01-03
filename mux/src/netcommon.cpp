@@ -1,11 +1,12 @@
-// netcommon.cpp
-//
-// $Id$
-//
-// This file contains routines used by the networking code that do not
-// depend on the implementation of the networking code.  The network-specific
-// portions of the descriptor data structure are not used.
-//
+/*! \file netcommon.cpp
+ * \brief Network-independent networking routines.
+ *
+ * $Id$
+ *
+ * This file contains routines used by the networking code that do not
+ * depend on the implementation of the networking code.  The network-specific
+ * portions of the descriptor data structure are not used.
+ */
 
 #include "copyright.h"
 #include "autoconf.h"

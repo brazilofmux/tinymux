@@ -1,5 +1,5 @@
 /*! \file funceval.cpp
- *  MUX function handlers.
+ * \brief MUX function handlers.
  *
  * $Id$
  *

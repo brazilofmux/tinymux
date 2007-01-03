@@ -1,5 +1,5 @@
 /*! \file game.cpp
- *  Main program and misc functions.
+ * \brief Main program and misc functions.
  *
  * $Id$
  *

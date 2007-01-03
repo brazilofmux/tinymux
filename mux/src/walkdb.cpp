@@ -1,7 +1,9 @@
-// walkdb.cpp -- Support for commands that walk the entire db.
-//
-// $Id$
-//
+/*! \file walkdb.cpp
+ * \brief Support for commands that walk the entire db.
+ *
+ * $Id$
+ *
+ */
 
 #include "copyright.h"
 #include "autoconf.h"

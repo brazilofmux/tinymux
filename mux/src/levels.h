@@ -1,4 +1,9 @@
-/* levels.h - Reality levels */
+/*! \file levels.h
+ * \brief Reality levels
+ *
+ * $Id$
+ *
+ */
 
 #include "copyright.h"
 
