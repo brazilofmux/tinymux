@@ -367,44 +367,6 @@ int AutoDetect::GetType(void)
     return m_CouldBe;
 }
 
-static int get_list_type
-(
-    char *fargs[],
-    int   nfargs,
-    int   type_pos,
-    char *ptrs[],
-    int   nitems
-)
-{
-    if (type_pos <= nfargs)
-    {
-        switch (mux_tolower(fargs[type_pos-1][0]))
-        {
-        case 'd':
-            return DBREF_LIST;
-
-        case 'n':
-            return NUMERIC_LIST;
-
-        case 'f':
-            return FLOAT_LIST;
-
-        case 'i':
-            return CI_ASCII_LIST;
-
-        case '\0':
-            break;
-
-        default:
-            return ASCII_LIST;
-        }
-    }
-
-    AutoDetect ad;
-    ad.ExamineList(nitems, ptrs);
-    return ad.GetType();
-}
-
 int list2arr(char *arr[], int maxcount, char *list, SEP *psep)
 {
     list = trim_space_sep(list, psep);
@@ -7482,41 +7444,36 @@ static FUNCTION(fun_conn)
  * * fun_sort: Sort lists.
  */
 
-typedef struct f_record
+typedef struct qsort_record
 {
-    double data;
+    union
+    {
+        double d;
+        long   l;
+        INT64  i64;
+    } u;
     char *str;
-} f_rec;
+} q_rec;
 
-typedef struct i_record
-{
-    long data;
-    char *str;
-} i_rec;
-
-typedef struct i64_record
-{
-    INT64 data;
-    char *str;
-} i64_rec;
+typedef int DCL_CDECL CompareFunction(const void *s1, const void *s2);
 
 static int DCL_CDECL a_comp(const void *s1, const void *s2)
 {
-    return strcmp(*(char **)s1, *(char **)s2);
+    return strcmp(((q_rec *)s1)->str, ((q_rec *)s2)->str);
 }
 
 static int DCL_CDECL a_casecomp(const void *s1, const void *s2)
 {
-    return mux_stricmp(*(char **)s1, *(char **)s2);
+    return mux_stricmp(((q_rec *)s1)->str, ((q_rec *)s2)->str);
 }
 
 static int DCL_CDECL f_comp(const void *s1, const void *s2)
 {
-    if (((f_rec *) s1)->data > ((f_rec *) s2)->data)
+    if (((q_rec *) s1)->u.d > ((q_rec *) s2)->u.d)
     {
         return 1;
     }
-    else if (((f_rec *) s1)->data < ((f_rec *) s2)->data)
+    else if (((q_rec *) s1)->u.d < ((q_rec *) s2)->u.d)
     {
         return -1;
     }
@@ -7525,11 +7482,11 @@ static int DCL_CDECL f_comp(const void *s1, const void *s2)
 
 static int DCL_CDECL i_comp(const void *s1, const void *s2)
 {
-    if (((i_rec *) s1)->data > ((i_rec *) s2)->data)
+    if (((q_rec *) s1)->u.l > ((q_rec *) s2)->u.l)
     {
         return 1;
     }
-    else if (((i_rec *) s1)->data < ((i_rec *) s2)->data)
+    else if (((q_rec *) s1)->u.l < ((q_rec *) s2)->u.l)
     {
         return -1;
     }
@@ -7538,96 +7495,108 @@ static int DCL_CDECL i_comp(const void *s1, const void *s2)
 
 static int DCL_CDECL i64_comp(const void *s1, const void *s2)
 {
-    if (((i64_rec *) s1)->data > ((i64_rec *) s2)->data)
+    if (((q_rec *) s1)->u.i64 > ((q_rec *) s2)->u.i64)
     {
         return 1;
     }
-    else if (((i64_rec *) s1)->data < ((i64_rec *) s2)->data)
+    else if (((q_rec *) s1)->u.i64 < ((q_rec *) s2)->u.i64)
     {
         return -1;
     }
     return 0;
 }
 
-static void do_asort(char *s[], int n, int sort_type)
+typedef struct
 {
-    if (  n <= 0
+    char **m_s;
+    int    m_n;
+    int    m_iSortType;
+    q_rec *m_ptrs;
+
+} SortContext;
+
+static bool do_asort_start(SortContext *psc, int n, char *s[], int sort_type)
+{
+    if (  n < 0
        || LBUF_SIZE <= n)
     {
-        return;
+        return false;
+    }
+    
+    psc->m_s = s;
+    psc->m_n  = n;
+    psc->m_iSortType = sort_type;
+    psc->m_ptrs = NULL;
+
+    if (0 == n)
+    {
+        return true;
     }
 
     int i;
-    f_rec *fp;
-    i_rec *ip;
-    i64_rec *i64p;
 
-    switch (sort_type)
+    psc->m_ptrs = (q_rec *) MEMALLOC(n * sizeof(q_rec));
+    if (NULL != psc->m_ptrs)
     {
-    case ASCII_LIST:
-        qsort(s, n, sizeof(char *), a_comp);
-        break;
-
-    case NUMERIC_LIST:
-        i64p = (i64_rec *) MEMALLOC(n * sizeof(i64_rec));
-        if (NULL != i64p)
+        switch (sort_type)
         {
+        case ASCII_LIST:
             for (i = 0; i < n; i++)
             {
-                i64p[i].str = s[i];
-                i64p[i].data = mux_atoi64(s[i]);
+                psc->m_ptrs[i].str = s[i];
             }
-            qsort(i64p, n, sizeof(i64_rec), i64_comp);
-            for (i = 0; i < n; i++)
-            {
-                s[i] = i64p[i].str;
-            }
-            MEMFREE(i64p);
-            i64p = NULL;
-        }
-        break;
+            qsort(psc->m_ptrs, n, sizeof(q_rec), a_comp);
+            break;
 
-    case DBREF_LIST:
-        ip = (i_rec *) MEMALLOC(n * sizeof(i_rec));
-        if (NULL != ip)
+        case NUMERIC_LIST:
+            for (i = 0; i < n; i++)
+            {
+                psc->m_ptrs[i].str = s[i];
+                psc->m_ptrs[i].u.i64 = mux_atoi64(s[i]);
+            }
+            qsort(psc->m_ptrs, n, sizeof(q_rec), i64_comp);
+            break;
+
+        case DBREF_LIST:
+            for (i = 0; i < n; i++)
+            {
+                psc->m_ptrs[i].str = s[i];
+                psc->m_ptrs[i].u.l = dbnum(s[i]);
+            }
+            qsort(psc->m_ptrs, n, sizeof(q_rec), i_comp);
+            break;
+
+        case FLOAT_LIST:
+            for (i = 0; i < n; i++)
+            {
+                psc->m_ptrs[i].str = s[i];
+                psc->m_ptrs[i].u.d = mux_atof(s[i], false);
+            }
+            qsort(psc->m_ptrs, n, sizeof(q_rec), f_comp);
+            break;
+
+        case CI_ASCII_LIST:
+            for (i = 0; i < n; i++)
+            {
+                psc->m_ptrs[i].str = s[i];
+            }
+            qsort(psc->m_ptrs, n, sizeof(q_rec), a_casecomp);
+            break;
+        }
+
+        for (i = 0; i < n; i++)
         {
-            for (i = 0; i < n; i++)
-            {
-                ip[i].str = s[i];
-                ip[i].data = dbnum(s[i]);
-            }
-            qsort(ip, n, sizeof(i_rec), i_comp);
-            for (i = 0; i < n; i++)
-            {
-                s[i] = ip[i].str;
-            }
-            MEMFREE(ip);
-            ip = NULL;
+            s[i] = psc->m_ptrs[i].str;
         }
-        break;
+    }
+}
 
-    case FLOAT_LIST:
-        fp = (f_rec *) MEMALLOC(n * sizeof(f_rec));
-        if (NULL != fp)
-        {
-            for (i = 0; i < n; i++)
-            {
-                fp[i].str = s[i];
-                fp[i].data = mux_atof(s[i], false);
-            }
-            qsort(fp, n, sizeof(f_rec), f_comp);
-            for (i = 0; i < n; i++)
-            {
-                s[i] = fp[i].str;
-            }
-            MEMFREE(fp);
-            fp = NULL;
-        }
-        break;
-
-    case CI_ASCII_LIST:
-        qsort(s, n, sizeof(char *), a_casecomp);
-        break;
+static void do_asort_finish(SortContext *psc)
+{
+    if (NULL != psc->m_ptrs)
+    {
+        MEMFREE(psc->m_ptrs);
+        psc->m_ptrs = NULL;
     }
 }
 
@@ -7652,8 +7621,51 @@ static FUNCTION(fun_sort)
     char *list = alloc_lbuf("fun_sort");
     mux_strncpy(list, fargs[0], LBUF_SIZE-1);
     int nitems = list2arr(ptrs, LBUF_SIZE / 2, list, &sep);
-    int sort_type = get_list_type(fargs, nfargs, 2, ptrs, nitems);
-    do_asort(ptrs, nitems, sort_type);
+
+    int sort_type = ASCII_LIST;
+    if (2 <= nfargs)
+    {
+        switch (mux_tolower(fargs[1][0]))
+        {
+        case 'd':
+            sort_type = DBREF_LIST;
+            break;
+
+        case 'n':
+            sort_type = NUMERIC_LIST;
+            break;
+
+        case 'f':
+            sort_type = FLOAT_LIST;
+            break;
+
+        case 'i':
+            sort_type = CI_ASCII_LIST;
+            break;
+
+        case '?':
+        case '\0':
+            {
+                AutoDetect ad;
+                ad.ExamineList(nitems, ptrs);
+                sort_type = ad.GetType();
+            }
+            break;
+        }
+    }
+    else
+    {
+        AutoDetect ad;
+        ad.ExamineList(nitems, ptrs);
+        sort_type = ad.GetType();
+    }
+
+    SortContext sc;
+    if (do_asort_start(&sc, nitems, ptrs, sort_type))
+    {
+        do_asort_finish(&sc);
+    }
+
     arr2list(ptrs, nitems, buff, bufc, &osep);
     free_lbuf(list);
 }
@@ -7668,12 +7680,13 @@ static FUNCTION(fun_sort)
 
 static void handle_sets
 (
-    char *fargs[],
-    char *buff,
+    int    nfargs,
+    char  *fargs[],
+    char  *buff,
     char **bufc,
-    int  oper,
-    SEP  *psep,
-    SEP  *posep
+    int    oper,
+    SEP   *psep,
+    SEP   *posep
 )
 {
     char **ptrs1 = NULL;
@@ -7712,16 +7725,84 @@ static void handle_sets
     char *list1 = alloc_lbuf("fun_setunion.1");
     mux_strncpy(list1, fargs[0], LBUF_SIZE-1);
     int n1 = list2arr(ptrs1, LBUF_SIZE/2, list1, psep);
-    do_asort(ptrs1, n1, ASCII_LIST);
 
     char *list2 = alloc_lbuf("fun_setunion.2");
     mux_strncpy(list2, fargs[1], LBUF_SIZE-1);
     int n2 = list2arr(ptrs2, LBUF_SIZE/2, list2, psep);
-    do_asort(ptrs2, n2, ASCII_LIST);
+
+    int sort_type = ASCII_LIST;
+    if (5 <= nfargs)
+    {
+        switch (mux_tolower(fargs[4][0]))
+        {
+        case 'd':
+            sort_type = DBREF_LIST;
+            break;
+
+        case 'n':
+            sort_type = NUMERIC_LIST;
+            break;
+
+        case 'f':
+            sort_type = FLOAT_LIST;
+            break;
+
+        case 'i':
+            sort_type = CI_ASCII_LIST;
+            break;
+
+        case '?':
+        case '\0':
+            {
+                AutoDetect ad;
+                ad.ExamineList(n1, ptrs1);
+                ad.ExamineList(n2, ptrs2);
+                sort_type = ad.GetType();
+            }
+            break;
+        }
+    }
+
+    SortContext sc1;
+    if (!do_asort_start(&sc1, n1, ptrs1, sort_type))
+    {
+        return;
+    }
+
+    SortContext sc2;
+    if (!do_asort_start(&sc2, n2, ptrs2, sort_type))
+    {
+        do_asort_finish(&sc1);
+        return;
+    }
+
+    CompareFunction *cf = NULL;
+    switch (sort_type)
+    {
+    case ASCII_LIST:
+        cf = a_comp;
+        break;
+
+    case NUMERIC_LIST:
+        cf = i64_comp;
+        break;
+
+    case DBREF_LIST:
+        cf = i_comp;
+        break;
+
+    case FLOAT_LIST:
+        cf = f_comp;
+        break;
+
+    case CI_ASCII_LIST:
+        cf = a_casecomp;
+        break;
+    }
 
     int i1 = 0;
     int i2 = 0;
-    char *oldp = NULL;
+    q_rec *oldp = NULL;
     bool bFirst = true;
 
     switch (oper)
@@ -7734,9 +7815,9 @@ static void handle_sets
         //
         if (  n1 == 1
            && n2 == 1
-           && strcmp(ptrs1[0], ptrs2[0]) == 0)
+           && cf(&sc1.m_ptrs[0], &sc2.m_ptrs[0]) == 0)
         {
-            safe_str(ptrs1[0], buff, bufc);
+            safe_str(sc1.m_ptrs[0].str, buff, bufc);
             break;
         }
 
@@ -7752,14 +7833,14 @@ static void handle_sets
             {
                 while (  i1 < n1
                       && oldp
-                      && strcmp(ptrs1[i1], oldp) == 0)
+                      && cf(&sc1.m_ptrs[i1], oldp) == 0)
                 {
                     i1++;
                 }
 
                 while (  i2 < n2
                       && oldp
-                      && strcmp(ptrs2[i2], oldp) == 0)
+                      && cf(&sc2.m_ptrs[i2], oldp) == 0)
                 {
                     i2++;
                 }
@@ -7776,16 +7857,16 @@ static void handle_sets
                 }
 
                 bFirst = false;
-                if (strcmp(ptrs1[i1], ptrs2[i2]) < 0)
+                if (cf(&sc1.m_ptrs[i1], &sc2.m_ptrs[i2]) < 0)
                 {
-                    oldp = ptrs1[i1];
-                    safe_str(ptrs1[i1], buff, bufc);
+                    oldp = &sc1.m_ptrs[i1];
+                    safe_str(sc1.m_ptrs[i1].str, buff, bufc);
                     i1++;
                 }
                 else
                 {
-                    oldp = ptrs2[i2];
-                    safe_str(ptrs2[i2], buff, bufc);
+                    oldp = &sc2.m_ptrs[i2];
+                    safe_str(sc2.m_ptrs[i2].str, buff, bufc);
                     i2++;
                 }
             }
@@ -7796,29 +7877,30 @@ static void handle_sets
         for (; i1 < n1; i1++)
         {
             if (  !oldp
-               || strcmp(oldp, ptrs1[i1]) != 0)
+               || cf(oldp, &sc1.m_ptrs[i1]) != 0)
             {
                 if (!bFirst)
                 {
                     print_sep(posep, buff, bufc);
                 }
                 bFirst = false;
-                oldp = ptrs1[i1];
-                safe_str(ptrs1[i1], buff, bufc);
+                oldp = &sc1.m_ptrs[i1];
+                safe_str(sc1.m_ptrs[i1].str, buff, bufc);
             }
         }
+
         for (; i2 < n2; i2++)
         {
             if (  !oldp
-               || strcmp(oldp, ptrs2[i2]) != 0)
+               || cf(oldp, &sc2.m_ptrs[i2]) != 0)
             {
                 if (!bFirst)
                 {
                     print_sep(posep, buff, bufc);
                 }
                 bFirst = false;
-                oldp = ptrs2[i2];
-                safe_str(ptrs2[i2], buff, bufc);
+                oldp = &sc2.m_ptrs[i2];
+                safe_str(sc2.m_ptrs[i2].str, buff, bufc);
             }
         }
         break;
@@ -7830,7 +7912,7 @@ static void handle_sets
         while (  i1 < n1
               && i2 < n2)
         {
-            val = strcmp(ptrs1[i1], ptrs2[i2]);
+            val = cf(&sc1.m_ptrs[i1], &sc2.m_ptrs[i2]);
             if (!val)
             {
                 // Got a match, copy it.
@@ -7840,17 +7922,17 @@ static void handle_sets
                     print_sep(posep, buff, bufc);
                 }
                 bFirst = false;
-                oldp = ptrs1[i1];
-                safe_str(ptrs1[i1], buff, bufc);
+                oldp = &sc1.m_ptrs[i1];
+                safe_str(sc1.m_ptrs[i1].str, buff, bufc);
                 i1++;
                 i2++;
                 while (  i1 < n1
-                      && strcmp(ptrs1[i1], oldp) == 0)
+                      && cf(&sc1.m_ptrs[i1], oldp) == 0)
                 {
                     i1++;
                 }
                 while (  i2 < n2
-                      && strcmp(ptrs2[i2], oldp) == 0)
+                      && cf(&sc2.m_ptrs[i2], oldp) == 0)
                 {
                     i2++;
                 }
@@ -7873,19 +7955,19 @@ static void handle_sets
         while (  i1 < n1
               && i2 < n2)
         {
-            val = strcmp(ptrs1[i1], ptrs2[i2]);
+            val = cf(&sc1.m_ptrs[i1], &sc2.m_ptrs[i2]);
             if (!val)
             {
                 // Got a match, increment pointers.
                 //
-                oldp = ptrs1[i1];
+                oldp = &sc1.m_ptrs[i1];
                 while (  i1 < n1
-                      && strcmp(ptrs1[i1], oldp) == 0)
+                      && cf(&sc1.m_ptrs[i1], oldp) == 0)
                 {
                     i1++;
                 }
                 while (  i2 < n2
-                      && strcmp(ptrs2[i2], oldp) == 0)
+                      && cf(&sc2.m_ptrs[i2], oldp) == 0)
                 {
                     i2++;
                 }
@@ -7899,11 +7981,11 @@ static void handle_sets
                     print_sep(posep, buff, bufc);
                 }
                 bFirst = false;
-                safe_str(ptrs1[i1], buff, bufc);
-                oldp = ptrs1[i1];
+                safe_str(sc1.m_ptrs[i1].str, buff, bufc);
+                oldp = &sc1.m_ptrs[i1];
                 i1++;
                 while (  i1 < n1
-                      && strcmp(ptrs1[i1], oldp) == 0)
+                      && cf(&sc1.m_ptrs[i1], oldp) == 0)
                 {
                     i1++;
                 }
@@ -7912,10 +7994,10 @@ static void handle_sets
             {
                 // Item in list2 but not in list1, discard.
                 //
-                oldp = ptrs2[i2];
+                oldp = &sc2.m_ptrs[i2];
                 i2++;
                 while (  i2 < n2
-                      && strcmp(ptrs2[i2], oldp) == 0)
+                      && cf(&sc2.m_ptrs[i2], oldp) == 0)
                 {
                     i2++;
                 }
@@ -7931,16 +8013,19 @@ static void handle_sets
                 print_sep(posep, buff, bufc);
             }
             bFirst = false;
-            safe_str(ptrs1[i1], buff, bufc);
-            oldp = ptrs1[i1];
+            safe_str(sc1.m_ptrs[i1].str, buff, bufc);
+            oldp = &sc1.m_ptrs[i1];
             i1++;
             while (  i1 < n1
-                  && strcmp(ptrs1[i1], oldp) == 0)
+                  && cf(&sc1.m_ptrs[i1], oldp) == 0)
             {
                 i1++;
             }
         }
     }
+
+    do_asort_finish(&sc1);
+    do_asort_finish(&sc2);
     free_lbuf(list1);
     free_lbuf(list2);
     delete [] ptrs1;
@@ -7961,7 +8046,7 @@ static FUNCTION(fun_setunion)
         return;
     }
 
-    handle_sets(fargs, buff, bufc, SET_UNION, &sep, &osep);
+    handle_sets(nfargs, fargs, buff, bufc, SET_UNION, &sep, &osep);
 }
 
 static FUNCTION(fun_setdiff)
@@ -7978,7 +8063,7 @@ static FUNCTION(fun_setdiff)
         return;
     }
 
-    handle_sets(fargs, buff, bufc, SET_DIFF, &sep, &osep);
+    handle_sets(nfargs, fargs, buff, bufc, SET_DIFF, &sep, &osep);
 }
 
 static FUNCTION(fun_setinter)
@@ -7995,7 +8080,7 @@ static FUNCTION(fun_setinter)
         return;
     }
 
-    handle_sets(fargs, buff, bufc, SET_INTERSECT, &sep, &osep);
+    handle_sets(nfargs, fargs, buff, bufc, SET_INTERSECT, &sep, &osep);
 }
 
 /* ---------------------------------------------------------------------------
@@ -10265,8 +10350,8 @@ static FUN builtin_function_list[] =
     {"SECS",        fun_secs,       MAX_ARG, 0,       2,         0, CA_PUBLIC},
     {"SECURE",      fun_secure,           1, 1,       1,         0, CA_PUBLIC},
     {"SET",         fun_set,        MAX_ARG, 2,       2,         0, CA_PUBLIC},
-    {"SETDIFF",     fun_setdiff,    MAX_ARG, 2,       4,         0, CA_PUBLIC},
-    {"SETINTER",    fun_setinter,   MAX_ARG, 2,       4,         0, CA_PUBLIC},
+    {"SETDIFF",     fun_setdiff,    MAX_ARG, 2,       5,         0, CA_PUBLIC},
+    {"SETINTER",    fun_setinter,   MAX_ARG, 2,       5,         0, CA_PUBLIC},
 #if defined(FIRANMUX)
     {"SETPARENT",   fun_setparent,  MAX_ARG, 2,       2,         0, CA_PUBLIC},
 #endif // FIRANMUX
@@ -10276,7 +10361,7 @@ static FUN builtin_function_list[] =
     {"SETNAME",     fun_setname,    MAX_ARG, 2,       2,         0, CA_PUBLIC},
     {"TRIGGER",     fun_trigger,    MAX_ARG, 1, MAX_ARG,         0, CA_PUBLIC},
 #endif // FIRANMUX
-    {"SETUNION",    fun_setunion,   MAX_ARG, 2,       4,         0, CA_PUBLIC},
+    {"SETUNION",    fun_setunion,   MAX_ARG, 2,       5,         0, CA_PUBLIC},
     {"SHA1",        fun_sha1,             1, 0,       1,         0, CA_PUBLIC},
     {"SHL",         fun_shl,        MAX_ARG, 2,       2,         0, CA_PUBLIC},
     {"SHR",         fun_shr,        MAX_ARG, 2,       2,         0, CA_PUBLIC},
