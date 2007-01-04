@@ -14,6 +14,8 @@ Feature Additions:
     consecutive &FOO lines refer to the same content (Issue 238).
  -- Add lpad(), cpad(), and rpad() functions to duplicate previous
     non-truncating ljust(), center(), and rjust functionality (Issue 13).
+ -- Added fifth, sort-type argument to setinter(), setunion(), and
+    setdiff() (Issue 3).
 
 
 Bug Fixes:

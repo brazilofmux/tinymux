@@ -7522,7 +7522,7 @@ static bool do_asort_start(SortContext *psc, int n, char *s[], int sort_type)
     {
         return false;
     }
-    
+
     psc->m_s = s;
     psc->m_n  = n;
     psc->m_iSortType = sort_type;

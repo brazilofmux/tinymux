@@ -11775,13 +11775,20 @@ SET()
 & SETDIFF()
 SETDIFF()
 
-  FUNCTION: setdiff(<list1>, <list2>[[, <delim>], <output delim>])
+  FUNCTION: setdiff(<list1>, <list2>[[[, <delim>], <output delim>], <sort type>])
 
   This function returns the difference of two sets -- i.e., the elements in
   <list1> that aren't in <list2>. The list that is returned is sorted.
 
   If <delim> is specified, it (rather than a space) is used to separate items
   in the list.
+
+  <sort type> may be used to specify the type of sort to perform (use 'd' for
+  dbref, 'n' for integer numeric, 'f' for floating numeric, 'a' for
+  case-sensitive alphanumeric, 'i' for case-insensitive alphanumeric, and '?'
+  for automatic typing).  If omitted, setdiff() sorts using case-sensitive
+  alphanumeric.  If '?' or left blank, setdiff() will try to determine the
+  type of sort to perform automatically.
 
   Example:
     > say setdiff(foo baz gleep bar, bar moof gleep)
@@ -11792,13 +11799,20 @@ SETDIFF()
 & SETINTER()
 SETINTER()
 
-  FUNCTION: setinter(<list1>, <list2>[[, <delim>], <output delim>])
+  FUNCTION: setinter(<list1>, <list2>[[[, <delim>], <output delim>], <sort type>])
 
   This function returns the intersection of two sets -- i.e., the elements
   that are in both <list1> and <list2>. The list that is returned is sorted.
 
   If <delim> is specified, it (rather than a space) is used to separate items
   in the list.
+
+  <sort type> may be used to specify the type of sort to perform (use 'd' for
+  dbref, 'n' for integer numeric, 'f' for floating numeric, 'a' for
+  case-sensitive alphanumeric, 'i' for case-insensitive alphanumeric, and '?'
+  for automatic typing).  If omitted, setinter() sorts using case-sensitive
+  alphanumeric.  If '?' or left blank, setinter() will try to determine the
+  type of sort to perform automatically.
 
   Example:
     > say setinter(foo baz gleep bar, bar moof gleep)
@@ -11871,7 +11885,7 @@ SETR()
 & SETUNION()
 SETUNION()
 
-  FUNCTION: setunion(<list1>, <list2>[[, <delim>], <output delim>])
+  FUNCTION: setunion(<list1>, <list2>[[[, <delim>], <output delim>], <sort type>])
 
   This function returns the union of two sets -- i.e., all the elements of
   both <list1> and <list2>, minus any duplicate elements. Think of it as
@@ -11879,6 +11893,14 @@ SETUNION()
 
   If <delim> is specified, it (rather than a space) is used to separate items
   in the list.
+
+  <sort type> may be used to specify the type of sort to perform (use 'd' for
+  dbref, 'n' for integer numeric, 'f' for floating numeric, 'a' for
+  case-sensitive alphanumeric, 'i' for case-insensitive alphanumeric, and '?'
+  for automatic typing).  If omitted, setunion() sorts using case-sensitive
+  alphanumeric.  If '?' or left blank, setunion() will try to determine the
+  type of sort to perform automatically.
+
 
   Example:
     > say setunion(foo baz gleep bar, bar moof gleep)
@@ -12065,9 +12087,9 @@ SORT()
 
   <sort type> may be used to specify the type of sort to perform (use 'd' for
   dbref, 'n' for integer numeric, 'f' for floating numeric, 'a' for
-  case-sensitive alphanumeric, and 'i' for case-insensitive alphanumeric).  If
-  omitted or left blank, the sort() function will try to determine the type of
-  sort to perform automatically.
+  case-sensitive alphanumeric, 'i' for case-insensitive alphanumeric, and '?'
+  for automatic typing).  If omitted, '?', or left blank, the sort() function
+  will try to determine the type of sort to perform automatically.
 
   By default, the output delimiter, <odelim>, defaults to the input delimiter,
   <idelim>, which itself defaults to a space. Delimiters here, like most other
