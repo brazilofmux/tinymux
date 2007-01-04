@@ -7767,6 +7767,10 @@ static void handle_sets
     SortContext sc1;
     if (!do_asort_start(&sc1, n1, ptrs1, sort_type))
     {
+        free_lbuf(list1);
+        free_lbuf(list2);
+        delete [] ptrs1;
+        delete [] ptrs2;
         return;
     }
 
@@ -7774,6 +7778,10 @@ static void handle_sets
     if (!do_asort_start(&sc2, n2, ptrs2, sort_type))
     {
         do_asort_finish(&sc1);
+        free_lbuf(list1);
+        free_lbuf(list2);
+        delete [] ptrs1;
+        delete [] ptrs2;
         return;
     }
 
