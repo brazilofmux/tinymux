@@ -7588,8 +7588,9 @@ static bool do_asort_start(SortContext *psc, int n, char *s[], int sort_type)
         {
             s[i] = psc->m_ptrs[i].str;
         }
+        return true;
     }
-    return true;
+    return false;
 }
 
 static void do_asort_finish(SortContext *psc)
