@@ -10356,6 +10356,39 @@ void init_functab(void)
 
 #define MAX_UFUN_NAME_LEN (SBUF_SIZE-1)
 
+// MakeCanonicalUserFunctionName
+//
+// We truncate the name to a length of MAX_UFUN_NAME_LEN, if
+// necessary. ANSI is stripped.
+//
+char *MakeCanonicalUserFunctionName(const char *pName, size_t *pnName, bool *pbValid)
+{
+    static char Buffer[MAX_UFUN_NAME_LEN+1];
+
+    if (  NULL == pName
+       || '\0' == pName[0])
+    {
+        *pnName = 0;
+        *pbValid = false;
+        return NULL;
+    }
+
+    size_t nLen = 0;
+    char *pNameStripped = strip_ansi(pName, &nLen);
+    if (sizeof(Buffer)-1 < nLen)
+    {
+        nLen = sizeof(Buffer)-1;
+    }
+    memcpy(Buffer, pNameStripped, nLen);
+    Buffer[nLen] = '\0';
+
+    mux_strlwr(Buffer);
+
+    *pnName = nLen;
+    *pbValid = true;
+    return Buffer;
+}
+
 void do_function
 (
     dbref executor,
@@ -10374,7 +10407,9 @@ void do_function
     UFUN *ufp, *ufp2;
     ATTR *ap;
 
-    if ((key & FN_LIST) || !fname || *fname == '\0')
+    if (  (key & FN_LIST)
+       || NULL == fname
+       || '\0' == fname[0])
     {
         notify(executor, tprintf("%-28s   %-8s  %-30s Flgs",
             "Function Name", "DBref#", "Attribute"));
@@ -10407,17 +10442,17 @@ void do_function
 
     ATTR *pattr;
     dbref obj;
-    size_t nLen;
 
-    // Make a local copy of the function name in canonical form.
+    // Canonicalize function name.
     //
-    char *pName = strip_ansi(fname, &nLen);
-    if (MAX_UFUN_NAME_LEN < nLen)
+    size_t nLen;
+    bool bValid;
+    char *pName = MakeCanonicalUserFunctionName(fname, &nLen, &bValid);
+    if (!bValid)
     {
-        pName[MAX_UFUN_NAME_LEN] = '\0';
-        nLen = MAX_UFUN_NAME_LEN;
+        notify_quiet(executor, "Function name is not valid.");
+        return;
     }
-    mux_strlwr(pName);
 
     // Verify that the function doesn't exist in the builtin table.
     //
@@ -10480,7 +10515,7 @@ void do_function
             return;
         }
 
-        ufp->name = StringClone(pName);
+        ufp->name = StringCloneLen(pName, nLen);
         mux_strupr(ufp->name);
         ufp->obj = obj;
         ufp->atr = pattr->number;
