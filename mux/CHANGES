@@ -26,6 +26,8 @@ Bug Fixes:
  -- Guest objects left DARK through announcement code (Issue 244).
  -- @wall evaluated a speechmod before processing the message (Issue 16).
  -- @wall's switches did not interact properly (Issue 30).
+ -- @function did not strip ansi from or properly truncate user-defined
+    function names. (Issue 249).
 
 
 Performance Enhancements:

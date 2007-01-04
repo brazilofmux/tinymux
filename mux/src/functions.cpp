@@ -10354,6 +10354,8 @@ void init_functab(void)
     ufun_head = NULL;
 }
 
+#define MAX_UFUN_NAME_LEN (SBUF_SIZE-1)
+
 void do_function
 (
     dbref executor,
@@ -10403,23 +10405,25 @@ void do_function
         return;
     }
 
-    char *np, *bp;
     ATTR *pattr;
     dbref obj;
+    size_t nLen;
 
-    // Make a local uppercase copy of the function name.
+    // Make a local copy of the function name in canonical form.
     //
-    bp = np = alloc_sbuf("add_user_func");
-    safe_sb_str(fname, np, &bp);
-    *bp = '\0';
-    mux_strlwr(np);
+    char *pName = strip_ansi(fname, &nLen);
+    if (MAX_UFUN_NAME_LEN < nLen)
+    {
+        pName[MAX_UFUN_NAME_LEN] = '\0';
+        nLen = MAX_UFUN_NAME_LEN;
+    }
+    mux_strlwr(pName);
 
     // Verify that the function doesn't exist in the builtin table.
     //
-    if (hashfindLEN(np, strlen(np), &mudstate.func_htab) != NULL)
+    if (hashfindLEN(pName, nLen, &mudstate.func_htab) != NULL)
     {
         notify_quiet(executor, "Function already defined in builtin function table.");
-        free_sbuf(np);
         return;
     }
 
@@ -10428,17 +10432,14 @@ void do_function
     if (!parse_attrib(executor, target, &obj, &pattr))
     {
         notify_quiet(executor, NOMATCH_MESSAGE);
-        free_sbuf(np);
         return;
     }
-
 
     // Make sure the attribute exists.
     //
     if (!pattr)
     {
         notify_quiet(executor, "No such attribute.");
-        free_sbuf(np);
         return;
     }
 
@@ -10447,7 +10448,6 @@ void do_function
     if (!See_attr(executor, obj, pattr))
     {
         notify_quiet(executor, NOPERM_MESSAGE);
-        free_sbuf(np);
         return;
     }
 
@@ -10456,13 +10456,12 @@ void do_function
     if ((key & FN_PRIV) && !Controls(executor, obj))
     {
         notify_quiet(executor, NOPERM_MESSAGE);
-        free_sbuf(np);
         return;
     }
 
     // See if function already exists.  If so, redefine it.
     //
-    ufp = (UFUN *) hashfindLEN(np, strlen(np), &mudstate.ufunc_htab);
+    ufp = (UFUN *) hashfindLEN(pName, nLen, &mudstate.ufunc_htab);
 
     if (!ufp)
     {
@@ -10478,11 +10477,10 @@ void do_function
 
         if (NULL == ufp)
         {
-            free_sbuf(np);
             return;
         }
 
-        ufp->name = StringClone(np);
+        ufp->name = StringClone(pName);
         mux_strupr(ufp->name);
         ufp->obj = obj;
         ufp->atr = pattr->number;
@@ -10501,15 +10499,14 @@ void do_function
             }
             ufp2->next = ufp;
         }
-        hashaddLEN(np, strlen(np), ufp, &mudstate.ufunc_htab);
+        hashaddLEN(pName, nLen, ufp, &mudstate.ufunc_htab);
     }
     ufp->obj = obj;
     ufp->atr = pattr->number;
     ufp->flags = key;
-    free_sbuf(np);
     if (!Quiet(executor))
     {
-        notify_quiet(executor, tprintf("Function %s defined.", fname));
+        notify_quiet(executor, tprintf("Function %s defined.", pName));
     }
 }
 
