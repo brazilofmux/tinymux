@@ -1,7 +1,10 @@
-// stringutil.h -- string utilities.
-//
-// $Id$
-//
+/*! \file stringutil.h
+ * \brief string utilities.
+ *
+ * $Id$
+ *
+ */
+
 #ifndef STRINGUTIL_H
 #define STRINGUTIL_H
 

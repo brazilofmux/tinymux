@@ -1,7 +1,11 @@
-/* copyright.h */
-/* -*-C-*- */
-/* $Id$ */
+/*! \file copyright.h
+ * \brief Copyright notice in comments.
+ *
+ * $Id$
+ *
+ */
 
+/* -*-C-*- */
 /*
  * MUX Source Code (version 2.0 through 2.7).
  * Copyright (C) 1999-2004 by Solid Vertical Domains, Ltd.

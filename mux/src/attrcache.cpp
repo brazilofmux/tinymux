@@ -1,5 +1,5 @@
 /*! \file attrcache.cpp
- *  Attribute caching module.
+ * \brief Attribute caching module.
  *
  * $Id$
  *

@@ -1,7 +1,10 @@
-// svdreport.cpp -- Aggregate User Statistics module.
-//
-// $Id$
-//
+/*! \file svdreport.cpp
+ * \brief Aggregate User Statistics module.
+ *
+ * $Id$
+ *
+ */
+
 #include "copyright.h"
 #include "autoconf.h"
 #include "config.h"

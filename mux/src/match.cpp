@@ -1,7 +1,9 @@
-// match.cpp -- Routines for parsing arguments.
-//
-// $Id$
-//
+/*! \file match.cpp
+ * \brief Routines for parsing arguments that may refer to objects.
+ *
+ * $Id$
+ *
+ */
 
 #include "copyright.h"
 #include "autoconf.h"

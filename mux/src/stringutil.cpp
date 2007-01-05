@@ -1,5 +1,5 @@
 /*! \file stringutil.cpp
- *  String utility functions.
+ * \brief String utility functions.
  *
  * $Id$
  *

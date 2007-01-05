@@ -1,7 +1,11 @@
-// config.h
-//
-// $Id$
-//
+/*! \file config.h
+ * \brief Compile-time options.
+ *
+ * $Id$
+ *
+ * Some of these might be okay to change, others aren't really
+ * options, and some are portability-related.
+ */
 
 #ifndef CONFIG_H
 #define CONFIG_H

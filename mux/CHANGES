@@ -28,6 +28,7 @@ Bug Fixes:
  -- Guest objects left DARK through announcement code (Issue 244).
  -- @wall evaluated a speechmod before processing the message (Issue 16).
  -- @wall's switches did not interact properly (Issue 30).
+ -- Corrected error messages for failed guest logins (Issue 246).
  -- @function did not strip ansi from or properly truncate user-defined
     function names. (Issue 249).
 
@@ -36,11 +37,13 @@ Performance Enhancements:
 ~~~~~~~~~~~~~~~~~~~~~~~~
  -- Help entries use less memory (specific improvements described in
     Issue 238 comments).
+ -- munge() translates results through a hash table instead of
+    repeated linear searching (Issue 247).
 
 
 Cosmetic Changes:
 ~~~~~~~~~~~~~~~~
- -- Placeholder.
+ -- Added Doxygen file headers (Issue 102).
 
 
 Miscellaneous:

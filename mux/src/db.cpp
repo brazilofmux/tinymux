@@ -1,7 +1,20 @@
-// db.cpp
-//
-// $Id$
-//
+/*! \file db.cpp
+ * \brief Attribute interface, some flatfile and object routines.
+ *
+ * $Id$
+ *
+ * This file mainly has to do with attributes and objects in memory,
+ * but it is somewhat bloated.  Contents now include: the list of
+ * built-in attributes, fwdlist routines, Name-related routines,
+ * the \@attribute and \@fixdb commands, the attribute interface
+ * (validation, name / number lookup, attribute list management,
+ * encoding / decoding of attribute metadata, get / set, copy, chown),
+ * creation throttle routines, in-memory object database routines,
+ * new ("minimal") database setup, flatfile i/o, zone control,
+ * comsys / mail resource cleanup, restart db i/o, and some basic
+ * filesystem delete / rename routines.
+ */
+
 #include "copyright.h"
 #include "autoconf.h"
 #include "config.h"

@@ -1,5 +1,5 @@
 /*! \file command.cpp
- *  Command parser and support routines.
+ * \brief Command parser and support routines.
  *
  * $Id$
  *

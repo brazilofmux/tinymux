@@ -1,5 +1,5 @@
 /*! \file timeutil.cpp
- *  CLinearTimeAbsolute and CLinearTimeDelta modules.
+ * \brief CLinearTimeAbsolute and CLinearTimeDelta modules.
  *
  * $Id$
  *

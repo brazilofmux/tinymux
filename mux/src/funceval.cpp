@@ -1,7 +1,15 @@
-// funceval.cpp -- MUX function handlers.
-//
-// $Id$
-//
+/*! \file funceval.cpp
+ * \brief MUX function handlers.
+ *
+ * $Id$
+ *
+ * This file began as a place to put function handlers ported from other
+ * MU* servers, but has also become home to miscellaneous new functions.
+ * These handlers include side-effect functions, comsys / mail functions,
+ * ansi functions, zone functions, encrypt / decrypt, random functions,
+ * some text-formatting and list-munging functions, deprecated stack
+ * functions, regexp functions, etc.
+ */
 
 #include "copyright.h"
 #include "autoconf.h"
@@ -3222,10 +3230,6 @@ FUNCTION(fun_munge)
         return;
     }
 
-    int nptrs1, nptrs2, nresults, i, j;
-    char *list1, *list2, *rlist, *bp, *str;
-    char *uargs[2];
-
     char **ptrs1 = NULL;
     try
     {
@@ -3261,12 +3265,12 @@ FUNCTION(fun_munge)
 
     // Copy our lists and chop them up.
     //
-    list1 = alloc_lbuf("fun_munge.list1");
-    list2 = alloc_lbuf("fun_munge.list2");
+    char *list1 = alloc_lbuf("fun_munge.list1");
+    char *list2 = alloc_lbuf("fun_munge.list2");
     mux_strncpy(list1, fargs[1], LBUF_SIZE-1);
     mux_strncpy(list2, fargs[2], LBUF_SIZE-1);
-    nptrs1 = list2arr(ptrs1, LBUF_SIZE / 2, list1, &sep);
-    nptrs2 = list2arr(ptrs2, LBUF_SIZE / 2, list2, &sep);
+    int nptrs1 = list2arr(ptrs1, LBUF_SIZE / 2, list1, &sep);
+    int nptrs2 = list2arr(ptrs2, LBUF_SIZE / 2, list2, &sep);
 
     if (nptrs1 != nptrs2)
     {
@@ -3279,8 +3283,28 @@ FUNCTION(fun_munge)
         return;
     }
 
+    // Convert lists into a hash table mapping elements of list1
+    // to corresponding elements of list2.
+    CHashTable *htab = new CHashTable;
+    ISOUTOFMEMORY(htab);
+
+    int i, len;
+    for (i = 0; i < nptrs1; i++)
+    {
+        len = strlen(ptrs1[i]);
+        if (!hashfindLEN(ptrs1[i], len, htab))
+        {
+            hashaddLEN(ptrs1[i], len, ptrs2[i], htab);
+        }
+    }
+    free_lbuf(list1);
+    delete [] ptrs1;
+
     // Call the u-function with the first list as %0.
     //
+    char *rlist, *bp, *str;
+    char *uargs[2];
+
     bp = rlist = alloc_lbuf("fun_munge");
     str = atext;
     uargs[0] = fargs[1];
@@ -3290,40 +3314,37 @@ FUNCTION(fun_munge)
     *bp = '\0';
 
     // Now that we have our result, put it back into array form.
-    // Search through list1 until we find the element position, then
-    // copy the corresponding element from list2.
+    // Translate its elements according to the mappings in our hash table.
     //
     char **results = new char *[LBUF_SIZE / 2];
     ISOUTOFMEMORY(results);
-    nresults = list2arr(results, LBUF_SIZE / 2, rlist, &sep);
+    int nresults = list2arr(results, LBUF_SIZE / 2, rlist, &sep);
 
     bool bFirst = true;
+    char *p2;
     for (i = 0; i < nresults; i++)
     {
-        for (j = 0; j < nptrs1; j++)
+        len = strlen(results[i]);
+        p2 = (char *) hashfindLEN(results[i], len, htab);
+        if (NULL != p2)
         {
-            if (!strcmp(results[i], ptrs1[j]))
+            if (!bFirst)
             {
-                if (!bFirst)
-                {
-                    print_sep(&sep, buff, bufc);
-                }
-                else
-                {
-                    bFirst = false;
-                }
-                safe_str(ptrs2[j], buff, bufc);
-                ptrs1[j][0] = '\0';
-                break;
+                print_sep(&sep, buff, bufc);
             }
+            else
+            {
+                bFirst = false;
+            }
+            safe_str(p2, buff, bufc);
+            hashdeleteLEN(results[i], len, htab);
         }
     }
     free_lbuf(atext);
-    free_lbuf(list1);
     free_lbuf(list2);
-    free_lbuf(rlist);
-    delete [] ptrs1;
     delete [] ptrs2;
+    delete htab;
+    free_lbuf(rlist);
     delete [] results;
 }
 

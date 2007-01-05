@@ -1,20 +1,21 @@
-/*************************************************
-*      Perl-Compatible Regular Expressions       *
-*************************************************/
-
-
-/* This is a library of functions to support regular expressions whose syntax
-and semantics are as close as possible to those of the Perl 5 language. See
-the file Tech.Notes for some information on the internals.
-
-Written by: Philip Hazel <ph10@cam.ac.uk>
-
-           Copyright (c) 1997-2003 University of Cambridge
+/*! \file pcre.cpp
+ * \brief Perl-Compatible Regular Expressions
+ *
+ * $Id$
+ *
+ * This is a library of functions to support regular expressions whose syntax
+ * and semantics are as close as possible to those of the Perl 5 language. See
+ * the file Tech.Notes for some information on the internals.
+ *
+ * \author Philip Hazel <ph10@cam.ac.uk>
+ *
+ * \verbatim
+         Copyright (c) 1997-2003 University of Cambridge
 
 -----------------------------------------------------------------------------
-Permission is granted to anyone to use this software for any purpose on any
-computer system, and to redistribute it freely, subject to the following
-restrictions:
+ Permission is granted to anyone to use this software for any purpose on any
+ computer system, and to redistribute it freely, subject to the following
+ restrictions:
 
 1. This software is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -30,14 +31,14 @@ restrictions:
    General Purpose Licence (GPL), then the terms of that licence shall
    supersede any condition above with which it is incompatible.
 -----------------------------------------------------------------------------
-*/
-
-/* Modified by Shawn Wagner for MUX to fit in one file and remove
-   things we don't use, like a bunch of API functions and utf-8
-   support. If you want the full thing, see http://www.pcre.org.
-
-   Patched by Alierak to protect against integer overflow in repeat
-   counts.
+\endverbatim
+ *
+ * Modified by Shawn Wagner for MUX to fit in one file and remove
+ * things we don't use, like a bunch of API functions and utf-8
+ * support. If you want the full thing, see http://www.pcre.org.
+ *
+ * Patched by Alierak to protect against integer overflow in repeat
+ * counts.
  */
 
 #include "autoconf.h"

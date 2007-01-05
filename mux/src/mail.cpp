@@ -1,11 +1,12 @@
-// mail.cpp
-//
-// $Id$
-//
-// This code was taken from Kalkin's DarkZone code, which was
-// originally taken from PennMUSH 1.50 p10, and has been heavily modified
-// since being included in MUX.
-//
+/*! \file mail.cpp
+ * \brief In-game \@mail system.
+ *
+ * $Id$
+ *
+ * This code was taken from Kalkin's DarkZone code, which was
+ * originally taken from PennMUSH 1.50 p10, and has been heavily modified
+ * since being included in MUX.
+ */
 
 #include "copyright.h"
 #include "autoconf.h"

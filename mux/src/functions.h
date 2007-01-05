@@ -1,7 +1,9 @@
-// functions.h -- declarations for functions & function processing.
-//
-// $Id$
-//
+/*! \file functions.h
+ * \brief declarations for functions & function processing.
+ *
+ * $Id$
+ *
+ */
 
 #include "copyright.h"
 

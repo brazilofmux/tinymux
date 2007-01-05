@@ -1,7 +1,9 @@
-// wiz.cpp -- Wizard-only commands.
-//
-// $Id$
-//
+/*! \file wiz.cpp
+ * \brief Wizard-only commands.
+ *
+ * $Id$
+ *
+ */
 
 #include "copyright.h"
 #include "autoconf.h"

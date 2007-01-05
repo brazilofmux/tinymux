@@ -1,7 +1,10 @@
-// muxcli.cpp
-//
-// $Id$
-//
+/*! \file muxcli.cpp
+ * \brief MUX command-line option parser.
+ *
+ * $Id$
+ *
+ */
+
 #include "copyright.h"
 #include <string.h>
 #include "muxcli.h"

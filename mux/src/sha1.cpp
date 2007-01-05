@@ -1,3 +1,10 @@
+/*! \file sha1.cpp
+ * \brief Implementation of SHA1 hash.
+ *
+ * $Id$
+ *
+ */
+
 #include "copyright.h"
 #include "autoconf.h"
 #include "config.h"

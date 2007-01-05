@@ -1,3 +1,10 @@
+/*! \file sha1.h
+ * \brief Header for SHA1 hash implementation.
+ *
+ * $Id$
+ *
+ */
+
 #ifndef SHA1_H
 #define SHA1_H
 

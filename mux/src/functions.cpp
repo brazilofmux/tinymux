@@ -1,5 +1,5 @@
 /*! \file functions.cpp
- *  MUX function handlers
+ * \brief MUX function handlers
  *
  * $Id$
  *

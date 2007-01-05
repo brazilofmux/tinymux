@@ -1,9 +1,11 @@
-// svdrand.cpp -- Random Numbers.
-//
-// $Id$
-//
-// Random Numbers from Makoto Matsumoto and Takuji Nishimura.
-//
+/*! \file svdrand.cpp
+ * \brief Random Numbers.
+ *
+ * $Id$
+ *
+ * Random Numbers from Makoto Matsumoto and Takuji Nishimura.
+ */
+
 #include "copyright.h"
 #include "autoconf.h"
 #include "config.h"

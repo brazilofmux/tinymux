@@ -1,7 +1,9 @@
-// comsys.h
-//
-// $Id$
-//
+/*! \file comsys.h
+ * \brief Channel Communication System.
+ *
+ * $Id$
+ *
+ */
 
 #ifndef __COMSYS_H__
 #define __COMSYS_H__

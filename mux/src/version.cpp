@@ -1,7 +1,9 @@
-// version.cpp -- Version information.
-//
-// $Id$
-//
+/*! \file version.cpp
+ * \brief Version information.
+ *
+ * $Id$
+ *
+ */
 
 #include "copyright.h"
 #include "autoconf.h"

@@ -1,7 +1,9 @@
-// powers.cpp -- Power manipulation routines.
-//
-// $Id$
-//
+/*! \file powers.cpp
+ * \brief Power manipulation routines.
+ *
+ * $Id$
+ *
+ */
 
 #include "copyright.h"
 #include "autoconf.h"

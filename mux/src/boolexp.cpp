@@ -1,5 +1,5 @@
 /*! \file boolexp.cpp
- *  Boolean Expressions for @locks
+ * \brief Boolean Expressions for \@locks
  *
  * $Id$
  *

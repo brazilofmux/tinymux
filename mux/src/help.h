@@ -1,7 +1,9 @@
-// help.h
-//
-// $Id$
-//
+/*! \file help.h
+ * \brief In-game help system.
+ *
+ * $Id$
+ *
+ */
 
 #define  TOPIC_NAME_LEN     30
 

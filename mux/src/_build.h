@@ -1,7 +1,10 @@
-// _build.h
-//
-// $Id$
-//
+/*! \file _build.h
+ * \brief Build identification and version info.
+ *
+ * $Id$
+ *
+ */
+
 #ifndef MUX_BUILD_NUM
 extern char szBuildNum[];
 #define MUX_BUILD_NUM szBuildNum

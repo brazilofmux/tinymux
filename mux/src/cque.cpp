@@ -1,5 +1,5 @@
 /*! \file cque.cpp
- *  Commands and functions for manipulating the command queue.
+ * \brief Commands and functions for manipulating the command queue.
  *
  * $Id$
  *

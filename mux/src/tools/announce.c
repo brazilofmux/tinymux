@@ -1,4 +1,9 @@
-/*
+/*! \file announce.c
+ * \brief Port announcer.
+ *
+ * $Id$
+ *
+ * \verbatim
  *      announce - sits listening on a port, and whenever anyone connects
  *                 announces a message and disconnects them
  *
@@ -7,6 +12,7 @@
  *      Author: Lawrence Brown <lpb@cs.adfa.oz.au>      Aug 90
  *
  *      Bits of code are adapted from the Berkeley telnetd sources
+ * \endverbatim
  */
 
 #define PORT    2860

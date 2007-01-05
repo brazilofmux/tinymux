@@ -1,5 +1,5 @@
 /*! \file conf.cpp
- *  Set up configuration information and static data.
+ * \brief Set up configuration information and static data.
  *
  * $Id$
  *

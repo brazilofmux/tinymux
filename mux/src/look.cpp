@@ -1,7 +1,10 @@
-// look.cpp -- Commands which look at things.
-//
-// $Id$
-//
+/*! \file look.cpp
+ * \brief Commands which look at things.
+ *
+ * $Id$
+ *
+ */
+
 #include "copyright.h"
 #include "autoconf.h"
 #include "config.h"
