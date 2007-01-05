@@ -3284,7 +3284,8 @@ FUNCTION(fun_munge)
     }
 
     // Convert lists into a hash table mapping elements of list1
-    // to corresponding elements of list2.
+    // to list indices (to be used to index list2 later). Indices
+    // are incremented to avoid ambiguity of storing 0.
     CHashTable *htab = new CHashTable;
     ISOUTOFMEMORY(htab);
 
@@ -3294,7 +3295,7 @@ FUNCTION(fun_munge)
         len = strlen(ptrs1[i]);
         if (!hashfindLEN(ptrs1[i], len, htab))
         {
-            hashaddLEN(ptrs1[i], len, ptrs2[i], htab);
+            hashaddLEN(ptrs1[i], len, (void *) (i + 1), htab);
         }
     }
     free_lbuf(list1);
@@ -3321,12 +3322,11 @@ FUNCTION(fun_munge)
     int nresults = list2arr(results, LBUF_SIZE / 2, rlist, &sep);
 
     bool bFirst = true;
-    char *p2;
     for (i = 0; i < nresults; i++)
     {
-        len = strlen(results[i]);
-        p2 = (char *) hashfindLEN(results[i], len, htab);
-        if (NULL != p2)
+        int j = (int) hashfindLEN(results[i], strlen(results[i]), htab);
+        if (  0 != j
+           && NULL != ptrs2[--j])
         {
             if (!bFirst)
             {
@@ -3336,8 +3336,8 @@ FUNCTION(fun_munge)
             {
                 bFirst = false;
             }
-            safe_str(p2, buff, bufc);
-            hashdeleteLEN(results[i], len, htab);
+            safe_str(ptrs2[j], buff, bufc);
+            ptrs2[j] = NULL;
         }
     }
     free_lbuf(atext);
