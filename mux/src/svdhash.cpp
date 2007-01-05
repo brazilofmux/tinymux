@@ -2685,7 +2685,7 @@ void CHashTable::GetStats
 CLogFile Log;
 void CLogFile::WriteInteger(int iNumber)
 {
-    char aTempBuffer[20];
+    char aTempBuffer[I32BUF_SIZE];
     size_t nTempBuffer = mux_ltoa(iNumber, aTempBuffer);
     WriteBuffer(nTempBuffer, aTempBuffer);
 }

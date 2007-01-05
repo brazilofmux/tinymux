@@ -136,7 +136,7 @@ static void pcache_save(PCACHE *pp)
 {
     if (pp->cflags & PF_MONEY_CH)
     {
-        char tbuf[32];
+        char tbuf[I32BUF_SIZE];
         mux_ltoa(pp->money, tbuf);
         atr_add_raw(pp->player, A_MONEY, tbuf);
         pp->cflags &= ~PF_MONEY_CH;
@@ -326,7 +326,7 @@ void s_Pennies(dbref obj, int howfew)
 {
     if (mudstate.bStandAlone)
     {
-        char tbuf[32];
+        char tbuf[I32BUF_SIZE];
         mux_ltoa(howfew, tbuf);
         atr_add_raw(obj, A_MONEY, tbuf);
     }

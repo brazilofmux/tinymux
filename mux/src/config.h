@@ -236,6 +236,14 @@ typedef UINT32           UINT16;
 typedef   signed char INT8;
 typedef unsigned char UINT8;
 
+// The smallest char array that will hold the longest representation of each
+// bit size of integer.
+//
+#define I8BUF_SIZE  5   //  "-128"                  or "256"
+#define I16BUF_SIZE 7   //  "-32768"                or "65536"
+#define I32BUF_SIZE 12  //  "-2147483648"           or "4294967296"
+#define I64BUF_SIZE 21  //  "-9223372036854776320"  or "18446744073709552640"
+
 #ifndef HAVE_IN_ADDR_T
 typedef UINT32 in_addr_t;
 #endif
