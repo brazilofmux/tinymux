@@ -411,8 +411,8 @@ const INT64 FACTOR_100NS_PER_DAY = FACTOR_100NS_PER_HOUR*24;
 const INT64 FACTOR_100NS_PER_WEEK = FACTOR_100NS_PER_DAY*7;
 
 int CLinearTimeAbsolute::m_nCount = 0;
-char CLinearTimeAbsolute::m_Buffer[204];
-char CLinearTimeDelta::m_Buffer[204];
+char CLinearTimeAbsolute::m_Buffer[I64BUF_SIZE*2];
+char CLinearTimeDelta::m_Buffer[I64BUF_SIZE*2];
 
 static void GetUTCLinearTime(INT64 *plt);
 

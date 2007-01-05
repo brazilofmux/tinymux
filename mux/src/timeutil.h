@@ -41,7 +41,7 @@ class CLinearTimeAbsolute
 private:
     INT64  m_tAbsolute;
     static int m_nCount;
-    static char m_Buffer[204];
+    static char m_Buffer[I64BUF_SIZE*2];
 
 public:
     //CLinearTimeAbsolute(int tInitial);
@@ -92,7 +92,7 @@ class CLinearTimeDelta
 
 private:
     INT64 m_tDelta;
-    static char m_Buffer[204];
+    static char m_Buffer[I64BUF_SIZE*2];
 
 public:
     CLinearTimeDelta(void);
