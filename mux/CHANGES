@@ -10,10 +10,12 @@ Feature Additions:
 ~~~~~~~~~~~~~~~~~
  -- Support optional action list with @break.  Add corresponding
     @assert command. (Issue 36).
- -- Help files support PennMUSH-style multiple topics for each help entry;
-    consecutive &FOO lines refer to the same content (Issue 238).
+ -- Help files support PennMUSH-style multiple topics for each help
+    entry; consecutive &FOO lines refer to the same content
+    (Issue 238).
  -- Add lpad(), cpad(), and rpad() functions to duplicate previous
-    non-truncating ljust(), center(), and rjust functionality (Issue 13).
+    non-truncating ljust(), center(), and rjust functionality
+    (Issue 13).
  -- Add /delete switch to @function and allow removal of user-defined
     functions (Issue 250).
  -- Added fifth, sort-type argument to setinter(), setunion(), and
@@ -24,11 +26,12 @@ Bug Fixes:
 ~~~~~~~~~
  -- INFO should show 'Patches' or 'INFO 1', but not both (Issue 236).
  -- @dolist and @trig were not passing TRACE bit through (Issue 237).
- -- Using \ as a shortcut to @emit no longer causes the beginning of the
-    message to be escaped (Issue 219).
+ -- Using \ as a shortcut to @emit no longer causes the beginning of
+    the message to be escaped (Issue 219).
  -- @verb/no_name used unterminated verb_sw table (Issued 243).
  -- Guest objects left DARK through announcement code (Issue 244).
- -- @wall evaluated a speechmod before processing the message (Issue 16).
+ -- @wall evaluated a speechmod before processing the message
+    (Issue 16).
  -- @wall's switches did not interact properly (Issue 30).
  -- Corrected error messages for failed guest logins (Issue 246).
  -- @function did not strip ansi from or properly truncate user-defined
