@@ -413,7 +413,7 @@
 & @FUNCTION
 @FUNCTION
 
-  COMMAND: @function[/<switches>] <function>=<object>/<attr>
+  COMMAND: @function[/<switches>] [<function>[=<object>/<attr>]]
 
   This command displays a list of currently-defined global functions or
   adds a new global function named <function>.  When invoked, the
@@ -437,15 +437,14 @@
   defined function, so you can feel free to use registers in the code
   without worrying about them overwriting previous definitions.
 
+  The /delete switch removes an existing user-defined function.
+
   The function definitions created by @function are not stored in the
-  database so they need to be re-created each time the MUX is started.
+  database, so they need to be re-created each time the MUX is started.
   It is recommended that the Startup attribute for player #1 include
   code to set up all global functions.
 
-  Function definitions may not be removed (aside from shutting down and
-  restarting the MUX, but they may be redefined so that they point to
-  an unused attribute.  This command may normally only be invoked by
-  player #1.
+  This command may normally only be invoked by player #1.
 
 & @HALT
 @HALT
