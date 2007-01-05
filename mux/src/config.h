@@ -76,6 +76,16 @@
 #define OBJECT_DEPOSIT(pennies) \
     (((pennies) - mudconf.sacadjust)* mudconf.sacfactor)
 
+// The smallest char array that will hold the longest representation of each
+// bit size of integer.
+//
+#define LONGEST_I8  5   //  "-128"                  or "256"
+#define LONGEST_I16 7   //  "-32768"                or "65536"
+#define LONGEST_I32 12  //  "-2147483648"           or "4294967296"
+#define LONGEST_I64 21  //  "-9223372036854776320"  or "18446744073709552640"
+
+#define I64BUF_SIZE LONGEST_I64
+
 #ifdef WIN32
 #define DCL_CDECL __cdecl
 #define DCL_INLINE __inline
@@ -175,24 +185,28 @@ typedef int SOCKET;
 #if SIZEOF_INT == 4
 typedef int              INT32;
 typedef unsigned int     UINT32;
+#define I32BUF_SIZE LONGEST_I32
 #ifdef CAN_UNALIGN_INT
 #define UNALIGNED32
 #endif
 #elif SIZEOF_LONG == 4
 typedef long             INT32;
 typedef unsigned long    UINT32;
+#define I32BUF_SIZE LONGEST_I32
 #ifdef CAN_UNALIGN_LONG
 #define UNALIGNED32
 #endif
 #elif SIZEOF_SHORT == 4
 typedef short            INT32;
 typedef unsigned short   UINT32;
+#define I32BUF_SIZE LONGEST_I32
 #ifdef CAN_UNALIGN_SHORT
 #define UNALIGNED32
 #endif
 #else
 typedef INT64            INT32;
 typedef UINT64           UINT32;
+#define I32BUF_SIZE LONGEST_I64
 #ifdef CAN_UNALIGN_LONGLONG
 #define UNALIGNED32
 #endif
@@ -207,24 +221,28 @@ typedef UINT64           UINT32;
 #if SIZEOF_INT == 2
 typedef int              INT16;
 typedef unsigned int     UINT16;
+#define I16BUF_SIZE LONGEST_I16
 #ifdef CAN_UNALIGN_INT
 #define UNALIGNED16
 #endif
 #elif SIZEOF_LONG == 2
 typedef long             INT16;
 typedef unsigned long    UINT16;
+#define I16BUF_SIZE LONGEST_I16
 #ifdef CAN_UNALIGN_LONG
 #define UNALIGNED16
 #endif
 #elif SIZEOF_SHORT == 2
 typedef short            INT16;
 typedef unsigned short   UINT16;
+#define I16BUF_SIZE LONGEST_I16
 #ifdef CAN_UNALIGN_SHORT
 #define UNALIGNED16
 #endif
 #else
 typedef INT32            INT16;
 typedef UINT32           UINT16;
+#define I16BUF_SIZE I32BUF_SIZE
 #ifdef UNALIGNED32
 #define UNALIGNED16
 #endif
@@ -235,14 +253,7 @@ typedef UINT32           UINT16;
 
 typedef   signed char INT8;
 typedef unsigned char UINT8;
-
-// The smallest char array that will hold the longest representation of each
-// bit size of integer.
-//
-#define I8BUF_SIZE  5   //  "-128"                  or "256"
-#define I16BUF_SIZE 7   //  "-32768"                or "65536"
-#define I32BUF_SIZE 12  //  "-2147483648"           or "4294967296"
-#define I64BUF_SIZE 21  //  "-9223372036854776320"  or "18446744073709552640"
+#define I8BUF_SIZE  LONGEST_I8
 
 #ifndef HAVE_IN_ADDR_T
 typedef UINT32 in_addr_t;
