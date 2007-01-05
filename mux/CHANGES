@@ -43,6 +43,8 @@ Performance Enhancements:
     Issue 238 comments).
  -- munge() translates results through a hash table instead of
     repeated linear searching (Issue 247).
+ -- VMAG(), VUNIT, and SHUFFLE() only need LBUF_SIZE/2 elements instead
+    of LBUF_SIZE elements.
 
 
 Cosmetic Changes:
