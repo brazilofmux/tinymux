@@ -283,7 +283,7 @@ void add_quota(dbref who, int payment)
 {
     dbref aowner;
     int aflags;
-    char buf[I64BUF_SIZE];
+    char buf[I32BUF_SIZE];
 
     char *quota = atr_get(who, A_RQUOTA, &aowner, &aflags);
     mux_ltoa(mux_atol(quota) + payment, buf);

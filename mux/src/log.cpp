@@ -246,7 +246,7 @@ static const char *OBJTYP(dbref thing)
 
 void log_type_and_name(dbref thing)
 {
-    char nbuf[I64BUF_SIZE+3];
+    char nbuf[I32BUF_SIZE+3];
 
     log_text(OBJTYP(thing));
     mux_sprintf(nbuf, sizeof(nbuf), " #%d(", thing);
