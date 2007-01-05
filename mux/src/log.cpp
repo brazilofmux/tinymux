@@ -1,7 +1,9 @@
-// log.cpp -- Logging routines.
-//
-// $Id$
-//
+/*! \file log.cpp
+ * \brief Logging routines.
+ *
+ * $Id$
+ *
+ */
 
 #include "copyright.h"
 #include "autoconf.h"

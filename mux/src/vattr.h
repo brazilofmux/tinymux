@@ -1,7 +1,9 @@
-// vattr.h -- Definitions for user-defined attributes.
-//
-// $Id$
-//
+/*! \file vattr.h
+ * \brief Definitions for user-defined attributes.
+ *
+ * $Id$
+ *
+ */
 
 extern ATTR *vattr_rename_LEN(char *pOldName, size_t nOldName, char *pNewName, size_t nNewName);
 extern ATTR *vattr_find_LEN(const char *pAttrName, size_t nAttrName);

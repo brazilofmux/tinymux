@@ -1,7 +1,9 @@
-// functions.h -- declarations for functions & function processing.
-//
-// $Id$
-//
+/*! \file functions.h
+ * \brief declarations for functions & function processing.
+ *
+ * $Id$
+ *
+ */
 
 #include "copyright.h"
 
@@ -35,6 +37,8 @@ typedef struct ufun {
 #define FN_PRES     8   // Preseve r-regs before user-def functions.
 
 #define FN_LIST     1   // Corresponds to /list switch. -not- used in
+                        // UFUN structure.
+#define FN_DELETE   16  // Corresponds to /delete switch. Not used in
                         // UFUN structure.
 
 void init_functab(void);

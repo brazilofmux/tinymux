@@ -1,3 +1,13 @@
+/*! \file autoconf.h
+ * \brief System-dependent configuration information
+ *
+ * $Id$
+ *
+ * This file contains preset configuration for Windows users.
+ * Normally you would need to run ./configure to generate this file
+ * from autoconf.h.in.
+ */
+
 #ifndef AUTOCONF_H
 #define AUTOCONF_H
 

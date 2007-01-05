@@ -1,7 +1,9 @@
-// speech.cpp -- Commands which involve speaking.
-//
-// $Id$
-//
+/*! \file speech.cpp
+ * \brief Commands which involve speaking.
+ *
+ * $Id$
+ *
+ */
 
 #include "copyright.h"
 #include "autoconf.h"

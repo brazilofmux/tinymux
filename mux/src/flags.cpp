@@ -1,7 +1,9 @@
-// flags.cpp -- Flag manipulation routines.
-//
-// $Id$
-//
+/*! \file flags.cpp
+ * \brief Flag manipulation routines.
+ *
+ * $Id$
+ *
+ */
 
 #include "copyright.h"
 #include "autoconf.h"

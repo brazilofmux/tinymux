@@ -1,7 +1,10 @@
-// svdhash.h -- CHashPage, CHashFile, CHashTable modules.
-//
-// $Id$
-//
+/*! \file svdhash.h
+ * \brief CHashPage, CHashFile, CHashTable modules.
+ *
+ * $Id$
+ *
+ */
+
 #ifndef SVDHASH_H
 #define SVDHASH_H
 

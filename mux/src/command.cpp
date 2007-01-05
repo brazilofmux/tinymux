@@ -1,5 +1,5 @@
 /*! \file command.cpp
- *  Command parser and support routines.
+ * \brief Command parser and support routines.
  *
  * $Id$
  *
@@ -224,6 +224,7 @@ static NAMETAB fpose_sw[] =
 
 static NAMETAB function_sw[] =
 {
+    {"delete",          1,  CA_WIZARD,  FN_DELETE},
     {"list",            1,  CA_WIZARD,  FN_LIST},
     {"preserve",        3,  CA_WIZARD,  FN_PRES|SW_MULTIPLE},
     {"privileged",      3,  CA_WIZARD,  FN_PRIV|SW_MULTIPLE},

@@ -1,7 +1,11 @@
-// player.cpp
-//
-// $Id$
-//
+/*! \file player.cpp
+ * \brief Player-related routines.
+ *
+ * $Id$
+ *
+ * As opposed to other types of objects, players have passwords, have more
+ * limited names, can log in, etc.
+ */
 
 #include "copyright.h"
 #include "autoconf.h"

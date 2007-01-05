@@ -1,7 +1,9 @@
-// mguests.h
-//
-// $Id$
-//
+/*! \file mguests.h
+ * \brief Multiguest system.
+ *
+ * $Id$
+ *
+ */
 
 #ifndef __MGUESTS_H
 #define __MGUESTS_H

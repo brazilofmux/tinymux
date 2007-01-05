@@ -1,7 +1,9 @@
-// move.cpp -- Routines for moving about.
-//
-// $Id$
-//
+/*! \file move.cpp
+ * \brief Routines for moving about.
+ *
+ * $Id$
+ *
+ */
 
 #include "copyright.h"
 #include "autoconf.h"

@@ -1,5 +1,5 @@
 /*! \file functions.cpp
- *  MUX function handlers
+ * \brief MUX function handlers
  *
  * $Id$
  *
@@ -10486,6 +10486,41 @@ void init_functab(void)
     ufun_head = NULL;
 }
 
+#define MAX_UFUN_NAME_LEN (SBUF_SIZE-1)
+
+// MakeCanonicalUserFunctionName
+//
+// We truncate the name to a length of MAX_UFUN_NAME_LEN, if
+// necessary. ANSI is stripped.
+//
+char *MakeCanonicalUserFunctionName(const char *pName, size_t *pnName, bool *pbValid)
+{
+    static char Buffer[MAX_UFUN_NAME_LEN+1];
+
+    if (  NULL == pName
+       || '\0' == pName[0])
+    {
+        *pnName = 0;
+        *pbValid = false;
+        return NULL;
+    }
+
+    size_t nLen = 0;
+    char *pNameStripped = strip_ansi(pName, &nLen);
+    if (sizeof(Buffer)-1 < nLen)
+    {
+        nLen = sizeof(Buffer)-1;
+    }
+    memcpy(Buffer, pNameStripped, nLen);
+    Buffer[nLen] = '\0';
+
+    mux_strlwr(Buffer);
+
+    *pnName = nLen;
+    *pbValid = true;
+    return Buffer;
+}
+
 void do_function
 (
     dbref executor,
@@ -10504,7 +10539,9 @@ void do_function
     UFUN *ufp, *ufp2;
     ATTR *ap;
 
-    if ((key & FN_LIST) || !fname || *fname == '\0')
+    if (  (key & FN_LIST)
+       || NULL == fname
+       || '\0' == fname[0])
     {
         notify(executor, tprintf("%-28s   %-8s  %-30s Flgs",
             "Function Name", "DBref#", "Attribute"));
@@ -10535,23 +10572,60 @@ void do_function
         return;
     }
 
-    char *np, *bp;
     ATTR *pattr;
     dbref obj;
 
-    // Make a local uppercase copy of the function name.
+    // Canonicalize function name.
     //
-    bp = np = alloc_sbuf("add_user_func");
-    safe_sb_str(fname, np, &bp);
-    *bp = '\0';
-    mux_strlwr(np);
+    size_t nLen;
+    bool bValid;
+    char *pName = MakeCanonicalUserFunctionName(fname, &nLen, &bValid);
+    if (!bValid)
+    {
+        notify_quiet(executor, "Function name is not valid.");
+        return;
+    }
 
     // Verify that the function doesn't exist in the builtin table.
     //
-    if (hashfindLEN(np, strlen(np), &mudstate.func_htab) != NULL)
+    if (hashfindLEN(pName, nLen, &mudstate.func_htab) != NULL)
     {
         notify_quiet(executor, "Function already defined in builtin function table.");
-        free_sbuf(np);
+        return;
+    }
+
+    // Check if we're removing a function.
+    //
+    if (  (key & FN_DELETE)
+       || (  2 == nargs
+          && '\0' == target[0]))
+    {
+        ufp = (UFUN *) hashfindLEN(pName, nLen, &mudstate.ufunc_htab);
+        if (NULL == ufp)
+        {
+            notify_quiet(executor, tprintf("Function %s not found.", pName));
+        }
+        else
+        {
+            if (ufp == ufun_head)
+            {
+                ufun_head = ufun_head->next;
+            }
+            else
+            {
+                for (ufp2 = ufun_head; ufp2->next; ufp2 = ufp2->next)
+                {
+                    if (ufp2->next == ufp)
+                    {
+                        ufp2->next = ufp->next;
+                        break;
+                    }
+                }
+            }
+            hashdeleteLEN(pName, nLen, &mudstate.ufunc_htab);
+            delete ufp;
+            notify_quiet(executor, tprintf("Function %s deleted.", pName));
+        }
         return;
     }
 
@@ -10560,17 +10634,14 @@ void do_function
     if (!parse_attrib(executor, target, &obj, &pattr))
     {
         notify_quiet(executor, NOMATCH_MESSAGE);
-        free_sbuf(np);
         return;
     }
-
 
     // Make sure the attribute exists.
     //
     if (!pattr)
     {
         notify_quiet(executor, "No such attribute.");
-        free_sbuf(np);
         return;
     }
 
@@ -10579,7 +10650,6 @@ void do_function
     if (!See_attr(executor, obj, pattr))
     {
         notify_quiet(executor, NOPERM_MESSAGE);
-        free_sbuf(np);
         return;
     }
 
@@ -10588,13 +10658,12 @@ void do_function
     if ((key & FN_PRIV) && !Controls(executor, obj))
     {
         notify_quiet(executor, NOPERM_MESSAGE);
-        free_sbuf(np);
         return;
     }
 
     // See if function already exists.  If so, redefine it.
     //
-    ufp = (UFUN *) hashfindLEN(np, strlen(np), &mudstate.ufunc_htab);
+    ufp = (UFUN *) hashfindLEN(pName, nLen, &mudstate.ufunc_htab);
 
     if (!ufp)
     {
@@ -10610,11 +10679,10 @@ void do_function
 
         if (NULL == ufp)
         {
-            free_sbuf(np);
             return;
         }
 
-        ufp->name = StringClone(np);
+        ufp->name = StringCloneLen(pName, nLen);
         mux_strupr(ufp->name);
         ufp->obj = obj;
         ufp->atr = pattr->number;
@@ -10633,15 +10701,14 @@ void do_function
             }
             ufp2->next = ufp;
         }
-        hashaddLEN(np, strlen(np), ufp, &mudstate.ufunc_htab);
+        hashaddLEN(pName, nLen, ufp, &mudstate.ufunc_htab);
     }
     ufp->obj = obj;
     ufp->atr = pattr->number;
     ufp->flags = key;
-    free_sbuf(np);
     if (!Quiet(executor))
     {
-        notify_quiet(executor, tprintf("Function %s defined.", fname));
+        notify_quiet(executor, tprintf("Function %s defined.", pName));
     }
 }
 

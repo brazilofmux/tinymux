@@ -1,5 +1,5 @@
 /*! \file alloc.cpp
- *  Memory Allocation Subsystem.
+ * \brief Memory Allocation Subsystem.
  *
  * $Id$
  *

@@ -1,7 +1,9 @@
-// object.cpp -- Low-level object manipulation routines.
-//
-// $Id$
-//
+/*! \file object.cpp
+ * \brief Low-level object manipulation routines.
+ *
+ * $Id$
+ *
+ */
 
 #include "copyright.h"
 #include "autoconf.h"

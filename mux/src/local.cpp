@@ -1,4 +1,7 @@
-/* local.cpp
+/*! \file local.cpp
+ * \brief Stub area for local extensions.
+ *
+ * $Id$
  *
  * Inspired by Penn's local extensions; implemented for TinyMUX by
  * M. Hassman (June 2005)

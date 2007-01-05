@@ -1,7 +1,9 @@
-// unparse.cpp
-//
-// $Id$
-//
+/*! \file unparse.cpp
+ * \brief Produces human-readable key info from boolexps.
+ *
+ * $Id$
+ *
+ */
 
 #include "copyright.h"
 #include "autoconf.h"

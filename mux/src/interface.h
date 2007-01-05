@@ -1,7 +1,9 @@
-// interface.h
-//
-// $Id$
-//
+/*! \file interface.h
+ * \brief Declarations relating to network connections.
+ *
+ * $Id$
+ *
+ */
 
 #include "copyright.h"
 

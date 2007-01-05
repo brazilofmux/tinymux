@@ -1,7 +1,9 @@
-// alloc.h -- External definitions for memory allocation subsystem.
-//
-// $Id$
-//
+/*! \file alloc.h
+ * \brief External definitions for memory allocation subsystem.
+ *
+ * $Id$
+ *
+ */
 
 #ifndef M_ALLOC_H
 #define M_ALLOC_H
