@@ -10465,20 +10465,19 @@ void do_function
     // Check if we're removing a function.
     //
     if (  (key & FN_DELETE)
-       || (  nargs == 2
-          && *target == '\0'))
+       || (  2 == nargs
+          && '\0' == target[0]))
     {
         ufp = (UFUN *) hashfindLEN(pName, nLen, &mudstate.ufunc_htab);
-        if (!ufp)
+        if (NULL == ufp)
         {
             notify_quiet(executor, tprintf("Function %s not found.", pName));
-            return;
         }
         else
         {
             if (ufp == ufun_head)
             {
-                ufun_head = ufp->next;
+                ufun_head = ufun_head->next;
             }
             else
             {
@@ -10494,8 +10493,8 @@ void do_function
             hashdeleteLEN(pName, nLen, &mudstate.ufunc_htab);
             delete ufp;
             notify_quiet(executor, tprintf("Function %s deleted.", pName));
-            return;
         }
+        return;
     }
 
     // Make sure the target object exists.
