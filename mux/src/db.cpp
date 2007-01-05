@@ -2891,7 +2891,7 @@ dbref parse_dbref(const char *s)
 
 void putref(FILE *f, dbref ref)
 {
-    char buf[SBUF_SIZE];
+    char buf[I32BUF_SIZE+1];
     size_t n = mux_ltoa(ref, buf);
     buf[n] = '\n';
     fwrite(buf, sizeof(char), n+1, f);

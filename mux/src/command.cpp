@@ -3607,7 +3607,7 @@ size_t LeftJustifyString(char *field, size_t nWidth, const char *value)
 
 size_t RightJustifyNumber(char *field, size_t nWidth, INT64 value, char chFill)
 {
-    char   buffer[22];
+    char   buffer[I64BUF_SIZE];
     size_t nReturn = 0;
     if (nWidth < sizeof(buffer))
     {

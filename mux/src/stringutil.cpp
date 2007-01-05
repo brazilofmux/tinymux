@@ -2121,14 +2121,14 @@ size_t mux_ltoa(long val, char *buf)
 
 char *mux_ltoa_t(long val)
 {
-    static char buff[12];
+    static char buff[I32BUF_SIZE];
     mux_ltoa(val, buff);
     return buff;
 }
 
 void safe_ltoa(long val, char *buff, char **bufc)
 {
-    static char temp[12];
+    static char temp[I32BUF_SIZE];
     size_t n = mux_ltoa(val, temp);
     safe_copy_buf(temp, n, buff, bufc);
 }
@@ -2189,14 +2189,14 @@ size_t mux_i64toa(INT64 val, char *buf)
 
 char *mux_i64toa_t(INT64 val)
 {
-    static char buff[22];
+    static char buff[I64BUF_SIZE];
     mux_i64toa(val, buff);
     return buff;
 }
 
 void safe_i64toa(INT64 val, char *buff, char **bufc)
 {
-    static char temp[22];
+    static char temp[I64BUF_SIZE];
     size_t n = mux_i64toa(val, temp);
     safe_copy_buf(temp, n, buff, bufc);
 }

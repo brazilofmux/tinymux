@@ -284,7 +284,7 @@ static void set_player_folder(dbref player, int fnum)
 {
     // Set a player's folder to fnum.
     //
-    char *tbuf1 = alloc_lbuf("set_player_folder");
+    char *tbuf1 = alloc_sbuf("set_player_folder");
     mux_ltoa(fnum, tbuf1);
     ATTR *a = atr_num(A_MAILCURF);
     if (a)
@@ -297,7 +297,7 @@ static void set_player_folder(dbref player, int fnum)
         //
         atr_add(player, A_MAILCURF, tbuf1, GOD, AF_ODARK | AF_WIZARD | AF_NOPROG | AF_LOCK);
     }
-    free_lbuf(tbuf1);
+    free_sbuf(tbuf1);
 }
 
 static void add_folder_name(dbref player, int fld, char *name)

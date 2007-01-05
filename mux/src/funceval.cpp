@@ -2880,7 +2880,7 @@ FUNCTION(fun_matchall)
     }
 
     int wcount;
-    char *r, *s, *old, tbuf[8];
+    char *r, *s, *old, tbuf[I32BUF_SIZE];
     old = *bufc;
 
     // Check each word individually, returning the word number of all that

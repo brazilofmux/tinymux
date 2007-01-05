@@ -163,7 +163,7 @@ void do_open(dbref executor, dbref caller, dbref enactor, int eval, int key,
         dbref destnum = parse_linkable_room(executor, dest);
         if (Good_obj(destnum) || destnum == HOME)
         {
-            char buff[12];
+            char buff[I32BUF_SIZE];
             mux_ltoa(loc, buff);
             open_exit(executor, destnum, links[1], buff);
         }
