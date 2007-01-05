@@ -10462,6 +10462,42 @@ void do_function
         return;
     }
 
+    // Check if we're removing a function.
+    //
+    if (  (key & FN_DELETE)
+       || (  nargs == 2
+          && *target == '\0'))
+    {
+        ufp = (UFUN *) hashfindLEN(pName, nLen, &mudstate.ufunc_htab);
+        if (!ufp)
+        {
+            notify_quiet(executor, tprintf("Function %s not found.", pName));
+            return;
+        }
+        else
+        {
+            if (ufp == ufun_head)
+            {
+                ufun_head = ufp->next;
+            }
+            else
+            {
+                for (ufp2 = ufun_head; ufp2->next; ufp2 = ufp2->next)
+                {
+                    if (ufp2->next == ufp)
+                    {
+                        ufp2->next = ufp->next;
+                        break;
+                    }
+                }
+            }
+            hashdeleteLEN(pName, nLen, &mudstate.ufunc_htab);
+            delete ufp;
+            notify_quiet(executor, tprintf("Function %s deleted.", pName));
+            return;
+        }
+    }
+
     // Make sure the target object exists.
     //
     if (!parse_attrib(executor, target, &obj, &pattr))
