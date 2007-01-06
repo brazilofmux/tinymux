@@ -147,19 +147,19 @@ UINT32 CRC32_ProcessInteger2(UINT32 nInteger1, UINT32 nInteger2)
  *
  * HASH_ProcesBuffer() uses a combination of CRC-32 and Adler-32.  For strings
  * up to 16 bytes long, it uses CRC-32 to preserve most of the string's
- * information.  For longer strings, it switches to Adler-32 which is much
- * faster than CRC-32 for medium-size strings but does not preserve as much
- * information as CRC-32.  Medium-sized strings have more information than
- * small strings anyway, so losing a little isn't an issue.  Adler-32 will
- * eventually overflow, so CRC-32 is again used to squeeze the sums down
+ * information.  For medium-sized strings, it switches to Adler-32 which is
+ * much faster than CRC-32 for strings that size but does not preserve as
+ * much information as CRC-32.  Medium-sized strings have more information
+ * than small strings anyway, so losing a little is not an issue.  Adler-32
+ * will eventually overflow, so CRC-32 is again used to squeeze the sums down
  * without performing the very costly division/modulus normally part of
  * Adler-32.
  *
- * This outperforms Adler-32 (and most other hashes) for medium and long
- * strings.  For short strings, it is still fast, but not as fast as some
- * quick-and-dirty hashes.  The tradeoff is that the time spent gleaning as
- * much information from the string pays for itself with fewer probes into
- * any hash table.
+ * This outperforms Adler-32 for small, medium, and long strings.  It also
+ * outperforms all other tested hashes for medium and long strings.  For short
+ * strings, it is still fast, but not as fast as some quick-and-dirty hashes.
+ * The tradeoff is that the time spent gleaning information from small strings
+ * pays for itself with fewer probes into any hash table.
  *
  * The cost for shorter strings is somewhat compensated by using
  * CRC32_ProcessInteger() and CRC32_ProcessInteger2() instead.
