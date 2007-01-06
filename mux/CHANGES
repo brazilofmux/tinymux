@@ -20,6 +20,7 @@ Feature Additions:
     functions (Issue 250).
  -- Added fifth, sort-type argument to setinter(), setunion(), and
     setdiff() (Issue 3).
+ -- Hash option for setunion(), setdiff(), and setinter() (Issue 4).
 
 
 Bug Fixes:

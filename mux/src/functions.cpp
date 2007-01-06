@@ -300,6 +300,7 @@ char *split_token(char **sp, SEP *psep)
 #define DBREF_LIST      4
 #define FLOAT_LIST      8
 #define CI_ASCII_LIST   16
+#define HASH_LIST       32
 #define ALL_LIST        (ASCII_LIST|NUMERIC_LIST|DBREF_LIST|FLOAT_LIST)
 
 class AutoDetect
@@ -7740,6 +7741,10 @@ static void handle_sets
     {
         switch (mux_tolower(fargs[4][0]))
         {
+        case 'h':
+            sort_type = HASH_LIST;
+            break;
+
         case 'd':
             sort_type = DBREF_LIST;
             break;
@@ -7766,6 +7771,104 @@ static void handle_sets
             }
             break;
         }
+    }
+
+    int i1 = 0;
+    int i2 = 0;
+    bool bFirst = true;
+
+    if (HASH_LIST == sort_type)
+    {
+        // Avoid the sorting requirement altogether and perform SET_UNION,
+        // SET_INTERSECT, SET_DIFF in the faster possible manner.
+        //
+        CHashTable *ht = new CHashTable;
+        ISOUTOFMEMORY(ht);
+
+#define HAVE_IN_SET1 ((void *)1)
+#define HAVE_IN_SET2 ((void *)2)
+#define HAVE_IN_BOTH ((void *)3)
+#define SHOW_IN_RESULT ((void *)4)
+
+        size_t len;
+        void *InitialState;
+        if (  SET_UNION == oper
+           || SET_DIFF  == oper)
+        {
+            InitialState = SHOW_IN_RESULT;
+        }
+        else
+        {
+            InitialState = HAVE_IN_SET1;
+        }
+
+        for (i1 = 0; i1 < n1; i1++)
+        {
+            len = strlen(ptrs1[i1]);
+            if (NULL == hashfindLEN(ptrs1[i1], len, ht))
+            {
+                hashaddLEN(ptrs1[i1], len, InitialState, ht);
+            }
+        }
+
+        switch (oper)
+        {
+        case SET_UNION:
+            for (i2 = 0; i2 < n2; i2++)
+            {
+                len = strlen(ptrs2[i2]);
+                if (NULL == hashfindLEN(ptrs2[i2], len, ht))
+                {
+                    hashaddLEN(ptrs2[i2], len, SHOW_IN_RESULT, ht);
+                }
+            }
+            break;
+
+        case SET_INTERSECT:
+            for (i2 = 0; i2 < n2; i2++)
+            {
+                len = strlen(ptrs2[i2]);
+                void *CurrentState = hashfindLEN(ptrs2[i2], len, ht);
+                if (HAVE_IN_SET1 == CurrentState)
+                {
+                    hashreplLEN(ptrs2[i2], len, SHOW_IN_RESULT, ht);
+                }
+            }
+            break;
+
+        case SET_DIFF:
+            for (i2 = 0; i2 < n2; i2++)
+            {
+                len = strlen(ptrs2[i2]);
+                (void)hashdeleteLEN(ptrs2[i2], len, ht);
+            }
+            break;
+        }
+
+        char *pKeyName;
+        int  nKeyName;
+
+        void *FinalState = hash_firstkey(ht, &nKeyName, &pKeyName);
+        while (NULL != FinalState)
+        {
+            if (SHOW_IN_RESULT == FinalState)
+            {
+                if (!bFirst)
+                {
+                    print_sep(posep, buff, bufc);
+                }
+                bFirst = false;
+                safe_copy_buf(pKeyName, nKeyName, buff, bufc);
+            }
+            FinalState = hash_nextkey(ht, &nKeyName, &pKeyName);
+        }
+
+        delete ht;
+        free_lbuf(list1);
+        free_lbuf(list2);
+        delete [] ptrs1;
+        delete [] ptrs2;
+        return;
     }
 
     SortContext sc1;
@@ -7813,10 +7916,7 @@ static void handle_sets
         break;
     }
 
-    int i1 = 0;
-    int i2 = 0;
     q_rec *oldp = NULL;
-    bool bFirst = true;
 
     switch (oper)
     {

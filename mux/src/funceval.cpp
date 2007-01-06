@@ -3296,10 +3296,10 @@ FUNCTION(fun_munge)
     CHashTable *htab = new CHashTable;
     ISOUTOFMEMORY(htab);
 
-    int i, len;
+    int i;
     for (i = 0; i < nptrs1; i++)
     {
-        len = strlen(ptrs1[i]);
+        size_t len = strlen(ptrs1[i]);
         if (!hashfindLEN(ptrs1[i], len, htab))
         {
             hashaddLEN(ptrs1[i], len, (void *) (i + 1), htab);
