@@ -305,3 +305,4 @@ Miscellaneous:
  -- Freshened ATTACK, BACKUPS, BETA, CREDITS, NOTES, README, and
     readme.txt.
  -- Documented Lbufref and Regref pools in 'wizhelp @list alloc'.
+ -- Increase MAX_ALIASES_PER_PLAYER from 50 to 100.
