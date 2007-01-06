@@ -143,6 +143,33 @@ UINT32 CRC32_ProcessInteger2(UINT32 nInteger1, UINT32 nInteger2)
 #define DO8(buf,i)  DO4(buf,i); DO4(buf,i+4);
 #define DO16(buf)   DO8(buf,0); DO8(buf,8);
 
+/*! \brief Calculate hash from string of given length.
+ *
+ * HASH_ProcesBuffer() uses a combination of CRC-32 and Adler-32.  For strings
+ * up to 16 bytes long, it uses CRC-32 to preserve most of the string's
+ * information.  For longer strings, it switches to Adler-32 which is much
+ * faster than CRC-32 for medium-size strings but does not preserve as much
+ * information as CRC-32.  Medium-sized strings have more information than
+ * small strings anyway, so losing a little isn't an issue.  Adler-32 will
+ * eventually overflow, so CRC-32 is again used to squeeze the sums down
+ * without performing the very costly division/modulus normally part of
+ * Adler-32.
+ *
+ * This outperforms Adler-32 (and most other hashes) for medium and long
+ * strings.  For short strings, it is still fast, but not as fast as some
+ * quick-and-dirty hashes.  The tradeoff is that the time spent gleaning as
+ * much information from the string pays for itself with fewer probes into
+ * any hash table.
+ *
+ * The cost for shorter strings is somewhat compensated by using
+ * CRC32_ProcessInteger() and CRC32_ProcessInteger2() instead.
+ *
+ * \param ulHash       Hash previously returned or zero (0) if first call.
+ * \param arg_pBuffer  String to be hashed.
+ * \param nBuffer      Size (in bytes) of the above buffer.
+ * \return             Resulting hash value.
+ */
+
 UINT32 HASH_ProcessBuffer
 (
     UINT32       ulHash,
