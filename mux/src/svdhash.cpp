@@ -274,12 +274,12 @@ UINT32 HASH_ProcessBuffer
     return ~ulHash;
 }
 
-UINT32 munge_hash(unsigned char *x)
+UINT32 munge_hash(const char *pBuffer)
 {
     UINT32 h = 0;
-    while (*x)
+    while (*pBuffer)
     {
-        h ^= (h << 5) + (h >> 2) + CRC32_Table[*x++];
+        h ^= (h << 5) + (h >> 2) + CRC32_Table[(unsigned char)*pBuffer++];
     }
     return h;
 }

@@ -51,7 +51,7 @@ extern UINT32 HASH_ProcessBuffer
     size_t       nBuffer
 );
 
-extern UINT32 munge_hash(unsigned char *x);
+extern UINT32 munge_hash(const char *pBuffer);
 
 #if defined(_SGI_SOURCE) || ((UINT16_MAX_VALUE-2) <= HF_SIZEOF_PAGE)
 typedef UINT32 UINT_OFFSET;
