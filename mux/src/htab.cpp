@@ -41,7 +41,21 @@ void hashreset(CHashTable *htab)
     htab->ResetStats();
 }
 
-htab_rec_type htab_rec;
+/*! \brief Staging area for reads and writes into CHashTable.
+ *
+ * The htab_rec structure is a fixed size, but only part of htab_rec is used.
+ * Since requests use variable-sized Keys, the portion of htab_rec used on
+ * any particular request is also variable-sized. pData is always present,
+ * but aKey may occupy as little as a single byte.
+ */
+
+#pragma pack(1)
+static struct
+{
+    void *pData;
+    char  aKey[LBUF_SIZE+125];
+} htab_rec;
+#pragma pack()
 
 /*! \brief Look for a previously-added (Key, Data) pair in a hash table, and
  *         return its data pointer.
