@@ -8077,178 +8077,77 @@ static void centerjustcombo
     {
         return;
     }
-    size_t width = mux_atol(fargs[1]);
-    if (width <= 0 || LBUF_SIZE <= width)
+    size_t nWidth = mux_atol(strip_ansi(fargs[1]));
+    if (0 == nWidth)
+    {
+        return;
+    }
+    if(LBUF_SIZE <= nWidth)
     {
         safe_range(buff, bufc);
         return;
     }
 
+    mux_string *sStr = new mux_string;
+    sStr->import(fargs[0]);
+    size_t nStr = sStr->length();
+
+    // If there's no need to pad, then we are done.
+    //
+    if (nWidth <= nStr)
+    {
+        sStr->copy(buff, bufc, 0, bTrunc ? nWidth : LBUF_SIZE);
+        delete sStr;
+        return;
+    }
+
     // Determine string to pad with.
     //
-    size_t vwPad = 0;
+    mux_string *sPad = new mux_string;
     size_t nPad = 0;
-    char aPad[SBUF_SIZE];
-    struct ANSI_In_Context  aic;
-    struct ANSI_Out_Context aoc;
     if (nfargs == 3 && *fargs[2])
     {
         char *p = RemoveSetOfCharacters(fargs[2], "\r\n\t");
-        ANSI_String_In_Init(&aic, p, ANSI_ENDGOAL_NORMAL);
-        ANSI_String_Out_Init(&aoc, aPad, sizeof(aPad), sizeof(aPad), ANSI_ENDGOAL_LEAK);
-        ANSI_String_Copy(&aoc, &aic, sizeof(aPad));
-        nPad = ANSI_String_Finalize(&aoc, &vwPad);
+        sPad->import(p);
     }
+    nPad = sPad->length();
     if (0 == nPad)
     {
-        aPad[0] = ' ';
-        aPad[1] = '\0';
-        nPad    = 1;
-        vwPad   = 1;
+        sPad->import(" ", 1);
+        nPad = 1;
     }
 
-    size_t vwStr;
-    char aStr[LBUF_SIZE];
-    size_t nStr = ANSI_TruncateToField(fargs[0], sizeof(aStr), aStr,
-        bTrunc ? width : LBUF_SIZE, &vwStr, ANSI_ENDGOAL_NORMAL);
-
-    // If there's no need to pad, then we are done. ANSI_TruncateToField
-    // ensures that it's not too long.
-    //
-    if (width <= vwStr)
-    {
-        safe_copy_buf(aStr, nStr, buff, bufc);
-        return;
-    }
-
-    size_t vwLeading = 0;
+    size_t nLeading = 0;
     if (iType == CJC_CENTER)
     {
-        vwLeading = (width - vwStr)/2;
+        nLeading = (nWidth - nStr)/2;
     }
     else if (iType == CJC_RJUST)
     {
-        vwLeading = width - vwStr;
+        nLeading = nWidth - nStr;
     }
-    size_t vwTrailing      = width - vwLeading - vwStr;
+    size_t nTrailing = nWidth - nLeading - nStr;
 
-    // Shortcut this function if nPad == 1 (i.e., the padding is a single
-    // character).
+    // Output leading padding.
     //
-    if (nPad == 1 && vwPad == 1)
+    for (size_t nPos = 0; nPos < nLeading; nPos += nPad)
     {
-        safe_fill(buff, bufc, aPad[0], vwLeading);
-        safe_copy_buf(aStr, nStr, buff, bufc);
-        safe_fill(buff, bufc, aPad[0], vwTrailing);
-        return;
+        sPad->copy(buff, bufc, 0, nLeading-nPos);
     }
 
+    // Output string.
+    //
+    sStr->copy(buff, bufc, 0, nStr);
 
-    // Calculate the necessary info about the leading padding.
-    // The origin on the padding is at byte 0 at beginning of the
-    // field (this may cause mis-syncronization on the screen if
-    // the same background padding string is used on several lines
-    // with each idented from column 0 by a different amount.
-    // There is nothing center() can do about this issue. You are
-    // on your own.
+    // Output trailing padding.
     //
-    // Padding is repeated nLeadFull times and then a partial string
-    // of vwLeadPartial visual width is tacked onto the end.
-    //
-    // vwLeading == nLeadFull * vwPad + vwLeadPartial
-    //
-    size_t nLeadFull     = 0;
-    size_t vwLeadPartial = 0;
-    if (vwLeading)
+    for (size_t nPos = 0; nPos < nTrailing; nPos += nPad)
     {
-        nLeadFull     = vwLeading / vwPad;
-        vwLeadPartial = vwLeading - nLeadFull * vwPad;
+        sPad->copy(buff, bufc, 0, nTrailing-nPos);
     }
 
-    // Calculate the necessary info about the trailing padding.
-    //
-    // vwTrailing == vwTrailPartial0 + nTrailFull * vwPad
-    //             + vwTrailPartial1
-    //
-    size_t vwTrailSkip0    = 0;
-    size_t vwTrailPartial0 = 0;
-    size_t nTrailFull      = 0;
-    size_t vwTrailPartial1 = 0;
-    if (vwTrailing)
-    {
-        vwTrailSkip0    = (vwLeading + vwStr) % vwPad;
-        vwTrailPartial0 = 0;
-        if (vwTrailSkip0)
-        {
-            size_t n = vwPad - vwTrailSkip0;
-            if (vwTrailing >= vwTrailPartial0)
-            {
-                vwTrailPartial0 = n;
-                vwTrailing -= vwTrailPartial0;
-            }
-        }
-        nTrailFull      = vwTrailing / vwPad;
-        vwTrailPartial1 = vwTrailing - nTrailFull * vwPad;
-    }
-
-    size_t nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
-    ANSI_String_Out_Init(&aoc, *bufc, nBufferAvailable,
-        LBUF_SIZE-1, ANSI_ENDGOAL_NORMAL);
-    size_t vwDone;
-
-    // Output the runs of full leading padding.
-    //
-    size_t i;
-    size_t n;
-    for (i = 0; i < nLeadFull; i++)
-    {
-        ANSI_String_In_Init(&aic, aPad, ANSI_ENDGOAL_NORMAL);
-        ANSI_String_Copy(&aoc, &aic, vwPad);
-    }
-
-    // Output the partial leading padding segment.
-    //
-    if (vwLeadPartial > 0)
-    {
-        ANSI_String_In_Init(&aic, aPad, ANSI_ENDGOAL_NORMAL);
-        ANSI_String_Copy(&aoc, &aic, vwLeadPartial);
-    }
-
-    // Output the main string to be centered.
-    //
-    if (nStr > 0)
-    {
-        ANSI_String_In_Init(&aic, aStr, ANSI_ENDGOAL_NORMAL);
-        ANSI_String_Copy(&aoc, &aic, LBUF_SIZE-1);
-    }
-
-    // Output the first partial trailing padding segment.
-    //
-    if (vwTrailPartial0 > 0)
-    {
-        ANSI_String_In_Init(&aic, aPad, ANSI_ENDGOAL_NORMAL);
-        ANSI_String_Skip(&aic, vwTrailSkip0, &vwDone);
-        ANSI_String_Copy(&aoc, &aic, LBUF_SIZE-1);
-    }
-
-    // Output the runs of full trailing padding.
-    //
-    for (i = 0; i < nTrailFull; i++)
-    {
-        ANSI_String_In_Init(&aic, aPad, ANSI_ENDGOAL_NORMAL);
-        ANSI_String_Copy(&aoc, &aic, vwPad);
-    }
-
-    // Output the second partial trailing padding segment.
-    //
-    if (vwTrailPartial1 > 0)
-    {
-        ANSI_String_In_Init(&aic, aPad, ANSI_ENDGOAL_NORMAL);
-        ANSI_String_Copy(&aoc, &aic, vwTrailPartial1);
-    }
-
-    n = ANSI_String_Finalize(&aoc, &vwDone);
-    *bufc += n;
+    delete sStr;
+    delete sPad;
 }
 
 static FUNCTION(fun_ljust)
