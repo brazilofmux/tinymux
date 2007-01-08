@@ -2278,21 +2278,10 @@ static FUNCTION(fun_mid)
     // At this point, iPosition0, nLength are reasonable numbers which may
     // -still- not refer to valid data in the string.
     //
-    struct ANSI_In_Context aic;
-    ANSI_String_In_Init(&aic, fargs[0], ANSI_ENDGOAL_NORMAL);
-    size_t nDone;
-    ANSI_String_Skip(&aic, iPosition0, &nDone);
-    if (nDone < static_cast<size_t>(iPosition0))
-    {
-        return;
-    }
-
-    struct ANSI_Out_Context aoc;
-    size_t nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
-    ANSI_String_Out_Init(&aoc, *bufc, nBufferAvailable, nLength, ANSI_ENDGOAL_NORMAL);
-    ANSI_String_Copy(&aoc, &aic, nLength);
-    size_t nSize = ANSI_String_Finalize(&aoc, &nDone);
-    *bufc += nSize;
+    mux_string *str = new mux_string;
+    str->import(fargs[0]);
+    str->copy(buff, bufc, iPosition0, nLength);
+    delete str;
 }
 
 // ---------------------------------------------------------------------------
@@ -2329,7 +2318,8 @@ static FUNCTION(fun_right)
 
     // iPosition1 on [0,LBUF_SIZE)
     //
-    size_t iPosition1 = strlen(strip_ansi(fargs[0]));
+    size_t iPosition1 = 0;
+    strip_ansi(fargs[0], &iPosition1);
 
     // iPosition0 on [0,LBUF_SIZE)
     //
@@ -2346,21 +2336,10 @@ static FUNCTION(fun_right)
     // At this point, iPosition0, nLength, and iPosition1 are reasonable
     // numbers which may -still- not refer to valid data in the string.
     //
-    struct ANSI_In_Context aic;
-    ANSI_String_In_Init(&aic, fargs[0], ANSI_ENDGOAL_NORMAL);
-    size_t nDone;
-    ANSI_String_Skip(&aic, iPosition0, &nDone);
-    if ((size_t)nDone < iPosition0)
-    {
-        return;
-    }
-
-    struct ANSI_Out_Context aoc;
-    size_t nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
-    ANSI_String_Out_Init(&aoc, *bufc, nBufferAvailable, nLength, ANSI_ENDGOAL_NORMAL);
-    ANSI_String_Copy(&aoc, &aic, nLength);
-    size_t nSize = ANSI_String_Finalize(&aoc, &nDone);
-    *bufc += nSize;
+    mux_string *str = new mux_string;
+    str->import(fargs[0]);
+    str->copy(buff, bufc, iPosition0, nLength);
+    delete str;
 }
 
 /*
@@ -3903,57 +3882,20 @@ static FUNCTION(fun_pos)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    // Strip ANSI from pattern and save.
-    //
-    // Note: We need to save it because the next call to strip_ansi()
-    // will overwrite the prior result.  Also, we save the pattern
-    // instead of the source because the the pattern will tend to be
-    // smaller (i.e., on average, fewer bytes to move).
-    //
     size_t nPat = 0;
-    char aPatBuf[LBUF_SIZE];
-    char *pPatStrip = strip_ansi(fargs[0], &nPat);
-    if (sizeof(aPatBuf) < nPat)
-    {
-        nPat = sizeof(aPatBuf);
-    }
-    memcpy(aPatBuf, pPatStrip, nPat);
-
-    // Strip ANSI from source.
-    //
-    size_t nSrc;
-    char *pSrc = strip_ansi(fargs[1], &nSrc);
-
-    // Search for pattern string inside source string.
-    //
-    size_t i;
-    bool bSucceeded = false;
-    if (nPat == 1)
-    {
-        // We can optimize the single-character case.
-        //
-        char *p = strchr(pSrc, aPatBuf[0]);
-        if (p)
-        {
-            i = p - pSrc;
-            bSucceeded = true;
-        }
-    }
-    else if (nPat > 1)
-    {
-        // We have a multi-byte pattern.
-        //
-        bSucceeded = BMH_StringSearch(&i, nPat, aPatBuf, nSrc, pSrc);
-    }
+    mux_string *str = new mux_string;
+    str->import(fargs[1]);
+    bool bSucceeded = str->search(fargs[0], &nPat);
 
     if (bSucceeded)
     {
-        safe_ltoa(static_cast<long>(i+1), buff, bufc);
+        safe_ltoa(static_cast<long>(nPat+1), buff, bufc);
     }
     else
     {
         safe_nothing(buff, bufc);
     }
+    delete str;
 }
 
 /* ---------------------------------------------------------------------------
@@ -5282,6 +5224,7 @@ static FUNCTION(fun_moniker)
     safe_str(Moniker(thing), buff, bufc);
 }
 
+#if 0
 static void ANSI_TransformTextWithTable
 (
     char *buff,
@@ -5355,6 +5298,7 @@ static void ANSI_TransformTextWithTable
     *pBuffer = '\0';
     *bufc = pBuffer;
 }
+#endif
 
 /*
  * ---------------------------------------------------------------------------
@@ -5371,7 +5315,11 @@ static FUNCTION(fun_lcstr)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    ANSI_TransformTextWithTable(buff, bufc, fargs[0], mux_tolower);
+    mux_string *str = new mux_string;
+    str->import(fargs[0]);
+    str->transformWithTable(mux_tolower);
+    str->copy(buff, bufc);
+    delete str;
 }
 
 static FUNCTION(fun_ucstr)
@@ -5384,7 +5332,11 @@ static FUNCTION(fun_ucstr)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    ANSI_TransformTextWithTable(buff, bufc, fargs[0], mux_toupper);
+    mux_string *str = new mux_string;
+    str->import(fargs[0]);
+    str->transformWithTable(mux_toupper);
+    str->copy(buff, bufc);
+    delete str;
 }
 
 static FUNCTION(fun_capstr)
@@ -5696,7 +5648,11 @@ static FUNCTION(fun_reverse)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    ANSI_TransformTextReverseWithFunction(buff, bufc, fargs[0], mux_memrevcpy);
+    mux_string *str = new mux_string;
+    str->import(fargs[0]);
+    str->reverse();
+    str->copy(buff, bufc);
+    delete str;
 }
 
 static char ReverseWordsInText_Seperator;
@@ -5787,18 +5743,20 @@ static FUNCTION(fun_after)
         bp = trim_space_sep(bp, &sepSpace);
     }
 
+    mux_string *str = new mux_string;
+    str->import(bp);
+    size_t i;
+    
     // Look for the target string.
     //
-    size_t nText = strlen(bp);
-    size_t i;
-    bool bSucceeded = BMH_StringSearch(&i, mlen, mp, nText, bp);
+    bool bSucceeded = str->search(mp, &i);
     if (bSucceeded)
     {
         // Yup, return what follows.
         //
-        bp += i + mlen;
-        safe_copy_buf(bp, nText-i-mlen, buff, bufc);
+        str->copy(buff, bufc, i+mlen);
     }
+    delete str;
     //
     // Ran off the end without finding it.
 }
@@ -5812,7 +5770,7 @@ static FUNCTION(fun_before)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    char *mp, *ip;
+    char *mp;
     size_t mlen;
 
     // Sanity-check arg1 and arg2.
@@ -5835,22 +5793,22 @@ static FUNCTION(fun_before)
         bp = trim_space_sep(bp, &sepSpace);
     }
 
-    ip = bp;
-
     // Look for the target string.
     //
     size_t i;
-    bool bSucceeded = BMH_StringSearch(&i, mlen, mp, strlen(bp), bp);
+    mux_string *str = new mux_string;
+    str->import(bp);
+    bool bSucceeded = str->search(mp, &i);
     if (bSucceeded)
     {
         // Yup, return what follows.
         //
-        safe_copy_buf(ip, i, buff, bufc);
+        str->copy(buff, bufc, 0, i);
         return;
     }
     // Ran off the end without finding it.
     //
-    safe_str(ip, buff, bufc);
+    str->copy(buff, bufc);
 }
 
 /*
@@ -6958,11 +6916,11 @@ static FUNCTION(fun_edit)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    char *tstr;
-
-    edit_string(strip_ansi(fargs[0]), &tstr, fargs[1], fargs[2]);
-    safe_str(tstr, buff, bufc);
-    free_lbuf(tstr);
+    mux_string *str = new mux_string;
+    str->import(fargs[0]);
+    str->edit(fargs[1], fargs[2]);
+    str->copy(buff, bufc);
+    delete str;
 }
 
 /* ---------------------------------------------------------------------------
