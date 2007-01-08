@@ -3305,7 +3305,7 @@ FUNCTION(fun_munge)
     for (i = 0; i < nptrs1; i++)
     {
         len = strlen(ptrs1[i]);
-        UINT32 nHash = HASH_ProcessBuffer(0, ptrs1[i], len);
+        UINT32 nHash = munge_hash((unsigned char *) ptrs1[i]);
         htab_rec.pData = (void *) ptrs2[i];
         memcpy(htab_rec.aKey, ptrs1[i], len);
         size_t nRecord = len + sizeof(void *);
@@ -3338,9 +3338,9 @@ FUNCTION(fun_munge)
     for (i = 0; i < nresults; i++)
     {
         len = strlen(results[i]);
-        UINT32 nHash = HASH_ProcessBuffer(0, results[i], len);
+        UINT32 nHash = munge_hash((unsigned char *) results[i]);
         UINT32 iDir = htab->FindFirstKey(nHash);
-	while (iDir != HF_FIND_END)
+        while (iDir != HF_FIND_END)
         {
             HP_HEAPLENGTH nRecord;
             htab->Copy(iDir, &nRecord, &htab_rec);
