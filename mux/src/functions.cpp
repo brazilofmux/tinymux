@@ -7815,8 +7815,8 @@ static void handle_sets
 
     int i1 = 0;
     int i2 = 0;
-    bool bFirst = true;
     q_rec *oldp = NULL;
+    bool bFirst = true;
 
     switch (oper)
     {
