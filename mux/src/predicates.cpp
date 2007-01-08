@@ -1006,6 +1006,7 @@ void do_listcommands(dbref player, dbref caller, dbref enactor, int eval,
             }
         }
     }
+
     if (!didit)
     {
         notify(player, "No added commands found in command table.");
