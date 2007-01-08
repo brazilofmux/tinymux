@@ -238,6 +238,7 @@ public:
     void append(const char *str, size_t n = LBUF_SIZE);
     void append_string(const char aTextBuf[LBUF_SIZE], const ANSI_ColorState aCSBuf[LBUF_SIZE], size_t nBuf);
     void edit(char *from, char *to);
+    size_t length(void);
     void prepend(const char *str, size_t n = LBUF_SIZE);
     void reverse(void);
     bool search(char *pattern, size_t *nPos = NULL, size_t nStart = 0);

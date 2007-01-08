@@ -4120,6 +4120,11 @@ void mux_string::edit(char *from, char *to)
     }
 }
 
+size_t mux_string::length(void)
+{
+    return m_n;
+}
+
 void mux_string::prepend(const char *str, size_t n)
 {
     char aTextBuf[LBUF_SIZE];
