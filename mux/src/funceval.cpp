@@ -3295,12 +3295,6 @@ FUNCTION(fun_munge)
     CHashTable *htab = new CHashTable;
     ISOUTOFMEMORY(htab);
 
-    struct
-    {
-        void *pData;
-        char  aKey[LBUF_SIZE+125];
-    } htab_rec;
-
     int i, len;
     for (i = 0; i < nptrs1; i++)
     {
