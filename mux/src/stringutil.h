@@ -228,11 +228,20 @@ private:
     size_t          m_n;
     char            m_ach[LBUF_SIZE];
     ANSI_ColorState m_acs[LBUF_SIZE];
+    void process(const char *str, size_t n, ANSI_ColorState aCSBuf[LBUF_SIZE]);
 
 public:
     mux_string(void);
-    void import(size_t n, const char *str);
-    void copy(char *buf, char **bufc, size_t nStart = 0, size_t nLen = LBUF_SIZE);
+    void import(const char *str, size_t n = LBUF_SIZE);
+    void copy(char *buff, char **bufc, size_t nStart = 0, size_t nLen = LBUF_SIZE, size_t nBuffer = (LBUF_SIZE-1));
+    void text(char *buff, char **bufc, size_t nStart = 0, size_t nLen = LBUF_SIZE, size_t nBuffer = (LBUF_SIZE-1));
+    void append(const char *str, size_t n = LBUF_SIZE);
+    void append_string(const char aTextBuf[LBUF_SIZE], const ANSI_ColorState aCSBuf[LBUF_SIZE], size_t nBuf);
+    void edit(char *from, char *to);
+    void prepend(const char *str, size_t n = LBUF_SIZE);
+    void reverse(void);
+    bool search(char *pattern, size_t *nPos = NULL, size_t nStart = 0);
+    void transformWithTable(const unsigned char xfrmTable[256]);
 };
 
 #endif // STRINGUTIL_H
