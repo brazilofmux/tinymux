@@ -3822,59 +3822,137 @@ mux_string::mux_string(void)
 void mux_string::import(size_t n, const char *str)
 {
     m_n = 0;
+    size_t nVisual = 0, nPos = 0, nPosV = 0;
+    mux_strncpy(m_ach, strip_ansi(str, &nVisual), n);
+    m_n = nVisual;
+    ANSI_ColorState acs = acsRestingStates[ANSI_ENDGOAL_NORMAL];
 
-    while (n)
+    if (nVisual < n)
     {
-        ANSI_ColorState acs = acsRestingStates[ANSI_ENDGOAL_NORMAL];
-        size_t nToken0;
-        size_t nToken1;
-        int iType = ANSI_lex(n, str, &nToken0, &nToken1);
-
-        if (iType == TOKEN_TEXT_ANSI)
+        while (nPos < n)
         {
-            // Process TEXT
-            //
-            size_t nTextToLoad = nToken0;
-            if (sizeof(m_ach) - m_n - 1 < nTextToLoad)
+            if (ESC_CHAR == str[nPos])
             {
-                nTextToLoad = sizeof(m_ach) - 1;
-            }
+                // We have an ESC_CHAR. Let's look at the next character.
+                //
+                if (str[nPos+1] != '[')
+                {
+                    // Could be a '\0' or another non-'[' character.
+                    // Move the pointer to position ourselves over it.
+                    // And continue looking for an ESC_CHAR.
+                    //
+                    nPos++;
+                    continue;
+                }
 
-            // Copy text and replicate corresponding color state.
-            //
-            memcpy(m_ach, str, nTextToLoad);
-            for (size_t i = 0; i < nTextToLoad; i++)
+                // We found the beginning of an ANSI sequence.
+                // Find the terminating character.
+                //
+                const char *pEsc = str + nPos;
+                const char *q = pEsc + 2;
+                while (ANSI_TokenTerminatorTable[(unsigned char)*q] == 0)
+                {
+                    q++;
+                }
+                if (q[0] == '\0')
+                {
+                    // There was no good terminator. Treat everything like text.
+                    // Also, we are at the end of the string, so we're done looking.
+                    //
+                    break;
+                }
+                else
+                {
+                    // We found an ANSI sequence.
+                    //
+                    size_t nAnsiLen = q - pEsc + 1;
+                    nPos += nAnsiLen;
+                    ANSI_Parse_m(&acs, nAnsiLen, pEsc);
+                }
+            }
+            else
             {
-                m_acs[m_n+i] = acs;
+                if (mux_isprint(str[nPos]))
+                {
+                    m_acs[nPosV] = acs;
+                    nPosV++;
+                }
+                nPos++;
             }
-
-            m_n += nTextToLoad;
-            str += nToken0;
-            n   -= nToken0;
-
-            nToken0 = nToken1;
-        }
-
-        if (nToken0)
-        {
-            // Process ANSI
-            //
-            ANSI_Parse_m(&acs, nToken0, str);
-            str += nToken0;
-            n   -= nToken0;
         }
     }
-    m_ach[m_n] = '\0';
+
+    for (size_t i = nPosV; i < m_n; i++)
+    {
+        m_acs[i] = acs;
+    }
+    memset(m_ach+m_n, '\0', LBUF_SIZE-m_n);
 }
 
 /*! \brief Generates ANSI string from internal form.
  *
  * \param buff     Pointer to beginning of lbuf.
  * \param bufc     Pointer to current position.
+ * \param nStart   String position to begin copying from. Defaults to 0.
+ * \param nLen     Number of chars to copy. Defaults to LBUF_SIZE.
  * \return         None.
  */
 
-void mux_string::copy(char *buff, char **bufc)
+void mux_string::copy(char *buff, char **bufc, size_t nStart, size_t nLen)
 {
-}
+    // Sanity check our arguments and find out how much room we have.
+    //
+    if (  !buff
+       || !*bufc)
+    {
+        return;
+    }
+    size_t nAvail = buff + (LBUF_SIZE-1) - *bufc;
+    if (  nAvail < 1
+       || LBUF_SIZE <= nAvail)
+    {
+        return;
+    }
+    if (  m_n <= nStart
+       || 0 == nLen)
+    {
+        return;
+    }
+    size_t  nLeft   = (m_n - nStart);
+    if (nLeft < nLen)
+    {
+        nLen = nLeft;
+    }
+    if (nAvail < nLen)
+    {
+        nLen = nAvail;
+    }
 
+    // At this point:
+    // nStart is the position in the source string where we will start copying,
+    //  and has a value in the range [0, m_n).
+    // nAvail is the room left in the destination LBUF,
+    //  and has a value in the range (0, LBUF_SIZE).
+    // nLeft is the length of the portion of the source string we'd like to copy,
+    //  and has a value in the range (0, m_n].
+    // nLen is the length of the portion of the source string we will copy,
+    //  and has a value in the ranges (0, nLeft] and (0, nAvail].
+    //
+    size_t nPos = nStart;
+    size_t nCopied = 0;
+    static char tbuff[LBUF_SIZE];
+    char *tbufc = tbuff;
+    ANSI_ColorState acs_normal = acsRestingStates[ANSI_ENDGOAL_NORMAL];
+    safe_str(ANSI_TransitionColorBinary(&acs_normal, &(m_acs[nPos]),
+                                    &nCopied, ANSI_ENDGOAL_NORMAL), tbuff, &tbufc);
+    while (nPos < nStart + nLen)
+    {
+        safe_chr(m_ach[nPos], tbuff, &tbufc);
+        safe_str(ANSI_TransitionColorBinary(&(m_acs[nPos]), &(m_acs[nPos+1]),
+                                            &nCopied, ANSI_ENDGOAL_NORMAL), tbuff, &tbufc);
+        nPos++;
+    }
+    tbufc = tbuff;
+    ANSI_TruncateToField (tbuff, nAvail, tbufc, nLen, &nCopied, ANSI_ENDGOAL_NORMAL);
+    safe_str(tbuff, buff, bufc);
+}

@@ -232,7 +232,7 @@ private:
 public:
     mux_string(void);
     void import(size_t n, const char *str);
-    void copy(char *buf, char **bufc);
+    void copy(char *buf, char **bufc, size_t nStart = 0, size_t nLen = LBUF_SIZE);
 };
 
 #endif // STRINGUTIL_H
