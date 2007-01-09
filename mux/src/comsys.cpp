@@ -1188,16 +1188,17 @@ static void ChannelMOTD(dbref executor, dbref enactor, int attr)
     {
         char *buf = alloc_lbuf("chanmotd");
         char *bp = buf;
+        char *p  = q;
 
         mux_exec(buf, &bp, executor, executor, enactor,
-            AttrTrace(aflags, EV_FCHECK|EV_EVAL|EV_TOP), &q, NULL, 0);
+            AttrTrace(aflags, EV_FCHECK|EV_EVAL|EV_TOP), &p, NULL, 0);
         *bp = '\0';
 
         notify_with_cause_ooc(enactor, executor, buf);
 
-        free_lbuf(q);
         free_lbuf(buf);
     }
+    free_lbuf(q);
 }
 
 void do_joinchannel(dbref player, struct channel *ch)
@@ -1485,8 +1486,8 @@ static bool do_chanlog(dbref player, char *channel, char *arg)
                 atr_clr(ch->chan_obj, hist->number);
             }
         }
-        free_lbuf(oldvalue);
     }
+    free_lbuf(oldvalue);
     atr_add(ch->chan_obj, atr, mux_ltoa_t(value), GOD,
         AF_CONST|AF_NOPROG|AF_NOPARSE);
     return true;
