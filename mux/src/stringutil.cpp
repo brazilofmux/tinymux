@@ -3808,102 +3808,169 @@ mux_string::mux_string(void)
 {
     m_n = 0;
     ANSI_ColorState acs = acsRestingStates[ANSI_ENDGOAL_NORMAL];
-    for (size_t i = 0; i < LBUF_SIZE; i++)
-    {
-        m_acs[i] = acs;
-    }
-    memset(m_ach, '\0', LBUF_SIZE);
+    m_ach[m_n] = '\0';
+    m_acs[m_n] = acs;
 }
 
-void mux_string::process(const char *str, size_t n, ANSI_ColorState aCSBuf[LBUF_SIZE])
+void mux_string::append(mux_string *sStr, size_t nStart, size_t nLen)
 {
-    size_t nPos = 0, nPosV = 0;
     ANSI_ColorState acs = acsRestingStates[ANSI_ENDGOAL_NORMAL];
 
-    while (nPos < n)
+    if (sStr->m_n <= nStart)
     {
-        if (ESC_CHAR == str[nPos])
-        {
-            // We have an ESC_CHAR. Let's look at the next character.
-            //
-            if (str[nPos+1] != '[')
-            {
-                // Could be a '\0' or another non-'[' character.
-                // Move the pointer to position ourselves over it.
-                // And continue looking for an ESC_CHAR.
-                //
-                nPos++;
-                continue;
-            }
+        return;
+    }
+    if (nLen > LBUF_SIZE-1)
+    {
+        nLen = LBUF_SIZE-1;
+    }
 
-            // We found the beginning of an ANSI sequence.
-            // Find the terminating character.
-            //
-            const char *pEsc = str + nPos;
-            const char *q = pEsc + 2;
-            while (ANSI_TokenTerminatorTable[(unsigned char)*q] == 0)
+    size_t i = 0; 
+    while (  i < m_n + sStr->m_n - nStart
+          && i < nLen)
+    {
+        m_ach[m_n+i] = sStr->m_ach[nStart+i];
+        m_acs[m_n+i] = sStr->m_acs[nStart+i];
+        i++;
+    }
+    m_n += i;
+    m_ach[m_n] = '\0';
+    m_acs[m_n] = acs;
+}
+
+void mux_string::append_CharPlain(const char cChar)
+{
+    ANSI_ColorState acs = acsRestingStates[ANSI_ENDGOAL_NORMAL];
+
+    if (m_n < LBUF_SIZE-1)
+    {
+        m_ach[m_n] = cChar;
+        m_acs[m_n] = acs;
+        m_n++;
+    }
+    m_ach[m_n] = '\0';
+    m_acs[m_n] = acs;
+}
+
+void mux_string::append_Long(long lLong)
+{
+    append_TextPlain(mux_ltoa_t(lLong));
+}
+
+void mux_string::append_TextAnsi(const char *pStr, size_t n)
+{
+    mux_string *sNew = new mux_string;
+
+    sNew->import_TextAnsi(pStr, n);
+    append(sNew);
+    delete sNew;
+}
+
+void mux_string::append_TextPlain(const char *pStr, size_t n)
+{
+    size_t i = 0; 
+    ANSI_ColorState acs = acsRestingStates[ANSI_ENDGOAL_NORMAL];
+
+    while (  i < n
+          && m_n + i < LBUF_SIZE-1)
+    {
+        m_ach[m_n+i] = pStr[i];
+        m_acs[m_n+i] = acs;
+        i++;
+    }
+    m_n += i;
+    m_ach[m_n] = '\0';
+    m_acs[m_n] = acs;
+}
+
+void mux_string::edit(char *pFrom, char *pTo)
+{
+    // Do the substitution.  Idea for prefix/suffix from R'nice@TinyTIM.
+    //
+    if (!strcmp(pFrom, "^"))
+    {
+        // Prepend 'to' to string.
+        //
+        prepend_TextAnsi(pTo);
+    }
+    else if (!strcmp(pFrom, "$"))
+    {
+        // Append 'to' to string.
+        //
+        append_TextAnsi(pTo);
+    }
+    else
+    {
+        // Replace all occurances of 'from' with 'to'. Handle the special
+        // cases of from = \$ and \^.
+        //
+        if (  (  pFrom[0] == '\\'
+              || pFrom[0] == '%')
+           && (  pFrom[1] == '$'
+              || pFrom[1] == '^')
+           && pFrom[2] == '\0')
+        {
+            pFrom++;
+        }
+        size_t nStart = 0;
+        size_t nFrom = strlen(pFrom);
+        mux_string *sTemp = new mux_string;
+        while (nStart < m_n)
+        {
+            size_t nPos = 0;
+            bool bSucceeded = search(pFrom, &nPos, nStart);
+            if (bSucceeded)
             {
-                q++;
-            }
-            if (q[0] == '\0')
-            {
-                // There was no good terminator. Treat everything like text.
-                // Also, we are at the end of the string, so we're done looking.
-                //
-                break;
+                export_Append(sTemp, nStart, nPos);
+                nStart += nPos;
+                sTemp->append_TextAnsi(pTo);
+                nStart += nFrom;
             }
             else
             {
-                // We found an ANSI sequence.
-                //
-                size_t nAnsiLen = q - pEsc + 1;
-                nPos += nAnsiLen;
-                ANSI_Parse_m(&acs, nAnsiLen, pEsc);
+                // No more matches.
+                export_Append(sTemp, nStart);
+                break;
             }
         }
-        else
-        {
-            if (mux_isprint(str[nPos]))
-            {
-                aCSBuf[nPosV] = acs;
-                nPosV++;
-            }
-            nPos++;
-        }
-    }
-
-    for (size_t i = nPosV; i < nPos; i++)
-    {
-        aCSBuf[i] = acs;
+        import(sTemp);
+        delete sTemp;
     }
 }
 
-/*! \brief Import ANSI string.
- *
- * Parses the given ANSI string into a form which can be more-easily
- * navigated.
- *
- * \param str      ANSI-color encoded string to import.
- * \param n        Length of string, str. Defaults to LBUF_SIZE.
- * \return         None.
- */
-
-void mux_string::import(const char *str, size_t n)
+void mux_string::export_Append(mux_string *sStr, size_t nStart, size_t nLen)
 {
-    m_n = 0;
-    size_t nStr = strlen(str);
-    if (nStr < n)
-    {
-        n = nStr;
-    }
-    size_t nVisual = 0;
-    mux_strncpy(m_ach, strip_ansi(str, &nVisual), n);
-    m_n = nVisual;
+    ANSI_ColorState acs = acsRestingStates[ANSI_ENDGOAL_NORMAL];
 
-    if (nVisual < nStr)
+    if (m_n <= nStart)
     {
-        process(str, n, m_acs);
+        return;
     }
+    if (nLen > m_n - nStart)
+    {
+        nLen = m_n - nStart;
+    }
+
+    size_t i = 0; 
+    while (  i + sStr->m_n < LBUF_SIZE-1
+          && i < nLen)
+    {
+        sStr->m_ach[m_n+i] = m_ach[nStart+i];
+        sStr->m_acs[m_n+i] = m_acs[nStart+i];
+        i++;
+    }
+    sStr->m_n += i;
+    sStr->m_ach[m_n] = '\0';
+    sStr->m_acs[m_n] = acs;
+}
+
+char mux_string::export_Char(size_t n)
+{
+    if (m_n <= n)
+    {
+        return '\0';
+    }
+    return m_ach[n];
 }
 
 /*! \brief Generates ANSI string from internal form.
@@ -3916,7 +3983,7 @@ void mux_string::import(const char *str, size_t n)
  * \return         None.
  */
 
-void mux_string::copy(char *buff, char **bufc, size_t nStart, size_t nLen, size_t nBuffer)
+void mux_string::export_TextAnsi(char *buff, char **bufc, size_t nStart, size_t nLen, size_t nBuffer)
 {
     // Sanity check our arguments and find out how much room we have.
     // We assume we're outputting into an LBUF unless given a smaller nBuffer.
@@ -3985,7 +4052,7 @@ void mux_string::copy(char *buff, char **bufc, size_t nStart, size_t nLen, size_
  * \return         None.
  */
 
-void mux_string::text(char *buff, char **bufc, size_t nStart, size_t nLen, size_t nBuffer)
+void mux_string::export_TextPlain(char *buff, char **bufc, size_t nStart, size_t nLen, size_t nBuffer)
 {
     // Sanity check our arguments and find out how much room we have.
     // We assume we're outputting into an LBUF unless given a smaller nBuffer.
@@ -4028,95 +4095,103 @@ void mux_string::text(char *buff, char **bufc, size_t nStart, size_t nLen, size_
     safe_copy_str(m_ach+nStart, buff, bufc, nBuffer);
 }
 
-void mux_string::append(const char *str, size_t n)
+void mux_string::import(mux_string *sStr)
 {
-    char aTextBuf[LBUF_SIZE];
-    ANSI_ColorState aCSBuf[LBUF_SIZE];
-
-    size_t nStr = 0;
-    mux_strncpy(aTextBuf, strip_ansi(str, &nStr), n);
-    process(str, n, aCSBuf);
-
+    ANSI_ColorState acs = acsRestingStates[ANSI_ENDGOAL_NORMAL];
     size_t i = 0; 
-    while (  i < m_n + nStr
+    while (  i < sStr->m_n
           && i < LBUF_SIZE-1)
     {
-        m_ach[m_n+i] = aTextBuf[i];
-        m_acs[m_n+i] = aCSBuf[i];
+        m_ach[i] = sStr->m_ach[i];
+        m_acs[i] = sStr->m_acs[i];
         i++;
     }
-    m_n += i;
-    m_ach[m_n] = '\0';
+    m_n = i;
+    memset(m_ach+m_n, '\0', LBUF_SIZE-m_n);
+    for (size_t j = m_n; j < LBUF_SIZE; j++)
+    {
+        m_acs[j] = acs;
+    }
 }
 
-void mux_string::append_string(const char aTextBuf[LBUF_SIZE], const ANSI_ColorState aCSBuf[LBUF_SIZE], size_t nBuf)
+void mux_string::import_CharAnsi(const char *pStr)
 {
-    size_t i = 0; 
-    while (  i < m_n + nBuf
-          && i < LBUF_SIZE-1)
+    m_n = 0;
+    ANSI_ColorState acs = acsRestingStates[ANSI_ENDGOAL_NORMAL];
+    if (ESC_CHAR != pStr[0])
     {
-        m_ach[m_n+i] = aTextBuf[i];
-        m_acs[m_n+i] = aCSBuf[i];
-        i++;
-    }
-    m_n += i;
-    m_ach[m_n] = '\0';
-}
-
-void mux_string::edit(char *from, char *to)
-{
-    // Do the substitution.  Idea for prefix/suffix from R'nice@TinyTIM.
-    //
-    if (!strcmp(from, "^"))
-    {
-        // Prepend 'to' to string.
-        //
-        prepend(to);
-    }
-    else if (!strcmp(from, "$"))
-    {
-        // Append 'to' to string.
-        //
-        append(to);
+        m_ach[0] = pStr[0];
+        m_acs[0] = acs;
+        m_n++;
     }
     else
     {
-        // Replace all occurances of 'from' with 'to'. Handle the special
-        // cases of from = \$ and \^.
-        //
-        if (  (  from[0] == '\\'
-              || from[0] == '%')
-           && (  from[1] == '$'
-              || from[1] == '^')
-           && from[2] == '\0')
+        size_t nStr = strlen(pStr);
+        size_t nVisual = 0;
+        mux_strncpy(m_ach, strip_ansi(pStr, &nVisual), 1);
+        if (0 < nVisual)
         {
-            from++;
+            process(pStr, nStr, m_acs);
+            m_n++;
         }
-        char *tstr = alloc_lbuf("mux_string::edit");
-        char *r = tstr;
-        size_t nPos = 0, nStart = 0;
-        size_t olen = strlen(from);
-        while (nStart < m_n)
-        {
-            size_t nPos = 0;
-            bool bSucceeded = search(from, &nPos, nStart);
-            if (bSucceeded)
-            {
-                copy(tstr, &r, nStart, nPos);
-                nStart += nPos;
-                safe_str(to, tstr, &r);
-                nStart += olen;
-            }
-            else
-            {
-                // No more matches.
-                copy(tstr, &r, nStart);
-                break;
-            }
-        }
-        *r = '\0';
-        import(tstr);
-        free_lbuf(tstr);
+    }
+
+    memset(m_ach+m_n, '\0', LBUF_SIZE-m_n);
+    for (size_t j = m_n; j < LBUF_SIZE; j++)
+    {
+        m_acs[j] = acs;
+    }
+}
+
+void mux_string::import_CharPlain(const char cIn)
+{
+    m_n = 0;
+    ANSI_ColorState acs = acsRestingStates[ANSI_ENDGOAL_NORMAL];
+
+    if (mux_isprint(cIn))
+    {
+        m_ach[0] = cIn;
+        m_acs[0] = acs;
+        m_n = 1;
+    }
+    memset(m_ach+m_n, '\0', LBUF_SIZE-m_n);
+    for (size_t j = m_n; j < LBUF_SIZE; j++)
+    {
+        m_acs[j] = acs;
+    }
+}
+
+/*! \brief Import ANSI string.
+ *
+ * Parses the given ANSI string into a form which can be more-easily
+ * navigated.
+ *
+ * \param str      ANSI-color encoded string to import.
+ * \param n        Length of string, str. Defaults to LBUF_SIZE.
+ * \return         None.
+ */
+
+void mux_string::import_TextAnsi(const char *pStr, size_t n)
+{
+    ANSI_ColorState acs = acsRestingStates[ANSI_ENDGOAL_NORMAL];
+    m_n = 0;
+    size_t nStr = strlen(pStr);
+    if (nStr < n)
+    {
+        n = nStr;
+    }
+    size_t nVisual = 0;
+    mux_strncpy(m_ach, strip_ansi(pStr, &nVisual), n);
+    m_n = nVisual;
+
+    if (nVisual < nStr)
+    {
+        process(pStr, n, m_acs);
+    }
+    memset(m_ach+m_n, '\0', LBUF_SIZE-m_n);
+    for (size_t j = m_n; j < LBUF_SIZE; j++)
+    {
+        m_acs[j] = acs;
     }
 }
 
@@ -4125,17 +4200,90 @@ size_t mux_string::length(void)
     return m_n;
 }
 
-void mux_string::prepend(const char *str, size_t n)
+void mux_string::prepend(mux_string *sStr)
 {
-    char aTextBuf[LBUF_SIZE];
-    ANSI_ColorState aCSBuf[LBUF_SIZE];
+    mux_string *sStore = new mux_string;
 
-    memcpy(aTextBuf, m_ach, sizeof(m_ach));
-    memcpy(aCSBuf, m_acs, sizeof(m_acs));
-    size_t nBuf = m_n;
+    memcpy(sStore->m_ach, m_ach, sizeof(m_ach));
+    memcpy(sStore->m_acs, m_acs, sizeof(m_acs));
+    sStore->m_n = m_n;
 
-    import(str, n);
-    append_string(aTextBuf, aCSBuf, nBuf);
+    import(sStr);
+    append(sStore);
+    delete sStore;
+}
+
+void mux_string::prepend_TextAnsi(const char *pStr, size_t n)
+{
+    mux_string *sStore = new mux_string;
+
+    memcpy(sStore->m_ach, m_ach, sizeof(m_ach));
+    memcpy(sStore->m_acs, m_acs, sizeof(m_acs));
+    sStore->m_n = m_n;
+
+    import_TextAnsi(pStr, n);
+    append(sStore);
+    delete sStore;
+}
+
+void mux_string::process(const char *pStr, size_t n, ANSI_ColorState aCSBuf[LBUF_SIZE])
+{
+    size_t nPos = 0, nPosV = 0;
+    ANSI_ColorState acs = acsRestingStates[ANSI_ENDGOAL_NORMAL];
+
+    while (nPos < n)
+    {
+        if (ESC_CHAR == pStr[nPos])
+        {
+            // We have an ESC_CHAR. Let's look at the next character.
+            //
+            if (pStr[nPos+1] != '[')
+            {
+                // Could be a '\0' or another non-'[' character.
+                // Move the pointer to position ourselves over it.
+                // And continue looking for an ESC_CHAR.
+                //
+                nPos++;
+                continue;
+            }
+
+            // We found the beginning of an ANSI sequence.
+            // Find the terminating character.
+            //
+            const char *pEsc = pStr + nPos;
+            const char *q = pEsc + 2;
+            while (ANSI_TokenTerminatorTable[(unsigned char)*q] == 0)
+            {
+                q++;
+            }
+            if (q[0] == '\0')
+            {
+                // There was no good terminator. Treat everything like text.
+                // Also, we are at the end of the string, so we're done looking.
+                //
+                break;
+            }
+            else
+            {
+                // We found an ANSI sequence.
+                //
+                size_t nAnsiLen = q - pEsc + 1;
+                nPos += nAnsiLen;
+                ANSI_Parse_m(&acs, nAnsiLen, pEsc);
+            }
+        }
+        else
+        {
+            aCSBuf[nPosV] = acs;
+            nPosV++;
+            nPos++;
+        }
+    }
+
+    for (size_t i = nPosV; i < nPos+1 && i < LBUF_SIZE; i++)
+    {
+        aCSBuf[i] = acs;
+    }
 }
 
 void mux_string::reverse(void)
@@ -4162,12 +4310,12 @@ void mux_string::reverse(void)
  * \return         True if found, false if not.
  */
 
-bool mux_string::search(char *pattern, size_t *nPos, size_t nStart)
+bool mux_string::search(char *pPattern, size_t *nPos, size_t nStart)
 {
     // Strip ANSI from pattern.
     //
     size_t nPat = 0;
-    char *pPatBuf = strip_ansi(pattern, &nPat);
+    char *pPatBuf = strip_ansi(pPattern, &nPat);
     char *pTarget = m_ach + nStart;
 
     size_t i = 0;
@@ -4197,9 +4345,13 @@ bool mux_string::search(char *pattern, size_t *nPos, size_t nStart)
     return bSucceeded;
 }
 
-void mux_string::transformWithTable(const unsigned char xfrmTable[256])
+void mux_string::transformWithTable(const unsigned char xfrmTable[256], size_t nStart, size_t nLen)
 {
-    for (size_t i = 0; i < m_n; i++)
+    if (m_n - nStart < nLen)
+    {
+        nLen = m_n - nStart;
+    }
+    for (size_t i = nStart; i < nStart + nLen; i++)
     {
         m_ach[i] = xfrmTable[(unsigned char)m_ach[i]];
     }
