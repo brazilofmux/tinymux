@@ -1181,24 +1181,27 @@ void SendChannelMessage
 
 static void ChannelMOTD(dbref executor, dbref enactor, int attr)
 {
-    dbref aowner;
-    int   aflags;
-    char *q = atr_get(executor, attr, &aowner, &aflags);
-    if ('\0' != q[0])
+    if (Good_obj(executor))
     {
-        char *buf = alloc_lbuf("chanmotd");
-        char *bp = buf;
-        char *p  = q;
+        dbref aowner;
+        int   aflags;
+        char *q = atr_get(executor, attr, &aowner, &aflags);
+        if ('\0' != q[0])
+        {
+            char *buf = alloc_lbuf("chanmotd");
+            char *bp = buf;
+            char *p  = q;
 
-        mux_exec(buf, &bp, executor, executor, enactor,
-            AttrTrace(aflags, EV_FCHECK|EV_EVAL|EV_TOP), &p, NULL, 0);
-        *bp = '\0';
+            mux_exec(buf, &bp, executor, executor, enactor,
+                AttrTrace(aflags, EV_FCHECK|EV_EVAL|EV_TOP), &p, NULL, 0);
+            *bp = '\0';
 
-        notify_with_cause_ooc(enactor, executor, buf);
+            notify_with_cause_ooc(enactor, executor, buf);
 
-        free_lbuf(buf);
+            free_lbuf(buf);
+        }
+        free_lbuf(q);
     }
-    free_lbuf(q);
 }
 
 void do_joinchannel(dbref player, struct channel *ch)
