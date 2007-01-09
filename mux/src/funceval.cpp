@@ -3225,9 +3225,9 @@ typedef struct munge_htab_rec
 {
     UINT16 nHash;         // partial hash value of this record's key
     UINT16 nNext;         // index of next record in this hash chain
-    UINT16 nKeyOffset;    // offset of key string (incremented by 1),
+    UINT16 nKeyOffset;    // offset of key string
+    UINT16 nValueOffset;  // offset of value string (incremented by 1),
                           //     zero indicates empty record.
-    UINT16 nValueOffset;  // offset of value string
 } munge_htab_rec;
 
 FUNCTION(fun_munge)
@@ -3254,11 +3254,40 @@ FUNCTION(fun_munge)
     char *list1 = alloc_lbuf("fun_munge.list1");
     mux_strncpy(list1, fargs[1], LBUF_SIZE - 1);
 
+    // Chop up list2 to find out how much space we really need.
+    //
+    UINT16 *pnValueOffsets = NULL;
+    try
+    {
+        pnValueOffsets = new UINT16[LBUF_SIZE / 2];
+    }
+    catch (...)
+    {
+        ; // Nothing.
+    }
+    if (NULL == pnValueOffsets)
+    {
+        free_lbuf(atext);
+        free_lbuf(list1);
+        return;
+    }
+
+    int nWords = 0;
+    char *p2 = trim_space_sep(fargs[2], &sep);
+    if ('\0' != *p2)
+    {
+        char *pValue;
+        for (pValue = split_token(&p2, &sep);
+             NULL != pValue;
+             pValue = split_token(&p2, &sep))
+        {
+            pnValueOffsets[nWords++] = 1 + pValue - fargs[2];
+        }
+    }
+
     // Prepare data structures for a hash table that will map
     // elements of list1 to corresponding elements of list2.
     //
-    int nWords = countwords(fargs[1], &sep);
-
     munge_htab_rec *htab = NULL;
     UINT16 *tails = NULL;
     try
@@ -3276,6 +3305,7 @@ FUNCTION(fun_munge)
     {
         free_lbuf(atext);
         free_lbuf(list1);
+        delete [] pnValueOffsets;
         if (NULL != htab)
         {
             delete [] htab;
@@ -3291,15 +3321,15 @@ FUNCTION(fun_munge)
 
     int nNext = 1 + nWords;  // first unused hash slot past starting area
 
-    // Chop up the lists, converting them into a hash table that
-    // maps elements of list1 to corresponding elements of list2.
+    // Chop up list1, inserting into a hash table mapping
+    // elements of list1 to corresponding elements of list2.
     //
+    int i;
     char *p1 = trim_space_sep(fargs[1], &sep);
-    char *p2 = trim_space_sep(fargs[2], &sep);
-    char *pKey, *pValue;
-    for (pKey = split_token(&p1, &sep), pValue = split_token(&p2, &sep);
-         NULL != pKey && NULL != pValue;
-         pKey = split_token(&p1, &sep), pValue = split_token(&p2, &sep))
+    char *pKey;
+    for (i = 0, pKey = split_token(&p1, &sep);
+         i < nWords && NULL != pKey;
+         i++, pKey = split_token(&p1, &sep))
     {
         UINT32 nHash = munge_hash(pKey);
         int nHashSlot = 1 + (nHash % nWords);
@@ -3318,13 +3348,14 @@ FUNCTION(fun_munge)
         }
 
         htab[nHashSlot].nHash = nHash;
-        htab[nHashSlot].nKeyOffset = 1 + pKey - fargs[1];
-        htab[nHashSlot].nValueOffset = pValue - fargs[2];
+        htab[nHashSlot].nKeyOffset = pKey - fargs[1];
+        htab[nHashSlot].nValueOffset = pnValueOffsets[i];
     }
+    delete [] pnValueOffsets;
     delete [] tails;
 
-    if (  NULL != pKey
-       || NULL != pValue)
+    if (  i < nWords
+       || NULL != pKey)
     {
         safe_str("#-1 LISTS MUST BE OF EQUAL SIZE", buff, bufc);
         free_lbuf(atext);
@@ -3364,15 +3395,14 @@ FUNCTION(fun_munge)
             int nHashSlot = 1 + (nHash % nWords);
             nHash >>= 16;
 
-            while (  0 != htab[nHashSlot].nKeyOffset
+            while (  0 != htab[nHashSlot].nValueOffset
                   && (  nHash != htab[nHashSlot].nHash
                      || 0 != strcmp(result,
-                                    (fargs[1] +
-                                     htab[nHashSlot].nKeyOffset - 1))))
+                                    fargs[1] + htab[nHashSlot].nKeyOffset)))
             {
                 nHashSlot = htab[nHashSlot].nNext;
             }
-            if (0 != htab[nHashSlot].nKeyOffset)
+            if (0 != htab[nHashSlot].nValueOffset)
             {
                 if (!bFirst)
                 {
@@ -3382,7 +3412,8 @@ FUNCTION(fun_munge)
                 {
                     bFirst = false;
                 }
-                safe_str(fargs[2] + htab[nHashSlot].nValueOffset, buff, bufc);
+                safe_str(fargs[2] + htab[nHashSlot].nValueOffset - 1,
+                         buff, bufc);
                 // delete from the hash table
                 memcpy(&htab[nHashSlot], &htab[htab[nHashSlot].nNext],
                        sizeof(munge_htab_rec));
