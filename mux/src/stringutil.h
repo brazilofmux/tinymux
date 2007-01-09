@@ -237,6 +237,7 @@ public:
     void append_Long        (long lLong);
     void append_TextAnsi    (const char *pStr, size_t n = LBUF_SIZE);
     void append_TextPlain   (const char *pStr, size_t n = LBUF_SIZE);
+    void delete_Chars       (size_t nStart = 0, size_t nLen = LBUF_SIZE);
     void edit               (char *pFrom, char *pTo);
     void export_Append      (mux_string *sStr, size_t nStart = 0, size_t nLen = LBUF_SIZE);
     char export_Char        (size_t n = 0);

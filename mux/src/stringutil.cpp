@@ -3883,6 +3883,32 @@ void mux_string::append_TextPlain(const char *pStr, size_t n)
     m_acs[m_n] = acs;
 }
 
+void mux_string::delete_Chars(size_t nStart, size_t nLen)
+{
+    if (m_n <= nStart)
+    {
+        return;
+    }
+    if (m_n < nStart + nLen)
+    {
+        nLen = m_n - nStart;
+    }
+    size_t i = 0;
+    ANSI_ColorState acs = acsRestingStates[ANSI_ENDGOAL_NORMAL];
+    while (i < m_n)
+    {
+        m_ach[nStart+i] = m_ach[nStart+i+nLen];
+        m_acs[nStart+i] = m_acs[nStart+i+nLen];
+        i++;
+    }
+    for (i = 0; i < nLen; i++)
+    {
+        m_ach[m_n] = '\0';
+        m_acs[m_n] = acs;
+        m_n--;
+    }
+}
+
 void mux_string::edit(char *pFrom, char *pTo)
 {
     // Do the substitution.  Idea for prefix/suffix from R'nice@TinyTIM.

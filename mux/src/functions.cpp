@@ -4746,54 +4746,49 @@ static FUNCTION(fun_delete)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    char *s = fargs[0];
+    mux_string *sStr = new mux_string;
+    sStr->import_TextAnsi(fargs[0]);
     long iStart = mux_atol(fargs[1]);
-    long nChars = mux_atol(fargs[2]);
-    size_t nLen = strlen(s);
+    long iChars = mux_atol(fargs[2]);
+    size_t nLen = sStr->length();
+    size_t nStart = 0;
+    size_t nChars = 0;
 
-    long iEnd;
-    if (0 <= nChars)
+    if (0 <= iChars)
     {
-        iEnd = iStart + nChars;
+        nChars = static_cast<size_t>(iChars);
     }
     else
     {
-        iEnd = iStart;
-        iStart = iEnd + nChars;
-    }
-
-    // Are we deleting anything at all?
-    //
-    if (  iEnd <= 0
-       || nLen <= static_cast<size_t>(iStart))
-    {
-        if (nLen)
-        {
-            safe_copy_buf(s, nLen, buff, bufc);
-        }
-        return;
+        iStart += iChars;
+        nChars = 0-iChars;
     }
 
     if (iStart < 0)
     {
         iStart = 0;
     }
-    if (static_cast<long>(nLen) < iEnd)
+    nStart = static_cast<size_t>(iStart);
+
+    // Are we deleting anything at all?
+    //
+    if (  0 == nChars
+       || nLen <= nStart)
     {
-        iEnd = static_cast<long>(nLen);
+        if (nLen)
+        {
+            sStr->export_TextAnsi(buff, bufc);
+        }
+        delete sStr;
+        return;
     }
 
     // ASSERT: Now [iStart,iEnd) exist somewhere within the the string
     // [s,nLen).
     //
-    if (iStart)
-    {
-        safe_copy_buf(s, iStart, buff, bufc);
-    }
-    if (iEnd < static_cast<long>(nLen))
-    {
-        safe_copy_buf(s + iEnd, nLen - iEnd, buff, bufc);
-    }
+    sStr->delete_Chars(nStart, nChars);
+    sStr->export_TextAnsi(buff, bufc);
+    delete sStr;
 }
 
 static FUNCTION(fun_lock)
