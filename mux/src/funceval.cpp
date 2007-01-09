@@ -3218,13 +3218,16 @@ FUNCTION(fun_foreach)
  * fun_munge: combines two lists in an arbitrary manner.
  * Borrowed from TinyMUSH 2.2
  * Hash table rewrite by Ian and Alierak.
+ *
+ * Assumes LBUF_SIZE is less than 64k.
  */
 typedef struct munge_htab_rec
 {
-    UINT32 nHash;       // full hash value of this record's key
-    UINT16 nIndex;      // index (+1) of this record's key and data in arrays,
-                        //     zero if this record is empty.
-    UINT16 nNext;       // next record in this hash chain
+    UINT16 nHash;         // partial hash value of this record's key
+    UINT16 nNext;         // index of next record in this hash chain
+    UINT16 nKeyOffset;    // offset of key string (incremented by 1),
+                          //     zero indicates empty record.
+    UINT16 nValueOffset;  // offset of value string
 } munge_htab_rec;
 
 FUNCTION(fun_munge)
@@ -3246,59 +3249,22 @@ FUNCTION(fun_munge)
         return;
     }
 
-    char **ptrs1 = NULL;
-    char **ptrs2 = NULL;
-    try
-    {
-        ptrs1 = new char *[LBUF_SIZE / 2];
-        ptrs2 = new char *[LBUF_SIZE / 2];
-    }
-    catch (...)
-    {
-        ; // Nothing.
-    }
-
-    if (  NULL == ptrs1
-       || NULL == ptrs2)
-    {
-        free_lbuf(atext);
-        if (NULL != ptrs1)
-        {
-            delete [] ptrs1;
-        }
-        else if (NULL != ptrs2)
-        {
-            delete [] ptrs2;
-        }
-        return;
-    }
-
-    // Copy list1 for later evaluation of the attribute,
-    // and chop up the lists.
+    // Copy list1 for later evaluation of the attribute.
     //
     char *list1 = alloc_lbuf("fun_munge.list1");
-    mux_strncpy(list1, fargs[1], LBUF_SIZE-1);
-    int nptrs1 = list2arr(ptrs1, LBUF_SIZE / 2, fargs[1], &sep);
-    int nptrs2 = list2arr(ptrs2, LBUF_SIZE / 2, fargs[2], &sep);
+    mux_strncpy(list1, fargs[1], LBUF_SIZE - 1);
 
-    if (nptrs1 != nptrs2)
-    {
-        safe_str("#-1 LISTS MUST BE OF EQUAL SIZE", buff, bufc);
-        free_lbuf(atext);
-        free_lbuf(list1);
-        delete [] ptrs1;
-        delete [] ptrs2;
-        return;
-    }
+    // Prepare data structures for a hash table that will map
+    // elements of list1 to corresponding elements of list2.
+    //
+    int nWords = countwords(fargs[1], &sep);
 
-    // Convert lists into a hash table mapping elements of list1
-    // to corresponding elements of list2.
     munge_htab_rec *htab = NULL;
     UINT16 *tails = NULL;
     try
     {
-        htab = new munge_htab_rec[1 + 2 * nptrs1];
-        tails = new UINT16[1 + nptrs1];
+        htab = new munge_htab_rec[1 + 2 * nWords];
+        tails = new UINT16[1 + nWords];
     }
     catch (...)
     {
@@ -3310,8 +3276,6 @@ FUNCTION(fun_munge)
     {
         free_lbuf(atext);
         free_lbuf(list1);
-        delete [] ptrs1;
-        delete [] ptrs2;
         if (NULL != htab)
         {
             delete [] htab;
@@ -3322,15 +3286,24 @@ FUNCTION(fun_munge)
         }
         return;
     }
-    memset(htab, 0, sizeof(munge_htab_rec) * (1 + 2 * nptrs1));
-    memset(tails, 0, sizeof(UINT16) * (1 + nptrs1));
+    memset(htab, 0, sizeof(munge_htab_rec) * (1 + 2 * nWords));
+    memset(tails, 0, sizeof(UINT16) * (1 + nWords));
 
-    int i;
-    int nNext = 1 + nptrs1;
-    for (i = 0; i < nptrs1; i++)
+    int nNext = 1 + nWords;  // first unused hash slot past starting area
+
+    // Chop up the lists, converting them into a hash table that
+    // maps elements of list1 to corresponding elements of list2.
+    //
+    char *p1 = trim_space_sep(fargs[1], &sep);
+    char *p2 = trim_space_sep(fargs[2], &sep);
+    char *pKey, *pValue;
+    for (pKey = split_token(&p1, &sep), pValue = split_token(&p2, &sep);
+         NULL != pKey && NULL != pValue;
+         pKey = split_token(&p1, &sep), pValue = split_token(&p2, &sep))
     {
-        UINT32 nHash = munge_hash(ptrs1[i]);
-        int nHashSlot = 1 + (nHash % nptrs1);
+        UINT32 nHash = munge_hash(pKey);
+        int nHashSlot = 1 + (nHash % nWords);
+        nHash >>= 16;
 
         if (0 != tails[nHashSlot])
         {
@@ -3345,11 +3318,20 @@ FUNCTION(fun_munge)
         }
 
         htab[nHashSlot].nHash = nHash;
-        // nIndex is incremented so we can use 0 to mean an empty slot.
-        // Be sure to subtract 1 later when indexing arrays.
-        htab[nHashSlot].nIndex = i + 1;
+        htab[nHashSlot].nKeyOffset = 1 + pKey - fargs[1];
+        htab[nHashSlot].nValueOffset = pValue - fargs[2];
     }
     delete [] tails;
+
+    if (  NULL != pKey
+       || NULL != pValue)
+    {
+        safe_str("#-1 LISTS MUST BE OF EQUAL SIZE", buff, bufc);
+        free_lbuf(atext);
+        free_lbuf(list1);
+        delete [] htab;
+        return;
+    }
 
     // Call the u-function with the first list as %0.
     //
@@ -3373,19 +3355,24 @@ FUNCTION(fun_munge)
     bp = trim_space_sep(rlist, &sep);
     if ('\0' != *bp)
     {
-        char *result = split_token(&bp, &sep);
-        for (; NULL != result; result = split_token(&bp, &sep))
+        char *result;
+        for (result = split_token(&bp, &sep);
+             NULL != result;
+             result = split_token(&bp, &sep))
         {
             UINT32 nHash = munge_hash(result);
-            int nHashSlot = 1 + (nHash % nptrs1);
-            while (  0 != htab[nHashSlot].nIndex
+            int nHashSlot = 1 + (nHash % nWords);
+            nHash >>= 16;
+
+            while (  0 != htab[nHashSlot].nKeyOffset
                   && (  nHash != htab[nHashSlot].nHash
                      || 0 != strcmp(result,
-                                    ptrs1[htab[nHashSlot].nIndex - 1])))
+                                    (fargs[1] +
+                                     htab[nHashSlot].nKeyOffset - 1))))
             {
                 nHashSlot = htab[nHashSlot].nNext;
             }
-            if (0 != htab[nHashSlot].nIndex)
+            if (0 != htab[nHashSlot].nKeyOffset)
             {
                 if (!bFirst)
                 {
@@ -3395,15 +3382,13 @@ FUNCTION(fun_munge)
                 {
                     bFirst = false;
                 }
-                safe_str(ptrs2[htab[nHashSlot].nIndex - 1], buff, bufc);
+                safe_str(fargs[2] + htab[nHashSlot].nValueOffset, buff, bufc);
                 // delete from the hash table
                 memcpy(&htab[nHashSlot], &htab[htab[nHashSlot].nNext],
                        sizeof(munge_htab_rec));
             }
         }
     }
-    delete [] ptrs1;
-    delete [] ptrs2;
     delete [] htab;
     free_lbuf(rlist);
 }
