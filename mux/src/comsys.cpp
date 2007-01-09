@@ -1144,6 +1144,7 @@ void SendChannelMessage
             logmax = mux_atol(maxbuf);
             free_lbuf(maxbuf);
         }
+
         if (logmax > 0)
         {
             if (logmax > MAX_RECALL_REQUEST)
@@ -1178,10 +1179,32 @@ void SendChannelMessage
     }
 }
 
+static void ChannelMOTD(dbref executor, dbref enactor, int attr)
+{
+    dbref aowner;
+    int   aflags;
+    char *q = atr_get(executor, attr, &aowner, &aflags);
+    if ('\0' != q[0])
+    {
+        char *buf = alloc_lbuf("chanmotd");
+        char *bp = buf;
+
+        mux_exec(buf, &bp, executor, executor, enactor,
+            AttrTrace(aflags, EV_FCHECK|EV_EVAL|EV_TOP), &q, NULL, 0);
+        *bp = '\0';
+
+        notify_with_cause_ooc(enactor, executor, buf);
+
+        free_lbuf(q);
+        free_lbuf(buf);
+    }
+}
+
 void do_joinchannel(dbref player, struct channel *ch)
 {
     struct comuser **cu;
     int i;
+    int attr;
 
     struct comuser *user = select_user(ch, player);
 
@@ -1228,10 +1251,12 @@ void do_joinchannel(dbref player, struct channel *ch)
             user->on_next = ch->on_users;
             ch->on_users  = user;
         }
+        attr = A_COMJOIN;
     }
     else if (!user->bUserIsOn)
     {
         user->bUserIsOn = true;
+        attr = A_COMON;
     }
     else
     {
@@ -1246,21 +1271,26 @@ void do_joinchannel(dbref player, struct channel *ch)
             ":has joined this channel.", &messNormal, &messNoComtitle);
         SendChannelMessage(player, ch, messNormal, messNoComtitle);
     }
+    ChannelMOTD(ch->chan_obj, user->who, attr);
 }
 
 void do_leavechannel(dbref player, struct channel *ch)
 {
     struct comuser *user = select_user(ch, player);
     raw_notify(player, tprintf("You have left channel %s.", ch->name));
-    if (  user->bUserIsOn
-       && !Hidden(player))
+
+    if (user->bUserIsOn)
     {
-        char *messNormal, *messNoComtitle;
-        BuildChannelMessage((ch->type & CHANNEL_SPOOF) != 0, ch->header, user,
-            ":has left this channel.", &messNormal, &messNoComtitle);
-        SendChannelMessage(player, ch, messNormal, messNoComtitle);
+        if (!Hidden(player))
+        {
+            char *messNormal, *messNoComtitle;
+            BuildChannelMessage((ch->type & CHANNEL_SPOOF) != 0, ch->header, user,
+                ":has left this channel.", &messNormal, &messNoComtitle);
+            SendChannelMessage(player, ch, messNormal, messNoComtitle);
+        }
+        ChannelMOTD(ch->chan_obj, user->who, A_COMOFF);
+        user->bUserIsOn = false;
     }
-    user->bUserIsOn = false;
 }
 
 static void do_comwho_line
@@ -1421,10 +1451,12 @@ static bool do_chanlog(dbref player, char *channel, char *arg)
     {
         return false;
     }
+
     if (value < 0)
     {
         value = 0;
     }
+
     struct channel *ch = select_channel(channel);
     if (!Good_obj(ch->chan_obj))
     {
@@ -1432,27 +1464,25 @@ static bool do_chanlog(dbref player, char *channel, char *arg)
         //
         return false;
     }
+
     int atr = mkattr(GOD, "MAX_LOG");
     if (atr <= 0)
     {
         return false;
     }
+
     dbref aowner;
     int aflags;
     char *oldvalue = atr_get(ch->chan_obj, atr, &aowner, &aflags);
-    if (oldvalue)
+    int oldnum = mux_atol(oldvalue);
+    if (value < oldnum)
     {
-        int oldnum = mux_atol(oldvalue);
-        if (oldnum > value)
+        for (int count = 0; count <= oldnum; count++)
         {
-            ATTR *hist;
-            for (int count = 0; count <= oldnum; count++)
+            ATTR *hist = atr_str(tprintf("HISTORY_%d", count));
+            if (hist)
             {
-                hist = atr_str(tprintf("HISTORY_%d", count));
-                if (hist)
-                {
-                    atr_clr(ch->chan_obj, hist->number);
-                }
+                atr_clr(ch->chan_obj, hist->number);
             }
         }
         free_lbuf(oldvalue);
@@ -1696,8 +1726,6 @@ void do_delcom(dbref executor, dbref caller, dbref enactor, int eval, int key, c
 
 void do_delcomchannel(dbref player, char *channel, bool bQuiet)
 {
-    struct comuser *user;
-
     struct channel *ch = select_channel(channel);
     if (!ch)
     {
@@ -1709,23 +1737,26 @@ void do_delcomchannel(dbref player, char *channel, bool bQuiet)
         int j = 0;
         for (i = 0; i < ch->num_users && !j; i++)
         {
-            user = ch->users[i];
+            struct comuser *user = ch->users[i];
             if (user->who == player)
             {
                 do_comdisconnectchannel(player, channel);
                 if (!bQuiet)
                 {
-                    if (  user->bUserIsOn
-                       && !Hidden(player))
+                    if (user->bUserIsOn)
                     {
-                        char *messNormal, *messNoComtitle;
-                        BuildChannelMessage((ch->type & CHANNEL_SPOOF) != 0,
-                                            ch->header, user, ":has left this channel.",
-                                            &messNormal, &messNoComtitle);
-                        SendChannelMessage(player, ch, messNormal, messNoComtitle);
+                        if (!Hidden(player))
+                        {
+                            char *messNormal, *messNoComtitle;
+                            BuildChannelMessage((ch->type & CHANNEL_SPOOF) != 0,
+                                ch->header, user, ":has left this channel.",
+                                &messNormal, &messNoComtitle);
+                            SendChannelMessage(player, ch, messNormal, messNoComtitle);
+                        }
                     }
                     raw_notify(player, tprintf("You have left channel %s.", channel));
                 }
+                ChannelMOTD(ch->chan_obj, user->who, A_COMLEAVE);
 
                 if (user->title)
                 {

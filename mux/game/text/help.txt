@@ -993,6 +993,51 @@ Related Topics: @name.
 
   Related Topics: @cpflags, @clist, CHANNEL OBJECT.
 
+& @COMJOIN
+@COMJOIN
+
+  COMMAND:   @comjoin <object> = <message>
+  ATTRIBUTE: Comjoin
+
+  Sets the message that is shown to the player who joins the channel
+  corresponding to <object>.
+
+  Related Topics: addcom, CHANNEL OBJECT, @comleave, @comoff, @comon
+
+
+& @COMLEAVE
+@COMLEAVE
+
+  COMMAND:   @comleave <object> = <message>
+  ATTRIBUTE: Comleave
+
+  Sets the message that is shown to the player who leaves the channel
+  corresponding to <object>.
+
+  Related Topics: CHANNEL OBJECT, @comjoin, @comoff, @comon, delcom.
+
+& @COMOFF
+@COMOFF
+
+  COMMAND:   @comoff <object> = <message>
+  ATTRIBUTE: Comoff
+
+  Sets the message that is shown to the player who turns off the channel
+  corresponding to <object>.
+
+  Related Topics: alias, CHANNEL OBJECT, @comjoin, @comleave, @comon.
+
+& @COMON
+@COMON
+
+  COMMAND:   @comoff <object> = <message>
+  ATTRIBUTE: Comoff
+
+  Sets the message that is shown to the player who turns on the channel
+  corresponding to <object>.
+
+  Related Topics: alias, CHANNEL OBJECT, @comjoin,@comleave, @comoff.
+
 & @COLOR
 @COLOR
 
@@ -4988,8 +5033,11 @@ CHANNEL OBJECT
   In the comsystem, you may specify a channel object for each channel.
   (@cset/object channel=<object>). See 'help @cset' for help.
 
-  Channel objects allow you to specify a description for a channel, and
-  place certain restrictions on joining, transmitting and receiving.
+  Channel objects allow you to specify a description for a channel and
+  place certain restrictions on joining, transmitting, and receiving.  If
+  present on the channel object, the @comjoin, @comleave, @comon, and @comoff
+  messages are evaluated and then sent to members performing the join, leave,
+  on, and off actions, respectively.
 
   NOTE: If a channel flag is set by @cpflags or @coflags, those will ALWAYS
   override the equivalent lock. The flags are set by default, so you will
@@ -5000,7 +5048,8 @@ CHANNEL OBJECT
   The receive lock for a channel is an enter @lock on the channel object.
   The description of a channel is the @desc of the channel object.
 
-  Related Topics: @ccreate, @create, @cset.
+  Related Topics: @comjoin, @comleave, @comoff, @comon, @ccreate, @create,
+                  @cset.
 
 & CHANNELS()
 CHANNELS()
@@ -5245,19 +5294,19 @@ COMMANDS (continued)
   @akill       @alead       @aleave      @alfail      @alias       @amail
   @amhear      @amove       @apay        @arfail      @asuccess    @atfail
   @atofail     @atport      @aufail      @ause        @away        @charges
-  @color       @conformat   @cost        @daily       @descformat  @describe
-  @dfail       @drop        @ealias      @efail       @enter       @exitformat
-  @exitto      @fail        @filter      @forwardlist @gfail       @idesc
-  @idle        @idletimeout @infilter    @inprefix    @kill        @lalias
-  @lead        @leave       @lfail       @listen      @mailsucc    @mfail
-  @moniker     @move        @nameformat  @odescribe   @odfail      @odrop
-  @oefail      @oenter      @ofail       @ogfail      @okill       @olead
-  @oleave      @olfail      @omove       @opay        @orfail      @osuccess
-  @otfail      @otofail     @otport      @oufail      @ouse        @oxenter
-  @oxleave     @oxtport     @pay         @prefix      @queuemax    @reject
-  @rfail       @runout      @saystring   @sex         @signature   @speechmod
-  @startup     @success     @tfail       @tofail      @tport       @ufail
-  @use
+  @color       @comjoin     @comleave    @comoff      @comon       @conformat
+  @cost        @daily       @descformat  @describe    @dfail       @drop
+  @ealias      @efail       @enter       @exitformat  @exitto      @fail
+  @filter      @forwardlist @gfail       @idesc       @idle        @idletimeout
+  @infilter    @inprefix    @kill        @lalias      @lead        @leave
+  @lfail       @listen      @mailsucc    @mfail       @moniker     @move
+  @nameformat  @odescribe   @odfail      @odrop       @oefail      @oenter
+  @ofail       @ogfail      @okill       @olead       @oleave      @olfail
+  @omove       @opay        @orfail      @osuccess    @otfail      @otofail
+  @otport      @oufail      @ouse        @oxenter     @oxleave     @oxtport
+  @pay         @prefix      @queuemax    @reject      @rfail       @runout
+  @saystring   @sex         @signature   @speechmod   @startup     @success
+  @tfail       @tofail      @tport       @ufail       @use
 
 & COMP()
 COMP()

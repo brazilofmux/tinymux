@@ -168,7 +168,12 @@
 #define A_MATRIXDESC 148
 #endif // WOD_REALMS
 
-// 149 - 197 unused
+#define A_COMJOIN   149
+#define A_COMLEAVE  150
+#define A_COMON     151
+#define A_COMOFF    152
+
+// 153 - 197 unused
 #define A_CMDCHECK  198 // For @icmd. (From RhostMUSH)
 #define A_MONIKER   199 // Ansi-colored and/or accented name of object.
 #define A_LASTPAGE  200 /* Player last paged */

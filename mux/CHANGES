@@ -13,13 +13,16 @@ Feature Additions:
  -- Help files support PennMUSH-style multiple topics for each help
     entry; consecutive &FOO lines refer to the same content
     (Issue 238).
- -- Add lpad(), cpad(), and rpad() functions to duplicate previous
+ -- Added lpad(), cpad(), and rpad() functions to duplicate previous
     non-truncating ljust(), center(), and rjust functionality
     (Issue 13).
- -- Add /delete switch to @function and allow removal of user-defined
+ -- Added /delete switch to @function and allow removal of user-defined
     functions (Issue 250).
  -- Added fifth, sort-type argument to setinter(), setunion(), and
     setdiff() (Issue 3).
+ -- Added @comjoin, @comleave, @comon, and @comoff for use with channel
+    objects.  Each evaluates to a message shown to the channel member
+    at the corresponding event (Issue 9).
 
 
 Bug Fixes:
