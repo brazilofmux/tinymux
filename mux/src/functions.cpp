@@ -8097,23 +8097,37 @@ static void centerjustcombo
         nLeading = nWidth - nStr;
     }
     size_t nTrailing = nWidth - nLeading - nStr;
+    size_t nPos = 0;
 
     // Output leading padding.
     //
-    for (size_t nPos = 0; nPos < nLeading; nPos += nPad)
+    while (nPos < nLeading)
     {
         sPad->export_TextAnsi(buff, bufc, 0, nLeading-nPos);
+        nPos += nPad;
     }
+    nPos = nLeading;
 
     // Output string.
     //
     sStr->export_TextAnsi(buff, bufc, 0, nStr);
+    nPos += nStr;
+
+    // Output first part of trailing padding.
+    //
+    if (nTrailing)
+    {
+        size_t nPadPart = nPos % nPad;
+        sPad->export_TextAnsi(buff, bufc, nPadPart, nWidth-nPos);
+        nPos += nPad-nPadPart;
+    }
 
     // Output trailing padding.
     //
-    for (size_t nPos = 0; nPos < nTrailing; nPos += nPad)
+    while (nPos < nWidth)
     {
-        sPad->export_TextAnsi(buff, bufc, 0, nTrailing-nPos);
+        sPad->export_TextAnsi(buff, bufc, 0, nWidth-nPos);
+        nPos += nPad;
     }
 
     delete sStr;
