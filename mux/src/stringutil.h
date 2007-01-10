@@ -239,7 +239,6 @@ public:
     void append_TextPlain   (const char *pStr, size_t n = LBUF_SIZE);
     void delete_Chars       (size_t nStart = 0, size_t nLen = LBUF_SIZE);
     void edit               (char *pFrom, char *pTo);
-    void export_Append      (mux_string *sStr, size_t nStart = 0, size_t nLen = LBUF_SIZE);
     char export_Char        (size_t n = 0);
     void export_TextAnsi    (char *buff, char **bufc, size_t nStart = 0, size_t nLen = LBUF_SIZE, size_t nBuffer = (LBUF_SIZE-1));
     void export_TextPlain   (char *buff, char **bufc, size_t nStart = 0, size_t nLen = LBUF_SIZE, size_t nBuffer = (LBUF_SIZE-1));

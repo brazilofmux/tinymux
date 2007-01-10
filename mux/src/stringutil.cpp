@@ -3957,29 +3957,6 @@ void mux_string::edit(char *pFrom, char *pTo)
     }
 }
 
-void mux_string::export_Append(mux_string *sStr, size_t nStart, size_t nLen)
-{
-    if (m_n <= nStart)
-    {
-        return;
-    }
-    if (nLen > m_n - nStart)
-    {
-        nLen = m_n - nStart;
-    }
-
-    size_t i = 0; 
-    while (  i + sStr->m_n < LBUF_SIZE-1
-          && i < nLen)
-    {
-        sStr->m_ach[m_n+i] = m_ach[nStart+i];
-        sStr->m_acs[m_n+i] = m_acs[nStart+i];
-        i++;
-    }
-    sStr->m_n += i;
-    sStr->truncate(sStr->m_n);
-}
-
 char mux_string::export_Char(size_t n)
 {
     if (m_n <= n)
@@ -4199,12 +4176,7 @@ void mux_string::import_CharAnsi(const char *pStr)
             m_n++;
         }
     }
-
-    memset(m_ach+m_n, '\0', LBUF_SIZE-m_n);
-    for (size_t j = m_n; j < LBUF_SIZE; j++)
-    {
-        m_acs[j] = acs;
-    }
+    truncate(m_n);
 }
 
 void mux_string::import_CharPlain(const char cIn)
@@ -4247,11 +4219,7 @@ void mux_string::import_TextAnsi(const char *pStr, size_t n)
     {
         process(pStr, n, m_acs);
     }
-    memset(m_ach+m_n, '\0', LBUF_SIZE-m_n);
-    for (size_t j = m_n; j < LBUF_SIZE; j++)
-    {
-        m_acs[j] = acs;
-    }
+    truncate(m_n);
 }
 
 size_t mux_string::length(void)
