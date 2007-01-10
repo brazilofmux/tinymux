@@ -187,9 +187,9 @@ depend: $(ALLSRC) unsplit
 	mv .depend~ .depend
 
 realclean:
-	-rm -f *.o a.out core gmon.out mux.*log mux.*sum netmux netmux~
+	-rm -f *.o a.out core gmon.out dbconvert config.status config.log netmux netmux~ slave sqlslave Makefile
 
 clean:
-	-rm -f *.o a.out core gmon.out mux.*log mux.*sum slave sqlslave netmux
+	-rm -f *.o a.out core gmon.out warn.log config.status config.log netmux~
 
 include .depend
