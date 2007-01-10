@@ -3807,15 +3807,15 @@ char *linewrap_desc(char *str)
 mux_string::mux_string(void)
 {
     m_n = 0;
-    ANSI_ColorState acs = acsRestingStates[ANSI_ENDGOAL_NORMAL];
-    m_ach[m_n] = '\0';
-    m_acs[m_n] = acs;
+    memset(m_ach, '\0', LBUF_SIZE);
+    for (size_t j = 0; j < LBUF_SIZE; j++)
+    {
+        m_acs[j] = acsRestingStates[ANSI_ENDGOAL_NORMAL];
+    }
 }
 
 void mux_string::append(mux_string *sStr, size_t nStart, size_t nLen)
 {
-    ANSI_ColorState acs = acsRestingStates[ANSI_ENDGOAL_NORMAL];
-
     if (sStr->m_n <= nStart)
     {
         return;
@@ -3834,22 +3834,18 @@ void mux_string::append(mux_string *sStr, size_t nStart, size_t nLen)
         i++;
     }
     m_n += i;
-    m_ach[m_n] = '\0';
-    m_acs[m_n] = acs;
+    truncate(m_n);
 }
 
 void mux_string::append_CharPlain(const char cChar)
 {
-    ANSI_ColorState acs = acsRestingStates[ANSI_ENDGOAL_NORMAL];
-
     if (m_n < LBUF_SIZE-1)
     {
         m_ach[m_n] = cChar;
-        m_acs[m_n] = acs;
+        m_acs[m_n] = acsRestingStates[ANSI_ENDGOAL_NORMAL];
         m_n++;
     }
-    m_ach[m_n] = '\0';
-    m_acs[m_n] = acs;
+    truncate(m_n);
 }
 
 void mux_string::append_Long(long lLong)
@@ -3869,18 +3865,16 @@ void mux_string::append_TextAnsi(const char *pStr, size_t n)
 void mux_string::append_TextPlain(const char *pStr, size_t n)
 {
     size_t i = 0; 
-    ANSI_ColorState acs = acsRestingStates[ANSI_ENDGOAL_NORMAL];
 
     while (  i < n
           && m_n + i < LBUF_SIZE-1)
     {
         m_ach[m_n+i] = pStr[i];
-        m_acs[m_n+i] = acs;
+        m_acs[m_n+i] = acsRestingStates[ANSI_ENDGOAL_NORMAL];
         i++;
     }
     m_n += i;
-    m_ach[m_n] = '\0';
-    m_acs[m_n] = acs;
+    truncate(m_n);
 }
 
 void mux_string::delete_Chars(size_t nStart, size_t nLen)
@@ -3889,24 +3883,20 @@ void mux_string::delete_Chars(size_t nStart, size_t nLen)
     {
         return;
     }
-    if (m_n < nStart + nLen)
+    if (m_n <= nStart + nLen)
     {
-        nLen = m_n - nStart;
+        truncate(nStart);
+        return;
     }
     size_t i = 0;
-    ANSI_ColorState acs = acsRestingStates[ANSI_ENDGOAL_NORMAL];
     while (i < m_n)
     {
         m_ach[nStart+i] = m_ach[nStart+i+nLen];
         m_acs[nStart+i] = m_acs[nStart+i+nLen];
         i++;
     }
-    for (i = 0; i < nLen; i++)
-    {
-        m_ach[m_n] = '\0';
-        m_acs[m_n] = acs;
-        m_n--;
-    }
+    m_n -= nLen;
+    truncate(m_n);
 }
 
 void mux_string::edit(char *pFrom, char *pTo)
@@ -3966,8 +3956,6 @@ void mux_string::edit(char *pFrom, char *pTo)
 
 void mux_string::export_Append(mux_string *sStr, size_t nStart, size_t nLen)
 {
-    ANSI_ColorState acs = acsRestingStates[ANSI_ENDGOAL_NORMAL];
-
     if (m_n <= nStart)
     {
         return;
@@ -3986,8 +3974,7 @@ void mux_string::export_Append(mux_string *sStr, size_t nStart, size_t nLen)
         i++;
     }
     sStr->m_n += i;
-    sStr->m_ach[m_n] = '\0';
-    sStr->m_acs[m_n] = acs;
+    sStr->truncate(sStr->m_n);
 }
 
 char mux_string::export_Char(size_t n)
@@ -4046,26 +4033,80 @@ void mux_string::export_TextAnsi(char *buff, char **bufc, size_t nStart, size_t 
     //  and has a value in the range (0, nBuffer).
     // nLeft is the length of the portion of the source string we'd like to copy,
     //  and has a value in the range (0, m_n].
-    // nLen is the length of the portion of the source string we will copy,
+    // nLen is the length of the portion of the source string we will try to copy,
     //  and has a value in the ranges (0, nLeft] and (0, nAvail].
     //
     size_t nPos = nStart;
-    size_t nCopied = 0;
-    static char tbuff[LBUF_SIZE];
-    char *tbufc = tbuff;
+    bool bPlentyOfRoom = nAvail > (nLen + 1) * (ANSI_MAXIMUM_BINARY_TRANSITION_LENGTH + 1);
     ANSI_ColorState acs_normal = acsRestingStates[ANSI_ENDGOAL_NORMAL];
-    safe_copy_str(ANSI_TransitionColorBinary(&acs_normal, &(m_acs[nPos]),
-                                    &nCopied, ANSI_ENDGOAL_NORMAL), tbuff, &tbufc, nBuffer);
+    size_t nCopied = 0;
+
+    if (bPlentyOfRoom)
+    {
+        ANSI_ColorState acs_prev = acs_normal;
+        while (nPos < nStart + nLen)
+        {
+            if (0 != memcmp(&acs_prev, &m_acs[nPos], sizeof(ANSI_ColorState)))
+            {
+                safe_copy_str(ANSI_TransitionColorBinary(&acs_prev, &(m_acs[nPos]),
+                                                &nCopied, ANSI_ENDGOAL_NORMAL), buff, bufc, nBuffer);
+                acs_prev = m_acs[nPos];
+            }
+            safe_copy_chr(m_ach[nPos], buff, bufc, nBuffer);
+            nPos++;
+        }
+        if (0 != memcmp(&acs_prev, &acs_normal, sizeof(ANSI_ColorState)))
+        {
+            safe_copy_str(ANSI_TransitionColorBinary(&acs_prev, &acs_normal, &nCopied, ANSI_ENDGOAL_NORMAL), buff, bufc, nBuffer);
+        }
+        **bufc = '\0';
+        return;
+    }
+
+    // There's a chance we might hit the end of the buffer. Do it the hard way.
+    size_t nNeededBefore = 0, nNeededAfter = 0;
+    ANSI_ColorState acs_prev = acs_normal;
     while (nPos < nStart + nLen)
     {
-        safe_copy_chr(m_ach[nPos], tbuff, &tbufc, nBuffer);
-        safe_copy_str(ANSI_TransitionColorBinary(&(m_acs[nPos]), &(m_acs[nPos+1]),
-                                            &nCopied, ANSI_ENDGOAL_NORMAL), tbuff, &tbufc, nBuffer);
+        if (0 != memcmp(&acs_prev, &m_acs[nPos], sizeof(ANSI_ColorState)))
+        {
+            if (0 != memcmp(&acs_normal, &m_acs[nPos], sizeof(ANSI_ColorState)))
+            {
+                nNeededBefore = nNeededAfter;
+                ANSI_TransitionColorBinary(&(m_acs[nPos]), &acs_normal, &nCopied, ANSI_ENDGOAL_NORMAL);
+                nNeededAfter = nCopied;
+                char *pTransition = ANSI_TransitionColorBinary(&acs_prev, &(m_acs[nPos]), &nCopied, ANSI_ENDGOAL_NORMAL);
+                if (nBuffer < (*bufc-buff) + nCopied + 1 + nNeededAfter)
+                {
+                    // There isn't enough room to add the color sequence,
+                    // its character, and still get back to normal. Stop here.
+                    //
+                    nNeededAfter = nNeededBefore;
+                    break;
+                }
+                safe_copy_str(pTransition, buff, bufc, nBuffer);
+            }
+            else
+            {
+                safe_copy_str(ANSI_TransitionColorBinary(&acs_prev, &(m_acs[nPos]),
+                                            &nCopied, ANSI_ENDGOAL_NORMAL), buff, bufc, nBuffer);
+                nNeededAfter = 0;
+            }
+            acs_prev = m_acs[nPos];
+        }
+        if (nBuffer < (*bufc-buff) + 1 + nNeededAfter)
+        {
+            break;
+        }
+        safe_copy_chr(m_ach[nPos], buff, bufc, nBuffer);
         nPos++;
     }
-    tbufc = tbuff;
-    ANSI_TruncateToField (tbuff, nAvail, tbufc, nLen, &nCopied, ANSI_ENDGOAL_NORMAL);
-    safe_copy_str(tbuff, buff, bufc, nBuffer);
+    if (nNeededAfter)
+    {
+       safe_copy_str(ANSI_TransitionColorBinary(&acs_prev, &acs_normal, &nCopied, ANSI_ENDGOAL_NORMAL), buff, bufc, nBuffer);
+    }
+    **bufc = '\0';
+    return;
 }
 
 /*! \brief Outputs ANSI-stripped string from internal form.
@@ -4123,7 +4164,6 @@ void mux_string::export_TextPlain(char *buff, char **bufc, size_t nStart, size_t
 
 void mux_string::import(mux_string *sStr)
 {
-    ANSI_ColorState acs = acsRestingStates[ANSI_ENDGOAL_NORMAL];
     size_t i = 0; 
     while (  i < sStr->m_n
           && i < LBUF_SIZE-1)
@@ -4132,22 +4172,17 @@ void mux_string::import(mux_string *sStr)
         m_acs[i] = sStr->m_acs[i];
         i++;
     }
-    m_n = i;
-    memset(m_ach+m_n, '\0', LBUF_SIZE-m_n);
-    for (size_t j = m_n; j < LBUF_SIZE; j++)
-    {
-        m_acs[j] = acs;
-    }
+    truncate(i);
 }
 
 void mux_string::import_CharAnsi(const char *pStr)
 {
-    m_n = 0;
     ANSI_ColorState acs = acsRestingStates[ANSI_ENDGOAL_NORMAL];
+    m_n = 0;
     if (ESC_CHAR != pStr[0])
     {
         m_ach[0] = pStr[0];
-        m_acs[0] = acs;
+        m_acs[0] = acsRestingStates[ANSI_ENDGOAL_NORMAL];
         m_n++;
     }
     else
@@ -4172,19 +4207,14 @@ void mux_string::import_CharAnsi(const char *pStr)
 void mux_string::import_CharPlain(const char cIn)
 {
     m_n = 0;
-    ANSI_ColorState acs = acsRestingStates[ANSI_ENDGOAL_NORMAL];
 
-    if (mux_isprint(cIn))
+    if (ESC_CHAR != cIn)
     {
         m_ach[0] = cIn;
-        m_acs[0] = acs;
+        m_acs[0] = acsRestingStates[ANSI_ENDGOAL_NORMAL];
         m_n = 1;
     }
-    memset(m_ach+m_n, '\0', LBUF_SIZE-m_n);
-    for (size_t j = m_n; j < LBUF_SIZE; j++)
-    {
-        m_acs[j] = acs;
-    }
+    truncate(m_n);
 }
 
 /*! \brief Import ANSI string.
@@ -4287,7 +4317,11 @@ void mux_string::process(const char *pStr, size_t n, ANSI_ColorState aCSBuf[LBUF
                 // There was no good terminator. Treat everything like text.
                 // Also, we are at the end of the string, so we're done looking.
                 //
-                break;
+                for (size_t i = nPosV; i < (size_t)(q-pStr) && i < LBUF_SIZE-1; i++)
+                {
+                    aCSBuf[i] = acs;
+                }
+                return;
             }
             else
             {
@@ -4314,18 +4348,17 @@ void mux_string::process(const char *pStr, size_t n, ANSI_ColorState aCSBuf[LBUF
 
 void mux_string::reverse(void)
 {
-    char aTextBuf[LBUF_SIZE];
-    ANSI_ColorState aCSBuf[LBUF_SIZE];
+    mux_string *sTemp = new mux_string;
 
-    aTextBuf[m_n] = '\0';
     for (size_t i = 0; i < m_n; i++)
     {
-        aTextBuf[i] = m_ach[(m_n-1)-i];
-        aCSBuf[i]   = m_acs[(m_n-1)-i];
+        sTemp->m_ach[i] = m_ach[(m_n-1)-i];
+        sTemp->m_acs[i] = m_acs[(m_n-1)-i];
     }
+    sTemp->m_n = m_n;
 
-    memcpy(m_ach, aTextBuf, sizeof(m_ach));
-    memcpy(m_acs, aCSBuf, sizeof(m_acs));
+    import(sTemp);
+    delete sTemp;
 }
 
 /*! \brief Searches text for a specified pattern.
@@ -4380,5 +4413,19 @@ void mux_string::transformWithTable(const unsigned char xfrmTable[256], size_t n
     for (size_t i = nStart; i < nStart + nLen; i++)
     {
         m_ach[i] = xfrmTable[(unsigned char)m_ach[i]];
+    }
+}
+
+void mux_string::truncate(size_t n)
+{
+    if (m_n < n)
+    {
+        return;
+    }
+    m_n = n;
+    memset(m_ach+m_n, '\0', LBUF_SIZE-m_n);
+    for (size_t j = m_n; j < LBUF_SIZE; j++)
+    {
+        m_acs[j] = acsRestingStates[ANSI_ENDGOAL_NORMAL];
     }
 }

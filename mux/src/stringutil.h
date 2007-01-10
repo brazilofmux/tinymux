@@ -253,6 +253,7 @@ public:
     void reverse            (void);
     bool search             (char *pPattern, size_t *nPos = NULL, size_t nStart = 0);
     void transformWithTable (const unsigned char xfrmTable[256], size_t nStart = 0, size_t nLen = LBUF_SIZE);
+    void truncate           (size_t n);
 };
 
 #endif // STRINGUTIL_H
