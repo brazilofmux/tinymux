@@ -3796,6 +3796,11 @@ char *linewrap_desc(char *str)
 
 #endif // FIRANMUX
 
+// The REMOVEME sections should be resolved and retested before being
+// promoted.
+//
+#define REMOVEME
+
 /*! \brief Constructs mux_string object.
  *
  * This constructor puts the mux_string object into an initial, reasonable,
@@ -3807,11 +3812,13 @@ char *linewrap_desc(char *str)
 mux_string::mux_string(void)
 {
     m_n = 0;
+#ifdef REMOVEME
     memset(m_ach, '\0', LBUF_SIZE);
     for (size_t j = 0; j < LBUF_SIZE; j++)
     {
         m_acs[j] = acsRestingStates[ANSI_ENDGOAL_NORMAL];
     }
+#endif
 }
 
 void mux_string::append(mux_string *sStr, size_t nStart, size_t nLen)
@@ -4377,10 +4384,15 @@ bool mux_string::search(char *pPattern, size_t *nPos, size_t nStart)
 
 void mux_string::transformWithTable(const unsigned char xfrmTable[256], size_t nStart, size_t nLen)
 {
-    if (m_n - nStart < nLen)
+    if (m_n <= nStart)
+    {
+        return;
+    }
+    else if (m_n - nStart < nLen)
     {
         nLen = m_n - nStart;
     }
+
     for (size_t i = nStart; i < nStart + nLen; i++)
     {
         m_ach[i] = xfrmTable[(unsigned char)m_ach[i]];
@@ -4389,14 +4401,17 @@ void mux_string::transformWithTable(const unsigned char xfrmTable[256], size_t n
 
 void mux_string::truncate(size_t n)
 {
-    if (m_n < n)
+    if (m_n <= n)
     {
         return;
     }
     m_n = n;
+
+#ifdef REMOVEME
     memset(m_ach+m_n, '\0', LBUF_SIZE-m_n);
     for (size_t j = m_n; j < LBUF_SIZE; j++)
     {
         m_acs[j] = acsRestingStates[ANSI_ENDGOAL_NORMAL];
     }
+#endif
 }
