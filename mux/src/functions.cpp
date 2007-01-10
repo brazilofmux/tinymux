@@ -3885,7 +3885,7 @@ static FUNCTION(fun_pos)
     size_t nPat = 0;
     mux_string *sStr = new mux_string;
     sStr->import_TextAnsi(fargs[1]);
-    bool bSucceeded = sStr->search(fargs[0], &nPat);
+    bool bSucceeded = sStr->search(strip_ansi(fargs[0]), &nPat);
 
     if (bSucceeded)
     {
@@ -4746,11 +4746,8 @@ static FUNCTION(fun_delete)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    mux_string *sStr = new mux_string;
-    sStr->import_TextAnsi(fargs[0]);
     long iStart = mux_atol(fargs[1]);
     long iChars = mux_atol(fargs[2]);
-    size_t nLen = sStr->length();
     size_t nStart = 0;
     size_t nChars = 0;
 
@@ -4763,29 +4760,26 @@ static FUNCTION(fun_delete)
         iStart += iChars;
         nChars = 0-iChars;
     }
-
     if (iStart < 0)
     {
+        nChars += iStart;
         iStart = 0;
     }
     nStart = static_cast<size_t>(iStart);
+    size_t nLen = strlen(fargs[0]);
 
     // Are we deleting anything at all?
     //
     if (  0 == nChars
-       || nLen <= nStart)
+       || nLen < nStart)
     {
-        if (nLen)
-        {
-            sStr->export_TextAnsi(buff, bufc);
-        }
-        delete sStr;
+        safe_str(fargs[0], buff, bufc);
         return;
     }
 
-    // ASSERT: Now [iStart,iEnd) exist somewhere within the the string
-    // [s,nLen).
-    //
+    mux_string *sStr = new mux_string;
+    sStr->import_TextAnsi(fargs[0]);
+
     sStr->delete_Chars(nStart, nChars);
     sStr->export_TextAnsi(buff, bufc);
     delete sStr;
