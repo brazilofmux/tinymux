@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.170 2006/11/26 05:05:21 sdennis Exp $
+// $Id: functions.cpp,v 1.171 2007/01/10 17:25:34 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2005 Solid Vertical Domains, Ltd. All
@@ -6808,10 +6808,14 @@ static void centerjustcombo
         vwTrailPartial0 = 0;
         if (vwTrailSkip0)
         {
-            int n = vwPad - vwTrailSkip0;
-            if (vwTrailing >= vwTrailPartial0)
+            vwTrailPartial0 = vwPad - vwTrailSkip0;
+            if (vwTrailing < vwTrailPartial0)
             {
-                vwTrailPartial0 = n;
+                vwTrailPartial0 = vwTrailing;
+                vwTrailing = 0;
+            }
+            else
+            {
                 vwTrailing -= vwTrailPartial0;
             }
         }
@@ -6855,7 +6859,7 @@ static void centerjustcombo
     {
         ANSI_String_In_Init(&aic, aPad, ANSI_ENDGOAL_NORMAL);
         ANSI_String_Skip(&aic, vwTrailSkip0, &vwDone);
-        ANSI_String_Copy(&aoc, &aic, LBUF_SIZE-1);
+        ANSI_String_Copy(&aoc, &aic, vwTrailPartial0);
     }
 
     // Output the runs of full trailing padding.
