@@ -42,6 +42,7 @@ Bug Fixes:
  -- Fix typo in do_say() which left a bit-wise instead of a logical
     AND operation (Issue 245).
  -- Fix sort(2 100) --> '100 2' bug introduced in 2.7.0.1 (Issue 251).
+ -- Fix trailing padding in center() (Issue 253).
 
 
 Performance Enhancements:
