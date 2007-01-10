@@ -267,6 +267,7 @@ Bug Fixes:
  -- @verb/no_name used unterminated verb_sw table (Issued 243).
  -- Fix typo in do_say() which left a bit-wise instead of a logical
     AND operation (Issue 245).
+ -- Fix trailing padding in center() (Issue 253).
 
 
 Performance Enhancements:

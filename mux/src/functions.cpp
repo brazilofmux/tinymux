@@ -8084,13 +8084,16 @@ static void centerjustcombo
     if (vwTrailing)
     {
         vwTrailSkip0    = (vwLeading + vwStr) % vwPad;
-        vwTrailPartial0 = 0;
         if (vwTrailSkip0)
         {
-            size_t n = vwPad - vwTrailSkip0;
-            if (vwTrailing >= vwTrailPartial0)
+            vwTrailPartial0 = vwPad - vwTrailSkip0;
+            if (vwTrailing < vwTrailPartial0)
             {
-                vwTrailPartial0 = n;
+                vwTrailPartial0 = vwTrailing;
+                vwTrailing = 0;
+            }
+            else
+            {
                 vwTrailing -= vwTrailPartial0;
             }
         }
@@ -8135,7 +8138,7 @@ static void centerjustcombo
     {
         ANSI_String_In_Init(&aic, aPad, ANSI_ENDGOAL_NORMAL);
         ANSI_String_Skip(&aic, vwTrailSkip0, &vwDone);
-        ANSI_String_Copy(&aoc, &aic, LBUF_SIZE-1);
+        ANSI_String_Copy(&aoc, &aic, vwTrailPartial0);
     }
 
     // Output the runs of full trailing padding.
