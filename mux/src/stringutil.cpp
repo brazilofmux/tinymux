@@ -3901,15 +3901,17 @@ void mux_string::delete_Chars(size_t nStart, size_t nLen)
 
 void mux_string::edit(char *pFrom, char *pTo)
 {
+    size_t nFrom = 0;
+    char *pFromStrip = strip_ansi(pFrom, &nFrom);
     // Do the substitution.  Idea for prefix/suffix from R'nice@TinyTIM.
     //
-    if (!strcmp(pFrom, "^"))
+    if (!strcmp(pFromStrip, "^"))
     {
         // Prepend 'to' to string.
         //
         prepend_TextAnsi(pTo);
     }
-    else if (!strcmp(pFrom, "$"))
+    else if (!strcmp(pFromStrip, "$"))
     {
         // Append 'to' to string.
         //
@@ -3920,37 +3922,38 @@ void mux_string::edit(char *pFrom, char *pTo)
         // Replace all occurances of 'from' with 'to'. Handle the special
         // cases of from = \$ and \^.
         //
-        if (  (  pFrom[0] == '\\'
-              || pFrom[0] == '%')
-           && (  pFrom[1] == '$'
-              || pFrom[1] == '^')
-           && pFrom[2] == '\0')
+        if (  (  pFromStrip[0] == '\\'
+              || pFromStrip[0] == '%')
+           && (  pFromStrip[1] == '$'
+              || pFromStrip[1] == '^')
+           && pFromStrip[2] == '\0')
         {
-            pFrom++;
+            pFromStrip++;
         }
         size_t nStart = 0;
-        size_t nFrom = strlen(pFrom);
-        mux_string *sTemp = new mux_string;
+        char *pTemp = alloc_lbuf("mux_string.edit");
+        char *pcTemp = pTemp;
         while (nStart < m_n)
         {
             size_t nPos = 0;
-            bool bSucceeded = search(pFrom, &nPos, nStart);
+            bool bSucceeded = search(pFromStrip, &nPos, nStart);
             if (bSucceeded)
             {
-                export_Append(sTemp, nStart, nPos);
+                export_TextAnsi(pTemp, &pcTemp, nStart, nPos);
                 nStart += nPos;
-                sTemp->append_TextAnsi(pTo);
+                safe_str(pTo, pTemp, &pcTemp);
                 nStart += nFrom;
             }
             else
             {
                 // No more matches.
-                export_Append(sTemp, nStart);
+                export_TextAnsi(pTemp, &pcTemp, nStart);
                 break;
             }
         }
-        import(sTemp);
-        delete sTemp;
+        *pcTemp = '\0';
+        import_TextAnsi(pTemp);
+        free_lbuf(pTemp);
     }
 }
 
