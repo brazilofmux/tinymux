@@ -84,22 +84,4 @@ extern void display_nametab(dbref, NAMETAB *, char *, bool);
 extern void interp_nametab(dbref, NAMETAB *, int, const char *, const char *, const char *);
 extern void listset_nametab(dbref, NAMETAB *, int, char *, bool);
 
-/*! \brief Staging area for reads and writes into CHashTable.
- *
- * The htab_rec structure is a fixed size, but only part of htab_rec is used.
- * Since requests use variable-sized Keys, the portion of htab_rec used on
- * any particular request is also variable-sized. pData is always present,
- * but aKey may occupy as little as a single byte.
- */
-
-#pragma pack(1)
-typedef struct
-{
-    void *pData;
-    char  aKey[LBUF_SIZE+125];
-} htab_rec_type;
-#pragma pack()
-
-extern htab_rec_type htab_rec;
-
 #endif // !__HTAB_H
