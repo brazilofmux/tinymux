@@ -50,7 +50,7 @@ void hashreset(CHashTable *htab)
  */
 
 #pragma pack(1)
-struct
+static struct
 {
     void *pData;
     char  aKey[LBUF_SIZE+125];

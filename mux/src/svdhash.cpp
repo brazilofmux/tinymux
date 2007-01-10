@@ -301,6 +301,16 @@ UINT32 HASH_ProcessBuffer
     return ~ulHash;
 }
 
+UINT32 munge_hash(const char *pBuffer)
+{
+    UINT32 h = 0;
+    while (*pBuffer)
+    {
+        h ^= (h << 5) + (h >> 2) + CRC32_Table[(unsigned char)*pBuffer++];
+    }
+    return h;
+}
+
 #define NUMBER_OF_PRIMES 177
 const int Primes[NUMBER_OF_PRIMES] =
 {
