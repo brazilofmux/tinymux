@@ -5851,43 +5851,44 @@ static FUNCTION(fun_merge)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    char *str, *rep;
-    char c;
+    if (1 < strlen(fargs[2]))
+    {
+        safe_str("#-1 TOO MANY CHARACTERS", buff, bufc);
+        return;
+    }
+
+    mux_string *sStrA = new mux_string;
+    sStrA->import_TextAnsi(fargs[0]);
+    mux_string *sStrB = new mux_string;
+    sStrB->import_TextAnsi(fargs[1]);
 
     // Do length checks first.
     //
-    size_t n0 = strlen(fargs[0]);
-    size_t n1 = strlen(fargs[1]);
-    if (n0 != n1)
+    if (sStrA->length() != sStrB->length())
     {
         safe_str("#-1 STRING LENGTHS MUST BE EQUAL", buff, bufc);
-        return;
-    }
-    if (strlen(fargs[2]) > 1)
-    {
-        safe_str("#-1 TOO MANY CHARACTERS", buff, bufc);
+        delete sStrA;
+        delete sStrB;
         return;
     }
 
     // Find the character to look for. null character is considered a
     // space.
     //
-    if (!*fargs[2])
-        c = ' ';
-    else
-        c = *fargs[2];
+    const char cFill = *fargs[2] ? *fargs[2] : ' ';
 
-    // Walk strings, copy from the appropriate string.
-    //
-    for (str = fargs[0], rep = fargs[1];
-         *str && *rep && ((*bufc - buff) < (LBUF_SIZE-1));
-         str++, rep++, (*bufc)++)
+    for (size_t i = 0; i < sStrA->length(); i++)
     {
-        if (*str == c)
-            **bufc = *rep;
-        else
-            **bufc = *str;
+        if (sStrA->export_Char(i) == cFill)
+        {
+            sStrA->set_Char(i, sStrB->export_Char(i));
+            sStrA->set_Color(i, sStrB->export_Color(i));
+        }
     }
+
+    sStrA->export_TextAnsi(buff, bufc);
+    delete sStrA;
+    delete sStrB;
     return;
 }
 
