@@ -1938,7 +1938,7 @@ char *BufferCloneLen(const char *pBuffer, unsigned int nBuffer)
  * safe_copy_str, safe_copy_chr - Copy buffers, watching for overflows.
  */
 
-void safe_copy_str(const char *src, char *buff, char **bufp, int nSizeOfBuffer)
+void safe_copy_str(const char *src, char *buff, char **bufp, size_t nSizeOfBuffer)
 {
     if (src == NULL) return;
 

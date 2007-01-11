@@ -148,7 +148,7 @@ char *BufferCloneLen(const char *pBuffer, unsigned int nBuffer);
 bool minmatch(char *str, char *target, int min);
 char *StringCloneLen(const char *str, size_t nStr);
 char *StringClone(const char *str);
-void safe_copy_str(const char *src, char *buff, char **bufp, int max);
+void safe_copy_str(const char *src, char *buff, char **bufp, size_t nSizeOfBuffer);
 void safe_copy_str_lbuf(const char *src, char *buff, char **bufp);
 size_t safe_copy_buf(const char *src, size_t nLen, char *buff, char **bufp);
 size_t safe_fill(char *buff, char **bufc, char chFile, size_t nSpaces);
