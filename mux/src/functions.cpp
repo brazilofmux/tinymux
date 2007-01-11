@@ -4262,44 +4262,25 @@ static FUNCTION(fun_secure)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    char *pString = fargs[0];
-    size_t nString = strlen(pString);
+    mux_string *sStr = new mux_string;
+    sStr->import_TextAnsi(fargs[0]);
 
-    while (nString)
+    size_t nString = sStr->length();
+    char cChar = '\0';
+
+    for (size_t i = 0; i < nString; i++)
     {
-        size_t nTokenLength0;
-        size_t nTokenLength1;
-        int iType = ANSI_lex(nString, pString, &nTokenLength0, &nTokenLength1);
-
-        if (iType == TOKEN_TEXT_ANSI)
+        cChar = sStr->export_Char(i);
+        if (mux_issecure(cChar))
         {
-            // Process TEXT portion (pString, nTokenLength0).
-            //
-            nString -= nTokenLength0;
-            while (nTokenLength0--)
-            {
-                if (mux_issecure(*pString))
-                {
-                    safe_chr(' ', buff, bufc);
-                }
-                else
-                {
-                    safe_chr(*pString, buff, bufc);
-                }
-                pString++;
-            }
-            nTokenLength0 = nTokenLength1;
+            safe_chr(' ', buff, bufc);
         }
-
-        if (nTokenLength0)
+        else
         {
-            // Process ANSI portion (pString, nTokenLength0).
-            //
-            safe_copy_buf(pString, nTokenLength0, buff, bufc);
-            pString += nTokenLength0;
-            nString -= nTokenLength0;
+            safe_chr(cChar, buff, bufc);
         }
     }
+    delete sStr;
 }
 
 // fun_escape: This function prepends a '\' to the beginning of a
@@ -4318,42 +4299,23 @@ static FUNCTION(fun_escape)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    char *pString = fargs[0];
-    size_t nString = strlen(pString);
+    mux_string *sStr = new mux_string;
+    sStr->import_TextAnsi(fargs[0]);
 
-    while (nString)
+    size_t nString = sStr->length();
+    char cChar = '\0';
+
+    for (size_t i = 0; i < nString; i++)
     {
-        size_t nTokenLength0;
-        size_t nTokenLength1;
-        int iType = ANSI_lex(nString, pString, &nTokenLength0, &nTokenLength1);
-
-        if (iType == TOKEN_TEXT_ANSI)
+        cChar = sStr->export_Char(i);
+        if (  mux_isescape(cChar)
+           || 0 == i)
         {
-            // Process TEXT portion (pString, nTokenLength0).
-            //
-            nString -= nTokenLength0;
-            while (nTokenLength0--)
-            {
-                if (  mux_isescape(*pString)
-                   || pString == fargs[0])
-                {
-                    safe_chr('\\', buff, bufc);
-                }
-                safe_chr(*pString, buff, bufc);
-                pString++;
-            }
-            nTokenLength0 = nTokenLength1;
+            safe_chr('\\', buff, bufc);
         }
-
-        if (nTokenLength0)
-        {
-            // Process ANSI portion (pString, nTokenLength0).
-            //
-            safe_copy_buf(pString, nTokenLength0, buff, bufc);
-            pString += nTokenLength0;
-            nString -= nTokenLength0;
-        }
+        safe_chr(cChar, buff, bufc);
     }
+    delete sStr;
 }
 
 /*
