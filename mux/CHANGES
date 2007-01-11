@@ -45,8 +45,6 @@ Bug Fixes:
  -- Fix trailing padding in CENTER() (Issue 253).
  -- Added mux_string and fixed many functions including EDIT(),
     REVERSE(), and DELETE() (14, 52, 100, and 232).
- -- Added mux_string and fixed many functions including EDIT(),
-    REVERSE(), and DELETE() (14, 52, 100, and 232).
 
 
 Performance Enhancements:
