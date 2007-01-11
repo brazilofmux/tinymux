@@ -3796,11 +3796,6 @@ char *linewrap_desc(char *str)
 
 #endif // FIRANMUX
 
-// The REMOVEME sections should be resolved and retested before being
-// promoted.
-//
-#define REMOVEME
-
 /*! \brief Constructs mux_string object.
  *
  * This constructor puts the mux_string object into an initial, reasonable,
@@ -3812,13 +3807,8 @@ char *linewrap_desc(char *str)
 mux_string::mux_string(void)
 {
     m_n = 0;
-    m_ach[m_n] = '\0';
-#ifdef REMOVEME
-    for (size_t j = 0; j < LBUF_SIZE; j++)
-    {
-        m_acs[j] = acsRestingStates[ANSI_ENDGOAL_NORMAL];
-    }
-#endif
+    m_ach[0] = '\0';
+    m_acs[0] = acsRestingStates[ANSI_ENDGOAL_NORMAL];
 }
 
 void mux_string::append(mux_string *sStr, size_t nStart, size_t nLen)
@@ -4211,7 +4201,6 @@ void mux_string::import_CharPlain(const char cIn)
 
 void mux_string::import_TextAnsi(const char *pStr, size_t n)
 {
-    ANSI_ColorState acs = acsRestingStates[ANSI_ENDGOAL_NORMAL];
     m_n = 0;
     size_t nStr = strlen(pStr);
     if (nStr < n)
@@ -4225,6 +4214,13 @@ void mux_string::import_TextAnsi(const char *pStr, size_t n)
     if (nVisual < nStr)
     {
         process(pStr, n, m_acs);
+    }
+    else
+    {
+        for (size_t i = 0; i < m_n; i++)
+        {
+            m_acs[i] = acsRestingStates[ANSI_ENDGOAL_NORMAL];
+        }
     }
     truncate(m_n);
 }
