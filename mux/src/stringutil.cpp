@@ -3812,8 +3812,8 @@ char *linewrap_desc(char *str)
 mux_string::mux_string(void)
 {
     m_n = 0;
+    m_ach[m_n] = '\0';
 #ifdef REMOVEME
-    memset(m_ach, '\0', LBUF_SIZE);
     for (size_t j = 0; j < LBUF_SIZE; j++)
     {
         m_acs[j] = acsRestingStates[ANSI_ENDGOAL_NORMAL];
@@ -4401,17 +4401,11 @@ void mux_string::transformWithTable(const unsigned char xfrmTable[256], size_t n
 
 void mux_string::truncate(size_t n)
 {
-    if (m_n <= n)
+    if (m_n < n)
     {
         return;
     }
     m_n = n;
-
-#ifdef REMOVEME
-    memset(m_ach+m_n, '\0', LBUF_SIZE-m_n);
-    for (size_t j = m_n; j < LBUF_SIZE; j++)
-    {
-        m_acs[j] = acsRestingStates[ANSI_ENDGOAL_NORMAL];
-    }
-#endif
+    m_ach[m_n] = '\0';
+    m_acs[m_n] = acsRestingStates[ANSI_ENDGOAL_NORMAL];
 }
