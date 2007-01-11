@@ -43,6 +43,8 @@ Bug Fixes:
     AND operation (Issue 245).
  -- Fix sort(2 100) --> '100 2' bug introduced in 2.7.0.1 (Issue 251).
  -- Fix trailing padding in center() (Issue 253).
+ -- Added mux_string and fixed many functions including EDIT(),
+    REVERSE(), and DELETE() (14, 52, 100, and 232).
 
 
 Performance Enhancements:
