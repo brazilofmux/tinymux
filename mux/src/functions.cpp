@@ -3919,31 +3919,38 @@ static FUNCTION(fun_lpos)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    if (*fargs[0] == '\0')
+    mux_string *sStr = new mux_string;
+    sStr->import_TextAnsi(fargs[0]);
+
+    if (0 == sStr->length())
     {
+        delete sStr;
         return;
     }
 
-    char c = *fargs[1];
-    if (!c)
+    mux_string *sPat = new mux_string;
+    sPat->import_TextAnsi(fargs[1]);
+    if (0 == sPat->length())
     {
-        c = ' ';
+        sPat->import(' ');
     }
 
-    int i;
-    char *bb_p = *bufc;
-    char *s = strip_ansi(fargs[0]);
-    for (i = 0; *s; i++, s++)
+    size_t nPat = 0, nStart = 0;
+    bool bSucceeded = sStr->search(*sPat, &nPat);
+    while (bSucceeded)
     {
-        if (*s == c)
+        if (0 < nStart)
         {
-            if (*bufc != bb_p)
-            {
-                safe_chr(' ', buff, bufc);
-            }
-            safe_ltoa(i, buff, bufc);
+            safe_chr(' ', buff, bufc);
         }
+        nStart += nPat;
+        safe_ltoa(static_cast<long>(nStart), buff, bufc);
+        nStart++;
+
+        bSucceeded = sStr->search(*sPat, &nPat, nStart);
     }
+    delete sStr;
+    delete sPat;
 }
 
 /*
