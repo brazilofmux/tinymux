@@ -229,30 +229,38 @@ private:
     char            m_ach[LBUF_SIZE];
     ANSI_ColorState m_acs[LBUF_SIZE];
 
-    void process(const char *pStr, size_t n, ANSI_ColorState aCSBuf[LBUF_SIZE]);
+    void process(const char *pStr, size_t n);
 
 public:
     mux_string(void);
-    void append(mux_string *sStr, size_t nStart = 0, size_t nLen = LBUF_SIZE-1);
-    void append_CharPlain(const char cChar);
-    void append_Long(long lLong);
+    void append(const char cChar);
+    void append(INT64 iInt);
+    void append(long lLong);
+    void append(mux_string *sStr, size_t nStart = 0, size_t nLen = (LBUF_SIZE-1));
     void append_TextAnsi(const char *pStr, size_t n = LBUF_SIZE);
     void append_TextPlain(const char *pStr, size_t n = LBUF_SIZE);
     void delete_Chars(size_t nStart = 0, size_t nLen = LBUF_SIZE);
     void edit(char *pFrom, char *pTo);
     char export_Char(size_t n = 0);
+    ANSI_ColorState export_Color(size_t n = 0);
     void export_TextAnsi(char *buff, char **bufc, size_t nStart = 0, size_t nLen = LBUF_SIZE, size_t nBuffer = (LBUF_SIZE-1));
     void export_TextPlain(char *buff, char **bufc, size_t nStart = 0, size_t nLen = LBUF_SIZE, size_t nBuffer = (LBUF_SIZE-1));
-    void import(mux_string *sStr);
-    void import_CharAnsi(const char *pStr);
-    void import_CharPlain(const char cIn);
+    void import(const char cIn);
+    void import(INT64 iInt);
+    void import(long lLong);
+    void import(mux_string *sStr, size_t nStart = 0);
     void import_TextAnsi(const char *pStr, size_t n = LBUF_SIZE);
     size_t length(void);
+    void prepend(const char cChar);
+    void prepend(INT64 iInt);
+    void prepend(long lLong);
     void prepend(mux_string *sStr);
     void prepend_TextAnsi(const char *pStr, size_t n = LBUF_SIZE);
     void reverse(void);
     bool search(char *pPattern, size_t *nPos = NULL, size_t nStart = 0);
-    bool search(const mux_string &Pattern, size_t *nPos = NULL, size_t nStart = 0);
+    bool search(const mux_string &sPattern, size_t *nPos = NULL, size_t nStart = 0);
+    void set_Char(size_t n, const char cChar);
+    void set_Color(size_t n, ANSI_ColorState acsColor);
     void transformWithTable(const unsigned char xfrmTable[256], size_t nStart = 0, size_t nLen = LBUF_SIZE);
     void truncate(size_t n);
 };

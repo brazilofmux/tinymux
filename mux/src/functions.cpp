@@ -8088,7 +8088,7 @@ static void centerjustcombo
     nPad = sPad->length();
     if (0 == nPad)
     {
-        sPad->import_CharPlain(' ');
+        sPad->import(' ');
         nPad = 1;
     }
 
