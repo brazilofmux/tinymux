@@ -4378,11 +4378,6 @@ void mux_string::process(const char *pStr, size_t n)
             nPos++;
         }
     }
-
-    for (size_t i = nPosV; i < nPos+1 && i < LBUF_SIZE; i++)
-    {
-        set_Color(i, acs);
-    }
 }
 
 void mux_string::reverse(void)
