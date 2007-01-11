@@ -3898,11 +3898,11 @@ void mux_string::delete_Chars(size_t nStart, size_t nLen)
         truncate(nStart);
         return;
     }
-    size_t i = 0;
+    size_t i = nStart;
     while (i < m_n)
     {
-        m_ach[nStart+i] = m_ach[nStart+i+nLen];
-        m_acs[nStart+i] = m_acs[nStart+i+nLen];
+        m_ach[i] = m_ach[i+nLen];
+        m_acs[i] = m_acs[i+nLen];
         i++;
     }
     m_n -= nLen;
