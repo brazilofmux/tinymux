@@ -4378,6 +4378,47 @@ bool mux_string::search(char *pPattern, size_t *nPos, size_t nStart)
     return bSucceeded;
 }
 
+/*! \brief Searches text for a specified pattern.
+ *
+ * \param pattern  Pointer to pattern to search for.
+ * \param nPos     Pointer to value of position in string where pattern is found.
+ * \param nStart   Position in string to begin looking at. Defaults to 0.
+ * \return         True if found, false if not.
+ */
+
+bool mux_string::search(const mux_string &Pattern, size_t *nPos, size_t nStart)
+{
+    // Strip ANSI from pattern.
+    //
+    char *pTarget = m_ach + nStart;
+
+    size_t i = 0;
+    bool bSucceeded = false;
+    if (1 == Pattern.m_n)
+    {
+        // We can optimize the single-character case.
+        //
+        char *p = strchr(pTarget, Pattern.m_ach[0]);
+        if (p)
+        {
+            i = p - pTarget;
+            bSucceeded = true;
+        }
+    }
+    else
+    {
+        // We have a multi-byte pattern.
+        //
+        bSucceeded = BMH_StringSearch(&i, Pattern.m_n, Pattern.m_ach, m_n - nStart, pTarget);
+    }
+
+    if (nPos)
+    {
+        *nPos = i;
+    }
+    return bSucceeded;
+}
+
 void mux_string::transformWithTable(const unsigned char xfrmTable[256], size_t nStart, size_t nLen)
 {
     if (m_n <= nStart)

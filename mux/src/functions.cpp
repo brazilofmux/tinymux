@@ -3883,9 +3883,13 @@ static FUNCTION(fun_pos)
     UNUSED_PARAMETER(ncargs);
 
     size_t nPat = 0;
+
+    mux_string *sPat = new mux_string;
+    sPat->import_TextAnsi(fargs[0]);
     mux_string *sStr = new mux_string;
     sStr->import_TextAnsi(fargs[1]);
-    bool bSucceeded = sStr->search(strip_ansi(fargs[0]), &nPat);
+
+    bool bSucceeded = sStr->search(*sPat, &nPat);
 
     if (bSucceeded)
     {
@@ -3896,6 +3900,7 @@ static FUNCTION(fun_pos)
         safe_nothing(buff, bufc);
     }
     delete sStr;
+    delete sPat;
 }
 
 /* ---------------------------------------------------------------------------
@@ -5715,7 +5720,7 @@ static FUNCTION(fun_after)
     mux_string *sStr = new mux_string;
     sStr->import_TextAnsi(bp);
     size_t i;
-    
+
     // Look for the target string.
     //
     bool bSucceeded = sStr->search(mp, &i);
