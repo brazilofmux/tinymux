@@ -4233,11 +4233,11 @@ void mux_string::import_TextAnsi(const char *pStr, size_t n)
     {
         n = nStr;
     }
-    size_t nVisual = 0;
-    mux_strncpy(m_ach, strip_ansi(pStr, &nVisual), n);
-    m_n = nVisual;
+    size_t nStripped = 0;
+    mux_strncpy(m_ach, strip_ansi(pStr, &nStripped), n);
+    m_n = nStripped;
 
-    if (nVisual < nStr)
+    if (nStripped < nStr)
     {
         process(pStr, n);
     }
