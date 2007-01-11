@@ -3838,14 +3838,17 @@ void mux_string::append(mux_string *sStr, size_t nStart, size_t nLen)
     {
         return;
     }
-    if (nLen > LBUF_SIZE-1)
+    if (nLen > sStr->m_n - nStart)
     {
-        nLen = LBUF_SIZE-1;
+        nLen = sStr->m_n - nStart;
+    }
+    if (nLen > (LBUF_SIZE-1)-m_n)
+    {
+        nLen = (LBUF_SIZE-1)-m_n;
     }
 
     size_t i = 0; 
-    while (  i < m_n + sStr->m_n - nStart
-          && i < nLen)
+    while (i < nLen)
     {
         m_ach[m_n+i] = sStr->m_ach[nStart+i];
         m_acs[m_n+i] = sStr->m_acs[nStart+i];
