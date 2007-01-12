@@ -3808,7 +3808,6 @@ mux_string::mux_string(void)
 {
     m_n = 0;
     m_ach[0] = '\0';
-    m_acs[0] = acsRestingStates[ANSI_ENDGOAL_NORMAL];
 }
 
 void mux_string::append(const char cChar)
@@ -3818,8 +3817,8 @@ void mux_string::append(const char cChar)
         m_ach[m_n] = cChar;
         m_acs[m_n] = acsRestingStates[ANSI_ENDGOAL_NORMAL];
         m_n++;
+        m_ach[m_n] = '\0';
     }
-    truncate(m_n);
 }
 
 void mux_string::append(INT64 iInt)
