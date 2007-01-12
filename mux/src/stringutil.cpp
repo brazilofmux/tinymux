@@ -3832,30 +3832,41 @@ void mux_string::append(long lLong)
     append_TextPlain(mux_ltoa_t(lLong));
 }
 
+/*! \brief Extract and append a range of characters.
+ *
+ * TODO: Eventually, sStr needs to be (const mux_string &)
+ *
+ * \param sStr     mux_string from which to extract characters.
+ * \param nStart   Beginning of range to extract and apend.
+ * \param nLen     Length of range to extract and append.
+ * \return         None.
+ */
+
 void mux_string::append(mux_string *sStr, size_t nStart, size_t nLen)
 {
-    if (sStr->m_n <= nStart)
+    if (  sStr->m_n <= nStart
+       || 0 == nLen)
     {
+        // The selection range is empty.
+        //
         return;
     }
-    if (nLen > sStr->m_n - nStart)
+
+    if (sStr->m_n - nStart < nLen)
     {
         nLen = sStr->m_n - nStart;
     }
-    if (nLen > (LBUF_SIZE-1)-m_n)
+
+    if ((LBUF_SIZE-1)-m_n < nLen)
     {
         nLen = (LBUF_SIZE-1)-m_n;
     }
 
-    size_t i = 0;
-    while (i < nLen)
-    {
-        m_ach[m_n+i] = sStr->m_ach[nStart+i];
-        m_acs[m_n+i] = sStr->m_acs[nStart+i];
-        i++;
-    }
-    m_n += i;
-    truncate(m_n);
+    memcpy(m_ach + m_n, sStr->m_ach + nStart, nLen * sizeof(m_ach[0]));
+    memcpy(m_acs + m_n, sStr->m_acs + nStart, nLen * sizeof(m_acs[0]));
+
+    m_n += nLen;
+    m_ach[m_n] = '\0';
 }
 
 void mux_string::append_TextAnsi(const char *pStr, size_t n)
