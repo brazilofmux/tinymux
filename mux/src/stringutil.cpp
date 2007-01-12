@@ -4200,18 +4200,21 @@ void mux_string::import(INT64 iInt)
     }
 }
 
+/*! \brief Converts and Imports an long integer.
+ *
+ * \param lLong     long integer to convert and import.
+ * \return         None.
+ */
+
 void mux_string::import(long lLong)
 {
-    m_n = 0;
-    char *pStr = mux_ltoa_t(lLong);
-    m_n = strlen(pStr);
-    mux_strncpy(m_ach, pStr, m_n);
-
+    // mux_ltoa() sets the '\0'.
+    //
+    m_n = mux_ltoa(lLong, m_ach);
     for (size_t i = 0; i < m_n; i++)
     {
         m_acs[i] = acsRestingStates[ANSI_ENDGOAL_NORMAL];
     }
-    truncate(m_n);
 }
 
 void mux_string::import(mux_string *sStr, size_t nStart)
