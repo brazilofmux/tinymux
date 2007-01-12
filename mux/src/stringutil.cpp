@@ -4399,6 +4399,38 @@ void mux_string::prepend_TextAnsi(const char *pStr, size_t n)
     delete sStore;
 }
 
+void mux_string::replace_Chars(mux_string *sTo, size_t nStart, size_t nLen)
+{
+    size_t nTo = sTo->length();
+    size_t nMove = 0;
+    size_t nCopy = nTo;
+    if (nLen != nTo)
+    {
+        nMove = m_n-(nStart+nLen);
+        if (LBUF_SIZE-1 < m_n + nTo - nLen)
+        {
+            if (LBUF_SIZE-1 < nStart + nTo)
+            {
+                nCopy = (LBUF_SIZE-1)-nStart;
+                nMove = 0;
+            }
+            else
+            {
+                nMove = (LBUF_SIZE-1)-(nStart+nTo);
+            }
+        }
+        if (nMove)
+        {
+            memmove(m_ach+nStart+nTo, m_ach+nStart + nLen, nMove);
+            memmove(m_acs+nStart+nTo, m_acs+nStart + nLen, nMove * sizeof(m_acs[0]));
+        }
+        m_n = nStart+nCopy+nMove;
+    }
+    memcpy(m_ach+nStart, sTo->m_ach, nCopy);
+    memcpy(m_acs+nStart, sTo->m_acs, nCopy * sizeof(m_acs[0]));
+    m_ach[m_n] = '\0';
+}
+
 /*! \brief Reverses the string.
  *
  * \return         None.
