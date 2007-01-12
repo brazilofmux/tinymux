@@ -4584,7 +4584,7 @@ void mux_string::transformWithTable(const unsigned char xfrmTable[256], size_t n
 
 void mux_string::truncate(size_t nLen)
 {
-    if (m_n < nLen)
+    if (m_n <= nLen)
     {
         return;
     }
