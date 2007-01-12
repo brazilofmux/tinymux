@@ -4254,27 +4254,53 @@ void mux_string::import(mux_string *sStr, size_t nStart)
 void mux_string::import_TextAnsi(const char *pStr, size_t n)
 {
     m_n = 0;
+    if (!pStr)
+    {
+        m_ach[m_n] = '\0';
+        return;
+    }
     size_t nStr = strlen(pStr);
     if (nStr < n)
     {
         n = nStr;
     }
-    size_t nStripped = 0;
-    mux_strncpy(m_ach, strip_ansi(pStr, &nStripped), n);
-    m_n = nStripped;
+    if (LBUF_SIZE-1 < n)
+    {
+        n = LBUF_SIZE-1;
+    }
+    size_t nPos = 0;
+    ANSI_ColorState acs = acsRestingStates[ANSI_ENDGOAL_NORMAL];
+    size_t nAnsiLen = 0;
 
-    if (nStripped < nStr)
+    while (nPos < n)
     {
-        process(pStr, n);
-    }
-    else
-    {
-        for (size_t i = 0; i < m_n; i++)
+        size_t nTokenLength0;
+        size_t nTokenLength1;
+        int iType = ANSI_lex(n-nPos, pStr+nPos, &nTokenLength0, &nTokenLength1);
+
+        if (iType == TOKEN_TEXT_ANSI)
         {
-            m_acs[i] = acsRestingStates[ANSI_ENDGOAL_NORMAL];
+            memcpy(m_ach + m_n, pStr + nPos, nTokenLength0);
+            for (size_t i = m_n; i < m_n+nTokenLength0 && i < LBUF_SIZE-1; i++)
+            {
+                memcpy(m_acs+i, &acs, sizeof(acs));
+            }
+
+            m_n += nTokenLength0;
+            nPos += nTokenLength0;
+
+            nAnsiLen = nTokenLength1;
         }
+        else
+        {
+            // TOKEN_ANSI
+            //
+            nAnsiLen = nTokenLength0;
+        }
+        ANSI_Parse_m(&acs, nAnsiLen, pStr+nPos);
+        nPos += nAnsiLen;
     }
-    truncate(m_n);
+    m_ach[m_n] = '\0';
 }
 
 size_t mux_string::length(void)
@@ -4345,65 +4371,6 @@ void mux_string::prepend_TextAnsi(const char *pStr, size_t n)
     import_TextAnsi(pStr, n);
     append(sStore);
     delete sStore;
-}
-
-void mux_string::process(const char *pStr, size_t n)
-{
-    size_t nPos = 0, nPosV = 0;
-    ANSI_ColorState acs = acsRestingStates[ANSI_ENDGOAL_NORMAL];
-
-    while (nPos < n)
-    {
-        if (ESC_CHAR == pStr[nPos])
-        {
-            // We have an ESC_CHAR. Let's look at the next character.
-            //
-            if (pStr[nPos+1] != '[')
-            {
-                // Could be a '\0' or another non-'[' character.
-                // Move the pointer to position ourselves over it.
-                // And continue looking for an ESC_CHAR.
-                //
-                nPos++;
-                continue;
-            }
-
-            // We found the beginning of an ANSI sequence.
-            // Find the terminating character.
-            //
-            const char *pEsc = pStr + nPos;
-            const char *q = pEsc + 2;
-            while (ANSI_TokenTerminatorTable[(unsigned char)*q] == 0)
-            {
-                q++;
-            }
-            if (q[0] == '\0')
-            {
-                // There was no good terminator. Treat everything like text.
-                // Also, we are at the end of the string, so we're done looking.
-                //
-                for (size_t i = nPosV; i < (size_t)(q-pStr) && i < LBUF_SIZE-1; i++)
-                {
-                    set_Color(i, acs);
-                }
-                return;
-            }
-            else
-            {
-                // We found an ANSI sequence.
-                //
-                size_t nAnsiLen = q - pEsc + 1;
-                nPos += nAnsiLen;
-                ANSI_Parse_m(&acs, nAnsiLen, pEsc);
-            }
-        }
-        else
-        {
-            set_Color(nPosV, acs);
-            nPosV++;
-            nPos++;
-        }
-    }
 }
 
 /*! \brief Reverses the string.

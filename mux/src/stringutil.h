@@ -241,8 +241,6 @@ private:
     char            m_ach[LBUF_SIZE];
     ANSI_ColorState m_acs[LBUF_SIZE];
 
-    void process(const char *pStr, size_t n);
-
 public:
     mux_string(void);
     void append(const char cChar);
