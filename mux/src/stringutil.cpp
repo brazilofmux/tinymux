@@ -3847,7 +3847,7 @@ void mux_string::append(mux_string *sStr, size_t nStart, size_t nLen)
         nLen = (LBUF_SIZE-1)-m_n;
     }
 
-    size_t i = 0; 
+    size_t i = 0;
     while (i < nLen)
     {
         m_ach[m_n+i] = sStr->m_ach[nStart+i];
@@ -4217,18 +4217,28 @@ void mux_string::import(long lLong)
     }
 }
 
+/*! \brief Import a portion of another mux_string.
+ *
+ * TODO: Eventually, sStr needs to be (const mux_string &)
+ *
+ * \param sStr     mux_string to import.
+ * \param nStart   Where to begin importing.
+ * \return         None.
+ */
+
 void mux_string::import(mux_string *sStr, size_t nStart)
 {
-    m_n = 0;
-    size_t i = nStart; 
-    while (  i < sStr->m_n
-          && i < LBUF_SIZE-1)
+    if (sStr->m_n <= nStart)
     {
-        m_ach[m_n] = sStr->m_ach[i];
-        m_acs[m_n] = sStr->m_acs[i];
-        m_n++;
+        m_n = 0;
     }
-    truncate(m_n);
+    else
+    {
+        m_n = sStr->m_n - nStart;
+        memcpy(m_ach, sStr->m_ach + nStart, m_n*sizeof(m_ach[0]));
+        memcpy(m_acs, sStr->m_acs + nStart, m_n*sizeof(m_acs[0]));
+    }
+    m_ach[m_n] = '\0';
 }
 
 /*! \brief Import ANSI string.
