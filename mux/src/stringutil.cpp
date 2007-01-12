@@ -3887,22 +3887,38 @@ void mux_string::append_TextPlain(const char *pStr, size_t n)
     truncate(m_n);
 }
 
+/*! \brief Delete a range of characters.
+ *
+ * \param nStart   Beginning of range to delete.
+ * \param nLen     Length of range.
+ * \return         None.
+ */
+
 void mux_string::delete_Chars(size_t nStart, size_t nLen)
 {
-    if (m_n <= nStart)
+    if (  m_n <= nStart
+       || 0 == nLen)
     {
+        // The range does not select any characters.
+        //
         return;
     }
+
     size_t nEnd = nStart + nLen;
     if (m_n <= nEnd)
     {
-        truncate(nStart);
+        // The range extends beyond the end, so we can simply truncate.
+        //
+        m_n = nStart;
+        m_ach[m_n] = '\0';
         return;
     }
-    memmove(m_ach+nStart, m_ach+nEnd, m_n-nEnd);
-    memmove(m_acs+nStart, m_acs+nEnd, (m_n-nEnd) * sizeof(m_acs[0]));
+
+    size_t nMove = m_n - nEnd;
+    memmove(m_ach+nStart, m_ach+nEnd, nMove * sizeof(m_ach[0]));
+    memmove(m_acs+nStart, m_acs+nEnd, nMove * sizeof(m_acs[0]));
     m_n -= nLen;
-    truncate(m_n);
+    m_ach[m_n] = '\0';
 }
 
 void mux_string::edit(char *pFrom, char *pTo)
