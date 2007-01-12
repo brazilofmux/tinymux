@@ -4161,7 +4161,7 @@ void mux_string::export_TextPlain(char *buff, char **bufc, size_t nStart, size_t
     safe_copy_str(m_ach+nStart, buff, bufc, *bufc-buff+nLen);
 }
 
-/*! \brief Inputs a single normal-colored character.
+/*! \brief Imports a single normal-colored character.
  *
  * \param chIn     Normal character.
  * \return         None.
@@ -4183,18 +4183,21 @@ void mux_string::import(const char chIn)
     m_ach[m_n] = '\0';
 }
 
+/*! \brief Converts and Imports an INT64.
+ *
+ * \param iInt     INT64 to convert and import.
+ * \return         None.
+ */
+
 void mux_string::import(INT64 iInt)
 {
-    m_n = 0;
-    char *pStr = mux_i64toa_t(iInt);
-    m_n = strlen(pStr);
-    mux_strncpy(m_ach, pStr, m_n);
-
+    // mux_i64toa() sets the '\0'.
+    //
+    m_n = mux_i64toa(iInt, m_ach);
     for (size_t i = 0; i < m_n; i++)
     {
         m_acs[i] = acsRestingStates[ANSI_ENDGOAL_NORMAL];
     }
-    truncate(m_n);
 }
 
 void mux_string::import(long lLong)
