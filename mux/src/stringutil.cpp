@@ -4411,7 +4411,7 @@ void mux_string::prepend_TextAnsi(const char *pStr, size_t n)
 
 void mux_string::reverse(void)
 {
-    for (size_t i = 0, j = m_n-1; i < j; i++, j++)
+    for (size_t i = 0, j = m_n-1; i < j; i++, j--)
     {
         char ch = m_ach[j];
         m_ach[j] = m_ach[i];
