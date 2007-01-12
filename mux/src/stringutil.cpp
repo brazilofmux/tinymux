@@ -4406,19 +4406,23 @@ void mux_string::process(const char *pStr, size_t n)
     }
 }
 
+/*! \brief Reverses the string.
+ *
+ * \return         None.
+ */
+
 void mux_string::reverse(void)
 {
-    mux_string *sTemp = new mux_string;
-
-    for (size_t i = 0; i < m_n; i++)
+    for (size_t i = 0, j = m_n-1; i < j; i++, j++)
     {
-        sTemp->m_ach[i] = m_ach[(m_n-1)-i];
-        sTemp->m_acs[i] = m_acs[(m_n-1)-i];
-    }
-    sTemp->m_n = m_n;
+        char ch = m_ach[j];
+        m_ach[j] = m_ach[i];
+        m_ach[i] = ch;
 
-    import(sTemp);
-    delete sTemp;
+        ANSI_ColorState cs = m_acs[j];
+        m_acs[j] = m_acs[i];
+        m_acs[i] = cs;
+    }
 }
 
 /*! \brief Searches text for a specified pattern.
