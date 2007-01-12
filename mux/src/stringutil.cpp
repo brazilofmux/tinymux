@@ -3884,33 +3884,46 @@ void mux_string::append(mux_string *sStr, size_t nStart, size_t nLen)
     m_ach[m_n] = '\0';
 }
 
-void mux_string::append_TextAnsi(const char *pStr, size_t n)
+void mux_string::append_TextAnsi(const char *pStr, size_t nLen)
 {
     mux_string *sNew = new mux_string;
 
-    sNew->import_TextAnsi(pStr, n);
+    sNew->import_TextAnsi(pStr, nLen);
     append(sNew);
     delete sNew;
 }
 
-void mux_string::append_TextPlain(const char *pStr, size_t n)
+void mux_string::append_TextPlain(const char *pStr, size_t nLen)
 {
-    size_t i = 0;
-    size_t nStr = strlen(pStr);
-    if (nStr < n)
+    if (  '\0' == *pStr
+       || 0 == nLen
+       || LBUF_SIZE-1 == m_n)
     {
-        n = nStr;
+        // The selection range is empty, or no buffer space is left.
+        //
+        return;
     }
 
-    while (  i < n
-          && m_n + i < LBUF_SIZE-1)
+    size_t nStr = strlen(pStr);
+    if (nStr < nLen)
     {
-        m_ach[m_n+i] = pStr[i];
-        m_acs[m_n+i] = acsRestingStates[ANSI_ENDGOAL_NORMAL];
-        i++;
+        nLen = nStr;
     }
-    m_n += i;
-    truncate(m_n);
+
+    if ((LBUF_SIZE-1)-m_n < nLen)
+    {
+        nLen = (LBUF_SIZE-1)-m_n;
+    }
+
+    memcpy(m_ach + m_n, pStr, nLen * sizeof(m_ach[0]));
+
+    for (size_t i = 0; i < nLen; i++)
+    {
+        m_acs[m_n+i] = acsRestingStates[ANSI_ENDGOAL_NORMAL];
+    }
+
+    m_n += nLen;
+    m_ach[m_n] = '\0';
 }
 
 /*! \brief Delete a range of characters.
@@ -4569,13 +4582,12 @@ void mux_string::transformWithTable(const unsigned char xfrmTable[256], size_t n
     }
 }
 
-void mux_string::truncate(size_t n)
+void mux_string::truncate(size_t nLen)
 {
-    if (m_n < n)
+    if (m_n < nLen)
     {
         return;
     }
-    m_n = n;
+    m_n = nLen;
     m_ach[m_n] = '\0';
-    m_acs[m_n] = acsRestingStates[ANSI_ENDGOAL_NORMAL];
 }

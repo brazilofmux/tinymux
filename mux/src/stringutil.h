@@ -248,8 +248,8 @@ public:
     void append(INT64 iInt);
     void append(long lLong);
     void append(mux_string *sStr, size_t nStart = 0, size_t nLen = (LBUF_SIZE-1));
-    void append_TextAnsi(const char *pStr, size_t n = (LBUF_SIZE-1));
-    void append_TextPlain(const char *pStr, size_t n = (LBUF_SIZE-1));
+    void append_TextAnsi(const char *pStr, size_t nLen = (LBUF_SIZE-1));
+    void append_TextPlain(const char *pStr, size_t nLen = (LBUF_SIZE-1));
     void delete_Chars(size_t nStart = 0, size_t nLen = (LBUF_SIZE-1));
     void edit(mux_string *sFrom, mux_string *sTo);
     char export_Char(size_t n = 0);
@@ -274,7 +274,7 @@ public:
     void set_Char(size_t n, const char cChar);
     void set_Color(size_t n, ANSI_ColorState acsColor);
     void transformWithTable(const unsigned char xfrmTable[256], size_t nStart = 0, size_t nLen = (LBUF_SIZE-1));
-    void truncate(size_t n);
+    void truncate(size_t nLen);
 };
 
 #endif // STRINGUTIL_H
