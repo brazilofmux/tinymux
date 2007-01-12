@@ -245,7 +245,7 @@ public:
     ANSI_ColorState export_Color(size_t n = 0);
     void export_TextAnsi(char *buff, char **bufc, size_t nStart = 0, size_t nLen = LBUF_SIZE, size_t nBuffer = (LBUF_SIZE-1));
     void export_TextPlain(char *buff, char **bufc, size_t nStart = 0, size_t nLen = LBUF_SIZE, size_t nBuffer = (LBUF_SIZE-1));
-    void import(const char cIn);
+    void import(const char chIn);
     void import(INT64 iInt);
     void import(long lLong);
     void import(mux_string *sStr, size_t nStart = 0);

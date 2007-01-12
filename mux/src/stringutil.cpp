@@ -4161,16 +4161,26 @@ void mux_string::export_TextPlain(char *buff, char **bufc, size_t nStart, size_t
     safe_copy_str(m_ach+nStart, buff, bufc, *bufc-buff+nLen);
 }
 
-void mux_string::import(const char cIn)
+/*! \brief Inputs a single normal-colored character.
+ *
+ * \param chIn     Normal character.
+ * \return         None.
+ */
+
+void mux_string::import(const char chIn)
 {
-    m_n = 0;
-    if (ESC_CHAR != cIn)
+    if (  ESC_CHAR != chIn
+       && '\0' != chIn)
     {
-        m_ach[0] = cIn;
+        m_ach[0] = chIn;
         m_acs[0] = acsRestingStates[ANSI_ENDGOAL_NORMAL];
         m_n = 1;
     }
-    truncate(m_n);
+    else
+    {
+        m_n = 0;
+    }
+    m_ach[m_n] = '\0';
 }
 
 void mux_string::import(INT64 iInt)
