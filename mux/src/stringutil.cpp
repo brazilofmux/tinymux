@@ -3810,6 +3810,21 @@ mux_string::mux_string(void)
     m_ach[0] = '\0';
 }
 
+/*! \brief Constructs mux_string object.
+ *
+ * This is a deep copy constructor.
+ *
+ * TODO: Eventually, sStr needs to be (const mux_string &)
+ *
+ * \param sStr     mux_string to be copied.
+ * \return         None.
+ */
+
+mux_string::mux_string(mux_string *sStr)
+{
+  import(sStr);
+}
+
 void mux_string::append(const char cChar)
 {
     if (m_n < LBUF_SIZE-1)
@@ -4341,11 +4356,7 @@ size_t mux_string::length(void)
 
 void mux_string::prepend(char cChar)
 {
-    mux_string *sStore = new mux_string;
-
-    memcpy(sStore->m_ach, m_ach, sizeof(m_ach));
-    memcpy(sStore->m_acs, m_acs, sizeof(m_acs));
-    sStore->m_n = m_n;
+    mux_string *sStore = new mux_string(this);
 
     import(cChar);
     append(sStore);
@@ -4354,11 +4365,7 @@ void mux_string::prepend(char cChar)
 
 void mux_string::prepend(long lLong)
 {
-    mux_string *sStore = new mux_string;
-
-    memcpy(sStore->m_ach, m_ach, sizeof(m_ach));
-    memcpy(sStore->m_acs, m_acs, sizeof(m_acs));
-    sStore->m_n = m_n;
+    mux_string *sStore = new mux_string(this);
 
     import(lLong);
     append(sStore);
@@ -4367,11 +4374,7 @@ void mux_string::prepend(long lLong)
 
 void mux_string::prepend(INT64 iInt)
 {
-    mux_string *sStore = new mux_string;
-
-    memcpy(sStore->m_ach, m_ach, sizeof(m_ach));
-    memcpy(sStore->m_acs, m_acs, sizeof(m_acs));
-    sStore->m_n = m_n;
+    mux_string *sStore = new mux_string(this);
 
     import(iInt);
     append(sStore);
@@ -4380,11 +4383,7 @@ void mux_string::prepend(INT64 iInt)
 
 void mux_string::prepend(mux_string *sStr)
 {
-    mux_string *sStore = new mux_string;
-
-    memcpy(sStore->m_ach, m_ach, sizeof(m_ach));
-    memcpy(sStore->m_acs, m_acs, sizeof(m_acs));
-    sStore->m_n = m_n;
+    mux_string *sStore = new mux_string(this);
 
     import(sStr);
     append(sStore);
@@ -4393,11 +4392,7 @@ void mux_string::prepend(mux_string *sStr)
 
 void mux_string::prepend_TextAnsi(const char *pStr, size_t n)
 {
-    mux_string *sStore = new mux_string;
-
-    memcpy(sStore->m_ach, m_ach, sizeof(m_ach));
-    memcpy(sStore->m_acs, m_acs, sizeof(m_acs));
-    sStore->m_n = m_n;
+    mux_string *sStore = new mux_string(this);
 
     import_TextAnsi(pStr, n);
     append(sStore);

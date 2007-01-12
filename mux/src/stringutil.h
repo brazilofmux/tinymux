@@ -243,6 +243,7 @@ private:
 
 public:
     mux_string(void);
+    mux_string(mux_string *sStr);
     void append(const char cChar);
     void append(INT64 iInt);
     void append(long lLong);
