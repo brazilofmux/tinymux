@@ -4524,7 +4524,7 @@ void mux_string::reverse(void)
 
 /*! \brief Searches text for a specified pattern.
  *
- * \param pattern  Pointer to pattern to search for.
+ * \param pPattern Pointer to pattern to search for.
  * \param nPos     Pointer to value of position in string where pattern is found.
  * \param nStart   Position in string to begin looking at. Defaults to 0.
  * \return         True if found, false if not.
@@ -4567,7 +4567,7 @@ bool mux_string::search(char *pPattern, size_t *nPos, size_t nStart)
 
 /*! \brief Searches text for a specified pattern.
  *
- * \param pattern  Pointer to pattern to search for.
+ * \param sPattern Reference to string to search for.
  * \param nPos     Pointer to value of position in string where pattern is found.
  * \param nStart   Position in string to begin looking at. Defaults to 0.
  * \return         True if found, false if not.
@@ -4622,6 +4622,82 @@ void mux_string::set_Color(size_t n, ANSI_ColorState acsColor)
         return;
     }
     m_acs[n] = acsColor;
+}
+
+/*! \brief Removes a specified set of characters from string.
+ *
+ * \param pStripSet Pointer to string of characters to remove.
+ * \param nStart    Position in string to begin checking. Defaults to 0.
+ * \param nLen      Number of characters in string to check. Defaults to LBUF_SIZE-1.
+ * \return          None.
+ */
+
+void mux_string::strip(const char *pStripSet, size_t nStart, size_t nLen)
+{
+    static bool strip_table[UCHAR_MAX+1];
+
+    if (  NULL == pStripSet
+       || '\0' == pStripSet[0]
+       || m_n <= nStart
+       || 0 == nLen)
+    {
+        // Nothing to do.
+        //
+        return;
+    }
+
+    if (m_n-nStart < nLen)
+    {
+        nLen = m_n-nStart;
+    }
+
+    // Load set of characters to strip.
+    //
+    memset(strip_table, false, sizeof(strip_table));
+    while (*pStripSet)
+    {
+        strip_table[(unsigned char)*pStripSet] = true;
+        pStripSet++;
+    }
+
+    bool bInStrip = false;
+    size_t nStripStart = nStart;
+    for (size_t i = nStart; i < nStart+nLen; i++)
+    {
+        if (  !bInStrip
+           && strip_table[(unsigned char)m_ach[i]])
+        {
+            bInStrip = true;
+            nStripStart = i;
+        }
+        else if (  bInStrip
+                && !strip_table[(unsigned char)m_ach[i]])
+        {
+            // We've hit the end of a string to be stripped.
+            //
+            size_t nStrip = i-nStripStart;
+            delete_Chars(nStripStart, nStrip);
+            i -= nStrip;
+            bInStrip = false;
+        }
+    }
+
+    if (bInStrip)
+    {
+        if (m_n == nStart+nLen)
+        {
+            // We found chars to strip at the end of the string.
+            // We can just truncate.
+            //
+            m_ach[nStripStart] = '\0';
+            m_n = nStripStart;
+        }
+        else
+        {
+            size_t nStrip = nStart+nLen-nStripStart;
+            delete_Chars(nStripStart, nStrip);
+        }
+    }
 }
 
 void mux_string::transformWithTable(const unsigned char xfrmTable[256], size_t nStart, size_t nLen)

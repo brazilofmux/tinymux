@@ -277,6 +277,7 @@ public:
     bool search(const mux_string &sPattern, size_t *nPos = NULL, size_t nStart = 0);
     void set_Char(size_t n, const char cChar);
     void set_Color(size_t n, ANSI_ColorState acsColor);
+    void strip(const char *pStripSet, size_t nStart = 0, size_t nLen = (LBUF_SIZE-1));
     void transformWithTable(const unsigned char xfrmTable[256], size_t nStart = 0, size_t nLen = (LBUF_SIZE-1));
     void truncate(size_t nLen);
 };

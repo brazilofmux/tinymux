@@ -8551,19 +8551,18 @@ static FUNCTION(fun_strip)
     {
         return;
     }
-    size_t n;
-    char  *p = strip_ansi(fargs[0], &n);
+    mux_string *sStr = new mux_string;
+    sStr->import(fargs[0]);
     if (  nfargs < 2
        || fargs[1][0] == '\0')
     {
-        safe_copy_buf(p, n, buff, bufc);
+        sStr->export_TextPlain(buff, bufc);
+        delete sStr;
         return;
     }
-    char *pInput = alloc_lbuf("fun_strip.1");
-    memcpy(pInput, p, n+1);
-    p = strip_ansi(fargs[1], &n);
-    safe_str(RemoveSetOfCharacters(pInput, p), buff, bufc);
-    free_lbuf(pInput);
+    sStr->strip(strip_ansi(fargs[1]));
+    sStr->export_TextPlain(buff, bufc);
+    delete sStr;
 }
 
 #define DEFAULT_WIDTH 78
