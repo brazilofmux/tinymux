@@ -3822,7 +3822,7 @@ mux_string::mux_string(void)
 
 mux_string::mux_string(mux_string *sStr)
 {
-  import(sStr);
+    import(sStr);
 }
 
 void mux_string::append(const char cChar)
