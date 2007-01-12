@@ -4266,20 +4266,28 @@ void mux_string::import(mux_string *sStr, size_t nStart)
 void mux_string::import_TextAnsi(const char *pStr, size_t n)
 {
     m_n = 0;
-    if (!pStr)
+    if (NULL == pStr)
     {
         m_ach[m_n] = '\0';
         return;
     }
+
+    // TODO: This works, but it isn't exactly the way to do it. If the user
+    // gives the length, we should use that information to avoid calling
+    // strlen().  Given that we are always calling strlen(), there is no
+    // reason to have a second argument.  It needs to be one or the other.
+    // 
     size_t nStr = strlen(pStr);
     if (nStr < n)
     {
         n = nStr;
     }
+
     if (LBUF_SIZE-1 < n)
     {
         n = LBUF_SIZE-1;
     }
+
     size_t nPos = 0;
     ANSI_ColorState acs = acsRestingStates[ANSI_ENDGOAL_NORMAL];
     size_t nAnsiLen = 0;
