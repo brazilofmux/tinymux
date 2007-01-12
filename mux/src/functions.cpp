@@ -6863,9 +6863,16 @@ static FUNCTION(fun_edit)
 
     mux_string *sStr = new mux_string;
     sStr->import_TextAnsi(fargs[0]);
-    sStr->edit(fargs[1], fargs[2]);
+    mux_string *sFrom = new mux_string;
+    sFrom->import_TextAnsi(fargs[1]);
+    mux_string *sTo = new mux_string;
+    sTo->import_TextAnsi(fargs[2]);
+
+    sStr->edit(sFrom, sTo);
     sStr->export_TextAnsi(buff, bufc);
     delete sStr;
+    delete sFrom;
+    delete sTo;
 }
 
 /* ---------------------------------------------------------------------------

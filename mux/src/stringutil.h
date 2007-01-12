@@ -251,7 +251,7 @@ public:
     void append_TextAnsi(const char *pStr, size_t n = (LBUF_SIZE-1));
     void append_TextPlain(const char *pStr, size_t n = (LBUF_SIZE-1));
     void delete_Chars(size_t nStart = 0, size_t nLen = (LBUF_SIZE-1));
-    void edit(char *pFrom, char *pTo);
+    void edit(mux_string *sFrom, mux_string *sTo);
     char export_Char(size_t n = 0);
     ANSI_ColorState export_Color(size_t n = 0);
     void export_TextAnsi(char *buff, char **bufc, size_t nStart = 0, size_t nLen = LBUF_SIZE, size_t nBuffer = (LBUF_SIZE-1));
@@ -267,6 +267,7 @@ public:
     void prepend(long lLong);
     void prepend(mux_string *sStr);
     void prepend_TextAnsi(const char *pStr, size_t n = (LBUF_SIZE-1));
+    void replace_Chars(mux_string *pTo, size_t nStart, size_t nLen);
     void reverse(void);
     bool search(char *pPattern, size_t *nPos = NULL, size_t nStart = 0);
     bool search(const mux_string &sPattern, size_t *nPos = NULL, size_t nStart = 0);

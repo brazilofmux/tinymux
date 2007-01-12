@@ -3947,61 +3947,61 @@ void mux_string::delete_Chars(size_t nStart, size_t nLen)
     m_ach[m_n] = '\0';
 }
 
-void mux_string::edit(char *pFrom, char *pTo)
+void mux_string::edit(mux_string *sFrom, mux_string *sTo)
 {
-    size_t nFrom = 0;
-    char *pFromStrip = strip_ansi(pFrom, &nFrom);
     // Do the substitution.  Idea for prefix/suffix from R'nice@TinyTIM.
     //
-    if (!strcmp(pFromStrip, "^"))
+    const char chFrom0 = sFrom->export_Char(0);
+    size_t nFrom = sFrom->length();
+    if (  1 == nFrom
+       && '^' == chFrom0)
     {
         // Prepend 'to' to string.
         //
-        prepend_TextAnsi(pTo);
+        prepend(sTo);
     }
-    else if (!strcmp(pFromStrip, "$"))
+    else if (  1 == nFrom
+            && '$' == chFrom0)
     {
         // Append 'to' to string.
         //
-        append_TextAnsi(pTo);
+        append(sTo);
     }
     else
     {
+        const char chFrom1 = sFrom->export_Char(1);
         // Replace all occurances of 'from' with 'to'. Handle the special
         // cases of from = \$ and \^.
         //
-        if (  (  pFromStrip[0] == '\\'
-              || pFromStrip[0] == '%')
-           && (  pFromStrip[1] == '$'
-              || pFromStrip[1] == '^')
-           && pFromStrip[2] == '\0')
+        if (  (  '\\' == chFrom0
+              || '%' == chFrom0)
+           && (  '$' == chFrom1
+              || '^' == chFrom1)
+           && 2 == nFrom)
         {
-            pFromStrip++;
+            sFrom->delete_Chars(0,1);
+            nFrom--;
         }
+
         size_t nStart = 0;
-        char *pTemp = alloc_lbuf("mux_string.edit");
-        char *pcTemp = pTemp;
-        while (nStart < m_n)
+        size_t nFound = 0;
+        size_t nTo = sTo->length();
+        bool bSucceeded = search(*sFrom, &nFound);
+        while (bSucceeded)
         {
-            size_t nPos = 0;
-            bool bSucceeded = search(pFromStrip, &nPos, nStart);
-            if (bSucceeded)
+            nStart += nFound;
+            replace_Chars(sTo, nStart, nFrom);
+            nStart += nTo;
+
+            if (nStart < LBUF_SIZE-1)
             {
-                export_TextAnsi(pTemp, &pcTemp, nStart, nPos);
-                nStart += nPos;
-                safe_str(pTo, pTemp, &pcTemp);
-                nStart += nFrom;
+                bSucceeded = search(*sFrom, &nFound, nStart);
             }
             else
             {
-                // No more matches.
-                export_TextAnsi(pTemp, &pcTemp, nStart);
-                break;
+                bSucceeded = false;
             }
         }
-        *pcTemp = '\0';
-        import_TextAnsi(pTemp);
-        free_lbuf(pTemp);
     }
 }
 
