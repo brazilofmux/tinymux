@@ -3893,18 +3893,14 @@ void mux_string::delete_Chars(size_t nStart, size_t nLen)
     {
         return;
     }
-    if (m_n <= nStart + nLen)
+    size_t nEnd = nStart + nLen;
+    if (m_n <= nEnd)
     {
         truncate(nStart);
         return;
     }
-    size_t i = nStart;
-    while (i < m_n)
-    {
-        m_ach[i] = m_ach[i+nLen];
-        m_acs[i] = m_acs[i+nLen];
-        i++;
-    }
+    memmove(m_ach+nStart, m_ach+nEnd, m_n-nEnd);
+    memmove(m_acs+nStart, m_acs+nEnd, (m_n-nEnd) * sizeof(m_acs[0]));
     m_n -= nLen;
     truncate(m_n);
 }
