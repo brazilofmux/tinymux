@@ -3884,13 +3884,50 @@ void mux_string::append(mux_string *sStr, size_t nStart, size_t nLen)
     m_ach[m_n] = '\0';
 }
 
-void mux_string::append_TextAnsi(const char *pStr, size_t nLen)
+void mux_string::append(const char *pStr)
 {
     mux_string *sNew = new mux_string;
 
-    sNew->import_TextAnsi(pStr, nLen);
+    sNew->import(pStr);
     append(sNew);
     delete sNew;
+}
+
+void mux_string::append(const char *pStr, size_t nLen)
+{
+    mux_string *sNew = new mux_string;
+
+    sNew->import(pStr, nLen);
+    append(sNew);
+    delete sNew;
+}
+
+void mux_string::append_TextPlain(const char *pStr)
+{
+    if (  '\0' == *pStr
+       || LBUF_SIZE-1 == m_n)
+    {
+        // The selection range is empty, or no buffer space is left.
+        //
+        return;
+    }
+
+    size_t nLen = strlen(pStr);
+
+    if ((LBUF_SIZE-1)-m_n < nLen)
+    {
+        nLen = (LBUF_SIZE-1)-m_n;
+    }
+
+    memcpy(m_ach + m_n, pStr, nLen * sizeof(m_ach[0]));
+
+    for (size_t i = 0; i < nLen; i++)
+    {
+        m_acs[m_n+i] = acsRestingStates[ANSI_ENDGOAL_NORMAL];
+    }
+
+    m_n += nLen;
+    m_ach[m_n] = '\0';
 }
 
 void mux_string::append_TextPlain(const char *pStr, size_t nLen)
@@ -3902,12 +3939,6 @@ void mux_string::append_TextPlain(const char *pStr, size_t nLen)
         // The selection range is empty, or no buffer space is left.
         //
         return;
-    }
-
-    size_t nStr = strlen(pStr);
-    if (nStr < nLen)
-    {
-        nLen = nStr;
     }
 
     if ((LBUF_SIZE-1)-m_n < nLen)
@@ -4302,7 +4333,7 @@ void mux_string::import(mux_string *sStr, size_t nStart)
  * \return         None.
  */
 
-void mux_string::import_TextAnsi(const char *pStr, size_t n)
+void mux_string::import(const char *pStr)
 {
     m_n = 0;
     if (NULL == pStr)
@@ -4311,15 +4342,17 @@ void mux_string::import_TextAnsi(const char *pStr, size_t n)
         return;
     }
 
-    // TODO: This works, but it isn't exactly the way to do it. If the user
-    // gives the length, we should use that information to avoid calling
-    // strlen().  Given that we are always calling strlen(), there is no
-    // reason to have a second argument.  It needs to be one or the other.
-    // 
-    size_t nStr = strlen(pStr);
-    if (nStr < n)
+    size_t n = strlen(pStr);
+    import(pStr, n);
+}
+
+void mux_string::import(const char *pStr, size_t n)
+{
+    m_n = 0;
+    if (NULL == pStr)
     {
-        n = nStr;
+        m_ach[m_n] = '\0';
+        return;
     }
 
     if (LBUF_SIZE-1 < n)
@@ -4403,11 +4436,20 @@ void mux_string::prepend(mux_string *sStr)
     delete sStore;
 }
 
-void mux_string::prepend_TextAnsi(const char *pStr, size_t n)
+void mux_string::prepend(const char *pStr)
 {
     mux_string *sStore = new mux_string(this);
 
-    import_TextAnsi(pStr, n);
+    import(pStr);
+    append(sStore);
+    delete sStore;
+}
+
+void mux_string::prepend(const char *pStr, size_t n)
+{
+    mux_string *sStore = new mux_string(this);
+
+    import(pStr, n);
     append(sStore);
     delete sStore;
 }
