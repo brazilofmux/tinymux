@@ -3844,9 +3844,10 @@ void mux_string::append(long lLong)
 void mux_string::append(mux_string *sStr, size_t nStart, size_t nLen)
 {
     if (  sStr->m_n <= nStart
-       || 0 == nLen)
+       || 0 == nLen
+       || LBUF_SIZE-1 == m_n)
     {
-        // The selection range is empty.
+        // The selection range is empty, or no buffer space is left.
         //
         return;
     }
