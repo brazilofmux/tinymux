@@ -2626,6 +2626,8 @@ Related Topics: @name.
   See '@list options' as to whether or not a player name may contain
   spaces.
 
+  Related Topics: setname().
+
 & @NAMEFORMAT
 @NAMEFORMAT
 
@@ -3158,7 +3160,7 @@ Related Topics: @name.
   if <parent> is omitted.  You must control <object> and must either own
   <parent> or pass the ParentLock on a parent that is set PARENT_OK.
 
-  Related Topics PARENT OBJECTS.
+  Related Topics PARENT OBJECTS, setparent().
 
 & @PASSWORD
 @PASSWORD
