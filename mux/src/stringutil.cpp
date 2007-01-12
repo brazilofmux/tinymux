@@ -4329,53 +4329,70 @@ void mux_string::import(mux_string *sStr, size_t nStart)
  * navigated.
  *
  * \param str      ANSI-color encoded string to import.
- * \param n        Length of string, str. Defaults to LBUF_SIZE.
  * \return         None.
  */
 
 void mux_string::import(const char *pStr)
 {
     m_n = 0;
-    if (NULL == pStr)
+    if (  NULL == pStr
+       || '\0' == *pStr)
     {
         m_ach[m_n] = '\0';
         return;
     }
 
-    size_t n = strlen(pStr);
-    import(pStr, n);
+    size_t nLen = strlen(pStr);
+    import(pStr, nLen);
 }
 
-void mux_string::import(const char *pStr, size_t n)
+/*! \brief Import ANSI string.
+ *
+ * Parses the given ANSI string into a form which can be more-easily
+ * navigated.
+ *
+ * \param str      ANSI-color encoded string to import.
+ * \param nLen     Length of portion of string, str, to import.
+ * \return         None.
+ */
+
+void mux_string::import(const char *pStr, size_t nLen)
 {
     m_n = 0;
-    if (NULL == pStr)
+    if (  NULL == pStr
+       || '\0' == *pStr
+       || 0 == nLen)
     {
         m_ach[m_n] = '\0';
         return;
     }
 
-    if (LBUF_SIZE-1 < n)
+    if (LBUF_SIZE-1 < nLen)
     {
-        n = LBUF_SIZE-1;
+        nLen = LBUF_SIZE-1;
     }
 
     size_t nPos = 0;
     ANSI_ColorState acs = acsRestingStates[ANSI_ENDGOAL_NORMAL];
     size_t nAnsiLen = 0;
 
-    while (nPos < n)
+    while (nPos < nLen)
     {
         size_t nTokenLength0;
         size_t nTokenLength1;
-        int iType = ANSI_lex(n-nPos, pStr+nPos, &nTokenLength0, &nTokenLength1);
+        int iType = ANSI_lex(nLen - nPos, pStr + nPos,
+                             &nTokenLength0, &nTokenLength1);
 
         if (iType == TOKEN_TEXT_ANSI)
         {
+            // We always have room for the token since nLen (the total
+            // amount of input to parse) is limited to LBUF_SIZE-1 and we
+            // started this import with m_n = 0.
+            //
             memcpy(m_ach + m_n, pStr + nPos, nTokenLength0);
-            for (size_t i = m_n; i < m_n+nTokenLength0 && i < LBUF_SIZE-1; i++)
+            for (size_t i = m_n; i < m_n + nTokenLength0; i++)
             {
-                memcpy(m_acs+i, &acs, sizeof(acs));
+                m_acs[i] = acs;
             }
 
             m_n += nTokenLength0;
