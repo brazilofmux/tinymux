@@ -4634,7 +4634,7 @@ void mux_string::set_Color(size_t n, ANSI_ColorState acsColor)
 
 void mux_string::strip(const char *pStripSet, size_t nStart, size_t nLen)
 {
-    static bool strip_table[UCHAR_MAX+1];
+    static unsigned char strip_table[UCHAR_MAX+1];
 
     if (  NULL == pStripSet
        || '\0' == pStripSet[0]
@@ -4653,16 +4653,16 @@ void mux_string::strip(const char *pStripSet, size_t nStart, size_t nLen)
 
     // Load set of characters to strip.
     //
-    memset(strip_table, false, sizeof(strip_table));
+    memset(strip_table, 0, sizeof(strip_table));
     while (*pStripSet)
     {
-        strip_table[(unsigned char)*pStripSet] = true;
+        strip_table[(unsigned char)*pStripSet] = 1;
         pStripSet++;
     }
     stripWithTable(strip_table, nStart, nLen);
 }
 
-void mux_string::stripWithTable(const bool strip_table[UCHAR_MAX+1], size_t nStart, size_t nLen)
+void mux_string::stripWithTable(const unsigned char strip_table[UCHAR_MAX+1], size_t nStart, size_t nLen)
 {
     if (  m_n <= nStart
        || 0 == nLen)
@@ -4679,20 +4679,20 @@ void mux_string::stripWithTable(const bool strip_table[UCHAR_MAX+1], size_t nSta
 
     bool bInStrip = false;
     size_t nStripStart = nStart;
-    for (size_t i = nStart; i < nStart+nLen; i++)
+    for (size_t i = nStart; i < nStart + nLen; i++)
     {
         if (  !bInStrip
-           && strip_table[(unsigned char)m_ach[i]])
+           && 0 != strip_table[(unsigned char)m_ach[i]])
         {
             bInStrip = true;
             nStripStart = i;
         }
         else if (  bInStrip
-                && !strip_table[(unsigned char)m_ach[i]])
+                && 0 != strip_table[(unsigned char)m_ach[i]])
         {
             // We've hit the end of a string to be stripped.
             //
-            size_t nStrip = i-nStripStart;
+            size_t nStrip = i - nStripStart;
             delete_Chars(nStripStart, nStrip);
             i -= nStrip;
             bInStrip = false;
@@ -4711,7 +4711,7 @@ void mux_string::stripWithTable(const bool strip_table[UCHAR_MAX+1], size_t nSta
         }
         else
         {
-            size_t nStrip = nStart+nLen-nStripStart;
+            size_t nStrip = nStart + nLen - nStripStart;
             delete_Chars(nStripStart, nStrip);
         }
     }
