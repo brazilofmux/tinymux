@@ -4389,7 +4389,7 @@ void mux_string::import(const char *pStr, size_t nLen)
             // amount of input to parse) is limited to LBUF_SIZE-1 and we
             // started this import with m_n = 0.
             //
-            memcpy(m_ach + m_n, pStr + nPos, nTokenLength0);
+            memcpy(m_ach + m_n, pStr + nPos, nTokenLength0 * sizeof(m_ach[0]));
             for (size_t i = m_n; i < m_n + nTokenLength0; i++)
             {
                 m_acs[i] = acs;
@@ -4493,12 +4493,12 @@ void mux_string::replace_Chars(mux_string *sTo, size_t nStart, size_t nLen)
         }
         if (nMove)
         {
-            memmove(m_ach+nStart+nTo, m_ach+nStart + nLen, nMove);
+            memmove(m_ach+nStart+nTo, m_ach+nStart + nLen, nMove * sizeof(m_ach[0]));
             memmove(m_acs+nStart+nTo, m_acs+nStart + nLen, nMove * sizeof(m_acs[0]));
         }
         m_n = nStart+nCopy+nMove;
     }
-    memcpy(m_ach+nStart, sTo->m_ach, nCopy);
+    memcpy(m_ach+nStart, sTo->m_ach, nCopy * sizeof(m_ach[0]));
     memcpy(m_acs+nStart, sTo->m_acs, nCopy * sizeof(m_acs[0]));
     m_ach[m_n] = '\0';
 }
