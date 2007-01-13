@@ -4659,7 +4659,11 @@ void mux_string::strip(const char *pStripSet, size_t nStart, size_t nLen)
         strip_table[(unsigned char)*pStripSet] = true;
         pStripSet++;
     }
+    stripWithTable(strip_table, nStart, nLen);
+}
 
+void mux_string::stripWithTable(const bool strip_table[UCHAR_MAX+1], size_t nStart, size_t nLen)
+{
     bool bInStrip = false;
     size_t nStripStart = nStart;
     for (size_t i = nStart; i < nStart+nLen; i++)
