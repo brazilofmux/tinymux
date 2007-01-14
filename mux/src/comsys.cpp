@@ -1747,16 +1747,14 @@ void do_delcomchannel(dbref player, char *channel, bool bQuiet)
                 do_comdisconnectchannel(player, channel);
                 if (!bQuiet)
                 {
-                    if (user->bUserIsOn)
+                    if (  user->bUserIsOn
+                       && !Hidden(player))
                     {
-                        if (!Hidden(player))
-                        {
-                            char *messNormal, *messNoComtitle;
-                            BuildChannelMessage((ch->type & CHANNEL_SPOOF) != 0,
-                                ch->header, user, ":has left this channel.",
-                                &messNormal, &messNoComtitle);
-                            SendChannelMessage(player, ch, messNormal, messNoComtitle);
-                        }
+                        char *messNormal, *messNoComtitle;
+                        BuildChannelMessage((ch->type & CHANNEL_SPOOF) != 0,
+                            ch->header, user, ":has left this channel.",
+                            &messNormal, &messNoComtitle);
+                        SendChannelMessage(player, ch, messNormal, messNoComtitle);
                     }
                     raw_notify(player, tprintf("You have left channel %s.", channel));
                 }
