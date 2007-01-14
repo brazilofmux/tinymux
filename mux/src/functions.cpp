@@ -3902,7 +3902,13 @@ static FUNCTION(fun_pos)
     {
         ; // Nothing.
     }
-    ISOUTOFMEMORY(sPat);
+
+    if (NULL == sPat)
+    {
+        // Out of memory.
+        //
+        return;
+    }
     sPat->import(fargs[0]);
 
     mux_string *sStr = NULL;
@@ -3914,7 +3920,14 @@ static FUNCTION(fun_pos)
     {
         ; // Nothing.
     }
-    ISOUTOFMEMORY(sStr);
+
+    if (NULL == sStr)
+    {
+        // Out of memory.
+        //
+        delete sPat;
+        return;
+    }
     sStr->import(fargs[1]);
 
     bool bSucceeded = sStr->search(*sPat, &nPat);
@@ -3956,7 +3969,13 @@ static FUNCTION(fun_lpos)
     {
         ; // Nothing.
     }
-    ISOUTOFMEMORY(sStr);
+    
+    if (NULL == sStr)
+    {
+        // Out of memory.
+        //
+        return;
+    }
     sStr->import(fargs[0]);
 
     if (0 == sStr->length())
@@ -4343,7 +4362,20 @@ static FUNCTION(fun_escape)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    mux_string *sStr = new mux_string;
+    mux_string *sStr = NULL;
+    try
+    {
+        sStr = new mux_string;
+    }
+    catch (...)
+    {
+        ; // Nothing.
+    }
+
+    if (NULL == sStr)
+    {
+        return;
+    }
     sStr->import(fargs[0]);
 
     size_t nLen = sStr->length();
@@ -5709,7 +5741,22 @@ static FUNCTION(fun_after)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    mux_string *sPat = new mux_string;
+    mux_string *sPat = NULL;
+    try
+    {
+        sPat = new mux_string;
+    }
+    catch (...)
+    {
+        ; // Nothing.
+    }
+
+    if (NULL == sPat)
+    {
+        // Out of memory.
+        //
+        return;
+    }
     size_t nPat;
 
     // Sanity-check arg1 and arg2.
@@ -5760,7 +5807,22 @@ static FUNCTION(fun_before)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    mux_string *sPat = new mux_string;
+    mux_string *sPat = NULL;
+    try
+    {
+        sPat = new mux_string;
+    }
+    catch (...)
+    {
+        ; // Nothing.
+    }
+    
+    if (NULL == sPat)
+    {
+        // Out of memory.
+        //
+        return;
+    }
     size_t nPat;
 
     // Sanity-check arg1 and arg2.
@@ -5923,7 +5985,13 @@ static FUNCTION(fun_merge)
     {
         ; // Nothing.
     }
-    ISOUTOFMEMORY(sStrA);
+
+    if (NULL == sStrA)
+    {
+        // Out of memory.
+        //
+        return;
+    }
     sStrA->import(fargs[0]);
 
     mux_string *sStrB = NULL;
@@ -5935,7 +6003,14 @@ static FUNCTION(fun_merge)
     {
         ; // Nothing.
     }
-    ISOUTOFMEMORY(sStrB);
+
+    if (NULL == sStrB)
+    {
+        // Out of memory.
+        //
+        delete sStrA;
+        return;
+    }
     sStrB->import(fargs[1]);
 
     // Do length checks first.
@@ -6940,7 +7015,13 @@ static FUNCTION(fun_edit)
     {
         ; // Nothing.
     }
-    ISOUTOFMEMORY(sStr);
+
+    if (NULL == sStr)
+    {
+        // Out of memory.
+        //
+        return;
+    }
     sStr->import(fargs[0]);
 
     mux_string *sFrom = NULL;
@@ -6952,7 +7033,14 @@ static FUNCTION(fun_edit)
     {
         ; // Nothing.
     }
-    ISOUTOFMEMORY(sFrom);
+
+    if (NULL == sFrom)
+    {
+        // Out of memory.
+        //
+        delete sStr;
+        return;
+    }
     sFrom->import(fargs[1]);
 
     mux_string *sTo = NULL;
@@ -6964,7 +7052,15 @@ static FUNCTION(fun_edit)
     {
         ; // Nothing.
     }
-    ISOUTOFMEMORY(sTo);
+    
+    if (NULL == sTo)
+    {
+        // Out of memory.
+        //
+        delete sStr;
+        delete sFrom;
+        return;
+    }
     sTo->import(fargs[2]);
 
     sStr->edit(sFrom, sTo);
@@ -8133,13 +8229,29 @@ static void centerjustcombo
     {
         return;
     }
-    if(LBUF_SIZE <= nWidth)
+
+    if (LBUF_SIZE <= nWidth)
     {
         safe_range(buff, bufc);
         return;
     }
 
-    mux_string *sStr = new mux_string;
+    mux_string *sStr = NULL;
+    try
+    {
+        sStr = new mux_string;
+    }
+    catch (...)
+    {
+        ; // Nothing.
+    }
+
+    if (NULL == sStr)
+    {
+        // Out of memory.
+        //
+        return;
+    }
     sStr->import(fargs[0]);
     size_t nStr = sStr->length();
 
@@ -8154,7 +8266,23 @@ static void centerjustcombo
 
     // Determine string to pad with.
     //
-    mux_string *sPad = new mux_string;
+    mux_string *sPad = NULL;
+    try
+    {
+        sPad = new mux_string;
+    }
+    catch (...)
+    {
+        ; // Nothing.
+    }
+    
+    if (NULL == sPad)
+    {
+        // Out of memory.
+        //
+        delete sStr;
+        return;
+    }
     size_t nPad = 0;
     if (nfargs == 3 && *fargs[2])
     {
