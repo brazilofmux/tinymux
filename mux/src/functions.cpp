@@ -1910,6 +1910,13 @@ static int getsuccs(int dice, int diff, int *psucc)
 
 FUNCTION(fun_successes)
 {
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     // Number of dice and difficulty.
     //
     if (  !is_integer(fargs[0], NULL)
@@ -3387,6 +3394,7 @@ static FUNCTION(fun_cansee)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
@@ -5606,15 +5614,6 @@ static FUNCTION(fun_attrcnt)
  * ---------------------------------------------------------------------------
  * * fun_reverse, fun_revwords: Reverse things.
  */
-
-static void mux_memrevcpy(char *dest, char *src, size_t n)
-{
-    dest += n - 1;
-    while (n--)
-    {
-        *dest-- = *src++;
-    }
-}
 
 typedef void MEMXFORM(char *dest, char *src, size_t n);
 static void ANSI_TransformTextReverseWithFunction

@@ -3219,13 +3219,17 @@ FUNCTION(fun_foreach)
  * Borrowed from TinyMUSH 2.2
  * Hash table rewrite by Ian and Alierak.
  */
+#if LBUF_SIZE < UINT16_MAX_VALUE
+typedef UINT16 NHASH;
+#define ShiftHash(x) (x) >>= 16
+#else
+typedef UINT32 NHASH;
+#define ShiftHash(x)
+#endif
+
 typedef struct munge_htab_rec
 {
-#if LBUF_SIZE < UINT16_MAX_VALUE
-    UINT16      nHash;         // partial hash value of this record's key
-#else
-    UINT32      nHash;         // partial hash value of this record's key
-#endif
+    NHASH       nHash;         // partial hash value of this record's key
     LBUF_OFFSET nNext;         // index of next record in this hash chain
     LBUF_OFFSET nKeyOffset;    // offset of key string (incremented by 1),
                                //     zero indicates empty record.
@@ -3305,23 +3309,21 @@ FUNCTION(fun_munge)
     {
         UINT32 nHash = munge_hash(pKey);
         int nHashSlot = 1 + (nHash % nWords);
-#if LBUF_SIZE < UINT16_MAX_VALUE
-        nHash >>= 16;
-#endif
+        ShiftHash(nHash);
 
         if (0 != tails[nHashSlot])
         {
             // there is already a hash chain starting in this slot,
             // insert at the tail to preserve order.
             nHashSlot = tails[nHashSlot] =
-                htab[tails[nHashSlot]].nNext = nNext++;
+                htab[tails[nHashSlot]].nNext = static_cast<LBUF_OFFSET>(nNext++);
         }
         else
         {
-            tails[nHashSlot] = nHashSlot;
+            tails[nHashSlot] = static_cast<LBUF_OFFSET>(nHashSlot);
         }
 
-        htab[nHashSlot].nHash = nHash;
+        htab[nHashSlot].nHash = static_cast<NHASH>(nHash);
         htab[nHashSlot].nKeyOffset = static_cast<LBUF_OFFSET>(1 + pKey - fargs[1]);
         htab[nHashSlot].nValueOffset = static_cast<LBUF_OFFSET>(pValue - fargs[2]);
     }
@@ -3366,9 +3368,7 @@ FUNCTION(fun_munge)
         {
             UINT32 nHash = munge_hash(result);
             int nHashSlot = 1 + (nHash % nWords);
-#if LBUF_SIZE < UINT16_MAX_VALUE
-            nHash >>= 16;
-#endif
+            ShiftHash(nHash);
 
             while (  0 != htab[nHashSlot].nKeyOffset
                   && (  nHash != htab[nHashSlot].nHash
