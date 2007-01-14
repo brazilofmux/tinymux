@@ -4333,10 +4333,10 @@ static FUNCTION(fun_escape)
            || 0 == i)
         {
             sOut->append('\\');
-	    sOut->set_Color(j++, acs);
+            sOut->set_Color(j++, acs);
         }
         sOut->append(cChar);
-	sOut->set_Color(j++, acs);
+        sOut->set_Color(j++, acs);
     }
     sOut->export_TextAnsi(buff, bufc);
     delete sStr;
