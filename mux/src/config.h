@@ -251,6 +251,14 @@ typedef UINT32           UINT16;
 #define INT16_MAX_VALUE  32767
 #define UINT16_MAX_VALUE 0xFFFFU
 
+#if LBUF_SIZE < UINT16_MAX_VALUE
+typedef UINT16 LBUF_OFFSET;
+#elif LBUF_SIZE < UINT32_MAX_VALUE
+typedef UINT32 LBUF_OFFSET;
+#else
+typedef size_t LBUF_OFFSET;
+#endif
+
 typedef   signed char INT8;
 typedef unsigned char UINT8;
 #define I8BUF_SIZE  LONGEST_I8

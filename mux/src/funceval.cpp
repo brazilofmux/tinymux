@@ -3218,16 +3218,14 @@ FUNCTION(fun_foreach)
  * fun_munge: combines two lists in an arbitrary manner.
  * Borrowed from TinyMUSH 2.2
  * Hash table rewrite by Ian and Alierak.
- *
- * Assumes LBUF_SIZE is less than 64k.
  */
 typedef struct munge_htab_rec
 {
-    UINT16 nHash;         // partial hash value of this record's key
-    UINT16 nNext;         // index of next record in this hash chain
-    UINT16 nKeyOffset;    // offset of key string (incremented by 1),
-                          //     zero indicates empty record.
-    UINT16 nValueOffset;  // offset of value string
+    UINT16      nHash;         // partial hash value of this record's key
+    UINT16      nNext;         // index of next record in this hash chain
+    LBUF_OFFSET nKeyOffset;    // offset of key string (incremented by 1),
+                               //     zero indicates empty record.
+    LBUF_OFFSET nValueOffset;  // offset of value string
 } munge_htab_rec;
 
 FUNCTION(fun_munge)
@@ -3318,8 +3316,8 @@ FUNCTION(fun_munge)
         }
 
         htab[nHashSlot].nHash = nHash;
-        htab[nHashSlot].nKeyOffset = 1 + pKey - fargs[1];
-        htab[nHashSlot].nValueOffset = pValue - fargs[2];
+        htab[nHashSlot].nKeyOffset = static_cast<LBUF_OFFSET>(1 + pKey - fargs[1]);
+        htab[nHashSlot].nValueOffset = static_cast<LBUF_OFFSET>(pValue - fargs[2]);
     }
     delete [] tails;
 
