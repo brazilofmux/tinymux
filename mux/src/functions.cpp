@@ -4301,8 +4301,8 @@ static FUNCTION(fun_secure)
 
 // fun_escape: This function prepends a '\' to the beginning of a
 // string and before any character which occurs in the set '%\[]{};,()^$'.
-// It handles ANSI by not treating the '[' character within an ANSI
-// sequence as a special character.
+// It handles ANSI by computing and preserving the color of each
+// visual character in the string.
 //
 static FUNCTION(fun_escape)
 {
@@ -4318,20 +4318,29 @@ static FUNCTION(fun_escape)
     mux_string *sStr = new mux_string;
     sStr->import(fargs[0]);
 
+    mux_string *sOut = new mux_string;
+
     size_t nString = sStr->length();
     char cChar = '\0';
+    ANSI_ColorState acs;
+    size_t j = 0;
 
     for (size_t i = 0; i < nString; i++)
     {
         cChar = sStr->export_Char(i);
+        acs = sStr->export_Color(i);
         if (  mux_isescape(cChar)
            || 0 == i)
         {
-            safe_chr('\\', buff, bufc);
+            sOut->append('\\');
+	    sOut->set_Color(j++, acs);
         }
-        safe_chr(cChar, buff, bufc);
+        sOut->append(cChar);
+	sOut->set_Color(j++, acs);
     }
+    sOut->export_TextAnsi(buff, bufc);
     delete sStr;
+    delete sOut;
 }
 
 /*
