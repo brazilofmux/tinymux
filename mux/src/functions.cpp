@@ -5890,7 +5890,8 @@ static FUNCTION(fun_merge)
 
     // Do length checks first.
     //
-    if (sStrA->length() != sStrB->length())
+    size_t nLen = sStrA->length();
+    if (nLen != sStrB->length())
     {
         safe_str("#-1 STRING LENGTHS MUST BE EQUAL", buff, bufc);
         delete sStrA;
@@ -5903,7 +5904,7 @@ static FUNCTION(fun_merge)
     //
     const char cFill = *fargs[2] ? *fargs[2] : ' ';
 
-    for (size_t i = 0; i < sStrA->length(); i++)
+    for (size_t i = 0; i < nLen; i++)
     {
         if (sStrA->export_Char(i) == cFill)
         {
