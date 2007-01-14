@@ -3984,7 +3984,23 @@ static FUNCTION(fun_lpos)
         return;
     }
 
-    mux_string *sPat = new mux_string;
+    mux_string *sPat = NULL;
+    try
+    {
+        sPat = new mux_string;
+    }
+    catch (...)
+    {
+        ; // Nothing.
+    }
+
+    if (NULL == sPat)
+    {
+        // Out of memory.
+        //
+        delete sStr;
+        return;
+    }
     sPat->import(fargs[1]);
     if (0 == sPat->length())
     {
@@ -4382,7 +4398,23 @@ static FUNCTION(fun_escape)
     char cChar;
     ANSI_ColorState csColor;
 
-    mux_string *sOut = new mux_string;
+    mux_string *sOut = NULL;
+    try
+    {
+        sOut = new mux_string;
+    }
+    catch (...)
+    {
+        ; // Nothing.
+    }
+
+    if (NULL == sOut)
+    {
+        // Out of memory.
+        //
+        delete sStr;
+        return;
+    }
     size_t iOut = 0;
 
     for (size_t i = 0; i < nLen; i++)
@@ -5779,7 +5811,24 @@ static FUNCTION(fun_after)
         bp = trim_space_sep(bp, &sepSpace);
     }
 
-    mux_string *sStr = new mux_string;
+    mux_string *sStr = NULL;
+    try
+    {
+        sStr = new mux_string;
+    }
+    catch (...)
+    {
+        ; // Nothing.
+    }
+    
+    if (NULL == sStr)
+    {
+        // Out of memory.
+        //
+        delete sPat;
+        return;
+    }
+
     sStr->import(bp);
     size_t i;
 
@@ -5848,7 +5897,23 @@ static FUNCTION(fun_before)
     // Look for the target string.
     //
     size_t i;
-    mux_string *sStr = new mux_string;
+    mux_string *sStr = NULL;
+    try
+    {
+        sStr = new mux_string;
+    }
+    catch (...)
+    {
+        ; // Nothing.
+    }
+
+    if (NULL == sStr)
+    {
+        // Out of memory.
+        //
+        delete sPat;
+        return;
+    }
     sStr->import(bp);
     bool bSucceeded = sStr->search(*sPat, &i);
     if (bSucceeded)
