@@ -3884,9 +3884,28 @@ static FUNCTION(fun_pos)
 
     size_t nPat = 0;
 
-    mux_string *sPat = new mux_string;
+    mux_string *sPat = = NULL;
+    try
+    {
+        sPat = new mux_string;
+    }
+    catch (...)
+    {
+        ; // Nothing.
+    }
+    ISOUTOFMEMORY(sPat);
     sPat->import(fargs[0]);
-    mux_string *sStr = new mux_string;
+
+    mux_string *sStr = NULL;
+    try
+    {
+        sStr = new mux_string;
+    }
+    catch (...)
+    {
+        ; // Nothing.
+    }
+    ISOUTOFMEMORY(sStr);
     sStr->import(fargs[1]);
 
     bool bSucceeded = sStr->search(*sPat, &nPat);
@@ -3919,7 +3938,16 @@ static FUNCTION(fun_lpos)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    mux_string *sStr = new mux_string;
+    mux_string *sStr = NULL;
+    try
+    {
+        sStr = new mux_string;
+    }
+    catch (...)
+    {
+        ; // Nothing.
+    }
+    ISOUTOFMEMORY(sStr);
     sStr->import(fargs[0]);
 
     if (0 == sStr->length())
@@ -5865,9 +5893,28 @@ static FUNCTION(fun_merge)
         return;
     }
 
-    mux_string *sStrA = new mux_string;
+    mux_string *sStrA = NULL;
+    try
+    {
+        sStrA = new mux_string;
+    }
+    catch (...)
+    {
+        ; // Nothing.
+    }
+    ISOUTOFMEMORY(sStrA);
     sStrA->import(fargs[0]);
-    mux_string *sStrB = new mux_string;
+
+    mux_string *sStrB = NULL;
+    try
+    {
+        sStrB = new mux_string;
+    }
+    catch (...)
+    {
+        ; // Nothing.
+    }
+    ISOUTOFMEMORY(sStrB);
     sStrB->import(fargs[1]);
 
     // Do length checks first.
@@ -6862,11 +6909,40 @@ static FUNCTION(fun_edit)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    mux_string *sStr = new mux_string;
+    mux_string *sStr = NULL;
+    try
+    {
+        sStr = new mux_string;
+    }
+    catch (...)
+    {
+        ; // Nothing.
+    }
+    ISOUTOFMEMORY(sStr);
     sStr->import(fargs[0]);
-    mux_string *sFrom = new mux_string;
+
+    mux_string *sFrom = NULL;
+    try
+    {
+        sFrom = new mux_string;
+    }
+    catch (...)
+    {
+        ; // Nothing.
+    }
+    ISOUTOFMEMORY(sFrom);
     sFrom->import(fargs[1]);
-    mux_string *sTo = new mux_string;
+
+    mux_string *sTo = NULL;
+    try
+    {
+        sTo = new mux_string;
+    }
+    catch (...)
+    {
+        ; // Nothing.
+    }
+    ISOUTOFMEMORY(sTo);
     sTo->import(fargs[2]);
 
     sStr->edit(sFrom, sTo);

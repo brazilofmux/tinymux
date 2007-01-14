@@ -3905,7 +3905,7 @@ void mux_string::append(const char *pStr, size_t nLen)
 void mux_string::append_TextPlain(const char *pStr)
 {
     if (  '\0' == *pStr
-       || LBUF_SIZE-1 == m_n)
+       || LBUF_SIZE-1 <= m_n)
     {
         // The selection range is empty, or no buffer space is left.
         //
