@@ -4318,25 +4318,25 @@ static FUNCTION(fun_escape)
     mux_string *sStr = new mux_string;
     sStr->import(fargs[0]);
 
+    size_t nLen = sStr->length();
+    char cChar;
+    ANSI_ColorState csColor;
+
     mux_string *sOut = new mux_string;
+    size_t iOut = 0;
 
-    size_t nString = sStr->length();
-    char cChar = '\0';
-    ANSI_ColorState acs;
-    size_t j = 0;
-
-    for (size_t i = 0; i < nString; i++)
+    for (size_t i = 0; i < nLen; i++)
     {
-        cChar = sStr->export_Char(i);
-        acs = sStr->export_Color(i);
+        cChar   = sStr->export_Char(i);
+        csColor = sStr->export_Color(i);
         if (  mux_isescape(cChar)
            || 0 == i)
         {
             sOut->append('\\');
-            sOut->set_Color(j++, acs);
+            sOut->set_Color(iOut++, csColor);
         }
         sOut->append(cChar);
-        sOut->set_Color(j++, acs);
+        sOut->set_Color(iOut++, csColor);
     }
     sOut->export_TextAnsi(buff, bufc);
     delete sStr;
