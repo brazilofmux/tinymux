@@ -3884,7 +3884,7 @@ static FUNCTION(fun_pos)
 
     size_t nPat = 0;
 
-    mux_string *sPat = = NULL;
+    mux_string *sPat = NULL;
     try
     {
         sPat = new mux_string;
