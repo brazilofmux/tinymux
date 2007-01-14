@@ -67,3 +67,4 @@ Miscellaneous:
  -- Documented Lbufref and Regref pools in 'wizhelp @list alloc'.
  -- Documented use of a single backslash as a proper shortcut to
     @emit (Issue 219).
+ -- Removed unnecessary global pos variable from help.cpp (Issue 265).
