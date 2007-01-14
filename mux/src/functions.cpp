@@ -5681,25 +5681,25 @@ static FUNCTION(fun_after)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    char *mp;
-    size_t mlen;
+    mux_string *sPat = new mux_string;
+    size_t nPat;
 
     // Sanity-check arg1 and arg2.
     //
     char *bp = fargs[0];
     if (nfargs > 1)
     {
-        mp = fargs[1];
-        mlen = strlen(mp);
+        sPat->import(fargs[1]);
+        nPat = sPat->length();
     }
     else
     {
-        mp = " ";
-        mlen = 1;
+        sPat->import(' ');
+        nPat = 1;
     }
 
-    if (  mlen == 1
-       && *mp == ' ')
+    if (  1 == nPat
+       && ' ' == sPat->export_Char(0))
     {
         bp = trim_space_sep(bp, &sepSpace);
     }
@@ -5710,14 +5710,15 @@ static FUNCTION(fun_after)
 
     // Look for the target string.
     //
-    bool bSucceeded = sStr->search(mp, &i);
+    bool bSucceeded = sStr->search(*sPat, &i);
     if (bSucceeded)
     {
         // Yup, return what follows.
         //
-        sStr->export_TextAnsi(buff, bufc, i+mlen);
+        sStr->export_TextAnsi(buff, bufc, i+nPat);
     }
     delete sStr;
+    delete sPat;
     //
     // Ran off the end without finding it.
 }
@@ -5731,25 +5732,25 @@ static FUNCTION(fun_before)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    char *mp;
-    size_t mlen;
+    mux_string *sPat = new mux_string;
+    size_t nPat;
 
     // Sanity-check arg1 and arg2.
     //
     char *bp = fargs[0];
     if (nfargs > 1)
     {
-        mp = fargs[1];
-        mlen = strlen(mp);
+        sPat->import(fargs[1]);
+        nPat = sPat->length();
     }
     else
     {
-        mp = " ";
-        mlen = 1;
+        sPat->import(' ');
+        nPat = 1;
     }
 
-    if (  mlen == 1
-       && *mp == ' ')
+    if (  1 == nPat
+       && ' ' == sPat->export_Char(0))
     {
         bp = trim_space_sep(bp, &sepSpace);
     }
@@ -5759,19 +5760,21 @@ static FUNCTION(fun_before)
     size_t i;
     mux_string *sStr = new mux_string;
     sStr->import(bp);
-    bool bSucceeded = sStr->search(mp, &i);
+    bool bSucceeded = sStr->search(*sPat, &i);
     if (bSucceeded)
     {
         // Yup, return what follows.
         //
         sStr->export_TextAnsi(buff, bufc, 0, i);
         delete sStr;
+        delete sPat;
         return;
     }
     // Ran off the end without finding it.
     //
     sStr->export_TextAnsi(buff, bufc);
     delete sStr;
+    delete sPat;
 }
 
 /*
@@ -8079,8 +8082,8 @@ static void centerjustcombo
     size_t nPad = 0;
     if (nfargs == 3 && *fargs[2])
     {
-        char *p = RemoveSetOfCharacters(fargs[2], "\r\n\t");
-        sPad->import(p);
+        sPad->import(fargs[2]);
+        sPad->strip("\r\n\t");
     }
     nPad = sPad->length();
     if (0 == nPad)
@@ -8570,19 +8573,18 @@ static FUNCTION(fun_strip)
     {
         return;
     }
-    size_t n;
-    char  *p = strip_ansi(fargs[0], &n);
+    mux_string *sStr = new mux_string;
+    sStr->import(fargs[0]);
     if (  nfargs < 2
        || fargs[1][0] == '\0')
     {
-        safe_copy_buf(p, n, buff, bufc);
+        sStr->export_TextPlain(buff, bufc);
+        delete sStr;
         return;
     }
-    char *pInput = alloc_lbuf("fun_strip.1");
-    memcpy(pInput, p, n+1);
-    p = strip_ansi(fargs[1], &n);
-    safe_str(RemoveSetOfCharacters(pInput, p), buff, bufc);
-    free_lbuf(pInput);
+    sStr->strip(strip_ansi(fargs[1]));
+    sStr->export_TextPlain(buff, bufc);
+    delete sStr;
 }
 
 #define DEFAULT_WIDTH 78
