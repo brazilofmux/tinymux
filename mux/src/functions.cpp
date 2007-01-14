@@ -2255,28 +2255,37 @@ static FUNCTION(fun_mid)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    // Initial checks for iPosition0 [0,LBUF_SIZE), nLength [0,LBUF_SIZE),
-    // and iPosition1 [0,LBUF_SIZE).
-    //
     int iPosition0 = mux_atol(fargs[1]);
     int nLength    = mux_atol(fargs[2]);
+
     if (nLength < 0)
     {
-        iPosition0 += nLength;
+        // The range should end at iPosition0, inclusive.
+        //
+        iPosition0 += 1 + nLength;
         nLength = -nLength;
     }
 
     if (iPosition0 < 0)
     {
+        // Start at the beginning of the string,
+        // but end at the same place the range would end
+        // if negative starting positions were valid.
+        //
+        nLength += iPosition0;
         iPosition0 = 0;
     }
-    else if (LBUF_SIZE-1 < iPosition0)
+
+    if (  nLength <= 0
+       || LBUF_SIZE <= iPosition0)
     {
-        iPosition0 = LBUF_SIZE-1;
+        // The range doesn't select any characters.
+        //
+        return;
     }
 
-    // At this point, iPosition0, nLength are reasonable numbers which may
-    // -still- not refer to valid data in the string.
+    // At this point, iPosition0 and nLength are nonnegative numbers
+    // which may -still- not refer to valid data in the string. 
     //
     mux_string *sStr = new mux_string;
     sStr->import(fargs[0]);
