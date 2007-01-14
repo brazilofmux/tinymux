@@ -3221,8 +3221,12 @@ FUNCTION(fun_foreach)
  */
 typedef struct munge_htab_rec
 {
+#if LBUF_SIZE < UINT16_MAX_VALUE
     UINT16      nHash;         // partial hash value of this record's key
-    UINT16      nNext;         // index of next record in this hash chain
+#else
+    UINT32      nHash;         // partial hash value of this record's key
+#endif
+    LBUF_OFFSET nNext;         // index of next record in this hash chain
     LBUF_OFFSET nKeyOffset;    // offset of key string (incremented by 1),
                                //     zero indicates empty record.
     LBUF_OFFSET nValueOffset;  // offset of value string
@@ -3301,7 +3305,9 @@ FUNCTION(fun_munge)
     {
         UINT32 nHash = munge_hash(pKey);
         int nHashSlot = 1 + (nHash % nWords);
+#if LBUF_SIZE < UINT16_MAX_VALUE
         nHash >>= 16;
+#endif
 
         if (0 != tails[nHashSlot])
         {
@@ -3360,7 +3366,9 @@ FUNCTION(fun_munge)
         {
             UINT32 nHash = munge_hash(result);
             int nHashSlot = 1 + (nHash % nWords);
+#if LBUF_SIZE < UINT16_MAX_VALUE
             nHash >>= 16;
+#endif
 
             while (  0 != htab[nHashSlot].nKeyOffset
                   && (  nHash != htab[nHashSlot].nHash
