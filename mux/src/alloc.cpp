@@ -63,7 +63,8 @@ typedef struct pooldata
 static POOL pools[NUM_POOLS];
 static const char *poolnames[] =
 {
-    "Lbufs", "Sbufs", "Mbufs", "Bools", "Descs", "Qentries", "Pcaches", "Lbufrefs", "Regrefs"
+    "Lbufs", "Sbufs", "Mbufs", "Bools", "Descs", "Qentries", "Pcaches",
+    "Lbufrefs", "Regrefs", "Strings"
 };
 
 void pool_init(int poolnum, int poolsize)

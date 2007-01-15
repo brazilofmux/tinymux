@@ -17,7 +17,8 @@
 #define POOL_PCACHE  6
 #define POOL_LBUFREF 7
 #define POOL_REGREF  8
-#define NUM_POOLS    9
+#define POOL_STRING  9
+#define NUM_POOLS    10
 
 #ifdef FIRANMUX
 #define LBUF_SIZE   16000   // Large
@@ -54,6 +55,8 @@ extern void pool_reset(void);
 #define free_lbufref(b)  pool_free(POOL_LBUFREF,(char *)(b), __FILE__, __LINE__)
 #define alloc_regref(s)  (reg_ref *)pool_alloc(POOL_REGREF,s, __FILE__, __LINE__)
 #define free_regref(b)   pool_free(POOL_REGREF,(char *)(b), __FILE__, __LINE__)
+#define alloc_string(s)  (mux_string *)pool_alloc(POOL_STRING,s, __FILE__, __LINE__)
+#define free_string(b)   pool_free(POOL_STRING,(char *)(b), __FILE__, __LINE__)
 
 #define safe_copy_chr(src, buff, bufp, nSizeOfBuffer) \
 { \

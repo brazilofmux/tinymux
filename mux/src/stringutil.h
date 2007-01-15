@@ -281,6 +281,20 @@ public:
     void stripWithTable(const unsigned char strip_table[UCHAR_MAX+1], size_t nStart = 0, size_t nLen = (LBUF_SIZE-1));
     void transformWithTable(const unsigned char xfrmTable[256], size_t nStart = 0, size_t nLen = (LBUF_SIZE-1));
     void truncate(size_t nLen);
+
+    static void * operator new(size_t size)
+    {
+        mux_assert(size == sizeof(mux_string));
+        return alloc_string("new");
+    }
+
+    static void operator delete(void *p)
+    {
+        if (NULL != p)
+        {
+            free_string(p);
+        }
+    }
 };
 
 #endif // STRINGUTIL_H
