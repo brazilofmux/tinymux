@@ -278,7 +278,7 @@ public:
     void set_Char(size_t n, const char cChar);
     void set_Color(size_t n, ANSI_ColorState acsColor);
     void strip(const char *pStripSet, size_t nStart = 0, size_t nLen = (LBUF_SIZE-1));
-    void stripWithTable(const unsigned char strip_table[UCHAR_MAX+1], size_t nStart = 0, size_t nLen = (LBUF_SIZE-1));
+    void stripWithTable(const bool strip_table[UCHAR_MAX+1], size_t nStart = 0, size_t nLen = (LBUF_SIZE-1));
     void transform(mux_string &sFromSet, mux_string &sToSet, size_t nStart = 0, size_t nLen = (LBUF_SIZE-1));
     void transformWithTable(const unsigned char xfrmTable[256], size_t nStart = 0, size_t nLen = (LBUF_SIZE-1));
     void truncate(size_t nLen);
