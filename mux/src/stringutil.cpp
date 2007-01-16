@@ -4717,6 +4717,38 @@ void mux_string::stripWithTable(const unsigned char strip_table[UCHAR_MAX+1], si
     }
 }
 
+void mux_string::transform(mux_string &sFromSet, mux_string &sToSet, size_t nStart, size_t nLen)
+{
+    static unsigned char xfrmTable[UCHAR_MAX+1];
+
+    if (m_n <= nStart)
+    {
+        return;
+    }
+    else if (m_n - nStart < nLen)
+    {
+        nLen = m_n - nStart;
+    }
+
+    // Set up table.
+    //
+    for (unsigned int c = 0; c <= UCHAR_MAX; c++)
+    {
+        xfrmTable[c] = (unsigned char)c;
+    }
+
+    unsigned char cFrom, cTo;
+    size_t nSet = min(sFromSet.m_n, sToSet.m_n);
+    for (size_t i = 0; i < nSet; i++)
+    {
+        cFrom = (unsigned char)sFromSet.m_ach[i];
+        cTo = (unsigned char)sToSet.m_ach[i];
+        xfrmTable[cFrom] = cTo;
+    }
+
+    transformWithTable(xfrmTable, nStart, nLen);
+}
+
 void mux_string::transformWithTable(const unsigned char xfrmTable[256], size_t nStart, size_t nLen)
 {
     if (m_n <= nStart)
