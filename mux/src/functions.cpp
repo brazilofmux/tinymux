@@ -3901,41 +3901,10 @@ static FUNCTION(fun_pos)
 
     size_t nPat = 0;
 
-    mux_string *sPat = NULL;
-    try
-    {
-        sPat = new mux_string;
-    }
-    catch (...)
-    {
-        ; // Nothing.
-    }
-
-    if (NULL == sPat)
-    {
-        // Out of memory.
-        //
-        return;
-    }
+    mux_string *sPat = new mux_string;
     sPat->import(fargs[0]);
 
-    mux_string *sStr = NULL;
-    try
-    {
-        sStr = new mux_string;
-    }
-    catch (...)
-    {
-        ; // Nothing.
-    }
-
-    if (NULL == sStr)
-    {
-        // Out of memory.
-        //
-        delete sPat;
-        return;
-    }
+    mux_string *sStr = new mux_string;
     sStr->import(fargs[1]);
 
     bool bSucceeded = sStr->search(*sPat, &nPat);
@@ -3968,22 +3937,7 @@ static FUNCTION(fun_lpos)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    mux_string *sStr = NULL;
-    try
-    {
-        sStr = new mux_string;
-    }
-    catch (...)
-    {
-        ; // Nothing.
-    }
-    
-    if (NULL == sStr)
-    {
-        // Out of memory.
-        //
-        return;
-    }
+    mux_string *sStr = new mux_string;
     sStr->import(fargs[0]);
 
     if (0 == sStr->length())
@@ -3992,23 +3946,7 @@ static FUNCTION(fun_lpos)
         return;
     }
 
-    mux_string *sPat = NULL;
-    try
-    {
-        sPat = new mux_string;
-    }
-    catch (...)
-    {
-        ; // Nothing.
-    }
-
-    if (NULL == sPat)
-    {
-        // Out of memory.
-        //
-        delete sStr;
-        return;
-    }
+    mux_string *sPat = new mux_string;
     sPat->import(fargs[1]);
     if (0 == sPat->length())
     {
@@ -4386,43 +4324,14 @@ static FUNCTION(fun_escape)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    mux_string *sStr = NULL;
-    try
-    {
-        sStr = new mux_string;
-    }
-    catch (...)
-    {
-        ; // Nothing.
-    }
-
-    if (NULL == sStr)
-    {
-        return;
-    }
+    mux_string *sStr = new mux_string;
     sStr->import(fargs[0]);
 
     size_t nLen = sStr->length();
     char cChar;
     ANSI_ColorState csColor;
 
-    mux_string *sOut = NULL;
-    try
-    {
-        sOut = new mux_string;
-    }
-    catch (...)
-    {
-        ; // Nothing.
-    }
-
-    if (NULL == sOut)
-    {
-        // Out of memory.
-        //
-        delete sStr;
-        return;
-    }
+    mux_string *sOut = new mux_string;
     size_t iOut = 0;
 
     for (size_t i = 0; i < nLen; i++)
@@ -5772,22 +5681,7 @@ static FUNCTION(fun_after)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    mux_string *sPat = NULL;
-    try
-    {
-        sPat = new mux_string;
-    }
-    catch (...)
-    {
-        ; // Nothing.
-    }
-
-    if (NULL == sPat)
-    {
-        // Out of memory.
-        //
-        return;
-    }
+    mux_string *sPat = new mux_string;
     size_t nPat;
 
     // Sanity-check arg1 and arg2.
@@ -5810,24 +5704,7 @@ static FUNCTION(fun_after)
         bp = trim_space_sep(bp, &sepSpace);
     }
 
-    mux_string *sStr = NULL;
-    try
-    {
-        sStr = new mux_string;
-    }
-    catch (...)
-    {
-        ; // Nothing.
-    }
-    
-    if (NULL == sStr)
-    {
-        // Out of memory.
-        //
-        delete sPat;
-        return;
-    }
-
+    mux_string *sStr = new mux_string;
     sStr->import(bp);
     size_t i;
 
@@ -5855,22 +5732,7 @@ static FUNCTION(fun_before)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    mux_string *sPat = NULL;
-    try
-    {
-        sPat = new mux_string;
-    }
-    catch (...)
-    {
-        ; // Nothing.
-    }
-    
-    if (NULL == sPat)
-    {
-        // Out of memory.
-        //
-        return;
-    }
+    mux_string *sPat = new mux_string;
     size_t nPat;
 
     // Sanity-check arg1 and arg2.
@@ -5896,23 +5758,7 @@ static FUNCTION(fun_before)
     // Look for the target string.
     //
     size_t i;
-    mux_string *sStr = NULL;
-    try
-    {
-        sStr = new mux_string;
-    }
-    catch (...)
-    {
-        ; // Nothing.
-    }
-
-    if (NULL == sStr)
-    {
-        // Out of memory.
-        //
-        delete sPat;
-        return;
-    }
+    mux_string *sStr = new mux_string;
     sStr->import(bp);
     bool bSucceeded = sStr->search(*sPat, &i);
     if (bSucceeded)
@@ -6040,41 +5886,10 @@ static FUNCTION(fun_merge)
         return;
     }
 
-    mux_string *sStrA = NULL;
-    try
-    {
-        sStrA = new mux_string;
-    }
-    catch (...)
-    {
-        ; // Nothing.
-    }
-
-    if (NULL == sStrA)
-    {
-        // Out of memory.
-        //
-        return;
-    }
+    mux_string *sStrA = new mux_string;
     sStrA->import(fargs[0]);
 
-    mux_string *sStrB = NULL;
-    try
-    {
-        sStrB = new mux_string;
-    }
-    catch (...)
-    {
-        ; // Nothing.
-    }
-
-    if (NULL == sStrB)
-    {
-        // Out of memory.
-        //
-        delete sStrA;
-        return;
-    }
+    mux_string *sStrB = new mux_string;
     sStrB->import(fargs[1]);
 
     // Do length checks first.
@@ -7070,61 +6885,13 @@ static FUNCTION(fun_edit)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    mux_string *sStr = NULL;
-    try
-    {
-        sStr = new mux_string;
-    }
-    catch (...)
-    {
-        ; // Nothing.
-    }
-
-    if (NULL == sStr)
-    {
-        // Out of memory.
-        //
-        return;
-    }
+    mux_string *sStr = new mux_string;
     sStr->import(fargs[0]);
 
-    mux_string *sFrom = NULL;
-    try
-    {
-        sFrom = new mux_string;
-    }
-    catch (...)
-    {
-        ; // Nothing.
-    }
-
-    if (NULL == sFrom)
-    {
-        // Out of memory.
-        //
-        delete sStr;
-        return;
-    }
+    mux_string *sFrom = new mux_string;
     sFrom->import(fargs[1]);
 
-    mux_string *sTo = NULL;
-    try
-    {
-        sTo = new mux_string;
-    }
-    catch (...)
-    {
-        ; // Nothing.
-    }
-    
-    if (NULL == sTo)
-    {
-        // Out of memory.
-        //
-        delete sStr;
-        delete sFrom;
-        return;
-    }
+    mux_string *sTo = new mux_string;
     sTo->import(fargs[2]);
 
     sStr->edit(sFrom, sTo);
@@ -8300,22 +8067,7 @@ static void centerjustcombo
         return;
     }
 
-    mux_string *sStr = NULL;
-    try
-    {
-        sStr = new mux_string;
-    }
-    catch (...)
-    {
-        ; // Nothing.
-    }
-
-    if (NULL == sStr)
-    {
-        // Out of memory.
-        //
-        return;
-    }
+    mux_string *sStr = new mux_string;
     sStr->import(fargs[0]);
     size_t nStr = sStr->length();
 
@@ -8330,23 +8082,7 @@ static void centerjustcombo
 
     // Determine string to pad with.
     //
-    mux_string *sPad = NULL;
-    try
-    {
-        sPad = new mux_string;
-    }
-    catch (...)
-    {
-        ; // Nothing.
-    }
-    
-    if (NULL == sPad)
-    {
-        // Out of memory.
-        //
-        delete sStr;
-        return;
-    }
+    mux_string *sPad = new mux_string;
     size_t nPad = 0;
     if (nfargs == 3 && *fargs[2])
     {
