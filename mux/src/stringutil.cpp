@@ -950,9 +950,9 @@ void ANSI_String_In_Init
     int        iEndGoal
 )
 {
-    pacIn->m_acs = acsRestingStates[iEndGoal];
-    pacIn->m_p   = szString;
-    pacIn->m_n   = strlen(szString);
+    pacIn->m_cs = acsRestingStates[iEndGoal];
+    pacIn->m_p  = szString;
+    pacIn->m_n  = strlen(szString);
 }
 
 void ANSI_String_Out_Init
@@ -964,7 +964,7 @@ void ANSI_String_Out_Init
     int    iEndGoal
 )
 {
-    pacOut->m_acs      = acsRestingStates[ANSI_ENDGOAL_NORMAL];
+    pacOut->m_cs       = acsRestingStates[ANSI_ENDGOAL_NORMAL];
     pacOut->m_bDone    = false;
     pacOut->m_iEndGoal = iEndGoal;
     pacOut->m_n        = 0;
@@ -1011,7 +1011,7 @@ void ANSI_String_Skip
             {
                 // Process ANSI
                 //
-                ANSI_Parse_m(&(pacIn->m_acs), nTokenLength1, pacIn->m_p);
+                ANSI_Parse_m(&(pacIn->m_cs), nTokenLength1, pacIn->m_p);
                 pacIn->m_p     += nTokenLength1;
                 pacIn->m_n     -= nTokenLength1;
             }
@@ -1020,7 +1020,7 @@ void ANSI_String_Skip
         {
             // Process ANSI
             //
-            ANSI_Parse_m(&(pacIn->m_acs), nTokenLength0, pacIn->m_p);
+            ANSI_Parse_m(&(pacIn->m_cs), nTokenLength0, pacIn->m_p);
             pacIn->m_n     -= nTokenLength0;
             pacIn->m_p     += nTokenLength0;
         }
@@ -1038,15 +1038,15 @@ void ANSI_String_Skip
 //
 // There are three ANSI color states that we deal with in this routine:
 //
-// 1. acsPrevious is the color state at the current end of the field.
+// 1. csPrevious is the color state at the current end of the field.
 //    It has already been encoded into the field.
 //
-// 2. acsCurrent is the color state that the current TEXT will be shown
+// 2. csCurrent is the color state that the current TEXT will be shown
 //    with. It hasn't been encoded into the field, yet, and if we don't
 //    have enough room for at least one character of TEXT, then it may
 //    never be encoded into the field.
 //
-// 3. acsFinal is the required color state at the end. This is usually
+// 3. csFinal is the required color state at the end. This is usually
 //    the normal state or in the case of NOBLEED, it's a specific (and
 //    somewhate arbitrary) foreground/background combination.
 //
@@ -1112,7 +1112,7 @@ void ANSI_String_Copy
                 // sure we always leave enough room to get back to the
                 // required final ANSI color state.
                 //
-                if (memcmp( &(pacIn->m_acs),
+                if (memcmp( &(pacIn->m_cs),
                             &acsRestingStates[pacOut->m_iEndGoal],
                             sizeof(ANSI_ColorState)) != 0)
                 {
@@ -1120,7 +1120,7 @@ void ANSI_String_Copy
                     // so how much room will the transition back to the
                     // final state take?
                     //
-                    ANSI_TransitionColorBinary( &(pacIn->m_acs),
+                    ANSI_TransitionColorBinary( &(pacIn->m_cs),
                                                 &acsRestingStates[pacOut->m_iEndGoal],
                                                 &nTransitionFinal,
                                                 pacOut->m_iEndGoal);
@@ -1134,8 +1134,8 @@ void ANSI_String_Copy
             //
             size_t nTransition = 0;
             char *pTransition =
-                ANSI_TransitionColorBinary( &(pacOut->m_acs),
-                                            &(pacIn->m_acs),
+                ANSI_TransitionColorBinary( &(pacOut->m_cs),
+                                            &(pacIn->m_cs),
                                             &nTransition,
                                             pacOut->m_iEndGoal);
             nFieldNeeded += nTransition;
@@ -1176,7 +1176,7 @@ void ANSI_String_Copy
                     pacIn->m_p += nTextToAdd;
                     pacIn->m_n -= nTextToAdd;
                     vw += nTextToAdd;
-                    pacOut->m_acs = pacIn->m_acs;
+                    pacOut->m_cs = pacIn->m_cs;
 
                     // Was this visual width limit related to the session or
                     // the call?
@@ -1211,13 +1211,13 @@ void ANSI_String_Copy
             pacIn->m_p += nTokenLength0;
             pacIn->m_n -= nTokenLength0;
             vw += nTokenLength0;
-            pacOut->m_acs = pacIn->m_acs;
+            pacOut->m_cs = pacIn->m_cs;
 
             if (nTokenLength1)
             {
                 // Process ANSI
                 //
-                ANSI_Parse_m(&(pacIn->m_acs), nTokenLength1, pacIn->m_p);
+                ANSI_Parse_m(&(pacIn->m_cs), nTokenLength1, pacIn->m_p);
                 pacIn->m_p += nTokenLength1;
                 pacIn->m_n -= nTokenLength1;
             }
@@ -1226,7 +1226,7 @@ void ANSI_String_Copy
         {
             // Process ANSI
             //
-            ANSI_Parse_m(&(pacIn->m_acs), nTokenLength0, pacIn->m_p);
+            ANSI_Parse_m(&(pacIn->m_cs), nTokenLength0, pacIn->m_p);
             pacIn->m_n -= nTokenLength0;
             pacIn->m_p += nTokenLength0;
         }
@@ -1248,7 +1248,7 @@ size_t ANSI_String_Finalize
     {
         size_t nTransition = 0;
         char *pTransition =
-            ANSI_TransitionColorBinary( &(pacOut->m_acs),
+            ANSI_TransitionColorBinary( &(pacOut->m_cs),
                                         &acsRestingStates[pacOut->m_iEndGoal],
                                         &nTransition, pacOut->m_iEndGoal);
         if (nTransition)
@@ -1408,10 +1408,10 @@ char *translate_string(const char *szString, bool bConvert)
     }
     size_t nString = strlen(szString);
 
-    ANSI_ColorState acsCurrent;
-    ANSI_ColorState acsPrevious;
-    acsCurrent = acsRestingStates[ANSI_ENDGOAL_NOBLEED];
-    acsPrevious = acsCurrent;
+    ANSI_ColorState csCurrent;
+    ANSI_ColorState csPrevious;
+    csCurrent = acsRestingStates[ANSI_ENDGOAL_NOBLEED];
+    csPrevious = csCurrent;
     const unsigned char *MU_EscapeChar = (bConvert)? MU_EscapeConvert : MU_EscapeNoConvert;
     while (nString)
     {
@@ -1426,7 +1426,7 @@ char *translate_string(const char *szString, bool bConvert)
             int nTransition = 0;
             if (bConvert)
             {
-                char *pTransition = ANSI_TransitionColorEscape(&acsPrevious, &acsCurrent, &nTransition);
+                char *pTransition = ANSI_TransitionColorEscape(&csPrevious, &csCurrent, &nTransition);
                 safe_str(pTransition, szTranslatedString, &pTranslatedString);
             }
             nString -= nTokenLength0;
@@ -1457,13 +1457,13 @@ char *translate_string(const char *szString, bool bConvert)
                     safe_chr(ch, szTranslatedString, &pTranslatedString);
                 }
             }
-            acsPrevious = acsCurrent;
+            csPrevious = csCurrent;
 
             if (nTokenLength1)
             {
                 // Process ANSI
                 //
-                ANSI_Parse_m(&acsCurrent, nTokenLength1, pString);
+                ANSI_Parse_m(&csCurrent, nTokenLength1, pString);
                 pString += nTokenLength1;
                 nString -= nTokenLength1;
             }
@@ -1472,7 +1472,7 @@ char *translate_string(const char *szString, bool bConvert)
         {
             // Process ANSI
             //
-            ANSI_Parse_m(&acsCurrent, nTokenLength0, pString);
+            ANSI_Parse_m(&csCurrent, nTokenLength0, pString);
             nString -= nTokenLength0;
             pString += nTokenLength0;
         }
@@ -4119,26 +4119,26 @@ void mux_string::export_TextAnsi(char *buff, char **bufc, size_t nStart, size_t 
     //
     size_t nPos = nStart;
     bool bPlentyOfRoom = nAvail > (nLen + 1) * (ANSI_MAXIMUM_BINARY_TRANSITION_LENGTH + 1);
-    ANSI_ColorState acs_normal = acsRestingStates[ANSI_ENDGOAL_NORMAL];
+    ANSI_ColorState csNormal = acsRestingStates[ANSI_ENDGOAL_NORMAL];
     size_t nCopied = 0;
 
     if (bPlentyOfRoom)
     {
-        ANSI_ColorState acs_prev = acs_normal;
+        ANSI_ColorState csPrev = csNormal;
         while (nPos < nStart + nLen)
         {
-            if (0 != memcmp(&acs_prev, &m_acs[nPos], sizeof(ANSI_ColorState)))
+            if (0 != memcmp(&csPrev, &m_acs[nPos], sizeof(ANSI_ColorState)))
             {
-                safe_copy_str(ANSI_TransitionColorBinary(&acs_prev, &(m_acs[nPos]),
+                safe_copy_str(ANSI_TransitionColorBinary(&csPrev, &(m_acs[nPos]),
                                                 &nCopied, ANSI_ENDGOAL_NORMAL), buff, bufc, nBuffer);
-                acs_prev = m_acs[nPos];
+                csPrev = m_acs[nPos];
             }
             safe_copy_chr(m_ach[nPos], buff, bufc, nBuffer);
             nPos++;
         }
-        if (0 != memcmp(&acs_prev, &acs_normal, sizeof(ANSI_ColorState)))
+        if (0 != memcmp(&csPrev, &csNormal, sizeof(ANSI_ColorState)))
         {
-            safe_copy_str(ANSI_TransitionColorBinary(&acs_prev, &acs_normal, &nCopied, ANSI_ENDGOAL_NORMAL), buff, bufc, nBuffer);
+            safe_copy_str(ANSI_TransitionColorBinary(&csPrev, &csNormal, &nCopied, ANSI_ENDGOAL_NORMAL), buff, bufc, nBuffer);
         }
         **bufc = '\0';
         return;
@@ -4146,17 +4146,17 @@ void mux_string::export_TextAnsi(char *buff, char **bufc, size_t nStart, size_t 
 
     // There's a chance we might hit the end of the buffer. Do it the hard way.
     size_t nNeededBefore = 0, nNeededAfter = 0;
-    ANSI_ColorState acs_prev = acs_normal;
+    ANSI_ColorState csPrev = csNormal;
     while (nPos < nStart + nLen)
     {
-        if (0 != memcmp(&acs_prev, &m_acs[nPos], sizeof(ANSI_ColorState)))
+        if (0 != memcmp(&csPrev, &m_acs[nPos], sizeof(ANSI_ColorState)))
         {
-            if (0 != memcmp(&acs_normal, &m_acs[nPos], sizeof(ANSI_ColorState)))
+            if (0 != memcmp(&csNormal, &m_acs[nPos], sizeof(ANSI_ColorState)))
             {
                 nNeededBefore = nNeededAfter;
-                ANSI_TransitionColorBinary(&(m_acs[nPos]), &acs_normal, &nCopied, ANSI_ENDGOAL_NORMAL);
+                ANSI_TransitionColorBinary(&(m_acs[nPos]), &csNormal, &nCopied, ANSI_ENDGOAL_NORMAL);
                 nNeededAfter = nCopied;
-                char *pTransition = ANSI_TransitionColorBinary(&acs_prev, &(m_acs[nPos]), &nCopied, ANSI_ENDGOAL_NORMAL);
+                char *pTransition = ANSI_TransitionColorBinary(&csPrev, &(m_acs[nPos]), &nCopied, ANSI_ENDGOAL_NORMAL);
                 if (nBuffer < (*bufc-buff) + nCopied + 1 + nNeededAfter)
                 {
                     // There isn't enough room to add the color sequence,
@@ -4169,11 +4169,11 @@ void mux_string::export_TextAnsi(char *buff, char **bufc, size_t nStart, size_t 
             }
             else
             {
-                safe_copy_str(ANSI_TransitionColorBinary(&acs_prev, &(m_acs[nPos]),
+                safe_copy_str(ANSI_TransitionColorBinary(&csPrev, &(m_acs[nPos]),
                                             &nCopied, ANSI_ENDGOAL_NORMAL), buff, bufc, nBuffer);
                 nNeededAfter = 0;
             }
-            acs_prev = m_acs[nPos];
+            csPrev = m_acs[nPos];
         }
         if (nBuffer < (*bufc-buff) + 1 + nNeededAfter)
         {
@@ -4184,7 +4184,7 @@ void mux_string::export_TextAnsi(char *buff, char **bufc, size_t nStart, size_t 
     }
     if (nNeededAfter)
     {
-       safe_copy_str(ANSI_TransitionColorBinary(&acs_prev, &acs_normal, &nCopied, ANSI_ENDGOAL_NORMAL), buff, bufc, nBuffer);
+       safe_copy_str(ANSI_TransitionColorBinary(&csPrev, &csNormal, &nCopied, ANSI_ENDGOAL_NORMAL), buff, bufc, nBuffer);
     }
     **bufc = '\0';
     return;
@@ -4373,7 +4373,7 @@ void mux_string::import(const char *pStr, size_t nLen)
     }
 
     size_t nPos = 0;
-    ANSI_ColorState acs = acsRestingStates[ANSI_ENDGOAL_NORMAL];
+    ANSI_ColorState cs = acsRestingStates[ANSI_ENDGOAL_NORMAL];
     size_t nAnsiLen = 0;
 
     while (nPos < nLen)
@@ -4392,7 +4392,7 @@ void mux_string::import(const char *pStr, size_t nLen)
             memcpy(m_ach + m_n, pStr + nPos, nTokenLength0 * sizeof(m_ach[0]));
             for (size_t i = m_n; i < m_n + nTokenLength0; i++)
             {
-                m_acs[i] = acs;
+                m_acs[i] = cs;
             }
 
             m_n += nTokenLength0;
@@ -4406,7 +4406,7 @@ void mux_string::import(const char *pStr, size_t nLen)
             //
             nAnsiLen = nTokenLength0;
         }
-        ANSI_Parse_m(&acs, nAnsiLen, pStr+nPos);
+        ANSI_Parse_m(&cs, nAnsiLen, pStr+nPos);
         nPos += nAnsiLen;
     }
     m_ach[m_n] = '\0';
@@ -4615,13 +4615,13 @@ void mux_string::set_Char(size_t n, const char cChar)
     m_ach[n] = cChar;
 }
 
-void mux_string::set_Color(size_t n, ANSI_ColorState acsColor)
+void mux_string::set_Color(size_t n, ANSI_ColorState csColor)
 {
     if (m_n <= n)
     {
         return;
     }
-    m_acs[n] = acsColor;
+    m_acs[n] = csColor;
 }
 
 /*! \brief Removes a specified set of characters from string.
