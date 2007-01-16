@@ -4738,7 +4738,11 @@ void mux_string::transform(mux_string &sFromSet, mux_string &sToSet, size_t nSta
     }
 
     unsigned char cFrom, cTo;
-    size_t nSet = min(sFromSet.m_n, sToSet.m_n);
+    size_t nSet = sFromSet.m_n;
+    if (sToSet.m_n < nSet)
+    {
+        nSet = sToSet.m_n;
+    }
     for (size_t i = 0; i < nSet; i++)
     {
         cFrom = (unsigned char)sFromSet.m_ach[i];
