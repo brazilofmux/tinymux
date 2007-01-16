@@ -25,6 +25,8 @@ Feature Additions:
  -- Added @comjoin, @comleave, @comon, and @comoff for use with channel
     objects.  Each evaluates to a message shown to the channel member
     at the corresponding event (Issue 9).
+ -- Added TR() function to allow transforming strings according to a
+    specified pattern (Issue 262). Thanks Jake.
 
 
 Bug Fixes:
