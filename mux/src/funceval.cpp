@@ -1686,20 +1686,30 @@ FUNCTION(fun_strtrunc)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    long maxVisualWidth = mux_atol(fargs[1]);
-    if (maxVisualWidth < 0)
+    long nLeft = mux_atol(fargs[1]);
+    if (nLeft < 0)
     {
         safe_range(buff, bufc);
         return;
     }
-    if (maxVisualWidth == 0)
+    else if (0 == nLeft)
     {
         return;
     }
-    size_t nVisualWidth;
-    char buf[LBUF_SIZE+1];
-    ANSI_TruncateToField(fargs[0], LBUF_SIZE, buf, maxVisualWidth, &nVisualWidth, ANSI_ENDGOAL_NORMAL);
-    safe_str(buf, buff, bufc);
+
+    mux_string *sStr = new mux_string(fargs[0]);
+    size_t nLen = sStr->length();
+
+    if (nLeft < nLen)
+    {
+        sStr->export_TextAnsi(buff, bufc, 0, nLeft);
+    }
+    else if (0 < nLen)
+    {
+        safe_str(fargs[0], buff, bufc);
+    }
+
+    delete sStr;
 }
 
 FUNCTION(fun_ifelse)

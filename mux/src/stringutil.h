@@ -96,7 +96,7 @@ typedef struct
 
 struct ANSI_In_Context
 {
-    ANSI_ColorState m_acs;
+    ANSI_ColorState m_cs;
     const char     *m_p;
     size_t          m_n;
 };
@@ -104,7 +104,7 @@ struct ANSI_In_Context
 struct ANSI_Out_Context
 {
     int             m_iEndGoal;
-    ANSI_ColorState m_acs;
+    ANSI_ColorState m_cs;
     bool            m_bDone; // some constraint was met.
     char           *m_p;
     size_t          m_n;
@@ -244,6 +244,7 @@ private:
 public:
     mux_string(void);
     mux_string(mux_string *sStr);
+    mux_string(const char *pStr);
     void append(const char cChar);
     void append(INT64 iInt);
     void append(long lLong);
@@ -276,7 +277,7 @@ public:
     bool search(char *pPattern, size_t *nPos = NULL, size_t nStart = 0);
     bool search(const mux_string &sPattern, size_t *nPos = NULL, size_t nStart = 0);
     void set_Char(size_t n, const char cChar);
-    void set_Color(size_t n, ANSI_ColorState acsColor);
+    void set_Color(size_t n, ANSI_ColorState csColor);
     void strip(const char *pStripSet, size_t nStart = 0, size_t nLen = (LBUF_SIZE-1));
     void stripWithTable(const bool strip_table[UCHAR_MAX+1], size_t nStart = 0, size_t nLen = (LBUF_SIZE-1));
     void transform(mux_string &sFromSet, mux_string &sToSet, size_t nStart = 0, size_t nLen = (LBUF_SIZE-1));

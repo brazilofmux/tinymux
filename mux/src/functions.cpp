@@ -2294,9 +2294,10 @@ static FUNCTION(fun_mid)
     // At this point, iPosition0 and nLength are nonnegative numbers
     // which may -still- not refer to valid data in the string. 
     //
-    mux_string *sStr = new mux_string;
-    sStr->import(fargs[0]);
+    mux_string *sStr = new mux_string(fargs[0]);
+
     sStr->export_TextAnsi(buff, bufc, iPosition0, nLength);
+
     delete sStr;
 }
 
@@ -2314,47 +2315,29 @@ static FUNCTION(fun_right)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    // nLength on [0,LBUF_SIZE).
-    //
-    long   lLength = mux_atol(fargs[1]);
-    size_t nLength;
-    if (lLength < 0)
+    long nRight = mux_atol(fargs[1]);
+    if (nRight < 0)
     {
         safe_range(buff, bufc);
         return;
     }
-    else if (LBUF_SIZE-1 < lLength)
+    else if (0 == nRight)
     {
-        nLength = LBUF_SIZE-1;
-    }
-    else
-    {
-        nLength = lLength;
+        return;
     }
 
-    mux_string *sStr = new mux_string;
-    sStr->import(fargs[0]);
+    mux_string *sStr = new mux_string(fargs[0]);
+    size_t nLen = sStr->length();
 
-    // iPosition1 on [0,LBUF_SIZE)
-    //
-    size_t iPosition1 = sStr->length();
-
-    // iPosition0 on [0,LBUF_SIZE)
-    //
-    size_t iPosition0;
-    if (iPosition1 <= nLength)
+    if (nRight < nLen)
     {
-        iPosition0 = 0;
+        sStr->export_TextAnsi(buff, bufc, nLen - nRight, nRight);
     }
-    else
+    else if (0 < nLen)
     {
-        iPosition0 = iPosition1 - nLength;
+        safe_str(fargs[0], buff, bufc);
     }
 
-    // At this point, iPosition0, nLength, and iPosition1 are reasonable
-    // numbers which may -still- not refer to valid data in the string.
-    //
-    sStr->export_TextAnsi(buff, bufc, iPosition0, nLength);
     delete sStr;
 }
 
@@ -3900,12 +3883,8 @@ static FUNCTION(fun_pos)
     UNUSED_PARAMETER(ncargs);
 
     size_t nPat = 0;
-
-    mux_string *sPat = new mux_string;
-    sPat->import(fargs[0]);
-
-    mux_string *sStr = new mux_string;
-    sStr->import(fargs[1]);
+    mux_string *sPat = new mux_string(fargs[0]);
+    mux_string *sStr = new mux_string(fargs[1]);
 
     bool bSucceeded = sStr->search(*sPat, &nPat);
 
@@ -3917,6 +3896,7 @@ static FUNCTION(fun_pos)
     {
         safe_nothing(buff, bufc);
     }
+
     delete sStr;
     delete sPat;
 }
@@ -3937,8 +3917,7 @@ static FUNCTION(fun_lpos)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    mux_string *sStr = new mux_string;
-    sStr->import(fargs[0]);
+    mux_string *sStr = new mux_string(fargs[0]);
 
     if (0 == sStr->length())
     {
@@ -3946,8 +3925,8 @@ static FUNCTION(fun_lpos)
         return;
     }
 
-    mux_string *sPat = new mux_string;
-    sPat->import(fargs[1]);
+    mux_string *sPat = new mux_string(fargs[1]);
+
     if (0 == sPat->length())
     {
         sPat->import(' ');
@@ -3967,6 +3946,7 @@ static FUNCTION(fun_lpos)
 
         bSucceeded = sStr->search(*sPat, &nPat, nStart);
     }
+
     delete sStr;
     delete sPat;
 }
@@ -4287,13 +4267,11 @@ static FUNCTION(fun_secure)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    mux_string *sStr = new mux_string;
-    sStr->import(fargs[0]);
-
-    size_t nString = sStr->length();
+    mux_string *sStr = new mux_string(fargs[0]);
+    size_t nLen = sStr->length();
     char cChar = '\0';
 
-    for (size_t i = 0; i < nString; i++)
+    for (size_t i = 0; i < nLen; i++)
     {
         cChar = sStr->export_Char(i);
         if (mux_issecure(cChar))
@@ -4305,6 +4283,7 @@ static FUNCTION(fun_secure)
             safe_chr(cChar, buff, bufc);
         }
     }
+
     delete sStr;
 }
 
@@ -4324,9 +4303,7 @@ static FUNCTION(fun_escape)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    mux_string *sStr = new mux_string;
-    sStr->import(fargs[0]);
-
+    mux_string *sStr = new mux_string(fargs[0]);
     size_t nLen = sStr->length();
     char cChar;
     ANSI_ColorState csColor;
@@ -4348,6 +4325,7 @@ static FUNCTION(fun_escape)
         sOut->set_Color(iOut++, csColor);
     }
     sOut->export_TextAnsi(buff, bufc);
+
     delete sStr;
     delete sOut;
 }
@@ -4778,11 +4756,11 @@ static FUNCTION(fun_delete)
         return;
     }
 
-    mux_string *sStr = new mux_string;
-    sStr->import(fargs[0]);
+    mux_string *sStr = new mux_string(fargs[0]);
 
     sStr->delete_Chars(nStart, nChars);
     sStr->export_TextAnsi(buff, bufc);
+
     delete sStr;
 }
 
@@ -5229,10 +5207,11 @@ static FUNCTION(fun_lcstr)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    mux_string *sStr = new mux_string;
-    sStr->import(fargs[0]);
+    mux_string *sStr = new mux_string(fargs[0]);
+
     sStr->transformWithTable(mux_tolower);
     sStr->export_TextAnsi(buff, bufc);
+
     delete sStr;
 }
 
@@ -5246,10 +5225,11 @@ static FUNCTION(fun_ucstr)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    mux_string *sStr = new mux_string;
-    sStr->import(fargs[0]);
+    mux_string *sStr = new mux_string(fargs[0]);
+
     sStr->transformWithTable(mux_toupper);
     sStr->export_TextAnsi(buff, bufc);
+
     delete sStr;
 }
 
@@ -5263,10 +5243,11 @@ static FUNCTION(fun_capstr)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    mux_string *sStr = new mux_string;
-    sStr->import(fargs[0]);
+    mux_string *sStr = new mux_string(fargs[0]);
+
     sStr->transformWithTable(mux_toupper, 0, 1);
     sStr->export_TextAnsi(buff, bufc);
+
     delete sStr;
 }
 
@@ -5533,10 +5514,11 @@ static FUNCTION(fun_reverse)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    mux_string *sStr = new mux_string;
-    sStr->import(fargs[0]);
+    mux_string *sStr = new mux_string(fargs[0]);
+
     sStr->reverse();
     sStr->export_TextAnsi(buff, bufc);
+
     delete sStr;
 }
 
@@ -5628,12 +5610,11 @@ static FUNCTION(fun_after)
         bp = trim_space_sep(bp, &sepSpace);
     }
 
-    mux_string *sStr = new mux_string;
-    sStr->import(bp);
-    size_t i;
-
     // Look for the target string.
     //
+    mux_string *sStr = new mux_string(bp);
+    size_t i;
+
     bool bSucceeded = sStr->search(*sPat, &i);
     if (bSucceeded)
     {
@@ -5641,10 +5622,9 @@ static FUNCTION(fun_after)
         //
         sStr->export_TextAnsi(buff, bufc, i+nPat);
     }
+
     delete sStr;
     delete sPat;
-    //
-    // Ran off the end without finding it.
 }
 
 static FUNCTION(fun_before)
@@ -5681,22 +5661,23 @@ static FUNCTION(fun_before)
 
     // Look for the target string.
     //
+    mux_string *sStr = new mux_string(bp);
     size_t i;
-    mux_string *sStr = new mux_string;
-    sStr->import(bp);
+
     bool bSucceeded = sStr->search(*sPat, &i);
     if (bSucceeded)
     {
         // Yup, return what follows.
         //
         sStr->export_TextAnsi(buff, bufc, 0, i);
-        delete sStr;
-        delete sPat;
-        return;
     }
-    // Ran off the end without finding it.
-    //
-    sStr->export_TextAnsi(buff, bufc);
+    else
+    {
+        // Ran off the end without finding it.
+        //
+        sStr->export_TextAnsi(buff, bufc);
+    }
+
     delete sStr;
     delete sPat;
 }
@@ -5810,11 +5791,8 @@ static FUNCTION(fun_merge)
         return;
     }
 
-    mux_string *sStrA = new mux_string;
-    sStrA->import(fargs[0]);
-
-    mux_string *sStrB = new mux_string;
-    sStrB->import(fargs[1]);
+    mux_string *sStrA = new mux_string(fargs[0]);
+    mux_string *sStrB = new mux_string(fargs[1]);
 
     // Do length checks first.
     //
@@ -5842,9 +5820,9 @@ static FUNCTION(fun_merge)
     }
 
     sStrA->export_TextAnsi(buff, bufc);
+
     delete sStrA;
     delete sStrB;
-    return;
 }
 
 /* ---------------------------------------------------------------------------
@@ -6809,17 +6787,13 @@ static FUNCTION(fun_edit)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    mux_string *sStr = new mux_string;
-    sStr->import(fargs[0]);
-
-    mux_string *sFrom = new mux_string;
-    sFrom->import(fargs[1]);
-
-    mux_string *sTo = new mux_string;
-    sTo->import(fargs[2]);
+    mux_string *sStr  = new mux_string(fargs[0]);
+    mux_string *sFrom = new mux_string(fargs[1]);
+    mux_string *sTo   = new mux_string(fargs[2]);
 
     sStr->edit(sFrom, sTo);
     sStr->export_TextAnsi(buff, bufc);
+
     delete sStr;
     delete sFrom;
     delete sTo;
@@ -7991,8 +7965,7 @@ static void centerjustcombo
         return;
     }
 
-    mux_string *sStr = new mux_string;
-    sStr->import(fargs[0]);
+    mux_string *sStr = new mux_string(fargs[0]);
     size_t nStr = sStr->length();
 
     // If there's no need to pad, then we are done.
@@ -8501,17 +8474,15 @@ static FUNCTION(fun_strip)
     {
         return;
     }
-    mux_string *sStr = new mux_string;
-    sStr->import(fargs[0]);
-    if (  nfargs < 2
-       || fargs[1][0] == '\0')
+    mux_string *sStr = new mux_string(fargs[0]);
+
+    if (  1 < nfargs
+       && '\0' != fargs[1][0])
     {
-        sStr->export_TextPlain(buff, bufc);
-        delete sStr;
-        return;
+        sStr->strip(strip_ansi(fargs[1]));
     }
-    sStr->strip(strip_ansi(fargs[1]));
     sStr->export_TextPlain(buff, bufc);
+
     delete sStr;
 }
 
@@ -8722,8 +8693,7 @@ static FUNCTION(fun_wrap)
         }
     }
 
-    mux_string *sStr = new mux_string;
-    sStr->import(expand_tabs(fargs[0]));
+    mux_string *sStr = new mux_string(expand_tabs(fargs[0]));
     size_t nStr = sStr->length();
 
     char *pPlain = alloc_lbuf("fun_wrap.pPlain");
@@ -8769,6 +8739,7 @@ static FUNCTION(fun_wrap)
             nPos++;
         }
     }
+
     free_lbuf(pColor);
     free_lbuf(pPlain);
     delete sStr;
@@ -9835,6 +9806,7 @@ size_t transform_range(mux_string &sStr)
     size_t nPos = 0, nStart = 0;
     char cBefore, cAfter;
     mux_string *sTemp = new mux_string;
+
     bool bSucceeded = sStr.search("-", &nPos, 1);
     while (bSucceeded)
     {
@@ -9897,6 +9869,7 @@ size_t transform_range(mux_string &sStr)
         nStart++;
         bSucceeded = sStr.search("-", &nPos, nStart);
     }
+
     delete sTemp;
     return sStr.length();
 }
@@ -9911,8 +9884,7 @@ static FUNCTION(fun_tr)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    mux_string *sStr = new mux_string;
-    sStr->import(fargs[0]);
+    mux_string *sStr = new mux_string(fargs[0]);
     size_t nStr = sStr->length();
 
     if (0 == nStr)
@@ -9925,12 +9897,10 @@ static FUNCTION(fun_tr)
 
     // Process character ranges.
     //
-    mux_string *sFrom = new mux_string;
-    sFrom->import(fargs[1]);
+    mux_string *sFrom = new mux_string(fargs[1]);
     size_t nFrom = transform_range(*sFrom);
 
-    mux_string *sTo = new mux_string;
-    sTo->import(fargs[2]);
+    mux_string *sTo = new mux_string(fargs[2]);
     size_t nTo = transform_range(*sTo);
 
     if (nFrom != nTo)

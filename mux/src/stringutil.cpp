@@ -3825,6 +3825,20 @@ mux_string::mux_string(mux_string *sStr)
     import(sStr);
 }
 
+/*! \brief Constructs mux_string object from an ANSI string.
+ *
+ * Parses the given ANSI string into a form which can be more-easily
+ * navigated.
+ *
+ * \param pStr     ANSI string to be parsed.
+ * \return         None.
+ */
+
+mux_string::mux_string(const char *pStr)
+{
+    import(pStr);
+}
+
 void mux_string::append(const char cChar)
 {
     if (m_n < LBUF_SIZE-1)
@@ -3886,9 +3900,8 @@ void mux_string::append(mux_string *sStr, size_t nStart, size_t nLen)
 
 void mux_string::append(const char *pStr)
 {
-    mux_string *sNew = new mux_string;
+    mux_string *sNew = new mux_string(pStr);
 
-    sNew->import(pStr);
     append(sNew);
     delete sNew;
 }
@@ -4328,7 +4341,7 @@ void mux_string::import(mux_string *sStr, size_t nStart)
  * Parses the given ANSI string into a form which can be more-easily
  * navigated.
  *
- * \param str      ANSI-color encoded string to import.
+ * \param pStr     ANSI-color encoded string to import.
  * \return         None.
  */
 
@@ -4351,7 +4364,7 @@ void mux_string::import(const char *pStr)
  * Parses the given ANSI string into a form which can be more-easily
  * navigated.
  *
- * \param str      ANSI-color encoded string to import.
+ * \param pStr     ANSI-color encoded string to import.
  * \param nLen     Length of portion of string, str, to import.
  * \return         None.
  */
