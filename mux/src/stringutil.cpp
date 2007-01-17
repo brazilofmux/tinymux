@@ -4081,7 +4081,7 @@ ANSI_ColorState mux_string::export_Color(size_t n)
 /*! \brief Generates ANSI string from internal form.
  *
  * \param buff     Pointer to beginning of lbuf.
- * \param bufc     Pointer to current position.
+ * \param bufc     Pointer to current position. Defaults to NULL.
  * \param nStart   String position to begin copying from. Defaults to 0.
  * \param nLen     Number of chars to copy. Defaults to LBUF_SIZE.
  * \param nBuffer  Size of buffer we're outputting into. Defaults to LBUF_SIZE-1.
@@ -4093,6 +4093,10 @@ void mux_string::export_TextAnsi(char *buff, char **bufc, size_t nStart, size_t 
     // Sanity check our arguments and find out how much room we have.
     // We assume we're outputting into an LBUF unless given a smaller nBuffer.
     //
+    if (NULL == bufc)
+    {
+        bufc = &buff;
+    }
     if (  !buff
        || !*bufc)
     {
@@ -4204,7 +4208,7 @@ void mux_string::export_TextAnsi(char *buff, char **bufc, size_t nStart, size_t 
 /*! \brief Outputs ANSI-stripped string from internal form.
  *
  * \param buff     Pointer to beginning of lbuf.
- * \param bufc     Pointer to current position.
+ * \param bufc     Pointer to current position. Defaults to NULL.
  * \param nStart   String position to begin copying from. Defaults to 0.
  * \param nLen     Number of chars to copy. Defaults to LBUF_SIZE.
  * \param nBuffer  Size of buffer we're outputting into. Defaults to LBUF_SIZE-1.
@@ -4216,6 +4220,10 @@ void mux_string::export_TextPlain(char *buff, char **bufc, size_t nStart, size_t
     // Sanity check our arguments and find out how much room we have.
     // We assume we're outputting into an LBUF unless given a smaller nBuffer.
     //
+    if (NULL == bufc)
+    {
+        bufc = &buff;
+    }
     if (  !buff
        || !*bufc)
     {

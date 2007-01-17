@@ -8698,10 +8698,7 @@ static FUNCTION(fun_wrap)
     size_t nStr = sStr->length();
 
     char *pPlain = alloc_lbuf("fun_wrap.pPlain");
-    char *pcPlain = pPlain;
-
     char *pColor = alloc_lbuf("fun_wrap.pColor");
-    char *pcColor = pColor;
 
     size_t nLength = 0;
     bool newline = false;
@@ -8710,13 +8707,11 @@ static FUNCTION(fun_wrap)
 
     while (nPos < nStr)
     {
-        pcPlain = pPlain;
-        sStr->export_TextPlain(pPlain, &pcPlain, nPos);
+        sStr->export_TextPlain(pPlain, NULL, nPos);
 
         nLength = wraplen(pPlain, nPos == 0 ? nFirstWidth : nWidth, newline);
 
-        pcColor = pColor;
-        sStr->export_TextAnsi(pColor, &pcColor, nPos, nLength);
+        sStr->export_TextAnsi(pColor, NULL, nPos, nLength);
 
         if (0 != nPos)
         {

@@ -257,8 +257,10 @@ public:
     void edit(mux_string &sFrom, const mux_string &sTo);
     char export_Char(size_t n);
     ANSI_ColorState export_Color(size_t n);
-    void export_TextAnsi(char *buff, char **bufc, size_t nStart = 0, size_t nLen = LBUF_SIZE, size_t nBuffer = (LBUF_SIZE-1));
-    void export_TextPlain(char *buff, char **bufc, size_t nStart = 0, size_t nLen = LBUF_SIZE, size_t nBuffer = (LBUF_SIZE-1));
+    void export_TextAnsi(char *buff, char **bufc = NULL, size_t nStart = 0, size_t nLen = LBUF_SIZE,
+                            size_t nBuffer = (LBUF_SIZE-1));
+    void export_TextPlain(char *buff, char **bufc = NULL, size_t nStart = 0, size_t nLen = LBUF_SIZE,
+                            size_t nBuffer = (LBUF_SIZE-1));
     void import(const char chIn);
     void import(INT64 iInt);
     void import(long lLong);
