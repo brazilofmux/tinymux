@@ -512,8 +512,7 @@ static bool check_filter(dbref object, dbref player, int filter, const char *msg
     return true;
 }
 
-static char *add_prefix(dbref object, dbref player, int prefix,
-                        const char *msg, const char *dflt)
+static char *make_prefix(dbref object, dbref player, int prefix, const char *dflt)
 {
     int aflags;
     dbref aowner;
@@ -523,7 +522,23 @@ static char *add_prefix(dbref object, dbref player, int prefix,
     if (!*buf)
     {
         cp = buf;
-        safe_str(dflt, buf, &cp);
+        if (NULL == dflt)
+        {
+            safe_str("From ", buf, &cp);
+            if (Good_obj(object))
+            {
+                safe_str(Moniker(object), buf, &cp);
+            }
+            else
+            {
+                safe_str(Moniker(player), buf, &cp);
+            }
+            safe_chr(',', buf, &cp);
+        }
+        else
+        {
+            safe_str(dflt, buf, &cp);
+        }
     }
     else
     {
@@ -547,28 +562,8 @@ static char *add_prefix(dbref object, dbref player, int prefix,
     {
         safe_chr(' ', buf, &cp);
     }
-    safe_str(msg, buf, &cp);
     *cp = '\0';
     return buf;
-}
-
-static char *dflt_from_msg(dbref sender, dbref sendloc)
-{
-    char *tp, *tbuff;
-
-    tp = tbuff = alloc_lbuf("notify_check.fwdlist");
-    safe_str("From ", tbuff, &tp);
-    if (Good_obj(sendloc))
-    {
-        safe_str(Moniker(sendloc), tbuff, &tp);
-    }
-    else
-    {
-        safe_str(Moniker(sender), tbuff, &tp);
-    }
-    safe_chr(',', tbuff, &tp);
-    *tp = '\0';
-    return tbuff;
 }
 
 /* Do HTML escaping, converting < to &lt;, etc.  'dest' needs to be
@@ -630,13 +625,12 @@ bool html_escape(const char *src, char *dest, char **destp)
     return ret;
 }
 
-void notify_check(dbref target, dbref sender, const char *msg, int key)
+void notify_check(dbref target, dbref sender, mux_string &msg, int key)
 {
     // If speaker is invalid or message is empty, just exit.
     //
     if (  !Good_obj(target)
-       || !msg
-       || !*msg)
+       || 0 == msg.length())
     {
         return;
     }
@@ -670,7 +664,10 @@ void notify_check(dbref target, dbref sender, const char *msg, int key)
         return;
     }
 
-    char *msg_ns, *mp, *tbuff, *tp, *buff;
+    mux_string *msg_ns = &msg;
+    mux_string *msgFinal = new mux_string;
+    char *tp;
+    char *prefix;
     char *args[NUM_ENV_VARS];
     dbref aowner,  recip, obj;
     int i, nargs, aflags;
@@ -681,7 +678,7 @@ void notify_check(dbref target, dbref sender, const char *msg, int key)
     //
     if (key & MSG_ME)
     {
-        mp = msg_ns = alloc_lbuf("notify_check");
+        msg_ns = new mux_string;
         if (  Nospoof(target)
            && target != sender
            && target != mudstate.curr_enactor
@@ -691,32 +688,27 @@ void notify_check(dbref target, dbref sender, const char *msg, int key)
             // caller may have.  notify(target, tprintf(...)) is quite common
             // in the code.
             //
-            tbuff = alloc_sbuf("notify_check.nospoof");
-            safe_chr('[', msg_ns, &mp);
-            safe_str(Moniker(sender), msg_ns, &mp);
-            mux_sprintf(tbuff, SBUF_SIZE, "(#%d)", sender);
-            safe_str(tbuff, msg_ns, &mp);
+            msg_ns->import('[');
+            msg_ns->append(Moniker(sender));
+            msg_ns->append('(');
+            msg_ns->append(sender);
+            msg_ns->append(')');
 
             if (sender != Owner(sender))
             {
-                safe_chr('{', msg_ns, &mp);
-                safe_str(Moniker(Owner(sender)), msg_ns, &mp);
-                safe_chr('}', msg_ns, &mp);
+                msg_ns->append('{');
+                msg_ns->append(Moniker(Owner(sender)));
+                msg_ns->append('}');
             }
             if (sender != mudstate.curr_enactor)
             {
-                mux_sprintf(tbuff, SBUF_SIZE, "<-(#%d)", mudstate.curr_enactor);
-                safe_str(tbuff, msg_ns, &mp);
+                msg_ns->append_TextPlain("<-(", 3);
+                msg_ns->append(mudstate.curr_enactor);
+                msg_ns->append(')');
             }
-            safe_str("] ", msg_ns, &mp);
-            free_sbuf(tbuff);
+            msg_ns->append_TextPlain("] ", 2);
         }
-        safe_str(msg, msg_ns, &mp);
-        *mp = '\0';
-    }
-    else
-    {
-        msg_ns = NULL;
+        msg_ns->append(msg);
     }
 
     // msg contains the raw message, msg_ns contains the NOSPOOFed msg.
@@ -729,23 +721,36 @@ void notify_check(dbref target, dbref sender, const char *msg, int key)
         {
             if (key & MSG_HTML)
             {
-                raw_notify_html(target, msg_ns);
+                raw_notify_html(target, *msg_ns);
             }
             else
             {
+                msgFinal->import(*msg_ns);
                 if (Html(target))
                 {
-                    char *msg_ns_escaped;
+                    mux_string *sFrom = new mux_string;
+                    mux_string *sTo = new mux_string;
 
-                    msg_ns_escaped = alloc_lbuf("notify_check_escape");
-                    html_escape(msg_ns, msg_ns_escaped, 0);
-                    raw_notify(target, msg_ns_escaped);
-                    free_lbuf(msg_ns_escaped);
+                    sFrom->import('&');
+                    sTo->import("&amp;", 5);
+                    msgFinal->edit(*sFrom, *sTo);
+
+                    sFrom->import('<');
+                    sTo->import("&lt;", 4);
+                    msgFinal->edit(*sFrom, *sTo);
+
+                    sFrom->import('>');
+                    sTo->import("&gt;", 4);
+                    msgFinal->edit(*sFrom, *sTo);
+
+                    sFrom->import('\"');
+                    sTo->import("&quot;", 6);
+                    msgFinal->edit(*sFrom, *sTo);
+
+                    delete sFrom;
+                    delete sTo;
                 }
-                else
-                {
-                    raw_notify(target, msg_ns);
-                }
+                raw_notify(target, *msgFinal);
             }
         }
         if (!mudconf.player_listen)
@@ -765,7 +770,7 @@ void notify_check(dbref target, dbref sender, const char *msg, int key)
         if (  mudstate.inpipe
            && !isPlayer(target))
         {
-            raw_notify(target, msg_ns);
+            raw_notify(target, *msg_ns);
         }
 
         // Forward puppet message if it is for me.
@@ -781,17 +786,16 @@ void notify_check(dbref target, dbref sender, const char *msg, int key)
               || (  targetloc != Location(Owner(target))
                  && targetloc != Owner(target))))
         {
-            tp = tbuff = alloc_lbuf("notify_check.puppet");
-            safe_str(Moniker(target), tbuff, &tp);
-            safe_str("> ", tbuff, &tp);
-            safe_str(msg_ns, tbuff, &tp);
-            *tp = '\0';
-            raw_notify(Owner(target), tbuff);
-            free_lbuf(tbuff);
+            msgFinal->import(Moniker(target));
+            msgFinal->append("> ");
+            msgFinal->append(msg_ns);
+            raw_notify(Owner(target), *msgFinal);
         }
 
         // Check for @Listen match if it will be useful.
         //
+        char *msgPlain = alloc_lbuf("notify_check.plain");
+        msg.export_TextPlain(msgPlain);
         bool pass_listen = false;
         nargs = 0;
         if (  check_listens
@@ -799,7 +803,7 @@ void notify_check(dbref target, dbref sender, const char *msg, int key)
            && H_Listen(target))
         {
             tp = atr_get(target, A_LISTEN, &aowner, &aflags);
-            if (*tp && wild(tp, (char *)msg, args, NUM_ENV_VARS))
+            if (*tp && wild(tp, msgPlain, args, NUM_ENV_VARS))
             {
                 for (nargs = NUM_ENV_VARS; nargs && (!args[nargs - 1] || !(*args[nargs - 1])); nargs--)
                 {
@@ -863,19 +867,20 @@ void notify_check(dbref target, dbref sender, const char *msg, int key)
            && sender != target
            && Monitor(target))
         {
-            atr_match(target, sender, AMATCH_LISTEN, (char *)msg, (char *)msg,
-                false);
+            atr_match(target, sender, AMATCH_LISTEN, msgPlain, msgPlain, false);
         }
 
         // Deliver message to forwardlist members.
         //
         if ( (key & MSG_FWDLIST)
            && is_audible
-           && check_filter(target, sender, A_FILTER, msg))
+           && check_filter(target, sender, A_FILTER, msgPlain))
         {
-            tbuff = dflt_from_msg(sender, target);
-            buff = add_prefix(target, sender, A_PREFIX, msg, tbuff);
-            free_lbuf(tbuff);
+            prefix = make_prefix(target, sender, A_PREFIX, NULL);
+            msgFinal->import(prefix);
+            free_lbuf(prefix);
+
+            msgFinal->append(msg);
 
             fp = fwdlist_get(target);
             if (fp)
@@ -888,11 +893,10 @@ void notify_check(dbref target, dbref sender, const char *msg, int key)
                     {
                         continue;
                     }
-                    notify_check(recip, sender, buff,
+                    notify_check(recip, sender, *msgFinal,
                              MSG_ME | MSG_F_UP | MSG_F_CONTENTS | MSG_S_INSIDE);
                 }
             }
-            free_lbuf(buff);
         }
 
         // Deliver message through audible exits.
@@ -904,13 +908,15 @@ void notify_check(dbref target, dbref sender, const char *msg, int key)
                 recip = Location(obj);
                 if (  Audible(obj)
                    && (  recip != target
-                      && check_filter(obj, sender, A_FILTER, msg)))
+                      && check_filter(obj, sender, A_FILTER, msgPlain)))
                 {
-                    buff = add_prefix(obj, target, A_PREFIX, msg,
-                        "From a distance,");
-                    notify_check(recip, sender, buff,
+                    prefix = make_prefix(obj, target, A_PREFIX, "From a distance,");
+                    msgFinal->import(prefix);
+                    free_lbuf(prefix);
+
+                    msgFinal->append(msg);
+                    notify_check(recip, sender, *msgFinal,
                         MSG_ME | MSG_F_UP | MSG_F_CONTENTS | MSG_S_INSIDE);
-                    free_lbuf(buff);
                 }
             }
         }
@@ -927,14 +933,18 @@ void notify_check(dbref target, dbref sender, const char *msg, int key)
             //
             if (key & MSG_S_INSIDE)
             {
-                tbuff = dflt_from_msg(sender, target);
-                buff = add_prefix(target, sender, A_PREFIX, msg, tbuff);
-                free_lbuf(tbuff);
+                prefix = make_prefix(target, sender, A_PREFIX, NULL);
+                msgFinal->import(prefix);
+                free_lbuf(prefix);
+
+                msgFinal->append(msg);
             }
             else
             {
-                buff = (char *)msg;
+                msgFinal->import(msg);
             }
+
+            mux_string *msgPrefixed2 = new mux_string;
 
             DOLIST(obj, Exits(Location(target)))
             {
@@ -943,19 +953,18 @@ void notify_check(dbref target, dbref sender, const char *msg, int key)
                    && Audible(obj)
                    && recip != targetloc
                    && recip != target
-                   && check_filter(obj, sender, A_FILTER, msg))
+                   && check_filter(obj, sender, A_FILTER, msgPlain))
                 {
-                    tbuff = add_prefix(obj, target, A_PREFIX, buff,
-                        "From a distance,");
-                    notify_check(recip, sender, tbuff,
+                    prefix = make_prefix(obj, target, A_PREFIX, "From a distance,");
+                    msgPrefixed2->import(prefix);
+                    free_lbuf(prefix);
+
+                    msgPrefixed2->append(*msgFinal);
+                    notify_check(recip, sender, *msgPrefixed2,
                         MSG_ME | MSG_F_UP | MSG_F_CONTENTS | MSG_S_INSIDE);
-                    free_lbuf(tbuff);
                 }
             }
-            if (key & MSG_S_INSIDE)
-            {
-                free_lbuf(buff);
-            }
+            delete msgPrefixed2;
         }
 
         // Deliver message to contents.
@@ -963,29 +972,30 @@ void notify_check(dbref target, dbref sender, const char *msg, int key)
         if (  (  (key & MSG_INV)
               || (  (key & MSG_INV_L)
                  && pass_listen))
-           && check_filter(target, sender, A_INFILTER, msg))
+           && check_filter(target, sender, A_INFILTER, msgPlain))
         {
             // Don't prefix the message if we were given the MSG_NOPREFIX key.
             //
             if (key & MSG_S_OUTSIDE)
             {
-                buff = add_prefix(target, sender, A_INPREFIX, msg, "");
+                prefix = make_prefix(target, sender, A_INPREFIX, "");
+                msgFinal->import(prefix);
+                free_lbuf(prefix);
+
+                msgFinal->append(msg);
             }
             else
             {
-                buff = (char *)msg;
+                msgFinal->import(msg);
             }
+
             DOLIST(obj, Contents(target))
             {
                 if (obj != target)
                 {
-                    notify_check(obj, sender, buff,
+                    notify_check(obj, sender, *msgFinal,
                         MSG_ME | MSG_F_DOWN | MSG_S_OUTSIDE | key & MSG_HTML);
                 }
-            }
-            if (key & MSG_S_OUTSIDE)
-            {
-                free_lbuf(buff);
             }
         }
 
@@ -995,30 +1005,28 @@ void notify_check(dbref target, dbref sender, const char *msg, int key)
            && (  (key & MSG_NBR)
               || (  (key & MSG_NBR_A)
                  && is_audible
-                 && check_filter(target, sender, A_FILTER, msg))))
+                 && check_filter(target, sender, A_FILTER, msgPlain))))
         {
             if (key & MSG_S_INSIDE)
             {
-                tbuff = dflt_from_msg(sender, target);
-                buff = add_prefix(target, sender, A_PREFIX, msg, "");
-                free_lbuf(tbuff);
+                prefix = make_prefix(target, sender, A_PREFIX, "");
+                msgFinal->import(prefix);
+                free_lbuf(prefix);
+
+                msgFinal->append(msg);
             }
             else
             {
-                buff = (char *)msg;
+                msgFinal->import(msg);
             }
+
             DOLIST(obj, Contents(targetloc))
             {
                 if (  obj != target
                    && obj != targetloc)
                 {
-                    notify_check(obj, sender, buff,
-                    MSG_ME | MSG_F_DOWN | MSG_S_OUTSIDE);
+                    notify_check(obj, sender, *msgFinal, MSG_ME | MSG_F_DOWN | MSG_S_OUTSIDE);
                 }
-            }
-            if (key & MSG_S_INSIDE)
-            {
-                free_lbuf(buff);
             }
         }
 
@@ -1028,31 +1036,48 @@ void notify_check(dbref target, dbref sender, const char *msg, int key)
            && (  (key & MSG_LOC)
               || ( (key & MSG_LOC_A)
                  && is_audible
-                 && check_filter(target, sender, A_FILTER, msg))))
+                 && check_filter(target, sender, A_FILTER, msgPlain))))
         {
             if (key & MSG_S_INSIDE)
             {
-                tbuff = dflt_from_msg(sender, target);
-                buff = add_prefix(target, sender, A_PREFIX, msg, tbuff);
-                free_lbuf(tbuff);
+                prefix = make_prefix(target, sender, A_PREFIX, NULL);
+                msgFinal->import(prefix);
+                free_lbuf(prefix);
+                msgFinal->append(msg);
             }
             else
             {
-                buff = (char *)msg;
+                msgFinal->import(msg);
             }
-            notify_check(targetloc, sender, buff,
-                MSG_ME | MSG_F_UP | MSG_S_INSIDE);
-            if (key & MSG_S_INSIDE)
-            {
-                free_lbuf(buff);
-            }
+
+            notify_check(targetloc, sender, *msgFinal, MSG_ME | MSG_F_UP | MSG_S_INSIDE);
         }
+        free_lbuf(msgPlain);
+        delete msgFinal;
     }
-    if (msg_ns)
+    if (key & MSG_ME)
     {
-        free_lbuf(msg_ns);
+        delete msg_ns;
     }
     mudstate.ntfy_nest_lev--;
+}
+
+void notify_check(dbref target, dbref sender, const char *msg, int key)
+{
+    // If speaker is invalid or message is empty, just exit.
+    //
+    if (  !Good_obj(target)
+       || !msg
+       || !*msg)
+    {
+        return;
+    }
+
+    mux_string *sMsg = new mux_string(msg);
+
+    notify_check(target, sender, *sMsg, key);
+
+    delete sMsg;
 }
 
 void notify_except(dbref loc, dbref player, dbref exception, const char *msg, int key)

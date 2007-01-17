@@ -213,6 +213,7 @@ char *linewrap_general(char *, int, char *, char *);
 void notify_except(dbref, dbref, dbref, const char *, int key);
 void notify_except2(dbref, dbref, dbref, dbref, const char *);
 
+void notify_check(dbref target, dbref sender, mux_string &msg, int key);
 void notify_check(dbref, dbref, const char *, int);
 
 bool Hearer(dbref);
