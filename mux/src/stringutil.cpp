@@ -4267,6 +4267,7 @@ void mux_string::export_TextPlain(char *buff, char **bufc, size_t nStart, size_t
     //  and has a value in the ranges (0, nLeft] and (0, nAvail].
     //
     safe_copy_str(m_ach+nStart, buff, bufc, *bufc-buff+nLen);
+    **bufc = '\0';
 }
 
 /*! \brief Imports a single normal-colored character.
