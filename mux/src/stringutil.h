@@ -258,7 +258,7 @@ public:
     char export_Char(size_t n);
     ANSI_ColorState export_Color(size_t n);
     void export_TextAnsi(char *buff, char **bufc = NULL, size_t nStart = 0, size_t nLen = LBUF_SIZE,
-                            size_t nBuffer = (LBUF_SIZE-1));
+                            size_t nBuffer = (LBUF_SIZE-1), int iEndGoal = ANSI_ENDGOAL_NORMAL);
     void export_TextPlain(char *buff, char **bufc = NULL, size_t nStart = 0, size_t nLen = LBUF_SIZE,
                             size_t nBuffer = (LBUF_SIZE-1));
     void import(const char chIn);

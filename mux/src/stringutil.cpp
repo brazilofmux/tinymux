@@ -4085,10 +4085,11 @@ ANSI_ColorState mux_string::export_Color(size_t n)
  * \param nStart   String position to begin copying from. Defaults to 0.
  * \param nLen     Number of chars to copy. Defaults to LBUF_SIZE.
  * \param nBuffer  Size of buffer we're outputting into. Defaults to LBUF_SIZE-1.
+ * \param iEndGoal Which output mode to use: normal or nobleed. Defaults to ANSI_ENDGOAL_NORMAL.
  * \return         None.
  */
 
-void mux_string::export_TextAnsi(char *buff, char **bufc, size_t nStart, size_t nLen, size_t nBuffer)
+void mux_string::export_TextAnsi(char *buff, char **bufc, size_t nStart, size_t nLen, size_t nBuffer, int iEndGoal)
 {
     // Sanity check our arguments and find out how much room we have.
     // We assume we're outputting into an LBUF unless given a smaller nBuffer.
@@ -4134,26 +4135,26 @@ void mux_string::export_TextAnsi(char *buff, char **bufc, size_t nStart, size_t 
     //
     size_t nPos = nStart;
     bool bPlentyOfRoom = nAvail > (nLen + 1) * (ANSI_MAXIMUM_BINARY_TRANSITION_LENGTH + 1);
-    ANSI_ColorState csNormal = acsRestingStates[ANSI_ENDGOAL_NORMAL];
+    ANSI_ColorState csEndGoal = acsRestingStates[iEndGoal];
     size_t nCopied = 0;
 
     if (bPlentyOfRoom)
     {
-        ANSI_ColorState csPrev = csNormal;
+        ANSI_ColorState csPrev = csEndGoal;
         while (nPos < nStart + nLen)
         {
             if (0 != memcmp(&csPrev, &m_acs[nPos], sizeof(ANSI_ColorState)))
             {
                 safe_copy_str(ANSI_TransitionColorBinary(&csPrev, &(m_acs[nPos]),
-                                                &nCopied, ANSI_ENDGOAL_NORMAL), buff, bufc, nBuffer);
+                                                &nCopied, iEndGoal), buff, bufc, nBuffer);
                 csPrev = m_acs[nPos];
             }
             safe_copy_chr(m_ach[nPos], buff, bufc, nBuffer);
             nPos++;
         }
-        if (0 != memcmp(&csPrev, &csNormal, sizeof(ANSI_ColorState)))
+        if (0 != memcmp(&csPrev, &csEndGoal, sizeof(ANSI_ColorState)))
         {
-            safe_copy_str(ANSI_TransitionColorBinary(&csPrev, &csNormal, &nCopied, ANSI_ENDGOAL_NORMAL), buff, bufc, nBuffer);
+            safe_copy_str(ANSI_TransitionColorBinary(&csPrev, &csEndGoal, &nCopied, iEndGoal), buff, bufc, nBuffer);
         }
         **bufc = '\0';
         return;
@@ -4161,17 +4162,17 @@ void mux_string::export_TextAnsi(char *buff, char **bufc, size_t nStart, size_t 
 
     // There's a chance we might hit the end of the buffer. Do it the hard way.
     size_t nNeededBefore = 0, nNeededAfter = 0;
-    ANSI_ColorState csPrev = csNormal;
+    ANSI_ColorState csPrev = csEndGoal;
     while (nPos < nStart + nLen)
     {
         if (0 != memcmp(&csPrev, &m_acs[nPos], sizeof(ANSI_ColorState)))
         {
-            if (0 != memcmp(&csNormal, &m_acs[nPos], sizeof(ANSI_ColorState)))
+            if (0 != memcmp(&csEndGoal, &m_acs[nPos], sizeof(ANSI_ColorState)))
             {
                 nNeededBefore = nNeededAfter;
-                ANSI_TransitionColorBinary(&(m_acs[nPos]), &csNormal, &nCopied, ANSI_ENDGOAL_NORMAL);
+                ANSI_TransitionColorBinary(&(m_acs[nPos]), &csEndGoal, &nCopied, iEndGoal);
                 nNeededAfter = nCopied;
-                char *pTransition = ANSI_TransitionColorBinary(&csPrev, &(m_acs[nPos]), &nCopied, ANSI_ENDGOAL_NORMAL);
+                char *pTransition = ANSI_TransitionColorBinary(&csPrev, &(m_acs[nPos]), &nCopied, iEndGoal);
                 if (nBuffer < (*bufc-buff) + nCopied + 1 + nNeededAfter)
                 {
                     // There isn't enough room to add the color sequence,
@@ -4185,7 +4186,7 @@ void mux_string::export_TextAnsi(char *buff, char **bufc, size_t nStart, size_t 
             else
             {
                 safe_copy_str(ANSI_TransitionColorBinary(&csPrev, &(m_acs[nPos]),
-                                            &nCopied, ANSI_ENDGOAL_NORMAL), buff, bufc, nBuffer);
+                                            &nCopied, iEndGoal), buff, bufc, nBuffer);
                 nNeededAfter = 0;
             }
             csPrev = m_acs[nPos];
@@ -4199,7 +4200,7 @@ void mux_string::export_TextAnsi(char *buff, char **bufc, size_t nStart, size_t 
     }
     if (nNeededAfter)
     {
-       safe_copy_str(ANSI_TransitionColorBinary(&csPrev, &csNormal, &nCopied, ANSI_ENDGOAL_NORMAL), buff, bufc, nBuffer);
+       safe_copy_str(ANSI_TransitionColorBinary(&csPrev, &csEndGoal, &nCopied, iEndGoal), buff, bufc, nBuffer);
     }
     **bufc = '\0';
     return;
