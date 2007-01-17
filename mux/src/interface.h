@@ -244,6 +244,7 @@ extern void clearstrings(DESC *);
 extern void queue_write_LEN(DESC *, const char *, size_t n);
 extern void queue_write(DESC *, const char *);
 extern void queue_string(DESC *, const char *);
+extern void queue_string(DESC *d, mux_string &s);
 extern void freeqs(DESC *);
 extern void welcome_user(DESC *);
 extern void save_command(DESC *, CBLK *);

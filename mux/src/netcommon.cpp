@@ -478,6 +478,41 @@ void queue_string(DESC *d, const char *s)
     queue_write(d, p);
 }
 
+void queue_string(DESC *d, mux_string &s)
+{
+    char *pBuff = alloc_lbuf("queue_string");
+    const char *pFinal = pBuff;
+
+    if (d->flags & DS_CONNECTED)
+    {
+        if (!Ansi(d->player))
+        {
+            s.export_TextPlain(pBuff);
+        }
+        else if (NoBleed(d->player))
+        {
+            s.export_TextAnsi(pBuff, NULL, 0, s.length(), LBUF_SIZE-1, ANSI_ENDGOAL_NOBLEED);
+        }
+        else
+        {
+            s.export_TextAnsi(pBuff);
+        }
+
+        if (NoAccents(d->player))
+        {
+            pFinal = strip_accents(pBuff);
+        }
+    }
+    else
+    {
+        s.export_TextPlain(pBuff);
+        pFinal = strip_accents(pBuff);
+    }
+    pFinal = encode_iac(pFinal);
+    queue_write(d, pFinal);
+    free_lbuf(pBuff);
+}
+
 void freeqs(DESC *d)
 {
     TBLOCK *tb, *tnext;
