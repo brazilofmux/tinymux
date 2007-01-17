@@ -150,6 +150,32 @@ void raw_notify_html(dbref player, const char *msg)
     }
 }
 
+void raw_notify_html(dbref player, mux_string &sMsg)
+{
+    if (0 == sMsg.length())
+    {
+        return;
+    }
+
+    if (  mudstate.inpipe
+       && player == mudstate.poutobj)
+    {
+        sMsg.export_TextAnsi(mudstate.poutnew, &mudstate.poutbufc);
+        return;
+    }
+    if (  !Connected(player)
+       || !Html(player))
+    {
+        return;
+    }
+
+    DESC *d;
+    DESC_ITER_PLAYER(player, d)
+    {
+        queue_string(d, sMsg);
+    }
+}
+
 /* ---------------------------------------------------------------------------
  * raw_notify: write a message to a player
  */
