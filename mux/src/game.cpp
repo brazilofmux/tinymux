@@ -788,7 +788,7 @@ void notify_check(dbref target, dbref sender, mux_string &msg, int key)
         {
             msgFinal->import(Moniker(target));
             msgFinal->append("> ");
-            msgFinal->append(msg_ns);
+            msgFinal->append(*msg_ns);
             raw_notify(Owner(target), *msgFinal);
         }
 

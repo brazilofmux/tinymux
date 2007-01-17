@@ -3814,15 +3814,13 @@ mux_string::mux_string(void)
  *
  * This is a deep copy constructor.
  *
- * TODO: Eventually, sStr needs to be (const mux_string &)
- *
  * \param sStr     mux_string to be copied.
  * \return         None.
  */
 
-mux_string::mux_string(mux_string *sStr)
+mux_string::mux_string(const mux_string &sStr)
 {
-    import(*sStr);
+    import(sStr);
 }
 
 /*! \brief Constructs mux_string object from an ANSI string.
@@ -4464,7 +4462,7 @@ size_t mux_string::length(void)
 
 void mux_string::prepend(const char cChar)
 {
-    mux_string *sStore = new mux_string(this);
+    mux_string *sStore = new mux_string(*this);
 
     import(cChar);
     append(*sStore);
@@ -4473,7 +4471,7 @@ void mux_string::prepend(const char cChar)
 
 void mux_string::prepend(dbref num)
 {
-    mux_string *sStore = new mux_string(this);
+    mux_string *sStore = new mux_string(*this);
 
     import(num);
     append(*sStore);
@@ -4482,7 +4480,7 @@ void mux_string::prepend(dbref num)
 
 void mux_string::prepend(long lLong)
 {
-    mux_string *sStore = new mux_string(this);
+    mux_string *sStore = new mux_string(*this);
 
     import(lLong);
     append(*sStore);
@@ -4491,7 +4489,7 @@ void mux_string::prepend(long lLong)
 
 void mux_string::prepend(INT64 iInt)
 {
-    mux_string *sStore = new mux_string(this);
+    mux_string *sStore = new mux_string(*this);
 
     import(iInt);
     append(*sStore);
@@ -4500,7 +4498,7 @@ void mux_string::prepend(INT64 iInt)
 
 void mux_string::prepend(const mux_string &sStr)
 {
-    mux_string *sStore = new mux_string(this);
+    mux_string *sStore = new mux_string(*this);
 
     import(sStr);
     append(*sStore);
@@ -4509,7 +4507,7 @@ void mux_string::prepend(const mux_string &sStr)
 
 void mux_string::prepend(const char *pStr)
 {
-    mux_string *sStore = new mux_string(this);
+    mux_string *sStore = new mux_string(*this);
 
     import(pStr);
     append(*sStore);
@@ -4518,7 +4516,7 @@ void mux_string::prepend(const char *pStr)
 
 void mux_string::prepend(const char *pStr, size_t n)
 {
-    mux_string *sStore = new mux_string(this);
+    mux_string *sStore = new mux_string(*this);
 
     import(pStr, n);
     append(*sStore);

@@ -243,7 +243,7 @@ private:
 
 public:
     mux_string(void);
-    mux_string(mux_string *sStr);
+    mux_string(const mux_string &sStr);
     mux_string(const char *pStr);
     void append(const char cChar);
     void append(dbref num);
