@@ -246,6 +246,7 @@ public:
     mux_string(mux_string *sStr);
     mux_string(const char *pStr);
     void append(const char cChar);
+    void append(dbref num);
     void append(INT64 iInt);
     void append(long lLong);
     void append(const mux_string &sStr, size_t nStart = 0, size_t nLen = (LBUF_SIZE-1));
@@ -262,6 +263,7 @@ public:
     void export_TextPlain(char *buff, char **bufc = NULL, size_t nStart = 0, size_t nLen = LBUF_SIZE,
                             size_t nBuffer = (LBUF_SIZE-1));
     void import(const char chIn);
+    void import(dbref num);
     void import(INT64 iInt);
     void import(long lLong);
     void import(const mux_string &sStr, size_t nStart = 0);
@@ -269,6 +271,7 @@ public:
     void import(const char *pStr, size_t nLen);
     size_t length(void);
     void prepend(const char cChar);
+    void prepend(dbref num);
     void prepend(INT64 iInt);
     void prepend(long lLong);
     void prepend(const mux_string &sStr);

@@ -3850,6 +3850,12 @@ void mux_string::append(const char cChar)
     }
 }
 
+void mux_string::append(dbref num)
+{
+    append('#');
+    append_TextPlain(mux_ltoa_t(num));
+}
+
 void mux_string::append(INT64 iInt)
 {
     append_TextPlain(mux_i64toa_t(iInt));
@@ -4285,6 +4291,26 @@ void mux_string::import(const char chIn)
     m_ach[m_n] = '\0';
 }
 
+/*! \brief Converts and Imports a dbref.
+ *
+ * \param num      dbref to convert and import.
+ * \return         None.
+ */
+
+void mux_string::import(dbref num)
+{
+    m_ach[0] = '#';
+    m_n = 1;
+
+    // mux_ltoa() sets the '\0'.
+    //
+    m_n += mux_ltoa(num, m_ach + 1);
+    for (size_t i = 0; i < m_n; i++)
+    {
+        m_acs[i] = acsRestingStates[ANSI_ENDGOAL_NORMAL];
+    }
+}
+
 /*! \brief Converts and Imports an INT64.
  *
  * \param iInt     INT64 to convert and import.
@@ -4440,6 +4466,15 @@ void mux_string::prepend(const char cChar)
     mux_string *sStore = new mux_string(this);
 
     import(cChar);
+    append(*sStore);
+    delete sStore;
+}
+
+void mux_string::prepend(dbref num)
+{
+    mux_string *sStore = new mux_string(this);
+
+    import(num);
     append(*sStore);
     delete sStore;
 }
