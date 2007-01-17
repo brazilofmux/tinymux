@@ -1686,16 +1686,17 @@ FUNCTION(fun_strtrunc)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    long nLeft = mux_atol(fargs[1]);
-    if (nLeft < 0)
+    long iLeft = mux_atol(fargs[1]);
+    if (iLeft < 0)
     {
         safe_range(buff, bufc);
         return;
     }
-    else if (0 == nLeft)
+    else if (0 == iLeft)
     {
         return;
     }
+    size_t nLeft = iLeft;
 
     mux_string *sStr = new mux_string(fargs[0]);
     size_t nLen = sStr->length();

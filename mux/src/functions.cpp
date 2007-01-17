@@ -2315,16 +2315,17 @@ static FUNCTION(fun_right)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    long nRight = mux_atol(fargs[1]);
-    if (nRight < 0)
+    long iRight = mux_atol(fargs[1]);
+    if (iRight < 0)
     {
         safe_range(buff, bufc);
         return;
     }
-    else if (0 == nRight)
+    else if (0 == iRight)
     {
         return;
     }
+    size_t nRight = iRight;
 
     mux_string *sStr = new mux_string(fargs[0]);
     size_t nLen = sStr->length();
