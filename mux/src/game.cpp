@@ -1053,8 +1053,8 @@ void notify_check(dbref target, dbref sender, mux_string &msg, int key)
             notify_check(targetloc, sender, *msgFinal, MSG_ME | MSG_F_UP | MSG_S_INSIDE);
         }
         free_lbuf(msgPlain);
-        delete msgFinal;
     }
+    delete msgFinal;
     if (key & MSG_ME)
     {
         delete msg_ns;
