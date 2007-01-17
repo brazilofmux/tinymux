@@ -183,6 +183,35 @@ void raw_notify(dbref player, const char *msg)
     }
 }
 
+void raw_notify(dbref player, mux_string &sMsg)
+{
+    DESC *d;
+
+    if (0 == sMsg.length())
+    {
+        return;
+    }
+
+    if (  mudstate.inpipe
+       && player == mudstate.poutobj)
+    {
+        sMsg.export_TextAnsi(mudstate.poutnew, &mudstate.poutbufc);
+        safe_str("\r\n", mudstate.poutnew, &mudstate.poutbufc);
+        return;
+    }
+
+    if (!Connected(player))
+    {
+        return;
+    }
+
+    DESC_ITER_PLAYER(player, d)
+    {
+        queue_string(d, sMsg);
+        queue_write_LEN(d, "\r\n", 2);
+    }
+}
+
 void raw_notify_newline(dbref player)
 {
     if (  mudstate.inpipe

@@ -239,6 +239,7 @@ extern const char *time_format_1(int Seconds, size_t maxWidth);
 extern const char *time_format_2(int Seconds);
 extern void update_quotas(CLinearTimeAbsolute& tLast, const CLinearTimeAbsolute& tCurrent);
 extern void raw_notify(dbref, const char *);
+extern void raw_notify(dbref player, mux_string &sMsg);
 extern void raw_notify_newline(dbref);
 extern void clearstrings(DESC *);
 extern void queue_write_LEN(DESC *, const char *, size_t n);
