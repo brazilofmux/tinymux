@@ -3822,7 +3822,7 @@ mux_string::mux_string(void)
 
 mux_string::mux_string(mux_string *sStr)
 {
-    import(sStr);
+    import(*sStr);
 }
 
 /*! \brief Constructs mux_string object from an ANSI string.
@@ -3862,17 +3862,15 @@ void mux_string::append(long lLong)
 
 /*! \brief Extract and append a range of characters.
  *
- * TODO: Eventually, sStr needs to be (const mux_string &)
- *
  * \param sStr     mux_string from which to extract characters.
  * \param nStart   Beginning of range to extract and apend.
  * \param nLen     Length of range to extract and append.
  * \return         None.
  */
 
-void mux_string::append(mux_string *sStr, size_t nStart, size_t nLen)
+void mux_string::append(const mux_string &sStr, size_t nStart, size_t nLen)
 {
-    if (  sStr->m_n <= nStart
+    if (  sStr.m_n <= nStart
        || 0 == nLen
        || LBUF_SIZE-1 == m_n)
     {
@@ -3881,9 +3879,9 @@ void mux_string::append(mux_string *sStr, size_t nStart, size_t nLen)
         return;
     }
 
-    if (sStr->m_n - nStart < nLen)
+    if (sStr.m_n - nStart < nLen)
     {
-        nLen = sStr->m_n - nStart;
+        nLen = sStr.m_n - nStart;
     }
 
     if ((LBUF_SIZE-1)-m_n < nLen)
@@ -3891,8 +3889,8 @@ void mux_string::append(mux_string *sStr, size_t nStart, size_t nLen)
         nLen = (LBUF_SIZE-1)-m_n;
     }
 
-    memcpy(m_ach + m_n, sStr->m_ach + nStart, nLen * sizeof(m_ach[0]));
-    memcpy(m_acs + m_n, sStr->m_acs + nStart, nLen * sizeof(m_acs[0]));
+    memcpy(m_ach + m_n, sStr.m_ach + nStart, nLen * sizeof(m_ach[0]));
+    memcpy(m_acs + m_n, sStr.m_acs + nStart, nLen * sizeof(m_acs[0]));
 
     m_n += nLen;
     m_ach[m_n] = '\0';
@@ -3902,7 +3900,7 @@ void mux_string::append(const char *pStr)
 {
     mux_string *sNew = new mux_string(pStr);
 
-    append(sNew);
+    append(*sNew);
     delete sNew;
 }
 
@@ -3911,7 +3909,7 @@ void mux_string::append(const char *pStr, size_t nLen)
     mux_string *sNew = new mux_string;
 
     sNew->import(pStr, nLen);
-    append(sNew);
+    append(*sNew);
     delete sNew;
 }
 
@@ -4004,12 +4002,12 @@ void mux_string::delete_Chars(size_t nStart, size_t nLen)
     m_ach[m_n] = '\0';
 }
 
-void mux_string::edit(mux_string *sFrom, mux_string *sTo)
+void mux_string::edit(mux_string &sFrom, const mux_string &sTo)
 {
     // Do the substitution.  Idea for prefix/suffix from R'nice@TinyTIM.
     //
-    const char chFrom0 = sFrom->export_Char(0);
-    size_t nFrom = sFrom->length();
+    const char chFrom0 = sFrom.export_Char(0);
+    size_t nFrom = sFrom.length();
     if (  1 == nFrom
        && '^' == chFrom0)
     {
@@ -4026,7 +4024,7 @@ void mux_string::edit(mux_string *sFrom, mux_string *sTo)
     }
     else
     {
-        const char chFrom1 = sFrom->export_Char(1);
+        const char chFrom1 = sFrom.export_Char(1);
         // Replace all occurances of 'from' with 'to'. Handle the special
         // cases of from = \$ and \^.
         //
@@ -4036,14 +4034,14 @@ void mux_string::edit(mux_string *sFrom, mux_string *sTo)
               || '^' == chFrom1)
            && 2 == nFrom)
         {
-            sFrom->delete_Chars(0,1);
+            sFrom.delete_Chars(0,1);
             nFrom--;
         }
 
         size_t nStart = 0;
         size_t nFound = 0;
-        size_t nTo = sTo->length();
-        bool bSucceeded = search(*sFrom, &nFound);
+        size_t nTo = sTo.m_n;
+        bool bSucceeded = search(sFrom, &nFound);
         while (bSucceeded)
         {
             nStart += nFound;
@@ -4052,7 +4050,7 @@ void mux_string::edit(mux_string *sFrom, mux_string *sTo)
 
             if (nStart < LBUF_SIZE-1)
             {
-                bSucceeded = search(*sFrom, &nFound, nStart);
+                bSucceeded = search(sFrom, &nFound, nStart);
             }
             else
             {
@@ -4314,24 +4312,22 @@ void mux_string::import(long lLong)
 
 /*! \brief Import a portion of another mux_string.
  *
- * TODO: Eventually, sStr needs to be (const mux_string &)
- *
  * \param sStr     mux_string to import.
  * \param nStart   Where to begin importing.
  * \return         None.
  */
 
-void mux_string::import(mux_string *sStr, size_t nStart)
+void mux_string::import(const mux_string &sStr, size_t nStart)
 {
-    if (sStr->m_n <= nStart)
+    if (sStr.m_n <= nStart)
     {
         m_n = 0;
     }
     else
     {
-        m_n = sStr->m_n - nStart;
-        memcpy(m_ach, sStr->m_ach + nStart, m_n*sizeof(m_ach[0]));
-        memcpy(m_acs, sStr->m_acs + nStart, m_n*sizeof(m_acs[0]));
+        m_n = sStr.m_n - nStart;
+        memcpy(m_ach, sStr.m_ach + nStart, m_n*sizeof(m_ach[0]));
+        memcpy(m_acs, sStr.m_acs + nStart, m_n*sizeof(m_acs[0]));
     }
     m_ach[m_n] = '\0';
 }
@@ -4430,12 +4426,12 @@ size_t mux_string::length(void)
     return m_n;
 }
 
-void mux_string::prepend(char cChar)
+void mux_string::prepend(const char cChar)
 {
     mux_string *sStore = new mux_string(this);
 
     import(cChar);
-    append(sStore);
+    append(*sStore);
     delete sStore;
 }
 
@@ -4444,7 +4440,7 @@ void mux_string::prepend(long lLong)
     mux_string *sStore = new mux_string(this);
 
     import(lLong);
-    append(sStore);
+    append(*sStore);
     delete sStore;
 }
 
@@ -4453,16 +4449,16 @@ void mux_string::prepend(INT64 iInt)
     mux_string *sStore = new mux_string(this);
 
     import(iInt);
-    append(sStore);
+    append(*sStore);
     delete sStore;
 }
 
-void mux_string::prepend(mux_string *sStr)
+void mux_string::prepend(const mux_string &sStr)
 {
     mux_string *sStore = new mux_string(this);
 
     import(sStr);
-    append(sStore);
+    append(*sStore);
     delete sStore;
 }
 
@@ -4471,7 +4467,7 @@ void mux_string::prepend(const char *pStr)
     mux_string *sStore = new mux_string(this);
 
     import(pStr);
-    append(sStore);
+    append(*sStore);
     delete sStore;
 }
 
@@ -4480,13 +4476,13 @@ void mux_string::prepend(const char *pStr, size_t n)
     mux_string *sStore = new mux_string(this);
 
     import(pStr, n);
-    append(sStore);
+    append(*sStore);
     delete sStore;
 }
 
-void mux_string::replace_Chars(mux_string *sTo, size_t nStart, size_t nLen)
+void mux_string::replace_Chars(const mux_string &sTo, size_t nStart, size_t nLen)
 {
-    size_t nTo = sTo->length();
+    size_t nTo = sTo.m_n;
     size_t nMove = 0;
     size_t nCopy = nTo;
     if (nLen != nTo)
@@ -4511,8 +4507,8 @@ void mux_string::replace_Chars(mux_string *sTo, size_t nStart, size_t nLen)
         }
         m_n = nStart+nCopy+nMove;
     }
-    memcpy(m_ach+nStart, sTo->m_ach, nCopy * sizeof(m_ach[0]));
-    memcpy(m_acs+nStart, sTo->m_acs, nCopy * sizeof(m_acs[0]));
+    memcpy(m_ach+nStart, sTo.m_ach, nCopy * sizeof(m_ach[0]));
+    memcpy(m_acs+nStart, sTo.m_acs, nCopy * sizeof(m_acs[0]));
     m_ach[m_n] = '\0';
 }
 
@@ -4543,7 +4539,7 @@ void mux_string::reverse(void)
  * \return         True if found, false if not.
  */
 
-bool mux_string::search(char *pPattern, size_t *nPos, size_t nStart)
+bool mux_string::search(const char *pPattern, size_t *nPos, size_t nStart)
 {
     // Strip ANSI from pattern.
     //
