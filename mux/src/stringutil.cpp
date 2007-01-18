@@ -974,59 +974,6 @@ void ANSI_String_Out_Init
     pacOut->m_vwMax    = vwMax;
 }
 
-void ANSI_String_Skip
-(
-    struct ANSI_In_Context *pacIn,
-    size_t                  maxVisualWidth,
-    size_t                 *pnVisualWidth
-)
-{
-    *pnVisualWidth = 0;
-    while (pacIn->m_n)
-    {
-        size_t nTokenLength0;
-        size_t nTokenLength1;
-        int iType = ANSI_lex(pacIn->m_n, pacIn->m_p, &nTokenLength0, &nTokenLength1);
-
-        if (iType == TOKEN_TEXT_ANSI)
-        {
-            // Process TEXT
-            //
-            size_t nTextToSkip = maxVisualWidth - *pnVisualWidth;
-            if (nTokenLength0 > nTextToSkip)
-            {
-                // We have reached the limits of the field
-                //
-                *pnVisualWidth += nTextToSkip;
-                pacIn->m_p     += nTextToSkip;
-                pacIn->m_n     -= nTextToSkip;
-                return;
-            }
-
-            pacIn->m_p     += nTokenLength0;
-            pacIn->m_n     -= nTokenLength0;
-            *pnVisualWidth += nTokenLength0;
-
-            if (nTokenLength1)
-            {
-                // Process ANSI
-                //
-                ANSI_Parse_m(&(pacIn->m_cs), nTokenLength1, pacIn->m_p);
-                pacIn->m_p     += nTokenLength1;
-                pacIn->m_n     -= nTokenLength1;
-            }
-        }
-        else
-        {
-            // Process ANSI
-            //
-            ANSI_Parse_m(&(pacIn->m_cs), nTokenLength0, pacIn->m_p);
-            pacIn->m_n     -= nTokenLength0;
-            pacIn->m_p     += nTokenLength0;
-        }
-    }
-}
-
 // TODO: Rework comment block.
 //
 // ANSI_String_Copy -- Copy characters into a buffer starting at
