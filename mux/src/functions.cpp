@@ -4255,8 +4255,8 @@ static FUNCTION(fun_member)
 }
 
 // fun_secure: This function replaces any character in the set
-// '%$\[](){},;' with a space. It handles ANSI by not replacing
-// the '[' character within an ANSI sequence.
+// '%$\[](){},;' with a space. It handles ANSI by computing and
+// preserving the color of each visual character in the string.
 //
 static FUNCTION(fun_secure)
 {
@@ -4270,20 +4270,16 @@ static FUNCTION(fun_secure)
 
     mux_string *sStr = new mux_string(fargs[0]);
     size_t nLen = sStr->length();
-    char cChar = '\0';
 
     for (size_t i = 0; i < nLen; i++)
     {
-        cChar = sStr->export_Char(i);
-        if (mux_issecure(cChar))
+        if (mux_issecure(sStr->export_Char(i)))
         {
-            safe_chr(' ', buff, bufc);
-        }
-        else
-        {
-            safe_chr(cChar, buff, bufc);
+            sStr->set_Char(i, ' ');
         }
     }
+
+    sStr->export_TextAnsi(buff, bufc, 0, nLen);
 
     delete sStr;
 }
