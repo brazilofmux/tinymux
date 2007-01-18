@@ -4722,40 +4722,42 @@ static FUNCTION(fun_delete)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    long iStart = mux_atol(fargs[1]);
-    long iChars = mux_atol(fargs[2]);
-    size_t nStart = 0;
-    size_t nChars = 0;
+    int iStart = mux_atol(fargs[1]);
+    int nDelete = mux_atol(fargs[2]);
 
-    if (0 <= iChars)
+    if (nDelete < 0)
     {
-        nChars = static_cast<size_t>(iChars);
+        // The range should end at iStart, inclusive.
+        //
+        iStart += 1 + nDelete;
+        nDelete = -nDelete;
     }
-    else
-    {
-        iStart += iChars;
-        nChars = 0-iChars;
-    }
+
     if (iStart < 0)
     {
-        nChars += iStart;
+        // Start at the beginning of the string,
+        // but end at the same place the range would end
+        // if negative starting positions were valid.
+        //
+        nDelete += iStart;
         iStart = 0;
     }
-    nStart = static_cast<size_t>(iStart);
-    size_t nLen = strlen(fargs[0]);
 
-    // Are we deleting anything at all?
-    //
-    if (  0 == nChars
-       || nLen < nStart)
+    if (  nDelete <= 0
+       || LBUF_SIZE <= iStart)
     {
+        // The range doesn't select any characters.
+        //
         safe_str(fargs[0], buff, bufc);
         return;
     }
 
+    // At this point, iStart and nDelete are nonnegative numbers
+    // which may -still- not refer to valid data in the string. 
+    //
     mux_string *sStr = new mux_string(fargs[0]);
 
-    sStr->delete_Chars(nStart, nChars);
+    sStr->delete_Chars(iStart, nDelete);
     sStr->export_TextAnsi(buff, bufc);
 
     delete sStr;
