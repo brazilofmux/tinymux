@@ -124,32 +124,6 @@ void update_quotas(CLinearTimeAbsolute& ltaLast, const CLinearTimeAbsolute& ltaC
 }
 
 /* raw_notify_html() -- raw_notify() without the newline */
-void raw_notify_html(dbref player, const char *msg)
-{
-    if (!msg || !*msg)
-    {
-        return;
-    }
-
-    if (  mudstate.inpipe
-       && player == mudstate.poutobj)
-    {
-        safe_str(msg, mudstate.poutnew, &mudstate.poutbufc);
-        return;
-    }
-    if (  !Connected(player)
-       || !Html(player))
-    {
-        return;
-    }
-
-    DESC *d;
-    DESC_ITER_PLAYER(player, d)
-    {
-        queue_string(d, msg);
-    }
-}
-
 void raw_notify_html(dbref player, mux_string &sMsg)
 {
     if (0 == sMsg.length())
@@ -211,8 +185,6 @@ void raw_notify(dbref player, const char *msg)
 
 void raw_notify(dbref player, mux_string &sMsg)
 {
-    DESC *d;
-
     if (0 == sMsg.length())
     {
         return;
@@ -231,6 +203,7 @@ void raw_notify(dbref player, mux_string &sMsg)
         return;
     }
 
+    DESC *d;
     DESC_ITER_PLAYER(player, d)
     {
         queue_string(d, sMsg);
