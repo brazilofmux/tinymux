@@ -4339,9 +4339,10 @@ static FUNCTION(fun_wordpos)
         return;
     }
 
+    size_t ncp;
+    char *cp = strip_ansi(fargs[0], &ncp);
     unsigned int charpos = mux_atol(fargs[1]);
-    char *cp = fargs[0];
-    size_t ncp = strlen(cp);
+
     if (  charpos > 0
        && charpos <= ncp)
     {
