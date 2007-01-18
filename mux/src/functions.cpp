@@ -9899,14 +9899,12 @@ static FUNCTION(fun_tr)
     if (nFrom != nTo)
     {
         safe_str("#-1 STRING LENGTHS MUST BE EQUAL", buff, bufc);
-        delete sStr;
-        delete sFrom;
-        delete sTo;
-        return;
     }
-
-    sStr->transform(*sFrom, *sTo);
-    sStr->export_TextAnsi(buff, bufc);
+    else
+    {
+        sStr->transform(*sFrom, *sTo);
+        sStr->export_TextAnsi(buff, bufc);
+    }
 
     delete sStr;
     delete sFrom;
