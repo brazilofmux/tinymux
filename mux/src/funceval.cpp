@@ -2597,22 +2597,33 @@ FUNCTION(fun_scramble)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    size_t nStrip;
-    char *old = strip_ansi(fargs[0], &nStrip);
+    mux_string *sStr = new mux_string(fargs[0]);
+    size_t nLen = sStr->length();
 
-    INT32 n = static_cast<INT32>(nStrip);
-    if (2 <= n)
+    if (2 <= nLen)
     {
-        INT32 i;
-        for (i = 0; i < n-1; i++)
+        for (size_t i = 0; i < nLen-1; i++)
         {
-            int j = RandomINT32(i, n-1);
-            char c = old[i];
-            old[i] = old[j];
-            old[j] = c;
+            size_t j = static_cast<size_t>(RandomINT32(i, nLen-1));
+
+            char ch = sStr->export_Char(i);
+            ANSI_ColorState cs = sStr->export_Color(i);
+
+            sStr->set_Char(i, sStr->export_Char(j));
+            sStr->set_Color(i, sStr->export_Color(j));
+
+            sStr->set_Char(j, ch);
+            sStr->set_Color(j, cs);
         }
+
+	sStr->export_TextAnsi(buff, bufc, 0, nLen);
     }
-    safe_str(old, buff, bufc);
+    else
+    {
+        safe_str(fargs[0], buff, bufc);
+    }
+
+    delete sStr;
 }
 
 /* ---------------------------------------------------------------------------
