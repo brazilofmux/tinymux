@@ -1686,22 +1686,21 @@ FUNCTION(fun_strtrunc)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    long iLeft = mux_atol(fargs[1]);
-    if (iLeft < 0)
+    int nLeft = mux_atol(fargs[1]);
+    if (nLeft < 0)
     {
         safe_range(buff, bufc);
         return;
     }
-    else if (0 == iLeft)
+    else if (0 == nLeft)
     {
         return;
     }
-    size_t nLeft = iLeft;
 
     mux_string *sStr = new mux_string(fargs[0]);
     size_t nLen = sStr->length();
 
-    if (nLeft < nLen)
+    if (static_cast<size_t>(nLeft) < nLen)
     {
         sStr->export_TextAnsi(buff, bufc, 0, nLeft);
     }

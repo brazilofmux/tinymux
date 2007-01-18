@@ -2315,22 +2315,21 @@ static FUNCTION(fun_right)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    long iRight = mux_atol(fargs[1]);
-    if (iRight < 0)
+    int nRight = mux_atol(fargs[1]);
+    if (nRight < 0)
     {
         safe_range(buff, bufc);
         return;
     }
-    else if (0 == iRight)
+    else if (0 == nRight)
     {
         return;
     }
-    size_t nRight = iRight;
 
     mux_string *sStr = new mux_string(fargs[0]);
     size_t nLen = sStr->length();
 
-    if (nRight < nLen)
+    if (static_cast<size_t>(nRight) < nLen)
     {
         sStr->export_TextAnsi(buff, bufc, nLen - nRight, nRight);
     }
