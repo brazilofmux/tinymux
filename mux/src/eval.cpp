@@ -1243,19 +1243,16 @@ void mux_exec( char *buff, char **bufc, dbref executor, dbref caller,
             // _strlwr(tbuf);
             //
             size_t nFun = 0;
-            size_t iEnd = pEnd - oldp;
-            while(  nFun <= iEnd 
-                 && nFun < MAX_UFUN_NAME_LEN)
+            for (size_t iEnd = pEnd - oldp; nFun <= iEnd; nFun++)
             {
                 mux_scratch[nFun] = mux_tolower(oldp[nFun]);
-                nFun++;
             }
             mux_scratch[nFun] = '\0';
 
             fp = NULL;
             ufp = NULL;
 
-            if (iEnd < nFun)
+            if (nFun <= MAX_UFUN_NAME_LEN)
             {
                 fp = (FUN *)hashfindLEN(mux_scratch, nFun, &mudstate.func_htab);
 
