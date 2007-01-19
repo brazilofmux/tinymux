@@ -52,7 +52,7 @@ Bug Fixes:
  -- mid(abc,-1,2) now returns a, not ab. mid(abc,1,-2) now returns
     ab, not a.  This is the documented behavior.
  -- wordpos() did not strip ansi before counting characters.
-
+ -- Corrected minor typo in @comon section of help.txt. (Issue 275)
 
 Performance Enhancements:
 ~~~~~~~~~~~~~~~~~~~~~~~~

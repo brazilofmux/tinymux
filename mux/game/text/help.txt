@@ -1036,7 +1036,7 @@ Related Topics: @name.
   Sets the message that is shown to the player who turns on the channel
   corresponding to <object>.
 
-  Related Topics: alias, CHANNEL OBJECT, @comjoin,@comleave, @comoff.
+  Related Topics: alias, CHANNEL OBJECT, @comjoin, @comleave, @comoff.
 
 & @COLOR
 @COLOR
