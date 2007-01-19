@@ -77,3 +77,4 @@ Miscellaneous:
  -- Documented use of a single backslash as a proper shortcut to
     @emit (Issue 219).  Thanks Alierak.
  -- Removed unnecessary global pos variable from help.cpp (Issue 265).
+ -- Fixed dangling reference to 'help @version' (Issue 277).
