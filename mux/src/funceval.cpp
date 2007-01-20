@@ -2603,7 +2603,8 @@ FUNCTION(fun_scramble)
     {
         for (size_t i = 0; i < nLen-1; i++)
         {
-            size_t j = static_cast<size_t>(RandomINT32(i, nLen-1));
+            size_t j = static_cast<size_t>(RandomINT32(static_cast<INT32>(i),
+                static_cast<INT32>(nLen-1)));
 
             char ch = sStr->export_Char(i);
             ANSI_ColorState cs = sStr->export_Color(i);
@@ -2614,8 +2615,7 @@ FUNCTION(fun_scramble)
             sStr->set_Char(j, ch);
             sStr->set_Color(j, cs);
         }
-
-	sStr->export_TextAnsi(buff, bufc, 0, nLen);
+        sStr->export_TextAnsi(buff, bufc, 0, nLen);
     }
     else
     {

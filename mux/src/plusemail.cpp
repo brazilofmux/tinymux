@@ -364,7 +364,7 @@ static int mod_email_sock_readline(SOCKET sock, char *buffer, int maxlen)
 
     // Check for data before giving up.
     //
-    if (IS_SOCKET_ERROR(select(sock+1, &read_fds, NULL, NULL, &tv)))
+    if (IS_SOCKET_ERROR(select(static_cast<int>(sock+1), &read_fds, NULL, NULL, &tv)))
     {
         return 0;
     }
@@ -403,7 +403,7 @@ static int mod_email_sock_readline(SOCKET sock, char *buffer, int maxlen)
 
                 // Check for data before giving up.
                 //
-                if (IS_SOCKET_ERROR(select(sock+1, &read_fds, NULL, NULL, &tv)))
+                if (IS_SOCKET_ERROR(select(static_cast<int>(sock+1), &read_fds, NULL, NULL, &tv)))
                 {
                     done = true;
                 }
