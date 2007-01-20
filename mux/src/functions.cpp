@@ -10342,8 +10342,6 @@ void init_functab(void)
     ufun_head = NULL;
 }
 
-#define MAX_UFUN_NAME_LEN (SBUF_SIZE-1)
-
 // MakeCanonicalUserFunctionName
 //
 // We truncate the name to a length of MAX_UFUN_NAME_LEN, if

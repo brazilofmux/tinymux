@@ -1242,22 +1242,26 @@ void mux_exec( char *buff, char **bufc, dbref executor, dbref caller,
 
             // _strlwr(tbuf);
             //
-            char *p2 = mux_scratch;
-            for (char *p = oldp; p <= pEnd; p++)
+            size_t nFun = 0;
+            for (size_t iEnd = pEnd - oldp; nFun <= iEnd; nFun++)
             {
-                *p2++ = mux_tolower(*p);
+                mux_scratch[nFun] = mux_tolower(oldp[nFun]);
             }
-            *p2 = '\0';
+            mux_scratch[nFun] = '\0';
 
-            size_t ntbuf = p2 - mux_scratch;
-            fp = (FUN *)hashfindLEN(mux_scratch, ntbuf, &mudstate.func_htab);
-
-            // If not a builtin func, check for global func.
-            //
+            fp = NULL;
             ufp = NULL;
-            if (fp == NULL)
+
+            if (nFun <= MAX_UFUN_NAME_LEN)
             {
-                ufp = (UFUN *)hashfindLEN(mux_scratch, ntbuf, &mudstate.ufunc_htab);
+                fp = (FUN *)hashfindLEN(mux_scratch, nFun, &mudstate.func_htab);
+
+                // If not a builtin func, check for global func.
+                //
+                if (fp == NULL)
+                {
+                    ufp = (UFUN *)hashfindLEN(mux_scratch, nFun, &mudstate.ufunc_htab);
+                }
             }
 
             // Do the right thing if it doesn't exist.
