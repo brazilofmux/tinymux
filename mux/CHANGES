@@ -56,6 +56,7 @@ Bug Fixes:
  -- Corrected minor typo in @comon section of help.txt. (Issue 275)
  -- Restore newline skipping in wrap(), broken in 2.7.0.2 (Issue 278).
 
+
 Performance Enhancements:
 ~~~~~~~~~~~~~~~~~~~~~~~~
  -- Help entries use less memory (specific improvements described in
