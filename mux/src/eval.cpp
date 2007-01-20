@@ -1242,8 +1242,9 @@ void mux_exec( char *buff, char **bufc, dbref executor, dbref caller,
 
             // _strlwr(tbuf);
             //
-            size_t nFun = 0;
-            for (size_t iEnd = pEnd - oldp; nFun <= iEnd; nFun++)
+            size_t nFun;
+            size_t iEnd = pEnd - oldp;
+            for (nFun = 0; nFun <= iEnd; nFun++)
             {
                 mux_scratch[nFun] = mux_tolower(oldp[nFun]);
             }
