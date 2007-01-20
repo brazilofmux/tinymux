@@ -3849,7 +3849,29 @@ void mux_string::append(const mux_string &sStr, size_t nStart, size_t nLen)
 
 void mux_string::append(const char *pStr)
 {
-    mux_string *sNew = new mux_string(pStr);
+    if (  NULL == pStr
+       || '\0' == *pStr)
+    {
+        return;
+    }
+
+    size_t nAvail = (LBUF_SIZE-1) - m_n;
+    if (0 == nAvail)
+    {
+        // No room.
+        //
+        return;
+    }
+
+    size_t nLen = strlen(pStr);
+    if (nAvail < nLen)
+    {
+        nLen = nAvail;
+    }
+
+    mux_string *sNew = new mux_string;
+    
+    sNew->import(pStr, nLen);
 
     append(*sNew);
     delete sNew;
@@ -3857,6 +3879,24 @@ void mux_string::append(const char *pStr)
 
 void mux_string::append(const char *pStr, size_t nLen)
 {
+    if (  NULL == pStr
+       || '\0' == *pStr)
+    {
+        return;
+    }
+
+    size_t nAvail = (LBUF_SIZE-1) - m_n;
+    if (0 == nAvail)
+    {
+        // No room.
+        //
+        return;
+    }
+    if (nAvail < nLen)
+    {
+        nLen = nAvail;
+    }
+
     mux_string *sNew = new mux_string;
 
     sNew->import(pStr, nLen);

@@ -41,6 +41,8 @@ typedef struct ufun {
 #define FN_DELETE   16  // Corresponds to /delete switch. Not used in
                         // UFUN structure.
 
+#define MAX_UFUN_NAME_LEN (SBUF_SIZE-1)
+
 void init_functab(void);
 void list_functable(dbref);
 extern UFUN *ufun_head;

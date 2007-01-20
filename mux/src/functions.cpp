@@ -8709,7 +8709,7 @@ static FUNCTION(fun_wrap)
 
         nLength = wraplen(pPlain, nPos == 0 ? nFirstWidth : nWidth, newline);
 
-        sStr->export_TextAnsi(pColor, NULL, nPos, nLength);
+        sStr->export_TextAnsi(pColor, NULL, nPos, nLength - (newline ? 2 : 0));
 
         if (0 != nPos)
         {
@@ -10341,8 +10341,6 @@ void init_functab(void)
     functions_add(builtin_function_list);
     ufun_head = NULL;
 }
-
-#define MAX_UFUN_NAME_LEN (SBUF_SIZE-1)
 
 // MakeCanonicalUserFunctionName
 //
