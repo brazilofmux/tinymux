@@ -8709,7 +8709,7 @@ static FUNCTION(fun_wrap)
 
         nLength = wraplen(pPlain, nPos == 0 ? nFirstWidth : nWidth, newline);
 
-        sStr->export_TextAnsi(pColor, NULL, nPos, nLength);
+        sStr->export_TextAnsi(pColor, NULL, nPos, nLength - (newline ? 2 : 0));
 
         if (0 != nPos)
         {
