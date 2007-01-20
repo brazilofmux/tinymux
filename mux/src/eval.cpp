@@ -1240,26 +1240,26 @@ void mux_exec( char *buff, char **bufc, dbref executor, dbref caller,
                 }
             }
 
-            // _strlwr(tbuf);
-            //
-            size_t nFun;
-            size_t iEnd = pEnd - oldp;
-            for (nFun = 0; nFun <= iEnd; nFun++)
-            {
-                mux_scratch[nFun] = mux_tolower(oldp[nFun]);
-            }
-            mux_scratch[nFun] = '\0';
-
             fp = NULL;
             ufp = NULL;
 
-            if (nFun <= MAX_UFUN_NAME_LEN)
+            size_t nFun = pEnd - oldp + 1;
+            if (  0 < nFun
+               && nFun <= MAX_UFUN_NAME_LEN)
             {
+                // _strlwr(tbuf);
+                //
+                for (size_t iFun = 0; iFun < nFun; iFun++)
+                {
+                    mux_scratch[iFun] = mux_tolower(oldp[iFun]);
+                }
+                mux_scratch[nFun] = '\0';
+
                 fp = (FUN *)hashfindLEN(mux_scratch, nFun, &mudstate.func_htab);
 
                 // If not a builtin func, check for global func.
                 //
-                if (fp == NULL)
+                if (NULL == fp)
                 {
                     ufp = (UFUN *)hashfindLEN(mux_scratch, nFun, &mudstate.ufunc_htab);
                 }
