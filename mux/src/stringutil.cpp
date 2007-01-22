@@ -772,7 +772,7 @@ static void ANSI_Parse_m(ANSI_ColorState *pacsCurrent, size_t nANSI, const char 
 //
 static char *ANSI_TransitionColorBinary
 (
-    ANSI_ColorState *acsCurrent,
+    const ANSI_ColorState *acsCurrent,
     const ANSI_ColorState *pcsNext,
     size_t *nTransition,
     int  iEndGoal
@@ -4051,7 +4051,7 @@ void mux_string::edit(mux_string &sFrom, const mux_string &sTo)
     }
 }
 
-char mux_string::export_Char(size_t n)
+char mux_string::export_Char(size_t n) const
 {
     if (m_n <= n)
     {
@@ -4060,7 +4060,7 @@ char mux_string::export_Char(size_t n)
     return m_ach[n];
 }
 
-ANSI_ColorState mux_string::export_Color(size_t n)
+ANSI_ColorState mux_string::export_Color(size_t n) const
 {
     if (m_n <= n)
     {
@@ -4080,7 +4080,7 @@ ANSI_ColorState mux_string::export_Color(size_t n)
  * \return         None.
  */
 
-void mux_string::export_TextAnsi(char *buff, char **bufc, size_t nStart, size_t nLen, size_t nBuffer, int iEndGoal)
+void mux_string::export_TextAnsi(char *buff, char **bufc, size_t nStart, size_t nLen, size_t nBuffer, int iEndGoal) const
 {
     // Sanity check our arguments and find out how much room we have.
     // We assume we're outputting into an LBUF unless given a smaller nBuffer.
@@ -4207,7 +4207,7 @@ void mux_string::export_TextAnsi(char *buff, char **bufc, size_t nStart, size_t 
  * \return         None.
  */
 
-void mux_string::export_TextPlain(char *buff, char **bufc, size_t nStart, size_t nLen, size_t nBuffer)
+void mux_string::export_TextPlain(char *buff, char **bufc, size_t nStart, size_t nLen, size_t nBuffer) const
 {
     // Sanity check our arguments and find out how much room we have.
     // We assume we're outputting into an LBUF unless given a smaller nBuffer.
@@ -4442,7 +4442,7 @@ void mux_string::import(const char *pStr, size_t nLen)
     m_ach[m_n] = '\0';
 }
 
-size_t mux_string::length(void)
+size_t mux_string::length(void) const
 {
     return m_n;
 }

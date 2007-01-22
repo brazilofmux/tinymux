@@ -255,12 +255,12 @@ public:
     void append_TextPlain(const char *pStr, size_t nLen);
     void delete_Chars(size_t nStart, size_t nLen);
     void edit(mux_string &sFrom, const mux_string &sTo);
-    char export_Char(size_t n);
-    ANSI_ColorState export_Color(size_t n);
+    char export_Char(size_t n) const;
+    ANSI_ColorState export_Color(size_t n) const;
     void export_TextAnsi(char *buff, char **bufc = NULL, size_t nStart = 0, size_t nLen = LBUF_SIZE,
-                            size_t nBuffer = (LBUF_SIZE-1), int iEndGoal = ANSI_ENDGOAL_NORMAL);
+                            size_t nBuffer = (LBUF_SIZE-1), int iEndGoal = ANSI_ENDGOAL_NORMAL) const;
     void export_TextPlain(char *buff, char **bufc = NULL, size_t nStart = 0, size_t nLen = LBUF_SIZE,
-                            size_t nBuffer = (LBUF_SIZE-1));
+                            size_t nBuffer = (LBUF_SIZE-1)) const;
     void import(const char chIn);
     void import(dbref num);
     void import(INT64 iInt);
@@ -268,7 +268,7 @@ public:
     void import(const mux_string &sStr, size_t nStart = 0);
     void import(const char *pStr);
     void import(const char *pStr, size_t nLen);
-    size_t length(void);
+    size_t length(void) const;
     void prepend(const char cChar);
     void prepend(dbref num);
     void prepend(INT64 iInt);
