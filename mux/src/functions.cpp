@@ -8263,6 +8263,7 @@ static FUNCTION(fun_trim)
     }
 
     sStr->export_TextAnsi(buff, bufc);
+    delete sStr;
 }
 
 static FUNCTION(fun_config)
