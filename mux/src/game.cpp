@@ -625,7 +625,7 @@ bool html_escape(const char *src, char *dest, char **destp)
     return ret;
 }
 
-void notify_check(dbref target, dbref sender, mux_string &msg, int key)
+void notify_check(dbref target, dbref sender, const mux_string &msg, int key)
 {
     // If speaker is invalid or message is empty, just exit.
     //
@@ -664,7 +664,7 @@ void notify_check(dbref target, dbref sender, mux_string &msg, int key)
         return;
     }
 
-    mux_string *msg_ns = &msg;
+    mux_string *msg_ns = new mux_string;
     mux_string *msgFinal = new mux_string;
     char *tp;
     char *prefix;
@@ -678,7 +678,6 @@ void notify_check(dbref target, dbref sender, mux_string &msg, int key)
     //
     if (key & MSG_ME)
     {
-        msg_ns = new mux_string;
         if (  Nospoof(target)
            && target != sender
            && target != mudstate.curr_enactor
@@ -708,8 +707,8 @@ void notify_check(dbref target, dbref sender, mux_string &msg, int key)
             }
             msg_ns->append_TextPlain("] ", 2);
         }
-        msg_ns->append(msg);
     }
+    msg_ns->append(msg);
 
     // msg contains the raw message, msg_ns contains the NOSPOOFed msg.
     //
@@ -1055,10 +1054,7 @@ void notify_check(dbref target, dbref sender, mux_string &msg, int key)
         free_lbuf(msgPlain);
     }
     delete msgFinal;
-    if (key & MSG_ME)
-    {
-        delete msg_ns;
-    }
+    delete msg_ns;
     mudstate.ntfy_nest_lev--;
 }
 

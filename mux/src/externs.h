@@ -213,7 +213,7 @@ char *linewrap_general(char *, int, char *, char *);
 void notify_except(dbref, dbref, dbref, const char *, int key);
 void notify_except2(dbref, dbref, dbref, dbref, const char *);
 
-void notify_check(dbref target, dbref sender, mux_string &msg, int key);
+void notify_check(dbref target, dbref sender, const mux_string &msg, int key);
 void notify_check(dbref, dbref, const char *, int);
 
 bool Hearer(dbref);
@@ -875,7 +875,7 @@ void check_mail_expiration(void);
 void check_mail(dbref player, int folder, bool silent);
 const char *mail_fetch_message(dbref player, int num);
 int  mail_fetch_from(dbref player, int num);
-void raw_notify_html(dbref player, mux_string &sMsg);
+void raw_notify_html(dbref player, const mux_string &sMsg);
 void do_lock(dbref executor, dbref caller, dbref enactor, int key,
                     int nargs, char *name, char *keytext);
 void check_events(void);
