@@ -4809,6 +4809,117 @@ void mux_string::transformWithTable(const unsigned char xfrmTable[256], size_t n
     }
 }
 
+void mux_string::trim(const char ch, bool bLeft, bool bRight)
+{
+    if (  0 == m_n
+       || (  !bLeft
+          && !bRight ))
+    {
+        return;
+    }
+
+    if (bRight)
+    {
+        size_t iPos = m_n - 1;
+        while (  ch == m_ach[iPos]
+              && 0 < iPos)
+        {
+            iPos--;
+        }
+
+        if (iPos < m_n - 1)
+        {
+            m_n = iPos + 1;
+            m_ach[m_n] = '\0';
+        }
+    }
+
+    if (bLeft)
+    {
+        size_t iPos = 0;
+        while (  ch == m_ach[iPos]
+              && iPos < m_n)
+        {
+            iPos++;
+        }
+
+        if (0 < iPos)
+        {
+            delete_Chars(0, iPos);
+        }
+    }
+}
+
+void mux_string::trim(const char *p, bool bLeft, bool bRight)
+{
+    if (  0 == m_n
+       || NULL == p
+       || '\0' == p[0]
+       || (  !bLeft
+          && !bRight ))
+    {
+        return;
+    }
+
+    size_t n = strlen(p);
+
+    if (1 == n)
+    {
+        trim(p[0], bLeft, bRight);
+        return;
+    }
+    else
+    {
+        trim(p, n, bLeft, bRight);
+    }
+}
+
+void mux_string::trim(const char *p, size_t n, bool bLeft, bool bRight)
+{
+    if (  0 == m_n
+       || NULL == p
+       || 0 == n
+       || m_n < n
+       || (  !bLeft
+          && !bRight ))
+    {
+        return;
+    }
+
+    if (bRight)
+    {
+        size_t iPos = m_n - 1;
+        size_t iDist = n - 1;
+        while (  p[iDist] == m_ach[iPos]
+              && 0 < iPos)
+        {
+            iPos--;
+            iDist = (0 < iDist) ? iDist - 1 : n - 1;
+        }
+
+        if (iPos < m_n - 1)
+        {
+            m_n = iPos + 1;
+            m_ach[m_n] = '\0';
+        }
+    }
+
+    if (bLeft)
+    {
+        size_t iPos = 0;
+        while (  p[iPos % n] == m_ach[iPos]
+              && iPos < m_n)
+        {
+            iPos++;
+        }
+
+        if (0 < iPos)
+        {
+            delete_Chars(0, iPos);
+        }
+    }
+}
+
 void mux_string::truncate(size_t nLen)
 {
     if (m_n <= nLen)

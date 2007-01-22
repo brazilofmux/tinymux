@@ -286,6 +286,9 @@ public:
     void stripWithTable(const bool strip_table[UCHAR_MAX+1], size_t nStart = 0, size_t nLen = (LBUF_SIZE-1));
     void transform(mux_string &sFromSet, mux_string &sToSet, size_t nStart = 0, size_t nLen = (LBUF_SIZE-1));
     void transformWithTable(const unsigned char xfrmTable[256], size_t nStart = 0, size_t nLen = (LBUF_SIZE-1));
+    void trim(const char ch = ' ', bool bLeft = true, bool bRight = true); 
+    void trim(const char *p, bool bLeft = true, bool bRight = true); 
+    void trim(const char *p, size_t n, bool bLeft = true, bool bRight = true); 
     void truncate(size_t nLen);
 
     static void * operator new(size_t size)

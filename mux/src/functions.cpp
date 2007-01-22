@@ -8218,133 +8218,51 @@ static FUNCTION(fun_isdbref)
 /* ---------------------------------------------------------------------------
  * trim: trim off unwanted white space.
  */
-
-static char* trim_fast_left(char* str, char delim)
-{
-    // We assume delim is never '\0'
-    //
-    while (*str == delim)
-    {
-        str++;
-    }
-    return str;
-}
-
-static void trim_fast_right(char* str, char delim)
-{
-    // We assume delim is never '\0'
-    //
-    char* last = NULL;
-    while (*str)
-    {
-        if (*str != delim)
-        {
-            last = str;
-        }
-        str++;
-    }
-
-    if (last == NULL)
-    {
-        return;
-    }
-
-    *(last+1) = '\0';
-}
-
-static char* trim_left(char* str, SEP* sep)
-{
-    if (1 == sep->n)
-    {
-        return trim_fast_left(str, sep->str[0]);
-    }
-    size_t cycle = 0;
-    size_t max = sep->n;
-    char* base = str-1;
-    for ( ; *str == sep->str[cycle]; str++)
-    {
-        if (max <= ++cycle)
-        {
-            cycle = 0;
-            base = str;
-        }
-    }
-    return base+1;
-}
-
-static void trim_right(char* str, SEP* sep)
-{
-    if (1 == sep->n)
-    {
-        trim_fast_right(str,sep->str[0]);
-        return;
-    }
-
-    int cycle = static_cast<int>(sep->n - 1);
-    size_t max = sep->n - 1;
-    int n = static_cast<int>(strlen(str));
-    size_t base = n;
-    n--;
-    for ( ; n >= 0 && str[n] == sep->str[cycle]; n--)
-    {
-        if (--cycle < 0)
-        {
-            cycle = max;
-            base = n;
-        }
-    }
-    *(str+base) = '\0';
-}
-
 static FUNCTION(fun_trim)
 {
-    SEP sep;
-    if (!OPTIONAL_DELIM(3, sep, DELIM_DFLT|DELIM_STRING))
-    {
-        return;
-    }
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
 
-#define TRIM_LEFT  1
-#define TRIM_RIGHT 2
+    bool bLeft = true, bRight = true;
+    const char *p = NULL;
+    size_t n = 0;
 
-    int trim;
     if (nfargs >= 2)
     {
         switch (mux_tolower(*fargs[1]))
         {
         case 'l':
-            trim = TRIM_LEFT;
+            bRight = false;
             break;
 
         case 'r':
-            trim = TRIM_RIGHT;
-            break;
-
-        default:
-            trim = TRIM_LEFT|TRIM_RIGHT;
+            bLeft = false;
             break;
         }
+
+        if (nfargs >= 3)
+        {
+            p = fargs[2];
+            n = strlen(p);
+        }
+    }
+
+    mux_string *sStr = new mux_string(fargs[0]);
+
+    if (0 == n)
+    {
+        sStr->trim(' ', bLeft, bRight);
     }
     else
     {
-        trim = TRIM_LEFT|TRIM_RIGHT;
+        sStr->trim(p, n, bLeft, bRight);
     }
 
-    char* str;
-    if (trim & TRIM_LEFT)
-    {
-        str = trim_left(fargs[0],&sep);
-    }
-    else
-    {
-        str = fargs[0];
-    }
-
-    if (trim & TRIM_RIGHT)
-    {
-        trim_right(str,&sep);
-    }
-    safe_str(str,buff,bufc);
+    sStr->export_TextAnsi(buff, bufc);
 }
 
 static FUNCTION(fun_config)
