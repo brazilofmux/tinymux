@@ -4442,7 +4442,7 @@ void mux_string::import(const char *pStr, size_t nLen)
     m_ach[m_n] = '\0';
 }
 
-size_t mux_string::length(void)
+size_t mux_string::length(void) const
 {
     return m_n;
 }

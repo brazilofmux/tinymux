@@ -268,7 +268,7 @@ public:
     void import(const mux_string &sStr, size_t nStart = 0);
     void import(const char *pStr);
     void import(const char *pStr, size_t nLen);
-    size_t length(void);
+    size_t length(void) const;
     void prepend(const char cChar);
     void prepend(dbref num);
     void prepend(INT64 iInt);
