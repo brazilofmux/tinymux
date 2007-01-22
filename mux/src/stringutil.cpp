@@ -491,6 +491,50 @@ const unsigned char mux_StripAccents[256] =
     0x6F, 0x6E, 0x6F, 0x6F, 0x6F, 0x6F, 0x6F, 0xF7, 0x6F, 0x75, 0x75, 0x75, 0x75, 0x79, 0x70, 0x79, // F
 };
 
+// This will help decode UTF-8 sequences.
+//
+// 0xxxxxxx ==> 00000000-01111111 ==> 00-7F 1 byte sequence.
+// 10xxxxxx ==> 10000000-10111111 ==> 80-BF continue
+// 110xxxxx ==> 11000000-11011111 ==> C0-DF 2 byte sequence.
+// 1110xxxx ==> 11100000-11101111 ==> E0-EF 3 byte sequence.
+// 11110xxx ==> 11110000-11110111 ==> F0-F7 4 byte sequence.
+//              11111000-11111111 illegal
+//
+// Also, 0xF5-0xFF do not appear in a valid sequence.
+//
+// The first byte gives the length of a sequence (UTF8_SIZE1 - UTF8_SIZE4).
+// Bytes in the middle of a sequence map to UTF_CONTINUE.  Bytes which should
+// not appear map to UTF_ILLEGAL.
+//
+#define UTF8_ILLEGAL   0
+#define UTF8_SIZE1     1
+#define UTF8_SIZE2     2
+#define UTF8_SIZE3     3
+#define UTF8_SIZE4     4
+#define UTF8_CONTINUE  5
+
+const unsigned char mux_utf8[256] =
+{
+//  0   1   2   3   4   5   6   7   8   9   A   B   C   D   E   F
+//
+    1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  // 0
+    1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  // 1
+    1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  // 2
+    1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  // 3
+    1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  // 4
+    1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  // 5
+    1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  // 6
+    1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  // 7
+
+    5,  5,  5,  5,  5,  5,  5,  5,  5,  5,  5,  5,  5,  5,  5,  5,  // 8
+    5,  5,  5,  5,  5,  5,  5,  5,  5,  5,  5,  5,  5,  5,  5,  5,  // A
+    5,  5,  5,  5,  5,  5,  5,  5,  5,  5,  5,  5,  5,  5,  5,  5,  // B
+    2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  // C
+    2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  // D
+    3,  3,  3,  3,  3,  3,  3,  3,  3,  3,  3,  3,  3,  3,  3,  3,  // E
+    4,  4,  4,  4,  4,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0   // F
+};
+
 // ANSI_lex - This function parses a string and returns two token types.
 // The type identifies the token type of length nLengthToken0. nLengthToken1
 // may also be present and is a token of the -other- type.
