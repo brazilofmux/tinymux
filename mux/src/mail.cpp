@@ -260,7 +260,7 @@ static void new_mail_message(char *message, int number)
     if (bTruncated)
     {
         STARTLOG(LOG_BUGS, "BUG", "MAIL");
-        log_text(tprintf("new_mail_message: Mail message %d truncated.", number));
+        log_printf("new_mail_message: Mail message %d truncated.", number);
         ENDLOG;
     }
 }
@@ -2294,7 +2294,7 @@ static void do_mail_nuke(dbref player)
         MailList ml(thing);
         ml.RemoveAll();
     }
-    log_text(tprintf("** MAIL PURGE ** done by %s(#%d)." ENDLINE, Moniker(player), player));
+    log_printf("** MAIL PURGE ** done by %s(#%d)." ENDLINE, Moniker(player), player);
     notify(player, "You annihilate the post office. All messages cleared.");
 }
 

@@ -531,7 +531,7 @@ void do_boot(dbref executor, dbref caller, dbref enactor, int eval, int key, cha
             return;
         }
         STARTLOG(LOG_WIZARD, "WIZ", "BOOT");
-        log_text(tprintf("Port %d", victim));
+        log_printf("Port %d", victim);
         log_text(" was @booted by ");
         log_name(executor);
         ENDLOG;

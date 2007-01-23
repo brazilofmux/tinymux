@@ -1562,7 +1562,7 @@ static void debug_examine(dbref player, dbref thing)
             }
             else
             {
-                safe_str(tprintf("%d ", ca), buf, &cp);
+                safe_tprintf_str(buf, &cp, "%d ", ca);
             }
         }
     }

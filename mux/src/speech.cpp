@@ -517,19 +517,16 @@ static bool page_check(dbref player, dbref target)
     }
     else if (!could_doit(target, player, A_LPAGE))
     {
-        char *p;
         if (Wizard(player))
         {
-            p = tprintf("Warning: %s can't return your page.",
-                Moniker(target));
-            notify(player, p);
+            notify(player, tprintf("Warning: %s can't return your page.",
+                Moniker(target)));
             return true;
         }
         else
         {
-            p = tprintf("Sorry, %s can't return your page.",
-                Moniker(target));
-            notify(player, p);
+            notify(player, tprintf("Sorry, %s can't return your page.",
+                Moniker(target)));
             return false;
         }
     }

@@ -999,8 +999,8 @@ static void announce_connect(dbref player, DESC *d)
 
         default:
 
-            log_text(tprintf("Invalid zone #%d for %s(#%d) has bad type %d",
-                zone, Name(player), player, Typeof(zone)));
+            log_printf("Invalid zone #%d for %s(#%d) has bad type %d",
+                zone, Name(player), player, Typeof(zone));
         }
     }
     free_lbuf(buf);
@@ -1166,8 +1166,8 @@ void announce_disconnect(dbref player, DESC *d, const char *reason)
                 break;
 
             default:
-                log_text(tprintf("Invalid zone #%d for %s(#%d) has bad type %d",
-                    zone, Name(player), player, Typeof(zone)));
+                log_printf("Invalid zone #%d for %s(#%d) has bad type %d",
+                    zone, Name(player), player, Typeof(zone));
             }
         }
         free_lbuf(buf);

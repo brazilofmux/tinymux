@@ -374,7 +374,7 @@ void pool_free(int poolnum, char *buf, const char *file, const int line)
     if (buf == NULL)
     {
         STARTLOG(LOG_PROBLEMS, "BUG", "ALLOC")
-        log_text(tprintf("Attempt to free null pointer in %s line %d.", file, line));
+        log_printf("Attempt to free null pointer in %s line %d.", file, line);
         ENDLOG
         return;
     }
@@ -450,7 +450,7 @@ void pool_free_lbuf(char *buf, const char *file, const int line)
     if (buf == NULL)
     {
         STARTLOG(LOG_PROBLEMS, "BUG", "ALLOC")
-        log_text(tprintf("Attempt to free_lbuf null pointer in %s line %d.", file, line));
+        log_printf("Attempt to free_lbuf null pointer in %s line %d.", file, line);
         ENDLOG
         return;
     }

@@ -1041,13 +1041,9 @@ void do_chown
             char *buff = alloc_lbuf("do_chown.notify");
             char *bp = buff;
 
-            char *p;
-            p = tprintf("Owner of %s(#%d) changed from ", Moniker(thing), thing);
-            safe_str(p, buff, &bp);
-            p = tprintf("%s(#%d) to ", Moniker(nOwnerOrig), nOwnerOrig);
-            safe_str(p, buff, &bp);
-            p = tprintf("%s(#%d).", Moniker(nOwnerNew), nOwnerNew);
-            safe_str(p, buff, &bp);
+            safe_tprintf_str(buff, &bp, "Owner of %s(#%d) changed from ", Moniker(thing), thing);
+            safe_tprintf_str(buff, &bp, "%s(#%d) to ", Moniker(nOwnerOrig), nOwnerOrig);
+            safe_tprintf_str(buff, &bp, "%s(#%d).", Moniker(nOwnerNew), nOwnerNew);
             *bp = '\0';
             notify_quiet(executor, buff);
             free_lbuf(buff);
