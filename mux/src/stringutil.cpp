@@ -500,7 +500,8 @@ const unsigned char mux_StripAccents[256] =
 // 11110xxx ==> 11110000-11110111 ==> F0-F7 4 byte sequence.
 //              11111000-11111111 illegal
 //
-// Also, 0xF5-0xFF do not appear in a valid sequence.
+// Also, RFC 3629 specifies that 0xC0, 0xC1, and 0xF5-0xFF never
+// appear in a valid sequence.
 //
 // The first byte gives the length of a sequence (UTF8_SIZE1 - UTF8_SIZE4).
 // Bytes in the middle of a sequence map to UTF_CONTINUE.  Bytes which should
@@ -530,7 +531,7 @@ const unsigned char mux_utf8[256] =
     5,  5,  5,  5,  5,  5,  5,  5,  5,  5,  5,  5,  5,  5,  5,  5,  // 9
     5,  5,  5,  5,  5,  5,  5,  5,  5,  5,  5,  5,  5,  5,  5,  5,  // A
     5,  5,  5,  5,  5,  5,  5,  5,  5,  5,  5,  5,  5,  5,  5,  5,  // B
-    2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  // C
+    0,  0,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  // C
     2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  // D
     3,  3,  3,  3,  3,  3,  3,  3,  3,  3,  3,  3,  3,  3,  3,  3,  // E
     4,  4,  4,  4,  4,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0   // F
