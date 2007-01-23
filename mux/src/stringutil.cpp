@@ -4449,11 +4449,19 @@ size_t mux_string::length(void)
 
 void mux_string::prepend(const char cChar)
 {
-    mux_string *sStore = new mux_string(*this);
+    size_t nMove = (m_n < LBUF_SIZE-1) ? m_n : LBUF_SIZE-2;
 
-    import(cChar);
-    append(*sStore);
-    delete sStore;
+    memmove(m_ach + 1, m_ach, nMove * sizeof(m_ach[0]));
+    memmove(m_acs + 1, m_acs, nMove * sizeof(m_acs[0]));
+
+    m_ach[0] = cChar;
+    m_acs[0] = acsRestingStates[ANSI_ENDGOAL_NORMAL];
+
+    if (m_n < LBUF_SIZE-1)
+    {
+        m_n++;
+    }
+    m_ach[m_n] = '\0';
 }
 
 void mux_string::prepend(dbref num)

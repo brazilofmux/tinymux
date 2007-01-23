@@ -65,6 +65,8 @@ Performance Enhancements:
     repeated linear searching (Issue 247).  Thanks Alierak and Ian.
  -- VMAG(), VUNIT, and SHUFFLE() only need LBUF_SIZE/2 elements instead
     of LBUF_SIZE elements.
+ -- Prepending a single char to a mux_string no longer copies the
+    string twice (Issue 281).
 
 
 Cosmetic Changes:
