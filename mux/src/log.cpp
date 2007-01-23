@@ -172,7 +172,7 @@ void log_name(dbref target)
 {
     if (mudstate.bStandAlone)
     {
-        Log.tinyprintf("%s(#%d)", Name(target), target);
+        Log.tinyprintf("%s(#%d)", PureName(target), target);
     }
     else
     {
@@ -246,16 +246,7 @@ static const char *OBJTYP(dbref thing)
 
 void log_type_and_name(dbref thing)
 {
-    char nbuf[I32BUF_SIZE+3];
-
-    log_text(OBJTYP(thing));
-    mux_sprintf(nbuf, sizeof(nbuf), " #%d(", thing);
-    log_text(nbuf);
-    if (Good_obj(thing))
-    {
-        log_text(Name(thing));
-    }
-    log_text(")");
+    Log.tinyprintf("%s #%d(%s)", OBJTYP(thing), thing, Good_obj(thing) ? PureName(thing) : "");
     return;
 }
 

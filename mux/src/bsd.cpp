@@ -2014,7 +2014,7 @@ void shutdownsock(DESC *d, int reason)
         buff2 = decode_flags(GOD, &(db[d->player].fs));
         dbref locPlayer = Location(d->player);
         int penPlayer = Pennies(d->player);
-        const char *PlayerName = Name(d->player);
+        const char *PlayerName = PureName(d->player);
         mux_sprintf(buff, LBUF_SIZE, "%d %s %d %d %d %d [%s] <%s> %s", d->player, buff2, d->command_count,
                 Seconds, locPlayer, penPlayer, d->addr, disc_reasons[reason],
                 PlayerName);
