@@ -2294,7 +2294,7 @@ static void do_mail_nuke(dbref player)
         MailList ml(thing);
         ml.RemoveAll();
     }
-    log_printf("** MAIL PURGE ** done by %s(#%d)." ENDLINE, Moniker(player), player);
+    log_printf("** MAIL PURGE ** done by %s(#%d)." ENDLINE, PureName(player), player);
     notify(player, "You annihilate the post office. All messages cleared.");
 }
 
