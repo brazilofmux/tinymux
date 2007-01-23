@@ -1703,7 +1703,7 @@ char *process_command
     static char LowerCaseCommand[LBUF_SIZE];
     char *pCommand;
     char *p, *q, *arg, *pSlash, *cmdsave, *bp, *str, check2[2];
-    int aflags, i;
+    int aflags;
     dbref exit, aowner;
     CMDENT *cmdp;
 
@@ -1719,12 +1719,8 @@ char *process_command
 
     if (!Good_obj(executor))
     {
-        // We are using SpaceCompressCommand temporarily.
-        //
         STARTLOG(LOG_BUGS, "CMD", "PLYR");
-        mux_sprintf(SpaceCompressCommand, sizeof(SpaceCompressCommand),
-            "Bad player in process_command: %d", executor);
-        log_text(SpaceCompressCommand);
+        log_printf("Bad player in process_command: %d", executor);
         ENDLOG;
         mudstate.debug_cmd = cmdsave;
         return pOriginalCommand;
@@ -1826,10 +1822,11 @@ char *process_command
     // most frequently executed commands, and they can never be the
     // HOME command.
     //
-    i = pCommand[0] & 0xff;
+    unsigned char i = (unsigned char)pCommand[0];
     int cval = 0;
     int hval = 0;
-    if (i && (prefix_cmds[i] != NULL))
+    if (  '\0' != i 
+       && NULL != prefix_cmds[i])
     {
         // CmdCheck tests for @icmd. higcheck tests for i/p hooks.
         // Both from RhostMUSH.
@@ -2047,26 +2044,27 @@ char *process_command
 
     // Make lowercase command
     //
-    char *LowerCaseCommandEnd = LowerCaseCommand + (LBUF_SIZE - 1);
-    for (p = pCommand, q = LowerCaseCommand;
-         *p && !mux_isspace(*p) && q < LowerCaseCommandEnd;
-         p++, q++)
+    size_t nLowerCaseCommand = 0, iPos = 0;
+    while (  pCommand[iPos]
+          && !mux_isspace(pCommand[iPos])
+          && nLowerCaseCommand < LBUF_SIZE - 1)
     {
-        *q = mux_tolower(*p);
+        LowerCaseCommand[nLowerCaseCommand] = mux_tolower(pCommand[iPos]);
+        iPos++;
+        nLowerCaseCommand++;
     }
-    *q = '\0';
-    size_t nLowerCaseCommand = q - LowerCaseCommand;
+    LowerCaseCommand[nLowerCaseCommand] = '\0';
 
     // Skip spaces before arg
     //
-    while (mux_isspace(*p))
+    while (mux_isspace(pCommand[iPos]))
     {
-        p++;
+        iPos++;
     }
 
     // Remember where arg starts
     //
-    arg = p;
+    arg = pCommand + iPos;
 
     // Strip off any command switches and save them.
     //
@@ -2262,7 +2260,7 @@ char *process_command
                     cval = zonecmdtest(executor, "leave");
                 }
 
-                cmdp = (CMDENT *)hashfindLEN((char *)"leave", strlen("leave"), &mudstate.command_htab);
+                cmdp = (CMDENT *)hashfindLEN("leave", strlen("leave"), &mudstate.command_htab);
 
                 if (cmdp->hookmask & (HOOK_IGNORE|HOOK_PERMIT))
                 {
@@ -2331,7 +2329,7 @@ char *process_command
                         cval = zonecmdtest(executor, "enter");
                     }
 
-                    cmdp = (CMDENT *)hashfindLEN((char *)"enter", strlen("enter"), &mudstate.command_htab);
+                    cmdp = (CMDENT *)hashfindLEN("enter", strlen("enter"), &mudstate.command_htab);
 
                     if (cmdp->hookmask & (HOOK_IGNORE|HOOK_PERMIT))
                     {
