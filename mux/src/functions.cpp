@@ -3006,18 +3006,9 @@ static FUNCTION(fun_extract)
     mux_words *words = new mux_words;
     words->m_s = sStr;
 
-    LBUF_OFFSET nWords;
-    if (1 == sep.n)
-    {
-        words->set_Control(sep.str);
-        nWords = words->find_Words();
-    }
-    else
-    {
-        size_t nDelim = 0;
-        char *pDelim = strip_ansi(sep.str, &nDelim);
-        nWords = words->find_Words(pDelim, nDelim);
-    }
+    size_t nDelim = 0;
+    char *pDelim = strip_ansi(sep.str, &nDelim);
+    LBUF_OFFSET nWords = words->find_Words(pDelim, nDelim);
 
     iFirstWord--;
     if (iFirstWord < nWords)
