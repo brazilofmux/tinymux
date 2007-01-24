@@ -4944,7 +4944,6 @@ mux_words::mux_words(void)
     m_aControl[(unsigned char)' '] = true;
     m_aiWords[0] = 0;
     m_nWords = 0;
-    m_iWord = 0;
     m_s = NULL;
 }
 
@@ -4976,6 +4975,28 @@ LBUF_OFFSET mux_words::find_Words(void)
     }
     m_nWords = nWords;
     return m_nWords;
+}
+
+LBUF_OFFSET mux_words::find_Words(const char *pDelim, size_t nDelim)
+{
+    size_t iPos = 0;
+    LBUF_OFFSET iStart = 0;
+    LBUF_OFFSET nWords = 0;
+    bool bSucceeded = m_s->search(pDelim, &iPos, iStart);
+
+    while (bSucceeded)
+    {
+        m_aiWords[nWords*2] = iStart;
+        m_aiWords[nWords*2+1] = static_cast<LBUF_OFFSET>(iStart + iPos);
+        nWords++;
+        iStart = static_cast<LBUF_OFFSET>(iStart + iPos + nDelim);
+        bSucceeded = m_s->search(pDelim, &iPos, iStart);
+    }
+    m_aiWords[nWords*2] = iStart;
+    m_aiWords[nWords*2+1] = static_cast<LBUF_OFFSET>(m_s->m_n);
+    nWords++;
+    m_nWords = nWords;
+    return nWords;
 }
 
 void mux_words::set_Control(const char *pControlSet)

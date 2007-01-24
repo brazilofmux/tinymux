@@ -2487,13 +2487,20 @@ FUNCTION(fun_elements)
     mux_string *sStr = new mux_string(fargs[0]);
     mux_words *words = new mux_words;
     words->m_s = sStr;
-    if (!( 1 == sep.n
-        && ' ' == sep.str[0]))
+
+    LBUF_OFFSET nWords;
+    if (1 == sep.n)
     {
         words->set_Control(sep.str);
+        nWords = words->find_Words();
+    }
+    else
+    {
+        size_t nDelim = 0;
+        char *pDelim = strip_ansi(sep.str, &nDelim);
+        nWords = words->find_Words(pDelim, nDelim);
     }
 
-    LBUF_OFFSET nWords = words->find_Words();
     bool bFirst = true;
     char *s = trim_space_sep(fargs[1], &sepSpace);
     LBUF_OFFSET iStart, nLen;
@@ -2505,7 +2512,7 @@ FUNCTION(fun_elements)
         char *r = split_token(&s, &sepSpace);
         int cur = mux_atol(r) - 1;
         if (  0 <= cur
-           && cur < nWords)
+           && cur < static_cast<int>(nWords))
         {
             if (!bFirst)
             {
