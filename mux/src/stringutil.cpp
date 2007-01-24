@@ -4986,9 +4986,8 @@ void mux_string::truncate(size_t nLen)
 
 mux_words::mux_words(void)
 {
-    memset(m_aControl, false, sizeof(m_aControl));
-    m_aControl[(unsigned char)' '] = true;
     m_aiWords[0] = 0;
+    m_aiWords[1] = 0;
     m_nWords = 0;
     m_s = NULL;
 }
