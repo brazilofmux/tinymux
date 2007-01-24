@@ -27,6 +27,8 @@ Feature Additions:
     at the corresponding event (Issue 9).
  -- Added TR() function to allow transforming strings according to a
     specified pattern (Issue 262). Thanks Jake.
+ -- REVWORDS() now accepts multi-character input and output delimiters
+    (Issue 21). Thanks Jake.
 
 
 Bug Fixes:

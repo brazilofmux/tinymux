@@ -5427,7 +5427,7 @@ static FUNCTION(fun_attrcnt)
  * ---------------------------------------------------------------------------
  * * fun_reverse, fun_revwords: Reverse things.
  */
-
+#if 0
 typedef void MEMXFORM(char *dest, char *src, size_t n);
 static void ANSI_TransformTextReverseWithFunction
 (
@@ -5503,24 +5503,6 @@ static void ANSI_TransformTextReverseWithFunction
     memcpy(pBuffer, pANSI, nANSI);
 }
 
-static FUNCTION(fun_reverse)
-{
-    UNUSED_PARAMETER(executor);
-    UNUSED_PARAMETER(caller);
-    UNUSED_PARAMETER(enactor);
-    UNUSED_PARAMETER(eval);
-    UNUSED_PARAMETER(nfargs);
-    UNUSED_PARAMETER(cargs);
-    UNUSED_PARAMETER(ncargs);
-
-    mux_string *sStr = new mux_string(fargs[0]);
-
-    sStr->reverse();
-    sStr->export_TextAnsi(buff, bufc);
-
-    delete sStr;
-}
-
 static char ReverseWordsInText_Seperator;
 
 static void ReverseWordsInText(char *dest, char *src, size_t n)
@@ -5554,6 +5536,25 @@ static void ReverseWordsInText(char *dest, char *src, size_t n)
     }
     src[n] = chSave;
 }
+#endif
+
+static FUNCTION(fun_reverse)
+{
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
+    mux_string *sStr = new mux_string(fargs[0]);
+
+    sStr->reverse();
+    sStr->export_TextAnsi(buff, bufc);
+
+    delete sStr;
+}
 
 static FUNCTION(fun_revwords)
 {
@@ -5563,13 +5564,43 @@ static FUNCTION(fun_revwords)
     {
         return;
     }
+
     SEP sep;
-    if (!OPTIONAL_DELIM(2, sep, DELIM_DFLT))
+    if (!OPTIONAL_DELIM(2, sep, DELIM_DFLT|DELIM_STRING))
     {
         return;
     }
-    ReverseWordsInText_Seperator = sep.str[0];
-    ANSI_TransformTextReverseWithFunction(buff, bufc, fargs[0], ReverseWordsInText);
+
+    SEP osep = sep;
+    if (!OPTIONAL_DELIM(3, osep, DELIM_NULL|DELIM_CRLF|DELIM_STRING|DELIM_INIT))
+    {
+        return;
+    }
+
+    mux_string *sStr = new mux_string(fargs[0]);
+    mux_words *words = new mux_words;
+    words->m_s = sStr;
+
+    size_t nDelim = 0;
+    char *pDelim = strip_ansi(sep.str, &nDelim);
+    LBUF_OFFSET nWords = words->find_Words(pDelim, nDelim);
+
+    bool bFirst = true;
+    for (LBUF_OFFSET i = 0; i < nWords; i++)
+    {
+        if (!bFirst)
+        {
+            print_sep(&osep, buff, bufc);
+        }
+        else
+        {
+            bFirst = false;
+        }
+        words->export_WordAnsi(nWords-i-1, buff, bufc);
+    }
+
+    delete sStr;
+    delete words;
 }
 
 /*
@@ -10117,7 +10148,7 @@ static FUN builtin_function_list[] =
     {"REPLACE",     fun_replace,    MAX_ARG, 3,       4,         0, CA_PUBLIC},
     {"REST",        fun_rest,       MAX_ARG, 0,       2,         0, CA_PUBLIC},
     {"REVERSE",     fun_reverse,          1, 1,       1,         0, CA_PUBLIC},
-    {"REVWORDS",    fun_revwords,   MAX_ARG, 0, MAX_ARG,         0, CA_PUBLIC},
+    {"REVWORDS",    fun_revwords,   MAX_ARG, 0,       3,         0, CA_PUBLIC},
     {"RIGHT",       fun_right,      MAX_ARG, 2,       2,         0, CA_PUBLIC},
     {"RJUST",       fun_rjust,      MAX_ARG, 2,       3,         0, CA_PUBLIC},
     {"RLOC",        fun_rloc,       MAX_ARG, 2,       2,         0, CA_PUBLIC},

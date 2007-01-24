@@ -11305,13 +11305,14 @@ REVERSE()
 & REVWORDS()
 REVWORDS()
 
-  FUNCTION: revwords(<string>[, <delim>])
+  FUNCTION: revwords(<string>[, <idelim>[, <odelim>]])
 
   Reverses the order of the words of <string>.  A word is considered to be
   any sequence of nonblank characters, separated by blanks, so punctuation
   characters that follow a word are considered part of the word.
 
-  <delim> may be used to specify a delimiter other than a space.
+  <idelim> may be used to specify an input delimiter other than a space.
+  <odelim> is the output delimiter.
 
   Examples:
     > say revwords(This is a test. Really...)
