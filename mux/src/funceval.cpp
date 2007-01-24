@@ -2482,16 +2482,21 @@ FUNCTION(fun_elements)
         return;
     }
 
-    char *ptrs[LBUF_SIZE / 2];
-    bool bFirst = true;
-
     // Turn the first list into an array.
     //
-    char *wordlist = alloc_lbuf("fun_elements.wordlist");
-    mux_strncpy(wordlist, fargs[0], LBUF_SIZE-1);
-    int nwords = list2arr(ptrs, LBUF_SIZE / 2, wordlist, &sep);
+    mux_string *sStr = new mux_string(fargs[0]);
+    mux_words *words = new mux_words;
+    words->m_s = sStr;
+    if (!( 1 == sep.n
+        && ' ' == sep.str[0]))
+    {
+        words->set_Control(sep.str);
+    }
 
+    LBUF_OFFSET nWords = words->find_Words();
+    bool bFirst = true;
     char *s = trim_space_sep(fargs[1], &sepSpace);
+    LBUF_OFFSET iStart, nLen;
 
     // Go through the second list, grabbing the numbers and finding the
     // corresponding elements.
@@ -2500,8 +2505,7 @@ FUNCTION(fun_elements)
         char *r = split_token(&s, &sepSpace);
         int cur = mux_atol(r) - 1;
         if (  0 <= cur
-           && cur < nwords
-           && ptrs[cur])
+           && cur < nWords)
         {
             if (!bFirst)
             {
@@ -2511,10 +2515,14 @@ FUNCTION(fun_elements)
             {
                 bFirst = false;
             }
-            safe_str(ptrs[cur], buff, bufc);
+            iStart = words->m_aiWords[cur*2];
+            nLen = words->m_aiWords[cur*2+1] - iStart;
+            sStr->export_TextAnsi(buff, bufc, iStart, nLen);
         }
     } while (s);
-    free_lbuf(wordlist);
+
+    delete sStr;
+    delete words;
 }
 
 /* ---------------------------------------------------------------------------

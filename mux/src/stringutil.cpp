@@ -4937,3 +4937,68 @@ void mux_string::truncate(size_t nLen)
     m_n = nLen;
     m_ach[m_n] = '\0';
 }
+
+mux_words::mux_words(void)
+{
+    memset(m_aControl, false, sizeof(m_aControl));
+    m_aControl[(unsigned char)' '] = true;
+    m_aiWords[0] = 0;
+    m_nWords = 0;
+    m_iWord = 0;
+    m_s = NULL;
+}
+
+LBUF_OFFSET mux_words::find_Words(void)
+{
+    LBUF_OFFSET n = static_cast<LBUF_OFFSET>(m_s->m_n);
+    LBUF_OFFSET nWords = 0;
+    bool bPrev = true;
+
+    for (LBUF_OFFSET i = 0; i < n; i++)
+    {
+        if (  !bPrev
+           && m_aControl[(unsigned char)(m_s->m_ach[i])])
+        {
+            bPrev = true;
+            m_aiWords[nWords*2+1] = i;
+            nWords++;
+        }
+        else if (bPrev)
+        {
+            bPrev = false;
+            m_aiWords[nWords*2] = i;
+        }
+    }
+    if (!bPrev)
+    {
+        m_aiWords[nWords*2+1] = n;
+        nWords++;
+    }
+    m_nWords = nWords;
+    return m_nWords;
+}
+
+void mux_words::set_Control(const char *pControlSet)
+{
+    if (  NULL == pControlSet
+       || '\0' == pControlSet[0])
+    {
+        // Nothing to do.
+        //
+        return;
+    }
+
+    // Load set of characters.
+    //
+    memset(m_aControl, false, sizeof(m_aControl));
+    while (*pControlSet)
+    {
+        m_aControl[(unsigned char)*pControlSet] = true;
+        pControlSet++;
+    }
+}
+
+void mux_words::set_Control(const bool table[UCHAR_MAX+1])
+{
+    memcpy(m_aControl, table, sizeof(table));
+}

@@ -304,6 +304,25 @@ public:
             free_string(p);
         }
     }
+
+    friend class mux_words;
+};
+
+class mux_words
+{
+private:
+    bool        m_aControl[UCHAR_MAX+1];
+    LBUF_OFFSET m_nWords;
+    LBUF_OFFSET m_iWord;
+
+public:
+    LBUF_OFFSET m_aiWords[LBUF_SIZE];
+    mux_string *m_s;
+
+    mux_words(void);
+    LBUF_OFFSET find_Words(void);
+    void set_Control(const char *pControlSet);
+    void set_Control(const bool table[UCHAR_MAX+1]);
 };
 
 #endif // STRINGUTIL_H
