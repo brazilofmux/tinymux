@@ -4996,7 +4996,8 @@ LBUF_OFFSET mux_words::find_Words(const char *pDelim, size_t nDelim)
     LBUF_OFFSET nWords = 0;
     bool bSucceeded = m_s->search(pDelim, &iPos, iStart);
 
-    while (bSucceeded)
+    while (  bSucceeded
+          && nWords + 1 < LBUF_SIZE / 2)
     {
         m_aiWords[nWords*2] = iStart;
         m_aiWords[nWords*2+1] = static_cast<LBUF_OFFSET>(iStart + iPos);
