@@ -4947,6 +4947,18 @@ mux_words::mux_words(void)
     m_s = NULL;
 }
 
+void mux_words::export_WordAnsi(LBUF_OFFSET n, char *buff, char **bufc)
+{
+    if (m_nWords < n)
+    {
+        return;
+    }
+
+    size_t iStart = m_aiWords[n*2];
+    size_t nLen = m_aiWords[n*2+1] - iStart;
+    m_s->export_TextAnsi(buff, bufc, iStart, nLen);
+}
+
 LBUF_OFFSET mux_words::find_Words(void)
 {
     LBUF_OFFSET n = static_cast<LBUF_OFFSET>(m_s->m_n);

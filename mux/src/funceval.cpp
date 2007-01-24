@@ -2503,7 +2503,6 @@ FUNCTION(fun_elements)
 
     bool bFirst = true;
     char *s = trim_space_sep(fargs[1], &sepSpace);
-    LBUF_OFFSET iStart, nLen;
 
     // Go through the second list, grabbing the numbers and finding the
     // corresponding elements.
@@ -2522,9 +2521,7 @@ FUNCTION(fun_elements)
             {
                 bFirst = false;
             }
-            iStart = words->m_aiWords[cur*2];
-            nLen = words->m_aiWords[cur*2+1] - iStart;
-            sStr->export_TextAnsi(buff, bufc, iStart, nLen);
+            words->export_WordAnsi(static_cast<LBUF_OFFSET>(cur), buff, bufc);
         }
     } while (s);
 

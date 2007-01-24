@@ -319,6 +319,7 @@ public:
     mux_string *m_s;
 
     mux_words(void);
+    void export_WordAnsi(LBUF_OFFSET n, char *buff, char **bufc = NULL);
     LBUF_OFFSET find_Words(void);
     LBUF_OFFSET find_Words(const char *pDelim, size_t nDelim);
     void set_Control(const char *pControlSet);
