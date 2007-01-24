@@ -4,7 +4,7 @@ Last Update:  January 2007
 Major changes that may affect performance and require softcode tweaks:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
  -- Added mux_string and fixed many functions including EDIT(),
-    REVERSE(), and DELETE() (Issues 14, 52, 100, and 232).
+    EXTRACT(), REVERSE(), and DELETE() (Issues 14, 25, 52, 100, and 232).
     Thanks Jake and Alierak.
 
 

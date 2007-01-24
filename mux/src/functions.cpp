@@ -2993,51 +2993,60 @@ static FUNCTION(fun_extract)
         return;
     }
 
-    int start = mux_atol(fargs[1]);
-    int len = mux_atol(fargs[2]);
+    int iFirstWord = mux_atol(fargs[1]);
+    int nWordsToCopy = mux_atol(fargs[2]);
 
-    if (  start < 1
-       || len < 1)
+    if (  iFirstWord < 1
+       || nWordsToCopy < 1)
     {
         return;
     }
 
-    // Skip to the start of the string to save.
-    //
-    start--;
-    char *s = trim_space_sep(fargs[0], &sep);
-    while (  start
-          && s)
+    mux_string *sStr = new mux_string(fargs[0]);
+    mux_words *words = new mux_words;
+    words->m_s = sStr;
+
+    LBUF_OFFSET nWords;
+    if (1 == sep.n)
     {
-        s = next_token(s, &sep);
-        start--;
+        words->set_Control(sep.str);
+        nWords = words->find_Words();
+    }
+    else
+    {
+        size_t nDelim = 0;
+        char *pDelim = strip_ansi(sep.str, &nDelim);
+        nWords = words->find_Words(pDelim, nDelim);
     }
 
-    // If we ran of the end of the string, return nothing.
-    //
-    if (!s || !*s)
+    iFirstWord--;
+    if (iFirstWord < nWords)
     {
-        return;
+        if (nWords < iFirstWord + nWordsToCopy)
+        {
+            nWordsToCopy = nWords - iFirstWord;
+        }
+
+        bool bFirst = true;
+
+        for (LBUF_OFFSET i = static_cast<LBUF_OFFSET>(iFirstWord);
+             i < iFirstWord + nWordsToCopy;
+             i++)
+        {
+            if (!bFirst)
+            {
+                print_sep(&osep, buff, bufc);
+            }
+            else
+            {
+                bFirst = false;
+            }
+            words->export_WordAnsi(i, buff, bufc);
+        }
     }
 
-    // Count off the words in the string to save.
-    //
-    bool bFirst = true;
-    while (  len
-          && s)
-    {
-        char *t = split_token(&s, &sep);
-        if (!bFirst)
-        {
-            print_sep(&osep, buff, bufc);
-        }
-        else
-        {
-            bFirst = false;
-        }
-        safe_str(t, buff, bufc);
-        len--;
-    }
+    delete sStr;
+    delete words;
 }
 
 // xlate() controls the subtle definition of a softcode boolean.
