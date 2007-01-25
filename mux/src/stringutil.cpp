@@ -2505,7 +2505,7 @@ static const double powerstab[10] =
    1000000000.0
 };
 
-double mux_atof(char *szString, bool bStrict)
+double mux_atof(const char *szString, bool bStrict)
 {
     PARSE_FLOAT_RESULT pfr;
     if (!ParseFloat(&pfr, szString, bStrict))
@@ -4113,6 +4113,21 @@ ANSI_ColorState mux_string::export_Color(size_t n) const
         return acsRestingStates[ANSI_ENDGOAL_NORMAL];
     }
     return m_acs[n];
+}
+
+double mux_string::export_Float(bool bStrict) const
+{
+    return mux_atof(m_ach, bStrict);
+}
+
+INT64 mux_string::export_I64(void) const
+{
+    return mux_atoi64(m_ach);
+}
+
+long mux_string::export_Long(void) const
+{
+    return mux_atol(m_ach);
 }
 
 /*! \brief Generates ANSI string from internal form.
