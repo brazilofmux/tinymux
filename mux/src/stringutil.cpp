@@ -2739,8 +2739,9 @@ char *mux_ftoa(double r, bool bRounded, int frac)
     return buffer;
 }
 
-bool is_integer(char *str, int *pDigits)
+bool is_integer(const char *str, int *pDigits)
 {
+    LBUF_OFFSET i = 0;
     int nDigits = 0;
     if (pDigits)
     {
@@ -2749,20 +2750,20 @@ bool is_integer(char *str, int *pDigits)
 
     // Leading spaces.
     //
-    while (mux_isspace(*str))
+    while (mux_isspace(str[i]))
     {
-        str++;
+        i++;
     }
 
     // Leading minus or plus
     //
-    if (*str == '-' || *str == '+')
+    if (str[i] == '-' || str[i] == '+')
     {
-        str++;
+        i++;
 
         // Just a sign by itself isn't an integer.
         //
-        if (!*str)
+        if (!str[i])
         {
             return false;
         }
@@ -2770,7 +2771,7 @@ bool is_integer(char *str, int *pDigits)
 
     // Need at least 1 integer
     //
-    if (!mux_isdigit(*str))
+    if (!mux_isdigit(str[i]))
     {
         return false;
     }
@@ -2779,9 +2780,9 @@ bool is_integer(char *str, int *pDigits)
     //
     do
     {
-        str++;
+        i++;
         nDigits++;
-    } while (mux_isdigit(*str));
+    } while (mux_isdigit(str[i]));
 
     if (pDigits)
     {
@@ -2790,32 +2791,34 @@ bool is_integer(char *str, int *pDigits)
 
     // Trailing Spaces.
     //
-    while (mux_isspace(*str))
+    while (mux_isspace(str[i]))
     {
-        str++;
+        i++;
     }
 
-    return (!*str);
+    return (!str[i]);
 }
 
-bool is_rational(char *str)
+bool is_rational(const char *str)
 {
+    LBUF_OFFSET i = 0;
+
     // Leading spaces.
     //
-    while (mux_isspace(*str))
+    while (mux_isspace(str[i]))
     {
-        str++;
+        i++;
     }
 
     // Leading minus or plus sign.
     //
-    if (*str == '-' || *str == '+')
+    if (str[i] == '-' || str[i] == '+')
     {
-        str++;
+        i++;
 
         // But not if just a sign.
         //
-        if (!*str)
+        if (!str[i])
         {
             return false;
         }
@@ -2824,28 +2827,28 @@ bool is_rational(char *str)
     // Need at least one digit.
     //
     bool got_one = false;
-    if (mux_isdigit(*str))
+    if (mux_isdigit(str[i]))
     {
         got_one = true;
     }
 
     // The number (int)
     //
-    while (mux_isdigit(*str))
+    while (mux_isdigit(str[i]))
     {
-        str++;
+        i++;
     }
 
     // Decimal point.
     //
-    if (*str == '.')
+    if (str[i] == '.')
     {
-        str++;
+        i++;
     }
 
     // Need at least one digit
     //
-    if (mux_isdigit(*str))
+    if (mux_isdigit(str[i]))
     {
         got_one = true;
     }
@@ -2857,24 +2860,24 @@ bool is_rational(char *str)
 
     // The number (fract)
     //
-    while (mux_isdigit(*str))
+    while (mux_isdigit(str[i]))
     {
-        str++;
+        i++;
     }
 
     // Trailing spaces.
     //
-    while (mux_isspace(*str))
+    while (mux_isspace(str[i]))
     {
-        str++;
+        i++;
     }
 
     // There must be nothing else after the trailing spaces.
     //
-    return (!*str);
+    return (!str[i]);
 }
 
-bool is_real(char *str)
+bool is_real(const char *str)
 {
     PARSE_FLOAT_RESULT pfr;
     return ParseFloat(&pfr, str);

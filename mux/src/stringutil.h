@@ -76,9 +76,9 @@ INT64 mux_atoi64(const char *pString);
 double mux_atof(const char *szString, bool bStrict = true);
 char *mux_ftoa(double r, bool bRounded, int frac);
 
-bool is_integer(char *, int *);
-bool is_rational(char *);
-bool is_real(char *);
+bool is_integer(const char *str, int *pDigits = NULL);
+bool is_rational(const char *str);
+bool is_real(const char *str);
 
 #pragma pack(1)
 typedef struct
