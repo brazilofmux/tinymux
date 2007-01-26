@@ -1111,20 +1111,12 @@ FUNCTION(fun_squish)
         return;
     }
 
-    char *p;
-    char *q = fargs[0];
-    while ((p = strchr(q, sep.str[0])) != NULL)
-    {
-        p = p + 1;
-        size_t nLen = p - q;
-        safe_copy_buf(q, nLen, buff, bufc);
-        q = p;
-        while (*q == sep.str[0])
-        {
-            q++;
-        }
-    }
-    safe_str(q, buff, bufc);
+    mux_string *sStr = new mux_string(fargs[0]);
+
+    sStr->compress(sep.str[0]);
+    sStr->export_TextAnsi(buff, bufc);
+
+    delete sStr;
 }
 
 FUNCTION(fun_stripansi)

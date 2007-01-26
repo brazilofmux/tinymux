@@ -4008,6 +4008,42 @@ void mux_string::append_TextPlain(const char *pStr, size_t nLen)
     m_ach[m_n] = '\0';
 }
 
+void mux_string::compress(const char ch)
+{
+    for (size_t i = 0, nTarget = 0; i < m_n; i++)
+    {
+        if (m_ach[i] == ch)
+        {
+            for (nTarget = 1; i + nTarget < m_n && m_ach[i + nTarget] == ch; nTarget++)
+            {
+                ; // Nothing.
+            }
+            if (1 < nTarget)
+            {
+                delete_Chars(i, nTarget-1);
+            }
+        }
+    }
+}
+
+void mux_string::compress_Spaces(void)
+{
+    for (size_t i = 0, nSpaces = 0; i < m_n; i++)
+    {
+        if (mux_isspace(m_ach[i]))
+        {
+            for (nSpaces = 1; i + nSpaces < m_n && mux_isspace(m_ach[i + nSpaces]); nSpaces++)
+            {
+                ; // Nothing.
+            }
+            if (1 < nSpaces)
+            {
+                delete_Chars(i, nSpaces-1);
+            }
+        }
+    }
+}
+
 /*! \brief Delete a range of characters.
  *
  * \param nStart   Beginning of range to delete.

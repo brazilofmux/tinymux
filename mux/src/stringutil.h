@@ -253,6 +253,8 @@ public:
     void append(const char *pStr, size_t nLen);
     void append_TextPlain(const char *pStr);
     void append_TextPlain(const char *pStr, size_t nLen);
+    void compress(const char ch);
+    void compress_Spaces(void);
     void delete_Chars(size_t nStart, size_t nLen);
     void edit(mux_string &sFrom, const mux_string &sTo);
     char export_Char(size_t n) const;
