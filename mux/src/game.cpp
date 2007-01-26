@@ -427,7 +427,7 @@ bool atr_match
  * optionally notify the contents, neighbors, and location also.
  */
 
-static bool check_filter(dbref object, dbref player, int filter, const char *msg_arg)
+static bool check_filter(dbref object, dbref player, int filter, const char *msg)
 {
     int aflags;
     dbref aowner;
@@ -437,15 +437,6 @@ static bool check_filter(dbref object, dbref player, int filter, const char *msg
         free_lbuf(buf);
         return true;
     }
-
-    // Strip ANSI from msg.
-    //
-    char *msg = alloc_lbuf("check_filter.msg");
-    char *mp = msg;
-    size_t nmsg;
-    char *msg_stripped = strip_ansi(msg_arg, &nmsg);
-    safe_copy_buf(msg_stripped, nmsg, msg, &mp);
-    *mp = '\0';
 
     reg_ref **preserve = NULL;
     preserve = PushRegisters(MAX_GLOBAL_REGS);
@@ -475,7 +466,6 @@ static bool check_filter(dbref object, dbref player, int filter, const char *msg
                || quick_wild(cp, msg))
             {
                 free_lbuf(nbuf);
-                free_lbuf(msg);
                 return false;
             }
         } while (dp != NULL);
@@ -500,7 +490,6 @@ static bool check_filter(dbref object, dbref player, int filter, const char *msg
                 {
                     MEMFREE(re);
                     free_lbuf(nbuf);
-                    free_lbuf(msg);
                     return false;
                 }
                 MEMFREE(re);
@@ -508,7 +497,6 @@ static bool check_filter(dbref object, dbref player, int filter, const char *msg
         } while (dp != NULL);
     }
     free_lbuf(nbuf);
-    free_lbuf(msg);
     return true;
 }
 
