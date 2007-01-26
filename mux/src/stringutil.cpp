@@ -5088,8 +5088,11 @@ LBUF_OFFSET mux_words::find_Words(void)
     return m_nWords;
 }
 
-LBUF_OFFSET mux_words::find_Words(const char *pDelim, size_t nDelim)
+LBUF_OFFSET mux_words::find_Words(const char *pDelim)
 {
+    size_t nDelim = 0;
+    pDelim = strip_ansi(pDelim, &nDelim);
+
     size_t iPos = 0;
     LBUF_OFFSET iStart = 0;
     LBUF_OFFSET nWords = 0;

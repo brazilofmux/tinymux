@@ -2494,10 +2494,7 @@ FUNCTION(fun_elements)
     }
 
     words->m_s = sStr;
-
-    size_t nDelim = 0;
-    char *pDelim = strip_ansi(sep.str, &nDelim);
-    LBUF_OFFSET nWords = words->find_Words(pDelim, nDelim);
+    LBUF_OFFSET nWords = words->find_Words(sep.str);
 
     bool bFirst = true;
     char *s = trim_space_sep(fargs[1], &sepSpace);
@@ -2706,9 +2703,7 @@ FUNCTION(fun_pickrand)
 
     mux_words *wordlist = new mux_words;
     wordlist->m_s = new mux_string(s);
-    size_t nSep = 0;
-    char *pSep = strip_ansi(sep.str, &nSep);
-    INT32 n = static_cast<INT32>(wordlist->find_Words(pSep, nSep));
+    INT32 n = static_cast<INT32>(wordlist->find_Words(sep.str));
 
     if (0 < n)
     {
@@ -2891,9 +2886,7 @@ FUNCTION(fun_last)
     mux_words *words = new mux_words;
     words->m_s = new mux_string(fargs[0]);
 
-    size_t nSep = 0;
-    char *pSepStrip = strip_ansi(sep.str, &nSep);
-    LBUF_OFFSET nWords = words->find_Words(pSepStrip, nSep);
+    LBUF_OFFSET nWords = words->find_Words(sep.str);
     words->export_WordAnsi(nWords-1, buff, bufc);
 
     delete words->m_s;

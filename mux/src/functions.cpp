@@ -3020,10 +3020,7 @@ static FUNCTION(fun_extract)
     }
 
     words->m_s = sStr;
-
-    size_t nDelim = 0;
-    char *pDelim = strip_ansi(sep.str, &nDelim);
-    LBUF_OFFSET nWords = words->find_Words(pDelim, nDelim);
+    LBUF_OFFSET nWords = words->find_Words(sep.str);
 
     iFirstWord--;
     if (iFirstWord < nWords)
@@ -4007,9 +4004,7 @@ static void do_itemfuns(char *buff, char **bufc, mux_string *sList, int iWord,
 
     mux_words *wordlist = new mux_words;
     wordlist->m_s = sList;
-    size_t nSep = 0;
-    char *pSepStrip = strip_ansi(psep->str, &nSep);
-    LBUF_OFFSET nWords = wordlist->find_Words(pSepStrip, nSep);
+    LBUF_OFFSET nWords = wordlist->find_Words(psep->str);
 
     if (  nWords <= iWord
        && (  flag != IF_INSERT
@@ -5561,10 +5556,7 @@ static FUNCTION(fun_revwords)
     }
 
     words->m_s = sStr;
-
-    size_t nDelim = 0;
-    char *pDelim = strip_ansi(sep.str, &nDelim);
-    LBUF_OFFSET nWords = words->find_Words(pDelim, nDelim);
+    LBUF_OFFSET nWords = words->find_Words(sep.str);
 
     bool bFirst = true;
     for (LBUF_OFFSET i = 0; i < nWords; i++)
