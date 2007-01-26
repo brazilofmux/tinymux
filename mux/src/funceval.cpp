@@ -2891,13 +2891,16 @@ FUNCTION(fun_last)
         return;
     }
 
-    char *str;
-    char *lstr = trim_space_sep(fargs[0], &sep);
-    while (NULL != (str = next_token(lstr, &sep)))
-    {
-        lstr = str;
-    }
-    safe_str(lstr, buff, bufc);
+    mux_words *words = new mux_words;
+    words->m_s = new mux_string(fargs[0]);
+
+    size_t nSep = 0;
+    char *pSepStrip = strip_ansi(sep.str, &nSep);
+    LBUF_OFFSET nWords = words->find_Words(pSepStrip, nSep);
+    words->export_WordAnsi(nWords-1, buff, bufc);
+
+    delete words->m_s;
+    delete words;
 }
 
 // Borrowed from TinyMUSH 2.2
