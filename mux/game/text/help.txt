@@ -6133,11 +6133,11 @@ E()
 
   FUNCTION: e()
 
-  Returns the value of the numeric constant e to nine decimal places.
+  Returns the value of the numeric constant e to fifteen decimal places.
 
   Example:
     > say e()
-    You say, "2.718281828"
+    You say, "2.718281828459045"
 
   Related Topics: exp(), ln(), log(), power().
 
@@ -10531,11 +10531,12 @@ PI()
 
   FUNCTION: pi()
 
-  Returns the value of the trigonometric constant pi to nine decimal places.
+  Returns the value of the trigonometric constant pi to fifteen decimal
+  places.
 
   Example:
     > say pi()
-    You say, "3.141592654"
+    You say, "3.141592653589793"
 
   Related Topics: acos(), asin(), atan(), cos(), sin(), tan().
 

@@ -85,3 +85,5 @@ Miscellaneous:
     @emit (Issue 219).  Thanks Alierak.
  -- Removed unnecessary global pos variable from help.cpp (Issue 265).
  -- Fixed dangling reference to 'help @version' (Issue 277).
+ -- Corrected documentation of E() and PI() to reflect actual precision
+    (Issue 283).  Thanks Jake.
