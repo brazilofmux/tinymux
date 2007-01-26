@@ -4696,7 +4696,7 @@ bool mux_string::search
     {
         // We can optimize the single-character case.
         //
-        char *p = strchr(pTarget, pPatBuf[0]);
+        const char *p = strchr(pTarget, pPatBuf[0]);
         if (p)
         {
             i = p - pTarget;
@@ -4742,7 +4742,7 @@ bool mux_string::search
     {
         // We can optimize the single-character case.
         //
-        char *p = strchr(pTarget, sPattern.m_ach[0]);
+        const char *p = strchr(pTarget, sPattern.m_ach[0]);
         if (p)
         {
             i = p - pTarget;
@@ -5097,8 +5097,11 @@ LBUF_OFFSET mux_words::find_Words(void)
     return m_nWords;
 }
 
-LBUF_OFFSET mux_words::find_Words(const char *pDelim, size_t nDelim)
+LBUF_OFFSET mux_words::find_Words(const char *pDelim)
 {
+    size_t nDelim = 0;
+    pDelim = strip_ansi(pDelim, &nDelim);
+
     size_t iPos = 0;
     LBUF_OFFSET iStart = 0;
     LBUF_OFFSET nWords = 0;

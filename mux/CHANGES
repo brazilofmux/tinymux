@@ -57,6 +57,7 @@ Bug Fixes:
  -- Fix signed / unsigned warning in dump_info() (Issue 276).
  -- Corrected minor typo in @comon section of help.txt. (Issue 275)
  -- Restore newline skipping in wrap(), broken in 2.7.0.2 (Issue 278).
+ -- Fix potential buffer overflow in ladd() (Issue 282). Thanks Jake.
 
 
 Performance Enhancements:
@@ -84,3 +85,5 @@ Miscellaneous:
     @emit (Issue 219).  Thanks Alierak.
  -- Removed unnecessary global pos variable from help.cpp (Issue 265).
  -- Fixed dangling reference to 'help @version' (Issue 277).
+ -- Corrected documentation of E() and PI() to reflect actual precision
+    (Issue 283).  Thanks Jake.

@@ -2477,7 +2477,6 @@ FUNCTION(fun_elements)
     // Turn the first list into an array.
     //
     mux_string *sStr = new mux_string(fargs[0]);
-
     mux_words *words = NULL;
     try
     {
@@ -2490,12 +2489,11 @@ FUNCTION(fun_elements)
     if (NULL == words)
     {
         ISOUTOFMEMORY(words);
+        delete sStr;
         return;
     }
 
-    size_t nDelim = 0;
-    char *pDelim = strip_ansi(sep.str, &nDelim);
-    LBUF_OFFSET nWords = words->find_Words(pDelim, nDelim);
+    LBUF_OFFSET nWords = words->find_Words(sep.str);
 
     bool bFirst = true;
     char *s = trim_space_sep(fargs[1], &sepSpace);
@@ -2697,27 +2695,37 @@ FUNCTION(fun_pickrand)
     }
 
     char *s = trim_space_sep(fargs[0], &sep);
-    char *t = s;
     if (s[0] == '\0')
     {
         return;
     }
-    INT32 n;
-    for (n = 0; t; t = next_token(t, &sep), n++)
+
+    mux_string *sStr = new mux_string(s);
+    mux_words *words = NULL;
+    try
     {
-        ; // Nothing
+        words = new mux_words(*sStr);
+    }
+    catch (...)
+    {
+        ; // Nothing.
+    }
+    if (NULL == words)
+    {
+        ISOUTOFMEMORY(words);
+        delete sStr;
+        return;
     }
 
-    if (n >= 1)
+    INT32 n = static_cast<INT32>(words->find_Words(sep.str));
+
+    if (0 < n)
     {
-        INT32 w = RandomINT32(0, n-1);
-        for (n = 0; n < w; n++)
-        {
-            s = next_token(s, &sep);
-        }
-        t = split_token(&s, &sep);
-        safe_str(t, buff, bufc);
+        LBUF_OFFSET w = static_cast<LBUF_OFFSET>(RandomINT32(0, n-1));
+        words->export_WordAnsi(w, buff, bufc);
     }
+    delete sStr;
+    delete words;
 }
 
 // sortby() code borrowed from TinyMUSH 2.2
@@ -2889,13 +2897,28 @@ FUNCTION(fun_last)
         return;
     }
 
-    char *str;
-    char *lstr = trim_space_sep(fargs[0], &sep);
-    while (NULL != (str = next_token(lstr, &sep)))
+    mux_string *sStr = new mux_string(fargs[0]);
+    mux_words *words = NULL;
+    try
     {
-        lstr = str;
+        words = new mux_words(*sStr);
     }
-    safe_str(lstr, buff, bufc);
+    catch (...)
+    {
+        ; // Nothing.
+    }
+    if (NULL == words)
+    {
+        ISOUTOFMEMORY(words);
+        delete sStr;
+        return;
+    }
+
+    LBUF_OFFSET nWords = words->find_Words(sep.str);
+    words->export_WordAnsi(nWords-1, buff, bufc);
+
+    delete sStr;
+    delete words;
 }
 
 // Borrowed from TinyMUSH 2.2

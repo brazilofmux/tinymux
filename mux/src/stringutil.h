@@ -343,7 +343,7 @@ public:
     mux_words(const mux_string &sStr);
     void export_WordAnsi(LBUF_OFFSET n, char *buff, char **bufc = NULL);
     LBUF_OFFSET find_Words(void);
-    LBUF_OFFSET find_Words(const char *pDelim, size_t nDelim);
+    LBUF_OFFSET find_Words(const char *pDelim);
     void set_Control(const char *pControlSet);
     void set_Control(const bool table[UCHAR_MAX+1]);
 };
