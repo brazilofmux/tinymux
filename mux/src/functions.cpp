@@ -3007,7 +3007,7 @@ static FUNCTION(fun_extract)
     mux_words *words = NULL;
     try
     {
-        words = new mux_words;
+        words = new mux_words(*sStr);
     }
     catch (...)
     {
@@ -3018,8 +3018,6 @@ static FUNCTION(fun_extract)
         ISOUTOFMEMORY(words);
         return;
     }
-
-    words->m_s = sStr;
 
     size_t nDelim = 0;
     char *pDelim = strip_ansi(sep.str, &nDelim);
@@ -5597,7 +5595,7 @@ static FUNCTION(fun_revwords)
     mux_words *words = NULL;
     try
     {
-        words = new mux_words;
+        words = new mux_words(*sStr);
     }
     catch (...)
     {
@@ -5608,8 +5606,6 @@ static FUNCTION(fun_revwords)
         ISOUTOFMEMORY(words);
         return;
     }
-
-    words->m_s = sStr;
 
     size_t nDelim = 0;
     char *pDelim = strip_ansi(sep.str, &nDelim);
