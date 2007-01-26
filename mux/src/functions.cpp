@@ -3003,7 +3003,6 @@ static FUNCTION(fun_extract)
     }
 
     mux_string *sStr = new mux_string(fargs[0]);
-
     mux_words *words = NULL;
     try
     {
@@ -3016,6 +3015,7 @@ static FUNCTION(fun_extract)
     if (NULL == words)
     {
         ISOUTOFMEMORY(words);
+        delete sStr;
         return;
     }
 
@@ -4002,16 +4002,30 @@ static void do_itemfuns(char *buff, char **bufc, mux_string *sList, int iWord,
     }
     iWord--;
 
-    mux_words *wordlist = new mux_words;
-    wordlist->m_s = sList;
-    LBUF_OFFSET nWords = wordlist->find_Words(psep->str);
+    mux_words *words = NULL;
+    try
+    {
+        words = new mux_words;
+    }
+    catch (...)
+    {
+        ; // Nothing.
+    }
+    if (NULL == words)
+    {
+        ISOUTOFMEMORY(words);
+        return;
+    }
+
+    words->m_s = sList;
+    LBUF_OFFSET nWords = words->find_Words(psep->str);
 
     if (  nWords <= iWord
        && (  flag != IF_INSERT
           || nWords < iWord))
     {
         sList->export_TextAnsi(buff, bufc);
-        delete wordlist;
+        delete words;
         return;
     }
 
@@ -4028,7 +4042,7 @@ static void do_itemfuns(char *buff, char **bufc, mux_string *sList, int iWord,
         {
             bFirst = false;
         }
-        wordlist->export_WordAnsi(i, buff, bufc);
+        words->export_WordAnsi(i, buff, bufc);
     }
 
     if (flag != IF_DELETE)
@@ -4050,7 +4064,7 @@ static void do_itemfuns(char *buff, char **bufc, mux_string *sList, int iWord,
         if (flag == IF_INSERT)
         {
             print_sep(psep, buff, bufc);
-            wordlist->export_WordAnsi(i, buff, bufc);
+            words->export_WordAnsi(i, buff, bufc);
         }
     }
 
@@ -4064,10 +4078,10 @@ static void do_itemfuns(char *buff, char **bufc, mux_string *sList, int iWord,
         {
             bFirst = false;
         }
-        wordlist->export_WordAnsi(i, buff, bufc);
+        words->export_WordAnsi(i, buff, bufc);
     }
 
-    delete wordlist;
+    delete words;
 }
 
 static FUNCTION(fun_ldelete)
@@ -5539,7 +5553,6 @@ static FUNCTION(fun_revwords)
     }
 
     mux_string *sStr = new mux_string(fargs[0]);
-
     mux_words *words = NULL;
     try
     {
@@ -5552,6 +5565,7 @@ static FUNCTION(fun_revwords)
     if (NULL == words)
     {
         ISOUTOFMEMORY(words);
+        delete sStr;
         return;
     }
 

@@ -2477,7 +2477,6 @@ FUNCTION(fun_elements)
     // Turn the first list into an array.
     //
     mux_string *sStr = new mux_string(fargs[0]);
-
     mux_words *words = NULL;
     try
     {
@@ -2490,6 +2489,7 @@ FUNCTION(fun_elements)
     if (NULL == words)
     {
         ISOUTOFMEMORY(words);
+        delete sStr;
         return;
     }
 
@@ -2701,17 +2701,33 @@ FUNCTION(fun_pickrand)
         return;
     }
 
-    mux_words *wordlist = new mux_words;
-    wordlist->m_s = new mux_string(s);
-    INT32 n = static_cast<INT32>(wordlist->find_Words(sep.str));
+    mux_string *sStr = new mux_string(s);
+    mux_words *words = NULL;
+    try
+    {
+        words = new mux_words;
+    }
+    catch (...)
+    {
+        ; // Nothing.
+    }
+    if (NULL == words)
+    {
+        ISOUTOFMEMORY(words);
+        delete sStr;
+        return;
+    }
+
+    words->m_s = sStr;
+    INT32 n = static_cast<INT32>(words->find_Words(sep.str));
 
     if (0 < n)
     {
         LBUF_OFFSET w = static_cast<LBUF_OFFSET>(RandomINT32(0, n-1));
-        wordlist->export_WordAnsi(w, buff, bufc);
+        words->export_WordAnsi(w, buff, bufc);
     }
-    delete wordlist->m_s;
-    delete wordlist;
+    delete sStr;
+    delete words;
 }
 
 // sortby() code borrowed from TinyMUSH 2.2
@@ -2883,13 +2899,28 @@ FUNCTION(fun_last)
         return;
     }
 
-    mux_words *words = new mux_words;
-    words->m_s = new mux_string(fargs[0]);
+    mux_string *sStr = new mux_string(fargs[0]);
+    mux_words *words = NULL;
+    try
+    {
+        words = new mux_words;
+    }
+    catch (...)
+    {
+        ; // Nothing.
+    }
+    if (NULL == words)
+    {
+        ISOUTOFMEMORY(words);
+        delete sStr;
+        return;
+    }
 
+    words->m_s = sStr;
     LBUF_OFFSET nWords = words->find_Words(sep.str);
     words->export_WordAnsi(nWords-1, buff, bufc);
 
-    delete words->m_s;
+    delete sStr;
     delete words;
 }
 
