@@ -1,6 +1,6 @@
 // funmath.cpp -- MUX math function handlers.
 //
-// $Id: funmath.cpp,v 1.6 2006/10/05 06:07:42 sdennis Exp $
+// $Id: funmath.cpp,v 1.7 2007/01/26 16:45:54 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2005 Solid Vertical Domains, Ltd. All
@@ -253,7 +253,8 @@ static const long nMaximums[10] =
     0, 9, 99, 999, 9999, 99999, 999999, 9999999, 99999999, 999999999
 };
 
-static double g_aDoubles[(LBUF_SIZE+1)/2];
+static double g_aDoubles[LBUF_SIZE];
+int const g_nDoubles = sizeof(g_aDoubles)/sizeof(double);
 
 FUNCTION(fun_add)
 {
@@ -263,8 +264,14 @@ FUNCTION(fun_add)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
+    int nArgs = nfargs;
+    if (g_nDoubles < nArgs)
+    {
+        nArgs = g_nDoubles;
+    }
+
     int i;
-    for (i = 0; i < nfargs; i++)
+    for (i = 0; i < nArgs; i++)
     {
         int nDigits;
         long nMaxValue = 0;
@@ -274,11 +281,12 @@ FUNCTION(fun_add)
         {
             // Do it the slow way.
             //
-            for (int j = 0; j < nfargs; j++)
+            for (int j = 0; j < nArgs; j++)
             {
                 g_aDoubles[j] = mux_atof(fargs[j]);
             }
-            fval(buff, bufc, AddDoubles(nfargs, g_aDoubles));
+
+            fval(buff, bufc, AddDoubles(nArgs, g_aDoubles));
             return;
         }
     }
@@ -286,7 +294,7 @@ FUNCTION(fun_add)
     // We can do it the fast way.
     //
     long sum = 0;
-    for (i = 0; i < nfargs; i++)
+    for (i = 0; i < nArgs; i++)
     {
         sum += mux_atol(fargs[i]);
     }
@@ -311,7 +319,8 @@ FUNCTION(fun_ladd)
         }
 
         char *cp = trim_space_sep(fargs[0], &sep);
-        while (cp)
+        while (  cp
+              && n < g_nDoubles)
         {
             char *curr = split_token(&cp, &sep);
             g_aDoubles[n++] = mux_atof(curr);
