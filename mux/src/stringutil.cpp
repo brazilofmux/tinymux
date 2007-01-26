@@ -4623,13 +4623,18 @@ void mux_string::reverse(void)
  * \return         True if found, false if not.
  */
 
-bool mux_string::search(const char *pPattern, size_t *nPos, size_t nStart)
+bool mux_string::search
+(
+    const char *pPattern,
+    size_t *nPos,
+    size_t nStart
+) const
 {
     // Strip ANSI from pattern.
     //
     size_t nPat = 0;
     char *pPatBuf = strip_ansi(pPattern, &nPat);
-    char *pTarget = m_ach + nStart;
+    const char *pTarget = m_ach + nStart;
 
     size_t i = 0;
     bool bSucceeded = false;
@@ -4666,11 +4671,16 @@ bool mux_string::search(const char *pPattern, size_t *nPos, size_t nStart)
  * \return         True if found, false if not.
  */
 
-bool mux_string::search(const mux_string &sPattern, size_t *nPos, size_t nStart)
+bool mux_string::search
+(
+    const mux_string &sPattern,
+    size_t *nPos,
+    size_t nStart
+) const
 {
     // Strip ANSI from pattern.
     //
-    char *pTarget = m_ach + nStart;
+    const char *pTarget = m_ach + nStart;
 
     size_t i = 0;
     bool bSucceeded = false;
