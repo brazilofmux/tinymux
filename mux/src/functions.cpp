@@ -3982,163 +3982,96 @@ static FUNCTION(fun_lpos)
 #define IF_REPLACE  1
 #define IF_INSERT   2
 
-static void do_itemfuns(char *buff, char **bufc, char *str, int el,
-                        char *word, SEP *psep, int flag)
+static void do_itemfuns(char *buff, char **bufc, mux_string *sList, int iWord,
+                        mux_string *sWord, SEP *psep, int flag)
 {
-    int ct;
-    char *sptr, *iptr, *eptr;
-    size_t slen = 0, ilen = 0, elen = 0;
-    bool overrun;
-
     // If passed a null string return an empty string, except that we
     // are allowed to append to a null string.
     //
-    if (  (  !str
-          || !*str)
+    if (  (  !sList
+          || 0 == sList->length())
        && (  flag != IF_INSERT
-          || el != 1))
+          || iWord != 1))
     {
         return;
     }
-    size_t nStr = strlen(str);
 
     // We can't fiddle with anything before the first position.
     //
-    if (el < 1)
+    if (iWord < 1)
     {
-        safe_copy_buf(str, nStr, buff, bufc);
+        sList->export_TextAnsi(buff, bufc);
+        return;
+    }
+    iWord--;
+
+    mux_words *wordlist = new mux_words;
+    wordlist->m_s = sList;
+    LBUF_OFFSET nWords = wordlist->find_Words(psep->str, psep->n);
+
+    if (  nWords <= iWord
+       && (  flag != IF_INSERT
+          || nWords < iWord))
+    {
+        sList->export_TextAnsi(buff, bufc);
+        delete wordlist;
         return;
     }
 
-    // Split the list up into 'before', 'target', and 'after' chunks
-    // pointed to by sptr, iptr, and eptr respectively.
-    //
-    if (el == 1)
+    bool bFirst = true;
+    LBUF_OFFSET i;
+
+    for (i = 0; i < static_cast<LBUF_OFFSET>(iWord); i++)
     {
-        // No 'before' portion, just split off element 1
-        //
-        sptr = NULL;
-        slen = 0;
-        if (!str || !*str)
+        if (!bFirst)
         {
-            eptr = NULL;
-            iptr = NULL;
+            print_sep(psep, buff, bufc);
         }
         else
         {
-            eptr = trim_space_sep_LEN(str, nStr, psep, &elen);
-            iptr = split_token_LEN(&eptr, &elen, psep, &ilen);
+            bFirst = false;
         }
+        wordlist->export_WordAnsi(i, buff, bufc);
     }
-    else
+
+    if (flag != IF_DELETE)
     {
-        // Break off 'before' portion.
-        //
-        sptr = eptr = trim_space_sep_LEN(str, nStr, psep, &elen);
-        overrun = true;
-        for (  ct = el;
-               ct > 2 && eptr;
-               eptr = next_token_LEN(eptr, &elen, psep), ct--)
+        if (!bFirst)
         {
-            // Nothing
-        }
-        if (eptr)
-        {
-            // Note: We are using (iptr,ilen) temporarily. It
-            // doesn't represent the 'target' word, but the
-            // the last token in the 'before' portion.
-            //
-            overrun = false;
-            iptr = split_token_LEN(&eptr, &elen, psep, &ilen);
-            slen = (iptr - sptr) + ilen;
-        }
-
-        // If we didn't make it to the target element, just return
-        // the string. Insert is allowed to continue if we are exactly
-        // at the end of the string, but replace and delete are not.
-        //
-        if (!(  eptr
-             || (  flag == IF_INSERT
-                && !overrun)))
-        {
-            safe_copy_buf(str, nStr, buff, bufc);
-            return;
-        }
-
-        // Split the 'target' word from the 'after' portion.
-        //
-        if (eptr)
-        {
-            iptr = split_token_LEN(&eptr, &elen, psep, &ilen);
+            print_sep(psep, buff, bufc);
         }
         else
         {
-            iptr = NULL;
-            ilen = 0;
+            bFirst = false;
+        }
+
+        if (sWord)
+        {
+            sWord->export_TextAnsi(buff, bufc);
+        }
+
+        if (flag == IF_INSERT)
+        {
+            print_sep(psep, buff, bufc);
+            wordlist->export_WordAnsi(i, buff, bufc);
         }
     }
 
-    switch (flag)
+    for (i++; i < nWords; i++)
     {
-    case IF_DELETE:
-
-        // deletion
-        //
-        if (sptr)
+        if (!bFirst)
         {
-            safe_copy_buf(sptr, slen, buff, bufc);
-            if (eptr)
-            {
-                safe_chr(psep->str[0], buff, bufc);
-            }
+            print_sep(psep, buff, bufc);
         }
-        if (eptr)
+        else
         {
-            safe_copy_buf(eptr, elen, buff, bufc);
+            bFirst = false;
         }
-        break;
-
-    case IF_REPLACE:
-
-        // replacing.
-        //
-        if (sptr)
-        {
-            safe_copy_buf(sptr, slen, buff, bufc);
-            safe_chr(psep->str[0], buff, bufc);
-        }
-        safe_str(word, buff, bufc);
-        if (eptr)
-        {
-            safe_chr(psep->str[0], buff, bufc);
-            safe_copy_buf(eptr, elen, buff, bufc);
-        }
-        break;
-
-    case IF_INSERT:
-
-        // Insertion.
-        //
-        if (sptr)
-        {
-            safe_copy_buf(sptr, slen, buff, bufc);
-            safe_chr(psep->str[0], buff, bufc);
-        }
-        safe_str(word, buff, bufc);
-        if (iptr)
-        {
-            safe_chr(psep->str[0], buff, bufc);
-            safe_copy_buf(iptr, ilen, buff, bufc);
-        }
-        if (eptr)
-        {
-            safe_chr(psep->str[0], buff, bufc);
-            safe_copy_buf(eptr, elen, buff, bufc);
-        }
-        break;
+        wordlist->export_WordAnsi(i, buff, bufc);
     }
+
+    delete wordlist;
 }
-
 
 static FUNCTION(fun_ldelete)
 {
@@ -4148,9 +4081,13 @@ static FUNCTION(fun_ldelete)
         return;
     }
 
+    mux_string *sList = new mux_string(fargs[0]);
+
     // Delete a word at position X of a list.
     //
-    do_itemfuns(buff, bufc, fargs[0], mux_atol(fargs[1]), NULL, &sep, IF_DELETE);
+    do_itemfuns(buff, bufc, sList, mux_atol(fargs[1]), NULL, &sep, IF_DELETE);
+
+    delete sList;
 }
 
 static FUNCTION(fun_replace)
@@ -4161,9 +4098,15 @@ static FUNCTION(fun_replace)
         return;
     }
 
+    mux_string *sList = new mux_string(fargs[0]);
+    mux_string *sWord = new mux_string(fargs[2]);
+
     // Replace a word at position X of a list.
     //
-    do_itemfuns(buff, bufc, fargs[0], mux_atol(fargs[1]), fargs[2], &sep, IF_REPLACE);
+    do_itemfuns(buff, bufc, sList, mux_atol(fargs[1]), sWord, &sep, IF_REPLACE);
+
+    delete sList;
+    delete sWord;
 }
 
 static FUNCTION(fun_insert)
@@ -4174,9 +4117,15 @@ static FUNCTION(fun_insert)
         return;
     }
 
+    mux_string *sList = new mux_string(fargs[0]);
+    mux_string *sWord = new mux_string(fargs[2]);
+
     // Insert a word at position X of a list.
     //
-    do_itemfuns(buff, bufc, fargs[0], mux_atol(fargs[1]), fargs[2], &sep, IF_INSERT);
+    do_itemfuns(buff, bufc, sList, mux_atol(fargs[1]), sWord, &sep, IF_INSERT);
+
+    delete sList;
+    delete sWord;
 }
 
 /*
