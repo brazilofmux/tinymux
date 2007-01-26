@@ -4007,7 +4007,9 @@ static void do_itemfuns(char *buff, char **bufc, mux_string *sList, int iWord,
 
     mux_words *wordlist = new mux_words;
     wordlist->m_s = sList;
-    LBUF_OFFSET nWords = wordlist->find_Words(psep->str, psep->n);
+    size_t nSep = 0;
+    char *pSepStrip = strip_ansi(psep->str, &nSep);
+    LBUF_OFFSET nWords = wordlist->find_Words(pSepStrip, nSep);
 
     if (  nWords <= iWord
        && (  flag != IF_INSERT
