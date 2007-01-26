@@ -268,6 +268,7 @@ Bug Fixes:
  -- Fix typo in do_say() which left a bit-wise instead of a logical
     AND operation (Issue 245).
  -- Fix trailing padding in center() (Issue 253).
+ -- Fix buffer overflow in fun_ladd (Issue 282).
 
 
 Performance Enhancements:
