@@ -2480,7 +2480,7 @@ FUNCTION(fun_elements)
     mux_words *words = NULL;
     try
     {
-        words = new mux_words;
+        words = new mux_words(*sStr);
     }
     catch (...)
     {
@@ -2493,7 +2493,6 @@ FUNCTION(fun_elements)
         return;
     }
 
-    words->m_s = sStr;
     LBUF_OFFSET nWords = words->find_Words(sep.str);
 
     bool bFirst = true;
@@ -2705,7 +2704,7 @@ FUNCTION(fun_pickrand)
     mux_words *words = NULL;
     try
     {
-        words = new mux_words;
+        words = new mux_words(*sStr);
     }
     catch (...)
     {
@@ -2718,7 +2717,6 @@ FUNCTION(fun_pickrand)
         return;
     }
 
-    words->m_s = sStr;
     INT32 n = static_cast<INT32>(words->find_Words(sep.str));
 
     if (0 < n)
@@ -2903,7 +2901,7 @@ FUNCTION(fun_last)
     mux_words *words = NULL;
     try
     {
-        words = new mux_words;
+        words = new mux_words(*sStr);
     }
     catch (...)
     {
@@ -2916,7 +2914,6 @@ FUNCTION(fun_last)
         return;
     }
 
-    words->m_s = sStr;
     LBUF_OFFSET nWords = words->find_Words(sep.str);
     words->export_WordAnsi(nWords-1, buff, bufc);
 

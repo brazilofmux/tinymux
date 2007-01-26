@@ -3006,7 +3006,7 @@ static FUNCTION(fun_extract)
     mux_words *words = NULL;
     try
     {
-        words = new mux_words;
+        words = new mux_words(*sStr);
     }
     catch (...)
     {
@@ -3019,7 +3019,6 @@ static FUNCTION(fun_extract)
         return;
     }
 
-    words->m_s = sStr;
     LBUF_OFFSET nWords = words->find_Words(sep.str);
 
     iFirstWord--;
@@ -4005,7 +4004,7 @@ static void do_itemfuns(char *buff, char **bufc, mux_string *sList, int iWord,
     mux_words *words = NULL;
     try
     {
-        words = new mux_words;
+        words = new mux_words(*sList);
     }
     catch (...)
     {
@@ -4017,7 +4016,6 @@ static void do_itemfuns(char *buff, char **bufc, mux_string *sList, int iWord,
         return;
     }
 
-    words->m_s = sList;
     LBUF_OFFSET nWords = words->find_Words(psep->str);
 
     if (  nWords <= iWord
@@ -5556,7 +5554,7 @@ static FUNCTION(fun_revwords)
     mux_words *words = NULL;
     try
     {
-        words = new mux_words;
+        words = new mux_words(*sStr);
     }
     catch (...)
     {
@@ -5569,7 +5567,6 @@ static FUNCTION(fun_revwords)
         return;
     }
 
-    words->m_s = sStr;
     LBUF_OFFSET nWords = words->find_Words(sep.str);
 
     bool bFirst = true;
