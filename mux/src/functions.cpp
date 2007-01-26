@@ -3003,7 +3003,22 @@ static FUNCTION(fun_extract)
     }
 
     mux_string *sStr = new mux_string(fargs[0]);
-    mux_words *words = new mux_words;
+
+    mux_words *words = NULL;
+    try
+    {
+        words = new mux_words;
+    }
+    catch (...)
+    {
+        ; // Nothing.
+    }
+    if (NULL == words)
+    {
+        ISOUTOFMEMORY(words);
+        return;
+    }
+
     words->m_s = sStr;
 
     size_t nDelim = 0;
@@ -5578,7 +5593,22 @@ static FUNCTION(fun_revwords)
     }
 
     mux_string *sStr = new mux_string(fargs[0]);
-    mux_words *words = new mux_words;
+
+    mux_words *words = NULL;
+    try
+    {
+        words = new mux_words;
+    }
+    catch (...)
+    {
+        ; // Nothing.
+    }
+    if (NULL == words)
+    {
+        ISOUTOFMEMORY(words);
+        return;
+    }
+
     words->m_s = sStr;
 
     size_t nDelim = 0;

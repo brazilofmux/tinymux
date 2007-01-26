@@ -2505,7 +2505,7 @@ static const double powerstab[10] =
    1000000000.0
 };
 
-double mux_atof(char *szString, bool bStrict)
+double mux_atof(const char *szString, bool bStrict)
 {
     PARSE_FLOAT_RESULT pfr;
     if (!ParseFloat(&pfr, szString, bStrict))
@@ -2739,8 +2739,9 @@ char *mux_ftoa(double r, bool bRounded, int frac)
     return buffer;
 }
 
-bool is_integer(char *str, int *pDigits)
+bool is_integer(const char *str, int *pDigits)
 {
+    LBUF_OFFSET i = 0;
     int nDigits = 0;
     if (pDigits)
     {
@@ -2749,20 +2750,20 @@ bool is_integer(char *str, int *pDigits)
 
     // Leading spaces.
     //
-    while (mux_isspace(*str))
+    while (mux_isspace(str[i]))
     {
-        str++;
+        i++;
     }
 
     // Leading minus or plus
     //
-    if (*str == '-' || *str == '+')
+    if (str[i] == '-' || str[i] == '+')
     {
-        str++;
+        i++;
 
         // Just a sign by itself isn't an integer.
         //
-        if (!*str)
+        if (!str[i])
         {
             return false;
         }
@@ -2770,7 +2771,7 @@ bool is_integer(char *str, int *pDigits)
 
     // Need at least 1 integer
     //
-    if (!mux_isdigit(*str))
+    if (!mux_isdigit(str[i]))
     {
         return false;
     }
@@ -2779,9 +2780,9 @@ bool is_integer(char *str, int *pDigits)
     //
     do
     {
-        str++;
+        i++;
         nDigits++;
-    } while (mux_isdigit(*str));
+    } while (mux_isdigit(str[i]));
 
     if (pDigits)
     {
@@ -2790,32 +2791,34 @@ bool is_integer(char *str, int *pDigits)
 
     // Trailing Spaces.
     //
-    while (mux_isspace(*str))
+    while (mux_isspace(str[i]))
     {
-        str++;
+        i++;
     }
 
-    return (!*str);
+    return (!str[i]);
 }
 
-bool is_rational(char *str)
+bool is_rational(const char *str)
 {
+    LBUF_OFFSET i = 0;
+
     // Leading spaces.
     //
-    while (mux_isspace(*str))
+    while (mux_isspace(str[i]))
     {
-        str++;
+        i++;
     }
 
     // Leading minus or plus sign.
     //
-    if (*str == '-' || *str == '+')
+    if (str[i] == '-' || str[i] == '+')
     {
-        str++;
+        i++;
 
         // But not if just a sign.
         //
-        if (!*str)
+        if (!str[i])
         {
             return false;
         }
@@ -2824,28 +2827,28 @@ bool is_rational(char *str)
     // Need at least one digit.
     //
     bool got_one = false;
-    if (mux_isdigit(*str))
+    if (mux_isdigit(str[i]))
     {
         got_one = true;
     }
 
     // The number (int)
     //
-    while (mux_isdigit(*str))
+    while (mux_isdigit(str[i]))
     {
-        str++;
+        i++;
     }
 
     // Decimal point.
     //
-    if (*str == '.')
+    if (str[i] == '.')
     {
-        str++;
+        i++;
     }
 
     // Need at least one digit
     //
-    if (mux_isdigit(*str))
+    if (mux_isdigit(str[i]))
     {
         got_one = true;
     }
@@ -2857,24 +2860,24 @@ bool is_rational(char *str)
 
     // The number (fract)
     //
-    while (mux_isdigit(*str))
+    while (mux_isdigit(str[i]))
     {
-        str++;
+        i++;
     }
 
     // Trailing spaces.
     //
-    while (mux_isspace(*str))
+    while (mux_isspace(str[i]))
     {
-        str++;
+        i++;
     }
 
     // There must be nothing else after the trailing spaces.
     //
-    return (!*str);
+    return (!str[i]);
 }
 
-bool is_real(char *str)
+bool is_real(const char *str)
 {
     PARSE_FLOAT_RESULT pfr;
     return ParseFloat(&pfr, str);
@@ -4005,6 +4008,42 @@ void mux_string::append_TextPlain(const char *pStr, size_t nLen)
     m_ach[m_n] = '\0';
 }
 
+void mux_string::compress(const char ch)
+{
+    for (size_t i = 0, nTarget = 0; i < m_n; i++)
+    {
+        if (m_ach[i] == ch)
+        {
+            for (nTarget = 1; i + nTarget < m_n && m_ach[i + nTarget] == ch; nTarget++)
+            {
+                ; // Nothing.
+            }
+            if (1 < nTarget)
+            {
+                delete_Chars(i, nTarget-1);
+            }
+        }
+    }
+}
+
+void mux_string::compress_Spaces(void)
+{
+    for (size_t i = 0, nSpaces = 0; i < m_n; i++)
+    {
+        if (mux_isspace(m_ach[i]))
+        {
+            for (nSpaces = 1; i + nSpaces < m_n && mux_isspace(m_ach[i + nSpaces]); nSpaces++)
+            {
+                ; // Nothing.
+            }
+            if (1 < nSpaces)
+            {
+                delete_Chars(i, nSpaces-1);
+            }
+        }
+    }
+}
+
 /*! \brief Delete a range of characters.
  *
  * \param nStart   Beginning of range to delete.
@@ -4113,6 +4152,21 @@ ANSI_ColorState mux_string::export_Color(size_t n) const
         return acsRestingStates[ANSI_ENDGOAL_NORMAL];
     }
     return m_acs[n];
+}
+
+double mux_string::export_Float(bool bStrict) const
+{
+    return mux_atof(m_ach, bStrict);
+}
+
+INT64 mux_string::export_I64(void) const
+{
+    return mux_atoi64(m_ach);
+}
+
+long mux_string::export_Long(void) const
+{
+    return mux_atol(m_ach);
 }
 
 /*! \brief Generates ANSI string from internal form.
@@ -4986,9 +5040,8 @@ void mux_string::truncate(size_t nLen)
 
 mux_words::mux_words(void)
 {
-    memset(m_aControl, false, sizeof(m_aControl));
-    m_aControl[(unsigned char)' '] = true;
     m_aiWords[0] = 0;
+    m_aiWords[1] = 0;
     m_nWords = 0;
     m_s = NULL;
 }
