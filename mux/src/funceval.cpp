@@ -2699,27 +2699,24 @@ FUNCTION(fun_pickrand)
     }
 
     char *s = trim_space_sep(fargs[0], &sep);
-    char *t = s;
     if (s[0] == '\0')
     {
         return;
     }
-    INT32 n;
-    for (n = 0; t; t = next_token(t, &sep), n++)
-    {
-        ; // Nothing
-    }
 
-    if (n >= 1)
+    mux_words *wordlist = new mux_words;
+    wordlist->m_s = new mux_string(s);
+    size_t nSep = 0;
+    char *pSep = strip_ansi(sep.str, &nSep);
+    INT32 n = static_cast<INT32>(wordlist->find_Words(pSep, nSep));
+
+    if (0 < n)
     {
-        INT32 w = RandomINT32(0, n-1);
-        for (n = 0; n < w; n++)
-        {
-            s = next_token(s, &sep);
-        }
-        t = split_token(&s, &sep);
-        safe_str(t, buff, bufc);
+        LBUF_OFFSET w = static_cast<LBUF_OFFSET>(RandomINT32(0, n-1));
+        wordlist->export_WordAnsi(w, buff, bufc);
     }
+    delete wordlist->m_s;
+    delete wordlist;
 }
 
 // sortby() code borrowed from TinyMUSH 2.2
