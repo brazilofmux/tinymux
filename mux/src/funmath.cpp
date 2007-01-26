@@ -314,7 +314,8 @@ FUNCTION(fun_ladd)
         }
 
         char *cp = trim_space_sep(fargs[0], &sep);
-        while (cp)
+        while (  cp 
+              && n < (LBUF_SIZE+1)/2)
         {
             char *curr = split_token(&cp, &sep);
             g_aDoubles[n++] = mux_atof(curr);
