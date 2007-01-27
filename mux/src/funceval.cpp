@@ -3227,20 +3227,22 @@ FUNCTION(fun_foreach)
     char cbuf[2] = {'\0', '\0'};
     char *atextbuf = alloc_lbuf("fun_foreach");
     char *bp = cbuf;
-    char *cp = trim_space_sep(strip_ansi(fargs[1]), &sepSpace);
     char *str;
+    mux_string *sStr = new mux_string(fargs[1]);
+    sStr->trim();
+    size_t nStr = sStr->length();
+    LBUF_OFFSET i = 0;
 
     if (nfargs == 4)
     {
         bool flag = false;
         char prev = '\0';
 
-        while (  cp
-              && *cp
+        while (  i < nStr
               && mudstate.func_invk_ctr < mudconf.func_invk_lim
               && !MuxAlarm.bAlarmed)
         {
-            cbuf[0] = *cp++;
+            cbuf[0] = sStr->export_Char(i++);
 
             if (flag)
             {
@@ -3277,12 +3279,11 @@ FUNCTION(fun_foreach)
     }
     else
     {
-        while (  cp
-              && *cp
+        while (  i < nStr
               && mudstate.func_invk_ctr < mudconf.func_invk_lim
               && !MuxAlarm.bAlarmed)
         {
-            cbuf[0] = *cp++;
+            cbuf[0] = sStr->export_Char(i++);
 
             mux_strncpy(atextbuf, atext, LBUF_SIZE-1);
             str = atextbuf;
@@ -3292,6 +3293,7 @@ FUNCTION(fun_foreach)
     }
     free_lbuf(atextbuf);
     free_lbuf(atext);
+    delete sStr;
 }
 
 /* ---------------------------------------------------------------------------
