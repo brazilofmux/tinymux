@@ -4101,6 +4101,20 @@ void mux_string::delete_Chars(size_t nStart, size_t nLen)
     m_ach[m_n] = '\0';
 }
 
+/*! \brief Perform a search-and-replace-all operation, or prepend or
+ * append the replacement string.
+ *
+ * If sFrom is "^", sTo is prepended to this string. If sFrom is "$",
+ * sTo is appended to this string.  Search-and-replace-all for a literal
+ * caret or dollar sign can be done by escaping them with a backslash or
+ * percent sign, but in that case sFrom will be destructively modified
+ * to remove the escape character.
+ *
+ * \param sFrom     String to search for within this string.
+ * \param sTo       Replacement string.
+ * \return          None.
+ */
+
 void mux_string::edit(mux_string &sFrom, const mux_string &sTo)
 {
     // Do the substitution.  Idea for prefix/suffix from R'nice@TinyTIM.
