@@ -4180,7 +4180,15 @@ long mux_string::export_Long(void) const
  * \return         None.
  */
 
-void mux_string::export_TextAnsi(char *buff, char **bufc, size_t nStart, size_t nLen, size_t nBuffer, int iEndGoal) const
+void mux_string::export_TextAnsi
+(
+    char *buff,
+    char **bufc,
+    size_t nStart,
+    size_t nLen,
+    size_t nBuffer,
+    int iEndGoal
+) const
 {
     // Sanity check our arguments and find out how much room we have.
     // We assume we're outputting into an LBUF unless given a smaller nBuffer.
@@ -4307,7 +4315,14 @@ void mux_string::export_TextAnsi(char *buff, char **bufc, size_t nStart, size_t 
  * \return         None.
  */
 
-void mux_string::export_TextPlain(char *buff, char **bufc, size_t nStart, size_t nLen, size_t nBuffer) const
+void mux_string::export_TextPlain
+(
+    char *buff,
+    char **bufc,
+    size_t nStart,
+    size_t nLen,
+    size_t nBuffer
+) const
 {
     // Sanity check our arguments and find out how much room we have.
     // We assume we're outputting into an LBUF unless given a smaller nBuffer.
@@ -4618,7 +4633,12 @@ void mux_string::prepend(const char *pStr, size_t n)
     delete sStore;
 }
 
-void mux_string::replace_Chars(const mux_string &sTo, size_t nStart, size_t nLen)
+void mux_string::replace_Chars
+(
+    const mux_string &sTo,
+    size_t nStart,
+    size_t nLen
+)
 {
     size_t nTo = sTo.m_n;
     size_t nMove = 0;
@@ -4819,7 +4839,12 @@ void mux_string::strip(const char *pStripSet, size_t nStart, size_t nLen)
     stripWithTable(strip_table, nStart, nLen);
 }
 
-void mux_string::stripWithTable(const bool strip_table[UCHAR_MAX+1], size_t nStart, size_t nLen)
+void mux_string::stripWithTable
+(
+    const bool strip_table[UCHAR_MAX+1],
+    size_t nStart,
+    size_t nLen
+)
 {
     if (  m_n <= nStart
        || 0 == nLen)
@@ -4874,7 +4899,13 @@ void mux_string::stripWithTable(const bool strip_table[UCHAR_MAX+1], size_t nSta
     }
 }
 
-void mux_string::transform(mux_string &sFromSet, mux_string &sToSet, size_t nStart, size_t nLen)
+void mux_string::transform
+(
+    mux_string &sFromSet,
+    mux_string &sToSet,
+    size_t nStart,
+    size_t nLen
+)
 {
     static unsigned char xfrmTable[UCHAR_MAX+1];
 
@@ -4910,7 +4941,12 @@ void mux_string::transform(mux_string &sFromSet, mux_string &sToSet, size_t nSta
     transformWithTable(xfrmTable, nStart, nLen);
 }
 
-void mux_string::transformWithTable(const unsigned char xfrmTable[256], size_t nStart, size_t nLen)
+void mux_string::transformWithTable
+(
+    const unsigned char xfrmTable[256],
+    size_t nStart,
+    size_t nLen
+)
 {
     if (m_n <= nStart)
     {
