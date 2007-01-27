@@ -4008,37 +4008,60 @@ void mux_string::append_TextPlain(const char *pStr, size_t nLen)
     m_ach[m_n] = '\0';
 }
 
+/*! \brief Compress each run of consecutive occurrences of the
+ * specified character to a single character.
+ *
+ * For each compressed run of characters, the properties of the
+ * first character are preserved.
+ *
+ * \param ch       Character to compress.
+ * \return         None.
+ */
+
 void mux_string::compress(const char ch)
 {
-    for (size_t i = 0, nTarget = 0; i < m_n; i++)
+    for (size_t i = 0, j = 0; i < m_n; i++)
     {
         if (m_ach[i] == ch)
         {
-            for (nTarget = 1; i + nTarget < m_n && m_ach[i + nTarget] == ch; nTarget++)
+            // look ahead for multiple occurrences of ch
+            //
+            for (j = i + 1; j < m_n && m_ach[j] == ch; j++)
             {
                 ; // Nothing.
             }
-            if (1 < nTarget)
+            if (i + 1 < j)
             {
-                delete_Chars(i, nTarget-1);
+                delete_Chars(i, j - (i + 1));
             }
         }
     }
 }
 
+/*! \brief Compress each run of consecutive whitespace characters to a
+ * single whitespace character.
+ *
+ * For each compressed run of whitespace characters, the properties
+ * of the first whitespace character are preserved.
+ *
+ * \return         None.
+ */
+
 void mux_string::compress_Spaces(void)
 {
-    for (size_t i = 0, nSpaces = 0; i < m_n; i++)
+    for (size_t i = 0, j = 0; i < m_n; i++)
     {
         if (mux_isspace(m_ach[i]))
         {
-            for (nSpaces = 1; i + nSpaces < m_n && mux_isspace(m_ach[i + nSpaces]); nSpaces++)
+            // look ahead for consecutive whitespace characters
+            //
+            for (j = i + 1; j < m_n && mux_isspace(m_ach[j]); j++)
             {
                 ; // Nothing.
             }
-            if (1 < nSpaces)
+            if (i + 1 < j)
             {
-                delete_Chars(i, nSpaces-1);
+                delete_Chars(i, j - (i + 1));
             }
         }
     }
