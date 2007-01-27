@@ -804,6 +804,7 @@ static char *parse_arglist_lite( dbref executor, dbref caller, dbref enactor,
     }
     int arg = 0;
     int iWhichDelim = 0;
+    char chSave = '\0';
     while (  arg < nfargs
           && dstr
           && iWhichDelim != 2)
@@ -818,6 +819,7 @@ static char *parse_arglist_lite( dbref executor, dbref caller, dbref enactor,
         }
         if (tstr)
         {
+            chSave = tstr[nLen];
             tstr[nLen] = '\0';
         }
 
@@ -834,6 +836,10 @@ static char *parse_arglist_lite( dbref executor, dbref caller, dbref enactor,
                  cargs, ncargs);
         *bp = '\0';
         arg++;
+        if (tstr)
+        {
+            tstr[nLen] = chSave;
+        }
     }
     *nArgsParsed = arg;
     return dstr;
@@ -2148,8 +2154,6 @@ void mux_exec( char *buff, char **bufc, dbref executor, dbref caller,
         memcpy(buff, mux_scratch, nLen+1);
         *bufc = buff + nLen;
     }
-
-    *dstr = pdstr;
 
     // Restore Parser Mode.
     //
