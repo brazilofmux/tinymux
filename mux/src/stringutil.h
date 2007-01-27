@@ -346,6 +346,8 @@ public:
     LBUF_OFFSET find_Words(const char *pDelim);
     void set_Control(const char *pControlSet);
     void set_Control(const bool table[UCHAR_MAX+1]);
+    LBUF_OFFSET wordBegin(LBUF_OFFSET n) const;
+    LBUF_OFFSET wordEnd(LBUF_OFFSET n) const;
 };
 
 #endif // STRINGUTIL_H
