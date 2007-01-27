@@ -3224,22 +3224,17 @@ FUNCTION(fun_foreach)
         return;
     }
 
-    char *str;
-    char cbuf[2], prev = '\0';
+    char cbuf[2] = {'\0', '\0'};
     char *atextbuf = alloc_lbuf("fun_foreach");
-    SEP sep;
-    sep.n = 1;
-    sep.str[0] = ' ';
-    sep.str[1] = '\0';
-    char *cp = trim_space_sep(fargs[1], &sep);
-
     char *bp = cbuf;
-
-    cbuf[1] = '\0';
+    char *cp = trim_space_sep(strip_ansi(fargs[1]), &sepSpace);
+    char *str;
 
     if (nfargs == 4)
     {
         bool flag = false;
+        char prev = '\0';
+
         while (  cp
               && *cp
               && mudstate.func_invk_ctr < mudconf.func_invk_lim
