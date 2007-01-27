@@ -729,8 +729,8 @@ TryAgain:
 // modified.
 //
 char *parse_arglist( dbref executor, dbref caller, dbref enactor, char *dstr,
-                     char delim, int eval, char *fargs[], dbref nfargs,
-                     char *cargs[], dbref ncargs, int *nArgsParsed )
+                     char delim, int eval, char *fargs[], int nfargs,
+                     char *cargs[], int ncargs, int *nArgsParsed )
 {
     char *rstr, *tstr, *bp, *str;
     int arg, peval;
@@ -780,7 +780,7 @@ char *parse_arglist( dbref executor, dbref caller, dbref enactor, char *dstr,
 
 static char *parse_arglist_lite( dbref executor, dbref caller, dbref enactor,
                           char *dstr, char delim, int eval, char *fargs[],
-                          dbref nfargs, char *cargs[], dbref ncargs,
+                          int nfargs, char *cargs[], int ncargs,
                           int *nArgsParsed)
 {
     UNUSED_PARAMETER(delim);
