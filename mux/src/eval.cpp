@@ -739,7 +739,10 @@ char *parse_arglist( dbref executor, dbref caller, dbref enactor, char *dstr,
     size_t nLen;
     int iWhichDelim;
     rstr = parse_to_lite(&dstr, delim, '\0', &nLen, &iWhichDelim);
-    rstr[nLen] = '\0';
+    if (rstr)
+    {
+        rstr[nLen] = '\0';
+    }
     arg = 0;
 
     peval = (eval & ~EV_EVAL);
@@ -813,7 +816,10 @@ static char *parse_arglist_lite( dbref executor, dbref caller, dbref enactor,
         {
             tstr = parse_to_lite(&dstr, '\0', ')', &nLen, &iWhichDelim);
         }
-        tstr[nLen] = '\0';
+        if (tstr)
+        {
+            tstr[nLen] = '\0';
+        }
 
         if (  iWhichDelim == 2
            && arg == 0
@@ -1908,7 +1914,10 @@ void mux_exec( char *buff, char **bufc, dbref executor, dbref caller,
             tstr = pdstr++;
             mudstate.nStackNest++;
             tbuf = parse_to_lite(&pdstr, ']', '\0', &n, &at_space);
-            tbuf[n] = '\0';
+            if (tbuf)
+            {
+                tbuf[n] = '\0';
+            }
             at_space = 0;
             if (pdstr == NULL)
             {
@@ -1962,7 +1971,10 @@ void mux_exec( char *buff, char **bufc, dbref executor, dbref caller,
             tstr = pdstr++;
             mudstate.nStackNest++;
             tbuf = parse_to_lite(&pdstr, '}', '\0', &n, &at_space);
-            tbuf[n] = '\0';
+            if (tbuf)
+            {
+                tbuf[n] = '\0';
+            }
             at_space = 0;
             if (pdstr == NULL)
             {
