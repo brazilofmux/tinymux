@@ -4404,7 +4404,8 @@ void mux_string::export_TextPlain
     // nLen is the length of the portion of the source string we will copy,
     //  and has a value in the ranges (0, nLeft] and (0, nAvail].
     //
-    safe_copy_str(m_ach+nStart, buff, bufc, *bufc-buff+nLen);
+    memcpy(*bufc, m_ach+nStart, nLen * sizeof(m_ach[0]));
+    *bufc += nLen;
     **bufc = '\0';
 }
 
