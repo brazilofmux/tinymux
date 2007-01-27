@@ -466,16 +466,14 @@ TryAgain:
     return rstr;
 }
 
-// This version parse_to is less destructive. It only null-terminates the source
-// It doesn't process escapes. It's useful with mux_exec which will be copying
-// the characters to another buffer anyway and is more than able to perform the
-// escapes and trimming.
+// This version of parse_to is non-destructive. It doesn't process escapes.
+// It's useful with mux_exec which will be copying the characters to another
+// buffer anyway and is more than able to perform the escapes and trimming.
 //
 static char *parse_to_lite(char **dstr, char delim1, char delim2, size_t *nLen, int *iWhichDelim)
 {
 #define stacklim 32
     char stack[stacklim];
-    char *rstr, *cstr;
     int sp, tp, bracketlev;
 
     if (  dstr == NULL
@@ -485,15 +483,15 @@ static char *parse_to_lite(char **dstr, char delim1, char delim2, size_t *nLen, 
         return NULL;
     }
 
+    char *rstr = *dstr;
     if (**dstr == '\0')
     {
-        rstr = *dstr;
         *dstr = NULL;
         *nLen = 0;
         return rstr;
     }
     sp = 0;
-    cstr = rstr = *dstr;
+    char *cstr = rstr;
     int iOriginalCode1 = isSpecial(L3, delim1);
     int iOriginalCode2 = isSpecial(L3, delim2);
     if (iOriginalCode1 <= 3)
@@ -595,7 +593,6 @@ TryAgain:
                         {
                             *iWhichDelim = 2;
                         }
-                        *cstr = '\0';
                         *nLen = (cstr - rstr);
                         *dstr = ++cstr;
                         isSpecial(L3, delim1) = iOriginalCode1;
@@ -692,7 +689,6 @@ TryAgain:
                         {
                             *iWhichDelim = 2;
                         }
-                        *cstr = '\0';
                         *nLen = (cstr - rstr);
                         *dstr = ++cstr;
                         isSpecial(L3, delim1) = iOriginalCode1;
@@ -716,7 +712,6 @@ TryAgain:
         }
     }
     *iWhichDelim = 0;
-    *cstr = '\0';
     *nLen = (cstr - rstr);
     *dstr = NULL;
     return rstr;
@@ -744,6 +739,7 @@ char *parse_arglist( dbref executor, dbref caller, dbref enactor, char *dstr,
     size_t nLen;
     int iWhichDelim;
     rstr = parse_to_lite(&dstr, delim, '\0', &nLen, &iWhichDelim);
+    rstr[nLen] = '\0';
     arg = 0;
 
     peval = (eval & ~EV_EVAL);
@@ -817,6 +813,7 @@ static char *parse_arglist_lite( dbref executor, dbref caller, dbref enactor,
         {
             tstr = parse_to_lite(&dstr, '\0', ')', &nLen, &iWhichDelim);
         }
+        tstr[nLen] = '\0';
 
         if (  iWhichDelim == 2
            && arg == 0
@@ -1911,6 +1908,7 @@ void mux_exec( char *buff, char **bufc, dbref executor, dbref caller,
             tstr = pdstr++;
             mudstate.nStackNest++;
             tbuf = parse_to_lite(&pdstr, ']', '\0', &n, &at_space);
+            tbuf[n] = '\0';
             at_space = 0;
             if (pdstr == NULL)
             {
@@ -1964,6 +1962,7 @@ void mux_exec( char *buff, char **bufc, dbref executor, dbref caller,
             tstr = pdstr++;
             mudstate.nStackNest++;
             tbuf = parse_to_lite(&pdstr, '}', '\0', &n, &at_space);
+            tbuf[n] = '\0';
             at_space = 0;
             if (pdstr == NULL)
             {
