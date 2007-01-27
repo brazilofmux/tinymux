@@ -5141,7 +5141,7 @@ mux_words::mux_words(const mux_string &sStr) : m_s(&sStr)
 
 void mux_words::export_WordAnsi(LBUF_OFFSET n, char *buff, char **bufc)
 {
-    if (m_nWords < n)
+    if (m_nWords <= n)
     {
         return;
     }
@@ -5230,4 +5230,24 @@ void mux_words::set_Control(const char *pControlSet)
 void mux_words::set_Control(const bool table[UCHAR_MAX+1])
 {
     memcpy(m_aControl, table, sizeof(table));
+}
+
+LBUF_OFFSET mux_words::wordBegin(LBUF_OFFSET n) const
+{
+    if (m_nWords <= n)
+    {
+        return 0;
+    }
+
+    return m_aiWordBegins[n];
+}
+
+LBUF_OFFSET mux_words::wordEnd(LBUF_OFFSET n) const
+{
+    if (m_nWords <= n)
+    {
+        return 0;
+    }
+
+    return m_aiWordEnds[n];
 }
