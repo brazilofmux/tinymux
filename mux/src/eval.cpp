@@ -1920,8 +1920,10 @@ void mux_exec( char *buff, char **bufc, dbref executor, dbref caller,
             tstr = pdstr++;
             mudstate.nStackNest++;
             tbuf = parse_to_lite(&pdstr, ']', '\0', &n, &at_space);
+            char chSave = '\0';
             if (tbuf)
             {
+                chSave = tbuf[n];
                 tbuf[n] = '\0';
             }
             at_space = 0;
@@ -1943,6 +1945,10 @@ void mux_exec( char *buff, char **bufc, dbref executor, dbref caller,
                     ncargs);
                 nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
                 pdstr--;
+            }
+            if (tbuf)
+            {
+                tbuf[n] = chSave;
             }
         }
 
@@ -1977,8 +1983,10 @@ void mux_exec( char *buff, char **bufc, dbref executor, dbref caller,
             tstr = pdstr++;
             mudstate.nStackNest++;
             tbuf = parse_to_lite(&pdstr, '}', '\0', &n, &at_space);
+            char chSave = '\0';
             if (tbuf)
             {
+                chSave = tbuf[n];
                 tbuf[n] = '\0';
             }
             at_space = 0;
@@ -2027,6 +2035,10 @@ void mux_exec( char *buff, char **bufc, dbref executor, dbref caller,
                     TempPtr = tbuf;
                     mux_exec(buff, bufc, executor, caller, enactor,
                         eval & ~EV_TOP, &TempPtr, cargs, ncargs);
+                }
+                if (tbuf)
+                {
+                    tbuf[n] = chSave;
                 }
                 nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
 
