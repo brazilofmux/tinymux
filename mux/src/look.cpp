@@ -439,8 +439,7 @@ static void look_exits(dbref player, dbref loc, const char *exit_name)
     //
     dbref aowner;
     int aflags;
-    char *ExitFormatBuffer = atr_pget(loc, A_EXITFORMAT, &aowner, &aflags);
-    char *ExitFormat = ExitFormatBuffer;
+    char *ExitFormat = atr_pget(loc, A_EXITFORMAT, &aowner, &aflags);
 
     bool bDisplayExits = bFoundAnyDisplayable;
     if (*ExitFormat)
@@ -480,9 +479,9 @@ static void look_exits(dbref player, dbref loc, const char *exit_name)
         preserve = PushRegisters(MAX_GLOBAL_REGS);
         save_and_clear_global_regs(preserve);
 
-        mux_exec(FormatOutput, &tPtr, loc, player, player,
+        mux_exec(ExitFormat, FormatOutput, &tPtr, loc, player, player,
             AttrTrace(aflags, EV_FCHECK|EV_EVAL|EV_TOP),
-            &ExitFormat, &VisibleObjectList, 1);
+            &VisibleObjectList, 1);
 
         restore_global_regs(preserve);
         PopRegisters(preserve, MAX_GLOBAL_REGS);
@@ -493,7 +492,7 @@ static void look_exits(dbref player, dbref loc, const char *exit_name)
 
         bDisplayExits = 0;
     }
-    free_lbuf(ExitFormatBuffer);
+    free_lbuf(ExitFormat);
 
     if (!bDisplayExits)
     {
@@ -611,8 +610,7 @@ static void look_contents(dbref player, dbref loc, const char *contents_name, in
 
     dbref aowner;
     int aflags;
-    char *ContentsFormatBuffer = atr_pget(loc, A_CONFORMAT, &aowner, &aflags);
-    char *ContentsFormat = ContentsFormatBuffer;
+    char *ContentsFormat = atr_pget(loc, A_CONFORMAT, &aowner, &aflags);
 
     bool bDisplayContents = true;
     if (*ContentsFormat)
@@ -657,9 +655,9 @@ static void look_contents(dbref player, dbref loc, const char *contents_name, in
         preserve = PushRegisters(MAX_GLOBAL_REGS);
         save_and_clear_global_regs(preserve);
 
-        mux_exec(FormatOutput, &tPtr, loc, player, player,
+        mux_exec(ContentsFormat, FormatOutput, &tPtr, loc, player, player,
             AttrTrace(aflags, EV_FCHECK|EV_EVAL|EV_TOP),
-            &ContentsFormat, ParameterList, 2);
+            ParameterList, 2);
 
         restore_global_regs(preserve);
         PopRegisters(preserve, MAX_GLOBAL_REGS);
@@ -671,7 +669,7 @@ static void look_contents(dbref player, dbref loc, const char *contents_name, in
 
         bDisplayContents = false;
     }
-    free_lbuf(ContentsFormatBuffer);
+    free_lbuf(ContentsFormat);
 
     if (!bDisplayContents)
     {
@@ -1020,8 +1018,7 @@ static bool show_a_desc(dbref player, dbref loc)
     int   aflags1;
     bool indent = (isRoom(loc) && mudconf.indent_desc && atr_get_raw(loc, A_DESC));
 
-    char *DescFormatBuffer = atr_pget(loc, A_DESCFORMAT, &aowner1, &aflags1);
-    char *DescFormat = DescFormatBuffer;
+    char *DescFormat = atr_pget(loc, A_DESCFORMAT, &aowner1, &aflags1);
     if (*DescFormat)
     {
         reg_ref **preserve = NULL;
@@ -1036,12 +1033,11 @@ static bool show_a_desc(dbref player, dbref loc)
         dbref aowner2;
         int   aflags2;
         char *tbuf1 = atr_pget(loc, iDescDefault, &aowner2, &aflags2);
-        char *str = tbuf1;
         char *temp = alloc_lbuf("look_description.ET");
         char *bp = temp;
-        mux_exec(temp, &bp, loc, player, player,
+        mux_exec(tbuf1, temp, &bp, loc, player, player,
             AttrTrace(aflags2, EV_FCHECK|EV_EVAL|EV_TOP),
-            &str, NULL, 0);
+            NULL, 0);
         *bp = '\0';
 
         char *attrname = alloc_lbuf("look_description.AN");
@@ -1052,9 +1048,9 @@ static bool show_a_desc(dbref player, dbref loc)
         char* ParameterList[] =
             { temp, attrname };
 
-        mux_exec(FormatOutput, &tPtr, loc, player, player,
+        mux_exec(DescFormat, FormatOutput, &tPtr, loc, player, player,
             AttrTrace(aflags1, EV_FCHECK|EV_EVAL|EV_TOP),
-            &DescFormat, ParameterList, 2);
+            ParameterList, 2);
 
         notify(player, FormatOutput);
 #ifdef REALITY_LVLS
@@ -1138,7 +1134,7 @@ static bool show_a_desc(dbref player, dbref loc)
         }
         free_lbuf(got);
     }
-    free_lbuf(DescFormatBuffer);
+    free_lbuf(DescFormat);
     return ret;
 }
 
@@ -1260,8 +1256,7 @@ void look_in(dbref player, dbref loc, int key)
     //
     dbref aowner;
     int aflags;
-    char *NameFormatBuffer = atr_pget(loc, A_NAMEFORMAT, &aowner, &aflags);
-    char *NameFormat = NameFormatBuffer;
+    char *NameFormat = atr_pget(loc, A_NAMEFORMAT, &aowner, &aflags);
 
     if (*NameFormat)
     {
@@ -1272,9 +1267,9 @@ void look_in(dbref player, dbref loc, int key)
         preserve = PushRegisters(MAX_GLOBAL_REGS);
         save_and_clear_global_regs(preserve);
 
-        mux_exec(FormatOutput, &tPtr, loc, player, player,
+        mux_exec(NameFormat, FormatOutput, &tPtr, loc, player, player,
             AttrTrace(aflags, EV_FCHECK|EV_EVAL|EV_TOP),
-            &NameFormat, 0, 0);
+            0, 0);
 
         restore_global_regs(preserve);
         PopRegisters(preserve, MAX_GLOBAL_REGS);
@@ -1299,7 +1294,7 @@ void look_in(dbref player, dbref loc, int key)
         }
         free_lbuf(buff);
     }
-    free_lbuf(NameFormatBuffer);
+    free_lbuf(NameFormat);
 
     if (!Good_obj(loc))
     {

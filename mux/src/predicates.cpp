@@ -701,7 +701,7 @@ void do_switch
     //
     bool bAny = false;
     int a;
-    char *buff, *bp, *str;
+    char *buff, *bp;
     buff = bp = alloc_lbuf("do_switch");
     CLinearTimeAbsolute lta;
     for (  a = 0;
@@ -713,9 +713,8 @@ void do_switch
            a += 2)
     {
         bp = buff;
-        str = args[a];
-        mux_exec(buff, &bp, executor, caller, enactor, eval|EV_FCHECK|EV_EVAL|EV_TOP,
-            &str, cargs, ncargs);
+        mux_exec(args[a], buff, &bp, executor, caller, enactor, eval|EV_FCHECK|EV_EVAL|EV_TOP,
+            cargs, ncargs);
         *bp = '\0';
         if (wild_match(buff, expr))
         {
@@ -783,8 +782,8 @@ void do_if
     CLinearTimeAbsolute lta;
     buff = bp = alloc_lbuf("do_if");
 
-    mux_exec(buff, &bp, player, caller, enactor, eval|EV_FCHECK|EV_EVAL|EV_TOP,
-        &expr, cargs, ncargs);
+    mux_exec(expr, buff, &bp, player, caller, enactor, eval|EV_FCHECK|EV_EVAL|EV_TOP,
+        cargs, ncargs);
     int a = !xlate(buff);
     free_lbuf(buff);
 
@@ -2319,7 +2318,7 @@ void did_it(dbref player, dbref thing, int what, const char *def, int owhat,
         return;
     }
 
-    char *d, *buff, *act, *charges, *bp, *str;
+    char *d, *buff, *act, *charges, *bp;
     dbref loc, aowner;
     int num, aflags;
 
@@ -2348,10 +2347,9 @@ void did_it(dbref player, dbref thing, int what, const char *def, int owhat,
             save_global_regs(preserve);
 
             buff = bp = alloc_lbuf("did_it.1");
-            str = d;
-            mux_exec(buff, &bp, thing, player, player,
+            mux_exec(d, buff, &bp, thing, player, player,
                 AttrTrace(aflags, EV_EVAL|EV_FIGNORE|EV_FCHECK|EV_TOP),
-                &str, args, nargs);
+                args, nargs);
             *bp = '\0';
             if (  (aflags & AF_HTML)
                && Html(player))
@@ -2403,10 +2401,9 @@ void did_it(dbref player, dbref thing, int what, const char *def, int owhat,
                 save_global_regs(preserve);
             }
             buff = bp = alloc_lbuf("did_it.2");
-            str = d;
-            mux_exec(buff, &bp, thing, player, player,
+            mux_exec(d, buff, &bp, thing, player, player,
                  AttrTrace(aflags, EV_EVAL|EV_FIGNORE|EV_FCHECK|EV_TOP),
-                 &str, args, nargs);
+                 args, nargs);
             *bp = '\0';
 #if !defined(FIRANMUX)
             if (*buff)

@@ -1068,9 +1068,8 @@ static bool process_hook(dbref executor, dbref thing, char *s_uselock, ATTR *hk_
             }
             char *buff, *bufc;
             bufc = buff = alloc_lbuf("process_hook");
-            char *str = atext;
-            mux_exec(buff, &bufc, thing, executor, executor,
-                AttrTrace(aflags, EV_FCHECK|EV_EVAL), &str, NULL, 0);
+            mux_exec(atext, buff, &bufc, thing, executor, executor,
+                AttrTrace(aflags, EV_FCHECK|EV_EVAL), NULL, 0);
             *bufc = '\0';
             if (save_flg)
             {
@@ -1324,8 +1323,8 @@ static void process_cmdent(CMDENT *cmdp, char *switchp, dbref executor, dbref ca
             {
                 *bp++ = *str++;
             }
-            mux_exec(buf1, &bp, executor, caller, enactor,
-                eval|interp|EV_FCHECK|EV_TOP, &str, cargs, ncargs);
+            mux_exec(str, buf1, &bp, executor, caller, enactor,
+                eval|interp|EV_FCHECK|EV_TOP, cargs, ncargs);
             *bp = '\0';
         }
         else
@@ -1470,9 +1469,8 @@ static void process_cmdent(CMDENT *cmdp, char *switchp, dbref executor, dbref ca
             *arg = '\0';
         }
         buf1 = bp = alloc_lbuf("process_cmdent.2");
-        str = buf2;
-        mux_exec(buf1, &bp, executor, caller, enactor,
-            eval|EV_STRIP_CURLY|EV_FCHECK|EV_EVAL|EV_TOP, &str, cargs, ncargs);
+        mux_exec(buf2, buf1, &bp, executor, caller, enactor,
+            eval|EV_STRIP_CURLY|EV_FCHECK|EV_EVAL|EV_TOP, cargs, ncargs);
         *bp = '\0';
 
         if (cmdp->callseq & CS_ARGV)
@@ -1510,9 +1508,8 @@ static void process_cmdent(CMDENT *cmdp, char *switchp, dbref executor, dbref ca
             if (interp & EV_EVAL)
             {
                 buf2 = bp = alloc_lbuf("process_cmdent.3");
-                str = arg;
-                mux_exec(buf2, &bp, executor, caller, enactor,
-                    eval|interp|EV_FCHECK|EV_TOP, &str, cargs, ncargs);
+                mux_exec(arg, buf2, &bp, executor, caller, enactor,
+                    eval|interp|EV_FCHECK|EV_TOP, cargs, ncargs);
                 *bp = '\0';
             }
             else if (cmdp->callseq & CS_UNPARSE)
@@ -1702,7 +1699,7 @@ char *process_command
     static char SpaceCompressCommand[LBUF_SIZE];
     static char LowerCaseCommand[LBUF_SIZE];
     char *pCommand;
-    char *p, *q, *arg, *pSlash, *cmdsave, *bp, *str, check2[2];
+    char *p, *q, *arg, *pSlash, *cmdsave, *bp, check2[2];
     int aflags;
     dbref exit, aowner;
     CMDENT *cmdp;
@@ -2219,9 +2216,8 @@ char *process_command
     // to work.
     //
     bp = LowerCaseCommand;
-    str = pCommand;
-    mux_exec(LowerCaseCommand, &bp, executor, caller, enactor,
-        eval|EV_EVAL|EV_FCHECK|EV_STRIP_CURLY|EV_TOP, &str, args, nargs);
+    mux_exec(pCommand, LowerCaseCommand, &bp, executor, caller, enactor,
+        eval|EV_EVAL|EV_FCHECK|EV_STRIP_CURLY|EV_TOP, args, nargs);
     *bp = '\0';
     bool succ = false;
 
@@ -2495,9 +2491,8 @@ char *process_command
             char *errtext = atr_get(mudconf.global_error_obj, A_VA, &aowner, &aflags);
             char *errbuff = alloc_lbuf("process_command.error_msg");
             char *errbufc = errbuff;
-            str = errtext;
-            mux_exec(errbuff, &errbufc, mudconf.global_error_obj, caller, enactor,
-                AttrTrace(aflags, EV_EVAL|EV_FCHECK|EV_STRIP_CURLY|EV_TOP), &str,
+            mux_exec(errtext, errbuff, &errbufc, mudconf.global_error_obj, caller, enactor,
+                AttrTrace(aflags, EV_EVAL|EV_FCHECK|EV_STRIP_CURLY|EV_TOP),
                 &pCommand, 1);
             notify(executor, errbuff);
             free_lbuf(errtext);

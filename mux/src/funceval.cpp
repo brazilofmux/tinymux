@@ -1031,9 +1031,8 @@ FUNCTION(fun_objeval)
     }
     char *name = alloc_lbuf("fun_objeval");
     char *bp = name;
-    char *str = fargs[0];
-    mux_exec(name, &bp, executor, caller, enactor,
-             eval|EV_FCHECK|EV_STRIP_CURLY|EV_EVAL, &str, cargs, ncargs);
+    mux_exec(fargs[0], name, &bp, executor, caller, enactor,
+             eval|EV_FCHECK|EV_STRIP_CURLY|EV_EVAL, cargs, ncargs);
     *bp = '\0';
 
     dbref obj = match_thing_quiet(executor, name);
@@ -1054,9 +1053,8 @@ FUNCTION(fun_objeval)
     }
 
     mudstate.nObjEvalNest++;
-    str = fargs[1];
-    mux_exec(buff, bufc, obj, executor, enactor,
-             eval|EV_FCHECK|EV_STRIP_CURLY|EV_EVAL, &str, cargs, ncargs);
+    mux_exec(fargs[1], buff, bufc, obj, executor, enactor,
+             eval|EV_FCHECK|EV_STRIP_CURLY|EV_EVAL, cargs, ncargs);
     mudstate.nObjEvalNest--;
 }
 
@@ -1068,9 +1066,8 @@ FUNCTION(fun_localize)
     preserve = PushRegisters(MAX_GLOBAL_REGS);
     save_global_regs(preserve);
 
-    char *str = fargs[0];
-    mux_exec(buff, bufc, executor, caller, enactor,
-        eval|EV_FCHECK|EV_STRIP_CURLY|EV_EVAL, &str, cargs, ncargs);
+    mux_exec(fargs[0], buff, bufc, executor, caller, enactor,
+        eval|EV_FCHECK|EV_STRIP_CURLY|EV_EVAL, cargs, ncargs);
 
     restore_global_regs(preserve);
     PopRegisters(preserve, MAX_GLOBAL_REGS);
@@ -1173,9 +1170,8 @@ FUNCTION(fun_zfun)
         free_lbuf(tbuf1);
         return;
     }
-    char *str = tbuf1;
-    mux_exec(buff, bufc, zone, executor, enactor,
-       AttrTrace(aflags, EV_EVAL|EV_STRIP_CURLY|EV_FCHECK), &str,
+    mux_exec(tbuf1, buff, bufc, zone, executor, enactor,
+       AttrTrace(aflags, EV_EVAL|EV_STRIP_CURLY|EV_FCHECK),
         &(fargs[1]), nfargs - 1);
     free_lbuf(tbuf1);
 }
@@ -1743,25 +1739,22 @@ FUNCTION(fun_ifelse)
     //
     char *lbuff = alloc_lbuf("fun_ifelse");
     char *bp = lbuff;
-    char *str = fargs[0];
-    mux_exec(lbuff, &bp, executor, caller, enactor,
-        eval|EV_STRIP_CURLY|EV_FCHECK|EV_EVAL, &str, cargs, ncargs);
+    mux_exec(fargs[0], lbuff, &bp, executor, caller, enactor,
+        eval|EV_STRIP_CURLY|EV_FCHECK|EV_EVAL, cargs, ncargs);
     *bp = '\0';
 
     if (!xlate(lbuff))
     {
         if (nfargs == 3)
         {
-            str = fargs[2];
-            mux_exec(buff, bufc, executor, caller, enactor,
-                eval|EV_STRIP_CURLY|EV_FCHECK|EV_EVAL, &str, cargs, ncargs);
+            mux_exec(fargs[2], buff, bufc, executor, caller, enactor,
+                eval|EV_STRIP_CURLY|EV_FCHECK|EV_EVAL, cargs, ncargs);
         }
     }
     else
     {
-        str = fargs[1];
-        mux_exec(buff, bufc, executor, caller, enactor,
-            eval|EV_STRIP_CURLY|EV_FCHECK|EV_EVAL, &str, cargs, ncargs);
+        mux_exec(fargs[1], buff, bufc, executor, caller, enactor,
+            eval|EV_STRIP_CURLY|EV_FCHECK|EV_EVAL, cargs, ncargs);
     }
     free_lbuf(lbuff);
 }
@@ -2243,9 +2236,8 @@ static void default_handler(char *buff, char **bufc, dbref executor,
     //
     char *objattr = alloc_lbuf("default_handler");
     char *bp = objattr;
-    char *str = fargs[0];
-    mux_exec(objattr, &bp, executor, caller, enactor,
-             eval|EV_EVAL|EV_STRIP_CURLY|EV_FCHECK, &str, cargs, ncargs);
+    mux_exec(fargs[0], objattr, &bp, executor, caller, enactor,
+             eval|EV_EVAL|EV_STRIP_CURLY|EV_FCHECK, cargs, ncargs);
     *bp = '\0';
 
     // Parse the first argument as either <dbref>/<attrname> or <attrname>.
@@ -2275,9 +2267,8 @@ static void default_handler(char *buff, char **bufc, dbref executor,
                 break;
 
             case DEFAULT_EDEFAULT:
-                str = atr_gotten;
-                mux_exec(buff, bufc, thing, executor, executor,
-                     AttrTrace(aflags, EV_FIGNORE|EV_EVAL), &str,
+                mux_exec(atr_gotten, buff, bufc, thing, executor, executor,
+                     AttrTrace(aflags, EV_FIGNORE|EV_EVAL),
                      NULL, 0);
                 break;
 
@@ -2290,17 +2281,15 @@ static void default_handler(char *buff, char **bufc, dbref executor,
                     {
                         xargs[i] = alloc_lbuf("fun_udefault_args");
                         char *bp2 = xargs[i];
-                        str = fargs[i+2];
 
-                        mux_exec(xargs[i], &bp2,
+                        mux_exec(fargs[i+2], xargs[i], &bp2,
                             thing, caller, enactor,
                             eval|EV_STRIP_CURLY|EV_FCHECK|EV_EVAL,
-                            &str, cargs, ncargs);
+                            cargs, ncargs);
                     }
 
-                    str = atr_gotten;
-                    mux_exec(buff, bufc, thing, caller, enactor,
-                        AttrTrace(aflags, EV_FCHECK|EV_EVAL), &str, xargs,
+                    mux_exec(atr_gotten, buff, bufc, thing, caller, enactor,
+                        AttrTrace(aflags, EV_FCHECK|EV_EVAL), xargs,
                         nxargs);
 
                     for (i = 0; i < nxargs; i++)
@@ -2320,9 +2309,8 @@ static void default_handler(char *buff, char **bufc, dbref executor,
     // If we've hit this point, we've not gotten anything useful, so
     // we go and evaluate the default.
     //
-    str = fargs[1];
-    mux_exec(buff, bufc, executor, caller, enactor,
-             eval|EV_EVAL|EV_STRIP_CURLY|EV_FCHECK, &str, cargs, ncargs);
+    mux_exec(fargs[1], buff, bufc, executor, caller, enactor,
+             eval|EV_EVAL|EV_STRIP_CURLY|EV_FCHECK, cargs, ncargs);
 }
 
 
@@ -2787,9 +2775,8 @@ static int u_comp(ucomp_context *pctx, const void *s1, const void *s2)
     mux_strncpy(tbuf, pctx->buff, LBUF_SIZE-1);
     char *result = alloc_lbuf("u_comp");
     char *bp = result;
-    char *str = tbuf;
-    mux_exec(result, &bp, pctx->executor, pctx->caller, pctx->enactor,
-             AttrTrace(pctx->aflags, EV_STRIP_CURLY|EV_FCHECK|EV_EVAL), &str, elems, 2);
+    mux_exec(tbuf, result, &bp, pctx->executor, pctx->caller, pctx->enactor,
+             AttrTrace(pctx->aflags, EV_STRIP_CURLY|EV_FCHECK|EV_EVAL), elems, 2);
     *bp = '\0';
     int n = mux_atol(result);
     free_lbuf(result);
@@ -3086,7 +3073,6 @@ FUNCTION(fun_mix)
     }
 
     char empty[1] = "";
-    char *atextbuf = alloc_lbuf("fun_mix");
     char *os[NUM_ENV_VARS];
     bool bFirst = true;
     for (  int wc = 0;
@@ -3112,14 +3098,11 @@ FUNCTION(fun_mix)
                 os[i] = empty;
             }
         }
-        mux_strncpy(atextbuf, atext, LBUF_SIZE-1);
-        char *str = atextbuf;
-        mux_exec(buff, bufc, thing, executor, enactor,
-            AttrTrace(aflags, EV_STRIP_CURLY|EV_FCHECK|EV_EVAL), &str,
+        mux_exec(atext, buff, bufc, thing, executor, enactor,
+            AttrTrace(aflags, EV_STRIP_CURLY|EV_FCHECK|EV_EVAL),
             os, lastn);
     }
     free_lbuf(atext);
-    free_lbuf(atextbuf);
 }
 
 /* ---------------------------------------------------------------------------
@@ -3165,7 +3148,6 @@ FUNCTION(fun_step)
 
     char *cp = trim_space_sep(fargs[1], &isep);
 
-    char *atextbuf = alloc_lbuf("fun_step");
     char *os[NUM_ENV_VARS];
     bool bFirst = true;
     while (  cp
@@ -3185,13 +3167,10 @@ FUNCTION(fun_step)
         {
             os[i] = split_token(&cp, &isep);
         }
-        mux_strncpy(atextbuf, atext, LBUF_SIZE-1);
-        char *str = atextbuf;
-        mux_exec(buff, bufc, executor, caller, enactor,
-             AttrTrace(aflags, EV_STRIP_CURLY|EV_FCHECK|EV_EVAL), &str, os, i);
+        mux_exec(atext, buff, bufc, executor, caller, enactor,
+             AttrTrace(aflags, EV_STRIP_CURLY|EV_FCHECK|EV_EVAL), os, i);
     }
     free_lbuf(atext);
-    free_lbuf(atextbuf);
 }
 
 /* ---------------------------------------------------------------------------
@@ -3225,9 +3204,7 @@ FUNCTION(fun_foreach)
     }
 
     char cbuf[2] = {'\0', '\0'};
-    char *atextbuf = alloc_lbuf("fun_foreach");
     char *bp = cbuf;
-    char *str;
     mux_string *sStr = new mux_string(fargs[1]);
     sStr->trim();
     size_t nStr = sStr->length();
@@ -3270,10 +3247,8 @@ FUNCTION(fun_foreach)
                 }
             }
 
-            mux_strncpy(atextbuf, atext, LBUF_SIZE-1);
-            str = atextbuf;
-            mux_exec(buff, bufc, thing, executor, enactor,
-                AttrTrace(aflags, EV_STRIP_CURLY|EV_FCHECK|EV_EVAL), &str, &bp, 1);
+            mux_exec(atext, buff, bufc, thing, executor, enactor,
+                AttrTrace(aflags, EV_STRIP_CURLY|EV_FCHECK|EV_EVAL), &bp, 1);
             prev = cbuf[0];
         }
     }
@@ -3285,13 +3260,10 @@ FUNCTION(fun_foreach)
         {
             cbuf[0] = sStr->export_Char(i++);
 
-            mux_strncpy(atextbuf, atext, LBUF_SIZE-1);
-            str = atextbuf;
-            mux_exec(buff, bufc, thing, executor, enactor,
-                AttrTrace(aflags, EV_STRIP_CURLY|EV_FCHECK|EV_EVAL), &str, &bp, 1);
+            mux_exec(atext, buff, bufc, thing, executor, enactor,
+                AttrTrace(aflags, EV_STRIP_CURLY|EV_FCHECK|EV_EVAL), &bp, 1);
         }
     }
-    free_lbuf(atextbuf);
     free_lbuf(atext);
     delete sStr;
 }
@@ -3423,15 +3395,14 @@ FUNCTION(fun_munge)
 
     // Call the u-function with the first list as %0.
     //
-    char *rlist, *bp, *str;
+    char *rlist, *bp;
     char *uargs[2];
 
     bp = rlist = alloc_lbuf("fun_munge");
-    str = atext;
     uargs[0] = list1;
     uargs[1] = sep.str;
-    mux_exec(rlist, &bp, executor, caller, enactor,
-             AttrTrace(aflags, EV_STRIP_CURLY|EV_FCHECK|EV_EVAL), &str, uargs, 2);
+    mux_exec(atext, rlist, &bp, executor, caller, enactor,
+             AttrTrace(aflags, EV_STRIP_CURLY|EV_FCHECK|EV_EVAL), uargs, 2);
     *bp = '\0';
     free_lbuf(atext);
     free_lbuf(list1);

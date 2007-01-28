@@ -487,9 +487,8 @@ static dbref get_exit_dest(dbref executor, dbref exit)
 
     char *result = alloc_lbuf("get_exit_dest");
     char *ref = result;
-    char *str = atr_gotten;
-    mux_exec(result, &ref, exit, executor, executor,
-        AttrTrace(aflags, EV_FCHECK|EV_EVAL), &str, NULL, 0);
+    mux_exec(atr_gotten, result, &ref, exit, executor, executor,
+        AttrTrace(aflags, EV_FCHECK|EV_EVAL), NULL, 0);
     free_lbuf(atr_gotten);
 
     dbref dest = NOTHING;

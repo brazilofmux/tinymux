@@ -921,9 +921,8 @@ static bool AcquireColor(dbref player, dbref target, char SimplifiedCodes[8])
     {
         char *AnsiCodes = alloc_lbuf("AcquireColor.2");
         char *ac = AnsiCodes;
-        char *cp = color_attr;
-        mux_exec(AnsiCodes, &ac, player, target, target,
-                AttrTrace(aflags, EV_EVAL|EV_TOP|EV_FCHECK), &cp, NULL, 0);
+        mux_exec(color_attr, AnsiCodes, &ac, player, target, target,
+                AttrTrace(aflags, EV_EVAL|EV_TOP|EV_FCHECK), NULL, 0);
         *ac = '\0';
         free_lbuf(color_attr);
 

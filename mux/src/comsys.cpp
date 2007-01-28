@@ -896,9 +896,8 @@ static void BuildChannelMessage
             //
             char TempToEval[LBUF_SIZE];
             mux_strncpy(TempToEval, user->title, LBUF_SIZE-1);
-            char *q = TempToEval;
-            mux_exec(*messNormal, &mnptr, user->who, user->who, user->who,
-                EV_FCHECK | EV_EVAL | EV_TOP, &q, NULL, 0);
+            mux_exec(TempToEval, *messNormal, &mnptr, user->who, user->who, user->who,
+                EV_FCHECK | EV_EVAL | EV_TOP, NULL, 0);
         }
         else
         {
@@ -1190,10 +1189,9 @@ static void ChannelMOTD(dbref executor, dbref enactor, int attr)
         {
             char *buf = alloc_lbuf("chanmotd");
             char *bp = buf;
-            char *p  = q;
 
-            mux_exec(buf, &bp, executor, executor, enactor,
-                AttrTrace(aflags, EV_FCHECK|EV_EVAL|EV_TOP), &p, NULL, 0);
+            mux_exec(q, buf, &bp, executor, executor, enactor,
+                AttrTrace(aflags, EV_FCHECK|EV_EVAL|EV_TOP), NULL, 0);
             *bp = '\0';
 
             notify_with_cause_ooc(enactor, executor, buf);

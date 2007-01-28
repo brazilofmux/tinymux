@@ -727,7 +727,7 @@ char *parse_arglist( dbref executor, dbref caller, dbref enactor, char *dstr,
                      char delim, int eval, char *fargs[], int nfargs,
                      char *cargs[], int ncargs, int *nArgsParsed )
 {
-    char *rstr, *tstr, *bp, *str;
+    char *rstr, *tstr, *bp;
     int arg, peval;
 
     if (dstr == NULL)
@@ -762,9 +762,8 @@ char *parse_arglist( dbref executor, dbref caller, dbref enactor, char *dstr,
         bp = fargs[arg] = alloc_lbuf("parse_arglist");
         if (eval & EV_EVAL)
         {
-            str = tstr;
-            mux_exec(fargs[arg], &bp, executor, caller, enactor,
-                     eval | EV_FCHECK, &str, cargs, ncargs);
+            mux_exec(tstr, fargs[arg], &bp, executor, caller, enactor,
+                     eval | EV_FCHECK, cargs, ncargs);
             *bp = '\0';
         }
         else
@@ -784,7 +783,7 @@ static char *parse_arglist_lite( dbref executor, dbref caller, dbref enactor,
 {
     UNUSED_PARAMETER(delim);
 
-    char *tstr, *bp, *str;
+    char *tstr, *bp;
 
     if (dstr == NULL)
     {
@@ -831,8 +830,7 @@ static char *parse_arglist_lite( dbref executor, dbref caller, dbref enactor,
         }
 
         bp = fargs[arg] = alloc_lbuf("parse_arglist");
-        str = tstr;
-        mux_exec(fargs[arg], &bp, executor, caller, enactor, peval, &str,
+        mux_exec(tstr, fargs[arg], &bp, executor, caller, enactor, peval,
                  cargs, ncargs);
         *bp = '\0';
         arg++;
@@ -1098,11 +1096,11 @@ void PopRegisters(reg_ref **p, int nNeeded)
     pRefsFrame->nrefs += nNeeded;
 }
 
-void mux_exec( char *buff, char **bufc, dbref executor, dbref caller,
-               dbref enactor, int eval, char **dstr, char *cargs[], int ncargs)
+void mux_exec( char *pdstr, char *buff, char **bufc, dbref executor,
+               dbref caller, dbref enactor, int eval, char *cargs[], int ncargs)
 {
-    if (  *dstr == NULL
-       || **dstr == '\0'
+    if (  pdstr == NULL
+       || *pdstr == '\0'
        || MuxAlarm.bAlarmed)
     {
         return;
@@ -1138,8 +1136,6 @@ void mux_exec( char *buff, char **bufc, dbref executor, dbref caller,
     // execute any function that could re-enter mux_exec.
     //
     static char mux_scratch[LBUF_SIZE];
-
-    char *pdstr = *dstr;
 
     int at_space = 1;
     int gender = -1;
@@ -1374,7 +1370,6 @@ void mux_exec( char *buff, char **bufc, dbref executor, dbref caller,
                         {
                             i = executor;
                         }
-                        TempPtr = tstr;
 
                         reg_ref **preserve = NULL;
 
@@ -1384,8 +1379,8 @@ void mux_exec( char *buff, char **bufc, dbref executor, dbref caller,
                             save_global_regs(preserve);
                         }
 
-                        mux_exec(buff, &oldp, i, executor, enactor,
-                            AttrTrace(aflags, feval), &TempPtr, fargs, nfargs);
+                        mux_exec(tstr, buff, &oldp, i, executor, enactor,
+                            AttrTrace(aflags, feval), fargs, nfargs);
 
                         if (ufp->flags & FN_PRES)
                         {
@@ -1939,9 +1934,8 @@ void mux_exec( char *buff, char **bufc, dbref executor, dbref caller,
             else
             {
                 mudstate.nStackNest--;
-                TempPtr = tbuf;
-                mux_exec(buff, bufc, executor, caller, enactor,
-                    (eval | EV_FCHECK | EV_FMAND) & ~EV_TOP, &TempPtr, cargs,
+                mux_exec(tbuf, buff, bufc, executor, caller, enactor,
+                    (eval | EV_FCHECK | EV_FMAND) & ~EV_TOP, cargs,
                     ncargs);
                 nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
                 pdstr--;
@@ -2025,16 +2019,14 @@ void mux_exec( char *buff, char **bufc, dbref executor, dbref caller,
                         tbuf++;
                     }
 
-                    TempPtr = tbuf;
-                    mux_exec(buff, bufc, executor, caller, enactor,
+                    mux_exec(tbuf, buff, bufc, executor, caller, enactor,
                         (eval & ~(EV_STRIP_CURLY | EV_FCHECK | EV_TOP)),
-                        &TempPtr, cargs, ncargs);
+                        cargs, ncargs);
                 }
                 else
                 {
-                    TempPtr = tbuf;
-                    mux_exec(buff, bufc, executor, caller, enactor,
-                        eval & ~EV_TOP, &TempPtr, cargs, ncargs);
+                    mux_exec(tbuf, buff, bufc, executor, caller, enactor,
+                        eval & ~EV_TOP, cargs, ncargs);
                 }
                 if (tbuf)
                 {

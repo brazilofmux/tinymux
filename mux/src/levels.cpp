@@ -559,9 +559,8 @@ void did_it_rlevel
                     save_global_regs(preserve);
                 }
                 buff = bp = alloc_lbuf("did_it.1");
-                str = d;
-                mux_exec(buff, &bp, thing, thing, player,
-                    AttrTrace(aflags, EV_EVAL|EV_FIGNORE|EV_TOP), &str,
+                mux_exec(d, buff, &bp, thing, thing, player,
+                    AttrTrace(aflags, EV_EVAL|EV_FIGNORE|EV_TOP),
                     args, nargs);
                 *bp = '\0';
 
@@ -599,9 +598,8 @@ void did_it_rlevel
                     save_global_regs(preserve);
                 }
                 buff = bp = alloc_lbuf("did_it.1");
-                str = d;
-                mux_exec(buff, &bp, thing, thing, player,
-                    AttrTrace(aflags, EV_EVAL|EV_FIGNORE|EV_TOP), &str,
+                mux_exec(d, buff, &bp, thing, thing, player,
+                    AttrTrace(aflags, EV_EVAL|EV_FIGNORE|EV_TOP),
                     args, nargs);
                 *bp = '\0';
 
@@ -643,9 +641,8 @@ void did_it_rlevel
              save_global_regs(preserve);
           }
           buff = bp = alloc_lbuf("did_it.1");
-          str = d;
-          mux_exec(buff, &bp, thing, thing, player,
-              AttrTrace(aflags, EV_EVAL|EV_FIGNORE|EV_TOP), &str,
+          mux_exec(d, buff, &bp, thing, thing, player,
+              AttrTrace(aflags, EV_EVAL|EV_FIGNORE|EV_TOP),
               args, nargs);
           *bp = '\0';
           notify(player, buff);
@@ -671,9 +668,8 @@ void did_it_rlevel
                 save_global_regs(preserve);
             }
             buff = bp = alloc_lbuf("did_it.2");
-            str = d;
-            mux_exec(buff, &bp, thing, thing, player,
-                AttrTrace(aflags, EV_EVAL|EV_FIGNORE|EV_TOP), &str,
+            mux_exec(d, buff, &bp, thing, thing, player,
+                AttrTrace(aflags, EV_EVAL|EV_FIGNORE|EV_TOP),
                 args, nargs);
             *bp = '\0';
 

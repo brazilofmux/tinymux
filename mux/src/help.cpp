@@ -371,9 +371,8 @@ static bool ReportTopic(dbref executor, struct help_entry *htab_entry, int iHelp
         bool bEval = mudstate.aHelpDesc[iHelpfile].bEval;
         if (bEval)
         {
-            char *str = line;
-            mux_exec(result, &bp, executor, executor, executor,
-                EV_NO_COMPRESS | EV_FIGNORE | EV_EVAL, &str, NULL, 0);
+            mux_exec(line, result, &bp, executor, executor, executor,
+                EV_NO_COMPRESS | EV_FIGNORE | EV_EVAL, NULL, 0);
         }
         else
         {

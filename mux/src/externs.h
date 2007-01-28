@@ -125,9 +125,8 @@ char *parse_to(char **, char, int);
 char *parse_arglist(dbref executor, dbref caller, dbref enactor, char *,
                     char, int, char *[], int, char*[], int, int *);
 int get_gender(dbref);
-void mux_exec(char *buff, char **bufc, dbref executor, dbref caller,
-              dbref enactor, int eval, char **dstr, char *cargs[],
-              int ncargs);
+void mux_exec(char *pdstr, char *buff, char **bufc, dbref executor,
+              dbref caller, dbref enactor, int eval, char *cargs[], int ncargs);
 
 DCL_INLINE void BufAddRef(lbuf_ref *lbufref)
 {
