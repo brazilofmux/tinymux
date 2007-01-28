@@ -229,16 +229,14 @@ private:
     // m_n is always between 0 and LBUF_SIZE-1 inclusively.  The first m_n
     // characters of m_ach[] contain the non-ANSI portion of the string.
     // In addition to a length, m_ach[] is also terminated with '\0' at
-    // m_ach[m_n].  This is intentional redudant.  Each character in m_ach[]
-    // has a corresponding color encoded in m_acs[].  The m_acs[m_n]
-    // (which corresponds to '\0') is not guaranteed to be valid.
-    //
-    // TODO: m_acs[LBUF_SIZE] can and should eventually be changed to
-    // m_acs[LBUF_SIZE-1] because the last position will never be used.
+    // m_ach[m_n].  This is intentional redudant.  Unless there is no color in
+    // the string, each character in m_ach[] has a corresponding color encoded
+    // in m_pcs[].  The m_pcs[m_n] (which corresponds to '\0') is not guaranteed
+    // to exist or be valid.
     //
     size_t          m_n;
     char            m_ach[LBUF_SIZE];
-    ANSI_ColorState m_acs[LBUF_SIZE];
+    ANSI_ColorState *m_pcs;
 
 public:
     mux_string(void);
