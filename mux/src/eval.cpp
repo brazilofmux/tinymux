@@ -1257,7 +1257,7 @@ void mux_exec( char *pdstr, char *buff, char **bufc, dbref executor,
             if (  0 < nFun
                && nFun <= MAX_UFUN_NAME_LEN)
             {
-                // _strlwr(tbuf);
+                // _strlwr();
                 //
                 for (size_t iFun = 0; iFun < nFun; iFun++)
                 {
@@ -1932,12 +1932,10 @@ void mux_exec( char *pdstr, char *buff, char **bufc, dbref executor,
             }
             else
             {
-                char chSave;
-                if (tbuf)
-                {
-                    chSave = tbuf[n];
-                    tbuf[n] = '\0';
-                }
+                // Prevent evaluation beyond the closing square bracket.
+                //
+                ch = tbuf[n];
+                tbuf[n] = '\0';
 
                 mudstate.nStackNest--;
                 mux_exec(tbuf, buff, bufc, executor, caller, enactor,
@@ -1946,10 +1944,7 @@ void mux_exec( char *pdstr, char *buff, char **bufc, dbref executor,
                 nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
                 pdstr--;
 
-                if (tbuf)
-                {
-                    tbuf[n] = chSave;
-                }
+                tbuf[n] = ch;
             }
         }
 
@@ -1985,7 +1980,7 @@ void mux_exec( char *pdstr, char *buff, char **bufc, dbref executor,
             mudstate.nStackNest++;
             tbuf = parse_to_lite(&pdstr, '}', '\0', &n, &at_space);
             at_space = 0;
-            if (pdstr == NULL)
+            if (NULL == pdstr)
             {
                 if (nBufferAvailable)
                 {
@@ -2006,28 +2001,27 @@ void mux_exec( char *pdstr, char *buff, char **bufc, dbref executor,
                     }
                 }
 
-                char chSave;
-                if (tbuf)
-                {
-                    chSave = tbuf[n];
-                    tbuf[n] = '\0';
-                }
+                // Prevent evaluation beyond closing brace.
+                //
+                ch = tbuf[n];
+                tbuf[n] = '\0';
 
                 if (eval & EV_EVAL)
                 {
                     // Preserve leading spaces (Felan)
                     //
-                    if (*tbuf == ' ')
+                    i = 0;
+                    if (' ' == tbuf[0])
                     {
                         if (nBufferAvailable)
                         {
                             *(*bufc)++ = ' ';
                             nBufferAvailable--;
                         }
-                        tbuf++;
+                        i = 1;
                     }
 
-                    mux_exec(tbuf, buff, bufc, executor, caller, enactor,
+                    mux_exec(tbuf+i, buff, bufc, executor, caller, enactor,
                         (eval & ~(EV_STRIP_CURLY | EV_FCHECK | EV_TOP)),
                         cargs, ncargs);
                 }
@@ -2036,6 +2030,7 @@ void mux_exec( char *pdstr, char *buff, char **bufc, dbref executor,
                     mux_exec(tbuf, buff, bufc, executor, caller, enactor,
                         eval & ~EV_TOP, cargs, ncargs);
                 }
+                tbuf[n] = ch;
                 nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
 
                 if (!(eval & EV_STRIP_CURLY))
@@ -2047,11 +2042,6 @@ void mux_exec( char *pdstr, char *buff, char **bufc, dbref executor,
                     }
                 }
                 pdstr--;
-
-                if (tbuf)
-                {
-                    tbuf[n] = chSave;
-                }
             }
         }
         else if (*pdstr == '\\')
