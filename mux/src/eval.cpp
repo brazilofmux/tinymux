@@ -831,6 +831,9 @@ static char *parse_arglist_lite( dbref executor, dbref caller, dbref enactor,
 
         if (tstr)
         {
+            // Prevent evaluation beyond the end of the argument (either at
+            // the comma or at the closing parenthesis).
+            //
             chSave = tstr[nLen];
             tstr[nLen] = '\0';
 
