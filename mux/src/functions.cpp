@@ -94,50 +94,6 @@ char *trim_space_sep(char *str, SEP *sep)
     return str;
 }
 
-// next_token: Point at start of next token in string -- known length
-// version.
-//
-static char *next_token_LEN(char *str, size_t *nStr, SEP *psep)
-{
-    char *pBegin = str;
-    if (psep->n == 1)
-    {
-        while (  *pBegin != '\0'
-              && *pBegin != psep->str[0])
-        {
-            pBegin++;
-        }
-        if (!*pBegin)
-        {
-            *nStr = 0;
-            return NULL;
-        }
-        pBegin++;
-        if (psep->str[0] == ' ')
-        {
-            while (*pBegin == ' ')
-            {
-                pBegin++;
-            }
-        }
-    }
-    else
-    {
-        char *p = strstr(pBegin, psep->str);
-        if (p)
-        {
-            pBegin = p + psep->n;
-        }
-        else
-        {
-            *nStr = 0;
-            return NULL;
-        }
-    }
-    *nStr -= pBegin - str;
-    return pBegin;
-}
-
 // next_token: Point at start of next token in string
 //
 char *next_token(char *str, SEP *psep)
@@ -175,67 +131,6 @@ char *next_token(char *str, SEP *psep)
         }
     }
     return str;
-}
-
-// split_token: Get next token from string as null-term string. String is
-// destructively modified -- known length version.
-//
-static char *split_token_LEN(char **sp, size_t *nStr, SEP *psep, size_t *nToken)
-{
-    char *str = *sp;
-    char *save = str;
-    if (!str)
-    {
-        *nStr = 0;
-        *sp = NULL;
-        *nToken = 0;
-        return NULL;
-    }
-
-    if (psep->n == 1)
-    {
-        // Advance over token
-        //
-        while (  *str
-              && *str != psep->str[0])
-        {
-            str++;
-        }
-        *nToken = str - save;
-
-        if (*str)
-        {
-            *str++ = '\0';
-            if (psep->str[0] == ' ')
-            {
-                while (*str == ' ')
-                {
-                    str++;
-                }
-            }
-            *nStr -= str - save;
-        }
-        else
-        {
-            *nStr = 0;
-            str = NULL;
-        }
-    }
-    else
-    {
-        char *p = strstr(str, psep->str);
-        if (p)
-        {
-            *p = '\0';
-            str = p + psep->n;
-        }
-        else
-        {
-            str = NULL;
-        }
-    }
-    *sp = str;
-    return save;
 }
 
 // split_token: Get next token from string as null-term string.  String is
