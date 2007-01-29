@@ -1920,13 +1920,6 @@ void mux_exec( char *pdstr, char *buff, char **bufc, dbref executor,
             tstr = pdstr++;
             mudstate.nStackNest++;
             tbuf = parse_to_lite(&pdstr, ']', '\0', &n, &at_space);
-            char chSave = '\0';
-            if (tbuf)
-            {
-                chSave = tbuf[n];
-                tbuf[n] = '\0';
-            }
-
             at_space = 0;
             if (pdstr == NULL)
             {
@@ -1939,17 +1932,24 @@ void mux_exec( char *pdstr, char *buff, char **bufc, dbref executor,
             }
             else
             {
+                char chSave;
+                if (tbuf)
+                {
+                    chSave = tbuf[n];
+                    tbuf[n] = '\0';
+                }
+
                 mudstate.nStackNest--;
                 mux_exec(tbuf, buff, bufc, executor, caller, enactor,
                     (eval | EV_FCHECK | EV_FMAND) & ~EV_TOP, cargs,
                     ncargs);
                 nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
                 pdstr--;
-            }
 
-            if (tbuf)
-            {
-                tbuf[n] = chSave;
+                if (tbuf)
+                {
+                    tbuf[n] = chSave;
+                }
             }
         }
 
@@ -1984,13 +1984,6 @@ void mux_exec( char *pdstr, char *buff, char **bufc, dbref executor,
             tstr = pdstr++;
             mudstate.nStackNest++;
             tbuf = parse_to_lite(&pdstr, '}', '\0', &n, &at_space);
-            char chSave = '\0';
-            if (tbuf)
-            {
-                chSave = tbuf[n];
-                tbuf[n] = '\0';
-            }
-
             at_space = 0;
             if (pdstr == NULL)
             {
@@ -2011,6 +2004,13 @@ void mux_exec( char *pdstr, char *buff, char **bufc, dbref executor,
                         *(*bufc)++ = '{';
                         nBufferAvailable--;
                     }
+                }
+
+                char chSave;
+                if (tbuf)
+                {
+                    chSave = tbuf[n];
+                    tbuf[n] = '\0';
                 }
 
                 if (eval & EV_EVAL)
@@ -2047,11 +2047,11 @@ void mux_exec( char *pdstr, char *buff, char **bufc, dbref executor,
                     }
                 }
                 pdstr--;
-            }
 
-            if (tbuf)
-            {
-                tbuf[n] = chSave;
+                if (tbuf)
+                {
+                    tbuf[n] = chSave;
+                }
             }
         }
         else if (*pdstr == '\\')
