@@ -785,7 +785,7 @@ static char *parse_arglist_lite( dbref executor, dbref caller, dbref enactor,
 
     char *tstr, *bp;
 
-    if (dstr == NULL)
+    if (NULL == dstr)
     {
         *nArgsParsed = 0;
         return NULL;
@@ -801,9 +801,11 @@ static char *parse_arglist_lite( dbref executor, dbref caller, dbref enactor,
     {
         peval = ((eval & ~EV_FCHECK)|EV_NOFCHECK);
     }
-    int arg = 0;
-    int iWhichDelim = 0;
+
+    int  arg = 0;
+    int  iWhichDelim = 0;
     char chSave = '\0';
+
     while (  arg < nfargs
           && dstr
           && iWhichDelim != 2)
@@ -816,28 +818,31 @@ static char *parse_arglist_lite( dbref executor, dbref caller, dbref enactor,
         {
             tstr = parse_to_lite(&dstr, '\0', ')', &nLen, &iWhichDelim);
         }
+
         if (tstr)
         {
+            if (  2 == iWhichDelim
+               && 0 == arg
+               && '\0' == tstr[0])
+            {
+                break;
+            }
+
             chSave = tstr[nLen];
             tstr[nLen] = '\0';
-        }
 
-        if (  iWhichDelim == 2
-           && arg == 0
-           && tstr[0] == '\0')
-        {
-            break;
-        }
+            bp = fargs[arg] = alloc_lbuf("parse_arglist");
+            mux_exec(tstr, fargs[arg], &bp, executor, caller, enactor, peval,
+                     cargs, ncargs);
 
-        bp = fargs[arg] = alloc_lbuf("parse_arglist");
-        mux_exec(tstr, fargs[arg], &bp, executor, caller, enactor, peval,
-                 cargs, ncargs);
-        *bp = '\0';
-        arg++;
-        if (tstr)
-        {
             tstr[nLen] = chSave;
         }
+        else
+        {
+            bp = fargs[arg] = alloc_lbuf("parse_arglist");
+        }
+        *bp = '\0';
+        arg++;
     }
     *nArgsParsed = arg;
     return dstr;
@@ -1921,6 +1926,7 @@ void mux_exec( char *pdstr, char *buff, char **bufc, dbref executor,
                 chSave = tbuf[n];
                 tbuf[n] = '\0';
             }
+
             at_space = 0;
             if (pdstr == NULL)
             {
@@ -1940,6 +1946,7 @@ void mux_exec( char *pdstr, char *buff, char **bufc, dbref executor,
                 nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
                 pdstr--;
             }
+
             if (tbuf)
             {
                 tbuf[n] = chSave;
@@ -1983,6 +1990,7 @@ void mux_exec( char *pdstr, char *buff, char **bufc, dbref executor,
                 chSave = tbuf[n];
                 tbuf[n] = '\0';
             }
+
             at_space = 0;
             if (pdstr == NULL)
             {
@@ -2028,10 +2036,6 @@ void mux_exec( char *pdstr, char *buff, char **bufc, dbref executor,
                     mux_exec(tbuf, buff, bufc, executor, caller, enactor,
                         eval & ~EV_TOP, cargs, ncargs);
                 }
-                if (tbuf)
-                {
-                    tbuf[n] = chSave;
-                }
                 nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
 
                 if (!(eval & EV_STRIP_CURLY))
@@ -2043,6 +2047,11 @@ void mux_exec( char *pdstr, char *buff, char **bufc, dbref executor,
                     }
                 }
                 pdstr--;
+            }
+
+            if (tbuf)
+            {
+                tbuf[n] = chSave;
             }
         }
         else if (*pdstr == '\\')
