@@ -821,9 +821,12 @@ static char *parse_arglist_lite( dbref executor, dbref caller, dbref enactor,
 
         if (tstr)
         {
+            // The following recognizes and returns zero arguments. We avoid
+            // allocating an lbuf.
+            //
             if (  2 == iWhichDelim
                && 0 == arg
-               && '\0' == tstr[0])
+               && 0 == nLen)
             {
                 break;
             }
