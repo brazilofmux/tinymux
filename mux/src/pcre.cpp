@@ -33,12 +33,15 @@
 -----------------------------------------------------------------------------
 \endverbatim
  *
- * Modified by Shawn Wagner for MUX to fit in one file and remove
- * things we don't use, like a bunch of API functions and utf-8
- * support. If you want the full thing, see http://www.pcre.org.
+ * Modified by Shawn Wagner for TinyMUX to fit in one file and remove things
+ * we don't use, like a bunch of API functions and utf-8 support. If you want
+ * the full thing, see http://www.pcre.org.
  *
  * Patched by Alierak to protect against integer overflow in repeat
  * counts.
+ *
+ * Re-synced with 4.5 sources to include utf-8 support. Kept Alierak's patch.
+ * Left out unnecessary functions and EBCDIC support.
  */
 
 #include "autoconf.h"
@@ -1044,6 +1047,9 @@ do
       case OP_MINQUERY:
       set_bit(start_bits, tcode[1], caseless, cd);
       tcode += 2;
+#ifdef SUPPORT_UTF8
+      if (utf8) while ((*tcode & 0xc0) == 0x80) tcode++;
+#endif
       break;
 
       /* Single-char upto sets the bit and tries the next */
@@ -1052,6 +1058,9 @@ do
       case OP_MINUPTO:
       set_bit(start_bits, tcode[3], caseless, cd);
       tcode += 4;
+#ifdef SUPPORT_UTF8
+      if (utf8) while ((*tcode & 0xc0) == 0x80) tcode++;
+#endif
       break;
 
       /* At least one single char sets the bit and stops */
@@ -1131,6 +1140,9 @@ do
       case OP_TYPEMINQUERY:
       switch(tcode[1])
         {
+        case OP_ANY:
+        return false;
+
         case OP_NOT_DIGIT:
         for (c = 0; c < 32; c++)
           start_bits[c] |= ~cd->cbits[c+cbit_digit];
@@ -1168,19 +1180,50 @@ do
       /* Character class where all the information is in a bit map: set the
       bits and either carry on or not, according to the repeat count. If it was
       a negative class, and we are operating with UTF-8 characters, any byte
-      with the top-bit set is a potentially valid starter because it may start
-      a character with a value > 255. (This is sub-optimal in that the
-      character may be in the range 128-255, and those characters might be
-      unwanted, but that's as far as we go for the moment.) */
+      with a value >= 0xc4 is a potentially valid starter because it starts a
+      character with a value > 255. */
 
       case OP_NCLASS:
-      if (utf8) memset(start_bits+16, 0xff, 16);
+      if (utf8)
+        {
+        start_bits[24] |= 0xf0;              /* Bits for 0xc4 - 0xc8 */
+        memset(start_bits+25, 0xff, 7);      /* Bits for 0xc9 - 0xff */
+        }
       /* Fall through */
 
       case OP_CLASS:
         {
         tcode++;
-        for (c = 0; c < 32; c++) start_bits[c] |= tcode[c];
+
+        /* In UTF-8 mode, the bits in a bit map correspond to character
+        values, not to byte values. However, the bit map we are constructing is
+        for byte values. So we have to do a conversion for characters whose
+        value is > 127. In fact, there are only two possible starting bytes for
+        characters in the range 128 - 255. */
+
+        if (utf8)
+          {
+          for (c = 0; c < 16; c++) start_bits[c] |= tcode[c];
+          for (c = 128; c < 256; c++)
+            {
+            if ((tcode[c/8] && (1 << (c&7))) != 0)
+              {
+              int d = (c >> 6) | 0xc0;            /* Set bit for this starter */
+              start_bits[d/8] |= (1 << (d&7));    /* and then skip on to the */
+              c = (c & 0xc0) + 0x40 - 1;          /* next relevant character. */
+              }
+            }
+          }
+
+        /* In non-UTF-8 mode, the two bit maps are completely compatible. */
+
+        else
+          {
+          for (c = 0; c < 32; c++) start_bits[c] |= tcode[c];
+          }
+
+        /* Advance past the bit map, and act on what follows */
+
         tcode += 32;
         switch (*tcode)
           {
@@ -1498,11 +1541,151 @@ static int   (*pcre_callout)(pcre_callout_block *) = NULL;
 *    Macros and tables for character handling    *
 *************************************************/
 
+/* When UTF-8 encoding is being used, a character is no longer just a single
+byte. The macros for character handling generate simple sequences when used in
+byte-mode, and more complicated ones for UTF-8 characters. */
+
+#ifndef SUPPORT_UTF8
 #define GETCHAR(c, eptr) c = *eptr;
 #define GETCHARINC(c, eptr) c = *eptr++;
 #define GETCHARINCTEST(c, eptr) c = *eptr++;
 #define GETCHARLEN(c, eptr, len) c = *eptr;
 #define BACKCHAR(eptr)
+
+#else   /* SUPPORT_UTF8 */
+
+/* Get the next UTF-8 character, not advancing the pointer. This is called when
+we know we are in UTF-8 mode. */
+
+#define GETCHAR(c, eptr) \
+  c = *eptr; \
+  if ((c & 0xc0) == 0xc0) \
+    { \
+    int gcii; \
+    int gcaa = utf8_table4[c & 0x3f];  /* Number of additional bytes */ \
+    int gcss = 6*gcaa; \
+    c = (c & utf8_table3[gcaa]) << gcss; \
+    for (gcii = 1; gcii <= gcaa; gcii++) \
+      { \
+      gcss -= 6; \
+      c |= (eptr[gcii] & 0x3f) << gcss; \
+      } \
+    }
+
+/* Get the next UTF-8 character, advancing the pointer. This is called when we
+know we are in UTF-8 mode. */
+
+#define GETCHARINC(c, eptr) \
+  c = *eptr++; \
+  if ((c & 0xc0) == 0xc0) \
+    { \
+    int gcaa = utf8_table4[c & 0x3f];  /* Number of additional bytes */ \
+    int gcss = 6*gcaa; \
+    c = (c & utf8_table3[gcaa]) << gcss; \
+    while (gcaa-- > 0) \
+      { \
+      gcss -= 6; \
+      c |= (*eptr++ & 0x3f) << gcss; \
+      } \
+    }
+
+/* Get the next character, testing for UTF-8 mode, and advancing the pointer */
+
+#define GETCHARINCTEST(c, eptr) \
+  c = *eptr++; \
+  if (md->utf8 && (c & 0xc0) == 0xc0) \
+    { \
+    int gcaa = utf8_table4[c & 0x3f];  /* Number of additional bytes */ \
+    int gcss = 6*gcaa; \
+    c = (c & utf8_table3[gcaa]) << gcss; \
+    while (gcaa-- > 0) \
+      { \
+      gcss -= 6; \
+      c |= (*eptr++ & 0x3f) << gcss; \
+      } \
+    }
+
+/* Get the next UTF-8 character, not advancing the pointer, incrementing length
+if there are extra bytes. This is called when we know we are in UTF-8 mode. */
+
+#define GETCHARLEN(c, eptr, len) \
+  c = *eptr; \
+  if ((c & 0xc0) == 0xc0) \
+    { \
+    int gcii; \
+    int gcaa = utf8_table4[c & 0x3f];  /* Number of additional bytes */ \
+    int gcss = 6*gcaa; \
+    c = (c & utf8_table3[gcaa]) << gcss; \
+    for (gcii = 1; gcii <= gcaa; gcii++) \
+      { \
+      gcss -= 6; \
+      c |= (eptr[gcii] & 0x3f) << gcss; \
+      } \
+    len += gcaa; \
+    }
+
+/* If the pointer is not at the start of a character, move it back until
+it is. Called only in UTF-8 mode. */
+
+#define BACKCHAR(eptr) while((*eptr & 0xc0) == 0x80) eptr--;
+
+/*************************************************
+*           Tables for UTF-8 support             *
+*************************************************/
+
+/* These are the breakpoints for different numbers of bytes in a UTF-8
+character. */
+
+static const int utf8_table1[] =
+  { 0x7f, 0x7ff, 0xffff, 0x1fffff, 0x3ffffff, 0x7fffffff};
+
+/* These are the indicator bits and the mask for the data bits to set in the
+first byte of a character, indexed by the number of additional bytes. */
+
+static const int utf8_table2[] = { 0,    0xc0, 0xe0, 0xf0, 0xf8, 0xfc};
+static const int utf8_table3[] = { 0xff, 0x1f, 0x0f, 0x07, 0x03, 0x01};
+
+/* Table of the number of extra characters, indexed by the first character
+masked with 0x3f. The highest number for a valid UTF-8 character is in fact
+0x3d. */
+
+static const uschar utf8_table4[] = {
+  1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+  1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+  2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,
+  3,3,3,3,3,3,3,3,4,4,4,4,5,5,5,5 };
+
+
+/*************************************************
+*       Convert character value to UTF-8         *
+*************************************************/
+
+/* This function takes an integer value in the range 0 - 0x7fffffff
+and encodes it as a UTF-8 character in 0 to 6 bytes.
+
+Arguments:
+  cvalue     the character value
+  buffer     pointer to buffer for result - at least 6 bytes long
+
+Returns:     number of characters placed in the buffer
+*/
+
+static int
+ord2utf8(int cvalue, uschar *buffer)
+{
+register int i, j;
+for (i = 0; i < sizeof(utf8_table1)/sizeof(int); i++)
+  if (cvalue <= utf8_table1[i]) break;
+buffer += i;
+for (j = i; j > 0; j--)
+ {
+ *buffer-- = 0x80 | (cvalue & 0x3f);
+ cvalue >>= 6;
+ }
+*buffer = utf8_table2[i] | cvalue;
+return i + 1;
+}
+#endif
 
 /*************************************************
 *            Handle escapes                      *
@@ -1620,6 +1803,30 @@ else
     which can be greater than 0xff, but only if the ddd are hex digits. */
 
     case 'x':
+
+#ifdef SUPPORT_UTF8
+    if (ptr[1] == '{' && (options & PCRE_UTF8) != 0)
+      {
+      const uschar *pt = ptr + 2;
+      register int count = 0;
+      c = 0;
+      while ((digitab[*pt] & ctype_xdigit) != 0)
+        {
+        int cc = *pt++;
+        count++;
+        if (cc >= 'a') cc -= 32;               /* Convert to upper case */
+        c = c * 16 + cc - ((cc < 'A')? '0' : ('A' - 10));
+        }
+      if (*pt == '}')
+        {
+        if (c < 0 || count > 8) *errorptr = ERR34;
+        ptr = pt;
+        break;
+        }
+      /* If the sequence of hex digits does not end with '}', then we don't
+      recognize this construct; fall through to the normal \x handling. */
+      }
+#endif
 
     /* Read just a single hex char */
 
@@ -1910,6 +2117,11 @@ for (;;)
 
     case OP_CHARS:
     branchlength += *(++cc);
+#ifdef SUPPORT_UTF8
+    if ((options & PCRE_UTF8) != 0)
+      for (d = 1; d <= *cc; d++)
+        if ((cc[d] & 0xc0) == 0x80) branchlength--;
+#endif
     cc += *cc + 1;
     break;
 
@@ -1919,6 +2131,12 @@ for (;;)
     case OP_EXACT:
     branchlength += GET2(cc,1);
     cc += 4;
+#ifdef SUPPORT_UTF8
+    if ((options & PCRE_UTF8) != 0)
+      {
+      while((*cc & 0x80) == 0x80) cc++;
+      }
+#endif
     break;
 
     case OP_TYPEEXACT:
@@ -1946,6 +2164,11 @@ for (;;)
 
     /* Check a class for variable quantification */
 
+#ifdef SUPPORT_UTF8
+    case OP_XCLASS:
+    cc += GET(cc, 1) - 33;
+    /* Fall through */
+#endif
 
     case OP_CLASS:
     case OP_NCLASS:
@@ -1999,8 +2222,11 @@ Returns:      pointer to the opcode for the bracket, or NULL if not found
 */
 
 static const uschar *
-find_bracket(const uschar *code, int number)
+find_bracket(const uschar *code, bool utf8, int number)
 {
+#ifndef SUPPORT_UTF8
+utf8 = utf8;               /* Stop pedantic compilers complaining */
+#endif
 
 for (;;)
   {
@@ -2018,6 +2244,36 @@ for (;;)
     {
     code += OP_lengths[c];
 
+#ifdef SUPPORT_UTF8
+
+    /* In UTF-8 mode, opcodes that are followed by a character may be followed
+    by a multi-byte character. The length in the table is a minimum, so we have
+    to scan along to skip the extra characters. All opcodes are less than 128,
+    so we can use relatively efficient code. */
+
+    if (utf8) switch(c)
+      {
+      case OP_EXACT:
+      case OP_UPTO:
+      case OP_MINUPTO:
+      case OP_STAR:
+      case OP_MINSTAR:
+      case OP_PLUS:
+      case OP_MINPLUS:
+      case OP_QUERY:
+      case OP_MINQUERY:
+      while ((*code & 0xc0) == 0x80) code++;
+      break;
+
+      /* XCLASS is used for classes that cannot be represented just by a bit
+      map. This includes negated single high-valued characters. The length in
+      the table is zero; the actual length is stored in the compled code. */
+
+      case OP_XCLASS:
+      code += GET(code, 1) + 1;
+      break;
+      }
+#endif
     }
   }
 }
@@ -2041,7 +2297,9 @@ Returns:      pointer to the opcode for OP_RECURSE, or NULL if not found
 static const uschar *
 find_recurse(const uschar *code, bool utf8)
 {
+#ifndef SUPPORT_UTF8
 utf8 = utf8;               /* Stop pedantic compilers complaining */
+#endif
 
 for (;;)
   {
@@ -2057,6 +2315,36 @@ for (;;)
     {
     code += OP_lengths[c];
 
+#ifdef SUPPORT_UTF8
+
+    /* In UTF-8 mode, opcodes that are followed by a character may be followed
+    by a multi-byte character. The length in the table is a minimum, so we have
+    to scan along to skip the extra characters. All opcodes are less than 128,
+    so we can use relatively efficient code. */
+
+    if (utf8) switch(c)
+      {
+      case OP_EXACT:
+      case OP_UPTO:
+      case OP_MINUPTO:
+      case OP_STAR:
+      case OP_MINSTAR:
+      case OP_PLUS:
+      case OP_MINPLUS:
+      case OP_QUERY:
+      case OP_MINQUERY:
+      while ((*code & 0xc0) == 0x80) code++;
+      break;
+
+      /* XCLASS is used for classes that cannot be represented just by a bit
+      map. This includes negated single high-valued characters. The length in
+      the table is zero; the actual length is stored in the compled code. */
+
+      case OP_XCLASS:
+      code += GET(code, 1) + 1;
+      break;
+      }
+#endif
     }
   }
 }
@@ -2117,11 +2405,19 @@ for (code = first_significant_code(code + 1 + LINK_SIZE, NULL, 0);
     {
     /* Check for quantifiers after a class */
 
+#ifdef SUPPORT_UTF8
+    case OP_XCLASS:
+    ccode = code + GET(code, 1);
+    goto CHECK_CLASS_REPEAT;
+#endif
 
     case OP_CLASS:
     case OP_NCLASS:
     ccode = code + 33;
 
+#ifdef SUPPORT_UTF8
+    CHECK_CLASS_REPEAT:
+#endif
 
     switch (*ccode)
       {
@@ -2174,6 +2470,19 @@ for (code = first_significant_code(code + 1 + LINK_SIZE, NULL, 0);
     case OP_ALT:
     return true;
 
+    /* In UTF-8 mode, STAR, MINSTAR, QUERY, MINQUERY, UPTO, and MINUPTO  may be
+    followed by a multibyte character */
+
+#ifdef SUPPORT_UTF8
+    case OP_STAR:
+    case OP_MINSTAR:
+    case OP_QUERY:
+    case OP_MINQUERY:
+    case OP_UPTO:
+    case OP_MINUPTO:
+    if (utf8) while ((code[2] & 0xc0) == 0x80) code++;
+    break;
+#endif
     }
   }
 
@@ -2362,7 +2671,14 @@ const uschar *tempptr;
 uschar *previous = NULL;
 uschar classa[32];
 
+#ifdef SUPPORT_UTF8
+bool class_utf8;
+bool utf8 = (options & PCRE_UTF8) != 0;
+uschar *class_utf8data;
+uschar utf8_char[6];
+#else
 bool utf8 = false;
+#endif
 
 /* Set up the default and non-default settings for greediness */
 
@@ -2502,6 +2818,10 @@ for (;; ptr++)
     class_charcount = 0;
     class_lastchar = -1;
 
+#ifdef SUPPORT_UTF8
+    class_utf8 = false;                       /* No chars >= 256 */
+    class_utf8data = code + LINK_SIZE + 34;   /* For UTF-8 items */
+#endif
 
     /* Initialize the 32-char bit map to all zeros. We have to build the
     map in a temporary bit of store, in case the class contains only 1
@@ -2518,6 +2838,12 @@ for (;; ptr++)
 
     do
       {
+#ifdef SUPPORT_UTF8
+      if (utf8 && c > 127)
+        {                           /* Braces are required because the */
+        GETCHARLEN(c, ptr, ptr);    /* macro generates multiple statements */
+        }
+#endif
 
       /* Inside \Q...\E everything is literal except \E */
 
@@ -2684,6 +3010,13 @@ for (;; ptr++)
         int d;
         ptr += 2;
 
+#ifdef SUPPORT_UTF8
+        if (utf8)
+          {                           /* Braces are required because the */
+          GETCHARLEN(d, ptr, ptr);    /* macro generates multiple statements */
+          }
+        else
+#endif
         d = *ptr;
 
         /* The second part of a range can be a single-character escape, but
@@ -2721,6 +3054,23 @@ for (;; ptr++)
         are handled with a bitmap, in order to get the case-insensitive
         handling. */
 
+#ifdef SUPPORT_UTF8
+        if (d > 255)
+          {
+          class_utf8 = true;
+          *class_utf8data++ = XCL_RANGE;
+          if ((options & PCRE_CASELESS) == 0)
+            {
+            class_utf8data += ord2utf8(c, class_utf8data);
+            class_utf8data += ord2utf8(d, class_utf8data);
+            continue;  /* Go get the next char in the class */
+            }
+          class_utf8data += ord2utf8(256, class_utf8data);
+          class_utf8data += ord2utf8(d, class_utf8data);
+          d = 255;
+          /* Fall through */
+          }
+#endif
         /* We use the bit map if the range is entirely < 255, or if part of it
         is < 255 and matching is caseless. */
 
@@ -2744,6 +3094,17 @@ for (;; ptr++)
 
       LONE_SINGLE_CHARACTER:
 
+      /* Handle a multibyte character */
+
+#ifdef SUPPORT_UTF8
+      if (utf8 && c > 255)
+        {
+        class_utf8 = true;
+        *class_utf8data++ = XCL_SINGLE;
+        class_utf8data += ord2utf8(c, class_utf8data);
+        }
+      else
+#endif
       /* Handle a single-byte character */
         {
         classa[c/8] |= (1 << (c&7));
@@ -2773,7 +3134,13 @@ for (;; ptr++)
     this item is first, whatever repeat count may follow. In the case of
     reqbyte, save the previous value for reinstating. */
 
+#ifdef SUPPORT_UTF8
+    if (class_charcount == 1 &&
+          (!utf8 ||
+          (!class_utf8 && class_lastchar < 128)))
+#else
     if (class_charcount == 1)
+#endif
       {
       zeroreqbyte = reqbyte;
       if (negate_class)
@@ -2813,6 +3180,39 @@ for (;; ptr++)
     extended class, with its own opcode. If there are no characters < 256,
     we can omit the bitmap. */
 
+#ifdef SUPPORT_UTF8
+    if (class_utf8)
+      {
+      *class_utf8data++ = XCL_END;    /* Marks the end of extra data */
+      *code++ = OP_XCLASS;
+      code += LINK_SIZE;
+      *code = negate_class? XCL_NOT : 0;
+
+      /* If the map is required, install it, and move on to the end of
+      the extra data */
+
+      if (class_charcount > 0)
+        {
+        *code++ |= XCL_MAP;
+        memcpy(code, class, 32);
+        code = class_utf8data;
+        }
+
+      /* If the map is not required, slide down the extra data. */
+
+      else
+        {
+        int len = class_utf8data - (code + 33);
+        memmove(code + 1, code + 33, len);
+        code += len + 1;
+        }
+
+      /* Now fill in the complete length of the item */
+
+      PUT(previous, 1, code - previous);
+      break;   /* End of class handling */
+      }
+#endif
 
     /* If there are no characters > 255, negate the 32-byte map if necessary,
     and copy it into the code vector. If this is the first thing in the branch,
@@ -2926,6 +3326,27 @@ for (;; ptr++)
       hold the length of the character in bytes, plus 0x80 to flag that it's a
       length rather than a small character. */
 
+#ifdef SUPPORT_UTF8
+      if (utf8 && (code[-1] & 0x80) != 0)
+        {
+        uschar *lastchar = code - 1;
+        while((*lastchar & 0xc0) == 0x80) lastchar--;
+        c = code - lastchar;            /* Length of UTF-8 character */
+        memcpy(utf8_char, lastchar, c); /* Save the char */
+        if (lastchar == previous + 2)   /* There was only one character */
+          {
+          code = previous;              /* Abolish the previous item */
+          }
+        else
+          {
+          previous[1] -= c;             /* Adjust length of previous */
+          code = lastchar;              /* Lost char off the end */
+          tempcode = code;              /* Adjust position to be moved for '+' */
+          }
+        c |= 0x80;                      /* Flag c as a length */
+        }
+      else
+#endif
 
       /* Handle the case of a single byte - either with no UTF8 support, or
       with UTF-8 disabled, or for a UTF-8 character < 128. */
@@ -3025,6 +3446,9 @@ for (;; ptr++)
           /* In UTF-8 mode, a multibyte char has its length in c, with the 0x80
           bit set as a flag. The length will always be between 2 and 6. */
 
+#ifdef SUPPORT_UTF8
+          if (utf8 && c >= 128) previous[1] += c & 7; else
+#endif
           previous[1]++;
           }
 
@@ -3040,6 +3464,14 @@ for (;; ptr++)
 
         if (repeat_max < 0)
           {
+#ifdef SUPPORT_UTF8
+          if (utf8 && c >= 128)
+            {
+            memcpy(code, utf8_char, c & 7);
+            code += c & 7;
+            }
+          else
+#endif
           *code++ = static_cast<uschar>(c);
           *code++ = static_cast<uschar>(OP_STAR + repeat_type);
           }
@@ -3049,6 +3481,14 @@ for (;; ptr++)
 
         else if (repeat_max != repeat_min)
           {
+#ifdef SUPPORT_UTF8
+          if (utf8 && c >= 128)
+            {
+            memcpy(code, utf8_char, c & 7);
+            code += c & 7;
+            }
+          else
+#endif
           *code++ = static_cast<uschar>(c);
           repeat_max -= repeat_min;
           *code++ = static_cast<uschar>(OP_UPTO + repeat_type);
@@ -3058,6 +3498,14 @@ for (;; ptr++)
 
       /* The character or character type itself comes last in all cases. */
 
+#ifdef SUPPORT_UTF8
+      if (utf8 && c >= 128)
+        {
+        memcpy(code, utf8_char, c & 7);
+        code += c & 7;
+        }
+      else
+#endif
 
       *code++ = static_cast<uschar>(c);
       }
@@ -3067,6 +3515,9 @@ for (;; ptr++)
 
     else if (*previous == OP_CLASS ||
              *previous == OP_NCLASS ||
+#ifdef SUPPORT_UTF8
+             *previous == OP_XCLASS ||
+#endif
              *previous == OP_REF)
       {
       if (repeat_max == 0)
@@ -3494,7 +3945,7 @@ for (;; ptr++)
 
           *code = OP_END;
           called = (recno == 0)?
-            cd->start_code : find_bracket(cd->start_code, recno);
+            cd->start_code : find_bracket(cd->start_code, utf8, recno);
 
           if (called == NULL)
             {
@@ -3849,6 +4300,16 @@ for (;; ptr++)
         /* If a character is > 127 in UTF-8 mode, we have to turn it into
         two or more bytes in the UTF-8 encoding. */
 
+#ifdef SUPPORT_UTF8
+        if (utf8 && c > 127)
+          {
+          uschar buffer[8];
+          int len = ord2utf8(c, buffer);
+          for (c = 0; c < len; c++) *code++ = buffer[c];
+          length += len;
+          continue;
+          }
+#endif
         }
 
       /* Ordinary character or single-char escape */
@@ -3867,6 +4328,76 @@ for (;; ptr++)
     code is kept separate. When we get here "length" contains the number of
     bytes. */
 
+#ifdef SUPPORT_UTF8
+    if (utf8 && length > 1)
+      {
+      uschar *t = previous + 3;                      /* After this code, t */
+      while (t < code && (*t & 0xc0) == 0x80) t++;   /* follows the 1st char */
+
+      /* Handle the case when there is only one multibyte character. It must
+      have at least two bytes because of the "length > 1" test above. */
+
+      if (t == code)
+        {
+        /* If no previous first byte, set it from this character, but revert to
+        none on a zero repeat. */
+
+        if (firstbyte == REQ_UNSET)
+          {
+          zerofirstbyte = REQ_NONE;
+          firstbyte = previous[2];
+          }
+
+        /* Otherwise, leave the first byte value alone, and don't change it on
+        a zero repeat */
+
+        else zerofirstbyte = firstbyte;
+
+        /* In both cases, a zero repeat resets the previous required byte */
+
+        zeroreqbyte = reqbyte;
+        }
+
+      /* Handle the case when there is more than one character. These may be
+      single-byte or multibyte characters */
+
+      else
+        {
+        t = code - 1;                       /* After this code, t is at the */
+        while ((*t & 0xc0) == 0x80) t--;    /* start of the last character */
+
+        /* If no previous first byte, set it from the first character, and
+        retain it on a zero repeat (of the last character). The required byte
+        is reset on a zero repeat, either to the byte before the last
+        character, unless this is the first byte of the string. In that case,
+        it reverts to its previous value. */
+
+        if (firstbyte == REQ_UNSET)
+          {
+          zerofirstbyte = firstbyte = previous[2] | req_caseopt;
+          zeroreqbyte = (t - 1 == previous + 2)?
+            reqbyte : t[-1] | req_caseopt | cd->req_varyopt;
+          }
+
+        /* If there was a previous first byte, leave it alone, and don't change
+        it on a zero repeat. The required byte is reset on a zero repeat to the
+        byte before the last character. */
+
+        else
+          {
+          zerofirstbyte = firstbyte;
+          zeroreqbyte = t[-1] | req_caseopt | cd->req_varyopt;
+          }
+        }
+
+      /* In all cases (we know length > 1), the new required byte is the last
+      byte of the string. */
+
+      reqbyte = code[-1] | req_caseopt | cd->req_varyopt;
+      }
+
+    else   /* End of UTF-8 coding */
+#endif
 
     /* This is the code for non-UTF-8 operation, either without UTF-8 support,
     or when UTF-8 is not enabled. */
@@ -4348,6 +4879,91 @@ return c;
 
 
 
+#ifdef SUPPORT_UTF8
+/*************************************************
+*         Validate a UTF-8 string                *
+*************************************************/
+
+/* This function is called (optionally) at the start of compile or match, to
+validate that a supposed UTF-8 string is actually valid. The early check means
+that subsequent code can assume it is dealing with a valid string. The check
+can be turned off for maximum performance, but then consequences of supplying
+an invalid string are then undefined.
+
+Arguments:
+  string       points to the string
+  length       length of string, or -1 if the string is zero-terminated
+
+Returns:       < 0    if the string is a valid UTF-8 string
+               >= 0   otherwise; the value is the offset of the bad byte
+*/
+
+static int
+valid_utf8(const uschar *string, int length)
+{
+register const uschar *p;
+
+if (length < 0)
+  {
+  for (p = string; *p != 0; p++);
+  length = p - string;
+  }
+
+for (p = string; length-- > 0; p++)
+  {
+  register int ab;
+  register int c = *p;
+  if (c < 128) continue;
+  if ((c & 0xc0) != 0xc0) return p - string;
+  ab = utf8_table4[c & 0x3f];  /* Number of additional bytes */
+  if (length < ab) return p - string;
+  length -= ab;
+
+  /* Check top bits in the second byte */
+  if ((*(++p) & 0xc0) != 0x80) return p - string;
+
+  /* Check for overlong sequences for each different length */
+  switch (ab)
+    {
+    /* Check for xx00 000x */
+    case 1:
+    if ((c & 0x3e) == 0) return p - string;
+    continue;   /* We know there aren't any more bytes to check */
+
+    /* Check for 1110 0000, xx0x xxxx */
+    case 2:
+    if (c == 0xe0 && (*p & 0x20) == 0) return p - string;
+    break;
+
+    /* Check for 1111 0000, xx00 xxxx */
+    case 3:
+    if (c == 0xf0 && (*p & 0x30) == 0) return p - string;
+    break;
+
+    /* Check for 1111 1000, xx00 0xxx */
+    case 4:
+    if (c == 0xf8 && (*p & 0x38) == 0) return p - string;
+    break;
+
+    /* Check for leading 0xfe or 0xff, and then for 1111 1100, xx00 00xx */
+    case 5:
+    if (c == 0xfe || c == 0xff ||
+       (c == 0xfc && (*p & 0x3c) == 0)) return p - string;
+    break;
+    }
+
+  /* Check for valid bytes after the 2nd, if any; all must start 10 */
+  while (--ab > 0)
+    {
+    if ((*(++p) & 0xc0) != 0x80) return p - string;
+    }
+  }
+
+return -1;
+}
+#endif
+
+
 /*************************************************
 *        Compile a Regular Expression            *
 *************************************************/
@@ -4380,6 +4996,11 @@ int branch_newextra;
 int item_count = -1;
 int name_count = 0;
 int max_name_size = 0;
+#ifdef SUPPORT_UTF8
+int lastcharlength = 0;
+bool utf8;
+bool class_utf8;
+#endif
 bool inescq = false;
 unsigned int brastackptr = 0;
 size_t size;
@@ -4407,11 +5028,21 @@ if (erroroffset == NULL)
 
 /* Can't support UTF8 unless PCRE has been compiled to include the code. */
 
+#ifdef SUPPORT_UTF8
+utf8 = (options & PCRE_UTF8) != 0;
+if (utf8 && (options & PCRE_NO_UTF8_CHECK) == 0 &&
+     (*erroroffset = valid_utf8((uschar *)pattern, -1)) >= 0)
+  {
+  *errorptr = ERR44;
+  return NULL;
+  }
+#else
 if ((options & PCRE_UTF8) != 0)
   {
   *errorptr = ERR32;
   return NULL;
   }
+#endif
 
 if ((options & ~PUBLIC_OPTIONS) != 0)
   {
@@ -4518,6 +5149,9 @@ while ((c = *(++ptr)) != 0)
     /* Other escapes need one byte, and are of length one for repeats */
 
     length++;
+#ifdef SUPPORT_UTF8
+    lastcharlength = 1;
+#endif
 
     /* A back reference needs an additional 2 bytes, plus either one or 5
     bytes for a repeat. We also need to keep the value of the highest
@@ -4547,6 +5181,9 @@ while ((c = *(++ptr)) != 0)
     case '.':
     case '$':
     length++;
+#ifdef SUPPORT_UTF8
+    lastcharlength = 1;
+#endif
     continue;
 
     case '*':            /* These repeats won't be after brackets; */
@@ -4573,7 +5210,19 @@ while ((c = *(++ptr)) != 0)
 
     else
       {
-
+#ifdef SUPPORT_UTF8
+      /* In UTF-8 mode, we should find the length in lastcharlength */
+      if (utf8)
+        {
+        if (min != 1)
+          {
+          length -= lastcharlength;   /* Uncount the original char or metachar */
+          if (min > 0) length += 3 + lastcharlength;
+          }
+        length += lastcharlength + ((max > 0)? 3 : 1);
+        }
+      else
+#endif
       /* Not UTF-8 mode: all characters are one byte */
         {
         if (min != 1)
@@ -4616,6 +5265,10 @@ while ((c = *(++ptr)) != 0)
     case '[':
     class_optcount = 0;
 
+#ifdef SUPPORT_UTF8
+    class_utf8 = false;
+#endif
+
     if (*(++ptr) == '^') ptr++;
 
     /* Written as a "do" so that an initial ']' is taken as data */
@@ -4636,6 +5289,9 @@ while ((c = *(++ptr)) != 0)
 
       if (*ptr == '\\')
         {
+#ifdef SUPPORT_UTF8
+        int prevchar = ptr[-1];
+#endif
         int ch = check_escape(&ptr, errorptr, bracount, options, true);
         if (*errorptr != NULL) goto PCRE_ERROR_RETURN;
 
@@ -4655,6 +5311,28 @@ while ((c = *(++ptr)) != 0)
 
         if (ch >= 0)
           {
+#ifdef SUPPORT_UTF8
+          if (utf8)
+            {
+            if (ch > 127) class_optcount = 10;  /* Ensure > 1 */
+            if (ch > 255)
+              {
+              uschar buffer[6];
+              if (!class_utf8)
+                {
+                class_utf8 = true;
+                length += LINK_SIZE + 1 + 1;
+                }
+              length += 1 + ord2utf8(ch, buffer);
+
+              /* If this wide character is preceded by '-', add an extra 2 to
+              the length in case the previous character was < 128, because in
+              this case the whole range will be put into the list. */
+
+              if (prevchar == '-') length += 2;
+              }
+            }
+#endif
           class_optcount++;            /* for possible optimization */
           }
         else class_optcount = 10;      /* \d, \s etc; make sure > 1 */
@@ -4677,6 +5355,34 @@ while ((c = *(++ptr)) != 0)
         NON_SPECIAL_CHARACTER:
         class_optcount++;
 
+#ifdef SUPPORT_UTF8
+        if (utf8)
+          {
+          int ch;
+          int extra = 0;
+          GETCHARLEN(ch, ptr, extra);
+          if (ch > 127) class_optcount = 10;   /* No optimization possible */
+          if (ch > 255)
+            {
+            if (!class_utf8)
+              {
+              class_utf8 = true;
+              length += LINK_SIZE + 1 + 1;
+              }
+            length += 2 + extra;
+
+            /* If this wide character is preceded by '-', add an extra 2 to
+            the length in case the previous character was < 128, because in
+            this case the whole range will be put into the list. */
+
+            if (ptr[-1] == '-') length += 2;
+
+            /* Advance to the end of this character */
+
+            ptr += extra;
+            }
+          }
+#endif
         }
       }
     while (*(++ptr) != 0 && (inescq || *ptr != ']')); /* Concludes "do" above */
@@ -5112,6 +5818,9 @@ while ((c = *(++ptr)) != 0)
     runlength = 0;
     do
       {
+#ifdef SUPPORT_UTF8
+      lastcharlength = 1;     /* Need length of last char for UTF-8 repeats */
+#endif
 
       /* If in a \Q...\E sequence, check for end; otherwise it's a literal */
       if (inescq)
@@ -5153,6 +5862,16 @@ while ((c = *(++ptr)) != 0)
         encode this character, and save the total length in case this is a
         final char that is repeated. */
 
+#ifdef SUPPORT_UTF8
+        if (utf8 && c > 127)
+          {
+          int i;
+          for (i = 0; i < sizeof(utf8_table1)/sizeof(int); i++)
+            if (c <= utf8_table1[i]) break;
+          runlength += i;
+          lastcharlength += i;
+          }
+#endif
         }
 
       /* Ordinary character or single-char escape */
@@ -5174,6 +5893,17 @@ while ((c = *(++ptr)) != 0)
     already have been done above. However, we also have to support in-line
     UTF-8 characters, so check backwards from where we are. */
 
+#ifdef SUPPORT_UTF8
+    if (utf8)
+      {
+      const uschar *lastptr = ptr - 1;
+      if ((*lastptr & 0x80) != 0)
+        {
+        while((*lastptr & 0xc0) == 0x80) lastptr--;
+        lastcharlength = ptr - lastptr;
+        }
+      }
+#endif
 
     length += runlength;
     continue;
@@ -5376,6 +6106,63 @@ match_ref
 
     return true;
 }
+
+
+#ifdef SUPPORT_UTF8
+/*************************************************
+*       Match character against an XCLASS        *
+*************************************************/
+
+/* This function is called from within the XCLASS code below, to match a
+character against an extended class which might match values > 255.
+
+Arguments:
+  c           the character
+  data        points to the flag byte of the XCLASS data
+
+Returns:      true if character matches, else false
+*/
+
+static bool
+match_xclass(int c, const uschar *data)
+{
+int t;
+bool negated = (*data & XCL_NOT) != 0;
+
+/* Character values < 256 are matched against a bitmap, if one is present. If
+not, we still carry on, because there may be ranges that start below 256 in the
+additional data. */
+
+if (c < 256)
+  {
+  if ((*data & XCL_MAP) != 0 && (data[1 + c/8] & (1 << (c&7))) != 0)
+    return !negated;   /* char found */
+  }
+
+/* Now match against the list of large chars or ranges that end with a large
+char. First skip the bit map if present. */
+
+if ((*data++ & XCL_MAP) != 0) data += 32;
+
+while ((t = *data++) != XCL_END)
+  {
+  int x, y;
+  GETCHARINC(x, data);
+  if (t == XCL_SINGLE)
+    {
+    if (c == x) return !negated;
+    }
+  else
+    {
+    GETCHARINC(y, data);
+    if (c >= x && c <= y) return !negated;
+    }
+  }
+
+return negated;   /* char was not found */
+}
+#endif
+
 
 /***************************************************************************
 ****************************************************************************
@@ -5741,6 +6528,19 @@ for (;!MuxAlarm.bAlarmed;)
     back a number of characters, not bytes. */
 
     case OP_REVERSE:
+#ifdef SUPPORT_UTF8
+    if (md->utf8)
+      {
+      c = GET(ecode,1);
+      for (i = 0; i < c; i++)
+        {
+        eptr--;
+        if (eptr < md->start_subject) RRETURN(MATCH_NOMATCH);
+        BACKCHAR(eptr)
+        }
+      }
+    else
+#endif
 
     /* No UTF-8 support, or not in UTF-8 mode: count is byte count */
 
@@ -6166,6 +6966,24 @@ for (;!MuxAlarm.bAlarmed;)
       It takes a bit more work in UTF-8 mode. Characters > 255 are assumed to
       be "non-word" characters. */
 
+#ifdef SUPPORT_UTF8
+      if (md->utf8)
+        {
+        if (eptr == md->start_subject) prev_is_word = false; else
+          {
+          lastptr = eptr - 1;
+          while((*lastptr & 0xc0) == 0x80) lastptr--;
+          GETCHAR(c, lastptr);
+          prev_is_word = c < 256 && (md->ctypes[c] & ctype_word) != 0;
+          }
+        if (eptr >= md->end_subject) cur_is_word = false; else
+          {
+          GETCHAR(c, eptr);
+          cur_is_word = c < 256 && (md->ctypes[c] & ctype_word) != 0;
+          }
+        }
+      else
+#endif
 
       /* More streamlined when not in UTF-8 mode */
 
@@ -6190,6 +7008,10 @@ for (;!MuxAlarm.bAlarmed;)
     if ((ims & PCRE_DOTALL) == 0 && eptr < md->end_subject && *eptr == NEWLINE)
       RRETURN(MATCH_NOMATCH);
     if (eptr++ >= md->end_subject) RRETURN(MATCH_NOMATCH);
+#ifdef SUPPORT_UTF8
+    if (md->utf8)
+      while (eptr < md->end_subject && (*eptr & 0xc0) == 0x80) eptr++;
+#endif
     ecode++;
     break;
 
@@ -6205,6 +7027,9 @@ for (;!MuxAlarm.bAlarmed;)
     if (eptr >= md->end_subject) RRETURN(MATCH_NOMATCH);
     GETCHARINCTEST(c, eptr);
     if (
+#ifdef SUPPORT_UTF8
+       c < 256 &&
+#endif
        (md->ctypes[c] & ctype_digit) != 0
        )
       RRETURN(MATCH_NOMATCH);
@@ -6215,6 +7040,9 @@ for (;!MuxAlarm.bAlarmed;)
     if (eptr >= md->end_subject) RRETURN(MATCH_NOMATCH);
     GETCHARINCTEST(c, eptr);
     if (
+#ifdef SUPPORT_UTF8
+       c >= 256 ||
+#endif
        (md->ctypes[c] & ctype_digit) == 0
        )
       RRETURN(MATCH_NOMATCH);
@@ -6225,6 +7053,9 @@ for (;!MuxAlarm.bAlarmed;)
     if (eptr >= md->end_subject) RRETURN(MATCH_NOMATCH);
     GETCHARINCTEST(c, eptr);
     if (
+#ifdef SUPPORT_UTF8
+       c < 256 &&
+#endif
        (md->ctypes[c] & ctype_space) != 0
        )
       RRETURN(MATCH_NOMATCH);
@@ -6235,6 +7066,9 @@ for (;!MuxAlarm.bAlarmed;)
     if (eptr >= md->end_subject) RRETURN(MATCH_NOMATCH);
     GETCHARINCTEST(c, eptr);
     if (
+#ifdef SUPPORT_UTF8
+       c >= 256 ||
+#endif
        (md->ctypes[c] & ctype_space) == 0
        )
       RRETURN(MATCH_NOMATCH);
@@ -6245,6 +7079,9 @@ for (;!MuxAlarm.bAlarmed;)
     if (eptr >= md->end_subject) RRETURN(MATCH_NOMATCH);
     GETCHARINCTEST(c, eptr);
     if (
+#ifdef SUPPORT_UTF8
+       c < 256 &&
+#endif
        (md->ctypes[c] & ctype_word) != 0
        )
       RRETURN(MATCH_NOMATCH);
@@ -6255,6 +7092,9 @@ for (;!MuxAlarm.bAlarmed;)
     if (eptr >= md->end_subject) RRETURN(MATCH_NOMATCH);
     GETCHARINCTEST(c, eptr);
     if (
+#ifdef SUPPORT_UTF8
+       c >= 256 ||
+#endif
        (md->ctypes[c] & ctype_word) == 0
        )
       RRETURN(MATCH_NOMATCH);
@@ -6419,6 +7259,26 @@ for (;!MuxAlarm.bAlarmed;)
 
       /* First, ensure the minimum number of matches are present. */
 
+#ifdef SUPPORT_UTF8
+      /* UTF-8 mode */
+      if (md->utf8)
+        {
+        for (i = 1; i <= min; i++)
+          {
+          if (eptr >= md->end_subject) RRETURN(MATCH_NOMATCH);
+          GETCHARINC(c, eptr);
+          if (c > 255)
+            {
+            if (op == OP_CLASS) RRETURN(MATCH_NOMATCH);
+            }
+          else
+            {
+            if ((data[c/8] & (1 << (c&7))) == 0) RRETURN(MATCH_NOMATCH);
+            }
+          }
+        }
+      else
+#endif
       /* Not UTF-8 mode */
         {
         for (i = 1; i <= min; i++)
@@ -6439,6 +7299,28 @@ for (;!MuxAlarm.bAlarmed;)
 
       if (minimize)
         {
+#ifdef SUPPORT_UTF8
+        /* UTF-8 mode */
+        if (md->utf8)
+          {
+          for (fi = min;; fi++)
+            {
+            RMATCH(rrc, eptr, ecode, offset_top, md, ims, eptrb, 0);
+            if (rrc != MATCH_NOMATCH) RRETURN(rrc);
+            if (fi >= max || eptr >= md->end_subject) RRETURN(MATCH_NOMATCH);
+            GETCHARINC(c, eptr);
+            if (c > 255)
+              {
+              if (op == OP_CLASS) RRETURN(MATCH_NOMATCH);
+              }
+            else
+              {
+              if ((data[c/8] & (1 << (c&7))) == 0) RRETURN(MATCH_NOMATCH);
+              }
+            }
+          }
+        else
+#endif
         /* Not UTF-8 mode */
           {
           for (fi = min;; fi++)
@@ -6459,6 +7341,35 @@ for (;!MuxAlarm.bAlarmed;)
         {
         pp = eptr;
 
+#ifdef SUPPORT_UTF8
+        /* UTF-8 mode */
+        if (md->utf8)
+          {
+          for (i = min; i < max; i++)
+            {
+            int len = 1;
+            if (eptr >= md->end_subject) break;
+            GETCHARLEN(c, eptr, len);
+            if (c > 255)
+              {
+              if (op == OP_CLASS) break;
+              }
+            else
+              {
+              if ((data[c/8] & (1 << (c&7))) == 0) break;
+              }
+            eptr += len;
+            }
+          for (;;)
+            {
+            RMATCH(rrc, eptr, ecode, offset_top, md, ims, eptrb, 0);
+            if (rrc != MATCH_NOMATCH) RRETURN(rrc);
+            if (eptr-- == pp) break;        /* Stop if tried at original pos */
+            BACKCHAR(eptr);
+            }
+          }
+        else
+#endif
           /* Not UTF-8 mode */
           {
           for (i = min; i < max; i++)
@@ -6485,6 +7396,97 @@ for (;!MuxAlarm.bAlarmed;)
     /* Match an extended character class. This opcode is encountered only
     in UTF-8 mode, because that's the only time it is compiled. */
 
+#ifdef SUPPORT_UTF8
+    case OP_XCLASS:
+      {
+      data = ecode + 1 + LINK_SIZE;                /* Save for matching */
+      ecode += GET(ecode, 1);                      /* Advance past the item */
+
+      switch (*ecode)
+        {
+        case OP_CRSTAR:
+        case OP_CRMINSTAR:
+        case OP_CRPLUS:
+        case OP_CRMINPLUS:
+        case OP_CRQUERY:
+        case OP_CRMINQUERY:
+        c = *ecode++ - OP_CRSTAR;
+        minimize = (c & 1) != 0;
+        min = rep_min[c];                 /* Pick up values from tables; */
+        max = rep_max[c];                 /* zero for max => infinity */
+        if (max == 0) max = INT_MAX;
+        break;
+
+        case OP_CRRANGE:
+        case OP_CRMINRANGE:
+        minimize = (*ecode == OP_CRMINRANGE);
+        min = GET2(ecode, 1);
+        max = GET2(ecode, 3);
+        if (max == 0) max = INT_MAX;
+        ecode += 5;
+        break;
+
+        default:               /* No repeat follows */
+        min = max = 1;
+        break;
+        }
+
+      /* First, ensure the minimum number of matches are present. */
+
+      for (i = 1; i <= min; i++)
+        {
+        if (eptr >= md->end_subject) RRETURN(MATCH_NOMATCH);
+        GETCHARINC(c, eptr);
+        if (!match_xclass(c, data)) RRETURN(MATCH_NOMATCH);
+        }
+
+      /* If max == min we can continue with the main loop without the
+      need to recurse. */
+
+      if (min == max) continue;
+
+      /* If minimizing, keep testing the rest of the expression and advancing
+      the pointer while it matches the class. */
+
+      if (minimize)
+        {
+        for (fi = min;; fi++)
+          {
+          RMATCH(rrc, eptr, ecode, offset_top, md, ims, eptrb, 0);
+          if (rrc != MATCH_NOMATCH) RRETURN(rrc);
+          if (fi >= max || eptr >= md->end_subject) RRETURN(MATCH_NOMATCH);
+          GETCHARINC(c, eptr);
+          if (!match_xclass(c, data)) RRETURN(MATCH_NOMATCH);
+          }
+        /* Control never gets here */
+        }
+
+      /* If maximizing, find the longest possible run, then work backwards. */
+
+      else
+        {
+        pp = eptr;
+        for (i = min; i < max; i++)
+          {
+          int len = 1;
+          if (eptr >= md->end_subject) break;
+          GETCHARLEN(c, eptr, len);
+          if (!match_xclass(c, data)) break;
+          eptr += len;
+          }
+        for(;;)
+          {
+          RMATCH(rrc, eptr, ecode, offset_top, md, ims, eptrb, 0);
+          if (rrc != MATCH_NOMATCH) RRETURN(rrc);
+          if (eptr-- == pp) break;        /* Stop if tried at original pos */
+          BACKCHAR(eptr)
+          }
+        RRETURN(MATCH_NOMATCH);
+        }
+
+      /* Control never gets here */
+      }
+#endif    /* End of XCLASS */
 
     /* Match a run of characters */
 
@@ -6561,6 +7563,69 @@ for (;!MuxAlarm.bAlarmed;)
     the subject. */
 
     REPEATCHAR:
+#ifdef SUPPORT_UTF8
+    if (md->utf8)
+      {
+      length = 1;
+      charptr = ecode;
+      GETCHARLEN(fc, ecode, length);
+      if (min * length > md->end_subject - eptr) RRETURN(MATCH_NOMATCH);
+      ecode += length;
+
+      /* Handle multibyte character matching specially here. There is no
+      support for any kind of casing for multibyte characters. */
+
+      if (length > 1)
+        {
+        for (i = 1; i <= min; i++)
+          {
+          if (memcmp(eptr, charptr, length) != 0) RRETURN(MATCH_NOMATCH);
+          eptr += length;
+          }
+
+        if (min == max) continue;
+
+        if (minimize)
+          {
+          for (fi = min;; fi++)
+            {
+            RMATCH(rrc, eptr, ecode, offset_top, md, ims, eptrb, 0);
+            if (rrc != MATCH_NOMATCH) RRETURN(rrc);
+            if (fi >= max ||
+                eptr >= md->end_subject ||
+                memcmp(eptr, charptr, length) != 0)
+              RRETURN(MATCH_NOMATCH);
+            eptr += length;
+            }
+          /* Control never gets here */
+          }
+        else
+          {
+          pp = eptr;
+          for (i = min; i < max; i++)
+            {
+            if (eptr > md->end_subject - length ||
+                memcmp(eptr, charptr, length) != 0)
+              break;
+            eptr += length;
+            }
+          while (eptr >= pp)
+           {
+           RMATCH(rrc, eptr, ecode, offset_top, md, ims, eptrb, 0);
+           if (rrc != MATCH_NOMATCH) RRETURN(rrc);
+           eptr -= length;
+           }
+          RRETURN(MATCH_NOMATCH);
+          }
+        /* Control never gets here */
+        }
+
+      /* If the length of a UTF-8 character is 1, we fall through here, and
+      obey the code as for non-UTF-8 characters below, though in this case the
+      value of fc will always be < 128. */
+      }
+    else
+#endif
 
     /* When not in UTF-8 mode, load a single-byte character. */
       {
@@ -6662,6 +7727,9 @@ for (;!MuxAlarm.bAlarmed;)
     GETCHARINCTEST(c, eptr);
     if ((ims & PCRE_CASELESS) != 0)
       {
+#ifdef SUPPORT_UTF8
+      if (c < 256)
+#endif
       c = md->lcc[c];
       if (md->lcc[*ecode++] == c) RRETURN(MATCH_NOMATCH);
       }
@@ -6726,6 +7794,20 @@ for (;!MuxAlarm.bAlarmed;)
       {
       fc = md->lcc[fc];
 
+#ifdef SUPPORT_UTF8
+      /* UTF-8 mode */
+      if (md->utf8)
+        {
+        register int d;
+        for (i = 1; i <= min; i++)
+          {
+          GETCHARINC(d, eptr);
+          if (d < 256) d = md->lcc[d];
+          if (fc == d) RRETURN(MATCH_NOMATCH);
+          }
+        }
+      else
+#endif
 
       /* Not UTF-8 mode */
         {
@@ -6737,6 +7819,23 @@ for (;!MuxAlarm.bAlarmed;)
 
       if (minimize)
         {
+#ifdef SUPPORT_UTF8
+        /* UTF-8 mode */
+        if (md->utf8)
+          {
+          register int d;
+          for (fi = min;; fi++)
+            {
+            RMATCH(rrc, eptr, ecode, offset_top, md, ims, eptrb, 0);
+            if (rrc != MATCH_NOMATCH) RRETURN(rrc);
+            GETCHARINC(d, eptr);
+            if (d < 256) d = md->lcc[d];
+            if (fi >= max || eptr >= md->end_subject || fc == d)
+              RRETURN(MATCH_NOMATCH);
+            }
+          }
+        else
+#endif
         /* Not UTF-8 mode */
           {
           for (fi = min;; fi++)
@@ -6756,6 +7855,30 @@ for (;!MuxAlarm.bAlarmed;)
         {
         pp = eptr;
 
+#ifdef SUPPORT_UTF8
+        /* UTF-8 mode */
+        if (md->utf8)
+          {
+          register int d;
+          for (i = min; i < max; i++)
+            {
+            int len = 1;
+            if (eptr >= md->end_subject) break;
+            GETCHARLEN(d, eptr, len);
+            if (d < 256) d = md->lcc[d];
+            if (fc == d) break;
+            eptr += len;
+            }
+          for(;;)
+            {
+            RMATCH(rrc, eptr, ecode, offset_top, md, ims, eptrb, 0);
+            if (rrc != MATCH_NOMATCH) RRETURN(rrc);
+            if (eptr-- == pp) break;        /* Stop if tried at original pos */
+            BACKCHAR(eptr);
+            }
+          }
+        else
+#endif
         /* Not UTF-8 mode */
           {
           for (i = min; i < max; i++)
@@ -6780,6 +7903,19 @@ for (;!MuxAlarm.bAlarmed;)
 
     else
       {
+#ifdef SUPPORT_UTF8
+      /* UTF-8 mode */
+      if (md->utf8)
+        {
+        register int d;
+        for (i = 1; i <= min; i++)
+          {
+          GETCHARINC(d, eptr);
+          if (fc == d) RRETURN(MATCH_NOMATCH);
+          }
+        }
+      else
+#endif
       /* Not UTF-8 mode */
         {
         for (i = 1; i <= min; i++)
@@ -6790,6 +7926,22 @@ for (;!MuxAlarm.bAlarmed;)
 
       if (minimize)
         {
+#ifdef SUPPORT_UTF8
+        /* UTF-8 mode */
+        if (md->utf8)
+          {
+          register int d;
+          for (fi = min;; fi++)
+            {
+            RMATCH(rrc, eptr, ecode, offset_top, md, ims, eptrb, 0);
+            if (rrc != MATCH_NOMATCH) RRETURN(rrc);
+            GETCHARINC(d, eptr);
+            if (fi >= max || eptr >= md->end_subject || fc == d)
+              RRETURN(MATCH_NOMATCH);
+            }
+          }
+        else
+#endif
         /* Not UTF-8 mode */
           {
           for (fi = min;; fi++)
@@ -6809,6 +7961,29 @@ for (;!MuxAlarm.bAlarmed;)
         {
         pp = eptr;
 
+#ifdef SUPPORT_UTF8
+        /* UTF-8 mode */
+        if (md->utf8)
+          {
+          register int d;
+          for (i = min; i < max; i++)
+            {
+            int len = 1;
+            if (eptr >= md->end_subject) break;
+            GETCHARLEN(d, eptr, len);
+            if (fc == d) break;
+            eptr += len;
+            }
+          for(;;)
+            {
+            RMATCH(rrc, eptr, ecode, offset_top, md, ims, eptrb, 0);
+            if (rrc != MATCH_NOMATCH) RRETURN(rrc);
+            if (eptr-- == pp) break;        /* Stop if tried at original pos */
+            BACKCHAR(eptr);
+            }
+          }
+        else
+#endif
         /* Not UTF-8 mode */
           {
           for (i = min; i < max; i++)
@@ -6876,6 +8051,85 @@ for (;!MuxAlarm.bAlarmed;)
     if (min > md->end_subject - eptr) RRETURN(MATCH_NOMATCH);
     if (min > 0)
       {
+#ifdef SUPPORT_UTF8
+      if (md->utf8) switch(ctype)
+        {
+        case OP_ANY:
+        for (i = 1; i <= min; i++)
+          {
+          if (eptr >= md->end_subject ||
+             (*eptr++ == NEWLINE && (ims & PCRE_DOTALL) == 0))
+            RRETURN(MATCH_NOMATCH);
+          while (eptr < md->end_subject && (*eptr & 0xc0) == 0x80) eptr++;
+          }
+        break;
+
+        case OP_ANYBYTE:
+        eptr += min;
+        break;
+
+        case OP_NOT_DIGIT:
+        for (i = 1; i <= min; i++)
+          {
+          if (eptr >= md->end_subject) RRETURN(MATCH_NOMATCH);
+          GETCHARINC(c, eptr);
+          if (c < 256 && (md->ctypes[c] & ctype_digit) != 0)
+            RRETURN(MATCH_NOMATCH);
+          }
+        break;
+
+        case OP_DIGIT:
+        for (i = 1; i <= min; i++)
+          {
+          if (eptr >= md->end_subject ||
+             *eptr >= 128 || (md->ctypes[*eptr++] & ctype_digit) == 0)
+            RRETURN(MATCH_NOMATCH);
+          /* No need to skip more bytes - we know it's a 1-byte character */
+          }
+        break;
+
+        case OP_NOT_WHITESPACE:
+        for (i = 1; i <= min; i++)
+          {
+          if (eptr >= md->end_subject ||
+             (*eptr < 128 && (md->ctypes[*eptr++] & ctype_space) != 0))
+            RRETURN(MATCH_NOMATCH);
+          while (eptr < md->end_subject && (*eptr & 0xc0) == 0x80) eptr++;
+          }
+        break;
+
+        case OP_WHITESPACE:
+        for (i = 1; i <= min; i++)
+          {
+          if (eptr >= md->end_subject ||
+             *eptr >= 128 || (md->ctypes[*eptr++] & ctype_space) == 0)
+            RRETURN(MATCH_NOMATCH);
+          /* No need to skip more bytes - we know it's a 1-byte character */
+          }
+        break;
+
+        case OP_NOT_WORDCHAR:
+        for (i = 1; i <= min; i++)
+          {
+          if (eptr >= md->end_subject ||
+             (*eptr < 128 && (md->ctypes[*eptr++] & ctype_word) != 0))
+            RRETURN(MATCH_NOMATCH);
+          while (eptr < md->end_subject && (*eptr & 0xc0) == 0x80) eptr++;
+          }
+        break;
+
+        case OP_WORDCHAR:
+        for (i = 1; i <= min; i++)
+          {
+          if (eptr >= md->end_subject ||
+             *eptr >= 128 || (md->ctypes[*eptr++] & ctype_word) == 0)
+            RRETURN(MATCH_NOMATCH);
+          /* No need to skip more bytes - we know it's a 1-byte character */
+          }
+        break;
+        }
+      else
+#endif
 
       /* Code for the non-UTF-8 case for minimum matching */
 
@@ -6937,6 +8191,60 @@ for (;!MuxAlarm.bAlarmed;)
 
     if (minimize)
       {
+#ifdef SUPPORT_UTF8
+      /* UTF-8 mode */
+      if (md->utf8)
+        {
+        for (fi = min;; fi++)
+          {
+          RMATCH(rrc, eptr, ecode, offset_top, md, ims, eptrb, 0);
+          if (rrc != MATCH_NOMATCH) RRETURN(rrc);
+          if (fi >= max || eptr >= md->end_subject) RRETURN(MATCH_NOMATCH);
+
+          GETCHARINC(c, eptr);
+          switch(ctype)
+            {
+            case OP_ANY:
+            if ((ims & PCRE_DOTALL) == 0 && c == NEWLINE) RRETURN(MATCH_NOMATCH);
+            break;
+
+            case OP_ANYBYTE:
+            break;
+
+            case OP_NOT_DIGIT:
+            if (c < 256 && (md->ctypes[c] & ctype_digit) != 0)
+              RRETURN(MATCH_NOMATCH);
+            break;
+
+            case OP_DIGIT:
+            if (c >= 256 || (md->ctypes[c] & ctype_digit) == 0)
+              RRETURN(MATCH_NOMATCH);
+            break;
+
+            case OP_NOT_WHITESPACE:
+            if (c < 256 && (md->ctypes[c] & ctype_space) != 0)
+              RRETURN(MATCH_NOMATCH);
+            break;
+
+            case OP_WHITESPACE:
+            if  (c >= 256 || (md->ctypes[c] & ctype_space) == 0)
+              RRETURN(MATCH_NOMATCH);
+            break;
+
+            case OP_NOT_WORDCHAR:
+            if (c < 256 && (md->ctypes[c] & ctype_word) != 0)
+              RRETURN(MATCH_NOMATCH);
+            break;
+
+            case OP_WORDCHAR:
+            if (c >= 256 && (md->ctypes[c] & ctype_word) == 0)
+              RRETURN(MATCH_NOMATCH);
+            break;
+            }
+          }
+        }
+      else
+#endif
       /* Not UTF-8 mode */
         {
         for (fi = min;; fi++)
@@ -6990,6 +8298,150 @@ for (;!MuxAlarm.bAlarmed;)
     else
       {
       pp = eptr;
+
+#ifdef SUPPORT_UTF8
+      /* UTF-8 mode */
+
+      if (md->utf8)
+        {
+        switch(ctype)
+          {
+          case OP_ANY:
+
+          /* Special code is required for UTF8, but when the maximum is unlimited
+          we don't need it, so we repeat the non-UTF8 code. This is probably
+          worth it, because .* is quite a common idiom. */
+
+          if (max < INT_MAX)
+            {
+            if ((ims & PCRE_DOTALL) == 0)
+              {
+              for (i = min; i < max; i++)
+                {
+                if (eptr >= md->end_subject || *eptr == NEWLINE) break;
+                eptr++;
+                while (eptr < md->end_subject && (*eptr & 0xc0) == 0x80) eptr++;
+                }
+              }
+            else
+              {
+              for (i = min; i < max; i++)
+                {
+                eptr++;
+                while (eptr < md->end_subject && (*eptr & 0xc0) == 0x80) eptr++;
+                }
+              }
+            }
+
+          /* Handle unlimited UTF-8 repeat */
+
+          else
+            {
+            if ((ims & PCRE_DOTALL) == 0)
+              {
+              for (i = min; i < max; i++)
+                {
+                if (eptr >= md->end_subject || *eptr == NEWLINE) break;
+                eptr++;
+                }
+              break;
+              }
+            else
+              {
+              c = max - min;
+              if (c > md->end_subject - eptr) c = md->end_subject - eptr;
+              eptr += c;
+              }
+            }
+          break;
+
+          /* The byte case is the same as non-UTF8 */
+
+          case OP_ANYBYTE:
+          c = max - min;
+          if (c > md->end_subject - eptr) c = md->end_subject - eptr;
+          eptr += c;
+          break;
+
+          case OP_NOT_DIGIT:
+          for (i = min; i < max; i++)
+            {
+            int len = 1;
+            if (eptr >= md->end_subject) break;
+            GETCHARLEN(c, eptr, len);
+            if (c < 256 && (md->ctypes[c] & ctype_digit) != 0) break;
+            eptr+= len;
+            }
+          break;
+
+          case OP_DIGIT:
+          for (i = min; i < max; i++)
+            {
+            int len = 1;
+            if (eptr >= md->end_subject) break;
+            GETCHARLEN(c, eptr, len);
+            if (c >= 256 ||(md->ctypes[c] & ctype_digit) == 0) break;
+            eptr+= len;
+            }
+          break;
+
+          case OP_NOT_WHITESPACE:
+          for (i = min; i < max; i++)
+            {
+            int len = 1;
+            if (eptr >= md->end_subject) break;
+            GETCHARLEN(c, eptr, len);
+            if (c < 256 && (md->ctypes[c] & ctype_space) != 0) break;
+            eptr+= len;
+            }
+          break;
+
+          case OP_WHITESPACE:
+          for (i = min; i < max; i++)
+            {
+            int len = 1;
+            if (eptr >= md->end_subject) break;
+            GETCHARLEN(c, eptr, len);
+            if (c >= 256 ||(md->ctypes[c] & ctype_space) == 0) break;
+            eptr+= len;
+            }
+          break;
+
+          case OP_NOT_WORDCHAR:
+          for (i = min; i < max; i++)
+            {
+            int len = 1;
+            if (eptr >= md->end_subject) break;
+            GETCHARLEN(c, eptr, len);
+            if (c < 256 && (md->ctypes[c] & ctype_word) != 0) break;
+            eptr+= len;
+            }
+          break;
+
+          case OP_WORDCHAR:
+          for (i = min; i < max; i++)
+            {
+            int len = 1;
+            if (eptr >= md->end_subject) break;
+            GETCHARLEN(c, eptr, len);
+            if (c >= 256 || (md->ctypes[c] & ctype_word) == 0) break;
+            eptr+= len;
+            }
+          break;
+          }
+
+        /* eptr is now past the end of the maximum run */
+
+        for(;;)
+          {
+          RMATCH(rrc, eptr, ecode, offset_top, md, ims, eptrb, 0);
+          if (rrc != MATCH_NOMATCH) RRETURN(rrc);
+          if (eptr-- == pp) break;        /* Stop if tried at original pos */
+          BACKCHAR(eptr);
+          }
+        }
+      else
+#endif
 
       /* Not UTF-8 mode */
         {
@@ -7219,6 +8671,23 @@ match_block.ctypes = re->tables + ctypes_offset;
 /* Check a UTF-8 string if required. Unfortunately there's no way of passing
 back the character offset. */
 
+#ifdef SUPPORT_UTF8
+if (match_block.utf8 && (options & PCRE_NO_UTF8_CHECK) == 0)
+  {
+  if (valid_utf8((uschar *)subject, length) >= 0)
+    return PCRE_ERROR_BADUTF8;
+  if (start_offset > 0 && start_offset < length)
+    {
+    int tb = ((uschar *)subject)[start_offset];
+    if (tb > 127)
+      {
+      tb &= 0xc0;
+      if (tb != 0 && tb != 0xc0) return PCRE_ERROR_BADUTF8_OFFSET;
+      }
+    }
+  }
+#endif
+
 /* The ims options can vary during the matching as a result of the presence
 of (?ims) items in the pattern. They are kept in a local variable so that
 restoring at the exit of a group is easy. */
@@ -7408,6 +8877,10 @@ do
   if (rc == MATCH_NOMATCH)
     {
     start_match++;
+#ifdef SUPPORT_UTF8
+    if (match_block.utf8)
+      while((*start_match & 0xc0) == 0x80) start_match++;
+#endif
     continue;
     }
 
