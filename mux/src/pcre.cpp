@@ -2031,8 +2031,6 @@ int
 pcre_fullinfo(const pcre *argument_re, const pcre_extra *extra_data, int what,
   void *where)
 {
-real_pcre internal_re;
-pcre_study_data internal_study;
 const real_pcre *re = (const real_pcre *)argument_re;
 const pcre_study_data *study = NULL;
 
@@ -5666,7 +5664,6 @@ pcre_compile(const char *pattern, int options, const char **errorptr,
 {
 real_pcre *re;
 int length = 1 + LINK_SIZE;      /* For initial BRA plus length */
-int runlength;
 int c, firstbyte, reqbyte;
 int bracount = 0;
 int branch_extra = 0;
@@ -9742,10 +9739,8 @@ const uschar *start_match = (const uschar *)subject + start_offset;
 const uschar *end_subject;
 const uschar *req_byte_ptr = start_match - 1;
 
-pcre_study_data internal_study;
 const pcre_study_data *study;
 
-real_pcre internal_re;
 const real_pcre *external_re = (const real_pcre *)argument_re;
 const real_pcre *re = external_re;
 
