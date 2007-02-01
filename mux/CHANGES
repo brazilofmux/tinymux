@@ -292,6 +292,10 @@ Bug Fixes:
     (Issue 217).  Found and fixed by Alierak.
  -- Fix typo in do_say() which left a bit-wise instead of a logical
     AND operation (Issue 245).
+ -- Added separate recursion limit protection on nesting of iter() and
+    list() (Issue 216). MAX_ITEXT is 100, but raising the function
+    recursion limit above that leaves iter() and list() open to step
+    on nearby mudstate structures including help and global_registers.
  -- Fix trailing padding in center() (Issue 253).
  -- Fix buffer overflow in fun_ladd (Issue 282).
 
@@ -347,10 +351,6 @@ Performance Enhancements:
     without including the subject.
  -- In MEMORY_BASED, avoid malloc() call each time an attribute is
     added to an object.
- -- Added separate recursion limit protection on nesting of iter() and
-    list() (Issue 216). MAX_ITEXT is 100, but raising the function
-    recursion limit above that leaves iter() and list() open to step
-    on nearby mudstate structures including help and global_registers.
 
 
 Cosmetic Changes:
