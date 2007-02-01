@@ -4,8 +4,8 @@ Last Update:  January 2007
 Major changes that may affect performance and require softcode tweaks:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
  -- Added mux_string and fixed many functions including EDIT(),
-    EXTRACT(), REVERSE(), SQUISH(), and DELETE() (Issues 14, 25, 52,
-    98, 100, and 232). Thanks Jake and Alierak.
+    EXTRACT(), REVERSE(), SQUISH(), WORDPOS(), and DELETE() (Issues
+    14, 25, 52, 98, 100, and 232). Thanks Jake and Alierak.
 
 
 Feature Additions:
@@ -29,6 +29,7 @@ Feature Additions:
     specified pattern (Issue 262). Thanks Jake.
  -- REVWORDS() now accepts multi-character input and output delimiters
     (Issue 21). Thanks Jake.
+ -- Use mux_string in SCRAMBLE() and SECURE() to avoid stripping ANSI.
 
 
 Bug Fixes:
@@ -58,6 +59,9 @@ Bug Fixes:
  -- Corrected minor typo in @comon section of help.txt. (Issue 275)
  -- Restore newline skipping in wrap(), broken in 2.7.0.2 (Issue 278).
  -- Fix potential buffer overflow in ladd() (Issue 282). Thanks Jake.
+ -- Use %p printf format for pointer to avoid compiler warning about
+    truncating a potentially 64-bit quantity.
+ -- Restore newline skipping in wrap(), broken in 2.7.0.2 (Issue 278).
 
 
 Performance Enhancements:
@@ -70,6 +74,12 @@ Performance Enhancements:
     of LBUF_SIZE elements.
  -- Prepending a single char to a mux_string no longer copies the
     string twice (Issue 281).
+ -- Make mux_exec() not check function names that are too long to be
+    valid.
+ -- Prepending a single char to a mux_string no longer copies the
+    string twice (Issue 281).
+ -- Make parse_arglist_lite() and mux_exec() non-destructive.
+ -- Make mux_exec() take a char *pdstr instead of char **dstr.
 
 
 Cosmetic Changes:
