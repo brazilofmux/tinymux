@@ -352,17 +352,21 @@ CTaskHeap::~CTaskHeap(void)
     }
 }
 
-void CTaskHeap::Insert(PTASK_RECORD pTask, SCHCMP *pfCompare)
+bool CTaskHeap::Insert(PTASK_RECORD pTask, SCHCMP *pfCompare)
 {
     if (m_nCurrent == m_nAllocated)
     {
-        if (!Grow()) return;
+        if (!Grow())
+        {
+            return false;
+        }
     }
     pTask->m_iVisitedMark = m_iVisitedMark-1;
 
     m_pHeap[m_nCurrent] = pTask;
     m_nCurrent++;
     SiftUp(m_nCurrent-1, pfCompare);
+    return true;
 }
 
 bool CTaskHeap::Grow(void)
@@ -496,7 +500,10 @@ void CScheduler::DeferTask(const CLinearTimeAbsolute& ltaWhen, int iPriority,
 
     // Must add to the WhenHeap so that network is still serviced.
     //
-    m_WhenHeap.Insert(pTask, CompareWhen);
+    if (!m_WhenHeap.Insert(pTask, CompareWhen))
+    {
+        delete pTask;
+    }
 }
 
 void CScheduler::DeferImmediateTask(int iPriority, FTASK *fpTask, void *arg_voidptr, int arg_Integer)
@@ -513,7 +520,10 @@ void CScheduler::DeferImmediateTask(int iPriority, FTASK *fpTask, void *arg_void
 
     // Must add to the WhenHeap so that network is still serviced.
     //
-    m_WhenHeap.Insert(pTask, CompareWhen);
+    if (!m_WhenHeap.Insert(pTask, CompareWhen))
+    {
+        delete pTask;
+    }
 }
 
 void CScheduler::CancelTask(FTASK *fpTask, void *arg_voidptr, int arg_Integer)
@@ -527,16 +537,14 @@ void CScheduler::ReadyTasks(const CLinearTimeAbsolute& ltaNow)
     // Move ready-to-run tasks off the WhenHeap and onto the PriorityHeap.
     //
     PTASK_RECORD pTask = m_WhenHeap.PeekAtTopmost();
-    while (pTask && (pTask->ltaWhen < ltaNow))
+    while (  pTask
+          && pTask->ltaWhen < ltaNow)
     {
         pTask = m_WhenHeap.RemoveTopmost(CompareWhen);
         if (pTask)
         {
-            if (pTask->fpTask)
-            {
-                m_PriorityHeap.Insert(pTask, ComparePriority);
-            }
-            else
+            if (  pTask->fpTask
+               || !m_PriorityHeap.Insert(pTask, ComparePriority))
             {
                 delete pTask;
             }

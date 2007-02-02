@@ -1010,7 +1010,7 @@ public:
     ~CTaskHeap();
 
     void Shrink(void);
-    void Insert(PTASK_RECORD, SCHCMP *);
+    bool Insert(PTASK_RECORD, SCHCMP *);
     PTASK_RECORD PeekAtTopmost(void);
     PTASK_RECORD RemoveTopmost(SCHCMP *);
     void CancelTask(FTASK *fpTask, void *arg_voidptr, int arg_Integer);
