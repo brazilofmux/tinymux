@@ -8297,6 +8297,7 @@ static char *expand_tabs(const char *str)
             {
             case '\t':
                 safe_fill(tbuf1, &bp, ' ', 8 - n % 8);
+                n = 0;
                 continue;
             case '\r':
                 // FALL THROUGH
