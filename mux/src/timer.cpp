@@ -543,7 +543,7 @@ void CScheduler::ReadyTasks(const CLinearTimeAbsolute& ltaNow)
         pTask = m_WhenHeap.RemoveTopmost(CompareWhen);
         if (pTask)
         {
-            if (  pTask->fpTask
+            if (  NULL == pTask->fpTask
                || !m_PriorityHeap.Insert(pTask, ComparePriority))
             {
                 delete pTask;
