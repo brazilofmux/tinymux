@@ -4403,6 +4403,7 @@ void mux_string::export_TextAnsi
     if (  m_n <= nStart
        || 0 == nLen)
     {
+        **bufc = '\0';
         return;
     }
     size_t  nLeft   = (m_n - nStart);

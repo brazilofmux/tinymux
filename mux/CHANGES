@@ -58,6 +58,7 @@ Bug Fixes:
  -- Corrected minor typo in @comon section of help.txt. (Issue 275)
  -- Restore newline skipping in wrap(), broken in 2.7.0.2 (Issue 278).
  -- Fix potential buffer overflow in ladd() (Issue 282). Thanks Jake.
+ -- Fix line-duplication bug in wrap(), broken in 2.7.0.2 (Issue 286).
 
 
 Performance Enhancements:
