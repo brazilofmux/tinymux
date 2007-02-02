@@ -1009,6 +1009,7 @@ static bool db_write_object(FILE *f, dbref i, int db_format, int flags)
                 }
                 j = a->number;
             }
+
             if (j < A_USER_START)
             {
                 switch (j)
@@ -1027,11 +1028,18 @@ static bool db_write_object(FILE *f, dbref i, int db_format, int flags)
                     }
                     break;
 
-                case A_LIST:
                 case A_MONEY:
+                    if (!(flags & V_ATRMONEY))
+                    {
+                        continue;
+                    }
+                    break;
+
+                case A_LIST:
                     continue;
                 }
             }
+
             // Format is: ">%d\n", j
             //
             const char *p = atr_get_raw(i, j);

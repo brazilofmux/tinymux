@@ -62,6 +62,7 @@ Bug Fixes:
  -- Use %p printf format for pointer to avoid compiler warning about
     truncating a potentially 64-bit quantity.
  -- Restore newline skipping in wrap(), broken in 2.7.0.2 (Issue 278).
+ -- Money is now included as an attribute in flatfiles (Issue 224).
 
 
 Performance Enhancements:
