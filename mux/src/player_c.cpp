@@ -287,7 +287,7 @@ int QueueMax(dbref player)
     return m;
 }
 
-/*! \brief Returns how many coins are in a player's purse.
+/*! \brief Returns how many coins are in a player's or things's purse.
  *
  * \param obj      dbref of player object.
  * \return         None.
@@ -295,24 +295,28 @@ int QueueMax(dbref player)
 
 int Pennies(dbref obj)
 {
-    if (mudstate.bStandAlone)
+    if (Good_obj(obj))
     {
-        const char *cp = atr_get_raw(obj, A_MONEY);
-        if (cp)
+        if (  !mudstate.bStandAlone
+           && OwnsOthers(obj))
         {
-            return mux_atol(cp);
+            PCACHE *pp = pcache_find(obj);
+            return pp->money;
         }
-    }
-    else if (  Good_obj(obj)
-            && OwnsOthers(obj))
-    {
-        PCACHE *pp = pcache_find(obj);
-        return pp->money;
+        else
+        {
+            const char *cp = atr_get_raw(obj, A_MONEY);
+            if (cp)
+            {
+                return mux_atol(cp);
+            }
+        }
     }
     return 0;
 }
 
-/*! \brief Sets the number of coins in a player's purse.
+
+/*! \brief Sets the number of coins in a player's or thing's purse.
  *
  * This changes the number of coins a player holds and sets this attribute
  * as dirty so that it will be updated in the attribute database later.
@@ -324,17 +328,21 @@ int Pennies(dbref obj)
 
 void s_Pennies(dbref obj, int howfew)
 {
-    if (mudstate.bStandAlone)
+    if (Good_obj(obj))
     {
-        char tbuf[I32BUF_SIZE];
-        mux_ltoa(howfew, tbuf);
-        atr_add_raw(obj, A_MONEY, tbuf);
-    }
-    else if (  Good_obj(obj)
-            && OwnsOthers(obj))
-    {
-        PCACHE *pp = pcache_find(obj);
-        pp->money = howfew;
-        pp->cflags |= PF_MONEY_CH;
+        if (  !mudstate.bStandAlone
+           && OwnsOthers(obj))
+        {
+            PCACHE *pp = pcache_find(obj);
+            pp->money = howfew;
+            pp->cflags |= PF_MONEY_CH;
+        }
+        else
+        {
+            char tbuf[I32BUF_SIZE];
+            mux_ltoa(howfew, tbuf);
+            atr_add_raw(obj, A_MONEY, tbuf);
+        }
+
     }
 }
