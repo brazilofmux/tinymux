@@ -343,6 +343,25 @@ void s_Pennies(dbref obj, int howfew)
             mux_ltoa(howfew, tbuf);
             atr_add_raw(obj, A_MONEY, tbuf);
         }
-
     }
+}
+
+/*! \brief A shortcut method of initializing the coins in a object's purse.
+ *
+ * This method should only be used from db_rw.cpp while loading the database.
+ * From there, the object will be in a half-way state, and has not been fully
+ * loaded.  The object type is not known.  Likewise, at database load time,
+ * using the player cache is ineffective -- causing a read request for A_MONEY
+ * to obtain a value for coins (probably zero) that we immediate change again.
+ *
+ * \param obj      dbref of object.
+ * \param howfew   Number of coins
+ * \return         None.
+ */
+
+void s_PenniesDirect(dbref obj, int howfew)
+{
+    char tbuf[I32BUF_SIZE];
+    mux_ltoa(howfew, tbuf);
+    atr_add_raw(obj, A_MONEY, tbuf);
 }

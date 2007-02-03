@@ -820,7 +820,7 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
             //
             if (read_money)
             {
-                s_Pennies(i, getref(f));
+                s_PenniesDirect(i, getref(f));
             }
 
             // FLAGS
