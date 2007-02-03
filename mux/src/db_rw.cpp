@@ -1028,14 +1028,8 @@ static bool db_write_object(FILE *f, dbref i, int db_format, int flags)
                     }
                     break;
 
-                case A_MONEY:
-                    if (!(flags & V_ATRMONEY))
-                    {
-                        continue;
-                    }
-                    break;
-
                 case A_LIST:
+                case A_MONEY:
                     continue;
                 }
             }
