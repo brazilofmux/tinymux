@@ -4329,9 +4329,11 @@ void mux_string::export_TextAnsi
     // Sanity check our arguments and find out how much room we have.
     // We assume we're outputting into an LBUF unless given a smaller nBuffer.
     //
+    char *bufctemp;
     if (NULL == bufc)
     {
-        bufc = &buff;
+        bufc = &bufctemp;
+        *bufc = buff;
     }
     if (  !buff
        || !*bufc)
@@ -4482,9 +4484,11 @@ void mux_string::export_TextPlain
     // Sanity check our arguments and find out how much room we have.
     // We assume we're outputting into an LBUF unless given a smaller nBuffer.
     //
+    char *bufctemp;
     if (NULL == bufc)
     {
-        bufc = &buff;
+        bufc = &bufctemp;
+        *bufc = buff;
     }
     if (  !buff
        || !*bufc)
