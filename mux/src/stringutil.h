@@ -224,24 +224,32 @@ extern bool ParseFloat(PARSE_FLOAT_RESULT *pfr, const char *str, bool bStrict = 
 class mux_string
 {
 private:
-    // m_n, m_ach, and m_acs work together as follows:
+    // m_n, m_ach, m_ncs, and m_pcs work together as follows:
     //
     // m_n is always between 0 and LBUF_SIZE-1 inclusively.  The first m_n
     // characters of m_ach[] contain the non-ANSI portion of the string.
     // In addition to a length, m_ach[] is also terminated with '\0' at
-    // m_ach[m_n].  This is intentional redudant.  Unless there is no color in
-    // the string, each character in m_ach[] has a corresponding color encoded
-    // in m_pcs[].  The m_pcs[m_n] (which corresponds to '\0') is not guaranteed
-    // to exist or be valid.
+    // m_ach[m_n].  This is intentionally redundant.
+    //
+    // m_ncs tracks the size of the array of color states pointed to
+    // by m_pcs.  If m_ncs is 0, there is no color in the string and
+    // m_pcs must not be dereferenced.  Otherwise each character in
+    // m_ach[] has a corresponding color encoded in m_pcs[].  The
+    // m_pcs[m_n] (which corresponds to '\0') is not guaranteed to
+    // exist or be valid.
     //
     size_t          m_n;
     char            m_ach[LBUF_SIZE];
+    size_t          m_ncs;
     ANSI_ColorState *m_pcs;
+
+    void realloc_m_pcs(size_t ncs);
 
 public:
     mux_string(void);
     mux_string(const mux_string &sStr);
     mux_string(const char *pStr);
+    ~mux_string(void);
     void append(const char cChar);
     void append(dbref num);
     void append(INT64 iInt);

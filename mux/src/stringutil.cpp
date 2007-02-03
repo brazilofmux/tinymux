@@ -3843,6 +3843,7 @@ mux_string::mux_string(void)
 {
     m_n = 0;
     m_ach[0] = '\0';
+    m_ncs = 0;
     m_pcs = NULL;
 }
 
@@ -3856,6 +3857,7 @@ mux_string::mux_string(void)
 
 mux_string::mux_string(const mux_string &sStr)
 {
+    m_ncs = 0;
     m_pcs = NULL;
     import(sStr);
 }
@@ -3871,8 +3873,21 @@ mux_string::mux_string(const mux_string &sStr)
 
 mux_string::mux_string(const char *pStr)
 {
+    m_ncs = 0;
     m_pcs = NULL;
     import(pStr);
+}
+
+/*! \brief Destructs mux_string object.
+ *
+ * This destructor deletes the m_pcs array if necessary.
+ *
+ * \return         None.
+ */
+
+mux_string::~mux_string(void)
+{
+    realloc_m_pcs(0);
 }
 
 void mux_string::append(const char cChar)
@@ -3880,26 +3895,9 @@ void mux_string::append(const char cChar)
     if (m_n < LBUF_SIZE-1)
     {
         m_ach[m_n] = cChar;
-        if (NULL != m_pcs)
+        if (0 != m_ncs)
         {
-            ANSI_ColorState *pcsOld = m_pcs;
-            m_pcs = NULL;
-            try
-            {
-                m_pcs = new ANSI_ColorState[m_n + 1];
-            }
-            catch (...)
-            {
-                ; // Nothing.
-            }
-            if (NULL == m_pcs)
-            {
-                ISOUTOFMEMORY(m_pcs);
-                return;
-            }
-
-            memcpy(m_pcs, pcsOld, m_n * sizeof(m_pcs[0]));
-            delete pcsOld;
+            realloc_m_pcs(m_n + 1);
             m_pcs[m_n] = acsRestingStates[ANSI_ENDGOAL_NORMAL];
         }
         m_n++;
@@ -3954,48 +3952,28 @@ void mux_string::append(const mux_string &sStr, size_t nStart, size_t nLen)
 
     memcpy(m_ach + m_n, sStr.m_ach + nStart, nLen * sizeof(m_ach[0]));
 
-    if (  NULL != m_pcs
-       || NULL != sStr.m_pcs)
+    if (0 != m_ncs)
     {
-        ANSI_ColorState *pcsOld = m_pcs;
-        m_pcs = NULL;
-        try
+        realloc_m_pcs(m_n + nLen);
+    }
+    else if (0 != sStr.m_ncs)
+    {
+        realloc_m_pcs(m_n + nLen);
+        for (size_t i = 0; i < m_n; i++)
         {
-            m_pcs = new ANSI_ColorState[m_n + nLen];
+            m_pcs[i] = acsRestingStates[ANSI_ENDGOAL_NORMAL];
         }
-        catch (...)
-        {
-            ; // Nothing.
-        }
-        if (NULL == m_pcs)
-        {
-            ISOUTOFMEMORY(m_pcs);
-            return;
-        }
+    }
 
-        if (NULL != pcsOld)
+    if (0 != sStr.m_ncs)
+    {
+        memcpy(m_pcs + m_n, sStr.m_pcs + nStart, nLen * sizeof(m_pcs[0]));
+    }
+    else if (0 != m_ncs)
+    {
+        for (size_t i = 0; i < nLen; i++)
         {
-            memcpy(m_pcs, pcsOld, m_n * sizeof(m_pcs[0]));
-            delete pcsOld;
-        }
-        else
-        {
-            for (size_t i = 0; i < m_n; i++)
-            {
-                m_pcs[i] = acsRestingStates[ANSI_ENDGOAL_NORMAL];
-            }
-        }
-
-        if (NULL != sStr.m_pcs)
-        {
-            memcpy(m_pcs + m_n, sStr.m_pcs + nStart, nLen * sizeof(m_pcs[0]));
-        }
-        else
-        {
-            for (size_t i = 0; i < nLen; i++)
-            {
-                m_pcs[m_n+i] = acsRestingStates[ANSI_ENDGOAL_NORMAL];
-            }
+            m_pcs[m_n+i] = acsRestingStates[ANSI_ENDGOAL_NORMAL];
         }
     }
 
@@ -4079,26 +4057,9 @@ void mux_string::append_TextPlain(const char *pStr)
 
     memcpy(m_ach + m_n, pStr, nLen * sizeof(m_ach[0]));
 
-    if (NULL != m_pcs)
+    if (0 != m_ncs)
     {
-        ANSI_ColorState *pcsOld = m_pcs;
-        m_pcs = NULL;
-        try
-        {
-            m_pcs = new ANSI_ColorState[m_n + nLen];
-        }
-        catch (...)
-        {
-            ; // Nothing.
-        }
-        if (NULL == m_pcs)
-        {
-            ISOUTOFMEMORY(m_pcs);
-            return;
-        }
-
-        memcpy(m_pcs, pcsOld, m_n * sizeof(m_pcs[0]));
-        delete pcsOld;
+        realloc_m_pcs(m_n + nLen);
         for (size_t i = 0; i < nLen; i++)
         {
             m_pcs[m_n+i] = acsRestingStates[ANSI_ENDGOAL_NORMAL];
@@ -4127,26 +4088,9 @@ void mux_string::append_TextPlain(const char *pStr, size_t nLen)
 
     memcpy(m_ach + m_n, pStr, nLen * sizeof(m_ach[0]));
 
-    if (NULL != m_pcs)
+    if (0 != m_ncs)
     {
-        ANSI_ColorState *pcsOld = m_pcs;
-        m_pcs = NULL;
-        try
-        {
-            m_pcs = new ANSI_ColorState[m_n + nLen];
-        }
-        catch (...)
-        {
-            ; // Nothing.
-        }
-        if (NULL == m_pcs)
-        {
-            ISOUTOFMEMORY(m_pcs);
-            return;
-        }
-
-        memcpy(m_pcs, pcsOld, m_n * sizeof(m_pcs[0]));
-        delete pcsOld;
+        realloc_m_pcs(m_n + nLen);
         for (size_t i = 0; i < nLen; i++)
         {
             m_pcs[m_n+i] = acsRestingStates[ANSI_ENDGOAL_NORMAL];
@@ -4245,7 +4189,7 @@ void mux_string::delete_Chars(size_t nStart, size_t nLen)
 
     size_t nMove = m_n - nEnd;
     memmove(m_ach + nStart, m_ach + nEnd, nMove * sizeof(m_ach[0]));
-    if (NULL != m_pcs)
+    if (0 != m_ncs)
     {
         memmove(m_pcs + nStart, m_pcs + nEnd, nMove * sizeof(m_pcs[0]));
     }
@@ -4337,7 +4281,7 @@ char mux_string::export_Char(size_t n) const
 ANSI_ColorState mux_string::export_Color(size_t n) const
 {
     if (  m_n <= n
-       || NULL == m_pcs)
+       || 0 == m_ncs)
     {
         return acsRestingStates[ANSI_ENDGOAL_NORMAL];
     }
@@ -4425,7 +4369,7 @@ void mux_string::export_TextAnsi
     // nLen is the length of the portion of the source string we will
     //  try to copy, and has a value in the ranges (0, nLeft] and (0, nAvail].
     //
-    if (NULL == m_pcs)
+    if (0 == m_ncs)
     {
         export_TextPlain(buff, bufc, nStart, nLen, nBuffer);
         return;
@@ -4593,11 +4537,7 @@ void mux_string::export_TextPlain
 
 void mux_string::import(const char chIn)
 {
-    if (NULL != m_pcs)
-    {
-        delete m_pcs;
-        m_pcs = NULL;
-    }
+    realloc_m_pcs(0);
 
     if (  ESC_CHAR != chIn
        && '\0' != chIn)
@@ -4620,11 +4560,7 @@ void mux_string::import(const char chIn)
 
 void mux_string::import(dbref num)
 {
-    if (NULL != m_pcs)
-    {
-        delete m_pcs;
-        m_pcs = NULL;
-    }
+    realloc_m_pcs(0);
 
     m_ach[0] = '#';
     m_n = 1;
@@ -4642,11 +4578,7 @@ void mux_string::import(dbref num)
 
 void mux_string::import(INT64 iInt)
 {
-    if (NULL != m_pcs)
-    {
-        delete m_pcs;
-        m_pcs = NULL;
-    }
+    realloc_m_pcs(0);
 
     // mux_i64toa() sets the '\0'.
     //
@@ -4661,11 +4593,7 @@ void mux_string::import(INT64 iInt)
 
 void mux_string::import(long lLong)
 {
-    if (NULL != m_pcs)
-    {
-        delete m_pcs;
-        m_pcs = NULL;
-    }
+    realloc_m_pcs(0);
 
     // mux_ltoa() sets the '\0'.
     //
@@ -4681,11 +4609,7 @@ void mux_string::import(long lLong)
 
 void mux_string::import(const mux_string &sStr, size_t nStart)
 {
-    if (NULL != m_pcs)
-    {
-        delete m_pcs;
-        m_pcs = NULL;
-    }
+    realloc_m_pcs(sStr.m_ncs);
 
     if (sStr.m_n <= nStart)
     {
@@ -4695,21 +4619,8 @@ void mux_string::import(const mux_string &sStr, size_t nStart)
     {
         m_n = sStr.m_n - nStart;
         memcpy(m_ach, sStr.m_ach + nStart, m_n*sizeof(m_ach[0]));
-        if (NULL != sStr.m_pcs)
+        if (0 != sStr.m_ncs)
         {
-            try
-            {
-                m_pcs = new ANSI_ColorState[m_n];
-            }
-            catch (...)
-            {
-                ; // Nothing.
-            }
-            if (NULL == m_pcs)
-            {
-                ISOUTOFMEMORY(m_pcs);
-                return;
-            }
             memcpy(m_pcs, sStr.m_pcs + nStart, m_n*sizeof(m_pcs[0]));
         }
     }
@@ -4753,15 +4664,11 @@ void mux_string::import(const char *pStr, size_t nLen)
 {
     m_n = 0;
 
-    if (NULL != m_pcs)
-    {
-        delete m_pcs;
-        m_pcs = NULL;
-    }
     if (  NULL == pStr
        || '\0' == *pStr
        || 0 == nLen)
     {
+        realloc_m_pcs(0);
         m_ach[m_n] = '\0';
         return;
     }
@@ -4816,20 +4723,12 @@ void mux_string::import(const char *pStr, size_t nLen)
     }
     if (bColor)
     {
-        try
-        {
-            m_pcs = new ANSI_ColorState[m_n];
-        }
-        catch (...)
-        {
-            ; // Nothing.
-        }
-        if (NULL == m_pcs)
-        {
-            ISOUTOFMEMORY(m_pcs);
-            return;
-        }
+        realloc_m_pcs(m_n);
         memcpy(m_pcs, acsTemp, m_n*sizeof(m_pcs[0]));
+    }
+    else
+    {
+        realloc_m_pcs(0);
     }
     m_ach[m_n] = '\0';
 }
@@ -4845,33 +4744,16 @@ void mux_string::prepend(const char cChar)
 
     memmove(m_ach + 1, m_ach, nMove * sizeof(m_ach[0]));
     m_ach[0] = cChar;
-    if (m_n < LBUF_SIZE-1)
-    {
-        m_n++;
-    }
-    m_ach[m_n] = '\0';
 
-    if (NULL != m_pcs)
+    if (0 != m_ncs)
     {
-        ANSI_ColorState *pcsOld = m_pcs;
-        m_pcs = NULL;
-        try
-        {
-            m_pcs = new ANSI_ColorState[m_n];
-        }
-        catch (...)
-        {
-            ; // Nothing.
-        }
-        if (NULL == m_pcs)
-        {
-            ISOUTOFMEMORY(m_pcs);
-            return;
-        }
+        realloc_m_pcs(1 + nMove);
+        memmove(m_pcs + 1, m_pcs, nMove * sizeof(m_pcs[0]));
         m_pcs[0] = acsRestingStates[ANSI_ENDGOAL_NORMAL];
-        memcpy(m_pcs + 1, pcsOld, nMove * sizeof(m_pcs[0]));
-        delete pcsOld;
     }
+
+    m_n = 1 + nMove;
+    m_ach[m_n] = '\0';
 }
 
 void mux_string::prepend(dbref num)
@@ -4960,78 +4842,94 @@ void mux_string::replace_Chars
         }
         m_n = nStart + nCopy + nMove;
 
-        if (  NULL != m_pcs
-           || NULL != sTo.m_pcs)
+        if (0 != m_ncs)
         {
-            ANSI_ColorState *pcsOld = m_pcs;
-            m_pcs = NULL;
-            try
+            realloc_m_pcs(m_n);
+            if (nMove)
             {
-                m_pcs = new ANSI_ColorState[m_n];
-            }
-            catch (...)
-            {
-                ; // Nothing.
-            }
-            if (NULL == m_pcs)
-            {
-                ISOUTOFMEMORY(m_pcs);
-                return;
-            }
-            if (NULL != pcsOld)
-            {
-                memcpy(m_pcs, pcsOld, nStart * sizeof(m_pcs[0]));
-                memcpy(m_pcs + nStart + nTo,
-                       pcsOld + nStart + nLen, nMove * sizeof(m_pcs[0]));
-                delete pcsOld;
-            }
-            else
-            {
-                for (size_t i = 0; i < m_n; i++)
-                {
-                    m_pcs[i] = acsRestingStates[ANSI_ENDGOAL_NORMAL];
-                }
+                memmove(m_pcs + nStart + nTo,
+                        m_pcs + nStart + nLen, nMove * sizeof(m_pcs[0]));
             }
         }
-    }
-    memcpy(m_ach + nStart, sTo.m_ach, nCopy * sizeof(m_ach[0]));
-    if (NULL != sTo.m_pcs)
-    {
-        if (NULL == m_pcs)
+        else if (0 != sTo.m_ncs)
         {
-            try
-            {
-                m_pcs = new ANSI_ColorState[m_n];
-            }
-            catch (...)
-            {
-                ; // Nothing.
-            }
-            if (NULL == m_pcs)
-            {
-                ISOUTOFMEMORY(m_pcs);
-                return;
-            }
-
-            for (size_t i = 0; i < m_n; i++)
+            realloc_m_pcs(m_n);
+            for (size_t i = 0; i < nStart; i++)
             {
                 m_pcs[i] = acsRestingStates[ANSI_ENDGOAL_NORMAL];
             }
+            for (size_t i = 0; i < nMove; i++)
+            {
+                m_pcs[i+nStart+nTo] = acsRestingStates[ANSI_ENDGOAL_NORMAL];
+            }
         }
+    }
+
+    memcpy(m_ach + nStart, sTo.m_ach, nCopy * sizeof(m_ach[0]));
+
+    if (0 != sTo.m_ncs)
+    {
         memcpy(m_pcs + nStart, sTo.m_pcs, nCopy * sizeof(m_pcs[0]));
     }
-    else
+    else if (0 != m_ncs)
     {
-        if (NULL != m_pcs)
+        for (size_t i = 0; i < nTo; i++)
         {
-            for (size_t i = 0; i < nTo; i++)
-            {
-                m_pcs[nStart + i] = acsRestingStates[ANSI_ENDGOAL_NORMAL];
-            }
+            m_pcs[nStart + i] = acsRestingStates[ANSI_ENDGOAL_NORMAL];
         }
     }
 
     m_ach[m_n] = '\0';
+}
+
+/*! \brief Resizes or deletes the m_pcs array if necessary.
+ *
+ * If asked to resize the array to 0, this method will delete the
+ * array and set m_pcs to NULL.  Otherwise when this method returns
+ * the m_pcs array will exist and have at least the required size.
+ * Any color states that were already initialized and would fit within
+ * the resulting array will be preserved.
+ *
+ * \param ncs      Size of m_pcs array required.
+ * \return         None.
+ */
+
+void mux_string::realloc_m_pcs(size_t ncs)
+{
+    if (  0 == ncs
+       && 0 != m_ncs)
+    {
+        delete [] m_pcs;
+        m_pcs = NULL;
+        m_ncs = 0;
+    }
+    else if (m_ncs < ncs)
+    {
+        // extend in chunks of 8
+        //
+        ncs |= 0x7;
+        ncs++;
+
+        ANSI_ColorState *pcsOld = m_pcs;
+        m_pcs = NULL;
+        try
+        {
+            m_pcs = new ANSI_ColorState[ncs];
+        }
+        catch (...)
+        {
+            ; // Nothing.
+        }
+        ISOUTOFMEMORY(m_pcs);
+
+        if (0 != m_ncs)
+        {
+            memcpy(m_pcs, pcsOld, m_ncs * sizeof(m_pcs[0]));
+            delete [] pcsOld;
+        }
+
+        m_ncs = ncs;
+    }
 }
 
 /*! \brief Reverses the string.
@@ -5047,7 +4945,7 @@ void mux_string::reverse(void)
         m_ach[j] = m_ach[i];
         m_ach[i] = ch;
 
-        if (NULL != m_pcs)
+        if (0 != m_ncs)
         {
             ANSI_ColorState cs = m_pcs[j];
             m_pcs[j] = m_pcs[i];
@@ -5169,29 +5067,16 @@ void mux_string::set_Color(size_t n, ANSI_ColorState csColor)
     {
         return;
     }
-    if (  NULL == m_pcs
+    if (  0 == m_ncs
        && 0 != memcmp(&csColor, &acsRestingStates[ANSI_ENDGOAL_NORMAL], sizeof(csColor)))
     {
-        try
-        {
-            m_pcs = new ANSI_ColorState[m_n];
-        }
-        catch (...)
-        {
-            ; // Nothing.
-        }
-        if (NULL == m_pcs)
-        {
-            ISOUTOFMEMORY(m_pcs);
-            return;
-        }
-
+        realloc_m_pcs(m_n);
         for (LBUF_OFFSET i = 0; i < m_n; i++)
         {
             m_pcs[i] = acsRestingStates[ANSI_ENDGOAL_NORMAL];
         }
     }
-    if (NULL != m_pcs)
+    if (0 != m_ncs)
     {
         m_pcs[n] = csColor;
     }
