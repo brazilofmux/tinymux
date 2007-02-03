@@ -348,11 +348,15 @@ void s_Pennies(dbref obj, int howfew)
 
 /*! \brief A shortcut method of initializing the coins in a object's purse.
  *
- * This method should only be used from db_rw.cpp while loading the database.
- * From there, the object will be in a half-way state, and has not been fully
- * loaded.  The object type is not known.  Likewise, at database load time,
- * using the player cache is ineffective -- causing a read request for A_MONEY
- * to obtain a value for coins (probably zero) that we immediate change again.
+ * This function should only be called from db_rw.cpp for loading the
+ * database.  From there, objects are in an in-between state, the object type
+ * is not yet known, but on the other hand, the dbref has just been allocated,
+ * so the player cache will not need flushing or updated.  In fact, using a
+ * the player cache during database load is ineffect because it causes a read
+ * request for A_MONEY which will most likely fail and return a value of zero
+ * coins.  Any value it does return, we immediate change anyway.  Furthermore,
+ * The cache consumes increasing memory during the load without any trims or
+ * saves.
  *
  * \param obj      dbref of object.
  * \param howfew   Number of coins
