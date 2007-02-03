@@ -1,6 +1,6 @@
 // externs.h -- Prototypes for externs not defined elsewhere.
 //
-// $Id: externs.h,v 1.65 2006/01/31 00:17:26 sdennis Exp $
+// $Id: externs.h,v 1.66 2007/02/03 04:25:46 sdennis Exp $
 //
 
 #ifndef EXTERNS_H
@@ -912,7 +912,7 @@ public:
     CTaskHeap();
     ~CTaskHeap();
 
-    void Insert(PTASK_RECORD, SCHCMP *);
+    bool Insert(PTASK_RECORD, SCHCMP *);
     PTASK_RECORD PeekAtTopmost(void);
     PTASK_RECORD RemoveTopmost(SCHCMP *);
     void CancelTask(FTASK *fpTask, void *arg_voidptr, int arg_Integer);

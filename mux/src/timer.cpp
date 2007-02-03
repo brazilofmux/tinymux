@@ -1,6 +1,6 @@
 // timer.cpp -- Mini-task scheduler for timed events.
 //
-// $Id: timer.cpp,v 1.19 2006/01/07 07:18:56 sdennis Exp $
+// $Id: timer.cpp,v 1.20 2007/02/03 04:25:46 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -352,17 +352,21 @@ CTaskHeap::~CTaskHeap(void)
     }
 }
 
-void CTaskHeap::Insert(PTASK_RECORD pTask, SCHCMP *pfCompare)
+bool CTaskHeap::Insert(PTASK_RECORD pTask, SCHCMP *pfCompare)
 {
     if (m_nCurrent == m_nAllocated)
     {
-        if (!Grow()) return;
+        if (!Grow())
+        {
+            return false;
+        }
     }
     pTask->m_iVisitedMark = m_iVisitedMark-1;
 
     m_pHeap[m_nCurrent] = pTask;
     m_nCurrent++;
     SiftUp(m_nCurrent-1, pfCompare);
+    return true;
 }
 
 bool CTaskHeap::Grow(void)
@@ -454,7 +458,10 @@ void CScheduler::DeferTask(const CLinearTimeAbsolute& ltaWhen, int iPriority,
 
     // Must add to the WhenHeap so that network is still serviced.
     //
-    m_WhenHeap.Insert(pTask, CompareWhen);
+    if (!m_WhenHeap.Insert(pTask, CompareWhen))
+    {
+        delete pTask;
+    }
 }
 
 void CScheduler::DeferImmediateTask(int iPriority, FTASK *fpTask, void *arg_voidptr, int arg_Integer)
@@ -471,7 +478,10 @@ void CScheduler::DeferImmediateTask(int iPriority, FTASK *fpTask, void *arg_void
 
     // Must add to the WhenHeap so that network is still serviced.
     //
-    m_WhenHeap.Insert(pTask, CompareWhen);
+    if (!m_WhenHeap.Insert(pTask, CompareWhen))
+    {
+        delete pTask;
+    }
 }
 
 void CScheduler::CancelTask(FTASK *fpTask, void *arg_voidptr, int arg_Integer)
@@ -485,16 +495,14 @@ void CScheduler::ReadyTasks(const CLinearTimeAbsolute& ltaNow)
     // Move ready-to-run tasks off the WhenHeap and onto the PriorityHeap.
     //
     PTASK_RECORD pTask = m_WhenHeap.PeekAtTopmost();
-    while (pTask && (pTask->ltaWhen < ltaNow))
+    while (  pTask
+          && pTask->ltaWhen < ltaNow)
     {
         pTask = m_WhenHeap.RemoveTopmost(CompareWhen);
         if (pTask)
         {
-            if (pTask->fpTask)
-            {
-                m_PriorityHeap.Insert(pTask, ComparePriority);
-            }
-            else
+            if (  NULL == pTask->fpTask
+               || !m_PriorityHeap.Insert(pTask, ComparePriority))
             {
                 delete pTask;
             }
