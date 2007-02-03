@@ -4613,11 +4613,10 @@ void mux_string::import(long lLong)
 
 void mux_string::import(const mux_string &sStr, size_t nStart)
 {
-    realloc_m_pcs(sStr.m_ncs);
-
     if (sStr.m_n <= nStart)
     {
         m_n = 0;
+        realloc_m_pcs(0);
     }
     else
     {
@@ -4625,6 +4624,7 @@ void mux_string::import(const mux_string &sStr, size_t nStart)
         memcpy(m_ach, sStr.m_ach + nStart, m_n*sizeof(m_ach[0]));
         if (0 != sStr.m_ncs)
         {
+            realloc_m_pcs(m_n);
             memcpy(m_pcs, sStr.m_pcs + nStart, m_n*sizeof(m_pcs[0]));
         }
     }
@@ -4814,6 +4814,56 @@ void mux_string::prepend(const char *pStr, size_t n)
     delete sStore;
 }
 
+/*! \brief Resizes or deletes the m_pcs array if necessary.
+ *
+ * If asked to resize the array to 0, this method will delete the
+ * array and set m_pcs to NULL.  Otherwise when this method returns
+ * the m_pcs array will exist and have at least the required size.
+ * Any color states that were already initialized and would fit within
+ * the resulting array will be preserved.
+ *
+ * \param ncs      Size of m_pcs array required.
+ * \return         None.
+ */
+
+void mux_string::realloc_m_pcs(size_t ncs)
+{
+    if (  0 == ncs
+       && 0 != m_ncs)
+    {
+        delete [] m_pcs;
+        m_pcs = NULL;
+        m_ncs = 0;
+    }
+    else if (m_ncs < ncs)
+    {
+        // extend in chunks of 8
+        //
+        ncs |= 0x7;
+        ncs++;
+
+        ANSI_ColorState *pcsOld = m_pcs;
+        m_pcs = NULL;
+        try
+        {
+            m_pcs = new ANSI_ColorState[ncs];
+        }
+        catch (...)
+        {
+            ; // Nothing.
+        }
+        ISOUTOFMEMORY(m_pcs);
+
+        if (0 != m_ncs)
+        {
+            memcpy(m_pcs, pcsOld, m_ncs * sizeof(m_pcs[0]));
+            delete [] pcsOld;
+        }
+
+        m_ncs = ncs;
+    }
+}
+
 void mux_string::replace_Chars
 (
     const mux_string &sTo,
@@ -4884,56 +4934,6 @@ void mux_string::replace_Chars
     }
 
     m_ach[m_n] = '\0';
-}
-
-/*! \brief Resizes or deletes the m_pcs array if necessary.
- *
- * If asked to resize the array to 0, this method will delete the
- * array and set m_pcs to NULL.  Otherwise when this method returns
- * the m_pcs array will exist and have at least the required size.
- * Any color states that were already initialized and would fit within
- * the resulting array will be preserved.
- *
- * \param ncs      Size of m_pcs array required.
- * \return         None.
- */
-
-void mux_string::realloc_m_pcs(size_t ncs)
-{
-    if (  0 == ncs
-       && 0 != m_ncs)
-    {
-        delete [] m_pcs;
-        m_pcs = NULL;
-        m_ncs = 0;
-    }
-    else if (m_ncs < ncs)
-    {
-        // extend in chunks of 8
-        //
-        ncs |= 0x7;
-        ncs++;
-
-        ANSI_ColorState *pcsOld = m_pcs;
-        m_pcs = NULL;
-        try
-        {
-            m_pcs = new ANSI_ColorState[ncs];
-        }
-        catch (...)
-        {
-            ; // Nothing.
-        }
-        ISOUTOFMEMORY(m_pcs);
-
-        if (0 != m_ncs)
-        {
-            memcpy(m_pcs, pcsOld, m_ncs * sizeof(m_pcs[0]));
-            delete [] pcsOld;
-        }
-
-        m_ncs = ncs;
-    }
 }
 
 /*! \brief Reverses the string.
