@@ -1,6 +1,6 @@
 // db.h
 //
-// $Id: db.h,v 1.9 2006/02/24 18:08:34 sdennis Exp $
+// $Id: db.h,v 1.10 2007/02/03 04:32:52 sdennis Exp $
 //
 
 #ifndef __DB_H
@@ -218,8 +218,9 @@ extern OBJ *db;
 #define s_ThAttrib(t,n)     db[t].throttled_attributes = (n);
 #define s_ThMail(t,n)       db[t].throttled_mail = (n);
 
-int  Pennies(dbref);
-void s_Pennies(dbref, int);
+int  Pennies(dbref obj);
+void s_Pennies(dbref obj, int howfew);
+void s_PenniesDirect(dbref obj, int howfew);
 
 #ifndef WIN32
 void load_restart_db(void);
