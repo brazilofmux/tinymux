@@ -1,5 +1,5 @@
 TinyMUX 2.4:  CHANGES
-Last Update:  January 2007
+Last Update:  February 2007
 
 Major changes that may affect performance and require softcode tweaks:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -298,6 +298,10 @@ Bug Fixes:
     on nearby mudstate structures including help and global_registers.
  -- Fix trailing padding in center() (Issue 253).
  -- Fix buffer overflow in fun_ladd (Issue 282).
+ -- Fixed memory leak in scheduler because of running out of memory.
+ -- Fixed non-player object's ability to hold coins.
+ -- Fixed loading of coins from flatfile (i.e., across @restart for
+    memory-based) (Issue 224).
 
 
 Performance Enhancements:
