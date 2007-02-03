@@ -222,8 +222,9 @@ extern OBJ *db;
 #define s_Stack(t,n)        db[t].stackhead = (n)
 #endif // DEPRECATED
 
-int  Pennies(dbref);
-void s_Pennies(dbref, int);
+int  Pennies(dbref obj);
+void s_Pennies(dbref obj, int howfew);
+void s_PenniesDirect(dbref obj, int howfew);
 
 #ifndef WIN32
 void load_restart_db(void);
