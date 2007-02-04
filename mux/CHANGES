@@ -68,6 +68,7 @@ Bug Fixes:
  -- Fixed non-player object's ability to hold coins.
  -- Fixed loading of coins from flatfile (i.e., across @restart for
     memory-based) (Issue 224).
+ -- Fix Firan build break in fun_trigger() (Issue 288).
 
 
 Performance Enhancements:

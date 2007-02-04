@@ -376,7 +376,7 @@ FUNCTION(fun_trigger)
     {
         return;
     }
-    do_trigger(executor, caller, enactor, 0, fargs[0], fargs+1, nfargs-1);
+    do_trigger(executor, caller, enactor, eval, 0, fargs[0], fargs+1, nfargs-1);
 }
 #endif // FIRANMUX
 
