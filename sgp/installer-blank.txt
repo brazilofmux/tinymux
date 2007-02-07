@@ -1,0 +1,176 @@
+@@
+@@  File Header fun....
+@@
+@@  This file is pretty much the stripped out version of the file I 
+@@  used when I build and installer.  It is provided to help those 
+@@  interested in compiling libraries for SGP cgen to do so more 
+@@  easily. 
+@@
+@@  This has a bunch of @pemits in it to let you know what is being set 
+@@  when and where, as well as giving you a way to see that things might 
+@@  have failed during installation.
+@@
+@@  Make sure that you include any notes that people should be mindful 
+@@  of as they proceed with the installation of the object and also put 
+@@  in notes in comments within the installer itself for anything that 
+@@  needs to be worked on by either yourself or the SGP team when we 
+@@  get the file ready to post to the website.  You can look at existing 
+@@  libraries for ideas.  Since this stuff is usually ignored, make sure 
+@@  you reward people who actually read them with something at least not 
+@@  turgid and dull.
+@@
+@@  You should list any known issues or bugs.
+@@  
+@@  You should add the list of people who should be credited for 
+@@  various parts of the code you give us.  Giving credit to people 
+@@  for their work is important to SGP.
+@@
+@@  A little about the text itself: 
+@@
+@@  Anything <> should be globally replaced with a single word genre 
+@@  name.  The objects get renamed straight out, so it is important 
+@@  to do this step.
+@@
+@@  If you make substantive changes to anything in this code, make 
+@@  sure that you add the details to the file, so we can be sure that 
+@@  they are noted.
+@@ 
+@@  Please test the file by quoting it to a game and seeing if it works.
+@@ 
+@@  When you are done, please email the file to sandbox@erisian.net so 
+@@  that we can include it in the release.
+@@
+@@  Thank you for supporting SGP!
+@@  Audumla, coordinator.
+@@
+
+@pemit me=Renaming the List Object and Support Code Objects to reflect the genre.  Moment....
+
+@name SGP Cgen: List Object=SGP Cgen: <> List Object
+@name SGP Cgen: Support Code=SGP Cgen: <> Support Code
+
+@pemit me=Done!
+
+
+@pemit me=Quoting the <> List Object to the existing object.  Moment....
+
+&CREDITS SGP Cgen: <> List Object=
+
+@pemit me=Done!
+
+@@
+@@  This section assumes that you are using a single condition switch 
+@@  for your sheet model.  This may not be the best route to the 
+@@  solution for your instance.
+@@
+
+@pemit me=Setting +stats commands on main and staff globals objects.  If they need to be somewhere else, you need to move them yourself.  If they don't set properly, you need to add and edit them manually.  Moment......
+
+&CMD-STATS SGP - Main Globals=$+stats:@switch [or(hasattr(%#,string-race),member(statlist(race),get(%#/string-race),|))]=0,{@pemit %#=You need to have someone set your race to something.},{@trigger #140/SHEET-[get(%#/string-race)]=%#,%#}
+
+&CMD-STAT-STAFF SGP - Staff Globals=$+stats *:@switch setq(0,num(*%0))%q0:[or(hasattr(%q0,string-race),member(statlist(race),get(%q0/string-race),|))]=#-1*,@pemit %#=Are you sure that's a player?,#-2*,@pemit %#=There seems to be more than one. I don't know which one you mean!,*:0,{@pemit %#=[name(%q0)] does not appear to have stats. It may be that %p STRING-RACE is unset, or invalid.},{@trigger #140/SHEET-[get(*%0/string-race)]=%q0,%#}
+
+@pemit me=Done!
+
+@@
+@@  These functions are the common functions to all sheet code done 
+@@  thus far.  Meaning, we know that they work everywhere SGP does.  
+@@  If you need to change the number of columns or the spacing, go 
+@@  ahead.  Anything that is generically useful and works everywhere 
+@@  will be accepted for inclusion in the system.
+@@
+
+@pemit me=Setting generic sheet support code.  Moment......
+
+&CREDITS SGP Cgen: <> Support Code=Audumla and BEM@Granite
+
+&FN-DISPLAY-LIST SGP Cgen: <> Support Code=%R[center(>%B[capstr(%0)]%B<,78,-)]%R[table(get(%1/list-%0),38,78,|,%b)]
+
+&FN-DISPLAY-LISTS SGP Cgen: <> Support Code=iter(filter(fn-haslist,%1[setq(9,%0)]), [u(fn-display-list,##,%0)])
+
+&FN-DISPLAY-STRINGS SGP Cgen: <> Support Code=table(iter(%1,before(##,:):%B%B[capstr(get(%0/[after(##,:)]))],|,|),38,78,|,)
+
+&FN-HASLIST SGP Cgen: <> Support Code=hasattr(%q9,list-%0)
+
+&FN_3LISTSCOL SGP Cgen: <> Support Code=table(iter(lnum(max(words(%0,|),words(%1,|),words(%2,|)))[setq(0,sort(%0,a,|))][setq(1,sort(%1,a,|))][setq(2,sort(%2,a,|))],u(me/fn_format,extract(%q0,#@,1,|))|[u(me/fn_format,extract(%q1,#@,1,|))]|[u(me/fn_format,extract(%q2,#@,1,|))],,|),25,78,|,%b)
+
+&FN_3VCOL SGP Cgen: <> Support Code=table(iter(lnum(setq(8,add(1,div(sub(words(%0,|),1),3)))%q8),u(me/fn_format,extract(%0,#@,1,|))|[u(me/fn_format,extract(%0,add(#@,%q8),1,|))]|[u(me/fn_format,extract(%0,add(#@,%q8,%q8),1,|))],,|),25,78,|,%b)
+
+&FN_COMMON-LISTS SGP Cgen: <> Support Code=[u(fn-display-lists, %0,specialties merits flaws equipment)]
+
+&FN_FORMAT SGP Cgen: <> Support Code=setq(9,switch(strmatch(extract(%0,2,1,:),extract(%0,3,1,:)),1,extract(%0,3,1,:),([extract(%0,3,1,:)])%B[extract(%0,2,1,:)]))[ljust(capstr(extract(%0,1,1,:)),sub(24,strlen(%q9)))]%q9
+
+@pemit me=Done!
+
+@@
+@@  Genre-specific functions, like things that generate really special
+@@  -ized display output.  Look at the other installers for clues.
+@@
+
+@pemit me=Now we will set functions that are <> specific.
+
+@pemit me=Done!
+
+@@
+@@  The +stats commands, as provided, switch on the contents of the 
+@@  STRING-RACE attribute, so &SHEET-<race> is the format.  If you 
+@@  decide to use some other factor to determine which sheet is read, 
+@@  then you need to modify the switched in +stats and +stats * to 
+@@  handle the conditions.
+@@
+
+@pemit me=Now we'll set the sheet attributes themselves.  
+
+@pemit me=Done!
+
+@@
+@@  No need to mess with this. 
+@@
+
+@pemit me=Setting the flags.
+
+@switch version()=TinyMUSH version 2.2.*,{@set SGP Cgen: <> Support Code=INHERIT;@set SGP Cgen: <> Support Code=COMMANDS;@set SGP Cgen: <> Support Code=STOP;@set SGP Cgen: <> Support Code=SAFE},PennMUSH*,{@set SGP Cgen: <> Support Code=!NO_COMMAND;@set SGP Cgen: <> Support Code=WIZARD},MUX*,{@set SGP Cgen: <> Support Code=INHERIT;@set SGP Cgen: <> Support Code=!NO_COMMAND;@set SGP Cgen: <> Support Code=SAFE},RhostMUSH*,{@set SGP Cgen: <> Support Code=INHERIT;@set SGP Cgen: <> Support Code=!NOCOMMAND;@set SGP Cgen: <> Support Code=SAFE;@set SGP Cgen: <> Support Code=STOP}
+
+@pemit me=Done!
+
+@@
+@@  There are functions that require explicit dbrefs to function.  
+@@  This code resets those values to what they are supposed to be.  
+@@  Generally, this section won't need touched, but make doubly sure 
+@@  that you add anything required to get code you add set with the 
+@@  proper dbrefs.
+@@ 
+
+@pemit me=Now we set the explicit references to the correct value.  If you and the various code objects aren't all in the same place, you will get errors.  Moment....
+
+@force me=@edit SGP Cgen: <> Support Code/*=#140,[num(SGP Cgen: <> Support Code)]
+@force me=@edit SGP - Main Globals/CMD-STATS=#140,[num(SGP Cgen: <> Support Code)]
+@force me=@edit SGP - Staff Globals/CMD-STAT-STAFF=#140,[num(SGP Cgen: <> Support Code)]
+
+@pemit me=Done!
+
+@@
+@@  SGP code is automatically put into the +version system.  You 
+@@  should only need to touch this stuff if you need to change the 
+@@  patchlevel or history.
+@@
+
+
+@pemit me=Setting up +version on the objects.  If you and the objects aren't in the same place, then you will get a bunch of errors.  Moment....
+
+@wait 0=&SGP-OBJECTS SGP - Global Parent Object=[get(SGP - Global Parent Object/SGP-OBJECTS)]|[num(SGP Cgen: <> List Object)]
+@wait 0=&SGP-OBJECTS SGP - Global Parent Object=[get(SGP - Global Parent Object/SGP-OBJECTS)]|[num(SGP Cgen: <> Support Code)]
+
++version/update [num(SGP Cgen: <> List Object)]/version=BETA
++version/update [num(SGP Cgen: <> List Object)]/Patchlevel=112401
++version/update [num(SGP Cgen: <> List Object)]/History=Base
+
++version/update [num(SGP Cgen: <> Support Code)]/version=BETA
++version/update [num(SGP Cgen: <> Support Code)]/Patchlevel=112401
++version/update [num(SGP Cgen: <> Support Code)]/History=Base
+
+@pemit me=Done!
+
+@pemit me=Creating the stats db.  This takes about a minute.
+
++create-db

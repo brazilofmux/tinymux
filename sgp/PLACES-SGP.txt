@@ -1,0 +1,242 @@
+@@  GLOBAL PLACES AND MUTTER CODE - SGP VERSION
+@@
+@@  This package includes code for 'places', and code for 'mutter'.
+@@
+@@  'Places' is a global system which allows for the creation of virtual
+@@  places within rooms. This allows tables, chairs, rugs, alcoves, and
+@@  similar areas to exist without the necessity of physical objects.
+@@
+@@  'mutter' is a set of globals which allow players to mutter messages
+@@  to each other. Muttered messages are shown in part to other players
+@@  in the room, with some of the text removed.
+@@
+@@  ----
+@@
+@@  The 'places' code is based upon Gahron (Meg's) original TableCode.
+@@  This rewrite was done by Osric, with bugfixes by Meg, and a lot of
+@@  rewriting for speed by Deirdre. All three people are from AmberMUSH.
+@@
+@@  The 'mutter' code provided here was written by Deirdre. The basic
+@@  mutter code does not require that the 'places' system be globally
+@@  installed. There are, however, two switches to mutter that are
+@@  specifically for using mutter with places.
+@@
+@@  Permission is granted to freely use and copy this code, as long as
+@@  credit is given in the +help files or some similar place (if you use
+@@  the +help files provided in this distribution, credit is already given).
+@@  Bugs and suggestions should be given to Deirdre@AmberMUSH.
+@@
+@@  ----
+@@
+@@  More rewriting by Angel@Heaven.gofast.net ... replacing @dolists with
+@@  @pemit/list .... and adding the help attributes to the parent object
+@@  instead of yet another separate help object.
+@@
+@@  Additionally, I added +spy code, and a configure command to turn on
+@@  spying on a room.
+@@
+@@  The PLACES# attributes can also include a final field that is a description
+@@  of the place in it.
+@@
+@@  ----
+@@
+@@  This code is intended to be installed in the Master Room. The main global
+@@  places object must be owned by a wizard, and set Inherit. Support for
+@@  the auxiliary functions also requires setting a @startup on the God.
+@@
+@@  This code was last tested under TinyMUSH 2.2.2 #1 (2/15/96) and is usable 
+@@  on both MUX and Penn platforms.
+@@
+@@  Updated to install, assuming WIZARD can use @function. (28 Jun 00)
+@@  Updated +spy commands to use either isstaff(), which sets the value to the 
+@@  defaults for how your game defines 'staff' or simply check for a WIZARD
+@@  flag. This is likely -not- the final change to how +spy and CANSPY are done.
+@@  Also mended a few typos in the installer.(3 July 00)
+@@  Fixed a bug in PLACEFUNCTION with @verb that was causing problems with 
+@@  JOIN and OJOIN messages in Penn and removed a } that was causing problems 
+@@  with PLACENUMS.(11 July 00)
+@@  Fixed a problem with escapes that was causing tt and ttooc commands to fail 
+@@  in Penn.(11 July 00)  
+@@  Added SGP +version information (16 December 00)
+@@  Fixed a legacy bug in DO_SIT and DO_JOIN(13 February 01)
+@@
+@@  ---  PLACES CODE  ---
+@@
+
+@pemit me=Creating Places Code Objects...Moment%R%R
+
+@create Places_global_object
+@create Places_function_object
+@parent Places_global_object=Places_function_object
+@Desc Places_global_object=The Places Code. Tables, rugs, beds, ladders, etc.
+@fo me=&EVAL_OBJ Places_global_object=[num(Places_function_object)]
+
+@wait 0=&SGP-OBJECTS SGP - Global Parent Object=[get(SGP - Global Parent Object/SGP-OBJECTS)]|[num(Places_global_object)]
+@wait 0=&SGP-OBJECTS SGP - Global Parent Object=[get(SGP - Global Parent Object/SGP-OBJECTS)]|[num(Places_function_object)]
+
+@wait 0=&SGP-VERSION Places_global_object=SGP-Y2K|Base|[rest(ldelete(time(),4,))]
+@wait 0=&SGP-VERSION Places_function_object=SGP-Y2K|Base|[rest(ldelete(time(),4,))]
+
+&UPDATE-HISTORY Places_global_object=Y2K
+&UPDATE-HISTORY Places_function_object=Y2K
+
+@@
+@@ @@ Configuring Places
+@@
+
+@pemit me=Quoting Places Commands...Moment%R%R
+
+&DO_CONFIGURE Places_global_object=$configure * places: @switch/first [controls(%#,%l)]:[isnum(%0)]:%0=0:*:*, {@pemit %#=You do not control [name(%l)].},*:0:*, {@pemit %#=The number of places needs to be a number!},*:*:0, {@dolist rest(lnum(add(get(%l/PLACESMAX),1)))={@unlock %l/PLACE##;&PLACE## %l};@unlock %l/PLACESCLEANUP1;@unlock %l/PLACESCLEANUP2;@unlock %l/PLACESMAX;&PLACESCLEANUP1 %l;&PLACESCLEANUP2 %l;&PLACESMAX %l;@set %l=!MONITOR;@pemit %#=Places removed from [name(%l)].},{&PLACESMAX %l=%0;@dolist rest(lnum(add(%0,1)))={@unlock %l/PLACE##;&PLACE## %l=ulocal(SETUP_FN,##,add(rand(9),1))};@unlock %l/PLACESCLEANUP1;@unlock %l/PLACESCLEANUP2;@unlock %l/PLACESMAX;@set %l=MONITOR;&PLACESCLEANUP1 %l=v(PLACESCLEANUP1);&PLACESCLEANUP2 %l=v(PLACESCLEANUP2);&PLACENUMS %l=[repeat(|,%0)];@pemit %#=Configuration for %0 places complete.}
+
+&DO_CONFIGURE_SPYING Places_global_object=$configure spy* *: @switch/first [controls(%#,%l)]:[ucstr(%1)]=0:*, {@pemit %#=You do not control [name(%l)].},*:Yes, {@pemit %#=Setting this room to allow Spying. ;&SPYOK %L=Yes ;},*:No, {@pemit %#=Setting this room to disallow Spying. Please include a reason why it should not work in a note on the room. ;&SPYOK %L=No ;},{@pemit %#=The valid commands are:%r%tconfigure spying Yes%r%tconfigure spying No%rPlease use one of those.}
+
+&SETUP_FN Places_global_object=Table %0|%1|[add(rand(%1),1)]||I'm sorry, there's no room to add a place there.|I'm sorry, there's on place to move there.|You sit down at|sits down at|You stand and leave|stands and leaves|At your table|A table with 4 legs and some chairs around it.
+
+@@
+@@ @@ Update
+@@
+
+&DO_UPDATE Places_global_object=$update */*=*: @switch/first [controls(%#,%l)]:[and(isnum(%0),lte(%0,get(%l/PLACESMAX)))]:[member(NAME MAXPLACES CURPLACES FIXED FULL EMPTY JOIN OJOIN DEPART ODEPART PREFIX DESCRIBE,ucstr(%1))]=0:*:*, {@pemit %#=Permission denied.},*:0:*, {@pemit %#=I'm sorry, but '%0' isn't a valid place number.},*:*:0, {@pemit %#=I'm sorry, but '%1' isn't a valid configuration option.},{@unlock %l/PLACE%0;&PLACE%0 %l=ulocal(UPDATEINFO,%l,%0,%1,%2);@pemit %#=The %1 for [ulocal(GETINFO,%l,%0,NAME)] is now set to:%r[space(5)][ulocal(GETINFO,%l,%0,%1)]}
+
+@@
+@@ @@ Mv
+@@
+
+&DO_MV Places_global_object=$mv from * to *: @switch/first 0=and(gt(%0,0),lte(%0,get(%l/PLACESMAX))), {@pemit %#='%0' is not a valid place number.},and(gt(%1,0),lte(%1,get(%l/PLACESMAX))), {@pemit %#='%1' is not a vaild place number.},not(words(ulocal(GETINFO,%l,%0,FIXED))), {@pemit %#=ulocal(GETINFO,%l,%0,FIXED)},not(words(ulocal(GETINFO,%l,%1,FIXED))), {@pemit %#=ulocal(GETINFO,%l,%1,FIXED)},sub(ulocal(GETINFO,%l,%0,CURPLACES),words(extract(get(%l/PLACENUMS),%0,1,|))), {@pemit %#=ulocal(GETINFO,%l,%0,EMPTY)},neq(ulocal(GETINFO,%l,%1,CURPLACES),ulocal(GETINFO,%l,%1,MAXPLACES)), {@pemit %#=ulocal(GETINFO,%l,%1,FULL)},{@unlock %l/PLACE%0;@unlock %l/PLACE%1;&PLACE%0 %l=ulocal(UPDATEINFO,%l,%0,CURPLACES,sub(ulocal(GETINFO,%l,%0,CURPLACES),1));&PLACE%1 %l=ulocal(UPDATEINFO,%l,%1,CURPLACES,add(ulocal(GETINFO,%l,%1,CURPLACES),1));@pemit %#=You move a place from [ulocal(GETINFO,%l,%0,NAME)] to [ulocal(GETINFO,%l,%1,NAME)].}
+
+@@
+@@ @@ Places Cleanup
+@@
+
+&PLACESCLEANUP1 Places_global_object=^* has left.:placescleanup(%#)
+&PLACESCLEANUP2 Places_global_object=^* has disconnected.:placescleanup(%#)
+&PLACESCLEANUPCMD Places_global_object=$placescleanup(*):@switch [setq(0, U(WHICHPLACE, %#, %0))][r(0)]=>0, {&PLACENUMS %#=[replace(get(%#/PLACENUMS), r(0), remove(extract(get(%#/PLACENUMS), r(0), 1, |), %0), |)]}
+
+@@
+@@ @@ Join
+@@
+
+&DO_JOIN Places_global_object=$join *: @switch/first [not(ulocal(WHICHPLACE,%l,%#))] [lcstr(%0)]=0 *, {@pemit %#=Don't you think you should 'depart' first?},1 at #*, {@trig me/PLACEFUNCTION=%l,%#,[delete(rest(%0),0,1)]},1 at *, {@trig me/PLACEFUNCTION=%l,%#,[rest(%0)]},1 #*, {@trig me/PLACEFUNCTION=%l,%#,[delete(%0,0,1)]},1 with *, {@pemit[setq(1,locate(%#,rest(%0),niPT))][setq(0,ulocal(WHICHPLACE,%l,r(1)))]%#=switch(r(0),0,There isn't anyone named '[capstr(rest(%0))]' at a special place.,You go over to join [name(r(1))].);@trig me/[switch(r(0),0,-,PLACEFUNCTION)]=%l,%#,[r(0)]},{@switch [isnum(%0)][setq(1,locate(%#,%0,niPT))][setq(0,ulocal(WHICHPLACE,%l,r(1)))]=1,{@trig me/PLACEFUNCTION=%l,%#,%0 ;},{@pemit %#=switch(r(0),0,There isn't anyone named '[capstr(rest(%0))]' at a special place.,You go over to join [name(r(1))].);@trig me/[switch(r(0),0,-,PLACEFUNCTION)]=%l,%#,[r(0)]}} 
+
+&DO_SIT Places_global_object=$sit *: @switch/first [not(ulocal(WHICHPLACE,%l,%#))] [lcstr(%0)]=0 *, {@pemit %#=Don't you think you should 'depart' first?},1 at #*, {@trig me/PLACEFUNCTION=%l,%#,[delete(rest(%0),0,1)]},1 at *, {@trig me/PLACEFUNCTION=%l,%#,[rest(%0)]},1 #*, {@trig me/PLACEFUNCTION=%l,%#,[delete(%0,0,1)]},1 with *, {@pemit[setq(1,locate(%#,rest(%0),niPT))][setq(0,ulocal(WHICHPLACE,%l,r(1)))]%#=switch(r(0),0,There isn't anyone named '[capstr(rest(%0))]' at a special place.,You go over to join [name(r(1))].);@trig me/[switch(r(0),0,-,PLACEFUNCTION)]=%l,%#,[r(0)]},{@switch [isnum(%0)][setq(1,locate(%#,%0,niPT))][setq(0,ulocal(WHICHPLACE,%l,r(1)))]=1,{@trig me/PLACEFUNCTION=%l,%#,%0},{@pemit %#=switch(r(0),0,There isn't anyone named '[capstr(rest(%0))]' at a special place.,You go over to join [name(r(1))].);@trig me/[switch(r(0),0,-,PLACEFUNCTION)]=%l,%#,[r(0)]}} 
+
+&PLACEFUNCTION Places_global_object=@switch/first 0=[lte(%2, get(%0/PLACESMAX))], @pemit %1=Invalid Place Number '%2'.,[setq(1, extract(get(%0/PLACENUMS), %2, 1, |))][gt(ulocal(GETINFO, %0, %2, CURPLACES), words(r(1)))], {@pemit %1=There aren't any free spaces there.},{@verb %1=[setq(0,ulocal(getinfo,%0,%2,NAME))]%1,eval_msg,[edit([U(GETINFO, %0, %2, JOIN)] [r(0)].,%,,%%%,)],oeval_mesg,[edit([U(GETINFO, %0, %2, OJOIN)] [r(0)].,%,,%%%,)];@pemit/list [r(1)]= [name(%1)] joins you. ;&PLACENUMS %0=[replace(get(%0/PLACENUMS), %2, [r(1)]%1%b, |)]}
+
+
+@@
+@@ @@ Depart
+@@
+
+&DO_DEPART Places_global_object=$depart:@switch [setq(1, U(WHICHPLACE, %l, %#))][setq(0,U(GETINFO,%l,r(1),NAME))][r(1)]=0, {@pemit %#=You aren't placed anywhere.},{&PLACENUMS %l=[replace(get(%l/PLACENUMS), r(1), [remove(extract(get(%l/PLACENUMS), r(1), 1, |), %#)], |)];@pemit/list [extract(get(%l/PLACENUMS), r(1), 1, |)]=%N has departed.;@pemit %#=[edit([U(GETINFO, %l, r(1), DEPART)] [r(0)].,%,,%%%,)];@pemit/list [ldelete(lcon(%L),match(lcon(%L),%#))]=%N [edit([U(GETINFO, %l, r(1), ODEPART)] [r(0)].,%,,%%%,)]}
+
+&DO_STAND Places_global_object=$stand:@switch [setq(1, U(WHICHPLACE, %l, %#))][setq(0,U(GETINFO,%l,r(1),NAME))][r(1)]=0, {@pemit %#=You aren't placed anywhere.},{&PLACENUMS %l=[replace(get(%l/PLACENUMS), r(1), [remove(extract(get(%l/PLACENUMS), r(1), 1, |), %#)], |)];@pemit/list [extract(get(%l/PLACENUMS), r(1), 1, |)]=%N has departed.;@pemit %#=[edit([U(GETINFO, %l, r(1), DEPART)] [r(0)].,%,,%%%,)];@pemit/list [ldelete(lcon(%L),match(lcon(%L),%#))]=%N [edit([U(GETINFO, %l, r(1), ODEPART)] [r(0)].,%,,%%%,)]}
+
+@@
+@@ @@ Places and Place
+@@
+
+&DO_PLACES Places_global_object=$places: @pemit %#=switch(get(%l/PLACESMAX),,There are no special places here.,0,There are no special places here.,map(PLACES_FN,rest(lnum(add(get(%l/PLACESMAX),1)))))
+
+&DO_PLACE Places_global_object=$place *: @pemit %#=switch(get(%l/PLACESMAX),,There are no special places here.,0,There are no special places here.,map(PLACES_FN,edit(%0,#,)))
+
+&PLACES_FN Places_global_object=%r[setq(0,ulocal(GETINFO,%l,%0,CURPLACES))][setq(1,extract(get(%l/PLACENUMS),%0,1,|))][capstr(ulocal(GETINFO,%l,%0,NAME))] (#%0) has [setq(2,sub(r(0),words(r(1))))][switch(r(2),0,no empty places,1,1 empty place,[r(2)] empty places)].[switch(words(r(1)),0,,1,%r%tPresent is: %b[name(edit(r(1),%b,))].,%r%tPresent are: %b[ulocal(PLACE_LOOK,r(1))])]
+
+&PLACE_LOOK Places_global_object=[setq(9,words(%0))][switch(r(9),0,,1,name(%0),2, [name(first(%0))] and [name(rest(%0))],[iter(extract(%0,1,sub(r(9),1)),{name(##),})] and [name(extract(%0,r(9),1))])]
+
+&DO_PLOOK Places_global_object=$plook: @pemit %#=[setq(0,edit(get(%l/PLACENUMS),|,))][fold(PLOOK_FOLD_FN,rest(lnum(add(get(%l/PLACESMAX),1))),-----)]%rNo place [space(3)] [setq(3,setdiff(setinter(lcon(%l),lwho()),r(0)))][rjust([words(r(3))] at no places,15)] [space(3)] [setq(4,sort(iter(r(3),name(##))))][ljust(mid(extract(r(4),1,1),0,14),14)] [ljust(mid(extract(r(4),2,1),0,14),14)] [ljust(mid(extract(r(4),3,1),0,14),14)][switch(gt(words(r(4)),3),1,ulocal(NAME_3COL_FN,extract(r(4),4,3999)))]%r-----
+
+&PLOOK_FOLD_FN Places_global_object=%0%r[setq(1,extract(get(%l/PLACENUMS),%1,1,|))]Place #[ljust(%1,5)] [rjust([sub(ulocal(GETINFO,%l,%1,CURPLACES),words(r(1)))] empty places,15)] [space(3)] [setq(2,sort(iter(r(1),name(##))))][ljust(mid(extract(r(2),1,1),0,14),14)] [ljust(mid(extract(r(2),2,1),0,14),14)] [ljust(mid(extract(r(2),3,1),0,14),14)][switch(gt(words(r(2)),3),1,ulocal(NAME_3COL_FN,extract(r(2),4,3999)))]
+
+&NAME_3COL_FN Places_global_object=[fold(NAME_3AUX_FN,rest(%0),%r[space(33)][ljust(mid(first(%0),0,14),15)])]
+
+&NAME_3AUX_FN Places_global_object=%0[switch(mod(words(%0),4),0,%r[space(33)][ljust(mid(%1,0,14),15)],[ljust(mid(%1,0,14),15)])]
+&DO_PLOOK_NUMBER Places_global_object=$plook *:@pemit %#=switch(get(%l/PLACESMAX),,There are no special places here.,0,There are no special places here.,%r[capstr(ulocal(GETINFO,%l,%0,NAME))]:%r[ulocal(GETINFO,%l,edit(%0,#,),DESCRIPTION)])
+
+&DO_TT Places_global_object=$tt *:@pemit/list [setq(0,ulocal(WHICHPLACE,%l,%#))][switch(r(0),0,%#[setq(1,You'll need to join a place first.)],[extract(get(%l/PLACENUMS),r(0),1,|)][setq(1,[ulocal(GETINFO,%l,r(0),PREFIX)]%, [switch(%0,:*,%N [delete(%0,0,1)],;*,%N[delete(%0,0,1)],"*,%N says "[delete(%0,0,1)]",|*,delete(%0,0,1),%N says "%0")])])]=[r(1)];@pemit/list [iter(lcon(%l),switch(strmatch([get(##/SPYING)],%l [r(0)]),1,##))]=(Overheard) [r(1)]
+
+&DO_TTOOC Places_global_object=$ttooc *:@pemit/list [setq(0,ulocal(WHICHPLACE,%l,%#))][switch(r(0),0,%#[setq(1,You'll need to join a place first.)],[extract(get(%l/PLACENUMS),r(0),1,|)][setq(1,<OOC> [ulocal(GETINFO,%l,r(0),PREFIX)]%, [switch(%0,:*,%N [delete(%0,0,1)],;*,%N[delete(%0,0,1)],"*,%N says "[delete(%0,0,1)]",|*,delete(%0,0,1),%N says "%0")])])]=r(1);@pemit/list [iter(lcon(%l),switch(strmatch([get(##/SPYING)],%l [r(0)]),1,##))]=(Overheard) [r(1)]
+
+&WHICHPLACE Places_global_object=[match(get(%0/PLACENUMS), *%1%b*, |)]
+
+&GETINFO Places_global_object=[extract(get(%0/PLACE%1),match(NAME MAXPLACES CURPLACES FIXED FULL EMPTY JOIN OJOIN DEPART ODEPART PREFIX DESCRIPTION,%2),1,|)]
+
+&UPDATEINFO Places_global_object=[replace(get(%0/PLACE%1),match(NAME MAXPLACES CURPLACES FIXED FULL EMPTY JOIN OJOIN DEPART ODEPART PREFIX DESCRIBE,%2),%3,|)]
+
+&ATPLACE Places_global_object=[extract(get(%0/PLACENUMS), %1, 1, |)]
+
+@Desc Places_function_object=This evaluator can be used with @verb to send literal messages with correct substitutions. To use it, go @verb [num(me)]=<actor>,eval_msg,,oeval_msg,,%{<msg>,<omsg>%}%rExtra arguments may be passed via setq(), and recovered in msg, omsg via %[r(X)%].
+
+&EVAL_MSG Places_function_object=[s(%0)]
+
+&OEVAL_MSG Places_function_object=[s(%1)]
+
+&FUNC_ATPLACE Places_global_object=[switch(or(controls(%#,%0),match(rloc(%l,100),rloc(%0,100))),1,extract(get(%0/PLACENUMS), %1, 1, |),PERMISSION DENIED)]
+
+&FUNC_PLACEINFO Places_global_object=[switch(or(controls(%#,%0),match(rloc(%l,100),rloc(%0,100))),1,extract(get(%0/PLACE%1),match(NAME MAXPLACES CURPLACES FIXED FULL EMPTY JOIN OJOIN DEPART ODEPART PREFIX,%2),1,|),PERMISSION DENIED)]
+
+&FUNC_WHICHPLACE Places_global_object=[switch(or(controls(%#,%0),match(rloc(%l,100),rloc(%0,100))),1,match(get(%0/PLACENUMS), *%1%b*, |),PERMISSION DENIED)]
+@pemit me=[center(*** QUOTE OF PLACES DONE ***,78)]
+
+@@
+@@
+@@  ---  MUTTER CODE  ---
+
+@@
+@@ @@ The Commands
+@@
+
+@pemit me=Adding Mutter Code...Moment%R%R
+
+
+&DO_MUTTER Places_global_object=$mutter *=*: @remit [setq(0,locate(%#,%0,nimP))][switch(r(0),#-1,XX,#-2,XX,%l)]={[switch(%1,:* "*"*,{%N [first(delete(%1,0,1),")]%S mutters to [setq(1,ulocal(MUTTER_FN,extract(%1,2,1,")))][switch(r(0),%#,%oself,name(r(0)))][switch(r(1),...,.,{, "[r(1)]"})] [rest(rest(%1,"),")]},:*,{%N mutters to [switch(r(0),%#,%oself,name(r(0)))].},;* "*"*,{%N[first(delete(%1,0,1),")]%S mutters to [setq(1,ulocal(MUTTER_FN,extract(%1,2,1,")))][switch(r(0),%#,%oself,name(r(0)))][switch(r(1),...,.,{, "[r(1)]"})] [rest(rest(%1,"),")]},;*,{%N mutters to [switch(r(0),%#,%oself,name(r(0)))].},{[setq(1,ulocal(MUTTER_FN,%1))]%N mutters to [switch(r(0),%#,%oself,name(r(0)))][switch(r(1),...,.,{, "[r(1)]"})]})]};@pemit %#[setq(2,edit(edit(%1,<,),>,))]=switch(r(0),#-1,I don't see that here.,#-2,I'm not sure which %0 you mean.,ulocal(MUTTER_FROM_FN,%#,r(0),r(2)));@pemit [switch(r(0),%#,XX,r(0))]=ulocal(MUTTER_TO_FN,%#,r(0),r(2))
+
+&DO_MUTTER_PLACE Places_global_object=$mutter/place *=*: @switch and(gte(%0,1),lte(%0,get(%l/PLACESMAX)))=0, {@pemit %#=There is no such place here.},{@remit %l={[switch(%1,:* "*"*,{%N [first(delete(%1,0,1),")]%S mutters to [PlaceInfo(%l,%0,NAME)][setq(1,ulocal(MUTTER_FN,extract(%1,2,1,")))][switch(r(1),...,.,{, "[r(1)]"})] [rest(rest(%1,"),")]},:*,{%N mutters to [PlaceInfo(%l,%0,NAME)],},;* "*"*,{%N[first(delete(%1,0,1),")]%S mutters to [PlaceInfo(%l,%0,NAME)][setq(1,ulocal(MUTTER_FN,extract(%1,2,1,")))][switch(r(1),...,.,{, "[r(1)]"})] [rest(rest(%1,"),")]},;*,{%N mutters to [PlaceInfo(%l,%0,NAME)]},{[setq(1,ulocal(MUTTER_FN,%1))]%N mutters to [PlaceInfo(%l,%0,NAME)][switch(r(1),....,.,{, "[r(1)]"})]})]};@pemit/list [setq(2,edit(edit(%1,<,),>,))][setq(3,{[PlaceInfo(%l,%0,PREFIX)], [switch(r(2),:*,%N [delete(r(2),0,1)],;*,%N[delete(r(2),0,1)],%N says "[r(2)]")]})][setunion(AtPlace(%l,%0),%#)]=r(3)}
+
+&DO_MUTTER_TT Places_global_object=$mutter/tt *=*: @switch/first [setq(0,locate(%#,%0,nimP))][r(0)] [setq(9,WhichPlace(%l,%#))][switch(r(9),0,setq(9,WhichPlace(%l,r(0))))][r(9)]=#-1 *, {@pemit %#=I don't see that here.},#-2 *, {@pemit %#=I'm not sure which %0 you mean.},* 0, {@pemit %#=Neither you nor [name(r(0))] is at a special place.},{@pemit/list [setq(8,{[PlaceInfo(%l,r(9),PREFIX)], [switch(%1,:* "*"*,{%N [first(delete(%1,0,1),")]%S mutters to [setq(1,ulocal(MUTTER_FN,extract(%1,2,1,")))][switch(r(0),%#,%oself,name(r(0)))][switch(r(1),...,.,{, "[r(1)]"})] [rest(rest(%1,"),")]},:*,{%N mutters to [switch(r(0),%#,%oself,name(r(0)))].},;* "*"*,{%N[first(delete(%1,0,1),")]%S mutters to [setq(1,ulocal(MUTTER_FN,extract(%1,2,1,")))][switch(r(0),%#,%oself,name(r(0)))][switch(r(1),...,.,{, "[r(1)]"})] [rest(rest(%1,"),")]},;*,{%N mutters to [switch(r(0),%#,%oself,name(r(0)))].},{[setq(1,ulocal(MUTTER_FN,%1))]%N mutters to [switch(r(0),%#,%oself,name(r(0)))][switch(r(1),...,.,{, "[r(1)]"})]})]})][setunion(AtPlace(%l,r(9)),%# [r(0)])]=r(8);@pemit/list [iter(lcon(%l),switch(strmatch([get(##/SPYING)],%l [r(0)]),1,##))]=(Overheard) [r(8)]@pemit %#=[setq(2,edit(edit(%1,<,),>,))][ulocal(MUTTER_FROM_FN,%#,r(0),r(2))];@pemit r(0)=ulocal(MUTTER_TO_FN,%#,r(0),r(2))}
+
+&DO_SPY Places_global_object=$+spy *:@switch/first [member(get([parent(me)]/CANSPY),%#)]:[words(get(%l/PLACESMAX))]:[and(gte(%0,0),lte(%0,get(%l/PLACESMAX)))]:[member(get(%L/SPYOK),Yes)]=0:*:*:*,{@pemit %#=You can't do that.},*:0:*:*,{@pemit %#=There aren't any special places here.},*:*:0:*,{@pemit %#=Invalid place number: '%0'.},*:*:*:0,{@pemit %#=Spying can not be used in this room.},{@switch %0=0,{@unlock %#/SPYING;&SPYING %#;@Pemit %#=You cease listening to that place.},{@unlock %#/SPYING;&SPYING %#=%L %0;@lock %#/SPYING=me;@Pemit %#=You listen in on a nearby conversation.}}
+
+&SPY_WHO Places_global_object=$+spy/who:@switch isstaff(%#)=0,{@pemit %#=You're not authorized to do that.},{@pemit %#=[repeat(*,78)]%RCharacters currently possessing +spy capability:%R%R[iter(get([parent(me)]/CANSPY),switch(mod(member(get([parent(me)]/CANSPY),##),4),0,%R[ljust(name(##),15)],[ljust(name(##),15)]))]%R%R[repeat(*,78)]}
+
+&SPY_ADD Places_global_object=$+spy/add *:@switch orflags(%#,W)=0,{@pemit %#=You're not authorized to do that.},{@switch member(get([parent(me)]/CANSPY),num(*%0))=0,{&CANSPY [parent(me)]=cat(get([parent(me)]/CANSPY),num(*%0));@pemit %#=[name(num(*%0))] has been cleared for spying.},{@pemit %#=That person is already cleared for spying.}}
+
+&SPY_REMOVE Places_global_object=$+spy/remove *:@switch orflags(%#,W)=0,{@pemit %#=You're not authorized to do that.},{@switch member(get([parent(me)]/CANSPY),num(*%0))=0,{@pemit %#=That person is not in the Master Spy List.},{&CANSPY [parent(me)]=remove(get([parent(me)]/CANSPY),num(*%0));@pemit %#=[name(num(*%0))] is removed from the Master Spy List.}}
+
+&DO_TT Places_global_object=$tt *:@pemit/list [setq(0,ulocal(WHICHPLACE,%l,%#))][switch(r(0),0,%#[setq(1,You'll need to join a place first.)],[extract(get(%l/PLACENUMS),r(0),1,|)][setq(1,\{[ulocal(GETINFO,%l,r(0),PREFIX)], [switch(%0,:*,%N [delete(%0,0,1)],;*,%N[delete(%0,0,1)],"*,%N says "[delete(%0,0,1)]",|*,delete(%0,0,1),%N says "%0")]\})])]=r(1);@pemit/list [iter(lcon(%l),switch(strmatch([get(##/SPYING)],%l [r(0)]),1,##))]=(Overheard) [r(1)]
+
+&MUTTER_FN Places_function_object=[edit(ulocal(DOTS_FN,ulocal(SELECT_WORDS_FN,%0)),%b...,...)]
+
+&MUTTER_TO_FN Places_function_object=[switch(%2,:*,{You sense [name(%0)] [delete(%2,0,1)]},;*,{You sense [name(%0)][delete(%2,0,1)]},{[name(%0)] whispers "%2"})]
+
+&MUTTER_FROM_FN Places_function_object=[switch(%0,%1,switch(%2,:*,{You sense "[name(%0)] [delete(%2,0,1)]"},;*,{You sense "[name(%0)][delete(%2,0,1)]"},{You mutter to yourself, "%2"}),switch(%2,:*,{[name(%1)] senses "[name(%0)] [delete(%2,0,1)]"},;*,{[name(%1)] senses "[name(%0)][delete(%2,0,1)]"},{You whisper "%2" to [name(%1)].}))]
+
+&DOTS_FN Places_function_object=[switch(%0,*... ...*,ulocal(DOTS_FN,edit(%0,... ...,...)),%0)]
+
+&SELECT_WORDS_FN Places_function_object=[switch(%0,*<*>*,[map(KILL_WORDS_FN,before(%0,<))] [before(after(%0,<),>)] [ulocal(SELECT_WORDS_FN,after(%0,>))],map(KILL_WORDS_FN,%0))]
+
+&KILL_WORDS_FN Places_function_object=[switch([rand(3)]%0,0,,1,,2,,0*,%0,...)]
+
+&CANSPY Places_function_object=#1
+
+@pemit me=[center(*** QUOTE OF MUTTER DONE ***,78)]
+@pemit me=[center(*** END OF QUOTE ***,78)]
+
+@pemit me=[center(*** Setting Flags ***,78)]
+
+
+@set Places_global_object=SAFE
+@set Places_function_object=SAFE
+
+@switch version()=PennMUSH*,{@Startup Places_global_object=@dolist lattr(me/FUNC_*)=@function after(##,FUNC_)=me,##},{@Startup Places_global_object=@dolist lattr(me/FUNC_*)=@function/privileged after(##,FUNC_)=me/##}
+
+@switch version()=TinyMUSH version 2.2.*,{@set Places_global_object=INHERIT;@set Places_global_object=COMMANDS;@set Places_global_object=STOP;@set Places_global_object=SAFE},PennMUSH*,{@set Places_global_object=!NO_COMMAND;@set Places_global_object=WIZARD},MUX*,{@set Places_global_object=INHERIT;@set Places_global_object=!NO_COMMAND;@set Places_global_object=SAFE},RhostMUSH*,{@set Places_global_object=INHERIT;@set Places_global_object=!NOCOMMAND;@set Places_global_object=SAFE;@set Places_global_object=STOP}
+
+@pemit me=[center(*** Triggering @startup ***,78)]
+
+@tr Places_global_object/startup
+
+
+drop Places_global_object
+drop Places_function_object
+
+@pemit me=Installation of PLACES complete.  Make sure that you put these objects in the master room and that you install the correct version of +help for your server.

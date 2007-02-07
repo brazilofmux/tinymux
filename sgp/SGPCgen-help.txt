@@ -1,0 +1,383 @@
+## SGP CGEN V0.? VERY BETA - 24 November 2001
+##
+## ----  SGP - Cgen helpfiles  ----
+##
+## This listing of helpfiles for SGP Cgen is woefully incomplete.  It also 
+## needs to be converted to softcode for non-MUX servers.  All of the current 
+## commands are listed.  These are all staff commands.
+##
+## TO DO:
+## 		- Document +setstring and +setlist.  (done 111001)
+## 		- Document global functions.  (done 111001)
+## 		- Document sheet display functions.  (done 111001)
+## 		- Document genre-specific sheet display functions.
+## 		- Document List Object creation and organization. 
+##        (done 111001 HOWTO-CHAR-SHEETS.txt)
+##      
+
+& CGEN 
+
+------------------------------------------------------------------------------
+  Statting commands:
+  
+  +setstat     +settemp     +removestat  +stattype    +setstring   +setlist 
+                                                                                                                                 
+------------------------------------------------------------------------------
+  DB commands:
+  
+  +create-db   +stathide	+statlist    +match       +matchfirst  +matches
+  
+------------------------------------------------------------------------------
+  Cgen and Database functions:
+
+  STAT()       SGPSQUISH()  SGPTRIM()    TEMPSTAT()   STRING()     STATLIST()   
+  STATTYPE()                             
+  
+------------------------------------------------------------------------------
+  General Sheet Functions:
+  
+  FN-DISPLAY-LIST     FN-DISPLAY-LISTS    FN-DISPLAY-STRINGS  FN_FORMAT
+  FN-HASLIST          FN_3LISTSCOL        FN_3VCOL            
+                                                                                                                          
+  World of Darkness Specific:
+  
+  FN_ABILITIES        FN_ARCANOI          FN_ARTS             FN_ATTRIBUTES 
+  FN_COMMON-LISTS     FN_DISCIPLINES      FN_FORMAT           FN_HEALTH 
+  FN_NUMINA           FN_SPHERES-REALMS
+  
+  In Nomine Specific:
+  
+  D&D 3E Specific:
+  
+  Trinity Specific:
+------------------------------------------------------------------------------
+
+
+& +setstat
++setstat
+
+  COMMAND: +setstat <player>/<stat>=<value>
+
+  This command sets or modifies the permanent value of  <stat> on <player>. If 
+  <value> is a simple number, the permanent and temporary value of the stat is 
+  set to that value.  If <value> starts with a '+' or '-' character, the 
+  permanent value is incremented or decremented by <value>.  The temporary 
+  value is set to match the new permanent value.
+  
+  Related Topics: 
+
+& +settemp
++settemp
+
+  COMMAND: +settemp <player>/<stat>=<value>
+
+  This command sets or modifies the temporary value of  <stat> on <player>. If 
+  <value> is a simple number, the temporary value of the stat is set to that 
+  value.  If <value> starts with a '+' or '-' character, the temporary value 
+  is incremented or decremented by <value>.  The permanent value of the stat 
+  remains unchanged.
+  
+  Related Topics: 
+
+& +removestat
++removestat
+
+  COMMAND: +removestat <player>/<stat>
+  
+  This command completely removes the named <stat> from the <player>.
+  
+  Related Topics: 
+
+& +stattype
++stattype
+
+  COMMAND: +stattype <stat>
+
+  This command looks up the named <stat> in the stat database and tells you 
+  which stat list it belongs to.
+  
+  Related Topics: 
+
+& +match
++match
+
+  COMMAND: +match <stat>
+  
+  This command exercises the FN-MATCHSTAT function on the Stat Parent object.  
+  This accepts a partially typed <stat> name and returns the stat that matches.  
+  If no stat matches <stat> the command returns #NO MATCH#.  If there are 
+  multiple stats that match <stat> the command returns #MULTIPLE MATCH#.
+  
+  Related Topics: 
+
+& +matchfirst
++matchfirst
+
+  COMMAND: +matchfirst <stat>
+  
+  This command exercises the FN-MATCH-FIRST function on the Stat Parent 
+  object.  This accepts a partially typed <stat> name and returns the first 
+  stat in the database that matches.  The stats are ordered alphabetically, so 
+  'str' would match 'streetwise' in preference to 'strength'.
+  
+  Related Topics: 
+
+& +matches
++matches
+
+  COMMAND: +matches <stat>
+
+  This command finds all stats in the database that match <stat>.
+  
+  Related Topics: 
+
+& +setstring
++setstring
+
+  COMMAND: +setstring <player>/<string>=<value>
+  
+  Writes <value> to a given &STRING attribute on a character.  Checks 
+  against &LIST-STRINGS for the existence of a given string.
+  
+  Related Topics: 
+
+& +setlist
++setlist
+
+  COMMAND: +setlist <player>/<list>=<value>
+  COMMAND: +setlist <player>/<list>=+<value>
+  COMMAND: +setlist <player>/<list>=-<value>
+  
+  Writes <value> to a given &LIST attribute on a character, adding a '|' 
+  between entries.  Checks against &LIST-LISTS for the existence of a given 
+  list. The first command overwrites the entry for a given &LIST, while adding 
+  a + or - adds and removes items from a list, respectively.
+  
+  Related Topics: 
+
+& DB Commands
+DB Commands
+
+  The DB Commands object contains commands that are used to maintain the stat 
+  data objects. The default lock on this object is set so that only Wizards 
+  can use the commands.  If you want to limit the group of people who can alter 
+  your stats database, then you need to change the &CAN_USE attribute accord
+  -ingly. The lock can be changed by altering the condition in the CAN_USE 
+  attribute to either a space seperated list of authorized users, or by 
+  creating a softcoded function similar to OSTAFF().
+  
+  Related Topics: 
+
+& +create-db
++create-db
+
+COMMAND: +create-db
+  Updates the stat database stored on the Stat DB object using the stat lists 
+  stored on the List Object.  This command needs to be run anytime the stat 
+  lists on the List Object are modified, either manually, or by using one of 
+  the following +statlist commands.
+  
+  Related Topics: 
+
+& +stathide
++stathide
+
+  COMMAND: +stathide
+
+  This is an administrative command that calls @attribute/access to set all 
+  the STATLIST-, STRING-, and LIST- attributes to be wizard hidden, so that 
+  the players cannot directly see or modify their stats.  For this command to 
+  work properly @attribute/access needs to be runnable by a Wizard.  By 
+  default, @attribute/access is usually set so that only God can use it.
+  
+  Related Topics: 
+
+& +statlist
++statlist
+
+  COMMAND: +statlist/<switch> [[<statlist>]/[<stat>]]
+
+    /showlists                   - This command lists out all the stat lists 
+                                  on the List Object. These are the stat lists 
+                                  that will be incorporated into the stat 
+                                  database when +create-db is run.
+    /addlist <statlist>          - This command adds <statlist> to the list 
+                                  of stat lists used by the database.  
+                                  <statlist> should be a single word with no 
+                                  spaces in it.   
+    /showstats <statlist>        - This command lists out the stats 
+                                  belonging to the stat list <statlist>.
+    /addstat <statlist>/<stat>   - This command adds the stat <stat> to the 
+                                  stat list <statlist>.  <stat> may include 
+                                  any characters (including blanks) except 
+                                  for ":" and "|".  
+    /deletestat <statlist>/<stat>- This command deletes the stat <stat> from 
+                                   the stat list <statlist>.  <stat> must, of 
+                                   course, be a stat on the named stat list.  
+
+  IMPORTANT NOTES: 
+    The stat lists can be manually edited by altering the LIST-<statlist> 
+    attribute on the List Object.
+    All alterations to the List Object, whether manually done, or done by 
+    code, MUST be followed by use of the +create-db command for the changes to 
+    take effect.  +stathide has to be used following the use of the /addlist 
+    switch.
+  
+  Related Topics:  +create-db, DB COMMANDS, LIST OBJECT, +stathide 
+  
+  
+& STAT()
+STAT()
+
+  GLOBAL FUNCTION: stat(<player>,<stat>)
+  
+  Returns the numeric value of the stat for a given player.  Returns 0 if the 
+  stat doesn't exist on the character or that stat is set to 0.  
+       
+& SGPSQUISH()
+SGPSQUISH()
+
+  GLOBAL FUNCTION: sgpsquish(<string>[,<character>])
+  
+  This function will trim multiple occurrences of <character> (or a space, if 
+  <character> is not specified) down to a single occurrence of <character>.
+  This is useful for getting rid of big internal spaces, and the like.
+  
+  Using ~ as part of the second argument will cause an error.
+  
+  Provides a second argument for squish on MUX.  This is a compatibility 
+  function that is only installed on MUXen where a 1 argument squish() is 
+  present.  Upgrade your server to the most current version of MUX as soon as 
+  possible. 
+    
+& SGPTRIM()
+SGPTRIM()
+
+  GLOBAL FUNCTION: sgptrim(<string> [,<trim style> [,<trim character>]])
+  
+  Checks for a Penn-style trim() and reverses the last 2 arguments.  This is a
+  compatibility function. 
+    
+& TEMPSTAT()
+TEMPSTAT()
+
+  GLOBAL FUNCTION: tempstat(<player>,<statname>)
+  
+  Returns the numeric value of the stat for a given player.  Returns 0 if the 
+  stat doesn't exist on the character or that stat is set to 0.
+   
+& STRING()
+STRING()
+
+  GLOBAL FUNCTION: string(*<player>,<stringname>)
+  
+  Returns the value of &STRING-<stringname> on a player object.    
+
+& STATLIST()
+STATLIST()
+
+  GLOBAL FUNCTION: statlist(<statlist>) 
+  
+  Returns the contents of a given &LIST and nothing if the LIST does not exist 
+  on the list object.  
+
+& STATTYPE()
+STATTYPE()
+
+  GLOBAL FUNCTION: stattype(<stat>)
+  
+  Returns the type of a given stat.  If the string is not a stat, then it 
+  returns "NOT A STAT".
+
+& FN-DISPLAY-LIST
+FN-DISPLAY-LIST
+
+  SHEET FUNCTION: FN-DISPLAY-LIST
+  
+  Given &LIST-FOO, creates a 78 column wide heading with 'Foo' centered and 
+  displays the appropriate list per FN-DISPLAY-LISTS.      
+
+& FN-DISPLAY-LISTS
+FN-DISPLAY-LISTS
+
+  SHEET FUNCTION: FN-DISPLAY-LISTS
+  
+  Given a '|' seperated &LIST from the character object, displays the 
+  elements of the &LIST in a 2 column format.  To change the number of 
+  columns, vary the 2nd argument of table(). 
+    
+
+& FN-DISPLAY-STRINGS
+FN-DISPLAY-STRINGS
+
+  SHEET FUNCTION: FN-DISPLAY-STRINGS 
+  
+Given [u(fn-display-strings,%0,<name>:STRING-<name>|<name 2>:STRING-<name2>)], 
+  creates a 2 column display of $STRING from the character object.   Vary the 
+  number of columns displayed by changing the value of the second argument in 
+  table().
+
+& FN_FORMAT
+FN_FORMAT
+
+  SHEET FUNCTION: FN_FORMAT
+  
+  This function takes an individual stat:#:# in a &STATLIST and displays it in 
+  a 24 character wide field, stat on the left and the temporary and permanent 
+  values for that stat.  Temporary values for a stat are in ().  This is an 
+  internal function to all numerical stat displays.  To change the width in 
+  order to vary the number of columns, you change the value inside the 
+  strlen().  
+  
+  Example:
+    Willpower          (6) 7
+    
+  
+& FN-HASLIST
+FN-HASLIST
+
+  SHEET FUNCTION: FN-HASLIST
+  
+  This function checks for the presence of a given &LIST on a player and 
+  feeds the result back to FN-DISPLAY-LISTS.          
+
+& FN_3LISTSCOL
+FN_3LISTSCOL
+
+  SHEET FUNCTION: [u(<dbref>/fn_3listscol,get(%0/<statlist>))]
+  
+  <dbref> is the dbref of the object where fn_3vcol is stored.  <statlist> is 
+  the STATLIST-<stattype> to be displayed.  This function displays a '|' 
+  seperated list of stats in 3, roughly equal vertical columns, divided into 
+  a 78 column display.  It displays the stats in the order that the stats 
+  appear in the attribute.
+  
+  Example:
+    >&STATLIST-FOO Bar=apple|orange|mango|pear
+    >&STATLIST-BAR Bar=cat|dog|canary
+    >&STATLIST-FOOBAR Bar=tree|flower|shrub
+    >say [u(<dbref>/FN_3LISTSCOL,get(*%0/STATLIST-FOO), get(*%0/STATLIST-BAR), get(*%0/STATLIST-FOOBAR))]
+    >apple        cat          tree 
+     orange       dog          flower
+     mango        canary       shrub
+     pear             
+        
+
+& FN_3VCOL 
+FN_3VCOL 
+
+  SHEET FUNCTION: [u(<dbref>/fn_3vcol,get(%0/<statlist>))]
+  
+  <dbref> is the dbref of the object where fn_3vcol is stored.  <statlist> is 
+  the STATLIST-<stattype> to be displayed.  This function displays a '|' 
+  seperated list of stats in 3, roughly equal columns, divided into a 78 
+  column display.  It displays the stats in the order that the stats appear in 
+  the attribute.
+  
+  Example:
+    >&STATLIST-FOO Bar=1|2|3|4|5|6|7|8|9
+    >say [u(<dbref>/fn_3vcol,get(%0/STATLIST-FOO))]
+    >1           4            7
+     2           5            8
+     3           6            9            
+

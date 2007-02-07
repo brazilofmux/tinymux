@@ -1,0 +1,133 @@
+@@ ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+@@
+@@  SGP @crontab installer - 17 February 2001 BETA
+@@
+@@  Code courtesy of Jeff Hulsey. <jeff@slackbastard.net>
+@@
+@@  This is a quotable installer file that installs code designed to simulate 
+@@  the functionality of a crontab.  It allows you to schedule the triggering 
+@@  of code without putting @waits in the queue for each action.   
+@@
+@@  @crontab can serve as a replacement for Myrddin's MUSHCron and is designed 
+@@  to be much less queue intensive.  
+@@ 
+@@ ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+@@
+@@  This file installs the Crontab Command Object for the adding and removing of 
+@@  jobs from the @crontab and Mush Cron Object for data storage. 
+@@
+@@  This file also includes the necessary +help attributes and code to install 
+@@  them into the SGP softcoded +help system.  Any +help system that accepts 
+@@  &HELP_ attribute syntax will be able to used the data attributes, with 
+@@  appropriate modifications of the object name.  MUX users should use the 
+@@  staffhelp.txt update found on the SGP website.
+@@
+@@  Installer assumes that your SGP installation includes +version commands for 
+@@  including this object in your local +version listing.  Install +version 
+@@  before installing this code. 
+@@  
+@@ ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+@@
+@@  Using this file:
+@@
+@@  This code is in BETA form.  This means that we believe that we have debugged 
+@@  it sufficiently for it to run in your application, but that there may be bugs 
+@@  we failed to anticipate.  Make sure you run a test of the code 
+@@  and report any problems to the SGP bug page(http://sgp.erisian.net/).  There 
+@@  may be a design or feature issue that we need to reconsider before the full 
+@@  release of the code. 
+@@
+@@  ALL code in this file is uncommented and will quote to the game with your 
+@@  MUSH client's uploading commands.  The command object should reside in the 
+@@  master room and the data object is stored, by default, inside it.
+@@
+@@ ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+@pemit me=Creating @crontab objects.  Moment....
+
+@create SGP - @crontab=10
+
+@create SGP - @crontab DB=10
+
+@wait 0=&SGP-OBJECTS SGP - Global Parent Object=[get(SGP - Global Parent Object/SGP-OBJECTS)]|[num(SGP - @crontab)]
+
+@wait 0=&SGP-OBJECTS SGP - Global Parent Object=[get(SGP - Global Parent Object/SGP-OBJECTS)]|[num(SGP - @crontab DB)]
+
+@wait 0=&SGP-VERSION SGP - @crontab=1.0|Base|[elements(time(),2 3 5)]
+@wait 0=&SGP-VERSION SGP - @crontab DB=1.0|Base|[elements(time(),2 3 5)]
+
+&UPDATE-HISTORY SGP - @crontab=Base Install [elements(time(),2 3 5)]
+&UPDATE-HISTORY SGP - @crontab DB=Base Install [elements(time(),2 3 5)]
+
+@pemit me=Quoting @crontab commands.  Moment....
+
+@lock SGP - @crontab=SGP - @crontab
+
+@wait 0=&DB SGP - @crontab=num(SGP - @crontab DB)
+
+&CMD.CRONADD SGP - @crontab=$@cron/add *=*/*:@switch/first 0[setq(1,strlen(get(v(db)/CRON_TIME_[setr(0,u(v(db)/fn.strip,%0))])))]=andflags(%#,W),{@pemit %#=get(v(db)/HUH)},not(strlen(setr(9,setdiff(first(lcstr(%1),|),jan feb mar apr may jun jul aug sep oct nov dec)))),{@pemit %#=Invalid month: %q9},not(strlen(setr(9,setdiff(extract(lcstr(%1),3,1,|),sun mon tue wed thu fri sat)))),{@pemit %#=Invalid day of week: %q9},eq(5,words(%1,|)),{@pemit %#=Incomplete crontab entry},isdbref(setr(9,first(%2,|))),{@pemit %#=Invalid dbref: %q9},{&CRON_TIME_%q0 [v(db)]=%1;&CRON_JOB_%q0 [v(db)]=%2;@pemit %#=Cron job [ucstr(%q0)] [switch(0,%q1,add,edit)]ed.}
+
+&CMD.CRONDEL SGP - @crontab=$@cron/del *:@switch 0=andflags(%#,W),{@pemit %#=get(v(db)/HUH)},strlen(get(v(db)/CRON_TIME_[setr(0,u(v(db)/fn.strip,%0))])),{@pemit %#=No such job: [ucstr(%q0)]},{&CRON_TIME_%q0 [v(db)];&CRON_JOB_%q0 [v(db)];@pemit %#=Cron job [ucstr(%q0)] deleted.}
+
+&CMD.CRONHELP SGP - @crontab=$@cron/add:@switch 0=andflags(%#,W),{@pemit %#=get(v(db)/HUH)},{@pemit %#=Usage: @cron/add <job name>=<time>/<object>|<attribute>%r%b%b<time format>: [get(v(db)/format)]%r%b%b<object>'s <attribute> will be @triggered when a match occurs}
+
+&CMD.CRONTAB SGP - @crontab=$@crontab:@switch 0=andflags(%#,W),{@pemit %#=get(v(db)/HUH)},{@dolist HEADER [lattr(v(db)/CRON_TIME_*)]={@switch ##=HEADER,{@pemit %#=Crontab Listing%r[repeat(-,15)]},{@pemit %#=setr(0,after(##,CRON_TIME_)): [get(v(db)/##)] -- [get(v(db)/CRON_JOB_%q0)]}}}
+
+&CREDIT SGP - @crontab=Donated to SGP by Jeff Hulsey <jeff@slackbastard.net>, Copyright 2001
+
+@pemit me=Setting flags on @crontab object.  Moment....
+
+@switch version()=TinyMUSH version 2.2.*,{@set SGP - @crontab=INHERIT;@set SGP - @crontab=COMMANDS;@set SGP - @crontab=STOP;@set SGP - @crontab=SAFE},PennMUSH*,{@set SGP - @crontab=!NO_COMMAND;@set SGP - @crontab=WIZARD},MUX*,{@set SGP - @crontab=INHERIT;@set SGP - @crontab=!NO_COMMAND;@set SGP - @crontab=SAFE},RhostMUSH*,{@set SGP - @crontab=INHERIT;@set SGP - @crontab=!NOCOMMAND;@set SGP - @crontab=SAFE;@set SGP - @crontab=STOP}
+
+@pemit me=Quoting @crontab data object.  Moment....
+
+@lock SGP - @crontab DB=SGP - @crontab
+
+@Startup SGP - @crontab DB=@trigger me/CRON
+
+&CRON SGP - @crontab DB=@trigger me/TRG.CRON;@wait 60={@trigger me/CRON}
+
+&FORMAT SGP - @crontab DB=[month]|[date]|[day of week]|[hour]|[minute]
+
+&FN.STRIP SGP - @crontab DB=edit(squish(trim(secure(foreach(me/fn.bad,%0)))),%b,_)
+
+&HUH SGP - @crontab DB=Huh? (Type "help" for help.)
+
+&FN.BAD SGP - @crontab DB=switch(member(v(list.bad),%0),0,%0,%b)
+
+&LIST.BAD SGP - @crontab DB=~ ! @ # ^ & * + ` = | : " ' < > ? , . /
+
+&TRG.CRON SGP - @crontab DB=@dolist u(FN.CRON,lattr(me/CRON_TIME_*))={@trigger [first(setr(8,v(CRON_JOB_[after(##,CRON_TIME_)])),|)]/[last(%q8,|)]}
+
+&FN.CRON SGP - @crontab DB=[setq(1,extract(setr(0,lcstr(time())),2,1))][setq(2,extract(%q0,3,1))][setq(3,extract(%q0,1,1))][setq(4,last(extract(%q0,1,1,:)))][setq(5,extract(%q0,2,1,:))][filter(FLT.CRON,lattr(me/CRON_TIME_*))]
+
+&FLT.CRON SGP - @crontab DB=and(or(member(setr(7,extract(setr(6,lcstr(v(%0))),1,1,|)),%q1),not(strlen(%q7))),or(member(setr(7,extract(%q6,2,1,|)),%q2),not(strlen(%q7))),or(member(setr(7,extract(%q6,3,1,|)),%q3),not(strlen(%q7))),or(member(setr(7,extract(%q6,4,1,|)),%q4),not(strlen(%q7))),or(member(setr(7,extract(%q6,5,1,|)),%q5),not(strlen(%q7))))
+
+&CREDIT SGP - @crontab DB=Donated to SGP by Jeff Hulsey <jeff@slackbastard.net>, Copyright 2001 
+
+@pemit me=Setting flag on @crontab data object.  Moment....
+
+@switch version()=TinyMUSH version 2.2.*,{@set SGP - @crontab DB=INHERIT;@set SGP - @crontab DB=SAFE},PennMUSH*,{@set SGP - @crontab DB=WIZARD},MUX*,{@set SGP - @crontab DB=INHERIT;@set SGP - @crontab DB=SAFE},RhostMUSH*,{@set SGP - @crontab DB=INHERIT;@set SGP - @crontab DB=SAFE}
+
+@pemit me=Triggering the startup on the data object.  Moment....
+
+@trigger SGP - @crontab DB/startup
+
+@pemit me=Editting &WIZLIST on the SGP - Help Data object and adding +wizhelp for @crontab.  If this is a MUX, you will see an error message.  Moment....
+
+@switch version()=MUX*,{},{@edit SGP - Help Data/WIZLIST_COMMANDS=$,|@crontab}
+
+&WIZHELP_@CRONTAB SGP - Help Data=[repeat(-,78)]%R@crontab:%R %R[space(2)]SYNTAX: @crontab%R[space(10)]@cron/add%R[space(10)]@cron/add <job name>=<time>/<object>|<attribute>%R[space(10)]@cron/del <job name>%R%R[space(2)]Wizard Only%R %R[space(2)]<time> is in the format: \[month\]|\[date\]|\[day of week\]|\[hour\]|\[minute\]%R[space(2)]<object> must be a dbref%R[space(2)]\[month\] and \[day of week\] are alpha entries (Jan, Mar, Tue, Sat, etc), not %R[space(2)]numeric entries. Case is unimportant (code lcstr's everything before running %R[space(2)]it through).%R[space(2)]%R[space(2)]Multiple entries inside any crontab category are space separated. (BE VERY %R[space(2)]CAREFUL WHEN LEAVING THE LAST 2 ENTRIES BLANK! - ANY BLANK MATCHES %R[space(2)]EVERYTHING!)%R%R[space(2)]@cron/add includes error checking and will not allow invalid month or day of %R[space(2)]week entries, or invalid dbrefs (including non-dbrefs like *jeff).%R[space(3)]%R[space(2)]Examples:%R[space(4)]|13|Fri|12|00[space(20)]- Every Friday the 13th, at noon.%R[space(4)]Jan|1||00|00[space(21)]- At the beginning of any year (midnight, %R[space(39)]Jan 1).%R[space(4)]||||00[space(27)]- At the beginning of every hour.%R[space(4)]||||00 10 20 30 40 50[space(12)]- Every 10 minutes.%R[space(4)]Jan Mar May Jul Aug Oct Dec|1||| - Every minute of the 1st day of any %R[space(39)]month listed. %R[space(43)]%R[repeat(-,78)]
+
+@pemit me=Using +version to add entries for @crontab and updating the history of the SGP - Help Data object.  If you don't have +version installed here, you will see error messages. Moment....
+
+@switch version()=MUX*,{},{+version/update [num(SGP - Help Data)]/history=@crontab added}
+
+
+drop SGP - @crontab 
+@tel SGP - @crontab DB=SGP - @crontab
+
+
+@pemit me=Quote of @crontab code complete.%R%RIf this is a MUX, you will need to edit staffhelp.txt to include the helpfile information found in 'crontab.txt' on the SGP website and be double sure to update the staffhelp index entry to include '@crontab'.  consult the SGP website for guidance.
+
+

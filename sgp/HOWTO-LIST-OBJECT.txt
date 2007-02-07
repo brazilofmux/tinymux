@@ -1,0 +1,98 @@
+SGP Cgen
+HOWTO-List Objects: 110901
+
+
+Data organization for SGP Cgen:
+------------------------------
+
+This is a short primer on compiling lists for your game's List Object.
+
+SGP cgen is based on the assumption that a character sheet for an RPG is 
+grouped into 3 essential categories: strings, stats, and lists.  
+
+String data, for our purposes is essentially the type of information found 
+at the top of a character sheet.  Strings may represent both arbitrary and 
+specific types of imformation, such as name(arbitrary), race(arbitrary or 
+specific), gender(specific), or other information that is identifying.  The 
+key is that any given bit of string data is generally going to be short, a 
+ew words at the most.  Look at the top of the character sheet in the back 
+of the book you're using.  Many of those character attributes are going to 
+be stored on the character object as &STRING- data.
+
+Stats, for our purposes, are any character attribute that carries a specific 
+numerical value, such as strength or willpower.  Stats are special, because 
+they are compiled into a master database that is searched before a stat is 
+set on the character object.  They are generally the most numerous type of 
+attribute on a character sheet and are stored on the character object as a 
+&STATLIST- data.
+
+List data is much like strings, except that lists on a character object are 
+generally arbitrary and can contain a little more information.  Lists are 
+generally things like merits, flaws, specialties, spells, and things you 
+might find as details on the bottom of a character sheet or on supplemental 
+pages.  They appear on a character object as &LIST- data.
+
+
+Compiling listings for &STATLIST-, &STRING-, and &LIST-:
+-------------------------------------------------------
+
+STRINGS:  The first thing to do is to list out the types of data you want to 
+store on the character object using this cgen.  Begin by compiling 
+&LIST-STRINGS and figuring out all the types of string data that you'll have 
+appearing at the top of the sheet display.  These lists may be short or long, 
+but all items should be seperated by a '|'.
+
+  Example:
+    &LIST-STRINGS List Object=name|race|class|sex
+    
+This list of strings becomes the list that +setstring checks to see if it is 
+a valid type of string data.  You can also define what may appear in something 
+like race by creating and attribute on the list object accordingly. 
+
+  Example:
+    &LIST-RACE List Object=elf|human|vampire|elephant
+    
+STATS:  Begin by using the book for your game system and define a list of 
+stattypes.  Write those types to a '|' seperated list.  The rule of thumb is 
+should be that if the book gives it a name, like a 'discipline' or 'skill' or 
+'attribute', then use those names in your stat list.  +setstat and +settemp 
+check a master database of stats based on this listing of stats.
+
+  Example:
+    &LIST-STATS List Object=abilities|skills|secondary-skills|pools|powers|lores
+    
+You then take each of the listed stat types and compile a list of stats that 
+fit them.  After you compile the lists, which may take a while, make an attribute 
+for them.  BE SURE that you check for typos.
+
+  Example:
+    &LIST-ABILITIES List Object=strength|dexterity|intelligence|charisma
+    &LIST-SKILLS List Object=driving|fighting|survival
+    &LIST-SECONDARY-SKILLS List Object=racing|performance|poetry|brawl|melee
+    &LIST-POOLS List Object=health|willpower|psi
+    &LIST-POWERS List Object=levitation|clairvoyance|telepathy
+    &LIST-LORES List Object=monsters|werewolves|history|mythology 
+    
+LISTS: As with string data, compile your list of list data on an attribute named 
+&LIST-LISTS.  +setlist will check this list to see if the list is valid or not.  
+You can control what may or may not be set in a given list by creating a &LIST- 
+attribute for that list.
+
+  Example: 
+    &LIST-LISTS List Object=merits|flaws|gear|spells|scrolls|magick items 
+    &LiST-SPELLS List Object=fireball|make water|call lightning|greet the sun
+    
+In the latter example, you can check against the specific list of spells as a 
+means to prevent misspellings, or simply to prevent strange things from cropping 
+up on your character sheets.
+
+Once complete, you can load the object and begin the process of building the 
+character sheet itself.  
+       
+  
+    
+
+
+
+
+

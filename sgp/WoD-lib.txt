@@ -1,0 +1,302 @@
+@@      SGP CGEN V1.0 BETA - 24 November 2001 BUILD 
+@@
+@@ ----  SGP - World of Darkness Library Object and Sheet Code  ----
+@@
+@@      NOTE 1: Due to the way that MUSH and MUX operate, you need to have 
+@@      #1 @admin player_queue_limit=1000 and then @restart the MUSH after
+@@      so that the file quotes cleanly.  It is recommended that if using 
+@@      TinyFugue, that you /quote with a 1 second delay between commands,
+@@      so that the queue has time to catch up before it becomes overloaded.
+@@
+@@      NOTE 2: Make sure that you either allow wizards to use @function 
+@@      and @attribute or be prepared to set up a long @startup on #1.
+@@
+@@      NOTE 3: Either quote these objects in the master room or @tel them  
+@@      to that location after they are loaded into your game.
+@@
+@@      NOTE 4: This code is compatible with TinyMUSH 2.2.4U1 and RhostMUSH, 
+@@      with the addition of a softcoded table() as found in Penn.  It worked 
+@@      on MUX and passed basic tests on PennMUSH.  There may be other problems  
+@@      problems on PennMUSH, so report bugs as you find them. TM3?  Hell if I 
+@@      know.
+@@
+@@      NOTE 5: This is file quotes the genre library code -only-.  Functions 
+@@      to generate sheet code are part of it, but the cgen engine needs to be 
+@@      installed FIRST.  Walkthrough rooms are not within the scope of this file.  
+@@
+@@      NOTE 6: If you are using this system to replace an existing one, or you 
+@@      are working on a new library from scratch, then you will need to find a 
+@@      competent coder and bribe them to do the work for you.  This is hard 
+@@      work, so don't treat them badly for their trouble.  We DO suggest that 
+@@      you take a backup of the DB before you try any of it. MAKE SURE THAT 
+@@      SAID CODER IS EMOTIONALLY STABLE AND COMPETENT, OR YOUR EXPERIENCE MAY 
+@@      END BADLY. 
+@@
+@@      NOTE 7: Audumla's Axiom reads "Psychocoder == psychopath.  Get it?"
+@@
+@@      NOTE 8: This code is best installed at the same time as the rest of 
+@@      the SGP globals packages.  Successful installation requires that global
+@@      functions and global parent objects are in the same place as the wizard
+@@      installing the code.  Otherwise,  You will need to update several pieces 
+@@      of information in the system and do a manual trigger of the startup on 
+@@      the global functions object(note that this is something that you need 
+@@      some patience and skill to accomplish without pulling your hair out). 
+@@
+@@      ----------
+@@
+@@      Bugs:
+@@
+@@      The SGP team has gone to some trouble to knock the bugs out of this 
+@@      puppy.  INVARIABLY, there are probably one or two still left, so 
+@@      report them and offer patches if you fix them before we get to them.  
+@@      Makes everything better for everyone. :)
+@@
+@@      Check for typos and omissions.
+@@
+@@      ----------
+@@
+@@      CREDITS:
+@@
+@@      List Object data compiled and donated by Psycho@Bloody Roses.  He made 
+@@      it and gave it away, so say 'thank you' by keeping the credits on the 
+@@      code.  If you don't like the way it's done, then do one yourself.  No 
+@@      one will stop you.
+@@
+@@      General and WoD-specific sheet code by Audumla and BEM@Granite, copyright 
+@@      2000-2001.  They made it and then just gave it away, so keep the 
+@@      credits on the code when you use it.  The folks at Bloody Roses helped 
+@@      a lot with final debugging, as did Jeff@Sandbox.  Thanks go out to the 
+@@      remaining members of the SGP Battlegroup** for putting up with the 
+@@      pre-release neurosis. ;)
+@@
+@@      *  WoD and World of Darkness are copyrighted by White Wolf Games.
+@@      Nothing done here is meant to infringe on White Wolf IP and hopefully 
+@@      will make it easier for folks to make even more new MU*.
+@@
+@@      ** (The SGP Battlegroup: BEM, Audumla, Jeff, Hilikiradi, Brazil, Talek, 
+@@      Raevnos, Ronan, and Ashen-Shugar, in a reprise of his role as 'The Dark 
+@@      One'. Javelin@M*U*S*H returned for a cameo as 'The Angel of Light and
+@@      Goodness'.)
+@@
+@@      ----------
+@@
+@@      This installer writes code to 5 objects and requires that startups be 
+@@      triggered at the end of the process.  It does lots of things by itself, 
+@@      but you need to use +stathide to run @attribute.  People using PennMUSH 
+@@      have to use it everytime.
+@@   
+@@      ----------
+@@
+@@      Recent Changes: 
+@@
+@@      - Gathered the list info and sheet support code as a seperate file.
+@@      - Rolled in changes to the list object. (24NOV01)
+@@      - +stats and +stats * both do a lot more error checking. (24NOV01)
+@@      - Updates FN_ATTRIBUTES (24NOV01)
+@@      - Created 3rd Edition sheet code. @nd Edition code is available, but will 
+@@      need local hacks.(24NOV01)
+@@
+@@      ----------  
+@@
+@@      To do List:
+@@       - Check for omissions and typos.
+@@       - add +version information.
+@@       - see about local hacks for test games.
+@@
+@@      ----------
+@@
+@@      To install this code:
+@@
+@@      1.  Install and make appropriate edits to the main cgen installer.  
+@@      Without it, this library is meaningless.
+@@      2.  From a WIZARD or equivalent level character, quote the file into 
+@@      the game.  You need to know how your client works for this part.
+@@      3.  @edit the Support Code object, replacing all occurances of #140 
+@@      with the dbref of the object itself.  The installation will be useless 
+@@      otherwise.
+@@      4.  Run +create-db
+@@      5.  Stat a test character and see what happens. 
+@@
+
+@pemit me=Renaming the List Object and Support Code Objects to reflect the genre.  Moment....
+
+@name SGP Cgen: List Object=SGP Cgen: WoD List Object
+@name SGP Cgen: Support Code=SGP Cgen: WoD Support Code
+
+@pemit me=Done!
+
+
+@pemit me=Quoting the WoD List Object to the existing object.  Moment....
+
+&CREDITS SGP Cgen: WoD List Object=Psycho@Bloody Roses: Richmond by Night
+
+&LIST-STATS SGP Cgen: WoD List Object=arcanoi|arts|attributes|backgrounds|disciplines|health|knowledges|lores|numinae|pools|renown|secknowledges|secskills|sectalents|skills|sorpaths|spheres-realms|talents|thaumpaths|virtues
+
+&LIST-ATTRIBUTES SGP Cgen: WoD List Object=Strength|Dexterity|Stamina|Charisma|Manipulation|Appearance|Perception|Intelligence|Wits
+
+&LIST-SECSKILLS SGP Cgen: WoD List Object=Acrobatics|Animal Training|Archery|Artillery|Blacksmith|Blind Fighting|Boat Handling|Brewing|Bribery|Calligraphy|Camouflage|Carpentry|Climbing|Cooking|Dancing|Debate|Demolitions|Disguise|Escapology|Falconry|Fast-Draw|Fast-Talk|Fire Dancing|First Aid|Fishing|Forgery|Gambling|Game Playing|Gunsmithing|Heavy Weapons|Helmsman|Herbalism|High Ritual|Hunting|Hypertech|Hypnotism|Jetpack|Jeweler|Journalism|Jury-Rig|Leatherworking|Lip Reading|Lockpicking|Mechanic|Meditation|Microgravity Operations|Misdirection|Networking|Origami|Parachuting|Photography|Pickpocket|Pilot|Police Procedure|Pottery|Psychoanalysis|Research|Ride|Scuba|Singing|Skiing|Sleight of Hand|Speed Reading|Storytelling|Torture|Tracking|Traps|Vamp
+
+&LIST-SECTALENTS SGP Cgen: WoD List Object=Acting|Artistic Expression|Carousing|Diplomacy|Fortune-Telling|Guile|Haggling|Homiletics|Instruction|Interrogation|Intrigue|Intuition|Lucid Dreaming|Masquerade|Mimicry|Misdirection|Negotiation|Newspeak|Panhandling|Poetic Expression|Public Speaking|Scan|Scrounging|Search|Seduction|Sense Deception|Style|Swimming|Throwing|Ventriloquism
+
+&LIST-SECKNOWLEDGES SGP Cgen: WoD List Object=Accounting|Alchemy|Anthropology|Archaeology|Architecture|Area Knowledge|Art History|Astrology|Astronomy|Biology|Biopsychology|Botany|Chemistry|Church History|City Secrets|Computer Hacking|Computer Programming|Conspiracy Theory|Construct Politics|Covert Culture|Criminology|Cryptography|Cryptology|Cybernetics|Economics|Electronics|Engineering|Ethnology|Fine Arts|Forensic Pathology|Forensics|Gematria|Genetics|Geology|Heraldry|Herbalism|History|Hypermathematics|Law Enforcement|Literature|Logic|Mathematics|Media|Metallurgy|Metaphysics|Meteorology|Military Science|Mythology|Naturalist|Numerology|Paleography|Paraphysics|Parapsychology|Pharmacopoeia|Philosophy|Phlogeny|Psychodynamics|Physics|Poisons|Power-Brokering|Propaganda|Psychology|RD Data|Religious Rites|Religious Scriptures|Sacred Geometry|Sacred Scriptures|Sociobiology|Subdimensions|Terrorism|Theology|Toxicology|Vice|Xenobiology
+
+&LIST-TALENTS SGP Cgen: WoD List Object=Alertness|Athletics|Awareness|Brawl|Dodge|Empathy|Expression|Intimidation|Kenning|Leadership|Persuasion|Primal-Urge|Streetwise|Subterfuge
+
+&LIST-SKILLS SGP Cgen: WoD List Object=Animal Ken|Biotech|Crafts|Drive|Energy Weapons|Etiquette|Firearms|Meditation|Melee|Music|Performance|Repair|Security|Stealth|Survival|Technology
+
+&LIST-KNOWLEDGES SGP Cgen: WoD List Object=Academics|Bureaucracy|Computer|Cosmology|Culture|Enigmas|Finance|Gremayre|Investigation|Law|Linguistics|Medicine|Occult|Politics|Rituals|Science
+
+&LIST-ARTS SGP Cgen: WoD List Object=Chicanery|Legerdemain|Primal|Soothsay|Sovereign|Wayfare|Dream-Craft|Pyretics|Chronos|Infusion|Contempt|Delusion
+
+&LIST-BACKGROUNDS SGP Cgen: WoD List Object=Allies|Rank|Contacts|Fame|Resources|Mentor|Chimera|Chimerical Breed|Familiar Companion|Dreamers|Holdings|Remembrance|Retinue|Title|Treasures|Prestige|Political Connections|Patron|Trod|Golem|Dross Force|Age|Equipment|Life|Totem|Rites|Fetish|Kinfolk|Library|Guide|Relic|Sancuary|Status|Cloaking|Companion|Construct|Destiny|Device|Genius|Hypercram|Laboratory|Node|Backup|Enhancement|Patron|Requistions|Secret Pure Spirit|Contacts|Allies|Rank|Resources|Mentor|Fame|Influence|Arcane|Wonder|Past Weapons|Spies|Generation|Herd|Retainers|Eidolon|Haunt|Artifact|Legacy|Memoriam|Notoriety|Batsu|Clan|Go-en|Sempai|Avatar|Dream|Treasure|Remembrance|Title|Military|Pure Breed|Jamak|Umbral Glade|Past Life|Elder Status|Clan Prestige|Mana|Husk|Regard|Fae Blood
+
+&LIST-DISCIPLINES SGP Cgen: WoD List Object=Auspex|Animalism|Celerity|Chimerstry|Dementation|Dominate|Fortitude|Necromancy|Obfuscate|Obtenebration|Potence|Presence|Quietus|Serpentis|Thaumaturgy|Vicissitude|Illumination|Protean|Mytherceria|Assamitic Sorcery
+
+&LIST-NUMINAE SGP Cgen: WoD List Object=Animal-Psychics|Anti-Psychic|Astral-Projection|Biocontrol|Channeling|Clairvoyance|Cyberkinesis|Cyberpathy|Ectoplasmic-Generation|Empathic-Healing|Psychic-Hypnosis|Mind-Shields|Precognition|Psychic-Healing|Psychic-Invisibility|Psychic-Vampirism|Psychokinesis|Psychometry|Psychoportation|Pyrokinesis|Soulstealing|Synergy|Telepathic-Sensing|Telepathic-Projection|Telepathic-Control|Via-Medicamenti|Via-Ignis|Via-Geniorum|Via-Necromantiae|Via-Oraculi
+
+&LIST-POOLS SGP Cgen: WoD List Object=Blood|Willpower|Paradox|Quint|Gnosis|Rage|Glamour|Enlightenment|Gullibility|Banality|Humanity
+
+&LIST-RENOWN SGP Cgen: WoD List Object=Glory|Honor|Wisdom|Infamy|Obligation|Cunning|Ferocity|Virtue|Obedience|Chie|Toku|Kagayaki|Succor|Humor|Valor|Harmony|Innovation
+
+&LIST-SORPATHS SGP Cgen: WoD List Object=Sorcerous Alchemy|Conjuration|Conveyance|Divination|Enchantment|Fascination|Fortune|Healing|Hellfire-Earthquake|Hellfire-Lightning|Hellfire-Decay|Hellfire-Dust Storm|Hellfire-Sleet|Hellfire-Smoke|Hellfire-Basic|Hellfire-Tanglewood|Hellfire-Drowning Tide|Mana Manipulation|Oneiromancy|Shadowcasting|Shapeshifting|S/B/W-Material|S/B/W-Daimonic|S/B/W-Ephemera|S/B/W-Necromantic|S/B/W-Technomantic|Weather Control
+
+&LIST-THAUMPATHS SGP Cgen: WoD List Object=Thaumaturgical Alchemy|Biothaumaturgy|Green Path|Faux Path|Focused Mind|Hands of Destruction|Hearth Path|Lure of Flames|Mastery of the Mortal Shell|Movement of the Mind|Neptune's Might|Oneiromancy|Path of Blood|Path of Conjuring|Path of Corruption|Path of Curses|Path of Levinbolt|Path of Mars|Path of Shadowcrafting|Path of the Blood's Curse|Path of the Father's Vengeance|Path of Technomancy|Path of Transmutation|Spirit Manipulation|Thaumaturgical Countermagic|Thaumaturgical Forensics|Thauamaturgical Weather Control|Vine of Dionysus|Way of Earth|Way of Fire|Way of the Spirit|Way of Sorrow|Way of Water|Way of Wind|Path of the Dry Nile|The Snake Inside|Awakening of the Steel|Echo of Nirvana|Elemental Mastery|Path of the Ailing Jackal|The Hunter's Winds|Fires of the Inferno|Path of Pain|Path of Pestilence|Path of Phobos|Path of Pleasure|Path of the Defiler|Path of the Unspoken|Taking of the Spirt|Ash Path|Bone Path|Cenotaph Path|Mortuus Path|Sepulchre Path|Vitreous Path
+
+&LIST-SPHERES-REALMS SGP Cgen: WoD List Object=Life|Spirit|Dimensional Science|Prime|Entropy|Forces|Time|Matter|Mind|Correspondence|Actor|Fae|Nature|Prop|Scene|Time|Air|Earth|Fire|Water|Spirit
+
+&LIST-VIRTUES SGP Cgen: WoD List Object=Instincts|Cunning|Wisdom|Self-Control|Conscience|Courage|Conviction|Beauty
+
+&LIST-ARCANOI SGP Cgen: WoD List Object=Argos|Castigate|Embody|Fatalism|Inhabit|Kenning|Lifeweb|Moliate|Outrage|Pademonium|Phantasm|Puppetry|Usury
+
+&LIST-RACE SGP Cgen: WoD List Object=fae|mage|mortal|mortal+|shifter|vampire|wraith
+
+&LIST-LISTS SGP Cgen: WoD List Object=battlescars|dark passions|equipment|fetters|flaws|gifts|merits|passions|rites|rituals|specialties|thorns
+
+&LIST-STRINGS SGP Cgen: WoD List Object=auspice|birthday|breed|cabal|changeday|chrysalisday|clan|concept|court|deathday|demeanor|embraceday|essence|faction|form|house|kith|legacy|nature|occupation|pack totem|path|position|race|rank|sect|seeming|shadow archetype|shadow name|sire|specialty|tradition|tribe|type|unlegacy
+
+&LIST-CLAN SGP Cgen: WoD List Object=Brujah|Gangrel|Malkavian|Nosferatu|Toreador|Tremere|Ventrue|Lasombra|Tzimisce|Assamite|Followers of Set|Giovanni|Ravnos|Kiasyd|Baali|Nagaraja|True Brujah|Caitiff|Gargoyle|Lasombra Antitribu|Assamite Antitribu|Blood Brothers|Brujah Antitribu|Gangrel Antitribu|Harbingers of Skulls|Malkavian Antitribu|Nosferatu Antitribu|Panders|Ravnos Antitribu|Salubri|Salubri Antitribu|Serpents of Light|Toreador Antitribu|Ventrue Antitribu
+
+&LIST-MARSUPIALS SGP Cgen: WoD List Object=Kangaroo|Oppossum|Panda|Koala|Tasmanian Devil|Numbats
+
+&LIST-HEALTH SGP Cgen: WoD List Object=Bashing|Lethal|Aggravated|Blood
+
+&LIST-NATURE SGP Cgen: WoD List Object=Architect|Autist|Autocrat|Bon Vivant|Bravo|Capitalist|Caregiver|Cavalier|Celebrant|Chameleon|Child|Competitor|Conformist|Conniver|Creep Show|Curmudgeon|Dabbler|Deviant|Director|Enigma|Eye of the Storm|Fanatic|Gallant|Guru|Idealist|Judge|Loner|Martyr|Masochist|Monster|Pedagogue|Penitent|Perfectionist|Rebel|Rogue|Sadist|Scientist|Sociopath|Soldier|Survivor|Thrill Seeker|Traditionalist|Trickster|Visionary
+
+&LIST-DEMEANOR SGP Cgen: WoD List Object=Architect|Autist|Autocrat|Bon Vivant|Bravo|Capitalist|Caregiver|Cavalier|Celebrant|Chameleon|Child|Competitor|Conformist|Conniver|Creep Show|Curmudgeon|Dabbler|Deviant|Director|Enigma|Eye of the Storm|Fanatic|Gallant|Guru|Idealist|Judge|Loner|Martyr|Masochist|Monster|Pedagogue|Penitent|Perfectionist|Rebel|Rogue|Sadist|Scientist|Sociopath|Soldier|Survivor|Thrill Seeker|Traditionalist|Trickster|Visionary
+
+&LIST-PATH SGP Cgen: WoD List Object=Path of Humanity|Path of Caine|Path of Cathari|Path of Death and the Soul|Path of Evil Revelations|Path of Feral Heart|Path of Honorable Accord|Path of Lilith|Path of Power and the Inner Voice
+
+&LIST-SECT SGP Cgen: WoD List Object=Camarilla|Sabbat|Black Hand|Anarch|Independent
+
+&LIST-LORES SGP Cgen: WoD List Object=Arcanum Lore|Black Hand Lore|Camarilla Lore|Church Lore|Clan Lore|Faerie Lore|Familiar Lore|Hearth Wisdom|Inquisition Lore|Kindred Lore|Lupine Lore|Mage Lore|Sabbat Lore|Sewer Lore|Shifter Lore|Spirit Lore|Stone Lore|Supernatural Lore|Underworld Lore|Wyrm Lore
+
+@pemit me=Done!
+
+@pemit me=Setting +stats commands on main and staff globals objects.  If they need to be somewhere else, you need to move them yourself.  If they don't set properly, you need to add and edit them manually.  Moment......
+
+&CMD-STATS SGP - Main Globals=$+stats:@switch [or(hasattr(%#,string-race),member(statlist(race),get(%#/string-race),|))]=0,{@pemit %#=You need to have someone set your race to something.},{@trigger #140/SHEET-[get(%#/string-race)]=%#,%#}
+
+&CMD-STAT-STAFF SGP - Staff Globals=$+stats *:@switch setq(0,num(*%0))%q0:[or(hasattr(%q0,string-race),member(statlist(race),get(%q0/string-race),|))]=#-1*,@pemit %#=Are you sure that's a player?,#-2*,@pemit %#=There seems to be more than one. I don't know which one you mean!,*:0,{@pemit %#=[name(%q0)] does not appear to have stats. It may be that %p STRING-RACE is unset, or invalid.},{@trigger #140/SHEET-[get(*%0/string-race)]=%q0,%#}
+
+@pemit me=Done!
+
+@pemit me=Setting generic sheet support code.  Moment......
+
+&CREDITS SGP Cgen: WoD Support Code=Audumla and BEM@Granite
+
+&FN_FORMAT SGP Cgen: WoD Support Code=setq(9,switch(strmatch(extract(%0,2,1,:),extract(%0,3,1,:)),1,extract(%0,3,1,:),([extract(%0,3,1,:)])%B[extract(%0,2,1,:)]))[ljust(capstr(extract(%0,1,1,:)),sub(24,strlen(%q9)))]%q9
+
+&FN_3LISTSCOL SGP Cgen: WoD Support Code=table(iter(lnum(max(words(%0,|),words(%1,|),words(%2,|)))[setq(0,sort(%0,a,|))][setq(1,sort(%1,a,|))][setq(2,sort(%2,a,|))],u(me/fn_format,extract(%q0,#@,1,|))|[u(me/fn_format,extract(%q1,#@,1,|))]|[u(me/fn_format,extract(%q2,#@,1,|))],,|),25,78,|,%b)
+
+&FN_3VCOL SGP Cgen: WoD Support Code=table(iter(lnum(setq(8,add(1,div(sub(words(%0,|),1),3)))%q8),u(me/fn_format,extract(%0,#@,1,|))|[u(me/fn_format,extract(%0,add(#@,%q8),1,|))]|[u(me/fn_format,extract(%0,add(#@,%q8,%q8),1,|))],,|),25,78,|,%b)
+
+&FN-DISPLAY-LIST SGP Cgen: WoD Support Code=%R[center(>%B[capstr(%0)]%B<,78,~)]%R[table(get(%1/list-%0),38,78,|,%b)]
+
+&FN-DISPLAY-LISTS SGP Cgen: WoD Support Code=iter(filter(fn-haslist,%1[setq(9,%0)]), [u(fn-display-list,##,%0)])
+
+&FN-HASLIST SGP Cgen: WoD Support Code=hasattr(%q9,list-%0)
+
+&FN-DISPLAY-STRINGS SGP Cgen: WoD Support Code=table(iter(%1,before(##,:):%B%B[capstr(get(%0/[after(##,:)]))],|,|),38,78,|,)
+
+&FN_COMMON-LISTS SGP Cgen: WoD Support Code=[u(fn-display-lists, %0,specialties merits flaws equipment)]
+
+@pemit me=Done!
+
+@pemit me=Now we will set functions that are WoD specific.
+
+&FN_ATTRIBUTES SGP Cgen: WoD Support Code=[center(%bAttributes%b,78,~)]%r[u(#140/fn_3vcol,iter(strength dexterity stamina charisma manipulation appearance perception intelligence wits,grab(get(%0/statlist-attributes),##:*,|),,|))]
+
+&FN_ABILITIES SGP Cgen: WoD Support Code=[center(%bAbilities%b,78,~)]%r[u(#140/FN_3LISTSCOL,sgptrim(get(%0/statlist-talents)|[get(%0/statlist-sectalents)],b,|),sgptrim(get(%0/statlist-skills)|[get(%0/statlist-secskills)],b,|),sgptrim(get(%0/statlist-knowledges)|[get(%0/statlist-secknowledges)],b,|))]
+
+&FN_HEALTH SGP Cgen: WoD Support Code=[center(%bHealth%b,78,~)]%r[setq(1,Bashing: [stat(name(*%0),bashing)]%B%B Lethal: [stat(name(*%0),lethal)]%B%BAgg Wounds : [stat(name(*%0),agg_wounds)])]  %q1[space(sub(32,strlen(%q1)))]%B%BBlood: [tempstat(name(*%0),blood)] / [stat(name(*%0),blood)][space(2)][switch(hasattr(*%0,REGNANT),1,{Blood bound to: [switch(isdbref(get(*%0/regnant)),1,[name(get(*%0/regnant))],0,[get(*%0/regnant)])]},0,)]
+
+&FN_DISCIPLINES SGP Cgen: WoD Support Code=%R[center(%bDisciplines%b,78,~)]%R[u(#140/fn_3vcol,sort(get(%0/statlist-disciplines),a,|))]
+
+&FN_THAUMPATHS SGP Cgen: WoD Support Code=%R[center(%bDThaumaturgy Paths%b,78,~)]%R[u(#140/fn_3vcol,sort(get(%0/statlist-thaumpaths),a,|))]
+
+&FN_SPHERES-REALMS SGP Cgen: WoD Support Code=[u(#140/fn_3vcol,sort(get(%0/statlist-spheres-realms),a,|))]
+
+&FN_ARCANOI SGP Cgen: WoD Support Code=%R[center(%bArcanoi%b,78,~)]%R[u(#140/fn_3vcol,sort(get(%0/statlist-arcanoi),a,|))]
+
+&FN_ARTS SGP Cgen: WoD Support Code=%R[center(%bArts%b,78,~)]%R[u(#140/fn_3vcol,sort(get(%0/statlist-arts),a,|))]
+
+&FN_NUMINA SGP Cgen: WoD Support Code=%R[center(%bNumina%b,78,~)]%R[u(#140/fn_3vcol,sort(get(%0/statlist-numinae),a,|))]
+
+&FN_SORPATHS SGP Cgen: WoD Support Code=%R[center(%bSorceror Paths%b,78,~)]%R[u(#140/fn_3vcol,sort(get(%0/statlist-sorpaths),a,|))]
+
+@@ &FN_IMMPOWERS SGP Cgen: WoD Support Code=%R[center(%bImmortal Powers%b,78,~)]%R[u(#140/fn_3vcol,sort(get(%0/statlist-immpowers),a,|))]
+
+@pemit me=Setting basic sheet support code for a WoD cgen.  Moment......
+
+&SHEET-MORTAL SGP Cgen: WoD Support Code=@pemit %1=[center(<%b%b[name(%0)]%b%b>,78,=)]%R[u(fn-display-strings,%0,Race:STRING-RACE|Date of Birth:STRING-BIRTHDAY|Nature:STRING-NATURE|Demeanor:STRING-DEMEANOR|Concept:STRING-CONCEPT|Occupation:STRING-OCCUPATION|XP:XP)]%r[u(#140/fn_attributes,*%0)]%r[u(#140/fn_abilities,*%0)]%r[center(%bMiscellaneous%b,78,~)]%r[u(#140/FN_3LISTSCOL,get(*%0/statlist-backgrounds),get(*%0/statlist-virtues),get(*%0/statlist-pools))]; @pemit %1=[u(#140/fn_common-lists,*%0)];@pemit %1=%r[u(#140/FN_HEALTH,%0)]%R[repeat(=,78)]
+
+&SHEET-VAMPIRE SGP Cgen: WoD Support Code=@pemit %1=[center(<%b%b[name(%0)]%b%b>,78,=)]%R[u(fn-display-strings,%0,Race:STRING-RACE|Clan:STRING-CLAN|Faction:STRING-FACTION|Birthday:STRING-BIRTHDAY|Nature:STRING-NATURE|Demeanor:STRING-DEMEANOR|Concept:STRING-CONCEPT|Sire:STRING-SIRE|Path:STRING-PATH|XP:XP)]%r[u(#140/fn_attributes,*%0)]%r[u(#140/fn_abilities,*%0)]%R[u(#140/FN_LORES,*%0)]%R[u(#140/FN_DISCIPLINES,*%0)][switch(hasattr(*%0,statlist-thaumpaths),1,%R[center(%bThaumaturgy Paths%b,78,~)]%R[u(#140/fn_3vcol,sort(get(*%0/statlist-thaumpaths),a,|))])]%r[center(%bMiscellaneous%b,78,~)]%r[u(#140/FN_3LISTSCOL,get(*%0/statlist-backgrounds),get(*%0/statlist-virtues),get(*%0/statlist-pools))];@pemit %1=[switch(hasattr(*%0,list-rituals),1,[u(fn-display-lists, %0,rituals)])];@pemit %1=[u(#140/fn_common-lists,*%0)];@pemit %1=[u(#140/FN_HEALTH,%0)]%R[repeat(=,78)]
+
+&SHEET-SHIFTER SGP Cgen: WoD Support Code=@pemit %1=[center(<%b%b[name(%0)]%b%b>,78,=)]%R[u(fn-display-strings,%0,Race:STRING-RACE|Type:STRING-TYPE|Breed:STRING-BREED|Tribe:STRING-TRIBE|Auspice:STRING-AUSPICE|Form:STRING-FORM|Date of Birth:STRING-BIRTHDAY|First Change:STRING-CHANGEDAY|Nature:STRING-NATURE|Demeanor:STRING-DEMEANOR|Concept:STRING-CONCEPT|Rank:STRING-RANK|Pack Totem:STRING-PACK TOTEM|XP:XP)]%r[u(#140/fn_attributes,*%0)]%r[u(#140/fn_abilities,*%0)]%R[u(#140/FN_LORES,*%0)]%r[center(%bMiscellaneous%b,78,~)]%r[u(#140/FN_3LISTSCOL,get(*%0/statlist-backgrounds),get(*%0/statlist-renown),get(*%0/statlist-pools))]; @pemit %1=[u(fn-display-lists, %0,gifts rites)];@pemit %1=[u(#140/fn_common-lists,*%0)];@pemit %1=[u(#140/FN_HEALTH,%0)]%R[repeat(=,78)]
+
+&SHEET-MAGE SGP Cgen: WoD Support Code=@pemit %1=[center(<%b%b[name(%0)]%b%b>,78,=)]%R[u(fn-display-strings,%0,Race:STRING-RACE|Tradition:STRING-TRADITION|Date of Birth:STRING-BIRTHDAY|Faction:STRING-FACTION|Nature:STRING-NATURE|Demeanor:STRING-DEMEANOR|Concept:STRING-CONCEPT|Essence:STRING-ESSENCE|Specialty:STRING-SPECIALTY|Cabal:STRING-CABAL|XP:XP)]%r[u(#140/fn_attributes,*%0)]%r[u(#140/fn_abilities,*%0)]%R[u(#140/FN_LORES,*%0)]%R[center(%bSpheres%b,78,~)]%R[u(#140/fn_spheres-realms,*%0)]%r[center(%bMiscellaneous%b,78,~)]%r[u(#140/FN_3LISTSCOL,get(*%0/statlist-backgrounds),get(*%0/statlist-virtues),get(*%0/statlist-pools))];@pemit %1=[u(#140/fn_common-lists,*%0)];@pemit %1=%r[u(#140/FN_HEALTH,%0)]%R[repeat(=,78)]
+
+&SHEET-WRAITH SGP Cgen: WoD Support Code=@pemit %1=[center(<%b%b[name(%0)]%b%b>,78,=)]%R[u(fn-display-strings,%0,Race:STRING-RACE|Type:STRING-TYPE|Faction:STRING-FACTION|Birthday:STRING-BIRTHDAY|Death Date:STRING-CHANGEDAY|Nature:STRING-NATURE|Demeanor:STRING-DEMEANOR|Concept:STRING-CONCEPT|XP:XP)]%r[u(#140/fn_attributes,*%0)]%r[u(#140/fn_abilities,*%0)]%R[u(#140/FN_LORES,*%0)][u(#140/fn_arcanoi,*%0)]%r[center(%bMiscellaneous%b,78,~)]%r[u(#140/FN_3LISTSCOL,get(*%0/statlist-backgrounds),get(*%0/statlist-shadowpools),get(*%0/statlist-pools))]; @pemit %1=[u(fn-display-lists, %0,passions fetters dark_passions thorns)];@pemit %1=[u(#140/fn_common-lists,*%0)];@pemit %1=%r[u(#140/FN_HEALTH,%0)]%R[repeat(=,78)]
+
+&SHEET-FAE SGP Cgen: WoD Support Code=@pemit %1=[center(<%b%b[name(%0)]%b%b>,78,=)]%R[u(fn-display-strings,%0,Race:STRING-RACE|Kith:STRING-KITH|Seeming:STRING-SEEMING|House:STRING-HOUSE|Date of Birth:STRING-BIRTHDAY|Date of Chrysalis:STRING-CHRYSALISDAY|Threshold:STRING-THRESHOLD|Concept:STRING-CONCEPT|Legacy:STRING-LEGACY|Unlegacy:STRING-UNLEGACY|Nature:STRING-NATURE|Demeanor:STRING-DEMEANOR|XP:XP)]%r[u(#140/fn_attributes,*%0)]%r[u(#140/fn_abilities,*%0)]%R[u(#140/FN_LORES,*%0)][u(#140/fn_arts,*%0)]%R[center(%bRealms%b,78,~)]%R[u(#140/fn_spheres-realms,*%0)]%r[center(%bMiscellaneous%b,78,~)]%r[u(#140/FN_3LISTSCOL,get(*%0/statlist-backgrounds),get(*%0/statlist-virtues),get(*%0/statlist-pools))]; @pemit %1=[u(#140/fn_common-lists,*%0)];@pemit %1=%r[u(#140/FN_HEALTH,%0)]%R[repeat(=,78)]
+
+&SHEET-MORTAL+ SGP Cgen: WoD Support Code=@pemit %1=[center(<%b%b[name(%0)]%b%b>,78,=)]%R[u(fn-display-strings,%0,Race:STRING-RACE|Type:STRING-TYPE|Occupation:STRING-OCCUPATION|Birthday:STRING-BIRTHDAY|Nature:STRING-NATURE|Demeanor:STRING-DEMEANOR|Concept:STRING-CONCEPT|XP:XP)]%r[u(#140/fn_attributes,*%0)]%r[u(#140/fn_abilities,*%0)]%R[u(#140/FN_LORES,*%0)][switch(hasattr(*%0,statlist-numinae),1,[u(#140/fn_numina,*%0)])][switch(hasattr(*%0,statlist-sorpaths),1,[u(#140/fn_sorpaths,*%0)])] [switch(hasattr(*%0,statlist-disciplines),1,%R[center(%bDisciplines%b,78,~)]%R[u(#140/fn_3vcol,sort(get(*%0/statlist-disciplines),a,|))])]%R[center(%bMiscellaneous%b,78,~)]%r[u(#140/FN_3LISTSCOL,get(*%0/statlist-backgrounds),get(*%0/statlist-virtues),get(*%0/statlist-pools))]; @pemit %1=[u(#140/fn_common-lists,*%0)];@pemit %1=%r[u(#140/FN_HEALTH,%0)]%R[repeat(=,78)]
+
+@@ &SHEET-IMMORTAL SGP Cgen: WoD Support Code=@pemit %1=[center(<%b%b[name(%0)]%b%b>,78,=)]%R[u(fn-display-strings,%0,Race:STRING-RACE|Concept:STRING-CONCEPT|Date of Birth:STRING-BIRTHDAY|Date of Death:STRING-DEATHDAY|Nature:STRING-NATURE|Demeanor:STRING-DEMEANOR|XP:XP)]%r[u(#140/fn_attributes,*%0)]%r[u(#140/fn_abilities,*%0)]%R[u(#140/FN_LORES,*%0)]%R[u(#140/FN_IMMPOWERS,*%0)]%r[center(%bMiscellaneous%b,78,~)]%r[u(#140/FN_3LISTSCOL,get(*%0/statlist-backgrounds),get(*%0/statlist-virtues),get(*%0/statlist-pools))]; @pemit %1=[u(#140/fn_common-lists,*%0)];@pemit %1=[u(#140/FN_HEALTH,%0)]%R[repeat(=,78)]
+
+@pemit me=Done!
+
+@pemit me=Setting flags.  Moment....
+
+@switch version()=TinyMUSH version 2.2.*,{@set SGP Cgen: WoD Support Code=INHERIT;@set SGP Cgen: WoD Support Code=COMMANDS;@set SGP Cgen: WoD Support Code=STOP;@set SGP Cgen: WoD Support Code=SAFE},PennMUSH*,{@set SGP Cgen: WoD Support Code=!NO_COMMAND;@set SGP Cgen: WoD Support Code=WIZARD},MUX*,{@set SGP Cgen: WoD Support Code=INHERIT;@set SGP Cgen: WoD Support Code=!NO_COMMAND;@set SGP Cgen: WoD Support Code=SAFE},RhostMUSH*,{@set SGP Cgen: WoD Support Code=INHERIT;@set SGP Cgen: WoD Support Code=!NOCOMMAND;@set SGP Cgen: WoD Support Code=SAFE;@set SGP Cgen: WoD Support Code=STOP}
+
+@pemit me=Done!
+
+@pemit me=Now we set the explicit references to the correct value.  If you and the various code objects aren't all in the same place, you will get errors.  Moment....
+
+@force me=@edit SGP Cgen: WoD Support/*=#140,[num(SGP Cgen: WoD Support)]
+@force me=@edit SGP - Main Globals/CMD-STATS=#140,[num(SGP Cgen: WoD Support)]
+@force me=@edit SGP - Staff Globals/CMD-STAT-STAFF=#140,[num(SGP Cgen: WoD Support)]
+
+@pemit me=Done!
+
+@pemit me=Setting up +version on the objects.  If you and the objects aren't in the same place, then you will get a bunch of errors.  Moment....
+
+@wait 0=&SGP-OBJECTS SGP - Global Parent Object=[get(SGP - Global Parent Object/SGP-OBJECTS)]|[num(SGP Cgen: WoD List Object)]
+@wait 0=&SGP-OBJECTS SGP - Global Parent Object=[get(SGP - Global Parent Object/SGP-OBJECTS)]|[num(SGP Cgen: WoD Support Code)]
+
++version/update [num(SGP Cgen: WoD List Object)]/version=BETA
++version/update [num(SGP Cgen: WoD List Object)]/Patchlevel=112401
++version/update [num(SGP Cgen: WoD List Object)]/History=Base
+
++version/update [num(SGP Cgen: WoD Support Code)]/version=BETA
++version/update [num(SGP Cgen: WoD Support Code)]/Patchlevel=112401
++version/update [num(SGP Cgen: WoD Support Code)]/History=Base
+
+@pemit me=Done!
+
+@pemit me=Creating the stats db.  This takes about a minute.
+
++create-db
+
+

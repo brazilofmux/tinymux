@@ -1,0 +1,172 @@
+SGP Cgen
+HOWTO-Character Sheets: 110901
+----------------------------------------------------------------------
+
+
+To begin making character sheets, you first have to define how many 
+different types of characters that you have and what kinds of data the 
+sheet needs to display for them.  There are two schools of thought as 
+to how to approach this task.  
+
+One is to create a large command that calls all the various strings, 
+stats, and list, using switches to determine what data is shown 
+according to some factor like race, character class, or some other 
+virtue.  This is likely advantageous on systems where there are very 
+few different types of characters or there isn't much difference 
+between the types of sheets needed to display. ie, if your game has 
+fighters, magicians, and clerics, and there isn't a lot of other 
+stuff to consider about the races that might be playing those classes, 
+then certainly one big command makes sense. 
+
+However, as the relationship between various factors involved in dis-
+playing a character sheet become more numerous or complex, it is 
+often better to create different sheets for different things.  A 
+fighter might be a dwarf or a human.  A magic user might be a vampire 
+or an elf.  Both situations can possibly require you to design dis-
+plays that take those variations into account.  
+
+((You will have to also account for these complexities and 
+restrictions in the way that you build the display conditions in the 
++stats commands themselves.  For instance, in some systems, a single 
+factor such as race determines the look and properties of character 
+sheet(WoD).  Others look at something like race and then have a 
+character class or faction affiliation to consider(Triniy or D&D).))
+
+For the purposes of discussion, this HOWTO covers the second method.
+
+The words of the day are 'simplicity' and 'readability'.  
+
+In general, readable code is best.  It is not always true, but in 
+most cases, it serves the coder and the user better at the end of the 
+day.  Large, clumsy, complicated switches in code are hard to debug, 
+and can also hit invokation and recursion limits -very- quickly.  
+Modular design is also very good for systems with multiple sheet 
+display attributes.  That said, you need to look at your system and 
+decide what is best.
+
+Now is the time that you look at the game system and play with a text 
+editor to design how your sheet will look overall.  Decide where you 
+want the strings, stats, and lists to appear, put the in order and 
+then sit back with it.  Sections of the sheet should be seperated by 
+headings that say what the section is.  Each of the major sections of 
+the sheet should be made so they live inside an @pemit statement, 
+strung together into a cohesive whole with semicolons ';'.  This way, 
+it is harder for the code to bottom out on one of the hard limits of 
+the server itself(4k/8k buffer limits, invokation, recursion, etc...).
+
+----------------------------------------------------------------------
+
+&CMD-STATS SGP Cgen: WoD Support Code=$+stats:@trigger 
+#140/SHEET-[get(%#/string-race)]=%#,%#
+
+The above is an example of a player-level sheet command.  The code 
+uses @trigger and the results of get(<enactor>/string-race) to choose 
+appropriate &SHEET- to display.  This code returns nothing if the race 
+attribute is unset(and note that it isn't a particulary great command 
+because it lacks adequate error checking).  Joe is a mortal and the 
+code finds and emits the contents of &SHEET-MORTAL back to him.  This 
+is but one way to deal with selecting which sheet to use and certainly 
+not the only one.  The staff command takes an argument, and provides 
+more error checking.   
+
+&SHEET-MORTAL SGP Cgen: WoD Support Code=@pemit %1=[center(<%b%b[name(%0)]%b%b>,78,=)]%R[u(fn-display-strings,%0,Race:STRING-RACE|Birthday:STRING-BIRTHDAY|Nature:STRING-NATURE|Demeanor:STRING-DEMEANOR|Concept:STRING-CONCEPT|XP:XP)]%r[u(#140/fn_attributes,*%0)]%r[u(#140/fn_abilities,*%0)]%r[center(%bMiscellaneous%b,78,~)]%r[u(#140/FN_3LISTSCOL,get(*%0/statlist-backgrounds),get(*%0/statlist-virtues),get(*%0/statlist-pools))]; @pemit %1=[u(#140/fn_common-lists,*%0)];@pemit %1=%r[u(#140/FN_HEALTH,%0)]%R[repeat(=,78)]
+
+The code @pemit to %1, not %0 or %# in this case.  Through the magic 
+of MUSHCode, %1 becomes %# in the command itself.  Isn't that nice and 
+confusing?  Now, look at the section from the beginning of the first 
+@pemit to the first ';'.   This part of the code displays the name of 
+the character, centered in the middle of a line 78 spaces long, padded 
+with '='.  It is then followed by invokation of FN-DISPLAY-STRINGS to 
+call a list of &STRING attributes on the character object as specified. 
+FN-DISPLAY-STRINGS creates a two column display as seen below.  It is 
+more than possible to create string manipulation functions that use as 
+few as 1 and 3 or more columns of display.
+
+Example:
+
+==================================<  Joe  >===================================
+Race:  Mortal                          Birthday:  Jan 1, 2000                       
+Nature:  Loner                         Demeanor:  Crabby                       
+Concept:  Computer Geek                XP:                                   
+
+
+The rest of the first @pemit uses two special utility functions, 
+FN_ATTRIBUTES and FN_ABILITIES.  FN_ATTRIBUTES creates the header line 
+and then uses the more general FN_3VCOL to produce the display from a 
+single list of stats.  It doesn't actually pick the order of how things 
+are displayed, but lets the order of the stats on the attribute decide.  
+FN_ABILITIES uses FN_3LISTSCOL to produce an alphabetically sorted, 3 
+column listing based on the contents of as many as 6 attributes on the 
+character object.   
+
+Example:
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Attributes ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Strength               2  Charisma               2  Perception             2 
+Dexterity              2  Manipulation           2  Intelligence           2 
+Stamina                2  Appearance             2  Wits                   4 
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Abilities ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Acting                 2  Animal ken             2  Bureaucracy            2 
+Alertness              2  Drive                  2  Computer               8 
+Athletics              2  Etiquette              2  Finance                4 
+Brawl                  2                            Investigation          2 
+Dodge                  2                            Science                3 
+
+
+Finally, the first section is completed with the making of a new 
+header line and a listing of miscellaneous stats using FN_3LISTSCOL.
+
+Example:
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Miscellaneous ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Contacts               4  Conscience             4  Blood                 10 
+Fame                   2  Courage                3  Willpower              7 
+Resources              5  
+
+
+The second @pemit calls the utility function, FN_COMMON-LISTS, and 
+checks the character object for specialties, merits, flaws, equip-
+ment.  Joe has Merits and Flaws, but no specialties or equipment that 
+needs to be listed on his sheet.  FN_COMMON-LISTS can be customized by 
+changing the content and the order of the listtypes in the code.                                                  
+
+Example:
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Merits ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+stuff                                  and stuff                              
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Flaws ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+stuffed                               
+
+The last @pemit calls another utility function called FN_HEALTH, that 
+lists out wounds, bloodpool and tracks if someone is blood bound to a 
+vampire or not.  It ends with a line of '=' 78 characters long
+
+Example:
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Health ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Wounds / Agg Wounds : 0 / 0     Blood: 10 / 10     
+==============================================================================
+
+The value of specialized utility functions can't be overstated.  In 
+cases where you have multiple sheets that have sections that will be 
+identical, being able to display those sections in a less spammy way 
+is useful, probably vital to the maintenance of both the code and your 
+sanity.  The other advantage of creating such specialized functions is 
+that if you want to do a mass change to the way a part of the display 
+looks, you can change it in one place and have it take effect for all 
+your different sheet types.
+
+The &SHEET is this case is very simple, and a mix of both explicit 
+function calls, and more specialitize utility functions.  In truth, a 
+sheet the size of Joe's could be displayed in a single @pemit 
+statement.  However, because other sheets are much more complex, and 
+have the potential to have a lot more information on them, we broke the 
+data into multiple statements to avoid hitting server limits.  Other 
+races in this genre(WoD), have a lot more stuff on them, so they are 
+broken up even further.
+
+The best thing to do is to study the way the code in other libraries 
+works, as well as read the cgen helpfiles on various topics.
+
+
+

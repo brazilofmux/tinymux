@@ -1,0 +1,310 @@
+@@      SGP CGEN V0.? VERY BETA - 24 November 2001 BUILD 
+@@
+@@ ----  SGP - The So Very Beta Cgen Installer  ----
+@@
+@@      NOTE 1: Due to the way that MUSH and MUX operate, you need to have 
+@@      #1 @admin player_queue_limit=1000 and then @restart the MUSH after
+@@      so that the file quotes cleanly.  It is recommended that if using 
+@@      TinyFugue, that you /quote with a 1 second delay between commands,
+@@      so that the queue has time to catch up before it becomes overloaded.
+@@      NOTE 2: Make sure that you either allow wizards to use @function 
+@@      and @attribute or be prepared to set up a long @startup on #1.
+@@      NOTE 3: Either quote these objects in the master room or @tel them  
+@@      to that location after they are loaded into your game.
+@@      NOTE 4: This code is compatible with TinyMUSH 2.2.4U1 and RhostMUSH, 
+@@      with the addition of a softcoded table() as found in Penn.  It worked 
+@@      on MUX and passed basic tests on PennMUSH.  There may be other problems  
+@@      problems on PennMUSH, so report bugs as you find them. TM3?  Hell if I 
+@@      know.
+@@      NOTE 5: This is file quotes the engine -only-.  Functions to generate 
+@@      sheet code are part of the game system library.  Walkthrough rooms are 
+@@      not within the scope of this file.  
+@@      NOTE 6: If you are using this system to replace an existing one, you 
+@@      will need to find a competent coder and bribe them to go through the 
+@@      process of converting all of your old stats.  This is hard work, so 
+@@      don't treat them badly for their trouble.  We DO suggest that you take 
+@@      a backup of the DB before you try this part. MAKE SURE THAT SAID CODER 
+@@      IS EMOTIONALLY STABLE AND COMPETENT, OR YOUR CONVERSION MAY END BADLY. 
+@@      Audumla's Axiom reads "Psychocoder == psychopath.  Get it?"
+@@      NOTE 7: It does have +help.  It may need updates.  
+@@
+@@      ----------
+@@
+@@      Bugs:
+@@
+@@      The SGP team has gone to some trouble to knock the bugs out of this 
+@@      puppy.  INVARIABLY, there are probably one or two still left, so 
+@@      report them and offer patches if you fix them before we get to them.  
+@@      Makes everything better for everyone. :)
+@@
+@@      ----------
+@@
+@@      CREDITS:
+@@
+@@      BEM@Sandbox/Granite, copyright 2001.  He worked hard on it for Granite: 
+@@      NH by Night MUSH.  He made it and then just gave it away, so keep the 
+@@      credits on the code when you use it.  The folks at Bloody Roses helped 
+@@      a lot with final debugging, as did Jeff@Sandbox.  Thanks go out to the 
+@@      remaining members of the SGP Battlegroup* for putting up with the 
+@@      pre-release neurosis. ;)
+@@
+@@      * (The SGP Battlegroup: BEM, Audumla, Jeff, Hilikiradi, Brazil, Talek, 
+@@      Raevnos, Ronan, and Ashen-Shugar, in a reprise of his role as 'The Dark 
+@@      One'. Javelin@M*U*S*H returned for a cameo as 'The Angel of Light and
+@@      Goodness'.)
+@@
+@@
+@@      This installer creates 5 objects as of this posting.  2 of them are 
+@@      intentionally blank.  ALL of them are needed.  Utility functions for 
+@@      creating sheet code will be forthcoming.
+@@
+@@       ----------
+@@
+@@       Recent Changes: 
+@@
+@@       - Added SGPTRIM() as a global function to deal with the syntax difference 
+@@       between PennMUSH and the rest in trim().  Changed code to use SGPTRIM().
+@@       - Added SGPSQUISH() as a global function, because MUX only had a single 
+@@       argument SQUISH().  Changed code to use SGPTRIM().  (24NOV01)
+@@       - Corrected problems with +setstat, +settemp, and +stats that were causing 
+@@       problems with PennMUSH.
+@@       - +setstring and +setlist were broken.  All better now. (24NOV01)
+@@       - WROTE THE HELPFILES! (9NOV01)
+@@       - UPDATED THE HELPFILES! (24NOV01)
+@@       - Tweaked the Installer file so that flags are being set correctly on all 
+@@       platforms. (9NOV01)
+@@       - Removed the testing library and support code so that the engine is ready 
+@@       for the creation and use of other libraries. (9NOV01)
+@@
+@@       ----------  
+@@
+@@       To do List:
+@@       - +create-db should set an update time attribute, so user can tell when the 
+@@       db was last updated
+@@       - have list manipulation code set a dirty flag so that user knows if there 
+@@       have been any additions to the list object affecting the db
+@@       - change +setstring so that value checking is optional, check content 
+@@       against list, if there is a list. **DONE
+@@       - add access control to command objects
+@@       - add generic +showstats, +showstrings, and +showlists commands (example 
+@@       code for +stats command)
+@@       - change command locks to be more particular about inherited powers
+@@       - add code to the installer to handle the @edits for the support code 
+@@       where explicit dbrefs are required. **DONE
+@@       - change explicit parenting to use v(db) references in the code for better 
+@@       efficiency in Penn.
+@@       - seperate the engine proper from the libraries as much as humanly possible.  
+@@       i.e, put support code for sheet generation with the engine and the sheet 
+@@       attributes and system-specific code with the library.  **DONE 
+@@       - combine support code with other objects where it is sensible and won't 
+@@       interfere with function.
+@@       - make sure that the global functions are being triggered properly.  **DONE
+@@       - move SGPTRIM to the SGP global functions object.  **DONE
+@@       - have db creation and altering commands look for a list of authorized 
+@@       users, whether an attribute or isstaff(), ostaff(), or cgenstaff().
+@@       - fix the uselock problem in Penn.
+@@       - add +version information.  **DONE
+@@       - add +setspecialty command.  **Should be a local hack. 
+@@
+@@       ----------
+@@
+@@       To install this code:
+@@
+@@       1. Make sure that @function and @attribute are both usable by WIZARD.
+@@       2.  From a WIZARD or equivalent level character, quote the file into 
+@@       the game.  You need to know how your client works for this part.
+@@       3.  Install the preferred library for your game system.
+@@       4.  @edit the Support Code, replacing all occurances of #140 with the 
+@@       dbref of the object itself.  The installation will be useless otherwise.
+@@       4.  Run +create-db
+@@       5.  Stat a test character and see what happens. 
+@@
+
+@pemit me=Creating the Cgen objects....
+
+@create SGP Cgen: Stat Commands
+@create SGP Cgen: Stat Parent
+@create SGP Cgen: DB Commands
+@create SGP Cgen: List Object
+@create SGP Cgen: Stat DB
+@create SGP Cgen: Support Code
+
+@pemit me=Done!
+
+@pemit me=Adding SGPTRIM and SGPSQUISH to the Global Functions object.  You MUST have these functions in order for the code to work.  Moment....
+
+&FN_SGPTRIM SGP - Global Functions=[trim(%0,switch(trim(--xx,b,-),--xx,%2,%1),switch(trim(--xx,b,-),--xx,%1,%2))]
+
+&FN_SGPSQUISH SGP - Global Functions=[edit(edit(squish(edit(edit(%0,%b,~),%1,%b)),%b,%1),~,%b)]
+
+@pemit me=Done!
+
+@pemit me=Loading the statting commands code.  Moment....
+
+&CMD-MATCH SGP Cgen: Stat Commands=$+match *:@pemit %#=%T[u(v(parent)/fn-matchstat,%0)]
+
+&CMD-MATCH-FIRST SGP Cgen: Stat Commands=$+matchfirst *:@pemit %#=%T[u(v(parent)/fn-match-first,%0)]
+
+&CMD-MATCHES SGP Cgen: Stat Commands=$+matches *:@pemit %#=Matches: [iter(get(v(db-object)/STAT-[mid(%0,0,1)]),switch(strmatch(##,%0*),1,%R%T[before(##,/)]),|)]
+
+&CMD-STATTYPE SGP Cgen: Stat Commands=$+stattype *:@pemit %#=u(v(parent)/fn-stattype,%0)
+
+&CMD-SETTEMP SGP Cgen: Stat Commands=$+settemp */*=*:@switch/first 0=and(eq(%2,trunc(%2)),isnum(edit(%2,+,-))),{@pemit %#=That is not a good number.},isdbref(num(*%0)),{@pemit %#=That is not a player!},not(strmatch(NOT A STAT,[setq(1,u(v(parent)/fn-stattype,[setq(2,lcstr(%1))]%q2))]%q1)),{@pemit %#=That is not a proper stat.},{&[setq(3,match(get(*%0/statlist-%q1),%q2*,|))][setq(5,switch(%q3,0,%q2:0:0,extract(get(*%0/statlist-%q1),%q3,1,|)))][setq(4,extract(%q5,3,1,:))][setq(4,switch(sgptrim(%2),-*,add(%2,%q4),+*,add(%2,%q4),%2))][setq(5,replace(%q5,3,%q4,:))]statlist-%q1 *%0=switch(%q3,0,sgptrim(get(*%0/statlist-%q1)|%q5,b,|),replace(get(*%0/statlist-%q1),%q3,%q5,|)); @pemit %#=Done. Temporary %q2 [switch(sgptrim(%2),+*,raised to,-*,lowered to,set to)] %q4.}
+
+&CMD-SETSTAT SGP Cgen: Stat Commands=$+setstat */*=*:@switch/first 0=and(eq(%2,trunc(%2)),isnum(edit(%2,+,-))),{@pemit %#=That is not a good number.},isdbref(num(*%0)),{@pemit %#=That is not a player!},not(strmatch(NOT A STAT,[setq(1,u(v(parent)/fn-stattype,[setq(2,lcstr(%1))]%q2))]%q1)),{@pemit %#=That is not a proper stat.},{&[setq(3,match(get(*%0/statlist-%q1),%q2*,|))][setq(4,switch(%q3,0,0,extract(extract(get(*%0/statlist-%q1),%q3,1,|),2,1,:)))][setq(4,switch(sgptrim(%2),-*,add(%2,%q4),+*,add(%2,%q4),%2))][setq(5,%q2:%q4:%q4)]statlist-%q1 *%0=switch(%q3,0,sgptrim(get(*%0/statlist-%q1)|%q5,b,|),replace(get(*%0/statlist-%q1),%q3,%q5,|)); @pemit %#=Done. Permanent %q2 [switch(sgptrim(%2),+*,raised to,-*,lowered to,set to)] %q4.}
+
+&CMD-SETSTRING SGP Cgen: Stat Commands=$+setstring */*=*:@switch/first 1=and(hasattr(v(LIST-OBJECT),LIST-%1),not(match(get(v(LIST-OBJECT)/LIST-%1),%2,|))), {@pemit %#=That is not a string element.}, [not(match(get(v(LIST-OBJECT)/LIST-STRINGS),%1,|))], {@pemit %#=That is not a string.}, match(num(*%0),#-1), {@pemit %#=That is not a player.},{&string-%1 *%0=%2; @pemit %#=Done. [capstr(%0)]'s %1 is [switch(hasattr(*%0,string-%1),0,removed.,set to %2.)]}
+
+&CMD-REMOVESTAT SGP Cgen: Stat Commands=$+removestat */*:@switch [setq(1,switch(1,match(num(*%0),#-1),NOPLAYER,edit(u(v(parent)/fn-stattype,%1),sec,)))]%q1=NOPLAYER,@pemit %#=That is not a player.,NOT A STAT,@pemit %#=That is not a stat.,{&statlist-%q1 *%0=remove(get(*%0/statlist-%q1),extract(get(*%0/statlist-%q1),match(get(*%0/statlist-%q1),%1:*,|),1,|),|);@pemit %#=Done. [capstr(%1)] removed from [capstr(%0)].}
+
+&CMD-SETLIST SGP Cgen: Stat Commands=$+setlist */*=*:@switch/first [setq(2,switch(mid(%2,0,1),+,delete(%2,0,1),-,delete(%2,0,1),%2))][setq(1,switch(1,match(num(*%0),#-1),NOPLAYER,not(match(get(v(LIST-OBJECT)/LIST-LISTS),%1,|)),NOT A LIST,%1))]%q1=*NOT A LIST*,@pemit %#=That is not a list.,*NOPLAYER*,@pemit %#=That is not a player.,{&list-%1 *%0=[switch(mid(%2,0,1),+,sgpsquish(sgptrim([get(*%0/list-%1)]|%q2,,|),|),-,sgpsquish(sgptrim(edit(get(*%0/list-%1),%q2,),,|),|),%q2)];@pemit %#=Done. '[capstr(%q2)]' has been [switch(mid(%2,0,1),+,added to,-,removed from,set to)] [capstr(%0)]'s %1.}
+
+&CREDITS SGP Cgen: Stat Commands=BEM@Granite
+
+&CAN_USE SGP Cgen: Stat Commands=[isstaff(owner(%#))]
+
+@lock/use SGP Cgen: Stat Commands=CAN_USE/1
+
+@switch version()=TinyMUSH version 2.2.*,{@set SGP Cgen: Stat Commands=INHERIT;@set SGP Cgen: Stat Commands=COMMANDS;@set SGP Cgen: Stat Commands=STOP;@set SGP Cgen: Stat Commands=SAFE},PennMUSH*,{@set SGP Cgen: Stat Commands=!NO_COMMAND;@set SGP Cgen: Stat Commands=WIZARD},MUX*,{@set SGP Cgen: Stat Commands=INHERIT;@set SGP Cgen: Stat Commands=!NO_COMMAND;@set SGP Cgen: Stat Commands=SAFE},RhostMUSH*,{@set SGP Cgen: Stat Commands=INHERIT;@set SGP Cgen: Stat Commands=!NOCOMMAND;@set SGP Cgen: Stat Commands=SAFE;@set SGP Cgen: Stat Commands=STOP}
+
+@pemit me=Loading the parent object code.  Moment....
+
+&FN-MATCHSTAT SGP Cgen: Stat Parent=switch(words(matchall(get(v(db-object)/STAT-[mid(%0,0,1)]),%0*,|)),0,#NO MATCH#,1,before(extract(get(v(db-object)/STAT-[mid(%0,0,1)]),match(get(v(db-object)/STAT-[mid(%0,0,1)]),%0*,|),1,|),/),#MULTIPLE MATCH#)
+
+&FN-MATCH-FIRST SGP Cgen: Stat Parent=switch(words(match(get(v(db-object)/STAT-[mid(%0,0,1)]),%0*,|)),0,#NO MATCH#,before(extract(get(v(db-object)/STAT-[mid(%0,0,1)]),match(get(v(db-object)/STAT-[mid(%0,0,1)]),%0*,|),1,|),/))
+
+&ADD-STAT SGP Cgen: Stat Parent=@dolist/delim | [get(u(LIST-OBJECT)/LIST-%0)]=&STAT-[setq(0,mid(##,0,1))]%q0 [u(db-object)]=[sort(sgptrim(get(u(db-object)/STAT-%q0)|##/%0,b,|),a,|)]
+
+@@ $0 is list of stat lists, %1 is the player that executed the command
+
+&ADD-STATS SGP Cgen: Stat Parent=@trigger me/add-stat=first(%0,|); @pemit %1= Processing [first(%0,|)]; @switch words(rest(%0,|))=0, {@pemit %1=Stat database creation is complete}, {@trigger me/add-stats=rest(%0,|), %1}
+
+&FN-STATTYPE-LOCAL SGP Cgen: Stat Parent=setq(0,grab(get(v(db-object)/STAT-[mid(%0,0,1)]),%0/*,|))[switch(words(%q0),0,NOT A STAT,after(%q0,/))]
+
+&FN-STATTYPE SGP Cgen: Stat Parent=ulocal(#STAT-PARENT/FN-STATTYPE-LOCAL,%0)
+
+&FN-STAT-LOCAL SGP Cgen: Stat Parent=setq(9,get(*%0/STATLIST-[stattype(%1)]))[setq(9,extract(%q9,match(%q9, %1:*,|),1,|))][switch(%q9,,0,extract(%q9,2,1,:))]
+
+&FN-STAT SGP Cgen: Stat Parent=ulocal(#STAT-PARENT/FN-STAT-LOCAL,%0,%1)
+
+&FN-TEMPSTAT-LOCAL SGP Cgen: Stat Parent=setq(0,get(*%0/STATLIST-[stattype(%1)]))[setq(0,extract(%q0,match(%q0, %1:*,|),1,|))][switch(%q0,,0,extract(%q0,3,1,:))]
+
+&FN-TEMPSTAT SGP Cgen: Stat Parent=ulocal(#STAT-PARENT/FN-TEMPSTAT-LOCAL,%0,%1)
+
+&FN-STATLIST SGP Cgen: Stat Parent=get(get(#STAT-PARENT/list-object)/LIST-%0)
+
+&FN-STRING SGP Cgen: Stat Parent=get(%0/STRING-%1)
+
+@@ %0=list, %1=list delimiter
+
+&FN-AUTO-COL SGP Cgen: Stat Parent=[setq(0,fold(max_length,%0,0,%1))][setq(1,div(76,add(%q0,1)))][setq(2,sub(div(76,%q1),1))][setq(3,add(1,div(sub(words(%0,%1),1),%q1)))][iter(lnum(%q3),%r%b%b[iter(lnum(%q1),ljust(index(%0,%1,setq(4,add(1,%q4))%q4,1),%q2))])]
+
+&MAX_LENGTH SGP Cgen: Stat Parent=max(%0,strlen(%1))
+
+&GLOBAL-FUNCTIONS SGP Cgen: Stat Parent=STAT TEMPSTAT STATTYPE STATLIST STRING 
+
+&CREDITS SGP Cgen: Stat Parent=BEM@Granite
+
+@switch version()=PennMUSH*,{@STARTUP SGP Cgen: Stat Parent=@dolist v(GLOBAL-FUNCTIONS)=@function ##=me,FN-##},{@Startup SGP Cgen: Stat Parent=@dolist v(GLOBAL-FUNCTIONS)=@function ##=me/FN-##}
+
+@switch version()=PennMUSH*,{@set SGP Cgen: Stat Parent=WIZARD},{@set SGP Cgen: Stat Parent=INHERIT}
+
+@pemit me=Adding database management commands.  Moment....
+
+@@ Update the database object based on current list object
+@@    - set a data attribute so admins can see how recently the db was updated 
+
+&CMD-CREATE-DB SGP Cgen: DB Commands=$+create-db:@wipe [v(db-object)]/STAT-*; @trigger v(parent)/add-stats=get(v(LIST-OBJECT)/LIST-STATS), %#
+
+@@ +statlist/addstat <list>/<stat>
+@@    check for conflicts in DB
+
+&CMD-STATLIST-ADDSTAT SGP Cgen: DB Commands=$+statlist/addstat */*: @switch/first 0= match(get(v(LIST-OBJECT)/LIST-STATS),%0,|),{@pemit %#=Sorry, the list '%0' does not exist},strmatch(setq(0,u(v(parent)/fn-stattype,%1))%q0,NOT A STAT),{@pemit %#=Sorry, '%1' already exists in the '%q0' stat list},{&LIST-%0 [v(list-object)]=sort(sgptrim(lcstr(%1)|[get(v(list-object)/LIST-%0)],|),a,|); @pemit %#= The stat '%1' has been added to the '%0' stat list.}
+
+@@ +statlist/deletestat <list>/<stat> @@    remove stat from list if it exists, error message if it doesn't
+
+&CMD-STATLIST-DELETESTAT SGP Cgen: DB Commands=$+statlist/deletestat */*: @switch/first 0= match(get(v(LIST-OBJECT)/LIST-STATS),%0,|),{@pemit %#=Sorry, the list '%0' does not exist},setq(0,match(get(v(LIST-OBJECT)/LIST-%0),%1,|))%q0, {@pemit %#=Sorry, the stat '%1' does not exist in list '%0'.},{&LIST-%0 [v(LIST-OBJECT)]=remove(get(v(LIST-OBJECT)/LIST-%0),%1,|); @pemit %#='%1' has been removed from list '%0'}
+
+@@ +statlist/addlist <list>
+@@    check for conflicts in statlist and list object attribute name
+@@    list name should be a single word
+
+&CMD-STATLIST-ADDLIST SGP Cgen: DB Commands=$+statlist/addlist *: @switch/first 0=eq(1,words(%0)), {@pemit %#=List name has to be a single word.}, not(match(get(v(LIST-OBJECT)/LIST-STATS),%0,|)), {@pemit %#=The list '%0' already exists.}, not(hasattr(v(list-object),LIST-%0)), {@pemit %#=The name '%0' is already in use on the list object.}, gt(32,add(strlen(%0),strlen(LIST-))), {@pemit %#=The list name '%0' is too long.}, {&LIST-STATS [v(LIST-OBJECT)]=sort(sgptrim(get(v(LIST-OBJECT)/LIST-STATS)|[lcstr(%0)],b,|),a,|); @pemit %#='%0' has been added to the list of stat lists.}
+
+@@ +statlist/showlists
+@@    display the names of stat lists
+
+&CMD-STATLIST-SHOWLISTS SGP Cgen: DB Commands=$+statlist/showlists: @pemit %#=Stat lists: [u(v(parent)/FN-AUTO-COL,iter(get(v(LIST-OBJECT)/LIST-STATS), ##,|),%B)]
+
+@@ +statlist/showstats <list>
+@@    list all the stats that belong to <list>
+
+&CMD-STATLIST-SHOWSTATS SGP Cgen: DB Commands=$+statlist/showstats *: @switch/first 0=match(get(v(LIST-OBJECT)/LIST-STATS), %0,|), @pemit %#='%0' is not a valid stat list, @pemit %#=Stats in %0: [u(v(parent)/FN-AUTO-COL,get(v(LIST-OBJECT)/LIST-%0),|)]
+
+@@ +stathide
+@@ set all statlist attributes to wizard hidden
+
+&CMD-STATHIDE SGP Cgen: DB Commands=$+stathide: @dolist setq(0,[iter(get(v(LIST-OBJECT)/LIST-STATS),STATLIST-[ucstr(edit(##,%B,_))],|)] [iter(get(v(LIST-OBJECT)/LIST-STRINGS),STRING-[ucstr(edit(##,%B,_))],|)] [iter(get(v(LIST-OBJECT)/LIST-LISTS),LIST-[ucstr(edit(##,%B,_))],|)])%q0=@attribute/access STATLIST-##=wizard hidden; @pemit %#=Ok.  The following attributes have been set wizard hidden:%R%T%q0
+
+&CAN_USE SGP Cgen: DB Commands=[hasflag(owner(%#),WIZARD)]
+
+&CREDITS SGP Cgen: DB Commands=BEM@Granite
+
+@lock/use SGP Cgen: Stat Commands=CAN_USE/1
+
+@pemit me=Setting the flags.  Gods help us all....
+
+@switch version()=TinyMUSH version 2.2.*,{@set SGP Cgen: DB Commands=INHERIT;@set SGP Cgen: DB Commands=COMMANDS;@set SGP Cgen: DB Commands=STOP;@set SGP Cgen: DB Commands=SAFE},PennMUSH*,{@set SGP Cgen: DB Commands=!NO_COMMAND;@set SGP Cgen: DB Commands=WIZARD},MUX*,{@set SGP Cgen: DB Commands=INHERIT;@set SGP Cgen: DB Commands=!NO_COMMAND;@set SGP Cgen: DB Commands=SAFE},RhostMUSH*,{@set SGP Cgen: DB Commands=INHERIT;@set SGP Cgen: DB Commands=!NOCOMMAND;@set SGP Cgen: DB Commands=SAFE;@set SGP Cgen: DB Commands=STOP}
+
+@pemit me=Setting reference variables between objects.  Moment....
+
+@force me=&PARENT SGP Cgen: Stat Commands=[num(SGP Cgen: Stat Parent)]
+@force me=&DB-OBJECT SGP Cgen: Stat Commands=[num(Stat DB)]
+@force me=&LIST-OBJECT SGP Cgen: Stat Commands=[num(List Object)]
+
+@force me=&PARENT SGP Cgen: DB Commands=[num(SGP Cgen: Stat Parent)]
+@force me=&DB-OBJECT SGP Cgen: DB Commands=[num(Stat DB)]
+@force me=&LIST-OBJECT SGP Cgen: DB Commands=[num(List Object)]
+
+@force me=&DB-OBJECT SGP Cgen: Stat Parent=[num(Stat DB)]
+@force me=&LIST-OBJECT SGP Cgen: Stat Parent=[num(List Object)]
+
+@force me=&PARENT SGP Cgen: DB Commands=[num(SGP Cgen: Stat Parent)]
+@force me=&DB-OBJECT SGP Cgen: DB Commands=[num(Stat DB)]
+@force me=&LIST-OBJECT SGP Cgen: DB Commands=[num(List Object)]
+
+@pemit me=Setting explicit references to self to the correct value.  Moment....
+
+@force me=@edit SGP Cgen: Stat Parent/*=#STAT-PARENT,[num(SGP Cgen: Stat Parent)]
+
+@pemit me=Triggering the creation of the global functions.  Moment....
+
+@trigger SGP Cgen: Stat Parent/startup
+
+@pemit me=NOTE: You have to have the stats set on the list object for any of this to mean anything.  Since the helpfiles for this aren't anything like done, you'll have to ask.  Better, you can volunteer to write them and post a webpage explaining how you go there.%R%ROh, and you have to write code to display sheet info for your game system.%R%RWe told you this was very beta, right? :) 
+
+@wait 0=&SGP-OBJECTS SGP - Global Parent Object=[get(SGP - Global Parent Object/SGP-OBJECTS)]|[num(SGP Cgen: Stat Commands)]
+@wait 0=&SGP-OBJECTS SGP - Global Parent Object=[get(SGP - Global Parent Object/SGP-OBJECTS)]|[num(SGP Cgen: Stat Parent)]
+@wait 0=&SGP-OBJECTS SGP - Global Parent Object=[get(SGP - Global Parent Object/SGP-OBJECTS)]|[num(SGP Cgen: DB Commands)]
+
+
++version/update [num(SGP Cgen: Stat Commands)]/version=BETA
++version/update [num(SGP Cgen: Stat Commands)]/Patchlevel=112401
++version/update [num(SGP Cgen: Stat Commands)]/History=Base
+
++version/update [num(SGP Cgen: Stat Parent)]/version=BETA
++version/update [num(SGP Cgen: Stat Parent)]/Patchlevel=112401
++version/update [num(SGP Cgen: Stat Parent)]/History=Base
+
++version/update [num(SGP Cgen: DB Commands)]/version=BETA
++version/update [num(SGP Cgen: DB Commands)]/Patchlevel=112401
++version/update [num(SGP Cgen: DB Commands)]/History=Base
+
+
+drop SGP Cgen: Stat Commands
+drop SGP Cgen: Stat Parent
+drop SGP Cgen: DB Commands
+drop SGP Cgen: List Object
+drop SGP Cgen: Stat DB
+drop SGP Cgen: Support Code
+

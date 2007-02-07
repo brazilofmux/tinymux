@@ -1,0 +1,35 @@
+& @crontab
+------------------------------------------------------------------------------
+@crontab:
+ 
+  SYNTAX: @crontab
+          @cron/add
+          @cron/add <job name>=<time>/<object>|<attribute>
+          @cron/del <job name>
+
+  Wizard Only
+ 
+  <time> is in the format: [month]|[date]|[day of week]|[hour]|[minute]
+  <object> must be a dbref
+  [month] and [day of week] are alpha entries (Jan, Mar, Tue, Sat, etc), not 
+  numeric entries. Case is unimportant (code lcstr's everything before running 
+  it through).
+  
+  Multiple entries inside any crontab category are space separated. (BE VERY 
+  CAREFUL WHEN LEAVING THE LAST 2 ENTRIES BLANK! - ANY BLANK MATCHES 
+  EVERYTHING!)
+
+  @cron/add includes error checking and will not allow invalid month or day of 
+  week entries, or invalid dbrefs (including non-dbrefs like *jeff).
+   
+  Examples:
+    |13|Fri|12|00                    - Every Friday the 13th, at noon.
+    Jan|1||00|00                     - At the beginning of any year (midnight, 
+                                       Jan 1).
+    ||||00                           - At the beginning of every hour.
+    ||||00 10 20 30 40 50            - Every 10 minutes.
+    Jan Mar May Jul Aug Oct Dec|1||| - Every minute of the 1st day of any 
+                                       month listed. 
+                                           
+------------------------------------------------------------------------------
+
