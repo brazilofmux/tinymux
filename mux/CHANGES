@@ -274,6 +274,7 @@ Bug Fixes:
  -- Fixed loading of coins from flatfile (i.e., across @restart for
     memory-based) (Issue 224).
  -- Fix Firan build break in fun_trigger() (Issue 288).
+ -- Fixed +glance softcode in SGP minimal database (Issue 291).
 
 
 Performance Enhancements:
