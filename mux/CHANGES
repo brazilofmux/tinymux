@@ -302,6 +302,7 @@ Bug Fixes:
  -- Fixed non-player object's ability to hold coins.
  -- Fixed loading of coins from flatfile (i.e., across @restart for
     memory-based) (Issue 224).
+ -- Fixed +glance softcode in SGP minimal database (Issue 291).
 
 
 Performance Enhancements:
