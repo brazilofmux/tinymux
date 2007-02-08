@@ -2670,33 +2670,45 @@ FUNCTION(fun_shuffle)
         return;
     }
 
-    char **words = NULL;
+    mux_string *sIn = new mux_string(fargs[0]);
+    mux_words *words = NULL;
     try
     {
-        words = new char *[LBUF_SIZE/2];
+        words = new mux_words(*sIn);
     }
     catch (...)
     {
         ; // Nothing.
     }
+    ISOUTOFMEMORY(words);
 
-    if (NULL != words)
+    LBUF_OFFSET n = words->find_Words(sep.str);
+    mux_string *sOut = new mux_string;
+    bool bFirst = true;
+    LBUF_OFFSET i = 0, iStart = 0, nLen = 0;
+
+    while (n > 0)
     {
-        int n = list2arr(words, LBUF_SIZE/2, fargs[0], &sep);
-
-        for (int i = 0; i < n-1; i++)
+        if (bFirst)
         {
-            int j = RandomINT32(i, n-1);
-
-            // Swap words[i] with words[j]
-            //
-            char *temp = words[i];
-            words[i] = words[j];
-            words[j] = temp;
+            bFirst = false;
         }
-        arr2list(words, n, buff, bufc, &osep);
-        delete [] words;
+        else
+        {
+            sOut->append(osep.str, osep.n);
+        }
+        i = static_cast<LBUF_OFFSET>(RandomINT32(0, static_cast<INT32>(n-1)));
+        iStart = words->wordBegin(i);
+        nLen = words->wordEnd(i) - iStart;
+        sOut->append(*sIn, iStart, nLen);
+        words->delete_Word(i, sIn);
+        n--;
     }
+    sOut->export_TextAnsi(buff, bufc);
+
+    delete words;
+    delete sIn;
+    delete sOut;
 }
 
 // pickrand -- choose a random item from a list.
