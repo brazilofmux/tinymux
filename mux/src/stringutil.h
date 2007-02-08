@@ -386,10 +386,10 @@ private:
 public:
 
     mux_words(const mux_string &sStr);
-    void delete_Word(LBUF_OFFSET n, mux_string *sStr);
     void export_WordAnsi(LBUF_OFFSET n, char *buff, char **bufc = NULL);
     LBUF_OFFSET find_Words(void);
     LBUF_OFFSET find_Words(const char *pDelim);
+    void ignore_Word(LBUF_OFFSET n);
     void set_Control(const char *pControlSet);
     void set_Control(const bool table[UCHAR_MAX+1]);
     LBUF_OFFSET wordBegin(LBUF_OFFSET n) const;

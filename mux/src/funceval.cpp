@@ -2701,7 +2701,7 @@ FUNCTION(fun_shuffle)
         iStart = words->wordBegin(i);
         nLen = words->wordEnd(i) - iStart;
         sOut->append(*sIn, iStart, nLen);
-        words->delete_Word(i, sIn);
+        words->ignore_Word(i);
         n--;
     }
     sOut->export_TextAnsi(buff, bufc);

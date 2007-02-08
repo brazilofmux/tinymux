@@ -5377,36 +5377,6 @@ mux_words::mux_words(const mux_string &sStr) : m_s(&sStr)
     m_nWords = 0;
 }
 
-void mux_words::delete_Word(LBUF_OFFSET n, mux_string *sStr)
-{
-    if (  m_nWords <= n
-       || sStr != m_s)
-    {
-        return;
-    }
-
-    if (n + 1 == m_nWords)
-    {
-        // This is the last word in the string.
-        //
-        sStr->truncate(m_aiWordBegins[n]);
-    }
-    else
-    {
-        LBUF_OFFSET iStart = m_aiWordBegins[n];
-        LBUF_OFFSET nLen = m_aiWordEnds[n] - iStart;
-        sStr->delete_Chars(iStart, nLen);
-
-        for (LBUF_OFFSET i = n; i < m_nWords - 1; i++)
-        {
-            m_aiWordBegins[i] = m_aiWordBegins[i + 1] - nLen;
-            m_aiWordEnds[i] = m_aiWordEnds[i + 1] - nLen;
-        }
-    }
-
-    m_nWords--;
-}
-
 void mux_words::export_WordAnsi(LBUF_OFFSET n, char *buff, char **bufc)
 {
     if (m_nWords <= n)
@@ -5473,6 +5443,21 @@ LBUF_OFFSET mux_words::find_Words(const char *pDelim)
     nWords++;
     m_nWords = nWords;
     return nWords;
+}
+
+void mux_words::ignore_Word(LBUF_OFFSET n)
+{
+    if (m_nWords <= n)
+    {
+        return;
+    }
+
+    for (LBUF_OFFSET i = n; i < m_nWords - 1; i++)
+    {
+        m_aiWordBegins[i] = m_aiWordBegins[i + 1];
+        m_aiWordEnds[i] = m_aiWordEnds[i + 1];
+    }
+    m_nWords--;
 }
 
 void mux_words::set_Control(const char *pControlSet)
