@@ -4044,44 +4044,78 @@ static FUNCTION(fun_remove)
         return;
     }
 
-    char *s, *sp, *word;
-    bool first, found;
-
-    if (strstr(fargs[1], sep.str))
+    mux_string *sWord = new mux_string(fargs[1]);
+    if (sWord->search(sep.str))
     {
         safe_str("#-1 CAN ONLY REMOVE ONE ELEMENT", buff, bufc);
+        delete sWord;
         return;
     }
-    s = fargs[0];
-    word = fargs[1];
+
+    mux_string *sStr = new mux_string(fargs[0]);
+    mux_words *words = NULL;
+    try
+    {
+        words = new mux_words(*sStr);
+    }
+    catch (...)
+    {
+        ; // Nothing.
+    }
+    if (NULL == words)
+    {
+        delete sWord;
+        delete sStr;
+        ISOUTOFMEMORY(words);
+        return;
+    }
+
+    LBUF_OFFSET nWords = words->find_Words(sep.str);
+    size_t iPos = 0, iStart = 0, iEnd = 0;
+    bool bSucceeded = sStr->search(*sWord, &iPos);
 
     // Walk through the string copying words until (if ever) we get to
     // one that matches the target word.
     //
-    sp = s;
-    found = false;
-    first = true;
-    while (s)
+    bool bFirst = true, bFound = false;
+    for (LBUF_OFFSET i = 0; i < nWords; i++)
     {
-        sp = split_token(&s, &sep);
-        if (  found
-           || strcmp(sp, word) != 0)
+        iStart = words->wordBegin(i);
+        iEnd = words->wordEnd(i);
+
+        if (  !bFound
+           && bSucceeded
+           && iPos < iStart)
         {
-            if (!first)
-            {
-                print_sep(&osep, buff, bufc);
-            }
-            else
-            {
-                first = false;
-            }
-            safe_str(sp, buff, bufc);
+            bSucceeded = sStr->search(*sWord, &iPos, iStart);
+            iPos += iStart;
+        }
+
+        if (  !bFound
+           && sWord->length() == iEnd - iStart
+           && (  (  bSucceeded
+                 && iPos == iStart)
+              || sWord->length() == 0))
+        {
+            bFound = true;
         }
         else
         {
-            found = true;
+            if (bFirst)
+            {
+                bFirst = false;
+            }
+            else
+            {
+                print_sep(&osep, buff, bufc);
+            }
+            words->export_WordAnsi(i, buff, bufc);
         }
     }
+
+    delete sWord;
+    delete sStr;
+    delete words;
 }
 
 /*
