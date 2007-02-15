@@ -7259,6 +7259,10 @@ static FUNCTION(fun_terminfo)
             safe_str(" telnet", buff, bufc);
         }
     }
+    
+    if (Html(d->player)) {
+        safe_str(" pueblo", buff, bufc);
+    }
 }
 
 
