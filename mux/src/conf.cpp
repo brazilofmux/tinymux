@@ -101,10 +101,14 @@ void cf_init(void)
     mux_strncpy(mudconf.pueblo_msg, "</xch_mudtext><img xch_mode=html>", GBUF_SIZE-1);
 #if defined(FIRANMUX)
     mux_strncpy(mudconf.immobile_msg, "You have been set immobile.", sizeof(mudconf.immobile_msg)-1);
+#endif // FIRANMUX
+#if defined(INLINESQL)
     mudconf.sql_server[0]   = '\0';
     mudconf.sql_user[0]     = '\0';
     mudconf.sql_password[0] = '\0';
     mudconf.sql_database[0] = '\0';
+#endif // INLINESQL
+#if defined(FIRANMUX)
     mudconf.mail_server[0]  = '\0';
     mudconf.mail_ehlo[0]    = '\0';
     mudconf.mail_sendaddr[0]= '\0';

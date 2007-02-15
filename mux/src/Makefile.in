@@ -72,6 +72,13 @@ FIRANMUX    = @FIRANMUX@
 #
 FIRANMUX_CONVERT = @FIRANMUX_CONVERT@
 
+# Inline SQL support.  This provides an inline sql() function which links
+# to a MySQL database, providing softcode compatibility with the SQL support
+# in TinyMUSH 3.x and PennMUSH.
+INLINESQL         = @INLINESQL@
+INLINESQL_LIBS    = @INLINESQL_LIBPATH@ @INLINESQL_LIBS@
+INLINESQL_INCLUDE = @INLINESQL_INCLUDE@
+
 # Deprecated Features. By default, this is off. This can be turned on by
 # running configure with --enable-deprecated. Features which are infrequently
 # used become deprecated and are eventually removed from the source.
@@ -149,7 +156,7 @@ MORELIBS	= -lm
 # Auxiliary source files: only used by offline utilities.
 #
 AUX_SRC	= unsplit.cpp
-ALLCXXFLAGS = $(CXXFLAGS) $(OPTIM) $(DEFS) $(MEMORY_BASED) $(WOD_REALMS) $(REALITY_LVLS) $(QUERY_SLAVE) $(FIRANMUX) $(FIRANMUX_CONVERT) $(DEPRECATED)
+ALLCXXFLAGS = $(CXXFLAGS) $(OPTIM) $(DEFS) $(MEMORY_BASED) $(WOD_REALMS) $(REALITY_LVLS) $(QUERY_SLAVE) $(FIRANMUX) $(FIRANMUX_CONVERT) $(DEPRECATED) $(INLINESQL) $(INLINESQL_INCLUDE)
 
 # Compiliation source files.
 #
@@ -180,7 +187,7 @@ unsplit: unsplit.o
 netmux: $(OBJ) $(VER_SRC)
 	$(CXX) $(ALLCXXFLAGS) $(VER_FLG) -c $(VER_SRC)
 	( if [ -f netmux ]; then mv -f netmux netmux~ ; fi )
-	$(CXX) $(ALLCXXFLAGS) -o netmux $(OBJ) $(VER_OBJ) $(LIBS) $(MORELIBS)
+	$(CXX) $(ALLCXXFLAGS) -o netmux $(OBJ) $(VER_OBJ) $(LIBS) $(MORELIBS) $(INLINESQL_LIBS)
 
 depend: $(ALLSRC) unsplit
 	for i in $(D_SRC) $(AUX_SRC) slave.cpp sqlslave.cpp sqlshared.cpp ; do $(CXXCPP) $(ALLCXXFLAGS) -M $$i; done | sed -e 's:/usr[^ ]*[ ]*::g' | ./unsplit > .depend~
