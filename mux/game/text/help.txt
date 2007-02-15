@@ -7088,13 +7088,13 @@ FUNCTION LIST (continued)
     STRCAT()    STRIP()     STRIPACCENTS()          STRIPANSI() STRLEN()
     STRMATCH()  STRMEM()    STRTRUNC()  SUB()       SUBEVAL()   SUBJ()
     SUCCESSES() SWITCH()    T()         TABLE()     TAN()       TEL()
-    TEXT()      TEXTFILE()  TIME()      TIMEFMT()   TRANSLATE() TR
-    TRIGGER()   TRIM()      TRUNC()     TXLEVEL()   TYPE()      U()
-    UCSTR()     UDEFAULT()  ULOCAL()    UNPACK()    V()         VADD()
-    VALID()     VCROSS()    VDIM()      VDOT()      VERSION()   VISIBLE()
-    VMAG()      VMUL()      VSUB()      VUNIT()     WHERE()     WIDTH()
-    WORDPOS()   WORDS()     WRAP()      WRITETIME() XGET()      XOR()
-    ZFUN()      ZONE()      ZWHO()
+    TERMINFO()  TEXT()      TEXTFILE()  TIME()      TIMEFMT()   TRANSLATE() 
+    TR()        TRIGGER()   TRIM()      TRUNC()     TXLEVEL()   TYPE()
+    U()         UCSTR()     UDEFAULT()  ULOCAL()    UNPACK()    V()
+    VADD()      VALID()     VCROSS()    VDIM()      VDOT()      VERSION()
+    VISIBLE()   VMAG()      VMUL()      VSUB()      VUNIT()     WHERE()
+    WIDTH()     WORDPOS()   WORDS()     WRAP()      WRITETIME() XGET()
+    XOR()       ZFUN()      ZONE()      ZWHO()
 
 & FUNCTIONS
 FUNCTIONS
@@ -12865,6 +12865,26 @@ TEL()
   effect function, and should only be used when necessary.
 
   Related Topics: @teleport
+
+& TERMINFO()
+TERMINFO()
+
+  FUNCTION: terminfo(<player|descriptor>)
+
+  Returns a list with at least one element - the type of client used
+  by the player, or "unknown" if the client being used doesn't support
+  being asked to identify itself using RFC 1091. 
+  
+  Other elements in the list describe client capabilities, and
+  currently include:
+  pueblo           present if the client is in Pueblo mode.
+  telnet           present if the client understands the telnet protocol.
+
+  Other fields may be added in the future; 'unicode' for clients that support
+  it, or 'mxp' for clients which support that, for instance.
+
+  Players can use terminfo() on their own connections. Using it on
+  other players is restricted to wizards.  
 
 & TERSE
 TERSE
