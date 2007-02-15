@@ -2343,6 +2343,9 @@ DESC *initializesock(SOCKET s, struct sockaddr_in *a)
     d->nvt_eor_us_state = OPTION_NO;
     d->nvt_naws_him_state = OPTION_NO;
     d->nvt_naws_us_state = OPTION_NO;
+    d->nvt_ttype_him_state = OPTION_NO;
+    d->nvt_ttype_us_state = OPTION_NO;
+    d->nvt_ttype_him_value = NULL;
     d->height = 24;
     d->width = 78;
     d->quota = mudconf.cmd_quota_max;
@@ -2684,122 +2687,20 @@ static const int nvt_input_action_table[8][14] =
     {   0,   0,   0,   0,  18,   0,   0,   0,   0,   0,   0,   0,   0,  17  }, // Have_IAC_SB_IAC
 };
 
-/*! \brief Return the other side's negotiation state.
- *
- * The negotiation of each optional feature of telnet can be in one of six
- * states (defined in interface.h): OPTION_NO, OPTION_YES,
- * OPTION_WANTNO_EMPTY, OPTION_WANTNO_OPPOSITE, OPTION_WANTYES_EMPTY, and
- * OPTION_WANTYES_OPPOSITE.
- *
- * An option is only enabled when it is in the OPTION_YES state.
- *
- * \param d        Player connection context.
- * \param chOption Telnet Option
- * \return         One of six states.
- */
 
-int HimState(DESC *d, unsigned char chOption)
-{
-    if (TELNET_NAWS == chOption)
-    {
-        return d->nvt_naws_him_state;
-    }
-    else if (TELNET_EOR == chOption)
-    {
-        return d->nvt_eor_him_state;
-    }
-    else if (TELNET_SGA == chOption)
-    {
-        return d->nvt_sga_him_state;
-    }
-    return OPTION_NO;
-}
-
-/*! \brief Return our side's negotiation state.
- *
- * The negotiation of each optional feature of telnet can be in one of six
- * states (defined in interface.h): OPTION_NO, OPTION_YES,
- * OPTION_WANTNO_EMPTY, OPTION_WANTNO_OPPOSITE, OPTION_WANTYES_EMPTY, and
- * OPTION_WANTYES_OPPOSITE.
- *
- * An option is only enabled when it is in the OPTION_YES state.
- *
- * \param d        Player connection context.
- * \param chOption Telnet Option
- * \return         One of six states.
- */
-
-int UsState(DESC *d, unsigned char chOption)
-{
-    if (TELNET_NAWS == chOption)
-    {
-        return d->nvt_naws_us_state;
-    }
-    else if (TELNET_EOR == chOption)
-    {
-        return d->nvt_eor_us_state;
-    }
-    else if (TELNET_SGA == chOption)
-    {
-        return d->nvt_sga_us_state;
-    }
-    return OPTION_NO;
-}
-
-/*! \brief Change the other side's negotiation state.
- *
- * \param d         Player connection context.
- * \param chOption  Telnet Option
- * \param iHimState One of the six option negotiation states.
- * \return          None.
- */
-
-static void SetHimState(DESC *d, unsigned char chOption, int iHimState)
-{
-    if (TELNET_NAWS == chOption)
-    {
-        d->nvt_naws_him_state = iHimState;
-    }
-    else if (TELNET_EOR == chOption)
-    {
-        d->nvt_eor_him_state = iHimState;
-    }
-    else if (TELNET_SGA == chOption)
-    {
-        d->nvt_sga_him_state = iHimState;
-    }
-}
-
-/*! \brief Change our side's negotiation state.
+/*! \brief Transmit a Telnet SB sequence for the given option.
  *
  * \param d         Player connection context.
  * \param chOption  Telnet Option.
- * \param iUsState  One of the six option negotiation states.
  * \return          None.
  */
 
-static void SetUsState(DESC *d, unsigned char chOption, int iUsState)
+static void SendSb(DESC *d, unsigned char chOption, unsigned char chRequest)
 {
-    if (TELNET_NAWS == chOption)
-    {
-        d->nvt_naws_us_state = iUsState;
-    }
-    else if (TELNET_EOR == chOption)
-    {
-        d->nvt_eor_us_state = iUsState;
-        if (OPTION_YES == iUsState)
-        {
-            EnableUs(d, TELNET_SGA);
-        }
-        else if (OPTION_NO == iUsState)
-        {
-            DisableUs(d, TELNET_SGA);
-        }
-    }
-    else if (TELNET_SGA == chOption)
-    {
-        d->nvt_sga_us_state = iUsState;
-    }
+    char aSB[6] = { NVT_IAC, NVT_SB, 0, 0, NVT_IAC, NVT_SE };
+    aSB[2] = chOption;
+    aSB[3] = chRequest;
+    queue_write_LEN(d, aSB, sizeof(aSB));
 }
 
 /*! \brief Transmit a Telnet WILL sequence for the given option.
@@ -2857,6 +2758,144 @@ static void SendWont(DESC *d, unsigned char chOption)
     aWont[2] = chOption;
     queue_write_LEN(d, aWont, sizeof(aWont));
 }
+
+/*! \brief Return the other side's negotiation state.
+ *
+ * The negotiation of each optional feature of telnet can be in one of six
+ * states (defined in interface.h): OPTION_NO, OPTION_YES,
+ * OPTION_WANTNO_EMPTY, OPTION_WANTNO_OPPOSITE, OPTION_WANTYES_EMPTY, and
+ * OPTION_WANTYES_OPPOSITE.
+ *
+ * An option is only enabled when it is in the OPTION_YES state.
+ *
+ * \param d        Player connection context.
+ * \param chOption Telnet Option
+ * \return         One of six states.
+ */
+
+int HimState(DESC *d, unsigned char chOption)
+{
+    if (TELNET_NAWS == chOption)
+    {
+        return d->nvt_naws_him_state;
+    }
+    else if (TELNET_EOR == chOption)
+    {
+        return d->nvt_eor_him_state;
+    }
+    else if (TELNET_SGA == chOption)
+    {
+        return d->nvt_sga_him_state;
+    }
+    else if (TELNET_TTYPE == chOption)
+    {
+        return d->nvt_ttype_him_state;
+    }
+    return OPTION_NO;
+}
+
+/*! \brief Return our side's negotiation state.
+ *
+ * The negotiation of each optional feature of telnet can be in one of six
+ * states (defined in interface.h): OPTION_NO, OPTION_YES,
+ * OPTION_WANTNO_EMPTY, OPTION_WANTNO_OPPOSITE, OPTION_WANTYES_EMPTY, and
+ * OPTION_WANTYES_OPPOSITE.
+ *
+ * An option is only enabled when it is in the OPTION_YES state.
+ *
+ * \param d        Player connection context.
+ * \param chOption Telnet Option
+ * \return         One of six states.
+ */
+
+int UsState(DESC *d, unsigned char chOption)
+{
+    if (TELNET_NAWS == chOption)
+    {
+        return d->nvt_naws_us_state;
+    }
+    else if (TELNET_EOR == chOption)
+    {
+        return d->nvt_eor_us_state;
+    }
+    else if (TELNET_SGA == chOption)
+    {
+        return d->nvt_sga_us_state;
+    }
+    else if (TELNET_TTYPE == chOption)
+    {
+        return d->nvt_ttype_us_state;
+    }
+    return OPTION_NO;
+}
+
+/*! \brief Change the other side's negotiation state.
+ *
+ * \param d         Player connection context.
+ * \param chOption  Telnet Option
+ * \param iHimState One of the six option negotiation states.
+ * \return          None.
+ */
+
+static void SetHimState(DESC *d, unsigned char chOption, int iHimState)
+{
+    if (TELNET_NAWS == chOption)
+    {
+        d->nvt_naws_him_state = iHimState;
+    }
+    else if (TELNET_EOR == chOption)
+    {
+        d->nvt_eor_him_state = iHimState;
+    }
+    else if (TELNET_SGA == chOption)
+    {
+        d->nvt_sga_him_state = iHimState;
+    }
+    else if (TELNET_TTYPE == chOption)
+    {
+        d->nvt_ttype_him_state = iHimState;
+        if (OPTION_YES == iHimState) {
+            SendSb(d,chOption,TELNETSB_SEND);
+        }
+    }
+}
+
+/*! \brief Change our side's negotiation state.
+ *
+ * \param d         Player connection context.
+ * \param chOption  Telnet Option.
+ * \param iUsState  One of the six option negotiation states.
+ * \return          None.
+ */
+
+static void SetUsState(DESC *d, unsigned char chOption, int iUsState)
+{
+    if (TELNET_NAWS == chOption)
+    {
+        d->nvt_naws_us_state = iUsState;
+    }
+    else if (TELNET_EOR == chOption)
+    {
+        d->nvt_eor_us_state = iUsState;
+        if (OPTION_YES == iUsState)
+        {
+            EnableUs(d, TELNET_SGA);
+        }
+        else if (OPTION_NO == iUsState)
+        {
+            DisableUs(d, TELNET_SGA);
+        }
+    }
+    else if (TELNET_SGA == chOption)
+    {
+        d->nvt_sga_us_state = iUsState;
+    }
+    else if (TELNET_TTYPE == chOption)
+    {
+        d->nvt_ttype_us_state = iUsState;
+    }
+}
+
 
 /*! \brief Determine whether we want a particular option on his side of the
  * link to be enabled.
@@ -3042,6 +3081,7 @@ void TelnetSetup(DESC *d)
     EnableUs(d, TELNET_EOR);
     EnableHim(d, TELNET_EOR);
     EnableHim(d, TELNET_SGA);
+    EnableHim(d, TELNET_TTYPE);
     EnableHim(d, TELNET_NAWS);
 }
 
@@ -3341,6 +3381,19 @@ static void process_input_helper(DESC *d, char *pBytes, int nBytes)
                     {
                         d->width  = (d->aOption[1] << 8 ) | d->aOption[2];
                         d->height = (d->aOption[3] << 8 ) | d->aOption[4];
+                    }
+                    break;
+                    
+                case TELNET_TTYPE:
+                    if (d->aOption[1] == TELNETSB_IS) {
+                        if (d->nvt_ttype_him_value) {
+                            free(d->nvt_ttype_him_value);
+                            d->nvt_ttype_him_value = NULL;
+                        }
+                        d->nvt_ttype_him_value = (char *)malloc(m);
+                        memset(d->nvt_ttype_him_value,0,m);
+                        // Skip past the TTYPE bit and the TELQUAL_IS bit...
+                        memcpy(d->nvt_ttype_him_value,&d->aOption[2],m - 2);
                     }
                     break;
                 }

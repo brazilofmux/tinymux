@@ -7186,6 +7186,82 @@ static FUNCTION(fun_conn)
     safe_ltoa(nConnected, buff, bufc);
 }
 
+static FUNCTION(fun_terminfo)
+{
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
+    long nConnected = -1;
+    DESC *d = NULL;
+    if (is_rational(fargs[0]))
+    {
+        SOCKET s = mux_atol(fargs[0]);
+        bool bFound = false;
+        DESC *d;
+        CLinearTimeAbsolute ltaNow;
+        ltaNow.GetUTC();
+        DESC_ITER_CONN(d)
+        {
+            if (d->descriptor == s)
+            {
+                bFound = true;
+                break;
+            }
+        }
+        if (  bFound
+           && !(  d->player == executor
+              || Wizard_Who(executor)))
+        {
+            safe_str("#-1 PERMISSION DENIED",buff, bufc);
+            return;
+        }
+    }
+    else
+    {
+        char *pTargetName = fargs[0];
+        if (*pTargetName == '*')
+        {
+            pTargetName++;
+        }
+        dbref target = lookup_player(executor, pTargetName, true);
+        if (  Good_obj(target)
+           && !(  !Hidden(target)
+              || See_Hidden(executor)))
+        {
+            safe_str("#-1 PERMISSION DENIED", buff, bufc);
+            return;
+        }
+        DESC_ITER_CONN(d)
+        {
+            if (d->player == target)
+            {
+                break;
+            }
+        }
+    }
+    
+    if (!d) {
+        safe_str("#-1 NOT CONNECTED", buff, bufc);
+        return;
+    }
+    
+    if (d->nvt_ttype_him_value) {
+        safe_str(d->nvt_ttype_him_value, buff, bufc);
+        safe_str(" telnet", buff, bufc);
+    }
+    else {
+        safe_str("unknown", buff, bufc);
+        if (d->nvt_naws_him_state || d->nvt_sga_him_state || d->nvt_eor_him_state) {
+            safe_str(" telnet", buff, bufc);
+        }
+    }
+}
+
+
 /*
  * ---------------------------------------------------------------------------
  * * fun_sort: Sort lists.
@@ -10096,6 +10172,7 @@ static FUN builtin_function_list[] =
     {"TABLE",       fun_table,      MAX_ARG, 1,       6,         0, CA_PUBLIC},
     {"TAN",         fun_tan,        MAX_ARG, 1,       2,         0, CA_PUBLIC},
     {"TEL",         fun_tel,        MAX_ARG, 2,       2,         0, CA_PUBLIC},
+    {"TERMINFO",    fun_terminfo,         1, 1, MAX_ARG,         0, CA_PUBLIC},
 #if defined(FIRANMUX)
     {"TEXT",        fun_text,       MAX_ARG, 2,       2,         0, CA_PUBLIC},
 #endif // FIRANMUX

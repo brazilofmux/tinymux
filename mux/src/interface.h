@@ -112,12 +112,15 @@ struct prog_data
 #define NVT_DO   '\xFD'
 #define NVT_DONT '\xFE'
 #define NVT_IAC  '\xFF'
+#define NVT_SB   '\xFA'
+#define NVT_SE   '\xF0'
 
 // Telnet Options
 //
 #define TELNET_SGA  '\x03'
 #define TELNET_EOR  '\x19'
 #define TELNET_NAWS '\x1F'
+#define TELNET_TTYPE '\x18'
 
 // Telnet Option Negotiation States
 //
@@ -127,6 +130,13 @@ struct prog_data
 #define OPTION_WANTNO_OPPOSITE  3
 #define OPTION_WANTYES_EMPTY    4
 #define OPTION_WANTYES_OPPOSITE 5
+
+// Telnet subnegotiation requests
+#define TELNETSB_IS             0
+#define TELNETSB_SEND           1
+#define TELNETSB_REPLY          2
+#define TELNETSB_NAME           3
+
 
 typedef struct descriptor_data DESC;
 struct descriptor_data
@@ -177,6 +187,9 @@ struct descriptor_data
   int nvt_eor_us_state;
   int nvt_naws_him_state;
   int nvt_naws_us_state;
+  int nvt_ttype_him_state;
+  int nvt_ttype_us_state;
+  char *nvt_ttype_him_value;
   int width;
   int height;
   int quota;
