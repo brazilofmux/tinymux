@@ -41,7 +41,9 @@ void VerifyTables(FILE *fp)
 {
     fprintf(stderr, "Testing final ITT and STT.\n");
     fseek(fp, 0, SEEK_SET);
-    int nextcode = ReadCodePoint(fp);
+    int Value;
+    UTF32 Othercase;
+    UTF32 nextcode = ReadCodePoint(fp, &Value, &Othercase);
     int i;
     for (i = 0; i <= UNI_MAX_LEGAL_UTF32; i++)
     {
@@ -57,9 +59,9 @@ void VerifyTables(FILE *fp)
                 bMember = false;
             }
 
-            if (0 <= nextcode)
+            if (UNI_EOF != nextcode)
             {
-                nextcode = ReadCodePoint(fp);
+                nextcode = ReadCodePoint(fp, &Value, &Othercase);
             }
         }
         else
@@ -104,50 +106,13 @@ void VerifyTables(FILE *fp)
 
 StateMachine sm;
 
-int ReadCodePoint(FILE *fp)
-{
-    char buffer[1024];
-    if (fgets(buffer, sizeof(buffer), fp) == NULL)
-    {
-        return -1;
-    }
-
-    int code = 0;
-    char *p = buffer;
-    while (  '\0' != *p
-          && ';' != *p)
-    {
-        char ch = *p;
-        if (  ch <= '9'
-           && '0' <= ch)
-        {
-            ch = ch - '0';
-        }
-        else if (  ch <= 'F'
-                && 'A' <= ch)
-        {
-            ch = ch - 'A' + 10;
-        }
-        else if (  ch <= 'f'
-                && 'a' <= ch)
-        {
-            ch = ch - 'a' + 10;
-        }
-        else
-        {
-            return -1;
-        }
-        code = (code << 4) + ch;
-        p++;
-    }
-    return code;
-}
-
 void TestTable(FILE *fp)
 {
     fprintf(stderr, "Testing STT table.\n");
     fseek(fp, 0, SEEK_SET);
-    int nextcode = ReadCodePoint(fp);
+    int Value;
+    UTF32 Othercase;
+    UTF32 nextcode = ReadCodePoint(fp, &Value, &Othercase);
     int i;
     for (i = 0; i <= UNI_MAX_LEGAL_UTF32; i++)
     {
@@ -163,9 +128,9 @@ void TestTable(FILE *fp)
                 bMember = false;
             }
 
-            if (0 <= nextcode)
+            if (UNI_EOF != nextcode)
             {
-                nextcode = ReadCodePoint(fp);
+                nextcode = ReadCodePoint(fp, &Value, &Othercase);
             }
         }
         else
@@ -198,7 +163,9 @@ void LoadStrings(FILE *fp)
     int cErrors   = 0;
 
     fseek(fp, 0, SEEK_SET);
-    int nextcode = ReadCodePoint(fp);
+    int Value;
+    UTF32 Othercase;
+    UTF32 nextcode = ReadCodePoint(fp, &Value, &Othercase);
 
     int i;
     for (i = 0; i <= UNI_MAX_LEGAL_UTF32; i++)
@@ -217,9 +184,9 @@ void LoadStrings(FILE *fp)
                 cExcluded++;
             }
 
-            if (0 <= nextcode)
+            if (UNI_EOF != nextcode)
             {
-                nextcode = ReadCodePoint(fp);
+                nextcode = ReadCodePoint(fp, &Value, &Othercase);
             }
         }
         else
@@ -260,16 +227,16 @@ void BuildAndOutputTable(FILE *fp, char *UpperPrefix, char *LowerPrefix)
     sm.Init();
     LoadStrings(fp);
     TestTable(fp);
-    sm.SetUndefinedStates();
+    sm.SetUndefinedStates(false);
     TestTable(fp);
 
     // Optimize State Transition Table.
     //
-    sm.RemoveAllNonMemberRows();
+    sm.MergeAcceptingStates();
     TestTable(fp);
-    sm.RemoveAllNonMemberRows();
+    sm.MergeAcceptingStates();
     TestTable(fp);
-    sm.RemoveAllNonMemberRows();
+    sm.MergeAcceptingStates();
     TestTable(fp);
     sm.RemoveDuplicateRows();
     TestTable(fp);

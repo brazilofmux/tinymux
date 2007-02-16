@@ -17,6 +17,185 @@ bool isPrivateUse(int ch)
               && ch <= UNI_PU3_END));
 }
 
+static UTF32 DecodeCodePoint(char *p)
+{
+    if (!isxdigit(*p))
+    {
+        // The first field was empty or contained invalid data.
+        //
+        return UNI_EOF;
+    }
+
+    int codepoint = 0;
+    while (isxdigit(*p))
+    {
+        char ch = *p;
+        if (  ch <= '9'
+           && '0' <= ch)
+        {
+            ch = ch - '0';
+        }
+        else if (  ch <= 'F'
+                && 'A' <= ch)
+        {
+            ch = ch - 'A' + 10;
+        }
+        else if (  ch <= 'f'
+                && 'a' <= ch)
+        {
+            ch = ch - 'a' + 10;
+        }
+        else
+        {
+            return UNI_EOF;
+        }
+        codepoint = (codepoint << 4) + ch;
+        p++;
+    }
+    return codepoint;
+}
+
+UTF32 ReadCodePoint(FILE *fp, int *pValue, UTF32 *pOthercase)
+{
+    char buffer[1024];
+    char *p;
+
+    for (;;)
+    {
+        if (fgets(buffer, sizeof(buffer), fp) == NULL)
+        {
+            *pValue = -1;
+            *pOthercase = UNI_EOF;
+            return UNI_EOF;
+        }
+        p = strchr(buffer, '#');
+        if (NULL != p)
+        {
+            // Ignore comment.
+            //
+            *p = '\0';
+        }
+        p = buffer;
+
+        // Skip leading whitespace.
+        //
+        while (isspace(*p))
+        {
+            p++;
+        }
+    
+        // Look for end of string or comment.
+        //
+        if ('\0' == *p)
+        {
+            // We skip blank lines.
+            //
+            continue;
+        }
+        break;
+    }
+
+#define MAX_FIELDS 15
+
+    int   nFields = 0;
+    char *aFields[MAX_FIELDS];
+    for (nFields = 0; nFields < MAX_FIELDS; )
+    {
+        // Skip leading whitespace.
+        //
+        while (isspace(*p))
+        {
+            p++;
+        }
+
+        aFields[nFields++] = p;
+        char *q = strchr(p, ';');
+        if (NULL == q)
+        {
+            // Trim trailing whitespace.
+            //
+            size_t i = strlen(p) - 1;
+            while (isspace(p[i]))
+            {
+                p[i] = '\0';
+            }
+            break;
+        }
+        else
+        {
+            *q = '\0';
+            p = q + 1;
+
+            // Trim trailing whitespace.
+            //
+            q--;
+            while (isspace(*q))
+            {
+                *q = '\0';
+                q--;
+            }
+        }
+    }
+
+    // Field #0 - Code Point
+    //
+    int codepoint = DecodeCodePoint(aFields[0]);
+
+    // Field #6 - Decimal Digit Property.
+    //
+    int Value;
+    p = aFields[6];
+    if (!isdigit(*p))
+    {
+        Value = -1;
+    }
+    else
+    {
+        Value = 0;
+        do
+        {
+            Value = Value * 10 + (*p - '0');
+            p++;
+        } while (isdigit(*p));
+    }
+    *pValue = Value;
+
+    // Field #12 - Simple Uppercase Mapping.
+    //
+    int Uppercase = DecodeCodePoint(aFields[12]);
+
+    // Field #13 = Simple Lowercase Mapping.
+    //
+    int Lowercase = DecodeCodePoint(aFields[13]);
+
+    if (  Uppercase < 0
+       && Lowercase < 0)
+    {
+        *pOthercase = UNI_EOF;
+    }
+    else
+    {
+        if (Uppercase < 0)
+        {
+            Uppercase = codepoint;
+        }
+        if (Lowercase < 0)
+        {
+            Lowercase = codepoint;
+        }
+
+        if (Lowercase == codepoint)
+        {
+            *pOthercase = Uppercase;
+        }
+        else
+        {
+            *pOthercase = Lowercase;
+        }
+    }
+    return codepoint;
+}
+
 State *StateMachine::AllocateState(void)
 {
     State *p = new State;
@@ -84,28 +263,24 @@ StateMachine::~StateMachine()
     Final();
 }
 
-void StateMachine::RecordString(UTF8 *pStart, UTF8 *pEnd, bool bMember)
+void StateMachine::RecordString(UTF8 *pStart, UTF8 *pEnd, int AcceptingState)
 {
     State *pState = m_StartingState;
     while (pStart < pEnd-1)
     {
         UTF8 ch = *pStart;
-        if (&m_Member == pState->next[ch])
-        {
-            fprintf(stderr, "Already recorded. This shouldn't happen.\n");
-            exit(0);
-        }
-        else if (&m_NotMember == pState->next[ch])
-        {
-            fprintf(stderr, "Already recorded as not a member. This shouldn't happen.\n");
-            exit(0);
-        }
-        else if (&m_Undefined == pState->next[ch])
+        if (&m_Undefined == pState->next[ch])
         {
             State *p = AllocateState();
             m_stt[m_nStates++] = p;
             pState->next[ch] = p;
             pState = p;
+        }
+        else if (  (State *)(m_aAcceptingStates) <= pState->next[ch]
+                && pState->next[ch] <= (State *)(m_aAcceptingStates + sizeof(m_aAcceptingStates)))
+        {
+            fprintf(stderr, "Already recorded.  This shouldn't happen.\n");
+            exit(0);
         }
         else
         {
@@ -117,26 +292,15 @@ void StateMachine::RecordString(UTF8 *pStart, UTF8 *pEnd, bool bMember)
     if (pStart < pEnd)
     {
         UTF8 ch = *pStart;
-        if (&m_Member == pState->next[ch])
+        if (&m_Undefined == pState->next[ch])
         {
-            fprintf(stderr, "Already recorded. This shouldn't happen.\n");
-            exit(0);
+            pState->next[ch] = (State *)(m_aAcceptingStates + AcceptingState);
         }
-        else if (&m_NotMember == pState->next[ch])
+        else if (  (State *)(m_aAcceptingStates) <= pState->next[ch]
+                && pState->next[ch] <= (State *)(m_aAcceptingStates + sizeof(m_aAcceptingStates)))
         {
-            fprintf(stderr, "Already recorded as not a member. This shouldn't happen.\n");
+            fprintf(stderr, "Already recorded.  This shouldn't happen.\n");
             exit(0);
-        }
-        else if (&m_Undefined == pState->next[ch])
-        {
-            if (bMember)
-            {
-                pState->next[ch] = &m_Member;
-            }
-            else
-            {
-                pState->next[ch] = &m_NotMember;
-            }
         }
         else
         {
@@ -192,33 +356,48 @@ bool StateMachine::ColumnsEqual(int iColumn, int jColumn)
     return true;
 }
 
-void StateMachine::RemoveAllNonMemberRows()
+void StateMachine::MergeAcceptingStates(void)
 {
-    fprintf(stderr, "Pruning away all states which never lead to a Member state.\n");
+    fprintf(stderr, "Pruning away all states which only ever lead to one accepting state.\n");
     int i;
     for (i = 0; i < m_nStates; i++)
     {
         m_stt[i]->merged = NULL;
     }
 
-    int j;
     for (i = 0; i < m_nStates; i++)
     {
-        bool bAllNonMember = true;
-        for (j = 0; j < 256; j++)
+        State *pi = m_stt[i];
+
+        bool bMatched = true;
+        State *pLastState = NULL;
+        int k;
+        for (k = 0; k < 256; k++)
         {
-            if (&m_NotMember != m_stt[i]->next[j])
+            if (&m_Undefined == pi->next[k])
             {
-                bAllNonMember = false;
+                // Undefined State will match everything.
+                //
+                continue;
+            }
+
+            if (  NULL != pLastState
+               && pLastState != pi->next[k])
+            {
+                bMatched = false;
                 break;
+            }
+            else
+            {
+                pLastState = pi->next[k];
             }
         }
 
-        if (bAllNonMember)
+        if (bMatched)
         {
-            // Prune (i)th row so as to arrive at NotMember state one transition earlier.
+            // Prune (i)th row so as to arrive at the accepting state one transition earlier.
             //
-            m_stt[i]->merged = &m_NotMember;
+            pi->merged = pLastState;
         }
     }
 
@@ -229,6 +408,7 @@ void StateMachine::RemoveAllNonMemberRows()
         State *pi = m_stt[i];
         if (NULL == pi->merged)
         {
+            int j;
             for (j = 0; j < 256; j++)
             {
                 State *pj = pi->next[j];
@@ -384,9 +564,9 @@ void StateMachine::DetectDuplicateColumns(void)
     ReportStatus();
 }
 
-void StateMachine::SetUndefinedStates(void)
+void StateMachine::SetUndefinedStates(int AcceptingState)
 {
-    fprintf(stderr, "Setting all invalid UTF-8 sequences to NotMember.\n");
+    fprintf(stderr, "Setting all undefined states to specified accepting state.\n");
     int i;
     for (i = 0; i < m_nStates; i++)
     {
@@ -395,7 +575,7 @@ void StateMachine::SetUndefinedStates(void)
         {
             if (&m_Undefined == m_stt[i]->next[j])
             {
-                m_stt[i]->next[j] = &m_NotMember;
+                m_stt[i]->next[j] = (State *)(m_aAcceptingStates + AcceptingState);
             }
         }
     }
@@ -438,12 +618,10 @@ void StateMachine::OutputTables(char *UpperPrefix, char *LowerPrefix)
     printf("// %d states, %d columns, %d bytes\n", m_nStates, m_nColumns, SizeOfMachine);
     printf("//\n");
 
-    int iMemberState = m_nStates;
-    int iNotMemberState = m_nStates+1;
+    int iAcceptingStatesStart = m_nStates;
 
     printf("#define %s_START_STATE (0)\n", UpperPrefix);
-    printf("#define %s_ISMEMBER_STATE (%d)\n", UpperPrefix, iMemberState);
-    printf("#define %s_ISNOTMEMBER_STATE (%d)\n", UpperPrefix, iNotMemberState);
+    printf("#define %s_ACCEPTING_STATES_START (%d)\n", UpperPrefix, iAcceptingStatesStart);
     printf("\n");
 
     printf("unsigned char %s_itt[256] =\n", LowerPrefix);
@@ -490,13 +668,11 @@ void StateMachine::OutputTables(char *UpperPrefix, char *LowerPrefix)
             State *pj = pi->next[j];
 
             int k;
-            if (&m_Member == pj)
+            if (  (State *)(m_aAcceptingStates) <= pj
+               && pj <= (State *)(m_aAcceptingStates + sizeof(m_aAcceptingStates)))
             {
-                k = iMemberState; 
-            }
-            else if (&m_NotMember == pj)
-            {
-                k = iNotMemberState;
+                char *p = reinterpret_cast<char *>(pj);
+                k = static_cast<int>(iAcceptingStatesStart + (p - m_aAcceptingStates));
             }
             else
             {
@@ -519,21 +695,27 @@ void StateMachine::OutputTables(char *UpperPrefix, char *LowerPrefix)
     printf("};\n");
 }
 
-void StateMachine::TestString(UTF8 *pStart, UTF8 *pEnd, bool bMember)
+void StateMachine::TestString(UTF8 *pStart, UTF8 *pEnd, int AcceptingState)
 {
     State *pState = m_StartingState;
     while (  pStart < pEnd
-          && &m_NotMember != pState
-          && &m_Member != pState)
+          && (  pState < (State *)(m_aAcceptingStates)
+             || (State *)(m_aAcceptingStates + sizeof(m_aAcceptingStates)) < pState))
     {
         pState = pState->next[(unsigned char)*pStart];
         pStart++;
     }
 
-    if (  (  &m_Member == pState
-          && !bMember)
-       || (  &m_NotMember == pState
-          && bMember))
+    if (&m_Undefined == pState)
+    {
+        fprintf(stderr, "Final State is undefined.\n");
+        exit(0);
+    }
+
+    char *p = reinterpret_cast<char *>(pState);
+    int iState = static_cast<int>(p - m_aAcceptingStates);
+
+    if (iState != AcceptingState)
     {
         fprintf(stderr, "State Transition Table does not work.\n");
         exit(0);

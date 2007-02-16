@@ -41,7 +41,9 @@ void VerifyTables(FILE *fp)
 {
     fprintf(stderr, "Testing final ITT and STT.\n");
     fseek(fp, 0, SEEK_SET);
-    int nextcode = ReadCodePoint(fp);
+    int Value;
+    UTF32 Othercase;
+    UTF32 nextcode = ReadCodePoint(fp, &Value, &Othercase);
     int i;
     for (i = 0; i <= UNI_MAX_LEGAL_UTF32; i++)
     {
@@ -57,9 +59,9 @@ void VerifyTables(FILE *fp)
                 bMember = false;
             }
 
-            if (0 <= nextcode)
+            if (UNI_EOF != nextcode)
             {
-                nextcode = ReadCodePoint(fp);
+                nextcode = ReadCodePoint(fp, &Value, &Othercase);
             }
         }
         else
@@ -104,196 +106,13 @@ void VerifyTables(FILE *fp)
 
 StateMachine sm;
 
-int DecodeCodePoint(char *p)
-{
-    if (!isxdigit(*p))
-    {
-        // The first field was empty or contained invalid data.
-        //
-        return -1;
-    }
-
-    int codepoint = 0;
-    while (isxdigit(*p))
-    {
-        char ch = *p;
-        if (  ch <= '9'
-           && '0' <= ch)
-        {
-            ch = ch - '0';
-        }
-        else if (  ch <= 'F'
-                && 'A' <= ch)
-        {
-            ch = ch - 'A' + 10;
-        }
-        else if (  ch <= 'f'
-                && 'a' <= ch)
-        {
-            ch = ch - 'a' + 10;
-        }
-        else
-        {
-            return -1;
-        }
-        codepoint = (codepoint << 4) + ch;
-        p++;
-    }
-    return codepoint;
-}
-
-int ReadCodePoint(FILE *fp, int *pValue)
-{
-    char buffer[1024];
-    char *p;
-
-    for (;;)
-    {
-        if (fgets(buffer, sizeof(buffer), fp) == NULL)
-        {
-            *pValue = -1;
-            return -1;
-        }
-        p = strchr(buffer, '#');
-        if (NULL != p)
-        {
-            // Ignore comment.
-            //
-            *p = '\0';
-        }
-        p = buffer;
-
-        // Skip leading whitespace.
-        //
-        while (isspace(*p))
-        {
-            p++;
-        }
-    
-        // Look for end of string or comment.
-        //
-        if ('\0' == *p)
-        {
-            // We skip blank lines.
-            //
-            continue;
-        }
-        break;
-    }
-
-#define MAX_FIELDS 15
-
-    int   nFields = 0;
-    char *aFields[MAX_FIELDS];
-    for (nFields = 0; nFields < MAX_FIELDS; )
-    {
-        // Skip leading whitespace.
-        //
-        while (isspace(*p))
-        {
-            p++;
-        }
-
-        aFields[nFields++] = p;
-        char *q = strchr(p, ';');
-        if (NULL == q)
-        {
-            // Trim trailing whitespace.
-            //
-            size_t i = strlen(p) - 1;
-            while (isspace(p[i]))
-            {
-                p[i] = '\0';
-            }
-            break;
-        }
-        else
-        {
-            *q = '\0';
-            p = q + 1;
-
-            // Trim trailing whitespace.
-            //
-            q--;
-            while (isspace(*q))
-            {
-                *q = '\0';
-                q--;
-            }
-        }
-    }
-
-    // Field #0 - Code Point
-    //
-    int codepoint = DecodeCodePoint(aFields[0]);
-
-    // Field #6 - Decimal Digit Property.
-    //
-    int Value;
-    p = aFields[6];
-    if (!isdigit(*p))
-    {
-        Value = -1;
-    }
-    else
-    {
-        Value = 0;
-        do
-        {
-            Value = Value * 10 + (*p - '0');
-            p++;
-        } while (isdigit(*p));
-    }
-
-    // Field #12 - Simple Uppercase Mapping.
-    //
-    int Uppercase = DecodeCodePoint(aFields[12]);
-
-    // Field #13 = Simple Lowercase Mapping.
-    //
-    int Lowercase = DecodeCodePoint(aFields[13]);
-
-    if (0 <= Value)
-    {
-        *pValue = Value;
-    }
-    else
-    {
-        if (  Uppercase < 0
-           && Lowercase < 0)
-        {
-            *pValue = -1;
-        }
-        else
-        {
-            if (Uppercase < 0)
-            {
-                Uppercase = codepoint;
-            }
-            if (Lowercase < 0)
-            {
-                Lowercase = codepoint;
-            }
-
-            if (Lowercase == codepoint)
-            {
-                *pValue = Uppercase - codepoint;
-            }
-            else
-            {
-                *pValue = Lowercase - codepoint;
-            }
-        }
-    }
-    return codepoint;
-}
-
 void TestTable(FILE *fp)
 {
     fprintf(stderr, "Testing STT table.\n");
     fseek(fp, 0, SEEK_SET);
     int Value;
-    int nextcode = ReadCodePoint(fp, &Value);
+    UTF32 Othercase;
+    UTF32 nextcode = ReadCodePoint(fp, &Value, &Othercase);
     int i;
     for (i = 0; i <= UNI_MAX_LEGAL_UTF32; i++)
     {
@@ -309,9 +128,9 @@ void TestTable(FILE *fp)
                 bMember = false;
             }
 
-            if (0 <= nextcode)
+            if (UNI_EOF != nextcode)
             {
-                nextcode = ReadCodePoint(fp, &Value);
+                nextcode = ReadCodePoint(fp, &Value, &Othercase);
             }
         }
         else
@@ -345,7 +164,8 @@ void LoadStrings(FILE *fp)
 
     fseek(fp, 0, SEEK_SET);
     int Value;
-    int nextcode = ReadCodePoint(fp, &Value);
+    UTF32 Othercase;
+    UTF32 nextcode = ReadCodePoint(fp, &Value, &Othercase);
 
     int i;
     for (i = 0; i <= UNI_MAX_LEGAL_UTF32; i++)
@@ -364,9 +184,9 @@ void LoadStrings(FILE *fp)
                 cExcluded++;
             }
 
-            if (0 <= nextcode)
+            if (UNI_EOF != nextcode)
             {
-                nextcode = ReadCodePoint(fp, &Value);
+                nextcode = ReadCodePoint(fp, &Value, &Othercase);
             }
         }
         else
@@ -407,16 +227,16 @@ void BuildAndOutputTable(FILE *fp, char *UpperPrefix, char *LowerPrefix)
     sm.Init();
     LoadStrings(fp);
     TestTable(fp);
-    sm.SetUndefinedStates();
+    sm.SetUndefinedStates(false);
     TestTable(fp);
 
     // Optimize State Transition Table.
     //
-    sm.RemoveAllNonMemberRows();
+    sm.MergeAcceptingStates();
     TestTable(fp);
-    sm.RemoveAllNonMemberRows();
+    sm.MergeAcceptingStates();
     TestTable(fp);
-    sm.RemoveAllNonMemberRows();
+    sm.MergeAcceptingStates();
     TestTable(fp);
     sm.RemoveDuplicateRows();
     TestTable(fp);

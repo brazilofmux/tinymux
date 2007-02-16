@@ -1,7 +1,10 @@
 #ifndef _SMUTIL_H_
 #define _SMUTIL_H_
 
-bool isPrivateUse(int ch);
+#define UNI_EOF ((UTF32)-1)
+
+bool  isPrivateUse(int ch);
+UTF32 ReadCodePoint(FILE *fp, int *pValue, UTF32 *pOthercase);
 
 typedef struct State
 {
@@ -11,16 +14,17 @@ typedef struct State
 } State;
 
 #define NUM_STATES 20000
+#define NUM_ACCEPTING_STATES 20000
 
 class StateMachine
 {
 public:
     StateMachine(void);
     void Init(void);
-    void RecordString(UTF8 *pStart, UTF8 *pEnd, bool bMember);
-    void TestString(UTF8 *pStart, UTF8 *pEnd, bool bMember);
-    void SetUndefinedStates(void);
-    void RemoveAllNonMemberRows(void);
+    void RecordString(UTF8 *pStart, UTF8 *pEnd, int AcceptingState);
+    void TestString(UTF8 *pStart, UTF8 *pEnd, int AcceptingState);
+    void SetUndefinedStates(int AcceptingState);
+    void MergeAcceptingStates(void);
     void RemoveDuplicateRows(void);
     void DetectDuplicateColumns(void);
     void NumberStates(void);
@@ -39,9 +43,7 @@ private:
     // Special States.
     //
     State  m_Undefined;
-    State  m_NotMember;
-    State  m_Member;
-
+    char   m_aAcceptingStates[NUM_ACCEPTING_STATES];
     State *m_StartingState;
 
     int    m_nStates;
