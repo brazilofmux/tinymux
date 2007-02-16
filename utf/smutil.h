@@ -47,6 +47,7 @@ private:
     State *m_StartingState;
 
     int    m_nStates;
+    int    m_nLargestAcceptingState;
     State *m_stt[NUM_STATES];
     UTF8   m_itt[256];
     bool   m_ColumnPresent[256];

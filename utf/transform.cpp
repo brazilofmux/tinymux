@@ -8,33 +8,24 @@
 #include "smutil.h"
 
 #if 0
-// 270 included, 1113842 excluded, 0 errors, 14 states, 32 columns, 704 bytes.
+// 270 code points.
+// 5 states, 42 columns, 466 bytes
 //
 #define DIGIT_START_STATE (0)
-#define DIGIT_ISMEMBER_STATE (14)
-#define DIGIT_ISNOTMEMBER_STATE (15)
+#define DIGIT_ACCEPTING_STATES_START (5)
 
 unsigned char digit_itt[256] =
 {
-     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 3, 2, 2, 2, 2, 4, 4, 4, 4, 5, 5, 5, 5, 6, 6, 7, 8, 9, 8, 8, 8, 8, 8, 8, 8, 10, 10, 10, 11, 10, 12, 13, 14, 14, 14, 14, 15, 16, 17, 16, 18, 19, 20, 19, 20, 19, 20, 21, 22, 21, 22, 21, 22, 21, 21, 21, 23, 10, 24, 25, 10, 10, 10, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 26, 0, 27, 0, 0, 0, 0, 28, 29, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 30, 31, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 5, 10, 11, 12, 13, 14, 15, 12, 16, 3, 4, 5, 6, 7, 13, 14, 15, 12, 16, 17, 4, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 19, 20, 21, 22, 23, 24, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 29, 17, 39, 32, 33, 34, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 40, 41, 41, 41, 41, 41, 41, 41, 41, 41, 41, 41, 41, 41, 41, 39, 40, 41, 41, 41, 41, 41, 41, 41, 41, 41, 41, 41, 41, 41, 41, 41
 };
 
-unsigned char digit_stt[14][32] =
+unsigned char digit_stt[5][42] =
 {
-    {  15,  14,  15,  15,  15,  15,  15,  15,  15,  15,  15,  15,  15,  15,  15,  15,  15,  15,  15,  15,  15,  15,  15,  15,  15,  15,   1,   2,   3,   6,   9,  10},
-    {  15,  15,  15,  15,  15,  15,  15,  15,  15,  15,  15,  15,  15,  14,  14,  14,  14,  14,  14,  15,  15,  15,  15,  15,  15,  15,  15,  15,  15,  15,  15,  15},
-    {  15,  15,  15,  15,  15,  15,  15,  15,  15,  15,  15,  15,  15,  15,  15,  15,  15,  15,  15,  15,  15,  14,  14,  14,  15,  15,  15,  15,  15,  15,  15,  15},
-    {  15,  15,  15,  15,  15,  15,  15,  15,  15,  15,  15,  15,  15,  15,  15,   4,  15,   4,   4,  15,   4,  15,   4,   5,   5,   1,  15,  15,  15,  15,  15,  15},
-    {  15,  15,  15,  15,  15,  15,  15,  15,  15,  15,  15,  15,  15,  15,  15,  15,  14,  14,  14,  14,  14,  15,  15,  15,  15,  15,  15,  15,  15,  15,  15,  15},
-    {  15,  15,  15,  15,  15,  15,  15,  14,  14,  14,  15,  15,  15,  15,  15,  15,  15,  15,  15,  15,  15,  15,  15,  15,  15,  15,  15,  15,  15,  15,  15,  15},
-    {  15,  15,  15,   7,  15,  15,  15,  15,  15,  15,  15,  15,   1,   5,  15,   8,  15,   5,  15,  15,  15,  15,  15,  15,  15,  15,  15,  15,  15,  15,  15,  15},
-    {  15,  15,  14,  14,  14,  15,  15,  15,  15,  15,  15,  15,  15,  15,  15,  15,  15,  15,  15,  15,  15,  15,  15,  15,  15,  15,  15,  15,  15,  15,  15,  15},
-    {  15,  15,  15,  15,  14,  14,  14,  15,  15,  15,  15,  15,  15,  15,  15,  15,  15,  15,  15,  15,  15,  15,  15,  15,  15,  15,  15,  15,  15,  15,  15,  15},
-    {  15,  15,  15,  15,  15,  15,  15,  15,  15,  15,  15,  15,  15,  15,  15,  15,  15,  15,  15,  15,  15,  15,  15,  15,  15,   5,  15,  15,  15,  15,  15,  15},
-    {  15,  15,  15,  15,  15,  15,  15,  11,  15,  15,  15,  12,  15,  15,  15,  15,  15,  15,  15,  15,  15,  15,  15,  15,  15,  15,  15,  15,  15,  15,  15,  15},
-    {  15,  15,  15,  15,  15,  15,  15,  15,  15,   1,  15,  15,  15,  15,  15,  15,  15,  15,  15,  15,  15,  15,  15,  15,  15,  15,  15,  15,  15,  15,  15,  15},
-    {  15,  15,  15,  15,  15,  15,  15,  15,  15,  15,  15,  15,  13,  15,  15,  15,  15,  15,  15,  15,  15,  15,  15,  15,  15,  15,  15,  15,  15,  15,  15,  15},
-    {  15,  15,  15,  15,  15,  15,  14,  14,  14,  14,  14,  14,  14,  14,  14,  14,  14,  14,  14,  14,  14,  14,  14,  14,  14,  14,  15,  15,  15,  15,  15,  15}
+    {   5,   6,   7,   8,   9,  10,  11,  12,  13,  14,   6,   6,   6,  13,  14,   5,   7,   0,   4,   5,   6,   7,   8,   9,  10,  11,  12,  13,  14,   5,   6,   7,   8,   9,  10,  11,  12,  13,  14,   0,   1,   3},
+    {   9,   9,   9,   9,   9,   9,   5,   6,   7,   8,  10,  11,  12,  13,  14,   1,   0,   0,   0,   0,   2,   0,   2,   0,   2,   0,   2,   0,   2,   0,   2,   0,   2,   0,   2,   0,   0,   0,   0,   0,   0,   0},
+    {  13,   0,  13,   0,   0,   0,   9,   0,  11,   0,   0,   0,   0,  11,   0,  13,   0,   0,   0,   9,  10,  11,  12,  13,  14,   5,   6,   7,   8,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0},
+    {   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   1,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0},
+    {   7,   8,   7,  10,  11,  12,  13,  14,   5,   6,   8,   8,   8,   5,   6,   7,   9,  10,  12,  13,  14,   5,   6,   7,   8,   9,  10,  11,  12,   9,  10,  11,  12,  13,  14,   5,   6,   7,   8,  11,   0,   0}
 };
 
 void VerifyTables(FILE *fp)
@@ -44,33 +35,13 @@ void VerifyTables(FILE *fp)
     int Value;
     UTF32 Othercase;
     UTF32 nextcode = ReadCodePoint(fp, &Value, &Othercase);
-    int i;
-    for (i = 0; i <= UNI_MAX_LEGAL_UTF32; i++)
+
+    // Value
+    //
+    while (UNI_EOF != nextcode)
     {
-        bool bMember;
-        if (i == nextcode)
-        {
-            if (!isPrivateUse(i))
-            {
-                bMember = true;
-            }
-            else
-            {
-                bMember = false;
-            }
-
-            if (UNI_EOF != nextcode)
-            {
-                nextcode = ReadCodePoint(fp, &Value, &Othercase);
-            }
-        }
-        else
-        {
-            bMember = false;
-        }
-
         UTF32 Source[2];
-        Source[0] = i;
+        Source[0] = nextcode;
         Source[1] = L'\0';
         const UTF32 *pSource = Source;
 
@@ -85,26 +56,28 @@ void VerifyTables(FILE *fp)
             int iState = DIGIT_START_STATE;
             UTF8 *p = Target;
             while (  p < pTarget
-                  && iState < DIGIT_ISMEMBER_STATE)
+                  && iState < DIGIT_ACCEPTING_STATES_START)
             {
                 iState = digit_stt[iState][digit_itt[(unsigned char)*p]];
                 p++;
             }
 
-            if (  (  DIGIT_ISMEMBER_STATE == iState
-                  && !bMember)
-               || (  DIGIT_ISNOTMEMBER_STATE == iState
-                  && bMember))
+            int j = iState - DIGIT_ACCEPTING_STATES_START;
+            if (j != Value)
             {
                 printf("Input Translation Table and State Transition Table do not work.\n");
                 exit(0);
             }
         }
+        nextcode = ReadCodePoint(fp, &Value, &Othercase);
     }
 }
 #endif
 
 StateMachine sm;
+
+UTF8 *aOutputTable[5000];
+int   nOutputTable;
 
 void TestTable(FILE *fp)
 {
@@ -113,45 +86,109 @@ void TestTable(FILE *fp)
     int Value;
     UTF32 Othercase;
     UTF32 nextcode = ReadCodePoint(fp, &Value, &Othercase);
-    int i;
-    for (i = 0; i <= UNI_MAX_LEGAL_UTF32; i++)
-    {
-        bool bMember;
-        if (i == nextcode)
-        {
-            if (!isPrivateUse(i))
-            {
-                bMember = true;
-            }
-            else
-            {
-                bMember = false;
-            }
 
-            if (UNI_EOF != nextcode)
+    if (Value < 0)
+    {
+        // Othercase
+        //
+        while (UNI_EOF != nextcode)
+        {
+            UTF32 SourceA[2];
+            SourceA[0] = nextcode;
+            SourceA[1] = L'\0';
+            const UTF32 *pSourceA = SourceA;
+
+            UTF8 TargetA[5];
+            UTF8 *pTargetA = TargetA;
+
+            ConversionResult cr;
+            cr = ConvertUTF32toUTF8(&pSourceA, pSourceA+1, &pTargetA, pTargetA+sizeof(TargetA)-1, lenientConversion);
+
+            if (conversionOK != cr)
             {
                 nextcode = ReadCodePoint(fp, &Value, &Othercase);
+                continue;
             }
+
+            UTF32 SourceB[2];
+            SourceB[0] = Othercase;
+            SourceB[1] = L'\0';
+            const UTF32 *pSourceB = SourceB;
+
+            UTF8 TargetB[5];
+            UTF8 *pTargetB = TargetB;
+
+            cr = ConvertUTF32toUTF8(&pSourceB, pSourceB+1, &pTargetB, pTargetB+sizeof(TargetB)-1, lenientConversion);
+
+            if (conversionOK == cr)
+            {
+                if (pTargetA - TargetA != pTargetB - TargetB)
+                {
+                    fprintf(stderr, "Different UTF-8 length between cases is unsupported.\n");
+                    exit(0);
+                }
+
+                // Calculate XOR string.
+                //
+                UTF8 Xor[5];
+                UTF8 *pA = TargetA;
+                UTF8 *pB = TargetB;
+                UTF8 *pXor = Xor;
+
+                while (pA < pTargetA)
+                {
+                    *pXor = *pA ^ *pB;
+                    pA++;
+                    pB++;
+                    pXor++;
+                }
+                *pXor = '\0';
+                size_t nXor = pXor - Xor + 1;
+
+                int i;
+                bool bFound = false;
+                for (i = 0; i < nOutputTable; i++)
+                {
+                    if (memcmp(aOutputTable[i], Xor, nXor) == 0)
+                    {
+                        bFound = true;
+                        break;
+                    }
+                }
+
+                if (!bFound)
+                {
+                    printf("Output String not found. This should not happen.\n");
+                    exit(0);
+                }
+
+                sm.TestString(TargetA, pTargetA, i);
+            }
+            nextcode = ReadCodePoint(fp, &Value, &Othercase);
         }
-        else
+    }
+    else
+    {
+        // Value
+        //
+        while (UNI_EOF != nextcode)
         {
-            bMember = false;
-        }
+            UTF32 Source[2];
+            Source[0] = nextcode;
+            Source[1] = L'\0';
+            const UTF32 *pSource = Source;
 
-        UTF32 Source[2];
-        Source[0] = i;
-        Source[1] = L'\0';
-        const UTF32 *pSource = Source;
+            UTF8 Target[5];
+            UTF8 *pTarget = Target;
 
-        UTF8 Target[5];
-        UTF8 *pTarget = Target;
+            ConversionResult cr;
+            cr = ConvertUTF32toUTF8(&pSource, pSource+1, &pTarget, pTarget+sizeof(Target)-1, lenientConversion);
 
-        ConversionResult cr;
-        cr = ConvertUTF32toUTF8(&pSource, pSource+1, &pTarget, pTarget+sizeof(Target)-1, lenientConversion);
-
-        if (conversionOK == cr)
-        {
-            sm.TestString(Target, pTarget, bMember);
+            if (conversionOK == cr)
+            {
+                sm.TestString(Target, pTarget, Value);
+            }
+            nextcode = ReadCodePoint(fp, &Value, &Othercase);
         }
     }
 }
@@ -159,64 +196,122 @@ void TestTable(FILE *fp)
 void LoadStrings(FILE *fp)
 {
     int cIncluded = 0;
-    int cExcluded = 0;
-    int cErrors   = 0;
 
     fseek(fp, 0, SEEK_SET);
     int Value;
     UTF32 Othercase;
     UTF32 nextcode = ReadCodePoint(fp, &Value, &Othercase);
 
-    int i;
-    for (i = 0; i <= UNI_MAX_LEGAL_UTF32; i++)
+    if (Value < 0)
     {
-        bool bMember;
-        if (i == nextcode)
+        // Othercase
+        //
+        nOutputTable = 0;
+        while (UNI_EOF != nextcode)
         {
-            if (!isPrivateUse(i))
-            {
-                bMember = true;
-                cIncluded++;
-            }
-            else
-            {
-                bMember = false;
-                cExcluded++;
-            }
+            UTF32 SourceA[2];
+            SourceA[0] = nextcode;
+            SourceA[1] = L'\0';
+            const UTF32 *pSourceA = SourceA;
 
-            if (UNI_EOF != nextcode)
+            UTF8 TargetA[5];
+            UTF8 *pTargetA = TargetA;
+
+            ConversionResult cr;
+            cr = ConvertUTF32toUTF8(&pSourceA, pSourceA+1, &pTargetA, pTargetA+sizeof(TargetA)-1, lenientConversion);
+
+            if (conversionOK != cr)
             {
                 nextcode = ReadCodePoint(fp, &Value, &Othercase);
+                continue;
             }
-        }
-        else
-        {
-            bMember = false;
-            cExcluded++;
-        }
 
-        UTF32 Source[2];
-        Source[0] = i;
-        Source[1] = L'\0';
-        const UTF32 *pSource = Source;
+            UTF32 SourceB[2];
+            SourceB[0] = Othercase;
+            SourceB[1] = L'\0';
+            const UTF32 *pSourceB = SourceB;
 
-        UTF8 Target[5];
-        UTF8 *pTarget = Target;
+            UTF8 TargetB[5];
+            UTF8 *pTargetB = TargetB;
 
-        ConversionResult cr;
-        cr = ConvertUTF32toUTF8(&pSource, pSource+1, &pTarget, pTarget+sizeof(Target)-1, lenientConversion);
+            cr = ConvertUTF32toUTF8(&pSourceB, pSourceB+1, &pTargetB, pTargetB+sizeof(TargetB)-1, lenientConversion);
 
-        if (conversionOK == cr)
-        {
-            sm.RecordString(Target, pTarget, bMember);
-        }
-        else
-        {
-            cErrors++;
+            if (conversionOK == cr)
+            {
+                if (pTargetA - TargetA != pTargetB - TargetB)
+                {
+                    fprintf(stderr, "Different UTF-8 length between cases is unsupported.\n");
+                    exit(0);
+                }
+
+                // Calculate XOR string.
+                //
+                UTF8 Xor[5];
+                UTF8 *pA = TargetA;
+                UTF8 *pB = TargetB;
+                UTF8 *pXor = Xor;
+
+                while (pA < pTargetA)
+                {
+                    *pXor = *pA ^ *pB;
+                    pA++;
+                    pB++;
+                    pXor++;
+                }
+                *pXor = '\0';
+                size_t nXor = pXor - Xor + 1;
+
+                int i;
+                bool bFound = false;
+                for (i = 0; i < nOutputTable; i++)
+                {
+                    if (memcmp(aOutputTable[i], Xor, nXor) == 0)
+                    {
+                        bFound = true;
+                        break;
+                    }
+                }
+
+                if (!bFound)
+                {
+                    aOutputTable[nOutputTable] = new UTF8[nXor];
+                    memcpy(aOutputTable[nOutputTable], Xor, nXor);
+                    i = nOutputTable++;
+                }
+
+                cIncluded++;
+                sm.RecordString(TargetA, pTargetA, i);
+            }
+            nextcode = ReadCodePoint(fp, &Value, &Othercase);
         }
     }
-    printf("// %d included, %d excluded, %d errors.\n", cIncluded, cExcluded, cErrors);
-    fprintf(stderr, "%d included, %d excluded, %d errors.\n", cIncluded, cExcluded, cErrors);
+    else
+    {
+        // Value
+        //
+        while (UNI_EOF != nextcode)
+        {
+            UTF32 Source[2];
+            Source[0] = nextcode;
+            Source[1] = L'\0';
+            const UTF32 *pSource = Source;
+
+            UTF8 Target[5];
+            UTF8 *pTarget = Target;
+
+            ConversionResult cr;
+            cr = ConvertUTF32toUTF8(&pSource, pSource+1, &pTarget, pTarget+sizeof(Target)-1, lenientConversion);
+
+            if (conversionOK == cr)
+            {
+                cIncluded++;
+                sm.RecordString(Target, pTarget, Value);
+            }
+            nextcode = ReadCodePoint(fp, &Value, &Othercase);
+        }
+    }
+    printf("// %d code points.\n", cIncluded);
+    fprintf(stderr, "%d code points.\n", cIncluded);
     sm.ReportStatus();
 }
 
@@ -227,8 +322,14 @@ void BuildAndOutputTable(FILE *fp, char *UpperPrefix, char *LowerPrefix)
     sm.Init();
     LoadStrings(fp);
     TestTable(fp);
-    sm.SetUndefinedStates(false);
+
+    // Leaving states undefined leads to a smaller table.  On the other hand,
+    // do not make queries for code points outside the expected set.
+    //
+#if 0
+    sm.SetUndefinedStates(0);
     TestTable(fp);
+#endif
 
     // Optimize State Transition Table.
     //
@@ -246,6 +347,46 @@ void BuildAndOutputTable(FILE *fp, char *UpperPrefix, char *LowerPrefix)
     //
     sm.NumberStates();
     sm.OutputTables(UpperPrefix, LowerPrefix);
+
+    if (0 == nOutputTable)
+    {
+        return;
+    }
+
+    printf("unsigned char ott[%d] =\n", nOutputTable);
+    printf("{\n");
+    int i;
+    for (i = 0; i < nOutputTable; i++)
+    {
+        UTF8 *p = aOutputTable[i];
+        printf("    \"");
+        while ('\0' != *p)
+        {
+            if (isprint(*p))
+            {
+                printf("%c", *p);
+            }
+            else
+            {
+                printf("\\x%02X", *p);
+            }
+            p++;
+        }
+
+        if (i != nOutputTable - 1)
+        {
+            printf("\",\n");
+        }
+        else
+        {
+            printf("\"\n");
+        }
+
+        delete aOutputTable[i];
+        aOutputTable[i] = NULL;
+    }
+    nOutputTable = 0;
+    printf("};\n");
 }
 
 int main(int argc, char *argv[])
@@ -258,8 +399,8 @@ int main(int argc, char *argv[])
         fprintf(stderr, "Usage: %s prefix unicodedata.txt\n", argv[0]);
         exit(0);
 #else
-        pFilename = "AlphaUpper.txt";
-        pPrefix   = "alupp";
+        pFilename = "NumericDecimal.txt";
+        pPrefix   = "digit";
 #endif
     }
     else

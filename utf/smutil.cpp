@@ -244,6 +244,7 @@ void StateMachine::Init(void)
         m_itt[i] = i;
         m_ColumnPresent[i] = true;
     }
+    m_nLargestAcceptingState = -1;
 }
 
 void StateMachine::Final(void)
@@ -265,6 +266,11 @@ StateMachine::~StateMachine()
 
 void StateMachine::RecordString(UTF8 *pStart, UTF8 *pEnd, int AcceptingState)
 {
+    if (m_nLargestAcceptingState < AcceptingState)
+    {
+        m_nLargestAcceptingState = AcceptingState;
+    }
+
     State *pState = m_StartingState;
     while (pStart < pEnd-1)
     {
@@ -334,7 +340,14 @@ bool StateMachine::RowsEqual(State *p, State *q)
     int i;
     for (i = 0; i < 256; i++)
     {
-        if (p->next[i] != q->next[i])
+        if (  &m_Undefined == p->next[i]
+           || &m_Undefined == q->next[i])
+        {
+            // We interpret undefined transitions as 'Do not care'.
+            //
+            continue;
+        }
+        else if (p->next[i] != q->next[i])
         {
             return false;
         }
@@ -348,6 +361,16 @@ bool StateMachine::ColumnsEqual(int iColumn, int jColumn)
     for (i = 0; i < m_nStates; i++)
     {
         State *p = m_stt[i];
+#if 1
+        if (  &m_Undefined == p->next[iColumn]
+           || &m_Undefined == p->next[jColumn])
+        {
+            // We interpret undefined transitions as 'Do not care'.
+            //
+            continue;
+        }
+        else
+#endif
         if (p->next[iColumn] != p->next[jColumn])
         {
             return false;
@@ -368,8 +391,14 @@ void StateMachine::MergeAcceptingStates(void)
     for (i = 0; i < m_nStates; i++)
     {
         State *pi = m_stt[i];
+        if (m_StartingState == pi)
+        {
+            // We can't remove the starting state.
+            //
+            continue;
+        }
 
-        bool bMatched = true;
+        bool bMatched = false;
         State *pLastState = NULL;
         int k;
         for (k = 0; k < 256; k++)
@@ -380,16 +409,24 @@ void StateMachine::MergeAcceptingStates(void)
                 //
                 continue;
             }
-
-            if (  NULL != pLastState
-               && pLastState != pi->next[k])
+            else if (  pi->next[k] < (State *)(m_aAcceptingStates)
+                    || (State *)(m_aAcceptingStates + sizeof(m_aAcceptingStates)) < pi->next[k])
             {
+                // Not at accepting state. We can't eliminate this transition.
+                //
                 bMatched = false;
                 break;
             }
-            else
+
+            if (NULL == pLastState)
             {
+                bMatched = true;
                 pLastState = pi->next[k];
+            }
+            else if (pLastState != pi->next[k])
+            {
+                bMatched = false;
+                break;
             }
         }
 
@@ -447,7 +484,7 @@ void StateMachine::MergeAcceptingStates(void)
 
 void StateMachine::RemoveDuplicateRows(void)
 {
-    fprintf(stderr, "Merging states which lead to the same states.\n");
+    fprintf(stderr, "Merging states which lead to the same state.\n");
     int i, j;
     for (i = 0; i < m_nStates; i++)
     {
@@ -471,6 +508,18 @@ void StateMachine::RemoveDuplicateRows(void)
                         // Merge (j)th row into (i)th row.
                         //
                         pj->merged = pi;
+
+                        // Let (j)th row defined transitions override (i)th
+                        // row undefined transitions.
+                        //
+                        int u;
+                        for (u = 0; u < 256; u++)
+                        {
+                            if (&m_Undefined == pi->next[u])
+                            {
+                                pi->next[u] = pj->next[u];
+                            }
+                        }
                     }
                 }
             }
@@ -544,6 +593,18 @@ void StateMachine::DetectDuplicateColumns(void)
             {
                 m_itt[j] = static_cast<UTF8>(i);
                 m_ColumnPresent[j] = false;
+
+                // Let (j)th column defined transitions override (i)th
+                // column undefined transitions.
+                //
+                int u;
+                for (u = 0; u < m_nStates; u++)
+                {
+                    if (&m_Undefined == m_stt[u]->next[i])
+                    {
+                        m_stt[u]->next[i] = m_stt[u]->next[j];
+                    }
+                }
             }
         }
     }
@@ -593,11 +654,12 @@ void StateMachine::NumberStates(void)
 void StateMachine::MinimumMachineSize(int *pSizeOfState, int *pSizeOfMachine)
 {
     int SizeOfState;
-    if (m_nStates < 256)
+    int TotalStates = m_nStates + m_nLargestAcceptingState + 1;
+    if (TotalStates < 256)
     {
         SizeOfState = sizeof(unsigned char);
     }
-    else if (m_nStates < 65536)
+    else if (TotalStates < 65536)
     {
         SizeOfState = sizeof(unsigned short);
     }
@@ -674,6 +736,12 @@ void StateMachine::OutputTables(char *UpperPrefix, char *LowerPrefix)
                 char *p = reinterpret_cast<char *>(pj);
                 k = static_cast<int>(iAcceptingStatesStart + (p - m_aAcceptingStates));
             }
+            else if (&m_Undefined == pj)
+            {
+                // This is a don't care.
+                //
+                k = 0;
+            }
             else
             {
                 k = pj->iState;
@@ -699,6 +767,7 @@ void StateMachine::TestString(UTF8 *pStart, UTF8 *pEnd, int AcceptingState)
 {
     State *pState = m_StartingState;
     while (  pStart < pEnd
+          && &m_Undefined != pState
           && (  pState < (State *)(m_aAcceptingStates)
              || (State *)(m_aAcceptingStates + sizeof(m_aAcceptingStates)) < pState))
     {
