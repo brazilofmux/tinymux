@@ -283,7 +283,7 @@ void StateMachine::RecordString(UTF8 *pStart, UTF8 *pEnd, int AcceptingState)
             pState = p;
         }
         else if (  (State *)(m_aAcceptingStates) <= pState->next[ch]
-                && pState->next[ch] <= (State *)(m_aAcceptingStates + sizeof(m_aAcceptingStates)))
+                && pState->next[ch] < (State *)(m_aAcceptingStates + sizeof(m_aAcceptingStates)))
         {
             fprintf(stderr, "Already recorded.  This shouldn't happen.\n");
             exit(0);
@@ -303,7 +303,7 @@ void StateMachine::RecordString(UTF8 *pStart, UTF8 *pEnd, int AcceptingState)
             pState->next[ch] = (State *)(m_aAcceptingStates + AcceptingState);
         }
         else if (  (State *)(m_aAcceptingStates) <= pState->next[ch]
-                && pState->next[ch] <= (State *)(m_aAcceptingStates + sizeof(m_aAcceptingStates)))
+                && pState->next[ch] < (State *)(m_aAcceptingStates + sizeof(m_aAcceptingStates)))
         {
             fprintf(stderr, "Already recorded.  This shouldn't happen.\n");
             exit(0);
@@ -410,7 +410,7 @@ void StateMachine::MergeAcceptingStates(void)
                 continue;
             }
             else if (  pi->next[k] < (State *)(m_aAcceptingStates)
-                    || (State *)(m_aAcceptingStates + sizeof(m_aAcceptingStates)) < pi->next[k])
+                    || (State *)(m_aAcceptingStates + sizeof(m_aAcceptingStates)) <= pi->next[k])
             {
                 // Not at accepting state. We can't eliminate this transition.
                 //
@@ -686,15 +686,36 @@ void StateMachine::OutputTables(char *UpperPrefix, char *LowerPrefix)
     printf("#define %s_ACCEPTING_STATES_START (%d)\n", UpperPrefix, iAcceptingStatesStart);
     printf("\n");
 
-    printf("unsigned char %s_itt[256] =\n", LowerPrefix);
-    printf("{\n    ");
+    printf("const unsigned char %s_itt[256] =\n", LowerPrefix);
+    printf("{\n");
     int i;
     for (i = 0; i < 256; i++)
     {
-        printf(" %d", m_itt[i]);
+        int j = i % 16;
+        if (0 == j)
+        {
+            printf("    ");
+        }
+
+        printf(" %3d", m_itt[i]);
         if (i < 256-1)
         {
             printf(",");
+        }
+
+        if (7 == j)
+        {
+            printf(" ");
+        }
+
+        if (15 == j)
+        {
+            printf("\n");
+        }
+
+        if (127 == i)
+        {
+            printf("\n");
         }
     }
     printf("\n};\n\n");
@@ -702,15 +723,15 @@ void StateMachine::OutputTables(char *UpperPrefix, char *LowerPrefix)
     switch (SizeOfState)
     {
     case 1:
-        printf("unsigned char %s_stt[%d][%d] =\n", LowerPrefix, m_nStates, m_nColumns);
+        printf("const unsigned char %s_stt[%d][%d] =\n", LowerPrefix, m_nStates, m_nColumns);
         break;
 
     case 2:
-        printf("unsigned short %s_stt[%d][%d] =\n", LowerPrefix, m_nStates, m_nColumns);
+        printf("const unsigned short %s_stt[%d][%d] =\n", LowerPrefix, m_nStates, m_nColumns);
         break;
 
     default:
-        printf("unsigned long %s_stt[%d][%d] =\n", LowerPrefix, m_nStates, m_nColumns);
+        printf("const unsigned long %s_stt[%d][%d] =\n", LowerPrefix, m_nStates, m_nColumns);
         break;
     }
     printf("{\n");
@@ -730,10 +751,10 @@ void StateMachine::OutputTables(char *UpperPrefix, char *LowerPrefix)
             State *pj = pi->next[j];
 
             int k;
-            if (  (State *)(m_aAcceptingStates) <= pj
-               && pj <= (State *)(m_aAcceptingStates + sizeof(m_aAcceptingStates)))
+            char *p = reinterpret_cast<char *>(pj);
+            if (  m_aAcceptingStates <= p
+               && p < m_aAcceptingStates + sizeof(m_aAcceptingStates))
             {
-                char *p = reinterpret_cast<char *>(pj);
                 k = static_cast<int>(iAcceptingStatesStart + (p - m_aAcceptingStates));
             }
             else if (&m_Undefined == pj)
@@ -769,7 +790,7 @@ void StateMachine::TestString(UTF8 *pStart, UTF8 *pEnd, int AcceptingState)
     while (  pStart < pEnd
           && &m_Undefined != pState
           && (  pState < (State *)(m_aAcceptingStates)
-             || (State *)(m_aAcceptingStates + sizeof(m_aAcceptingStates)) < pState))
+             || (State *)(m_aAcceptingStates + sizeof(m_aAcceptingStates)) <= pState))
     {
         pState = pState->next[(unsigned char)*pStart];
         pStart++;
