@@ -9540,15 +9540,12 @@ static FUNCTION(fun_chr)
         safe_str("#-1 ARGUMENT MUST BE A NUMBER", buff, bufc);
         return;
     }
+
     int ch = mux_atol(fargs[0]);
-    if (  ch < 0
-       || (int) UCHAR_MAX < ch)
+    UTF8 *p = ConvertToUTF8(ch);
+    if (mux_isprint(p))
     {
-        safe_str("#-1 THIS ISN'T UNICODE", buff, bufc);
-    }
-    else if (mux_isprint(ch))
-    {
-        safe_chr(ch, buff, bufc);
+        safe_str((char *)(p), buff, bufc);
     }
     else
     {
@@ -9692,11 +9689,18 @@ static FUNCTION(fun_accent)
                 ch  = AccentCombo3[ch0-1][ch1];
             }
         }
-        if (!mux_isprint(ch))
+
+        UTF16 ch16 = mux_ch2utf16[ch];
+        UTF8 *t = ConvertToUTF8(ch16);
+        if (mux_isprint(t))
+        {
+            safe_str((char *)t, buff, bufc);
+        }
+        else
         {
             ch = *p;
+            safe_chr(ch, buff, bufc);
         }
-        safe_chr(ch, buff, bufc);
 
         p++;
         q++;

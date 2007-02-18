@@ -167,7 +167,7 @@ char *MakeCanonicalComAlias
     size_t n = 0;
     while (pAlias[n])
     {
-        if (  !mux_isprint(pAlias[n])
+        if (  !mux_isprint_old(pAlias[n])
            || ' ' == pAlias[n])
         {
             return NULL;

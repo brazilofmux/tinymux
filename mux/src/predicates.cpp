@@ -557,14 +557,14 @@ bool ok_password(const char *password, const char **pmsg)
         return false;
     }
 
-    const char *scan;
     int num_upper = 0;
     int num_special = 0;
     int num_lower = 0;
 
-    for (scan = password; *scan; scan++)
+    const unsigned char *scan = (const unsigned char *)(password);
+    for ( ; *scan; scan = mux_NextCodePoint(scan))
     {
-        if (  !mux_isprint(*scan)
+        if (  !mux_isprint(scan)
            || mux_isspace(*scan))
         {
             *pmsg = "Illegal character in password.";

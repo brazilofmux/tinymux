@@ -8,7 +8,11 @@
 #ifndef STRINGUTIL_H
 #define STRINGUTIL_H
 
-extern const bool mux_isprint[256];
+typedef UINT8  UTF8;
+typedef UINT16 UTF16;
+typedef UINT32 UTF32;
+
+extern const bool mux_isprint_old[256];
 extern const bool mux_isdigit[256];
 extern const bool mux_isxdigit[256];
 extern const bool mux_isazAZ[256];
@@ -27,8 +31,10 @@ extern const unsigned char mux_hex2dec[256];
 extern const unsigned char mux_toupper[256];
 extern const unsigned char mux_tolower[256];
 extern const unsigned char mux_StripAccents[256];
+extern const unsigned char mux_utf8[256];
+extern const UTF16 mux_ch2utf16[256];
 
-#define mux_isprint(x) (mux_isprint[(unsigned char)(x)])
+#define mux_isprint_old(x) (mux_isprint_old[(unsigned char)(x)])
 #define mux_isdigit(x) (mux_isdigit[(unsigned char)(x)])
 #define mux_isxdigit(x)(mux_isxdigit[(unsigned char)(x)])
 #define mux_isazAZ(x)  (mux_isazAZ[(unsigned char)(x)])
@@ -48,6 +54,43 @@ extern const unsigned char mux_StripAccents[256];
 #define mux_issecure(x)           (mux_issecure[(unsigned char)(x)])
 #define mux_isescape(x)           (mux_isescape[(unsigned char)(x)])
 #define mux_StripAccents(x)       (mux_StripAccents[(unsigned char)(x)])
+
+#define UNI_REPLACEMENT_CHAR ((UTF32)0x0000FFFDUL)
+#define UNI_MAX_BMP          ((UTF32)0x0000FFFFUL)
+#define UNI_MAX_UTF16        ((UTF32)0x0010FFFFUL)
+#define UNI_MAX_UTF32        ((UTF32)0x7FFFFFFFUL)
+#define UNI_MAX_LEGAL_UTF32  ((UTF32)0x0010FFFFUL)
+#define UNI_SUR_HIGH_START   ((UTF32)0x0000D800UL)
+#define UNI_SUR_HIGH_END     ((UTF32)0x0000DBFFUL)
+#define UNI_SUR_LOW_START    ((UTF32)0x0000DC00UL)
+#define UNI_SUR_LOW_END      ((UTF32)0x0000DFFFUL)
+#define UNI_PU1_START        ((UTF32)0x0000E000UL)
+#define UNI_PU1_END          ((UTF32)0x0000F8FFUL)
+#define UNI_PU2_START        ((UTF32)0x000F0000UL)
+#define UNI_PU2_END          ((UTF32)0x000FFFFDUL)
+#define UNI_PU3_START        ((UTF32)0x00100000UL)
+#define UNI_PU3_END          ((UTF32)0x0010FFFDUL)
+
+#define mux_NextCodePoint(x)      (x + mux_utf8[(unsigned char)*x])
+
+// 219 included, 1113893 excluded, 0 errors.
+// 12 states, 26 columns, 568 bytes
+//
+#define PRINT_START_STATE (0)
+#define PRINT_ACCEPTING_STATES_START (12)
+extern const unsigned char print_itt[256];
+extern const unsigned char print_stt[12][26];
+
+inline bool mux_isprint(const unsigned char *p)
+{
+    int iState = PRINT_START_STATE;
+    do
+    {
+        unsigned char ch = *p++;
+        iState = print_stt[iState][print_itt[(unsigned char)ch]];
+    } while (iState < PRINT_ACCEPTING_STATES_START);
+    return ((iState - PRINT_ACCEPTING_STATES_START) == 1) ? true : false;
+}
 
 int ANSI_lex(size_t nString, const char *pString, size_t *nLengthToken0, size_t *nLengthToken1);
 #define TOKEN_TEXT_ANSI 0 // Text sequence + optional ANSI sequence.
@@ -151,6 +194,7 @@ void safe_copy_str(const char *src, char *buff, char **bufp, size_t nSizeOfBuffe
 void safe_copy_str_lbuf(const char *src, char *buff, char **bufp);
 size_t safe_copy_buf(const char *src, size_t nLen, char *buff, char **bufp);
 size_t safe_fill(char *buff, char **bufc, char chFile, size_t nSpaces);
+UTF8 *ConvertToUTF8(UTF32 ch);
 void mux_strncpy(char *dest, const char *src, size_t nSizeOfBuffer);
 bool matches_exit_from_list(char *, const char *);
 char *translate_string(const char *, bool);

@@ -13,7 +13,7 @@
 #include "ansi.h"
 #include "pcre.h"
 
-const bool mux_isprint[256] =
+const bool mux_isprint_old[256] =
 {
 //  0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F
 //
@@ -540,7 +540,7 @@ const unsigned char mux_utf8[256] =
 // The following table maps existing 8-bit characters to UTF-16 which can
 // then be encoded into UTF-8.
 //
-const UINT16 mux_ch2utf16[256] =
+const UTF16 mux_ch2utf16[256] =
 {
     0x0000, 0x0001, 0x0002, 0x0003, 0x0004, 0x0005, 0x0006, 0x0007,
     0x0008, 0x0009, 0x000A, 0x000B, 0x000C, 0x000D, 0x000E, 0x000F,
@@ -575,6 +575,51 @@ const UINT16 mux_ch2utf16[256] =
     0x00F0, 0x00F1, 0x00F2, 0x00F3, 0x00F4, 0x00F5, 0x00F6, 0x00F7,
     0x00F8, 0x00F9, 0x00FA, 0x00FB, 0x00FC, 0x00FD, 0x00FE, 0x00FF
 };
+
+// 219 included, 1113893 excluded, 0 errors.
+// 12 states, 26 columns, 568 bytes
+//
+#define PRINT_START_STATE (0)
+#define PRINT_ACCEPTING_STATES_START (12)
+
+const unsigned char print_itt[256] =
+{
+       0,   0,   0,   0,   0,   0,   0,   0,    0,   0,   0,   0,   0,   0,   0,   0,
+       0,   0,   0,   0,   0,   0,   0,   0,    0,   0,   0,   0,   0,   0,   0,   0,
+       1,   1,   1,   1,   1,   1,   1,   1,    1,   1,   1,   1,   1,   1,   1,   1,
+       1,   1,   1,   1,   1,   1,   1,   1,    1,   1,   1,   1,   1,   1,   1,   1,
+       1,   1,   1,   1,   1,   1,   1,   1,    1,   1,   1,   1,   1,   1,   1,   1,
+       1,   1,   1,   1,   1,   1,   1,   1,    1,   1,   1,   1,   1,   1,   1,   1,
+       1,   1,   1,   1,   1,   1,   1,   1,    1,   1,   1,   1,   1,   1,   1,   1,
+       1,   1,   1,   1,   1,   1,   1,   1,    1,   1,   1,   1,   1,   1,   1,   0,
+
+       2,   3,   4,   3,   5,   3,   6,   3,    3,   3,   3,   3,   3,   3,   3,   3,
+       3,   3,   7,   8,   9,   3,   3,   3,    9,   9,   9,   3,  10,   9,   9,   3,
+      11,  11,  12,  13,  13,  13,  14,  13,   13,  13,  13,  13,  15,  13,  13,  13,
+      14,  13,  13,  13,  13,  13,  13,  13,   16,  14,  14,  13,  13,  17,  16,  18,
+       0,   0,  19,  20,   0,  21,  22,   0,    0,   0,   0,  23,   0,   0,   0,   0,
+       0,   0,   0,   0,   0,   0,   0,   0,    0,   0,   0,   0,   0,   0,   0,   0,
+       0,   0,  24,   0,   0,   0,   0,   0,    0,   0,   0,   0,   0,   0,   0,  25,
+       0,   0,   0,   0,   0,   0,   0,   0,    0,   0,   0,   0,   0,   0,   0,   0
+
+};
+
+const unsigned char print_stt[12][26] =
+{
+    {  12,  13,  12,  12,  12,  12,  12,  12,  12,  12,  12,  12,  12,  12,  12,  12,  12,  12,  12,   1,   2,   3,   4,   5,   6,  10},
+    {  12,  12,  12,  12,  12,  12,  12,  12,  12,  12,  12,  13,  13,  13,  13,  13,  13,  13,  13,  12,  12,  12,  12,  12,  12,  12},
+    {  12,  12,  13,  13,  13,  13,  13,  13,  13,  13,  13,  13,  13,  13,  13,  13,  13,  13,  13,  12,  12,  12,  12,  12,  12,  12},
+    {  12,  12,  12,  12,  12,  12,  12,  13,  13,  12,  12,  13,  12,  12,  12,  12,  13,  13,  12,  12,  12,  12,  12,  12,  12,  12},
+    {  12,  12,  12,  12,  12,  12,  12,  13,  12,  12,  12,  12,  12,  12,  12,  12,  12,  12,  12,  12,  12,  12,  12,  12,  12,  12},
+    {  12,  12,  12,  12,  12,  12,  13,  12,  12,  12,  13,  12,  12,  12,  12,  12,  12,  12,  12,  12,  12,  12,  12,  12,  12,  12},
+    {  12,  12,   7,  12,   8,   9,  12,  12,  12,  12,  12,  12,  12,  12,  12,  12,  12,  12,  12,  12,  12,  12,  12,  12,  12,  12},
+    {  12,  12,  12,  12,  12,  12,  12,  12,  13,  13,  13,  13,  13,  12,  13,  12,  12,  12,  12,  12,  12,  12,  12,  12,  12,  12},
+    {  12,  12,  12,  12,  12,  12,  12,  12,  12,  12,  12,  12,  12,  12,  12,  13,  12,  12,  12,  12,  12,  12,  12,  12,  12,  12},
+    {  12,  12,  12,  12,  12,  12,  12,  12,  12,  12,  12,  12,  13,  12,  12,  12,  12,  12,  12,  12,  12,  12,  12,  12,  12,  12},
+    {  12,  12,  12,  12,  12,  12,  12,  12,  12,  12,  12,  12,  12,  12,  12,  12,  12,  12,  11,  12,  12,  12,  12,  12,  12,  12},
+    {  12,  12,  12,  12,  12,  12,  12,  12,  12,  12,  12,  12,  12,  12,  12,  12,  12,  13,  12,  12,  12,  12,  12,  12,  12,  12}
+};
+
 
 // ANSI_lex - This function parses a string and returns two token types.
 // The type identifies the token type of length nLengthToken0. nLengthToken1
@@ -2026,6 +2071,59 @@ size_t safe_fill(char *buff, char **bufc, char chFill, size_t nSpaces)
     memset(*bufc, chFill, nSpaces);
     *bufc += nSpaces;
     return nSpaces;
+}
+
+UTF8 *ConvertToUTF8
+(
+    UTF32  ch
+)
+{
+    static UTF8 buffer[6];
+    if (  UNI_SUR_HIGH_START <= ch
+       && ch <= UNI_SUR_LOW_END)
+    {
+        buffer[0] = '\0';
+        return buffer;
+    }
+
+    const UTF32 byteMask = 0xBF;
+    const UTF32 byteMark = 0x80;
+
+    if (ch < (UTF32)0x80)
+    {
+        // ASCII
+        //
+        buffer[1] = '\0';
+        buffer[0] = static_cast<UTF8>(ch);
+    }
+    else if (ch < (UTF32)0x800)
+    {
+        buffer[2] = '\0';
+        buffer[1] = static_cast<char>((ch | byteMark) & byteMask);
+        ch >>= 6;
+        buffer[0] = static_cast<char>(0xC0 | ch);
+    }
+    else if (ch < (UTF32)0x10000)
+    {
+        buffer[3] = '\0';
+        buffer[2] =static_cast<char>((ch | byteMark) & byteMask);
+        ch >>= 6;
+        buffer[1] = static_cast<char>((ch | byteMark) & byteMask);
+        ch >>= 6;
+        buffer[0] = static_cast<char>(0xE0 | ch);
+    }
+    else if (ch <= UNI_MAX_LEGAL_UTF32)
+    {
+        buffer[4] = '\0';
+        buffer[3] = static_cast<char>((ch | byteMark) & byteMask);
+        ch >>= 6;
+        buffer[2] = static_cast<char>((ch | byteMark) & byteMask);
+        ch >>= 6;
+        buffer[1] = static_cast<char>((ch | byteMark) & byteMask);
+        ch >>= 6;
+        buffer[0] = static_cast<char>(0xF8 | ch);
+    }
+    return buffer;
 }
 
 // mux_strncpy: Copies up to specified number of chars from source.

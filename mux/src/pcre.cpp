@@ -959,7 +959,7 @@ pcre_maketables(void)
         if (mux_isspace(i)) p[cbit_space  + i/8] |= 1 << (i&7);
         if (mux_isxdigit(i))p[cbit_xdigit + i/8] |= 1 << (i&7);
         if (isgraph(i))     p[cbit_graph  + i/8] |= 1 << (i&7);
-        if (mux_isprint(i)) p[cbit_print  + i/8] |= 1 << (i&7);
+        if (isprint(i))     p[cbit_print  + i/8] |= 1 << (i&7);
         if (ispunct(i))     p[cbit_punct  + i/8] |= 1 << (i&7);
         if (iscntrl(i))     p[cbit_cntrl  + i/8] |= 1 << (i&7);
     }

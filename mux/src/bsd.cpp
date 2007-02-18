@@ -298,7 +298,7 @@ static DWORD WINAPI SlaveProc(LPVOID lpParameter)
                                         bAllDone = true;
                                         break;
                                     }
-                                    if (mux_isprint(*p))
+                                    if (mux_isprint_old(*p))
                                     {
                                         szIdent[nIdent++] = *p;
                                     }
@@ -2337,6 +2337,8 @@ DESC *initializesock(SOCKET s, struct sockaddr_in *a)
     d->raw_input_at = NULL;
     d->nOption = 0;
     d->raw_input_state = NVT_IS_NORMAL;
+    d->raw_codepoint_state = PRINT_START_STATE;
+    d->raw_codepoint_length = 0;
     d->nvt_sga_him_state = OPTION_NO;
     d->nvt_sga_us_state = OPTION_NO;
     d->nvt_eor_him_state = OPTION_NO;
@@ -3129,17 +3131,43 @@ static void process_input_helper(DESC *d, char *pBytes, int nBytes)
         case 1:
             // Action 1 - Accept CHR(X).
             //
-            if (mux_isprint(ch))
+            d->raw_codepoint_state = print_stt[d->raw_codepoint_state][print_itt[ch]];
+            if (  1 == d->raw_codepoint_state - PRINT_ACCEPTING_STATES_START
+               && p < pend)
             {
-                if (p < pend)
+                // Save the byte and reset the state machine.  This is
+                // the most frequently-occuring case.
+                //
+                *p++ = ch;
+                nInputBytes += d->raw_codepoint_length + 1;
+                d->raw_codepoint_length = 0;
+                d->raw_codepoint_state = PRINT_START_STATE;
+            }
+            else if (  d->raw_codepoint_state < PRINT_ACCEPTING_STATES_START
+                    && p < pend)
+            {
+                // Save the byte and we're done for now.
+                //
+                *p++ = ch;
+                d->raw_codepoint_length++;
+            }
+            else
+            {
+                // The code point is not printable or there isn't enough room.
+                // Back out any bytes in this code point.
+                //
+                if (pend <= p)
                 {
-                    *p++ = ch;
-                    nInputBytes++;
+                    nLostBytes += d->raw_codepoint_length + 1;
                 }
-                else
+
+                p -= d->raw_codepoint_length;
+                if (p < d->raw_input_at)
                 {
-                    nLostBytes++;
+                    p = d->raw_input_at;
                 }
+                d->raw_codepoint_length = 0;
+                d->raw_codepoint_state = PRINT_START_STATE;
             }
             d->raw_input_state = NVT_IS_NORMAL;
             break;

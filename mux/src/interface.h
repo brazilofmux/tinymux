@@ -181,6 +181,8 @@ struct descriptor_data
   size_t        nOption;
   unsigned char aOption[SBUF_SIZE];
   int raw_input_state;
+  int raw_codepoint_state;
+  size_t raw_codepoint_length;
   int nvt_sga_him_state;
   int nvt_sga_us_state;
   int nvt_eor_him_state;
