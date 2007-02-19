@@ -69,7 +69,13 @@ void VerifyTables(FILE *fp)
                 exit(0);
             }
         }
-        nextcode = ReadCodePoint(fp, &Value, &Othercase);
+        UTF32 nextcode2 = ReadCodePoint(fp, &Value, &Othercase);
+        if (nextcode2 < nextcode)
+        {
+            fprintf(stderr, "Codes in file are not in order.\n");
+            exit(0);
+        }
+        nextcode = nextcode2;            
     }
 }
 #endif
@@ -164,7 +170,14 @@ void TestTable(FILE *fp)
 
                 sm.TestString(TargetA, pTargetA, i);
             }
-            nextcode = ReadCodePoint(fp, &Value, &Othercase);
+
+            UTF32 nextcode2 = ReadCodePoint(fp, &Value, &Othercase);
+            if (nextcode2 < nextcode)
+            {
+                fprintf(stderr, "Codes in file are not in order.\n");
+                exit(0);
+            }
+            nextcode = nextcode2;            
         }
     }
     else
@@ -188,7 +201,14 @@ void TestTable(FILE *fp)
             {
                 sm.TestString(Target, pTarget, Value);
             }
-            nextcode = ReadCodePoint(fp, &Value, &Othercase);
+
+            UTF32 nextcode2 = ReadCodePoint(fp, &Value, &Othercase);
+            if (nextcode2 < nextcode)
+            {
+                fprintf(stderr, "Codes in file are not in order.\n");
+                exit(0);
+            }
+            nextcode = nextcode2;            
         }
     }
 }
@@ -282,7 +302,14 @@ void LoadStrings(FILE *fp)
                 cIncluded++;
                 sm.RecordString(TargetA, pTargetA, i);
             }
-            nextcode = ReadCodePoint(fp, &Value, &Othercase);
+
+            UTF32 nextcode2 = ReadCodePoint(fp, &Value, &Othercase);
+            if (nextcode2 < nextcode)
+            {
+                fprintf(stderr, "Codes in file are not in order.\n");
+                exit(0);
+            }
+            nextcode = nextcode2;            
         }
     }
     else
@@ -307,7 +334,14 @@ void LoadStrings(FILE *fp)
                 cIncluded++;
                 sm.RecordString(Target, pTarget, Value);
             }
-            nextcode = ReadCodePoint(fp, &Value, &Othercase);
+
+            UTF32 nextcode2 = ReadCodePoint(fp, &Value, &Othercase);
+            if (nextcode2 < nextcode)
+            {
+                fprintf(stderr, "Codes in file are not in order.\n");
+                exit(0);
+            }
+            nextcode = nextcode2;            
         }
     }
     printf("// %d code points.\n", cIncluded);
