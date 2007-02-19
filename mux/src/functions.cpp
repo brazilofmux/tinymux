@@ -9507,15 +9507,22 @@ static FUNCTION(fun_ord)
     UNUSED_PARAMETER(ncargs);
 
     size_t n;
-    char *p  = strip_ansi(fargs[0], &n);
-    if (n == 1)
+    UTF8 *p  = (UTF8 *)strip_ansi(fargs[0]);
+    if (utf8_strlen(p, n))
     {
-        unsigned char ch = p[0];
-        safe_ltoa(ch, buff, bufc);
+        if (1 == n)
+        {
+            UTF32 ch = ConvertFromUTF8(p);
+            safe_ltoa(ch, buff, bufc);
+        }
+        else
+        {
+            safe_str("#-1 FUNCTION EXPECTS ONE CHARACTER", buff, bufc);
+        }
     }
     else
     {
-        safe_str("#-1 FUNCTION EXPECTS ONE CHARACTER", buff, bufc);
+        safe_str("#-1 STRING IS INVALID", buff, bufc);
     }
 }
 
@@ -9573,7 +9580,7 @@ static FUNCTION(fun_stripaccents)
 
 // Base Letter: AaCcEeIiNnOoUuYy?!<>sPpD
 //
-static const unsigned char AccentCombo1[256] =
+static const unsigned char AccentCombo1[128] =
 {
 //  0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F
 //
@@ -9585,20 +9592,11 @@ static const unsigned char AccentCombo1[256] =
    22, 0, 0, 0, 0,13, 0, 0, 0,15, 0, 0, 0, 0, 0, 0,  // 5
     0, 2, 0, 4, 0, 6, 0, 0, 0, 8, 0, 0, 0, 0,10,12,  // 6
    23, 0, 0,21, 0,14, 0, 0, 0,16, 0, 0, 0, 0, 0, 0,  // 7
-
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // 8
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // 9
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // A
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // B
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // C
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // D
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // E
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0   // F
 };
 
 // Accent:      `'^~:o,u"B|-&Ee
 //
-static const unsigned char AccentCombo2[256] =
+static const unsigned char AccentCombo2[128] =
 {
 //  0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F
 //
@@ -9610,15 +9608,6 @@ static const unsigned char AccentCombo2[256] =
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 0,  // 5
     1, 0, 0, 0, 0,15, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6,  // 6
     0, 0, 0, 0, 0, 8, 0, 0, 0, 0, 0, 0,11, 0, 4, 0,  // 7
-
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // 8
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // 9
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // A
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // B
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // C
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // D
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // E
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0   // F
 };
 
 static const unsigned char AccentCombo3[24][16] =
@@ -9667,43 +9656,54 @@ static FUNCTION(fun_accent)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    size_t n = strlen(fargs[0]);
-    if (n != strlen(fargs[1]))
+    const UTF8 *p = (UTF8 *)fargs[0];
+    const UTF8 *q = (UTF8 *)fargs[1];
+
+    size_t n0, n1;
+    if (  !utf8_strlen(p, n0)
+       || !utf8_strlen(q, n1))
+    {
+        safe_str("#-1 STRINGS ARE INVALID", buff, bufc);
+        return;
+    }
+
+    if (n0 != n1)
     {
         safe_str("#-1 STRING LENGTHS MUST BE EQUAL", buff, bufc);
         return;
     }
 
-    const unsigned char *p = (unsigned char *)fargs[0];
-    const unsigned char *q = (unsigned char *)fargs[1];
-
-    while (*p)
+    while ('\0' != *p)
     {
-        unsigned char ch = '\0';
-        unsigned char ch0 = AccentCombo1[(unsigned char)*p];
-        if (0 < ch0)
+        UTF8 ch = '\0';
+        UTF8 ch0 = *p;
+        if (  UTF8_SIZE1 == mux_utf8[ch0]
+           && (0 < (ch0 = AccentCombo1[ch0])))
         {
-            unsigned char ch1 = AccentCombo2[(unsigned char)*q];
-            if (0 < ch1)
+            UTF8 ch1 = *q;
+            if (  UTF8_SIZE1 == mux_utf8[ch1]
+               && (0 < (ch1 = AccentCombo2[ch1])))
             {
                 ch  = AccentCombo3[ch0-1][ch1];
             }
         }
 
+        // TODO: These translations and conversions work, but should be
+        // re-done late to accomplish the goal more directly.
+        //
         UTF16 ch16 = mux_ch2utf16[ch];
         UTF8 *t = ConvertToUTF8(ch16);
         if (mux_isprint(t))
         {
-            safe_str((char *)t, buff, bufc);
+            utf8_safe_chr(t, buff, bufc);
         }
         else
         {
-            ch = *p;
-            safe_chr(ch, buff, bufc);
+            utf8_safe_chr(p, buff, bufc);
         }
 
-        p++;
-        q++;
+        p = utf8_NextCodePoint(p);
+        q = utf8_NextCodePoint(q);
     }
 }
 

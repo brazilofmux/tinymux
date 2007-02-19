@@ -504,16 +504,9 @@ const unsigned char mux_StripAccents[256] =
 // appear in a valid sequence.
 //
 // The first byte gives the length of a sequence (UTF8_SIZE1 - UTF8_SIZE4).
-// Bytes in the middle of a sequence map to UTF_CONTINUE.  Bytes which should
-// not appear map to UTF_ILLEGAL.
+// Bytes in the middle of a sequence map to UTF8_CONTINUE.  Bytes which should
+// not appear map to UTF8_ILLEGAL.
 //
-#define UTF8_ILLEGAL   0
-#define UTF8_SIZE1     1
-#define UTF8_SIZE2     2
-#define UTF8_SIZE3     3
-#define UTF8_SIZE4     4
-#define UTF8_CONTINUE  5
-
 const unsigned char mux_utf8[256] =
 {
 //  0   1   2   3   4   5   6   7   8   9   A   B   C   D   E   F
@@ -531,10 +524,10 @@ const unsigned char mux_utf8[256] =
     5,  5,  5,  5,  5,  5,  5,  5,  5,  5,  5,  5,  5,  5,  5,  5,  // 9
     5,  5,  5,  5,  5,  5,  5,  5,  5,  5,  5,  5,  5,  5,  5,  5,  // A
     5,  5,  5,  5,  5,  5,  5,  5,  5,  5,  5,  5,  5,  5,  5,  5,  // B
-    0,  0,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  // C
+    6,  6,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  // C
     2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  // D
     3,  3,  3,  3,  3,  3,  3,  3,  3,  3,  3,  3,  3,  3,  3,  3,  // E
-    4,  4,  4,  4,  4,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0   // F
+    4,  4,  4,  4,  4,  6,  6,  6,  6,  6,  6,  6,  6,  6,  6,  6   // F
 };
 
 // The following table maps existing 8-bit characters to UTF-16 which can
@@ -620,6 +613,39 @@ const unsigned char print_stt[12][26] =
     {  12,  12,  12,  12,  12,  12,  12,  12,  12,  12,  12,  12,  12,  12,  12,  12,  12,  13,  12,  12,  12,  12,  12,  12,  12,  12}
 };
 
+/*! \brief Validates UTF8 string and returns number of code points contained therein.
+ *
+ * \param pString   UTF8 string.
+ * \param nString   Resulting number of code points in pString.
+ * \return          true for valid, false for invalid.
+ */
+
+bool utf8_strlen(const UTF8 *pString, size_t &nString)
+{
+    nString = 0;
+    int i = 0;
+    while ('\0' != pString[i])
+    {
+        unsigned char t = mux_utf8[pString[i]];
+        if (UTF8_CONTINUE <= t)
+        {
+            return false;
+        }
+
+        int j;
+        for (j = i + 1; j < i + t; j++)
+        {
+            if (  '\0' == pString[j]
+               || UTF8_CONTINUE != mux_utf8[pString[j]])
+            {
+                return false;
+            }
+        }
+        nString++;
+        i = i + t;
+    }
+    return true;
+}
 
 // ANSI_lex - This function parses a string and returns two token types.
 // The type identifies the token type of length nLengthToken0. nLengthToken1
@@ -2073,6 +2099,20 @@ size_t safe_fill(char *buff, char **bufc, char chFill, size_t nSpaces)
     return nSpaces;
 }
 
+void utf8_safe_chr(const UTF8 *src, char *buff, char **bufc)
+{
+    size_t nLen;
+    size_t nLeft;
+    if (  NULL == src
+       || UTF8_CONTINUE <= (nLen = mux_utf8[*src])
+       || (nLeft = LBUF_SIZE - (*bufc - buff) - 1) < nLen)
+    {
+        return;
+    }
+    memcpy(*bufc, src, nLen);
+    *bufc += nLen;
+}
+
 UTF8 *ConvertToUTF8
 (
     UTF32  ch
@@ -2124,6 +2164,72 @@ UTF8 *ConvertToUTF8
         buffer[0] = static_cast<char>(0xF8 | ch);
     }
     return buffer;
+}
+
+UTF32 ConvertFromUTF8(const UTF8 *pString)
+{
+    size_t t = mux_utf8[*pString];
+    if (UTF8_CONTINUE <= t)
+    {
+        return UNI_EOF;
+    }
+
+    UTF32 ch;
+    if (1 == t)
+    {
+        // This is the most common case, and the value is always smaller than
+        // UNI_SUR_HIGH_START.
+        //
+        return pString[0];
+    }
+    else if (2 == t)
+    {
+        if (UTF8_CONTINUE != mux_utf8[pString[1]])
+        {
+            return UNI_EOF;
+        }
+        ch =  ((UTF32)(pString[0] & 0x1F) <<  6)
+           |  ((UTF32)(pString[1] & 0x3F)      );
+    }
+    else if (3 == t)
+    {
+        if (  UTF8_CONTINUE != mux_utf8[pString[1]]
+           || UTF8_CONTINUE != mux_utf8[pString[2]])
+        {
+            return UNI_EOF;
+        }
+        ch = ((UTF32)(pString[0] & 0x1F) << 12)
+           | ((UTF32)(pString[1] & 0x3F) <<  6)
+           | ((UTF32)(pString[2] & 0x3F)      );
+    }
+    else if (4 == t)
+    {
+        if (  UTF8_CONTINUE != mux_utf8[pString[1]]
+           || UTF8_CONTINUE != mux_utf8[pString[2]]
+           || UTF8_CONTINUE != mux_utf8[pString[3]])
+        {
+            return UNI_EOF;
+        }
+        ch = ((UTF32)(pString[0] & 0x1F) << 18)
+           | ((UTF32)(pString[1] & 0x3F) << 12)
+           | ((UTF32)(pString[2] & 0x3F) <<  6)
+           | ((UTF32)(pString[3] & 0x3F)      );
+    }
+    else
+    {
+        return UNI_EOF;
+    }
+
+    if (  ch < UNI_SUR_HIGH_START
+       || (  UNI_SUR_LOW_END < ch
+          && UNI_MAX_LEGAL_UTF32))
+    {
+        return ch;
+    }
+    else
+    {
+        return UNI_REPLACEMENT_CHAR;
+    }
 }
 
 // mux_strncpy: Copies up to specified number of chars from source.
