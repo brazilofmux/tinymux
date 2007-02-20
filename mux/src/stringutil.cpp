@@ -4564,7 +4564,8 @@ void mux_string::export_TextAnsi
     bool bPlentyOfRoom =
         (nAvail > (nLen + 1) * (ANSI_MAXIMUM_BINARY_TRANSITION_LENGTH + 1));
     ANSI_ColorState csEndGoal = bNoBleed ? csNoBleed : csNormal;
-    size_t nCopied = 0;
+    size_t nTransition = 0;
+    char *pTransition = NULL;
 
     if (bPlentyOfRoom)
     {
@@ -4573,10 +4574,11 @@ void mux_string::export_TextAnsi
         {
             if (0 != memcmp(&csPrev, &m_pcs[nPos], sizeof(ANSI_ColorState)))
             {
-                safe_copy_str(ANSI_TransitionColorBinary( &csPrev,
+                pTransition = ANSI_TransitionColorBinary( &csPrev,
                                                           &(m_pcs[nPos]),
-                                                          &nCopied, bNoBleed),
-                              buff, bufc, nBuffer);
+                                                          &nTransition, bNoBleed);
+                memcpy(*bufc, pTransition, nTransition * sizeof(pTransition[0]));
+                *bufc += nTransition;
                 csPrev = m_pcs[nPos];
             }
             safe_copy_chr(m_ach[nPos], buff, bufc, nBuffer);
@@ -4584,65 +4586,65 @@ void mux_string::export_TextAnsi
         }
         if (0 != memcmp(&csPrev, &csEndGoal, sizeof(ANSI_ColorState)))
         {
-            safe_copy_str(ANSI_TransitionColorBinary( &csPrev, &csEndGoal,
-                                                      &nCopied, bNoBleed),
-                          buff, bufc, nBuffer);
+            pTransition = ANSI_TransitionColorBinary( &csPrev, &csEndGoal,
+                                                      &nTransition, bNoBleed);
+            memcpy(*bufc, pTransition, nTransition * sizeof(pTransition[0]));
+            *bufc += nTransition;
         }
         **bufc = '\0';
         return;
     }
 
     // There's a chance we might hit the end of the buffer. Do it the hard way.
-    size_t nNeededBefore = 0, nNeededAfter = 0;
+    size_t nNeededAfter = 0;
     ANSI_ColorState csPrev = csEndGoal;
+    bool bNearEnd = false;
     while (nPos < nStart + nLen)
     {
-        if (0 != memcmp(&csPrev, &m_pcs[nPos], sizeof(ANSI_ColorState)))
+        if (0 != memcmp(&csPrev, &(m_pcs[nPos]), sizeof(ANSI_ColorState)))
         {
-            if (0 != memcmp(&csEndGoal, &m_pcs[nPos], sizeof(ANSI_ColorState)))
-            {
-                nNeededBefore = nNeededAfter;
-                ANSI_TransitionColorBinary( &(m_pcs[nPos]), &csEndGoal,
-                                            &nCopied, bNoBleed);
-                nNeededAfter = nCopied;
-                char *pTransition =
-                    ANSI_TransitionColorBinary( &csPrev, &(m_pcs[nPos]),
-                                                &nCopied, bNoBleed);
-                if (nBuffer < (*bufc-buff) + nCopied + 1 + nNeededAfter)
-                {
-                    // There isn't enough room to add the color sequence,
-                    // its character, and still get back to normal. Stop here.
-                    //
-                    nNeededAfter = nNeededBefore;
-                    break;
-                }
-                safe_copy_str(pTransition, buff, bufc, nBuffer);
-            }
-            else
-            {
-                safe_copy_str(ANSI_TransitionColorBinary( &csPrev,
-                                                          &(m_pcs[nPos]),
-                                                          &nCopied, bNoBleed),
-                              buff, bufc, nBuffer);
-                nNeededAfter = 0;
-            }
-            csPrev = m_pcs[nPos];
+            pTransition = ANSI_TransitionColorBinary( &csPrev, &(m_pcs[nPos]),
+                                                      &nTransition, bNoBleed);
         }
-        if (nBuffer < (*bufc-buff) + 1 + nNeededAfter)
+        else
         {
-            break;
+            nTransition = 0;
+        }
+        if (nBuffer < (*bufc-buff) + nTransition + 1 + ANSI_MAXIMUM_BINARY_TRANSITION_LENGTH)
+        {
+            if (  !bNearEnd
+               || nTransition)
+            {
+                ANSI_TransitionColorBinary( &(m_pcs[nPos]), &csEndGoal,
+                                            &nNeededAfter, bNoBleed);
+                bNearEnd = true;
+            }
+            if (nBuffer < (*bufc-buff) + nTransition + 1 + nNeededAfter)
+            {
+                // There isn't enough room to add the color sequence,
+                // its character, and still get back to normal. Stop here.
+                //
+                break;
+            }
+        }
+        if (nTransition)
+        {
+            memcpy(*bufc, pTransition, nTransition * sizeof(pTransition[0]));
+            *bufc += nTransition;
+            csPrev = m_pcs[nPos];
         }
         safe_copy_chr(m_ach[nPos], buff, bufc, nBuffer);
         nPos++;
     }
-    if (nNeededAfter)
+    pTransition = ANSI_TransitionColorBinary( &csPrev, &csEndGoal,
+                                              &nTransition, bNoBleed);
+    if (  nTransition
+       && (*bufc-buff) + nTransition <= nBuffer)
     {
-       safe_copy_str(ANSI_TransitionColorBinary( &csPrev, &csEndGoal,
-                                                 &nCopied, bNoBleed),
-                     buff, bufc, nBuffer);
+        memcpy(*bufc, pTransition, nTransition * sizeof(pTransition[0]));
+        *bufc += nTransition;
     }
     **bufc = '\0';
-    return;
 }
 
 /*! \brief Outputs ANSI-stripped string from internal form.
