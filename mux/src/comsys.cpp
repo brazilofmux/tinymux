@@ -43,8 +43,7 @@ static char *RestrictTitleValue(char *pTitleRequest)
     char NewTitle_ANSI[MAX_TITLE_LEN+1];
     size_t nVisualWidth;
     size_t nLen = ANSI_TruncateToField(pNewTitle, sizeof(NewTitle_ANSI),
-        NewTitle_ANSI, sizeof(NewTitle_ANSI), &nVisualWidth,
-        ANSI_ENDGOAL_NORMAL);
+        NewTitle_ANSI, sizeof(NewTitle_ANSI), &nVisualWidth);
     memcpy(pNewTitle, NewTitle_ANSI, nLen+1);
     return pNewTitle;
 }
@@ -687,7 +686,7 @@ void load_comsystem(FILE *fp)
             }
             size_t vwVisual;
             ANSI_TruncateToField(temp, MAX_HEADER_LEN+1, ch->header,
-                MAX_HEADER_LEN+1, &vwVisual, ANSI_ENDGOAL_NORMAL);
+                MAX_HEADER_LEN+1, &vwVisual);
         }
 
         ch->num_users = 0;
@@ -1592,7 +1591,7 @@ void do_addcom
     if (!ch)
     {
         size_t nVisualWidth;
-        ANSI_TruncateToField(channel, sizeof(Buffer), Buffer, sizeof(Buffer), &nVisualWidth, ANSI_ENDGOAL_NORMAL);
+        ANSI_TruncateToField(channel, sizeof(Buffer), Buffer, sizeof(Buffer), &nVisualWidth);
         raw_notify(executor, tprintf("Channel %s does not exist yet.", Buffer));
         return;
     }
@@ -1811,7 +1810,7 @@ void do_createchannel(dbref executor, dbref caller, dbref enactor, int eval, int
     char *pNameNoANSI;
     char Buffer[MAX_HEADER_LEN];
     size_t nChannel = ANSI_TruncateToField(channel, sizeof(Buffer),
-        Buffer, sizeof(Buffer), &vwChannel, ANSI_ENDGOAL_NORMAL);
+        Buffer, sizeof(Buffer), &vwChannel);
     if (nChannel == vwChannel)
     {
         // The channel name does not contain ANSI, so first, we add some to
@@ -3023,8 +3022,7 @@ void do_cheader(dbref player, char *channel, char *header)
     char NewHeader_ANSI[MAX_HEADER_LEN+1];
     size_t nVisualWidth;
     size_t nLen = ANSI_TruncateToField(p, sizeof(NewHeader_ANSI),
-        NewHeader_ANSI, sizeof(NewHeader_ANSI), &nVisualWidth,
-        ANSI_ENDGOAL_NORMAL);
+        NewHeader_ANSI, sizeof(NewHeader_ANSI), &nVisualWidth);
     memcpy(ch->header, NewHeader_ANSI, nLen+1);
 }
 

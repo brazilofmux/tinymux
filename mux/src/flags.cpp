@@ -890,7 +890,7 @@ char *unparse_object_numonly(dbref target)
         //
         size_t vw;
         size_t nLen = ANSI_TruncateToField(Name(target), LBUF_SIZE-100,
-            buf, LBUF_SIZE, &vw, ANSI_ENDGOAL_NORMAL);
+            buf, LBUF_SIZE, &vw);
         char *bp = buf + nLen;
 
         safe_str("(#", buf, &bp);
@@ -965,7 +965,7 @@ char *unparse_object(dbref player, dbref target, bool obey_myopic, bool bAddColo
         //
         size_t vw;
         size_t nLen = ANSI_TruncateToField(Moniker(target), LBUF_SIZE-100,
-            buf, LBUF_SIZE, &vw, ANSI_ENDGOAL_NORMAL);
+            buf, LBUF_SIZE, &vw);
 
         char *bp = buf + nLen;
 

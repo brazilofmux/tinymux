@@ -1393,7 +1393,7 @@ static void GetFromField(dbref target, char szFrom[MBUF_SIZE])
 {
     size_t vw = 0;
     size_t nFrom = ANSI_TruncateToField(Moniker(target), sizeof(szFrom)-16,
-        szFrom, 16, &vw, ANSI_ENDGOAL_NORMAL);
+        szFrom, 16, &vw);
 
     while (  vw < 16
           && nFrom < MBUF_SIZE)
@@ -1446,7 +1446,7 @@ static void do_mail_read(dbref player, char *msglist)
                 char szSubjectBuffer[MBUF_SIZE];
                 size_t iRealVisibleWidth;
                 ANSI_TruncateToField(mp->subject, sizeof(szSubjectBuffer),
-                    szSubjectBuffer, 65, &iRealVisibleWidth, ANSI_ENDGOAL_NORMAL);
+                    szSubjectBuffer, 65, &iRealVisibleWidth);
 
                 notify(player, tprintf("%-3d         From:  %s  At: %-25s  %s\r\nFldr   : %-2d Status: %s\r\nTo     : %-65s\r\nSubject: %s",
                                i, szFromName,
@@ -1529,7 +1529,7 @@ static void do_mail_review(dbref player, char *name, char *msglist)
                 GetFromField(mp->from, szFromName);
 
                 ANSI_TruncateToField(mp->subject, sizeof(szSubjectBuffer),
-                    szSubjectBuffer, 25, &iRealVisibleWidth, ANSI_ENDGOAL_NORMAL);
+                    szSubjectBuffer, 25, &iRealVisibleWidth);
                 size_t nSize = MessageFetchSize(mp->number);
                 notify(player, tprintf("[%s] %-3d (%4d) From: %s Sub: %s",
                                status_chars(mp),
@@ -1562,7 +1562,7 @@ static void do_mail_review(dbref player, char *name, char *msglist)
                     GetFromField(mp->from, szFromName);
 
                     ANSI_TruncateToField(mp->subject, sizeof(szSubjectBuffer),
-                        szSubjectBuffer, 65, &iRealVisibleWidth, ANSI_ENDGOAL_NORMAL);
+                        szSubjectBuffer, 65, &iRealVisibleWidth);
 
                     notify(player, DASH_LINE);
                     notify(player, tprintf("%-3d         From:  %s  At: %-25s  %s\r\nFldr   : %-2d Status: %s\r\nSubject: %s",
@@ -1667,7 +1667,7 @@ static void do_mail_list(dbref player, char *msglist, bool sub)
                 if (sub)
                 {
                     ANSI_TruncateToField(mp->subject, sizeof(szSubjectBuffer),
-                        szSubjectBuffer, 25, &iRealVisibleWidth, ANSI_ENDGOAL_NORMAL);
+                        szSubjectBuffer, 25, &iRealVisibleWidth);
 
                     notify(player, tprintf("[%s] %-3d (%4d) From: %s Sub: %s",
                         status_chars(mp), i, nSize, szFromName, szSubjectBuffer));
@@ -2994,8 +2994,7 @@ char *MakeCanonicalMailAliasDesc
                               SIZEOF_MALIASDESC,
                               szFittedMailAliasDesc,
                               WIDTHOF_MALIASDESC,
-                              pnVisualWidth,
-                              ANSI_ENDGOAL_NORMAL
+                              pnVisualWidth
                              );
     *pbValidMailAliasDesc = true;
     return szFittedMailAliasDesc;
@@ -4043,7 +4042,7 @@ static void do_mail_proof(dbref player)
     char szSubjectBuffer[MBUF_SIZE];
     ANSI_TruncateToField(atr_get_raw(player, A_MAILSUB),
         sizeof(szSubjectBuffer), szSubjectBuffer, 35,
-        &iRealVisibleWidth, ANSI_ENDGOAL_NORMAL);
+        &iRealVisibleWidth);
 
     char szFromName[MBUF_SIZE];
     GetFromField(player, szFromName);

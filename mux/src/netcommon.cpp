@@ -517,13 +517,9 @@ void queue_string(DESC *d, const mux_string &s)
         {
             s.export_TextPlain(pBuff);
         }
-        else if (NoBleed(d->player))
-        {
-            s.export_TextAnsi(pBuff, NULL, 0, s.length(), LBUF_SIZE-1, ANSI_ENDGOAL_NOBLEED);
-        }
         else
         {
-            s.export_TextAnsi(pBuff);
+            s.export_TextAnsi(pBuff, NULL, 0, s.length(), LBUF_SIZE-1, NoBleed(d->player));
         }
 
         if (NoAccents(d->player))
@@ -1564,8 +1560,7 @@ static const char *trimmed_name(dbref player, size_t *pvw)
         sizeof(cbuff),
         cbuff,
         MAX_TRIMMED_NAME_LENGTH,
-        pvw,
-        ANSI_ENDGOAL_NORMAL
+        pvw
     );
     return cbuff;
 }
@@ -1996,8 +1991,7 @@ char *MakeCanonicalDoing(char *pDoing, size_t *pnValidDoing, bool *pbValidDoing)
                       SIZEOF_DOING_STRING,
                       szFittedDoing,
                       WIDTHOF_DOING_STRING,
-                      &nVisualWidth,
-                      ANSI_ENDGOAL_NORMAL
+                      &nVisualWidth
                     );
     *pbValidDoing = true;
     return szFittedDoing;

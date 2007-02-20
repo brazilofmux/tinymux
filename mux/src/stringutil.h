@@ -146,7 +146,7 @@ struct ANSI_In_Context
 
 struct ANSI_Out_Context
 {
-    int             m_iEndGoal;
+    bool            m_bNoBleed;
     ANSI_ColorState m_cs;
     bool            m_bDone; // some constraint was met.
     char           *m_p;
@@ -156,16 +156,12 @@ struct ANSI_Out_Context
     size_t          m_vwMax;
 };
 
-#define ANSI_ENDGOAL_NORMAL  0
-#define ANSI_ENDGOAL_NOBLEED 1
-#define ANSI_ENDGOAL_LEAK    2
-
-void ANSI_String_In_Init(struct ANSI_In_Context *pacIn, const char *szString, int iEndGoal);
-void ANSI_String_Out_Init(struct ANSI_Out_Context *pacOut, char *pField, size_t nField, size_t vwMax, int iEndGoal);
+void ANSI_String_In_Init(struct ANSI_In_Context *pacIn, const char *szString, bool bNoBleed = false);
+void ANSI_String_Out_Init(struct ANSI_Out_Context *pacOut, char *pField, size_t nField, size_t vwMax, bool bNoBleed = false);
 void ANSI_String_Copy(struct ANSI_Out_Context *pacOut, struct ANSI_In_Context *pacIn, size_t vwMax);
 size_t ANSI_String_Finalize(struct ANSI_Out_Context *pacOut, size_t *pnVisualWidth);
 char *ANSI_TruncateAndPad_sbuf(const char *pString, size_t nMaxVisualWidth, char fill = ' ');
-size_t ANSI_TruncateToField(const char *szString, size_t nField, char *pField, size_t maxVisual, size_t *nVisualWidth, int iEndGoal);
+size_t ANSI_TruncateToField(const char *szString, size_t nField, char *pField, size_t maxVisual, size_t *nVisualWidth, bool bNoBleed = false);
 char *strip_ansi(const char *szString, size_t *pnString = 0);
 char *strip_accents(const char *szString, size_t *pnString = 0);
 char *normal_to_white(const char *);
@@ -324,7 +320,7 @@ public:
         size_t nStart = 0,
         size_t nLen = LBUF_SIZE,
         size_t nBuffer = (LBUF_SIZE-1),
-        int iEndGoal = ANSI_ENDGOAL_NORMAL
+        bool bNoBleed = false
     ) const;
     void export_TextPlain
     (
