@@ -3129,6 +3129,9 @@ static void process_input_helper(DESC *d, char *pBytes, int nBytes)
         switch (iAction)
         {
         case 1:
+            // TODO: This needs to be gated on the client's ability to handle UTF8.
+            // We need to negotiate it.
+            //
             // Action 1 - Accept CHR(X).
             //
             d->raw_codepoint_state = print_stt[d->raw_codepoint_state][print_itt[ch]];
@@ -3162,9 +3165,9 @@ static void process_input_helper(DESC *d, char *pBytes, int nBytes)
                 }
 
                 p -= d->raw_codepoint_length;
-                if (p < d->raw_input_at)
+                if (p < d->raw_input->cmd)
                 {
-                    p = d->raw_input_at;
+                    p = d->raw_input->cmd;
                 }
                 d->raw_codepoint_length = 0;
                 d->raw_codepoint_state = PRINT_START_STATE;
@@ -3405,7 +3408,7 @@ static void process_input_helper(DESC *d, char *pBytes, int nBytes)
                 switch (d->aOption[0])
                 {
                 case TELNET_NAWS:
-                    if (m == 5)
+                    if (5 == m)
                     {
                         d->width  = (d->aOption[1] << 8 ) | d->aOption[2];
                         d->height = (d->aOption[3] << 8 ) | d->aOption[4];
@@ -3413,15 +3416,21 @@ static void process_input_helper(DESC *d, char *pBytes, int nBytes)
                     break;
                     
                 case TELNET_TTYPE:
-                    if (d->aOption[1] == TELNETSB_IS) {
-                        if (d->nvt_ttype_him_value) {
+                    if (TELNETSB_IS == d->aOption[1])
+                    {
+                        if (d->nvt_ttype_him_value)
+                        {
                             free(d->nvt_ttype_him_value);
                             d->nvt_ttype_him_value = NULL;
                         }
-                        d->nvt_ttype_him_value = (char *)malloc(m);
-                        memset(d->nvt_ttype_him_value,0,m);
-                        // Skip past the TTYPE bit and the TELQUAL_IS bit...
-                        memcpy(d->nvt_ttype_him_value,&d->aOption[2],m - 2);
+                        
+                        // Skip past the TTYPE and TELQUAL_IS bytes.
+                        //
+                        size_t nTermType = m-2;
+                        unsigned char *pTermType = &d->aOption[2];
+                        d->nvt_ttype_him_value = (char *)malloc(nTermType+1);
+                        memcpy(d->nvt_ttype_him_value, pTermType, nTermType);
+                        d->nvt_ttype_him_value[nTermType] = '\0';
                     }
                     break;
                 }
