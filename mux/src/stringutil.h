@@ -38,9 +38,9 @@ extern const unsigned char mux_StripAccents[256];
 #define UTF8_SIZE4     4
 #define UTF8_CONTINUE  5
 #define UTF8_ILLEGAL   6
-extern const unsigned char mux_utf8[256];
-
-extern const UTF16 mux_ch2utf16[256];
+extern const unsigned char utf8_FirstByte[256];
+extern const char *utf8_latin1[256];
+#define utf8_latin1(x) ((const UTF8 *)utf8_latin1[(unsigned char)x])
 
 #define mux_isprint_old(x) (mux_isprint_old[(unsigned char)(x)])
 #define mux_isdigit(x) (mux_isdigit[(unsigned char)(x)])
@@ -81,7 +81,7 @@ extern const UTF16 mux_ch2utf16[256];
 #define UNI_PU3_START        ((UTF32)0x00100000UL)
 #define UNI_PU3_END          ((UTF32)0x0010FFFDUL)
 
-#define utf8_NextCodePoint(x)      (x + mux_utf8[(unsigned char)*x])
+#define utf8_NextCodePoint(x)      (x + utf8_FirstByte[(unsigned char)*x])
 
 // 219 included, 1113893 excluded, 0 errors.
 // 12 states, 26 columns, 568 bytes
@@ -90,6 +90,16 @@ extern const UTF16 mux_ch2utf16[256];
 #define PRINT_ACCEPTING_STATES_START (12)
 extern const unsigned char print_itt[256];
 extern const unsigned char print_stt[12][26];
+
+// 224 code points.
+// 10 states, 171 columns, 3676 bytes
+//
+#define LATIN_START_STATE (0)
+#define LATIN_ACCEPTING_STATES_START (10)
+extern const unsigned char latin_itt[256];
+extern const unsigned short latin_stt[10][171];
+
+const char *ConvertToLatin(const UTF8 *pString);
 
 inline bool mux_isprint(const unsigned char *p)
 {

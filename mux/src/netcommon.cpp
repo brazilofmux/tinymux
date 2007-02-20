@@ -502,6 +502,11 @@ void queue_string(DESC *d, const char *s)
         }
         p = strip_accents(p);
     }
+
+    // TODO: This needs to be gated on the client's ability to handle UTF8.
+    // We need to negotiate it.
+    //
+    //p = ConvertToLatin((UTF8 *)p);
     p = encode_iac(p);
     queue_write(d, p);
 }
@@ -536,6 +541,11 @@ void queue_string(DESC *d, const mux_string &s)
         s.export_TextPlain(pBuff);
         pFinal = strip_accents(pBuff);
     }
+
+    // TODO: This needs to be gated on the client's ability to handle UTF8.
+    // We need to negotiate it.
+    //
+    //pFinal = ConvertToLatin((UTF8 *)pFinal);
     pFinal = encode_iac(pFinal);
     queue_write(d, pFinal);
     free_lbuf(pBuff);

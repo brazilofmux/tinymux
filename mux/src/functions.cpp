@@ -7244,23 +7244,30 @@ static FUNCTION(fun_terminfo)
         }
     }
     
-    if (!d) {
+    if (!d)
+    {
         safe_str("#-1 NOT CONNECTED", buff, bufc);
         return;
     }
     
-    if (d->nvt_ttype_him_value) {
+    if (d->nvt_ttype_him_value)
+    {
         safe_str(d->nvt_ttype_him_value, buff, bufc);
         safe_str(" telnet", buff, bufc);
     }
-    else {
+    else
+    {
         safe_str("unknown", buff, bufc);
-        if (d->nvt_naws_him_state || d->nvt_sga_him_state || d->nvt_eor_him_state) {
+        if (  d->nvt_naws_him_state
+           || d->nvt_sga_him_state
+           || d->nvt_eor_him_state)
+        {
             safe_str(" telnet", buff, bufc);
         }
     }
     
-    if (Html(d->player)) {
+    if (Html(d->player))
+    {
         safe_str(" pueblo", buff, bufc);
     }
 }
@@ -9677,22 +9684,18 @@ static FUNCTION(fun_accent)
     {
         UTF8 ch = '\0';
         UTF8 ch0 = *p;
-        if (  UTF8_SIZE1 == mux_utf8[ch0]
+        if (  UTF8_SIZE1 == utf8_FirstByte[ch0]
            && (0 < (ch0 = AccentCombo1[ch0])))
         {
             UTF8 ch1 = *q;
-            if (  UTF8_SIZE1 == mux_utf8[ch1]
+            if (  UTF8_SIZE1 == utf8_FirstByte[ch1]
                && (0 < (ch1 = AccentCombo2[ch1])))
             {
                 ch  = AccentCombo3[ch0-1][ch1];
             }
         }
 
-        // TODO: These translations and conversions work, but should be
-        // re-done late to accomplish the goal more directly.
-        //
-        UTF16 ch16 = mux_ch2utf16[ch];
-        UTF8 *t = ConvertToUTF8(ch16);
+        const UTF8 *t = utf8_latin1(ch);
         if (mux_isprint(t))
         {
             utf8_safe_chr(t, buff, bufc);
