@@ -2147,10 +2147,10 @@ void mux_exec( char *pdstr, char *buff, char **bufc, dbref executor,
         {
             *realbp = '\0';
             ANSI_String_In_Init(&aic, realbuff);
-            ANSI_String_Copy(&aoc, &aic, sizeof(mux_scratch));
+            ANSI_String_Copy(&aoc, &aic);
         }
         ANSI_String_In_Init(&aic, buff);
-        ANSI_String_Copy(&aoc, &aic, sizeof(mux_scratch));
+        ANSI_String_Copy(&aoc, &aic);
         if (realbuff)
         {
             MEMFREE(buff);

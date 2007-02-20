@@ -1155,8 +1155,7 @@ void ANSI_String_Out_Init
 void ANSI_String_Copy
 (
     struct ANSI_Out_Context *pacOut,
-    struct ANSI_In_Context  *pacIn,
-    size_t maxVisualWidth0
+    struct ANSI_In_Context  *pacIn
 )
 {
     // Check whether we have previous struck the session limits (given
@@ -1171,10 +1170,6 @@ void ANSI_String_Copy
     //
     size_t vw = 0;
     size_t vwMax = pacOut->m_vwMax;
-    if (maxVisualWidth0 < vwMax)
-    {
-        vwMax = maxVisualWidth0;
-    }
 
     // What is the working limit for field size.
     //
@@ -1276,14 +1271,6 @@ void ANSI_String_Copy
                     pacIn->m_n -= nTextToAdd;
                     vw += nTextToAdd;
                     pacOut->m_cs = pacIn->m_cs;
-
-                    // Was this visual width limit related to the session or
-                    // the call?
-                    //
-                    if (vwMax != maxVisualWidth0)
-                    {
-                        pacOut->m_bDone = true;
-                    }
                 }
                 else
                 {
@@ -1383,7 +1370,7 @@ size_t ANSI_TruncateToField
     struct ANSI_Out_Context aoc;
     ANSI_String_In_Init(&aic, szString, bNoBleed);
     ANSI_String_Out_Init(&aoc, pField0, nField, maxVisualWidth, bNoBleed);
-    ANSI_String_Copy(&aoc, &aic, maxVisualWidth);
+    ANSI_String_Copy(&aoc, &aic);
     return ANSI_String_Finalize(&aoc, pnVisualWidth);
 }
 
