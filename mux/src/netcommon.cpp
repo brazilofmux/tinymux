@@ -508,33 +508,32 @@ void queue_string(DESC *d, const char *s)
 
 void queue_string(DESC *d, const mux_string &s)
 {
-    char *pBuff = alloc_lbuf("queue_string");
-    const char *pFinal = pBuff;
+    static char Buffer[LBUF_SIZE];
+    const char *pFinal = Buffer;
 
     if (d->flags & DS_CONNECTED)
     {
         if (!Ansi(d->player))
         {
-            s.export_TextPlain(pBuff);
+            s.export_TextPlain(Buffer);
         }
         else
         {
-            s.export_TextAnsi(pBuff, NULL, 0, s.length(), LBUF_SIZE-1, NoBleed(d->player));
+            s.export_TextAnsi(Buffer, NULL, 0, s.length(), LBUF_SIZE-1, NoBleed(d->player));
         }
 
         if (NoAccents(d->player))
         {
-            pFinal = strip_accents(pBuff);
+            pFinal = strip_accents(Buffer);
         }
     }
     else
     {
-        s.export_TextPlain(pBuff);
-        pFinal = strip_accents(pBuff);
+        s.export_TextPlain(Buffer);
+        pFinal = strip_accents(Buffer);
     }
     pFinal = encode_iac(pFinal);
     queue_write(d, pFinal);
-    free_lbuf(pBuff);
 }
 
 void freeqs(DESC *d)
