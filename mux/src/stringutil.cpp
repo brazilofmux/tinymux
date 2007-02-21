@@ -728,13 +728,15 @@ const char *ConvertToLatin(const UTF8 *pString)
 
     while ('\0' != *pString)
     {
+        const UTF8 *p = pString;
         int iState = LATIN_START_STATE;
         do
         {
-            unsigned char ch = *pString++;
+            unsigned char ch = *p++;
             iState = latin_stt[iState][latin_itt[(unsigned char)ch]];
         } while (iState < LATIN_ACCEPTING_STATES_START);
         *q++ = (char)(iState - LATIN_ACCEPTING_STATES_START);
+        pString = utf8_NextCodePoint(pString);
     }
     *q = '\0';
     return buffer;
