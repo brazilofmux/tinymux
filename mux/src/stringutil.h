@@ -79,6 +79,8 @@ extern const char *utf8_latin1[256];
 
 #define utf8_NextCodePoint(x)      (x + utf8_FirstByte[(unsigned char)*x])
 
+// utf/cl_Print.txt
+//
 // 219 included, 1113893 excluded, 0 errors.
 // 12 states, 26 columns, 568 bytes
 //
@@ -86,16 +88,6 @@ extern const char *utf8_latin1[256];
 #define PRINT_ACCEPTING_STATES_START (12)
 extern const unsigned char print_itt[256];
 extern const unsigned char print_stt[12][26];
-
-// 224 code points.
-// 10 states, 171 columns, 3676 bytes
-//
-#define LATIN_START_STATE (0)
-#define LATIN_ACCEPTING_STATES_START (10)
-extern const unsigned char latin_itt[256];
-extern const unsigned short latin_stt[10][171];
-
-const char *ConvertToLatin(const UTF8 *pString);
 
 inline bool mux_isprint(const unsigned char *p)
 {
@@ -107,6 +99,60 @@ inline bool mux_isprint(const unsigned char *p)
     } while (iState < PRINT_ACCEPTING_STATES_START);
     return ((iState - PRINT_ACCEPTING_STATES_START) == 1) ? true : false;
 }
+
+// utf/cl_AttrNameInitial.txt
+//
+// 129 included, 1113983 excluded, 0 errors.
+// 5 states, 10 columns, 306 bytes
+//
+#define CL_ATTRNAMEINITIAL_START_STATE (0)
+#define CL_ATTRNAMEINITIAL_ACCEPTING_STATES_START (5)
+extern const unsigned char cl_attrnameinitial_itt[256];
+extern const unsigned char cl_attrnameinitial_stt[5][10];
+
+inline bool mux_isattrnameinitial(const unsigned char *p)
+{
+    int iState = CL_ATTRNAMEINITIAL_START_STATE;
+    do
+    {
+        unsigned char ch = *p++;
+        iState = cl_attrnameinitial_stt[iState][cl_attrnameinitial_itt[(unsigned char)ch]];
+    } while (iState < CL_ATTRNAMEINITIAL_ACCEPTING_STATES_START);
+    return ((iState - CL_ATTRNAMEINITIAL_ACCEPTING_STATES_START) == 1) ? true : false;
+}
+
+// utf/cl_AttrName.txt
+//
+// 155 included, 1113957 excluded, 0 errors.
+// 5 states, 10 columns, 306 bytes
+//
+#define CL_ATTRNAME_START_STATE (0)
+#define CL_ATTRNAME_ACCEPTING_STATES_START (5)
+extern const unsigned char cl_attrname_itt[256];
+extern const unsigned char cl_attrname_stt[5][10];
+
+inline bool mux_isattrname(const unsigned char *p)
+{
+    int iState = CL_ATTRNAME_START_STATE;
+    do
+    {
+        unsigned char ch = *p++;
+        iState = cl_attrname_stt[iState][cl_attrname_itt[(unsigned char)ch]];
+    } while (iState < CL_ATTRNAME_ACCEPTING_STATES_START);
+    return ((iState - CL_ATTRNAME_ACCEPTING_STATES_START) == 1) ? true : false;
+}
+
+// utf/tr_UTF8_Latin1.txt
+//
+// 224 code points.
+// 10 states, 171 columns, 3676 bytes
+//
+#define TR_LATIN_START_STATE (0)
+#define TR_LATIN_ACCEPTING_STATES_START (10)
+extern const unsigned char tr_latin_itt[256];
+extern const unsigned short tr_latin_stt[10][171];
+const char *ConvertToLatin(const UTF8 *pString);
+
 bool utf8_strlen(const UTF8 *pString, size_t &nString);
 
 int ANSI_lex(size_t nString, const char *pString, size_t *nLengthToken0, size_t *nLengthToken1);
