@@ -267,6 +267,10 @@ typedef unsigned char UINT8;
 typedef UINT32 in_addr_t;
 #endif
 
+typedef UINT8  UTF8;
+typedef UINT16 UTF16;
+typedef UINT32 UTF32;
+
 #ifndef SMALLEST_INT_GTE_NEG_QUOTIENT
 #define LARGEST_INT_LTE_NEG_QUOTIENT
 #endif // !SMALLEST_INT_GTE_NEG_QUOTIENT

@@ -8,10 +8,6 @@
 #ifndef STRINGUTIL_H
 #define STRINGUTIL_H
 
-typedef UINT8  UTF8;
-typedef UINT16 UTF16;
-typedef UINT32 UTF32;
-
 extern const bool mux_isprint_old[256];
 extern const bool mux_isdigit[256];
 extern const bool mux_isxdigit[256];
