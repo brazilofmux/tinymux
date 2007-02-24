@@ -2337,7 +2337,7 @@ DESC *initializesock(SOCKET s, struct sockaddr_in *a)
     d->raw_input_at = NULL;
     d->nOption = 0;
     d->raw_input_state = NVT_IS_NORMAL;
-    d->raw_codepoint_state = PRINT_START_STATE;
+    d->raw_codepoint_state = CL_PRINT_START_STATE;
     d->raw_codepoint_length = 0;
     d->nvt_sga_him_state = OPTION_NO;
     d->nvt_sga_us_state = OPTION_NO;
@@ -3134,8 +3134,8 @@ static void process_input_helper(DESC *d, char *pBytes, int nBytes)
             //
             // Action 1 - Accept CHR(X).
             //
-            d->raw_codepoint_state = print_stt[d->raw_codepoint_state][print_itt[ch]];
-            if (  1 == d->raw_codepoint_state - PRINT_ACCEPTING_STATES_START
+            d->raw_codepoint_state = cl_print_stt[d->raw_codepoint_state][cl_print_itt[ch]];
+            if (  1 == d->raw_codepoint_state - CL_PRINT_ACCEPTING_STATES_START
                && p < pend)
             {
                 // Save the byte and reset the state machine.  This is
@@ -3144,9 +3144,9 @@ static void process_input_helper(DESC *d, char *pBytes, int nBytes)
                 *p++ = ch;
                 nInputBytes += d->raw_codepoint_length + 1;
                 d->raw_codepoint_length = 0;
-                d->raw_codepoint_state = PRINT_START_STATE;
+                d->raw_codepoint_state = CL_PRINT_START_STATE;
             }
-            else if (  d->raw_codepoint_state < PRINT_ACCEPTING_STATES_START
+            else if (  d->raw_codepoint_state < CL_PRINT_ACCEPTING_STATES_START
                     && p < pend)
             {
                 // Save the byte and we're done for now.
@@ -3170,7 +3170,7 @@ static void process_input_helper(DESC *d, char *pBytes, int nBytes)
                     p = d->raw_input->cmd;
                 }
                 d->raw_codepoint_length = 0;
-                d->raw_codepoint_state = PRINT_START_STATE;
+                d->raw_codepoint_state = CL_PRINT_START_STATE;
             }
             d->raw_input_state = NVT_IS_NORMAL;
             break;

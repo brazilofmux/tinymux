@@ -79,25 +79,25 @@ extern const char *utf8_latin1[256];
 
 #define utf8_NextCodePoint(x)      (x + utf8_FirstByte[(unsigned char)*x])
 
-// utf/cl_Print.txt
+// utf/cl_Printable.txt
 //
 // 219 included, 1113893 excluded, 0 errors.
 // 12 states, 26 columns, 568 bytes
 //
-#define PRINT_START_STATE (0)
-#define PRINT_ACCEPTING_STATES_START (12)
-extern const unsigned char print_itt[256];
-extern const unsigned char print_stt[12][26];
+#define CL_PRINT_START_STATE (0)
+#define CL_PRINT_ACCEPTING_STATES_START (12)
+extern const unsigned char cl_print_itt[256];
+extern const unsigned char cl_print_stt[12][26];
 
 inline bool mux_isprint(const unsigned char *p)
 {
-    int iState = PRINT_START_STATE;
+    int iState = CL_PRINT_START_STATE;
     do
     {
         unsigned char ch = *p++;
-        iState = print_stt[iState][print_itt[(unsigned char)ch]];
-    } while (iState < PRINT_ACCEPTING_STATES_START);
-    return ((iState - PRINT_ACCEPTING_STATES_START) == 1) ? true : false;
+        iState = cl_print_stt[iState][cl_print_itt[(unsigned char)ch]];
+    } while (iState < CL_PRINT_ACCEPTING_STATES_START);
+    return ((iState - CL_PRINT_ACCEPTING_STATES_START) == 1) ? true : false;
 }
 
 // utf/cl_AttrNameInitial.txt
