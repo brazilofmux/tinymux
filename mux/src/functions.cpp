@@ -7195,7 +7195,6 @@ static FUNCTION(fun_terminfo)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    long nConnected = -1;
     DESC *d = NULL;
     if (is_rational(fargs[0]))
     {

@@ -3112,8 +3112,8 @@ static void process_input_helper(DESC *d, char *pBytes, int nBytes)
         d->raw_input_at = d->raw_input->cmd;
     }
 
-    int nInputBytes = 0;
-    int nLostBytes  = 0;
+    size_t nInputBytes = 0;
+    size_t nLostBytes  = 0;
 
     char *p    = d->raw_input_at;
     char *pend = d->raw_input->cmd + (LBUF_SIZE - sizeof(CBLKHDR) - 1);
