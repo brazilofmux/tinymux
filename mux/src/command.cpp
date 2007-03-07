@@ -1346,6 +1346,7 @@ static void process_cmdent(CMDENT *cmdp, char *switchp, dbref executor, dbref ca
                 }
                 if (!*s)
                 {
+                    free_lbuf(buff);
                     break;
                 }
                 *s++ = '\0';

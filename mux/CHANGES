@@ -276,6 +276,7 @@ Bug Fixes:
  -- Fix Firan build break in fun_trigger() (Issue 288).
  -- Fixed +glance softcode in SGP minimal database (Issue 291).
  -- Fix memory leak in @mail error code path.
+ -- Fix memory leak in process_cmdent().
 
 
 Performance Enhancements:
