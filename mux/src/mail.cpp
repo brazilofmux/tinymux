@@ -1,6 +1,6 @@
 // mail.cpp
 //
-// $Id: mail.cpp,v 1.54 2006/02/02 23:02:59 sdennis Exp $
+// $Id: mail.cpp,v 1.55 2007/03/07 00:27:59 sdennis Exp $
 //
 // This code was taken from Kalkin's DarkZone code, which was
 // originally taken from PennMUSH 1.50 p10, and has been heavily modified
@@ -3667,6 +3667,7 @@ static void do_expmail_stop(dbref player, int flags)
         if (*mailmsg == '\0')
         {
             notify(player, "MAIL: The body of this message is empty.  Use - to add to the message.");
+            free_lbuf(tolist);
         }
         else
         {
