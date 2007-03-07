@@ -540,7 +540,7 @@ FWDLIST *fwdlist_get(dbref thing)
     {
         dbref aowner;
         int   aflags;
-        char *tp = atr_get(thing, A_FORWARDLIST, &aowner, &aflags);
+        char *tp = atr_get("fwdlist_get.543", thing, A_FORWARDLIST, &aowner, &aflags);
         fp = fwdlist_load(GOD, tp);
         free_lbuf(tp);
     }
@@ -628,7 +628,7 @@ const char *PureName(dbref thing)
         }
         return db[thing].purename;
     }
-    pName = atr_get(thing, A_NAME, &aowner, &aflags);
+    pName = atr_get("PureName.631", thing, A_NAME, &aowner, &aflags);
     pPureName = strip_ansi(pName);
     free_lbuf(pName);
     return pPureName;
@@ -2209,7 +2209,7 @@ void atr_set_flags(dbref thing, int atr, dbref flags)
 {
     dbref aowner;
     int aflags;
-    char *buff = atr_get(thing, atr, &aowner, &aflags);
+    char *buff = atr_get("atr_set_flags.2212", thing, atr, &aowner, &aflags);
     atr_add(thing, atr, buff, aowner, flags);
     free_lbuf(buff);
 }
@@ -2316,15 +2316,15 @@ char *atr_get_str(char *s, dbref thing, int atr, dbref *owner, int *flags)
 
 char *atr_get_LEN(dbref thing, int atr, dbref *owner, int *flags, size_t *pLen)
 {
-    char *buff = alloc_lbuf("atr_get");
+    char *buff = alloc_lbuf("atr_get_LEN");
     return atr_get_str_LEN(buff, thing, atr, owner, flags, pLen);
 }
 
-char *atr_get_real(dbref thing, int atr, dbref *owner, int *flags,
+char *atr_get_real(const char *tag, dbref thing, int atr, dbref *owner, int *flags,
     const char *file, const int line)
 {
     size_t nLen;
-    char *buff = pool_alloc_lbuf("atr_get", file, line);
+    char *buff = pool_alloc_lbuf(tag, file, line);
     return atr_get_str_LEN(buff, thing, atr, owner, flags, &nLen);
 }
 
@@ -2477,7 +2477,7 @@ void atr_cpy(dbref dest, dbref source, bool bInternal)
     {
         int   aflags;
         dbref aowner;
-        char *buf = atr_get(source, atr, &aowner, &aflags);
+        char *buf = atr_get("atr_cpy.2480", source, atr, &aowner, &aflags);
 
         if (!(aflags & AF_LOCK))
         {
@@ -2526,7 +2526,7 @@ void atr_chown(dbref obj)
     {
         int   aflags;
         dbref aowner;
-        char *buf = atr_get(obj, atr, &aowner, &aflags);
+        char *buf = atr_get("atr_chown.2529", obj, atr, &aowner, &aflags);
         if (  aowner != owner
            && !(aflags & AF_LOCK))
         {

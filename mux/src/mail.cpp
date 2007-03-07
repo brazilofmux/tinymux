@@ -213,7 +213,7 @@ static int add_mail_message(dbref player, char *message)
     int   aflags;
     dbref aowner;
     char *bp = alloc_lbuf("add_mail_message");
-    char *atrstr = atr_get(player, A_SIGNATURE, &aowner, &aflags);
+    char *atrstr = atr_get("add_mail_message.216", player, A_SIGNATURE, &aowner, &aflags);
     char *execstr = bp;
     mux_exec(atrstr, execstr, &bp, player, player, player,
          AttrTrace(aflags, EV_STRIP_CURLY|EV_FCHECK|EV_EVAL),
@@ -3851,7 +3851,7 @@ static void do_expmail_stop(dbref player, int flags)
 
     dbref aowner;
     dbref aflags;
-    char *tolist = atr_get(player, A_MAILTO, & aowner, &aflags);
+    char *tolist = atr_get("do_expmail_stop.3854", player, A_MAILTO, & aowner, &aflags);
     if (*tolist == '\0')
     {
         notify(player, "MAIL: No recipients.");
@@ -3859,15 +3859,16 @@ static void do_expmail_stop(dbref player, int flags)
     }
     else
     {
-        char *pMailMsg = atr_get(player, A_MAILMSG, &aowner, &aflags);
+        char *pMailMsg = atr_get("do_expmail_stop.3862", player, A_MAILMSG, &aowner, &aflags);
         if (*pMailMsg == '\0')
         {
             notify(player, "MAIL: The body of this message is empty.  Use - to add to the message.");
+            free_lbuf(tolist);
         }
         else
         {
-            char *mailsub   = atr_get(player, A_MAILSUB, &aowner, &aflags);
-            char *mailflags = atr_get(player, A_MAILFLAGS, &aowner, &aflags);
+            char *mailsub   = atr_get("do_expmail_stop.3870", player, A_MAILSUB, &aowner, &aflags);
+            char *mailflags = atr_get("do_expmail_stop.3871", player, A_MAILFLAGS, &aowner, &aflags);
             mail_to_list(player, tolist, mailsub, pMailMsg, flags | mux_atol(mailflags), false);
             free_lbuf(mailflags);
             free_lbuf(mailsub);
@@ -3911,7 +3912,7 @@ void do_prepend(dbref executor, dbref caller, dbref enactor, int eval, int key, 
         dbref aowner;
         int aflags;
 
-        char *oldmsg = atr_get(executor, A_MAILMSG, &aowner, &aflags);
+        char *oldmsg = atr_get("do_prepend.3915", executor, A_MAILMSG, &aowner, &aflags);
         if (*oldmsg)
         {
             char *newmsg = alloc_lbuf("do_prepend");
@@ -3974,7 +3975,7 @@ void do_postpend(dbref executor, dbref caller, dbref enactor, int eval, int key,
         dbref aowner;
         int aflags;
 
-        char *oldmsg = atr_get(executor, A_MAILMSG, &aowner, &aflags);
+        char *oldmsg = atr_get("do_postpend.3978", executor, A_MAILMSG, &aowner, &aflags);
         if (*oldmsg)
         {
             char *newmsg = alloc_lbuf("do_postpend");
@@ -4010,7 +4011,7 @@ static void do_edit_msg(dbref player, char *from, char *to)
     {
         dbref aowner;
         int aflags;
-        char *msg = atr_get(player, A_MAILMSG, &aowner, &aflags);
+        char *msg = atr_get("do_edit_msg.4014", player, A_MAILMSG, &aowner, &aflags);
         char *result = replace_string(from, to, msg);
         atr_add(player, A_MAILMSG, result, aowner, aflags);
         notify(player, "Text edited.");
@@ -4034,8 +4035,8 @@ static void do_mail_proof(dbref player)
     dbref aowner;
     int aflags;
 
-    char *mailto   = atr_get(player, A_MAILTO, &aowner, &aflags);
-    char *pMailMsg = atr_get(player, A_MAILMSG, &aowner, &aflags);
+    char *mailto   = atr_get("do_mail_proof.4038", player, A_MAILTO, &aowner, &aflags);
+    char *pMailMsg = atr_get("do_mail_proof.4039", player, A_MAILMSG, &aowner, &aflags);
     char *names    = make_namelist(player, mailto);
 
     size_t iRealVisibleWidth;

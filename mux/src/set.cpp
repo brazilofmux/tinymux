@@ -884,7 +884,7 @@ void do_chown
             notify_quiet(executor, NOPERM_MESSAGE);
             return;
         }
-        char *buff = atr_get(thing, ap->number, &aowner, &aflags);
+        char *buff = atr_get("do_chown.887", thing, ap->number, &aowner, &aflags);
         atr_add(thing, ap->number, buff, nOwnerNew, aflags);
         free_lbuf(buff);
         if (!Quiet(executor))

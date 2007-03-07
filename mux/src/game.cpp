@@ -787,7 +787,7 @@ void notify_check(dbref target, dbref sender, const mux_string &msg, int key)
            && (key & (MSG_ME | MSG_INV_L))
            && H_Listen(target))
         {
-            tp = atr_get(target, A_LISTEN, &aowner, &aflags);
+            tp = atr_get("notify_check.790", target, A_LISTEN, &aowner, &aflags);
             if (*tp && wild(tp, msgPlain, args, NUM_ENV_VARS))
             {
                 for (nargs = NUM_ENV_VARS; nargs && (!args[nargs - 1] || !(*args[nargs - 1])); nargs--)

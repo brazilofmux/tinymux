@@ -127,7 +127,7 @@ bool eval_boolexp(dbref player, dbref thing, dbref from, BOOLEXP *b)
             mudstate.lock_nest_lev--;
             return false;
         }
-        key = atr_get(b->sub1->thing, A_LOCK, &aowner, &aflags);
+        key = atr_get("boolexp.130", b->sub1->thing, A_LOCK, &aowner, &aflags);
         c = eval_boolexp_atr(player, b->sub1->thing, from, key);
         free_lbuf(key);
         mudstate.lock_nest_lev--;

@@ -461,8 +461,8 @@ void atr_set_flags(dbref, int, int);
 const char *atr_get_raw_LEN(dbref, int, size_t *);
 const char *atr_get_raw(dbref, int);
 char *atr_get_LEN(dbref, int, dbref *, int *, size_t *);
-char *atr_get_real(dbref, int, dbref *, int *, const char *, const int);
-#define atr_get(t,a,o,f) atr_get_real(t,a,o,f, __FILE__, __LINE__)
+char *atr_get_real(const char *tag, dbref, int, dbref *, int *, const char *, const int);
+#define atr_get(g,t,a,o,f) atr_get_real(g,t,a,o,f, __FILE__, __LINE__)
 char *atr_pget_LEN(dbref, int, dbref *, int *, size_t *);
 char *atr_pget_real(dbref, int, dbref *, int *, const char *, const int);
 #define atr_pget(t,a,o,f) atr_pget_real(t,a,o,f, __FILE__, __LINE__)
