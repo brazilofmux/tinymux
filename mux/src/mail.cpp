@@ -3865,6 +3865,7 @@ static void do_expmail_stop(dbref player, int flags)
         if (*pMailMsg == '\0')
         {
             notify(player, "MAIL: The body of this message is empty.  Use - to add to the message.");
+            free_lbuf(tolist);
         }
         else
         {
