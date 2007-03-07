@@ -1,6 +1,6 @@
 // command.cpp -- command parser and support routines.
 //
-// $Id: command.cpp,v 1.78 2006/12/10 08:29:42 sdennis Exp $
+// $Id: command.cpp,v 1.79 2007/03/07 03:39:19 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -1305,6 +1305,7 @@ static void process_cmdent(CMDENT *cmdp, char *switchp, dbref executor, dbref ca
                 }
                 if (!*s)
                 {
+                    free_lbuf(buff);
                     break;
                 }
                 *s++ = '\0';
