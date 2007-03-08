@@ -2697,7 +2697,7 @@ static const int nvt_input_action_table[8][14] =
  *
  * \param d         Player connection context.
  * \param chOption  Telnet Option.
- * \param chRequest	Telnet SB command.
+ * \param chRequest Telnet SB command.
  * \return          None.
  */
 
@@ -2714,37 +2714,46 @@ static void SendSb(DESC *d, unsigned char chOption, unsigned char chRequest)
  * \param d         Player connection context.
  * \param chOption  Telnet Option.
  * \param chRequest Telnet SB command.
- * \param pPayload	Pointer to the payload.
- * \param iLength	Length of the payload.
+ * \param pPayload  Pointer to the payload.
+ * \param iLength   Length of the payload.
  * \return          None.
  */
 
-static void SendSb(DESC *d, unsigned char chOption, unsigned char chRequest, char *pPayload, unsigned int iPayloadLength)
+static void SendSb
+(
+    DESC *d,
+    unsigned char chOption,
+    unsigned char chRequest,
+    char *pPayload,
+    unsigned int iPayloadLength
+)
 {
-	unsigned int finalLength = 0;
-	unsigned int loop;
-	
-	char * escapedPayload = (char *)malloc(iPayloadLength * 2);
-	memset(escapedPayload,0,iPayloadLength * 2);
-	
-	char * payloadPointer = escapedPayload;
+    unsigned int finalLength = 0;
+    unsigned int loop;
 
-	for (loop = 0; loop < iPayloadLength; loop++) {
-		if (NVT_IAC == *(pPayload + loop)) {
-			*payloadPointer++ = NVT_IAC;
-			finalLength++;
-		}
-		*payloadPointer++ = *(pPayload + loop);
-		finalLength++;
-	}
+    char * escapedPayload = (char *)malloc(iPayloadLength * 2);
+    memset(escapedPayload, 0, iPayloadLength * 2);
 
-	unsigned int length = finalLength + 5; 
-	char *pSB = (char *)malloc(length);
-	pSB[0] = NVT_IAC;
-	pSB[1] = NVT_SB;
+    char * payloadPointer = escapedPayload;
+
+    for (loop = 0; loop < iPayloadLength; loop++)
+    {
+        if (NVT_IAC == *(pPayload + loop))
+        {
+            *payloadPointer++ = NVT_IAC;
+            finalLength++;
+        }
+        *payloadPointer++ = *(pPayload + loop);
+        finalLength++;
+    }
+
+    unsigned int length = finalLength + 5; 
+    char *pSB = (char *)malloc(length);
+    pSB[0] = NVT_IAC;
+    pSB[1] = NVT_SB;
     pSB[2] = chOption;
     pSB[3] = chRequest;
-    memcpy(&pSB[4],escapedPayload,finalLength);
+    memcpy(&pSB[4], escapedPayload, finalLength);
     pSB[length - 2] = NVT_IAC;
     pSB[length - 1] = NVT_SE;
     queue_write_LEN(d, pSB, length);
@@ -2843,7 +2852,7 @@ int HimState(DESC *d, unsigned char chOption)
     }
     else if (TELNET_CHARSET == chOption)
     {
-    	return d->nvt_charset_him_state;
+        return d->nvt_charset_him_state;
     }
     return OPTION_NO;
 }
@@ -2882,7 +2891,7 @@ int UsState(DESC *d, unsigned char chOption)
     }
     else if (TELNET_CHARSET == chOption)
     {
-    	return d->nvt_charset_us_state;
+        return d->nvt_charset_us_state;
     }
     return OPTION_NO;
 }
@@ -2912,17 +2921,25 @@ static void SetHimState(DESC *d, unsigned char chOption, int iHimState)
     else if (TELNET_TTYPE == chOption)
     {
         d->nvt_ttype_him_state = iHimState;
-        if (OPTION_YES == iHimState) {
-            SendSb(d,chOption,TELNETSB_SEND);
+        if (OPTION_YES == iHimState)
+        {
+            SendSb(d, chOption, TELNETSB_SEND);
         }
     }
     else if (TELNET_CHARSET == chOption)
     {
-    	d->nvt_charset_him_state = iHimState;
-    	if (OPTION_YES == iHimState) {
-    		char aCharsets[18] = { NULL, 'U', 'T', 'F', '-', '8', NULL, 'I', 'S', 'O', '-', '8', '8', '5', '9', '-', '1', NULL};    	
-    		SendSb(d,chOption,TELNETSB_REQUEST,&aCharsets[0],18);
-    	}
+        d->nvt_charset_him_state = iHimState;
+        if (OPTION_YES == iHimState)
+        {
+            char aCharsets[18] =
+            {
+                '\0',
+                'U', 'T', 'F', '-', '8', '\0',
+                'I', 'S', 'O', '-', '8', '8', '5', '9', '-', '1', '\0'
+            };
+
+            SendSb(d, chOption, TELNETSB_REQUEST, &aCharsets[0], 18);
+        }
     }
 }
 
@@ -2962,7 +2979,7 @@ static void SetUsState(DESC *d, unsigned char chOption, int iUsState)
     }
     else if (TELNET_CHARSET == chOption)
     {
-    	d->nvt_charset_us_state = iUsState;
+        d->nvt_charset_us_state = iUsState;
     }
 }
 
@@ -3504,22 +3521,23 @@ static void process_input_helper(DESC *d, char *pBytes, int nBytes)
                     break;
                     
                 case TELNET_CHARSET:
-                	if (TELNETSB_ACCEPT == d->aOption[1])
-                	{
-                		unsigned char *pCharset = &d->aOption[2];
-                		if (strncmp((char *)pCharset,"UTF-8",m - 2) == 0) {
-                			d->nvt_charset_utf8 = true;
-                		}
-                	}
-                	else if (TELNETSB_REJECT == d->aOption[1]) 
-                	{
-                		// The client has replied that it doesn't even
-                		// support Latin1/ISO-8859-1 accented characters.
-                		// In theory, we should probably record this to strip out
-                		// any accents.
-                		//
-                		// TODO?
-                	}
+                    if (TELNETSB_ACCEPT == d->aOption[1])
+                    {
+                        unsigned char *pCharset = &d->aOption[2];
+                        if (strncmp((char *)pCharset, "UTF-8", m - 2) == 0)
+                        {
+                            d->nvt_charset_utf8 = true;
+                        }
+                    }
+                    else if (TELNETSB_REJECT == d->aOption[1]) 
+                    {
+                        // The client has replied that it doesn't even
+                        // support Latin1/ISO-8859-1 accented characters.
+                        // In theory, we should probably record this to strip out
+                        // any accents.
+                        //
+                        // TODO?
+                    }
                 }
             }
             q = d->aOption;
