@@ -2747,7 +2747,7 @@ static void SendSb
         finalLength++;
     }
 
-    unsigned int length = finalLength + 5; 
+    unsigned int length = finalLength + 5;
     char *pSB = (char *)malloc(length);
     pSB[0] = NVT_IAC;
     pSB[1] = NVT_SB;
@@ -3500,7 +3500,7 @@ static void process_input_helper(DESC *d, char *pBytes, int nBytes)
                         d->height = (d->aOption[3] << 8 ) | d->aOption[4];
                     }
                     break;
-                    
+
                 case TELNET_TTYPE:
                     if (TELNETSB_IS == d->aOption[1])
                     {
@@ -3509,7 +3509,7 @@ static void process_input_helper(DESC *d, char *pBytes, int nBytes)
                             free(d->nvt_ttype_him_value);
                             d->nvt_ttype_him_value = NULL;
                         }
-                        
+
                         // Skip past the TTYPE and TELQUAL_IS bytes.
                         //
                         size_t nTermType = m-2;
@@ -3519,7 +3519,7 @@ static void process_input_helper(DESC *d, char *pBytes, int nBytes)
                         d->nvt_ttype_him_value[nTermType] = '\0';
                     }
                     break;
-                    
+
                 case TELNET_CHARSET:
                     if (TELNETSB_ACCEPT == d->aOption[1])
                     {
@@ -3529,7 +3529,7 @@ static void process_input_helper(DESC *d, char *pBytes, int nBytes)
                             d->nvt_charset_utf8 = true;
                         }
                     }
-                    else if (TELNETSB_REJECT == d->aOption[1]) 
+                    else if (TELNETSB_REJECT == d->aOption[1])
                     {
                         // The client has replied that it doesn't even
                         // support Latin1/ISO-8859-1 accented characters.
