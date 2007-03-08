@@ -65,7 +65,7 @@ static int add_to(dbref executor, int am, int attrnum)
     int aflags;
     dbref aowner;
 
-    char *atr_gotten = atr_get(executor, attrnum, &aowner, &aflags);
+    char *atr_gotten = atr_get("add_to.68", executor, attrnum, &aowner, &aflags);
     int num = mux_atol(atr_gotten);
     free_lbuf(atr_gotten);
     num += am;
@@ -559,7 +559,7 @@ int nfy_que(dbref sem, int attr, int key, int count)
     {
         int   aflags;
         dbref aowner;
-        char *str = atr_get(sem, attr, &aowner, &aflags);
+        char *str = atr_get("nfy_que.562", sem, attr, &aowner, &aflags);
         cSemaphore = mux_atol(str);
         free_lbuf(str);
     }

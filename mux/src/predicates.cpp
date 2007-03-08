@@ -131,7 +131,7 @@ bool could_doit(dbref player, dbref thing, int locknum)
 
     dbref aowner;
     int   aflags;
-    char *key = atr_get(thing, locknum, &aowner, &aflags);
+    char *key = atr_get("could_doit.134", thing, locknum, &aowner, &aflags);
     bool doit = eval_boolexp_atr(player, thing, thing, key);
     free_lbuf(key);
     return doit;
@@ -197,7 +197,7 @@ static bool pay_quota(dbref who, int cost)
     //
     dbref aowner;
     int aflags;
-    char *quota_str = atr_get(Owner(who), A_RQUOTA, &aowner, &aflags);
+    char *quota_str = atr_get("pay_quota.200", Owner(who), A_RQUOTA, &aowner, &aflags);
     int quota = mux_atol(quota_str);
     free_lbuf(quota_str);
 
@@ -285,7 +285,7 @@ void add_quota(dbref who, int payment)
     int aflags;
     char buf[I32BUF_SIZE];
 
-    char *quota = atr_get(who, A_RQUOTA, &aowner, &aflags);
+    char *quota = atr_get("add_quota.288", who, A_RQUOTA, &aowner, &aflags);
     mux_ltoa(mux_atol(quota) + payment, buf);
     free_lbuf(quota);
     atr_add_raw(who, A_RQUOTA, buf);
@@ -1212,7 +1212,7 @@ void handle_prog(DESC *d, char *message)
     }
     dbref aowner;
     int aflags, i;
-    char *cmd = atr_get(d->player, A_PROGCMD, &aowner, &aflags);
+    char *cmd = atr_get("handle_prog.1215", d->player, A_PROGCMD, &aowner, &aflags);
     CLinearTimeAbsolute lta;
     wait_que(d->program_data->wait_enactor, d->player, d->player,
         AttrTrace(aflags, 0), false, lta, NOTHING, 0,
@@ -1402,7 +1402,7 @@ void do_prog
         bool bFound = false;
         ITER_PARENTS(thing, parent, lev)
         {
-            pBuffer = atr_get(parent, ap->number, &aowner, &aflags);
+            pBuffer = atr_get("do_prog.1405", parent, ap->number, &aowner, &aflags);
             if (pBuffer[0])
             {
                 bFound = true;

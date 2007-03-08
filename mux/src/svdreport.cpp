@@ -40,7 +40,7 @@ void do_report(dbref executor, dbref caller, dbref enactor, int extra)
         if (isPlayer(iPlayer))
         {
             int aowner, aflags;
-            char *player_last = atr_get(iPlayer, A_LAST, &aowner, &aflags);
+            char *player_last = atr_get("do_report.43", iPlayer, A_LAST, &aowner, &aflags);
 
             if (ltaPlayer.SetString(player_last))
             {

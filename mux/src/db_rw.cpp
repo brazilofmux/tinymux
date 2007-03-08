@@ -967,7 +967,7 @@ static bool db_write_object(FILE *f, dbref i, int db_format, int flags)
     putref(f, Next(i));
     if (!(flags & V_ATRKEY))
     {
-        got = atr_get(i, A_LOCK, &aowner, &aflags);
+        got = atr_get("db_write_object.970", i, A_LOCK, &aowner, &aflags);
         tempbool = parse_boolexp(GOD, got, true);
         free_lbuf(got);
         putboolexp(f, tempbool);

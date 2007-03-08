@@ -140,7 +140,7 @@ void record_login
     dbref aowner;
     int aflags, i;
 
-    char *atrbuf = atr_get(player, A_LOGINDATA, &aowner, &aflags);
+    char *atrbuf = atr_get("record_login.143", player, A_LOGINDATA, &aowner, &aflags);
     decrypt_logindata(atrbuf, &login_info);
     if (isgood)
     {
@@ -463,7 +463,7 @@ static bool check_pass(dbref player, const char *pPassword)
 
     int   aflags;
     dbref aowner;
-    char *pTarget = atr_get(player, A_PASS, &aowner, &aflags);
+    char *pTarget = atr_get("check_pass.466", player, A_PASS, &aowner, &aflags);
     if (*pTarget)
     {
         if (strcmp(mux_crypt(pPassword, pTarget, &iType), pTarget) == 0)
@@ -513,7 +513,7 @@ dbref connect_player(char *name, char *password, char *host, char *username, cha
     //
     int aflags;
     dbref aowner;
-    char *player_last = atr_get(player, A_LAST, &aowner, &aflags);
+    char *player_last = atr_get("connect_player.516", player, A_LAST, &aowner, &aflags);
     if (strncmp(player_last, time_str, 10) != 0)
     {
         char *allowance = atr_pget(player, A_ALLOWANCE, &aowner, &aflags);
@@ -615,7 +615,7 @@ void do_password
 
     dbref aowner;
     int   aflags;
-    char *target = atr_get(executor, A_PASS, &aowner, &aflags);
+    char *target = atr_get("do_password.618", executor, A_PASS, &aowner, &aflags);
     const char *pmsg;
     if (  !*target
        || !check_pass(executor, oldpass))
@@ -681,7 +681,7 @@ void do_last(dbref executor, dbref caller, dbref enactor, int eval, int key, cha
     }
     else
     {
-        char *atrbuf = atr_get(target, A_LOGINDATA, &aowner, &aflags);
+        char *atrbuf = atr_get("do_last.684", target, A_LOGINDATA, &aowner, &aflags);
         LDATA login_info;
         decrypt_logindata(atrbuf, &login_info);
 

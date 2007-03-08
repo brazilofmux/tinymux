@@ -1138,7 +1138,7 @@ void SendChannelMessage
         if (  pattr
            && pattr->number)
         {
-            maxbuf = atr_get(obj, pattr->number, &aowner, &aflags);
+            maxbuf = atr_get("SendChannelMessage.1141", obj, pattr->number, &aowner, &aflags);
             logmax = mux_atol(maxbuf);
             free_lbuf(maxbuf);
         }
@@ -1183,7 +1183,7 @@ static void ChannelMOTD(dbref executor, dbref enactor, int attr)
     {
         dbref aowner;
         int   aflags;
-        char *q = atr_get(executor, attr, &aowner, &aflags);
+        char *q = atr_get("ChannelMOTD.1186", executor, attr, &aowner, &aflags);
         if ('\0' != q[0])
         {
             char *buf = alloc_lbuf("chanmotd");
@@ -1405,7 +1405,7 @@ void do_comlast(dbref player, struct channel *ch, int arg)
     if (  pattr
        && (atr_get_info(obj, pattr->number, &aowner, &aflags)))
     {
-        char *maxbuf = atr_get(obj, pattr->number, &aowner, &aflags);
+        char *maxbuf = atr_get("do_comlast.1408", obj, pattr->number, &aowner, &aflags);
         logmax = mux_atol(maxbuf);
         free_lbuf(maxbuf);
     }
@@ -1433,7 +1433,7 @@ void do_comlast(dbref player, struct channel *ch, int arg)
         pattr = atr_str(tprintf("HISTORY_%d", iMod(histnum, logmax)));
         if (pattr)
         {
-            message = atr_get(obj, pattr->number, &aowner, &aflags);
+            message = atr_get("do_comlast.1436", obj, pattr->number, &aowner, &aflags);
             raw_notify(player, message);
             free_lbuf(message);
         }
@@ -1474,7 +1474,7 @@ static bool do_chanlog(dbref player, char *channel, char *arg)
 
     dbref aowner;
     int aflags;
-    char *oldvalue = atr_get(ch->chan_obj, atr, &aowner, &aflags);
+    char *oldvalue = atr_get("do_chanlog.1477", ch->chan_obj, atr, &aowner, &aflags);
     int oldnum = mux_atol(oldvalue);
     if (value < oldnum)
     {

@@ -1057,7 +1057,7 @@ static bool process_hook(dbref executor, dbref thing, char *s_uselock, ATTR *hk_
         dbref aowner;
         int aflags;
         int anum = hk_attr->number;
-        char *atext = atr_get(thing, anum, &aowner, &aflags);
+        char *atext = atr_get("process_hook.1060", thing, anum, &aowner, &aflags);
         if (atext[0] && !(aflags & AF_NOPROG))
         {
             reg_ref **preserve = NULL;
@@ -1344,7 +1344,7 @@ static void process_cmdent(CMDENT *cmdp, char *switchp, dbref executor, dbref ca
         {
             for (add = cmdp->addent; add != NULL; add = add->next)
             {
-                buff = atr_get(add->thing, add->atr, &aowner, &aflags);
+                buff = atr_get("process_cmdent.1347", add->thing, add->atr, &aowner, &aflags);
 
                 // Skip the '$' character, and the next character.
                 //
@@ -1571,7 +1571,7 @@ static int cmdtest(dbref player, char *cmd)
     int aflags, rval;
 
     rval = 0;
-    buff1 = atr_get(player, A_CMDCHECK, &aowner, &aflags);
+    buff1 = atr_get("cmdtest.1573", player, A_CMDCHECK, &aowner, &aflags);
     pt1 = buff1;
     while (pt1 && *pt1)
     {
@@ -2489,7 +2489,7 @@ char *process_command
         if (  Good_obj(mudconf.global_error_obj)
            && !Going(mudconf.global_error_obj))
         {
-            char *errtext = atr_get(mudconf.global_error_obj, A_VA, &aowner, &aflags);
+            char *errtext = atr_get("process_command.2491", mudconf.global_error_obj, A_VA, &aowner, &aflags);
             char *errbuff = alloc_lbuf("process_command.error_msg");
             char *errbufc = errbuff;
             mux_exec(errtext, errbuff, &errbufc, mudconf.global_error_obj, caller, enactor,
@@ -4058,7 +4058,7 @@ void do_icmd(dbref player, dbref cause, dbref enactor, int eval, int key,
         }
         else if (key == ICMD_LROOM)
         {
-            atrpt = atr_get(target, A_CMDCHECK, &aowner, &aflags);
+            atrpt = atr_get("do_icmd.4060", target, A_CMDCHECK, &aowner, &aflags);
             if (*atrpt)
             {
                 notify(player,"Location CmdCheck attribute is:");
@@ -4084,7 +4084,7 @@ void do_icmd(dbref player, dbref cause, dbref enactor, int eval, int key,
             }
             notify(player, "Scanning all locations and zones from your current location:");
             bFound = false;
-            atrpt = atr_get(target, A_CMDCHECK, &aowner, &aflags);
+            atrpt = atr_get("do_icmd.4086", target, A_CMDCHECK, &aowner, &aflags);
             if (*atrpt)
             {
                 notify(player, tprintf("%c     --- At %s(#%d) :",
@@ -4100,7 +4100,7 @@ void do_icmd(dbref player, dbref cause, dbref enactor, int eval, int key,
                    && (  isRoom(zone)
                       || isThing(zone)))
                 {
-                    atrpt = atr_get(zone, A_CMDCHECK, &aowner, &aflags);
+                    atrpt = atr_get("do_icmd.4102", zone, A_CMDCHECK, &aowner, &aflags);
                     if (*atrpt)
                     {
                         notify(player,tprintf("%c     z-- At %s(#%d) :",
@@ -4164,7 +4164,7 @@ void do_icmd(dbref player, dbref cause, dbref enactor, int eval, int key,
             {
                 notify(player, "CmdCheck is not active.");
             }
-            atrpt = atr_get(target, A_CMDCHECK, &aowner, &aflags);
+            atrpt = atr_get("do_icmd.4166", target, A_CMDCHECK, &aowner, &aflags);
             if (*atrpt)
             {
                 notify(player, "CmdCheck attribute is:");
@@ -4221,7 +4221,7 @@ void do_icmd(dbref player, dbref cause, dbref enactor, int eval, int key,
             }
             if (cmdp || bHome)
             {
-                atrpt = atr_get(target, A_CMDCHECK, &aowner, &aflags);
+                atrpt = atr_get("do_icmd.4223", target, A_CMDCHECK, &aowner, &aflags);
                 if (cmdp)
                 {
                     aflags = (int)strlen(cmdp->cmdname);

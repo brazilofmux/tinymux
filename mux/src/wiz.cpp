@@ -471,7 +471,7 @@ void do_newpassword
             //
             int   aflags;
             dbref aowner;
-            char *target = atr_get(executor, A_PASS, &aowner, &aflags);
+            char *target = atr_get("do_newpassword.474", executor, A_PASS, &aowner, &aflags);
             if (target[0] != '\0')
             {
                 bCan = false;
