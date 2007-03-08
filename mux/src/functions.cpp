@@ -7269,6 +7269,11 @@ static FUNCTION(fun_terminfo)
     {
         safe_str(" pueblo", buff, bufc);
     }
+    
+    if (d->nvt_charset_utf8)
+    {
+    	safe_str(" unicode", buff, bufc);
+    }
 }
 
 
