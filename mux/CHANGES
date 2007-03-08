@@ -305,6 +305,8 @@ Bug Fixes:
  -- Fixed +glance softcode in SGP minimal database (Issue 291).
  -- Fix memory leak in @mail error code path.
  -- Fix memory leak in process_cmdent().
+ -- Fix possibility of reading beyond end of @addcommand'ed attribute
+    (Issue 294).
 
 
 Performance Enhancements:
