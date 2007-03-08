@@ -25,6 +25,7 @@ for i in $patchableFiles;
 do
     cp $ChangesDir/$i $NewDir\_src/$i
 done
+cp $ChangesDir/src/autoconf-win32.h $NewDir\_src/src/autoconf.h
 for i in $removeFiles;
 do
     if [ -e $NewDir\_src/$i ]; then

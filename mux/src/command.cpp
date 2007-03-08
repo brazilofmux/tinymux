@@ -1169,7 +1169,7 @@ static void process_cmdent(CMDENT *cmdp, char *switchp, dbref executor, dbref ca
         return;
     }
 
-    char *buf1, *buf2, tchar, *bp, *str, *buff, *s, *j, *new0, *s_uselock;
+    char *buf1, *buf2, tchar, *bp, *str, *buff, *j, *new0, *s_uselock;
     char *args[MAX_ARG];
     int nargs, i, interp, key, xkey, aflags;
     dbref aowner;
@@ -1338,18 +1338,31 @@ static void process_cmdent(CMDENT *cmdp, char *switchp, dbref executor, dbref ca
             {
                 buff = atr_get(add->thing, add->atr, &aowner, &aflags);
 
-                // Skip the '$' character, and the next character.
+                // Attribute should contain at least two characters and first
+                // character is '$'.
                 //
-                for (s = buff + 2; *s && *s != ':'; s++)
-                {
-                    ; // Nothing.
-                }
-                if (!*s)
+                if (  AMATCH_CMD != buff[0]
+                   || '\0' == buff[1])
                 {
                     free_lbuf(buff);
                     break;
                 }
-                *s++ = '\0';
+
+                // Skip the '$' character and the next to allow "$::cmd".
+                //
+                size_t iBuff;
+                for (iBuff = 2;  '\0' != buff[iBuff]
+                              && ':'  != buff[iBuff]; iBuff++)
+                {
+                    ; // Nothing.
+                }
+
+                if ('\0' == buff[iBuff])
+                {
+                    free_lbuf(buff);
+                    break;
+                }
+                buff[iBuff++] = '\0';
 
                 if (!(cmdp->callseq & CS_LEADIN))
                 {
@@ -1405,7 +1418,7 @@ static void process_cmdent(CMDENT *cmdp, char *switchp, dbref executor, dbref ca
                     CLinearTimeAbsolute lta;
                     wait_que(add->thing, caller, executor,
                         AttrTrace(aflags, 0), false, lta, NOTHING, 0,
-                        s,
+                        buff + iBuff,
                         NUM_ENV_VARS, aargs,
                         mudstate.global_regs);
 
