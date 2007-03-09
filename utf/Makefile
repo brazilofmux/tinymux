@@ -1,5 +1,8 @@
 all: classify transform
 
+UnicodeData.txt:
+	wget http://www.unicode.org/Public/UNIDATA/UnicodeData.txt
+
 table: UnicodeData.txt UnicodeHan.txt
 	perl buildUnicodeMaster.pl UnicodeData.txt UnicodeHan.txt > UnicodeDataNew.txt
 	
