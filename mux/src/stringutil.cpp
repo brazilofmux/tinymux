@@ -624,7 +624,6 @@ const unsigned char cl_print_itt[256] =
       67,  67,  75,  76,  77,  78,  79,  80,   81,  82,  67,  83,  84,  85,  86,   0,
       87,  88,  89,  90,  91,  92,  93,  94,   95,  96,  97,  98,  99, 100,   0, 101,
      102,   0,   0,   0,   0,   0,   0,   0,    0,   0,   0,   0,   0,   0,   0,   0
-
 };
 
 const unsigned char cl_print_stt[164][103] =
@@ -4504,7 +4503,7 @@ void mux_string::append(const char *pStr)
     }
 
     mux_string *sNew = new mux_string;
-    
+
     sNew->import(pStr, nLen);
 
     append(*sNew);
@@ -5036,7 +5035,7 @@ void mux_string::export_TextPlain
  *
  * Results in an empty mux_string if the specified character does
  * not form a valid one-character string, e.g. ESC or NUL.
- * 
+ *
  * \param chIn     Normal character.
  * \return         None.
  */

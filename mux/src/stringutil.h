@@ -451,9 +451,9 @@ public:
         size_t nStart = 0,
         size_t nLen = (LBUF_SIZE-1)
     );
-    void trim(const char ch = ' ', bool bLeft = true, bool bRight = true); 
-    void trim(const char *p, bool bLeft = true, bool bRight = true); 
-    void trim(const char *p, size_t n, bool bLeft = true, bool bRight = true); 
+    void trim(const char ch = ' ', bool bLeft = true, bool bRight = true);
+    void trim(const char *p, bool bLeft = true, bool bRight = true);
+    void trim(const char *p, size_t n, bool bLeft = true, bool bRight = true);
     void truncate(size_t nLen);
 
     static void * operator new(size_t size)
@@ -485,7 +485,7 @@ public:
 // String buffers are LBUF_SIZE, so maximum string length is LBUF_SIZE-1.
 // That means the longest possible list can consist of LBUF_SIZE-1 copies
 // of the delimiter, making for LBUF_SIZE words in the list.
-// 
+//
 #define MAX_WORDS LBUF_SIZE
 
 class mux_words
