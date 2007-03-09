@@ -7200,7 +7200,6 @@ static FUNCTION(fun_terminfo)
     {
         SOCKET s = mux_atol(fargs[0]);
         bool bFound = false;
-        DESC *d;
         CLinearTimeAbsolute ltaNow;
         ltaNow.GetUTC();
         DESC_ITER_CONN(d)
@@ -7212,8 +7211,8 @@ static FUNCTION(fun_terminfo)
             }
         }
         if (  bFound
-           && !(  d->player == executor
-              || Wizard_Who(executor)))
+           && (  d->player != executor
+              && !Wizard_Who(executor)))
         {
             safe_str("#-1 PERMISSION DENIED",buff, bufc);
             return;
