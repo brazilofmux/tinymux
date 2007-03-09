@@ -81,13 +81,13 @@ extern const char *utf8_latin1[256];
 
 // utf/cl_Printable.txt
 //
-// 219 included, 1113893 excluded, 0 errors.
-// 12 states, 26 columns, 568 bytes
+// 95007 included, 1019105 excluded, 0 errors.
+// 164 states, 103 columns, 17148 bytes
 //
 #define CL_PRINT_START_STATE (0)
-#define CL_PRINT_ACCEPTING_STATES_START (12)
+#define CL_PRINT_ACCEPTING_STATES_START (164)
 extern const unsigned char cl_print_itt[256];
-extern const unsigned char cl_print_stt[12][26];
+extern const unsigned char cl_print_stt[164][103];
 
 inline bool mux_isprint(const unsigned char *p)
 {
@@ -344,7 +344,7 @@ private:
     // exist or be valid.
     //
     size_t          m_n;
-    char            m_ach[LBUF_SIZE];
+    unsigned char   m_ach[LBUF_SIZE];
     size_t          m_ncs;
     ANSI_ColorState *m_pcs;
 
@@ -451,9 +451,9 @@ public:
         size_t nStart = 0,
         size_t nLen = (LBUF_SIZE-1)
     );
-    void trim(const char ch = ' ', bool bLeft = true, bool bRight = true); 
-    void trim(const char *p, bool bLeft = true, bool bRight = true); 
-    void trim(const char *p, size_t n, bool bLeft = true, bool bRight = true); 
+    void trim(const char ch = ' ', bool bLeft = true, bool bRight = true);
+    void trim(const char *p, bool bLeft = true, bool bRight = true);
+    void trim(const char *p, size_t n, bool bLeft = true, bool bRight = true);
     void truncate(size_t nLen);
 
     static void * operator new(size_t size)
@@ -485,7 +485,7 @@ public:
 // String buffers are LBUF_SIZE, so maximum string length is LBUF_SIZE-1.
 // That means the longest possible list can consist of LBUF_SIZE-1 copies
 // of the delimiter, making for LBUF_SIZE words in the list.
-// 
+//
 #define MAX_WORDS LBUF_SIZE
 
 class mux_words

@@ -75,7 +75,7 @@ void VerifyTables(FILE *fp)
             fprintf(stderr, "Codes in file are not in order.\n");
             exit(0);
         }
-        nextcode = nextcode2;            
+        nextcode = nextcode2;
     }
 }
 #endif
@@ -177,7 +177,7 @@ void TestTable(FILE *fp)
                 fprintf(stderr, "Codes in file are not in order.\n");
                 exit(0);
             }
-            nextcode = nextcode2;            
+            nextcode = nextcode2;
         }
     }
     else
@@ -208,7 +208,7 @@ void TestTable(FILE *fp)
                 fprintf(stderr, "Codes in file are not in order.\n");
                 exit(0);
             }
-            nextcode = nextcode2;            
+            nextcode = nextcode2;
         }
     }
 }
@@ -309,7 +309,7 @@ void LoadStrings(FILE *fp)
                 fprintf(stderr, "Codes in file are not in order.\n");
                 exit(0);
             }
-            nextcode = nextcode2;            
+            nextcode = nextcode2;
         }
     }
     else
@@ -341,7 +341,7 @@ void LoadStrings(FILE *fp)
                 fprintf(stderr, "Codes in file are not in order.\n");
                 exit(0);
             }
-            nextcode = nextcode2;            
+            nextcode = nextcode2;
         }
     }
     printf("// %d code points.\n", cIncluded);
