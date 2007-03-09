@@ -12,20 +12,20 @@ open(STRINGPREP,"< $profiletable") || die("Eep, no stringprep.");
 
 while ($line = <STRINGPREP>)
 {
-	if ($line =~ /^\s*([0-9A-F\-]+).*/) {
-	   my $codepage = $1;
-	   if ($codepage =~ /^([0-9A-F]+)\-([0-9A-F]+)$/) {
-	   	  my $codeval1 = hex $1;
-	   	  my $codeval2 = hex $2;
-	   	  for ($loop = $codeval1; $loop <= $codeval2; $loop++) {
-	   	     $prohibited[$loop] = 1;
-	   	  }
-	   }
-	   else {
-	   	  my $codeval = hex $codepage;
-	   	  $prohibited[$codeval] = 1;
-	   }
-	}
+    if ($line =~ /^\s*([0-9A-F\-]+).*/) {
+       my $codepage = $1;
+       if ($codepage =~ /^([0-9A-F]+)\-([0-9A-F]+)$/) {
+             my $codeval1 = hex $1;
+             my $codeval2 = hex $2;
+             for ($loop = $codeval1; $loop <= $codeval2; $loop++) {
+                $prohibited[$loop] = 1;
+             }
+       }
+       else {
+             my $codeval = hex $codepage;
+             $prohibited[$codeval] = 1;
+       }
+    }
 }
 
 close(STRINGPREP);

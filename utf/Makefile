@@ -5,7 +5,7 @@ UnicodeData.txt:
 
 table: UnicodeData.txt UnicodeHan.txt
 	perl buildUnicodeMaster.pl UnicodeData.txt UnicodeHan.txt > UnicodeDataNew.txt
-	
+
 printable: table UnicodeDataNew.txt StringprepProhibited.txt
 	perl buildStringprepPrintable.pl StringprepProhibited.txt UnicodeDataNew.txt > cl_Printable.txt
 
