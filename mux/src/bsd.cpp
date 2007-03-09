@@ -2856,11 +2856,11 @@ int HimState(DESC *d, unsigned char chOption)
     }
     else if (TELNET_ENV == chOption)
     {
-    	return d->nvt_env_him_state;
+        return d->nvt_env_him_state;
     }
     else if (TELNET_OLDENV == chOption)
     {
-    	return d->nvt_oldenv_him_state;
+        return d->nvt_oldenv_him_state;
     }
     else if (TELNET_CHARSET == chOption)
     {
@@ -2903,11 +2903,11 @@ int UsState(DESC *d, unsigned char chOption)
     }
     else if (TELNET_ENV == chOption)
     {
-    	return d->nvt_env_us_state;
+        return d->nvt_env_us_state;
     }
     else if (TELNET_OLDENV == chOption)
     {
-    	return d->nvt_oldenv_us_state;
+        return d->nvt_oldenv_us_state;
     }
     else if (TELNET_CHARSET == chOption)
     {
@@ -2926,8 +2926,8 @@ int UsState(DESC *d, unsigned char chOption)
 
 void SendCharsetRequest(DESC *d)
 {
-	if (d->nvt_charset_him_state == OPTION_YES)
-	{
+    if (d->nvt_charset_him_state == OPTION_YES)
+    {
         char aCharsets[18] =
         {
             '\0',
@@ -2935,8 +2935,8 @@ void SendCharsetRequest(DESC *d)
             'I', 'S', 'O', '-', '8', '8', '5', '9', '-', '1', '\0'
         };
 
-    	SendSb(d, TELNET_CHARSET, TELNETSB_REQUEST, &aCharsets[0], 18);
-	}
+        SendSb(d, TELNET_CHARSET, TELNETSB_REQUEST, &aCharsets[0], 18);
+    }
 }
 
 static void SetHimState(DESC *d, unsigned char chOption, int iHimState)
@@ -2963,21 +2963,25 @@ static void SetHimState(DESC *d, unsigned char chOption, int iHimState)
     }
     else if (TELNET_ENV == chOption)
     {
-    	d->nvt_env_him_state = iHimState;
-    	if (OPTION_YES == iHimState) {
-    		// Request environment variables
-    		char aEnvReq[2] = { TELNETSB_VAR, TELNETSB_USERVAR };
-    		SendSb(d,chOption,TELNETSB_SEND,aEnvReq,2);
-    	}
+        d->nvt_env_him_state = iHimState;
+        if (OPTION_YES == iHimState)
+        {
+            // Request environment variables.
+            //
+            char aEnvReq[2] = { TELNETSB_VAR, TELNETSB_USERVAR };
+            SendSb(d,chOption,TELNETSB_SEND,aEnvReq,2);
+        }
     }
     else if (TELNET_OLDENV == chOption)
     {
-    	d->nvt_oldenv_him_state = iHimState;
-    	if (OPTION_YES == iHimState) {
-    		// Request environment variables
-    		char aEnvReq[2] = { TELNETSB_VAR, TELNETSB_USERVAR };
-    		SendSb(d,chOption,TELNETSB_SEND,aEnvReq,2);
-    	}
+        d->nvt_oldenv_him_state = iHimState;
+        if (OPTION_YES == iHimState)
+        {
+            // Request environment variables.
+            //
+            char aEnvReq[2] = { TELNETSB_VAR, TELNETSB_USERVAR };
+            SendSb(d,chOption,TELNETSB_SEND,aEnvReq,2);
+        }
     }
     else if (TELNET_CHARSET == chOption)
     {
@@ -2992,7 +2996,7 @@ static void SetHimState(DESC *d, unsigned char chOption, int iHimState)
             };
 
             SendSb(d, chOption, TELNETSB_REQUEST, &aCharsets[0], 18);
-     }
+        }
     }
 }
 
@@ -3032,11 +3036,11 @@ static void SetUsState(DESC *d, unsigned char chOption, int iUsState)
     }
     else if (TELNET_ENV == chOption)
     {
-    	d->nvt_env_us_state = iUsState;
+        d->nvt_env_us_state = iUsState;
     }
     else if (TELNET_OLDENV == chOption)
     {
-    	d->nvt_oldenv_us_state = iUsState;
+        d->nvt_oldenv_us_state = iUsState;
     }
     else if (TELNET_CHARSET == chOption)
     {
@@ -3580,71 +3584,90 @@ static void process_input_helper(DESC *d, char *pBytes, int nBytes)
                         d->nvt_ttype_him_value = (char *)malloc(nTermType+1);
                         memcpy(d->nvt_ttype_him_value, pTermType, nTermType);
                         d->nvt_ttype_him_value[nTermType] = '\0';
-                        
                     }
                     break;
 
                 case TELNET_ENV:
                 case TELNET_OLDENV:
-                	if (TELNETSB_IS == d->aOption[1])
-                	{
-                		unsigned char *envPtr;
-                		
-                		envPtr = &d->aOption[2];
-                		
-                		while (envPtr < (&d->aOption[m])) 
-                		{
-                			if ((*envPtr == TELNETSB_USERVAR) || (*envPtr == TELNETSB_VAR))
-                			{
-                				unsigned char *pVarname = ++envPtr;
-                				unsigned char *pVarval = NULL;
-                				while ((*envPtr != TELNETSB_VALUE) && (envPtr < &d->aOption[m]))
-                					envPtr++;
-                					
-                				if (envPtr < &d->aOption[m]) 
-                				{
-                					pVarval = ++envPtr;
-                				}
-                				
-                				while ((*envPtr != TELNETSB_USERVAR) && (*envPtr != TELNETSB_VAR) && (envPtr < &d->aOption[m]))
-                					envPtr++;
+                    if (TELNETSB_IS == d->aOption[1])
+                    {
+                        unsigned char *envPtr;
 
-								if (((pVarval - pVarname) < 1023) && ((envPtr - pVarval) < 1023)) {
-									char varname[1024];
-									char varval[1024];
-								
-									memset(varname,0,1024);
-									memset(varval,0,1024);
-								
-									memcpy(varname,pVarname,pVarval - pVarname - 1);
-									memcpy(varval,pVarval,envPtr - pVarval);
+                        envPtr = &d->aOption[2];
 
-									// This is a horrible, horrible nasty hack.									
-									if ((mux_stricmp(varname,"LC_CTYPE") == 0) || (mux_stricmp(varname,"LC_ALL") == 0)) {
-										char *pEncoding = strchr(varval,'.');
-										if (pEncoding)
-											pEncoding++;
-										else
-											pEncoding = &varval[0];
-											
-										if (mux_stricmp(pEncoding,"utf-8") == 0)
-											d->nvt_charset_utf8 = true;
-									}
-									
-									// Do we think the "USER" value would be of any value at all?
-									// I'm suspecting not.
-									//
-									// We can also get 'DISPLAY' here if we were feeling 
-									// masochistic, and actually use Xterm functionality.									
-									
-								}
-                			}
-                			else
-	                			envPtr++;
-                		}
-                	}
-                	break;
-                    
+                        while (envPtr < &d->aOption[m])
+                        {
+                            if (  TELNETSB_USERVAR == *envPtr
+                               || TELNETSB_VAR     == *envPtr)
+                            {
+                                unsigned char *pVarname = ++envPtr;
+                                unsigned char *pVarval = NULL;
+                                while (  TELNETSB_VALUE != *envPtr
+                                      && envPtr < &d->aOption[m])
+                                {
+                                    envPtr++;
+                                }
+
+                                if (envPtr < &d->aOption[m])
+                                {
+                                    pVarval = ++envPtr;
+                                }
+
+                                while (  TELNETSB_USERVAR != *envPtr
+                                      && TELNETSB_VAR     != *envPtr
+                                      && envPtr < &d->aOption[m])
+                                {
+                                    envPtr++;
+                                }
+
+                                if (  pVarval - pVarname < 1023
+                                   && envPtr - pVarval < 1023)
+                                {
+                                    char varname[1024];
+                                    char varval[1024];
+
+                                    memset(varname,0,1024);
+                                    memset(varval,0,1024);
+
+                                    memcpy(varname,pVarname,pVarval - pVarname - 1);
+                                    memcpy(varval,pVarval,envPtr - pVarval);
+
+                                    // This is a horrible, horrible nasty hack.
+                                    if (  0 == mux_stricmp(varname,"LC_CTYPE")
+                                       || 0 == mux_stricmp(varname,"LC_ALL"))
+                                    {
+                                        char *pEncoding = strchr(varval,'.');
+                                        if (pEncoding)
+                                        {
+                                            pEncoding++;
+                                        }
+                                        else
+                                        {
+                                            pEncoding = &varval[0];
+                                        }
+
+                                        if (0 == mux_stricmp(pEncoding, "utf-8"))
+                                        {
+                                            d->nvt_charset_utf8 = true;
+                                        }
+                                    }
+
+                                    // Do we think the "USER" value would be of any value at all?
+                                    // I'm suspecting not.
+                                    //
+                                    // We can also get 'DISPLAY' here if we were feeling
+                                    // masochistic, and actually use Xterm functionality.
+
+                                }
+                            }
+                            else
+                            {
+                                envPtr++;
+                            }
+                        }
+                    }
+                    break;
+
                 case TELNET_CHARSET:
                     if (TELNETSB_ACCEPT == d->aOption[1])
                     {
