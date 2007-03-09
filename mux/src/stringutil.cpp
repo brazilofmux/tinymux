@@ -4789,17 +4789,17 @@ ANSI_ColorState mux_string::export_Color(size_t n) const
 
 double mux_string::export_Float(bool bStrict) const
 {
-    return mux_atof(m_ach, bStrict);
+    return mux_atof((const char *)m_ach, bStrict);
 }
 
 INT64 mux_string::export_I64(void) const
 {
-    return mux_atoi64(m_ach);
+    return mux_atoi64((const char *)m_ach);
 }
 
 long mux_string::export_Long(void) const
 {
-    return mux_atol(m_ach);
+    return mux_atol((const char *)m_ach);
 }
 
 /*! \brief Generates ANSI string from internal form.
@@ -5072,7 +5072,7 @@ void mux_string::import(dbref num)
 
     // mux_ltoa() sets the '\0'.
     //
-    m_n += mux_ltoa(num, m_ach + 1);
+    m_n += mux_ltoa(num, (char *)m_ach + 1);
 }
 
 /*! \brief Converts and Imports an INT64.
@@ -5087,7 +5087,7 @@ void mux_string::import(INT64 iInt)
 
     // mux_i64toa() sets the '\0'.
     //
-    m_n = mux_i64toa(iInt, m_ach);
+    m_n = mux_i64toa(iInt, (char *)m_ach);
 }
 
 /*! \brief Converts and Imports an long integer.
@@ -5102,7 +5102,7 @@ void mux_string::import(long lLong)
 
     // mux_ltoa() sets the '\0'.
     //
-    m_n = mux_ltoa(lLong, m_ach);
+    m_n = mux_ltoa(lLong, (char *)m_ach);
 }
 
 /*! \brief Import a portion of another mux_string.
@@ -5481,7 +5481,7 @@ bool mux_string::search
     //
     size_t nPat = 0;
     char *pPatBuf = strip_ansi(pPattern, &nPat);
-    const char *pTarget = m_ach + nStart;
+    const unsigned char *pTarget = m_ach + nStart;
 
     size_t i = 0;
     bool bSucceeded = false;
@@ -5489,7 +5489,7 @@ bool mux_string::search
     {
         // We can optimize the single-character case.
         //
-        const char *p = strchr(pTarget, pPatBuf[0]);
+        const unsigned char *p = (const unsigned char *)memchr(pTarget, pPatBuf[0], m_n - nStart);
         if (p)
         {
             i = p - pTarget;
@@ -5501,7 +5501,7 @@ bool mux_string::search
         // We have a multi-byte pattern.
         //
         bSucceeded = BMH_StringSearch(&i, nPat, pPatBuf,
-                                      m_n - nStart, pTarget);
+                                      m_n - nStart, (const char *)pTarget);
     }
 
     if (nPos)
@@ -5529,7 +5529,7 @@ bool mux_string::search
 {
     // Strip ANSI from pattern.
     //
-    const char *pTarget = m_ach + nStart;
+    const unsigned char *pTarget = m_ach + nStart;
 
     size_t i = 0;
     bool bSucceeded = false;
@@ -5537,7 +5537,7 @@ bool mux_string::search
     {
         // We can optimize the single-character case.
         //
-        const char *p = strchr(pTarget, sPattern.m_ach[0]);
+        const unsigned char *p = (const unsigned char *)memchr(pTarget, sPattern.m_ach[0], m_n - nStart);
         if (p)
         {
             i = p - pTarget;
@@ -5548,8 +5548,8 @@ bool mux_string::search
     {
         // We have a multi-byte pattern.
         //
-        bSucceeded = BMH_StringSearch(&i, sPattern.m_n, sPattern.m_ach,
-                                      m_n - nStart, pTarget);
+        bSucceeded = BMH_StringSearch(&i, sPattern.m_n, (const char *)sPattern.m_ach,
+                                      m_n - nStart, (const char *)pTarget);
     }
 
     if (nPos)
@@ -5653,13 +5653,13 @@ void mux_string::stripWithTable
     for (size_t i = nStart; i < nStart + nLen; i++)
     {
         if (  !bInStrip
-           && strip_table[(unsigned char)m_ach[i]])
+           && strip_table[m_ach[i]])
         {
             bInStrip = true;
             nStripStart = i;
         }
         else if (  bInStrip
-                && !strip_table[(unsigned char)m_ach[i]])
+                && !strip_table[m_ach[i]])
         {
             // We've hit the end of a string to be stripped.
             //
@@ -5722,8 +5722,8 @@ void mux_string::transform
     }
     for (size_t i = 0; i < nSet; i++)
     {
-        cFrom = (unsigned char)sFromSet.m_ach[i];
-        cTo = (unsigned char)sToSet.m_ach[i];
+        cFrom = sFromSet.m_ach[i];
+        cTo = sToSet.m_ach[i];
         xfrmTable[cFrom] = cTo;
     }
 
@@ -5748,7 +5748,7 @@ void mux_string::transformWithTable
 
     for (size_t i = nStart; i < nStart + nLen; i++)
     {
-        m_ach[i] = xfrmTable[(unsigned char)m_ach[i]];
+        m_ach[i] = xfrmTable[m_ach[i]];
     }
 }
 
@@ -5901,7 +5901,7 @@ LBUF_OFFSET mux_words::find_Words(void)
     for (LBUF_OFFSET i = 0; i < n; i++)
     {
         if (  !bPrev
-           && m_aControl[(unsigned char)(m_s->m_ach[i])])
+           && m_aControl[m_s->m_ach[i]])
         {
             bPrev = true;
             m_aiWordEnds[nWords] = i;
