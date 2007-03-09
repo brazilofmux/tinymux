@@ -121,6 +121,8 @@ struct prog_data
 #define TELNET_EOR  '\x19'
 #define TELNET_NAWS '\x1F'
 #define TELNET_TTYPE '\x18'
+#define TELNET_OLDENV '\x24'
+#define TELNET_ENV '\x27'
 #define TELNET_CHARSET '\x2A'
 
 // Telnet Option Negotiation States
@@ -133,16 +135,20 @@ struct prog_data
 #define OPTION_WANTYES_OPPOSITE 5
 
 // Telnet subnegotiation requests
-// Other than 0, you can have multiple
-// meanings for 1+ in the responses
+// Multiple meanings, depending on TELOPT
 //
 #define TELNETSB_IS             0
+#define TELNETSB_VAR			0
 #define TELNETSB_REQUEST        1
 #define TELNETSB_SEND           1
+#define TELNETSB_VALUE			1
+#define TELNETSB_INFO			2
 #define TELNETSB_ACCEPT         2
 #define TELNETSB_REPLY          2
+#define TELNETSB_ESC			2
 #define TELNETSB_REJECT         3
 #define TELNETSB_NAME           3
+#define TELNETSB_USERVAR		3
 
 
 typedef struct descriptor_data DESC;
@@ -202,6 +208,10 @@ struct descriptor_data
   int nvt_charset_him_state;
   int nvt_charset_us_state;
   bool nvt_charset_utf8;
+  int nvt_env_him_state;
+  int nvt_env_us_state;
+  int nvt_oldenv_him_state;
+  int nvt_oldenv_us_state;
   int width;
   int height;
   int quota;

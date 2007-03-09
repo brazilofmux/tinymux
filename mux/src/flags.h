@@ -116,6 +116,7 @@
 
 #define SITEMON      0x00000400      // Sitemonitor Flag
 #define CMDCHECK     0x00000800      // Has @icmd set
+#define UNICODE      0x00001000      // UTF-8 override flag
 #define MARK_0       0x00400000      // User-defined flags.
 #define MARK_1       0x00800000
 #define MARK_2       0x01000000
@@ -440,6 +441,9 @@ char *MakeCanonicalFlagName
 #define Has_power(p,x)      (check_access((p),powers_nametab[x].flag))
 #define Html(x)             ((Flags2(x) & HTML) != 0)
 #define s_Html(x)           s_Flags((x), FLAG_WORD2, Flags2(x) | HTML)
+
+#define Unicode(x)			((Flags3(x) & UNICODE) != 0)
+#define s_Unicode(x)		s_Flags((x), FLAG_WORD3, Flags3(x) | UNICODE)
 
 #if defined(FIRANMUX)
 #define Linewrap(x)   ((Flags3(x) & LINEWRAP) != 0)
