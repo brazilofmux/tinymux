@@ -871,7 +871,7 @@ static void announce_connect(dbref player, DESC *d)
     {
         num++;
     }
-    
+
     // Check for UNICODE forced on
     //
     if (Unicode(player))

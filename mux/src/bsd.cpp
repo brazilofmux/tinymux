@@ -2996,7 +2996,7 @@ static void SetHimState(DESC *d, unsigned char chOption, int iHimState)
             };
 
             SendSb(d, chOption, TELNETSB_REQUEST, &aCharsets[0], 18);
-     }
+        }
     }
 }
 
@@ -3584,7 +3584,6 @@ static void process_input_helper(DESC *d, char *pBytes, int nBytes)
                         d->nvt_ttype_him_value = (char *)malloc(nTermType+1);
                         memcpy(d->nvt_ttype_him_value, pTermType, nTermType);
                         d->nvt_ttype_him_value[nTermType] = '\0';
-                        
                     }
                     break;
 
