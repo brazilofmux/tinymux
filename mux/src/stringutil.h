@@ -344,7 +344,7 @@ private:
     // exist or be valid.
     //
     size_t          m_n;
-    char            m_ach[LBUF_SIZE];
+    unsigned char   m_ach[LBUF_SIZE];
     size_t          m_ncs;
     ANSI_ColorState *m_pcs;
 
