@@ -81,13 +81,13 @@ extern const char *utf8_latin1[256];
 
 // utf/cl_Printable.txt
 //
-// 219 included, 1113893 excluded, 0 errors.
-// 12 states, 26 columns, 568 bytes
+// 83837 included, 1030275 excluded, 0 errors.
+// 163 states, 101 columns, 16719 bytes
 //
 #define CL_PRINT_START_STATE (0)
-#define CL_PRINT_ACCEPTING_STATES_START (12)
+#define CL_PRINT_ACCEPTING_STATES_START (163)
 extern const unsigned char cl_print_itt[256];
-extern const unsigned char cl_print_stt[12][26];
+extern const unsigned char cl_print_stt[163][101];
 
 inline bool mux_isprint(const unsigned char *p)
 {
