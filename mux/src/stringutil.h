@@ -8,7 +8,8 @@
 #ifndef STRINGUTIL_H
 #define STRINGUTIL_H
 
-extern const bool mux_isprint_old[256];
+extern const bool mux_isprint_ascii[256];
+extern const bool mux_isprint_latin1[256];
 extern const bool mux_isdigit[256];
 extern const bool mux_isxdigit[256];
 extern const bool mux_isazAZ[256];
@@ -38,7 +39,8 @@ extern const unsigned char utf8_FirstByte[256];
 extern const char *utf8_latin1[256];
 #define utf8_latin1(x) ((const UTF8 *)utf8_latin1[(unsigned char)x])
 
-#define mux_isprint_old(x) (mux_isprint_old[(unsigned char)(x)])
+#define mux_isprint_ascii(x) (mux_isprint_ascii[(unsigned char)(x)])
+#define mux_isprint_latin1(x) (mux_isprint_latin1[(unsigned char)(x)])
 #define mux_isdigit(x) (mux_isdigit[(unsigned char)(x)])
 #define mux_isxdigit(x)(mux_isxdigit[(unsigned char)(x)])
 #define mux_isazAZ(x)  (mux_isazAZ[(unsigned char)(x)])

@@ -82,7 +82,7 @@
 #define HTML         0x04000000  /* Player supports HTML */
 #define BLIND        0x08000000  // Suppress has arrived / left messages.
 #define SUSPECT      0x10000000  /* Report some activities to wizards */
-#define NOACCENTS    0x20000000  // Strip accented characters.
+#define ASCII        0x20000000  // Strip characters down to 7-bit ASCII.
 #define CONNECTED    0x40000000  /* Player is connected */
 #define SLAVE        0x80000000  /* Disallow most commands */
 
@@ -296,7 +296,7 @@ char *MakeCanonicalFlagName
 #define Fixed(x)            ((Flags2(x) & FIXED) != 0)
 #define Uninspected(x)      ((Flags2(x) & UNINSPECTED) != 0)
 #define Ansi(x)             ((Flags2(x) & ANSI) != 0)
-#define NoAccents(x)        ((Flags2(x) & NOACCENTS) != 0)
+#define Ascii(x)            ((Flags2(x) & ASCII) != 0)
 #define No_Command(x)       ((Flags2(x) & NO_COMMAND) != 0)
 #define NoBleed(x)          ((Flags2(x) & NOBLEED) != 0)
 #define KeepAlive(x)        ((Flags2(x) & CKEEPALIVE) != 0)

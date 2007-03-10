@@ -349,6 +349,8 @@ void LoadStrings(FILE *fp)
     sm.ReportStatus();
 }
 
+bool g_bReplacement = false;
+
 void BuildAndOutputTable(FILE *fp, char *UpperPrefix, char *LowerPrefix)
 {
     // Construct State Transition Table.
@@ -360,10 +362,11 @@ void BuildAndOutputTable(FILE *fp, char *UpperPrefix, char *LowerPrefix)
     // Leaving states undefined leads to a smaller table.  On the other hand,
     // do not make queries for code points outside the expected set.
     //
-#if 0
-    sm.SetUndefinedStates(0);
-    TestTable(fp);
-#endif
+    if (g_bReplacement)
+    {
+        sm.SetUndefinedStates('?');
+        TestTable(fp);
+    }
 
     // Optimize State Transition Table.
     //
@@ -425,22 +428,41 @@ void BuildAndOutputTable(FILE *fp, char *UpperPrefix, char *LowerPrefix)
 
 int main(int argc, char *argv[])
 {
-    char *pPrefix;
-    char *pFilename;
+    char *pPrefix = NULL;
+    char *pFilename = NULL;
+
     if (argc < 3)
     {
 #if 0
-        fprintf(stderr, "Usage: %s prefix unicodedata.txt\n", argv[0]);
+        fprintf(stderr, "Usage: %s [-c] prefix unicodedata.txt\n", argv[0]);
         exit(0);
 #else
         pFilename = "NumericDecimal.txt";
         pPrefix   = "digit";
+        g_bReplacement = false;
 #endif
     }
     else
     {
-        pPrefix   = argv[1];
-        pFilename = argv[2];
+        int j;
+        for (j = 1; j < argc; j++)
+        {
+            if (0 == strcmp(argv[j], "-c"))
+            {
+                g_bReplacement = true;
+            }
+            else
+            {
+                if (NULL == pPrefix)
+                {
+                    pPrefix = argv[j];
+                }
+                else if (NULL == pFilename)
+                {
+                    pFilename = argv[j];
+                }
+            }
+        }
     }
 
     FILE *fp = fopen(pFilename, "rb");

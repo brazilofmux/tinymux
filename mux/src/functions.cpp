@@ -2183,7 +2183,7 @@ static FUNCTION(fun_mid)
     }
 
     // At this point, iStart and nMid are nonnegative numbers
-    // which may -still- not refer to valid data in the string. 
+    // which may -still- not refer to valid data in the string.
     //
     mux_string *sStr = new mux_string(fargs[0]);
 
@@ -4649,7 +4649,7 @@ static FUNCTION(fun_delete)
     }
 
     // At this point, iStart and nDelete are nonnegative numbers
-    // which may -still- not refer to valid data in the string. 
+    // which may -still- not refer to valid data in the string.
     //
     mux_string *sStr = new mux_string(fargs[0]);
 
@@ -7200,7 +7200,6 @@ static FUNCTION(fun_terminfo)
     {
         SOCKET s = mux_atol(fargs[0]);
         bool bFound = false;
-        DESC *d;
         CLinearTimeAbsolute ltaNow;
         ltaNow.GetUTC();
         DESC_ITER_CONN(d)
@@ -7212,8 +7211,8 @@ static FUNCTION(fun_terminfo)
             }
         }
         if (  bFound
-           && !(  d->player == executor
-              || Wizard_Who(executor)))
+           && (  d->player != executor
+              && !Wizard_Who(executor)))
         {
             safe_str("#-1 PERMISSION DENIED",buff, bufc);
             return;
@@ -7242,37 +7241,37 @@ static FUNCTION(fun_terminfo)
             }
         }
     }
-    
+
     if (!d)
     {
         safe_str("#-1 NOT CONNECTED", buff, bufc);
         return;
     }
-    
-    if (d->nvt_ttype_him_value)
+
+    if (d->ttype)
     {
-        safe_str(d->nvt_ttype_him_value, buff, bufc);
+        safe_str(d->ttype, buff, bufc);
         safe_str(" telnet", buff, bufc);
     }
     else
     {
         safe_str("unknown", buff, bufc);
-        if (  d->nvt_naws_him_state
-           || d->nvt_sga_him_state
-           || d->nvt_eor_him_state)
+        if (  d->nvt_him_state[TELNET_NAWS]
+           || d->nvt_him_state[TELNET_SGA]
+           || d->nvt_him_state[TELNET_EOR])
         {
             safe_str(" telnet", buff, bufc);
         }
     }
-    
+
     if (Html(d->player))
     {
         safe_str(" pueblo", buff, bufc);
     }
-    
-    if (d->nvt_charset_utf8)
+
+    if (CHARSET_UTF8 == d->encoding)
     {
-    	safe_str(" unicode", buff, bufc);
+        safe_str(" unicode", buff, bufc);
     }
 }
 
@@ -8648,7 +8647,7 @@ static FUNCTION(fun_wrap)
         safe_str(pRight, buff, bufc);
 
         nPos += nLength;
-        if (  pPlain[nLength] == ' ' 
+        if (  pPlain[nLength] == ' '
            && pPlain[nLength+1] != ' ')
         {
             nPos++;
@@ -9716,8 +9715,9 @@ static FUNCTION(fun_accent)
 
 size_t transform_range(mux_string &sStr)
 {
-    // Look for a-z type character ranges. Dashes that don't have another 
+    // Look for a-z type character ranges. Dashes that don't have another
     // character on each end of them are treated literally.
+    //
     size_t nPos = 0, nStart = 0;
     char cBefore, cAfter;
     mux_string *sTemp = new mux_string;

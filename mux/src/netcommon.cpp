@@ -489,7 +489,7 @@ void queue_string(DESC *d, const char *s)
             p = normal_to_white(p);
         }
 
-        if (NoAccents(d->player))
+        if (Ascii(d->player))
         {
             p = strip_accents(p);
         }
@@ -504,7 +504,7 @@ void queue_string(DESC *d, const char *s)
     }
 
 
-    if (!d->nvt_charset_utf8)
+    if (CHARSET_UTF8 != d->encoding)
     {
         p = ConvertToLatin((UTF8 *)p);
     }
@@ -529,7 +529,7 @@ void queue_string(DESC *d, const mux_string &s)
             s.export_TextAnsi(Buffer, NULL, 0, s.length(), LBUF_SIZE-1, NoBleed(d->player));
         }
 
-        if (NoAccents(d->player))
+        if (Ascii(d->player))
         {
             pFinal = strip_accents(Buffer);
         }
@@ -540,7 +540,7 @@ void queue_string(DESC *d, const mux_string &s)
         pFinal = strip_accents(Buffer);
     }
 
-    if (!d->nvt_charset_utf8)
+    if (CHARSET_UTF8 != d->encoding)
     {
         pFinal = ConvertToLatin((UTF8 *)pFinal);
     }
@@ -583,18 +583,12 @@ void freeqs(DESC *d)
     d->raw_input_at = NULL;
     d->nOption = 0;
     d->raw_input_state    = NVT_IS_NORMAL;
-    d->nvt_sga_him_state  = OPTION_NO;
-    d->nvt_sga_us_state   = OPTION_NO;
-    d->nvt_eor_him_state  = OPTION_NO;
-    d->nvt_eor_us_state   = OPTION_NO;
-    d->nvt_naws_him_state = OPTION_NO;
-    d->nvt_naws_us_state  = OPTION_NO;
-    d->nvt_ttype_him_state = OPTION_NO;
-    d->nvt_ttype_us_state = OPTION_NO;
-    if (d->nvt_ttype_him_value)
+    memset(d->nvt_him_state,OPTION_NO,256);
+    memset(d->nvt_us_state,OPTION_NO,256);
+    if (d->ttype)
     {
-        free(d->nvt_ttype_him_value);
-        d->nvt_ttype_him_value = NULL;
+        free(d->ttype);
+        d->ttype = NULL;
     }
     d->height = 24;
     d->width = 78;
@@ -878,9 +872,25 @@ static void announce_connect(dbref player, DESC *d)
     {
         DESC_ITER_PLAYER(player, dtemp)
         {
-            dtemp->nvt_charset_utf8 = true;
+            if (CHARSET_UTF8 != dtemp->encoding)
+            {
+                // Since we are changing to the UTF-8 character set, the
+                // printable state machine needs to be initialized.
+                //
+                dtemp->encoding = CHARSET_UTF8;
+                dtemp->raw_codepoint_state = CL_PRINT_START_STATE;
+            }
         }
     }
+
+    if (Ascii(player))
+    {
+        DESC_ITER_PLAYER(player, dtemp)
+        {
+            dtemp->encoding = CHARSET_ASCII;
+        }
+    }
+
 
     // Reset vacation flag.
     //
