@@ -872,7 +872,14 @@ static void announce_connect(dbref player, DESC *d)
     {
         DESC_ITER_PLAYER(player, dtemp)
         {
-            dtemp->encoding = CHARSET_UTF8;
+            if (CHARSET_UTF8 != dtemp->encoding)
+            {
+                // Since we are changing to the UTF-8 character set, the
+                // printable state machine needs to be initialized.
+                //
+                dtemp->encoding = CHARSET_UTF8;
+                dtemp->raw_codepoint_state = CL_PRINT_START_STATE;
+            }
         }
     }
 

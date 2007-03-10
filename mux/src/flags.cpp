@@ -298,9 +298,20 @@ static bool fh_unicode(dbref target, dbref player, FLAG flag, int fflags, bool r
         DESC_ITER_PLAYER(target, dtemp)
         {
             if (!reset)
-                dtemp->encoding = CHARSET_UTF8;
+            {
+                if (CHARSET_UTF8 != dtemp->encoding)
+                {
+                    // Since we are changing to the UTF-8 character set, the
+                    // printable state machine needs to be initialized.
+                    //
+                    dtemp->encoding = CHARSET_UTF8;
+                    dtemp->raw_codepoint_state = CL_PRINT_START_STATE;
+                }
+            }
             else
+            {
                 dtemp->encoding = CHARSET_LATIN1;
+            }
 
             if (  reset
                && OPTION_YES == dtemp->nvt_him_state[TELNET_CHARSET])

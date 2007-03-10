@@ -298,7 +298,7 @@ static DWORD WINAPI SlaveProc(LPVOID lpParameter)
                                         bAllDone = true;
                                         break;
                                     }
-                                    if (mux_isprint_old(*p))
+                                    if (mux_isprint_latin1(*p))
                                     {
                                         szIdent[nIdent++] = *p;
                                     }
@@ -3156,48 +3156,92 @@ static void process_input_helper(DESC *d, char *pBytes, int nBytes)
         switch (iAction)
         {
         case 1:
-            // TODO: This needs to be gated on the client's ability to handle UTF8.
-            // We need to negotiate it.
-            //
             // Action 1 - Accept CHR(X).
             //
-            d->raw_codepoint_state = cl_print_stt[d->raw_codepoint_state][cl_print_itt[ch]];
-            if (  1 == d->raw_codepoint_state - CL_PRINT_ACCEPTING_STATES_START
-               && p < pend)
+            if (CHARSET_UTF8 == d->encoding)
             {
-                // Save the byte and reset the state machine.  This is
-                // the most frequently-occuring case.
+                // Execute UTF-8 state machine.
                 //
-                *p++ = ch;
-                nInputBytes += d->raw_codepoint_length + 1;
-                d->raw_codepoint_length = 0;
-                d->raw_codepoint_state = CL_PRINT_START_STATE;
-            }
-            else if (  d->raw_codepoint_state < CL_PRINT_ACCEPTING_STATES_START
-                    && p < pend)
-            {
-                // Save the byte and we're done for now.
-                //
-                *p++ = ch;
-                d->raw_codepoint_length++;
-            }
-            else
-            {
-                // The code point is not printable or there isn't enough room.
-                // Back out any bytes in this code point.
-                //
-                if (pend <= p)
+                d->raw_codepoint_state = cl_print_stt[d->raw_codepoint_state][cl_print_itt[ch]];
+                if (  1 == d->raw_codepoint_state - CL_PRINT_ACCEPTING_STATES_START
+                   && p < pend)
                 {
-                    nLostBytes += d->raw_codepoint_length + 1;
+                    // Save the byte and reset the state machine.  This is
+                    // the most frequently-occuring case.
+                    //
+                    *p++ = ch;
+                    nInputBytes += d->raw_codepoint_length + 1;
+                    d->raw_codepoint_length = 0;
+                    d->raw_codepoint_state = CL_PRINT_START_STATE;
                 }
+                else if (  d->raw_codepoint_state < CL_PRINT_ACCEPTING_STATES_START
+                        && p < pend)
+                {
+                    // Save the byte and we're done for now.
+                    //
+                    *p++ = ch;
+                    d->raw_codepoint_length++;
+                }
+                else
+                {
+                    // The code point is not printable or there isn't enough room.
+                    // Back out any bytes in this code point.
+                    //
+                    if (pend <= p)
+                    {
+                        nLostBytes += d->raw_codepoint_length + 1;
+                    }
 
-                p -= d->raw_codepoint_length;
-                if (p < d->raw_input->cmd)
-                {
-                    p = d->raw_input->cmd;
+                    p -= d->raw_codepoint_length;
+                    if (p < d->raw_input->cmd)
+                    {
+                        p = d->raw_input->cmd;
+                    }
+                    d->raw_codepoint_length = 0;
+                    d->raw_codepoint_state = CL_PRINT_START_STATE;
                 }
-                d->raw_codepoint_length = 0;
-                d->raw_codepoint_state = CL_PRINT_START_STATE;
+            }
+            else if (CHARSET_LATIN1 == d->encoding)
+            {
+                // CHARSET_LATIN1
+                //
+                if (mux_isprint_latin1(ch))
+                {
+                    // Convert this latin1 character to the internal UTF-8 form.
+                    //
+                    const UTF8 *q = utf8_latin1(ch);
+                    UTF8 n = utf8_FirstByte[q[0]];
+
+                    if (p + n < pend)
+                    {
+                        while (n--)
+                        {
+                            *p++ = *q++;
+                        }
+                        nInputBytes++;
+                    }
+                    else
+                    {
+                        nLostBytes++;
+                    }
+                }
+            }
+            else if (CHARSET_ASCII == d->encoding)
+            {
+                // CHARSET_ASCII
+                //
+                if (mux_isprint_ascii(ch))
+                {
+                    if (p < pend)
+                    {
+                        *p++ = ch;
+                        nInputBytes++;
+                    }
+                    else
+                    {
+                        nLostBytes++;
+                    }
+                }
             }
             d->raw_input_state = NVT_IS_NORMAL;
             break;
@@ -3222,6 +3266,10 @@ static void process_input_helper(DESC *d, char *pBytes, int nBytes)
             if (p > d->raw_input->cmd)
             {
                 // The character we took back.
+                //
+                // TODO: This doesn't work for UTF-8, and the accounting of
+                // bytes will be difficult if the client switched character
+                // sets in the middle of a line.
                 //
                 nInputBytes -= 1;
                 p--;
@@ -3476,6 +3524,7 @@ static void process_input_helper(DESC *d, char *pBytes, int nBytes)
                             {
                                 unsigned char *pVarname = ++envPtr;
                                 unsigned char *pVarval = NULL;
+
                                 while (  TELNETSB_VALUE != *envPtr
                                       && envPtr < &d->aOption[m])
                                 {
@@ -3503,18 +3552,19 @@ static void process_input_helper(DESC *d, char *pBytes, int nBytes)
                                     memset(varname,0,1024);
                                     memset(varval,0,1024);
 
-                                    memcpy(varname,pVarname,pVarval - pVarname - 1);
-                                    memcpy(varval,pVarval,envPtr - pVarval);
+                                    memcpy(varname, pVarname, pVarval - pVarname - 1);
+                                    memcpy(varval, pVarval, envPtr - pVarval);
 
                                     // This is a horrible, horrible nasty hack
-                                    // to try and detect UTF8.  We do not
-                                    // even try to figure out the other encodings
-                                    // this way, and just default to Latin1 if we
-                                    // can't get a UTF8 locale.
-                                    if (  0 == mux_stricmp(varname,"LC_CTYPE")
-                                       || 0 == mux_stricmp(varname,"LC_ALL"))
+                                    // to try and detect UTF8.  We do not even
+                                    // try to figure out the other encodings
+                                    // this way, and just default to Latin1 if
+                                    // we can't get a UTF8 locale.
+                                    //
+                                    if (  0 == mux_stricmp(varname, "LC_CTYPE")
+                                       || 0 == mux_stricmp(varname, "LC_ALL"))
                                     {
-                                        char *pEncoding = strchr(varval,'.');
+                                        char *pEncoding = strchr(varval, '.');
                                         if (pEncoding)
                                         {
                                             pEncoding++;
@@ -3524,20 +3574,28 @@ static void process_input_helper(DESC *d, char *pBytes, int nBytes)
                                             pEncoding = &varval[0];
                                         }
 
-                                        if (0 == mux_stricmp(pEncoding, "utf-8"))
+                                        if (  0 == mux_stricmp(pEncoding, "utf-8")
+                                           && CHARSET_UTF8 != d->encoding)
                                         {
+                                            // Since we are changing to the
+                                            // UTF-8 character set, the
+                                            // printable state machine needs
+                                            // to be initialized.
+                                            //
                                             d->encoding = CHARSET_UTF8;
+                                            d->raw_codepoint_state = CL_PRINT_START_STATE;
                                         }
                                     }
 
-                                    if (0 == mux_stricmp(varname,"USER"))
+                                    if (0 == mux_stricmp(varname, "USER"))
                                     {
-                                        memset(d->username,0,11);
-                                        memcpy(d->username,varval,10);
+                                        memset(d->username, 0, 11);
+                                        memcpy(d->username, varval, 10);
                                     }
 
-                                    // We can also get 'DISPLAY' here if we were feeling
-                                    // masochistic, and actually use Xterm functionality.
+                                    // We can also get 'DISPLAY' here if we were
+                                    // feeling masochistic, and actually use
+                                    // Xterm functionality.
                                 }
                             }
                             else
@@ -3554,7 +3612,15 @@ static void process_input_helper(DESC *d, char *pBytes, int nBytes)
                         unsigned char *pCharset = &d->aOption[2];
                         if (0 == strncmp((char *)pCharset, "UTF-8", m - 2))
                         {
-                            d->encoding = CHARSET_UTF8;
+                            if (CHARSET_UTF8 != d->encoding)
+                            {
+                                // Since we are changing to the UTF-8
+                                // character set, the printable state machine
+                                // needs to be initialized.
+                                //
+                                d->encoding = CHARSET_UTF8;
+                                d->raw_codepoint_state = CL_PRINT_START_STATE;
+                            }
                         }
                         else if (0 == strncmp((char *)pCharset, "ISO-8859-1", m-2))
                         {
@@ -3567,10 +3633,10 @@ static void process_input_helper(DESC *d, char *pBytes, int nBytes)
                     }
                     else if (TELNETSB_REJECT == d->aOption[1])
                     {
-                        // The client has replied that it doesn't even
-                        // support Latin1/ISO-8859-1 accented characters.
-                        // Thus, we should probably record this to strip out
-                        // any accents.
+                        // The client has replied that it doesn't even support
+                        // Latin1/ISO-8859-1 accented characters.  Thus, we
+                        // should probably record this to strip out any
+                        // accents.
                         //
                         d->encoding = CHARSET_ASCII;
                     }
