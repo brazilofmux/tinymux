@@ -3254,6 +3254,18 @@ static void process_input_helper(DESC *d, char *pBytes, int nBytes)
         case 2:
             // Action 2 - Erase Character.
             //
+            if (  CHARSET_UTF8 == d->encoding
+               && 0 < d->raw_codepoint_length)
+            {
+                p -= d->raw_codepoint_length;
+                if (p < d->raw_input->cmd)
+                {
+                    p = d->raw_input->cmd;
+                }
+                d->raw_codepoint_length = 0;
+                d->raw_codepoint_state = CL_PRINT_START_STATE;
+            }
+
             if (NVT_DEL == ch)
             {
                 queue_string(d, "\b \b");
