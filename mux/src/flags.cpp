@@ -281,32 +281,28 @@ extern void SendCharsetRequest(DESC* d);
 
 static bool fh_unicode(dbref target, dbref player, FLAG flag, int fflags, bool reset)
 {
-	bool result;
-	
     if (!isPlayer(target))
     {
         return false;
     }
-    result = fh_any(target, player, flag, fflags, reset);
-    
-    if (result) 
+
+    if (fh_any(target, player, flag, fflags, reset)) 
     {
-    	DESC *dtemp;
-    	
-	    DESC_ITER_PLAYER(target, dtemp)
-    	{
-        	dtemp->nvt_charset_utf8 = !reset;
-        	if (reset && (dtemp->nvt_charset_him_state == OPTION_YES)) 
-        	{
-        		SendCharsetRequest(dtemp);
-        	}
-	    } 	    	
+        DESC *dtemp;
+
+        DESC_ITER_PLAYER(target, dtemp)
+        {
+            dtemp->nvt_charset_utf8 = !reset;
+            if (  reset 
+               && (dtemp->nvt_charset_him_state == OPTION_YES))
+            {
+                SendCharsetRequest(dtemp);
+            }
+        }
+        return true;
     }
-    
-    return result;
+    return false;
 }
-
-
 
 static FLAGBITENT fbeAbode          = { ABODE,        'A',    FLAG_WORD2, 0,                    fh_any};
 static FLAGBITENT fbeAnsi           = { ANSI,         'X',    FLAG_WORD2, 0,                    fh_any};
