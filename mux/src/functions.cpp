@@ -6997,9 +6997,14 @@ static FUNCTION(fun_height)
         {
             if (d->descriptor == s)
             {
-                target = d->player;
                 break;
             }
+        }
+        
+        if (d)
+        {
+            safe_ltoa(d->height,buff,bufc);
+            return;
         }
     }
     else
@@ -7048,9 +7053,14 @@ static FUNCTION(fun_width)
         {
             if (d->descriptor == s)
             {
-                target = d->player;
                 break;
             }
+        }
+        
+        if (d)
+        {
+            safe_ltoa(d->width,buff,bufc);
+            return;
         }
     }
     else
