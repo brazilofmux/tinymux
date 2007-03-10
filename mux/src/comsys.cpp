@@ -166,7 +166,7 @@ char *MakeCanonicalComAlias
     size_t n = 0;
     while (pAlias[n])
     {
-        if (  !mux_isprint_old(pAlias[n])
+        if (  !mux_isprint_latin1(pAlias[n])
            || ' ' == pAlias[n])
         {
             return NULL;
