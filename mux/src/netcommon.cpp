@@ -506,7 +506,14 @@ void queue_string(DESC *d, const char *s)
 
     if (CHARSET_UTF8 != d->encoding)
     {
-        p = ConvertToLatin((UTF8 *)p);
+        if (CHARSET_LATIN1 == d->encoding)
+        {
+            p = ConvertToLatin((UTF8 *)p);
+        }
+        else // if (CHARSET_ASCII == d->encoding)
+        {
+            p = ConvertToAscii((UTF8 *)p);
+        }
     }
 
     p = encode_iac(p);
@@ -542,7 +549,14 @@ void queue_string(DESC *d, const mux_string &s)
 
     if (CHARSET_UTF8 != d->encoding)
     {
-        pFinal = ConvertToLatin((UTF8 *)pFinal);
+        if (CHARSET_LATIN1 == d->encoding)
+        {
+            pFinal = ConvertToLatin((UTF8 *)pFinal);
+        }
+        else // if (CHARSET_ASCII == d->encoding)
+        {
+            pFinal = ConvertToAscii((UTF8 *)pFinal);
+        }
     }
     pFinal = encode_iac(pFinal);
     queue_write(d, pFinal);

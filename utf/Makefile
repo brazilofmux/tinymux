@@ -15,8 +15,9 @@ classify: classify.cpp ConvertUTF.cpp ConvertUTF.h smutil.cpp
 transform: transform.cpp ConvertUTF.cpp ConvertUTF.h smutil.cpp
 	g++ -O3 -fomit-frame-pointer -o transform transform.cpp ConvertUTF.cpp smutil.cpp
 
-stringutil.txt: classify transform cl_Printable.txt
+stringutil.txt: classify transform cl_Printable.txt cl_AttrNameInitial.txt cl_AttrName.txt tr_utf8_latin1.txt tr_utf8_ascii.txt
 	./classify cl_print cl_Printable.txt > stringutil.txt
 	./classify cl_attrnameinitial cl_AttrNameInitial.txt >> stringutil.txt
 	./classify cl_attrname cl_AttrName.txt >> stringutil.txt
 	./transform -c tr_latin1 tr_utf8_latin1.txt >> stringutil.txt
+	./transform -c tr_ascii tr_utf8_ascii.txt >> stringutil.txt

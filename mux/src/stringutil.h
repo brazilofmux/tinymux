@@ -144,7 +144,7 @@ inline bool mux_isattrname(const unsigned char *p)
     return ((iState - CL_ATTRNAME_ACCEPTING_STATES_START) == 1) ? true : false;
 }
 
-// utf/tr_UTF8_Latin1.txt
+// utf/tr_utf8_latin1.txt
 //
 // 224 code points.
 // 10 states, 171 columns, 3676 bytes
@@ -154,6 +154,17 @@ inline bool mux_isattrname(const unsigned char *p)
 extern const unsigned char tr_latin_itt[256];
 extern const unsigned short tr_latin_stt[10][171];
 const char *ConvertToLatin(const UTF8 *pString);
+
+// utf/tr_utf8_ascii.txt
+//
+// 101 code points.
+// 1 states, 101 columns, 357 bytes
+//
+#define TR_ASCII_START_STATE (0)
+#define TR_ASCII_ACCEPTING_STATES_START (1)
+extern const unsigned char tr_ascii_itt[256];
+extern const unsigned char tr_ascii_stt[1][101];
+const char *ConvertToAscii(const UTF8 *pString);
 
 bool utf8_strlen(const UTF8 *pString, size_t &nString);
 
