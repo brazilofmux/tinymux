@@ -489,9 +489,13 @@ void queue_string(DESC *d, const char *s)
             p = normal_to_white(p);
         }
 
-        if (Ascii(d->player))
+        if (CHARSET_UTF8 != d->encoding)
         {
-            p = strip_accents(p);
+            p = ConvertToLatin((UTF8 *)p);
+            if (Ascii(d->player))
+            {
+                p = strip_accents(p);
+            }
         }
     }
     else
@@ -500,13 +504,8 @@ void queue_string(DESC *d, const char *s)
         {
             p = strip_ansi(p);
         }
-        p = strip_accents(p);
-    }
-
-
-    if (CHARSET_UTF8 != d->encoding)
-    {
         p = ConvertToLatin((UTF8 *)p);
+        p = strip_accents(p);
     }
 
     p = encode_iac(p);
@@ -529,21 +528,22 @@ void queue_string(DESC *d, const mux_string &s)
             s.export_TextAnsi(Buffer, NULL, 0, s.length(), LBUF_SIZE-1, NoBleed(d->player));
         }
 
-        if (Ascii(d->player))
+        if (CHARSET_UTF8 != d->encoding)
         {
-            pFinal = strip_accents(Buffer);
+            pFinal = ConvertToLatin((UTF8 *)Buffer);
+            if (Ascii(d->player))
+            {
+                pFinal = strip_accents(pFinal);
+            }
         }
     }
     else
     {
         s.export_TextPlain(Buffer);
-        pFinal = strip_accents(Buffer);
+        pFinal = ConvertToLatin((UTF8 *)Buffer);
+        pFinal = strip_accents(pFinal);
     }
 
-    if (CHARSET_UTF8 != d->encoding)
-    {
-        pFinal = ConvertToLatin((UTF8 *)pFinal);
-    }
     pFinal = encode_iac(pFinal);
     queue_write(d, pFinal);
 }
