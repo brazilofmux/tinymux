@@ -7248,17 +7248,17 @@ static FUNCTION(fun_terminfo)
         return;
     }
     
-    if (d->nvt_ttype_him_value)
+    if (d->ttype)
     {
-        safe_str(d->nvt_ttype_him_value, buff, bufc);
+        safe_str(d->ttype, buff, bufc);
         safe_str(" telnet", buff, bufc);
     }
     else
     {
         safe_str("unknown", buff, bufc);
-        if (  d->nvt_naws_him_state
-           || d->nvt_sga_him_state
-           || d->nvt_eor_him_state)
+        if (  d->nvt_him_state[TELNET_NAWS]
+           || d->nvt_him_state[TELNET_SGA]
+           || d->nvt_him_state[TELNET_EOR])
         {
             safe_str(" telnet", buff, bufc);
         }
@@ -7269,9 +7269,9 @@ static FUNCTION(fun_terminfo)
         safe_str(" pueblo", buff, bufc);
     }
     
-    if (d->nvt_charset_utf8)
+    if (CHARSET_UTF8 == d->encoding)
     {
-    	safe_str(" unicode", buff, bufc);
+        safe_str(" unicode", buff, bufc);
     }
 }
 

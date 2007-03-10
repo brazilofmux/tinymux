@@ -3370,7 +3370,7 @@ void dump_restart_db(void)
 {
     FILE *f;
     DESC *d;
-    int version = 2;
+    int version = 3;
 
     mux_assert(mux_fopen(&f, "restart.db", "wb"));
     fprintf(f, "+V%d\n", version);
@@ -3394,14 +3394,16 @@ void dump_restart_db(void)
         putref(f, d->player);
         putref(f, d->last_time.ReturnSeconds());
         putref(f, d->raw_input_state);
-        putref(f, d->nvt_sga_him_state);
-        putref(f, d->nvt_sga_us_state);
-        putref(f, d->nvt_eor_him_state);
-        putref(f, d->nvt_eor_us_state);
-        putref(f, d->nvt_naws_him_state);
-        putref(f, d->nvt_naws_us_state);
+        
+        for (int stateloop = 0; stateloop < 256; stateloop++) {
+            putref(f, d->nvt_him_state[stateloop]);
+            putref(f, d->nvt_us_state[stateloop]);
+        }
+        
         putref(f, d->height);
         putref(f, d->width);
+        putstring(f, d->ttype);
+        putref(f, d->encoding);
         putstring(f, d->output_prefix);
         putstring(f, d->output_suffix);
         putstring(f, d->addr);
@@ -3429,10 +3431,12 @@ void load_restart_db(void)
     mux_assert(strncmp(buf, "+V", 2) == 0);
     int version = getref(f);
     if (  1 == version
-       || 2 == version)
+       || 2 == version
+       || 3 == version)
     {
         // Version 1 started on 2001-DEC-03
         // Version 2 started on 2005-NOV-08
+        // Version 3 started on 2007-MAR-09
         //
         nMainGamePorts = getref(f);
         for (int i = 0; i < nMainGamePorts; i++)
@@ -3483,27 +3487,43 @@ void load_restart_db(void)
         d->host_info = getref(f);
         d->player = getref(f);
         d->last_time.SetSeconds(getref(f));
-        if (2 == version)
+        memset(d->nvt_him_state,OPTION_NO,256);
+        memset(d->nvt_us_state,OPTION_NO,256);
+        if (3 == version)
         {
-            d->raw_input_state    = getref(f);
-            d->nvt_sga_him_state  = getref(f);
-            d->nvt_sga_us_state   = getref(f);
-            d->nvt_eor_him_state  = getref(f);
-            d->nvt_eor_us_state   = getref(f);
-            d->nvt_naws_him_state = getref(f);
-            d->nvt_naws_us_state  = getref(f);
+            d->raw_input_state              = getref(f);
+            for (int stateloop = 0; stateloop < 256; stateloop++) {
+                d->nvt_him_state[stateloop] = getref(f);
+                d->nvt_us_state[stateloop] = getref(f);
+            }
+        
+            d->height = getref(f);
+            d->width = getref(f);
+
+            size_t nBuffer;
+            char *temp = getstring_noalloc(f, true, &nBuffer);
+            if ('\0' != temp[0]) {
+                d->ttype = alloc_lbuf("set_userstring");
+                memcpy(d->ttype,temp, nBuffer + 1);
+            }
+
+            d->encoding = getref(f); 
+        }
+        else if (2 == version)
+        {
+            d->raw_input_state              = getref(f);
+            d->nvt_him_state[TELNET_SGA]    = getref(f);
+            d->nvt_us_state[TELNET_SGA]     = getref(f);
+            d->nvt_him_state[TELNET_EOR]    = getref(f);
+            d->nvt_us_state[TELNET_EOR]     = getref(f);
+            d->nvt_him_state[TELNET_NAWS]   = getref(f);
+            d->nvt_us_state[TELNET_NAWS]    = getref(f);
             d->height = getref(f);
             d->width = getref(f);
         }
         else
         {
             d->raw_input_state    = NVT_IS_NORMAL;
-            d->nvt_sga_him_state  = OPTION_NO;
-            d->nvt_sga_us_state   = OPTION_NO;
-            d->nvt_eor_him_state  = OPTION_NO;
-            d->nvt_eor_us_state   = OPTION_NO;
-            d->nvt_naws_him_state = OPTION_NO;
-            d->nvt_naws_us_state  = OPTION_NO;
             d->height = 24;
             d->width = 78;
         }

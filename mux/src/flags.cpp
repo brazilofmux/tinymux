@@ -281,8 +281,8 @@ extern void SendCharsetRequest(DESC* d);
 
 static bool fh_unicode(dbref target, dbref player, FLAG flag, int fflags, bool reset)
 {
-	bool result;
-	
+    bool result;
+    
     if (!isPlayer(target))
     {
         return false;
@@ -291,16 +291,18 @@ static bool fh_unicode(dbref target, dbref player, FLAG flag, int fflags, bool r
     
     if (result) 
     {
-    	DESC *dtemp;
-    	
-	    DESC_ITER_PLAYER(target, dtemp)
-    	{
-        	dtemp->nvt_charset_utf8 = !reset;
-        	if (reset && (dtemp->nvt_charset_him_state == OPTION_YES)) 
-        	{
-        		SendCharsetRequest(dtemp);
-        	}
-	    } 	    	
+        DESC *dtemp;
+        
+        DESC_ITER_PLAYER(target, dtemp)
+        {
+            if (!reset)
+                dtemp->encoding = CHARSET_UTF8;
+                            
+            else if (reset && (OPTION_YES == dtemp->nvt_him_state[TELNET_CHARSET])) 
+            {
+                SendCharsetRequest(dtemp);
+            }
+        }           
     }
     
     return result;
@@ -360,7 +362,7 @@ static FLAGBITENT fbeTerse          = { TERSE,        'q',    FLAG_WORD1, 0,    
 static FLAGBITENT fbeTrace          = { TRACE,        'T',    FLAG_WORD1, 0,                    fh_any};
 static FLAGBITENT fbeTransparent    = { SEETHRU,      't',    FLAG_WORD1, 0,                    fh_any};
 static FLAGBITENT fbeUnfindable     = { UNFINDABLE,   'U',    FLAG_WORD2, 0,                    fh_any};
-static FLAGBITENT fbeUnicode		= { UNICODE,	  ' ',	  FLAG_WORD3, CA_NO_DECOMP,			fh_unicode};
+static FLAGBITENT fbeUnicode        = { UNICODE,      ' ',    FLAG_WORD3, CA_NO_DECOMP,         fh_unicode};
 static FLAGBITENT fbeUninspected    = { UNINSPECTED,  'g',    FLAG_WORD2, 0,                    fh_wizroy};
 static FLAGBITENT fbeVacation       = { VACATION,     '|',    FLAG_WORD2, 0,                    fh_restrict_player};
 static FLAGBITENT fbeVerbose        = { VERBOSE,      'v',    FLAG_WORD1, 0,                    fh_any};
@@ -477,7 +479,7 @@ FLAGNAMEENT gen_flag_names[] =
     {"TRACE",           true, &fbeTrace          },
     {"TRANSPARENT",     true, &fbeTransparent    },
     {"UNFINDABLE",      true, &fbeUnfindable     },
-    {"UNICODE",			true, &fbeUnicode		 },
+    {"UNICODE",         true, &fbeUnicode        },
     {"UNINSPECTED",     true, &fbeUninspected    },
     {"VACATION",        true, &fbeVacation       },
     {"VERBOSE",         true, &fbeVerbose        },

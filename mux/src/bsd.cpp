@@ -2339,22 +2339,10 @@ DESC *initializesock(SOCKET s, struct sockaddr_in *a)
     d->raw_input_state = NVT_IS_NORMAL;
     d->raw_codepoint_state = CL_PRINT_START_STATE;
     d->raw_codepoint_length = 0;
-    d->nvt_sga_him_state = OPTION_NO;
-    d->nvt_sga_us_state = OPTION_NO;
-    d->nvt_eor_him_state = OPTION_NO;
-    d->nvt_eor_us_state = OPTION_NO;
-    d->nvt_naws_him_state = OPTION_NO;
-    d->nvt_naws_us_state = OPTION_NO;
-    d->nvt_ttype_him_state = OPTION_NO;
-    d->nvt_ttype_us_state = OPTION_NO;
-    d->nvt_ttype_him_value = NULL;
-    d->nvt_env_him_state = OPTION_NO;
-    d->nvt_env_us_state = OPTION_NO;
-    d->nvt_oldenv_him_state = OPTION_NO;
-    d->nvt_oldenv_us_state = OPTION_NO;
-    d->nvt_charset_him_state = OPTION_NO;
-    d->nvt_charset_us_state = OPTION_NO;
-    d->nvt_charset_utf8 = false;
+    memset(d->nvt_him_state,OPTION_NO,256);
+    memset(d->nvt_us_state,OPTION_NO,256);
+    d->ttype = NULL;
+    d->encoding = CHARSET_LATIN1;
     d->height = 24;
     d->width = 78;
     d->quota = mudconf.cmd_quota_max;
@@ -2838,35 +2826,7 @@ static void SendWont(DESC *d, unsigned char chOption)
 
 int HimState(DESC *d, unsigned char chOption)
 {
-    if (TELNET_NAWS == chOption)
-    {
-        return d->nvt_naws_him_state;
-    }
-    else if (TELNET_EOR == chOption)
-    {
-        return d->nvt_eor_him_state;
-    }
-    else if (TELNET_SGA == chOption)
-    {
-        return d->nvt_sga_him_state;
-    }
-    else if (TELNET_TTYPE == chOption)
-    {
-        return d->nvt_ttype_him_state;
-    }
-    else if (TELNET_ENV == chOption)
-    {
-        return d->nvt_env_him_state;
-    }
-    else if (TELNET_OLDENV == chOption)
-    {
-        return d->nvt_oldenv_him_state;
-    }
-    else if (TELNET_CHARSET == chOption)
-    {
-        return d->nvt_charset_him_state;
-    }
-    return OPTION_NO;
+    return d->nvt_him_state[chOption];
 }
 
 /*! \brief Return our side's negotiation state.
@@ -2885,35 +2845,7 @@ int HimState(DESC *d, unsigned char chOption)
 
 int UsState(DESC *d, unsigned char chOption)
 {
-    if (TELNET_NAWS == chOption)
-    {
-        return d->nvt_naws_us_state;
-    }
-    else if (TELNET_EOR == chOption)
-    {
-        return d->nvt_eor_us_state;
-    }
-    else if (TELNET_SGA == chOption)
-    {
-        return d->nvt_sga_us_state;
-    }
-    else if (TELNET_TTYPE == chOption)
-    {
-        return d->nvt_ttype_us_state;
-    }
-    else if (TELNET_ENV == chOption)
-    {
-        return d->nvt_env_us_state;
-    }
-    else if (TELNET_OLDENV == chOption)
-    {
-        return d->nvt_oldenv_us_state;
-    }
-    else if (TELNET_CHARSET == chOption)
-    {
-        return d->nvt_charset_us_state;
-    }
-    return OPTION_NO;
+    return d->nvt_us_state[chOption];
 }
 
 /*! \brief Change the other side's negotiation state.
@@ -2926,7 +2858,7 @@ int UsState(DESC *d, unsigned char chOption)
 
 void SendCharsetRequest(DESC *d)
 {
-    if (d->nvt_charset_him_state == OPTION_YES)
+    if (d->nvt_him_state[TELNET_CHARSET] == OPTION_YES)
     {
         char aCharsets[18] =
         {
@@ -2941,52 +2873,21 @@ void SendCharsetRequest(DESC *d)
 
 static void SetHimState(DESC *d, unsigned char chOption, int iHimState)
 {
-    if (TELNET_NAWS == chOption)
-    {
-        d->nvt_naws_him_state = iHimState;
-    }
-    else if (TELNET_EOR == chOption)
-    {
-        d->nvt_eor_him_state = iHimState;
-    }
-    else if (TELNET_SGA == chOption)
-    {
-        d->nvt_sga_him_state = iHimState;
-    }
-    else if (TELNET_TTYPE == chOption)
-    {
-        d->nvt_ttype_him_state = iHimState;
-        if (OPTION_YES == iHimState)
+    d->nvt_him_state[chOption] = iHimState;
+    
+    if (OPTION_YES == iHimState) {
+        if (TELNET_TTYPE == chOption)
         {
             SendSb(d, chOption, TELNETSB_SEND);
         }
-    }
-    else if (TELNET_ENV == chOption)
-    {
-        d->nvt_env_him_state = iHimState;
-        if (OPTION_YES == iHimState)
+        else if (TELNET_ENV == chOption)
         {
             // Request environment variables.
             //
             char aEnvReq[2] = { TELNETSB_VAR, TELNETSB_USERVAR };
             SendSb(d,chOption,TELNETSB_SEND,aEnvReq,2);
         }
-    }
-    else if (TELNET_OLDENV == chOption)
-    {
-        d->nvt_oldenv_him_state = iHimState;
-        if (OPTION_YES == iHimState)
-        {
-            // Request environment variables.
-            //
-            char aEnvReq[2] = { TELNETSB_VAR, TELNETSB_USERVAR };
-            SendSb(d,chOption,TELNETSB_SEND,aEnvReq,2);
-        }
-    }
-    else if (TELNET_CHARSET == chOption)
-    {
-        d->nvt_charset_him_state = iHimState;
-        if (OPTION_YES == iHimState)
+        else if (TELNET_CHARSET == chOption)
         {
             char aCharsets[18] =
             {
@@ -3010,13 +2911,10 @@ static void SetHimState(DESC *d, unsigned char chOption, int iHimState)
 
 static void SetUsState(DESC *d, unsigned char chOption, int iUsState)
 {
-    if (TELNET_NAWS == chOption)
+    d->nvt_us_state[chOption] = iUsState;
+
+    if (TELNET_EOR == chOption)
     {
-        d->nvt_naws_us_state = iUsState;
-    }
-    else if (TELNET_EOR == chOption)
-    {
-        d->nvt_eor_us_state = iUsState;
         if (OPTION_YES == iUsState)
         {
             EnableUs(d, TELNET_SGA);
@@ -3025,26 +2923,6 @@ static void SetUsState(DESC *d, unsigned char chOption, int iUsState)
         {
             DisableUs(d, TELNET_SGA);
         }
-    }
-    else if (TELNET_SGA == chOption)
-    {
-        d->nvt_sga_us_state = iUsState;
-    }
-    else if (TELNET_TTYPE == chOption)
-    {
-        d->nvt_ttype_us_state = iUsState;
-    }
-    else if (TELNET_ENV == chOption)
-    {
-        d->nvt_env_us_state = iUsState;
-    }
-    else if (TELNET_OLDENV == chOption)
-    {
-        d->nvt_oldenv_us_state = iUsState;
-    }
-    else if (TELNET_CHARSET == chOption)
-    {
-        d->nvt_charset_us_state = iUsState;
     }
 }
 
@@ -3061,9 +2939,11 @@ static bool DesiredHimOption(DESC *d, unsigned char chOption)
 {
     UNUSED_PARAMETER(d);
 
-    if (  TELNET_NAWS == chOption
-       || TELNET_EOR  == chOption
-       || TELNET_SGA  == chOption)
+    if (  TELNET_NAWS    == chOption
+       || TELNET_EOR     == chOption
+       || TELNET_SGA     == chOption
+       || TELNET_ENV     == chOption
+       || TELNET_CHARSET == chOption)
     {
         return true;
     }
@@ -3571,19 +3451,19 @@ static void process_input_helper(DESC *d, char *pBytes, int nBytes)
                 case TELNET_TTYPE:
                     if (TELNETSB_IS == d->aOption[1])
                     {
-                        if (d->nvt_ttype_him_value)
+                        if (d->ttype)
                         {
-                            free(d->nvt_ttype_him_value);
-                            d->nvt_ttype_him_value = NULL;
+                            free(d->ttype);
+                            d->ttype = NULL;
                         }
 
                         // Skip past the TTYPE and TELQUAL_IS bytes.
                         //
                         size_t nTermType = m-2;
                         unsigned char *pTermType = &d->aOption[2];
-                        d->nvt_ttype_him_value = (char *)malloc(nTermType+1);
-                        memcpy(d->nvt_ttype_him_value, pTermType, nTermType);
-                        d->nvt_ttype_him_value[nTermType] = '\0';
+                        d->ttype = (char *)malloc(nTermType+1);
+                        memcpy(d->ttype, pTermType, nTermType);
+                        d->ttype[nTermType] = '\0';
                     }
                     break;
 
@@ -3648,16 +3528,18 @@ static void process_input_helper(DESC *d, char *pBytes, int nBytes)
 
                                         if (0 == mux_stricmp(pEncoding, "utf-8"))
                                         {
-                                            d->nvt_charset_utf8 = true;
+                                            d->encoding = CHARSET_UTF8;
                                         }
                                     }
 
-                                    // Do we think the "USER" value would be of any value at all?
-                                    // I'm suspecting not.
-                                    //
+                                    if ( 0 == mux_stricmp(varname,"USER")) 
+                                    {
+                                        memset(d->username,0,11);
+                                        memcpy(d->username,varval,10);
+                                    }
+
                                     // We can also get 'DISPLAY' here if we were feeling
                                     // masochistic, and actually use Xterm functionality.
-
                                 }
                             }
                             else
@@ -3674,17 +3556,17 @@ static void process_input_helper(DESC *d, char *pBytes, int nBytes)
                         unsigned char *pCharset = &d->aOption[2];
                         if (strncmp((char *)pCharset, "UTF-8", m - 2) == 0)
                         {
-                            d->nvt_charset_utf8 = true;
+                            d->encoding = CHARSET_UTF8;
                         }
                     }
                     else if (TELNETSB_REJECT == d->aOption[1])
                     {
                         // The client has replied that it doesn't even
                         // support Latin1/ISO-8859-1 accented characters.
-                        // In theory, we should probably record this to strip out
+                        // Thus, we should probably record this to strip out
                         // any accents.
                         //
-                        // TODO?
+                        d->encoding = CHARSET_ASCII;
                     }
                 }
             }
