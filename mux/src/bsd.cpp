@@ -3280,6 +3280,18 @@ static void process_input_helper(DESC *d, char *pBytes, int nBytes)
         case 3:
             // Action  3 - Accept Line.
             //
+            if (  CHARSET_UTF8 == d->encoding
+               && 0 < d->raw_codepoint_length)
+            {
+                p -= d->raw_codepoint_length;
+                if (p < d->raw_input->cmd)
+                {
+                    p = d->raw_input->cmd;
+                }
+                d->raw_codepoint_length = 0;
+                d->raw_codepoint_state = CL_PRINT_START_STATE;
+            }
+
             *p = '\0';
             if (d->raw_input->cmd < p)
             {
@@ -3661,7 +3673,7 @@ static void process_input_helper(DESC *d, char *pBytes, int nBytes)
         d->raw_input_at = NULL;
     }
 
-    if ( d->aOption <= q
+    if (  d->aOption <= q
        && q < qend)
     {
         d->nOption = q - d->aOption;
