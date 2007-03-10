@@ -157,13 +157,13 @@ const char *ConvertToLatin(const UTF8 *pString);
 
 // utf/tr_utf8_ascii.txt
 //
-// 101 code points.
-// 1 states, 101 columns, 357 bytes
+// 1434 code points.
+// 67 states, 189 columns, 12919 bytes
 //
 #define TR_ASCII_START_STATE (0)
-#define TR_ASCII_ACCEPTING_STATES_START (1)
+#define TR_ASCII_ACCEPTING_STATES_START (67)
 extern const unsigned char tr_ascii_itt[256];
-extern const unsigned char tr_ascii_stt[1][101];
+extern const unsigned char tr_ascii_stt[67][189];
 const char *ConvertToAscii(const UTF8 *pString);
 
 bool utf8_strlen(const UTF8 *pString, size_t &nString);
