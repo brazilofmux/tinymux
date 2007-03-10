@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.171 2007/01/10 17:25:34 sdennis Exp $
+// $Id: functions.cpp,v 1.172 2007/03/10 17:01:24 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2005 Solid Vertical Domains, Ltd. All
@@ -6015,7 +6015,6 @@ static FUNCTION(fun_height)
     UNUSED_PARAMETER(ncargs);
 
     long nHeight = 24;
-    dbref target = NOTHING;
     if (is_rational(fargs[0]))
     {
         SOCKET s = mux_atol(fargs[0]);
@@ -6024,7 +6023,7 @@ static FUNCTION(fun_height)
         {
             if (d->descriptor == s)
             {
-                target = d->player;
+                nHeight = d->height;
                 break;
             }
         }
@@ -6032,26 +6031,20 @@ static FUNCTION(fun_height)
     else
     {
         char *pTargetName = fargs[0];
-        if (*pTargetName == '*')
+        if ('*' == *pTargetName)
         {
             pTargetName++;
         }
-        target = lookup_player(executor, pTargetName, true);
-        if (!Good_obj(target))
+        dbref target = lookup_player(executor, pTargetName, true);
+        if (Good_obj(target))
         {
-            target = NOTHING;
+            if (  executor == target
+               || See_All(executor))
+            {
+                nHeight = fetch_height(target);
+            }
         }
     }
-
-    if (NOTHING != target)
-    {
-        if (  executor == target
-           || See_All(executor))
-        {
-            nHeight = fetch_height(target);
-        }
-    }
-
     safe_ltoa(nHeight, buff, bufc);
 }
 
@@ -6064,8 +6057,7 @@ static FUNCTION(fun_width)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    long nWidth = 78;
-    dbref target = NOTHING;
+    long nWidth = 24;
     if (is_rational(fargs[0]))
     {
         SOCKET s = mux_atol(fargs[0]);
@@ -6074,7 +6066,7 @@ static FUNCTION(fun_width)
         {
             if (d->descriptor == s)
             {
-                target = d->player;
+                nWidth = d->width;
                 break;
             }
         }
@@ -6082,26 +6074,20 @@ static FUNCTION(fun_width)
     else
     {
         char *pTargetName = fargs[0];
-        if (*pTargetName == '*')
+        if ('*' == *pTargetName)
         {
             pTargetName++;
         }
-        target = lookup_player(executor, pTargetName, true);
-        if (!Good_obj(target))
+        dbref target = lookup_player(executor, pTargetName, true);
+        if (Good_obj(target))
         {
-            target = NOTHING;
+            if (  executor == target
+               || See_All(executor))
+            {
+                nWidth = fetch_width(target);
+            }
         }
     }
-
-    if (NOTHING != target)
-    {
-        if (  executor == target
-           || See_All(executor))
-        {
-            nWidth = fetch_width(target);
-        }
-    }
-
     safe_ltoa(nWidth, buff, bufc);
 }
 

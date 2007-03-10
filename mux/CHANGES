@@ -307,6 +307,8 @@ Bug Fixes:
  -- Fix memory leak in process_cmdent().
  -- Fix possibility of reading beyond end of @addcommand'ed attribute
     (Issue 294).
+ -- HEIGHT() and WIDTH() returned least-idle port when given a port rather 
+    than the specified port.
 
 
 Performance Enhancements:
