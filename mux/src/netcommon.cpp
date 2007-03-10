@@ -489,7 +489,7 @@ void queue_string(DESC *d, const char *s)
             p = normal_to_white(p);
         }
 
-        if (NoAccents(d->player))
+        if (Ascii(d->player))
         {
             p = strip_accents(p);
         }
@@ -529,7 +529,7 @@ void queue_string(DESC *d, const mux_string &s)
             s.export_TextAnsi(Buffer, NULL, 0, s.length(), LBUF_SIZE-1, NoBleed(d->player));
         }
 
-        if (NoAccents(d->player))
+        if (Ascii(d->player))
         {
             pFinal = strip_accents(Buffer);
         }
@@ -883,7 +883,7 @@ static void announce_connect(dbref player, DESC *d)
         }
     }
 
-    if (NoAccents(player))
+    if (Ascii(player))
     {
         DESC_ITER_PLAYER(player, dtemp)
         {

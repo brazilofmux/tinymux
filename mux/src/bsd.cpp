@@ -3214,15 +3214,15 @@ static void process_input_helper(DESC *d, char *pBytes, int nBytes)
 
                     if (p + n < pend)
                     {
+                        nInputBytes += n;
                         while (n--)
                         {
                             *p++ = *q++;
                         }
-                        nInputBytes++;
                     }
                     else
                     {
-                        nLostBytes++;
+                        nLostBytes += n;
                     }
                 }
             }
@@ -3263,16 +3263,16 @@ static void process_input_helper(DESC *d, char *pBytes, int nBytes)
                 queue_string(d, " \b");
             }
 
-            if (p > d->raw_input->cmd)
+            // Rewind until we pass the first byte of a UTF-8 sequence.
+            //
+            while (d->raw_input->cmd < p)
             {
-                // The character we took back.
-                //
-                // TODO: This doesn't work for UTF-8, and the accounting of
-                // bytes will be difficult if the client switched character
-                // sets in the middle of a line.
-                //
-                nInputBytes -= 1;
+                nInputBytes--;
                 p--;
+                if (utf8_FirstByte[(UTF8)*p] < UTF8_CONTINUE)
+                {
+                    break;
+                }
             }
             d->raw_input_state = NVT_IS_NORMAL;
             break;

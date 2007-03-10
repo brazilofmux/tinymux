@@ -395,7 +395,7 @@ static FLAGBITENT fbeLinkOk         = { LINK_OK,      'L',    FLAG_WORD1, 0,    
 static FLAGBITENT fbeMonitor        = { MONITOR,      'M',    FLAG_WORD1, 0,                    fh_hear_bit};
 static FLAGBITENT fbeMyopic         = { MYOPIC,       'm',    FLAG_WORD1, 0,                    fh_any};
 static FLAGBITENT fbeNoCommand      = { NO_COMMAND,   'n',    FLAG_WORD2, 0,                    fh_any};
-static FLAGBITENT fbeNoAccents      = { NOACCENTS,    '~',    FLAG_WORD2, 0,                    fh_ascii};
+static FLAGBITENT fbeAscii          = { ASCII    ,    '~',    FLAG_WORD2, 0,                    fh_ascii};
 static FLAGBITENT fbeNoBleed        = { NOBLEED,      '-',    FLAG_WORD2, 0,                    fh_any};
 static FLAGBITENT fbeNoSpoof        = { NOSPOOF,      'N',    FLAG_WORD1, 0,                    fh_any};
 static FLAGBITENT fbeOpaque         = { TM_OPAQUE,    'O',    FLAG_WORD1, 0,                    fh_any};
@@ -466,8 +466,9 @@ static FLAGBITENT fbeParent         = { PARENT,       '+',    FLAG_WORD3, 0,    
 FLAGNAMEENT gen_flag_names[] =
 {
     {"ABODE",           true, &fbeAbode          },
-    {"ACCENTS",        false, &fbeNoAccents      },
+    {"ACCENTS",        false, &fbeAscii          },
     {"ANSI",            true, &fbeAnsi           },
+    {"ASCII",           true, &fbeAscii          },
     {"AUDIBLE",         true, &fbeAudible        },
     {"AUDITORIUM",      true, &fbeAuditorium     },
     {"BLEED",          false, &fbeNoBleed        },
@@ -510,7 +511,8 @@ FLAGNAMEENT gen_flag_names[] =
     {"MONITOR",         true, &fbeMonitor        },
     {"MYOPIC",          true, &fbeMyopic         },
     {"NO_COMMAND",      true, &fbeNoCommand      },
-    {"NOACCENTS",       true, &fbeNoAccents      },
+    {"NOACCENTS",       true, &fbeAscii          },
+    {"NOASCII",        false, &fbeAscii          },
     {"NOBLEED",         true, &fbeNoBleed        },
     {"NOSPOOF",         true, &fbeNoSpoof        },
     {"OPAQUE",          true, &fbeOpaque         },
