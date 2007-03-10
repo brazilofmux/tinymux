@@ -277,6 +277,8 @@ Bug Fixes:
  -- Fixed +glance softcode in SGP minimal database (Issue 291).
  -- Fix memory leak in @mail error code path.
  -- Fix memory leak in process_cmdent().
+ -- HEIGHT() and WIDTH() returned least-idle port when given a port rather
+    than the specified port.
 
 
 Performance Enhancements:
