@@ -2860,14 +2860,15 @@ void SendCharsetRequest(DESC *d)
 {
     if (d->nvt_him_state[TELNET_CHARSET] == OPTION_YES)
     {
-        char aCharsets[18] =
+        char aCharsets[27] =
         {
             '\0',
             'U', 'T', 'F', '-', '8', '\0',
-            'I', 'S', 'O', '-', '8', '8', '5', '9', '-', '1', '\0'
+            'I', 'S', 'O', '-', '8', '8', '5', '9', '-', '1', '\0',
+            'U', 'S', '-', 'A', 'S', 'C', 'I', 'I', '\0'
         };
 
-        SendSb(d, TELNET_CHARSET, TELNETSB_REQUEST, &aCharsets[0], 18);
+        SendSb(d, TELNET_CHARSET, TELNETSB_REQUEST, &aCharsets[0], 27);
     }
 }
 
@@ -2889,14 +2890,7 @@ static void SetHimState(DESC *d, unsigned char chOption, int iHimState)
         }
         else if (TELNET_CHARSET == chOption)
         {
-            char aCharsets[18] =
-            {
-                '\0',
-                'U', 'T', 'F', '-', '8', '\0',
-                'I', 'S', 'O', '-', '8', '8', '5', '9', '-', '1', '\0'
-            };
-
-            SendSb(d, chOption, TELNETSB_REQUEST, &aCharsets[0], 18);
+        	SendCharsetRequest(d);
         }
     }
 }
@@ -3512,7 +3506,11 @@ static void process_input_helper(DESC *d, char *pBytes, int nBytes)
                                     memcpy(varname,pVarname,pVarval - pVarname - 1);
                                     memcpy(varval,pVarval,envPtr - pVarval);
 
-                                    // This is a horrible, horrible nasty hack.
+                                    // This is a horrible, horrible nasty hack
+                                    // to try and detect UTF8.  We do not
+                                    // even try to figure out the other encodings
+                                    // this way, and just default to Latin1 if we
+                                    // can't get a UTF8 locale.
                                     if (  0 == mux_stricmp(varname,"LC_CTYPE")
                                        || 0 == mux_stricmp(varname,"LC_ALL"))
                                     {
@@ -3554,9 +3552,17 @@ static void process_input_helper(DESC *d, char *pBytes, int nBytes)
                     if (TELNETSB_ACCEPT == d->aOption[1])
                     {
                         unsigned char *pCharset = &d->aOption[2];
-                        if (strncmp((char *)pCharset, "UTF-8", m - 2) == 0)
+                        if (0 == strncmp((char *)pCharset, "UTF-8", m - 2))
                         {
                             d->encoding = CHARSET_UTF8;
+                        }
+                        else if (0 == strncmp((char *)pCharset, "ISO-8859-1", m-2))
+                        {
+                        	d->encoding = CHARSET_LATIN1;
+                        }
+                        else if (0 == strncmp((char *)pCharset, "US-ASCII", m-2))
+                        {
+                        	d->encoding = CHARSET_ASCII;
                         }
                     }
                     else if (TELNETSB_REJECT == d->aOption[1])

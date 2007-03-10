@@ -272,13 +272,15 @@ static bool fh_staff
     return (fh_any(target, player, flag, fflags, reset));
 }
 
+
+/* External reference to our telnet routine to resynch charset */
+extern void SendCharsetRequest(DESC* d);
+
 /*
  * ---------------------------------------------------------------------------
  * * fh_unicode: only players may set or clear this bit.
  */
  
-extern void SendCharsetRequest(DESC* d);
-
 static bool fh_unicode(dbref target, dbref player, FLAG flag, int fflags, bool reset)
 {
     bool result;
@@ -297,8 +299,46 @@ static bool fh_unicode(dbref target, dbref player, FLAG flag, int fflags, bool r
         {
             if (!reset)
                 dtemp->encoding = CHARSET_UTF8;
+            else
+                dtemp->encoding = CHARSET_LATIN1;
                             
-            else if (reset && (OPTION_YES == dtemp->nvt_him_state[TELNET_CHARSET])) 
+            if (reset && (OPTION_YES == dtemp->nvt_him_state[TELNET_CHARSET])) 
+            {
+                SendCharsetRequest(dtemp);
+            }
+        }           
+    }
+    
+    return result;
+}
+
+/*
+ * ---------------------------------------------------------------------------
+ * * fh_ascii: only players may set or clear this bit.
+ */
+ 
+static bool fh_ascii(dbref target, dbref player, FLAG flag, int fflags, bool reset)
+{
+    bool result;
+    
+    if (!isPlayer(target))
+    {
+        return false;
+    }
+    result = fh_any(target, player, flag, fflags, reset);
+    
+    if (result) 
+    {
+        DESC *dtemp;
+        
+        DESC_ITER_PLAYER(target, dtemp)
+        {
+            if (!reset)
+                dtemp->encoding = CHARSET_ASCII;
+            else
+                dtemp->encoding = CHARSET_LATIN1;
+                            
+            if (reset && (OPTION_YES == dtemp->nvt_him_state[TELNET_CHARSET])) 
             {
                 SendCharsetRequest(dtemp);
             }
@@ -342,7 +382,7 @@ static FLAGBITENT fbeLinkOk         = { LINK_OK,      'L',    FLAG_WORD1, 0,    
 static FLAGBITENT fbeMonitor        = { MONITOR,      'M',    FLAG_WORD1, 0,                    fh_hear_bit};
 static FLAGBITENT fbeMyopic         = { MYOPIC,       'm',    FLAG_WORD1, 0,                    fh_any};
 static FLAGBITENT fbeNoCommand      = { NO_COMMAND,   'n',    FLAG_WORD2, 0,                    fh_any};
-static FLAGBITENT fbeNoAccents      = { NOACCENTS,    '~',    FLAG_WORD2, 0,                    fh_any};
+static FLAGBITENT fbeNoAccents      = { NOACCENTS,    '~',    FLAG_WORD2, 0,                    fh_ascii};
 static FLAGBITENT fbeNoBleed        = { NOBLEED,      '-',    FLAG_WORD2, 0,                    fh_any};
 static FLAGBITENT fbeNoSpoof        = { NOSPOOF,      'N',    FLAG_WORD1, 0,                    fh_any};
 static FLAGBITENT fbeOpaque         = { TM_OPAQUE,    'O',    FLAG_WORD1, 0,                    fh_any};
