@@ -2875,7 +2875,7 @@ void SendCharsetRequest(DESC *d)
 static void SetHimState(DESC *d, unsigned char chOption, int iHimState)
 {
     d->nvt_him_state[chOption] = iHimState;
-    
+
     if (OPTION_YES == iHimState) {
         if (TELNET_TTYPE == chOption)
         {
@@ -2890,7 +2890,7 @@ static void SetHimState(DESC *d, unsigned char chOption, int iHimState)
         }
         else if (TELNET_CHARSET == chOption)
         {
-        	SendCharsetRequest(d);
+            SendCharsetRequest(d);
         }
     }
 }
@@ -3530,7 +3530,7 @@ static void process_input_helper(DESC *d, char *pBytes, int nBytes)
                                         }
                                     }
 
-                                    if ( 0 == mux_stricmp(varname,"USER")) 
+                                    if (0 == mux_stricmp(varname,"USER"))
                                     {
                                         memset(d->username,0,11);
                                         memcpy(d->username,varval,10);
@@ -3558,11 +3558,11 @@ static void process_input_helper(DESC *d, char *pBytes, int nBytes)
                         }
                         else if (0 == strncmp((char *)pCharset, "ISO-8859-1", m-2))
                         {
-                        	d->encoding = CHARSET_LATIN1;
+                            d->encoding = CHARSET_LATIN1;
                         }
                         else if (0 == strncmp((char *)pCharset, "US-ASCII", m-2))
                         {
-                        	d->encoding = CHARSET_ASCII;
+                            d->encoding = CHARSET_ASCII;
                         }
                     }
                     else if (TELNETSB_REJECT == d->aOption[1])

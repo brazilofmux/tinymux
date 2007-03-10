@@ -280,35 +280,36 @@ extern void SendCharsetRequest(DESC* d);
  * ---------------------------------------------------------------------------
  * * fh_unicode: only players may set or clear this bit.
  */
- 
+
 static bool fh_unicode(dbref target, dbref player, FLAG flag, int fflags, bool reset)
 {
     bool result;
-    
+
     if (!isPlayer(target))
     {
         return false;
     }
     result = fh_any(target, player, flag, fflags, reset);
-    
-    if (result) 
+
+    if (result)
     {
         DESC *dtemp;
-        
+
         DESC_ITER_PLAYER(target, dtemp)
         {
             if (!reset)
                 dtemp->encoding = CHARSET_UTF8;
             else
                 dtemp->encoding = CHARSET_LATIN1;
-                            
-            if (reset && (OPTION_YES == dtemp->nvt_him_state[TELNET_CHARSET])) 
+
+            if (  reset
+               && OPTION_YES == dtemp->nvt_him_state[TELNET_CHARSET])
             {
                 SendCharsetRequest(dtemp);
             }
-        }           
+        }
     }
-    
+
     return result;
 }
 
@@ -316,35 +317,36 @@ static bool fh_unicode(dbref target, dbref player, FLAG flag, int fflags, bool r
  * ---------------------------------------------------------------------------
  * * fh_ascii: only players may set or clear this bit.
  */
- 
+
 static bool fh_ascii(dbref target, dbref player, FLAG flag, int fflags, bool reset)
 {
     bool result;
-    
+
     if (!isPlayer(target))
     {
         return false;
     }
     result = fh_any(target, player, flag, fflags, reset);
-    
-    if (result) 
+
+    if (result)
     {
         DESC *dtemp;
-        
+
         DESC_ITER_PLAYER(target, dtemp)
         {
             if (!reset)
                 dtemp->encoding = CHARSET_ASCII;
             else
                 dtemp->encoding = CHARSET_LATIN1;
-                            
-            if (reset && (OPTION_YES == dtemp->nvt_him_state[TELNET_CHARSET])) 
+
+            if (  reset
+               && OPTION_YES == dtemp->nvt_him_state[TELNET_CHARSET])
             {
                 SendCharsetRequest(dtemp);
             }
-        }           
+        }
     }
-    
+
     return result;
 }
 

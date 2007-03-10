@@ -3394,12 +3394,12 @@ void dump_restart_db(void)
         putref(f, d->player);
         putref(f, d->last_time.ReturnSeconds());
         putref(f, d->raw_input_state);
-        
+
         for (int stateloop = 0; stateloop < 256; stateloop++) {
             putref(f, d->nvt_him_state[stateloop]);
             putref(f, d->nvt_us_state[stateloop]);
         }
-        
+
         putref(f, d->height);
         putref(f, d->width);
         putstring(f, d->ttype);
@@ -3496,7 +3496,7 @@ void load_restart_db(void)
                 d->nvt_him_state[stateloop] = getref(f);
                 d->nvt_us_state[stateloop] = getref(f);
             }
-        
+
             d->height = getref(f);
             d->width = getref(f);
 
@@ -3507,7 +3507,7 @@ void load_restart_db(void)
                 memcpy(d->ttype,temp, nBuffer + 1);
             }
 
-            d->encoding = getref(f); 
+            d->encoding = getref(f);
         }
         else if (2 == version)
         {
