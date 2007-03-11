@@ -9684,7 +9684,7 @@ static FUNCTION(fun_accent)
             }
         }
 
-        const UTF8 *t = utf8_latin1(ch);
+        const UTF8 *t = latin1_utf8(ch);
         if (mux_isprint(t))
         {
             utf8_safe_chr(t, buff, bufc);
