@@ -3394,6 +3394,7 @@ void dump_restart_db(void)
         putref(f, d->player);
         putref(f, d->last_time.ReturnSeconds());
         putref(f, d->raw_input_state);
+        putref(f, d->raw_codepoint_state);
 
         for (int stateloop = 0; stateloop < 256; stateloop++) {
             putref(f, d->nvt_him_state[stateloop]);
@@ -3492,6 +3493,7 @@ void load_restart_db(void)
         if (3 == version)
         {
             d->raw_input_state              = getref(f);
+            d->raw_codepoint_state          = getref(f);
             for (int stateloop = 0; stateloop < 256; stateloop++) {
                 d->nvt_him_state[stateloop] = getref(f);
                 d->nvt_us_state[stateloop] = getref(f);
@@ -3524,6 +3526,7 @@ void load_restart_db(void)
         else
         {
             d->raw_input_state    = NVT_IS_NORMAL;
+            d->raw_codepoint_state= 0;
             d->height = 24;
             d->width = 78;
         }
