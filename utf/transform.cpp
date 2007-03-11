@@ -341,6 +341,12 @@ void LoadStrings(FILE *fp)
                 fprintf(stderr, "Codes in file are not in order.\n");
                 exit(0);
             }
+            else if (  UNI_EOF != nextcode2
+                    && Value < 0)
+            {
+                fprintf(stderr, "Value missing from code U-%06X\n", nextcode2);
+                exit(0);
+            }
             nextcode = nextcode2;
         }
     }

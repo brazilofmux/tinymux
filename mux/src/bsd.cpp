@@ -3209,7 +3209,7 @@ static void process_input_helper(DESC *d, char *pBytes, int nBytes)
                 {
                     // Convert this latin1 character to the internal UTF-8 form.
                     //
-                    const UTF8 *q = utf8_latin1(ch);
+                    const UTF8 *q = latin1_utf8(ch);
                     UTF8 n = utf8_FirstByte[q[0]];
 
                     if (p + n < pend)

@@ -36,8 +36,8 @@ extern const unsigned char mux_StripAccents[256];
 #define UTF8_CONTINUE  5
 #define UTF8_ILLEGAL   6
 extern const unsigned char utf8_FirstByte[256];
-extern const char *utf8_latin1[256];
-#define utf8_latin1(x) ((const UTF8 *)utf8_latin1[(unsigned char)x])
+extern const char *latin1_utf8[256];
+#define latin1_utf8(x) ((const UTF8 *)latin1_utf8[(unsigned char)x])
 
 #define mux_isprint_ascii(x) (mux_isprint_ascii[(unsigned char)(x)])
 #define mux_isprint_latin1(x) (mux_isprint_latin1[(unsigned char)(x)])
@@ -144,16 +144,27 @@ inline bool mux_isattrname(const unsigned char *p)
     return ((iState - CL_ATTRNAME_ACCEPTING_STATES_START) == 1) ? true : false;
 }
 
-// utf/tr_UTF8_Latin1.txt
+// utf/tr_utf8_latin1.txt
 //
-// 224 code points.
-// 10 states, 171 columns, 3676 bytes
+// 1503 code points.
+// 71 states, 190 columns, 27236 bytes
 //
-#define TR_LATIN_START_STATE (0)
-#define TR_LATIN_ACCEPTING_STATES_START (10)
-extern const unsigned char tr_latin_itt[256];
-extern const unsigned short tr_latin_stt[10][171];
+#define TR_LATIN1_START_STATE (0)
+#define TR_LATIN1_ACCEPTING_STATES_START (71)
+extern const unsigned char tr_latin1_itt[256];
+extern const unsigned short tr_latin1_stt[71][190];
 const char *ConvertToLatin(const UTF8 *pString);
+
+// utf/tr_utf8_ascii.txt
+//
+// 1446 code points.
+// 67 states, 190 columns, 12986 bytes
+//
+#define TR_ASCII_START_STATE (0)
+#define TR_ASCII_ACCEPTING_STATES_START (67)
+extern const unsigned char tr_ascii_itt[256];
+extern const unsigned char tr_ascii_stt[67][190];
+const char *ConvertToAscii(const UTF8 *pString);
 
 bool utf8_strlen(const UTF8 *pString, size_t &nString);
 

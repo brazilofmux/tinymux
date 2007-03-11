@@ -36,6 +36,7 @@ public:
 
 private:
     State *AllocateState(void);
+    void ValidateStatePointer(State *pState, int iLine);
     void FreeState(State *p);
     bool RowsEqual(State *p, State *q);
     bool ColumnsEqual(int iColumn, int jColumn);
