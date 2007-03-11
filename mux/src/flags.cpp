@@ -283,15 +283,12 @@ extern void SendCharsetRequest(DESC* d);
 
 static bool fh_unicode(dbref target, dbref player, FLAG flag, int fflags, bool reset)
 {
-    bool result;
-
     if (!isPlayer(target))
     {
         return false;
     }
-    result = fh_any(target, player, flag, fflags, reset);
 
-    if (result)
+    if (fh_any(target, player, flag, fflags, reset))
     {
         DESC *dtemp;
 
@@ -319,9 +316,9 @@ static bool fh_unicode(dbref target, dbref player, FLAG flag, int fflags, bool r
                 SendCharsetRequest(dtemp);
             }
         }
+        return true;
     }
-
-    return result;
+    return false;
 }
 
 /*
