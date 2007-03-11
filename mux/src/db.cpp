@@ -3488,13 +3488,15 @@ void load_restart_db(void)
         d->host_info = getref(f);
         d->player = getref(f);
         d->last_time.SetSeconds(getref(f));
-        memset(d->nvt_him_state,OPTION_NO,256);
-        memset(d->nvt_us_state,OPTION_NO,256);
+        memset(d->nvt_him_state, OPTION_NO, 256);
+        memset(d->nvt_us_state, OPTION_NO, 256);
+        d->raw_codepoint_length = 0;
         if (3 == version)
         {
             d->raw_input_state              = getref(f);
             d->raw_codepoint_state          = getref(f);
-            for (int stateloop = 0; stateloop < 256; stateloop++) {
+            for (int stateloop = 0; stateloop < 256; stateloop++)
+            {
                 d->nvt_him_state[stateloop] = getref(f);
                 d->nvt_us_state[stateloop] = getref(f);
             }
@@ -3504,7 +3506,8 @@ void load_restart_db(void)
 
             size_t nBuffer;
             char *temp = getstring_noalloc(f, true, &nBuffer);
-            if ('\0' != temp[0]) {
+            if ('\0' != temp[0])
+            {
                 d->ttype = alloc_lbuf("set_userstring");
                 memcpy(d->ttype,temp, nBuffer + 1);
             }
@@ -3514,6 +3517,7 @@ void load_restart_db(void)
         else if (2 == version)
         {
             d->raw_input_state              = getref(f);
+            d->raw_codepoint_state          = CL_PRINT_START_STATE;
             d->nvt_him_state[TELNET_SGA]    = getref(f);
             d->nvt_us_state[TELNET_SGA]     = getref(f);
             d->nvt_him_state[TELNET_EOR]    = getref(f);
@@ -3526,7 +3530,7 @@ void load_restart_db(void)
         else
         {
             d->raw_input_state    = NVT_IS_NORMAL;
-            d->raw_codepoint_state= 0;
+            d->raw_codepoint_state= CL_PRINT_START_STATE;
             d->height = 24;
             d->width = 78;
         }
