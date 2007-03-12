@@ -426,9 +426,9 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
                     aflags = mudconf.vattr_flags;
                 }
 
-                // If v2 flatfile, convert tstr to UTF-8.
+                // If v2 flatfile or earlier, convert tstr to UTF-8.
                 //
-                if (2 == g_version)
+                if (g_version <= 2)
                 {
                     tstr = ConvertToUTF8((char *)tstr);
                 }
