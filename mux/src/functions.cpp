@@ -9724,8 +9724,8 @@ size_t transform_range(mux_string &sStr)
             // Character range.
             //
             sTemp->truncate(0);
-            if (  mux_islower(cBefore)
-               == mux_islower(cAfter))
+            if (  mux_islower_latin1(cBefore)
+               == mux_islower_latin1(cAfter))
             {
                 cBefore++;
                 while (cBefore < cAfter)
@@ -9735,8 +9735,8 @@ size_t transform_range(mux_string &sStr)
                 }
                 sStr.replace_Chars(*sTemp, nStart, 1);
             }
-            else if (  mux_islower(cBefore)
-                    && mux_isupper(cAfter))
+            else if (  mux_islower_latin1(cBefore)
+                    && mux_isupper_latin1(cAfter))
             {
                 cBefore++;
                 while (cBefore <= 'z')

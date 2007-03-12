@@ -15,8 +15,8 @@ extern const bool mux_isxdigit[256];
 extern const bool mux_isazAZ[256];
 extern const bool mux_isalpha[256];
 extern const bool mux_isalnum[256];
-extern const bool mux_islower[256];
-extern const bool mux_isupper[256];
+extern const bool mux_islower_latin1[256];
+extern const bool mux_isupper_latin1[256];
 extern const bool mux_isspace[256];
 extern bool mux_AttrNameInitialSet[256];
 extern bool mux_AttrNameSet[256];
@@ -46,8 +46,8 @@ extern const char *latin1_utf8[256];
 #define mux_isazAZ(x)  (mux_isazAZ[(unsigned char)(x)])
 #define mux_isalpha(x) (mux_isalpha[(unsigned char)(x)])
 #define mux_isalnum(x) (mux_isalnum[(unsigned char)(x)])
-#define mux_islower(x) (mux_islower[(unsigned char)(x)])
-#define mux_isupper(x) (mux_isupper[(unsigned char)(x)])
+#define mux_islower_latin1(x) (mux_islower_latin1[(unsigned char)(x)])
+#define mux_isupper_latin1(x) (mux_isupper_latin1[(unsigned char)(x)])
 #define mux_isspace(x) (mux_isspace[(unsigned char)(x)])
 #define mux_hex2dec(x) (mux_hex2dec[(unsigned char)(x)])
 #define mux_toupper(x) (mux_toupper[(unsigned char)(x)])
@@ -144,6 +144,48 @@ inline bool mux_isattrname(const unsigned char *p)
     return ((iState - CL_ATTRNAME_ACCEPTING_STATES_START) == 1) ? true : false;
 }
 
+// utf/cl_Upper.txt
+//
+// 56 included, 1114056 excluded, 0 errors.
+// 2 states, 4 columns, 264 bytes
+//
+#define CL_UPPER_START_STATE (0)
+#define CL_UPPER_ACCEPTING_STATES_START (2)
+extern const unsigned char cl_upper_itt[256];
+extern const unsigned char cl_upper_stt[2][4];
+
+inline bool mux_isupper(const unsigned char *p)
+{
+    int iState = CL_UPPER_START_STATE;
+    do
+    {
+        unsigned char ch = *p++;
+        iState = cl_upper_stt[iState][cl_upper_itt[(unsigned char)ch]];
+    } while (iState < CL_UPPER_ACCEPTING_STATES_START);
+    return ((iState - CL_UPPER_ACCEPTING_STATES_START) == 1) ? true : false;
+}
+
+// utf/cl_Lower.txt
+//
+// 58 included, 1114054 excluded, 0 errors.
+// 2 states, 4 columns, 264 bytes
+//
+#define CL_LOWER_START_STATE (0)
+#define CL_LOWER_ACCEPTING_STATES_START (2)
+extern const unsigned char cl_lower_itt[256];
+extern const unsigned char cl_lower_stt[2][4];
+
+inline bool mux_islower(const unsigned char *p)
+{
+    int iState = CL_LOWER_START_STATE;
+    do
+    {
+        unsigned char ch = *p++;
+        iState = cl_lower_stt[iState][cl_lower_itt[(unsigned char)ch]];
+    } while (iState < CL_LOWER_ACCEPTING_STATES_START);
+    return ((iState - CL_LOWER_ACCEPTING_STATES_START) == 1) ? true : false;
+}
+
 // utf/tr_utf8_latin1.txt
 //
 // 1503 code points.
@@ -165,6 +207,50 @@ const char *ConvertToLatin(const UTF8 *pString);
 extern const unsigned char tr_ascii_itt[256];
 extern const unsigned char tr_ascii_stt[67][190];
 const char *ConvertToAscii(const UTF8 *pString);
+
+// utf/tr_tolower.txt
+//
+// 56 code points.
+// 1 states, 2 columns, 258 bytes
+//
+#define TR_TOLOWER_START_STATE (0)
+#define TR_TOLOWER_ACCEPTING_STATES_START (1)
+extern const unsigned char tr_tolower_itt[256];
+extern const unsigned char tr_tolower_stt[1][2];
+extern const char *tr_tolower_ott[2];
+
+inline const unsigned char *mux_lowerflip(const unsigned char *p)
+{
+    int iState = TR_TOLOWER_START_STATE;
+    do
+    {
+        unsigned char ch = *p++;
+        iState = tr_tolower_stt[iState][tr_tolower_itt[(unsigned char)ch]];
+    } while (iState < TR_TOLOWER_ACCEPTING_STATES_START);
+    return (const unsigned char *)tr_tolower_ott[iState - TR_TOLOWER_ACCEPTING_STATES_START];
+}
+
+// utf/tr_toupper.txt
+//
+// 57 code points.
+// 1 states, 4 columns, 260 bytes
+//
+#define TR_TOUPPER_START_STATE (0)
+#define TR_TOUPPER_ACCEPTING_STATES_START (1)
+extern const unsigned char tr_toupper_itt[256];
+extern const unsigned char tr_toupper_stt[1][4];
+extern const char *tr_toupper_ott[3];
+
+inline const unsigned char *mux_upperflip(const unsigned char *p)
+{
+    int iState = TR_TOUPPER_START_STATE;
+    do
+    {
+        unsigned char ch = *p++;
+        iState = tr_toupper_stt[iState][tr_toupper_itt[(unsigned char)ch]];
+    } while (iState < TR_TOUPPER_ACCEPTING_STATES_START);
+    return (const unsigned char *)tr_toupper_ott[iState - TR_TOUPPER_ACCEPTING_STATES_START];
+}
 
 bool utf8_strlen(const UTF8 *pString, size_t &nString);
 

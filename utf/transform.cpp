@@ -400,7 +400,7 @@ void BuildAndOutputTable(FILE *fp, char *UpperPrefix, char *LowerPrefix)
         return;
     }
 
-    printf("unsigned char %s_ott[%d] =\n", LowerPrefix, nOutputTable);
+    printf("const char *%s_ott[%d] =\n", LowerPrefix, nOutputTable);
     printf("{\n");
     int i;
     for (i = 0; i < nOutputTable; i++)

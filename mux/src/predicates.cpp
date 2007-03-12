@@ -569,11 +569,11 @@ bool ok_password(const char *password, const char **pmsg)
             *pmsg = "Illegal character in password.";
             return false;
         }
-        if (mux_isupper(*scan))
+        if (mux_isupper_latin1(*scan))
         {
             num_upper++;
         }
-        else if (mux_islower(*scan))
+        else if (mux_islower_latin1(*scan))
         {
             num_lower++;
         }
