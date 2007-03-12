@@ -185,6 +185,27 @@ inline bool mux_islower(const unsigned char *p)
     return ((iState - CL_LOWER_ACCEPTING_STATES_START) == 1) ? true : false;
 }
 
+// utf/cl_PrivateUse.txt
+//
+// 137468 included, 976644 excluded, 0 errors.
+// 8 states, 12 columns, 352 bytes
+//
+#define CL_COLOR_START_STATE (0)
+#define CL_COLOR_ACCEPTING_STATES_START (8)
+extern const unsigned char cl_color_itt[256];
+extern const unsigned char cl_color_stt[8][12];
+
+inline bool mux_iscolor(const unsigned char *p)
+{
+    int iState = CL_COLOR_START_STATE;
+    do
+    {
+        unsigned char ch = *p++;
+        iState = cl_color_stt[iState][cl_color_itt[(unsigned char)ch]];
+    } while (iState < CL_COLOR_ACCEPTING_STATES_START);
+    return ((iState - CL_COLOR_ACCEPTING_STATES_START) == 1) ? true : false;
+}
+
 // utf/tr_utf8_latin1.txt
 //
 // 1503 code points.

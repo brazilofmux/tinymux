@@ -931,14 +931,50 @@ const unsigned char cl_lower_stt[2][4] =
     {   2,   2,   3,   2}
 };
 
+// utf/cl_PrivateUse.txt
+//
+// 137468 included, 976644 excluded, 0 errors.
+// 8 states, 12 columns, 352 bytes
+//
+const unsigned char cl_color_itt[256] =
+{
+       0,   0,   0,   0,   0,   0,   0,   0,    0,   0,   0,   0,   0,   0,   0,   0,
+       0,   0,   0,   0,   0,   0,   0,   0,    0,   0,   0,   0,   0,   0,   0,   0,
+       0,   0,   0,   0,   0,   0,   0,   0,    0,   0,   0,   0,   0,   0,   0,   0,
+       0,   0,   0,   0,   0,   0,   0,   0,    0,   0,   0,   0,   0,   0,   0,   0,
+       0,   0,   0,   0,   0,   0,   0,   0,    0,   0,   0,   0,   0,   0,   0,   0,
+       0,   0,   0,   0,   0,   0,   0,   0,    0,   0,   0,   0,   0,   0,   0,   0,
+       0,   0,   0,   0,   0,   0,   0,   0,    0,   0,   0,   0,   0,   0,   0,   0,
+       0,   0,   0,   0,   0,   0,   0,   0,    0,   0,   0,   0,   0,   0,   0,   0,
+
+       1,   1,   1,   1,   1,   1,   1,   1,    1,   1,   1,   1,   1,   1,   1,   2,
+       3,   3,   3,   3,   3,   3,   3,   3,    3,   3,   3,   3,   3,   3,   3,   3,
+       3,   3,   3,   3,   4,   4,   4,   4,    4,   4,   4,   4,   4,   4,   4,   4,
+       5,   5,   5,   5,   5,   5,   5,   5,    5,   5,   5,   5,   5,   5,   6,   7,
+       0,   0,   0,   0,   0,   0,   0,   0,    0,   0,   0,   0,   0,   0,   0,   0,
+       0,   0,   0,   0,   0,   0,   0,   0,    0,   0,   0,   0,   0,   0,   0,   0,
+       0,   0,   0,   0,   0,   0,   0,   0,    0,   0,   0,   0,   0,   0,   8,   9,
+       0,   0,   0,  10,  11,   0,   0,   0,    0,   0,   0,   0,   0,   0,   0,   0
+
+};
+
+const unsigned char cl_color_stt[8][12] =
+{
+    {   8,   8,   8,   8,   8,   8,   8,   8,   1,   3,   4,   7},
+    {   8,   2,   2,   2,   2,   2,   2,   2,   8,   8,   8,   8},
+    {   8,   9,   9,   9,   9,   9,   9,   9,   8,   8,   8,   8},
+    {   8,   2,   2,   2,   8,   8,   8,   8,   8,   8,   8,   8},
+    {   8,   8,   8,   8,   8,   1,   1,   5,   8,   8,   8,   8},
+    {   8,   2,   2,   2,   2,   2,   2,   6,   8,   8,   8,   8},
+    {   8,   9,   9,   9,   9,   9,   8,   8,   8,   8,   8,   8},
+    {   8,   1,   5,   8,   8,   8,   8,   8,   8,   8,   8,   8}
+};
+
 // utf/tr_utf8_latin1.txt
 //
 // 1503 code points.
 // 71 states, 190 columns, 27236 bytes
 //
-#define TR_LATIN1_START_STATE (0)
-#define TR_LATIN1_ACCEPTING_STATES_START (71)
-
 const unsigned char tr_latin1_itt[256] =
 {
        0,   0,   0,   0,   0,   0,   0,   1,    2,   3,   4,   0,   0,   5,   0,   0,
@@ -1041,9 +1077,6 @@ const unsigned short tr_latin1_stt[71][190] =
 // 1446 code points.
 // 67 states, 190 columns, 12986 bytes
 //
-#define TR_ASCII_START_STATE (0)
-#define TR_ASCII_ACCEPTING_STATES_START (67)
-
 const unsigned char tr_ascii_itt[256] =
 {
        0,   0,   0,   0,   0,   0,   0,   1,    2,   3,   4,   0,   0,   5,   0,   0,
@@ -1180,9 +1213,6 @@ const char *tr_tolower_ott[2] =
 // 57 code points.
 // 1 states, 4 columns, 260 bytes
 //
-#define TR_TOUPPER_START_STATE (0)
-#define TR_TOUPPER_ACCEPTING_STATES_START (1)
-
 const unsigned char tr_toupper_itt[256] =
 {
        0,   0,   0,   0,   0,   0,   0,   0,    0,   0,   0,   0,   0,   0,   0,   0,
