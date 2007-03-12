@@ -25,7 +25,7 @@ static int g_flags;
 static BOOLEXP *getboolexp1(FILE *f)
 {
     BOOLEXP *b;
-    char *buff, *s;
+    UTF8 *buff, *s;
     int d;
 
     int c = getc(f);
@@ -126,7 +126,7 @@ static BOOLEXP *getboolexp1(FILE *f)
         }
         else if (mux_AttrNameInitialSet_latin1(c))
         {
-            buff = alloc_lbuf("getboolexp1.atr_name");
+            buff = (UTF8 *)alloc_lbuf("getboolexp1.atr_name");
 
             s = buff;
             size_t n;
@@ -187,7 +187,7 @@ static BOOLEXP *getboolexp1(FILE *f)
                 b->type = BOOLEXP_ATR;
             }
 
-            buff = alloc_lbuf("getboolexp1.attr_lock");
+            buff = (UTF8 *)alloc_lbuf("getboolexp1.attr_lock");
             s = buff;
             size_t n;
             while (   EOF != (c = getc(f))
@@ -211,7 +211,7 @@ static BOOLEXP *getboolexp1(FILE *f)
             }
             *s = '\0';
 
-            b->sub1 = (BOOLEXP *)StringClone(buff);
+            b->sub1 = (BOOLEXP *)StringClone((char *)buff);
             free_lbuf(buff);
         }
         ungetc(c, f);
@@ -337,7 +337,7 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
 {
     dbref i, anum;
     int ch;
-    const char *tstr;
+    const UTF8 *tstr;
     int aflags;
     BOOLEXP *tempbool;
     char *buff;
@@ -362,7 +362,7 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
 
     size_t nName;
     bool bValid;
-    char *pName;
+    UTF8 *pName;
 
     int iDotCounter = 0;
     if (mudstate.bStandAlone)
@@ -411,7 +411,7 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
                 // USER-NAMED ATTRIBUTE
                 //
                 anum = getref(f);
-                tstr = getstring_noalloc(f, true, &nBuffer);
+                tstr = (UTF8 *)getstring_noalloc(f, true, &nBuffer);
                 if (mux_isdigit(*tstr))
                 {
                     aflags = 0;
@@ -425,6 +425,14 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
                 {
                     aflags = mudconf.vattr_flags;
                 }
+
+                // If v2 flatfile, convert tstr to UTF-8.
+                //
+                if (2 == g_version)
+                {
+                    tstr = ConvertToUTF8((char *)tstr);
+                }
+
                 pName = MakeCanonicalAttributeName(tstr, &nName, &bValid);
                 if (bValid)
                 {
@@ -474,7 +482,7 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
                 if (header_gotten)
                 {
                     Log.tinyprintf(ENDLINE "Duplicate MUX version header entry at object %d, ignored." ENDLINE, i);
-                    tstr = getstring_noalloc(f, false, &nBuffer);
+                    tstr = (UTF8 *)getstring_noalloc(f, false, &nBuffer);
                 }
                 else
                 {
@@ -520,7 +528,7 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
                 if (size_gotten)
                 {
                     Log.tinyprintf(ENDLINE "Duplicate size entry at object %d, ignored." ENDLINE, i);
-                    tstr = getstring_noalloc(f, false, &nBuffer);
+                    tstr = (UTF8 *)getstring_noalloc(f, false, &nBuffer);
                 }
                 else
                 {
@@ -535,7 +543,7 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
                 if (nextattr_gotten)
                 {
                     Log.tinyprintf(ENDLINE "Duplicate next free vattr entry at object %d, ignored." ENDLINE, i);
-                    tstr = getstring_noalloc(f, false, &nBuffer);
+                    tstr = (UTF8 *)getstring_noalloc(f, false, &nBuffer);
                 }
                 else
                 {
@@ -546,7 +554,7 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
             else
             {
                 Log.tinyprintf(ENDLINE "Unexpected character '%c' in MUX header near object #%d, ignored." ENDLINE, ch, i);
-                tstr = getstring_noalloc(f, false, &nBuffer);
+                tstr = (UTF8 *)getstring_noalloc(f, false, &nBuffer);
             }
             break;
 
@@ -556,9 +564,9 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
 
             if (read_name)
             {
-                tstr = getstring_noalloc(f, true, &nBuffer);
+                tstr = (UTF8 *)getstring_noalloc(f, true, &nBuffer);
                 buff = alloc_lbuf("dbread.s_Name");
-                (void)ANSI_TruncateToField(tstr, MBUF_SIZE, buff, MBUF_SIZE,
+                (void)ANSI_TruncateToField((char *)tstr, MBUF_SIZE, buff, MBUF_SIZE,
                     &nVisualWidth);
                 s_Name(i, buff);
                 free_lbuf(buff);
@@ -652,8 +660,8 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
             break;
 
         case '*':   // EOF marker
-            tstr = getstring_noalloc(f, false, &nBuffer);
-            if (strncmp(tstr, "**END OF DUMP***", 16))
+            tstr = (UTF8 *)getstring_noalloc(f, false, &nBuffer);
+            if (strncmp((char *)tstr, "**END OF DUMP***", 16))
             {
                 Log.tinyprintf(ENDLINE "Bad EOF marker at object #%d" ENDLINE, i);
                 return -1;
@@ -872,7 +880,7 @@ dbref db_write(FILE *f, int format, int version)
             *pBuffer++ = '"';
             pBuffer += mux_ltoa(vp->flags, pBuffer);
             *pBuffer++ = ':';
-            size_t nNameLength = strlen(vp->name);
+            size_t nNameLength = strlen((char *)vp->name);
             memcpy(pBuffer, vp->name, nNameLength);
             pBuffer += nNameLength;
             *pBuffer++ = '"';

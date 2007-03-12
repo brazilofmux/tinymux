@@ -1151,7 +1151,7 @@ void SendChannelMessage
                 atr_add(ch->chan_obj, pattr->number, mux_ltoa_t(logmax), GOD,
                     AF_CONST|AF_NOPROG|AF_NOPARSE);
             }
-            char *p = tprintf("HISTORY_%d", iMod(ch->num_messages, logmax));
+            UTF8 *p = (UTF8 *)tprintf("HISTORY_%d", iMod(ch->num_messages, logmax));
             int atr = mkattr(GOD, p);
             if (0 < atr)
             {
@@ -1430,7 +1430,7 @@ void do_comlast(dbref player, struct channel *ch, int arg)
     for (int count = 0; count < arg; count++)
     {
         histnum++;
-        pattr = atr_str(tprintf("HISTORY_%d", iMod(histnum, logmax)));
+        pattr = atr_str((UTF8 *)tprintf("HISTORY_%d", iMod(histnum, logmax)));
         if (pattr)
         {
             message = atr_get("do_comlast.1436", obj, pattr->number, &aowner, &aflags);
@@ -1480,7 +1480,7 @@ static bool do_chanlog(dbref player, char *channel, char *arg)
     {
         for (int count = 0; count <= oldnum; count++)
         {
-            ATTR *hist = atr_str(tprintf("HISTORY_%d", count));
+            ATTR *hist = atr_str((UTF8 *)tprintf("HISTORY_%d", count));
             if (hist)
             {
                 atr_clr(ch->chan_obj, hist->number);

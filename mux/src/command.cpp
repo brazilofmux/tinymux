@@ -890,7 +890,7 @@ void init_cmdtab(void)
 
         size_t nBuffer;
         bool bValid;
-        char *cbuff = MakeCanonicalAttributeCommand(ap->name, &nBuffer, &bValid);
+        UTF8 *cbuff = MakeCanonicalAttributeCommand(ap->name, &nBuffer, &bValid);
         if (!bValid)
         {
             continue;
@@ -908,7 +908,7 @@ void init_cmdtab(void)
 
         if (NULL != cp2a)
         {
-            cp2a->cmdname = StringClone(cbuff);
+            cp2a->cmdname = StringClone((char *)cbuff);
             cp2a->perms = CA_NO_GUEST | CA_NO_SLAVE;
             cp2a->switches = NULL;
             if (ap->flags & (AF_WIZARD | AF_MDARK))
@@ -1046,7 +1046,7 @@ bool check_access(dbref player, int mask)
  * Idea taken from TinyMUSH3, code from RhostMUSH, ported by Jake Nelson.
  * Hooks processed:  before, after, ignore, permit, fail
  *****************************************************************************/
-static bool process_hook(dbref executor, dbref thing, char *s_uselock, ATTR *hk_attr,
+static bool process_hook(dbref executor, dbref thing, UTF8 *s_uselock, ATTR *hk_attr,
                   bool save_flg)
 {
     UNUSED_PARAMETER(s_uselock);
@@ -1084,7 +1084,7 @@ static bool process_hook(dbref executor, dbref thing, char *s_uselock, ATTR *hk_
     return retval;
 }
 
-static char *hook_name(char *pCommand, int key)
+static UTF8 *hook_name(char *pCommand, int key)
 {
     char *keylet;
     switch (key)
@@ -1125,8 +1125,8 @@ static char *hook_name(char *pCommand, int key)
         }
     }
 
-    char *s_uselock = alloc_sbuf("command_hook.hookname");
-    mux_sprintf(s_uselock, SBUF_SIZE, "%s_%s", keylet, cmdName);
+    UTF8 *s_uselock = (UTF8 *)alloc_sbuf("command_hook.hookname");
+    mux_sprintf((char *)s_uselock, SBUF_SIZE, "%s_%s", keylet, cmdName);
     return s_uselock;
 }
 
@@ -1169,7 +1169,8 @@ static void process_cmdent(CMDENT *cmdp, char *switchp, dbref executor, dbref ca
         return;
     }
 
-    char *buf1, *buf2, tchar, *bp, *str, *buff, *j, *new0, *s_uselock;
+    UTF8 *s_uselock;
+    char *buf1, *buf2, tchar, *bp, *str, *buff, *j, *new0;
     char *args[MAX_ARG];
     int nargs, i, interp, key, xkey, aflags;
     dbref aowner;
@@ -1654,7 +1655,7 @@ static int higcheck(dbref executor, dbref caller, dbref enactor, CMDENT *cmdp,
     if (  Good_obj(mudconf.hook_obj)
        && !Going(mudconf.hook_obj))
     {
-        char *s_uselock;
+        UTF8 *s_uselock;
         ATTR *checkattr;
         bool bResult;
         if (cmdp->hookmask & HOOK_IGNORE)
@@ -1692,7 +1693,7 @@ static void hook_fail(dbref executor, CMDENT *cmdp, char *pCommand)
     if (  Good_obj(mudconf.hook_obj)
        && !Going(mudconf.hook_obj))
     {
-        char *s_uselock = hook_name(cmdp->cmdname, HOOK_AFAIL);
+        UTF8 *s_uselock = hook_name(cmdp->cmdname, HOOK_AFAIL);
         ATTR *hk_ap2 = atr_str(s_uselock);
         process_hook(executor, mudconf.hook_obj, s_uselock, hk_ap2, false);
         free_sbuf(s_uselock);
@@ -2789,6 +2790,7 @@ static void list_cmdaccess(dbref player)
         }
     }
     free_sbuf(buff);
+
     for (ap = AttrTable; ap->name; ap++)
     {
         if (ap->flags & AF_NOCMD)
@@ -2798,13 +2800,13 @@ static void list_cmdaccess(dbref player)
 
         size_t nBuffer;
         bool bValid;
-        buff = MakeCanonicalAttributeCommand(ap->name, &nBuffer, &bValid);
+        UTF8 *buff2 = MakeCanonicalAttributeCommand(ap->name, &nBuffer, &bValid);
         if (!bValid)
         {
             continue;
         }
 
-        CMDENT *cmdp = (CMDENT *)hashfindLEN(buff, nBuffer, &mudstate.command_htab);
+        CMDENT *cmdp = (CMDENT *)hashfindLEN(buff2, nBuffer, &mudstate.command_htab);
         if (cmdp == NULL)
         {
             continue;
@@ -2818,7 +2820,7 @@ static void list_cmdaccess(dbref player)
         if (!(cmdp->perms & CF_DARK))
         {
             mux_sprintf(buff, SBUF_SIZE, "%.60s:", cmdp->cmdname);
-            listset_nametab(player, access_nametab, cmdp->perms, buff, true);
+            listset_nametab(player, access_nametab, cmdp->perms, (char *)buff2, true);
         }
     }
 }
@@ -3075,7 +3077,7 @@ CF_HAND(cf_acmd_access)
     {
         size_t nBuffer;
         bool bValid;
-        char *buff = MakeCanonicalAttributeCommand(ap->name, &nBuffer, &bValid);
+        UTF8 *buff = MakeCanonicalAttributeCommand(ap->name, &nBuffer, &bValid);
         if (!bValid)
         {
             continue;
@@ -3120,7 +3122,7 @@ CF_HAND(cf_attr_access)
         sp++;
     }
 
-    ap = atr_str(str);
+    ap = atr_str((UTF8 *)str);
     if (ap)
     {
         return cf_modify_bits(&(ap->flags), sp, pExtra, nExtra, player, cmd);
@@ -3582,7 +3584,7 @@ static void list_vattrs(dbref player, char *s_mask)
             if (wild_mtch)
             {
                 mudstate.wild_invk_ctr = 0;
-                if (!quick_wild(s_mask, va->name))
+                if (!quick_wild(s_mask, (char *)va->name))
                 {
                     continue;
                 }
@@ -4549,7 +4551,7 @@ void do_hook(dbref executor, dbref caller, dbref enactor, int eval, int key, cha
 
     bool negate, found;
     char *s_ptr, *s_ptrbuff, *cbuff, *p;
-    const char *q;
+    const UTF8 *q;
     CMDENT *cmdp = (CMDENT *)NULL;
 
     if (  (  key

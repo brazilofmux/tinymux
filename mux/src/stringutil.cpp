@@ -2737,7 +2737,7 @@ size_t safe_fill(char *buff, char **bufc, char chFill, size_t nSpaces)
     return nSpaces;
 }
 
-void utf8_safe_chr(const UTF8 *src, char *buff, char **bufc)
+void utf8_safe_chr(const UTF8 *src, UTF8 *buff, UTF8 **bufc)
 {
     size_t nLen;
     size_t nLeft;
@@ -2868,6 +2868,22 @@ UTF32 ConvertFromUTF8(const UTF8 *pString)
     {
         return UNI_REPLACEMENT_CHAR;
     }
+}
+
+UTF8 *ConvertToUTF8(const char *p)
+{
+    static UTF8 aBuffer[LBUF_SIZE];
+    UTF8 *pBuffer = aBuffer;
+    size_t n;
+
+    while ('\0' != *p)
+    {
+        UTF8 *q = ConvertToUTF8(*p);
+        utf8_safe_chr(q, aBuffer, &pBuffer);
+        p++;
+    }
+    *pBuffer = '\0';
+    return aBuffer;
 }
 
 // mux_strncpy: Copies up to specified number of chars from source.

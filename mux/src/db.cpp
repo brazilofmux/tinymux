@@ -817,7 +817,7 @@ void do_attribute
     size_t nName;
     bool bValid = false;
     ATTR *va = NULL;
-    char *pName = MakeCanonicalAttributeName(aname, &nName, &bValid);
+    UTF8 *pName = MakeCanonicalAttributeName((UTF8 *)aname, &nName, &bValid);
     if (bValid)
     {
         va = (ATTR *)vattr_find_LEN(pName, nName);
@@ -889,22 +889,22 @@ void do_attribute
         {
             // Save the old name for use later.
             //
-            char OldName[SBUF_SIZE];
-            char *pOldName = OldName;
-            safe_sb_str(pName, OldName, &pOldName);
+            UTF8 OldName[SBUF_SIZE];
+            UTF8 *pOldName = OldName;
+            safe_sb_str((char *)pName, (char *)OldName, (char **)&pOldName);
             *pOldName = '\0';
             size_t nOldName = pOldName - OldName;
 
             // Make sure the new name doesn't already exist. This checks
             // the built-in and user-defined data structures.
             //
-            va2 = atr_str(value);
+            va2 = atr_str((UTF8 *)value);
             if (va2)
             {
                 notify(executor, "An attribute with that name already exists.");
                 return;
             }
-            pName = MakeCanonicalAttributeName(value, &nName, &bValid);
+            pName = MakeCanonicalAttributeName((UTF8 *)value, &nName, &bValid);
             if (  !bValid
                || vattr_rename_LEN(OldName, nOldName, pName, nName) == NULL)
             {
@@ -1072,7 +1072,7 @@ void do_fixdb
 // We truncate the attribute name to a length of SBUF_SIZE-1, if
 // necessary, but we will validate the remaining characters anyway.
 //
-char *MakeCanonicalAttributeName(const char *pName_arg, size_t *pnName, bool *pbValid)
+UTF8 *MakeCanonicalAttributeName(const UTF8 *pName_arg, size_t *pnName, bool *pbValid)
 {
     static UTF8 Buffer[SBUF_SIZE];
     const UTF8 *pName = (UTF8 *)pName_arg;
@@ -1095,7 +1095,7 @@ char *MakeCanonicalAttributeName(const char *pName_arg, size_t *pnName, bool *pb
         {
             *pnName = 0;
             *pbValid = false;
-            return (char *)Buffer;
+            return Buffer;
         }
 
         nLeft -= n;
@@ -1129,7 +1129,7 @@ char *MakeCanonicalAttributeName(const char *pName_arg, size_t *pnName, bool *pb
         {
             *pnName = 0;
             *pbValid = false;
-            return (char *)Buffer;
+            return Buffer;
         }
         pName = utf8_NextCodePoint(pName);
     }
@@ -1138,31 +1138,46 @@ char *MakeCanonicalAttributeName(const char *pName_arg, size_t *pnName, bool *pb
     //
     *pnName = p - Buffer;
     *pbValid = true;
-    return (char *)Buffer;
+    return Buffer;
 }
 
 // MakeCanonicalAttributeCommand
 //
-char *MakeCanonicalAttributeCommand(const char *pName, size_t *pnName, bool *pbValid)
+UTF8 *MakeCanonicalAttributeCommand(const UTF8 *pName, size_t *pnName, bool *pbValid)
 {
-    if (!pName)
+    if (NULL == pName)
     {
         *pnName = 0;
         *pbValid = false;
         return NULL;
     }
 
-    static char Buffer[SBUF_SIZE];
+    static UTF8 Buffer[SBUF_SIZE];
     int nLeft = SBUF_SIZE-2;
-    char *p = Buffer;
+    UTF8 *p = Buffer;
+    size_t n;
 
     *p++ = '@';
-    while (*pName && nLeft)
+    while (  '\0' != *pName
+          && (n = utf8_FirstByte[(unsigned char)*pName]) < UTF8_CONTINUE
+          && n <= nLeft)
     {
-        *p = mux_tolower(*pName);
-        p++;
-        pName++;
-        nLeft--;
+        nLeft -= n;
+        if (mux_isupper(pName))
+        {
+            const UTF8 *qFlip = mux_lowerflip(pName);
+            while (n--)
+            {
+                *p++ = *pName++ ^ *qFlip++;
+            }
+        }
+        else
+        {
+            while (n--)
+            {
+                *p++ = *pName++;
+            }
+        }
     }
     *p = '\0';
 
@@ -1190,7 +1205,7 @@ void init_attrtab(void)
     {
         size_t nLen;
         bool bValid;
-        char *buff = MakeCanonicalAttributeName(a->name, &nLen, &bValid);
+        UTF8 *buff = MakeCanonicalAttributeName(a->name, &nLen, &bValid);
         if (!bValid)
         {
             continue;
@@ -1208,7 +1223,7 @@ void init_attrtab(void)
     {
         anum_extend(a->number);
         anum_set(a->number, a);
-        hashaddLEN(a->name, strlen(a->name), a, &mudstate.attr_name_htab);
+        hashaddLEN((char *)a->name, strlen((char *)a->name), a, &mudstate.attr_name_htab);
     }
 }
 
@@ -1216,13 +1231,13 @@ void init_attrtab(void)
  * atr_str: Look up an attribute by name.
  */
 
-ATTR *atr_str(char *s)
+ATTR *atr_str(const UTF8 *s)
 {
     // Make attribute name canonical.
     //
     size_t nBuffer;
     bool bValid;
-    char *buff = MakeCanonicalAttributeName(s, &nBuffer, &bValid);
+    UTF8 *buff = MakeCanonicalAttributeName(s, &nBuffer, &bValid);
     if (!bValid)
     {
         return NULL;
@@ -1426,7 +1441,7 @@ bool ThrottleMail(dbref executor)
  * mkattr: Lookup attribute by name, creating if needed.
  */
 
-int mkattr(dbref executor, char *buff)
+int mkattr(dbref executor, const UTF8 *buff)
 {
     ATTR *ap = atr_str(buff);
     if (!ap)
@@ -1435,7 +1450,7 @@ int mkattr(dbref executor, char *buff)
         //
         size_t nName;
         bool bValid;
-        char *pName = MakeCanonicalAttributeName(buff, &nName, &bValid);
+        UTF8 *pName = MakeCanonicalAttributeName(buff, &nName, &bValid);
         ATTR *va;
         if (bValid)
         {
@@ -2247,7 +2262,7 @@ void atr_set_flags(dbref thing, int atr, dbref flags)
  * get_atr,atr_get_raw, atr_get_str, atr_get: Get an attribute from the database.
  */
 
-int get_atr(char *name)
+int get_atr(UTF8 *name)
 {
     ATTR *ap = atr_str(name);
 

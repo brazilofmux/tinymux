@@ -633,7 +633,8 @@ void do_notify
         if (  what
            && what[0] != '\0')
         {
-            int i = mkattr(executor, what);
+            UTF8 *AttributeName = (UTF8 *)what;
+            int i = mkattr(executor, AttributeName);
             if (0 < i)
             {
                 atr = i;
@@ -1042,10 +1043,11 @@ void do_wait
             }
             else
             {
-                ATTR *ap = atr_str(event);
+                UTF8 *EventAttributeName = (UTF8 *)event;
+                ATTR *ap = atr_str(EventAttributeName);
                 if (!ap)
                 {
-                    atr = mkattr(executor, event);
+                    atr = mkattr(executor, EventAttributeName);
                     if (atr <= 0)
                     {
                         notify_quiet(executor, "Invalid attribute.");

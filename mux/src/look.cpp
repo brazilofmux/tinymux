@@ -1043,7 +1043,7 @@ static bool show_a_desc(dbref player, dbref loc)
         char *attrname = alloc_lbuf("look_description.AN");
         char *cp = attrname;
 
-        safe_str(cattr->name, attrname, &cp);
+        safe_str((char *)cattr->name, attrname, &cp);
         *cp = '\0';
         char* ParameterList[] =
             { temp, attrname };
@@ -1552,7 +1552,7 @@ static void debug_examine(dbref player, dbref thing)
             {
                 // Valid attr.
                 //
-                safe_str(pattr->name, buf, &cp);
+                safe_str((char *)pattr->name, buf, &cp);
                 safe_chr(' ', buf, &cp);
             }
             else
@@ -2663,7 +2663,7 @@ void do_decomp
             }
             else
             {
-                mux_strncpy(buff, pattr->name, MBUF_SIZE-1);
+                mux_strncpy(buff, (char *)pattr->name, MBUF_SIZE-1);
                 notify(executor, tprintf("%c%s %s=%s", ((ca < A_USER_START) ?
                     '@' : '&'), buff, thingname, got));
                 for (np = indiv_attraccess_nametab; np->name; np++)

@@ -2310,7 +2310,7 @@ static FUNCTION(fun_v)
         // Fetch an attribute from me. First see if it exists,
         // returning a null string if it does not.
         //
-        ap = atr_str(fargs[0]);
+        ap = atr_str((UTF8 *)fargs[0]);
         if (!ap)
         {
             return;
@@ -5246,7 +5246,7 @@ static void lattr_handler(char *buff, char **bufc, dbref executor, char *fargs[]
                     safe_chr(' ', buff, bufc);
                 }
                 bFirst = false;
-                safe_str(pattr->name, buff, bufc);
+                safe_str((char *)pattr->name, buff, bufc);
             }
         }
     }
@@ -9232,7 +9232,7 @@ static FUNCTION(fun_lattrcmds)
                         safe_chr(' ', buff, bufc);
                     }
                     isFirst = false;
-                    safe_str(pattr->name, buff, bufc);
+                    safe_str((char *)pattr->name, buff, bufc);
                 }
             }
         }
@@ -9549,7 +9549,7 @@ static FUNCTION(fun_chr)
     UTF8 *p = ConvertToUTF8(ch);
     if (mux_isprint(p))
     {
-        safe_str((char *)(p), buff, bufc);
+        utf8_safe_chr(p, (UTF8 *)buff, (UTF8 **)bufc);
     }
     else
     {
@@ -9688,11 +9688,11 @@ static FUNCTION(fun_accent)
         const UTF8 *t = latin1_utf8(ch);
         if (mux_isprint(t))
         {
-            utf8_safe_chr(t, buff, bufc);
+            utf8_safe_chr(t, (UTF8 *)buff, (UTF8 **)bufc);
         }
         else
         {
-            utf8_safe_chr(p, buff, bufc);
+            utf8_safe_chr(p, (UTF8 *)buff, (UTF8 **)bufc);
         }
 
         p = utf8_NextCodePoint(p);
@@ -10315,7 +10315,7 @@ void do_function
         int count = 0;
         for (ufp2 = ufun_head; ufp2; ufp2 = ufp2->next)
         {
-            const char *pName = "(WARNING: Bad Attribute Number)";
+            const UTF8 *pName = (UTF8 *)"(WARNING: Bad Attribute Number)";
             ap = atr_num(ufp2->atr);
             if (ap)
             {

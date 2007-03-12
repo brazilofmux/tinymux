@@ -1883,7 +1883,7 @@ void mux_exec( char *pdstr, char *buff, char **bufc, dbref executor,
                                 if (  mux_isattrnameinitial((UTF8 *)mux_scratch)
                                    && '\0' != *utf8_NextCodePoint(mux_scratch))
                                 {
-                                    ATTR *ap = atr_str(mux_scratch);
+                                    ATTR *ap = atr_str((UTF8 *)mux_scratch);
                                     if (ap)
                                     {
                                         size_t nLen;

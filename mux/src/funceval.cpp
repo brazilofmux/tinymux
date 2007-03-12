@@ -58,7 +58,7 @@ bool parse_and_get_attrib
     if (!parse_attrib(executor, fargs[0], thing, &ap))
     {
         *thing = executor;
-        ap = atr_str(fargs[0]);
+        ap = atr_str((UTF8 *)fargs[0]);
     }
 
     // Make sure we got a good attribute.
@@ -731,7 +731,7 @@ FUNCTION(fun_set)
     if (*p)
     {
         *p++ = 0;
-        int atr = mkattr(executor, fargs[1]);
+        int atr = mkattr(executor, (UTF8 *)fargs[1]);
         if (atr <= 0)
         {
             safe_str("#-1 UNABLE TO CREATE ATTRIBUTE", buff, bufc);
@@ -1153,7 +1153,7 @@ FUNCTION(fun_zfun)
 
     // Find the user function attribute.
     //
-    int attrib = get_atr(fargs[0]);
+    int attrib = get_atr((UTF8 *)fargs[0]);
     if (!attrib)
     {
         safe_str("#-1 NO SUCH USER FUNCTION", buff, bufc);
@@ -1484,7 +1484,7 @@ static size_t mem_usage(dbref thing)
     for (int ca = atr_head(thing, &as); ca; ca = atr_next(&as))
     {
         size_t nLen;
-        const char *str = atr_get_raw_LEN(thing, ca, &nLen);
+        const UTF8 *str = (UTF8 *)atr_get_raw_LEN(thing, ca, &nLen);
         k += nLen+1;
         ATTR *pattr = atr_num(ca);
         if (pattr)
@@ -1493,7 +1493,7 @@ static size_t mem_usage(dbref thing)
             if (  str
                && *str)
             {
-                k += strlen(str)+1;
+                k += strlen((char *)str)+1;
             }
         }
     }
@@ -2159,7 +2159,7 @@ static void hasattr_handler(char *buff, char **bufc, dbref executor, char *fargs
         return;
     }
 
-    ATTR *pattr = atr_str(fargs[1]);
+    ATTR *pattr = atr_str((UTF8 *)fargs[1]);
     bool result = false;
     if (pattr)
     {
@@ -2248,7 +2248,7 @@ static void default_handler(char *buff, char **bufc, dbref executor,
     if (!parse_attrib(executor, objattr, &thing, &pattr))
     {
         thing = executor;
-        pattr = atr_str(objattr);
+        pattr = atr_str((UTF8 *)objattr);
     }
     free_lbuf(objattr);
 
@@ -3818,12 +3818,12 @@ static char *grep_util(dbref player, dbref thing, char *pattern, char *lookfor, 
                     safe_chr(' ', tbuf1, &bp);
                 }
                 ATTR *ap = atr_num(ca);
-                const char *pName = "(WARNING: Bad Attribute Number)";
+                const UTF8 *pName = (UTF8 *)"(WARNING: Bad Attribute Number)";
                 if (ap)
                 {
                     pName = ap->name;
                 }
-                safe_str(pName, tbuf1, &bp);
+                safe_str((char *)pName, tbuf1, &bp);
             }
             free_lbuf(attrib);
         }
@@ -3958,7 +3958,7 @@ FUNCTION(fun_valid)
     }
     else if (!mux_stricmp(fargs[0], "attrname"))
     {
-        MakeCanonicalAttributeName(fargs[1], &nValidName, &bValid);
+        MakeCanonicalAttributeName((UTF8 *)fargs[1], &nValidName, &bValid);
     }
     else if (!mux_stricmp(fargs[0], "comalias"))
     {

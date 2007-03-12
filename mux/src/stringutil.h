@@ -351,8 +351,9 @@ void safe_copy_str(const char *src, char *buff, char **bufp, size_t nSizeOfBuffe
 void safe_copy_str_lbuf(const char *src, char *buff, char **bufp);
 size_t safe_copy_buf(const char *src, size_t nLen, char *buff, char **bufp);
 size_t safe_fill(char *buff, char **bufc, char chFile, size_t nSpaces);
-void utf8_safe_chr(const UTF8 *src, char *buff, char **bufp);
+void utf8_safe_chr(const UTF8 *src, UTF8 *buff, UTF8 **bufp);
 UTF8 *ConvertToUTF8(UTF32 ch);
+UTF8 *ConvertToUTF8(const char *p);
 UTF32 ConvertFromUTF8(const UTF8 *p);
 void mux_strncpy(char *dest, const char *src, size_t nSizeOfBuffer);
 bool matches_exit_from_list(char *, const char *);
