@@ -1134,7 +1134,7 @@ void SendChannelMessage
         int aflags;
         int logmax = DFLT_MAX_LOG;
         char *maxbuf;
-        ATTR *pattr = atr_str("MAX_LOG");
+        ATTR *pattr = atr_str((UTF8 *)"MAX_LOG");
         if (  pattr
            && pattr->number)
         {
@@ -1401,7 +1401,7 @@ void do_comlast(dbref player, struct channel *ch, int arg)
     int aflags;
     dbref obj = ch->chan_obj;
     int logmax = MAX_RECALL_REQUEST;
-    ATTR *pattr = atr_str("MAX_LOG");
+    ATTR *pattr = atr_str((UTF8 *)"MAX_LOG");
     if (  pattr
        && (atr_get_info(obj, pattr->number, &aowner, &aflags)))
     {
@@ -1466,7 +1466,7 @@ static bool do_chanlog(dbref player, char *channel, char *arg)
         return false;
     }
 
-    int atr = mkattr(GOD, "MAX_LOG");
+    int atr = mkattr(GOD, (UTF8 *)"MAX_LOG");
     if (atr <= 0)
     {
         return false;
