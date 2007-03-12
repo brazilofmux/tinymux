@@ -41,7 +41,7 @@ struct atrcount
     int count;
 };
 
-// list of attributes
+// List of Attributes.
 //
 ATTR AttrTable[] =
 {
@@ -221,9 +221,6 @@ ATTR AttrTable[] =
     {"RegInfo",     A_REGINFO,  AF_PRIVATE | AF_MDARK | AF_NOPROG | AF_NOCMD | AF_WIZARD},
 #endif // GAME_DOOFERMUX
     {"ConnInfo",    A_CONNINFO, AF_PRIVATE | AF_MDARK | AF_NOPROG | AF_NOCMD | AF_GOD},
-    {"*Password",   A_PASS,     AF_DARK | AF_NOPROG | AF_NOCMD | AF_INTERNAL},
-    {"*Privileges", A_PRIVS,    AF_DARK | AF_NOPROG | AF_NOCMD | AF_INTERNAL},
-    {"*Money",      A_MONEY,    AF_DARK | AF_NOPROG | AF_NOCMD | AF_INTERNAL},
 #ifdef REALITY_LVLS
     {"Rlevel",      A_RLEVEL,   AF_DARK | AF_NOPROG | AF_NOCMD | AF_INTERNAL},
 #endif // REALITY_LVLS
@@ -234,6 +231,17 @@ ATTR AttrTable[] =
     {"Olead",       A_OLEAD,    AF_ODARK | AF_NOPROG | AF_WIZARD},
 #endif // FIRANMUX
     {NULL,          0,          0}
+};
+
+// The following 'special' attributes adopt invalid names to make them
+// inaccessible to softcode.  A small price of this is that we must
+// manually upper-case them in the table.
+//
+ATTR AttrTableSpecial[] =
+{
+    {"*PASSWORD",   A_PASS,     AF_DARK | AF_NOPROG | AF_NOCMD | AF_INTERNAL},
+    {"*PRIVILEGES", A_PRIVS,    AF_DARK | AF_NOPROG | AF_NOCMD | AF_INTERNAL},
+    {"*MONEY",      A_MONEY,    AF_DARK | AF_NOPROG | AF_NOCMD | AF_INTERNAL},
 };
 
 char *aszSpecialDBRefNames[1-NOPERM] =
@@ -897,10 +905,15 @@ void do_attribute
                 return;
             }
             pName = MakeCanonicalAttributeName(value, &nName, &bValid);
-            if (!bValid || vattr_rename_LEN(OldName, nOldName, pName, nName) == NULL)
+            if (  !bValid
+               || vattr_rename_LEN(OldName, nOldName, pName, nName) == NULL)
+            {
                 notify(executor, "Attribute rename failed.");
+            }
             else
+            {
                 notify(executor, "Attribute renamed.");
+            }
         }
         break;
 
@@ -1059,34 +1072,48 @@ void do_fixdb
 // We truncate the attribute name to a length of SBUF_SIZE-1, if
 // necessary, but we will validate the remaining characters anyway.
 //
-// NOTE: Refer to init_attrtab() where it directly manipulates
-// mux_AttrNameSet to allow the attribute name: "*Password".
-//
-char *MakeCanonicalAttributeName(const char *pName, size_t *pnName, bool *pbValid)
+char *MakeCanonicalAttributeName(const char *pName_arg, size_t *pnName, bool *pbValid)
 {
-    static char Buffer[SBUF_SIZE];
+    static UTF8 Buffer[SBUF_SIZE];
+    const UTF8 *pName = (UTF8 *)pName_arg;
 
-    if (  !pName
-       || !mux_AttrNameInitialSet(*pName))
+    if (  NULL == pName
+       || !mux_isattrnameinitial(pName))
     {
         *pnName = 0;
         *pbValid = false;
         return NULL;
     }
-    int nLeft = SBUF_SIZE-1;
-    char *p = Buffer;
-    while (*pName && nLeft)
+    size_t nLeft = SBUF_SIZE-1;
+    UTF8 *p = Buffer;
+    size_t n;
+    while (  '\0' != *pName
+          && (n = utf8_FirstByte[(unsigned char)*pName]) < UTF8_CONTINUE
+          && n <= nLeft)
     {
-        if (!mux_AttrNameSet(*pName))
+        if (!mux_isattrname(pName))
         {
             *pnName = 0;
             *pbValid = false;
-            return Buffer;
+            return (char *)Buffer;
         }
-        *p = mux_toupper(*pName);
-        p++;
-        pName++;
-        nLeft--;
+
+        nLeft -= n;
+        if (mux_islower(pName))
+        {
+            const UTF8 *qFlip = mux_upperflip(pName);
+            while (n--)
+            {
+                *p++ = *pName++ ^ *qFlip++;
+            }
+        }
+        else
+        {
+            while (n--)
+            {
+                *p++ = *pName++;
+            }
+        }
     }
     *p = '\0';
 
@@ -1095,22 +1122,23 @@ char *MakeCanonicalAttributeName(const char *pName, size_t *pnName, bool *pbVali
     // softcode will run in the future if we increase the
     // size of SBUF_SIZE.
     //
-    while (*pName)
+    while ('\0' != *pName)
     {
-        if (!mux_AttrNameSet(*pName))
+        if (  UTF8_CONTINUE <= utf8_FirstByte[(unsigned char)*pName]
+           || !mux_isattrname(pName))
         {
             *pnName = 0;
             *pbValid = false;
-            return Buffer;
+            return (char *)Buffer;
         }
-        pName++;
+        pName = utf8_NextCodePoint(pName);
     }
 
     // Length of truncated result.
     //
     *pnName = p - Buffer;
     *pbValid = true;
-    return Buffer;
+    return (char *)Buffer;
 }
 
 // MakeCanonicalAttributeCommand
@@ -1158,14 +1186,6 @@ char *MakeCanonicalAttributeCommand(const char *pName, size_t *pnName, bool *pbV
 void init_attrtab(void)
 {
     ATTR *a;
-
-    // We specifically allow the '*' character at server
-    // initialization because it's part of the A_PASS attribute
-    // name.
-    //
-    const unsigned char star = '*';
-    mux_AttrNameSet[star] = true;
-    mux_AttrNameInitialSet[star] = true;
     for (a = AttrTable; a->number; a++)
     {
         size_t nLen;
@@ -1179,8 +1199,17 @@ void init_attrtab(void)
         anum_set(a->number, a);
         hashaddLEN(buff, nLen, a, &mudstate.attr_name_htab);
     }
-    mux_AttrNameInitialSet[star] = false;
-    mux_AttrNameSet[star] = false;
+
+    // We specifically allow the '*' character at server
+    // initialization because it's part of the A_PASS attribute
+    // name.
+    //
+    for (a = AttrTableSpecial; a->number; a++)
+    {
+        anum_extend(a->number);
+        anum_set(a->number, a);
+        hashaddLEN(a->name, strlen(a->name), a, &mudstate.attr_name_htab);
+    }
 }
 
 /* ---------------------------------------------------------------------------

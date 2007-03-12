@@ -2300,11 +2300,12 @@ static FUNCTION(fun_v)
 
     dbref aowner;
     int aflags;
-    char *sbuf, *sbufc, *tbuf;
+    char *sbuf, *sbufc;
     ATTR *ap;
 
-    tbuf = fargs[0];
-    if (mux_AttrNameInitialSet(tbuf[0]) && tbuf[1])
+    UTF8 *tbuf = (UTF8 *)fargs[0];
+    if (  mux_isattrnameinitial(tbuf)
+       && '\0' != *utf8_NextCodePoint(tbuf))
     {
         // Fetch an attribute from me. First see if it exists,
         // returning a null string if it does not.
@@ -2319,10 +2320,10 @@ static FUNCTION(fun_v)
         // string.
         //
         size_t nLen;
-        tbuf = atr_pget_LEN(executor, ap->number, &aowner, &aflags, &nLen);
+        tbuf = (UTF8 *)atr_pget_LEN(executor, ap->number, &aowner, &aflags, &nLen);
         if (See_attr(executor, executor, ap))
         {
-            safe_copy_buf(tbuf, nLen, buff, bufc);
+            safe_copy_buf((char *)tbuf, nLen, buff, bufc);
         }
         free_lbuf(tbuf);
         return;

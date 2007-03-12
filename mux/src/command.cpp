@@ -1374,11 +1374,17 @@ static void process_cmdent(CMDENT *cmdp, char *switchp, dbref executor, dbref ca
 
                 if (!(cmdp->callseq & CS_LEADIN))
                 {
-                    for (j = unp_command; *j && (*j != ' '); j++) ;
+                    for (j = unp_command; *j && (*j != ' '); j++)
+                    {
+                        ; // Nothing.
+                    }
                 }
                 else
                 {
-                    for (j = unp_command; *j; j++) ;
+                    for (j = unp_command; *j; j++)
+                    {
+                        ; // Nothing.
+                    }
                 }
 
                 new0 = alloc_lbuf("process_cmdent.soft");

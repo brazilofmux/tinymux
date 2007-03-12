@@ -18,7 +18,7 @@ extern const bool mux_isalnum[256];
 extern const bool mux_islower_latin1[256];
 extern const bool mux_isupper_latin1[256];
 extern const bool mux_isspace[256];
-extern bool mux_AttrNameInitialSet[256];
+extern bool mux_AttrNameInitialSet_latin1[256];
 extern bool mux_AttrNameSet[256];
 extern const bool mux_ObjectNameSet[256];
 extern bool mux_PlayerNameSet[256];
@@ -53,8 +53,7 @@ extern const char *latin1_utf8[256];
 #define mux_toupper(x) (mux_toupper[(unsigned char)(x)])
 #define mux_tolower(x) (mux_tolower[(unsigned char)(x)])
 
-#define mux_AttrNameInitialSet(x) (mux_AttrNameInitialSet[(unsigned char)(x)])
-#define mux_AttrNameSet(x)        (mux_AttrNameSet[(unsigned char)(x)])
+#define mux_AttrNameInitialSet_latin1(x) (mux_AttrNameInitialSet_latin1[(unsigned char)(x)])
 #define mux_ObjectNameSet(x)      (mux_ObjectNameSet[(unsigned char)(x)])
 #define mux_PlayerNameSet(x)      (mux_PlayerNameSet[(unsigned char)(x)])
 #define mux_issecure(x)           (mux_issecure[(unsigned char)(x)])
