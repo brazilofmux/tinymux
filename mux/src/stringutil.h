@@ -294,6 +294,7 @@ inline int mux_color(const unsigned char *p)
 #define COLOR_BG_MAGENTA 19
 #define COLOR_BG_CYAN    20
 #define COLOR_BG_WHITE   21
+#define COLOR_LAST_CODE  21
 
 bool utf8_strlen(const UTF8 *pString, size_t &nString);
 
@@ -369,6 +370,8 @@ char *ANSI_TruncateAndPad_sbuf(const char *pString, size_t nMaxVisualWidth, char
 size_t ANSI_TruncateToField(const char *szString, size_t nField, char *pField, size_t maxVisual, size_t *nVisualWidth, bool bNoBleed = false);
 char *strip_ansi(const char *szString, size_t *pnString = 0);
 char *strip_accents(const char *szString, size_t *pnString = 0);
+UTF8 *convert_color(const UTF8 *pString, bool bNoBleed);
+UTF8 *strip_color(const UTF8 *pString);
 char *normal_to_white(const char *);
 char *munge_space(const char *);
 char *trim_spaces(char *);

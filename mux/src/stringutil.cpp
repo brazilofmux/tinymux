@@ -2092,6 +2092,74 @@ char *normal_to_white(const char *szString)
     return Buffer;
 }
 
+const UTF8 *aColorSequences[COLOR_LAST_CODE+1] =
+{
+    NULL,
+    (UTF8 *)ANSI_NORMAL,
+    (UTF8 *)ANSI_HILITE,
+    (UTF8 *)ANSI_UNDER,
+    (UTF8 *)ANSI_BLINK,
+    (UTF8 *)ANSI_INVERSE,
+    (UTF8 *)ANSI_BLACK,
+    (UTF8 *)ANSI_RED,
+    (UTF8 *)ANSI_GREEN,
+    (UTF8 *)ANSI_YELLOW,
+    (UTF8 *)ANSI_BLUE,
+    (UTF8 *)ANSI_MAGENTA,
+    (UTF8 *)ANSI_CYAN,
+    (UTF8 *)ANSI_WHITE,
+    (UTF8 *)ANSI_BBLACK,
+    (UTF8 *)ANSI_BRED,
+    (UTF8 *)ANSI_BGREEN,
+    (UTF8 *)ANSI_BYELLOW,
+    (UTF8 *)ANSI_BBLUE,
+    (UTF8 *)ANSI_BMAGENTA,
+    (UTF8 *)ANSI_BCYAN,
+    (UTF8 *)ANSI_BWHITE,
+};
+
+UTF8 *convert_color(const UTF8 *pString, bool bNoBleed)
+{
+    static UTF8 aBuffer[LBUF_SIZE];
+    UTF8 *pBuffer = aBuffer;
+    while ('\0' != *pString)
+    {
+        unsigned int iCode = mux_color(pString);
+        if (iCode <= COLOR_LAST_CODE)
+        {
+            const UTF8 *p;
+            if (COLOR_UNDEFINED == iCode)
+            {
+                p = pString;
+            }
+            else
+            {
+                p = aColorSequences[iCode];
+            }
+            utf8_safe_chr(p, aBuffer, &pBuffer);
+        }
+        pString = utf8_NextCodePoint(pString);
+    }
+    *pBuffer = '\0';
+    return aBuffer;
+}
+
+UTF8 *strip_color(const UTF8 *pString)
+{
+    static UTF8 aBuffer[LBUF_SIZE];
+    UTF8 *pBuffer = aBuffer;
+    while ('\0' != *pString)
+    {
+        if (COLOR_UNDEFINED == mux_color(pString))
+        {
+            utf8_safe_chr(pString, aBuffer, &pBuffer);
+        }
+        pString = utf8_NextCodePoint(pString);
+    }
+    *pBuffer = '\0';
+    return aBuffer;
+}
+
 typedef struct
 {
     int len;
