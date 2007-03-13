@@ -1486,29 +1486,6 @@ char *strip_ansi(const char *szString, size_t *pnString)
     return Buffer;
 }
 
-char *strip_accents(const char *szString, size_t *pnString)
-{
-    static char Buffer[LBUF_SIZE];
-    char *pBuffer = Buffer;
-
-    const char *pString = szString;
-    if (pString)
-    {
-        while (*pString)
-        {
-            *pBuffer = mux_StripAccents(*pString);
-            pBuffer++;
-            pString++;
-        }
-    }
-    if (pnString)
-    {
-        *pnString = pBuffer - Buffer;
-    }
-    *pBuffer = '\0';
-    return Buffer;
-}
-
 #define ANSI_COLOR_INDEX_BLACK     0
 #define ANSI_COLOR_INDEX_RED       1
 #define ANSI_COLOR_INDEX_GREEN     2

@@ -657,7 +657,7 @@ const char *Moniker(dbref thing)
     // Compare accent-stripped, ansi-stripped version of @moniker against
     // accent-stripped, ansi-stripped version of @name.
     //
-    const char *pPureName = strip_accents(PureName(thing));
+    const char *pPureName = ConvertToAscii((const UTF8 *)PureName(thing));
     char *pPureNameCopy = StringClone(pPureName);
 
     size_t nMoniker;
@@ -665,7 +665,7 @@ const char *Moniker(dbref thing)
     int    aflags;
     char *pMoniker = atr_get_LEN(thing, A_MONIKER, &aowner, &aflags,
         &nMoniker);
-    char *pPureMoniker = strip_accents(strip_ansi(pMoniker));
+    const char *pPureMoniker = ConvertToAscii((const UTF8 *)strip_ansi(pMoniker));
 
     const char *pReturn = NULL;
     static char tbuff[LBUF_SIZE];
