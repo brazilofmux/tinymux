@@ -806,15 +806,17 @@ void do_addcommand
 
     // Validate command name.
     //
-    char *pName = NULL;
+    static char pName[LBUF_SIZE];
     if (1 <= nargs)
     {
-        char *pStripped = strip_ansi(name);
-        pName = RemoveSetOfCharacters(pStripped, "\r\n\t ");
-        mux_strlwr(pName);
+        mux_string *sName = new mux_string(name);
+        sName->strip("\r\n\t ");
+        sName->transform_Ascii(mux_tolower_ascii);
+        sName->export_TextPlain(pName);
+        delete sName;
     }
-    if (  !pName
-       || pName[0] == '\0'
+    if (  0 == nargs
+       || '\0' == pName[0]
        || (  pName[0] == '_'
           && pName[1] == '_'))
     {
