@@ -2092,51 +2092,54 @@ char *normal_to_white(const char *szString)
     return Buffer;
 }
 
-const UTF8 *aColorSequences[COLOR_LAST_CODE+1] =
+static struct
 {
-    NULL,
-    (UTF8 *)ANSI_NORMAL,
-    (UTF8 *)ANSI_HILITE,
-    (UTF8 *)ANSI_UNDER,
-    (UTF8 *)ANSI_BLINK,
-    (UTF8 *)ANSI_INVERSE,
-    (UTF8 *)ANSI_BLACK,
-    (UTF8 *)ANSI_RED,
-    (UTF8 *)ANSI_GREEN,
-    (UTF8 *)ANSI_YELLOW,
-    (UTF8 *)ANSI_BLUE,
-    (UTF8 *)ANSI_MAGENTA,
-    (UTF8 *)ANSI_CYAN,
-    (UTF8 *)ANSI_WHITE,
-    (UTF8 *)ANSI_BBLACK,
-    (UTF8 *)ANSI_BRED,
-    (UTF8 *)ANSI_BGREEN,
-    (UTF8 *)ANSI_BYELLOW,
-    (UTF8 *)ANSI_BBLUE,
-    (UTF8 *)ANSI_BMAGENTA,
-    (UTF8 *)ANSI_BCYAN,
-    (UTF8 *)ANSI_BWHITE,
+    UTF8   *pAnsi;
+    size_t  nAnsi;
+} aColorSequences[COLOR_LAST_CODE+1] =
+{
+    {  NULL, 0 },
+    { (UTF8 *)ANSI_NORMAL,   sizeof(ANSI_NORMAL) - 1   },
+    { (UTF8 *)ANSI_HILITE,   sizeof(ANSI_HILITE) - 1   },
+    { (UTF8 *)ANSI_UNDER,    sizeof(ANSI_UNDER) - 1    },
+    { (UTF8 *)ANSI_BLINK,    sizeof(ANSI_BLINK) - 1    },
+    { (UTF8 *)ANSI_INVERSE,  sizeof(ANSI_INVERSE) - 1  },
+    { (UTF8 *)ANSI_BLACK,    sizeof(ANSI_BLACK) - 1    },
+    { (UTF8 *)ANSI_RED,      sizeof(ANSI_RED) - 1      },
+    { (UTF8 *)ANSI_GREEN,    sizeof(ANSI_GREEN) - 1    },
+    { (UTF8 *)ANSI_YELLOW,   sizeof(ANSI_YELLOW) - 1   },
+    { (UTF8 *)ANSI_BLUE,     sizeof(ANSI_BLUE) - 1     },
+    { (UTF8 *)ANSI_MAGENTA,  sizeof(ANSI_MAGENTA) - 1  },
+    { (UTF8 *)ANSI_CYAN,     sizeof(ANSI_CYAN) - 1     },
+    { (UTF8 *)ANSI_WHITE,    sizeof(ANSI_WHITE) - 1    },
+    { (UTF8 *)ANSI_BBLACK,   sizeof(ANSI_BBLACK) - 1   },
+    { (UTF8 *)ANSI_BRED,     sizeof(ANSI_BRED) - 1     },
+    { (UTF8 *)ANSI_BGREEN,   sizeof(ANSI_BGREEN) - 1   },
+    { (UTF8 *)ANSI_BYELLOW,  sizeof(ANSI_BYELLOW) - 1  },
+    { (UTF8 *)ANSI_BBLUE,    sizeof(ANSI_BBLUE) - 1    },
+    { (UTF8 *)ANSI_BMAGENTA, sizeof(ANSI_BMAGENTA) - 1 },
+    { (UTF8 *)ANSI_BCYAN,    sizeof(ANSI_BCYAN) - 1    },
+    { (UTF8 *)ANSI_BWHITE,   sizeof(ANSI_BWHITE) - 1   }
 };
 
 UTF8 *convert_color(const UTF8 *pString, bool bNoBleed)
 {
-    static UTF8 aBuffer[LBUF_SIZE];
+    static UTF8 aBuffer[2*LBUF_SIZE];
     UTF8 *pBuffer = aBuffer;
     while ('\0' != *pString)
     {
         unsigned int iCode = mux_color(pString);
         if (iCode <= COLOR_LAST_CODE)
         {
-            const UTF8 *p;
             if (COLOR_UNDEFINED == iCode)
             {
-                p = pString;
+                utf8_safe_chr(pString, aBuffer, &pBuffer);
             }
             else
             {
-                p = aColorSequences[iCode];
+                memcpy(pBuffer, aColorSequences[iCode].pAnsi, aColorSequences[iCode].nAnsi);
+                pBuffer += aColorSequences[iCode].nAnsi;
             }
-            utf8_safe_chr(p, aBuffer, &pBuffer);
         }
         pString = utf8_NextCodePoint(pString);
     }
