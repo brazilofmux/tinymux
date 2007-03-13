@@ -185,27 +185,6 @@ inline bool mux_islower(const unsigned char *p)
     return ((iState - CL_LOWER_ACCEPTING_STATES_START) == 1) ? true : false;
 }
 
-// utf/cl_PrivateUse.txt
-//
-// 137468 included, 976644 excluded, 0 errors.
-// 8 states, 12 columns, 352 bytes
-//
-#define CL_COLOR_START_STATE (0)
-#define CL_COLOR_ACCEPTING_STATES_START (8)
-extern const unsigned char cl_color_itt[256];
-extern const unsigned char cl_color_stt[8][12];
-
-inline bool mux_iscolor(const unsigned char *p)
-{
-    int iState = CL_COLOR_START_STATE;
-    do
-    {
-        unsigned char ch = *p++;
-        iState = cl_color_stt[iState][cl_color_itt[(unsigned char)ch]];
-    } while (iState < CL_COLOR_ACCEPTING_STATES_START);
-    return ((iState - CL_COLOR_ACCEPTING_STATES_START) == 1) ? true : false;
-}
-
 // utf/tr_utf8_latin1.txt
 //
 // 1503 code points.
@@ -271,6 +250,50 @@ inline const unsigned char *mux_upperflip(const unsigned char *p)
     } while (iState < TR_TOUPPER_ACCEPTING_STATES_START);
     return (const unsigned char *)tr_toupper_ott[iState - TR_TOUPPER_ACCEPTING_STATES_START];
 }
+
+// utf/tr_Color.txt
+//
+// 517 code points.
+// 5 states, 11 columns, 311 bytes
+//
+#define TR_COLOR_START_STATE (0)
+#define TR_COLOR_ACCEPTING_STATES_START (5)
+extern const unsigned char tr_color_itt[256];
+extern const unsigned char tr_color_stt[5][11];
+
+inline int mux_color(const unsigned char *p)
+{
+    int iState = TR_COLOR_START_STATE;
+    do
+    {
+        unsigned char ch = *p++;
+        iState = tr_color_stt[iState][tr_color_itt[(unsigned char)ch]];
+    } while (iState < TR_COLOR_ACCEPTING_STATES_START);
+    return ((iState - TR_COLOR_ACCEPTING_STATES_START) == 1) ? true : false;
+}
+
+#define COLOR_UNDEFINED  0
+#define COLOR_RESET      1
+#define COLOR_INTENSE    2
+#define COLOR_UNDERLINE  3
+#define COLOR_BLINK      4
+#define COLOR_INVERSE    5
+#define COLOR_FG_BLACK   6
+#define COLOR_FG_RED     7
+#define COLOR_FG_GREEN   8
+#define COLOR_FG_YELLOW  9
+#define COLOR_FG_BLUE    10
+#define COLOR_FG_MAGENTA 11
+#define COLOR_FG_CYAN    12
+#define COLOR_FG_WHITE   13
+#define COLOR_BG_BLACK   14
+#define COLOR_BG_RED     15
+#define COLOR_BG_GREEN   16
+#define COLOR_BG_YELLOW  17
+#define COLOR_BG_BLUE    18
+#define COLOR_BG_MAGENTA 19
+#define COLOR_BG_CYAN    20
+#define COLOR_BG_WHITE   21
 
 bool utf8_strlen(const UTF8 *pString, size_t &nString);
 
