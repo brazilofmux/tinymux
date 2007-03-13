@@ -5103,7 +5103,7 @@ static FUNCTION(fun_lcstr)
 
     mux_string *sStr = new mux_string(fargs[0]);
 
-    sStr->transformWithTable(mux_tolower);
+    sStr->transform_Ascii(mux_tolower_ascii);
     sStr->export_TextAnsi(buff, bufc);
 
     delete sStr;
@@ -5121,7 +5121,7 @@ static FUNCTION(fun_ucstr)
 
     mux_string *sStr = new mux_string(fargs[0]);
 
-    sStr->transformWithTable(mux_toupper);
+    sStr->transform_Ascii(mux_toupper_ascii);
     sStr->export_TextAnsi(buff, bufc);
 
     delete sStr;
@@ -5139,7 +5139,7 @@ static FUNCTION(fun_capstr)
 
     mux_string *sStr = new mux_string(fargs[0]);
 
-    sStr->transformWithTable(mux_toupper, 0, 1);
+    sStr->transform_Ascii(mux_toupper_ascii, 0, 1);
     sStr->export_TextAnsi(buff, bufc);
 
     delete sStr;

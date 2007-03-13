@@ -25,8 +25,10 @@ extern bool mux_PlayerNameSet[256];
 extern const bool mux_issecure[256];
 extern const bool mux_isescape[256];
 extern const unsigned char mux_hex2dec[256];
-extern const unsigned char mux_toupper[256];
-extern const unsigned char mux_tolower[256];
+extern const unsigned char mux_toupper_ascii[SCHAR_MAX+1];
+extern const unsigned char mux_tolower_ascii[SCHAR_MAX+1];
+extern const unsigned char mux_toupper_latin1[256];
+extern const unsigned char mux_tolower_latin1[256];
 extern const unsigned char mux_StripAccents[256];
 
 #define UTF8_SIZE1     1
@@ -50,8 +52,8 @@ extern const char *latin1_utf8[256];
 #define mux_isupper_latin1(x) (mux_isupper_latin1[(unsigned char)(x)])
 #define mux_isspace(x) (mux_isspace[(unsigned char)(x)])
 #define mux_hex2dec(x) (mux_hex2dec[(unsigned char)(x)])
-#define mux_toupper(x) (mux_toupper[(unsigned char)(x)])
-#define mux_tolower(x) (mux_tolower[(unsigned char)(x)])
+#define mux_toupper(x) (mux_toupper_latin1[(unsigned char)(x)])
+#define mux_tolower(x) (mux_tolower_latin1[(unsigned char)(x)])
 
 #define mux_AttrNameInitialSet_latin1(x) (mux_AttrNameInitialSet_latin1[(unsigned char)(x)])
 #define mux_ObjectNameSet(x)      (mux_ObjectNameSet[(unsigned char)(x)])
@@ -592,9 +594,9 @@ public:
         size_t nStart = 0,
         size_t nLen = (LBUF_SIZE-1)
     );
-    void transformWithTable
+    void transform_Ascii
     (
-        const unsigned char xfrmTable[256],
+        const unsigned char asciiTable[SCHAR_MAX+1],
         size_t nStart = 0,
         size_t nLen = (LBUF_SIZE-1)
     );
