@@ -964,21 +964,21 @@ const char *ColorTable[256] =
     0, 0, 0, 0, 0, 0, 0, 0,  0, 0, 0, 0, 0, 0, 0, 0,      // 0x10-0x1F
     0, 0, 0, 0, 0, 0, 0, 0,  0, 0, 0, 0, 0, 0, 0, 0,      // 0x20-0x2F
     0, 0, 0, 0, 0, 0, 0, 0,  0, 0, 0, 0, 0, 0, 0, 0,      // 0x30-0x3F
-    0,           0,             ANSI_BBLUE,  ANSI_BCYAN,  // 0x40-0x43
-    0,           0,             0,           ANSI_BGREEN, // 0x44-0x47
+    0,           0,             COLOR_BG_BLUE,  COLOR_BG_CYAN,  // 0x40-0x43
+    0,           0,             0,           COLOR_BG_GREEN, // 0x44-0x47
     0,           0,             0,           0,           // 0x48-0x4B
-    0,           ANSI_BMAGENTA, 0,           0,           // 0x4B-0x4F
-    0,           0,             ANSI_BRED,   0,           // 0x50-0x53
-    0,           0,             0,           ANSI_BWHITE, // 0x54-0x57
-    ANSI_BBLACK, ANSI_BYELLOW,  0,           0,           // 0x58-0x5B
+    0,           COLOR_BG_MAGENTA, 0,           0,           // 0x4B-0x4F
+    0,           0,             COLOR_BG_RED,   0,           // 0x50-0x53
+    0,           0,             0,           COLOR_BG_WHITE, // 0x54-0x57
+    COLOR_BG_BLACK, COLOR_BG_YELLOW,  0,           0,           // 0x58-0x5B
     0,           0,             0,           0,           // 0x5B-0x5F
-    0,           0,             ANSI_BLUE,   ANSI_CYAN,   // 0x60-0x63
-    0,           0,             ANSI_BLINK,  ANSI_GREEN,  // 0x64-0x67
-    ANSI_HILITE, ANSI_INVERSE,  0,           0,           // 0x68-0x6B
-    0,           ANSI_MAGENTA,  ANSI_NORMAL, 0,           // 0x6C-0x6F
-    0,           0,             ANSI_RED,    0,           // 0x70-0x73
-    0,           ANSI_UNDER,    0,           ANSI_WHITE,  // 0x74-0x77
-    ANSI_BLACK,  ANSI_YELLOW,   0,           0,           // 0x78-0x7B
+    0,           0,             COLOR_FG_BLUE,   COLOR_FG_CYAN,   // 0x60-0x63
+    0,           0,             COLOR_BLINK,  COLOR_FG_GREEN,  // 0x64-0x67
+    COLOR_INTENSE, COLOR_INVERSE,  0,           0,           // 0x68-0x6B
+    0,           COLOR_FG_MAGENTA,  COLOR_RESET, 0,           // 0x6C-0x6F
+    0,           0,             COLOR_FG_RED,    0,           // 0x70-0x73
+    0,           COLOR_UNDERLINE,    0,           COLOR_FG_WHITE,  // 0x74-0x77
+    COLOR_FG_BLACK,  COLOR_FG_YELLOW,   0,           0,           // 0x78-0x7B
     0,           0,             0,           0,           // 0x7B-0x7F
     0, 0, 0, 0, 0, 0, 0, 0,  0, 0, 0, 0, 0, 0, 0, 0,      // 0x80-0x8F
     0, 0, 0, 0, 0, 0, 0, 0,  0, 0, 0, 0, 0, 0, 0, 0,      // 0x90-0x9F

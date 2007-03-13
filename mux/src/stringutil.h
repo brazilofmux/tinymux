@@ -269,31 +269,31 @@ inline int mux_color(const unsigned char *p)
         unsigned char ch = *p++;
         iState = tr_color_stt[iState][tr_color_itt[(unsigned char)ch]];
     } while (iState < TR_COLOR_ACCEPTING_STATES_START);
-    return ((iState - TR_COLOR_ACCEPTING_STATES_START) == 1) ? true : false;
+    return iState - TR_COLOR_ACCEPTING_STATES_START;
 }
 
 #define COLOR_UNDEFINED  0
-#define COLOR_RESET      1
-#define COLOR_INTENSE    2
-#define COLOR_UNDERLINE  3
-#define COLOR_BLINK      4
-#define COLOR_INVERSE    5
-#define COLOR_FG_BLACK   6
-#define COLOR_FG_RED     7
-#define COLOR_FG_GREEN   8
-#define COLOR_FG_YELLOW  9
-#define COLOR_FG_BLUE    10
-#define COLOR_FG_MAGENTA 11
-#define COLOR_FG_CYAN    12
-#define COLOR_FG_WHITE   13
-#define COLOR_BG_BLACK   14
-#define COLOR_BG_RED     15
-#define COLOR_BG_GREEN   16
-#define COLOR_BG_YELLOW  17
-#define COLOR_BG_BLUE    18
-#define COLOR_BG_MAGENTA 19
-#define COLOR_BG_CYAN    20
-#define COLOR_BG_WHITE   21
+#define COLOR_RESET      "\xEE\x80\x80"    // 1
+#define COLOR_INTENSE    "\xEE\x80\x81"    // 2
+#define COLOR_UNDERLINE  "\xEE\x80\x84"    // 3
+#define COLOR_BLINK      "\xEE\x80\x85"    // 4
+#define COLOR_INVERSE    "\xEE\x80\x87"    // 5
+#define COLOR_FG_BLACK   "\xEE\x84\x80"    // 6
+#define COLOR_FG_RED     "\xEE\x84\x81"    // 7
+#define COLOR_FG_GREEN   "\xEE\x84\x82"    // 8
+#define COLOR_FG_YELLOW  "\xEE\x84\x83"    // 9
+#define COLOR_FG_BLUE    "\xEE\x84\x84"    // 10
+#define COLOR_FG_MAGENTA "\xEE\x84\x85"    // 11
+#define COLOR_FG_CYAN    "\xEE\x84\x86"    // 12
+#define COLOR_FG_WHITE   "\xEE\x84\x87"    // 13
+#define COLOR_BG_BLACK   "\xEE\x88\x80"    // 14
+#define COLOR_BG_RED     "\xEE\x88\x81"    // 15
+#define COLOR_BG_GREEN   "\xEE\x88\x82"    // 16
+#define COLOR_BG_YELLOW  "\xEE\x88\x83"    // 17
+#define COLOR_BG_BLUE    "\xEE\x88\x84"    // 18
+#define COLOR_BG_MAGENTA "\xEE\x88\x85"    // 19
+#define COLOR_BG_CYAN    "\xEE\x88\x86"    // 20
+#define COLOR_BG_WHITE   "\xEE\x88\x87"    // 21
 #define COLOR_LAST_CODE  21
 
 bool utf8_strlen(const UTF8 *pString, size_t &nString);

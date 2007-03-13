@@ -1185,7 +1185,7 @@ void handle_prog(DESC *d, char *message)
 
         if (d->program_data != NULL)
         {
-            queue_string(d, tprintf("%s>%s ", ANSI_HILITE, ANSI_NORMAL));
+            queue_string(d, tprintf("%s>%s ", COLOR_INTENSE, COLOR_RESET));
 
             if (OPTION_YES == UsState(d, TELNET_EOR))
             {
@@ -1462,7 +1462,7 @@ void do_prog
     {
         d->program_data = program;
 
-        queue_string(d, tprintf("%s>%s ", ANSI_HILITE, ANSI_NORMAL));
+        queue_string(d, tprintf("%s>%s ", COLOR_INTENSE, COLOR_RESET));
 
         if (OPTION_YES == UsState(d, TELNET_EOR))
         {

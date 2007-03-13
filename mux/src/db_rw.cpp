@@ -756,10 +756,8 @@ static bool db_write_object(FILE *f, dbref i, int db_format, int flags)
     UNUSED_PARAMETER(db_format);
 
     ATTR *a;
-    char *got, *as;
-    dbref aowner;
-    int ca, aflags, j;
-    BOOLEXP *tempbool;
+    char *as;
+    int ca, j;
 
     if (!(flags & V_ATRNAME))
     {

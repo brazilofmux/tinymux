@@ -1605,10 +1605,19 @@ static void ANSI_Parse_m(ANSI_ColorState *pacsCurrent, size_t nANSI, const char 
     }
 }
 
-// The following is really 30 (E[0mE[1mE[4mE[5mE[7mE[33mE[43m) but we are
-// being conservative.
+// Maximum binary transition length is:
 //
-#define ANSI_MAXIMUM_BINARY_TRANSITION_LENGTH 60
+//   COLOR_RESET      "\xEE\x80\x80"
+// + COLOR_INTENSE    "\xEE\x80\x81"
+// + COLOR_UNDERLINE  "\xEE\x80\x84"
+// + COLOR_BLINK      "\xEE\x80\x85"
+// + COLOR_INVERSE    "\xEE\x80\x87"
+// + COLOR_FG_RED     "\xEE\x84\x81"
+// + COLOR_BG_WHITE   "\xEE\x88\x87"
+//
+// Each of the seven codes is 3 bytes or 21 bytes total.
+//
+#define ANSI_MAXIMUM_BINARY_TRANSITION_LENGTH 21
 
 // Generate the minimal ANSI sequence that will transition from one color state
 // to another.
@@ -1651,43 +1660,69 @@ static char *ANSI_TransitionColorBinary
        || (  tmp.iForeground != ANSI_COLOR_INDEX_DEFAULT
           && pcsNext->iForeground == ANSI_COLOR_INDEX_DEFAULT))
     {
-        memcpy(p, ANSI_NORMAL, sizeof(ANSI_NORMAL)-1);
-        p += sizeof(ANSI_NORMAL)-1;
+        memcpy(p, COLOR_RESET, sizeof(COLOR_RESET)-1);
+        p += sizeof(COLOR_RESET)-1;
         tmp = csNormal;
     }
+
     if (tmp.bHighlite != pcsNext->bHighlite)
     {
-        memcpy(p, ANSI_HILITE, sizeof(ANSI_HILITE)-1);
-        p += sizeof(ANSI_HILITE)-1;
+        memcpy(p, COLOR_INTENSE, sizeof(COLOR_INTENSE)-1);
+        p += sizeof(COLOR_INTENSE)-1;
     }
+
     if (tmp.bUnder != pcsNext->bUnder)
     {
-        memcpy(p, ANSI_UNDER, sizeof(ANSI_UNDER)-1);
-        p += sizeof(ANSI_UNDER)-1;
+        memcpy(p, COLOR_UNDERLINE, sizeof(COLOR_UNDERLINE)-1);
+        p += sizeof(COLOR_UNDERLINE)-1;
     }
+
     if (tmp.bBlink != pcsNext->bBlink)
     {
-        memcpy(p, ANSI_BLINK, sizeof(ANSI_BLINK)-1);
-        p += sizeof(ANSI_BLINK)-1;
+        memcpy(p, COLOR_BLINK, sizeof(COLOR_BLINK)-1);
+        p += sizeof(COLOR_BLINK)-1;
     }
+
     if (tmp.bInverse != pcsNext->bInverse)
     {
-        memcpy(p, ANSI_INVERSE, sizeof(ANSI_INVERSE)-1);
-        p += sizeof(ANSI_INVERSE)-1;
+        memcpy(p, COLOR_INVERSE, sizeof(COLOR_INVERSE)-1);
+        p += sizeof(COLOR_INVERSE)-1;
     }
+
     if (tmp.iForeground != pcsNext->iForeground)
     {
-        memcpy(p, ANSI_FOREGROUND, sizeof(ANSI_FOREGROUND)-1);
-        p += sizeof(ANSI_FOREGROUND)-1;
-        *p++ = static_cast<char>(pcsNext->iForeground + '0');
-        *p++ = ANSI_ATTR_CMD;
+        char *aForegrounds[8] =
+        {
+            COLOR_FG_BLACK,
+            COLOR_FG_RED,
+            COLOR_FG_GREEN,
+            COLOR_FG_YELLOW,
+            COLOR_FG_BLUE,
+            COLOR_FG_MAGENTA,
+            COLOR_FG_CYAN,
+            COLOR_FG_WHITE
+        };
+
+        memcpy(p, aForegrounds[pcsNext->iForeground], sizeof(COLOR_FG_BLACK)-1);
+        p += sizeof(COLOR_FG_BLACK)-1;
     }
+
     if (tmp.iBackground != pcsNext->iBackground)
     {
-        memcpy(p, ANSI_BACKGROUND, sizeof(ANSI_BACKGROUND)-1);
-        p += sizeof(ANSI_BACKGROUND)-1;
-        *p++ = static_cast<char>(pcsNext->iBackground + '0');
-        *p++ = ANSI_ATTR_CMD;
+        char *aForegrounds[8] =
+        {
+            COLOR_BG_BLACK,
+            COLOR_BG_RED,
+            COLOR_BG_GREEN,
+            COLOR_BG_YELLOW,
+            COLOR_BG_BLUE,
+            COLOR_BG_MAGENTA,
+            COLOR_BG_CYAN,
+            COLOR_BG_WHITE
+        };
+
+        memcpy(p, aForegrounds[pcsNext->iBackground], sizeof(COLOR_BG_BLACK)-1);
+        p += sizeof(COLOR_BG_BLACK)-1;
     }
     *p = '\0';
     *nTransition = p - Buffer;
@@ -2975,7 +3010,6 @@ UTF8 *ConvertToUTF8(const char *p)
 {
     static UTF8 aBuffer[LBUF_SIZE];
     UTF8 *pBuffer = aBuffer;
-    size_t n;
 
     while ('\0' != *p)
     {

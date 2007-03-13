@@ -675,14 +675,14 @@ void load_comsystem(FILE *fp)
             //
             if (ch->type & CHANNEL_PUBLIC)
             {
-                mux_sprintf(temp, sizeof(temp), "%s[%s%s%s%s%s]%s", ANSI_CYAN, ANSI_HILITE,
-                    ANSI_BLUE, ch->name, ANSI_NORMAL, ANSI_CYAN, ANSI_NORMAL);
+                mux_sprintf(temp, sizeof(temp), "%s[%s%s%s%s%s]%s", COLOR_FG_CYAN, COLOR_INTENSE,
+                    COLOR_FG_BLUE, ch->name, COLOR_RESET, COLOR_FG_CYAN, COLOR_RESET);
             }
             else
             {
-                mux_sprintf(temp, sizeof(temp), "%s[%s%s%s%s%s]%s", ANSI_MAGENTA, ANSI_HILITE,
-                    ANSI_RED, ch->name, ANSI_NORMAL, ANSI_MAGENTA,
-                    ANSI_NORMAL);
+                mux_sprintf(temp, sizeof(temp), "%s[%s%s%s%s%s]%s", COLOR_FG_MAGENTA, COLOR_INTENSE,
+                    COLOR_FG_RED, ch->name, COLOR_RESET, COLOR_FG_MAGENTA,
+                    COLOR_RESET);
             }
             size_t vwVisual;
             ANSI_TruncateToField(temp, MAX_HEADER_LEN+1, ch->header,
@@ -1816,15 +1816,15 @@ void do_createchannel(dbref executor, dbref caller, dbref enactor, int eval, int
         // The channel name does not contain ANSI, so first, we add some to
         // get the header.
         //
-        const size_t nMax = MAX_HEADER_LEN - (sizeof(ANSI_HILITE)-1)
-                          - (sizeof(ANSI_NORMAL)-1) - 2;
+        const size_t nMax = MAX_HEADER_LEN - (sizeof(COLOR_INTENSE)-1)
+                          - (sizeof(COLOR_RESET)-1) - 2;
         if (nChannel > nMax)
         {
             nChannel = nMax;
         }
         Buffer[nChannel] = '\0';
         mux_sprintf(newchannel->header, sizeof(newchannel->header),
-            "%s[%s]%s", ANSI_HILITE, Buffer, ANSI_NORMAL);
+            "%s[%s]%s", COLOR_INTENSE, Buffer, COLOR_RESET);
 
         // Then, we use the non-ANSI part for the name.
         //

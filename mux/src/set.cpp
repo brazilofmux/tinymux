@@ -1739,9 +1739,9 @@ static void edit_string_ansi(char *src, char **dst, char **returnstr, char *from
         //
         *returnstr = alloc_lbuf("edit_string_ansi.^");
         rp = *returnstr;
-        safe_str(ANSI_HILITE, *returnstr, &rp);
+        safe_str(COLOR_INTENSE, *returnstr, &rp);
         safe_str(to, *returnstr, &rp);
-        safe_str(ANSI_NORMAL, *returnstr, &rp);
+        safe_str(COLOR_RESET, *returnstr, &rp);
         safe_str(src, *returnstr, &rp);
         *rp = '\0';
 
@@ -1761,9 +1761,9 @@ static void edit_string_ansi(char *src, char **dst, char **returnstr, char *from
         *returnstr = alloc_lbuf("edit_string_ansi.$");
         rp = *returnstr;
         safe_str(src, *returnstr, &rp);
-        safe_str(ANSI_HILITE, *returnstr, &rp);
+        safe_str(COLOR_INTENSE, *returnstr, &rp);
         safe_str(to, *returnstr, &rp);
-        safe_str(ANSI_NORMAL, *returnstr, &rp);
+        safe_str(COLOR_RESET, *returnstr, &rp);
         *rp = '\0';
 
     }
@@ -1780,8 +1780,8 @@ static void edit_string_ansi(char *src, char **dst, char **returnstr, char *from
         }
 
         *dst = replace_string(from, to, src);
-        *returnstr = replace_string(from, tprintf("%s%s%s", ANSI_HILITE,
-                             to, ANSI_NORMAL), src);
+        *returnstr = replace_string(from, tprintf("%s%s%s", COLOR_INTENSE,
+                             to, COLOR_RESET), src);
     }
 }
 
