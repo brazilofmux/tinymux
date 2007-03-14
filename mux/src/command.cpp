@@ -3711,7 +3711,7 @@ static void list_hashstats(dbref player)
 static void list_db_stats(dbref player)
 {
 #ifdef MEMORY_BASED
-    raw_notify(player, "Database is memory based.");
+    raw_notify(player, (UTF8 *)"Database is memory based.");
 #else // MEMORY_BASED
     CLinearTimeAbsolute lsaNow;
     lsaNow.GetUTC();

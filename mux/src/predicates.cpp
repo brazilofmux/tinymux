@@ -1603,7 +1603,7 @@ void do_backup(dbref player, dbref caller, dbref enactor, int key)
     // to use it as the flatfile.
     //
     dump_database_internal(DUMP_I_FLAT);
-    system(tprintf("./_backupflat.sh %s.FLAT 1>&2", mudconf.indb));
+    system((char *)tprintf("./_backupflat.sh %s.FLAT 1>&2", mudconf.indb));
 #else // MEMORY_BASED
     // Invoking _backupflat.sh without an argument prompts the backup script
     // to use dbconvert itself.

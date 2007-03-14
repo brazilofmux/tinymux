@@ -2682,7 +2682,7 @@ int atr_head(dbref thing, unsigned char **attrp)
         ISOUTOFMEMORY(atr);
         atr->thing = thing;
         atr->count = 1;
-        *attrp = (char *)atr;
+        *attrp = (unsigned char *)atr;
         return db[thing].pALHead[0].number;
     }
     return 0;
