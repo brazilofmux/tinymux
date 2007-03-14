@@ -3514,7 +3514,13 @@ void load_restart_db(void)
 
     size_t nBuffer;
     UTF8 *pBuffer = getstring_noalloc(f, true, &nBuffer);
-    memcpy(mudstate.doing_hdr, pBuffer, nBuffer=1);
+    if (version < 3)
+    {
+        // Convert Latin1 and ANSI to UTF-8 code points.
+        //
+        pBuffer = ConvertToUTF8(pBuffer, &nBuffer);
+    }
+    memcpy(mudstate.doing_hdr, pBuffer, nBuffer+1);
 
     mudstate.record_players = getref(f);
     if (mudconf.reset_players)
@@ -3588,6 +3594,10 @@ void load_restart_db(void)
         UTF8 *temp = getstring_noalloc(f, true, &nBuffer);
         if ('\0' != temp[0])
         {
+            if (version < 3)
+            {
+                temp = ConvertToUTF8(temp, &nBuffer);
+            }
             d->output_prefix = alloc_lbuf("set_userstring");
             memcpy(d->output_prefix, temp, nBuffer+1);
         }
@@ -3599,6 +3609,10 @@ void load_restart_db(void)
         temp = getstring_noalloc(f, true, &nBuffer);
         if ('\0' != temp[0])
         {
+            if (version < 3)
+            {
+                temp = ConvertToUTF8(temp, &nBuffer);
+            }
             d->output_suffix = alloc_lbuf("set_userstring");
             memcpy(d->output_suffix, temp, nBuffer+1);
         }
@@ -3607,11 +3621,31 @@ void load_restart_db(void)
             d->output_suffix = NULL;
         }
 
+        // Host address.
+        //
         temp = getstring_noalloc(f, true, &nBuffer);
+        if (version < 3)
+        {
+            temp = ConvertToUTF8(temp, &nBuffer);
+        }
         memcpy(d->addr, temp, nBuffer+1);
+
+        // Doing.
+        //
         temp = getstring_noalloc(f, true, &nBuffer);
+        if (version < 3)
+        {
+            temp = ConvertToUTF8(temp, &nBuffer);
+        }
         memcpy(d->doing, temp, nBuffer+1);
+
+        // User name.
+        //
         temp = getstring_noalloc(f, true, &nBuffer);
+        if (version < 3)
+        {
+            temp = ConvertToUTF8(temp, &nBuffer);
+        }
         memcpy(d->username, temp, nBuffer+1);
 
         d->output_size = 0;
