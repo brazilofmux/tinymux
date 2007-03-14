@@ -144,7 +144,7 @@ void log_perror(const UTF8 *primary, const UTF8 *secondary, const UTF8 *extra, c
 
 void log_text(const UTF8 *text)
 {
-    Log.WriteString(strip_ansi(text));
+    Log.WriteString(strip_color(text));
 }
 
 void log_number(int num)
@@ -186,7 +186,7 @@ void log_name(dbref target)
         {
             tp = unparse_object_numonly(target);
         }
-        Log.WriteString(strip_ansi(tp));
+        Log.WriteString(strip_color(tp));
         free_lbuf(tp);
         if (  (mudconf.log_info & LOGOPT_OWNER)
            && target != Owner(target))
@@ -199,7 +199,7 @@ void log_name(dbref target)
             {
                 tp = unparse_object_numonly(Owner(target));
             }
-            Log.tinyprintf("[%s]", strip_ansi(tp));
+            Log.tinyprintf("[%s]", strip_color(tp));
             free_lbuf(tp);
         }
     }
@@ -270,7 +270,7 @@ void do_log
 
     // Strip the filename of all ANSI.
     //
-    UTF8 *pFilename = strip_ansi(whichlog);
+    UTF8 *pFilename = strip_color(whichlog);
 
     // Restrict filename to a subdirectory to reduce the possibility
     // of a security hole.
@@ -317,7 +317,7 @@ void do_log
 
         // Strip the message of all ANSI.
         //
-        pMessage = strip_ansi(logtext);
+        pMessage = strip_color(logtext);
 
         // Check for and disallow empty messages.
         //

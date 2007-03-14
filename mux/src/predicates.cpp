@@ -338,7 +338,7 @@ UTF8 *MakeCanonicalObjectName(const UTF8 *pName, size_t *pnName, bool *pbValid)
     // Get the stripped version (Visible parts without color info).
     //
     size_t nStripped;
-    UTF8 *pStripped = strip_ansi(Buf, &nStripped);
+    UTF8 *pStripped = strip_color(Buf, &nStripped);
 
     // Do not allow LOOKUP_TOKEN, NUMBER_TOKEN, NOT_TOKEN, or SPACE
     // as the first character, or SPACE as the last character
@@ -393,7 +393,7 @@ UTF8 *MakeCanonicalExitName(const UTF8 *pName, size_t *pnName, bool *pbValid)
     // Build the non-ANSI version so that we can parse for semicolons
     // safely.
     //
-    UTF8 *pStripped = strip_ansi(pName);
+    UTF8 *pStripped = strip_color(pName);
     UTF8 *pBuf = Buf;
     safe_mb_str(pStripped, Buf, &pBuf);
     *pBuf = '\0';

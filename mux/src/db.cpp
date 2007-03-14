@@ -613,7 +613,7 @@ const UTF8 *PureName(dbref thing)
             size_t nPureName;
 #ifdef MEMORY_BASED
             pName = atr_get_LEN(thing, A_NAME, &aowner, &aflags, &nName);
-            pPureName = strip_ansi(pName, &nPureName);
+            pPureName = strip_color(pName, &nPureName);
             free_lbuf(pName);
             db[thing].purename = StringCloneLen(pPureName, nPureName);
 #else // MEMORY_BASED
@@ -628,7 +628,7 @@ const UTF8 *PureName(dbref thing)
                 nName = strlen((char *)db[thing].name);
             }
             pName = db[thing].name;
-            pPureName = strip_ansi(pName, &nPureName);
+            pPureName = strip_color(pName, &nPureName);
             if (nPureName == nName)
             {
                 db[thing].purename = pName;
@@ -642,7 +642,7 @@ const UTF8 *PureName(dbref thing)
         return db[thing].purename;
     }
     pName = atr_get("PureName.631", thing, A_NAME, &aowner, &aflags);
-    pPureName = strip_ansi(pName);
+    pPureName = strip_color(pName);
     free_lbuf(pName);
     return pPureName;
 }
@@ -669,7 +669,7 @@ const UTF8 *Moniker(dbref thing)
     int    aflags;
     UTF8 *pMoniker = atr_get_LEN(thing, A_MONIKER, &aowner, &aflags,
         &nMoniker);
-    const UTF8 *pPureMoniker = (UTF8 *)ConvertToAscii(strip_ansi(pMoniker));
+    const UTF8 *pPureMoniker = (UTF8 *)ConvertToAscii(strip_color(pMoniker));
 
     const UTF8 *pReturn = NULL;
     static UTF8 tbuff[LBUF_SIZE];

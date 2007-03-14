@@ -1440,54 +1440,6 @@ int ANSI_lex(size_t nString, const UTF8 *pString, size_t *nLengthToken0, size_t 
     }
 }
 
-UTF8 *strip_ansi(const UTF8 *szString, size_t *pnString)
-{
-    static UTF8 Buffer[LBUF_SIZE];
-    UTF8 *pBuffer = Buffer;
-
-    const UTF8 *pString = szString;
-    if (!pString)
-    {
-        if (pnString)
-        {
-            *pnString = 0;
-        }
-        *pBuffer = '\0';
-        return Buffer;
-    }
-    size_t nString = strlen((char *)szString);
-
-    while (nString)
-    {
-        size_t nTokenLength0;
-        size_t nTokenLength1;
-        int iType = ANSI_lex(nString, pString, &nTokenLength0, &nTokenLength1);
-
-        if (iType == TOKEN_TEXT_ANSI)
-        {
-            memcpy(pBuffer, pString, nTokenLength0);
-            pBuffer += nTokenLength0;
-
-            size_t nSkipLength = nTokenLength0 + nTokenLength1;
-            nString -= nSkipLength;
-            pString += nSkipLength;
-        }
-        else
-        {
-            // TOKEN_ANSI
-            //
-            nString -= nTokenLength0;
-            pString += nTokenLength0;
-        }
-    }
-    if (pnString)
-    {
-        *pnString = pBuffer - Buffer;
-    }
-    *pBuffer = '\0';
-    return Buffer;
-}
-
 #define ANSI_COLOR_INDEX_BLACK     0
 #define ANSI_COLOR_INDEX_RED       1
 #define ANSI_COLOR_INDEX_GREEN     2
@@ -2189,19 +2141,44 @@ UTF8 *convert_color(const UTF8 *pString, bool bNoBleed)
     return aBuffer;
 }
 
-UTF8 *strip_color(const UTF8 *pString)
+UTF8 *strip_color(const UTF8 *pString, size_t *pnBytes, size_t *pnPoints)
 {
     static UTF8 aBuffer[LBUF_SIZE];
     UTF8 *pBuffer = aBuffer;
+
+    if (NULL == pString)
+    {
+        if (NULL != pnBytes)
+        {
+            *pnBytes = 0;
+        }
+        if (NULL != pnPoints)
+        {
+            *pnPoints = 0;
+        }
+        *pBuffer = '\0';
+        return aBuffer;
+    }
+
+    size_t nPoints = 0;
     while ('\0' != *pString)
     {
         if (COLOR_UNDEFINED == mux_color(pString))
         {
             utf8_safe_chr(pString, aBuffer, &pBuffer);
+            nPoints++;
         }
         pString = utf8_NextCodePoint(pString);
     }
     *pBuffer = '\0';
+    if (NULL != pnBytes)
+    {
+        *pnBytes = pBuffer - aBuffer;
+    }
+    if (NULL != pnPoints)
+    {
+        *pnPoints = nPoints;
+    }
     return aBuffer;
 }
 
@@ -6166,7 +6143,7 @@ bool mux_string::search
     // Strip ANSI from pattern.
     //
     size_t nPat = 0;
-    UTF8 *pPatBuf = strip_ansi(pPattern, &nPat);
+    UTF8 *pPatBuf = strip_color(pPattern, &nPat);
     const UTF8 *pTarget = m_ach + nStart;
 
     size_t i = 0;
@@ -6631,7 +6608,7 @@ LBUF_OFFSET mux_words::find_Words(void)
 LBUF_OFFSET mux_words::find_Words(const UTF8 *pDelim)
 {
     size_t nDelim = 0;
-    pDelim = strip_ansi(pDelim, &nDelim);
+    pDelim = strip_color(pDelim, &nDelim);
 
     size_t iPos = 0;
     LBUF_OFFSET iStart = 0;

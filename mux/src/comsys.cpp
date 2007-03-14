@@ -2150,12 +2150,14 @@ void do_createchannel(dbref executor, dbref caller, dbref enactor, int eval, int
     }
     else
     {
-        // The given channel name does contain ANSI.
+        // The given channel name does contain color.
         //
         memcpy(newchannel->header, Buffer, nChannel+1);
-        pNameNoANSI = strip_ansi(Buffer, &nNameNoANSI);
+        pNameNoANSI = strip_color(Buffer, &nNameNoANSI);
     }
 
+    // TODO: Truncation needs to be fixed.
+    //
     if (nNameNoANSI > MAX_CHANNEL_LEN)
     {
         nNameNoANSI = MAX_CHANNEL_LEN;
@@ -2652,7 +2654,7 @@ void do_channelwho(dbref executor, dbref caller, dbref enactor, int eval, int ke
               || See_Hidden(executor)))
         {
             buff = unparse_object(executor, user->who, false);
-            mux_sprintf(temp, sizeof(temp), "%-29.29s %-6.6s %-6.6s", strip_ansi(buff),
+            mux_sprintf(temp, sizeof(temp), "%-29.29s %-6.6s %-6.6s", strip_color(buff),
                 user->bUserIsOn ? "on " : "off",
                 isPlayer(user->who) ? "yes" : "no ");
             raw_notify(executor, temp);

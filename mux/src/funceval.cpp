@@ -795,8 +795,7 @@ static size_t GenCode(UTF8 *pCode, size_t nCode, const UTF8 *pCodeASCII)
 {
     // Strip out the ANSI.
     //
-    size_t nIn;
-    UTF8 *pIn = strip_ansi(pCodeASCII, &nIn);
+    UTF8 *pIn = strip_color(pCodeASCII);
 
     // Process the printable characters.
     //
@@ -837,7 +836,7 @@ static UTF8 *crypt_code(UTF8 *code, UTF8 *text, bool type)
     }
 
     static UTF8 textbuff[LBUF_SIZE];
-    UTF8 *p = strip_ansi(text);
+    UTF8 *p = strip_color(text);
     size_t nq = nCode;
     size_t ip = 0;
     size_t iq = 0;
@@ -1126,7 +1125,7 @@ FUNCTION(fun_stripansi)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    safe_str(strip_ansi(fargs[0]), buff, bufc);
+    safe_str(strip_color(fargs[0]), buff, bufc);
 }
 
 // Borrowed from PennMUSH 1.50
@@ -1305,7 +1304,7 @@ FUNCTION(fun_table)
     UTF8 *pPaddingEnd = NULL;
     if (nfargs == 6 && *fargs[5])
     {
-        pPaddingStart = strip_ansi(fargs[5]);
+        pPaddingStart = strip_color(fargs[5]);
         pPaddingEnd = (UTF8 *)strchr((char *)pPaddingStart, '\0');
     }
 
