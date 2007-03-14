@@ -3829,7 +3829,7 @@ static FUNCTION(fun_lpos)
 
     if (0 == sPat->length())
     {
-        sPat->import(' ');
+        sPat->import(T(" "), 1);
     }
 
     size_t nPat = 0, nStart = 0;
@@ -5539,7 +5539,7 @@ static FUNCTION(fun_after)
     }
     else
     {
-        sPat->import(' ');
+        sPat->import(T(" "), 1);
         nPat = 1;
     }
 
@@ -5588,7 +5588,7 @@ static FUNCTION(fun_before)
     }
     else
     {
-        sPat->import(' ');
+        sPat->import(T(" "), 1);
         nPat = 1;
     }
 
@@ -7974,12 +7974,12 @@ static void centerjustcombo
     if (nfargs == 3 && *fargs[2])
     {
         sPad->import(fargs[2]);
-        sPad->strip((UTF8 *)"\r\n\t");
+        sPad->strip(T("\r\n\t"));
     }
     nPad = sPad->length();
     if (0 == nPad)
     {
-        sPad->import(' ');
+        sPad->import(T(" "), 1);
         nPad = 1;
     }
 

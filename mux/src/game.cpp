@@ -511,7 +511,7 @@ static UTF8 *make_prefix(dbref object, dbref player, int prefix, const UTF8 *dfl
         cp = buf;
         if (NULL == dflt)
         {
-            safe_str((UTF8 *)"From ", buf, &cp);
+            safe_str(T("From "), buf, &cp);
             if (Good_obj(object))
             {
                 safe_str(Moniker(object), buf, &cp);
@@ -579,19 +579,19 @@ bool html_escape(const UTF8 *src, UTF8 *dest, UTF8 **destp)
         switch (*msg_orig)
         {
         case '<':
-            safe_str((UTF8 *)"&lt;", dest, destp);
+            safe_str(T("&lt;"), dest, destp);
             break;
 
         case '>':
-            safe_str((UTF8 *)"&gt;", dest, destp);
+            safe_str(T("&gt;"), dest, destp);
             break;
 
         case '&':
-            safe_str((UTF8 *)"&amp;", dest, destp);
+            safe_str(T("&amp;"), dest, destp);
             break;
 
         case '\"':
-            safe_str((UTF8 *)"&quot;", dest, destp);
+            safe_str(T("&quot;"), dest, destp);
             break;
 
         default:
@@ -673,25 +673,25 @@ void notify_check(dbref target, dbref sender, const mux_string &msg, int key)
             // caller may have.  notify(target, tprintf(...)) is quite common
             // in the code.
             //
-            msg_ns->import('[');
+            msg_ns->import(T("["), 1);
             msg_ns->append(Moniker(sender));
-            msg_ns->append('(');
+            msg_ns->append_TextPlain(T("("), 1);
             msg_ns->append(sender);
-            msg_ns->append(')');
+            msg_ns->append_TextPlain(T(")"), 1);
 
             if (sender != Owner(sender))
             {
-                msg_ns->append('{');
+                msg_ns->append_TextPlain(T("{"), 1);
                 msg_ns->append(Moniker(Owner(sender)));
-                msg_ns->append('}');
+                msg_ns->append_TextPlain(T("}"), 1);
             }
             if (sender != mudstate.curr_enactor)
             {
-                msg_ns->append_TextPlain((UTF8 *)"<-(", 3);
+                msg_ns->append_TextPlain(T("<-("), 3);
                 msg_ns->append(mudstate.curr_enactor);
-                msg_ns->append(')');
+                msg_ns->append_TextPlain(T(")"), 1);
             }
-            msg_ns->append_TextPlain((UTF8 *)"] ", 2);
+            msg_ns->append_TextPlain(T("] "), 2);
         }
     }
     msg_ns->append(msg);
@@ -716,20 +716,20 @@ void notify_check(dbref target, dbref sender, const mux_string &msg, int key)
                     mux_string *sFrom = new mux_string;
                     mux_string *sTo = new mux_string;
 
-                    sFrom->import('&');
-                    sTo->import((UTF8 *)"&amp;", 5);
+                    sFrom->import(T("&"), 1);
+                    sTo->import(T("&amp;"), 5);
                     msgFinal->edit(*sFrom, *sTo);
 
-                    sFrom->import('<');
-                    sTo->import((UTF8 *)"&lt;", 4);
+                    sFrom->import(T("<"), 1);
+                    sTo->import(T("&lt;"), 4);
                     msgFinal->edit(*sFrom, *sTo);
 
-                    sFrom->import('>');
-                    sTo->import((UTF8 *)"&gt;", 4);
+                    sFrom->import(T(">"), 1);
+                    sTo->import(T("&gt;"), 4);
                     msgFinal->edit(*sFrom, *sTo);
 
-                    sFrom->import('\"');
-                    sTo->import((UTF8 *)"&quot;", 6);
+                    sFrom->import(T("\""), 1);
+                    sTo->import(T("&quot;"), 6);
                     msgFinal->edit(*sFrom, *sTo);
 
                     delete sFrom;
@@ -772,7 +772,7 @@ void notify_check(dbref target, dbref sender, const mux_string &msg, int key)
                  && targetloc != Owner(target))))
         {
             msgFinal->import(Moniker(target));
-            msgFinal->append((UTF8 *)"> ");
+            msgFinal->append_TextPlain(T("> "), 2);
             msgFinal->append(*msg_ns);
             raw_notify(Owner(target), *msgFinal);
         }
@@ -895,7 +895,7 @@ void notify_check(dbref target, dbref sender, const mux_string &msg, int key)
                    && (  recip != target
                       && check_filter(obj, sender, A_FILTER, msgPlain)))
                 {
-                    prefix = make_prefix(obj, target, A_PREFIX, (UTF8 *)"From a distance,");
+                    prefix = make_prefix(obj, target, A_PREFIX, T("From a distance,"));
                     msgFinal->import(prefix);
                     free_lbuf(prefix);
 
@@ -940,7 +940,7 @@ void notify_check(dbref target, dbref sender, const mux_string &msg, int key)
                    && recip != target
                    && check_filter(obj, sender, A_FILTER, msgPlain))
                 {
-                    prefix = make_prefix(obj, target, A_PREFIX, (UTF8 *)"From a distance,");
+                    prefix = make_prefix(obj, target, A_PREFIX, T("From a distance,"));
                     msgPrefixed2->import(prefix);
                     free_lbuf(prefix);
 
@@ -963,7 +963,7 @@ void notify_check(dbref target, dbref sender, const mux_string &msg, int key)
             //
             if (key & MSG_S_OUTSIDE)
             {
-                prefix = make_prefix(target, sender, A_INPREFIX, (UTF8 *)"");
+                prefix = make_prefix(target, sender, A_INPREFIX, T(""));
                 msgFinal->import(prefix);
                 free_lbuf(prefix);
 
@@ -994,7 +994,7 @@ void notify_check(dbref target, dbref sender, const mux_string &msg, int key)
         {
             if (key & MSG_S_INSIDE)
             {
-                prefix = make_prefix(target, sender, A_PREFIX, (UTF8 *)"");
+                prefix = make_prefix(target, sender, A_PREFIX, T(""));
                 msgFinal->import(prefix);
                 free_lbuf(prefix);
 
@@ -1477,7 +1477,7 @@ void dump_database_internal(int dump_type)
         RemoveFile(tmpfile);
         mux_sprintf(tmpfile, sizeof(tmpfile), "%s.#%d#", mudconf.outdb, mudstate.epoch);
 
-        if (mux_fopen(&f, tmpfile, (UTF8 *)"wb"))
+        if (mux_fopen(&f, tmpfile, T("wb")))
         {
             DebugTotalFiles++;
             setvbuf(f, NULL, _IOFBF, 16384);
@@ -1489,18 +1489,18 @@ void dump_database_internal(int dump_type)
             ReplaceFile(mudconf.outdb, prevfile);
             if (ReplaceFile(tmpfile, mudconf.outdb) < 0)
             {
-                log_perror((UTF8 *)"SAV", (UTF8 *)"FAIL", (UTF8 *)"Renaming output file to DB file", tmpfile);
+                log_perror(T("SAV"), T("FAIL"), T("Renaming output file to DB file"), tmpfile);
             }
         }
         else
         {
-            log_perror((UTF8 *)"SAV", (UTF8 *)"FAIL", (UTF8 *)"Opening", tmpfile);
+            log_perror(T("SAV"), T("FAIL"), T("Opening"), tmpfile);
         }
     }
 
     if (mudconf.have_mailer)
     {
-        if (mux_fopen(&f, mudconf.mail_db, (UTF8 *)"wb"))
+        if (mux_fopen(&f, mudconf.mail_db, T("wb")))
         {
             DebugTotalFiles++;
             dump_mail(f);
@@ -1527,7 +1527,7 @@ static void dump_database(void)
     if (mudstate.dumping)
     {
         STARTLOG(LOG_DBSAVES, "DMP", "DUMP");
-        log_text((UTF8 *)"Waiting on previously-forked child before dumping... ");
+        log_text(T("Waiting on previously-forked child before dumping... "));
         ENDLOG;
 
         while (mudstate.dumping)
@@ -1545,7 +1545,7 @@ static void dump_database(void)
     mux_sprintf(buff, MBUF_SIZE, "%s.#%d#", mudconf.outdb, mudstate.epoch);
 
     STARTLOG(LOG_DBSAVES, "DMP", "DUMP");
-    log_text((UTF8 *)"Dumping: ");
+    log_text(T("Dumping: "));
     log_text(buff);
     ENDLOG;
 
@@ -1563,7 +1563,7 @@ static void dump_database(void)
     SYNC;
 
     STARTLOG(LOG_DBSAVES, "DMP", "DONE")
-    log_text((UTF8 *)"Dump complete: ");
+    log_text(T("Dump complete: "));
     log_text(buff);
     ENDLOG;
     free_mbuf(buff);
@@ -1621,7 +1621,7 @@ void fork_and_dump(int key)
         {
             mudstate.epoch++;
             mux_sprintf(buff, LBUF_SIZE, "%s.#%d#", mudconf.outdb, mudstate.epoch);
-            log_text((UTF8 *)"Checkpointing: ");
+            log_text(T("Checkpointing: "));
             log_text(buff);
         }
         ENDLOG;
@@ -1629,7 +1629,7 @@ void fork_and_dump(int key)
     if (key & DUMP_FLATFILE)
     {
         STARTLOG(LOG_DBSAVES, "DMP", "FLAT");
-        log_text((UTF8 *)"Creating flatfile: ");
+        log_text(T("Creating flatfile: "));
         mux_sprintf(buff, LBUF_SIZE, "%s.FLAT", mudconf.outdb);
         log_text(buff);
         ENDLOG;
@@ -1788,7 +1788,7 @@ static int load_game(int ccPageFile)
             return LOAD_GAME_NO_INPUT_DB;
         }
 
-        if (!mux_fopen(&f, infile, (UTF8 *)"rb"))
+        if (!mux_fopen(&f, infile, T("rb")))
         {
             return LOAD_GAME_CANNOT_OPEN;
         }
@@ -1799,7 +1799,7 @@ static int load_game(int ccPageFile)
     // Ok, read it in.
     //
     STARTLOG(LOG_STARTUP, "INI", "LOAD")
-    log_text((UTF8 *)"Loading: ");
+    log_text(T("Loading: "));
     log_text(infile);
     ENDLOG
     if (db_read(f, &db_format, &db_version, &db_flags) < 0)
@@ -1823,7 +1823,7 @@ static int load_game(int ccPageFile)
         f = 0;
 
         STARTLOG(LOG_ALWAYS, "INI", "FATAL")
-        log_text((UTF8 *)"Error loading ");
+        log_text(T("Error loading "));
         log_text(infile);
         ENDLOG
         return LOAD_GAME_LOADING_PROBLEM;

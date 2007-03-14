@@ -5700,32 +5700,6 @@ void mux_string::export_TextPlain
     **bufc = '\0';
 }
 
-/*! \brief Imports a single normal-colored character.
- *
- * Results in an empty mux_string if the specified character does
- * not form a valid one-character string, e.g. ESC or NUL.
- *
- * \param chIn     Normal character.
- * \return         None.
- */
-
-void mux_string::import(const UTF8 chIn)
-{
-    realloc_m_pcs(0);
-
-    if (  ESC_CHAR != chIn
-       && '\0' != chIn)
-    {
-        m_ach[0] = chIn;
-        m_n = 1;
-    }
-    else
-    {
-        m_n = 0;
-    }
-    m_ach[m_n] = '\0';
-}
-
 /*! \brief Converts and Imports a dbref.
  *
  * \param num      dbref to convert and import.
