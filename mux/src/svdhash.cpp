@@ -1926,7 +1926,7 @@ bool CHashFile::Insert(HP_HEAPLENGTH nRecord, UINT32 nHash, void *pRecord)
            && mudstate.dumping)
         {
             STARTLOG(LOG_DBSAVES, "DMP", "DUMP");
-            log_text("Waiting on previously-forked child before page-splitting... ");
+            log_text((UTF8 *)"Waiting on previously-forked child before page-splitting... ");
             ENDLOG;
             do
             {

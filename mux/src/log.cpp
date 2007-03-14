@@ -132,7 +132,7 @@ void log_perror(const UTF8 *primary, const UTF8 *secondary, const UTF8 *extra, c
     Log.WriteString((UTF8 *)": ");
     Log.WriteString(mux_strerror(errno));
 #ifndef WIN32
-    Log.WriteString(ENDLINE);
+    Log.WriteString((UTF8 *)ENDLINE);
 #endif // !WIN32
     Log.Flush();
     mudstate.logging--;

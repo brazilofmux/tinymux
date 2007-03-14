@@ -410,7 +410,7 @@ const UTF8 *mux_crypt(const UTF8 *szPassword, const UTF8 *szSetting, int *piType
     case CRYPT_DES:
 #if defined(HAVE_LIBCRYPT) \
  || defined(HAVE_CRYPT)
-        return crypt(szPassword, szSetting);
+        return (UTF8 *)crypt((char *)szPassword, (char *)szSetting);
 #else
         return szFail;
 #endif

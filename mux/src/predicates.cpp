@@ -1506,7 +1506,7 @@ void do_restart(dbref executor, dbref caller, dbref enactor, int key)
 #ifndef WIN32
     if (mudstate.dumping)
     {
-        notify(executor, "Dumping. Please try again later.");
+        notify(executor, (UTF8 *)"Dumping. Please try again later.");
         bDenied = true;
     }
 #endif // !WIN32
@@ -1594,7 +1594,7 @@ void do_backup(dbref player, dbref caller, dbref enactor, int key)
 
     raw_broadcast(0, "GAME: Backing up database. Please wait.");
     STARTLOG(LOG_ALWAYS, "WIZ", "BACK");
-    log_text("Backup by ");
+    log_text((UTF8 *)"Backup by ");
     log_name(player);
     ENDLOG;
 
@@ -1609,7 +1609,7 @@ void do_backup(dbref player, dbref caller, dbref enactor, int key)
     // to use dbconvert itself.
     //
     dump_database_internal(DUMP_I_NORMAL);
-    system(tprintf("./_backupflat.sh 1>&2"));
+    system((char *)tprintf("./_backupflat.sh 1>&2"));
 #endif // MEMORY_BASED
     raw_broadcast(0, "GAME: Backup finished.");
 }

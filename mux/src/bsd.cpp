@@ -748,7 +748,7 @@ void boot_slave(dbref executor, dbref caller, dbref enactor, int)
     }
 
     STARTLOG(LOG_ALWAYS, "NET", "SLAVE");
-    log_text("DNS lookup slave started on fd ");
+    log_text((UTF8 *)"DNS lookup slave started on fd ");
     log_number(slave_socket);
     ENDLOG;
     return;
@@ -757,7 +757,7 @@ failure:
 
     CleanUpSlaveProcess();
     STARTLOG(LOG_ALWAYS, "NET", "SLAVE");
-    log_text(pFailedFunc);
+    log_text((UTF8 *)pFailedFunc);
     log_number(errno);
     ENDLOG;
 }
@@ -788,7 +788,7 @@ static int get_sqlslave_result(void)
         CleanUpSQLSlaveProcess();
 
         STARTLOG(LOG_ALWAYS, "NET", "QUERY");
-        log_text("read() of query slave failed. Query Slave stopped.");
+        log_text((UTF8 *)"read() of query slave failed. Query Slave stopped.");
         ENDLOG;
 
         return -1;
@@ -815,7 +815,7 @@ static int get_slave_result(void)
     int local_port, remote_port;
     DESC *d;
 
-    char *buf = alloc_lbuf("slave_buf");
+    UTF8 *buf = alloc_lbuf("slave_buf");
 
     int len = mux_read(slave_socket, buf, LBUF_SIZE-1);
     if (len < 0)
@@ -832,7 +832,7 @@ static int get_slave_result(void)
         free_lbuf(buf);
 
         STARTLOG(LOG_ALWAYS, "NET", "SLAVE");
-        log_text("read() of slave result failed. Slave stopped.");
+        log_text((UTF8 *)"read() of slave result failed. Slave stopped.");
         ENDLOG;
 
         return -1;
@@ -844,16 +844,16 @@ static int get_slave_result(void)
     }
     buf[len] = '\0';
 
-    char *token = alloc_lbuf("slave_token");
-    char *os = alloc_lbuf("slave_os");
-    char *userid = alloc_lbuf("slave_userid");
-    char *host = alloc_lbuf("slave_host");
-    char *p;
-    if (sscanf(buf, "%s %s", host, token) != 2)
+    UTF8 *token = alloc_lbuf("slave_token");
+    UTF8 *os = alloc_lbuf("slave_os");
+    UTF8 *userid = alloc_lbuf("slave_userid");
+    UTF8 *host = alloc_lbuf("slave_host");
+    UTF8 *p;
+    if (sscanf((char *)buf, "%s %s", host, token) != 2)
     {
         goto Done;
     }
-    p = strchr(buf, '\n');
+    p = (UTF8 *)strchr((char *)buf, '\n');
     if (!p)
     {
         goto Done;
@@ -863,12 +863,12 @@ static int get_slave_result(void)
     {
         for (d = descriptor_list; d; d = d->next)
         {
-            if (strcmp(d->addr, host) != 0)
+            if (strcmp((char *)d->addr, (char *)host) != 0)
             {
                 continue;
             }
 
-            strncpy(d->addr, token, 50);
+            strncpy((char *)d->addr, (char *)token, 50);
             d->addr[50] = '\0';
             if (d->player != 0)
             {
@@ -881,12 +881,12 @@ static int get_slave_result(void)
                 {
                     atr_add_raw(d->player, A_LASTSITE, d->addr);
                 }
-                atr_add_raw(d->player, A_LASTIP, inet_ntoa((d->address).sin_addr));
+                atr_add_raw(d->player, A_LASTIP, (UTF8 *)inet_ntoa((d->address).sin_addr));
             }
         }
     }
 
-    if (sscanf(p + 1, "%s %d , %d : %s : %s : %s",
+    if (sscanf((char *)p + 1, "%s %d , %d : %s : %s : %s",
            host,
            &remote_port, &local_port,
            token, os, userid) != 6)
@@ -897,7 +897,7 @@ static int get_slave_result(void)
     {
         if (ntohs((d->address).sin_port) != remote_port)
             continue;
-        strncpy(d->username, userid, 10);
+        strncpy((char *)d->username, (char *)userid, 10);
         d->username[10] = '\0';
         if (d->player != 0)
         {
@@ -1363,7 +1363,7 @@ static LRESULT WINAPI mux_WindowProc
     return DefWindowProc(hWin, msg, wParam, lParam);
 }
 
-const char szApp[] = "MUX2";
+const UTF8 szApp[] = "MUX2";
 
 static DWORD WINAPI ListenForCloseProc(LPVOID lpParameter)
 {
@@ -1584,7 +1584,7 @@ void shovechars(int nPorts, PortInfo aPorts[])
                 // doom, unless we can figure out what the bad file
                 // descriptor is and get rid of it.
                 //
-                log_perror("NET", "FAIL", "checking for activity", "select");
+                log_perror((UTF8 *)"NET", (UTF8 *)"FAIL", (UTF8 *)"checking for activity", (UTF8 *)"select");
 
                 // Search for a bad socket amoungst the players.
                 //
@@ -1593,7 +1593,7 @@ void shovechars(int nPorts, PortInfo aPorts[])
                     if (!ValidSocket(d->descriptor))
                     {
                         STARTLOG(LOG_PROBLEMS, "ERR", "EBADF");
-                        log_text("Bad descriptor ");
+                        log_text((UTF8 *)"Bad descriptor ");
                         log_number(d->descriptor);
                         ENDLOG;
                         shutdownsock(d, R_SOCKDIED);
@@ -1606,7 +1606,7 @@ void shovechars(int nPorts, PortInfo aPorts[])
                     // died.
                     //
                     STARTLOG(LOG_PROBLEMS, "ERR", "EBADF");
-                    log_text("Bad slave descriptor ");
+                    log_text((UTF8 *)"Bad slave descriptor ");
                     log_number(slave_socket);
                     ENDLOG;
                     boot_slave(GOD, GOD, GOD, 0);
@@ -1627,7 +1627,7 @@ void shovechars(int nPorts, PortInfo aPorts[])
                         // That's it. Game over.
                         //
                         STARTLOG(LOG_PROBLEMS, "ERR", "EBADF");
-                        log_text("Bad game port descriptor ");
+                        log_text((UTF8 *)"Bad game port descriptor ");
                         log_number(aPorts[i].socket);
                         ENDLOG;
                         return;
@@ -1636,7 +1636,7 @@ void shovechars(int nPorts, PortInfo aPorts[])
             }
             else if (iSocketError != SOCKET_EINTR)
             {
-                log_perror("NET", "FAIL", "checking for activity", "select");
+                log_perror((UTF8 *)"NET", (UTF8 *)"FAIL", (UTF8 *)"checking for activity", (UTF8 *)"select");
             }
             continue;
         }
@@ -1678,7 +1678,7 @@ void shovechars(int nPorts, PortInfo aPorts[])
                     if (  iSocketError
                        && iSocketError != SOCKET_EINTR)
                     {
-                        log_perror("NET", "FAIL", NULL, "new_connection");
+                        log_perror((UTF8 *)"NET", (UTF8 *)"FAIL", NULL, (UTF8 *)"new_connection");
                     }
                 }
                 else if (  !IS_INVALID_SOCKET(newd->descriptor)
@@ -1826,17 +1826,17 @@ DESC *new_connection(PortInfo *Port, int *piSocketError)
         if (  !IS_INVALID_SOCKET(slave_socket)
            && mudconf.use_hostname)
         {
-            char *pBuffL1 = alloc_lbuf("new_connection.write");
+            UTF8 *pBuffL1 = alloc_lbuf("new_connection.write");
             mux_sprintf(pBuffL1, LBUF_SIZE, "%s\n%s,%d,%d\n", pBuffM2, pBuffM2, usPort,
                 Port->port);
-            len = strlen(pBuffL1);
+            len = strlen((char *)pBuffL1);
             if (mux_write(slave_socket, pBuffL1, len) < 0)
             {
                 CleanUpSlaveSocket();
                 CleanUpSlaveProcess();
 
                 STARTLOG(LOG_ALWAYS, "NET", "SLAVE");
-                log_text("write() of slave request failed. Slave stopped.");
+                log_text((UTF8 *)"write() of slave request failed. Slave stopped.");
                 ENDLOG;
             }
             free_lbuf(pBuffL1);
@@ -4015,11 +4015,11 @@ void BuildSignalNamesTable(void)
 #ifndef WIN32
                 if (sig == SIGUSR1)
                 {
-                    tsn->pLongName = "Restart server";
+                    tsn->pLongName = (UTF8 *)"Restart server";
                 }
                 else if (sig == SIGUSR2)
                 {
-                    tsn->pLongName = "Drop flatfile";
+                    tsn->pLongName = (UTF8 *)"Drop flatfile";
                 }
 #endif // WIN32
 #ifdef SysSigNames
@@ -4107,9 +4107,9 @@ static void log_signal(int iSignal)
 static void log_signal_ignore(int iSignal)
 {
     STARTLOG(LOG_PROBLEMS, "SIG", "CATCH");
-    log_text("Caught signal and ignored signal ");
+    log_text((UTF8 *)"Caught signal and ignored signal ");
     log_text(SignalDesc(iSignal));
-    log_text(" because server just came up.");
+    log_text((UTF8 *)" because server just came up.");
     ENDLOG;
 }
 
@@ -4126,7 +4126,7 @@ void LogStatBuf(int stat_buf, const char *Name)
     }
     else
     {
-        log_text("process ended unexpectedly.");
+        log_text((UTF8 *)"process ended unexpectedly.");
     }
     ENDLOG;
 }

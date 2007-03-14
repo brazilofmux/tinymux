@@ -4459,7 +4459,7 @@ size_t DCL_CDECL mux_vsnprintf(UTF8 *buff, size_t count, const char *fmt, va_lis
     extern char *vsprintf(char *, char *, va_list);
 #endif // NEED_VSPRINTF_DCL
 
-    int cc = vsnprintf(buff, count, fmt, va);
+    int cc = vsnprintf((char *)buff, count, fmt, va);
 #endif // WIN32
     if (0 <= cc && static_cast<size_t>(cc) <= count-1)
     {

@@ -598,7 +598,7 @@ void do_dbclean(dbref executor, dbref caller, dbref enactor, int key)
 #ifndef WIN32
     if (mudstate.dumping)
     {
-        notify(executor, "Dumping in progress. Try again later.");
+        notify(executor, (UTF8 *)"Dumping in progress. Try again later.");
         return;
     }
 #endif // !WIN32

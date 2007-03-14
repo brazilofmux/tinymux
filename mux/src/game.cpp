@@ -41,7 +41,7 @@ void do_dump(dbref executor, dbref caller, dbref enactor, int key)
 #ifndef WIN32
     if (mudstate.dumping)
     {
-        notify(executor, "Dumping in progress. Try again later.");
+        notify(executor, (UTF8 *)"Dumping in progress. Try again later.");
         return;
     }
 #endif
@@ -1323,7 +1323,7 @@ void do_shutdown
 typedef struct
 {
     UTF8 **ppszOutputBase;
-    UTF8 szOutputSuffix[14];
+    UTF8 *szOutputSuffix;
     bool bUseTemporary;
     int  fType;
     UTF8 *pszErrorMessage;
@@ -1331,11 +1331,11 @@ typedef struct
 
 static DUMP_PROCEDURE DumpProcedures[NUM_DUMP_TYPES] =
 {
-    { 0,                (UTF8 *)""       , false, 0,                             (UTF8 *)"" }, // 0 -- Handled specially.
-    { &mudconf.crashdb, (UTF8 *)""       , false, UNLOAD_VERSION | UNLOAD_FLAGS, (UTF8 *)"Opening crash file" }, // 1
-    { &mudconf.indb,    (UTF8 *)""       , true,  OUTPUT_VERSION | OUTPUT_FLAGS, (UTF8 *)"Opening input file" }, // 2
-    { &mudconf.indb,   (UTF8 *)".FLAT"   , false, UNLOAD_VERSION | UNLOAD_FLAGS, (UTF8 *)"Opening flatfile"   }, // 3
-    { &mudconf.indb,   (UTF8 *)".SIG"    , false, UNLOAD_VERSION | UNLOAD_FLAGS, (UTF8 *)"Opening signalled flatfile"}  // 4
+    { NULL,             (UTF8 *)"",     false, 0,                             (UTF8 *)"" }, // 0 -- Handled specially.
+    { &mudconf.crashdb, (UTF8 *)"",     false, UNLOAD_VERSION | UNLOAD_FLAGS, (UTF8 *)"Opening crash file" }, // 1
+    { &mudconf.indb,    (UTF8 *)"",     true,  OUTPUT_VERSION | OUTPUT_FLAGS, (UTF8 *)"Opening input file" }, // 2
+    { &mudconf.indb,   (UTF8 *)".FLAT", false, UNLOAD_VERSION | UNLOAD_FLAGS, (UTF8 *)"Opening flatfile"   }, // 3
+    { &mudconf.indb,   (UTF8 *)".SIG",  false, UNLOAD_VERSION | UNLOAD_FLAGS, (UTF8 *)"Opening signalled flatfile"}  // 4
 };
 
 #ifdef WIN32
@@ -1527,7 +1527,7 @@ static void dump_database(void)
     if (mudstate.dumping)
     {
         STARTLOG(LOG_DBSAVES, "DMP", "DUMP");
-        log_text("Waiting on previously-forked child before dumping... ");
+        log_text((UTF8 *)"Waiting on previously-forked child before dumping... ");
         ENDLOG;
 
         while (mudstate.dumping)
@@ -1695,7 +1695,7 @@ void fork_and_dump(int key)
         }
         else if (child < 0)
         {
-            log_perror("DMP", "FORK", NULL, "fork()");
+            log_perror((UTF8 *)"DMP", (UTF8 *)"FORK", NULL, (UTF8 *)"fork()");
         }
         else
         {
@@ -3313,14 +3313,14 @@ void init_rlimit(void)
 
     if (getrlimit(RLIMIT_NOFILE, rlp))
     {
-        log_perror("RLM", "FAIL", NULL, "getrlimit()");
+        log_perror((UTF8 *)"RLM", (UTF8 *)"FAIL", NULL, (UTF8 *)"getrlimit()");
         free_lbuf(rlp);
         return;
     }
     rlp->rlim_cur = rlp->rlim_max;
     if (setrlimit(RLIMIT_NOFILE, rlp))
     {
-        log_perror("RLM", "FAIL", NULL, "setrlimit()");
+        log_perror((UTF8 *)"RLM", (UTF8 *)"FAIL", NULL, (UTF8 *)"setrlimit()");
     }
     free_lbuf(rlp);
 

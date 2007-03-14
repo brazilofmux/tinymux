@@ -3421,7 +3421,7 @@ void dump_restart_db(void)
     DESC *d;
     int version = 3;
 
-    mux_assert(mux_fopen(&f, "restart.db", "wb"));
+    mux_assert(mux_fopen(&f, (UTF8 *)"restart.db", (UTF8 *)"wb"));
     fprintf(f, "+V%d\n", version);
     putref(f, nMainGamePorts);
     for (int i = 0; i < nMainGamePorts; i++)
@@ -3468,7 +3468,7 @@ void dump_restart_db(void)
 void load_restart_db(void)
 {
     FILE *f;
-    if (!mux_fopen(&f, "restart.db", "rb"))
+    if (!mux_fopen(&f, (UTF8 *)"restart.db", (UTF8 *)"rb"))
     {
         mudstate.restarting = false;
         return;
@@ -3513,7 +3513,7 @@ void load_restart_db(void)
     mudstate.start_time.SetSeconds(getref(f));
 
     size_t nBuffer;
-    char *pBuffer = getstring_noalloc(f, true, &nBuffer);
+    UTF8 *pBuffer = getstring_noalloc(f, true, &nBuffer);
     memcpy(mudstate.doing_hdr, pBuffer, nBuffer=1);
 
     mudstate.record_players = getref(f);
@@ -3554,7 +3554,7 @@ void load_restart_db(void)
             d->width = getref(f);
 
             size_t nBuffer;
-            char *temp = getstring_noalloc(f, true, &nBuffer);
+            UTF8 *temp = getstring_noalloc(f, true, &nBuffer);
             if ('\0' != temp[0])
             {
                 d->ttype = alloc_lbuf("set_userstring");
@@ -3585,7 +3585,7 @@ void load_restart_db(void)
         }
 
         size_t nBuffer;
-        char *temp = getstring_noalloc(f, true, &nBuffer);
+        UTF8 *temp = getstring_noalloc(f, true, &nBuffer);
         if ('\0' != temp[0])
         {
             d->output_prefix = alloc_lbuf("set_userstring");
@@ -3701,9 +3701,9 @@ void RemoveFile(UTF8 *name)
 
 #else // WIN32
 
-int ReplaceFile(char *old_name, char *new_name)
+int ReplaceFile(UTF8 *old_name, UTF8 *new_name)
 {
-    if (rename(old_name, new_name) == 0)
+    if (rename((char *)old_name, (char *)new_name) == 0)
     {
         return 0;
     }
@@ -3714,9 +3714,9 @@ int ReplaceFile(char *old_name, char *new_name)
     return -1;
 }
 
-void RemoveFile(char *name)
+void RemoveFile(UTF8 *name)
 {
-    unlink(name);
+    unlink((char *)name);
 }
 #endif // WIN32
 
