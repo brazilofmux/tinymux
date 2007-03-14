@@ -93,20 +93,20 @@ static int WhichRealm(dbref what, bool bPeering)
         UTF8 *buff;
         dbref owner;
         int flags;
-        int iPeeringRealm = get_atr((UTF8 *)"PEERING_REALM");
+        int iPeeringRealm = get_atr(T("PEERING_REALM"));
         if (0 < iPeeringRealm)
         {
             buff = atr_get("WhichRealm.99", what, iPeeringRealm, &owner, &flags);
             if (*buff)
             {
-                if      (mux_stricmp(buff, (UTF8 *)"FAE") == 0)     realm = FAE_REALM;
-                else if (mux_stricmp(buff, (UTF8 *)"CHIMERA") == 0) realm = CHIMERA_REALM;
-                else if (mux_stricmp(buff, (UTF8 *)"SHROUD") == 0)  realm = SHROUD_REALM;
-                else if (mux_stricmp(buff, (UTF8 *)"UMBRA") == 0)   realm = UMBRA_REALM;
-                else if (mux_stricmp(buff, (UTF8 *)"MATRIX") == 0)  realm = MATRIX_REALM;
-                else if (mux_stricmp(buff, (UTF8 *)"NORMAL") == 0)  realm = NORMAL_REALM;
-                else if (mux_stricmp(buff, (UTF8 *)"BLIND") == 0)   realm = BLIND_REALM;
-                else if (mux_stricmp(buff, (UTF8 *)"STAFF") == 0)   realm = STAFF_REALM;
+                if      (mux_stricmp(buff, T("FAE")) == 0)     realm = FAE_REALM;
+                else if (mux_stricmp(buff, T("CHIMERA")) == 0) realm = CHIMERA_REALM;
+                else if (mux_stricmp(buff, T("SHROUD")) == 0)  realm = SHROUD_REALM;
+                else if (mux_stricmp(buff, T("UMBRA")) == 0)   realm = UMBRA_REALM;
+                else if (mux_stricmp(buff, T("MATRIX")) == 0)  realm = MATRIX_REALM;
+                else if (mux_stricmp(buff, T("NORMAL")) == 0)  realm = NORMAL_REALM;
+                else if (mux_stricmp(buff, T("BLIND")) == 0)   realm = BLIND_REALM;
+                else if (mux_stricmp(buff, T("STAFF")) == 0)   realm = STAFF_REALM;
             }
             free_lbuf(buff);
         }
@@ -123,7 +123,7 @@ static int HandleObfuscation(dbref looker, dbref lookee, int threshhold)
         int iObfuscateLevel = 0;
         dbref owner;
         int flags;
-        buff = atr_get("HandleObfuscation.126", lookee, get_atr((UTF8 *)"OBF_LEVEL"), &owner, &flags);
+        buff = atr_get("HandleObfuscation.126", lookee, get_atr(T("OBF_LEVEL")), &owner, &flags);
         if (*buff)
         {
             iObfuscateLevel = mux_atol(buff);
@@ -142,7 +142,7 @@ static int HandleObfuscation(dbref looker, dbref lookee, int threshhold)
             int iHeightenSensesLevel = 0;
             if (isHeightenedSenses(looker))
             {
-                buff = atr_get("HandleObfuscation.145", looker, get_atr((UTF8 *)"HSS_LEVEL"), &owner, &flags);
+                buff = atr_get("HandleObfuscation.145", looker, get_atr(T("HSS_LEVEL")), &owner, &flags);
                 if (*buff)
                 {
                     iHeightenSensesLevel = mux_atol(buff);
@@ -343,24 +343,24 @@ static void LetDescriptionsDefault(dbref thing, int *piDESC, int *piADESC, int R
     switch (RealmDirective & REALM_DO_MASK)
     {
     case REALM_DO_SHOW_OBFDESC:
-        iDesc = get_atr((UTF8 *)"OBFDESC");
+        iDesc = get_atr(T("OBFDESC"));
         break;
 
     case REALM_DO_SHOW_WRAITHDESC:
-        iDesc = get_atr((UTF8 *)"WRAITHDESC");
+        iDesc = get_atr(T("WRAITHDESC"));
         *piADESC = 0;
         break;
 
     case REALM_DO_SHOW_UMBRADESC:
-        iDesc = get_atr((UTF8 *)"UMBRADESC");
+        iDesc = get_atr(T("UMBRADESC"));
         break;
 
     case REALM_DO_SHOW_MATRIXDESC:
-        iDesc = get_atr((UTF8 *)"MATRIXDESC");
+        iDesc = get_atr(T("MATRIXDESC"));
         break;
 
     case REALM_DO_SHOW_FAEDESC:
-        iDesc = get_atr((UTF8 *)"FAEDESC");
+        iDesc = get_atr(T("FAEDESC"));
         break;
     }
 
@@ -541,7 +541,7 @@ static void look_exits(dbref player, dbref loc, const UTF8 *exit_name)
                     //
                     if (buff != e)
                     {
-                        safe_str((UTF8 *)"  ", buff, &e);
+                        safe_str(T("  "), buff, &e);
                     }
 
                     for (s = Moniker(thing); *s && (*s != ';'); s++)
@@ -554,11 +554,11 @@ static void look_exits(dbref player, dbref loc, const UTF8 *exit_name)
                     if (Html(player))
                     {
                         /* XXX The exit name needs to be HTML escaped. */
-                        safe_str((UTF8 *)"<a xch_cmd=\"", buff, &e);
+                        safe_str(T("<a xch_cmd=\""), buff, &e);
                         safe_str(buff1, buff, &e);
-                        safe_str((UTF8 *)"\"> ", buff, &e);
+                        safe_str(T("\"> "), buff, &e);
                         html_escape(buff1, buff, &e);
-                        safe_str((UTF8 *)" </a>", buff, &e);
+                        safe_str(T(" </a>"), buff, &e);
                     }
                     else
                     {
@@ -574,7 +574,7 @@ static void look_exits(dbref player, dbref loc, const UTF8 *exit_name)
     {
         if (Html(player))
         {
-            safe_str((UTF8 *)"\r\n", buff, &e);
+            safe_str(T("\r\n"), buff, &e);
             *e = 0;
             notify_html(player, buff);
         }
@@ -705,7 +705,7 @@ static void look_contents(dbref player, dbref loc, const UTF8 *contents_name, in
                     html_cp = html_buff;
                     if (Html(player))
                     {
-                        safe_str((UTF8 *)"<a xch_cmd=\"look ", html_buff, &html_cp);
+                        safe_str(T("<a xch_cmd=\"look "), html_buff, &html_cp);
                         switch (style)
                         {
                         case CONTENTS_LOCAL:
@@ -714,7 +714,7 @@ static void look_contents(dbref player, dbref loc, const UTF8 *contents_name, in
 
                         case CONTENTS_NESTED:
                             safe_str(Moniker(Location(thing)), html_buff, &html_cp);
-                            safe_str((UTF8 *)"'s ", html_buff, &html_cp);
+                            safe_str(T("'s "), html_buff, &html_cp);
                             safe_str(Moniker(thing), html_buff, &html_cp);
                             break;
 
@@ -729,9 +729,9 @@ static void look_contents(dbref player, dbref loc, const UTF8 *contents_name, in
 
                             break;
                         }
-                        safe_str((UTF8 *)"\">", html_buff, &html_cp);
+                        safe_str(T("\">"), html_buff, &html_cp);
                         html_escape(buff, html_buff, &html_cp);
-                        safe_str((UTF8 *)"</a>\r\n", html_buff, &html_cp);
+                        safe_str(T("</a>\r\n"), html_buff, &html_cp);
                         *html_cp = 0;
                         notify_html(player, html_buff);
                     }
@@ -752,23 +752,23 @@ typedef struct
 {
     int  mask;
     UTF8 letter;
-    UTF8 *name;
+    const UTF8 *name;
 } ATTR_DECODE_ENTRY, *PATTR_DECODE_ENTRY;
 
 static ATTR_DECODE_ENTRY attr_decode_table[NUM_ATTRIBUTE_CODES+1] =
 {
-    { AF_LOCK,    '+', (UTF8 *)"LOCK"    },
-    { AF_NOPROG,  '$', (UTF8 *)"NOPROG"  },
-    { AF_CASE,    'C', (UTF8 *)"CASE"    },
-    { AF_HTML,    'H', (UTF8 *)"HTML"    },
-    { AF_PRIVATE, 'I', (UTF8 *)"PRIVATE" },
-    { AF_NONAME,  'N', (UTF8 *)"NONAME"  },
-    { AF_NOPARSE, 'P', (UTF8 *)"NOPARSE" },
-    { AF_REGEXP,  'R', (UTF8 *)"REGEXP"  },
-    { AF_TRACE,   'T', (UTF8 *)"TRACE"   },
-    { AF_VISUAL,  'V', (UTF8 *)"VISUAL"  },
-    { AF_MDARK,   'M', (UTF8 *)"DARK"    },
-    { AF_WIZARD,  'W', (UTF8 *)"WIZARD"  },
+    { AF_LOCK,    '+', T("LOCK")    },
+    { AF_NOPROG,  '$', T("NOPROG")  },
+    { AF_CASE,    'C', T("CASE")    },
+    { AF_HTML,    'H', T("HTML")    },
+    { AF_PRIVATE, 'I', T("PRIVATE") },
+    { AF_NONAME,  'N', T("NONAME")  },
+    { AF_NOPARSE, 'P', T("NOPARSE") },
+    { AF_REGEXP,  'R', T("REGEXP")  },
+    { AF_TRACE,   'T', T("TRACE")   },
+    { AF_VISUAL,  'V', T("VISUAL")  },
+    { AF_MDARK,   'M', T("DARK")    },
+    { AF_WIZARD,  'W', T("WIZARD")  },
     { 0, 0, NULL }
 };
 
@@ -1175,7 +1175,7 @@ static void look_simple(dbref player, dbref thing, bool obey_terse)
     int pattr = (obey_terse && Terse(player)) ? 0 : iDescDefault;
     if (!show_a_desc(player, thing))
     {
-        notify(player, (UTF8 *)"You see nothing special.");
+        notify(player, T("You see nothing special."));
 #ifdef REALITY_LVLS
         did_it_rlevel(player, thing, 0, NULL, A_ODESC, NULL, iADescDefault,
             0, NULL, 0);
@@ -1284,9 +1284,9 @@ void look_in(dbref player, dbref loc, int key)
         UTF8 *buff = unparse_object(player, loc, true, true);
         if (Html(player))
         {
-            notify_html(player, (UTF8 *)"<center><h3>");
+            notify_html(player, T("<center><h3>"));
             notify(player, buff);
-            notify_html(player, (UTF8 *)"</h3></center>");
+            notify_html(player, T("</h3></center>"));
         }
         else
         {
@@ -1354,13 +1354,13 @@ void look_in(dbref player, dbref loc, int key)
     if (  !is_terse
        || mudconf.terse_contents)
     {
-        look_contents(player, loc, (UTF8 *)"Contents:", CONTENTS_LOCAL);
+        look_contents(player, loc, T("Contents:"), CONTENTS_LOCAL);
     }
     if (  (key & LK_SHOWEXIT)
        && (  !is_terse
           || mudconf.terse_exits))
     {
-        look_exits(player, loc, (UTF8 *)"Obvious exits:");
+        look_exits(player, loc, T("Obvious exits:"));
     }
 }
 
@@ -1379,7 +1379,7 @@ static void look_here
             if (  isRoom(thing)
                || Opaque(thing))
             {
-                notify_quiet(executor, (UTF8 *)"You can't look outside.");
+                notify_quiet(executor, T("You can't look outside."));
                 return;
             }
             thing = Location(thing);
@@ -1535,7 +1535,7 @@ static void debug_examine(dbref player, dbref thing)
 
     buf = alloc_lbuf("debug_dexamine");
     cp = buf;
-    safe_str((UTF8 *)"Attr list: ", buf, &cp);
+    safe_str(T("Attr list: "), buf, &cp);
 
     unsigned char *as;
     for (ca = atr_head(thing, &as); ca; ca = atr_next(&as))
@@ -1644,14 +1644,14 @@ static void exam_wildattrs
             }
             else
             {
-                notify(player, (UTF8 *)"<Too far away to get a good look>");
+                notify(player, T("<Too far away to get a good look>"));
             }
         }
         free_lbuf(buf);
     }
     if (!got_any)
     {
-        notify_quiet(player, (UTF8 *)"No matching attributes found.");
+        notify_quiet(player, T("No matching attributes found."));
     }
 }
 
@@ -1792,7 +1792,7 @@ void do_examine(dbref executor, dbref caller, dbref enactor, int eval, int key, 
     }
     else
     {
-        notify(executor, (UTF8 *)"<Too far away to get a good look>");
+        notify(executor, T("<Too far away to get a good look>"));
     }
 
     if (control)
@@ -1855,7 +1855,7 @@ void do_examine(dbref executor, dbref caller, dbref enactor, int eval, int key, 
         //
         if (Contents(thing) != NOTHING)
         {
-            notify(executor, (UTF8 *)"Contents:");
+            notify(executor, T("Contents:"));
             DOLIST(content, Contents(thing))
             {
                 buf2 = unparse_object(executor, content, false, true);
@@ -1873,7 +1873,7 @@ void do_examine(dbref executor, dbref caller, dbref enactor, int eval, int key, 
             //
             if (Exits(thing) != NOTHING)
             {
-                notify(executor, (UTF8 *)"Exits:");
+                notify(executor, T("Exits:"));
                 DOLIST(exit, Exits(thing))
                 {
                     buf2 = unparse_object(executor, exit, false, true);
@@ -1883,7 +1883,7 @@ void do_examine(dbref executor, dbref caller, dbref enactor, int eval, int key, 
             }
             else
             {
-                notify(executor, (UTF8 *)"No exits.");
+                notify(executor, T("No exits."));
             }
 
             // print dropto if present
@@ -1903,7 +1903,7 @@ void do_examine(dbref executor, dbref caller, dbref enactor, int eval, int key, 
             //
             if (Exits(thing) != NOTHING)
             {
-                notify(executor, (UTF8 *)"Exits:");
+                notify(executor, T("Exits:"));
                 DOLIST(exit, Exits(thing))
                 {
                     buf2 = unparse_object(executor, exit, false, true);
@@ -1913,7 +1913,7 @@ void do_examine(dbref executor, dbref caller, dbref enactor, int eval, int key, 
             }
             else
             {
-                notify(executor, (UTF8 *)"No exits.");
+                notify(executor, T("No exits."));
             }
 
             // Print home
@@ -1949,7 +1949,7 @@ void do_examine(dbref executor, dbref caller, dbref enactor, int eval, int key, 
             case NOTHING:
                 // Special case. unparse_object() normally returns -1 as '*NOTHING*'.
                 //
-                notify(executor, (UTF8 *)"Destination: *UNLINKED*");
+                notify(executor, T("Destination: *UNLINKED*"));
                 break;
 
             default:
@@ -1969,11 +1969,11 @@ void do_examine(dbref executor, dbref caller, dbref enactor, int eval, int key, 
     {
         if (Has_contents(thing))
         {
-            look_contents(executor, thing, (UTF8 *)"Contents:", CONTENTS_REMOTE);
+            look_contents(executor, thing, T("Contents:"), CONTENTS_REMOTE);
         }
         if (!isExit(thing))
         {
-            look_exits(executor, thing, (UTF8 *)"Obvious exits:");
+            look_exits(executor, thing, T("Obvious exits:"));
         }
     }
     free_lbuf(temp);
@@ -2017,11 +2017,11 @@ void do_inventory(dbref executor, dbref caller, dbref enactor, int key)
     thing = Contents(executor);
     if (thing == NOTHING)
     {
-        notify(executor, (UTF8 *)"You aren't carrying anything.");
+        notify(executor, T("You aren't carrying anything."));
     }
     else
     {
-        notify(executor, (UTF8 *)"You are carrying:");
+        notify(executor, T("You are carrying:"));
         DOLIST(thing, thing)
         {
             buff = unparse_object(executor, thing, true, true);
@@ -2033,7 +2033,7 @@ void do_inventory(dbref executor, dbref caller, dbref enactor, int key)
     thing = Exits(executor);
     if (thing != NOTHING)
     {
-        notify(executor, (UTF8 *)"Exits:");
+        notify(executor, T("Exits:"));
         e = buff = alloc_lbuf("look_exits");
         DOLIST(thing, thing)
         {
@@ -2043,7 +2043,7 @@ void do_inventory(dbref executor, dbref caller, dbref enactor, int key)
             {
                 safe_chr(*s, buff, &e);
             }
-            safe_str((UTF8 *)"  ", buff, &e);
+            safe_str(T("  "), buff, &e);
         }
         *e = 0;
         notify(executor, buff);
@@ -2330,34 +2330,34 @@ static void sweep_check(dbref player, dbref what, int key, bool is_loc)
 
         if (cancom)
         {
-            safe_str((UTF8 *)"commands ", buf, &bp);
+            safe_str(T("commands "), buf, &bp);
         }
 
         if (canhear)
         {
-            safe_str((UTF8 *)"messages ", buf, &bp);
+            safe_str(T("messages "), buf, &bp);
         }
 
         if (isplayer)
         {
-            safe_str((UTF8 *)"player ", buf, &bp);
+            safe_str(T("player "), buf, &bp);
         }
 
         if (ispuppet)
         {
-            safe_str((UTF8 *)"puppet(", buf, &bp);
+            safe_str(T("puppet("), buf, &bp);
             safe_str(Moniker(Owner(what)), buf, &bp);
-            safe_str((UTF8 *)") ", buf, &bp);
+            safe_str(T(") "), buf, &bp);
         }
 
         if (isconnected)
         {
-            safe_str((UTF8 *)"connected ", buf, &bp);
+            safe_str(T("connected "), buf, &bp);
         }
 
         if (is_parent)
         {
-            safe_str((UTF8 *)"parent ", buf, &bp);
+            safe_str(T("parent "), buf, &bp);
         }
         bp[-1] = '\0';
 
@@ -2424,7 +2424,7 @@ void do_sweep(dbref executor, dbref caller, dbref enactor, int eval, int key, UT
     //
     if (where_key & SWEEP_HERE)
     {
-        notify(executor, (UTF8 *)"Sweeping location...");
+        notify(executor, T("Sweeping location..."));
         if (Has_location(sweeploc))
         {
             here = Location(sweeploc);
@@ -2434,7 +2434,7 @@ void do_sweep(dbref executor, dbref caller, dbref enactor, int eval, int key, UT
                   && !Examinable(executor, here)))
             {
                 notify_quiet(executor,
-                    (UTF8 *)"Sorry, it is dark here and you can't search for bugs");
+                    T("Sorry, it is dark here and you can't search for bugs"));
                 sweep_check(executor, sweeploc, what_key, false);
             }
             else
@@ -2457,7 +2457,7 @@ void do_sweep(dbref executor, dbref caller, dbref enactor, int eval, int key, UT
     if (  (where_key & SWEEP_EXITS)
        && Has_location(sweeploc))
     {
-        notify(executor, (UTF8 *)"Sweeping exits...");
+        notify(executor, T("Sweeping exits..."));
         for (here = Exits(Location(sweeploc)); here != NOTHING; here = Next(here))
         {
             sweep_check(executor, here, what_key, false);
@@ -2469,7 +2469,7 @@ void do_sweep(dbref executor, dbref caller, dbref enactor, int eval, int key, UT
     if (  (where_key & SWEEP_ME)
        && Has_contents(sweeploc))
     {
-        notify(executor, (UTF8 *)"Sweeping inventory...");
+        notify(executor, T("Sweeping inventory..."));
         for (here = Contents(sweeploc); here != NOTHING; here = Next(here))
         {
             sweep_check(executor, here, what_key, false);
@@ -2481,13 +2481,13 @@ void do_sweep(dbref executor, dbref caller, dbref enactor, int eval, int key, UT
     if (  (where_key & SWEEP_EXITS)
        && Has_exits(sweeploc))
     {
-        notify(executor, (UTF8 *)"Sweeping carried exits...");
+        notify(executor, T("Sweeping carried exits..."));
         for (here = Exits(sweeploc); here != NOTHING; here = Next(here))
         {
             sweep_check(executor, here, what_key, false);
         }
     }
-    notify(executor, (UTF8 *)"Sweep complete.");
+    notify(executor, T("Sweep complete."));
 }
 
 /* Output the sequence of commands needed to duplicate the specified
@@ -2544,7 +2544,7 @@ void do_decomp
     if (!Examinable(executor, thing))
     {
         notify_quiet(executor,
-              (UTF8 *)"You can only decompile things you can examine.");
+              T("You can only decompile things you can examine."));
         olist_pop();
         return;
     }
@@ -2578,7 +2578,7 @@ void do_decomp
                 break;
 
             case TYPE_ROOM:
-                mux_strncpy(thingname, (UTF8 *)"here", LBUF_SIZE-1);
+                mux_strncpy(thingname, T("here"), LBUF_SIZE-1);
                 notify(executor, tprintf("@dig/teleport %s",
                     translate_string(Moniker(thing), true)));
                 break;
@@ -2600,7 +2600,7 @@ void do_decomp
             case TYPE_PLAYER:
                 if (executor == thing)
                 {
-                    mux_strncpy(thingname, (UTF8 *)"me", LBUF_SIZE-1);
+                    mux_strncpy(thingname, T("me"), LBUF_SIZE-1);
                 }
                 else
                 {
@@ -2740,16 +2740,16 @@ void show_vrml_url(dbref thing, dbref loc)
         UTF8 *vrml_message, *vrml_cp;
 
         vrml_message = vrml_cp = alloc_lbuf("show_vrml_url");
-        safe_str((UTF8 *)"<img xch_graph=load href=\"", vrml_message, &vrml_cp);
+        safe_str(T("<img xch_graph=load href=\""), vrml_message, &vrml_cp);
         safe_str(vrml_url, vrml_message, &vrml_cp);
-        safe_str((UTF8 *)"\">", vrml_message, &vrml_cp);
+        safe_str(T("\">"), vrml_message, &vrml_cp);
         *vrml_cp = 0;
         notify_html(thing, vrml_message);
         free_lbuf(vrml_message);
     }
     else
     {
-        notify_html(thing, (UTF8 *)"<img xch_graph=hide>");
+        notify_html(thing, T("<img xch_graph=hide>"));
     }
     free_lbuf(vrml_url);
 }

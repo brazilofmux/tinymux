@@ -103,60 +103,60 @@ bool ph_inherit(dbref target, dbref player, POWER power, int fpowers, bool reset
 
 static POWERENT gen_powers[] =
 {
-    {(UTF8 *)"announce",        POW_ANNOUNCE,   0, 0,   ph_wiz},
-    {(UTF8 *)"boot",            POW_BOOT,       0, 0,   ph_wiz},
+    {T("announce"),        POW_ANNOUNCE,   0, 0,   ph_wiz},
+    {T("boot"),            POW_BOOT,       0, 0,   ph_wiz},
 #if defined(FIRANMUX)
-    {(UTF8 *)"builder",         POW_BUILDER,    POWER_EXT,  0,  ph_any},
+    {T("builder"),         POW_BUILDER,    POWER_EXT,  0,  ph_any},
 #else
-    {(UTF8 *)"builder",         POW_BUILDER,    POWER_EXT,  0,  ph_wiz},
+    {T("builder"),         POW_BUILDER,    POWER_EXT,  0,  ph_wiz},
 #endif // FIRANMUX
-    {(UTF8 *)"chown_anything",  POW_CHOWN_ANY,  0, 0,   ph_wiz},
-    {(UTF8 *)"comm_all",        POW_COMM_ALL,   0, 0,   ph_wiz},
-    {(UTF8 *)"control_all",     POW_CONTROL_ALL,0, 0,   ph_god},
-    {(UTF8 *)"expanded_who",    POW_WIZARD_WHO, 0, 0,   ph_wiz},
-    {(UTF8 *)"find_unfindable", POW_FIND_UNFIND,0, 0,   ph_wiz},
-    {(UTF8 *)"free_money",      POW_FREE_MONEY, 0, 0,   ph_wiz},
-    {(UTF8 *)"free_quota",      POW_FREE_QUOTA, 0, 0,   ph_wiz},
-    {(UTF8 *)"guest",           POW_GUEST,      0, 0,   ph_god},
-    {(UTF8 *)"halt",            POW_HALT,       0, 0,   ph_wiz},
+    {T("chown_anything"),  POW_CHOWN_ANY,  0, 0,   ph_wiz},
+    {T("comm_all"),        POW_COMM_ALL,   0, 0,   ph_wiz},
+    {T("control_all"),     POW_CONTROL_ALL,0, 0,   ph_god},
+    {T("expanded_who"),    POW_WIZARD_WHO, 0, 0,   ph_wiz},
+    {T("find_unfindable"), POW_FIND_UNFIND,0, 0,   ph_wiz},
+    {T("free_money"),      POW_FREE_MONEY, 0, 0,   ph_wiz},
+    {T("free_quota"),      POW_FREE_QUOTA, 0, 0,   ph_wiz},
+    {T("guest"),           POW_GUEST,      0, 0,   ph_god},
+    {T("halt"),            POW_HALT,       0, 0,   ph_wiz},
 #if defined(FIRANMUX)
-    {(UTF8 *)"hide",            POW_HIDE,       0, 0,   ph_any},
+    {T("hide"),            POW_HIDE,       0, 0,   ph_any},
 #else
-    {(UTF8 *)"hide",            POW_HIDE,       0, 0,   ph_wiz},
+    {T("hide"),            POW_HIDE,       0, 0,   ph_wiz},
 #endif // FIRANMUX
-    {(UTF8 *)"idle",            POW_IDLE,       0, 0,   ph_wiz},
+    {T("idle"),            POW_IDLE,       0, 0,   ph_wiz},
 #if defined(FIRANMUX)
-    {(UTF8 *)"immutable",       POW_IMMUTABLE,  POWER_EXT, 0, ph_wiz},
+    {T("immutable"),       POW_IMMUTABLE,  POWER_EXT, 0, ph_wiz},
 #endif // FIRANMUX
-    {(UTF8 *)"long_fingers",    POW_LONGFINGERS,0, 0,   ph_wiz},
+    {T("long_fingers"),    POW_LONGFINGERS,0, 0,   ph_wiz},
 #if defined(FIRANMUX)
-    {(UTF8 *)"monitor",         POW_MONITOR,    0, 0,   ph_any},
+    {T("monitor"),         POW_MONITOR,    0, 0,   ph_any},
 #else
-    {(UTF8 *)"monitor",         POW_MONITOR,    0, 0,   ph_wiz},
+    {T("monitor"),         POW_MONITOR,    0, 0,   ph_wiz},
 #endif // FIRANMUX
-    {(UTF8 *)"no_destroy",      POW_NO_DESTROY, 0, 0,   ph_wiz},
-    {(UTF8 *)"pass_locks",      POW_PASS_LOCKS, 0, 0,   ph_wiz},
-    {(UTF8 *)"poll",            POW_POLL,       0, 0,   ph_wiz},
-    {(UTF8 *)"prog",            POW_PROG,       0, 0,   ph_wiz},
-    {(UTF8 *)"quota",           POW_CHG_QUOTAS, 0, 0,   ph_wiz},
-    {(UTF8 *)"search",          POW_SEARCH,     0, 0,   ph_wiz},
+    {T("no_destroy"),      POW_NO_DESTROY, 0, 0,   ph_wiz},
+    {T("pass_locks"),      POW_PASS_LOCKS, 0, 0,   ph_wiz},
+    {T("poll"),            POW_POLL,       0, 0,   ph_wiz},
+    {T("prog"),            POW_PROG,       0, 0,   ph_wiz},
+    {T("quota"),           POW_CHG_QUOTAS, 0, 0,   ph_wiz},
+    {T("search"),          POW_SEARCH,     0, 0,   ph_wiz},
 #if defined(FIRANMUX)
-    {(UTF8 *)"see_all",         POW_EXAM_ALL,   0, 0,   ph_any},
+    {T("see_all"),         POW_EXAM_ALL,   0, 0,   ph_any},
 #else
-    {(UTF8 *)"see_all",         POW_EXAM_ALL,   0, 0,   ph_wiz},
+    {T("see_all"),         POW_EXAM_ALL,   0, 0,   ph_wiz},
 #endif // FIRANMUX
-    {(UTF8 *)"see_hidden",      POW_SEE_HIDDEN, 0, 0,   ph_wiz},
-    {(UTF8 *)"see_queue",       POW_SEE_QUEUE,  0, 0,   ph_wiz},
-    {(UTF8 *)"siteadmin",       POW_SITEADMIN,  0, 0,   ph_wiz},
-    {(UTF8 *)"stat_any",        POW_STAT_ANY,   0, 0,   ph_wiz},
-    {(UTF8 *)"steal_money",     POW_STEAL,      0, 0,   ph_wiz},
-    {(UTF8 *)"tel_anything",    POW_TEL_UNRST,  0, 0,   ph_wiz},
+    {T("see_hidden"),      POW_SEE_HIDDEN, 0, 0,   ph_wiz},
+    {T("see_queue"),       POW_SEE_QUEUE,  0, 0,   ph_wiz},
+    {T("siteadmin"),       POW_SITEADMIN,  0, 0,   ph_wiz},
+    {T("stat_any"),        POW_STAT_ANY,   0, 0,   ph_wiz},
+    {T("steal_money"),     POW_STEAL,      0, 0,   ph_wiz},
+    {T("tel_anything"),    POW_TEL_UNRST,  0, 0,   ph_wiz},
 #if defined(FIRANMUX)
-    {(UTF8 *)"tel_anywhere",    POW_TEL_ANYWHR, 0, 0,   ph_any},
+    {T("tel_anywhere"),    POW_TEL_ANYWHR, 0, 0,   ph_any},
 #else
-    {(UTF8 *)"tel_anywhere",    POW_TEL_ANYWHR, 0, 0,   ph_wiz},
+    {T("tel_anywhere"),    POW_TEL_ANYWHR, 0, 0,   ph_wiz},
 #endif // FIRANMUX
-    {(UTF8 *)"unkillable",      POW_UNKILLABLE, 0, 0,   ph_wiz},
+    {T("unkillable"),      POW_UNKILLABLE, 0, 0,   ph_wiz},
     {(UTF8 *)NULL,              0,              0, 0,   0}
 };
 
@@ -192,7 +192,7 @@ void display_powertab(dbref player)
     POWERENT *fp;
 
     bp = buf = alloc_lbuf("display_powertab");
-    safe_str((UTF8 *)"Powers:", buf, &bp);
+    safe_str(T("Powers:"), buf, &bp);
     for (fp = gen_powers; fp->powername; fp++)
     {
         if ((fp->listperm & CA_WIZARD) && !Wizard(player))
@@ -298,11 +298,11 @@ void power_set(dbref target, dbref player, UTF8 *power, int key)
         {
             if (bNegate)
             {
-                notify(player, (UTF8 *)"You must specify a power to clear.");
+                notify(player, T("You must specify a power to clear."));
             }
             else
             {
-                notify(player, (UTF8 *)"You must specify a power to set.");
+                notify(player, T("You must specify a power to set."));
             }
         }
         else
@@ -310,7 +310,7 @@ void power_set(dbref target, dbref player, UTF8 *power, int key)
             POWERENT *fp = find_power(target, power);
             if (fp == NULL)
             {
-                notify(player, (UTF8 *)"I don't understand that power.");
+                notify(player, T("I don't understand that power."));
             }
             else
             {
@@ -322,7 +322,7 @@ void power_set(dbref target, dbref player, UTF8 *power, int key)
                 }
                 else if (!(key & SET_QUIET) && !Quiet(player))
                 {
-                    notify(player, (bNegate ? (UTF8 *)"Cleared." : (UTF8 *)"Set."));
+                    notify(player, (bNegate ? T("Cleared.") : T("Set.")));
                 }
             }
         }

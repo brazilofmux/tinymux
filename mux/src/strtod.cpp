@@ -2585,7 +2585,7 @@ static UTF8 *rv_alloc(unsigned int i)
     return dtoa_result;
 }
 
-static UTF8 *nrv_alloc(UTF8 *s, UTF8 **rve, int n)
+static UTF8 *nrv_alloc(const UTF8 *s, UTF8 **rve, int n)
 {
     UTF8 *rv, *t;
 
@@ -2734,10 +2734,10 @@ UTF8 *mux_dtoa(double d, int mode, int ndigits, int *decpt, int *sign,
 #ifdef IEEE_Arith
         if (!word1(d) && !(word0(d) & 0xfffff))
         {
-            return nrv_alloc((UTF8 *)"Inf", rve, 8);
+            return nrv_alloc(T("Inf"), rve, 8);
         }
 #endif
-        return nrv_alloc((UTF8 *)"NaN", rve, 3);
+        return nrv_alloc(T("NaN"), rve, 3);
     }
 #endif
 #ifdef IBM
@@ -2746,7 +2746,7 @@ UTF8 *mux_dtoa(double d, int mode, int ndigits, int *decpt, int *sign,
     if (!dval(d))
     {
         *decpt = 1;
-        return nrv_alloc((UTF8 *)"0", rve, 1);
+        return nrv_alloc(T("0"), rve, 1);
     }
 
 #ifdef SET_INEXACT

@@ -26,8 +26,8 @@ void dispatch_FreeListReconstruction(void *pUnused, int iUnused)
 
     if (mudconf.control_flags & CF_DBCHECK)
     {
-        UTF8 *cmdsave = mudstate.debug_cmd;
-        mudstate.debug_cmd = (UTF8 *)"< dbck >";
+        const UTF8 *cmdsave = mudstate.debug_cmd;
+        mudstate.debug_cmd = T("< dbck >");
         do_dbck(NOTHING, NOTHING, NOTHING, 0);
         Guest.CleanUp();
         pcache_trim();
@@ -57,8 +57,8 @@ void dispatch_DatabaseDump(void *pUnused, int iUnused)
 
     if (mudconf.control_flags & CF_CHECKPOINT)
     {
-        UTF8 *cmdsave = mudstate.debug_cmd;
-        mudstate.debug_cmd = (UTF8 *)"< dump >";
+        const UTF8 *cmdsave = mudstate.debug_cmd;
+        mudstate.debug_cmd = T("< dump >");
 #ifndef WIN32
         if (mudstate.dumping)
         {
@@ -96,8 +96,8 @@ void dispatch_IdleCheck(void *pUnused, int iUnused)
 
     if (mudconf.control_flags & CF_IDLECHECK)
     {
-        UTF8 *cmdsave = mudstate.debug_cmd;
-        mudstate.debug_cmd = (UTF8 *)"< idlecheck >";
+        const UTF8 *cmdsave = mudstate.debug_cmd;
+        mudstate.debug_cmd = T("< idlecheck >");
         check_idle();
         mudstate.debug_cmd = cmdsave;
     }
@@ -121,8 +121,8 @@ void dispatch_CheckEvents(void *pUnused, int iUnused)
 
     if (mudconf.control_flags & CF_EVENTCHECK)
     {
-        UTF8 *cmdsave = mudstate.debug_cmd;
-        mudstate.debug_cmd = (UTF8 *)"< eventcheck >";
+        const UTF8 *cmdsave = mudstate.debug_cmd;
+        mudstate.debug_cmd = T("< eventcheck >");
         check_events();
         mudstate.debug_cmd = cmdsave;
     }
@@ -142,8 +142,8 @@ void dispatch_CacheTick(void *pUnused, int iUnused)
     UNUSED_PARAMETER(pUnused);
     UNUSED_PARAMETER(iUnused);
 
-    UTF8 *cmdsave = mudstate.debug_cmd;
-    mudstate.debug_cmd = (UTF8 *)"< cachetick >";
+    const UTF8 *cmdsave = mudstate.debug_cmd;
+    mudstate.debug_cmd = T("< cachetick >");
 
     CLinearTimeDelta ltd = 0;
     if (mudconf.cache_tick_period <= ltd)
@@ -167,7 +167,7 @@ void dispatch_CacheTick(void *pUnused, int iUnused)
 void dispatch_CleanChannels(void *pUnused, int iUnused)
 {
     UTF8 *cmdsave = mudstate.debug_cmd;
-    mudstate.debug_cmd = (UTF8 *)"< cleanchannels >";
+    mudstate.debug_cmd = T("< cleanchannels >");
     do_cleanupchannels();
 
     // Schedule ourselves again.

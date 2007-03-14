@@ -75,7 +75,7 @@ void cache_redirect(void)
     {
         UTF8 TempFileName[20];
         mux_sprintf(TempFileName, sizeof(TempFileName), "$convtemp.%d", i);
-        mux_assert(mux_fopen(&TempFiles[i], TempFileName, (UTF8 *)"wb+"));
+        mux_assert(mux_fopen(&TempFiles[i], TempFileName, T("wb+")));
         mux_assert(TempFiles[i]);
         setvbuf(TempFiles[i], NULL, _IOFBF, 16384);
     }

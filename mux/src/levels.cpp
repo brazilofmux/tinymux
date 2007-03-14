@@ -279,7 +279,7 @@ void do_rxlevel
 {
     if (!arg || !*arg)
     {
-        notify_quiet(player, (UTF8 *)"I don't know what you want to set!");
+        notify_quiet(player, T("I don't know what you want to set!"));
         return;
     }
 
@@ -323,11 +323,11 @@ void do_rxlevel
         {
             if (negate)
             {
-                notify(player, (UTF8 *)"You must specify a reality level to clear.");
+                notify(player, T("You must specify a reality level to clear."));
             }
             else
             {
-                notify(player, (UTF8 *)"You must specify a reality level to set.");
+                notify(player, T("You must specify a reality level to set."));
             }
             return;
         }
@@ -335,18 +335,18 @@ void do_rxlevel
         RLEVEL result = find_rlevel(lname);
         if (!result)
         {
-            notify(player, (UTF8 *)"No such reality level.");
+            notify(player, T("No such reality level."));
             continue;
         }
         if (negate)
         {
             andmask &= ~result;
-            notify(player, (UTF8 *)"Cleared.");
+            notify(player, T("Cleared."));
         }
         else
         {
             ormask |= result;
-            notify(player, (UTF8 *)"Set.");
+            notify(player, T("Set."));
         }
     }
 
@@ -371,7 +371,7 @@ void do_txlevel
 {
     if (!arg || !*arg)
     {
-        notify_quiet(player, (UTF8 *)"I don't know what you want to set!");
+        notify_quiet(player, T("I don't know what you want to set!"));
         return;
     }
 
@@ -415,11 +415,11 @@ void do_txlevel
         {
             if (negate)
             {
-                notify(player, (UTF8 *)"You must specify a reality level to clear.");
+                notify(player, T("You must specify a reality level to clear."));
             }
             else
             {
-                notify(player, (UTF8 *)"You must specify a reality level to set.");
+                notify(player, T("You must specify a reality level to set."));
             }
             return;
         }
@@ -427,18 +427,18 @@ void do_txlevel
         RLEVEL result = find_rlevel(lname);
         if (!result)
         {
-            notify(player, (UTF8 *)"No such reality level.");
+            notify(player, T("No such reality level."));
             continue;
         }
         if (negate)
         {
             andmask &= ~result;
-            notify(player, (UTF8 *)"Cleared.");
+            notify(player, T("Cleared."));
         }
         else
         {
             ormask |= result;
-            notify(player, (UTF8 *)"Set.");
+            notify(player, T("Set."));
         }
     }
 
@@ -567,7 +567,7 @@ void did_it_rlevel
                 if (  A_HTDESC == desclist[i]
                    && Html(player))
                 {
-                    safe_str((UTF8 *)"\r\n", buff, &bp);
+                    safe_str(T("\r\n"), buff, &bp);
                     *bp = '\0';
                     notify_html(player, buff);
                 }
@@ -606,7 +606,7 @@ void did_it_rlevel
                 if (  A_HTDESC == what
                    && Html(player))
                 {
-                    safe_str((UTF8 *)"\r\n", buff, &bp);
+                    safe_str(T("\r\n"), buff, &bp);
                     *bp = '\0';
                     notify_html(player, buff);
                 }
@@ -631,7 +631,7 @@ void did_it_rlevel
 
     if (isPlayer(thing))
     {
-       d = atr_pget(mudconf.master_room, get_atr((UTF8 *)"ASSET_DESC"), &aowner, &aflags);
+       d = atr_pget(mudconf.master_room, get_atr(T("ASSET_DESC")), &aowner, &aflags);
        if (*d)
        {
           if (!need_pres)

@@ -328,7 +328,7 @@ bool search_nametab(dbref player, NAMETAB *ntab, UTF8 *flagname, int *pflag)
  * * find_nametab_ent: Search a name table for a match and return a pointer to it.
  */
 
-NAMETAB *find_nametab_ent(dbref player, NAMETAB *ntab, UTF8 *flagname)
+NAMETAB *find_nametab_ent(dbref player, NAMETAB *ntab, const UTF8 *flagname)
 {
     NAMETAB *nt;
 
@@ -350,7 +350,7 @@ NAMETAB *find_nametab_ent(dbref player, NAMETAB *ntab, UTF8 *flagname)
  * * display_nametab: Print out the names of the entries in a name table.
  */
 
-void display_nametab(dbref player, NAMETAB *ntab, UTF8 *prefix, bool list_if_none)
+void display_nametab(dbref player, NAMETAB *ntab, const UTF8 *prefix, bool list_if_none)
 {
     NAMETAB *nt;
     bool got_one = false;
@@ -401,7 +401,7 @@ void interp_nametab(dbref player, NAMETAB *ntab, int flagword,
             }
             safe_chr(' ', buf, &bp);
             safe_str(nt->name, buf, &bp);
-            safe_str((UTF8 *)"...", buf, &bp);
+            safe_str(T("..."), buf, &bp);
             if ((flagword & nt->flag) != 0)
             {
                 safe_str(true_text, buf, &bp);
@@ -481,6 +481,6 @@ CF_HAND(cf_ntab_access)
             return cf_modify_bits(&(np->perm), ap, pExtra, nExtra, player, cmd);
         }
     }
-    cf_log_notfound(player, cmd, (UTF8 *)"Entry", str);
+    cf_log_notfound(player, cmd, T("Entry"), str);
     return -1;
 }

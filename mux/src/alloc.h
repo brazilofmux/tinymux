@@ -55,7 +55,7 @@ extern void pool_reset(void);
 #define free_lbufref(b)  pool_free(POOL_LBUFREF,(UTF8 *)(b), (UTF8 *)__FILE__, __LINE__)
 #define alloc_regref(s)  (reg_ref *)pool_alloc(POOL_REGREF, (UTF8 *)s, (UTF8 *)__FILE__, __LINE__)
 #define free_regref(b)   pool_free(POOL_REGREF,(UTF8 *)(b), (UTF8 *)__FILE__, __LINE__)
-#define alloc_string(s)  (mux_string *)pool_alloc(POOL_STRING, (UTF8 *)s, (UTF8 *)__FILE__, __LINE__)
+#define alloc_string(s)  (mux_string *)pool_alloc(POOL_STRING, T(s), (UTF8 *)__FILE__, __LINE__)
 #define free_string(b)   pool_free(POOL_STRING,(UTF8 *)(b), (UTF8 *)__FILE__, __LINE__)
 
 #define safe_copy_chr_ascii(src, buff, bufp, nSizeOfBuffer) \

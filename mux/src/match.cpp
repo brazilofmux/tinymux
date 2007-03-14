@@ -16,15 +16,15 @@
 #include "levels.h"
 #endif // REALITY_LVLS
 
-const UTF8 *NOMATCH_MESSAGE      = (UTF8 *)"I don't see that here.";
-const UTF8 *AMBIGUOUS_MESSAGE    = (UTF8 *)"I don't know which one you mean!";
-const UTF8 *NOPERM_MESSAGE       = (UTF8 *)"Permission denied.";
-const UTF8 *FUNC_FAIL_MESSAGE    = (UTF8 *)"#-1";
-const UTF8 *FUNC_NOMATCH_MESSAGE = (UTF8 *)"#-1 NO MATCH";
-const UTF8 *OUT_OF_RANGE         = (UTF8 *)"#-1 OUT OF RANGE";
-const UTF8 *FUNC_NOT_FOUND       = (UTF8 *)"#-1 NOT FOUND";
-const UTF8 *FUNC_AMBIGUOUS       = (UTF8 *)"#-2 AMBIGUOUS";
-const UTF8 *FUNC_NOPERM_MESSAGE  = (UTF8 *)"#-1 PERMISSION DENIED";
+const UTF8 *NOMATCH_MESSAGE      = T("I don't see that here.");
+const UTF8 *AMBIGUOUS_MESSAGE    = T("I don't know which one you mean!");
+const UTF8 *NOPERM_MESSAGE       = T("Permission denied.");
+const UTF8 *FUNC_FAIL_MESSAGE    = T("#-1");
+const UTF8 *FUNC_NOMATCH_MESSAGE = T("#-1 NO MATCH");
+const UTF8 *OUT_OF_RANGE         = T("#-1 OUT OF RANGE");
+const UTF8 *FUNC_NOT_FOUND       = T("#-1 NOT FOUND");
+const UTF8 *FUNC_AMBIGUOUS       = T("#-2 AMBIGUOUS");
+const UTF8 *FUNC_NOPERM_MESSAGE  = T("#-1 PERMISSION DENIED");
 
 #define CON_LOCAL       0x01    // Match is near me.
 #define CON_TYPE        0x02    // Match is of requested type.
@@ -244,7 +244,7 @@ void match_me(void)
         promote_match(md.player, CON_DBREF | CON_LOCAL);
         return;
     }
-    if (!string_compare(md.string, (UTF8 *)"me"))
+    if (!string_compare(md.string, T("me")))
     {
         promote_match(md.player, CON_TOKEN | CON_LOCAL);
     }
@@ -257,7 +257,7 @@ static void match_home(void)
     {
         return;
     }
-    if (!string_compare(md.string, (UTF8 *)"home"))
+    if (!string_compare(md.string, T("home")))
     {
         promote_match(HOME, CON_TOKEN);
     }
@@ -280,7 +280,7 @@ void match_here(void)
             {
                 promote_match(loc, CON_DBREF | CON_LOCAL);
             }
-            else if (!string_compare(md.string, (UTF8 *)"here"))
+            else if (!string_compare(md.string, T("here")))
             {
                 promote_match(loc, CON_TOKEN | CON_LOCAL);
             }

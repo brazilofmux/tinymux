@@ -87,11 +87,11 @@ void build_version(void)
 void init_version(void)
 {
     STARTLOG(LOG_ALWAYS, "INI", "START");
-    log_text((UTF8 *)"Starting: ");
+    log_text(T("Starting: "));
     log_text(mudstate.version);
     ENDLOG;
     STARTLOG(LOG_ALWAYS, "INI", "START");
-    log_text((UTF8 *)"Build date: ");
+    log_text(T("Build date: "));
     log_text((UTF8 *)MUX_BUILD_DATE);
     ENDLOG;
 }

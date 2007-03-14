@@ -12,7 +12,7 @@
 
 typedef struct tagFun
 {
-    UTF8 *name;     // function name
+    const UTF8 *name;     // function name
     void (*fun)(UTF8 *buff, UTF8 **bufc, dbref executor, dbref caller,
         dbref enactor, int eval, UTF8 *fargs[], int nfargs, UTF8 *cargs[],
         int ncargs);  // handler

@@ -16,7 +16,7 @@
 typedef struct name_table NAMETAB;
 struct name_table
 {
-    UTF8    *name;
+    const UTF8 *name;
     int minlen;
     int perm;
     int flag;
@@ -79,8 +79,8 @@ void *hash_nextkey(CHashTable *htab, int *, UTF8 **);
 extern NAMETAB powers_nametab[];
 
 extern bool search_nametab(dbref, NAMETAB *, UTF8 *, int *);
-extern NAMETAB *find_nametab_ent(dbref, NAMETAB *, UTF8 *);
-extern void display_nametab(dbref, NAMETAB *, UTF8 *, bool);
+extern NAMETAB *find_nametab_ent(dbref, NAMETAB *, const UTF8 *);
+extern void display_nametab(dbref, NAMETAB *, const UTF8 *, bool);
 extern void interp_nametab(dbref, NAMETAB *, int, const UTF8 *, const UTF8 *, const UTF8 *);
 extern void listset_nametab(dbref, NAMETAB *, int, UTF8 *, bool);
 

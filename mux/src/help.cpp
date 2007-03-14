@@ -134,7 +134,7 @@ static void helpindex_read(int iHelpfile)
         mudstate.aHelpDesc[iHelpfile].pBaseFilename);
 
     FILE *fp;
-    if (!mux_fopen(&fp, szTextFilename, (UTF8 *)"rb"))
+    if (!mux_fopen(&fp, szTextFilename, T("rb")))
     {
         STARTLOG(LOG_PROBLEMS, "HLP", "RINDX");
         UTF8 *p = alloc_lbuf("helpindex_read.LOG");
@@ -233,7 +233,7 @@ void helpindex_load(dbref player)
     if (  player != NOTHING
        && !Quiet(player))
     {
-        notify(player, (UTF8 *)"Cache for help indexes refreshed.");
+        notify(player, T("Cache for help indexes refreshed."));
     }
 }
 
@@ -247,7 +247,7 @@ static const UTF8 *MakeCanonicalTopicName(UTF8 *topic_arg)
     const UTF8 *topic;
     if (topic_arg[0] == '\0')
     {
-        topic = (UTF8 *)"help";
+        topic = T("help");
     }
     else
     {
@@ -305,7 +305,7 @@ static bool ReportTopic(dbref executor, struct help_entry *htab_entry, int iHelp
 
     size_t offset = htab_entry->pos;
     FILE *fp;
-    if (!mux_fopen(&fp, szTextFilename, (UTF8 *)"rb"))
+    if (!mux_fopen(&fp, szTextFilename, T("rb")))
     {
         STARTLOG(LOG_PROBLEMS, "HLP", "OPEN");
         UTF8 *line = alloc_lbuf("ReportTopic.open");
@@ -414,7 +414,7 @@ static void help_write(dbref executor, UTF8 *topic_arg, int iHelpfile)
         }
         else
         {
-            notify(executor, (UTF8 *)"Sorry, that function is temporarily unavailable.");
+            notify(executor, T("Sorry, that function is temporarily unavailable."));
         }
         free_lbuf(result);
     }
@@ -456,7 +456,7 @@ void do_help(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF
 
     if (!ValidateHelpFileIndex(iHelpfile))
     {
-        notify(executor, (UTF8 *)"No such indexed file found.");
+        notify(executor, T("No such indexed file found."));
         return;
     }
     help_write(executor, message, iHelpfile);
@@ -484,12 +484,12 @@ void help_helper(dbref executor, int iHelpfile, UTF8 *topic_arg,
         }
         else
         {
-            safe_str((UTF8 *)"#-1 ERROR", buff, bufc);
+            safe_str(T("#-1 ERROR"), buff, bufc);
         }
         free_lbuf(result);
     }
     else
     {
-        safe_str((UTF8 *)"#-1 TOPIC DOES NOT EXIST", buff, bufc);
+        safe_str(T("#-1 TOPIC DOES NOT EXIST"), buff, bufc);
     }
 }

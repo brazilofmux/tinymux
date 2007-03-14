@@ -1026,7 +1026,7 @@ bool CHashPage::Split(CHashPage &hp0, CHashPage &hp1)
     GetStats(0, &nRecords, &nAllocatedSize, &nGoodDirSize);
     if (nRecords == 0)
     {
-        Log.WriteString((UTF8 *)"Why are we splitting a page with no records in it?" ENDLINE);
+        Log.WriteString(T("Why are we splitting a page with no records in it?" ENDLINE));
         return false;
     }
 
@@ -1048,7 +1048,7 @@ bool CHashPage::Split(CHashPage &hp0, CHashPage &hp1)
             {
                 if (!IS_HP_SUCCESS(hp0.Insert(pNode->u.s.nRecordSize, nHash, pNode+1)))
                 {
-                    Log.WriteString((UTF8 *)"CHashPage::Split - Ran out of room." ENDLINE);
+                    Log.WriteString(T("CHashPage::Split - Ran out of room." ENDLINE));
                     return false;
                 }
             }
@@ -1056,13 +1056,13 @@ bool CHashPage::Split(CHashPage &hp0, CHashPage &hp1)
             {
                 if (!IS_HP_SUCCESS(hp1.Insert(pNode->u.s.nRecordSize, nHash, pNode+1)))
                 {
-                    Log.WriteString((UTF8 *)"CHashPage::Split - Ran out of room." ENDLINE);
+                    Log.WriteString(T("CHashPage::Split - Ran out of room." ENDLINE));
                     return false;
                 }
             }
             else
             {
-                Log.WriteString((UTF8 *)"CHashPage::Split - This record fits in neither page...lost." ENDLINE);
+                Log.WriteString(T("CHashPage::Split - This record fits in neither page...lost." ENDLINE));
                 return false;
             }
         }
@@ -1549,7 +1549,7 @@ bool CHashFile::RebuildDirectory(void)
         int iCache;
         if ((iCache = AllocateEmptyPage(0, NULL)) < 0)
         {
-            Log.WriteString((UTF8 *)"CHashFile::RebuildDirectory.  AllocateEmptyPage failed. DB DAMAGE." ENDLINE);
+            Log.WriteString(T("CHashFile::RebuildDirectory.  AllocateEmptyPage failed. DB DAMAGE." ENDLINE));
             return false;
         }
 
@@ -1561,7 +1561,7 @@ bool CHashFile::RebuildDirectory(void)
         }
         else
         {
-            Log.WriteString((UTF8 *)"CHashFile::RebuildDirectory.  ReadPage failed to get the page. DB DAMAGE." ENDLINE);
+            Log.WriteString(T("CHashFile::RebuildDirectory.  ReadPage failed to get the page. DB DAMAGE." ENDLINE));
         }
 
         UINT32 nPageDepth = m_Cache[iCache].m_hp.GetDepth();
@@ -1578,7 +1578,7 @@ bool CHashFile::RebuildDirectory(void)
         {
             if (m_pDir[nStart] != 0xFFFFFFFFUL)
             {
-                Log.WriteString((UTF8 *)"CHashFile::Open - The keyspace of pages in Page File overlap." ENDLINE);
+                Log.WriteString(T("CHashFile::Open - The keyspace of pages in Page File overlap." ENDLINE));
                 return false;
             }
             m_pDir[nStart] = oPage;
@@ -1592,7 +1592,7 @@ bool CHashFile::RebuildDirectory(void)
     {
         if (m_pDir[iFileDir] == 0xFFFFFFFFUL)
         {
-            Log.WriteString((UTF8 *)"CHashFile::Open - Page File is incomplete." ENDLINE);
+            Log.WriteString(T("CHashFile::Open - Page File is incomplete." ENDLINE));
             return false;
         }
     }
@@ -1789,7 +1789,7 @@ void CHashFile::Sync(void)
         }
         if (!bAllFlushed)
         {
-            Log.WriteString((UTF8 *)"CHashFile::Sync. Could not flush all the pages. DB DAMAGE." ENDLINE);
+            Log.WriteString(T("CHashFile::Sync. Could not flush all the pages. DB DAMAGE." ENDLINE));
         }
 
 #ifdef DO_COMMIT
@@ -1886,13 +1886,13 @@ bool CHashFile::Insert(HP_HEAPLENGTH nRecord, UINT32 nHash, void *pRecord)
         UINT32 iFileDir = nHash >> (32-m_nDirDepth);
         if (iFileDir >= m_nDir)
         {
-            Log.WriteString((UTF8 *)"CHashFile::Insert - iFileDir out of range." ENDLINE);
+            Log.WriteString(T("CHashFile::Insert - iFileDir out of range." ENDLINE));
             return false;
         }
         iCache = ReadCache(iFileDir, &cs_whits);
         if (iCache < 0)
         {
-            Log.WriteString((UTF8 *)"CHashFile::Insert - Page wasn't valid." ENDLINE);
+            Log.WriteString(T("CHashFile::Insert - Page wasn't valid." ENDLINE));
             return false;
         }
 
@@ -1926,7 +1926,7 @@ bool CHashFile::Insert(HP_HEAPLENGTH nRecord, UINT32 nHash, void *pRecord)
            && mudstate.dumping)
         {
             STARTLOG(LOG_DBSAVES, "DMP", "DUMP");
-            log_text((UTF8 *)"Waiting on previously-forked child before page-splitting... ");
+            log_text(T("Waiting on previously-forked child before page-splitting... "));
             ENDLOG;
             do
             {
@@ -1962,7 +1962,7 @@ bool CHashFile::Insert(HP_HEAPLENGTH nRecord, UINT32 nHash, void *pRecord)
 
         if (iCache == iEmpty0)
         {
-            Log.WriteString((UTF8 *)"CHashFile::Split - iCache == iEmpty0" ENDLINE);
+            Log.WriteString(T("CHashFile::Split - iCache == iEmpty0" ENDLINE));
             return false;
         }
 
@@ -1972,13 +1972,13 @@ bool CHashFile::Insert(HP_HEAPLENGTH nRecord, UINT32 nHash, void *pRecord)
 
         if (iCache == iEmpty1)
         {
-            Log.WriteString((UTF8 *)"CHashFile::Split - iCache == iEmpty1" ENDLINE);
+            Log.WriteString(T("CHashFile::Split - iCache == iEmpty1" ENDLINE));
             return false;
         }
 
         if (iEmpty0 == iEmpty1)
         {
-            Log.WriteString((UTF8 *)"CHashFile::Split - iEmpty0 == iEmpty1" ENDLINE);
+            Log.WriteString(T("CHashFile::Split - iEmpty0 == iEmpty1" ENDLINE));
             return false;
         }
 
@@ -2132,7 +2132,7 @@ UINT32 CHashFile::FindFirstKey(UINT32 nHash)
     UINT32 iFileDir = nHash >> (32-m_nDirDepth);
     if (iFileDir >= m_nDir)
     {
-        Log.WriteString((UTF8 *)"CHashFile::Insert - iFileDir out of range." ENDLINE);
+        Log.WriteString(T("CHashFile::Insert - iFileDir out of range." ENDLINE));
         cs_fails++;
         return HF_FIND_END;
     }
@@ -2351,7 +2351,7 @@ int CHashFile::ReadCache(UINT32 iFileDir, int *phits)
         }
         else
         {
-            Log.WriteString((UTF8 *)"CHashFile::ReadCache.  ReadPage failed to get the page. DB DAMAGE." ENDLINE);
+            Log.WriteString(T("CHashFile::ReadCache.  ReadPage failed to get the page. DB DAMAGE." ENDLINE));
         }
     }
     return -1;
@@ -2411,14 +2411,14 @@ bool CHashTable::Insert(HP_HEAPLENGTH nRecord, UINT32  nHash, void *pRecord)
 #ifdef HP_PROTECTION
         if (iTableDir >= m_nDir)
         {
-            Log.WriteString((UTF8 *)"CHashTable::Insert - iTableDir out of range." ENDLINE);
+            Log.WriteString(T("CHashTable::Insert - iTableDir out of range.") ENDLINE);
             return false;
         }
 #endif // HP_PROTECTION
         m_hpLast = m_pDir[iTableDir];
         if (!m_hpLast)
         {
-            Log.WriteString((UTF8 *)"CHashTable::Insert - Page wasn't valid." ENDLINE);
+            Log.WriteString(T("CHashTable::Insert - Page wasn't valid." ENDLINE));
             return false;
         }
         UINT32  nStart, nEnd;
@@ -2540,14 +2540,14 @@ UINT32 CHashTable::FindFirstKey(UINT32  nHash)
 #ifdef HP_PROTECTION
     if (iTableDir >= m_nDir)
     {
-        Log.WriteString((UTF8 *)"CHashTable::Insert - iTableDir out of range." ENDLINE);
+        Log.WriteString(T("CHashTable::Insert - iTableDir out of range.") ENDLINE);
         return HF_FIND_END;
     }
 #endif // HP_PROTECTION
     m_hpLast = m_pDir[iTableDir];
     if (!m_hpLast)
     {
-        Log.WriteString((UTF8 *)"CHashTable::Insert - Page wasn't valid." ENDLINE);
+        Log.WriteString(T("CHashTable::Insert - Page wasn't valid." ENDLINE));
         return HF_FIND_END;
     }
 #ifdef HP_PROTECTION
@@ -2555,7 +2555,7 @@ UINT32 CHashTable::FindFirstKey(UINT32  nHash)
     m_hpLast->GetRange(m_nDirDepth, nStart, nEnd);
     if (iTableDir < nStart || nEnd < iTableDir)
     {
-        Log.WriteString((UTF8 *)"CHashTable::Find - Directory points to the wrong page." ENDLINE);
+        Log.WriteString(T("CHashTable::Find - Directory points to the wrong page.") ENDLINE);
         return HF_FIND_END;
     }
 #endif // HP_PROTECTION
@@ -2953,7 +2953,7 @@ void CLogFile::SetBasename(const UTF8 *pBasename)
         }
         else
         {
-            m_pBasename = StringClone((UTF8 *)"");
+            m_pBasename = StringClone(T(""));
         }
     }
 }

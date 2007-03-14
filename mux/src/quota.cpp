@@ -171,12 +171,12 @@ void do_quota
 
     if (!(mudconf.quotas || Quota(executor)))
     {
-        notify_quiet(executor, (UTF8 *)"Quotas are not enabled.");
+        notify_quiet(executor, T("Quotas are not enabled."));
         return;
     }
     if ((key & QUOTA_TOT) && (key & QUOTA_REM))
     {
-        notify_quiet(executor, (UTF8 *)"Illegal combination of switches.");
+        notify_quiet(executor, T("Illegal combination of switches."));
         return;
     }
 
@@ -202,7 +202,7 @@ void do_quota
         {
             STARTLOG(LOG_WIZARD, "WIZ", "QUOTA");
             log_name(executor);
-            log_text((UTF8 *)" changed everyone's quota");
+            log_text(T(" changed everyone's quota"));
             ENDLOG;
         }
         DO_WHOLE_DB(i)
@@ -230,7 +230,7 @@ void do_quota
         who = lookup_player(executor, arg1, true);
         if (!Good_obj(who))
         {
-            notify_quiet(executor, (UTF8 *)"Not found.");
+            notify_quiet(executor, T("Not found."));
             return;
         }
     }
@@ -264,7 +264,7 @@ void do_quota
     {
         STARTLOG(LOG_WIZARD, "WIZ", "QUOTA");
         log_name(executor);
-        log_text((UTF8 *)" changed the quota of ");
+        log_text(T(" changed the quota of "));
         log_name(who);
         ENDLOG;
         mung_quotas(who, key, value);
@@ -283,7 +283,7 @@ FUNCTION(fun_hasquota)
 
     if (!mudconf.quotas)
     {
-        safe_str((UTF8 *)"#-1 Quotas are not enabled.", buff, bufc);
+        safe_str(T("#-1 Quotas are not enabled."), buff, bufc);
         return;
     }
 
@@ -292,7 +292,7 @@ FUNCTION(fun_hasquota)
     dbref who = lookup_player(executor, fargs[0], true);
     if (!Good_obj(who))
     {
-        safe_str((UTF8 *)"#-1 NOT FOUND", buff, bufc);
+        safe_str(T("#-1 NOT FOUND"), buff, bufc);
         return;
     }
 

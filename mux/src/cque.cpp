@@ -166,7 +166,7 @@ static void Task_RunQueueEntry(void *pEntry, int iUnused)
                     ltaEnd.GetUTC();
                     if (MuxAlarm.bAlarmed)
                     {
-                        notify(executor, (UTF8 *)"GAME: Expensive activity abbreviated.");
+                        notify(executor, T("GAME: Expensive activity abbreviated."));
                         s_Flags(point->enactor, FLAG_WORD1, Flags(point->enactor) | HALT);
                         s_Flags(point->executor, FLAG_WORD1, Flags(point->executor) | HALT);
                         halt_que(point->enactor, NOTHING);
@@ -421,7 +421,7 @@ void do_halt(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF
         }
         if (key & HALT_ALL)
         {
-            notify(executor, (UTF8 *)"Can't specify a target and /all");
+            notify(executor, T("Can't specify a target and /all"));
             return;
         }
         if (isPlayer(obj_targ))
@@ -671,11 +671,11 @@ void do_notify
             {
                 if (key == NFY_DRAIN)
                 {
-                    notify_quiet(executor, (UTF8 *)"Drained.");
+                    notify_quiet(executor, T("Drained."));
                 }
                 else
                 {
-                    notify_quiet(executor, (UTF8 *)"Notified.");
+                    notify_quiet(executor, T("Notified."));
                 }
             }
         }
@@ -713,7 +713,7 @@ static BQUE *setup_que
     }
     if (!payfor(executor, a))
     {
-        notify(Owner(executor), (UTF8 *)"Not enough money to queue command.");
+        notify(Owner(executor), T("Not enough money to queue command."));
         return NULL;
     }
 
@@ -726,7 +726,7 @@ static BQUE *setup_que
         a_Queue(Owner(executor), -1);
 
         notify(Owner(executor),
-            (UTF8 *)"Run away objects: too many commands queued.  Halted.");
+            T("Run away objects: too many commands queued.  Halted."));
         halt_que(Owner(executor), NOTHING);
 
         // Halt also means no command execution allowed.
@@ -1050,7 +1050,7 @@ void do_wait
                     atr = mkattr(executor, EventAttributeName);
                     if (atr <= 0)
                     {
-                        notify_quiet(executor, (UTF8 *)"Invalid attribute.");
+                        notify_quiet(executor, T("Invalid attribute."));
                         return;
                     }
                     ap = atr_num(atr);
@@ -1231,9 +1231,9 @@ static void ShowPsLine(BQUE *tmp)
         {
             if (tmp->env[i] != NULL)
             {
-                safe_str((UTF8 *)"; Arg", bufp, &bp);
+                safe_str(T("; Arg"), bufp, &bp);
                 safe_chr((UTF8)(i + '0'), bufp, &bp);
-                safe_str((UTF8 *)"='", bufp, &bp);
+                safe_str(T("='"), bufp, &bp);
                 safe_str(tmp->env[i], bufp, &bp);
                 safe_chr('\'', bufp, &bp);
             }
@@ -1264,7 +1264,7 @@ static int CallBack_ShowWait(PTASK_RECORD p)
         }
         if (Show_bFirstLine)
         {
-            notify(Show_Player, (UTF8 *)"----- Wait Queue -----");
+            notify(Show_Player, T("----- Wait Queue -----"));
             Show_bFirstLine = false;
         }
         ShowPsLine(tmp);
@@ -1290,7 +1290,7 @@ static int CallBack_ShowSemaphore(PTASK_RECORD p)
         }
         if (Show_bFirstLine)
         {
-            notify(Show_Player, (UTF8 *)"----- Semaphore Queue -----");
+            notify(Show_Player, T("----- Semaphore Queue -----"));
             Show_bFirstLine = false;
         }
         ShowPsLine(tmp);
@@ -1371,7 +1371,7 @@ void do_ps(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8 
         }
         if (key & PS_ALL)
         {
-            notify(executor, (UTF8 *)"Can't specify a target and /all");
+            notify(executor, T("Can't specify a target and /all"));
             return;
         }
         if (isPlayer(obj_targ))
@@ -1390,7 +1390,7 @@ void do_ps(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8 
         break;
 
     default:
-        notify(executor, (UTF8 *)"Illegal combination of switches.");
+        notify(executor, T("Illegal combination of switches."));
         return;
     }
 
@@ -1414,7 +1414,7 @@ void do_ps(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8 
 #endif // QUERY_SLAVE
     if (Wizard(executor))
     {
-        notify(executor, (UTF8 *)"----- System Queue -----");
+        notify(executor, T("----- System Queue -----"));
         scheduler.TraverseOrdered(CallBack_ShowDispatches);
     }
 
@@ -1475,7 +1475,7 @@ void do_queue(dbref executor, dbref caller, dbref enactor, int eval, int key, UT
         int save_minPriority = scheduler.GetMinPriority();
         if (save_minPriority <= PRIORITY_CF_DEQUEUE_DISABLED)
         {
-            notify(executor, (UTF8 *)"Warning: automatic dequeueing is disabled.");
+            notify(executor, T("Warning: automatic dequeueing is disabled."));
             scheduler.SetMinPriority(PRIORITY_CF_DEQUEUE_ENABLED);
         }
         CLinearTimeAbsolute lsaNow;
@@ -1495,7 +1495,7 @@ void do_queue(dbref executor, dbref caller, dbref enactor, int eval, int key, UT
         ltdWarp.SetSeconds(iWarp);
         if (scheduler.GetMinPriority() <= PRIORITY_CF_DEQUEUE_DISABLED)
         {
-            notify(executor, (UTF8 *)"Warning: automatic dequeueing is disabled.");
+            notify(executor, T("Warning: automatic dequeueing is disabled."));
         }
 
         scheduler.TraverseUnordered(CallBack_Warp);
@@ -1514,7 +1514,7 @@ void do_queue(dbref executor, dbref caller, dbref enactor, int eval, int key, UT
         }
         else
         {
-            notify(executor, (UTF8 *)"Object queue appended to player queue.");
+            notify(executor, T("Object queue appended to player queue."));
         }
     }
 }

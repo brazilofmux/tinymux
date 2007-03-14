@@ -36,13 +36,13 @@ static dbref parse_linkable_room(dbref player, UTF8 *room_name)
     //
     if (!Good_obj(room))
     {
-        notify_quiet(player, (UTF8 *)"That's not a valid object.");
+        notify_quiet(player, T("That's not a valid object."));
         return NOTHING;
     }
     else if (  !Has_contents(room)
             || !Linkable(player, room))
     {
-        notify_quiet(player, (UTF8 *)"You can't link to that.");
+        notify_quiet(player, T("You can't link to that."));
         return NOTHING;
     }
     else
@@ -62,7 +62,7 @@ static void open_exit(dbref player, dbref loc, UTF8 *direction, UTF8 *linkto)
     }
     if (!direction || !*direction)
     {
-        notify_quiet(player, (UTF8 *)"Open where?");
+        notify_quiet(player, T("Open where?"));
         return;
     }
     else if (!Controls(player, loc))
@@ -88,7 +88,7 @@ static void open_exit(dbref player, dbref loc, UTF8 *direction, UTF8 *linkto)
 
     // and we're done
     //
-    notify_quiet(player, (UTF8 *)"Opened.");
+    notify_quiet(player, T("Opened."));
 
     // See if we should do a link
     //
@@ -104,7 +104,7 @@ static void open_exit(dbref player, dbref loc, UTF8 *direction, UTF8 *linkto)
         //
         if (!could_doit(player, loc, A_LLINK))
         {
-            notify_quiet(player, (UTF8 *)"You can't link to there.");
+            notify_quiet(player, T("You can't link to there."));
             return;
         }
 
@@ -119,7 +119,7 @@ static void open_exit(dbref player, dbref loc, UTF8 *direction, UTF8 *linkto)
         else
         {
             s_Location(exit, loc);
-            notify_quiet(player, (UTF8 *)"Linked.");
+            notify_quiet(player, T("Linked."));
         }
     }
 }
@@ -226,7 +226,7 @@ static void link_exit(dbref player, dbref exit, dbref dest)
     s_Location(exit, dest);
     if (!Quiet(player))
     {
-        notify_quiet(player, (UTF8 *)"Linked.");
+        notify_quiet(player, T("Linked."));
     }
 }
 
@@ -296,7 +296,7 @@ void do_link
         }
         if (!Has_contents(room))
         {
-            notify_quiet(executor, (UTF8 *)"Can't link to an exit.");
+            notify_quiet(executor, T("Can't link to an exit."));
             break;
         }
         if (  !can_set_home(executor, thing, room)
@@ -306,7 +306,7 @@ void do_link
         }
         else if (room == HOME)
         {
-            notify_quiet(executor, (UTF8 *)"Can't set home to home.");
+            notify_quiet(executor, T("Can't set home to home."));
         }
         else
         {
@@ -351,7 +351,7 @@ void do_link
         if (  room != HOME
            && !isRoom(room))
         {
-            notify_quiet(executor, (UTF8 *)"That is not a room!");
+            notify_quiet(executor, T("That is not a room!"));
         }
         else if (  room != HOME
                 && (  (  !Controls(executor, room)
@@ -468,7 +468,7 @@ void do_parent
         {
             if (curr == thing)
             {
-                notify_quiet(executor, (UTF8 *)"You can't have yourself as a parent!");
+                notify_quiet(executor, T("You can't have yourself as a parent!"));
                 return;
             }
         }
@@ -482,9 +482,9 @@ void do_parent
     if (!Quiet(thing) && !Quiet(executor))
     {
         if (parent == NOTHING)
-            notify_quiet(executor, (UTF8 *)"Parent cleared.");
+            notify_quiet(executor, T("Parent cleared."));
         else
-            notify_quiet(executor, (UTF8 *)"Parent set.");
+            notify_quiet(executor, T("Parent set."));
     }
 }
 
@@ -501,7 +501,7 @@ void do_dig(dbref executor, dbref caller, dbref enactor, int eval, int key,
     //
     if (!name || !*name)
     {
-        notify_quiet(executor, (UTF8 *)"Dig what?");
+        notify_quiet(executor, T("Dig what?"));
         return;
     }
     dbref room = create_obj(executor, TYPE_ROOM, name, 0);
@@ -556,13 +556,13 @@ void do_create
     int cost = 0;
     if (!name || !*name)
     {
-        notify_quiet(executor, (UTF8 *)"Create what?");
+        notify_quiet(executor, T("Create what?"));
         return;
     }
     else if (  nargs == 2
             && (cost = mux_atol(coststr)) < 0)
     {
-        notify_quiet(executor, (UTF8 *)"You can't create an object for less than nothing!");
+        notify_quiet(executor, T("You can't create an object for less than nothing!"));
         return;
     }
     dbref thing = create_obj(executor, TYPE_THING, name, cost);
@@ -637,7 +637,7 @@ void do_clone
     }
     if (isPlayer(thing))
     {
-        notify_quiet(executor, (UTF8 *)"You cannot clone players!");
+        notify_quiet(executor, T("You cannot clone players!"));
         return;
     }
 
@@ -839,10 +839,10 @@ void do_pcreate
         notify_quiet(executor,
             tprintf("New robot '%s' (#%d) created with password '%s'",
                 name, newplayer, pass));
-        notify_quiet(executor, (UTF8 *)"Your robot has arrived.");
+        notify_quiet(executor, T("Your robot has arrived."));
         STARTLOG(LOG_PCREATES, "CRE", "ROBOT");
         log_name(newplayer);
-        log_text((UTF8 *)" created by ");
+        log_text(T(" created by "));
         log_name(executor);
         ENDLOG;
     }
@@ -854,7 +854,7 @@ void do_pcreate
                    name, newplayer, pass));
         STARTLOG(LOG_PCREATES | LOG_WIZARD, "WIZ", "PCREA");
         log_name(newplayer);
-        log_text((UTF8 *)" created by ");
+        log_text(T(" created by "));
         log_name(executor);
         ENDLOG;
 #ifdef GAME_DOOFERMUX
@@ -890,12 +890,12 @@ static bool can_destroy_player(dbref player, dbref victim)
 {
     if (!Wizard(player))
     {
-        notify_quiet(player, (UTF8 *)"Sorry, no suicide allowed.");
+        notify_quiet(player, T("Sorry, no suicide allowed."));
         return false;
     }
     if (RealWizard(victim))
     {
-        notify_quiet(player, (UTF8 *)"Even you can't do that!");
+        notify_quiet(player, T("Even you can't do that!"));
         return false;
     }
     return true;
@@ -948,7 +948,7 @@ void do_destroy(dbref executor, dbref caller, dbref enactor, int eval, int key, 
        && !(key & DEST_OVERRIDE)
        && !(isThing(thing) && Destroy_ok(thing)))
     {
-        notify_quiet(executor, (UTF8 *)"Sorry, that object is protected.  Use @destroy/override to destroy it.");
+        notify_quiet(executor, T("Sorry, that object is protected.  Use @destroy/override to destroy it."));
         return;
     }
 
@@ -956,7 +956,7 @@ void do_destroy(dbref executor, dbref caller, dbref enactor, int eval, int key, 
     //
     if (!destroyable(thing))
     {
-        notify_quiet(executor, (UTF8 *)"You can't destroy that!");
+        notify_quiet(executor, T("You can't destroy that!"));
         return;
     }
 
@@ -994,7 +994,7 @@ void do_destroy(dbref executor, dbref caller, dbref enactor, int eval, int key, 
         switch (Typeof(thing))
         {
         case TYPE_ROOM:
-            notify_all(thing, executor, (UTF8 *)"The room shakes and begins to crumble.");
+            notify_all(thing, executor, T("The room shakes and begins to crumble."));
             break;
 
         case TYPE_PLAYER:
@@ -1006,7 +1006,7 @@ void do_destroy(dbref executor, dbref caller, dbref enactor, int eval, int key, 
                 // take care of this more immediately.
                 //
                 bInstant = true;
-                notify(executor, (UTF8 *)"Player has a lot of attributes. Performing destruction immediately.");
+                notify(executor, T("Player has a lot of attributes. Performing destruction immediately."));
                 break;
             }
 
@@ -1019,7 +1019,7 @@ void do_destroy(dbref executor, dbref caller, dbref enactor, int eval, int key, 
             break;
 
         default:
-            notify(executor, (UTF8 *)"Weird object type cannot be destroyed.");
+            notify(executor, T("Weird object type cannot be destroyed."));
             free_sbuf(NameOfType);
             return;
         }
@@ -1089,7 +1089,7 @@ void do_destroy(dbref executor, dbref caller, dbref enactor, int eval, int key, 
             break;
 
         default:
-            notify(executor, (UTF8 *)"Weird object type cannot be destroyed.");
+            notify(executor, T("Weird object type cannot be destroyed."));
             return;
         }
     }

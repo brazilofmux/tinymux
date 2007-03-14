@@ -98,7 +98,7 @@ ATTR *vattr_define_LEN(const UTF8 *pName, size_t nName, int number, int flags)
 //
 static void dbclean_CheckANHtoAT(dbref executor)
 {
-    notify(executor, (UTF8 *)"1. Checking (v)attr_name_htabs to anum_table mapping...");
+    notify(executor, T("1. Checking (v)attr_name_htabs to anum_table mapping..."));
 
     // This test traverses the attr_name_htab/vattr_name_htab and verifies
     // that the corresponding anum_table entry exists and is valid.
@@ -170,12 +170,12 @@ static void dbclean_CheckANHtoAT(dbref executor)
     notify(executor, tprintf("   User Defined: %d", nUserDefined));
     notify(executor, tprintf("   Index Out of Bounds: %d", nOutOfBounds));
     notify(executor, tprintf("   Inconsistent: %d", nInvalid));
-    notify(executor, (UTF8 *)"   Done.");
+    notify(executor, T("   Done."));
 }
 
 static void dbclean_CheckATtoANH(dbref executor)
 {
-    notify(executor, (UTF8 *)"2. Checking anum_table to vattr_name_htab mapping...");
+    notify(executor, T("2. Checking anum_table to vattr_name_htab mapping..."));
 
     // This test traverses the anum_table and verifies that the corresponding attr_name_htab and
     // vattr_name_htab entries exist and are valid.
@@ -240,12 +240,12 @@ static void dbclean_CheckATtoANH(dbref executor)
     notify(executor, tprintf("   User Defined: %d", nUserDefined));
     notify(executor, tprintf("   Empty: %d", nEmpty));
     notify(executor, tprintf("   Inconsistent: %d", nInvalid));
-    notify(executor, (UTF8 *)"   Done.");
+    notify(executor, T("   Done."));
 }
 
 static void dbclean_CheckALISTtoAT(dbref executor)
 {
-    notify(executor, (UTF8 *)"3. Checking ALIST to anum_table mapping...");
+    notify(executor, T("3. Checking ALIST to anum_table mapping..."));
 
     // Traverse every attribute on every object and make sure that attribute is
     // represented in the attribute table.
@@ -314,7 +314,7 @@ static void dbclean_CheckALISTtoAT(dbref executor)
 
 static void dbclean_CheckALISTtoDB(dbref executor)
 {
-    notify(executor, (UTF8 *)"4. Checking ALIST against attribute DB on disk...");
+    notify(executor, T("4. Checking ALIST against attribute DB on disk..."));
 
     // Traverse every attribute on every object and make sure that attribute is
     // represented attribute database.
@@ -598,7 +598,7 @@ void do_dbclean(dbref executor, dbref caller, dbref enactor, int key)
 #ifndef WIN32
     if (mudstate.dumping)
     {
-        notify(executor, (UTF8 *)"Dumping in progress. Try again later.");
+        notify(executor, T("Dumping in progress. Try again later."));
         return;
     }
 #endif // !WIN32
@@ -609,16 +609,16 @@ void do_dbclean(dbref executor, dbref caller, dbref enactor, int key)
 #endif // MEMORY_BASED
     pcache_sync();
 
-    notify(executor, (UTF8 *)"Checking Integrity of the attribute data structures...");
+    notify(executor, T("Checking Integrity of the attribute data structures..."));
     dbclean_IntegrityChecking(executor);
-    notify(executor, (UTF8 *)"Removing stale attributes names...");
+    notify(executor, T("Removing stale attributes names..."));
     int cVAttributes = dbclean_RemoveStaleAttributeNames();
-    notify(executor, (UTF8 *)"Renumbering and compacting attribute numbers...");
+    notify(executor, T("Renumbering and compacting attribute numbers..."));
     dbclean_RenumberAttributes(cVAttributes);
     notify(executor, tprintf("Next Attribute number to allocate: %d", mudstate.attr_next));
-    notify(executor, (UTF8 *)"Checking Integrity of the attribute data structures...");
+    notify(executor, T("Checking Integrity of the attribute data structures..."));
     dbclean_IntegrityChecking(executor);
-    notify(executor, (UTF8 *)"@dbclean completed..");
+    notify(executor, T("@dbclean completed.."));
 }
 
 void vattr_delete_LEN(UTF8 *pName, size_t nName)

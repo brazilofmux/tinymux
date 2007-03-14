@@ -29,16 +29,8 @@ static UTF8 *unparse_object_quiet(dbref player, dbref loc)
 
     static UTF8 buf[SBUF_SIZE];
 
-    switch (loc)
-    {
-    case NOTHING:
-        return (UTF8 *)"-1";
-    case HOME:
-        return (UTF8 *)"-3";
-    default:
-        mux_sprintf(buf, SBUF_SIZE, "(#%d)", loc);
-        return buf;
-    }
+    mux_sprintf(buf, SBUF_SIZE, "(#%d)", loc);
+    return buf;
 }
 
 static UTF8 boolexp_buf[LBUF_SIZE];
@@ -50,7 +42,7 @@ static void unparse_boolexp1(dbref player, BOOLEXP *b, UTF8 outer_type, int form
     {
         if (format == F_EXAMINE)
         {
-            safe_str((UTF8 *)"*UNLOCKED*", boolexp_buf, &buftop);
+            safe_str(T("*UNLOCKED*"), boolexp_buf, &buftop);
         }
         return;
     }
@@ -213,7 +205,7 @@ static void unparse_boolexp1(dbref player, BOOLEXP *b, UTF8 outer_type, int form
 
         // Bad type.
         //
-        Log.WriteString((UTF8 *)"ABORT! unparse.cpp, fell off the end of switch in unparse_boolexp1()" ENDLINE);
+        Log.WriteString(T("ABORT! unparse.cpp, fell off the end of switch in unparse_boolexp1()" ENDLINE));
         Log.Flush();
         abort();
         break;

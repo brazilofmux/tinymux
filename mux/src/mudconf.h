@@ -379,8 +379,8 @@ struct statedata
     UTF8    short_ver[64];      /* Short version number (for INFO) */
     UTF8    doing_hdr[SIZEOF_DOING_STRING];  /* Doing column header in the WHO display */
     UTF8    version[128];       /* MUX version string */
-    UTF8    *curr_cmd;          /* The current command */
-    UTF8    *debug_cmd;         // The command we are executing (if any).
+    const UTF8    *curr_cmd;    /* The current command */
+    const UTF8    *debug_cmd;   // The command we are executing (if any).
     unsigned char *mod_alist;   /* Attribute list for modifying */
     UTF8    *pout;              /* The output of the pipe used in %| */
     UTF8    *poutbufc;          /* Buffer position for poutnew */

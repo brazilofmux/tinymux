@@ -143,7 +143,7 @@ typedef struct flag_bit_entry
 
 typedef struct flag_name_entry
 {
-    UTF8 *pOrigName;        // Original name of flag.
+    UTF8 *pOrigName;  // Original name of flag.
     bool bPositive;         // Flag sense.
     FLAGBITENT *fbe;        // Which bit is this associated with?
     UTF8 *flagname;         // Name of the flag.
@@ -181,7 +181,7 @@ void display_flagtab(dbref);
 void flag_set(dbref, dbref, UTF8 *, int);
 UTF8 *flag_description(dbref, dbref);
 UTF8 *decode_flags(dbref, FLAGSET *);
-bool has_flag(dbref, dbref, UTF8 *);
+bool has_flag(dbref, dbref, const UTF8 *);
 UTF8 *unparse_object(dbref player, dbref target, bool obey_myopic, bool bAddColor = false);
 UTF8 *unparse_object_numonly(dbref);
 bool convert_flags(dbref, UTF8 *, FLAGSET *, FLAG *);

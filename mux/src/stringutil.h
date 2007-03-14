@@ -311,10 +311,10 @@ typedef struct
 } MUX_STRTOK_STATE;
 
 void mux_strtok_src(MUX_STRTOK_STATE *tts, UTF8 *pString);
-void mux_strtok_ctl(MUX_STRTOK_STATE *tts, UTF8 *pControl);
+void mux_strtok_ctl(MUX_STRTOK_STATE *tts, const UTF8 *pControl);
 UTF8 *mux_strtok_parseLEN(MUX_STRTOK_STATE *tts, size_t *pnLen);
 UTF8 *mux_strtok_parse(MUX_STRTOK_STATE *tts);
-UTF8 *RemoveSetOfCharacters(UTF8 *pString, UTF8 *pSetToRemove);
+UTF8 *RemoveSetOfCharacters(UTF8 *pString, const UTF8 *pSetToRemove);
 
 size_t mux_ltoa(long val, UTF8 *buf);
 UTF8 *mux_ltoa_t(long val);
@@ -374,7 +374,7 @@ UTF8 *convert_color(const UTF8 *pString, bool bNoBleed);
 UTF8 *strip_color(const UTF8 *pString, size_t *pnLength = 0, size_t *pnPoints = 0);
 UTF8 *normal_to_white(const UTF8 *);
 UTF8 *munge_space(const UTF8 *);
-UTF8 *trim_spaces(UTF8 *);
+UTF8 *trim_spaces(const UTF8 *);
 UTF8 *grabto(UTF8 **, UTF8);
 int  string_compare(const UTF8 *, const UTF8 *);
 int  string_prefix(const UTF8 *, const UTF8 *);
@@ -391,7 +391,7 @@ UTF8 *replace_tokens
 int prefix_match(const UTF8 *, const UTF8 *);
 char *BufferCloneLen(const UTF8 *pBuffer, unsigned int nBuffer);
 #endif // 0
-bool minmatch(UTF8 *str, UTF8 *target, int min);
+bool minmatch(const UTF8 *str, const UTF8 *target, int min);
 UTF8 *StringCloneLen(const UTF8 *str, size_t nStr);
 UTF8 *StringClone(const UTF8 *str);
 void safe_copy_str(const UTF8 *src, UTF8 *buff, UTF8 **bufp, size_t nSizeOfBuffer);

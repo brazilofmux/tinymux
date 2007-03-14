@@ -748,7 +748,7 @@ void boot_slave(dbref executor, dbref caller, dbref enactor, int)
     }
 
     STARTLOG(LOG_ALWAYS, "NET", "SLAVE");
-    log_text((UTF8 *)"DNS lookup slave started on fd ");
+    log_text(T("DNS lookup slave started on fd "));
     log_number(slave_socket);
     ENDLOG;
     return;
@@ -788,7 +788,7 @@ static int get_sqlslave_result(void)
         CleanUpSQLSlaveProcess();
 
         STARTLOG(LOG_ALWAYS, "NET", "QUERY");
-        log_text((UTF8 *)"read() of query slave failed. Query Slave stopped.");
+        log_text(T("read() of query slave failed. Query Slave stopped."));
         ENDLOG;
 
         return -1;
@@ -832,7 +832,7 @@ static int get_slave_result(void)
         free_lbuf(buf);
 
         STARTLOG(LOG_ALWAYS, "NET", "SLAVE");
-        log_text((UTF8 *)"read() of slave result failed. Slave stopped.");
+        log_text(T("read() of slave result failed. Slave stopped."));
         ENDLOG;
 
         return -1;
@@ -955,14 +955,14 @@ static void make_socket(PortInfo *Port)
         s = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
         if (IS_INVALID_SOCKET(s))
         {
-            log_perror((UTF8 *)"NET", (UTF8 *)"FAIL", NULL, (UTF8 *)"creating master socket");
+            log_perror(T("NET"), T("FAIL"), NULL, T("creating master socket"));
             return;
         }
 
         DebugTotalSockets++;
         if (setsockopt(s, SOL_SOCKET, SO_REUSEADDR, (char *)&opt, sizeof(opt)) < 0)
         {
-            log_perror((UTF8 *)"NET", (UTF8 *)"FAIL", NULL, (UTF8 *)"setsockopt");
+            log_perror(T("NET"), T("FAIL"), NULL, T("setsockopt"));
         }
 
         // Fill in the the address structure
@@ -1006,7 +1006,7 @@ static void make_socket(PortInfo *Port)
         HANDLE hThread = CreateThread(NULL, 0, MUDListenThread, (LPVOID)Port, 0, NULL);
         if (NULL == hThread)
         {
-            log_perror((UTF8 *)"NET", (UTF8 *)"FAIL", (UTF8 *)"CreateThread", (UTF8 *)"setsockopt");
+            log_perror(T("NET"), T("FAIL"), T("CreateThread"), T("setsockopt"));
             if (SOCKET_CLOSE(s) == 0)
             {
                 DebugTotalSockets--;
@@ -1024,14 +1024,14 @@ static void make_socket(PortInfo *Port)
     s = socket(AF_INET, SOCK_STREAM, 0);
     if (IS_INVALID_SOCKET(s))
     {
-        log_perror((UTF8 *)"NET", (UTF8 *)"FAIL", NULL, (UTF8 *)"creating master socket");
+        log_perror(T("NET"), T("FAIL"), NULL, T("creating master socket"));
         return;
     }
 
     DebugTotalSockets++;
     if (setsockopt(s, SOL_SOCKET, SO_REUSEADDR, (char *)&opt, sizeof(opt)) < 0)
     {
-        log_perror((UTF8 *)"NET", (UTF8 *)"FAIL", NULL, (UTF8 *)"setsockopt");
+        log_perror(T("NET"), T("FAIL"), NULL, T("setsockopt"));
     }
 
     server.sin_family = AF_INET;
@@ -1041,7 +1041,7 @@ static void make_socket(PortInfo *Port)
     int cc  = bind(s, (struct sockaddr *)&server, sizeof(server));
     if (IS_SOCKET_ERROR(cc))
     {
-        log_perror((UTF8 *)"NET", (UTF8 *)"FAIL", NULL, (UTF8 *)"bind");
+        log_perror(T("NET"), T("FAIL"), NULL, T("bind"));
         if (SOCKET_CLOSE(s) == 0)
         {
             DebugTotalSockets--;
@@ -1199,7 +1199,7 @@ void shovechars9x(int nPorts, PortInfo aPorts[])
 #define CheckInput(x)   FD_ISSET_priv(x, &input_set)
 #define CheckOutput(x)  FD_ISSET_priv(x, &output_set)
 
-    mudstate.debug_cmd = (UTF8 *)"< shovechars >";
+    mudstate.debug_cmd = T("< shovechars >");
 
     CLinearTimeAbsolute ltaLastSlice;
     ltaLastSlice.GetUTC();
@@ -1272,7 +1272,7 @@ void shovechars9x(int nPorts, PortInfo aPorts[])
         case SOCKET_ERROR:
             {
                 STARTLOG(LOG_NET, "NET", "CONN");
-                log_text((UTF8 *)"shovechars: Socket error.");
+                log_text(T("shovechars: Socket error."));
                 ENDLOG;
             }
 
@@ -1293,7 +1293,7 @@ void shovechars9x(int nPorts, PortInfo aPorts[])
                     if (  iSocketError
                        && iSocketError != SOCKET_EINTR)
                     {
-                        log_perror((UTF8 *)"NET", (UTF8 *)"FAIL", NULL, (UTF8 *)"new_connection");
+                        log_perror(T("NET"), T("FAIL"), NULL, T("new_connection"));
                     }
                 }
             }
@@ -1405,7 +1405,7 @@ void shovecharsNT(int nPorts, PortInfo aPorts[])
     UNUSED_PARAMETER(nPorts);
     UNUSED_PARAMETER(aPorts);
 
-    mudstate.debug_cmd = (UTF8 *)"< shovechars >";
+    mudstate.debug_cmd = T("< shovechars >");
 
     CreateThread(NULL, 0, ListenForCloseProc, NULL, 0, NULL);
 
@@ -1483,7 +1483,7 @@ void shovechars(int nPorts, PortInfo aPorts[])
 #define CheckInput(x)     FD_ISSET(x, &input_set)
 #define CheckOutput(x)    FD_ISSET(x, &output_set)
 
-    mudstate.debug_cmd = (UTF8 *)"< shovechars >";
+    mudstate.debug_cmd = T("< shovechars >");
 
     CLinearTimeAbsolute ltaLastSlice;
     ltaLastSlice.GetUTC();
@@ -1584,7 +1584,7 @@ void shovechars(int nPorts, PortInfo aPorts[])
                 // doom, unless we can figure out what the bad file
                 // descriptor is and get rid of it.
                 //
-                log_perror((UTF8 *)"NET", (UTF8 *)"FAIL", (UTF8 *)"checking for activity", (UTF8 *)"select");
+                log_perror(T("NET"), T("FAIL"), T("checking for activity"), T("select"));
 
                 // Search for a bad socket amoungst the players.
                 //
@@ -1593,7 +1593,7 @@ void shovechars(int nPorts, PortInfo aPorts[])
                     if (!ValidSocket(d->descriptor))
                     {
                         STARTLOG(LOG_PROBLEMS, "ERR", "EBADF");
-                        log_text((UTF8 *)"Bad descriptor ");
+                        log_text(T("Bad descriptor "));
                         log_number(d->descriptor);
                         ENDLOG;
                         shutdownsock(d, R_SOCKDIED);
@@ -1606,7 +1606,7 @@ void shovechars(int nPorts, PortInfo aPorts[])
                     // died.
                     //
                     STARTLOG(LOG_PROBLEMS, "ERR", "EBADF");
-                    log_text((UTF8 *)"Bad slave descriptor ");
+                    log_text(T("Bad slave descriptor "));
                     log_number(slave_socket);
                     ENDLOG;
                     boot_slave(GOD, GOD, GOD, 0);
@@ -1627,7 +1627,7 @@ void shovechars(int nPorts, PortInfo aPorts[])
                         // That's it. Game over.
                         //
                         STARTLOG(LOG_PROBLEMS, "ERR", "EBADF");
-                        log_text((UTF8 *)"Bad game port descriptor ");
+                        log_text(T("Bad game port descriptor "));
                         log_number(aPorts[i].socket);
                         ENDLOG;
                         return;
@@ -1636,7 +1636,7 @@ void shovechars(int nPorts, PortInfo aPorts[])
             }
             else if (iSocketError != SOCKET_EINTR)
             {
-                log_perror((UTF8 *)"NET", (UTF8 *)"FAIL", (UTF8 *)"checking for activity", (UTF8 *)"select");
+                log_perror(T("NET"), T("FAIL"), T("checking for activity"), T("select"));
             }
             continue;
         }
@@ -1678,7 +1678,7 @@ void shovechars(int nPorts, PortInfo aPorts[])
                     if (  iSocketError
                        && iSocketError != SOCKET_EINTR)
                     {
-                        log_perror((UTF8 *)"NET", (UTF8 *)"FAIL", NULL, (UTF8 *)"new_connection");
+                        log_perror(T("NET"), T("FAIL"), NULL, T("new_connection"));
                     }
                 }
                 else if (  !IS_INVALID_SOCKET(newd->descriptor)
@@ -1745,8 +1745,8 @@ DESC *new_connection(PortInfo *Port, int *piSocketError)
     int len;
 #endif // !WIN32
 
-    UTF8 *cmdsave = mudstate.debug_cmd;
-    mudstate.debug_cmd = (UTF8 *)"< new_connection >";
+    const UTF8 *cmdsave = mudstate.debug_cmd;
+    mudstate.debug_cmd = T("< new_connection >");
     addr_len = sizeof(struct sockaddr);
 
     SOCKET newsock = accept(Port->socket, (struct sockaddr *)&addr, &addr_len);
@@ -1775,7 +1775,7 @@ DESC *new_connection(PortInfo *Port, int *piSocketError)
 
         // Report site monitor information.
         //
-        SiteMonSend(newsock, pBuffM2, NULL, (UTF8 *)"Connection refused");
+        SiteMonSend(newsock, pBuffM2, NULL, T("Connection refused"));
 
         fcache_rawdump(newsock, FC_CONN_SITE);
         shutdown(newsock, SD_BOTH);
@@ -1836,7 +1836,7 @@ DESC *new_connection(PortInfo *Port, int *piSocketError)
                 CleanUpSlaveProcess();
 
                 STARTLOG(LOG_ALWAYS, "NET", "SLAVE");
-                log_text((UTF8 *)"write() of slave request failed. Slave stopped.");
+                log_text(T("write() of slave request failed. Slave stopped."));
                 ENDLOG;
             }
             free_lbuf(pBuffL1);
@@ -1857,7 +1857,7 @@ DESC *new_connection(PortInfo *Port, int *piSocketError)
         // Initalize everything before sending the sitemon info, so that we
         // can pass the descriptor, d.
         //
-        SiteMonSend(newsock, pBuffM2, d, (UTF8 *)"Connection");
+        SiteMonSend(newsock, pBuffM2, d, T("Connection"));
 
         welcome_user(d);
     }
@@ -1871,32 +1871,32 @@ DESC *new_connection(PortInfo *Port, int *piSocketError)
 //
 static const UTF8 *disc_reasons[] =
 {
-    (UTF8 *)"Unspecified",
-    (UTF8 *)"Quit",
-    (UTF8 *)"Inactivity Timeout",
-    (UTF8 *)"Booted",
-    (UTF8 *)"Remote Close or Net Failure",
-    (UTF8 *)"Game Shutdown",
-    (UTF8 *)"Login Retry Limit",
-    (UTF8 *)"Logins Disabled",
-    (UTF8 *)"Logout (Connection Not Dropped)",
-    (UTF8 *)"Too Many Connected Players"
+    T("Unspecified"),
+    T("Quit"),
+    T("Inactivity Timeout"),
+    T("Booted"),
+    T("Remote Close or Net Failure"),
+    T("Game Shutdown"),
+    T("Login Retry Limit"),
+    T("Logins Disabled"),
+    T("Logout (Connection Not Dropped)"),
+    T("Too Many Connected Players")
 };
 
 // Disconnect reasons that get fed to A_ADISCONNECT via announce_disconnect
 //
 static const UTF8 *disc_messages[] =
 {
-    (UTF8 *)"Unknown",
-    (UTF8 *)"Quit",
-    (UTF8 *)"Timeout",
-    (UTF8 *)"Boot",
-    (UTF8 *)"Netfailure",
-    (UTF8 *)"Shutdown",
-    (UTF8 *)"BadLogin",
-    (UTF8 *)"NoLogins",
-    (UTF8 *)"Logout",
-    (UTF8 *)"GameFull"
+    T("Unknown"),
+    T("Quit"),
+    T("Timeout"),
+    T("Boot"),
+    T("Netfailure"),
+    T("Shutdown"),
+    T("BadLogin"),
+    T("NoLogins"),
+    T("Logout"),
+    T("GameFull")
 };
 
 void shutdownsock(DESC *d, int reason)
@@ -2001,7 +2001,7 @@ void shutdownsock(DESC *d, int reason)
             log_text(buff);
             free_mbuf(buff);
             ENDLOG;
-            SiteMonSend(d->descriptor, d->addr, d, (UTF8 *)"Disconnection");
+            SiteMonSend(d->descriptor, d->addr, d, T("Disconnection"));
         }
 
         // If requested, write an accounting record of the form:
@@ -2037,7 +2037,7 @@ void shutdownsock(DESC *d, int reason)
         log_text(buff);
         free_mbuf(buff);
         ENDLOG;
-        SiteMonSend(d->descriptor, d->addr, d, (UTF8 *)"N/C Connection Closed");
+        SiteMonSend(d->descriptor, d->addr, d, T("N/C Connection Closed"));
     }
 
     process_output(d, false);
@@ -2223,33 +2223,33 @@ int make_nonblocking(SOCKET s)
     unsigned long on = 1;
     if (IS_SOCKET_ERROR(ioctlsocket(s, FIONBIO, &on)))
     {
-        log_perror((UTF8 *)"NET", (UTF8 *)"FAIL", (UTF8 *)"make_nonblocking", (UTF8 *)"ioctlsocket");
+        log_perror(T("NET"), T("FAIL"), T("make_nonblocking"), T("ioctlsocket"));
         return -1;
     }
 #else // WIN32
 #if defined(O_NONBLOCK)
     if (fcntl(s, F_SETFL, O_NONBLOCK) < 0)
     {
-        log_perror((UTF8 *)"NET", (UTF8 *)"FAIL", (UTF8 *)"make_nonblocking", (UTF8 *)"fcntl");
+        log_perror(T("NET"), T("FAIL"), T("make_nonblocking"), T("fcntl"));
         return -1;
     }
 #elif defined(FNDELAY)
     if (fcntl(s, F_SETFL, FNDELAY) < 0)
     {
-        log_perror((UTF8 *)"NET", (UTF8 *)"FAIL", (UTF8 *)"make_nonblocking", (UTF8 *)"fcntl");
+        log_perror(T("NET"), T("FAIL"), T("make_nonblocking"), T("fcntl"));
         return -1;
     }
 #elif defined(O_NDELAY)
     if (fcntl(s, F_SETFL, O_NDELAY) < 0)
     {
-        log_perror((UTF8 *)"NET", (UTF8 *)"FAIL", (UTF8 *)"make_nonblocking", (UTF8 *)"fcntl");
+        log_perror(T("NET"), T("FAIL"), T("make_nonblocking"), T("fcntl"));
         return -1;
     }
 #elif defined(FIONBIO)
     unsigned long on = 1;
     if (ioctl(s, FIONBIO, &on) < 0)
     {
-        log_perror((UTF8 *)"NET", (UTF8 *)"FAIL", (UTF8 *)"make_nonblocking", (UTF8 *)"ioctl");
+        log_perror(T("NET"), T("FAIL"), T("make_nonblocking"), T("ioctl"));
         return -1;
     }
 #endif // O_NONBLOCK, FNDELAY, O_NDELAY, FIONBIO
@@ -2265,7 +2265,7 @@ static void make_nolinger(SOCKET s)
     ling.l_linger = 0;
     if (IS_SOCKET_ERROR(setsockopt(s, SOL_SOCKET, SO_LINGER, (char *)&ling, sizeof(ling))))
     {
-        log_perror((UTF8 *)"NET", (UTF8 *)"FAIL", (UTF8 *)"linger", (UTF8 *)"setsockopt");
+        log_perror(T("NET"), T("FAIL"), T("linger"), T("setsockopt"));
     }
 #endif // HAVE_LINGER
 }
@@ -2399,8 +2399,8 @@ void process_output9x(void *dvoid, int bHandleShutdown)
     DESC *d = (DESC *)dvoid;
     int cnt;
 
-    UTF8 *cmdsave = mudstate.debug_cmd;
-    mudstate.debug_cmd = (UTF8 *)"< process_output >";
+    const UTF8 *cmdsave = mudstate.debug_cmd;
+    mudstate.debug_cmd = T("< process_output >");
 
     TBLOCK *tb = d->output_head;
 
@@ -2506,8 +2506,8 @@ void process_outputNT(void *dvoid, int bHandleShutdown)
         return;
     }
 
-    UTF8 *cmdsave = mudstate.debug_cmd;
-    mudstate.debug_cmd = (UTF8 *)"< process_output >";
+    const UTF8 *cmdsave = mudstate.debug_cmd;
+    mudstate.debug_cmd = T("< process_output >");
 
     TBLOCK *tb = d->output_head;
     TBLOCK *save;
@@ -2567,7 +2567,7 @@ void process_output(void *dvoid, int bHandleShutdown)
     DESC *d = (DESC *)dvoid;
 
     UTF8 *cmdsave = mudstate.debug_cmd;
-    mudstate.debug_cmd = (UTF8 *)"< process_output >";
+    mudstate.debug_cmd = T("< process_output >");
 
     TBLOCK *tb = d->output_head;
     while (tb != NULL)
@@ -3268,11 +3268,11 @@ static void process_input_helper(DESC *d, char *pBytes, int nBytes)
 
             if (NVT_DEL == ch)
             {
-                queue_string(d, (UTF8 *)"\b \b");
+                queue_string(d, T("\b \b"));
             }
             else
             {
-                queue_string(d, (UTF8 *)" \b");
+                queue_string(d, T(" \b"));
             }
 
             // Rewind until we pass the first byte of a UTF-8 sequence.
@@ -3367,7 +3367,7 @@ static void process_input_helper(DESC *d, char *pBytes, int nBytes)
         case 12:
             // Action 12 - Respond to IAC AYT and return to the Normal state.
             //
-            queue_string(d, (UTF8 *)"\r\n[Yes]\r\n");
+            queue_string(d, T("\r\n[Yes]\r\n"));
             d->raw_input_state = NVT_IS_NORMAL;
             break;
 
@@ -3585,8 +3585,8 @@ static void process_input_helper(DESC *d, char *pBytes, int nBytes)
                                     // this way, and just default to Latin1 if
                                     // we can't get a UTF8 locale.
                                     //
-                                    if (  0 == mux_stricmp(varname, (UTF8 *)"LC_CTYPE")
-                                       || 0 == mux_stricmp(varname, (UTF8 *)"LC_ALL"))
+                                    if (  0 == mux_stricmp(varname, T("LC_CTYPE"))
+                                       || 0 == mux_stricmp(varname, T("LC_ALL")))
                                     {
                                         UTF8 *pEncoding = (UTF8 *)strchr((char *)varval, '.');
                                         if (pEncoding)
@@ -3598,7 +3598,7 @@ static void process_input_helper(DESC *d, char *pBytes, int nBytes)
                                             pEncoding = &varval[0];
                                         }
 
-                                        if (  0 == mux_stricmp(pEncoding, (UTF8 *)"utf-8")
+                                        if (  0 == mux_stricmp(pEncoding, T("utf-8"))
                                            && CHARSET_UTF8 != d->encoding)
                                         {
                                             // Since we are changing to the
@@ -3611,7 +3611,7 @@ static void process_input_helper(DESC *d, char *pBytes, int nBytes)
                                         }
                                     }
 
-                                    if (0 == mux_stricmp(varname, (UTF8 *)"USER"))
+                                    if (0 == mux_stricmp(varname, T("USER")))
                                     {
                                         memset(d->username, 0, 11);
                                         memcpy(d->username, varval, 10);
@@ -3701,8 +3701,8 @@ static void process_input_helper(DESC *d, char *pBytes, int nBytes)
 
 bool process_input(DESC *d)
 {
-    UTF8 *cmdsave = mudstate.debug_cmd;
-    mudstate.debug_cmd = (UTF8 *)"< process_input >";
+    const UTF8 *cmdsave = mudstate.debug_cmd;
+    mudstate.debug_cmd = T("< process_input >");
 
     char buf[LBUF_SIZE];
     int got = SOCKET_READ(d->descriptor, buf, sizeof(buf), 0);
@@ -3726,7 +3726,7 @@ bool process_input(DESC *d)
     return true;
 }
 
-void close_sockets(bool emergency, UTF8 *message)
+void close_sockets(bool emergency, const UTF8 *message)
 {
     DESC *d, *dnext;
 
@@ -3734,10 +3734,10 @@ void close_sockets(bool emergency, UTF8 *message)
     {
         if (emergency)
         {
-            SOCKET_WRITE(d->descriptor, (char *)message, strlen((char *)message), 0);
+            SOCKET_WRITE(d->descriptor, (const char *)message, strlen((const char *)message), 0);
             if (IS_SOCKET_ERROR(shutdown(d->descriptor, SD_BOTH)))
             {
-                log_perror((UTF8 *)"NET", (UTF8 *)"FAIL", NULL, (UTF8 *)"shutdown");
+                log_perror(T("NET"), T("FAIL"), NULL, T("shutdown"));
             }
             if (SOCKET_CLOSE(d->descriptor) == 0)
             {
@@ -3763,7 +3763,7 @@ void close_sockets(bool emergency, UTF8 *message)
 
 void emergency_shutdown(void)
 {
-    close_sockets(true, (UTF8 *)"Going down - Bye");
+    close_sockets(true, T("Going down - Bye"));
 }
 
 
@@ -3791,190 +3791,190 @@ const SIGNALTYPE aSigTypes[] =
 #ifdef SIGHUP
     // Hangup detected on controlling terminal or death of controlling process.
     //
-    { SIGHUP,   (UTF8 *)"SIGHUP"},
+    { SIGHUP,   T("SIGHUP")},
 #endif // SIGHUP
 #ifdef SIGINT
     // Interrupt from keyboard.
     //
-    { SIGINT,   (UTF8 *)"SIGINT"},
+    { SIGINT,   T("SIGINT")},
 #endif // SIGINT
 #ifdef SIGQUIT
     // Quit from keyboard.
     //
-    { SIGQUIT,  (UTF8 *)"SIGQUIT"},
+    { SIGQUIT,  T("SIGQUIT")},
 #endif // SIGQUIT
 #ifdef SIGILL
     // Illegal Instruction.
     //
-    { SIGILL,   (UTF8 *)"SIGILL"},
+    { SIGILL,   T("SIGILL")},
 #endif // SIGILL
 #ifdef SIGTRAP
     // Trace/breakpoint trap.
     //
-    { SIGTRAP,  (UTF8 *)"SIGTRAP"},
+    { SIGTRAP,  T("SIGTRAP")},
 #endif // SIGTRAP
 #if defined(SIGABRT)
     // Abort signal from abort(3).
     //
-    { SIGABRT,  (UTF8 *)"SIGABRT"},
+    { SIGABRT,  T("SIGABRT")},
 #elif defined(SIGIOT)
 #define SIGABRT SIGIOT
     // Abort signal from abort(3).
     //
-    { SIGIOT,   (UTF8 *)"SIGIOT"},
+    { SIGIOT,   T("SIGIOT")},
 #endif // SIGABRT
 #ifdef SIGEMT
-    { SIGEMT,   (UTF8 *)"SIGEMT"},
+    { SIGEMT,   T("SIGEMT")},
 #endif // SIGEMT
 #ifdef SIGFPE
     // Floating-point exception.
     //
-    { SIGFPE,   (UTF8 *)"SIGFPE"},
+    { SIGFPE,   T("SIGFPE")},
 #endif // SIGFPE
 #ifdef SIGKILL
     // Kill signal. Not catchable.
     //
-    { SIGKILL,  (UTF8 *)"SIGKILL"},
+    { SIGKILL,  T("SIGKILL")},
 #endif // SIGKILL
 #ifdef SIGSEGV
     // Invalid memory reference.
     //
-    { SIGSEGV,  (UTF8 *)"SIGSEGV"},
+    { SIGSEGV,  T("SIGSEGV")},
 #endif // SIGSEGV
 #ifdef SIGPIPE
     // Broken pipe: write to pipe with no readers.
     //
-    { SIGPIPE,  (UTF8 *)"SIGPIPE"},
+    { SIGPIPE,  T("SIGPIPE")},
 #endif // SIGPIPE
 #ifdef SIGALRM
     // Timer signal from alarm(2).
     //
-    { SIGALRM,  (UTF8 *)"SIGALRM"},
+    { SIGALRM,  T("SIGALRM")},
 #endif // SIGALRM
 #ifdef SIGTERM
     // Termination signal.
     //
-    { SIGTERM,  (UTF8 *)"SIGTERM"},
+    { SIGTERM,  T("SIGTERM")},
 #endif // SIGTERM
 #ifdef SIGBREAK
     // Ctrl-Break.
     //
-    { SIGBREAK, (UTF8 *)"SIGBREAK"},
+    { SIGBREAK, T("SIGBREAK")},
 #endif // SIGBREAK
 #ifdef SIGUSR1
     // User-defined signal 1.
     //
-    { SIGUSR1,  (UTF8 *)"SIGUSR1"},
+    { SIGUSR1,  T("SIGUSR1")},
 #endif // SIGUSR1
 #ifdef SIGUSR2
     // User-defined signal 2.
     //
-    { SIGUSR2,  (UTF8 *)"SIGUSR2"},
+    { SIGUSR2,  T("SIGUSR2")},
 #endif // SIGUSR2
 #if defined(SIGCHLD)
     // Child stopped or terminated.
     //
-    { SIGCHLD,  (UTF8 *)"SIGCHLD"},
+    { SIGCHLD,  T("SIGCHLD")},
 #elif defined(SIGCLD)
 #define SIGCHLD SIGCLD
     // Child stopped or terminated.
     //
-    { SIGCLD,   (UTF8 *)"SIGCLD"},
+    { SIGCLD,   T("SIGCLD")},
 #endif // SIGCHLD
 #ifdef SIGCONT
     // Continue if stopped.
     //
-    { SIGCONT,  (UTF8 *)"SIGCONT"},
+    { SIGCONT,  T("SIGCONT")},
 #endif // SIGCONT
 #ifdef SIGSTOP
     // Stop process. Not catchable.
     //
-    { SIGSTOP,  (UTF8 *)"SIGSTOP"},
+    { SIGSTOP,  T("SIGSTOP")},
 #endif // SIGSTOP
 #ifdef SIGTSTP
     // Stop typed at tty
     //
-    { SIGTSTP,  (UTF8 *)"SIGTSTP"},
+    { SIGTSTP,  T("SIGTSTP")},
 #endif // SIGTSTP
 #ifdef SIGTTIN
     // tty input for background process.
     //
-    { SIGTTIN,  (UTF8 *)"SIGTTIN"},
+    { SIGTTIN,  T("SIGTTIN")},
 #endif // SIGTTIN
 #ifdef SIGTTOU
     // tty output for background process.
     //
-    { SIGTTOU,  (UTF8 *)"SIGTTOU"},
+    { SIGTTOU,  T("SIGTTOU")},
 #endif // SIGTTOU
 #ifdef SIGBUS
     // Bus error (bad memory access).
     //
-    { SIGBUS,   (UTF8 *)"SIGBUS"},
+    { SIGBUS,   T("SIGBUS")},
 #endif // SIGBUS
 #ifdef SIGPROF
     // Profiling timer expired.
     //
-    { SIGPROF,  (UTF8 *)"SIGPROF"},
+    { SIGPROF,  T("SIGPROF")},
 #endif // SIGPROF
 #ifdef SIGSYS
     // Bad argument to routine (SVID).
     //
-    { SIGSYS,   (UTF8 *)"SIGSYS"},
+    { SIGSYS,   T("SIGSYS")},
 #endif // SIGSYS
 #ifdef SIGURG
     // Urgent condition on socket (4.2 BSD).
     //
-    { SIGURG,   (UTF8 *)"SIGURG"},
+    { SIGURG,   T("SIGURG")},
 #endif // SIGURG
 #ifdef SIGVTALRM
     // Virtual alarm clock (4.2 BSD).
     //
-    { SIGVTALRM, (UTF8 *)"SIGVTALRM"},
+    { SIGVTALRM, T("SIGVTALRM")},
 #endif // SIGVTALRM
 #ifdef SIGXCPU
     // CPU time limit exceeded (4.2 BSD).
     //
-    { SIGXCPU,  (UTF8 *)"SIGXCPU"},
+    { SIGXCPU,  T("SIGXCPU")},
 #endif // SIGXCPU
 #ifdef SIGXFSZ
     // File size limit exceeded (4.2 BSD).
     //
-    { SIGXFSZ,  (UTF8 *)"SIGXFSZ"},
+    { SIGXFSZ,  T("SIGXFSZ")},
 #endif // SIGXFSZ
 #ifdef SIGSTKFLT
     // Stack fault on coprocessor.
     //
-    { SIGSTKFLT, (UTF8 *)"SIGSTKFLT"},
+    { SIGSTKFLT, T("SIGSTKFLT")},
 #endif // SIGSTKFLT
 #if defined(SIGIO)
     // I/O now possible (4.2 BSD). File lock lost.
     //
-    { SIGIO,    (UTF8 *)"SIGIO"},
+    { SIGIO,    T("SIGIO")},
 #elif defined(SIGPOLL)
 #define SIGIO SIGPOLL
     // Pollable event (Sys V).
     //
-    { SIGPOLL,  (UTF8 *)"SIGPOLL"},
+    { SIGPOLL,  T("SIGPOLL")},
 #endif // SIGIO
 #ifdef SIGLOST
-    { SIGLOST,  (UTF8 *)"SIGLOST"},
+    { SIGLOST,  T("SIGLOST")},
 #endif // SIGLOST
 #if defined(SIGPWR)
     // Power failure (System V).
     //
-    { SIGPWR,   (UTF8 *)"SIGPWR"},
+    { SIGPWR,   T("SIGPWR")},
 #elif defined(SIGINFO)
 #define SIGPWR SIGINFO
     // Power failure (System V).
     //
-    { SIGINFO,  (UTF8 *)"SIGINFO"},
+    { SIGINFO,  T("SIGINFO")},
 #endif // SIGPWR
 #ifdef SIGWINCH
     // Window resize signal (4.3 BSD, Sun).
     //
-    { SIGWINCH, (UTF8 *)"SIGWINCH"},
+    { SIGWINCH, T("SIGWINCH")},
 #endif // SIGWINCH
-    { 0,        (UTF8 *)"SIGZERO" },
+    { 0,        T("SIGZERO") },
     { -1, NULL }
 };
 
@@ -4015,11 +4015,11 @@ void BuildSignalNamesTable(void)
 #ifndef WIN32
                 if (sig == SIGUSR1)
                 {
-                    tsn->pLongName = (UTF8 *)"Restart server";
+                    tsn->pLongName = T("Restart server");
                 }
                 else if (sig == SIGUSR2)
                 {
-                    tsn->pLongName = (UTF8 *)"Drop flatfile";
+                    tsn->pLongName = T("Drop flatfile");
                 }
 #endif // WIN32
 #ifdef SysSigNames
@@ -4087,7 +4087,7 @@ static UTF8 *SignalDesc(int iSignal)
     safe_str(signames[iSignal].pShortName, buff, &bufc);
     if (signames[iSignal].pLongName)
     {
-        safe_str((UTF8 *)" (", buff, &bufc);
+        safe_str(T(" ("), buff, &bufc);
         safe_str(signames[iSignal].pLongName, buff, &bufc);
         safe_chr(')', buff, &bufc);
     }
@@ -4097,8 +4097,8 @@ static UTF8 *SignalDesc(int iSignal)
 
 static void log_signal(int iSignal)
 {
-    STARTLOG(LOG_PROBLEMS, (UTF8 *)"SIG", (UTF8 *)"CATCH");
-    log_text((UTF8 *)"Caught signal ");
+    STARTLOG(LOG_PROBLEMS, T("SIG"), T("CATCH"));
+    log_text(T("Caught signal "));
     log_text(SignalDesc(iSignal));
     ENDLOG;
 }
@@ -4107,9 +4107,9 @@ static void log_signal(int iSignal)
 static void log_signal_ignore(int iSignal)
 {
     STARTLOG(LOG_PROBLEMS, "SIG", "CATCH");
-    log_text((UTF8 *)"Caught signal and ignored signal ");
+    log_text(T("Caught signal and ignored signal "));
     log_text(SignalDesc(iSignal));
-    log_text((UTF8 *)" because server just came up.");
+    log_text(T(" because server just came up."));
     ENDLOG;
 }
 
@@ -4126,7 +4126,7 @@ void LogStatBuf(int stat_buf, const char *Name)
     }
     else
     {
-        log_text((UTF8 *)"process ended unexpectedly.");
+        log_text(T("process ended unexpectedly."));
     }
     ENDLOG;
 }
@@ -4397,8 +4397,8 @@ static RETSIGTYPE DCL_CDECL sighandler(int sig)
 
 NAMETAB sigactions_nametab[] =
 {
-    {(UTF8 *)"exit",        3,  0,  SA_EXIT},
-    {(UTF8 *)"default",     1,  0,  SA_DFLT},
+    {T("exit"),        3,  0,  SA_EXIT},
+    {T("default"),     1,  0,  SA_DFLT},
     {(UTF8 *) NULL,         0,  0,  0}
 };
 
@@ -4462,7 +4462,7 @@ void list_system_resources(dbref player)
     UTF8 buffer[80];
 
     int nTotal = 0;
-    notify(player, (UTF8 *)"System Resources");
+    notify(player, T("System Resources"));
 
     mux_sprintf(buffer, sizeof(buffer), "Total Open Files: %ld", DebugTotalFiles);
     notify(player, buffer);
@@ -4927,11 +4927,11 @@ void ProcessWindowsTCP(DWORD dwTimeout)
             STARTLOG(LOG_NET | LOG_LOGIN, "NET", "CONN");
             const UTF8 *lDesc = mux_i64toa_t(d->descriptor);
             Log.tinyprintf("[%s/%s] Connection opened (remote port %d)",
-                bInvalidSocket ? (UTF8 *)"UNKNOWN" : lDesc, buff,
+                bInvalidSocket ? T("UNKNOWN") : lDesc, buff,
                 ntohs(d->address.sin_port));
             ENDLOG;
 
-            SiteMonSend(d->descriptor, buff, d, (UTF8 *)"Connection");
+            SiteMonSend(d->descriptor, buff, d, T("Connection"));
 
             if (bInvalidSocket)
             {
@@ -4942,7 +4942,7 @@ void ProcessWindowsTCP(DWORD dwTimeout)
                     buff, ntohs(d->address.sin_port));
                 ENDLOG;
 
-                SiteMonSend(d->descriptor, buff, d, (UTF8 *)"Connection closed prematurely");
+                SiteMonSend(d->descriptor, buff, d, T("Connection closed prematurely"));
             }
             else
             {
@@ -5006,12 +5006,12 @@ void SiteMonSend(SOCKET port, const UTF8 *address, DESC *d, const UTF8 *msg)
     if (IS_INVALID_SOCKET(port))
     {
         sendMsg = tprintf("SITEMON: [UNKNOWN] %s from %s.%s", msg, address,
-            bSuspect ? (UTF8 *)" (SUSPECT)": (UTF8 *)"");
+            bSuspect ? T(" (SUSPECT)"): T(""));
     }
     else
     {
         sendMsg = tprintf("SITEMON: [%d] %s from %s.%s", port, msg,
-            address, bSuspect ? (UTF8 *)" (SUSPECT)": (UTF8 *)"");
+            address, bSuspect ? T(" (SUSPECT)"): T(""));
     }
 
     DESC *nd;

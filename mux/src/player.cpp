@@ -146,12 +146,12 @@ void record_login
     {
         if (login_info.new_bad > 0)
         {
-            notify(player, (UTF8 *)"");
+            notify(player, T(""));
             notify(player, tprintf("**** %d failed connect%s since your last successful connect. ****",
                 login_info.new_bad, (login_info.new_bad == 1 ? "" : "s")));
             notify(player, tprintf("Most recent attempt was from %s on %s.",
                 login_info.bad[0].host, login_info.bad[0].dtm));
-            notify(player, (UTF8 *)"");
+            notify(player, T(""));
             login_info.new_bad = 0;
         }
         if (  login_info.good[0].host
@@ -548,8 +548,8 @@ void AddToPublicChannel(dbref player)
 
 dbref create_player
 (
-    UTF8 *name,
-    UTF8 *password,
+    const UTF8 *name,
+    const UTF8 *password,
     dbref creator,
     bool isrobot,
     const UTF8 **pmsg
@@ -561,7 +561,7 @@ dbref create_player
     //
     if (ThrottlePlayerCreate())
     {
-        *pmsg = (UTF8 *)"The limit of new players for this hour has been reached. Please try again later.";
+        *pmsg = T("The limit of new players for this hour has been reached. Please try again later.");
         return NOTHING;
     }
 
@@ -579,7 +579,7 @@ dbref create_player
     dbref player = create_obj(creator, TYPE_PLAYER, name, isrobot);
     if (player == NOTHING)
     {
-        *pmsg = (UTF8 *)"Either there is already a player with that name, or that name is illegal.";
+        *pmsg = T("Either there is already a player with that name, or that name is illegal.");
         free_lbuf(pbuf);
         return NOTHING;
     }
@@ -620,7 +620,7 @@ void do_password
     if (  !*target
        || !check_pass(executor, oldpass))
     {
-        notify(executor, (UTF8 *)"Sorry.");
+        notify(executor, T("Sorry."));
     }
     else if (ok_password(newpass, &pmsg))
     {
@@ -662,7 +662,7 @@ void do_last(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF
     {
         target = Owner(executor);
     }
-    else if (string_compare(who, (UTF8 *)"me") == 0)
+    else if (string_compare(who, T("me")) == 0)
     {
         target = Owner(executor);
     }
@@ -673,7 +673,7 @@ void do_last(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF
 
     if (target == NOTHING)
     {
-        notify(executor, (UTF8 *)"I couldn't find that player.");
+        notify(executor, T("I couldn't find that player."));
     }
     else if (!Controls(executor, target))
     {
@@ -814,7 +814,7 @@ bool delete_player_name(dbref player, const UTF8 *name)
 
 dbref lookup_player(dbref doer, UTF8 *name, bool check_who)
 {
-    if (string_compare(name, (UTF8 *)"me") == 0)
+    if (string_compare(name, T("me")) == 0)
     {
         return doer;
     }

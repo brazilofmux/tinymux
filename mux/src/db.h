@@ -25,7 +25,7 @@
                       ((l) < mudconf.parent_nest_lim)); \
                      (p)=Parent(p), (l)++)
 
-int get_atr(UTF8 *name);
+int get_atr(const UTF8 *name);
 
 typedef struct attr ATTR;
 struct attr
@@ -125,7 +125,7 @@ struct boolexp
 #define AMBIGUOUS   (-2)    /* multiple possibilities, for matchers */
 #define HOME        (-3)    /* virtual room, represents mover's home */
 #define NOPERM      (-4)    /* Error status, no permission */
-extern UTF8 *aszSpecialDBRefNames[1-NOPERM];
+extern const UTF8 *aszSpecialDBRefNames[1-NOPERM];
 
 typedef struct object OBJ;
 struct object

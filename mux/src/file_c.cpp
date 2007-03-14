@@ -41,33 +41,33 @@ typedef struct filecache_hdr FCACHE;
 
 static FCACHE fcache[] =
 {
-    { &mudconf.conn_file,    NULL,   (UTF8 *)"Conn" },
-    { &mudconf.site_file,    NULL,   (UTF8 *)"Conn/Badsite" },
-    { &mudconf.down_file,    NULL,   (UTF8 *)"Conn/Down" },
-    { &mudconf.full_file,    NULL,   (UTF8 *)"Conn/Full" },
-    { &mudconf.guest_file,   NULL,   (UTF8 *)"Conn/Guest" },
-    { &mudconf.creg_file,    NULL,   (UTF8 *)"Conn/Reg" },
-    { &mudconf.crea_file,    NULL,   (UTF8 *)"Crea/Newuser" },
-    { &mudconf.regf_file,    NULL,   (UTF8 *)"Crea/RegFaill" },
-    { &mudconf.motd_file,    NULL,   (UTF8 *)"Motd" },
-    { &mudconf.wizmotd_file, NULL,   (UTF8 *)"Wizmotd" },
-    { &mudconf.quit_file,    NULL,   (UTF8 *)"Quit" },
+    { &mudconf.conn_file,    NULL,   T("Conn") },
+    { &mudconf.site_file,    NULL,   T("Conn/Badsite") },
+    { &mudconf.down_file,    NULL,   T("Conn/Down") },
+    { &mudconf.full_file,    NULL,   T("Conn/Full") },
+    { &mudconf.guest_file,   NULL,   T("Conn/Guest") },
+    { &mudconf.creg_file,    NULL,   T("Conn/Reg") },
+    { &mudconf.crea_file,    NULL,   T("Crea/Newuser") },
+    { &mudconf.regf_file,    NULL,   T("Crea/RegFaill") },
+    { &mudconf.motd_file,    NULL,   T("Motd") },
+    { &mudconf.wizmotd_file, NULL,   T("Wizmotd") },
+    { &mudconf.quit_file,    NULL,   T("Quit") },
     { NULL,                  NULL,   (UTF8 *)NULL }
 };
 
 static NAMETAB list_files[] =
 {
-    {(UTF8 *)"badsite_connect",  1,  CA_WIZARD,  FC_CONN_SITE},
-    {(UTF8 *)"connect",          2,  CA_WIZARD,  FC_CONN},
-    {(UTF8 *)"create_register",  2,  CA_WIZARD,  FC_CREA_REG},
-    {(UTF8 *)"down",             1,  CA_WIZARD,  FC_CONN_DOWN},
-    {(UTF8 *)"full",             1,  CA_WIZARD,  FC_CONN_FULL},
-    {(UTF8 *)"guest_motd",       1,  CA_WIZARD,  FC_CONN_GUEST},
-    {(UTF8 *)"motd",             1,  CA_WIZARD,  FC_MOTD},
-    {(UTF8 *)"newuser",          1,  CA_WIZARD,  FC_CREA_NEW},
-    {(UTF8 *)"quit",             1,  CA_WIZARD,  FC_QUIT},
-    {(UTF8 *)"register_connect", 1,  CA_WIZARD,  FC_CONN_REG},
-    {(UTF8 *)"wizard_motd",      1,  CA_WIZARD,  FC_WIZMOTD},
+    {T("badsite_connect"),  1,  CA_WIZARD,  FC_CONN_SITE},
+    {T("connect"),          2,  CA_WIZARD,  FC_CONN},
+    {T("create_register"),  2,  CA_WIZARD,  FC_CREA_REG},
+    {T("down"),             1,  CA_WIZARD,  FC_CONN_DOWN},
+    {T("full"),             1,  CA_WIZARD,  FC_CONN_FULL},
+    {T("guest_motd"),       1,  CA_WIZARD,  FC_CONN_GUEST},
+    {T("motd"),             1,  CA_WIZARD,  FC_MOTD},
+    {T("newuser"),          1,  CA_WIZARD,  FC_CREA_NEW},
+    {T("quit"),             1,  CA_WIZARD,  FC_QUIT},
+    {T("register_connect"), 1,  CA_WIZARD,  FC_CONN_REG},
+    {T("wizard_motd"),      1,  CA_WIZARD,  FC_WIZMOTD},
     {(UTF8 *) NULL,              0,  0,          0}
 };
 
@@ -81,7 +81,7 @@ void do_list_file(dbref executor, dbref caller, dbref enactor, int eval, int ext
     int flagvalue;
     if (!search_nametab(executor, list_files, arg, &flagvalue))
     {
-        display_nametab(executor, list_files, (UTF8 *)"Unknown file.  Use one of:", true);
+        display_nametab(executor, list_files, T("Unknown file.  Use one of:"), true);
         return;
     }
     fcache_send(executor, flagvalue);
@@ -253,14 +253,14 @@ void fcache_load(dbref player)
             mux_ltoa(i, sbuf);
             if (fp == fcache)
             {
-                safe_str((UTF8 *)"File sizes: ", buff, &bufc);
+                safe_str(T("File sizes: "), buff, &bufc);
             }
             else
             {
-                safe_str((UTF8 *)"  ", buff, &bufc);
+                safe_str(T("  "), buff, &bufc);
             }
             safe_str(fp->desc, buff, &bufc);
-            safe_str((UTF8 *)"...", buff, &bufc);
+            safe_str(T("..."), buff, &bufc);
             safe_str(sbuf, buff, &bufc);
         }
     }

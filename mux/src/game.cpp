@@ -41,11 +41,11 @@ void do_dump(dbref executor, dbref caller, dbref enactor, int key)
 #ifndef WIN32
     if (mudstate.dumping)
     {
-        notify(executor, (UTF8 *)"Dumping in progress. Try again later.");
+        notify(executor, T("Dumping in progress. Try again later."));
         return;
     }
 #endif
-    notify(executor, (UTF8 *)"Dumping...");
+    notify(executor, T("Dumping..."));
     fork_and_dump(key);
 }
 
@@ -54,19 +54,19 @@ void do_dump(dbref executor, dbref caller, dbref enactor, int key)
 void report(void)
 {
     STARTLOG(LOG_BUGS, "BUG", "INFO");
-    log_text((UTF8 *)"Command: '");
+    log_text(T("Command: '"));
     log_text(mudstate.debug_cmd);
-    log_text((UTF8 *)"'");
+    log_text(T("'"));
     ENDLOG;
     if (Good_obj(mudstate.curr_executor))
     {
         STARTLOG(LOG_BUGS, "BUG", "INFO");
-        log_text((UTF8 *)"Player: ");
+        log_text(T("Player: "));
         log_name_and_loc(mudstate.curr_executor);
         if (  mudstate.curr_enactor != mudstate.curr_executor
            && Good_obj(mudstate.curr_enactor))
         {
-            log_text((UTF8 *)" Enactor: ");
+            log_text(T(" Enactor: "));
             log_name_and_loc(mudstate.curr_enactor);
         }
         ENDLOG;
@@ -1118,20 +1118,20 @@ static void report_timecheck
     if (  yes_log
        && (LOG_TIMEUSE & mudconf.log_options))
     {
-        start_log((UTF8 *)"OBJ", (UTF8 *)"CPU");
+        start_log(T("OBJ"), T("CPU"));
         log_name(player);
-        log_text((UTF8 *)" checks object time use over ");
+        log_text(T(" checks object time use over "));
         log_number(ltdPeriod.ReturnSeconds());
-        log_text((UTF8 *)" seconds" ENDLINE);
+        log_text(T(" seconds" ENDLINE));
     }
     else
     {
         yes_log = false;
         STARTLOG(LOG_ALWAYS, "WIZ", "TIMECHECK");
         log_name(player);
-        log_text((UTF8 *)" checks object time use over ");
+        log_text(T(" checks object time use over "));
         log_number(ltdPeriod.ReturnSeconds());
-        log_text((UTF8 *)" seconds");
+        log_text(T(" seconds"));
         ENDLOG;
     }
 
@@ -1242,12 +1242,12 @@ void do_shutdown
 
     raw_broadcast(0, "GAME: Shutdown by %s", Moniker(Owner(executor)));
     STARTLOG(LOG_ALWAYS, "WIZ", "SHTDN");
-    log_text((UTF8 *)"Shutdown by ");
+    log_text(T("Shutdown by "));
     log_name(executor);
     ENDLOG;
 
     STARTLOG(LOG_ALWAYS, "WIZ", "SHTDN");
-    log_text((UTF8 *)"Shutdown status: ");
+    log_text(T("Shutdown status: "));
     log_text(message);
     ENDLOG;
 
@@ -1288,12 +1288,12 @@ void do_shutdown
         CLOSE;
 
         STARTLOG(LOG_ALWAYS, "DMP", "PANIC");
-        log_text((UTF8 *)"Panic dump: ");
+        log_text(T("Panic dump: "));
         log_text(mudconf.crashdb);
         ENDLOG;
         dump_database_internal(DUMP_I_PANIC);
         STARTLOG(LOG_ALWAYS, "DMP", "DONE");
-        log_text((UTF8 *)"Panic dump complete: ");
+        log_text(T("Panic dump complete: "));
         log_text(mudconf.crashdb);
         ENDLOG;
     }
@@ -1321,20 +1321,20 @@ void do_shutdown
 //
 typedef struct
 {
-    UTF8 **ppszOutputBase;
-    UTF8 *szOutputSuffix;
-    bool bUseTemporary;
-    int  fType;
-    UTF8 *pszErrorMessage;
+    UTF8      **ppszOutputBase;
+    const UTF8 *szOutputSuffix;
+    bool        bUseTemporary;
+    int         fType;
+    const UTF8 *pszErrorMessage;
 } DUMP_PROCEDURE;
 
 static DUMP_PROCEDURE DumpProcedures[NUM_DUMP_TYPES] =
 {
-    { NULL,             (UTF8 *)"",     false, 0,                             (UTF8 *)"" }, // 0 -- Handled specially.
-    { &mudconf.crashdb, (UTF8 *)"",     false, UNLOAD_VERSION | UNLOAD_FLAGS, (UTF8 *)"Opening crash file" }, // 1
-    { &mudconf.indb,    (UTF8 *)"",     true,  OUTPUT_VERSION | OUTPUT_FLAGS, (UTF8 *)"Opening input file" }, // 2
-    { &mudconf.indb,   (UTF8 *)".FLAT", false, UNLOAD_VERSION | UNLOAD_FLAGS, (UTF8 *)"Opening flatfile"   }, // 3
-    { &mudconf.indb,   (UTF8 *)".SIG",  false, UNLOAD_VERSION | UNLOAD_FLAGS, (UTF8 *)"Opening signalled flatfile"}  // 4
+    { NULL,             T(""),     false, 0,                             T("") }, // 0 -- Handled specially.
+    { &mudconf.crashdb, T(""),     false, UNLOAD_VERSION | UNLOAD_FLAGS, T("Opening crash file") }, // 1
+    { &mudconf.indb,    T(""),     true,  OUTPUT_VERSION | OUTPUT_FLAGS, T("Opening input file") }, // 2
+    { &mudconf.indb,   T(".FLAT"), false, UNLOAD_VERSION | UNLOAD_FLAGS, T("Opening flatfile")   }, // 3
+    { &mudconf.indb,   T(".SIG"),  false, UNLOAD_VERSION | UNLOAD_FLAGS, T("Opening signalled flatfile")}  // 4
 };
 
 #ifdef WIN32
@@ -1388,12 +1388,12 @@ void dump_database_internal(int dump_type)
         {
             mux_sprintf(tmpfile, sizeof(tmpfile), "%s.#%d#", outfn, mudstate.epoch);
             RemoveFile(tmpfile);
-            bOpen = mux_fopen(&f, tmpfile, (UTF8 *)"wb");
+            bOpen = mux_fopen(&f, tmpfile, T("wb"));
         }
         else
         {
             RemoveFile(outfn);
-            bOpen = mux_fopen(&f, outfn, (UTF8 *)"wb");
+            bOpen = mux_fopen(&f, outfn, T("wb"));
         }
 
         if (bOpen)
@@ -1413,14 +1413,14 @@ void dump_database_internal(int dump_type)
         }
         else
         {
-            log_perror((UTF8 *)"DMP", (UTF8 *)"FAIL", dp->pszErrorMessage, outfn);
+            log_perror(T("DMP"), T("FAIL"), dp->pszErrorMessage, outfn);
         }
 
         if (!bPotentialConflicts)
         {
             if (mudconf.have_mailer)
             {
-                if (mux_fopen(&f, mudconf.mail_db, (UTF8 *)"wb"))
+                if (mux_fopen(&f, mudconf.mail_db, T("wb")))
                 {
                     DebugTotalFiles++;
                     dump_mail(f);
@@ -1461,12 +1461,12 @@ void dump_database_internal(int dump_type)
             ReplaceFile(outfn, prevfile);
             if (ReplaceFile(tmpfile, outfn) < 0)
             {
-                log_perror((UTF8 *)"SAV", (UTF8 *)"FAIL", (UTF8 *)"Renaming output file to DB file", tmpfile);
+                log_perror(T("SAV"), T("FAIL"), T("Renaming output file to DB file"), tmpfile);
             }
         }
         else
         {
-            log_perror((UTF8 *)"SAV", (UTF8 *)"FAIL", (UTF8 *)"Opening", tmpfile);
+            log_perror(T("SAV"), T("FAIL"), T("Opening"), tmpfile);
         }
     }
     else
@@ -1610,10 +1610,10 @@ void fork_and_dump(int key)
         STARTLOG(LOG_DBSAVES, "DMP", "CHKPT");
         if (key & DUMP_TEXT)
         {
-            log_text((UTF8 *)"SYNCing");
+            log_text(T("SYNCing"));
             if (key & DUMP_STRUCT)
             {
-                log_text((UTF8 *)" and ");
+                log_text(T(" and "));
             }
         }
         if (key & DUMP_STRUCT)
@@ -1694,7 +1694,7 @@ void fork_and_dump(int key)
         }
         else if (child < 0)
         {
-            log_perror((UTF8 *)"DMP", (UTF8 *)"FORK", NULL, (UTF8 *)"fork()");
+            log_perror(T("DMP"), T("FORK"), NULL, T("fork()"));
         }
         else
         {
@@ -1854,7 +1854,7 @@ static int load_game(int ccPageFile)
         if (ccPageFile == HF_OPEN_STATUS_NEW)
         {
             STARTLOG(LOG_STARTUP, "INI", "LOAD");
-            log_text((UTF8 *)"Attributes are not present in either the input file or the attribute database.");
+            log_text(T("Attributes are not present in either the input file or the attribute database."));
             ENDLOG;
         }
     }
@@ -1865,7 +1865,7 @@ static int load_game(int ccPageFile)
         if (ccPageFile == HF_OPEN_STATUS_OLD)
         {
             STARTLOG(LOG_STARTUP, "INI", "LOAD");
-            log_text((UTF8 *)"Attributes present in both the input file and the attribute database.");
+            log_text(T("Attributes present in both the input file and the attribute database."));
             ENDLOG;
         }
     }
@@ -1878,7 +1878,7 @@ static int load_game(int ccPageFile)
 
     if (mudconf.have_mailer)
     {
-        if (mux_fopen(&f, mudconf.mail_db, (UTF8 *)"rb"))
+        if (mux_fopen(&f, mudconf.mail_db, T("rb")))
         {
             DebugTotalFiles++;
             setvbuf(f, NULL, _IOFBF, 16384);
@@ -1893,7 +1893,7 @@ static int load_game(int ccPageFile)
         }
     }
     STARTLOG(LOG_STARTUP, "INI", "LOAD");
-    log_text((UTF8 *)"Load complete.");
+    log_text(T("Load complete."));
     ENDLOG;
 
     return LOAD_GAME_SUCCESS;
@@ -2126,17 +2126,17 @@ static void info(int fmt, int flags, int ver)
 
     if (fmt == F_MUX)
     {
-        cp = (UTF8 *)"MUX";
+        cp = T("MUX");
     }
     else
     {
-        cp = (UTF8 *)"*unknown*";
+        cp = T("*unknown*");
     }
     Log.tinyprintf("%s version %d:", cp, ver);
     if (  ver < MIN_SUPPORTED_VERSION
        || MAX_SUPPORTED_VERSION < ver)
     {
-        Log.WriteString((UTF8 *)" Unsupported version");
+        Log.WriteString(T(" Unsupported version"));
     }
     else if (  (  (  1 == ver
                   || 2 == ver)
@@ -2144,17 +2144,17 @@ static void info(int fmt, int flags, int ver)
             || (  3 == ver
                && (flags & MANDFLAGS_V3) != MANDFLAGS_V3))
     {
-        Log.WriteString((UTF8 *)" Unsupported flags");
+        Log.WriteString(T(" Unsupported flags"));
     }
     if (flags & V_DATABASE)
-        Log.WriteString((UTF8 *)" Database");
+        Log.WriteString(T(" Database"));
     if (flags & V_ATRNAME)
-        Log.WriteString((UTF8 *)" AtrName");
+        Log.WriteString(T(" AtrName"));
     if (flags & V_ATRKEY)
-        Log.WriteString((UTF8 *)" AtrKey");
+        Log.WriteString(T(" AtrKey"));
     if (flags & V_ATRMONEY)
-        Log.WriteString((UTF8 *)" AtrMoney");
-    Log.WriteString((UTF8 *)"\n");
+        Log.WriteString(T(" AtrMoney"));
+    Log.WriteString(T("\n"));
 }
 
 static UTF8 *standalone_infile = NULL;
@@ -2169,7 +2169,7 @@ static void dbconvert(void)
     int setflags, clrflags, ver;
     int db_ver, db_format, db_flags;
 
-    Log.SetBasename((UTF8 *)"-");
+    Log.SetBasename(T("-"));
     Log.StartLogging();
 
     SeedRandomNumberGenerator();
@@ -2213,13 +2213,13 @@ static void dbconvert(void)
     UTF8 dirfile[SIZEOF_PATHNAME];
     UTF8 *dirfile_c = dirfile;
     safe_copy_str(standalone_basename, dirfile, &dirfile_c, (SIZEOF_PATHNAME-1));
-    safe_copy_str((UTF8 *)".dir", dirfile, &dirfile_c, (SIZEOF_PATHNAME-1));
+    safe_copy_str(T(".dir"), dirfile, &dirfile_c, (SIZEOF_PATHNAME-1));
     *dirfile_c = '\0';
 
     UTF8 pagfile[SIZEOF_PATHNAME];
     UTF8 *pagfile_c = pagfile;
     safe_copy_str(standalone_basename, pagfile, &pagfile_c, (SIZEOF_PATHNAME-1));
-    safe_copy_str((UTF8 *)".pag", pagfile, &pagfile_c, (SIZEOF_PATHNAME-1));
+    safe_copy_str(T(".pag"), pagfile, &pagfile_c, (SIZEOF_PATHNAME-1));
     *pagfile_c = '\0';
 
     int cc = init_dbfile(dirfile, pagfile, 650);
@@ -2248,7 +2248,7 @@ static void dbconvert(void)
     }
 
     FILE *fpIn;
-    if (!mux_fopen(&fpIn, standalone_infile, (UTF8 *)"rb"))
+    if (!mux_fopen(&fpIn, standalone_infile, T("rb")))
     {
         exit(1);
     }
@@ -2265,7 +2265,7 @@ static void dbconvert(void)
     {
         cache_pass2();
     }
-    Log.WriteString((UTF8 *)"Input: ");
+    Log.WriteString(T("Input: "));
     info(db_format, db_flags, db_ver);
 
     if (standalone_check)
@@ -2277,7 +2277,7 @@ static void dbconvert(void)
     if (do_write)
     {
         FILE *fpOut;
-        if (!mux_fopen(&fpOut, standalone_outfile, (UTF8 *)"wb"))
+        if (!mux_fopen(&fpOut, standalone_outfile, T("wb")))
         {
             exit(1);
         }
@@ -2291,7 +2291,7 @@ static void dbconvert(void)
         {
             db_ver = ver;
         }
-        Log.WriteString((UTF8 *)"Output: ");
+        Log.WriteString(T("Output: "));
         info(F_MUX, db_flags, db_ver);
         setvbuf(fpOut, NULL, _IOFBF, 16384);
 #ifndef MEMORY_BASED
@@ -2311,7 +2311,7 @@ static void dbconvert(void)
 static void write_pidfile(const UTF8 *pFilename)
 {
     FILE *fp;
-    if (mux_fopen(&fp, pFilename, (UTF8 *)"wb"))
+    if (mux_fopen(&fp, pFilename, T("wb")))
     {
         fprintf(fp, "%d" ENDLINE, game_pid);
         fclose(fp);
@@ -2330,11 +2330,11 @@ static void init_sql(void)
     if ('\0' != mudconf.sql_server[0])
     {
         STARTLOG(LOG_STARTUP,"SQL","CONN");
-        log_text((UTF8 *)"Connecting: ");
+        log_text(T("Connecting: "));
         log_text(mudconf.sql_database);
-        log_text((UTF8 *)"@");
+        log_text(T("@"));
         log_text(mudconf.sql_server);
-        log_text((UTF8 *)" as ");
+        log_text(T(" as "));
         log_text(mudconf.sql_user);
         ENDLOG;
 
@@ -2348,13 +2348,13 @@ static void init_sql(void)
                       (char *)mudconf.sql_database, 0, NULL, 0))
            {
                STARTLOG(LOG_STARTUP,"SQL","CONN");
-               log_text((UTF8 *)"Connected to MySQL");
+               log_text(T("Connected to MySQL"));
                ENDLOG;
            }
            else
            {
                STARTLOG(LOG_STARTUP,"SQL","CONN");
-               log_text((UTF8 *)"Unable to connect");
+               log_text(T("Unable to connect"));
                ENDLOG;
                mysql_close(mush_database);
                mush_database = NULL;
@@ -2363,7 +2363,7 @@ static void init_sql(void)
         else
         {
            STARTLOG(LOG_STARTUP,"SQL","CONN");
-           log_text((UTF8 *)"MySQL Library unavailable");
+           log_text(T("MySQL Library unavailable"));
            ENDLOG;
         }
     }
@@ -2398,7 +2398,7 @@ static bool bMinDB = false;
 static bool bSyntaxError = false;
 static UTF8 *conffile = NULL;
 static bool bVersion = false;
-static UTF8 *pErrorBasename = (UTF8 *)"";
+static const UTF8 *pErrorBasename = T("");
 static bool bServerOption = false;
 
 #ifdef MEMORY_BASED
@@ -2889,8 +2889,8 @@ static void cpu_init(void)
 
 #endif // __INTEL_COMPILER
 
-#define DBCONVERT_NAME1 (UTF8 *)"dbconvert"
-#define DBCONVERT_NAME2 (UTF8 *)"dbconvert.exe"
+#define DBCONVERT_NAME1 T("dbconvert")
+#define DBCONVERT_NAME2 T("dbconvert.exe")
 
 int DCL_CDECL main(int argc, char *argv[])
 {
@@ -3026,7 +3026,7 @@ int DCL_CDECL main(int argc, char *argv[])
     HINSTANCE hInstKernel32 = LoadLibrary("kernel32");
     if (!hInstKernel32)
     {
-        Log.WriteString((UTF8 *)"LoadLibrary of kernel32 failed. Cannot use completion ports." ENDLINE);
+        Log.WriteString(T("LoadLibrary of kernel32 failed. Cannot use completion ports." ENDLINE));
         bUseCompletionPorts = false;
     }
     else
@@ -3042,7 +3042,7 @@ int DCL_CDECL main(int argc, char *argv[])
             fpCancelIo = (FCANCELIO *)GetProcAddress(hInstKernel32, "CancelIo");
             if (NULL == fpCancelIo)
             {
-                Log.WriteString((UTF8 *)"GetProcAddress of _CancelIo failed." ENDLINE);
+                Log.WriteString(T("GetProcAddress of _CancelIo failed." ENDLINE));
                 bUseCompletionPorts = false;
             }
         }
@@ -3052,17 +3052,17 @@ int DCL_CDECL main(int argc, char *argv[])
         {
             // We can work with or without GetProcessTimes().
             //
-            Log.WriteString((UTF8 *)"GetProcAddress of GetProcessTimes failed, but that's OK." ENDLINE);
+            Log.WriteString(T("GetProcAddress of GetProcessTimes failed, but that's OK." ENDLINE));
         }
     }
 
     if (bUseCompletionPorts)
     {
-        Log.WriteString((UTF8 *)"Using NT I/O Completion Ports for networking." ENDLINE);
+        Log.WriteString(T("Using NT I/O Completion Ports for networking." ENDLINE));
     }
     else
     {
-        Log.WriteString((UTF8 *)"Using select() for networking." ENDLINE);
+        Log.WriteString(T("Using select() for networking." ENDLINE));
     }
 
     // Initialize WinSock.
@@ -3071,7 +3071,7 @@ int DCL_CDECL main(int argc, char *argv[])
     WSADATA wsaData;
     if (WSAStartup(wVersionRequested, &wsaData) != 0)
     {
-        Log.WriteString((UTF8 *)"ERROR: Could not initialize WinSock." ENDLINE);
+        Log.WriteString(T("ERROR: Could not initialize WinSock." ENDLINE));
         return 101;
     }
 
@@ -3087,7 +3087,7 @@ int DCL_CDECL main(int argc, char *argv[])
     }
     if (!bCryptoAPI)
     {
-        Log.WriteString((UTF8 *)"Crypto API unavailable.\r\n");
+        Log.WriteString(T("Crypto API unavailable.\r\n"));
     }
 #endif // WIN32
 
@@ -3139,7 +3139,7 @@ int DCL_CDECL main(int argc, char *argv[])
     if (HF_OPEN_STATUS_ERROR == ccPageFile)
     {
         STARTLOG(LOG_ALWAYS, "INI", "LOAD");
-        log_text((UTF8 *)"Couldn't load text database: ");
+        log_text(T("Couldn't load text database: "));
         log_text(mudconf.game_dir);
         log_text(mudconf.game_pag);
         ENDLOG;
@@ -3180,7 +3180,7 @@ int DCL_CDECL main(int argc, char *argv[])
         if (ccInFile != LOAD_GAME_SUCCESS)
         {
             STARTLOG(LOG_ALWAYS, "INI", "LOAD")
-            log_text((UTF8 *)"Couldn't load: ");
+            log_text(T("Couldn't load: "));
             log_text(mudconf.indb);
             ENDLOG
             return 2;
@@ -3257,12 +3257,12 @@ int DCL_CDECL main(int argc, char *argv[])
          mysql_close(mush_database);
          mush_database = NULL;
          STARTLOG(LOG_STARTUP,"SQL","DISC");
-         log_text((UTF8 *)"SQL shut down");
+         log_text(T("SQL shut down"));
          ENDLOG;
      }
 #endif // INLINESQL
 
-    close_sockets(false, (UTF8 *)"Going down - Bye");
+    close_sockets(false, T("Going down - Bye"));
     dump_database();
 
     // All shutdown, barring logfiles, should be done, shutdown the
@@ -3313,14 +3313,14 @@ void init_rlimit(void)
 
     if (getrlimit(RLIMIT_NOFILE, rlp))
     {
-        log_perror((UTF8 *)"RLM", (UTF8 *)"FAIL", NULL, (UTF8 *)"getrlimit()");
+        log_perror(T("RLM"), T("FAIL"), NULL, T("getrlimit()"));
         free_lbuf(rlp);
         return;
     }
     rlp->rlim_cur = rlp->rlim_max;
     if (setrlimit(RLIMIT_NOFILE, rlp))
     {
-        log_perror((UTF8 *)"RLM", (UTF8 *)"FAIL", NULL, (UTF8 *)"setrlimit()");
+        log_perror(T("RLM"), T("FAIL"), NULL, T("setrlimit()"));
     }
     free_lbuf(rlp);
 

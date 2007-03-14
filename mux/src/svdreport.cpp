@@ -57,7 +57,7 @@ void do_report(dbref executor, dbref caller, dbref enactor, int extra)
     }
 
     int iHour, nSum = 0;
-    notify(executor, (UTF8 *)"Day   Hours     Players  Total");
+    notify(executor, T("Day   Hours     Players  Total"));
     for (i = 0, iHour = 0; i < NPERIODS; i++, iHour += 8)
     {
         nSum += nBin[i];

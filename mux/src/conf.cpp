@@ -21,7 +21,7 @@
 //
 typedef struct confparm
 {
-    UTF8 *pname;            // parm name
+    const UTF8 *pname;            // parm name
     int (*interpreter)(int *vp, UTF8 *str, void *pExtra, UINT32 nExtra,
                        dbref player, UTF8 *cmd); // routine to interp parameter
     int flags;              // control flags
@@ -44,18 +44,18 @@ void cf_init(void)
 {
     int i;
 
-    mudconf.indb = StringClone((UTF8 *)"netmux.db");
-    mudconf.outdb = StringClone((UTF8 *)"");
-    mudconf.crashdb = StringClone((UTF8 *)"");
-    mudconf.game_dir = StringClone((UTF8 *)"");
-    mudconf.game_pag = StringClone((UTF8 *)"");
-    mudconf.mail_db   = StringClone((UTF8 *)"mail.db");
-    mudconf.comsys_db = StringClone((UTF8 *)"comsys.db");
+    mudconf.indb = StringClone(T("netmux.db"));
+    mudconf.outdb = StringClone(T(""));
+    mudconf.crashdb = StringClone(T(""));
+    mudconf.game_dir = StringClone(T(""));
+    mudconf.game_pag = StringClone(T(""));
+    mudconf.mail_db   = StringClone(T("mail.db"));
+    mudconf.comsys_db = StringClone(T("comsys.db"));
 
     mudconf.compress_db = false;
-    mudconf.compress = StringClone((UTF8 *)"gzip");
-    mudconf.uncompress = StringClone((UTF8 *)"gzip -d");
-    mudconf.status_file = StringClone((UTF8 *)"shutdown.status");
+    mudconf.compress = StringClone(T("gzip"));
+    mudconf.uncompress = StringClone(T("gzip -d"));
+    mudconf.status_file = StringClone(T("shutdown.status"));
     mudconf.max_cache_size = 1*1024*1024;
 
     mudconf.ports.n = 1;
@@ -74,18 +74,18 @@ void cf_init(void)
     mudconf.guest_nuker = GOD;
     mudconf.number_guests = 30;
     mudconf.min_guests = 1;
-    mux_strncpy(mudconf.guest_prefix, (UTF8 *)"Guest", 31);
-    mudconf.guest_file     = StringClone((UTF8 *)"text/guest.txt");
-    mudconf.conn_file      = StringClone((UTF8 *)"text/connect.txt");
-    mudconf.creg_file      = StringClone((UTF8 *)"text/register.txt");
-    mudconf.regf_file      = StringClone((UTF8 *)"text/create_reg.txt");
-    mudconf.motd_file      = StringClone((UTF8 *)"text/motd.txt");
-    mudconf.wizmotd_file   = StringClone((UTF8 *)"text/wizmotd.txt");
-    mudconf.quit_file      = StringClone((UTF8 *)"text/quit.txt");
-    mudconf.down_file      = StringClone((UTF8 *)"text/down.txt");
-    mudconf.full_file      = StringClone((UTF8 *)"text/full.txt");
-    mudconf.site_file      = StringClone((UTF8 *)"text/badsite.txt");
-    mudconf.crea_file      = StringClone((UTF8 *)"text/newuser.txt");
+    mux_strncpy(mudconf.guest_prefix, T("Guest"), 31);
+    mudconf.guest_file     = StringClone(T("text/guest.txt"));
+    mudconf.conn_file      = StringClone(T("text/connect.txt"));
+    mudconf.creg_file      = StringClone(T("text/register.txt"));
+    mudconf.regf_file      = StringClone(T("text/create_reg.txt"));
+    mudconf.motd_file      = StringClone(T("text/motd.txt"));
+    mudconf.wizmotd_file   = StringClone(T("text/wizmotd.txt"));
+    mudconf.quit_file      = StringClone(T("text/quit.txt"));
+    mudconf.down_file      = StringClone(T("text/down.txt"));
+    mudconf.full_file      = StringClone(T("text/full.txt"));
+    mudconf.site_file      = StringClone(T("text/badsite.txt"));
+    mudconf.crea_file      = StringClone(T("text/newuser.txt"));
     mudconf.motd_msg[0] = '\0';
     mudconf.wizmotd_msg[0] = '\0';
     mudconf.downmotd_msg[0] = '\0';
@@ -94,13 +94,13 @@ void cf_init(void)
     mudconf.postdump_msg[0] = '\0';
     mudconf.fixed_home_msg[0] = '\0';
     mudconf.fixed_tel_msg[0] = '\0';
-    mux_strncpy(mudconf.public_channel, (UTF8 *)"Public", 31);
-    mux_strncpy(mudconf.public_channel_alias, (UTF8 *)"pub", 31);
-    mux_strncpy(mudconf.guests_channel, (UTF8 *)"Guests", 31);
-    mux_strncpy(mudconf.guests_channel_alias, (UTF8 *)"g", 31);
-    mux_strncpy(mudconf.pueblo_msg, (UTF8 *)"</xch_mudtext><img xch_mode=html>", GBUF_SIZE-1);
+    mux_strncpy(mudconf.public_channel, T("Public"), 31);
+    mux_strncpy(mudconf.public_channel_alias, T("pub"), 31);
+    mux_strncpy(mudconf.guests_channel, T("Guests"), 31);
+    mux_strncpy(mudconf.guests_channel_alias, T("g"), 31);
+    mux_strncpy(mudconf.pueblo_msg, T("</xch_mudtext><img xch_mode=html>"), GBUF_SIZE-1);
 #if defined(FIRANMUX)
-    mux_strncpy(mudconf.immobile_msg, (UTF8 *)"You have been set immobile.", sizeof(mudconf.immobile_msg)-1);
+    mux_strncpy(mudconf.immobile_msg, T("You have been set immobile."), sizeof(mudconf.immobile_msg)-1);
 #endif // FIRANMUX
 #if defined(INLINESQL)
     mudconf.sql_server[0]   = '\0';
@@ -242,9 +242,9 @@ void cf_init(void)
          | HEAD_FLAG | SLAVE | STAFF | SUSPECT | UNINSPECTED;
 
     mudconf.vattr_flags = AF_ODARK;
-    mux_strncpy(mudconf.mud_name, (UTF8 *)"MUX", 31);
-    mux_strncpy(mudconf.one_coin, (UTF8 *)"penny", 31);
-    mux_strncpy(mudconf.many_coins, (UTF8 *)"pennies", 31);
+    mux_strncpy(mudconf.mud_name, T("MUX"), 31);
+    mux_strncpy(mudconf.one_coin, T("penny"), 31);
+    mux_strncpy(mudconf.many_coins, T("pennies"), 31);
     mudconf.timeslice.SetSeconds(1);
     mudconf.cmd_quota_max = 100;
     mudconf.cmd_quota_incr = 1;
@@ -299,9 +299,9 @@ void cf_init(void)
     mudstate.curr_enactor = NOTHING;
     mudstate.shutdown_flag  = false;
     mudstate.attr_next = A_USER_START;
-    mudstate.debug_cmd = (UTF8 *)"< init >";
-    mudstate.curr_cmd  = (UTF8 *)"< none >";
-    mux_strncpy(mudstate.doing_hdr, (UTF8 *)"Doing", SIZEOF_DOING_STRING-1);
+    mudstate.debug_cmd = T("< init >");
+    mudstate.curr_cmd  = T("< none >");
+    mux_strncpy(mudstate.doing_hdr, T("Doing"), SIZEOF_DOING_STRING-1);
     mudstate.access_list = NULL;
     mudstate.suspect_list = NULL;
     mudstate.badname_head = NULL;
@@ -359,7 +359,7 @@ void cf_init(void)
 // ---------------------------------------------------------------------------
 // cf_log_notfound: Log a 'parameter not found' error.
 //
-void cf_log_notfound(dbref player, UTF8 *cmd, const UTF8 *thingname, UTF8 *thing)
+void cf_log_notfound(dbref player, const UTF8 *cmd, const UTF8 *thingname, const UTF8 *thing)
 {
     if (mudstate.bReadingConfiguration)
     {
@@ -387,7 +387,7 @@ void DCL_CDECL cf_log_syntax(dbref player, UTF8 *cmd, const char *fmt, ...)
     {
         STARTLOG(LOG_STARTUP, "CNF", "SYNTX")
         log_text(cmd);
-        log_text((UTF8 *)": ");
+        log_text(T(": "));
         log_text(buf);
         ENDLOG;
     }
@@ -428,7 +428,7 @@ static int cf_status_from_succfail(dbref player, UTF8 *cmd, int success, int fai
         }
         else
         {
-            notify(player, (UTF8 *)"Nothing to set");
+            notify(player, T("Nothing to set"));
         }
     }
     return -1;
@@ -513,7 +513,7 @@ static CF_HAND(cf_int_array)
     UTF8 *p;
     MUX_STRTOK_STATE tts;
     mux_strtok_src(&tts, str);
-    mux_strtok_ctl(&tts, (UTF8 *)" \t\n\r");
+    mux_strtok_ctl(&tts, T(" \t\n\r"));
     while (  (p = mux_strtok_parse(&tts)) != NULL
           && nPorts < nExtra)
     {
@@ -622,12 +622,12 @@ static CF_HAND(cf_seconds)
 //
 static NAMETAB bool_names[] =
 {
-    {(UTF8 *)"true",    1,  0,  true},
-    {(UTF8 *)"false",   1,  0,  false},
-    {(UTF8 *)"yes",     1,  0,  true},
-    {(UTF8 *)"no",      1,  0,  false},
-    {(UTF8 *)"1",       1,  0,  true},
-    {(UTF8 *)"0",       1,  0,  false},
+    {T("true"),    1,  0,  true},
+    {T("false"),   1,  0,  false},
+    {T("yes"),     1,  0,  true},
+    {T("no"),      1,  0,  false},
+    {T("1"),       1,  0,  true},
+    {T("0"),       1,  0,  false},
     {(UTF8 *)NULL,      0,  0,  0}
 };
 
@@ -639,7 +639,7 @@ static CF_HAND(cf_bool)
     int i;
     if (!search_nametab(GOD, bool_names, str, &i))
     {
-        cf_log_notfound(player, cmd, (UTF8 *)"Value", str);
+        cf_log_notfound(player, cmd, T("Value"), str);
         return -1;
     }
     bool *pb = (bool *)vp;
@@ -657,7 +657,7 @@ static CF_HAND(cf_option)
     int i;
     if (!search_nametab(GOD, (NAMETAB *)pExtra, str, &i))
     {
-        cf_log_notfound(player, cmd, (UTF8 *)"Value", str);
+        cf_log_notfound(player, cmd, T("Value"), str);
         return -1;
     }
     *vp = i;
@@ -696,7 +696,7 @@ static CF_HAND(cf_string)
         }
         else
         {
-            notify(player, (UTF8 *)"String truncated");
+            notify(player, T("String truncated"));
         }
         retval = 1;
     }
@@ -754,7 +754,7 @@ static CF_HAND(cf_string_dyn)
         }
         else
         {
-            notify(player, (UTF8 *)"String truncated");
+            notify(player, T("String truncated"));
         }
         retval = 1;
     }
@@ -781,7 +781,7 @@ static CF_HAND(cf_alias)
 
     MUX_STRTOK_STATE tts;
     mux_strtok_src(&tts, str);
-    mux_strtok_ctl(&tts, (UTF8 *)" \t=,");
+    mux_strtok_ctl(&tts, T(" \t=,"));
     UTF8 *alias = mux_strtok_parse(&tts);
     UTF8 *orig = mux_strtok_parse(&tts);
 
@@ -795,7 +795,7 @@ static CF_HAND(cf_alias)
             cp = hashfindLEN(orig, strlen((char *)orig), (CHashTable *) vp);
             if (cp == NULL)
             {
-                cf_log_notfound(player, cmd, (UTF8 *)"Entry", orig);
+                cf_log_notfound(player, cmd, T("Entry"), orig);
                 return -1;
             }
         }
@@ -819,7 +819,7 @@ static CF_HAND(cf_flagalias)
 
     MUX_STRTOK_STATE tts;
     mux_strtok_src(&tts, str);
-    mux_strtok_ctl(&tts, (UTF8 *)" \t=,");
+    mux_strtok_ctl(&tts, T(" \t=,"));
     UTF8 *alias = mux_strtok_parse(&tts);
     UTF8 *orig = mux_strtok_parse(&tts);
 
@@ -846,7 +846,7 @@ static CF_HAND(cf_flagalias)
     }
     if (!success)
     {
-        cf_log_notfound(player, cmd, (UTF8 *)"Flag", orig);
+        cf_log_notfound(player, cmd, T("Flag"), orig);
     }
     return (success ? 0 : -1);
 }
@@ -862,7 +862,7 @@ static CF_HAND(cf_poweralias)
 
     MUX_STRTOK_STATE tts;
     mux_strtok_src(&tts, str);
-    mux_strtok_ctl(&tts, (UTF8 *)" \t=,");
+    mux_strtok_ctl(&tts, T(" \t=,"));
     UTF8 *alias = mux_strtok_parse(&tts);
     UTF8 *orig = mux_strtok_parse(&tts);
 
@@ -886,7 +886,7 @@ static CF_HAND(cf_poweralias)
     }
     if (!success)
     {
-        cf_log_notfound(player, cmd, (UTF8 *)"Power", orig);
+        cf_log_notfound(player, cmd, T("Power"), orig);
     }
     return (success ? 0 : -1);
 }
@@ -946,7 +946,7 @@ CF_HAND(cf_modify_bits)
     success = failure = 0;
     MUX_STRTOK_STATE tts;
     mux_strtok_src(&tts, str);
-    mux_strtok_ctl(&tts, (UTF8 *)" \t");
+    mux_strtok_ctl(&tts, T(" \t"));
     UTF8 *sp = mux_strtok_parse(&tts);
     while (sp != NULL)
     {
@@ -971,7 +971,7 @@ CF_HAND(cf_modify_bits)
         }
         else
         {
-            cf_log_notfound(player, cmd, (UTF8 *)"Entry", sp);
+            cf_log_notfound(player, cmd, T("Entry"), sp);
             failure++;
         }
 
@@ -1039,7 +1039,7 @@ static CF_HAND(cf_set_flags)
     success = failure = 0;
     MUX_STRTOK_STATE tts;
     mux_strtok_src(&tts, str);
-    mux_strtok_ctl(&tts, (UTF8 *)" \t");
+    mux_strtok_ctl(&tts, T(" \t"));
     UTF8 *sp = mux_strtok_parse(&tts);
     FLAGSET *fset = (FLAGSET *) vp;
 
@@ -1079,7 +1079,7 @@ static CF_HAND(cf_set_flags)
         }
         else
         {
-            cf_log_notfound(player, cmd, (UTF8 *)"Entry", sp);
+            cf_log_notfound(player, cmd, T("Entry"), sp);
             failure++;
         }
 
@@ -1390,7 +1390,7 @@ static CF_HAND(cf_site)
         //
         MUX_STRTOK_STATE tts;
         mux_strtok_src(&tts, str);
-        mux_strtok_ctl(&tts, (UTF8 *)" \t=,");
+        mux_strtok_ctl(&tts, T(" \t=,"));
         addr_txt = mux_strtok_parse(&tts);
         mask_txt = NULL;
         if (addr_txt)
@@ -1526,7 +1526,7 @@ static int add_helpfile(dbref player, UTF8 *cmd, UTF8 *str, bool bRaw)
     //
     MUX_STRTOK_STATE tts;
     mux_strtok_src(&tts, str);
-    mux_strtok_ctl(&tts, (UTF8 *)" \t\n\r");
+    mux_strtok_ctl(&tts, T(" \t\n\r"));
 
     UTF8 *pCmdName = mux_strtok_parse(&tts);
     UTF8 *pBase = mux_strtok_parse(&tts);
@@ -1631,13 +1631,13 @@ static int add_helpfile(dbref player, UTF8 *cmd, UTF8 *str, bool bRaw)
         // of the command weren't dynamically allocated.  This might leak
         // memory.
         //
-        UTF8 *p = cmdp->cmdname;
-        hashdeleteLEN(p, strlen((char *)p), &mudstate.command_htab);
-        hashaddLEN(p, strlen((char *)p), cmdp, &mudstate.command_htab);
+        const UTF8 *p = cmdp->cmdname;
+        hashdeleteLEN(p, strlen((const char *)p), &mudstate.command_htab);
+        hashaddLEN(p, strlen((const char *)p), cmdp, &mudstate.command_htab);
 
         p = tprintf("__%s", cmdp->cmdname);
-        hashdeleteLEN(p, strlen((char *)p), &mudstate.command_htab);
-        hashaddLEN(p, strlen((char *)p), cmdp, &mudstate.command_htab);
+        hashdeleteLEN(p, strlen((const char *)p), &mudstate.command_htab);
+        hashaddLEN(p, strlen((const char *)p), cmdp, &mudstate.command_htab);
     }
     else
     {
@@ -1674,12 +1674,12 @@ static CF_HAND(cf_raw_helpfile)
 //
 static NAMETAB hook_names[] =
 {
-    {(UTF8 *)"after",      3, 0, HOOK_AFTER},
-    {(UTF8 *)"before",     3, 0, HOOK_BEFORE},
-    {(UTF8 *)"fail",       3, 0, HOOK_AFAIL},
-    {(UTF8 *)"ignore",     3, 0, HOOK_IGNORE},
-    {(UTF8 *)"igswitch",   3, 0, HOOK_IGSWITCH},
-    {(UTF8 *)"permit",     3, 0, HOOK_PERMIT},
+    {T("after"),      3, 0, HOOK_AFTER},
+    {T("before"),     3, 0, HOOK_BEFORE},
+    {T("fail"),       3, 0, HOOK_AFAIL},
+    {T("ignore"),     3, 0, HOOK_IGNORE},
+    {T("igswitch"),   3, 0, HOOK_IGSWITCH},
+    {T("permit"),     3, 0, HOOK_PERMIT},
     {(UTF8 *)NULL,         0, 0, 0}
 };
 
@@ -1699,7 +1699,7 @@ static CF_HAND(cf_hook)
     mux_strncpy(playbuff, str, 200);
     MUX_STRTOK_STATE tts;
     mux_strtok_src(&tts, playbuff);
-    mux_strtok_ctl(&tts, (UTF8 *)" \t");
+    mux_strtok_ctl(&tts, T(" \t"));
     hookcmd = mux_strtok_parse(&tts);
     if (hookcmd != NULL)
     {
@@ -1757,9 +1757,9 @@ static CF_HAND(cf_include)
     }
 
     FILE *fp;
-    if (!mux_fopen(&fp, str, (UTF8 *)"rb"))
+    if (!mux_fopen(&fp, str, T("rb")))
     {
-        cf_log_notfound(player, cmd, (UTF8 *)"Config file", str);
+        cf_log_notfound(player, cmd, T("Config file"), str);
         return -1;
     }
     DebugTotalFiles++;
@@ -1857,233 +1857,233 @@ static CF_HAND(cf_include)
 
 static CONF conftable[] =
 {
-    {(UTF8 *)"access",                    cf_access,      CA_GOD,    CA_DISABLED, NULL,                            access_nametab,     0},
-    {(UTF8 *)"alias",                     cf_cmd_alias,   CA_GOD,    CA_DISABLED, (int *)&mudstate.command_htab,   0,                  0},
-    {(UTF8 *)"allow_guest_from_registered_site", cf_bool, CA_GOD,    CA_WIZARD,   (int *)&mudconf.allow_guest_from_registered_site, NULL,     1},
-    {(UTF8 *)"article_rule",              cf_art_rule,    CA_GOD,    CA_DISABLED, (int *)&mudconf.art_rules,       NULL,               0},
-    {(UTF8 *)"attr_access",               cf_attr_access, CA_GOD,    CA_DISABLED, NULL,                            attraccess_nametab, 0},
-    {(UTF8 *)"attr_alias",                cf_alias,       CA_GOD,    CA_DISABLED, (int *)&mudstate.attr_name_htab, 0,                  0},
-    {(UTF8 *)"attr_cmd_access",           cf_acmd_access, CA_GOD,    CA_DISABLED, NULL,                            access_nametab,     0},
-    {(UTF8 *)"autozone",                  cf_bool,        CA_GOD,    CA_PUBLIC,   (int *)&mudconf.autozone,        NULL,               0},
-    {(UTF8 *)"bad_name",                  cf_badname,     CA_GOD,    CA_DISABLED, NULL,                            NULL,               0},
-    {(UTF8 *)"badsite_file",              cf_string_dyn,  CA_STATIC, CA_GOD,      (int *)&mudconf.site_file,       NULL, SIZEOF_PATHNAME},
-    {(UTF8 *)"cache_names",               cf_bool,        CA_STATIC, CA_GOD,      (int *)&mudconf.cache_names,     NULL,               0},
-    {(UTF8 *)"cache_pages",               cf_int,         CA_STATIC, CA_WIZARD,   &mudconf.cache_pages,            NULL,               0},
-    {(UTF8 *)"cache_tick_period",         cf_seconds,     CA_GOD,    CA_WIZARD,   (int *)&mudconf.cache_tick_period, NULL,             0},
-    {(UTF8 *)"check_interval",            cf_int,         CA_GOD,    CA_WIZARD,   &mudconf.check_interval,         NULL,               0},
-    {(UTF8 *)"check_offset",              cf_int,         CA_GOD,    CA_WIZARD,   &mudconf.check_offset,           NULL,               0},
-    {(UTF8 *)"clone_copies_cost",         cf_bool,        CA_GOD,    CA_PUBLIC,   (int *)&mudconf.clone_copy_cost, NULL,               0},
-    {(UTF8 *)"command_quota_increment",   cf_int,         CA_GOD,    CA_WIZARD,   &mudconf.cmd_quota_incr,         NULL,               0},
-    {(UTF8 *)"command_quota_max",         cf_int,         CA_GOD,    CA_WIZARD,   &mudconf.cmd_quota_max,          NULL,               0},
-    {(UTF8 *)"compress_program",          cf_string_dyn,  CA_STATIC, CA_GOD,      (int *)&mudconf.compress,        NULL, SIZEOF_PATHNAME},
-    {(UTF8 *)"compression",               cf_bool,        CA_GOD,    CA_GOD,      (int *)&mudconf.compress_db,     NULL,               0},
-    {(UTF8 *)"comsys_database",           cf_string_dyn,  CA_STATIC, CA_GOD,      (int *)&mudconf.comsys_db,       NULL, SIZEOF_PATHNAME},
-    {(UTF8 *)"config_access",             cf_cf_access,   CA_GOD,    CA_DISABLED, NULL,                            access_nametab,     0},
-    {(UTF8 *)"conn_timeout",              cf_int,         CA_GOD,    CA_WIZARD,   &mudconf.conn_timeout,           NULL,               0},
-    {(UTF8 *)"connect_file",              cf_string_dyn,  CA_STATIC, CA_GOD,      (int *)&mudconf.conn_file,       NULL, SIZEOF_PATHNAME},
-    {(UTF8 *)"connect_reg_file",          cf_string_dyn,  CA_STATIC, CA_GOD,      (int *)&mudconf.creg_file,       NULL, SIZEOF_PATHNAME},
-    {(UTF8 *)"lag_limit",                 cf_seconds,     CA_GOD,    CA_WIZARD,   (int *)&mudconf.max_cmdsecs,     NULL,               0},
-    {(UTF8 *)"crash_database",            cf_string_dyn,  CA_STATIC, CA_GOD,      (int *)&mudconf.crashdb,         NULL, SIZEOF_PATHNAME},
-    {(UTF8 *)"create_max_cost",           cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.createmax,              NULL,               0},
-    {(UTF8 *)"create_min_cost",           cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.createmin,              NULL,               0},
-    {(UTF8 *)"dark_sleepers",             cf_bool,        CA_GOD,    CA_WIZARD,   (int *)&mudconf.dark_sleepers,   NULL,               0},
-    {(UTF8 *)"default_home",              cf_dbref,       CA_GOD,    CA_PUBLIC,   &mudconf.default_home,           NULL,               0},
-    {(UTF8 *)"destroy_going_now",         cf_bool,        CA_GOD,    CA_WIZARD,   (int *)&mudconf.destroy_going_now, NULL,               0},
-    {(UTF8 *)"dig_cost",                  cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.digcost,                NULL,               0},
-    {(UTF8 *)"down_file",                 cf_string_dyn,  CA_STATIC, CA_GOD,      (int *)&mudconf.down_file,       NULL, SIZEOF_PATHNAME},
-    {(UTF8 *)"down_motd_message",         cf_string,      CA_GOD,    CA_WIZARD,   (int *)mudconf.downmotd_msg,     NULL,       GBUF_SIZE},
-    {(UTF8 *)"dump_interval",             cf_int,         CA_GOD,    CA_WIZARD,   &mudconf.dump_interval,          NULL,               0},
-    {(UTF8 *)"dump_message",              cf_string,      CA_GOD,    CA_WIZARD,   (int *)mudconf.dump_msg,         NULL,             256},
-    {(UTF8 *)"dump_offset",               cf_int,         CA_GOD,    CA_WIZARD,   &mudconf.dump_offset,            NULL,               0},
-    {(UTF8 *)"earn_limit",                cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.paylimit,               NULL,               0},
-    {(UTF8 *)"eval_comtitle",             cf_bool,        CA_GOD,    CA_PUBLIC,   (int *)&mudconf.eval_comtitle,   NULL,               0},
-    {(UTF8 *)"events_daily_hour",         cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.events_daily_hour,      NULL,               0},
-    {(UTF8 *)"examine_flags",             cf_bool,        CA_GOD,    CA_PUBLIC,   (int *)&mudconf.ex_flags,        NULL,               0},
-    {(UTF8 *)"examine_public_attrs",      cf_bool,        CA_GOD,    CA_PUBLIC,   (int *)&mudconf.exam_public,     NULL,               0},
-    {(UTF8 *)"exit_flags",                cf_set_flags,   CA_GOD,    CA_DISABLED, (int *)&mudconf.exit_flags,      NULL,               0},
-    {(UTF8 *)"exit_quota",                cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.exit_quota,             NULL,               0},
-    {(UTF8 *)"fascist_teleport",          cf_bool,        CA_GOD,    CA_PUBLIC,   (int *)&mudconf.fascist_tport,   NULL,               0},
-    {(UTF8 *)"find_money_chance",         cf_int,         CA_GOD,    CA_WIZARD,   &mudconf.payfind,                NULL,               0},
-    {(UTF8 *)"fixed_home_message",        cf_string,      CA_STATIC, CA_PUBLIC,   (int *)mudconf.fixed_home_msg,   NULL,             128},
-    {(UTF8 *)"fixed_tel_message",         cf_string,      CA_STATIC, CA_PUBLIC,   (int *)mudconf.fixed_tel_msg,    NULL,             128},
-    {(UTF8 *)"flag_access",               cf_flag_access, CA_GOD,    CA_DISABLED, NULL,                            NULL,               0},
-    {(UTF8 *)"flag_alias",                cf_flagalias,   CA_GOD,    CA_DISABLED, NULL,                            NULL,               0},
-    {(UTF8 *)"flag_name",                 cf_flag_name,   CA_GOD,    CA_DISABLED, NULL,                            NULL,               0},
-    {(UTF8 *)"float_precision",           cf_int,         CA_STATIC, CA_PUBLIC,   &mudconf.float_precision,        NULL,               0},
-    {(UTF8 *)"forbid_site",               cf_site,        CA_GOD,    CA_DISABLED, (int *)&mudstate.access_list,    NULL,     H_FORBIDDEN},
+    {T("access"),                    cf_access,      CA_GOD,    CA_DISABLED, NULL,                            access_nametab,     0},
+    {T("alias"),                     cf_cmd_alias,   CA_GOD,    CA_DISABLED, (int *)&mudstate.command_htab,   0,                  0},
+    {T("allow_guest_from_registered_site"), cf_bool, CA_GOD,    CA_WIZARD,   (int *)&mudconf.allow_guest_from_registered_site, NULL,     1},
+    {T("article_rule"),              cf_art_rule,    CA_GOD,    CA_DISABLED, (int *)&mudconf.art_rules,       NULL,               0},
+    {T("attr_access"),               cf_attr_access, CA_GOD,    CA_DISABLED, NULL,                            attraccess_nametab, 0},
+    {T("attr_alias"),                cf_alias,       CA_GOD,    CA_DISABLED, (int *)&mudstate.attr_name_htab, 0,                  0},
+    {T("attr_cmd_access"),           cf_acmd_access, CA_GOD,    CA_DISABLED, NULL,                            access_nametab,     0},
+    {T("autozone"),                  cf_bool,        CA_GOD,    CA_PUBLIC,   (int *)&mudconf.autozone,        NULL,               0},
+    {T("bad_name"),                  cf_badname,     CA_GOD,    CA_DISABLED, NULL,                            NULL,               0},
+    {T("badsite_file"),              cf_string_dyn,  CA_STATIC, CA_GOD,      (int *)&mudconf.site_file,       NULL, SIZEOF_PATHNAME},
+    {T("cache_names"),               cf_bool,        CA_STATIC, CA_GOD,      (int *)&mudconf.cache_names,     NULL,               0},
+    {T("cache_pages"),               cf_int,         CA_STATIC, CA_WIZARD,   &mudconf.cache_pages,            NULL,               0},
+    {T("cache_tick_period"),         cf_seconds,     CA_GOD,    CA_WIZARD,   (int *)&mudconf.cache_tick_period, NULL,             0},
+    {T("check_interval"),            cf_int,         CA_GOD,    CA_WIZARD,   &mudconf.check_interval,         NULL,               0},
+    {T("check_offset"),              cf_int,         CA_GOD,    CA_WIZARD,   &mudconf.check_offset,           NULL,               0},
+    {T("clone_copies_cost"),         cf_bool,        CA_GOD,    CA_PUBLIC,   (int *)&mudconf.clone_copy_cost, NULL,               0},
+    {T("command_quota_increment"),   cf_int,         CA_GOD,    CA_WIZARD,   &mudconf.cmd_quota_incr,         NULL,               0},
+    {T("command_quota_max"),         cf_int,         CA_GOD,    CA_WIZARD,   &mudconf.cmd_quota_max,          NULL,               0},
+    {T("compress_program"),          cf_string_dyn,  CA_STATIC, CA_GOD,      (int *)&mudconf.compress,        NULL, SIZEOF_PATHNAME},
+    {T("compression"),               cf_bool,        CA_GOD,    CA_GOD,      (int *)&mudconf.compress_db,     NULL,               0},
+    {T("comsys_database"),           cf_string_dyn,  CA_STATIC, CA_GOD,      (int *)&mudconf.comsys_db,       NULL, SIZEOF_PATHNAME},
+    {T("config_access"),             cf_cf_access,   CA_GOD,    CA_DISABLED, NULL,                            access_nametab,     0},
+    {T("conn_timeout"),              cf_int,         CA_GOD,    CA_WIZARD,   &mudconf.conn_timeout,           NULL,               0},
+    {T("connect_file"),              cf_string_dyn,  CA_STATIC, CA_GOD,      (int *)&mudconf.conn_file,       NULL, SIZEOF_PATHNAME},
+    {T("connect_reg_file"),          cf_string_dyn,  CA_STATIC, CA_GOD,      (int *)&mudconf.creg_file,       NULL, SIZEOF_PATHNAME},
+    {T("lag_limit"),                 cf_seconds,     CA_GOD,    CA_WIZARD,   (int *)&mudconf.max_cmdsecs,     NULL,               0},
+    {T("crash_database"),            cf_string_dyn,  CA_STATIC, CA_GOD,      (int *)&mudconf.crashdb,         NULL, SIZEOF_PATHNAME},
+    {T("create_max_cost"),           cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.createmax,              NULL,               0},
+    {T("create_min_cost"),           cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.createmin,              NULL,               0},
+    {T("dark_sleepers"),             cf_bool,        CA_GOD,    CA_WIZARD,   (int *)&mudconf.dark_sleepers,   NULL,               0},
+    {T("default_home"),              cf_dbref,       CA_GOD,    CA_PUBLIC,   &mudconf.default_home,           NULL,               0},
+    {T("destroy_going_now"),         cf_bool,        CA_GOD,    CA_WIZARD,   (int *)&mudconf.destroy_going_now, NULL,               0},
+    {T("dig_cost"),                  cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.digcost,                NULL,               0},
+    {T("down_file"),                 cf_string_dyn,  CA_STATIC, CA_GOD,      (int *)&mudconf.down_file,       NULL, SIZEOF_PATHNAME},
+    {T("down_motd_message"),         cf_string,      CA_GOD,    CA_WIZARD,   (int *)mudconf.downmotd_msg,     NULL,       GBUF_SIZE},
+    {T("dump_interval"),             cf_int,         CA_GOD,    CA_WIZARD,   &mudconf.dump_interval,          NULL,               0},
+    {T("dump_message"),              cf_string,      CA_GOD,    CA_WIZARD,   (int *)mudconf.dump_msg,         NULL,             256},
+    {T("dump_offset"),               cf_int,         CA_GOD,    CA_WIZARD,   &mudconf.dump_offset,            NULL,               0},
+    {T("earn_limit"),                cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.paylimit,               NULL,               0},
+    {T("eval_comtitle"),             cf_bool,        CA_GOD,    CA_PUBLIC,   (int *)&mudconf.eval_comtitle,   NULL,               0},
+    {T("events_daily_hour"),         cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.events_daily_hour,      NULL,               0},
+    {T("examine_flags"),             cf_bool,        CA_GOD,    CA_PUBLIC,   (int *)&mudconf.ex_flags,        NULL,               0},
+    {T("examine_public_attrs"),      cf_bool,        CA_GOD,    CA_PUBLIC,   (int *)&mudconf.exam_public,     NULL,               0},
+    {T("exit_flags"),                cf_set_flags,   CA_GOD,    CA_DISABLED, (int *)&mudconf.exit_flags,      NULL,               0},
+    {T("exit_quota"),                cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.exit_quota,             NULL,               0},
+    {T("fascist_teleport"),          cf_bool,        CA_GOD,    CA_PUBLIC,   (int *)&mudconf.fascist_tport,   NULL,               0},
+    {T("find_money_chance"),         cf_int,         CA_GOD,    CA_WIZARD,   &mudconf.payfind,                NULL,               0},
+    {T("fixed_home_message"),        cf_string,      CA_STATIC, CA_PUBLIC,   (int *)mudconf.fixed_home_msg,   NULL,             128},
+    {T("fixed_tel_message"),         cf_string,      CA_STATIC, CA_PUBLIC,   (int *)mudconf.fixed_tel_msg,    NULL,             128},
+    {T("flag_access"),               cf_flag_access, CA_GOD,    CA_DISABLED, NULL,                            NULL,               0},
+    {T("flag_alias"),                cf_flagalias,   CA_GOD,    CA_DISABLED, NULL,                            NULL,               0},
+    {T("flag_name"),                 cf_flag_name,   CA_GOD,    CA_DISABLED, NULL,                            NULL,               0},
+    {T("float_precision"),           cf_int,         CA_STATIC, CA_PUBLIC,   &mudconf.float_precision,        NULL,               0},
+    {T("forbid_site"),               cf_site,        CA_GOD,    CA_DISABLED, (int *)&mudstate.access_list,    NULL,     H_FORBIDDEN},
 #ifndef WIN32
-    {(UTF8 *)"fork_dump",                 cf_bool,        CA_GOD,    CA_WIZARD,   (int *)&mudconf.fork_dump,       NULL,               0},
+    {T("fork_dump"),                 cf_bool,        CA_GOD,    CA_WIZARD,   (int *)&mudconf.fork_dump,       NULL,               0},
 #endif
-    {(UTF8 *)"full_file",                 cf_string_dyn,  CA_STATIC, CA_GOD,      (int *)&mudconf.full_file,       NULL, SIZEOF_PATHNAME},
-    {(UTF8 *)"full_motd_message",         cf_string,      CA_GOD,    CA_WIZARD,   (int *)mudconf.fullmotd_msg,     NULL,       GBUF_SIZE},
-    {(UTF8 *)"function_access",           cf_func_access, CA_GOD,    CA_DISABLED, NULL,                            access_nametab,     0},
-    {(UTF8 *)"function_alias",            cf_alias,       CA_GOD,    CA_DISABLED, (int *)&mudstate.func_htab,      NULL,               0},
-    {(UTF8 *)"function_invocation_limit", cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.func_invk_lim,          NULL,               0},
-    {(UTF8 *)"function_recursion_limit",  cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.func_nest_lim,          NULL,               0},
-    {(UTF8 *)"game_dir_file",             cf_string_dyn,  CA_STATIC, CA_GOD,      (int *)&mudconf.game_dir,        NULL, SIZEOF_PATHNAME},
-    {(UTF8 *)"game_pag_file",             cf_string_dyn,  CA_STATIC, CA_GOD,      (int *)&mudconf.game_pag,        NULL, SIZEOF_PATHNAME},
-    {(UTF8 *)"global_error_obj",          cf_dbref,       CA_GOD,    CA_GOD,      &mudconf.global_error_obj,       NULL,               0},
-    {(UTF8 *)"good_name",                 cf_badname,     CA_GOD,    CA_DISABLED, NULL,                            NULL,               1},
-    {(UTF8 *)"guest_char_num",            cf_dbref,       CA_STATIC, CA_WIZARD,   &mudconf.guest_char,             NULL,               0},
-    {(UTF8 *)"guest_file",                cf_string_dyn,  CA_STATIC, CA_GOD,      (int *)&mudconf.guest_file,      NULL, SIZEOF_PATHNAME},
-    {(UTF8 *)"guest_nuker",               cf_dbref,       CA_GOD,    CA_WIZARD,   &mudconf.guest_nuker,            NULL,               0},
-    {(UTF8 *)"guest_prefix",              cf_string,      CA_STATIC, CA_PUBLIC,   (int *)mudconf.guest_prefix,     NULL,              32},
-    {(UTF8 *)"guest_site",                cf_site,        CA_GOD,    CA_DISABLED, (int *)&mudstate.access_list,    NULL,         H_GUEST},
-    {(UTF8 *)"guests_channel",            cf_string,      CA_STATIC, CA_PUBLIC,   (int *)mudconf.guests_channel,   NULL,              32},
-    {(UTF8 *)"guests_channel_alias",      cf_string,      CA_STATIC, CA_PUBLIC,   (int *)mudconf.guests_channel_alias, NULL,          32},
-    {(UTF8 *)"have_comsys",               cf_bool,        CA_STATIC, CA_PUBLIC,   (int *)&mudconf.have_comsys,     NULL,               0},
-    {(UTF8 *)"have_mailer",               cf_bool,        CA_STATIC, CA_PUBLIC,   (int *)&mudconf.have_mailer,     NULL,               0},
-    {(UTF8 *)"have_zones",                cf_bool,        CA_STATIC, CA_PUBLIC,   (int *)&mudconf.have_zones,      NULL,               0},
-    {(UTF8 *)"helpfile",                  cf_helpfile,    CA_STATIC, CA_DISABLED, NULL,                            NULL,               0},
-    {(UTF8 *)"hook_cmd",                  cf_hook,        CA_GOD,    CA_GOD,      &mudconf.hook_cmd,               NULL,               0},
-    {(UTF8 *)"hook_obj",                  cf_dbref,       CA_GOD,    CA_GOD,      &mudconf.hook_obj,               NULL,               0},
-    {(UTF8 *)"hostnames",                 cf_bool,        CA_GOD,    CA_WIZARD,   (int *)&mudconf.use_hostname,    NULL,               0},
-    {(UTF8 *)"idle_interval",             cf_int,         CA_GOD,    CA_WIZARD,   &mudconf.idle_interval,          NULL,               0},
-    {(UTF8 *)"idle_timeout",              cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.idle_timeout,           NULL,               0},
-    {(UTF8 *)"idle_wiz_dark",             cf_bool,        CA_GOD,    CA_WIZARD,   (int *)&mudconf.idle_wiz_dark,   NULL,               0},
-    {(UTF8 *)"include",                   cf_include,     CA_STATIC, CA_DISABLED, NULL,                            NULL,               0},
-    {(UTF8 *)"indent_desc",               cf_bool,        CA_GOD,    CA_PUBLIC,   (int *)&mudconf.indent_desc,     NULL,               0},
-    {(UTF8 *)"initial_size",              cf_int,         CA_STATIC, CA_WIZARD,   &mudconf.init_size,              NULL,               0},
-    {(UTF8 *)"input_database",            cf_string_dyn,  CA_STATIC, CA_GOD,      (int *)&mudconf.indb,            NULL, SIZEOF_PATHNAME},
-    {(UTF8 *)"kill_guarantee_cost",       cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.killguarantee,          NULL,               0},
-    {(UTF8 *)"kill_max_cost",             cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.killmax,                NULL,               0},
-    {(UTF8 *)"kill_min_cost",             cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.killmin,                NULL,               0},
-    {(UTF8 *)"lag_maximum",               cf_seconds,     CA_GOD,    CA_WIZARD,   (int *)&mudconf.rpt_cmdsecs,     NULL,               0},
-    {(UTF8 *)"lbuf_size",                 cf_int,       CA_DISABLED, CA_PUBLIC,   (int *)&mudconf.lbuf_size,       NULL,               0},
-    {(UTF8 *)"link_cost",                 cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.linkcost,               NULL,               0},
-    {(UTF8 *)"list_access",               cf_ntab_access, CA_GOD,    CA_DISABLED, (int *)list_names,               access_nametab,     0},
-    {(UTF8 *)"lock_recursion_limit",      cf_int,         CA_WIZARD, CA_PUBLIC,   &mudconf.lock_nest_lim,          NULL,               0},
-    {(UTF8 *)"log",                       cf_modify_bits, CA_GOD,    CA_DISABLED, &mudconf.log_options,            logoptions_nametab, 0},
-    {(UTF8 *)"log_options",               cf_modify_bits, CA_GOD,    CA_DISABLED, &mudconf.log_info,               logdata_nametab,    0},
-    {(UTF8 *)"logout_cmd_access",         cf_ntab_access, CA_GOD,    CA_DISABLED, (int *)logout_cmdtable,          access_nametab,     0},
-    {(UTF8 *)"logout_cmd_alias",          cf_alias,       CA_GOD,    CA_DISABLED, (int *)&mudstate.logout_cmd_htab,NULL,               0},
-    {(UTF8 *)"look_obey_terse",           cf_bool,        CA_GOD,    CA_PUBLIC,   (int *)&mudconf.terse_look,      NULL,               0},
-    {(UTF8 *)"machine_command_cost",      cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.machinecost,            NULL,               0},
-    {(UTF8 *)"mail_database",             cf_string_dyn,  CA_GOD,    CA_GOD,      (int *)&mudconf.mail_db,         NULL, SIZEOF_PATHNAME},
-    {(UTF8 *)"mail_expiration",           cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.mail_expiration,        NULL,               0},
-    {(UTF8 *)"mail_per_hour",             cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.mail_per_hour,          NULL,               0},
-    {(UTF8 *)"master_room",               cf_dbref,       CA_GOD,    CA_WIZARD,   &mudconf.master_room,            NULL,               0},
-    {(UTF8 *)"match_own_commands",        cf_bool,        CA_GOD,    CA_PUBLIC,   (int *)&mudconf.match_mine,      NULL,               0},
-    {(UTF8 *)"max_cache_size",            cf_int,         CA_GOD,    CA_GOD,      (int *)&mudconf.max_cache_size,  NULL,               0},
-    {(UTF8 *)"max_players",               cf_int,         CA_GOD,    CA_WIZARD,   &mudconf.max_players,            NULL,               0},
-    {(UTF8 *)"min_guests",                cf_int,         CA_STATIC, CA_GOD,      (int *)&mudconf.min_guests,      NULL,               0},
-    {(UTF8 *)"money_name_plural",         cf_string,      CA_GOD,    CA_PUBLIC,   (int *)mudconf.many_coins,       NULL,              32},
-    {(UTF8 *)"money_name_singular",       cf_string,      CA_GOD,    CA_PUBLIC,   (int *)mudconf.one_coin,         NULL,              32},
-    {(UTF8 *)"motd_file",                 cf_string_dyn,  CA_STATIC, CA_GOD,      (int *)&mudconf.motd_file,       NULL, SIZEOF_PATHNAME},
-    {(UTF8 *)"motd_message",              cf_string,      CA_GOD,    CA_WIZARD,   (int *)mudconf.motd_msg,         NULL,       GBUF_SIZE},
-    {(UTF8 *)"mud_name",                  cf_string,      CA_GOD,    CA_PUBLIC,   (int *)mudconf.mud_name,         NULL,              32},
-    {(UTF8 *)"newuser_file",              cf_string_dyn,  CA_STATIC, CA_GOD,      (int *)&mudconf.crea_file,       NULL, SIZEOF_PATHNAME},
-    {(UTF8 *)"nositemon_site",            cf_site,        CA_GOD,    CA_DISABLED, (int *)&mudstate.access_list,    NULL,     H_NOSITEMON},
-    {(UTF8 *)"notify_recursion_limit",    cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.ntfy_nest_lim,          NULL,               0},
-    {(UTF8 *)"number_guests",             cf_int,         CA_STATIC, CA_WIZARD,   &mudconf.number_guests,          NULL,               0},
-    {(UTF8 *)"open_cost",                 cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.opencost,               NULL,               0},
-    {(UTF8 *)"output_database",           cf_string_dyn,  CA_STATIC, CA_GOD,      (int *)&mudconf.outdb,           NULL, SIZEOF_PATHNAME},
-    {(UTF8 *)"output_limit",              cf_int,         CA_GOD,    CA_WIZARD,   (int *)&mudconf.output_limit,           NULL,               0},
-    {(UTF8 *)"page_cost",                 cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.pagecost,               NULL,               0},
-    {(UTF8 *)"paranoid_allocate",         cf_bool,        CA_GOD,    CA_WIZARD,   (int *)&mudconf.paranoid_alloc,  NULL,               0},
-    {(UTF8 *)"parent_recursion_limit",    cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.parent_nest_lim,        NULL,               0},
-    {(UTF8 *)"paycheck",                  cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.paycheck,               NULL,               0},
-    {(UTF8 *)"pemit_any_object",          cf_bool,        CA_GOD,    CA_PUBLIC,   (int *)&mudconf.pemit_any,       NULL,               0},
-    {(UTF8 *)"pemit_far_players",         cf_bool,        CA_GOD,    CA_PUBLIC,   (int *)&mudconf.pemit_players,   NULL,               0},
-    {(UTF8 *)"permit_site",               cf_site,        CA_GOD,    CA_DISABLED, (int *)&mudstate.access_list,    NULL,               0},
-    {(UTF8 *)"player_flags",              cf_set_flags,   CA_GOD,    CA_DISABLED, (int *)&mudconf.player_flags,    NULL,               0},
-    {(UTF8 *)"player_listen",             cf_bool,        CA_GOD,    CA_PUBLIC,   (int *)&mudconf.player_listen,   NULL,               0},
-    {(UTF8 *)"player_match_own_commands", cf_bool,        CA_GOD,    CA_PUBLIC,   (int *)&mudconf.match_mine_pl,   NULL,               0},
-    {(UTF8 *)"player_name_spaces",        cf_bool,        CA_GOD,    CA_PUBLIC,   (int *)&mudconf.name_spaces,     NULL,               0},
-    {(UTF8 *)"player_queue_limit",        cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.queuemax,               NULL,               0},
-    {(UTF8 *)"player_quota",              cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.player_quota,           NULL,               0},
-    {(UTF8 *)"player_starting_home",      cf_dbref,       CA_GOD,    CA_PUBLIC,   &mudconf.start_home,             NULL,               0},
-    {(UTF8 *)"player_starting_room",      cf_dbref,       CA_GOD,    CA_PUBLIC,   &mudconf.start_room,             NULL,               0},
-    {(UTF8 *)"port",                      cf_int_array,   CA_STATIC, CA_PUBLIC,   (int *)&mudconf.ports,           NULL, MAX_LISTEN_PORTS},
-    {(UTF8 *)"postdump_message",          cf_string,      CA_GOD,    CA_WIZARD,   (int *)mudconf.postdump_msg,     NULL,             256},
-    {(UTF8 *)"power_alias",               cf_poweralias,  CA_GOD,    CA_DISABLED, NULL,                            NULL,               0},
-    {(UTF8 *)"pcreate_per_hour",          cf_int,         CA_STATIC, CA_PUBLIC,   (int *)&mudconf.pcreate_per_hour,NULL,               0},
-    {(UTF8 *)"public_channel",            cf_string,      CA_STATIC, CA_PUBLIC,   (int *)mudconf.public_channel,   NULL,              32},
-    {(UTF8 *)"public_channel_alias",      cf_string,      CA_STATIC, CA_PUBLIC,   (int *)mudconf.public_channel_alias, NULL,          32},
-    {(UTF8 *)"public_flags",              cf_bool,        CA_GOD,    CA_PUBLIC,   (int *)&mudconf.pub_flags,       NULL,               0},
-    {(UTF8 *)"pueblo_message",            cf_string,      CA_GOD,    CA_WIZARD,   (int *)mudconf.pueblo_msg,       NULL,       GBUF_SIZE},
-    {(UTF8 *)"queue_active_chunk",        cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.active_q_chunk,         NULL,               0},
-    {(UTF8 *)"queue_idle_chunk",          cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.queue_chunk,            NULL,               0},
-    {(UTF8 *)"quiet_look",                cf_bool,        CA_GOD,    CA_PUBLIC,   (int *)&mudconf.quiet_look,      NULL,               0},
-    {(UTF8 *)"quiet_whisper",             cf_bool,        CA_GOD,    CA_PUBLIC,   (int *)&mudconf.quiet_whisper,   NULL,               0},
-    {(UTF8 *)"quit_file",                 cf_string_dyn,  CA_STATIC, CA_GOD,      (int *)&mudconf.quit_file,       NULL, SIZEOF_PATHNAME},
-    {(UTF8 *)"quotas",                    cf_bool,        CA_GOD,    CA_PUBLIC,   (int *)&mudconf.quotas,          NULL,               0},
-    {(UTF8 *)"raw_helpfile",              cf_raw_helpfile,CA_STATIC, CA_DISABLED, NULL,                            NULL,               0},
-    {(UTF8 *)"read_remote_desc",          cf_bool,        CA_GOD,    CA_PUBLIC,   (int *)&mudconf.read_rem_desc,   NULL,               0},
-    {(UTF8 *)"read_remote_name",          cf_bool,        CA_GOD,    CA_PUBLIC,   (int *)&mudconf.read_rem_name,   NULL,               0},
-    {(UTF8 *)"register_create_file",      cf_string_dyn,  CA_STATIC, CA_GOD,      (int *)&mudconf.regf_file,       NULL, SIZEOF_PATHNAME},
-    {(UTF8 *)"register_site",             cf_site,        CA_GOD,    CA_DISABLED, (int *)&mudstate.access_list,    NULL,  H_REGISTRATION},
-    {(UTF8 *)"reset_players",             cf_bool,        CA_GOD,    CA_DISABLED, (int *)&mudconf.reset_players,   NULL,               0},
-    {(UTF8 *)"restrict_home",             cf_bool,        CA_GOD,    CA_DISABLED, (int *)&mudconf.restrict_home,   NULL,               0},
-    {(UTF8 *)"retry_limit",               cf_int,         CA_GOD,    CA_WIZARD,   &mudconf.retry_limit,            NULL,               0},
-    {(UTF8 *)"robot_cost",                cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.robotcost,              NULL,               0},
-    {(UTF8 *)"robot_flags",               cf_set_flags,   CA_GOD,    CA_DISABLED, (int *)&mudconf.robot_flags,     NULL,               0},
-    {(UTF8 *)"robot_speech",              cf_bool,        CA_GOD,    CA_PUBLIC,   (int *)&mudconf.robot_speak,     NULL,               0},
-    {(UTF8 *)"room_flags",                cf_set_flags,   CA_GOD,    CA_DISABLED, (int *)&mudconf.room_flags,      NULL,               0},
-    {(UTF8 *)"room_quota",                cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.room_quota,             NULL,               0},
-    {(UTF8 *)"run_startup",               cf_bool,        CA_STATIC, CA_WIZARD,   (int *)&mudconf.run_startup,     NULL,               0},
-    {(UTF8 *)"sacrifice_adjust",          cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.sacadjust,              NULL,               0},
-    {(UTF8 *)"sacrifice_factor",          cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.sacfactor,              NULL,               0},
-    {(UTF8 *)"safe_wipe",                 cf_bool,        CA_GOD,    CA_WIZARD,   (int *)&mudconf.safe_wipe,       NULL,               0},
-    {(UTF8 *)"safer_passwords",           cf_bool,        CA_GOD,    CA_PUBLIC,   (int *)&mudconf.safer_passwords, NULL,               0},
-    {(UTF8 *)"search_cost",               cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.searchcost,             NULL,               0},
-    {(UTF8 *)"see_owned_dark",            cf_bool,        CA_GOD,    CA_PUBLIC,   (int *)&mudconf.see_own_dark,    NULL,               0},
-    {(UTF8 *)"signal_action",             cf_option,      CA_STATIC, CA_GOD,      &mudconf.sig_action,             sigactions_nametab, 0},
-    {(UTF8 *)"site_chars",                cf_int,         CA_GOD,    CA_WIZARD,   (int *)&mudconf.site_chars,      NULL,               0},
-    {(UTF8 *)"space_compress",            cf_bool,        CA_GOD,    CA_PUBLIC,   (int *)&mudconf.space_compress,  NULL,               0},
-    {(UTF8 *)"stack_limit",               cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.stack_limit,            NULL,               0},
-    {(UTF8 *)"starting_money",            cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.paystart,               NULL,               0},
-    {(UTF8 *)"starting_quota",            cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.start_quota,            NULL,               0},
-    {(UTF8 *)"status_file",               cf_string_dyn,  CA_STATIC, CA_GOD,      (int *)&mudconf.status_file,     NULL, SIZEOF_PATHNAME},
-    {(UTF8 *)"stripped_flags",            cf_set_flags,   CA_GOD,    CA_DISABLED, (int *)&mudconf.stripped_flags,  NULL,               0},
-    {(UTF8 *)"suspect_site",              cf_site,        CA_GOD,    CA_DISABLED, (int *)&mudstate.suspect_list,   NULL,       H_SUSPECT},
-    {(UTF8 *)"sweep_dark",                cf_bool,        CA_GOD,    CA_PUBLIC,   (int *)&mudconf.sweep_dark,      NULL,               0},
-    {(UTF8 *)"switch_default_all",        cf_bool,        CA_GOD,    CA_PUBLIC,   (int *)&mudconf.switch_df_all,   NULL,               0},
-    {(UTF8 *)"terse_shows_contents",      cf_bool,        CA_GOD,    CA_PUBLIC,   (int *)&mudconf.terse_contents,  NULL,               0},
-    {(UTF8 *)"terse_shows_exits",         cf_bool,        CA_GOD,    CA_PUBLIC,   (int *)&mudconf.terse_exits,     NULL,               0},
-    {(UTF8 *)"terse_shows_move_messages", cf_bool,        CA_GOD,    CA_PUBLIC,   (int *)&mudconf.terse_movemsg,   NULL,               0},
-    {(UTF8 *)"thing_flags",               cf_set_flags,   CA_GOD,    CA_DISABLED, (int *)&mudconf.thing_flags,     NULL,               0},
-    {(UTF8 *)"thing_quota",               cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.thing_quota,            NULL,               0},
-    {(UTF8 *)"timeslice",                 cf_seconds,     CA_GOD,    CA_PUBLIC,   (int *)&mudconf.timeslice,       NULL,               0},
-    {(UTF8 *)"toad_recipient",            cf_dbref,       CA_GOD,    CA_WIZARD,   &mudconf.toad_recipient,         NULL,               0},
-    {(UTF8 *)"trace_output_limit",        cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.trace_limit,            NULL,               0},
-    {(UTF8 *)"trace_topdown",             cf_bool,        CA_GOD,    CA_PUBLIC,   (int *)&mudconf.trace_topdown,   NULL,               0},
-    {(UTF8 *)"trust_site",                cf_site,        CA_GOD,    CA_DISABLED, (int *)&mudstate.suspect_list,   NULL,               0},
-    {(UTF8 *)"uncompress_program",        cf_string_dyn,  CA_STATIC, CA_GOD,      (int *)&mudconf.uncompress,      NULL, SIZEOF_PATHNAME},
-    {(UTF8 *)"unowned_safe",              cf_bool,        CA_GOD,    CA_PUBLIC,   (int *)&mudconf.safe_unowned,    NULL,               0},
-    {(UTF8 *)"use_http",                  cf_bool,        CA_STATIC, CA_PUBLIC,   (int *)&mudconf.use_http,        NULL,               0},
-    {(UTF8 *)"user_attr_access",          cf_modify_bits, CA_GOD,    CA_DISABLED, &mudconf.vattr_flags,            attraccess_nametab, 0},
-    {(UTF8 *)"user_attr_per_hour",        cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.vattr_per_hour,         NULL,               0},
-    {(UTF8 *)"wait_cost",                 cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.waitcost,               NULL,               0},
-    {(UTF8 *)"wizard_motd_file",          cf_string_dyn,  CA_STATIC, CA_GOD,      (int *)&mudconf.wizmotd_file,    NULL, SIZEOF_PATHNAME},
-    {(UTF8 *)"wizard_motd_message",       cf_string,      CA_GOD,    CA_WIZARD,   (int *)mudconf.wizmotd_msg,      NULL,       GBUF_SIZE},
-    {(UTF8 *)"zone_recursion_limit",      cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.zone_nest_lim,          NULL,               0},
+    {T("full_file"),                 cf_string_dyn,  CA_STATIC, CA_GOD,      (int *)&mudconf.full_file,       NULL, SIZEOF_PATHNAME},
+    {T("full_motd_message"),         cf_string,      CA_GOD,    CA_WIZARD,   (int *)mudconf.fullmotd_msg,     NULL,       GBUF_SIZE},
+    {T("function_access"),           cf_func_access, CA_GOD,    CA_DISABLED, NULL,                            access_nametab,     0},
+    {T("function_alias"),            cf_alias,       CA_GOD,    CA_DISABLED, (int *)&mudstate.func_htab,      NULL,               0},
+    {T("function_invocation_limit"), cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.func_invk_lim,          NULL,               0},
+    {T("function_recursion_limit"),  cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.func_nest_lim,          NULL,               0},
+    {T("game_dir_file"),             cf_string_dyn,  CA_STATIC, CA_GOD,      (int *)&mudconf.game_dir,        NULL, SIZEOF_PATHNAME},
+    {T("game_pag_file"),             cf_string_dyn,  CA_STATIC, CA_GOD,      (int *)&mudconf.game_pag,        NULL, SIZEOF_PATHNAME},
+    {T("global_error_obj"),          cf_dbref,       CA_GOD,    CA_GOD,      &mudconf.global_error_obj,       NULL,               0},
+    {T("good_name"),                 cf_badname,     CA_GOD,    CA_DISABLED, NULL,                            NULL,               1},
+    {T("guest_char_num"),            cf_dbref,       CA_STATIC, CA_WIZARD,   &mudconf.guest_char,             NULL,               0},
+    {T("guest_file"),                cf_string_dyn,  CA_STATIC, CA_GOD,      (int *)&mudconf.guest_file,      NULL, SIZEOF_PATHNAME},
+    {T("guest_nuker"),               cf_dbref,       CA_GOD,    CA_WIZARD,   &mudconf.guest_nuker,            NULL,               0},
+    {T("guest_prefix"),              cf_string,      CA_STATIC, CA_PUBLIC,   (int *)mudconf.guest_prefix,     NULL,              32},
+    {T("guest_site"),                cf_site,        CA_GOD,    CA_DISABLED, (int *)&mudstate.access_list,    NULL,         H_GUEST},
+    {T("guests_channel"),            cf_string,      CA_STATIC, CA_PUBLIC,   (int *)mudconf.guests_channel,   NULL,              32},
+    {T("guests_channel_alias"),      cf_string,      CA_STATIC, CA_PUBLIC,   (int *)mudconf.guests_channel_alias, NULL,          32},
+    {T("have_comsys"),               cf_bool,        CA_STATIC, CA_PUBLIC,   (int *)&mudconf.have_comsys,     NULL,               0},
+    {T("have_mailer"),               cf_bool,        CA_STATIC, CA_PUBLIC,   (int *)&mudconf.have_mailer,     NULL,               0},
+    {T("have_zones"),                cf_bool,        CA_STATIC, CA_PUBLIC,   (int *)&mudconf.have_zones,      NULL,               0},
+    {T("helpfile"),                  cf_helpfile,    CA_STATIC, CA_DISABLED, NULL,                            NULL,               0},
+    {T("hook_cmd"),                  cf_hook,        CA_GOD,    CA_GOD,      &mudconf.hook_cmd,               NULL,               0},
+    {T("hook_obj"),                  cf_dbref,       CA_GOD,    CA_GOD,      &mudconf.hook_obj,               NULL,               0},
+    {T("hostnames"),                 cf_bool,        CA_GOD,    CA_WIZARD,   (int *)&mudconf.use_hostname,    NULL,               0},
+    {T("idle_interval"),             cf_int,         CA_GOD,    CA_WIZARD,   &mudconf.idle_interval,          NULL,               0},
+    {T("idle_timeout"),              cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.idle_timeout,           NULL,               0},
+    {T("idle_wiz_dark"),             cf_bool,        CA_GOD,    CA_WIZARD,   (int *)&mudconf.idle_wiz_dark,   NULL,               0},
+    {T("include"),                   cf_include,     CA_STATIC, CA_DISABLED, NULL,                            NULL,               0},
+    {T("indent_desc"),               cf_bool,        CA_GOD,    CA_PUBLIC,   (int *)&mudconf.indent_desc,     NULL,               0},
+    {T("initial_size"),              cf_int,         CA_STATIC, CA_WIZARD,   &mudconf.init_size,              NULL,               0},
+    {T("input_database"),            cf_string_dyn,  CA_STATIC, CA_GOD,      (int *)&mudconf.indb,            NULL, SIZEOF_PATHNAME},
+    {T("kill_guarantee_cost"),       cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.killguarantee,          NULL,               0},
+    {T("kill_max_cost"),             cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.killmax,                NULL,               0},
+    {T("kill_min_cost"),             cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.killmin,                NULL,               0},
+    {T("lag_maximum"),               cf_seconds,     CA_GOD,    CA_WIZARD,   (int *)&mudconf.rpt_cmdsecs,     NULL,               0},
+    {T("lbuf_size"),                 cf_int,       CA_DISABLED, CA_PUBLIC,   (int *)&mudconf.lbuf_size,       NULL,               0},
+    {T("link_cost"),                 cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.linkcost,               NULL,               0},
+    {T("list_access"),               cf_ntab_access, CA_GOD,    CA_DISABLED, (int *)list_names,               access_nametab,     0},
+    {T("lock_recursion_limit"),      cf_int,         CA_WIZARD, CA_PUBLIC,   &mudconf.lock_nest_lim,          NULL,               0},
+    {T("log"),                       cf_modify_bits, CA_GOD,    CA_DISABLED, &mudconf.log_options,            logoptions_nametab, 0},
+    {T("log_options"),               cf_modify_bits, CA_GOD,    CA_DISABLED, &mudconf.log_info,               logdata_nametab,    0},
+    {T("logout_cmd_access"),         cf_ntab_access, CA_GOD,    CA_DISABLED, (int *)logout_cmdtable,          access_nametab,     0},
+    {T("logout_cmd_alias"),          cf_alias,       CA_GOD,    CA_DISABLED, (int *)&mudstate.logout_cmd_htab,NULL,               0},
+    {T("look_obey_terse"),           cf_bool,        CA_GOD,    CA_PUBLIC,   (int *)&mudconf.terse_look,      NULL,               0},
+    {T("machine_command_cost"),      cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.machinecost,            NULL,               0},
+    {T("mail_database"),             cf_string_dyn,  CA_GOD,    CA_GOD,      (int *)&mudconf.mail_db,         NULL, SIZEOF_PATHNAME},
+    {T("mail_expiration"),           cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.mail_expiration,        NULL,               0},
+    {T("mail_per_hour"),             cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.mail_per_hour,          NULL,               0},
+    {T("master_room"),               cf_dbref,       CA_GOD,    CA_WIZARD,   &mudconf.master_room,            NULL,               0},
+    {T("match_own_commands"),        cf_bool,        CA_GOD,    CA_PUBLIC,   (int *)&mudconf.match_mine,      NULL,               0},
+    {T("max_cache_size"),            cf_int,         CA_GOD,    CA_GOD,      (int *)&mudconf.max_cache_size,  NULL,               0},
+    {T("max_players"),               cf_int,         CA_GOD,    CA_WIZARD,   &mudconf.max_players,            NULL,               0},
+    {T("min_guests"),                cf_int,         CA_STATIC, CA_GOD,      (int *)&mudconf.min_guests,      NULL,               0},
+    {T("money_name_plural"),         cf_string,      CA_GOD,    CA_PUBLIC,   (int *)mudconf.many_coins,       NULL,              32},
+    {T("money_name_singular"),       cf_string,      CA_GOD,    CA_PUBLIC,   (int *)mudconf.one_coin,         NULL,              32},
+    {T("motd_file"),                 cf_string_dyn,  CA_STATIC, CA_GOD,      (int *)&mudconf.motd_file,       NULL, SIZEOF_PATHNAME},
+    {T("motd_message"),              cf_string,      CA_GOD,    CA_WIZARD,   (int *)mudconf.motd_msg,         NULL,       GBUF_SIZE},
+    {T("mud_name"),                  cf_string,      CA_GOD,    CA_PUBLIC,   (int *)mudconf.mud_name,         NULL,              32},
+    {T("newuser_file"),              cf_string_dyn,  CA_STATIC, CA_GOD,      (int *)&mudconf.crea_file,       NULL, SIZEOF_PATHNAME},
+    {T("nositemon_site"),            cf_site,        CA_GOD,    CA_DISABLED, (int *)&mudstate.access_list,    NULL,     H_NOSITEMON},
+    {T("notify_recursion_limit"),    cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.ntfy_nest_lim,          NULL,               0},
+    {T("number_guests"),             cf_int,         CA_STATIC, CA_WIZARD,   &mudconf.number_guests,          NULL,               0},
+    {T("open_cost"),                 cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.opencost,               NULL,               0},
+    {T("output_database"),           cf_string_dyn,  CA_STATIC, CA_GOD,      (int *)&mudconf.outdb,           NULL, SIZEOF_PATHNAME},
+    {T("output_limit"),              cf_int,         CA_GOD,    CA_WIZARD,   (int *)&mudconf.output_limit,           NULL,               0},
+    {T("page_cost"),                 cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.pagecost,               NULL,               0},
+    {T("paranoid_allocate"),         cf_bool,        CA_GOD,    CA_WIZARD,   (int *)&mudconf.paranoid_alloc,  NULL,               0},
+    {T("parent_recursion_limit"),    cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.parent_nest_lim,        NULL,               0},
+    {T("paycheck"),                  cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.paycheck,               NULL,               0},
+    {T("pemit_any_object"),          cf_bool,        CA_GOD,    CA_PUBLIC,   (int *)&mudconf.pemit_any,       NULL,               0},
+    {T("pemit_far_players"),         cf_bool,        CA_GOD,    CA_PUBLIC,   (int *)&mudconf.pemit_players,   NULL,               0},
+    {T("permit_site"),               cf_site,        CA_GOD,    CA_DISABLED, (int *)&mudstate.access_list,    NULL,               0},
+    {T("player_flags"),              cf_set_flags,   CA_GOD,    CA_DISABLED, (int *)&mudconf.player_flags,    NULL,               0},
+    {T("player_listen"),             cf_bool,        CA_GOD,    CA_PUBLIC,   (int *)&mudconf.player_listen,   NULL,               0},
+    {T("player_match_own_commands"), cf_bool,        CA_GOD,    CA_PUBLIC,   (int *)&mudconf.match_mine_pl,   NULL,               0},
+    {T("player_name_spaces"),        cf_bool,        CA_GOD,    CA_PUBLIC,   (int *)&mudconf.name_spaces,     NULL,               0},
+    {T("player_queue_limit"),        cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.queuemax,               NULL,               0},
+    {T("player_quota"),              cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.player_quota,           NULL,               0},
+    {T("player_starting_home"),      cf_dbref,       CA_GOD,    CA_PUBLIC,   &mudconf.start_home,             NULL,               0},
+    {T("player_starting_room"),      cf_dbref,       CA_GOD,    CA_PUBLIC,   &mudconf.start_room,             NULL,               0},
+    {T("port"),                      cf_int_array,   CA_STATIC, CA_PUBLIC,   (int *)&mudconf.ports,           NULL, MAX_LISTEN_PORTS},
+    {T("postdump_message"),          cf_string,      CA_GOD,    CA_WIZARD,   (int *)mudconf.postdump_msg,     NULL,             256},
+    {T("power_alias"),               cf_poweralias,  CA_GOD,    CA_DISABLED, NULL,                            NULL,               0},
+    {T("pcreate_per_hour"),          cf_int,         CA_STATIC, CA_PUBLIC,   (int *)&mudconf.pcreate_per_hour,NULL,               0},
+    {T("public_channel"),            cf_string,      CA_STATIC, CA_PUBLIC,   (int *)mudconf.public_channel,   NULL,              32},
+    {T("public_channel_alias"),      cf_string,      CA_STATIC, CA_PUBLIC,   (int *)mudconf.public_channel_alias, NULL,          32},
+    {T("public_flags"),              cf_bool,        CA_GOD,    CA_PUBLIC,   (int *)&mudconf.pub_flags,       NULL,               0},
+    {T("pueblo_message"),            cf_string,      CA_GOD,    CA_WIZARD,   (int *)mudconf.pueblo_msg,       NULL,       GBUF_SIZE},
+    {T("queue_active_chunk"),        cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.active_q_chunk,         NULL,               0},
+    {T("queue_idle_chunk"),          cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.queue_chunk,            NULL,               0},
+    {T("quiet_look"),                cf_bool,        CA_GOD,    CA_PUBLIC,   (int *)&mudconf.quiet_look,      NULL,               0},
+    {T("quiet_whisper"),             cf_bool,        CA_GOD,    CA_PUBLIC,   (int *)&mudconf.quiet_whisper,   NULL,               0},
+    {T("quit_file"),                 cf_string_dyn,  CA_STATIC, CA_GOD,      (int *)&mudconf.quit_file,       NULL, SIZEOF_PATHNAME},
+    {T("quotas"),                    cf_bool,        CA_GOD,    CA_PUBLIC,   (int *)&mudconf.quotas,          NULL,               0},
+    {T("raw_helpfile"),              cf_raw_helpfile,CA_STATIC, CA_DISABLED, NULL,                            NULL,               0},
+    {T("read_remote_desc"),          cf_bool,        CA_GOD,    CA_PUBLIC,   (int *)&mudconf.read_rem_desc,   NULL,               0},
+    {T("read_remote_name"),          cf_bool,        CA_GOD,    CA_PUBLIC,   (int *)&mudconf.read_rem_name,   NULL,               0},
+    {T("register_create_file"),      cf_string_dyn,  CA_STATIC, CA_GOD,      (int *)&mudconf.regf_file,       NULL, SIZEOF_PATHNAME},
+    {T("register_site"),             cf_site,        CA_GOD,    CA_DISABLED, (int *)&mudstate.access_list,    NULL,  H_REGISTRATION},
+    {T("reset_players"),             cf_bool,        CA_GOD,    CA_DISABLED, (int *)&mudconf.reset_players,   NULL,               0},
+    {T("restrict_home"),             cf_bool,        CA_GOD,    CA_DISABLED, (int *)&mudconf.restrict_home,   NULL,               0},
+    {T("retry_limit"),               cf_int,         CA_GOD,    CA_WIZARD,   &mudconf.retry_limit,            NULL,               0},
+    {T("robot_cost"),                cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.robotcost,              NULL,               0},
+    {T("robot_flags"),               cf_set_flags,   CA_GOD,    CA_DISABLED, (int *)&mudconf.robot_flags,     NULL,               0},
+    {T("robot_speech"),              cf_bool,        CA_GOD,    CA_PUBLIC,   (int *)&mudconf.robot_speak,     NULL,               0},
+    {T("room_flags"),                cf_set_flags,   CA_GOD,    CA_DISABLED, (int *)&mudconf.room_flags,      NULL,               0},
+    {T("room_quota"),                cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.room_quota,             NULL,               0},
+    {T("run_startup"),               cf_bool,        CA_STATIC, CA_WIZARD,   (int *)&mudconf.run_startup,     NULL,               0},
+    {T("sacrifice_adjust"),          cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.sacadjust,              NULL,               0},
+    {T("sacrifice_factor"),          cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.sacfactor,              NULL,               0},
+    {T("safe_wipe"),                 cf_bool,        CA_GOD,    CA_WIZARD,   (int *)&mudconf.safe_wipe,       NULL,               0},
+    {T("safer_passwords"),           cf_bool,        CA_GOD,    CA_PUBLIC,   (int *)&mudconf.safer_passwords, NULL,               0},
+    {T("search_cost"),               cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.searchcost,             NULL,               0},
+    {T("see_owned_dark"),            cf_bool,        CA_GOD,    CA_PUBLIC,   (int *)&mudconf.see_own_dark,    NULL,               0},
+    {T("signal_action"),             cf_option,      CA_STATIC, CA_GOD,      &mudconf.sig_action,             sigactions_nametab, 0},
+    {T("site_chars"),                cf_int,         CA_GOD,    CA_WIZARD,   (int *)&mudconf.site_chars,      NULL,               0},
+    {T("space_compress"),            cf_bool,        CA_GOD,    CA_PUBLIC,   (int *)&mudconf.space_compress,  NULL,               0},
+    {T("stack_limit"),               cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.stack_limit,            NULL,               0},
+    {T("starting_money"),            cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.paystart,               NULL,               0},
+    {T("starting_quota"),            cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.start_quota,            NULL,               0},
+    {T("status_file"),               cf_string_dyn,  CA_STATIC, CA_GOD,      (int *)&mudconf.status_file,     NULL, SIZEOF_PATHNAME},
+    {T("stripped_flags"),            cf_set_flags,   CA_GOD,    CA_DISABLED, (int *)&mudconf.stripped_flags,  NULL,               0},
+    {T("suspect_site"),              cf_site,        CA_GOD,    CA_DISABLED, (int *)&mudstate.suspect_list,   NULL,       H_SUSPECT},
+    {T("sweep_dark"),                cf_bool,        CA_GOD,    CA_PUBLIC,   (int *)&mudconf.sweep_dark,      NULL,               0},
+    {T("switch_default_all"),        cf_bool,        CA_GOD,    CA_PUBLIC,   (int *)&mudconf.switch_df_all,   NULL,               0},
+    {T("terse_shows_contents"),      cf_bool,        CA_GOD,    CA_PUBLIC,   (int *)&mudconf.terse_contents,  NULL,               0},
+    {T("terse_shows_exits"),         cf_bool,        CA_GOD,    CA_PUBLIC,   (int *)&mudconf.terse_exits,     NULL,               0},
+    {T("terse_shows_move_messages"), cf_bool,        CA_GOD,    CA_PUBLIC,   (int *)&mudconf.terse_movemsg,   NULL,               0},
+    {T("thing_flags"),               cf_set_flags,   CA_GOD,    CA_DISABLED, (int *)&mudconf.thing_flags,     NULL,               0},
+    {T("thing_quota"),               cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.thing_quota,            NULL,               0},
+    {T("timeslice"),                 cf_seconds,     CA_GOD,    CA_PUBLIC,   (int *)&mudconf.timeslice,       NULL,               0},
+    {T("toad_recipient"),            cf_dbref,       CA_GOD,    CA_WIZARD,   &mudconf.toad_recipient,         NULL,               0},
+    {T("trace_output_limit"),        cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.trace_limit,            NULL,               0},
+    {T("trace_topdown"),             cf_bool,        CA_GOD,    CA_PUBLIC,   (int *)&mudconf.trace_topdown,   NULL,               0},
+    {T("trust_site"),                cf_site,        CA_GOD,    CA_DISABLED, (int *)&mudstate.suspect_list,   NULL,               0},
+    {T("uncompress_program"),        cf_string_dyn,  CA_STATIC, CA_GOD,      (int *)&mudconf.uncompress,      NULL, SIZEOF_PATHNAME},
+    {T("unowned_safe"),              cf_bool,        CA_GOD,    CA_PUBLIC,   (int *)&mudconf.safe_unowned,    NULL,               0},
+    {T("use_http"),                  cf_bool,        CA_STATIC, CA_PUBLIC,   (int *)&mudconf.use_http,        NULL,               0},
+    {T("user_attr_access"),          cf_modify_bits, CA_GOD,    CA_DISABLED, &mudconf.vattr_flags,            attraccess_nametab, 0},
+    {T("user_attr_per_hour"),        cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.vattr_per_hour,         NULL,               0},
+    {T("wait_cost"),                 cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.waitcost,               NULL,               0},
+    {T("wizard_motd_file"),          cf_string_dyn,  CA_STATIC, CA_GOD,      (int *)&mudconf.wizmotd_file,    NULL, SIZEOF_PATHNAME},
+    {T("wizard_motd_message"),       cf_string,      CA_GOD,    CA_WIZARD,   (int *)mudconf.wizmotd_msg,      NULL,       GBUF_SIZE},
+    {T("zone_recursion_limit"),      cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.zone_nest_lim,          NULL,               0},
 #ifdef REALITY_LVLS
-    {(UTF8 *)"reality_level",             cf_rlevel,      CA_STATIC, CA_GOD,      (int *)&mudconf,                 NULL,               0},
-    {(UTF8 *)"def_room_rx",               cf_int,         CA_WIZARD, CA_PUBLIC,   (int *)&mudconf.def_room_rx,     NULL,               0},
-    {(UTF8 *)"def_room_tx",               cf_int,         CA_WIZARD, CA_PUBLIC,   (int *)&mudconf.def_room_tx,     NULL,               0},
-    {(UTF8 *)"def_player_rx",             cf_int,         CA_WIZARD, CA_PUBLIC,   (int *)&mudconf.def_player_rx,   NULL,               0},
-    {(UTF8 *)"def_player_tx",             cf_int,         CA_WIZARD, CA_PUBLIC,   (int *)&mudconf.def_player_tx,   NULL,               0},
-    {(UTF8 *)"def_exit_rx",               cf_int,         CA_WIZARD, CA_PUBLIC,   (int *)&mudconf.def_exit_rx,     NULL,               0},
-    {(UTF8 *)"def_exit_tx",               cf_int,         CA_WIZARD, CA_PUBLIC,   (int *)&mudconf.def_exit_tx,     NULL,               0},
-    {(UTF8 *)"def_thing_rx",              cf_int,         CA_WIZARD, CA_PUBLIC,   (int *)&mudconf.def_thing_rx,    NULL,               0},
-    {(UTF8 *)"def_thing_tx",              cf_int,         CA_WIZARD, CA_PUBLIC,   (int *)&mudconf.def_thing_tx,    NULL,               0},
+    {T("reality_level"),             cf_rlevel,      CA_STATIC, CA_GOD,      (int *)&mudconf,                 NULL,               0},
+    {T("def_room_rx"),               cf_int,         CA_WIZARD, CA_PUBLIC,   (int *)&mudconf.def_room_rx,     NULL,               0},
+    {T("def_room_tx"),               cf_int,         CA_WIZARD, CA_PUBLIC,   (int *)&mudconf.def_room_tx,     NULL,               0},
+    {T("def_player_rx"),             cf_int,         CA_WIZARD, CA_PUBLIC,   (int *)&mudconf.def_player_rx,   NULL,               0},
+    {T("def_player_tx"),             cf_int,         CA_WIZARD, CA_PUBLIC,   (int *)&mudconf.def_player_tx,   NULL,               0},
+    {T("def_exit_rx"),               cf_int,         CA_WIZARD, CA_PUBLIC,   (int *)&mudconf.def_exit_rx,     NULL,               0},
+    {T("def_exit_tx"),               cf_int,         CA_WIZARD, CA_PUBLIC,   (int *)&mudconf.def_exit_tx,     NULL,               0},
+    {T("def_thing_rx"),              cf_int,         CA_WIZARD, CA_PUBLIC,   (int *)&mudconf.def_thing_rx,    NULL,               0},
+    {T("def_thing_tx"),              cf_int,         CA_WIZARD, CA_PUBLIC,   (int *)&mudconf.def_thing_tx,    NULL,               0},
 #endif // REALITY_LVLS
 
 #ifdef FIRANMUX
-    {(UTF8 *)"immobile_message",          cf_string,      CA_WIZARD, CA_PUBLIC,   (int *)mudconf.immobile_msg,     NULL,             128},
+    {T("immobile_message"),          cf_string,      CA_WIZARD, CA_PUBLIC,   (int *)mudconf.immobile_msg,     NULL,             128},
 #endif // FIRANMUX
 #if defined(INLINESQL)
-    {(UTF8 *)"sql_server",                cf_string,      CA_STATIC, CA_DISABLED, (int *)mudconf.sql_server,       NULL,             128},
-    {(UTF8 *)"sql_user",                  cf_string,      CA_STATIC, CA_DISABLED, (int *)mudconf.sql_user,         NULL,             128},
-    {(UTF8 *)"sql_password",              cf_string,      CA_STATIC, CA_DISABLED, (int *)mudconf.sql_password,     NULL,             128},
-    {(UTF8 *)"sql_database",              cf_string,      CA_STATIC, CA_DISABLED, (int *)mudconf.sql_database,     NULL,             128},
+    {T("sql_server"),                cf_string,      CA_STATIC, CA_DISABLED, (int *)mudconf.sql_server,       NULL,             128},
+    {T("sql_user"),                  cf_string,      CA_STATIC, CA_DISABLED, (int *)mudconf.sql_user,         NULL,             128},
+    {T("sql_password"),              cf_string,      CA_STATIC, CA_DISABLED, (int *)mudconf.sql_password,     NULL,             128},
+    {T("sql_database"),              cf_string,      CA_STATIC, CA_DISABLED, (int *)mudconf.sql_database,     NULL,             128},
 #endif // INLINESQL
-    {(UTF8 *)"mail_server",               cf_string,      CA_STATIC, CA_DISABLED, (int *)mudconf.mail_server,      NULL,             128},
-    {(UTF8 *)"mail_ehlo",                 cf_string,      CA_STATIC, CA_DISABLED, (int *)mudconf.mail_ehlo,        NULL,             128},
-    {(UTF8 *)"mail_sendaddr",             cf_string,      CA_STATIC, CA_DISABLED, (int *)mudconf.mail_sendaddr,    NULL,             128},
-    {(UTF8 *)"mail_sendname",             cf_string,      CA_STATIC, CA_DISABLED, (int *)mudconf.mail_sendname,    NULL,             128},
-    {(UTF8 *)"mail_subject",              cf_string,      CA_STATIC, CA_DISABLED, (int *)mudconf.mail_subject,     NULL,             128},
+    {T("mail_server"),               cf_string,      CA_STATIC, CA_DISABLED, (int *)mudconf.mail_server,      NULL,             128},
+    {T("mail_ehlo"),                 cf_string,      CA_STATIC, CA_DISABLED, (int *)mudconf.mail_ehlo,        NULL,             128},
+    {T("mail_sendaddr"),             cf_string,      CA_STATIC, CA_DISABLED, (int *)mudconf.mail_sendaddr,    NULL,             128},
+    {T("mail_sendname"),             cf_string,      CA_STATIC, CA_DISABLED, (int *)mudconf.mail_sendname,    NULL,             128},
+    {T("mail_subject"),              cf_string,      CA_STATIC, CA_DISABLED, (int *)mudconf.mail_subject,     NULL,             128},
     {(UTF8 *) NULL,                       NULL,           0,         0,           NULL,                            NULL,               0}
 };
 
@@ -2118,7 +2118,7 @@ CF_HAND(cf_cf_access)
                 notify(player, NOPERM_MESSAGE);
                 STARTLOG(LOG_CONFIGMODS, "CFG", "PERM");
                 log_name(player);
-                log_text((UTF8 *)" tried to change access to static param: ");
+                log_text(T(" tried to change access to static param: "));
                 log_text(tp->pname);
                 ENDLOG;
                 return -1;
@@ -2126,7 +2126,7 @@ CF_HAND(cf_cf_access)
             return cf_modify_bits(&tp->flags, ap, pExtra, nExtra, player, cmd);
         }
     }
-    cf_log_notfound(player, cmd, (UTF8 *)"Config directive", str);
+    cf_log_notfound(player, cmd, T("Config directive"), str);
     return -1;
 }
 
@@ -2162,27 +2162,27 @@ int cf_set(UTF8 *cp, UTF8 *ap, dbref player)
                 {
                     STARTLOG(LOG_CONFIGMODS, "CFG", "UPDAT");
                     log_name(player);
-                    log_text((UTF8 *)" entered config directive: ");
+                    log_text(T(" entered config directive: "));
                     log_text(cp);
-                    log_text((UTF8 *)" with args '");
+                    log_text(T(" with args '"));
                     log_text(buff);
-                    log_text((UTF8 *)"'.  Status: ");
+                    log_text(T("'.  Status: "));
                     switch (i)
                     {
                     case 0:
-                        log_text((UTF8 *)"Success.");
+                        log_text(T("Success."));
                         break;
 
                     case 1:
-                        log_text((UTF8 *)"Partial success.");
+                        log_text(T("Partial success."));
                         break;
 
                     case -1:
-                        log_text((UTF8 *)"Failure.");
+                        log_text(T("Failure."));
                         break;
 
                     default:
-                        log_text((UTF8 *)"Strange.");
+                        log_text(T("Strange."));
                     }
                     ENDLOG;
                     free_lbuf(buff);
@@ -2198,7 +2198,7 @@ int cf_set(UTF8 *cp, UTF8 *ap, dbref player)
 
     // Config directive not found.  Complain about it.
     //
-    cf_log_notfound(player, (UTF8 *)"Set", (UTF8 *)"Config directive", cp);
+    cf_log_notfound(player, T("Set"), T("Config directive"), cp);
     return -1;
 }
 
@@ -2251,7 +2251,7 @@ void do_admin
     int i = cf_set(kw, value, executor);
     if ((i >= 0) && !Quiet(executor))
     {
-        notify(executor, (UTF8 *)"Set.");
+        notify(executor, T("Set."));
     }
     ValidateConfigurationDbrefs();
 }
@@ -2262,14 +2262,14 @@ void do_admin
 static struct
 {
     UTF8 **pFilename;
-    UTF8 *pSuffix;
+    const UTF8 *pSuffix;
 } DefaultSuffixes[]
 =
 {
-    { &mudconf.outdb,    (UTF8 *)".out" },
-    { &mudconf.crashdb,  (UTF8 *)".CRASH" },
-    { &mudconf.game_dir, (UTF8 *)".dir" },
-    { &mudconf.game_pag, (UTF8 *)".pag" },
+    { &mudconf.outdb,    T(".out") },
+    { &mudconf.crashdb,  T(".CRASH") },
+    { &mudconf.game_dir, T(".dir") },
+    { &mudconf.game_pag, T(".pag") },
     { 0, 0 }
 };
 
@@ -2292,8 +2292,8 @@ int cf_read(void)
             // The filename is an empty string so we should construct
             // a default filename.
             //
-            UTF8 *pSuffix = DefaultSuffixes[i].pSuffix;
-            size_t nSuffix = strlen((char *)pSuffix);
+            const UTF8 *pSuffix = DefaultSuffixes[i].pSuffix;
+            size_t nSuffix = strlen((const char *)pSuffix);
             UTF8 *buff = (UTF8 *)MEMALLOC(nInDB + nSuffix + 1);
             ISOUTOFMEMORY(buff);
             memcpy(buff, mudconf.indb, nInDB);

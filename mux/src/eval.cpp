@@ -1208,35 +1208,35 @@ void mux_exec( UTF8 *pdstr, UTF8 *buff, UTF8 **bufc, dbref executor,
 
     static const UTF8 *subj[5] =
     {
-        (UTF8 *)"",
-        (UTF8 *)"it",
-        (UTF8 *)"she",
-        (UTF8 *)"he",
-        (UTF8 *)"they"
+        T(""),
+        T("it"),
+        T("she"),
+        T("he"),
+        T("they")
     };
     static const UTF8 *poss[5] =
     {
-        (UTF8 *)"",
-        (UTF8 *)"its",
-        (UTF8 *)"her",
-        (UTF8 *)"his",
-        (UTF8 *)"their"
+        T(""),
+        T("its"),
+        T("her"),
+        T("his"),
+        T("their")
     };
     static const UTF8 *obj[5] =
     {
-        (UTF8 *)"",
-        (UTF8 *)"it",
-        (UTF8 *)"her",
-        (UTF8 *)"him",
-        (UTF8 *)"them"
+        T(""),
+        T("it"),
+        T("her"),
+        T("him"),
+        T("them")
     };
     static const UTF8 *absp[5] =
     {
-        (UTF8 *)"",
-        (UTF8 *)"its",
-        (UTF8 *)"hers",
-        (UTF8 *)"his",
-        (UTF8 *)"theirs"
+        T(""),
+        T("its"),
+        T("hers"),
+        T("his"),
+        T("theirs")
     };
 
     // This is scratch buffer is used potentially on every invocation of
@@ -1386,9 +1386,9 @@ void mux_exec( UTF8 *pdstr, UTF8 *buff, UTF8 **bufc, dbref executor,
                 if (eval & EV_FMAND)
                 {
                     *bufc = oldp;
-                    safe_str((UTF8 *)"#-1 FUNCTION (", buff, bufc);
+                    safe_str(T("#-1 FUNCTION ("), buff, bufc);
                     safe_str(mux_scratch, buff, bufc);
-                    safe_str((UTF8 *)") NOT FOUND", buff, bufc);
+                    safe_str(T(") NOT FOUND"), buff, bufc);
                     nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
                     break;
                 }
@@ -1450,15 +1450,15 @@ void mux_exec( UTF8 *pdstr, UTF8 *buff, UTF8 **bufc, dbref executor,
                     mudstate.func_invk_ctr++;
                     if (mudconf.func_nest_lim <= mudstate.func_nest_lev)
                     {
-                         safe_str((UTF8 *)"#-1 FUNCTION RECURSION LIMIT EXCEEDED", buff, &oldp);
+                         safe_str(T("#-1 FUNCTION RECURSION LIMIT EXCEEDED"), buff, &oldp);
                     }
                     else if (mudconf.func_invk_lim <= mudstate.func_invk_ctr)
                     {
-                        safe_str((UTF8 *)"#-1 FUNCTION INVOCATION LIMIT EXCEEDED", buff, &oldp);
+                        safe_str(T("#-1 FUNCTION INVOCATION LIMIT EXCEEDED"), buff, &oldp);
                     }
                     else if (Going(executor))
                     {
-                        safe_str((UTF8 *)"#-1 BAD EXECUTOR", buff, &oldp);
+                        safe_str(T("#-1 BAD EXECUTOR"), buff, &oldp);
                     }
                     else if (!check_access(executor, ufp ? ufp->perms : fp->perms))
                     {
@@ -1466,7 +1466,7 @@ void mux_exec( UTF8 *pdstr, UTF8 *buff, UTF8 **bufc, dbref executor,
                     }
                     else if (MuxAlarm.bAlarmed)
                     {
-                        safe_str((UTF8 *)"#-1 CPU LIMITED", buff, &oldp);
+                        safe_str(T("#-1 CPU LIMITED"), buff, &oldp);
                     }
                     else if (ufp)
                     {
@@ -1690,7 +1690,7 @@ void mux_exec( UTF8 *pdstr, UTF8 *buff, UTF8 **bufc, dbref executor,
                         //
                         // Carriage return.
                         //
-                        safe_copy_buf((UTF8 *)"\r\n", 2, buff, bufc);
+                        safe_copy_buf(T("\r\n"), 2, buff, bufc);
                         nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
                     }
                 }

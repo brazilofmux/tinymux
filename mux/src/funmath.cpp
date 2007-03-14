@@ -22,14 +22,14 @@
 
 static const UTF8 *mux_FPStrings[] =
 {
-    (UTF8 *)"+Inf",
-    (UTF8 *)"-Inf",
-    (UTF8 *)"Ind",
-    (UTF8 *)"NaN",
-    (UTF8 *)"0",
-    (UTF8 *)"0",
-    (UTF8 *)"0",
-    (UTF8 *)"0"
+    T("+Inf"),
+    T("-Inf"),
+    T("Ind"),
+    T("NaN"),
+    T("0"),
+    T("0"),
+    T("0"),
+    T("0")
 };
 
 #define MUX_FPGROUP_PASS  0x00 // Pass-through to printf
@@ -708,7 +708,7 @@ FUNCTION(fun_sign)
     double num = mux_atof(fargs[0]);
     if (num < 0)
     {
-        safe_str((UTF8 *)"-1", buff, bufc);
+        safe_str(T("-1"), buff, bufc);
     }
     else
     {
@@ -732,7 +732,7 @@ FUNCTION(fun_isign)
 
     if (num < 0)
     {
-        safe_str((UTF8 *)"-1", buff, bufc);
+        safe_str(T("-1"), buff, bufc);
     }
     else
     {
@@ -761,7 +761,7 @@ FUNCTION(fun_shl)
     }
     else
     {
-        safe_str((UTF8 *)"#-1 ARGUMENTS MUST BE INTEGERS", buff, bufc);
+        safe_str(T("#-1 ARGUMENTS MUST BE INTEGERS"), buff, bufc);
     }
 }
 
@@ -784,7 +784,7 @@ FUNCTION(fun_shr)
     }
     else
     {
-        safe_str((UTF8 *)"#-1 ARGUMENTS MUST BE INTEGERS", buff, bufc);
+        safe_str(T("#-1 ARGUMENTS MUST BE INTEGERS"), buff, bufc);
     }
 }
 
@@ -822,7 +822,7 @@ FUNCTION(fun_dec)
     }
     else
     {
-        safe_str((UTF8 *)"-1", buff, bufc);
+        safe_str(T("-1"), buff, bufc);
     }
 }
 
@@ -875,15 +875,15 @@ FUNCTION(fun_fdiv)
     {
         if (top > 0.0)
         {
-            safe_str((UTF8 *)"+Inf", buff, bufc);
+            safe_str(T("+Inf"), buff, bufc);
         }
         else if (top < 0.0)
         {
-            safe_str((UTF8 *)"-Inf", buff, bufc);
+            safe_str(T("-Inf"), buff, bufc);
         }
         else
         {
-            safe_str((UTF8 *)"Ind", buff, bufc);
+            safe_str(T("Ind"), buff, bufc);
         }
     }
     else
@@ -910,7 +910,7 @@ FUNCTION(fun_idiv)
     bot = mux_atoi64(fargs[1]);
     if (bot == 0)
     {
-        safe_str((UTF8 *)"#-1 DIVIDE BY ZERO", buff, bufc);
+        safe_str(T("#-1 DIVIDE BY ZERO"), buff, bufc);
     }
     else
     {
@@ -935,7 +935,7 @@ FUNCTION(fun_floordiv)
     bot = mux_atoi64(fargs[1]);
     if (bot == 0)
     {
-        safe_str((UTF8 *)"#-1 DIVIDE BY ZERO", buff, bufc);
+        safe_str(T("#-1 DIVIDE BY ZERO"), buff, bufc);
     }
     else
     {
@@ -1151,7 +1151,7 @@ static void handle_vectors
            && (  n == 1
               || m == 1)))
     {
-        safe_str((UTF8 *)"#-1 VECTORS MUST BE SAME DIMENSIONS", buff, bufc);
+        safe_str(T("#-1 VECTORS MUST BE SAME DIMENSIONS"), buff, bufc);
         delete [] v1;
         delete [] v2;
         return;
@@ -1328,7 +1328,7 @@ static void handle_vectors
         //
         if (n != 3)
         {
-            safe_str((UTF8 *)"#-1 VECTORS MUST BE DIMENSION OF 3", buff, bufc);
+            safe_str(T("#-1 VECTORS MUST BE DIMENSION OF 3"), buff, bufc);
         }
         else
         {
@@ -1350,7 +1350,7 @@ static void handle_vectors
 
         // If we reached this, we're in trouble.
         //
-        safe_str((UTF8 *)"#-1 UNIMPLEMENTED", buff, bufc);
+        safe_str(T("#-1 UNIMPLEMENTED"), buff, bufc);
     }
     delete [] v1;
     delete [] v2;
@@ -1535,7 +1535,7 @@ FUNCTION(fun_vunit)
 
         if (res <= 0)
         {
-            safe_str((UTF8 *)"#-1 CAN'T MAKE UNIT VECTOR FROM ZERO-LENGTH VECTOR",
+            safe_str(T("#-1 CAN'T MAKE UNIT VECTOR FROM ZERO-LENGTH VECTOR"),
                 buff, bufc);
             delete [] v1;
             return;
@@ -1659,7 +1659,7 @@ FUNCTION(fun_pi)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    safe_str((UTF8 *)"3.141592653589793", buff, bufc);
+    safe_str(T("3.141592653589793"), buff, bufc);
 }
 
 FUNCTION(fun_e)
@@ -1673,7 +1673,7 @@ FUNCTION(fun_e)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    safe_str((UTF8 *)"2.718281828459045", buff, bufc);
+    safe_str(T("2.718281828459045"), buff, bufc);
 }
 
 static double ConvertRDG2R(double d, const UTF8 *szUnits)
@@ -2304,60 +2304,60 @@ FUNCTION(fun_t)
 }
 static const UTF8 *bigones[] =
 {
-    (UTF8 *)"",
-    (UTF8 *)"thousand",
-    (UTF8 *)"million",
-    (UTF8 *)"billion",
-    (UTF8 *)"trillion"
+    T(""),
+    T("thousand"),
+    T("million"),
+    T("billion"),
+    T("trillion")
 };
 
 static const UTF8 *singles[] =
 {
-    (UTF8 *)"",
-    (UTF8 *)"one",
-    (UTF8 *)"two",
-    (UTF8 *)"three",
-    (UTF8 *)"four",
-    (UTF8 *)"five",
-    (UTF8 *)"six",
-    (UTF8 *)"seven",
-    (UTF8 *)"eight",
-    (UTF8 *)"nine"
+    T(""),
+    T("one"),
+    T("two"),
+    T("three"),
+    T("four"),
+    T("five"),
+    T("six"),
+    T("seven"),
+    T("eight"),
+    T("nine")
 };
 
 static const UTF8 *teens[] =
 {
-    (UTF8 *)"ten",
-    (UTF8 *)"eleven",
-    (UTF8 *)"twelve",
-    (UTF8 *)"thirteen",
-    (UTF8 *)"fourteen",
-    (UTF8 *)"fifteen",
-    (UTF8 *)"sixteen",
-    (UTF8 *)"seventeen",
-    (UTF8 *)"eighteen",
-    (UTF8 *)"nineteen"
+    T("ten"),
+    T("eleven"),
+    T("twelve"),
+    T("thirteen"),
+    T("fourteen"),
+    T("fifteen"),
+    T("sixteen"),
+    T("seventeen"),
+    T("eighteen"),
+    T("nineteen")
 };
 
 static const UTF8 *tens[] =
 {
-    (UTF8 *)"",
-    (UTF8 *)"",
-    (UTF8 *)"twenty",
-    (UTF8 *)"thirty",
-    (UTF8 *)"forty",
-    (UTF8 *)"fifty",
-    (UTF8 *)"sixty",
-    (UTF8 *)"seventy",
-    (UTF8 *)"eighty",
-    (UTF8 *)"ninety"
+    T(""),
+    T(""),
+    T("twenty"),
+    T("thirty"),
+    T("forty"),
+    T("fifty"),
+    T("sixty"),
+    T("seventy"),
+    T("eighty"),
+    T("ninety")
 };
 
 static const UTF8 *th_prefix[] =
 {
-    (UTF8 *)"",
-    (UTF8 *)"ten",
-    (UTF8 *)"hundred"
+    T(""),
+    T("ten"),
+    T("hundred")
 };
 
 class CSpellNum
@@ -2424,7 +2424,7 @@ void CSpellNum::TwoDigits(const UTF8 *p)
     {
         StartWord();
         AddWord(tens[n0]);
-        AddWord((UTF8 *)"-");
+        AddWord(T("-"));
         AddWord(singles[n1]);
     }
 }
@@ -2447,7 +2447,7 @@ void CSpellNum::ThreeDigits(const UTF8 *p, size_t iBigOne)
         StartWord();
         AddWord(singles[p[0]-'0']);
         StartWord();
-        AddWord((UTF8 *)"hundred");
+        AddWord(T("hundred"));
     }
     TwoDigits(p+1);
     if (iBigOne > 0)
@@ -2469,7 +2469,7 @@ void CSpellNum::ManyDigits(size_t n, const UTF8 *p, bool bHundreds)
     {
         TwoDigits(p);
         StartWord();
-        AddWord((UTF8 *)"hundred");
+        AddWord(T("hundred"));
         TwoDigits(p+2);
         return;
     }
@@ -2522,15 +2522,15 @@ void CSpellNum::FractionalDigits(size_t n, const UTF8 *p)
             AddWord(th_prefix[r]);
             if (d != 0)
             {
-                AddWord((UTF8 *)"-");
+                AddWord(T("-"));
             }
         }
         AddWord(bigones[d]);
-        AddWord((UTF8 *)"th");
+        AddWord(T("th"));
         INT64 i64 = mux_atoi64(p);
         if (i64 != 1)
         {
-            AddWord((UTF8 *)"s");
+            AddWord(T("s"));
         }
     }
 }
@@ -2551,7 +2551,7 @@ void CSpellNum::SpellNum(const UTF8 *number, UTF8 *buff_arg, UTF8 **bufc_arg)
     if (*number == '-')
     {
         StartWord();
-        AddWord((UTF8 *)"negative");
+        AddWord(T("negative"));
         number++;
     }
 
@@ -2593,7 +2593,7 @@ void CSpellNum::SpellNum(const UTF8 *number, UTF8 *buff_arg, UTF8 **bufc_arg)
        || nA >= 16
        || nB >= 15)
     {
-        safe_str((UTF8 *)"#-1 ARGUMENT MUST BE A NUMBER", buff, bufc);
+        safe_str(T("#-1 ARGUMENT MUST BE A NUMBER"), buff, bufc);
         return;
     }
 
@@ -2602,7 +2602,7 @@ void CSpellNum::SpellNum(const UTF8 *number, UTF8 *buff_arg, UTF8 **bufc_arg)
         if (nB == 0)
         {
             StartWord();
-            AddWord((UTF8 *)"zero");
+            AddWord(T("zero"));
         }
     }
     else
@@ -2611,7 +2611,7 @@ void CSpellNum::SpellNum(const UTF8 *number, UTF8 *buff_arg, UTF8 **bufc_arg)
         if (nB)
         {
             StartWord();
-            AddWord((UTF8 *)"and");
+            AddWord(T("and"));
         }
     }
     if (nB)
@@ -2678,7 +2678,7 @@ FUNCTION(fun_roman)
     //
     if (*number || nA < 1)
     {
-        safe_str((UTF8 *)"#-1 ARGUMENT MUST BE A POSITIVE NUMBER", buff, bufc);
+        safe_str(T("#-1 ARGUMENT MUST BE A POSITIVE NUMBER"), buff, bufc);
         return;
     }
     else if (  nA > 4
@@ -2708,16 +2708,16 @@ FUNCTION(fun_roman)
 
     static const UTF8 *aCode[10] =
     {
-        (UTF8 *)"",
-        (UTF8 *)"1",
-        (UTF8 *)"11",
-        (UTF8 *)"111",
-        (UTF8 *)"12",
-        (UTF8 *)"2",
-        (UTF8 *)"21",
-        (UTF8 *)"211",
-        (UTF8 *)"2111",
-        (UTF8 *)"13"
+        T(""),
+        T("1"),
+        T("11"),
+        T("111"),
+        T("12"),
+        T("2"),
+        T("21"),
+        T("211"),
+        T("2111"),
+        T("13")
     };
 
     while (nA--)
@@ -2812,7 +2812,7 @@ FUNCTION(fun_band)
         }
         else
         {
-            safe_str((UTF8 *)"#-1 ARGUMENTS MUST BE INTEGERS", buff, bufc);
+            safe_str(T("#-1 ARGUMENTS MUST BE INTEGERS"), buff, bufc);
             return;
         }
     }
@@ -2837,7 +2837,7 @@ FUNCTION(fun_bor)
         }
         else
         {
-            safe_str((UTF8 *)"#-1 ARGUMENTS MUST BE INTEGERS", buff, bufc);
+            safe_str(T("#-1 ARGUMENTS MUST BE INTEGERS"), buff, bufc);
             return;
         }
     }
@@ -2863,7 +2863,7 @@ FUNCTION(fun_bnand)
     }
     else
     {
-        safe_str((UTF8 *)"#-1 ARGUMENTS MUST BE INTEGERS", buff, bufc);
+        safe_str(T("#-1 ARGUMENTS MUST BE INTEGERS"), buff, bufc);
     }
 }
 
@@ -2885,7 +2885,7 @@ FUNCTION(fun_bxor)
         }
         else
         {
-            safe_str((UTF8 *)"#-1 ARGUMENTS MUST BE INTEGERS", buff, bufc);
+            safe_str(T("#-1 ARGUMENTS MUST BE INTEGERS"), buff, bufc);
             return;
         }
     }

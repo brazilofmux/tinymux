@@ -16,7 +16,7 @@
 // From bsd.cpp.
 //
 void boot_slave(dbref executor, dbref caller, dbref enactor, int key);
-void close_sockets(bool emergency, UTF8 *message);
+void close_sockets(bool emergency, const UTF8 *message);
 void CleanUpSlaveSocket(void);
 void CleanUpSlaveProcess(void);
 #ifdef QUERY_SLAVE
@@ -36,7 +36,7 @@ extern NAMETAB sigactions_nametab[];
 
 // From conf.cpp
 //
-void cf_log_notfound(dbref, UTF8 *, const UTF8 *, UTF8 *);
+void cf_log_notfound(dbref, const UTF8 *, const UTF8 *, const UTF8 *);
 int  cf_modify_bits(int *, UTF8 *, void *, UINT32, dbref, UTF8 *);
 void DCL_CDECL cf_log_syntax(dbref player, UTF8 *cmd, const char *fmt, ...);
 void ValidateConfigurationDbrefs(void);
@@ -308,7 +308,7 @@ void  destroy_obj(dbref);
 void  empty_obj(dbref);
 
 /* From player.cpp */
-dbref create_player(UTF8 *name, UTF8 *pass, dbref executor, bool isrobot, const UTF8 **pmsg);
+dbref create_player(const UTF8 *name, const UTF8 *pass, dbref executor, bool isrobot, const UTF8 **pmsg);
 void AddToPublicChannel(dbref player);
 bool add_player_name(dbref, const UTF8 *);
 bool delete_player_name(dbref, const UTF8 *);
@@ -814,7 +814,7 @@ extern int anum_alc_top;
 #define SA_DFLT         2   /* Try to restart on a fatal error */
 
 #define STARTLOG(key,p,s) \
-    if ((((key) & mudconf.log_options) != 0) && start_log((UTF8 *)p, (UTF8 *)s)) {
+    if ((((key) & mudconf.log_options) != 0) && start_log(T(p), T(s))) {
 #define ENDLOG \
     end_log(); }
 #define LOG_SIMPLE(key,p,s,m) \

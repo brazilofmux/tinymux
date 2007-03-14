@@ -61,7 +61,7 @@ static bool sp_ok(dbref player)
     if (  Gagged(player)
        && !Wizard(player))
     {
-        notify(player, (UTF8 *)"Sorry. Gagged players cannot speak.");
+        notify(player, T("Sorry. Gagged players cannot speak."));
         return false;
     }
 
@@ -69,7 +69,7 @@ static bool sp_ok(dbref player)
     {
         if (Robot(player) && !Controls(player, Location(player)))
         {
-            notify(player, (UTF8 *)"Sorry, robots may not speak in public.");
+            notify(player, T("Sorry, robots may not speak in public."));
             return false;
         }
     }
@@ -77,7 +77,7 @@ static bool sp_ok(dbref player)
     {
         if (!could_doit(player, Location(player), A_LSPEECH))
         {
-            notify(player, (UTF8 *)"Sorry, you may not speak in this place.");
+            notify(player, T("Sorry, you may not speak in this place."));
             return false;
         }
     }
@@ -323,9 +323,9 @@ static void wall_broadcast(int target, dbref player, UTF8 *message)
     }
 }
 
-static const UTF8 *announce_msg = (UTF8 *)"Announcement: ";
-static const UTF8 *broadcast_msg = (UTF8 *)"Broadcast: ";
-static const UTF8 *admin_msg = (UTF8 *)"Admin: ";
+static const UTF8 *announce_msg = T("Announcement: ");
+static const UTF8 *broadcast_msg = T("Broadcast: ");
+static const UTF8 *admin_msg = T("Admin: ");
 
 void do_shout(dbref executor, dbref caller, dbref enactor, int eval, int key,
     UTF8 *message)
@@ -346,31 +346,31 @@ void do_shout(dbref executor, dbref caller, dbref enactor, int eval, int key,
     {
         key = SHOUT_ADMIN;      // @wall/wiz/admin is treated as @wall/admin
         prefix = admin_msg;
-        loghead = (UTF8 *)"ASHOUT";
-        logtext1 = (UTF8 *)" ADMIN";
-        logsay = (UTF8 *)" yells: ";
-        saystring = (UTF8 *)"says, \"";
+        loghead = T("ASHOUT");
+        logtext1 = T(" ADMIN");
+        logsay = T(" yells: ");
+        saystring = T("says, \"");
     }
     else if (key & SHOUT_WIZARD)
     {
         prefix = broadcast_msg;
-        loghead = (UTF8 *)"BCAST";
-        logtext1 = (UTF8 *)" WIZ";
-        logsay = (UTF8 *)" broadcasts: ";
-        saystring = (UTF8 *)"says, \"";
+        loghead = T("BCAST");
+        logtext1 = T(" WIZ");
+        logsay = T(" broadcasts: ");
+        saystring = T("says, \"");
     }
     else
     {
         prefix = announce_msg;
-        loghead = (UTF8 *)"SHOUT";
-        logtext1 = (UTF8 *)" WALL";
-        logsay = (UTF8 *)" shouts: ";
-        saystring = (UTF8 *)"shouts, \"";
+        loghead = T("SHOUT");
+        logtext1 = T(" WALL");
+        logsay = T(" shouts: ");
+        saystring = T("shouts, \"");
     }
 
     if (bNoTag)
     {
-        prefix = (UTF8 *)"";
+        prefix = T("");
     }
 
     if (!bPose)
@@ -406,8 +406,8 @@ void do_shout(dbref executor, dbref caller, dbref enactor, int eval, int key,
         safe_chr('"', buf2, &bp);
         *bp = '\0';
     }
-    p = tprintf("%s%s%s%s", prefix, bEmit ? (UTF8 *)"" : Moniker(executor),
-        bSpace ? (UTF8 *)" " : (UTF8 *)"", bPose ? (UTF8 *)message : (UTF8 *)buf2);
+    p = tprintf("%s%s%s%s", prefix, bEmit ? T("") : Moniker(executor),
+        bSpace ? T(" ") : T(""), bPose ? (UTF8 *)message : (UTF8 *)buf2);
     wall_broadcast(key, executor, p);
     if (!bPose)
     {
@@ -418,12 +418,12 @@ void do_shout(dbref executor, dbref caller, dbref enactor, int eval, int key,
     if (bEmit)
     {
         log_text(logtext1);
-        log_text((UTF8 *)"emits: ");
+        log_text(T("emits: "));
     }
     else if (bPose)
     {
         log_text(logtext1);
-        log_text((UTF8 *)"poses: ");
+        log_text(T("poses: "));
     }
     else
     {
@@ -494,7 +494,7 @@ static bool page_check(dbref player, dbref target)
     }
     else if (!Connected(target))
     {
-        page_return(player, target, (UTF8 *)"Away", A_AWAY,
+        page_return(player, target, T("Away"), A_AWAY,
             tprintf("Sorry, %s is not connected.", Moniker(target)));
     }
     else if (!could_doit(player, target, A_LPAGE))
@@ -503,12 +503,12 @@ static bool page_check(dbref player, dbref target)
            && Hidden(target)
            && !See_Hidden(player))
         {
-            page_return(player, target, (UTF8 *)"Away", A_AWAY,
+            page_return(player, target, T("Away"), A_AWAY,
                 tprintf("Sorry, %s is not connected.", Moniker(target)));
         }
         else
         {
-            page_return(player, target, (UTF8 *)"Reject", A_REJECT,
+            page_return(player, target, T("Reject"), A_REJECT,
                 tprintf("Sorry, %s is not accepting pages.", Moniker(target)));
         }
     }
@@ -584,7 +584,7 @@ void do_page
             //
             MUX_STRTOK_STATE tts;
             mux_strtok_src(&tts, p);
-            mux_strtok_ctl(&tts, (UTF8 *)", ");
+            mux_strtok_ctl(&tts, T(", "));
             UTF8 *r;
             for (r = mux_strtok_parse(&tts); r; r = mux_strtok_parse(&tts))
             {
@@ -646,7 +646,7 @@ void do_page
 
         MUX_STRTOK_STATE tts;
         mux_strtok_src(&tts, pLastPage);
-        mux_strtok_ctl(&tts, (UTF8 *)" ");
+        mux_strtok_ctl(&tts, T(" "));
         UTF8 *p;
         for (p = mux_strtok_parse(&tts); p; p = mux_strtok_parse(&tts))
         {
@@ -734,11 +734,11 @@ void do_page
         if (  nargs == 1
            && arg1[0] == '\0')
         {
-            notify(executor, (UTF8 *)"You have not paged anyone.");
+            notify(executor, T("You have not paged anyone."));
         }
         else
         {
-            notify(executor, (UTF8 *)"No one to page.");
+            notify(executor, T("No one to page."));
         }
         return;
     }
@@ -763,7 +763,7 @@ void do_page
             }
             else
             {
-                safe_copy_buf((UTF8 *)", ", 2, aFriendly, &pFriendly);
+                safe_copy_buf(T(", "), 2, aFriendly, &pFriendly);
             }
             safe_str(Moniker(aPlayers[i]), aFriendly, &pFriendly);
         }
@@ -856,7 +856,7 @@ void do_page
         break;
 
     case 2:
-        safe_str((UTF8 *)"From afar, ", omessage, &omp);
+        safe_str(T("From afar, "), omessage, &omp);
         if (nValid > 1)
         {
             safe_tprintf_str(omessage, &omp, "to %s: ", aFriendly);
@@ -867,7 +867,7 @@ void do_page
         break;
 
     case 3:
-        safe_str((UTF8 *)"From afar, ", omessage, &omp);
+        safe_str(T("From afar, "), omessage, &omp);
         if (nValid > 1)
         {
             safe_tprintf_str(omessage, &omp, "to %s: ", aFriendly);
@@ -902,7 +902,7 @@ void do_page
             int target_idle_timeout_val = idle_timeout_val(target);
             if (target_idle >= target_idle_timeout_val)
             {
-                page_return(executor, target, (UTF8 *)"Idle", A_IDLE, NULL);
+                page_return(executor, target, T("Idle"), A_IDLE, NULL);
             }
         }
     }
@@ -988,25 +988,25 @@ void do_pemit_single
         switch (key)
         {
         case PEMIT_WHISPER:
-            notify(player, (UTF8 *)"Whisper to whom?");
+            notify(player, T("Whisper to whom?"));
             break;
 
         case PEMIT_PEMIT:
-            notify(player, (UTF8 *)"Emit to whom?");
+            notify(player, T("Emit to whom?"));
             break;
 
         case PEMIT_OEMIT:
-            notify(player, (UTF8 *)"Emit except to whom?");
+            notify(player, T("Emit except to whom?"));
             break;
 
         default:
-            notify(player, (UTF8 *)"Sorry.");
+            notify(player, T("Sorry."));
             break;
         }
         break;
 
     case AMBIGUOUS:
-        notify(player, (UTF8 *)"I don't know who you mean!");
+        notify(player, T("I don't know who you mean!"));
         break;
 
     default:
@@ -1035,7 +1035,7 @@ void do_pemit_single
            && (  !mudconf.pemit_any
               || key != PEMIT_PEMIT))
         {
-            notify(player, (UTF8 *)"You are too far away to do that.");
+            notify(player, T("You are too far away to do that."));
             return;
         }
         if (  bDoContents
@@ -1078,7 +1078,7 @@ void do_pemit_single
             if (  isPlayer(target)
                && !Connected(target))
             {
-                page_return(player, target, (UTF8 *)"Away", A_AWAY,
+                page_return(player, target, T("Away"), A_AWAY,
                     tprintf("Sorry, %s is not connected.", Moniker(target)));
                 return;
             }
@@ -1121,7 +1121,7 @@ void do_pemit_single
                     buf2 = alloc_lbuf("do_pemit.whisper.buzz");
                     bp = buf2;
                     safe_str(Moniker(player), buf2, &bp);
-                    safe_str((UTF8 *)" whispers something to ", buf2, &bp);
+                    safe_str(T(" whispers something to "), buf2, &bp);
                     safe_str(Moniker(target), buf2, &bp);
                     *bp = '\0';
                     notify_except2(loc, player, player, target, buf2);
@@ -1248,7 +1248,7 @@ void do_pemit_list
     UTF8 *p;
     MUX_STRTOK_STATE tts;
     mux_strtok_src(&tts, list);
-    mux_strtok_ctl(&tts, (UTF8 *)" ");
+    mux_strtok_ctl(&tts, T(" "));
     for (p = mux_strtok_parse(&tts); p; p = mux_strtok_parse(&tts))
     {
         do_pemit_single(player, key, bDoContents, pemit_flags, p, chPoseType,

@@ -377,7 +377,7 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
     int iDotCounter = 0;
     if (mudstate.bStandAlone)
     {
-        Log.WriteString((UTF8 *)"Reading ");
+        Log.WriteString(T("Reading "));
         Log.Flush();
     }
     db_free();
@@ -739,7 +739,7 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
                 *db_flags = g_flags;
                 if (mudstate.bStandAlone)
                 {
-                    Log.WriteString((UTF8 *)ENDLINE);
+                    Log.WriteString(T(ENDLINE));
                     Log.Flush();
                 }
                 else
@@ -862,12 +862,12 @@ dbref db_write(FILE *f, int format, int version)
         break;
 
     default:
-        Log.WriteString((UTF8 *)"Can only write MUX format." ENDLINE);
+        Log.WriteString(T("Can only write MUX format." ENDLINE));
         return -1;
     }
     if (mudstate.bStandAlone)
     {
-        Log.WriteString((UTF8 *)"Writing ");
+        Log.WriteString(T("Writing "));
         Log.Flush();
     }
     i = mudstate.attr_next;
@@ -932,7 +932,7 @@ dbref db_write(FILE *f, int format, int version)
     fputs("***END OF DUMP***\n", f);
     if (mudstate.bStandAlone)
     {
-        Log.WriteString((UTF8 *)ENDLINE);
+        Log.WriteString(T(ENDLINE));
         Log.Flush();
     }
     return mudstate.db_top;

@@ -16,33 +16,33 @@
 
 NAMETAB logdata_nametab[] =
 {
-    {(UTF8 *)"flags",           1,  0,  LOGOPT_FLAGS},
-    {(UTF8 *)"location",        1,  0,  LOGOPT_LOC},
-    {(UTF8 *)"owner",           1,  0,  LOGOPT_OWNER},
-    {(UTF8 *)"timestamp",       1,  0,  LOGOPT_TIMESTAMP},
+    {T("flags"),           1,  0,  LOGOPT_FLAGS},
+    {T("location"),        1,  0,  LOGOPT_LOC},
+    {T("owner"),           1,  0,  LOGOPT_OWNER},
+    {T("timestamp"),       1,  0,  LOGOPT_TIMESTAMP},
     {(UTF8 *) NULL,             0,  0,  0}
 };
 
 NAMETAB logoptions_nametab[] =
 {
-    {(UTF8 *)"accounting",      2,  0,  LOG_ACCOUNTING},
-    {(UTF8 *)"all_commands",    2,  0,  LOG_ALLCOMMANDS},
-    {(UTF8 *)"bad_commands",    2,  0,  LOG_BADCOMMANDS},
-    {(UTF8 *)"buffer_alloc",    3,  0,  LOG_ALLOCATE},
-    {(UTF8 *)"bugs",            3,  0,  LOG_BUGS},
-    {(UTF8 *)"checkpoints",     2,  0,  LOG_DBSAVES},
-    {(UTF8 *)"config_changes",  2,  0,  LOG_CONFIGMODS},
-    {(UTF8 *)"create",          2,  0,  LOG_PCREATES},
-    {(UTF8 *)"killing",         1,  0,  LOG_KILLS},
-    {(UTF8 *)"logins",          1,  0,  LOG_LOGIN},
-    {(UTF8 *)"network",         1,  0,  LOG_NET},
-    {(UTF8 *)"problems",        1,  0,  LOG_PROBLEMS},
-    {(UTF8 *)"security",        2,  0,  LOG_SECURITY},
-    {(UTF8 *)"shouts",          2,  0,  LOG_SHOUTS},
-    {(UTF8 *)"startup",         2,  0,  LOG_STARTUP},
-    {(UTF8 *)"suspect",         2,  0,  LOG_SUSPECTCMDS},
-    {(UTF8 *)"time_usage",      1,  0,  LOG_TIMEUSE},
-    {(UTF8 *)"wizard",          1,  0,  LOG_WIZARD},
+    {T("accounting"),      2,  0,  LOG_ACCOUNTING},
+    {T("all_commands"),    2,  0,  LOG_ALLCOMMANDS},
+    {T("bad_commands"),    2,  0,  LOG_BADCOMMANDS},
+    {T("buffer_alloc"),    3,  0,  LOG_ALLOCATE},
+    {T("bugs"),            3,  0,  LOG_BUGS},
+    {T("checkpoints"),     2,  0,  LOG_DBSAVES},
+    {T("config_changes"),  2,  0,  LOG_CONFIGMODS},
+    {T("create"),          2,  0,  LOG_PCREATES},
+    {T("killing"),         1,  0,  LOG_KILLS},
+    {T("logins"),          1,  0,  LOG_LOGIN},
+    {T("network"),         1,  0,  LOG_NET},
+    {T("problems"),        1,  0,  LOG_PROBLEMS},
+    {T("security"),        2,  0,  LOG_SECURITY},
+    {T("shouts"),          2,  0,  LOG_SHOUTS},
+    {T("startup"),         2,  0,  LOG_STARTUP},
+    {T("suspect"),         2,  0,  LOG_SUSPECTCMDS},
+    {T("time_usage"),      1,  0,  LOG_TIMEUSE},
+    {T("wizard"),          1,  0,  LOG_WIZARD},
     {(UTF8 *) NULL,                     0,  0,  0}
 };
 
@@ -95,7 +95,7 @@ bool start_log(const UTF8 *primary, const UTF8 *secondary)
         {
             return true;
         }
-        Log.WriteString((UTF8 *)"Recursive logging request." ENDLINE);
+        Log.WriteString(T("Recursive logging request." ENDLINE));
     }
     mudstate.logging--;
     return false;
@@ -121,15 +121,15 @@ void log_perror(const UTF8 *primary, const UTF8 *secondary, const UTF8 *extra, c
     start_log(primary, secondary);
     if (extra && *extra)
     {
-        log_text((UTF8 *)"(");
+        log_text(T("("));
         log_text(extra);
-        log_text((UTF8 *)") ");
+        log_text(T(") "));
     }
 
     // <Failing_object text>: <strerror() text>
     //
     Log.WriteString(failing_object);
-    Log.WriteString((UTF8 *)": ");
+    Log.WriteString(T(": "));
     Log.WriteString(mux_strerror(errno));
 #ifndef WIN32
     Log.WriteString((UTF8 *)ENDLINE);
@@ -215,7 +215,7 @@ void log_name_and_loc(dbref player)
     if (  (mudconf.log_info & LOGOPT_LOC)
        && Has_location(player))
     {
-        log_text((UTF8 *)" in ");
+        log_text(T(" in "));
         log_name(Location(player));
     }
     return;
@@ -225,28 +225,28 @@ static const UTF8 *OBJTYP(dbref thing)
 {
     if (!Good_dbref(thing))
     {
-        return (UTF8 *)"??OUT-OF-RANGE??";
+        return T("??OUT-OF-RANGE??");
     }
     switch (Typeof(thing))
     {
     case TYPE_PLAYER:
-        return (UTF8 *)"PLAYER";
+        return T("PLAYER");
     case TYPE_THING:
-        return (UTF8 *)"THING";
+        return T("THING");
     case TYPE_ROOM:
-        return (UTF8 *)"ROOM";
+        return T("ROOM");
     case TYPE_EXIT:
-        return (UTF8 *)"EXIT";
+        return T("EXIT");
     case TYPE_GARBAGE:
-        return (UTF8 *)"GARBAGE";
+        return T("GARBAGE");
     default:
-        return (UTF8 *)"??ILLEGAL??";
+        return T("??ILLEGAL??");
     }
 }
 
 void log_type_and_name(dbref thing)
 {
-    Log.tinyprintf("%s #%d(%s)", OBJTYP(thing), thing, Good_obj(thing) ? PureName(thing) : (UTF8 *)"");
+    Log.tinyprintf("%s #%d(%s)", OBJTYP(thing), thing, Good_obj(thing) ? PureName(thing) : T(""));
     return;
 }
 
@@ -309,7 +309,7 @@ void do_log
     }
 
     UTF8 *pFullName = NULL;
-    UTF8 *pMessage = (UTF8 *)"";
+    const UTF8 *pMessage = T("");
     if (bValid)
     {
         pFullName = alloc_lbuf("do_log_filename");
@@ -333,15 +333,15 @@ void do_log
         {
             free_lbuf(pFullName);
         }
-        notify(executor, (UTF8 *)"Syntax: @log file=message");
+        notify(executor, T("Syntax: @log file=message"));
         return;
     }
 
     FILE *hFile;
-    if (mux_fopen(&hFile, pFullName, (UTF8 *)"r"))
+    if (mux_fopen(&hFile, pFullName, T("r")))
     {
         fclose(hFile);
-        if (mux_fopen(&hFile, pFullName, (UTF8 *)"a"))
+        if (mux_fopen(&hFile, pFullName, T("a")))
         {
             // Okay, at this point, the file exists.
             //
@@ -353,6 +353,6 @@ void do_log
     }
     free_lbuf(pFullName);
 
-    notify(executor, (UTF8 *)"Not a valid log file.");
+    notify(executor, T("Not a valid log file."));
     return;
 }

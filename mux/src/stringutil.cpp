@@ -2192,26 +2192,26 @@ UTF8 *strip_color(const UTF8 *pString, size_t *pnBytes, size_t *pnPoints)
 typedef struct
 {
     int len;
-    UTF8 *p;
+    const UTF8 *p;
 } LITERAL_STRING_STRUCT;
 
 #define NUM_MU_SUBS 14
 static LITERAL_STRING_STRUCT MU_Substitutes[NUM_MU_SUBS] =
 {
-    { 1, (UTF8 *)" "  },  // 0
-    { 1, (UTF8 *)" "  },  // 1
-    { 2, (UTF8 *)"%t" },  // 2
-    { 2, (UTF8 *)"%r" },  // 3
+    { 1, T(" ")  },  // 0
+    { 1, T(" ")  },  // 1
+    { 2, T("%t") },  // 2
+    { 2, T("%r") },  // 3
     { 0,         NULL },  // 4
-    { 2, (UTF8 *)"%b" },  // 5
-    { 2, (UTF8 *)"%%" },  // 6
-    { 2, (UTF8 *)"%(" },  // 7
-    { 2, (UTF8 *)"%)" },  // 8
-    { 2, (UTF8 *)"%[" },  // 9
-    { 2, (UTF8 *)"%]" },  // 10
-    { 2, (UTF8 *)"%{" },  // 11
-    { 2, (UTF8 *)"%}" },  // 12
-    { 2, (UTF8 *)"\\\\" } // 13
+    { 2, T("%b") },  // 5
+    { 2, T("%%") },  // 6
+    { 2, T("%(") },  // 7
+    { 2, T("%)") },  // 8
+    { 2, T("%[") },  // 9
+    { 2, T("%]") },  // 10
+    { 2, T("%{") },  // 11
+    { 2, T("%}") },  // 12
+    { 2, T("\\\\") } // 13
 };
 
 const unsigned char MU_EscapeConvert[256] =
@@ -2390,10 +2390,10 @@ UTF8 *munge_space(const UTF8 *string)
 /* ---------------------------------------------------------------------------
  * trim_spaces: Remove leading and trailing spaces.
  */
-UTF8 *trim_spaces(UTF8 *string)
+UTF8 *trim_spaces(const UTF8 *string)
 {
     UTF8 *buffer = alloc_lbuf("trim_spaces");
-    UTF8 *p = string;
+    const UTF8 *p = string;
     UTF8 *q = buffer;
 
     if (p)
@@ -2743,7 +2743,7 @@ int prefix_match(const UTF8 *s1, const UTF8 *s2)
 }
 #endif // 0
 
-bool minmatch(UTF8 *str, UTF8 *target, int min)
+bool minmatch(const UTF8 *str, const UTF8 *target, int min)
 {
     while (*str && *target
           && (mux_tolower(*str) == mux_tolower(*target)))
@@ -4077,7 +4077,7 @@ void mux_strtok_src(MUX_STRTOK_STATE *tts, UTF8 *arg_pString)
     tts->pString = arg_pString;
 }
 
-void mux_strtok_ctl(MUX_STRTOK_STATE *tts, UTF8 *pControl)
+void mux_strtok_ctl(MUX_STRTOK_STATE *tts, const UTF8 *pControl)
 {
     if (!tts || !pControl) return;
 
@@ -4174,7 +4174,7 @@ UTF8 *mux_strtok_parse(MUX_STRTOK_STATE *tts)
 // This function will filter out any characters in the the set from
 // the string.
 //
-UTF8 *RemoveSetOfCharacters(UTF8 *pString, UTF8 *pSetToRemove)
+UTF8 *RemoveSetOfCharacters(UTF8 *pString, const UTF8 *pSetToRemove)
 {
     static UTF8 Buffer[LBUF_SIZE];
     UTF8 *pBuffer = Buffer;
@@ -4809,7 +4809,7 @@ UTF8 *linewrap_general(UTF8 *strret, int field, UTF8 *left, UTF8 *right)
             position = leftmargin;
 
             safe_str(right, str, &ostr);
-            safe_str((UTF8 *)"\r\n", str, &ostr);
+            safe_str(T("\r\n"), str, &ostr);
             continue;
         }
 
@@ -4959,7 +4959,7 @@ UTF8 *linewrap_general(UTF8 *strret, int field, UTF8 *left, UTF8 *right)
 
 UTF8 *linewrap_desc(UTF8 *str)
 {
-    return linewrap_general(str, 70, (UTF8 *)"     ", (UTF8 *)"");
+    return linewrap_general(str, 70, T("     "), T(""));
 }
 
 #endif // FIRANMUX

@@ -479,19 +479,19 @@ void do_plusemail(dbref executor, dbref cause, dbref enactor, int key,
 
     if ('\0' == mudconf.mail_server[0])
     {
-        notify(executor, (UTF8 *)"@email: Not configured");
+        notify(executor, T("@email: Not configured"));
         return;
     }
 
     if (!arg1 || !*arg1)
     {
-        notify(executor, (UTF8 *)"@email: I don't know who you want to e-mail!");
+        notify(executor, T("@email: I don't know who you want to e-mail!"));
         return;
     }
 
     if (!arg2 || !*arg2)
     {
-        notify(executor, (UTF8 *)"@email: Not sending an empty e-mail!");
+        notify(executor, T("@email: Not sending an empty e-mail!"));
         return;
     }
 
@@ -531,7 +531,7 @@ void do_plusemail(dbref executor, dbref cause, dbref enactor, int key,
         result = mod_email_sock_open(pMailServer, 25, &mailsock);
         if (0 != result)
         {
-            notify(executor, (UTF8 *)"@email: Unable to connect to mailserver, aborting!");
+            notify(executor, T("@email: Unable to connect to mailserver, aborting!"));
             free_lbuf(addy);
             return;
         }
@@ -553,7 +553,7 @@ void do_plusemail(dbref executor, dbref cause, dbref enactor, int key,
     if (-1 == result)
     {
         mod_email_sock_close(mailsock);
-        notify(executor, (UTF8 *)"@email: Connection to mailserver lost.");
+        notify(executor, T("@email: Connection to mailserver lost."));
         free_lbuf(body);
         free_lbuf(addy);
         return;
@@ -578,7 +578,7 @@ void do_plusemail(dbref executor, dbref cause, dbref enactor, int key,
     if (-1 == result)
     {
         mod_email_sock_close(mailsock);
-        notify(executor, (UTF8 *)"@email: Connection to mailserver lost.");
+        notify(executor, T("@email: Connection to mailserver lost."));
         free_lbuf(body);
         free_lbuf(addy);
         return;
@@ -602,7 +602,7 @@ void do_plusemail(dbref executor, dbref cause, dbref enactor, int key,
     if (-1 == result)
     {
         mod_email_sock_close(mailsock);
-        notify(executor, (UTF8 *)"@email: Connection to mailserver lost.");
+        notify(executor, T("@email: Connection to mailserver lost."));
         free_lbuf(body);
         free_lbuf(addy);
         return;
@@ -626,7 +626,7 @@ void do_plusemail(dbref executor, dbref cause, dbref enactor, int key,
     if (-1 == result)
     {
         mod_email_sock_close(mailsock);
-        notify(executor, (UTF8 *)"@email: Connection to mailserver lost.");
+        notify(executor, T("@email: Connection to mailserver lost."));
         free_lbuf(body);
         free_lbuf(addy);
         return;
@@ -653,7 +653,7 @@ void do_plusemail(dbref executor, dbref cause, dbref enactor, int key,
     if (-1 == result)
     {
         mod_email_sock_close(mailsock);
-        notify(executor, (UTF8 *)"@email: Connection to mailserver lost.");
+        notify(executor, T("@email: Connection to mailserver lost."));
         free_lbuf(body);
         free_lbuf(addy);
         return;
@@ -700,7 +700,7 @@ void do_plusemail(dbref executor, dbref cause, dbref enactor, int key,
     if (-1 == result)
     {
         mod_email_sock_close(mailsock);
-        notify(executor, (UTF8 *)"@email: Connection to mailserver lost.");
+        notify(executor, T("@email: Connection to mailserver lost."));
         free_lbuf(body);
         free_lbuf(addy);
         return;

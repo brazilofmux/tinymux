@@ -167,7 +167,7 @@ void raw_notify(dbref player, const UTF8 *msg)
        && player == mudstate.poutobj)
     {
         safe_str(msg, mudstate.poutnew, &mudstate.poutbufc);
-        safe_str((UTF8 *)"\r\n", mudstate.poutnew, &mudstate.poutbufc);
+        safe_str(T("\r\n"), mudstate.poutnew, &mudstate.poutbufc);
         return;
     }
 
@@ -194,7 +194,7 @@ void raw_notify(dbref player, const mux_string &sMsg)
        && player == mudstate.poutobj)
     {
         sMsg.export_TextAnsi(mudstate.poutnew, &mudstate.poutbufc);
-        safe_str((UTF8 *)"\r\n", mudstate.poutnew, &mudstate.poutbufc);
+        safe_str(T("\r\n"), mudstate.poutnew, &mudstate.poutbufc);
         return;
     }
 
@@ -216,7 +216,7 @@ void raw_notify_newline(dbref player)
     if (  mudstate.inpipe
        && player == mudstate.poutobj)
     {
-        safe_str((UTF8 *)"\r\n", mudstate.poutnew, &mudstate.poutbufc);
+        safe_str(T("\r\n"), mudstate.poutnew, &mudstate.poutbufc);
         return;
     }
     if (!Connected(player))
@@ -381,7 +381,7 @@ void queue_write_LEN(DESC *d, const char *b, size_t n)
         if (tp == NULL)
         {
             STARTLOG(LOG_PROBLEMS, "QUE", "WRITE");
-            log_text((UTF8 *)"Flushing when output_head is null!");
+            log_text(T("Flushing when output_head is null!"));
             ENDLOG;
         }
         else
@@ -854,13 +854,13 @@ static void announce_connect(dbref player, DESC *d)
 
         if (!(mudconf.control_flags & CF_LOGIN))
         {
-            raw_notify(player, (UTF8 *)"*** Logins are disabled.");
+            raw_notify(player, T("*** Logins are disabled."));
         }
     }
     atr_get_str_LEN(buf, player, A_LPAGE, &aowner, &aflags, &nLen);
     if (nLen)
     {
-        raw_notify(player, (UTF8 *)"Your PAGE LOCK is set.  You may be unable to receive some pages.");
+        raw_notify(player, T("Your PAGE LOCK is set.  You may be unable to receive some pages."));
     }
     int num = 0;
     DESC_ITER_PLAYER(player, dtemp)
@@ -1795,7 +1795,7 @@ static void dump_users(DESC *e, UTF8 *match, int key)
             CLinearTimeDelta ltdConnected = ltaNow - d->connected_at;
             CLinearTimeDelta ltdLastTime  = ltaNow - d->last_time;
 
-            const UTF8 *pNameField = (UTF8 *)"<Unconnected>";
+            const UTF8 *pNameField = T("<Unconnected>");
             size_t vwNameField = strlen((char *)pNameField);
             if (d->flags & DS_CONNECTED)
             {
@@ -1875,8 +1875,8 @@ static void dump_users(DESC *e, UTF8 *match, int key)
     // Sometimes I like the ternary operator.
     //
     mux_sprintf(buf, MBUF_SIZE, "%d Player%slogged in, %d record, %s maximum.\r\n", count,
-        (count == 1) ? (UTF8 *)" " : (UTF8 *)"s ", mudstate.record_players,
-        (mudconf.max_players == -1) ? (UTF8 *)"no" : mux_ltoa_t(mudconf.max_players));
+        (count == 1) ? T(" ") : T("s "), mudstate.record_players,
+        (mudconf.max_players == -1) ? T("no") : mux_ltoa_t(mudconf.max_players));
     queue_write(e, (char *)buf);
 
     if (  (e->flags & (DS_PUEBLOCLIENT|DS_CONNECTED))
@@ -1890,22 +1890,22 @@ static void dump_users(DESC *e, UTF8 *match, int key)
 static const UTF8 *DumpInfoTable[] =
 {
 #if defined(DEPRECATED)
-    (UTF8 *)"DEPRECATED",
+    T("DEPRECATED"),
 #endif
 #if defined(FIRANMUX)
-    (UTF8 *)"FIRANMUX",
+    T("FIRANMUX"),
 #endif
 #if defined(FIRANMUX_CONVERT)
-    (UTF8 *)"FIRANMUX_CONVERT",
+    T("FIRANMUX_CONVERT"),
 #endif
 #if defined(MEMORY_BASED)
-    (UTF8 *)"MEMORY_BASED",
+    T("MEMORY_BASED"),
 #endif
 #if defined(REALITY_LVLS)
-    (UTF8 *)"REALITY_LVLS",
+    T("REALITY_LVLS"),
 #endif
 #if defined(WOD_REALMS)
-    (UTF8 *)"WOD_REALMS",
+    T("WOD_REALMS"),
 #endif
     (UTF8 *)NULL
 };
@@ -1968,7 +1968,7 @@ static void dump_info(DESC *arg_desc)
 
         size_t i;
         bool bFirst = true;
-        safe_str((UTF8 *)"Patches: ", buf, &bp);
+        safe_str(T("Patches: "), buf, &bp);
         for (i = 0; i < nDumpInfoTable; i++)
         {
             if (!bFirst)
@@ -2014,7 +2014,7 @@ UTF8 *MakeCanonicalDoing(UTF8 *pDoing, size_t *pnValidDoing, bool *pbValidDoing)
 
     // First, remove all '\r\n\t' from the string.
     //
-    UTF8 *Buffer = RemoveSetOfCharacters(pDoing, (UTF8 *)"\r\n\t");
+    UTF8 *Buffer = RemoveSetOfCharacters(pDoing, T("\r\n\t"));
 
     // Optimize/terminate any ANSI in the string.
     //
@@ -2073,12 +2073,12 @@ void do_doing(dbref executor, dbref caller, dbref enactor, int eval, int key, UT
             if (  !bQuiet
                && !Quiet(executor))
             {
-                notify(executor, (UTF8 *)"Set.");
+                notify(executor, T("Set."));
             }
         }
         else
         {
-            notify(executor, (UTF8 *)"Not connected.");
+            notify(executor, T("Not connected."));
         }
     }
     else if (key == DOING_UNIQUE)
@@ -2101,12 +2101,12 @@ void do_doing(dbref executor, dbref caller, dbref enactor, int eval, int key, UT
             if (  !bQuiet
                && !Quiet(executor))
             {
-                notify(executor, (UTF8 *)"Set.");
+                notify(executor, T("Set."));
             }
         }
         else
         {
-            notify(executor, (UTF8 *)"Not connected.");
+            notify(executor, T("Not connected."));
         }
     }
     else if (key == DOING_HEADER)
@@ -2118,7 +2118,7 @@ void do_doing(dbref executor, dbref caller, dbref enactor, int eval, int key, UT
         }
         if (nValidDoing == 0)
         {
-            mux_strncpy(mudstate.doing_hdr, (UTF8 *)"Doing", SIZEOF_DOING_STRING-1);
+            mux_strncpy(mudstate.doing_hdr, T("Doing"), SIZEOF_DOING_STRING-1);
         }
         else
         {
@@ -2127,7 +2127,7 @@ void do_doing(dbref executor, dbref caller, dbref enactor, int eval, int key, UT
         if (  !bQuiet
            && !Quiet(executor))
         {
-            notify(executor, (UTF8 *)"Set.");
+            notify(executor, T("Set."));
         }
     }
     else // if (key == DOING_POLL)
@@ -2138,15 +2138,15 @@ void do_doing(dbref executor, dbref caller, dbref enactor, int eval, int key, UT
 
 NAMETAB logout_cmdtable[] =
 {
-    {(UTF8 *)"DOING",         5,  CA_PUBLIC,  CMD_DOING},
-    {(UTF8 *)"LOGOUT",        6,  CA_PUBLIC,  CMD_LOGOUT},
-    {(UTF8 *)"OUTPUTPREFIX", 12,  CA_PUBLIC,  CMD_PREFIX|CMD_NOxFIX},
-    {(UTF8 *)"OUTPUTSUFFIX", 12,  CA_PUBLIC,  CMD_SUFFIX|CMD_NOxFIX},
-    {(UTF8 *)"QUIT",          4,  CA_PUBLIC,  CMD_QUIT},
-    {(UTF8 *)"SESSION",       7,  CA_PUBLIC,  CMD_SESSION},
-    {(UTF8 *)"WHO",           3,  CA_PUBLIC,  CMD_WHO},
-    {(UTF8 *)"PUEBLOCLIENT", 12,  CA_PUBLIC,  CMD_PUEBLOCLIENT},
-    {(UTF8 *)"INFO",          4,  CA_PUBLIC,  CMD_INFO},
+    {T("DOING"),         5,  CA_PUBLIC,  CMD_DOING},
+    {T("LOGOUT"),        6,  CA_PUBLIC,  CMD_LOGOUT},
+    {T("OUTPUTPREFIX"), 12,  CA_PUBLIC,  CMD_PREFIX|CMD_NOxFIX},
+    {T("OUTPUTSUFFIX"), 12,  CA_PUBLIC,  CMD_SUFFIX|CMD_NOxFIX},
+    {T("QUIT"),          4,  CA_PUBLIC,  CMD_QUIT},
+    {T("SESSION"),       7,  CA_PUBLIC,  CMD_SESSION},
+    {T("WHO"),           3,  CA_PUBLIC,  CMD_WHO},
+    {T("PUEBLOCLIENT"), 12,  CA_PUBLIC,  CMD_PUEBLOCLIENT},
+    {T("INFO"),          4,  CA_PUBLIC,  CMD_INFO},
     {NULL,                    0,          0,         0}
 };
 
@@ -2166,7 +2166,7 @@ void init_logout_cmdtab(void)
 static void failconn(const UTF8 *logcode, const UTF8 *logtype, const UTF8 *logreason,
                      DESC *d, int disconnect_reason,
                      dbref player, int filecache, UTF8 *motd_msg, UTF8 *command,
-                     UTF8 *user, UTF8 *password, UTF8 *cmdsave)
+                     UTF8 *user, UTF8 *password, const UTF8 *cmdsave)
 {
     STARTLOG(LOG_LOGIN | LOG_SECURITY, logcode, "RJCT");
     UTF8 *buff = alloc_mbuf("failconn.LOG");
@@ -2181,9 +2181,9 @@ static void failconn(const UTF8 *logcode, const UTF8 *logtype, const UTF8 *logre
     {
         log_text(user);
     }
-    log_text((UTF8 *)" (");
+    log_text(T(" ("));
     log_text(logreason);
-    log_text((UTF8 *)")");
+    log_text(T(")"));
     ENDLOG;
     fcache_dump(d, filecache);
     if (*motd_msg)
@@ -2199,7 +2199,7 @@ static void failconn(const UTF8 *logcode, const UTF8 *logtype, const UTF8 *logre
     return;
 }
 
-static const UTF8 *connect_fail = (UTF8 *)"Either that player does not exist, or has a different password.\r\n";
+static const UTF8 *connect_fail = T("Either that player does not exist, or has a different password.\r\n");
 
 static bool check_connect(DESC *d, UTF8 *msg)
 {
@@ -2210,8 +2210,8 @@ static bool check_connect(DESC *d, UTF8 *msg)
     const UTF8 *p;
     bool isGuest = false;
 
-    UTF8 *cmdsave = mudstate.debug_cmd;
-    mudstate.debug_cmd = (UTF8 *)"< check_connect >";
+    const UTF8 *cmdsave = mudstate.debug_cmd;
+    mudstate.debug_cmd = T("< check_connect >");
 
     // Hide the password length from SESSION.
     //
@@ -2245,7 +2245,7 @@ static bool check_connect(DESC *d, UTF8 *msg)
                 // The guest 'power' is handled separately further
                 // down.
                 //
-                failconn((UTF8 *)"CONN", (UTF8 *)"Connect", (UTF8 *)"Guest Site Forbidden", d,
+                failconn(T("CONN"), T("Connect"), T("Guest Site Forbidden"), d,
                     R_GAMEDOWN, NOTHING, FC_CONN_REG, mudconf.downmotd_msg,
                     command, user, password, cmdsave);
                 return false;
@@ -2348,7 +2348,7 @@ static bool check_connect(DESC *d, UTF8 *msg)
                   || (   !mudconf.allow_guest_from_registered_site
                      && (d->host_info & H_REGISTRATION))))
             {
-                failconn((UTF8 *)"CON", (UTF8 *)"Connect", (UTF8 *)"Guest Site Forbidden", d,
+                failconn(T("CON"), T("Connect"), T("Guest Site Forbidden"), d,
                     R_GAMEDOWN, player, FC_CONN_SITE,
                     mudconf.downmotd_msg, command, user, password,
                     cmdsave);
@@ -2426,13 +2426,13 @@ static bool check_connect(DESC *d, UTF8 *msg)
         }
         else if (!(mudconf.control_flags & CF_LOGIN))
         {
-            failconn((UTF8 *)"CON", (UTF8 *)"Connect", (UTF8 *)"Logins Disabled", d, R_GAMEDOWN, player, FC_CONN_DOWN,
+            failconn(T("CON"), T("Connect"), T("Logins Disabled"), d, R_GAMEDOWN, player, FC_CONN_DOWN,
                 mudconf.downmotd_msg, command, user, password, cmdsave);
             return false;
         }
         else
         {
-            failconn((UTF8 *)"CON", (UTF8 *)"Connect", (UTF8 *)"Game Full", d, R_GAMEFULL, player, FC_CONN_FULL,
+            failconn(T("CON"), T("Connect"), T("Game Full"), d, R_GAMEFULL, player, FC_CONN_FULL,
                 mudconf.fullmotd_msg, command, user, password, cmdsave);
             return false;
         }
@@ -2443,7 +2443,7 @@ static bool check_connect(DESC *d, UTF8 *msg)
         //
         if (!(mudconf.control_flags & CF_LOGIN))
         {
-            failconn((UTF8 *)"CRE", (UTF8 *)"Create", (UTF8 *)"Logins Disabled", d, R_GAMEDOWN, NOTHING, FC_CONN_DOWN,
+            failconn(T("CRE"), T("Create"), T("Logins Disabled"), d, R_GAMEDOWN, NOTHING, FC_CONN_DOWN,
                 mudconf.downmotd_msg, command, user, password, cmdsave);
             return false;
         }
@@ -2466,7 +2466,7 @@ static bool check_connect(DESC *d, UTF8 *msg)
         {
             // Too many players on, reject the attempt.
             //
-            failconn((UTF8 *)"CRE", (UTF8 *)"Create", (UTF8 *)"Game Full", d,
+            failconn(T("CRE"), T("Create"), T("Game Full"), d,
                 R_GAMEFULL, NOTHING, FC_CONN_FULL,
                 mudconf.fullmotd_msg, command, user, password,
                 cmdsave);
@@ -2555,7 +2555,7 @@ static void do_logged_out_internal(DESC *d, int key, UTF8 *arg)
 #if defined(FIRANMUX)
         if ((d->flags & DS_CONNECTED) == 0)
         {
-            queue_string(d, (UTF8 *)"This command is disabled on login.");
+            queue_string(d, T("This command is disabled on login."));
             queue_write_LEN(d, "\r\n", 2);
         }
         else
@@ -2604,8 +2604,8 @@ static void do_logged_out_internal(DESC *d, int key, UTF8 *arg)
 
 void do_command(DESC *d, UTF8 *command)
 {
-    UTF8 *cmdsave = mudstate.debug_cmd;
-    mudstate.debug_cmd = (UTF8 *)"< do_command >";
+    const UTF8 *cmdsave = mudstate.debug_cmd;
+    mudstate.debug_cmd = T("< do_command >");
 
     if (d->flags & DS_CONNECTED)
     {
@@ -2639,7 +2639,7 @@ void do_command(DESC *d, UTF8 *command)
         ltaEnd.GetUTC();
         if (MuxAlarm.bAlarmed)
         {
-            notify(d->player, (UTF8 *)"GAME: Expensive activity abbreviated.");
+            notify(d->player, T("GAME: Expensive activity abbreviated."));
             halt_que(d->player, NOTHING);
             s_Flags(d->player, FLAG_WORD1, Flags(d->player) | HALT);
         }
@@ -2659,7 +2659,7 @@ void do_command(DESC *d, UTF8 *command)
             ENDLOG;
         }
 
-        mudstate.curr_cmd = (UTF8 *) "";
+        mudstate.curr_cmd = T("");
         if (d->output_suffix)
         {
             queue_string(d, d->output_suffix);
@@ -2871,11 +2871,11 @@ static const UTF8 *stat_string(int strtype, int flag)
     case S_SUSPECT:
         if (flag)
         {
-            str = (UTF8 *)"Suspected";
+            str = T("Suspected");
         }
         else
         {
-            str = (UTF8 *)"Trusted";
+            str = T("Trusted");
         }
         break;
 
@@ -2883,33 +2883,33 @@ static const UTF8 *stat_string(int strtype, int flag)
         switch (flag)
         {
         case H_FORBIDDEN:
-            str = (UTF8 *)"Forbidden";
+            str = T("Forbidden");
             break;
 
         case H_REGISTRATION:
-            str = (UTF8 *)"Registration";
+            str = T("Registration");
             break;
 
         case H_GUEST:
-            str = (UTF8 *)"NoGuest";
+            str = T("NoGuest");
             break;
 
         case H_NOSITEMON:
-            str = (UTF8 *)"NoSiteMon";
+            str = T("NoSiteMon");
             break;
 
         case 0:
-            str = (UTF8 *)"Unrestricted";
+            str = T("Unrestricted");
             break;
 
         default:
-            str = (UTF8 *)"Strange";
+            str = T("Strange");
             break;
         }
         break;
 
     default:
-        str = (UTF8 *)"Strange";
+        str = T("Strange");
         break;
     }
     return str;
@@ -2925,7 +2925,7 @@ static void list_sites(dbref player, SITE *site_list, const UTF8 *header_txt, in
     buff1 = alloc_sbuf("list_sites.addr");
     mux_sprintf(buff, MBUF_SIZE, "----- %s -----", header_txt);
     notify(player, buff);
-    notify(player, (UTF8 *)"Address              Mask                 Status");
+    notify(player, T("Address              Mask                 Status"));
     for (this0 = site_list; this0; this0 = this0->next)
     {
         str = stat_string(stat_type, this0->flag);
@@ -2944,8 +2944,8 @@ static void list_sites(dbref player, SITE *site_list, const UTF8 *header_txt, in
 
 void list_siteinfo(dbref player)
 {
-    list_sites(player, mudstate.access_list,  (UTF8 *)"Site Access", S_ACCESS);
-    list_sites(player, mudstate.suspect_list, (UTF8 *)"Suspected Sites", S_SUSPECT);
+    list_sites(player, mudstate.access_list,  T("Site Access"), S_ACCESS);
+    list_sites(player, mudstate.suspect_list, T("Suspected Sites"), S_SUSPECT);
 }
 
 /* ---------------------------------------------------------------------------
@@ -3049,7 +3049,7 @@ FUNCTION(fun_doing)
         dbref victim = lookup_player(executor, fargs[0], true);
         if (victim == NOTHING)
         {
-            safe_str((UTF8 *)"#-1 PLAYER DOES NOT EXIST", buff, bufc);
+            safe_str(T("#-1 PLAYER DOES NOT EXIST"), buff, bufc);
             return;
         }
 
@@ -3066,7 +3066,7 @@ FUNCTION(fun_doing)
                 }
             }
         }
-        safe_str((UTF8 *)"#-1 NOT A CONNECTED PLAYER", buff, bufc);
+        safe_str(T("#-1 NOT A CONNECTED PLAYER"), buff, bufc);
     }
 }
 
@@ -3108,7 +3108,7 @@ FUNCTION(fun_host)
         dbref victim = lookup_player(executor, fargs[0], true);
         if (victim == NOTHING)
         {
-            safe_str((UTF8 *)"#-1 PLAYER DOES NOT EXIST", buff, bufc);
+            safe_str(T("#-1 PLAYER DOES NOT EXIST"), buff, bufc);
             return;
         }
         DESC_ITER_CONN(d)
@@ -3129,11 +3129,11 @@ FUNCTION(fun_host)
     }
     if (isPort)
     {
-        safe_str((UTF8 *)"#-1 NOT AN ACTIVE PORT", buff, bufc);
+        safe_str(T("#-1 NOT AN ACTIVE PORT"), buff, bufc);
     }
     else
     {
-        safe_str((UTF8 *)"#-1 NOT A CONNECTED PLAYER", buff, bufc);
+        safe_str(T("#-1 NOT A CONNECTED PLAYER"), buff, bufc);
     }
 }
 
@@ -3204,7 +3204,7 @@ FUNCTION(fun_siteinfo)
         dbref victim = lookup_player(executor, fargs[0], true);
         if (victim == NOTHING)
         {
-            safe_str((UTF8 *)"#-1 PLAYER DOES NOT EXIST", buff, bufc);
+            safe_str(T("#-1 PLAYER DOES NOT EXIST"), buff, bufc);
             return;
         }
         DESC_ITER_CONN(d)
@@ -3238,11 +3238,11 @@ FUNCTION(fun_siteinfo)
     }
     if (isPort)
     {
-        safe_str((UTF8 *)"#-1 NOT AN ACTIVE PORT", buff, bufc);
+        safe_str(T("#-1 NOT AN ACTIVE PORT"), buff, bufc);
     }
     else
     {
-        safe_str((UTF8 *)"#-1 NOT A CONNECTED PLAYER", buff, bufc);
+        safe_str(T("#-1 NOT A CONNECTED PLAYER"), buff, bufc);
     }
 
 }
@@ -3275,7 +3275,7 @@ static void ParseConnectionInfoString(UTF8 *pConnInfo, UTF8 *pFields[5])
 {
     MUX_STRTOK_STATE tts;
     mux_strtok_src(&tts, pConnInfo);
-    mux_strtok_ctl(&tts, (UTF8 *)" ");
+    mux_strtok_ctl(&tts, T(" "));
     for (int i = 0; i < 5; i++)
     {
         pFields[i] = mux_strtok_parse(&tts);

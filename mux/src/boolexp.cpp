@@ -93,15 +93,15 @@ bool eval_boolexp(dbref player, dbref thing, dbref from, BOOLEXP *b)
         {
             if (mudstate.bStandAlone)
             {
-                Log.WriteString((UTF8 *)"Lock exceeded recursion limit." ENDLINE);
+                Log.WriteString(T("Lock exceeded recursion limit." ENDLINE));
             }
             else
             {
                 STARTLOG(LOG_BUGS, "BUG", "LOCK");
                 log_name_and_loc(player);
-                log_text((UTF8 *)": Lock exceeded recursion limit.");
+                log_text(T(": Lock exceeded recursion limit."));
                 ENDLOG;
-                notify(player, (UTF8 *)"Sorry, broken lock!");
+                notify(player, T("Sorry, broken lock!"));
             }
             mudstate.lock_nest_lev--;
             return false;
@@ -111,11 +111,11 @@ bool eval_boolexp(dbref player, dbref thing, dbref from, BOOLEXP *b)
         {
             if (mudstate.bStandAlone)
             {
-                Log.WriteString((UTF8 *)"Broken lock." ENDLINE);
+                Log.WriteString(T("Broken lock." ENDLINE));
             }
             else
             {
-                STARTLOG(LOG_BUGS, (UTF8 *)"BUG", (UTF8 *)"LOCK");
+                STARTLOG(LOG_BUGS, T("BUG"), T("LOCK"));
                 log_name_and_loc(player);
                 buff = alloc_mbuf("eval_boolexp.LOG.indir");
                 mux_sprintf(buff, MBUF_SIZE, ": Lock had bad indirection (%c, type %d)",
@@ -123,7 +123,7 @@ bool eval_boolexp(dbref player, dbref thing, dbref from, BOOLEXP *b)
                 log_text(buff);
                 free_mbuf(buff);
                 ENDLOG;
-                notify(player, (UTF8 *)"Sorry, broken lock!");
+                notify(player, T("Sorry, broken lock!"));
             }
             mudstate.lock_nest_lev--;
             return false;

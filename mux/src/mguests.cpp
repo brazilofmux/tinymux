@@ -132,7 +132,7 @@ const UTF8 *CGuests::Create(DESC *d)
             guest_player = Guests[i] = MakeGuestChar();
             if (guest_player == NOTHING)
             {
-                queue_string(d, (UTF8 *)"Error creating guest, please try again later.\n");
+                queue_string(d, T("Error creating guest, please try again later.\n"));
                 return NULL;
             }
             else
@@ -204,13 +204,13 @@ const UTF8 *CGuests::Create(DESC *d)
 
     if (nGuests >= mudconf.number_guests)
     {
-        queue_string(d, (UTF8 *)"All guests are currently busy, please try again later.\n");
+        queue_string(d, T("All guests are currently busy, please try again later.\n"));
         return NULL;
     }
     dbref newGuest = MakeGuestChar();
     if (newGuest == NOTHING)
     {
-        queue_string(d, (UTF8 *)"Error creating guest, please try again later.\n");
+        queue_string(d, T("Error creating guest, please try again later.\n"));
         return NULL;
     }
     SizeGuests(nGuests+1);
@@ -315,7 +315,7 @@ dbref CGuests::MakeGuestChar(void)
     //
     if (player == NOTHING)
     {
-        log_text((UTF8 *)"GUEST: failed in create_player" ENDLINE);
+        log_text(T("GUEST: failed in create_player" ENDLINE));
         return NOTHING;
     }
 
@@ -420,9 +420,9 @@ bool CGuests::CheckGuest(dbref player)
 //
 void CGuests::ListAll(dbref player)
 {
-    notify(player, (UTF8 *)"--------------------------- Current Guests Listing ---------------------------");
-    notify(player, (UTF8 *)"*Guest #  : Name            dbref  Status     Last Site");
-    notify(player, (UTF8 *)"------------------------------------------------------------------------------");\
+    notify(player, T("--------------------------- Current Guests Listing ---------------------------"));
+    notify(player, T("*Guest #  : Name            dbref  Status     Last Site"));
+    notify(player, T("------------------------------------------------------------------------------"));\
     UTF8 *buff = alloc_lbuf("CGuests-ListAll");
     int i;
     UTF8 *LastSite=alloc_lbuf("CGuests-LastSite");

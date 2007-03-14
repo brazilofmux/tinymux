@@ -160,7 +160,7 @@ CMD_TWO_ARG(do_plusemail);
 
 typedef struct
 {
-    UTF8    *cmdname;
+    const UTF8 *cmdname;
     NAMETAB *switches;
     int     perms;
     int     extra;
@@ -171,7 +171,7 @@ typedef struct
 
 typedef struct
 {
-    UTF8    *cmdname;
+    const UTF8 *cmdname;
     NAMETAB *switches;
     int     perms;
     int     extra;
@@ -182,7 +182,7 @@ typedef struct
 
 typedef struct
 {
-    UTF8    *cmdname;
+    const UTF8 *cmdname;
     NAMETAB *switches;
     int     perms;
     int     extra;
@@ -193,7 +193,7 @@ typedef struct
 
 typedef struct
 {
-    UTF8    *cmdname;
+    const UTF8 *cmdname;
     NAMETAB *switches;
     int     perms;
     int     extra;
@@ -204,7 +204,7 @@ typedef struct
 
 typedef struct
 {
-    UTF8    *cmdname;
+    const UTF8 *cmdname;
     NAMETAB *switches;
     int     perms;
     int     extra;
@@ -215,7 +215,7 @@ typedef struct
 
 typedef struct
 {
-    UTF8    *cmdname;
+    const UTF8 *cmdname;
     NAMETAB *switches;
     int     perms;
     int     extra;
@@ -226,7 +226,7 @@ typedef struct
 
 typedef struct
 {
-    UTF8    *cmdname;
+    const UTF8 *cmdname;
     NAMETAB *switches;
     int     perms;
     int     extra;
@@ -247,7 +247,7 @@ struct addedentry
 
 typedef struct
 {
-    UTF8    *cmdname;
+    UTF8 *cmdname;
     NAMETAB *switches;
     int     perms;
     int     extra;

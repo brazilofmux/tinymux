@@ -36,7 +36,7 @@ static UTF8 *RestrictTitleValue(UTF8 *pTitleRequest)
 {
     // First, remove all '\r\n\t' from the string.
     //
-    UTF8 *pNewTitle = RemoveSetOfCharacters(pTitleRequest, (UTF8 *)"\r\n\t");
+    UTF8 *pNewTitle = RemoveSetOfCharacters(pTitleRequest, T("\r\n\t"));
 
     // Optimize/terminate any ANSI in the string.
     //
@@ -78,7 +78,7 @@ void save_comsys(UTF8 *filename)
 
     mux_sprintf(buffer, sizeof(buffer), "%s.#", filename);
     FILE *fp;
-    if (!mux_fopen(&fp, buffer, (UTF8 *)"wb"))
+    if (!mux_fopen(&fp, buffer, T("wb")))
     {
         Log.tinyprintf("Unable to open %s for writing." ENDLINE, buffer);
         return;
@@ -1068,7 +1068,7 @@ void load_comsys(UTF8 *filename)
     }
 
     FILE *fp;
-    if (!mux_fopen(&fp, filename, (UTF8 *)"rb"))
+    if (!mux_fopen(&fp, filename, T("rb")))
     {
         Log.tinyprintf("Error: Couldn't find %s." ENDLINE, filename);
     }
@@ -1281,11 +1281,11 @@ static void BuildChannelMessage
         {
             safe_chr(' ', *messNormal, &mnptr);
             safe_str(saystring, *messNormal, &mnptr);
-            safe_str((UTF8 *)" \"", *messNormal, &mnptr);
+            safe_str(T(" \""), *messNormal, &mnptr);
         }
         else
         {
-            safe_str((UTF8 *)" says, \"", *messNormal, &mnptr);
+            safe_str(T(" says, \""), *messNormal, &mnptr);
         }
         safe_str(pPose, *messNormal, &mnptr);
         safe_chr('"', *messNormal, &mnptr);
@@ -1295,11 +1295,11 @@ static void BuildChannelMessage
             {
                 safe_chr(' ', *messNoComtitle, &mncptr);
                 safe_str(saystring, *messNoComtitle, &mncptr);
-                safe_str((UTF8 *)" \"", *messNoComtitle, &mncptr);
+                safe_str(T(" \""), *messNoComtitle, &mncptr);
             }
             else
             {
-                safe_str((UTF8 *)" says, \"", *messNoComtitle, &mncptr);
+                safe_str(T(" says, \""), *messNoComtitle, &mncptr);
             }
             safe_str(pPose, *messNoComtitle, &mncptr);
             safe_chr('"', *messNoComtitle, &mncptr);
@@ -1325,7 +1325,7 @@ static void do_processcom(dbref player, UTF8 *arg1, UTF8 *arg2)
 {
     if (!*arg2)
     {
-        raw_notify(player, (UTF8 *)"No message.");
+        raw_notify(player, T("No message."));
         return;
     }
     if (3500 < strlen((char *)arg2))
@@ -1341,7 +1341,7 @@ static void do_processcom(dbref player, UTF8 *arg1, UTF8 *arg2)
     struct comuser *user = select_user(ch, player);
     if (!user)
     {
-        raw_notify(player, (UTF8 *)"You are not listed as on that channel.  Delete this alias and readd.");
+        raw_notify(player, T("You are not listed as on that channel.  Delete this alias and readd."));
         return;
     }
 
@@ -1349,7 +1349,7 @@ static void do_processcom(dbref player, UTF8 *arg1, UTF8 *arg2)
     if (  Gagged(player)
        && !Wizard(player))
     {
-        raw_notify(player, (UTF8 *)"GAGGED players may not speak on channels.");
+        raw_notify(player, T("GAGGED players may not speak on channels."));
         return;
     }
 #endif // FIRANMUX
@@ -1387,7 +1387,7 @@ static void do_processcom(dbref player, UTF8 *arg1, UTF8 *arg2)
     }
     else if (!test_transmit_access(player, ch))
     {
-        raw_notify(player, (UTF8 *)"That channel type cannot be transmitted on.");
+        raw_notify(player, T("That channel type cannot be transmitted on."));
         return;
     }
     else
@@ -1451,7 +1451,7 @@ void SendChannelMessage
         int aflags;
         int logmax = DFLT_MAX_LOG;
         UTF8 *maxbuf;
-        ATTR *pattr = atr_str((UTF8 *)"MAX_LOG");
+        ATTR *pattr = atr_str(T("MAX_LOG"));
         if (  pattr
            && pattr->number)
         {
@@ -1560,7 +1560,7 @@ void do_joinchannel(dbref player, struct channel *ch)
         user->who            = player;
         user->bUserIsOn      = true;
         user->ComTitleStatus = true;
-        user->title          = StringClone((UTF8 *)"");
+        user->title          = StringClone(T(""));
 
         // if (Connected(player))&&(isPlayer(player))
         //
@@ -1667,7 +1667,7 @@ void do_comwho(dbref player, struct channel *ch)
 {
     struct comuser *user;
 
-    raw_notify(player, (UTF8 *)"-- Players --");
+    raw_notify(player, T("-- Players --"));
     for (user = ch->on_users; user; user = user->on_next)
     {
         if (isPlayer(user->who))
@@ -1688,7 +1688,7 @@ void do_comwho(dbref player, struct channel *ch)
             }
         }
     }
-    raw_notify(player, (UTF8 *)"-- Objects --");
+    raw_notify(player, T("-- Objects --"));
     for (user = ch->on_users; user; user = user->on_next)
     {
         if (!isPlayer(user->who))
@@ -1711,14 +1711,14 @@ void do_comlast(dbref player, struct channel *ch, int arg)
 {
     if (!Good_obj(ch->chan_obj))
     {
-        raw_notify(player, (UTF8 *)"Channel does not have an object.");
+        raw_notify(player, T("Channel does not have an object."));
         return;
     }
     dbref aowner;
     int aflags;
     dbref obj = ch->chan_obj;
     int logmax = MAX_RECALL_REQUEST;
-    ATTR *pattr = atr_str((UTF8 *)"MAX_LOG");
+    ATTR *pattr = atr_str(T("MAX_LOG"));
     if (  pattr
        && (atr_get_info(obj, pattr->number, &aowner, &aflags)))
     {
@@ -1728,7 +1728,7 @@ void do_comlast(dbref player, struct channel *ch, int arg)
     }
     if (logmax < 1)
     {
-        raw_notify(player, (UTF8 *)"Channel does not log.");
+        raw_notify(player, T("Channel does not log."));
         return;
     }
     if (arg < MIN_RECALL_REQUEST)
@@ -1743,7 +1743,7 @@ void do_comlast(dbref player, struct channel *ch, int arg)
     UTF8 *message;
     int histnum = ch->num_messages - arg;
 
-    raw_notify(player, (UTF8 *)"-- Begin Comsys Recall --");
+    raw_notify(player, T("-- Begin Comsys Recall --"));
     for (int count = 0; count < arg; count++)
     {
         histnum++;
@@ -1755,7 +1755,7 @@ void do_comlast(dbref player, struct channel *ch, int arg)
             free_lbuf(message);
         }
     }
-    raw_notify(player, (UTF8 *)"-- End Comsys Recall --");
+    raw_notify(player, T("-- End Comsys Recall --"));
 }
 
 static bool do_chanlog(dbref player, UTF8 *channel, UTF8 *arg)
@@ -1783,7 +1783,7 @@ static bool do_chanlog(dbref player, UTF8 *channel, UTF8 *arg)
         return false;
     }
 
-    int atr = mkattr(GOD, (UTF8 *)"MAX_LOG");
+    int atr = mkattr(GOD, T("MAX_LOG"));
     if (atr <= 0)
     {
         return false;
@@ -1883,7 +1883,7 @@ void do_addcom
 
     if (!mudconf.have_comsys)
     {
-        raw_notify(executor, (UTF8 *)"Comsys disabled.");
+        raw_notify(executor, T("Comsys disabled."));
         return;
     }
     bool bValidAlias;
@@ -1891,12 +1891,12 @@ void do_addcom
     UTF8 *pValidAlias = MakeCanonicalComAlias(arg1, &nValidAlias, &bValidAlias);
     if (!bValidAlias)
     {
-        raw_notify(executor, (UTF8 *)"You need to specify a valid alias.");
+        raw_notify(executor, T("You need to specify a valid alias."));
         return;
     }
     if ('\0' == channel[0])
     {
-        raw_notify(executor, (UTF8 *)"You need to specify a channel.");
+        raw_notify(executor, T("You need to specify a channel."));
         return;
     }
 
@@ -1914,7 +1914,7 @@ void do_addcom
     }
     if (!test_join_access(executor, ch))
     {
-        raw_notify(executor, (UTF8 *)"Sorry, this channel type does not allow you to join.");
+        raw_notify(executor, T("Sorry, this channel type does not allow you to join."));
         return;
     }
     comsys_t *c = get_comsys(executor);
@@ -1989,12 +1989,12 @@ void do_delcom(dbref executor, dbref caller, dbref enactor, int eval, int key, U
 
     if (!mudconf.have_comsys)
     {
-        raw_notify(executor, (UTF8 *)"Comsys disabled.");
+        raw_notify(executor, T("Comsys disabled."));
         return;
     }
     if (!arg1)
     {
-        raw_notify(executor, (UTF8 *)"Need an alias to delete.");
+        raw_notify(executor, T("Need an alias to delete."));
         return;
     }
     comsys_t *c = get_comsys(executor);
@@ -2039,7 +2039,7 @@ void do_delcom(dbref executor, dbref caller, dbref enactor, int eval, int key, U
             return;
         }
     }
-    raw_notify(executor, (UTF8 *)"Unable to find that alias.");
+    raw_notify(executor, T("Unable to find that alias."));
 }
 
 void do_delcomchannel(dbref player, UTF8 *channel, bool bQuiet)
@@ -2105,7 +2105,7 @@ void do_createchannel(dbref executor, dbref caller, dbref enactor, int eval, int
 
     if ('\0' == channel[0])
     {
-        raw_notify(executor, (UTF8 *)"You must specify a channel to create.");
+        raw_notify(executor, T("You must specify a channel to create."));
         return;
     }
 
@@ -2118,7 +2118,7 @@ void do_createchannel(dbref executor, dbref caller, dbref enactor, int eval, int
     struct channel *newchannel = (struct channel *)MEMALLOC(sizeof(struct channel));
     if (NULL == newchannel)
     {
-        raw_notify(executor, (UTF8 *)"Out of memory.");
+        raw_notify(executor, T("Out of memory."));
         return;
     }
 
@@ -2207,7 +2207,7 @@ void do_destroychannel(dbref executor, dbref caller, dbref enactor, int eval, in
 
     if (!mudconf.have_comsys)
     {
-        raw_notify(executor, (UTF8 *)"Comsys disabled.");
+        raw_notify(executor, T("Comsys disabled."));
         return;
     }
     ch = (struct channel *)hashfindLEN(channel, strlen((char *)channel), &mudstate.channel_htab);
@@ -2333,9 +2333,9 @@ static void do_listchannels(dbref player)
     bool perm = Comm_All(player);
     if (!perm)
     {
-        raw_notify(player, (UTF8 *)"Warning: Only public channels and your channels will be shown.");
+        raw_notify(player, T("Warning: Only public channels and your channels will be shown."));
     }
-    raw_notify(player, (UTF8 *)"*** Channel      --Flags--    Obj     Own   Charge  Balance  Users   Messages");
+    raw_notify(player, T("*** Channel      --Flags--    Obj     Own   Charge  Balance  Users   Messages"));
 
     for (ch = (struct channel *)hash_firstentry(&mudstate.channel_htab);
          ch; ch = (struct channel *)hash_nextentry(&mudstate.channel_htab))
@@ -2360,7 +2360,7 @@ static void do_listchannels(dbref player)
             raw_notify(player, temp);
         }
     }
-    raw_notify(player, (UTF8 *)"-- End of list of Channels --");
+    raw_notify(player, T("-- End of list of Channels --"));
 }
 
 void do_comtitle
@@ -2380,12 +2380,12 @@ void do_comtitle
 
     if (!mudconf.have_comsys)
     {
-        raw_notify(executor, (UTF8 *)"Comsys disabled.");
+        raw_notify(executor, T("Comsys disabled."));
         return;
     }
     if (!*arg1)
     {
-        raw_notify(executor, (UTF8 *)"Need an alias to do comtitle.");
+        raw_notify(executor, T("Need an alias to do comtitle."));
         return;
     }
 
@@ -2394,7 +2394,7 @@ void do_comtitle
 
     if (channel[0] == '\0')
     {
-        raw_notify(executor, (UTF8 *)"Unknown alias.");
+        raw_notify(executor, T("Unknown alias."));
         return;
     }
     struct channel *ch = select_channel(channel);
@@ -2411,7 +2411,7 @@ void do_comtitle
                 }
                 else
                 {
-                    raw_notify(executor, (UTF8 *)"You can not turn off comtitles on that channel.");
+                    raw_notify(executor, T("You can not turn off comtitles on that channel."));
                 }
             }
             else if (key == COMTITLE_ON)
@@ -2430,7 +2430,7 @@ void do_comtitle
     }
     else
     {
-        raw_notify(executor, (UTF8 *)"Illegal comsys alias, please delete.");
+        raw_notify(executor, T("Illegal comsys alias, please delete."));
     }
 }
 
@@ -2451,7 +2451,7 @@ void do_comlist
 
     if (!mudconf.have_comsys)
     {
-        raw_notify(executor, (UTF8 *)"Comsys disabled.");
+        raw_notify(executor, T("Comsys disabled."));
         return;
     }
 
@@ -2466,7 +2466,7 @@ void do_comlist
         bWild = false;
     }
 
-    raw_notify(executor, (UTF8 *)"Alias     Channel            Status   Title");
+    raw_notify(executor, T("Alias     Channel            Status   Title"));
 
     comsys_t *c = get_comsys(executor);
     int i;
@@ -2493,7 +2493,7 @@ void do_comlist
             raw_notify(executor, tprintf("Bad Comsys Alias: %s for Channel: %s", c->alias + i * ALIAS_SIZE, c->channels[i]));
         }
     }
-    raw_notify(executor, (UTF8 *)"-- End of comlist --");
+    raw_notify(executor, T("-- End of comlist --"));
 }
 
 void do_channelnuke(dbref player)
@@ -2531,7 +2531,7 @@ void do_clearcom(dbref executor, dbref caller, dbref enactor, int unused2)
 
     if (!mudconf.have_comsys)
     {
-        raw_notify(executor, (UTF8 *)"Comsys disabled.");
+        raw_notify(executor, T("Comsys disabled."));
         return;
     }
     comsys_t *c = get_comsys(executor);
@@ -2552,14 +2552,14 @@ void do_allcom(dbref executor, dbref caller, dbref enactor, int eval, int key, U
 
     if (!mudconf.have_comsys)
     {
-        raw_notify(executor, (UTF8 *)"Comsys disabled.");
+        raw_notify(executor, T("Comsys disabled."));
         return;
     }
     if (  strcmp((char *)arg1, "who") != 0
        && strcmp((char *)arg1, "on")  != 0
        && strcmp((char *)arg1, "off") != 0)
     {
-        raw_notify(executor, (UTF8 *)"Only options available are: on, off and who.");
+        raw_notify(executor, T("Only options available are: on, off and who."));
         return;
     }
 
@@ -2570,7 +2570,7 @@ void do_allcom(dbref executor, dbref caller, dbref enactor, int eval, int key, U
         do_processcom(executor, c->channels[i], arg1);
         if (strcmp((char *)arg1, "who") == 0)
         {
-            raw_notify(executor, (UTF8 *)"");
+            raw_notify(executor, T(""));
         }
     }
 }
@@ -2607,7 +2607,7 @@ void do_channelwho(dbref executor, dbref caller, dbref enactor, int eval, int ke
 
     if (!mudconf.have_comsys)
     {
-        raw_notify(executor, (UTF8 *)"Comsys disabled.");
+        raw_notify(executor, T("Comsys disabled."));
         return;
     }
 
@@ -2838,7 +2838,7 @@ void do_editchannel
 
     if (!mudconf.have_comsys)
     {
-        raw_notify(executor, (UTF8 *)"Comsys disabled.");
+        raw_notify(executor, T("Comsys disabled."));
         return;
     }
     struct channel *ch = select_channel(arg1);
@@ -2869,11 +2869,11 @@ void do_editchannel
             if (Good_obj(who))
             {
                 ch->charge_who = Owner(who);
-                raw_notify(executor, (UTF8 *)"Set.");
+                raw_notify(executor, T("Set."));
             }
             else
             {
-                raw_notify(executor, (UTF8 *)"Invalid player.");
+                raw_notify(executor, T("Invalid player."));
             }
         }
         break;
@@ -2885,11 +2885,11 @@ void do_editchannel
                && c_charge <= MAX_COST)
             {
                 ch->charge = c_charge;
-                raw_notify(executor, (UTF8 *)"Set.");
+                raw_notify(executor, T("Set."));
             }
             else
             {
-                raw_notify(executor, (UTF8 *)"That is not a reasonable cost.");
+                raw_notify(executor, T("That is not a reasonable cost."));
             }
         }
         break;
@@ -2911,7 +2911,7 @@ void do_editchannel
             }
             else
             {
-                raw_notify(executor, (UTF8 *)"@cpflags: Unknown Flag.");
+                raw_notify(executor, T("@cpflags: Unknown Flag."));
             }
 
             if (access)
@@ -2919,12 +2919,12 @@ void do_editchannel
                 if (add_remove)
                 {
                     ch->type |= access;
-                    raw_notify(executor, (UTF8 *)"@cpflags: Set.");
+                    raw_notify(executor, T("@cpflags: Set."));
                 }
                 else
                 {
                     ch->type &= ~access;
-                    raw_notify(executor, (UTF8 *)"@cpflags: Cleared.");
+                    raw_notify(executor, T("@cpflags: Cleared."));
                 }
             }
         }
@@ -2947,7 +2947,7 @@ void do_editchannel
             }
             else
             {
-                raw_notify(executor, (UTF8 *)"@coflags: Unknown Flag.");
+                raw_notify(executor, T("@coflags: Unknown Flag."));
             }
 
             if (access)
@@ -2955,12 +2955,12 @@ void do_editchannel
                 if (add_remove)
                 {
                     ch->type |= access;
-                    raw_notify(executor, (UTF8 *)"@coflags: Set.");
+                    raw_notify(executor, T("@coflags: Set."));
                 }
                 else
                 {
                     ch->type &= ~access;
-                    raw_notify(executor, (UTF8 *)"@coflags: Cleared.");
+                    raw_notify(executor, T("@coflags: Cleared."));
                 }
             }
         }
@@ -3076,7 +3076,7 @@ void do_cemit
 
     if (!mudconf.have_comsys)
     {
-        raw_notify(executor, (UTF8 *)"Comsys disabled.");
+        raw_notify(executor, T("Comsys disabled."));
         return;
     }
     struct channel *ch = select_channel(chan);
@@ -3118,7 +3118,7 @@ void do_chopen
 
     if (!mudconf.have_comsys)
     {
-        raw_notify(executor, (UTF8 *)"Comsys disabled.");
+        raw_notify(executor, T("Comsys disabled."));
         return;
     }
     if (key == CSET_LIST)
@@ -3127,7 +3127,7 @@ void do_chopen
         return;
     }
 
-    UTF8 *msg = NULL;
+    const UTF8 *msg = NULL;
     struct channel *ch = select_channel(chan);
     if (!ch)
     {
@@ -3201,7 +3201,7 @@ void do_chopen
 
     case CSET_HEADER:
         do_cheader(executor, chan, value);
-        msg = (UTF8 *)"Set.";
+        msg = T("Set.");
         break;
 
     case CSET_LOG:
@@ -3237,25 +3237,25 @@ void do_chboot
     //
     if (!mudconf.have_comsys)
     {
-        raw_notify(executor, (UTF8 *)"Comsys disabled.");
+        raw_notify(executor, T("Comsys disabled."));
         return;
     }
     struct channel *ch = select_channel(channel);
     if (!ch)
     {
-        raw_notify(executor, (UTF8 *)"@cboot: Unknown channel.");
+        raw_notify(executor, T("@cboot: Unknown channel."));
         return;
     }
     struct comuser *user = select_user(ch, executor);
     if (!user)
     {
-        raw_notify(executor, (UTF8 *)"@cboot: You are not on that channel.");
+        raw_notify(executor, T("@cboot: You are not on that channel."));
         return;
     }
     if (  !Controls(executor, ch->charge_who)
        && !Comm_All(executor))
     {
-        raw_notify(executor, (UTF8 *)"@cboot: You can't do that!");
+        raw_notify(executor, T("@cboot: You can't do that!"));
         return;
     }
     dbref thing = match_thing(executor, victim);
@@ -3325,7 +3325,7 @@ void do_cheader(dbref player, UTF8 *channel, UTF8 *header)
     struct channel *ch = select_channel(channel);
     if (!ch)
     {
-        raw_notify(player, (UTF8 *)"That channel does not exist.");
+        raw_notify(player, T("That channel does not exist."));
         return;
     }
     if (  !Controls(player, ch->charge_who)
@@ -3334,7 +3334,7 @@ void do_cheader(dbref player, UTF8 *channel, UTF8 *header)
         raw_notify(player, NOPERM_MESSAGE);
         return;
     }
-    UTF8 *p = RemoveSetOfCharacters(header, (UTF8 *)"\r\n\t");
+    UTF8 *p = RemoveSetOfCharacters(header, T("\r\n\t"));
 
     // Optimize/terminate any ANSI in the string.
     //
@@ -3374,7 +3374,7 @@ void do_chanlist
 
     if (!mudconf.have_comsys)
     {
-        raw_notify(executor, (UTF8 *)"Comsys disabled.");
+        raw_notify(executor, T("Comsys disabled."));
         return;
     }
     if (key & CLIST_FULL)
@@ -3392,11 +3392,11 @@ void do_chanlist
 
     if (key & CLIST_HEADERS)
     {
-        raw_notify(executor, (UTF8 *)"*** Channel       Owner           Header");
+        raw_notify(executor, T("*** Channel       Owner           Header"));
     }
     else
     {
-        raw_notify(executor, (UTF8 *)"*** Channel       Owner           Description");
+        raw_notify(executor, T("*** Channel       Owner           Description"));
     }
 
     bool bWild;
@@ -3466,7 +3466,7 @@ void do_chanlist
                             if (  NOTHING == ch->chan_obj
                                || !*atrstr)
                             {
-                                mux_strncpy(buf, (UTF8 *)"No description.", MBUF_SIZE-1);
+                                mux_strncpy(buf, T("No description."), MBUF_SIZE-1);
                             }
                             else
                             {
@@ -3494,7 +3494,7 @@ void do_chanlist
     }
     free_mbuf(temp);
     free_mbuf(buf);
-    raw_notify(executor, (UTF8 *)"-- End of list of Channels --");
+    raw_notify(executor, T("-- End of list of Channels --"));
 }
 
 // Returns a player's comtitle for a named channel.
@@ -3510,7 +3510,7 @@ FUNCTION(fun_comtitle)
 
     if (!mudconf.have_comsys)
     {
-        safe_str((UTF8 *)"#-1 COMSYS DISABLED", buff, bufc);
+        safe_str(T("#-1 COMSYS DISABLED"), buff, bufc);
         return;
     }
 
@@ -3522,7 +3522,7 @@ FUNCTION(fun_comtitle)
         victim = match_result();
         if (!Good_obj(victim))
         {
-            safe_str((UTF8 *)"#-1 OBJECT DOES NOT EXIST", buff, bufc);
+            safe_str(T("#-1 OBJECT DOES NOT EXIST"), buff, bufc);
             return;
         }
     }
@@ -3530,7 +3530,7 @@ FUNCTION(fun_comtitle)
     struct channel *chn = select_channel(fargs[1]);
     if (!chn)
     {
-        safe_str((UTF8 *)"#-1 CHANNEL DOES NOT EXIST", buff, bufc);
+        safe_str(T("#-1 CHANNEL DOES NOT EXIST"), buff, bufc);
         return;
     }
 
@@ -3579,7 +3579,7 @@ FUNCTION(fun_comtitle)
 #endif
         }
     }
-    safe_str((UTF8 *)"#-1 OBJECT NOT ON THAT CHANNEL", buff, bufc);
+    safe_str(T("#-1 OBJECT NOT ON THAT CHANNEL"), buff, bufc);
 }
 
 // Returns a player's comsys alias for a named channel.
@@ -3595,7 +3595,7 @@ FUNCTION(fun_comalias)
 
     if (!mudconf.have_comsys)
     {
-        safe_str((UTF8 *)"#-1 COMSYS DISABLED", buff, bufc);
+        safe_str(T("#-1 COMSYS DISABLED"), buff, bufc);
         return;
     }
 
@@ -3607,7 +3607,7 @@ FUNCTION(fun_comalias)
         victim = match_result();
         if (!Good_obj(victim))
         {
-            safe_str((UTF8 *)"#-1 OBJECT DOES NOT EXIST", buff, bufc);
+            safe_str(T("#-1 OBJECT DOES NOT EXIST"), buff, bufc);
             return;
         }
     }
@@ -3615,7 +3615,7 @@ FUNCTION(fun_comalias)
     struct channel *chn = select_channel(fargs[1]);
     if (!chn)
     {
-        safe_str((UTF8 *)"#-1 CHANNEL DOES NOT EXIST", buff, bufc);
+        safe_str(T("#-1 CHANNEL DOES NOT EXIST"), buff, bufc);
         return;
     }
 
@@ -3640,7 +3640,7 @@ FUNCTION(fun_comalias)
             return;
         }
     }
-    safe_str((UTF8 *)"#-1 OBJECT NOT ON THAT CHANNEL", buff, bufc);
+    safe_str(T("#-1 OBJECT NOT ON THAT CHANNEL"), buff, bufc);
 }
 
 // Returns a list of channels.
@@ -3655,7 +3655,7 @@ FUNCTION(fun_channels)
 
     if (!mudconf.have_comsys)
     {
-        safe_str((UTF8 *)"#-1 COMSYS DISABLED", buff, bufc);
+        safe_str(T("#-1 COMSYS DISABLED"), buff, bufc);
         return;
     }
 
@@ -3664,9 +3664,9 @@ FUNCTION(fun_channels)
     {
         who = lookup_player(executor, fargs[0], true);
         if (  who == NOTHING
-           && mux_stricmp(fargs[0], (UTF8 *)"all") != 0)
+           && mux_stricmp(fargs[0], T("all")) != 0)
         {
-            safe_str((UTF8 *)"#-1 PLAYER NOT FOUND", buff, bufc);
+            safe_str(T("#-1 PLAYER NOT FOUND"), buff, bufc);
             return;
         }
     }

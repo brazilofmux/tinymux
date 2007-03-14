@@ -31,7 +31,7 @@ static bool fh_any(dbref target, dbref player, FLAG flag, int fflags, bool reset
        && flag == WIZARD
        && fflags == FLAG_WORD1)
     {
-        notify(player, (UTF8 *)"You cannot make God mortal.");
+        notify(player, T("You cannot make God mortal."));
         return false;
     }
 
@@ -184,7 +184,7 @@ static bool fh_going_bit(dbref target, dbref player, FLAG flag, int fflags, bool
        && reset
        && (Typeof(target) != TYPE_GARBAGE))
     {
-        notify(player, (UTF8 *)"Your object has been spared from destruction.");
+        notify(player, T("Your object has been spared from destruction."));
         return (fh_any(target, player, flag, fflags, reset));
     }
     if (!God(player))
@@ -560,14 +560,14 @@ FLAGNAMEENT gen_flag_names[] =
 
 OBJENT object_types[8] =
 {
-    {(UTF8 *)"ROOM",    'R', CA_PUBLIC, OF_CONTENTS|OF_EXITS|OF_DROPTO|OF_HOME},
-    {(UTF8 *)"THING",   ' ', CA_PUBLIC, OF_CONTENTS|OF_LOCATION|OF_EXITS|OF_HOME|OF_SIBLINGS},
-    {(UTF8 *)"EXIT",    'E', CA_PUBLIC, OF_SIBLINGS},
-    {(UTF8 *)"PLAYER",  'P', CA_PUBLIC, OF_CONTENTS|OF_LOCATION|OF_EXITS|OF_HOME|OF_OWNER|OF_SIBLINGS},
-    {(UTF8 *)"TYPE5",   '+', CA_GOD,    0},
-    {(UTF8 *)"GARBAGE", '-', CA_PUBLIC, OF_CONTENTS|OF_LOCATION|OF_EXITS|OF_HOME|OF_SIBLINGS},
-    {(UTF8 *)"GARBAGE", '#', CA_GOD,    0},
-    {(UTF8 *)"GARBAGE", '=', CA_GOD,    0}
+    {T("ROOM"),    'R', CA_PUBLIC, OF_CONTENTS|OF_EXITS|OF_DROPTO|OF_HOME},
+    {T("THING"),   ' ', CA_PUBLIC, OF_CONTENTS|OF_LOCATION|OF_EXITS|OF_HOME|OF_SIBLINGS},
+    {T("EXIT"),    'E', CA_PUBLIC, OF_SIBLINGS},
+    {T("PLAYER"),  'P', CA_PUBLIC, OF_CONTENTS|OF_LOCATION|OF_EXITS|OF_HOME|OF_OWNER|OF_SIBLINGS},
+    {T("TYPE5"),   '+', CA_GOD,    0},
+    {T("GARBAGE"), '-', CA_PUBLIC, OF_CONTENTS|OF_LOCATION|OF_EXITS|OF_HOME|OF_SIBLINGS},
+    {T("GARBAGE"), '#', CA_GOD,    0},
+    {T("GARBAGE"), '=', CA_GOD,    0}
 };
 
 /* ---------------------------------------------------------------------------
@@ -600,7 +600,7 @@ void display_flagtab(dbref player)
     FLAGNAMEENT *fp;
 
     bp = buf = alloc_lbuf("display_flagtab");
-    safe_str((UTF8 *)"Flags:", buf, &bp);
+    safe_str(T("Flags:"), buf, &bp);
     for (fp = gen_flag_names; fp->flagname; fp++)
     {
         FLAGBITENT *fbe = fp->fbe;
@@ -663,7 +663,7 @@ UTF8 *MakeCanonicalFlagName
     }
 }
 
-static FLAGNAMEENT *find_flag(UTF8 *flagname)
+static FLAGNAMEENT *find_flag(const UTF8 *flagname)
 {
     // Convert flagname to canonical lowercase format.
     //
@@ -728,11 +728,11 @@ void flag_set(dbref target, dbref player, UTF8 *flag, int key)
         {
             if (bNegate)
             {
-                notify(player, (UTF8 *)"You must specify a flag to clear.");
+                notify(player, T("You must specify a flag to clear."));
             }
             else
             {
-                notify(player, (UTF8 *)"You must specify a flag to set.");
+                notify(player, T("You must specify a flag to set."));
             }
         }
         else
@@ -740,7 +740,7 @@ void flag_set(dbref target, dbref player, UTF8 *flag, int key)
             FLAGNAMEENT *fp = find_flag(flag);
             if (!fp)
             {
-                notify(player, (UTF8 *)"I do not understand that flag.");
+                notify(player, T("I do not understand that flag."));
             }
             else
             {
@@ -760,7 +760,7 @@ void flag_set(dbref target, dbref player, UTF8 *flag, int key)
                 }
                 else if (!(key & SET_QUIET) && !Quiet(player))
                 {
-                    notify(player, (bClearSet ? (UTF8 *)"Cleared." : (UTF8 *)"Set."));
+                    notify(player, (bClearSet ? T("Cleared.") : T("Set.")));
                 }
             }
         }
@@ -782,7 +782,7 @@ UTF8 *decode_flags(dbref player, FLAGSET *fs)
 
     if (!Good_obj(player))
     {
-        mux_strncpy(buf, (UTF8 *)"#-2 ERROR", SBUF_SIZE-1);
+        mux_strncpy(buf, T("#-2 ERROR"), SBUF_SIZE-1);
         return buf;
     }
     int flagtype = fs->word[FLAG_WORD1] & TYPE_MASK;
@@ -850,7 +850,7 @@ UTF8 *decode_flags(dbref player, FLAGSET *fs)
  * * has_flag: does object have flag visible to player?
  */
 
-bool has_flag(dbref player, dbref it, UTF8 *flagname)
+bool has_flag(dbref player, dbref it, const UTF8 *flagname)
 {
     FLAGNAMEENT *fp = find_flag(flagname);
     if (!fp)
@@ -906,9 +906,9 @@ UTF8 *flag_description(dbref player, dbref target)
 
     // Store the header strings and object type.
     //
-    safe_mb_str((UTF8 *)"Type: ", buff, &bp);
+    safe_mb_str(T("Type: "), buff, &bp);
     safe_mb_str(object_types[otype].name, buff, &bp);
-    safe_mb_str((UTF8 *)" Flags:", buff, &bp);
+    safe_mb_str(T(" Flags:"), buff, &bp);
     if (object_types[otype].perm != CA_PUBLIC)
     {
         *bp = '\0';
@@ -985,7 +985,7 @@ UTF8 *unparse_object_numonly(dbref target)
             buf, LBUF_SIZE, &vw);
         UTF8 *bp = buf + nLen;
 
-        safe_str((UTF8 *)"(#", buf, &bp);
+        safe_str(T("(#"), buf, &bp);
         safe_ltoa(target, buf, &bp);
         safe_chr(')', buf, &bp);
         *bp = '\0';
@@ -1109,7 +1109,7 @@ UTF8 *unparse_object(dbref player, dbref target, bool obey_myopic, bool bAddColo
             //
             UTF8 *fp = decode_flags(player, &(db[target].fs));
 
-            safe_str((UTF8 *)"(#", buf, &bp);
+            safe_str(T("(#"), buf, &bp);
             safe_ltoa(target, buf, &bp);
             safe_str(fp, buf, &bp);
             safe_chr(')', buf, &bp);
@@ -1134,7 +1134,7 @@ CF_HAND(cf_flag_access)
 
     MUX_STRTOK_STATE tts;
     mux_strtok_src(&tts, str);
-    mux_strtok_ctl(&tts, (UTF8 *)" \t=,");
+    mux_strtok_ctl(&tts, T(" \t=,"));
     UTF8 *fstr = mux_strtok_parse(&tts);
     UTF8 *permstr = mux_strtok_parse(&tts);
 
@@ -1146,7 +1146,7 @@ CF_HAND(cf_flag_access)
     FLAGNAMEENT *fp;
     if ((fp = find_flag(fstr)) == NULL)
     {
-        cf_log_notfound(player, cmd, (UTF8 *)"No such flag", fstr);
+        cf_log_notfound(player, cmd, T("No such flag"), fstr);
         return -1;
     }
     FLAGBITENT *fbe = fp->fbe;
@@ -1161,7 +1161,7 @@ CF_HAND(cf_flag_access)
        && (fbe->handler != fh_privileged))
     {
         STARTLOG(LOG_CONFIGMODS, "CFG", "PERM");
-        log_text((UTF8 *)"Cannot change access for flag: ");
+        log_text(T("Cannot change access for flag: "));
         log_text(fp->flagname);
         ENDLOG;
         return -1;
@@ -1197,7 +1197,7 @@ CF_HAND(cf_flag_access)
     }
     else
     {
-        cf_log_notfound(player, cmd, (UTF8 *)"Flag access", permstr);
+        cf_log_notfound(player, cmd, T("Flag access"), permstr);
         return -1;
     }
     return 0;
@@ -1368,8 +1368,8 @@ static bool flag_rename(UTF8 *alias, UTF8 *newname)
             {
                 MEMFREE(flag1->flagname);
             }
+            mux_strupr(pNewName);
             flag1->flagname = StringCloneLen(pNewName, nNewName);
-            mux_strupr(flag1->flagname);
 
             free_sbuf(pAlias);
             free_sbuf(pNewName);
@@ -1391,7 +1391,7 @@ void do_flag(dbref executor, dbref caller, dbref enactor, int key, int nargs,
     {
         if (nargs == 2)
         {
-            notify(executor, (UTF8 *)"Extra argument ignored.");
+            notify(executor, T("Extra argument ignored."));
         }
         int nAlias;
         bool bValidAlias;
@@ -1412,7 +1412,7 @@ void do_flag(dbref executor, dbref caller, dbref enactor, int key, int nargs,
                 }
                 else
                 {
-                    notify(executor, (UTF8 *)"Error: You can't remove the present flag name from the hash table.");
+                    notify(executor, T("Error: You can't remove the present flag name from the hash table."));
                 }
             }
         }
@@ -1421,16 +1421,16 @@ void do_flag(dbref executor, dbref caller, dbref enactor, int key, int nargs,
     {
         if (nargs < 2)
         {
-            notify(executor, (UTF8 *)"You must specify a flag and a name.");
+            notify(executor, T("You must specify a flag and a name."));
             return;
         }
         if (flag_rename(flag1, flag2))
         {
-            notify(executor, (UTF8 *)"Flag name changed.");
+            notify(executor, T("Flag name changed."));
         }
         else
         {
-            notify(executor, (UTF8 *)"Error: Bad flagname given or flag not found.");
+            notify(executor, T("Error: Bad flagname given or flag not found."));
         }
     }
 }
@@ -1449,7 +1449,7 @@ CF_HAND(cf_flag_name)
 
     MUX_STRTOK_STATE tts;
     mux_strtok_src(&tts, str);
-    mux_strtok_ctl(&tts, (UTF8 *)" \t=,");
+    mux_strtok_ctl(&tts, T(" \t=,"));
     UTF8 *flagstr = mux_strtok_parse(&tts);
     UTF8 *namestr = mux_strtok_parse(&tts);
 

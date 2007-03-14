@@ -45,190 +45,190 @@ struct atrcount
 //
 ATTR AttrTable[] =
 {
-    {(UTF8 *)"Aahear",      A_AAHEAR,   AF_ODARK | AF_NOPROG},
-    {(UTF8 *)"Aclone",      A_ACLONE,   AF_ODARK | AF_NOPROG},
-    {(UTF8 *)"Aconnect",    A_ACONNECT, AF_ODARK | AF_NOPROG},
-    {(UTF8 *)"Adesc",       A_ADESC,    AF_ODARK | AF_NOPROG},
-    {(UTF8 *)"Adfail",      A_ADFAIL,   AF_ODARK | AF_NOPROG},
-    {(UTF8 *)"Adisconnect", A_ADISCONNECT, AF_ODARK | AF_NOPROG},
-    {(UTF8 *)"Adrop",       A_ADROP,    AF_ODARK | AF_NOPROG},
-    {(UTF8 *)"Aefail",      A_AEFAIL,   AF_ODARK | AF_NOPROG},
-    {(UTF8 *)"Aenter",      A_AENTER,   AF_ODARK | AF_NOPROG},
-    {(UTF8 *)"Afail",       A_AFAIL,    AF_ODARK | AF_NOPROG},
-    {(UTF8 *)"Agfail",      A_AGFAIL,   AF_ODARK | AF_NOPROG},
-    {(UTF8 *)"Ahear",       A_AHEAR,    AF_ODARK | AF_NOPROG},
-    {(UTF8 *)"Akill",       A_AKILL,    AF_ODARK | AF_NOPROG},
-    {(UTF8 *)"Aleave",      A_ALEAVE,   AF_ODARK | AF_NOPROG},
-    {(UTF8 *)"Alfail",      A_ALFAIL,   AF_ODARK | AF_NOPROG},
-    {(UTF8 *)"Alias",       A_ALIAS,    AF_NOPROG | AF_NOCMD | AF_NOCLONE | AF_PRIVATE | AF_CONST | AF_VISUAL},
-    {(UTF8 *)"Allowance",   A_ALLOWANCE, AF_MDARK | AF_NOPROG | AF_WIZARD},
-    {(UTF8 *)"Amail",       A_AMAIL,    AF_ODARK | AF_NOPROG},
-    {(UTF8 *)"Amhear",      A_AMHEAR,   AF_ODARK | AF_NOPROG},
-    {(UTF8 *)"Amove",       A_AMOVE,    AF_ODARK | AF_NOPROG},
-    {(UTF8 *)"Apay",        A_APAY,     AF_ODARK | AF_NOPROG},
-    {(UTF8 *)"Arfail",      A_ARFAIL,   AF_ODARK | AF_NOPROG},
-    {(UTF8 *)"Asucc",       A_ASUCC,    AF_ODARK | AF_NOPROG},
-    {(UTF8 *)"Atfail",      A_ATFAIL,   AF_ODARK | AF_NOPROG},
-    {(UTF8 *)"Atport",      A_ATPORT,   AF_ODARK | AF_NOPROG},
-    {(UTF8 *)"Atofail",     A_ATOFAIL,  AF_ODARK | AF_NOPROG},
-    {(UTF8 *)"Aufail",      A_AUFAIL,   AF_ODARK | AF_NOPROG},
-    {(UTF8 *)"Ause",        A_AUSE,     AF_ODARK | AF_NOPROG},
-    {(UTF8 *)"Away",        A_AWAY,     AF_ODARK | AF_NOPROG},
-    {(UTF8 *)"Charges",     A_CHARGES,  AF_ODARK | AF_NOPROG},
-    {(UTF8 *)"CmdCheck",    A_CMDCHECK, AF_DARK | AF_NOPROG | AF_NOCMD | AF_NOCLONE | AF_PRIVATE | AF_CONST},
-    {(UTF8 *)"Comjoin",     A_COMJOIN,  AF_ODARK | AF_NOPROG},
-    {(UTF8 *)"Comleave",    A_COMLEAVE, AF_ODARK | AF_NOPROG},
-    {(UTF8 *)"Comment",     A_COMMENT,  AF_MDARK | AF_WIZARD},
-    {(UTF8 *)"Comoff",      A_COMOFF,   AF_ODARK | AF_NOPROG},
-    {(UTF8 *)"Comon",       A_COMON,    AF_ODARK | AF_NOPROG},
-    {(UTF8 *)"ConFormat",   A_CONFORMAT, AF_ODARK | AF_NOPROG},
-    {(UTF8 *)"Cost",        A_COST,     AF_ODARK | AF_NOPROG},
-    {(UTF8 *)"Created",     A_CREATED,  AF_ODARK | AF_NOPROG | AF_NOCMD | AF_NOCLONE | AF_GOD},
-    {(UTF8 *)"Daily",       A_DAILY,    AF_ODARK | AF_NOPROG},
-    {(UTF8 *)"Desc",        A_DESC,     AF_VISUAL | AF_NOPROG},
-    {(UTF8 *)"DefaultLock", A_LOCK,     AF_ODARK | AF_NOPROG | AF_NOCMD | AF_IS_LOCK},
-    {(UTF8 *)"DescFormat",  A_DESCFORMAT, AF_ODARK | AF_NOPROG},
-    {(UTF8 *)"Destroyer",   A_DESTROYER, AF_MDARK | AF_WIZARD | AF_NOPROG},
-    {(UTF8 *)"Dfail",       A_DFAIL,    AF_ODARK | AF_NOPROG},
-    {(UTF8 *)"Drop",        A_DROP,     AF_ODARK | AF_NOPROG},
-    {(UTF8 *)"DropLock",    A_LDROP,    AF_ODARK | AF_NOPROG | AF_NOCMD | AF_IS_LOCK},
-    {(UTF8 *)"Ealias",      A_EALIAS,   AF_ODARK | AF_NOPROG},
-    {(UTF8 *)"Efail",       A_EFAIL,    AF_ODARK | AF_NOPROG},
-    {(UTF8 *)"Enter",       A_ENTER,    AF_ODARK | AF_NOPROG},
-    {(UTF8 *)"EnterLock",   A_LENTER,   AF_ODARK | AF_NOPROG | AF_NOCMD | AF_IS_LOCK},
-    {(UTF8 *)"ExitFormat",  A_EXITFORMAT, AF_ODARK | AF_NOPROG},
-    {(UTF8 *)"ExitTo",      A_EXITVARDEST, AF_ODARK | AF_NOPROG | AF_WIZARD},
-    {(UTF8 *)"Fail",        A_FAIL,     AF_ODARK | AF_NOPROG},
-    {(UTF8 *)"Filter",      A_FILTER,   AF_ODARK | AF_NOPROG},
-    {(UTF8 *)"Forwardlist", A_FORWARDLIST, AF_ODARK | AF_NOPROG | AF_NOCMD | AF_CONST},
-    {(UTF8 *)"GetFromLock", A_LGET,     AF_ODARK | AF_NOPROG | AF_NOCMD | AF_IS_LOCK},
-    {(UTF8 *)"Gfail",       A_GFAIL,    AF_ODARK | AF_NOPROG},
-    {(UTF8 *)"GiveLock",    A_LGIVE,    AF_ODARK | AF_NOPROG | AF_NOCMD | AF_IS_LOCK},
-    {(UTF8 *)"Idesc",       A_IDESC,    AF_ODARK | AF_NOPROG},
-    {(UTF8 *)"Idle",        A_IDLE,     AF_ODARK | AF_NOPROG},
-    {(UTF8 *)"IdleTimeout", A_IDLETMOUT, AF_ODARK | AF_NOPROG},
-    {(UTF8 *)"Infilter",    A_INFILTER, AF_ODARK | AF_NOPROG},
-    {(UTF8 *)"Inprefix",    A_INPREFIX, AF_ODARK | AF_NOPROG},
-    {(UTF8 *)"Kill",        A_KILL,     AF_ODARK | AF_NOPROG},
-    {(UTF8 *)"Lalias",      A_LALIAS,   AF_ODARK | AF_NOPROG},
-    {(UTF8 *)"Last",        A_LAST,     AF_WIZARD | AF_NOCMD | AF_NOPROG | AF_NOCLONE},
-    {(UTF8 *)"Lastpage",    A_LASTPAGE, AF_INTERNAL | AF_NOCMD | AF_NOPROG | AF_GOD | AF_PRIVATE},
-    {(UTF8 *)"Lastsite",    A_LASTSITE, AF_ODARK | AF_NOPROG | AF_NOCMD | AF_NOCLONE | AF_GOD},
-    {(UTF8 *)"LastIP",      A_LASTIP,   AF_ODARK | AF_NOPROG | AF_NOCMD | AF_GOD},
-    {(UTF8 *)"Leave",       A_LEAVE,    AF_ODARK | AF_NOPROG},
-    {(UTF8 *)"LeaveLock",   A_LLEAVE,   AF_ODARK | AF_NOPROG | AF_NOCMD | AF_IS_LOCK},
-    {(UTF8 *)"Lfail",       A_LFAIL,    AF_ODARK | AF_NOPROG},
-    {(UTF8 *)"LinkLock",    A_LLINK,    AF_ODARK | AF_NOPROG | AF_NOCMD | AF_IS_LOCK},
-    {(UTF8 *)"Listen",      A_LISTEN,   AF_ODARK | AF_NOPROG},
-    {(UTF8 *)"Logindata",   A_LOGINDATA, AF_MDARK | AF_NOPROG | AF_NOCMD | AF_CONST},
-    {(UTF8 *)"Mailcurf",    A_MAILCURF, AF_MDARK | AF_WIZARD | AF_NOPROG | AF_NOCLONE},
-    {(UTF8 *)"Mailflags",   A_MAILFLAGS, AF_MDARK | AF_WIZARD | AF_NOPROG | AF_NOCLONE},
-    {(UTF8 *)"Mailfolders", A_MAILFOLDERS, AF_MDARK | AF_WIZARD | AF_NOPROG | AF_NOCLONE},
-    {(UTF8 *)"MailLock",    A_LMAIL,    AF_ODARK | AF_NOPROG | AF_NOCMD | AF_IS_LOCK},
-    {(UTF8 *)"Mailmsg",     A_MAILMSG,  AF_DARK | AF_NOPROG | AF_NOCMD | AF_INTERNAL},
-    {(UTF8 *)"Mailsub",     A_MAILSUB,  AF_DARK | AF_NOPROG | AF_NOCMD | AF_INTERNAL},
-    {(UTF8 *)"Mailsucc",    A_MAIL,     AF_ODARK | AF_NOPROG},
-    {(UTF8 *)"Mailto",      A_MAILTO,   AF_DARK | AF_NOPROG | AF_NOCMD | AF_INTERNAL},
-    {(UTF8 *)"Mfail",       A_MFAIL,    AF_ODARK | AF_NOPROG},
-    {(UTF8 *)"Modified",    A_MODIFIED, AF_ODARK | AF_NOPROG | AF_NOCMD | AF_NOCLONE | AF_GOD},
-    {(UTF8 *)"Moniker",     A_MONIKER,  AF_ODARK | AF_NOPROG | AF_NOCMD | AF_CONST},
-    {(UTF8 *)"Move",        A_MOVE,     AF_ODARK | AF_NOPROG},
-    {(UTF8 *)"Name",        A_NAME,     AF_DARK | AF_NOPROG | AF_NOCMD | AF_INTERNAL},
-    {(UTF8 *)"NameFormat",  A_NAMEFORMAT, AF_ODARK | AF_NOPROG | AF_WIZARD},
-    {(UTF8 *)"Odesc",       A_ODESC,    AF_ODARK | AF_NOPROG},
-    {(UTF8 *)"Odfail",      A_ODFAIL,   AF_ODARK | AF_NOPROG},
-    {(UTF8 *)"Odrop",       A_ODROP,    AF_ODARK | AF_NOPROG},
-    {(UTF8 *)"Oefail",      A_OEFAIL,   AF_ODARK | AF_NOPROG},
-    {(UTF8 *)"Oenter",      A_OENTER,   AF_ODARK | AF_NOPROG},
-    {(UTF8 *)"Ofail",       A_OFAIL,    AF_ODARK | AF_NOPROG},
-    {(UTF8 *)"Ogfail",      A_OGFAIL,   AF_ODARK | AF_NOPROG},
-    {(UTF8 *)"Okill",       A_OKILL,    AF_ODARK | AF_NOPROG},
-    {(UTF8 *)"Oleave",      A_OLEAVE,   AF_ODARK | AF_NOPROG},
-    {(UTF8 *)"Olfail",      A_OLFAIL,   AF_ODARK | AF_NOPROG},
-    {(UTF8 *)"Omove",       A_OMOVE,    AF_ODARK | AF_NOPROG},
-    {(UTF8 *)"Opay",        A_OPAY,     AF_ODARK | AF_NOPROG},
-    {(UTF8 *)"OpenLock",    A_LOPEN,    AF_ODARK | AF_NOPROG | AF_NOCMD | AF_IS_LOCK},
-    {(UTF8 *)"Orfail",      A_ORFAIL,   AF_ODARK | AF_NOPROG},
-    {(UTF8 *)"Osucc",       A_OSUCC,    AF_ODARK | AF_NOPROG},
-    {(UTF8 *)"Otfail",      A_OTFAIL,   AF_ODARK | AF_NOPROG},
-    {(UTF8 *)"Otport",      A_OTPORT,   AF_ODARK | AF_NOPROG},
-    {(UTF8 *)"Otofail",     A_OTOFAIL,  AF_ODARK | AF_NOPROG},
-    {(UTF8 *)"Oufail",      A_OUFAIL,   AF_ODARK | AF_NOPROG},
-    {(UTF8 *)"Ouse",        A_OUSE,     AF_ODARK | AF_NOPROG},
-    {(UTF8 *)"Oxenter",     A_OXENTER,  AF_ODARK | AF_NOPROG},
-    {(UTF8 *)"Oxleave",     A_OXLEAVE,  AF_ODARK | AF_NOPROG},
-    {(UTF8 *)"Oxtport",     A_OXTPORT,  AF_ODARK | AF_NOPROG},
-    {(UTF8 *)"PageLock",    A_LPAGE,    AF_ODARK | AF_NOPROG | AF_NOCMD | AF_IS_LOCK},
-    {(UTF8 *)"ParentLock",  A_LPARENT,  AF_ODARK | AF_NOPROG | AF_NOCMD | AF_IS_LOCK},
-    {(UTF8 *)"Pay",         A_PAY,      AF_ODARK | AF_NOPROG},
-    {(UTF8 *)"Prefix",      A_PREFIX,   AF_ODARK | AF_NOPROG},
-    {(UTF8 *)"ProgCmd",     A_PROGCMD,  AF_DARK | AF_NOPROG | AF_NOCMD | AF_INTERNAL},
-    {(UTF8 *)"QueueMax",    A_QUEUEMAX, AF_MDARK | AF_WIZARD | AF_NOPROG},
-    {(UTF8 *)"Quota",       A_QUOTA,    AF_MDARK | AF_NOPROG | AF_GOD | AF_NOCMD | AF_NOCLONE},
-    {(UTF8 *)"ReceiveLock", A_LRECEIVE, AF_ODARK | AF_NOPROG | AF_NOCMD | AF_IS_LOCK},
-    {(UTF8 *)"Reject",      A_REJECT,   AF_ODARK | AF_NOPROG},
-    {(UTF8 *)"Rfail",       A_RFAIL,    AF_ODARK | AF_NOPROG},
-    {(UTF8 *)"Rquota",      A_RQUOTA,   AF_MDARK | AF_NOPROG | AF_GOD | AF_NOCMD | AF_NOCLONE},
-    {(UTF8 *)"Runout",      A_RUNOUT,   AF_ODARK | AF_NOPROG},
-    {(UTF8 *)"SayString",   A_SAYSTRING, AF_ODARK | AF_NOPROG},
-    {(UTF8 *)"Semaphore",   A_SEMAPHORE, AF_ODARK | AF_NOPROG | AF_WIZARD | AF_NOCMD | AF_NOCLONE},
-    {(UTF8 *)"Sex",         A_SEX,      AF_VISUAL | AF_NOPROG},
-    {(UTF8 *)"Signature",   A_SIGNATURE, AF_ODARK | AF_NOPROG},
-    {(UTF8 *)"SpeechMod",   A_SPEECHMOD, AF_ODARK | AF_NOPROG},
-    {(UTF8 *)"SpeechLock",  A_LSPEECH,  AF_ODARK | AF_NOPROG | AF_NOCMD | AF_IS_LOCK},
-    {(UTF8 *)"Startup",     A_STARTUP,  AF_ODARK | AF_NOPROG},
-    {(UTF8 *)"Succ",        A_SUCC,     AF_ODARK | AF_NOPROG},
-    {(UTF8 *)"TeloutLock",  A_LTELOUT,  AF_ODARK | AF_NOPROG | AF_NOCMD | AF_IS_LOCK},
-    {(UTF8 *)"Tfail",       A_TFAIL,    AF_ODARK | AF_NOPROG},
-    {(UTF8 *)"Timeout",     A_TIMEOUT,  AF_MDARK | AF_NOPROG | AF_WIZARD},
-    {(UTF8 *)"Tport",       A_TPORT,    AF_ODARK | AF_NOPROG},
-    {(UTF8 *)"TportLock",   A_LTPORT,   AF_ODARK | AF_NOPROG | AF_NOCMD | AF_IS_LOCK},
-    {(UTF8 *)"Tofail",      A_TOFAIL,   AF_ODARK | AF_NOPROG},
-    {(UTF8 *)"Ufail",       A_UFAIL,    AF_ODARK | AF_NOPROG},
-    {(UTF8 *)"Use",         A_USE,      AF_ODARK | AF_NOPROG},
-    {(UTF8 *)"UseLock",     A_LUSE,     AF_ODARK | AF_NOPROG | AF_NOCMD | AF_IS_LOCK},
-    {(UTF8 *)"UserLock",    A_LUSER,    AF_ODARK | AF_NOPROG | AF_NOCMD | AF_IS_LOCK},
-    {(UTF8 *)"VA",          A_VA,       AF_ODARK},
-    {(UTF8 *)"VB",          A_VA + 1,   AF_ODARK},
-    {(UTF8 *)"VC",          A_VA + 2,   AF_ODARK},
-    {(UTF8 *)"VD",          A_VA + 3,   AF_ODARK},
-    {(UTF8 *)"VE",          A_VA + 4,   AF_ODARK},
-    {(UTF8 *)"VF",          A_VA + 5,   AF_ODARK},
-    {(UTF8 *)"VG",          A_VA + 6,   AF_ODARK},
-    {(UTF8 *)"VH",          A_VA + 7,   AF_ODARK},
-    {(UTF8 *)"VI",          A_VA + 8,   AF_ODARK},
-    {(UTF8 *)"VJ",          A_VA + 9,   AF_ODARK},
-    {(UTF8 *)"VK",          A_VA + 10,  AF_ODARK},
-    {(UTF8 *)"VL",          A_VA + 11,  AF_ODARK},
-    {(UTF8 *)"VM",          A_VA + 12,  AF_ODARK},
-    {(UTF8 *)"VN",          A_VA + 13,  AF_ODARK},
-    {(UTF8 *)"VO",          A_VA + 14,  AF_ODARK},
-    {(UTF8 *)"VP",          A_VA + 15,  AF_ODARK},
-    {(UTF8 *)"VQ",          A_VA + 16,  AF_ODARK},
-    {(UTF8 *)"VR",          A_VA + 17,  AF_ODARK},
-    {(UTF8 *)"VS",          A_VA + 18,  AF_ODARK},
-    {(UTF8 *)"VT",          A_VA + 19,  AF_ODARK},
-    {(UTF8 *)"VU",          A_VA + 20,  AF_ODARK},
-    {(UTF8 *)"VV",          A_VA + 21,  AF_ODARK},
-    {(UTF8 *)"VW",          A_VA + 22,  AF_ODARK},
-    {(UTF8 *)"VX",          A_VA + 23,  AF_ODARK},
-    {(UTF8 *)"VY",          A_VA + 24,  AF_ODARK},
-    {(UTF8 *)"VZ",          A_VA + 25,  AF_ODARK},
-    {(UTF8 *)"VRML_URL",    A_VRML_URL, AF_ODARK | AF_NOPROG},
-    {(UTF8 *)"HTDesc",      A_HTDESC,   AF_NOPROG},
-    {(UTF8 *)"Reason",      A_REASON,   AF_PRIVATE | AF_MDARK | AF_NOPROG | AF_NOCMD | AF_GOD},
+    {T("Aahear"),      A_AAHEAR,   AF_ODARK | AF_NOPROG},
+    {T("Aclone"),      A_ACLONE,   AF_ODARK | AF_NOPROG},
+    {T("Aconnect"),    A_ACONNECT, AF_ODARK | AF_NOPROG},
+    {T("Adesc"),       A_ADESC,    AF_ODARK | AF_NOPROG},
+    {T("Adfail"),      A_ADFAIL,   AF_ODARK | AF_NOPROG},
+    {T("Adisconnect"), A_ADISCONNECT, AF_ODARK | AF_NOPROG},
+    {T("Adrop"),       A_ADROP,    AF_ODARK | AF_NOPROG},
+    {T("Aefail"),      A_AEFAIL,   AF_ODARK | AF_NOPROG},
+    {T("Aenter"),      A_AENTER,   AF_ODARK | AF_NOPROG},
+    {T("Afail"),       A_AFAIL,    AF_ODARK | AF_NOPROG},
+    {T("Agfail"),      A_AGFAIL,   AF_ODARK | AF_NOPROG},
+    {T("Ahear"),       A_AHEAR,    AF_ODARK | AF_NOPROG},
+    {T("Akill"),       A_AKILL,    AF_ODARK | AF_NOPROG},
+    {T("Aleave"),      A_ALEAVE,   AF_ODARK | AF_NOPROG},
+    {T("Alfail"),      A_ALFAIL,   AF_ODARK | AF_NOPROG},
+    {T("Alias"),       A_ALIAS,    AF_NOPROG | AF_NOCMD | AF_NOCLONE | AF_PRIVATE | AF_CONST | AF_VISUAL},
+    {T("Allowance"),   A_ALLOWANCE, AF_MDARK | AF_NOPROG | AF_WIZARD},
+    {T("Amail"),       A_AMAIL,    AF_ODARK | AF_NOPROG},
+    {T("Amhear"),      A_AMHEAR,   AF_ODARK | AF_NOPROG},
+    {T("Amove"),       A_AMOVE,    AF_ODARK | AF_NOPROG},
+    {T("Apay"),        A_APAY,     AF_ODARK | AF_NOPROG},
+    {T("Arfail"),      A_ARFAIL,   AF_ODARK | AF_NOPROG},
+    {T("Asucc"),       A_ASUCC,    AF_ODARK | AF_NOPROG},
+    {T("Atfail"),      A_ATFAIL,   AF_ODARK | AF_NOPROG},
+    {T("Atport"),      A_ATPORT,   AF_ODARK | AF_NOPROG},
+    {T("Atofail"),     A_ATOFAIL,  AF_ODARK | AF_NOPROG},
+    {T("Aufail"),      A_AUFAIL,   AF_ODARK | AF_NOPROG},
+    {T("Ause"),        A_AUSE,     AF_ODARK | AF_NOPROG},
+    {T("Away"),        A_AWAY,     AF_ODARK | AF_NOPROG},
+    {T("Charges"),     A_CHARGES,  AF_ODARK | AF_NOPROG},
+    {T("CmdCheck"),    A_CMDCHECK, AF_DARK | AF_NOPROG | AF_NOCMD | AF_NOCLONE | AF_PRIVATE | AF_CONST},
+    {T("Comjoin"),     A_COMJOIN,  AF_ODARK | AF_NOPROG},
+    {T("Comleave"),    A_COMLEAVE, AF_ODARK | AF_NOPROG},
+    {T("Comment"),     A_COMMENT,  AF_MDARK | AF_WIZARD},
+    {T("Comoff"),      A_COMOFF,   AF_ODARK | AF_NOPROG},
+    {T("Comon"),       A_COMON,    AF_ODARK | AF_NOPROG},
+    {T("ConFormat"),   A_CONFORMAT, AF_ODARK | AF_NOPROG},
+    {T("Cost"),        A_COST,     AF_ODARK | AF_NOPROG},
+    {T("Created"),     A_CREATED,  AF_ODARK | AF_NOPROG | AF_NOCMD | AF_NOCLONE | AF_GOD},
+    {T("Daily"),       A_DAILY,    AF_ODARK | AF_NOPROG},
+    {T("Desc"),        A_DESC,     AF_VISUAL | AF_NOPROG},
+    {T("DefaultLock"), A_LOCK,     AF_ODARK | AF_NOPROG | AF_NOCMD | AF_IS_LOCK},
+    {T("DescFormat"),  A_DESCFORMAT, AF_ODARK | AF_NOPROG},
+    {T("Destroyer"),   A_DESTROYER, AF_MDARK | AF_WIZARD | AF_NOPROG},
+    {T("Dfail"),       A_DFAIL,    AF_ODARK | AF_NOPROG},
+    {T("Drop"),        A_DROP,     AF_ODARK | AF_NOPROG},
+    {T("DropLock"),    A_LDROP,    AF_ODARK | AF_NOPROG | AF_NOCMD | AF_IS_LOCK},
+    {T("Ealias"),      A_EALIAS,   AF_ODARK | AF_NOPROG},
+    {T("Efail"),       A_EFAIL,    AF_ODARK | AF_NOPROG},
+    {T("Enter"),       A_ENTER,    AF_ODARK | AF_NOPROG},
+    {T("EnterLock"),   A_LENTER,   AF_ODARK | AF_NOPROG | AF_NOCMD | AF_IS_LOCK},
+    {T("ExitFormat"),  A_EXITFORMAT, AF_ODARK | AF_NOPROG},
+    {T("ExitTo"),      A_EXITVARDEST, AF_ODARK | AF_NOPROG | AF_WIZARD},
+    {T("Fail"),        A_FAIL,     AF_ODARK | AF_NOPROG},
+    {T("Filter"),      A_FILTER,   AF_ODARK | AF_NOPROG},
+    {T("Forwardlist"), A_FORWARDLIST, AF_ODARK | AF_NOPROG | AF_NOCMD | AF_CONST},
+    {T("GetFromLock"), A_LGET,     AF_ODARK | AF_NOPROG | AF_NOCMD | AF_IS_LOCK},
+    {T("Gfail"),       A_GFAIL,    AF_ODARK | AF_NOPROG},
+    {T("GiveLock"),    A_LGIVE,    AF_ODARK | AF_NOPROG | AF_NOCMD | AF_IS_LOCK},
+    {T("Idesc"),       A_IDESC,    AF_ODARK | AF_NOPROG},
+    {T("Idle"),        A_IDLE,     AF_ODARK | AF_NOPROG},
+    {T("IdleTimeout"), A_IDLETMOUT, AF_ODARK | AF_NOPROG},
+    {T("Infilter"),    A_INFILTER, AF_ODARK | AF_NOPROG},
+    {T("Inprefix"),    A_INPREFIX, AF_ODARK | AF_NOPROG},
+    {T("Kill"),        A_KILL,     AF_ODARK | AF_NOPROG},
+    {T("Lalias"),      A_LALIAS,   AF_ODARK | AF_NOPROG},
+    {T("Last"),        A_LAST,     AF_WIZARD | AF_NOCMD | AF_NOPROG | AF_NOCLONE},
+    {T("Lastpage"),    A_LASTPAGE, AF_INTERNAL | AF_NOCMD | AF_NOPROG | AF_GOD | AF_PRIVATE},
+    {T("Lastsite"),    A_LASTSITE, AF_ODARK | AF_NOPROG | AF_NOCMD | AF_NOCLONE | AF_GOD},
+    {T("LastIP"),      A_LASTIP,   AF_ODARK | AF_NOPROG | AF_NOCMD | AF_GOD},
+    {T("Leave"),       A_LEAVE,    AF_ODARK | AF_NOPROG},
+    {T("LeaveLock"),   A_LLEAVE,   AF_ODARK | AF_NOPROG | AF_NOCMD | AF_IS_LOCK},
+    {T("Lfail"),       A_LFAIL,    AF_ODARK | AF_NOPROG},
+    {T("LinkLock"),    A_LLINK,    AF_ODARK | AF_NOPROG | AF_NOCMD | AF_IS_LOCK},
+    {T("Listen"),      A_LISTEN,   AF_ODARK | AF_NOPROG},
+    {T("Logindata"),   A_LOGINDATA, AF_MDARK | AF_NOPROG | AF_NOCMD | AF_CONST},
+    {T("Mailcurf"),    A_MAILCURF, AF_MDARK | AF_WIZARD | AF_NOPROG | AF_NOCLONE},
+    {T("Mailflags"),   A_MAILFLAGS, AF_MDARK | AF_WIZARD | AF_NOPROG | AF_NOCLONE},
+    {T("Mailfolders"), A_MAILFOLDERS, AF_MDARK | AF_WIZARD | AF_NOPROG | AF_NOCLONE},
+    {T("MailLock"),    A_LMAIL,    AF_ODARK | AF_NOPROG | AF_NOCMD | AF_IS_LOCK},
+    {T("Mailmsg"),     A_MAILMSG,  AF_DARK | AF_NOPROG | AF_NOCMD | AF_INTERNAL},
+    {T("Mailsub"),     A_MAILSUB,  AF_DARK | AF_NOPROG | AF_NOCMD | AF_INTERNAL},
+    {T("Mailsucc"),    A_MAIL,     AF_ODARK | AF_NOPROG},
+    {T("Mailto"),      A_MAILTO,   AF_DARK | AF_NOPROG | AF_NOCMD | AF_INTERNAL},
+    {T("Mfail"),       A_MFAIL,    AF_ODARK | AF_NOPROG},
+    {T("Modified"),    A_MODIFIED, AF_ODARK | AF_NOPROG | AF_NOCMD | AF_NOCLONE | AF_GOD},
+    {T("Moniker"),     A_MONIKER,  AF_ODARK | AF_NOPROG | AF_NOCMD | AF_CONST},
+    {T("Move"),        A_MOVE,     AF_ODARK | AF_NOPROG},
+    {T("Name"),        A_NAME,     AF_DARK | AF_NOPROG | AF_NOCMD | AF_INTERNAL},
+    {T("NameFormat"),  A_NAMEFORMAT, AF_ODARK | AF_NOPROG | AF_WIZARD},
+    {T("Odesc"),       A_ODESC,    AF_ODARK | AF_NOPROG},
+    {T("Odfail"),      A_ODFAIL,   AF_ODARK | AF_NOPROG},
+    {T("Odrop"),       A_ODROP,    AF_ODARK | AF_NOPROG},
+    {T("Oefail"),      A_OEFAIL,   AF_ODARK | AF_NOPROG},
+    {T("Oenter"),      A_OENTER,   AF_ODARK | AF_NOPROG},
+    {T("Ofail"),       A_OFAIL,    AF_ODARK | AF_NOPROG},
+    {T("Ogfail"),      A_OGFAIL,   AF_ODARK | AF_NOPROG},
+    {T("Okill"),       A_OKILL,    AF_ODARK | AF_NOPROG},
+    {T("Oleave"),      A_OLEAVE,   AF_ODARK | AF_NOPROG},
+    {T("Olfail"),      A_OLFAIL,   AF_ODARK | AF_NOPROG},
+    {T("Omove"),       A_OMOVE,    AF_ODARK | AF_NOPROG},
+    {T("Opay"),        A_OPAY,     AF_ODARK | AF_NOPROG},
+    {T("OpenLock"),    A_LOPEN,    AF_ODARK | AF_NOPROG | AF_NOCMD | AF_IS_LOCK},
+    {T("Orfail"),      A_ORFAIL,   AF_ODARK | AF_NOPROG},
+    {T("Osucc"),       A_OSUCC,    AF_ODARK | AF_NOPROG},
+    {T("Otfail"),      A_OTFAIL,   AF_ODARK | AF_NOPROG},
+    {T("Otport"),      A_OTPORT,   AF_ODARK | AF_NOPROG},
+    {T("Otofail"),     A_OTOFAIL,  AF_ODARK | AF_NOPROG},
+    {T("Oufail"),      A_OUFAIL,   AF_ODARK | AF_NOPROG},
+    {T("Ouse"),        A_OUSE,     AF_ODARK | AF_NOPROG},
+    {T("Oxenter"),     A_OXENTER,  AF_ODARK | AF_NOPROG},
+    {T("Oxleave"),     A_OXLEAVE,  AF_ODARK | AF_NOPROG},
+    {T("Oxtport"),     A_OXTPORT,  AF_ODARK | AF_NOPROG},
+    {T("PageLock"),    A_LPAGE,    AF_ODARK | AF_NOPROG | AF_NOCMD | AF_IS_LOCK},
+    {T("ParentLock"),  A_LPARENT,  AF_ODARK | AF_NOPROG | AF_NOCMD | AF_IS_LOCK},
+    {T("Pay"),         A_PAY,      AF_ODARK | AF_NOPROG},
+    {T("Prefix"),      A_PREFIX,   AF_ODARK | AF_NOPROG},
+    {T("ProgCmd"),     A_PROGCMD,  AF_DARK | AF_NOPROG | AF_NOCMD | AF_INTERNAL},
+    {T("QueueMax"),    A_QUEUEMAX, AF_MDARK | AF_WIZARD | AF_NOPROG},
+    {T("Quota"),       A_QUOTA,    AF_MDARK | AF_NOPROG | AF_GOD | AF_NOCMD | AF_NOCLONE},
+    {T("ReceiveLock"), A_LRECEIVE, AF_ODARK | AF_NOPROG | AF_NOCMD | AF_IS_LOCK},
+    {T("Reject"),      A_REJECT,   AF_ODARK | AF_NOPROG},
+    {T("Rfail"),       A_RFAIL,    AF_ODARK | AF_NOPROG},
+    {T("Rquota"),      A_RQUOTA,   AF_MDARK | AF_NOPROG | AF_GOD | AF_NOCMD | AF_NOCLONE},
+    {T("Runout"),      A_RUNOUT,   AF_ODARK | AF_NOPROG},
+    {T("SayString"),   A_SAYSTRING, AF_ODARK | AF_NOPROG},
+    {T("Semaphore"),   A_SEMAPHORE, AF_ODARK | AF_NOPROG | AF_WIZARD | AF_NOCMD | AF_NOCLONE},
+    {T("Sex"),         A_SEX,      AF_VISUAL | AF_NOPROG},
+    {T("Signature"),   A_SIGNATURE, AF_ODARK | AF_NOPROG},
+    {T("SpeechMod"),   A_SPEECHMOD, AF_ODARK | AF_NOPROG},
+    {T("SpeechLock"),  A_LSPEECH,  AF_ODARK | AF_NOPROG | AF_NOCMD | AF_IS_LOCK},
+    {T("Startup"),     A_STARTUP,  AF_ODARK | AF_NOPROG},
+    {T("Succ"),        A_SUCC,     AF_ODARK | AF_NOPROG},
+    {T("TeloutLock"),  A_LTELOUT,  AF_ODARK | AF_NOPROG | AF_NOCMD | AF_IS_LOCK},
+    {T("Tfail"),       A_TFAIL,    AF_ODARK | AF_NOPROG},
+    {T("Timeout"),     A_TIMEOUT,  AF_MDARK | AF_NOPROG | AF_WIZARD},
+    {T("Tport"),       A_TPORT,    AF_ODARK | AF_NOPROG},
+    {T("TportLock"),   A_LTPORT,   AF_ODARK | AF_NOPROG | AF_NOCMD | AF_IS_LOCK},
+    {T("Tofail"),      A_TOFAIL,   AF_ODARK | AF_NOPROG},
+    {T("Ufail"),       A_UFAIL,    AF_ODARK | AF_NOPROG},
+    {T("Use"),         A_USE,      AF_ODARK | AF_NOPROG},
+    {T("UseLock"),     A_LUSE,     AF_ODARK | AF_NOPROG | AF_NOCMD | AF_IS_LOCK},
+    {T("UserLock"),    A_LUSER,    AF_ODARK | AF_NOPROG | AF_NOCMD | AF_IS_LOCK},
+    {T("VA"),          A_VA,       AF_ODARK},
+    {T("VB"),          A_VA + 1,   AF_ODARK},
+    {T("VC"),          A_VA + 2,   AF_ODARK},
+    {T("VD"),          A_VA + 3,   AF_ODARK},
+    {T("VE"),          A_VA + 4,   AF_ODARK},
+    {T("VF"),          A_VA + 5,   AF_ODARK},
+    {T("VG"),          A_VA + 6,   AF_ODARK},
+    {T("VH"),          A_VA + 7,   AF_ODARK},
+    {T("VI"),          A_VA + 8,   AF_ODARK},
+    {T("VJ"),          A_VA + 9,   AF_ODARK},
+    {T("VK"),          A_VA + 10,  AF_ODARK},
+    {T("VL"),          A_VA + 11,  AF_ODARK},
+    {T("VM"),          A_VA + 12,  AF_ODARK},
+    {T("VN"),          A_VA + 13,  AF_ODARK},
+    {T("VO"),          A_VA + 14,  AF_ODARK},
+    {T("VP"),          A_VA + 15,  AF_ODARK},
+    {T("VQ"),          A_VA + 16,  AF_ODARK},
+    {T("VR"),          A_VA + 17,  AF_ODARK},
+    {T("VS"),          A_VA + 18,  AF_ODARK},
+    {T("VT"),          A_VA + 19,  AF_ODARK},
+    {T("VU"),          A_VA + 20,  AF_ODARK},
+    {T("VV"),          A_VA + 21,  AF_ODARK},
+    {T("VW"),          A_VA + 22,  AF_ODARK},
+    {T("VX"),          A_VA + 23,  AF_ODARK},
+    {T("VY"),          A_VA + 24,  AF_ODARK},
+    {T("VZ"),          A_VA + 25,  AF_ODARK},
+    {T("VRML_URL"),    A_VRML_URL, AF_ODARK | AF_NOPROG},
+    {T("HTDesc"),      A_HTDESC,   AF_NOPROG},
+    {T("Reason"),      A_REASON,   AF_PRIVATE | AF_MDARK | AF_NOPROG | AF_NOCMD | AF_GOD},
 #ifdef GAME_DOOFERMUX
-    {(UTF8 *)"RegInfo",     A_REGINFO,  AF_PRIVATE | AF_MDARK | AF_NOPROG | AF_NOCMD | AF_WIZARD},
+    {T("RegInfo"),     A_REGINFO,  AF_PRIVATE | AF_MDARK | AF_NOPROG | AF_NOCMD | AF_WIZARD},
 #endif // GAME_DOOFERMUX
-    {(UTF8 *)"ConnInfo",    A_CONNINFO, AF_PRIVATE | AF_MDARK | AF_NOPROG | AF_NOCMD | AF_GOD},
+    {T("ConnInfo"),    A_CONNINFO, AF_PRIVATE | AF_MDARK | AF_NOPROG | AF_NOCMD | AF_GOD},
 #ifdef REALITY_LVLS
-    {(UTF8 *)"Rlevel",      A_RLEVEL,   AF_DARK | AF_NOPROG | AF_NOCMD | AF_INTERNAL},
+    {T("Rlevel"),      A_RLEVEL,   AF_DARK | AF_NOPROG | AF_NOCMD | AF_INTERNAL},
 #endif // REALITY_LVLS
 #if defined(FIRANMUX)
-    {(UTF8 *)"Color",       A_COLOR,    AF_ODARK},
-    {(UTF8 *)"Alead",       A_ALEAD,    AF_ODARK | AF_WIZARD},
-    {(UTF8 *)"Lead",        A_LEAD,     AF_ODARK | AF_NOPROG | AF_WIZARD},
-    {(UTF8 *)"Olead",       A_OLEAD,    AF_ODARK | AF_NOPROG | AF_WIZARD},
+    {T("Color"),       A_COLOR,    AF_ODARK},
+    {T("Alead"),       A_ALEAD,    AF_ODARK | AF_WIZARD},
+    {T("Lead"),        A_LEAD,     AF_ODARK | AF_NOPROG | AF_WIZARD},
+    {T("Olead"),       A_OLEAD,    AF_ODARK | AF_NOPROG | AF_WIZARD},
 #endif // FIRANMUX
     {NULL,                  0,          0}
 };
@@ -239,19 +239,19 @@ ATTR AttrTable[] =
 //
 ATTR AttrTableSpecial[] =
 {
-    {(UTF8 *)"*PASSWORD",   A_PASS,     AF_DARK | AF_NOPROG | AF_NOCMD | AF_INTERNAL},
-    {(UTF8 *)"*PRIVILEGES", A_PRIVS,    AF_DARK | AF_NOPROG | AF_NOCMD | AF_INTERNAL},
-    {(UTF8 *)"*MONEY",      A_MONEY,    AF_DARK | AF_NOPROG | AF_NOCMD | AF_INTERNAL},
+    {T("*PASSWORD"),   A_PASS,     AF_DARK | AF_NOPROG | AF_NOCMD | AF_INTERNAL},
+    {T("*PRIVILEGES"), A_PRIVS,    AF_DARK | AF_NOPROG | AF_NOCMD | AF_INTERNAL},
+    {T("*MONEY"),      A_MONEY,    AF_DARK | AF_NOPROG | AF_NOCMD | AF_INTERNAL},
     {NULL,                  0,          0}
 };
 
-UTF8 *aszSpecialDBRefNames[1-NOPERM] =
+const UTF8 *aszSpecialDBRefNames[1-NOPERM] =
 {
-    (UTF8 *)"",
-    (UTF8 *)"*NOTHING*",
-    (UTF8 *)"*AMBIGUOUS*",
-    (UTF8 *)"*HOME*",
-    (UTF8 *)"*NOPERMISSION*"
+    T(""),
+    T("*NOTHING*"),
+    T("*AMBIGUOUS*"),
+    T("*HOME*"),
+    T("*NOPERMISSION*")
 };
 
 /* ---------------------------------------------------------------------------
@@ -830,7 +830,7 @@ void do_attribute
 
     if (NULL == va)
     {
-        notify(executor, (UTF8 *)"No such user-named attribute.");
+        notify(executor, T("No such user-named attribute."));
         return;
     }
 
@@ -848,7 +848,7 @@ void do_attribute
         mux_strupr(value);
         MUX_STRTOK_STATE tts;
         mux_strtok_src(&tts, value);
-        mux_strtok_ctl(&tts, (UTF8 *)" ");
+        mux_strtok_ctl(&tts, T(" "));
         sp = mux_strtok_parse(&tts);
         success = false;
         while (sp != NULL)
@@ -886,7 +886,7 @@ void do_attribute
             sp = mux_strtok_parse(&tts);
         }
         if (success && !Quiet(executor))
-            notify(executor, (UTF8 *)"Attribute access changed.");
+            notify(executor, T("Attribute access changed."));
         break;
 
     case ATTRIB_RENAME:
@@ -906,18 +906,18 @@ void do_attribute
             va2 = atr_str(value);
             if (va2)
             {
-                notify(executor, (UTF8 *)"An attribute with that name already exists.");
+                notify(executor, T("An attribute with that name already exists."));
                 return;
             }
             pName = MakeCanonicalAttributeName(value, &nName, &bValid);
             if (  !bValid
                || vattr_rename_LEN(OldName, nOldName, pName, nName) == NULL)
             {
-                notify(executor, (UTF8 *)"Attribute rename failed.");
+                notify(executor, T("Attribute rename failed."));
             }
             else
             {
-                notify(executor, (UTF8 *)"Attribute renamed.");
+                notify(executor, T("Attribute renamed."));
             }
         }
         break;
@@ -927,7 +927,7 @@ void do_attribute
         // Remove the attribute.
         //
         vattr_delete_LEN(pName, nName);
-        notify(executor, (UTF8 *)"Attribute deleted.");
+        notify(executor, T("Attribute deleted."));
         break;
     }
 }
@@ -1027,18 +1027,18 @@ void do_fixdb
         {
             if (!ValidatePlayerName(arg2))
             {
-                notify(executor, (UTF8 *)"That's not a good name for a player.");
+                notify(executor, T("That's not a good name for a player."));
                 return;
             }
             pValidName = arg2;
             if (lookup_player(NOTHING, pValidName, false) != NOTHING)
             {
-                notify(executor, (UTF8 *)"That name is already in use.");
+                notify(executor, T("That name is already in use."));
                 return;
             }
             STARTLOG(LOG_SECURITY, "SEC", "CNAME");
             log_name(thing),
-            log_text((UTF8 *)" renamed to ");
+            log_text(T(" renamed to "));
             log_text(pValidName);
             ENDLOG;
             if (Suspect(executor))
@@ -1057,7 +1057,7 @@ void do_fixdb
             pValidName = MakeCanonicalObjectName(arg2, &nTmp, &bValid);
             if (!bValid)
             {
-                notify(executor, (UTF8 *)"That is not a reasonable name.");
+                notify(executor, T("That is not a reasonable name."));
                 return;
             }
             s_Name(thing, pValidName);
@@ -2267,7 +2267,7 @@ void atr_set_flags(dbref thing, int atr, dbref flags)
  * get_atr,atr_get_raw, atr_get_str, atr_get: Get an attribute from the database.
  */
 
-int get_atr(UTF8 *name)
+int get_atr(const UTF8 *name)
 {
     ATTR *ap = atr_str(name);
 
@@ -2443,7 +2443,7 @@ UTF8 *atr_pget_real(dbref thing, int atr, dbref *owner, int *flags,
     const UTF8 *file, const int line)
 {
     size_t nLen;
-    UTF8 *buff = pool_alloc_lbuf((UTF8 *)"atr_pget", file, line);
+    UTF8 *buff = pool_alloc_lbuf(T("atr_pget"), file, line);
     return atr_pget_str_LEN(buff, thing, atr, owner, flags, &nLen);
 }
 
@@ -2885,7 +2885,7 @@ void db_make_minimal(void)
 {
     db_free();
     db_grow(1);
-    s_Name(0, (UTF8 *)"Limbo");
+    s_Name(0, T("Limbo"));
     s_Flags(0, FLAG_WORD1, TYPE_ROOM);
     s_Flags(0, FLAG_WORD2, 0);
     s_Flags(0, FLAG_WORD3, 0);
@@ -2903,7 +2903,7 @@ void db_make_minimal(void)
     //
     load_player_names();
     const UTF8 *pmsg;
-    dbref obj = create_player((UTF8 *)"Wizard", (UTF8 *)"potrzebie", NOTHING, false, &pmsg);
+    dbref obj = create_player(T("Wizard"), T("potrzebie"), NOTHING, false, &pmsg);
     s_Flags(obj, FLAG_WORD1, Flags(obj) | WIZARD);
     s_Powers(obj, 0);
     s_Powers2(obj, 0);
@@ -3325,7 +3325,7 @@ static BOOLEXP *dup_bool(BOOLEXP *b)
         r->sub1 = (BOOLEXP *)StringClone((UTF8 *)b->sub1);
         break;
     default:
-        Log.WriteString((UTF8 *)"Bad bool type!" ENDLINE);
+        Log.WriteString(T("Bad bool type!" ENDLINE));
         return TRUE_BOOLEXP;
     }
     return (r);
@@ -3421,7 +3421,7 @@ void dump_restart_db(void)
     DESC *d;
     int version = 3;
 
-    mux_assert(mux_fopen(&f, (UTF8 *)"restart.db", (UTF8 *)"wb"));
+    mux_assert(mux_fopen(&f, T("restart.db"), T("wb")));
     fprintf(f, "+V%d\n", version);
     putref(f, nMainGamePorts);
     for (int i = 0; i < nMainGamePorts; i++)
@@ -3468,7 +3468,7 @@ void dump_restart_db(void)
 void load_restart_db(void)
 {
     FILE *f;
-    if (!mux_fopen(&f, (UTF8 *)"restart.db", (UTF8 *)"rb"))
+    if (!mux_fopen(&f, T("restart.db"), T("rb")))
     {
         mudstate.restarting = false;
         return;
