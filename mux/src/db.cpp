@@ -3513,12 +3513,12 @@ void load_restart_db(void)
     mudstate.start_time.SetSeconds(getref(f));
 
     size_t nBuffer;
-    UTF8 *pBuffer = getstring_noalloc(f, true, &nBuffer);
+    UTF8 *pBuffer = (UTF8 *)getstring_noalloc(f, true, &nBuffer);
     if (version < 3)
     {
         // Convert Latin1 and ANSI to UTF-8 code points.
         //
-        pBuffer = ConvertToUTF8(pBuffer, &nBuffer);
+        pBuffer = ConvertToUTF8((char *)pBuffer, &nBuffer);
     }
     memcpy(mudstate.doing_hdr, pBuffer, nBuffer+1);
 
@@ -3560,11 +3560,11 @@ void load_restart_db(void)
             d->width = getref(f);
 
             size_t nBuffer;
-            UTF8 *temp = getstring_noalloc(f, true, &nBuffer);
+            char *temp = (char *)getstring_noalloc(f, true, &nBuffer);
             if ('\0' != temp[0])
             {
                 d->ttype = alloc_lbuf("set_userstring");
-                memcpy(d->ttype,temp, nBuffer + 1);
+                memcpy(d->ttype, temp, nBuffer + 1);
             }
 
             d->encoding = getref(f);
@@ -3641,7 +3641,7 @@ void load_restart_db(void)
             size_t nBufferUnicode;
             UTF8  *pBufferUnicode;
             size_t nBufferLatin1;
-            UTF8  *pBufferLatin1 = (char *)getstring_noalloc(f, true, &nBufferLatin1);
+            char  *pBufferLatin1 = (char *)getstring_noalloc(f, true, &nBufferLatin1);
             if ('\0' != pBufferUnicode[0])
             {
                 pBufferUnicode = ConvertToUTF8(pBufferLatin1, &nBufferUnicode);
