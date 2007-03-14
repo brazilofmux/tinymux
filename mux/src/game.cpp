@@ -2331,11 +2331,11 @@ static void init_sql(void)
     if ('\0' != mudconf.sql_server[0])
     {
         STARTLOG(LOG_STARTUP,"SQL","CONN");
-        log_text("Connecting: ");
+        log_text((UTF8 *)"Connecting: ");
         log_text(mudconf.sql_database);
-        log_text("@");
+        log_text((UTF8 *)"@");
         log_text(mudconf.sql_server);
-        log_text(" as ");
+        log_text((UTF8 *)" as ");
         log_text(mudconf.sql_user);
         ENDLOG;
 
@@ -2343,18 +2343,19 @@ static void init_sql(void)
 
         if (mush_database)
         {
-           if (mysql_real_connect(mush_database,mudconf.sql_server,
-                      mudconf.sql_user, mudconf.sql_password,
-                      mudconf.sql_database, 0, NULL, 0))
+           if (mysql_real_connect(mush_database,
+                      (char *)mudconf.sql_server, (char *)mudconf.sql_user,
+                      (char *)mudconf.sql_password,
+                      (char *)mudconf.sql_database, 0, NULL, 0))
            {
                STARTLOG(LOG_STARTUP,"SQL","CONN");
-               log_text("Connected to MySQL");
+               log_text((UTF8 *)"Connected to MySQL");
                ENDLOG;
            }
            else
            {
                STARTLOG(LOG_STARTUP,"SQL","CONN");
-               log_text("Unable to connect");
+               log_text((UTF8 *)"Unable to connect");
                ENDLOG;
                mysql_close(mush_database);
                mush_database = NULL;
@@ -2363,7 +2364,7 @@ static void init_sql(void)
         else
         {
            STARTLOG(LOG_STARTUP,"SQL","CONN");
-           log_text("MySQL Library unavailable");
+           log_text((UTF8 *)"MySQL Library unavailable");
            ENDLOG;
         }
     }
@@ -3257,7 +3258,7 @@ int DCL_CDECL main(int argc, char *argv[])
          mysql_close(mush_database);
          mush_database = NULL;
          STARTLOG(LOG_STARTUP,"SQL","DISC");
-         log_text("SQL shut down");
+         log_text((UTF8 *)"SQL shut down");
          ENDLOG;
      }
 #endif // INLINESQL

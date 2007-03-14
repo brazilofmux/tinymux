@@ -6442,7 +6442,7 @@ FUNCTION(fun_sql)
 {
     if (!mush_database)
     {
-        safe_str("#-1 NO DATABASE", buff, bufc);
+        safe_str((UTF8 *)"#-1 NO DATABASE", buff, bufc);
         return;
     }
 
@@ -6476,14 +6476,14 @@ FUNCTION(fun_sql)
     if (mysql_ping(mush_database))
     {
         free_lbuf(curr);
-        safe_str("#-1 SQL UNAVAILABLE", buff, bufc);
+        safe_str((UTF8 *)"#-1 SQL UNAVAILABLE", buff, bufc);
         return;
     }
 
-    if (mysql_real_query(mush_database, cp, strlen((char *)cp)))
+    if (mysql_real_query(mush_database, (char *)cp, strlen((char *)cp)))
     {
         free_lbuf(curr);
-        safe_str("#-1 QUERY ERROR", buff, bufc);
+        safe_str((UTF8 *)"#-1 QUERY ERROR", buff, bufc);
         return;
     }
 
@@ -6506,7 +6506,7 @@ FUNCTION(fun_sql)
             {
                 print_sep(&sepColumn, buff, bufc);
             }
-            safe_str(row[loop], buff, bufc);
+            safe_str((UTF8 *)row[loop], buff, bufc);
         }
         row = mysql_fetch_row(result);
         if (row)
