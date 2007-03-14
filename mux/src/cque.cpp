@@ -633,7 +633,7 @@ void do_notify
         if (  what
            && what[0] != '\0')
         {
-            UTF8 *AttributeName = (UTF8 *)what;
+            UTF8 *AttributeName = what;
             int i = mkattr(executor, AttributeName);
             if (0 < i)
             {

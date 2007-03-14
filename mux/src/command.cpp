@@ -2655,7 +2655,7 @@ static void list_attrtable(dbref player)
     {
         if (See_attr(player, player, ap))
         {
-            ItemToList_AddString(&itl, (UTF8 *)ap->name);
+            ItemToList_AddString(&itl, ap->name);
         }
     }
     ItemToList_Final(&itl);

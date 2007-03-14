@@ -4290,7 +4290,7 @@ bool ItemToList_AddInteger64(ITL *pContext, INT64 i64)
     return true;
 }
 
-bool ItemToList_AddStringLEN(ITL *pContext, size_t nStr, UTF8 *pStr)
+bool ItemToList_AddStringLEN(ITL *pContext, size_t nStr, const UTF8 *pStr)
 {
     size_t nLen = nStr;
     if (  !pContext->bFirst
@@ -4327,9 +4327,9 @@ bool ItemToList_AddStringLEN(ITL *pContext, size_t nStr, UTF8 *pStr)
     return true;
 }
 
-bool ItemToList_AddString(ITL *pContext, UTF8 *pStr)
+bool ItemToList_AddString(ITL *pContext, const UTF8 *pStr)
 {
-    size_t nStr = strlen((char *)pStr);
+    size_t nStr = strlen((const char *)pStr);
     return ItemToList_AddStringLEN(pContext, nStr, pStr);
 }
 

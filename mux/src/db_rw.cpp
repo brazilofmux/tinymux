@@ -126,7 +126,7 @@ static BOOLEXP *getboolexp1(FILE *f)
         }
         else if (mux_AttrNameInitialSet_latin1(c))
         {
-            buff = (UTF8 *)alloc_lbuf("getboolexp1.atr_name");
+            buff = alloc_lbuf("getboolexp1.atr_name");
 
             s = buff;
             size_t n;
@@ -187,7 +187,7 @@ static BOOLEXP *getboolexp1(FILE *f)
                 b->type = BOOLEXP_ATR;
             }
 
-            buff = (UTF8 *)alloc_lbuf("getboolexp1.attr_lock");
+            buff = alloc_lbuf("getboolexp1.attr_lock");
             s = buff;
             size_t n;
             while (   EOF != (c = getc(f))

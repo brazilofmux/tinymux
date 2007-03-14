@@ -423,8 +423,8 @@ void ItemToList_Init(ITL *pContext, UTF8 *arg_buff, UTF8 **arg_bufc,
     UTF8 arg_chPrefix = 0, UTF8 arg_chSep = ' ');
 bool ItemToList_AddInteger(ITL *pContext, int i);
 bool ItemToList_AddInteger64(ITL *pContext, INT64 i);
-bool ItemToList_AddString(ITL *pContext, UTF8 *pStr);
-bool ItemToList_AddStringLEN(ITL *pContext, size_t nStr, UTF8 *pStr);
+bool ItemToList_AddString(ITL *pContext, const UTF8 *pStr);
+bool ItemToList_AddStringLEN(ITL *pContext, size_t nStr, const UTF8 *pStr);
 void ItemToList_Final(ITL *pContext);
 
 size_t DCL_CDECL mux_vsnprintf(UTF8 *buff, size_t count, const char *fmt, va_list va);

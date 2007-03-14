@@ -2302,14 +2302,14 @@ static FUNCTION(fun_v)
     UTF8 *sbuf, *sbufc;
     ATTR *ap;
 
-    UTF8 *tbuf = (UTF8 *)fargs[0];
+    UTF8 *tbuf = fargs[0];
     if (  mux_isattrnameinitial(tbuf)
        && '\0' != *utf8_NextCodePoint(tbuf))
     {
         // Fetch an attribute from me. First see if it exists,
         // returning a null string if it does not.
         //
-        ap = atr_str((UTF8 *)fargs[0]);
+        ap = atr_str(fargs[0]);
         if (!ap)
         {
             return;
@@ -4840,7 +4840,7 @@ static FUNCTION(fun_nearby)
  * * fun_obj, fun_poss, and fun_subj: perform pronoun sub for object.
  */
 
-static void process_sex(dbref player, UTF8 *what, const UTF8 *token, UTF8 *buff, UTF8 **bufc)
+static void process_sex(dbref player, UTF8 *what, UTF8 *token, UTF8 *buff, UTF8 **bufc)
 {
     dbref it = match_thing_quiet(player, strip_ansi(what));
     if (!Good_obj(it))
@@ -4855,7 +4855,7 @@ static void process_sex(dbref player, UTF8 *what, const UTF8 *token, UTF8 *buff,
     }
     else
     {
-        mux_exec((UTF8 *)token, buff, bufc, it, it, it, EV_EVAL, NULL, 0);
+        mux_exec(token, buff, bufc, it, it, it, EV_EVAL, NULL, 0);
     }
 }
 
@@ -9507,7 +9507,7 @@ static FUNCTION(fun_ord)
     UNUSED_PARAMETER(ncargs);
 
     size_t n;
-    UTF8 *p  = (UTF8 *)strip_ansi(fargs[0]);
+    UTF8 *p  = strip_ansi(fargs[0]);
     if (utf8_strlen(p, n))
     {
         if (1 == n)
@@ -9552,7 +9552,7 @@ static FUNCTION(fun_chr)
     UTF8 *p = ConvertToUTF8(ch);
     if (mux_isprint(p))
     {
-        utf8_safe_chr(p, (UTF8 *)buff, (UTF8 **)bufc);
+        utf8_safe_chr(p, buff, bufc);
     }
     else
     {
@@ -9655,8 +9655,8 @@ static FUNCTION(fun_accent)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    const UTF8 *p = (UTF8 *)fargs[0];
-    const UTF8 *q = (UTF8 *)fargs[1];
+    const UTF8 *p = fargs[0];
+    const UTF8 *q = fargs[1];
 
     size_t n0, n1;
     if (  !utf8_strlen(p, n0)
@@ -9690,11 +9690,11 @@ static FUNCTION(fun_accent)
         const UTF8 *t = latin1_utf8(ch);
         if (mux_isprint(t))
         {
-            utf8_safe_chr(t, (UTF8 *)buff, (UTF8 **)bufc);
+            utf8_safe_chr(t, buff, bufc);
         }
         else
         {
-            utf8_safe_chr(p, (UTF8 *)buff, (UTF8 **)bufc);
+            utf8_safe_chr(p, buff, bufc);
         }
 
         p = utf8_NextCodePoint(p);

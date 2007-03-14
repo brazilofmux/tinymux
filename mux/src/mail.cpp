@@ -1591,7 +1591,7 @@ static void do_mail_review(dbref player, UTF8 *name, UTF8 *msglist)
 
 static UTF8 *mail_list_time(const UTF8 *the_time)
 {
-    UTF8 *p = (UTF8 *)the_time;
+    const UTF8 *p = the_time;
     UTF8 *new0 = alloc_lbuf("mail_list_time");
     UTF8 *q = new0;
     if (!p || !*p)
