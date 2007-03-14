@@ -520,6 +520,7 @@ public:
     void delete_Chars(size_t nStart, size_t nLen);
     void edit(mux_string &sFrom, const mux_string &sTo);
     UTF8 export_Char(size_t n) const;
+    LBUF_OFFSET export_Char_UTF8(size_t iFirst, UTF8 *pBuffer) const;
     ANSI_ColorState export_Color(size_t n) const;
     double export_Float(bool bStrict = true) const;
     INT64 export_I64(void) const;

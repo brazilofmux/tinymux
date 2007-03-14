@@ -3215,12 +3215,12 @@ FUNCTION(fun_foreach)
         return;
     }
 
-    UTF8 cbuf[2] = {'\0', '\0'};
+    UTF8 cbuf[5] = {'\0', '\0', '\0', '\0', '\0'};
     UTF8 *bp = cbuf;
     mux_string *sStr = new mux_string(fargs[1]);
     sStr->trim();
     size_t nStr = sStr->length();
-    LBUF_OFFSET i = 0;
+    LBUF_OFFSET i = 0, nBytes = 0;
 
     if (nfargs == 4)
     {
@@ -3231,7 +3231,7 @@ FUNCTION(fun_foreach)
               && mudstate.func_invk_ctr < mudconf.func_invk_lim
               && !MuxAlarm.bAlarmed)
         {
-            cbuf[0] = sStr->export_Char(i++);
+            nBytes = sStr->export_Char_UTF8(i, cbuf);
 
             if (flag)
             {
@@ -3254,7 +3254,7 @@ FUNCTION(fun_foreach)
                 }
                 else
                 {
-                    safe_chr(cbuf[0], buff, bufc);
+                    safe_copy_buf(cbuf, nBytes, buff, bufc);
                     continue;
                 }
             }
@@ -3262,6 +3262,7 @@ FUNCTION(fun_foreach)
             mux_exec(atext, buff, bufc, thing, executor, enactor,
                 AttrTrace(aflags, EV_STRIP_CURLY|EV_FCHECK|EV_EVAL), &bp, 1);
             prev = cbuf[0];
+            i = i + nBytes;
         }
     }
     else
@@ -3270,10 +3271,11 @@ FUNCTION(fun_foreach)
               && mudstate.func_invk_ctr < mudconf.func_invk_lim
               && !MuxAlarm.bAlarmed)
         {
-            cbuf[0] = sStr->export_Char(i++);
+            nBytes = sStr->export_Char_UTF8(i, cbuf);
 
             mux_exec(atext, buff, bufc, thing, executor, enactor,
                 AttrTrace(aflags, EV_STRIP_CURLY|EV_FCHECK|EV_EVAL), &bp, 1);
+            i = i + nBytes;
         }
     }
     free_lbuf(atext);

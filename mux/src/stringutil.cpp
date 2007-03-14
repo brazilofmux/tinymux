@@ -5422,6 +5422,40 @@ UTF8 mux_string::export_Char(size_t n) const
     return m_ach[n];
 }
 
+LBUF_OFFSET mux_string::export_Char_UTF8(size_t iFirst, UTF8 *pBuffer) const
+{
+    if (m_n <= iFirst)
+    {
+        if (NULL != pBuffer)
+        {
+            pBuffer[0] = '\0';
+        }
+        return 0;
+    }
+
+    LBUF_OFFSET nBytes = utf8_FirstByte[m_ach[iFirst]];
+
+    if (UTF8_CONTINUE <= iFirst)
+    {
+        if (NULL != pBuffer)
+        {
+            pBuffer[0] = '\0';
+        }
+        return 0;
+    }
+
+    if (NULL != pBuffer)
+    {
+        LBUF_OFFSET i;
+        for (i = 0; i < nBytes; i++)
+        {
+            pBuffer[i] = m_ach[iFirst + i];
+        }
+        pBuffer[i] = '\0';
+    }
+    return nBytes;
+}
+
 ANSI_ColorState mux_string::export_Color(size_t n) const
 {
     if (  m_n <= n
