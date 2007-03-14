@@ -1363,7 +1363,7 @@ static LRESULT WINAPI mux_WindowProc
     return DefWindowProc(hWin, msg, wParam, lParam);
 }
 
-const UTF8 szApp[] = "MUX2";
+const char *szApp = "MUX2";
 
 static DWORD WINAPI ListenForCloseProc(LPVOID lpParameter)
 {
@@ -4422,7 +4422,7 @@ void set_signals(void)
     signal(SIGINT,  CAST_SIGNAL_FUNC sighandler);
     signal(SIGTERM, CAST_SIGNAL_FUNC sighandler);
     signal(SIGILL,  CAST_SIGNAL_FUNC sighandler);
-    //signal(SIGSEGV, CAST_SIGNAL_FUNC sighandler);
+    signal(SIGSEGV, CAST_SIGNAL_FUNC sighandler);
     signal(SIGABRT, CAST_SIGNAL_FUNC sighandler);
     signal(SIGFPE,  SIG_IGN);
 
