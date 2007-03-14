@@ -280,6 +280,7 @@ Bug Fixes:
  -- HEIGHT() and WIDTH() returned least-idle port when given a port rather
     than the specified port.
  -- Fix doing header across @restart.
+ -- Fix handle leak in comsys.db if initial parsing fails.
 
 
 Performance Enhancements:

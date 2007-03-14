@@ -100,6 +100,10 @@ void load_comsys(char *filename)
         else
         {
             Log.tinyprintf("Error: Couldn't find Begin CHANNELS in %s.", filename);
+            if (fclose(fp) == 0)
+            {
+                DebugTotalFiles--;
+            }
             return;
         }
 
@@ -111,6 +115,10 @@ void load_comsys(char *filename)
         else
         {
             Log.tinyprintf("Error: Couldn't find Begin COMSYS in %s.", filename);
+            if (fclose(fp) == 0)
+            {
+                DebugTotalFiles--;
+            }
             return;
         }
 
