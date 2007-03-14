@@ -1688,11 +1688,21 @@ static UTF8 *ANSI_TransitionColorBinary
     return Buffer;
 }
 
-// The following is really 21 (%xn%xh%xu%xi%xf%xR%xr) but we are being conservative
+// Maximum binary transition length is:
 //
-#define ANSI_MAXIMUM_ESCAPE_TRANSITION_LENGTH 42
+//   COLOR_RESET      "%xn"
+// + COLOR_INTENSE    "%xh"
+// + COLOR_UNDERLINE  "%xu"
+// + COLOR_BLINK      "%xf"
+// + COLOR_INVERSE    "%xi"
+// + COLOR_FG_RED     "%xr"
+// + COLOR_BG_WHITE   "%xW"
+//
+// Each of the seven codes is 3 bytes or 21 bytes total.
+//
+#define ANSI_MAXIMUM_ESCAPE_TRANSITION_LENGTH 21
 
-// Generate the minimal MU ANSI %-sequence that will transition from one color state
+// Generate the minimal color %-sequence that will transition from one color state
 // to another.
 //
 static UTF8 *ANSI_TransitionColorEscape
@@ -2123,17 +2133,14 @@ UTF8 *convert_color(const UTF8 *pString, bool bNoBleed)
     while ('\0' != *pString)
     {
         unsigned int iCode = mux_color(pString);
-        if (iCode <= COLOR_LAST_CODE)
+        if (COLOR_UNDEFINED == iCode)
         {
-            if (COLOR_UNDEFINED == iCode)
-            {
-                utf8_safe_chr(pString, aBuffer, &pBuffer);
-            }
-            else
-            {
-                memcpy(pBuffer, aColorSequences[iCode].pAnsi, aColorSequences[iCode].nAnsi);
-                pBuffer += aColorSequences[iCode].nAnsi;
-            }
+            utf8_safe_chr(pString, aBuffer, &pBuffer);
+        }
+        else
+        {
+            memcpy(pBuffer, aColorSequences[iCode].pAnsi, aColorSequences[iCode].nAnsi);
+            pBuffer += aColorSequences[iCode].nAnsi;
         }
         pString = utf8_NextCodePoint(pString);
     }
@@ -2796,7 +2803,7 @@ UTF8 *BufferCloneLen(const UTF8 *pBuffer, unsigned int nBuffer)
 #endif // 0
 
 /* ---------------------------------------------------------------------------
- * safe_copy_str, safe_copy_chr - Copy buffers, watching for overflows.
+ * safe_copy_str - Copy buffers, watching for overflows.
  */
 
 void safe_copy_str(const UTF8 *src, UTF8 *buff, UTF8 **bufp, size_t nSizeOfBuffer)
@@ -5557,7 +5564,7 @@ void mux_string::export_TextAnsi
                 *bufc += nTransition;
                 csPrev = m_pcs[nPos];
             }
-            safe_copy_chr(m_ach[nPos], buff, bufc, nBuffer);
+            safe_copy_chr_ascii(m_ach[nPos], buff, bufc, nBuffer);
             nPos++;
         }
         if (0 != memcmp(&csPrev, &csEndGoal, sizeof(ANSI_ColorState)))
@@ -5609,7 +5616,7 @@ void mux_string::export_TextAnsi
             *bufc += nTransition;
             csPrev = m_pcs[nPos];
         }
-        safe_copy_chr(m_ach[nPos], buff, bufc, nBuffer);
+        safe_copy_chr_ascii(m_ach[nPos], buff, bufc, nBuffer);
         nPos++;
     }
     pTransition = ANSI_TransitionColorBinary( &csPrev, &csEndGoal,

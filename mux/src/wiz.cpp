@@ -741,13 +741,10 @@ void do_motd(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF
 //
 NAMETAB enable_names[] =
 {
-    {(UTF8 *)(UTF8 *)"building",        1,  CA_PUBLIC,  CF_BUILD},
+    {(UTF8 *)"building",        1,  CA_PUBLIC,  CF_BUILD},
     {(UTF8 *)"checkpointing",   2,  CA_PUBLIC,  CF_CHECKPOINT},
     {(UTF8 *)"cleaning",        2,  CA_PUBLIC,  CF_DBCHECK},
     {(UTF8 *)"dequeueing",      1,  CA_PUBLIC,  CF_DEQUEUE},
-#ifdef MUSH3
-    {(UTF8 *)"god_monitoring",  1,  CA_PUBLIC,  CF_GODMONITOR},
-#endif // MUSH3
     {(UTF8 *)"idlechecking",    2,  CA_PUBLIC,  CF_IDLECHECK},
     {(UTF8 *)"interpret",       2,  CA_PUBLIC,  CF_INTERP},
     {(UTF8 *)"logins",          3,  CA_PUBLIC,  CF_LOGIN},

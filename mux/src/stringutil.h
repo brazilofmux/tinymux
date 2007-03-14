@@ -396,7 +396,8 @@ void safe_copy_str(const UTF8 *src, UTF8 *buff, UTF8 **bufp, size_t nSizeOfBuffe
 void safe_copy_str_lbuf(const UTF8 *src, UTF8 *buff, UTF8 **bufp);
 size_t safe_copy_buf(const UTF8 *src, size_t nLen, UTF8 *buff, UTF8 **bufp);
 size_t safe_fill(UTF8 *buff, UTF8 **bufc, UTF8 chFile, size_t nSpaces);
-void utf8_safe_chr(const UTF8 *src, UTF8 *buff, UTF8 **bufp);
+void safe_chr_utf8(const UTF8 *src, UTF8 *buff, UTF8 **bufp);
+#define utf8_safe_chr safe_chr_utf8
 UTF8 *ConvertToUTF8(UTF32 ch);
 UTF8 *ConvertToUTF8(const char *p, size_t *pn);
 UTF32 ConvertFromUTF8(const UTF8 *p);

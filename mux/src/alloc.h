@@ -58,7 +58,7 @@ extern void pool_reset(void);
 #define alloc_string(s)  (mux_string *)pool_alloc(POOL_STRING, (UTF8 *)s, (UTF8 *)__FILE__, __LINE__)
 #define free_string(b)   pool_free(POOL_STRING,(UTF8 *)(b), (UTF8 *)__FILE__, __LINE__)
 
-#define safe_copy_chr(src, buff, bufp, nSizeOfBuffer) \
+#define safe_copy_chr_ascii(src, buff, bufp, nSizeOfBuffer) \
 { \
     if ((size_t)(*bufp - buff) < nSizeOfBuffer) \
     { \
@@ -67,13 +67,21 @@ extern void pool_reset(void);
     } \
 }
 
-#define safe_str(s,b,p)     safe_copy_str_lbuf(s,b,p)
-#define safe_chr(c,b,p)     safe_copy_chr((UTF8)(c),b,p,(LBUF_SIZE-1))
-#define safe_bool(c,b,p)    safe_chr(((c) ? '1' : '0'),b,p)
-#define safe_sb_str(s,b,p)  safe_copy_str(s,b,p,(SBUF_SIZE-1))
-#define safe_sb_chr(c,b,p)  safe_copy_chr(c,b,p,(SBUF_SIZE-1))
-#define safe_mb_str(s,b,p)  safe_copy_str(s,b,p,(MBUF_SIZE-1))
-#define safe_mb_chr(c,b,p)  safe_copy_chr(c,b,p,(MBUF_SIZE-1))
+#define safe_str(s,b,p)           safe_copy_str_lbuf(s,b,p)
+#define safe_bool(c,b,p)          safe_chr(((c) ? '1' : '0'),b,p)
+#define safe_sb_str(s,b,p)        safe_copy_str(s,b,p,(SBUF_SIZE-1))
+#define safe_mb_str(s,b,p)        safe_copy_str(s,b,p,(MBUF_SIZE-1))
+
+#define safe_chr_ascii(c,b,p)     safe_copy_chr_ascii((UTF8)(c),b,p,(LBUF_SIZE-1))
+#define safe_sb_chr_ascii(c,b,p)  safe_copy_chr_ascii(c,b,p,(SBUF_SIZE-1))
+#define safe_mb_chr_ascii(c,b,p)  safe_copy_chr_ascii(c,b,p,(MBUF_SIZE-1))
+
+// Slowly transition from safe_chr to safe_chr_ascii and safe_chr_utf8,
+// safe_sb_chr to safe_sb_chr_ascii,and safe_mb_chr to safe_mb_chr_ascii.
+//
+#define safe_sb_chr safe_sb_chr_ascii
+#define safe_mb_chr safe_mb_chr_ascii
+#define safe_chr safe_chr_ascii
 
 struct lbuf_ref
 {
