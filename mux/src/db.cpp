@@ -1567,9 +1567,9 @@ bool Commer(dbref thing)
 
     bool bFoundListens = false;
 
-    UTF8 *as;
     atr_push();
     UTF8 *buff = alloc_lbuf("Commer");
+    unsigned char *as;
     for (int atr = atr_head(thing, &as); atr; atr = atr_next(&as))
     {
         ATTR *ap = atr_num(atr);
@@ -2492,8 +2492,8 @@ void atr_free(dbref thing)
     db[thing].nALAlloc = 0;
     db[thing].nALUsed  = 0;
 #else // MEMORY_BASED
-    UTF8 *as;
     atr_push();
+    unsigned char *as;
     for (int atr = atr_head(thing, &as); atr; atr = atr_next(&as))
     {
         atr_clr(thing, atr);
@@ -2520,8 +2520,8 @@ void atr_cpy(dbref dest, dbref source, bool bInternal)
 {
     dbref owner = Owner(dest);
 
-    UTF8 *as;
     atr_push();
+    unsigned char *as;
     for (int atr = atr_head(source, &as); atr; atr = atr_next(&as))
     {
         int   aflags;
@@ -2569,8 +2569,8 @@ void atr_chown(dbref obj)
 {
     dbref owner = Owner(obj);
 
-    UTF8 *as;
     atr_push();
+    unsigned char *as;
     for (int atr = atr_head(obj, &as); atr; atr = atr_next(&as))
     {
         int   aflags;

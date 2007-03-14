@@ -196,8 +196,8 @@ static int atr_match1
             // Because we know this object contains no commands, there is no
             // need to look at the attribute values.
             //
-            unsigned char *as;
             atr_push();
+            unsigned char *as;
             for (int atr = atr_head(parent, &as); atr; atr = atr_next(&as))
             {
                 ATTR *ap = atr_num(atr);
@@ -219,8 +219,8 @@ static int atr_match1
     bool bFoundCommands = false;
     bool bFoundListens  = false;
 
-    unsigned char *as;
     atr_push();
+    unsigned char *as;
     for (int atr = atr_head(parent, &as); atr; atr = atr_next(&as))
     {
         ATTR *ap = atr_num(atr);
@@ -1981,8 +1981,8 @@ bool Hearer(dbref thing)
             bool bFoundCommands = false;
 
             UTF8 *buff = alloc_lbuf("Hearer");
-            UTF8 *as;
             atr_push();
+            unsigned char *as;
             for (int atr = atr_head(thing, &as); atr; atr = atr_next(&as))
             {
                 ATTR *ap = atr_num(atr);

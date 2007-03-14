@@ -1496,7 +1496,7 @@ static void debug_examine(dbref player, dbref thing)
     int aflags, ca;
     BOOLEXP *pBoolExp;
     ATTR *pattr;
-    UTF8 *as, *cp;
+    UTF8 *cp;
 
     notify(player, tprintf("Number  = %d", thing));
     if (!Good_obj(thing))
@@ -1537,6 +1537,7 @@ static void debug_examine(dbref player, dbref thing)
     cp = buf;
     safe_str((UTF8 *)"Attr list: ", buf, &cp);
 
+    unsigned char *as;
     for (ca = atr_head(thing, &as); ca; ca = atr_next(&as))
     {
         pattr = atr_num(ca);
@@ -2510,7 +2511,7 @@ void do_decomp
     UNUSED_PARAMETER(nargs);
 
     BOOLEXP *pBoolExp;
-    UTF8 *got, *thingname, *as, *ltext, *buff;
+    UTF8 *got, *thingname, *ltext, *buff;
     dbref aowner, thing;
     int val, aflags, ca;
     ATTR *pattr;
@@ -2629,6 +2630,7 @@ void do_decomp
 
     // Report attributes.
     //
+    unsigned char *as;
     buff = alloc_mbuf("do_decomp.attr_name");
     for (ca = (wild_decomp ? olist_first() : atr_head(thing, &as));
         (wild_decomp) ? (ca != NOTHING) : (ca != 0);

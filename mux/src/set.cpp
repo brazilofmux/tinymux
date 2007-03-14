@@ -1548,13 +1548,13 @@ bool parse_attrib(dbref player, UTF8 *str, dbref *thing, ATTR **attr)
 static void find_wild_attrs(dbref player, dbref thing, UTF8 *str, bool check_exclude, bool hash_insert, bool get_locks)
 {
     ATTR *pattr;
-    UTF8 *as;
     dbref aowner;
     int ca, ok, aflags;
 
     // Walk the attribute list of the object.
     //
     atr_push();
+    unsigned char *as;
     for (ca = atr_head(thing, &as); ca; ca = atr_next(&as))
     {
         pattr = atr_num(ca);

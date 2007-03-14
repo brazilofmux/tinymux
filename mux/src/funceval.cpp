@@ -1480,7 +1480,7 @@ static size_t mem_usage(dbref thing)
 {
     size_t k = sizeof(struct object) + strlen((char *)Name(thing)) + 1;
 
-    UTF8 *as;
+    unsigned char *as;
     for (int ca = atr_head(thing, &as); ca; ca = atr_next(&as))
     {
         size_t nLen;

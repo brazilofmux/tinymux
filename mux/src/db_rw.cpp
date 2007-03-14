@@ -772,7 +772,6 @@ static bool db_write_object(FILE *f, dbref i, int db_format, int flags)
     UNUSED_PARAMETER(db_format);
 
     ATTR *a;
-    UTF8 *as;
     int ca, j;
 
     if (!(flags & V_ATRNAME))
@@ -803,6 +802,7 @@ static bool db_write_object(FILE *f, dbref i, int db_format, int flags)
     {
         UTF8 buf[SBUF_SIZE];
         buf[0] = '>';
+        unsigned char *as;
         for (ca = atr_head(i, &as); ca; ca = atr_next(&as))
         {
             if (mudstate.bStandAlone)
