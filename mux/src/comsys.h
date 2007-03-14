@@ -73,12 +73,10 @@ bool test_transmit_access(dbref player, struct channel *chan);
 bool test_receive_access(dbref player, struct channel *chan);
 void do_joinchannel(dbref player, struct channel *ch);
 void do_comdisconnectchannel(dbref player, UTF8 *channel);
-void load_channels(FILE *fp);
 void purge_comsystem(void);
 void save_channels(FILE *fp);
 void destroy_comsys(comsys_t *c);
 void sort_com_aliases(comsys_t *c);
-void load_comsystem(FILE *fp);
 void save_comsystem(FILE *fp);
 void SendChannelMessage
 (

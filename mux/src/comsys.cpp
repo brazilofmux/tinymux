@@ -72,55 +72,6 @@ static void do_setnewtitle(dbref player, struct channel *ch, UTF8 *pValidatedTit
     }
 }
 
-void load_comsys(UTF8 *filename)
-{
-    int i;
-    UTF8 buffer[200];
-
-    for (i = 0; i < NUM_COMSYS; i++)
-    {
-        comsys_table[i] = NULL;
-    }
-
-    FILE *fp;
-    if (!mux_fopen(&fp, filename, (UTF8 *)"rb"))
-    {
-        Log.tinyprintf("Error: Couldn't find %s." ENDLINE, filename);
-    }
-    else
-    {
-        DebugTotalFiles++;
-        Log.tinyprintf("LOADING: %s" ENDLINE, filename);
-        if (  fgets((char *)buffer, sizeof(buffer), fp)
-           && strcmp((char *)buffer, "*** Begin CHANNELS ***\n") == 0)
-        {
-            load_channels(fp);
-        }
-        else
-        {
-            Log.tinyprintf("Error: Couldn't find Begin CHANNELS in %s.", filename);
-            return;
-        }
-
-        if (  fgets((char *)buffer, sizeof(buffer), fp)
-           && strcmp((char *)buffer, "*** Begin COMSYS ***\n") == 0)
-        {
-            load_comsystem(fp);
-        }
-        else
-        {
-            Log.tinyprintf("Error: Couldn't find Begin COMSYS in %s.", filename);
-            return;
-        }
-
-        if (fclose(fp) == 0)
-        {
-            DebugTotalFiles--;
-        }
-        Log.tinyprintf("LOADING: %s (done)" ENDLINE, filename);
-    }
-}
-
 void save_comsys(UTF8 *filename)
 {
     UTF8 buffer[500];
@@ -133,6 +84,7 @@ void save_comsys(UTF8 *filename)
         return;
     }
     DebugTotalFiles++;
+    fprintf(fp, "+V4\n");
     fprintf(fp, "*** Begin CHANNELS ***\n");
     save_channels(fp);
 
@@ -265,65 +217,6 @@ static bool ReadListOfNumbers(FILE *fp, int cnt, int anum[])
     return false;
 }
 
-void load_channels(FILE *fp)
-{
-    int i, j;
-    int anum[2];
-    UTF8 buffer[LBUF_SIZE];
-    comsys_t *c;
-
-    int np = 0;
-    mux_assert(ReadListOfNumbers(fp, 1, &np));
-    for (i = 0; i < np; i++)
-    {
-        c = create_new_comsys();
-        c->who = 0;
-        c->numchannels = 0;
-        mux_assert(ReadListOfNumbers(fp, 2, anum));
-        c->who = anum[0];
-        c->numchannels = anum[1];
-        c->maxchannels = c->numchannels;
-        if (c->maxchannels > 0)
-        {
-            c->alias = (UTF8 *)MEMALLOC(c->maxchannels * ALIAS_SIZE);
-            ISOUTOFMEMORY(c->alias);
-            c->channels = (UTF8 **)MEMALLOC(sizeof(UTF8 *) * c->maxchannels);
-            ISOUTOFMEMORY(c->channels);
-
-            for (j = 0; j < c->numchannels; j++)
-            {
-                size_t n = GetLineTrunc(buffer, sizeof(buffer), fp);
-                if (buffer[n-1] == '\n')
-                {
-                    // Get rid of trailing '\n'.
-                    //
-                    n--;
-                    buffer[n] = '\0';
-                }
-                if (!ParseChannelLine(buffer, c->alias + j * ALIAS_SIZE, c->channels+j))
-                {
-                    c->numchannels--;
-                    j--;
-                }
-            }
-            sort_com_aliases(c);
-        }
-        else
-        {
-            c->alias = NULL;
-            c->channels = NULL;
-        }
-        if (Good_obj(c->who))
-        {
-            add_comsys(c);
-        }
-        else
-        {
-            Log.tinyprintf("Invalid dbref %d." ENDLINE, c->who);
-        }
-        purge_comsystem();
-    }
-}
 
 void purge_comsystem(void)
 {
@@ -560,7 +453,174 @@ static UTF8 *get_channel_from_alias(dbref player, UTF8 *alias)
     }
 }
 
-void load_comsystem(FILE *fp)
+// Version 4 start on 2007-MAR-17
+//
+//   -- Supports UTF-8 and ANSI as code-points.
+//   -- Relies on a version number at the top of the file instead of within
+//      this section.
+//
+void load_comsystem_V4(FILE *fp)
+{
+    int i, j;
+    struct channel *ch;
+    UTF8 temp[LBUF_SIZE];
+
+    num_channels = 0;
+
+    int nc = 0;
+    if (NULL == fgets((char *)temp, sizeof(temp), fp))
+    {
+        return;
+    }
+    nc = mux_atol(temp);
+
+    num_channels = nc;
+
+    for (i = 0; i < nc; i++)
+    {
+        int anum[10];
+
+        ch = (struct channel *)MEMALLOC(sizeof(struct channel));
+        ISOUTOFMEMORY(ch);
+
+        size_t nChannel = GetLineTrunc(temp, sizeof(temp), fp);
+        if (nChannel > MAX_CHANNEL_LEN)
+        {
+            nChannel = MAX_CHANNEL_LEN;
+        }
+        if (temp[nChannel-1] == '\n')
+        {
+            // Get rid of trailing '\n'.
+            //
+            nChannel--;
+        }
+        memcpy(ch->name, temp, nChannel);
+        ch->name[nChannel] = '\0';
+
+        size_t nHeader = GetLineTrunc(temp, sizeof(temp), fp);
+        if (nHeader > MAX_HEADER_LEN)
+        {
+            nHeader = MAX_HEADER_LEN;
+        }
+        if (temp[nHeader-1] == '\n')
+        {
+            nHeader--;
+        }
+        memcpy(ch->header, temp, nHeader);
+        ch->header[nHeader] = '\0';
+
+        ch->on_users = NULL;
+
+        hashaddLEN(ch->name, nChannel, ch, &mudstate.channel_htab);
+
+        ch->type         = 127;
+        ch->temp1        = 0;
+        ch->temp2        = 0;
+        ch->charge       = 0;
+        ch->charge_who   = NOTHING;
+        ch->amount_col   = 0;
+        ch->num_messages = 0;
+        ch->chan_obj     = NOTHING;
+
+        mux_assert(ReadListOfNumbers(fp, 8, anum));
+        ch->type         = anum[0];
+        ch->temp1        = anum[1];
+        ch->temp2        = anum[2];
+        ch->charge       = anum[3];
+        ch->charge_who   = anum[4];
+        ch->amount_col   = anum[5];
+        ch->num_messages = anum[6];
+        ch->chan_obj     = anum[7];
+
+        ch->num_users = 0;
+        mux_assert(ReadListOfNumbers(fp, 1, &(ch->num_users)));
+        ch->max_users = ch->num_users;
+        if (ch->num_users > 0)
+        {
+            ch->users = (struct comuser **)calloc(ch->max_users, sizeof(struct comuser *));
+            ISOUTOFMEMORY(ch->users);
+
+            int jAdded = 0;
+            for (j = 0; j < ch->num_users; j++)
+            {
+                struct comuser t_user;
+                memset(&t_user, 0, sizeof(t_user));
+
+                t_user.who = NOTHING;
+                t_user.bUserIsOn = false;
+                t_user.ComTitleStatus = false;
+
+                mux_assert(ReadListOfNumbers(fp, 3, anum));
+                t_user.who = anum[0];
+                t_user.bUserIsOn = (anum[1] ? true : false);
+                t_user.ComTitleStatus = (anum[2] ? true : false);
+
+                // Read Comtitle.
+                //
+                size_t nTitle = GetLineTrunc(temp, sizeof(temp), fp);
+                UTF8 *pTitle = temp;
+
+                if (!Good_dbref(t_user.who))
+                {
+                    Log.tinyprintf("load_comsystem: dbref %d out of range [0, %d)." ENDLINE, t_user.who, mudstate.db_top);
+                }
+                else if (isGarbage(t_user.who))
+                {
+                    Log.tinyprintf("load_comsystem: dbref is GARBAGE." ENDLINE, t_user.who);
+                }
+                else
+                {
+                    // Validate comtitle
+                    //
+                    if (3 < nTitle && temp[0] == 't' && temp[1] == ':')
+                    {
+                        pTitle = temp+2;
+                        nTitle -= 2;
+                        if (pTitle[nTitle-1] == '\n')
+                        {
+                            // Get rid of trailing '\n'.
+                            //
+                            nTitle--;
+                        }
+                        if (nTitle <= 0 || MAX_TITLE_LEN < nTitle)
+                        {
+                            nTitle = 0;
+                            pTitle = temp;
+                        }
+                    }
+                    else
+                    {
+                        nTitle = 0;
+                    }
+
+                    struct comuser *user = (struct comuser *)MEMALLOC(sizeof(struct comuser));
+                    ISOUTOFMEMORY(user);
+                    memcpy(user, &t_user, sizeof(struct comuser));
+
+                    user->title = StringCloneLen(pTitle, nTitle);
+                    ch->users[jAdded++] = user;
+
+                    if (  !(isPlayer(user->who))
+                       && !(Going(user->who)
+                       && (God(Owner(user->who)))))
+                    {
+                        do_joinchannel(user->who, ch);
+                    }
+                    user->on_next = ch->on_users;
+                    ch->on_users = user;
+                }
+            }
+            ch->num_users = jAdded;
+            sort_users(ch);
+        }
+        else
+        {
+            ch->users = NULL;
+        }
+    }
+}
+
+void load_comsystem_V0123(FILE *fp)
 {
     int i, j;
     int ver = 0;
@@ -601,30 +661,50 @@ void load_comsystem(FILE *fp)
         ISOUTOFMEMORY(ch);
 
         size_t nChannel = GetLineTrunc(temp, sizeof(temp), fp);
-        if (nChannel > MAX_CHANNEL_LEN)
-        {
-            nChannel = MAX_CHANNEL_LEN;
-        }
         if (temp[nChannel-1] == '\n')
         {
             // Get rid of trailing '\n'.
             //
             nChannel--;
         }
-        memcpy(ch->name, temp, nChannel);
+
+        // Convert entire line to UTF-8 including ANSI escapes.
+        //
+        UTF8 *pBufferUnicode = ConvertToUTF8((char *)temp, &nChannel);
+        if (MAX_CHANNEL_LEN < nChannel)
+        {
+            nChannel = MAX_CHANNEL_LEN;
+            while (  0 < nChannel
+                  && UTF8_CONTINUE <= utf8_FirstByte[(unsigned char)temp[nChannel-1]])
+            {
+                nChannel--;
+            }
+        }
+
+        memcpy(ch->name, pBufferUnicode, nChannel);
         ch->name[nChannel] = '\0';
 
         if (ver >= 2)
         {
             size_t nHeader = GetLineTrunc(temp, sizeof(temp), fp);
-            if (nHeader > MAX_HEADER_LEN)
-            {
-                nHeader = MAX_HEADER_LEN;
-            }
             if (temp[nHeader-1] == '\n')
             {
                 nHeader--;
             }
+
+            // Convert entire line to UTF-8 including ANSI escapes.
+            //
+            UTF8 *pBufferUnicode = ConvertToUTF8((char *)temp, &nHeader);
+            if (MAX_HEADER_LEN < nHeader)
+            {
+                nHeader = MAX_HEADER_LEN;
+                while (  0 < nHeader
+                      && UTF8_CONTINUE <= utf8_FirstByte[(unsigned char)temp[nHeader-1]])
+                {
+                    nHeader--;
+                }
+            }
+
             memcpy(ch->header, temp, nHeader);
             ch->header[nHeader] = '\0';
         }
@@ -736,7 +816,10 @@ void load_comsystem(FILE *fp)
                 // Read Comtitle.
                 //
                 size_t nTitle = GetLineTrunc(temp, sizeof(temp), fp);
-                UTF8 *pTitle = temp;
+
+                // Convert entire line to UTF-8 including ANSI escapes.
+                //
+                UTF8 *pTitle = ConvertToUTF8((char *)temp, &nTitle);
 
                 if (!Good_dbref(t_user.who))
                 {
@@ -798,13 +881,247 @@ void load_comsystem(FILE *fp)
     }
 }
 
+void load_channels_V4(FILE *fp)
+{
+    int i, j;
+    int anum[2];
+    UTF8 buffer[LBUF_SIZE];
+    comsys_t *c;
+
+    int np = 0;
+    mux_assert(ReadListOfNumbers(fp, 1, &np));
+    for (i = 0; i < np; i++)
+    {
+        c = create_new_comsys();
+        c->who = 0;
+        c->numchannels = 0;
+        mux_assert(ReadListOfNumbers(fp, 2, anum));
+        c->who = anum[0];
+        c->numchannels = anum[1];
+        c->maxchannels = c->numchannels;
+        if (c->maxchannels > 0)
+        {
+            c->alias = (UTF8 *)MEMALLOC(c->maxchannels * ALIAS_SIZE);
+            ISOUTOFMEMORY(c->alias);
+            c->channels = (UTF8 **)MEMALLOC(sizeof(UTF8 *) * c->maxchannels);
+            ISOUTOFMEMORY(c->channels);
+
+            for (j = 0; j < c->numchannels; j++)
+            {
+                size_t n = GetLineTrunc(buffer, sizeof(buffer), fp);
+                if (buffer[n-1] == '\n')
+                {
+                    // Get rid of trailing '\n'.
+                    //
+                    n--;
+                    buffer[n] = '\0';
+                }
+                if (!ParseChannelLine(buffer, c->alias + j * ALIAS_SIZE, c->channels+j))
+                {
+                    c->numchannels--;
+                    j--;
+                }
+            }
+            sort_com_aliases(c);
+        }
+        else
+        {
+            c->alias = NULL;
+            c->channels = NULL;
+        }
+        if (Good_obj(c->who))
+        {
+            add_comsys(c);
+        }
+        else
+        {
+            Log.tinyprintf("Invalid dbref %d." ENDLINE, c->who);
+        }
+        purge_comsystem();
+    }
+}
+
+void load_channels_V0123(FILE *fp)
+{
+    int i, j;
+    int anum[2];
+    char buffer[LBUF_SIZE];
+    comsys_t *c;
+
+    int np = 0;
+    mux_assert(ReadListOfNumbers(fp, 1, &np));
+    for (i = 0; i < np; i++)
+    {
+        c = create_new_comsys();
+        c->who = 0;
+        c->numchannels = 0;
+        mux_assert(ReadListOfNumbers(fp, 2, anum));
+        c->who = anum[0];
+        c->numchannels = anum[1];
+        c->maxchannels = c->numchannels;
+        if (c->maxchannels > 0)
+        {
+            c->alias = (UTF8 *)MEMALLOC(c->maxchannels * ALIAS_SIZE);
+            ISOUTOFMEMORY(c->alias);
+            c->channels = (UTF8 **)MEMALLOC(sizeof(UTF8 *) * c->maxchannels);
+            ISOUTOFMEMORY(c->channels);
+
+            for (j = 0; j < c->numchannels; j++)
+            {
+                size_t n = GetLineTrunc((UTF8 *)buffer, sizeof(buffer), fp);
+                if (buffer[n-1] == '\n')
+                {
+                    // Get rid of trailing '\n'.
+                    //
+                    n--;
+                    buffer[n] = '\0';
+                }
+
+                // Convert the entire line to UTF8 before parsing the line
+                // into fields . The first field no ANSI in it anyway.
+                //
+                size_t nBufferUnicode;
+                UTF8 *pBufferUnicode = ConvertToUTF8(buffer, &nBufferUnicode);
+                if (!ParseChannelLine(pBufferUnicode, c->alias + j * ALIAS_SIZE, c->channels+j))
+                {
+                    c->numchannels--;
+                    j--;
+                }
+            }
+            sort_com_aliases(c);
+        }
+        else
+        {
+            c->alias = NULL;
+            c->channels = NULL;
+        }
+        if (Good_obj(c->who))
+        {
+            add_comsys(c);
+        }
+        else
+        {
+            Log.tinyprintf("Invalid dbref %d." ENDLINE, c->who);
+        }
+        purge_comsystem();
+    }
+}
+
+void load_comsys_V4(FILE *fp)
+{
+    char buffer[200];
+    if (  fgets(buffer, sizeof(buffer), fp)
+       && strcmp(buffer, "*** Begin CHANNELS ***\n") == 0)
+    {
+        load_channels_V4(fp);
+    }
+    else
+    {
+        Log.tinyprintf("Error: Couldn't find Begin CHANNELS." ENDLINE);
+        return;
+    }
+
+    if (  fgets(buffer, sizeof(buffer), fp)
+       && strcmp(buffer, "*** Begin COMSYS ***\n") == 0)
+    {
+        load_comsystem_V4(fp);
+    }
+    else
+    {
+        Log.tinyprintf("Error: Couldn't find Begin COMSYS." ENDLINE);
+        return;
+    }
+}
+
+void load_comsys_V0123(FILE *fp)
+{
+    char buffer[200];
+    if (  fgets(buffer, sizeof(buffer), fp)
+       && strcmp(buffer, "*** Begin CHANNELS ***\n") == 0)
+    {
+        load_channels_V0123(fp);
+    }
+    else
+    {
+        Log.tinyprintf("Error: Couldn't find Begin CHANNELS." ENDLINE);
+        return;
+    }
+
+    if (  fgets(buffer, sizeof(buffer), fp)
+       && strcmp(buffer, "*** Begin COMSYS ***\n") == 0)
+    {
+        load_comsystem_V0123(fp);
+    }
+    else
+    {
+        Log.tinyprintf("Error: Couldn't find Begin COMSYS." ENDLINE);
+        return;
+    }
+}
+
+void load_comsys(UTF8 *filename)
+{
+    int i;
+    for (i = 0; i < NUM_COMSYS; i++)
+    {
+        comsys_table[i] = NULL;
+    }
+
+    FILE *fp;
+    if (!mux_fopen(&fp, filename, (UTF8 *)"rb"))
+    {
+        Log.tinyprintf("Error: Couldn't find %s." ENDLINE, filename);
+    }
+    else
+    {
+        DebugTotalFiles++;
+        Log.tinyprintf("LOADING: %s" ENDLINE, filename);
+        int ch = getc(fp);
+        if (EOF == ch)
+        {
+            Log.tinyprintf("Error: Couldn't read first byte.");
+        }
+        else
+        {
+            ungetc(ch, fp);
+            if ('+' == ch)
+            {
+                // Version 4 or later.
+                //
+                UTF8 nbuf1[8];
+
+                // Read the version number.
+                //
+                if (fgets((char *)nbuf1, sizeof(nbuf1), fp))
+                {
+                    if (strncmp((char *)nbuf1, "+V4", 3) == 0)
+                    {
+                        // Started v4 on 2007-MAR-13.
+                        //
+                        load_comsys_V4(fp);
+                    }
+                }
+            }
+            else
+            {
+                load_comsys_V0123(fp);
+            }
+        }
+
+        if (fclose(fp) == 0)
+        {
+            DebugTotalFiles--;
+        }
+        Log.tinyprintf("LOADING: %s (done)" ENDLINE, filename);
+    }
+}
+
 void save_comsystem(FILE *fp)
 {
     struct channel *ch;
     struct comuser *user;
     int j;
 
-    fprintf(fp, "+V3\n");
     fprintf(fp, "%d\n", num_channels);
     for (ch = (struct channel *)hash_firstentry(&mudstate.channel_htab);
          ch;
