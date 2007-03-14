@@ -16,7 +16,7 @@
 // From bsd.cpp.
 //
 void boot_slave(dbref executor, dbref caller, dbref enactor, int key);
-void close_sockets(bool emergency, char *message);
+void close_sockets(bool emergency, UTF8 *message);
 void CleanUpSlaveSocket(void);
 void CleanUpSlaveProcess(void);
 #ifdef QUERY_SLAVE
@@ -36,16 +36,16 @@ extern NAMETAB sigactions_nametab[];
 
 // From conf.cpp
 //
-void cf_log_notfound(dbref, char *, const char *, char *);
-int  cf_modify_bits(int *, char *, void *, UINT32, dbref, char *);
-void DCL_CDECL cf_log_syntax(dbref player, char *cmd, const char *fmt, ...);
+void cf_log_notfound(dbref, UTF8 *, const UTF8 *, UTF8 *);
+int  cf_modify_bits(int *, UTF8 *, void *, UINT32, dbref, UTF8 *);
+void DCL_CDECL cf_log_syntax(dbref player, UTF8 *cmd, const char *fmt, ...);
 void ValidateConfigurationDbrefs(void);
 int  cf_read(void);
 void cf_init(void);
-void cf_list(dbref, char *, char **);
-void cf_display(dbref, char *, char *, char **);
+void cf_list(dbref, UTF8 *, UTF8 **);
+void cf_display(dbref, UTF8 *, UTF8 *, UTF8 **);
 void list_cf_access(dbref);
-int cf_set(char *, char *, dbref);
+int cf_set(UTF8 *, UTF8 *, dbref);
 CF_HAND(cf_cf_access);
 CF_HAND(cf_access);
 CF_HAND(cf_cmd_alias);
@@ -70,30 +70,30 @@ void local_disconnect(dbref, int);
 void local_data_create(dbref);
 void local_data_clone(dbref, dbref);
 void local_data_free(dbref);
-const char **local_get_info_table(void);
+const UTF8 **local_get_info_table(void);
 
 // From mail.cpp.
 //
 void load_mail(FILE *);
 int  dump_mail(FILE *);
 struct mail *mail_fetch(dbref, int);
-char *MakeCanonicalMailAlias
+UTF8 *MakeCanonicalMailAlias
 (
-    char   *pMailAlias,
+    UTF8   *pMailAlias,
     size_t *pnValidMailAlias,
     bool   *pbValidMailAlias
 );
 
-char *MakeCanonicalMailAliasDesc
+UTF8 *MakeCanonicalMailAliasDesc
 (
-    char   *pMailAliasDesc,
+    UTF8   *pMailAliasDesc,
     size_t *pnValidMailAliasDesc,
     bool   *pbValidMailAliasDesc,
     size_t *pnVisualWidth
 );
 
 #if defined(FIRANMUX)
-const char *MessageFetch(int number);
+const UTF8 *MessageFetch(int number);
 size_t MessageFetchSize(int number);
 #endif // FIRANMUX
 
@@ -102,17 +102,17 @@ size_t MessageFetchSize(int number);
 void DCL_CDECL raw_broadcast(int, char *, ...);
 void list_siteinfo(dbref);
 void logged_out0(dbref executor, dbref caller, dbref enactor, int key);
-void logged_out1(dbref executor, dbref caller, dbref enactor, int eval, int key, char *arg);
+void logged_out1(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8 *arg);
 void init_logout_cmdtab(void);
 void desc_reload(dbref);
-void make_portlist(dbref, dbref, char *, char **);
-char *MakeCanonicalDoing(char *pDoing, size_t *pnValidDoing, bool *pbValidDoing);
+void make_portlist(dbref, dbref, UTF8 *, UTF8 **);
+UTF8 *MakeCanonicalDoing(UTF8 *pDoing, size_t *pnValidDoing, bool *pbValidDoing);
 
 /* From cque.cpp */
 int  nfy_que(dbref, int, int, int);
 int  halt_que(dbref, dbref);
 void wait_que(dbref executor, dbref caller, dbref enactor, int, bool,
-    CLinearTimeAbsolute&, dbref, int, char *, int, char *[], reg_ref *[]);
+    CLinearTimeAbsolute&, dbref, int, UTF8 *, int, UTF8 *[], reg_ref *[]);
 
 #ifndef WIN32
 extern "C" char *crypt(const char *inptr, const char *inkey);
@@ -121,12 +121,12 @@ extern bool break_called;
 
 /* From eval.cpp */
 void tcache_init(void);
-char *parse_to(char **, char, int);
-char *parse_arglist(dbref executor, dbref caller, dbref enactor, char *,
-                    char, int, char *[], int, char*[], int, int *);
+UTF8 *parse_to(UTF8 **, UTF8, int);
+UTF8 *parse_arglist(dbref executor, dbref caller, dbref enactor, UTF8 *,
+                    UTF8, int, UTF8 *[], int, UTF8*[], int, int *);
 int get_gender(dbref);
-void mux_exec(char *pdstr, char *buff, char **bufc, dbref executor,
-              dbref caller, dbref enactor, int eval, char *cargs[], int ncargs);
+void mux_exec(UTF8 *pdstr, UTF8 *buff, UTF8 **bufc, dbref executor,
+              dbref caller, dbref enactor, int eval, UTF8 *cargs[], int ncargs);
 
 DCL_INLINE void BufAddRef(lbuf_ref *lbufref)
 {
@@ -173,23 +173,23 @@ DCL_INLINE void RegRelease(reg_ref *regref)
         }
     }
 }
-void RegAssign(reg_ref **regref, size_t nLength, const char *ptr);
+void RegAssign(reg_ref **regref, size_t nLength, const UTF8 *ptr);
 
 void save_global_regs(reg_ref *preserve[]);
 void save_and_clear_global_regs(reg_ref *preserve[]);
 void restore_global_regs(reg_ref *preserve[]);
 
-char **PushPointers(int nNeeded);
-void PopPointers(char **p, int nNeeded);
+UTF8 **PushPointers(int nNeeded);
+void PopPointers(UTF8 **p, int nNeeded);
 reg_ref **PushRegisters(int nNeeded);
 void PopRegisters(reg_ref **p, int nNeeded);
 
 extern const signed char mux_RegisterSet[256];
-extern const char *ColorTable[256];
+extern const UTF8 *ColorTable[256];
 
 #if defined(FIRANMUX)
-char *linewrap_desc(char *);
-char *linewrap_general(char *, int, char *, char *);
+UTF8 *linewrap_desc(UTF8 *);
+UTF8 *linewrap_general(UTF8 *, int, UTF8 *, UTF8 *);
 #endif // FIRANMUX
 
 /* From game.cpp */
@@ -209,11 +209,11 @@ char *linewrap_general(char *, int, char *, char *);
 #define notify_all_from_inside_html(p,c,m)  notify_check(p,c,m, MSG_ME_ALL|MSG_NBR_EXITS_A|MSG_F_UP|MSG_F_CONTENTS|MSG_S_INSIDE|MSG_HTML)
 //#define notify_all_from_outside(p,c,m)      notify_check(p,c,m, MSG_ME_ALL|MSG_NBR_EXITS|MSG_F_UP|MSG_F_CONTENTS|MSG_S_OUTSIDE)
 
-void notify_except(dbref, dbref, dbref, const char *, int key);
-void notify_except2(dbref, dbref, dbref, dbref, const char *);
+void notify_except(dbref, dbref, dbref, const UTF8 *, int key);
+void notify_except2(dbref, dbref, dbref, dbref, const UTF8 *);
 
 void notify_check(dbref target, dbref sender, const mux_string &msg, int key);
-void notify_check(dbref, dbref, const char *, int);
+void notify_check(dbref, dbref, const UTF8 *, int);
 
 bool Hearer(dbref);
 void report(void);
@@ -222,18 +222,18 @@ bool atr_match
 (
     dbref thing,
     dbref player,
-    char  type,
-    char  *str,
-    char  *raw_str,
+    UTF8  type,
+    UTF8  *str,
+    UTF8  *raw_str,
     bool  check_parents
 );
 
 bool regexp_match
 (
-    char *pattern,
-    char *str,
+    UTF8 *pattern,
+    UTF8 *str,
     int case_opt,
-    char *args[],
+    UTF8 *args[],
     int nargs
 );
 
@@ -241,12 +241,12 @@ bool list_check
 (
     dbref thing,
     dbref player,
-    char  type,
-    char  *str,
-    char  *raw_str,
+    UTF8  type,
+    UTF8  *str,
+    UTF8  *raw_str,
     bool  check_parent
 );
-bool html_escape(const char *src, char *dest, char **destp);
+bool html_escape(const UTF8 *src, UTF8 *dest, UTF8 **destp);
 
 #define DUMP_I_NORMAL    0  // OUTPUT to the outdb through a temporary file.
 #define DUMP_I_PANIC     1  // UNLOAD to a crashdb
@@ -258,12 +258,12 @@ void dump_database_internal(int);
 void fork_and_dump(int key);
 
 #define MUX_OPEN_INVALID_HANDLE_VALUE (-1)
-bool mux_fopen(FILE **pFile, const char *filename, const char *mode);
-bool mux_open(int *pfh, const char *filename, int oflag);
-const char *mux_strerror(int errnum);
+bool mux_fopen(FILE **pFile, const UTF8 *filename, const UTF8 *mode);
+bool mux_open(int *pfh, const UTF8 *filename, int oflag);
+const UTF8 *mux_strerror(int errnum);
 
 /* From htab.cpp */
-int  cf_ntab_access(int *, char *, void *, UINT32, dbref, char *);
+int  cf_ntab_access(int *, UTF8 *, void *, UINT32, dbref, UTF8 *);
 
 /* From log.cpp */
 #ifdef WIN32
@@ -271,11 +271,11 @@ int  cf_ntab_access(int *, char *, void *, UINT32, dbref, char *);
 #else // WIN32
 #define ENDLINE "\n"
 #endif // WIN32
-bool start_log(const char *primary, const char *secondary);
+bool start_log(const UTF8 *primary, const UTF8 *secondary);
 void end_log(void);
-void log_perror(const char *, const char *,const char *,
-            const char *);
-void log_text(const char *);
+void log_perror(const UTF8 *, const UTF8 *,const UTF8 *,
+            const UTF8 *);
+void log_text(const UTF8 *);
 void log_number(int);
 void DCL_CDECL log_printf(const char *fmt, ...);
 void log_name(dbref);
@@ -286,14 +286,14 @@ void log_type_and_name(dbref);
 void look_in(dbref,dbref, int);
 void show_vrml_url(dbref, dbref);
 #define NUM_ATTRIBUTE_CODES 12
-size_t decode_attr_flags(int aflags, char buff[NUM_ATTRIBUTE_CODES+1]);
-void   decode_attr_flag_names(int aflags, char *buf, char **bufc);
+size_t decode_attr_flags(int aflags, UTF8 buff[NUM_ATTRIBUTE_CODES+1]);
+void   decode_attr_flag_names(int aflags, UTF8 *buf, UTF8 **bufc);
 
 /* From move.cpp */
 void move_object(dbref, dbref);
 void move_via_generic(dbref, dbref, dbref, int);
 bool move_via_teleport(dbref, dbref, dbref, int);
-void move_exit(dbref, dbref, bool, const char *, int);
+void move_exit(dbref, dbref, bool, const UTF8 *, int);
 void do_enter_internal(dbref, dbref, bool);
 
 /* From object.cpp */
@@ -303,31 +303,31 @@ bool  can_set_home(dbref, dbref, dbref);
 dbref new_home(dbref);
 dbref clone_home(dbref, dbref);
 void  divest_object(dbref);
-dbref create_obj(dbref, int, const char *, int);
+dbref create_obj(dbref, int, const UTF8 *, int);
 void  destroy_obj(dbref);
 void  empty_obj(dbref);
 
 /* From player.cpp */
-dbref create_player(char *name, char *pass, dbref executor, bool isrobot, const char **pmsg);
+dbref create_player(UTF8 *name, UTF8 *pass, dbref executor, bool isrobot, const UTF8 **pmsg);
 void AddToPublicChannel(dbref player);
-bool add_player_name(dbref, const char *);
-bool delete_player_name(dbref, const char *);
-dbref lookup_player(dbref, char *, bool);
+bool add_player_name(dbref, const UTF8 *);
+bool delete_player_name(dbref, const UTF8 *);
+dbref lookup_player(dbref, UTF8 *, bool);
 void load_player_names(void);
-void badname_add(char *);
-void badname_remove(char *);
-bool badname_check(char *);
-void badname_list(dbref, const char *);
-void ChangePassword(dbref player, const char *szPassword);
-const char *mux_crypt(const char *szPassword, const char *szSalt, int *piType);
+void badname_add(UTF8 *);
+void badname_remove(UTF8 *);
+bool badname_check(UTF8 *);
+void badname_list(dbref, const UTF8 *);
+void ChangePassword(dbref player, const UTF8 *szPassword);
+const UTF8 *mux_crypt(const UTF8 *szPassword, const UTF8 *szSalt, int *piType);
 int  QueueMax(dbref);
 int  a_Queue(dbref, int);
 void pcache_reload(dbref);
 void pcache_init(void);
 
 /* From predicates.cpp */
-char * DCL_CDECL tprintf(const char *, ...);
-void DCL_CDECL safe_tprintf_str(char *, char **, const char *, ...);
+UTF8 * DCL_CDECL tprintf(const char *, ...);
+void DCL_CDECL safe_tprintf_str(UTF8 *, UTF8 **, const char *, ...);
 dbref insert_first(dbref, dbref);
 dbref remove_first(dbref, dbref);
 dbref reverse_list(dbref);
@@ -338,33 +338,33 @@ void add_quota(dbref, int);
 bool canpayfees(dbref, dbref, int, int);
 void giveto(dbref,int);
 bool payfor(dbref,int);
-char *MakeCanonicalObjectName(const char *pName, size_t *pnName, bool *pbValid);
-char *MakeCanonicalExitName(const char *pName, size_t *pnName, bool *pbValid);
-bool ValidatePlayerName(const char *pName);
-bool ok_password(const char *szPassword, const char **pmsg);
+UTF8 *MakeCanonicalObjectName(const UTF8 *pName, size_t *pnName, bool *pbValid);
+UTF8 *MakeCanonicalExitName(const UTF8 *pName, size_t *pnName, bool *pbValid);
+bool ValidatePlayerName(const UTF8 *pName);
+bool ok_password(const UTF8 *szPassword, const UTF8 **pmsg);
 void handle_ears(dbref, bool, bool);
-dbref match_possessed(dbref, dbref, char *, dbref, bool);
-void parse_range(char **, dbref *, dbref *);
-bool parse_thing_slash(dbref, char *, char **, dbref *);
-bool get_obj_and_lock(dbref, char *, dbref *, ATTR **, char *, char **);
+dbref match_possessed(dbref, dbref, UTF8 *, dbref, bool);
+void parse_range(UTF8 **, dbref *, dbref *);
+bool parse_thing_slash(dbref, UTF8 *, UTF8 **, dbref *);
+bool get_obj_and_lock(dbref, UTF8 *, dbref *, ATTR **, UTF8 *, UTF8 **);
 dbref where_is(dbref);
 dbref where_room(dbref);
 bool locatable(dbref, dbref, dbref);
 bool nearby(dbref, dbref);
 bool exit_visible(dbref, dbref, int);
 bool exit_displayable(dbref, dbref, int);
-void did_it(dbref player, dbref thing, int what, const char *def, int owhat,
-            const char *odef, int awhat, int ctrl_flags,
-            char *args[], int nargs);
+void did_it(dbref player, dbref thing, int what, const UTF8 *def, int owhat,
+            const UTF8 *odef, int awhat, int ctrl_flags,
+            UTF8 *args[], int nargs);
 bool bCanReadAttr(dbref executor, dbref target, ATTR *tattr, bool bParentCheck);
 bool bCanSetAttr(dbref executor, dbref target, ATTR *tattr);
 bool bCanLockAttr(dbref executor, dbref target, ATTR *tattr);
 
 /* From set.cpp */
-bool parse_attrib(dbref, char *, dbref *, ATTR **);
-bool parse_attrib_wild(dbref, char *, dbref *, bool, bool, bool);
-void edit_string(char *, char **, char *, char *);
-dbref match_controlled_handler(dbref player, const char *name, bool bQuiet);
+bool parse_attrib(dbref, UTF8 *, dbref *, ATTR **);
+bool parse_attrib_wild(dbref, UTF8 *, dbref *, bool, bool, bool);
+void edit_string(UTF8 *, UTF8 **, UTF8 *, UTF8 *);
+dbref match_controlled_handler(dbref player, const UTF8 *name, bool bQuiet);
 #define match_controlled(player,name)       match_controlled_handler(player, name, false)
 #define match_controlled_quiet(player,name) match_controlled_handler(player, name, true)
 void set_modified(dbref thing);
@@ -386,11 +386,11 @@ void SetClearFlags(dbref thing, FLAG aClearFlags[3], FLAG aSetFlags[3]);
 
 /* From boolexp.cpp */
 bool eval_boolexp(dbref, dbref, dbref, BOOLEXP *);
-BOOLEXP *parse_boolexp(dbref, const char *, bool);
-bool eval_boolexp_atr(dbref, dbref, dbref, char *);
+BOOLEXP *parse_boolexp(dbref, const UTF8 *, bool);
+bool eval_boolexp_atr(dbref, dbref, dbref, UTF8 *);
 
 /* From functions.cpp */
-bool xlate(char *);
+bool xlate(UTF8 *);
 
 #define IEEE_MAKE_NAN  1
 #define IEEE_MAKE_IND  2
@@ -400,10 +400,10 @@ bool xlate(char *);
 double MakeSpecialFloat(int iWhich);
 
 /* From unparse.cpp */
-char *unparse_boolexp(dbref, BOOLEXP *);
-char *unparse_boolexp_quiet(dbref, BOOLEXP *);
-char *unparse_boolexp_decompile(dbref, BOOLEXP *);
-char *unparse_boolexp_function(dbref, BOOLEXP *);
+UTF8 *unparse_boolexp(dbref, BOOLEXP *);
+UTF8 *unparse_boolexp_quiet(dbref, BOOLEXP *);
+UTF8 *unparse_boolexp_decompile(dbref, BOOLEXP *);
+UTF8 *unparse_boolexp_function(dbref, BOOLEXP *);
 
 /* From walkdb.cpp */
 int chown_all(dbref from_player, dbref to_player, dbref acting_player, int key);
@@ -414,17 +414,17 @@ dbref olist_first(void);
 dbref olist_next(void);
 
 /* From wild.cpp */
-bool wild(char *, char *, char *[], int);
-bool wild_match(char *, const char *);
-bool quick_wild(const char *, const char *);
+bool wild(UTF8 *, UTF8 *, UTF8 *[], int);
+bool wild_match(UTF8 *, const UTF8 *);
+bool quick_wild(const UTF8 *, const UTF8 *);
 
 /* From command.cpp */
 bool check_access(dbref player, int mask);
 void set_prefix_cmds(void);
-char *process_command(dbref executor, dbref caller, dbref enactor, int, bool,
-    char *, char *[], int);
-size_t LeftJustifyString(char *field, size_t nWidth, const char *value);
-size_t RightJustifyNumber(char *field, size_t nWidth, INT64 value, char chFill);
+UTF8 *process_command(dbref executor, dbref caller, dbref enactor, int, bool,
+    UTF8 *, UTF8 *[], int);
+size_t LeftJustifyString(UTF8 *field, size_t nWidth, const UTF8 *value);
+size_t RightJustifyNumber(UTF8 *field, size_t nWidth, INT64 value, UTF8 chFill);
 
 #define Protect(f) (cmdp->perms & f)
 
@@ -435,48 +435,48 @@ size_t RightJustifyNumber(char *field, size_t nWidth, INT64 value, char chFill);
 
 /* from db.cpp */
 bool Commer(dbref);
-void s_Pass(dbref, const char *);
-void s_Name(dbref, const char *);
-void s_Moniker(dbref thing, const char *s);
-const char *Name(dbref thing);
-const char *PureName(dbref thing);
-const char *Moniker(dbref thing);
-FWDLIST *fwdlist_load(dbref player, char *atext);
+void s_Pass(dbref, const UTF8 *);
+void s_Name(dbref, const UTF8 *);
+void s_Moniker(dbref thing, const UTF8 *s);
+const UTF8 *Name(dbref thing);
+const UTF8 *PureName(dbref thing);
+const UTF8 *Moniker(dbref thing);
+FWDLIST *fwdlist_load(dbref player, UTF8 *atext);
 void fwdlist_set(dbref, FWDLIST *);
 void fwdlist_clr(dbref);
-int  fwdlist_rewrite(FWDLIST *, char *);
+int  fwdlist_rewrite(FWDLIST *, UTF8 *);
 FWDLIST *fwdlist_get(dbref);
 void atr_push(void);
 void atr_pop(void);
-int  atr_head(dbref, char **);
-int  atr_next(char **);
-int  init_dbfile(char *game_dir_file, char *game_pag_file, int nCachePages);
+int  atr_head(dbref, unsigned char **);
+int  atr_next(UTF8 **);
+int  init_dbfile(UTF8 *game_dir_file, UTF8 *game_pag_file, int nCachePages);
 void atr_cpy(dbref dest, dbref source, bool bInternal);
 void atr_chown(dbref);
 void atr_clr(dbref, int);
-void atr_add_raw_LEN(dbref, int, const char *, size_t n);
-void atr_add_raw(dbref, int, const char *);
-void atr_add(dbref, int, char *, dbref, int);
+void atr_add_raw_LEN(dbref thing, int atr, const UTF8 *szValue, size_t nValue);
+void atr_add_raw(dbref, int, const UTF8 *);
+void atr_add(dbref, int, UTF8 *, dbref, int);
 void atr_set_flags(dbref, int, int);
-const char *atr_get_raw_LEN(dbref, int, size_t *);
-const char *atr_get_raw(dbref, int);
-char *atr_get_LEN(dbref, int, dbref *, int *, size_t *);
-char *atr_get_real(const char *tag, dbref, int, dbref *, int *, const char *, const int);
-#define atr_get(g,t,a,o,f) atr_get_real(g,t,a,o,f, __FILE__, __LINE__)
-char *atr_pget_LEN(dbref, int, dbref *, int *, size_t *);
-char *atr_pget_real(dbref, int, dbref *, int *, const char *, const int);
-#define atr_pget(t,a,o,f) atr_pget_real(t,a,o,f, __FILE__, __LINE__)
-char *atr_get_str_LEN(char *s, dbref, int, dbref *, int *, size_t *);
-char *atr_get_str(char *, dbref, int, dbref *, int *);
-char *atr_pget_str_LEN(char *, dbref, int, dbref *, int *, size_t *);
-char *atr_pget_str(char *, dbref, int, dbref *, int *);
+const UTF8 *atr_get_raw_LEN(dbref, int, size_t *);
+const UTF8 *atr_get_raw(dbref, int);
+UTF8 *atr_get_LEN(dbref, int, dbref *, int *, size_t *);
+UTF8 *atr_get_real(const UTF8 *tag, dbref, int, dbref *, int *, const UTF8 *, const int);
+#define atr_get(g,t,a,o,f) atr_get_real((UTF8 *)g,t,a,o,f, (UTF8 *)__FILE__, __LINE__)
+UTF8 *atr_pget_LEN(dbref, int, dbref *, int *, size_t *);
+UTF8 *atr_pget_real(dbref, int, dbref *, int *, const UTF8 *, const int);
+#define atr_pget(t,a,o,f) atr_pget_real(t,a,o,f, (UTF8 *)__FILE__, __LINE__)
+UTF8 *atr_get_str_LEN(UTF8 *s, dbref, int, dbref *, int *, size_t *);
+UTF8 *atr_get_str(UTF8 *, dbref, int, dbref *, int *);
+UTF8 *atr_pget_str_LEN(UTF8 *, dbref, int, dbref *, int *, size_t *);
+UTF8 *atr_pget_str(UTF8 *, dbref, int, dbref *, int *);
 bool atr_get_info(dbref, int, dbref *, int *);
 bool atr_pget_info(dbref, int, dbref *, int *);
 void atr_free(dbref);
 bool check_zone_handler(dbref player, dbref thing, bool bPlayerCheck);
 #define check_zone(player, thing) check_zone_handler(player, thing, false)
 void ReleaseAllResources(dbref obj);
-bool fwdlist_ck(dbref player, dbref thing, int anum, char *atext);
+bool fwdlist_ck(dbref player, dbref thing, int anum, UTF8 *atext);
 
 extern int anum_alc_top;
 
@@ -814,7 +814,7 @@ extern int anum_alc_top;
 #define SA_DFLT         2   /* Try to restart on a fatal error */
 
 #define STARTLOG(key,p,s) \
-    if ((((key) & mudconf.log_options) != 0) && start_log(p, s)) {
+    if ((((key) & mudconf.log_options) != 0) && start_log((UTF8 *)p, (UTF8 *)s)) {
 #define ENDLOG \
     end_log(); }
 #define LOG_SIMPLE(key,p,s,m) \
@@ -822,15 +822,15 @@ extern int anum_alc_top;
         log_text(m); \
     ENDLOG
 
-extern const char *NOMATCH_MESSAGE;
-extern const char *AMBIGUOUS_MESSAGE;
-extern const char *NOPERM_MESSAGE;
-extern const char *FUNC_FAIL_MESSAGE;
-extern const char *FUNC_NOMATCH_MESSAGE;
-extern const char *OUT_OF_RANGE;
-extern const char *FUNC_NOT_FOUND;
-extern const char *FUNC_AMBIGUOUS;
-extern const char *FUNC_NOPERM_MESSAGE;
+extern const UTF8 *NOMATCH_MESSAGE;
+extern const UTF8 *AMBIGUOUS_MESSAGE;
+extern const UTF8 *NOPERM_MESSAGE;
+extern const UTF8 *FUNC_FAIL_MESSAGE;
+extern const UTF8 *FUNC_NOMATCH_MESSAGE;
+extern const UTF8 *OUT_OF_RANGE;
+extern const UTF8 *FUNC_NOT_FOUND;
+extern const UTF8 *FUNC_AMBIGUOUS;
+extern const UTF8 *FUNC_NOPERM_MESSAGE;
 
 #define safe_nothing(b,p)   safe_copy_buf(FUNC_FAIL_MESSAGE,3,(b),(p))
 #define safe_noperm(b,p)    safe_copy_buf(FUNC_NOPERM_MESSAGE,21,(b),(p))
@@ -839,8 +839,8 @@ extern const char *FUNC_NOPERM_MESSAGE;
 #define safe_ambiguous(b,p) safe_copy_buf(FUNC_AMBIGUOUS,13,(b),(p))
 #define safe_notfound(b,p)  safe_copy_buf(FUNC_NOT_FOUND,13,(b),(p))
 
-int  ReplaceFile(char *old_name, char *new_name);
-void RemoveFile(char *name);
+int  ReplaceFile(UTF8 *old_name, UTF8 *new_name);
+void RemoveFile(UTF8 *name);
 void destroy_player(dbref agent, dbref victim);
 void do_pemit_list
 (
@@ -848,9 +848,9 @@ void do_pemit_list
     int key,
     bool bDoContents,
     int pemit_flags,
-    char *list,
+    UTF8 *list,
     int chPoseType,
-    char *message
+    UTF8 *message
 );
 void do_pemit_single
 (
@@ -858,25 +858,25 @@ void do_pemit_single
     int key,
     bool bDoContents,
     int pemit_flags,
-    char *recipient,
+    UTF8 *recipient,
     int chPoseType,
-    char *message
+    UTF8 *message
 );
 void do_say(dbref executor, dbref caller, dbref enactor, int eval, int key,
-                   char *message);
+                   UTF8 *message);
 
-int  boot_off(dbref player, const char *message);
-void do_mail_clear(dbref player, char *msglist);
+int  boot_off(dbref player, const UTF8 *message);
+void do_mail_clear(dbref player, UTF8 *msglist);
 void do_mail_purge(dbref player);
 void malias_cleanup(dbref player);
 void count_mail(dbref player, int folder, int *rcount, int *ucount, int *ccount);
 void check_mail_expiration(void);
 void check_mail(dbref player, int folder, bool silent);
-const char *mail_fetch_message(dbref player, int num);
+const UTF8 *mail_fetch_message(dbref player, int num);
 int  mail_fetch_from(dbref player, int num);
 void raw_notify_html(dbref player, const mux_string &sMsg);
 void do_lock(dbref executor, dbref caller, dbref enactor, int key,
-                    int nargs, char *name, char *keytext);
+                    int nargs, UTF8 *name, UTF8 *keytext);
 void check_events(void);
 void list_system_resources(dbref player);
 
@@ -1088,9 +1088,9 @@ void mux_FPInit();
 void mux_FPSet();
 void mux_FPRestore();
 double ulp(double);
-double mux_strtod(const char *s00, char **se);
-char *mux_dtoa(double d, int mode, int ndigits, int *decpt, int *sign,
-             char **rve);
+double mux_strtod(const UTF8 *s00, UTF8 **se);
+UTF8 *mux_dtoa(double d, int mode, int ndigits, int *decpt, int *sign,
+             UTF8 **rve);
 
 // From wiz.cpp
 //
@@ -1114,14 +1114,14 @@ extern CLinearTimeAbsolute cs_ltime;
 
 // From speech.cpp
 //
-char *modSpeech(dbref player, char *message, bool bWhich, char *command);
+UTF8 *modSpeech(dbref player, UTF8 *message, bool bWhich, UTF8 *command);
 
 // From funceval.cpp
 //
 #ifdef DEPRECATED
 void stack_clr(dbref obj);
 #endif // DEPRECATED
-bool parse_and_get_attrib(dbref, char *[], char **, dbref *, dbref *, int *, char *, char **);
-void SimplifyColorLetters(char Out[8], char *pIn);
+bool parse_and_get_attrib(dbref, UTF8 *[], UTF8 **, dbref *, dbref *, int *, UTF8 *, UTF8 **);
+void SimplifyColorLetters(UTF8 Out[8], UTF8 *pIn);
 
 #endif // EXTERNS_H

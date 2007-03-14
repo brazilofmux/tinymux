@@ -411,8 +411,8 @@ const INT64 FACTOR_100NS_PER_DAY = FACTOR_100NS_PER_HOUR*24;
 const INT64 FACTOR_100NS_PER_WEEK = FACTOR_100NS_PER_DAY*7;
 
 int CLinearTimeAbsolute::m_nCount = 0;
-char CLinearTimeAbsolute::m_Buffer[I64BUF_SIZE*2];
-char CLinearTimeDelta::m_Buffer[I64BUF_SIZE*2];
+UTF8 CLinearTimeAbsolute::m_Buffer[I64BUF_SIZE*2];
+UTF8 CLinearTimeDelta::m_Buffer[I64BUF_SIZE*2];
 
 static void GetUTCLinearTime(INT64 *plt);
 
@@ -463,7 +463,7 @@ CLinearTimeAbsolute::CLinearTimeAbsolute(const CLinearTimeAbsolute& ltaOrigin, c
     m_tAbsolute = ltaOrigin.m_tAbsolute + ltdOffset.m_tDelta;
 }
 
-static bool ParseFractionalSecondsString(INT64 &i64, char *str)
+static bool ParseFractionalSecondsString(INT64 &i64, UTF8 *str)
 {
     bool bMinus = false;
 
@@ -496,7 +496,7 @@ static bool ParseFractionalSecondsString(INT64 &i64, char *str)
     // Need at least one digit.
     //
     bGotOne = false;
-    char *pIntegerStart = str;
+    UTF8 *pIntegerStart = str;
     if (mux_isdigit(*str))
     {
         bGotOne = true;
@@ -509,7 +509,7 @@ static bool ParseFractionalSecondsString(INT64 &i64, char *str)
     {
         str++;
     }
-    char *pIntegerEnd = str;
+    UTF8 *pIntegerEnd = str;
 
     // Decimal point.
     //
@@ -520,7 +520,7 @@ static bool ParseFractionalSecondsString(INT64 &i64, char *str)
 
     // Need at least one digit
     //
-    char *pFractionalStart = str;
+    UTF8 *pFractionalStart = str;
     if (mux_isdigit(*str))
     {
         bGotOne = true;
@@ -533,7 +533,7 @@ static bool ParseFractionalSecondsString(INT64 &i64, char *str)
     {
         str++;
     }
-    char *pFractionalEnd = str;
+    UTF8 *pFractionalEnd = str;
 
     // Trailing spaces.
     //
@@ -548,9 +548,9 @@ static bool ParseFractionalSecondsString(INT64 &i64, char *str)
     }
 
 #define PFSS_PRECISION 7
-    char   aBuffer[64];
+    UTF8   aBuffer[64];
     size_t nBufferAvailable = sizeof(aBuffer) - PFSS_PRECISION - 1;
-    char  *p = aBuffer;
+    UTF8  *p = aBuffer;
 
     // Sign.
     //
@@ -618,7 +618,7 @@ static bool ParseFractionalSecondsString(INT64 &i64, char *str)
     return true;
 }
 
-static void ConvertToSecondsString(char *buffer, INT64 n64, int nFracDigits)
+static void ConvertToSecondsString(UTF8 *buffer, INT64 n64, int nFracDigits)
 {
     INT64 Leftover;
     INT64 lt = i64FloorDivisionMod(n64, FACTOR_100NS_PER_SECOND, &Leftover);
@@ -643,11 +643,11 @@ static void ConvertToSecondsString(char *buffer, INT64 n64, int nFracDigits)
     }
     if (0 < nFracDigits)
     {
-        char *p = buffer + n;
+        UTF8 *p = buffer + n;
         *p++ = '.';
-        char *q = p;
+        UTF8 *q = p;
 
-        char buf[maxFracDigits+1];
+        UTF8 buf[maxFracDigits+1];
         size_t m = mux_i64toa(Leftover, buf);
         memset(p, '0', maxFracDigits - m);
         p += maxFracDigits - m;
@@ -662,13 +662,13 @@ static void ConvertToSecondsString(char *buffer, INT64 n64, int nFracDigits)
     }
 }
 
-char *CLinearTimeDelta::ReturnSecondsString(int nFracDigits)
+UTF8 *CLinearTimeDelta::ReturnSecondsString(int nFracDigits)
 {
     ConvertToSecondsString(m_Buffer, m_tDelta, nFracDigits);
     return m_Buffer;
 }
 
-char *CLinearTimeAbsolute::ReturnSecondsString(int nFracDigits)
+UTF8 *CLinearTimeAbsolute::ReturnSecondsString(int nFracDigits)
 {
     ConvertToSecondsString(m_Buffer, m_tAbsolute - EPOCH_OFFSET, nFracDigits);
     return m_Buffer;
@@ -722,11 +722,32 @@ void CLinearTimeDelta::SetTimeValueStruct(struct timeval *tv)
 // However, the year may be larger than 4 characters.
 //
 
-char *DayOfWeekString[7] = { "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat" };
-static const char daystab[12] = { 31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };
-const char *monthtab[12] =
+UTF8 *DayOfWeekString[7] =
 {
-    "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+    (UTF8 *)"Sun",
+    (UTF8 *)"Mon",
+    (UTF8 *)"Tue",
+    (UTF8 *)"Wed",
+    (UTF8 *)"Thu",
+    (UTF8 *)"Fri",
+    (UTF8 *)"Sat"
+};
+
+static const UTF8 daystab[12] = { 31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };
+const UTF8 *monthtab[12] =
+{
+    (UTF8 *)"Jan",
+    (UTF8 *)"Feb",
+    (UTF8 *)"Mar",
+    (UTF8 *)"Apr",
+    (UTF8 *)"May",
+    (UTF8 *)"Jun",
+    (UTF8 *)"Jul",
+    (UTF8 *)"Aug",
+    (UTF8 *)"Sep",
+    (UTF8 *)"Oct",
+    (UTF8 *)"Nov",
+    (UTF8 *)"Dec"
 };
 
 void CLinearTimeDelta::SetMilliseconds(unsigned long arg_dwMilliseconds)
@@ -744,7 +765,7 @@ INT64 CLinearTimeDelta::ReturnMicroseconds(void)
     return m_tDelta/FACTOR_100NS_PER_MICROSECOND;
 }
 
-void CLinearTimeDelta::SetSecondsString(char *arg_szSeconds)
+void CLinearTimeDelta::SetSecondsString(UTF8 *arg_szSeconds)
 {
     ParseFractionalSecondsString(m_tDelta, arg_szSeconds);
 }
@@ -954,13 +975,13 @@ static int MonthTabHash[12] =
     0x00534550, 0x004f4354, 0x004e4f56, 0x00444543
 };
 
-static bool ParseThreeLetters(const char **pp, int *piHash)
+static bool ParseThreeLetters(const UTF8 **pp, int *piHash)
 {
     *piHash = 0;
 
     // Skip Initial spaces
     //
-    const char *p = *pp;
+    const UTF8 *p = *pp;
     while (*p == ' ')
     {
         p++;
@@ -968,7 +989,7 @@ static bool ParseThreeLetters(const char **pp, int *piHash)
 
     // Parse space-separate token.
     //
-    const char *q = p;
+    const UTF8 *q = p;
     int iHash = 0;
     while (*q && *q != ' ')
     {
@@ -1000,10 +1021,10 @@ static bool ParseThreeLetters(const char **pp, int *piHash)
     return true;
 }
 
-static void ParseDecimalSeconds(size_t n, const char *p, unsigned short *iMilli,
+static void ParseDecimalSeconds(size_t n, const UTF8 *p, unsigned short *iMilli,
                          unsigned short *iMicro, unsigned short *iNano)
 {
-    char aBuffer[10];
+    UTF8 aBuffer[10];
     if (n > sizeof(aBuffer) - 1)
     {
         n = sizeof(aBuffer) - 1;
@@ -1018,7 +1039,7 @@ static void ParseDecimalSeconds(size_t n, const char *p, unsigned short *iMilli,
     *iMilli = static_cast<unsigned short>(ns / 1000);
 }
 
-static bool do_convtime(const char *str, FIELDEDTIME *ft)
+static bool do_convtime(const UTF8 *str, FIELDEDTIME *ft)
 {
     memset(ft, 0, sizeof(FIELDEDTIME));
     if (!str || !ft)
@@ -1028,7 +1049,7 @@ static bool do_convtime(const char *str, FIELDEDTIME *ft)
 
     // Day-of-week OR month.
     //
-    const char *p = str;
+    const UTF8 *p = str;
     int i, iHash;
     if (!ParseThreeLetters(&p, &iHash))
     {
@@ -1115,14 +1136,14 @@ static bool do_convtime(const char *str, FIELDEDTIME *ft)
     {
         p++;
         size_t n;
-        const char *q = strchr(p, ' ');
+        const UTF8 *q = (UTF8 *)strchr((char *)p, ' ');
         if (q)
         {
             n = q - p;
         }
         else
         {
-            n = strlen(p);
+            n = strlen((char *)p);
         }
 
         ParseDecimalSeconds(n, p, &ft->iMillisecond, &ft->iMicrosecond,
@@ -1172,7 +1193,7 @@ bool CLinearTimeAbsolute::ReturnFields(FIELDEDTIME *arg_tStruct)
     return LinearTimeToFieldedTime(m_tAbsolute, arg_tStruct);
 }
 
-bool CLinearTimeAbsolute::SetString(const char *arg_tBuffer)
+bool CLinearTimeAbsolute::SetString(const UTF8 *arg_tBuffer)
 {
     FIELDEDTIME ft;
     if (do_convtime(arg_tBuffer, &ft))
@@ -1268,7 +1289,7 @@ static void SetStructTm(FIELDEDTIME *ft, struct tm *ptm)
     ft->iSecond     = static_cast<unsigned short>(ptm->tm_sec);
 }
 
-void CLinearTimeAbsolute::ReturnUniqueString(char *buffer, size_t nBuffer)
+void CLinearTimeAbsolute::ReturnUniqueString(UTF8 *buffer, size_t nBuffer)
 {
     FIELDEDTIME ft;
     if (LinearTimeToFieldedTime(m_tAbsolute, &ft))
@@ -1282,7 +1303,7 @@ void CLinearTimeAbsolute::ReturnUniqueString(char *buffer, size_t nBuffer)
     }
 }
 
-char *CLinearTimeAbsolute::ReturnDateString(int nFracDigits)
+UTF8 *CLinearTimeAbsolute::ReturnDateString(int nFracDigits)
 {
     FIELDEDTIME ft;
     if (LinearTimeToFieldedTime(m_tAbsolute, &ft))
@@ -1300,7 +1321,7 @@ char *CLinearTimeAbsolute::ReturnDateString(int nFracDigits)
             nFracDigits = maxFracDigits;
         }
 
-        char buffer[11];
+        UTF8 buffer[11];
         buffer[0] = '\0';
         if (  0 < nFracDigits
            && (  ft.iMillisecond != 0
@@ -1312,7 +1333,7 @@ char *CLinearTimeAbsolute::ReturnDateString(int nFracDigits)
 
             // Remove trailing zeros.
             //
-            char *p = (buffer + 1) + (nFracDigits - 1);
+            UTF8 *p = (buffer + 1) + (nFracDigits - 1);
             while (*p == '0')
             {
                 p--;
@@ -1403,7 +1424,7 @@ bool LinearTimeToFieldedTime(INT64 lt, FIELDEDTIME *ft)
     return true;
 }
 
-bool CLinearTimeAbsolute::SetSecondsString(char *arg_szSeconds)
+bool CLinearTimeAbsolute::SetSecondsString(UTF8 *arg_szSeconds)
 {
     INT64 t;
     const INT64 tEarliest = EARLIEST_VALID_DATE;
@@ -2509,7 +2530,7 @@ typedef struct tag_pd_node
 #define PDTT_TEXT             4 // 'January' 'Jan' 'T' 'W'
 #define PDTT_NUMERIC_SIGNED   5 // [+-][0-9]+
     unsigned  uTokenType;
-    char     *pToken;
+    UTF8     *pToken;
     size_t    nToken;
     int       iToken;
 
@@ -2580,7 +2601,7 @@ typedef struct tag_AllFields
 
 // isValidYear assumes numeric string.
 //
-static bool isValidYear(size_t nStr, char *pStr, int iValue)
+static bool isValidYear(size_t nStr, UTF8 *pStr, int iValue)
 {
     UNUSED_PARAMETER(pStr);
     UNUSED_PARAMETER(iValue);
@@ -2596,7 +2617,7 @@ static bool isValidYear(size_t nStr, char *pStr, int iValue)
     return false;
 }
 
-static bool isValidMonth(size_t nStr, char *pStr, int iValue)
+static bool isValidMonth(size_t nStr, UTF8 *pStr, int iValue)
 {
     UNUSED_PARAMETER(pStr);
 
@@ -2610,7 +2631,7 @@ static bool isValidMonth(size_t nStr, char *pStr, int iValue)
     return false;
 }
 
-static bool isValidDayOfMonth(size_t nStr, char *pStr, int iValue)
+static bool isValidDayOfMonth(size_t nStr, UTF8 *pStr, int iValue)
 {
     UNUSED_PARAMETER(pStr);
 
@@ -2625,7 +2646,7 @@ static bool isValidDayOfMonth(size_t nStr, char *pStr, int iValue)
     return false;
 }
 
-static bool isValidDayOfWeek(size_t nStr, char *pStr, int iValue)
+static bool isValidDayOfWeek(size_t nStr, UTF8 *pStr, int iValue)
 {
     UNUSED_PARAMETER(pStr);
 
@@ -2639,7 +2660,7 @@ static bool isValidDayOfWeek(size_t nStr, char *pStr, int iValue)
     return false;
 }
 
-static bool isValidDayOfYear(size_t nStr, char *pStr, int iValue)
+static bool isValidDayOfYear(size_t nStr, UTF8 *pStr, int iValue)
 {
     UNUSED_PARAMETER(pStr);
 
@@ -2653,7 +2674,7 @@ static bool isValidDayOfYear(size_t nStr, char *pStr, int iValue)
     return false;
 }
 
-static bool isValidWeekOfYear(size_t nStr, char *pStr, int iValue)
+static bool isValidWeekOfYear(size_t nStr, UTF8 *pStr, int iValue)
 {
     UNUSED_PARAMETER(pStr);
 
@@ -2667,7 +2688,7 @@ static bool isValidWeekOfYear(size_t nStr, char *pStr, int iValue)
     return false;
 }
 
-static bool isValidHour(size_t nStr, char *pStr, int iValue)
+static bool isValidHour(size_t nStr, UTF8 *pStr, int iValue)
 {
     UNUSED_PARAMETER(pStr);
 
@@ -2681,7 +2702,7 @@ static bool isValidHour(size_t nStr, char *pStr, int iValue)
     return false;
 }
 
-static bool isValidMinute(size_t nStr, char *pStr, int iValue)
+static bool isValidMinute(size_t nStr, UTF8 *pStr, int iValue)
 {
     UNUSED_PARAMETER(pStr);
 
@@ -2695,7 +2716,7 @@ static bool isValidMinute(size_t nStr, char *pStr, int iValue)
     return false;
 }
 
-static bool isValidSecond(size_t nStr, char *pStr, int iValue)
+static bool isValidSecond(size_t nStr, UTF8 *pStr, int iValue)
 {
     UNUSED_PARAMETER(pStr);
 
@@ -2710,7 +2731,7 @@ static bool isValidSecond(size_t nStr, char *pStr, int iValue)
     return false;
 }
 
-static bool isValidSubSecond(size_t nStr, char *pStr, int iValue)
+static bool isValidSubSecond(size_t nStr, UTF8 *pStr, int iValue)
 {
     UNUSED_PARAMETER(pStr);
     UNUSED_PARAMETER(iValue);
@@ -2727,7 +2748,7 @@ static bool isValidSubSecond(size_t nStr, char *pStr, int iValue)
 
 // This function handles H, HH, HMM, HHMM, HMMSS, HHMMSS
 //
-static bool isValidHMS(size_t nStr, char *pStr, int iValue)
+static bool isValidHMS(size_t nStr, UTF8 *pStr, int iValue)
 {
     int iHour, iMinutes, iSeconds;
     switch (nStr)
@@ -2822,7 +2843,7 @@ static void BreakDownHMS(PD_Node *pNode)
 
 // This function handles YYMMDD, YYYMMDD, YYYYMMDD, YYYYYMMDD
 //
-static bool isValidYMD(size_t nStr, char *pStr, int iValue)
+static bool isValidYMD(size_t nStr, UTF8 *pStr, int iValue)
 {
     int iYear = iValue / 10000;
     iValue -= 10000 * iYear;
@@ -2850,7 +2871,7 @@ static void BreakDownYMD(PD_Node *pNode)
 
 // This function handles MMDDYY
 //
-static bool isValidMDY(size_t nStr, char *pStr, int iValue)
+static bool isValidMDY(size_t nStr, UTF8 *pStr, int iValue)
 {
     int iMonth = iValue / 10000;
     iValue -= 10000 * iMonth;
@@ -2879,7 +2900,7 @@ static void BreakDownMDY(PD_Node *pNode)
 
 // This function handles DDMMYY
 //
-static bool isValidDMY(size_t nStr, char *pStr, int iValue)
+static bool isValidDMY(size_t nStr, UTF8 *pStr, int iValue)
 {
     int iDay = iValue / 10000;
     iValue -= 10000 * iDay;
@@ -2908,7 +2929,7 @@ static void BreakDownDMY(PD_Node *pNode)
 
 // This function handles YDDD, YYDDD, YYYDDD, YYYYDDD, YYYYYDDD
 //
-static bool isValidYD(size_t nStr, char *pStr, int iValue)
+static bool isValidYD(size_t nStr, UTF8 *pStr, int iValue)
 {
     int iYear = iValue / 1000;
     iValue -= 1000*iYear;
@@ -2944,7 +2965,7 @@ static const int InitialCouldBe[9] =
     PDCB_YMD  // 9
 };
 
-typedef bool PVALIDFUNC(size_t nStr, char *pStr, int iValue);
+typedef bool PVALIDFUNC(size_t nStr, UTF8 *pStr, int iValue);
 
 typedef struct tag_pd_numeric_valid
 {
@@ -2978,7 +2999,7 @@ const NUMERIC_VALID_RECORD NumericSet[] =
 static void ClassifyNumericToken(PD_Node *pNode)
 {
     size_t nToken = pNode->nToken;
-    char  *pToken = pNode->pToken;
+    UTF8  *pToken = pNode->pToken;
     int    iToken = pNode->iToken;
 
     unsigned int uCouldBe = InitialCouldBe[nToken-1];
@@ -2999,106 +3020,106 @@ static void ClassifyNumericToken(PD_Node *pNode)
 
 typedef struct
 {
-    char        *szText;
+    UTF8        *szText;
     unsigned int uCouldBe;
     int          iValue;
 } PD_TEXT_ENTRY;
 
 const PD_TEXT_ENTRY PD_TextTable[] =
 {
-    {"sun",       PDCB_DAY_OF_WEEK,   7 },
-    {"mon",       PDCB_DAY_OF_WEEK,   1 },
-    {"tue",       PDCB_DAY_OF_WEEK,   2 },
-    {"wed",       PDCB_DAY_OF_WEEK,   3 },
-    {"thu",       PDCB_DAY_OF_WEEK,   4 },
-    {"fri",       PDCB_DAY_OF_WEEK,   5 },
-    {"sat",       PDCB_DAY_OF_WEEK,   6 },
-    {"jan",       PDCB_MONTH,         1 },
-    {"feb",       PDCB_MONTH,         2 },
-    {"mar",       PDCB_MONTH,         3 },
-    {"apr",       PDCB_MONTH,         4 },
-    {"may",       PDCB_MONTH,         5 },
-    {"jun",       PDCB_MONTH,         6 },
-    {"jul",       PDCB_MONTH,         7 },
-    {"aug",       PDCB_MONTH,         8 },
-    {"sep",       PDCB_MONTH,         9 },
-    {"oct",       PDCB_MONTH,        10 },
-    {"nov",       PDCB_MONTH,        11 },
-    {"dec",       PDCB_MONTH,        12 },
-    {"january",   PDCB_MONTH,         1 },
-    {"february",  PDCB_MONTH,         2 },
-    {"march",     PDCB_MONTH,         3 },
-    {"april",     PDCB_MONTH,         4 },
-    {"may",       PDCB_MONTH,         5 },
-    {"june",      PDCB_MONTH,         6 },
-    {"july",      PDCB_MONTH,         7 },
-    {"august",    PDCB_MONTH,         8 },
-    {"september", PDCB_MONTH,         9 },
-    {"october",   PDCB_MONTH,        10 },
-    {"november",  PDCB_MONTH,        11 },
-    {"december",  PDCB_MONTH,        12 },
-    {"sunday",    PDCB_DAY_OF_WEEK,   7 },
-    {"monday",    PDCB_DAY_OF_WEEK,   1 },
-    {"tuesday",   PDCB_DAY_OF_WEEK,   2 },
-    {"wednesday", PDCB_DAY_OF_WEEK,   3 },
-    {"thursday",  PDCB_DAY_OF_WEEK,   4 },
-    {"friday",    PDCB_DAY_OF_WEEK,   5 },
-    {"saturday",  PDCB_DAY_OF_WEEK,   6 },
-    {"a",         PDCB_TIMEZONE,    100 },
-    {"b",         PDCB_TIMEZONE,    200 },
-    {"c",         PDCB_TIMEZONE,    300 },
-    {"d",         PDCB_TIMEZONE,    400 },
-    {"e",         PDCB_TIMEZONE,    500 },
-    {"f",         PDCB_TIMEZONE,    600 },
-    {"g",         PDCB_TIMEZONE,    700 },
-    {"h",         PDCB_TIMEZONE,    800 },
-    {"i",         PDCB_TIMEZONE,    900 },
-    {"k",         PDCB_TIMEZONE,   1000 },
-    {"l",         PDCB_TIMEZONE,   1100 },
-    {"m",         PDCB_TIMEZONE,   1200 },
-    {"n",         PDCB_TIMEZONE,   -100 },
-    {"o",         PDCB_TIMEZONE,   -200 },
-    {"p",         PDCB_TIMEZONE,   -300 },
-    {"q",         PDCB_TIMEZONE,   -400 },
-    {"r",         PDCB_TIMEZONE,   -500 },
-    {"s",         PDCB_TIMEZONE,   -600 },
-    {"t",         PDCB_DATE_TIME_SEPARATOR|PDCB_TIMEZONE, -700},
-    {"u",         PDCB_TIMEZONE,   -800 },
-    {"v",         PDCB_TIMEZONE,   -900 },
-    {"w",         PDCB_WEEK_OF_YEAR_PREFIX|PDCB_TIMEZONE,  -1000 },
-    {"x",         PDCB_TIMEZONE,  -1100 },
-    {"y",         PDCB_TIMEZONE,  -1200 },
-    {"z",         PDCB_TIMEZONE,      0 },
-    {"hst",       PDCB_TIMEZONE,  -1000 },
-    {"akst",      PDCB_TIMEZONE,   -900 },
-    {"pst",       PDCB_TIMEZONE,   -800 },
-    {"mst",       PDCB_TIMEZONE,   -700 },
-    {"cst",       PDCB_TIMEZONE,   -600 },
-    {"est",       PDCB_TIMEZONE,   -500 },
-    {"ast",       PDCB_TIMEZONE,   -400 },
-    {"akdt",      PDCB_TIMEZONE,   -800 },
-    {"pdt",       PDCB_TIMEZONE,   -700 },
-    {"mdt",       PDCB_TIMEZONE,   -600 },
-    {"cdt",       PDCB_TIMEZONE,   -500 },
-    {"edt",       PDCB_TIMEZONE,   -400 },
-    {"adt",       PDCB_TIMEZONE,   -300 },
-    {"bst",       PDCB_TIMEZONE,    100 },
-    {"ist",       PDCB_TIMEZONE,    100 },
-    {"cet",       PDCB_TIMEZONE,    100 },
-    {"cest",      PDCB_TIMEZONE,    200 },
-    {"eet",       PDCB_TIMEZONE,    200 },
-    {"eest",      PDCB_TIMEZONE,    300 },
-    {"aest",      PDCB_TIMEZONE,   1000 },
-    {"gmt",       PDCB_TIMEZONE,      0 },
-    {"ut",        PDCB_TIMEZONE,      0 },
-    {"utc",       PDCB_TIMEZONE,      0 },
-    {"st",        PDCB_DAY_OF_MONTH_SUFFIX, 0 },
-    {"nd",        PDCB_DAY_OF_MONTH_SUFFIX, 0 },
-    {"rd",        PDCB_DAY_OF_MONTH_SUFFIX, 0 },
-    {"th",        PDCB_DAY_OF_MONTH_SUFFIX, 0 },
-    {"am",        PDCB_MERIDIAN,      0 },
-    {"pm",        PDCB_MERIDIAN,     12 },
-    { 0, 0, 0}
+    {(UTF8 *)"sun",       PDCB_DAY_OF_WEEK,   7 },
+    {(UTF8 *)"mon",       PDCB_DAY_OF_WEEK,   1 },
+    {(UTF8 *)"tue",       PDCB_DAY_OF_WEEK,   2 },
+    {(UTF8 *)"wed",       PDCB_DAY_OF_WEEK,   3 },
+    {(UTF8 *)"thu",       PDCB_DAY_OF_WEEK,   4 },
+    {(UTF8 *)"fri",       PDCB_DAY_OF_WEEK,   5 },
+    {(UTF8 *)"sat",       PDCB_DAY_OF_WEEK,   6 },
+    {(UTF8 *)"jan",       PDCB_MONTH,         1 },
+    {(UTF8 *)"feb",       PDCB_MONTH,         2 },
+    {(UTF8 *)"mar",       PDCB_MONTH,         3 },
+    {(UTF8 *)"apr",       PDCB_MONTH,         4 },
+    {(UTF8 *)"may",       PDCB_MONTH,         5 },
+    {(UTF8 *)"jun",       PDCB_MONTH,         6 },
+    {(UTF8 *)"jul",       PDCB_MONTH,         7 },
+    {(UTF8 *)"aug",       PDCB_MONTH,         8 },
+    {(UTF8 *)"sep",       PDCB_MONTH,         9 },
+    {(UTF8 *)"oct",       PDCB_MONTH,        10 },
+    {(UTF8 *)"nov",       PDCB_MONTH,        11 },
+    {(UTF8 *)"dec",       PDCB_MONTH,        12 },
+    {(UTF8 *)"january",   PDCB_MONTH,         1 },
+    {(UTF8 *)"february",  PDCB_MONTH,         2 },
+    {(UTF8 *)"march",     PDCB_MONTH,         3 },
+    {(UTF8 *)"april",     PDCB_MONTH,         4 },
+    {(UTF8 *)"may",       PDCB_MONTH,         5 },
+    {(UTF8 *)"june",      PDCB_MONTH,         6 },
+    {(UTF8 *)"july",      PDCB_MONTH,         7 },
+    {(UTF8 *)"august",    PDCB_MONTH,         8 },
+    {(UTF8 *)"september", PDCB_MONTH,         9 },
+    {(UTF8 *)"october",   PDCB_MONTH,        10 },
+    {(UTF8 *)"november",  PDCB_MONTH,        11 },
+    {(UTF8 *)"december",  PDCB_MONTH,        12 },
+    {(UTF8 *)"sunday",    PDCB_DAY_OF_WEEK,   7 },
+    {(UTF8 *)"monday",    PDCB_DAY_OF_WEEK,   1 },
+    {(UTF8 *)"tuesday",   PDCB_DAY_OF_WEEK,   2 },
+    {(UTF8 *)"wednesday", PDCB_DAY_OF_WEEK,   3 },
+    {(UTF8 *)"thursday",  PDCB_DAY_OF_WEEK,   4 },
+    {(UTF8 *)"friday",    PDCB_DAY_OF_WEEK,   5 },
+    {(UTF8 *)"saturday",  PDCB_DAY_OF_WEEK,   6 },
+    {(UTF8 *)"a",         PDCB_TIMEZONE,    100 },
+    {(UTF8 *)"b",         PDCB_TIMEZONE,    200 },
+    {(UTF8 *)"c",         PDCB_TIMEZONE,    300 },
+    {(UTF8 *)"d",         PDCB_TIMEZONE,    400 },
+    {(UTF8 *)"e",         PDCB_TIMEZONE,    500 },
+    {(UTF8 *)"f",         PDCB_TIMEZONE,    600 },
+    {(UTF8 *)"g",         PDCB_TIMEZONE,    700 },
+    {(UTF8 *)"h",         PDCB_TIMEZONE,    800 },
+    {(UTF8 *)"i",         PDCB_TIMEZONE,    900 },
+    {(UTF8 *)"k",         PDCB_TIMEZONE,   1000 },
+    {(UTF8 *)"l",         PDCB_TIMEZONE,   1100 },
+    {(UTF8 *)"m",         PDCB_TIMEZONE,   1200 },
+    {(UTF8 *)"n",         PDCB_TIMEZONE,   -100 },
+    {(UTF8 *)"o",         PDCB_TIMEZONE,   -200 },
+    {(UTF8 *)"p",         PDCB_TIMEZONE,   -300 },
+    {(UTF8 *)"q",         PDCB_TIMEZONE,   -400 },
+    {(UTF8 *)"r",         PDCB_TIMEZONE,   -500 },
+    {(UTF8 *)"s",         PDCB_TIMEZONE,   -600 },
+    {(UTF8 *)"t",         PDCB_DATE_TIME_SEPARATOR|PDCB_TIMEZONE, -700},
+    {(UTF8 *)"u",         PDCB_TIMEZONE,   -800 },
+    {(UTF8 *)"v",         PDCB_TIMEZONE,   -900 },
+    {(UTF8 *)"w",         PDCB_WEEK_OF_YEAR_PREFIX|PDCB_TIMEZONE,  -1000 },
+    {(UTF8 *)"x",         PDCB_TIMEZONE,  -1100 },
+    {(UTF8 *)"y",         PDCB_TIMEZONE,  -1200 },
+    {(UTF8 *)"z",         PDCB_TIMEZONE,      0 },
+    {(UTF8 *)"hst",       PDCB_TIMEZONE,  -1000 },
+    {(UTF8 *)"akst",      PDCB_TIMEZONE,   -900 },
+    {(UTF8 *)"pst",       PDCB_TIMEZONE,   -800 },
+    {(UTF8 *)"mst",       PDCB_TIMEZONE,   -700 },
+    {(UTF8 *)"cst",       PDCB_TIMEZONE,   -600 },
+    {(UTF8 *)"est",       PDCB_TIMEZONE,   -500 },
+    {(UTF8 *)"ast",       PDCB_TIMEZONE,   -400 },
+    {(UTF8 *)"akdt",      PDCB_TIMEZONE,   -800 },
+    {(UTF8 *)"pdt",       PDCB_TIMEZONE,   -700 },
+    {(UTF8 *)"mdt",       PDCB_TIMEZONE,   -600 },
+    {(UTF8 *)"cdt",       PDCB_TIMEZONE,   -500 },
+    {(UTF8 *)"edt",       PDCB_TIMEZONE,   -400 },
+    {(UTF8 *)"adt",       PDCB_TIMEZONE,   -300 },
+    {(UTF8 *)"bst",       PDCB_TIMEZONE,    100 },
+    {(UTF8 *)"ist",       PDCB_TIMEZONE,    100 },
+    {(UTF8 *)"cet",       PDCB_TIMEZONE,    100 },
+    {(UTF8 *)"cest",      PDCB_TIMEZONE,    200 },
+    {(UTF8 *)"eet",       PDCB_TIMEZONE,    200 },
+    {(UTF8 *)"eest",      PDCB_TIMEZONE,    300 },
+    {(UTF8 *)"aest",      PDCB_TIMEZONE,   1000 },
+    {(UTF8 *)"gmt",       PDCB_TIMEZONE,      0 },
+    {(UTF8 *)"ut",        PDCB_TIMEZONE,      0 },
+    {(UTF8 *)"utc",       PDCB_TIMEZONE,      0 },
+    {(UTF8 *)"st",        PDCB_DAY_OF_MONTH_SUFFIX, 0 },
+    {(UTF8 *)"nd",        PDCB_DAY_OF_MONTH_SUFFIX, 0 },
+    {(UTF8 *)"rd",        PDCB_DAY_OF_MONTH_SUFFIX, 0 },
+    {(UTF8 *)"th",        PDCB_DAY_OF_MONTH_SUFFIX, 0 },
+    {(UTF8 *)"am",        PDCB_MERIDIAN,      0 },
+    {(UTF8 *)"pm",        PDCB_MERIDIAN,     12 },
+    {(UTF8 *) 0, 0, 0}
 };
 
 #define PD_LEX_INVALID 0
@@ -3243,9 +3264,9 @@ static void PD_RemoveNode(PD_Node *pNode)
     }
 }
 
-static PD_Node *PD_ScanNextToken(char **ppString)
+static PD_Node *PD_ScanNextToken(UTF8 **ppString)
 {
-    char *p = *ppString;
+    UTF8 *p = *ppString;
     int ch = *p;
     if (ch == 0)
     {
@@ -3299,7 +3320,7 @@ static PD_Node *PD_ScanNextToken(char **ppString)
     }
     else
     {
-        char *pSave = p;
+        UTF8 *pSave = p;
         do
         {
             p++;
@@ -3325,7 +3346,7 @@ static PD_Node *PD_ScanNextToken(char **ppString)
 
             if (1 <= nLen && nLen <= 9)
             {
-                char buff[10];
+                UTF8 buff[10];
                 memcpy(buff, pSave, nLen);
                 buff[nLen] = '\0';
                 pNode->iToken = mux_atol(buff);
@@ -3347,7 +3368,7 @@ static PD_Node *PD_ScanNextToken(char **ppString)
             bool bFound = false;
             while (PD_TextTable[j].szText)
             {
-                if (  strlen(PD_TextTable[j].szText) == nLen
+                if (  strlen((char *)PD_TextTable[j].szText) == nLen
                    && mux_memicmp(PD_TextTable[j].szText, pSave, nLen) == 0)
                 {
                     pNode->uCouldBe = PD_TextTable[j].uCouldBe;
@@ -4083,13 +4104,13 @@ static bool ConvertAllFieldsToLinearTime(CLinearTimeAbsolute &lta, ALLFIELDS *pa
 bool ParseDate
 (
     CLinearTimeAbsolute &lt,
-    char *pDateString,
+    UTF8 *pDateString,
     bool *pbZoneSpecified
 )
 {
     PD_Reset();
 
-    char *p = pDateString;
+    UTF8 *p = pDateString;
     PD_Node *pNode;
     for (  pNode = PD_ScanNextToken(&p);
            pNode;

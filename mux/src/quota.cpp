@@ -67,7 +67,7 @@ static void mung_quotas(dbref player, int key, int value)
 {
     dbref aowner;
     int aq, rq, xq, aflags;
-    char *buff;
+    UTF8 *buff;
 
     if (key & QUOTA_FIX)
     {
@@ -135,7 +135,7 @@ static void show_quota(dbref player, dbref victim)
 {
     dbref aowner;
     int aq, rq, aflags;
-    char *buff;
+    UTF8 *buff;
 
     buff = atr_get("show_quota.140", victim, A_QUOTA, &aowner, &aflags);
     aq = mux_atol(buff);
@@ -161,8 +161,8 @@ void do_quota
     dbref enactor,
     int   key,
     int   nargs,
-    char *arg1,
-    char *arg2
+    UTF8 *arg1,
+    UTF8 *arg2
 )
 {
     UNUSED_PARAMETER(caller);
@@ -171,12 +171,12 @@ void do_quota
 
     if (!(mudconf.quotas || Quota(executor)))
     {
-        notify_quiet(executor, "Quotas are not enabled.");
+        notify_quiet(executor, (UTF8 *)"Quotas are not enabled.");
         return;
     }
     if ((key & QUOTA_TOT) && (key & QUOTA_REM))
     {
-        notify_quiet(executor, "Illegal combination of switches.");
+        notify_quiet(executor, (UTF8 *)"Illegal combination of switches.");
         return;
     }
 
@@ -202,7 +202,7 @@ void do_quota
         {
             STARTLOG(LOG_WIZARD, "WIZ", "QUOTA");
             log_name(executor);
-            log_text(" changed everyone's quota");
+            log_text((UTF8 *)" changed everyone's quota");
             ENDLOG;
         }
         DO_WHOLE_DB(i)
@@ -230,7 +230,7 @@ void do_quota
         who = lookup_player(executor, arg1, true);
         if (!Good_obj(who))
         {
-            notify_quiet(executor, "Not found.");
+            notify_quiet(executor, (UTF8 *)"Not found.");
             return;
         }
     }
@@ -264,7 +264,7 @@ void do_quota
     {
         STARTLOG(LOG_WIZARD, "WIZ", "QUOTA");
         log_name(executor);
-        log_text(" changed the quota of ");
+        log_text((UTF8 *)" changed the quota of ");
         log_name(who);
         ENDLOG;
         mung_quotas(who, key, value);
@@ -283,7 +283,7 @@ FUNCTION(fun_hasquota)
 
     if (!mudconf.quotas)
     {
-        safe_str("#-1 Quotas are not enabled.", buff, bufc);
+        safe_str((UTF8 *)"#-1 Quotas are not enabled.", buff, bufc);
         return;
     }
 
@@ -292,7 +292,7 @@ FUNCTION(fun_hasquota)
     dbref who = lookup_player(executor, fargs[0], true);
     if (!Good_obj(who))
     {
-        safe_str("#-1 NOT FOUND", buff, bufc);
+        safe_str((UTF8 *)"#-1 NOT FOUND", buff, bufc);
         return;
     }
 
@@ -310,7 +310,7 @@ FUNCTION(fun_hasquota)
     {
         int aflags;
         dbref aowner;
-        char *quota = atr_get("fun_hasquota.313", who, A_RQUOTA, &aowner, &aflags);
+        UTF8 *quota = atr_get("fun_hasquota.313", who, A_RQUOTA, &aowner, &aflags);
         int rq = mux_atol(quota);
         free_lbuf(quota);
         bResult = (rq >= mux_atol(fargs[1]));

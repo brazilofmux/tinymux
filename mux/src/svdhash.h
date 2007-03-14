@@ -51,7 +51,7 @@ extern UINT32 HASH_ProcessBuffer
     size_t       nBuffer
 );
 
-extern UINT32 munge_hash(const char *pBuffer);
+extern UINT32 munge_hash(const UTF8 *pBuffer);
 
 #if defined(_SGI_SOURCE) || ((UINT16_MAX_VALUE-2) <= HF_SIZEOF_PAGE)
 typedef UINT32 UINT_OFFSET;
@@ -227,7 +227,7 @@ private:
     void InitCache(int nCachePages);
     void FinalCache(void);
 
-    bool CreateFileSet(const char *szDirFile, const char *szPageFile);
+    bool CreateFileSet(const UTF8 *szDirFile, const UTF8 *szPageFile);
     bool RebuildDirectory(void);
     bool ReadDirectory(void);
 
@@ -236,7 +236,7 @@ public:
 #define HF_OPEN_STATUS_ERROR -1
 #define HF_OPEN_STATUS_NEW    0
 #define HF_OPEN_STATUS_OLD    1
-    int Open(const char *szDirFile, const char *szPageFile, int nCachePages);
+    int Open(const UTF8 *szDirFile, const UTF8 *szPageFile, int nCachePages);
     bool Insert(HP_HEAPLENGTH nRecord, UINT32 nHash, void *pRecord);
     UINT32 FindFirstKey(UINT32 nHash);
     UINT32 FindNextKey(UINT32 iDir, UINT32 nHash);
@@ -307,12 +307,12 @@ private:
 #endif // WIN32
     size_t m_nSize;
     size_t m_nBuffer;
-    char m_aBuffer[SIZEOF_LOG_BUFFER];
+    UTF8 m_aBuffer[SIZEOF_LOG_BUFFER];
     bool bEnabled;
     bool bUseStderr;
-    char *m_pBasename;
-    char m_szPrefix[32];
-    char m_szFilename[SIZEOF_PATHNAME];
+    UTF8 *m_pBasename;
+    UTF8 m_szPrefix[32];
+    UTF8 m_szFilename[SIZEOF_PATHNAME];
 
     bool CreateLogFile(void);
     void AppendLogFile(void);
@@ -320,13 +320,13 @@ private:
 public:
     CLogFile(void);
     ~CLogFile(void);
-    void WriteBuffer(size_t nString, const char *pString);
-    void WriteString(const char *pString);
+    void WriteBuffer(size_t nString, const UTF8 *pString);
+    void WriteString(const UTF8 *pString);
     void WriteInteger(int iNumber);
     void DCL_CDECL tinyprintf(char *pFormatSpec, ...);
     void Flush(void);
-    void SetPrefix(const char *pPrefix);
-    void SetBasename(const char *pBasename);
+    void SetPrefix(const UTF8 *pPrefix);
+    void SetBasename(const UTF8 *pBasename);
     void StartLogging(void);
     void StopLogging(void);
 };

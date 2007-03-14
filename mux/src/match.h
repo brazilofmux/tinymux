@@ -11,7 +11,8 @@
 #define M_MATCH_H
 
 typedef struct match_state MSTATE;
-struct match_state {
+struct match_state
+{
     int     confidence;     /* How confident are we?  CON_xx */
     int     count;          /* # of matches at this confidence */
     int     pref_type;      /* The preferred object type */
@@ -19,7 +20,7 @@ struct match_state {
     dbref   absolute_form;  /* If #num, then the number */
     dbref   match;          /* What I've found so far */
     dbref   player;         /* Who is performing match */
-    char    *string;        /* The string to search for */
+    UTF8    *string;        /* The string to search for */
 };
 
 /* Match functions
@@ -31,8 +32,8 @@ struct match_state {
  *  thing = match_result()
  */
 
-extern void init_match(dbref, const char *, int);
-extern void init_match_check_keys(dbref, const char *, int);
+extern void init_match(dbref, const UTF8 *, int);
+extern void init_match_check_keys(dbref, const UTF8 *, int);
 extern void match_player(void);
 extern void match_absolute(void);
 extern void match_me(void);
@@ -52,9 +53,9 @@ extern dbref noisy_match_result(void);
 extern void save_match_state(MSTATE *);
 extern void restore_match_state(MSTATE *);
 extern void match_zone_exit(void);
-extern dbref match_thing(dbref player, char *name);
-extern dbref match_thing_quiet(dbref player, char *name);
-extern void safe_match_result(dbref it, char *buff, char **bufc);
+extern dbref match_thing(dbref player, UTF8 *name);
+extern dbref match_thing_quiet(dbref player, UTF8 *name);
+extern void safe_match_result(dbref it, UTF8 *buff, UTF8 **bufc);
 
 #define MAT_NO_EXITS        1   /* Don't check for exits */
 #define MAT_EXIT_PARENTS    2   /* Check for exits in parents */

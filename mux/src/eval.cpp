@@ -28,8 +28,8 @@
 // we ran off the end of the string without finding the delimiter, dstr is
 // returned as NULL.
 //
-static char *parse_to_cleanup( int eval, int first, char *cstr, char *rstr,
-                               char *zstr, char *strFirewall)
+static UTF8 *parse_to_cleanup( int eval, int first, UTF8 *cstr, UTF8 *rstr,
+                               UTF8 *zstr, UTF8 *strFirewall)
 {
     if (  (  mudconf.space_compress
           || (eval & EV_STRIP_TS))
@@ -181,11 +181,11 @@ const signed char mux_RegisterSet[256] =
 #endif
 
 
-char *parse_to(char **dstr, char delim, int eval)
+UTF8 *parse_to(UTF8 **dstr, UTF8 delim, int eval)
 {
 #define stacklim 32
-    char stack[stacklim];
-    char *rstr, *cstr, *zstr, *strFirewall;
+    UTF8 stack[stacklim];
+    UTF8 *rstr, *cstr, *zstr, *strFirewall;
     int sp, tp, bracketlev;
 
     if (  dstr == NULL
@@ -470,10 +470,10 @@ TryAgain:
 // It's useful with mux_exec which will be copying the characters to another
 // buffer anyway and is more than able to perform the escapes and trimming.
 //
-static char *parse_to_lite(char **dstr, char delim1, char delim2, size_t *nLen, int *iWhichDelim)
+static UTF8 *parse_to_lite(UTF8 **dstr, UTF8 delim1, UTF8 delim2, size_t *nLen, int *iWhichDelim)
 {
 #define stacklim 32
-    char stack[stacklim];
+    UTF8 stack[stacklim];
     int sp, tp, bracketlev;
 
     if (  dstr == NULL
@@ -483,7 +483,7 @@ static char *parse_to_lite(char **dstr, char delim1, char delim2, size_t *nLen, 
         return NULL;
     }
 
-    char *rstr = *dstr;
+    UTF8 *rstr = *dstr;
     if (**dstr == '\0')
     {
         *dstr = NULL;
@@ -491,7 +491,7 @@ static char *parse_to_lite(char **dstr, char delim1, char delim2, size_t *nLen, 
         return rstr;
     }
     sp = 0;
-    char *cstr = rstr;
+    UTF8 *cstr = rstr;
     int iOriginalCode1 = isSpecial(L3, delim1);
     int iOriginalCode2 = isSpecial(L3, delim2);
     if (iOriginalCode1 <= 3)
@@ -536,7 +536,7 @@ TryAgain:
                 //
                 if (sp < stacklim)
                 {
-                    static char matcher[2] = { ']', ')'};
+                    static UTF8 matcher[2] = { ']', ')'};
                     stack[sp++] = matcher[iCode-2];
                 }
                 cstr++;
@@ -723,11 +723,11 @@ TryAgain:
 // is unterminated, a NULL is returned.  The original arglist is destructively
 // modified.
 //
-char *parse_arglist( dbref executor, dbref caller, dbref enactor, char *dstr,
-                     char delim, int eval, char *fargs[], int nfargs,
-                     char *cargs[], int ncargs, int *nArgsParsed )
+UTF8 *parse_arglist( dbref executor, dbref caller, dbref enactor, UTF8 *dstr,
+                     UTF8 delim, int eval, UTF8 *fargs[], int nfargs,
+                     UTF8 *cargs[], int ncargs, int *nArgsParsed )
 {
-    char *rstr, *tstr, *bp;
+    UTF8 *rstr, *tstr, *bp;
     int arg, peval;
 
     if (dstr == NULL)
@@ -776,14 +776,14 @@ char *parse_arglist( dbref executor, dbref caller, dbref enactor, char *dstr,
     return dstr;
 }
 
-static char *parse_arglist_lite( dbref executor, dbref caller, dbref enactor,
-                          char *dstr, char delim, int eval, char *fargs[],
-                          int nfargs, char *cargs[], int ncargs,
+static UTF8 *parse_arglist_lite( dbref executor, dbref caller, dbref enactor,
+                          UTF8 *dstr, UTF8 delim, int eval, UTF8 *fargs[],
+                          int nfargs, UTF8 *cargs[], int ncargs,
                           int *nArgsParsed)
 {
     UNUSED_PARAMETER(delim);
 
-    char *tstr, *bp;
+    UTF8 *tstr, *bp;
 
     if (NULL == dstr)
     {
@@ -804,7 +804,7 @@ static char *parse_arglist_lite( dbref executor, dbref caller, dbref enactor,
 
     int  arg = 0;
     int  iWhichDelim = 0;
-    char chSave = '\0';
+    UTF8 chSave = '\0';
 
     while (  arg < nfargs
           && dstr
@@ -861,8 +861,8 @@ int get_gender(dbref player)
 {
     dbref aowner;
     int aflags;
-    char *atr_gotten = atr_pget(player, A_SEX, &aowner, &aflags);
-    char first = atr_gotten[0];
+    UTF8 *atr_gotten = atr_pget(player, A_SEX, &aowner, &aflags);
+    UTF8 first = atr_gotten[0];
     free_lbuf(atr_gotten);
     switch (mux_tolower(first))
     {
@@ -886,8 +886,8 @@ typedef struct tcache_ent TCENT;
 static struct tcache_ent
 {
     dbref player;
-    char *orig;
-    char *result;
+    UTF8 *orig;
+    UTF8 *result;
     struct tcache_ent *next;
 } *tcache_head;
 
@@ -912,15 +912,15 @@ static bool tcache_empty(void)
     return false;
 }
 
-static void tcache_add(dbref player, char *orig, char *result)
+static void tcache_add(dbref player, UTF8 *orig, UTF8 *result)
 {
-    if (strcmp(orig, result))
+    if (strcmp((char *)orig, (char *)result))
     {
         tcache_count++;
         if (tcache_count <= mudconf.trace_limit)
         {
             TCENT *xp = (TCENT *) alloc_sbuf("tcache_add.sbuf");
-            char *tp = alloc_lbuf("tcache_add.lbuf");
+            UTF8 *tp = alloc_lbuf("tcache_add.lbuf");
 
             size_t nvw;
             ANSI_TruncateToField(result, LBUF_SIZE, tp, LBUF_SIZE, &nvw);
@@ -958,28 +958,98 @@ static void tcache_finish(void)
     tcache_count = 0;
 }
 
-const char *ColorTable[256] =
+const UTF8 *ColorTable[256] =
 {
     0, 0, 0, 0, 0, 0, 0, 0,  0, 0, 0, 0, 0, 0, 0, 0,      // 0x00-0x0F
     0, 0, 0, 0, 0, 0, 0, 0,  0, 0, 0, 0, 0, 0, 0, 0,      // 0x10-0x1F
     0, 0, 0, 0, 0, 0, 0, 0,  0, 0, 0, 0, 0, 0, 0, 0,      // 0x20-0x2F
     0, 0, 0, 0, 0, 0, 0, 0,  0, 0, 0, 0, 0, 0, 0, 0,      // 0x30-0x3F
-    0,           0,             COLOR_BG_BLUE,  COLOR_BG_CYAN,  // 0x40-0x43
-    0,           0,             0,           COLOR_BG_GREEN, // 0x44-0x47
-    0,           0,             0,           0,           // 0x48-0x4B
-    0,           COLOR_BG_MAGENTA, 0,           0,           // 0x4B-0x4F
-    0,           0,             COLOR_BG_RED,   0,           // 0x50-0x53
-    0,           0,             0,           COLOR_BG_WHITE, // 0x54-0x57
-    COLOR_BG_BLACK, COLOR_BG_YELLOW,  0,           0,           // 0x58-0x5B
-    0,           0,             0,           0,           // 0x5B-0x5F
-    0,           0,             COLOR_FG_BLUE,   COLOR_FG_CYAN,   // 0x60-0x63
-    0,           0,             COLOR_BLINK,  COLOR_FG_GREEN,  // 0x64-0x67
-    COLOR_INTENSE, COLOR_INVERSE,  0,           0,           // 0x68-0x6B
-    0,           COLOR_FG_MAGENTA,  COLOR_RESET, 0,           // 0x6C-0x6F
-    0,           0,             COLOR_FG_RED,    0,           // 0x70-0x73
-    0,           COLOR_UNDERLINE,    0,           COLOR_FG_WHITE,  // 0x74-0x77
-    COLOR_FG_BLACK,  COLOR_FG_YELLOW,   0,           0,           // 0x78-0x7B
-    0,           0,             0,           0,           // 0x7B-0x7F
+
+    // 0x40-0x47
+    0,
+    0,
+    (UTF8 *)COLOR_BG_BLUE,
+    (UTF8 *)COLOR_BG_CYAN,
+    0,
+    0,
+    0,
+    (UTF8 *)COLOR_BG_GREEN,
+
+    // 0x48-0x4F
+    0,
+    0,
+    0,
+    0,
+    0,
+    (UTF8 *)COLOR_BG_MAGENTA,
+    0,
+    0,
+
+    // 0x50-0x57
+    //
+    0,
+    0,
+    (UTF8 *)COLOR_BG_RED,
+    0,
+    0,
+    0,
+    0,
+    (UTF8 *)COLOR_BG_WHITE,
+    
+    // 0x58-0x5F
+    //
+    (UTF8 *)COLOR_BG_BLACK,
+    (UTF8 *)COLOR_BG_YELLOW,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+
+    // 0x60-0x67
+    0,
+    0,
+    (UTF8 *)COLOR_FG_BLUE,
+    (UTF8 *)COLOR_FG_CYAN,
+    0,
+    0,
+    (UTF8 *)COLOR_BLINK,
+    (UTF8 *)COLOR_FG_GREEN,
+
+    // 0x68-0x6F
+    //
+    (UTF8 *)COLOR_INTENSE,
+    (UTF8 *)COLOR_INVERSE,
+    0,
+    0,
+    0,
+    (UTF8 *)COLOR_FG_MAGENTA,
+    (UTF8 *)COLOR_RESET,
+    0,
+
+    // 0x70-0x77
+    //
+    0,
+    0,
+    (UTF8 *)COLOR_FG_RED,
+    0,
+    0,
+    (UTF8 *)COLOR_UNDERLINE,
+    0,
+    (UTF8 *)COLOR_FG_WHITE,
+
+    // 0x78-0x7F
+    //
+    (UTF8 *)COLOR_FG_BLACK,
+    (UTF8 *)COLOR_FG_YELLOW,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+
     0, 0, 0, 0, 0, 0, 0, 0,  0, 0, 0, 0, 0, 0, 0, 0,      // 0x80-0x8F
     0, 0, 0, 0, 0, 0, 0, 0,  0, 0, 0, 0, 0, 0, 0, 0,      // 0x90-0x9F
     0, 0, 0, 0, 0, 0, 0, 0,  0, 0, 0, 0, 0, 0, 0, 0,      // 0xA0-0xAF
@@ -1030,17 +1100,17 @@ static const unsigned char isSpecial_L2[256] =
       0,  0,  0,  0,  0,  0,  0,  0,   0,  0,  0,  0,  0,  0,  0,  0  // 0xF0-0xFF
 };
 
-#define PTRS_PER_FRAME ((LBUF_SIZE - sizeof(char *) - sizeof(int))/sizeof(char *))
+#define PTRS_PER_FRAME ((LBUF_SIZE - sizeof(UTF8 *) - sizeof(int))/sizeof(UTF8 *))
 typedef struct tag_ptrsframe
 {
     int   nptrs;
-    char *ptrs[PTRS_PER_FRAME];
+    UTF8 *ptrs[PTRS_PER_FRAME];
     struct tag_ptrsframe *next;
 } PtrsFrame;
 
 static PtrsFrame *pPtrsFrame = NULL;
 
-char **PushPointers(int nNeeded)
+UTF8 **PushPointers(int nNeeded)
 {
     if (  !pPtrsFrame
        || pPtrsFrame->nptrs < nNeeded)
@@ -1054,14 +1124,14 @@ char **PushPointers(int nNeeded)
     return pPtrsFrame->ptrs + pPtrsFrame->nptrs;
 }
 
-void PopPointers(char **p, int nNeeded)
+void PopPointers(UTF8 **p, int nNeeded)
 {
     UNUSED_PARAMETER(p);
 
     if (pPtrsFrame->nptrs == PTRS_PER_FRAME)
     {
         PtrsFrame *q = pPtrsFrame->next;
-        free_lbuf((char *)pPtrsFrame);
+        free_lbuf((UTF8 *)pPtrsFrame);
         pPtrsFrame = q;
     }
     //mux_assert(p == pPtrsFrame->ptrs + pPtrsFrame->nptrs);
@@ -1099,15 +1169,15 @@ void PopRegisters(reg_ref **p, int nNeeded)
     if (pRefsFrame->nrefs == REFS_PER_FRAME)
     {
         RefsFrame *q = pRefsFrame->next;
-        free_lbuf((char *)pRefsFrame);
+        free_lbuf((UTF8 *)pRefsFrame);
         pRefsFrame = q;
     }
     //mux_assert(p == pRefsFrame->refs + pRefsFrame->nrefs);
     pRefsFrame->nrefs += nNeeded;
 }
 
-void mux_exec( char *pdstr, char *buff, char **bufc, dbref executor,
-               dbref caller, dbref enactor, int eval, char *cargs[], int ncargs)
+void mux_exec( UTF8 *pdstr, UTF8 *buff, UTF8 **bufc, dbref executor,
+               dbref caller, dbref enactor, int eval, UTF8 *cargs[], int ncargs)
 {
     if (  pdstr == NULL
        || *pdstr == '\0'
@@ -1124,11 +1194,11 @@ void mux_exec( char *pdstr, char *buff, char **bufc, dbref executor,
         return;
     }
 
-    char *TempPtr;
-    char *tstr, *tbuf, *start, *oldp, *savestr;
-    const char *constbuf;
-    char ch;
-    char *realbuff = NULL, *realbp = NULL;
+    UTF8 *TempPtr;
+    UTF8 *tstr, *tbuf, *start, *oldp, *savestr;
+    const UTF8 *constbuf;
+    UTF8 ch;
+    UTF8 *realbuff = NULL, *realbp = NULL;
     dbref aowner;
     int nfargs, aflags, feval, i;
     size_t n;
@@ -1136,16 +1206,44 @@ void mux_exec( char *pdstr, char *buff, char **bufc, dbref executor,
     FUN *fp;
     UFUN *ufp;
 
-    static const char *subj[5] = {"", "it", "she", "he", "they"};
-    static const char *poss[5] = {"", "its", "her", "his", "their"};
-    static const char *obj[5] =  {"", "it", "her", "him", "them"};
-    static const char *absp[5] = {"", "its", "hers", "his", "theirs"};
+    static const UTF8 *subj[5] =
+    {
+        (UTF8 *)"",
+        (UTF8 *)"it",
+        (UTF8 *)"she",
+        (UTF8 *)"he",
+        (UTF8 *)"they"
+    };
+    static const UTF8 *poss[5] =
+    {
+        (UTF8 *)"",
+        (UTF8 *)"its",
+        (UTF8 *)"her",
+        (UTF8 *)"his",
+        (UTF8 *)"their"
+    };
+    static const UTF8 *obj[5] =
+    {
+        (UTF8 *)"",
+        (UTF8 *)"it",
+        (UTF8 *)"her",
+        (UTF8 *)"him",
+        (UTF8 *)"them"
+    };
+    static const UTF8 *absp[5] =
+    {
+        (UTF8 *)"",
+        (UTF8 *)"its",
+        (UTF8 *)"hers",
+        (UTF8 *)"his",
+        (UTF8 *)"theirs"
+    };
 
     // This is scratch buffer is used potentially on every invocation of
     // mux_exec. Do not assume that its contents are valid after you
     // execute any function that could re-enter mux_exec.
     //
-    static char mux_scratch[LBUF_SIZE];
+    static UTF8 mux_scratch[LBUF_SIZE];
 
     int at_space = 1;
     int gender = -1;
@@ -1159,7 +1257,7 @@ void mux_exec( char *pdstr, char *buff, char **bufc, dbref executor,
     {
         realbuff = buff;
         realbp = *bufc;
-        buff = (char *)MEMALLOC(LBUF_SIZE);
+        buff = (UTF8 *)MEMALLOC(LBUF_SIZE);
         ISOUTOFMEMORY(buff);
         *bufc = buff;
     }
@@ -1197,7 +1295,7 @@ void mux_exec( char *pdstr, char *buff, char **bufc, dbref executor,
         //
         if (!isSpecial(L1, *pdstr))
         {
-            char *p = pdstr + 1;
+            UTF8 *p = pdstr + 1;
             while (!isSpecial(L1, *p++))
             {
                 ; // Nothing.
@@ -1245,7 +1343,7 @@ void mux_exec( char *pdstr, char *buff, char **bufc, dbref executor,
             // see if the func exists. Trim trailing spaces from the name if
             // configured.
             //
-            char *pEnd = *bufc - 1;
+            UTF8 *pEnd = *bufc - 1;
             if (mudconf.space_compress && (eval & EV_FMAND))
             {
                 while (  oldp <= pEnd
@@ -1288,9 +1386,9 @@ void mux_exec( char *pdstr, char *buff, char **bufc, dbref executor,
                 if (eval & EV_FMAND)
                 {
                     *bufc = oldp;
-                    safe_str("#-1 FUNCTION (", buff, bufc);
+                    safe_str((UTF8 *)"#-1 FUNCTION (", buff, bufc);
                     safe_str(mux_scratch, buff, bufc);
-                    safe_str(") NOT FOUND", buff, bufc);
+                    safe_str((UTF8 *)") NOT FOUND", buff, bufc);
                     nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
                     break;
                 }
@@ -1325,7 +1423,7 @@ void mux_exec( char *pdstr, char *buff, char **bufc, dbref executor,
                     feval = eval & ~EV_TOP;
                 }
 
-                char **fargs = PushPointers(MAX_ARG);
+                UTF8 **fargs = PushPointers(MAX_ARG);
                 pdstr = parse_arglist_lite(executor, caller, enactor,
                       pdstr + 1, ')', feval, fargs, nfargs, cargs, ncargs,
                       &nfargs);
@@ -1352,15 +1450,15 @@ void mux_exec( char *pdstr, char *buff, char **bufc, dbref executor,
                     mudstate.func_invk_ctr++;
                     if (mudconf.func_nest_lim <= mudstate.func_nest_lev)
                     {
-                         safe_str("#-1 FUNCTION RECURSION LIMIT EXCEEDED", buff, &oldp);
+                         safe_str((UTF8 *)"#-1 FUNCTION RECURSION LIMIT EXCEEDED", buff, &oldp);
                     }
                     else if (mudconf.func_invk_lim <= mudstate.func_invk_ctr)
                     {
-                        safe_str("#-1 FUNCTION INVOCATION LIMIT EXCEEDED", buff, &oldp);
+                        safe_str((UTF8 *)"#-1 FUNCTION INVOCATION LIMIT EXCEEDED", buff, &oldp);
                     }
                     else if (Going(executor))
                     {
-                        safe_str("#-1 BAD EXECUTOR", buff, &oldp);
+                        safe_str((UTF8 *)"#-1 BAD EXECUTOR", buff, &oldp);
                     }
                     else if (!check_access(executor, ufp ? ufp->perms : fp->perms))
                     {
@@ -1368,7 +1466,7 @@ void mux_exec( char *pdstr, char *buff, char **bufc, dbref executor,
                     }
                     else if (MuxAlarm.bAlarmed)
                     {
-                        safe_str("#-1 CPU LIMITED", buff, &oldp);
+                        safe_str((UTF8 *)"#-1 CPU LIMITED", buff, &oldp);
                     }
                     else if (ufp)
                     {
@@ -1571,7 +1669,7 @@ void mux_exec( char *pdstr, char *buff, char **bufc, dbref executor,
                         //
                         // Color
                         //
-                        const char *pColor = ColorTable[(unsigned char)pdstr[1]];
+                        const UTF8 *pColor = ColorTable[(unsigned char)pdstr[1]];
                         if (pColor)
                         {
                             pdstr++;
@@ -1592,7 +1690,7 @@ void mux_exec( char *pdstr, char *buff, char **bufc, dbref executor,
                         //
                         // Carriage return.
                         //
-                        safe_copy_buf("\r\n", 2, buff, bufc);
+                        safe_copy_buf((UTF8 *)"\r\n", 2, buff, bufc);
                         nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
                     }
                 }
@@ -1870,7 +1968,7 @@ void mux_exec( char *pdstr, char *buff, char **bufc, dbref executor,
                         {
                             pdstr++;
 
-                            char *p2 = mux_scratch;
+                            UTF8 *p2 = mux_scratch;
                             while (  pdstr[0]
                                   && '>' != pdstr[0])
                             {
@@ -2227,9 +2325,9 @@ void restore_global_regs
 
 static lbuf_ref *last_lbufref = NULL;
 static size_t    last_left    = 0;
-static char     *last_ptr     = NULL;
+static UTF8     *last_ptr     = NULL;
 
-void RegAssign(reg_ref **regref, size_t nLength, const char *ptr)
+void RegAssign(reg_ref **regref, size_t nLength, const UTF8 *ptr)
 {
     if (  NULL == regref
        || NULL == ptr
@@ -2274,7 +2372,7 @@ void RegAssign(reg_ref **regref, size_t nLength, const char *ptr)
 
     // Use last lbuf.
     //
-    char *p = last_ptr;
+    UTF8 *p = last_ptr;
     memcpy(last_ptr, ptr, nSize);
     last_ptr[nLength] = '\0';
     last_ptr  += nSize;

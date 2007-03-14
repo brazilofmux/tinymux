@@ -31,7 +31,7 @@ static bool fh_any(dbref target, dbref player, FLAG flag, int fflags, bool reset
        && flag == WIZARD
        && fflags == FLAG_WORD1)
     {
-        notify(player, "You cannot make God mortal.");
+        notify(player, (UTF8 *)"You cannot make God mortal.");
         return false;
     }
 
@@ -184,7 +184,7 @@ static bool fh_going_bit(dbref target, dbref player, FLAG flag, int fflags, bool
        && reset
        && (Typeof(target) != TYPE_GARBAGE))
     {
-        notify(player, "Your object has been spared from destruction.");
+        notify(player, (UTF8 *)"Your object has been spared from destruction.");
         return (fh_any(target, player, flag, fflags, reset));
     }
     if (!God(player))
@@ -462,112 +462,112 @@ static FLAGBITENT fbeParent         = { PARENT,       '+',    FLAG_WORD3, 0,    
 
 FLAGNAMEENT gen_flag_names[] =
 {
-    {"ABODE",           true, &fbeAbode          },
-    {"ACCENTS",        false, &fbeAscii          },
-    {"ANSI",            true, &fbeAnsi           },
-    {"ASCII",           true, &fbeAscii          },
-    {"AUDIBLE",         true, &fbeAudible        },
-    {"AUDITORIUM",      true, &fbeAuditorium     },
-    {"BLEED",          false, &fbeNoBleed        },
-    {"BLIND",           true, &fbeBlind          },
-    {"COMMANDS",       false, &fbeNoCommand      },
-    {"CHOWN_OK",        true, &fbeChownOk        },
-    {"CONNECTED",       true, &fbeConnected      },
-    {"DARK",            true, &fbeDark           },
-    {"DESTROY_OK",      true, &fbeDestroyOk      },
-    {"ENTER_OK",        true, &fbeEnterOk        },
-    {"FIXED",           true, &fbeFixed          },
-    {"FLOATING",        true, &fbeFloating       },
-    {"GAGGED",          true, &fbeGagged         },
-    {"GOING",           true, &fbeGoing          },
-    {"HALTED",          true, &fbeHalted         },
-    {"HAS_DAILY",       true, &fbeHasDaily       },
-    {"HAS_FORWARDLIST", true, &fbeHasForwardList },
-    {"HAS_LISTEN",      true, &fbeHasListen      },
-    {"HAS_STARTUP",     true, &fbeHasStartup     },
-    {"HAVEN",           true, &fbeHaven          },
-    {"HEAD",            true, &fbeHead           },
-    {"HTML",            true, &fbeHtml           },
-    {"IMMORTAL",        true, &fbeImmortal       },
-    {"INHERIT",         true, &fbeInherit        },
-    {"JUMP_OK",         true, &fbeJumpOk         },
-    {"KEEPALIVE",       true, &fbeKeepAlive      },
-    {"KEY",             true, &fbeKey            },
-    {"LIGHT",           true, &fbeLight          },
-    {"LINK_OK",         true, &fbeLinkOk         },
-    {"MARKER0",         true, &fbeMarker0        },
-    {"MARKER1",         true, &fbeMarker1        },
-    {"MARKER2",         true, &fbeMarker2        },
-    {"MARKER3",         true, &fbeMarker3        },
-    {"MARKER4",         true, &fbeMarker4        },
-    {"MARKER5",         true, &fbeMarker5        },
-    {"MARKER6",         true, &fbeMarker6        },
-    {"MARKER7",         true, &fbeMarker7        },
-    {"MARKER8",         true, &fbeMarker8        },
-    {"MARKER9",         true, &fbeMarker9        },
-    {"MONITOR",         true, &fbeMonitor        },
-    {"MYOPIC",          true, &fbeMyopic         },
-    {"NO_COMMAND",      true, &fbeNoCommand      },
-    {"NOACCENTS",       true, &fbeAscii          },
-    {"NOBLEED",         true, &fbeNoBleed        },
-    {"NOSPOOF",         true, &fbeNoSpoof        },
-    {"OPAQUE",          true, &fbeOpaque         },
-    {"OPEN_OK",         true, &fbeOpenOk         },
-    {"PARENT_OK",       true, &fbeParentOk       },
-    {"PLAYER_MAILS",    true, &fbePlayerMails    },
-    {"PUPPET",          true, &fbePuppet         },
-    {"QUIET",           true, &fbeQuiet          },
-    {"ROBOT",           true, &fbeRobot          },
-    {"ROYALTY",         true, &fbeRoyalty        },
-    {"SAFE",            true, &fbeSafe           },
-    {"SITEMON",         true, &fbeSitemon        },
-    {"SLAVE",           true, &fbeSlave          },
-    {"SPOOF",          false, &fbeNoSpoof        },
-    {"STAFF",           true, &fbeStaff          },
-    {"STICKY",          true, &fbeSticky         },
-    {"SUSPECT",         true, &fbeSuspect        },
-    {"TERSE",           true, &fbeTerse          },
-    {"TRACE",           true, &fbeTrace          },
-    {"TRANSPARENT",     true, &fbeTransparent    },
-    {"UNFINDABLE",      true, &fbeUnfindable     },
-    {"UNICODE",         true, &fbeUnicode        },
-    {"UNINSPECTED",     true, &fbeUninspected    },
-    {"VACATION",        true, &fbeVacation       },
-    {"VERBOSE",         true, &fbeVerbose        },
-    {"VISUAL",          true, &fbeVisual         },
-    {"WIZARD",          true, &fbeWizard         },
+    {(UTF8 *)"ABODE",           true, &fbeAbode          },
+    {(UTF8 *)"ACCENTS",        false, &fbeAscii          },
+    {(UTF8 *)"ANSI",            true, &fbeAnsi           },
+    {(UTF8 *)"ASCII",           true, &fbeAscii          },
+    {(UTF8 *)"AUDIBLE",         true, &fbeAudible        },
+    {(UTF8 *)"AUDITORIUM",      true, &fbeAuditorium     },
+    {(UTF8 *)"BLEED",          false, &fbeNoBleed        },
+    {(UTF8 *)"BLIND",           true, &fbeBlind          },
+    {(UTF8 *)"COMMANDS",       false, &fbeNoCommand      },
+    {(UTF8 *)"CHOWN_OK",        true, &fbeChownOk        },
+    {(UTF8 *)"CONNECTED",       true, &fbeConnected      },
+    {(UTF8 *)"DARK",            true, &fbeDark           },
+    {(UTF8 *)"DESTROY_OK",      true, &fbeDestroyOk      },
+    {(UTF8 *)"ENTER_OK",        true, &fbeEnterOk        },
+    {(UTF8 *)"FIXED",           true, &fbeFixed          },
+    {(UTF8 *)"FLOATING",        true, &fbeFloating       },
+    {(UTF8 *)"GAGGED",          true, &fbeGagged         },
+    {(UTF8 *)"GOING",           true, &fbeGoing          },
+    {(UTF8 *)"HALTED",          true, &fbeHalted         },
+    {(UTF8 *)"HAS_DAILY",       true, &fbeHasDaily       },
+    {(UTF8 *)"HAS_FORWARDLIST", true, &fbeHasForwardList },
+    {(UTF8 *)"HAS_LISTEN",      true, &fbeHasListen      },
+    {(UTF8 *)"HAS_STARTUP",     true, &fbeHasStartup     },
+    {(UTF8 *)"HAVEN",           true, &fbeHaven          },
+    {(UTF8 *)"HEAD",            true, &fbeHead           },
+    {(UTF8 *)"HTML",            true, &fbeHtml           },
+    {(UTF8 *)"IMMORTAL",        true, &fbeImmortal       },
+    {(UTF8 *)"INHERIT",         true, &fbeInherit        },
+    {(UTF8 *)"JUMP_OK",         true, &fbeJumpOk         },
+    {(UTF8 *)"KEEPALIVE",       true, &fbeKeepAlive      },
+    {(UTF8 *)"KEY",             true, &fbeKey            },
+    {(UTF8 *)"LIGHT",           true, &fbeLight          },
+    {(UTF8 *)"LINK_OK",         true, &fbeLinkOk         },
+    {(UTF8 *)"MARKER0",         true, &fbeMarker0        },
+    {(UTF8 *)"MARKER1",         true, &fbeMarker1        },
+    {(UTF8 *)"MARKER2",         true, &fbeMarker2        },
+    {(UTF8 *)"MARKER3",         true, &fbeMarker3        },
+    {(UTF8 *)"MARKER4",         true, &fbeMarker4        },
+    {(UTF8 *)"MARKER5",         true, &fbeMarker5        },
+    {(UTF8 *)"MARKER6",         true, &fbeMarker6        },
+    {(UTF8 *)"MARKER7",         true, &fbeMarker7        },
+    {(UTF8 *)"MARKER8",         true, &fbeMarker8        },
+    {(UTF8 *)"MARKER9",         true, &fbeMarker9        },
+    {(UTF8 *)"MONITOR",         true, &fbeMonitor        },
+    {(UTF8 *)"MYOPIC",          true, &fbeMyopic         },
+    {(UTF8 *)"NO_COMMAND",      true, &fbeNoCommand      },
+    {(UTF8 *)"NOACCENTS",       true, &fbeAscii          },
+    {(UTF8 *)"NOBLEED",         true, &fbeNoBleed        },
+    {(UTF8 *)"NOSPOOF",         true, &fbeNoSpoof        },
+    {(UTF8 *)"OPAQUE",          true, &fbeOpaque         },
+    {(UTF8 *)"OPEN_OK",         true, &fbeOpenOk         },
+    {(UTF8 *)"PARENT_OK",       true, &fbeParentOk       },
+    {(UTF8 *)"PLAYER_MAILS",    true, &fbePlayerMails    },
+    {(UTF8 *)"PUPPET",          true, &fbePuppet         },
+    {(UTF8 *)"QUIET",           true, &fbeQuiet          },
+    {(UTF8 *)"ROBOT",           true, &fbeRobot          },
+    {(UTF8 *)"ROYALTY",         true, &fbeRoyalty        },
+    {(UTF8 *)"SAFE",            true, &fbeSafe           },
+    {(UTF8 *)"SITEMON",         true, &fbeSitemon        },
+    {(UTF8 *)"SLAVE",           true, &fbeSlave          },
+    {(UTF8 *)"SPOOF",          false, &fbeNoSpoof        },
+    {(UTF8 *)"STAFF",           true, &fbeStaff          },
+    {(UTF8 *)"STICKY",          true, &fbeSticky         },
+    {(UTF8 *)"SUSPECT",         true, &fbeSuspect        },
+    {(UTF8 *)"TERSE",           true, &fbeTerse          },
+    {(UTF8 *)"TRACE",           true, &fbeTrace          },
+    {(UTF8 *)"TRANSPARENT",     true, &fbeTransparent    },
+    {(UTF8 *)"UNFINDABLE",      true, &fbeUnfindable     },
+    {(UTF8 *)"UNICODE",         true, &fbeUnicode        },
+    {(UTF8 *)"UNINSPECTED",     true, &fbeUninspected    },
+    {(UTF8 *)"VACATION",        true, &fbeVacation       },
+    {(UTF8 *)"VERBOSE",         true, &fbeVerbose        },
+    {(UTF8 *)"VISUAL",          true, &fbeVisual         },
+    {(UTF8 *)"WIZARD",          true, &fbeWizard         },
 #ifdef WOD_REALMS
-    {"FAE",             true, &fbeFae            },
-    {"CHIMERA",         true, &fbeChimera        },
-    {"PEERING",         true, &fbePeering        },
-    {"UMBRA",           true, &fbeUmbra          },
-    {"SHROUD",          true, &fbeShroud         },
-    {"MATRIX",          true, &fbeMatrix         },
-    {"OBF",             true, &fbeObf            },
-    {"HSS",             true, &fbeHss            },
-    {"MEDIUM",          true, &fbeMedium         },
-    {"DEAD",            true, &fbeDead           },
+    {(UTF8 *)"FAE",             true, &fbeFae            },
+    {(UTF8 *)"CHIMERA",         true, &fbeChimera        },
+    {(UTF8 *)"PEERING",         true, &fbePeering        },
+    {(UTF8 *)"UMBRA",           true, &fbeUmbra          },
+    {(UTF8 *)"SHROUD",          true, &fbeShroud         },
+    {(UTF8 *)"MATRIX",          true, &fbeMatrix         },
+    {(UTF8 *)"OBF",             true, &fbeObf            },
+    {(UTF8 *)"HSS",             true, &fbeHss            },
+    {(UTF8 *)"MEDIUM",          true, &fbeMedium         },
+    {(UTF8 *)"DEAD",            true, &fbeDead           },
 #endif // WOD_REALMS
 #if defined(FIRANMUX)
-    {"IMMOBILE",        true, &fbeImmobile       },
-    {"LINEWRAP",        true, &fbeLineWrap       },
-    {"QUELL",           true, &fbeQuell          },
-    {"RESTRICTED",      true, &fbeRestricted     },
-    {"PARENT",          true, &fbeParent         },
+    {(UTF8 *)"IMMOBILE",        true, &fbeImmobile       },
+    {(UTF8 *)"LINEWRAP",        true, &fbeLineWrap       },
+    {(UTF8 *)"QUELL",           true, &fbeQuell          },
+    {(UTF8 *)"RESTRICTED",      true, &fbeRestricted     },
+    {(UTF8 *)"PARENT",          true, &fbeParent         },
 #endif // FIRANMUX
-    {NULL,             false, NULL}
+    {(UTF8 *)NULL,             false, NULL}
 };
 
 OBJENT object_types[8] =
 {
-    {"ROOM",    'R', CA_PUBLIC, OF_CONTENTS|OF_EXITS|OF_DROPTO|OF_HOME},
-    {"THING",   ' ', CA_PUBLIC, OF_CONTENTS|OF_LOCATION|OF_EXITS|OF_HOME|OF_SIBLINGS},
-    {"EXIT",    'E', CA_PUBLIC, OF_SIBLINGS},
-    {"PLAYER",  'P', CA_PUBLIC, OF_CONTENTS|OF_LOCATION|OF_EXITS|OF_HOME|OF_OWNER|OF_SIBLINGS},
-    {"TYPE5",   '+', CA_GOD,    0},
-    {"GARBAGE", '-', CA_PUBLIC, OF_CONTENTS|OF_LOCATION|OF_EXITS|OF_HOME|OF_SIBLINGS},
-    {"GARBAGE", '#', CA_GOD,    0},
-    {"GARBAGE", '=', CA_GOD,    0}
+    {(UTF8 *)"ROOM",    'R', CA_PUBLIC, OF_CONTENTS|OF_EXITS|OF_DROPTO|OF_HOME},
+    {(UTF8 *)"THING",   ' ', CA_PUBLIC, OF_CONTENTS|OF_LOCATION|OF_EXITS|OF_HOME|OF_SIBLINGS},
+    {(UTF8 *)"EXIT",    'E', CA_PUBLIC, OF_SIBLINGS},
+    {(UTF8 *)"PLAYER",  'P', CA_PUBLIC, OF_CONTENTS|OF_LOCATION|OF_EXITS|OF_HOME|OF_OWNER|OF_SIBLINGS},
+    {(UTF8 *)"TYPE5",   '+', CA_GOD,    0},
+    {(UTF8 *)"GARBAGE", '-', CA_PUBLIC, OF_CONTENTS|OF_LOCATION|OF_EXITS|OF_HOME|OF_SIBLINGS},
+    {(UTF8 *)"GARBAGE", '#', CA_GOD,    0},
+    {(UTF8 *)"GARBAGE", '=', CA_GOD,    0}
 };
 
 /* ---------------------------------------------------------------------------
@@ -576,15 +576,15 @@ OBJENT object_types[8] =
 
 void init_flagtab(void)
 {
-    char *nbuf = alloc_sbuf("init_flagtab");
+    UTF8 *nbuf = alloc_sbuf("init_flagtab");
     for (FLAGNAMEENT *fp = gen_flag_names; fp->pOrigName; fp++)
     {
         fp->flagname = fp->pOrigName;
         mux_strncpy(nbuf, fp->pOrigName, SBUF_SIZE-1);
         mux_strlwr(nbuf);
-        if (!hashfindLEN(nbuf, strlen(nbuf), &mudstate.flags_htab))
+        if (!hashfindLEN(nbuf, strlen((char *)nbuf), &mudstate.flags_htab))
         {
-            hashaddLEN(nbuf, strlen(nbuf), fp, &mudstate.flags_htab);
+            hashaddLEN(nbuf, strlen((char *)nbuf), fp, &mudstate.flags_htab);
         }
     }
     free_sbuf(nbuf);
@@ -596,11 +596,11 @@ void init_flagtab(void)
 
 void display_flagtab(dbref player)
 {
-    char *buf, *bp;
+    UTF8 *buf, *bp;
     FLAGNAMEENT *fp;
 
     bp = buf = alloc_lbuf("display_flagtab");
-    safe_str("Flags:", buf, &bp);
+    safe_str((UTF8 *)"Flags:", buf, &bp);
     for (fp = gen_flag_names; fp->flagname; fp++)
     {
         FLAGBITENT *fbe = fp->fbe;
@@ -629,15 +629,15 @@ void display_flagtab(dbref player)
     free_lbuf(buf);
 }
 
-char *MakeCanonicalFlagName
+UTF8 *MakeCanonicalFlagName
 (
-    const char *pName,
+    const UTF8 *pName,
     int *pnName,
     bool *pbValid
 )
 {
-    static char buff[SBUF_SIZE];
-    char *p = buff;
+    static UTF8 buff[SBUF_SIZE];
+    UTF8 *p = buff;
     int nName = 0;
 
     while (*pName && nName < SBUF_SIZE)
@@ -663,13 +663,13 @@ char *MakeCanonicalFlagName
     }
 }
 
-static FLAGNAMEENT *find_flag(char *flagname)
+static FLAGNAMEENT *find_flag(UTF8 *flagname)
 {
     // Convert flagname to canonical lowercase format.
     //
     int nName;
     bool bValid;
-    char *pName = MakeCanonicalFlagName(flagname, &nName, &bValid);
+    UTF8 *pName = MakeCanonicalFlagName(flagname, &nName, &bValid);
     FLAGNAMEENT *fe = NULL;
     if (bValid)
     {
@@ -681,7 +681,7 @@ static FLAGNAMEENT *find_flag(char *flagname)
 // ---------------------------------------------------------------------------
 // flag_set: Set or clear a specified flag on an object.
 //
-void flag_set(dbref target, dbref player, char *flag, int key)
+void flag_set(dbref target, dbref player, UTF8 *flag, int key)
 {
     bool bDone = false;
 
@@ -706,7 +706,7 @@ void flag_set(dbref target, dbref player, char *flag, int key)
 
         // Beginning of flag name is now 'flag'.
         //
-        char *nflag = flag;
+        UTF8 *nflag = flag;
         while (  *nflag != '\0'
               && !mux_isspace(*nflag))
         {
@@ -728,11 +728,11 @@ void flag_set(dbref target, dbref player, char *flag, int key)
         {
             if (bNegate)
             {
-                notify(player, "You must specify a flag to clear.");
+                notify(player, (UTF8 *)"You must specify a flag to clear.");
             }
             else
             {
-                notify(player, "You must specify a flag to set.");
+                notify(player, (UTF8 *)"You must specify a flag to set.");
             }
         }
         else
@@ -740,7 +740,7 @@ void flag_set(dbref target, dbref player, char *flag, int key)
             FLAGNAMEENT *fp = find_flag(flag);
             if (!fp)
             {
-                notify(player, "I do not understand that flag.");
+                notify(player, (UTF8 *)"I do not understand that flag.");
             }
             else
             {
@@ -760,7 +760,7 @@ void flag_set(dbref target, dbref player, char *flag, int key)
                 }
                 else if (!(key & SET_QUIET) && !Quiet(player))
                 {
-                    notify(player, (bClearSet ? "Cleared." : "Set."));
+                    notify(player, (bClearSet ? (UTF8 *)"Cleared." : (UTF8 *)"Set."));
                 }
             }
         }
@@ -774,15 +774,15 @@ void flag_set(dbref target, dbref player, char *flag, int key)
  * * decode_flags: converts a flags word into corresponding letters.
  */
 
-char *decode_flags(dbref player, FLAGSET *fs)
+UTF8 *decode_flags(dbref player, FLAGSET *fs)
 {
-    char *buf, *bp;
+    UTF8 *buf, *bp;
     buf = bp = alloc_sbuf("decode_flags");
     *bp = '\0';
 
     if (!Good_obj(player))
     {
-        mux_strncpy(buf, "#-2 ERROR", SBUF_SIZE-1);
+        mux_strncpy(buf, (UTF8 *)"#-2 ERROR", SBUF_SIZE-1);
         return buf;
     }
     int flagtype = fs->word[FLAG_WORD1] & TYPE_MASK;
@@ -850,7 +850,7 @@ char *decode_flags(dbref player, FLAGSET *fs)
  * * has_flag: does object have flag visible to player?
  */
 
-bool has_flag(dbref player, dbref it, char *flagname)
+bool has_flag(dbref player, dbref it, UTF8 *flagname)
 {
     FLAGNAMEENT *fp = find_flag(flagname);
     if (!fp)
@@ -896,19 +896,19 @@ bool has_flag(dbref player, dbref it, char *flagname)
  * * flag_description: Return an mbuf containing the type and flags on thing.
  */
 
-char *flag_description(dbref player, dbref target)
+UTF8 *flag_description(dbref player, dbref target)
 {
     // Allocate the return buffer.
     //
     int otype = Typeof(target);
-    char *buff = alloc_mbuf("flag_description");
-    char *bp = buff;
+    UTF8 *buff = alloc_mbuf("flag_description");
+    UTF8 *bp = buff;
 
     // Store the header strings and object type.
     //
-    safe_mb_str("Type: ", buff, &bp);
+    safe_mb_str((UTF8 *)"Type: ", buff, &bp);
     safe_mb_str(object_types[otype].name, buff, &bp);
-    safe_mb_str(" Flags:", buff, &bp);
+    safe_mb_str((UTF8 *)" Flags:", buff, &bp);
     if (object_types[otype].perm != CA_PUBLIC)
     {
         *bp = '\0';
@@ -965,9 +965,9 @@ char *flag_description(dbref player, dbref target)
  * * Return an lbuf containing the name and number of an object
  */
 
-char *unparse_object_numonly(dbref target)
+UTF8 *unparse_object_numonly(dbref target)
 {
-    char *buf = alloc_lbuf("unparse_object_numonly");
+    UTF8 *buf = alloc_lbuf("unparse_object_numonly");
     if (target < 0)
     {
         mux_strncpy(buf, aszSpecialDBRefNames[-target], LBUF_SIZE-1);
@@ -983,9 +983,9 @@ char *unparse_object_numonly(dbref target)
         size_t vw;
         size_t nLen = ANSI_TruncateToField(Name(target), LBUF_SIZE-100,
             buf, LBUF_SIZE, &vw);
-        char *bp = buf + nLen;
+        UTF8 *bp = buf + nLen;
 
-        safe_str("(#", buf, &bp);
+        safe_str((UTF8 *)"(#", buf, &bp);
         safe_ltoa(target, buf, &bp);
         safe_chr(')', buf, &bp);
         *bp = '\0';
@@ -994,14 +994,14 @@ char *unparse_object_numonly(dbref target)
 }
 
 #if defined(FIRANMUX)
-static bool AcquireColor(dbref player, dbref target, char SimplifiedCodes[8])
+static bool AcquireColor(dbref player, dbref target, UTF8 SimplifiedCodes[8])
 {
     int   aflags;
     dbref aowner;
 
     // Get the value of the object's '@color' attribute (or on a parent).
     //
-    char *color_attr = alloc_lbuf("AcquireColor.1");
+    UTF8 *color_attr = alloc_lbuf("AcquireColor.1");
     atr_pget_str(color_attr, target, A_COLOR, &aowner, &aflags);
 
     if ('\0' == color_attr[0])
@@ -1011,8 +1011,8 @@ static bool AcquireColor(dbref player, dbref target, char SimplifiedCodes[8])
     }
     else
     {
-        char *AnsiCodes = alloc_lbuf("AcquireColor.2");
-        char *ac = AnsiCodes;
+        UTF8 *AnsiCodes = alloc_lbuf("AcquireColor.2");
+        UTF8 *ac = AnsiCodes;
         mux_exec(color_attr, AnsiCodes, &ac, player, target, target,
                 AttrTrace(aflags, EV_EVAL|EV_TOP|EV_FCHECK), NULL, 0);
         *ac = '\0';
@@ -1029,9 +1029,9 @@ static bool AcquireColor(dbref player, dbref target, char SimplifiedCodes[8])
  * ---------------------------------------------------------------------------
  * * Return an lbuf pointing to the object name and possibly the db# and flags
  */
-char *unparse_object(dbref player, dbref target, bool obey_myopic, bool bAddColor)
+UTF8 *unparse_object(dbref player, dbref target, bool obey_myopic, bool bAddColor)
 {
-    char *buf = alloc_lbuf("unparse_object");
+    UTF8 *buf = alloc_lbuf("unparse_object");
     if (NOPERM <= target && target < 0)
     {
         mux_strncpy(buf, aszSpecialDBRefNames[-target], LBUF_SIZE-1);
@@ -1059,7 +1059,7 @@ char *unparse_object(dbref player, dbref target, bool obey_myopic, bool bAddColo
         size_t nLen = ANSI_TruncateToField(Moniker(target), LBUF_SIZE-100,
             buf, LBUF_SIZE, &vw);
 
-        char *bp = buf + nLen;
+        UTF8 *bp = buf + nLen;
 
 #if defined(FIRANMUX)
         if (  vw == nLen
@@ -1067,15 +1067,15 @@ char *unparse_object(dbref player, dbref target, bool obey_myopic, bool bAddColo
         {
             // There is no color in the name, so look for @color, or highlight.
             //
-            char *buf2 = alloc_lbuf("unparse_object.color");
-            char *bp2  = buf2;
+            UTF8 *buf2 = alloc_lbuf("unparse_object.color");
+            UTF8 *bp2  = buf2;
 
-            char SimplifiedCodes[8];
+            UTF8 SimplifiedCodes[8];
             if (AcquireColor(player, target, SimplifiedCodes))
             {
                 for (int i = 0; SimplifiedCodes[i]; i++)
                 {
-                    const char *pColor = ColorTable[(unsigned char)SimplifiedCodes[i]];
+                    const UTF8 *pColor = ColorTable[(unsigned char)SimplifiedCodes[i]];
                     if (pColor)
                     {
                         safe_str(pColor, buf2, &bp2);
@@ -1107,9 +1107,9 @@ char *unparse_object(dbref player, dbref target, bool obey_myopic, bool bAddColo
         {
             // Show everything.
             //
-            char *fp = decode_flags(player, &(db[target].fs));
+            UTF8 *fp = decode_flags(player, &(db[target].fs));
 
-            safe_str("(#", buf, &bp);
+            safe_str((UTF8 *)"(#", buf, &bp);
             safe_ltoa(target, buf, &bp);
             safe_str(fp, buf, &bp);
             safe_chr(')', buf, &bp);
@@ -1134,9 +1134,9 @@ CF_HAND(cf_flag_access)
 
     MUX_STRTOK_STATE tts;
     mux_strtok_src(&tts, str);
-    mux_strtok_ctl(&tts, " \t=,");
-    char *fstr = mux_strtok_parse(&tts);
-    char *permstr = mux_strtok_parse(&tts);
+    mux_strtok_ctl(&tts, (UTF8 *)" \t=,");
+    UTF8 *fstr = mux_strtok_parse(&tts);
+    UTF8 *permstr = mux_strtok_parse(&tts);
 
     if (!fstr || !*fstr)
     {
@@ -1146,7 +1146,7 @@ CF_HAND(cf_flag_access)
     FLAGNAMEENT *fp;
     if ((fp = find_flag(fstr)) == NULL)
     {
-        cf_log_notfound(player, cmd, "No such flag", fstr);
+        cf_log_notfound(player, cmd, (UTF8 *)"No such flag", fstr);
         return -1;
     }
     FLAGBITENT *fbe = fp->fbe;
@@ -1161,43 +1161,43 @@ CF_HAND(cf_flag_access)
        && (fbe->handler != fh_privileged))
     {
         STARTLOG(LOG_CONFIGMODS, "CFG", "PERM");
-        log_text("Cannot change access for flag: ");
+        log_text((UTF8 *)"Cannot change access for flag: ");
         log_text(fp->flagname);
         ENDLOG;
         return -1;
     }
 
-    if (!strcmp(permstr, "any"))
+    if (!strcmp((char *)permstr, "any"))
     {
         fbe->handler = fh_any;
     }
-    else if (!strcmp(permstr, "royalty"))
+    else if (!strcmp((char *)permstr, "royalty"))
     {
         fbe->handler = fh_wizroy;
     }
-    else if (!strcmp(permstr, "wizard"))
+    else if (!strcmp((char *)permstr, "wizard"))
     {
         fbe->handler = fh_wiz;
     }
-    else if (!strcmp(permstr, "god"))
+    else if (!strcmp((char *)permstr, "god"))
     {
         fbe->handler = fh_god;
     }
-    else if (!strcmp(permstr, "restrict_player"))
+    else if (!strcmp((char *)permstr, "restrict_player"))
     {
         fbe->handler = fh_restrict_player;
     }
-    else if (!strcmp(permstr, "privileged"))
+    else if (!strcmp((char *)permstr, "privileged"))
     {
         fbe->handler = fh_privileged;
     }
-    else if (!strcmp(permstr, "staff"))
+    else if (!strcmp((char *)permstr, "staff"))
     {
         fbe->handler = fh_staff;
     }
     else
     {
-        cf_log_notfound(player, cmd, "Flag access", permstr);
+        cf_log_notfound(player, cmd, (UTF8 *)"Flag access", permstr);
         return -1;
     }
     return 0;
@@ -1209,14 +1209,14 @@ CF_HAND(cf_flag_access)
  * * Also set the type qualifier if specified and not already set.
  */
 
-bool convert_flags(dbref player, char *flaglist, FLAGSET *fset, FLAG *p_type)
+bool convert_flags(dbref player, UTF8 *flaglist, FLAGSET *fset, FLAG *p_type)
 {
     FLAG type = NOTYPE;
     FLAGSET flagmask;
     memset(&flagmask, 0, sizeof(flagmask));
     int i;
 
-    char *s;
+    UTF8 *s;
     bool handled;
     for (s = flaglist; *s; s++)
     {
@@ -1239,7 +1239,7 @@ bool convert_flags(dbref player, char *flaglist, FLAGSET *fset, FLAG *p_type)
                 if (  type != NOTYPE
                    && type != i)
                 {
-                    char *p = tprintf("%c: Conflicting type specifications.",
+                    UTF8 *p = tprintf("%c: Conflicting type specifications.",
                         *s);
                     notify(player, p);
                     return false;
@@ -1300,7 +1300,7 @@ bool convert_flags(dbref player, char *flaglist, FLAGSET *fset, FLAG *p_type)
  * * decompile_flags: Produce commands to set flags on target.
  */
 
-void decompile_flags(dbref player, dbref thing, char *thingname)
+void decompile_flags(dbref player, dbref thing, UTF8 *thingname)
 {
     // Report generic flags.
     //
@@ -1331,27 +1331,27 @@ void decompile_flags(dbref player, dbref thing, char *thingname)
 // do_flag: Rename flags or remove flag aliases.
 // Based on RhostMUSH code.
 //
-static bool flag_rename(char *alias, char *newname)
+static bool flag_rename(UTF8 *alias, UTF8 *newname)
 {
     int nAlias;
     bool bValidAlias;
-    char *pCheckedAlias = MakeCanonicalFlagName(alias, &nAlias, &bValidAlias);
+    UTF8 *pCheckedAlias = MakeCanonicalFlagName(alias, &nAlias, &bValidAlias);
     if (!bValidAlias)
     {
         return false;
     }
-    char *pAlias = alloc_sbuf("flag_rename.old");
+    UTF8 *pAlias = alloc_sbuf("flag_rename.old");
     memcpy(pAlias, pCheckedAlias, nAlias+1);
 
     int nNewName;
     bool bValidNewName;
-    char *pCheckedNewName = MakeCanonicalFlagName(newname, &nNewName, &bValidNewName);
+    UTF8 *pCheckedNewName = MakeCanonicalFlagName(newname, &nNewName, &bValidNewName);
     if (!bValidNewName)
     {
         free_sbuf(pAlias);
         return false;
     }
-    char *pNewName = alloc_sbuf("flag_rename.new");
+    UTF8 *pNewName = alloc_sbuf("flag_rename.new");
     memcpy(pNewName, pCheckedNewName, nNewName+1);
 
     FLAGNAMEENT *flag1;
@@ -1382,7 +1382,7 @@ static bool flag_rename(char *alias, char *newname)
 }
 
 void do_flag(dbref executor, dbref caller, dbref enactor, int key, int nargs,
-             char *flag1, char *flag2)
+             UTF8 *flag1, UTF8 *flag2)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
@@ -1391,11 +1391,11 @@ void do_flag(dbref executor, dbref caller, dbref enactor, int key, int nargs,
     {
         if (nargs == 2)
         {
-            notify(executor, "Extra argument ignored.");
+            notify(executor, (UTF8 *)"Extra argument ignored.");
         }
         int nAlias;
         bool bValidAlias;
-        char *pCheckedAlias = MakeCanonicalFlagName(flag1, &nAlias, &bValidAlias);
+        UTF8 *pCheckedAlias = MakeCanonicalFlagName(flag1, &nAlias, &bValidAlias);
         if (bValidAlias)
         {
             FLAGNAMEENT *lookup;
@@ -1412,7 +1412,7 @@ void do_flag(dbref executor, dbref caller, dbref enactor, int key, int nargs,
                 }
                 else
                 {
-                    notify(executor, "Error: You can't remove the present flag name from the hash table.");
+                    notify(executor, (UTF8 *)"Error: You can't remove the present flag name from the hash table.");
                 }
             }
         }
@@ -1421,16 +1421,16 @@ void do_flag(dbref executor, dbref caller, dbref enactor, int key, int nargs,
     {
         if (nargs < 2)
         {
-            notify(executor, "You must specify a flag and a name.");
+            notify(executor, (UTF8 *)"You must specify a flag and a name.");
             return;
         }
         if (flag_rename(flag1, flag2))
         {
-            notify(executor, "Flag name changed.");
+            notify(executor, (UTF8 *)"Flag name changed.");
         }
         else
         {
-            notify(executor, "Error: Bad flagname given or flag not found.");
+            notify(executor, (UTF8 *)"Error: Bad flagname given or flag not found.");
         }
     }
 }
@@ -1449,9 +1449,9 @@ CF_HAND(cf_flag_name)
 
     MUX_STRTOK_STATE tts;
     mux_strtok_src(&tts, str);
-    mux_strtok_ctl(&tts, " \t=,");
-    char *flagstr = mux_strtok_parse(&tts);
-    char *namestr = mux_strtok_parse(&tts);
+    mux_strtok_ctl(&tts, (UTF8 *)" \t=,");
+    UTF8 *flagstr = mux_strtok_parse(&tts);
+    UTF8 *namestr = mux_strtok_parse(&tts);
 
     if (  !flagstr
        || !*flagstr

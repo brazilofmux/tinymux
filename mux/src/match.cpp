@@ -16,15 +16,15 @@
 #include "levels.h"
 #endif // REALITY_LVLS
 
-const char *NOMATCH_MESSAGE      = "I don't see that here.";
-const char *AMBIGUOUS_MESSAGE    = "I don't know which one you mean!";
-const char *NOPERM_MESSAGE       = "Permission denied.";
-const char *FUNC_FAIL_MESSAGE    = "#-1";
-const char *FUNC_NOMATCH_MESSAGE = "#-1 NO MATCH";
-const char *OUT_OF_RANGE         = "#-1 OUT OF RANGE";
-const char *FUNC_NOT_FOUND       = "#-1 NOT FOUND";
-const char *FUNC_AMBIGUOUS       = "#-2 AMBIGUOUS";
-const char *FUNC_NOPERM_MESSAGE  = "#-1 PERMISSION DENIED";
+const UTF8 *NOMATCH_MESSAGE      = (UTF8 *)"I don't see that here.";
+const UTF8 *AMBIGUOUS_MESSAGE    = (UTF8 *)"I don't know which one you mean!";
+const UTF8 *NOPERM_MESSAGE       = (UTF8 *)"Permission denied.";
+const UTF8 *FUNC_FAIL_MESSAGE    = (UTF8 *)"#-1";
+const UTF8 *FUNC_NOMATCH_MESSAGE = (UTF8 *)"#-1 NO MATCH";
+const UTF8 *OUT_OF_RANGE         = (UTF8 *)"#-1 OUT OF RANGE";
+const UTF8 *FUNC_NOT_FOUND       = (UTF8 *)"#-1 NOT FOUND";
+const UTF8 *FUNC_AMBIGUOUS       = (UTF8 *)"#-2 AMBIGUOUS";
+const UTF8 *FUNC_NOPERM_MESSAGE  = (UTF8 *)"#-1 PERMISSION DENIED";
 
 #define CON_LOCAL       0x01    // Match is near me.
 #define CON_TYPE        0x02    // Match is of requested type.
@@ -113,12 +113,12 @@ static void promote_match(dbref what, int confidence)
  * * names are being matched.  It also removes inital and terminal spaces.
  */
 
-static char *munge_space_for_match(char *name)
+static UTF8 *munge_space_for_match(UTF8 *name)
 {
-    static char buffer[LBUF_SIZE];
+    static UTF8 buffer[LBUF_SIZE];
 
-    char *p = name;
-    char *q = buffer;
+    UTF8 *p = name;
+    UTF8 *q = buffer;
 
     if (p)
     {
@@ -169,7 +169,7 @@ void match_player(void)
     }
     if (*md.string == LOOKUP_TOKEN)
     {
-        char *p;
+        UTF8 *p;
         for (p = md.string + 1; mux_isspace(*p); p++)
         {
             ; // Nothing.
@@ -187,7 +187,7 @@ void match_player(void)
  */
 static dbref absolute_name(bool bNeedPound)
 {
-    char *mname = md.string;
+    UTF8 *mname = md.string;
     if (bNeedPound)
     {
         if (*mname != NUMBER_TOKEN)
@@ -244,7 +244,7 @@ void match_me(void)
         promote_match(md.player, CON_DBREF | CON_LOCAL);
         return;
     }
-    if (!string_compare(md.string, "me"))
+    if (!string_compare(md.string, (UTF8 *)"me"))
     {
         promote_match(md.player, CON_TOKEN | CON_LOCAL);
     }
@@ -257,7 +257,7 @@ static void match_home(void)
     {
         return;
     }
-    if (!string_compare(md.string, "home"))
+    if (!string_compare(md.string, (UTF8 *)"home"))
     {
         promote_match(HOME, CON_TOKEN);
     }
@@ -280,7 +280,7 @@ void match_here(void)
             {
                 promote_match(loc, CON_DBREF | CON_LOCAL);
             }
-            else if (!string_compare(md.string, "here"))
+            else if (!string_compare(md.string, (UTF8 *)"here"))
             {
                 promote_match(loc, CON_TOKEN | CON_LOCAL);
             }
@@ -311,7 +311,7 @@ static void match_list(dbref first, int local)
          * would overwrite Name()'s static buffer which is
          * needed by string_match().
          */
-        const char *namebuf = PureName(first);
+        const UTF8 *namebuf = PureName(first);
 
         if (!string_compare(namebuf, md.string))
         {
@@ -612,7 +612,7 @@ void restore_match_state(MSTATE *mstate)
     free_lbuf(mstate->string);
 }
 
-void init_match(dbref player, const char *name, int type)
+void init_match(dbref player, const UTF8 *name, int type)
 {
     md.confidence = -1;
     md.count = 0;
@@ -620,31 +620,31 @@ void init_match(dbref player, const char *name, int type)
     md.pref_type = type;
     md.match = NOTHING;
     md.player = player;
-    md.string = munge_space_for_match((char *)name);
+    md.string = munge_space_for_match((UTF8 *)name);
     md.absolute_form = absolute_name(true);
 }
 
-void init_match_check_keys(dbref player, const char *name, int type)
+void init_match_check_keys(dbref player, const UTF8 *name, int type)
 {
     init_match(player, name, type);
     md.check_keys = true;
 }
 
-dbref match_thing(dbref player, char *name)
+dbref match_thing(dbref player, UTF8 *name)
 {
     init_match(player, name, NOTYPE);
     match_everything(MAT_EXIT_PARENTS);
     return noisy_match_result();
 }
 
-dbref match_thing_quiet(dbref player, char *name)
+dbref match_thing_quiet(dbref player, UTF8 *name)
 {
     init_match(player, name, NOTYPE);
     match_everything(MAT_EXIT_PARENTS);
     return match_result();
 }
 
-void safe_match_result(dbref it, char *buff, char **bufc)
+void safe_match_result(dbref it, UTF8 *buff, UTF8 **bufc)
 {
     if (it == AMBIGUOUS)
     {

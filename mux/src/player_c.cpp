@@ -72,7 +72,7 @@ void pcache_init(void)
 
 static void pcache_reload1(dbref player, PCACHE *pp)
 {
-    const char *cp = atr_get_raw(player, A_MONEY);
+    const UTF8 *cp = atr_get_raw(player, A_MONEY);
     if (cp && *cp)
     {
         pp->money = mux_atol(cp);
@@ -136,7 +136,7 @@ static void pcache_save(PCACHE *pp)
 {
     if (pp->cflags & PF_MONEY_CH)
     {
-        char tbuf[I32BUF_SIZE];
+        UTF8 tbuf[I32BUF_SIZE];
         mux_ltoa(pp->money, tbuf);
         atr_add_raw(pp->player, A_MONEY, tbuf);
         pp->cflags &= ~PF_MONEY_CH;
@@ -305,7 +305,7 @@ int Pennies(dbref obj)
         }
         else
         {
-            const char *cp = atr_get_raw(obj, A_MONEY);
+            const UTF8 *cp = atr_get_raw(obj, A_MONEY);
             if (cp)
             {
                 return mux_atol(cp);
@@ -339,7 +339,7 @@ void s_Pennies(dbref obj, int howfew)
         }
         else
         {
-            char tbuf[I32BUF_SIZE];
+            UTF8 tbuf[I32BUF_SIZE];
             mux_ltoa(howfew, tbuf);
             atr_add_raw(obj, A_MONEY, tbuf);
         }
@@ -365,7 +365,7 @@ void s_Pennies(dbref obj, int howfew)
 
 void s_PenniesDirect(dbref obj, int howfew)
 {
-    char tbuf[I32BUF_SIZE];
+    UTF8 tbuf[I32BUF_SIZE];
     mux_ltoa(howfew, tbuf);
     atr_add_raw(obj, A_MONEY, tbuf);
 }

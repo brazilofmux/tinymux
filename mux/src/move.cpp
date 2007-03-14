@@ -38,7 +38,7 @@ static void process_leave_loc(dbref thing, dbref dest, dbref cause, bool canhear
 
     if (Html(thing))
     {
-        notify_html(thing, "<xch_page clear=links>");
+        notify_html(thing, (UTF8 *)"<xch_page clear=links>");
     }
 
     // Run the LEAVE attributes in the current room if we meet any of
@@ -405,7 +405,7 @@ bool move_via_teleport(dbref thing, dbref dest, dbref cause, int hush)
 {
     dbref curr;
     int count;
-    char *failmsg;
+    UTF8 *failmsg;
 
     dbref src = Location(thing);
     if ((dest != HOME) && Good_obj(src))
@@ -417,12 +417,12 @@ bool move_via_teleport(dbref thing, dbref dest, dbref cause, int hush)
             {
                 if ((thing == cause) || (cause == NOTHING))
                 {
-                    failmsg = "You can't teleport out!";
+                    failmsg = (UTF8 *)"You can't teleport out!";
                 }
                 else
                 {
-                    failmsg = "You can't be teleported out!";
-                    notify_quiet(cause, "You can't teleport that out!");
+                    failmsg = (UTF8 *)"You can't be teleported out!";
+                    notify_quiet(cause, (UTF8 *)"You can't teleport that out!");
                 }
                 did_it(thing, src,
                        A_TOFAIL, failmsg, A_OTOFAIL, NULL,
@@ -483,10 +483,10 @@ static dbref get_exit_dest(dbref executor, dbref exit)
 {
     dbref aowner;
     int   aflags;
-    char *atr_gotten = atr_pget(exit, A_EXITVARDEST, &aowner, &aflags);
+    UTF8 *atr_gotten = atr_pget(exit, A_EXITVARDEST, &aowner, &aflags);
 
-    char *result = alloc_lbuf("get_exit_dest");
-    char *ref = result;
+    UTF8 *result = alloc_lbuf("get_exit_dest");
+    UTF8 *ref = result;
     mux_exec(atr_gotten, result, &ref, exit, executor, executor,
         AttrTrace(aflags, EV_FCHECK|EV_EVAL), NULL, 0);
     free_lbuf(atr_gotten);
@@ -501,7 +501,7 @@ static dbref get_exit_dest(dbref executor, dbref exit)
     return dest;
 }
 
-void move_exit(dbref player, dbref exit, bool divest, const char *failmsg, int hush)
+void move_exit(dbref player, dbref exit, bool divest, const UTF8 *failmsg, int hush)
 {
     int oattr, aattr;
     bool bDoit = false;
@@ -527,7 +527,7 @@ void move_exit(dbref player, dbref exit, bool divest, const char *failmsg, int h
             if (iShroudWarded > 0)
             {
                 int owner, flags;
-                char *buff = atr_pget(exit, iShroudWarded, &owner, &flags);
+                UTF8 *buff = atr_pget(exit, iShroudWarded, &owner, &flags);
                 if (buff)
                 {
                     if (*buff)
@@ -546,7 +546,7 @@ void move_exit(dbref player, dbref exit, bool divest, const char *failmsg, int h
             if (iUmbraWarded > 0)
             {
                 int owner, flags;
-                char *buff = atr_pget(exit, iUmbraWarded, &owner, &flags);
+                UTF8 *buff = atr_pget(exit, iUmbraWarded, &owner, &flags);
                 if (buff)
                 {
                     if (*buff)
@@ -590,14 +590,14 @@ void move_exit(dbref player, dbref exit, bool divest, const char *failmsg, int h
         case TYPE_THING:
             if (Going(loc))
             {
-                notify(player, "You can't go that way.");
+                notify(player, (UTF8 *)"You can't go that way.");
                 return;
             }
             move_via_exit(player, loc, NOTHING, exit, hush);
             divest_object(player);
             break;
         case TYPE_EXIT:
-            notify(player, "You can't go that way.");
+            notify(player, (UTF8 *)"You can't go that way.");
             return;
         }
     }
@@ -625,7 +625,7 @@ void move_exit(dbref player, dbref exit, bool divest, const char *failmsg, int h
  * do_move: Move from one place to another via exits or 'home'.
  */
 
-void do_move(dbref executor, dbref caller, dbref enactor, int eval, int key, char *direction)
+void do_move(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8 *direction)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
@@ -634,7 +634,7 @@ void do_move(dbref executor, dbref caller, dbref enactor, int eval, int key, cha
     dbref exit, loc;
     int i, quiet;
 
-    if (!string_compare(direction, "home"))
+    if (!string_compare(direction, (UTF8 *)"home"))
     {
         // Go home w/o stuff.
         //
@@ -662,10 +662,13 @@ void do_move(dbref executor, dbref caller, dbref enactor, int eval, int key, cha
             //
             notify_except(loc, executor, executor, tprintf("%s goes home.", Moniker(executor)), 0);
         }
+
         // Give the player the messages
         //
         for (i = 0; i < 3; i++)
-            notify(executor, "There's no place like home...");
+        {
+            notify(executor, (UTF8 *)"There's no place like home...");
+        }
         move_via_generic(executor, HOME, NOTHING, 0);
         divest_object(executor);
         process_sticky_dropto(loc, executor);
@@ -686,16 +689,16 @@ void do_move(dbref executor, dbref caller, dbref enactor, int eval, int key, cha
     switch (exit)
     {
     case NOTHING:       // Try to force the object
-        notify(executor, "You can't go that way.");
+        notify(executor, (UTF8 *)"You can't go that way.");
         break;
     case AMBIGUOUS:
-        notify(executor, "I don't know which way you mean!");
+        notify(executor, (UTF8 *)"I don't know which way you mean!");
         break;
     default:
         quiet = 0;
         if ((key & MOVE_QUIET) && Controls(executor, exit))
             quiet = HUSH_EXIT;
-        move_exit(executor, exit, false, "You can't go that way.", quiet);
+        move_exit(executor, exit, false, (UTF8 *)"You can't go that way.", quiet);
     }
 }
 
@@ -703,7 +706,7 @@ void do_move(dbref executor, dbref caller, dbref enactor, int eval, int key, cha
  * do_get: Get an object.
  */
 
-void do_get(dbref executor, dbref caller, dbref enactor, int eval, int key, char *what)
+void do_get(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8 *what)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
@@ -764,7 +767,7 @@ void do_get(dbref executor, dbref caller, dbref enactor, int eval, int key, char
 
     // If we can get it, get it.
     //
-    const char *failmsg;
+    const UTF8 *failmsg;
     int oattr, aattr;
     bool quiet = false;
     switch (Typeof(thing))
@@ -776,7 +779,7 @@ void do_get(dbref executor, dbref caller, dbref enactor, int eval, int key, char
         //
         if (thingloc == executor)
         {
-            notify(executor, "You already have that!");
+            notify(executor, (UTF8 *)"You already have that!");
             break;
         }
         if (  (key & GET_QUIET)
@@ -787,7 +790,7 @@ void do_get(dbref executor, dbref caller, dbref enactor, int eval, int key, char
 
         if (thing == executor)
         {
-            notify(executor, "You cannot get yourself!");
+            notify(executor, (UTF8 *)"You cannot get yourself!");
         }
         else if (could_doit(executor, thing, A_LOCK))
         {
@@ -797,10 +800,10 @@ void do_get(dbref executor, dbref caller, dbref enactor, int eval, int key, char
                     Moniker(thing)));
             }
             move_via_generic(thing, executor, executor, 0);
-            notify(thing, "Taken.");
+            notify(thing, (UTF8 *)"Taken.");
             oattr = quiet ? 0 : A_OSUCC;
             aattr = quiet ? 0 : A_ASUCC;
-            did_it(executor, thing, A_SUCC, "Taken.", oattr, NULL,
+            did_it(executor, thing, A_SUCC, (UTF8 *)"Taken.", oattr, NULL,
                    aattr, 0, NULL, 0);
         }
         else
@@ -809,11 +812,11 @@ void do_get(dbref executor, dbref caller, dbref enactor, int eval, int key, char
             aattr = quiet ? 0 : A_AFAIL;
             if (thingloc != playerloc)
             {
-                failmsg = "You can't take that from there.";
+                failmsg = (UTF8 *)"You can't take that from there.";
             }
             else
             {
-                failmsg = "You can't pick that up.";
+                failmsg = (UTF8 *)"You can't pick that up.";
             }
             did_it(executor, thing, A_FAIL, failmsg, oattr, NULL, aattr,
                 0, NULL, 0);
@@ -827,7 +830,7 @@ void do_get(dbref executor, dbref caller, dbref enactor, int eval, int key, char
         thingloc = Exits(thing);
         if (thingloc == executor)
         {
-            notify(executor, "You already have that!");
+            notify(executor, (UTF8 *)"You already have that!");
             break;
         }
 
@@ -847,13 +850,13 @@ void do_get(dbref executor, dbref caller, dbref enactor, int eval, int key, char
         s_Exits(thing, executor);
         if (!Quiet(executor))
         {
-            notify(executor, "Exit taken.");
+            notify(executor, (UTF8 *)"Exit taken.");
         }
         break;
 
     default:
 
-        notify(executor, "You can't take that!");
+        notify(executor, (UTF8 *)"You can't take that!");
         break;
     }
 }
@@ -862,7 +865,7 @@ void do_get(dbref executor, dbref caller, dbref enactor, int eval, int key, char
  * do_drop: Drop an object.
  */
 
-void do_drop(dbref executor, dbref caller, dbref enactor, int eval, int key, char *name)
+void do_drop(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8 *name)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
@@ -873,7 +876,7 @@ void do_drop(dbref executor, dbref caller, dbref enactor, int eval, int key, cha
         return;
 
     dbref exitloc, thing;
-    char *buf, *bp;
+    UTF8 *buf, *bp;
     int oattr, aattr;
     bool quiet;
 
@@ -884,10 +887,10 @@ void do_drop(dbref executor, dbref caller, dbref enactor, int eval, int key, cha
     switch (thing = match_result())
     {
     case NOTHING:
-        notify(executor, "You don't have that!");
+        notify(executor, (UTF8 *)"You don't have that!");
         return;
     case AMBIGUOUS:
-        notify(executor, "I don't know which you mean!");
+        notify(executor, (UTF8 *)"I don't know which you mean!");
         return;
     }
 
@@ -902,7 +905,7 @@ void do_drop(dbref executor, dbref caller, dbref enactor, int eval, int key, cha
               && !Wizard(executor))
            || !could_doit(executor, thing, A_LDROP))
         {
-            did_it(executor, thing, A_DFAIL, "You can't drop that.",
+            did_it(executor, thing, A_DFAIL, (UTF8 *)"You can't drop that.",
                    A_ODFAIL, NULL, A_ADFAIL, 0, NULL, 0);
             return;
         }
@@ -910,7 +913,7 @@ void do_drop(dbref executor, dbref caller, dbref enactor, int eval, int key, cha
         // Move it
         //
         move_via_generic(thing, Location(executor), executor, 0);
-        notify(thing, "Dropped.");
+        notify(thing, (UTF8 *)"Dropped.");
         quiet = false;
         if ((key & DROP_QUIET) && Controls(executor, thing))
             quiet = true;
@@ -918,7 +921,7 @@ void do_drop(dbref executor, dbref caller, dbref enactor, int eval, int key, cha
         safe_tprintf_str(buf, &bp, "dropped %s.", Moniker(thing));
         oattr = quiet ? 0 : A_ODROP;
         aattr = quiet ? 0 : A_ADROP;
-        did_it(executor, thing, A_DROP, "Dropped.", oattr, buf,
+        did_it(executor, thing, A_DROP, (UTF8 *)"Dropped.", oattr, buf,
                aattr, 0, NULL, 0);
         free_lbuf(buf);
 
@@ -933,7 +936,7 @@ void do_drop(dbref executor, dbref caller, dbref enactor, int eval, int key, cha
         //
         if ((Exits(thing) != executor) && !Wizard(executor))
         {
-            notify(executor, "You can't drop that.");
+            notify(executor, (UTF8 *)"You can't drop that.");
             return;
         }
         if (!Controls(executor, loc))
@@ -950,10 +953,10 @@ void do_drop(dbref executor, dbref caller, dbref enactor, int eval, int key, cha
         s_Exits(thing, loc);
 
         if (!Quiet(executor))
-            notify(executor, "Exit dropped.");
+            notify(executor, (UTF8 *)"Exit dropped.");
         break;
     default:
-        notify(executor, "You can't drop that.");
+        notify(executor, (UTF8 *)"You can't drop that.");
     }
 }
 
@@ -974,7 +977,7 @@ void do_enter_internal(dbref player, dbref thing, bool quiet)
     }
     else if (player == thing)
     {
-        notify(player, "You can't enter yourself!");
+        notify(player, (UTF8 *)"You can't enter yourself!");
     }
     else if (could_doit(player, thing, A_LENTER))
     {
@@ -988,12 +991,12 @@ void do_enter_internal(dbref player, dbref thing, bool quiet)
     {
         oattr = quiet ? 0 : A_OEFAIL;
         aattr = quiet ? 0 : A_AEFAIL;
-        did_it(player, thing, A_EFAIL, "You can't enter that.",
+        did_it(player, thing, A_EFAIL, (UTF8 *)"You can't enter that.",
                oattr, NULL, aattr, 0, NULL, 0);
     }
 }
 
-void do_enter(dbref executor, dbref caller, dbref enactor, int eval, int key, char *what)
+void do_enter(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8 *what)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
@@ -1038,7 +1041,7 @@ void do_leave(dbref executor, dbref caller, dbref enactor, int key)
        || !Good_obj(newLoc = Location(loc))
        || Going(newLoc))
     {
-        notify(executor, "You can't leave.");
+        notify(executor, (UTF8 *)"You can't leave.");
         return;
     }
     int quiet = 0;
@@ -1055,7 +1058,7 @@ void do_leave(dbref executor, dbref caller, dbref enactor, int key)
     {
         int oattr = quiet ? 0 : A_OLFAIL;
         int aattr = quiet ? 0 : A_ALFAIL;
-        did_it(executor, loc, A_LFAIL, "You can't leave.",
+        did_it(executor, loc, A_LFAIL, (UTF8 *)"You can't leave.",
                oattr, NULL, aattr, 0, NULL, 0);
     }
 }

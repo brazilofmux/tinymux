@@ -16,34 +16,34 @@
 
 NAMETAB logdata_nametab[] =
 {
-    {"flags",           1,  0,  LOGOPT_FLAGS},
-    {"location",        1,  0,  LOGOPT_LOC},
-    {"owner",           1,  0,  LOGOPT_OWNER},
-    {"timestamp",       1,  0,  LOGOPT_TIMESTAMP},
-    { NULL,             0,  0,  0}
+    {(UTF8 *)"flags",           1,  0,  LOGOPT_FLAGS},
+    {(UTF8 *)"location",        1,  0,  LOGOPT_LOC},
+    {(UTF8 *)"owner",           1,  0,  LOGOPT_OWNER},
+    {(UTF8 *)"timestamp",       1,  0,  LOGOPT_TIMESTAMP},
+    {(UTF8 *) NULL,             0,  0,  0}
 };
 
 NAMETAB logoptions_nametab[] =
 {
-    {"accounting",      2,  0,  LOG_ACCOUNTING},
-    {"all_commands",    2,  0,  LOG_ALLCOMMANDS},
-    {"bad_commands",    2,  0,  LOG_BADCOMMANDS},
-    {"buffer_alloc",    3,  0,  LOG_ALLOCATE},
-    {"bugs",            3,  0,  LOG_BUGS},
-    {"checkpoints",     2,  0,  LOG_DBSAVES},
-    {"config_changes",  2,  0,  LOG_CONFIGMODS},
-    {"create",          2,  0,  LOG_PCREATES},
-    {"killing",         1,  0,  LOG_KILLS},
-    {"logins",          1,  0,  LOG_LOGIN},
-    {"network",         1,  0,  LOG_NET},
-    {"problems",        1,  0,  LOG_PROBLEMS},
-    {"security",        2,  0,  LOG_SECURITY},
-    {"shouts",          2,  0,  LOG_SHOUTS},
-    {"startup",         2,  0,  LOG_STARTUP},
-    {"suspect",         2,  0,  LOG_SUSPECTCMDS},
-    {"time_usage",      1,  0,  LOG_TIMEUSE},
-    {"wizard",          1,  0,  LOG_WIZARD},
-    { NULL,                     0,  0,  0}
+    {(UTF8 *)"accounting",      2,  0,  LOG_ACCOUNTING},
+    {(UTF8 *)"all_commands",    2,  0,  LOG_ALLCOMMANDS},
+    {(UTF8 *)"bad_commands",    2,  0,  LOG_BADCOMMANDS},
+    {(UTF8 *)"buffer_alloc",    3,  0,  LOG_ALLOCATE},
+    {(UTF8 *)"bugs",            3,  0,  LOG_BUGS},
+    {(UTF8 *)"checkpoints",     2,  0,  LOG_DBSAVES},
+    {(UTF8 *)"config_changes",  2,  0,  LOG_CONFIGMODS},
+    {(UTF8 *)"create",          2,  0,  LOG_PCREATES},
+    {(UTF8 *)"killing",         1,  0,  LOG_KILLS},
+    {(UTF8 *)"logins",          1,  0,  LOG_LOGIN},
+    {(UTF8 *)"network",         1,  0,  LOG_NET},
+    {(UTF8 *)"problems",        1,  0,  LOG_PROBLEMS},
+    {(UTF8 *)"security",        2,  0,  LOG_SECURITY},
+    {(UTF8 *)"shouts",          2,  0,  LOG_SHOUTS},
+    {(UTF8 *)"startup",         2,  0,  LOG_STARTUP},
+    {(UTF8 *)"suspect",         2,  0,  LOG_SUSPECTCMDS},
+    {(UTF8 *)"time_usage",      1,  0,  LOG_TIMEUSE},
+    {(UTF8 *)"wizard",          1,  0,  LOG_WIZARD},
+    {(UTF8 *) NULL,                     0,  0,  0}
 };
 
 /* ---------------------------------------------------------------------------
@@ -51,7 +51,7 @@ NAMETAB logoptions_nametab[] =
  * log entry.
  */
 
-bool start_log(const char *primary, const char *secondary)
+bool start_log(const UTF8 *primary, const UTF8 *secondary)
 {
     mudstate.logging++;
     if (  1 <= mudstate.logging
@@ -61,7 +61,7 @@ bool start_log(const char *primary, const char *secondary)
         {
             // Format the timestamp.
             //
-            char buffer[256];
+            UTF8 buffer[256];
             buffer[0] = '\0';
             if (mudconf.log_info & LOGOPT_TIMESTAMP)
             {
@@ -69,7 +69,7 @@ bool start_log(const char *primary, const char *secondary)
                 ltaNow.GetLocal();
                 FIELDEDTIME ft;
                 ltaNow.ReturnFields(&ft);
-                mux_sprintf(buffer, sizeof(buffer), "%d.%02d%02d:%02d%02d%02d ",ft.iYear,
+                mux_sprintf(buffer, sizeof(buffer), "%d.%02d%02d:%02d%02d%02d ", ft.iYear,
                     ft.iMonth, ft.iDayOfMonth, ft.iHour, ft.iMinute,
                     ft.iSecond);
             }
@@ -95,7 +95,7 @@ bool start_log(const char *primary, const char *secondary)
         {
             return true;
         }
-        Log.WriteString("Recursive logging request." ENDLINE);
+        Log.WriteString((UTF8 *)"Recursive logging request." ENDLINE);
     }
     mudstate.logging--;
     return false;
@@ -107,7 +107,7 @@ bool start_log(const char *primary, const char *secondary)
 
 void end_log(void)
 {
-    Log.WriteString(ENDLINE);
+    Log.WriteString((UTF8 *)ENDLINE);
     Log.Flush();
     mudstate.logging--;
 }
@@ -116,23 +116,23 @@ void end_log(void)
  * log_perror: Write perror message to the log
  */
 
-void log_perror(const char *primary, const char *secondary, const char *extra, const char *failing_object)
+void log_perror(const UTF8 *primary, const UTF8 *secondary, const UTF8 *extra, const UTF8 *failing_object)
 {
     start_log(primary, secondary);
     if (extra && *extra)
     {
-        log_text("(");
+        log_text((UTF8 *)"(");
         log_text(extra);
-        log_text(") ");
+        log_text((UTF8 *)") ");
     }
 
     // <Failing_object text>: <strerror() text>
     //
     Log.WriteString(failing_object);
-    Log.WriteString(": ");
+    Log.WriteString((UTF8 *)": ");
     Log.WriteString(mux_strerror(errno));
 #ifndef WIN32
-    Log.WriteString(ENDLINE);
+    Log.WriteString((UTF8 *)ENDLINE);
 #endif // !WIN32
     Log.Flush();
     mudstate.logging--;
@@ -142,7 +142,7 @@ void log_perror(const char *primary, const char *secondary, const char *extra, c
  * log_text, log_number: Write text or number to the log file.
  */
 
-void log_text(const char *text)
+void log_text(const UTF8 *text)
 {
     Log.WriteString(strip_ansi(text));
 }
@@ -156,7 +156,7 @@ void DCL_CDECL log_printf(const char *fmt, ...)
 {
     va_list ap;
     va_start(ap, fmt);
-    char aTempBuffer[SIZEOF_LOG_BUFFER];
+    UTF8 aTempBuffer[SIZEOF_LOG_BUFFER];
     size_t nString = mux_vsnprintf(aTempBuffer, SIZEOF_LOG_BUFFER, fmt, ap);
     va_end(ap);
     Log.WriteBuffer(nString, aTempBuffer);
@@ -176,7 +176,7 @@ void log_name(dbref target)
     }
     else
     {
-        char *tp;
+        UTF8 *tp;
 
         if (mudconf.log_info & LOGOPT_FLAGS)
         {
@@ -215,38 +215,38 @@ void log_name_and_loc(dbref player)
     if (  (mudconf.log_info & LOGOPT_LOC)
        && Has_location(player))
     {
-        log_text(" in ");
+        log_text((UTF8 *)" in ");
         log_name(Location(player));
     }
     return;
 }
 
-static const char *OBJTYP(dbref thing)
+static const UTF8 *OBJTYP(dbref thing)
 {
     if (!Good_dbref(thing))
     {
-        return "??OUT-OF-RANGE??";
+        return (UTF8 *)"??OUT-OF-RANGE??";
     }
     switch (Typeof(thing))
     {
     case TYPE_PLAYER:
-        return "PLAYER";
+        return (UTF8 *)"PLAYER";
     case TYPE_THING:
-        return "THING";
+        return (UTF8 *)"THING";
     case TYPE_ROOM:
-        return "ROOM";
+        return (UTF8 *)"ROOM";
     case TYPE_EXIT:
-        return "EXIT";
+        return (UTF8 *)"EXIT";
     case TYPE_GARBAGE:
-        return "GARBAGE";
+        return (UTF8 *)"GARBAGE";
     default:
-        return "??ILLEGAL??";
+        return (UTF8 *)"??ILLEGAL??";
     }
 }
 
 void log_type_and_name(dbref thing)
 {
-    Log.tinyprintf("%s #%d(%s)", OBJTYP(thing), thing, Good_obj(thing) ? PureName(thing) : "");
+    Log.tinyprintf("%s #%d(%s)", OBJTYP(thing), thing, Good_obj(thing) ? PureName(thing) : (UTF8 *)"");
     return;
 }
 
@@ -257,8 +257,8 @@ void do_log
     dbref enactor,
     int   key,
     int   nargs,
-    char *whichlog,
-    char *logtext
+    UTF8 *whichlog,
+    UTF8 *logtext
 )
 {
     UNUSED_PARAMETER(caller);
@@ -270,17 +270,17 @@ void do_log
 
     // Strip the filename of all ANSI.
     //
-    char *pFilename = strip_ansi(whichlog);
+    UTF8 *pFilename = strip_ansi(whichlog);
 
     // Restrict filename to a subdirectory to reduce the possibility
     // of a security hole.
     //
-    char *temp_ptr = strrchr(pFilename, '/');
+    UTF8 *temp_ptr = (UTF8 *)strrchr((char *)pFilename, '/');
     if (temp_ptr)
     {
         pFilename = ++temp_ptr;
     }
-    temp_ptr = strrchr(pFilename, '\\');
+    temp_ptr = (UTF8 *)strrchr((char *)pFilename, '\\');
     if (temp_ptr)
     {
         pFilename = ++temp_ptr;
@@ -289,7 +289,7 @@ void do_log
     // Check for and disallow leading periods, empty strings
     // and filenames over 30 characters.
     //
-    size_t n = strlen(pFilename);
+    size_t n = strlen((char *)pFilename);
     if (  n == 0
        || n > 30)
     {
@@ -308,8 +308,8 @@ void do_log
         }
     }
 
-    char *pFullName = NULL;
-    char *pMessage = "";
+    UTF8 *pFullName = NULL;
+    UTF8 *pMessage = (UTF8 *)"";
     if (bValid)
     {
         pFullName = alloc_lbuf("do_log_filename");
@@ -333,15 +333,15 @@ void do_log
         {
             free_lbuf(pFullName);
         }
-        notify(executor, "Syntax: @log file=message");
+        notify(executor, (UTF8 *)"Syntax: @log file=message");
         return;
     }
 
     FILE *hFile;
-    if (mux_fopen(&hFile, pFullName, "r"))
+    if (mux_fopen(&hFile, pFullName, (UTF8 *)"r"))
     {
         fclose(hFile);
-        if (mux_fopen(&hFile, pFullName, "a"))
+        if (mux_fopen(&hFile, pFullName, (UTF8 *)"a"))
         {
             // Okay, at this point, the file exists.
             //
@@ -353,6 +353,6 @@ void do_log
     }
     free_lbuf(pFullName);
 
-    notify(executor, "Not a valid log file.");
+    notify(executor, (UTF8 *)"Not a valid log file.");
     return;
 }

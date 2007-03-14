@@ -24,8 +24,8 @@ struct search_type {
     POWERSET s_pset;
     dbref   s_parent;
     dbref   s_zone;
-    char    *s_rst_name;
-    char    *s_rst_eval;
+    UTF8    *s_rst_name;
+    UTF8    *s_rst_eval;
     int low_bound;
     int high_bound;
 };
@@ -42,7 +42,7 @@ struct stats_type {
     int s_garbage;
 };
 
-extern bool search_setup(dbref, char *, SEARCH *);
+extern bool search_setup(dbref, UTF8 *, SEARCH *);
 extern void search_perform(dbref executor, dbref caller, dbref enactor, SEARCH *);
 extern bool get_stats(dbref, dbref, STATS *);
 

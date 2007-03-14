@@ -18,10 +18,10 @@
 // Cmds run in low-prio Q after a 1 sec delay for the first one.
 //
 static void bind_and_queue(dbref executor, dbref caller, dbref enactor,
-                           int eval, char *action, char *argstr, char *cargs[],
+                           int eval, UTF8 *action, UTF8 *argstr, UTF8 *cargs[],
                            int ncargs, int number)
 {
-    char *command = replace_tokens(action, argstr, mux_ltoa_t(number), NULL);
+    UTF8 *command = replace_tokens(action, argstr, mux_ltoa_t(number), NULL);
     CLinearTimeAbsolute lta;
     wait_que(executor, caller, enactor, eval, false, lta, NOTHING, 0,
         command,
@@ -37,23 +37,23 @@ static void bind_and_queue(dbref executor, dbref caller, dbref enactor,
 // and /delimit allows specification of a delimiter.
 //
 void do_dolist(dbref executor, dbref caller, dbref enactor, int eval, int key,
-               char *list, char *command, char *cargs[], int ncargs)
+               UTF8 *list, UTF8 *command, UTF8 *cargs[], int ncargs)
 {
     if (!list || *list == '\0')
     {
-        notify(executor, "That's terrific, but what should I do with the list?");
+        notify(executor, (UTF8 *)"That's terrific, but what should I do with the list?");
         return;
     }
-    char *objstring, delimiter = ' ';
+    UTF8 *objstring, delimiter = ' ';
     int number = 0;
-    char *curr = list;
+    UTF8 *curr = list;
 
     if (key & DOLIST_DELIMIT)
     {
-        char *tempstr = parse_to(&curr, ' ', EV_STRIP_CURLY);
-        if (strlen(tempstr) > 1)
+        UTF8 *tempstr = parse_to(&curr, ' ', EV_STRIP_CURLY);
+        if (1 < strlen((char *)tempstr))
         {
-            notify(executor, "The delimiter must be a single character!");
+            notify(executor, (UTF8 *)"The delimiter must be a single character!");
             return;
         }
         delimiter = *tempstr;
@@ -75,8 +75,8 @@ void do_dolist(dbref executor, dbref caller, dbref enactor, int eval, int key,
 
     if (key & DOLIST_NOTIFY)
     {
-        char *tbuf = alloc_lbuf("dolist.notify_cmd");
-        mux_strncpy(tbuf, "@notify/quiet me", LBUF_SIZE-1);
+        UTF8 *tbuf = alloc_lbuf("dolist.notify_cmd");
+        mux_strncpy(tbuf, (UTF8 *)"@notify/quiet me", LBUF_SIZE-1);
         CLinearTimeAbsolute lta;
         wait_que(executor, caller, enactor, eval, false, lta, NOTHING,
             A_SEMAPHORE,
@@ -89,14 +89,14 @@ void do_dolist(dbref executor, dbref caller, dbref enactor, int eval, int key,
 
 // Regular @find command
 //
-void do_find(dbref executor, dbref caller, dbref enactor, int eval, int key, char *name)
+void do_find(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8 *name)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
     UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(key);
 
-    char *buff;
+    UTF8 *buff;
 
     if (!payfor(executor, mudconf.searchcost))
     {
@@ -118,7 +118,7 @@ void do_find(dbref executor, dbref caller, dbref enactor, int eval, int key, cha
             free_lbuf(buff);
         }
     }
-    notify(executor, "***End of List***");
+    notify(executor, (UTF8 *)"***End of List***");
 }
 
 // ---------------------------------------------------------------------------
@@ -192,7 +192,7 @@ bool get_stats(dbref player, dbref who, STATS *info)
 
 // Reworked by R'nice
 //
-void do_stats(dbref executor, dbref caller, dbref enactor, int eval, int key, char *name)
+void do_stats(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8 *name)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
@@ -228,14 +228,14 @@ void do_stats(dbref executor, dbref caller, dbref enactor, int eval, int key, ch
         owner = lookup_player(executor, name, true);
         if (owner == NOTHING)
         {
-            notify(executor, "Not found.");
+            notify(executor, (UTF8 *)"Not found.");
             return;
         }
         break;
 
     default:
 
-        notify(executor, "Illegal combination of switches.");
+        notify(executor, (UTF8 *)"Illegal combination of switches.");
         return;
     }
 
@@ -352,8 +352,8 @@ void do_chownall
     dbref enactor,
     int   key,
     int   nargs,
-    char *from,
-    char *to
+    UTF8 *from,
+    UTF8 *to
 )
 {
     UNUSED_PARAMETER(caller);
@@ -372,7 +372,7 @@ void do_chownall
     }
     else if (!isPlayer(victim))
     {
-        notify(executor, "Victim must be a player.");
+        notify(executor, (UTF8 *)"Victim must be a player.");
         return;
     }
 
@@ -403,11 +403,11 @@ void do_chownall
 static void er_mark_disabled(dbref player)
 {
     notify(player,
-     "The mark commands are not allowed while DB cleaning is enabled.");
+     (UTF8 *)"The mark commands are not allowed while DB cleaning is enabled.");
     notify(player,
-     "Use the '@disable cleaning' command to disable automatic cleaning.");
+     (UTF8 *)"Use the '@disable cleaning' command to disable automatic cleaning.");
     notify(player,
-     "Remember to '@unmark_all' before re-enabling automatic cleaning.");
+     (UTF8 *)"Remember to '@unmark_all' before re-enabling automatic cleaning.");
 }
 
 
@@ -415,24 +415,24 @@ static void er_mark_disabled(dbref player)
 // do_search: Walk the db reporting various things (or setting/clearing mark
 // bits)
 //
-bool search_setup(dbref player, char *searchfor, SEARCH *parm)
+bool search_setup(dbref player, UTF8 *searchfor, SEARCH *parm)
 {
     // Crack arg into <pname> <type>=<targ>,<low>,<high>
     //
-    char *pname = parse_to(&searchfor, '=', EV_STRIP_TS);
+    UTF8 *pname = parse_to(&searchfor, '=', EV_STRIP_TS);
     if (!pname || !*pname)
     {
-        pname = "me";
+        pname = (UTF8 *)"me";
     }
     else
     {
         mux_strlwr(pname);
     }
 
-    char *searchtype;
+    UTF8 *searchtype;
     if (searchfor && *searchfor)
     {
-        searchtype = strrchr(pname, ' ');
+        searchtype = (UTF8 *)strrchr((char *)pname, ' ');
         if (searchtype)
         {
             *searchtype++ = '\0';
@@ -440,19 +440,19 @@ bool search_setup(dbref player, char *searchfor, SEARCH *parm)
         else
         {
             searchtype = pname;
-            pname = "";
+            pname = (UTF8 *)"";
         }
     }
     else
     {
-        searchtype = "";
+        searchtype = (UTF8 *)"";
     }
 
     // If the player name is quoted, strip the quotes.
     //
     if (*pname == '\"')
     {
-        size_t k = strlen(pname) - 1;
+        size_t k = strlen((char *)pname) - 1;
         if (pname[k] == '"')
         {
             pname[k] = '\0';
@@ -487,7 +487,7 @@ bool search_setup(dbref player, char *searchfor, SEARCH *parm)
         }
 
     }
-    else if (strcmp(pname, "me") == 0)
+    else if (strcmp((char *)pname, "me") == 0)
     {
         parm->s_rst_owner = player;
     }
@@ -527,36 +527,36 @@ bool search_setup(dbref player, char *searchfor, SEARCH *parm)
 
     case 'e':
 
-        if (string_prefix("exits", searchtype))
+        if (string_prefix((UTF8 *)"exits", searchtype))
         {
             parm->s_rst_name = searchfor;
             parm->s_rst_type = TYPE_EXIT;
         }
-        else if (string_prefix("evaluate", searchtype))
+        else if (string_prefix((UTF8 *)"evaluate", searchtype))
         {
             parm->s_rst_eval = searchfor;
         }
-        else if (string_prefix("eplayer", searchtype))
+        else if (string_prefix((UTF8 *)"eplayer", searchtype))
         {
             parm->s_rst_type = TYPE_PLAYER;
             parm->s_rst_eval = searchfor;
         }
-        else if (string_prefix("eroom", searchtype))
+        else if (string_prefix((UTF8 *)"eroom", searchtype))
         {
             parm->s_rst_type = TYPE_ROOM;
             parm->s_rst_eval = searchfor;
         }
-        else if (string_prefix("eobject", searchtype))
+        else if (string_prefix((UTF8 *)"eobject", searchtype))
         {
             parm->s_rst_type = TYPE_THING;
             parm->s_rst_eval = searchfor;
         }
-        else if (string_prefix("ething", searchtype))
+        else if (string_prefix((UTF8 *)"ething", searchtype))
         {
             parm->s_rst_type = TYPE_THING;
             parm->s_rst_eval = searchfor;
         }
-        else if (string_prefix("eexit", searchtype))
+        else if (string_prefix((UTF8 *)"eexit", searchtype))
         {
             parm->s_rst_type = TYPE_EXIT;
             parm->s_rst_eval = searchfor;
@@ -569,7 +569,7 @@ bool search_setup(dbref player, char *searchfor, SEARCH *parm)
 
     case 'f':
 
-        if (string_prefix("flags", searchtype))
+        if (string_prefix((UTF8 *)"flags", searchtype))
         {
             // convert_flags ignores previous values of flag_mask and
             // s_rst_type while setting them.
@@ -588,7 +588,7 @@ bool search_setup(dbref player, char *searchfor, SEARCH *parm)
 
     case 'n':
 
-        if (string_prefix("name", searchtype))
+        if (string_prefix((UTF8 *)"name", searchtype))
         {
             parm->s_rst_name = searchfor;
         }
@@ -600,7 +600,7 @@ bool search_setup(dbref player, char *searchfor, SEARCH *parm)
 
     case 'o':
 
-        if (string_prefix("objects", searchtype))
+        if (string_prefix((UTF8 *)"objects", searchtype))
         {
             parm->s_rst_name = searchfor;
             parm->s_rst_type = TYPE_THING;
@@ -613,7 +613,7 @@ bool search_setup(dbref player, char *searchfor, SEARCH *parm)
 
     case 'p':
 
-        if (string_prefix("players", searchtype))
+        if (string_prefix((UTF8 *)"players", searchtype))
         {
             parm->s_rst_name = searchfor;
             parm->s_rst_type = TYPE_PLAYER;
@@ -622,7 +622,7 @@ bool search_setup(dbref player, char *searchfor, SEARCH *parm)
                 parm->s_rst_owner = ANY_OWNER;
             }
         }
-        else if (string_prefix("parent", searchtype))
+        else if (string_prefix((UTF8 *)"parent", searchtype))
         {
             parm->s_parent = match_controlled(player, searchfor);
             if (!Good_obj(parm->s_parent))
@@ -634,7 +634,7 @@ bool search_setup(dbref player, char *searchfor, SEARCH *parm)
                 parm->s_rst_owner = ANY_OWNER;
             }
         }
-        else if (string_prefix("power", searchtype))
+        else if (string_prefix((UTF8 *)"power", searchtype))
         {
             if (!decode_power(player, searchfor, &parm->s_pset))
             {
@@ -649,7 +649,7 @@ bool search_setup(dbref player, char *searchfor, SEARCH *parm)
 
     case 'r':
 
-        if (string_prefix("rooms", searchtype))
+        if (string_prefix((UTF8 *)"rooms", searchtype))
         {
             parm->s_rst_name = searchfor;
             parm->s_rst_type = TYPE_ROOM;
@@ -662,33 +662,33 @@ bool search_setup(dbref player, char *searchfor, SEARCH *parm)
 
     case 't':
 
-        if (string_prefix("type", searchtype))
+        if (string_prefix((UTF8 *)"type", searchtype))
         {
             if (searchfor[0] == '\0')
             {
                 break;
             }
-            if (string_prefix("rooms", searchfor))
+            if (string_prefix((UTF8 *)"rooms", searchfor))
             {
                 parm->s_rst_type = TYPE_ROOM;
             }
-            else if (string_prefix("exits", searchfor))
+            else if (string_prefix((UTF8 *)"exits", searchfor))
             {
                 parm->s_rst_type = TYPE_EXIT;
             }
-            else if (string_prefix("objects", searchfor))
+            else if (string_prefix((UTF8 *)"objects", searchfor))
             {
                 parm->s_rst_type = TYPE_THING;
             }
-            else if (string_prefix("things", searchfor))
+            else if (string_prefix((UTF8 *)"things", searchfor))
             {
                 parm->s_rst_type = TYPE_THING;
             }
-            else if (string_prefix("garbage", searchfor))
+            else if (string_prefix((UTF8 *)"garbage", searchfor))
             {
                 parm->s_rst_type = TYPE_GARBAGE;
             }
-            else if (string_prefix("players", searchfor))
+            else if (string_prefix((UTF8 *)"players", searchfor))
             {
                 parm->s_rst_type = TYPE_PLAYER;
                 if (!*pname)
@@ -702,7 +702,7 @@ bool search_setup(dbref player, char *searchfor, SEARCH *parm)
                 return false;
             }
         }
-        else if (string_prefix("things", searchtype))
+        else if (string_prefix((UTF8 *)"things", searchtype))
         {
             parm->s_rst_name = searchfor;
             parm->s_rst_type = TYPE_THING;
@@ -715,7 +715,7 @@ bool search_setup(dbref player, char *searchfor, SEARCH *parm)
 
     case 'z':
 
-        if (string_prefix("zone", searchtype))
+        if (string_prefix((UTF8 *)"zone", searchtype))
         {
             parm->s_zone = match_controlled(player, searchfor);
             if (!Good_obj(parm->s_zone))
@@ -751,7 +751,7 @@ bool search_setup(dbref player, char *searchfor, SEARCH *parm)
        && (parm->s_rst_owner != player)
        && (parm->s_rst_owner != ANY_OWNER))
     {
-        notify(player, "You need a search warrant to do that!");
+        notify(player, (UTF8 *)"You need a search warrant to do that!");
         return false;
     }
 
@@ -770,9 +770,9 @@ bool search_setup(dbref player, char *searchfor, SEARCH *parm)
 void search_perform(dbref executor, dbref caller, dbref enactor, SEARCH *parm)
 {
     POWER thing1powers, thing2powers;
-    char *result, *bp;
+    UTF8 *result, *bp;
 
-    char *buff = alloc_sbuf("search_perform.num");
+    UTF8 *buff = alloc_sbuf("search_perform.num");
     int save_invk_ctr = mudstate.func_invk_ctr;
 
     dbref thing;
@@ -863,7 +863,7 @@ void search_perform(dbref executor, dbref caller, dbref enactor, SEARCH *parm)
         {
             buff[0] = '#';
             mux_ltoa(thing, buff+1);
-            char *buff2 = replace_tokens(parm->s_rst_eval, buff, NULL, NULL);
+            UTF8 *buff2 = replace_tokens(parm->s_rst_eval, buff, NULL, NULL);
             result = bp = alloc_lbuf("search_perform");
             mux_exec(buff2, result, &bp, executor, caller, enactor,
                 EV_FCHECK | EV_EVAL | EV_NOTRACE, NULL, 0);
@@ -922,11 +922,11 @@ static void search_mark(dbref player, int key)
     return;
 }
 
-void do_search(dbref executor, dbref caller, dbref enactor, int eval, int key, char *arg)
+void do_search(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8 *arg)
 {
     UNUSED_PARAMETER(eval);
 
-    char *buff, *outbuf, *bp;
+    UTF8 *buff, *outbuf, *bp;
     dbref thing, from, to;
     SEARCH searchparm;
 
@@ -975,7 +975,7 @@ void do_search(dbref executor, dbref caller, dbref enactor, int eval, int key, c
             {
                 flag = false;
                 destitute = false;
-                notify(executor, "\nROOMS:");
+                notify(executor, (UTF8 *)"\nROOMS:");
             }
             buff = unparse_object(executor, thing, false);
             notify(executor, buff);
@@ -1000,7 +1000,7 @@ void do_search(dbref executor, dbref caller, dbref enactor, int eval, int key, c
             {
                 flag = false;
                 destitute = false;
-                notify(executor, "\nEXITS:");
+                notify(executor, (UTF8 *)"\nEXITS:");
             }
             from = Exits(thing);
             to = Location(thing);
@@ -1010,14 +1010,14 @@ void do_search(dbref executor, dbref caller, dbref enactor, int eval, int key, c
             safe_str(buff, outbuf, &bp);
             free_lbuf(buff);
 
-            safe_str(" [from ", outbuf, &bp);
+            safe_str((UTF8 *)" [from ", outbuf, &bp);
             buff = unparse_object(executor, from, false);
-            safe_str(((from == NOTHING) ? "NOWHERE" : buff), outbuf, &bp);
+            safe_str(((from == NOTHING) ? (UTF8 *)"NOWHERE" : buff), outbuf, &bp);
             free_lbuf(buff);
 
-            safe_str(" to ", outbuf, &bp);
+            safe_str((UTF8 *)" to ", outbuf, &bp);
             buff = unparse_object(executor, to, false);
-            safe_str(((to == NOTHING) ? "NOWHERE" : buff), outbuf, &bp);
+            safe_str(((to == NOTHING) ? (UTF8 *)"NOWHERE" : buff), outbuf, &bp);
             free_lbuf(buff);
 
             safe_chr(']', outbuf, &bp);
@@ -1043,14 +1043,14 @@ void do_search(dbref executor, dbref caller, dbref enactor, int eval, int key, c
             {
                 flag = false;
                 destitute = false;
-                notify(executor, "\nOBJECTS:");
+                notify(executor, (UTF8 *)"\nOBJECTS:");
             }
             bp = outbuf;
             buff = unparse_object(executor, thing, false);
             safe_str(buff, outbuf, &bp);
             free_lbuf(buff);
 
-            safe_str(" [owner: ", outbuf, &bp);
+            safe_str((UTF8 *)" [owner: ", outbuf, &bp);
             buff = unparse_object(executor, Owner(thing), false);
             safe_str(buff, outbuf, &bp);
             free_lbuf(buff);
@@ -1078,7 +1078,7 @@ void do_search(dbref executor, dbref caller, dbref enactor, int eval, int key, c
             {
                 flag = false;
                 destitute = false;
-                notify(executor, "\nPLAYERS:");
+                notify(executor, (UTF8 *)"\nPLAYERS:");
             }
             bp = outbuf;
             buff = unparse_object(executor, thing, 0);
@@ -1086,7 +1086,7 @@ void do_search(dbref executor, dbref caller, dbref enactor, int eval, int key, c
             free_lbuf(buff);
             if (searchparm.s_wizard)
             {
-                safe_str(" [location: ", outbuf, &bp);
+                safe_str((UTF8 *)" [location: ", outbuf, &bp);
                 buff = unparse_object(executor, Location(thing), false);
                 safe_str(buff, outbuf, &bp);
                 free_lbuf(buff);
@@ -1102,7 +1102,7 @@ void do_search(dbref executor, dbref caller, dbref enactor, int eval, int key, c
     //
     if (destitute)
     {
-        notify(executor, "Nothing found.");
+        notify(executor, (UTF8 *)"Nothing found.");
     }
     else
     {
@@ -1140,7 +1140,7 @@ void do_markall(dbref executor, dbref caller, dbref enactor, int key)
     }
     if (!Quiet(executor))
     {
-        notify(executor, "Done.");
+        notify(executor, (UTF8 *)"Done.");
     }
 }
 
@@ -1148,7 +1148,7 @@ void do_markall(dbref executor, dbref caller, dbref enactor, int key)
 // do_apply_marked: Perform a command for each marked obj in the db.
 //
 void do_apply_marked( dbref executor, dbref caller, dbref enactor, int eval,
-                      int key, char *command, char *cargs[], int ncargs)
+                      int key, UTF8 *command, UTF8 *cargs[], int ncargs)
 {
     UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(key);
@@ -1158,7 +1158,7 @@ void do_apply_marked( dbref executor, dbref caller, dbref enactor, int eval,
         er_mark_disabled(executor);
         return;
     }
-    char *buff = alloc_sbuf("do_apply_marked");
+    UTF8 *buff = alloc_sbuf("do_apply_marked");
     int i;
     int number = 0;
     DO_WHOLE_DB(i)
@@ -1175,7 +1175,7 @@ void do_apply_marked( dbref executor, dbref caller, dbref enactor, int eval,
     free_sbuf(buff);
     if (!Quiet(executor))
     {
-        notify(executor, "Done.");
+        notify(executor, (UTF8 *)"Done.");
     }
 }
 

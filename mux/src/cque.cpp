@@ -65,12 +65,12 @@ static int add_to(dbref executor, int am, int attrnum)
     int aflags;
     dbref aowner;
 
-    char *atr_gotten = atr_get("add_to.68", executor, attrnum, &aowner, &aflags);
+    UTF8 *atr_gotten = atr_get("add_to.68", executor, attrnum, &aowner, &aflags);
     int num = mux_atol(atr_gotten);
     free_lbuf(atr_gotten);
     num += am;
 
-    char buff[I32BUF_SIZE];
+    UTF8 buff[I32BUF_SIZE];
     size_t nlen = 0;
     *buff = '\0';
     if (num)
@@ -114,7 +114,7 @@ static void Task_RunQueueEntry(void *pEntry, int iUnused)
                 point->scr[i] = NULL;
             }
 
-            char *command = point->comm;
+            UTF8 *command = point->comm;
 
             mux_assert(!mudstate.inpipe);
             mux_assert(mudstate.pipe_nest_lev == 0);
@@ -128,7 +128,7 @@ static void Task_RunQueueEntry(void *pEntry, int iUnused)
                 mux_assert(!mudstate.poutnew);
                 mux_assert(!mudstate.poutbufc);
 
-                char *cp = parse_to(&command, ';', 0);
+                UTF8 *cp = parse_to(&command, ';', 0);
 
                 if (  cp
                    && *cp)
@@ -158,7 +158,7 @@ static void Task_RunQueueEntry(void *pEntry, int iUnused)
                     MuxAlarm.Set(mudconf.max_cmdsecs);
                     CLinearTimeDelta ltdUsageBegin = GetProcessorUsage();
 
-                    char *log_cmdbuf = process_command(executor, point->caller,
+                    UTF8 *log_cmdbuf = process_command(executor, point->caller,
                         point->enactor, point->eval, false, cp, point->env,
                         point->nargs);
 
@@ -166,7 +166,7 @@ static void Task_RunQueueEntry(void *pEntry, int iUnused)
                     ltaEnd.GetUTC();
                     if (MuxAlarm.bAlarmed)
                     {
-                        notify(executor, "GAME: Expensive activity abbreviated.");
+                        notify(executor, (UTF8 *)"GAME: Expensive activity abbreviated.");
                         s_Flags(point->enactor, FLAG_WORD1, Flags(point->enactor) | HALT);
                         s_Flags(point->executor, FLAG_WORD1, Flags(point->executor) | HALT);
                         halt_que(point->enactor, NOTHING);
@@ -183,7 +183,7 @@ static void Task_RunQueueEntry(void *pEntry, int iUnused)
                     {
                         STARTLOG(LOG_PROBLEMS, "CMD", "CPU");
                         log_name_and_loc(executor);
-                        char *logbuf = alloc_lbuf("do_top.LOG.cpu");
+                        UTF8 *logbuf = alloc_lbuf("do_top.LOG.cpu");
                         mux_sprintf(logbuf, LBUF_SIZE, " queued command taking %s secs (enactor #%d): ",
                             ltd.ReturnSecondsString(4), point->enactor);
                         log_text(logbuf);
@@ -373,7 +373,7 @@ int halt_que(dbref executor, dbref object)
 // ---------------------------------------------------------------------------
 // do_halt: Command interface to halt_que.
 //
-void do_halt(dbref executor, dbref caller, dbref enactor, int eval, int key, char *target)
+void do_halt(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8 *target)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
@@ -421,7 +421,7 @@ void do_halt(dbref executor, dbref caller, dbref enactor, int eval, int key, cha
         }
         if (key & HALT_ALL)
         {
-            notify(executor, "Can't specify a target and /all");
+            notify(executor, (UTF8 *)"Can't specify a target and /all");
             return;
         }
         if (isPlayer(obj_targ))
@@ -559,7 +559,7 @@ int nfy_que(dbref sem, int attr, int key, int count)
     {
         int   aflags;
         dbref aowner;
-        char *str = atr_get("nfy_que.562", sem, attr, &aowner, &aflags);
+        UTF8 *str = atr_get("nfy_que.562", sem, attr, &aowner, &aflags);
         cSemaphore = mux_atol(str);
         free_lbuf(str);
     }
@@ -606,15 +606,15 @@ void do_notify
     dbref enactor,
     int   key,
     int   nargs,
-    char *what,
-    char *count
+    UTF8 *what,
+    UTF8 *count
 )
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
     UNUSED_PARAMETER(nargs);
 
-    char *obj = parse_to(&what, '/', 0);
+    UTF8 *obj = parse_to(&what, '/', 0);
     init_match(executor, obj, NOTYPE);
     match_everything(0);
 
@@ -671,11 +671,11 @@ void do_notify
             {
                 if (key == NFY_DRAIN)
                 {
-                    notify_quiet(executor, "Drained.");
+                    notify_quiet(executor, (UTF8 *)"Drained.");
                 }
                 else
                 {
-                    notify_quiet(executor, "Notified.");
+                    notify_quiet(executor, (UTF8 *)"Notified.");
                 }
             }
         }
@@ -691,9 +691,9 @@ static BQUE *setup_que
     dbref    caller,
     dbref    enactor,
     int      eval,
-    char    *command,
+    UTF8    *command,
     int      nargs,
-    char    *args[],
+    UTF8    *args[],
     reg_ref *sargs[]
 )
 {
@@ -713,7 +713,7 @@ static BQUE *setup_que
     }
     if (!payfor(executor, a))
     {
-        notify(Owner(executor), "Not enough money to queue command.");
+        notify(Owner(executor), (UTF8 *)"Not enough money to queue command.");
         return NULL;
     }
 
@@ -726,7 +726,7 @@ static BQUE *setup_que
         a_Queue(Owner(executor), -1);
 
         notify(Owner(executor),
-            "Run away objects: too many commands queued.  Halted.");
+            (UTF8 *)"Run away objects: too many commands queued.  Halted.");
         halt_que(Owner(executor), NOTHING);
 
         // Halt also means no command execution allowed.
@@ -746,7 +746,7 @@ static BQUE *setup_que
 
     if (command)
     {
-        nCommand = strlen(command) + 1;
+        nCommand = strlen((char *)command) + 1;
         tlen = nCommand;
     }
 
@@ -759,7 +759,7 @@ static BQUE *setup_que
     {
         if (args[a])
         {
-            nLenEnv[a] = strlen(args[a]) + 1;
+            nLenEnv[a] = strlen((char *)args[a]) + 1;
             tlen += nLenEnv[a];
         }
     }
@@ -769,7 +769,7 @@ static BQUE *setup_que
     BQUE *tmp = alloc_qentry("setup_que.qblock");
     tmp->comm = NULL;
 
-    char *tptr = tmp->text = (char *)MEMALLOC(tlen);
+    UTF8 *tptr = tmp->text = (UTF8 *)MEMALLOC(tlen);
     ISOUTOFMEMORY(tptr);
 
     if (command)
@@ -843,9 +843,9 @@ void wait_que
     CLinearTimeAbsolute &ltaWhen,
     dbref    sem,
     int      attr,
-    char    *command,
+    UTF8    *command,
     int      nargs,
-    char    *args[],
+    UTF8    *args[],
     reg_ref *sargs[]
 )
 {
@@ -921,9 +921,9 @@ void sql_que
     CLinearTimeAbsolute &ltaWhen,
     dbref    thing,
     int      attr,
-    char    *command,
+    UTF8    *command,
     int      nargs,
-    char    *args[],
+    UTF8    *args[],
     reg_ref *sargs[]
 )
 {
@@ -974,9 +974,9 @@ void do_wait
     dbref enactor,
     int   eval,
     int key,
-    char *event,
-    char *cmd,
-    char *cargs[],
+    UTF8 *event,
+    UTF8 *cmd,
+    UTF8 *cargs[],
     int ncargs
 )
 {
@@ -1006,7 +1006,7 @@ void do_wait
 
     // Semaphore wait with optional timeout.
     //
-    char *what = parse_to(&event, '/', 0);
+    UTF8 *what = parse_to(&event, '/', 0);
     init_match(executor, what, NOTYPE);
     match_everything(0);
 
@@ -1050,7 +1050,7 @@ void do_wait
                     atr = mkattr(executor, EventAttributeName);
                     if (atr <= 0)
                     {
-                        notify_quiet(executor, "Invalid attribute.");
+                        notify_quiet(executor, (UTF8 *)"Invalid attribute.");
                         return;
                     }
                     ap = atr_num(atr);
@@ -1093,9 +1093,9 @@ void do_query
     dbref enactor,
     int   eval,
     int   key,
-    char *dbref_attr,
-    char *dbname_query,
-    char *cargs[],
+    UTF8 *dbref_attr,
+    UTF8 *dbname_query,
+    UTF8 *cargs[],
     int   ncargs
 )
 {
@@ -1119,8 +1119,8 @@ void do_query
             return;
         }
 
-        char *pQuery = dbname_query;
-        char *pDBName = parse_to(&pQuery, '/', 0);
+        UTF8 *pQuery = dbname_query;
+        UTF8 *pDBName = parse_to(&pQuery, '/', 0);
 
         if (NULL == pQuery)
         {
@@ -1205,7 +1205,7 @@ static int CallBack_ShowDispatches(PTASK_RECORD p)
 
 static void ShowPsLine(BQUE *tmp)
 {
-    char *bufp = unparse_object(Show_Player, tmp->executor, false);
+    UTF8 *bufp = unparse_object(Show_Player, tmp->executor, false);
     if (tmp->IsTimed && (Good_obj(tmp->sem)))
     {
         CLinearTimeDelta ltd = tmp->waittime - Show_lsaNow;
@@ -1224,16 +1224,16 @@ static void ShowPsLine(BQUE *tmp)
     {
         notify(Show_Player, tprintf("%s:%s", bufp, tmp->comm));
     }
-    char *bp = bufp;
+    UTF8 *bp = bufp;
     if (Show_Key == PS_LONG)
     {
         for (int i = 0; i < tmp->nargs; i++)
         {
             if (tmp->env[i] != NULL)
             {
-                safe_str("; Arg", bufp, &bp);
-                safe_chr((char)(i + '0'), bufp, &bp);
-                safe_str("='", bufp, &bp);
+                safe_str((UTF8 *)"; Arg", bufp, &bp);
+                safe_chr((UTF8)(i + '0'), bufp, &bp);
+                safe_str((UTF8 *)"='", bufp, &bp);
                 safe_str(tmp->env[i], bufp, &bp);
                 safe_chr('\'', bufp, &bp);
             }
@@ -1264,7 +1264,7 @@ static int CallBack_ShowWait(PTASK_RECORD p)
         }
         if (Show_bFirstLine)
         {
-            notify(Show_Player, "----- Wait Queue -----");
+            notify(Show_Player, (UTF8 *)"----- Wait Queue -----");
             Show_bFirstLine = false;
         }
         ShowPsLine(tmp);
@@ -1290,7 +1290,7 @@ static int CallBack_ShowSemaphore(PTASK_RECORD p)
         }
         if (Show_bFirstLine)
         {
-            notify(Show_Player, "----- Semaphore Queue -----");
+            notify(Show_Player, (UTF8 *)"----- Semaphore Queue -----");
             Show_bFirstLine = false;
         }
         ShowPsLine(tmp);
@@ -1329,13 +1329,13 @@ int CallBack_ShowSQLQueries(PTASK_RECORD p)
 // ---------------------------------------------------------------------------
 // do_ps: tell executor what commands they have pending in the queue
 //
-void do_ps(dbref executor, dbref caller, dbref enactor, int eval, int key, char *target)
+void do_ps(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8 *target)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
     UNUSED_PARAMETER(eval);
 
-    char *bufp;
+    UTF8 *bufp;
     dbref executor_targ, obj_targ;
 
     // Figure out what to list the queue for.
@@ -1371,7 +1371,7 @@ void do_ps(dbref executor, dbref caller, dbref enactor, int eval, int key, char 
         }
         if (key & PS_ALL)
         {
-            notify(executor, "Can't specify a target and /all");
+            notify(executor, (UTF8 *)"Can't specify a target and /all");
             return;
         }
         if (isPlayer(obj_targ))
@@ -1390,7 +1390,7 @@ void do_ps(dbref executor, dbref caller, dbref enactor, int eval, int key, char 
         break;
 
     default:
-        notify(executor, "Illegal combination of switches.");
+        notify(executor, (UTF8 *)"Illegal combination of switches.");
         return;
     }
 
@@ -1414,7 +1414,7 @@ void do_ps(dbref executor, dbref caller, dbref enactor, int eval, int key, char 
 #endif // QUERY_SLAVE
     if (Wizard(executor))
     {
-        notify(executor, "----- System Queue -----");
+        notify(executor, (UTF8 *)"----- System Queue -----");
         scheduler.TraverseOrdered(CallBack_ShowDispatches);
     }
 
@@ -1463,7 +1463,7 @@ static int CallBack_Warp(PTASK_RECORD p)
 // ---------------------------------------------------------------------------
 // do_queue: Queue management
 //
-void do_queue(dbref executor, dbref caller, dbref enactor, int eval, int key, char *arg)
+void do_queue(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8 *arg)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
@@ -1475,7 +1475,7 @@ void do_queue(dbref executor, dbref caller, dbref enactor, int eval, int key, ch
         int save_minPriority = scheduler.GetMinPriority();
         if (save_minPriority <= PRIORITY_CF_DEQUEUE_DISABLED)
         {
-            notify(executor, "Warning: automatic dequeueing is disabled.");
+            notify(executor, (UTF8 *)"Warning: automatic dequeueing is disabled.");
             scheduler.SetMinPriority(PRIORITY_CF_DEQUEUE_ENABLED);
         }
         CLinearTimeAbsolute lsaNow;
@@ -1495,7 +1495,7 @@ void do_queue(dbref executor, dbref caller, dbref enactor, int eval, int key, ch
         ltdWarp.SetSeconds(iWarp);
         if (scheduler.GetMinPriority() <= PRIORITY_CF_DEQUEUE_DISABLED)
         {
-            notify(executor, "Warning: automatic dequeueing is disabled.");
+            notify(executor, (UTF8 *)"Warning: automatic dequeueing is disabled.");
         }
 
         scheduler.TraverseUnordered(CallBack_Warp);
@@ -1514,7 +1514,7 @@ void do_queue(dbref executor, dbref caller, dbref enactor, int eval, int key, ch
         }
         else
         {
-            notify(executor, "Object queue appended to player queue.");
+            notify(executor, (UTF8 *)"Object queue appended to player queue.");
         }
     }
 }

@@ -16,7 +16,7 @@
 class CGuests
 {
 private:
-    static char name[50];
+    static UTF8 name[50];
     dbref *Guests;
     int   nMaxGuests;              // Size of Guests[].
     int   nGuests;                 // Number of guests stored in Guests[].
@@ -33,7 +33,7 @@ public:
     bool  CheckGuest(dbref);
     void  ListAll(dbref);          // @list guests
     void  StartUp();
-    const char  *Create(DESC *d);
+    const UTF8  *Create(DESC *d);
     void  CleanUp(void);
 };
 

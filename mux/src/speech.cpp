@@ -18,11 +18,11 @@
 #include "levels.h"
 #endif
 
-char *modSpeech(dbref player, char *message, bool bWhich, char *command)
+UTF8 *modSpeech(dbref player, UTF8 *message, bool bWhich, UTF8 *command)
 {
     dbref aowner;
     int aflags;
-    char *mod = atr_get("modSpeech.25", player, bWhich ? A_SPEECHMOD : A_SAYSTRING,
+    UTF8 *mod = atr_get("modSpeech.25", player, bWhich ? A_SPEECHMOD : A_SAYSTRING,
         &aowner, &aflags);
 
     if (  mod[0] == '\0'
@@ -32,9 +32,9 @@ char *modSpeech(dbref player, char *message, bool bWhich, char *command)
         return NULL;
     }
 
-    char *new_message = alloc_lbuf("modspeech");
-    char *t_ptr = new_message;
-    char *args[2];
+    UTF8 *new_message = alloc_lbuf("modspeech");
+    UTF8 *t_ptr = new_message;
+    UTF8 *args[2];
     args[0] = message;
     args[1] = command;
     mux_exec(mod, new_message, &t_ptr, player, player, player,
@@ -50,7 +50,7 @@ static int idle_timeout_val(dbref player)
     //
     dbref aowner;
     int aflags;
-    char *ITbuffer = atr_get("idle_timeout_val.53", player, A_IDLETMOUT, &aowner, &aflags);
+    UTF8 *ITbuffer = atr_get("idle_timeout_val.53", player, A_IDLETMOUT, &aowner, &aflags);
     int idle_timeout = mux_atol(ITbuffer);
     free_lbuf(ITbuffer);
     return idle_timeout;
@@ -61,7 +61,7 @@ static bool sp_ok(dbref player)
     if (  Gagged(player)
        && !Wizard(player))
     {
-        notify(player, "Sorry. Gagged players cannot speak.");
+        notify(player, (UTF8 *)"Sorry. Gagged players cannot speak.");
         return false;
     }
 
@@ -69,7 +69,7 @@ static bool sp_ok(dbref player)
     {
         if (Robot(player) && !Controls(player, Location(player)))
         {
-            notify(player, "Sorry, robots may not speak in public.");
+            notify(player, (UTF8 *)"Sorry, robots may not speak in public.");
             return false;
         }
     }
@@ -77,7 +77,7 @@ static bool sp_ok(dbref player)
     {
         if (!could_doit(player, Location(player), A_LSPEECH))
         {
-            notify(player, "Sorry, you may not speak in this place.");
+            notify(player, (UTF8 *)"Sorry, you may not speak in this place.");
             return false;
         }
     }
@@ -85,11 +85,11 @@ static bool sp_ok(dbref player)
 }
 
 void do_think(dbref executor, dbref caller, dbref enactor, int eval, int key,
-    char *message)
+    UTF8 *message)
 {
     UNUSED_PARAMETER(key);
 
-    char *buf, *bp;
+    UTF8 *buf, *bp;
 
     buf = bp = alloc_lbuf("do_think");
     mux_exec(message, buf, &bp, executor, caller, enactor, eval|EV_FCHECK|EV_EVAL|EV_TOP,
@@ -99,7 +99,7 @@ void do_think(dbref executor, dbref caller, dbref enactor, int eval, int key,
     free_lbuf(buf);
 }
 
-void do_say(dbref executor, dbref caller, dbref enactor, int eval, int key, char *message)
+void do_say(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8 *message)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
@@ -160,24 +160,24 @@ void do_say(dbref executor, dbref caller, dbref enactor, int eval, int key, char
         }
     }
 
-    char *command = "";
+    UTF8 *command = (UTF8 *)"";
     if (SAY_SAY == key)
     {
-        command = "say";
+        command = (UTF8 *)"say";
     }
     else if (SAY_POSE == key || SAY_POSE_NOSPC == key)
     {
-        command = "pose";
+        command = (UTF8 *)"pose";
     }
     else if (SAY_EMIT == key)
     {
-        command = "@emit";
+        command = (UTF8 *)"@emit";
     }
 
     // Parse speechmod if present.
     //
-    char *messageOrig = message;
-    char *messageNew = NULL;
+    UTF8 *messageOrig = message;
+    UTF8 *messageNew = NULL;
     if (!(say_flags & SAY_NOEVAL))
     {
         messageNew = modSpeech(executor, message, true, command);
@@ -189,7 +189,7 @@ void do_say(dbref executor, dbref caller, dbref enactor, int eval, int key, char
 
     // Send the message on its way
     //
-    char *saystring;
+    UTF8 *saystring;
     switch (key)
     {
     case SAY_SAY:
@@ -292,7 +292,7 @@ void do_say(dbref executor, dbref caller, dbref enactor, int eval, int key, char
     }
 }
 
-static void wall_broadcast(int target, dbref player, char *message)
+static void wall_broadcast(int target, dbref player, UTF8 *message)
 {
     DESC *d;
     DESC_ITER_CONN(d)
@@ -323,54 +323,54 @@ static void wall_broadcast(int target, dbref player, char *message)
     }
 }
 
-static const char *announce_msg = "Announcement: ";
-static const char *broadcast_msg = "Broadcast: ";
-static const char *admin_msg = "Admin: ";
+static const UTF8 *announce_msg = (UTF8 *)"Announcement: ";
+static const UTF8 *broadcast_msg = (UTF8 *)"Broadcast: ";
+static const UTF8 *admin_msg = (UTF8 *)"Admin: ";
 
 void do_shout(dbref executor, dbref caller, dbref enactor, int eval, int key,
-    char *message)
+    UTF8 *message)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
     UNUSED_PARAMETER(eval);
 
-    char *p = NULL, *messageNew = NULL, *buf2 = NULL, *bp = NULL;
+    UTF8 *p = NULL, *messageNew = NULL, *buf2 = NULL, *bp = NULL;
     bool bNoTag = (key & SHOUT_NOTAG)   ? true : false;
     bool bEmit  = (key & SHOUT_EMIT)    ? true : false;
     bool bPose  = (key & SHOUT_POSE)    ? true : bEmit;
     bool bSpace = !bEmit;
     key &= ~(SHOUT_NOTAG | SHOUT_POSE | SHOUT_EMIT);
-    static const char *prefix, *loghead, *logtext1, *logsay, *saystring;
+    static const UTF8 *prefix, *loghead, *logtext1, *logsay, *saystring;
 
     if (key & SHOUT_ADMIN)
     {
         key = SHOUT_ADMIN;      // @wall/wiz/admin is treated as @wall/admin
         prefix = admin_msg;
-        loghead = "ASHOUT";
-        logtext1 = " ADMIN";
-        logsay = " yells: ";
-        saystring = "says, \"";
+        loghead = (UTF8 *)"ASHOUT";
+        logtext1 = (UTF8 *)" ADMIN";
+        logsay = (UTF8 *)" yells: ";
+        saystring = (UTF8 *)"says, \"";
     }
     else if (key & SHOUT_WIZARD)
     {
         prefix = broadcast_msg;
-        loghead = "BCAST";
-        logtext1 = " WIZ";
-        logsay = " broadcasts: ";
-        saystring = "says, \"";
+        loghead = (UTF8 *)"BCAST";
+        logtext1 = (UTF8 *)" WIZ";
+        logsay = (UTF8 *)" broadcasts: ";
+        saystring = (UTF8 *)"says, \"";
     }
     else
     {
         prefix = announce_msg;
-        loghead = "SHOUT";
-        logtext1 = " WALL";
-        logsay = " shouts: ";
-        saystring = "shouts, \"";
+        loghead = (UTF8 *)"SHOUT";
+        logtext1 = (UTF8 *)" WALL";
+        logsay = (UTF8 *)" shouts: ";
+        saystring = (UTF8 *)"shouts, \"";
     }
 
     if (bNoTag)
     {
-        prefix = "";
+        prefix = (UTF8 *)"";
     }
 
     if (!bPose)
@@ -392,7 +392,7 @@ void do_shout(dbref executor, dbref caller, dbref enactor, int eval, int key,
     }
     // Parse speechmod if present.
     //
-    messageNew = modSpeech(executor, message, true, "@wall");
+    messageNew = modSpeech(executor, message, true, (UTF8 *)"@wall");
     if (messageNew)
     {
         message = messageNew;
@@ -406,8 +406,8 @@ void do_shout(dbref executor, dbref caller, dbref enactor, int eval, int key,
         safe_chr('"', buf2, &bp);
         *bp = '\0';
     }
-    p = tprintf("%s%s%s%s", prefix, bEmit ? "" : Moniker(executor),
-        bSpace ? " " : "", bPose ? message : buf2);
+    p = tprintf("%s%s%s%s", prefix, bEmit ? (UTF8 *)"" : Moniker(executor),
+        bSpace ? (UTF8 *)" " : (UTF8 *)"", bPose ? (UTF8 *)message : (UTF8 *)buf2);
     wall_broadcast(key, executor, p);
     if (!bPose)
     {
@@ -418,12 +418,12 @@ void do_shout(dbref executor, dbref caller, dbref enactor, int eval, int key,
     if (bEmit)
     {
         log_text(logtext1);
-        log_text("emits: ");
+        log_text((UTF8 *)"emits: ");
     }
     else if (bPose)
     {
         log_text(logtext1);
-        log_text("poses: ");
+        log_text((UTF8 *)"poses: ");
     }
     else
     {
@@ -443,8 +443,8 @@ void do_shout(dbref executor, dbref caller, dbref enactor, int eval, int key,
  * Page-pose code from shadow@prelude.cc.purdue.
  */
 
-static void page_return(dbref player, dbref target, const char *tag,
-    int anum, const char *dflt)
+static void page_return(dbref player, dbref target, const UTF8 *tag,
+    int anum, const UTF8 *dflt)
 {
     if (MuxAlarm.bAlarmed)
     {
@@ -453,7 +453,7 @@ static void page_return(dbref player, dbref target, const char *tag,
 
     dbref aowner;
     int aflags;
-    char *str, *str2, *bp;
+    UTF8 *str, *str2, *bp;
 
     str = atr_pget(target, anum, &aowner, &aflags);
     if (*str)
@@ -470,7 +470,7 @@ static void page_return(dbref player, dbref target, const char *tag,
             FIELDEDTIME ft;
             ltaNow.ReturnFields(&ft);
 
-            char *p = tprintf("%s message from %s: %s", tag,
+            UTF8 *p = tprintf("%s message from %s: %s", tag,
                 Moniker(target), str2);
             notify_with_cause_ooc(player, target, p);
             p = tprintf("[%d:%02d] %s message sent to %s.", ft.iHour,
@@ -494,7 +494,7 @@ static bool page_check(dbref player, dbref target)
     }
     else if (!Connected(target))
     {
-        page_return(player, target, "Away", A_AWAY,
+        page_return(player, target, (UTF8 *)"Away", A_AWAY,
             tprintf("Sorry, %s is not connected.", Moniker(target)));
     }
     else if (!could_doit(player, target, A_LPAGE))
@@ -503,12 +503,12 @@ static bool page_check(dbref player, dbref target)
            && Hidden(target)
            && !See_Hidden(player))
         {
-            page_return(player, target, "Away", A_AWAY,
+            page_return(player, target, (UTF8 *)"Away", A_AWAY,
                 tprintf("Sorry, %s is not connected.", Moniker(target)));
         }
         else
         {
-            page_return(player, target, "Reject", A_REJECT,
+            page_return(player, target, (UTF8 *)"Reject", A_REJECT,
                 tprintf("Sorry, %s is not accepting pages.", Moniker(target)));
         }
     }
@@ -551,8 +551,8 @@ void do_page
     dbref enactor,
     int   key,
     int   nargs,
-    char *arg1,
-    char *arg2
+    UTF8 *arg1,
+    UTF8 *arg2
 )
 {
     UNUSED_PARAMETER(caller);
@@ -571,10 +571,10 @@ void do_page
     {
         bModified = true;
 
-        char *p = arg1;
+        UTF8 *p = arg1;
         while (*p != '\0')
         {
-            char *q = strchr(p, '"');
+            UTF8 *q = (UTF8 *)strchr((char *)p, '"');
             if (q)
             {
                 *q = '\0';
@@ -584,8 +584,8 @@ void do_page
             //
             MUX_STRTOK_STATE tts;
             mux_strtok_src(&tts, p);
-            mux_strtok_ctl(&tts, ", ");
-            char *r;
+            mux_strtok_ctl(&tts, (UTF8 *)", ");
+            UTF8 *r;
             for (r = mux_strtok_parse(&tts); r; r = mux_strtok_parse(&tts))
             {
                 dbref target = lookup_player(executor, r, true);
@@ -605,7 +605,7 @@ void do_page
 
                 // Handle quoted named.
                 //
-                q = strchr(p, '"');
+                q = (UTF8 *)strchr((char *)p, '"');
                 if (q)
                 {
                     *q = '\0';
@@ -642,12 +642,12 @@ void do_page
         //
         dbref aowner;
         int   aflags;
-        char *pLastPage = atr_get("do_page.645", executor, A_LASTPAGE, &aowner, &aflags);
+        UTF8 *pLastPage = atr_get("do_page.645", executor, A_LASTPAGE, &aowner, &aflags);
 
         MUX_STRTOK_STATE tts;
         mux_strtok_src(&tts, pLastPage);
-        mux_strtok_ctl(&tts, " ");
-        char *p;
+        mux_strtok_ctl(&tts, (UTF8 *)" ");
+        UTF8 *p;
         for (p = mux_strtok_parse(&tts); p; p = mux_strtok_parse(&tts))
         {
             dbref target = mux_atol(p);
@@ -711,8 +711,8 @@ void do_page
         // Update the database.
         //
         ITL itl;
-        char *pBuff = alloc_lbuf("do_page.lastpage");
-        char *pBufc = pBuff;
+        UTF8 *pBuff = alloc_lbuf("do_page.lastpage");
+        UTF8 *pBufc = pBuff;
         ItemToList_Init(&itl, pBuff, &pBufc);
         for (i = 0; i < nPlayers; i++)
         {
@@ -734,19 +734,19 @@ void do_page
         if (  nargs == 1
            && arg1[0] == '\0')
         {
-            notify(executor, "You have not paged anyone.");
+            notify(executor, (UTF8 *)"You have not paged anyone.");
         }
         else
         {
-            notify(executor, "No one to page.");
+            notify(executor, (UTF8 *)"No one to page.");
         }
         return;
     }
 
     // Build a friendly representation of the recipient list.
     //
-    char *aFriendly = alloc_lbuf("do_page.friendly");
-    char *pFriendly = aFriendly;
+    UTF8 *aFriendly = alloc_lbuf("do_page.friendly");
+    UTF8 *pFriendly = aFriendly;
 
     if (nValid > 1)
     {
@@ -763,7 +763,7 @@ void do_page
             }
             else
             {
-                safe_copy_buf(", ", 2, aFriendly, &pFriendly);
+                safe_copy_buf((UTF8 *)", ", 2, aFriendly, &pFriendly);
             }
             safe_str(Moniker(aPlayers[i]), aFriendly, &pFriendly);
         }
@@ -786,12 +786,12 @@ void do_page
 
     // Build messages.
     //
-    char *omessage = alloc_lbuf("do_page.omessage");
-    char *imessage = alloc_lbuf("do_page.imessage");
-    char *omp = omessage;
-    char *imp = imessage;
+    UTF8 *omessage = alloc_lbuf("do_page.omessage");
+    UTF8 *imessage = alloc_lbuf("do_page.imessage");
+    UTF8 *omp = omessage;
+    UTF8 *imp = imessage;
 
-    char *pMessage;
+    UTF8 *pMessage;
     if (nargs == 1)
     {
         // 'page A' form.
@@ -831,7 +831,7 @@ void do_page
         pageMode = 0;
     }
 
-    char *newMessage = modSpeech(executor, pMessage, true, "page");
+    UTF8 *newMessage = modSpeech(executor, pMessage, true, (UTF8 *)"page");
     if (newMessage)
     {
         pMessage = newMessage;
@@ -856,7 +856,7 @@ void do_page
         break;
 
     case 2:
-        safe_str("From afar, ", omessage, &omp);
+        safe_str((UTF8 *)"From afar, ", omessage, &omp);
         if (nValid > 1)
         {
             safe_tprintf_str(omessage, &omp, "to %s: ", aFriendly);
@@ -867,7 +867,7 @@ void do_page
         break;
 
     case 3:
-        safe_str("From afar, ", omessage, &omp);
+        safe_str((UTF8 *)"From afar, ", omessage, &omp);
         if (nValid > 1)
         {
             safe_tprintf_str(omessage, &omp, "to %s: ", aFriendly);
@@ -902,7 +902,7 @@ void do_page
             int target_idle_timeout_val = idle_timeout_val(target);
             if (target_idle >= target_idle_timeout_val)
             {
-                page_return(executor, target, "Idle", A_IDLE, NULL);
+                page_return(executor, target, (UTF8 *)"Idle", A_IDLE, NULL);
             }
         }
     }
@@ -922,14 +922,14 @@ void do_page
  * do_pemit: Messages to specific players, or to all but specific players.
  */
 
-static void whisper_pose(dbref player, dbref target, char *message, bool bSpace)
+static void whisper_pose(dbref player, dbref target, UTF8 *message, bool bSpace)
 {
-    char *newMessage = modSpeech(player, message, true, "whisper");
+    UTF8 *newMessage = modSpeech(player, message, true, (UTF8 *)"whisper");
     if (newMessage)
     {
         message = newMessage;
     }
-    char *buff = alloc_lbuf("do_pemit.whisper.pose");
+    UTF8 *buff = alloc_lbuf("do_pemit.whisper.pose");
     mux_strncpy(buff, Moniker(player), LBUF_SIZE-1);
     notify(player, tprintf("%s senses \"%s%s%s\"", Moniker(target), buff,
         bSpace ? " " : "", message));
@@ -948,13 +948,13 @@ void do_pemit_single
     int key,
     bool bDoContents,
     int pemit_flags,
-    char *recipient,
+    UTF8 *recipient,
     int chPoseType,
-    char *message
+    UTF8 *message
 )
 {
     dbref target, loc;
-    char *buf2, *bp;
+    UTF8 *buf2, *bp;
     int depth;
     bool ok_to_do = false;
 
@@ -978,35 +978,35 @@ void do_pemit_single
         target = match_result();
     }
 
-    char *newMessage = NULL;
-    char *saystring = NULL;
+    UTF8 *newMessage = NULL;
+    UTF8 *saystring = NULL;
 
-    char *p;
+    UTF8 *p;
     switch (target)
     {
     case NOTHING:
         switch (key)
         {
         case PEMIT_WHISPER:
-            notify(player, "Whisper to whom?");
+            notify(player, (UTF8 *)"Whisper to whom?");
             break;
 
         case PEMIT_PEMIT:
-            notify(player, "Emit to whom?");
+            notify(player, (UTF8 *)"Emit to whom?");
             break;
 
         case PEMIT_OEMIT:
-            notify(player, "Emit except to whom?");
+            notify(player, (UTF8 *)"Emit except to whom?");
             break;
 
         default:
-            notify(player, "Sorry.");
+            notify(player, (UTF8 *)"Sorry.");
             break;
         }
         break;
 
     case AMBIGUOUS:
-        notify(player, "I don't know who you mean!");
+        notify(player, (UTF8 *)"I don't know who you mean!");
         break;
 
     default:
@@ -1035,7 +1035,7 @@ void do_pemit_single
            && (  !mudconf.pemit_any
               || key != PEMIT_PEMIT))
         {
-            notify(player, "You are too far away to do that.");
+            notify(player, (UTF8 *)"You are too far away to do that.");
             return;
         }
         if (  bDoContents
@@ -1078,7 +1078,7 @@ void do_pemit_single
             if (  isPlayer(target)
                && !Connected(target))
             {
-                page_return(player, target, "Away", A_AWAY,
+                page_return(player, target, (UTF8 *)"Away", A_AWAY,
                     tprintf("Sorry, %s is not connected.", Moniker(target)));
                 return;
             }
@@ -1098,7 +1098,7 @@ void do_pemit_single
                 message++;
 
             default:
-                newMessage = modSpeech(player, message, true, "whisper");
+                newMessage = modSpeech(player, message, true, (UTF8 *)"whisper");
                 if (newMessage)
                 {
                     message = newMessage;
@@ -1121,7 +1121,7 @@ void do_pemit_single
                     buf2 = alloc_lbuf("do_pemit.whisper.buzz");
                     bp = buf2;
                     safe_str(Moniker(player), buf2, &bp);
-                    safe_str(" whispers something to ", buf2, &bp);
+                    safe_str((UTF8 *)" whispers something to ", buf2, &bp);
                     safe_str(Moniker(target), buf2, &bp);
                     *bp = '\0';
                     notify_except2(loc, player, player, target, buf2);
@@ -1131,7 +1131,7 @@ void do_pemit_single
             break;
 
         case PEMIT_FSAY:
-            newMessage = modSpeech(target, message, true, "@fsay");
+            newMessage = modSpeech(target, message, true, (UTF8 *)"@fsay");
             if (newMessage)
             {
                 message = newMessage;
@@ -1139,7 +1139,7 @@ void do_pemit_single
             notify(target, tprintf("You say, \"%s\"", message));
             if (loc != NOTHING)
             {
-                saystring = modSpeech(target, message, false, "@fsay");
+                saystring = modSpeech(target, message, false, (UTF8 *)"@fsay");
                 if (saystring)
                 {
                     p = tprintf("%s %s \"%s\"", Moniker(target),
@@ -1164,7 +1164,7 @@ void do_pemit_single
             break;
 
         case PEMIT_FPOSE:
-            newMessage = modSpeech(target, message, true, "@fpose");
+            newMessage = modSpeech(target, message, true, (UTF8 *)"@fpose");
             if (newMessage)
             {
                 message = newMessage;
@@ -1178,7 +1178,7 @@ void do_pemit_single
             break;
 
         case PEMIT_FPOSE_NS:
-            newMessage = modSpeech(target, message, true, "@fpose");
+            newMessage = modSpeech(target, message, true, (UTF8 *)"@fpose");
             if (newMessage)
             {
                 message = newMessage;
@@ -1231,9 +1231,9 @@ void do_pemit_list
     int key,
     bool bDoContents,
     int pemit_flags,
-    char *list,
+    UTF8 *list,
     int chPoseType,
-    char *message
+    UTF8 *message
 )
 {
     // Send a message to a list of dbrefs. The list is destructively
@@ -1245,10 +1245,10 @@ void do_pemit_list
         return;
     }
 
-    char *p;
+    UTF8 *p;
     MUX_STRTOK_STATE tts;
     mux_strtok_src(&tts, list);
-    mux_strtok_ctl(&tts, " ");
+    mux_strtok_ctl(&tts, (UTF8 *)" ");
     for (p = mux_strtok_parse(&tts); p; p = mux_strtok_parse(&tts))
     {
         do_pemit_single(player, key, bDoContents, pemit_flags, p, chPoseType,
@@ -1263,8 +1263,8 @@ void do_pemit
     dbref enactor,
     int   key,
     int   nargs,
-    char *recipient,
-    char *message
+    UTF8 *recipient,
+    UTF8 *message
 )
 {
     UNUSED_PARAMETER(caller);

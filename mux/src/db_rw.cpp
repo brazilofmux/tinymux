@@ -137,11 +137,11 @@ static BOOLEXP *getboolexp1(FILE *f)
                   && (n = utf8_FirstByte[(unsigned char)c]) < UTF8_CONTINUE
                   && s + n < buff + LBUF_SIZE)
             {
-                *s++ = (char)c;
+                *s++ = (UTF8)c;
                 while (--n)
                 {
                     c = getc(f);
-                    *s++ = (char)c;
+                    *s++ = (UTF8)c;
                 }
             }
 
@@ -197,11 +197,11 @@ static BOOLEXP *getboolexp1(FILE *f)
                   && (n = utf8_FirstByte[(unsigned char)c]) < UTF8_CONTINUE
                   && s + n < buff + LBUF_SIZE)
             {
-                *s++ = (char)c;
+                *s++ = (UTF8)c;
                 while (--n)
                 {
                     c = getc(f);
-                    *s++ = (char)c;
+                    *s++ = (UTF8)c;
                 }
             }
 
@@ -211,7 +211,7 @@ static BOOLEXP *getboolexp1(FILE *f)
             }
             *s = '\0';
 
-            b->sub1 = (BOOLEXP *)StringClone((char *)buff);
+            b->sub1 = (BOOLEXP *)StringClone(buff);
             free_lbuf(buff);
         }
         ungetc(c, f);
@@ -254,7 +254,7 @@ int g_max_obj_atr = INT_MIN;
 
 static bool get_list(FILE *f, dbref i)
 {
-    char *buff = alloc_lbuf("get_list");
+    UTF8 *buff = alloc_lbuf("get_list");
     for (;;)
     {
         dbref atr;
@@ -291,9 +291,19 @@ static bool get_list(FILE *f, dbref i)
 
                 // Store the attr
                 //
-                size_t nBuffer;
-                char *pBuffer = getstring_noalloc(f, true, &nBuffer);
-                atr_add_raw_LEN(i, atr, pBuffer, nBuffer);
+                size_t nBufferUnicode;
+                UTF8 *pBufferUnicode;
+                if (3 == g_version)
+                {
+                    pBufferUnicode = (UTF8 *)getstring_noalloc(f, true, &nBufferUnicode);
+                }
+                else
+                {
+                    size_t nBufferLatin1;
+                    char *pBufferLatin1 = (char *)getstring_noalloc(f, true, &nBufferLatin1);
+                    pBufferUnicode = ConvertToUTF8(pBufferLatin1, &nBufferUnicode);
+                }
+                atr_add_raw_LEN(i, atr, pBufferUnicode, nBufferUnicode);
             }
             else
             {
@@ -340,7 +350,7 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
     const UTF8 *tstr;
     int aflags;
     BOOLEXP *tempbool;
-    char *buff;
+    UTF8 *buff;
     size_t nVisualWidth;
     size_t nBuffer;
 
@@ -367,7 +377,7 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
     int iDotCounter = 0;
     if (mudstate.bStandAlone)
     {
-        Log.WriteString("Reading ");
+        Log.WriteString((UTF8 *)"Reading ");
         Log.Flush();
     }
     db_free();
@@ -430,7 +440,8 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
                 //
                 if (g_version <= 2)
                 {
-                    tstr = ConvertToUTF8((char *)tstr);
+                    size_t nBuffer;
+                    tstr = ConvertToUTF8((char *)tstr, &nBuffer);
                 }
 
                 pName = MakeCanonicalAttributeName(tstr, &nName, &bValid);
@@ -444,8 +455,8 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
                         if (a)
                         {
                             Log.tinyprintf("Renaming conflicting user attribute, %s, to FIRAN_%s." ENDLINE, pName, pName);
-                            char *p = alloc_lbuf("db_read");
-                            char *q = p;
+                            UTF8 *p = alloc_lbuf("db_read");
+                            UTF8 *q = p;
                             safe_str("FIRAN_", p, &q);
                             safe_str(pName, p, &q);
                             *q = '\0';
@@ -565,8 +576,13 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
             if (read_name)
             {
                 tstr = (UTF8 *)getstring_noalloc(f, true, &nBuffer);
+                if (g_version <= 2)
+                {
+                    size_t nBuffer;
+                    tstr = ConvertToUTF8((char *)tstr, &nBuffer);
+                }
                 buff = alloc_lbuf("dbread.s_Name");
-                (void)ANSI_TruncateToField((char *)tstr, MBUF_SIZE, buff, MBUF_SIZE,
+                (void)ANSI_TruncateToField(tstr, MBUF_SIZE, buff, MBUF_SIZE,
                     &nVisualWidth);
                 s_Name(i, buff);
                 free_lbuf(buff);
@@ -723,7 +739,7 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
                 *db_flags = g_flags;
                 if (mudstate.bStandAlone)
                 {
-                    Log.WriteString(ENDLINE);
+                    Log.WriteString((UTF8 *)ENDLINE);
                     Log.Flush();
                 }
                 else
@@ -756,7 +772,7 @@ static bool db_write_object(FILE *f, dbref i, int db_format, int flags)
     UNUSED_PARAMETER(db_format);
 
     ATTR *a;
-    char *as;
+    UTF8 *as;
     int ca, j;
 
     if (!(flags & V_ATRNAME))
@@ -785,7 +801,7 @@ static bool db_write_object(FILE *f, dbref i, int db_format, int flags)
     //
     if (!(flags & V_DATABASE))
     {
-        char buf[SBUF_SIZE];
+        UTF8 buf[SBUF_SIZE];
         buf[0] = '>';
         for (ca = atr_head(i, &as); ca; ca = atr_next(&as))
         {
@@ -822,13 +838,13 @@ static bool db_write_object(FILE *f, dbref i, int db_format, int flags)
 
             // Format is: ">%d\n", j
             //
-            const char *p = atr_get_raw(i, j);
+            const UTF8 *p = atr_get_raw(i, j);
             size_t n = mux_ltoa(j, buf+1) + 1;
             buf[n++] = '\n';
-            fwrite(buf, sizeof(char), n, f);
+            fwrite(buf, sizeof(UTF8), n, f);
             putstring(f, p);
         }
-        fwrite("<\n", sizeof(char), 2, f);
+        fwrite("<\n", sizeof(UTF8), 2, f);
     }
     return false;
 }
@@ -846,12 +862,12 @@ dbref db_write(FILE *f, int format, int version)
         break;
 
     default:
-        Log.WriteString("Can only write MUX format." ENDLINE);
+        Log.WriteString((UTF8 *)"Can only write MUX format." ENDLINE);
         return -1;
     }
     if (mudstate.bStandAlone)
     {
-        Log.WriteString("Writing ");
+        Log.WriteString((UTF8 *)"Writing ");
         Log.Flush();
     }
     i = mudstate.attr_next;
@@ -860,7 +876,7 @@ dbref db_write(FILE *f, int format, int version)
 
     // Dump user-named attribute info.
     //
-    char Buffer[LBUF_SIZE];
+    UTF8 Buffer[LBUF_SIZE];
     Buffer[0] = '+';
     Buffer[1] = 'A';
     int iAttr;
@@ -872,7 +888,7 @@ dbref db_write(FILE *f, int format, int version)
         {
             // Format is: "+A%d\n\"%d:%s\"\n", vp->number, vp->flags, vp->name
             //
-            char *pBuffer = Buffer+2;
+            UTF8 *pBuffer = Buffer+2;
             pBuffer += mux_ltoa(vp->number, pBuffer);
             *pBuffer++ = '\n';
             *pBuffer++ = '"';
@@ -883,12 +899,12 @@ dbref db_write(FILE *f, int format, int version)
             pBuffer += nNameLength;
             *pBuffer++ = '"';
             *pBuffer++ = '\n';
-            fwrite(Buffer, sizeof(char), pBuffer-Buffer, f);
+            fwrite(Buffer, sizeof(UTF8), pBuffer-Buffer, f);
         }
     }
 
     int iDotCounter = 0;
-    char buf[SBUF_SIZE];
+    UTF8 buf[SBUF_SIZE];
     buf[0] = '!';
     DO_WHOLE_DB(i)
     {
@@ -909,14 +925,14 @@ dbref db_write(FILE *f, int format, int version)
             //
             size_t n = mux_ltoa(i, buf+1) + 1;
             buf[n++] = '\n';
-            fwrite(buf, sizeof(char), n, f);
+            fwrite(buf, sizeof(UTF8), n, f);
             db_write_object(f, i, format, flags);
         }
     }
     fputs("***END OF DUMP***\n", f);
     if (mudstate.bStandAlone)
     {
-        Log.WriteString(ENDLINE);
+        Log.WriteString((UTF8 *)ENDLINE);
         Log.Flush();
     }
     return mudstate.db_top;

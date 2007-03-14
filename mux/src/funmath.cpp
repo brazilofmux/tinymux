@@ -20,7 +20,17 @@
 
 #ifdef HAVE_IEEE_FP_FORMAT
 
-static const char *mux_FPStrings[] = { "+Inf", "-Inf", "Ind", "NaN", "0", "0", "0", "0" };
+static const UTF8 *mux_FPStrings[] =
+{
+    (UTF8 *)"+Inf",
+    (UTF8 *)"-Inf",
+    (UTF8 *)"Ind",
+    (UTF8 *)"NaN",
+    (UTF8 *)"0",
+    (UTF8 *)"0",
+    (UTF8 *)"0",
+    (UTF8 *)"0"
+};
 
 #define MUX_FPGROUP_PASS  0x00 // Pass-through to printf
 #define MUX_FPGROUP_ZERO  0x10 // Force to be zero.
@@ -135,7 +145,7 @@ static double AddWithError(double& err, double a, double b)
 //
 static double NearestPretty(double R)
 {
-    char *rve = NULL;
+    UTF8 *rve = NULL;
     int decpt;
     int bNegative;
     const int mode = 0;
@@ -146,7 +156,7 @@ static double NearestPretty(double R)
 
     // R.
     //
-    char *p = mux_dtoa(R, mode, 50, &decpt, &bNegative, &rve);
+    UTF8 *p = mux_dtoa(R, mode, 50, &decpt, &bNegative, &rve);
     size_t nDigits = rve - p;
 
     // R-ulp(R)
@@ -218,7 +228,7 @@ static double AddDoubles(int n, double pd[])
 /* ---------------------------------------------------------------------------
  * fval: copy the floating point value into a buffer and make it presentable
  */
-static void fval(char *buff, char **bufc, double result)
+static void fval(UTF8 *buff, UTF8 **bufc, double result)
 {
     // Get double val into buffer.
     //
@@ -320,11 +330,11 @@ FUNCTION(fun_ladd)
             return;
         }
 
-        char *cp = trim_space_sep(fargs[0], &sep);
+        UTF8 *cp = trim_space_sep(fargs[0], &sep);
         while (  cp
               && n < MAX_WORDS)
         {
-            char *curr = split_token(&cp, &sep);
+            UTF8 *curr = split_token(&cp, &sep);
             g_aDoubles[n++] = mux_atof(curr);
         }
     }
@@ -589,7 +599,7 @@ FUNCTION(fun_eq)
     }
     else
     {
-        if (strcmp(fargs[0], fargs[1]) != 0)
+        if (strcmp((char *)fargs[0], (char *)fargs[1]) != 0)
         {
             double a = mux_atof(fargs[0]);
             double b = mux_atof(fargs[1]);
@@ -622,7 +632,7 @@ FUNCTION(fun_neq)
     }
     else
     {
-        if (strcmp(fargs[0], fargs[1]) != 0)
+        if (strcmp((char *)fargs[0], (char *)fargs[1]) != 0)
         {
             double a = mux_atof(fargs[0]);
             double b = mux_atof(fargs[1]);
@@ -698,7 +708,7 @@ FUNCTION(fun_sign)
     double num = mux_atof(fargs[0]);
     if (num < 0)
     {
-        safe_str("-1", buff, bufc);
+        safe_str((UTF8 *)"-1", buff, bufc);
     }
     else
     {
@@ -722,7 +732,7 @@ FUNCTION(fun_isign)
 
     if (num < 0)
     {
-        safe_str("-1", buff, bufc);
+        safe_str((UTF8 *)"-1", buff, bufc);
     }
     else
     {
@@ -751,7 +761,7 @@ FUNCTION(fun_shl)
     }
     else
     {
-        safe_str("#-1 ARGUMENTS MUST BE INTEGERS", buff, bufc);
+        safe_str((UTF8 *)"#-1 ARGUMENTS MUST BE INTEGERS", buff, bufc);
     }
 }
 
@@ -774,7 +784,7 @@ FUNCTION(fun_shr)
     }
     else
     {
-        safe_str("#-1 ARGUMENTS MUST BE INTEGERS", buff, bufc);
+        safe_str((UTF8 *)"#-1 ARGUMENTS MUST BE INTEGERS", buff, bufc);
     }
 }
 
@@ -812,7 +822,7 @@ FUNCTION(fun_dec)
     }
     else
     {
-        safe_str("-1", buff, bufc);
+        safe_str((UTF8 *)"-1", buff, bufc);
     }
 }
 
@@ -865,15 +875,15 @@ FUNCTION(fun_fdiv)
     {
         if (top > 0.0)
         {
-            safe_str("+Inf", buff, bufc);
+            safe_str((UTF8 *)"+Inf", buff, bufc);
         }
         else if (top < 0.0)
         {
-            safe_str("-Inf", buff, bufc);
+            safe_str((UTF8 *)"-Inf", buff, bufc);
         }
         else
         {
-            safe_str("Ind", buff, bufc);
+            safe_str((UTF8 *)"Ind", buff, bufc);
         }
     }
     else
@@ -900,7 +910,7 @@ FUNCTION(fun_idiv)
     bot = mux_atoi64(fargs[1]);
     if (bot == 0)
     {
-        safe_str("#-1 DIVIDE BY ZERO", buff, bufc);
+        safe_str((UTF8 *)"#-1 DIVIDE BY ZERO", buff, bufc);
     }
     else
     {
@@ -925,7 +935,7 @@ FUNCTION(fun_floordiv)
     bot = mux_atoi64(fargs[1]);
     if (bot == 0)
     {
-        safe_str("#-1 DIVIDE BY ZERO", buff, bufc);
+        safe_str((UTF8 *)"#-1 DIVIDE BY ZERO", buff, bufc);
     }
     else
     {
@@ -1110,7 +1120,7 @@ FUNCTION(fun_dist3d)
 
 static void handle_vectors
 (
-    char *vecarg1, char *vecarg2, char *buff, char **bufc, SEP *psep,
+    UTF8 *vecarg1, UTF8 *vecarg2, UTF8 *buff, UTF8 **bufc, SEP *psep,
     SEP *posep, int flag
 )
 {
@@ -1121,9 +1131,9 @@ static void handle_vectors
         return;
     }
 
-    char **v1 = new char *[(LBUF_SIZE+1)/2];
+    UTF8 **v1 = new UTF8 *[(LBUF_SIZE+1)/2];
     ISOUTOFMEMORY(v1);
-    char **v2 = new char *[(LBUF_SIZE+1)/2];
+    UTF8 **v2 = new UTF8 *[(LBUF_SIZE+1)/2];
     ISOUTOFMEMORY(v2);
 
     // Split the list up, or return if the list is empty.
@@ -1141,7 +1151,7 @@ static void handle_vectors
            && (  n == 1
               || m == 1)))
     {
-        safe_str("#-1 VECTORS MUST BE SAME DIMENSIONS", buff, bufc);
+        safe_str((UTF8 *)"#-1 VECTORS MUST BE SAME DIMENSIONS", buff, bufc);
         delete [] v1;
         delete [] v2;
         return;
@@ -1318,7 +1328,7 @@ static void handle_vectors
         //
         if (n != 3)
         {
-            safe_str("#-1 VECTORS MUST BE DIMENSION OF 3", buff, bufc);
+            safe_str((UTF8 *)"#-1 VECTORS MUST BE DIMENSION OF 3", buff, bufc);
         }
         else
         {
@@ -1340,7 +1350,7 @@ static void handle_vectors
 
         // If we reached this, we're in trouble.
         //
-        safe_str("#-1 UNIMPLEMENTED", buff, bufc);
+        safe_str((UTF8 *)"#-1 UNIMPLEMENTED", buff, bufc);
     }
     delete [] v1;
     delete [] v2;
@@ -1445,10 +1455,10 @@ FUNCTION(fun_vmag)
         return;
     }
 
-    char **v1 = NULL;
+    UTF8 **v1 = NULL;
     try
     {
-        v1 = new char *[LBUF_SIZE/2];
+        v1 = new UTF8 *[LBUF_SIZE/2];
     }
     catch (...)
     {
@@ -1499,10 +1509,10 @@ FUNCTION(fun_vunit)
         return;
     }
 
-    char **v1 = NULL;
+    UTF8 **v1 = NULL;
     try
     {
-        v1 = new char *[LBUF_SIZE/2];
+        v1 = new UTF8 *[LBUF_SIZE/2];
     }
     catch (...)
     {
@@ -1525,7 +1535,7 @@ FUNCTION(fun_vunit)
 
         if (res <= 0)
         {
-            safe_str("#-1 CAN'T MAKE UNIT VECTOR FROM ZERO-LENGTH VECTOR",
+            safe_str((UTF8 *)"#-1 CAN'T MAKE UNIT VECTOR FROM ZERO-LENGTH VECTOR",
                 buff, bufc);
             delete [] v1;
             return;
@@ -1649,7 +1659,7 @@ FUNCTION(fun_pi)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    safe_str("3.141592653589793", buff, bufc);
+    safe_str((UTF8 *)"3.141592653589793", buff, bufc);
 }
 
 FUNCTION(fun_e)
@@ -1663,10 +1673,10 @@ FUNCTION(fun_e)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    safe_str("2.718281828459045", buff, bufc);
+    safe_str((UTF8 *)"2.718281828459045", buff, bufc);
 }
 
-static double ConvertRDG2R(double d, const char *szUnits)
+static double ConvertRDG2R(double d, const UTF8 *szUnits)
 {
     switch (mux_tolower(szUnits[0]))
     {
@@ -1685,7 +1695,7 @@ static double ConvertRDG2R(double d, const char *szUnits)
     return d;
 }
 
-static double ConvertR2RDG(double d, const char *szUnits)
+static double ConvertR2RDG(double d, const UTF8 *szUnits)
 {
     switch (mux_tolower(szUnits[0]))
     {
@@ -2181,10 +2191,10 @@ FUNCTION(fun_orbool)
 FUNCTION(fun_cand)
 {
     bool val = true;
-    char *temp = alloc_lbuf("fun_cand");
+    UTF8 *temp = alloc_lbuf("fun_cand");
     for (int i = 0; i < nfargs && val && !MuxAlarm.bAlarmed; i++)
     {
-        char *bp = temp;
+        UTF8 *bp = temp;
         mux_exec(fargs[i], temp, &bp, executor, caller, enactor,
             eval|EV_STRIP_CURLY|EV_FCHECK|EV_EVAL, cargs, ncargs);
         *bp = '\0';
@@ -2197,10 +2207,10 @@ FUNCTION(fun_cand)
 FUNCTION(fun_cor)
 {
     bool val = false;
-    char *temp = alloc_lbuf("fun_cor");
+    UTF8 *temp = alloc_lbuf("fun_cor");
     for (int i = 0; i < nfargs && !val && !MuxAlarm.bAlarmed; i++)
     {
-        char *bp = temp;
+        UTF8 *bp = temp;
         mux_exec(fargs[i], temp, &bp, executor, caller, enactor,
             eval|EV_STRIP_CURLY|EV_FCHECK|EV_EVAL, cargs, ncargs);
         *bp = '\0';
@@ -2213,10 +2223,10 @@ FUNCTION(fun_cor)
 FUNCTION(fun_candbool)
 {
     bool val = true;
-    char *temp = alloc_lbuf("fun_candbool");
+    UTF8 *temp = alloc_lbuf("fun_candbool");
     for (int i = 0; i < nfargs && val && !MuxAlarm.bAlarmed; i++)
     {
-        char *bp = temp;
+        UTF8 *bp = temp;
         mux_exec(fargs[i], temp, &bp, executor, caller, enactor,
             eval|EV_STRIP_CURLY|EV_FCHECK|EV_EVAL, cargs, ncargs);
         *bp = '\0';
@@ -2229,10 +2239,10 @@ FUNCTION(fun_candbool)
 FUNCTION(fun_corbool)
 {
     bool val = false;
-    char *temp = alloc_lbuf("fun_corbool");
+    UTF8 *temp = alloc_lbuf("fun_corbool");
     for (int i = 0; i < nfargs && !val && !MuxAlarm.bAlarmed; i++)
     {
-        char *bp = temp;
+        UTF8 *bp = temp;
         mux_exec(fargs[i], temp, &bp, executor, caller, enactor,
             eval|EV_STRIP_CURLY|EV_FCHECK|EV_EVAL, cargs, ncargs);
         *bp = '\0';
@@ -2292,80 +2302,80 @@ FUNCTION(fun_t)
         safe_bool(xlate(fargs[0]), buff, bufc);
     }
 }
-static const char *bigones[] =
+static const UTF8 *bigones[] =
 {
-    "",
-    "thousand",
-    "million",
-    "billion",
-    "trillion"
+    (UTF8 *)"",
+    (UTF8 *)"thousand",
+    (UTF8 *)"million",
+    (UTF8 *)"billion",
+    (UTF8 *)"trillion"
 };
 
-static const char *singles[] =
+static const UTF8 *singles[] =
 {
-    "",
-    "one",
-    "two",
-    "three",
-    "four",
-    "five",
-    "six",
-    "seven",
-    "eight",
-    "nine"
+    (UTF8 *)"",
+    (UTF8 *)"one",
+    (UTF8 *)"two",
+    (UTF8 *)"three",
+    (UTF8 *)"four",
+    (UTF8 *)"five",
+    (UTF8 *)"six",
+    (UTF8 *)"seven",
+    (UTF8 *)"eight",
+    (UTF8 *)"nine"
 };
 
-static const char *teens[] =
+static const UTF8 *teens[] =
 {
-    "ten",
-    "eleven",
-    "twelve",
-    "thirteen",
-    "fourteen",
-    "fifteen",
-    "sixteen",
-    "seventeen",
-    "eighteen",
-    "nineteen"
+    (UTF8 *)"ten",
+    (UTF8 *)"eleven",
+    (UTF8 *)"twelve",
+    (UTF8 *)"thirteen",
+    (UTF8 *)"fourteen",
+    (UTF8 *)"fifteen",
+    (UTF8 *)"sixteen",
+    (UTF8 *)"seventeen",
+    (UTF8 *)"eighteen",
+    (UTF8 *)"nineteen"
 };
 
-static const char *tens[] =
+static const UTF8 *tens[] =
 {
-    "",
-    "",
-    "twenty",
-    "thirty",
-    "forty",
-    "fifty",
-    "sixty",
-    "seventy",
-    "eighty",
-    "ninety"
+    (UTF8 *)"",
+    (UTF8 *)"",
+    (UTF8 *)"twenty",
+    (UTF8 *)"thirty",
+    (UTF8 *)"forty",
+    (UTF8 *)"fifty",
+    (UTF8 *)"sixty",
+    (UTF8 *)"seventy",
+    (UTF8 *)"eighty",
+    (UTF8 *)"ninety"
 };
 
-static const char *th_prefix[] =
+static const UTF8 *th_prefix[] =
 {
-    "",
-    "ten",
-    "hundred"
+    (UTF8 *)"",
+    (UTF8 *)"ten",
+    (UTF8 *)"hundred"
 };
 
 class CSpellNum
 {
 public:
-    void SpellNum(const char *p, char *buff_arg, char **bufc_arg);
+    void SpellNum(const UTF8 *p, UTF8 *buff_arg, UTF8 **bufc_arg);
 
 private:
-    void TwoDigits(const char *p);
-    void ThreeDigits(const char *p, size_t iBigOne);
-    void ManyDigits(size_t n, const char *p, bool bHundreds);
-    void FractionalDigits(size_t n, const char *p);
+    void TwoDigits(const UTF8 *p);
+    void ThreeDigits(const UTF8 *p, size_t iBigOne);
+    void ManyDigits(size_t n, const UTF8 *p, bool bHundreds);
+    void FractionalDigits(size_t n, const UTF8 *p);
 
     void StartWord(void);
-    void AddWord(const char *p);
+    void AddWord(const UTF8 *p);
 
-    char *buff;
-    char **bufc;
+    UTF8 *buff;
+    UTF8 **bufc;
     bool bNeedSpace;
 };
 
@@ -2378,14 +2388,14 @@ void CSpellNum::StartWord(void)
     bNeedSpace = true;
 }
 
-void CSpellNum::AddWord(const char *p)
+void CSpellNum::AddWord(const UTF8 *p)
 {
     safe_str(p, buff, bufc);
 }
 
 // Handle two-character sequences.
 //
-void CSpellNum::TwoDigits(const char *p)
+void CSpellNum::TwoDigits(const UTF8 *p)
 {
     int n0 = p[0] - '0';
     int n1 = p[1] - '0';
@@ -2414,14 +2424,14 @@ void CSpellNum::TwoDigits(const char *p)
     {
         StartWord();
         AddWord(tens[n0]);
-        AddWord("-");
+        AddWord((UTF8 *)"-");
         AddWord(singles[n1]);
     }
 }
 
 // Handle three-character sequences.
 //
-void CSpellNum::ThreeDigits(const char *p, size_t iBigOne)
+void CSpellNum::ThreeDigits(const UTF8 *p, size_t iBigOne)
 {
     if (  p[0] == '0'
        && p[1] == '0'
@@ -2437,7 +2447,7 @@ void CSpellNum::ThreeDigits(const char *p, size_t iBigOne)
         StartWord();
         AddWord(singles[p[0]-'0']);
         StartWord();
-        AddWord("hundred");
+        AddWord((UTF8 *)"hundred");
     }
     TwoDigits(p+1);
     if (iBigOne > 0)
@@ -2449,7 +2459,7 @@ void CSpellNum::ThreeDigits(const char *p, size_t iBigOne)
 
 // Handle a series of patterns of three.
 //
-void CSpellNum::ManyDigits(size_t n, const char *p, bool bHundreds)
+void CSpellNum::ManyDigits(size_t n, const UTF8 *p, bool bHundreds)
 {
     // Handle special Hundreds cases.
     //
@@ -2459,7 +2469,7 @@ void CSpellNum::ManyDigits(size_t n, const char *p, bool bHundreds)
     {
         TwoDigits(p);
         StartWord();
-        AddWord("hundred");
+        AddWord((UTF8 *)"hundred");
         TwoDigits(p+2);
         return;
     }
@@ -2468,7 +2478,7 @@ void CSpellNum::ManyDigits(size_t n, const char *p, bool bHundreds)
     //
     size_t ndiv = ((n + 2) / 3) - 1;
     size_t nrem = n % 3;
-    char buf[3];
+    UTF8 buf[3];
     if (nrem == 0)
     {
         nrem = 3;
@@ -2498,7 +2508,7 @@ void CSpellNum::ManyDigits(size_t n, const char *p, bool bHundreds)
 
 // Handle precision ending for part to the right of the decimal place.
 //
-void CSpellNum::FractionalDigits(size_t n, const char *p)
+void CSpellNum::FractionalDigits(size_t n, const UTF8 *p)
 {
     ManyDigits(n, p, false);
     if (  0 < n
@@ -2512,20 +2522,20 @@ void CSpellNum::FractionalDigits(size_t n, const char *p)
             AddWord(th_prefix[r]);
             if (d != 0)
             {
-                AddWord("-");
+                AddWord((UTF8 *)"-");
             }
         }
         AddWord(bigones[d]);
-        AddWord("th");
+        AddWord((UTF8 *)"th");
         INT64 i64 = mux_atoi64(p);
         if (i64 != 1)
         {
-            AddWord("s");
+            AddWord((UTF8 *)"s");
         }
     }
 }
 
-void CSpellNum::SpellNum(const char *number, char *buff_arg, char **bufc_arg)
+void CSpellNum::SpellNum(const UTF8 *number, UTF8 *buff_arg, UTF8 **bufc_arg)
 {
     buff = buff_arg;
     bufc = bufc_arg;
@@ -2541,7 +2551,7 @@ void CSpellNum::SpellNum(const char *number, char *buff_arg, char **bufc_arg)
     if (*number == '-')
     {
         StartWord();
-        AddWord("negative");
+        AddWord((UTF8 *)"negative");
         number++;
     }
 
@@ -2552,14 +2562,14 @@ void CSpellNum::SpellNum(const char *number, char *buff_arg, char **bufc_arg)
         number++;
     }
 
-    const char *pA = number;
+    const UTF8 *pA = number;
     while (mux_isdigit(*number))
     {
         number++;
     }
     size_t nA = number - pA;
 
-    const char *pB  = NULL;
+    const UTF8 *pB  = NULL;
     size_t nB = 0;
     if (*number == '.')
     {
@@ -2583,7 +2593,7 @@ void CSpellNum::SpellNum(const char *number, char *buff_arg, char **bufc_arg)
        || nA >= 16
        || nB >= 15)
     {
-        safe_str("#-1 ARGUMENT MUST BE A NUMBER", buff, bufc);
+        safe_str((UTF8 *)"#-1 ARGUMENT MUST BE A NUMBER", buff, bufc);
         return;
     }
 
@@ -2592,7 +2602,7 @@ void CSpellNum::SpellNum(const char *number, char *buff_arg, char **bufc_arg)
         if (nB == 0)
         {
             StartWord();
-            AddWord("zero");
+            AddWord((UTF8 *)"zero");
         }
     }
     else
@@ -2601,7 +2611,7 @@ void CSpellNum::SpellNum(const char *number, char *buff_arg, char **bufc_arg)
         if (nB)
         {
             StartWord();
-            AddWord("and");
+            AddWord((UTF8 *)"and");
         }
     }
     if (nB)
@@ -2634,7 +2644,7 @@ FUNCTION(fun_roman)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    const char *number = fargs[0];
+    const UTF8 *number = fargs[0];
 
     // Trim Spaces from beginning.
     //
@@ -2650,7 +2660,7 @@ FUNCTION(fun_roman)
         number++;
     }
 
-    const char *pA = number;
+    const UTF8 *pA = number;
     while (mux_isdigit(*number))
     {
         number++;
@@ -2668,7 +2678,7 @@ FUNCTION(fun_roman)
     //
     if (*number || nA < 1)
     {
-        safe_str("#-1 ARGUMENT MUST BE A POSITIVE NUMBER", buff, bufc);
+        safe_str((UTF8 *)"#-1 ARGUMENT MUST BE A POSITIVE NUMBER", buff, bufc);
         return;
     }
     else if (  nA > 4
@@ -2688,7 +2698,7 @@ FUNCTION(fun_roman)
     // Hundreds:  _ C CC CCC CD D DC DCC DCCC CM
     // Thousands: _ M MM MMM
     //
-    static const char aLetters[4][3] =
+    static const UTF8 aLetters[4][3] =
     {
         { 'I', 'V', 'X' },
         { 'X', 'L', 'C' },
@@ -2696,24 +2706,24 @@ FUNCTION(fun_roman)
         { 'M', ' ', ' ' }
     };
 
-    static const char *aCode[10] =
+    static const UTF8 *aCode[10] =
     {
-        "",
-        "1",
-        "11",
-        "111",
-        "12",
-        "2",
-        "21",
-        "211",
-        "2111",
-        "13"
+        (UTF8 *)"",
+        (UTF8 *)"1",
+        (UTF8 *)"11",
+        (UTF8 *)"111",
+        (UTF8 *)"12",
+        (UTF8 *)"2",
+        (UTF8 *)"21",
+        (UTF8 *)"211",
+        (UTF8 *)"2111",
+        (UTF8 *)"13"
     };
 
     while (nA--)
     {
-        const char *pCode = aCode[*pA - '0'];
-        const char *pLetters = aLetters[nA];
+        const UTF8 *pCode = aCode[*pA - '0'];
+        const UTF8 *pLetters = aLetters[nA];
 
         while (*pCode)
         {
@@ -2746,10 +2756,10 @@ FUNCTION(fun_land)
             return;
         }
 
-        char *cp = trim_space_sep(fargs[0], &sep);
+        UTF8 *cp = trim_space_sep(fargs[0], &sep);
         while (cp && bValue)
         {
-            char *curr = split_token(&cp, &sep);
+            UTF8 *curr = split_token(&cp, &sep);
             bValue = isTRUE(mux_atol(curr));
         }
     }
@@ -2774,10 +2784,10 @@ FUNCTION(fun_lor)
             return;
         }
 
-        char *cp = trim_space_sep(fargs[0], &sep);
+        UTF8 *cp = trim_space_sep(fargs[0], &sep);
         while (cp && !bValue)
         {
-            char *curr = split_token(&cp, &sep);
+            UTF8 *curr = split_token(&cp, &sep);
             bValue = isTRUE(mux_atol(curr));
         }
     }
@@ -2802,7 +2812,7 @@ FUNCTION(fun_band)
         }
         else
         {
-            safe_str("#-1 ARGUMENTS MUST BE INTEGERS", buff, bufc);
+            safe_str((UTF8 *)"#-1 ARGUMENTS MUST BE INTEGERS", buff, bufc);
             return;
         }
     }
@@ -2827,7 +2837,7 @@ FUNCTION(fun_bor)
         }
         else
         {
-            safe_str("#-1 ARGUMENTS MUST BE INTEGERS", buff, bufc);
+            safe_str((UTF8 *)"#-1 ARGUMENTS MUST BE INTEGERS", buff, bufc);
             return;
         }
     }
@@ -2853,7 +2863,7 @@ FUNCTION(fun_bnand)
     }
     else
     {
-        safe_str("#-1 ARGUMENTS MUST BE INTEGERS", buff, bufc);
+        safe_str((UTF8 *)"#-1 ARGUMENTS MUST BE INTEGERS", buff, bufc);
     }
 }
 
@@ -2875,7 +2885,7 @@ FUNCTION(fun_bxor)
         }
         else
         {
-            safe_str("#-1 ARGUMENTS MUST BE INTEGERS", buff, bufc);
+            safe_str((UTF8 *)"#-1 ARGUMENTS MUST BE INTEGERS", buff, bufc);
             return;
         }
     }
@@ -2894,7 +2904,7 @@ FUNCTION(fun_crc32)
     UINT32 ulCRC32 = 0;
     for (int i = 0; i < nfargs; i++)
     {
-        size_t n = strlen(fargs[i]);
+        size_t n = strlen((char *)fargs[i]);
         ulCRC32 = CRC32_ProcessBuffer(ulCRC32, fargs[i], n);
     }
     safe_i64toa(ulCRC32, buff, bufc);
@@ -2914,12 +2924,12 @@ FUNCTION(fun_sha1)
     SHA1_Init(&shac);
     for (i = 0; i < nfargs; i++)
     {
-        SHA1_Compute(&shac, strlen(fargs[i]), fargs[i]);
+        SHA1_Compute(&shac, strlen((char *)fargs[i]), fargs[i]);
     }
     SHA1_Final(&shac);
     for (i = 0; i <= 4; i++)
     {
-        char buf[9];
+        UTF8 buf[9];
         mux_sprintf(buf, sizeof(buf), "%08X", shac.H[i]);
         safe_str(buf, buff, bufc);
     }

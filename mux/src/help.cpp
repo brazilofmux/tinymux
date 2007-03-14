@@ -20,7 +20,7 @@
 struct help_entry
 {
     size_t pos;       // Position in file.
-    char  *key;       // The key this is stored under. NULL if this is an
+    UTF8  *key;       // The key this is stored under. NULL if this is an
                       // automatically generated initial substring alias.
 };
 
@@ -53,7 +53,7 @@ static int lineno;
 static int ntopics;
 static FILE *rfp;
 
-static char Line[LBUF_SIZE];
+static UTF8 Line[LBUF_SIZE];
 
 static void HelpIndex_Start(FILE *fp)
 {
@@ -62,14 +62,14 @@ static void HelpIndex_Start(FILE *fp)
     rfp = fp;
 }
 
-static bool HelpIndex_Read(size_t *pPos, size_t *nTopic, char pTopic[TOPIC_NAME_LEN+1])
+static bool HelpIndex_Read(size_t *pPos, size_t *nTopic, UTF8 pTopic[TOPIC_NAME_LEN+1])
 {
     size_t nLine = 0;
 
     while (  0 == nLine
           || '&' != Line[0])
     {
-        if (fgets(Line, LBUF_SIZE-2, rfp) == NULL)
+        if (fgets((char *)Line, LBUF_SIZE-2, rfp) == NULL)
         {
             *pPos   = 0L;
             *nTopic = 0;
@@ -77,7 +77,7 @@ static bool HelpIndex_Read(size_t *pPos, size_t *nTopic, char pTopic[TOPIC_NAME_
         }
         ++lineno;
 
-        nLine = strlen(Line);
+        nLine = strlen((char *)Line);
         *pPos += nLine;
         if (  0 < nLine
            && '\n' != Line[nLine - 1])
@@ -87,7 +87,7 @@ static bool HelpIndex_Read(size_t *pPos, size_t *nTopic, char pTopic[TOPIC_NAME_
     }
 
     ++ntopics;
-    char *topic = Line + 1;
+    UTF8 *topic = Line + 1;
     while (  ' '  == *topic
           || '\t' == *topic
           || '\r' == *topic)
@@ -95,7 +95,7 @@ static bool HelpIndex_Read(size_t *pPos, size_t *nTopic, char pTopic[TOPIC_NAME_
         topic++;
     }
 
-    char   *s = topic;
+    UTF8   *s = topic;
     size_t  i = 0;
     while (  '\n' != *s
           && '\r' != *s
@@ -129,15 +129,15 @@ static void helpindex_read(int iHelpfile)
     mudstate.aHelpDesc[iHelpfile].ht = new CHashTable;
     CHashTable *htab = mudstate.aHelpDesc[iHelpfile].ht;
 
-    char szTextFilename[SBUF_SIZE+8];
+    UTF8 szTextFilename[SBUF_SIZE+8];
     mux_sprintf(szTextFilename, sizeof(szTextFilename), "%s.txt",
         mudstate.aHelpDesc[iHelpfile].pBaseFilename);
 
     FILE *fp;
-    if (!mux_fopen(&fp, szTextFilename, "rb"))
+    if (!mux_fopen(&fp, szTextFilename, (UTF8 *)"rb"))
     {
         STARTLOG(LOG_PROBLEMS, "HLP", "RINDX");
-        char *p = alloc_lbuf("helpindex_read.LOG");
+        UTF8 *p = alloc_lbuf("helpindex_read.LOG");
         mux_sprintf(p, LBUF_SIZE, "Can't open %s for reading.", szTextFilename);
         log_text(p);
         free_lbuf(p);
@@ -148,7 +148,7 @@ static void helpindex_read(int iHelpfile)
 
     size_t pos   = 0;
     size_t nTopicOriginal = 0;
-    char   topic[TOPIC_NAME_LEN+1];
+    UTF8   topic[TOPIC_NAME_LEN+1];
 
     HelpIndex_Start(fp);
     while (HelpIndex_Read(&pos, &nTopicOriginal, topic))
@@ -233,7 +233,7 @@ void helpindex_load(dbref player)
     if (  player != NOTHING
        && !Quiet(player))
     {
-        notify(player, "Cache for help indexes refreshed.");
+        notify(player, (UTF8 *)"Cache for help indexes refreshed.");
     }
 }
 
@@ -242,12 +242,12 @@ void helpindex_init(void)
     helpindex_load(NOTHING);
 }
 
-static const char *MakeCanonicalTopicName(char *topic_arg)
+static const UTF8 *MakeCanonicalTopicName(UTF8 *topic_arg)
 {
-    const char *topic;
+    const UTF8 *topic;
     if (topic_arg[0] == '\0')
     {
-        topic = "help";
+        topic = (UTF8 *)"help";
     }
     else
     {
@@ -257,11 +257,11 @@ static const char *MakeCanonicalTopicName(char *topic_arg)
     return topic;
 }
 
-static void ReportMatchedTopics(dbref executor, const char *topic, CHashTable *htab)
+static void ReportMatchedTopics(dbref executor, const UTF8 *topic, CHashTable *htab)
 {
     bool matched = false;
-    char *topic_list = NULL;
-    char *buffp = NULL;
+    UTF8 *topic_list = NULL;
+    UTF8 *buffp = NULL;
     struct help_entry *htab_entry;
     for (htab_entry = (struct help_entry *)hash_firstentry(htab);
          htab_entry != NULL;
@@ -297,18 +297,18 @@ static void ReportMatchedTopics(dbref executor, const char *topic, CHashTable *h
 }
 
 static bool ReportTopic(dbref executor, struct help_entry *htab_entry, int iHelpfile,
-    char *result)
+    UTF8 *result)
 {
-    char szTextFilename[SBUF_SIZE+8];
+    UTF8 szTextFilename[SBUF_SIZE+8];
     mux_sprintf(szTextFilename, sizeof(szTextFilename), "%s.txt",
         mudstate.aHelpDesc[iHelpfile].pBaseFilename);
 
     size_t offset = htab_entry->pos;
     FILE *fp;
-    if (!mux_fopen(&fp, szTextFilename, "rb"))
+    if (!mux_fopen(&fp, szTextFilename, (UTF8 *)"rb"))
     {
         STARTLOG(LOG_PROBLEMS, "HLP", "OPEN");
-        char *line = alloc_lbuf("ReportTopic.open");
+        UTF8 *line = alloc_lbuf("ReportTopic.open");
         mux_sprintf(line, LBUF_SIZE, "Can't open %s for reading.", szTextFilename);
         log_text(line);
         free_lbuf(line);
@@ -320,7 +320,7 @@ static bool ReportTopic(dbref executor, struct help_entry *htab_entry, int iHelp
     if (fseek(fp, static_cast<long>(offset), 0) < 0L)
     {
         STARTLOG(LOG_PROBLEMS, "HLP", "SEEK");
-        char *line = alloc_lbuf("ReportTopic.seek");
+        UTF8 *line = alloc_lbuf("ReportTopic.seek");
         mux_sprintf(line, LBUF_SIZE, "Seek error in file %s.", szTextFilename);
         log_text(line);
         free_lbuf(line);
@@ -331,12 +331,12 @@ static bool ReportTopic(dbref executor, struct help_entry *htab_entry, int iHelp
         }
         return false;
     }
-    char *line = alloc_lbuf("ReportTopic");
-    char *bp = result;
+    UTF8 *line = alloc_lbuf("ReportTopic");
+    UTF8 *bp = result;
     bool bInTopicAliases = true;
     for (;;)
     {
-        if (  fgets(line, LBUF_SIZE - 2, fp) == NULL
+        if (  fgets((char *)line, LBUF_SIZE - 2, fp) == NULL
            || '\0' == line[0])
         {
             break;
@@ -357,7 +357,7 @@ static bool ReportTopic(dbref executor, struct help_entry *htab_entry, int iHelp
 
         // Transform LF into CRLF to be telnet-friendly.
         //
-        size_t len = strlen(line);
+        size_t len = strlen((char *)line);
         if (  0 < len
            && '\n' == line[len-1]
            && (  1 == len
@@ -398,23 +398,23 @@ static bool ReportTopic(dbref executor, struct help_entry *htab_entry, int iHelp
     return true;
 }
 
-static void help_write(dbref executor, char *topic_arg, int iHelpfile)
+static void help_write(dbref executor, UTF8 *topic_arg, int iHelpfile)
 {
-    const char *topic = MakeCanonicalTopicName(topic_arg);
+    const UTF8 *topic = MakeCanonicalTopicName(topic_arg);
 
     CHashTable *htab = mudstate.aHelpDesc[iHelpfile].ht;
     struct help_entry *htab_entry =
-        (struct help_entry *)hashfindLEN(topic, strlen(topic), htab);
+        (struct help_entry *)hashfindLEN(topic, strlen((char *)topic), htab);
     if (htab_entry)
     {
-        char *result = alloc_lbuf("help_write");
+        UTF8 *result = alloc_lbuf("help_write");
         if (ReportTopic(executor, htab_entry, iHelpfile, result))
         {
             notify(executor, result);
         }
         else
         {
-            notify(executor, "Sorry, that function is temporarily unavailable.");
+            notify(executor, (UTF8 *)"Sorry, that function is temporarily unavailable.");
         }
         free_lbuf(result);
     }
@@ -430,7 +430,7 @@ static bool ValidateHelpFileIndex(int iHelpfile)
     if (  iHelpfile < 0
        || mudstate.mHelpDesc <= iHelpfile)
     {
-        char *buf = alloc_mbuf("do_help.LOG");
+        UTF8 *buf = alloc_mbuf("do_help.LOG");
         STARTLOG(LOG_BUGS, "BUG", "HELP");
         mux_sprintf(buf, MBUF_SIZE, "Unknown help file number: %d", iHelpfile);
         log_text(buf);
@@ -446,7 +446,7 @@ static bool ValidateHelpFileIndex(int iHelpfile)
  * * do_help: display information from new-format news and help files
  */
 
-void do_help(dbref executor, dbref caller, dbref enactor, int eval, int key, char *message)
+void do_help(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8 *message)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
@@ -456,40 +456,40 @@ void do_help(dbref executor, dbref caller, dbref enactor, int eval, int key, cha
 
     if (!ValidateHelpFileIndex(iHelpfile))
     {
-        notify(executor, "No such indexed file found.");
+        notify(executor, (UTF8 *)"No such indexed file found.");
         return;
     }
     help_write(executor, message, iHelpfile);
 }
 
-void help_helper(dbref executor, int iHelpfile, char *topic_arg,
-    char *buff, char **bufc)
+void help_helper(dbref executor, int iHelpfile, UTF8 *topic_arg,
+    UTF8 *buff, UTF8 **bufc)
 {
     if (!ValidateHelpFileIndex(iHelpfile))
     {
         return;
     }
 
-    const char *topic = MakeCanonicalTopicName(topic_arg);
+    const UTF8 *topic = MakeCanonicalTopicName(topic_arg);
 
     CHashTable *htab = mudstate.aHelpDesc[iHelpfile].ht;
     struct help_entry *htab_entry =
-        (struct help_entry *)hashfindLEN(topic, strlen(topic), htab);
+        (struct help_entry *)hashfindLEN(topic, strlen((char *)topic), htab);
     if (htab_entry)
     {
-        char *result = alloc_lbuf("help_helper");
+        UTF8 *result = alloc_lbuf("help_helper");
         if (ReportTopic(executor, htab_entry, iHelpfile, result))
         {
             safe_str(result, buff, bufc);
         }
         else
         {
-            safe_str("#-1 ERROR", buff, bufc);
+            safe_str((UTF8 *)"#-1 ERROR", buff, bufc);
         }
         free_lbuf(result);
     }
     else
     {
-        safe_str("#-1 TOPIC DOES NOT EXIST", buff, bufc);
+        safe_str((UTF8 *)"#-1 TOPIC DOES NOT EXIST", buff, bufc);
     }
 }

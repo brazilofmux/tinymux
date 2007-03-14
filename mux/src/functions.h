@@ -12,9 +12,9 @@
 
 typedef struct tagFun
 {
-    char *name;     // function name
-    void (*fun)(char *buff, char **bufc, dbref executor, dbref caller,
-        dbref enactor, int eval, char *fargs[], int nfargs, char *cargs[],
+    UTF8 *name;     // function name
+    void (*fun)(UTF8 *buff, UTF8 **bufc, dbref executor, dbref caller,
+        dbref enactor, int eval, UTF8 *fargs[], int nfargs, UTF8 *cargs[],
         int ncargs);  // handler
     int maxArgsParsed;// Maximum number of arguments parsed.
     int minArgs;      // Minimum number of args needed or expected
@@ -24,7 +24,7 @@ typedef struct tagFun
 } FUN;
 
 typedef struct ufun {
-    char *name;     /* function name */
+    UTF8 *name;     /* function name */
     dbref obj;      /* Object ID */
     int atr;        /* Attribute ID */
     int flags;      /* Function flags */
@@ -55,7 +55,7 @@ extern UFUN *ufun_head;
 typedef struct
 {
     size_t n;
-    char   str[MAX_SEP_LEN+1];
+    UTF8   str[MAX_SEP_LEN+1];
 } SEP;
 
 extern SEP sepSpace;
@@ -71,28 +71,28 @@ extern SEP sepSpace;
 
 bool delim_check
 (
-    char *buff, char **bufc,
+    UTF8 *buff, UTF8 **bufc,
     dbref executor, dbref caller, dbref enactor,
     int   eval,
-    char *fargs[], int nfargs,
-    char *cargs[], int ncargs,
+    UTF8 *fargs[], int nfargs,
+    UTF8 *cargs[], int ncargs,
     int sep_arg, SEP *sep, int dflags
 );
 
-void arr2list(char *arr[], int alen, char *list, char **bufc, SEP *psep);
-int list2arr(char *arr[], int maxlen, char *list, SEP *psep);
-char *trim_space_sep(char *str, SEP *psep);
-char *trim_space_sep_LEN(char *str, size_t nStr, SEP *psep, size_t *nTrim);
-char *next_token(char *str, SEP *psep);
-char *split_token(char **sp, SEP *psep);
-int countwords(char *str, SEP *psep);
+void arr2list(UTF8 *arr[], int alen, UTF8 *list, UTF8 **bufc, SEP *psep);
+int list2arr(UTF8 *arr[], int maxlen, UTF8 *list, SEP *psep);
+UTF8 *trim_space_sep(UTF8 *str, SEP *psep);
+UTF8 *trim_space_sep_LEN(UTF8 *str, size_t nStr, SEP *psep, size_t *nTrim);
+UTF8 *next_token(UTF8 *str, SEP *psep);
+UTF8 *split_token(UTF8 **sp, SEP *psep);
+int countwords(UTF8 *str, SEP *psep);
 
 // This is the prototype for functions
 //
 #define FUNCTION(x) \
-    void x(char *buff, char **bufc, dbref executor, dbref caller,     \
-        dbref enactor, int eval, char *fargs[], int nfargs,           \
-        char *cargs[], int ncargs)
+    void x(UTF8 *buff, UTF8 **bufc, dbref executor, dbref caller,     \
+        dbref enactor, int eval, UTF8 *fargs[], int nfargs,           \
+        UTF8 *cargs[], int ncargs)
 
 // This is for functions that take an optional delimiter character.
 //
@@ -100,9 +100,9 @@ int countwords(char *str, SEP *psep);
     delim_check(buff, bufc, executor, caller, enactor, eval,     \
         fargs, nfargs, cargs, ncargs, (iSep), &(Sep), (dflags))
 
-#define XFUNCTION(x) void x(char *buff, char **bufc, dbref executor,    \
- dbref caller, dbref enactor, int eval, char *fargs[], int nfargs,      \
- char *cargs[], int ncargs)
+#define XFUNCTION(x) void x(UTF8 *buff, UTF8 **bufc, dbref executor,    \
+ dbref caller, dbref enactor, int eval, UTF8 *fargs[], int nfargs,      \
+ UTF8 *cargs[], int ncargs)
 
 // Interface for adding additional hardcode functions.
 //

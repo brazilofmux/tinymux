@@ -25,14 +25,14 @@ struct filecache_block
         struct filecache_block *nxt;
         unsigned int nchars;
     } hdr;
-    char data[MBUF_SIZE - sizeof(struct filecache_block_hdr)];
+    UTF8 data[MBUF_SIZE - sizeof(struct filecache_block_hdr)];
 };
 
 struct filecache_hdr
 {
-    char **ppFilename;
+    UTF8 **ppFilename;
     FBLOCK *fileblock;
-    const char *desc;
+    const UTF8 *desc;
 };
 
 typedef struct filecache_hdr FCACHE;
@@ -41,37 +41,37 @@ typedef struct filecache_hdr FCACHE;
 
 static FCACHE fcache[] =
 {
-    { &mudconf.conn_file,    NULL,   "Conn" },
-    { &mudconf.site_file,    NULL,   "Conn/Badsite" },
-    { &mudconf.down_file,    NULL,   "Conn/Down" },
-    { &mudconf.full_file,    NULL,   "Conn/Full" },
-    { &mudconf.guest_file,   NULL,   "Conn/Guest" },
-    { &mudconf.creg_file,    NULL,   "Conn/Reg" },
-    { &mudconf.crea_file,    NULL,   "Crea/Newuser" },
-    { &mudconf.regf_file,    NULL,   "Crea/RegFaill" },
-    { &mudconf.motd_file,    NULL,   "Motd" },
-    { &mudconf.wizmotd_file, NULL,   "Wizmotd" },
-    { &mudconf.quit_file,    NULL,   "Quit" },
-    { NULL,                  NULL,   NULL }
+    { &mudconf.conn_file,    NULL,   (UTF8 *)"Conn" },
+    { &mudconf.site_file,    NULL,   (UTF8 *)"Conn/Badsite" },
+    { &mudconf.down_file,    NULL,   (UTF8 *)"Conn/Down" },
+    { &mudconf.full_file,    NULL,   (UTF8 *)"Conn/Full" },
+    { &mudconf.guest_file,   NULL,   (UTF8 *)"Conn/Guest" },
+    { &mudconf.creg_file,    NULL,   (UTF8 *)"Conn/Reg" },
+    { &mudconf.crea_file,    NULL,   (UTF8 *)"Crea/Newuser" },
+    { &mudconf.regf_file,    NULL,   (UTF8 *)"Crea/RegFaill" },
+    { &mudconf.motd_file,    NULL,   (UTF8 *)"Motd" },
+    { &mudconf.wizmotd_file, NULL,   (UTF8 *)"Wizmotd" },
+    { &mudconf.quit_file,    NULL,   (UTF8 *)"Quit" },
+    { NULL,                  NULL,   (UTF8 *)NULL }
 };
 
 static NAMETAB list_files[] =
 {
-    {"badsite_connect",  1,  CA_WIZARD,  FC_CONN_SITE},
-    {"connect",          2,  CA_WIZARD,  FC_CONN},
-    {"create_register",  2,  CA_WIZARD,  FC_CREA_REG},
-    {"down",             1,  CA_WIZARD,  FC_CONN_DOWN},
-    {"full",             1,  CA_WIZARD,  FC_CONN_FULL},
-    {"guest_motd",       1,  CA_WIZARD,  FC_CONN_GUEST},
-    {"motd",             1,  CA_WIZARD,  FC_MOTD},
-    {"newuser",          1,  CA_WIZARD,  FC_CREA_NEW},
-    {"quit",             1,  CA_WIZARD,  FC_QUIT},
-    {"register_connect", 1,  CA_WIZARD,  FC_CONN_REG},
-    {"wizard_motd",      1,  CA_WIZARD,  FC_WIZMOTD},
-    { NULL,              0,  0,          0}
+    {(UTF8 *)"badsite_connect",  1,  CA_WIZARD,  FC_CONN_SITE},
+    {(UTF8 *)"connect",          2,  CA_WIZARD,  FC_CONN},
+    {(UTF8 *)"create_register",  2,  CA_WIZARD,  FC_CREA_REG},
+    {(UTF8 *)"down",             1,  CA_WIZARD,  FC_CONN_DOWN},
+    {(UTF8 *)"full",             1,  CA_WIZARD,  FC_CONN_FULL},
+    {(UTF8 *)"guest_motd",       1,  CA_WIZARD,  FC_CONN_GUEST},
+    {(UTF8 *)"motd",             1,  CA_WIZARD,  FC_MOTD},
+    {(UTF8 *)"newuser",          1,  CA_WIZARD,  FC_CREA_NEW},
+    {(UTF8 *)"quit",             1,  CA_WIZARD,  FC_QUIT},
+    {(UTF8 *)"register_connect", 1,  CA_WIZARD,  FC_CONN_REG},
+    {(UTF8 *)"wizard_motd",      1,  CA_WIZARD,  FC_WIZMOTD},
+    {(UTF8 *) NULL,              0,  0,          0}
 };
 
-void do_list_file(dbref executor, dbref caller, dbref enactor, int eval, int extra, char *arg)
+void do_list_file(dbref executor, dbref caller, dbref enactor, int eval, int extra, UTF8 *arg)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
@@ -81,13 +81,13 @@ void do_list_file(dbref executor, dbref caller, dbref enactor, int eval, int ext
     int flagvalue;
     if (!search_nametab(executor, list_files, arg, &flagvalue))
     {
-        display_nametab(executor, list_files, "Unknown file.  Use one of:", true);
+        display_nametab(executor, list_files, (UTF8 *)"Unknown file.  Use one of:", true);
         return;
     }
     fcache_send(executor, flagvalue);
 }
 
-static FBLOCK *fcache_fill(FBLOCK *fp, char ch)
+static FBLOCK *fcache_fill(FBLOCK *fp, UTF8 ch)
 {
     if (fp->hdr.nchars >= sizeof(fp->data))
     {
@@ -103,7 +103,7 @@ static FBLOCK *fcache_fill(FBLOCK *fp, char ch)
     return fp;
 }
 
-static int fcache_read(FBLOCK **cp, char *filename)
+static int fcache_read(FBLOCK **cp, UTF8 *filename)
 {
     // Free a prior buffer chain.
     //
@@ -119,7 +119,7 @@ static int fcache_read(FBLOCK **cp, char *filename)
     // Read the text file into a new chain.
     //
     int   fd;
-    char *buff;
+    UTF8 *buff;
     if (!mux_open(&fd, filename, O_RDONLY|O_BINARY))
     {
         // Failure: log the event
@@ -191,7 +191,7 @@ void fcache_rawdump(SOCKET fd, int num)
 
     FBLOCK *fp = fcache[num].fileblock;
     int cnt, remaining;
-    char *start;
+    UTF8 *start;
 
     while (fp != NULL)
     {
@@ -199,7 +199,7 @@ void fcache_rawdump(SOCKET fd, int num)
         remaining = fp->hdr.nchars;
         while (remaining > 0)
         {
-            cnt = SOCKET_WRITE(fd, start, remaining, 0);
+            cnt = SOCKET_WRITE(fd, (char *)start, remaining, 0);
             if (cnt < 0)
             {
                 return;
@@ -222,7 +222,7 @@ void fcache_dump(DESC *d, int num)
 
     while (fp != NULL)
     {
-        queue_write_LEN(d, fp->data, fp->hdr.nchars);
+        queue_write_LEN(d, (char *)fp->data, fp->hdr.nchars);
         fp = fp->hdr.nxt;
     }
 }
@@ -240,7 +240,7 @@ void fcache_send(dbref player, int num)
 void fcache_load(dbref player)
 {
     FCACHE *fp;
-    char *buff, *bufc, *sbuf;
+    UTF8 *buff, *bufc, *sbuf;
 
     buff = bufc = alloc_lbuf("fcache_load.lbuf");
     sbuf = alloc_sbuf("fcache_load.sbuf");
@@ -253,14 +253,14 @@ void fcache_load(dbref player)
             mux_ltoa(i, sbuf);
             if (fp == fcache)
             {
-                safe_str("File sizes: ", buff, &bufc);
+                safe_str((UTF8 *)"File sizes: ", buff, &bufc);
             }
             else
             {
-                safe_str("  ", buff, &bufc);
+                safe_str((UTF8 *)"  ", buff, &bufc);
             }
             safe_str(fp->desc, buff, &bufc);
-            safe_str("...", buff, &bufc);
+            safe_str((UTF8 *)"...", buff, &bufc);
             safe_str(sbuf, buff, &bufc);
         }
     }

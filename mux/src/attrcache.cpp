@@ -32,7 +32,7 @@ CLinearTimeAbsolute cs_ltime;
 typedef struct tagAttrRecord
 {
     Aname attrKey;
-    char attrText[LBUF_SIZE];
+    UTF8 attrText[LBUF_SIZE];
 } ATTR_RECORD, *PATTR_RECORD;
 #pragma pack()
 
@@ -50,7 +50,7 @@ static PCENT_HDR pCacheHead = 0;
 static PCENT_HDR pCacheTail = 0;
 static size_t CacheSize = 0;
 
-int cache_init(const char *game_dir_file, const char *game_pag_file,
+int cache_init(const UTF8 *game_dir_file, const UTF8 *game_pag_file,
     int nCachePages)
 {
     if (cache_initted)
@@ -73,9 +73,9 @@ void cache_redirect(void)
 {
     for (int i = 0; i < N_TEMP_FILES; i++)
     {
-        char TempFileName[20];
+        UTF8 TempFileName[20];
         mux_sprintf(TempFileName, sizeof(TempFileName), "$convtemp.%d", i);
-        mux_assert(mux_fopen(&TempFiles[i], TempFileName, "wb+"));
+        mux_assert(mux_fopen(&TempFiles[i], TempFileName, (UTF8 *)"wb+"));
         mux_assert(TempFiles[i]);
         setvbuf(TempFiles[i], NULL, _IOFBF, 16384);
     }
@@ -113,7 +113,7 @@ void cache_pass2(void)
             }
         }
         fclose(TempFiles[i]);
-        char TempFileName[20];
+        UTF8 TempFileName[20];
         mux_sprintf(TempFileName, sizeof(TempFileName), "$convtemp.%d", i);
         RemoveFile(TempFileName);
         fprintf(stderr, ENDLINE);
@@ -226,7 +226,7 @@ static void TrimCache(void)
     }
 }
 
-const char *cache_get(Aname *nam, size_t *pLen)
+const UTF8 *cache_get(Aname *nam, size_t *pLen)
 {
     if (  nam == (Aname *) 0
        || !cache_initted)
@@ -252,7 +252,7 @@ const char *cache_get(Aname *nam, size_t *pLen)
             if (sizeof(CENT_HDR) < pCacheEntry->nSize)
             {
                 *pLen = pCacheEntry->nSize - sizeof(CENT_HDR);
-                return (char *)(pCacheEntry+1);
+                return (UTF8 *)(pCacheEntry+1);
             }
             else
             {
@@ -325,7 +325,7 @@ const char *cache_get(Aname *nam, size_t *pLen)
 
 // cache_put no longer frees the pointer.
 //
-bool cache_put(Aname *nam, const char *value, size_t len)
+bool cache_put(Aname *nam, const UTF8 *value, size_t len)
 {
     if (  !value
        || !nam

@@ -301,7 +301,7 @@ UINT32 HASH_ProcessBuffer
     return ~ulHash;
 }
 
-UINT32 munge_hash(const char *pBuffer)
+UINT32 munge_hash(const UTF8 *pBuffer)
 {
     UINT32 h = 0;
     while (*pBuffer)
@@ -1026,7 +1026,7 @@ bool CHashPage::Split(CHashPage &hp0, CHashPage &hp1)
     GetStats(0, &nRecords, &nAllocatedSize, &nGoodDirSize);
     if (nRecords == 0)
     {
-        Log.WriteString("Why are we splitting a page with no records in it?" ENDLINE);
+        Log.WriteString((UTF8 *)"Why are we splitting a page with no records in it?" ENDLINE);
         return false;
     }
 
@@ -1048,7 +1048,7 @@ bool CHashPage::Split(CHashPage &hp0, CHashPage &hp1)
             {
                 if (!IS_HP_SUCCESS(hp0.Insert(pNode->u.s.nRecordSize, nHash, pNode+1)))
                 {
-                    Log.WriteString("CHashPage::Split - Ran out of room." ENDLINE);
+                    Log.WriteString((UTF8 *)"CHashPage::Split - Ran out of room." ENDLINE);
                     return false;
                 }
             }
@@ -1056,13 +1056,13 @@ bool CHashPage::Split(CHashPage &hp0, CHashPage &hp1)
             {
                 if (!IS_HP_SUCCESS(hp1.Insert(pNode->u.s.nRecordSize, nHash, pNode+1)))
                 {
-                    Log.WriteString("CHashPage::Split - Ran out of room." ENDLINE);
+                    Log.WriteString((UTF8 *)"CHashPage::Split - Ran out of room." ENDLINE);
                     return false;
                 }
             }
             else
             {
-                Log.WriteString("CHashPage::Split - This record fits in neither page...lost." ENDLINE);
+                Log.WriteString((UTF8 *)"CHashPage::Split - This record fits in neither page...lost." ENDLINE);
                 return false;
             }
         }
@@ -1471,13 +1471,13 @@ bool CHashFile::InitializeDirectory(unsigned int n)
     return true;
 }
 
-bool CHashFile::CreateFileSet(const char *szDirFile, const char *szPageFile)
+bool CHashFile::CreateFileSet(const UTF8 *szDirFile, const UTF8 *szPageFile)
 {
     CloseAll();
 
     bool bSuccess;
 #ifdef WIN32
-    m_hPageFile = CreateFile(szPageFile, GENERIC_READ | GENERIC_WRITE,
+    m_hPageFile = CreateFile((char *)szPageFile, GENERIC_READ | GENERIC_WRITE,
         FILE_SHARE_READ, 0, CREATE_ALWAYS,
         FILE_ATTRIBUTE_NORMAL + FILE_FLAG_RANDOM_ACCESS, NULL);
     bSuccess = (INVALID_HANDLE_VALUE != m_hPageFile);
@@ -1491,7 +1491,7 @@ bool CHashFile::CreateFileSet(const char *szDirFile, const char *szPageFile)
     }
 
 #ifdef WIN32
-    m_hDirFile = CreateFile(szDirFile, GENERIC_READ | GENERIC_WRITE,
+    m_hDirFile = CreateFile((char *)szDirFile, GENERIC_READ | GENERIC_WRITE,
         FILE_SHARE_READ, 0, CREATE_ALWAYS,
         FILE_ATTRIBUTE_NORMAL + FILE_FLAG_SEQUENTIAL_SCAN, NULL);
     bSuccess = (INVALID_HANDLE_VALUE != m_hDirFile);
@@ -1549,7 +1549,7 @@ bool CHashFile::RebuildDirectory(void)
         int iCache;
         if ((iCache = AllocateEmptyPage(0, NULL)) < 0)
         {
-            Log.WriteString("CHashFile::RebuildDirectory.  AllocateEmptyPage failed. DB DAMAGE." ENDLINE);
+            Log.WriteString((UTF8 *)"CHashFile::RebuildDirectory.  AllocateEmptyPage failed. DB DAMAGE." ENDLINE);
             return false;
         }
 
@@ -1561,7 +1561,7 @@ bool CHashFile::RebuildDirectory(void)
         }
         else
         {
-            Log.WriteString("CHashFile::RebuildDirectory.  ReadPage failed to get the page. DB DAMAGE." ENDLINE);
+            Log.WriteString((UTF8 *)"CHashFile::RebuildDirectory.  ReadPage failed to get the page. DB DAMAGE." ENDLINE);
         }
 
         UINT32 nPageDepth = m_Cache[iCache].m_hp.GetDepth();
@@ -1578,7 +1578,7 @@ bool CHashFile::RebuildDirectory(void)
         {
             if (m_pDir[nStart] != 0xFFFFFFFFUL)
             {
-                Log.WriteString("CHashFile::Open - The keyspace of pages in Page File overlap." ENDLINE);
+                Log.WriteString((UTF8 *)"CHashFile::Open - The keyspace of pages in Page File overlap." ENDLINE);
                 return false;
             }
             m_pDir[nStart] = oPage;
@@ -1592,7 +1592,7 @@ bool CHashFile::RebuildDirectory(void)
     {
         if (m_pDir[iFileDir] == 0xFFFFFFFFUL)
         {
-            Log.WriteString("CHashFile::Open - Page File is incomplete." ENDLINE);
+            Log.WriteString((UTF8 *)"CHashFile::Open - Page File is incomplete." ENDLINE);
             return false;
         }
     }
@@ -1657,7 +1657,7 @@ void CHashFile::InitCache(int nCachePages)
     m_iOldest = 0;
 }
 
-int CHashFile::Open(const char *szDirFile, const char *szPageFile, int nCachePages)
+int CHashFile::Open(const UTF8 *szDirFile, const UTF8 *szPageFile, int nCachePages)
 {
     CloseAll();
     FinalCache();
@@ -1667,7 +1667,7 @@ int CHashFile::Open(const char *szDirFile, const char *szPageFile, int nCachePag
     //
     bool bSuccess;
 #ifdef WIN32
-    m_hPageFile = CreateFile(szPageFile, GENERIC_READ | GENERIC_WRITE,
+    m_hPageFile = CreateFile((char *)szPageFile, GENERIC_READ | GENERIC_WRITE,
         FILE_SHARE_READ, 0, OPEN_EXISTING,
         FILE_ATTRIBUTE_NORMAL + FILE_FLAG_RANDOM_ACCESS, NULL);
     bSuccess = (INVALID_HANDLE_VALUE != m_hPageFile);
@@ -1726,7 +1726,7 @@ int CHashFile::Open(const char *szDirFile, const char *szPageFile, int nCachePag
     // However, having it helps us to open faster.
     //
 #ifdef WIN32
-    m_hDirFile = CreateFile(szDirFile, GENERIC_READ | GENERIC_WRITE,
+    m_hDirFile = CreateFile((char *)szDirFile, GENERIC_READ | GENERIC_WRITE,
         FILE_SHARE_READ, 0, OPEN_EXISTING,
         FILE_ATTRIBUTE_NORMAL + FILE_FLAG_SEQUENTIAL_SCAN, NULL);
     bSuccess = (INVALID_HANDLE_VALUE != m_hDirFile);
@@ -1738,7 +1738,7 @@ int CHashFile::Open(const char *szDirFile, const char *szPageFile, int nCachePag
         // The Directory doesn't exist, so we create it anew, and rebuild the
         // index.
 #ifdef WIN32
-        m_hDirFile = CreateFile(szDirFile, GENERIC_READ | GENERIC_WRITE,
+        m_hDirFile = CreateFile((char *)szDirFile, GENERIC_READ | GENERIC_WRITE,
             FILE_SHARE_READ, 0, CREATE_ALWAYS,
             FILE_ATTRIBUTE_NORMAL + FILE_FLAG_SEQUENTIAL_SCAN, NULL);
         bSuccess = (INVALID_HANDLE_VALUE != m_hDirFile);
@@ -1789,7 +1789,7 @@ void CHashFile::Sync(void)
         }
         if (!bAllFlushed)
         {
-            Log.WriteString("CHashFile::Sync. Could not flush all the pages. DB DAMAGE." ENDLINE);
+            Log.WriteString((UTF8 *)"CHashFile::Sync. Could not flush all the pages. DB DAMAGE." ENDLINE);
         }
 
 #ifdef DO_COMMIT
@@ -1886,13 +1886,13 @@ bool CHashFile::Insert(HP_HEAPLENGTH nRecord, UINT32 nHash, void *pRecord)
         UINT32 iFileDir = nHash >> (32-m_nDirDepth);
         if (iFileDir >= m_nDir)
         {
-            Log.WriteString("CHashFile::Insert - iFileDir out of range." ENDLINE);
+            Log.WriteString((UTF8 *)"CHashFile::Insert - iFileDir out of range." ENDLINE);
             return false;
         }
         iCache = ReadCache(iFileDir, &cs_whits);
         if (iCache < 0)
         {
-            Log.WriteString("CHashFile::Insert - Page wasn't valid." ENDLINE);
+            Log.WriteString((UTF8 *)"CHashFile::Insert - Page wasn't valid." ENDLINE);
             return false;
         }
 
@@ -1926,7 +1926,7 @@ bool CHashFile::Insert(HP_HEAPLENGTH nRecord, UINT32 nHash, void *pRecord)
            && mudstate.dumping)
         {
             STARTLOG(LOG_DBSAVES, "DMP", "DUMP");
-            log_text("Waiting on previously-forked child before page-splitting... ");
+            log_text((UTF8 *)"Waiting on previously-forked child before page-splitting... ");
             ENDLOG;
             do
             {
@@ -1962,7 +1962,7 @@ bool CHashFile::Insert(HP_HEAPLENGTH nRecord, UINT32 nHash, void *pRecord)
 
         if (iCache == iEmpty0)
         {
-            Log.WriteString("CHashFile::Split - iCache == iEmpty0" ENDLINE);
+            Log.WriteString((UTF8 *)"CHashFile::Split - iCache == iEmpty0" ENDLINE);
             return false;
         }
 
@@ -1972,13 +1972,13 @@ bool CHashFile::Insert(HP_HEAPLENGTH nRecord, UINT32 nHash, void *pRecord)
 
         if (iCache == iEmpty1)
         {
-            Log.WriteString("CHashFile::Split - iCache == iEmpty1" ENDLINE);
+            Log.WriteString((UTF8 *)"CHashFile::Split - iCache == iEmpty1" ENDLINE);
             return false;
         }
 
         if (iEmpty0 == iEmpty1)
         {
-            Log.WriteString("CHashFile::Split - iEmpty0 == iEmpty1" ENDLINE);
+            Log.WriteString((UTF8 *)"CHashFile::Split - iEmpty0 == iEmpty1" ENDLINE);
             return false;
         }
 
@@ -2132,7 +2132,7 @@ UINT32 CHashFile::FindFirstKey(UINT32 nHash)
     UINT32 iFileDir = nHash >> (32-m_nDirDepth);
     if (iFileDir >= m_nDir)
     {
-        Log.WriteString("CHashFile::Insert - iFileDir out of range." ENDLINE);
+        Log.WriteString((UTF8 *)"CHashFile::Insert - iFileDir out of range." ENDLINE);
         cs_fails++;
         return HF_FIND_END;
     }
@@ -2351,7 +2351,7 @@ int CHashFile::ReadCache(UINT32 iFileDir, int *phits)
         }
         else
         {
-            Log.WriteString("CHashFile::ReadCache.  ReadPage failed to get the page. DB DAMAGE." ENDLINE);
+            Log.WriteString((UTF8 *)"CHashFile::ReadCache.  ReadPage failed to get the page. DB DAMAGE." ENDLINE);
         }
     }
     return -1;
@@ -2411,14 +2411,14 @@ bool CHashTable::Insert(HP_HEAPLENGTH nRecord, UINT32  nHash, void *pRecord)
 #ifdef HP_PROTECTION
         if (iTableDir >= m_nDir)
         {
-            Log.WriteString("CHashTable::Insert - iTableDir out of range." ENDLINE);
+            Log.WriteString((UTF8 *)"CHashTable::Insert - iTableDir out of range." ENDLINE);
             return false;
         }
 #endif // HP_PROTECTION
         m_hpLast = m_pDir[iTableDir];
         if (!m_hpLast)
         {
-            Log.WriteString("CHashTable::Insert - Page wasn't valid." ENDLINE);
+            Log.WriteString((UTF8 *)"CHashTable::Insert - Page wasn't valid." ENDLINE);
             return false;
         }
         UINT32  nStart, nEnd;
@@ -2540,14 +2540,14 @@ UINT32 CHashTable::FindFirstKey(UINT32  nHash)
 #ifdef HP_PROTECTION
     if (iTableDir >= m_nDir)
     {
-        Log.WriteString("CHashTable::Insert - iTableDir out of range." ENDLINE);
+        Log.WriteString((UTF8 *)"CHashTable::Insert - iTableDir out of range." ENDLINE);
         return HF_FIND_END;
     }
 #endif // HP_PROTECTION
     m_hpLast = m_pDir[iTableDir];
     if (!m_hpLast)
     {
-        Log.WriteString("CHashTable::Insert - Page wasn't valid." ENDLINE);
+        Log.WriteString((UTF8 *)"CHashTable::Insert - Page wasn't valid." ENDLINE);
         return HF_FIND_END;
     }
 #ifdef HP_PROTECTION
@@ -2555,7 +2555,7 @@ UINT32 CHashTable::FindFirstKey(UINT32  nHash)
     m_hpLast->GetRange(m_nDirDepth, nStart, nEnd);
     if (iTableDir < nStart || nEnd < iTableDir)
     {
-        Log.WriteString("CHashTable::Find - Directory points to the wrong page." ENDLINE);
+        Log.WriteString((UTF8 *)"CHashTable::Find - Directory points to the wrong page." ENDLINE);
         return HF_FIND_END;
     }
 #endif // HP_PROTECTION
@@ -2722,12 +2722,12 @@ void CHashTable::GetStats
 CLogFile Log;
 void CLogFile::WriteInteger(int iNumber)
 {
-    char aTempBuffer[I32BUF_SIZE];
+    UTF8 aTempBuffer[I32BUF_SIZE];
     size_t nTempBuffer = mux_ltoa(iNumber, aTempBuffer);
     WriteBuffer(nTempBuffer, aTempBuffer);
 }
 
-void CLogFile::WriteBuffer(size_t nString, const char *pString)
+void CLogFile::WriteBuffer(size_t nString, const UTF8 *pString)
 {
     if (!bEnabled)
     {
@@ -2767,9 +2767,9 @@ void CLogFile::WriteBuffer(size_t nString, const char *pString)
 #endif // WIN32
 }
 
-void CLogFile::WriteString(const char *pString)
+void CLogFile::WriteString(const UTF8 *pString)
 {
-    size_t nString = strlen(pString);
+    size_t nString = strlen((char *)pString);
     WriteBuffer(nString, pString);
 }
 
@@ -2777,7 +2777,7 @@ void DCL_CDECL CLogFile::tinyprintf(char *fmt, ...)
 {
     va_list ap;
     va_start(ap, fmt);
-    char aTempBuffer[SIZEOF_LOG_BUFFER];
+    UTF8 aTempBuffer[SIZEOF_LOG_BUFFER];
     size_t nString = mux_vsnprintf(aTempBuffer, SIZEOF_LOG_BUFFER, fmt, ap);
     va_end(ap);
     WriteBuffer(nString, aTempBuffer);
@@ -2785,14 +2785,14 @@ void DCL_CDECL CLogFile::tinyprintf(char *fmt, ...)
 
 static void MakeLogName
 (
-    const char *pBasename,
-    const char *szPrefix,
+    const UTF8 *pBasename,
+    const UTF8 *szPrefix,
     CLinearTimeAbsolute lta,
-    char *szLogName,
+    UTF8 *szLogName,
     size_t nLogName
 )
 {
-    char szTimeStamp[18];
+    UTF8 szTimeStamp[18];
     lta.ReturnUniqueString(szTimeStamp, sizeof(szTimeStamp));
     if (  pBasename
        && pBasename[0] != '\0')
@@ -2818,7 +2818,7 @@ bool CLogFile::CreateLogFile(void)
 
     bool bSuccess;
 #ifdef WIN32
-    m_hFile = CreateFile(m_szFilename, GENERIC_READ | GENERIC_WRITE,
+    m_hFile = CreateFile((char *)m_szFilename, GENERIC_READ | GENERIC_WRITE,
         FILE_SHARE_READ, 0, CREATE_ALWAYS,
         FILE_ATTRIBUTE_NORMAL + FILE_FLAG_SEQUENTIAL_SCAN, NULL);
     bSuccess = (INVALID_HANDLE_VALUE != m_hFile);
@@ -2834,7 +2834,7 @@ void CLogFile::AppendLogFile(void)
 
     bool bSuccess;
 #ifdef WIN32
-    m_hFile = CreateFile(m_szFilename, GENERIC_READ | GENERIC_WRITE,
+    m_hFile = CreateFile((char *)m_szFilename, GENERIC_READ | GENERIC_WRITE,
         FILE_SHARE_READ, 0, OPEN_ALWAYS,
         FILE_ATTRIBUTE_NORMAL + FILE_FLAG_SEQUENTIAL_SCAN, NULL);
     bSuccess = (INVALID_HANDLE_VALUE != m_hFile);
@@ -2906,17 +2906,17 @@ void CLogFile::Flush(void)
     m_nBuffer = 0;
 }
 
-void CLogFile::SetPrefix(const char *szPrefix)
+void CLogFile::SetPrefix(const UTF8 *szPrefix)
 {
     if (  !bUseStderr
-       && strcmp(szPrefix, m_szPrefix) != 0)
+       && strcmp((char *)szPrefix, (char *)m_szPrefix) != 0)
     {
         if (bEnabled)
         {
             CloseLogFile();
         }
 
-        char szNewName[SIZEOF_PATHNAME];
+        UTF8 szNewName[SIZEOF_PATHNAME];
         MakeLogName(m_pBasename, szPrefix, m_ltaStarted, szNewName, sizeof(szNewName));
         if (bEnabled)
         {
@@ -2932,7 +2932,7 @@ void CLogFile::SetPrefix(const char *szPrefix)
     }
 }
 
-void CLogFile::SetBasename(const char *pBasename)
+void CLogFile::SetBasename(const UTF8 *pBasename)
 {
     if (m_pBasename)
     {
@@ -2940,7 +2940,7 @@ void CLogFile::SetBasename(const char *pBasename)
         m_pBasename = NULL;
     }
     if (  pBasename
-       && strcmp(pBasename, "-") == 0)
+       && strcmp((char *)pBasename, "-") == 0)
     {
         bUseStderr = true;
     }
@@ -2953,7 +2953,7 @@ void CLogFile::SetBasename(const char *pBasename)
         }
         else
         {
-            m_pBasename = StringClone("");
+            m_pBasename = StringClone((UTF8 *)"");
         }
     }
 }

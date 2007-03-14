@@ -59,9 +59,9 @@ struct mail
     dbref        to;
     dbref        from;
     int          number;
-    char        *time;
-    char        *subject;
-    char        *tolist;
+    UTF8        *time;
+    UTF8        *subject;
+    UTF8        *tolist;
     int          read;
 };
 
@@ -78,8 +78,8 @@ struct mail_selector
 struct muser
 {
     dbref  who;
-    char  *fwd;
-    char  *vacation;
+    UTF8  *fwd;
+    UTF8  *vacation;
     dbref *afilter;
     int    status;
 };
@@ -88,7 +88,7 @@ typedef struct mail_body MAILBODY;
 struct mail_body
 {
     size_t m_nMessage;
-    char  *m_pMessage;
+    UTF8  *m_pMessage;
     int    m_nRefs;
 };
 

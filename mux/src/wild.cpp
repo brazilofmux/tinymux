@@ -24,7 +24,7 @@
 
 // Argument return space and size.
 //
-static char **arglist;
+static UTF8 **arglist;
 static int numargs;
 
 //
@@ -33,7 +33,7 @@ static int numargs;
 //
 // This routine will cause crashes if fed NULLs instead of strings.
 //
-bool quick_wild(const char *tstr, const char *dstr)
+bool quick_wild(const UTF8 *tstr, const UTF8 *dstr)
 {
     if (mudstate.wild_invk_ctr >= mudconf.wild_invk_lim)
     {
@@ -145,7 +145,7 @@ bool quick_wild(const char *tstr, const char *dstr)
 //
 // Side Effect: this routine modifies the 'arglist' static global variable.
 //
-static bool wild1(char *tstr, char *dstr, int arg)
+static bool wild1(UTF8 *tstr, UTF8 *dstr, int arg)
 {
     if (mudstate.wild_invk_ctr >= mudconf.wild_invk_lim)
     {
@@ -153,7 +153,7 @@ static bool wild1(char *tstr, char *dstr, int arg)
     }
     mudstate.wild_invk_ctr++;
 
-    char *datapos;
+    UTF8 *datapos;
     int argpos, numextra;
 
     while (*tstr != '*')
@@ -360,12 +360,12 @@ static bool wild1(char *tstr, char *dstr, int arg)
 // Side Effect: this routine modifies the 'arglist' and 'numargs' static
 // global variables.
 //
-bool wild(char *tstr, char *dstr, char *args[], int nargs)
+bool wild(UTF8 *tstr, UTF8 *dstr, UTF8 *args[], int nargs)
 {
     mudstate.wild_invk_ctr = 0;
 
     int i;
-    char *scan;
+    UTF8 *scan;
 
     // Initialize the return array.
     //
@@ -448,7 +448,7 @@ bool wild(char *tstr, char *dstr, char *args[], int nargs)
 //
 // This routine will cause crashes if fed NULLs instead of strings.
 //
-bool wild_match(char *tstr, const char *dstr)
+bool wild_match(UTF8 *tstr, const UTF8 *dstr)
 {
     switch (*tstr)
     {
@@ -464,7 +464,7 @@ bool wild_match(char *tstr, const char *dstr)
         }
         else
         {
-            return (strcmp(tstr, dstr) < 0);
+            return (strcmp((char *)tstr, (char *)dstr) < 0);
         }
 
     case '<':
@@ -479,7 +479,7 @@ bool wild_match(char *tstr, const char *dstr)
         }
         else
         {
-            return (strcmp(tstr, dstr) > 0);
+            return (strcmp((char *)tstr, (char *)dstr) > 0);
         }
     }
     mudstate.wild_invk_ctr = 0;

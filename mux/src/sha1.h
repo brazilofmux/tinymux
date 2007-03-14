@@ -17,7 +17,7 @@ typedef struct
 } SHA1_CONTEXT;
 
 void SHA1_Init(SHA1_CONTEXT *p);
-void SHA1_Compute(SHA1_CONTEXT *p, size_t n, const char *buf);
+void SHA1_Compute(SHA1_CONTEXT *p, size_t n, const UTF8 *buf);
 void SHA1_Final(SHA1_CONTEXT *p);
 
 #endif // SHA1_H

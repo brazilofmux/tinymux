@@ -53,7 +53,7 @@ void SeedRandomNumberGenerator(void)
     // If it doesn't work, just seed the normal way
     //
     int fd;
-    if (mux_open(&fd, "/dev/urandom", O_RDONLY))
+    if (mux_open(&fd, (UTF8 *)"/dev/urandom", O_RDONLY))
     {
         int len = mux_read(fd, aRandomSystemBytes, sizeof aRandomSystemBytes);
         mux_close(fd);

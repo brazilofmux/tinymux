@@ -21,15 +21,15 @@ void do_kill
     dbref enactor,
     int   key,
     int   nargs,
-    char *what,
-    char *costchar
+    UTF8 *what,
+    UTF8 *costchar
 )
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
     UNUSED_PARAMETER(nargs);
 
-    char *buf1, *buf2;
+    UTF8 *buf1, *buf2;
 
     init_match(executor, what, TYPE_PLAYER);
     match_neighbor();
@@ -45,18 +45,18 @@ void do_kill
     switch (victim)
     {
     case NOTHING:
-        notify(executor, "I don't see that player here.");
+        notify(executor, (UTF8 *)"I don't see that player here.");
         break;
 
     case AMBIGUOUS:
-        notify(executor, "I don't know who you mean!");
+        notify(executor, (UTF8 *)"I don't know who you mean!");
         break;
 
     default:
         if (  !isPlayer(victim)
            && !isThing(victim))
         {
-            notify(executor, "Sorry, you can only kill players and things.");
+            notify(executor, (UTF8 *)"Sorry, you can only kill players and things.");
             break;
         }
         if (  (  Haven(Location(victim))
@@ -65,7 +65,7 @@ void do_kill
               && !Controls(executor, Location(victim)))
            || Unkillable(victim))
         {
-            notify(executor, "Sorry.");
+            notify(executor, (UTF8 *)"Sorry.");
             break;
         }
 
@@ -100,7 +100,7 @@ void do_kill
         {
             // Failure: notify player and victim only.
             //
-            notify(executor, "Your murder attempt failed.");
+            notify(executor, (UTF8 *)"Your murder attempt failed.");
             buf1 = alloc_lbuf("do_kill.failed");
             mux_sprintf(buf1, LBUF_SIZE, "%s tried to kill you!", Moniker(executor));
             notify_with_cause_ooc(victim, executor, buf1);
@@ -150,7 +150,7 @@ void do_kill
             {
                 if (!Quiet(victim))
                 {
-                    notify(Owner(victim), "Halted.");
+                    notify(Owner(victim), (UTF8 *)"Halted.");
                 }
             }
         }
@@ -176,7 +176,7 @@ void do_kill
             }
             else
             {
-                notify(victim, "Your insurance policy has been revoked.");
+                notify(victim, (UTF8 *)"Your insurance policy has been revoked.");
             }
         }
         free_lbuf(buf1);
@@ -195,7 +195,7 @@ void do_kill
  * * give_thing, give_money, do_give: Give away money or things.
  */
 
-static void give_thing(dbref giver, dbref recipient, int key, char *what)
+static void give_thing(dbref giver, dbref recipient, int key, UTF8 *what)
 {
     init_match(giver, what, TYPE_THING);
     match_possession();
@@ -205,21 +205,21 @@ static void give_thing(dbref giver, dbref recipient, int key, char *what)
     switch (thing)
     {
     case NOTHING:
-        notify(giver, "You don't have that!");
+        notify(giver, (UTF8 *)"You don't have that!");
         return;
 
     case AMBIGUOUS:
-        notify(giver, "I don't know which you mean!");
+        notify(giver, (UTF8 *)"I don't know which you mean!");
         return;
     }
     if (thing == giver)
     {
-        notify(giver, "You can't give yourself away!");
+        notify(giver, (UTF8 *)"You can't give yourself away!");
         return;
     }
     if (thing == recipient)
     {
-        notify(giver, "You can't give an object to itself.");
+        notify(giver, (UTF8 *)"You can't give an object to itself.");
         return;
     }
     if (  (!isThing(thing) && !isPlayer(thing))
@@ -230,13 +230,13 @@ static void give_thing(dbref giver, dbref recipient, int key, char *what)
         notify(giver, NOPERM_MESSAGE);
         return;
     }
-    char *str, *sp;
+    UTF8 *str, *sp;
     if (!could_doit(giver, thing, A_LGIVE))
     {
         sp = str = alloc_lbuf("do_give.gfail");
-        safe_str("You can't give ", str, &sp);
+        safe_str((UTF8 *)"You can't give ", str, &sp);
         safe_str(Moniker(thing), str, &sp);
-        safe_str(" away.", str, &sp);
+        safe_str((UTF8 *)" away.", str, &sp);
         *sp = '\0';
 
         did_it(giver, thing, A_GFAIL, str, A_OGFAIL, NULL, A_AGFAIL, 0,
@@ -248,7 +248,7 @@ static void give_thing(dbref giver, dbref recipient, int key, char *what)
     {
         sp = str = alloc_lbuf("do_give.rfail");
         safe_str(Moniker(recipient), str, &sp);
-        safe_str(" doesn't want ", str, &sp);
+        safe_str((UTF8 *)" doesn't want ", str, &sp);
         safe_str(Moniker(thing), str, &sp);
         safe_chr('.', str, &sp);
         *sp = '\0';
@@ -265,7 +265,7 @@ static void give_thing(dbref giver, dbref recipient, int key, char *what)
         str = alloc_lbuf("do_give.thing.ok");
         mux_strncpy(str, Moniker(giver), LBUF_SIZE-1);
         notify_with_cause_ooc(recipient, giver, tprintf("%s gave you %s.", str, Moniker(thing)));
-        notify(giver, "Given.");
+        notify(giver, (UTF8 *)"Given.");
         notify_with_cause_ooc(thing, giver, tprintf("%s gave you to %s.", str, Moniker(recipient)));
         free_lbuf(str);
     }
@@ -323,7 +323,7 @@ static void give_money(dbref giver, dbref recipient, int key, int amount)
     {
         dbref aowner;
         int aflags;
-        char *str = atr_pget(recipient, A_COST, &aowner, &aflags);
+        UTF8 *str = atr_pget(recipient, A_COST, &aowner, &aflags);
         cost = mux_atol(str);
         free_lbuf(str);
 
@@ -331,7 +331,7 @@ static void give_money(dbref giver, dbref recipient, int key, int amount)
         //
         if (amount < cost)
         {
-            notify(giver, "Feeling poor today?");
+            notify(giver, (UTF8 *)"Feeling poor today?");
             giveto(giver, amount);
             return;
         }
@@ -390,8 +390,8 @@ void do_give
     dbref enactor,
     int   key,
     int   nargs,
-    char *who,
-    char *amnt
+    UTF8 *who,
+    UTF8 *amnt
 )
 {
     UNUSED_PARAMETER(caller);
@@ -413,22 +413,22 @@ void do_give
     switch (recipient)
     {
     case NOTHING:
-        notify(executor, "Give to whom?");
+        notify(executor, (UTF8 *)"Give to whom?");
         return;
 
     case AMBIGUOUS:
-        notify(executor, "I don't know who you mean!");
+        notify(executor, (UTF8 *)"I don't know who you mean!");
         return;
     }
 
     if (isExit(recipient))
     {
-        notify(executor, "You can't give anything to an exit.");
+        notify(executor, (UTF8 *)"You can't give anything to an exit.");
         return;
     }
     if (Guest(recipient))
     {
-        notify(executor, "Guests really don't need money or anything.");
+        notify(executor, (UTF8 *)"Guests really don't need money or anything.");
         return;
     }
     if (is_rational(amnt))

@@ -23,34 +23,34 @@
  * only internal currently, so it's not a problem.
  */
 
-static char *unparse_object_quiet(dbref player, dbref loc)
+static UTF8 *unparse_object_quiet(dbref player, dbref loc)
 {
     UNUSED_PARAMETER(player);
 
-    static char buf[SBUF_SIZE];
+    static UTF8 buf[SBUF_SIZE];
 
     switch (loc)
     {
     case NOTHING:
-        return (char *)"-1";
+        return (UTF8 *)"-1";
     case HOME:
-        return (char *)"-3";
+        return (UTF8 *)"-3";
     default:
         mux_sprintf(buf, SBUF_SIZE, "(#%d)", loc);
         return buf;
     }
 }
 
-static char boolexp_buf[LBUF_SIZE];
-static char *buftop;
+static UTF8 boolexp_buf[LBUF_SIZE];
+static UTF8 *buftop;
 
-static void unparse_boolexp1(dbref player, BOOLEXP *b, char outer_type, int format)
+static void unparse_boolexp1(dbref player, BOOLEXP *b, UTF8 outer_type, int format)
 {
     if ((b == TRUE_BOOLEXP))
     {
         if (format == F_EXAMINE)
         {
-            safe_str("*UNLOCKED*", boolexp_buf, &buftop);
+            safe_str((UTF8 *)"*UNLOCKED*", boolexp_buf, &buftop);
         }
         return;
     }
@@ -125,7 +125,7 @@ static void unparse_boolexp1(dbref player, BOOLEXP *b, char outer_type, int form
 
                 // Examine output - informative. Name(#Num) or Name.
                 //
-                char *buff;
+                UTF8 *buff;
 
                 buff = unparse_object(player, b->thing, false);
                 safe_str(buff, boolexp_buf, &buftop);
@@ -186,7 +186,7 @@ static void unparse_boolexp1(dbref player, BOOLEXP *b, char outer_type, int form
         {
             // Use the attribute name if the attribute exists.
             //
-            safe_str((char *)ap->name, boolexp_buf, &buftop);
+            safe_str(ap->name, boolexp_buf, &buftop);
         }
         else
         {
@@ -206,21 +206,21 @@ static void unparse_boolexp1(dbref player, BOOLEXP *b, char outer_type, int form
         {
             safe_chr(':', boolexp_buf, &buftop);
         }
-        safe_str((char *)b->sub1, boolexp_buf, &buftop);
+        safe_str((UTF8 *)b->sub1, boolexp_buf, &buftop);
         break;
 
     default:
 
         // Bad type.
         //
-        Log.WriteString("ABORT! unparse.cpp, fell off the end of switch in unparse_boolexp1()" ENDLINE);
+        Log.WriteString((UTF8 *)"ABORT! unparse.cpp, fell off the end of switch in unparse_boolexp1()" ENDLINE);
         Log.Flush();
         abort();
         break;
     }
 }
 
-char *unparse_boolexp_quiet(dbref player, BOOLEXP *b)
+UTF8 *unparse_boolexp_quiet(dbref player, BOOLEXP *b)
 {
     buftop = boolexp_buf;
     unparse_boolexp1(player, b, BOOLEXP_CONST, F_QUIET);
@@ -228,7 +228,7 @@ char *unparse_boolexp_quiet(dbref player, BOOLEXP *b)
     return boolexp_buf;
 }
 
-char *unparse_boolexp(dbref player, BOOLEXP *b)
+UTF8 *unparse_boolexp(dbref player, BOOLEXP *b)
 {
     buftop = boolexp_buf;
     unparse_boolexp1(player, b, BOOLEXP_CONST, F_EXAMINE);
@@ -236,7 +236,7 @@ char *unparse_boolexp(dbref player, BOOLEXP *b)
     return boolexp_buf;
 }
 
-char *unparse_boolexp_decompile(dbref player, BOOLEXP *b)
+UTF8 *unparse_boolexp_decompile(dbref player, BOOLEXP *b)
 {
     buftop = boolexp_buf;
     unparse_boolexp1(player, b, BOOLEXP_CONST, F_DECOMPILE);
@@ -244,7 +244,7 @@ char *unparse_boolexp_decompile(dbref player, BOOLEXP *b)
     return boolexp_buf;
 }
 
-char *unparse_boolexp_function(dbref player, BOOLEXP *b)
+UTF8 *unparse_boolexp_function(dbref player, BOOLEXP *b)
 {
     buftop = boolexp_buf;
     unparse_boolexp1(player, b, BOOLEXP_CONST, F_FUNCTION);

@@ -113,7 +113,7 @@ void CGuests::SizeGuests(int nMin)
     nMaxGuests = nMin;
 }
 
-const char *CGuests::Create(DESC *d)
+const UTF8 *CGuests::Create(DESC *d)
 {
     // If we have a guest character, let's use it
     //
@@ -132,7 +132,7 @@ const char *CGuests::Create(DESC *d)
             guest_player = Guests[i] = MakeGuestChar();
             if (guest_player == NOTHING)
             {
-                queue_string(d, "Error creating guest, please try again later.\n");
+                queue_string(d, (UTF8 *)"Error creating guest, please try again later.\n");
                 return NULL;
             }
             else
@@ -193,7 +193,7 @@ const char *CGuests::Create(DESC *d)
             // Wipe the attributes.
             //
             WipeAttrs(guest_player);
-            ChangePassword(guest_player, GUEST_PASSWORD);
+            ChangePassword(guest_player, (UTF8 *)GUEST_PASSWORD);
 
             // Copy them back.
             //
@@ -204,13 +204,13 @@ const char *CGuests::Create(DESC *d)
 
     if (nGuests >= mudconf.number_guests)
     {
-        queue_string(d, "All guests are currently busy, please try again later.\n");
+        queue_string(d, (UTF8 *)"All guests are currently busy, please try again later.\n");
         return NULL;
     }
     dbref newGuest = MakeGuestChar();
     if (newGuest == NOTHING)
     {
-        queue_string(d, "Error creating guest, please try again later.\n");
+        queue_string(d, (UTF8 *)"Error creating guest, please try again later.\n");
         return NULL;
     }
     SizeGuests(nGuests+1);
@@ -308,14 +308,14 @@ dbref CGuests::MakeGuestChar(void)
 
     // Make the player.
     //
-    const char *pmsg;
-    player = create_player(name, GUEST_PASSWORD, mudconf.guest_nuker, false, &pmsg);
+    const UTF8 *pmsg;
+    player = create_player(name, (UTF8 *)GUEST_PASSWORD, mudconf.guest_nuker, false, &pmsg);
 
     // No Player Created?? Return error.
     //
     if (player == NOTHING)
     {
-        log_text("GUEST: failed in create_player" ENDLINE);
+        log_text((UTF8 *)"GUEST: failed in create_player" ENDLINE);
         return NOTHING;
     }
 
@@ -351,8 +351,8 @@ dbref CGuests::MakeGuestChar(void)
 
     // Lock em!
     //
-    do_lock(player, player, player, A_LOCK, 2, tprintf("#%d", player), "=me");
-    do_lock(player, player, player, A_LENTER, 2, tprintf("#%d", player), "=me");
+    do_lock(player, player, player, A_LOCK, 2, tprintf("#%d", player), (UTF8 *)"=me");
+    do_lock(player, player, player, A_LENTER, 2, tprintf("#%d", player), (UTF8 *)"=me");
 
     // return em!
     //
@@ -386,7 +386,7 @@ void CGuests::WipeAttrs(dbref guest)
     olist_push();
 
     int atr;
-    char *as;
+    unsigned char *as;
     for (atr = atr_head(guest, &as); atr; atr = atr_next(&as))
     {
         ATTR *ap = atr_num(atr);
@@ -420,12 +420,12 @@ bool CGuests::CheckGuest(dbref player)
 //
 void CGuests::ListAll(dbref player)
 {
-    notify(player, "--------------------------- Current Guests Listing ---------------------------");
-    notify(player, "*Guest #  : Name            dbref  Status     Last Site");
-    notify(player, "------------------------------------------------------------------------------");\
-    char *buff = alloc_lbuf("CGuests-ListAll");
+    notify(player, (UTF8 *)"--------------------------- Current Guests Listing ---------------------------");
+    notify(player, (UTF8 *)"*Guest #  : Name            dbref  Status     Last Site");
+    notify(player, (UTF8 *)"------------------------------------------------------------------------------");\
+    UTF8 *buff = alloc_lbuf("CGuests-ListAll");
     int i;
-    char *LastSite=alloc_lbuf("CGuests-LastSite");
+    UTF8 *LastSite=alloc_lbuf("CGuests-LastSite");
     for (i = 0; i < nGuests; i++)
     {
         dbref aowner;
@@ -458,4 +458,4 @@ void CGuests::AddToGuestChannel(dbref player)
     }
 }
 
-char CGuests::name[50];
+UTF8 CGuests::name[50];

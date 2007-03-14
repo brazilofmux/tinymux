@@ -23,9 +23,9 @@ CFG=netmux - Win32 Debug
 
 # Begin Project
 # PROP AllowPerConfigDependencies 0
-# PROP Scc_ProjName ""$/TinyMUX23/mux/src", PPGAAAAA"
+# PROP Scc_ProjName ""$/TinyMUX24/mux/src", "
 # PROP Scc_LocalPath "."
-CPP=cl.exe
+CPP=xicl6.exe
 RSC=rc.exe
 
 !IF  "$(CFG)" == "netmux - Win32 Release"
@@ -41,17 +41,16 @@ RSC=rc.exe
 # PROP Intermediate_Dir "bin_release_netmux"
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
-# ADD BASE CPP /nologo /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_CONSOLE" /D "_MBCS" /YX /FD /c
-# ADD CPP /nologo /G6 /Gr /MT /W3 /GX /Ox /Ot /Oa /Og /Oi /Ob2 /Gf /Gy /D "NDEBUG" /D "WIN32" /D "_CONSOLE" /D "_MBCS" /D "WOD_REALMS" /FR /YX /FD /c
-# SUBTRACT CPP /Os
+# ADD BASE CPP /nologo /W3 /GX /D "WIN32" /D "NDEBUG" /D "_CONSOLE" /D "_MBCS" /YX /FD /c
+# ADD CPP /nologo /Gr /MT /W3 /GX /Ot /Oa /Og /Oi /Oy /Ob2 /Gy /D "NDEBUG" /D "WIN32" /D "_CONSOLE" /D "_MBCS" /D "WOD_REALMS" /FR /YX /FD /G7 /GF /O3 /QaxKWNPB /Qprec_div /Qipo2 /Qsfalign8 /Qparallel /Qpar_threshold50 /Qunroll /Qprof_use /Qprefetch /c
 # ADD BASE RSC /l 0x409 /d "NDEBUG"
 # ADD RSC /l 0x409 /d "NDEBUG"
 BSC32=bscmake.exe
 # ADD BASE BSC32 /nologo
 # ADD BSC32 /nologo
-LINK32=link.exe
+LINK32=xilink6.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:console /machine:I386
-# ADD LINK32 kernel32.lib user32.lib gdi32.lib wsock32.lib /nologo /version:2.3 /subsystem:console /machine:I386
+# ADD LINK32 kernel32.lib user32.lib gdi32.lib wsock32.lib /nologo /version:2.4 /subsystem:console /machine:I386
 # SUBTRACT LINK32 /map
 
 !ELSEIF  "$(CFG)" == "netmux - Win32 Debug"
@@ -68,13 +67,13 @@ LINK32=link.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_CONSOLE" /D "_MBCS" /YX /FD /GZ /c
-# ADD CPP /nologo /G6 /MTd /W3 /GX /Zi /Od /D "_DEBUG" /D "WIN32" /D "_CONSOLE" /D "_MBCS" /D "WOD_REALMS" /FR /YX /FD /GZ /c
+# ADD CPP /nologo /MTd /W3 /GX /Zi /Od /D "_DEBUG" /D "WIN32" /D "_CONSOLE" /D "_MBCS" /D "WOD_REALMS" /FR /YX /FD /G7 /GZ /c
 # ADD BASE RSC /l 0x409 /d "_DEBUG"
 # ADD RSC /l 0x409 /d "_DEBUG"
 BSC32=bscmake.exe
 # ADD BASE BSC32 /nologo
 # ADD BSC32 /nologo
-LINK32=link.exe
+LINK32=xilink6.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:console /debug /machine:I386 /pdbtype:sept
 # ADD LINK32 kernel32.lib user32.lib gdi32.lib wsock32.lib /nologo /subsystem:console /debug /machine:I386 /pdbtype:sept
 
@@ -390,6 +389,10 @@ SOURCE=.\htab.h
 # Begin Source File
 
 SOURCE=.\interface.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\levels.h
 # End Source File
 # Begin Source File
 

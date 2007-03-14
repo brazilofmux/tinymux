@@ -28,7 +28,6 @@
 
 // Foreground colors.
 //
-#define ANSI_FOREGROUND "\033[3"
 #define ANSI_BLACK      "\033[30m"
 #define ANSI_RED        "\033[31m"
 #define ANSI_GREEN      "\033[32m"
@@ -40,7 +39,6 @@
 
 // Background colors.
 //
-#define ANSI_BACKGROUND "\033[4"
 #define ANSI_BBLACK     "\033[40m"
 #define ANSI_BRED       "\033[41m"
 #define ANSI_BGREEN     "\033[42m"
