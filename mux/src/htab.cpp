@@ -53,7 +53,7 @@ void hashreset(CHashTable *htab)
 static struct
 {
     void *pData;
-    char  aKey[LBUF_SIZE+125];
+    UTF8  aKey[LBUF_SIZE+125];
 } htab_rec;
 #pragma pack()
 
@@ -265,7 +265,7 @@ void *hash_nextentry(CHashTable *htab)
     return NULL;
 }
 
-void *hash_firstkey(CHashTable *htab, int *nKeyLength, char **pKey)
+void *hash_firstkey(CHashTable *htab, int *nKeyLength, UTF8 **pKey)
 {
     HP_HEAPLENGTH nRecord;
     UINT32 iDir = htab->FindFirst(&nRecord, &htab_rec);
@@ -280,7 +280,7 @@ void *hash_firstkey(CHashTable *htab, int *nKeyLength, char **pKey)
     return NULL;
 }
 
-void *hash_nextkey(CHashTable *htab, int *nKeyLength, char **pKey)
+void *hash_nextkey(CHashTable *htab, int *nKeyLength, UTF8 **pKey)
 {
     HP_HEAPLENGTH nRecord;
     UINT32 iDir = htab->FindNext(&nRecord, &htab_rec);
@@ -300,7 +300,7 @@ void *hash_nextkey(CHashTable *htab, int *nKeyLength, char **pKey)
  * * search_nametab: Search a name table for a match and return the flag value.
  */
 
-bool search_nametab(dbref player, NAMETAB *ntab, char *flagname, int *pflag)
+bool search_nametab(dbref player, NAMETAB *ntab, UTF8 *flagname, int *pflag)
 {
     NAMETAB *nt;
     for (nt = ntab; nt->name; nt++)
@@ -328,7 +328,7 @@ bool search_nametab(dbref player, NAMETAB *ntab, char *flagname, int *pflag)
  * * find_nametab_ent: Search a name table for a match and return a pointer to it.
  */
 
-NAMETAB *find_nametab_ent(dbref player, NAMETAB *ntab, char *flagname)
+NAMETAB *find_nametab_ent(dbref player, NAMETAB *ntab, UTF8 *flagname)
 {
     NAMETAB *nt;
 
@@ -350,12 +350,12 @@ NAMETAB *find_nametab_ent(dbref player, NAMETAB *ntab, char *flagname)
  * * display_nametab: Print out the names of the entries in a name table.
  */
 
-void display_nametab(dbref player, NAMETAB *ntab, char *prefix, bool list_if_none)
+void display_nametab(dbref player, NAMETAB *ntab, UTF8 *prefix, bool list_if_none)
 {
     NAMETAB *nt;
     bool got_one = false;
-    char *buf = alloc_lbuf("display_nametab");
-    char *bp = buf;
+    UTF8 *buf = alloc_lbuf("display_nametab");
+    UTF8 *bp = buf;
 
     safe_str(prefix, buf, &bp);
     for (nt = ntab; nt->name; nt++)
@@ -382,11 +382,11 @@ void display_nametab(dbref player, NAMETAB *ntab, char *prefix, bool list_if_non
  */
 
 void interp_nametab(dbref player, NAMETAB *ntab, int flagword,
-    const char *prefix, const char *true_text, const char *false_text)
+    const UTF8 *prefix, const UTF8 *true_text, const UTF8 *false_text)
 {
     bool bFirst = true;
-    char *buf = alloc_lbuf("interp_nametab");
-    char *bp = buf;
+    UTF8 *buf = alloc_lbuf("interp_nametab");
+    UTF8 *bp = buf;
 
     safe_str(prefix, buf, &bp);
     for (NAMETAB *nt = ntab; nt->name; nt++)
@@ -401,7 +401,7 @@ void interp_nametab(dbref player, NAMETAB *ntab, int flagword,
             }
             safe_chr(' ', buf, &bp);
             safe_str(nt->name, buf, &bp);
-            safe_str("...", buf, &bp);
+            safe_str((UTF8 *)"...", buf, &bp);
             if ((flagword & nt->flag) != 0)
             {
                 safe_str(true_text, buf, &bp);
@@ -421,10 +421,10 @@ void interp_nametab(dbref player, NAMETAB *ntab, int flagword,
  * listset_nametab: Print values for flags defined in name table.
  */
 
-void listset_nametab(dbref player, NAMETAB *ntab, int flagword, char *prefix, bool list_if_none)
+void listset_nametab(dbref player, NAMETAB *ntab, int flagword, UTF8 *prefix, bool list_if_none)
 {
-    char *buf = alloc_lbuf("listset_nametab");
-    char *bp = buf;
+    UTF8 *buf = alloc_lbuf("listset_nametab");
+    UTF8 *bp = buf;
 
     safe_str(prefix, buf, &bp);
 
@@ -458,7 +458,7 @@ void listset_nametab(dbref player, NAMETAB *ntab, int flagword, char *prefix, bo
 CF_HAND(cf_ntab_access)
 {
     NAMETAB *np;
-    char *ap;
+    UTF8 *ap;
 
     for (ap = str; *ap && !mux_isspace(*ap); ap++)
     {
@@ -481,6 +481,6 @@ CF_HAND(cf_ntab_access)
             return cf_modify_bits(&(np->perm), ap, pExtra, nExtra, player, cmd);
         }
     }
-    cf_log_notfound(player, cmd, "Entry", str);
+    cf_log_notfound(player, cmd, (UTF8 *)"Entry", str);
     return -1;
 }

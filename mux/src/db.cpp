@@ -245,9 +245,13 @@ ATTR AttrTableSpecial[] =
     {NULL,                  0,          0}
 };
 
-char *aszSpecialDBRefNames[1-NOPERM] =
+UTF8 *aszSpecialDBRefNames[1-NOPERM] =
 {
-    "", "*NOTHING*", "*AMBIGUOUS*", "*HOME*", "*NOPERMISSION*"
+    (UTF8 *)"",
+    (UTF8 *)"*NOTHING*",
+    (UTF8 *)"*AMBIGUOUS*",
+    (UTF8 *)"*HOME*",
+    (UTF8 *)"*NOPERMISSION*"
 };
 
 /* ---------------------------------------------------------------------------
@@ -362,7 +366,7 @@ void fwdlist_clr(dbref thing)
  * fwdlist_load: Load text into a forwardlist.
  */
 
-FWDLIST *fwdlist_load(dbref player, char *atext)
+FWDLIST *fwdlist_load(dbref player, UTF8 *atext)
 {
     FWDLIST *fp = NULL;
     try
@@ -389,8 +393,8 @@ FWDLIST *fwdlist_load(dbref player, char *atext)
 
         if (NULL != fp->data)
         {
-            char *tp = alloc_lbuf("fwdlist_load.str");
-            char *bp = tp;
+            UTF8 *tp = alloc_lbuf("fwdlist_load.str");
+            UTF8 *bp = tp;
             mux_strncpy(tp, atext, LBUF_SIZE-1);
 
             int count = 0;
@@ -406,7 +410,7 @@ FWDLIST *fwdlist_load(dbref player, char *atext)
 
                 // Remember string.
                 //
-                char *dp;
+                UTF8 *dp;
                 for (dp = bp; *bp && !mux_isspace(*bp); bp++)
                 {
                     ; // Nothing.
@@ -479,7 +483,7 @@ FWDLIST *fwdlist_load(dbref player, char *atext)
  * fwdlist_rewrite: Generate a text string from a FWDLIST buffer.
  */
 
-int fwdlist_rewrite(FWDLIST *fp, char *atext)
+int fwdlist_rewrite(FWDLIST *fp, UTF8 *atext)
 {
     int count = 0;
     atext[0] = '\0';
@@ -487,7 +491,7 @@ int fwdlist_rewrite(FWDLIST *fp, char *atext)
     if (  fp
        && fp->count)
     {
-        char *bp = atext;
+        UTF8 *bp = atext;
         ITL pContext;
         ItemToList_Init(&pContext, atext, &bp, '#');
         for (int i = 0; i < fp->count; i++)
@@ -506,7 +510,7 @@ int fwdlist_rewrite(FWDLIST *fp, char *atext)
 /* ---------------------------------------------------------------------------
  * fwdlist_ck:  Check a list of dbref numbers to forward to for AUDIBLE
  */
-bool fwdlist_ck(dbref player, dbref thing, int anum, char *atext)
+bool fwdlist_ck(dbref player, dbref thing, int anum, UTF8 *atext)
 {
     UNUSED_PARAMETER(anum);
 
@@ -549,7 +553,7 @@ FWDLIST *fwdlist_get(dbref thing)
     {
         dbref aowner;
         int   aflags;
-        char *tp = atr_get("fwdlist_get.543", thing, A_FORWARDLIST, &aowner, &aflags);
+        UTF8 *tp = atr_get("fwdlist_get.543", thing, A_FORWARDLIST, &aowner, &aflags);
         fp = fwdlist_load(GOD, tp);
         free_lbuf(tp);
     }
@@ -565,7 +569,7 @@ FWDLIST *fwdlist_get(dbref thing)
 // Name, PureName, Moniker, s_Moniker, and s_Name: Get or set object's
 // various names.
 //
-const char *Name(dbref thing)
+const UTF8 *Name(dbref thing)
 {
     if (thing < 0)
     {
@@ -575,14 +579,14 @@ const char *Name(dbref thing)
     dbref aowner;
     int aflags;
 #ifdef MEMORY_BASED
-    static char tbuff[LBUF_SIZE];
+    static UTF8 tbuff[LBUF_SIZE];
     atr_get_str(tbuff, thing, A_NAME, &aowner, &aflags);
     return tbuff;
 #else // MEMORY_BASED
     if (!db[thing].name)
     {
         size_t len;
-        char *pName = atr_get_LEN(thing, A_NAME, &aowner, &aflags, &len);
+        UTF8 *pName = atr_get_LEN(thing, A_NAME, &aowner, &aflags, &len);
         db[thing].name = StringCloneLen(pName, len);
         free_lbuf(pName);
     }
@@ -590,7 +594,7 @@ const char *Name(dbref thing)
 #endif // MEMORY_BASED
 }
 
-const char *PureName(dbref thing)
+const UTF8 *PureName(dbref thing)
 {
     if (thing < 0)
     {
@@ -600,7 +604,7 @@ const char *PureName(dbref thing)
     dbref aowner;
     int aflags;
 
-    char *pName, *pPureName;
+    UTF8 *pName, *pPureName;
     if (mudconf.cache_names)
     {
         if (!db[thing].purename)
@@ -621,7 +625,7 @@ const char *PureName(dbref thing)
             }
             else
             {
-                nName = strlen(db[thing].name);
+                nName = strlen((char *)db[thing].name);
             }
             pName = db[thing].name;
             pPureName = strip_ansi(pName, &nPureName);
@@ -643,7 +647,7 @@ const char *PureName(dbref thing)
     return pPureName;
 }
 
-const char *Moniker(dbref thing)
+const UTF8 *Moniker(dbref thing)
 {
     if (thing < 0)
     {
@@ -657,19 +661,19 @@ const char *Moniker(dbref thing)
     // Compare accent-stripped, ansi-stripped version of @moniker against
     // accent-stripped, ansi-stripped version of @name.
     //
-    const char *pPureName = strip_accents(PureName(thing));
-    char *pPureNameCopy = StringClone(pPureName);
+    const UTF8 *pPureName = strip_accents(PureName(thing));
+    UTF8 *pPureNameCopy = StringClone(pPureName);
 
     size_t nMoniker;
     dbref  aowner;
     int    aflags;
-    char *pMoniker = atr_get_LEN(thing, A_MONIKER, &aowner, &aflags,
+    UTF8 *pMoniker = atr_get_LEN(thing, A_MONIKER, &aowner, &aflags,
         &nMoniker);
-    char *pPureMoniker = strip_accents(strip_ansi(pMoniker));
+    UTF8 *pPureMoniker = strip_accents(strip_ansi(pMoniker));
 
-    const char *pReturn = NULL;
-    static char tbuff[LBUF_SIZE];
-    if (strcmp(pPureNameCopy, pPureMoniker) == 0)
+    const UTF8 *pReturn = NULL;
+    static UTF8 tbuff[LBUF_SIZE];
+    if (strcmp((char *)pPureNameCopy, (char *)pPureMoniker) == 0)
     {
         // The stripped version of @moniker is the same as the stripped
         // version of @name, so (possibly cache and) use the unstripped
@@ -680,7 +684,7 @@ const char *Moniker(dbref thing)
 #ifdef MEMORY_BASED
             db[thing].moniker = StringCloneLen(pMoniker, nMoniker);
 #else // MEMORY_BASED
-            if (strcmp(pMoniker, Name(thing)) == 0)
+            if (strcmp((char *)pMoniker, (char *)Name(thing)) == 0)
             {
                 db[thing].moniker = db[thing].name;
             }
@@ -730,7 +734,7 @@ const char *Moniker(dbref thing)
     return pReturn;
 }
 
-void s_Name(dbref thing, const char *s)
+void s_Name(dbref thing, const UTF8 *s)
 {
     atr_add_raw(thing, A_NAME, s);
 #ifndef MEMORY_BASED
@@ -770,7 +774,7 @@ void s_Name(dbref thing, const char *s)
     }
 }
 
-void s_Moniker(dbref thing, const char *s)
+void s_Moniker(dbref thing, const UTF8 *s)
 {
     atr_add_raw(thing, A_MONIKER, s);
     if (mudconf.cache_names)
@@ -789,7 +793,7 @@ void s_Moniker(dbref thing, const char *s)
     }
 }
 
-void s_Pass(dbref thing, const char *s)
+void s_Pass(dbref thing, const UTF8 *s)
 {
     atr_add_raw(thing, A_PASS, s);
 }
@@ -805,8 +809,8 @@ void do_attribute
     dbref enactor,
     int   key,
     int   nargs,
-    char *aname,
-    char *value
+    UTF8 *aname,
+    UTF8 *value
 )
 {
     UNUSED_PARAMETER(caller);
@@ -826,12 +830,12 @@ void do_attribute
 
     if (NULL == va)
     {
-        notify(executor, "No such user-named attribute.");
+        notify(executor, (UTF8 *)"No such user-named attribute.");
         return;
     }
 
     int f;
-    char *sp;
+    UTF8 *sp;
     ATTR *va2;
     bool negate, success;
 
@@ -844,7 +848,7 @@ void do_attribute
         mux_strupr(value);
         MUX_STRTOK_STATE tts;
         mux_strtok_src(&tts, value);
-        mux_strtok_ctl(&tts, " ");
+        mux_strtok_ctl(&tts, (UTF8 *)" ");
         sp = mux_strtok_parse(&tts);
         success = false;
         while (sp != NULL)
@@ -882,7 +886,7 @@ void do_attribute
             sp = mux_strtok_parse(&tts);
         }
         if (success && !Quiet(executor))
-            notify(executor, "Attribute access changed.");
+            notify(executor, (UTF8 *)"Attribute access changed.");
         break;
 
     case ATTRIB_RENAME:
@@ -892,7 +896,7 @@ void do_attribute
             //
             UTF8 OldName[SBUF_SIZE];
             UTF8 *pOldName = OldName;
-            safe_sb_str((char *)pName, (char *)OldName, (char **)&pOldName);
+            safe_sb_str((UTF8 *)pName, (UTF8 *)OldName, (UTF8 **)&pOldName);
             *pOldName = '\0';
             size_t nOldName = pOldName - OldName;
 
@@ -902,18 +906,18 @@ void do_attribute
             va2 = atr_str((UTF8 *)value);
             if (va2)
             {
-                notify(executor, "An attribute with that name already exists.");
+                notify(executor, (UTF8 *)"An attribute with that name already exists.");
                 return;
             }
             pName = MakeCanonicalAttributeName((UTF8 *)value, &nName, &bValid);
             if (  !bValid
                || vattr_rename_LEN(OldName, nOldName, pName, nName) == NULL)
             {
-                notify(executor, "Attribute rename failed.");
+                notify(executor, (UTF8 *)"Attribute rename failed.");
             }
             else
             {
-                notify(executor, "Attribute renamed.");
+                notify(executor, (UTF8 *)"Attribute renamed.");
             }
         }
         break;
@@ -923,7 +927,7 @@ void do_attribute
         // Remove the attribute.
         //
         vattr_delete_LEN(pName, nName);
-        notify(executor, "Attribute deleted.");
+        notify(executor, (UTF8 *)"Attribute deleted.");
         break;
     }
 }
@@ -939,8 +943,8 @@ void do_fixdb
     dbref enactor,
     int   key,
     int   nargs,
-    char *arg1,
-    char *arg2
+    UTF8 *arg1,
+    UTF8 *arg2
 )
 {
     UNUSED_PARAMETER(caller);
@@ -972,7 +976,7 @@ void do_fixdb
         break;
     }
 
-    char *pValidName;
+    UTF8 *pValidName;
     switch (key)
     {
     case FIXDB_OWNER:
@@ -1023,18 +1027,18 @@ void do_fixdb
         {
             if (!ValidatePlayerName(arg2))
             {
-                notify(executor, "That's not a good name for a player.");
+                notify(executor, (UTF8 *)"That's not a good name for a player.");
                 return;
             }
             pValidName = arg2;
             if (lookup_player(NOTHING, pValidName, false) != NOTHING)
             {
-                notify(executor, "That name is already in use.");
+                notify(executor, (UTF8 *)"That name is already in use.");
                 return;
             }
             STARTLOG(LOG_SECURITY, "SEC", "CNAME");
             log_name(thing),
-            log_text(" renamed to ");
+            log_text((UTF8 *)" renamed to ");
             log_text(pValidName);
             ENDLOG;
             if (Suspect(executor))
@@ -1053,7 +1057,7 @@ void do_fixdb
             pValidName = MakeCanonicalObjectName(arg2, &nTmp, &bValid);
             if (!bValid)
             {
-                notify(executor, "That is not a reasonable name.");
+                notify(executor, (UTF8 *)"That is not a reasonable name.");
                 return;
             }
             s_Name(thing, pValidName);
@@ -1338,7 +1342,7 @@ void anum_extend(int newtop)
                 anum_table2[i] = anum_table[i];
             }
 
-            MEMFREE((char *)anum_table);
+            MEMFREE(anum_table);
         }
         anum_table = anum_table2;
     }
@@ -1490,9 +1494,9 @@ int mkattr(dbref executor, const UTF8 *buff)
  * al_decode: Fetch an attribute number from an alist.
  */
 
-static int al_decode(char **app)
+static int al_decode(unsigned char **app)
 {
-    char *ap = *app;
+    unsigned char *ap = *app;
 
     int atrnum = 0, atrshft = 0;
     for (;;)
@@ -1522,7 +1526,7 @@ static int al_decode(char **app)
 // following routine only generates a '\0' if atrnum == 0 (which is
 // never used).
 //
-static char *al_code(char *ap, unsigned int atrnum)
+static unsigned char *al_code(unsigned char *ap, unsigned int atrnum)
 {
     int i;
     unsigned int bits;
@@ -1531,11 +1535,11 @@ static char *al_code(char *ap, unsigned int atrnum)
         bits = atrnum & 0x7F;
         if (atrnum <= 0x7F)
         {
-            ap[i] = (char)bits;
+            ap[i] = (unsigned char)bits;
             break;
         }
         atrnum >>= 7;
-        ap[i] = (char)(bits | 0x80);
+        ap[i] = (unsigned char)(bits | 0x80);
     }
     return ap + i + 1;
 }
@@ -1563,9 +1567,9 @@ bool Commer(dbref thing)
 
     bool bFoundListens = false;
 
-    char *as;
+    UTF8 *as;
     atr_push();
-    char *buff = alloc_lbuf("Commer");
+    UTF8 *buff = alloc_lbuf("Commer");
     for (int atr = atr_head(thing, &as); atr; atr = atr_next(&as))
     {
         ATTR *ap = atr_num(atr);
@@ -1593,7 +1597,7 @@ bool Commer(dbref thing)
 
         // Search for unescaped ':'
         //
-        char *s = strchr(buff+1, ':');
+        UTF8 *s = (UTF8 *)strchr((char *)buff+1, ':');
         if (!s)
         {
             continue;
@@ -1642,12 +1646,12 @@ bool Commer(dbref thing)
 
 // al_extend: Get more space for attributes, if needed
 //
-static void al_extend(char **buffer, size_t *bufsiz, size_t len, bool copy)
+static void al_extend(unsigned char **buffer, size_t *bufsiz, size_t len, bool copy)
 {
     if (len > *bufsiz)
     {
         size_t newsize = len + ATR_BUF_CHUNK;
-        char *tbuff = (char *)MEMALLOC(newsize);
+        unsigned char *tbuff = (unsigned char *)MEMALLOC(newsize);
         ISOUTOFMEMORY(tbuff);
         if (*buffer)
         {
@@ -1683,7 +1687,7 @@ void al_store(void)
 
 // al_fetch: Load attribute list
 //
-static char *al_fetch(dbref thing)
+static unsigned char *al_fetch(dbref thing)
 {
     // We only need fetch if we change things.
     //
@@ -1696,7 +1700,7 @@ static char *al_fetch(dbref thing)
     //
     al_store();
     size_t len;
-    const char *astr = atr_get_raw_LEN(thing, A_LIST, &len);
+    const unsigned char *astr = atr_get_raw_LEN(thing, A_LIST, &len);
     if (astr)
     {
         al_extend(&mudstate.mod_alist, &mudstate.mod_size, len+1, false);
@@ -1717,8 +1721,8 @@ static char *al_fetch(dbref thing)
 //
 static bool al_add(dbref thing, int attrnum)
 {
-    char *abuf = al_fetch(thing);
-    char *cp = abuf;
+    unsigned char *abuf = al_fetch(thing);
+    unsigned char *cp = abuf;
     int anum;
 
     // See if attr is in the list.  If so, exit (need not do anything).
@@ -1766,7 +1770,7 @@ static bool al_add(dbref thing, int attrnum)
 static void al_delete(dbref thing, int attrnum)
 {
     int anum;
-    char *abuf, *cp, *dp;
+    unsigned char *abuf, *cp, *dp;
 
     // If trying to modify List attrib, return.  Otherwise, get the attribute list.
     //
@@ -1812,7 +1816,7 @@ static DCL_INLINE void makekey(dbref thing, int atr, Aname *abuff)
  * atr_encode: Encode an attribute string.
  */
 
-static char *atr_encode(char *iattr, dbref thing, dbref owner, int flags, int atr)
+static UTF8 *atr_encode(UTF8 *iattr, dbref thing, dbref owner, int flags, int atr)
 {
     UNUSED_PARAMETER(atr);
 
@@ -1832,7 +1836,7 @@ static char *atr_encode(char *iattr, dbref thing, dbref owner, int flags, int at
 // atr_decode_flags_owner: Decode the owner and flags (if present) and
 // return a pointer to the attribute text.
 //
-static const char *atr_decode_flags_owner(const char *iattr, dbref *owner, int *flags)
+static const UTF8 *atr_decode_flags_owner(const UTF8 *iattr, dbref *owner, int *flags)
 {
     // See if the first char of the attribute is the special character
     //
@@ -1844,7 +1848,7 @@ static const char *atr_decode_flags_owner(const char *iattr, dbref *owner, int *
 
     // It has the special character, crack the attr apart.
     //
-    const char *cp = iattr + 1;
+    const UTF8 *cp = iattr + 1;
 
     // Get the attribute owner
     //
@@ -1905,7 +1909,7 @@ static const char *atr_decode_flags_owner(const char *iattr, dbref *owner, int *
 // ---------------------------------------------------------------------------
 // atr_decode: Decode an attribute string.
 //
-static void atr_decode_LEN(const char *iattr, size_t nLen, char *oattr,
+static void atr_decode_LEN(const UTF8 *iattr, size_t nLen, UTF8 *oattr,
                            dbref thing, dbref *owner, int *flags, size_t *pLen)
 {
     // Default the owner
@@ -1914,7 +1918,7 @@ static void atr_decode_LEN(const char *iattr, size_t nLen, char *oattr,
 
     // Parse for owner and flags
     //
-    const char *cp = atr_decode_flags_owner(iattr, owner, flags);
+    const UTF8 *cp = atr_decode_flags_owner(iattr, owner, flags);
 
     // Get the attribute text.
     //
@@ -2033,7 +2037,7 @@ void atr_clr(dbref thing, int atr)
  * atr_add_raw, atr_add: add attribute of type atr to list
  */
 
-void atr_add_raw_LEN(dbref thing, int atr, const char *szValue, size_t nValue)
+void atr_add_raw_LEN(dbref thing, int atr, const UTF8 *szValue, size_t nValue)
 {
     if (  !szValue
        || '\0' == szValue[0])
@@ -2044,7 +2048,7 @@ void atr_add_raw_LEN(dbref thing, int atr, const char *szValue, size_t nValue)
 
 #ifdef MEMORY_BASED
     ATRLIST *list = db[thing].pALHead;
-    char *text = StringCloneLen(szValue, nValue);
+    UTF8 *text = StringCloneLen(szValue, nValue);
 
     if (!list)
     {
@@ -2205,12 +2209,12 @@ FoundAttribute:
     }
 }
 
-void atr_add_raw(dbref thing, int atr, const char *szValue)
+void atr_add_raw(dbref thing, int atr, const UTF8 *szValue)
 {
-    atr_add_raw_LEN(thing, atr, szValue, szValue ? strlen(szValue) : 0);
+    atr_add_raw_LEN(thing, atr, szValue, szValue ? strlen((char *)szValue) : 0);
 }
 
-void atr_add(dbref thing, int atr, char *buff, dbref owner, int flags)
+void atr_add(dbref thing, int atr, UTF8 *buff, dbref owner, int flags)
 {
     set_modified(thing);
 
@@ -2245,7 +2249,7 @@ void atr_add(dbref thing, int atr, char *buff, dbref owner, int flags)
         mudstate.bfListens.Clear(thing);
         mudstate.bfCommands.Clear(thing);
 
-        char *tbuff = atr_encode(buff, thing, owner, flags, atr);
+        UTF8 *tbuff = atr_encode(buff, thing, owner, flags, atr);
         atr_add_raw(thing, atr, tbuff);
     }
 }
@@ -2254,7 +2258,7 @@ void atr_set_flags(dbref thing, int atr, dbref flags)
 {
     dbref aowner;
     int aflags;
-    char *buff = atr_get("atr_set_flags.2212", thing, atr, &aowner, &aflags);
+    UTF8 *buff = atr_get("atr_set_flags.2212", thing, atr, &aowner, &aflags);
     atr_add(thing, atr, buff, aowner, flags);
     free_lbuf(buff);
 }
@@ -2275,7 +2279,7 @@ int get_atr(UTF8 *name)
 }
 
 #ifdef MEMORY_BASED
-const char *atr_get_raw_LEN(dbref thing, int atr, size_t *pLen)
+const UTF8 *atr_get_raw_LEN(dbref thing, int atr, size_t *pLen)
 {
     if (!Good_obj(thing))
     {
@@ -2316,29 +2320,29 @@ const char *atr_get_raw_LEN(dbref thing, int atr, size_t *pLen)
 
 #else // MEMORY_BASED
 
-const char *atr_get_raw_LEN(dbref thing, int atr, size_t *pLen)
+const UTF8 *atr_get_raw_LEN(dbref thing, int atr, size_t *pLen)
 {
     Aname okey;
 
     makekey(thing, atr, &okey);
     size_t nLen;
-    const char *a = cache_get(&okey, &nLen);
+    const UTF8 *a = cache_get(&okey, &nLen);
     nLen = a ? (nLen-1) : 0;
     *pLen = nLen;
     return a;
 }
 #endif // MEMORY_BASED
 
-const char *atr_get_raw(dbref thing, int atr)
+const UTF8 *atr_get_raw(dbref thing, int atr)
 {
     size_t Len;
     return atr_get_raw_LEN(thing, atr, &Len);
 }
 
-char *atr_get_str_LEN(char *s, dbref thing, int atr, dbref *owner, int *flags,
+UTF8 *atr_get_str_LEN(UTF8 *s, dbref thing, int atr, dbref *owner, int *flags,
     size_t *pLen)
 {
-    const char *buff = atr_get_raw_LEN(thing, atr, pLen);
+    const UTF8 *buff = atr_get_raw_LEN(thing, atr, pLen);
     if (!buff)
     {
         *owner = Owner(thing);
@@ -2353,30 +2357,30 @@ char *atr_get_str_LEN(char *s, dbref thing, int atr, dbref *owner, int *flags,
     return s;
 }
 
-char *atr_get_str(char *s, dbref thing, int atr, dbref *owner, int *flags)
+UTF8 *atr_get_str(UTF8 *s, dbref thing, int atr, dbref *owner, int *flags)
 {
     size_t nLen;
     return atr_get_str_LEN(s, thing, atr, owner, flags, &nLen);
 }
 
-char *atr_get_LEN(dbref thing, int atr, dbref *owner, int *flags, size_t *pLen)
+UTF8 *atr_get_LEN(dbref thing, int atr, dbref *owner, int *flags, size_t *pLen)
 {
-    char *buff = alloc_lbuf("atr_get_LEN");
+    UTF8 *buff = alloc_lbuf("atr_get_LEN");
     return atr_get_str_LEN(buff, thing, atr, owner, flags, pLen);
 }
 
-char *atr_get_real(const char *tag, dbref thing, int atr, dbref *owner, int *flags,
-    const char *file, const int line)
+UTF8 *atr_get_real(const UTF8 *tag, dbref thing, int atr, dbref *owner, int *flags,
+    const UTF8 *file, const int line)
 {
     size_t nLen;
-    char *buff = pool_alloc_lbuf(tag, file, line);
+    UTF8 *buff = pool_alloc_lbuf(tag, file, line);
     return atr_get_str_LEN(buff, thing, atr, owner, flags, &nLen);
 }
 
 bool atr_get_info(dbref thing, int atr, dbref *owner, int *flags)
 {
     size_t nLen;
-    const char *buff = atr_get_raw_LEN(thing, atr, &nLen);
+    const UTF8 *buff = atr_get_raw_LEN(thing, atr, &nLen);
     if (!buff)
     {
         *owner = Owner(thing);
@@ -2387,12 +2391,12 @@ bool atr_get_info(dbref thing, int atr, dbref *owner, int *flags)
     return true;
 }
 
-char *atr_pget_str_LEN(char *s, dbref thing, int atr, dbref *owner, int *flags, size_t *pLen)
+UTF8 *atr_pget_str_LEN(UTF8 *s, dbref thing, int atr, dbref *owner, int *flags, size_t *pLen)
 {
     dbref parent;
     int lev;
     ATTR *ap;
-    const char *buff;
+    const UTF8 *buff;
 
     ITER_PARENTS(thing, parent, lev)
     {
@@ -2423,23 +2427,23 @@ char *atr_pget_str_LEN(char *s, dbref thing, int atr, dbref *owner, int *flags, 
     return s;
 }
 
-char *atr_pget_str(char *s, dbref thing, int atr, dbref *owner, int *flags)
+UTF8 *atr_pget_str(UTF8 *s, dbref thing, int atr, dbref *owner, int *flags)
 {
     size_t nLen;
     return atr_pget_str_LEN(s, thing, atr, owner, flags, &nLen);
 }
 
-char *atr_pget_LEN(dbref thing, int atr, dbref *owner, int *flags, size_t *pLen)
+UTF8 *atr_pget_LEN(dbref thing, int atr, dbref *owner, int *flags, size_t *pLen)
 {
-    char *buff = alloc_lbuf("atr_pget");
+    UTF8 *buff = alloc_lbuf("atr_pget");
     return atr_pget_str_LEN(buff, thing, atr, owner, flags, pLen);
 }
 
-char *atr_pget_real(dbref thing, int atr, dbref *owner, int *flags,
-    const char *file, const int line)
+UTF8 *atr_pget_real(dbref thing, int atr, dbref *owner, int *flags,
+    const UTF8 *file, const int line)
 {
     size_t nLen;
-    char *buff = pool_alloc_lbuf("atr_pget", file, line);
+    UTF8 *buff = pool_alloc_lbuf((UTF8 *)"atr_pget", file, line);
     return atr_pget_str_LEN(buff, thing, atr, owner, flags, &nLen);
 }
 
@@ -2452,7 +2456,7 @@ bool atr_pget_info(dbref thing, int atr, dbref *owner, int *flags)
     ITER_PARENTS(thing, parent, lev)
     {
         size_t nLen;
-        const char *buff = atr_get_raw_LEN(parent, atr, &nLen);
+        const UTF8 *buff = atr_get_raw_LEN(parent, atr, &nLen);
         if (buff && *buff)
         {
             atr_decode_LEN(buff, nLen, NULL, thing, owner, flags, &nLen);
@@ -2488,7 +2492,7 @@ void atr_free(dbref thing)
     db[thing].nALAlloc = 0;
     db[thing].nALUsed  = 0;
 #else // MEMORY_BASED
-    char *as;
+    UTF8 *as;
     atr_push();
     for (int atr = atr_head(thing, &as); atr; atr = atr_next(&as))
     {
@@ -2516,13 +2520,13 @@ void atr_cpy(dbref dest, dbref source, bool bInternal)
 {
     dbref owner = Owner(dest);
 
-    char *as;
+    UTF8 *as;
     atr_push();
     for (int atr = atr_head(source, &as); atr; atr = atr_next(&as))
     {
         int   aflags;
         dbref aowner;
-        char *buf = atr_get("atr_cpy.2480", source, atr, &aowner, &aflags);
+        UTF8 *buf = atr_get("atr_cpy.2480", source, atr, &aowner, &aflags);
 
         if (!(aflags & AF_LOCK))
         {
@@ -2565,13 +2569,13 @@ void atr_chown(dbref obj)
 {
     dbref owner = Owner(obj);
 
-    char *as;
+    UTF8 *as;
     atr_push();
     for (int atr = atr_head(obj, &as); atr; atr = atr_next(&as))
     {
         int   aflags;
         dbref aowner;
-        char *buf = atr_get("atr_chown.2529", obj, atr, &aowner, &aflags);
+        UTF8 *buf = atr_get("atr_chown.2529", obj, atr, &aowner, &aflags);
         if (  aowner != owner
            && !(aflags & AF_LOCK))
         {
@@ -2586,7 +2590,7 @@ void atr_chown(dbref obj)
  * atr_next: Return next attribute in attribute list.
  */
 
-int atr_next(char **attrp)
+int atr_next(UTF8 **attrp)
 {
 #ifdef MEMORY_BASED
     ATRCOUNT *atr;
@@ -2653,7 +2657,7 @@ void atr_pop(void)
         mudstate.iter_alist.data = old_alist->data;
         mudstate.iter_alist.len = old_alist->len;
         mudstate.iter_alist.next = old_alist->next;
-        char *cp = (char *)old_alist;
+        unsigned char *cp = (unsigned char *)old_alist;
         free_sbuf(cp);
     }
     else
@@ -2669,7 +2673,7 @@ void atr_pop(void)
  * atr_head: Returns the head of the attr list for object 'thing'
  */
 
-int atr_head(dbref thing, char **attrp)
+int atr_head(dbref thing, unsigned char **attrp)
 {
 #ifdef MEMORY_BASED
     if (db[thing].nALUsed)
@@ -2683,7 +2687,7 @@ int atr_head(dbref thing, char **attrp)
     }
     return 0;
 #else // MEMORY_BASED
-    const char *astr;
+    const unsigned char *astr;
     size_t alen;
 
     // Get attribute list.  Save a read if it is in the modify atr list
@@ -2881,7 +2885,7 @@ void db_make_minimal(void)
 {
     db_free();
     db_grow(1);
-    s_Name(0, "Limbo");
+    s_Name(0, (UTF8 *)"Limbo");
     s_Flags(0, FLAG_WORD1, TYPE_ROOM);
     s_Flags(0, FLAG_WORD2, 0);
     s_Flags(0, FLAG_WORD3, 0);
@@ -2898,8 +2902,8 @@ void db_make_minimal(void)
     // should be #1
     //
     load_player_names();
-    const char *pmsg;
-    dbref obj = create_player("Wizard", "potrzebie", NOTHING, false, &pmsg);
+    const UTF8 *pmsg;
+    dbref obj = create_player((UTF8 *)"Wizard", (UTF8 *)"potrzebie", NOTHING, false, &pmsg);
     s_Flags(obj, FLAG_WORD1, Flags(obj) | WIZARD);
     s_Powers(obj, 0);
     s_Powers2(obj, 0);
@@ -2913,11 +2917,11 @@ void db_make_minimal(void)
     s_Link(obj, 0);
 }
 
-dbref parse_dbref(const char *s)
+dbref parse_dbref(const UTF8 *s)
 {
     // Enforce completely numeric dbrefs
     //
-    const char *p = s;
+    const UTF8 *p = s;
     if (p[0])
     {
         do
@@ -2940,7 +2944,7 @@ dbref parse_dbref(const char *s)
 
 void putref(FILE *f, dbref ref)
 {
-    char buf[I32BUF_SIZE+1];
+    UTF8 buf[I32BUF_SIZE+1];
     size_t n = mux_ltoa(ref, buf);
     buf[n] = '\n';
     fwrite(buf, sizeof(char), n+1, f);
@@ -2998,22 +3002,22 @@ static const int action_table[2][8] =
     { 2,   1,   2,   2,   5,   6,   7,   8}  // STATE_HAVE_ESC
 };
 
-char *getstring_noalloc(FILE *f, bool new_strings, size_t *pnBuffer)
+UTF8 *getstring_noalloc(FILE *f, bool new_strings, size_t *pnBuffer)
 {
-    static char buf[2*LBUF_SIZE + 20];
+    static UTF8 buf[2*LBUF_SIZE + 20];
     int c = fgetc(f);
     if (  new_strings
        && c == '"')
     {
         size_t nBufferLeft = sizeof(buf)-10;
         int iState = STATE_START;
-        char *pOutput = buf;
+        UTF8 *pOutput = buf;
         for (;;)
         {
             // Fetch up to and including the next LF.
             //
-            char *pInput = pOutput + 6;
-            if (fgets(pInput, static_cast<int>(nBufferLeft), f) == NULL)
+            UTF8 *pInput = pOutput + 6;
+            if (fgets((char *)pInput, static_cast<int>(nBufferLeft), f) == NULL)
             {
                 // EOF or ERROR.
                 //
@@ -3032,14 +3036,14 @@ char *getstring_noalloc(FILE *f, bool new_strings, size_t *pnBuffer)
             //
             for (;;)
             {
-                char ch = *pInput++;
+                UTF8 ch = *pInput++;
                 if (iState == STATE_START)
                 {
                     if (decode_table[(unsigned char)ch] == 0)
                     {
                         // As long as decode_table[*p] is 0, just keep copying the characters.
                         //
-                        char *p = pOutput;
+                        UTF8 *p = pOutput;
                         do
                         {
                             *pOutput++ = ch;
@@ -3130,12 +3134,12 @@ char *getstring_noalloc(FILE *f, bool new_strings, size_t *pnBuffer)
     {
         ungetc(c, f);
 
-        char *p = buf;
+        UTF8 *p = buf;
         for (;;)
         {
             // Fetch up to and including the next LF.
             //
-            if (fgets(p, LBUF_SIZE, f) == NULL)
+            if (fgets((char *)p, LBUF_SIZE, f) == NULL)
             {
                 // EOF or ERROR.
                 //
@@ -3145,7 +3149,7 @@ char *getstring_noalloc(FILE *f, bool new_strings, size_t *pnBuffer)
             {
                 // How much data did we fetch?
                 //
-                size_t nLine = strlen(p);
+                size_t nLine = strlen((char *)p);
                 if (nLine >= 2)
                 {
                     if (p[nLine-2] == '\r')
@@ -3201,10 +3205,10 @@ static const unsigned char encode_table[256] =
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0  // F
 };
 
-void putstring(FILE *f, const char *pRaw)
+void putstring(FILE *f, const UTF8 *pRaw)
 {
-    static char aBuffer[2*LBUF_SIZE+4];
-    char *pBuffer = aBuffer;
+    static UTF8 aBuffer[2*LBUF_SIZE+4];
+    UTF8 *pBuffer = aBuffer;
 
     // Always leave room for four characters. One at the beginning and
     // three on the end. '\\"\n' or '\""\n'
@@ -3215,7 +3219,7 @@ void putstring(FILE *f, const char *pRaw)
     {
         for (;;)
         {
-            char ch;
+            UTF8 ch;
             while ((ch = encode_table[(unsigned char)*pRaw]) == 0)
             {
                 *pBuffer++ = *pRaw++;
@@ -3246,13 +3250,13 @@ void putstring(FILE *f, const char *pRaw)
     *pBuffer++ = '"';
     *pBuffer++ = '\n';
 
-    fwrite(aBuffer, sizeof(char), pBuffer - aBuffer, f);
+    fwrite(aBuffer, sizeof(UTF8), pBuffer - aBuffer, f);
 }
 
 int getref(FILE *f)
 {
-    static char buf[SBUF_SIZE];
-    if (NULL != fgets(buf, sizeof(buf), f))
+    static UTF8 buf[SBUF_SIZE];
+    if (NULL != fgets((char *)buf, sizeof(buf), f))
     {
         return mux_atol(buf);
     }
@@ -3318,17 +3322,17 @@ static BOOLEXP *dup_bool(BOOLEXP *b)
     case BOOLEXP_EVAL:
     case BOOLEXP_ATR:
         r->thing = b->thing;
-        r->sub1 = (BOOLEXP *)StringClone((char *)b->sub1);
+        r->sub1 = (BOOLEXP *)StringClone((UTF8 *)b->sub1);
         break;
     default:
-        Log.WriteString("Bad bool type!" ENDLINE);
+        Log.WriteString((UTF8 *)"Bad bool type!" ENDLINE);
         return TRUE_BOOLEXP;
     }
     return (r);
 }
 
 #ifndef MEMORY_BASED
-int init_dbfile(char *game_dir_file, char *game_pag_file, int nCachePages)
+int init_dbfile(UTF8 *game_dir_file, UTF8 *game_pag_file, int nCachePages)
 {
     if (mudstate.bStandAlone)
     {
@@ -3675,10 +3679,10 @@ void load_restart_db(void)
 
 #ifdef WIN32
 
-int ReplaceFile(char *old_name, char *new_name)
+int ReplaceFile(UTF8 *old_name, UTF8 *new_name)
 {
-    DeleteFile(new_name);
-    if (MoveFile(old_name, new_name))
+    DeleteFile((char *)new_name);
+    if (MoveFile((char *)old_name, (char *)new_name))
     {
         return 0;
     }
@@ -3690,9 +3694,9 @@ int ReplaceFile(char *old_name, char *new_name)
     return -1;
 }
 
-void RemoveFile(char *name)
+void RemoveFile(UTF8 *name)
 {
-    DeleteFile(name);
+    DeleteFile((char *)name);
 }
 
 #else // WIN32

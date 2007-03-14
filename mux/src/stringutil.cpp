@@ -1335,22 +1335,24 @@ const char *ConvertToAscii(const UTF8 *pString)
     return buffer;
 }
 
+// TODO: This doesn't work with UTF8 and should be removed.
+//
 // ANSI_lex - This function parses a string and returns two token types.
 // The type identifies the token type of length nLengthToken0. nLengthToken1
 // may also be present and is a token of the -other- type.
 //
-int ANSI_lex(size_t nString, const char *pString, size_t *nLengthToken0, size_t *nLengthToken1)
+int ANSI_lex(size_t nString, const UTF8 *pString, size_t *nLengthToken0, size_t *nLengthToken1)
 {
     *nLengthToken0 = 0;
     *nLengthToken1 = 0;
 
-    const char *p = pString;
+    const UTF8 *p = pString;
 
     for (;;)
     {
         // Look for an ESC_CHAR
         //
-        p = strchr(p, ESC_CHAR);
+        p = (UTF8 *)strchr((char *)p, ESC_CHAR);
         if (!p)
         {
             // This is the most common case by far.
@@ -1374,7 +1376,7 @@ int ANSI_lex(size_t nString, const char *pString, size_t *nLengthToken0, size_t 
         // We found the beginning of an ANSI sequence.
         // Find the terminating character.
         //
-        const char *q = p+2;
+        const UTF8 *q = p+2;
         while (ANSI_TokenTerminatorTable[(unsigned char)*q] == 0)
         {
             q++;
@@ -1410,12 +1412,12 @@ int ANSI_lex(size_t nString, const char *pString, size_t *nLengthToken0, size_t 
     }
 }
 
-char *strip_ansi(const char *szString, size_t *pnString)
+UTF8 *strip_ansi(const UTF8 *szString, size_t *pnString)
 {
-    static char Buffer[LBUF_SIZE];
-    char *pBuffer = Buffer;
+    static UTF8 Buffer[LBUF_SIZE];
+    UTF8 *pBuffer = Buffer;
 
-    const char *pString = szString;
+    const UTF8 *pString = szString;
     if (!pString)
     {
         if (pnString)
@@ -1425,7 +1427,7 @@ char *strip_ansi(const char *szString, size_t *pnString)
         *pBuffer = '\0';
         return Buffer;
     }
-    size_t nString = strlen(szString);
+    size_t nString = strlen((char *)szString);
 
     while (nString)
     {
@@ -1458,12 +1460,12 @@ char *strip_ansi(const char *szString, size_t *pnString)
     return Buffer;
 }
 
-char *strip_accents(const char *szString, size_t *pnString)
+UTF8 *strip_accents(const UTF8 *szString, size_t *pnString)
 {
-    static char Buffer[LBUF_SIZE];
-    char *pBuffer = Buffer;
+    static UTF8 Buffer[LBUF_SIZE];
+    UTF8 *pBuffer = Buffer;
 
-    const char *pString = szString;
+    const UTF8 *pString = szString;
     if (pString)
     {
         while (*pString)
@@ -1497,7 +1499,7 @@ static const ANSI_ColorState csNormal =
 static const ANSI_ColorState csNoBleed =
     {false, false, false, false, false, ANSI_COLOR_INDEX_WHITE,   ANSI_COLOR_INDEX_DEFAULT};
 
-static void ANSI_Parse_m(ANSI_ColorState *pacsCurrent, size_t nANSI, const char *pANSI)
+static void ANSI_Parse_m(ANSI_ColorState *pacsCurrent, size_t nANSI, const UTF8 *pANSI)
 {
     // If the last character isn't an 'm', then it's an ANSI sequence we
     // don't support, yet. TODO: There should be a ANSI_Parse() function
@@ -1517,7 +1519,7 @@ static void ANSI_Parse_m(ANSI_ColorState *pacsCurrent, size_t nANSI, const char 
         // Process the next attribute phrase (terminated by ';' or 'm'
         // typically).
         //
-        const char *p = pANSI;
+        const UTF8 *p = pANSI;
         while (mux_isdigit(*p))
         {
             p++;
@@ -1622,7 +1624,7 @@ static void ANSI_Parse_m(ANSI_ColorState *pacsCurrent, size_t nANSI, const char 
 // Generate the minimal ANSI sequence that will transition from one color state
 // to another.
 //
-static char *ANSI_TransitionColorBinary
+static UTF8 *ANSI_TransitionColorBinary
 (
     const ANSI_ColorState *acsCurrent,
     const ANSI_ColorState *pcsNext,
@@ -1630,7 +1632,7 @@ static char *ANSI_TransitionColorBinary
     bool bNoBleed
 )
 {
-    static char Buffer[ANSI_MAXIMUM_BINARY_TRANSITION_LENGTH+1];
+    static UTF8 Buffer[ANSI_MAXIMUM_BINARY_TRANSITION_LENGTH+1];
 
     if (memcmp(acsCurrent, pcsNext, sizeof(ANSI_ColorState)) == 0)
     {
@@ -1639,7 +1641,7 @@ static char *ANSI_TransitionColorBinary
         return Buffer;
     }
     ANSI_ColorState tmp = *acsCurrent;
-    char *p = Buffer;
+    UTF8 *p = Buffer;
 
     if (pcsNext->bNormal)
     {
@@ -1691,16 +1693,16 @@ static char *ANSI_TransitionColorBinary
 
     if (tmp.iForeground != pcsNext->iForeground)
     {
-        char *aForegrounds[8] =
+        UTF8 *aForegrounds[8] =
         {
-            COLOR_FG_BLACK,
-            COLOR_FG_RED,
-            COLOR_FG_GREEN,
-            COLOR_FG_YELLOW,
-            COLOR_FG_BLUE,
-            COLOR_FG_MAGENTA,
-            COLOR_FG_CYAN,
-            COLOR_FG_WHITE
+            (UTF8 *)COLOR_FG_BLACK,
+            (UTF8 *)COLOR_FG_RED,
+            (UTF8 *)COLOR_FG_GREEN,
+            (UTF8 *)COLOR_FG_YELLOW,
+            (UTF8 *)COLOR_FG_BLUE,
+            (UTF8 *)COLOR_FG_MAGENTA,
+            (UTF8 *)COLOR_FG_CYAN,
+            (UTF8 *)COLOR_FG_WHITE
         };
 
         memcpy(p, aForegrounds[pcsNext->iForeground], sizeof(COLOR_FG_BLACK)-1);
@@ -1709,19 +1711,19 @@ static char *ANSI_TransitionColorBinary
 
     if (tmp.iBackground != pcsNext->iBackground)
     {
-        char *aForegrounds[8] =
+        UTF8 *aBackgrounds[8] =
         {
-            COLOR_BG_BLACK,
-            COLOR_BG_RED,
-            COLOR_BG_GREEN,
-            COLOR_BG_YELLOW,
-            COLOR_BG_BLUE,
-            COLOR_BG_MAGENTA,
-            COLOR_BG_CYAN,
-            COLOR_BG_WHITE
+            (UTF8 *)COLOR_BG_BLACK,
+            (UTF8 *)COLOR_BG_RED,
+            (UTF8 *)COLOR_BG_GREEN,
+            (UTF8 *)COLOR_BG_YELLOW,
+            (UTF8 *)COLOR_BG_BLUE,
+            (UTF8 *)COLOR_BG_MAGENTA,
+            (UTF8 *)COLOR_BG_CYAN,
+            (UTF8 *)COLOR_BG_WHITE
         };
 
-        memcpy(p, aForegrounds[pcsNext->iBackground], sizeof(COLOR_BG_BLACK)-1);
+        memcpy(p, aBackgrounds[pcsNext->iBackground], sizeof(COLOR_BG_BLACK)-1);
         p += sizeof(COLOR_BG_BLACK)-1;
     }
     *p = '\0';
@@ -1736,16 +1738,16 @@ static char *ANSI_TransitionColorBinary
 // Generate the minimal MU ANSI %-sequence that will transition from one color state
 // to another.
 //
-static char *ANSI_TransitionColorEscape
+static UTF8 *ANSI_TransitionColorEscape
 (
     ANSI_ColorState *acsCurrent,
     ANSI_ColorState *acsNext,
     int *nTransition
 )
 {
-    static char Buffer[ANSI_MAXIMUM_ESCAPE_TRANSITION_LENGTH+1];
-    static const char cForegroundColors[9] = "xrgybmcw";
-    static const char cBackgroundColors[9] = "XRGYBMCW";
+    static UTF8 Buffer[ANSI_MAXIMUM_ESCAPE_TRANSITION_LENGTH+1];
+    static const UTF8 cForegroundColors[9] = "xrgybmcw";
+    static const UTF8 cBackgroundColors[9] = "XRGYBMCW";
 
     if (memcmp(acsCurrent, acsNext, sizeof(ANSI_ColorState)) == 0)
     {
@@ -1824,19 +1826,19 @@ static char *ANSI_TransitionColorEscape
 void ANSI_String_In_Init
 (
     struct ANSI_In_Context *pacIn,
-    const char *szString,
+    const UTF8 *szString,
     bool       bNoBleed
 )
 {
     pacIn->m_cs = bNoBleed ? csNoBleed : csNormal;
     pacIn->m_p  = szString;
-    pacIn->m_n  = strlen(szString);
+    pacIn->m_n  = strlen((char *)szString);
 }
 
 void ANSI_String_Out_Init
 (
     struct ANSI_Out_Context *pacOut,
-    char  *pField,
+    UTF8  *pField,
     size_t nField,
     size_t vwMax,
     bool   bNoBleed
@@ -1898,7 +1900,7 @@ void ANSI_String_Copy
     //
     size_t nMax = pacOut->m_nMax;
 
-    char *pField = pacOut->m_p;
+    UTF8 *pField = pacOut->m_p;
     while (pacIn->m_n)
     {
         size_t nTokenLength0;
@@ -1950,7 +1952,7 @@ void ANSI_String_Copy
             // the right color.
             //
             size_t nTransition = 0;
-            char *pTransition =
+            UTF8 *pTransition =
                 ANSI_TransitionColorBinary( &(pacOut->m_cs),
                                             &(pacIn->m_cs),
                                             &nTransition,
@@ -2052,9 +2054,9 @@ size_t ANSI_String_Finalize
     size_t *pnVisualWidth
 )
 {
-    char *pField = pacOut->m_p;
+    UTF8 *pField = pacOut->m_p;
     size_t nTransition = 0;
-    char *pTransition =
+    UTF8 *pTransition =
         ANSI_TransitionColorBinary( &(pacOut->m_cs),
                                     pacOut->m_bNoBleed ? &csNoBleed : &csNormal,
                                     &nTransition, pacOut->m_bNoBleed);
@@ -2076,9 +2078,9 @@ size_t ANSI_String_Finalize
 //
 size_t ANSI_TruncateToField
 (
-    const char *szString,
+    const UTF8 *szString,
     size_t nField,
-    char *pField0,
+    UTF8 *pField0,
     size_t maxVisualWidth,
     size_t *pnVisualWidth,
     bool bNoBleed
@@ -2097,9 +2099,9 @@ size_t ANSI_TruncateToField
     return ANSI_String_Finalize(&aoc, pnVisualWidth);
 }
 
-char *ANSI_TruncateAndPad_sbuf(const char *pString, size_t nMaxVisualWidth, char fill)
+UTF8 *ANSI_TruncateAndPad_sbuf(const UTF8 *pString, size_t nMaxVisualWidth, UTF8 fill)
 {
-    char *pStringModified = alloc_sbuf("ANSI_TruncateAndPad_sbuf");
+    UTF8 *pStringModified = alloc_sbuf("ANSI_TruncateAndPad_sbuf");
     size_t nAvailable = SBUF_SIZE - nMaxVisualWidth;
     size_t nVisualWidth;
     size_t nLen = ANSI_TruncateToField(pString, nAvailable,
@@ -2113,9 +2115,9 @@ char *ANSI_TruncateAndPad_sbuf(const char *pString, size_t nMaxVisualWidth, char
     return pStringModified;
 }
 
-char *normal_to_white(const char *szString)
+UTF8 *normal_to_white(const UTF8 *szString)
 {
-    static char Buffer[LBUF_SIZE];
+    static UTF8 Buffer[LBUF_SIZE];
     size_t nVisualWidth;
     ANSI_TruncateToField( szString,
                           sizeof(Buffer),
@@ -2201,26 +2203,26 @@ UTF8 *strip_color(const UTF8 *pString)
 typedef struct
 {
     int len;
-    char *p;
+    UTF8 *p;
 } LITERAL_STRING_STRUCT;
 
 #define NUM_MU_SUBS 14
 static LITERAL_STRING_STRUCT MU_Substitutes[NUM_MU_SUBS] =
 {
-    { 1, " "  },  // 0
-    { 1, " "  },  // 1
-    { 2, "%t" },  // 2
-    { 2, "%r" },  // 3
-    { 0, NULL },  // 4
-    { 2, "%b" },  // 5
-    { 2, "%%" },  // 6
-    { 2, "%(" },  // 7
-    { 2, "%)" },  // 8
-    { 2, "%[" },  // 9
-    { 2, "%]" },  // 10
-    { 2, "%{" },  // 11
-    { 2, "%}" },  // 12
-    { 2, "\\\\" } // 13
+    { 1, (UTF8 *)" "  },  // 0
+    { 1, (UTF8 *)" "  },  // 1
+    { 2, (UTF8 *)"%t" },  // 2
+    { 2, (UTF8 *)"%r" },  // 3
+    { 0,         NULL },  // 4
+    { 2, (UTF8 *)"%b" },  // 5
+    { 2, (UTF8 *)"%%" },  // 6
+    { 2, (UTF8 *)"%(" },  // 7
+    { 2, (UTF8 *)"%)" },  // 8
+    { 2, (UTF8 *)"%[" },  // 9
+    { 2, (UTF8 *)"%]" },  // 10
+    { 2, (UTF8 *)"%{" },  // 11
+    { 2, (UTF8 *)"%}" },  // 12
+    { 2, (UTF8 *)"\\\\" } // 13
 };
 
 const unsigned char MU_EscapeConvert[256] =
@@ -2272,24 +2274,24 @@ const unsigned char MU_EscapeNoConvert[256] =
 // Convert raw character sequences into MUX substitutions (type = 1)
 // or strips them (type = 0).
 //
-char *translate_string(const char *szString, bool bConvert)
+UTF8 *translate_string(const UTF8 *szString, bool bConvert)
 {
-    static char szTranslatedString[LBUF_SIZE];
-    char *pTranslatedString = szTranslatedString;
+    static UTF8 szTranslatedString[LBUF_SIZE];
+    UTF8 *pTranslatedString = szTranslatedString;
 
-    const char *pString = szString;
+    const UTF8 *pString = szString;
     if (!szString)
     {
         *pTranslatedString = '\0';
         return szTranslatedString;
     }
-    size_t nString = strlen(szString);
+    size_t nString = strlen((char *)szString);
 
     ANSI_ColorState csCurrent;
     ANSI_ColorState csPrevious;
     csCurrent = csNoBleed;
     csPrevious = csCurrent;
-    const unsigned char *MU_EscapeChar = (bConvert)? MU_EscapeConvert : MU_EscapeNoConvert;
+    const UTF8*MU_EscapeChar = (bConvert)? MU_EscapeConvert : MU_EscapeNoConvert;
     while (nString)
     {
         size_t nTokenLength0;
@@ -2303,15 +2305,15 @@ char *translate_string(const char *szString, bool bConvert)
             int nTransition = 0;
             if (bConvert)
             {
-                char *pTransition = ANSI_TransitionColorEscape(&csPrevious, &csCurrent, &nTransition);
+                UTF8 *pTransition = ANSI_TransitionColorEscape(&csPrevious, &csCurrent, &nTransition);
                 safe_str(pTransition, szTranslatedString, &pTranslatedString);
             }
             nString -= nTokenLength0;
 
             while (nTokenLength0--)
             {
-                unsigned char ch = *pString++;
-                unsigned char code = MU_EscapeChar[ch];
+                UTF8 ch = *pString++;
+                UTF8 code = MU_EscapeChar[ch];
                 if (  0 < code
                    && code < NUM_MU_SUBS)
                 {
@@ -2362,11 +2364,11 @@ char *translate_string(const char *szString, bool bConvert)
  * munge_space: Compress multiple spaces to one space, also remove leading and
  * trailing spaces.
  */
-char *munge_space(const char *string)
+UTF8 *munge_space(const UTF8 *string)
 {
-    char *buffer = alloc_lbuf("munge_space");
-    const char *p = string;
-    char *q = buffer;
+    UTF8 *buffer = alloc_lbuf("munge_space");
+    const UTF8 *p = string;
+    UTF8 *q = buffer;
 
     if (p)
     {
@@ -2399,11 +2401,11 @@ char *munge_space(const char *string)
 /* ---------------------------------------------------------------------------
  * trim_spaces: Remove leading and trailing spaces.
  */
-char *trim_spaces(char *string)
+UTF8 *trim_spaces(UTF8 *string)
 {
-    char *buffer = alloc_lbuf("trim_spaces");
-    char *p = string;
-    char *q = buffer;
+    UTF8 *buffer = alloc_lbuf("trim_spaces");
+    UTF8 *p = string;
+    UTF8 *q = buffer;
 
     if (p)
     {
@@ -2451,9 +2453,9 @@ char *trim_spaces(char *string)
  * * returns a modified pointer to the string ready for another call.
  */
 
-char *grabto(char **str, char targ)
+UTF8 *grabto(UTF8 **str, UTF8 targ)
 {
-    char *savec, *cp;
+    UTF8 *savec, *cp;
 
     if (!str || !*str || !**str)
         return NULL;
@@ -2467,7 +2469,7 @@ char *grabto(char **str, char targ)
     return savec;
 }
 
-int string_compare(const char *s1, const char *s2)
+int string_compare(const UTF8 *s1, const UTF8 *s2)
 {
     if (  mudstate.bStandAlone
        || mudconf.space_compress)
@@ -2540,7 +2542,7 @@ int string_compare(const char *s1, const char *s2)
     }
 }
 
-int string_prefix(const char *string, const char *prefix)
+int string_prefix(const UTF8 *string, const UTF8 *prefix)
 {
     int count = 0;
 
@@ -2565,7 +2567,7 @@ int string_prefix(const char *string, const char *prefix)
  * accepts only nonempty matches starting at the beginning of a word
  */
 
-const char *string_match(const char *src, const char *sub)
+const UTF8 *string_match(const UTF8 *src, const UTF8 *sub)
 {
     if ((*sub != '\0') && (src))
     {
@@ -2598,20 +2600,20 @@ const char *string_match(const char *src, const char *sub)
  * * (mitch 1 feb 91)
  */
 
-char *replace_string(const char *old, const char *new0, const char *s)
+UTF8 *replace_string(const UTF8 *old, const UTF8 *new0, const UTF8 *s)
 {
     if (!s)
     {
         return NULL;
     }
-    size_t olen = strlen(old);
-    char *result = alloc_lbuf("replace_string");
-    char *r = result;
+    size_t olen = strlen((char *)old);
+    UTF8 *result = alloc_lbuf("replace_string");
+    UTF8 *r = result;
     while (*s)
     {
         // Find next occurrence of the first character of OLD string.
         //
-        const char *p = strchr(s, old[0]);
+        const UTF8 *p = (UTF8 *)strchr((char *)s, old[0]);
         if (  olen
            && p)
         {
@@ -2628,7 +2630,7 @@ char *replace_string(const char *old, const char *new0, const char *s)
             // and bump the input string past the occurrence of OLD.
             // Otherwise, copy the character and try matching again.
             //
-            if (!strncmp(old, s, olen))
+            if (!strncmp((char *)old, (char *)s, olen))
             {
                 safe_str(new0, result, &r);
                 s += olen;
@@ -2655,26 +2657,26 @@ char *replace_string(const char *old, const char *new0, const char *s)
 // ---------------------------------------------------------------------------
 // replace_tokens: Performs ## and #@ substitution.
 //
-char *replace_tokens
+UTF8 *replace_tokens
 (
-    const char *s,
-    const char *pBound,
-    const char *pListPlace,
-    const char *pSwitch
+    const UTF8 *s,
+    const UTF8 *pBound,
+    const UTF8 *pListPlace,
+    const UTF8 *pSwitch
 )
 {
     if (!s)
     {
         return NULL;
     }
-    char *result = alloc_lbuf("replace_tokens");
-    char *r = result;
+    UTF8 *result = alloc_lbuf("replace_tokens");
+    UTF8 *r = result;
 
     while (*s)
     {
         // Find next '#'.
         //
-        const char *p = strchr(s, '#');
+        const UTF8 *p = (UTF8 *)strchr((char *)s, '#');
         if (p)
         {
             // Copy up to the next occurrence of the first character.
@@ -2732,7 +2734,7 @@ char *replace_tokens
 #if 0
 // Returns the number of identical characters in the two strings.
 //
-int prefix_match(const char *s1, const char *s2)
+int prefix_match(const UTF8 *s1, const UTF8 *s2)
 {
     int count = 0;
 
@@ -2752,7 +2754,7 @@ int prefix_match(const char *s1, const char *s2)
 }
 #endif // 0
 
-bool minmatch(char *str, char *target, int min)
+bool minmatch(UTF8 *str, UTF8 *target, int min)
 {
     while (*str && *target
           && (mux_tolower(*str) == mux_tolower(*target)))
@@ -2775,9 +2777,9 @@ bool minmatch(char *str, char *target, int min)
 // --------------------------------------------------------------------------
 // StringCloneLen: allocate memory and copy string
 //
-char *StringCloneLen(const char *str, size_t nStr)
+UTF8 *StringCloneLen(const UTF8 *str, size_t nStr)
 {
-    char *buff = (char *)MEMALLOC(nStr+1);
+    UTF8 *buff = (UTF8 *)MEMALLOC(nStr+1);
     if (buff)
     {
         memcpy(buff, str, nStr);
@@ -2793,18 +2795,18 @@ char *StringCloneLen(const char *str, size_t nStr)
 // --------------------------------------------------------------------------
 // StringClone: allocate memory and copy string
 //
-char *StringClone(const char *str)
+UTF8 *StringClone(const UTF8 *str)
 {
-    return StringCloneLen(str, strlen(str));
+    return StringCloneLen(str, strlen((char *)str));
 }
 
 #if 0
 // --------------------------------------------------------------------------
 // BufferCloneLen: allocate memory and copy buffer
 //
-char *BufferCloneLen(const char *pBuffer, unsigned int nBuffer)
+UTF8 *BufferCloneLen(const UTF8 *pBuffer, unsigned int nBuffer)
 {
-    char *buff = (char *)MEMALLOC(nBuffer);
+    UTF8 *buff = (UTF8 *)MEMALLOC(nBuffer);
     ISOUTOFMEMORY(buff);
     memcpy(buff, pBuffer, nBuffer);
     return buff;
@@ -2815,12 +2817,12 @@ char *BufferCloneLen(const char *pBuffer, unsigned int nBuffer)
  * safe_copy_str, safe_copy_chr - Copy buffers, watching for overflows.
  */
 
-void safe_copy_str(const char *src, char *buff, char **bufp, size_t nSizeOfBuffer)
+void safe_copy_str(const UTF8 *src, UTF8 *buff, UTF8 **bufp, size_t nSizeOfBuffer)
 {
     if (src == NULL) return;
 
-    char *tp = *bufp;
-    char *maxtp = buff + nSizeOfBuffer;
+    UTF8 *tp = *bufp;
+    UTF8 *maxtp = buff + nSizeOfBuffer;
     while (tp < maxtp && *src)
     {
         *tp++ = *src++;
@@ -2828,15 +2830,15 @@ void safe_copy_str(const char *src, char *buff, char **bufp, size_t nSizeOfBuffe
     *bufp = tp;
 }
 
-void safe_copy_str_lbuf(const char *src, char *buff, char **bufp)
+void safe_copy_str_lbuf(const UTF8 *src, UTF8 *buff, UTF8 **bufp)
 {
     if (src == NULL)
     {
         return;
     }
 
-    char *tp = *bufp;
-    char *maxtp = buff + LBUF_SIZE - 1;
+    UTF8 *tp = *bufp;
+    UTF8 *maxtp = buff + LBUF_SIZE - 1;
     while (tp < maxtp && *src)
     {
         *tp++ = *src++;
@@ -2844,7 +2846,7 @@ void safe_copy_str_lbuf(const char *src, char *buff, char **bufp)
     *bufp = tp;
 }
 
-size_t safe_copy_buf(const char *src, size_t nLen, char *buff, char **bufc)
+size_t safe_copy_buf(const UTF8 *src, size_t nLen, UTF8 *buff, UTF8 **bufc)
 {
     size_t left = LBUF_SIZE - (*bufc - buff) - 1;
     if (left < nLen)
@@ -2856,7 +2858,7 @@ size_t safe_copy_buf(const char *src, size_t nLen, char *buff, char **bufc)
     return nLen;
 }
 
-size_t safe_fill(char *buff, char **bufc, char chFill, size_t nSpaces)
+size_t safe_fill(UTF8 *buff, UTF8 **bufc, UTF8 chFill, size_t nSpaces)
 {
     // Check for buffer limits.
     //
@@ -3006,30 +3008,179 @@ UTF32 ConvertFromUTF8(const UTF8 *pString)
     }
 }
 
-UTF8 *ConvertToUTF8(const char *p)
+// Unlike ANSI_lex, we want to remove mal-formed ESC sequences completely and
+// convert the well-formed ones.
+//
+UTF8 *ConvertToUTF8(const char *p, size_t *pn)
 {
+    *pn = 0;
+
     static UTF8 aBuffer[LBUF_SIZE];
     UTF8 *pBuffer = aBuffer;
 
     while ('\0' != *p)
     {
-        UTF8 *q = ConvertToUTF8(*p);
-        utf8_safe_chr(q, aBuffer, &pBuffer);
-        p++;
+        if (ESC_CHAR != *p)
+        {
+            UTF8 *q = ConvertToUTF8(*p);
+            utf8_safe_chr(q, aBuffer, &pBuffer);
+            p++;
+        }
+        else
+        {
+            // We have an ANSI sequence.
+            //
+            p++;
+            if ('[' == *p)
+            {
+                p++;
+                const char *q = p;
+                while (ANSI_TokenTerminatorTable[(unsigned char)*q] == 0)
+                {
+                    q++;
+                }
+
+                if ('\0' != q[0])
+                {
+                    // The segment [p,q) should contain a list of semi-color delimited codes.
+                    //
+                    const char *r = p;
+                    while (r != q)
+                    {
+                        while (  r != q
+                              && ';' != *r)
+                        {
+                            r++;
+                        }
+
+                        // The segment [p,r) should contain one code.
+                        //
+                        size_t n = r - p;
+                        const UTF8 *s = NULL;
+                        switch (n)
+                        {
+                        case 1:
+                            if ('0' == *p)
+                            {
+                                s = (UTF8 *)COLOR_RESET;
+                            }
+                            else if ('1' == *p)
+                            {
+                                s = (UTF8 *)COLOR_INTENSE;
+                            }
+                            else if ('4' == *p)
+                            {
+                                s = (UTF8 *)COLOR_UNDERLINE;
+                            }
+                            else if ('5' == *p)
+                            {
+                                s = (UTF8 *)COLOR_BLINK;
+                            }
+                            else if ('7' == *p)
+                            {
+                                s = (UTF8 *)COLOR_INVERSE;
+                            }
+                            break;
+
+                        case 2:
+                            if ('3' == *p)
+                            {
+                                if ('0' == p[1])
+                                {
+                                    s = (UTF8 *)COLOR_FG_BLACK;
+                                }
+                                else if ('1' == p[1])
+                                {
+                                    s = (UTF8 *)COLOR_FG_RED;
+                                }
+                                else if ('2' == p[1])
+                                {
+                                    s = (UTF8 *)COLOR_FG_GREEN;
+                                }
+                                else if ('3' == p[1])
+                                {
+                                    s = (UTF8 *)COLOR_FG_YELLOW;
+                                }
+                                else if ('4' == p[1])
+                                {
+                                    s = (UTF8 *)COLOR_FG_BLUE;
+                                }
+                                else if ('5' == p[1])
+                                {
+                                    s = (UTF8 *)COLOR_FG_MAGENTA;
+                                }
+                                else if ('6' == p[1])
+                                {
+                                    s = (UTF8 *)COLOR_FG_CYAN;
+                                }
+                                else if ('7' == p[1])
+                                {
+                                    s = (UTF8 *)COLOR_FG_WHITE;
+                                }
+                            }
+                            else if ('4' == *p)
+                            {
+                                if ('0' == p[1])
+                                {
+                                    s = (UTF8 *)COLOR_BG_BLACK;
+                                }
+                                else if ('1' == p[1])
+                                {
+                                    s = (UTF8 *)COLOR_BG_RED;
+                                }
+                                else if ('2' == p[1])
+                                {
+                                    s = (UTF8 *)COLOR_BG_GREEN;
+                                }
+                                else if ('3' == p[1])
+                                {
+                                    s = (UTF8 *)COLOR_BG_YELLOW;
+                                }
+                                else if ('4' == p[1])
+                                {
+                                    s = (UTF8 *)COLOR_BG_BLUE;
+                                }
+                                else if ('5' == p[1])
+                                {
+                                    s = (UTF8 *)COLOR_BG_MAGENTA;
+                                }
+                                else if ('6' == p[1])
+                                {
+                                    s = (UTF8 *)COLOR_BG_CYAN;
+                                }
+                                else if ('7' == p[1])
+                                {
+                                    s = (UTF8 *)COLOR_BG_WHITE;
+                                }
+                            }
+                            break;
+                        }
+
+                        if (NULL != s)
+                        {
+                            utf8_safe_chr(s, aBuffer, &pBuffer);
+                        }
+                        p = r + 1;
+                    }
+                    p = q;
+                }
+            }
+        }
     }
     *pBuffer = '\0';
+    *pn = pBuffer - aBuffer;
     return aBuffer;
 }
 
 // mux_strncpy: Copies up to specified number of chars from source.
 // Note: unlike strncpy(), this null-terminates after copying.
 //
-void mux_strncpy(char *dest, const char *src, size_t nSizeOfBuffer)
+void mux_strncpy(UTF8 *dest, const UTF8 *src, size_t nSizeOfBuffer)
 {
     if (src == NULL) return;
 
-    char *tp = dest;
-    char *maxtp = dest + nSizeOfBuffer;
+    UTF8 *tp = dest;
+    UTF8 *maxtp = dest + nSizeOfBuffer;
     while (tp < maxtp && *src)
     {
         *tp++ = *src++;
@@ -3037,9 +3188,9 @@ void mux_strncpy(char *dest, const char *src, size_t nSizeOfBuffer)
     *tp = '\0';
 }
 
-bool matches_exit_from_list(char *str, const char *pattern)
+bool matches_exit_from_list(UTF8 *str, const UTF8 *pattern)
 {
-    char *s;
+    UTF8 *s;
 
     while (*pattern)
     {
@@ -3084,15 +3235,15 @@ bool matches_exit_from_list(char *str, const char *pattern)
     return false;
 }
 
-const char Digits100[201] =
+const UTF8 Digits100[201] =
 "001020304050607080900111213141516171819102122232425262728292\
 031323334353637383930414243444546474849405152535455565758595\
 061626364656667686960717273747576777879708182838485868788898\
 09192939495969798999";
 
-size_t mux_ltoa(long val, char *buf)
+size_t mux_ltoa(long val, UTF8 *buf)
 {
-    char *p = buf;
+    UTF8 *p = buf;
 
     if (val < 0)
     {
@@ -3101,9 +3252,9 @@ size_t mux_ltoa(long val, char *buf)
     }
     unsigned long uval = (unsigned long)val;
 
-    char *q = p;
+    UTF8 *q = p;
 
-    const char *z;
+    const UTF8 *z;
     while (uval > 99)
     {
         z = Digits100 + ((uval % 100) << 1);
@@ -3129,7 +3280,7 @@ size_t mux_ltoa(long val, char *buf)
     {
         // Swap characters are *p and *q
         //
-        char temp = *p;
+        UTF8 temp = *p;
         *p = *q;
         *q = temp;
 
@@ -3144,23 +3295,23 @@ size_t mux_ltoa(long val, char *buf)
     return nLength;
 }
 
-char *mux_ltoa_t(long val)
+UTF8 *mux_ltoa_t(long val)
 {
-    static char buff[I32BUF_SIZE];
+    static UTF8 buff[I32BUF_SIZE];
     mux_ltoa(val, buff);
     return buff;
 }
 
-void safe_ltoa(long val, char *buff, char **bufc)
+void safe_ltoa(long val, UTF8 *buff, UTF8 **bufc)
 {
-    static char temp[I32BUF_SIZE];
+    static UTF8 temp[I32BUF_SIZE];
     size_t n = mux_ltoa(val, temp);
     safe_copy_buf(temp, n, buff, bufc);
 }
 
-size_t mux_i64toa(INT64 val, char *buf)
+size_t mux_i64toa(INT64 val, UTF8 *buf)
 {
-    char *p = buf;
+    UTF8 *p = buf;
 
     if (val < 0)
     {
@@ -3169,9 +3320,9 @@ size_t mux_i64toa(INT64 val, char *buf)
     }
     UINT64 uval = (UINT64)val;
 
-    char *q = p;
+    UTF8 *q = p;
 
-    const char *z;
+    const UTF8 *z;
     while (uval > 99)
     {
         z = Digits100 + ((uval % 100) << 1);
@@ -3197,7 +3348,7 @@ size_t mux_i64toa(INT64 val, char *buf)
     {
         // Swap characters are *p and *q
         //
-        char temp = *p;
+        UTF8 temp = *p;
         *p = *q;
         *q = temp;
 
@@ -3212,21 +3363,21 @@ size_t mux_i64toa(INT64 val, char *buf)
     return nLength;
 }
 
-char *mux_i64toa_t(INT64 val)
+UTF8 *mux_i64toa_t(INT64 val)
 {
-    static char buff[I64BUF_SIZE];
+    static UTF8 buff[I64BUF_SIZE];
     mux_i64toa(val, buff);
     return buff;
 }
 
-void safe_i64toa(INT64 val, char *buff, char **bufc)
+void safe_i64toa(INT64 val, UTF8 *buff, UTF8 **bufc)
 {
-    static char temp[I64BUF_SIZE];
+    static UTF8 temp[I64BUF_SIZE];
     size_t n = mux_i64toa(val, temp);
     safe_copy_buf(temp, n, buff, bufc);
 }
 
-const char TableATOI[16][10] =
+const UTF8 TableATOI[16][10] =
 {
     {  0,  1,  2,  3,  4,  5,  6,  7,  8,  9},
     { 10, 11, 12, 13, 14, 15, 16, 17, 18, 19},
@@ -3240,7 +3391,7 @@ const char TableATOI[16][10] =
     { 90, 91, 92, 93, 94, 95, 96, 97, 98, 99}
 };
 
-long mux_atol(const char *pString)
+long mux_atol(const UTF8 *pString)
 {
     long sum = 0;
     int LeadingCharacter = 0;
@@ -3292,7 +3443,7 @@ long mux_atol(const char *pString)
     return sum;
 }
 
-INT64 mux_atoi64(const char *pString)
+INT64 mux_atoi64(const UTF8 *pString)
 {
     INT64 sum = 0;
     int LeadingCharacter = 0;
@@ -3353,13 +3504,13 @@ INT64 mux_atoi64(const char *pString)
 // Ind
 // NaN
 //
-bool ParseFloat(PARSE_FLOAT_RESULT *pfr, const char *str, bool bStrict)
+bool ParseFloat(PARSE_FLOAT_RESULT *pfr, const UTF8 *str, bool bStrict)
 {
     memset(pfr, 0, sizeof(PARSE_FLOAT_RESULT));
 
     // Parse Input
     //
-    unsigned char ch;
+    UTF8 ch;
     pfr->pMeat = str;
     if (  !mux_isdigit(*str)
        && *str != '.')
@@ -3537,7 +3688,7 @@ static const double powerstab[10] =
    1000000000.0
 };
 
-double mux_atof(const char *szString, bool bStrict)
+double mux_atof(const UTF8 *szString, bool bStrict)
 {
     PARSE_FLOAT_RESULT pfr;
     if (!ParseFloat(&pfr, szString, bStrict))
@@ -3596,13 +3747,13 @@ double mux_atof(const char *szString, bool bStrict)
         }
     }
 
-    const char *p = pfr.pMeat;
+    const UTF8 *p = pfr.pMeat;
     size_t n = pfr.nMeat;
 
     // We need to protect certain libraries from going nuts from being
     // force fed lots of ASCII.
     //
-    char *pTmp = NULL;
+    UTF8 *pTmp = NULL;
     if (n > ATOF_LIMIT)
     {
         pTmp = alloc_lbuf("mux_atof");
@@ -3621,11 +3772,11 @@ double mux_atof(const char *szString, bool bStrict)
     return ret;
 }
 
-char *mux_ftoa(double r, bool bRounded, int frac)
+UTF8 *mux_ftoa(double r, bool bRounded, int frac)
 {
-    static char buffer[100];
-    char *q = buffer;
-    char *rve = NULL;
+    static UTF8 buffer[100];
+    UTF8 *q = buffer;
+    UTF8 *rve = NULL;
     int iDecimalPoint = 0;
     int bNegative = 0;
     int mode = 0;
@@ -3659,7 +3810,7 @@ char *mux_ftoa(double r, bool bRounded, int frac)
         }
     }
 
-    char *p = mux_dtoa(r, mode, nRequest, &iDecimalPoint, &bNegative, &rve);
+    UTF8 *p = mux_dtoa(r, mode, nRequest, &iDecimalPoint, &bNegative, &rve);
     size_t nSize = rve - p;
     if (nSize > 50)
     {
@@ -3771,7 +3922,7 @@ char *mux_ftoa(double r, bool bRounded, int frac)
     return buffer;
 }
 
-bool is_integer(const char *str, int *pDigits)
+bool is_integer(const UTF8 *str, int *pDigits)
 {
     LBUF_OFFSET i = 0;
     int nDigits = 0;
@@ -3831,7 +3982,7 @@ bool is_integer(const char *str, int *pDigits)
     return (!str[i]);
 }
 
-bool is_rational(const char *str)
+bool is_rational(const UTF8 *str)
 {
     LBUF_OFFSET i = 0;
 
@@ -3909,7 +4060,7 @@ bool is_rational(const char *str)
     return (!str[i]);
 }
 
-bool is_real(const char *str)
+bool is_real(const UTF8 *str)
 {
     PARSE_FLOAT_RESULT pfr;
     return ParseFloat(&pfr, str);
@@ -3928,7 +4079,7 @@ bool is_real(const char *str)
 // consume -all- of the controlling delimiters that separate two tokens.
 // It consumes only the first one.
 //
-void mux_strtok_src(MUX_STRTOK_STATE *tts, char *arg_pString)
+void mux_strtok_src(MUX_STRTOK_STATE *tts, UTF8 *arg_pString)
 {
     if (!tts || !arg_pString) return;
 
@@ -3937,7 +4088,7 @@ void mux_strtok_src(MUX_STRTOK_STATE *tts, char *arg_pString)
     tts->pString = arg_pString;
 }
 
-void mux_strtok_ctl(MUX_STRTOK_STATE *tts, char *pControl)
+void mux_strtok_ctl(MUX_STRTOK_STATE *tts, UTF8 *pControl)
 {
     if (!tts || !pControl) return;
 
@@ -3958,14 +4109,14 @@ void mux_strtok_ctl(MUX_STRTOK_STATE *tts, char *pControl)
     }
 }
 
-char *mux_strtok_parseLEN(MUX_STRTOK_STATE *tts, size_t *pnLen)
+UTF8 *mux_strtok_parseLEN(MUX_STRTOK_STATE *tts, size_t *pnLen)
 {
     *pnLen = 0;
     if (!tts)
     {
         return NULL;
     }
-    char *p = tts->pString;
+    UTF8 *p = tts->pString;
     if (!p)
     {
         return NULL;
@@ -3978,7 +4129,7 @@ char *mux_strtok_parseLEN(MUX_STRTOK_STATE *tts, size_t *pnLen)
         p++;
     }
 
-    char *pReturn = p;
+    UTF8 *pReturn = p;
 
     // Skip over non-control characters.
     //
@@ -4020,10 +4171,10 @@ char *mux_strtok_parseLEN(MUX_STRTOK_STATE *tts, size_t *pnLen)
     }
 }
 
-char *mux_strtok_parse(MUX_STRTOK_STATE *tts)
+UTF8 *mux_strtok_parse(MUX_STRTOK_STATE *tts)
 {
     size_t nLen;
-    char *p = mux_strtok_parseLEN(tts, &nLen);
+    UTF8 *p = mux_strtok_parseLEN(tts, &nLen);
     if (p)
     {
         p[nLen] = '\0';
@@ -4034,14 +4185,14 @@ char *mux_strtok_parse(MUX_STRTOK_STATE *tts)
 // This function will filter out any characters in the the set from
 // the string.
 //
-char *RemoveSetOfCharacters(char *pString, char *pSetToRemove)
+UTF8 *RemoveSetOfCharacters(UTF8 *pString, UTF8 *pSetToRemove)
 {
-    static char Buffer[LBUF_SIZE];
-    char *pBuffer = Buffer;
+    static UTF8 Buffer[LBUF_SIZE];
+    UTF8 *pBuffer = Buffer;
 
     size_t nLen;
     size_t nLeft = sizeof(Buffer) - 1;
-    char *p;
+    UTF8 *p;
     MUX_STRTOK_STATE tts;
     mux_strtok_src(&tts, pString);
     mux_strtok_ctl(&tts, pSetToRemove);
@@ -4061,8 +4212,8 @@ char *RemoveSetOfCharacters(char *pString, char *pSetToRemove)
     return Buffer;
 }
 
-void ItemToList_Init(ITL *p, char *arg_buff, char **arg_bufc,
-    char arg_chPrefix, char arg_chSep)
+void ItemToList_Init(ITL *p, UTF8 *arg_buff, UTF8 **arg_bufc,
+    UTF8 arg_chPrefix, UTF8 arg_chSep)
 {
     p->bFirst = true;
     p->chPrefix = arg_chPrefix;
@@ -4074,8 +4225,8 @@ void ItemToList_Init(ITL *p, char *arg_buff, char **arg_bufc,
 
 bool ItemToList_AddInteger(ITL *pContext, int i)
 {
-    char smbuf[SBUF_SIZE];
-    char *p = smbuf;
+    UTF8 smbuf[SBUF_SIZE];
+    UTF8 *p = smbuf;
     if (  !pContext->bFirst
        && pContext->chSep)
     {
@@ -4105,8 +4256,8 @@ bool ItemToList_AddInteger(ITL *pContext, int i)
 
 bool ItemToList_AddInteger64(ITL *pContext, INT64 i64)
 {
-    char smbuf[SBUF_SIZE];
-    char *p = smbuf;
+    UTF8 smbuf[SBUF_SIZE];
+    UTF8 *p = smbuf;
     if (  !pContext->bFirst
        && pContext->chSep)
     {
@@ -4134,7 +4285,7 @@ bool ItemToList_AddInteger64(ITL *pContext, INT64 i64)
     return true;
 }
 
-bool ItemToList_AddStringLEN(ITL *pContext, size_t nStr, char *pStr)
+bool ItemToList_AddStringLEN(ITL *pContext, size_t nStr, UTF8 *pStr)
 {
     size_t nLen = nStr;
     if (  !pContext->bFirst
@@ -4152,7 +4303,7 @@ bool ItemToList_AddStringLEN(ITL *pContext, size_t nStr, char *pStr)
         //
         return false;
     }
-    char *p = *(pContext->bufc);
+    UTF8 *p = *(pContext->bufc);
     if (pContext->bFirst)
     {
         pContext->bFirst = false;
@@ -4171,9 +4322,9 @@ bool ItemToList_AddStringLEN(ITL *pContext, size_t nStr, char *pStr)
     return true;
 }
 
-bool ItemToList_AddString(ITL *pContext, char *pStr)
+bool ItemToList_AddString(ITL *pContext, UTF8 *pStr)
 {
-    size_t nStr = strlen(pStr);
+    size_t nStr = strlen((char *)pStr);
     return ItemToList_AddStringLEN(pContext, nStr, pStr);
 }
 
@@ -4184,7 +4335,7 @@ void ItemToList_Final(ITL *pContext)
 
 // mux_stricmp - Compare two strings ignoring case.
 //
-int mux_stricmp(const char *a, const char *b)
+int mux_stricmp(const UTF8 *a, const UTF8 *b)
 {
     while (  *a
           && *b
@@ -4213,8 +4364,8 @@ int mux_stricmp(const char *a, const char *b)
 //
 int mux_memicmp(const void *p1_arg, const void *p2_arg, size_t n)
 {
-    unsigned char *p1 = (unsigned char *)p1_arg;
-    unsigned char *p2 = (unsigned char *)p2_arg;
+    UTF8 *p1 = (UTF8 *)p1_arg;
+    UTF8 *p2 = (UTF8 *)p2_arg;
     while (  n
           && mux_tolower(*p1) == mux_tolower(*p2))
     {
@@ -4240,7 +4391,7 @@ int mux_memicmp(const void *p1_arg, const void *p2_arg, size_t n)
 
 // mux_strlwr - Convert string to all lower case.
 //
-void mux_strlwr(char *a)
+void mux_strlwr(UTF8 *a)
 {
     while (*a)
     {
@@ -4251,7 +4402,7 @@ void mux_strlwr(char *a)
 
 // mux_strupr - Convert string to all upper case.
 //
-void mux_strupr(char *a)
+void mux_strupr(UTF8 *a)
 {
     while (*a)
     {
@@ -4268,7 +4419,7 @@ void mux_strupr(char *a)
 // Returns: A number from 0 to count-1 that is the string length of
 // the returned (possibly truncated) buffer.
 //
-size_t DCL_CDECL mux_vsnprintf(char *buff, size_t count, const char *fmt, va_list va)
+size_t DCL_CDECL mux_vsnprintf(UTF8 *buff, size_t count, const char *fmt, va_list va)
 {
     // From the manuals:
     //
@@ -4301,7 +4452,7 @@ size_t DCL_CDECL mux_vsnprintf(char *buff, size_t count, const char *fmt, va_lis
 #if !defined(__INTEL_COMPILER) && (_MSC_VER >= 1400)
     int cc = vsnprintf_s(buff, count, _TRUNCATE, fmt, va);
 #else // _MSC_VER
-    int cc = _vsnprintf(buff, count, fmt, va);
+    int cc = _vsnprintf((char *)buff, count, fmt, va);
 #endif // _MSC_VER
 #else // WIN32
 #ifdef NEED_VSPRINTF_DCL
@@ -4331,7 +4482,7 @@ size_t DCL_CDECL mux_vsnprintf(char *buff, size_t count, const char *fmt, va_lis
     return len;
 }
 
-void DCL_CDECL mux_sprintf(char *buff, size_t count, const char *fmt, ...)
+void DCL_CDECL mux_sprintf(UTF8 *buff, size_t count, const char *fmt, ...)
 {
     va_list ap;
     va_start(ap, fmt);
@@ -4343,12 +4494,12 @@ void DCL_CDECL mux_sprintf(char *buff, size_t count, const char *fmt, ...)
 // line past the buffer size is truncated instead of being returned on
 // the next call.
 //
-size_t GetLineTrunc(char *Buffer, size_t nBuffer, FILE *fp)
+size_t GetLineTrunc(UTF8 *Buffer, size_t nBuffer, FILE *fp)
 {
     size_t lenBuffer = 0;
-    if (fgets(Buffer, static_cast<int>(nBuffer), fp))
+    if (fgets((char *)Buffer, static_cast<int>(nBuffer), fp))
     {
-        lenBuffer = strlen(Buffer);
+        lenBuffer = strlen((char *)Buffer);
     }
     if (lenBuffer <= 0)
     {
@@ -4360,15 +4511,15 @@ size_t GetLineTrunc(char *Buffer, size_t nBuffer, FILE *fp)
         // The line was too long for the buffer. Continue reading until the
         // end of the line.
         //
-        char TruncBuffer[SBUF_SIZE];
+        UTF8 TruncBuffer[SBUF_SIZE];
         size_t lenTruncBuffer;
         do
         {
-            if (!fgets(TruncBuffer, sizeof(TruncBuffer), fp))
+            if (!fgets((char *)TruncBuffer, sizeof(TruncBuffer), fp))
             {
                 break;
             }
-            lenTruncBuffer = strlen(TruncBuffer);
+            lenTruncBuffer = strlen((char *)TruncBuffer);
         }
         while (TruncBuffer[lenTruncBuffer-1] != '\n');
     }
@@ -4385,7 +4536,7 @@ size_t GetLineTrunc(char *Buffer, size_t nBuffer, FILE *fp)
 // the full Boyer-Moore would make more sense.
 //
 #define BMH_LARGE 32767
-void BMH_Prepare(BMH_State *bmhs, size_t nPat, const char *pPat)
+void BMH_Prepare(BMH_State *bmhs, size_t nPat, const UTF8 *pPat)
 {
     if (nPat <= 0)
     {
@@ -4397,7 +4548,7 @@ void BMH_Prepare(BMH_State *bmhs, size_t nPat, const char *pPat)
         bmhs->m_d[k] = nPat;
     }
 
-    char chLastPat = pPat[nPat-1];
+    UTF8 chLastPat = pPat[nPat-1];
     bmhs->m_skip2 = nPat;
     for (k = 0; k < nPat - 1; k++)
     {
@@ -4410,7 +4561,7 @@ void BMH_Prepare(BMH_State *bmhs, size_t nPat, const char *pPat)
     bmhs->m_d[(unsigned char)chLastPat] = BMH_LARGE;
 }
 
-bool BMH_Execute(BMH_State *bmhs, size_t *pnMatched, size_t nPat, const char *pPat, size_t nSrc, const char *pSrc)
+bool BMH_Execute(BMH_State *bmhs, size_t *pnMatched, size_t nPat, const UTF8 *pPat, size_t nSrc, const UTF8 *pSrc)
 {
     if (nPat <= 0)
     {
@@ -4428,7 +4579,7 @@ bool BMH_Execute(BMH_State *bmhs, size_t *pnMatched, size_t nPat, const char *pP
         }
         i -= BMH_LARGE;
         int j = static_cast<int>(nPat - 1);
-        const char *s = pSrc + (i - j);
+        const UTF8 *s = pSrc + (i - j);
         while (--j >= 0 && s[j] == pPat[j])
         {
             ; // Nothing.
@@ -4442,14 +4593,14 @@ bool BMH_Execute(BMH_State *bmhs, size_t *pnMatched, size_t nPat, const char *pP
     return false;
 }
 
-bool BMH_StringSearch(size_t *pnMatched, size_t nPat, const char *pPat, size_t nSrc, const char *pSrc)
+bool BMH_StringSearch(size_t *pnMatched, size_t nPat, const UTF8 *pPat, size_t nSrc, const UTF8 *pSrc)
 {
     BMH_State bmhs;
     BMH_Prepare(&bmhs, nPat, pPat);
     return BMH_Execute(&bmhs, pnMatched, nPat, pPat, nSrc, pSrc);
 }
 
-void BMH_PrepareI(BMH_State *bmhs, size_t nPat, const char *pPat)
+void BMH_PrepareI(BMH_State *bmhs, size_t nPat, const UTF8 *pPat)
 {
     if (nPat <= 0)
     {
@@ -4461,7 +4612,7 @@ void BMH_PrepareI(BMH_State *bmhs, size_t nPat, const char *pPat)
         bmhs->m_d[k] = nPat;
     }
 
-    char chLastPat = pPat[nPat-1];
+    UTF8 chLastPat = pPat[nPat-1];
     bmhs->m_skip2 = nPat;
     for (k = 0; k < nPat - 1; k++)
     {
@@ -4476,7 +4627,7 @@ void BMH_PrepareI(BMH_State *bmhs, size_t nPat, const char *pPat)
     bmhs->m_d[mux_tolower(chLastPat)] = BMH_LARGE;
 }
 
-bool BMH_ExecuteI(BMH_State *bmhs, size_t *pnMatched, size_t nPat, const char *pPat, size_t nSrc, const char *pSrc)
+bool BMH_ExecuteI(BMH_State *bmhs, size_t *pnMatched, size_t nPat, const UTF8 *pPat, size_t nSrc, const UTF8 *pSrc)
 {
     if (nPat <= 0)
     {
@@ -4494,7 +4645,7 @@ bool BMH_ExecuteI(BMH_State *bmhs, size_t *pnMatched, size_t nPat, const char *p
         }
         i -= BMH_LARGE;
         int j = static_cast<int>(nPat - 1);
-        const char *s = pSrc + (i - j);
+        const UTF8 *s = pSrc + (i - j);
         while (  --j >= 0
               && mux_toupper(s[j]) == mux_toupper(pPat[j]))
         {
@@ -4509,7 +4660,7 @@ bool BMH_ExecuteI(BMH_State *bmhs, size_t *pnMatched, size_t nPat, const char *p
     return false;
 }
 
-bool BMH_StringSearchI(size_t *pnMatched, size_t nPat, const char *pPat, size_t nSrc, const char *pSrc)
+bool BMH_StringSearchI(size_t *pnMatched, size_t nPat, const UTF8 *pPat, size_t nSrc, const UTF8 *pSrc)
 {
     BMH_State bmhs;
     BMH_PrepareI(&bmhs, nPat, pPat);
@@ -4527,13 +4678,13 @@ CF_HAND(cf_art_rule)
     UNUSED_PARAMETER(pExtra);
     UNUSED_PARAMETER(nExtra);
 
-    char* pCurrent = str;
+    UTF8* pCurrent = str;
 
     while (mux_isspace(*pCurrent))
     {
         pCurrent++;
     }
-    char* pArticle = pCurrent;
+    UTF8* pArticle = pCurrent;
     while (  !mux_isspace(*pCurrent)
           && *pCurrent != '\0')
     {
@@ -4585,7 +4736,7 @@ CF_HAND(cf_art_rule)
 
     const char *errptr;
     int erroffset;
-    pcre* reNewRegexp = pcre_compile(pCurrent, 0, &errptr, &erroffset, NULL);
+    pcre* reNewRegexp = pcre_compile((char *)pCurrent, 0, &errptr, &erroffset, NULL);
     if (!reNewRegexp)
     {
         cf_log_syntax(player, cmd, "Error processing regexp '%s':.",
@@ -4633,7 +4784,7 @@ CF_HAND(cf_art_rule)
 
 #if defined(FIRANMUX)
 
-char *linewrap_general(char *strret, int field, char *left, char *right)
+UTF8 *linewrap_general(UTF8 *strret, int field, UTF8 *left, UTF8 *right)
 {
     int tabsets[] =
     {
@@ -4650,10 +4801,10 @@ char *linewrap_general(char *strret, int field, char *left, char *right)
     bool line_indented = false;
     bool skip_out = false;
 
-    char *str = alloc_lbuf("linewrap_desc");
-    char *ostr = str;
+    UTF8 *str = alloc_lbuf("linewrap_desc");
+    UTF8 *ostr = str;
 
-    const char *original = strret;
+    const UTF8 *original = strret;
 
     for (;;)
     {
@@ -4809,7 +4960,7 @@ char *linewrap_general(char *strret, int field, char *left, char *right)
     safe_str(right, str, &ostr);
     *ostr = '\0';
 
-    char *bp = strret;
+    UTF8 *bp = strret;
     safe_str(str, strret, &bp);
     *bp = '\0';
 
@@ -4817,7 +4968,7 @@ char *linewrap_general(char *strret, int field, char *left, char *right)
     return strret;
 }
 
-char *linewrap_desc(char *str)
+UTF8 *linewrap_desc(UTF8 *str)
 {
     return linewrap_general(str, 70, "     ", "");
 }
@@ -4864,7 +5015,7 @@ mux_string::mux_string(const mux_string &sStr)
  * \return         None.
  */
 
-mux_string::mux_string(const char *pStr)
+mux_string::mux_string(const UTF8 *pStr)
 {
     m_ncs = 0;
     m_pcs = NULL;
@@ -4883,7 +5034,7 @@ mux_string::~mux_string(void)
     realloc_m_pcs(0);
 }
 
-void mux_string::append(const char cChar)
+void mux_string::append(const UTF8 cChar)
 {
     if (m_n < LBUF_SIZE-1)
     {
@@ -4974,7 +5125,7 @@ void mux_string::append(const mux_string &sStr, size_t nStart, size_t nLen)
     m_ach[m_n] = '\0';
 }
 
-void mux_string::append(const char *pStr)
+void mux_string::append(const UTF8 *pStr)
 {
     if (  NULL == pStr
        || '\0' == *pStr)
@@ -4990,7 +5141,7 @@ void mux_string::append(const char *pStr)
         return;
     }
 
-    size_t nLen = strlen(pStr);
+    size_t nLen = strlen((char *)pStr);
     if (nAvail < nLen)
     {
         nLen = nAvail;
@@ -5004,7 +5155,7 @@ void mux_string::append(const char *pStr)
     delete sNew;
 }
 
-void mux_string::append(const char *pStr, size_t nLen)
+void mux_string::append(const UTF8 *pStr, size_t nLen)
 {
     if (  NULL == pStr
        || '\0' == *pStr)
@@ -5031,7 +5182,7 @@ void mux_string::append(const char *pStr, size_t nLen)
     delete sNew;
 }
 
-void mux_string::append_TextPlain(const char *pStr)
+void mux_string::append_TextPlain(const UTF8 *pStr)
 {
     if (  '\0' == *pStr
        || LBUF_SIZE-1 <= m_n)
@@ -5041,7 +5192,7 @@ void mux_string::append_TextPlain(const char *pStr)
         return;
     }
 
-    size_t nLen = strlen(pStr);
+    size_t nLen = strlen((char *)pStr);
 
     if ((LBUF_SIZE-1)-m_n < nLen)
     {
@@ -5063,7 +5214,7 @@ void mux_string::append_TextPlain(const char *pStr)
     m_ach[m_n] = '\0';
 }
 
-void mux_string::append_TextPlain(const char *pStr, size_t nLen)
+void mux_string::append_TextPlain(const UTF8 *pStr, size_t nLen)
 {
     if (  '\0' == *pStr
        || 0 == nLen
@@ -5104,7 +5255,7 @@ void mux_string::append_TextPlain(const char *pStr, size_t nLen)
  * \return         None.
  */
 
-void mux_string::compress(const char ch)
+void mux_string::compress(const UTF8 ch)
 {
     for (size_t i = 0, j = 0; i < m_n; i++)
     {
@@ -5208,7 +5359,7 @@ void mux_string::edit(mux_string &sFrom, const mux_string &sTo)
 {
     // Do the substitution.  Idea for prefix/suffix from R'nice@TinyTIM.
     //
-    const char chFrom0 = sFrom.export_Char(0);
+    const UTF8 chFrom0 = sFrom.export_Char(0);
     size_t nFrom = sFrom.length();
     if (  1 == nFrom
        && '^' == chFrom0)
@@ -5226,7 +5377,7 @@ void mux_string::edit(mux_string &sFrom, const mux_string &sTo)
     }
     else
     {
-        const char chFrom1 = sFrom.export_Char(1);
+        const UTF8 chFrom1 = sFrom.export_Char(1);
         // Replace all occurances of 'from' with 'to'. Handle the special
         // cases of from = \$ and \^.
         //
@@ -5262,7 +5413,7 @@ void mux_string::edit(mux_string &sFrom, const mux_string &sTo)
     }
 }
 
-char mux_string::export_Char(size_t n) const
+UTF8 mux_string::export_Char(size_t n) const
 {
     if (m_n <= n)
     {
@@ -5283,17 +5434,17 @@ ANSI_ColorState mux_string::export_Color(size_t n) const
 
 double mux_string::export_Float(bool bStrict) const
 {
-    return mux_atof((const char *)m_ach, bStrict);
+    return mux_atof(m_ach, bStrict);
 }
 
 INT64 mux_string::export_I64(void) const
 {
-    return mux_atoi64((const char *)m_ach);
+    return mux_atoi64(m_ach);
 }
 
 long mux_string::export_Long(void) const
 {
-    return mux_atol((const char *)m_ach);
+    return mux_atol(m_ach);
 }
 
 /*! \brief Generates ANSI string from internal form.
@@ -5311,8 +5462,8 @@ long mux_string::export_Long(void) const
 
 void mux_string::export_TextAnsi
 (
-    char *buff,
-    char **bufc,
+    UTF8 *buff,
+    UTF8 **bufc,
     size_t nStart,
     size_t nLen,
     size_t nBuffer,
@@ -5322,7 +5473,7 @@ void mux_string::export_TextAnsi
     // Sanity check our arguments and find out how much room we have.
     // We assume we're outputting into an LBUF unless given a smaller nBuffer.
     //
-    char *bufctemp;
+    UTF8 *bufctemp;
     if (NULL == bufc)
     {
         bufc = &bufctemp;
@@ -5374,7 +5525,7 @@ void mux_string::export_TextAnsi
         (nAvail > (nLen + 1) * (ANSI_MAXIMUM_BINARY_TRANSITION_LENGTH + 1));
     ANSI_ColorState csEndGoal = bNoBleed ? csNoBleed : csNormal;
     size_t nTransition = 0;
-    char *pTransition = NULL;
+    UTF8 *pTransition = NULL;
 
     if (bPlentyOfRoom)
     {
@@ -5469,8 +5620,8 @@ void mux_string::export_TextAnsi
 
 void mux_string::export_TextPlain
 (
-    char *buff,
-    char **bufc,
+    UTF8 *buff,
+    UTF8 **bufc,
     size_t nStart,
     size_t nLen,
     size_t nBuffer
@@ -5479,7 +5630,7 @@ void mux_string::export_TextPlain
     // Sanity check our arguments and find out how much room we have.
     // We assume we're outputting into an LBUF unless given a smaller nBuffer.
     //
-    char *bufctemp;
+    UTF8 *bufctemp;
     if (NULL == bufc)
     {
         bufc = &bufctemp;
@@ -5534,7 +5685,7 @@ void mux_string::export_TextPlain
  * \return         None.
  */
 
-void mux_string::import(const char chIn)
+void mux_string::import(const UTF8 chIn)
 {
     realloc_m_pcs(0);
 
@@ -5566,7 +5717,7 @@ void mux_string::import(dbref num)
 
     // mux_ltoa() sets the '\0'.
     //
-    m_n += mux_ltoa(num, (char *)m_ach + 1);
+    m_n += mux_ltoa(num, m_ach + 1);
 }
 
 /*! \brief Converts and Imports an INT64.
@@ -5581,7 +5732,7 @@ void mux_string::import(INT64 iInt)
 
     // mux_i64toa() sets the '\0'.
     //
-    m_n = mux_i64toa(iInt, (char *)m_ach);
+    m_n = mux_i64toa(iInt, m_ach);
 }
 
 /*! \brief Converts and Imports an long integer.
@@ -5596,7 +5747,7 @@ void mux_string::import(long lLong)
 
     // mux_ltoa() sets the '\0'.
     //
-    m_n = mux_ltoa(lLong, (char *)m_ach);
+    m_n = mux_ltoa(lLong, m_ach);
 }
 
 /*! \brief Import a portion of another mux_string.
@@ -5635,7 +5786,7 @@ void mux_string::import(const mux_string &sStr, size_t nStart)
  * \return         None.
  */
 
-void mux_string::import(const char *pStr)
+void mux_string::import(const UTF8 *pStr)
 {
     m_n = 0;
     if (  NULL == pStr
@@ -5645,7 +5796,7 @@ void mux_string::import(const char *pStr)
         return;
     }
 
-    size_t nLen = strlen(pStr);
+    size_t nLen = strlen((char *)pStr);
     import(pStr, nLen);
 }
 
@@ -5659,7 +5810,7 @@ void mux_string::import(const char *pStr)
  * \return         None.
  */
 
-void mux_string::import(const char *pStr, size_t nLen)
+void mux_string::import(const UTF8 *pStr, size_t nLen)
 {
     m_n = 0;
 
@@ -5737,7 +5888,7 @@ size_t mux_string::length(void) const
     return m_n;
 }
 
-void mux_string::prepend(const char cChar)
+void mux_string::prepend(const UTF8 cChar)
 {
     size_t nMove = (m_n < LBUF_SIZE-1) ? m_n : LBUF_SIZE-2;
 
@@ -5791,7 +5942,7 @@ void mux_string::prepend(const mux_string &sStr)
     delete sStore;
 }
 
-void mux_string::prepend(const char *pStr)
+void mux_string::prepend(const UTF8 *pStr)
 {
     mux_string *sStore = new mux_string(*this);
 
@@ -5800,7 +5951,7 @@ void mux_string::prepend(const char *pStr)
     delete sStore;
 }
 
-void mux_string::prepend(const char *pStr, size_t n)
+void mux_string::prepend(const UTF8 *pStr, size_t n)
 {
     mux_string *sStore = new mux_string(*this);
 
@@ -5968,7 +6119,7 @@ void mux_string::reverse(void)
 
 bool mux_string::search
 (
-    const char *pPattern,
+    const UTF8 *pPattern,
     size_t *nPos,
     size_t nStart
 ) const
@@ -5976,8 +6127,8 @@ bool mux_string::search
     // Strip ANSI from pattern.
     //
     size_t nPat = 0;
-    char *pPatBuf = strip_ansi(pPattern, &nPat);
-    const unsigned char *pTarget = m_ach + nStart;
+    UTF8 *pPatBuf = strip_ansi(pPattern, &nPat);
+    const UTF8 *pTarget = m_ach + nStart;
 
     size_t i = 0;
     bool bSucceeded = false;
@@ -5997,7 +6148,7 @@ bool mux_string::search
         // We have a multi-byte pattern.
         //
         bSucceeded = BMH_StringSearch(&i, nPat, pPatBuf,
-                                      m_n - nStart, (const char *)pTarget);
+                                      m_n - nStart, pTarget);
     }
 
     if (nPos)
@@ -6025,7 +6176,7 @@ bool mux_string::search
 {
     // Strip ANSI from pattern.
     //
-    const unsigned char *pTarget = m_ach + nStart;
+    const UTF8 *pTarget = m_ach + nStart;
 
     size_t i = 0;
     bool bSucceeded = false;
@@ -6044,8 +6195,8 @@ bool mux_string::search
     {
         // We have a multi-byte pattern.
         //
-        bSucceeded = BMH_StringSearch(&i, sPattern.m_n, (const char *)sPattern.m_ach,
-                                      m_n - nStart, (const char *)pTarget);
+        bSucceeded = BMH_StringSearch(&i, sPattern.m_n, sPattern.m_ach,
+                                      m_n - nStart, pTarget);
     }
 
     if (nPos)
@@ -6055,7 +6206,7 @@ bool mux_string::search
     return bSucceeded;
 }
 
-void mux_string::set_Char(size_t n, const char cChar)
+void mux_string::set_Char(size_t n, const UTF8 cChar)
 {
     if (m_n <= n)
     {
@@ -6094,7 +6245,7 @@ void mux_string::set_Color(size_t n, ANSI_ColorState csColor)
  * \return          None.
  */
 
-void mux_string::strip(const char *pStripSet, size_t nStart, size_t nLen)
+void mux_string::strip(const UTF8 *pStripSet, size_t nStart, size_t nLen)
 {
     static bool strip_table[UCHAR_MAX+1];
 
@@ -6248,7 +6399,7 @@ void mux_string::transformWithTable
     }
 }
 
-void mux_string::trim(const char ch, bool bLeft, bool bRight)
+void mux_string::trim(const UTF8 ch, bool bLeft, bool bRight)
 {
     if (  0 == m_n
        || (  !bLeft
@@ -6289,7 +6440,7 @@ void mux_string::trim(const char ch, bool bLeft, bool bRight)
     }
 }
 
-void mux_string::trim(const char *p, bool bLeft, bool bRight)
+void mux_string::trim(const UTF8 *p, bool bLeft, bool bRight)
 {
     if (  0 == m_n
        || NULL == p
@@ -6300,7 +6451,7 @@ void mux_string::trim(const char *p, bool bLeft, bool bRight)
         return;
     }
 
-    size_t n = strlen(p);
+    size_t n = strlen((char *)p);
 
     if (1 == n)
     {
@@ -6313,7 +6464,7 @@ void mux_string::trim(const char *p, bool bLeft, bool bRight)
     }
 }
 
-void mux_string::trim(const char *p, size_t n, bool bLeft, bool bRight)
+void mux_string::trim(const UTF8 *p, size_t n, bool bLeft, bool bRight)
 {
     if (  0 == m_n
        || NULL == p
@@ -6376,7 +6527,7 @@ mux_words::mux_words(const mux_string &sStr) : m_s(&sStr)
     m_nWords = 0;
 }
 
-void mux_words::export_WordAnsi(LBUF_OFFSET n, char *buff, char **bufc)
+void mux_words::export_WordAnsi(LBUF_OFFSET n, UTF8 *buff, UTF8 **bufc)
 {
     if (m_nWords <= n)
     {
@@ -6418,7 +6569,7 @@ LBUF_OFFSET mux_words::find_Words(void)
     return m_nWords;
 }
 
-LBUF_OFFSET mux_words::find_Words(const char *pDelim)
+LBUF_OFFSET mux_words::find_Words(const UTF8 *pDelim)
 {
     size_t nDelim = 0;
     pDelim = strip_ansi(pDelim, &nDelim);
@@ -6459,7 +6610,7 @@ void mux_words::ignore_Word(LBUF_OFFSET n)
     m_nWords--;
 }
 
-void mux_words::set_Control(const char *pControlSet)
+void mux_words::set_Control(const UTF8 *pControlSet)
 {
     if (  NULL == pControlSet
        || '\0' == pControlSet[0])

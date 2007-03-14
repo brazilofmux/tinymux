@@ -38,7 +38,7 @@ unsigned int ndescriptors = 0;
 DESC *descriptor_list = NULL;
 
 static void TelnetSetup(DESC *d);
-static void SiteMonSend(SOCKET, const char *, DESC *, const char *);
+static void SiteMonSend(SOCKET, const UTF8 *, DESC *, const UTF8 *);
 static DESC *initializesock(SOCKET, struct sockaddr_in *);
 static DESC *new_connection(PortInfo *Port, int *piError);
 static bool process_input(DESC *);
@@ -91,9 +91,9 @@ static int iSlaveRequest = 0;
 #define MAX_STRING 514
 typedef struct
 {
-    char host[MAX_STRING];
-    char token[MAX_STRING];
-    char ident[MAX_STRING];
+    UTF8 host[MAX_STRING];
+    UTF8 token[MAX_STRING];
+    UTF8 ident[MAX_STRING];
 } SLAVE_RESULT;
 
 static HANDLE hSlaveResultStackSemaphore;
@@ -212,17 +212,17 @@ static DWORD WINAPI SlaveProc(LPVOID lpParameter)
             {
                 SlaveThreadInfo[iSlave].iDoing = __LINE__;
 
-                char host[MAX_STRING];
-                char token[MAX_STRING];
-                char szIdent[MAX_STRING];
+                UTF8 host[MAX_STRING];
+                UTF8 token[MAX_STRING];
+                UTF8 szIdent[MAX_STRING];
                 struct sockaddr_in sin;
                 memset(&sin, 0, sizeof(sin));
                 SOCKET s;
 
                 // We have a host name.
                 //
-                mux_strncpy(host, inet_ntoa(req.sa_in.sin_addr), MAX_STRING-1);
-                mux_strncpy(token, hp->h_name, MAX_STRING-1);
+                mux_strncpy(host, (UTF8 *)inet_ntoa(req.sa_in.sin_addr), MAX_STRING-1);
+                mux_strncpy(token, (UTF8 *)hp->h_name, MAX_STRING-1);
 
                 // Setup ident port.
                 //
@@ -255,17 +255,17 @@ static DWORD WINAPI SlaveProc(LPVOID lpParameter)
                         setsockopt(s, SOL_SOCKET, SO_KEEPALIVE, (char *)&TurnOn, sizeof(TurnOn));
 
                         SlaveThreadInfo[iSlave].iDoing = __LINE__;
-                        char szPortPair[128];
+                        UTF8 szPortPair[128];
                         mux_sprintf(szPortPair, sizeof(szPortPair), "%d, %d\r\n",
                             ntohs(req.sa_in.sin_port), req.port_in);
                         SlaveThreadInfo[iSlave].iDoing = __LINE__;
-                        size_t nPortPair = strlen(szPortPair);
+                        size_t nPortPair = strlen((char *)szPortPair);
 
                         CLinearTimeAbsolute ltaCurrent;
                         ltaCurrent.GetUTC();
                         if (  ltaTimeoutBackward < ltaCurrent
                            && ltaCurrent < ltaTimeoutForward
-                           && send(s, szPortPair, static_cast<int>(nPortPair), 0) != SOCKET_ERROR)
+                           && send(s, (char *)szPortPair, static_cast<int>(nPortPair), 0) != SOCKET_ERROR)
                         {
                             SlaveThreadInfo[iSlave].iDoing = __LINE__;
                             int nIdent = 0;
@@ -388,11 +388,11 @@ void boot_slave(dbref executor, dbref caller, dbref enactor, int)
 
 static int get_slave_result(void)
 {
-    char host[MAX_STRING];
-    char token[MAX_STRING];
-    char ident[MAX_STRING];
-    char os[MAX_STRING];
-    char userid[MAX_STRING];
+    UTF8 host[MAX_STRING];
+    UTF8 token[MAX_STRING];
+    UTF8 ident[MAX_STRING];
+    UTF8 os[MAX_STRING];
+    UTF8 userid[MAX_STRING];
     DESC *d;
     int local_port, remote_port;
 
@@ -425,7 +425,7 @@ static int get_slave_result(void)
     }
     for (d = descriptor_list; d; d = d->next)
     {
-        if (strcmp(d->addr, host))
+        if (strcmp((char *)d->addr, (char *)host))
         {
             continue;
         }
@@ -435,17 +435,17 @@ static int get_slave_result(void)
         {
             if (d->username[0])
             {
-                atr_add_raw(d->player, A_LASTSITE, tprintf("%s@%s", d->username, d->addr));
+                atr_add_raw(d->player, A_LASTSITE, (UTF8 *)tprintf("%s@%s", d->username, d->addr));
             }
             else
             {
                 atr_add_raw(d->player, A_LASTSITE, d->addr);
             }
-            atr_add_raw(d->player, A_LASTIP, inet_ntoa((d->address).sin_addr));
+            atr_add_raw(d->player, A_LASTIP, (UTF8 *)inet_ntoa((d->address).sin_addr));
         }
     }
 
-    if (sscanf(ident, "%d , %d : %s : %s : %s", &remote_port, &local_port, token, os, userid) != 5)
+    if (sscanf((char *)ident, "%d , %d : %s : %s : %s", &remote_port, &local_port, token, os, userid) != 5)
     {
         return 1;
     }
@@ -459,7 +459,7 @@ static int get_slave_result(void)
         mux_strncpy(d->username, userid, 10);
         if (d->player != 0)
         {
-            atr_add_raw(d->player, A_LASTSITE, tprintf("%s@%s", d->username, d->addr));
+            atr_add_raw(d->player, A_LASTSITE, (UTF8 *)tprintf("%s@%s", d->username, d->addr));
         }
     }
     return 1;
@@ -955,14 +955,14 @@ static void make_socket(PortInfo *Port)
         s = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
         if (IS_INVALID_SOCKET(s))
         {
-            log_perror("NET", "FAIL", NULL, "creating master socket");
+            log_perror((UTF8 *)"NET", (UTF8 *)"FAIL", NULL, (UTF8 *)"creating master socket");
             return;
         }
 
         DebugTotalSockets++;
         if (setsockopt(s, SOL_SOCKET, SO_REUSEADDR, (char *)&opt, sizeof(opt)) < 0)
         {
-            log_perror("NET", "FAIL", NULL, "setsockopt");
+            log_perror((UTF8 *)"NET", (UTF8 *)"FAIL", NULL, (UTF8 *)"setsockopt");
         }
 
         // Fill in the the address structure
@@ -1006,7 +1006,7 @@ static void make_socket(PortInfo *Port)
         HANDLE hThread = CreateThread(NULL, 0, MUDListenThread, (LPVOID)Port, 0, NULL);
         if (NULL == hThread)
         {
-            log_perror("NET", "FAIL", "CreateThread", "setsockopt");
+            log_perror((UTF8 *)"NET", (UTF8 *)"FAIL", (UTF8 *)"CreateThread", (UTF8 *)"setsockopt");
             if (SOCKET_CLOSE(s) == 0)
             {
                 DebugTotalSockets--;
@@ -1024,14 +1024,14 @@ static void make_socket(PortInfo *Port)
     s = socket(AF_INET, SOCK_STREAM, 0);
     if (IS_INVALID_SOCKET(s))
     {
-        log_perror("NET", "FAIL", NULL, "creating master socket");
+        log_perror((UTF8 *)"NET", (UTF8 *)"FAIL", NULL, (UTF8 *)"creating master socket");
         return;
     }
 
     DebugTotalSockets++;
     if (setsockopt(s, SOL_SOCKET, SO_REUSEADDR, (char *)&opt, sizeof(opt)) < 0)
     {
-        log_perror("NET", "FAIL", NULL, "setsockopt");
+        log_perror((UTF8 *)"NET", (UTF8 *)"FAIL", NULL, (UTF8 *)"setsockopt");
     }
 
     server.sin_family = AF_INET;
@@ -1041,7 +1041,7 @@ static void make_socket(PortInfo *Port)
     int cc  = bind(s, (struct sockaddr *)&server, sizeof(server));
     if (IS_SOCKET_ERROR(cc))
     {
-        log_perror("NET", "FAIL", NULL, "bind");
+        log_perror((UTF8 *)"NET", (UTF8 *)"FAIL", NULL, (UTF8 *)"bind");
         if (SOCKET_CLOSE(s) == 0)
         {
             DebugTotalSockets--;
@@ -1199,7 +1199,7 @@ void shovechars9x(int nPorts, PortInfo aPorts[])
 #define CheckInput(x)   FD_ISSET_priv(x, &input_set)
 #define CheckOutput(x)  FD_ISSET_priv(x, &output_set)
 
-    mudstate.debug_cmd = "< shovechars >";
+    mudstate.debug_cmd = (UTF8 *)"< shovechars >";
 
     CLinearTimeAbsolute ltaLastSlice;
     ltaLastSlice.GetUTC();
@@ -1272,7 +1272,7 @@ void shovechars9x(int nPorts, PortInfo aPorts[])
         case SOCKET_ERROR:
             {
                 STARTLOG(LOG_NET, "NET", "CONN");
-                log_text("shovechars: Socket error.");
+                log_text((UTF8 *)"shovechars: Socket error.");
                 ENDLOG;
             }
 
@@ -1293,7 +1293,7 @@ void shovechars9x(int nPorts, PortInfo aPorts[])
                     if (  iSocketError
                        && iSocketError != SOCKET_EINTR)
                     {
-                        log_perror("NET", "FAIL", NULL, "new_connection");
+                        log_perror((UTF8 *)"NET", (UTF8 *)"FAIL", NULL, (UTF8 *)"new_connection");
                     }
                 }
             }
@@ -1405,7 +1405,7 @@ void shovecharsNT(int nPorts, PortInfo aPorts[])
     UNUSED_PARAMETER(nPorts);
     UNUSED_PARAMETER(aPorts);
 
-    mudstate.debug_cmd = "< shovechars >";
+    mudstate.debug_cmd = (UTF8 *)"< shovechars >";
 
     CreateThread(NULL, 0, ListenForCloseProc, NULL, 0, NULL);
 
@@ -1483,7 +1483,7 @@ void shovechars(int nPorts, PortInfo aPorts[])
 #define CheckInput(x)     FD_ISSET(x, &input_set)
 #define CheckOutput(x)    FD_ISSET(x, &output_set)
 
-    mudstate.debug_cmd = "< shovechars >";
+    mudstate.debug_cmd = (UTF8 *)"< shovechars >";
 
     CLinearTimeAbsolute ltaLastSlice;
     ltaLastSlice.GetUTC();
@@ -1745,8 +1745,8 @@ DESC *new_connection(PortInfo *Port, int *piSocketError)
     int len;
 #endif // !WIN32
 
-    char *cmdsave = mudstate.debug_cmd;
-    mudstate.debug_cmd = "< new_connection >";
+    UTF8 *cmdsave = mudstate.debug_cmd;
+    mudstate.debug_cmd = (UTF8 *)"< new_connection >";
     addr_len = sizeof(struct sockaddr);
 
     SOCKET newsock = accept(Port->socket, (struct sockaddr *)&addr, &addr_len);
@@ -1758,15 +1758,15 @@ DESC *new_connection(PortInfo *Port, int *piSocketError)
         return 0;
     }
 
-    char *pBuffM2 = alloc_mbuf("new_connection.address");
-    mux_strncpy(pBuffM2, inet_ntoa(addr.sin_addr), MBUF_SIZE-1);
+    UTF8 *pBuffM2 = (UTF8 *)alloc_mbuf("new_connection.address");
+    mux_strncpy(pBuffM2, (UTF8 *)inet_ntoa(addr.sin_addr), MBUF_SIZE-1);
     unsigned short usPort = ntohs(addr.sin_port);
 
     DebugTotalSockets++;
     if (site_check(addr.sin_addr, mudstate.access_list) == H_FORBIDDEN)
     {
         STARTLOG(LOG_NET | LOG_SECURITY, "NET", "SITE");
-        char *pBuffM1  = alloc_mbuf("new_connection.LOG.badsite");
+        UTF8 *pBuffM1  = alloc_mbuf("new_connection.LOG.badsite");
         mux_sprintf(pBuffM1, MBUF_SIZE, "[%u/%s] Connection refused.  (Remote port %d)",
             newsock, pBuffM2, usPort);
         log_text(pBuffM1);
@@ -1775,7 +1775,7 @@ DESC *new_connection(PortInfo *Port, int *piSocketError)
 
         // Report site monitor information.
         //
-        SiteMonSend(newsock, pBuffM2, NULL, "Connection refused");
+        SiteMonSend(newsock, pBuffM2, NULL, (UTF8 *)"Connection refused");
 
         fcache_rawdump(newsock, FC_CONN_SITE);
         shutdown(newsock, SD_BOTH);
@@ -1844,7 +1844,7 @@ DESC *new_connection(PortInfo *Port, int *piSocketError)
 #endif // WIN32
 
         STARTLOG(LOG_NET, "NET", "CONN");
-        char *pBuffM3 = alloc_mbuf("new_connection.LOG.open");
+        UTF8 *pBuffM3 = alloc_mbuf("new_connection.LOG.open");
         mux_sprintf(pBuffM3, MBUF_SIZE, "[%u/%s] Connection opened (remote port %d)", newsock,
             pBuffM2, usPort);
         log_text(pBuffM3);
@@ -1857,7 +1857,7 @@ DESC *new_connection(PortInfo *Port, int *piSocketError)
         // Initalize everything before sending the sitemon info, so that we
         // can pass the descriptor, d.
         //
-        SiteMonSend(newsock, pBuffM2, d, "Connection");
+        SiteMonSend(newsock, pBuffM2, d, (UTF8 *)"Connection");
 
         welcome_user(d);
     }
@@ -1869,39 +1869,39 @@ DESC *new_connection(PortInfo *Port, int *piSocketError)
 
 // Disconnect reasons that get written to the logfile
 //
-static const char *disc_reasons[] =
+static const UTF8 *disc_reasons[] =
 {
-    "Unspecified",
-    "Quit",
-    "Inactivity Timeout",
-    "Booted",
-    "Remote Close or Net Failure",
-    "Game Shutdown",
-    "Login Retry Limit",
-    "Logins Disabled",
-    "Logout (Connection Not Dropped)",
-    "Too Many Connected Players"
+    (UTF8 *)"Unspecified",
+    (UTF8 *)"Quit",
+    (UTF8 *)"Inactivity Timeout",
+    (UTF8 *)"Booted",
+    (UTF8 *)"Remote Close or Net Failure",
+    (UTF8 *)"Game Shutdown",
+    (UTF8 *)"Login Retry Limit",
+    (UTF8 *)"Logins Disabled",
+    (UTF8 *)"Logout (Connection Not Dropped)",
+    (UTF8 *)"Too Many Connected Players"
 };
 
 // Disconnect reasons that get fed to A_ADISCONNECT via announce_disconnect
 //
-static const char *disc_messages[] =
+static const UTF8 *disc_messages[] =
 {
-    "Unknown",
-    "Quit",
-    "Timeout",
-    "Boot",
-    "Netfailure",
-    "Shutdown",
-    "BadLogin",
-    "NoLogins",
-    "Logout",
-    "GameFull"
+    (UTF8 *)"Unknown",
+    (UTF8 *)"Quit",
+    (UTF8 *)"Timeout",
+    (UTF8 *)"Boot",
+    (UTF8 *)"Netfailure",
+    (UTF8 *)"Shutdown",
+    (UTF8 *)"BadLogin",
+    (UTF8 *)"NoLogins",
+    (UTF8 *)"Logout",
+    (UTF8 *)"GameFull"
 };
 
 void shutdownsock(DESC *d, int reason)
 {
-    char *buff, *buff2;
+    UTF8 *buff, *buff2;
     int i, num;
     DESC *dtemp;
 
@@ -2001,7 +2001,7 @@ void shutdownsock(DESC *d, int reason)
             log_text(buff);
             free_mbuf(buff);
             ENDLOG;
-            SiteMonSend(d->descriptor, d->addr, d, "Disconnection");
+            SiteMonSend(d->descriptor, d->addr, d, (UTF8 *)"Disconnection");
         }
 
         // If requested, write an accounting record of the form:
@@ -2014,7 +2014,7 @@ void shutdownsock(DESC *d, int reason)
         buff2 = decode_flags(GOD, &(db[d->player].fs));
         dbref locPlayer = Location(d->player);
         int penPlayer = Pennies(d->player);
-        const char *PlayerName = PureName(d->player);
+        const UTF8 *PlayerName = PureName(d->player);
         mux_sprintf(buff, LBUF_SIZE, "%d %s %d %d %d %d [%s] <%s> %s", d->player, buff2, d->command_count,
                 Seconds, locPlayer, penPlayer, d->addr, disc_reasons[reason],
                 PlayerName);
@@ -2037,7 +2037,7 @@ void shutdownsock(DESC *d, int reason)
         log_text(buff);
         free_mbuf(buff);
         ENDLOG;
-        SiteMonSend(d->descriptor, d->addr, d, "N/C Connection Closed");
+        SiteMonSend(d->descriptor, d->addr, d, (UTF8 *)"N/C Connection Closed");
     }
 
     process_output(d, false);
@@ -2223,33 +2223,33 @@ int make_nonblocking(SOCKET s)
     unsigned long on = 1;
     if (IS_SOCKET_ERROR(ioctlsocket(s, FIONBIO, &on)))
     {
-        log_perror("NET", "FAIL", "make_nonblocking", "ioctlsocket");
+        log_perror((UTF8 *)"NET", (UTF8 *)"FAIL", (UTF8 *)"make_nonblocking", (UTF8 *)"ioctlsocket");
         return -1;
     }
 #else // WIN32
 #if defined(O_NONBLOCK)
     if (fcntl(s, F_SETFL, O_NONBLOCK) < 0)
     {
-        log_perror("NET", "FAIL", "make_nonblocking", "fcntl");
+        log_perror((UTF8 *)"NET", (UTF8 *)"FAIL", (UTF8 *)"make_nonblocking", (UTF8 *)"fcntl");
         return -1;
     }
 #elif defined(FNDELAY)
     if (fcntl(s, F_SETFL, FNDELAY) < 0)
     {
-        log_perror("NET", "FAIL", "make_nonblocking", "fcntl");
+        log_perror((UTF8 *)"NET", (UTF8 *)"FAIL", (UTF8 *)"make_nonblocking", (UTF8 *)"fcntl");
         return -1;
     }
 #elif defined(O_NDELAY)
     if (fcntl(s, F_SETFL, O_NDELAY) < 0)
     {
-        log_perror("NET", "FAIL", "make_nonblocking", "fcntl");
+        log_perror((UTF8 *)"NET", (UTF8 *)"FAIL", (UTF8 *)"make_nonblocking", (UTF8 *)"fcntl");
         return -1;
     }
 #elif defined(FIONBIO)
     unsigned long on = 1;
     if (ioctl(s, FIONBIO, &on) < 0)
     {
-        log_perror("NET", "FAIL", "make_nonblocking", "ioctl");
+        log_perror((UTF8 *)"NET", (UTF8 *)"FAIL", (UTF8 *)"make_nonblocking", (UTF8 *)"ioctl");
         return -1;
     }
 #endif // O_NONBLOCK, FNDELAY, O_NDELAY, FIONBIO
@@ -2265,7 +2265,7 @@ static void make_nolinger(SOCKET s)
     ling.l_linger = 0;
     if (IS_SOCKET_ERROR(setsockopt(s, SOL_SOCKET, SO_LINGER, (char *)&ling, sizeof(ling))))
     {
-        log_perror("NET", "FAIL", "linger", "setsockopt");
+        log_perror((UTF8 *)"NET", (UTF8 *)"FAIL", (UTF8 *)"linger", (UTF8 *)"setsockopt");
     }
 #endif // HAVE_LINGER
 }
@@ -2348,7 +2348,7 @@ DESC *initializesock(SOCKET s, struct sockaddr_in *a)
     d->quota = mudconf.cmd_quota_max;
     d->program_data = NULL;
     d->address = *a;
-    mux_strncpy(d->addr, inet_ntoa(a->sin_addr), 50);
+    mux_strncpy(d->addr, (UTF8 *)inet_ntoa(a->sin_addr), 50);
 
 #ifdef WIN32
     // protect adding the descriptor from the linked list from
@@ -2399,8 +2399,8 @@ void process_output9x(void *dvoid, int bHandleShutdown)
     DESC *d = (DESC *)dvoid;
     int cnt;
 
-    char *cmdsave = mudstate.debug_cmd;
-    mudstate.debug_cmd = "< process_output >";
+    UTF8 *cmdsave = mudstate.debug_cmd;
+    mudstate.debug_cmd = (UTF8 *)"< process_output >";
 
     TBLOCK *tb = d->output_head;
 
@@ -2408,7 +2408,7 @@ void process_output9x(void *dvoid, int bHandleShutdown)
     {
         while (tb->hdr.nchars > 0)
         {
-            cnt = SOCKET_WRITE(d->descriptor, tb->hdr.start, tb->hdr.nchars, 0);
+            cnt = SOCKET_WRITE(d->descriptor, (char *)tb->hdr.start, tb->hdr.nchars, 0);
             if (IS_SOCKET_ERROR(cnt))
             {
                 int iSocketError = SOCKET_LAST_ERROR;
@@ -2506,8 +2506,8 @@ void process_outputNT(void *dvoid, int bHandleShutdown)
         return;
     }
 
-    char *cmdsave = mudstate.debug_cmd;
-    mudstate.debug_cmd = "< process_output >";
+    UTF8 *cmdsave = mudstate.debug_cmd;
+    mudstate.debug_cmd = (UTF8 *)"< process_output >";
 
     TBLOCK *tb = d->output_head;
     TBLOCK *save;
@@ -2533,7 +2533,7 @@ void process_outputNT(void *dvoid, int bHandleShutdown)
         {
             if (tb->hdr.nchars > 0)
             {
-                cnt = AsyncSend(d, tb->hdr.start, tb->hdr.nchars);
+                cnt = AsyncSend(d, (char *)tb->hdr.start, tb->hdr.nchars);
                 if (cnt <= 0)
                 {
                     mudstate.debug_cmd = cmdsave;
@@ -2566,8 +2566,8 @@ void process_output(void *dvoid, int bHandleShutdown)
 {
     DESC *d = (DESC *)dvoid;
 
-    char *cmdsave = mudstate.debug_cmd;
-    mudstate.debug_cmd = "< process_output >";
+    UTF8 *cmdsave = mudstate.debug_cmd;
+    mudstate.debug_cmd = (UTF8 *)"< process_output >";
 
     TBLOCK *tb = d->output_head;
     while (tb != NULL)
@@ -3142,8 +3142,8 @@ static void process_input_helper(DESC *d, char *pBytes, int nBytes)
     size_t nInputBytes = 0;
     size_t nLostBytes  = 0;
 
-    char *p    = d->raw_input_at;
-    char *pend = d->raw_input->cmd + (LBUF_SIZE - sizeof(CBLKHDR) - 1);
+    UTF8 *p    = d->raw_input_at;
+    UTF8 *pend = d->raw_input->cmd + (LBUF_SIZE - sizeof(CBLKHDR) - 1);
 
     unsigned char *q    = d->aOption + d->nOption;
     unsigned char *qend = d->aOption + SBUF_SIZE - 1;
@@ -3268,11 +3268,11 @@ static void process_input_helper(DESC *d, char *pBytes, int nBytes)
 
             if (NVT_DEL == ch)
             {
-                queue_string(d, "\b \b");
+                queue_string(d, (UTF8 *)"\b \b");
             }
             else
             {
-                queue_string(d, " \b");
+                queue_string(d, (UTF8 *)" \b");
             }
 
             // Rewind until we pass the first byte of a UTF-8 sequence.
@@ -3367,7 +3367,7 @@ static void process_input_helper(DESC *d, char *pBytes, int nBytes)
         case 12:
             // Action 12 - Respond to IAC AYT and return to the Normal state.
             //
-            queue_string(d, "\r\n[Yes]\r\n");
+            queue_string(d, (UTF8 *)"\r\n[Yes]\r\n");
             d->raw_input_state = NVT_IS_NORMAL;
             break;
 
@@ -3527,7 +3527,7 @@ static void process_input_helper(DESC *d, char *pBytes, int nBytes)
                         //
                         size_t nTermType = m-2;
                         unsigned char *pTermType = &d->aOption[2];
-                        d->ttype = (char *)malloc(nTermType+1);
+                        d->ttype = (UTF8 *)malloc(nTermType+1);
                         memcpy(d->ttype, pTermType, nTermType);
                         d->ttype[nTermType] = '\0';
                     }
@@ -3570,8 +3570,8 @@ static void process_input_helper(DESC *d, char *pBytes, int nBytes)
                                 if (  pVarval - pVarname < 1023
                                    && envPtr - pVarval < 1023)
                                 {
-                                    char varname[1024];
-                                    char varval[1024];
+                                    UTF8 varname[1024];
+                                    UTF8 varval[1024];
 
                                     memset(varname,0,1024);
                                     memset(varval,0,1024);
@@ -3585,10 +3585,10 @@ static void process_input_helper(DESC *d, char *pBytes, int nBytes)
                                     // this way, and just default to Latin1 if
                                     // we can't get a UTF8 locale.
                                     //
-                                    if (  0 == mux_stricmp(varname, "LC_CTYPE")
-                                       || 0 == mux_stricmp(varname, "LC_ALL"))
+                                    if (  0 == mux_stricmp(varname, (UTF8 *)"LC_CTYPE")
+                                       || 0 == mux_stricmp(varname, (UTF8 *)"LC_ALL"))
                                     {
-                                        char *pEncoding = strchr(varval, '.');
+                                        UTF8 *pEncoding = (UTF8 *)strchr((char *)varval, '.');
                                         if (pEncoding)
                                         {
                                             pEncoding++;
@@ -3598,7 +3598,7 @@ static void process_input_helper(DESC *d, char *pBytes, int nBytes)
                                             pEncoding = &varval[0];
                                         }
 
-                                        if (  0 == mux_stricmp(pEncoding, "utf-8")
+                                        if (  0 == mux_stricmp(pEncoding, (UTF8 *)"utf-8")
                                            && CHARSET_UTF8 != d->encoding)
                                         {
                                             // Since we are changing to the
@@ -3611,7 +3611,7 @@ static void process_input_helper(DESC *d, char *pBytes, int nBytes)
                                         }
                                     }
 
-                                    if (0 == mux_stricmp(varname, "USER"))
+                                    if (0 == mux_stricmp(varname, (UTF8 *)"USER"))
                                     {
                                         memset(d->username, 0, 11);
                                         memcpy(d->username, varval, 10);
@@ -3701,8 +3701,8 @@ static void process_input_helper(DESC *d, char *pBytes, int nBytes)
 
 bool process_input(DESC *d)
 {
-    char *cmdsave = mudstate.debug_cmd;
-    mudstate.debug_cmd = "< process_input >";
+    UTF8 *cmdsave = mudstate.debug_cmd;
+    mudstate.debug_cmd = (UTF8 *)"< process_input >";
 
     char buf[LBUF_SIZE];
     int got = SOCKET_READ(d->descriptor, buf, sizeof(buf), 0);
@@ -3726,7 +3726,7 @@ bool process_input(DESC *d)
     return true;
 }
 
-void close_sockets(bool emergency, char *message)
+void close_sockets(bool emergency, UTF8 *message)
 {
     DESC *d, *dnext;
 
@@ -3734,10 +3734,10 @@ void close_sockets(bool emergency, char *message)
     {
         if (emergency)
         {
-            SOCKET_WRITE(d->descriptor, message, strlen(message), 0);
+            SOCKET_WRITE(d->descriptor, (char *)message, strlen((char *)message), 0);
             if (IS_SOCKET_ERROR(shutdown(d->descriptor, SD_BOTH)))
             {
-                log_perror("NET", "FAIL", NULL, "shutdown");
+                log_perror((UTF8 *)"NET", (UTF8 *)"FAIL", NULL, (UTF8 *)"shutdown");
             }
             if (SOCKET_CLOSE(d->descriptor) == 0)
             {
@@ -3763,7 +3763,7 @@ void close_sockets(bool emergency, char *message)
 
 void emergency_shutdown(void)
 {
-    close_sockets(true, "Going down - Bye");
+    close_sockets(true, (UTF8 *)"Going down - Bye");
 }
 
 
@@ -3783,7 +3783,7 @@ void emergency_shutdown(void)
 typedef struct
 {
     int         iSignal;
-    const char *szSignal;
+    const UTF8 *szSignal;
 } SIGNALTYPE, *PSIGNALTYPE;
 
 const SIGNALTYPE aSigTypes[] =
@@ -3791,197 +3791,197 @@ const SIGNALTYPE aSigTypes[] =
 #ifdef SIGHUP
     // Hangup detected on controlling terminal or death of controlling process.
     //
-    { SIGHUP,   "SIGHUP"},
+    { SIGHUP,   (UTF8 *)"SIGHUP"},
 #endif // SIGHUP
 #ifdef SIGINT
     // Interrupt from keyboard.
     //
-    { SIGINT,   "SIGINT"},
+    { SIGINT,   (UTF8 *)"SIGINT"},
 #endif // SIGINT
 #ifdef SIGQUIT
     // Quit from keyboard.
     //
-    { SIGQUIT,  "SIGQUIT"},
+    { SIGQUIT,  (UTF8 *)"SIGQUIT"},
 #endif // SIGQUIT
 #ifdef SIGILL
     // Illegal Instruction.
     //
-    { SIGILL,   "SIGILL"},
+    { SIGILL,   (UTF8 *)"SIGILL"},
 #endif // SIGILL
 #ifdef SIGTRAP
     // Trace/breakpoint trap.
     //
-    { SIGTRAP,  "SIGTRAP"},
+    { SIGTRAP,  (UTF8 *)"SIGTRAP"},
 #endif // SIGTRAP
 #if defined(SIGABRT)
     // Abort signal from abort(3).
     //
-    { SIGABRT,  "SIGABRT"},
+    { SIGABRT,  (UTF8 *)"SIGABRT"},
 #elif defined(SIGIOT)
 #define SIGABRT SIGIOT
     // Abort signal from abort(3).
     //
-    { SIGIOT,   "SIGIOT"},
+    { SIGIOT,   (UTF8 *)"SIGIOT"},
 #endif // SIGABRT
 #ifdef SIGEMT
-    { SIGEMT,   "SIGEMT"},
+    { SIGEMT,   (UTF8 *)"SIGEMT"},
 #endif // SIGEMT
 #ifdef SIGFPE
     // Floating-point exception.
     //
-    { SIGFPE,   "SIGFPE"},
+    { SIGFPE,   (UTF8 *)"SIGFPE"},
 #endif // SIGFPE
 #ifdef SIGKILL
     // Kill signal. Not catchable.
     //
-    { SIGKILL,  "SIGKILL"},
+    { SIGKILL,  (UTF8 *)"SIGKILL"},
 #endif // SIGKILL
 #ifdef SIGSEGV
     // Invalid memory reference.
     //
-    { SIGSEGV,  "SIGSEGV"},
+    { SIGSEGV,  (UTF8 *)"SIGSEGV"},
 #endif // SIGSEGV
 #ifdef SIGPIPE
     // Broken pipe: write to pipe with no readers.
     //
-    { SIGPIPE,  "SIGPIPE"},
+    { SIGPIPE,  (UTF8 *)"SIGPIPE"},
 #endif // SIGPIPE
 #ifdef SIGALRM
     // Timer signal from alarm(2).
     //
-    { SIGALRM,  "SIGALRM"},
+    { SIGALRM,  (UTF8 *)"SIGALRM"},
 #endif // SIGALRM
 #ifdef SIGTERM
     // Termination signal.
     //
-    { SIGTERM,  "SIGTERM"},
+    { SIGTERM,  (UTF8 *)"SIGTERM"},
 #endif // SIGTERM
 #ifdef SIGBREAK
     // Ctrl-Break.
     //
-    { SIGBREAK, "SIGBREAK"},
+    { SIGBREAK, (UTF8 *)"SIGBREAK"},
 #endif // SIGBREAK
 #ifdef SIGUSR1
     // User-defined signal 1.
     //
-    { SIGUSR1,  "SIGUSR1"},
+    { SIGUSR1,  (UTF8 *)"SIGUSR1"},
 #endif // SIGUSR1
 #ifdef SIGUSR2
     // User-defined signal 2.
     //
-    { SIGUSR2,  "SIGUSR2"},
+    { SIGUSR2,  (UTF8 *)"SIGUSR2"},
 #endif // SIGUSR2
 #if defined(SIGCHLD)
     // Child stopped or terminated.
     //
-    { SIGCHLD,  "SIGCHLD"},
+    { SIGCHLD,  (UTF8 *)"SIGCHLD"},
 #elif defined(SIGCLD)
 #define SIGCHLD SIGCLD
     // Child stopped or terminated.
     //
-    { SIGCLD,   "SIGCLD"},
+    { SIGCLD,   (UTF8 *)"SIGCLD"},
 #endif // SIGCHLD
 #ifdef SIGCONT
     // Continue if stopped.
     //
-    { SIGCONT,  "SIGCONT"},
+    { SIGCONT,  (UTF8 *)"SIGCONT"},
 #endif // SIGCONT
 #ifdef SIGSTOP
     // Stop process. Not catchable.
     //
-    { SIGSTOP,  "SIGSTOP"},
+    { SIGSTOP,  (UTF8 *)"SIGSTOP"},
 #endif // SIGSTOP
 #ifdef SIGTSTP
     // Stop typed at tty
     //
-    { SIGTSTP,  "SIGTSTP"},
+    { SIGTSTP,  (UTF8 *)"SIGTSTP"},
 #endif // SIGTSTP
 #ifdef SIGTTIN
     // tty input for background process.
     //
-    { SIGTTIN,  "SIGTTIN"},
+    { SIGTTIN,  (UTF8 *)"SIGTTIN"},
 #endif // SIGTTIN
 #ifdef SIGTTOU
     // tty output for background process.
     //
-    { SIGTTOU,  "SIGTTOU"},
+    { SIGTTOU,  (UTF8 *)"SIGTTOU"},
 #endif // SIGTTOU
 #ifdef SIGBUS
     // Bus error (bad memory access).
     //
-    { SIGBUS,   "SIGBUS"},
+    { SIGBUS,   (UTF8 *)"SIGBUS"},
 #endif // SIGBUS
 #ifdef SIGPROF
     // Profiling timer expired.
     //
-    { SIGPROF,  "SIGPROF"},
+    { SIGPROF,  (UTF8 *)"SIGPROF"},
 #endif // SIGPROF
 #ifdef SIGSYS
     // Bad argument to routine (SVID).
     //
-    { SIGSYS,   "SIGSYS"},
+    { SIGSYS,   (UTF8 *)"SIGSYS"},
 #endif // SIGSYS
 #ifdef SIGURG
     // Urgent condition on socket (4.2 BSD).
     //
-    { SIGURG,   "SIGURG"},
+    { SIGURG,   (UTF8 *)"SIGURG"},
 #endif // SIGURG
 #ifdef SIGVTALRM
     // Virtual alarm clock (4.2 BSD).
     //
-    { SIGVTALRM, "SIGVTALRM"},
+    { SIGVTALRM, (UTF8 *)"SIGVTALRM"},
 #endif // SIGVTALRM
 #ifdef SIGXCPU
     // CPU time limit exceeded (4.2 BSD).
     //
-    { SIGXCPU,  "SIGXCPU"},
+    { SIGXCPU,  (UTF8 *)"SIGXCPU"},
 #endif // SIGXCPU
 #ifdef SIGXFSZ
     // File size limit exceeded (4.2 BSD).
     //
-    { SIGXFSZ,  "SIGXFSZ"},
+    { SIGXFSZ,  (UTF8 *)"SIGXFSZ"},
 #endif // SIGXFSZ
 #ifdef SIGSTKFLT
     // Stack fault on coprocessor.
     //
-    { SIGSTKFLT, "SIGSTKFLT"},
+    { SIGSTKFLT, (UTF8 *)"SIGSTKFLT"},
 #endif // SIGSTKFLT
 #if defined(SIGIO)
     // I/O now possible (4.2 BSD). File lock lost.
     //
-    { SIGIO,    "SIGIO"},
+    { SIGIO,    (UTF8 *)"SIGIO"},
 #elif defined(SIGPOLL)
 #define SIGIO SIGPOLL
     // Pollable event (Sys V).
     //
-    { SIGPOLL,  "SIGPOLL"},
+    { SIGPOLL,  (UTF8 *)"SIGPOLL"},
 #endif // SIGIO
 #ifdef SIGLOST
-    { SIGLOST,  "SIGLOST"},
+    { SIGLOST,  (UTF8 *)"SIGLOST"},
 #endif // SIGLOST
 #if defined(SIGPWR)
     // Power failure (System V).
     //
-    { SIGPWR,   "SIGPWR"},
+    { SIGPWR,   (UTF8 *)"SIGPWR"},
 #elif defined(SIGINFO)
 #define SIGPWR SIGINFO
     // Power failure (System V).
     //
-    { SIGINFO,  "SIGINFO"},
+    { SIGINFO,  (UTF8 *)"SIGINFO"},
 #endif // SIGPWR
 #ifdef SIGWINCH
     // Window resize signal (4.3 BSD, Sun).
     //
-    { SIGWINCH, "SIGWINCH"},
+    { SIGWINCH, (UTF8 *)"SIGWINCH"},
 #endif // SIGWINCH
-    { 0,        "SIGZERO" },
+    { 0,        (UTF8 *)"SIGZERO" },
     { -1, NULL }
 };
 
 typedef struct
 {
-    const char *pShortName;
-    const char *pLongName;
+    const UTF8 *pShortName;
+    const UTF8 *pLongName;
 } MUX_SIGNAMES;
 
 static MUX_SIGNAMES signames[NSIG];
@@ -4080,14 +4080,14 @@ static void check_panicking(int sig)
     mudstate.panicking = true;
 }
 
-static char *SignalDesc(int iSignal)
+static UTF8 *SignalDesc(int iSignal)
 {
-    static char buff[LBUF_SIZE];
-    char *bufc = buff;
+    static UTF8 buff[LBUF_SIZE];
+    UTF8 *bufc = buff;
     safe_str(signames[iSignal].pShortName, buff, &bufc);
     if (signames[iSignal].pLongName)
     {
-        safe_str(" (", buff, &bufc);
+        safe_str((UTF8 *)" (", buff, &bufc);
         safe_str(signames[iSignal].pLongName, buff, &bufc);
         safe_chr(')', buff, &bufc);
     }
@@ -4097,8 +4097,8 @@ static char *SignalDesc(int iSignal)
 
 static void log_signal(int iSignal)
 {
-    STARTLOG(LOG_PROBLEMS, "SIG", "CATCH");
-    log_text("Caught signal ");
+    STARTLOG(LOG_PROBLEMS, (UTF8 *)"SIG", (UTF8 *)"CATCH");
+    log_text((UTF8 *)"Caught signal ");
     log_text(SignalDesc(iSignal));
     ENDLOG;
 }
@@ -4397,9 +4397,9 @@ static RETSIGTYPE DCL_CDECL sighandler(int sig)
 
 NAMETAB sigactions_nametab[] =
 {
-    {"exit",        3,  0,  SA_EXIT},
-    {"default",     1,  0,  SA_DFLT},
-    { NULL,         0,  0,  0}
+    {(UTF8 *)"exit",        3,  0,  SA_EXIT},
+    {(UTF8 *)"default",     1,  0,  SA_DFLT},
+    {(UTF8 *) NULL,         0,  0,  0}
 };
 
 void set_signals(void)
@@ -4422,7 +4422,7 @@ void set_signals(void)
     signal(SIGINT,  CAST_SIGNAL_FUNC sighandler);
     signal(SIGTERM, CAST_SIGNAL_FUNC sighandler);
     signal(SIGILL,  CAST_SIGNAL_FUNC sighandler);
-    signal(SIGSEGV, CAST_SIGNAL_FUNC sighandler);
+    //signal(SIGSEGV, CAST_SIGNAL_FUNC sighandler);
     signal(SIGABRT, CAST_SIGNAL_FUNC sighandler);
     signal(SIGFPE,  SIG_IGN);
 
@@ -4459,10 +4459,10 @@ void set_signals(void)
 
 void list_system_resources(dbref player)
 {
-    char buffer[80];
+    UTF8 buffer[80];
 
     int nTotal = 0;
-    notify(player, "System Resources");
+    notify(player, (UTF8 *)"System Resources");
 
     mux_sprintf(buffer, sizeof(buffer), "Total Open Files: %ld", DebugTotalFiles);
     notify(player, buffer);
@@ -4913,8 +4913,8 @@ void ProcessWindowsTCP(DWORD dwTimeout)
         }
         else if (lpo == &lpo_welcome)
         {
-            char *buff = alloc_mbuf("ProcessWindowsTCP.Premature");
-            mux_strncpy(buff, inet_ntoa(d->address.sin_addr), MBUF_SIZE-1);
+            UTF8 *buff = alloc_mbuf("ProcessWindowsTCP.Premature");
+            mux_strncpy(buff, (UTF8 *)inet_ntoa(d->address.sin_addr), MBUF_SIZE-1);
 
             // If the socket is invalid, the we were unable to queue a read
             // request, and the port was shutdown while this packet was in
@@ -4925,13 +4925,13 @@ void ProcessWindowsTCP(DWORD dwTimeout)
             // Log connection.
             //
             STARTLOG(LOG_NET | LOG_LOGIN, "NET", "CONN");
-            const char *lDesc = mux_i64toa_t(d->descriptor);
+            const UTF8 *lDesc = mux_i64toa_t(d->descriptor);
             Log.tinyprintf("[%s/%s] Connection opened (remote port %d)",
-                bInvalidSocket ? "UNKNOWN" : lDesc, buff,
+                bInvalidSocket ? (UTF8 *)"UNKNOWN" : lDesc, buff,
                 ntohs(d->address.sin_port));
             ENDLOG;
 
-            SiteMonSend(d->descriptor, buff, d, "Connection");
+            SiteMonSend(d->descriptor, buff, d, (UTF8 *)"Connection");
 
             if (bInvalidSocket)
             {
@@ -4942,7 +4942,7 @@ void ProcessWindowsTCP(DWORD dwTimeout)
                     buff, ntohs(d->address.sin_port));
                 ENDLOG;
 
-                SiteMonSend(d->descriptor, buff, d, "Connection closed prematurely");
+                SiteMonSend(d->descriptor, buff, d, (UTF8 *)"Connection closed prematurely");
             }
             else
             {
@@ -4989,7 +4989,7 @@ void ProcessWindowsTCP(DWORD dwTimeout)
 
 #endif // WIN32
 
-void SiteMonSend(SOCKET port, const char *address, DESC *d, const char *msg)
+void SiteMonSend(SOCKET port, const UTF8 *address, DESC *d, const UTF8 *msg)
 {
     // Don't do sitemon for blocked sites.
     //
@@ -5001,17 +5001,17 @@ void SiteMonSend(SOCKET port, const char *address, DESC *d, const char *msg)
 
     // Build the msg.
     //
-    char *sendMsg;
+    UTF8 *sendMsg;
     bool bSuspect = (d != NULL) && (d->host_info & H_SUSPECT);
     if (IS_INVALID_SOCKET(port))
     {
         sendMsg = tprintf("SITEMON: [UNKNOWN] %s from %s.%s", msg, address,
-            bSuspect ? " (SUSPECT)": "");
+            bSuspect ? (UTF8 *)" (SUSPECT)": (UTF8 *)"");
     }
     else
     {
         sendMsg = tprintf("SITEMON: [%d] %s from %s.%s", port, msg,
-            address, bSuspect ? " (SUSPECT)": "");
+            address, bSuspect ? (UTF8 *)" (SUSPECT)": (UTF8 *)"");
     }
 
     DESC *nd;

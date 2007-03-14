@@ -45,7 +45,7 @@ void do_dump(dbref executor, dbref caller, dbref enactor, int key)
         return;
     }
 #endif
-    notify(executor, "Dumping...");
+    notify(executor, (UTF8 *)"Dumping...");
     fork_and_dump(key);
 }
 
@@ -54,19 +54,19 @@ void do_dump(dbref executor, dbref caller, dbref enactor, int key)
 void report(void)
 {
     STARTLOG(LOG_BUGS, "BUG", "INFO");
-    log_text("Command: '");
+    log_text((UTF8 *)"Command: '");
     log_text(mudstate.debug_cmd);
-    log_text("'");
+    log_text((UTF8 *)"'");
     ENDLOG;
     if (Good_obj(mudstate.curr_executor))
     {
         STARTLOG(LOG_BUGS, "BUG", "INFO");
-        log_text("Player: ");
+        log_text((UTF8 *)"Player: ");
         log_name_and_loc(mudstate.curr_executor);
         if (  mudstate.curr_enactor != mudstate.curr_executor
            && Good_obj(mudstate.curr_enactor))
         {
-            log_text(" Enactor: ");
+            log_text((UTF8 *)" Enactor: ");
             log_name_and_loc(mudstate.curr_enactor);
         }
         ENDLOG;
@@ -80,10 +80,10 @@ void report(void)
 
 bool regexp_match
 (
-    char *pattern,
-    char *str,
+    UTF8 *pattern,
+    UTF8 *str,
     int case_opt,
-    char *args[],
+    UTF8 *args[],
     int nargs
 )
 {
@@ -100,7 +100,7 @@ bool regexp_match
 
     pcre *re;
     if (  MuxAlarm.bAlarmed
-       || (re = pcre_compile(pattern, case_opt, &errptr, &erroffset, NULL)) == NULL)
+       || (re = pcre_compile((char *)pattern, case_opt, &errptr, &erroffset, NULL)) == NULL)
     {
         /*
          * This is a matching error. We have an error message in
@@ -120,7 +120,7 @@ bool regexp_match
      * Now we try to match the pattern. The relevant fields will
      * automatically be filled in by this.
      */
-    matches = pcre_exec(re, NULL, str, static_cast<int>(strlen(str)), 0, 0, ovec, ovecsize);
+    matches = pcre_exec(re, NULL, (char *)str, static_cast<int>(strlen((char *)str)), 0, 0, ovec, ovecsize);
     if (matches < 0)
     {
         delete [] ovec;
@@ -146,8 +146,8 @@ bool regexp_match
     for (i = 0; i < nargs; ++i)
     {
         args[i] = alloc_lbuf("regexp_match");
-        if (pcre_copy_substring(str, ovec, matches, i,
-                                args[i], LBUF_SIZE) < 0)
+        if (pcre_copy_substring((char *)str, ovec, matches, i,
+                                (char *)args[i], LBUF_SIZE) < 0)
         {
             free_lbuf(args[i]);
             args[i] = NULL;
@@ -168,9 +168,9 @@ static int atr_match1
     dbref thing,
     dbref parent,
     dbref player,
-    char  type,
-    char  *str,
-    char  *raw_str,
+    UTF8  type,
+    UTF8  *str,
+    UTF8  *raw_str,
     int   check_exclude,
     int   hash_insert
 )
@@ -196,7 +196,7 @@ static int atr_match1
             // Because we know this object contains no commands, there is no
             // need to look at the attribute values.
             //
-            char *as;
+            unsigned char *as;
             atr_push();
             for (int atr = atr_head(parent, &as); atr; atr = atr_next(&as))
             {
@@ -219,7 +219,7 @@ static int atr_match1
     bool bFoundCommands = false;
     bool bFoundListens  = false;
 
-    char *as;
+    unsigned char *as;
     atr_push();
     for (int atr = atr_head(parent, &as); atr; atr = atr_next(&as))
     {
@@ -239,15 +239,15 @@ static int atr_match1
         //
         dbref aowner;
         int   aflags;
-        char buff[LBUF_SIZE];
+        UTF8 buff[LBUF_SIZE];
         atr_get_str(buff, parent, atr, &aowner, &aflags);
 
-        char *s = NULL;
+        UTF8 *s = NULL;
         if (  0 == (aflags & AF_NOPROG)
            &&  (  AMATCH_CMD    == buff[0]
                || AMATCH_LISTEN == buff[0]))
         {
-            s = strchr(buff+1, ':');
+            s = (UTF8 *)strchr((char *)buff+1, ':');
             if (s)
             {
                 if (AMATCH_CMD == buff[0])
@@ -302,7 +302,7 @@ static int atr_match1
         }
         *s++ = '\0';
 
-        char *args[NUM_ENV_VARS];
+        UTF8 *args[NUM_ENV_VARS];
         if (  (  0 != (aflags & AF_REGEXP)
             && regexp_match(buff + 1, (aflags & AF_NOPARSE) ? raw_str : str,
                 ((aflags & AF_CASE) ? 0 : PCRE_CASELESS), args, NUM_ENV_VARS))
@@ -357,9 +357,9 @@ bool atr_match
 (
     dbref thing,
     dbref player,
-    char  type,
-    char  *str,
-    char  *raw_str,
+    UTF8  type,
+    UTF8  *str,
+    UTF8  *raw_str,
     bool check_parents
 )
 {
@@ -427,11 +427,11 @@ bool atr_match
  * optionally notify the contents, neighbors, and location also.
  */
 
-static bool check_filter(dbref object, dbref player, int filter, const char *msg)
+static bool check_filter(dbref object, dbref player, int filter, const UTF8 *msg)
 {
     int aflags;
     dbref aowner;
-    char *buf = atr_pget(object, filter, &aowner, &aflags);
+    UTF8 *buf = atr_pget(object, filter, &aowner, &aflags);
     if (!*buf)
     {
         free_lbuf(buf);
@@ -442,8 +442,8 @@ static bool check_filter(dbref object, dbref player, int filter, const char *msg
     preserve = PushRegisters(MAX_GLOBAL_REGS);
     save_global_regs(preserve);
 
-    char *nbuf = alloc_lbuf("check_filter");
-    char *dp = nbuf;
+    UTF8 *nbuf = alloc_lbuf("check_filter");
+    UTF8 *dp = nbuf;
     mux_exec(buf, nbuf, &dp, object, player, player,
         AttrTrace(aflags, EV_FIGNORE|EV_EVAL|EV_TOP),
         NULL, 0);
@@ -459,7 +459,7 @@ static bool check_filter(dbref object, dbref player, int filter, const char *msg
     {
         do
         {
-            char *cp = parse_to(&dp, ',', EV_STRIP_CURLY);
+            UTF8 *cp = parse_to(&dp, ',', EV_STRIP_CURLY);
             mudstate.wild_invk_ctr = 0;
             if (  MuxAlarm.bAlarmed
                || quick_wild(cp, msg))
@@ -476,14 +476,14 @@ static bool check_filter(dbref object, dbref player, int filter, const char *msg
         {
             int erroffset;
             const char *errptr;
-            char *cp = parse_to(&dp, ',', EV_STRIP_CURLY);
+            UTF8 *cp = parse_to(&dp, ',', EV_STRIP_CURLY);
             pcre *re;
             if (  !MuxAlarm.bAlarmed
-               && (re = pcre_compile(cp, case_opt, &errptr, &erroffset, NULL)) != NULL)
+               && (re = pcre_compile((char *)cp, case_opt, &errptr, &erroffset, NULL)) != NULL)
             {
                 const int ovecsize = 33;
                 int ovec[ovecsize];
-                int matches = pcre_exec(re, NULL, msg, static_cast<int>(strlen(msg)), 0, 0,
+                int matches = pcre_exec(re, NULL, (char *)msg, static_cast<int>(strlen((char *)msg)), 0, 0,
                     ovec, ovecsize);
                 if (0 <= matches)
                 {
@@ -499,11 +499,11 @@ static bool check_filter(dbref object, dbref player, int filter, const char *msg
     return true;
 }
 
-static char *make_prefix(dbref object, dbref player, int prefix, const char *dflt)
+static UTF8 *make_prefix(dbref object, dbref player, int prefix, const UTF8 *dflt)
 {
     int aflags;
     dbref aowner;
-    char *buf, *nbuf, *cp;
+    UTF8 *buf, *nbuf, *cp;
 
     buf = atr_pget(object, prefix, &aowner, &aflags);
     if (!*buf)
@@ -511,7 +511,7 @@ static char *make_prefix(dbref object, dbref player, int prefix, const char *dfl
         cp = buf;
         if (NULL == dflt)
         {
-            safe_str("From ", buf, &cp);
+            safe_str((UTF8 *)"From ", buf, &cp);
             if (Good_obj(object))
             {
                 safe_str(Moniker(object), buf, &cp);
@@ -556,42 +556,42 @@ static char *make_prefix(dbref object, dbref player, int prefix, const char *dfl
  * allocated & freed by the caller.
  *
  * If you're using this to append to a string, you can pass in the
- * safe_{str|chr} (char **) so we can just do the append directly,
+ * safe_{str|chr} (UTF8 **) so we can just do the append directly,
  * saving you an alloc_lbuf()...free_lbuf().  If you want us to append
  * from the start of 'dest', just pass in a 0 for 'destp'.
  *
  * Returns 0 if the copy succeeded, 1 if it failed.
  */
-bool html_escape(const char *src, char *dest, char **destp)
+bool html_escape(const UTF8 *src, UTF8 *dest, UTF8 **destp)
 {
-    const char *msg_orig;
+    const UTF8 *msg_orig;
     bool ret = false;
 
     if (destp == 0)
     {
-        char *temp = dest;
+        UTF8 *temp = dest;
         destp = &temp;
     }
 
     for (msg_orig = src; msg_orig && *msg_orig && !ret; msg_orig++)
     {
-        char *p = *destp;
+        UTF8 *p = *destp;
         switch (*msg_orig)
         {
         case '<':
-            safe_str("&lt;", dest, destp);
+            safe_str((UTF8 *)"&lt;", dest, destp);
             break;
 
         case '>':
-            safe_str("&gt;", dest, destp);
+            safe_str((UTF8 *)"&gt;", dest, destp);
             break;
 
         case '&':
-            safe_str("&amp;", dest, destp);
+            safe_str((UTF8 *)"&amp;", dest, destp);
             break;
 
         case '\"':
-            safe_str("&quot;", dest, destp);
+            safe_str((UTF8 *)"&quot;", dest, destp);
             break;
 
         default:
@@ -652,9 +652,9 @@ void notify_check(dbref target, dbref sender, const mux_string &msg, int key)
 
     mux_string *msg_ns = new mux_string;
     mux_string *msgFinal = new mux_string;
-    char *tp;
-    char *prefix;
-    char *args[NUM_ENV_VARS];
+    UTF8 *tp;
+    UTF8 *prefix;
+    UTF8 *args[NUM_ENV_VARS];
     dbref aowner,  recip, obj;
     int i, nargs, aflags;
     FWDLIST *fp;
@@ -687,11 +687,11 @@ void notify_check(dbref target, dbref sender, const mux_string &msg, int key)
             }
             if (sender != mudstate.curr_enactor)
             {
-                msg_ns->append_TextPlain("<-(", 3);
+                msg_ns->append_TextPlain((UTF8 *)"<-(", 3);
                 msg_ns->append(mudstate.curr_enactor);
                 msg_ns->append(')');
             }
-            msg_ns->append_TextPlain("] ", 2);
+            msg_ns->append_TextPlain((UTF8 *)"] ", 2);
         }
     }
     msg_ns->append(msg);
@@ -717,19 +717,19 @@ void notify_check(dbref target, dbref sender, const mux_string &msg, int key)
                     mux_string *sTo = new mux_string;
 
                     sFrom->import('&');
-                    sTo->import("&amp;", 5);
+                    sTo->import((UTF8 *)"&amp;", 5);
                     msgFinal->edit(*sFrom, *sTo);
 
                     sFrom->import('<');
-                    sTo->import("&lt;", 4);
+                    sTo->import((UTF8 *)"&lt;", 4);
                     msgFinal->edit(*sFrom, *sTo);
 
                     sFrom->import('>');
-                    sTo->import("&gt;", 4);
+                    sTo->import((UTF8 *)"&gt;", 4);
                     msgFinal->edit(*sFrom, *sTo);
 
                     sFrom->import('\"');
-                    sTo->import("&quot;", 6);
+                    sTo->import((UTF8 *)"&quot;", 6);
                     msgFinal->edit(*sFrom, *sTo);
 
                     delete sFrom;
@@ -772,14 +772,14 @@ void notify_check(dbref target, dbref sender, const mux_string &msg, int key)
                  && targetloc != Owner(target))))
         {
             msgFinal->import(Moniker(target));
-            msgFinal->append("> ");
+            msgFinal->append((UTF8 *)"> ");
             msgFinal->append(*msg_ns);
             raw_notify(Owner(target), *msgFinal);
         }
 
         // Check for @Listen match if it will be useful.
         //
-        char *msgPlain = alloc_lbuf("notify_check.plain");
+        UTF8 *msgPlain = alloc_lbuf("notify_check.plain");
         msg.export_TextPlain(msgPlain);
         bool pass_listen = false;
         nargs = 0;
@@ -895,7 +895,7 @@ void notify_check(dbref target, dbref sender, const mux_string &msg, int key)
                    && (  recip != target
                       && check_filter(obj, sender, A_FILTER, msgPlain)))
                 {
-                    prefix = make_prefix(obj, target, A_PREFIX, "From a distance,");
+                    prefix = make_prefix(obj, target, A_PREFIX, (UTF8 *)"From a distance,");
                     msgFinal->import(prefix);
                     free_lbuf(prefix);
 
@@ -940,7 +940,7 @@ void notify_check(dbref target, dbref sender, const mux_string &msg, int key)
                    && recip != target
                    && check_filter(obj, sender, A_FILTER, msgPlain))
                 {
-                    prefix = make_prefix(obj, target, A_PREFIX, "From a distance,");
+                    prefix = make_prefix(obj, target, A_PREFIX, (UTF8 *)"From a distance,");
                     msgPrefixed2->import(prefix);
                     free_lbuf(prefix);
 
@@ -963,7 +963,7 @@ void notify_check(dbref target, dbref sender, const mux_string &msg, int key)
             //
             if (key & MSG_S_OUTSIDE)
             {
-                prefix = make_prefix(target, sender, A_INPREFIX, "");
+                prefix = make_prefix(target, sender, A_INPREFIX, (UTF8 *)"");
                 msgFinal->import(prefix);
                 free_lbuf(prefix);
 
@@ -994,7 +994,7 @@ void notify_check(dbref target, dbref sender, const mux_string &msg, int key)
         {
             if (key & MSG_S_INSIDE)
             {
-                prefix = make_prefix(target, sender, A_PREFIX, "");
+                prefix = make_prefix(target, sender, A_PREFIX, (UTF8 *)"");
                 msgFinal->import(prefix);
                 free_lbuf(prefix);
 
@@ -1044,7 +1044,7 @@ void notify_check(dbref target, dbref sender, const mux_string &msg, int key)
     mudstate.ntfy_nest_lev--;
 }
 
-void notify_check(dbref target, dbref sender, const char *msg, int key)
+void notify_check(dbref target, dbref sender, const UTF8 *msg, int key)
 {
     // If speaker is invalid or message is empty, just exit.
     //
@@ -1062,7 +1062,7 @@ void notify_check(dbref target, dbref sender, const char *msg, int key)
     delete sMsg;
 }
 
-void notify_except(dbref loc, dbref player, dbref exception, const char *msg, int key)
+void notify_except(dbref loc, dbref player, dbref exception, const UTF8 *msg, int key)
 {
     dbref first;
 
@@ -1079,7 +1079,7 @@ void notify_except(dbref loc, dbref player, dbref exception, const char *msg, in
     }
 }
 
-void notify_except2(dbref loc, dbref player, dbref exc1, dbref exc2, const char *msg)
+void notify_except2(dbref loc, dbref player, dbref exc1, dbref exc2, const UTF8 *msg)
 {
     dbref first;
 
@@ -1119,20 +1119,20 @@ static void report_timecheck
     if (  yes_log
        && (LOG_TIMEUSE & mudconf.log_options))
     {
-        start_log("OBJ", "CPU");
+        start_log((UTF8 *)"OBJ", (UTF8 *)"CPU");
         log_name(player);
-        log_text(" checks object time use over ");
+        log_text((UTF8 *)" checks object time use over ");
         log_number(ltdPeriod.ReturnSeconds());
-        log_text(" seconds" ENDLINE);
+        log_text((UTF8 *)" seconds" ENDLINE);
     }
     else
     {
         yes_log = false;
         STARTLOG(LOG_ALWAYS, "WIZ", "TIMECHECK");
         log_name(player);
-        log_text(" checks object time use over ");
+        log_text((UTF8 *)" checks object time use over ");
         log_number(ltdPeriod.ReturnSeconds());
-        log_text(" seconds");
+        log_text((UTF8 *)" seconds");
         ENDLOG;
     }
 
@@ -1228,7 +1228,7 @@ void do_shutdown
     dbref enactor,
     int   eval,
     int   key,
-    char *message
+    UTF8 *message
 )
 {
     UNUSED_PARAMETER(caller);
@@ -1243,19 +1243,19 @@ void do_shutdown
 
     raw_broadcast(0, "GAME: Shutdown by %s", Moniker(Owner(executor)));
     STARTLOG(LOG_ALWAYS, "WIZ", "SHTDN");
-    log_text("Shutdown by ");
+    log_text((UTF8 *)"Shutdown by ");
     log_name(executor);
     ENDLOG;
 
     STARTLOG(LOG_ALWAYS, "WIZ", "SHTDN");
-    log_text("Shutdown status: ");
+    log_text((UTF8 *)"Shutdown status: ");
     log_text(message);
     ENDLOG;
 
     int fd;
     if (mux_open(&fd, mudconf.status_file, O_RDWR|O_CREAT|O_TRUNC|O_BINARY))
     {
-        mux_write(fd, message, static_cast<unsigned int>(strlen(message)));
+        mux_write(fd, message, static_cast<unsigned int>(strlen((char *)message)));
         mux_write(fd, ENDLINE, sizeof(ENDLINE)-1);
         DebugTotalFiles++;
         if (mux_close(fd) == 0)
@@ -1289,12 +1289,12 @@ void do_shutdown
         CLOSE;
 
         STARTLOG(LOG_ALWAYS, "DMP", "PANIC");
-        log_text("Panic dump: ");
+        log_text((UTF8 *)"Panic dump: ");
         log_text(mudconf.crashdb);
         ENDLOG;
         dump_database_internal(DUMP_I_PANIC);
         STARTLOG(LOG_ALWAYS, "DMP", "DONE");
-        log_text("Panic dump complete: ");
+        log_text((UTF8 *)"Panic dump complete: ");
         log_text(mudconf.crashdb);
         ENDLOG;
     }
@@ -1322,20 +1322,20 @@ void do_shutdown
 //
 typedef struct
 {
-    char **ppszOutputBase;
-    char szOutputSuffix[14];
+    UTF8 **ppszOutputBase;
+    UTF8 szOutputSuffix[14];
     bool bUseTemporary;
     int  fType;
-    char *pszErrorMessage;
+    UTF8 *pszErrorMessage;
 } DUMP_PROCEDURE;
 
 static DUMP_PROCEDURE DumpProcedures[NUM_DUMP_TYPES] =
 {
-    { 0,                ""       , false, 0,                             "" }, // 0 -- Handled specially.
-    { &mudconf.crashdb, ""       , false, UNLOAD_VERSION | UNLOAD_FLAGS, "Opening crash file" }, // 1
-    { &mudconf.indb,    ""       , true,  OUTPUT_VERSION | OUTPUT_FLAGS, "Opening input file" }, // 2
-    { &mudconf.indb,   ".FLAT"   , false, UNLOAD_VERSION | UNLOAD_FLAGS, "Opening flatfile"   }, // 3
-    { &mudconf.indb,   ".SIG"    , false, UNLOAD_VERSION | UNLOAD_FLAGS, "Opening signalled flatfile"}  // 4
+    { 0,                (UTF8 *)""       , false, 0,                             (UTF8 *)"" }, // 0 -- Handled specially.
+    { &mudconf.crashdb, (UTF8 *)""       , false, UNLOAD_VERSION | UNLOAD_FLAGS, (UTF8 *)"Opening crash file" }, // 1
+    { &mudconf.indb,    (UTF8 *)""       , true,  OUTPUT_VERSION | OUTPUT_FLAGS, (UTF8 *)"Opening input file" }, // 2
+    { &mudconf.indb,   (UTF8 *)".FLAT"   , false, UNLOAD_VERSION | UNLOAD_FLAGS, (UTF8 *)"Opening flatfile"   }, // 3
+    { &mudconf.indb,   (UTF8 *)".SIG"    , false, UNLOAD_VERSION | UNLOAD_FLAGS, (UTF8 *)"Opening signalled flatfile"}  // 4
 };
 
 #ifdef WIN32
@@ -1348,9 +1348,9 @@ static DUMP_PROCEDURE DumpProcedures[NUM_DUMP_TYPES] =
 
 void dump_database_internal(int dump_type)
 {
-    char tmpfile[SIZEOF_PATHNAME+32];
-    char outfn[SIZEOF_PATHNAME+32];
-    char prevfile[SIZEOF_PATHNAME+32];
+    UTF8 tmpfile[SIZEOF_PATHNAME+32];
+    UTF8 outfn[SIZEOF_PATHNAME+32];
+    UTF8 prevfile[SIZEOF_PATHNAME+32];
     FILE *f;
 
     if (  dump_type < 0
@@ -1389,12 +1389,12 @@ void dump_database_internal(int dump_type)
         {
             mux_sprintf(tmpfile, sizeof(tmpfile), "%s.#%d#", outfn, mudstate.epoch);
             RemoveFile(tmpfile);
-            bOpen = mux_fopen(&f, tmpfile, "wb");
+            bOpen = mux_fopen(&f, tmpfile, (UTF8 *)"wb");
         }
         else
         {
             RemoveFile(outfn);
-            bOpen = mux_fopen(&f, outfn, "wb");
+            bOpen = mux_fopen(&f, outfn, (UTF8 *)"wb");
         }
 
         if (bOpen)
@@ -1414,14 +1414,14 @@ void dump_database_internal(int dump_type)
         }
         else
         {
-            log_perror("DMP", "FAIL", dp->pszErrorMessage, outfn);
+            log_perror((UTF8 *)"DMP", (UTF8 *)"FAIL", dp->pszErrorMessage, outfn);
         }
 
         if (!bPotentialConflicts)
         {
             if (mudconf.have_mailer)
             {
-                if (mux_fopen(&f, mudconf.mail_db, "wb"))
+                if (mux_fopen(&f, mudconf.mail_db, (UTF8 *)"wb"))
                 {
                     DebugTotalFiles++;
                     dump_mail(f);
@@ -1449,7 +1449,7 @@ void dump_database_internal(int dump_type)
         mux_sprintf(tmpfile, sizeof(tmpfile), "%s.#%d#.gz", mudconf.outdb, mudstate.epoch);
         mux_sprintf(outfn, sizeof(outfn), "%s.gz", mudconf.outdb);
 
-        f = popen(tprintf("%s > %s", mudconf.compress, tmpfile), POPEN_WRITE_OP);
+        f = popen((char *)tprintf("%s > %s", mudconf.compress, tmpfile), POPEN_WRITE_OP);
         if (f)
         {
             DebugTotalFiles++;
@@ -1462,12 +1462,12 @@ void dump_database_internal(int dump_type)
             ReplaceFile(outfn, prevfile);
             if (ReplaceFile(tmpfile, outfn) < 0)
             {
-                log_perror("SAV", "FAIL", "Renaming output file to DB file", tmpfile);
+                log_perror((UTF8 *)"SAV", (UTF8 *)"FAIL", (UTF8 *)"Renaming output file to DB file", tmpfile);
             }
         }
         else
         {
-            log_perror("SAV", "FAIL", "Opening", tmpfile);
+            log_perror((UTF8 *)"SAV", (UTF8 *)"FAIL", (UTF8 *)"Opening", tmpfile);
         }
     }
     else
@@ -1477,7 +1477,7 @@ void dump_database_internal(int dump_type)
         RemoveFile(tmpfile);
         mux_sprintf(tmpfile, sizeof(tmpfile), "%s.#%d#", mudconf.outdb, mudstate.epoch);
 
-        if (mux_fopen(&f, tmpfile, "wb"))
+        if (mux_fopen(&f, tmpfile, (UTF8 *)"wb"))
         {
             DebugTotalFiles++;
             setvbuf(f, NULL, _IOFBF, 16384);
@@ -1489,18 +1489,18 @@ void dump_database_internal(int dump_type)
             ReplaceFile(mudconf.outdb, prevfile);
             if (ReplaceFile(tmpfile, mudconf.outdb) < 0)
             {
-                log_perror("SAV", "FAIL", "Renaming output file to DB file", tmpfile);
+                log_perror((UTF8 *)"SAV", (UTF8 *)"FAIL", (UTF8 *)"Renaming output file to DB file", tmpfile);
             }
         }
         else
         {
-            log_perror("SAV", "FAIL", "Opening", tmpfile);
+            log_perror((UTF8 *)"SAV", (UTF8 *)"FAIL", (UTF8 *)"Opening", tmpfile);
         }
     }
 
     if (mudconf.have_mailer)
     {
-        if (mux_fopen(&f, mudconf.mail_db, "wb"))
+        if (mux_fopen(&f, mudconf.mail_db, (UTF8 *)"wb"))
         {
             DebugTotalFiles++;
             dump_mail(f);
@@ -1519,7 +1519,7 @@ void dump_database_internal(int dump_type)
 
 static void dump_database(void)
 {
-    char *buff;
+    UTF8 *buff;
 
     mudstate.epoch++;
 
@@ -1545,7 +1545,7 @@ static void dump_database(void)
     mux_sprintf(buff, MBUF_SIZE, "%s.#%d#", mudconf.outdb, mudstate.epoch);
 
     STARTLOG(LOG_DBSAVES, "DMP", "DUMP");
-    log_text("Dumping: ");
+    log_text((UTF8 *)"Dumping: ");
     log_text(buff);
     ENDLOG;
 
@@ -1563,7 +1563,7 @@ static void dump_database(void)
     SYNC;
 
     STARTLOG(LOG_DBSAVES, "DMP", "DONE")
-    log_text("Dump complete: ");
+    log_text((UTF8 *)"Dump complete: ");
     log_text(buff);
     ENDLOG;
     free_mbuf(buff);
@@ -1605,23 +1605,23 @@ void fork_and_dump(int key)
         raw_broadcast(0, "%s", mudconf.dump_msg);
     }
     check_mail_expiration();
-    char *buff = alloc_lbuf("fork_and_dump");
+    UTF8 *buff = alloc_lbuf("fork_and_dump");
     if (key & (DUMP_TEXT|DUMP_STRUCT))
     {
         STARTLOG(LOG_DBSAVES, "DMP", "CHKPT");
         if (key & DUMP_TEXT)
         {
-            log_text("SYNCing");
+            log_text((UTF8 *)"SYNCing");
             if (key & DUMP_STRUCT)
             {
-                log_text(" and ");
+                log_text((UTF8 *)" and ");
             }
         }
         if (key & DUMP_STRUCT)
         {
             mudstate.epoch++;
             mux_sprintf(buff, LBUF_SIZE, "%s.#%d#", mudconf.outdb, mudstate.epoch);
-            log_text("Checkpointing: ");
+            log_text((UTF8 *)"Checkpointing: ");
             log_text(buff);
         }
         ENDLOG;
@@ -1629,7 +1629,7 @@ void fork_and_dump(int key)
     if (key & DUMP_FLATFILE)
     {
         STARTLOG(LOG_DBSAVES, "DMP", "FLAT");
-        log_text("Creating flatfile: ");
+        log_text((UTF8 *)"Creating flatfile: ");
         mux_sprintf(buff, LBUF_SIZE, "%s.FLAT", mudconf.outdb);
         log_text(buff);
         ENDLOG;
@@ -1757,7 +1757,7 @@ static int load_game(int ccPageFile)
 #endif // MEMORY_BASED
 {
     FILE *f = NULL;
-    char infile[SIZEOF_PATHNAME+8];
+    UTF8 infile[SIZEOF_PATHNAME+8];
     struct stat statbuf;
     int db_format, db_version, db_flags;
 
@@ -1766,9 +1766,9 @@ static int load_game(int ccPageFile)
     if (mudconf.compress_db)
     {
         mux_sprintf(infile, sizeof(infile), "%s.gz", mudconf.indb);
-        if (stat(infile, &statbuf) == 0)
+        if (stat((char *)infile, &statbuf) == 0)
         {
-            f = popen(tprintf(" %s < %s", mudconf.uncompress, infile), POPEN_READ_OP);
+            f = popen((char *)tprintf(" %s < %s", mudconf.uncompress, infile), POPEN_READ_OP);
             if (f != NULL)
             {
                 DebugTotalFiles++;
@@ -1780,7 +1780,7 @@ static int load_game(int ccPageFile)
     if (!compressed)
     {
         mux_strncpy(infile, mudconf.indb, sizeof(infile)-1);
-        if (stat(infile, &statbuf) != 0)
+        if (stat((char *)infile, &statbuf) != 0)
         {
             // Indicate that we couldn't load because the input db didn't
             // exist.
@@ -1788,7 +1788,7 @@ static int load_game(int ccPageFile)
             return LOAD_GAME_NO_INPUT_DB;
         }
 
-        if (!mux_fopen(&f, infile, "rb"))
+        if (!mux_fopen(&f, infile, (UTF8 *)"rb"))
         {
             return LOAD_GAME_CANNOT_OPEN;
         }
@@ -1799,7 +1799,7 @@ static int load_game(int ccPageFile)
     // Ok, read it in.
     //
     STARTLOG(LOG_STARTUP, "INI", "LOAD")
-    log_text("Loading: ");
+    log_text((UTF8 *)"Loading: ");
     log_text(infile);
     ENDLOG
     if (db_read(f, &db_format, &db_version, &db_flags) < 0)
@@ -1823,7 +1823,7 @@ static int load_game(int ccPageFile)
         f = 0;
 
         STARTLOG(LOG_ALWAYS, "INI", "FATAL")
-        log_text("Error loading ");
+        log_text((UTF8 *)"Error loading ");
         log_text(infile);
         ENDLOG
         return LOAD_GAME_LOADING_PROBLEM;
@@ -1855,7 +1855,7 @@ static int load_game(int ccPageFile)
         if (ccPageFile == HF_OPEN_STATUS_NEW)
         {
             STARTLOG(LOG_STARTUP, "INI", "LOAD");
-            log_text("Attributes are not present in either the input file or the attribute database.");
+            log_text((UTF8 *)"Attributes are not present in either the input file or the attribute database.");
             ENDLOG;
         }
     }
@@ -1866,7 +1866,7 @@ static int load_game(int ccPageFile)
         if (ccPageFile == HF_OPEN_STATUS_OLD)
         {
             STARTLOG(LOG_STARTUP, "INI", "LOAD");
-            log_text("Attributes present in both the input file and the attribute database.");
+            log_text((UTF8 *)"Attributes present in both the input file and the attribute database.");
             ENDLOG;
         }
     }
@@ -1879,7 +1879,7 @@ static int load_game(int ccPageFile)
 
     if (mudconf.have_mailer)
     {
-        if (mux_fopen(&f, mudconf.mail_db, "rb"))
+        if (mux_fopen(&f, mudconf.mail_db, (UTF8 *)"rb"))
         {
             DebugTotalFiles++;
             setvbuf(f, NULL, _IOFBF, 16384);
@@ -1894,7 +1894,7 @@ static int load_game(int ccPageFile)
         }
     }
     STARTLOG(LOG_STARTUP, "INI", "LOAD");
-    log_text("Load complete.");
+    log_text((UTF8 *)"Load complete.");
     ENDLOG;
 
     return LOAD_GAME_SUCCESS;
@@ -1914,9 +1914,9 @@ bool list_check
 (
     dbref thing,
     dbref player,
-    char  type,
-    char  *str,
-    char  *raw_str,
+    UTF8  type,
+    UTF8  *str,
+    UTF8  *raw_str,
     bool check_parent
 )
 {
@@ -1980,8 +1980,8 @@ bool Hearer(dbref thing)
         {
             bool bFoundCommands = false;
 
-            char *buff = alloc_lbuf("Hearer");
-            char *as;
+            UTF8 *buff = alloc_lbuf("Hearer");
+            UTF8 *as;
             atr_push();
             for (int atr = atr_head(thing, &as); atr; atr = atr_next(&as))
             {
@@ -2001,11 +2001,11 @@ bool Hearer(dbref thing)
                     continue;
                 }
 
-                char *s = NULL;
+                UTF8 *s = NULL;
                 if (  AMATCH_CMD    == buff[0]
                    || AMATCH_LISTEN == buff[0])
                 {
-                    s = strchr(buff+1, ':');
+                    s = (UTF8 *)strchr((char *)buff+1, ':');
                     if (s)
                     {
                         if (AMATCH_CMD == buff[0])
@@ -2056,7 +2056,7 @@ static void process_preload(void)
 {
     dbref thing, parent, aowner;
     int aflags, lev;
-    char *tstr;
+    UTF8 *tstr;
 
     tstr = alloc_lbuf("process_preload.string");
     DO_WHOLE_DB(thing)
@@ -2123,21 +2123,21 @@ static void process_preload(void)
 
 static void info(int fmt, int flags, int ver)
 {
-    const char *cp;
+    const UTF8 *cp;
 
     if (fmt == F_MUX)
     {
-        cp = "MUX";
+        cp = (UTF8 *)"MUX";
     }
     else
     {
-        cp = "*unknown*";
+        cp = (UTF8 *)"*unknown*";
     }
     Log.tinyprintf("%s version %d:", cp, ver);
     if (  ver < MIN_SUPPORTED_VERSION
        || MAX_SUPPORTED_VERSION < ver)
     {
-        Log.WriteString(" Unsupported version");
+        Log.WriteString((UTF8 *)" Unsupported version");
     }
     else if (  (  (  1 == ver
                   || 2 == ver)
@@ -2145,22 +2145,22 @@ static void info(int fmt, int flags, int ver)
             || (  3 == ver
                && (flags & MANDFLAGS_V3) != MANDFLAGS_V3))
     {
-        Log.WriteString(" Unsupported flags");
+        Log.WriteString((UTF8 *)" Unsupported flags");
     }
     if (flags & V_DATABASE)
-        Log.WriteString(" Database");
+        Log.WriteString((UTF8 *)" Database");
     if (flags & V_ATRNAME)
-        Log.WriteString(" AtrName");
+        Log.WriteString((UTF8 *)" AtrName");
     if (flags & V_ATRKEY)
-        Log.WriteString(" AtrKey");
+        Log.WriteString((UTF8 *)" AtrKey");
     if (flags & V_ATRMONEY)
-        Log.WriteString(" AtrMoney");
-    Log.WriteString("\n");
+        Log.WriteString((UTF8 *)" AtrMoney");
+    Log.WriteString((UTF8 *)"\n");
 }
 
-static char *standalone_infile = NULL;
-static char *standalone_outfile = NULL;
-static char *standalone_basename = NULL;
+static UTF8 *standalone_infile = NULL;
+static UTF8 *standalone_outfile = NULL;
+static UTF8 *standalone_basename = NULL;
 static bool standalone_check = false;
 static bool standalone_load = false;
 static bool standalone_unload = false;
@@ -2170,7 +2170,7 @@ static void dbconvert(void)
     int setflags, clrflags, ver;
     int db_ver, db_format, db_flags;
 
-    Log.SetBasename("-");
+    Log.SetBasename((UTF8 *)"-");
     Log.StartLogging();
 
     SeedRandomNumberGenerator();
@@ -2211,16 +2211,16 @@ static void dbconvert(void)
     //
     init_attrtab();
 
-    char dirfile[SIZEOF_PATHNAME];
-    char *dirfile_c = dirfile;
+    UTF8 dirfile[SIZEOF_PATHNAME];
+    UTF8 *dirfile_c = dirfile;
     safe_copy_str(standalone_basename, dirfile, &dirfile_c, (SIZEOF_PATHNAME-1));
-    safe_copy_str(".dir", dirfile, &dirfile_c, (SIZEOF_PATHNAME-1));
+    safe_copy_str((UTF8 *)".dir", dirfile, &dirfile_c, (SIZEOF_PATHNAME-1));
     *dirfile_c = '\0';
 
-    char pagfile[SIZEOF_PATHNAME];
-    char *pagfile_c = pagfile;
+    UTF8 pagfile[SIZEOF_PATHNAME];
+    UTF8 *pagfile_c = pagfile;
     safe_copy_str(standalone_basename, pagfile, &pagfile_c, (SIZEOF_PATHNAME-1));
-    safe_copy_str(".pag", pagfile, &pagfile_c, (SIZEOF_PATHNAME-1));
+    safe_copy_str((UTF8 *)".pag", pagfile, &pagfile_c, (SIZEOF_PATHNAME-1));
     *pagfile_c = '\0';
 
     int cc = init_dbfile(dirfile, pagfile, 650);
@@ -2249,7 +2249,7 @@ static void dbconvert(void)
     }
 
     FILE *fpIn;
-    if (!mux_fopen(&fpIn, standalone_infile, "rb"))
+    if (!mux_fopen(&fpIn, standalone_infile, (UTF8 *)"rb"))
     {
         exit(1);
     }
@@ -2266,7 +2266,7 @@ static void dbconvert(void)
     {
         cache_pass2();
     }
-    Log.WriteString("Input: ");
+    Log.WriteString((UTF8 *)"Input: ");
     info(db_format, db_flags, db_ver);
 
     if (standalone_check)
@@ -2278,7 +2278,7 @@ static void dbconvert(void)
     if (do_write)
     {
         FILE *fpOut;
-        if (!mux_fopen(&fpOut, standalone_outfile, "wb"))
+        if (!mux_fopen(&fpOut, standalone_outfile, (UTF8 *)"wb"))
         {
             exit(1);
         }
@@ -2292,7 +2292,7 @@ static void dbconvert(void)
         {
             db_ver = ver;
         }
-        Log.WriteString("Output: ");
+        Log.WriteString((UTF8 *)"Output: ");
         info(F_MUX, db_flags, db_ver);
         setvbuf(fpOut, NULL, _IOFBF, 16384);
 #ifndef MEMORY_BASED
@@ -2309,10 +2309,10 @@ static void dbconvert(void)
 }
 #endif // MEMORY_BASED
 
-static void write_pidfile(const char *pFilename)
+static void write_pidfile(const UTF8 *pFilename)
 {
     FILE *fp;
-    if (mux_fopen(&fp, pFilename, "wb"))
+    if (mux_fopen(&fp, pFilename, (UTF8 *)"wb"))
     {
         fprintf(fp, "%d" ENDLINE, game_pid);
         fclose(fp);
@@ -2396,9 +2396,9 @@ long DebugTotalMemory = 0;
 
 static bool bMinDB = false;
 static bool bSyntaxError = false;
-static char *conffile = NULL;
+static UTF8 *conffile = NULL;
 static bool bVersion = false;
-static char *pErrorBasename = "";
+static UTF8 *pErrorBasename = (UTF8 *)"";
 static bool bServerOption = false;
 
 #ifdef MEMORY_BASED
@@ -2436,12 +2436,12 @@ static void CLI_CallBack(CLI_OptionEntry *p, char *pValue)
         {
         case CLI_DO_PID_FILE:
             bServerOption = true;
-            mudconf.pid_file = pValue;
+            mudconf.pid_file = (UTF8 *)pValue;
             break;
 
         case CLI_DO_CONFIG_FILE:
             bServerOption = true;
-            conffile = pValue;
+            conffile = (UTF8 *)pValue;
             break;
 
         case CLI_DO_MINIMAL:
@@ -2456,7 +2456,7 @@ static void CLI_CallBack(CLI_OptionEntry *p, char *pValue)
 
         case CLI_DO_ERRORPATH:
             bServerOption = true;
-            pErrorBasename = pValue;
+            pErrorBasename = (UTF8 *)pValue;
             break;
 
 #ifdef WIN32
@@ -2468,12 +2468,12 @@ static void CLI_CallBack(CLI_OptionEntry *p, char *pValue)
 #ifndef MEMORY_BASED
         case CLI_DO_INFILE:
             mudstate.bStandAlone = true;
-            standalone_infile = pValue;
+            standalone_infile = (UTF8 *)pValue;
             break;
 
         case CLI_DO_OUTFILE:
             mudstate.bStandAlone = true;
-            standalone_outfile = pValue;
+            standalone_outfile = (UTF8 *)pValue;
             break;
 
         case CLI_DO_CHECK:
@@ -2493,7 +2493,7 @@ static void CLI_CallBack(CLI_OptionEntry *p, char *pValue)
 
         case CLI_DO_BASENAME:
             mudstate.bStandAlone = true;
-            standalone_basename = pValue;
+            standalone_basename = (UTF8 *)pValue;
             break;
 #endif
 
@@ -2889,8 +2889,8 @@ static void cpu_init(void)
 
 #endif // __INTEL_COMPILER
 
-#define DBCONVERT_NAME1 "dbconvert"
-#define DBCONVERT_NAME2 "dbconvert.exe"
+#define DBCONVERT_NAME1 (UTF8 *)"dbconvert"
+#define DBCONVERT_NAME2 (UTF8 *)"dbconvert.exe"
 
 int DCL_CDECL main(int argc, char *argv[])
 {
@@ -2913,13 +2913,13 @@ int DCL_CDECL main(int argc, char *argv[])
     }
     pProg++;
     mudstate.bStandAlone = false;
-    if (  mux_stricmp(pProg, DBCONVERT_NAME1) == 0
-       || mux_stricmp(pProg, DBCONVERT_NAME2) == 0)
+    if (  mux_stricmp((UTF8 *)pProg, DBCONVERT_NAME1) == 0
+       || mux_stricmp((UTF8 *)pProg, DBCONVERT_NAME2) == 0)
     {
         mudstate.bStandAlone = true;
     }
 
-    mudconf.pid_file = "netmux.pid";
+    mudconf.pid_file = (UTF8 *)"netmux.pid";
 
     // Parse the command line
     //
@@ -3026,7 +3026,7 @@ int DCL_CDECL main(int argc, char *argv[])
     HINSTANCE hInstKernel32 = LoadLibrary("kernel32");
     if (!hInstKernel32)
     {
-        Log.WriteString("LoadLibrary of kernel32 failed. Cannot use completion ports." ENDLINE);
+        Log.WriteString((UTF8 *)"LoadLibrary of kernel32 failed. Cannot use completion ports." ENDLINE);
         bUseCompletionPorts = false;
     }
     else
@@ -3042,7 +3042,7 @@ int DCL_CDECL main(int argc, char *argv[])
             fpCancelIo = (FCANCELIO *)GetProcAddress(hInstKernel32, "CancelIo");
             if (NULL == fpCancelIo)
             {
-                Log.WriteString("GetProcAddress of _CancelIo failed." ENDLINE);
+                Log.WriteString((UTF8 *)"GetProcAddress of _CancelIo failed." ENDLINE);
                 bUseCompletionPorts = false;
             }
         }
@@ -3052,17 +3052,17 @@ int DCL_CDECL main(int argc, char *argv[])
         {
             // We can work with or without GetProcessTimes().
             //
-            Log.WriteString("GetProcAddress of GetProcessTimes failed, but that's OK." ENDLINE);
+            Log.WriteString((UTF8 *)"GetProcAddress of GetProcessTimes failed, but that's OK." ENDLINE);
         }
     }
 
     if (bUseCompletionPorts)
     {
-        Log.WriteString("Using NT I/O Completion Ports for networking." ENDLINE);
+        Log.WriteString((UTF8 *)"Using NT I/O Completion Ports for networking." ENDLINE);
     }
     else
     {
-        Log.WriteString("Using select() for networking." ENDLINE);
+        Log.WriteString((UTF8 *)"Using select() for networking." ENDLINE);
     }
 
     // Initialize WinSock.
@@ -3071,7 +3071,7 @@ int DCL_CDECL main(int argc, char *argv[])
     WSADATA wsaData;
     if (WSAStartup(wVersionRequested, &wsaData) != 0)
     {
-        Log.WriteString("ERROR: Could not initialize WinSock." ENDLINE);
+        Log.WriteString((UTF8 *)"ERROR: Could not initialize WinSock." ENDLINE);
         return 101;
     }
 
@@ -3087,7 +3087,7 @@ int DCL_CDECL main(int argc, char *argv[])
     }
     if (!bCryptoAPI)
     {
-        Log.WriteString("Crypto API unavailable.\r\n");
+        Log.WriteString((UTF8 *)"Crypto API unavailable.\r\n");
     }
 #endif // WIN32
 
@@ -3139,7 +3139,7 @@ int DCL_CDECL main(int argc, char *argv[])
     if (HF_OPEN_STATUS_ERROR == ccPageFile)
     {
         STARTLOG(LOG_ALWAYS, "INI", "LOAD");
-        log_text("Couldn't load text database: ");
+        log_text((UTF8 *)"Couldn't load text database: ");
         log_text(mudconf.game_dir);
         log_text(mudconf.game_pag);
         ENDLOG;
@@ -3180,7 +3180,7 @@ int DCL_CDECL main(int argc, char *argv[])
         if (ccInFile != LOAD_GAME_SUCCESS)
         {
             STARTLOG(LOG_ALWAYS, "INI", "LOAD")
-            log_text("Couldn't load: ");
+            log_text((UTF8 *)"Couldn't load: ");
             log_text(mudconf.indb);
             ENDLOG
             return 2;
@@ -3262,7 +3262,7 @@ int DCL_CDECL main(int argc, char *argv[])
      }
 #endif // INLINESQL
 
-    close_sockets(false, "Going down - Bye");
+    close_sockets(false, (UTF8 *)"Going down - Bye");
     dump_database();
 
     // All shutdown, barring logfiles, should be done, shutdown the
@@ -3327,7 +3327,7 @@ void init_rlimit(void)
 }
 #endif // HAVE_SETRLIMIT RLIMIT_NOFILE
 
-bool mux_fopen(FILE **pFile, const char *filename, const char *mode)
+bool mux_fopen(FILE **pFile, const UTF8 *filename, const UTF8 *mode)
 {
     if (pFile)
     {
@@ -3340,7 +3340,7 @@ bool mux_fopen(FILE **pFile, const char *filename, const char *mode)
             //
             return (fopen_s(pFile, filename, mode) == 0);
 #else
-            *pFile = fopen(filename, mode);
+            *pFile = fopen((char *)filename, (char *)mode);
             if (NULL != *pFile)
             {
                 return true;
@@ -3351,7 +3351,7 @@ bool mux_fopen(FILE **pFile, const char *filename, const char *mode)
     return false;
 }
 
-bool mux_open(int *pfh, const char *filename, int oflag)
+bool mux_open(int *pfh, const UTF8 *filename, int oflag)
 {
     if (NULL != pfh)
     {
@@ -3361,12 +3361,12 @@ bool mux_open(int *pfh, const char *filename, int oflag)
 #if defined(WIN32) && !defined(__INTEL_COMPILER) && (_MSC_VER >= 1400)
             // 1400 is Visual C++ 2005
             //
-            return (_sopen_s(pfh, filename, oflag, _SH_DENYNO, _S_IREAD|_S_IWRITE) == 0);
+            return (_sopen_s(pfh, (char *)filename, oflag, _SH_DENYNO, _S_IREAD|_S_IWRITE) == 0);
 #elif defined(win32)
-            *pfh = _open(filename, oflag, _S_IREAD|_S_IWRITE);
+            *pfh = _open((char *)filename, oflag, _S_IREAD|_S_IWRITE);
             return (0 <= *pfh);
 #else
-            *pfh = open(filename, oflag, 0600);
+            *pfh = open((char *)filename, oflag, 0600);
             return (0 <= *pfh);
 #endif
         }
@@ -3374,15 +3374,15 @@ bool mux_open(int *pfh, const char *filename, int oflag)
     return false;
 }
 
-const char *mux_strerror(int errnum)
+const UTF8 *mux_strerror(int errnum)
 {
 #if defined(WIN32) && !defined(__INTEL_COMPILER) && (_MSC_VER >= 1400)
     // 1400 is Visual C++ 2005
     //
-    static char buffer[80];
+    static UTF8 buffer[80];
     strerror_s(buffer, sizeof(buffer), errnum);
     return buffer;
 #else
-    return strerror(errnum);
+    return (UTF8 *)strerror(errnum);
 #endif
 }

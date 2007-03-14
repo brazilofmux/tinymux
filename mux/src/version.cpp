@@ -20,7 +20,7 @@ void do_version(dbref executor, dbref caller, dbref enactor, int extra)
     UNUSED_PARAMETER(extra);
 
     notify(executor, mudstate.version);
-    char *buff = alloc_mbuf("do_version");
+    UTF8 *buff = alloc_mbuf("do_version");
     mux_sprintf(buff, MBUF_SIZE, "Build date: %s", MUX_BUILD_DATE);
     notify(executor, buff);
     free_mbuf(buff);
@@ -87,11 +87,11 @@ void build_version(void)
 void init_version(void)
 {
     STARTLOG(LOG_ALWAYS, "INI", "START");
-    log_text("Starting: ");
+    log_text((UTF8 *)"Starting: ");
     log_text(mudstate.version);
     ENDLOG;
     STARTLOG(LOG_ALWAYS, "INI", "START");
-    log_text("Build date: ");
-    log_text(MUX_BUILD_DATE);
+    log_text((UTF8 *)"Build date: ");
+    log_text((UTF8 *)MUX_BUILD_DATE);
     ENDLOG;
 }

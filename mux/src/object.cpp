@@ -30,44 +30,44 @@ static int check_type;
  */
 
 static void Log_pointer_err(dbref prior, dbref obj, dbref loc, dbref ref,
-    const char *reftype, const char *errtype)
+    const UTF8 *reftype, const UTF8 *errtype)
 {
     STARTLOG(LOG_PROBLEMS, "OBJ", "DAMAG");
     log_type_and_name(obj);
     if (loc != NOTHING)
     {
-        log_text(" in ");
+        log_text((UTF8 *)" in ");
         log_type_and_name(loc);
     }
-    log_text(": ");
+    log_text((UTF8 *)": ");
     if (prior == NOTHING)
     {
         log_text(reftype);
     }
     else
     {
-        log_text("Next pointer");
+        log_text((UTF8 *)"Next pointer");
     }
-    log_text(" ");
+    log_text((UTF8 *)" ");
     log_type_and_name(ref);
-    log_text(" ");
+    log_text((UTF8 *)" ");
     log_text(errtype);
     ENDLOG;
 }
 
 static void Log_header_err(dbref obj, dbref loc, dbref val, bool is_object,
-    const char *valtype, const char *errtype)
+    const UTF8 *valtype, const UTF8 *errtype)
 {
     STARTLOG(LOG_PROBLEMS, "OBJ", "DAMAG");
     log_type_and_name(obj);
     if (loc != NOTHING)
     {
-        log_text(" in ");
+        log_text((UTF8 *)" in ");
         log_type_and_name(loc);
     }
-    log_text(": ");
+    log_text((UTF8 *)": ");
     log_text(valtype);
-    log_text(" ");
+    log_text((UTF8 *)" ");
     if (is_object)
     {
         log_type_and_name(val);
@@ -76,21 +76,21 @@ static void Log_header_err(dbref obj, dbref loc, dbref val, bool is_object,
     {
         log_number(val);
     }
-    log_text(" ");
+    log_text((UTF8 *)" ");
     log_text(errtype);
     ENDLOG;
 }
 
-static void Log_simple_err(dbref obj, dbref loc, const char *errtype)
+static void Log_simple_err(dbref obj, dbref loc, const UTF8 *errtype)
 {
     STARTLOG(LOG_PROBLEMS, "OBJ", "DAMAG");
     log_type_and_name(obj);
     if (loc != NOTHING)
     {
-        log_text(" in ");
+        log_text((UTF8 *)" in ");
         log_type_and_name(loc);
     }
-    log_text(": ");
+    log_text((UTF8 *)": ");
     log_text(errtype);
     ENDLOG;
 }
@@ -181,15 +181,15 @@ dbref clone_home(dbref player, dbref thing)
  * * afford it.
  */
 
-dbref create_obj(dbref player, int objtype, const char *name, int cost)
+dbref create_obj(dbref player, int objtype, const UTF8 *name, int cost)
 {
     dbref obj, owner;
     int quota = 0, value = 0;
     size_t nValidName;
     FLAGSET f;
-    char *buff;
-    const char *pValidName;
-    const char *tname;
+    UTF8 *buff;
+    const UTF8 *pValidName;
+    const UTF8 *tname;
     bool okname = false, self_owned = false, require_inherit = false;
 
     switch (objtype)
@@ -200,7 +200,7 @@ dbref create_obj(dbref player, int objtype, const char *name, int cost)
         quota = mudconf.room_quota;
         f = mudconf.room_flags;
         pValidName = MakeCanonicalObjectName(name, &nValidName, &okname);
-        tname = "a room";
+        tname = (UTF8 *)"a room";
         break;
 
     case TYPE_THING:
@@ -213,7 +213,7 @@ dbref create_obj(dbref player, int objtype, const char *name, int cost)
         f = mudconf.thing_flags;
         value = OBJECT_ENDOWMENT(cost);
         pValidName = MakeCanonicalObjectName(name, &nValidName, &okname);
-        tname = "a thing";
+        tname = (UTF8 *)"a thing";
         break;
 
     case TYPE_EXIT:
@@ -222,7 +222,7 @@ dbref create_obj(dbref player, int objtype, const char *name, int cost)
         quota = mudconf.exit_quota;
         f = mudconf.exit_flags;
         pValidName = MakeCanonicalExitName(name, &nValidName, &okname);
-        tname = "an exit";
+        tname = (UTF8 *)"an exit";
         break;
 
     case TYPE_PLAYER:
@@ -233,7 +233,7 @@ dbref create_obj(dbref player, int objtype, const char *name, int cost)
             quota = mudconf.player_quota;
             f = mudconf.robot_flags;
             value = 0;
-            tname = "a robot";
+            tname = (UTF8 *)"a robot";
             require_inherit = true;
         }
         else
@@ -244,13 +244,13 @@ dbref create_obj(dbref player, int objtype, const char *name, int cost)
             value = mudconf.paystart;
             quota = mudconf.start_quota;
             self_owned = true;
-            tname = "a player";
+            tname = (UTF8 *)"a player";
         }
         buff = munge_space(name);
         pValidName = name;
         if (!badname_check(buff))
         {
-            notify(player, "That name is not allowed.");
+            notify(player, (UTF8 *)"That name is not allowed.");
             free_lbuf(buff);
             return NOTHING;
         }
@@ -259,7 +259,7 @@ dbref create_obj(dbref player, int objtype, const char *name, int cost)
             okname = ValidatePlayerName(buff);
             if (!okname)
             {
-                notify(player, "That's a silly name for a player.");
+                notify(player, (UTF8 *)"That's a silly name for a player.");
                 free_lbuf(buff);
                 return NOTHING;
             }
@@ -460,7 +460,7 @@ void destroy_obj(dbref obj)
            && !Quiet(obj)
            && !Quiet(owner))
         {
-            notify(owner, "Halted.");
+            notify(owner, (UTF8 *)"Halted.");
         }
         nfy_que(obj, A_SEMAPHORE, NFY_DRAIN, 0);
 
@@ -617,14 +617,14 @@ void empty_obj(dbref obj)
         if (!Has_location(targ))
         {
             Log_simple_err(targ, obj,
-                   "Funny object type in contents list of GOING location. Flush terminated.");
+                   (UTF8 *)"Funny object type in contents list of GOING location. Flush terminated.");
             break;
         }
         else if (Location(targ) != obj)
         {
             Log_header_err(targ, obj, Location(targ), true,
-                   "Location",
-                   "indicates object really in another location during cleanup of GOING location.  Flush terminated.");
+                   (UTF8 *)"Location",
+                   (UTF8 *)"indicates object really in another location during cleanup of GOING location.  Flush terminated.");
             break;
         }
         else
@@ -648,13 +648,13 @@ void empty_obj(dbref obj)
     {
         if (!isExit(targ) && !isGarbage(targ))
         {
-            Log_simple_err(targ, obj, "Funny object type in exit list of GOING location. Flush terminated.");
+            Log_simple_err(targ, obj, (UTF8 *)"Funny object type in exit list of GOING location. Flush terminated.");
             break;
         }
         else if (Exits(targ) != obj)
         {
-            Log_header_err(targ, obj, Exits(targ), true, "Location",
-                   "indicates exit really in another location during cleanup of GOING location.  Flush terminated.");
+            Log_header_err(targ, obj, Exits(targ), true, (UTF8 *)"Location",
+                   (UTF8 *)"indicates exit really in another location during cleanup of GOING location.  Flush terminated.");
             break;
         }
         else
@@ -687,7 +687,7 @@ void destroy_player(dbref player, dbref victim)
 {
     // Bye bye...
     //
-    boot_off(victim, "You have been destroyed!");
+    boot_off(victim, (UTF8 *)"You have been destroyed!");
     halt_que(victim, NOTHING);
     int count = chown_all(victim, player, player, CHOWN_NOZONE);
 
@@ -696,7 +696,7 @@ void destroy_player(dbref player, dbref victim)
     delete_player_name(victim, Name(victim));
     dbref aowner;
     int aflags;
-    char *buf = atr_pget(victim, A_ALIAS, &aowner, &aflags);
+    UTF8 *buf = atr_pget(victim, A_ALIAS, &aowner, &aflags);
     delete_player_name(victim, buf);
     free_lbuf(buf);
 
@@ -715,7 +715,7 @@ static void purge_going(void)
             continue;
         }
 
-        const char *p;
+        const UTF8 *p;
         switch (Typeof(i))
         {
         case TYPE_PLAYER:
@@ -727,10 +727,10 @@ static void purge_going(void)
                 dbref loc = Location(i);
                 if (loc != NOTHING)
                 {
-                    log_text(" in ");
+                    log_text((UTF8 *)" in ");
                     log_type_and_name(loc);
                 }
-                log_text("GOING object doesn't remember it's destroyer. GOING reset.");
+                log_text((UTF8 *)"GOING object doesn't remember it's destroyer. GOING reset.");
                 ENDLOG;
                 db[i].fs.word[FLAG_WORD1] &= ~GOING;
             }
@@ -765,7 +765,7 @@ static void purge_going(void)
             // Something else... How did this happen?
             //
             Log_simple_err(i, NOTHING,
-              "GOING object with unexpected type.  Destroyed.");
+              (UTF8 *)"GOING object with unexpected type.  Destroyed.");
             destroy_obj(i);
         }
     }
@@ -774,7 +774,7 @@ static void purge_going(void)
 // ---------------------------------------------------------------------------
 // check_dead_refs: Look for references to GOING or illegal objects.
 //
-static void check_pennies(dbref thing, int limit, const char *qual)
+static void check_pennies(dbref thing, int limit, const UTF8 *qual)
 {
     if (Going(thing))
     {
@@ -785,23 +785,23 @@ static void check_pennies(dbref thing, int limit, const char *qual)
     {
         if (isRoom(thing) || isExit(thing))
         {
-            Log_header_err(thing, NOTHING, j, false, qual, "is strange.  Reset.");
+            Log_header_err(thing, NOTHING, j, false, qual, (UTF8 *)"is strange.  Reset.");
             s_Pennies(thing, 0);
         }
         else if (j < 0)
         {
-            Log_header_err(thing, NOTHING, j, false, qual, "is negative.");
+            Log_header_err(thing, NOTHING, j, false, qual, (UTF8 *)"is negative.");
         }
         else if (limit < j)
         {
-            Log_header_err(thing, NOTHING, j, false, qual, "is excessive.");
+            Log_header_err(thing, NOTHING, j, false, qual, (UTF8 *)"is excessive.");
         }
     }
     else
     {
         if(isPlayer(thing) || isThing(thing))
         {
-            Log_header_err(thing, NOTHING, j, false, qual, "is zero.");
+            Log_header_err(thing, NOTHING, j, false, qual, (UTF8 *)"is zero.");
         }
     }
 }
@@ -810,7 +810,7 @@ static void check_dead_refs(void)
 {
     dbref targ, owner, i, j;
     int aflags;
-    char *str;
+    UTF8 *str;
     FWDLIST *fp;
     bool dirty;
 
@@ -823,14 +823,14 @@ static void check_dead_refs(void)
         {
             if (isPlayer(i))
             {
-                Log_header_err(i, NOTHING, owner, true, "Owner",
-                    "is invalid.  Set to player.");
+                Log_header_err(i, NOTHING, owner, true, (UTF8 *)"Owner",
+                    (UTF8 *)"is invalid.  Set to player.");
                 owner = i;
             }
             else
             {
-                Log_header_err(i, NOTHING, owner, true, "Owner",
-                    "is invalid.  Set to GOD.");
+                Log_header_err(i, NOTHING, owner, true, (UTF8 *)"Owner",
+                    (UTF8 *)"is invalid.  Set to GOD.");
                 owner = GOD;
             }
             s_Owner(i, owner);
@@ -847,13 +847,13 @@ static void check_dead_refs(void)
                 if (isPlayer(i))
                 {
                     Log_header_err(i, NOTHING, owner, true,
-                       "Owner", "is set GOING.  Set to player.");
+                       (UTF8 *)"Owner", (UTF8 *)"is set GOING.  Set to player.");
                     owner = i;
                 }
                 else
                 {
                     Log_header_err(i, NOTHING, owner, true,
-                       "Owner", "is set GOING.  Set to GOD.");
+                       (UTF8 *)"Owner", (UTF8 *)"is set GOING.  Set to GOD.");
                     owner = GOD;
                 }
                 s_Owner(i, owner);
@@ -868,13 +868,13 @@ static void check_dead_refs(void)
                 if (isPlayer(i))
                 {
                     Log_header_err(i, NOTHING, owner, true,
-                       "Owner", "is not a valid owner type.  Set to player.");
+                       (UTF8 *)"Owner", (UTF8 *)"is not a valid owner type.  Set to player.");
                     owner = i;
                 }
                 else
                 {
                     Log_header_err(i, NOTHING, owner, true,
-                       "Owner", "is not a valid owner type.  Set to GOD.");
+                       (UTF8 *)"Owner", (UTF8 *)"is not a valid owner type.  Set to GOD.");
                     owner = GOD;
                 }
                 s_Owner(i, owner);
@@ -900,15 +900,15 @@ static void check_dead_refs(void)
                 }
                 else
                 {
-                    Log_header_err(i, Location(i), targ, true, "Parent",
-                        "is invalid.  Cleared.");
+                    Log_header_err(i, Location(i), targ, true, (UTF8 *)"Parent",
+                        (UTF8 *)"is invalid.  Cleared.");
                 }
             }
         }
         else if (targ != NOTHING)
         {
             Log_header_err(i, Location(i), targ, true,
-                "Parent", "is invalid.  Cleared.");
+                (UTF8 *)"Parent", (UTF8 *)"is invalid.  Cleared.");
             s_Parent(i, NOTHING);
         }
 
@@ -932,15 +932,15 @@ static void check_dead_refs(void)
                 }
                 else
                 {
-                    Log_header_err(i, Location(i), targ, true, "Zone",
-                        "is invalid.  Cleared.");
+                    Log_header_err(i, Location(i), targ, true, (UTF8 *)"Zone",
+                        (UTF8 *)"is invalid.  Cleared.");
                 }
             }
         }
         else if (targ != NOTHING)
         {
-            Log_header_err(i, Location(i), targ, true, "Zone",
-                "is invalid.  Cleared.");
+            Log_header_err(i, Location(i), targ, true, (UTF8 *)"Zone",
+                (UTF8 *)"is invalid.  Cleared.");
             s_Zone(i, NOTHING);
         }
 
@@ -984,12 +984,12 @@ static void check_dead_refs(void)
             {
                 if (isPlayer(i))
                 {
-                    Log_simple_err(i, NOTHING, "Player is a WIZARD.");
+                    Log_simple_err(i, NOTHING, (UTF8 *)"Player is a WIZARD.");
                 }
                 if (!Wizard(Owner(i)))
                 {
                     Log_header_err(i, NOTHING, Owner(i), true,
-                               "Owner", "of a WIZARD object is not a wizard");
+                               (UTF8 *)"Owner", (UTF8 *)"of a WIZARD object is not a wizard");
                 }
             }
         }
@@ -1003,7 +1003,7 @@ static void check_dead_refs(void)
             if (  !Good_obj(targ)
                || !Has_contents(targ))
             {
-                Log_simple_err(i, Location(i), "Bad home. Reset.");
+                Log_simple_err(i, Location(i), (UTF8 *)"Bad home. Reset.");
                 s_Home(i, default_home());
             }
 
@@ -1013,8 +1013,8 @@ static void check_dead_refs(void)
             if (  !Good_obj(targ)
                || !Has_contents(targ))
             {
-                Log_pointer_err(NOTHING, i, NOTHING, targ, "Location",
-                    "is invalid.  Moved to home.");
+                Log_pointer_err(NOTHING, i, NOTHING, targ, (UTF8 *)"Location",
+                    (UTF8 *)"is invalid.  Moved to home.");
                 move_object(i, Home(i));
             }
 
@@ -1023,7 +1023,7 @@ static void check_dead_refs(void)
             if (Next(i) == i)
             {
                 Log_simple_err(i, NOTHING,
-                     "Next points to self.  Next cleared.");
+                     (UTF8 *)"Next points to self.  Next cleared.");
                 s_Next(i, NOTHING);
             }
 
@@ -1032,7 +1032,7 @@ static void check_dead_refs(void)
                 // Check wealth.
                 //
                 targ = mudconf.paylimit;
-                check_pennies(i, targ, "Wealth");
+                check_pennies(i, targ, (UTF8 *)"Wealth");
             }
             break;
 
@@ -1054,8 +1054,8 @@ static void check_dead_refs(void)
                     }
                     else
                     {
-                        Log_header_err(i, Location(i), targ, true, "Home",
-                            "is invalid.  Cleared.");
+                        Log_header_err(i, Location(i), targ, true, (UTF8 *)"Home",
+                            (UTF8 *)"is invalid.  Cleared.");
                     }
                 }
                 s_Home(i, new_home(i));
@@ -1067,8 +1067,8 @@ static void check_dead_refs(void)
             if (  !Good_obj(targ)
                || !Has_contents(targ))
             {
-                Log_pointer_err(NOTHING, i, NOTHING, targ, "Location",
-                    "is invalid.  Moved to home.");
+                Log_pointer_err(NOTHING, i, NOTHING, targ, (UTF8 *)"Location",
+                    (UTF8 *)"is invalid.  Moved to home.");
                 move_object(i, HOME);
             }
 
@@ -1077,7 +1077,7 @@ static void check_dead_refs(void)
             if (Next(i) == i)
             {
                 Log_simple_err(i, NOTHING,
-                    "Next points to self.  Next cleared.");
+                    (UTF8 *)"Next points to self.  Next cleared.");
                 s_Next(i, NOTHING);
             }
             if (check_type & DBCK_FULL)
@@ -1085,7 +1085,7 @@ static void check_dead_refs(void)
                 // Check value.
                 //
                 targ = OBJECT_ENDOWMENT(mudconf.createmax);
-                check_pennies(i, targ, "Value");
+                check_pennies(i, targ, (UTF8 *)"Value");
             }
             break;
 
@@ -1110,16 +1110,16 @@ static void check_dead_refs(void)
                     }
                     else
                     {
-                        Log_header_err(i, NOTHING, targ, true, "Dropto",
-                            "is invalid.  Removed.");
+                        Log_header_err(i, NOTHING, targ, true, (UTF8 *)"Dropto",
+                            (UTF8 *)"is invalid.  Removed.");
                     }
                 }
             }
             else if (  targ != NOTHING
                     && targ != HOME)
             {
-                Log_header_err(i, NOTHING, targ, true, "Dropto",
-                    "is invalid.  Cleared.");
+                Log_header_err(i, NOTHING, targ, true, (UTF8 *)"Dropto",
+                    (UTF8 *)"is invalid.  Cleared.");
                 s_Dropto(i, NOTHING);
             }
             if (check_type & DBCK_FULL)
@@ -1128,8 +1128,8 @@ static void check_dead_refs(void)
                 //
                 if (Next(i) != NOTHING)
                 {
-                    Log_header_err(i, NOTHING, Next(i), true, "Next pointer",
-                        "should be NOTHING.  Reset.");
+                    Log_header_err(i, NOTHING, Next(i), true, (UTF8 *)"Next pointer",
+                        (UTF8 *)"should be NOTHING.  Reset.");
                     s_Next(i, NOTHING);
                 }
 
@@ -1137,14 +1137,14 @@ static void check_dead_refs(void)
                 //
                 if (Link(i) != NOTHING)
                 {
-                    Log_header_err(i, NOTHING, Link(i), true, "Link pointer ",
-                        "should be NOTHING.  Reset.");
+                    Log_header_err(i, NOTHING, Link(i), true, (UTF8 *)"Link pointer ",
+                        (UTF8 *)"should be NOTHING.  Reset.");
                     s_Link(i, NOTHING);
                 }
 
                 // Check value.
                 //
-                check_pennies(i, 1, "Value");
+                check_pennies(i, 1, (UTF8 *)"Value");
             }
             break;
 
@@ -1167,16 +1167,16 @@ static void check_dead_refs(void)
             }
             else if (targ != NOTHING)
             {
-                Log_header_err(i, Exits(i), targ, true, "Destination",
-                    "is invalid.  Exit destroyed.");
+                Log_header_err(i, Exits(i), targ, true, (UTF8 *)"Destination",
+                    (UTF8 *)"is invalid.  Exit destroyed.");
                 s_Going(i);
             }
             else
             {
                 if (!Has_contents(targ))
                 {
-                    Log_header_err(i, Exits(i), targ, true, "Destination",
-                        "is not a valid type.  Exit destroyed.");
+                    Log_header_err(i, Exits(i), targ, true, (UTF8 *)"Destination",
+                        (UTF8 *)"is not a valid type.  Exit destroyed.");
                     s_Going(i);
                 }
             }
@@ -1186,7 +1186,7 @@ static void check_dead_refs(void)
             if (Next(i) == i)
             {
                 Log_simple_err(i, NOTHING,
-                    "Next points to self.  Next cleared.");
+                    (UTF8 *)"Next points to self.  Next cleared.");
                 s_Next(i, NOTHING);
             }
             if (check_type & DBCK_FULL)
@@ -1195,8 +1195,8 @@ static void check_dead_refs(void)
                 //
                 if (Contents(i) != NOTHING)
                 {
-                    Log_header_err(i, Exits(i), Contents(i), true, "Contents",
-                        "should be NOTHING.  Reset.");
+                    Log_header_err(i, Exits(i), Contents(i), true, (UTF8 *)"Contents",
+                        (UTF8 *)"should be NOTHING.  Reset.");
                     s_Contents(i, NOTHING);
                 }
 
@@ -1204,14 +1204,14 @@ static void check_dead_refs(void)
                 //
                 if (Link(i) != NOTHING)
                 {
-                    Log_header_err(i, Exits(i), Link(i), true, "Link",
-                        "should be NOTHING.  Reset.");
+                    Log_header_err(i, Exits(i), Link(i), true, (UTF8 *)"Link",
+                        (UTF8 *)"should be NOTHING.  Reset.");
                     s_Link(i, NOTHING);
                 }
 
                 // Check value.
                 //
-                check_pennies(i, 1, "Value");
+                check_pennies(i, 1, (UTF8 *)"Value");
             }
             break;
 
@@ -1222,7 +1222,7 @@ static void check_dead_refs(void)
 
             // Funny object type, destroy it.
             //
-            Log_simple_err(i, NOTHING, "Funny object type.  Destroyed.");
+            Log_simple_err(i, NOTHING, (UTF8 *)"Funny object type.  Destroyed.");
             destroy_obj(i);
         }
     }
@@ -1287,8 +1287,8 @@ static void check_loc_exits(dbref loc)
         {
             // A bad pointer - terminate chain.
             //
-            Log_pointer_err(back, loc, NOTHING, exit, "Exit list",
-                "is invalid.  List nulled.");
+            Log_pointer_err(back, loc, NOTHING, exit, (UTF8 *)"Exit list",
+                (UTF8 *)"is invalid.  List nulled.");
             if (back != NOTHING)
             {
                 s_Next(back, NOTHING);
@@ -1303,8 +1303,8 @@ static void check_loc_exits(dbref loc)
         {
             // Not an exit - terminate chain.
             //
-            Log_pointer_err(back, loc, NOTHING, exit, "Exitlist member",
-                "is not an exit.  List terminated.");
+            Log_pointer_err(back, loc, NOTHING, exit, (UTF8 *)"Exitlist member",
+                (UTF8 *)"is not an exit.  List terminated.");
             if (back != NOTHING)
             {
                 s_Next(back, NOTHING);
@@ -1336,8 +1336,8 @@ static void check_loc_exits(dbref loc)
         {
             // Already in another list - terminate chain.
             //
-            Log_pointer_err(back, loc, NOTHING, exit, "Exitlist member",
-                "is in another exitlist.  Cleared.");
+            Log_pointer_err(back, loc, NOTHING, exit, (UTF8 *)"Exitlist member",
+                (UTF8 *)"is in another exitlist.  Cleared.");
             if (back != NOTHING)
             {
                 s_Next(back, NOTHING);
@@ -1354,8 +1354,8 @@ static void check_loc_exits(dbref loc)
         {
             // Destination is not in the db.  Null it.
             //
-            Log_pointer_err(back, loc, NOTHING, exit, "Destination",
-                "is invalid.  Cleared.");
+            Log_pointer_err(back, loc, NOTHING, exit, (UTF8 *)"Destination",
+                (UTF8 *)"is invalid.  Cleared.");
             s_Location(exit, NOTHING);
         }
         else if (exitloc != loc)
@@ -1370,8 +1370,8 @@ static void check_loc_exits(dbref loc)
             {
                 // It's in the other list, give it up.
                 //
-                Log_pointer_err(back, loc, NOTHING, exit, "",
-                    "is in another exitlist.  List terminated.");
+                Log_pointer_err(back, loc, NOTHING, exit, (UTF8 *)"",
+                    (UTF8 *)"is in another exitlist.  List terminated.");
                 if (back != NOTHING)
                 {
                     s_Next(back, NOTHING);
@@ -1387,7 +1387,7 @@ static void check_loc_exits(dbref loc)
                 // Not in the other list, assume in ours.
                 //
                 Log_header_err(exit, loc, exitloc, true,
-                    "Not on chain for location", "Reset.");
+                    (UTF8 *)"Not on chain for location", (UTF8 *)"Reset.");
                 s_Exits(exit, loc);
             }
         }
@@ -1404,8 +1404,8 @@ static void check_loc_exits(dbref loc)
                 if (  temp != Owner(loc)
                    && temp != Owner(Location(exit)))
                 {
-                    Log_header_err(exit, loc, temp, true, "Owner",
-                        "does not own either the source or destination.");
+                    Log_header_err(exit, loc, temp, true, (UTF8 *)"Owner",
+                        (UTF8 *)"does not own either the source or destination.");
                 }
             }
             Mark(exit);
@@ -1430,7 +1430,7 @@ static void check_exit_chains(void)
         if (  isExit(i)
            && !Marked(i))
         {
-            Log_simple_err(i, NOTHING, "Disconnected exit.  Destroyed.");
+            Log_simple_err(i, NOTHING, (UTF8 *)"Disconnected exit.  Destroyed.");
             destroy_obj(i);
         }
     }
@@ -1476,8 +1476,8 @@ static void check_misplaced_obj(dbref *obj, dbref back, dbref loc)
     {
         // It's in the other list, give it up.
         //
-        Log_pointer_err(back, loc, NOTHING, *obj, "",
-            "is in another contents list.  Cleared.");
+        Log_pointer_err(back, loc, NOTHING, *obj, (UTF8 *)"",
+            (UTF8 *)"is in another contents list.  Cleared.");
         if (back != NOTHING)
         {
             s_Next(back, NOTHING);
@@ -1492,8 +1492,8 @@ static void check_misplaced_obj(dbref *obj, dbref back, dbref loc)
     {
         // Not in the other list, assume in ours.
         //
-        Log_header_err(*obj, loc, Contents(*obj), true, "Location",
-            "is invalid.  Reset.");
+        Log_header_err(*obj, loc, Contents(*obj), true, (UTF8 *)"Location",
+            (UTF8 *)"is invalid.  Reset.");
         s_Contents(*obj, loc);
     }
     return;
@@ -1522,8 +1522,8 @@ static void check_loc_contents(dbref loc)
         {
             // A bad pointer - terminate chain.
             //
-            Log_pointer_err(back, loc, NOTHING, obj, "Contents list",
-                "is invalid.  Cleared.");
+            Log_pointer_err(back, loc, NOTHING, obj, (UTF8 *)"Contents list",
+                (UTF8 *)"is invalid.  Cleared.");
             if (back != NOTHING)
             {
                 s_Next(back, NOTHING);
@@ -1538,8 +1538,8 @@ static void check_loc_contents(dbref loc)
         {
             // Not a player or thing - terminate chain.
             //
-            Log_pointer_err(back, loc, NOTHING, obj, "",
-                "is not a player or thing.  Cleared.");
+            Log_pointer_err(back, loc, NOTHING, obj, (UTF8 *)"",
+                (UTF8 *)"is not a player or thing.  Cleared.");
             if (back != NOTHING)
             {
                 s_Next(back, NOTHING);
@@ -1587,7 +1587,7 @@ static void check_loc_contents(dbref loc)
                     if (Commer(obj))
                     {
                         Log_simple_err(obj, loc,
-                            "Wizard command handling object inside non-wizard.");
+                            (UTF8 *)"Wizard command handling object inside non-wizard.");
                     }
                 }
 
@@ -1597,7 +1597,7 @@ static void check_loc_contents(dbref loc)
                    && !Wizard(obj)
                    && !Wizard(Owner(obj)))
                 {
-                    Log_simple_err(obj, loc, "Non-wizard object inside wizard.");
+                    Log_simple_err(obj, loc, (UTF8 *)"Non-wizard object inside wizard.");
                 }
             }
             Mark(obj);
@@ -1622,7 +1622,7 @@ static void check_contents_chains(void)
            && !Marked(i)
            && Has_location(i))
         {
-            Log_simple_err(i, Location(i), "Orphaned object, moved home.");
+            Log_simple_err(i, Location(i), (UTF8 *)"Orphaned object, moved home.");
             s_Location(i, NOTHING);
             s_Next(i, NOTHING);
             if (  !Good_obj(Home(i))
@@ -1703,7 +1703,7 @@ static void check_floating(void)
             }
             else
             {
-                Log_simple_err(i, NOTHING, "Disconnected room.");
+                Log_simple_err(i, NOTHING, (UTF8 *)"Disconnected room.");
             }
         }
     }
@@ -1741,6 +1741,6 @@ void do_dbck(dbref executor, dbref caller, dbref enactor, int key)
        && executor != NOTHING
        && !Quiet(executor))
     {
-        notify(executor, "Done.");
+        notify(executor, (UTF8 *)"Done.");
     }
 }

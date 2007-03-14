@@ -14,9 +14,9 @@ typedef struct Aname
     unsigned int    attrnum;
 } Aname;
 
-extern const char *cache_get(Aname *nam, size_t *pLen);
-extern bool cache_put(Aname *nam, const char *obj, size_t len);
-extern int  cache_init(const char *game_dir_file, const char *game_pag_file,
+extern const UTF8 *cache_get(Aname *nam, size_t *pLen);
+extern bool cache_put(Aname *nam, const UTF8 *obj, size_t len);
+extern int  cache_init(const UTF8 *game_dir_file, const UTF8 *game_pag_file,
     int nCachePages);
 extern void cache_close(void);
 extern void cache_tick(void);

@@ -134,7 +134,7 @@
 typedef struct flag_bit_entry
 {
     int  flagvalue;         // Which bit in the object is the flag.
-    char flaglett;          // Flag letter for listing.
+    UTF8 flaglett;          // Flag letter for listing.
     int  flagflag;          // Ctrl flags for this flag.
     int  listperm;          // Who sees this flag when set.
     bool (*handler)(dbref target, dbref player, FLAG flag, int fflags,
@@ -143,10 +143,10 @@ typedef struct flag_bit_entry
 
 typedef struct flag_name_entry
 {
-    char *pOrigName;        // Original name of flag.
+    UTF8 *pOrigName;        // Original name of flag.
     bool bPositive;         // Flag sense.
     FLAGBITENT *fbe;        // Which bit is this associated with?
-    char *flagname;         // Name of the flag.
+    UTF8 *flagname;         // Name of the flag.
 } FLAGNAMEENT;
 
 extern FLAGNAMEENT gen_flag_names[];
@@ -156,7 +156,7 @@ extern FLAGNAMEENT gen_flag_names[];
  */
 
 typedef struct object_entry {
-    const char *name;
+    const UTF8 *name;
     char    lett;
     int perm;
     int flags;
@@ -178,17 +178,17 @@ typedef struct flagset
 
 void init_flagtab(void);
 void display_flagtab(dbref);
-void flag_set(dbref, dbref, char *, int);
-char *flag_description(dbref, dbref);
-char *decode_flags(dbref, FLAGSET *);
-bool has_flag(dbref, dbref, char *);
-char *unparse_object(dbref player, dbref target, bool obey_myopic, bool bAddColor = false);
-char *unparse_object_numonly(dbref);
-bool convert_flags(dbref, char *, FLAGSET *, FLAG *);
-void decompile_flags(dbref, dbref, char *);
-char *MakeCanonicalFlagName
+void flag_set(dbref, dbref, UTF8 *, int);
+UTF8 *flag_description(dbref, dbref);
+UTF8 *decode_flags(dbref, FLAGSET *);
+bool has_flag(dbref, dbref, UTF8 *);
+UTF8 *unparse_object(dbref player, dbref target, bool obey_myopic, bool bAddColor = false);
+UTF8 *unparse_object_numonly(dbref);
+bool convert_flags(dbref, UTF8 *, FLAGSET *, FLAG *);
+void decompile_flags(dbref, dbref, UTF8 *);
+UTF8 *MakeCanonicalFlagName
 (
-    const char *pName,
+    const UTF8 *pName,
     int *pnName,
     bool *pbValid
 );

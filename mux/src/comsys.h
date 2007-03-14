@@ -11,7 +11,7 @@
 typedef struct chanentry CHANENT;
 struct chanentry
 {
-    char *channame;
+    UTF8 *channame;
     struct channel *chan;
 };
 
@@ -29,15 +29,15 @@ struct comuser
 {
     dbref who;
     bool bUserIsOn;
-    char *title;
+    UTF8 *title;
     bool ComTitleStatus;
     struct comuser *on_next;
 };
 
 struct channel
 {
-    char name[MAX_CHANNEL_LEN+1];
-    char header[MAX_HEADER_LEN+1];
+    UTF8 name[MAX_CHANNEL_LEN+1];
+    UTF8 header[MAX_HEADER_LEN+1];
     int type;
     int temp1;
     int temp2;
@@ -58,21 +58,21 @@ typedef struct tagComsys
 
     int numchannels;
     int maxchannels;
-    char *alias;
-    char **channels;
+    UTF8 *alias;
+    UTF8 **channels;
 
     struct tagComsys *next;
 } comsys_t;
 
-void save_comsys(char *filename);
-void load_comsys(char *filename);
+void save_comsys(UTF8 *filename);
+void load_comsys(UTF8 *filename);
 void del_comsys(dbref who);
 void add_comsys(comsys_t *c);
 bool test_join_access(dbref player, struct channel *chan);
 bool test_transmit_access(dbref player, struct channel *chan);
 bool test_receive_access(dbref player, struct channel *chan);
 void do_joinchannel(dbref player, struct channel *ch);
-void do_comdisconnectchannel(dbref player, char *channel);
+void do_comdisconnectchannel(dbref player, UTF8 *channel);
 void load_channels(FILE *fp);
 void purge_comsystem(void);
 void save_channels(FILE *fp);
@@ -84,13 +84,13 @@ void SendChannelMessage
 (
     dbref  player,
     struct channel *ch,
-    char  *msgNormal,
-    char  *msgNoComtitle
+    UTF8  *msgNormal,
+    UTF8  *msgNoComtitle
 );
 void do_comwho(dbref player, struct channel *ch);
 void do_comlast(dbref player, struct channel *ch, int arg);
 void do_leavechannel(dbref player, struct channel *ch);
-void do_delcomchannel(dbref player, char *channel, bool bQuiet);
+void do_delcomchannel(dbref player, UTF8 *channel, bool bQuiet);
 #if 0
 void do_cleanupchannels(void);
 #endif // 0
@@ -99,7 +99,7 @@ void sort_users(struct channel *ch);
 void do_comdisconnect(dbref player);
 void do_comconnect(dbref player);
 void do_clearcom(dbref executor, dbref caller, dbref enactor, int unused2);
-void do_cheader(dbref player, char *channel, char *header);
+void do_cheader(dbref player, UTF8 *channel, UTF8 *header);
 void do_addcom
 (
     dbref executor,
@@ -107,24 +107,24 @@ void do_addcom
     dbref enactor,
     int   key,
     int   nargs,
-    char *arg1,
-    char *arg2
+    UTF8 *arg1,
+    UTF8 *arg2
 );
 
 comsys_t *create_new_comsys ();
 
-struct channel *select_channel(char *channel);
+struct channel *select_channel(UTF8 *channel);
 struct comuser *select_user(struct channel *ch, dbref player);
 
-char  *get_channel_from_alias();
-char *MakeCanonicalComAlias
+UTF8  *get_channel_from_alias();
+UTF8 *MakeCanonicalComAlias
 (
-    const char *pAlias,
+    const UTF8 *pAlias,
     size_t *nValidAlias,
     bool *bValidAlias
 );
 
-bool  do_comsystem(dbref who, char *cmd);
+bool  do_comsystem(dbref who, UTF8 *cmd);
 
 #define CHANNEL_PLAYER_JOIN     (0x00000001UL)
 #define CHANNEL_PLAYER_TRANSMIT (0x00000002UL)

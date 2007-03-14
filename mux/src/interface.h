@@ -64,22 +64,22 @@ typedef struct cmd_block_hdr
 typedef struct cmd_block
 {
     CBLKHDR hdr;
-    char    cmd[LBUF_SIZE - sizeof(CBLKHDR)];
+    UTF8    cmd[LBUF_SIZE - sizeof(CBLKHDR)];
 } CBLK;
 
 typedef struct text_block TBLOCK;
 typedef struct text_block_hdr
 {
     struct text_block *nxt;
-    char    *start;
-    char    *end;
+    UTF8    *start;
+    UTF8    *end;
     size_t   nchars;
 }   TBLOCKHDR;
 
 typedef struct text_block
 {
     TBLOCKHDR hdr;
-    char    data[OUTPUT_BLOCK_SIZE - sizeof(TBLOCKHDR)];
+    UTF8    data[OUTPUT_BLOCK_SIZE - sizeof(TBLOCKHDR)];
 } TBLOCK;
 
 typedef struct prog_data PROG;
@@ -180,8 +180,8 @@ struct descriptor_data
   int timeout;
   int host_info;
   dbref player;
-  char *output_prefix;
-  char *output_suffix;
+  UTF8 *output_prefix;
+  UTF8 *output_suffix;
   size_t output_size;
   size_t output_tot;
   size_t output_lost;
@@ -193,7 +193,7 @@ struct descriptor_data
   CBLK *input_head;
   CBLK *input_tail;
   CBLK *raw_input;
-  char *raw_input_at;
+  UTF8 *raw_input_at;
   size_t        nOption;
   unsigned char aOption[SBUF_SIZE];
   int raw_input_state;
@@ -201,7 +201,7 @@ struct descriptor_data
   size_t raw_codepoint_length;
   int nvt_him_state[256];
   int nvt_us_state[256];
-  char *ttype;
+  UTF8 *ttype;
   int encoding;
   int width;
   int height;
@@ -213,9 +213,9 @@ struct descriptor_data
 
   struct sockaddr_in address;   /* added 3/6/90 SCG */
 
-  char addr[51];
-  char username[11];
-  char doing[SIZEOF_DOING_STRING];
+  UTF8 addr[51];
+  UTF8 username[11];
+  UTF8 doing[SIZEOF_DOING_STRING];
 };
 
 int HimState(DESC *d, unsigned char chOption);
@@ -254,17 +254,17 @@ extern void set_signals(void);
 
 // From netcommon.cpp
 //
-extern void make_ulist(dbref, char *, char **, bool);
-extern void make_port_ulist(dbref, char *, char **);
+extern void make_ulist(dbref, UTF8 *, UTF8 **, bool);
+extern void make_port_ulist(dbref, UTF8 *, UTF8 **);
 extern int fetch_session(dbref target);
 extern int fetch_idle(dbref target);
 extern int fetch_connect(dbref target);
 extern int fetch_height(dbref target);
 extern int fetch_width(dbref target);
-extern const char *time_format_1(int Seconds, size_t maxWidth);
-extern const char *time_format_2(int Seconds);
+extern const UTF8 *time_format_1(int Seconds, size_t maxWidth);
+extern const UTF8 *time_format_2(int Seconds);
 extern void update_quotas(CLinearTimeAbsolute& tLast, const CLinearTimeAbsolute& tCurrent);
-extern void raw_notify(dbref, const char *);
+extern void raw_notify(dbref, const UTF8 *);
 extern void raw_notify(dbref player, const mux_string &sMsg);
 extern void raw_notify_newline(dbref);
 extern void clearstrings(DESC *);
@@ -275,26 +275,26 @@ extern void queue_string(DESC *d, const mux_string &s);
 extern void freeqs(DESC *);
 extern void welcome_user(DESC *);
 extern void save_command(DESC *, CBLK *);
-extern void announce_disconnect(dbref, DESC *, const char *);
-extern int boot_by_port(SOCKET port, bool bGod, const char *message);
+extern void announce_disconnect(dbref, DESC *, const UTF8 *);
+extern int boot_by_port(SOCKET port, bool bGod, const UTF8 *message);
 extern void find_oldest(dbref target, DESC *dOldest[2]);
 extern void check_idle(void);
 void Task_ProcessCommand(void *arg_voidptr, int arg_iInteger);
 extern int site_check(struct in_addr, SITE *);
-extern dbref  find_connected_name(dbref, char *);
-extern void do_command(DESC *, char *);
+extern dbref  find_connected_name(dbref, UTF8 *);
+extern void do_command(DESC *, UTF8 *);
 extern void desc_addhash(DESC *);
 
 // From predicates.cpp
 //
-#define alloc_desc(s) (DESC *)pool_alloc(POOL_DESC,s, __FILE__, __LINE__)
-#define free_desc(b) pool_free(POOL_DESC,(char *)(b), __FILE__, __LINE__)
-extern void handle_prog(DESC *d, char *message);
+#define alloc_desc(s) (DESC *)pool_alloc(POOL_DESC, (UTF8 *)s, (UTF8 *)__FILE__, __LINE__)
+#define free_desc(b) pool_free(POOL_DESC,(UTF8 *)(b), (UTF8 *)__FILE__, __LINE__)
+extern void handle_prog(DESC *d, UTF8 *message);
 
 // From player.cpp
 //
-extern void record_login(dbref, bool, char *, char *, char *, char *);
-extern dbref connect_player(char *, char *, char *, char *, char *);
+void record_login(dbref, bool, UTF8 *, UTF8 *, UTF8 *, UTF8 *);
+extern dbref connect_player(UTF8 *, UTF8 *, UTF8 *, UTF8 *, UTF8 *);
 
 #define DESC_ITER_PLAYER(p,d) \
     for (d=(DESC *)hashfindLEN(&(p), sizeof(p), &mudstate.desc_htab); d; d = d->hashnext)

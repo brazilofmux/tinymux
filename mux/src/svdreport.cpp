@@ -20,7 +20,7 @@ void do_report(dbref executor, dbref caller, dbref enactor, int extra)
     UNUSED_PARAMETER(enactor);
     UNUSED_PARAMETER(extra);
 
-    char *buff = alloc_mbuf("do_report");
+    UTF8 *buff = alloc_mbuf("do_report");
     int nBin[NPERIODS];
     int i;
 
@@ -40,7 +40,7 @@ void do_report(dbref executor, dbref caller, dbref enactor, int extra)
         if (isPlayer(iPlayer))
         {
             int aowner, aflags;
-            char *player_last = atr_get("do_report.43", iPlayer, A_LAST, &aowner, &aflags);
+            UTF8 *player_last = atr_get("do_report.43", iPlayer, A_LAST, &aowner, &aflags);
 
             if (ltaPlayer.SetString(player_last))
             {
@@ -57,7 +57,7 @@ void do_report(dbref executor, dbref caller, dbref enactor, int extra)
     }
 
     int iHour, nSum = 0;
-    notify(executor, "Day   Hours     Players  Total");
+    notify(executor, (UTF8 *)"Day   Hours     Players  Total");
     for (i = 0, iHour = 0; i < NPERIODS; i++, iHour += 8)
     {
         nSum += nBin[i];

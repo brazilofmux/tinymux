@@ -31,32 +31,32 @@
 #define SBUF_SIZE   64      // Small
 
 extern void pool_init(int, int);
-extern char *pool_alloc(int, const char *, const char *, int);
-extern char *pool_alloc_lbuf(const char *, const char *, int);
-extern void pool_free(int, char *, const char *, int);
-extern void pool_free_lbuf(char *, const char *, int);
+extern UTF8 *pool_alloc(int, const UTF8 *, const UTF8 *, int);
+extern UTF8 *pool_alloc_lbuf(const UTF8 *, const UTF8 *, int);
+extern void pool_free(int, UTF8 *, const UTF8 *, int);
+extern void pool_free_lbuf(UTF8 *, const UTF8 *, int);
 extern void list_bufstats(dbref);
 extern void list_buftrace(dbref);
 extern void pool_reset(void);
 
-#define alloc_lbuf(s)    pool_alloc_lbuf(s, __FILE__, __LINE__)
-#define free_lbuf(b)     pool_free_lbuf((char *)(b), __FILE__, __LINE__)
-#define alloc_mbuf(s)    pool_alloc(POOL_MBUF,s, __FILE__, __LINE__)
-#define free_mbuf(b)     pool_free(POOL_MBUF,(char *)(b), __FILE__, __LINE__)
-#define alloc_sbuf(s)    pool_alloc(POOL_SBUF,s, __FILE__, __LINE__)
-#define free_sbuf(b)     pool_free(POOL_SBUF,(char *)(b), __FILE__, __LINE__)
-#define alloc_bool(s)    (struct boolexp *)pool_alloc(POOL_BOOL,s, __FILE__, __LINE__)
-#define free_bool(b)     pool_free(POOL_BOOL,(char *)(b), __FILE__, __LINE__)
-#define alloc_qentry(s)  (BQUE *)pool_alloc(POOL_QENTRY,s, __FILE__, __LINE__)
-#define free_qentry(b)   pool_free(POOL_QENTRY,(char *)(b), __FILE__, __LINE__)
-#define alloc_pcache(s)  (PCACHE *)pool_alloc(POOL_PCACHE,s, __FILE__, __LINE__)
-#define free_pcache(b)   pool_free(POOL_PCACHE,(char *)(b), __FILE__, __LINE__)
-#define alloc_lbufref(s) (lbuf_ref *)pool_alloc(POOL_LBUFREF,s, __FILE__, __LINE__)
-#define free_lbufref(b)  pool_free(POOL_LBUFREF,(char *)(b), __FILE__, __LINE__)
-#define alloc_regref(s)  (reg_ref *)pool_alloc(POOL_REGREF,s, __FILE__, __LINE__)
-#define free_regref(b)   pool_free(POOL_REGREF,(char *)(b), __FILE__, __LINE__)
-#define alloc_string(s)  (mux_string *)pool_alloc(POOL_STRING,s, __FILE__, __LINE__)
-#define free_string(b)   pool_free(POOL_STRING,(char *)(b), __FILE__, __LINE__)
+#define alloc_lbuf(s)    pool_alloc_lbuf((UTF8 *)s, (UTF8 *)__FILE__, __LINE__)
+#define free_lbuf(b)     pool_free_lbuf((UTF8 *)(b), (UTF8 *)__FILE__, __LINE__)
+#define alloc_mbuf(s)    pool_alloc(POOL_MBUF, (UTF8 *)s, (UTF8 *)__FILE__, __LINE__)
+#define free_mbuf(b)     pool_free(POOL_MBUF,(UTF8 *)(b), (UTF8 *)__FILE__, __LINE__)
+#define alloc_sbuf(s)    pool_alloc(POOL_SBUF, (UTF8 *)s, (UTF8 *)__FILE__, __LINE__)
+#define free_sbuf(b)     pool_free(POOL_SBUF,(UTF8 *)(b), (UTF8 *)__FILE__, __LINE__)
+#define alloc_bool(s)    (struct boolexp *)pool_alloc(POOL_BOOL, (UTF8 *)s, (UTF8 *)__FILE__, __LINE__)
+#define free_bool(b)     pool_free(POOL_BOOL,(UTF8 *)(b), (UTF8 *)__FILE__, __LINE__)
+#define alloc_qentry(s)  (BQUE *)pool_alloc(POOL_QENTRY, (UTF8 *)s, (UTF8 *)__FILE__, __LINE__)
+#define free_qentry(b)   pool_free(POOL_QENTRY,(UTF8 *)(b), (UTF8 *)__FILE__, __LINE__)
+#define alloc_pcache(s)  (PCACHE *)pool_alloc(POOL_PCACHE, (UTF8 *)s, (UTF8 *)__FILE__, __LINE__)
+#define free_pcache(b)   pool_free(POOL_PCACHE,(UTF8 *)(b), (UTF8 *)__FILE__, __LINE__)
+#define alloc_lbufref(s) (lbuf_ref *)pool_alloc(POOL_LBUFREF, (UTF8 *)s, (UTF8 *)__FILE__, __LINE__)
+#define free_lbufref(b)  pool_free(POOL_LBUFREF,(UTF8 *)(b), (UTF8 *)__FILE__, __LINE__)
+#define alloc_regref(s)  (reg_ref *)pool_alloc(POOL_REGREF, (UTF8 *)s, (UTF8 *)__FILE__, __LINE__)
+#define free_regref(b)   pool_free(POOL_REGREF,(UTF8 *)(b), (UTF8 *)__FILE__, __LINE__)
+#define alloc_string(s)  (mux_string *)pool_alloc(POOL_STRING, (UTF8 *)s, (UTF8 *)__FILE__, __LINE__)
+#define free_string(b)   pool_free(POOL_STRING,(UTF8 *)(b), (UTF8 *)__FILE__, __LINE__)
 
 #define safe_copy_chr(src, buff, bufp, nSizeOfBuffer) \
 { \
@@ -68,7 +68,7 @@ extern void pool_reset(void);
 }
 
 #define safe_str(s,b,p)     safe_copy_str_lbuf(s,b,p)
-#define safe_chr(c,b,p)     safe_copy_chr((unsigned char)(c),b,p,(LBUF_SIZE-1))
+#define safe_chr(c,b,p)     safe_copy_chr((UTF8)(c),b,p,(LBUF_SIZE-1))
 #define safe_bool(c,b,p)    safe_chr(((c) ? '1' : '0'),b,p)
 #define safe_sb_str(s,b,p)  safe_copy_str(s,b,p,(SBUF_SIZE-1))
 #define safe_sb_chr(c,b,p)  safe_copy_chr(c,b,p,(SBUF_SIZE-1))
@@ -78,7 +78,7 @@ extern void pool_reset(void);
 struct lbuf_ref
 {
     int      refcount;
-    char    *lbuf_ptr;
+    UTF8    *lbuf_ptr;
 };
 
 struct reg_ref
@@ -86,7 +86,7 @@ struct reg_ref
     int      refcount;
     lbuf_ref *lbuf;
     size_t   reg_len;
-    char    *reg_ptr;
+    UTF8    *reg_ptr;
 };
 
 #endif // M_ALLOC_H

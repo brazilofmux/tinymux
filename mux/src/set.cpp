@@ -25,7 +25,7 @@ void set_modified(dbref thing)
     atr_add_raw(thing, A_MODIFIED, ltaNow.ReturnDateString(7));
 }
 
-dbref match_controlled_handler(dbref executor, const char *name, bool bQuiet)
+dbref match_controlled_handler(dbref executor, const UTF8 *name, bool bQuiet)
 {
     dbref mat;
     init_match(executor, name, NOTYPE);
@@ -61,8 +61,8 @@ void do_chzone
     dbref enactor,
     int   key,
     int   nargs,
-    char *name,
-    char *newobj
+    UTF8 *name,
+    UTF8 *newobj
 )
 {
     UNUSED_PARAMETER(caller);
@@ -72,7 +72,7 @@ void do_chzone
 
     if (!mudconf.have_zones)
     {
-        notify(executor, "Zones disabled.");
+        notify(executor, (UTF8 *)"Zones disabled.");
         return;
     }
     init_match(executor, name, NOTYPE);
@@ -85,7 +85,7 @@ void do_chzone
 
     dbref zone;
     if (  newobj[0] == '\0'
-       || !mux_stricmp(newobj, "none"))
+       || !mux_stricmp(newobj, (UTF8 *)"none"))
     {
         zone = NOTHING;
     }
@@ -101,7 +101,7 @@ void do_chzone
         if (  !isThing(zone)
            && !isRoom(zone))
         {
-            notify(executor, "Invalid zone object type.");
+            notify(executor, (UTF8 *)"Invalid zone object type.");
             return;
         }
     }
@@ -111,7 +111,7 @@ void do_chzone
        && !check_zone_handler(executor, thing, true)
        && db[executor].owner != db[thing].owner)
     {
-        notify(executor, "You don't have the power to shift reality.");
+        notify(executor, (UTF8 *)"You don't have the power to shift reality.");
         return;
     }
 
@@ -122,7 +122,7 @@ void do_chzone
        && !Controls(executor, zone)
        && db[executor].owner != db[zone].owner)
     {
-        notify(executor, "You cannot move that object to that zone.");
+        notify(executor, (UTF8 *)"You cannot move that object to that zone.");
         return;
     }
 
@@ -132,7 +132,7 @@ void do_chzone
        && isRoom(zone)
        && !isRoom(thing))
     {
-        notify(executor, "Only rooms may be zoned to other rooms.");
+        notify(executor, (UTF8 *)"Only rooms may be zoned to other rooms.");
         return;
     }
 
@@ -152,7 +152,7 @@ void do_chzone
         Powers(thing) = 0;
         Powers2(thing) = 0;
     }
-    notify(executor, "Zone changed.");
+    notify(executor, (UTF8 *)"Zone changed.");
 }
 
 void do_name
@@ -162,8 +162,8 @@ void do_name
     dbref enactor,
     int   key,
     int   nargs,
-    char *name,
-    char *newname
+    UTF8 *name,
+    UTF8 *newname
 )
 {
     UNUSED_PARAMETER(caller);
@@ -181,7 +181,7 @@ void do_name
     if (  nargs < 2
        || newname[0] == '\0')
     {
-        notify_quiet(executor, "Give it what new name?");
+        notify_quiet(executor, (UTF8 *)"Give it what new name?");
         return;
     }
 
@@ -189,11 +189,11 @@ void do_name
     //
     if (isPlayer(thing))
     {
-        char *buff = trim_spaces(newname);
+        UTF8 *buff = trim_spaces(newname);
         if (  !ValidatePlayerName(buff)
            || !badname_check(buff))
         {
-            notify_quiet(executor, "You can't use that name.");
+            notify_quiet(executor, (UTF8 *)"You can't use that name.");
             free_lbuf(buff);
             return;
         }
@@ -202,7 +202,7 @@ void do_name
         {
             // string_compare allows changing foo to Foo, etc.
             //
-            notify_quiet(executor, "That name is already in use.");
+            notify_quiet(executor, (UTF8 *)"That name is already in use.");
             free_lbuf(buff);
             return;
         }
@@ -211,7 +211,7 @@ void do_name
         //
         STARTLOG(LOG_SECURITY, "SEC", "CNAME");
         log_name(thing),
-        log_text(" renamed to ");
+        log_text((UTF8 *)" renamed to ");
         log_text(buff);
         ENDLOG;
         if (Suspect(thing))
@@ -224,7 +224,7 @@ void do_name
         add_player_name(thing, Name(thing));
         if (!Quiet(executor) && !Quiet(thing))
         {
-            notify_quiet(executor, "Name set.");
+            notify_quiet(executor, (UTF8 *)"Name set.");
         }
         free_lbuf(buff);
         return;
@@ -233,7 +233,7 @@ void do_name
     {
         size_t nValidName;
         bool bValid;
-        char *pValidName;
+        UTF8 *pValidName;
 
         if (isExit(thing))
         {
@@ -246,7 +246,7 @@ void do_name
 
         if (!bValid)
         {
-            notify_quiet(executor, "That is not a reasonable name.");
+            notify_quiet(executor, (UTF8 *)"That is not a reasonable name.");
             return;
         }
 
@@ -256,7 +256,7 @@ void do_name
         set_modified(thing);
         if (!Quiet(executor) && !Quiet(thing))
         {
-            notify_quiet(executor, "Name set.");
+            notify_quiet(executor, (UTF8 *)"Name set.");
         }
     }
 }
@@ -273,8 +273,8 @@ void do_alias
     dbref enactor,
     int   key,
     int   nargs,
-    char *name,
-    char *alias
+    UTF8 *name,
+    UTF8 *alias
 )
 {
     UNUSED_PARAMETER(caller);
@@ -297,8 +297,8 @@ void do_alias
     {
         // Fetch the old alias.
         //
-        char *oldalias = atr_pget(thing, A_ALIAS, &aowner, &aflags);
-        char *trimalias = trim_spaces(alias);
+        UTF8 *oldalias = atr_pget(thing, A_ALIAS, &aowner, &aflags);
+        UTF8 *trimalias = trim_spaces(alias);
 
         if (!Controls(executor, thing))
         {
@@ -317,19 +317,19 @@ void do_alias
             atr_clr(thing, A_ALIAS);
             if (!Quiet(executor))
             {
-                notify_quiet(executor, "Alias removed.");
+                notify_quiet(executor, (UTF8 *)"Alias removed.");
             }
         }
         else if (lookup_player(NOTHING, trimalias, false) != NOTHING)
         {
             // Make sure new alias isn't already in use.
             //
-            notify_quiet(executor, "That name is already in use.");
+            notify_quiet(executor, (UTF8 *)"That name is already in use.");
         }
         else if (  !(badname_check(trimalias)
                 && ValidatePlayerName(trimalias)))
         {
-            notify_quiet(executor, "That's a silly name for a player!");
+            notify_quiet(executor, (UTF8 *)"That's a silly name for a player!");
         }
         else
         {
@@ -341,13 +341,13 @@ void do_alias
             {
                 if (!Quiet(executor))
                 {
-                    notify_quiet(executor, "Alias set.");
+                    notify_quiet(executor, (UTF8 *)"Alias set.");
                 }
             }
             else
             {
                 notify_quiet(executor,
-                    "That name is already in use or is illegal, alias cleared.");
+                    (UTF8 *)"That name is already in use or is illegal, alias cleared.");
                 atr_clr(thing, A_ALIAS);
             }
         }
@@ -369,7 +369,7 @@ void do_alias
             atr_add(thing, A_ALIAS, alias, Owner(executor), aflags);
             if (!Quiet(executor))
             {
-                notify_quiet(executor, "Set.");
+                notify_quiet(executor, (UTF8 *)"Set.");
             }
         }
     }
@@ -385,8 +385,8 @@ void do_forwardlist
     dbref enactor,
     int   key,
     int   nargs,
-    char *target,
-    char *newlist
+    UTF8 *target,
+    UTF8 *newlist
 )
 {
     UNUSED_PARAMETER(caller);
@@ -415,12 +415,12 @@ void do_forwardlist
         set_modified(thing);
         if (!Quiet(executor))
         {
-            notify_quiet(executor, "Forwardlist removed.");
+            notify_quiet(executor, (UTF8 *)"Forwardlist removed.");
         }
     }
     else if (!fwdlist_ck(executor, thing, A_FORWARDLIST, newlist))
     {
-        notify_quiet(executor, "Invalid forwardlist.");
+        notify_quiet(executor, (UTF8 *)"Invalid forwardlist.");
         return;
     }
     else
@@ -428,7 +428,7 @@ void do_forwardlist
         atr_add(thing, A_FORWARDLIST, newlist, Owner(executor), aflags);
         if (!Quiet(executor))
         {
-            notify_quiet(executor, "Set.");
+            notify_quiet(executor, (UTF8 *)"Set.");
         }
     }
 }
@@ -445,8 +445,8 @@ void do_lock
     dbref enactor,
     int   key,
     int   nargs,
-    char *name,
-    char *keytext
+    UTF8 *name,
+    UTF8 *keytext
 )
 {
     UNUSED_PARAMETER(caller);
@@ -463,7 +463,7 @@ void do_lock
         int aflags;
         if (!atr_get_info(thing, ap->number, &aowner, &aflags))
         {
-            notify_quiet(executor, "Attribute not present on object.");
+            notify_quiet(executor, (UTF8 *)"Attribute not present on object.");
             return;
         }
 
@@ -474,7 +474,7 @@ void do_lock
             if (  !Quiet(executor)
                && !Quiet(thing))
             {
-                notify_quiet(executor, "Attribute locked.");
+                notify_quiet(executor, (UTF8 *)"Attribute locked.");
             }
         }
         else
@@ -490,26 +490,26 @@ void do_lock
     switch (thing)
     {
     case NOTHING:
-        notify_quiet(executor, "I don't see what you want to lock!");
+        notify_quiet(executor, (UTF8 *)"I don't see what you want to lock!");
         return;
 
     case AMBIGUOUS:
-        notify_quiet(executor, "I don't know which one you want to lock!");
+        notify_quiet(executor, (UTF8 *)"I don't know which one you want to lock!");
         return;
 
     default:
         if (!Controls(executor, thing))
         {
-            notify_quiet(executor, "You can't lock that!");
+            notify_quiet(executor, (UTF8 *)"You can't lock that!");
             return;
         }
     }
 
-    char *pRestrictedKeyText = RemoveSetOfCharacters(keytext, "\r\n\t");
+    UTF8 *pRestrictedKeyText = RemoveSetOfCharacters(keytext, (UTF8 *)"\r\n\t");
     struct boolexp *okey = parse_boolexp(executor, pRestrictedKeyText, false);
     if (okey == TRUE_BOOLEXP)
     {
-        notify_quiet(executor, "I don't understand that key.");
+        notify_quiet(executor, (UTF8 *)"I don't understand that key.");
     }
     else
     {
@@ -523,7 +523,7 @@ void do_lock
         if (  !Quiet(executor)
            && !Quiet(thing))
         {
-            notify_quiet(executor, "Locked.");
+            notify_quiet(executor, (UTF8 *)"Locked.");
         }
     }
     free_boolexp(okey);
@@ -534,7 +534,7 @@ void do_lock
  * * Remove a lock from an object of attribute.
  */
 
-void do_unlock(dbref executor, dbref caller, dbref enactor, int eval, int key, char *name)
+void do_unlock(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8 *name)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
@@ -552,7 +552,7 @@ void do_unlock(dbref executor, dbref caller, dbref enactor, int eval, int key, c
         int aflags;
         if (!atr_get_info(thing, ap->number, &aowner, &aflags))
         {
-            notify_quiet(executor, "Attribute not present on object.");
+            notify_quiet(executor, (UTF8 *)"Attribute not present on object.");
             return;
         }
 
@@ -563,7 +563,7 @@ void do_unlock(dbref executor, dbref caller, dbref enactor, int eval, int key, c
             if (  !Quiet(executor)
                && !Quiet(thing))
             {
-                notify_quiet(executor, "Attribute unlocked.");
+                notify_quiet(executor, (UTF8 *)"Attribute unlocked.");
             }
         }
         else
@@ -586,7 +586,7 @@ void do_unlock(dbref executor, dbref caller, dbref enactor, int eval, int key, c
         set_modified(thing);
         if (!Quiet(executor) && !Quiet(thing))
         {
-            notify_quiet(executor, "Unlocked.");
+            notify_quiet(executor, (UTF8 *)"Unlocked.");
         }
     }
 }
@@ -596,7 +596,7 @@ void do_unlock(dbref executor, dbref caller, dbref enactor, int eval, int key, c
  * * do_unlink: Unlink an exit from its destination or remove a dropto.
  */
 
-void do_unlink(dbref executor, dbref caller, dbref enactor, int eval, int key, char *name)
+void do_unlink(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8 *name)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
@@ -613,12 +613,12 @@ void do_unlink(dbref executor, dbref caller, dbref enactor, int eval, int key, c
     {
     case NOTHING:
 
-        notify_quiet(executor, "Unlink what?");
+        notify_quiet(executor, (UTF8 *)"Unlink what?");
         break;
 
     case AMBIGUOUS:
 
-        notify_quiet(executor, "I don't know which one you mean!");
+        notify_quiet(executor, (UTF8 *)"I don't know which one you mean!");
         break;
 
     default:
@@ -636,7 +636,7 @@ void do_unlink(dbref executor, dbref caller, dbref enactor, int eval, int key, c
                 s_Location(exit, NOTHING);
                 if (!Quiet(executor))
                 {
-                    notify_quiet(executor, "Unlinked.");
+                    notify_quiet(executor, (UTF8 *)"Unlinked.");
                 }
                 giveto(Owner(exit), mudconf.linkcost);
                 break;
@@ -646,13 +646,13 @@ void do_unlink(dbref executor, dbref caller, dbref enactor, int eval, int key, c
                 s_Dropto(exit, NOTHING);
                 if (!Quiet(executor))
                 {
-                    notify_quiet(executor, "Dropto removed.");
+                    notify_quiet(executor, (UTF8 *)"Dropto removed.");
                 }
                 break;
 
             default:
 
-                notify_quiet(executor, "You can't unlink that!");
+                notify_quiet(executor, (UTF8 *)"You can't unlink that!");
                 break;
             }
         }
@@ -782,8 +782,8 @@ void do_chown
     dbref enactor,
     int   key,
     int   nargs,
-    char *name,
-    char *newown
+    UTF8 *name,
+    UTF8 *newown
 )
 {
     UNUSED_PARAMETER(caller);
@@ -806,7 +806,7 @@ void do_chown
         {
             nOwnerNew = nOwnerOrig;
         }
-        else if (!string_compare(newown, "me"))
+        else if (!string_compare(newown, (UTF8 *)"me"))
         {
             nOwnerNew = Owner(executor);
         }
@@ -824,13 +824,13 @@ void do_chown
         int   aflags;
         if (!atr_get_info(thing, ap->number, &aowner, &aflags))
         {
-            notify_quiet(executor, "Attribute not present on object.");
+            notify_quiet(executor, (UTF8 *)"Attribute not present on object.");
             return;
         }
         bDoit = false;
         if (nOwnerNew == NOTHING)
         {
-            notify_quiet(executor, "I couldn't find that player.");
+            notify_quiet(executor, (UTF8 *)"I couldn't find that player.");
         }
         else if (  God(thing)
                 && !God(executor))
@@ -884,12 +884,12 @@ void do_chown
             notify_quiet(executor, NOPERM_MESSAGE);
             return;
         }
-        char *buff = atr_get("do_chown.887", thing, ap->number, &aowner, &aflags);
+        UTF8 *buff = atr_get("do_chown.887", thing, ap->number, &aowner, &aflags);
         atr_add(thing, ap->number, buff, nOwnerNew, aflags);
         free_lbuf(buff);
         if (!Quiet(executor))
         {
-            notify_quiet(executor, "Attribute owner changed.");
+            notify_quiet(executor, (UTF8 *)"Attribute owner changed.");
         }
         return;
     }
@@ -911,17 +911,17 @@ void do_chown
     {
     case NOTHING:
 
-        notify_quiet(executor, "You don't have that!");
+        notify_quiet(executor, (UTF8 *)"You don't have that!");
         return;
 
     case AMBIGUOUS:
 
-        notify_quiet(executor, "I don't know which you mean!");
+        notify_quiet(executor, (UTF8 *)"I don't know which you mean!");
         return;
     }
     nOwnerOrig = Owner(thing);
 
-    if (!*newown || !(string_compare(newown, "me")))
+    if (!*newown || !(string_compare(newown, (UTF8 *)"me")))
     {
         nOwnerNew = Owner(executor);
     }
@@ -963,16 +963,16 @@ void do_chown
     if (  isGarbage(thing)
        && bPlayerControlsThing)
     {
-        notify_quiet(executor, "You shouldn't be rummaging through the garbage.");
+        notify_quiet(executor, (UTF8 *)"You shouldn't be rummaging through the garbage.");
     }
     else if (nOwnerNew == NOTHING)
     {
-        notify_quiet(executor, "I couldn't find that player.");
+        notify_quiet(executor, (UTF8 *)"I couldn't find that player.");
     }
     else if (  isPlayer(thing)
             && !God(executor))
     {
-        notify_quiet(executor, "Players always own themselves.");
+        notify_quiet(executor, (UTF8 *)"Players always own themselves.");
     }
     else if (  (  !bPlayerControlsThing
                && !Chown_Any(executor)
@@ -1038,8 +1038,8 @@ void do_chown
 
         if (!Quiet(executor))
         {
-            char *buff = alloc_lbuf("do_chown.notify");
-            char *bp = buff;
+            UTF8 *buff = alloc_lbuf("do_chown.notify");
+            UTF8 *bp = buff;
 
             safe_tprintf_str(buff, &bp, "Owner of %s(#%d) changed from ", Moniker(thing), thing);
             safe_tprintf_str(buff, &bp, "%s(#%d) to ", Moniker(nOwnerOrig), nOwnerOrig);
@@ -1056,7 +1056,7 @@ void do_chown
  * * do_set: Set flags or attributes on objects, or flags on attributes.
  */
 
-static void set_attr_internal(dbref player, dbref thing, int attrnum, char *attrtext, int key)
+static void set_attr_internal(dbref player, dbref thing, int attrnum, UTF8 *attrtext, int key)
 {
     dbref aowner;
     int aflags;
@@ -1072,7 +1072,7 @@ static void set_attr_internal(dbref player, dbref thing, int attrnum, char *attr
            && !Quiet(player)
            && !Quiet(thing))
         {
-            notify_quiet(player, "Set.");
+            notify_quiet(player, (UTF8 *)"Set.");
         }
     }
     else
@@ -1088,8 +1088,8 @@ void do_set
     dbref enactor,
     int   key,
     int   nargs,
-    char *name,
-    char *flagname
+    UTF8 *name,
+    UTF8 *flagname
 )
 {
     UNUSED_PARAMETER(caller);
@@ -1113,7 +1113,7 @@ void do_set
             if (  !flagname
                || flagname[0] == '\0')
             {
-                notify_quiet(executor, "I don't know what you want to set!");
+                notify_quiet(executor, (UTF8 *)"I don't know what you want to set!");
                 return;
             }
 
@@ -1131,7 +1131,7 @@ void do_set
             int flagvalue;
             if (!search_nametab(executor, indiv_attraccess_nametab, flagname, &flagvalue))
             {
-                notify_quiet(executor, "You can't set that!");
+                notify_quiet(executor, (UTF8 *)"You can't set that!");
                 return;
             }
 
@@ -1139,7 +1139,7 @@ void do_set
             //
             if (!atr_get_info(thing, pattr->number, &aowner, &aflags))
             {
-                notify_quiet(executor, "Attribute not present on object.");
+                notify_quiet(executor, (UTF8 *)"Attribute not present on object.");
                 return;
             }
 
@@ -1175,11 +1175,11 @@ void do_set
             {
                 if (clear)
                 {
-                    notify_quiet(executor, "Cleared.");
+                    notify_quiet(executor, (UTF8 *)"Cleared.");
                 }
                 else
                 {
-                    notify_quiet(executor, "Set.");
+                    notify_quiet(executor, (UTF8 *)"Set.");
                 }
             }
             return;
@@ -1196,7 +1196,7 @@ void do_set
 
     // Check for attribute set first.
     //
-    char *p;
+    UTF8 *p;
     for (p = flagname; *p && (*p != ':'); p++)
     {
         ; // Nothing.
@@ -1208,7 +1208,7 @@ void do_set
         int atr = mkattr(executor, (UTF8 *)flagname);
         if (atr <= 0)
         {
-            notify_quiet(executor, "Couldn't create attribute.");
+            notify_quiet(executor, (UTF8 *)"Couldn't create attribute.");
             return;
         }
         pattr = atr_num(atr);
@@ -1222,7 +1222,7 @@ void do_set
             notify_quiet(executor, NOPERM_MESSAGE);
             return;
         }
-        char *buff = alloc_lbuf("do_set");
+        UTF8 *buff = alloc_lbuf("do_set");
 
         // Check for _
         //
@@ -1235,7 +1235,7 @@ void do_set
             if (!( parse_attrib(executor, p + 1, &thing2, &pattr2)
                 && pattr2))
             {
-                notify_quiet(executor, "No match.");
+                notify_quiet(executor, (UTF8 *)"No match.");
                 free_lbuf(buff);
                 return;
             }
@@ -1269,8 +1269,8 @@ void do_power
     dbref enactor,
     int   key,
     int   nargs,
-    char *name,
-    char *flag
+    UTF8 *name,
+    UTF8 *flag
 )
 {
     UNUSED_PARAMETER(caller);
@@ -1280,7 +1280,7 @@ void do_power
     if (  !flag
        || !*flag)
     {
-        notify_quiet(executor, "I don't know what you want to set!");
+        notify_quiet(executor, (UTF8 *)"I don't know what you want to set!");
         return;
     }
 
@@ -1301,8 +1301,8 @@ void do_setattr
     dbref enactor,
     int   attrnum,
     int   nargs,
-    char *name,
-    char *attrtext
+    UTF8 *name,
+    UTF8 *attrtext
 )
 {
     UNUSED_PARAMETER(caller);
@@ -1321,13 +1321,13 @@ void do_setattr
 }
 
 void do_cpattr(dbref executor, dbref caller, dbref enactor, int eval, int key,
-               char *oldpair, char *newpair[], int nargs)
+               UTF8 *oldpair, UTF8 *newpair[], int nargs)
 {
     UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(key);
 
     int i;
-    char *oldthing, *oldattr, *newthing, *newattr;
+    UTF8 *oldthing, *oldattr, *newthing, *newattr;
 
     if (  !*oldpair
        || !**newpair
@@ -1377,7 +1377,7 @@ void do_cpattr(dbref executor, dbref caller, dbref enactor, int eval, int key,
 
 
 void do_mvattr(dbref executor, dbref caller, dbref enactor, int eval, int key,
-               char *what, char *args[], int nargs)
+               UTF8 *what, UTF8 *args[], int nargs)
 {
     UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(caller);
@@ -1388,7 +1388,7 @@ void do_mvattr(dbref executor, dbref caller, dbref enactor, int eval, int key,
     //
     if (nargs < 2)
     {
-        notify_quiet(executor, "Nothing to do.");
+        notify_quiet(executor, (UTF8 *)"Nothing to do.");
         return;
     }
 
@@ -1404,7 +1404,7 @@ void do_mvattr(dbref executor, dbref caller, dbref enactor, int eval, int key,
     // readable, use an empty string.
     //
     int in_anum = -1;
-    char *astr = alloc_lbuf("do_mvattr");
+    UTF8 *astr = alloc_lbuf("do_mvattr");
     ATTR *in_attr = atr_str((UTF8 *)args[0]);
     int aflags = 0;
     if (in_attr == NULL)
@@ -1478,7 +1478,7 @@ void do_mvattr(dbref executor, dbref caller, dbref enactor, int eval, int key,
         }
         else
         {
-            notify_quiet(executor, "Not copied anywhere. Non-existent attribute.");
+            notify_quiet(executor, (UTF8 *)"Not copied anywhere. Non-existent attribute.");
         }
     }
     else if (  in_anum > 0
@@ -1504,7 +1504,7 @@ void do_mvattr(dbref executor, dbref caller, dbref enactor, int eval, int key,
         }
         else
         {
-            notify_quiet(executor, "Could not remove old attribute. Non-existent attribute.");
+            notify_quiet(executor, (UTF8 *)"Could not remove old attribute. Non-existent attribute.");
         }
     }
     free_lbuf(astr);
@@ -1515,7 +1515,7 @@ void do_mvattr(dbref executor, dbref caller, dbref enactor, int eval, int key,
  * * parse_attrib, parse_attrib_wild: parse <obj>/<attr> tokens.
  */
 
-bool parse_attrib(dbref player, char *str, dbref *thing, ATTR **attr)
+bool parse_attrib(dbref player, UTF8 *str, dbref *thing, ATTR **attr)
 {
     ATTR *tattr = NULL;
     *thing = NOTHING;
@@ -1528,9 +1528,9 @@ bool parse_attrib(dbref player, char *str, dbref *thing, ATTR **attr)
 
     // Break apart string into obj and attr.
     //
-    char *buff = alloc_lbuf("parse_attrib");
+    UTF8 *buff = alloc_lbuf("parse_attrib");
     mux_strncpy(buff, str, LBUF_SIZE-1);
-    char *AttrName;
+    UTF8 *AttrName;
     bool retval = parse_thing_slash(player, buff, &AttrName, thing);
 
     // Get the named attribute from the object if we can.
@@ -1545,10 +1545,10 @@ bool parse_attrib(dbref player, char *str, dbref *thing, ATTR **attr)
     return retval;
 }
 
-static void find_wild_attrs(dbref player, dbref thing, char *str, bool check_exclude, bool hash_insert, bool get_locks)
+static void find_wild_attrs(dbref player, dbref thing, UTF8 *str, bool check_exclude, bool hash_insert, bool get_locks)
 {
     ATTR *pattr;
-    char *as;
+    UTF8 *as;
     dbref aowner;
     int ca, ok, aflags;
 
@@ -1594,7 +1594,7 @@ static void find_wild_attrs(dbref player, dbref thing, char *str, bool check_exc
 
         mudstate.wild_invk_ctr = 0;
         if (  ok
-           && quick_wild(str, (char *)pattr->name))
+           && quick_wild(str, pattr->name))
         {
             olist_add(ca);
             if (hash_insert)
@@ -1606,7 +1606,7 @@ static void find_wild_attrs(dbref player, dbref thing, char *str, bool check_exc
     atr_pop();
 }
 
-bool parse_attrib_wild(dbref player, char *str, dbref *thing,
+bool parse_attrib_wild(dbref player, UTF8 *str, dbref *thing,
     bool check_parents, bool get_locks, bool df_star)
 {
     if (!str)
@@ -1617,7 +1617,7 @@ bool parse_attrib_wild(dbref player, char *str, dbref *thing,
     dbref parent;
     int lev;
     bool check_exclude, hash_insert;
-    char *buff = alloc_lbuf("parse_attrib_wild");
+    UTF8 *buff = alloc_lbuf("parse_attrib_wild");
     mux_strncpy(buff, str, LBUF_SIZE-1);
 
     // Separate name and attr portions at the first /.
@@ -1643,7 +1643,7 @@ bool parse_attrib_wild(dbref player, char *str, dbref *thing,
             free_lbuf(buff);
             return false;
         }
-        str = (char *)"*";
+        str = (UTF8 *)"*";
     }
 
     // Check the object (and optionally all parents) for attributes.
@@ -1676,13 +1676,13 @@ bool parse_attrib_wild(dbref player, char *str, dbref *thing,
  * * edit_string, edit_string_ansi, do_edit: Modify attributes.
  */
 
-void edit_string(char *src, char **dst, char *from, char *to)
+void edit_string(UTF8 *src, UTF8 **dst, UTF8 *from, UTF8 *to)
 {
-    char *cp;
+    UTF8 *cp;
 
     // Do the substitution.  Idea for prefix/suffix from R'nice@TinyTIM.
     //
-    if (!strcmp(from, "^"))
+    if (!strcmp((char *)from, "^"))
     {
         // Prepend 'to' to string.
         //
@@ -1692,7 +1692,7 @@ void edit_string(char *src, char **dst, char *from, char *to)
         safe_str(src, *dst, &cp);
         *cp = '\0';
     }
-    else if (!strcmp(from, "$"))
+    else if (!strcmp((char *)from, "$"))
     {
         // Append 'to' to string.
         //
@@ -1719,13 +1719,13 @@ void edit_string(char *src, char **dst, char *from, char *to)
     }
 }
 
-static void edit_string_ansi(char *src, char **dst, char **returnstr, char *from, char *to)
+static void edit_string_ansi(UTF8 *src, UTF8 **dst, UTF8 **returnstr, UTF8 *from, UTF8 *to)
 {
-    char *cp, *rp;
+    UTF8 *cp, *rp;
 
     // Do the substitution.  Idea for prefix/suffix from R'nice@TinyTIM
     //
-    if (!strcmp(from, "^"))
+    if (!strcmp((char *)from, "^"))
     {
         // Prepend 'to' to string.
         //
@@ -1739,14 +1739,14 @@ static void edit_string_ansi(char *src, char **dst, char **returnstr, char *from
         //
         *returnstr = alloc_lbuf("edit_string_ansi.^");
         rp = *returnstr;
-        safe_str(COLOR_INTENSE, *returnstr, &rp);
+        safe_str((UTF8 *)COLOR_INTENSE, *returnstr, &rp);
         safe_str(to, *returnstr, &rp);
-        safe_str(COLOR_RESET, *returnstr, &rp);
+        safe_str((UTF8 *)COLOR_RESET, *returnstr, &rp);
         safe_str(src, *returnstr, &rp);
         *rp = '\0';
 
     }
-    else if (!strcmp(from, "$"))
+    else if (!strcmp((char *)from, "$"))
     {
         // Append 'to' to string
         //
@@ -1761,9 +1761,9 @@ static void edit_string_ansi(char *src, char **dst, char **returnstr, char *from
         *returnstr = alloc_lbuf("edit_string_ansi.$");
         rp = *returnstr;
         safe_str(src, *returnstr, &rp);
-        safe_str(COLOR_INTENSE, *returnstr, &rp);
+        safe_str((UTF8 *)COLOR_INTENSE, *returnstr, &rp);
         safe_str(to, *returnstr, &rp);
-        safe_str(COLOR_RESET, *returnstr, &rp);
+        safe_str((UTF8 *)COLOR_RESET, *returnstr, &rp);
         *rp = '\0';
 
     }
@@ -1786,7 +1786,7 @@ static void edit_string_ansi(char *src, char **dst, char **returnstr, char *from
 }
 
 void do_edit(dbref executor, dbref caller, dbref enactor, int eval, int key,
-             char *it, char *args[], int nargs)
+             UTF8 *it, UTF8 *args[], int nargs)
 {
     UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(caller);
@@ -1796,7 +1796,7 @@ void do_edit(dbref executor, dbref caller, dbref enactor, int eval, int key,
     dbref thing, aowner;
     int atr, aflags;
     bool bGotOne;
-    char *from, *to, *result, *returnstr, *atext;
+    UTF8 *from, *to, *result, *returnstr, *atext;
     ATTR *ap;
 
     // Make sure we have something to do.
@@ -1804,11 +1804,11 @@ void do_edit(dbref executor, dbref caller, dbref enactor, int eval, int key,
     if (  nargs < 1
        || !*args[0])
     {
-        notify_quiet(executor, "Nothing to do.");
+        notify_quiet(executor, (UTF8 *)"Nothing to do.");
         return;
     }
     from = args[0];
-    to = (nargs >= 2) ? args[1] : (char *)"";
+    to = (nargs >= 2) ? args[1] : (UTF8 *)"";
 
     // Look for the object and get the attribute (possibly wildcarded)
     //
@@ -1817,7 +1817,7 @@ void do_edit(dbref executor, dbref caller, dbref enactor, int eval, int key,
        || !*it
        || !parse_attrib_wild(executor, it, &thing, false, false, false))
     {
-        notify_quiet(executor, "No match.");
+        notify_quiet(executor, (UTF8 *)"No match.");
         return;
     }
 
@@ -1867,7 +1867,7 @@ void do_edit(dbref executor, dbref caller, dbref enactor, int eval, int key,
 
     if (!bGotOne)
     {
-        notify_quiet(executor, "No matching attributes.");
+        notify_quiet(executor, (UTF8 *)"No matching attributes.");
     }
     else
     {
@@ -1875,7 +1875,7 @@ void do_edit(dbref executor, dbref caller, dbref enactor, int eval, int key,
     }
 }
 
-void do_wipe(dbref executor, dbref caller, dbref enactor, int eval, int key, char *it)
+void do_wipe(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8 *it)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
@@ -1889,13 +1889,13 @@ void do_wipe(dbref executor, dbref caller, dbref enactor, int eval, int key, cha
        || !*it
        || !parse_attrib_wild(executor, it, &thing, false, false, true))
     {
-        notify_quiet(executor, "No match.");
+        notify_quiet(executor, (UTF8 *)"No match.");
         return;
     }
     if (  mudconf.safe_wipe
-       && has_flag(NOTHING, thing, "SAFE"))
+       && has_flag(NOTHING, thing, (UTF8 *)"SAFE"))
     {
-        notify_quiet(executor, "SAFE objects may not be @wiped.");
+        notify_quiet(executor, (UTF8 *)"SAFE objects may not be @wiped.");
         return;
     }
 
@@ -1926,7 +1926,7 @@ void do_wipe(dbref executor, dbref caller, dbref enactor, int eval, int key, cha
 
     if (!bGotOne)
     {
-        notify_quiet(executor, "No matching attributes.");
+        notify_quiet(executor, (UTF8 *)"No matching attributes.");
     }
     else
     {
@@ -1934,13 +1934,13 @@ void do_wipe(dbref executor, dbref caller, dbref enactor, int eval, int key, cha
         handle_ears(thing, could_hear, Hearer(thing));
         if (!Quiet(executor))
         {
-            notify_quiet(executor, "Wiped.");
+            notify_quiet(executor, (UTF8 *)"Wiped.");
         }
     }
 }
 
 void do_trigger(dbref executor, dbref caller, dbref enactor, int eval, int key,
-                char *object, char *argv[], int nargs)
+                UTF8 *object, UTF8 *argv[], int nargs)
 {
     dbref thing;
     ATTR *pattr;
@@ -1948,7 +1948,7 @@ void do_trigger(dbref executor, dbref caller, dbref enactor, int eval, int key,
     if (!( parse_attrib(executor, object, &thing, &pattr)
         && pattr))
     {
-        notify_quiet(executor, "No match.");
+        notify_quiet(executor, (UTF8 *)"No match.");
         return;
     }
 
@@ -1961,8 +1961,8 @@ void do_trigger(dbref executor, dbref caller, dbref enactor, int eval, int key,
 
     if (key & TRIG_NOTIFY)
     {
-        char *tbuf = alloc_lbuf("trigger.notify_cmd");
-        mux_strncpy(tbuf, "@notify/quiet me", LBUF_SIZE-1);
+        UTF8 *tbuf = alloc_lbuf("trigger.notify_cmd");
+        mux_strncpy(tbuf, (UTF8 *)"@notify/quiet me", LBUF_SIZE-1);
         CLinearTimeAbsolute lta;
         wait_que(executor, caller, enactor, eval, false, lta, NOTHING, A_SEMAPHORE,
             tbuf,
@@ -1974,18 +1974,18 @@ void do_trigger(dbref executor, dbref caller, dbref enactor, int eval, int key,
     if (  !(key & TRIG_QUIET)
        && !Quiet(executor))
     {
-        notify_quiet(executor, "Triggered.");
+        notify_quiet(executor, (UTF8 *)"Triggered.");
     }
 }
 
-void do_use(dbref executor, dbref caller, dbref enactor, int eval, int key, char *object)
+void do_use(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8 *object)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
     UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(key);
 
-    char *df_use, *df_ouse, *temp;
+    UTF8 *df_use, *df_ouse, *temp;
     dbref thing, aowner;
     int aflags;
 
@@ -2008,7 +2008,7 @@ void do_use(dbref executor, dbref caller, dbref enactor, int eval, int key, char
     if (!could_doit(executor, thing, A_LUSE))
     {
         did_it(executor, thing, A_UFAIL,
-               "You can't figure out how to use that.",
+               (UTF8 *)"You can't figure out how to use that.",
                A_OUFAIL, NULL, A_AUFAIL, 0, NULL, 0);
         return;
     }
@@ -2041,7 +2041,7 @@ void do_use(dbref executor, dbref caller, dbref enactor, int eval, int key, char
     }
     else
     {
-        notify_quiet(executor, "You can't figure out how to use that.");
+        notify_quiet(executor, (UTF8 *)"You can't figure out how to use that.");
     }
 }
 
@@ -2057,14 +2057,14 @@ void do_setvattr
     dbref enactor,
     int   key,
     int   nargs,
-    char *arg1,
-    char *arg2
+    UTF8 *arg1,
+    UTF8 *arg2
 )
 {
     UNUSED_PARAMETER(key);
     UNUSED_PARAMETER(nargs);
 
-    char *s;
+    UTF8 *s;
     int anum;
 
     // Skip the '&'
@@ -2091,7 +2091,7 @@ void do_setvattr
 
     if (anum <= 0)
     {
-        notify_quiet(executor, "That's not a good name for an attribute.");
+        notify_quiet(executor, (UTF8 *)"That's not a good name for an attribute.");
         return;
     }
     do_setattr(executor, caller, enactor, anum, 2, s, arg2);

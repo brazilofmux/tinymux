@@ -42,7 +42,7 @@
 // Code 4 - '.'  (0x2E)
 // Code 5 - non-ASCII
 //
-static const unsigned char BodyClasses[256] =
+static const UTF8 BodyClasses[256] =
 {
 //  0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F
 //
@@ -106,15 +106,15 @@ static const int BodyActions[8][6] =
     { 14,  15,  17,   0,  14,   0}  // STATE_HAVE_DOT_CR
 };
 
-char *EncodeBody(char *pBody)
+UTF8 *EncodeBody(UTF8 *pBody)
 {
-    static char buf[2*LBUF_SIZE];
-    char *bp = buf;
+    static UTF8 buf[2*LBUF_SIZE];
+    UTF8 *bp = buf;
 
     int iState = STATE_BOM;
     for (;;)
     {
-        char ch = *pBody++;
+        UTF8 ch = *pBody++;
         int iAction = BodyActions[iState][BodyClasses[(unsigned char)ch]];
         switch (iAction)
         {
@@ -274,10 +274,10 @@ char *EncodeBody(char *pBody)
 
 // Transform CRLF runs to a space.
 //
-char *ConvertCRLFtoSpace(const char *pString)
+UTF8 *ConvertCRLFtoSpace(const UTF8 *pString)
 {
-    static char buf[LBUF_SIZE];
-    char *bp = buf;
+    static UTF8 buf[LBUF_SIZE];
+    UTF8 *bp = buf;
 
     // Skip any leading CRLF as well as non-ASCII.
     //
@@ -327,7 +327,7 @@ char *ConvertCRLFtoSpace(const char *pString)
 static int DCL_CDECL mod_email_sock_printf(SOCKET sock, char *format, ...)
 {
     va_list vargs;
-    char mybuf[2*LBUF_SIZE];
+    UTF8 mybuf[2*LBUF_SIZE];
 
     if (IS_INVALID_SOCKET(sock))
     {
@@ -338,12 +338,12 @@ static int DCL_CDECL mod_email_sock_printf(SOCKET sock, char *format, ...)
     mux_vsnprintf(mybuf, sizeof(mybuf), format, vargs);
     va_end(vargs);
 
-    return SOCKET_WRITE(sock, &mybuf[0], strlen(mybuf), 0);
+    return SOCKET_WRITE(sock, (char *)&mybuf[0], strlen((char *)mybuf), 0);
 }
 
 // Read a line of input from the socket.
 //
-static int mod_email_sock_readline(SOCKET sock, char *buffer, int maxlen)
+static int mod_email_sock_readline(SOCKET sock, UTF8 *buffer, int maxlen)
 {
     buffer[0] = '\0';
 
@@ -381,9 +381,9 @@ static int mod_email_sock_readline(SOCKET sock, char *buffer, int maxlen)
     while (  !done
           && pos < maxlen)
     {
-        char getme[2];
+        UTF8 getme[2];
 
-        int numread = SOCKET_READ(sock, &getme[0], 1, 0);
+        int numread = SOCKET_READ(sock, (char *)&getme[0], 1, 0);
         if (  IS_SOCKET_ERROR(numread)
            || 0 == numread)
         {
@@ -434,13 +434,13 @@ static int mod_email_sock_readline(SOCKET sock, char *buffer, int maxlen)
 
 // Open a socket to a specific host/port.
 //
-static int mod_email_sock_open(const char *conhostname, u_short port, SOCKET *sock)
+static int mod_email_sock_open(const UTF8 *conhostname, u_short port, SOCKET *sock)
 {
     struct hostent *conhost;
     struct sockaddr_in name;
     int addr_len;
 
-    conhost = gethostbyname(conhostname);
+    conhost = gethostbyname((char *)conhostname);
     if (0 == conhost)
     {
         return -1;
@@ -468,39 +468,39 @@ static int mod_email_sock_close(SOCKET sock)
 }
 
 void do_plusemail(dbref executor, dbref cause, dbref enactor, int key,
-                 int nfargs, char *arg1, char *arg2)
+                 int nfargs, UTF8 *arg1, UTF8 *arg2)
 {
     UNUSED_PARAMETER(cause);
     UNUSED_PARAMETER(enactor);
     UNUSED_PARAMETER(key);
     UNUSED_PARAMETER(nfargs);
 
-    char inputline[LBUF_SIZE];
+    UTF8 inputline[LBUF_SIZE];
 
     if ('\0' == mudconf.mail_server[0])
     {
-        notify(executor, "@email: Not configured");
+        notify(executor, (UTF8 *)"@email: Not configured");
         return;
     }
 
     if (!arg1 || !*arg1)
     {
-        notify(executor, "@email: I don't know who you want to e-mail!");
+        notify(executor, (UTF8 *)"@email: I don't know who you want to e-mail!");
         return;
     }
 
     if (!arg2 || !*arg2)
     {
-        notify(executor, "@email: Not sending an empty e-mail!");
+        notify(executor, (UTF8 *)"@email: Not sending an empty e-mail!");
         return;
     }
 
-    char *addy = alloc_lbuf("mod_email_do_email.headers");
-    char *bp = addy;
+    UTF8 *addy = alloc_lbuf("mod_email_do_email.headers");
+    UTF8 *bp = addy;
     safe_str(arg1, addy, &bp);
     *bp = '\0';
 
-    char *subject = strchr(addy, '/');
+    UTF8 *subject = (UTF8 *)strchr((char *)addy, '/');
     if (subject)
     {
         *subject = '\0';
@@ -511,7 +511,7 @@ void do_plusemail(dbref executor, dbref cause, dbref enactor, int key,
         subject = mudconf.mail_subject;
     }
 
-    char *pMailServer = ConvertCRLFtoSpace(mudconf.mail_server);
+    UTF8 *pMailServer = ConvertCRLFtoSpace(mudconf.mail_server);
     SOCKET mailsock = INVALID_SOCKET;
     int result = mod_email_sock_open(pMailServer, 25, &mailsock);
 
@@ -531,14 +531,14 @@ void do_plusemail(dbref executor, dbref cause, dbref enactor, int key,
         result = mod_email_sock_open(pMailServer, 25, &mailsock);
         if (0 != result)
         {
-            notify(executor, "@email: Unable to connect to mailserver, aborting!");
+            notify(executor, (UTF8 *)"@email: Unable to connect to mailserver, aborting!");
             free_lbuf(addy);
             return;
         }
     }
 
-    char *body = alloc_lbuf("mod_email_do_email.body");
-    char *bodyptr = body;
+    UTF8 *body = alloc_lbuf("mod_email_do_email.body");
+    UTF8 *bodyptr = body;
     mux_exec(arg2, body, &bodyptr, executor, executor, executor,
         EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, NULL, 0);
     *bodyptr = 0;
@@ -553,7 +553,7 @@ void do_plusemail(dbref executor, dbref cause, dbref enactor, int key,
     if (-1 == result)
     {
         mod_email_sock_close(mailsock);
-        notify(executor, "@email: Connection to mailserver lost.");
+        notify(executor, (UTF8 *)"@email: Connection to mailserver lost.");
         free_lbuf(body);
         free_lbuf(addy);
         return;
@@ -578,7 +578,7 @@ void do_plusemail(dbref executor, dbref cause, dbref enactor, int key,
     if (-1 == result)
     {
         mod_email_sock_close(mailsock);
-        notify(executor, "@email: Connection to mailserver lost.");
+        notify(executor, (UTF8 *)"@email: Connection to mailserver lost.");
         free_lbuf(body);
         free_lbuf(addy);
         return;
@@ -602,7 +602,7 @@ void do_plusemail(dbref executor, dbref cause, dbref enactor, int key,
     if (-1 == result)
     {
         mod_email_sock_close(mailsock);
-        notify(executor, "@email: Connection to mailserver lost.");
+        notify(executor, (UTF8 *)"@email: Connection to mailserver lost.");
         free_lbuf(body);
         free_lbuf(addy);
         return;
@@ -626,7 +626,7 @@ void do_plusemail(dbref executor, dbref cause, dbref enactor, int key,
     if (-1 == result)
     {
         mod_email_sock_close(mailsock);
-        notify(executor, "@email: Connection to mailserver lost.");
+        notify(executor, (UTF8 *)"@email: Connection to mailserver lost.");
         free_lbuf(body);
         free_lbuf(addy);
         return;
@@ -653,7 +653,7 @@ void do_plusemail(dbref executor, dbref cause, dbref enactor, int key,
     if (-1 == result)
     {
         mod_email_sock_close(mailsock);
-        notify(executor, "@email: Connection to mailserver lost.");
+        notify(executor, (UTF8 *)"@email: Connection to mailserver lost.");
         free_lbuf(body);
         free_lbuf(addy);
         return;
@@ -668,7 +668,7 @@ void do_plusemail(dbref executor, dbref cause, dbref enactor, int key,
         return;
     }
 
-    char *pSendName = StringClone(ConvertCRLFtoSpace(mudconf.mail_sendname));
+    UTF8 *pSendName = StringClone(ConvertCRLFtoSpace(mudconf.mail_sendname));
     mod_email_sock_printf(mailsock, "From: %s <%s>\r\n",  pSendName, ConvertCRLFtoSpace(mudconf.mail_sendaddr));
     MEMFREE(pSendName);
 
@@ -700,7 +700,7 @@ void do_plusemail(dbref executor, dbref cause, dbref enactor, int key,
     if (-1 == result)
     {
         mod_email_sock_close(mailsock);
-        notify(executor, "@email: Connection to mailserver lost.");
+        notify(executor, (UTF8 *)"@email: Connection to mailserver lost.");
         free_lbuf(body);
         free_lbuf(addy);
         return;

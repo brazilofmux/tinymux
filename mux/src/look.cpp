@@ -90,7 +90,7 @@ static int WhichRealm(dbref what, bool bPeering)
 
     if (bPeering)
     {
-        char *buff;
+        UTF8 *buff;
         dbref owner;
         int flags;
         int iPeeringRealm = get_atr((UTF8 *)"PEERING_REALM");
@@ -99,14 +99,14 @@ static int WhichRealm(dbref what, bool bPeering)
             buff = atr_get("WhichRealm.99", what, iPeeringRealm, &owner, &flags);
             if (*buff)
             {
-                if      (mux_stricmp(buff, "FAE") == 0)     realm = FAE_REALM;
-                else if (mux_stricmp(buff, "CHIMERA") == 0) realm = CHIMERA_REALM;
-                else if (mux_stricmp(buff, "SHROUD") == 0)  realm = SHROUD_REALM;
-                else if (mux_stricmp(buff, "UMBRA") == 0)   realm = UMBRA_REALM;
-                else if (mux_stricmp(buff, "MATRIX") == 0)  realm = MATRIX_REALM;
-                else if (mux_stricmp(buff, "NORMAL") == 0)  realm = NORMAL_REALM;
-                else if (mux_stricmp(buff, "BLIND") == 0)   realm = BLIND_REALM;
-                else if (mux_stricmp(buff, "STAFF") == 0)   realm = STAFF_REALM;
+                if      (mux_stricmp(buff, (UTF8 *)"FAE") == 0)     realm = FAE_REALM;
+                else if (mux_stricmp(buff, (UTF8 *)"CHIMERA") == 0) realm = CHIMERA_REALM;
+                else if (mux_stricmp(buff, (UTF8 *)"SHROUD") == 0)  realm = SHROUD_REALM;
+                else if (mux_stricmp(buff, (UTF8 *)"UMBRA") == 0)   realm = UMBRA_REALM;
+                else if (mux_stricmp(buff, (UTF8 *)"MATRIX") == 0)  realm = MATRIX_REALM;
+                else if (mux_stricmp(buff, (UTF8 *)"NORMAL") == 0)  realm = NORMAL_REALM;
+                else if (mux_stricmp(buff, (UTF8 *)"BLIND") == 0)   realm = BLIND_REALM;
+                else if (mux_stricmp(buff, (UTF8 *)"STAFF") == 0)   realm = STAFF_REALM;
             }
             free_lbuf(buff);
         }
@@ -119,7 +119,7 @@ static int HandleObfuscation(dbref looker, dbref lookee, int threshhold)
     int iReturn = REALM_DO_NORMALLY_SEEN;
     if (isObfuscate(lookee))
     {
-        char *buff;
+        UTF8 *buff;
         int iObfuscateLevel = 0;
         dbref owner;
         int flags;
@@ -366,7 +366,7 @@ static void LetDescriptionsDefault(dbref thing, int *piDESC, int *piADESC, int R
 
     if (iDesc > 0)
     {
-        char *buff = atr_pget(thing, iDesc, &owner, &flags);
+        UTF8 *buff = atr_pget(thing, iDesc, &owner, &flags);
         if (buff)
         {
             if (*buff)
@@ -379,7 +379,7 @@ static void LetDescriptionsDefault(dbref thing, int *piDESC, int *piADESC, int R
 }
 #endif
 
-static void look_exits(dbref player, dbref loc, const char *exit_name)
+static void look_exits(dbref player, dbref loc, const UTF8 *exit_name)
 {
     // Make sure location has exits.
     //
@@ -390,8 +390,8 @@ static void look_exits(dbref player, dbref loc, const char *exit_name)
     }
 
     dbref thing, parent;
-    char *buff, *e, *buff1, *e1;
-    const char *s;
+    UTF8 *buff, *e, *buff1, *e1;
+    const UTF8 *s;
 
     // make sure there is at least one visible exit.
     //
@@ -439,13 +439,13 @@ static void look_exits(dbref player, dbref loc, const char *exit_name)
     //
     dbref aowner;
     int aflags;
-    char *ExitFormat = atr_pget(loc, A_EXITFORMAT, &aowner, &aflags);
+    UTF8 *ExitFormat = atr_pget(loc, A_EXITFORMAT, &aowner, &aflags);
 
     bool bDisplayExits = bFoundAnyDisplayable;
     if (*ExitFormat)
     {
-        char *VisibleObjectList = alloc_lbuf("look_exits.VOL");
-        char *tPtr = VisibleObjectList;
+        UTF8 *VisibleObjectList = alloc_lbuf("look_exits.VOL");
+        UTF8 *tPtr = VisibleObjectList;
 
         ITL pContext;
         ItemToList_Init(&pContext, VisibleObjectList, &tPtr, '#');
@@ -472,7 +472,7 @@ static void look_exits(dbref player, dbref loc, const char *exit_name)
         }
         ItemToList_Final(&pContext);
 
-        char *FormatOutput = alloc_lbuf("look_exits.FO");
+        UTF8 *FormatOutput = alloc_lbuf("look_exits.FO");
         tPtr = FormatOutput;
 
         reg_ref **preserve = NULL;
@@ -541,7 +541,7 @@ static void look_exits(dbref player, dbref loc, const char *exit_name)
                     //
                     if (buff != e)
                     {
-                        safe_str("  ", buff, &e);
+                        safe_str((UTF8 *)"  ", buff, &e);
                     }
 
                     for (s = Moniker(thing); *s && (*s != ';'); s++)
@@ -554,11 +554,11 @@ static void look_exits(dbref player, dbref loc, const char *exit_name)
                     if (Html(player))
                     {
                         /* XXX The exit name needs to be HTML escaped. */
-                        safe_str("<a xch_cmd=\"", buff, &e);
+                        safe_str((UTF8 *)"<a xch_cmd=\"", buff, &e);
                         safe_str(buff1, buff, &e);
-                        safe_str("\"> ", buff, &e);
+                        safe_str((UTF8 *)"\"> ", buff, &e);
                         html_escape(buff1, buff, &e);
-                        safe_str(" </a>", buff, &e);
+                        safe_str((UTF8 *)" </a>", buff, &e);
                     }
                     else
                     {
@@ -574,7 +574,7 @@ static void look_exits(dbref player, dbref loc, const char *exit_name)
     {
         if (Html(player))
         {
-            safe_str("\r\n", buff, &e);
+            safe_str((UTF8 *)"\r\n", buff, &e);
             *e = 0;
             notify_html(player, buff);
         }
@@ -592,12 +592,12 @@ static void look_exits(dbref player, dbref loc, const char *exit_name)
 #define CONTENTS_NESTED 1
 #define CONTENTS_REMOTE 2
 
-static void look_contents(dbref player, dbref loc, const char *contents_name, int style)
+static void look_contents(dbref player, dbref loc, const UTF8 *contents_name, int style)
 {
     dbref thing;
-    char *buff;
-    char *html_buff, *html_cp;
-    char remote_num[I32BUF_SIZE+1];
+    UTF8 *buff;
+    UTF8 *html_buff, *html_cp;
+    UTF8 remote_num[I32BUF_SIZE+1];
 
     // Check to see if he can see the location.
     //
@@ -610,13 +610,13 @@ static void look_contents(dbref player, dbref loc, const char *contents_name, in
 
     dbref aowner;
     int aflags;
-    char *ContentsFormat = atr_pget(loc, A_CONFORMAT, &aowner, &aflags);
+    UTF8 *ContentsFormat = atr_pget(loc, A_CONFORMAT, &aowner, &aflags);
 
     bool bDisplayContents = true;
     if (*ContentsFormat)
     {
-        char *VisibleObjectList = alloc_lbuf("look_contents.VOL");
-        char *tPtr = VisibleObjectList;
+        UTF8 *VisibleObjectList = alloc_lbuf("look_contents.VOL");
+        UTF8 *tPtr = VisibleObjectList;
 
         ITL pContext;
         ItemToList_Init(&pContext, VisibleObjectList, &tPtr, '#');
@@ -639,16 +639,16 @@ static void look_contents(dbref player, dbref loc, const char *contents_name, in
         }
         ItemToList_Final(&pContext);
 
-        char *ContentsNameScratch = alloc_lbuf("look_contents.CNS");
+        UTF8 *ContentsNameScratch = alloc_lbuf("look_contents.CNS");
         tPtr = ContentsNameScratch;
 
         safe_str(contents_name, ContentsNameScratch, &tPtr);
         *tPtr = '\0';
 
-        char *FormatOutput = alloc_lbuf("look_contents.FO");
+        UTF8 *FormatOutput = alloc_lbuf("look_contents.FO");
         tPtr = FormatOutput;
 
-        char* ParameterList[] =
+        UTF8* ParameterList[] =
             { VisibleObjectList, ContentsNameScratch };
 
         reg_ref **preserve = NULL;
@@ -705,7 +705,7 @@ static void look_contents(dbref player, dbref loc, const char *contents_name, in
                     html_cp = html_buff;
                     if (Html(player))
                     {
-                        safe_str("<a xch_cmd=\"look ", html_buff, &html_cp);
+                        safe_str((UTF8 *)"<a xch_cmd=\"look ", html_buff, &html_cp);
                         switch (style)
                         {
                         case CONTENTS_LOCAL:
@@ -714,7 +714,7 @@ static void look_contents(dbref player, dbref loc, const char *contents_name, in
 
                         case CONTENTS_NESTED:
                             safe_str(Moniker(Location(thing)), html_buff, &html_cp);
-                            safe_str("'s ", html_buff, &html_cp);
+                            safe_str((UTF8 *)"'s ", html_buff, &html_cp);
                             safe_str(Moniker(thing), html_buff, &html_cp);
                             break;
 
@@ -729,9 +729,9 @@ static void look_contents(dbref player, dbref loc, const char *contents_name, in
 
                             break;
                         }
-                        safe_str("\">", html_buff, &html_cp);
+                        safe_str((UTF8 *)"\">", html_buff, &html_cp);
                         html_escape(buff, html_buff, &html_cp);
-                        safe_str("</a>\r\n", html_buff, &html_cp);
+                        safe_str((UTF8 *)"</a>\r\n", html_buff, &html_cp);
                         *html_cp = 0;
                         notify_html(player, html_buff);
                     }
@@ -751,28 +751,28 @@ static void look_contents(dbref player, dbref loc, const char *contents_name, in
 typedef struct
 {
     int  mask;
-    char letter;
-    char *name;
+    UTF8 letter;
+    UTF8 *name;
 } ATTR_DECODE_ENTRY, *PATTR_DECODE_ENTRY;
 
 static ATTR_DECODE_ENTRY attr_decode_table[NUM_ATTRIBUTE_CODES+1] =
 {
-    { AF_LOCK,    '+', "LOCK"    },
-    { AF_NOPROG,  '$', "NOPROG"  },
-    { AF_CASE,    'C', "CASE"    },
-    { AF_HTML,    'H', "HTML"    },
-    { AF_PRIVATE, 'I', "PRIVATE" },
-    { AF_NONAME,  'N', "NONAME"  },
-    { AF_NOPARSE, 'P', "NOPARSE" },
-    { AF_REGEXP,  'R', "REGEXP"  },
-    { AF_TRACE,   'T', "TRACE"   },
-    { AF_VISUAL,  'V', "VISUAL"  },
-    { AF_MDARK,   'M', "DARK"    },
-    { AF_WIZARD,  'W', "WIZARD"  },
+    { AF_LOCK,    '+', (UTF8 *)"LOCK"    },
+    { AF_NOPROG,  '$', (UTF8 *)"NOPROG"  },
+    { AF_CASE,    'C', (UTF8 *)"CASE"    },
+    { AF_HTML,    'H', (UTF8 *)"HTML"    },
+    { AF_PRIVATE, 'I', (UTF8 *)"PRIVATE" },
+    { AF_NONAME,  'N', (UTF8 *)"NONAME"  },
+    { AF_NOPARSE, 'P', (UTF8 *)"NOPARSE" },
+    { AF_REGEXP,  'R', (UTF8 *)"REGEXP"  },
+    { AF_TRACE,   'T', (UTF8 *)"TRACE"   },
+    { AF_VISUAL,  'V', (UTF8 *)"VISUAL"  },
+    { AF_MDARK,   'M', (UTF8 *)"DARK"    },
+    { AF_WIZARD,  'W', (UTF8 *)"WIZARD"  },
     { 0, 0, NULL }
 };
 
-size_t decode_attr_flags(int aflags, char buff[NUM_ATTRIBUTE_CODES+1])
+size_t decode_attr_flags(int aflags, UTF8 buff[NUM_ATTRIBUTE_CODES+1])
 {
     size_t n = 0;
     PATTR_DECODE_ENTRY pEntry;
@@ -787,7 +787,7 @@ size_t decode_attr_flags(int aflags, char buff[NUM_ATTRIBUTE_CODES+1])
     return n;
 }
 
-void decode_attr_flag_names(int aflags, char *buf, char **bufc)
+void decode_attr_flag_names(int aflags, UTF8 *buf, UTF8 **bufc)
 {
     PATTR_DECODE_ENTRY pEntry;
     bool bFirst = true;
@@ -810,13 +810,13 @@ static void view_atr
     dbref player,
     dbref thing,
     ATTR *ap,
-    char *text,
+    UTF8 *text,
     dbref aowner,
     int aflags,
     bool skip_tag
 )
 {
-    char *buf;
+    UTF8 *buf;
 
     if (ap->flags & AF_IS_LOCK)
     {
@@ -846,7 +846,7 @@ static void view_atr
 
     // Generate flags.
     //
-    char xbuf[11];
+    UTF8 xbuf[11];
     decode_attr_flags(aflags, xbuf);
 
     if (  aowner != Owner(thing)
@@ -884,7 +884,7 @@ static void look_atrs1
     bool bFoundCommands = false;
     bool bFoundListens  = false;
 
-    char *as;
+    unsigned char *as;
     for (int ca = atr_head(thing, &as); ca; ca = atr_next(&as))
     {
         if (  ca == A_DESC
@@ -913,14 +913,14 @@ static void look_atrs1
 
         int   aflags;
         dbref aowner;
-        char *buf = atr_get("look_atrs1.916", thing, ca, &aowner, &aflags);
+        UTF8 *buf = atr_get("look_atrs1.916", thing, ca, &aowner, &aflags);
 
         if (!(aflags & AF_NOPROG))
         {
             if (  AMATCH_CMD    == buf[0]
                || AMATCH_LISTEN == buf[0])
             {
-                char *s = strchr(buf+1, ':');
+                UTF8 *s = (UTF8 *)strchr((char *)buf+1, ':');
                 if (s)
                 {
                     if (AMATCH_CMD == buf[0])
@@ -1018,34 +1018,34 @@ static bool show_a_desc(dbref player, dbref loc)
     int   aflags1;
     bool indent = (isRoom(loc) && mudconf.indent_desc && atr_get_raw(loc, A_DESC));
 
-    char *DescFormat = atr_pget(loc, A_DESCFORMAT, &aowner1, &aflags1);
+    UTF8 *DescFormat = atr_pget(loc, A_DESCFORMAT, &aowner1, &aflags1);
     if (*DescFormat)
     {
         reg_ref **preserve = NULL;
         preserve = PushRegisters(MAX_GLOBAL_REGS);
         save_global_regs(preserve);
 
-        char *FormatOutput = alloc_lbuf("look_description.FO");
-        char *tPtr = FormatOutput;
+        UTF8 *FormatOutput = alloc_lbuf("look_description.FO");
+        UTF8 *tPtr = FormatOutput;
 
         ATTR *cattr = atr_num(iDescDefault);
 
         dbref aowner2;
         int   aflags2;
-        char *tbuf1 = atr_pget(loc, iDescDefault, &aowner2, &aflags2);
-        char *temp = alloc_lbuf("look_description.ET");
-        char *bp = temp;
+        UTF8 *tbuf1 = atr_pget(loc, iDescDefault, &aowner2, &aflags2);
+        UTF8 *temp = alloc_lbuf("look_description.ET");
+        UTF8 *bp = temp;
         mux_exec(tbuf1, temp, &bp, loc, player, player,
             AttrTrace(aflags2, EV_FCHECK|EV_EVAL|EV_TOP),
             NULL, 0);
         *bp = '\0';
 
-        char *attrname = alloc_lbuf("look_description.AN");
-        char *cp = attrname;
+        UTF8 *attrname = alloc_lbuf("look_description.AN");
+        UTF8 *cp = attrname;
 
-        safe_str((char *)cattr->name, attrname, &cp);
+        safe_str(cattr->name, attrname, &cp);
         *cp = '\0';
-        char* ParameterList[] =
+        UTF8* ParameterList[] =
             { temp, attrname };
 
         mux_exec(DescFormat, FormatOutput, &tPtr, loc, player, player,
@@ -1073,7 +1073,7 @@ static bool show_a_desc(dbref player, dbref loc)
     }
     else
     {
-        char *got;
+        UTF8 *got;
         if (Html(player))
         {
             got = atr_pget(loc, A_HTDESC, &aowner1, &aflags1);
@@ -1161,7 +1161,7 @@ static void look_simple(dbref player, dbref thing, bool obey_terse)
     int can_see_thing = Examinable(player, thing);
     if (can_see_thing)
     {
-        char *buff = unparse_object(player, thing, true, true);
+        UTF8 *buff = unparse_object(player, thing, true, true);
         notify(player, buff);
         free_lbuf(buff);
     }
@@ -1175,7 +1175,7 @@ static void look_simple(dbref player, dbref thing, bool obey_terse)
     int pattr = (obey_terse && Terse(player)) ? 0 : iDescDefault;
     if (!show_a_desc(player, thing))
     {
-        notify(player, "You see nothing special.");
+        notify(player, (UTF8 *)"You see nothing special.");
 #ifdef REALITY_LVLS
         did_it_rlevel(player, thing, 0, NULL, A_ODESC, NULL, iADescDefault,
             0, NULL, 0);
@@ -1195,7 +1195,7 @@ static void look_simple(dbref player, dbref thing, bool obey_terse)
 
 static void show_desc(dbref player, dbref loc, int key)
 {
-    char *got;
+    UTF8 *got;
     dbref aowner;
     int aflags;
 
@@ -1256,12 +1256,12 @@ void look_in(dbref player, dbref loc, int key)
     //
     dbref aowner;
     int aflags;
-    char *NameFormat = atr_pget(loc, A_NAMEFORMAT, &aowner, &aflags);
+    UTF8 *NameFormat = atr_pget(loc, A_NAMEFORMAT, &aowner, &aflags);
 
     if (*NameFormat)
     {
-        char *FormatOutput = alloc_lbuf("look_name.FO");
-        char *tPtr = FormatOutput;
+        UTF8 *FormatOutput = alloc_lbuf("look_name.FO");
+        UTF8 *tPtr = FormatOutput;
 
         reg_ref **preserve = NULL;
         preserve = PushRegisters(MAX_GLOBAL_REGS);
@@ -1281,12 +1281,12 @@ void look_in(dbref player, dbref loc, int key)
     {
         // Okay, no @NameFormat.  Show the normal name.
         //
-        char *buff = unparse_object(player, loc, true, true);
+        UTF8 *buff = unparse_object(player, loc, true, true);
         if (Html(player))
         {
-            notify_html(player, "<center><h3>");
+            notify_html(player, (UTF8 *)"<center><h3>");
             notify(player, buff);
-            notify_html(player, "</h3></center>");
+            notify_html(player, (UTF8 *)"</h3></center>");
         }
         else
         {
@@ -1354,13 +1354,13 @@ void look_in(dbref player, dbref loc, int key)
     if (  !is_terse
        || mudconf.terse_contents)
     {
-        look_contents(player, loc, "Contents:", CONTENTS_LOCAL);
+        look_contents(player, loc, (UTF8 *)"Contents:", CONTENTS_LOCAL);
     }
     if (  (key & LK_SHOWEXIT)
        && (  !is_terse
           || mudconf.terse_exits))
     {
-        look_exits(player, loc, "Obvious exits:");
+        look_exits(player, loc, (UTF8 *)"Obvious exits:");
     }
 }
 
@@ -1379,7 +1379,7 @@ static void look_here
             if (  isRoom(thing)
                || Opaque(thing))
             {
-                notify_quiet(executor, "You can't look outside.");
+                notify_quiet(executor, (UTF8 *)"You can't look outside.");
                 return;
             }
             thing = Location(thing);
@@ -1388,7 +1388,7 @@ static void look_here
     }
 }
 
-void do_look(dbref executor, dbref caller, dbref enactor, int eval, int key, char *name)
+void do_look(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8 *name)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
@@ -1466,7 +1466,7 @@ void do_look(dbref executor, dbref caller, dbref enactor, int eval, int key, cha
                && (  mudconf.terse_contents
                   || !Terse(executor)))
             {
-                look_contents(executor, thing, "Carrying:", CONTENTS_NESTED);
+                look_contents(executor, thing,(UTF8 *) "Carrying:", CONTENTS_NESTED);
             }
             break;
 
@@ -1492,11 +1492,11 @@ void do_look(dbref executor, dbref caller, dbref enactor, int eval, int key, cha
 static void debug_examine(dbref player, dbref thing)
 {
     dbref aowner;
-    char *buf;
+    UTF8 *buf;
     int aflags, ca;
     BOOLEXP *pBoolExp;
     ATTR *pattr;
-    char *as, *cp;
+    UTF8 *as, *cp;
 
     notify(player, tprintf("Number  = %d", thing));
     if (!Good_obj(thing))
@@ -1535,7 +1535,7 @@ static void debug_examine(dbref player, dbref thing)
 
     buf = alloc_lbuf("debug_dexamine");
     cp = buf;
-    safe_str("Attr list: ", buf, &cp);
+    safe_str((UTF8 *)"Attr list: ", buf, &cp);
 
     for (ca = atr_head(thing, &as); ca; ca = atr_next(&as))
     {
@@ -1552,7 +1552,7 @@ static void debug_examine(dbref player, dbref thing)
             {
                 // Valid attr.
                 //
-                safe_str((char *)pattr->name, buf, &cp);
+                safe_str(pattr->name, buf, &cp);
                 safe_chr(' ', buf, &cp);
             }
             else
@@ -1600,7 +1600,7 @@ static void exam_wildattrs
         }
         int   aflags;
         dbref aowner;
-        char *buf;
+        UTF8 *buf;
         if (  do_parent
            && !(ap->flags & AF_PRIVATE))
         {
@@ -1643,18 +1643,18 @@ static void exam_wildattrs
             }
             else
             {
-                notify(player, "<Too far away to get a good look>");
+                notify(player, (UTF8 *)"<Too far away to get a good look>");
             }
         }
         free_lbuf(buf);
     }
     if (!got_any)
     {
-        notify_quiet(player, "No matching attributes found.");
+        notify_quiet(player, (UTF8 *)"No matching attributes found.");
     }
 }
 
-void do_examine(dbref executor, dbref caller, dbref enactor, int eval, int key, char *name)
+void do_examine(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8 *name)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
@@ -1668,8 +1668,8 @@ void do_examine(dbref executor, dbref caller, dbref enactor, int eval, int key, 
     }
 
     dbref content, exit, aowner, loc;
-    char savec;
-    char *temp, *buf, *buf2;
+    UTF8 savec;
+    UTF8 *temp, *buf, *buf2;
     BOOLEXP *pBoolExp;
     int aflags;
     bool control;
@@ -1791,7 +1791,7 @@ void do_examine(dbref executor, dbref caller, dbref enactor, int eval, int key, 
     }
     else
     {
-        notify(executor, "<Too far away to get a good look>");
+        notify(executor, (UTF8 *)"<Too far away to get a good look>");
     }
 
     if (control)
@@ -1854,7 +1854,7 @@ void do_examine(dbref executor, dbref caller, dbref enactor, int eval, int key, 
         //
         if (Contents(thing) != NOTHING)
         {
-            notify(executor, "Contents:");
+            notify(executor, (UTF8 *)"Contents:");
             DOLIST(content, Contents(thing))
             {
                 buf2 = unparse_object(executor, content, false, true);
@@ -1872,7 +1872,7 @@ void do_examine(dbref executor, dbref caller, dbref enactor, int eval, int key, 
             //
             if (Exits(thing) != NOTHING)
             {
-                notify(executor, "Exits:");
+                notify(executor, (UTF8 *)"Exits:");
                 DOLIST(exit, Exits(thing))
                 {
                     buf2 = unparse_object(executor, exit, false, true);
@@ -1882,7 +1882,7 @@ void do_examine(dbref executor, dbref caller, dbref enactor, int eval, int key, 
             }
             else
             {
-                notify(executor, "No exits.");
+                notify(executor, (UTF8 *)"No exits.");
             }
 
             // print dropto if present
@@ -1902,7 +1902,7 @@ void do_examine(dbref executor, dbref caller, dbref enactor, int eval, int key, 
             //
             if (Exits(thing) != NOTHING)
             {
-                notify(executor, "Exits:");
+                notify(executor, (UTF8 *)"Exits:");
                 DOLIST(exit, Exits(thing))
                 {
                     buf2 = unparse_object(executor, exit, false, true);
@@ -1912,7 +1912,7 @@ void do_examine(dbref executor, dbref caller, dbref enactor, int eval, int key, 
             }
             else
             {
-                notify(executor, "No exits.");
+                notify(executor, (UTF8 *)"No exits.");
             }
 
             // Print home
@@ -1948,7 +1948,7 @@ void do_examine(dbref executor, dbref caller, dbref enactor, int eval, int key, 
             case NOTHING:
                 // Special case. unparse_object() normally returns -1 as '*NOTHING*'.
                 //
-                notify(executor, "Destination: *UNLINKED*");
+                notify(executor, (UTF8 *)"Destination: *UNLINKED*");
                 break;
 
             default:
@@ -1968,11 +1968,11 @@ void do_examine(dbref executor, dbref caller, dbref enactor, int eval, int key, 
     {
         if (Has_contents(thing))
         {
-            look_contents(executor, thing, "Contents:", CONTENTS_REMOTE);
+            look_contents(executor, thing, (UTF8 *)"Contents:", CONTENTS_REMOTE);
         }
         if (!isExit(thing))
         {
-            look_exits(executor, thing, "Obvious exits:");
+            look_exits(executor, thing, (UTF8 *)"Obvious exits:");
         }
     }
     free_lbuf(temp);
@@ -2010,17 +2010,17 @@ void do_inventory(dbref executor, dbref caller, dbref enactor, int key)
     UNUSED_PARAMETER(key);
 
     dbref thing;
-    char *buff, *e;
-    const char *s;
+    UTF8 *buff, *e;
+    const UTF8 *s;
 
     thing = Contents(executor);
     if (thing == NOTHING)
     {
-        notify(executor, "You aren't carrying anything.");
+        notify(executor, (UTF8 *)"You aren't carrying anything.");
     }
     else
     {
-        notify(executor, "You are carrying:");
+        notify(executor, (UTF8 *)"You are carrying:");
         DOLIST(thing, thing)
         {
             buff = unparse_object(executor, thing, true, true);
@@ -2032,7 +2032,7 @@ void do_inventory(dbref executor, dbref caller, dbref enactor, int key)
     thing = Exits(executor);
     if (thing != NOTHING)
     {
-        notify(executor, "Exits:");
+        notify(executor, (UTF8 *)"Exits:");
         e = buff = alloc_lbuf("look_exits");
         DOLIST(thing, thing)
         {
@@ -2042,7 +2042,7 @@ void do_inventory(dbref executor, dbref caller, dbref enactor, int key)
             {
                 safe_chr(*s, buff, &e);
             }
-            safe_str("  ", buff, &e);
+            safe_str((UTF8 *)"  ", buff, &e);
         }
         *e = 0;
         notify(executor, buff);
@@ -2051,7 +2051,7 @@ void do_inventory(dbref executor, dbref caller, dbref enactor, int key)
     do_score(executor, caller, executor, 0);
 }
 
-void do_entrances(dbref executor, dbref caller, dbref enactor, int eval, int key, char *name)
+void do_entrances(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8 *name)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
@@ -2059,7 +2059,7 @@ void do_entrances(dbref executor, dbref caller, dbref enactor, int eval, int key
     UNUSED_PARAMETER(key);
 
     dbref thing, i, j;
-    char *exit, *message;
+    UTF8 *exit, *message;
     int control_thing, count, low_bound, high_bound;
     FWDLIST *fp;
 
@@ -2207,8 +2207,8 @@ static void sweep_check(dbref player, dbref what, int key, bool is_loc)
         {
             bool bFoundCommands = false;
 
-            char *as;
-            char *buff = alloc_lbuf("sweep_check.Hearer");
+            unsigned char *as;
+            UTF8 *buff = alloc_lbuf("sweep_check.Hearer");
             for (int atr = atr_head(what, &as); atr; atr = atr_next(&as))
             {
                 ATTR *ap = atr_num(atr);
@@ -2227,11 +2227,11 @@ static void sweep_check(dbref player, dbref what, int key, bool is_loc)
                     continue;
                 }
 
-                char *s = NULL;
+                UTF8 *s = NULL;
                 if (  AMATCH_CMD    == buff[0]
                    || AMATCH_LISTEN == buff[0])
                 {
-                    s = strchr(buff+1, ':');
+                    s = (UTF8 *)strchr((char *)buff+1, ':');
                     if (s)
                     {
                         if (AMATCH_CMD == buff[0])
@@ -2324,39 +2324,39 @@ static void sweep_check(dbref player, dbref what, int key, bool is_loc)
        || ispuppet
        || isconnected)
     {
-        char *buf = alloc_lbuf("sweep_check.types");
-        char *bp = buf;
+        UTF8 *buf = alloc_lbuf("sweep_check.types");
+        UTF8 *bp = buf;
 
         if (cancom)
         {
-            safe_str("commands ", buf, &bp);
+            safe_str((UTF8 *)"commands ", buf, &bp);
         }
 
         if (canhear)
         {
-            safe_str("messages ", buf, &bp);
+            safe_str((UTF8 *)"messages ", buf, &bp);
         }
 
         if (isplayer)
         {
-            safe_str("player ", buf, &bp);
+            safe_str((UTF8 *)"player ", buf, &bp);
         }
 
         if (ispuppet)
         {
-            safe_str("puppet(", buf, &bp);
+            safe_str((UTF8 *)"puppet(", buf, &bp);
             safe_str(Moniker(Owner(what)), buf, &bp);
-            safe_str(") ", buf, &bp);
+            safe_str((UTF8 *)") ", buf, &bp);
         }
 
         if (isconnected)
         {
-            safe_str("connected ", buf, &bp);
+            safe_str((UTF8 *)"connected ", buf, &bp);
         }
 
         if (is_parent)
         {
-            safe_str("parent ", buf, &bp);
+            safe_str((UTF8 *)"parent ", buf, &bp);
         }
         bp[-1] = '\0';
 
@@ -2367,7 +2367,7 @@ static void sweep_check(dbref player, dbref what, int key, bool is_loc)
         }
         else
         {
-            char *buf2 = alloc_lbuf("sweep_check.name");
+            UTF8 *buf2 = alloc_lbuf("sweep_check.name");
             mux_strncpy(buf2, Moniker(what), LBUF_SIZE-1);
             for (bp = buf2; *bp && (*bp != ';'); bp++)
             {
@@ -2381,7 +2381,7 @@ static void sweep_check(dbref player, dbref what, int key, bool is_loc)
     }
 }
 
-void do_sweep(dbref executor, dbref caller, dbref enactor, int eval, int key, char *where)
+void do_sweep(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8 *where)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
@@ -2423,7 +2423,7 @@ void do_sweep(dbref executor, dbref caller, dbref enactor, int eval, int key, ch
     //
     if (where_key & SWEEP_HERE)
     {
-        notify(executor, "Sweeping location...");
+        notify(executor, (UTF8 *)"Sweeping location...");
         if (Has_location(sweeploc))
         {
             here = Location(sweeploc);
@@ -2433,7 +2433,7 @@ void do_sweep(dbref executor, dbref caller, dbref enactor, int eval, int key, ch
                   && !Examinable(executor, here)))
             {
                 notify_quiet(executor,
-                    "Sorry, it is dark here and you can't search for bugs");
+                    (UTF8 *)"Sorry, it is dark here and you can't search for bugs");
                 sweep_check(executor, sweeploc, what_key, false);
             }
             else
@@ -2456,7 +2456,7 @@ void do_sweep(dbref executor, dbref caller, dbref enactor, int eval, int key, ch
     if (  (where_key & SWEEP_EXITS)
        && Has_location(sweeploc))
     {
-        notify(executor, "Sweeping exits...");
+        notify(executor, (UTF8 *)"Sweeping exits...");
         for (here = Exits(Location(sweeploc)); here != NOTHING; here = Next(here))
         {
             sweep_check(executor, here, what_key, false);
@@ -2468,7 +2468,7 @@ void do_sweep(dbref executor, dbref caller, dbref enactor, int eval, int key, ch
     if (  (where_key & SWEEP_ME)
        && Has_contents(sweeploc))
     {
-        notify(executor, "Sweeping inventory...");
+        notify(executor, (UTF8 *)"Sweeping inventory...");
         for (here = Contents(sweeploc); here != NOTHING; here = Next(here))
         {
             sweep_check(executor, here, what_key, false);
@@ -2480,13 +2480,13 @@ void do_sweep(dbref executor, dbref caller, dbref enactor, int eval, int key, ch
     if (  (where_key & SWEEP_EXITS)
        && Has_exits(sweeploc))
     {
-        notify(executor, "Sweeping carried exits...");
+        notify(executor, (UTF8 *)"Sweeping carried exits...");
         for (here = Exits(sweeploc); here != NOTHING; here = Next(here))
         {
             sweep_check(executor, here, what_key, false);
         }
     }
-    notify(executor, "Sweep complete.");
+    notify(executor, (UTF8 *)"Sweep complete.");
 }
 
 /* Output the sequence of commands needed to duplicate the specified
@@ -2501,8 +2501,8 @@ void do_decomp
     dbref enactor,
     int   key,
     int   nargs,
-    char *name,
-    char *qual
+    UTF8 *name,
+    UTF8 *qual
 )
 {
     UNUSED_PARAMETER(caller);
@@ -2510,7 +2510,7 @@ void do_decomp
     UNUSED_PARAMETER(nargs);
 
     BOOLEXP *pBoolExp;
-    char *got, *thingname, *as, *ltext, *buff;
+    UTF8 *got, *thingname, *as, *ltext, *buff;
     dbref aowner, thing;
     int val, aflags, ca;
     ATTR *pattr;
@@ -2543,7 +2543,7 @@ void do_decomp
     if (!Examinable(executor, thing))
     {
         notify_quiet(executor,
-              "You can only decompile things you can examine.");
+              (UTF8 *)"You can only decompile things you can examine.");
         olist_pop();
         return;
     }
@@ -2577,7 +2577,7 @@ void do_decomp
                 break;
 
             case TYPE_ROOM:
-                mux_strncpy(thingname, "here", LBUF_SIZE-1);
+                mux_strncpy(thingname, (UTF8 *)"here", LBUF_SIZE-1);
                 notify(executor, tprintf("@dig/teleport %s",
                     translate_string(Moniker(thing), true)));
                 break;
@@ -2599,7 +2599,7 @@ void do_decomp
             case TYPE_PLAYER:
                 if (executor == thing)
                 {
-                    mux_strncpy(thingname, "me", LBUF_SIZE-1);
+                    mux_strncpy(thingname, (UTF8 *)"me", LBUF_SIZE-1);
                 }
                 else
                 {
@@ -2614,7 +2614,7 @@ void do_decomp
     // several places.
     //
     size_t len;
-    char *p = strip_ansi(thingname, &len);
+    UTF8 *p = strip_ansi(thingname, &len);
     memcpy(thingname, p, len+1);
 
     // Report the lock (if any).
@@ -2663,7 +2663,7 @@ void do_decomp
             }
             else
             {
-                mux_strncpy(buff, (char *)pattr->name, MBUF_SIZE-1);
+                mux_strncpy(buff, pattr->name, MBUF_SIZE-1);
                 notify(executor, tprintf("%c%s %s=%s", ((ca < A_USER_START) ?
                     '@' : '&'), buff, thingname, got));
                 for (np = indiv_attraccess_nametab; np->name; np++)
@@ -2721,7 +2721,7 @@ void do_decomp
 //
 void show_vrml_url(dbref thing, dbref loc)
 {
-    char *vrml_url;
+    UTF8 *vrml_url;
     dbref aowner;
     int aflags;
 
@@ -2735,19 +2735,19 @@ void show_vrml_url(dbref thing, dbref loc)
     vrml_url = atr_pget(loc, A_VRML_URL, &aowner, &aflags);
     if (*vrml_url)
     {
-        char *vrml_message, *vrml_cp;
+        UTF8 *vrml_message, *vrml_cp;
 
         vrml_message = vrml_cp = alloc_lbuf("show_vrml_url");
-        safe_str("<img xch_graph=load href=\"", vrml_message, &vrml_cp);
+        safe_str((UTF8 *)"<img xch_graph=load href=\"", vrml_message, &vrml_cp);
         safe_str(vrml_url, vrml_message, &vrml_cp);
-        safe_str("\">", vrml_message, &vrml_cp);
+        safe_str((UTF8 *)"\">", vrml_message, &vrml_cp);
         *vrml_cp = 0;
         notify_html(thing, vrml_message);
         free_lbuf(vrml_message);
     }
     else
     {
-        notify_html(thing, "<img xch_graph=hide>");
+        notify_html(thing, (UTF8 *)"<img xch_graph=hide>");
     }
     free_lbuf(vrml_url);
 }

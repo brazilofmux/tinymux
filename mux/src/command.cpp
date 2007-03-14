@@ -28,536 +28,536 @@
 //
 static NAMETAB attrib_sw[] =
 {
-    {"access",          1,  CA_GOD,     ATTRIB_ACCESS},
-    {"delete",          1,  CA_GOD,     ATTRIB_DELETE},
-    {"rename",          1,  CA_GOD,     ATTRIB_RENAME},
-    { NULL,             0,       0,     0}
+    {(UTF8 *)"access",          1,  CA_GOD,     ATTRIB_ACCESS},
+    {(UTF8 *)"delete",          1,  CA_GOD,     ATTRIB_DELETE},
+    {(UTF8 *)"rename",          1,  CA_GOD,     ATTRIB_RENAME},
+    {(UTF8 *) NULL,             0,       0,     0}
 };
 
 static NAMETAB boot_sw[] =
 {
-    {"port",            1,  CA_WIZARD,  BOOT_PORT|SW_MULTIPLE},
-    {"quiet",           1,  CA_WIZARD,  BOOT_QUIET|SW_MULTIPLE},
-    { NULL,             0,          0,  0}
+    {(UTF8 *)"port",            1,  CA_WIZARD,  BOOT_PORT|SW_MULTIPLE},
+    {(UTF8 *)"quiet",           1,  CA_WIZARD,  BOOT_QUIET|SW_MULTIPLE},
+    {(UTF8 *) NULL,             0,          0,  0}
 };
 
 static NAMETAB cboot_sw[] =
 {
-    {"quiet",           1,  CA_PUBLIC,  CBOOT_QUIET},
-    { NULL,             0,          0,  0}
+    {(UTF8 *)"quiet",           1,  CA_PUBLIC,  CBOOT_QUIET},
+    {(UTF8 *) NULL,             0,          0,  0}
 };
 
 static NAMETAB comtitle_sw[] =
 {
-    {"off",             2,  CA_PUBLIC,  COMTITLE_OFF},
-    {"on",              2,  CA_PUBLIC,  COMTITLE_ON},
-    { NULL,             0,          0,  0}
+    {(UTF8 *)"off",             2,  CA_PUBLIC,  COMTITLE_OFF},
+    {(UTF8 *)"on",              2,  CA_PUBLIC,  COMTITLE_ON},
+    {(UTF8 *) NULL,             0,          0,  0}
 };
 
 static NAMETAB cemit_sw[] =
 {
-    {"noheader",        1,  CA_PUBLIC,  CEMIT_NOHEADER},
-    { NULL,             0,          0,  0}
+    {(UTF8 *)"noheader",        1,  CA_PUBLIC,  CEMIT_NOHEADER},
+    {(UTF8 *) NULL,             0,          0,  0}
 };
 
 static NAMETAB chown_sw[] =
 {
-    {"nostrip",         1,  CA_PUBLIC,  CHOWN_NOSTRIP},
-    { NULL,             0,          0,  0}
+    {(UTF8 *)"nostrip",         1,  CA_PUBLIC,  CHOWN_NOSTRIP},
+    {(UTF8 *) NULL,             0,          0,  0}
 };
 
 static NAMETAB clone_sw[] =
 {
-    {"cost",            1,  CA_PUBLIC,  CLONE_SET_COST},
-    {"inherit",         3,  CA_PUBLIC,  CLONE_INHERIT|SW_MULTIPLE},
-    {"inventory",       3,  CA_PUBLIC,  CLONE_INVENTORY},
-    {"location",        1,  CA_PUBLIC,  CLONE_LOCATION},
-    {"nostrip",         2,  CA_WIZARD,  CLONE_NOSTRIP|SW_MULTIPLE},
-    {"parent",          2,  CA_PUBLIC,  CLONE_FROM_PARENT|SW_MULTIPLE},
-    {"preserve",        2,  CA_WIZARD,  CLONE_PRESERVE|SW_MULTIPLE},
-    { NULL,             0,          0,  0}
+    {(UTF8 *)"cost",            1,  CA_PUBLIC,  CLONE_SET_COST},
+    {(UTF8 *)"inherit",         3,  CA_PUBLIC,  CLONE_INHERIT|SW_MULTIPLE},
+    {(UTF8 *)"inventory",       3,  CA_PUBLIC,  CLONE_INVENTORY},
+    {(UTF8 *)"location",        1,  CA_PUBLIC,  CLONE_LOCATION},
+    {(UTF8 *)"nostrip",         2,  CA_WIZARD,  CLONE_NOSTRIP|SW_MULTIPLE},
+    {(UTF8 *)"parent",          2,  CA_PUBLIC,  CLONE_FROM_PARENT|SW_MULTIPLE},
+    {(UTF8 *)"preserve",        2,  CA_WIZARD,  CLONE_PRESERVE|SW_MULTIPLE},
+    {(UTF8 *) NULL,             0,          0,  0}
 };
 
 static NAMETAB clist_sw[] =
 {
-    {"full",            0,  CA_PUBLIC,  CLIST_FULL},
-    {"headers",         0,  CA_PUBLIC,  CLIST_HEADERS},
-    { NULL,             0,          0,  0}
+    {(UTF8 *)"full",            0,  CA_PUBLIC,  CLIST_FULL},
+    {(UTF8 *)"headers",         0,  CA_PUBLIC,  CLIST_HEADERS},
+    {(UTF8 *) NULL,             0,          0,  0}
 };
 
 static NAMETAB cset_sw[] =
 {
-    {"anon",            1,  CA_PUBLIC,  CSET_SPOOF},
-    {"header",          1,  CA_PUBLIC,  CSET_HEADER},
-    {"list",            2,  CA_PUBLIC,  CSET_LIST},
-    {"log" ,            3,  CA_PUBLIC,  CSET_LOG},
-    {"loud",            3,  CA_PUBLIC,  CSET_LOUD},
-    {"mute",            1,  CA_PUBLIC,  CSET_QUIET},
-    {"nospoof",         1,  CA_PUBLIC,  CSET_NOSPOOF},
-    {"object",          1,  CA_PUBLIC,  CSET_OBJECT},
-    {"private",         2,  CA_PUBLIC,  CSET_PRIVATE},
-    {"public",          2,  CA_PUBLIC,  CSET_PUBLIC},
-    {"quiet",           1,  CA_PUBLIC,  CSET_QUIET},
-    {"spoof",           1,  CA_PUBLIC,  CSET_SPOOF},
-    { NULL,             0,          0,  0}
+    {(UTF8 *)"anon",            1,  CA_PUBLIC,  CSET_SPOOF},
+    {(UTF8 *)"header",          1,  CA_PUBLIC,  CSET_HEADER},
+    {(UTF8 *)"list",            2,  CA_PUBLIC,  CSET_LIST},
+    {(UTF8 *)"log" ,            3,  CA_PUBLIC,  CSET_LOG},
+    {(UTF8 *)"loud",            3,  CA_PUBLIC,  CSET_LOUD},
+    {(UTF8 *)"mute",            1,  CA_PUBLIC,  CSET_QUIET},
+    {(UTF8 *)"nospoof",         1,  CA_PUBLIC,  CSET_NOSPOOF},
+    {(UTF8 *)"object",          1,  CA_PUBLIC,  CSET_OBJECT},
+    {(UTF8 *)"private",         2,  CA_PUBLIC,  CSET_PRIVATE},
+    {(UTF8 *)"public",          2,  CA_PUBLIC,  CSET_PUBLIC},
+    {(UTF8 *)"quiet",           1,  CA_PUBLIC,  CSET_QUIET},
+    {(UTF8 *)"spoof",           1,  CA_PUBLIC,  CSET_SPOOF},
+    {(UTF8 *) NULL,             0,          0,  0}
 };
 
 static NAMETAB dbck_sw[] =
 {
-    {"full",            1,  CA_WIZARD,  DBCK_FULL},
-    { NULL,             0,          0,  0}
+    {(UTF8 *)"full",            1,  CA_WIZARD,  DBCK_FULL},
+    {(UTF8 *) NULL,             0,          0,  0}
 };
 
 static NAMETAB decomp_sw[] =
 {
-    {"dbref",           1,  CA_PUBLIC,  DECOMP_DBREF},
-    { NULL,             0,           0, 0}
+    {(UTF8 *)"dbref",           1,  CA_PUBLIC,  DECOMP_DBREF},
+    {(UTF8 *) NULL,             0,           0, 0}
 };
 
 static NAMETAB destroy_sw[] =
 {
-    {"instant",         4,  CA_PUBLIC,  DEST_INSTANT|SW_MULTIPLE},
-    {"override",        8,  CA_PUBLIC,  DEST_OVERRIDE|SW_MULTIPLE},
-    { NULL,             0,          0,  0}
+    {(UTF8 *)"instant",         4,  CA_PUBLIC,  DEST_INSTANT|SW_MULTIPLE},
+    {(UTF8 *)"override",        8,  CA_PUBLIC,  DEST_OVERRIDE|SW_MULTIPLE},
+    {(UTF8 *) NULL,             0,          0,  0}
 };
 
 static NAMETAB dig_sw[] =
 {
-    {"teleport",        1,  CA_PUBLIC,  DIG_TELEPORT},
-    { NULL,             0,          0,  0}
+    {(UTF8 *)"teleport",        1,  CA_PUBLIC,  DIG_TELEPORT},
+    {(UTF8 *) NULL,             0,          0,  0}
 };
 
 static NAMETAB doing_sw[] =
 {
-    {"header",          1,  CA_PUBLIC,  DOING_HEADER},
-    {"message",         1,  CA_PUBLIC,  DOING_MESSAGE},
-    {"poll",            1,  CA_PUBLIC,  DOING_POLL},
-    {"quiet",           1,  CA_PUBLIC,  DOING_QUIET|SW_MULTIPLE},
-    {"unique",          1,  CA_PUBLIC,  DOING_UNIQUE},
-    { NULL,             0,          0,  0}
+    {(UTF8 *)"header",          1,  CA_PUBLIC,  DOING_HEADER},
+    {(UTF8 *)"message",         1,  CA_PUBLIC,  DOING_MESSAGE},
+    {(UTF8 *)"poll",            1,  CA_PUBLIC,  DOING_POLL},
+    {(UTF8 *)"quiet",           1,  CA_PUBLIC,  DOING_QUIET|SW_MULTIPLE},
+    {(UTF8 *)"unique",          1,  CA_PUBLIC,  DOING_UNIQUE},
+    {(UTF8 *) NULL,             0,          0,  0}
 };
 
 static NAMETAB dolist_sw[] =
 {
-    {"delimit",         1,  CA_PUBLIC,  DOLIST_DELIMIT},
-    {"notify",          1,  CA_PUBLIC,  DOLIST_NOTIFY|SW_MULTIPLE},
-    {"space",           1,  CA_PUBLIC,  DOLIST_SPACE},
-    { NULL,             0,          0,  0}
+    {(UTF8 *)"delimit",         1,  CA_PUBLIC,  DOLIST_DELIMIT},
+    {(UTF8 *)"notify",          1,  CA_PUBLIC,  DOLIST_NOTIFY|SW_MULTIPLE},
+    {(UTF8 *)"space",           1,  CA_PUBLIC,  DOLIST_SPACE},
+    {(UTF8 *) NULL,             0,          0,  0}
 };
 
 #ifdef QUERY_SLAVE
 static NAMETAB query_sw[] =
 {
-    {"sql",             1,  CA_PUBLIC,  QUERY_SQL},
-    { NULL,             0,          0,  0}
+    {(UTF8 *)"sql",             1,  CA_PUBLIC,  QUERY_SQL},
+    {(UTF8 *) NULL,             0,          0,  0}
 };
 #endif // QUERY_SLAVE
 
 static NAMETAB drop_sw[] =
 {
-    {"quiet",           1,  CA_PUBLIC,  DROP_QUIET},
-    { NULL,             0,          0,  0}
+    {(UTF8 *)"quiet",           1,  CA_PUBLIC,  DROP_QUIET},
+    {(UTF8 *) NULL,             0,          0,  0}
 };
 
 static NAMETAB dump_sw[] =
 {
-    {"flatfile",        1,  CA_WIZARD,  DUMP_FLATFILE|SW_MULTIPLE},
-    {"structure",       1,  CA_WIZARD,  DUMP_STRUCT|SW_MULTIPLE},
-    {"text",            1,  CA_WIZARD,  DUMP_TEXT|SW_MULTIPLE},
-    { NULL,             0,          0,  0}
+    {(UTF8 *)"flatfile",        1,  CA_WIZARD,  DUMP_FLATFILE|SW_MULTIPLE},
+    {(UTF8 *)"structure",       1,  CA_WIZARD,  DUMP_STRUCT|SW_MULTIPLE},
+    {(UTF8 *)"text",            1,  CA_WIZARD,  DUMP_TEXT|SW_MULTIPLE},
+    {(UTF8 *) NULL,             0,          0,  0}
 };
 
 static NAMETAB emit_sw[] =
 {
-    {"here",            2,  CA_PUBLIC,  SAY_HERE|SW_MULTIPLE},
-    {"html",            2,  CA_PUBLIC,  SAY_HTML|SW_MULTIPLE},
-    {"room",            1,  CA_PUBLIC,  SAY_ROOM|SW_MULTIPLE},
-    { NULL,             0,          0,  0}
+    {(UTF8 *)"here",            2,  CA_PUBLIC,  SAY_HERE|SW_MULTIPLE},
+    {(UTF8 *)"html",            2,  CA_PUBLIC,  SAY_HTML|SW_MULTIPLE},
+    {(UTF8 *)"room",            1,  CA_PUBLIC,  SAY_ROOM|SW_MULTIPLE},
+    {(UTF8 *) NULL,             0,          0,  0}
 };
 
 static NAMETAB enter_sw[] =
 {
-    {"quiet",           1,  CA_PUBLIC,  MOVE_QUIET},
-    { NULL,             0,          0,  0}
+    {(UTF8 *)"quiet",           1,  CA_PUBLIC,  MOVE_QUIET},
+    {(UTF8 *) NULL,             0,          0,  0}
 };
 
 static NAMETAB examine_sw[] =
 {
-    {"brief",           1,  CA_PUBLIC,  EXAM_BRIEF},
-    {"debug",           1,  CA_WIZARD,  EXAM_DEBUG},
-    {"full",            1,  CA_PUBLIC,  EXAM_LONG},
-    {"parent",          1,  CA_PUBLIC,  EXAM_PARENT},
-    { NULL,             0,          0,  0}
+    {(UTF8 *)"brief",           1,  CA_PUBLIC,  EXAM_BRIEF},
+    {(UTF8 *)"debug",           1,  CA_WIZARD,  EXAM_DEBUG},
+    {(UTF8 *)"full",            1,  CA_PUBLIC,  EXAM_LONG},
+    {(UTF8 *)"parent",          1,  CA_PUBLIC,  EXAM_PARENT},
+    {(UTF8 *) NULL,             0,          0,  0}
 };
 
 static NAMETAB femit_sw[] =
 {
-    {"here",            1,  CA_PUBLIC,  PEMIT_HERE|SW_MULTIPLE},
-    {"room",            1,  CA_PUBLIC,  PEMIT_ROOM|SW_MULTIPLE},
-    { NULL,             0,          0,  0}
+    {(UTF8 *)"here",            1,  CA_PUBLIC,  PEMIT_HERE|SW_MULTIPLE},
+    {(UTF8 *)"room",            1,  CA_PUBLIC,  PEMIT_ROOM|SW_MULTIPLE},
+    {(UTF8 *) NULL,             0,          0,  0}
 };
 
 static NAMETAB fixdb_sw[] =
 {
-    {"contents",        1,     CA_GOD,  FIXDB_CON},
-    {"exits",           1,     CA_GOD,  FIXDB_EXITS},
-    {"location",        1,     CA_GOD,  FIXDB_LOC},
-    {"next",            1,     CA_GOD,  FIXDB_NEXT},
-    {"owner",           1,     CA_GOD,  FIXDB_OWNER},
-    {"pennies",         1,     CA_GOD,  FIXDB_PENNIES},
-    {"rename",          1,     CA_GOD,  FIXDB_NAME},
-    { NULL,             0,          0,  0}
+    {(UTF8 *)"contents",        1,     CA_GOD,  FIXDB_CON},
+    {(UTF8 *)"exits",           1,     CA_GOD,  FIXDB_EXITS},
+    {(UTF8 *)"location",        1,     CA_GOD,  FIXDB_LOC},
+    {(UTF8 *)"next",            1,     CA_GOD,  FIXDB_NEXT},
+    {(UTF8 *)"owner",           1,     CA_GOD,  FIXDB_OWNER},
+    {(UTF8 *)"pennies",         1,     CA_GOD,  FIXDB_PENNIES},
+    {(UTF8 *)"rename",          1,     CA_GOD,  FIXDB_NAME},
+    {(UTF8 *) NULL,             0,          0,  0}
 };
 
 static NAMETAB flag_sw[] =
 {
-    {"remove",          1,     CA_GOD,  FLAG_REMOVE},
-    { NULL,             0,          0,  0}
+    {(UTF8 *)"remove",          1,     CA_GOD,  FLAG_REMOVE},
+    {(UTF8 *) NULL,             0,          0,  0}
 };
 
 static NAMETAB fpose_sw[] =
 {
-    {"default",         1,  CA_PUBLIC,  0},
-    {"nospace",         1,  CA_PUBLIC,  SAY_NOSPACE},
-    { NULL,             0,          0,  0}
+    {(UTF8 *)"default",         1,  CA_PUBLIC,  0},
+    {(UTF8 *)"nospace",         1,  CA_PUBLIC,  SAY_NOSPACE},
+    {(UTF8 *) NULL,             0,          0,  0}
 };
 
 static NAMETAB function_sw[] =
 {
-    {"delete",          1,  CA_WIZARD,  FN_DELETE},
-    {"list",            1,  CA_WIZARD,  FN_LIST},
-    {"preserve",        3,  CA_WIZARD,  FN_PRES|SW_MULTIPLE},
-    {"privileged",      3,  CA_WIZARD,  FN_PRIV|SW_MULTIPLE},
-    { NULL,             0,          0,  0}
+    {(UTF8 *)"delete",          1,  CA_WIZARD,  FN_DELETE},
+    {(UTF8 *)"list",            1,  CA_WIZARD,  FN_LIST},
+    {(UTF8 *)"preserve",        3,  CA_WIZARD,  FN_PRES|SW_MULTIPLE},
+    {(UTF8 *)"privileged",      3,  CA_WIZARD,  FN_PRIV|SW_MULTIPLE},
+    {(UTF8 *) NULL,             0,          0,  0}
 };
 
 static NAMETAB get_sw[] =
 {
-    {"quiet",           1,  CA_PUBLIC,  GET_QUIET},
-    { NULL,             0,          0,  0}
+    {(UTF8 *)"quiet",           1,  CA_PUBLIC,  GET_QUIET},
+    {(UTF8 *) NULL,             0,          0,  0}
 };
 
 static NAMETAB give_sw[] =
 {
-    {"quiet",           1,  CA_WIZARD,  GIVE_QUIET},
-    { NULL,             0,          0,  0}
+    {(UTF8 *)"quiet",           1,  CA_WIZARD,  GIVE_QUIET},
+    {(UTF8 *) NULL,             0,          0,  0}
 };
 
 static NAMETAB goto_sw[] =
 {
-    {"quiet",           1,  CA_PUBLIC,  MOVE_QUIET},
-    { NULL,             0,          0,  0}
+    {(UTF8 *)"quiet",           1,  CA_PUBLIC,  MOVE_QUIET},
+    {(UTF8 *) NULL,             0,          0,  0}
 };
 
 static NAMETAB halt_sw[] =
 {
-    {"all",             1,  CA_PUBLIC,  HALT_ALL},
-    { NULL,             0,          0,  0}
+    {(UTF8 *)"all",             1,  CA_PUBLIC,  HALT_ALL},
+    {(UTF8 *) NULL,             0,          0,  0}
 };
 
 static NAMETAB hook_sw[] =
 {
-    {"after",           3,     CA_GOD,  HOOK_AFTER},
-    {"before",          3,     CA_GOD,  HOOK_BEFORE},
-    {"clear",           3,     CA_GOD,  HOOK_CLEAR|SW_MULTIPLE},
-    {"fail",            1,     CA_GOD,  HOOK_AFAIL},
-    {"ignore",          3,     CA_GOD,  HOOK_IGNORE},
-    {"igswitch",        3,     CA_GOD,  HOOK_IGSWITCH},
-    {"list",            3,     CA_GOD,  HOOK_LIST},
-    {"permit",          3,     CA_GOD,  HOOK_PERMIT},
-    {NULL,              0,          0,  0}
+    {(UTF8 *)"after",           3,     CA_GOD,  HOOK_AFTER},
+    {(UTF8 *)"before",          3,     CA_GOD,  HOOK_BEFORE},
+    {(UTF8 *)"clear",           3,     CA_GOD,  HOOK_CLEAR|SW_MULTIPLE},
+    {(UTF8 *)"fail",            1,     CA_GOD,  HOOK_AFAIL},
+    {(UTF8 *)"ignore",          3,     CA_GOD,  HOOK_IGNORE},
+    {(UTF8 *)"igswitch",        3,     CA_GOD,  HOOK_IGSWITCH},
+    {(UTF8 *)"list",            3,     CA_GOD,  HOOK_LIST},
+    {(UTF8 *)"permit",          3,     CA_GOD,  HOOK_PERMIT},
+    {(UTF8 *)NULL,              0,          0,  0}
 };
 
 static NAMETAB icmd_sw[] =
 {
-    {"check",           2,     CA_GOD,  ICMD_CHECK},
-    {"clear",           2,     CA_GOD,  ICMD_CLEAR},
-    {"croom",           2,     CA_GOD,  ICMD_CROOM},
-    {"disable",         1,     CA_GOD,  ICMD_DISABLE},
-    {"droom",           2,     CA_GOD,  ICMD_DROOM},
-    {"ignore",          1,     CA_GOD,  ICMD_IGNORE},
-    {"iroom",           2,     CA_GOD,  ICMD_IROOM},
-    {"lroom",           2,     CA_GOD,  ICMD_LROOM},
-    {"lallroom",        2,     CA_GOD,  ICMD_LALLROOM},
-    {"off",             2,     CA_GOD,  ICMD_OFF},
-    {"on",              2,     CA_GOD,  ICMD_ON},
-    {NULL,              0,          0,  0}
+    {(UTF8 *)"check",           2,     CA_GOD,  ICMD_CHECK},
+    {(UTF8 *)"clear",           2,     CA_GOD,  ICMD_CLEAR},
+    {(UTF8 *)"croom",           2,     CA_GOD,  ICMD_CROOM},
+    {(UTF8 *)"disable",         1,     CA_GOD,  ICMD_DISABLE},
+    {(UTF8 *)"droom",           2,     CA_GOD,  ICMD_DROOM},
+    {(UTF8 *)"ignore",          1,     CA_GOD,  ICMD_IGNORE},
+    {(UTF8 *)"iroom",           2,     CA_GOD,  ICMD_IROOM},
+    {(UTF8 *)"lroom",           2,     CA_GOD,  ICMD_LROOM},
+    {(UTF8 *)"lallroom",        2,     CA_GOD,  ICMD_LALLROOM},
+    {(UTF8 *)"off",             2,     CA_GOD,  ICMD_OFF},
+    {(UTF8 *)"on",              2,     CA_GOD,  ICMD_ON},
+    {(UTF8 *)NULL,              0,          0,  0}
 };
 
 static NAMETAB leave_sw[] =
 {
-    {"quiet",           1,  CA_PUBLIC,  MOVE_QUIET},
-    { NULL,             0,          0,  0}
+    {(UTF8 *)"quiet",           1,  CA_PUBLIC,  MOVE_QUIET},
+    {(UTF8 *) NULL,             0,          0,  0}
 };
 
 static NAMETAB listmotd_sw[] =
 {
-    {"brief",           1,  CA_WIZARD,  MOTD_BRIEF},
-    { NULL,             0,          0,  0}
+    {(UTF8 *)"brief",           1,  CA_WIZARD,  MOTD_BRIEF},
+    {(UTF8 *) NULL,             0,          0,  0}
 };
 
 NAMETAB lock_sw[] =
 {
-    {"defaultlock",     1,  CA_PUBLIC,  A_LOCK},
-    {"droplock",        1,  CA_PUBLIC,  A_LDROP},
-    {"enterlock",       1,  CA_PUBLIC,  A_LENTER},
-    {"getfromlock",     1,  CA_PUBLIC,  A_LGET},
-    {"givelock",        1,  CA_PUBLIC,  A_LGIVE},
-    {"leavelock",       2,  CA_PUBLIC,  A_LLEAVE},
-    {"linklock",        2,  CA_PUBLIC,  A_LLINK},
-    {"maillock",        1,  CA_PUBLIC,  A_LMAIL},
-    {"openlock",        1,  CA_PUBLIC,  A_LOPEN},
-    {"pagelock",        3,  CA_PUBLIC,  A_LPAGE},
-    {"parentlock",      3,  CA_PUBLIC,  A_LPARENT},
-    {"receivelock",     1,  CA_PUBLIC,  A_LRECEIVE},
-    {"speechlock",      1,  CA_PUBLIC,  A_LSPEECH},
-    {"teloutlock",      2,  CA_PUBLIC,  A_LTELOUT},
-    {"tportlock",       2,  CA_PUBLIC,  A_LTPORT},
-    {"uselock",         1,  CA_PUBLIC,  A_LUSE},
-    {"userlock",        4,  CA_PUBLIC,  A_LUSER},
-    { NULL,             0,          0,  0}
+    {(UTF8 *)"defaultlock",     1,  CA_PUBLIC,  A_LOCK},
+    {(UTF8 *)"droplock",        1,  CA_PUBLIC,  A_LDROP},
+    {(UTF8 *)"enterlock",       1,  CA_PUBLIC,  A_LENTER},
+    {(UTF8 *)"getfromlock",     1,  CA_PUBLIC,  A_LGET},
+    {(UTF8 *)"givelock",        1,  CA_PUBLIC,  A_LGIVE},
+    {(UTF8 *)"leavelock",       2,  CA_PUBLIC,  A_LLEAVE},
+    {(UTF8 *)"linklock",        2,  CA_PUBLIC,  A_LLINK},
+    {(UTF8 *)"maillock",        1,  CA_PUBLIC,  A_LMAIL},
+    {(UTF8 *)"openlock",        1,  CA_PUBLIC,  A_LOPEN},
+    {(UTF8 *)"pagelock",        3,  CA_PUBLIC,  A_LPAGE},
+    {(UTF8 *)"parentlock",      3,  CA_PUBLIC,  A_LPARENT},
+    {(UTF8 *)"receivelock",     1,  CA_PUBLIC,  A_LRECEIVE},
+    {(UTF8 *)"speechlock",      1,  CA_PUBLIC,  A_LSPEECH},
+    {(UTF8 *)"teloutlock",      2,  CA_PUBLIC,  A_LTELOUT},
+    {(UTF8 *)"tportlock",       2,  CA_PUBLIC,  A_LTPORT},
+    {(UTF8 *)"uselock",         1,  CA_PUBLIC,  A_LUSE},
+    {(UTF8 *)"userlock",        4,  CA_PUBLIC,  A_LUSER},
+    {(UTF8 *) NULL,             0,          0,  0}
 };
 
 static NAMETAB look_sw[] =
 {
-    {"outside",         1,  CA_PUBLIC,  LOOK_OUTSIDE},
-    { NULL,             0,          0,  0}
+    {(UTF8 *)"outside",         1,  CA_PUBLIC,  LOOK_OUTSIDE},
+    {(UTF8 *) NULL,             0,          0,  0}
 };
 
 static NAMETAB mail_sw[] =
 {
-    {"abort",           2,  CA_PUBLIC,  MAIL_ABORT},
-    {"alias",           4,  CA_PUBLIC,  MAIL_ALIAS},
-    {"alist",           4,  CA_PUBLIC,  MAIL_ALIST},
-    {"bcc",             1,  CA_PUBLIC,  MAIL_BCC},
-    {"cc",              2,  CA_PUBLIC,  MAIL_CC},
-    {"clear",           2,  CA_PUBLIC,  MAIL_CLEAR},
-    {"debug",           2,  CA_PUBLIC,  MAIL_DEBUG},
-    {"dstats",          2,  CA_PUBLIC,  MAIL_DSTATS},
-    {"edit",            1,  CA_PUBLIC,  MAIL_EDIT},
-    {"file",            2,  CA_PUBLIC,  MAIL_FILE},
-    {"folder",          3,  CA_PUBLIC,  MAIL_FOLDER},
-    {"forward",         3,  CA_PUBLIC,  MAIL_FORWARD},
-    {"fstats",          2,  CA_PUBLIC,  MAIL_FSTATS},
-    {"fwd",             2,  CA_PUBLIC,  MAIL_FORWARD},
-    {"list",            1,  CA_PUBLIC,  MAIL_LIST},
-    {"nuke",            1,  CA_PUBLIC,  MAIL_NUKE},
-    {"proof",           2,  CA_PUBLIC,  MAIL_PROOF},
-    {"purge",           2,  CA_PUBLIC,  MAIL_PURGE},
-    {"quick",           3,  CA_PUBLIC,  MAIL_QUICK},
-    {"quote",           3,  CA_PUBLIC,  MAIL_QUOTE|SW_MULTIPLE},
-    {"read",            3,  CA_PUBLIC,  MAIL_READ},
-    {"reply",           3,  CA_PUBLIC,  MAIL_REPLY},
-    {"replyall",        6,  CA_PUBLIC,  MAIL_REPLYALL},
-    {"retract",         3,  CA_PUBLIC,  MAIL_RETRACT},
-    {"review",          3,  CA_PUBLIC,  MAIL_REVIEW},
-    {"safe",            2,  CA_PUBLIC,  MAIL_SAFE},
-    {"send",            2,  CA_PUBLIC,  MAIL_SEND},
-    {"stats",           2,  CA_PUBLIC,  MAIL_STATS},
-    {"tag",             1,  CA_PUBLIC,  MAIL_TAG},
-    {"unclear",         3,  CA_PUBLIC,  MAIL_UNCLEAR},
-    {"untag",           3,  CA_PUBLIC,  MAIL_UNTAG},
-    {"urgent",          2,  CA_PUBLIC,  MAIL_URGENT},
-    { NULL,             0,          0,  0}
+    {(UTF8 *)"abort",           2,  CA_PUBLIC,  MAIL_ABORT},
+    {(UTF8 *)"alias",           4,  CA_PUBLIC,  MAIL_ALIAS},
+    {(UTF8 *)"alist",           4,  CA_PUBLIC,  MAIL_ALIST},
+    {(UTF8 *)"bcc",             1,  CA_PUBLIC,  MAIL_BCC},
+    {(UTF8 *)"cc",              2,  CA_PUBLIC,  MAIL_CC},
+    {(UTF8 *)"clear",           2,  CA_PUBLIC,  MAIL_CLEAR},
+    {(UTF8 *)"debug",           2,  CA_PUBLIC,  MAIL_DEBUG},
+    {(UTF8 *)"dstats",          2,  CA_PUBLIC,  MAIL_DSTATS},
+    {(UTF8 *)"edit",            1,  CA_PUBLIC,  MAIL_EDIT},
+    {(UTF8 *)"file",            2,  CA_PUBLIC,  MAIL_FILE},
+    {(UTF8 *)"folder",          3,  CA_PUBLIC,  MAIL_FOLDER},
+    {(UTF8 *)"forward",         3,  CA_PUBLIC,  MAIL_FORWARD},
+    {(UTF8 *)"fstats",          2,  CA_PUBLIC,  MAIL_FSTATS},
+    {(UTF8 *)"fwd",             2,  CA_PUBLIC,  MAIL_FORWARD},
+    {(UTF8 *)"list",            1,  CA_PUBLIC,  MAIL_LIST},
+    {(UTF8 *)"nuke",            1,  CA_PUBLIC,  MAIL_NUKE},
+    {(UTF8 *)"proof",           2,  CA_PUBLIC,  MAIL_PROOF},
+    {(UTF8 *)"purge",           2,  CA_PUBLIC,  MAIL_PURGE},
+    {(UTF8 *)"quick",           3,  CA_PUBLIC,  MAIL_QUICK},
+    {(UTF8 *)"quote",           3,  CA_PUBLIC,  MAIL_QUOTE|SW_MULTIPLE},
+    {(UTF8 *)"read",            3,  CA_PUBLIC,  MAIL_READ},
+    {(UTF8 *)"reply",           3,  CA_PUBLIC,  MAIL_REPLY},
+    {(UTF8 *)"replyall",        6,  CA_PUBLIC,  MAIL_REPLYALL},
+    {(UTF8 *)"retract",         3,  CA_PUBLIC,  MAIL_RETRACT},
+    {(UTF8 *)"review",          3,  CA_PUBLIC,  MAIL_REVIEW},
+    {(UTF8 *)"safe",            2,  CA_PUBLIC,  MAIL_SAFE},
+    {(UTF8 *)"send",            2,  CA_PUBLIC,  MAIL_SEND},
+    {(UTF8 *)"stats",           2,  CA_PUBLIC,  MAIL_STATS},
+    {(UTF8 *)"tag",             1,  CA_PUBLIC,  MAIL_TAG},
+    {(UTF8 *)"unclear",         3,  CA_PUBLIC,  MAIL_UNCLEAR},
+    {(UTF8 *)"untag",           3,  CA_PUBLIC,  MAIL_UNTAG},
+    {(UTF8 *)"urgent",          2,  CA_PUBLIC,  MAIL_URGENT},
+    {(UTF8 *) NULL,             0,          0,  0}
 };
 
 static NAMETAB malias_sw[] =
 {
-    {"add",             1,  CA_PUBLIC,  MALIAS_ADD},
-    {"chown",           1,  CA_PUBLIC,  MALIAS_CHOWN},
-    {"desc",            1,  CA_PUBLIC,  MALIAS_DESC},
-    {"delete",          1,  CA_PUBLIC,  MALIAS_DELETE},
-    {"list",            1,  CA_PUBLIC,  MALIAS_LIST},
-    {"remove",          1,  CA_PUBLIC,  MALIAS_REMOVE},
-    {"rename",          1,  CA_PUBLIC,  MALIAS_RENAME},
-    {"status",          1,  CA_PUBLIC,  MALIAS_STATUS},
-    { NULL,             0,          0,  0}
+    {(UTF8 *)"add",             1,  CA_PUBLIC,  MALIAS_ADD},
+    {(UTF8 *)"chown",           1,  CA_PUBLIC,  MALIAS_CHOWN},
+    {(UTF8 *)"desc",            1,  CA_PUBLIC,  MALIAS_DESC},
+    {(UTF8 *)"delete",          1,  CA_PUBLIC,  MALIAS_DELETE},
+    {(UTF8 *)"list",            1,  CA_PUBLIC,  MALIAS_LIST},
+    {(UTF8 *)"remove",          1,  CA_PUBLIC,  MALIAS_REMOVE},
+    {(UTF8 *)"rename",          1,  CA_PUBLIC,  MALIAS_RENAME},
+    {(UTF8 *)"status",          1,  CA_PUBLIC,  MALIAS_STATUS},
+    {(UTF8 *) NULL,             0,          0,  0}
 };
 
 static NAMETAB mark_sw[] =
 {
-    {"clear",           1,  CA_PUBLIC,  MARK_CLEAR},
-    {"set",             1,  CA_PUBLIC,  MARK_SET},
-    { NULL,             0,          0,  0}
+    {(UTF8 *)"clear",           1,  CA_PUBLIC,  MARK_CLEAR},
+    {(UTF8 *)"set",             1,  CA_PUBLIC,  MARK_SET},
+    {(UTF8 *) NULL,             0,          0,  0}
 };
 
 static NAMETAB markall_sw[] =
 {
-    {"clear",           1,  CA_PUBLIC,  MARK_CLEAR},
-    {"set",             1,  CA_PUBLIC,  MARK_SET},
-    { NULL,             0,          0,  0}
+    {(UTF8 *)"clear",           1,  CA_PUBLIC,  MARK_CLEAR},
+    {(UTF8 *)"set",             1,  CA_PUBLIC,  MARK_SET},
+    {(UTF8 *) NULL,             0,          0,  0}
 };
 
 static NAMETAB motd_sw[] =
 {
-    {"brief",           1,  CA_WIZARD,  MOTD_BRIEF|SW_MULTIPLE},
-    {"connect",         1,  CA_WIZARD,  MOTD_ALL},
-    {"down",            1,  CA_WIZARD,  MOTD_DOWN},
-    {"full",            1,  CA_WIZARD,  MOTD_FULL},
-    {"list",            1,  CA_PUBLIC,  MOTD_LIST},
-    {"wizard",          1,  CA_WIZARD,  MOTD_WIZ},
-    { NULL,             0,          0,  0}
+    {(UTF8 *)"brief",           1,  CA_WIZARD,  MOTD_BRIEF|SW_MULTIPLE},
+    {(UTF8 *)"connect",         1,  CA_WIZARD,  MOTD_ALL},
+    {(UTF8 *)"down",            1,  CA_WIZARD,  MOTD_DOWN},
+    {(UTF8 *)"full",            1,  CA_WIZARD,  MOTD_FULL},
+    {(UTF8 *)"list",            1,  CA_PUBLIC,  MOTD_LIST},
+    {(UTF8 *)"wizard",          1,  CA_WIZARD,  MOTD_WIZ},
+    {(UTF8 *) NULL,             0,          0,  0}
 };
 
 static NAMETAB notify_sw[] =
 {
-    {"all",             1,  CA_PUBLIC,  NFY_NFYALL},
-    {"first",           1,  CA_PUBLIC,  NFY_NFY},
-    {"quiet",           1,  CA_PUBLIC,  NFY_QUIET},
-    { NULL,             0,          0,  0}
+    {(UTF8 *)"all",             1,  CA_PUBLIC,  NFY_NFYALL},
+    {(UTF8 *)"first",           1,  CA_PUBLIC,  NFY_NFY},
+    {(UTF8 *)"quiet",           1,  CA_PUBLIC,  NFY_QUIET},
+    {(UTF8 *) NULL,             0,          0,  0}
 };
 
 static NAMETAB open_sw[] =
 {
-    {"inventory",       1,  CA_PUBLIC,  OPEN_INVENTORY},
-    {"location",        1,  CA_PUBLIC,  OPEN_LOCATION},
-    { NULL,             0,          0,  0}
+    {(UTF8 *)"inventory",       1,  CA_PUBLIC,  OPEN_INVENTORY},
+    {(UTF8 *)"location",        1,  CA_PUBLIC,  OPEN_LOCATION},
+    {(UTF8 *) NULL,             0,          0,  0}
 };
 
 static NAMETAB page_sw[] =
 {
-    {"noeval",          1,  CA_PUBLIC,  SW_NOEVAL|SW_MULTIPLE},
-    { NULL,             0,          0,  0}
+    {(UTF8 *)"noeval",          1,  CA_PUBLIC,  SW_NOEVAL|SW_MULTIPLE},
+    {(UTF8 *) NULL,             0,          0,  0}
 };
 
 static NAMETAB pemit_sw[] =
 {
-    {"contents",        1,  CA_PUBLIC,  PEMIT_CONTENTS|SW_MULTIPLE},
-    {"html",            1,  CA_PUBLIC,  PEMIT_HTML|SW_MULTIPLE},
-    {"list",            1,  CA_PUBLIC,  PEMIT_LIST|SW_MULTIPLE},
-    {"noeval",          1,  CA_PUBLIC,  SW_NOEVAL|SW_MULTIPLE},
-    {"object",          1,  CA_PUBLIC,  0},
-    {"silent",          1,  CA_PUBLIC,  0},
-    { NULL,             0,          0,  0}
+    {(UTF8 *)"contents",        1,  CA_PUBLIC,  PEMIT_CONTENTS|SW_MULTIPLE},
+    {(UTF8 *)"html",            1,  CA_PUBLIC,  PEMIT_HTML|SW_MULTIPLE},
+    {(UTF8 *)"list",            1,  CA_PUBLIC,  PEMIT_LIST|SW_MULTIPLE},
+    {(UTF8 *)"noeval",          1,  CA_PUBLIC,  SW_NOEVAL|SW_MULTIPLE},
+    {(UTF8 *)"object",          1,  CA_PUBLIC,  0},
+    {(UTF8 *)"silent",          1,  CA_PUBLIC,  0},
+    {(UTF8 *) NULL,             0,          0,  0}
 };
 
 static NAMETAB pose_sw[] =
 {
-    {"default",         1,  CA_PUBLIC,  0},
-    {"noeval",          3,  CA_PUBLIC,  SW_NOEVAL|SW_MULTIPLE},
-    {"nospace",         3,  CA_PUBLIC,  SAY_NOSPACE},
-    { NULL,             0,          0,  0}
+    {(UTF8 *)"default",         1,  CA_PUBLIC,  0},
+    {(UTF8 *)"noeval",          3,  CA_PUBLIC,  SW_NOEVAL|SW_MULTIPLE},
+    {(UTF8 *)"nospace",         3,  CA_PUBLIC,  SAY_NOSPACE},
+    {(UTF8 *) NULL,             0,          0,  0}
 };
 
 static NAMETAB ps_sw[] =
 {
-    {"all",             1,  CA_PUBLIC,  PS_ALL|SW_MULTIPLE},
-    {"brief",           1,  CA_PUBLIC,  PS_BRIEF},
-    {"long",            1,  CA_PUBLIC,  PS_LONG},
-    {"summary",         1,  CA_PUBLIC,  PS_SUMM},
-    { NULL,             0,          0,  0}
+    {(UTF8 *)"all",             1,  CA_PUBLIC,  PS_ALL|SW_MULTIPLE},
+    {(UTF8 *)"brief",           1,  CA_PUBLIC,  PS_BRIEF},
+    {(UTF8 *)"long",            1,  CA_PUBLIC,  PS_LONG},
+    {(UTF8 *)"summary",         1,  CA_PUBLIC,  PS_SUMM},
+    {(UTF8 *) NULL,             0,          0,  0}
 };
 
 static NAMETAB quota_sw[] =
 {
-    {"all",             1,  CA_GOD,     QUOTA_ALL|SW_MULTIPLE},
-    {"fix",             1,  CA_WIZARD,  QUOTA_FIX},
-    {"remaining",       1,  CA_WIZARD,  QUOTA_REM|SW_MULTIPLE},
-    {"set",             1,  CA_WIZARD,  QUOTA_SET},
-    {"total",           1,  CA_WIZARD,  QUOTA_TOT|SW_MULTIPLE},
-    { NULL,             0,          0,  0}
+    {(UTF8 *)"all",             1,  CA_GOD,     QUOTA_ALL|SW_MULTIPLE},
+    {(UTF8 *)"fix",             1,  CA_WIZARD,  QUOTA_FIX},
+    {(UTF8 *)"remaining",       1,  CA_WIZARD,  QUOTA_REM|SW_MULTIPLE},
+    {(UTF8 *)"set",             1,  CA_WIZARD,  QUOTA_SET},
+    {(UTF8 *)"total",           1,  CA_WIZARD,  QUOTA_TOT|SW_MULTIPLE},
+    {(UTF8 *) NULL,             0,          0,  0}
 };
 
 static NAMETAB say_sw[] =
 {
-    {"noeval",          1,  CA_PUBLIC,  SAY_NOEVAL|SW_NOEVAL|SW_MULTIPLE},
-    { NULL,             0,          0,  0}
+    {(UTF8 *)"noeval",          1,  CA_PUBLIC,  SAY_NOEVAL|SW_NOEVAL|SW_MULTIPLE},
+    {(UTF8 *) NULL,             0,          0,  0}
 };
 
 static NAMETAB set_sw[] =
 {
-    {"quiet",           1,  CA_PUBLIC,  SET_QUIET},
-    { NULL,             0,          0,  0}
+    {(UTF8 *)"quiet",           1,  CA_PUBLIC,  SET_QUIET},
+    {(UTF8 *) NULL,             0,          0,  0}
 };
 
 static NAMETAB stats_sw[] =
 {
-    {"all",             1,  CA_PUBLIC,  STAT_ALL},
-    {"me",              1,  CA_PUBLIC,  STAT_ME},
-    {"player",          1,  CA_PUBLIC,  STAT_PLAYER},
-    { NULL,             0,          0,  0}
+    {(UTF8 *)"all",             1,  CA_PUBLIC,  STAT_ALL},
+    {(UTF8 *)"me",              1,  CA_PUBLIC,  STAT_ME},
+    {(UTF8 *)"player",          1,  CA_PUBLIC,  STAT_PLAYER},
+    {(UTF8 *) NULL,             0,          0,  0}
 };
 
 static NAMETAB sweep_sw[] =
 {
-    {"commands",        3,  CA_PUBLIC,  SWEEP_COMMANDS|SW_MULTIPLE},
-    {"connected",       3,  CA_PUBLIC,  SWEEP_CONNECT|SW_MULTIPLE},
-    {"exits",           1,  CA_PUBLIC,  SWEEP_EXITS|SW_MULTIPLE},
-    {"here",            1,  CA_PUBLIC,  SWEEP_HERE|SW_MULTIPLE},
-    {"inventory",       1,  CA_PUBLIC,  SWEEP_ME|SW_MULTIPLE},
-    {"listeners",       1,  CA_PUBLIC,  SWEEP_LISTEN|SW_MULTIPLE},
-    {"players",         1,  CA_PUBLIC,  SWEEP_PLAYER|SW_MULTIPLE},
-    { NULL,             0,          0,  0}
+    {(UTF8 *)"commands",        3,  CA_PUBLIC,  SWEEP_COMMANDS|SW_MULTIPLE},
+    {(UTF8 *)"connected",       3,  CA_PUBLIC,  SWEEP_CONNECT|SW_MULTIPLE},
+    {(UTF8 *)"exits",           1,  CA_PUBLIC,  SWEEP_EXITS|SW_MULTIPLE},
+    {(UTF8 *)"here",            1,  CA_PUBLIC,  SWEEP_HERE|SW_MULTIPLE},
+    {(UTF8 *)"inventory",       1,  CA_PUBLIC,  SWEEP_ME|SW_MULTIPLE},
+    {(UTF8 *)"listeners",       1,  CA_PUBLIC,  SWEEP_LISTEN|SW_MULTIPLE},
+    {(UTF8 *)"players",         1,  CA_PUBLIC,  SWEEP_PLAYER|SW_MULTIPLE},
+    {(UTF8 *) NULL,             0,          0,  0}
 };
 
 static NAMETAB switch_sw[] =
 {
-    {"all",             1,  CA_PUBLIC,  SWITCH_ANY},
-    {"default",         1,  CA_PUBLIC,  SWITCH_DEFAULT},
-    {"first",           1,  CA_PUBLIC,  SWITCH_ONE},
-    {"notify",          1,  CA_PUBLIC,  SWITCH_NOTIFY|SW_MULTIPLE},
-    { NULL,             0,          0,  0}
+    {(UTF8 *)"all",             1,  CA_PUBLIC,  SWITCH_ANY},
+    {(UTF8 *)"default",         1,  CA_PUBLIC,  SWITCH_DEFAULT},
+    {(UTF8 *)"first",           1,  CA_PUBLIC,  SWITCH_ONE},
+    {(UTF8 *)"notify",          1,  CA_PUBLIC,  SWITCH_NOTIFY|SW_MULTIPLE},
+    {(UTF8 *) NULL,             0,          0,  0}
 };
 
 static NAMETAB teleport_sw[] =
 {
-    {"list",            1,  CA_PUBLIC,  TELEPORT_LIST|SW_MULTIPLE},
-    {"loud",            1,  CA_PUBLIC,  TELEPORT_DEFAULT},
-    {"quiet",           1,  CA_PUBLIC,  TELEPORT_QUIET},
-    { NULL,             0,          0,  0}
+    {(UTF8 *)"list",            1,  CA_PUBLIC,  TELEPORT_LIST|SW_MULTIPLE},
+    {(UTF8 *)"loud",            1,  CA_PUBLIC,  TELEPORT_DEFAULT},
+    {(UTF8 *)"quiet",           1,  CA_PUBLIC,  TELEPORT_QUIET},
+    {(UTF8 *) NULL,             0,          0,  0}
 };
 
 static NAMETAB timecheck_sw[] =
 {
-    {"log",             1,  CA_WIZARD,  TIMECHK_LOG | SW_MULTIPLE},
-    {"reset",           1,  CA_WIZARD,  TIMECHK_RESET | SW_MULTIPLE},
-    {"screen",          1,  CA_WIZARD,  TIMECHK_SCREEN | SW_MULTIPLE},
-    { NULL,             0,          0,  0}
+    {(UTF8 *)"log",             1,  CA_WIZARD,  TIMECHK_LOG | SW_MULTIPLE},
+    {(UTF8 *)"reset",           1,  CA_WIZARD,  TIMECHK_RESET | SW_MULTIPLE},
+    {(UTF8 *)"screen",          1,  CA_WIZARD,  TIMECHK_SCREEN | SW_MULTIPLE},
+    {(UTF8 *) NULL,             0,          0,  0}
 };
 
 static NAMETAB toad_sw[] =
 {
-    {"no_chown",        1,  CA_WIZARD,  TOAD_NO_CHOWN|SW_MULTIPLE},
-    { NULL,             0,          0,  0}
+    {(UTF8 *)"no_chown",        1,  CA_WIZARD,  TOAD_NO_CHOWN|SW_MULTIPLE},
+    {(UTF8 *) NULL,             0,          0,  0}
 };
 
 static NAMETAB trig_sw[] =
 {
-    {"quiet",           1,  CA_PUBLIC,  TRIG_QUIET},
-    {"notify",          1,  CA_PUBLIC,  TRIG_NOTIFY|SW_MULTIPLE},
-    { NULL,             0,          0,  0}
+    {(UTF8 *)"quiet",           1,  CA_PUBLIC,  TRIG_QUIET},
+    {(UTF8 *)"notify",          1,  CA_PUBLIC,  TRIG_NOTIFY|SW_MULTIPLE},
+    {(UTF8 *) NULL,             0,          0,  0}
 };
 
 static NAMETAB wait_sw[] =
 {
-    {"until",           1,  CA_PUBLIC,   WAIT_UNTIL},
-    { NULL,             0,          0,   0}
+    {(UTF8 *)"until",           1,  CA_PUBLIC,   WAIT_UNTIL},
+    {(UTF8 *) NULL,             0,          0,   0}
 };
 
 static NAMETAB verb_sw[] =
 {
-    {"no_name",         3,  CA_PUBLIC,   VERB_NONAME},
-    { NULL,             0,          0,   0}
+    {(UTF8 *)"no_name",         3,  CA_PUBLIC,   VERB_NONAME},
+    {(UTF8 *) NULL,             0,          0,   0}
 };
 
 static NAMETAB wall_sw[] =
 {
-    {"admin",           1,  CA_ADMIN,    SHOUT_ADMIN|SW_MULTIPLE},
-    {"emit",            1,  CA_ANNOUNCE, SHOUT_EMIT|SW_MULTIPLE},
-    {"no_prefix",       1,  CA_ANNOUNCE, SHOUT_NOTAG|SW_MULTIPLE},
-    {"pose",            1,  CA_ANNOUNCE, SHOUT_POSE|SW_MULTIPLE},
-    {"wizard",          1,  CA_ANNOUNCE, SHOUT_WIZARD|SW_MULTIPLE},
-    { NULL,             0,          0,   0}
+    {(UTF8 *)"admin",           1,  CA_ADMIN,    SHOUT_ADMIN|SW_MULTIPLE},
+    {(UTF8 *)"emit",            1,  CA_ANNOUNCE, SHOUT_EMIT|SW_MULTIPLE},
+    {(UTF8 *)"no_prefix",       1,  CA_ANNOUNCE, SHOUT_NOTAG|SW_MULTIPLE},
+    {(UTF8 *)"pose",            1,  CA_ANNOUNCE, SHOUT_POSE|SW_MULTIPLE},
+    {(UTF8 *)"wizard",          1,  CA_ANNOUNCE, SHOUT_WIZARD|SW_MULTIPLE},
+    {(UTF8 *) NULL,             0,          0,   0}
 };
 
 static NAMETAB warp_sw[] =
 {
-    {"check",           1,  CA_WIZARD,  TWARP_CLEAN|SW_MULTIPLE},
-    {"dump",            1,  CA_WIZARD,  TWARP_DUMP|SW_MULTIPLE},
-    {"events",          1,  CA_WIZARD,  TWARP_EVENTS|SW_MULTIPLE},
-    {"idle",            1,  CA_WIZARD,  TWARP_IDLE|SW_MULTIPLE},
-    {"queue",           1,  CA_WIZARD,  TWARP_QUEUE|SW_MULTIPLE},
-    { NULL,             0,          0,  0}
+    {(UTF8 *)"check",           1,  CA_WIZARD,  TWARP_CLEAN|SW_MULTIPLE},
+    {(UTF8 *)"dump",            1,  CA_WIZARD,  TWARP_DUMP|SW_MULTIPLE},
+    {(UTF8 *)"events",          1,  CA_WIZARD,  TWARP_EVENTS|SW_MULTIPLE},
+    {(UTF8 *)"idle",            1,  CA_WIZARD,  TWARP_IDLE|SW_MULTIPLE},
+    {(UTF8 *)"queue",           1,  CA_WIZARD,  TWARP_QUEUE|SW_MULTIPLE},
+    {(UTF8 *) NULL,             0,          0,  0}
 };
 
 
@@ -570,207 +570,207 @@ static NAMETAB warp_sw[] =
  */
 static CMDENT_NO_ARG command_table_no_arg[] =
 {
-    {"@@",          NULL,       CA_PUBLIC,   0,          CS_NO_ARGS, 0, do_comment},
-    {"@backup",     NULL,       CA_WIZARD,   0,          CS_NO_ARGS, 0, do_backup},
-    {"@dbck",       dbck_sw,    CA_WIZARD,   0,          CS_NO_ARGS, 0, do_dbck},
-    {"@dbclean",    NULL,       CA_GOD,      0,          CS_NO_ARGS, 0, do_dbclean},
-    {"@dump",       dump_sw,    CA_WIZARD,   0,          CS_NO_ARGS, 0, do_dump},
-    {"@mark_all",   markall_sw, CA_WIZARD,   MARK_SET,   CS_NO_ARGS, 0, do_markall},
-    {"@readcache",  NULL,       CA_WIZARD,   0,          CS_NO_ARGS, 0, do_readcache},
-    {"@restart",    NULL,       CA_NO_GUEST|CA_NO_SLAVE, 0, CS_NO_ARGS, 0, do_restart},
+    {(UTF8 *)"@@",          NULL,       CA_PUBLIC,   0,          CS_NO_ARGS, 0, do_comment},
+    {(UTF8 *)"@backup",     NULL,       CA_WIZARD,   0,          CS_NO_ARGS, 0, do_backup},
+    {(UTF8 *)"@dbck",       dbck_sw,    CA_WIZARD,   0,          CS_NO_ARGS, 0, do_dbck},
+    {(UTF8 *)"@dbclean",    NULL,       CA_GOD,      0,          CS_NO_ARGS, 0, do_dbclean},
+    {(UTF8 *)"@dump",       dump_sw,    CA_WIZARD,   0,          CS_NO_ARGS, 0, do_dump},
+    {(UTF8 *)"@mark_all",   markall_sw, CA_WIZARD,   MARK_SET,   CS_NO_ARGS, 0, do_markall},
+    {(UTF8 *)"@readcache",  NULL,       CA_WIZARD,   0,          CS_NO_ARGS, 0, do_readcache},
+    {(UTF8 *)"@restart",    NULL,       CA_NO_GUEST|CA_NO_SLAVE, 0, CS_NO_ARGS, 0, do_restart},
 #ifndef WIN32
-    {"@startslave", NULL,       CA_WIZARD,   0,          CS_NO_ARGS, 0, boot_slave},
+    {(UTF8 *)"@startslave", NULL,       CA_WIZARD,   0,          CS_NO_ARGS, 0, boot_slave},
 #endif // !WIN32
-    {"@timecheck",  timecheck_sw, CA_WIZARD, 0,          CS_NO_ARGS, 0, do_timecheck},
-    {"clearcom",    NULL,       CA_NO_SLAVE, 0,          CS_NO_ARGS, 0, do_clearcom},
-    {"info",        NULL,       CA_PUBLIC,   CMD_INFO,   CS_NO_ARGS, 0, logged_out0},
-    {"inventory",   NULL,       CA_PUBLIC,   0,          CS_NO_ARGS, 0, do_inventory},
-    {"leave",       leave_sw,   CA_LOCATION, 0,          CS_NO_ARGS, 0, do_leave},
-    {"logout",      NULL,       CA_PUBLIC,   CMD_LOGOUT, CS_NO_ARGS, 0, logged_out0},
-    {"quit",        NULL,       CA_PUBLIC,   CMD_QUIT,   CS_NO_ARGS, 0, logged_out0},
-    {"report",      NULL,       CA_PUBLIC,   0,          CS_NO_ARGS, 0, do_report},
-    {"score",       NULL,       CA_PUBLIC,   0,          CS_NO_ARGS, 0, do_score},
-    {"version",     NULL,       CA_PUBLIC,   0,          CS_NO_ARGS, 0, do_version},
-    {NULL,          NULL,       0,           0,          0,          0, NULL}
+    {(UTF8 *)"@timecheck",  timecheck_sw, CA_WIZARD, 0,          CS_NO_ARGS, 0, do_timecheck},
+    {(UTF8 *)"clearcom",    NULL,       CA_NO_SLAVE, 0,          CS_NO_ARGS, 0, do_clearcom},
+    {(UTF8 *)"info",        NULL,       CA_PUBLIC,   CMD_INFO,   CS_NO_ARGS, 0, logged_out0},
+    {(UTF8 *)"inventory",   NULL,       CA_PUBLIC,   0,          CS_NO_ARGS, 0, do_inventory},
+    {(UTF8 *)"leave",       leave_sw,   CA_LOCATION, 0,          CS_NO_ARGS, 0, do_leave},
+    {(UTF8 *)"logout",      NULL,       CA_PUBLIC,   CMD_LOGOUT, CS_NO_ARGS, 0, logged_out0},
+    {(UTF8 *)"quit",        NULL,       CA_PUBLIC,   CMD_QUIT,   CS_NO_ARGS, 0, logged_out0},
+    {(UTF8 *)"report",      NULL,       CA_PUBLIC,   0,          CS_NO_ARGS, 0, do_report},
+    {(UTF8 *)"score",       NULL,       CA_PUBLIC,   0,          CS_NO_ARGS, 0, do_score},
+    {(UTF8 *)"version",     NULL,       CA_PUBLIC,   0,          CS_NO_ARGS, 0, do_version},
+    {(UTF8 *)NULL,          NULL,       0,           0,          0,          0, NULL}
 };
 
 static CMDENT_ONE_ARG command_table_one_arg[] =
 {
-    {"@boot",         boot_sw,    CA_NO_GUEST|CA_NO_SLAVE,    0,  CS_ONE_ARG|CS_INTERP, 0, do_boot},
-    {"@ccreate",      NULL,       CA_NO_SLAVE|CA_NO_GUEST,    0,  CS_ONE_ARG,           0, do_createchannel},
-    {"@cdestroy",     NULL,       CA_NO_SLAVE|CA_NO_GUEST,    0,  CS_ONE_ARG,           0, do_destroychannel},
-    {"@clist",        clist_sw,   CA_NO_SLAVE,                0,  CS_ONE_ARG,           0, do_chanlist},
-    {"@cut",          NULL,       CA_WIZARD|CA_LOCATION,      0,  CS_ONE_ARG|CS_INTERP, 0, do_cut},
-    {"@cwho",         NULL,       CA_NO_SLAVE,                0,  CS_ONE_ARG,           0, do_channelwho},
-    {"@destroy",      destroy_sw, CA_NO_SLAVE|CA_NO_GUEST|CA_GBL_BUILD, DEST_ONE,   CS_ONE_ARG|CS_INTERP,   0, do_destroy},
-    {"@disable",      NULL,       CA_WIZARD,       GLOB_DISABLE,  CS_ONE_ARG,           0, do_global},
-    {"@doing",        doing_sw,   CA_PUBLIC,                  0,  CS_ONE_ARG,           0, do_doing},
-    {"@emit",         emit_sw,    CA_LOCATION|CA_NO_GUEST|CA_NO_SLAVE,  SAY_EMIT,   CS_ONE_ARG|CS_INTERP,   0, do_say},
-    {"@enable",       NULL,       CA_WIZARD,        GLOB_ENABLE,  CS_ONE_ARG,           0, do_global},
-    {"@entrances",    NULL,       CA_NO_GUEST,                0,  CS_ONE_ARG|CS_INTERP, 0, do_entrances},
-    {"@find",         NULL,       CA_PUBLIC,                  0,  CS_ONE_ARG|CS_INTERP, 0, do_find},
-    {"@halt",         halt_sw,    CA_NO_SLAVE,                0,  CS_ONE_ARG|CS_INTERP, 0, do_halt},
-    {"@hook",         hook_sw,    CA_GOD,                     0,  CS_ONE_ARG|CS_INTERP, 0, do_hook},
-    {"@kick",         NULL,       CA_WIZARD,         QUEUE_KICK,  CS_ONE_ARG|CS_INTERP, 0, do_queue},
-    {"@last",         NULL,       CA_NO_GUEST,                0,  CS_ONE_ARG|CS_INTERP, 0, do_last},
-    {"@list",         NULL,       CA_PUBLIC,                  0,  CS_ONE_ARG|CS_INTERP, 0, do_list},
-    {"@list_file",    NULL,       CA_WIZARD,                  0,  CS_ONE_ARG|CS_INTERP, 0, do_list_file},
-    {"@listcommands", NULL,       CA_GOD,                     0,  CS_ONE_ARG,           0, do_listcommands},
-    {"@listmotd",     listmotd_sw,CA_PUBLIC,          MOTD_LIST,  CS_ONE_ARG,           0, do_motd},
-    {"@mark",         mark_sw,    CA_WIZARD,          SRCH_MARK,  CS_ONE_ARG|CS_NOINTERP,   0, do_search},
-    {"@motd",         motd_sw,    CA_WIZARD,                  0,  CS_ONE_ARG,           0, do_motd},
-    {"@nemit",        emit_sw,    CA_LOCATION|CA_NO_GUEST|CA_NO_SLAVE, SAY_EMIT, CS_ONE_ARG|CS_UNPARSE|CS_NOSQUISH, 0, do_say},
-    {"@poor",         NULL,       CA_GOD,                     0,  CS_ONE_ARG|CS_INTERP, 0, do_poor},
-    {"@ps",           ps_sw,      CA_PUBLIC,                  0,  CS_ONE_ARG|CS_INTERP, 0, do_ps},
-    {"@quitprogram",  NULL,       CA_PUBLIC,                  0,  CS_ONE_ARG|CS_INTERP, 0, do_quitprog},
-    {"@search",       NULL,       CA_PUBLIC,        SRCH_SEARCH,  CS_ONE_ARG|CS_NOINTERP,   0, do_search},
-    {"@shutdown",     NULL,       CA_NO_GUEST|CA_NO_SLAVE,    0,  CS_ONE_ARG,           0, do_shutdown},
-    {"@stats",        stats_sw,   CA_PUBLIC,                  0,  CS_ONE_ARG|CS_INTERP, 0, do_stats},
-    {"@sweep",        sweep_sw,   CA_PUBLIC,                  0,  CS_ONE_ARG,           0, do_sweep},
-    {"@timewarp",     warp_sw,    CA_WIZARD,                  0,  CS_ONE_ARG|CS_INTERP, 0, do_timewarp},
-    {"@unlink",       NULL,       CA_NO_SLAVE|CA_GBL_BUILD,   0,  CS_ONE_ARG|CS_INTERP, 0, do_unlink},
-    {"@unlock",       lock_sw,    CA_NO_SLAVE,                0,  CS_ONE_ARG|CS_INTERP, 0, do_unlock},
-    {"@wall",         wall_sw,    CA_ANNOUNCE,     SHOUT_DEFAULT, CS_ONE_ARG|CS_INTERP, 0, do_shout},
-    {"@wipe",         NULL,       CA_NO_SLAVE|CA_NO_GUEST|CA_GBL_BUILD, 0,  CS_ONE_ARG|CS_INTERP,   0, do_wipe},
-    {"allcom",        NULL,       CA_NO_SLAVE,                0,  CS_ONE_ARG,           0, do_allcom},
-    {"comlist",       NULL,       CA_NO_SLAVE,                0,  CS_ONE_ARG,           0, do_comlist},
-    {"delcom",        NULL,       CA_NO_SLAVE,                0,  CS_ONE_ARG,           0, do_delcom},
-    {"doing",         NULL,       CA_PUBLIC,          CMD_DOING,  CS_ONE_ARG,           0, logged_out1},
-    {"drop",          drop_sw,    CA_NO_SLAVE|CA_CONTENTS|CA_LOCATION|CA_NO_GUEST,  0,  CS_ONE_ARG|CS_INTERP,   0, do_drop},
-    {"enter",         enter_sw,   CA_LOCATION,                0,  CS_ONE_ARG|CS_INTERP, 0, do_enter},
-    {"examine",       examine_sw, CA_PUBLIC,                  0,  CS_ONE_ARG|CS_INTERP, 0, do_examine},
-    {"get",           get_sw,     CA_LOCATION|CA_NO_GUEST,    0,  CS_ONE_ARG|CS_INTERP, 0, do_get},
+    {(UTF8 *)"@boot",         boot_sw,    CA_NO_GUEST|CA_NO_SLAVE,    0,  CS_ONE_ARG|CS_INTERP, 0, do_boot},
+    {(UTF8 *)"@ccreate",      NULL,       CA_NO_SLAVE|CA_NO_GUEST,    0,  CS_ONE_ARG,           0, do_createchannel},
+    {(UTF8 *)"@cdestroy",     NULL,       CA_NO_SLAVE|CA_NO_GUEST,    0,  CS_ONE_ARG,           0, do_destroychannel},
+    {(UTF8 *)"@clist",        clist_sw,   CA_NO_SLAVE,                0,  CS_ONE_ARG,           0, do_chanlist},
+    {(UTF8 *)"@cut",          NULL,       CA_WIZARD|CA_LOCATION,      0,  CS_ONE_ARG|CS_INTERP, 0, do_cut},
+    {(UTF8 *)"@cwho",         NULL,       CA_NO_SLAVE,                0,  CS_ONE_ARG,           0, do_channelwho},
+    {(UTF8 *)"@destroy",      destroy_sw, CA_NO_SLAVE|CA_NO_GUEST|CA_GBL_BUILD, DEST_ONE,   CS_ONE_ARG|CS_INTERP,   0, do_destroy},
+    {(UTF8 *)"@disable",      NULL,       CA_WIZARD,       GLOB_DISABLE,  CS_ONE_ARG,           0, do_global},
+    {(UTF8 *)"@doing",        doing_sw,   CA_PUBLIC,                  0,  CS_ONE_ARG,           0, do_doing},
+    {(UTF8 *)"@emit",         emit_sw,    CA_LOCATION|CA_NO_GUEST|CA_NO_SLAVE,  SAY_EMIT,   CS_ONE_ARG|CS_INTERP,   0, do_say},
+    {(UTF8 *)"@enable",       NULL,       CA_WIZARD,        GLOB_ENABLE,  CS_ONE_ARG,           0, do_global},
+    {(UTF8 *)"@entrances",    NULL,       CA_NO_GUEST,                0,  CS_ONE_ARG|CS_INTERP, 0, do_entrances},
+    {(UTF8 *)"@find",         NULL,       CA_PUBLIC,                  0,  CS_ONE_ARG|CS_INTERP, 0, do_find},
+    {(UTF8 *)"@halt",         halt_sw,    CA_NO_SLAVE,                0,  CS_ONE_ARG|CS_INTERP, 0, do_halt},
+    {(UTF8 *)"@hook",         hook_sw,    CA_GOD,                     0,  CS_ONE_ARG|CS_INTERP, 0, do_hook},
+    {(UTF8 *)"@kick",         NULL,       CA_WIZARD,         QUEUE_KICK,  CS_ONE_ARG|CS_INTERP, 0, do_queue},
+    {(UTF8 *)"@last",         NULL,       CA_NO_GUEST,                0,  CS_ONE_ARG|CS_INTERP, 0, do_last},
+    {(UTF8 *)"@list",         NULL,       CA_PUBLIC,                  0,  CS_ONE_ARG|CS_INTERP, 0, do_list},
+    {(UTF8 *)"@list_file",    NULL,       CA_WIZARD,                  0,  CS_ONE_ARG|CS_INTERP, 0, do_list_file},
+    {(UTF8 *)"@listcommands", NULL,       CA_GOD,                     0,  CS_ONE_ARG,           0, do_listcommands},
+    {(UTF8 *)"@listmotd",     listmotd_sw,CA_PUBLIC,          MOTD_LIST,  CS_ONE_ARG,           0, do_motd},
+    {(UTF8 *)"@mark",         mark_sw,    CA_WIZARD,          SRCH_MARK,  CS_ONE_ARG|CS_NOINTERP,   0, do_search},
+    {(UTF8 *)"@motd",         motd_sw,    CA_WIZARD,                  0,  CS_ONE_ARG,           0, do_motd},
+    {(UTF8 *)"@nemit",        emit_sw,    CA_LOCATION|CA_NO_GUEST|CA_NO_SLAVE, SAY_EMIT, CS_ONE_ARG|CS_UNPARSE|CS_NOSQUISH, 0, do_say},
+    {(UTF8 *)"@poor",         NULL,       CA_GOD,                     0,  CS_ONE_ARG|CS_INTERP, 0, do_poor},
+    {(UTF8 *)"@ps",           ps_sw,      CA_PUBLIC,                  0,  CS_ONE_ARG|CS_INTERP, 0, do_ps},
+    {(UTF8 *)"@quitprogram",  NULL,       CA_PUBLIC,                  0,  CS_ONE_ARG|CS_INTERP, 0, do_quitprog},
+    {(UTF8 *)"@search",       NULL,       CA_PUBLIC,        SRCH_SEARCH,  CS_ONE_ARG|CS_NOINTERP,   0, do_search},
+    {(UTF8 *)"@shutdown",     NULL,       CA_NO_GUEST|CA_NO_SLAVE,    0,  CS_ONE_ARG,           0, do_shutdown},
+    {(UTF8 *)"@stats",        stats_sw,   CA_PUBLIC,                  0,  CS_ONE_ARG|CS_INTERP, 0, do_stats},
+    {(UTF8 *)"@sweep",        sweep_sw,   CA_PUBLIC,                  0,  CS_ONE_ARG,           0, do_sweep},
+    {(UTF8 *)"@timewarp",     warp_sw,    CA_WIZARD,                  0,  CS_ONE_ARG|CS_INTERP, 0, do_timewarp},
+    {(UTF8 *)"@unlink",       NULL,       CA_NO_SLAVE|CA_GBL_BUILD,   0,  CS_ONE_ARG|CS_INTERP, 0, do_unlink},
+    {(UTF8 *)"@unlock",       lock_sw,    CA_NO_SLAVE,                0,  CS_ONE_ARG|CS_INTERP, 0, do_unlock},
+    {(UTF8 *)"@wall",         wall_sw,    CA_ANNOUNCE,     SHOUT_DEFAULT, CS_ONE_ARG|CS_INTERP, 0, do_shout},
+    {(UTF8 *)"@wipe",         NULL,       CA_NO_SLAVE|CA_NO_GUEST|CA_GBL_BUILD, 0,  CS_ONE_ARG|CS_INTERP,   0, do_wipe},
+    {(UTF8 *)"allcom",        NULL,       CA_NO_SLAVE,                0,  CS_ONE_ARG,           0, do_allcom},
+    {(UTF8 *)"comlist",       NULL,       CA_NO_SLAVE,                0,  CS_ONE_ARG,           0, do_comlist},
+    {(UTF8 *)"delcom",        NULL,       CA_NO_SLAVE,                0,  CS_ONE_ARG,           0, do_delcom},
+    {(UTF8 *)"doing",         NULL,       CA_PUBLIC,          CMD_DOING,  CS_ONE_ARG,           0, logged_out1},
+    {(UTF8 *)"drop",          drop_sw,    CA_NO_SLAVE|CA_CONTENTS|CA_LOCATION|CA_NO_GUEST,  0,  CS_ONE_ARG|CS_INTERP,   0, do_drop},
+    {(UTF8 *)"enter",         enter_sw,   CA_LOCATION,                0,  CS_ONE_ARG|CS_INTERP, 0, do_enter},
+    {(UTF8 *)"examine",       examine_sw, CA_PUBLIC,                  0,  CS_ONE_ARG|CS_INTERP, 0, do_examine},
+    {(UTF8 *)"get",           get_sw,     CA_LOCATION|CA_NO_GUEST,    0,  CS_ONE_ARG|CS_INTERP, 0, do_get},
 #if defined(FIRANMUX)
-    {"goto",          goto_sw,    CA_LOCATION|CA_NO_IMMOBILE, 0,  CS_ONE_ARG|CS_INTERP, 0, do_move},
+    {(UTF8 *)"goto",          goto_sw,    CA_LOCATION|CA_NO_IMMOBILE, 0,  CS_ONE_ARG|CS_INTERP, 0, do_move},
 #else
-    {"goto",          goto_sw,    CA_LOCATION,                0,  CS_ONE_ARG|CS_INTERP, 0, do_move},
+    {(UTF8 *)"goto",          goto_sw,    CA_LOCATION,                0,  CS_ONE_ARG|CS_INTERP, 0, do_move},
 #endif // FIRANMUX
-    {"look",          look_sw,    CA_LOCATION,        LOOK_LOOK,  CS_ONE_ARG|CS_INTERP, 0, do_look},
-    {"outputprefix",  NULL,       CA_PUBLIC,         CMD_PREFIX,  CS_ONE_ARG,           0, logged_out1},
-    {"outputsuffix",  NULL,       CA_PUBLIC,         CMD_SUFFIX,  CS_ONE_ARG,           0, logged_out1},
-    {"pose",          pose_sw,    CA_LOCATION|CA_NO_SLAVE,  SAY_POSE,   CS_ONE_ARG|CS_INTERP,   0, do_say},
-    {"puebloclient",  NULL,       CA_PUBLIC,   CMD_PUEBLOCLIENT,  CS_ONE_ARG,           0, logged_out1},
-    {"say",           say_sw,     CA_LOCATION|CA_NO_SLAVE,  SAY_SAY,    CS_ONE_ARG|CS_INTERP,   0, do_say},
-    {"session",       NULL,       CA_PUBLIC,        CMD_SESSION,  CS_ONE_ARG,           0, logged_out1},
-    {"think",         NULL,       CA_NO_SLAVE,                0,  CS_ONE_ARG,           0, do_think},
-    {"train",         NULL,       CA_PUBLIC,                  0,  CS_ONE_ARG,           0, do_train},
-    {"use",           NULL,       CA_NO_SLAVE|CA_GBL_INTERP,  0,  CS_ONE_ARG|CS_INTERP, 0, do_use},
-    {"who",           NULL,       CA_PUBLIC,            CMD_WHO,  CS_ONE_ARG,           0, logged_out1},
-    {"\\",            NULL,       CA_NO_GUEST|CA_LOCATION|CF_DARK|CA_NO_SLAVE,  SAY_PREFIX, CS_ONE_ARG|CS_INTERP|CS_LEADIN,   0, do_say},
-    {":",             NULL,       CA_LOCATION|CF_DARK|CA_NO_SLAVE,  SAY_PREFIX, CS_ONE_ARG|CS_INTERP|CS_LEADIN, 0, do_say},
-    {";",             NULL,       CA_LOCATION|CF_DARK|CA_NO_SLAVE,  SAY_PREFIX, CS_ONE_ARG|CS_INTERP|CS_LEADIN, 0, do_say},
-    {"\"",            NULL,       CA_LOCATION|CF_DARK|CA_NO_SLAVE,  SAY_PREFIX, CS_ONE_ARG|CS_INTERP|CS_LEADIN, 0, do_say},
-    {"-",             NULL,       CA_NO_GUEST|CA_NO_SLAVE|CF_DARK,  0,  CS_ONE_ARG|CS_LEADIN,   0, do_postpend},
-    {"~",             NULL,       CA_NO_GUEST|CA_NO_SLAVE|CF_DARK,  0,  CS_ONE_ARG|CS_LEADIN,   0, do_prepend},
-    {NULL,            NULL,       0,                          0,    0,                  0, NULL}
+    {(UTF8 *)"look",          look_sw,    CA_LOCATION,        LOOK_LOOK,  CS_ONE_ARG|CS_INTERP, 0, do_look},
+    {(UTF8 *)"outputprefix",  NULL,       CA_PUBLIC,         CMD_PREFIX,  CS_ONE_ARG,           0, logged_out1},
+    {(UTF8 *)"outputsuffix",  NULL,       CA_PUBLIC,         CMD_SUFFIX,  CS_ONE_ARG,           0, logged_out1},
+    {(UTF8 *)"pose",          pose_sw,    CA_LOCATION|CA_NO_SLAVE,  SAY_POSE,   CS_ONE_ARG|CS_INTERP,   0, do_say},
+    {(UTF8 *)"puebloclient",  NULL,       CA_PUBLIC,   CMD_PUEBLOCLIENT,  CS_ONE_ARG,           0, logged_out1},
+    {(UTF8 *)"say",           say_sw,     CA_LOCATION|CA_NO_SLAVE,  SAY_SAY,    CS_ONE_ARG|CS_INTERP,   0, do_say},
+    {(UTF8 *)"session",       NULL,       CA_PUBLIC,        CMD_SESSION,  CS_ONE_ARG,           0, logged_out1},
+    {(UTF8 *)"think",         NULL,       CA_NO_SLAVE,                0,  CS_ONE_ARG,           0, do_think},
+    {(UTF8 *)"train",         NULL,       CA_PUBLIC,                  0,  CS_ONE_ARG,           0, do_train},
+    {(UTF8 *)"use",           NULL,       CA_NO_SLAVE|CA_GBL_INTERP,  0,  CS_ONE_ARG|CS_INTERP, 0, do_use},
+    {(UTF8 *)"who",           NULL,       CA_PUBLIC,            CMD_WHO,  CS_ONE_ARG,           0, logged_out1},
+    {(UTF8 *)"\\",            NULL,       CA_NO_GUEST|CA_LOCATION|CF_DARK|CA_NO_SLAVE,  SAY_PREFIX, CS_ONE_ARG|CS_INTERP|CS_LEADIN,   0, do_say},
+    {(UTF8 *)":",             NULL,       CA_LOCATION|CF_DARK|CA_NO_SLAVE,  SAY_PREFIX, CS_ONE_ARG|CS_INTERP|CS_LEADIN, 0, do_say},
+    {(UTF8 *)";",             NULL,       CA_LOCATION|CF_DARK|CA_NO_SLAVE,  SAY_PREFIX, CS_ONE_ARG|CS_INTERP|CS_LEADIN, 0, do_say},
+    {(UTF8 *)"\"",            NULL,       CA_LOCATION|CF_DARK|CA_NO_SLAVE,  SAY_PREFIX, CS_ONE_ARG|CS_INTERP|CS_LEADIN, 0, do_say},
+    {(UTF8 *)"-",             NULL,       CA_NO_GUEST|CA_NO_SLAVE|CF_DARK,  0,  CS_ONE_ARG|CS_LEADIN,   0, do_postpend},
+    {(UTF8 *)"~",             NULL,       CA_NO_GUEST|CA_NO_SLAVE|CF_DARK,  0,  CS_ONE_ARG|CS_LEADIN,   0, do_prepend},
+    {(UTF8 *)NULL,            NULL,       0,                          0,    0,                  0, NULL}
 };
 
 static CMDENT_ONE_ARG_CMDARG command_table_one_arg_cmdarg[] =
 {
-    {"@apply_marked", NULL,       CA_WIZARD|CA_GBL_INTERP,    0,      CS_ONE_ARG|CS_CMDARG|CS_NOINTERP|CS_STRIP_AROUND,   0, do_apply_marked},
-    {"#",             NULL,       CA_NO_SLAVE|CA_GBL_INTERP|CF_DARK,    0,      CS_ONE_ARG|CS_INTERP|CS_CMDARG, 0, do_force_prefixed},
-    {NULL,            NULL,       0,     0,      0,             0,  NULL}
+    {(UTF8 *)"@apply_marked", NULL,       CA_WIZARD|CA_GBL_INTERP,    0,      CS_ONE_ARG|CS_CMDARG|CS_NOINTERP|CS_STRIP_AROUND,   0, do_apply_marked},
+    {(UTF8 *)"#",             NULL,       CA_NO_SLAVE|CA_GBL_INTERP|CF_DARK,    0,      CS_ONE_ARG|CS_INTERP|CS_CMDARG, 0, do_force_prefixed},
+    {(UTF8 *)NULL,            NULL,       0,     0,      0,             0,  NULL}
 };
 
 static CMDENT_TWO_ARG command_table_two_arg[] =
 {
-    {"@addcommand",  NULL,       CA_GOD,                                           0,           CS_TWO_ARG,           0, do_addcommand},
-    {"@admin",       NULL,       CA_WIZARD,                                        0,           CS_TWO_ARG|CS_INTERP, 0, do_admin},
-    {"@alias",       NULL,       CA_NO_GUEST|CA_NO_SLAVE,                          0,           CS_TWO_ARG,           0, do_alias},
-    {"@attribute",   attrib_sw,  CA_GOD,                                           0,           CS_TWO_ARG|CS_INTERP, 0, do_attribute},
-    {"@cboot",       cboot_sw,   CA_NO_SLAVE|CA_NO_GUEST,                          0,           CS_TWO_ARG,           0, do_chboot},
-    {"@ccharge",     NULL,       CA_NO_SLAVE|CA_NO_GUEST,                          1,           CS_TWO_ARG,           0, do_editchannel},
-    {"@cchown",      NULL,       CA_NO_SLAVE|CA_NO_GUEST,                          0,           CS_TWO_ARG,           0, do_editchannel},
-    {"@cemit",       cemit_sw,   CA_NO_SLAVE|CA_NO_GUEST,                          0,           CS_TWO_ARG,           0, do_cemit},
-    {"@chown",       chown_sw,   CA_NO_SLAVE|CA_NO_GUEST|CA_GBL_BUILD,             CHOWN_ONE,   CS_TWO_ARG|CS_INTERP, 0, do_chown},
-    {"@chownall",    chown_sw,   CA_WIZARD|CA_GBL_BUILD,                           CHOWN_ALL,   CS_TWO_ARG|CS_INTERP, 0, do_chownall},
-    {"@chzone",      NULL,       CA_NO_SLAVE|CA_NO_GUEST|CA_GBL_BUILD,             0,           CS_TWO_ARG|CS_INTERP, 0, do_chzone},
-    {"@clone",       clone_sw,   CA_NO_SLAVE|CA_GBL_BUILD|CA_CONTENTS|CA_NO_GUEST, 0,           CS_TWO_ARG|CS_INTERP, 0, do_clone},
-    {"@coflags",     NULL,       CA_NO_SLAVE,                                      4,           CS_TWO_ARG,           0, do_editchannel},
-    {"@cpflags",     NULL,       CA_NO_SLAVE,                                      3,           CS_TWO_ARG,           0, do_editchannel},
-    {"@create",      NULL,       CA_NO_SLAVE|CA_GBL_BUILD|CA_CONTENTS|CA_NO_GUEST, 0,           CS_TWO_ARG|CS_INTERP, 0, do_create},
-    {"@cset",        cset_sw,    CA_NO_SLAVE,                                      0,           CS_TWO_ARG|CS_INTERP, 0, do_chopen},
-    {"@decompile",   decomp_sw,  CA_PUBLIC,                                        0,           CS_TWO_ARG|CS_INTERP, 0, do_decomp},
-    {"@delcommand",  NULL,       CA_GOD,                                           0,           CS_TWO_ARG,           0, do_delcommand},
-    {"@drain",       NULL,       CA_GBL_INTERP|CA_NO_SLAVE|CA_NO_GUEST,            NFY_DRAIN,   CS_TWO_ARG,           0, do_notify},
-    {"@femit",       femit_sw,   CA_LOCATION|CA_NO_GUEST|CA_NO_SLAVE,              PEMIT_FEMIT, CS_TWO_ARG|CS_INTERP, 0, do_pemit},
-    {"@fixdb",       fixdb_sw,   CA_GOD,                                           0,           CS_TWO_ARG|CS_INTERP, 0, do_fixdb},
-    {"@flag",        flag_sw,    CA_GOD,                                           0,           CS_TWO_ARG,           0, do_flag},
-    {"@forwardlist", NULL,       CA_NO_SLAVE|CA_NO_GUEST,                          0,           CS_TWO_ARG,           0, do_forwardlist},
-    {"@fpose",       fpose_sw,   CA_LOCATION|CA_NO_SLAVE,                          PEMIT_FPOSE, CS_TWO_ARG|CS_INTERP, 0, do_pemit},
-    {"@fsay",        NULL,       CA_LOCATION|CA_NO_SLAVE,                          PEMIT_FSAY,  CS_TWO_ARG|CS_INTERP, 0, do_pemit},
-    {"@function",    function_sw,CA_GOD,                                           0,           CS_TWO_ARG|CS_INTERP, 0, do_function},
-    {"@link",        NULL,       CA_NO_SLAVE|CA_GBL_BUILD|CA_NO_GUEST,             0,           CS_TWO_ARG|CS_INTERP, 0, do_link},
-    {"@lock",        lock_sw,    CA_NO_SLAVE,                                      0,           CS_TWO_ARG|CS_INTERP, 0, do_lock},
-    {"@log",         NULL,       CA_WIZARD,                                        0,           CS_TWO_ARG,           0, do_log},
-    {"@mail",        mail_sw,    CA_NO_SLAVE|CA_NO_GUEST,                          0,           CS_TWO_ARG|CS_INTERP, 0, do_mail},
-    {"@malias",      malias_sw,  CA_NO_SLAVE|CA_NO_GUEST,                          0,           CS_TWO_ARG|CS_INTERP, 0, do_malias},
-    {"@moniker",     NULL,       CA_NO_GUEST|CA_NO_SLAVE,                          0,           CS_TWO_ARG|CS_INTERP, 0, do_moniker},
-    {"@name",        NULL,       CA_NO_SLAVE|CA_GBL_BUILD|CA_NO_GUEST,             0,           CS_TWO_ARG|CS_INTERP, 0, do_name},
-    {"@newpassword", NULL,       CA_WIZARD,                                        0,           CS_TWO_ARG,           0, do_newpassword},
-    {"@notify",      notify_sw,  CA_GBL_INTERP|CA_NO_SLAVE|CA_NO_GUEST,            0,           CS_TWO_ARG,           0, do_notify},
-    {"@npemit",      pemit_sw,   CA_NO_GUEST|CA_NO_SLAVE,                          PEMIT_PEMIT, CS_TWO_ARG|CS_UNPARSE|CS_NOSQUISH, 0, do_pemit},
-    {"@oemit",       NULL,       CA_NO_GUEST|CA_NO_SLAVE,                          PEMIT_OEMIT, CS_TWO_ARG|CS_INTERP, 0, do_pemit},
-    {"@parent",      NULL,       CA_NO_SLAVE|CA_GBL_BUILD|CA_NO_GUEST,             0,           CS_TWO_ARG,           0, do_parent},
-    {"@password",    NULL,       CA_NO_GUEST,                                      0,           CS_TWO_ARG,           0, do_password},
-    {"@pcreate",     NULL,       CA_WIZARD|CA_GBL_BUILD,                           PCRE_PLAYER, CS_TWO_ARG,           0, do_pcreate},
-    {"@pemit",       pemit_sw,   CA_NO_GUEST|CA_NO_SLAVE,                          PEMIT_PEMIT, CS_TWO_ARG|CS_INTERP, 0, do_pemit},
-    {"@power",       NULL,       CA_PUBLIC,                                        0,           CS_TWO_ARG,           0, do_power},
-    {"@program",     NULL,       CA_PUBLIC,                                        0,           CS_TWO_ARG|CS_INTERP, 0, do_prog},
-    {"@quota",       quota_sw,   CA_PUBLIC,                                        0,           CS_TWO_ARG|CS_INTERP, 0, do_quota},
-    {"@robot",       NULL,       CA_NO_SLAVE|CA_GBL_BUILD|CA_NO_GUEST|CA_PLAYER,   PCRE_ROBOT,  CS_TWO_ARG,           0, do_pcreate},
+    {(UTF8 *)"@addcommand",  NULL,       CA_GOD,                                           0,           CS_TWO_ARG,           0, do_addcommand},
+    {(UTF8 *)"@admin",       NULL,       CA_WIZARD,                                        0,           CS_TWO_ARG|CS_INTERP, 0, do_admin},
+    {(UTF8 *)"@alias",       NULL,       CA_NO_GUEST|CA_NO_SLAVE,                          0,           CS_TWO_ARG,           0, do_alias},
+    {(UTF8 *)"@attribute",   attrib_sw,  CA_GOD,                                           0,           CS_TWO_ARG|CS_INTERP, 0, do_attribute},
+    {(UTF8 *)"@cboot",       cboot_sw,   CA_NO_SLAVE|CA_NO_GUEST,                          0,           CS_TWO_ARG,           0, do_chboot},
+    {(UTF8 *)"@ccharge",     NULL,       CA_NO_SLAVE|CA_NO_GUEST,                          1,           CS_TWO_ARG,           0, do_editchannel},
+    {(UTF8 *)"@cchown",      NULL,       CA_NO_SLAVE|CA_NO_GUEST,                          0,           CS_TWO_ARG,           0, do_editchannel},
+    {(UTF8 *)"@cemit",       cemit_sw,   CA_NO_SLAVE|CA_NO_GUEST,                          0,           CS_TWO_ARG,           0, do_cemit},
+    {(UTF8 *)"@chown",       chown_sw,   CA_NO_SLAVE|CA_NO_GUEST|CA_GBL_BUILD,             CHOWN_ONE,   CS_TWO_ARG|CS_INTERP, 0, do_chown},
+    {(UTF8 *)"@chownall",    chown_sw,   CA_WIZARD|CA_GBL_BUILD,                           CHOWN_ALL,   CS_TWO_ARG|CS_INTERP, 0, do_chownall},
+    {(UTF8 *)"@chzone",      NULL,       CA_NO_SLAVE|CA_NO_GUEST|CA_GBL_BUILD,             0,           CS_TWO_ARG|CS_INTERP, 0, do_chzone},
+    {(UTF8 *)"@clone",       clone_sw,   CA_NO_SLAVE|CA_GBL_BUILD|CA_CONTENTS|CA_NO_GUEST, 0,           CS_TWO_ARG|CS_INTERP, 0, do_clone},
+    {(UTF8 *)"@coflags",     NULL,       CA_NO_SLAVE,                                      4,           CS_TWO_ARG,           0, do_editchannel},
+    {(UTF8 *)"@cpflags",     NULL,       CA_NO_SLAVE,                                      3,           CS_TWO_ARG,           0, do_editchannel},
+    {(UTF8 *)"@create",      NULL,       CA_NO_SLAVE|CA_GBL_BUILD|CA_CONTENTS|CA_NO_GUEST, 0,           CS_TWO_ARG|CS_INTERP, 0, do_create},
+    {(UTF8 *)"@cset",        cset_sw,    CA_NO_SLAVE,                                      0,           CS_TWO_ARG|CS_INTERP, 0, do_chopen},
+    {(UTF8 *)"@decompile",   decomp_sw,  CA_PUBLIC,                                        0,           CS_TWO_ARG|CS_INTERP, 0, do_decomp},
+    {(UTF8 *)"@delcommand",  NULL,       CA_GOD,                                           0,           CS_TWO_ARG,           0, do_delcommand},
+    {(UTF8 *)"@drain",       NULL,       CA_GBL_INTERP|CA_NO_SLAVE|CA_NO_GUEST,            NFY_DRAIN,   CS_TWO_ARG,           0, do_notify},
+    {(UTF8 *)"@femit",       femit_sw,   CA_LOCATION|CA_NO_GUEST|CA_NO_SLAVE,              PEMIT_FEMIT, CS_TWO_ARG|CS_INTERP, 0, do_pemit},
+    {(UTF8 *)"@fixdb",       fixdb_sw,   CA_GOD,                                           0,           CS_TWO_ARG|CS_INTERP, 0, do_fixdb},
+    {(UTF8 *)"@flag",        flag_sw,    CA_GOD,                                           0,           CS_TWO_ARG,           0, do_flag},
+    {(UTF8 *)"@forwardlist", NULL,       CA_NO_SLAVE|CA_NO_GUEST,                          0,           CS_TWO_ARG,           0, do_forwardlist},
+    {(UTF8 *)"@fpose",       fpose_sw,   CA_LOCATION|CA_NO_SLAVE,                          PEMIT_FPOSE, CS_TWO_ARG|CS_INTERP, 0, do_pemit},
+    {(UTF8 *)"@fsay",        NULL,       CA_LOCATION|CA_NO_SLAVE,                          PEMIT_FSAY,  CS_TWO_ARG|CS_INTERP, 0, do_pemit},
+    {(UTF8 *)"@function",    function_sw,CA_GOD,                                           0,           CS_TWO_ARG|CS_INTERP, 0, do_function},
+    {(UTF8 *)"@link",        NULL,       CA_NO_SLAVE|CA_GBL_BUILD|CA_NO_GUEST,             0,           CS_TWO_ARG|CS_INTERP, 0, do_link},
+    {(UTF8 *)"@lock",        lock_sw,    CA_NO_SLAVE,                                      0,           CS_TWO_ARG|CS_INTERP, 0, do_lock},
+    {(UTF8 *)"@log",         NULL,       CA_WIZARD,                                        0,           CS_TWO_ARG,           0, do_log},
+    {(UTF8 *)"@mail",        mail_sw,    CA_NO_SLAVE|CA_NO_GUEST,                          0,           CS_TWO_ARG|CS_INTERP, 0, do_mail},
+    {(UTF8 *)"@malias",      malias_sw,  CA_NO_SLAVE|CA_NO_GUEST,                          0,           CS_TWO_ARG|CS_INTERP, 0, do_malias},
+    {(UTF8 *)"@moniker",     NULL,       CA_NO_GUEST|CA_NO_SLAVE,                          0,           CS_TWO_ARG|CS_INTERP, 0, do_moniker},
+    {(UTF8 *)"@name",        NULL,       CA_NO_SLAVE|CA_GBL_BUILD|CA_NO_GUEST,             0,           CS_TWO_ARG|CS_INTERP, 0, do_name},
+    {(UTF8 *)"@newpassword", NULL,       CA_WIZARD,                                        0,           CS_TWO_ARG,           0, do_newpassword},
+    {(UTF8 *)"@notify",      notify_sw,  CA_GBL_INTERP|CA_NO_SLAVE|CA_NO_GUEST,            0,           CS_TWO_ARG,           0, do_notify},
+    {(UTF8 *)"@npemit",      pemit_sw,   CA_NO_GUEST|CA_NO_SLAVE,                          PEMIT_PEMIT, CS_TWO_ARG|CS_UNPARSE|CS_NOSQUISH, 0, do_pemit},
+    {(UTF8 *)"@oemit",       NULL,       CA_NO_GUEST|CA_NO_SLAVE,                          PEMIT_OEMIT, CS_TWO_ARG|CS_INTERP, 0, do_pemit},
+    {(UTF8 *)"@parent",      NULL,       CA_NO_SLAVE|CA_GBL_BUILD|CA_NO_GUEST,             0,           CS_TWO_ARG,           0, do_parent},
+    {(UTF8 *)"@password",    NULL,       CA_NO_GUEST,                                      0,           CS_TWO_ARG,           0, do_password},
+    {(UTF8 *)"@pcreate",     NULL,       CA_WIZARD|CA_GBL_BUILD,                           PCRE_PLAYER, CS_TWO_ARG,           0, do_pcreate},
+    {(UTF8 *)"@pemit",       pemit_sw,   CA_NO_GUEST|CA_NO_SLAVE,                          PEMIT_PEMIT, CS_TWO_ARG|CS_INTERP, 0, do_pemit},
+    {(UTF8 *)"@power",       NULL,       CA_PUBLIC,                                        0,           CS_TWO_ARG,           0, do_power},
+    {(UTF8 *)"@program",     NULL,       CA_PUBLIC,                                        0,           CS_TWO_ARG|CS_INTERP, 0, do_prog},
+    {(UTF8 *)"@quota",       quota_sw,   CA_PUBLIC,                                        0,           CS_TWO_ARG|CS_INTERP, 0, do_quota},
+    {(UTF8 *)"@robot",       NULL,       CA_NO_SLAVE|CA_GBL_BUILD|CA_NO_GUEST|CA_PLAYER,   PCRE_ROBOT,  CS_TWO_ARG,           0, do_pcreate},
 #ifdef REALITY_LVLS
-    {"@rxlevel",     NULL,       CA_WIZARD,                                        0,           CS_TWO_ARG|CS_INTERP, 0, do_rxlevel},
+    {(UTF8 *)"@rxlevel",     NULL,       CA_WIZARD,                                        0,           CS_TWO_ARG|CS_INTERP, 0, do_rxlevel},
 #endif
-    {"@set",         set_sw,     CA_NO_SLAVE|CA_GBL_BUILD|CA_NO_GUEST,             0,           CS_TWO_ARG,           0, do_set},
-    {"@teleport",    teleport_sw,CA_NO_GUEST,                                      TELEPORT_DEFAULT, CS_TWO_ARG|CS_INTERP, 0, do_teleport},
+    {(UTF8 *)"@set",         set_sw,     CA_NO_SLAVE|CA_GBL_BUILD|CA_NO_GUEST,             0,           CS_TWO_ARG,           0, do_set},
+    {(UTF8 *)"@teleport",    teleport_sw,CA_NO_GUEST,                                      TELEPORT_DEFAULT, CS_TWO_ARG|CS_INTERP, 0, do_teleport},
 #ifdef REALITY_LVLS
-    {"@txlevel",     NULL,       CA_WIZARD,                                        0,           CS_TWO_ARG|CS_INTERP, 0, do_txlevel},
+    {(UTF8 *)"@txlevel",     NULL,       CA_WIZARD,                                        0,           CS_TWO_ARG|CS_INTERP, 0, do_txlevel},
 #endif
-    {"@toad",        toad_sw,    CA_WIZARD,                                        0,           CS_TWO_ARG|CS_INTERP, 0, do_toad},
-    {"@email",       NULL,       CA_WIZARD,                                        0,           CS_TWO_ARG,           0, do_plusemail},
-    {"addcom",       NULL,       CA_NO_SLAVE,                                      0,           CS_TWO_ARG,           0, do_addcom},
-    {"comtitle",     comtitle_sw,CA_NO_SLAVE,                                      0,           CS_TWO_ARG,           0, do_comtitle},
-    {"give",         give_sw,    CA_LOCATION|CA_NO_GUEST,                          0,           CS_TWO_ARG|CS_INTERP, 0, do_give},
-    {"kill",         NULL,       CA_NO_GUEST|CA_NO_SLAVE,                          KILL_KILL,   CS_TWO_ARG|CS_INTERP, 0, do_kill},
-    {"page",         page_sw,    CA_NO_SLAVE,                                      0,           CS_TWO_ARG|CS_INTERP, 0, do_page},
-    {"slay",         NULL,       CA_WIZARD,                                        KILL_SLAY,   CS_TWO_ARG|CS_INTERP, 0, do_kill},
-    {"whisper",      NULL,       CA_LOCATION|CA_NO_SLAVE,                          PEMIT_WHISPER, CS_TWO_ARG|CS_INTERP, 0, do_pemit},
-    {"&",            NULL,       CA_NO_GUEST|CA_NO_SLAVE|CF_DARK,                  0,           CS_TWO_ARG|CS_LEADIN, 0, do_setvattr},
-    {NULL,           NULL,       0,                                                0,           0,                    0, NULL}
+    {(UTF8 *)"@toad",        toad_sw,    CA_WIZARD,                                        0,           CS_TWO_ARG|CS_INTERP, 0, do_toad},
+    {(UTF8 *)"@email",       NULL,       CA_WIZARD,                                        0,           CS_TWO_ARG,           0, do_plusemail},
+    {(UTF8 *)"addcom",       NULL,       CA_NO_SLAVE,                                      0,           CS_TWO_ARG,           0, do_addcom},
+    {(UTF8 *)"comtitle",     comtitle_sw,CA_NO_SLAVE,                                      0,           CS_TWO_ARG,           0, do_comtitle},
+    {(UTF8 *)"give",         give_sw,    CA_LOCATION|CA_NO_GUEST,                          0,           CS_TWO_ARG|CS_INTERP, 0, do_give},
+    {(UTF8 *)"kill",         NULL,       CA_NO_GUEST|CA_NO_SLAVE,                          KILL_KILL,   CS_TWO_ARG|CS_INTERP, 0, do_kill},
+    {(UTF8 *)"page",         page_sw,    CA_NO_SLAVE,                                      0,           CS_TWO_ARG|CS_INTERP, 0, do_page},
+    {(UTF8 *)"slay",         NULL,       CA_WIZARD,                                        KILL_SLAY,   CS_TWO_ARG|CS_INTERP, 0, do_kill},
+    {(UTF8 *)"whisper",      NULL,       CA_LOCATION|CA_NO_SLAVE,                          PEMIT_WHISPER, CS_TWO_ARG|CS_INTERP, 0, do_pemit},
+    {(UTF8 *)"&",            NULL,       CA_NO_GUEST|CA_NO_SLAVE|CF_DARK,                  0,           CS_TWO_ARG|CS_LEADIN, 0, do_setvattr},
+    {(UTF8 *)NULL,           NULL,       0,                                                0,           0,                    0, NULL}
 };
 
 static CMDENT_TWO_ARG_ARGV command_table_two_arg_argv[] =
 {
-    {"@cpattr",     NULL,       CA_NO_SLAVE|CA_NO_GUEST|CA_GBL_BUILD, 0,  CS_TWO_ARG|CS_ARGV,             0, do_cpattr},
-    {"@dig",        dig_sw,     CA_NO_SLAVE|CA_NO_GUEST|CA_GBL_BUILD, 0,  CS_TWO_ARG|CS_ARGV|CS_INTERP,   0, do_dig},
-    {"@edit",       NULL,       CA_NO_SLAVE|CA_NO_GUEST,              0,  CS_TWO_ARG|CS_ARGV|CS_STRIP_AROUND, 0, do_edit},
-    {"@icmd",       icmd_sw,    CA_GOD,                               0,  CS_TWO_ARG|CS_ARGV|CS_INTERP,   0, do_icmd},
-    {"@mvattr",     NULL,       CA_NO_SLAVE|CA_NO_GUEST|CA_GBL_BUILD, 0,  CS_TWO_ARG|CS_ARGV,             0, do_mvattr},
-    {"@open",       open_sw,    CA_NO_SLAVE|CA_GBL_BUILD|CA_NO_GUEST, 0,  CS_TWO_ARG|CS_ARGV|CS_INTERP,   0, do_open},
-    {"@trigger",    trig_sw,    CA_GBL_INTERP,                        0,  CS_TWO_ARG|CS_ARGV,             0, do_trigger},
-    {"@verb",       verb_sw,    CA_GBL_INTERP|CA_NO_SLAVE,            0,  CS_TWO_ARG|CS_ARGV|CS_INTERP|CS_STRIP_AROUND, 0, do_verb},
-    {NULL,          NULL,       0,                                    0,  0,              0, NULL}
+    {(UTF8 *)"@cpattr",     NULL,       CA_NO_SLAVE|CA_NO_GUEST|CA_GBL_BUILD, 0,  CS_TWO_ARG|CS_ARGV,             0, do_cpattr},
+    {(UTF8 *)"@dig",        dig_sw,     CA_NO_SLAVE|CA_NO_GUEST|CA_GBL_BUILD, 0,  CS_TWO_ARG|CS_ARGV|CS_INTERP,   0, do_dig},
+    {(UTF8 *)"@edit",       NULL,       CA_NO_SLAVE|CA_NO_GUEST,              0,  CS_TWO_ARG|CS_ARGV|CS_STRIP_AROUND, 0, do_edit},
+    {(UTF8 *)"@icmd",       icmd_sw,    CA_GOD,                               0,  CS_TWO_ARG|CS_ARGV|CS_INTERP,   0, do_icmd},
+    {(UTF8 *)"@mvattr",     NULL,       CA_NO_SLAVE|CA_NO_GUEST|CA_GBL_BUILD, 0,  CS_TWO_ARG|CS_ARGV,             0, do_mvattr},
+    {(UTF8 *)"@open",       open_sw,    CA_NO_SLAVE|CA_GBL_BUILD|CA_NO_GUEST, 0,  CS_TWO_ARG|CS_ARGV|CS_INTERP,   0, do_open},
+    {(UTF8 *)"@trigger",    trig_sw,    CA_GBL_INTERP,                        0,  CS_TWO_ARG|CS_ARGV,             0, do_trigger},
+    {(UTF8 *)"@verb",       verb_sw,    CA_GBL_INTERP|CA_NO_SLAVE,            0,  CS_TWO_ARG|CS_ARGV|CS_INTERP|CS_STRIP_AROUND, 0, do_verb},
+    {(UTF8 *)NULL,          NULL,       0,                                    0,  0,              0, NULL}
 };
 
 static CMDENT_TWO_ARG_CMDARG command_table_two_arg_cmdarg[] =
 {
-    {"@assert", NULL,       CA_PUBLIC,     0, CS_TWO_ARG|CS_CMDARG|CS_NOINTERP|CS_STRIP_AROUND, 0, do_assert},
-    {"@break",  NULL,       CA_PUBLIC,     0, CS_TWO_ARG|CS_CMDARG|CS_NOINTERP|CS_STRIP_AROUND, 0, do_break},
-    {"@dolist", dolist_sw,  CA_GBL_INTERP, 0, CS_TWO_ARG|CS_CMDARG|CS_NOINTERP|CS_STRIP_AROUND, 0, do_dolist},
-    {"@force",  NULL,       CA_NO_SLAVE|CA_GBL_INTERP|CA_NO_GUEST, 0, CS_TWO_ARG|CS_INTERP|CS_CMDARG, 0, do_force},
+    {(UTF8 *)"@assert", NULL,       CA_PUBLIC,     0, CS_TWO_ARG|CS_CMDARG|CS_NOINTERP|CS_STRIP_AROUND, 0, do_assert},
+    {(UTF8 *)"@break",  NULL,       CA_PUBLIC,     0, CS_TWO_ARG|CS_CMDARG|CS_NOINTERP|CS_STRIP_AROUND, 0, do_break},
+    {(UTF8 *)"@dolist", dolist_sw,  CA_GBL_INTERP, 0, CS_TWO_ARG|CS_CMDARG|CS_NOINTERP|CS_STRIP_AROUND, 0, do_dolist},
+    {(UTF8 *)"@force",  NULL,       CA_NO_SLAVE|CA_GBL_INTERP|CA_NO_GUEST, 0, CS_TWO_ARG|CS_INTERP|CS_CMDARG, 0, do_force},
 #ifdef QUERY_SLAVE
-    {"@query",  query_sw,   CA_WIZARD,     0, CS_TWO_ARG|CS_INTERP|CS_CMDARG,                   0, do_query},
+    {(UTF8 *)"@query",  query_sw,   CA_WIZARD,     0, CS_TWO_ARG|CS_INTERP|CS_CMDARG,                   0, do_query},
 #endif
-    {"@wait",   wait_sw,    CA_GBL_INTERP, 0, CS_TWO_ARG|CS_CMDARG|CS_NOINTERP|CS_STRIP_AROUND, 0, do_wait},
-    {NULL,      NULL,       0,             0, 0,                                                0, NULL}
+    {(UTF8 *)"@wait",   wait_sw,    CA_GBL_INTERP, 0, CS_TWO_ARG|CS_CMDARG|CS_NOINTERP|CS_STRIP_AROUND, 0, do_wait},
+    {(UTF8 *)NULL,      NULL,       0,             0, 0,                                                0, NULL}
 };
 
 static CMDENT_TWO_ARG_ARGV_CMDARG command_table_two_arg_argv_cmdarg[] =
 {
-    {"@if",     NULL,       CA_GBL_INTERP,  0,  CS_TWO_ARG|CS_ARGV|CS_CMDARG|CS_NOINTERP|CS_STRIP_AROUND, 0, do_if},
-    {"@switch", switch_sw,  CA_GBL_INTERP,  0,  CS_TWO_ARG|CS_ARGV|CS_CMDARG|CS_NOINTERP|CS_STRIP_AROUND, 0, do_switch},
-    {NULL,      NULL,       0,              0,  0,                                                        0, NULL}
+    {(UTF8 *)"@if",     NULL,       CA_GBL_INTERP,  0,  CS_TWO_ARG|CS_ARGV|CS_CMDARG|CS_NOINTERP|CS_STRIP_AROUND, 0, do_if},
+    {(UTF8 *)"@switch", switch_sw,  CA_GBL_INTERP,  0,  CS_TWO_ARG|CS_ARGV|CS_CMDARG|CS_NOINTERP|CS_STRIP_AROUND, 0, do_switch},
+    {(UTF8 *)NULL,      NULL,       0,              0,  0,                                                        0, NULL}
 };
 
 static CMDENT *prefix_cmds[256];
@@ -782,10 +782,10 @@ void commands_no_arg_add(CMDENT_NO_ARG cmdent[])
     CMDENT_NO_ARG *cp0a;
     for (cp0a = cmdent; cp0a->cmdname; cp0a++)
     {
-        if (!hashfindLEN(cp0a->cmdname, strlen(cp0a->cmdname),
+        if (!hashfindLEN(cp0a->cmdname, strlen((char *)cp0a->cmdname),
                          &mudstate.command_htab))
         {
-            hashaddLEN(cp0a->cmdname, strlen(cp0a->cmdname), cp0a,
+            hashaddLEN(cp0a->cmdname, strlen((char *)cp0a->cmdname), cp0a,
                        &mudstate.command_htab);
         }
     }
@@ -796,10 +796,10 @@ void commands_one_arg_add(CMDENT_ONE_ARG cmdent[])
     CMDENT_ONE_ARG *cp1a;
     for (cp1a = cmdent; cp1a->cmdname; cp1a++)
     {
-        if (!hashfindLEN(cp1a->cmdname, strlen(cp1a->cmdname),
+        if (!hashfindLEN(cp1a->cmdname, strlen((char *)cp1a->cmdname),
                         &mudstate.command_htab))
         {
-            hashaddLEN(cp1a->cmdname, strlen(cp1a->cmdname), cp1a,
+            hashaddLEN(cp1a->cmdname, strlen((char *)cp1a->cmdname), cp1a,
                        &mudstate.command_htab);
         }
     }
@@ -810,10 +810,10 @@ void commands_one_arg_cmdarg_add(CMDENT_ONE_ARG_CMDARG cmdent[])
     CMDENT_ONE_ARG_CMDARG *cp1ac;
     for (cp1ac = cmdent; cp1ac->cmdname; cp1ac++)
     {
-        if (!hashfindLEN(cp1ac->cmdname, strlen(cp1ac->cmdname),
+        if (!hashfindLEN(cp1ac->cmdname, strlen((char *)cp1ac->cmdname),
                          &mudstate.command_htab))
         {
-            hashaddLEN(cp1ac->cmdname, strlen(cp1ac->cmdname), cp1ac,
+            hashaddLEN(cp1ac->cmdname, strlen((char *)cp1ac->cmdname), cp1ac,
                        &mudstate.command_htab);
         }
     }
@@ -824,10 +824,10 @@ void commands_two_arg_add(CMDENT_TWO_ARG cmdent[])
     CMDENT_TWO_ARG *cp2a;
     for (cp2a = cmdent; cp2a->cmdname; cp2a++)
     {
-        if (!hashfindLEN(cp2a->cmdname, strlen(cp2a->cmdname),
+        if (!hashfindLEN(cp2a->cmdname, strlen((char *)cp2a->cmdname),
                          &mudstate.command_htab))
         {
-            hashaddLEN(cp2a->cmdname, strlen(cp2a->cmdname), cp2a,
+            hashaddLEN(cp2a->cmdname, strlen((char *)cp2a->cmdname), cp2a,
                        &mudstate.command_htab);
         }
     }
@@ -838,10 +838,10 @@ void commands_two_arg_argv_add(CMDENT_TWO_ARG_ARGV cmdent[])
     CMDENT_TWO_ARG_ARGV *cp2aa;
     for (cp2aa = cmdent; cp2aa->cmdname; cp2aa++)
     {
-        if (!hashfindLEN(cp2aa->cmdname, strlen(cp2aa->cmdname),
+        if (!hashfindLEN(cp2aa->cmdname, strlen((char *)cp2aa->cmdname),
                          &mudstate.command_htab))
         {
-            hashaddLEN(cp2aa->cmdname, strlen(cp2aa->cmdname), cp2aa,
+            hashaddLEN(cp2aa->cmdname, strlen((char *)cp2aa->cmdname), cp2aa,
                        &mudstate.command_htab);
         }
     }
@@ -852,10 +852,10 @@ void commands_two_arg_cmdarg_add(CMDENT_TWO_ARG_CMDARG cmdent[])
     CMDENT_TWO_ARG_CMDARG  *cp2ac;
     for (cp2ac = cmdent; cp2ac->cmdname; cp2ac++)
     {
-        if (!hashfindLEN(cp2ac->cmdname, strlen(cp2ac->cmdname),
+        if (!hashfindLEN(cp2ac->cmdname, strlen((char *)cp2ac->cmdname),
                          &mudstate.command_htab))
         {
-            hashaddLEN(cp2ac->cmdname, strlen(cp2ac->cmdname), cp2ac,
+            hashaddLEN(cp2ac->cmdname, strlen((char *)cp2ac->cmdname), cp2ac,
                        &mudstate.command_htab);
         }
     }
@@ -866,10 +866,10 @@ void commands_two_arg_argv_cmdarg_add(CMDENT_TWO_ARG_ARGV_CMDARG cmdent[])
     CMDENT_TWO_ARG_ARGV_CMDARG  *cp2aac;
     for (cp2aac = cmdent; cp2aac->cmdname; cp2aac++)
     {
-        if (!hashfindLEN(cp2aac->cmdname, strlen(cp2aac->cmdname),
+        if (!hashfindLEN(cp2aac->cmdname, strlen((char *)cp2aac->cmdname),
                          &mudstate.command_htab))
         {
-            hashaddLEN(cp2aac->cmdname, strlen(cp2aac->cmdname), cp2aac,
+            hashaddLEN(cp2aac->cmdname, strlen((char *)cp2aac->cmdname), cp2aac,
                        &mudstate.command_htab);
         }
     }
@@ -908,7 +908,7 @@ void init_cmdtab(void)
 
         if (NULL != cp2a)
         {
-            cp2a->cmdname = StringClone((char *)cbuff);
+            cp2a->cmdname = StringClone(cbuff);
             cp2a->perms = CA_NO_GUEST | CA_NO_SLAVE;
             cp2a->switches = NULL;
             if (ap->flags & (AF_WIZARD | AF_MDARK))
@@ -1057,7 +1057,7 @@ static bool process_hook(dbref executor, dbref thing, UTF8 *s_uselock, ATTR *hk_
         dbref aowner;
         int aflags;
         int anum = hk_attr->number;
-        char *atext = atr_get("process_hook.1060", thing, anum, &aowner, &aflags);
+        UTF8 *atext = atr_get("process_hook.1060", thing, anum, &aowner, &aflags);
         if (atext[0] && !(aflags & AF_NOPROG))
         {
             reg_ref **preserve = NULL;
@@ -1066,7 +1066,7 @@ static bool process_hook(dbref executor, dbref thing, UTF8 *s_uselock, ATTR *hk_
                 preserve = PushRegisters(MAX_GLOBAL_REGS);
                 save_global_regs(preserve);
             }
-            char *buff, *bufc;
+            UTF8 *buff, *bufc;
             bufc = buff = alloc_lbuf("process_hook");
             mux_exec(atext, buff, &bufc, thing, executor, executor,
                 AttrTrace(aflags, EV_FCHECK|EV_EVAL), NULL, 0);
@@ -1084,7 +1084,7 @@ static bool process_hook(dbref executor, dbref thing, UTF8 *s_uselock, ATTR *hk_
     return retval;
 }
 
-static UTF8 *hook_name(char *pCommand, int key)
+static UTF8 *hook_name(UTF8 *pCommand, int key)
 {
     char *keylet;
     switch (key)
@@ -1108,25 +1108,25 @@ static UTF8 *hook_name(char *pCommand, int key)
         return NULL;
     }
 
-    const char *cmdName = pCommand;
+    const UTF8 *cmdName = pCommand;
     if (  pCommand[0]
        && !pCommand[1])
     {
         switch (pCommand[0])
         {
-        case '"' : cmdName = "say";    break;
+        case '"' : cmdName = (UTF8 *)"say";    break;
         case ':' :
-        case ';' : cmdName = "pose";   break;
-        case '\\': cmdName = "@emit";  break;
-        case '#' : cmdName = "@force"; break;
-        case '&' : cmdName = "@set";   break;
-        case '-' : cmdName = "@mail";  break;
-        case '~' : cmdName = "@mail";  break;
+        case ';' : cmdName = (UTF8 *)"pose";   break;
+        case '\\': cmdName = (UTF8 *)"@emit";  break;
+        case '#' : cmdName = (UTF8 *)"@force"; break;
+        case '&' : cmdName = (UTF8 *)"@set";   break;
+        case '-' : cmdName = (UTF8 *)"@mail";  break;
+        case '~' : cmdName = (UTF8 *)"@mail";  break;
         }
     }
 
-    UTF8 *s_uselock = (UTF8 *)alloc_sbuf("command_hook.hookname");
-    mux_sprintf((char *)s_uselock, SBUF_SIZE, "%s_%s", keylet, cmdName);
+    UTF8 *s_uselock = alloc_sbuf("command_hook.hookname");
+    mux_sprintf(s_uselock, SBUF_SIZE, "%s_%s", keylet, cmdName);
     return s_uselock;
 }
 
@@ -1134,15 +1134,15 @@ static UTF8 *hook_name(char *pCommand, int key)
  * process_cmdent: Perform indicated command with passed args.
  */
 
-static void process_cmdent(CMDENT *cmdp, char *switchp, dbref executor, dbref caller,
-            dbref enactor, int eval, bool interactive, char *arg, char *unp_command,
-            char *cargs[], int ncargs)
+static void process_cmdent(CMDENT *cmdp, UTF8 *switchp, dbref executor, dbref caller,
+            dbref enactor, int eval, bool interactive, UTF8 *arg, UTF8 *unp_command,
+            UTF8 *cargs[], int ncargs)
 {
     // Perform object type checks.
     //
     if (Invalid_Objtype(executor))
     {
-        notify(executor, "Command incompatible with executor type.");
+        notify(executor, (UTF8 *)"Command incompatible with executor type.");
         return;
     }
 
@@ -1160,21 +1160,21 @@ static void process_cmdent(CMDENT *cmdp, char *switchp, dbref executor, dbref ca
        && Protect(CA_GBL_BUILD)
        && !(mudconf.control_flags & CF_BUILD))
     {
-        notify(executor, "Sorry, building is not allowed now.");
+        notify(executor, (UTF8 *)"Sorry, building is not allowed now.");
         return;
     }
     if (Protect(CA_GBL_INTERP) && !(mudconf.control_flags & CF_INTERP))
     {
-        notify(executor, "Sorry, queueing and triggering are not allowed now.");
+        notify(executor, (UTF8 *)"Sorry, queueing and triggering are not allowed now.");
         return;
     }
 
     UTF8 *s_uselock;
-    char *buf1, *buf2, tchar, *bp, *str, *buff, *j, *new0;
-    char *args[MAX_ARG];
+    UTF8 *buf1, *buf2, tchar, *bp, *str, *buff, *j, *new0;
+    UTF8 *args[MAX_ARG];
     int nargs, i, interp, key, xkey, aflags;
     dbref aowner;
-    char *aargs[NUM_ENV_VARS];
+    UTF8 *aargs[NUM_ENV_VARS];
     ADDENT *add;
     ATTR *hk_ap2;
 
@@ -1198,7 +1198,7 @@ static void process_cmdent(CMDENT *cmdp, char *switchp, dbref executor, dbref ca
     {
         do
         {
-            buf1 = strchr(switchp, '/');
+            buf1 = (UTF8 *)strchr((char *)switchp, '/');
             if (buf1)
             {
                 *buf1++ = '\0';
@@ -1222,7 +1222,7 @@ static void process_cmdent(CMDENT *cmdp, char *switchp, dbref executor, dbref ca
             {
                 if (i == 1)
                 {
-                    notify(executor, "Illegal combination of switches.");
+                    notify(executor, (UTF8 *)"Illegal combination of switches.");
                     return;
                 }
                 i = 1;
@@ -1584,9 +1584,9 @@ static void process_cmdent(CMDENT *cmdp, char *switchp, dbref executor, dbref ca
     return;
 }
 
-static int cmdtest(dbref player, char *cmd)
+static int cmdtest(dbref player, UTF8 *cmd)
 {
-    char *buff1, *pt1, *pt2;
+    UTF8 *buff1, *pt1, *pt2;
     dbref aowner;
     int aflags, rval;
 
@@ -1595,10 +1595,10 @@ static int cmdtest(dbref player, char *cmd)
     pt1 = buff1;
     while (pt1 && *pt1)
     {
-        pt2 = strchr(pt1, ':');
+        pt2 = (UTF8 *)strchr((char *)pt1, ':');
         if (!pt2 || (pt2 == pt1))
             break;
-        if (!strncmp(pt2+1, cmd, strlen(cmd)))
+        if (!strncmp((char *)pt2+1, (char *)cmd, strlen((char *)cmd)))
         {
             if (*(pt2-1) == '1')
                 rval = 1;
@@ -1606,7 +1606,7 @@ static int cmdtest(dbref player, char *cmd)
                 rval = 2;
             break;
         }
-        pt1 = strchr(pt2+1,' ');
+        pt1 = (UTF8 *)strchr((char *)pt2+1,' ');
         if (pt1 && *pt1)
         {
             while (mux_isspace(*pt1))
@@ -1619,7 +1619,7 @@ static int cmdtest(dbref player, char *cmd)
     return rval;
 }
 
-static int zonecmdtest(dbref player, char *cmd)
+static int zonecmdtest(dbref player, UTF8 *cmd)
 {
     if (!Good_obj(player) || God(player))
     {
@@ -1646,7 +1646,7 @@ static int zonecmdtest(dbref player, char *cmd)
 }
 
 static int higcheck(dbref executor, dbref caller, dbref enactor, CMDENT *cmdp,
-             char *pCommand)
+             UTF8 *pCommand)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
@@ -1686,7 +1686,7 @@ static int higcheck(dbref executor, dbref caller, dbref enactor, CMDENT *cmdp,
     return 0;
 }
 
-static void hook_fail(dbref executor, CMDENT *cmdp, char *pCommand)
+static void hook_fail(dbref executor, CMDENT *cmdp, UTF8 *pCommand)
 {
     UNUSED_PARAMETER(pCommand);
 
@@ -1703,24 +1703,24 @@ static void hook_fail(dbref executor, CMDENT *cmdp, char *pCommand)
 // ---------------------------------------------------------------------------
 // process_command: Execute a command.
 //
-char *process_command
+UTF8 *process_command
 (
     dbref executor,
     dbref caller,
     dbref enactor,
     int   eval,
     bool  interactive,
-    char *arg_command,
-    char *args[],
+    UTF8 *arg_command,
+    UTF8 *args[],
     int   nargs
 )
 {
-    static char preserve_cmd[LBUF_SIZE];
-    char *pOriginalCommand = arg_command;
-    static char SpaceCompressCommand[LBUF_SIZE];
-    static char LowerCaseCommand[LBUF_SIZE];
-    char *pCommand;
-    char *p, *q, *arg, *pSlash, *cmdsave, *bp, check2[2];
+    static UTF8 preserve_cmd[LBUF_SIZE];
+    UTF8 *pOriginalCommand = arg_command;
+    static UTF8 SpaceCompressCommand[LBUF_SIZE];
+    static UTF8 LowerCaseCommand[LBUF_SIZE];
+    UTF8 *pCommand;
+    UTF8 *p, *q, *arg, *pSlash, *cmdsave, *bp, check2[2];
     int aflags;
     dbref exit, aowner;
     CMDENT *cmdp;
@@ -1728,7 +1728,7 @@ char *process_command
     // Robustify player.
     //
     cmdsave = mudstate.debug_cmd;
-    mudstate.debug_cmd = (char *)"< process_command >";
+    mudstate.debug_cmd = (UTF8 *)"< process_command >";
     mudstate.nStackNest = 0;
     mudstate.bStackLimitReached = false;
     *(check2 + 1) = '\0';
@@ -1737,7 +1737,7 @@ char *process_command
 
     if (!Good_obj(executor))
     {
-        STARTLOG(LOG_BUGS, "CMD", "PLYR");
+        STARTLOG(LOG_BUGS, (UTF8 *)"CMD", (UTF8 *)"PLYR");
         log_printf("Bad player in process_command: %d", executor);
         ENDLOG;
         mudstate.debug_cmd = cmdsave;
@@ -1759,17 +1759,17 @@ char *process_command
     if (  Suspect(executor)
        && (mudconf.log_options & LOG_SUSPECTCMDS))
     {
-        STARTLOG(LOG_SUSPECTCMDS, "CMD", "SUSP");
+        STARTLOG(LOG_SUSPECTCMDS, (UTF8 *)"CMD", (UTF8 *)"SUSP");
         log_name_and_loc(executor);
-        log_text(" entered: ");
+        log_text((UTF8 *)" entered: ");
         log_text(pOriginalCommand);
         ENDLOG;
     }
     else
     {
-        STARTLOG(LOG_ALLCOMMANDS, "CMD", "ALL");
+        STARTLOG(LOG_ALLCOMMANDS, (UTF8 *)"CMD", (UTF8 *)"ALL");
         log_name_and_loc(executor);
-        log_text(" entered: ");
+        log_text((UTF8 *)" entered: ");
         log_text(pOriginalCommand);
         ENDLOG;
     }
@@ -1840,7 +1840,7 @@ char *process_command
     // most frequently executed commands, and they can never be the
     // HOME command.
     //
-    unsigned char i = (unsigned char)pCommand[0];
+    UTF8 i = (UTF8)pCommand[0];
     int cval = 0;
     int hval = 0;
     if (  '\0' != i
@@ -1850,7 +1850,7 @@ char *process_command
         // Both from RhostMUSH.
         // cval/hval values: 0 normal, 1 disable, 2 ignore
         //
-        *check2 = (char)i;
+        *check2 = i;
         if (CmdCheck(executor))
         {
             cval = cmdtest(executor, check2);
@@ -1899,9 +1899,9 @@ char *process_command
                 eval, interactive, pCommand, pCommand, args, nargs);
             if (mudstate.bStackLimitReached)
             {
-                STARTLOG(LOG_ALWAYS, "CMD", "SPAM");
+                STARTLOG(LOG_ALWAYS, (UTF8 *)"CMD", (UTF8 *)"SPAM");
                 log_name_and_loc(executor);
-                log_text(" entered: ");
+                log_text((UTF8 *)" entered: ");
                 log_text(pOriginalCommand);
                 ENDLOG;
             }
@@ -1923,7 +1923,7 @@ char *process_command
     // Check for the HOME command.
     //
     if (  Has_location(executor)
-       && string_compare(pCommand, "home") == 0)
+       && string_compare(pCommand, (UTF8 *)"home") == 0)
     {
         // CmdCheck tests for @icmd. higcheck tests for i/p hooks.
         // Both from RhostMUSH.
@@ -1931,11 +1931,11 @@ char *process_command
         //
         if (CmdCheck(executor))
         {
-            cval = cmdtest(executor, "home");
+            cval = cmdtest(executor, (UTF8 *)"home");
         }
         else if (CmdCheck(Owner(executor)))
         {
-            cval = cmdtest(Owner(executor), "home");
+            cval = cmdtest(Owner(executor), (UTF8 *)"home");
         }
         else
         {
@@ -1944,7 +1944,7 @@ char *process_command
 
         if (cval == 0)
         {
-            cval = zonecmdtest(executor, "home");
+            cval = zonecmdtest(executor, (UTF8 *)"home");
         }
 
         if (cval != 2)
@@ -1969,7 +1969,7 @@ char *process_command
                 mudstate.debug_cmd = cmdsave;
                 return preserve_cmd;
             }
-            do_move(executor, caller, enactor, eval, 0, "home");
+            do_move(executor, caller, enactor, eval, 0, (UTF8 *)"home");
             mudstate.debug_cmd = cmdsave;
             return preserve_cmd;
         }
@@ -1986,11 +1986,11 @@ char *process_command
         //
         if (CmdCheck(executor))
         {
-            cval = cmdtest(executor, "goto");
+            cval = cmdtest(executor, (UTF8 *)"goto");
         }
         else if (CmdCheck(Owner(executor)))
         {
-            cval = cmdtest(Owner(executor), "goto");
+            cval = cmdtest(Owner(executor), (UTF8 *)"goto");
         }
         else
         {
@@ -1999,12 +1999,12 @@ char *process_command
 
         if (cval == 0)
         {
-            cval = zonecmdtest(executor, "goto");
+            cval = zonecmdtest(executor, (UTF8 *)"goto");
         }
 
         if (goto_cmdp->hookmask & (HOOK_IGNORE|HOOK_PERMIT))
         {
-            hval = higcheck(executor, caller, enactor, goto_cmdp, "goto");
+            hval = higcheck(executor, caller, enactor, goto_cmdp, (UTF8 *)"goto");
         }
         else
         {
@@ -2025,7 +2025,7 @@ char *process_command
                 {
                     if (goto_cmdp->hookmask & HOOK_AFAIL)
                     {
-                        hook_fail(executor, goto_cmdp, "goto");
+                        hook_fail(executor, goto_cmdp, (UTF8 *)"goto");
                     }
                     else
                     {
@@ -2034,7 +2034,7 @@ char *process_command
                     mudstate.debug_cmd = cmdsave;
                     return preserve_cmd;
                 }
-                move_exit(executor, exit, false, "You can't go that way.", 0);
+                move_exit(executor, exit, false, (UTF8 *)"You can't go that way.", 0);
                 mudstate.debug_cmd = cmdsave;
                 return preserve_cmd;
             }
@@ -2086,7 +2086,7 @@ char *process_command
 
     // Strip off any command switches and save them.
     //
-    pSlash = strchr(LowerCaseCommand, '/');
+    pSlash = (UTF8 *)strchr((char *)LowerCaseCommand, '/');
     if (pSlash)
     {
         nLowerCaseCommand = pSlash - LowerCaseCommand;
@@ -2147,11 +2147,11 @@ char *process_command
                 {
                     MUX_STRTOK_STATE ttswitch;
                     // All the switches given a command shouldn't exceed 200 chars together
-                    char switch_buff[200];
-                    char *switch_ptr;
+                    UTF8 switch_buff[200];
+                    UTF8 *switch_ptr;
                     mux_strncpy(switch_buff, pSlash, sizeof(switch_buff)-1);
                     mux_strtok_src(&ttswitch, switch_buff);
-                    mux_strtok_ctl(&ttswitch, "/");
+                    mux_strtok_ctl(&ttswitch, (UTF8 *)"/");
                     switch_ptr = mux_strtok_parse(&ttswitch);
                     while (  switch_ptr
                           && *switch_ptr)
@@ -2218,9 +2218,9 @@ char *process_command
                 interactive, arg, pCommand, args, nargs);
             if (mudstate.bStackLimitReached)
             {
-                STARTLOG(LOG_ALWAYS, "CMD", "SPAM");
+                STARTLOG(LOG_ALWAYS, (UTF8 *)"CMD", (UTF8 *)"SPAM");
                 log_name_and_loc(executor);
-                log_text(" entered: ");
+                log_text((UTF8 *)" entered: ");
                 log_text(pOriginalCommand);
                 ENDLOG;
             }
@@ -2261,11 +2261,11 @@ char *process_command
                 //
                 if (CmdCheck(executor))
                 {
-                    cval = cmdtest(executor, "leave");
+                    cval = cmdtest(executor, (UTF8 *)"leave");
                 }
                 else if (CmdCheck(Owner(executor)))
                 {
-                    cval = cmdtest(Owner(executor), "leave");
+                    cval = cmdtest(Owner(executor), (UTF8 *)"leave");
                 }
                 else
                 {
@@ -2274,14 +2274,14 @@ char *process_command
 
                 if (cval == 0)
                 {
-                    cval = zonecmdtest(executor, "leave");
+                    cval = zonecmdtest(executor, (UTF8 *)"leave");
                 }
 
                 cmdp = (CMDENT *)hashfindLEN("leave", strlen("leave"), &mudstate.command_htab);
 
                 if (cmdp->hookmask & (HOOK_IGNORE|HOOK_PERMIT))
                 {
-                    hval = higcheck(executor, caller, enactor, cmdp, "leave");
+                    hval = higcheck(executor, caller, enactor, cmdp, (UTF8 *)"leave");
                 }
                 else
                 {
@@ -2296,7 +2296,7 @@ char *process_command
                     {
                         if (cmdp->hookmask & HOOK_AFAIL)
                         {
-                            hook_fail(executor, cmdp, "leave");
+                            hook_fail(executor, cmdp, (UTF8 *)"leave");
                         }
                         else
                         {
@@ -2330,11 +2330,11 @@ char *process_command
                     //
                     if (CmdCheck(executor))
                     {
-                        cval = cmdtest(executor, "enter");
+                        cval = cmdtest(executor, (UTF8 *)"enter");
                     }
                     else if (CmdCheck(Owner(executor)))
                     {
-                        cval = cmdtest(Owner(executor), "enter");
+                        cval = cmdtest(Owner(executor), (UTF8 *)"enter");
                     }
                     else
                     {
@@ -2343,14 +2343,14 @@ char *process_command
 
                     if (cval == 0)
                     {
-                        cval = zonecmdtest(executor, "enter");
+                        cval = zonecmdtest(executor, (UTF8 *)"enter");
                     }
 
                     cmdp = (CMDENT *)hashfindLEN("enter", strlen("enter"), &mudstate.command_htab);
 
                     if (cmdp->hookmask & (HOOK_IGNORE|HOOK_PERMIT))
                     {
-                        hval = higcheck(executor, caller, enactor, cmdp, "enter");
+                        hval = higcheck(executor, caller, enactor, cmdp, (UTF8 *)"enter");
                     }
                     else
                     {
@@ -2365,7 +2365,7 @@ char *process_command
                         {
                             if (cmdp->hookmask & HOOK_AFAIL)
                             {
-                                hook_fail(executor, cmdp, "enter");
+                                hook_fail(executor, cmdp, (UTF8 *)"enter");
                             }
                             else
                             {
@@ -2509,9 +2509,9 @@ char *process_command
         if (  Good_obj(mudconf.global_error_obj)
            && !Going(mudconf.global_error_obj))
         {
-            char *errtext = atr_get("process_command.2491", mudconf.global_error_obj, A_VA, &aowner, &aflags);
-            char *errbuff = alloc_lbuf("process_command.error_msg");
-            char *errbufc = errbuff;
+            UTF8 *errtext = atr_get("process_command.2491", mudconf.global_error_obj, A_VA, &aowner, &aflags);
+            UTF8 *errbuff = alloc_lbuf("process_command.error_msg");
+            UTF8 *errbufc = errbuff;
             mux_exec(errtext, errbuff, &errbufc, mudconf.global_error_obj, caller, enactor,
                 AttrTrace(aflags, EV_EVAL|EV_FCHECK|EV_STRIP_CURLY|EV_TOP),
                 &pCommand, 1);
@@ -2523,10 +2523,10 @@ char *process_command
         {
             // We use LowerCaseCommand for another purpose.
             //
-            notify(executor, "Huh?  (Type \"help\" for help.)");
+            notify(executor, (UTF8 *)"Huh?  (Type \"help\" for help.)");
             STARTLOG(LOG_BADCOMMANDS, "CMD", "BAD");
             log_name_and_loc(executor);
-            log_text(" entered: ");
+            log_text((UTF8 *)" entered: ");
             log_text(pCommand);
             ENDLOG;
         }
@@ -2540,11 +2540,11 @@ char *process_command
 //
 static void list_cmdtable(dbref player)
 {
-    char *buf = alloc_lbuf("list_cmdtable");
-    char *bp = buf;
+    UTF8 *buf = alloc_lbuf("list_cmdtable");
+    UTF8 *bp = buf;
     ITL itl;
     ItemToList_Init(&itl, buf, &bp);
-    ItemToList_AddString(&itl, (char *)"Commands:");
+    ItemToList_AddString(&itl, (UTF8 *)"Commands:");
 
     {
         CMDENT_NO_ARG *cmdp;
@@ -2646,16 +2646,16 @@ static void list_attrtable(dbref player)
 {
     ATTR *ap;
 
-    char *buf = alloc_lbuf("list_attrtable");
-    char *bp = buf;
+    UTF8 *buf = alloc_lbuf("list_attrtable");
+    UTF8 *bp = buf;
     ITL itl;
     ItemToList_Init(&itl, buf, &bp);
-    ItemToList_AddString(&itl, (char *)"Attributes:");
+    ItemToList_AddString(&itl, (UTF8 *)"Attributes:");
     for (ap = AttrTable; ap->name; ap++)
     {
         if (See_attr(player, player, ap))
         {
-            ItemToList_AddString(&itl, (char *)ap->name);
+            ItemToList_AddString(&itl, (UTF8 *)ap->name);
         }
     }
     ItemToList_Final(&itl);
@@ -2669,42 +2669,42 @@ static void list_attrtable(dbref player)
 //
 NAMETAB access_nametab[] =
 {
-    {"builder",               6, CA_WIZARD, CA_BUILDER},
+    {(UTF8 *)"builder",               6, CA_WIZARD, CA_BUILDER},
 #if !defined(FIRANMUX)
-    {"dark",                  4, CA_GOD,    CF_DARK},
+    {(UTF8 *)"dark",                  4, CA_GOD,    CF_DARK},
 #endif // FIRANMUX
-    {"disabled",              4, CA_GOD,    CA_DISABLED},
-    {"global_build",          8, CA_PUBLIC, CA_GBL_BUILD},
-    {"global_interp",         8, CA_PUBLIC, CA_GBL_INTERP},
-    {"god",                   2, CA_GOD,    CA_GOD},
-    {"head",                  2, CA_WIZARD, CA_HEAD},
-    {"immortal",              3, CA_WIZARD, CA_IMMORTAL},
-    {"need_location",         6, CA_PUBLIC, CA_LOCATION},
-    {"need_contents",         6, CA_PUBLIC, CA_CONTENTS},
-    {"need_player",           6, CA_PUBLIC, CA_PLAYER},
-    {"no_haven",              4, CA_PUBLIC, CA_NO_HAVEN},
+    {(UTF8 *)"disabled",              4, CA_GOD,    CA_DISABLED},
+    {(UTF8 *)"global_build",          8, CA_PUBLIC, CA_GBL_BUILD},
+    {(UTF8 *)"global_interp",         8, CA_PUBLIC, CA_GBL_INTERP},
+    {(UTF8 *)"god",                   2, CA_GOD,    CA_GOD},
+    {(UTF8 *)"head",                  2, CA_WIZARD, CA_HEAD},
+    {(UTF8 *)"immortal",              3, CA_WIZARD, CA_IMMORTAL},
+    {(UTF8 *)"need_location",         6, CA_PUBLIC, CA_LOCATION},
+    {(UTF8 *)"need_contents",         6, CA_PUBLIC, CA_CONTENTS},
+    {(UTF8 *)"need_player",           6, CA_PUBLIC, CA_PLAYER},
+    {(UTF8 *)"no_haven",              4, CA_PUBLIC, CA_NO_HAVEN},
 #if defined(FIRANMUX)
-    {"no_immobile",           5, CA_WIZARD, CA_NO_IMMOBILE},
-    {"no_restricted",         6, CA_WIZARD, CA_NO_RESTRICTED},
+    {(UTF8 *)"no_immobile",           5, CA_WIZARD, CA_NO_IMMOBILE},
+    {(UTF8 *)"no_restricted",         6, CA_WIZARD, CA_NO_RESTRICTED},
 #endif // FIRANMUX
-    {"no_robot",              4, CA_WIZARD, CA_NO_ROBOT},
-    {"no_slave",              5, CA_PUBLIC, CA_NO_SLAVE},
-    {"no_suspect",            5, CA_WIZARD, CA_NO_SUSPECT},
-    {"no_guest",              5, CA_WIZARD, CA_NO_GUEST},
-    {"no_uninspected",        5, CA_WIZARD, CA_NO_UNINS},
-    {"robot",                 2, CA_WIZARD, CA_ROBOT},
-    {"staff",                 4, CA_WIZARD, CA_STAFF},
-    {"static",                4, CA_GOD,    CA_STATIC},
-    {"uninspected",           5, CA_WIZARD, CA_UNINS},
-    {"wizard",                3, CA_WIZARD, CA_WIZARD},
-    {NULL,                    0, 0,         0}
+    {(UTF8 *)"no_robot",              4, CA_WIZARD, CA_NO_ROBOT},
+    {(UTF8 *)"no_slave",              5, CA_PUBLIC, CA_NO_SLAVE},
+    {(UTF8 *)"no_suspect",            5, CA_WIZARD, CA_NO_SUSPECT},
+    {(UTF8 *)"no_guest",              5, CA_WIZARD, CA_NO_GUEST},
+    {(UTF8 *)"no_uninspected",        5, CA_WIZARD, CA_NO_UNINS},
+    {(UTF8 *)"robot",                 2, CA_WIZARD, CA_ROBOT},
+    {(UTF8 *)"staff",                 4, CA_WIZARD, CA_STAFF},
+    {(UTF8 *)"static",                4, CA_GOD,    CA_STATIC},
+    {(UTF8 *)"uninspected",           5, CA_WIZARD, CA_UNINS},
+    {(UTF8 *)"wizard",                3, CA_WIZARD, CA_WIZARD},
+    {(UTF8 *)NULL,                    0, 0,         0}
 };
 
 static void list_cmdaccess(dbref player)
 {
     ATTR *ap;
 
-    char *buff = alloc_sbuf("list_cmdaccess");
+    UTF8 *buff = alloc_sbuf("list_cmdaccess");
     {
         CMDENT_NO_ARG *cmdp;
         for (cmdp = command_table_no_arg; cmdp->cmdname; cmdp++)
@@ -2820,7 +2820,7 @@ static void list_cmdaccess(dbref player)
         if (!(cmdp->perms & CF_DARK))
         {
             mux_sprintf(buff, SBUF_SIZE, "%.60s:", cmdp->cmdname);
-            listset_nametab(player, access_nametab, cmdp->perms, (char *)buff2, true);
+            listset_nametab(player, access_nametab, cmdp->perms, buff2, true);
         }
     }
 }
@@ -2830,7 +2830,7 @@ static void list_cmdaccess(dbref player)
 //
 static void list_cmdswitches(dbref player)
 {
-    char *buff = alloc_sbuf("list_cmdswitches");
+    UTF8 *buff = alloc_sbuf("list_cmdswitches");
     {
         CMDENT_NO_ARG *cmdp;
         for (cmdp = command_table_no_arg; cmdp->cmdname; cmdp++)
@@ -2958,45 +2958,45 @@ static void list_cmdswitches(dbref player)
 //
 NAMETAB attraccess_nametab[] =
 {
-    {"const",       1,  CA_PUBLIC,  AF_CONST},
-    {"dark",        2,  CA_WIZARD,  AF_DARK},
-    {"deleted",     2,  CA_WIZARD,  AF_DELETED},
-    {"god",         1,  CA_PUBLIC,  AF_GOD},
-    {"hidden",      1,  CA_WIZARD,  AF_MDARK},
-    {"ignore",      2,  CA_WIZARD,  AF_NOCMD},
-    {"internal",    2,  CA_WIZARD,  AF_INTERNAL},
-    {"is_lock",     4,  CA_PUBLIC,  AF_IS_LOCK},
-    {"locked",      1,  CA_PUBLIC,  AF_LOCK},
-    {"no_command",  4,  CA_PUBLIC,  AF_NOPROG},
-    {"no_inherit",  4,  CA_PUBLIC,  AF_PRIVATE},
-    {"private",     1,  CA_PUBLIC,  AF_ODARK},
-    {"regexp",      1,  CA_PUBLIC,  AF_REGEXP},
-    {"visual",      1,  CA_PUBLIC,  AF_VISUAL},
-    {"wizard",      1,  CA_PUBLIC,  AF_WIZARD},
-    { NULL,         0,          0,          0}
+    {(UTF8 *)"const",       1,  CA_PUBLIC,  AF_CONST},
+    {(UTF8 *)"dark",        2,  CA_WIZARD,  AF_DARK},
+    {(UTF8 *)"deleted",     2,  CA_WIZARD,  AF_DELETED},
+    {(UTF8 *)"god",         1,  CA_PUBLIC,  AF_GOD},
+    {(UTF8 *)"hidden",      1,  CA_WIZARD,  AF_MDARK},
+    {(UTF8 *)"ignore",      2,  CA_WIZARD,  AF_NOCMD},
+    {(UTF8 *)"internal",    2,  CA_WIZARD,  AF_INTERNAL},
+    {(UTF8 *)"is_lock",     4,  CA_PUBLIC,  AF_IS_LOCK},
+    {(UTF8 *)"locked",      1,  CA_PUBLIC,  AF_LOCK},
+    {(UTF8 *)"no_command",  4,  CA_PUBLIC,  AF_NOPROG},
+    {(UTF8 *)"no_inherit",  4,  CA_PUBLIC,  AF_PRIVATE},
+    {(UTF8 *)"private",     1,  CA_PUBLIC,  AF_ODARK},
+    {(UTF8 *)"regexp",      1,  CA_PUBLIC,  AF_REGEXP},
+    {(UTF8 *)"visual",      1,  CA_PUBLIC,  AF_VISUAL},
+    {(UTF8 *)"wizard",      1,  CA_PUBLIC,  AF_WIZARD},
+    {(UTF8 *) NULL,         0,          0,          0}
 };
 
 NAMETAB indiv_attraccess_nametab[] =
 {
-    {"case",                1,  CA_PUBLIC,  AF_CASE},
-    {"hidden",              1,  CA_WIZARD,  AF_MDARK},
-    {"html",                2,  CA_PUBLIC,  AF_HTML},
-    {"no_command",          4,  CA_PUBLIC,  AF_NOPROG},
-    {"no_inherit",          4,  CA_PUBLIC,  AF_PRIVATE},
-    {"no_name",             4,  CA_PUBLIC,  AF_NONAME},
-    {"no_parse",            4,  CA_PUBLIC,  AF_NOPARSE},
-    {"regexp",              1,  CA_PUBLIC,  AF_REGEXP},
-    {"trace",               1,  CA_PUBLIC,  AF_TRACE},
-    {"visual",              1,  CA_PUBLIC,  AF_VISUAL},
-    {"wizard",              1,  CA_WIZARD,  AF_WIZARD},
-    { NULL,                 0,          0,          0}
+    {(UTF8 *)"case",                1,  CA_PUBLIC,  AF_CASE},
+    {(UTF8 *)"hidden",              1,  CA_WIZARD,  AF_MDARK},
+    {(UTF8 *)"html",                2,  CA_PUBLIC,  AF_HTML},
+    {(UTF8 *)"no_command",          4,  CA_PUBLIC,  AF_NOPROG},
+    {(UTF8 *)"no_inherit",          4,  CA_PUBLIC,  AF_PRIVATE},
+    {(UTF8 *)"no_name",             4,  CA_PUBLIC,  AF_NONAME},
+    {(UTF8 *)"no_parse",            4,  CA_PUBLIC,  AF_NOPARSE},
+    {(UTF8 *)"regexp",              1,  CA_PUBLIC,  AF_REGEXP},
+    {(UTF8 *)"trace",               1,  CA_PUBLIC,  AF_TRACE},
+    {(UTF8 *)"visual",              1,  CA_PUBLIC,  AF_VISUAL},
+    {(UTF8 *)"wizard",              1,  CA_WIZARD,  AF_WIZARD},
+    {(UTF8 *) NULL,                 0,          0,          0}
 };
 
 static void list_attraccess(dbref player)
 {
     ATTR *ap;
 
-    char *buff = alloc_sbuf("list_attraccess");
+    UTF8 *buff = alloc_sbuf("list_attraccess");
     for (ap = AttrTable; ap->name; ap++)
     {
         if (bCanReadAttr(player, player, ap, false))
@@ -3016,7 +3016,7 @@ CF_HAND(cf_access)
     UNUSED_PARAMETER(vp);
 
     CMDENT *cmdp;
-    char *ap;
+    UTF8 *ap;
     bool set_switch;
 
     for (ap = str; *ap && !mux_isspace(*ap) && (*ap != '/'); ap++) ;
@@ -3038,7 +3038,7 @@ CF_HAND(cf_access)
         }
     }
 
-    cmdp = (CMDENT *)hashfindLEN(str, strlen(str), &mudstate.command_htab);
+    cmdp = (CMDENT *)hashfindLEN(str, strlen((char *)str), &mudstate.command_htab);
     if (cmdp != NULL)
     {
         if (set_switch)
@@ -3054,12 +3054,12 @@ CF_HAND(cf_access)
     }
     else
     {
-        if (!mux_stricmp(str, "home"))
+        if (!mux_stricmp(str, (UTF8 *)"home"))
         {
             return cf_modify_bits(&(mudconf.restrict_home), ap, pExtra,
                                   nExtra, player, cmd);
         }
-        cf_log_notfound(player, cmd, "Command", str);
+        cf_log_notfound(player, cmd, (UTF8 *)"Command", str);
         return -1;
     }
 }
@@ -3107,7 +3107,7 @@ CF_HAND(cf_attr_access)
     UNUSED_PARAMETER(vp);
 
     ATTR *ap;
-    char *sp;
+    UTF8 *sp;
 
     for (sp = str; *sp && !mux_isspace(*sp); sp++)
     {
@@ -3129,7 +3129,7 @@ CF_HAND(cf_attr_access)
     }
     else
     {
-        cf_log_notfound(player, cmd, "Attribute", str);
+        cf_log_notfound(player, cmd, (UTF8 *)"Attribute", str);
         return -1;
     }
 }
@@ -3142,15 +3142,15 @@ CF_HAND(cf_cmd_alias)
     UNUSED_PARAMETER(pExtra);
     UNUSED_PARAMETER(nExtra);
 
-    char *ap;
+    UTF8 *ap;
     CMDENT *cmdp, *cmd2;
     NAMETAB *nt;
 
     MUX_STRTOK_STATE tts;
     mux_strtok_src(&tts, str);
-    mux_strtok_ctl(&tts, " \t=,");
-    char *alias = mux_strtok_parse(&tts);
-    char *orig = mux_strtok_parse(&tts);
+    mux_strtok_ctl(&tts, (UTF8 *)" \t=,");
+    UTF8 *alias = mux_strtok_parse(&tts);
+    UTF8 *orig = mux_strtok_parse(&tts);
 
     if (!orig)
     {
@@ -3169,10 +3169,10 @@ CF_HAND(cf_cmd_alias)
 
         // Look up the command
         //
-        cmdp = (CMDENT *) hashfindLEN(orig, strlen(orig), (CHashTable *) vp);
+        cmdp = (CMDENT *) hashfindLEN(orig, strlen((char *)orig), (CHashTable *) vp);
         if (cmdp == NULL || cmdp->switches == NULL)
         {
-            cf_log_notfound(player, cmd, "Command", orig);
+            cf_log_notfound(player, cmd, (UTF8 *)"Command", orig);
             return -1;
         }
 
@@ -3181,11 +3181,11 @@ CF_HAND(cf_cmd_alias)
         nt = find_nametab_ent(player, (NAMETAB *) cmdp->switches, ap);
         if (!nt)
         {
-            cf_log_notfound(player, cmd, "Switch", ap);
+            cf_log_notfound(player, cmd, (UTF8 *)"Switch", ap);
             return -1;
         }
 
-        if (!hashfindLEN(alias, strlen(alias), (CHashTable *)vp))
+        if (!hashfindLEN(alias, strlen((char *)alias), (CHashTable *)vp))
         {
             // Create the new command table entry.
             //
@@ -3202,20 +3202,20 @@ CF_HAND(cf_cmd_alias)
             cmd2->callseq = cmdp->callseq;
             cmd2->handler = cmdp->handler;
 
-            hashaddLEN(cmd2->cmdname, strlen(cmd2->cmdname), cmd2, (CHashTable *) vp);
+            hashaddLEN(cmd2->cmdname, strlen((char *)cmd2->cmdname), cmd2, (CHashTable *) vp);
         }
     }
     else
     {
         // A normal (non-switch) alias
         //
-        void *hp = hashfindLEN(orig, strlen(orig), (CHashTable *) vp);
+        void *hp = hashfindLEN(orig, strlen((char *)orig), (CHashTable *) vp);
         if (hp == NULL)
         {
-            cf_log_notfound(player, cmd, "Entry", orig);
+            cf_log_notfound(player, cmd, (UTF8 *)"Entry", orig);
             return -1;
         }
-        hashaddLEN(alias, strlen(alias), hp, (CHashTable *) vp);
+        hashaddLEN(alias, strlen((char *)alias), hp, (CHashTable *) vp);
     }
     return 0;
 }
@@ -3229,25 +3229,25 @@ static void list_df_flags(dbref player)
 
     fs = mudconf.player_flags;
     fs.word[FLAG_WORD1] |= TYPE_PLAYER;
-    char *playerb = decode_flags(player, &fs);
+    UTF8 *playerb = decode_flags(player, &fs);
 
     fs = mudconf.room_flags;
     fs.word[FLAG_WORD1] |= TYPE_ROOM;
-    char *roomb = decode_flags(player, &fs);
+    UTF8 *roomb = decode_flags(player, &fs);
 
     fs = mudconf.exit_flags;
     fs.word[FLAG_WORD1] |= TYPE_EXIT;
-    char *exitb = decode_flags(player, &fs);
+    UTF8 *exitb = decode_flags(player, &fs);
 
     fs = mudconf.thing_flags;
     fs.word[FLAG_WORD1] |= TYPE_THING;
-    char *thingb = decode_flags(player, &fs);
+    UTF8 *thingb = decode_flags(player, &fs);
 
     fs = mudconf.robot_flags;
     fs.word[FLAG_WORD1] |= TYPE_PLAYER;
-    char *robotb = decode_flags(player, &fs);
+    UTF8 *robotb = decode_flags(player, &fs);
 
-    char *buff = alloc_lbuf("list_df_flags");
+    UTF8 *buff = alloc_lbuf("list_df_flags");
     mux_sprintf(buff, LBUF_SIZE,
         "Default flags: Players...%s Rooms...%s Exits...%s Things...%s Robots...%s",
         playerb, roomb, exitb, thingb, robotb);
@@ -3269,7 +3269,7 @@ static void list_df_flags(dbref player)
 
 static void list_costs(dbref player)
 {
-    char *buff = alloc_mbuf("list_costs");
+    UTF8 *buff = alloc_mbuf("list_costs");
 
     if (mudconf.quotas)
     {
@@ -3351,7 +3351,7 @@ static void list_costs(dbref player)
         raw_notify(player,
                tprintf("A %d %s deposit is charged for putting a command on the queue.",
                    mudconf.waitcost, mudconf.one_coin));
-        raw_notify(player, "The deposit is refunded when the command is run or canceled.");
+        raw_notify(player, (UTF8 *)"The deposit is refunded when the command is run or canceled.");
     }
     if (mudconf.sacfactor == 0)
     {
@@ -3377,7 +3377,7 @@ static void list_costs(dbref player)
     }
     raw_notify(player, tprintf("The value of an object is %s.", buff));
     if (mudconf.clone_copy_cost)
-        raw_notify(player, "The default value of cloned objects is the value of the original object.");
+        raw_notify(player, (UTF8 *)"The default value of cloned objects is the value of the original object.");
     else
         raw_notify(player, tprintf("The default value of cloned objects is %d %s.",
                 mudconf.createmin, coin_name(mudconf.createmin)));
@@ -3388,80 +3388,91 @@ static void list_costs(dbref player)
 // ---------------------------------------------------------------------------
 // list_options: List more game options from mudconf.
 //
-static const char *switchd[] =
-{"/first", "/all"};
-static const char *examd[] =
-{"/brief", "/full"};
-static const char *ed[] =
-{"Disabled", "Enabled"};
+static const UTF8 *switchd[] =
+{
+    (UTF8 *)"/first",
+    (UTF8 *)"/all"
+};
+
+static const UTF8 *examd[] =
+{
+    (UTF8 *)"/brief",
+    (UTF8 *)"/full"
+};
+
+static const UTF8 *ed[] =
+{
+    (UTF8 *)"Disabled",
+    (UTF8 *)"Enabled"
+};
 
 static void list_options(dbref player)
 {
-    char *buff;
+    UTF8 *buff;
 
     CLinearTimeAbsolute ltaNow;
     ltaNow.GetUTC();
 
     if (mudconf.quotas)
-        raw_notify(player, "Building quotas are enforced.");
+        raw_notify(player, (UTF8 *)"Building quotas are enforced.");
     if (mudconf.name_spaces)
-        raw_notify(player, "Player names may contain spaces.");
+        raw_notify(player, (UTF8 *)"Player names may contain spaces.");
     else
-        raw_notify(player, "Player names may not contain spaces.");
+        raw_notify(player, (UTF8 *)"Player names may not contain spaces.");
     if (!mudconf.robot_speak)
-        raw_notify(player, "Robots are not allowed to speak in public areas.");
+        raw_notify(player, (UTF8 *)"Robots are not allowed to speak in public areas.");
     if (mudconf.player_listen)
-        raw_notify(player, "The @Listen/@Ahear attribute set works on player objects.");
+        raw_notify(player, (UTF8 *)"The @Listen/@Ahear attribute set works on player objects.");
     if (mudconf.ex_flags)
-        raw_notify(player, "The 'examine' command lists the flag names for the object's flags.");
+        raw_notify(player, (UTF8 *)"The 'examine' command lists the flag names for the object's flags.");
     if (!mudconf.quiet_look)
-        raw_notify(player, "The 'look' command shows visible attributes in addition to the description.");
+        raw_notify(player, (UTF8 *)"The 'look' command shows visible attributes in addition to the description.");
     if (mudconf.see_own_dark)
-        raw_notify(player, "The 'look' command lists DARK objects owned by you.");
+        raw_notify(player, (UTF8 *)"The 'look' command lists DARK objects owned by you.");
     if (!mudconf.dark_sleepers)
-        raw_notify(player, "The 'look' command shows disconnected players.");
+        raw_notify(player, (UTF8 *)"The 'look' command shows disconnected players.");
     if (mudconf.terse_look)
-        raw_notify(player, "The 'look' command obeys the TERSE flag.");
+        raw_notify(player, (UTF8 *)"The 'look' command obeys the TERSE flag.");
     if (mudconf.trace_topdown)
     {
-        raw_notify(player, "Trace output is presented top-down (whole expression first, then sub-exprs).");
+        raw_notify(player, (UTF8 *)"Trace output is presented top-down (whole expression first, then sub-exprs).");
         raw_notify(player, tprintf("Only %d lines of trace output are displayed.", mudconf.trace_limit));
     }
     else
     {
-        raw_notify(player, "Trace output is presented bottom-up (subexpressions first).");
+        raw_notify(player, (UTF8 *)"Trace output is presented bottom-up (subexpressions first).");
     }
     if (!mudconf.quiet_whisper)
-        raw_notify(player, "The 'whisper' command lets others in the room with you know you whispered.");
+        raw_notify(player, (UTF8 *)"The 'whisper' command lets others in the room with you know you whispered.");
     if (mudconf.pemit_players)
-        raw_notify(player, "The '@pemit' command may be used to emit to faraway players.");
+        raw_notify(player, (UTF8 *)"The '@pemit' command may be used to emit to faraway players.");
     if (!mudconf.terse_contents)
-        raw_notify(player, "The TERSE flag suppresses listing the contents of a location.");
+        raw_notify(player, (UTF8 *)"The TERSE flag suppresses listing the contents of a location.");
     if (!mudconf.terse_exits)
-        raw_notify(player, "The TERSE flag suppresses listing obvious exits in a location.");
+        raw_notify(player, (UTF8 *)"The TERSE flag suppresses listing obvious exits in a location.");
     if (!mudconf.terse_movemsg)
-        raw_notify(player, "The TERSE flag suppresses enter/leave/succ/drop messages generated by moving.");
+        raw_notify(player, (UTF8 *)"The TERSE flag suppresses enter/leave/succ/drop messages generated by moving.");
     if (mudconf.pub_flags)
-        raw_notify(player, "The 'flags()' function will return the flags of any object.");
+        raw_notify(player, (UTF8 *)"The 'flags()' function will return the flags of any object.");
     if (mudconf.read_rem_desc)
-        raw_notify(player, "The 'get()' function will return the description of faraway objects,");
+        raw_notify(player, (UTF8 *)"The 'get()' function will return the description of faraway objects,");
     if (mudconf.read_rem_name)
-        raw_notify(player, "The 'name()' function will return the name of faraway objects.");
+        raw_notify(player, (UTF8 *)"The 'name()' function will return the name of faraway objects.");
     raw_notify(player, tprintf("The default switch for the '@switch' command is %s.", switchd[mudconf.switch_df_all]));
     raw_notify(player, tprintf("The default switch for the 'examine' command is %s.", examd[mudconf.exam_public]));
     if (mudconf.sweep_dark)
-        raw_notify(player, "Players may @sweep dark locations.");
+        raw_notify(player, (UTF8 *)"Players may @sweep dark locations.");
     if (mudconf.fascist_tport)
-        raw_notify(player, "You may only @teleport out of locations that are JUMP_OK or that you control.");
+        raw_notify(player, (UTF8 *)"You may only @teleport out of locations that are JUMP_OK or that you control.");
     raw_notify(player,
            tprintf("Players may have at most %d commands in the queue at one time.",
                mudconf.queuemax));
     if (mudconf.match_mine)
     {
         if (mudconf.match_mine_pl)
-            raw_notify(player, "All objects search themselves for $-commands.");
+            raw_notify(player, (UTF8 *)"All objects search themselves for $-commands.");
         else
-            raw_notify(player, "Objects other than players search themselves for $-commands.");
+            raw_notify(player, (UTF8 *)"Objects other than players search themselves for $-commands.");
     }
     if (!Wizard(player))
         return;
@@ -3474,17 +3485,17 @@ static void list_options(dbref player)
            tprintf("%d commands are run from the queue when there is net activity.",
                mudconf.active_q_chunk));
     if (mudconf.idle_wiz_dark)
-        raw_notify(player, "Wizards idle for longer than the default timeout are automatically set DARK.");
+        raw_notify(player, (UTF8 *)"Wizards idle for longer than the default timeout are automatically set DARK.");
     if (mudconf.safe_unowned)
-        raw_notify(player, "Objects not owned by you are automatically considered SAFE.");
+        raw_notify(player, (UTF8 *)"Objects not owned by you are automatically considered SAFE.");
     if (mudconf.paranoid_alloc)
-        raw_notify(player, "The buffer pools are checked for consistency on each allocate or free.");
+        raw_notify(player, (UTF8 *)"The buffer pools are checked for consistency on each allocate or free.");
     if (mudconf.cache_names)
-        raw_notify(player, "A separate name cache is used.");
+        raw_notify(player, (UTF8 *)"A separate name cache is used.");
 #ifndef WIN32
     if (mudconf.fork_dump)
     {
-        raw_notify(player, "Database dumps are performed by a fork()ed process.");
+        raw_notify(player, (UTF8 *)"Database dumps are performed by a fork()ed process.");
     }
 #endif
     if (mudconf.max_players >= 0)
@@ -3558,16 +3569,16 @@ static void list_options(dbref player)
 // ---------------------------------------------------------------------------
 // list_vattrs: List user-defined attributes
 //
-static void list_vattrs(dbref player, char *s_mask)
+static void list_vattrs(dbref player, UTF8 *s_mask)
 {
     bool wild_mtch =  s_mask
                    && s_mask[0] != '\0';
 
-    char *buff = alloc_lbuf("list_vattrs");
+    UTF8 *buff = alloc_lbuf("list_vattrs");
 
     // If wild_match, then only list attributes that match wildcard(s)
     //
-    char *p = tprintf("--- User-Defined Attributes %s---",
+    UTF8 *p = tprintf("--- User-Defined Attributes %s---",
         wild_mtch ? "(wildmatched) " : "");
     raw_notify(player, p);
 
@@ -3584,7 +3595,7 @@ static void list_vattrs(dbref player, char *s_mask)
             if (wild_mtch)
             {
                 mudstate.wild_invk_ctr = 0;
-                if (!quick_wild(s_mask, (char *)va->name))
+                if (!quick_wild(s_mask, va->name))
                 {
                     continue;
                 }
@@ -3608,9 +3619,9 @@ static void list_vattrs(dbref player, char *s_mask)
     free_lbuf(buff);
 }
 
-size_t LeftJustifyString(char *field, size_t nWidth, const char *value)
+size_t LeftJustifyString(UTF8 *field, size_t nWidth, const UTF8 *value)
 {
-    size_t n = strlen(value);
+    size_t n = strlen((char *)value);
     if (n > nWidth)
     {
         n = nWidth;
@@ -3620,9 +3631,9 @@ size_t LeftJustifyString(char *field, size_t nWidth, const char *value)
     return nWidth;
 }
 
-size_t RightJustifyNumber(char *field, size_t nWidth, INT64 value, char chFill)
+size_t RightJustifyNumber(UTF8 *field, size_t nWidth, INT64 value, UTF8 chFill)
 {
-    char   buffer[I64BUF_SIZE];
+    UTF8   buffer[I64BUF_SIZE];
     size_t nReturn = 0;
     if (nWidth < sizeof(buffer))
     {
@@ -3644,7 +3655,7 @@ size_t RightJustifyNumber(char *field, size_t nWidth, INT64 value, char chFill)
 
 // list_hashstats: List information from hash tables
 //
-static void list_hashstat(dbref player, const char *tab_name, CHashTable *htab)
+static void list_hashstat(dbref player, const UTF8 *tab_name, CHashTable *htab)
 {
     unsigned int hashsize;
     int          entries, max_scan;
@@ -3653,8 +3664,8 @@ static void list_hashstat(dbref player, const char *tab_name, CHashTable *htab)
     htab->GetStats(&hashsize, &entries, &deletes, &scans, &hits, &checks,
         &max_scan);
 
-    char buff[MBUF_SIZE];
-    char *p = buff;
+    UTF8 buff[MBUF_SIZE];
+    UTF8 *p = buff;
 
     p += LeftJustifyString(p,  13, tab_name);      *p++ = ' ';
     p += RightJustifyNumber(p,  4, hashsize, ' '); *p++ = ' ';
@@ -3669,22 +3680,22 @@ static void list_hashstat(dbref player, const char *tab_name, CHashTable *htab)
 
 static void list_hashstats(dbref player)
 {
-    raw_notify(player, "Hash Stats    Size    Num     Del       Lookups          Hits        Probes Long");
-    list_hashstat(player, "Commands", &mudstate.command_htab);
-    list_hashstat(player, "Logout Cmds", &mudstate.logout_cmd_htab);
-    list_hashstat(player, "Functions", &mudstate.func_htab);
-    list_hashstat(player, "Flags", &mudstate.flags_htab);
-    list_hashstat(player, "Powers", &mudstate.powers_htab);
-    list_hashstat(player, "Attr Names", &mudstate.attr_name_htab);
-    list_hashstat(player, "Vattr Names", &mudstate.vattr_name_htab);
-    list_hashstat(player, "Player Names", &mudstate.player_htab);
-    list_hashstat(player, "Net Descr.", &mudstate.desc_htab);
-    list_hashstat(player, "Fwd. lists", &mudstate.fwdlist_htab);
-    list_hashstat(player, "Excl. $-cmds", &mudstate.parent_htab);
-    list_hashstat(player, "Mail Messages", &mudstate.mail_htab);
-    list_hashstat(player, "Channel Names", &mudstate.channel_htab);
+    raw_notify(player, (UTF8 *)"Hash Stats    Size    Num     Del       Lookups          Hits        Probes Long");
+    list_hashstat(player, (UTF8 *)"Commands", &mudstate.command_htab);
+    list_hashstat(player, (UTF8 *)"Logout Cmds", &mudstate.logout_cmd_htab);
+    list_hashstat(player, (UTF8 *)"Functions", &mudstate.func_htab);
+    list_hashstat(player, (UTF8 *)"Flags", &mudstate.flags_htab);
+    list_hashstat(player, (UTF8 *)"Powers", &mudstate.powers_htab);
+    list_hashstat(player, (UTF8 *)"Attr Names", &mudstate.attr_name_htab);
+    list_hashstat(player, (UTF8 *)"Vattr Names", &mudstate.vattr_name_htab);
+    list_hashstat(player, (UTF8 *)"Player Names", &mudstate.player_htab);
+    list_hashstat(player, (UTF8 *)"Net Descr.", &mudstate.desc_htab);
+    list_hashstat(player, (UTF8 *)"Fwd. lists", &mudstate.fwdlist_htab);
+    list_hashstat(player, (UTF8 *)"Excl. $-cmds", &mudstate.parent_htab);
+    list_hashstat(player, (UTF8 *)"Mail Messages", &mudstate.mail_htab);
+    list_hashstat(player, (UTF8 *)"Channel Names", &mudstate.channel_htab);
 #if !defined(MEMORY_BASED)
-    list_hashstat(player, "Attr. Cache", &mudstate.acache_htab);
+    list_hashstat(player, (UTF8 *)"Attr. Cache", &mudstate.acache_htab);
 #endif // MEMORY_BASED
     for (int i = 0; i < mudstate.nHelpDesc; i++)
     {
@@ -3849,38 +3860,38 @@ static void list_rlevels(dbref player)
 
 NAMETAB list_names[] =
 {
-    {"allocations",        2,  CA_WIZARD,  LIST_ALLOCATOR},
-    {"attr_permissions",   5,  CA_WIZARD,  LIST_ATTRPERMS},
-    {"attributes",         2,  CA_PUBLIC,  LIST_ATTRIBUTES},
-    {"bad_names",          2,  CA_WIZARD,  LIST_BADNAMES},
-    {"buffers",            2,  CA_WIZARD,  LIST_BUFTRACE},
-    {"commands",           3,  CA_PUBLIC,  LIST_COMMANDS},
-    {"config_permissions", 3,  CA_GOD,     LIST_CONF_PERMS},
-    {"costs",              3,  CA_PUBLIC,  LIST_COSTS},
-    {"db_stats",           2,  CA_WIZARD,  LIST_DB_STATS},
-    {"default_flags",      1,  CA_PUBLIC,  LIST_DF_FLAGS},
-    {"flags",              2,  CA_PUBLIC,  LIST_FLAGS},
-    {"functions",          2,  CA_PUBLIC,  LIST_FUNCTIONS},
-    {"globals",            2,  CA_WIZARD,  LIST_GLOBALS},
-    {"hashstats",          1,  CA_WIZARD,  LIST_HASHSTATS},
-    {"logging",            1,  CA_GOD,     LIST_LOGGING},
-    {"options",            1,  CA_PUBLIC,  LIST_OPTIONS},
-    {"permissions",        2,  CA_WIZARD,  LIST_PERMS},
-    {"powers",             2,  CA_WIZARD,  LIST_POWERS},
-    {"process",            2,  CA_WIZARD,  LIST_PROCESS},
-    {"resources",          1,  CA_WIZARD,  LIST_RESOURCES},
-    {"site_information",   2,  CA_WIZARD,  LIST_SITEINFO},
-    {"switches",           2,  CA_PUBLIC,  LIST_SWITCHES},
-    {"user_attributes",    1,  CA_WIZARD,  LIST_VATTRS},
-    {"guests",             2,  CA_WIZARD,  LIST_GUESTS},
+    {(UTF8 *)"allocations",        2,  CA_WIZARD,  LIST_ALLOCATOR},
+    {(UTF8 *)"attr_permissions",   5,  CA_WIZARD,  LIST_ATTRPERMS},
+    {(UTF8 *)"attributes",         2,  CA_PUBLIC,  LIST_ATTRIBUTES},
+    {(UTF8 *)"bad_names",          2,  CA_WIZARD,  LIST_BADNAMES},
+    {(UTF8 *)"buffers",            2,  CA_WIZARD,  LIST_BUFTRACE},
+    {(UTF8 *)"commands",           3,  CA_PUBLIC,  LIST_COMMANDS},
+    {(UTF8 *)"config_permissions", 3,  CA_GOD,     LIST_CONF_PERMS},
+    {(UTF8 *)"costs",              3,  CA_PUBLIC,  LIST_COSTS},
+    {(UTF8 *)"db_stats",           2,  CA_WIZARD,  LIST_DB_STATS},
+    {(UTF8 *)"default_flags",      1,  CA_PUBLIC,  LIST_DF_FLAGS},
+    {(UTF8 *)"flags",              2,  CA_PUBLIC,  LIST_FLAGS},
+    {(UTF8 *)"functions",          2,  CA_PUBLIC,  LIST_FUNCTIONS},
+    {(UTF8 *)"globals",            2,  CA_WIZARD,  LIST_GLOBALS},
+    {(UTF8 *)"hashstats",          1,  CA_WIZARD,  LIST_HASHSTATS},
+    {(UTF8 *)"logging",            1,  CA_GOD,     LIST_LOGGING},
+    {(UTF8 *)"options",            1,  CA_PUBLIC,  LIST_OPTIONS},
+    {(UTF8 *)"permissions",        2,  CA_WIZARD,  LIST_PERMS},
+    {(UTF8 *)"powers",             2,  CA_WIZARD,  LIST_POWERS},
+    {(UTF8 *)"process",            2,  CA_WIZARD,  LIST_PROCESS},
+    {(UTF8 *)"resources",          1,  CA_WIZARD,  LIST_RESOURCES},
+    {(UTF8 *)"site_information",   2,  CA_WIZARD,  LIST_SITEINFO},
+    {(UTF8 *)"switches",           2,  CA_PUBLIC,  LIST_SWITCHES},
+    {(UTF8 *)"user_attributes",    1,  CA_WIZARD,  LIST_VATTRS},
+    {(UTF8 *)"guests",             2,  CA_WIZARD,  LIST_GUESTS},
 #ifdef REALITY_LVLS
-    {"rlevels",            3,  CA_PUBLIC,  LIST_RLEVELS},
+    {(UTF8 *)"rlevels",            3,  CA_PUBLIC,  LIST_RLEVELS},
 #endif
-    { NULL,                0,  0,          0}
+    {(UTF8 *) NULL,                0,  0,          0}
 };
 
 void do_list(dbref executor, dbref caller, dbref enactor, int eval, int extra,
-             char *arg)
+             UTF8 *arg)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
@@ -3889,15 +3900,15 @@ void do_list(dbref executor, dbref caller, dbref enactor, int eval, int extra,
 
     MUX_STRTOK_STATE tts;
     mux_strtok_src(&tts, arg);
-    mux_strtok_ctl(&tts, " \t=,");
-    char *s_option = mux_strtok_parse(&tts);
+    mux_strtok_ctl(&tts, (UTF8 *)" \t=,");
+    UTF8 *s_option = mux_strtok_parse(&tts);
 
     int flagvalue;
     if (!search_nametab(executor, list_names, arg, &flagvalue))
     {
         if (flagvalue == -1)
         {
-            display_nametab(executor, list_names, "Unknown option.  Use one of:", true);
+            display_nametab(executor, list_names, (UTF8 *)"Unknown option.  Use one of:", true);
         }
         else
         {
@@ -3943,7 +3954,7 @@ void do_list(dbref executor, dbref caller, dbref enactor, int eval, int extra,
         break;
     case LIST_GLOBALS:
         interp_nametab(executor, enable_names, mudconf.control_flags,
-                "Global parameters:", "enabled", "disabled");
+                (UTF8 *)"Global parameters:", (UTF8 *)"enabled", (UTF8 *)"disabled");
         break;
     case LIST_DF_FLAGS:
         list_df_flags(executor);
@@ -3966,9 +3977,9 @@ void do_list(dbref executor, dbref caller, dbref enactor, int eval, int extra,
         break;
     case LIST_LOGGING:
         interp_nametab(executor, logoptions_nametab, mudconf.log_options,
-                   "Events Logged:", "enabled", "disabled");
+                   (UTF8 *)"Events Logged:", (UTF8 *)"enabled", (UTF8 *)"disabled");
         interp_nametab(executor, logdata_nametab, mudconf.log_info,
-                   "Information Logged:", "yes", "no");
+                   (UTF8 *)"Information Logged:", (UTF8 *)"yes", (UTF8 *)"no");
         break;
     case LIST_DB_STATS:
         list_db_stats(executor);
@@ -3977,7 +3988,7 @@ void do_list(dbref executor, dbref caller, dbref enactor, int eval, int extra,
         list_process(executor);
         break;
     case LIST_BADNAMES:
-        badname_list(executor, "Disallowed names:");
+        badname_list(executor, (UTF8 *)"Disallowed names:");
         break;
     case LIST_RESOURCES:
         list_system_resources(executor);
@@ -3994,7 +4005,7 @@ void do_list(dbref executor, dbref caller, dbref enactor, int eval, int extra,
 }
 
 void do_assert(dbref executor, dbref caller, dbref enactor, int eval, int key,
-               char *arg1, char *command, char *cargs[], int ncargs)
+               UTF8 *arg1, UTF8 *command, UTF8 *cargs[], int ncargs)
 {
     UNUSED_PARAMETER(key);
 
@@ -4014,7 +4025,7 @@ void do_assert(dbref executor, dbref caller, dbref enactor, int eval, int key,
 }
 
 void do_break(dbref executor, dbref caller, dbref enactor, int eval, int key,
-              char *arg1, char *command, char *cargs[], int ncargs)
+              UTF8 *arg1, UTF8 *command, UTF8 *cargs[], int ncargs)
 {
     UNUSED_PARAMETER(key);
 
@@ -4038,14 +4049,14 @@ void do_break(dbref executor, dbref caller, dbref enactor, int eval, int key,
 // Bludgeoned into MUX by Jake Nelson 7/2002.
 //
 void do_icmd(dbref player, dbref cause, dbref enactor, int eval, int key,
-             char *name, char *args[], int nargs)
+             UTF8 *name, UTF8 *args[], int nargs)
 {
     UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(cause);
     UNUSED_PARAMETER(enactor);
 
     CMDENT *cmdp;
-    char *buff1, *pt1, *pt2, *pt3, *atrpt, *pt5;
+    UTF8 *buff1, *pt1, *pt2, *pt3, *atrpt, *pt5;
     int x, aflags;
     size_t y;
     dbref target = NOTHING, aowner, zone;
@@ -4067,14 +4078,14 @@ void do_icmd(dbref player, dbref cause, dbref enactor, int eval, int key,
               || !( isRoom(target)
                  || isThing(target))))
         {
-            notify(player, "@icmd: Bad Location.");
+            notify(player, (UTF8 *)"@icmd: Bad Location.");
             return;
         }
         if (key == ICMD_CROOM)
         {
             atr_clr(target, A_CMDCHECK);
-            notify(player, "@icmd: Location - All cleared.");
-            notify(player, "@icmd: Done.");
+            notify(player, (UTF8 *)"@icmd: Location - All cleared.");
+            notify(player, (UTF8 *)"@icmd: Done.");
             return;
         }
         else if (key == ICMD_LROOM)
@@ -4082,15 +4093,15 @@ void do_icmd(dbref player, dbref cause, dbref enactor, int eval, int key,
             atrpt = atr_get("do_icmd.4060", target, A_CMDCHECK, &aowner, &aflags);
             if (*atrpt)
             {
-                notify(player,"Location CmdCheck attribute is:");
+                notify(player,(UTF8 *)"Location CmdCheck attribute is:");
                 notify(player, atrpt);
             }
             else
             {
-                notify(player, "Location CmdCheck attribute is empty.");
+                notify(player, (UTF8 *)"Location CmdCheck attribute is empty.");
             }
             free_lbuf(atrpt);
-            notify(player, "@icmd: Done.");
+            notify(player, (UTF8 *)"@icmd: Done.");
             return;
         }
         else if (key == ICMD_LALLROOM)
@@ -4100,10 +4111,10 @@ void do_icmd(dbref player, dbref cause, dbref enactor, int eval, int key,
                || Going(target)
                || isPlayer(target))
             {
-                notify(player, "@icmd: Bad Location.");
+                notify(player, (UTF8 *)"@icmd: Bad Location.");
                 return;
             }
-            notify(player, "Scanning all locations and zones from your current location:");
+            notify(player, (UTF8 *)"Scanning all locations and zones from your current location:");
             bFound = false;
             atrpt = atr_get("do_icmd.4086", target, A_CMDCHECK, &aowner, &aflags);
             if (*atrpt)
@@ -4134,9 +4145,9 @@ void do_icmd(dbref player, dbref cause, dbref enactor, int eval, int key,
             }
             if (!bFound)
             {
-                notify(player, "@icmd: Location - No icmd's found at current location.");
+                notify(player, (UTF8 *)"@icmd: Location - No icmd's found at current location.");
             }
-            notify(player, "@icmd: Done.");
+            notify(player, (UTF8 *)"@icmd: Done.");
             return;
         }
         else if (key == ICMD_IROOM)
@@ -4154,7 +4165,7 @@ void do_icmd(dbref player, dbref cause, dbref enactor, int eval, int key,
         target = lookup_player(player, name, false);
         if (!Good_obj(target) || God(target))
         {
-            notify(player, "@icmd: Bad player.");
+            notify(player, (UTF8 *)"@icmd: Bad player.");
             return;
         }
         if ((key == ICMD_OFF) || (key == ICMD_CLEAR))
@@ -4164,39 +4175,39 @@ void do_icmd(dbref player, dbref cause, dbref enactor, int eval, int key,
             {
                 atr_clr(target, A_CMDCHECK);
             }
-            notify(player, "@icmd: All cleared.");
-            notify(player, "@icmd: Done.");
+            notify(player, (UTF8 *)"@icmd: All cleared.");
+            notify(player, (UTF8 *)"@icmd: Done.");
             return;
         }
         else if (key == ICMD_ON)
         {
             s_Flags(target, FLAG_WORD3, Flags3(target) | CMDCHECK);
-            notify(player, "@icmd: Activated.");
-            notify(player, "@icmd: Done.");
+            notify(player, (UTF8 *)"@icmd: Activated.");
+            notify(player, (UTF8 *)"@icmd: Done.");
             return;
         }
         else if (key == ICMD_CHECK)
         {
             if (CmdCheck(target))
             {
-                notify(player, "CmdCheck is active.");
+                notify(player, (UTF8 *)"CmdCheck is active.");
             }
             else
             {
-                notify(player, "CmdCheck is not active.");
+                notify(player, (UTF8 *)"CmdCheck is not active.");
             }
             atrpt = atr_get("do_icmd.4166", target, A_CMDCHECK, &aowner, &aflags);
             if (*atrpt)
             {
-                notify(player, "CmdCheck attribute is:");
+                notify(player, (UTF8 *)"CmdCheck attribute is:");
                 notify(player, atrpt);
             }
             else
             {
-                notify(player, "CmdCheck attribute is empty.");
+                notify(player, (UTF8 *)"CmdCheck attribute is empty.");
             }
             free_lbuf(atrpt);
-            notify(player, "@icmd: Done.");
+            notify(player, (UTF8 *)"@icmd: Done.");
             return;
         }
     }
@@ -4204,7 +4215,8 @@ void do_icmd(dbref player, dbref cause, dbref enactor, int eval, int key,
     {
         key = loc_set;
     }
-    char *message = "";
+
+    UTF8 *message = (UTF8 *)"";
     buff1 = alloc_lbuf("do_icmd");
     for (x = 0; x < nargs; x++)
     {
@@ -4230,7 +4242,7 @@ void do_icmd(dbref player, dbref cause, dbref enactor, int eval, int key,
         if (*pt1)
         {
             bool bHome, bColon = false;
-            if (!string_compare(pt1, "home"))
+            if (!string_compare(pt1, (UTF8 *)"home"))
             {
                 bHome = true;
                 cmdp = NULL;
@@ -4238,14 +4250,14 @@ void do_icmd(dbref player, dbref cause, dbref enactor, int eval, int key,
             else
             {
                 bHome = false;
-                cmdp = (CMDENT *) hashfindLEN(pt1, strlen(pt1), &mudstate.command_htab);
+                cmdp = (CMDENT *) hashfindLEN(pt1, strlen((char *)pt1), &mudstate.command_htab);
             }
             if (cmdp || bHome)
             {
                 atrpt = atr_get("do_icmd.4223", target, A_CMDCHECK, &aowner, &aflags);
                 if (cmdp)
                 {
-                    aflags = (int)strlen(cmdp->cmdname);
+                    aflags = (int)strlen((char *)cmdp->cmdname);
                     bColon = (  aflags == 1
                              && *(cmdp->cmdname) == ':');
                 }
@@ -4260,7 +4272,7 @@ void do_icmd(dbref player, dbref cause, dbref enactor, int eval, int key,
                     {
                         if (bColon)
                         {
-                            pt1 = strstr(pt5, "::");
+                            pt1 = (UTF8 *)strstr((char *)pt5, "::");
                             if (pt1)
                             {
                                 pt1++;
@@ -4268,12 +4280,12 @@ void do_icmd(dbref player, dbref cause, dbref enactor, int eval, int key,
                         }
                         else
                         {
-                            pt1 = strstr(pt5, cmdp->cmdname);
+                            pt1 = (UTF8 *)strstr((char *)pt5, (char *)cmdp->cmdname);
                         }
                     }
                     else
                     {
-                        pt1 = strstr(pt5, "home");
+                        pt1 = (UTF8 *)strstr((char *)pt5, "home");
                     }
                     if (  pt1
                        && (pt1 > atrpt)
@@ -4309,8 +4321,8 @@ void do_icmd(dbref player, dbref cause, dbref enactor, int eval, int key,
                             pt3 = tprintf(" %d:home", key + 1);
                         }
 
-                        size_t natrpt = strlen(atrpt);
-                        size_t npt3 = strlen(pt3);
+                        size_t natrpt = strlen((char *)atrpt);
+                        size_t npt3 = strlen((char *)pt3);
                         if ((natrpt + npt3) < LBUF_SIZE - 1)
                         {
                             mux_strncpy(atrpt + natrpt, pt3, LBUF_SIZE-natrpt-1);
@@ -4319,12 +4331,12 @@ void do_icmd(dbref player, dbref cause, dbref enactor, int eval, int key,
                             {
                                 s_Flags(target, FLAG_WORD3, Flags3(target) | CMDCHECK);
                             }
-                            message = "Set";
+                            message = (UTF8 *)"Set";
                         }
                     }
                     else
                     {
-                        message = "Command already present";
+                        message = (UTF8 *)"Command already present";
                     }
                 }
                 else
@@ -4339,7 +4351,7 @@ void do_icmd(dbref player, dbref cause, dbref enactor, int eval, int key,
                         y = pt2 - atrpt + 1;
                         // Save the char that'll be nulled by mux_strncpy.
                         // (Even though it may be unneeded by this point.)
-                        char cSave = buff1[y];
+                        UTF8 cSave = buff1[y];
                         mux_strncpy(buff1, atrpt, y);
                         buff1[y] = cSave;
                         if (y == 1)
@@ -4356,7 +4368,7 @@ void do_icmd(dbref player, dbref cause, dbref enactor, int eval, int key,
                             }
                             if (*pt2)
                             {
-                                size_t natrpt = strlen(atrpt);
+                                size_t natrpt = strlen((char *)atrpt);
                                 mux_strncpy(atrpt + natrpt, pt2, LBUF_SIZE-natrpt-1);
                             }
                         }
@@ -4376,56 +4388,56 @@ void do_icmd(dbref player, dbref cause, dbref enactor, int eval, int key,
                             {
                                 s_Flags(target, FLAG_WORD3, Flags3(target) & ~CMDCHECK);
                             }
-                            message = "Cleared";
+                            message = (UTF8 *)"Cleared";
                         }
                         else
                         {
                             atr_add_raw(target, A_CMDCHECK, atrpt);
-                            message = "Cleared";
+                            message = (UTF8 *)"Cleared";
                         }
                     }
                     else
                     {
-                        message = "Command not present";
+                        message = (UTF8 *)"Command not present";
                     }
                 }
                 free_lbuf(atrpt);
             }
             else
             {
-                message = "Bad command";
+                message = (UTF8 *)"Bad command";
             }
-            notify(player, tprintf("@icmd:%s %s.",(loc_set == -1) ? "" : " Location -", message));
+            notify(player, tprintf("@icmd:%s %s.",(loc_set == -1) ? (UTF8 *)"" : (UTF8 *)" Location -", message));
         }
     }
     free_lbuf(buff1);
-    notify(player,"@icmd: Done.");
+    notify(player,(UTF8 *)"@icmd: Done.");
 }
 
 // do_train: show someone else in the same room what code you're entering and the result
 // From RhostMUSH, changed to use notify_all_from_inside.
 //
-void do_train(dbref executor, dbref caller, dbref enactor, int eval, int key, char *string)
+void do_train(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8 *string)
 {
     UNUSED_PARAMETER(key);
 
     if (0 < mudstate.train_nest_lev)
     {
-        notify(executor, "Train cannot be used to teach command, train.");
+        notify(executor, (UTF8 *)"Train cannot be used to teach command, train.");
         return;
     }
     mudstate.train_nest_lev++;
     dbref loc = Location(executor);
     if (!Good_obj(loc))
     {
-        notify(executor, "Bad location.");
+        notify(executor, (UTF8 *)"Bad location.");
         mudstate.train_nest_lev--;
         return;
     }
     if (  !string
        || !*string)
     {
-        notify(executor, "Train requires an argument.");
+        notify(executor, (UTF8 *)"Train requires an argument.");
         mudstate.train_nest_lev--;
         return;
     }
@@ -4437,7 +4449,7 @@ void do_train(dbref executor, dbref caller, dbref enactor, int eval, int key, ch
 }
 
 void do_moniker(dbref executor, dbref caller, dbref enactor, int key,
-                 int nfargs, char *name, char *instr)
+                 int nfargs, UTF8 *name, UTF8 *instr)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
@@ -4459,7 +4471,7 @@ void do_moniker(dbref executor, dbref caller, dbref enactor, int key,
     if (  instr == NULL
        || instr[0] == '\0')
     {
-        notify_quiet(executor, "Moniker cleared.");
+        notify_quiet(executor, (UTF8 *)"Moniker cleared.");
         s_Moniker(thing, NULL);
     }
     else
@@ -4468,7 +4480,7 @@ void do_moniker(dbref executor, dbref caller, dbref enactor, int key,
         if (  !Quiet(executor)
            && !Quiet(thing))
         {
-            notify_quiet(executor, "Moniker set.");
+            notify_quiet(executor, (UTF8 *)"Moniker set.");
         }
     }
     set_modified(thing);
@@ -4479,28 +4491,28 @@ void do_moniker(dbref executor, dbref caller, dbref enactor, int key,
 // Used with express permission of RhostMUSH developers.
 // Bludgeoned into MUX by Jake Nelson 7/2002.
 //
-static void show_hook(char *bf, char *bfptr, int key)
+static void show_hook(UTF8 *bf, UTF8 *bfptr, int key)
 {
     if (key & HOOK_BEFORE)
-        safe_str("before ", bf, &bfptr);
+        safe_str((UTF8 *)"before ", bf, &bfptr);
     if (key & HOOK_AFTER)
-        safe_str("after ", bf, &bfptr);
+        safe_str((UTF8 *)"after ", bf, &bfptr);
     if (key & HOOK_PERMIT)
-        safe_str("permit ", bf, &bfptr);
+        safe_str((UTF8 *)"permit ", bf, &bfptr);
     if (key & HOOK_IGNORE)
-        safe_str("ignore ", bf, &bfptr);
+        safe_str((UTF8 *)"ignore ", bf, &bfptr);
     if (key & HOOK_IGSWITCH)
-        safe_str("igswitch ", bf, &bfptr);
+        safe_str((UTF8 *)"igswitch ", bf, &bfptr);
     if (key & HOOK_AFAIL)
-        safe_str("afail ", bf, &bfptr);
+        safe_str((UTF8 *)"afail ", bf, &bfptr);
     *bfptr = '\0';
 }
 
-static void hook_loop(dbref executor, CMDENT *cmdp, char *s_ptr, char *s_ptrbuff)
+static void hook_loop(dbref executor, CMDENT *cmdp, UTF8 *s_ptr, UTF8 *s_ptrbuff)
 {
     show_hook(s_ptrbuff, s_ptr, cmdp->hookmask);
     const char *pFmt = "%-32.32s | %s";
-    const char *pCmd = cmdp->cmdname;
+    const UTF8 *pCmd = cmdp->cmdname;
     if (  pCmd[0] != '\0'
        && pCmd[1] == '\0')
     {
@@ -4508,49 +4520,49 @@ static void hook_loop(dbref executor, CMDENT *cmdp, char *s_ptr, char *s_ptrbuff
         {
         case '"':
             pFmt = "S %-30.30s | %s";
-            pCmd = "('\"' hook on 'say')";
+            pCmd = (UTF8 *)"('\"' hook on 'say')";
             break;
         case ':':
             pFmt = "P %-30.30s | %s";
-            pCmd = "(':' hook on 'pose')";
+            pCmd = (UTF8 *)"(':' hook on 'pose')";
             break;
         case ';':
             pFmt = "P %-30.30s | %s";
-            pCmd = "(';' hook on 'pose')";
+            pCmd = (UTF8 *)"(';' hook on 'pose')";
             break;
         case '\\':
             pFmt = "E %-30.30s | %s";
-            pCmd = "('\\\\' hook on '@emit')";
+            pCmd = (UTF8 *)"('\\\\' hook on '@emit')";
             break;
         case '#':
             pFmt = "F %-30.30s | %s";
-            pCmd = "('#' hook on '@force')";
+            pCmd = (UTF8 *)"('#' hook on '@force')";
             break;
         case '&':
             pFmt = "V %-30.30s | %s";
-            pCmd = "('&' hook on '@set')";
+            pCmd = (UTF8 *)"('&' hook on '@set')";
             break;
         case '-':
             pFmt = "M %-30.30s | %s";
-            pCmd = "('-' hook on '@mail')";
+            pCmd = (UTF8 *)"('-' hook on '@mail')";
             break;
         case '~':
             pFmt = "M %-30.30s | %s";
-            pCmd = "('~' hook on '@mail')";
+            pCmd = (UTF8 *)"('~' hook on '@mail')";
             break;
         }
     }
     notify(executor, tprintf(pFmt, pCmd, s_ptrbuff));
 }
 
-void do_hook(dbref executor, dbref caller, dbref enactor, int eval, int key, char *name)
+void do_hook(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8 *name)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
     UNUSED_PARAMETER(eval);
 
     bool negate, found;
-    char *s_ptr, *s_ptrbuff, *cbuff, *p;
+    UTF8 *s_ptr, *s_ptrbuff, *cbuff, *p;
     const UTF8 *q;
     CMDENT *cmdp = (CMDENT *)NULL;
 
@@ -4560,17 +4572,17 @@ void do_hook(dbref executor, dbref caller, dbref enactor, int eval, int key, cha
              || (key & HOOK_LIST))
           && *name))
     {
-        cmdp = (CMDENT *)hashfindLEN(name, strlen(name), &mudstate.command_htab);
+        cmdp = (CMDENT *)hashfindLEN(name, strlen((char *)name), &mudstate.command_htab);
         if (!cmdp)
         {
-            notify(executor, "@hook: Non-existent command name given.");
+            notify(executor, (UTF8 *)"@hook: Non-existent command name given.");
             return;
         }
     }
     if (  (key & HOOK_CLEAR)
        && (key & HOOK_LIST))
     {
-        notify(executor, "@hook: Incompatible switches.");
+        notify(executor, (UTF8 *)"@hook: Incompatible switches.");
         return;
     }
 

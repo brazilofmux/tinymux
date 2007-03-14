@@ -35,7 +35,7 @@ SEP sepSpace = { 1, " " };
 // Trim off leading and trailing spaces if the separator char is a
 // space -- known length version.
 //
-char *trim_space_sep_LEN(char *str, size_t nStr, SEP *sep, size_t *nTrim)
+UTF8 *trim_space_sep_LEN(UTF8 *str, size_t nStr, SEP *sep, size_t *nTrim)
 {
     if (  sep->n != 1
        || sep->str[0] != ' ')
@@ -46,8 +46,8 @@ char *trim_space_sep_LEN(char *str, size_t nStr, SEP *sep, size_t *nTrim)
 
     // Advance over leading spaces.
     //
-    char *pBegin = str;
-    char *pEnd = str + nStr - 1;
+    UTF8 *pBegin = str;
+    UTF8 *pEnd = str + nStr - 1;
     while (*pBegin == ' ')
     {
         pBegin++;
@@ -69,7 +69,7 @@ char *trim_space_sep_LEN(char *str, size_t nStr, SEP *sep, size_t *nTrim)
 
 // Trim off leading and trailing spaces if the separator char is a space.
 //
-char *trim_space_sep(char *str, SEP *sep)
+UTF8 *trim_space_sep(UTF8 *str, SEP *sep)
 {
     if (  sep->n != 1
        || sep->str[0] != ' ')
@@ -80,7 +80,7 @@ char *trim_space_sep(char *str, SEP *sep)
     {
         str++;
     }
-    char *p;
+    UTF8 *p;
     for (p = str; *p; p++)
     {
         // Nothing.
@@ -96,7 +96,7 @@ char *trim_space_sep(char *str, SEP *sep)
 
 // next_token: Point at start of next token in string
 //
-char *next_token(char *str, SEP *psep)
+UTF8 *next_token(UTF8 *str, SEP *psep)
 {
     if (psep->n == 1)
     {
@@ -120,7 +120,7 @@ char *next_token(char *str, SEP *psep)
     }
     else
     {
-        char *p = strstr(str, psep->str);
+        UTF8 *p = (UTF8 *)strstr((char *)str, (char *)psep->str);
         if (p)
         {
             str = p + psep->n;
@@ -136,10 +136,10 @@ char *next_token(char *str, SEP *psep)
 // split_token: Get next token from string as null-term string.  String is
 // destructively modified.
 //
-char *split_token(char **sp, SEP *psep)
+UTF8 *split_token(UTF8 **sp, SEP *psep)
 {
-    char *str = *sp;
-    char *save = str;
+    UTF8 *str = *sp;
+    UTF8 *save = str;
 
     if (!str)
     {
@@ -171,7 +171,7 @@ char *split_token(char **sp, SEP *psep)
     }
     else
     {
-        char *p = strstr(str, psep->str);
+        UTF8 *p = (UTF8 *)strstr((char *)str, (char *)psep->str);
         if (p)
         {
             *p = '\0';
@@ -204,7 +204,7 @@ private:
 
 public:
     AutoDetect(void);
-    void ExamineList(int nitems, char *ptrs[]);
+    void ExamineList(int nitems, UTF8 *ptrs[]);
     int GetType(void);
 };
 
@@ -213,11 +213,11 @@ AutoDetect::AutoDetect(void)
     m_CouldBe = ALL_LIST;
 }
 
-void AutoDetect::ExamineList(int nitems, char *ptrs[])
+void AutoDetect::ExamineList(int nitems, UTF8 *ptrs[])
 {
     for (int i = 0; i < nitems && ASCII_LIST != m_CouldBe; i++)
     {
-        char *p = ptrs[i];
+        UTF8 *p = ptrs[i];
         if (p[0] != NUMBER_TOKEN)
         {
             m_CouldBe &= ~DBREF_LIST;
@@ -265,14 +265,14 @@ int AutoDetect::GetType(void)
     return m_CouldBe;
 }
 
-int list2arr(char *arr[], int maxcount, char *list, SEP *psep)
+int list2arr(UTF8 *arr[], int maxcount, UTF8 *list, SEP *psep)
 {
     list = trim_space_sep(list, psep);
     if (list[0] == '\0')
     {
         return 0;
     }
-    char *p = split_token(&list, psep);
+    UTF8 *p = split_token(&list, psep);
     int i;
     for (i = 0; p && i < maxcount; i++, p = split_token(&list, psep))
     {
@@ -281,7 +281,7 @@ int list2arr(char *arr[], int maxcount, char *list, SEP *psep)
     return i;
 }
 
-void arr2list(char *arr[], int alen, char *list, char **bufc, SEP *psep)
+void arr2list(UTF8 *arr[], int alen, UTF8 *list, UTF8 **bufc, SEP *psep)
 {
     int i;
     for (i = 0; i < alen-1; i++)
@@ -295,7 +295,7 @@ void arr2list(char *arr[], int alen, char *list, char **bufc, SEP *psep)
     }
 }
 
-static int dbnum(char *dbr)
+static int dbnum(UTF8 *dbr)
 {
     if (  '#'  != dbr[0]
        || '\0' == dbr[1])
@@ -337,11 +337,11 @@ static bool nearby_or_control(dbref player, dbref thing)
  */
 bool delim_check
 (
-    char *buff, char **bufc,
+    UTF8 *buff, UTF8 **bufc,
     dbref executor, dbref caller, dbref enactor,
     int   eval,
-    char *fargs[], int nfargs,
-    char *cargs[], int ncargs,
+    UTF8 *fargs[], int nfargs,
+    UTF8 *cargs[], int ncargs,
     int sep_arg, SEP *sep, int dflags
 )
 {
@@ -350,8 +350,8 @@ bool delim_check
     {
         // First, we decide whether to evalute fargs[sep_arg-1] or not.
         //
-        char *tstr = fargs[sep_arg-1];
-        size_t tlen = strlen(tstr);
+        UTF8 *tstr = fargs[sep_arg-1];
+        size_t tlen = strlen((char *)tstr);
 
         if (tlen <= 1)
         {
@@ -360,8 +360,8 @@ bool delim_check
 
         if (dflags & DELIM_EVAL)
         {
-            char *str = tstr;
-            char *bp = tstr = alloc_lbuf("delim_check");
+            UTF8 *str = tstr;
+            UTF8 *bp = tstr = alloc_lbuf("delim_check");
             mux_exec(str, tstr, &bp, executor, caller, enactor,
                      eval|EV_EVAL|EV_FCHECK, cargs, ncargs);
             *bp = '\0';
@@ -405,13 +405,13 @@ bool delim_check
             }
             else
             {
-                safe_str("#-1 SEPARATOR IS TOO LARGE", buff, bufc);
+                safe_str((UTF8 *)"#-1 SEPARATOR IS TOO LARGE", buff, bufc);
                 bSuccess = false;
             }
         }
         else
         {
-            safe_str("#-1 SEPARATOR MUST BE ONE CHARACTER", buff, bufc);
+            safe_str((UTF8 *)"#-1 SEPARATOR MUST BE ONE CHARACTER", buff, bufc);
             bSuccess = false;
         }
 
@@ -435,7 +435,7 @@ bool delim_check
  * Added 1/28/91 Philip D. Wasson
  */
 
-int countwords(char *str, SEP *psep)
+int countwords(UTF8 *str, SEP *psep)
 {
     int n;
 
@@ -491,7 +491,7 @@ static FUNCTION(fun_flags)
             dbref aowner;
             int   aflags;
             atr_pget_info(it, pattr->number, &aowner, &aflags);
-            char xbuf[11];
+            UTF8 xbuf[11];
             decode_attr_flags(aflags, xbuf);
             safe_str(xbuf, buff, bufc);
         }
@@ -508,7 +508,7 @@ static FUNCTION(fun_flags)
            || Examinable(executor, it)
            || it == enactor)
         {
-            char *buff2 = decode_flags(executor, &(db[it].fs));
+            UTF8 *buff2 = decode_flags(executor, &(db[it].fs));
             safe_str(buff2, buff, bufc);
             free_sbuf(buff2);
         }
@@ -550,7 +550,7 @@ static FUNCTION(fun_rand)
         }
         else
         {
-            safe_str("#-1 ARGUMENT MUST BE INTEGER", buff, bufc);
+            safe_str((UTF8 *)"#-1 ARGUMENT MUST BE INTEGER", buff, bufc);
         }
         break;
 
@@ -572,7 +572,7 @@ static FUNCTION(fun_rand)
         }
         else
         {
-            safe_str("#-1 ARGUMENT MUST BE INTEGER", buff, bufc);
+            safe_str((UTF8 *)"#-1 ARGUMENT MUST BE INTEGER", buff, bufc);
         }
         break;
     }
@@ -598,7 +598,7 @@ static FUNCTION(fun_time)
 
     CLinearTimeAbsolute ltaNow;
     if (  nfargs == 0
-       || mux_stricmp("utc", fargs[0]) != 0)
+       || mux_stricmp((UTF8 *)"utc", fargs[0]) != 0)
     {
         ltaNow.GetLocal();
     }
@@ -611,7 +611,7 @@ static FUNCTION(fun_time)
     {
         nPrecision = mux_atol(fargs[1]);
     }
-    char *temp = ltaNow.ReturnDateString(nPrecision);
+    UTF8 *temp = ltaNow.ReturnDateString(nPrecision);
     safe_str(temp, buff, bufc);
 }
 
@@ -637,7 +637,7 @@ static FUNCTION(fun_secs)
 
     CLinearTimeAbsolute ltaNow;
     if (  nfargs == 0
-       || mux_stricmp("local", fargs[0]) != 0)
+       || mux_stricmp((UTF8 *)"local", fargs[0]) != 0)
     {
         ltaNow.GetUTC();
     }
@@ -681,7 +681,7 @@ static FUNCTION(fun_convsecs)
     if (lta.SetSecondsString(fargs[0]))
     {
         if (  nfargs == 1
-           || mux_stricmp("utc", fargs[1]) != 0)
+           || mux_stricmp((UTF8 *)"utc", fargs[1]) != 0)
         {
             lta.UTC2Local();
         }
@@ -690,12 +690,12 @@ static FUNCTION(fun_convsecs)
         {
             nPrecision = mux_atol(fargs[2]);
         }
-        char *temp = lta.ReturnDateString(nPrecision);
+        UTF8 *temp = lta.ReturnDateString(nPrecision);
         safe_str(temp, buff, bufc);
     }
     else
     {
-        safe_str("#-1 INVALID DATE", buff, bufc);
+        safe_str((UTF8 *)"#-1 INVALID DATE", buff, bufc);
     }
 }
 
@@ -733,7 +733,7 @@ static FUNCTION(fun_convtime)
     {
         if (  !bZoneSpecified
            && (  nfargs == 1
-              || mux_stricmp("utc", fargs[1]) != 0))
+              || mux_stricmp((UTF8 *)"utc", fargs[1]) != 0))
         {
             lta.Local2UTC();
         }
@@ -746,7 +746,7 @@ static FUNCTION(fun_convtime)
     }
     else
     {
-        safe_str("#-1 INVALID DATE", buff, bufc);
+        safe_str((UTF8 *)"#-1 INVALID DATE", buff, bufc);
     }
 }
 
@@ -766,7 +766,7 @@ static FUNCTION(fun_starttime)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    char *temp = mudstate.start_time.ReturnDateString();
+    UTF8 *temp = mudstate.start_time.ReturnDateString();
     safe_str(temp, buff, bufc);
 }
 
@@ -781,31 +781,31 @@ static FUNCTION(fun_starttime)
 // All escape sequences start with a $. Any unrecognized codes or other
 // text will be returned unchanged.
 //
-static const char *DayOfWeekStringLong[7] =
+static const UTF8 *DayOfWeekStringLong[7] =
 {
-    "Sunday",
-    "Monday",
-    "Tuesday",
-    "Wednesday",
-    "Thursday",
-    "Friday",
-    "Saturday"
+    (UTF8 *)"Sunday",
+    (UTF8 *)"Monday",
+    (UTF8 *)"Tuesday",
+    (UTF8 *)"Wednesday",
+    (UTF8 *)"Thursday",
+    (UTF8 *)"Friday",
+    (UTF8 *)"Saturday"
 };
 
-static const char *MonthTableLong[] =
+static const UTF8 *MonthTableLong[] =
 {
-    "January",
-    "February",
-    "March",
-    "April",
-    "May",
-    "June",
-    "July",
-    "August",
-    "September",
-    "October",
-    "November",
-    "December"
+    (UTF8 *)"January",
+    (UTF8 *)"February",
+    (UTF8 *)"March",
+    (UTF8 *)"April",
+    (UTF8 *)"May",
+    (UTF8 *)"June",
+    (UTF8 *)"July",
+    (UTF8 *)"August",
+    (UTF8 *)"September",
+    (UTF8 *)"October",
+    (UTF8 *)"November",
+    (UTF8 *)"December"
 };
 
 static const int Map24to12[24] =
@@ -900,8 +900,8 @@ static FUNCTION(fun_timefmt)
         }
     }
 
-    const char *pValidLongMonth = NULL;
-    const char *pValidShortMonth = NULL;
+    const UTF8 *pValidLongMonth = NULL;
+    const UTF8 *pValidShortMonth = NULL;
     if (  1 <= ft.iMonth
        && ft.iMonth <= 12)
     {
@@ -910,12 +910,12 @@ static FUNCTION(fun_timefmt)
     }
     else
     {
-        pValidLongMonth = "";
-        pValidShortMonth = "";
+        pValidLongMonth = (UTF8 *)"";
+        pValidShortMonth = (UTF8 *)"";
     }
 
-    const char *pValidLongDayOfWeek = NULL;
-    const char *pValidShortDayOfWeek = NULL;
+    const UTF8 *pValidLongDayOfWeek = NULL;
+    const UTF8 *pValidShortDayOfWeek = NULL;
     if (ft.iDayOfWeek <= 6)
     {
         pValidLongDayOfWeek = DayOfWeekStringLong[ft.iDayOfWeek];
@@ -923,13 +923,13 @@ static FUNCTION(fun_timefmt)
     }
     else
     {
-        pValidLongDayOfWeek = "";
-        pValidShortDayOfWeek = "";
+        pValidLongDayOfWeek = (UTF8 *)"";
+        pValidShortDayOfWeek = (UTF8 *)"";
     }
 
-    char *q;
-    char *p = fargs[0];
-    while ((q = strchr(p, '$')) != NULL)
+    UTF8 *q;
+    UTF8 *p = fargs[0];
+    while ((q = (UTF8 *)strchr((char *)p, '$')) != NULL)
     {
         size_t nLen = q - p;
         safe_copy_buf(p, nLen, buff, bufc);
@@ -1063,22 +1063,21 @@ static FUNCTION(fun_timefmt)
             break;
 
         case 'n': // $n - Newline.
-            safe_str("\r\n", buff, bufc);
+            safe_str((UTF8 *)"\r\n", buff, bufc);
             break;
 
         case 'p': // $p - AM/PM
-            safe_str((ft.iHour < 12)?"AM":"PM", buff, bufc);
+            safe_str((ft.iHour < 12)?(UTF8 *)"AM":(UTF8 *)"PM", buff, bufc);
             break;
 
         case 'P': // $p - am/pm
-            safe_str((ft.iHour < 12)?"am":"pm", buff, bufc);
+            safe_str((ft.iHour < 12)?(UTF8 *)"am":(UTF8 *)"pm", buff, bufc);
             break;
 
         case 'r': // $r - Equivalent to $I:$M:$S $p
-            safe_tprintf_str(buff, bufc,
+            safe_tprintf_str( buff, bufc,
                 (iOption=='#')?"%d:%02d:%02d %s":"%02d:%02d:%02d %s",
-                iHour12, ft.iMinute, ft.iSecond,
-                (ft.iHour<12)?"AM":"PM");
+                iHour12, ft.iMinute, ft.iSecond, (ft.iHour<12)?(UTF8 *)"AM":(UTF8 *)"PM");
             break;
 
         case 'R': // $R - Equivalent to $H:$M
@@ -1181,9 +1180,9 @@ static FUNCTION(fun_etimefmt)
     long days    = hours/24;
     hours -= 24*days;
 
-    char *q;
-    char *p = fargs[0];
-    while ((q = strchr(p, '$')) != NULL)
+    UTF8 *q;
+    UTF8 *p = fargs[0];
+    while ((q = (UTF8 *)strchr((char *)p, '$')) != NULL)
     {
         size_t nLen = q - p;
         safe_copy_buf(p, nLen, buff, bufc);
@@ -1233,7 +1232,7 @@ static FUNCTION(fun_etimefmt)
             ch = *p++;
         }
 
-        char field[MBUF_SIZE];
+        UTF8 field[MBUF_SIZE];
         size_t n = 0;
 
         // Handle format letter.
@@ -1417,7 +1416,7 @@ static FUNCTION(fun_etimefmt)
             break;
 
         case 'n': // $n - Newline.
-            safe_str("\r\n", buff, bufc);
+            safe_str((UTF8 *)"\r\n", buff, bufc);
             break;
 
         case '$': // $$
@@ -1459,7 +1458,7 @@ FUNCTION(fun_format)
         return;
     }
 
-    char *buf = alloc_lbuf("fun_format");
+    UTF8 *buf = alloc_lbuf("fun_format");
     mux_strncpy(buf, fargs[0], LBUF_SIZE-1);
     linewrap_general(buf, fieldsize, fargs[2], fargs[3]);
     safe_str(buf, buff, bufc);
@@ -1482,7 +1481,7 @@ FUNCTION(fun_text)
         return;
     }
 
-    char mybuffer[80];
+    UTF8 mybuffer[80];
     while (fgets(mybuffer, 80, textconf))
     {
         int index = 0;
@@ -1499,7 +1498,7 @@ FUNCTION(fun_text)
         }
 
         /* Found the file listed, did I? */
-        if (!strcmp(mybuffer, fargs[0]))
+        if (!strcmp((char *)mybuffer, (char *)fargs[0]))
         {
             FILE *myfile;
             if (!mux_fopen(&myfile, fargs[0], "r"))
@@ -1817,7 +1816,7 @@ FUNCTION(fun_successes)
     if (  !is_integer(fargs[0], NULL)
        || !is_integer(fargs[1], NULL))
     {
-        safe_str("#-1 ARGUMENTS MUST BE INTEGERS", buff, bufc);
+        safe_str((UTF8 *)"#-1 ARGUMENTS MUST BE INTEGERS", buff, bufc);
         return;
     }
 
@@ -1831,15 +1830,15 @@ FUNCTION(fun_successes)
 
     if (0 == num_dice)
     {
-        safe_str("0", buff, bufc);
+        safe_str((UTF8 *)"0", buff, bufc);
     }
     else if (num_dice < 0)
     {
-        safe_str("#-1 NUMBER OF DICE SHOULD BE > 0", buff, bufc);
+        safe_str((UTF8 *)"#-1 NUMBER OF DICE SHOULD BE > 0", buff, bufc);
     }
     else if (100 < num_dice)
     {
-        safe_str("#-1 THAT'S TOO MANY DICE FOR ME TO ROLL", buff, bufc);
+        safe_str((UTF8 *)"#-1 THAT'S TOO MANY DICE FOR ME TO ROLL", buff, bufc);
     }
     else
     {
@@ -1854,11 +1853,11 @@ FUNCTION(fun_successes)
                 break;
 
             case NUMBER_TOO_LARGE:
-                safe_str("#-1 INVALID SUCCESS TABLE", buff, bufc);
+                safe_str((UTF8 *)"#-1 INVALID SUCCESS TABLE", buff, bufc);
                 break;
 
             default:
-                safe_str("#-1 UNKNOWN ERROR", buff, bufc);
+                safe_str((UTF8 *)"#-1 UNKNOWN ERROR", buff, bufc);
                 break;
             }
         }
@@ -1913,16 +1912,16 @@ FUNCTION(fun_successes)
 #define GET_EVAL    4
 #define GET_GEVAL   8
 
-static void get_handler(char *buff, char **bufc, dbref executor, char *fargs[], int key)
+static void get_handler(UTF8 *buff, UTF8 **bufc, dbref executor, UTF8 *fargs[], int key)
 {
     bool bFreeBuffer = false;
-    char *pRefAttrib = fargs[0];
+    UTF8 *pRefAttrib = fargs[0];
 
     if (  key == GET_XGET
        || key == GET_EVAL)
     {
         pRefAttrib = alloc_lbuf("get_handler");
-        char *bufp = pRefAttrib;
+        UTF8 *bufp = pRefAttrib;
         safe_tprintf_str(pRefAttrib, &bufp, "%s/%s", fargs[0], fargs[1]);
         bFreeBuffer = true;
     }
@@ -1955,7 +1954,7 @@ static void get_handler(char *buff, char **bufc, dbref executor, char *fargs[], 
     dbref aowner;
     int   aflags;
     size_t nLen = 0;
-    char *atr_gotten = atr_pget_LEN(thing, pattr->number, &aowner, &aflags, &nLen);
+    UTF8 *atr_gotten = atr_pget_LEN(thing, pattr->number, &aowner, &aflags, &nLen);
 
     if (  key == GET_EVAL
        || key == GET_GEVAL)
@@ -2050,17 +2049,17 @@ static FUNCTION(fun_eval)
  * * fun_u and fun_ulocal:  Call a user-defined function.
  */
 
-static void do_ufun(char *buff, char **bufc, dbref executor, dbref caller,
+static void do_ufun(UTF8 *buff, UTF8 **bufc, dbref executor, dbref caller,
             dbref enactor,
-            char *fargs[], int nfargs,
-            char *cargs[], int ncargs,
+            UTF8 *fargs[], int nfargs,
+            UTF8 *cargs[], int ncargs,
             bool is_local)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    char *atext;
+    UTF8 *atext;
     dbref thing;
     dbref aowner;
     int   aflags;
@@ -2252,8 +2251,8 @@ static FUNCTION(fun_first)
         return;
     }
 
-    char *s = trim_space_sep(fargs[0], &sep);
-    char *first = split_token(&s, &sep);
+    UTF8 *s = trim_space_sep(fargs[0], &sep);
+    UTF8 *first = split_token(&s, &sep);
     if (first)
     {
         safe_str(first, buff, bufc);
@@ -2281,7 +2280,7 @@ static FUNCTION(fun_rest)
         return;
     }
 
-    char *s = trim_space_sep(fargs[0], &sep);
+    UTF8 *s = trim_space_sep(fargs[0], &sep);
     split_token(&s, &sep);
     if (s)
     {
@@ -2300,7 +2299,7 @@ static FUNCTION(fun_v)
 
     dbref aowner;
     int aflags;
-    char *sbuf, *sbufc;
+    UTF8 *sbuf, *sbufc;
     ATTR *ap;
 
     UTF8 *tbuf = (UTF8 *)fargs[0];
@@ -2320,10 +2319,10 @@ static FUNCTION(fun_v)
         // string.
         //
         size_t nLen;
-        tbuf = (UTF8 *)atr_pget_LEN(executor, ap->number, &aowner, &aflags, &nLen);
+        tbuf = atr_pget_LEN(executor, ap->number, &aowner, &aflags, &nLen);
         if (See_attr(executor, executor, ap))
         {
-            safe_copy_buf((char *)tbuf, nLen, buff, bufc);
+            safe_copy_buf(tbuf, nLen, buff, bufc);
         }
         free_lbuf(tbuf);
         return;
@@ -2717,14 +2716,14 @@ static FUNCTION(fun_controls)
     if (!Good_obj(x))
     {
         safe_match_result(x, buff, bufc);
-        safe_str(" (ARG1)", buff, bufc);
+        safe_str((UTF8 *)" (ARG1)", buff, bufc);
         return;
     }
     dbref y = match_thing_quiet(executor, fargs[1]);
     if (!Good_obj(y))
     {
         safe_match_result(x, buff, bufc);
-        safe_str(" (ARG2)", buff, bufc);
+        safe_str((UTF8 *)" (ARG2)", buff, bufc);
         return;
     }
     safe_bool(Controls(x,y), buff, bufc);
@@ -2755,7 +2754,7 @@ static FUNCTION(fun_fullname)
         if (  !nearby_or_control(executor, it)
            && !isPlayer(it))
         {
-            safe_str("#-1 TOO FAR AWAY TO SEE", buff, bufc);
+            safe_str((UTF8 *)"#-1 TOO FAR AWAY TO SEE", buff, bufc);
             return;
         }
     }
@@ -2788,15 +2787,15 @@ static FUNCTION(fun_name)
            && !isPlayer(it)
            && !Long_Fingers(executor))
         {
-            safe_str("#-1 TOO FAR AWAY TO SEE", buff, bufc);
+            safe_str((UTF8 *)"#-1 TOO FAR AWAY TO SEE", buff, bufc);
             return;
         }
     }
-    char *temp = *bufc;
+    UTF8 *temp = *bufc;
     safe_str(Name(it), buff, bufc);
     if (isExit(it))
     {
-        char *s;
+        UTF8 *s;
         for (s = temp; (s != *bufc) && (*s != ';'); s++)
         {
             // Do nothing
@@ -2828,9 +2827,9 @@ static FUNCTION(fun_match)
     // one that matches.  If none match, return 0.
     //
     int wcount = 1;
-    char *s = trim_space_sep(fargs[0], &sep);
+    UTF8 *s = trim_space_sep(fargs[0], &sep);
     do {
-        char *r = split_token(&s, &sep);
+        UTF8 *r = split_token(&s, &sep);
         mudstate.wild_invk_ctr = 0;
         if (quick_wild(fargs[1], r))
         {
@@ -2943,9 +2942,9 @@ static FUNCTION(fun_extract)
 
 // xlate() controls the subtle definition of a softcode boolean.
 //
-bool xlate(char *arg)
+bool xlate(UTF8 *arg)
 {
-    const char *p = arg;
+    const UTF8 *p = arg;
     if (p[0] == '#')
     {
         if (p[1] == '-')
@@ -3022,7 +3021,7 @@ static FUNCTION(fun_index)
     UNUSED_PARAMETER(ncargs);
 
     int start, end;
-    char c, *s, *p;
+    UTF8 c, *s, *p;
 
     s = fargs[0];
     c = *fargs[1];
@@ -3043,7 +3042,7 @@ static FUNCTION(fun_index)
     start--;
     while (start && s && *s)
     {
-        if ((s = strchr(s, c)) != NULL)
+        if ((s = (UTF8 *)strchr((char *)s, c)) != NULL)
         {
             s++;
         }
@@ -3066,7 +3065,7 @@ static FUNCTION(fun_index)
     p = s;
     while (end && p && *p)
     {
-        if ((p = strchr(p, c)) != NULL)
+        if ((p = (UTF8 *)strchr((char *)p, c)) != NULL)
         {
             if (--end == 0)
             {
@@ -3153,7 +3152,7 @@ static FUNCTION(fun_strmem)
     size_t n = 0;
     if (nfargs >= 1)
     {
-        n = strlen(fargs[0]);
+        n = strlen((char *)fargs[0]);
     }
     safe_ltoa(static_cast<long>(n), buff, bufc);
 }
@@ -3172,10 +3171,10 @@ static FUNCTION(fun_num)
 
 static void internalPlayerFind
 (
-    char* buff,
-    char** bufc,
+    UTF8* buff,
+    UTF8** bufc,
     dbref player,
-    char* name,
+    UTF8* name,
     int bVerifyPlayer
 )
 {
@@ -3199,7 +3198,7 @@ static void internalPlayerFind
     }
     else
     {
-        char *nptr = name;
+        UTF8 *nptr = name;
         if (*nptr == '*')
         {
             // Start with the second character in the name string.
@@ -3262,10 +3261,10 @@ static FUNCTION(fun_comp)
 
     int x;
 
-    x = strcmp(fargs[0], fargs[1]);
+    x = strcmp((char *)fargs[0], (char *)fargs[1]);
     if (x < 0)
     {
-        safe_str("-1", buff, bufc);
+        safe_str((UTF8 *)"-1", buff, bufc);
     }
     else
     {
@@ -3286,14 +3285,14 @@ static FUNCTION(fun_cansee)
     if (!Good_obj(looker))
     {
         safe_match_result(looker, buff, bufc);
-        safe_str(" (LOOKER)", buff, bufc);
+        safe_str((UTF8 *)" (LOOKER)", buff, bufc);
         return;
     }
     dbref lookee = match_thing_quiet(executor, fargs[1]);
     if (!Good_obj(lookee))
     {
         safe_match_result(looker, buff, bufc);
-        safe_str(" (LOOKEE)", buff, bufc);
+        safe_str((UTF8 *)" (LOOKEE)", buff, bufc);
         return;
     }
     int mode;
@@ -3345,17 +3344,17 @@ typedef enum
 
 static struct lconSubsetTable
 {
-    char      *name;
+    UTF8      *name;
     lconSubset subset;
 }
 SubsetTable[] =
 {
-    { "PLAYER",  lconPlayer },
-    { "OBJECT",  lconObject },
-    { "CONNECT", lconConnect},
-    { "PUPPET",  lconPuppet },
-    { "LISTEN",  lconListen },
-    { NULL,      lconAny    }
+    { (UTF8 *)"PLAYER",  lconPlayer },
+    { (UTF8 *)"OBJECT",  lconObject },
+    { (UTF8 *)"CONNECT", lconConnect},
+    { (UTF8 *)"PUPPET",  lconPuppet },
+    { (UTF8 *)"LISTEN",  lconListen },
+    { (UTF8 *)NULL,      lconAny    }
 };
 
 /*
@@ -3552,7 +3551,7 @@ FUNCTION(fun_entrances)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    char *p;
+    UTF8 *p;
     dbref i;
 
     dbref low_bound = 0;
@@ -3617,7 +3616,7 @@ FUNCTION(fun_entrances)
                 break;
 
             default:
-                safe_str("#-1 INVALID TYPE", buff, bufc);
+                safe_str((UTF8 *)"#-1 INVALID TYPE", buff, bufc);
                 return;
             }
         }
@@ -3868,7 +3867,7 @@ static FUNCTION(fun_lpos)
 #define IF_REPLACE  1
 #define IF_INSERT   2
 
-static void do_itemfuns(char *buff, char **bufc, mux_string *sList, int iWord,
+static void do_itemfuns(UTF8 *buff, UTF8 **bufc, mux_string *sList, int iWord,
                         mux_string *sWord, SEP *psep, int flag)
 {
     // If passed a null string return an empty string, except that we
@@ -4048,7 +4047,7 @@ static FUNCTION(fun_remove)
     mux_string *sWord = new mux_string(fargs[1]);
     if (sWord->search(sep.str))
     {
-        safe_str("#-1 CAN ONLY REMOVE ONE ELEMENT", buff, bufc);
+        safe_str((UTF8 *)"#-1 CAN ONLY REMOVE ONE ELEMENT", buff, bufc);
         delete sWord;
         return;
     }
@@ -4133,14 +4132,14 @@ static FUNCTION(fun_member)
     }
 
     int wcount;
-    char *r, *s;
+    UTF8 *r, *s;
 
     wcount = 1;
     s = trim_space_sep(fargs[0], &sep);
     do
     {
         r = split_token(&s, &sep);
-        if (!strcmp(fargs[1], r))
+        if (!strcmp((char *)fargs[1], (char *)r))
         {
             safe_ltoa(wcount, buff, bufc);
             return;
@@ -4198,7 +4197,7 @@ static FUNCTION(fun_escape)
 
     mux_string *sStr = new mux_string(fargs[0]);
     size_t nLen = sStr->length();
-    char cChar;
+    UTF8 cChar;
     ANSI_ColorState csColor;
 
     mux_string *sOut = new mux_string;
@@ -4236,21 +4235,21 @@ static FUNCTION(fun_wordpos)
     }
 
     size_t ncp;
-    char *cp = strip_ansi(fargs[0], &ncp);
+    UTF8 *cp = strip_ansi(fargs[0], &ncp);
     unsigned int charpos = mux_atol(fargs[1]);
 
     if (  charpos > 0
        && charpos <= ncp)
     {
         size_t ncp_trimmed;
-        char *tp = &(cp[charpos - 1]);
+        UTF8 *tp = &(cp[charpos - 1]);
         cp = trim_space_sep_LEN(cp, ncp, &sep, &ncp_trimmed);
-        char *xp = split_token(&cp, &sep);
+        UTF8 *xp = split_token(&cp, &sep);
 
         int i;
         for (i = 1; xp; i++)
         {
-            if (tp < xp + strlen(xp))
+            if (tp < xp + strlen((char *)xp))
             {
                 break;
             }
@@ -4280,43 +4279,43 @@ static FUNCTION(fun_type)
     switch (Typeof(it))
     {
     case TYPE_ROOM:
-        safe_str("ROOM", buff, bufc);
+        safe_str((UTF8 *)"ROOM", buff, bufc);
         break;
     case TYPE_EXIT:
-        safe_str("EXIT", buff, bufc);
+        safe_str((UTF8 *)"EXIT", buff, bufc);
         break;
     case TYPE_PLAYER:
-        safe_str("PLAYER", buff, bufc);
+        safe_str((UTF8 *)"PLAYER", buff, bufc);
         break;
     case TYPE_THING:
-        safe_str("THING", buff, bufc);
+        safe_str((UTF8 *)"THING", buff, bufc);
         break;
     default:
-        safe_str("#-1 ILLEGAL TYPE", buff, bufc);
+        safe_str((UTF8 *)"#-1 ILLEGAL TYPE", buff, bufc);
     }
 }
 
 typedef struct
 {
-    const char *pName;
+    const UTF8 *pName;
     int  iMask;
 } ATR_HAS_FLAG_ENTRY;
 
 static ATR_HAS_FLAG_ENTRY atr_has_flag_table[] =
 {
-    { "dark",       AF_DARK    },
-    { "wizard",     AF_WIZARD  },
-    { "hidden",     AF_MDARK   },
-    { "html",       AF_HTML    },
-    { "locked",     AF_LOCK    },
-    { "no_command", AF_NOPROG  },
-    { "no_parse",   AF_NOPARSE },
-    { "regexp",     AF_REGEXP  },
-    { "god",        AF_GOD     },
-    { "visual",     AF_VISUAL  },
-    { "no_inherit", AF_PRIVATE },
-    { "const",      AF_CONST   },
-    { NULL,         0          }
+    { (UTF8 *)"dark",       AF_DARK    },
+    { (UTF8 *)"wizard",     AF_WIZARD  },
+    { (UTF8 *)"hidden",     AF_MDARK   },
+    { (UTF8 *)"html",       AF_HTML    },
+    { (UTF8 *)"locked",     AF_LOCK    },
+    { (UTF8 *)"no_command", AF_NOPROG  },
+    { (UTF8 *)"no_parse",   AF_NOPARSE },
+    { (UTF8 *)"regexp",     AF_REGEXP  },
+    { (UTF8 *)"god",        AF_GOD     },
+    { (UTF8 *)"visual",     AF_VISUAL  },
+    { (UTF8 *)"no_inherit", AF_PRIVATE },
+    { (UTF8 *)"const",      AF_CONST   },
+    { (UTF8 *)NULL,         0          }
 };
 
 static bool atr_has_flag
@@ -4326,7 +4325,7 @@ static bool atr_has_flag
     ATTR* pattr,
     dbref aowner,
     int   aflags,
-    const char *flagname
+    const UTF8 *flagname
 )
 {
     UNUSED_PARAMETER(aowner);
@@ -4525,7 +4524,7 @@ static FUNCTION(fun_listrlevels)
 static FUNCTION(fun_rxlevel)
 {
     dbref it;
-    char levelbuff[2048];
+    UTF8 levelbuff[2048];
     int i;
     RLEVEL lev;
 
@@ -4554,7 +4553,7 @@ static FUNCTION(fun_rxlevel)
 static FUNCTION(fun_txlevel)
 {
     dbref it;
-    char levelbuff[2048];
+    UTF8 levelbuff[2048];
     int i;
     RLEVEL lev;
 
@@ -4599,7 +4598,7 @@ static FUNCTION(fun_powers)
        || Examinable(executor, it)
        || it == enactor)
     {
-        char *buf = powers_list(executor, it);
+        UTF8 *buf = powers_list(executor, it);
         safe_str(buf, buff, bufc);
         free_lbuf(buf);
     }
@@ -4683,7 +4682,7 @@ static FUNCTION(fun_lock)
 
     // Get the attribute and decode it if we can read it
     //
-    char *tbuf = atr_get("fun_lock.4685", it, pattr->number, &aowner, &aflags);
+    UTF8 *tbuf = atr_get("fun_lock.4685", it, pattr->number, &aowner, &aflags);
     if (bCanReadAttr(executor, it, pattr, false))
     {
         pBoolExp = parse_boolexp(executor, tbuf, true);
@@ -4736,7 +4735,7 @@ static FUNCTION(fun_elock)
     else if (  nearby_or_control(executor, victim)
             || nearby_or_control(executor, it))
     {
-        char *tbuf = atr_get("fun_elock.4738", it, pattr->number, &aowner, &aflags);
+        UTF8 *tbuf = atr_get("fun_elock.4738", it, pattr->number, &aowner, &aflags);
         if (  pattr->number == A_LOCK
            || bCanReadAttr(executor, it, pattr, false))
         {
@@ -4752,7 +4751,7 @@ static FUNCTION(fun_elock)
     }
     else
     {
-        safe_str("#-1 TOO FAR AWAY", buff, bufc);
+        safe_str((UTF8 *)"#-1 TOO FAR AWAY", buff, bufc);
     }
 }
 
@@ -4816,14 +4815,14 @@ static FUNCTION(fun_nearby)
     if (!Good_obj(obj1))
     {
         safe_match_result(obj1, buff, bufc);
-        safe_str(" (ARG1)", buff, bufc);
+        safe_str((UTF8 *)" (ARG1)", buff, bufc);
         return;
     }
     dbref obj2 = match_thing_quiet(executor, fargs[1]);
     if (!Good_obj(obj2))
     {
         safe_match_result(obj2, buff, bufc);
-        safe_str(" (ARG2)", buff, bufc);
+        safe_str((UTF8 *)" (ARG2)", buff, bufc);
         return;
     }
     bool bResult = (  (  nearby_or_control(executor, obj1)
@@ -4837,7 +4836,7 @@ static FUNCTION(fun_nearby)
  * * fun_obj, fun_poss, and fun_subj: perform pronoun sub for object.
  */
 
-static void process_sex(dbref player, char *what, const char *token, char *buff, char **bufc)
+static void process_sex(dbref player, UTF8 *what, const UTF8 *token, UTF8 *buff, UTF8 **bufc)
 {
     dbref it = match_thing_quiet(player, strip_ansi(what));
     if (!Good_obj(it))
@@ -4852,7 +4851,7 @@ static void process_sex(dbref player, char *what, const char *token, char *buff,
     }
     else
     {
-        mux_exec((char *)token, buff, bufc, it, it, it, EV_EVAL, NULL, 0);
+        mux_exec((UTF8 *)token, buff, bufc, it, it, it, EV_EVAL, NULL, 0);
     }
 }
 
@@ -4865,7 +4864,7 @@ static FUNCTION(fun_obj)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    process_sex(executor, fargs[0], "%o", buff, bufc);
+    process_sex(executor, fargs[0], (UTF8 *)"%o", buff, bufc);
 }
 
 static FUNCTION(fun_poss)
@@ -4877,7 +4876,7 @@ static FUNCTION(fun_poss)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    process_sex(executor, fargs[0], "%p", buff, bufc);
+    process_sex(executor, fargs[0], (UTF8 *)"%p", buff, bufc);
 }
 
 static FUNCTION(fun_subj)
@@ -4889,7 +4888,7 @@ static FUNCTION(fun_subj)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    process_sex(executor, fargs[0], "%s", buff, bufc);
+    process_sex(executor, fargs[0], (UTF8 *)"%s", buff, bufc);
 }
 
 static FUNCTION(fun_aposs)
@@ -4901,7 +4900,7 @@ static FUNCTION(fun_aposs)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    process_sex(executor, fargs[0], "%a", buff, bufc);
+    process_sex(executor, fargs[0], (UTF8 *)"%a", buff, bufc);
 }
 
 /*
@@ -4961,7 +4960,7 @@ FUNCTION(fun_fcount)
     else if (1 == nfargs)
     {
         long ficBefore = mudstate.func_invk_ctr;
-        char *bufc_save = *bufc;
+        UTF8 *bufc_save = *bufc;
         mux_exec(fargs[0], buff, bufc, executor, caller, enactor,
             eval|EV_FCHECK|EV_STRIP_CURLY|EV_EVAL, cargs, ncargs);
         long ficAfter = mudstate.func_invk_ctr;
@@ -5193,7 +5192,7 @@ static FUNCTION(fun_lnum)
         for (i = bot+step; i <= top; i += step)
         {
             print_sep(&sep, buff, bufc);
-            char *p = *bufc;
+            UTF8 *p = *bufc;
             safe_ltoa(i, buff, bufc);
             if (p == *bufc)
             {
@@ -5207,7 +5206,7 @@ static FUNCTION(fun_lnum)
         for (i = bot-step; i >= top; i -= step)
         {
             print_sep(&sep, buff, bufc);
-            char *p = *bufc;
+            UTF8 *p = *bufc;
             safe_ltoa(i, buff, bufc);
             if (p == *bufc)
             {
@@ -5221,7 +5220,7 @@ static FUNCTION(fun_lnum)
  * fun_lattr, fun_lattrp: Return list of attributes I can see on the object.
  */
 
-static void lattr_handler(char *buff, char **bufc, dbref executor, char *fargs[],
+static void lattr_handler(UTF8 *buff, UTF8 **bufc, dbref executor, UTF8 *fargs[],
                    bool bCheckParent)
 {
     dbref thing;
@@ -5246,7 +5245,7 @@ static void lattr_handler(char *buff, char **bufc, dbref executor, char *fargs[]
                     safe_chr(' ', buff, bufc);
                 }
                 bFirst = false;
-                safe_str((char *)pattr->name, buff, bufc);
+                safe_str(pattr->name, buff, bufc);
             }
         }
     }
@@ -5323,19 +5322,19 @@ static FUNCTION(fun_attrcnt)
  * * fun_reverse, fun_revwords: Reverse things.
  */
 #if 0
-typedef void MEMXFORM(char *dest, char *src, size_t n);
+typedef void MEMXFORM(UTF8 *dest, UTF8 *src, size_t n);
 static void ANSI_TransformTextReverseWithFunction
 (
-    char *buff,
-    char **bufc,
-    char *pString,
+    UTF8 *buff,
+    UTF8 **bufc,
+    UTF8 *pString,
     MEMXFORM *pfMemXForm
 )
 {
     // Bounds checking.
     //
-    size_t nString = strlen(pString);
-    char *pBuffer = *bufc;
+    size_t nString = strlen((char *)pString);
+    UTF8 *pBuffer = *bufc;
     size_t nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
     if (nString > nBufferAvailable)
     {
@@ -5356,7 +5355,7 @@ static void ANSI_TransformTextReverseWithFunction
     // TODO: Do not reverse the CRLF in the text part either.
     //
     size_t  nANSI = 0;
-    char *pANSI = pString;
+    UTF8 *pANSI = pString;
     pBuffer += nString;
     *bufc = pBuffer;
     **bufc = '\0';
@@ -5398,16 +5397,16 @@ static void ANSI_TransformTextReverseWithFunction
     memcpy(pBuffer, pANSI, nANSI);
 }
 
-static char ReverseWordsInText_Seperator;
+static UTF8 ReverseWordsInText_Seperator;
 
-static void ReverseWordsInText(char *dest, char *src, size_t n)
+static void ReverseWordsInText(UTF8 *dest, UTF8 *src, size_t n)
 {
-    char chSave = src[n];
+    UTF8 chSave = src[n];
     src[n] = '\0';
     dest += n;
     while (n)
     {
-        char *pWord = strchr(src, ReverseWordsInText_Seperator);
+        UTF8 *pWord = (UTF8 *)strchr((char *)src, ReverseWordsInText_Seperator);
         size_t nLen;
         if (pWord)
         {
@@ -5528,7 +5527,7 @@ static FUNCTION(fun_after)
 
     // Sanity-check arg1 and arg2.
     //
-    char *bp = fargs[0];
+    UTF8 *bp = fargs[0];
     if (nfargs > 1)
     {
         sPat->import(fargs[1]);
@@ -5577,7 +5576,7 @@ static FUNCTION(fun_before)
 
     // Sanity-check arg1 and arg2.
     //
-    char *bp = fargs[0];
+    UTF8 *bp = fargs[0];
     if (nfargs > 1)
     {
         sPat->import(fargs[1]);
@@ -5629,7 +5628,7 @@ static FUNCTION(fun_search)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    char *pArg = NULL;
+    UTF8 *pArg = NULL;
     if (nfargs != 0)
     {
         pArg = fargs[0];
@@ -5640,7 +5639,7 @@ static FUNCTION(fun_search)
     SEARCH searchparm;
     if (!search_setup(executor, pArg, &searchparm))
     {
-        safe_str("#-1 ERROR DURING SEARCH", buff, bufc);
+        safe_str((UTF8 *)"#-1 ERROR DURING SEARCH", buff, bufc);
         return;
     }
 
@@ -5680,7 +5679,7 @@ static FUNCTION(fun_stats)
     if (  nfargs == 0
        || (!fargs[0])
        || !*fargs[0]
-       || !string_compare(fargs[0], "all"))
+       || !string_compare(fargs[0], (UTF8 *)"all"))
     {
         who = NOTHING;
     }
@@ -5689,14 +5688,14 @@ static FUNCTION(fun_stats)
         who = lookup_player(executor, fargs[0], true);
         if (who == NOTHING)
         {
-            safe_str("#-1 PLAYER NOT FOUND", buff, bufc);
+            safe_str((UTF8 *)"#-1 PLAYER NOT FOUND", buff, bufc);
             return;
         }
     }
     STATS statinfo;
     if (!get_stats(executor, who, &statinfo))
     {
-        safe_str("#-1 ERROR GETTING STATS", buff, bufc);
+        safe_str((UTF8 *)"#-1 ERROR GETTING STATS", buff, bufc);
         return;
     }
     safe_tprintf_str(buff, bufc, "%d %d %d %d %d %d", statinfo.s_total, statinfo.s_rooms,
@@ -5721,9 +5720,9 @@ static FUNCTION(fun_merge)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    if (1 < strlen(fargs[2]))
+    if (1 < strlen((char *)fargs[2]))
     {
-        safe_str("#-1 TOO MANY CHARACTERS", buff, bufc);
+        safe_str((UTF8 *)"#-1 TOO MANY CHARACTERS", buff, bufc);
         return;
     }
 
@@ -5735,7 +5734,7 @@ static FUNCTION(fun_merge)
     size_t nLen = sStrA->length();
     if (nLen != sStrB->length())
     {
-        safe_str("#-1 STRING LENGTHS MUST BE EQUAL", buff, bufc);
+        safe_str((UTF8 *)"#-1 STRING LENGTHS MUST BE EQUAL", buff, bufc);
         delete sStrA;
         delete sStrB;
         return;
@@ -5744,7 +5743,7 @@ static FUNCTION(fun_merge)
     // Find the character to look for. null character is considered a
     // space.
     //
-    const char cFill = *fargs[2] ? *fargs[2] : ' ';
+    const UTF8 cFill = *fargs[2] ? *fargs[2] : ' ';
 
     for (size_t i = 0; i < nLen; i++)
     {
@@ -5782,21 +5781,21 @@ static FUNCTION(fun_splice)
     //
     if (countwords(fargs[2], &sep) > 1)
     {
-        safe_str("#-1 TOO MANY WORDS", buff, bufc);
+        safe_str((UTF8 *)"#-1 TOO MANY WORDS", buff, bufc);
         return;
     }
     int words = countwords(fargs[0], &sep);
     if (words != countwords(fargs[1], &sep))
     {
-        safe_str("#-1 NUMBER OF WORDS MUST BE EQUAL", buff, bufc);
+        safe_str((UTF8 *)"#-1 NUMBER OF WORDS MUST BE EQUAL", buff, bufc);
         return;
     }
 
     // Loop through the two lists.
     //
-    char *p1 = fargs[0];
-    char *q1 = fargs[1];
-    char *p2, *q2;
+    UTF8 *p1 = fargs[0];
+    UTF8 *q1 = fargs[1];
+    UTF8 *p2, *q2;
     bool first = true;
     int i;
     for (i = 0; i < words; i++)
@@ -5807,7 +5806,7 @@ static FUNCTION(fun_splice)
         {
             print_sep(&osep, buff, bufc);
         }
-        if (strcmp(p2, fargs[2]) == 0)
+        if (strcmp((char *)p2, (char *)fargs[2]) == 0)
         {
             safe_str(q2, buff, bufc); // replace
         }
@@ -5848,7 +5847,7 @@ static FUNCTION(fun_repeat)
     }
     else
     {
-        size_t len = strlen(fargs[0]);
+        size_t len = strlen((char *)fargs[0]);
         if (len == 1)
         {
             // It turns into a memset.
@@ -5861,7 +5860,7 @@ static FUNCTION(fun_repeat)
             if (  times > LBUF_SIZE - 1
                || nSize > LBUF_SIZE - 1)
             {
-                safe_str("#-1 STRING TOO LONG", buff, bufc);
+                safe_str((UTF8 *)"#-1 STRING TOO LONG", buff, bufc);
             }
             else
             {
@@ -5911,13 +5910,13 @@ static FUNCTION(fun_iter)
         return;
     }
 
-    char *curr = alloc_lbuf("fun_iter");
-    char *dp = curr;
+    UTF8 *curr = alloc_lbuf("fun_iter");
+    UTF8 *dp = curr;
     mux_exec(fargs[0], curr, &dp, executor, caller, enactor,
         eval|EV_STRIP_CURLY|EV_FCHECK|EV_EVAL, cargs, ncargs);
     *dp = '\0';
     size_t ncp;
-    char *cp = trim_space_sep_LEN(curr, dp-curr, &sep, &ncp);
+    UTF8 *cp = trim_space_sep_LEN(curr, dp-curr, &sep, &ncp);
     if (!*cp)
     {
         free_lbuf(curr);
@@ -5943,13 +5942,13 @@ static FUNCTION(fun_iter)
         }
         first = false;
         number++;
-        char *objstring = split_token(&cp, &sep);
+        UTF8 *objstring = split_token(&cp, &sep);
         if (bLoopInBounds)
         {
             mudstate.itext[mudstate.in_loop-1] = objstring;
             mudstate.inum[mudstate.in_loop-1]  = number;
         }
-        char *buff2 = replace_tokens(fargs[1], objstring, mux_ltoa_t(number),
+        UTF8 *buff2 = replace_tokens(fargs[1], objstring, mux_ltoa_t(number),
             NULL);
         mux_exec(buff2, buff, bufc, executor, caller, enactor,
             eval|EV_STRIP_CURLY|EV_FCHECK|EV_EVAL, cargs, ncargs);
@@ -5964,7 +5963,7 @@ static FUNCTION(fun_iter)
     free_lbuf(curr);
 }
 
-static void iter_value(char *buff, char **bufc, char *fargs[], int nfargs, bool bWhich)
+static void iter_value(UTF8 *buff, UTF8 **bufc, UTF8 *fargs[], int nfargs, bool bWhich)
 {
     int number = 0;
     if (nfargs > 0)
@@ -6024,14 +6023,14 @@ static FUNCTION(fun_list)
         return;
     }
 
-    char *objstring, *result;
+    UTF8 *objstring, *result;
 
-    char *curr = alloc_lbuf("fun_list");
-    char *dp   = curr;
+    UTF8 *curr = alloc_lbuf("fun_list");
+    UTF8 *dp   = curr;
     mux_exec(fargs[0], curr, &dp, executor, caller, enactor,
         eval|EV_STRIP_CURLY|EV_FCHECK|EV_EVAL, cargs, ncargs);
     size_t ncp;
-    char *cp = trim_space_sep_LEN(curr, dp-curr, &sep, &ncp);
+    UTF8 *cp = trim_space_sep_LEN(curr, dp-curr, &sep, &ncp);
     if (!*cp)
     {
         free_lbuf(curr);
@@ -6057,7 +6056,7 @@ static FUNCTION(fun_list)
             mudstate.itext[mudstate.in_loop-1] = objstring;
             mudstate.inum[mudstate.in_loop-1]  = number;
         }
-        char *buff2 = replace_tokens(fargs[1], objstring, mux_ltoa_t(number),
+        UTF8 *buff2 = replace_tokens(fargs[1], objstring, mux_ltoa_t(number),
             NULL);
         dp = result = alloc_lbuf("fun_list.2");
         mux_exec(buff2, result, &dp, executor, caller, enactor,
@@ -6113,7 +6112,7 @@ static FUNCTION(fun_fold)
         return;
     }
 
-    char *atext;
+    UTF8 *atext;
     dbref thing;
     dbref aowner;
     int   aflags;
@@ -6124,9 +6123,9 @@ static FUNCTION(fun_fold)
 
     // Evaluate it using the rest of the passed function args.
     //
-    char *curr = fargs[1];
-    char *cp = curr;
-    char *result, *bp, *clist[2];
+    UTF8 *curr = fargs[1];
+    UTF8 *cp = curr;
+    UTF8 *result, *bp, *clist[2];
 
     // May as well handle first case now.
     //
@@ -6152,7 +6151,7 @@ static FUNCTION(fun_fold)
         *bp = '\0';
     }
 
-    char *rstore = result;
+    UTF8 *rstore = result;
     result = alloc_lbuf("fun_fold");
 
     while (  cp
@@ -6191,25 +6190,25 @@ static FUNCTION(fun_itemize)
         return;
     }
 
-    const char *lconj = "and";
+    const UTF8 *lconj = (UTF8 *)"and";
     if (nfargs > 2)
     {
         lconj = fargs[2];
     }
-    const char *punc = ",";
+    const UTF8 *punc = (UTF8 *)",";
     if (nfargs > 3)
     {
         punc = fargs[3];
     }
 
     int pos = 1;
-    char *cp = trim_space_sep(fargs[0], &sep);
-    char *word = split_token(&cp, &sep);
+    UTF8 *cp = trim_space_sep(fargs[0], &sep);
+    UTF8 *word = split_token(&cp, &sep);
     while (cp && *cp)
     {
         pos++;
         safe_str(word, buff, bufc);
-        char *nextword = split_token(&cp, &sep);
+        UTF8 *nextword = split_token(&cp, &sep);
 
         if (!cp || !*cp)
         {
@@ -6245,10 +6244,10 @@ static FUNCTION(fun_choose)
         return;
     }
 
-    char **elems = NULL;
+    UTF8 **elems = NULL;
     try
     {
-        elems = new char *[LBUF_SIZE/2];
+        elems = new UTF8 *[LBUF_SIZE/2];
     }
     catch (...)
     {
@@ -6260,10 +6259,10 @@ static FUNCTION(fun_choose)
         return;
     }
 
-    char **weights = NULL;
+    UTF8 **weights = NULL;
     try
     {
-        weights = new char *[LBUF_SIZE/2];
+        weights = new UTF8 *[LBUF_SIZE/2];
     }
     catch (...)
     {
@@ -6281,7 +6280,7 @@ static FUNCTION(fun_choose)
 
     if (n_elems != n_weights)
     {
-        safe_str("#-1 LISTS MUST BE OF EQUAL SIZE", buff, bufc);
+        safe_str((UTF8 *)"#-1 LISTS MUST BE OF EQUAL SIZE", buff, bufc);
         delete [] elems;
         delete [] weights;
         return;
@@ -6308,7 +6307,7 @@ static FUNCTION(fun_choose)
             int sum_next = sum + num;
             if (sum_next < sum)
             {
-                safe_str("#-1 OVERFLOW", buff, bufc);
+                safe_str((UTF8 *)"#-1 OVERFLOW", buff, bufc);
                 delete [] elems;
                 delete [] weights;
                 return;
@@ -6355,13 +6354,13 @@ FUNCTION(fun_distribute)
     //
     if (!is_integer(fargs[0], NULL))
     {
-        safe_str("#-1 ARG1 IS NOT AN INTEGER", buff, bufc);
+        safe_str((UTF8 *)"#-1 ARG1 IS NOT AN INTEGER", buff, bufc);
         return;
     }
 
     if (!is_integer(fargs[1], NULL))
     {
-        safe_str("#-1 ARG2 IS NOT AN INTEGER", buff, bufc);
+        safe_str((UTF8 *)"#-1 ARG2 IS NOT AN INTEGER", buff, bufc);
         return;
     }
 
@@ -6390,7 +6389,7 @@ FUNCTION(fun_distribute)
 
     if (NULL == bin_array)
     {
-        safe_str("#-1 NOT ENOUGH MEMORY TO DISTRIBUTE", buff, bufc);
+        safe_str((UTF8 *)"#-1 NOT ENOUGH MEMORY TO DISTRIBUTE", buff, bufc);
     }
     else
     {
@@ -6456,13 +6455,13 @@ FUNCTION(fun_sql)
     }
 
 
-    char *curr = alloc_lbuf("fun_sql");
-    char *dp = curr;
+    UTF8 *curr = alloc_lbuf("fun_sql");
+    UTF8 *dp = curr;
     mux_exec(fargs[0], curr, &dp, executor, caller, enactor,
         eval|EV_STRIP_CURLY|EV_FCHECK|EV_EVAL, cargs, ncargs);
     *dp = '\0';
 
-    char *cp = curr;
+    UTF8 *cp = curr;
     cp = trim_space_sep(cp, &sepSpace);
     if (!*cp)
     {
@@ -6477,7 +6476,7 @@ FUNCTION(fun_sql)
         return;
     }
 
-    if (mysql_real_query(mush_database, cp, strlen(cp)))
+    if (mysql_real_query(mush_database, cp, strlen((char *)cp)))
     {
         free_lbuf(curr);
         safe_str("#-1 QUERY ERROR", buff, bufc);
@@ -6531,10 +6530,10 @@ FUNCTION(fun_sql)
  *  NOTE:  If you specify a separator, it is used to delimit the returned list.
  */
 
-static void filter_handler(char *buff, char **bufc, dbref executor, dbref enactor,
-                    char *fargs[], int nfargs, SEP *psep, SEP *posep, bool bBool)
+static void filter_handler(UTF8 *buff, UTF8 **bufc, dbref executor, dbref enactor,
+                    UTF8 *fargs[], int nfargs, SEP *psep, SEP *posep, bool bBool)
 {
-    char *atext;
+    UTF8 *atext;
     dbref thing;
     dbref aowner;
     int   aflags;
@@ -6545,7 +6544,7 @@ static void filter_handler(char *buff, char **bufc, dbref executor, dbref enacto
 
     // Process optional arguments %1-%9.
     //
-    char *filter_args[10];
+    UTF8 *filter_args[10];
     int   filter_nargs = 1;
     for (int iArg = 4; iArg < nfargs; iArg++)
     {
@@ -6554,17 +6553,17 @@ static void filter_handler(char *buff, char **bufc, dbref executor, dbref enacto
 
     // Now iteratively eval the attrib with the argument list.
     //
-    char *cp = trim_space_sep(fargs[1], psep);
+    UTF8 *cp = trim_space_sep(fargs[1], psep);
     if ('\0' != cp[0])
     {
-        char *result = alloc_lbuf("fun_filter");
+        UTF8 *result = alloc_lbuf("fun_filter");
         bool bFirst = true;
         while (  cp
               && mudstate.func_invk_ctr < mudconf.func_invk_lim
               && !MuxAlarm.bAlarmed)
         {
-            char *objstring = split_token(&cp, psep);
-            char *bp = result;
+            UTF8 *objstring = split_token(&cp, psep);
+            UTF8 *bp = result;
             filter_args[0] = objstring;
             mux_exec(atext, result, &bp, thing, executor, enactor,
                 AttrTrace(aflags, EV_STRIP_CURLY|EV_FCHECK|EV_EVAL),
@@ -6644,7 +6643,7 @@ static FUNCTION(fun_map)
         return;
     }
 
-    char *atext;
+    UTF8 *atext;
     dbref thing;
     dbref aowner;
     int   aflags;
@@ -6655,7 +6654,7 @@ static FUNCTION(fun_map)
 
     // Process optional arguments %1-%9.
     //
-    char *map_args[10];
+    UTF8 *map_args[10];
     int   map_nargs = 1;
     for (int iArg = 4; iArg < nfargs; iArg++)
     {
@@ -6664,7 +6663,7 @@ static FUNCTION(fun_map)
 
     // Now process the list one element at a time.
     //
-    char *cp = trim_space_sep(fargs[1], &sep);
+    UTF8 *cp = trim_space_sep(fargs[1], &sep);
     if ('\0' != cp[0])
     {
         bool first = true;
@@ -6677,7 +6676,7 @@ static FUNCTION(fun_map)
                 print_sep(&osep, buff, bufc);
             }
             first = false;
-            char *objstring = split_token(&cp, &sep);
+            UTF8 *objstring = split_token(&cp, &sep);
             map_args[0] = objstring;
             mux_exec(atext, buff, bufc, thing, executor, enactor,
                 AttrTrace(aflags, EV_STRIP_CURLY|EV_FCHECK|EV_EVAL),
@@ -6729,7 +6728,7 @@ static FUNCTION(fun_locate)
 
     bool check_locks, verbose, multiple;
     dbref thing, what;
-    char *cp;
+    UTF8 *cp;
 
     int pref_type = NOTYPE;
     check_locks = verbose = multiple = false;
@@ -6848,23 +6847,23 @@ static FUNCTION(fun_locate)
 
 static void switch_handler
 (
-    char *buff, char **bufc,
+    UTF8 *buff, UTF8 **bufc,
     dbref executor, dbref caller, dbref enactor,
     int   eval,
-    char *fargs[], int nfargs,
-    char *cargs[], int ncargs,
+    UTF8 *fargs[], int nfargs,
+    UTF8 *cargs[], int ncargs,
     bool bSwitch
 )
 {
     // Evaluate the target in fargs[0].
     //
-    char *mbuff = alloc_lbuf("fun_switch");
-    char *bp = mbuff;
+    UTF8 *mbuff = alloc_lbuf("fun_switch");
+    UTF8 *bp = mbuff;
     mux_exec(fargs[0], mbuff, &bp, executor, caller, enactor,
         eval|EV_STRIP_CURLY|EV_FCHECK|EV_EVAL, cargs, ncargs);
     *bp = '\0';
 
-    char *tbuff = alloc_lbuf("fun_switch.2");
+    UTF8 *tbuff = alloc_lbuf("fun_switch.2");
 
     // Loop through the patterns looking for a match.
     //
@@ -6879,7 +6878,7 @@ static void switch_handler
             eval|EV_STRIP_CURLY|EV_FCHECK|EV_EVAL, cargs, ncargs);
         *bp = '\0';
 
-        if (bSwitch ? wild_match(tbuff, mbuff) : strcmp(tbuff, mbuff) == 0)
+        if (bSwitch ? wild_match(tbuff, mbuff) : strcmp((char *)tbuff, (char *)mbuff) == 0)
         {
             free_lbuf(tbuff);
             tbuff = replace_tokens(fargs[i+1], NULL, NULL, mbuff);
@@ -7004,7 +7003,7 @@ static FUNCTION(fun_height)
     }
     else
     {
-        char *pTargetName = fargs[0];
+        UTF8 *pTargetName = fargs[0];
         if ('*' == *pTargetName)
         {
             pTargetName++;
@@ -7048,7 +7047,7 @@ static FUNCTION(fun_width)
     }
     else
     {
-        char *pTargetName = fargs[0];
+        UTF8 *pTargetName = fargs[0];
         if ('*' == *pTargetName)
         {
             pTargetName++;
@@ -7106,7 +7105,7 @@ static FUNCTION(fun_idle)
     }
     else
     {
-        char *pTargetName = fargs[0];
+        UTF8 *pTargetName = fargs[0];
         if (*pTargetName == '*')
         {
             pTargetName++;
@@ -7157,7 +7156,7 @@ static FUNCTION(fun_conn)
     }
     else
     {
-        char *pTargetName = fargs[0];
+        UTF8 *pTargetName = fargs[0];
         if (*pTargetName == '*')
         {
             pTargetName++;
@@ -7201,13 +7200,13 @@ static FUNCTION(fun_terminfo)
            && (  d->player != executor
               && !Wizard_Who(executor)))
         {
-            safe_str("#-1 PERMISSION DENIED",buff, bufc);
+            safe_str((UTF8 *)"#-1 PERMISSION DENIED",buff, bufc);
             return;
         }
     }
     else
     {
-        char *pTargetName = fargs[0];
+        UTF8 *pTargetName = fargs[0];
         if (*pTargetName == '*')
         {
             pTargetName++;
@@ -7217,7 +7216,7 @@ static FUNCTION(fun_terminfo)
            && !(  !Hidden(target)
               || See_Hidden(executor)))
         {
-            safe_str("#-1 PERMISSION DENIED", buff, bufc);
+            safe_str((UTF8 *)"#-1 PERMISSION DENIED", buff, bufc);
             return;
         }
         DESC_ITER_CONN(d)
@@ -7231,34 +7230,34 @@ static FUNCTION(fun_terminfo)
 
     if (!d)
     {
-        safe_str("#-1 NOT CONNECTED", buff, bufc);
+        safe_str((UTF8 *)"#-1 NOT CONNECTED", buff, bufc);
         return;
     }
 
     if (d->ttype)
     {
         safe_str(d->ttype, buff, bufc);
-        safe_str(" telnet", buff, bufc);
+        safe_str((UTF8 *)" telnet", buff, bufc);
     }
     else
     {
-        safe_str("unknown", buff, bufc);
+        safe_str((UTF8 *)"unknown", buff, bufc);
         if (  d->nvt_him_state[TELNET_NAWS]
            || d->nvt_him_state[TELNET_SGA]
            || d->nvt_him_state[TELNET_EOR])
         {
-            safe_str(" telnet", buff, bufc);
+            safe_str((UTF8 *)" telnet", buff, bufc);
         }
     }
 
     if (Html(d->player))
     {
-        safe_str(" pueblo", buff, bufc);
+        safe_str((UTF8 *)" pueblo", buff, bufc);
     }
 
     if (CHARSET_UTF8 == d->encoding)
     {
-        safe_str(" unicode", buff, bufc);
+        safe_str((UTF8 *)" unicode", buff, bufc);
     }
 }
 
@@ -7276,14 +7275,14 @@ typedef struct qsort_record
         long   l;
         INT64  i64;
     } u;
-    char *str;
+    UTF8 *str;
 } q_rec;
 
 typedef int DCL_CDECL CompareFunction(const void *s1, const void *s2);
 
 static int DCL_CDECL a_comp(const void *s1, const void *s2)
 {
-    return strcmp(((q_rec *)s1)->str, ((q_rec *)s2)->str);
+    return strcmp((char *)((q_rec *)s1)->str, (char *)((q_rec *)s2)->str);
 }
 
 static int DCL_CDECL a_casecomp(const void *s1, const void *s2)
@@ -7332,14 +7331,14 @@ static int DCL_CDECL i64_comp(const void *s1, const void *s2)
 
 typedef struct
 {
-    char **m_s;
+    UTF8 **m_s;
     int    m_n;
     int    m_iSortType;
     q_rec *m_ptrs;
 
 } SortContext;
 
-static bool do_asort_start(SortContext *psc, int n, char *s[], int sort_type)
+static bool do_asort_start(SortContext *psc, int n, UTF8 *s[], int sort_type)
 {
     if (  n < 0
        || LBUF_SIZE <= n)
@@ -7440,11 +7439,11 @@ static FUNCTION(fun_sort)
         return;
     }
 
-    char *ptrs[LBUF_SIZE / 2];
+    UTF8 *ptrs[LBUF_SIZE / 2];
 
     // Convert the list to an array.
     //
-    char *list = alloc_lbuf("fun_sort");
+    UTF8 *list = alloc_lbuf("fun_sort");
     mux_strncpy(list, fargs[0], LBUF_SIZE-1);
     int nitems = list2arr(ptrs, LBUF_SIZE / 2, list, &sep);
 
@@ -7507,18 +7506,18 @@ static FUNCTION(fun_sort)
 static void handle_sets
 (
     int    nfargs,
-    char  *fargs[],
-    char  *buff,
-    char **bufc,
+    UTF8  *fargs[],
+    UTF8  *buff,
+    UTF8 **bufc,
     int    oper,
     SEP   *psep,
     SEP   *posep
 )
 {
-    char **ptrs1 = NULL;
+    UTF8 **ptrs1 = NULL;
     try
     {
-        ptrs1 = new char *[LBUF_SIZE/2];
+        ptrs1 = new UTF8 *[LBUF_SIZE/2];
     }
     catch (...)
     {
@@ -7530,10 +7529,10 @@ static void handle_sets
         return;
     }
 
-    char **ptrs2 = NULL;
+    UTF8 **ptrs2 = NULL;
     try
     {
-        ptrs2 = new char *[LBUF_SIZE/2];
+        ptrs2 = new UTF8 *[LBUF_SIZE/2];
     }
     catch (...)
     {
@@ -7548,11 +7547,11 @@ static void handle_sets
 
     int val;
 
-    char *list1 = alloc_lbuf("fun_setunion.1");
+    UTF8 *list1 = alloc_lbuf("fun_setunion.1");
     mux_strncpy(list1, fargs[0], LBUF_SIZE-1);
     int n1 = list2arr(ptrs1, LBUF_SIZE/2, list1, psep);
 
-    char *list2 = alloc_lbuf("fun_setunion.2");
+    UTF8 *list2 = alloc_lbuf("fun_setunion.2");
     mux_strncpy(list2, fargs[1], LBUF_SIZE-1);
     int n2 = list2arr(ptrs2, LBUF_SIZE/2, list2, psep);
 
@@ -7927,9 +7926,9 @@ static FUNCTION(fun_setinter)
 static void centerjustcombo
 (
     int iType,
-    char *buff,
-    char **bufc,
-    char *fargs[],
+    UTF8 *buff,
+    UTF8 **bufc,
+    UTF8 *fargs[],
     int nfargs,
     bool bTrunc
 )
@@ -7971,7 +7970,7 @@ static void centerjustcombo
     if (nfargs == 3 && *fargs[2])
     {
         sPad->import(fargs[2]);
-        sPad->strip("\r\n\t");
+        sPad->strip((UTF8 *)"\r\n\t");
     }
     nPad = sPad->length();
     if (0 == nPad)
@@ -8118,11 +8117,11 @@ static FUNCTION(fun_setq)
        || regnum >= MAX_GLOBAL_REGS
        || fargs[0][1] != '\0')
     {
-        safe_str("#-1 INVALID GLOBAL REGISTER", buff, bufc);
+        safe_str((UTF8 *)"#-1 INVALID GLOBAL REGISTER", buff, bufc);
     }
     else
     {
-        size_t n = strlen(fargs[1]);
+        size_t n = strlen((char *)fargs[1]);
         RegAssign(&mudstate.global_regs[regnum], n, fargs[1]);
     }
 }
@@ -8142,11 +8141,11 @@ static FUNCTION(fun_setr)
        || regnum >= MAX_GLOBAL_REGS
        || fargs[0][1] != '\0')
     {
-        safe_str("#-1 INVALID GLOBAL REGISTER", buff, bufc);
+        safe_str((UTF8 *)"#-1 INVALID GLOBAL REGISTER", buff, bufc);
     }
     else
     {
-        size_t n = strlen(fargs[1]);
+        size_t n = strlen((char *)fargs[1]);
         RegAssign(&mudstate.global_regs[regnum], n, fargs[1]);
         safe_copy_buf(fargs[1], n, buff, bufc);
     }
@@ -8167,7 +8166,7 @@ static FUNCTION(fun_r)
        || regnum >= MAX_GLOBAL_REGS
        || fargs[0][1] != '\0')
     {
-        safe_str("#-1 INVALID GLOBAL REGISTER", buff, bufc);
+        safe_str((UTF8 *)"#-1 INVALID GLOBAL REGISTER", buff, bufc);
     }
     else if (mudstate.global_regs[regnum])
     {
@@ -8192,7 +8191,7 @@ static FUNCTION(fun_isdbref)
     bool bResult = false;
     if (nfargs >= 1)
     {
-        char *p = fargs[0];
+        UTF8 *p = fargs[0];
         if (NUMBER_TOKEN == p[0])
         {
             p++;
@@ -8216,7 +8215,7 @@ static FUNCTION(fun_trim)
     UNUSED_PARAMETER(ncargs);
 
     bool bLeft = true, bRight = true;
-    const char *p = NULL;
+    const UTF8 *p = NULL;
     size_t n = 0;
 
     if (nfargs >= 2)
@@ -8235,7 +8234,7 @@ static FUNCTION(fun_trim)
         if (nfargs >= 3)
         {
             p = fargs[2];
-            n = strlen(p);
+            n = strlen((char *)p);
         }
     }
 
@@ -8341,12 +8340,12 @@ static FUNCTION(fun_error)
     {
         dbref aowner;
         int aflags;
-        char *errtext = atr_get("fun_error.8353", mudconf.global_error_obj, A_VA, &aowner, &aflags);
-        char *errbuff = alloc_lbuf("process_command.error_msg");
-        char *errbufc = errbuff;
+        UTF8 *errtext = atr_get("fun_error.8353", mudconf.global_error_obj, A_VA, &aowner, &aflags);
+        UTF8 *errbuff = alloc_lbuf("process_command.error_msg");
+        UTF8 *errbufc = errbuff;
         if (nfargs == 1)
         {
-            char *arg = fargs[0];
+            UTF8 *arg = fargs[0];
             mux_exec(errtext, errbuff, &errbufc, mudconf.global_error_obj, caller, enactor,
                 AttrTrace(aflags, EV_EVAL|EV_FCHECK|EV_STRIP_CURLY), &arg, 1);
         }
@@ -8362,7 +8361,7 @@ static FUNCTION(fun_error)
     }
     else
     {
-        safe_str("Huh?  (Type \"help\" for help.)", buff, bufc);
+        safe_str((UTF8 *)"Huh?  (Type \"help\" for help.)", buff, bufc);
     }
 }
 
@@ -8392,10 +8391,10 @@ static FUNCTION(fun_strip)
 }
 
 #define DEFAULT_WIDTH 78
-static char *expand_tabs(const char *str)
+static UTF8 *expand_tabs(const UTF8 *str)
 {
-    static char tbuf1[LBUF_SIZE];
-    char *bp = tbuf1;
+    static UTF8 tbuf1[LBUF_SIZE];
+    UTF8 *bp = tbuf1;
 
     if (str)
     {
@@ -8443,9 +8442,9 @@ static char *expand_tabs(const char *str)
     return tbuf1;
 }
 
-static size_t wraplen(char *str, const size_t nWidth, bool &newline)
+static size_t wraplen(UTF8 *str, const size_t nWidth, bool &newline)
 {
-    const size_t length = strlen(str);
+    const size_t length = strlen((char *)str);
     newline = false;
     if (length <= nWidth)
     {
@@ -8524,7 +8523,7 @@ static FUNCTION(fun_wrap)
     if (  3 <= nfargs
        && '\0' != fargs[2][0])
     {
-        char cJust = mux_toupper(fargs[2][0]);
+        UTF8 cJust = mux_toupper(fargs[2][0]);
         switch (cJust)
         {
         case 'L':
@@ -8537,14 +8536,14 @@ static FUNCTION(fun_wrap)
             iJustKey = CJC_CENTER;
             break;
         default:
-            safe_str("#-1 INVALID JUSTIFICATION SPECIFIED", buff, bufc);
+            safe_str((UTF8 *)"#-1 INVALID JUSTIFICATION SPECIFIED", buff, bufc);
             return;
         }
     }
 
     // ARG 4: Left padding. Default: blank.
     //
-    char *pLeft = NULL;
+    UTF8 *pLeft = NULL;
     if (  4 <= nfargs
        && '\0' != fargs[3][0])
     {
@@ -8553,7 +8552,7 @@ static FUNCTION(fun_wrap)
 
     // ARG 5: Right padding. Default: blank.
     //
-    char *pRight = NULL;
+    UTF8 *pRight = NULL;
     if (  5 <= nfargs
        && '\0' != fargs[4][0])
     {
@@ -8571,11 +8570,11 @@ static FUNCTION(fun_wrap)
 
     // ARG 7: Output separator. Default: line break.
     //
-    char *pOSep = "\r\n";
+    UTF8 *pOSep = (UTF8 *)"\r\n";
     if (  7 <= nfargs
        && '\0' != fargs[6][0])
     {
-        if (!strcmp(fargs[6], "@@"))
+        if (!strcmp((char *)fargs[6], "@@"))
         {
             pOSep = NULL;
         }
@@ -8602,12 +8601,12 @@ static FUNCTION(fun_wrap)
     mux_string *sStr = new mux_string(expand_tabs(fargs[0]));
     size_t nStr = sStr->length();
 
-    char *pPlain = alloc_lbuf("fun_wrap.pPlain");
-    char *pColor = alloc_lbuf("fun_wrap.pColor");
+    UTF8 *pPlain = alloc_lbuf("fun_wrap.pPlain");
+    UTF8 *pColor = alloc_lbuf("fun_wrap.pColor");
 
     size_t nLength = 0;
     bool newline = false;
-    char *jargs[2];
+    UTF8 *jargs[2];
     size_t nPos = 0;
 
     while (nPos < nStr)
@@ -8649,22 +8648,22 @@ static FUNCTION(fun_wrap)
 typedef struct
 {
     int  iBase;
-    char chLetter;
+    UTF8 chLetter;
     int  nName;
-    char *pName;
+    UTF8 *pName;
 
 } RADIX_ENTRY;
 
 #define N_RADIX_ENTRIES 7
 static const RADIX_ENTRY reTable[N_RADIX_ENTRIES] =
 {
-    { 31556926, 'y', 4, "year"   },  // Average solar year.
-    {  2629743, 'M', 5, "month"  },  // Average month.
-    {   604800, 'w', 4, "week"   },  // 7 days.
-    {    86400, 'd', 3, "day"    },
-    {     3600, 'h', 4, "hour"   },
-    {       60, 'm', 6, "minute" },
-    {        1, 's', 6, "second" }
+    { 31556926, 'y', 4, (UTF8 *)"year"   },  // Average solar year.
+    {  2629743, 'M', 5, (UTF8 *)"month"  },  // Average month.
+    {   604800, 'w', 4, (UTF8 *)"week"   },  // 7 days.
+    {    86400, 'd', 3, (UTF8 *)"day"    },
+    {     3600, 'h', 4, (UTF8 *)"hour"   },
+    {       60, 'm', 6, (UTF8 *)"minute" },
+    {        1, 's', 6, (UTF8 *)"second" }
 };
 
 #define IYEARS   0
@@ -8680,7 +8679,7 @@ static const RADIX_ENTRY reTable[N_RADIX_ENTRIES] =
 //
 static void GeneralTimeConversion
 (
-    char *Buffer,
+    UTF8 *Buffer,
     long Seconds,
     int iStartBase,
     int iEndBase,
@@ -8693,7 +8692,7 @@ static void GeneralTimeConversion
         Seconds = 0;
     }
 
-    char *p = Buffer;
+    UTF8 *p = Buffer;
     int iValue;
 
     if (  iStartBase < 0
@@ -8762,15 +8761,15 @@ static void GeneralTimeConversion
 //
 // We pick 64 as a round number.
 //
-static char TimeBuffer64[64];
-static char TimeBuffer80[80];
+static UTF8 TimeBuffer64[64];
+static UTF8 TimeBuffer80[80];
 
 // Show time in days, hours, and minutes
 //
 // 2^63/86400 is 1.07E14 which is at most 15 digits.
 // '(15)d (2):(2)\0' is at most 23 characters.
 //
-static const char *digit_format(int Seconds)
+static const UTF8 *digit_format(int Seconds)
 {
     if (Seconds < 0)
     {
@@ -8858,7 +8857,7 @@ static struct
     }
 };
 
-const char *time_format_1(int Seconds, size_t maxWidth)
+const UTF8 *time_format_1(int Seconds, size_t maxWidth)
 {
     if (Seconds < 0)
     {
@@ -8868,7 +8867,7 @@ const char *time_format_1(int Seconds, size_t maxWidth)
     if (  maxWidth < 8
        || 12 < maxWidth)
     {
-        mux_strncpy(TimeBuffer80, "???", sizeof(TimeBuffer80)-1);
+        mux_strncpy(TimeBuffer80, (UTF8 *)"???", sizeof(TimeBuffer80)-1);
         return TimeBuffer80;
     }
     size_t iWidth = maxWidth - 8;
@@ -8892,7 +8891,7 @@ const char *time_format_1(int Seconds, size_t maxWidth)
 
 // Show time in days, hours, minutes, or seconds.
 //
-const char *time_format_2(int Seconds)
+const UTF8 *time_format_2(int Seconds)
 {
     // 2^63/86400 is 1.07E14 which is at most 15 digits.
     // '(15)d\0' is at most 17 characters.
@@ -8907,7 +8906,7 @@ const char *time_format_2(int Seconds)
 
 // expand_time - Written (short) time format.
 //
-static const char *expand_time(int Seconds)
+static const UTF8 *expand_time(int Seconds)
 {
     // 2^63/2592000 is 3558399705577 which is at most 13 digits.
     // '(13)M (1)w (1)d (2)h (2)m (2)s\0' is at most 33 characters.
@@ -8918,7 +8917,7 @@ static const char *expand_time(int Seconds)
 
 // write_time - Written (long) time format.
 //
-static const char *write_time(int Seconds)
+static const UTF8 *write_time(int Seconds)
 {
     // 2^63/2592000 is 3558399705577 which is at most 13 digits.
     // '(13) months (1) weeks (1) days (2) hours (2) minutes (2) seconds\0' is
@@ -9087,7 +9086,7 @@ static FUNCTION(fun_conntotal)
     }
     else
     {
-        safe_str("#-1 PLAYER NOT FOUND", buff, bufc);
+        safe_str((UTF8 *)"#-1 PLAYER NOT FOUND", buff, bufc);
     }
 }
 
@@ -9116,7 +9115,7 @@ static FUNCTION(fun_connmax)
     }
     else
     {
-        safe_str("#-1 PLAYER NOT FOUND", buff, bufc);
+        safe_str((UTF8 *)"#-1 PLAYER NOT FOUND", buff, bufc);
     }
 }
 
@@ -9139,7 +9138,7 @@ static FUNCTION(fun_connlast)
     }
     else
     {
-        safe_str("#-1 PLAYER NOT FOUND", buff, bufc);
+        safe_str((UTF8 *)"#-1 PLAYER NOT FOUND", buff, bufc);
     }
 }
 
@@ -9167,7 +9166,7 @@ static FUNCTION(fun_connnum)
     }
     else
     {
-        safe_str("#-1 PLAYER NOT FOUND", buff, bufc);
+        safe_str((UTF8 *)"#-1 PLAYER NOT FOUND", buff, bufc);
     }
 }
 
@@ -9191,7 +9190,7 @@ static FUNCTION(fun_connleft)
     }
     else
     {
-        safe_str("#-1 PLAYER NOT FOUND", buff, bufc);
+        safe_str((UTF8 *)"#-1 PLAYER NOT FOUND", buff, bufc);
     }
 }
 
@@ -9216,7 +9215,7 @@ static FUNCTION(fun_lattrcmds)
     if (parse_attrib_wild(executor, fargs[0], &thing, false, false, true))
     {
         bool isFirst = true;
-        char *buf = alloc_lbuf("fun_lattrcmds");
+        UTF8 *buf = alloc_lbuf("fun_lattrcmds");
         for (int ca = olist_first(); ca != NOTHING; ca = olist_next())
         {
             ATTR *pattr = atr_num(ca);
@@ -9232,7 +9231,7 @@ static FUNCTION(fun_lattrcmds)
                         safe_chr(' ', buff, bufc);
                     }
                     isFirst = false;
-                    safe_str((char *)pattr->name, buff, bufc);
+                    safe_str(pattr->name, buff, bufc);
                 }
             }
         }
@@ -9261,7 +9260,7 @@ static FUNCTION(fun_lcmds)
     // Check to see what type of command matching we will do. '$' commands
     // or '^' listens.  We default with '$' commands.
     //
-    char cmd_type = '$';
+    UTF8 cmd_type = '$';
     if (  nfargs == 3
         && (  *fargs[2] == '$'
            || *fargs[2] == '^'))
@@ -9278,7 +9277,7 @@ static FUNCTION(fun_lcmds)
     if (parse_attrib_wild(executor, fargs[0], &thing, false, false, true))
     {
         bool isFirst = true;
-        char *buf = alloc_lbuf("fun_lattrcmds");
+        UTF8 *buf = alloc_lbuf("fun_lattrcmds");
         dbref aowner;
         int   aflags;
         for (int ca = olist_first(); ca != NOTHING; ca = olist_next())
@@ -9290,7 +9289,7 @@ static FUNCTION(fun_lcmds)
                 if (buf[0] == cmd_type)
                 {
                     bool isFound = false;
-                    char *c_ptr = buf+1;
+                    UTF8 *c_ptr = buf+1;
 
                     // If there is no characters between the '$' or '^' and the
                     // ':' it's not a valid command, so skip it.
@@ -9472,10 +9471,10 @@ static FUNCTION(fun_art)
         pcre_extra* reRuleStudy = (pcre_extra *) arRule->m_pRegexpStudy;
 
         if (  !MuxAlarm.bAlarmed
-           && pcre_exec(reRuleRegexp, reRuleStudy, fargs[0], static_cast<int>(strlen(fargs[0])),
+           && pcre_exec(reRuleRegexp, reRuleStudy, (char *)fargs[0], static_cast<int>(strlen((char *)fargs[0])),
                 0, 0, ovec, ovecsize) > 0)
         {
-            safe_str(arRule->m_bUseAn ? "an" : "a", buff, bufc);
+            safe_str(arRule->m_bUseAn ? (UTF8 *)"an" : (UTF8 *)"a", buff, bufc);
             return;
         }
 
@@ -9484,7 +9483,7 @@ static FUNCTION(fun_art)
 
     // Default to 'a'.
     //
-    safe_str( "a", buff, bufc);
+    safe_str((UTF8 *)"a", buff, bufc);
 }
 
 // ---------------------------------------------------------------------------
@@ -9514,12 +9513,12 @@ static FUNCTION(fun_ord)
         }
         else
         {
-            safe_str("#-1 FUNCTION EXPECTS ONE CHARACTER", buff, bufc);
+            safe_str((UTF8 *)"#-1 FUNCTION EXPECTS ONE CHARACTER", buff, bufc);
         }
     }
     else
     {
-        safe_str("#-1 STRING IS INVALID", buff, bufc);
+        safe_str((UTF8 *)"#-1 STRING IS INVALID", buff, bufc);
     }
 }
 
@@ -9541,7 +9540,7 @@ static FUNCTION(fun_chr)
 
     if (!is_integer(fargs[0], NULL))
     {
-        safe_str("#-1 ARGUMENT MUST BE A NUMBER", buff, bufc);
+        safe_str((UTF8 *)"#-1 ARGUMENT MUST BE A NUMBER", buff, bufc);
         return;
     }
 
@@ -9553,7 +9552,7 @@ static FUNCTION(fun_chr)
     }
     else
     {
-        safe_str("#-1 UNPRINTABLE CHARACTER", buff, bufc);
+        safe_str((UTF8 *)"#-1 UNPRINTABLE CHARACTER", buff, bufc);
     }
 }
 
@@ -9570,7 +9569,7 @@ static FUNCTION(fun_stripaccents)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    const char *p = ConvertToAscii((UTF8 *)fargs[0]);
+    const UTF8 *p = (UTF8 *)ConvertToAscii(fargs[0]);
     safe_str(p, buff, bufc);
 }
 
@@ -9659,13 +9658,13 @@ static FUNCTION(fun_accent)
     if (  !utf8_strlen(p, n0)
        || !utf8_strlen(q, n1))
     {
-        safe_str("#-1 STRINGS ARE INVALID", buff, bufc);
+        safe_str((UTF8 *)"#-1 STRINGS ARE INVALID", buff, bufc);
         return;
     }
 
     if (n0 != n1)
     {
-        safe_str("#-1 STRING LENGTHS MUST BE EQUAL", buff, bufc);
+        safe_str((UTF8 *)"#-1 STRING LENGTHS MUST BE EQUAL", buff, bufc);
         return;
     }
 
@@ -9705,10 +9704,10 @@ size_t transform_range(mux_string &sStr)
     // character on each end of them are treated literally.
     //
     size_t nPos = 0, nStart = 0;
-    char cBefore, cAfter;
+    UTF8 cBefore, cAfter;
     mux_string *sTemp = new mux_string;
 
-    bool bSucceeded = sStr.search("-", &nPos, 1);
+    bool bSucceeded = sStr.search((UTF8 *)"-", &nPos, 1);
     while (bSucceeded)
     {
         nStart += nPos;
@@ -9768,7 +9767,7 @@ size_t transform_range(mux_string &sStr)
             sStr.replace_Chars(*sTemp, nStart, 1);
         }
         nStart++;
-        bSucceeded = sStr.search("-", &nPos, nStart);
+        bSucceeded = sStr.search((UTF8 *)"-", &nPos, nStart);
     }
 
     delete sTemp;
@@ -9806,7 +9805,7 @@ static FUNCTION(fun_tr)
 
     if (nFrom != nTo)
     {
-        safe_str("#-1 STRING LENGTHS MUST BE EQUAL", buff, bufc);
+        safe_str((UTF8 *)"#-1 STRING LENGTHS MUST BE EQUAL", buff, bufc);
     }
     else
     {
@@ -9827,419 +9826,419 @@ static FUNCTION(fun_tr)
 //
 static FUN builtin_function_list[] =
 {
-    {"@@",          fun_null,             1, 1,       1, FN_NOEVAL, CA_PUBLIC},
-    {"ABS",         fun_abs,        MAX_ARG, 1,       1,         0, CA_PUBLIC},
-    {"ACCENT",      fun_accent,     MAX_ARG, 2,       2,         0, CA_PUBLIC},
-    {"ACOS",        fun_acos,       MAX_ARG, 1,       2,         0, CA_PUBLIC},
-    {"ADD",         fun_add,        MAX_ARG, 1, MAX_ARG,         0, CA_PUBLIC},
-    {"AFTER",       fun_after,      MAX_ARG, 1,       2,         0, CA_PUBLIC},
-    {"ALPHAMAX",    fun_alphamax,   MAX_ARG, 1, MAX_ARG,         0, CA_PUBLIC},
-    {"ALPHAMIN",    fun_alphamin,   MAX_ARG, 1, MAX_ARG,         0, CA_PUBLIC},
-    {"AND",         fun_and,        MAX_ARG, 0, MAX_ARG,         0, CA_PUBLIC},
-    {"ANDBOOL",     fun_andbool,    MAX_ARG, 0, MAX_ARG,         0, CA_PUBLIC},
-    {"ANDFLAGS",    fun_andflags,   MAX_ARG, 2,       2,         0, CA_PUBLIC},
-    {"ANSI",        fun_ansi,       MAX_ARG, 2, MAX_ARG,         0, CA_PUBLIC},
-    {"APOSS",       fun_aposs,      MAX_ARG, 1,       1,         0, CA_PUBLIC},
-    {"ART",         fun_art,        MAX_ARG, 1,       1,         0, CA_PUBLIC},
-    {"ASIN",        fun_asin,       MAX_ARG, 1,       2,         0, CA_PUBLIC},
-    {"ATAN",        fun_atan,       MAX_ARG, 1,       2,         0, CA_PUBLIC},
-    {"ATTRCNT",     fun_attrcnt,    MAX_ARG, 1,       1,         0, CA_PUBLIC},
-    {"BAND",        fun_band,       MAX_ARG, 1, MAX_ARG,         0, CA_PUBLIC},
-    {"BEEP",        fun_beep,       MAX_ARG, 0,       0,         0, CA_WIZARD},
-    {"BEFORE",      fun_before,     MAX_ARG, 1,       2,         0, CA_PUBLIC},
-    {"BITTYPE",     fun_bittype,    MAX_ARG, 0,       1,         0, CA_PUBLIC},
-    {"BNAND",       fun_bnand,      MAX_ARG, 2,       2,         0, CA_PUBLIC},
-    {"BOR",         fun_bor,        MAX_ARG, 1, MAX_ARG,         0, CA_PUBLIC},
-    {"BXOR",        fun_bxor,       MAX_ARG, 1, MAX_ARG,         0, CA_PUBLIC},
-    {"CAND",        fun_cand,       MAX_ARG, 0, MAX_ARG, FN_NOEVAL, CA_PUBLIC},
-    {"CANDBOOL",    fun_candbool,   MAX_ARG, 0, MAX_ARG, FN_NOEVAL, CA_PUBLIC},
+    {(UTF8 *)"@@",          fun_null,             1, 1,       1, FN_NOEVAL, CA_PUBLIC},
+    {(UTF8 *)"ABS",         fun_abs,        MAX_ARG, 1,       1,         0, CA_PUBLIC},
+    {(UTF8 *)"ACCENT",      fun_accent,     MAX_ARG, 2,       2,         0, CA_PUBLIC},
+    {(UTF8 *)"ACOS",        fun_acos,       MAX_ARG, 1,       2,         0, CA_PUBLIC},
+    {(UTF8 *)"ADD",         fun_add,        MAX_ARG, 1, MAX_ARG,         0, CA_PUBLIC},
+    {(UTF8 *)"AFTER",       fun_after,      MAX_ARG, 1,       2,         0, CA_PUBLIC},
+    {(UTF8 *)"ALPHAMAX",    fun_alphamax,   MAX_ARG, 1, MAX_ARG,         0, CA_PUBLIC},
+    {(UTF8 *)"ALPHAMIN",    fun_alphamin,   MAX_ARG, 1, MAX_ARG,         0, CA_PUBLIC},
+    {(UTF8 *)"AND",         fun_and,        MAX_ARG, 0, MAX_ARG,         0, CA_PUBLIC},
+    {(UTF8 *)"ANDBOOL",     fun_andbool,    MAX_ARG, 0, MAX_ARG,         0, CA_PUBLIC},
+    {(UTF8 *)"ANDFLAGS",    fun_andflags,   MAX_ARG, 2,       2,         0, CA_PUBLIC},
+    {(UTF8 *)"ANSI",        fun_ansi,       MAX_ARG, 2, MAX_ARG,         0, CA_PUBLIC},
+    {(UTF8 *)"APOSS",       fun_aposs,      MAX_ARG, 1,       1,         0, CA_PUBLIC},
+    {(UTF8 *)"ART",         fun_art,        MAX_ARG, 1,       1,         0, CA_PUBLIC},
+    {(UTF8 *)"ASIN",        fun_asin,       MAX_ARG, 1,       2,         0, CA_PUBLIC},
+    {(UTF8 *)"ATAN",        fun_atan,       MAX_ARG, 1,       2,         0, CA_PUBLIC},
+    {(UTF8 *)"ATTRCNT",     fun_attrcnt,    MAX_ARG, 1,       1,         0, CA_PUBLIC},
+    {(UTF8 *)"BAND",        fun_band,       MAX_ARG, 1, MAX_ARG,         0, CA_PUBLIC},
+    {(UTF8 *)"BEEP",        fun_beep,       MAX_ARG, 0,       0,         0, CA_WIZARD},
+    {(UTF8 *)"BEFORE",      fun_before,     MAX_ARG, 1,       2,         0, CA_PUBLIC},
+    {(UTF8 *)"BITTYPE",     fun_bittype,    MAX_ARG, 0,       1,         0, CA_PUBLIC},
+    {(UTF8 *)"BNAND",       fun_bnand,      MAX_ARG, 2,       2,         0, CA_PUBLIC},
+    {(UTF8 *)"BOR",         fun_bor,        MAX_ARG, 1, MAX_ARG,         0, CA_PUBLIC},
+    {(UTF8 *)"BXOR",        fun_bxor,       MAX_ARG, 1, MAX_ARG,         0, CA_PUBLIC},
+    {(UTF8 *)"CAND",        fun_cand,       MAX_ARG, 0, MAX_ARG, FN_NOEVAL, CA_PUBLIC},
+    {(UTF8 *)"CANDBOOL",    fun_candbool,   MAX_ARG, 0, MAX_ARG, FN_NOEVAL, CA_PUBLIC},
 #if defined(WOD_REALMS) || defined(REALITY_LVLS)
-    {"CANSEE",      fun_cansee,     MAX_ARG, 2,       3,         0, CA_PUBLIC},
+    {(UTF8 *)"CANSEE",      fun_cansee,     MAX_ARG, 2,       3,         0, CA_PUBLIC},
 #endif
-    {"CAPSTR",      fun_capstr,           1, 1,       1,         0, CA_PUBLIC},
-    {"CASE",        fun_case,       MAX_ARG, 2, MAX_ARG, FN_NOEVAL, CA_PUBLIC},
-    {"CAT",         fun_cat,        MAX_ARG, 0, MAX_ARG,         0, CA_PUBLIC},
-    {"CEIL",        fun_ceil,       MAX_ARG, 1,       1,         0, CA_PUBLIC},
-    {"CEMIT",       fun_cemit,      MAX_ARG, 2,       2,         0, CA_PUBLIC},
-    {"CENTER",      fun_center,     MAX_ARG, 2,       3,         0, CA_PUBLIC},
-    {"CHANNELS",    fun_channels,   MAX_ARG, 0,       1,         0, CA_PUBLIC},
-    {"CHILDREN",    fun_children,   MAX_ARG, 1,       1,         0, CA_PUBLIC},
-    {"CHOOSE",      fun_choose,     MAX_ARG, 2,       3,         0, CA_PUBLIC},
-    {"CHR",         fun_chr,        MAX_ARG, 1,       1,         0, CA_PUBLIC},
-    {"CMDS",        fun_cmds,       MAX_ARG, 1,       1,         0, CA_PUBLIC},
-    {"COLUMNS",     fun_columns,    MAX_ARG, 2,       4,         0, CA_PUBLIC},
-    {"COMALIAS",    fun_comalias,   MAX_ARG, 2,       2,         0, CA_PUBLIC},
-    {"COMP",        fun_comp,       MAX_ARG, 2,       2,         0, CA_PUBLIC},
-    {"COMTITLE",    fun_comtitle,   MAX_ARG, 2,       2,         0, CA_PUBLIC},
-    {"CON",         fun_con,        MAX_ARG, 1,       1,         0, CA_PUBLIC},
-    {"CONFIG",      fun_config,     MAX_ARG, 0,       1,         0, CA_PUBLIC},
-    {"CONN",        fun_conn,       MAX_ARG, 1,       1,         0, CA_PUBLIC},
-    {"CONNLAST",    fun_connlast,   MAX_ARG, 1,       1,         0, CA_PUBLIC},
-    {"CONNLEFT",    fun_connleft,   MAX_ARG, 1,       1,         0, CA_PUBLIC},
-    {"CONNMAX",     fun_connmax,    MAX_ARG, 1,       1,         0, CA_PUBLIC},
-    {"CONNNUM",     fun_connnum,    MAX_ARG, 1,       1,         0, CA_PUBLIC},
-    {"CONNRECORD",  fun_connrecord, MAX_ARG, 0,       0,         0, CA_PUBLIC},
-    {"CONNTOTAL",   fun_conntotal,  MAX_ARG, 1,       1,         0, CA_PUBLIC},
-    {"CONTROLS",    fun_controls,   MAX_ARG, 2,       2,         0, CA_PUBLIC},
-    {"CONVSECS",    fun_convsecs,   MAX_ARG, 1,       3,         0, CA_PUBLIC},
-    {"CONVTIME",    fun_convtime,   MAX_ARG, 1,       3,         0, CA_PUBLIC},
-    {"COR",         fun_cor,        MAX_ARG, 0, MAX_ARG, FN_NOEVAL, CA_PUBLIC},
-    {"CORBOOL",     fun_corbool,    MAX_ARG, 0, MAX_ARG, FN_NOEVAL, CA_PUBLIC},
-    {"COS",         fun_cos,        MAX_ARG, 1,       2,         0, CA_PUBLIC},
-    {"CPAD",        fun_cpad,       MAX_ARG, 2,       3,         0, CA_PUBLIC},
-    {"CRC32",       fun_crc32,      MAX_ARG, 0, MAX_ARG,         0, CA_PUBLIC},
-    {"CREATE",      fun_create,     MAX_ARG, 2,       3,         0, CA_PUBLIC},
-    {"CTIME",       fun_ctime,      MAX_ARG, 0,       1,         0, CA_PUBLIC},
-    {"CTU",         fun_ctu,        MAX_ARG, 3,       3,         0, CA_PUBLIC},
-    {"CWHO",        fun_cwho,       MAX_ARG, 1,       2,         0, CA_PUBLIC},
-    {"DEC",         fun_dec,        MAX_ARG, 0,       1,         0, CA_PUBLIC},
-    {"DECRYPT",     fun_decrypt,    MAX_ARG, 2,       2,         0, CA_PUBLIC},
-    {"DEFAULT",     fun_default,    MAX_ARG, 2,       2, FN_NOEVAL, CA_PUBLIC},
-    {"DELETE",      fun_delete,     MAX_ARG, 3,       3,         0, CA_PUBLIC},
-    {"DIE",         fun_die,        MAX_ARG, 2,       3,         0, CA_PUBLIC},
-    {"DIGITTIME",   fun_digittime,  MAX_ARG, 1,       1,         0, CA_PUBLIC},
-    {"DIST2D",      fun_dist2d,     MAX_ARG, 4,       4,         0, CA_PUBLIC},
-    {"DIST3D",      fun_dist3d,     MAX_ARG, 6,       6,         0, CA_PUBLIC},
-    {"DISTRIBUTE",  fun_distribute, MAX_ARG, 2,       3,         0, CA_PUBLIC},
-    {"DOING",       fun_doing,      MAX_ARG, 1,       1,         0, CA_PUBLIC},
-    {"DUMPING",     fun_dumping,    MAX_ARG, 0,       0,         0, CA_PUBLIC},
-    {"E",           fun_e,          MAX_ARG, 0,       0,         0, CA_PUBLIC},
-    {"EDEFAULT",    fun_edefault,   MAX_ARG, 2,       2, FN_NOEVAL, CA_PUBLIC},
-    {"EDIT",        fun_edit,       MAX_ARG, 3,       3,         0, CA_PUBLIC},
-    {"ELEMENTS",    fun_elements,   MAX_ARG, 2,       4,         0, CA_PUBLIC},
-    {"ELOCK",       fun_elock,      MAX_ARG, 2,       2,         0, CA_PUBLIC},
-    {"EMIT",        fun_emit,       MAX_ARG, 1,       1,         0, CA_PUBLIC},
+    {(UTF8 *)"CAPSTR",      fun_capstr,           1, 1,       1,         0, CA_PUBLIC},
+    {(UTF8 *)"CASE",        fun_case,       MAX_ARG, 2, MAX_ARG, FN_NOEVAL, CA_PUBLIC},
+    {(UTF8 *)"CAT",         fun_cat,        MAX_ARG, 0, MAX_ARG,         0, CA_PUBLIC},
+    {(UTF8 *)"CEIL",        fun_ceil,       MAX_ARG, 1,       1,         0, CA_PUBLIC},
+    {(UTF8 *)"CEMIT",       fun_cemit,      MAX_ARG, 2,       2,         0, CA_PUBLIC},
+    {(UTF8 *)"CENTER",      fun_center,     MAX_ARG, 2,       3,         0, CA_PUBLIC},
+    {(UTF8 *)"CHANNELS",    fun_channels,   MAX_ARG, 0,       1,         0, CA_PUBLIC},
+    {(UTF8 *)"CHILDREN",    fun_children,   MAX_ARG, 1,       1,         0, CA_PUBLIC},
+    {(UTF8 *)"CHOOSE",      fun_choose,     MAX_ARG, 2,       3,         0, CA_PUBLIC},
+    {(UTF8 *)"CHR",         fun_chr,        MAX_ARG, 1,       1,         0, CA_PUBLIC},
+    {(UTF8 *)"CMDS",        fun_cmds,       MAX_ARG, 1,       1,         0, CA_PUBLIC},
+    {(UTF8 *)"COLUMNS",     fun_columns,    MAX_ARG, 2,       4,         0, CA_PUBLIC},
+    {(UTF8 *)"COMALIAS",    fun_comalias,   MAX_ARG, 2,       2,         0, CA_PUBLIC},
+    {(UTF8 *)"COMP",        fun_comp,       MAX_ARG, 2,       2,         0, CA_PUBLIC},
+    {(UTF8 *)"COMTITLE",    fun_comtitle,   MAX_ARG, 2,       2,         0, CA_PUBLIC},
+    {(UTF8 *)"CON",         fun_con,        MAX_ARG, 1,       1,         0, CA_PUBLIC},
+    {(UTF8 *)"CONFIG",      fun_config,     MAX_ARG, 0,       1,         0, CA_PUBLIC},
+    {(UTF8 *)"CONN",        fun_conn,       MAX_ARG, 1,       1,         0, CA_PUBLIC},
+    {(UTF8 *)"CONNLAST",    fun_connlast,   MAX_ARG, 1,       1,         0, CA_PUBLIC},
+    {(UTF8 *)"CONNLEFT",    fun_connleft,   MAX_ARG, 1,       1,         0, CA_PUBLIC},
+    {(UTF8 *)"CONNMAX",     fun_connmax,    MAX_ARG, 1,       1,         0, CA_PUBLIC},
+    {(UTF8 *)"CONNNUM",     fun_connnum,    MAX_ARG, 1,       1,         0, CA_PUBLIC},
+    {(UTF8 *)"CONNRECORD",  fun_connrecord, MAX_ARG, 0,       0,         0, CA_PUBLIC},
+    {(UTF8 *)"CONNTOTAL",   fun_conntotal,  MAX_ARG, 1,       1,         0, CA_PUBLIC},
+    {(UTF8 *)"CONTROLS",    fun_controls,   MAX_ARG, 2,       2,         0, CA_PUBLIC},
+    {(UTF8 *)"CONVSECS",    fun_convsecs,   MAX_ARG, 1,       3,         0, CA_PUBLIC},
+    {(UTF8 *)"CONVTIME",    fun_convtime,   MAX_ARG, 1,       3,         0, CA_PUBLIC},
+    {(UTF8 *)"COR",         fun_cor,        MAX_ARG, 0, MAX_ARG, FN_NOEVAL, CA_PUBLIC},
+    {(UTF8 *)"CORBOOL",     fun_corbool,    MAX_ARG, 0, MAX_ARG, FN_NOEVAL, CA_PUBLIC},
+    {(UTF8 *)"COS",         fun_cos,        MAX_ARG, 1,       2,         0, CA_PUBLIC},
+    {(UTF8 *)"CPAD",        fun_cpad,       MAX_ARG, 2,       3,         0, CA_PUBLIC},
+    {(UTF8 *)"CRC32",       fun_crc32,      MAX_ARG, 0, MAX_ARG,         0, CA_PUBLIC},
+    {(UTF8 *)"CREATE",      fun_create,     MAX_ARG, 2,       3,         0, CA_PUBLIC},
+    {(UTF8 *)"CTIME",       fun_ctime,      MAX_ARG, 0,       1,         0, CA_PUBLIC},
+    {(UTF8 *)"CTU",         fun_ctu,        MAX_ARG, 3,       3,         0, CA_PUBLIC},
+    {(UTF8 *)"CWHO",        fun_cwho,       MAX_ARG, 1,       2,         0, CA_PUBLIC},
+    {(UTF8 *)"DEC",         fun_dec,        MAX_ARG, 0,       1,         0, CA_PUBLIC},
+    {(UTF8 *)"DECRYPT",     fun_decrypt,    MAX_ARG, 2,       2,         0, CA_PUBLIC},
+    {(UTF8 *)"DEFAULT",     fun_default,    MAX_ARG, 2,       2, FN_NOEVAL, CA_PUBLIC},
+    {(UTF8 *)"DELETE",      fun_delete,     MAX_ARG, 3,       3,         0, CA_PUBLIC},
+    {(UTF8 *)"DIE",         fun_die,        MAX_ARG, 2,       3,         0, CA_PUBLIC},
+    {(UTF8 *)"DIGITTIME",   fun_digittime,  MAX_ARG, 1,       1,         0, CA_PUBLIC},
+    {(UTF8 *)"DIST2D",      fun_dist2d,     MAX_ARG, 4,       4,         0, CA_PUBLIC},
+    {(UTF8 *)"DIST3D",      fun_dist3d,     MAX_ARG, 6,       6,         0, CA_PUBLIC},
+    {(UTF8 *)"DISTRIBUTE",  fun_distribute, MAX_ARG, 2,       3,         0, CA_PUBLIC},
+    {(UTF8 *)"DOING",       fun_doing,      MAX_ARG, 1,       1,         0, CA_PUBLIC},
+    {(UTF8 *)"DUMPING",     fun_dumping,    MAX_ARG, 0,       0,         0, CA_PUBLIC},
+    {(UTF8 *)"E",           fun_e,          MAX_ARG, 0,       0,         0, CA_PUBLIC},
+    {(UTF8 *)"EDEFAULT",    fun_edefault,   MAX_ARG, 2,       2, FN_NOEVAL, CA_PUBLIC},
+    {(UTF8 *)"EDIT",        fun_edit,       MAX_ARG, 3,       3,         0, CA_PUBLIC},
+    {(UTF8 *)"ELEMENTS",    fun_elements,   MAX_ARG, 2,       4,         0, CA_PUBLIC},
+    {(UTF8 *)"ELOCK",       fun_elock,      MAX_ARG, 2,       2,         0, CA_PUBLIC},
+    {(UTF8 *)"EMIT",        fun_emit,       MAX_ARG, 1,       1,         0, CA_PUBLIC},
 #ifdef DEPRECATED
-    {"EMPTY",       fun_empty,      MAX_ARG, 0,       1,         0, CA_PUBLIC},
+    {(UTF8 *)"EMPTY",       fun_empty,      MAX_ARG, 0,       1,         0, CA_PUBLIC},
 #endif // DEPRECATED
-    {"ENCRYPT",     fun_encrypt,    MAX_ARG, 2,       2,         0, CA_PUBLIC},
-    {"ENTRANCES",   fun_entrances,  MAX_ARG, 0,       4,         0, CA_PUBLIC},
-    {"EQ",          fun_eq,         MAX_ARG, 2,       2,         0, CA_PUBLIC},
-    {"ERROR",       fun_error,            1, 0,       1,         0, CA_PUBLIC},
-    {"ESCAPE",      fun_escape,           1, 1,       1,         0, CA_PUBLIC},
-    {"ETIMEFMT",    fun_etimefmt,   MAX_ARG, 2,       2,         0, CA_PUBLIC},
-    {"EVAL",        fun_eval,       MAX_ARG, 1,       2,         0, CA_PUBLIC},
-    {"EXIT",        fun_exit,       MAX_ARG, 1,       1,         0, CA_PUBLIC},
-    {"EXP",         fun_exp,        MAX_ARG, 1,       1,         0, CA_PUBLIC},
-    {"EXPTIME",     fun_exptime,    MAX_ARG, 1,       1,         0, CA_PUBLIC},
-    {"EXTRACT",     fun_extract,    MAX_ARG, 3,       5,         0, CA_PUBLIC},
-    {"FCOUNT",      fun_fcount,     MAX_ARG, 0,       1, FN_NOEVAL, CA_PUBLIC},
-    {"FDEPTH",      fun_fdepth,     MAX_ARG, 0,       0,         0, CA_PUBLIC},
-    {"FDIV",        fun_fdiv,       MAX_ARG, 2,       2,         0, CA_PUBLIC},
-    {"FILTER",      fun_filter,     MAX_ARG, 2,      13,         0, CA_PUBLIC},
-    {"FILTERBOOL",  fun_filterbool, MAX_ARG, 2,      13,         0, CA_PUBLIC},
-    {"FINDABLE",    fun_findable,   MAX_ARG, 2,       2,         0, CA_PUBLIC},
-    {"FIRST",       fun_first,      MAX_ARG, 0,       2,         0, CA_PUBLIC},
-    {"FLAGS",       fun_flags,      MAX_ARG, 1,       1,         0, CA_PUBLIC},
-    {"FLOOR",       fun_floor,      MAX_ARG, 1,       1,         0, CA_PUBLIC},
-    {"FLOORDIV",    fun_floordiv,   MAX_ARG, 2,       2,         0, CA_PUBLIC},
-    {"FMOD",        fun_fmod,       MAX_ARG, 2,       2,         0, CA_PUBLIC},
-    {"FOLD",        fun_fold,       MAX_ARG, 2,       4,         0, CA_PUBLIC},
-    {"FOREACH",     fun_foreach,    MAX_ARG, 2,       4,         0, CA_PUBLIC},
+    {(UTF8 *)"ENCRYPT",     fun_encrypt,    MAX_ARG, 2,       2,         0, CA_PUBLIC},
+    {(UTF8 *)"ENTRANCES",   fun_entrances,  MAX_ARG, 0,       4,         0, CA_PUBLIC},
+    {(UTF8 *)"EQ",          fun_eq,         MAX_ARG, 2,       2,         0, CA_PUBLIC},
+    {(UTF8 *)"ERROR",       fun_error,            1, 0,       1,         0, CA_PUBLIC},
+    {(UTF8 *)"ESCAPE",      fun_escape,           1, 1,       1,         0, CA_PUBLIC},
+    {(UTF8 *)"ETIMEFMT",    fun_etimefmt,   MAX_ARG, 2,       2,         0, CA_PUBLIC},
+    {(UTF8 *)"EVAL",        fun_eval,       MAX_ARG, 1,       2,         0, CA_PUBLIC},
+    {(UTF8 *)"EXIT",        fun_exit,       MAX_ARG, 1,       1,         0, CA_PUBLIC},
+    {(UTF8 *)"EXP",         fun_exp,        MAX_ARG, 1,       1,         0, CA_PUBLIC},
+    {(UTF8 *)"EXPTIME",     fun_exptime,    MAX_ARG, 1,       1,         0, CA_PUBLIC},
+    {(UTF8 *)"EXTRACT",     fun_extract,    MAX_ARG, 3,       5,         0, CA_PUBLIC},
+    {(UTF8 *)"FCOUNT",      fun_fcount,     MAX_ARG, 0,       1, FN_NOEVAL, CA_PUBLIC},
+    {(UTF8 *)"FDEPTH",      fun_fdepth,     MAX_ARG, 0,       0,         0, CA_PUBLIC},
+    {(UTF8 *)"FDIV",        fun_fdiv,       MAX_ARG, 2,       2,         0, CA_PUBLIC},
+    {(UTF8 *)"FILTER",      fun_filter,     MAX_ARG, 2,      13,         0, CA_PUBLIC},
+    {(UTF8 *)"FILTERBOOL",  fun_filterbool, MAX_ARG, 2,      13,         0, CA_PUBLIC},
+    {(UTF8 *)"FINDABLE",    fun_findable,   MAX_ARG, 2,       2,         0, CA_PUBLIC},
+    {(UTF8 *)"FIRST",       fun_first,      MAX_ARG, 0,       2,         0, CA_PUBLIC},
+    {(UTF8 *)"FLAGS",       fun_flags,      MAX_ARG, 1,       1,         0, CA_PUBLIC},
+    {(UTF8 *)"FLOOR",       fun_floor,      MAX_ARG, 1,       1,         0, CA_PUBLIC},
+    {(UTF8 *)"FLOORDIV",    fun_floordiv,   MAX_ARG, 2,       2,         0, CA_PUBLIC},
+    {(UTF8 *)"FMOD",        fun_fmod,       MAX_ARG, 2,       2,         0, CA_PUBLIC},
+    {(UTF8 *)"FOLD",        fun_fold,       MAX_ARG, 2,       4,         0, CA_PUBLIC},
+    {(UTF8 *)"FOREACH",     fun_foreach,    MAX_ARG, 2,       4,         0, CA_PUBLIC},
 #if defined(FIRANMUX)
-    {"FORMAT",      fun_format,     MAX_ARG, 4,       4,         0, CA_PUBLIC},
+    {(UTF8 *)"FORMAT",      fun_format,     MAX_ARG, 4,       4,         0, CA_PUBLIC},
 #endif // FIRANMUX
-    {"FULLNAME",    fun_fullname,   MAX_ARG, 1,       1,         0, CA_PUBLIC},
-    {"GET",         fun_get,        MAX_ARG, 1,       1,         0, CA_PUBLIC},
-    {"GET_EVAL",    fun_get_eval,   MAX_ARG, 1,       1,         0, CA_PUBLIC},
-    {"GRAB",        fun_grab,       MAX_ARG, 2,       3,         0, CA_PUBLIC},
-    {"GRABALL",     fun_graball,    MAX_ARG, 2,       4,         0, CA_PUBLIC},
-    {"GREP",        fun_grep,       MAX_ARG, 3,       3,         0, CA_PUBLIC},
-    {"GREPI",       fun_grepi,      MAX_ARG, 3,       3,         0, CA_PUBLIC},
-    {"GT",          fun_gt,         MAX_ARG, 2,       2,         0, CA_PUBLIC},
-    {"GTE",         fun_gte,        MAX_ARG, 2,       2,         0, CA_PUBLIC},
-    {"HASATTR",     fun_hasattr,    MAX_ARG, 2,       2,         0, CA_PUBLIC},
-    {"HASATTRP",    fun_hasattrp,   MAX_ARG, 2,       2,         0, CA_PUBLIC},
-    {"HASFLAG",     fun_hasflag,    MAX_ARG, 2,       2,         0, CA_PUBLIC},
-    {"HASPOWER",    fun_haspower,   MAX_ARG, 2,       2,         0, CA_PUBLIC},
-    {"HASQUOTA",    fun_hasquota,   MAX_ARG, 2,       3,         0, CA_PUBLIC},
+    {(UTF8 *)"FULLNAME",    fun_fullname,   MAX_ARG, 1,       1,         0, CA_PUBLIC},
+    {(UTF8 *)"GET",         fun_get,        MAX_ARG, 1,       1,         0, CA_PUBLIC},
+    {(UTF8 *)"GET_EVAL",    fun_get_eval,   MAX_ARG, 1,       1,         0, CA_PUBLIC},
+    {(UTF8 *)"GRAB",        fun_grab,       MAX_ARG, 2,       3,         0, CA_PUBLIC},
+    {(UTF8 *)"GRABALL",     fun_graball,    MAX_ARG, 2,       4,         0, CA_PUBLIC},
+    {(UTF8 *)"GREP",        fun_grep,       MAX_ARG, 3,       3,         0, CA_PUBLIC},
+    {(UTF8 *)"GREPI",       fun_grepi,      MAX_ARG, 3,       3,         0, CA_PUBLIC},
+    {(UTF8 *)"GT",          fun_gt,         MAX_ARG, 2,       2,         0, CA_PUBLIC},
+    {(UTF8 *)"GTE",         fun_gte,        MAX_ARG, 2,       2,         0, CA_PUBLIC},
+    {(UTF8 *)"HASATTR",     fun_hasattr,    MAX_ARG, 2,       2,         0, CA_PUBLIC},
+    {(UTF8 *)"HASATTRP",    fun_hasattrp,   MAX_ARG, 2,       2,         0, CA_PUBLIC},
+    {(UTF8 *)"HASFLAG",     fun_hasflag,    MAX_ARG, 2,       2,         0, CA_PUBLIC},
+    {(UTF8 *)"HASPOWER",    fun_haspower,   MAX_ARG, 2,       2,         0, CA_PUBLIC},
+    {(UTF8 *)"HASQUOTA",    fun_hasquota,   MAX_ARG, 2,       3,         0, CA_PUBLIC},
 #ifdef REALITY_LVLS
-    {"HASRXLEVEL",  fun_hasrxlevel, MAX_ARG, 2,       2,         0, CA_PUBLIC},
-    {"HASTXLEVEL",  fun_hastxlevel, MAX_ARG, 2,       2,         0, CA_PUBLIC},
+    {(UTF8 *)"HASRXLEVEL",  fun_hasrxlevel, MAX_ARG, 2,       2,         0, CA_PUBLIC},
+    {(UTF8 *)"HASTXLEVEL",  fun_hastxlevel, MAX_ARG, 2,       2,         0, CA_PUBLIC},
 #endif // REALITY_LVLS
-    {"HASTYPE",     fun_hastype,    MAX_ARG, 2,       2,         0, CA_PUBLIC},
-    {"HEIGHT",      fun_height,     MAX_ARG, 1,       1,         0, CA_PUBLIC},
-    {"HOME",        fun_home,       MAX_ARG, 1,       1,         0, CA_PUBLIC},
-    {"HOST",        fun_host,       MAX_ARG, 1,       1,         0, CA_PUBLIC},
-    {"IABS",        fun_iabs,       MAX_ARG, 1,       1,         0, CA_PUBLIC},
-    {"IADD",        fun_iadd,       MAX_ARG, 0, MAX_ARG,         0, CA_PUBLIC},
-    {"IDIV",        fun_idiv,       MAX_ARG, 2,       2,         0, CA_PUBLIC},
-    {"IDLE",        fun_idle,       MAX_ARG, 1,       1,         0, CA_PUBLIC},
-    {"IF",          fun_ifelse,     MAX_ARG, 2,       3, FN_NOEVAL, CA_PUBLIC},
-    {"IFELSE",      fun_ifelse,     MAX_ARG, 3,       3, FN_NOEVAL, CA_PUBLIC},
-    {"ILEV",        fun_ilev,       MAX_ARG, 0,       0,         0, CA_PUBLIC},
-    {"IMUL",        fun_imul,       MAX_ARG, 1, MAX_ARG,         0, CA_PUBLIC},
-    {"INC",         fun_inc,        MAX_ARG, 0,       1,         0, CA_PUBLIC},
-    {"INDEX",       fun_index,      MAX_ARG, 4,       4,         0, CA_PUBLIC},
-    {"INSERT",      fun_insert,     MAX_ARG, 3,       4,         0, CA_PUBLIC},
-    {"INUM",        fun_inum,       MAX_ARG, 0,       1,         0, CA_PUBLIC},
-    {"INZONE",      fun_inzone,     MAX_ARG, 1,       1,         0, CA_PUBLIC},
-    {"ISDBREF",     fun_isdbref,    MAX_ARG, 0,       1,         0, CA_PUBLIC},
-    {"ISIGN",       fun_isign,      MAX_ARG, 1,       1,         0, CA_PUBLIC},
-    {"ISINT",       fun_isint,      MAX_ARG, 1,       1,         0, CA_PUBLIC},
-    {"ISNUM",       fun_isnum,      MAX_ARG, 1,       1,         0, CA_PUBLIC},
-    {"ISRAT",       fun_israt,      MAX_ARG, 1,       1,         0, CA_PUBLIC},
-    {"ISUB",        fun_isub,       MAX_ARG, 2,       2,         0, CA_PUBLIC},
-    {"ISWORD",      fun_isword,     MAX_ARG, 1,       1,         0, CA_PUBLIC},
-    {"ITEMIZE",     fun_itemize,    MAX_ARG, 1,       4,         0, CA_PUBLIC},
+    {(UTF8 *)"HASTYPE",     fun_hastype,    MAX_ARG, 2,       2,         0, CA_PUBLIC},
+    {(UTF8 *)"HEIGHT",      fun_height,     MAX_ARG, 1,       1,         0, CA_PUBLIC},
+    {(UTF8 *)"HOME",        fun_home,       MAX_ARG, 1,       1,         0, CA_PUBLIC},
+    {(UTF8 *)"HOST",        fun_host,       MAX_ARG, 1,       1,         0, CA_PUBLIC},
+    {(UTF8 *)"IABS",        fun_iabs,       MAX_ARG, 1,       1,         0, CA_PUBLIC},
+    {(UTF8 *)"IADD",        fun_iadd,       MAX_ARG, 0, MAX_ARG,         0, CA_PUBLIC},
+    {(UTF8 *)"IDIV",        fun_idiv,       MAX_ARG, 2,       2,         0, CA_PUBLIC},
+    {(UTF8 *)"IDLE",        fun_idle,       MAX_ARG, 1,       1,         0, CA_PUBLIC},
+    {(UTF8 *)"IF",          fun_ifelse,     MAX_ARG, 2,       3, FN_NOEVAL, CA_PUBLIC},
+    {(UTF8 *)"IFELSE",      fun_ifelse,     MAX_ARG, 3,       3, FN_NOEVAL, CA_PUBLIC},
+    {(UTF8 *)"ILEV",        fun_ilev,       MAX_ARG, 0,       0,         0, CA_PUBLIC},
+    {(UTF8 *)"IMUL",        fun_imul,       MAX_ARG, 1, MAX_ARG,         0, CA_PUBLIC},
+    {(UTF8 *)"INC",         fun_inc,        MAX_ARG, 0,       1,         0, CA_PUBLIC},
+    {(UTF8 *)"INDEX",       fun_index,      MAX_ARG, 4,       4,         0, CA_PUBLIC},
+    {(UTF8 *)"INSERT",      fun_insert,     MAX_ARG, 3,       4,         0, CA_PUBLIC},
+    {(UTF8 *)"INUM",        fun_inum,       MAX_ARG, 0,       1,         0, CA_PUBLIC},
+    {(UTF8 *)"INZONE",      fun_inzone,     MAX_ARG, 1,       1,         0, CA_PUBLIC},
+    {(UTF8 *)"ISDBREF",     fun_isdbref,    MAX_ARG, 0,       1,         0, CA_PUBLIC},
+    {(UTF8 *)"ISIGN",       fun_isign,      MAX_ARG, 1,       1,         0, CA_PUBLIC},
+    {(UTF8 *)"ISINT",       fun_isint,      MAX_ARG, 1,       1,         0, CA_PUBLIC},
+    {(UTF8 *)"ISNUM",       fun_isnum,      MAX_ARG, 1,       1,         0, CA_PUBLIC},
+    {(UTF8 *)"ISRAT",       fun_israt,      MAX_ARG, 1,       1,         0, CA_PUBLIC},
+    {(UTF8 *)"ISUB",        fun_isub,       MAX_ARG, 2,       2,         0, CA_PUBLIC},
+    {(UTF8 *)"ISWORD",      fun_isword,     MAX_ARG, 1,       1,         0, CA_PUBLIC},
+    {(UTF8 *)"ITEMIZE",     fun_itemize,    MAX_ARG, 1,       4,         0, CA_PUBLIC},
 #ifdef DEPRECATED
-    {"ITEMS",       fun_items,      MAX_ARG, 0,       1,         0, CA_PUBLIC},
+    {(UTF8 *)"ITEMS",       fun_items,      MAX_ARG, 0,       1,         0, CA_PUBLIC},
 #endif // DEPRECATED
-    {"ITER",        fun_iter,       MAX_ARG, 2,       4, FN_NOEVAL, CA_PUBLIC},
-    {"ITEXT",       fun_itext,      MAX_ARG, 0,       1,         0, CA_PUBLIC},
-    {"LADD",        fun_ladd,       MAX_ARG, 0,       2,         0, CA_PUBLIC},
-    {"LAND",        fun_land,       MAX_ARG, 0,       2,         0, CA_PUBLIC},
-    {"LAST",        fun_last,       MAX_ARG, 0,       2,         0, CA_PUBLIC},
-    {"LATTR",       fun_lattr,      MAX_ARG, 1,       1,         0, CA_PUBLIC},
-    {"LATTRCMDS",   fun_lattrcmds,  MAX_ARG, 1,       1,         0, CA_PUBLIC},
-    {"LATTRP",      fun_lattrp,     MAX_ARG, 1,       1,         0, CA_PUBLIC},
+    {(UTF8 *)"ITER",        fun_iter,       MAX_ARG, 2,       4, FN_NOEVAL, CA_PUBLIC},
+    {(UTF8 *)"ITEXT",       fun_itext,      MAX_ARG, 0,       1,         0, CA_PUBLIC},
+    {(UTF8 *)"LADD",        fun_ladd,       MAX_ARG, 0,       2,         0, CA_PUBLIC},
+    {(UTF8 *)"LAND",        fun_land,       MAX_ARG, 0,       2,         0, CA_PUBLIC},
+    {(UTF8 *)"LAST",        fun_last,       MAX_ARG, 0,       2,         0, CA_PUBLIC},
+    {(UTF8 *)"LATTR",       fun_lattr,      MAX_ARG, 1,       1,         0, CA_PUBLIC},
+    {(UTF8 *)"LATTRCMDS",   fun_lattrcmds,  MAX_ARG, 1,       1,         0, CA_PUBLIC},
+    {(UTF8 *)"LATTRP",      fun_lattrp,     MAX_ARG, 1,       1,         0, CA_PUBLIC},
 #ifdef REALITY_LVLS
-    {"LISTRLEVELS", fun_listrlevels, MAX_ARG, 0,       0,         0, CA_PUBLIC},
+    {(UTF8 *)"LISTRLEVELS", fun_listrlevels, MAX_ARG, 0,       0,         0, CA_PUBLIC},
 #endif
-    {"LCMDS",       fun_lcmds,      MAX_ARG, 1,       3,         0, CA_PUBLIC},
-    {"LCON",        fun_lcon,       MAX_ARG, 1,       2,         0, CA_PUBLIC},
-    {"LCSTR",       fun_lcstr,            1, 1,       1,         0, CA_PUBLIC},
-    {"LDELETE",     fun_ldelete,    MAX_ARG, 2,       3,         0, CA_PUBLIC},
-    {"LEXITS",      fun_lexits,     MAX_ARG, 1,       1,         0, CA_PUBLIC},
-    {"LFLAGS",      fun_lflags,     MAX_ARG, 1,       1,         0, CA_PUBLIC},
-    {"LINK",        fun_link,       MAX_ARG, 2,       2,         0, CA_PUBLIC},
-    {"LIST",        fun_list,       MAX_ARG, 2,       3, FN_NOEVAL, CA_PUBLIC},
-    {"LIT",         fun_lit,              1, 1,       1, FN_NOEVAL, CA_PUBLIC},
-    {"LJUST",       fun_ljust,      MAX_ARG, 2,       3,         0, CA_PUBLIC},
-    {"LN",          fun_ln,         MAX_ARG, 1,       1,         0, CA_PUBLIC},
-    {"LNUM",        fun_lnum,       MAX_ARG, 0,       4,         0, CA_PUBLIC},
-    {"LOC",         fun_loc,        MAX_ARG, 1,       1,         0, CA_PUBLIC},
-    {"LOCALIZE",    fun_localize,   MAX_ARG, 1,       1, FN_NOEVAL, CA_PUBLIC},
-    {"LOCATE",      fun_locate,     MAX_ARG, 3,       3,         0, CA_PUBLIC},
-    {"LOCK",        fun_lock,       MAX_ARG, 1,       1,         0, CA_PUBLIC},
-    {"LOG",         fun_log,        MAX_ARG, 1,       1,         0, CA_PUBLIC},
-    {"LOR",         fun_lor,        MAX_ARG, 0,       2,         0, CA_PUBLIC},
-    {"LPAD",        fun_lpad,       MAX_ARG, 2,       3,         0, CA_PUBLIC},
-    {"LPARENT",     fun_lparent,    MAX_ARG, 1,       1,         0, CA_PUBLIC},
-    {"LPORTS",      fun_lports,     MAX_ARG, 0,       0,         0, CA_WIZARD},
-    {"LPOS",        fun_lpos,       MAX_ARG, 2,       2,         0, CA_PUBLIC},
-    {"LRAND",       fun_lrand,      MAX_ARG, 3,       4,         0, CA_PUBLIC},
-    {"LROOMS",      fun_lrooms,     MAX_ARG, 1,       3,         0, CA_PUBLIC},
+    {(UTF8 *)"LCMDS",       fun_lcmds,      MAX_ARG, 1,       3,         0, CA_PUBLIC},
+    {(UTF8 *)"LCON",        fun_lcon,       MAX_ARG, 1,       2,         0, CA_PUBLIC},
+    {(UTF8 *)"LCSTR",       fun_lcstr,            1, 1,       1,         0, CA_PUBLIC},
+    {(UTF8 *)"LDELETE",     fun_ldelete,    MAX_ARG, 2,       3,         0, CA_PUBLIC},
+    {(UTF8 *)"LEXITS",      fun_lexits,     MAX_ARG, 1,       1,         0, CA_PUBLIC},
+    {(UTF8 *)"LFLAGS",      fun_lflags,     MAX_ARG, 1,       1,         0, CA_PUBLIC},
+    {(UTF8 *)"LINK",        fun_link,       MAX_ARG, 2,       2,         0, CA_PUBLIC},
+    {(UTF8 *)"LIST",        fun_list,       MAX_ARG, 2,       3, FN_NOEVAL, CA_PUBLIC},
+    {(UTF8 *)"LIT",         fun_lit,              1, 1,       1, FN_NOEVAL, CA_PUBLIC},
+    {(UTF8 *)"LJUST",       fun_ljust,      MAX_ARG, 2,       3,         0, CA_PUBLIC},
+    {(UTF8 *)"LN",          fun_ln,         MAX_ARG, 1,       1,         0, CA_PUBLIC},
+    {(UTF8 *)"LNUM",        fun_lnum,       MAX_ARG, 0,       4,         0, CA_PUBLIC},
+    {(UTF8 *)"LOC",         fun_loc,        MAX_ARG, 1,       1,         0, CA_PUBLIC},
+    {(UTF8 *)"LOCALIZE",    fun_localize,   MAX_ARG, 1,       1, FN_NOEVAL, CA_PUBLIC},
+    {(UTF8 *)"LOCATE",      fun_locate,     MAX_ARG, 3,       3,         0, CA_PUBLIC},
+    {(UTF8 *)"LOCK",        fun_lock,       MAX_ARG, 1,       1,         0, CA_PUBLIC},
+    {(UTF8 *)"LOG",         fun_log,        MAX_ARG, 1,       1,         0, CA_PUBLIC},
+    {(UTF8 *)"LOR",         fun_lor,        MAX_ARG, 0,       2,         0, CA_PUBLIC},
+    {(UTF8 *)"LPAD",        fun_lpad,       MAX_ARG, 2,       3,         0, CA_PUBLIC},
+    {(UTF8 *)"LPARENT",     fun_lparent,    MAX_ARG, 1,       1,         0, CA_PUBLIC},
+    {(UTF8 *)"LPORTS",      fun_lports,     MAX_ARG, 0,       0,         0, CA_WIZARD},
+    {(UTF8 *)"LPOS",        fun_lpos,       MAX_ARG, 2,       2,         0, CA_PUBLIC},
+    {(UTF8 *)"LRAND",       fun_lrand,      MAX_ARG, 3,       4,         0, CA_PUBLIC},
+    {(UTF8 *)"LROOMS",      fun_lrooms,     MAX_ARG, 1,       3,         0, CA_PUBLIC},
 #ifdef DEPRECATED
-    {"LSTACK",      fun_lstack,     MAX_ARG, 0,       1,         0, CA_PUBLIC},
+    {(UTF8 *)"LSTACK",      fun_lstack,     MAX_ARG, 0,       1,         0, CA_PUBLIC},
 #endif // DEPRECATED
-    {"LT",          fun_lt,         MAX_ARG, 2,       2,         0, CA_PUBLIC},
-    {"LTE",         fun_lte,        MAX_ARG, 2,       2,         0, CA_PUBLIC},
-    {"LWHO",        fun_lwho,       MAX_ARG, 0,       1,         0, CA_PUBLIC},
-    {"MAIL",        fun_mail,       MAX_ARG, 0,       2,         0, CA_PUBLIC},
-    {"MAILFROM",    fun_mailfrom,   MAX_ARG, 1,       2,         0, CA_PUBLIC},
+    {(UTF8 *)"LT",          fun_lt,         MAX_ARG, 2,       2,         0, CA_PUBLIC},
+    {(UTF8 *)"LTE",         fun_lte,        MAX_ARG, 2,       2,         0, CA_PUBLIC},
+    {(UTF8 *)"LWHO",        fun_lwho,       MAX_ARG, 0,       1,         0, CA_PUBLIC},
+    {(UTF8 *)"MAIL",        fun_mail,       MAX_ARG, 0,       2,         0, CA_PUBLIC},
+    {(UTF8 *)"MAILFROM",    fun_mailfrom,   MAX_ARG, 1,       2,         0, CA_PUBLIC},
 #if defined(FIRANMUX)
-    {"MAILJ",       fun_mailj,      MAX_ARG, 0,       2,         0, CA_PUBLIC},
-    {"MAILSIZE",    fun_mailsize,   MAX_ARG, 1,       1,         0, CA_PUBLIC},
-    {"MAILSUBJ",    fun_mailsubj,   MAX_ARG, 1,       2,         0, CA_PUBLIC},
+    {(UTF8 *)"MAILJ",       fun_mailj,      MAX_ARG, 0,       2,         0, CA_PUBLIC},
+    {(UTF8 *)"MAILSIZE",    fun_mailsize,   MAX_ARG, 1,       1,         0, CA_PUBLIC},
+    {(UTF8 *)"MAILSUBJ",    fun_mailsubj,   MAX_ARG, 1,       2,         0, CA_PUBLIC},
 #endif // FIRANMUX
-    {"MAP",         fun_map,        MAX_ARG, 2,      13,         0, CA_PUBLIC},
-    {"MATCH",       fun_match,      MAX_ARG, 2,       3,         0, CA_PUBLIC},
-    {"MATCHALL",    fun_matchall,   MAX_ARG, 2,       3,         0, CA_PUBLIC},
-    {"MAX",         fun_max,        MAX_ARG, 1, MAX_ARG,         0, CA_PUBLIC},
-    {"MEMBER",      fun_member,     MAX_ARG, 2,       3,         0, CA_PUBLIC},
-    {"MERGE",       fun_merge,      MAX_ARG, 3,       3,         0, CA_PUBLIC},
-    {"MID",         fun_mid,        MAX_ARG, 3,       3,         0, CA_PUBLIC},
-    {"MIN",         fun_min,        MAX_ARG, 1, MAX_ARG,         0, CA_PUBLIC},
-    {"MIX",         fun_mix,        MAX_ARG, 2,      12,         0, CA_PUBLIC},
-    {"MOD",         fun_mod,        MAX_ARG, 2,       2,         0, CA_PUBLIC},
-    {"MONEY",       fun_money,      MAX_ARG, 1,       1,         0, CA_PUBLIC},
-    {"MONIKER",     fun_moniker,    MAX_ARG, 0,       1,         0, CA_PUBLIC},
-    {"MOTD",        fun_motd,       MAX_ARG, 0,       0,         0, CA_PUBLIC},
-    {"MTIME",       fun_mtime,      MAX_ARG, 0,       1,         0, CA_PUBLIC},
-    {"MUDNAME",     fun_mudname,    MAX_ARG, 0,       0,         0, CA_PUBLIC},
-    {"MUL",         fun_mul,        MAX_ARG, 1, MAX_ARG,         0, CA_PUBLIC},
-    {"MUNGE",       fun_munge,      MAX_ARG, 3,       4,         0, CA_PUBLIC},
-    {"NAME",        fun_name,       MAX_ARG, 1,       1,         0, CA_PUBLIC},
-    {"NEARBY",      fun_nearby,     MAX_ARG, 2,       2,         0, CA_PUBLIC},
-    {"NEQ",         fun_neq,        MAX_ARG, 2,       2,         0, CA_PUBLIC},
-    {"NEXT",        fun_next,       MAX_ARG, 1,       1,         0, CA_PUBLIC},
-    {"NOT",         fun_not,        MAX_ARG, 1,       1,         0, CA_PUBLIC},
-    {"NULL",        fun_null,       MAX_ARG, 1,       1,         0, CA_PUBLIC},
-    {"NUM",         fun_num,        MAX_ARG, 1,       1,         0, CA_PUBLIC},
-    {"OBJ",         fun_obj,        MAX_ARG, 1,       1,         0, CA_PUBLIC},
-    {"OBJEVAL",     fun_objeval,    MAX_ARG, 2,       2, FN_NOEVAL, CA_PUBLIC},
-    {"OBJMEM",      fun_objmem,     MAX_ARG, 1,       1,         0, CA_PUBLIC},
-    {"OEMIT",       fun_oemit,      MAX_ARG, 2,       2,         0, CA_PUBLIC},
-    {"OR",          fun_or,         MAX_ARG, 0, MAX_ARG,         0, CA_PUBLIC},
-    {"ORBOOL",      fun_orbool,     MAX_ARG, 0, MAX_ARG,         0, CA_PUBLIC},
-    {"ORD",         fun_ord,        MAX_ARG, 1,       1,         0, CA_PUBLIC},
-    {"ORFLAGS",     fun_orflags,    MAX_ARG, 2,       2,         0, CA_PUBLIC},
-    {"OWNER",       fun_owner,      MAX_ARG, 1,       1,         0, CA_PUBLIC},
-    {"PACK",        fun_pack,       MAX_ARG, 1,       2,         0, CA_PUBLIC},
-    {"PARENT",      fun_parent,     MAX_ARG, 1,       1,         0, CA_PUBLIC},
-    {"PARSE",       fun_iter,       MAX_ARG, 2,       4, FN_NOEVAL, CA_PUBLIC},
+    {(UTF8 *)"MAP",         fun_map,        MAX_ARG, 2,      13,         0, CA_PUBLIC},
+    {(UTF8 *)"MATCH",       fun_match,      MAX_ARG, 2,       3,         0, CA_PUBLIC},
+    {(UTF8 *)"MATCHALL",    fun_matchall,   MAX_ARG, 2,       3,         0, CA_PUBLIC},
+    {(UTF8 *)"MAX",         fun_max,        MAX_ARG, 1, MAX_ARG,         0, CA_PUBLIC},
+    {(UTF8 *)"MEMBER",      fun_member,     MAX_ARG, 2,       3,         0, CA_PUBLIC},
+    {(UTF8 *)"MERGE",       fun_merge,      MAX_ARG, 3,       3,         0, CA_PUBLIC},
+    {(UTF8 *)"MID",         fun_mid,        MAX_ARG, 3,       3,         0, CA_PUBLIC},
+    {(UTF8 *)"MIN",         fun_min,        MAX_ARG, 1, MAX_ARG,         0, CA_PUBLIC},
+    {(UTF8 *)"MIX",         fun_mix,        MAX_ARG, 2,      12,         0, CA_PUBLIC},
+    {(UTF8 *)"MOD",         fun_mod,        MAX_ARG, 2,       2,         0, CA_PUBLIC},
+    {(UTF8 *)"MONEY",       fun_money,      MAX_ARG, 1,       1,         0, CA_PUBLIC},
+    {(UTF8 *)"MONIKER",     fun_moniker,    MAX_ARG, 0,       1,         0, CA_PUBLIC},
+    {(UTF8 *)"MOTD",        fun_motd,       MAX_ARG, 0,       0,         0, CA_PUBLIC},
+    {(UTF8 *)"MTIME",       fun_mtime,      MAX_ARG, 0,       1,         0, CA_PUBLIC},
+    {(UTF8 *)"MUDNAME",     fun_mudname,    MAX_ARG, 0,       0,         0, CA_PUBLIC},
+    {(UTF8 *)"MUL",         fun_mul,        MAX_ARG, 1, MAX_ARG,         0, CA_PUBLIC},
+    {(UTF8 *)"MUNGE",       fun_munge,      MAX_ARG, 3,       4,         0, CA_PUBLIC},
+    {(UTF8 *)"NAME",        fun_name,       MAX_ARG, 1,       1,         0, CA_PUBLIC},
+    {(UTF8 *)"NEARBY",      fun_nearby,     MAX_ARG, 2,       2,         0, CA_PUBLIC},
+    {(UTF8 *)"NEQ",         fun_neq,        MAX_ARG, 2,       2,         0, CA_PUBLIC},
+    {(UTF8 *)"NEXT",        fun_next,       MAX_ARG, 1,       1,         0, CA_PUBLIC},
+    {(UTF8 *)"NOT",         fun_not,        MAX_ARG, 1,       1,         0, CA_PUBLIC},
+    {(UTF8 *)"NULL",        fun_null,       MAX_ARG, 1,       1,         0, CA_PUBLIC},
+    {(UTF8 *)"NUM",         fun_num,        MAX_ARG, 1,       1,         0, CA_PUBLIC},
+    {(UTF8 *)"OBJ",         fun_obj,        MAX_ARG, 1,       1,         0, CA_PUBLIC},
+    {(UTF8 *)"OBJEVAL",     fun_objeval,    MAX_ARG, 2,       2, FN_NOEVAL, CA_PUBLIC},
+    {(UTF8 *)"OBJMEM",      fun_objmem,     MAX_ARG, 1,       1,         0, CA_PUBLIC},
+    {(UTF8 *)"OEMIT",       fun_oemit,      MAX_ARG, 2,       2,         0, CA_PUBLIC},
+    {(UTF8 *)"OR",          fun_or,         MAX_ARG, 0, MAX_ARG,         0, CA_PUBLIC},
+    {(UTF8 *)"ORBOOL",      fun_orbool,     MAX_ARG, 0, MAX_ARG,         0, CA_PUBLIC},
+    {(UTF8 *)"ORD",         fun_ord,        MAX_ARG, 1,       1,         0, CA_PUBLIC},
+    {(UTF8 *)"ORFLAGS",     fun_orflags,    MAX_ARG, 2,       2,         0, CA_PUBLIC},
+    {(UTF8 *)"OWNER",       fun_owner,      MAX_ARG, 1,       1,         0, CA_PUBLIC},
+    {(UTF8 *)"PACK",        fun_pack,       MAX_ARG, 1,       2,         0, CA_PUBLIC},
+    {(UTF8 *)"PARENT",      fun_parent,     MAX_ARG, 1,       1,         0, CA_PUBLIC},
+    {(UTF8 *)"PARSE",       fun_iter,       MAX_ARG, 2,       4, FN_NOEVAL, CA_PUBLIC},
 #ifdef DEPRECATED
-    {"PEEK",        fun_peek,       MAX_ARG, 0,       2,         0, CA_PUBLIC},
+    {(UTF8 *)"PEEK",        fun_peek,       MAX_ARG, 0,       2,         0, CA_PUBLIC},
 #endif // DEPRECATED
-    {"PEMIT",       fun_pemit,      MAX_ARG, 2,       2,         0, CA_PUBLIC},
-    {"PFIND",       fun_pfind,      MAX_ARG, 1,       1,         0, CA_PUBLIC},
-    {"PI",          fun_pi,         MAX_ARG, 0,       0,         0, CA_PUBLIC},
-    {"PICKRAND",    fun_pickrand,   MAX_ARG, 0,       2,         0, CA_PUBLIC},
-    {"PLAYMEM",     fun_playmem,    MAX_ARG, 0,       1,         0, CA_PUBLIC},
-    {"PMATCH",      fun_pmatch,     MAX_ARG, 1,       1,         0, CA_PUBLIC},
-    {"POLL",        fun_poll,       MAX_ARG, 0,       0,         0, CA_PUBLIC},
+    {(UTF8 *)"PEMIT",       fun_pemit,      MAX_ARG, 2,       2,         0, CA_PUBLIC},
+    {(UTF8 *)"PFIND",       fun_pfind,      MAX_ARG, 1,       1,         0, CA_PUBLIC},
+    {(UTF8 *)"PI",          fun_pi,         MAX_ARG, 0,       0,         0, CA_PUBLIC},
+    {(UTF8 *)"PICKRAND",    fun_pickrand,   MAX_ARG, 0,       2,         0, CA_PUBLIC},
+    {(UTF8 *)"PLAYMEM",     fun_playmem,    MAX_ARG, 0,       1,         0, CA_PUBLIC},
+    {(UTF8 *)"PMATCH",      fun_pmatch,     MAX_ARG, 1,       1,         0, CA_PUBLIC},
+    {(UTF8 *)"POLL",        fun_poll,       MAX_ARG, 0,       0,         0, CA_PUBLIC},
 #ifdef DEPRECATED
-    {"POP",         fun_pop,        MAX_ARG, 0,       2,         0, CA_PUBLIC},
+    {(UTF8 *)"POP",         fun_pop,        MAX_ARG, 0,       2,         0, CA_PUBLIC},
 #endif // DEPRECATED
-    {"PORTS",       fun_ports,      MAX_ARG, 1,       1,         0, CA_PUBLIC},
-    {"POS",         fun_pos,        MAX_ARG, 2,       2,         0, CA_PUBLIC},
-    {"POSS",        fun_poss,       MAX_ARG, 1,       1,         0, CA_PUBLIC},
-    {"POWER",       fun_power,      MAX_ARG, 2,       2,         0, CA_PUBLIC},
-    {"POWERS",      fun_powers,     MAX_ARG, 1,       1,         0, CA_PUBLIC},
+    {(UTF8 *)"PORTS",       fun_ports,      MAX_ARG, 1,       1,         0, CA_PUBLIC},
+    {(UTF8 *)"POS",         fun_pos,        MAX_ARG, 2,       2,         0, CA_PUBLIC},
+    {(UTF8 *)"POSS",        fun_poss,       MAX_ARG, 1,       1,         0, CA_PUBLIC},
+    {(UTF8 *)"POWER",       fun_power,      MAX_ARG, 2,       2,         0, CA_PUBLIC},
+    {(UTF8 *)"POWERS",      fun_powers,     MAX_ARG, 1,       1,         0, CA_PUBLIC},
 #ifdef DEPRECATED
-    {"PUSH",        fun_push,       MAX_ARG, 1,       2,         0, CA_PUBLIC},
+    {(UTF8 *)"PUSH",        fun_push,       MAX_ARG, 1,       2,         0, CA_PUBLIC},
 #endif // DEPRECATED
-    {"R",           fun_r,          MAX_ARG, 1,       1,         0, CA_PUBLIC},
-    {"RAND",        fun_rand,       MAX_ARG, 1,       2,         0, CA_PUBLIC},
-    {"REGMATCH",    fun_regmatch,   MAX_ARG, 2,       3,         0, CA_PUBLIC},
-    {"REGMATCHI",   fun_regmatchi,  MAX_ARG, 2,       3,         0, CA_PUBLIC},
-    {"REGRAB",      fun_regrab,     MAX_ARG, 2,       3,         0, CA_PUBLIC},
-    {"REGRABALL",   fun_regraball,  MAX_ARG, 2,       3,         0, CA_PUBLIC},
-    {"REGRABALLI",  fun_regraballi, MAX_ARG, 2,       3,         0, CA_PUBLIC},
-    {"REGRABI",     fun_regrabi,    MAX_ARG, 2,       3,         0, CA_PUBLIC},
-    {"REMAINDER",   fun_remainder,  MAX_ARG, 2,       2,         0, CA_PUBLIC},
-    {"REMIT",       fun_remit,      MAX_ARG, 2,       2,         0, CA_PUBLIC},
-    {"REMOVE",      fun_remove,     MAX_ARG, 2,       4,         0, CA_PUBLIC},
-    {"REPEAT",      fun_repeat,     MAX_ARG, 2,       2,         0, CA_PUBLIC},
-    {"REPLACE",     fun_replace,    MAX_ARG, 3,       4,         0, CA_PUBLIC},
-    {"REST",        fun_rest,       MAX_ARG, 0,       2,         0, CA_PUBLIC},
-    {"REVERSE",     fun_reverse,          1, 1,       1,         0, CA_PUBLIC},
-    {"REVWORDS",    fun_revwords,   MAX_ARG, 0,       3,         0, CA_PUBLIC},
-    {"RIGHT",       fun_right,      MAX_ARG, 2,       2,         0, CA_PUBLIC},
-    {"RJUST",       fun_rjust,      MAX_ARG, 2,       3,         0, CA_PUBLIC},
-    {"RLOC",        fun_rloc,       MAX_ARG, 2,       2,         0, CA_PUBLIC},
-    {"ROMAN",       fun_roman,      MAX_ARG, 1,       1,         0, CA_PUBLIC},
-    {"ROOM",        fun_room,       MAX_ARG, 1,       1,         0, CA_PUBLIC},
-    {"ROUND",       fun_round,      MAX_ARG, 2,       2,         0, CA_PUBLIC},
-    {"RPAD",        fun_rpad,       MAX_ARG, 2,       3,         0, CA_PUBLIC},
+    {(UTF8 *)"R",           fun_r,          MAX_ARG, 1,       1,         0, CA_PUBLIC},
+    {(UTF8 *)"RAND",        fun_rand,       MAX_ARG, 1,       2,         0, CA_PUBLIC},
+    {(UTF8 *)"REGMATCH",    fun_regmatch,   MAX_ARG, 2,       3,         0, CA_PUBLIC},
+    {(UTF8 *)"REGMATCHI",   fun_regmatchi,  MAX_ARG, 2,       3,         0, CA_PUBLIC},
+    {(UTF8 *)"REGRAB",      fun_regrab,     MAX_ARG, 2,       3,         0, CA_PUBLIC},
+    {(UTF8 *)"REGRABALL",   fun_regraball,  MAX_ARG, 2,       3,         0, CA_PUBLIC},
+    {(UTF8 *)"REGRABALLI",  fun_regraballi, MAX_ARG, 2,       3,         0, CA_PUBLIC},
+    {(UTF8 *)"REGRABI",     fun_regrabi,    MAX_ARG, 2,       3,         0, CA_PUBLIC},
+    {(UTF8 *)"REMAINDER",   fun_remainder,  MAX_ARG, 2,       2,         0, CA_PUBLIC},
+    {(UTF8 *)"REMIT",       fun_remit,      MAX_ARG, 2,       2,         0, CA_PUBLIC},
+    {(UTF8 *)"REMOVE",      fun_remove,     MAX_ARG, 2,       4,         0, CA_PUBLIC},
+    {(UTF8 *)"REPEAT",      fun_repeat,     MAX_ARG, 2,       2,         0, CA_PUBLIC},
+    {(UTF8 *)"REPLACE",     fun_replace,    MAX_ARG, 3,       4,         0, CA_PUBLIC},
+    {(UTF8 *)"REST",        fun_rest,       MAX_ARG, 0,       2,         0, CA_PUBLIC},
+    {(UTF8 *)"REVERSE",     fun_reverse,          1, 1,       1,         0, CA_PUBLIC},
+    {(UTF8 *)"REVWORDS",    fun_revwords,   MAX_ARG, 0,       3,         0, CA_PUBLIC},
+    {(UTF8 *)"RIGHT",       fun_right,      MAX_ARG, 2,       2,         0, CA_PUBLIC},
+    {(UTF8 *)"RJUST",       fun_rjust,      MAX_ARG, 2,       3,         0, CA_PUBLIC},
+    {(UTF8 *)"RLOC",        fun_rloc,       MAX_ARG, 2,       2,         0, CA_PUBLIC},
+    {(UTF8 *)"ROMAN",       fun_roman,      MAX_ARG, 1,       1,         0, CA_PUBLIC},
+    {(UTF8 *)"ROOM",        fun_room,       MAX_ARG, 1,       1,         0, CA_PUBLIC},
+    {(UTF8 *)"ROUND",       fun_round,      MAX_ARG, 2,       2,         0, CA_PUBLIC},
+    {(UTF8 *)"RPAD",        fun_rpad,       MAX_ARG, 2,       3,         0, CA_PUBLIC},
 #ifdef REALITY_LVLS
-    {"RXLEVEL",     fun_rxlevel,    MAX_ARG, 1,       1,         0, CA_PUBLIC},
+    {(UTF8 *)"RXLEVEL",     fun_rxlevel,    MAX_ARG, 1,       1,         0, CA_PUBLIC},
 #endif // REALITY_LVLS
-    {"S",           fun_s,                1, 1,       1,         0, CA_PUBLIC},
-    {"SCRAMBLE",    fun_scramble,   MAX_ARG, 1,       1,         0, CA_PUBLIC},
-    {"SEARCH",      fun_search,           1, 0,       1,         0, CA_PUBLIC},
-    {"SECS",        fun_secs,       MAX_ARG, 0,       2,         0, CA_PUBLIC},
-    {"SECURE",      fun_secure,           1, 1,       1,         0, CA_PUBLIC},
-    {"SET",         fun_set,        MAX_ARG, 2,       2,         0, CA_PUBLIC},
-    {"SETDIFF",     fun_setdiff,    MAX_ARG, 2,       5,         0, CA_PUBLIC},
-    {"SETINTER",    fun_setinter,   MAX_ARG, 2,       5,         0, CA_PUBLIC},
+    {(UTF8 *)"S",           fun_s,                1, 1,       1,         0, CA_PUBLIC},
+    {(UTF8 *)"SCRAMBLE",    fun_scramble,   MAX_ARG, 1,       1,         0, CA_PUBLIC},
+    {(UTF8 *)"SEARCH",      fun_search,           1, 0,       1,         0, CA_PUBLIC},
+    {(UTF8 *)"SECS",        fun_secs,       MAX_ARG, 0,       2,         0, CA_PUBLIC},
+    {(UTF8 *)"SECURE",      fun_secure,           1, 1,       1,         0, CA_PUBLIC},
+    {(UTF8 *)"SET",         fun_set,        MAX_ARG, 2,       2,         0, CA_PUBLIC},
+    {(UTF8 *)"SETDIFF",     fun_setdiff,    MAX_ARG, 2,       5,         0, CA_PUBLIC},
+    {(UTF8 *)"SETINTER",    fun_setinter,   MAX_ARG, 2,       5,         0, CA_PUBLIC},
 #if defined(FIRANMUX)
-    {"SETPARENT",   fun_setparent,  MAX_ARG, 2,       2,         0, CA_PUBLIC},
+    {(UTF8 *)"SETPARENT",   fun_setparent,  MAX_ARG, 2,       2,         0, CA_PUBLIC},
 #endif // FIRANMUX
-    {"SETQ",        fun_setq,       MAX_ARG, 2,       2,         0, CA_PUBLIC},
-    {"SETR",        fun_setr,       MAX_ARG, 2,       2,         0, CA_PUBLIC},
+    {(UTF8 *)"SETQ",        fun_setq,       MAX_ARG, 2,       2,         0, CA_PUBLIC},
+    {(UTF8 *)"SETR",        fun_setr,       MAX_ARG, 2,       2,         0, CA_PUBLIC},
 #if defined(FIRANMUX)
-    {"SETNAME",     fun_setname,    MAX_ARG, 2,       2,         0, CA_PUBLIC},
-    {"TRIGGER",     fun_trigger,    MAX_ARG, 1, MAX_ARG,         0, CA_PUBLIC},
+    {(UTF8 *)"SETNAME",     fun_setname,    MAX_ARG, 2,       2,         0, CA_PUBLIC},
+    {(UTF8 *)"TRIGGER",     fun_trigger,    MAX_ARG, 1, MAX_ARG,         0, CA_PUBLIC},
 #endif // FIRANMUX
-    {"SETUNION",    fun_setunion,   MAX_ARG, 2,       5,         0, CA_PUBLIC},
-    {"SHA1",        fun_sha1,             1, 0,       1,         0, CA_PUBLIC},
-    {"SHL",         fun_shl,        MAX_ARG, 2,       2,         0, CA_PUBLIC},
-    {"SHR",         fun_shr,        MAX_ARG, 2,       2,         0, CA_PUBLIC},
-    {"SHUFFLE",     fun_shuffle,    MAX_ARG, 1,       3,         0, CA_PUBLIC},
-    {"SIGN",        fun_sign,       MAX_ARG, 1,       1,         0, CA_PUBLIC},
-    {"SIN",         fun_sin,        MAX_ARG, 1,       2,         0, CA_PUBLIC},
-    {"SINGLETIME",  fun_singletime, MAX_ARG, 1,       1,         0, CA_PUBLIC},
-    {"SITEINFO",    fun_siteinfo,   MAX_ARG, 1,       1,         0, CA_PUBLIC},
-    {"SORT",        fun_sort,       MAX_ARG, 1,       4,         0, CA_PUBLIC},
-    {"SORTBY",      fun_sortby,     MAX_ARG, 2,       4,         0, CA_PUBLIC},
-    {"SPACE",       fun_space,      MAX_ARG, 0,       1,         0, CA_PUBLIC},
-    {"SPELLNUM",    fun_spellnum,   MAX_ARG, 1,       1,         0, CA_PUBLIC},
-    {"SPLICE",      fun_splice,     MAX_ARG, 3,       5,         0, CA_PUBLIC},
+    {(UTF8 *)"SETUNION",    fun_setunion,   MAX_ARG, 2,       5,         0, CA_PUBLIC},
+    {(UTF8 *)"SHA1",        fun_sha1,             1, 0,       1,         0, CA_PUBLIC},
+    {(UTF8 *)"SHL",         fun_shl,        MAX_ARG, 2,       2,         0, CA_PUBLIC},
+    {(UTF8 *)"SHR",         fun_shr,        MAX_ARG, 2,       2,         0, CA_PUBLIC},
+    {(UTF8 *)"SHUFFLE",     fun_shuffle,    MAX_ARG, 1,       3,         0, CA_PUBLIC},
+    {(UTF8 *)"SIGN",        fun_sign,       MAX_ARG, 1,       1,         0, CA_PUBLIC},
+    {(UTF8 *)"SIN",         fun_sin,        MAX_ARG, 1,       2,         0, CA_PUBLIC},
+    {(UTF8 *)"SINGLETIME",  fun_singletime, MAX_ARG, 1,       1,         0, CA_PUBLIC},
+    {(UTF8 *)"SITEINFO",    fun_siteinfo,   MAX_ARG, 1,       1,         0, CA_PUBLIC},
+    {(UTF8 *)"SORT",        fun_sort,       MAX_ARG, 1,       4,         0, CA_PUBLIC},
+    {(UTF8 *)"SORTBY",      fun_sortby,     MAX_ARG, 2,       4,         0, CA_PUBLIC},
+    {(UTF8 *)"SPACE",       fun_space,      MAX_ARG, 0,       1,         0, CA_PUBLIC},
+    {(UTF8 *)"SPELLNUM",    fun_spellnum,   MAX_ARG, 1,       1,         0, CA_PUBLIC},
+    {(UTF8 *)"SPLICE",      fun_splice,     MAX_ARG, 3,       5,         0, CA_PUBLIC},
 #if defined(INLINESQL)
-    {"SQL",         fun_sql,        MAX_ARG, 1,       3,         0, CA_WIZARD},
+    {(UTF8 *)"SQL",         fun_sql,        MAX_ARG, 1,       3,         0, CA_WIZARD},
 #endif // INLINESQL
-    {"SQRT",        fun_sqrt,       MAX_ARG, 1,       1,         0, CA_PUBLIC},
-    {"SQUISH",      fun_squish,     MAX_ARG, 0,       2,         0, CA_PUBLIC},
-    {"STARTSECS",   fun_startsecs,  MAX_ARG, 0,       0,         0, CA_PUBLIC},
-    {"STARTTIME",   fun_starttime,  MAX_ARG, 0,       0,         0, CA_PUBLIC},
-    {"STATS",       fun_stats,      MAX_ARG, 0,       1,         0, CA_PUBLIC},
-    {"STEP",        fun_step,       MAX_ARG, 3,       5,         0, CA_PUBLIC},
-    {"STRCAT",      fun_strcat,     MAX_ARG, 0, MAX_ARG,         0, CA_PUBLIC},
-    {"STRIP",       fun_strip,      MAX_ARG, 1,       2,         0, CA_PUBLIC},
-    {"STRIPACCENTS",fun_stripaccents, MAX_ARG, 1,     1,         0, CA_PUBLIC},
-    {"STRIPANSI",   fun_stripansi,  MAX_ARG, 1,       1,         0, CA_PUBLIC},
-    {"STRLEN",      fun_strlen,           1, 0,       1,         0, CA_PUBLIC},
-    {"STRMATCH",    fun_strmatch,   MAX_ARG, 2,       2,         0, CA_PUBLIC},
-    {"STRMEM",      fun_strmem,           1, 0,       1,         0, CA_PUBLIC},
-    {"STRTRUNC",    fun_strtrunc,   MAX_ARG, 2,       2,         0, CA_PUBLIC},
-    {"SUB",         fun_sub,        MAX_ARG, 2,       2,         0, CA_PUBLIC},
-    {"SUBEVAL",     fun_subeval,    MAX_ARG, 1,       1,         0, CA_PUBLIC},
-    {"SUBJ",        fun_subj,       MAX_ARG, 1,       1,         0, CA_PUBLIC},
-    {"SUCCESSES",   fun_successes,  MAX_ARG, 2,       3,         0, CA_PUBLIC},
-    {"SWITCH",      fun_switch,     MAX_ARG, 2, MAX_ARG, FN_NOEVAL, CA_PUBLIC},
-    {"T",           fun_t,                1, 0,       1,         0, CA_PUBLIC},
-    {"TABLE",       fun_table,      MAX_ARG, 1,       6,         0, CA_PUBLIC},
-    {"TAN",         fun_tan,        MAX_ARG, 1,       2,         0, CA_PUBLIC},
-    {"TEL",         fun_tel,        MAX_ARG, 2,       2,         0, CA_PUBLIC},
-    {"TERMINFO",    fun_terminfo,         1, 1, MAX_ARG,         0, CA_PUBLIC},
+    {(UTF8 *)"SQRT",        fun_sqrt,       MAX_ARG, 1,       1,         0, CA_PUBLIC},
+    {(UTF8 *)"SQUISH",      fun_squish,     MAX_ARG, 0,       2,         0, CA_PUBLIC},
+    {(UTF8 *)"STARTSECS",   fun_startsecs,  MAX_ARG, 0,       0,         0, CA_PUBLIC},
+    {(UTF8 *)"STARTTIME",   fun_starttime,  MAX_ARG, 0,       0,         0, CA_PUBLIC},
+    {(UTF8 *)"STATS",       fun_stats,      MAX_ARG, 0,       1,         0, CA_PUBLIC},
+    {(UTF8 *)"STEP",        fun_step,       MAX_ARG, 3,       5,         0, CA_PUBLIC},
+    {(UTF8 *)"STRCAT",      fun_strcat,     MAX_ARG, 0, MAX_ARG,         0, CA_PUBLIC},
+    {(UTF8 *)"STRIP",       fun_strip,      MAX_ARG, 1,       2,         0, CA_PUBLIC},
+    {(UTF8 *)"STRIPACCENTS",fun_stripaccents, MAX_ARG, 1,     1,         0, CA_PUBLIC},
+    {(UTF8 *)"STRIPANSI",   fun_stripansi,  MAX_ARG, 1,       1,         0, CA_PUBLIC},
+    {(UTF8 *)"STRLEN",      fun_strlen,           1, 0,       1,         0, CA_PUBLIC},
+    {(UTF8 *)"STRMATCH",    fun_strmatch,   MAX_ARG, 2,       2,         0, CA_PUBLIC},
+    {(UTF8 *)"STRMEM",      fun_strmem,           1, 0,       1,         0, CA_PUBLIC},
+    {(UTF8 *)"STRTRUNC",    fun_strtrunc,   MAX_ARG, 2,       2,         0, CA_PUBLIC},
+    {(UTF8 *)"SUB",         fun_sub,        MAX_ARG, 2,       2,         0, CA_PUBLIC},
+    {(UTF8 *)"SUBEVAL",     fun_subeval,    MAX_ARG, 1,       1,         0, CA_PUBLIC},
+    {(UTF8 *)"SUBJ",        fun_subj,       MAX_ARG, 1,       1,         0, CA_PUBLIC},
+    {(UTF8 *)"SUCCESSES",   fun_successes,  MAX_ARG, 2,       3,         0, CA_PUBLIC},
+    {(UTF8 *)"SWITCH",      fun_switch,     MAX_ARG, 2, MAX_ARG, FN_NOEVAL, CA_PUBLIC},
+    {(UTF8 *)"T",           fun_t,                1, 0,       1,         0, CA_PUBLIC},
+    {(UTF8 *)"TABLE",       fun_table,      MAX_ARG, 1,       6,         0, CA_PUBLIC},
+    {(UTF8 *)"TAN",         fun_tan,        MAX_ARG, 1,       2,         0, CA_PUBLIC},
+    {(UTF8 *)"TEL",         fun_tel,        MAX_ARG, 2,       2,         0, CA_PUBLIC},
+    {(UTF8 *)"TERMINFO",    fun_terminfo,         1, 1, MAX_ARG,         0, CA_PUBLIC},
 #if defined(FIRANMUX)
-    {"TEXT",        fun_text,       MAX_ARG, 2,       2,         0, CA_PUBLIC},
+    {(UTF8 *)"TEXT",        fun_text,       MAX_ARG, 2,       2,         0, CA_PUBLIC},
 #endif // FIRANMUX
-    {"TEXTFILE",    fun_textfile,   MAX_ARG, 2,       2,         0, CA_PUBLIC},
-    {"TIME",        fun_time,       MAX_ARG, 0,       2,         0, CA_PUBLIC},
-    {"TIMEFMT",     fun_timefmt,    MAX_ARG, 1,       2,         0, CA_PUBLIC},
-    {"TR",          fun_tr,         MAX_ARG, 1,       3,         0, CA_PUBLIC},
-    {"TRANSLATE",   fun_translate,  MAX_ARG, 2,       2,         0, CA_PUBLIC},
-    {"TRIM",        fun_trim,       MAX_ARG, 1,       3,         0, CA_PUBLIC},
-    {"TRUNC",       fun_trunc,      MAX_ARG, 1,       1,         0, CA_PUBLIC},
+    {(UTF8 *)"TEXTFILE",    fun_textfile,   MAX_ARG, 2,       2,         0, CA_PUBLIC},
+    {(UTF8 *)"TIME",        fun_time,       MAX_ARG, 0,       2,         0, CA_PUBLIC},
+    {(UTF8 *)"TIMEFMT",     fun_timefmt,    MAX_ARG, 1,       2,         0, CA_PUBLIC},
+    {(UTF8 *)"TR",          fun_tr,         MAX_ARG, 1,       3,         0, CA_PUBLIC},
+    {(UTF8 *)"TRANSLATE",   fun_translate,  MAX_ARG, 2,       2,         0, CA_PUBLIC},
+    {(UTF8 *)"TRIM",        fun_trim,       MAX_ARG, 1,       3,         0, CA_PUBLIC},
+    {(UTF8 *)"TRUNC",       fun_trunc,      MAX_ARG, 1,       1,         0, CA_PUBLIC},
 #ifdef REALITY_LVLS
-    {"TXLEVEL",     fun_txlevel,    MAX_ARG, 1,       1,         0, CA_PUBLIC},
+    {(UTF8 *)"TXLEVEL",     fun_txlevel,    MAX_ARG, 1,       1,         0, CA_PUBLIC},
 #endif // REALITY_LVLS
-    {"TYPE",        fun_type,       MAX_ARG, 1,       1,         0, CA_PUBLIC},
-    {"U",           fun_u,          MAX_ARG, 1, MAX_ARG,         0, CA_PUBLIC},
-    {"UCSTR",       fun_ucstr,            1, 1,       1,         0, CA_PUBLIC},
-    {"UDEFAULT",    fun_udefault,   MAX_ARG, 2, MAX_ARG, FN_NOEVAL, CA_PUBLIC},
-    {"ULOCAL",      fun_ulocal,     MAX_ARG, 1, MAX_ARG,         0, CA_PUBLIC},
-    {"UNPACK",      fun_unpack,     MAX_ARG, 1,       2,         0, CA_PUBLIC},
-    {"V",           fun_v,          MAX_ARG, 1,       1,         0, CA_PUBLIC},
-    {"VADD",        fun_vadd,       MAX_ARG, 2,       4,         0, CA_PUBLIC},
-    {"VALID",       fun_valid,      MAX_ARG, 2,       2,         0, CA_PUBLIC},
-    {"VCROSS",      fun_vcross,     MAX_ARG, 2,       4,         0, CA_PUBLIC},
-    {"VDIM",        fun_words,      MAX_ARG, 0,       2,         0, CA_PUBLIC},
-    {"VDOT",        fun_vdot,       MAX_ARG, 2,       4,         0, CA_PUBLIC},
-    {"VERSION",     fun_version,    MAX_ARG, 0,       0,         0, CA_PUBLIC},
-    {"VISIBLE",     fun_visible,    MAX_ARG, 2,       2,         0, CA_PUBLIC},
-    {"VMAG",        fun_vmag,       MAX_ARG, 1,       2,         0, CA_PUBLIC},
-    {"VMUL",        fun_vmul,       MAX_ARG, 2,       4,         0, CA_PUBLIC},
-    {"VSUB",        fun_vsub,       MAX_ARG, 2,       4,         0, CA_PUBLIC},
-    {"VUNIT",       fun_vunit,      MAX_ARG, 1,       2,         0, CA_PUBLIC},
-    {"WHERE",       fun_where,      MAX_ARG, 1,       1,         0, CA_PUBLIC},
-    {"WIDTH",       fun_width,      MAX_ARG, 1,       1,         0, CA_PUBLIC},
-    {"WORDPOS",     fun_wordpos,    MAX_ARG, 2,       3,         0, CA_PUBLIC},
-    {"WORDS",       fun_words,      MAX_ARG, 0,       2,         0, CA_PUBLIC},
-    {"WRAP",        fun_wrap,       MAX_ARG, 1,       8,         0, CA_PUBLIC},
-    {"WRITETIME",   fun_writetime,  MAX_ARG, 1,       1,         0, CA_PUBLIC},
-    {"XGET",        fun_xget,       MAX_ARG, 2,       2,         0, CA_PUBLIC},
-    {"XOR",         fun_xor,        MAX_ARG, 0, MAX_ARG,         0, CA_PUBLIC},
-    {"ZFUN",        fun_zfun,       MAX_ARG, 2,      11,         0, CA_PUBLIC},
-    {"ZONE",        fun_zone,       MAX_ARG, 1,       1,         0, CA_PUBLIC},
-    {"ZWHO",        fun_zwho,       MAX_ARG, 1,       1,         0, CA_PUBLIC},
-    {NULL,          NULL,           MAX_ARG, 0,       0,         0, 0}
+    {(UTF8 *)"TYPE",        fun_type,       MAX_ARG, 1,       1,         0, CA_PUBLIC},
+    {(UTF8 *)"U",           fun_u,          MAX_ARG, 1, MAX_ARG,         0, CA_PUBLIC},
+    {(UTF8 *)"UCSTR",       fun_ucstr,            1, 1,       1,         0, CA_PUBLIC},
+    {(UTF8 *)"UDEFAULT",    fun_udefault,   MAX_ARG, 2, MAX_ARG, FN_NOEVAL, CA_PUBLIC},
+    {(UTF8 *)"ULOCAL",      fun_ulocal,     MAX_ARG, 1, MAX_ARG,         0, CA_PUBLIC},
+    {(UTF8 *)"UNPACK",      fun_unpack,     MAX_ARG, 1,       2,         0, CA_PUBLIC},
+    {(UTF8 *)"V",           fun_v,          MAX_ARG, 1,       1,         0, CA_PUBLIC},
+    {(UTF8 *)"VADD",        fun_vadd,       MAX_ARG, 2,       4,         0, CA_PUBLIC},
+    {(UTF8 *)"VALID",       fun_valid,      MAX_ARG, 2,       2,         0, CA_PUBLIC},
+    {(UTF8 *)"VCROSS",      fun_vcross,     MAX_ARG, 2,       4,         0, CA_PUBLIC},
+    {(UTF8 *)"VDIM",        fun_words,      MAX_ARG, 0,       2,         0, CA_PUBLIC},
+    {(UTF8 *)"VDOT",        fun_vdot,       MAX_ARG, 2,       4,         0, CA_PUBLIC},
+    {(UTF8 *)"VERSION",     fun_version,    MAX_ARG, 0,       0,         0, CA_PUBLIC},
+    {(UTF8 *)"VISIBLE",     fun_visible,    MAX_ARG, 2,       2,         0, CA_PUBLIC},
+    {(UTF8 *)"VMAG",        fun_vmag,       MAX_ARG, 1,       2,         0, CA_PUBLIC},
+    {(UTF8 *)"VMUL",        fun_vmul,       MAX_ARG, 2,       4,         0, CA_PUBLIC},
+    {(UTF8 *)"VSUB",        fun_vsub,       MAX_ARG, 2,       4,         0, CA_PUBLIC},
+    {(UTF8 *)"VUNIT",       fun_vunit,      MAX_ARG, 1,       2,         0, CA_PUBLIC},
+    {(UTF8 *)"WHERE",       fun_where,      MAX_ARG, 1,       1,         0, CA_PUBLIC},
+    {(UTF8 *)"WIDTH",       fun_width,      MAX_ARG, 1,       1,         0, CA_PUBLIC},
+    {(UTF8 *)"WORDPOS",     fun_wordpos,    MAX_ARG, 2,       3,         0, CA_PUBLIC},
+    {(UTF8 *)"WORDS",       fun_words,      MAX_ARG, 0,       2,         0, CA_PUBLIC},
+    {(UTF8 *)"WRAP",        fun_wrap,       MAX_ARG, 1,       8,         0, CA_PUBLIC},
+    {(UTF8 *)"WRITETIME",   fun_writetime,  MAX_ARG, 1,       1,         0, CA_PUBLIC},
+    {(UTF8 *)"XGET",        fun_xget,       MAX_ARG, 2,       2,         0, CA_PUBLIC},
+    {(UTF8 *)"XOR",         fun_xor,        MAX_ARG, 0, MAX_ARG,         0, CA_PUBLIC},
+    {(UTF8 *)"ZFUN",        fun_zfun,       MAX_ARG, 2,      11,         0, CA_PUBLIC},
+    {(UTF8 *)"ZONE",        fun_zone,       MAX_ARG, 1,       1,         0, CA_PUBLIC},
+    {(UTF8 *)"ZWHO",        fun_zwho,       MAX_ARG, 1,       1,         0, CA_PUBLIC},
+    {(UTF8 *)NULL,          NULL,           MAX_ARG, 0,       0,         0, 0}
 };
 
 void function_add(FUN *fp)
 {
-    char *buff = alloc_sbuf("init_functab");
-    char *bp = buff;
+    UTF8 *buff = alloc_sbuf("init_functab");
+    UTF8 *bp = buff;
     safe_sb_str(fp->name, buff, &bp);
     *bp = '\0';
     mux_strlwr(buff);
-    hashaddLEN(buff, strlen(buff), fp, &mudstate.func_htab);
+    hashaddLEN(buff, strlen((char *)buff), fp, &mudstate.func_htab);
     free_sbuf(buff);
 }
 
 void functions_add(FUN funlist[])
 {
-    char *buff = alloc_sbuf("init_functab");
+    UTF8 *buff = alloc_sbuf("init_functab");
     for (FUN *fp = funlist; fp->name; fp++)
     {
-        char *bp = buff;
+        UTF8 *bp = buff;
         safe_sb_str(fp->name, buff, &bp);
         *bp = '\0';
         mux_strlwr(buff);
-        hashaddLEN(buff, strlen(buff), fp, &mudstate.func_htab);
+        hashaddLEN(buff, strlen((char *)buff), fp, &mudstate.func_htab);
     }
     free_sbuf(buff);
 }
@@ -10255,9 +10254,9 @@ void init_functab(void)
 // We truncate the name to a length of MAX_UFUN_NAME_LEN, if
 // necessary. ANSI is stripped.
 //
-char *MakeCanonicalUserFunctionName(const char *pName, size_t *pnName, bool *pbValid)
+UTF8 *MakeCanonicalUserFunctionName(const UTF8 *pName, size_t *pnName, bool *pbValid)
 {
-    static char Buffer[MAX_UFUN_NAME_LEN+1];
+    static UTF8 Buffer[MAX_UFUN_NAME_LEN+1];
 
     if (  NULL == pName
        || '\0' == pName[0])
@@ -10268,7 +10267,7 @@ char *MakeCanonicalUserFunctionName(const char *pName, size_t *pnName, bool *pbV
     }
 
     size_t nLen = 0;
-    char *pNameStripped = strip_ansi(pName, &nLen);
+    UTF8 *pNameStripped = strip_ansi(pName, &nLen);
     if (sizeof(Buffer)-1 < nLen)
     {
         nLen = sizeof(Buffer)-1;
@@ -10290,8 +10289,8 @@ void do_function
     dbref enactor,
     int   key,
     int   nargs,
-    char *fname,
-    char *target
+    UTF8 *fname,
+    UTF8 *target
 )
 {
     UNUSED_PARAMETER(caller);
@@ -10341,10 +10340,10 @@ void do_function
     //
     size_t nLen;
     bool bValid;
-    char *pName = MakeCanonicalUserFunctionName(fname, &nLen, &bValid);
+    UTF8 *pName = MakeCanonicalUserFunctionName(fname, &nLen, &bValid);
     if (!bValid)
     {
-        notify_quiet(executor, "Function name is not valid.");
+        notify_quiet(executor, (UTF8 *)"Function name is not valid.");
         return;
     }
 
@@ -10352,7 +10351,7 @@ void do_function
     //
     if (hashfindLEN(pName, nLen, &mudstate.func_htab) != NULL)
     {
-        notify_quiet(executor, "Function already defined in builtin function table.");
+        notify_quiet(executor, (UTF8 *)"Function already defined in builtin function table.");
         return;
     }
 
@@ -10403,7 +10402,7 @@ void do_function
     //
     if (!pattr)
     {
-        notify_quiet(executor, "No such attribute.");
+        notify_quiet(executor, (UTF8 *)"No such attribute.");
         return;
     }
 
@@ -10479,10 +10478,10 @@ void do_function
 //
 void list_functable(dbref player)
 {
-    char *buff = alloc_lbuf("list_functable");
-    char *bp = buff;
+    UTF8 *buff = alloc_lbuf("list_functable");
+    UTF8 *bp = buff;
 
-    safe_str("Functions:", buff, &bp);
+    safe_str((UTF8 *)"Functions:", buff, &bp);
 
     FUN *fp;
     for (fp = builtin_function_list; fp->name && bp < buff + (LBUF_SIZE-1); fp++)
@@ -10497,7 +10496,7 @@ void list_functable(dbref player)
     notify(player, buff);
 
     bp = buff;
-    safe_str("User-Functions:", buff, &bp);
+    safe_str((UTF8 *)"User-Functions:", buff, &bp);
 
     UFUN *ufp;
     for (ufp = ufun_head; ufp && bp < buff + (LBUF_SIZE-1); ufp = ufp->next)
@@ -10522,7 +10521,7 @@ CF_HAND(cf_func_access)
 {
     UNUSED_PARAMETER(vp);
 
-    char *ap;
+    UTF8 *ap;
     for (ap = str; *ap && !mux_isspace(*ap); ap++)
     {
         *ap = mux_tolower(*ap); // Nothing.
@@ -10544,6 +10543,6 @@ CF_HAND(cf_func_access)
     {
         return cf_modify_bits(&ufp->perms, ap, pExtra, nExtra, player, cmd);
     }
-    cf_log_notfound(player, cmd, "Function", str);
+    cf_log_notfound(player, cmd, (UTF8 *)"Function", str);
     return -1;
 }

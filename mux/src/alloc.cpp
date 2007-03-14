@@ -25,7 +25,7 @@ typedef struct pool_header_unaligned
     size_t              pool_size;  // For consistency check
     struct pool_header *next;       // Next pool header in chain
     struct pool_header *nxtfree;    // Next pool header in freelist
-    char               *buf_tag;    // Debugging/trace tag
+    UTF8               *buf_tag;    // Debugging/trace tag
 } POOLHDR_UNALIGNED;
 
 // The following structure is 64-bit aligned. The fields in the
@@ -38,8 +38,8 @@ typedef struct pool_header
     size_t              pool_size;  // For consistency check
     struct pool_header *next;       // Next pool header in chain
     struct pool_header *nxtfree;    // Next pool header in freelist
-    char               *buf_tag;    // Debugging/trace tag
-    char  PaddingTo64bits[7 - ((sizeof(POOLHDR_UNALIGNED)-1) & 7)];
+    UTF8               *buf_tag;    // Debugging/trace tag
+    UTF8  PaddingTo64bits[7 - ((sizeof(POOLHDR_UNALIGNED)-1) & 7)];
 } POOLHDR;
 
 typedef struct pool_footer
@@ -61,10 +61,18 @@ typedef struct pooldata
 } POOL;
 
 static POOL pools[NUM_POOLS];
-static const char *poolnames[] =
+static const UTF8 *poolnames[] =
 {
-    "Lbufs", "Sbufs", "Mbufs", "Bools", "Descs", "Qentries", "Pcaches",
-    "Lbufrefs", "Regrefs", "Strings"
+    (UTF8 *)"Lbufs",
+    (UTF8 *)"Sbufs",
+    (UTF8 *)"Mbufs",
+    (UTF8 *)"Bools",
+    (UTF8 *)"Descs",
+    (UTF8 *)"Qentries",
+    (UTF8 *)"Pcaches",
+    (UTF8 *)"Lbufrefs",
+    (UTF8 *)"Regrefs",
+    (UTF8 *)"Strings"
 };
 
 void pool_init(int poolnum, int poolsize)
@@ -83,20 +91,20 @@ void pool_init(int poolnum, int poolsize)
 
 static void pool_err
 (
-    const char *logsys,
+    const UTF8 *logsys,
     int         logflag,
     int         poolnum,
-    const char *tag,
+    const UTF8 *tag,
     POOLHDR    *ph,
-    const char *action,
-    const char *reason,
-    const char *file,
+    const UTF8 *action,
+    const UTF8 *reason,
+    const UTF8 *file,
     const int   line
 )
 {
     if (mudstate.logging == 0)
     {
-        STARTLOG(logflag, logsys, "ALLOC");
+        STARTLOG(logflag, logsys, (UTF8 *)"ALLOC");
         Log.tinyprintf("%s[%d] (tag %s) %s in %s line %d at %p. (%s)", action,
             pools[poolnum].pool_client_size, tag, reason, file, line, ph,
             mudstate.debug_cmd);
@@ -109,25 +117,25 @@ static void pool_err
     }
 }
 
-static void pool_vfy(int poolnum, const char *tag, const char *file, const int line)
+static void pool_vfy(int poolnum, const UTF8 *tag, const UTF8 *file, const int line)
 {
     POOLHDR *ph, *lastph;
     POOLFTR *pf;
-    char *h;
+    UTF8 *h;
 
     lastph = NULL;
     size_t psize = pools[poolnum].pool_client_size;
     for (ph = pools[poolnum].chain_head; ph; lastph = ph, ph = ph->next)
     {
-        h = (char *)ph;
+        h = (UTF8 *)ph;
         h += sizeof(POOLHDR);
         h += pools[poolnum].pool_client_size;
         pf = (POOLFTR *) h;
 
         if (ph->magicnum != pools[poolnum].poolmagic)
         {
-            pool_err("BUG", LOG_ALWAYS, poolnum, tag, ph, "Verify",
-                     "header corrupted (clearing freelist)", file, line);
+            pool_err((UTF8 *)"BUG", LOG_ALWAYS, poolnum, tag, ph, (UTF8 *)"Verify",
+                     (UTF8 *)"header corrupted (clearing freelist)", file, line);
 
             // Break the header chain at this point so we don't
             // generate an error for EVERY alloc and free, also we
@@ -149,19 +157,19 @@ static void pool_vfy(int poolnum, const char *tag, const char *file, const int l
         }
         if (pf->magicnum != pools[poolnum].poolmagic)
         {
-            pool_err("BUG", LOG_ALWAYS, poolnum, tag, ph, "Verify",
-                "footer corrupted", file, line);
+            pool_err((UTF8 *)"BUG", LOG_ALWAYS, poolnum, tag, ph, (UTF8 *)"Verify",
+                (UTF8 *)"footer corrupted", file, line);
             pf->magicnum = pools[poolnum].poolmagic;
         }
         if (ph->pool_size != psize)
         {
-            pool_err("BUG", LOG_ALWAYS, poolnum, tag, ph,
-                 "Verify", "header has incorrect size", file, line);
+            pool_err((UTF8 *)"BUG", LOG_ALWAYS, poolnum, tag, ph,
+                 (UTF8 *)"Verify", (UTF8 *)"header has incorrect size", file, line);
         }
     }
 }
 
-static void pool_check(const char *tag, const char *file, const int line)
+static void pool_check(const UTF8 *tag, const UTF8 *file, const int line)
 {
     int i;
     for (i = 0; i < NUM_POOLS; i++)
@@ -170,20 +178,20 @@ static void pool_check(const char *tag, const char *file, const int line)
     }
 }
 
-char *pool_alloc(int poolnum, const char *tag, const char *file, const int line)
+UTF8 *pool_alloc(int poolnum, const UTF8 *tag, const UTF8 *file, const int line)
 {
     if (mudconf.paranoid_alloc)
     {
         pool_check(tag, file, line);
     }
 
-    char *p;
+    UTF8 *p;
     POOLFTR *pf;
     POOLHDR *ph = (POOLHDR *)pools[poolnum].free_head;
     if (  ph
        && ph->magicnum == pools[poolnum].poolmagic)
     {
-        p = (char *)(ph + 1);
+        p = (UTF8 *)(ph + 1);
         pf = (POOLFTR *)(p + pools[poolnum].pool_client_size);
         pools[poolnum].free_head = ph->nxtfree;
 
@@ -191,8 +199,8 @@ char *pool_alloc(int poolnum, const char *tag, const char *file, const int line)
         //
         if (pf->magicnum != pools[poolnum].poolmagic)
         {
-            pool_err("BUG", LOG_ALWAYS, poolnum, tag, ph, "Alloc",
-                "corrupted buffer footer", file, line);
+            pool_err((UTF8 *)"BUG", LOG_ALWAYS, poolnum, tag, ph, (UTF8 *)"Alloc",
+                (UTF8 *)"corrupted buffer footer", file, line);
             pf->magicnum = pools[poolnum].poolmagic;
         }
     }
@@ -202,8 +210,8 @@ char *pool_alloc(int poolnum, const char *tag, const char *file, const int line)
         {
             // Header is corrupt. Throw away the freelist and start a new
             // one.
-            pool_err("BUG", LOG_ALWAYS, poolnum, tag, ph, "Alloc",
-                "corrupted buffer header", file, line);
+            pool_err((UTF8 *)"BUG", LOG_ALWAYS, poolnum, tag, ph, (UTF8 *)"Alloc",
+                (UTF8 *)"corrupted buffer header", file, line);
 
             // Start a new free list and record stats.
             //
@@ -229,7 +237,7 @@ char *pool_alloc(int poolnum, const char *tag, const char *file, const int line)
             return NULL;
         }
 
-        p = (char *)(ph + 1);
+        p = (UTF8 *)(ph + 1);
         pf = (POOLFTR *)(p + pools[poolnum].pool_client_size);
 
         // Initialize.
@@ -244,13 +252,13 @@ char *pool_alloc(int poolnum, const char *tag, const char *file, const int line)
         pools[poolnum].max_alloc++;
     }
 
-    ph->buf_tag = (char *)tag;
+    ph->buf_tag = (UTF8 *)tag;
     pools[poolnum].tot_alloc++;
     pools[poolnum].num_alloc++;
 
     if (  (LOG_ALLOCATE & mudconf.log_options)
        && mudstate.logging == 0
-       && start_log("DBG", "ALLOC"))
+       && start_log((UTF8 *)"DBG", (UTF8 *)"ALLOC"))
     {
         Log.tinyprintf("Alloc[%d] (tag %s) in %s line %d buffer at %p. (%s)",
             pools[poolnum].pool_client_size, tag, file, line, ph,
@@ -263,27 +271,27 @@ char *pool_alloc(int poolnum, const char *tag, const char *file, const int line)
     unsigned int *pui = (unsigned int *)p;
     if (*pui != pools[poolnum].poolmagic)
     {
-        pool_err("BUG", LOG_PROBLEMS, poolnum, tag, ph, "Alloc",
-            "buffer modified after free", file, line);
+        pool_err((UTF8 *)"BUG", LOG_PROBLEMS, poolnum, tag, ph, (UTF8 *)"Alloc",
+            (UTF8 *)"buffer modified after free", file, line);
     }
     *pui = 0;
     return p;
 }
 
-char *pool_alloc_lbuf(const char *tag, const char *file, const int line)
+UTF8 *pool_alloc_lbuf(const UTF8 *tag, const UTF8 *file, const int line)
 {
     if (mudconf.paranoid_alloc)
     {
         pool_check(tag, file, line);
     }
 
-    char *p;
+    UTF8 *p;
     POOLFTR *pf;
     POOLHDR *ph = (POOLHDR *)pools[POOL_LBUF].free_head;
     if (  ph
        && ph->magicnum == pools[POOL_LBUF].poolmagic)
     {
-        p = (char *)(ph + 1);
+        p = (UTF8 *)(ph + 1);
         pf = (POOLFTR *)(p + LBUF_SIZE);
         pools[POOL_LBUF].free_head = ph->nxtfree;
 
@@ -291,8 +299,8 @@ char *pool_alloc_lbuf(const char *tag, const char *file, const int line)
         //
         if (pf->magicnum != pools[POOL_LBUF].poolmagic)
         {
-            pool_err("BUG", LOG_ALWAYS, POOL_LBUF, tag, ph, "Alloc",
-                "corrupted buffer footer", file, line);
+            pool_err((UTF8 *)"BUG", LOG_ALWAYS, POOL_LBUF, tag, ph, (UTF8 *)"Alloc",
+                (UTF8 *)"corrupted buffer footer", file, line);
             pf->magicnum = pools[POOL_LBUF].poolmagic;
         }
     }
@@ -302,8 +310,8 @@ char *pool_alloc_lbuf(const char *tag, const char *file, const int line)
         {
             // Header is corrupt. Throw away the freelist and start a new
             // one.
-            pool_err("BUG", LOG_ALWAYS, POOL_LBUF, tag, ph, "Alloc",
-                "corrupted buffer header", file, line);
+            pool_err((UTF8 *)"BUG", LOG_ALWAYS, POOL_LBUF, tag, ph, (UTF8 *)"Alloc",
+                (UTF8 *)"corrupted buffer header", file, line);
 
             // Start a new free list and record stats.
             //
@@ -329,7 +337,7 @@ char *pool_alloc_lbuf(const char *tag, const char *file, const int line)
             return NULL;
         }
 
-        p = (char *)(ph + 1);
+        p = (UTF8 *)(ph + 1);
         pf = (POOLFTR *)(p + LBUF_SIZE);
 
         // Initialize.
@@ -344,13 +352,13 @@ char *pool_alloc_lbuf(const char *tag, const char *file, const int line)
         pools[POOL_LBUF].max_alloc++;
     }
 
-    ph->buf_tag = (char *)tag;
+    ph->buf_tag = (UTF8 *)tag;
     pools[POOL_LBUF].tot_alloc++;
     pools[POOL_LBUF].num_alloc++;
 
     if (  (LOG_ALLOCATE & mudconf.log_options)
        && mudstate.logging == 0
-       && start_log("DBG", "ALLOC"))
+       && start_log((UTF8 *)"DBG", (UTF8 *)"ALLOC"))
     {
         Log.tinyprintf("Alloc[%d] (tag %s) in %s line %d buffer at %p. (%s)",
             LBUF_SIZE, tag, file, line, ph, mudstate.debug_cmd);
@@ -362,18 +370,18 @@ char *pool_alloc_lbuf(const char *tag, const char *file, const int line)
     unsigned int *pui = (unsigned int *)p;
     if (*pui != pools[POOL_LBUF].poolmagic)
     {
-        pool_err("BUG", LOG_PROBLEMS, POOL_LBUF, tag, ph, "Alloc",
-            "buffer modified after free", file, line);
+        pool_err((UTF8 *)"BUG", LOG_PROBLEMS, POOL_LBUF, tag, ph, (UTF8 *)"Alloc",
+            (UTF8 *)"buffer modified after free", file, line);
     }
     *pui = 0;
     return p;
 }
 
-void pool_free(int poolnum, char *buf, const char *file, const int line)
+void pool_free(int poolnum, UTF8 *buf, const UTF8 *file, const int line)
 {
     if (buf == NULL)
     {
-        STARTLOG(LOG_PROBLEMS, "BUG", "ALLOC")
+        STARTLOG(LOG_PROBLEMS, (UTF8 *)"BUG", (UTF8 *)"ALLOC")
         log_printf("Attempt to free null pointer in %s line %d.", file, line);
         ENDLOG
         return;
@@ -392,8 +400,8 @@ void pool_free(int poolnum, char *buf, const char *file, const int line)
     //
     if (ph->magicnum != pools[poolnum].poolmagic)
     {
-        pool_err("BUG", LOG_ALWAYS, poolnum, ph->buf_tag, ph, "Free",
-                 "corrupted buffer header", file, line);
+        pool_err((UTF8 *)"BUG", LOG_ALWAYS, poolnum, ph->buf_tag, ph, (UTF8 *)"Free",
+                 (UTF8 *)"corrupted buffer header", file, line);
         pools[poolnum].num_lost++;
         pools[poolnum].num_alloc--;
         pools[poolnum].tot_alloc--;
@@ -404,8 +412,8 @@ void pool_free(int poolnum, char *buf, const char *file, const int line)
     //
     if (pf->magicnum != pools[poolnum].poolmagic)
     {
-        pool_err("BUG", LOG_ALWAYS, poolnum, ph->buf_tag, ph, "Free",
-             "corrupted buffer footer", file, line);
+        pool_err((UTF8 *)"BUG", LOG_ALWAYS, poolnum, ph->buf_tag, ph, (UTF8 *)"Free",
+             (UTF8 *)"corrupted buffer footer", file, line);
         pf->magicnum = pools[poolnum].poolmagic;
     }
 
@@ -413,14 +421,14 @@ void pool_free(int poolnum, char *buf, const char *file, const int line)
     //
     if (ph->pool_size != pools[poolnum].pool_client_size)
     {
-        pool_err("BUG", LOG_ALWAYS, poolnum, ph->buf_tag, ph, "Free",
-                 "Attempt to free into a different pool.", file, line);
+        pool_err((UTF8 *)"BUG", LOG_ALWAYS, poolnum, ph->buf_tag, ph, (UTF8 *)"Free",
+                 (UTF8 *)"Attempt to free into a different pool.", file, line);
         return;
     }
 
     if (  (LOG_ALLOCATE & mudconf.log_options)
        && mudstate.logging == 0
-       && start_log("DBG", "ALLOC"))
+       && start_log((UTF8 *)"DBG", (UTF8 *)"ALLOC"))
     {
         Log.tinyprintf("Free[%d] (tag %s) in %s line %d buffer at %p. (%s)",
             pools[poolnum].pool_client_size, ph->buf_tag, file, line, ph,
@@ -433,8 +441,8 @@ void pool_free(int poolnum, char *buf, const char *file, const int line)
     //
     if (*pui == pools[poolnum].poolmagic)
     {
-        pool_err("BUG", LOG_BUGS, poolnum, ph->buf_tag, ph, "Free",
-                 "buffer already freed", file, line);
+        pool_err((UTF8 *)"BUG", LOG_BUGS, poolnum, ph->buf_tag, ph, (UTF8 *)"Free",
+                 (UTF8 *)"buffer already freed", file, line);
     }
     else
     {
@@ -445,11 +453,11 @@ void pool_free(int poolnum, char *buf, const char *file, const int line)
     }
 }
 
-void pool_free_lbuf(char *buf, const char *file, const int line)
+void pool_free_lbuf(UTF8 *buf, const UTF8 *file, const int line)
 {
     if (buf == NULL)
     {
-        STARTLOG(LOG_PROBLEMS, "BUG", "ALLOC")
+        STARTLOG(LOG_PROBLEMS, (UTF8 *)"BUG", (UTF8 *)"ALLOC")
         log_printf("Attempt to free_lbuf null pointer in %s line %d.", file, line);
         ENDLOG
         return;
@@ -473,8 +481,8 @@ void pool_free_lbuf(char *buf, const char *file, const int line)
             // The buffer header is damaged. Log the error and throw away the
             // buffer.
             //
-            pool_err("BUG", LOG_ALWAYS, POOL_LBUF, ph->buf_tag, ph, "Free",
-                     "corrupted buffer header", file, line);
+            pool_err((UTF8 *)"BUG", LOG_ALWAYS, POOL_LBUF, ph->buf_tag, ph, (UTF8 *)"Free",
+                     (UTF8 *)"corrupted buffer header", file, line);
             pools[POOL_LBUF].num_lost++;
             pools[POOL_LBUF].num_alloc--;
             pools[POOL_LBUF].tot_alloc--;
@@ -484,16 +492,16 @@ void pool_free_lbuf(char *buf, const char *file, const int line)
         {
             // The buffer footer is damaged.  Don't unlink, just repair.
             //
-            pool_err("BUG", LOG_ALWAYS, POOL_LBUF, ph->buf_tag, ph, "Free",
-                "corrupted buffer footer", file, line);
+            pool_err((UTF8 *)"BUG", LOG_ALWAYS, POOL_LBUF, ph->buf_tag, ph, (UTF8 *)"Free",
+                (UTF8 *)"corrupted buffer footer", file, line);
             pf->magicnum = pools[POOL_LBUF].poolmagic;
         }
         else if (ph->pool_size != LBUF_SIZE)
         {
             // We are trying to free someone else's buffer.
             //
-            pool_err("BUG", LOG_ALWAYS, POOL_LBUF, ph->buf_tag, ph, "Free",
-                "Attempt to free into a different pool.", file, line);
+            pool_err((UTF8 *)"BUG", LOG_ALWAYS, POOL_LBUF, ph->buf_tag, ph, (UTF8 *)"Free",
+                (UTF8 *)"Attempt to free into a different pool.", file, line);
             return;
         }
 
@@ -501,15 +509,15 @@ void pool_free_lbuf(char *buf, const char *file, const int line)
         //
         if (*pui == pools[POOL_LBUF].poolmagic)
         {
-            pool_err("BUG", LOG_BUGS, POOL_LBUF, ph->buf_tag, ph, "Free",
-                     "buffer already freed", file, line);
+            pool_err((UTF8 *)"BUG", LOG_BUGS, POOL_LBUF, ph->buf_tag, ph, (UTF8 *)"Free",
+                (UTF8 *)"buffer already freed", file, line);
             return;
         }
     }
 
     if (  (LOG_ALLOCATE & mudconf.log_options)
        && mudstate.logging == 0
-       && start_log("DBG", "ALLOC"))
+       && start_log((UTF8 *)"DBG", (UTF8 *)"ALLOC"))
     {
         Log.tinyprintf("Free[%d] (tag %s) in %s line %d buffer at %p. (%s)",
             LBUF_SIZE, ph->buf_tag, file, line, ph, mudstate.debug_cmd);
@@ -524,7 +532,7 @@ void pool_free_lbuf(char *buf, const char *file, const int line)
     pools[POOL_LBUF].num_alloc--;
 }
 
-static void pool_trace(dbref player, int poolnum, const char *text)
+static void pool_trace(dbref player, int poolnum, const UTF8 *text)
 {
     POOLHDR *ph;
     int numfree = 0;
@@ -533,7 +541,7 @@ static void pool_trace(dbref player, int poolnum, const char *text)
     {
         if (ph->magicnum != pools[poolnum].poolmagic)
         {
-            notify(player, "*** CORRUPTED BUFFER HEADER, ABORTING SCAN ***");
+            notify(player, (UTF8 *)"*** CORRUPTED BUFFER HEADER, ABORTING SCAN ***");
             notify(player, tprintf("%d free %s (before corruption)",
                        numfree, text));
             return;
@@ -555,11 +563,11 @@ static void pool_trace(dbref player, int poolnum, const char *text)
 
 void list_bufstats(dbref player)
 {
-    notify(player, "Buffer Stats  Size      InUse      Total           Allocs   Lost");
+    notify(player, (UTF8 *)"Buffer Stats  Size      InUse      Total           Allocs   Lost");
     for (int i = 0; i < NUM_POOLS; i++)
     {
-        char buff[MBUF_SIZE];
-        char *p = buff;
+        UTF8 buff[MBUF_SIZE];
+        UTF8 *p = buff;
 
         p += LeftJustifyString(p,  12, poolnames[i]);                   *p++ = ' ';
         p += RightJustifyNumber(p,  5, pools[i].pool_client_size, ' '); *p++ = ' ';

@@ -39,7 +39,7 @@ struct attr
 typedef struct atrlist ATRLIST;
 struct atrlist
 {
-    char *data;     /* Attribute text. */
+    UTF8 *data;     /* Attribute text. */
     int size;       /* Length of attribute */
     int number;     /* Attribute number. */
 };
@@ -125,7 +125,7 @@ struct boolexp
 #define AMBIGUOUS   (-2)    /* multiple possibilities, for matchers */
 #define HOME        (-3)    /* virtual room, represents mover's home */
 #define NOPERM      (-4)    /* Error status, no permission */
-extern char *aszSpecialDBRefNames[1-NOPERM];
+extern UTF8 *aszSpecialDBRefNames[1-NOPERM];
 
 typedef struct object OBJ;
 struct object
@@ -165,15 +165,15 @@ struct object
     int     throttled_attributes;
     int     throttled_mail;
 
-    char    *purename;
-    char    *moniker;
+    UTF8    *purename;
+    UTF8    *moniker;
 
 #ifdef MEMORY_BASED
     ATRLIST *pALHead;   /* The head of the attribute list.       */
     int      nALAlloc;  /* Size of the allocated attribute list. */
     int      nALUsed;   /* Used portion of the attribute list.   */
 #else
-    char    *name;
+    UTF8    *name;
 #endif // MEMORY_BASED
 };
 
@@ -235,7 +235,7 @@ void load_restart_db(void);
 dbref    getref(FILE *);
 void putref(FILE *, dbref);
 void free_boolexp(BOOLEXP *);
-dbref    parse_dbref(const char *);
+dbref    parse_dbref(const UTF8 *);
 bool ThrottleMail(dbref executor);
 bool ThrottleAttributeNames(dbref executor);
 bool ThrottlePlayerCreate(void);
@@ -248,8 +248,8 @@ dbref    db_read(FILE *, int *, int *, int *);
 dbref    db_write(FILE *, int, int);
 void destroy_thing(dbref);
 void destroy_exit(dbref);
-void putstring(FILE *f, const char *s);
-char *getstring_noalloc(FILE *f, bool new_strings, size_t *pnBuffer);
+void putstring(FILE *f, const UTF8 *s);
+UTF8 *getstring_noalloc(FILE *f, bool new_strings, size_t *pnBuffer);
 void init_attrtab(void);
 int GrowFiftyPercent(int x, int low, int high);
 

@@ -29,9 +29,9 @@ typedef struct tag_int_array
 
 typedef struct
 {
-    const char *CommandName;
+    const UTF8 *CommandName;
     CHashTable *ht;
-    char       *pBaseFilename;
+    UTF8       *pBaseFilename;
     bool       bEval;
 } HELP_DESC;
 
@@ -183,62 +183,62 @@ struct confdata
 
     IntArray    ports;          // user ports.
 
-    char    guest_prefix[32];   /* Prefix for the guest char's name */
-    char    guests_channel[32]; /* Name of guests channel */
-    char    guests_channel_alias[32]; /* Name of guests channel alias */
-    char    many_coins[32];     /* name of many coins (ie. "pennies") */
-    char    mud_name[32];       /* Name of the mud */
-    char    one_coin[32];       /* name of one coin (ie. "penny") */
-    char    public_channel[32]; /* Name of public channel */
-    char    public_channel_alias[32]; /* Name of public channel alias */
-    char    dump_msg[256];      /* Message displayed when @dump-ing */
-    char    fixed_home_msg[128];    /* Message displayed when going home and FIXED */
-    char    fixed_tel_msg[128]; /* Message displayed when teleporting and FIXED */
-    char    postdump_msg[256];  /* Message displayed after @dump-ing */
+    UTF8    guest_prefix[32];   /* Prefix for the guest char's name */
+    UTF8    guests_channel[32]; /* Name of guests channel */
+    UTF8    guests_channel_alias[32]; /* Name of guests channel alias */
+    UTF8    many_coins[32];     /* name of many coins (ie. "pennies") */
+    UTF8    mud_name[32];       /* Name of the mud */
+    UTF8    one_coin[32];       /* name of one coin (ie. "penny") */
+    UTF8    public_channel[32]; /* Name of public channel */
+    UTF8    public_channel_alias[32]; /* Name of public channel alias */
+    UTF8    dump_msg[256];      /* Message displayed when @dump-ing */
+    UTF8    fixed_home_msg[128];    /* Message displayed when going home and FIXED */
+    UTF8    fixed_tel_msg[128]; /* Message displayed when teleporting and FIXED */
+    UTF8    postdump_msg[256];  /* Message displayed after @dump-ing */
 #ifdef FIRANMUX
-    char    immobile_msg[128];  /* Message displayed to immobile players */
+    UTF8    immobile_msg[128];  /* Message displayed to immobile players */
 #endif // FIRANMUX
 #ifdef INLINESQL
-    char    sql_server[128];
-    char    sql_user[128];
-    char    sql_password[128];
-    char    sql_database[128];
+    UTF8    sql_server[128];
+    UTF8    sql_user[128];
+    UTF8    sql_password[128];
+    UTF8    sql_database[128];
 #endif // INLINESQL
 
-    char    mail_server[128];
-    char    mail_ehlo[128];
-    char    mail_sendaddr[128];
-    char    mail_sendname[128];
-    char    mail_subject[128];
+    UTF8    mail_server[128];
+    UTF8    mail_ehlo[128];
+    UTF8    mail_sendaddr[128];
+    UTF8    mail_sendname[128];
+    UTF8    mail_subject[128];
 
-    char    downmotd_msg[GBUF_SIZE];    /* Settable 'logins disabled' message */
-    char    fullmotd_msg[GBUF_SIZE];    /* Settable 'Too many players' message */
-    char    motd_msg[GBUF_SIZE];    /* Wizard-settable login message */
-    char    pueblo_msg[GBUF_SIZE];  /* Message displayed to Pueblo clients */
-    char    wizmotd_msg[GBUF_SIZE]; /* Login message for wizards only */
-    char    *compress;          /* program to run to compress */
-    char    *comsys_db;         /* name of the comsys db */
-    char    *config_file;       /* name of config file, used by @restart */
-    char    *conn_file;         /* display on connect if no registration */
-    char    *crashdb;           /* write database here on crash */
-    char    *crea_file;         /* display this on login for new users */
-    char    *creg_file;         /* display on connect if registration */
-    char    *down_file;         /* display this file if no logins */
-    char    *full_file;         /* display when max users exceeded */
-    char    *game_dir;          /* use this game CHashFile DIR file if we need one */
-    char    *game_pag;          /* use this game CHashFile PAG file if we need one */
-    char    *guest_file;        /* display if guest connects */
-    char    *indb;              /* database file name */
-    char    *mail_db;           /* name of the @mail database */
-    char    *motd_file;         /* display this file on login */
-    char    *outdb;             /* checkpoint the database to here */
-    char    *quit_file;         /* display on quit */
-    char    *regf_file;         /* display on (failed) create if reg is on */
-    char    *site_file;         /* display if conn from bad site */
-    char    *status_file;       /* Where to write arg to @shutdown */
-    char    *uncompress;        /* program to run to uncompress */
-    char    *wizmotd_file;      /* display this file on login to wizards */
-    char    *pid_file;          // file for communicating process id back to ./Startmux
+    UTF8    downmotd_msg[GBUF_SIZE];    /* Settable 'logins disabled' message */
+    UTF8    fullmotd_msg[GBUF_SIZE];    /* Settable 'Too many players' message */
+    UTF8    motd_msg[GBUF_SIZE];    /* Wizard-settable login message */
+    UTF8    pueblo_msg[GBUF_SIZE];  /* Message displayed to Pueblo clients */
+    UTF8    wizmotd_msg[GBUF_SIZE]; /* Login message for wizards only */
+    UTF8    *compress;          /* program to run to compress */
+    UTF8    *comsys_db;         /* name of the comsys db */
+    UTF8    *config_file;       /* name of config file, used by @restart */
+    UTF8    *conn_file;         /* display on connect if no registration */
+    UTF8    *crashdb;           /* write database here on crash */
+    UTF8    *crea_file;         /* display this on login for new users */
+    UTF8    *creg_file;         /* display on connect if registration */
+    UTF8    *down_file;         /* display this file if no logins */
+    UTF8    *full_file;         /* display when max users exceeded */
+    UTF8    *game_dir;          /* use this game CHashFile DIR file if we need one */
+    UTF8    *game_pag;          /* use this game CHashFile PAG file if we need one */
+    UTF8    *guest_file;        /* display if guest connects */
+    UTF8    *indb;              /* database file name */
+    UTF8    *mail_db;           /* name of the @mail database */
+    UTF8    *motd_file;         /* display this file on login */
+    UTF8    *outdb;             /* checkpoint the database to here */
+    UTF8    *quit_file;         /* display on quit */
+    UTF8    *regf_file;         /* display on (failed) create if reg is on */
+    UTF8    *site_file;         /* display if conn from bad site */
+    UTF8    *status_file;       /* Where to write arg to @shutdown */
+    UTF8    *uncompress;        /* program to run to uncompress */
+    UTF8    *wizmotd_file;      /* display this file on login to wizards */
+    UTF8    *pid_file;          // file for communicating process id back to ./Startmux
     unsigned char    markdata[8];  /* Masks for marking/unmarking */
     CLinearTimeDelta rpt_cmdsecs;  /* Reporting Threshhold for time taken by command */
     CLinearTimeDelta max_cmdsecs;  /* Upper Limit for real time taken by command */
@@ -295,7 +295,7 @@ struct markbuf
 typedef struct alist ALIST;
 struct alist
 {
-    char    *data;
+    unsigned char *data;
     size_t len;
     struct alist *next;
 };
@@ -303,7 +303,7 @@ struct alist
 typedef struct badname_struc BADNAME;
 struct badname_struc
 {
-    char    *name;
+    UTF8    *name;
     struct badname_struc    *next;
 };
 
@@ -376,16 +376,16 @@ struct statedata
     size_t  mod_alist_len;      /* Length of mod_alist */
     size_t  mod_size;           /* Length of modified buffer */
 
-    char    short_ver[64];      /* Short version number (for INFO) */
-    char    doing_hdr[SIZEOF_DOING_STRING];  /* Doing column header in the WHO display */
-    char    version[128];       /* MUX version string */
-    char    *curr_cmd;          /* The current command */
-    char    *debug_cmd;         // The command we are executing (if any).
-    char    *mod_alist;         /* Attribute list for modifying */
-    char    *pout;              /* The output of the pipe used in %| */
-    char    *poutbufc;          /* Buffer position for poutnew */
-    char    *poutnew;           /* The output being build by the current command */
-    char    *itext[MAX_ITEXT];  // Text of iter(). Equivalent to ##.
+    UTF8    short_ver[64];      /* Short version number (for INFO) */
+    UTF8    doing_hdr[SIZEOF_DOING_STRING];  /* Doing column header in the WHO display */
+    UTF8    version[128];       /* MUX version string */
+    UTF8    *curr_cmd;          /* The current command */
+    UTF8    *debug_cmd;         // The command we are executing (if any).
+    unsigned char *mod_alist;   /* Attribute list for modifying */
+    UTF8    *pout;              /* The output of the pipe used in %| */
+    UTF8    *poutbufc;          /* Buffer position for poutnew */
+    UTF8    *poutnew;           /* The output being build by the current command */
+    UTF8    *itext[MAX_ITEXT];  // Text of iter(). Equivalent to ##.
 
     reg_ref *global_regs[MAX_GLOBAL_REGS];  /* Global registers */
     ALIST   iter_alist;         /* Attribute list for iterations */
@@ -438,7 +438,7 @@ extern STATEDATA mudstate;
 
 /* Configuration parameter handler definition */
 
-#define CF_HAND(proc)   int proc(int *vp, char *str, void *pExtra, UINT32 nExtra, dbref player, char *cmd)
+#define CF_HAND(proc)   int proc(int *vp, UTF8 *str, void *pExtra, UINT32 nExtra, dbref player, UTF8 *cmd)
 
 /* Global flags */
 

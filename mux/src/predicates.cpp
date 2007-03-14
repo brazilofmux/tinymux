@@ -25,9 +25,9 @@
 #include "levels.h"
 #endif // REALITY_LVLS
 
-char * DCL_CDECL tprintf(const char *fmt,...)
+UTF8 *DCL_CDECL tprintf(const char *fmt,...)
 {
-    static char buff[LBUF_SIZE];
+    static UTF8 buff[LBUF_SIZE];
     va_list ap;
     va_start(ap, fmt);
     mux_vsnprintf(buff, LBUF_SIZE, fmt, ap);
@@ -35,7 +35,7 @@ char * DCL_CDECL tprintf(const char *fmt,...)
     return buff;
 }
 
-void DCL_CDECL safe_tprintf_str(char *str, char **bp, const char *fmt,...)
+void DCL_CDECL safe_tprintf_str(UTF8 *str, UTF8 **bp, const char *fmt,...)
 {
     va_list ap;
     va_start(ap, fmt);
@@ -131,7 +131,7 @@ bool could_doit(dbref player, dbref thing, int locknum)
 
     dbref aowner;
     int   aflags;
-    char *key = atr_get("could_doit.134", thing, locknum, &aowner, &aflags);
+    UTF8 *key = atr_get("could_doit.134", thing, locknum, &aowner, &aflags);
     bool doit = eval_boolexp_atr(player, thing, thing, key);
     free_lbuf(key);
     return doit;
@@ -197,7 +197,7 @@ static bool pay_quota(dbref who, int cost)
     //
     dbref aowner;
     int aflags;
-    char *quota_str = atr_get("pay_quota.200", Owner(who), A_RQUOTA, &aowner, &aflags);
+    UTF8 *quota_str = atr_get("pay_quota.200", Owner(who), A_RQUOTA, &aowner, &aflags);
     int quota = mux_atol(quota_str);
     free_lbuf(quota_str);
 
@@ -213,7 +213,7 @@ static bool pay_quota(dbref who, int cost)
 
     // Dock the quota.
     //
-    char buf[I32BUF_SIZE];
+    UTF8 buf[I32BUF_SIZE];
     mux_ltoa(quota, buf);
     atr_add_raw(Owner(who), A_RQUOTA, buf);
 
@@ -246,12 +246,12 @@ bool canpayfees(dbref player, dbref who, int pennies, int quota)
         {
             if (player == who)
             {
-                notify(player, "Sorry, your building contract has run out.");
+                notify(player, (UTF8 *)"Sorry, your building contract has run out.");
             }
             else
             {
                 notify(player,
-                    "Sorry, that player's building contract has run out.");
+                    (UTF8 *)"Sorry, that player's building contract has run out.");
             }
             return false;
         }
@@ -283,9 +283,9 @@ void add_quota(dbref who, int payment)
 {
     dbref aowner;
     int aflags;
-    char buf[I32BUF_SIZE];
+    UTF8 buf[I32BUF_SIZE];
 
-    char *quota = atr_get("add_quota.288", who, A_RQUOTA, &aowner, &aflags);
+    UTF8 *quota = atr_get("add_quota.288", who, A_RQUOTA, &aowner, &aflags);
     mux_ltoa(mux_atol(quota) + payment, buf);
     free_lbuf(quota);
     atr_add_raw(who, A_RQUOTA, buf);
@@ -308,9 +308,9 @@ void giveto(dbref who, int pennies)
 // used for things and rooms, but not for players or exits) and generates
 // a canonical form of that name (with optimized ANSI).
 //
-char *MakeCanonicalObjectName(const char *pName, size_t *pnName, bool *pbValid)
+UTF8 *MakeCanonicalObjectName(const UTF8 *pName, size_t *pnName, bool *pbValid)
 {
-    static char Buf[MBUF_SIZE];
+    static UTF8 Buf[MBUF_SIZE];
 
     *pnName = 0;
     *pbValid = false;
@@ -338,12 +338,12 @@ char *MakeCanonicalObjectName(const char *pName, size_t *pnName, bool *pbValid)
     // Get the stripped version (Visible parts without color info).
     //
     size_t nStripped;
-    char *pStripped = strip_ansi(Buf, &nStripped);
+    UTF8 *pStripped = strip_ansi(Buf, &nStripped);
 
     // Do not allow LOOKUP_TOKEN, NUMBER_TOKEN, NOT_TOKEN, or SPACE
     // as the first character, or SPACE as the last character
     //
-    if (  strchr("*!#", *pStripped)
+    if (  (UTF8 *)strchr((char *)"*!#", *pStripped)
        || mux_isspace(pStripped[0])
        || mux_isspace(pStripped[nStripped-1]))
     {
@@ -377,10 +377,10 @@ char *MakeCanonicalObjectName(const char *pName, size_t *pnName, bool *pbValid)
 
 // The following function validates exit names.
 //
-char *MakeCanonicalExitName(const char *pName, size_t *pnName, bool *pbValid)
+UTF8 *MakeCanonicalExitName(const UTF8 *pName, size_t *pnName, bool *pbValid)
 {
-    static char Buf[MBUF_SIZE];
-    static char Out[MBUF_SIZE];
+    static UTF8 Buf[MBUF_SIZE];
+    static UTF8 Out[MBUF_SIZE];
 
     *pnName = 0;
     *pbValid = false;
@@ -393,8 +393,8 @@ char *MakeCanonicalExitName(const char *pName, size_t *pnName, bool *pbValid)
     // Build the non-ANSI version so that we can parse for semicolons
     // safely.
     //
-    char *pStripped = strip_ansi(pName);
-    char *pBuf = Buf;
+    UTF8 *pStripped = strip_ansi(pName);
+    UTF8 *pBuf = Buf;
     safe_mb_str(pStripped, Buf, &pBuf);
     *pBuf = '\0';
 
@@ -403,14 +403,14 @@ char *MakeCanonicalExitName(const char *pName, size_t *pnName, bool *pbValid)
 
     bool bHaveDisplay = false;
 
-    char *pOut = Out;
+    UTF8 *pOut = Out;
 
     for (; nBuf;)
     {
         // Build (q,n) as the next segment.  Leave the the remaining segments as
         // (pBuf,nBuf).
         //
-        char *q = strchr(pBuf, ';');
+        UTF8 *q = (UTF8 *)strchr((char *)pBuf, ';');
         size_t n;
         if (q)
         {
@@ -436,7 +436,7 @@ char *MakeCanonicalExitName(const char *pName, size_t *pnName, bool *pbValid)
             //
             size_t nN;
             bool   bN;
-            char  *pN = MakeCanonicalObjectName(q, &nN, &bN);
+            UTF8  *pN = MakeCanonicalObjectName(q, &nN, &bN);
             if (  bN
                && nN < static_cast<size_t>(MBUF_SIZE - (pOut - Out) - 1))
             {
@@ -461,7 +461,7 @@ char *MakeCanonicalExitName(const char *pName, size_t *pnName, bool *pbValid)
             {
                 size_t nN;
                 bool   bN;
-                char  *pN = MakeCanonicalObjectName(Out, &nN, &bN);
+                UTF8  *pN = MakeCanonicalObjectName(Out, &nN, &bN);
                 if (  bN
                    && nN <= MBUF_SIZE - 1)
                 {
@@ -488,13 +488,13 @@ char *MakeCanonicalExitName(const char *pName, size_t *pnName, bool *pbValid)
 // allowed in player names. However, a player name must satisfy
 // the requirements of a regular name as well.
 //
-bool ValidatePlayerName(const char *pName)
+bool ValidatePlayerName(const UTF8 *pName)
 {
     if (!pName)
     {
         return false;
     }
-    size_t nName = strlen(pName);
+    size_t nName = strlen((char *)pName);
 
     // Verify that name is not empty, but not too long, either.
     //
@@ -507,7 +507,7 @@ bool ValidatePlayerName(const char *pName)
     // Do not allow LOOKUP_TOKEN, NUMBER_TOKEN, NOT_TOKEN, or SPACE
     // as the first character, or SPACE as the last character
     //
-    if (  strchr("*!#", *pName)
+    if (  (UTF8 *)strchr((char *)"*!#", *pName)
        || mux_isspace(pName[0])
        || mux_isspace(pName[nName-1]))
     {
@@ -546,13 +546,13 @@ bool ValidatePlayerName(const char *pName)
     return true;
 }
 
-bool ok_password(const char *password, const char **pmsg)
+bool ok_password(const UTF8 *password, const UTF8 **pmsg)
 {
     *pmsg = NULL;
 
     if (*password == '\0')
     {
-        *pmsg = "Null passwords are not allowed.";
+        *pmsg = (UTF8 *)"Null passwords are not allowed.";
         return false;
     }
 
@@ -560,13 +560,13 @@ bool ok_password(const char *password, const char **pmsg)
     int num_special = 0;
     int num_lower = 0;
 
-    const unsigned char *scan = (const unsigned char *)(password);
+    const UTF8 *scan = password;
     for ( ; *scan; scan = utf8_NextCodePoint(scan))
     {
         if (  !mux_isprint(scan)
            || mux_isspace(*scan))
         {
-            *pmsg = "Illegal character in password.";
+            *pmsg = (UTF8 *)"Illegal character in password.";
             return false;
         }
         if (mux_isupper_latin1(*scan))
@@ -589,17 +589,17 @@ bool ok_password(const char *password, const char **pmsg)
     {
         if (num_upper < 1)
         {
-            *pmsg = "The password must contain at least one capital letter.";
+            *pmsg = (UTF8 *)"The password must contain at least one capital letter.";
             return false;
         }
         if (num_lower < 1)
         {
-            *pmsg = "The password must contain at least one lowercase letter.";
+            *pmsg = (UTF8 *)"The password must contain at least one lowercase letter.";
             return false;
         }
         if (num_special < 1)
         {
-            *pmsg = "The password must contain at least one number or a symbol other than the apostrophe or dash.";
+            *pmsg = (UTF8 *)"The password must contain at least one number or a symbol other than the apostrophe or dash.";
             return false;
         }
     }
@@ -612,8 +612,14 @@ bool ok_password(const char *password, const char **pmsg)
 
 void handle_ears(dbref thing, bool could_hear, bool can_hear)
 {
-    static const char *poss[5] =
-    {"", "its", "her", "his", "their"};
+    static const UTF8 *poss[5] =
+    {
+        (UTF8 *)"",
+        (UTF8 *)"its",
+        (UTF8 *)"her",
+        (UTF8 *)"his",
+        (UTF8 *)"their"
+    };
 
     if (could_hear != can_hear)
     {
@@ -621,7 +627,7 @@ void handle_ears(dbref thing, bool could_hear, bool can_hear)
         if (isExit(thing))
         {
             size_t iPos;
-            if (sStr->search(";", &iPos))
+            if (sStr->search((UTF8 *)";", &iPos))
             {
                 sStr->truncate(iPos);
             }
@@ -653,10 +659,10 @@ void do_switch
     dbref enactor,
     int   eval,
     int   key,
-    char *expr,
-    char *args[],
+    UTF8 *expr,
+    UTF8 *args[],
     int   nargs,
-    char *cargs[],
+    UTF8 *cargs[],
     int   ncargs
 )
 {
@@ -694,7 +700,7 @@ void do_switch
     //
     bool bAny = false;
     int a;
-    char *buff, *bp;
+    UTF8 *buff, *bp;
     buff = bp = alloc_lbuf("do_switch");
     CLinearTimeAbsolute lta;
     for (  a = 0;
@@ -711,7 +717,7 @@ void do_switch
         *bp = '\0';
         if (wild_match(buff, expr))
         {
-            char *tbuf = replace_tokens(args[a+1], NULL, NULL, expr);
+            UTF8 *tbuf = replace_tokens(args[a+1], NULL, NULL, expr);
             wait_que(executor, caller, enactor, eval, false, lta, NOTHING, 0,
                 tbuf,
                 ncargs, cargs,
@@ -726,7 +732,7 @@ void do_switch
        && !bAny
        && args[a])
     {
-        char *tbuf = replace_tokens(args[a], NULL, NULL, expr);
+        UTF8 *tbuf = replace_tokens(args[a], NULL, NULL, expr);
         wait_que(executor, caller, enactor, eval, false, lta, NOTHING, 0,
             tbuf,
             ncargs, cargs,
@@ -736,8 +742,8 @@ void do_switch
 
     if (key & SWITCH_NOTIFY)
     {
-        char *tbuf = alloc_lbuf("switch.notify_cmd");
-        mux_strncpy(tbuf, "@notify/quiet me", LBUF_SIZE-1);
+        UTF8 *tbuf = alloc_lbuf("switch.notify_cmd");
+        mux_strncpy(tbuf, (UTF8 *)"@notify/quiet me", LBUF_SIZE-1);
         wait_que(executor, caller, enactor, eval, false, lta, NOTHING, A_SEMAPHORE,
             tbuf,
             ncargs, cargs,
@@ -756,10 +762,10 @@ void do_if
     dbref enactor,
     int   eval,
     int   key,
-    char *expr,
-    char *args[],
+    UTF8 *expr,
+    UTF8 *args[],
     int   nargs,
-    char *cargs[],
+    UTF8 *cargs[],
     int   ncargs
 )
 {
@@ -771,7 +777,7 @@ void do_if
         return;
     }
 
-    char *buff, *bp;
+    UTF8 *buff, *bp;
     CLinearTimeAbsolute lta;
     buff = bp = alloc_lbuf("do_if");
 
@@ -796,8 +802,8 @@ void do_addcommand
     dbref enactor,
     int   key,
     int   nargs,
-    char *name,
-    char *command
+    UTF8 *name,
+    UTF8 *command
 )
 {
     UNUSED_PARAMETER(caller);
@@ -806,11 +812,11 @@ void do_addcommand
 
     // Validate command name.
     //
-    char *pName = NULL;
+    UTF8 *pName = NULL;
     if (1 <= nargs)
     {
-        char *pStripped = strip_ansi(name);
-        pName = RemoveSetOfCharacters(pStripped, "\r\n\t ");
+        UTF8 *pStripped = strip_ansi(name);
+        pName = RemoveSetOfCharacters(pStripped, (UTF8 *)"\r\n\t ");
         mux_strlwr(pName);
     }
     if (  !pName
@@ -818,7 +824,7 @@ void do_addcommand
        || (  pName[0] == '_'
           && pName[1] == '_'))
     {
-        notify(player, "That is not a valid command name.");
+        notify(player, (UTF8 *)"That is not a valid command name.");
         return;
     }
 
@@ -829,7 +835,7 @@ void do_addcommand
     if (  !parse_attrib(player, command, &thing, &pattr)
        || !pattr)
     {
-        notify(player, "No such attribute.");
+        notify(player, (UTF8 *)"No such attribute.");
         return;
     }
     if (!See_attr(player, thing, pattr))
@@ -838,7 +844,7 @@ void do_addcommand
         return;
     }
 
-    CMDENT *old = (CMDENT *)hashfindLEN(pName, strlen(pName),
+    CMDENT *old = (CMDENT *)hashfindLEN(pName, strlen((char *)pName),
         &mudstate.command_htab);
 
     CMDENT *cmd;
@@ -876,7 +882,7 @@ void do_addcommand
             // Delete the old built-in (which will later be added back as
             // __name).
             //
-            hashdeleteLEN(pName, strlen(pName), &mudstate.command_htab);
+            hashdeleteLEN(pName, strlen((char *)pName), &mudstate.command_htab);
         }
 
         cmd = (CMDENT *)MEMALLOC(sizeof(CMDENT));
@@ -903,19 +909,19 @@ void do_addcommand
         add->next = NULL;
         cmd->addent = add;
 
-        hashaddLEN(pName, strlen(pName), cmd, &mudstate.command_htab);
+        hashaddLEN(pName, strlen((char *)pName), cmd, &mudstate.command_htab);
 
         if (  old
-           && strcmp(pName, old->cmdname) == 0)
+           && strcmp((char *)pName, (char *)old->cmdname) == 0)
         {
             // We are @addcommand'ing over a built-in command by its
             // unaliased name, therefore, we want to re-target all the
             // aliases.
             //
-            char *p = tprintf("__%s", pName);
-            hashdeleteLEN(p, strlen(p), &mudstate.command_htab);
+            UTF8 *p = tprintf("__%s", pName);
+            hashdeleteLEN(p, strlen((char *)p), &mudstate.command_htab);
             hashreplall(old, cmd, &mudstate.command_htab);
-            hashaddLEN(p, strlen(p), old, &mudstate.command_htab);
+            hashaddLEN(p, strlen((char *)p), old, &mudstate.command_htab);
         }
     }
 
@@ -926,7 +932,7 @@ void do_addcommand
 }
 
 void do_listcommands(dbref player, dbref caller, dbref enactor, int eval,
-                     int key, char *name)
+                     int key, UTF8 *name)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
@@ -943,7 +949,7 @@ void do_listcommands(dbref player, dbref caller, dbref enactor, int eval,
 
     if (*name)
     {
-        old = (CMDENT *)hashfindLEN(name, strlen(name), &mudstate.command_htab);
+        old = (CMDENT *)hashfindLEN(name, strlen((char *)name), &mudstate.command_htab);
 
         if (  old
            && (old->callseq & CS_ADDED))
@@ -970,7 +976,7 @@ void do_listcommands(dbref player, dbref caller, dbref enactor, int eval,
     }
     else
     {
-        char *pKeyName;
+        UTF8 *pKeyName;
         int  nKeyName;
         for (old = (CMDENT *)hash_firstkey(&mudstate.command_htab, &nKeyName, &pKeyName);
              old != NULL;
@@ -981,7 +987,7 @@ void do_listcommands(dbref player, dbref caller, dbref enactor, int eval,
                 pKeyName[nKeyName] = '\0';
                 for (nextp = old->addent; nextp != NULL; nextp = nextp->next)
                 {
-                    if (strcmp(pKeyName, nextp->name) != 0)
+                    if (strcmp((char *)pKeyName, (char *)nextp->name) != 0)
                     {
                         continue;
                     }
@@ -1001,7 +1007,7 @@ void do_listcommands(dbref player, dbref caller, dbref enactor, int eval,
 
     if (!didit)
     {
-        notify(player, "No added commands found in command table.");
+        notify(player, (UTF8 *)"No added commands found in command table.");
     }
 }
 
@@ -1012,8 +1018,8 @@ void do_delcommand
     dbref enactor,
     int   key,
     int   nargs,
-    char *name,
-    char *command
+    UTF8 *name,
+    UTF8 *command
 )
 {
     UNUSED_PARAMETER(caller);
@@ -1023,7 +1029,7 @@ void do_delcommand
 
     if (!*name)
     {
-        notify(player, "Sorry.");
+        notify(player, (UTF8 *)"Sorry.");
         return;
     }
 
@@ -1035,7 +1041,7 @@ void do_delcommand
         if (  !parse_attrib(player, command, &thing, &pattr)
            || !pattr)
         {
-            notify(player, "No such attribute.");
+            notify(player, (UTF8 *)"No such attribute.");
             return;
         }
         if (!See_attr(player, thing, pattr))
@@ -1052,14 +1058,14 @@ void do_delcommand
 
     CMDENT *old, *cmd;
     ADDENT *prev = NULL, *nextp;
-    size_t nName = strlen(name);
+    size_t nName = strlen((char *)name);
     old = (CMDENT *)hashfindLEN(name, nName, &mudstate.command_htab);
 
     if (  old
        && (old->callseq & CS_ADDED))
     {
-        char *p__Name = tprintf("__%s", name);
-        size_t n__Name = strlen(p__Name);
+        UTF8 *p__Name = tprintf("__%s", name);
+        size_t n__Name = strlen((char *)p__Name);
 
         if (command[0] == '\0')
         {
@@ -1077,9 +1083,9 @@ void do_delcommand
             cmd = (CMDENT *)hashfindLEN(p__Name, n__Name, &mudstate.command_htab);
             if (cmd)
             {
-                hashaddLEN(cmd->cmdname, strlen(cmd->cmdname), cmd,
+                hashaddLEN(cmd->cmdname, strlen((char *)cmd->cmdname), cmd,
                     &mudstate.command_htab);
-                if (strcmp(name, cmd->cmdname) != 0)
+                if (strcmp((char *)name, (char *)cmd->cmdname) != 0)
                 {
                     hashaddLEN(name, nName, cmd, &mudstate.command_htab);
                 }
@@ -1098,7 +1104,7 @@ void do_delcommand
             MEMFREE(old);
             old = NULL;
             set_prefix_cmds();
-            notify(player, "Done.");
+            notify(player, (UTF8 *)"Done.");
         }
         else
         {
@@ -1120,9 +1126,9 @@ void do_delcommand
                                 &mudstate.command_htab);
                             if (cmd)
                             {
-                                hashaddLEN(cmd->cmdname, strlen(cmd->cmdname),
+                                hashaddLEN(cmd->cmdname, strlen((char *)cmd->cmdname),
                                     cmd, &mudstate.command_htab);
-                                if (strcmp(name, cmd->cmdname) != 0)
+                                if (strcmp((char *)name, (char *)cmd->cmdname) != 0)
                                 {
                                     hashaddLEN(name, nName, cmd,
                                         &mudstate.command_htab);
@@ -1154,17 +1160,17 @@ void do_delcommand
                         nextp = NULL;
                     }
                     set_prefix_cmds();
-                    notify(player, "Done.");
+                    notify(player, (UTF8 *)"Done.");
                     return;
                 }
                 prev = nextp;
             }
-            notify(player, "Command not found in command table.");
+            notify(player, (UTF8 *)"Command not found in command table.");
         }
     }
     else
     {
-        notify(player, "Command not found in command table.");
+        notify(player, (UTF8 *)"Command not found in command table.");
     }
 }
 
@@ -1175,7 +1181,7 @@ void do_delcommand
  * queued by the doer will be processed normally.
  */
 
-void handle_prog(DESC *d, char *message)
+void handle_prog(DESC *d, UTF8 *message)
 {
     // Allow the player to pipe a command while in interactive mode.
     //
@@ -1206,7 +1212,7 @@ void handle_prog(DESC *d, char *message)
     }
     dbref aowner;
     int aflags, i;
-    char *cmd = atr_get("handle_prog.1215", d->player, A_PROGCMD, &aowner, &aflags);
+    UTF8 *cmd = atr_get("handle_prog.1215", d->player, A_PROGCMD, &aowner, &aflags);
     CLinearTimeAbsolute lta;
     wait_que(d->program_data->wait_enactor, d->player, d->player,
         AttrTrace(aflags, 0), false, lta, NOTHING, 0,
@@ -1245,7 +1251,7 @@ void handle_prog(DESC *d, char *message)
     free_lbuf(cmd);
 }
 
-void do_quitprog(dbref player, dbref caller, dbref enactor, int eval, int key, char *name)
+void do_quitprog(dbref player, dbref caller, dbref enactor, int eval, int key, UTF8 *name)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
@@ -1273,12 +1279,12 @@ void do_quitprog(dbref player, dbref caller, dbref enactor, int eval, int key, c
     if (  !Good_obj(doer)
        || !isPlayer(doer))
     {
-        notify(player, "That is not a player.");
+        notify(player, (UTF8 *)"That is not a player.");
         return;
     }
     if (!Connected(doer))
     {
-        notify(player, "That player is not connected.");
+        notify(player, (UTF8 *)"That player is not connected.");
         return;
     }
     DESC *d;
@@ -1293,7 +1299,7 @@ void do_quitprog(dbref player, dbref caller, dbref enactor, int eval, int key, c
 
     if (!isprog)
     {
-        notify(player, "Player is not in an @program.");
+        notify(player, (UTF8 *)"Player is not in an @program.");
         return;
     }
 
@@ -1325,8 +1331,8 @@ void do_quitprog(dbref player, dbref caller, dbref enactor, int eval, int key, c
     }
 
     atr_clr(doer, A_PROGCMD);
-    notify(player, "@program cleared.");
-    notify(doer, "Your @program has been terminated.");
+    notify(player, (UTF8 *)"@program cleared.");
+    notify(doer, (UTF8 *)"Your @program has been terminated.");
 }
 
 void do_prog
@@ -1336,8 +1342,8 @@ void do_prog
     dbref enactor,
     int   key,
     int   nargs,
-    char *name,
-    char *command
+    UTF8 *name,
+    UTF8 *command
 )
 {
     UNUSED_PARAMETER(caller);
@@ -1348,7 +1354,7 @@ void do_prog
     if (  !name
        || !*name)
     {
-        notify(player, "No players specified.");
+        notify(player, (UTF8 *)"No players specified.");
         return;
     }
 
@@ -1363,16 +1369,16 @@ void do_prog
     if (  !Good_obj(doer)
        || !isPlayer(doer))
     {
-        notify(player, "That is not a player.");
+        notify(player, (UTF8 *)"That is not a player.");
         return;
     }
     if (!Connected(doer))
     {
-        notify(player, "That player is not connected.");
+        notify(player, (UTF8 *)"That player is not connected.");
         return;
     }
-    char *msg = command;
-    char *attrib = parse_to(&msg, ':', 1);
+    UTF8 *msg = command;
+    UTF8 *attrib = parse_to(&msg, ':', 1);
 
     if (msg && *msg)
     {
@@ -1392,7 +1398,7 @@ void do_prog
         int   aflags;
         int   lev;
         dbref parent;
-        char *pBuffer = NULL;
+        UTF8 *pBuffer = NULL;
         bool bFound = false;
         ITER_PARENTS(thing, parent, lev)
         {
@@ -1422,13 +1428,13 @@ void do_prog
         }
         else
         {
-            notify(player, "Attribute not present on object.");
+            notify(player, (UTF8 *)"Attribute not present on object.");
             return;
         }
     }
     else
     {
-        notify(player, "No such attribute.");
+        notify(player, (UTF8 *)"No such attribute.");
         return;
     }
 
@@ -1439,7 +1445,7 @@ void do_prog
     {
         if (d->program_data != NULL)
         {
-            notify(player, "Input already pending.");
+            notify(player, (UTF8 *)"Input already pending.");
             return;
         }
     }
@@ -1508,13 +1514,13 @@ void do_restart(dbref executor, dbref caller, dbref enactor, int key)
 
     if (!mudstate.bCanRestart)
     {
-        notify(executor, "Server just started. Please try again in a few seconds.");
+        notify(executor, (UTF8 *)"Server just started. Please try again in a few seconds.");
         bDenied = true;
     }
     if (bDenied)
     {
         STARTLOG(LOG_ALWAYS, "WIZ", "RSTRT");
-        log_text("Restart requested but not executed by ");
+        log_text((UTF8 *)"Restart requested but not executed by ");
         log_name(executor);
         ENDLOG;
         return;
@@ -1522,7 +1528,7 @@ void do_restart(dbref executor, dbref caller, dbref enactor, int key)
 
     raw_broadcast(0, "GAME: Restart by %s, please wait.", Moniker(Owner(executor)));
     STARTLOG(LOG_ALWAYS, "WIZ", "RSTRT");
-    log_text("Restart by ");
+    log_text((UTF8 *)"Restart by ");
     log_name(executor);
     ENDLOG;
 
@@ -1572,7 +1578,7 @@ void do_backup(dbref player, dbref caller, dbref enactor, int key)
     UNUSED_PARAMETER(enactor);
     UNUSED_PARAMETER(key);
 
-    notify(player, "This feature is not yet available on Win32-hosted MUX.");
+    notify(player, (UTF8 *)"This feature is not yet available on Win32-hosted MUX.");
 }
 
 #else // WIN32
@@ -1582,7 +1588,7 @@ void do_backup(dbref player, dbref caller, dbref enactor, int key)
 #ifndef WIN32
     if (mudstate.dumping)
     {
-        notify(player, "Dumping. Please try again later.");
+        notify(player, (UTF8 *)"Dumping. Please try again later.");
     }
 #endif // !WIN32
 
@@ -1636,7 +1642,7 @@ static dbref promote_dflt(dbref old, dbref new0)
     return NOTHING;
 }
 
-dbref match_possessed(dbref player, dbref thing, char *target, dbref dflt, bool check_enter)
+dbref match_possessed(dbref player, dbref thing, UTF8 *target, dbref dflt, bool check_enter)
 {
     // First, check normally.
     //
@@ -1648,14 +1654,14 @@ dbref match_possessed(dbref player, dbref thing, char *target, dbref dflt, bool 
     // Didn't find it directly.  Recursively do a contents check.
     //
     dbref result, result1;
-    char *buff, *place, *s1, *d1, *temp;
-    char *start = target;
+    UTF8 *buff, *place, *s1, *d1, *temp;
+    UTF8 *start = target;
     while (*target)
     {
         // Fail if no ' characters.
         //
         place = target;
-        target = strchr(place, '\'');
+        target = (UTF8 *)strchr((char *)place, '\'');
         if (  target == NULL
            || !*target)
         {
@@ -1771,16 +1777,16 @@ dbref match_possessed(dbref player, dbref thing, char *target, dbref dflt, bool 
  * parse_range: break up <what>,<low>,<high> syntax
  */
 
-void parse_range(char **name, dbref *low_bound, dbref *high_bound)
+void parse_range(UTF8 **name, dbref *low_bound, dbref *high_bound)
 {
-    char *buff1 = *name;
+    UTF8 *buff1 = *name;
     if (buff1 && *buff1)
     {
         *name = parse_to(&buff1, ',', EV_STRIP_TS);
     }
     if (buff1 && *buff1)
     {
-        char *buff2 = parse_to(&buff1, ',', EV_STRIP_TS);
+        UTF8 *buff2 = parse_to(&buff1, ',', EV_STRIP_TS);
         if (buff1 && *buff1)
         {
             while (mux_isspace(*buff1))
@@ -1827,11 +1833,11 @@ void parse_range(char **name, dbref *low_bound, dbref *high_bound)
     }
 }
 
-bool parse_thing_slash(dbref player, char *thing, char **after, dbref *it)
+bool parse_thing_slash(dbref player, UTF8 *thing, UTF8 **after, dbref *it)
 {
     // Get name up to '/'.
     //
-    char *str = thing;
+    UTF8 *str = thing;
     while (  *str != '\0'
           && *str != '/')
     {
@@ -1860,9 +1866,9 @@ bool parse_thing_slash(dbref player, char *thing, char **after, dbref *it)
     return Good_obj(*it);
 }
 
-bool get_obj_and_lock(dbref player, char *what, dbref *it, ATTR **attr, char *errmsg, char **bufc)
+bool get_obj_and_lock(dbref player, UTF8 *what, dbref *it, ATTR **attr, UTF8 *errmsg, UTF8 **bufc)
 {
-    char *str, *tbuf;
+    UTF8 *str, *tbuf;
     int anum;
 
     tbuf = alloc_lbuf("get_obj_and_lock");
@@ -1874,7 +1880,7 @@ bool get_obj_and_lock(dbref player, char *what, dbref *it, ATTR **attr, char *er
         if (!search_nametab(player, lock_sw, str, &anum))
         {
             free_lbuf(tbuf);
-            safe_str("#-1 LOCK NOT FOUND", errmsg, bufc);
+            safe_str((UTF8 *)"#-1 LOCK NOT FOUND", errmsg, bufc);
             return false;
         }
     }
@@ -1898,7 +1904,7 @@ bool get_obj_and_lock(dbref player, char *what, dbref *it, ATTR **attr, char *er
     *attr = atr_num(anum);
     if (!(*attr))
     {
-        safe_str("#-1 LOCK NOT FOUND", errmsg, bufc);
+        safe_str((UTF8 *)"#-1 LOCK NOT FOUND", errmsg, bufc);
         return false;
     }
     return true;
@@ -2302,16 +2308,16 @@ bool exit_displayable(dbref exit, dbref player, int key)
  * did_it: Have player do something to/with thing
  */
 
-void did_it(dbref player, dbref thing, int what, const char *def, int owhat,
-            const char *odef, int awhat, int ctrl_flags,
-            char *args[], int nargs)
+void did_it(dbref player, dbref thing, int what, const UTF8 *def, int owhat,
+            const UTF8 *odef, int awhat, int ctrl_flags,
+            UTF8 *args[], int nargs)
 {
     if (MuxAlarm.bAlarmed)
     {
         return;
     }
 
-    char *d, *buff, *act, *charges, *bp;
+    UTF8 *d, *buff, *act, *charges, *bp;
     dbref loc, aowner;
     int num, aflags;
 
@@ -2347,7 +2353,7 @@ void did_it(dbref player, dbref thing, int what, const char *def, int owhat,
             if (  (aflags & AF_HTML)
                && Html(player))
             {
-                safe_str("\r\n", buff, &bp);
+                safe_str((UTF8 *)"\r\n", buff, &bp);
                 *bp = '\0';
                 notify_html(player, buff);
             }
@@ -2537,7 +2543,7 @@ void did_it(dbref player, dbref thing, int what, const char *def, int owhat,
  */
 
 void do_verb(dbref executor, dbref caller, dbref enactor, int eval, int key,
-             char *victim_str, char *args[], int nargs)
+             UTF8 *victim_str, UTF8 *args[], int nargs)
 {
     UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(caller);
@@ -2548,7 +2554,7 @@ void do_verb(dbref executor, dbref caller, dbref enactor, int eval, int key,
     if (  !victim_str
        || !*victim_str)
     {
-        notify(executor, "Nothing to do.");
+        notify(executor, (UTF8 *)"Nothing to do.");
         return;
     }
 
@@ -2592,7 +2598,7 @@ void do_verb(dbref executor, dbref caller, dbref enactor, int eval, int key,
     //
     if (!Controls(executor, actor))
     {
-        notify_quiet(executor, "Permission denied,");
+        notify_quiet(executor, (UTF8 *)"Permission denied,");
         return;
     }
 
@@ -2600,12 +2606,12 @@ void do_verb(dbref executor, dbref caller, dbref enactor, int eval, int key,
     int what = -1;
     int owhat = -1;
     int awhat = -1;
-    const char *whatd = NULL;
-    const char *owhatd = NULL;
+    const UTF8 *whatd = NULL;
+    const UTF8 *owhatd = NULL;
     int nxargs = 0;
     dbref aowner = NOTHING;
     int aflags = NOTHING;
-    char *xargs[10];
+    UTF8 *xargs[10];
 
     switch (nargs) // Yes, this IS supposed to fall through.
     {
@@ -2714,7 +2720,7 @@ void do_verb(dbref executor, dbref caller, dbref enactor, int eval, int key,
 // --------------------------------------------------------------------------
 // OutOfMemory: handle an out of memory condition.
 //
-void OutOfMemory(const char *SourceFile, unsigned int LineNo)
+void OutOfMemory(const UTF8 *SourceFile, unsigned int LineNo)
 {
     Log.tinyprintf("%s(%u): Out of memory." ENDLINE, SourceFile, LineNo);
     Log.Flush();
@@ -2732,7 +2738,7 @@ void OutOfMemory(const char *SourceFile, unsigned int LineNo)
 // --------------------------------------------------------------------------
 // AssertionFailed: A logical assertion has failed.
 //
-bool AssertionFailed(const char *SourceFile, unsigned int LineNo)
+bool AssertionFailed(const UTF8 *SourceFile, unsigned int LineNo)
 {
     Log.tinyprintf("%s(%u): Assertion failed." ENDLINE, SourceFile, LineNo);
     Log.Flush();

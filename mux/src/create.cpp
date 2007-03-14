@@ -19,7 +19,7 @@
 // ---------------------------------------------------------------------------
 // parse_linkable_room: Get a location to link to.
 //
-static dbref parse_linkable_room(dbref player, char *room_name)
+static dbref parse_linkable_room(dbref player, UTF8 *room_name)
 {
     init_match(player, room_name, NOTYPE);
     match_everything(MAT_NO_EXITS | MAT_NUMERIC | MAT_HOME);
@@ -36,13 +36,13 @@ static dbref parse_linkable_room(dbref player, char *room_name)
     //
     if (!Good_obj(room))
     {
-        notify_quiet(player, "That's not a valid object.");
+        notify_quiet(player, (UTF8 *)"That's not a valid object.");
         return NOTHING;
     }
     else if (  !Has_contents(room)
             || !Linkable(player, room))
     {
-        notify_quiet(player, "You can't link to that.");
+        notify_quiet(player, (UTF8 *)"You can't link to that.");
         return NOTHING;
     }
     else
@@ -54,7 +54,7 @@ static dbref parse_linkable_room(dbref player, char *room_name)
 // ---------------------------------------------------------------------------
 // open_exit, do_open: Open a new exit and optionally link it somewhere.
 //
-static void open_exit(dbref player, dbref loc, char *direction, char *linkto)
+static void open_exit(dbref player, dbref loc, UTF8 *direction, UTF8 *linkto)
 {
     if (!Good_obj(loc))
     {
@@ -62,7 +62,7 @@ static void open_exit(dbref player, dbref loc, char *direction, char *linkto)
     }
     if (!direction || !*direction)
     {
-        notify_quiet(player, "Open where?");
+        notify_quiet(player, (UTF8 *)"Open where?");
         return;
     }
     else if (!Controls(player, loc))
@@ -88,7 +88,7 @@ static void open_exit(dbref player, dbref loc, char *direction, char *linkto)
 
     // and we're done
     //
-    notify_quiet(player, "Opened.");
+    notify_quiet(player, (UTF8 *)"Opened.");
 
     // See if we should do a link
     //
@@ -104,7 +104,7 @@ static void open_exit(dbref player, dbref loc, char *direction, char *linkto)
         //
         if (!could_doit(player, loc, A_LLINK))
         {
-            notify_quiet(player, "You can't link to there.");
+            notify_quiet(player, (UTF8 *)"You can't link to there.");
             return;
         }
 
@@ -119,19 +119,19 @@ static void open_exit(dbref player, dbref loc, char *direction, char *linkto)
         else
         {
             s_Location(exit, loc);
-            notify_quiet(player, "Linked.");
+            notify_quiet(player, (UTF8 *)"Linked.");
         }
     }
 }
 
 void do_open(dbref executor, dbref caller, dbref enactor, int eval, int key,
-             char *direction, char *links[], int nlinks)
+             UTF8 *direction, UTF8 *links[], int nlinks)
 {
     UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
 
-    char *dest;
+    UTF8 *dest;
 
     // Create the exit and link to the destination, if there is one
     //
@@ -163,7 +163,7 @@ void do_open(dbref executor, dbref caller, dbref enactor, int eval, int key,
         dbref destnum = parse_linkable_room(executor, dest);
         if (Good_obj(destnum) || destnum == HOME)
         {
-            char buff[I32BUF_SIZE];
+            UTF8 buff[I32BUF_SIZE];
             mux_ltoa(loc, buff);
             open_exit(executor, destnum, links[1], buff);
         }
@@ -226,7 +226,7 @@ static void link_exit(dbref player, dbref exit, dbref dest)
     s_Location(exit, dest);
     if (!Quiet(player))
     {
-        notify_quiet(player, "Linked.");
+        notify_quiet(player, (UTF8 *)"Linked.");
     }
 }
 
@@ -237,8 +237,8 @@ void do_link
     dbref enactor,
     int   key,
     int   nargs,
-    char *what,
-    char *where
+    UTF8 *what,
+    UTF8 *where
 )
 {
     UNUSED_PARAMETER(nargs);
@@ -262,7 +262,7 @@ void do_link
     }
 
     dbref room;
-    char *buff;
+    UTF8 *buff;
 
     switch (Typeof(thing))
     {
@@ -296,7 +296,7 @@ void do_link
         }
         if (!Has_contents(room))
         {
-            notify_quiet(executor, "Can't link to an exit.");
+            notify_quiet(executor, (UTF8 *)"Can't link to an exit.");
             break;
         }
         if (  !can_set_home(executor, thing, room)
@@ -306,7 +306,7 @@ void do_link
         }
         else if (room == HOME)
         {
-            notify_quiet(executor, "Can't set home to home.");
+            notify_quiet(executor, (UTF8 *)"Can't set home to home.");
         }
         else
         {
@@ -315,10 +315,10 @@ void do_link
             s_Home(thing, nHomeNew);
             if (!Quiet(executor))
             {
-                char *buff1 = alloc_lbuf("do_link.notify");
-                char *bp = buff1;
+                UTF8 *buff1 = alloc_lbuf("do_link.notify");
+                UTF8 *bp = buff1;
 
-                char *p;
+                UTF8 *p;
                 p = tprintf("Home of %s(#%d) changed from ", Name(thing), thing);
                 safe_str(p, buff1, &bp);
                 p = tprintf("%s(#%d) to ", Name(nHomeOrig), nHomeOrig);
@@ -351,7 +351,7 @@ void do_link
         if (  room != HOME
            && !isRoom(room))
         {
-            notify_quiet(executor, "That is not a room!");
+            notify_quiet(executor, (UTF8 *)"That is not a room!");
         }
         else if (  room != HOME
                 && (  (  !Controls(executor, room)
@@ -367,10 +367,10 @@ void do_link
             s_Dropto(thing, room);
             if (!Quiet(executor))
             {
-                char *buff1 = alloc_lbuf("do_link2.notify");
-                char *bp = buff1;
+                UTF8 *buff1 = alloc_lbuf("do_link2.notify");
+                UTF8 *bp = buff1;
 
-                char *p;
+                UTF8 *p;
                 p = tprintf("Dropto of %s(#%d) changed from ", Name(thing), thing);
                 safe_str(p, buff1, &bp);
                 p = tprintf("%s(#%d) to ", Name(nDroptoOrig), nDroptoOrig);
@@ -411,8 +411,8 @@ void do_parent
     dbref enactor,
     int   key,
     int   nargs,
-    char *tname,
-    char *pname
+    UTF8 *tname,
+    UTF8 *pname
 )
 {
     UNUSED_PARAMETER(caller);
@@ -468,7 +468,7 @@ void do_parent
         {
             if (curr == thing)
             {
-                notify_quiet(executor, "You can't have yourself as a parent!");
+                notify_quiet(executor, (UTF8 *)"You can't have yourself as a parent!");
                 return;
             }
         }
@@ -482,9 +482,9 @@ void do_parent
     if (!Quiet(thing) && !Quiet(executor))
     {
         if (parent == NOTHING)
-            notify_quiet(executor, "Parent cleared.");
+            notify_quiet(executor, (UTF8 *)"Parent cleared.");
         else
-            notify_quiet(executor, "Parent set.");
+            notify_quiet(executor, (UTF8 *)"Parent set.");
     }
 }
 
@@ -492,7 +492,7 @@ void do_parent
 // do_dig: Create a new room.
 //
 void do_dig(dbref executor, dbref caller, dbref enactor, int eval, int key,
-            char *name, char *args[], int nargs)
+            UTF8 *name, UTF8 *args[], int nargs)
 {
     UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(caller);
@@ -501,7 +501,7 @@ void do_dig(dbref executor, dbref caller, dbref enactor, int eval, int key,
     //
     if (!name || !*name)
     {
-        notify_quiet(executor, "Dig what?");
+        notify_quiet(executor, (UTF8 *)"Dig what?");
         return;
     }
     dbref room = create_obj(executor, TYPE_ROOM, name, 0);
@@ -513,7 +513,7 @@ void do_dig(dbref executor, dbref caller, dbref enactor, int eval, int key,
     local_data_create(room);
     notify(executor, tprintf("%s created as room #%d.", name, room));
 
-    char *buff = alloc_sbuf("do_dig");
+    UTF8 *buff = alloc_sbuf("do_dig");
     if (  nargs >= 1
        && args[0]
        && *args[0])
@@ -545,8 +545,8 @@ void do_create
     dbref enactor,
     int   key,
     int   nargs,
-    char *name,
-    char *coststr
+    UTF8 *name,
+    UTF8 *coststr
 )
 {
     UNUSED_PARAMETER(caller);
@@ -556,13 +556,13 @@ void do_create
     int cost = 0;
     if (!name || !*name)
     {
-        notify_quiet(executor, "Create what?");
+        notify_quiet(executor, (UTF8 *)"Create what?");
         return;
     }
     else if (  nargs == 2
             && (cost = mux_atol(coststr)) < 0)
     {
-        notify_quiet(executor, "You can't create an object for less than nothing!");
+        notify_quiet(executor, (UTF8 *)"You can't create an object for less than nothing!");
         return;
     }
     dbref thing = create_obj(executor, TYPE_THING, name, cost);
@@ -592,8 +592,8 @@ void do_clone
     dbref enactor,
     int   key,
     int   nargs,
-    char *name,
-    char *arg2
+    UTF8 *name,
+    UTF8 *arg2
 )
 {
     UNUSED_PARAMETER(caller);
@@ -637,7 +637,7 @@ void do_clone
     }
     if (isPlayer(thing))
     {
-        notify_quiet(executor, "You cannot clone players!");
+        notify_quiet(executor, (UTF8 *)"You cannot clone players!");
         return;
     }
 
@@ -693,8 +693,8 @@ void do_clone
     //
     bool bValid;
     size_t nValidName;
-    char *pValidName = MakeCanonicalObjectName(arg2, &nValidName, &bValid);
-    const char *clone_name;
+    UTF8 *pValidName = MakeCanonicalObjectName(arg2, &nValidName, &bValid);
+    const UTF8 *clone_name;
     if (bValid)
     {
         clone_name = pValidName;
@@ -816,15 +816,15 @@ void do_pcreate
     dbref enactor,
     int   key,
     int   nargs,
-    char *name,
-    char *pass
+    UTF8 *name,
+    UTF8 *pass
 )
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
     UNUSED_PARAMETER(nargs);
 
-    const char *pmsg;
+    const UTF8 *pmsg;
     bool isrobot = (key == PCRE_ROBOT);
     dbref newplayer = create_player(name, pass, executor, isrobot, &pmsg);
     if (newplayer == NOTHING)
@@ -839,10 +839,10 @@ void do_pcreate
         notify_quiet(executor,
             tprintf("New robot '%s' (#%d) created with password '%s'",
                 name, newplayer, pass));
-        notify_quiet(executor, "Your robot has arrived.");
+        notify_quiet(executor, (UTF8 *)"Your robot has arrived.");
         STARTLOG(LOG_PCREATES, "CRE", "ROBOT");
         log_name(newplayer);
-        log_text(" created by ");
+        log_text((UTF8 *)" created by ");
         log_name(executor);
         ENDLOG;
     }
@@ -854,7 +854,7 @@ void do_pcreate
                    name, newplayer, pass));
         STARTLOG(LOG_PCREATES | LOG_WIZARD, "WIZ", "PCREA");
         log_name(newplayer);
-        log_text(" created by ");
+        log_text((UTF8 *)" created by ");
         log_name(executor);
         ENDLOG;
 #ifdef GAME_DOOFERMUX
@@ -890,18 +890,18 @@ static bool can_destroy_player(dbref player, dbref victim)
 {
     if (!Wizard(player))
     {
-        notify_quiet(player, "Sorry, no suicide allowed.");
+        notify_quiet(player, (UTF8 *)"Sorry, no suicide allowed.");
         return false;
     }
     if (RealWizard(victim))
     {
-        notify_quiet(player, "Even you can't do that!");
+        notify_quiet(player, (UTF8 *)"Even you can't do that!");
         return false;
     }
     return true;
 }
 
-void do_destroy(dbref executor, dbref caller, dbref enactor, int eval, int key, char *what)
+void do_destroy(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8 *what)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
@@ -948,7 +948,7 @@ void do_destroy(dbref executor, dbref caller, dbref enactor, int eval, int key, 
        && !(key & DEST_OVERRIDE)
        && !(isThing(thing) && Destroy_ok(thing)))
     {
-        notify_quiet(executor, "Sorry, that object is protected.  Use @destroy/override to destroy it.");
+        notify_quiet(executor, (UTF8 *)"Sorry, that object is protected.  Use @destroy/override to destroy it.");
         return;
     }
 
@@ -956,7 +956,7 @@ void do_destroy(dbref executor, dbref caller, dbref enactor, int eval, int key, 
     //
     if (!destroyable(thing))
     {
-        notify_quiet(executor, "You can't destroy that!");
+        notify_quiet(executor, (UTF8 *)"You can't destroy that!");
         return;
     }
 
@@ -968,7 +968,7 @@ void do_destroy(dbref executor, dbref caller, dbref enactor, int eval, int key, 
         return;
     }
 
-    char *NameOfType = alloc_sbuf("do_destroy.NameOfType");
+    UTF8 *NameOfType = alloc_sbuf("do_destroy.NameOfType");
     mux_strncpy(NameOfType, object_types[Typeof(thing)].name, SBUF_SIZE-1);
     mux_strlwr(NameOfType);
     if (Going(thing))
@@ -994,7 +994,7 @@ void do_destroy(dbref executor, dbref caller, dbref enactor, int eval, int key, 
         switch (Typeof(thing))
         {
         case TYPE_ROOM:
-            notify_all(thing, executor, "The room shakes and begins to crumble.");
+            notify_all(thing, executor, (UTF8 *)"The room shakes and begins to crumble.");
             break;
 
         case TYPE_PLAYER:
@@ -1006,7 +1006,7 @@ void do_destroy(dbref executor, dbref caller, dbref enactor, int eval, int key, 
                 // take care of this more immediately.
                 //
                 bInstant = true;
-                notify(executor, "Player has a lot of attributes. Performing destruction immediately.");
+                notify(executor, (UTF8 *)"Player has a lot of attributes. Performing destruction immediately.");
                 break;
             }
 
@@ -1019,7 +1019,7 @@ void do_destroy(dbref executor, dbref caller, dbref enactor, int eval, int key, 
             break;
 
         default:
-            notify(executor, "Weird object type cannot be destroyed.");
+            notify(executor, (UTF8 *)"Weird object type cannot be destroyed.");
             free_sbuf(NameOfType);
             return;
         }
@@ -1056,7 +1056,7 @@ void do_destroy(dbref executor, dbref caller, dbref enactor, int eval, int key, 
             }
             else
             {
-                char *tname = alloc_lbuf("destroy_obj");
+                UTF8 *tname = alloc_lbuf("destroy_obj");
                 mux_strncpy(tname, Moniker(ThingOwner), LBUF_SIZE-1);
                 notify(executor, tprintf("Destroyed %s's %s(#%d).",
                     tname, Moniker(thing), thing));
@@ -1089,7 +1089,7 @@ void do_destroy(dbref executor, dbref caller, dbref enactor, int eval, int key, 
             break;
 
         default:
-            notify(executor, "Weird object type cannot be destroyed.");
+            notify(executor, (UTF8 *)"Weird object type cannot be destroyed.");
             return;
         }
     }

@@ -298,36 +298,36 @@ inline int mux_color(const unsigned char *p)
 
 bool utf8_strlen(const UTF8 *pString, size_t &nString);
 
-int ANSI_lex(size_t nString, const char *pString, size_t *nLengthToken0, size_t *nLengthToken1);
+int ANSI_lex(size_t nString, const UTF8 *pString, size_t *nLengthToken0, size_t *nLengthToken1);
 #define TOKEN_TEXT_ANSI 0 // Text sequence + optional ANSI sequence.
 #define TOKEN_ANSI      1 // ANSI sequence.
 
 typedef struct
 {
-    char *pString;
-    char aControl[256];
+    UTF8 *pString;
+    UTF8 aControl[256];
 } MUX_STRTOK_STATE;
 
-void mux_strtok_src(MUX_STRTOK_STATE *tts, char *pString);
-void mux_strtok_ctl(MUX_STRTOK_STATE *tts, char *pControl);
-char *mux_strtok_parseLEN(MUX_STRTOK_STATE *tts, size_t *pnLen);
-char *mux_strtok_parse(MUX_STRTOK_STATE *tts);
-char *RemoveSetOfCharacters(char *pString, char *pSetToRemove);
+void mux_strtok_src(MUX_STRTOK_STATE *tts, UTF8 *pString);
+void mux_strtok_ctl(MUX_STRTOK_STATE *tts, UTF8 *pControl);
+UTF8 *mux_strtok_parseLEN(MUX_STRTOK_STATE *tts, size_t *pnLen);
+UTF8 *mux_strtok_parse(MUX_STRTOK_STATE *tts);
+UTF8 *RemoveSetOfCharacters(UTF8 *pString, UTF8 *pSetToRemove);
 
-size_t mux_ltoa(long val, char *buf);
-char *mux_ltoa_t(long val);
-void safe_ltoa(long val, char *buff, char **bufc);
-size_t mux_i64toa(INT64 val, char *buf);
-char *mux_i64toa_t(INT64 val);
-void safe_i64toa(INT64 val, char *buff, char **bufc);
-long mux_atol(const char *pString);
-INT64 mux_atoi64(const char *pString);
-double mux_atof(const char *szString, bool bStrict = true);
-char *mux_ftoa(double r, bool bRounded, int frac);
+size_t mux_ltoa(long val, UTF8 *buf);
+UTF8 *mux_ltoa_t(long val);
+void safe_ltoa(long val, UTF8 *buff, UTF8 **bufc);
+size_t mux_i64toa(INT64 val, UTF8 *buf);
+UTF8 *mux_i64toa_t(INT64 val);
+void safe_i64toa(INT64 val, UTF8 *buff, UTF8 **bufc);
+long mux_atol(const UTF8 *pString);
+INT64 mux_atoi64(const UTF8 *pString);
+double mux_atof(const UTF8 *szString, bool bStrict = true);
+UTF8 *mux_ftoa(double r, bool bRounded, int frac);
 
-bool is_integer(const char *str, int *pDigits = NULL);
-bool is_rational(const char *str);
-bool is_real(const char *str);
+bool is_integer(const UTF8 *str, int *pDigits = NULL);
+bool is_rational(const UTF8 *str);
+bool is_real(const UTF8 *str);
 
 #pragma pack(1)
 typedef struct
@@ -346,7 +346,7 @@ typedef struct
 struct ANSI_In_Context
 {
     ANSI_ColorState m_cs;
-    const char     *m_p;
+    const UTF8     *m_p;
     size_t          m_n;
 };
 
@@ -355,82 +355,82 @@ struct ANSI_Out_Context
     bool            m_bNoBleed;
     ANSI_ColorState m_cs;
     bool            m_bDone; // some constraint was met.
-    char           *m_p;
+    UTF8           *m_p;
     size_t          m_n;
     size_t          m_nMax;
     size_t          m_vw;
     size_t          m_vwMax;
 };
 
-void ANSI_String_In_Init(struct ANSI_In_Context *pacIn, const char *szString, bool bNoBleed = false);
-void ANSI_String_Out_Init(struct ANSI_Out_Context *pacOut, char *pField, size_t nField, size_t vwMax, bool bNoBleed = false);
+void ANSI_String_In_Init(struct ANSI_In_Context *pacIn, const UTF8 *szString, bool bNoBleed = false);
+void ANSI_String_Out_Init(struct ANSI_Out_Context *pacOut, UTF8 *pField, size_t nField, size_t vwMax, bool bNoBleed = false);
 void ANSI_String_Copy(struct ANSI_Out_Context *pacOut, struct ANSI_In_Context *pacIn);
 size_t ANSI_String_Finalize(struct ANSI_Out_Context *pacOut, size_t *pnVisualWidth);
-char *ANSI_TruncateAndPad_sbuf(const char *pString, size_t nMaxVisualWidth, char fill = ' ');
-size_t ANSI_TruncateToField(const char *szString, size_t nField, char *pField, size_t maxVisual, size_t *nVisualWidth, bool bNoBleed = false);
-char *strip_ansi(const char *szString, size_t *pnString = 0);
-char *strip_accents(const char *szString, size_t *pnString = 0);
+UTF8 *ANSI_TruncateAndPad_sbuf(const UTF8 *pString, size_t nMaxVisualWidth, UTF8 fill = ' ');
+size_t ANSI_TruncateToField(const UTF8 *szString, size_t nField, UTF8 *pField, size_t maxVisual, size_t *nVisualWidth, bool bNoBleed = false);
+UTF8 *strip_ansi(const UTF8 *szString, size_t *pnString = 0);
+UTF8 *strip_accents(const UTF8 *szString, size_t *pnString = 0);
 UTF8 *convert_color(const UTF8 *pString, bool bNoBleed);
 UTF8 *strip_color(const UTF8 *pString);
-char *normal_to_white(const char *);
-char *munge_space(const char *);
-char *trim_spaces(char *);
-char *grabto(char **, char);
-int  string_compare(const char *, const char *);
-int  string_prefix(const char *, const char *);
-const char * string_match(const char * ,const char *);
-char *replace_string(const char *, const char *, const char *);
-char *replace_tokens
+UTF8 *normal_to_white(const UTF8 *);
+UTF8 *munge_space(const UTF8 *);
+UTF8 *trim_spaces(UTF8 *);
+UTF8 *grabto(UTF8 **, UTF8);
+int  string_compare(const UTF8 *, const UTF8 *);
+int  string_prefix(const UTF8 *, const UTF8 *);
+const UTF8 * string_match(const UTF8 * ,const UTF8 *);
+UTF8 *replace_string(const UTF8 *, const UTF8 *, const UTF8 *);
+UTF8 *replace_tokens
 (
-    const char *s,
-    const char *pBound,
-    const char *pListPlace,
-    const char *pSwitch
+    const UTF8 *s,
+    const UTF8 *pBound,
+    const UTF8 *pListPlace,
+    const UTF8 *pSwitch
 );
 #if 0
-int prefix_match(const char *, const char *);
-char *BufferCloneLen(const char *pBuffer, unsigned int nBuffer);
+int prefix_match(const UTF8 *, const UTF8 *);
+char *BufferCloneLen(const UTF8 *pBuffer, unsigned int nBuffer);
 #endif // 0
-bool minmatch(char *str, char *target, int min);
-char *StringCloneLen(const char *str, size_t nStr);
-char *StringClone(const char *str);
-void safe_copy_str(const char *src, char *buff, char **bufp, size_t nSizeOfBuffer);
-void safe_copy_str_lbuf(const char *src, char *buff, char **bufp);
-size_t safe_copy_buf(const char *src, size_t nLen, char *buff, char **bufp);
-size_t safe_fill(char *buff, char **bufc, char chFile, size_t nSpaces);
+bool minmatch(UTF8 *str, UTF8 *target, int min);
+UTF8 *StringCloneLen(const UTF8 *str, size_t nStr);
+UTF8 *StringClone(const UTF8 *str);
+void safe_copy_str(const UTF8 *src, UTF8 *buff, UTF8 **bufp, size_t nSizeOfBuffer);
+void safe_copy_str_lbuf(const UTF8 *src, UTF8 *buff, UTF8 **bufp);
+size_t safe_copy_buf(const UTF8 *src, size_t nLen, UTF8 *buff, UTF8 **bufp);
+size_t safe_fill(UTF8 *buff, UTF8 **bufc, UTF8 chFile, size_t nSpaces);
 void utf8_safe_chr(const UTF8 *src, UTF8 *buff, UTF8 **bufp);
 UTF8 *ConvertToUTF8(UTF32 ch);
-UTF8 *ConvertToUTF8(const char *p);
+UTF8 *ConvertToUTF8(const char *p, size_t *pn);
 UTF32 ConvertFromUTF8(const UTF8 *p);
-void mux_strncpy(char *dest, const char *src, size_t nSizeOfBuffer);
-bool matches_exit_from_list(char *, const char *);
-char *translate_string(const char *, bool);
-int mux_stricmp(const char *a, const char *b);
+void mux_strncpy(UTF8 *dest, const UTF8 *src, size_t nSizeOfBuffer);
+bool matches_exit_from_list(UTF8 *, const UTF8 *);
+UTF8 *translate_string(const UTF8 *, bool);
+int mux_stricmp(const UTF8 *a, const UTF8 *b);
 int mux_memicmp(const void *p1_arg, const void *p2_arg, size_t n);
-void mux_strlwr(char *tp);
-void mux_strupr(char *a);
+void mux_strlwr(UTF8 *tp);
+void mux_strupr(UTF8 *a);
 
 typedef struct tag_itl
 {
     bool bFirst;
     char chPrefix;
     char chSep;
-    char *buff;
-    char **bufc;
+    UTF8 *buff;
+    UTF8 **bufc;
     size_t nBufferAvailable;
 } ITL;
 
-void ItemToList_Init(ITL *pContext, char *arg_buff, char **arg_bufc,
-    char arg_chPrefix = 0, char arg_chSep = ' ');
+void ItemToList_Init(ITL *pContext, UTF8 *arg_buff, UTF8 **arg_bufc,
+    UTF8 arg_chPrefix = 0, UTF8 arg_chSep = ' ');
 bool ItemToList_AddInteger(ITL *pContext, int i);
 bool ItemToList_AddInteger64(ITL *pContext, INT64 i);
-bool ItemToList_AddString(ITL *pContext, char *pStr);
-bool ItemToList_AddStringLEN(ITL *pContext, size_t nStr, char *pStr);
+bool ItemToList_AddString(ITL *pContext, UTF8 *pStr);
+bool ItemToList_AddStringLEN(ITL *pContext, size_t nStr, UTF8 *pStr);
 void ItemToList_Final(ITL *pContext);
 
-size_t DCL_CDECL mux_vsnprintf(char *buff, size_t count, const char *fmt, va_list va);
-void DCL_CDECL mux_sprintf(char *buff, size_t count, const char *fmt, ...);
-size_t GetLineTrunc(char *Buffer, size_t nBuffer, FILE *fp);
+size_t DCL_CDECL mux_vsnprintf(UTF8 *buff, size_t count, const char *fmt, va_list va);
+void DCL_CDECL mux_sprintf(UTF8 *buff, size_t count, const char *fmt, ...);
+size_t GetLineTrunc(UTF8 *Buffer, size_t nBuffer, FILE *fp);
 
 typedef struct
 {
@@ -438,12 +438,12 @@ typedef struct
     size_t m_skip2;
 } BMH_State;
 
-extern void BMH_Prepare(BMH_State *bmhs, size_t nPat, const char *pPat);
-extern bool BMH_Execute(BMH_State *bmhs, size_t *pnMatched, size_t nPat, const char *pPat, size_t nSrc, const char *pSrc);
-extern bool BMH_StringSearch(size_t *pnMatched, size_t nPat, const char *pPat, size_t nSrc, const char *pSrc);
-extern void BMH_PrepareI(BMH_State *bmhs, size_t nPat, const char *pPat);
-extern bool BMH_ExecuteI(BMH_State *bmhs, size_t *pnMatched, size_t nPat, const char *pPat, size_t nSrc, const char *pSrc);
-extern bool BMH_StringSearchI(size_t *pnMatched, size_t nPat, const char *pPat, size_t nSrc, const char *pSrc);
+extern void BMH_Prepare(BMH_State *bmhs, size_t nPat, const UTF8 *pPat);
+extern bool BMH_Execute(BMH_State *bmhs, size_t *pnMatched, size_t nPat, const UTF8 *pPat, size_t nSrc, const UTF8 *pSrc);
+extern bool BMH_StringSearch(size_t *pnMatched, size_t nPat, const UTF8 *pPat, size_t nSrc, const UTF8 *pSrc);
+extern void BMH_PrepareI(BMH_State *bmhs, size_t nPat, const UTF8 *pPat);
+extern bool BMH_ExecuteI(BMH_State *bmhs, size_t *pnMatched, size_t nPat, const UTF8 *pPat, size_t nSrc, const UTF8 *pSrc);
+extern bool BMH_StringSearchI(size_t *pnMatched, size_t nPat, const UTF8 *pPat, size_t nSrc, const UTF8 *pSrc);
 
 struct ArtRuleset
 {
@@ -458,19 +458,19 @@ typedef struct
 {
     int         iLeadingSign;
     int         iString;
-    const char  *pDigitsA;
+    const UTF8  *pDigitsA;
     size_t      nDigitsA;
-    const char  *pDigitsB;
+    const UTF8  *pDigitsB;
     size_t      nDigitsB;
     int         iExponentSign;
-    const char  *pDigitsC;
+    const UTF8  *pDigitsC;
     size_t      nDigitsC;
-    const char  *pMeat;
+    const UTF8  *pMeat;
     size_t      nMeat;
 
 } PARSE_FLOAT_RESULT;
 
-extern bool ParseFloat(PARSE_FLOAT_RESULT *pfr, const char *str, bool bStrict = true);
+extern bool ParseFloat(PARSE_FLOAT_RESULT *pfr, const UTF8 *str, bool bStrict = true);
 
 class mux_string
 {
@@ -499,9 +499,9 @@ private:
 public:
     mux_string(void);
     mux_string(const mux_string &sStr);
-    mux_string(const char *pStr);
+    mux_string(const UTF8 *pStr);
     ~mux_string(void);
-    void append(const char cChar);
+    void append(const UTF8 cChar);
     void append(dbref num);
     void append(INT64 iInt);
     void append(long lLong);
@@ -511,23 +511,23 @@ public:
         size_t nStart = 0,
         size_t nLen = (LBUF_SIZE-1)
     );
-    void append(const char *pStr);
-    void append(const char *pStr, size_t nLen);
-    void append_TextPlain(const char *pStr);
-    void append_TextPlain(const char *pStr, size_t nLen);
-    void compress(const char ch);
+    void append(const UTF8 *pStr);
+    void append(const UTF8 *pStr, size_t nLen);
+    void append_TextPlain(const UTF8 *pStr);
+    void append_TextPlain(const UTF8 *pStr, size_t nLen);
+    void compress(const UTF8 ch);
     void compress_Spaces(void);
     void delete_Chars(size_t nStart, size_t nLen);
     void edit(mux_string &sFrom, const mux_string &sTo);
-    char export_Char(size_t n) const;
+    UTF8 export_Char(size_t n) const;
     ANSI_ColorState export_Color(size_t n) const;
     double export_Float(bool bStrict = true) const;
     INT64 export_I64(void) const;
     long export_Long(void) const;
     void export_TextAnsi
     (
-        char *buff,
-        char **bufc = NULL,
+        UTF8 *buff,
+        UTF8 **bufc = NULL,
         size_t nStart = 0,
         size_t nLen = LBUF_SIZE,
         size_t nBuffer = (LBUF_SIZE-1),
@@ -535,32 +535,32 @@ public:
     ) const;
     void export_TextPlain
     (
-        char *buff,
-        char **bufc = NULL,
+        UTF8 *buff,
+        UTF8 **bufc = NULL,
         size_t nStart = 0,
         size_t nLen = LBUF_SIZE,
         size_t nBuffer = (LBUF_SIZE-1)
     ) const;
-    void import(const char chIn);
+    void import(const UTF8 chIn);
     void import(dbref num);
     void import(INT64 iInt);
     void import(long lLong);
     void import(const mux_string &sStr, size_t nStart = 0);
-    void import(const char *pStr);
-    void import(const char *pStr, size_t nLen);
+    void import(const UTF8 *pStr);
+    void import(const UTF8 *pStr, size_t nLen);
     size_t length(void) const;
-    void prepend(const char cChar);
+    void prepend(const UTF8 cChar);
     void prepend(dbref num);
     void prepend(INT64 iInt);
     void prepend(long lLong);
     void prepend(const mux_string &sStr);
-    void prepend(const char *pStr);
-    void prepend(const char *pStr, size_t nLen);
+    void prepend(const UTF8 *pStr);
+    void prepend(const UTF8 *pStr, size_t nLen);
     void replace_Chars(const mux_string &pTo, size_t nStart, size_t nLen);
     void reverse(void);
     bool search
     (
-        const char *pPattern,
+        const UTF8 *pPattern,
         size_t *nPos = NULL,
         size_t nStart = 0
     ) const;
@@ -570,11 +570,11 @@ public:
         size_t *nPos = NULL,
         size_t nStart = 0
     ) const;
-    void set_Char(size_t n, const char cChar);
+    void set_Char(size_t n, const UTF8 cChar);
     void set_Color(size_t n, ANSI_ColorState csColor);
     void strip
     (
-        const char *pStripSet,
+        const UTF8 *pStripSet,
         size_t nStart = 0,
         size_t nLen = (LBUF_SIZE-1)
     );
@@ -593,19 +593,19 @@ public:
     );
     void transformWithTable
     (
-        const unsigned char xfrmTable[256],
+        const UTF8 xfrmTable[256],
         size_t nStart = 0,
         size_t nLen = (LBUF_SIZE-1)
     );
-    void trim(const char ch = ' ', bool bLeft = true, bool bRight = true);
-    void trim(const char *p, bool bLeft = true, bool bRight = true);
-    void trim(const char *p, size_t n, bool bLeft = true, bool bRight = true);
+    void trim(const UTF8 ch = ' ', bool bLeft = true, bool bRight = true);
+    void trim(const UTF8 *p, bool bLeft = true, bool bRight = true);
+    void trim(const UTF8 *p, size_t n, bool bLeft = true, bool bRight = true);
     void truncate(size_t nLen);
 
     static void * operator new(size_t size)
     {
         mux_assert(size == sizeof(mux_string));
-        return alloc_string("new");
+        return alloc_string((UTF8 *)"new");
     }
 
     static void operator delete(void *p)
@@ -616,7 +616,7 @@ public:
         }
     }
 
-    char operator [](size_t i) const
+    UTF8 operator [](size_t i) const
     {
         if (m_n <= i)
         {
@@ -646,11 +646,11 @@ private:
 public:
 
     mux_words(const mux_string &sStr);
-    void export_WordAnsi(LBUF_OFFSET n, char *buff, char **bufc = NULL);
+    void export_WordAnsi(LBUF_OFFSET n, UTF8 *buff, UTF8 **bufc = NULL);
     LBUF_OFFSET find_Words(void);
-    LBUF_OFFSET find_Words(const char *pDelim);
+    LBUF_OFFSET find_Words(const UTF8 *pDelim);
     void ignore_Word(LBUF_OFFSET n);
-    void set_Control(const char *pControlSet);
+    void set_Control(const UTF8 *pControlSet);
     void set_Control(const bool table[UCHAR_MAX+1]);
     LBUF_OFFSET wordBegin(LBUF_OFFSET n) const;
     LBUF_OFFSET wordEnd(LBUF_OFFSET n) const;

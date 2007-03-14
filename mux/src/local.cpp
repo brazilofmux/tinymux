@@ -192,12 +192,12 @@ void local_data_free(dbref object)
     UNUSED_PARAMETER(object);
 }
 
-static const char *LocalDumpInfoTable[] =
+static const UTF8 *LocalDumpInfoTable[] =
 {
     NULL
 };
 
-const char **local_get_info_table(void)
+const UTF8 **local_get_info_table(void)
 {
     return LocalDumpInfoTable;
 }

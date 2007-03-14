@@ -9,12 +9,12 @@
 #define __COMMAND_H
 
 #define CMD_NO_ARG(name)              extern void name(dbref executor, dbref caller, dbref enactor, int)
-#define CMD_ONE_ARG(name)             extern void name(dbref executor, dbref caller, dbref enactor, int eval, int, char *)
-#define CMD_ONE_ARG_CMDARG(name)      extern void name(dbref executor, dbref caller, dbref enactor, int eval, int, char *, char *[], int)
-#define CMD_TWO_ARG(name)             extern void name(dbref executor, dbref caller, dbref enactor, int, int, char *, char *)
-#define CMD_TWO_ARG_CMDARG(name)      extern void name(dbref executor, dbref caller, dbref enactor, int eval, int, char *, char *, char*[], int)
-#define CMD_TWO_ARG_ARGV(name)        extern void name(dbref executor, dbref caller, dbref enactor, int eval, int, char *, char *[], int)
-#define CMD_TWO_ARG_ARGV_CMDARG(name) extern void name(dbref executor, dbref caller, dbref enactor, int eval, int, char *, char *[], int, char*[], int)
+#define CMD_ONE_ARG(name)             extern void name(dbref executor, dbref caller, dbref enactor, int eval, int, UTF8 *)
+#define CMD_ONE_ARG_CMDARG(name)      extern void name(dbref executor, dbref caller, dbref enactor, int eval, int, UTF8 *, UTF8 *[], int)
+#define CMD_TWO_ARG(name)             extern void name(dbref executor, dbref caller, dbref enactor, int, int, UTF8 *, UTF8 *)
+#define CMD_TWO_ARG_CMDARG(name)      extern void name(dbref executor, dbref caller, dbref enactor, int eval, int, UTF8 *, UTF8 *, UTF8*[], int)
+#define CMD_TWO_ARG_ARGV(name)        extern void name(dbref executor, dbref caller, dbref enactor, int eval, int, UTF8 *, UTF8 *[], int)
+#define CMD_TWO_ARG_ARGV_CMDARG(name) extern void name(dbref executor, dbref caller, dbref enactor, int eval, int, UTF8 *, UTF8 *[], int, UTF8*[], int)
 
 /* Command function handlers */
 /* from comsys.c */
@@ -160,7 +160,7 @@ CMD_TWO_ARG(do_plusemail);
 
 typedef struct
 {
-    char    *cmdname;
+    UTF8    *cmdname;
     NAMETAB *switches;
     int     perms;
     int     extra;
@@ -171,69 +171,69 @@ typedef struct
 
 typedef struct
 {
-    char    *cmdname;
+    UTF8    *cmdname;
     NAMETAB *switches;
     int     perms;
     int     extra;
     int     callseq;
     int     hookmask;
-    void    (*handler)(dbref executor, dbref caller, dbref enactor, int eval, int, char *);
+    void    (*handler)(dbref executor, dbref caller, dbref enactor, int eval, int, UTF8 *);
 } CMDENT_ONE_ARG;
 
 typedef struct
 {
-    char    *cmdname;
+    UTF8    *cmdname;
     NAMETAB *switches;
     int     perms;
     int     extra;
     int     callseq;
     int     hookmask;
-    void    (*handler)(dbref executor, dbref caller, dbref enactor, int eval, int, char *, char *[], int);
+    void    (*handler)(dbref executor, dbref caller, dbref enactor, int eval, int, UTF8 *, UTF8 *[], int);
 } CMDENT_ONE_ARG_CMDARG;
 
 typedef struct
 {
-    char    *cmdname;
+    UTF8    *cmdname;
     NAMETAB *switches;
     int     perms;
     int     extra;
     int     callseq;
     int     hookmask;
-    void    (*handler)(dbref executor, dbref caller, dbref enactor, int, int, char *, char *);
+    void    (*handler)(dbref executor, dbref caller, dbref enactor, int, int, UTF8 *, UTF8 *);
 } CMDENT_TWO_ARG;
 
 typedef struct
 {
-    char    *cmdname;
+    UTF8    *cmdname;
     NAMETAB *switches;
     int     perms;
     int     extra;
     int     callseq;
     int     hookmask;
-    void    (*handler)(dbref executor, dbref caller, dbref enactor, int, int, char *, char *, char*[], int);
+    void    (*handler)(dbref executor, dbref caller, dbref enactor, int, int, UTF8 *, UTF8 *, UTF8*[], int);
 } CMDENT_TWO_ARG_CMDARG;
 
 typedef struct
 {
-    char    *cmdname;
+    UTF8    *cmdname;
     NAMETAB *switches;
     int     perms;
     int     extra;
     int     callseq;
     int     hookmask;
-    void    (*handler)(dbref executor, dbref caller, dbref enactor, int eval, int, char *, char *[], int);
+    void    (*handler)(dbref executor, dbref caller, dbref enactor, int eval, int, UTF8 *, UTF8 *[], int);
 } CMDENT_TWO_ARG_ARGV;
 
 typedef struct
 {
-    char    *cmdname;
+    UTF8    *cmdname;
     NAMETAB *switches;
     int     perms;
     int     extra;
     int     callseq;
     int     hookmask;
     void    (*handler)(dbref executor, dbref caller, dbref enactor, int eval, int,
-                       char *, char *[], int, char*[], int);
+                       UTF8 *, UTF8 *[], int, UTF8*[], int);
 } CMDENT_TWO_ARG_ARGV_CMDARG;
 
 typedef struct addedentry ADDENT;
@@ -241,13 +241,13 @@ struct addedentry
 {
     dbref   thing;
     int     atr;
-    char    *name;
+    UTF8    *name;
     struct addedentry *next;
 };
 
 typedef struct
 {
-    char    *cmdname;
+    UTF8    *cmdname;
     NAMETAB *switches;
     int     perms;
     int     extra;

@@ -278,11 +278,11 @@ typedef UINT32 UTF32;
 #define LARGEST_INT_LTE_NEG_QUOTIENT
 #endif // !SMALLEST_INT_GTE_NEG_QUOTIENT
 
-extern bool AssertionFailed(const char *SourceFile, unsigned int LineNo);
-#define mux_assert(exp) (void)( (exp) || (AssertionFailed(__FILE__, __LINE__), 0) )
+extern bool AssertionFailed(const UTF8 *SourceFile, unsigned int LineNo);
+#define mux_assert(exp) (void)( (exp) || (AssertionFailed((UTF8 *)__FILE__, __LINE__), 0) )
 
-extern void OutOfMemory(const char *SourceFile, unsigned int LineNo);
-#define ISOUTOFMEMORY(exp) {if (!(exp)) { OutOfMemory(__FILE__, __LINE__); }}
+extern void OutOfMemory(const UTF8 *SourceFile, unsigned int LineNo);
+#define ISOUTOFMEMORY(exp) {if (!(exp)) { OutOfMemory((UTF8 *)__FILE__, __LINE__); }}
 
 //#define MEMORY_ACCOUNTING
 

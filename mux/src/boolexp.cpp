@@ -23,13 +23,13 @@ static bool parsing_internal = false;
  * the object lockobj
  */
 
-static bool check_attr(dbref player, dbref lockobj, ATTR *attr, char *key)
+static bool check_attr(dbref player, dbref lockobj, ATTR *attr, UTF8 *key)
 {
     dbref aowner;
     int aflags;
     bool bCheck = false;
 
-    char *buff = atr_pget(player, attr->number, &aowner, &aflags);
+    UTF8 *buff = atr_pget(player, attr->number, &aowner, &aflags);
 
     if (attr->number == A_LENTER)
     {
@@ -64,7 +64,8 @@ bool eval_boolexp(dbref player, dbref thing, dbref from, BOOLEXP *b)
 
     dbref aowner, obj, source;
     int aflags;
-    char *key, *buff, *buff2, *bp;
+    UTF8 *buff, *buff2, *bp;
+    UTF8 *key;
     ATTR *a;
     bool bCheck, c;
 
@@ -92,15 +93,15 @@ bool eval_boolexp(dbref player, dbref thing, dbref from, BOOLEXP *b)
         {
             if (mudstate.bStandAlone)
             {
-                Log.WriteString("Lock exceeded recursion limit." ENDLINE);
+                Log.WriteString((UTF8 *)"Lock exceeded recursion limit." ENDLINE);
             }
             else
             {
                 STARTLOG(LOG_BUGS, "BUG", "LOCK");
                 log_name_and_loc(player);
-                log_text(": Lock exceeded recursion limit.");
+                log_text((UTF8 *)": Lock exceeded recursion limit.");
                 ENDLOG;
-                notify(player, "Sorry, broken lock!");
+                notify(player, (UTF8 *)"Sorry, broken lock!");
             }
             mudstate.lock_nest_lev--;
             return false;
@@ -110,11 +111,11 @@ bool eval_boolexp(dbref player, dbref thing, dbref from, BOOLEXP *b)
         {
             if (mudstate.bStandAlone)
             {
-                Log.WriteString("Broken lock." ENDLINE);
+                Log.WriteString((UTF8 *)"Broken lock." ENDLINE);
             }
             else
             {
-                STARTLOG(LOG_BUGS, "BUG", "LOCK");
+                STARTLOG(LOG_BUGS, (UTF8 *)"BUG", (UTF8 *)"LOCK");
                 log_name_and_loc(player);
                 buff = alloc_mbuf("eval_boolexp.LOG.indir");
                 mux_sprintf(buff, MBUF_SIZE, ": Lock had bad indirection (%c, type %d)",
@@ -122,7 +123,7 @@ bool eval_boolexp(dbref player, dbref thing, dbref from, BOOLEXP *b)
                 log_text(buff);
                 free_mbuf(buff);
                 ENDLOG;
-                notify(player, "Sorry, broken lock!");
+                notify(player, (UTF8 *)"Sorry, broken lock!");
             }
             mudstate.lock_nest_lev--;
             return false;
@@ -148,13 +149,13 @@ bool eval_boolexp(dbref player, dbref thing, dbref from, BOOLEXP *b)
 
         // First check the object itself, then its contents.
         //
-        if (check_attr(player, from, a, (char *)b->sub1))
+        if (check_attr(player, from, a, (UTF8 *)b->sub1))
         {
             return true;
         }
         DOLIST(obj, Contents(player))
         {
-            if (check_attr(obj, from, a, (char *)b->sub1))
+            if (check_attr(obj, from, a, (UTF8 *)b->sub1))
             {
                 return true;
             }
@@ -206,7 +207,7 @@ bool eval_boolexp(dbref player, dbref thing, dbref from, BOOLEXP *b)
             restore_global_regs(preserve);
             PopRegisters(preserve, MAX_GLOBAL_REGS);
 
-            bCheck = !string_compare(buff2, (char *)b->sub1);
+            bCheck = !string_compare(buff2, (UTF8 *)b->sub1);
             free_lbuf(buff2);
         }
         free_lbuf(buff);
@@ -228,7 +229,7 @@ bool eval_boolexp(dbref player, dbref thing, dbref from, BOOLEXP *b)
         {
             return false;
         }
-        return check_attr(player, from, a, (char *)(b->sub1)->sub1);
+        return check_attr(player, from, a, (UTF8 *)(b->sub1)->sub1);
 
     case BOOLEXP_CARRY:
 
@@ -248,7 +249,7 @@ bool eval_boolexp(dbref player, dbref thing, dbref from, BOOLEXP *b)
         }
         DOLIST(obj, Contents(player))
         {
-            if (check_attr(obj, from, a, (char *)(b->sub1)->sub1))
+            if (check_attr(obj, from, a, (UTF8 *)(b->sub1)->sub1))
             {
                 return true;
             }
@@ -268,7 +269,7 @@ bool eval_boolexp(dbref player, dbref thing, dbref from, BOOLEXP *b)
     }
 }
 
-bool eval_boolexp_atr(dbref player, dbref thing, dbref from, char *key)
+bool eval_boolexp_atr(dbref player, dbref thing, dbref from, UTF8 *key)
 {
     bool ret_value;
 
@@ -311,7 +312,7 @@ static BOOLEXP *test_atr(UTF8 *s)
     boolexp_type locktype;
 
     UTF8 *buff = (UTF8 *)alloc_lbuf("test_atr");
-    mux_strncpy((char *)buff, (char *)s, LBUF_SIZE-1);
+    mux_strncpy(buff, s, LBUF_SIZE-1);
     for (s = buff; *s && (*s != ':') && (*s != '/'); s++)
     {
         ; // Nothing.
@@ -355,7 +356,7 @@ static BOOLEXP *test_atr(UTF8 *s)
             free_lbuf(buff);
             return TRUE_BOOLEXP;
         }
-        anum = mux_atol((char *)buff);
+        anum = mux_atol(buff);
         if (anum <= 0)
         {
             free_lbuf(buff);
@@ -372,7 +373,7 @@ static BOOLEXP *test_atr(UTF8 *s)
     BOOLEXP *b = alloc_bool("test_str");
     b->type = locktype;
     b->thing = (dbref) anum;
-    b->sub1 = (BOOLEXP *) StringClone((char *)s);
+    b->sub1 = (BOOLEXP *) StringClone((UTF8 *)s);
     free_lbuf(buff);
     return b;
 }
@@ -452,7 +453,7 @@ static BOOLEXP *parse_boolexp_L(void)
                     free_bool(b);
                     return TRUE_BOOLEXP;
                 }
-                b->thing = mux_atol((char *)&buf[1]);
+                b->thing = mux_atol(&buf[1]);
                 if (!Good_dbref(b->thing))
                 {
                     free_lbuf(buf);
@@ -463,7 +464,7 @@ static BOOLEXP *parse_boolexp_L(void)
             else
             {
                 save_match_state(&mstate);
-                init_match(parse_player, (char *)buf, TYPE_THING);
+                init_match(parse_player, buf, TYPE_THING);
                 match_everything(MAT_EXIT_PARENTS);
                 b->thing = match_result();
                 restore_match_state(&mstate);
@@ -495,7 +496,7 @@ static BOOLEXP *parse_boolexp_L(void)
                 free_bool(b);
                 return TRUE_BOOLEXP;
             }
-            b->thing = mux_atol((char *)&buf[1]);
+            b->thing = mux_atol(&buf[1]);
             if (b->thing < 0)
             {
                 free_lbuf(buf);
@@ -693,9 +694,9 @@ static BOOLEXP *parse_boolexp_E(void)
     return b;
 }
 
-BOOLEXP *parse_boolexp(dbref player, const char *buf, bool internal)
+BOOLEXP *parse_boolexp(dbref player, const UTF8 *buf, bool internal)
 {
-    size_t n = strlen(buf);
+    size_t n = strlen((char *)buf);
     if (n > sizeof(parsestore)-1)
     {
         n = sizeof(parsestore)-1;

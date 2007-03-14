@@ -27,8 +27,8 @@
 typedef struct hostdtm HOSTDTM;
 struct hostdtm
 {
-    char *host;
-    char *dtm;
+    UTF8 *host;
+    UTF8 *dtm;
 };
 
 typedef struct logindata LDATA;
@@ -46,7 +46,7 @@ struct logindata
  * decrypt_logindata, encrypt_logindata: Decode and encode login info.
  */
 
-static void decrypt_logindata(char *atrbuf, LDATA *info)
+static void decrypt_logindata(UTF8 *atrbuf, LDATA *info)
 {
     int i;
 
@@ -83,12 +83,12 @@ static void decrypt_logindata(char *atrbuf, LDATA *info)
     }
 }
 
-static void encrypt_logindata(char *atrbuf, LDATA *info)
+static void encrypt_logindata(UTF8 *atrbuf, LDATA *info)
 {
     // Make sure the SPRINTF call tracks NUM_GOOD and NUM_BAD for the number
     // of host/dtm pairs of each type.
     //
-    char nullc = '\0';
+    UTF8 nullc = '\0';
     int i;
     for (i = 0; i < NUM_GOOD; i++)
     {
@@ -104,7 +104,7 @@ static void encrypt_logindata(char *atrbuf, LDATA *info)
         if (!info->bad[i].dtm)
             info->bad[i].dtm = &nullc;
     }
-    char *bp = alloc_lbuf("encrypt_logindata");
+    UTF8 *bp = alloc_lbuf("encrypt_logindata");
     mux_sprintf(bp, LBUF_SIZE,
         "#%d;%s;%s;%s;%s;%s;%s;%s;%s;%d;%d;%s;%s;%s;%s;%s;%s;",
         info->tot_good,
@@ -130,28 +130,28 @@ void record_login
 (
     dbref player,
     bool  isgood,
-    char  *ldate,
-    char  *lhost,
-    char  *lusername,
-    char  *lipaddr
+    UTF8  *ldate,
+    UTF8  *lhost,
+    UTF8  *lusername,
+    UTF8  *lipaddr
 )
 {
     LDATA login_info;
     dbref aowner;
     int aflags, i;
 
-    char *atrbuf = atr_get("record_login.143", player, A_LOGINDATA, &aowner, &aflags);
+    UTF8 *atrbuf = atr_get("record_login.143", player, A_LOGINDATA, &aowner, &aflags);
     decrypt_logindata(atrbuf, &login_info);
     if (isgood)
     {
         if (login_info.new_bad > 0)
         {
-            notify(player, "");
+            notify(player, (UTF8 *)"");
             notify(player, tprintf("**** %d failed connect%s since your last successful connect. ****",
                 login_info.new_bad, (login_info.new_bad == 1 ? "" : "s")));
             notify(player, tprintf("Most recent attempt was from %s on %s.",
                 login_info.bad[0].host, login_info.bad[0].dtm));
-            notify(player, "");
+            notify(player, (UTF8 *)"");
             login_info.new_bad = 0;
         }
         if (  login_info.good[0].host
@@ -201,12 +201,12 @@ void record_login
     free_lbuf(atrbuf);
 }
 
-const char Base64Table[65] =
+const UTF8 Base64Table[65] =
     "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
 #define ENCODED_LENGTH(x) ((((x)+2)/3)*4)
 
-static void EncodeBase64(size_t nIn, const char *pIn, char *pOut)
+static void EncodeBase64(size_t nIn, const UTF8 *pIn, UTF8 *pOut)
 {
     size_t nTriples  = nIn/3;
     size_t nLeftover = nIn%3;
@@ -256,35 +256,35 @@ static void EncodeBase64(size_t nIn, const char *pIn, char *pOut)
 }
 
 #define SHA1_PREFIX_LENGTH 6
-const char szSHA1Prefix[SHA1_PREFIX_LENGTH+1] = "$SHA1$";
+const UTF8 szSHA1Prefix[SHA1_PREFIX_LENGTH+1] = "$SHA1$";
 #define ENCODED_HASH_LENGTH ENCODED_LENGTH(5*sizeof(UINT32))
 
 #define MD5_PREFIX_LENGTH 3
-const char szMD5Prefix[MD5_PREFIX_LENGTH+1] = "$1$";
+const UTF8 szMD5Prefix[MD5_PREFIX_LENGTH+1] = "$1$";
 
 #define BLOWFISH_PREFIX_LENGTH 4
-const char szBlowfishPrefix[BLOWFISH_PREFIX_LENGTH+1] = "$2a$";
+const UTF8 szBlowfishPrefix[BLOWFISH_PREFIX_LENGTH+1] = "$2a$";
 
 #define SALT_LENGTH 9
 #define ENCODED_SALT_LENGTH ENCODED_LENGTH(SALT_LENGTH)
 
-static const char *GenerateSalt(void)
+static const UTF8 *GenerateSalt(void)
 {
-    char szSaltRaw[SALT_LENGTH+1];
+    UTF8 szSaltRaw[SALT_LENGTH+1];
     int i;
     for (i = 0; i < SALT_LENGTH; i++)
     {
-        szSaltRaw[i] = (char)RandomINT32(0, 255);
+        szSaltRaw[i] = (UTF8)RandomINT32(0, 255);
     }
     szSaltRaw[SALT_LENGTH] = '\0';
 
-    static char szSaltEncoded[SHA1_PREFIX_LENGTH + ENCODED_SALT_LENGTH+1];
+    static UTF8 szSaltEncoded[SHA1_PREFIX_LENGTH + ENCODED_SALT_LENGTH+1];
     mux_strncpy(szSaltEncoded, szSHA1Prefix, SHA1_PREFIX_LENGTH);
     EncodeBase64(SALT_LENGTH, szSaltRaw, szSaltEncoded + SHA1_PREFIX_LENGTH);
     return szSaltEncoded;
 }
 
-void ChangePassword(dbref player, const char *szPassword)
+void ChangePassword(dbref player, const UTF8 *szPassword)
 {
     int iType;
     s_Pass(player, mux_crypt(szPassword, GenerateSalt(), &iType));
@@ -299,7 +299,7 @@ void ChangePassword(dbref player, const char *szPassword)
 #define CRYPT_CLEARTEXT   6
 #define CRYPT_OTHER       7
 
-const char szFail[] = "$FAIL$$";
+const UTF8 szFail[] = "$FAIL$$";
 
 // REMOVE: After 2006-JUL-23, remove support for DES-encrypted passwords on
 // Win32 build.  This should allow support for DES-encrypted passwords to
@@ -309,16 +309,16 @@ const char szFail[] = "$FAIL$$";
 // passwords should be supported on Unix for even longer, converting the
 // flatfile on a Unix box remains an option.
 //
-const char *mux_crypt(const char *szPassword, const char *szSetting, int *piType)
+const UTF8 *mux_crypt(const UTF8 *szPassword, const UTF8 *szSetting, int *piType)
 {
-    const char *pSaltField = NULL;
+    const UTF8 *pSaltField = NULL;
     size_t nSaltField = 0;
 
     *piType = CRYPT_FAIL;
 
     if (szSetting[0] == '$')
     {
-        const char *p = strchr(szSetting+1, '$');
+        const UTF8 *p = (UTF8 *)strchr((char *)szSetting+1, '$');
         if (p)
         {
             p++;
@@ -329,14 +329,14 @@ const char *mux_crypt(const char *szPassword, const char *szSetting, int *piType
                 // SHA-1
                 //
                 pSaltField = p;
-                p = strchr(pSaltField, '$');
+                p = (UTF8 *)strchr((char *)pSaltField, '$');
                 if (p)
                 {
                     nSaltField = p - pSaltField;
                 }
                 else
                 {
-                    nSaltField = strlen(pSaltField);
+                    nSaltField = strlen((char *)pSaltField);
                 }
                 if (nSaltField <= ENCODED_SALT_LENGTH)
                 {
@@ -376,7 +376,7 @@ const char *mux_crypt(const char *szPassword, const char *szSetting, int *piType
         // salt, or if you need to generate a DES-encrypted password, the
         // following code won't work.
         //
-        size_t nSetting = strlen(szSetting);
+        size_t nSetting = strlen((char *)szSetting);
         if (  nSetting == 13
            && memcmp(szSetting, "XX", 2) == 0)
         {
@@ -422,13 +422,13 @@ const char *mux_crypt(const char *szPassword, const char *szSetting, int *piType
 
     SHA1_Init(&shac);
     SHA1_Compute(&shac, nSaltField, pSaltField);
-    SHA1_Compute(&shac, strlen(szPassword), szPassword);
+    SHA1_Compute(&shac, strlen((char *)szPassword), szPassword);
     SHA1_Final(&shac);
 
     // Serialize 5 UINT32 words into big-endian.
     //
-    char szHashRaw[21];
-    char *p = szHashRaw;
+    UTF8 szHashRaw[21];
+    UTF8 *p = szHashRaw;
 
     int i;
     for (i = 0; i <= 4; i++)
@@ -444,7 +444,7 @@ const char *mux_crypt(const char *szPassword, const char *szSetting, int *piType
     // 12345678901234567890123456789012345678901234567
     // $SHA1$ssssssssssss$hhhhhhhhhhhhhhhhhhhhhhhhhhhh
     //
-    static char buf[SHA1_PREFIX_LENGTH + ENCODED_SALT_LENGTH + 1 + ENCODED_HASH_LENGTH + 1 + 16];
+    static UTF8 buf[SHA1_PREFIX_LENGTH + ENCODED_SALT_LENGTH + 1 + ENCODED_HASH_LENGTH + 1 + 16];
     mux_strncpy(buf, szSHA1Prefix, SHA1_PREFIX_LENGTH);
     memcpy(buf + SHA1_PREFIX_LENGTH, pSaltField, nSaltField);
     buf[SHA1_PREFIX_LENGTH + nSaltField] = '$';
@@ -456,17 +456,17 @@ const char *mux_crypt(const char *szPassword, const char *szSetting, int *piType
  * check_pass: Test a password to see if it is correct.
  */
 
-static bool check_pass(dbref player, const char *pPassword)
+static bool check_pass(dbref player, const UTF8 *pPassword)
 {
     bool bValidPass  = false;
     int  iType;
 
     int   aflags;
     dbref aowner;
-    char *pTarget = atr_get("check_pass.466", player, A_PASS, &aowner, &aflags);
+    UTF8 *pTarget = atr_get("check_pass.466", player, A_PASS, &aowner, &aflags);
     if (*pTarget)
     {
-        if (strcmp(mux_crypt(pPassword, pTarget, &iType), pTarget) == 0)
+        if (strcmp((char *)mux_crypt(pPassword, pTarget, &iType), (char *)pTarget) == 0)
         {
             bValidPass = true;
             if (iType != CRYPT_SHA1)
@@ -492,11 +492,11 @@ static bool check_pass(dbref player, const char *pPassword)
  * connect_player: Try to connect to an existing player.
  */
 
-dbref connect_player(char *name, char *password, char *host, char *username, char *ipaddr)
+dbref connect_player(UTF8 *name, UTF8 *password, UTF8 *host, UTF8 *username, UTF8 *ipaddr)
 {
     CLinearTimeAbsolute ltaNow;
     ltaNow.GetLocal();
-    char *time_str = ltaNow.ReturnDateString(7);
+    UTF8 *time_str = ltaNow.ReturnDateString(7);
 
     dbref player = lookup_player(NOTHING, name, false);
     if (player == NOTHING)
@@ -513,10 +513,10 @@ dbref connect_player(char *name, char *password, char *host, char *username, cha
     //
     int aflags;
     dbref aowner;
-    char *player_last = atr_get("connect_player.516", player, A_LAST, &aowner, &aflags);
-    if (strncmp(player_last, time_str, 10) != 0)
+    UTF8 *player_last = atr_get("connect_player.516", player, A_LAST, &aowner, &aflags);
+    if (strncmp((char *)player_last, (char *)time_str, 10) != 0)
     {
-        char *allowance = atr_pget(player, A_ALLOWANCE, &aowner, &aflags);
+        UTF8 *allowance = atr_pget(player, A_ALLOWANCE, &aowner, &aflags);
         if (*allowance == '\0')
         {
             giveto(player, mudconf.paycheck);
@@ -548,11 +548,11 @@ void AddToPublicChannel(dbref player)
 
 dbref create_player
 (
-    char *name,
-    char *password,
+    UTF8 *name,
+    UTF8 *password,
     dbref creator,
     bool isrobot,
-    const char **pmsg
+    const UTF8 **pmsg
 )
 {
     *pmsg = NULL;
@@ -561,13 +561,13 @@ dbref create_player
     //
     if (ThrottlePlayerCreate())
     {
-        *pmsg = "The limit of new players for this hour has been reached. Please try again later.";
+        *pmsg = (UTF8 *)"The limit of new players for this hour has been reached. Please try again later.";
         return NOTHING;
     }
 
     // Make sure the password is OK.  Name is checked in create_obj.
     //
-    char *pbuf = trim_spaces(password);
+    UTF8 *pbuf = trim_spaces(password);
     if (!ok_password(pbuf, pmsg))
     {
         free_lbuf(pbuf);
@@ -579,7 +579,7 @@ dbref create_player
     dbref player = create_obj(creator, TYPE_PLAYER, name, isrobot);
     if (player == NOTHING)
     {
-        *pmsg = "Either there is already a player with that name, or that name is illegal.";
+        *pmsg = (UTF8 *)"Either there is already a player with that name, or that name is illegal.";
         free_lbuf(pbuf);
         return NOTHING;
     }
@@ -604,8 +604,8 @@ void do_password
     dbref enactor,
     int   key,
     int   nargs,
-    char *oldpass,
-    char *newpass
+    UTF8 *oldpass,
+    UTF8 *newpass
 )
 {
     UNUSED_PARAMETER(caller);
@@ -615,17 +615,17 @@ void do_password
 
     dbref aowner;
     int   aflags;
-    char *target = atr_get("do_password.618", executor, A_PASS, &aowner, &aflags);
-    const char *pmsg;
+    UTF8 *target = atr_get("do_password.618", executor, A_PASS, &aowner, &aflags);
+    const UTF8 *pmsg;
     if (  !*target
        || !check_pass(executor, oldpass))
     {
-        notify(executor, "Sorry.");
+        notify(executor, (UTF8 *)"Sorry.");
     }
     else if (ok_password(newpass, &pmsg))
     {
         ChangePassword(executor, newpass);
-        notify(executor, "Password changed.");
+        notify(executor,(UTF8 *) "Password changed.");
     }
     else
     {
@@ -638,7 +638,7 @@ void do_password
  * do_last: Display login history data.
  */
 
-static void disp_from_on(dbref player, char *dtm_str, char *host_str)
+static void disp_from_on(dbref player, UTF8 *dtm_str, UTF8 *host_str)
 {
     if (dtm_str && *dtm_str && host_str && *host_str)
     {
@@ -647,7 +647,7 @@ static void disp_from_on(dbref player, char *dtm_str, char *host_str)
     }
 }
 
-void do_last(dbref executor, dbref caller, dbref enactor, int eval, int key, char *who)
+void do_last(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8 *who)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
@@ -662,7 +662,7 @@ void do_last(dbref executor, dbref caller, dbref enactor, int eval, int key, cha
     {
         target = Owner(executor);
     }
-    else if (string_compare(who, "me") == 0)
+    else if (string_compare(who, (UTF8 *)"me") == 0)
     {
         target = Owner(executor);
     }
@@ -673,7 +673,7 @@ void do_last(dbref executor, dbref caller, dbref enactor, int eval, int key, cha
 
     if (target == NOTHING)
     {
-        notify(executor, "I couldn't find that player.");
+        notify(executor, (UTF8 *)"I couldn't find that player.");
     }
     else if (!Controls(executor, target))
     {
@@ -681,7 +681,7 @@ void do_last(dbref executor, dbref caller, dbref enactor, int eval, int key, cha
     }
     else
     {
-        char *atrbuf = atr_get("do_last.684", target, A_LOGINDATA, &aowner, &aflags);
+        UTF8 *atrbuf = atr_get("do_last.684", target, A_LOGINDATA, &aowner, &aflags);
         LDATA login_info;
         decrypt_logindata(atrbuf, &login_info);
 
@@ -704,10 +704,10 @@ void do_last(dbref executor, dbref caller, dbref enactor, int eval, int key, cha
  * Manage playername->dbref mapping
  */
 
-bool add_player_name(dbref player, const char *name)
+bool add_player_name(dbref player, const UTF8 *name)
 {
     bool stat = false;
-    char *temp, *tp;
+    UTF8 *temp, *tp;
 
     // Convert to all lowercase.
     //
@@ -716,7 +716,7 @@ bool add_player_name(dbref player, const char *name)
     *tp = '\0';
     mux_strlwr(temp);
 
-    dbref *p = (int *)hashfindLEN(temp, strlen(temp), &mudstate.player_htab);
+    dbref *p = (int *)hashfindLEN(temp, strlen((char *)temp), &mudstate.player_htab);
     if (p)
     {
         // Entry found in the hashtable.  If a player, succeed if the
@@ -753,7 +753,7 @@ bool add_player_name(dbref player, const char *name)
         if (NULL != p)
         {
             *p = player;
-            stat = hashreplLEN(temp, strlen(temp), p, &mudstate.player_htab);
+            stat = hashreplLEN(temp, strlen((char *)temp), p, &mudstate.player_htab);
         }
         else
         {
@@ -776,7 +776,7 @@ bool add_player_name(dbref player, const char *name)
         if (NULL != p)
         {
             *p = player;
-            stat = hashaddLEN(temp, strlen(temp), p, &mudstate.player_htab);
+            stat = hashaddLEN(temp, strlen((char *)temp), p, &mudstate.player_htab);
         }
         else
         {
@@ -787,16 +787,16 @@ bool add_player_name(dbref player, const char *name)
     return stat;
 }
 
-bool delete_player_name(dbref player, const char *name)
+bool delete_player_name(dbref player, const UTF8 *name)
 {
-    char *temp, *tp;
+    UTF8 *temp, *tp;
 
     tp = temp = alloc_lbuf("delete_player_name");
     safe_str(name, temp, &tp);
     *tp = '\0';
     mux_strlwr(temp);
 
-    dbref *p = (int *)hashfindLEN(temp, strlen(temp), &mudstate.player_htab);
+    dbref *p = (int *)hashfindLEN(temp, strlen((char *)temp), &mudstate.player_htab);
     if (  !p
        || *p == NOTHING
        || (  player != NOTHING
@@ -807,14 +807,14 @@ bool delete_player_name(dbref player, const char *name)
     }
     delete p;
     p = NULL;
-    hashdeleteLEN(temp, strlen(temp), &mudstate.player_htab);
+    hashdeleteLEN(temp, strlen((char *)temp), &mudstate.player_htab);
     free_lbuf(temp);
     return true;
 }
 
-dbref lookup_player(dbref doer, char *name, bool check_who)
+dbref lookup_player(dbref doer, UTF8 *name, bool check_who)
 {
-    if (string_compare(name, "me") == 0)
+    if (string_compare(name, (UTF8 *)"me") == 0)
     {
         return doer;
     }
@@ -843,12 +843,12 @@ dbref lookup_player(dbref doer, char *name, bool check_who)
         }
         return thing;
     }
-    char *temp, *tp;
+    UTF8 *temp, *tp;
     tp = temp = alloc_lbuf("lookup_player");
     safe_str(name, temp, &tp);
     *tp = '\0';
     mux_strlwr(temp);
-    dbref *p = (int *)hashfindLEN(temp, strlen(temp), &mudstate.player_htab);
+    dbref *p = (int *)hashfindLEN(temp, strlen((char *)temp), &mudstate.player_htab);
     free_lbuf(temp);
     if (!p)
     {
@@ -887,7 +887,7 @@ void load_player_names(void)
             add_player_name(i, Name(i));
         }
     }
-    char *alias = alloc_lbuf("load_player_names");
+    UTF8 *alias = alloc_lbuf("load_player_names");
     DO_WHOLE_DB(i)
     {
         if (isPlayer(i))
@@ -908,7 +908,7 @@ void load_player_names(void)
  * badname_add, badname_check, badname_list: Add/look for/display bad names.
  */
 
-void badname_add(char *bad_name)
+void badname_add(UTF8 *bad_name)
 {
     // Make a new node and link it in at the top.
     //
@@ -934,7 +934,7 @@ void badname_add(char *bad_name)
     }
 }
 
-void badname_remove(char *bad_name)
+void badname_remove(UTF8 *bad_name)
 {
     // Look for an exact match on the bad name and remove if found.
     //
@@ -961,7 +961,7 @@ void badname_remove(char *bad_name)
     }
 }
 
-bool badname_check(char *bad_name)
+bool badname_check(UTF8 *bad_name)
 {
     BADNAME *bp;
 
@@ -979,10 +979,10 @@ bool badname_check(char *bad_name)
     return true;
 }
 
-void badname_list(dbref player, const char *prefix)
+void badname_list(dbref player, const UTF8 *prefix)
 {
     BADNAME *bp;
-    char *buff, *bufp;
+    UTF8 *buff, *bufp;
 
     // Construct an lbuf with all the names separated by spaces.
     //

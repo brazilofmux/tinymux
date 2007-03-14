@@ -16,7 +16,7 @@
 typedef struct name_table NAMETAB;
 struct name_table
 {
-    char    *name;
+    UTF8    *name;
     int minlen;
     int perm;
     int flag;
@@ -35,9 +35,9 @@ struct bque
     dbref   sem;                    // blocking semaphore
     int     attr;                   // blocking attribute
     int     nargs;                  // How many args I have
-    char    *text;                  // buffer for comm, env, and scr text
-    char    *comm;                  // command
-    char    *env[NUM_ENV_VARS];     // environment vars
+    UTF8    *text;                  // buffer for comm, env, and scr text
+    UTF8    *comm;                  // command
+    UTF8    *env[NUM_ENV_VARS];     // environment vars
     reg_ref *scr[MAX_GLOBAL_REGS];  // temp vars
     bool    IsTimed;                // Is there a waittime time on this entry?
 };
@@ -73,15 +73,15 @@ bool hashreplLEN(const void *Str, size_t nStr, void *hashdata,
 void hashreplall(const void *, void *, CHashTable *);
 void *hash_nextentry(CHashTable *htab);
 void *hash_firstentry(CHashTable *htab);
-void *hash_firstkey(CHashTable *htab, int *, char **);
-void *hash_nextkey(CHashTable *htab, int *, char **);
+void *hash_firstkey(CHashTable *htab, int *, UTF8 **);
+void *hash_nextkey(CHashTable *htab, int *, UTF8 **);
 
 extern NAMETAB powers_nametab[];
 
-extern bool search_nametab(dbref, NAMETAB *, char *, int *);
-extern NAMETAB *find_nametab_ent(dbref, NAMETAB *, char *);
-extern void display_nametab(dbref, NAMETAB *, char *, bool);
-extern void interp_nametab(dbref, NAMETAB *, int, const char *, const char *, const char *);
-extern void listset_nametab(dbref, NAMETAB *, int, char *, bool);
+extern bool search_nametab(dbref, NAMETAB *, UTF8 *, int *);
+extern NAMETAB *find_nametab_ent(dbref, NAMETAB *, UTF8 *);
+extern void display_nametab(dbref, NAMETAB *, UTF8 *, bool);
+extern void interp_nametab(dbref, NAMETAB *, int, const UTF8 *, const UTF8 *, const UTF8 *);
+extern void listset_nametab(dbref, NAMETAB *, int, UTF8 *, bool);
 
 #endif // !__HTAB_H

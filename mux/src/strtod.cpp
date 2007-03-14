@@ -523,7 +523,7 @@ static Bigint *multadd(Bigint *b, int m, int a)
     return b;
 }
 
-static Bigint *s2b(CONST char *s, int nd0, int nd, ULong y9)
+static Bigint *s2b(CONST UTF8 *s, int nd0, int nd, ULong y9)
 {
     Bigint *b;
     int i, k;
@@ -1369,14 +1369,14 @@ DCL_INLINE int FltRounds(void)
     return Flt_Rounds;
 }
 
-double mux_strtod(CONST char *s00, char **se)
+double mux_strtod(CONST UTF8 *s00, UTF8 **se)
 {
 #ifdef Avoid_Underflow
     int scale;
 #endif
     int bb2, bb5, bbe, bd2, bd5, bbbits, bs2, c, dsign,
          e, e1, esign, i, j, k, nd, nd0, nf, nz, nz0, sign;
-    CONST char *s, *s0, *s1;
+    CONST UTF8 *s, *s0, *s1;
     double aadj, aadj1, adj, rv, rv0;
     Long L;
     ULong y, z;
@@ -2447,7 +2447,7 @@ retfree:
 ret:
     if (se)
     {
-        *se = (char *)s;
+        *se = (UTF8 *)s;
     }
     return sign ? -dval(rv) : dval(rv);
 }
@@ -2566,9 +2566,9 @@ static int quorem(Bigint *b, Bigint *S)
     return q;
 }
 
-static char *dtoa_result;
+static UTF8 *dtoa_result;
 
-static char *rv_alloc(unsigned int i)
+static UTF8 *rv_alloc(unsigned int i)
 {
     unsigned int j, k, *r;
 
@@ -2581,13 +2581,13 @@ static char *rv_alloc(unsigned int i)
     }
     r = (unsigned int*)Balloc(k);
     *r = k;
-    dtoa_result = (char *)(r+1);
+    dtoa_result = (UTF8 *)(r+1);
     return dtoa_result;
 }
 
-static char *nrv_alloc(char *s, char **rve, int n)
+static UTF8 *nrv_alloc(UTF8 *s, UTF8 **rve, int n)
 {
-    char *rv, *t;
+    UTF8 *rv, *t;
 
     t = rv = rv_alloc(n);
     *t = *s++;
@@ -2605,7 +2605,7 @@ static char *nrv_alloc(char *s, char **rve, int n)
 
 /* freedtoa(s) must be used to free values s returned by dtoa.
  */
-static void freedtoa(char *s)
+static void freedtoa(UTF8 *s)
 {
     Bigint *b = (Bigint *)((int *)s - 1);
     b->maxwds = 1 << (b->k = *(int*)b);
@@ -2650,8 +2650,8 @@ static void freedtoa(char *s)
  *     calculation.
  */
 
-char *mux_dtoa(double d, int mode, int ndigits, int *decpt, int *sign,
-                char **rve)
+UTF8 *mux_dtoa(double d, int mode, int ndigits, int *decpt, int *sign,
+                UTF8 **rve)
 {
  /* Arguments ndigits, decpt, sign are similar to those
     of ecvt and fcvt; trailing zeros are suppressed from
@@ -2697,7 +2697,7 @@ char *mux_dtoa(double d, int mode, int ndigits, int *decpt, int *sign,
 #endif
     Bigint *b = NULL, *b1 = NULL, *delta = NULL, *mlo = NULL, *mhi = NULL, *S = NULL;
     double d2, ds, eps;
-    char *s, *s0;
+    UTF8 *s, *s0;
 #ifdef Honor_FLT_ROUNDS
     int rounding;
 #endif
@@ -2734,10 +2734,10 @@ char *mux_dtoa(double d, int mode, int ndigits, int *decpt, int *sign,
 #ifdef IEEE_Arith
         if (!word1(d) && !(word0(d) & 0xfffff))
         {
-            return nrv_alloc("Inf", rve, 8);
+            return nrv_alloc((UTF8 *)"Inf", rve, 8);
         }
 #endif
-        return nrv_alloc("NaN", rve, 3);
+        return nrv_alloc((UTF8 *)"NaN", rve, 3);
     }
 #endif
 #ifdef IBM
@@ -2746,7 +2746,7 @@ char *mux_dtoa(double d, int mode, int ndigits, int *decpt, int *sign,
     if (!dval(d))
     {
         *decpt = 1;
-        return nrv_alloc("0", rve, 1);
+        return nrv_alloc((UTF8 *)"0", rve, 1);
     }
 
 #ifdef SET_INEXACT

@@ -57,26 +57,28 @@
  * POWERENT: Information about object powers.
  */
 
-typedef struct power_entry {
-    const char *powername;  /* Name of the flag */
+typedef struct power_entry
+{
+    const UTF8 *powername;  /* Name of the flag */
     int powervalue; /* Which bit in the object is the flag */
     int powerpower; /* Ctrl flags for this power (recursive? :-) */
     int listperm;   /* Who sees this flag when set */
     bool (*handler)(dbref target, dbref player, POWER power, int fpowers, bool reset);    /* Handler for setting/clearing this flag */
 } POWERENT;
 
-typedef struct powerset {
+typedef struct powerset
+{
     POWER   word1;
     POWER   word2;
 } POWERSET;
 
 extern void init_powertab(void);
 extern void display_powertab(dbref);
-extern void power_set(dbref, dbref, char *, int);
-extern char *powers_list(dbref executor, dbref thing);
-extern bool has_power(dbref, dbref, char *);
-extern void decompile_powers(dbref, dbref, char *);
-extern bool decode_power(dbref player, char *powername, POWERSET *pset);
+extern void power_set(dbref, dbref, UTF8 *, int);
+extern UTF8 *powers_list(dbref executor, dbref thing);
+extern bool has_power(dbref, dbref, UTF8 *);
+extern void decompile_powers(dbref, dbref, UTF8 *);
+extern bool decode_power(dbref player, UTF8 *powername, POWERSET *pset);
 
 #define s_Guest(c)          s_Powers((c), Powers(c) | POW_GUEST)
 

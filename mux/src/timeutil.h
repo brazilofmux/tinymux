@@ -41,7 +41,7 @@ class CLinearTimeAbsolute
 private:
     INT64  m_tAbsolute;
     static int m_nCount;
-    static char m_Buffer[I64BUF_SIZE*2];
+    static UTF8 m_Buffer[I64BUF_SIZE*2];
 
 public:
     //CLinearTimeAbsolute(int tInitial);
@@ -55,17 +55,17 @@ public:
     void GetUTC(void);
     void GetLocal(void);
 
-    void  ReturnUniqueString(char *buffer, size_t nBuffer);
-    char *ReturnDateString(int nFracDigits = 0);
+    void  ReturnUniqueString(UTF8 *buffer, size_t nBuffer);
+    UTF8 *ReturnDateString(int nFracDigits = 0);
     bool  ReturnFields(FIELDEDTIME *arg_tStruct);
     INT64 ReturnSeconds(void);
-    char *ReturnSecondsString(int nFracDigits = 0);
+    UTF8 *ReturnSecondsString(int nFracDigits = 0);
     INT64 Return100ns(void);
 
     void SetSeconds(INT64 arg_tSeconds);
-    bool SetSecondsString(char *arg_szSeconds);
+    bool SetSecondsString(UTF8 *arg_szSeconds);
     bool SetFields(FIELDEDTIME *arg_tStruct);
-    bool SetString(const char *arg_tBuffer);
+    bool SetString(const UTF8 *arg_tBuffer);
     void Set100ns(INT64 arg_t100ns);
 
     void UTC2Local(void);
@@ -92,7 +92,7 @@ class CLinearTimeDelta
 
 private:
     INT64 m_tDelta;
-    static char m_Buffer[I64BUF_SIZE*2];
+    static UTF8 m_Buffer[I64BUF_SIZE*2];
 
 public:
     CLinearTimeDelta(void);
@@ -107,13 +107,13 @@ public:
     INT64 ReturnMicroseconds(void);
     long ReturnDays(void);
     long ReturnSeconds(void);
-    char *ReturnSecondsString(int nFracDigits = 0);
+    UTF8 *ReturnSecondsString(int nFracDigits = 0);
     INT64 Return100ns(void);
 
     void SetTimeValueStruct(struct timeval *tv);
     void SetMilliseconds(unsigned long arg_dwMilliseconds);
     void SetSeconds(INT64 arg_tSeconds);
-    void SetSecondsString(char *arg_szSeconds);
+    void SetSecondsString(UTF8 *arg_szSeconds);
     void Set100ns(INT64 arg_t100ns);
 
     void operator+=(const CLinearTimeDelta& ltd);
@@ -208,10 +208,10 @@ int DCL_INLINE iFloorDivisionMod(int x, int y, int *piMod) \
 
 #endif // SMALLEST_INT_GTE_NEG_QUOTIENT
 
-extern bool ParseDate(CLinearTimeAbsolute &lta, char *pDateString, bool *pbZoneSpecified);
+extern bool ParseDate(CLinearTimeAbsolute &lta, UTF8 *pDateString, bool *pbZoneSpecified);
 extern bool isLeapYear(long iYear);
-extern const char *monthtab[12];
-extern char *DayOfWeekString[7];
+extern const UTF8 *monthtab[12];
+extern UTF8 *DayOfWeekString[7];
 extern int iMod(int x, int y);
 
 #endif // TIMEUTIL_H

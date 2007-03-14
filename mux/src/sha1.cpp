@@ -103,7 +103,7 @@ static void SHA1_HashBlock(SHA1_CONTEXT *p)
     p->H[4] += e;
 }
 
-void SHA1_Compute(SHA1_CONTEXT *p, size_t n, const char *buf)
+void SHA1_Compute(SHA1_CONTEXT *p, size_t n, const UTF8 *buf)
 {
     while (n)
     {

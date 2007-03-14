@@ -98,7 +98,7 @@ ATTR *vattr_define_LEN(const UTF8 *pName, size_t nName, int number, int flags)
 //
 static void dbclean_CheckANHtoAT(dbref executor)
 {
-    notify(executor, "1. Checking (v)attr_name_htabs to anum_table mapping...");
+    notify(executor, (UTF8 *)"1. Checking (v)attr_name_htabs to anum_table mapping...");
 
     // This test traverses the attr_name_htab/vattr_name_htab and verifies
     // that the corresponding anum_table entry exists and is valid.
@@ -170,12 +170,12 @@ static void dbclean_CheckANHtoAT(dbref executor)
     notify(executor, tprintf("   User Defined: %d", nUserDefined));
     notify(executor, tprintf("   Index Out of Bounds: %d", nOutOfBounds));
     notify(executor, tprintf("   Inconsistent: %d", nInvalid));
-    notify(executor, "   Done.");
+    notify(executor, (UTF8 *)"   Done.");
 }
 
 static void dbclean_CheckATtoANH(dbref executor)
 {
-    notify(executor, "2. Checking anum_table to vattr_name_htab mapping...");
+    notify(executor, (UTF8 *)"2. Checking anum_table to vattr_name_htab mapping...");
 
     // This test traverses the anum_table and verifies that the corresponding attr_name_htab and
     // vattr_name_htab entries exist and are valid.
@@ -197,14 +197,14 @@ static void dbclean_CheckATtoANH(dbref executor)
 
                 // Convert name to upper case.
                 //
-                char Buffer[SBUF_SIZE];
-                mux_strncpy(Buffer, (char *)pa->name, SBUF_SIZE-1);
+                UTF8 Buffer[SBUF_SIZE];
+                mux_strncpy(Buffer, pa->name, SBUF_SIZE-1);
                 mux_strupr(Buffer);
 
                 // Fetch the attribute structure pointer -- which should match the one
                 // from the corresponding table entry.
                 //
-                ATTR *pb = (ATTR *) hashfindLEN(Buffer, strlen(Buffer), &mudstate.attr_name_htab);
+                ATTR *pb = (ATTR *) hashfindLEN(Buffer, strlen((char *)Buffer), &mudstate.attr_name_htab);
                 if (pb != pa)
                 {
                     nInvalid++;
@@ -240,12 +240,12 @@ static void dbclean_CheckATtoANH(dbref executor)
     notify(executor, tprintf("   User Defined: %d", nUserDefined));
     notify(executor, tprintf("   Empty: %d", nEmpty));
     notify(executor, tprintf("   Inconsistent: %d", nInvalid));
-    notify(executor, "   Done.");
+    notify(executor, (UTF8 *)"   Done.");
 }
 
 static void dbclean_CheckALISTtoAT(dbref executor)
 {
-    notify(executor, "3. Checking ALIST to anum_table mapping...");
+    notify(executor, (UTF8 *)"3. Checking ALIST to anum_table mapping...");
 
     // Traverse every attribute on every object and make sure that attribute is
     // represented in the attribute table.
@@ -257,8 +257,7 @@ static void dbclean_CheckALISTtoAT(dbref executor)
     atr_push();
     DO_WHOLE_DB(iObject)
     {
-        char *as;
-
+        unsigned char *as;
         for (int iAttr = atr_head(iObject, &as); iAttr; iAttr = atr_next(&as))
         {
             if (iAttr <= 0)
@@ -280,7 +279,7 @@ static void dbclean_CheckALISTtoAT(dbref executor)
                 {
                     // We can try to fix this one.
                     //
-                    const char *pRecord = atr_get_raw(iObject, iAttr);
+                    const UTF8 *pRecord = atr_get_raw(iObject, iAttr);
                     if (pRecord)
                     {
                         // If the attribute exists in the DB, then the easiest thing to do
@@ -288,8 +287,8 @@ static void dbclean_CheckALISTtoAT(dbref executor)
                         // is already in Canonical form, otherwise, we would need to
                         // call MakeCanonicalAttributeName.
                         //
-                        char *p = tprintf("DANGLINGATTR-%08d", iAttr);
-                        vattr_define_LEN((UTF8 *)p, strlen(p), iAttr, 0);
+                        UTF8 *p = tprintf("DANGLINGATTR-%08d", iAttr);
+                        vattr_define_LEN(p, strlen((char *)p), iAttr, 0);
                         nDangle++;
                     }
                     else
@@ -315,7 +314,7 @@ static void dbclean_CheckALISTtoAT(dbref executor)
 
 static void dbclean_CheckALISTtoDB(dbref executor)
 {
-    notify(executor, "4. Checking ALIST against attribute DB on disk...");
+    notify(executor, (UTF8 *)"4. Checking ALIST against attribute DB on disk...");
 
     // Traverse every attribute on every object and make sure that attribute is
     // represented attribute database.
@@ -326,8 +325,7 @@ static void dbclean_CheckALISTtoDB(dbref executor)
     atr_push();
     DO_WHOLE_DB(iObject)
     {
-        char *as;
-
+        unsigned char *as;
         for (int iAttr = atr_head(iObject, &as); iAttr; iAttr = atr_next(&as))
         {
             if (iAttr <= 0)
@@ -336,7 +334,7 @@ static void dbclean_CheckALISTtoDB(dbref executor)
             }
             else if (iAttr <= anum_alc_top)
             {
-                const char *pRecord = atr_get_raw(iObject, iAttr);
+                const UTF8 *pRecord = atr_get_raw(iObject, iAttr);
                 if (!pRecord)
                 {
                     // The contents are gone. The easiest thing to do is remove it from the ALIST.
@@ -386,8 +384,7 @@ static int dbclean_RemoveStaleAttributeNames(void)
     atr_push();
     DO_WHOLE_DB(iObject)
     {
-        char *as;
-
+        unsigned char *as;
         for (int atr = atr_head(iObject, &as); atr; atr = atr_next(&as))
         {
             if (atr >= A_USER_START)
@@ -417,7 +414,7 @@ static int dbclean_RemoveStaleAttributeNames(void)
 
                 // Delete from hashtable.
                 //
-                UINT32 nHash = HASH_ProcessBuffer(0, (char *)va->name, strlen((char *)va->name));
+                UINT32 nHash = HASH_ProcessBuffer(0, va->name, strlen((char *)va->name));
                 CHashTable *pht = &mudstate.vattr_name_htab;
                 UINT32 iDir = pht->FindFirstKey(nHash);
                 while (iDir != HF_FIND_END)
@@ -482,7 +479,7 @@ static void dbclean_RenumberAttributes(int cVAttributes)
             // Change vattr_name_htab mapping as well to point to
             // iAllocated instead of iAttr.
             //
-            UINT32 nHash = HASH_ProcessBuffer(0, (char *)va->name, strlen((char *)va->name));
+            UINT32 nHash = HASH_ProcessBuffer(0, va->name, strlen((char *)va->name));
             CHashTable *pht = &mudstate.vattr_name_htab;
             UINT32 iDir = pht->FindFirstKey(nHash);
             while (iDir != HF_FIND_END)
@@ -517,8 +514,7 @@ static void dbclean_RenumberAttributes(int cVAttributes)
     dbref iObject;
     DO_WHOLE_DB(iObject)
     {
-        char *as;
-
+        unsigned char *as;
         for ( int iAttr = atr_head(iObject, &as);
               iAttr;
               iAttr = atr_next(&as)
@@ -531,7 +527,7 @@ static void dbclean_RenumberAttributes(int cVAttributes)
                 {
                     dbref iOwner;
                     int   iFlag;
-                    char *pRecord = atr_get("dbclean_RenumberAttributes.534", iObject, iAttr, &iOwner, &iFlag);
+                    UTF8 *pRecord = atr_get("dbclean_RenumberAttributes.534", iObject, iAttr, &iOwner, &iFlag);
                     atr_add_raw(iObject, iNew, pRecord);
                     free_lbuf(pRecord);
                     atr_add_raw(iObject, iAttr, NULL);
@@ -543,7 +539,7 @@ static void dbclean_RenumberAttributes(int cVAttributes)
     // Traverse entire @addcommand data structure.
     //
     int nKeyLength;
-    char *pKeyName;
+    UTF8 *pKeyName;
     CMDENT *old;
     for (old = (CMDENT *)hash_firstkey(&mudstate.command_htab, &nKeyLength, &pKeyName);
          old != NULL;
@@ -555,7 +551,7 @@ static void dbclean_RenumberAttributes(int cVAttributes)
             ADDENT *nextp;
             for (nextp = old->addent; nextp != NULL; nextp = nextp->next)
             {
-                if (strcmp(pKeyName, nextp->name) != 0)
+                if (strcmp((char *)pKeyName, (char *)nextp->name) != 0)
                 {
                     continue;
                 }
@@ -613,16 +609,16 @@ void do_dbclean(dbref executor, dbref caller, dbref enactor, int key)
 #endif // MEMORY_BASED
     pcache_sync();
 
-    notify(executor, "Checking Integrity of the attribute data structures...");
+    notify(executor, (UTF8 *)"Checking Integrity of the attribute data structures...");
     dbclean_IntegrityChecking(executor);
-    notify(executor, "Removing stale attributes names...");
+    notify(executor, (UTF8 *)"Removing stale attributes names...");
     int cVAttributes = dbclean_RemoveStaleAttributeNames();
-    notify(executor, "Renumbering and compacting attribute numbers...");
+    notify(executor, (UTF8 *)"Renumbering and compacting attribute numbers...");
     dbclean_RenumberAttributes(cVAttributes);
     notify(executor, tprintf("Next Attribute number to allocate: %d", mudstate.attr_next));
-    notify(executor, "Checking Integrity of the attribute data structures...");
+    notify(executor, (UTF8 *)"Checking Integrity of the attribute data structures...");
     dbclean_IntegrityChecking(executor);
-    notify(executor, "@dbclean completed..");
+    notify(executor, (UTF8 *)"@dbclean completed..");
 }
 
 void vattr_delete_LEN(UTF8 *pName, size_t nName)
