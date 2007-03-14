@@ -3643,7 +3643,7 @@ void load_restart_db(void)
             UTF8  *pBufferUnicode;
             size_t nBufferLatin1;
             char  *pBufferLatin1 = (char *)getstring_noalloc(f, true, &nBufferLatin1);
-            if ('\0' != pBufferUnicode[0])
+            if ('\0' != pBufferLatin1[0])
             {
                 pBufferUnicode = ConvertToUTF8(pBufferLatin1, &nBufferUnicode);
                 d->output_prefix = alloc_lbuf("set_userstring");
@@ -3657,7 +3657,7 @@ void load_restart_db(void)
             // Output Suffix
             //
             pBufferLatin1 = (char *)getstring_noalloc(f, true, &nBufferLatin1);
-            if ('\0' != pBufferUnicode[0])
+            if ('\0' != pBufferLatin1[0])
             {
                 pBufferUnicode = ConvertToUTF8(pBufferLatin1, &nBufferUnicode);
                 d->output_suffix = alloc_lbuf("set_userstring");

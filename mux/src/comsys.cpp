@@ -694,12 +694,12 @@ void load_comsystem_V0123(FILE *fp)
 
             // Convert entire line to UTF-8 including ANSI escapes.
             //
-            UTF8 *pBufferUnicode = ConvertToUTF8((char *)temp, &nHeader);
+            pBufferUnicode = ConvertToUTF8((char *)temp, &nHeader);
             if (MAX_HEADER_LEN < nHeader)
             {
                 nHeader = MAX_HEADER_LEN;
                 while (  0 < nHeader
-                      && UTF8_CONTINUE <= utf8_FirstByte[(unsigned char)temp[nHeader-1]])
+                      && UTF8_CONTINUE <= utf8_FirstByte[(unsigned char)pBufferUnicode[nHeader-1]])
                 {
                     nHeader--;
                 }
