@@ -58,7 +58,7 @@ bool parse_and_get_attrib
     if (!parse_attrib(executor, fargs[0], thing, &ap))
     {
         *thing = executor;
-        ap = atr_str((UTF8 *)fargs[0]);
+        ap = atr_str(fargs[0]);
     }
 
     // Make sure we got a good attribute.
@@ -731,7 +731,7 @@ FUNCTION(fun_set)
     if (*p)
     {
         *p++ = 0;
-        int atr = mkattr(executor, (UTF8 *)fargs[1]);
+        int atr = mkattr(executor, fargs[1]);
         if (atr <= 0)
         {
             safe_str((UTF8 *)"#-1 UNABLE TO CREATE ATTRIBUTE", buff, bufc);
@@ -1152,7 +1152,7 @@ FUNCTION(fun_zfun)
 
     // Find the user function attribute.
     //
-    int attrib = get_atr((UTF8 *)fargs[0]);
+    int attrib = get_atr(fargs[0]);
     if (!attrib)
     {
         safe_str((UTF8 *)"#-1 NO SUCH USER FUNCTION", buff, bufc);
@@ -1483,7 +1483,7 @@ static size_t mem_usage(dbref thing)
     for (int ca = atr_head(thing, &as); ca; ca = atr_next(&as))
     {
         size_t nLen;
-        const UTF8 *str = (UTF8 *)atr_get_raw_LEN(thing, ca, &nLen);
+        const UTF8 *str = atr_get_raw_LEN(thing, ca, &nLen);
         k += nLen+1;
         ATTR *pattr = atr_num(ca);
         if (pattr)
@@ -2158,7 +2158,7 @@ static void hasattr_handler(UTF8 *buff, UTF8 **bufc, dbref executor, UTF8 *fargs
         return;
     }
 
-    ATTR *pattr = atr_str((UTF8 *)fargs[1]);
+    ATTR *pattr = atr_str(fargs[1]);
     bool result = false;
     if (pattr)
     {
@@ -2247,7 +2247,7 @@ static void default_handler(UTF8 *buff, UTF8 **bufc, dbref executor,
     if (!parse_attrib(executor, objattr, &thing, &pattr))
     {
         thing = executor;
-        pattr = atr_str((UTF8 *)objattr);
+        pattr = atr_str(objattr);
     }
     free_lbuf(objattr);
 
@@ -3959,7 +3959,7 @@ FUNCTION(fun_valid)
     }
     else if (!mux_stricmp(fargs[0], (UTF8 *)"attrname"))
     {
-        MakeCanonicalAttributeName((UTF8 *)fargs[1], &nValidName, &bValid);
+        MakeCanonicalAttributeName(fargs[1], &nValidName, &bValid);
     }
     else if (!mux_stricmp(fargs[0], (UTF8 *)"comalias"))
     {

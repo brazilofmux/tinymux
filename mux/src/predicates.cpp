@@ -2626,7 +2626,7 @@ void do_verb(dbref executor, dbref caller, dbref enactor, int eval, int key,
     case 6:
         // Get action attribute.
         //
-        ap = atr_str((UTF8 *)args[5]);
+        ap = atr_str(args[5]);
         if (ap)
         {
             awhat = ap->number;
@@ -2643,7 +2643,7 @@ void do_verb(dbref executor, dbref caller, dbref enactor, int eval, int key,
     case 4:
         // Get others message attribute.
         //
-        ap = atr_str((UTF8 *)args[3]);
+        ap = atr_str(args[3]);
         if (ap && (ap->number > 0))
         {
             owhat = ap->number;
@@ -2660,7 +2660,7 @@ void do_verb(dbref executor, dbref caller, dbref enactor, int eval, int key,
     case 2:
         // Get enactor message attribute.
         //
-        ap = atr_str((UTF8 *)args[1]);
+        ap = atr_str(args[1]);
         if (ap && (ap->number > 0))
         {
             what = ap->number;

@@ -3338,7 +3338,7 @@ bool mux_fopen(FILE **pFile, const UTF8 *filename, const UTF8 *mode)
 #if defined(WIN32) && !defined(__INTEL_COMPILER) && (_MSC_VER >= 1400)
             // 1400 is Visual C++ 2005
             //
-            return (fopen_s(pFile, filename, mode) == 0);
+            return (fopen_s(pFile, (const char *)filename, (const char *)mode) == 0);
 #else
             *pFile = fopen((char *)filename, (char *)mode);
             if (NULL != *pFile)
@@ -3361,7 +3361,7 @@ bool mux_open(int *pfh, const UTF8 *filename, int oflag)
 #if defined(WIN32) && !defined(__INTEL_COMPILER) && (_MSC_VER >= 1400)
             // 1400 is Visual C++ 2005
             //
-            return (_sopen_s(pfh, (char *)filename, oflag, _SH_DENYNO, _S_IREAD|_S_IWRITE) == 0);
+            return (_sopen_s(pfh, (const char *)filename, oflag, _SH_DENYNO, _S_IREAD|_S_IWRITE) == 0);
 #elif defined(win32)
             *pfh = _open((char *)filename, oflag, _S_IREAD|_S_IWRITE);
             return (0 <= *pfh);
@@ -3380,7 +3380,7 @@ const UTF8 *mux_strerror(int errnum)
     // 1400 is Visual C++ 2005
     //
     static UTF8 buffer[80];
-    strerror_s(buffer, sizeof(buffer), errnum);
+    strerror_s((char *)buffer, sizeof(buffer), errnum);
     return buffer;
 #else
     return (UTF8 *)strerror(errnum);

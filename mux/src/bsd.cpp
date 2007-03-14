@@ -435,7 +435,7 @@ static int get_slave_result(void)
         {
             if (d->username[0])
             {
-                atr_add_raw(d->player, A_LASTSITE, (UTF8 *)tprintf("%s@%s", d->username, d->addr));
+                atr_add_raw(d->player, A_LASTSITE, tprintf("%s@%s", d->username, d->addr));
             }
             else
             {
@@ -459,7 +459,7 @@ static int get_slave_result(void)
         mux_strncpy(d->username, userid, 10);
         if (d->player != 0)
         {
-            atr_add_raw(d->player, A_LASTSITE, (UTF8 *)tprintf("%s@%s", d->username, d->addr));
+            atr_add_raw(d->player, A_LASTSITE, tprintf("%s@%s", d->username, d->addr));
         }
     }
     return 1;
@@ -1758,7 +1758,7 @@ DESC *new_connection(PortInfo *Port, int *piSocketError)
         return 0;
     }
 
-    UTF8 *pBuffM2 = (UTF8 *)alloc_mbuf("new_connection.address");
+    UTF8 *pBuffM2 = alloc_mbuf("new_connection.address");
     mux_strncpy(pBuffM2, (UTF8 *)inet_ntoa(addr.sin_addr), MBUF_SIZE-1);
     unsigned short usPort = ntohs(addr.sin_port);
 

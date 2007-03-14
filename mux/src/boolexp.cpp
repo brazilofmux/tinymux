@@ -311,7 +311,7 @@ static BOOLEXP *test_atr(UTF8 *s)
     int anum;
     boolexp_type locktype;
 
-    UTF8 *buff = (UTF8 *)alloc_lbuf("test_atr");
+    UTF8 *buff = alloc_lbuf("test_atr");
     mux_strncpy(buff, s, LBUF_SIZE-1);
     for (s = buff; *s && (*s != ':') && (*s != '/'); s++)
     {
@@ -373,7 +373,7 @@ static BOOLEXP *test_atr(UTF8 *s)
     BOOLEXP *b = alloc_bool("test_str");
     b->type = locktype;
     b->thing = (dbref) anum;
-    b->sub1 = (BOOLEXP *) StringClone((UTF8 *)s);
+    b->sub1 = (BOOLEXP *) StringClone(s);
     free_lbuf(buff);
     return b;
 }
@@ -407,7 +407,7 @@ static BOOLEXP *parse_boolexp_L(void)
 
         // Must have hit an object ref.  Load the name into our buffer.
         //
-        buf = (UTF8 *)alloc_lbuf("parse_boolexp_L");
+        buf = alloc_lbuf("parse_boolexp_L");
         p = buf;
         while (  *parsebuf
               && *parsebuf != AND_TOKEN

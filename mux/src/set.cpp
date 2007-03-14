@@ -1205,7 +1205,7 @@ void do_set
     if (*p)
     {
         *p++ = 0;
-        int atr = mkattr(executor, (UTF8 *)flagname);
+        int atr = mkattr(executor, flagname);
         if (atr <= 0)
         {
             notify_quiet(executor, (UTF8 *)"Couldn't create attribute.");
@@ -1405,7 +1405,7 @@ void do_mvattr(dbref executor, dbref caller, dbref enactor, int eval, int key,
     //
     int in_anum = -1;
     UTF8 *astr = alloc_lbuf("do_mvattr");
-    ATTR *in_attr = atr_str((UTF8 *)args[0]);
+    ATTR *in_attr = atr_str(args[0]);
     int aflags = 0;
     if (in_attr == NULL)
     {
@@ -1431,7 +1431,7 @@ void do_mvattr(dbref executor, dbref caller, dbref enactor, int eval, int key,
     int  nCopied = 0;
     for (int i = 1; i < nargs; i++)
     {
-        int anum = mkattr(executor, (UTF8 *)args[i]);
+        int anum = mkattr(executor, args[i]);
         if (anum <= 0)
         {
             notify_quiet(executor, tprintf("%s: That's not a good name for an attribute.", args[i]));
@@ -1537,7 +1537,7 @@ bool parse_attrib(dbref player, UTF8 *str, dbref *thing, ATTR **attr)
     //
     if (retval)
     {
-        tattr = atr_str((UTF8 *)AttrName);
+        tattr = atr_str(AttrName);
     }
 
     free_lbuf(buff);

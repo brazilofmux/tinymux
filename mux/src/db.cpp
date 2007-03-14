@@ -822,7 +822,7 @@ void do_attribute
     size_t nName;
     bool bValid = false;
     ATTR *va = NULL;
-    UTF8 *pName = MakeCanonicalAttributeName((UTF8 *)aname, &nName, &bValid);
+    UTF8 *pName = MakeCanonicalAttributeName(aname, &nName, &bValid);
     if (bValid)
     {
         va = (ATTR *)vattr_find_LEN(pName, nName);
@@ -896,20 +896,20 @@ void do_attribute
             //
             UTF8 OldName[SBUF_SIZE];
             UTF8 *pOldName = OldName;
-            safe_sb_str((UTF8 *)pName, (UTF8 *)OldName, (UTF8 **)&pOldName);
+            safe_sb_str(pName, OldName, &pOldName);
             *pOldName = '\0';
             size_t nOldName = pOldName - OldName;
 
             // Make sure the new name doesn't already exist. This checks
             // the built-in and user-defined data structures.
             //
-            va2 = atr_str((UTF8 *)value);
+            va2 = atr_str(value);
             if (va2)
             {
                 notify(executor, (UTF8 *)"An attribute with that name already exists.");
                 return;
             }
-            pName = MakeCanonicalAttributeName((UTF8 *)value, &nName, &bValid);
+            pName = MakeCanonicalAttributeName(value, &nName, &bValid);
             if (  !bValid
                || vattr_rename_LEN(OldName, nOldName, pName, nName) == NULL)
             {
@@ -1080,7 +1080,7 @@ void do_fixdb
 UTF8 *MakeCanonicalAttributeName(const UTF8 *pName_arg, size_t *pnName, bool *pbValid)
 {
     static UTF8 Buffer[SBUF_SIZE];
-    const UTF8 *pName = (UTF8 *)pName_arg;
+    const UTF8 *pName = pName_arg;
 
     if (  NULL == pName
        || !mux_isattrnameinitial(pName))

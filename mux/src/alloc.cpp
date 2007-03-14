@@ -25,7 +25,7 @@ typedef struct pool_header_unaligned
     size_t              pool_size;  // For consistency check
     struct pool_header *next;       // Next pool header in chain
     struct pool_header *nxtfree;    // Next pool header in freelist
-    UTF8               *buf_tag;    // Debugging/trace tag
+    const UTF8         *buf_tag;    // Debugging/trace tag
 } POOLHDR_UNALIGNED;
 
 // The following structure is 64-bit aligned. The fields in the
@@ -38,7 +38,7 @@ typedef struct pool_header
     size_t              pool_size;  // For consistency check
     struct pool_header *next;       // Next pool header in chain
     struct pool_header *nxtfree;    // Next pool header in freelist
-    UTF8               *buf_tag;    // Debugging/trace tag
+    const UTF8         *buf_tag;    // Debugging/trace tag
     UTF8  PaddingTo64bits[7 - ((sizeof(POOLHDR_UNALIGNED)-1) & 7)];
 } POOLHDR;
 
@@ -252,7 +252,7 @@ UTF8 *pool_alloc(int poolnum, const UTF8 *tag, const UTF8 *file, const int line)
         pools[poolnum].max_alloc++;
     }
 
-    ph->buf_tag = (UTF8 *)tag;
+    ph->buf_tag = tag;
     pools[poolnum].tot_alloc++;
     pools[poolnum].num_alloc++;
 
@@ -352,7 +352,7 @@ UTF8 *pool_alloc_lbuf(const UTF8 *tag, const UTF8 *file, const int line)
         pools[POOL_LBUF].max_alloc++;
     }
 
-    ph->buf_tag = (UTF8 *)tag;
+    ph->buf_tag = tag;
     pools[POOL_LBUF].tot_alloc++;
     pools[POOL_LBUF].num_alloc++;
 

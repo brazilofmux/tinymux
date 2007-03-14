@@ -4274,7 +4274,7 @@ bool ItemToList_AddInteger64(ITL *pContext, INT64 i64)
     return true;
 }
 
-bool ItemToList_AddStringLEN(ITL *pContext, size_t nStr, UTF8 *pStr)
+bool ItemToList_AddStringLEN(ITL *pContext, size_t nStr, const UTF8 *pStr)
 {
     size_t nLen = nStr;
     if (  !pContext->bFirst
@@ -4311,9 +4311,9 @@ bool ItemToList_AddStringLEN(ITL *pContext, size_t nStr, UTF8 *pStr)
     return true;
 }
 
-bool ItemToList_AddString(ITL *pContext, UTF8 *pStr)
+bool ItemToList_AddString(ITL *pContext, const UTF8 *pStr)
 {
-    size_t nStr = strlen((char *)pStr);
+    size_t nStr = strlen((const char *)pStr);
     return ItemToList_AddStringLEN(pContext, nStr, pStr);
 }
 
@@ -4439,7 +4439,7 @@ size_t DCL_CDECL mux_vsnprintf(UTF8 *buff, size_t count, const char *fmt, va_lis
     size_t len;
 #if defined(WIN32)
 #if !defined(__INTEL_COMPILER) && (_MSC_VER >= 1400)
-    int cc = vsnprintf_s(buff, count, _TRUNCATE, fmt, va);
+    int cc = vsnprintf_s((char *)buff, count, _TRUNCATE, fmt, va);
 #else // _MSC_VER
     int cc = _vsnprintf((char *)buff, count, fmt, va);
 #endif // _MSC_VER
@@ -5023,24 +5023,9 @@ mux_string::~mux_string(void)
     realloc_m_pcs(0);
 }
 
-void mux_string::append(const UTF8 cChar)
-{
-    if (m_n < LBUF_SIZE-1)
-    {
-        m_ach[m_n] = cChar;
-        if (0 != m_ncs)
-        {
-            realloc_m_pcs(m_n + 1);
-            m_pcs[m_n] = csNormal;
-        }
-        m_n++;
-        m_ach[m_n] = '\0';
-    }
-}
-
 void mux_string::append(dbref num)
 {
-    append('#');
+    append_TextPlain((const UTF8 *)"#", 1);
     append_TextPlain(mux_ltoa_t(num));
 }
 

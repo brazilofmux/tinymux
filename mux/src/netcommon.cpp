@@ -2917,7 +2917,8 @@ static const UTF8 *stat_string(int strtype, int flag)
 
 static void list_sites(dbref player, SITE *site_list, const UTF8 *header_txt, int stat_type)
 {
-    UTF8 *buff, *buff1, *str;
+    UTF8 *buff, *buff1;
+    const UTF8 *str;
     SITE *this0;
 
     buff = alloc_mbuf("list_sites.buff");
@@ -2927,7 +2928,7 @@ static void list_sites(dbref player, SITE *site_list, const UTF8 *header_txt, in
     notify(player, (UTF8 *)"Address              Mask                 Status");
     for (this0 = site_list; this0; this0 = this0->next)
     {
-        str = (UTF8 *)stat_string(stat_type, this0->flag);
+        str = stat_string(stat_type, this0->flag);
         mux_strncpy(buff1, (UTF8 *)inet_ntoa(this0->mask), SBUF_SIZE-1);
         mux_sprintf(buff, MBUF_SIZE, "%-20s %-20s %s", inet_ntoa(this0->address), buff1,
             str);

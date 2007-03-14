@@ -113,11 +113,11 @@ static void promote_match(dbref what, int confidence)
  * * names are being matched.  It also removes inital and terminal spaces.
  */
 
-static UTF8 *munge_space_for_match(UTF8 *name)
+static UTF8 *munge_space_for_match(const UTF8 *name)
 {
     static UTF8 buffer[LBUF_SIZE];
 
-    UTF8 *p = name;
+    const UTF8 *p = name;
     UTF8 *q = buffer;
 
     if (p)
@@ -620,7 +620,7 @@ void init_match(dbref player, const UTF8 *name, int type)
     md.pref_type = type;
     md.match = NOTHING;
     md.player = player;
-    md.string = munge_space_for_match((UTF8 *)name);
+    md.string = munge_space_for_match(name);
     md.absolute_form = absolute_name(true);
 }
 
