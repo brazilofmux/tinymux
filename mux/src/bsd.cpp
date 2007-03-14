@@ -4025,7 +4025,7 @@ void BuildSignalNamesTable(void)
 #ifdef SysSigNames
                 if (  tsn->pLongName == NULL
                    && SysSigNames[sig]
-                   && strcmp(tsn->pShortName, SysSigNames[sig]) != 0)
+                   && strcmp((char *)tsn->pShortName, (char *)SysSigNames[sig]) != 0)
                 {
                     tsn->pLongName = SysSigNames[sig];
                 }
