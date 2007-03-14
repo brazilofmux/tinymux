@@ -1445,7 +1445,7 @@ FUNCTION(fun_format)
     if (  fieldsize < 1
        || 80 < fieldsize)
     {
-        safe_str("#-1 ILLEGAL FIELDSIZE", buff, bufc);
+        safe_str((UTF8 *)"#-1 ILLEGAL FIELDSIZE", buff, bufc);
         return;
     }
 
@@ -1454,7 +1454,7 @@ FUNCTION(fun_format)
     strip_ansi(fargs[3], &n3);
     if (fieldsize + n2 + n3 > 79)
     {
-        safe_str("#-1 COMBINED FIELD TOO LARGE", buff, bufc);
+        safe_str((UTF8 *)"#-1 COMBINED FIELD TOO LARGE", buff, bufc);
         return;
     }
 
@@ -1473,16 +1473,16 @@ FUNCTION(fun_format)
 FUNCTION(fun_text)
 {
     FILE *textconf;
-    if (!mux_fopen(&textconf, "textfiles.conf", "r"))
+    if (!mux_fopen(&textconf, (UTF8 *)"textfiles.conf", (UTF8 *)"r"))
     {
         // Can't open the file.
         //
-        safe_str("#-1 TEXTFILES.CONF MISSING", buff, bufc);
+        safe_str((UTF8 *)"#-1 TEXTFILES.CONF MISSING", buff, bufc);
         return;
     }
 
     UTF8 mybuffer[80];
-    while (fgets(mybuffer, 80, textconf))
+    while (fgets((char *)mybuffer, 80, textconf))
     {
         int index = 0;
         while (mybuffer[index])
@@ -1501,15 +1501,15 @@ FUNCTION(fun_text)
         if (!strcmp((char *)mybuffer, (char *)fargs[0]))
         {
             FILE *myfile;
-            if (!mux_fopen(&myfile, fargs[0], "r"))
+            if (!mux_fopen(&myfile, fargs[0], (UTF8 *)"r"))
             {
                 /* But not here!? */
                 fclose(textconf);
-                safe_str("#-1 FILE DOES NOT EXIST",buff,bufc);
+                safe_str((UTF8 *)"#-1 FILE DOES NOT EXIST",buff,bufc);
                 return;
             }
 
-            while (fgets(mybuffer, 80, myfile))
+            while (fgets((char *)mybuffer, 80, myfile))
             {
                 index = 0;
                 while (mybuffer[index])
@@ -1526,7 +1526,7 @@ FUNCTION(fun_text)
 
                 if ('&' == mybuffer[0])
                 {
-                    if (!mux_stricmp(fargs[1]+strspn(fargs[1]," "), mybuffer+2))
+                    if (!mux_stricmp(fargs[1]+strspn((char *)fargs[1], " "), mybuffer+2))
                     {
                         /* At this point I've found the file and the entry */
                         int thischar;
@@ -1553,12 +1553,12 @@ FUNCTION(fun_text)
             }
             fclose(textconf);
             fclose(myfile);
-            safe_str("#-1 ENTRY NOT FOUND", buff, bufc);
+            safe_str((UTF8 *)"#-1 ENTRY NOT FOUND", buff, bufc);
             return;
         }
     }
     fclose(textconf);
-    safe_str("#-1 FILE NOT LISTED",buff,bufc);
+    safe_str((UTF8 *)"#-1 FILE NOT LISTED",buff,bufc);
 }
 
 #endif // FIRANMUX

@@ -4820,7 +4820,7 @@ UTF8 *linewrap_general(UTF8 *strret, int field, UTF8 *left, UTF8 *right)
             position = leftmargin;
 
             safe_str(right, str, &ostr);
-            safe_str("\r\n", str, &ostr);
+            safe_str((UTF8 *)"\r\n", str, &ostr);
             continue;
         }
 
@@ -4970,7 +4970,7 @@ UTF8 *linewrap_general(UTF8 *strret, int field, UTF8 *left, UTF8 *right)
 
 UTF8 *linewrap_desc(UTF8 *str)
 {
-    return linewrap_general(str, 70, "     ", "");
+    return linewrap_general(str, 70, (UTF8 *)"     ", (UTF8 *)"");
 }
 
 #endif // FIRANMUX

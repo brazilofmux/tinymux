@@ -1903,7 +1903,7 @@ FUNCTION(fun_mailsubj)
 {
     if (!mudconf.have_mailer)
     {
-        safe_str("#-1 MAILER DISABLED.", buff, bufc);
+        safe_str((UTF8 *)"#-1 MAILER DISABLED.", buff, bufc);
         return;
     }
 
@@ -1920,7 +1920,7 @@ FUNCTION(fun_mailsubj)
         playerask = lookup_player(executor, fargs[0], 1);
         if (NOTHING == playerask)
         {
-            safe_str("#-1 NO SUCH PLAYER", buff, bufc);
+            safe_str((UTF8 *)"#-1 NO SUCH PLAYER", buff, bufc);
             return;
         }
         else if (  executor == playerask
@@ -1938,7 +1938,7 @@ FUNCTION(fun_mailsubj)
     if (  num < 1
        || !isPlayer(playerask))
     {
-        safe_str("#-1 NO SUCH MESSAGE", buff, bufc);
+        safe_str((UTF8 *)"#-1 NO SUCH MESSAGE", buff, bufc);
     }
     else
     {
@@ -1949,7 +1949,7 @@ FUNCTION(fun_mailsubj)
         }
         else
         {
-            safe_str("#-1 NO SUCH MESSAGE", buff, bufc);
+            safe_str((UTF8 *)"#-1 NO SUCH MESSAGE", buff, bufc);
         }
     }
 }
@@ -1968,7 +1968,7 @@ FUNCTION(fun_mailj)
 {
     if (!mudconf.have_mailer)
     {
-        safe_str("#-1 MAILER DISABLED.", buff, bufc);
+        safe_str((UTF8 *)"#-1 MAILER DISABLED.", buff, bufc);
         return;
     }
 
@@ -1997,7 +1997,7 @@ FUNCTION(fun_mailj)
             playerask = lookup_player(executor, fargs[0], 1);
             if (NOTHING == playerask)
             {
-                safe_str("#-1 NO SUCH PLAYER", buff, bufc);
+                safe_str((UTF8 *)"#-1 NO SUCH PLAYER", buff, bufc);
             }
             else if (  executor == playerask
                     || Wizard(executor))
@@ -2041,7 +2041,7 @@ FUNCTION(fun_mailj)
         playerask = lookup_player(executor, fargs[0], 1);
         if (NOTHING == playerask)
         {
-            safe_str("#-1 NO SUCH PLAYER", buff, bufc);
+            safe_str((UTF8 *)"#-1 NO SUCH PLAYER", buff, bufc);
             return;
         }
         else if (  executor == playerask
@@ -2059,7 +2059,7 @@ FUNCTION(fun_mailj)
     if (  num < 1
        || !isPlayer(playerask))
     {
-        safe_str("#-1 NO SUCH MESSAGE", buff, bufc);
+        safe_str((UTF8 *)"#-1 NO SUCH MESSAGE", buff, bufc);
         return;
     }
 
@@ -2070,7 +2070,7 @@ FUNCTION(fun_mailj)
     }
     else
     {
-        safe_str("#-1 NO SUCH MESSAGE", buff, bufc);
+        safe_str((UTF8 *)"#-1 NO SUCH MESSAGE", buff, bufc);
     }
 }
 #endif // FIRANMUX
