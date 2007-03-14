@@ -4213,7 +4213,7 @@ static FUNCTION(fun_escape)
             sOut->append('\\');
             sOut->set_Color(iOut++, csColor);
         }
-        sOut->append(cChar);
+        sOut->append_TextPlain(&cChar, 1);
         sOut->set_Color(iOut++, csColor);
     }
     sOut->export_TextAnsi(buff, bufc);
@@ -9733,7 +9733,7 @@ size_t transform_range(mux_string &sStr)
                 cBefore++;
                 while (cBefore < cAfter)
                 {
-                    sTemp->append(cBefore);
+                    sTemp->append_TextPlain(&cBefore, 1);
                     cBefore++;
                 }
                 sStr.replace_Chars(*sTemp, nStart, 1);
@@ -9744,13 +9744,13 @@ size_t transform_range(mux_string &sStr)
                 cBefore++;
                 while (cBefore <= 'z')
                 {
-                    sTemp->append(cBefore);
+                    sTemp->append_TextPlain(&cBefore, 1);
                     cBefore++;
                 }
                 cBefore = 'A';
                 while (cBefore < cAfter)
                 {
-                    sTemp->append(cBefore);
+                    sTemp->append_TextPlain(&cBefore, 1);
                     cBefore++;
                 }
                 sStr.replace_Chars(*sTemp, nStart, 1);
@@ -9765,7 +9765,7 @@ size_t transform_range(mux_string &sStr)
             sTemp->truncate(0);
             while (cBefore < cAfter)
             {
-                sTemp->append(cBefore);
+                sTemp->append_TextPlain(&cBefore, 1);
                 cBefore++;
             }
             sStr.replace_Chars(*sTemp, nStart, 1);

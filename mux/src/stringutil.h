@@ -500,7 +500,6 @@ public:
     mux_string(const mux_string &sStr);
     mux_string(const UTF8 *pStr);
     ~mux_string(void);
-    void append(const UTF8 cChar);
     void append(dbref num);
     void append(INT64 iInt);
     void append(long lLong);
