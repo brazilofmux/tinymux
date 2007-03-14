@@ -279,6 +279,7 @@ Bug Fixes:
  -- Fix memory leak in process_cmdent().
  -- HEIGHT() and WIDTH() returned least-idle port when given a port rather
     than the specified port.
+ -- Fix doing header across @restart.
 
 
 Performance Enhancements:

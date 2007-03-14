@@ -3443,7 +3443,7 @@ void load_restart_db(void)
 
     size_t nBuffer;
     char *pBuffer = getstring_noalloc(f, true, &nBuffer);
-    memcpy(mudstate.doing_hdr, pBuffer, nBuffer=1);
+    memcpy(mudstate.doing_hdr, pBuffer, nBuffer+1);
 
     mudstate.record_players = getref(f);
     if (mudconf.reset_players)
