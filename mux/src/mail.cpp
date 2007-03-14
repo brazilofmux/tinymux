@@ -2864,7 +2864,7 @@ int dump_mail(FILE *fp)
 
     // Write out version number
     //
-    fprintf(fp, "+V5\n");
+    fprintf(fp, "+V6\n");
     putref(fp, mudstate.mail_db_top);
     DO_WHOLE_DB(thing)
     {
@@ -2904,7 +2904,7 @@ int dump_mail(FILE *fp)
     return count;
 }
 
-static void load_mail_V5(FILE *fp)
+static void load_mail_V6(FILE *fp)
 {
     int mail_top = getref(fp);
     mail_db_grow(mail_top + 1);
@@ -2939,11 +2939,12 @@ static void load_mail_V5(FILE *fp)
 
         mp->number  = getref(fp);
         MessageReferenceInc(mp->number);
-        pBuffer = getstring_noalloc(fp, true, &nBuffer);
+
+        pBuffer = (UTF8 *)getstring_noalloc(fp, true, &nBuffer);
         mp->tolist  = StringCloneLen(pBuffer, nBuffer);
-        pBuffer = getstring_noalloc(fp, true, &nBuffer);
+        pBuffer = (UTF8 *)getstring_noalloc(fp, true, &nBuffer);
         mp->time    = StringCloneLen(pBuffer, nBuffer);
-        pBuffer = getstring_noalloc(fp, true, &nBuffer);
+        pBuffer = (UTF8 *)getstring_noalloc(fp, true, &nBuffer);
         mp->subject = StringCloneLen(pBuffer, nBuffer);
         mp->read    = getref(fp);
 
@@ -2957,9 +2958,83 @@ static void load_mail_V5(FILE *fp)
     while (p && strncmp((char *)nbuf1, "+++", 3))
     {
         int number = mux_atol(nbuf1);
-        pBuffer = getstring_noalloc(fp, true, &nBuffer);
+        pBuffer = (UTF8 *)getstring_noalloc(fp, true, &nBuffer);
         new_mail_message(pBuffer, number);
         p = (UTF8 *)fgets((char *)nbuf1, sizeof(nbuf1), fp);
+    }
+}
+
+static void load_mail_V5(FILE *fp)
+{
+    int mail_top = getref(fp);
+    mail_db_grow(mail_top + 1);
+
+    size_t nBufferLatin1;
+    char  *pBufferLatin1;
+    size_t nBufferUnicode;
+    UTF8  *pBufferUnicode;
+
+    char nbuf1[8];
+    char *p = fgets(nbuf1, sizeof(nbuf1), fp);
+    while (  p
+          && strncmp(nbuf1, "***", 3) != 0)
+    {
+        struct mail *mp = NULL;
+        try
+        {
+            mp = new struct mail;
+        }
+        catch (...)
+        {
+            ; // Nothing.
+        }
+
+        if (NULL == mp)
+        {
+            STARTLOG(LOG_BUGS, "BUG", "MAIL");
+            log_text((UTF8 *)"Out of memory.");
+            ENDLOG;
+            return;
+        }
+
+        pBufferUnicode = (UTF8 *)nbuf1;
+
+        mp->to      = mux_atol(pBufferUnicode);
+        mp->from    = getref(fp);
+
+        mp->number  = getref(fp);
+        MessageReferenceInc(mp->number);
+
+        pBufferLatin1 = (char *)getstring_noalloc(fp, true, &nBufferLatin1);
+        pBufferUnicode = ConvertToUTF8(pBufferLatin1, &nBufferUnicode);
+        mp->tolist  = StringCloneLen(pBufferUnicode, nBufferUnicode);
+
+        pBufferLatin1 = (char *)getstring_noalloc(fp, true, &nBufferLatin1);
+        pBufferUnicode = ConvertToUTF8(pBufferLatin1, &nBufferUnicode);
+        mp->time    = StringCloneLen(pBufferUnicode, nBufferUnicode);
+
+        pBufferLatin1 = (char *)getstring_noalloc(fp, true, &nBufferLatin1);
+        pBufferUnicode = ConvertToUTF8(pBufferLatin1, &nBufferUnicode);
+        mp->subject = StringCloneLen(pBufferUnicode, nBufferUnicode);
+
+        mp->read    = getref(fp);
+
+        MailList ml(mp->to);
+        ml.AppendItem(mp);
+
+        p = fgets(nbuf1, sizeof(nbuf1), fp);
+    }
+
+    p = fgets(nbuf1, sizeof(nbuf1), fp);
+    while (  p
+          && strncmp(nbuf1, "+++", 3))
+    {
+        pBufferUnicode = (UTF8 *)nbuf1;
+        int number = mux_atol(pBufferUnicode);
+        pBufferLatin1 = (char *)getstring_noalloc(fp, true, &nBufferLatin1);
+        pBufferUnicode = ConvertToUTF8(pBufferLatin1, &nBufferUnicode);
+        new_mail_message(pBufferUnicode, number);
+        p = fgets(nbuf1, sizeof(nbuf1), fp);
     }
 }
 
@@ -3000,7 +3075,7 @@ UTF8 *MakeCanonicalMailAliasDesc
     return szFittedMailAliasDesc;
 }
 
-static void malias_read(FILE *fp)
+static void malias_read(FILE *fp, bool bConvert)
 {
     int i, j;
 
@@ -3082,9 +3157,21 @@ static void malias_read(FILE *fp)
         //
         size_t nLen = GetLineTrunc(buffer, sizeof(buffer), fp);
         buffer[nLen-1] = '\0'; // Get rid of trailing '\n'.
+
+        UTF8 *pBufferUnicode;
+        if (bConvert)
+        {
+            size_t nBufferUnicode;
+            pBufferUnicode = ConvertToUTF8((char *)buffer, &nBufferUnicode);
+        }
+        else
+        {
+            pBufferUnicode = buffer;
+        }
+
         size_t nMailAlias;
         bool bMailAlias;
-        UTF8 *pMailAlias = MakeCanonicalMailAlias( buffer+2,
+        UTF8 *pMailAlias = MakeCanonicalMailAlias( pBufferUnicode+2,
                                                    &nMailAlias,
                                                    &bMailAlias);
         if (bMailAlias)
@@ -3099,10 +3186,20 @@ static void malias_read(FILE *fp)
         // The format of the description is "D:<description>\n"
         //
         nLen = GetLineTrunc(buffer, sizeof(buffer), fp);
+        if (bConvert)
+        {
+            size_t nBufferUnicode;
+            pBufferUnicode = ConvertToUTF8((char *)buffer, &nBufferUnicode);
+        }
+        else
+        {
+            pBufferUnicode = buffer;
+        }
+
         size_t  nMailAliasDesc;
         bool bMailAliasDesc;
         size_t nVisualWidth;
-        UTF8 *pMailAliasDesc = MakeCanonicalMailAliasDesc( buffer+2,
+        UTF8 *pMailAliasDesc = MakeCanonicalMailAliasDesc( pBufferUnicode+2,
                                                            &nMailAliasDesc,
                                                            &bMailAliasDesc,
                                                            &nVisualWidth);
@@ -3135,7 +3232,7 @@ static void malias_read(FILE *fp)
     }
 }
 
-static void load_malias(FILE *fp)
+static void load_malias(FILE *fp, bool bConvert)
 {
     UTF8 buffer[200];
 
@@ -3143,7 +3240,7 @@ static void load_malias(FILE *fp)
     if (  fgets((char *)buffer, sizeof(buffer), fp)
        && strcmp((char *)buffer, "*** Begin MALIAS ***\n") == 0)
     {
-        malias_read(fp);
+        malias_read(fp, bConvert);
     }
     else
     {
@@ -3162,15 +3259,24 @@ void load_mail(FILE *fp)
     {
         return;
     }
-    if (strncmp((char *)nbuf1, "+V5", 3) == 0)
+
+    bool bConvert = false;
+    if (strncmp((char *)nbuf1, "+V6", 3) == 0)
+    {
+        // Started v6 on 2007-MAR-13.
+        //
+        load_mail_V6(fp);
+    }
+    else if (strncmp((char *)nbuf1, "+V5", 3) == 0)
     {
         load_mail_V5(fp);
+        bConvert = true;
     }
     else
     {
         return;
     }
-    load_malias(fp);
+    load_malias(fp, bConvert);
 }
 
 void check_mail_expiration(void)

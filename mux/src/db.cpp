@@ -3002,7 +3002,7 @@ static const int action_table[2][8] =
     { 2,   1,   2,   2,   5,   6,   7,   8}  // STATE_HAVE_ESC
 };
 
-UTF8 *getstring_noalloc(FILE *f, bool new_strings, size_t *pnBuffer)
+void *getstring_noalloc(FILE *f, bool new_strings, size_t *pnBuffer)
 {
     static UTF8 buf[2*LBUF_SIZE + 20];
     int c = fgetc(f);
@@ -3590,63 +3590,101 @@ void load_restart_db(void)
             d->width = 78;
         }
 
-        size_t nBuffer;
-        UTF8 *temp = getstring_noalloc(f, true, &nBuffer);
-        if ('\0' != temp[0])
+        if (3 == version)
         {
-            if (version < 3)
+            // Output Prefix.
+            //
+            size_t nBufferUnicode;
+            UTF8 *pBufferUnicode = (UTF8 *)getstring_noalloc(f, true, &nBufferUnicode);
+            if ('\0' != pBufferUnicode[0])
             {
-                temp = ConvertToUTF8(temp, &nBuffer);
+                d->output_prefix = alloc_lbuf("set_userstring");
+                memcpy(d->output_prefix, pBufferUnicode, nBufferUnicode+1);
             }
-            d->output_prefix = alloc_lbuf("set_userstring");
-            memcpy(d->output_prefix, temp, nBuffer+1);
+            else
+            {
+                d->output_prefix = NULL;
+            }
+
+            // Output Suffix
+            //
+            pBufferUnicode = (UTF8 *)getstring_noalloc(f, true, &nBufferUnicode);
+            if ('\0' != pBufferUnicode[0])
+            {
+                d->output_suffix = alloc_lbuf("set_userstring");
+                memcpy(d->output_suffix, pBufferUnicode, nBufferUnicode+1);
+            }
+            else
+            {
+                d->output_suffix = NULL;
+            }
+
+            // Host address.
+            //
+            pBufferUnicode = (UTF8 *)getstring_noalloc(f, true, &nBufferUnicode);
+            memcpy(d->addr, pBufferUnicode, nBufferUnicode+1);
+
+            // Doing.
+            //
+            pBufferUnicode = (UTF8 *)getstring_noalloc(f, true, &nBufferUnicode);
+            memcpy(d->doing, pBufferUnicode, nBufferUnicode+1);
+
+            // User name.
+            //
+            pBufferUnicode = (UTF8 *)getstring_noalloc(f, true, &nBufferUnicode);
+            memcpy(d->username, pBufferUnicode, nBufferUnicode+1);
         }
         else
         {
-            d->output_prefix = NULL;
-        }
-
-        temp = getstring_noalloc(f, true, &nBuffer);
-        if ('\0' != temp[0])
-        {
-            if (version < 3)
+            // Output Prefix.
+            //
+            size_t nBufferUnicode;
+            UTF8  *pBufferUnicode;
+            size_t nBufferLatin1;
+            UTF8  *pBufferLatin1 = (char *)getstring_noalloc(f, true, &nBufferLatin1);
+            if ('\0' != pBufferUnicode[0])
             {
-                temp = ConvertToUTF8(temp, &nBuffer);
+                pBufferUnicode = ConvertToUTF8(pBufferLatin1, &nBufferUnicode);
+                d->output_prefix = alloc_lbuf("set_userstring");
+                memcpy(d->output_prefix, pBufferUnicode, nBufferUnicode+1);
             }
-            d->output_suffix = alloc_lbuf("set_userstring");
-            memcpy(d->output_suffix, temp, nBuffer+1);
-        }
-        else
-        {
-            d->output_suffix = NULL;
-        }
+            else
+            {
+                d->output_prefix = NULL;
+            }
 
-        // Host address.
-        //
-        temp = getstring_noalloc(f, true, &nBuffer);
-        if (version < 3)
-        {
-            temp = ConvertToUTF8(temp, &nBuffer);
-        }
-        memcpy(d->addr, temp, nBuffer+1);
+            // Output Suffix
+            //
+            pBufferLatin1 = (char *)getstring_noalloc(f, true, &nBufferLatin1);
+            if ('\0' != pBufferUnicode[0])
+            {
+                pBufferUnicode = ConvertToUTF8(pBufferLatin1, &nBufferUnicode);
+                d->output_suffix = alloc_lbuf("set_userstring");
+                memcpy(d->output_suffix, pBufferUnicode, nBufferUnicode+1);
+            }
+            else
+            {
+                d->output_suffix = NULL;
+            }
 
-        // Doing.
-        //
-        temp = getstring_noalloc(f, true, &nBuffer);
-        if (version < 3)
-        {
-            temp = ConvertToUTF8(temp, &nBuffer);
-        }
-        memcpy(d->doing, temp, nBuffer+1);
+            // Host address.
+            //
+            pBufferLatin1 = (char *)getstring_noalloc(f, true, &nBufferLatin1);
+            pBufferUnicode = ConvertToUTF8(pBufferLatin1, &nBufferUnicode);
+            memcpy(d->addr, pBufferUnicode, nBufferUnicode+1);
 
-        // User name.
-        //
-        temp = getstring_noalloc(f, true, &nBuffer);
-        if (version < 3)
-        {
-            temp = ConvertToUTF8(temp, &nBuffer);
+            // Doing.
+            //
+            pBufferLatin1 = (char *)getstring_noalloc(f, true, &nBufferLatin1);
+            pBufferUnicode = ConvertToUTF8(pBufferLatin1, &nBufferUnicode);
+            memcpy(d->doing, pBufferUnicode, nBufferUnicode+1);
+
+            // User name.
+            //
+            pBufferLatin1 = (char *)getstring_noalloc(f, true, &nBufferLatin1);
+            pBufferUnicode = ConvertToUTF8(pBufferLatin1, &nBufferUnicode);
+            memcpy(d->username, pBufferUnicode, nBufferUnicode+1);
         }
-        memcpy(d->username, temp, nBuffer+1);
 
         d->output_size = 0;
         d->output_tot = 0;

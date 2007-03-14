@@ -249,7 +249,7 @@ dbref    db_write(FILE *, int, int);
 void destroy_thing(dbref);
 void destroy_exit(dbref);
 void putstring(FILE *f, const UTF8 *s);
-UTF8 *getstring_noalloc(FILE *f, bool new_strings, size_t *pnBuffer);
+void *getstring_noalloc(FILE *f, bool new_strings, size_t *pnBuffer);
 void init_attrtab(void);
 int GrowFiftyPercent(int x, int low, int high);
 

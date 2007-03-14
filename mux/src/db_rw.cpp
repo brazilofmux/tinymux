@@ -291,18 +291,19 @@ static bool get_list(FILE *f, dbref i)
 
                 // Store the attr
                 //
-                size_t nBuffer;
-                UTF8 *pBuffer = getstring_noalloc(f, true, &nBuffer);
+                size_t nBufferUnicode;
                 UTF8 *pBufferUnicode;
-                if (g_version <= 2)
+                if (3 == g_version)
                 {
-                    pBufferUnicode = ConvertToUTF8((char *)pBuffer, &nBuffer);
+                    pBufferUnicode = (UTF8 *)getstring_noalloc(f, true, &nBufferUnicode);
                 }
                 else
                 {
-                    pBufferUnicode = (UTF8 *)pBuffer;
+                    size_t nBufferLatin1;
+                    char *pBufferLatin1 = (char *)getstring_noalloc(f, true, &nBufferLatin1);
+                    pBufferUnicode = ConvertToUTF8(pBufferLatin1, &nBufferUnicode);
                 }
-                atr_add_raw_LEN(i, atr, pBufferUnicode, nBuffer);
+                atr_add_raw_LEN(i, atr, pBufferUnicode, nBufferUnicode);
             }
             else
             {
