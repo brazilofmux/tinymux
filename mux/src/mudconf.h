@@ -131,9 +131,9 @@ struct confdata
 #ifdef REALITY_LVLS
     int     no_levels;          /* Number of reality levels */
     struct  rlevel_def {
-        char name[9];           /* Rlevel name */
+        UTF8 name[9];           /* Rlevel name */
         RLEVEL value;           /* Rlevel bitmask */
-        char attr[33];          /* desc attribute */
+        UTF8 attr[33];          /* desc attribute */
     } reality_level[32];        /* Reality levels */
     RLEVEL  def_room_rx;        /* Default room RX level */
     RLEVEL  def_room_tx;        /* Default room TX level */

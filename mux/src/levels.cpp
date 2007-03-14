@@ -23,13 +23,13 @@
 #include "levels.h"
 #include "stringutil.h"
 
-extern void cf_log_notfound(dbref, char *, const char *, char *);
+extern void cf_log_notfound(dbref, UTF8 *, const UTF8 *, UTF8 *);
 
 RLEVEL RxLevel(dbref thing)
 {
-    const char *buff = atr_get_raw(thing, A_RLEVEL);
+    const UTF8 *buff = atr_get_raw(thing, A_RLEVEL);
     if (  NULL == buff
-       || strlen(buff) != 17)
+       || strlen((char *)buff) != 17)
     {
         switch(Typeof(thing))
         {
@@ -58,9 +58,9 @@ RLEVEL RxLevel(dbref thing)
 
 RLEVEL TxLevel(dbref thing)
 {
-    const char *buff = atr_get_raw(thing, A_RLEVEL);
+    const UTF8 *buff = atr_get_raw(thing, A_RLEVEL);
     if (  NULL == buff
-       || strlen(buff) != 17)
+       || strlen((char *)buff) != 17)
     {
         switch(Typeof(thing))
         {
@@ -108,7 +108,7 @@ void notify_except_rlevel
     dbref loc,
     dbref player,
     dbref exception,
-    const char *msg,
+    const UTF8 *msg,
     int xflags
 )
 {
@@ -137,7 +137,7 @@ void notify_except2_rlevel
     dbref player,
     dbref exc1,
     dbref exc2,
-    const char *msg
+    const UTF8 *msg
 )
 {
     if (  loc != exc1
@@ -167,7 +167,7 @@ void notify_except2_rlevel2
     dbref player,
     dbref exc1,
     dbref exc2,
-    const char *msg
+    const UTF8 *msg
 )
 {
     if (  loc != exc1
@@ -197,13 +197,13 @@ void notify_except2_rlevel2
  * * rxlevel_description: Return an mbuf containing the RxLevels of the thing.
  */
 
-char *rxlevel_description(dbref player, dbref target)
+UTF8 *rxlevel_description(dbref player, dbref target)
 {
     // Allocate the return buffer.
     //
     int  otype = Typeof(target);
-    char *buff = alloc_mbuf("rxlevel_description");
-    char *bp   = buff;
+    UTF8 *buff = alloc_mbuf("rxlevel_description");
+    UTF8 *bp   = buff;
 
     int i;
     RLEVEL rl = RxLevel(target);
@@ -228,13 +228,13 @@ char *rxlevel_description(dbref player, dbref target)
  * * txlevel_description: Return an mbuf containing the TxLevels of the thing.
  */
 
-char *txlevel_description(dbref player, dbref target)
+UTF8 *txlevel_description(dbref player, dbref target)
 {
     // Allocate the return buffer.
     //
     int otype = Typeof(target);
-    char *buff = alloc_mbuf("txlevel_description");
-    char *bp = buff;
+    UTF8 *buff = alloc_mbuf("txlevel_description");
+    UTF8 *bp = buff;
 
     int i;
     RLEVEL tl = TxLevel(target);
@@ -254,7 +254,7 @@ char *txlevel_description(dbref player, dbref target)
     return buff;
 }
 
-RLEVEL find_rlevel(char *name)
+RLEVEL find_rlevel(UTF8 *name)
 {
     for (int i = 0; i < mudconf.no_levels; i++)
     {
@@ -273,13 +273,13 @@ void do_rxlevel
     dbref enactor,
     int   nargs,
     int   key,
-    char *object,
-    char *arg
+    UTF8 *object,
+    UTF8 *arg
 )
 {
     if (!arg || !*arg)
     {
-        notify_quiet(player, "I don't know what you want to set!");
+        notify_quiet(player, (UTF8 *)"I don't know what you want to set!");
         return;
     }
 
@@ -291,7 +291,7 @@ void do_rxlevel
         return;
     }
 
-    char lname[9];
+    UTF8 lname[9];
     RLEVEL ormask = 0;
     RLEVEL andmask = ~ormask;
     while (*arg)
@@ -323,11 +323,11 @@ void do_rxlevel
         {
             if (negate)
             {
-                notify(player, "You must specify a reality level to clear.");
+                notify(player, (UTF8 *)"You must specify a reality level to clear.");
             }
             else
             {
-                notify(player, "You must specify a reality level to set.");
+                notify(player, (UTF8 *)"You must specify a reality level to set.");
             }
             return;
         }
@@ -335,24 +335,24 @@ void do_rxlevel
         RLEVEL result = find_rlevel(lname);
         if (!result)
         {
-            notify(player, "No such reality level.");
+            notify(player, (UTF8 *)"No such reality level.");
             continue;
         }
         if (negate)
         {
             andmask &= ~result;
-            notify(player, "Cleared.");
+            notify(player, (UTF8 *)"Cleared.");
         }
         else
         {
             ormask |= result;
-            notify(player, "Set.");
+            notify(player, (UTF8 *)"Set.");
         }
     }
 
     // Set the Rx Level.
     //
-    char *buff = alloc_lbuf("do_rxlevel");
+    UTF8 *buff = alloc_lbuf("do_rxlevel");
     mux_sprintf(buff, LBUF_SIZE, "%08X %08X", RxLevel(thing) & andmask | ormask, TxLevel(thing));
     atr_add_raw(thing, A_RLEVEL, buff);
     free_lbuf(buff);
@@ -365,13 +365,13 @@ void do_txlevel
     dbref enactor,
     int nargs,
     int key,
-    char *object,
-    char *arg
+    UTF8 *object,
+    UTF8 *arg
 )
 {
     if (!arg || !*arg)
     {
-        notify_quiet(player, "I don't know what you want to set!");
+        notify_quiet(player, (UTF8 *)"I don't know what you want to set!");
         return;
     }
 
@@ -383,7 +383,7 @@ void do_txlevel
         return;
     }
 
-    char lname[9];
+    UTF8 lname[9];
     RLEVEL ormask = 0;
     RLEVEL andmask = ~ormask;
     while (*arg)
@@ -415,11 +415,11 @@ void do_txlevel
         {
             if (negate)
             {
-                notify(player, "You must specify a reality level to clear.");
+                notify(player, (UTF8 *)"You must specify a reality level to clear.");
             }
             else
             {
-                notify(player, "You must specify a reality level to set.");
+                notify(player, (UTF8 *)"You must specify a reality level to set.");
             }
             return;
         }
@@ -427,24 +427,24 @@ void do_txlevel
         RLEVEL result = find_rlevel(lname);
         if (!result)
         {
-            notify(player, "No such reality level.");
+            notify(player, (UTF8 *)"No such reality level.");
             continue;
         }
         if (negate)
         {
             andmask &= ~result;
-            notify(player, "Cleared.");
+            notify(player, (UTF8 *)"Cleared.");
         }
         else
         {
             ormask |= result;
-            notify(player, "Set.");
+            notify(player, (UTF8 *)"Set.");
         }
     }
 
     // Set the Tx Level.
     //
-    char *buff = alloc_lbuf("do_rxlevel");
+    UTF8 *buff = alloc_lbuf("do_rxlevel");
     mux_sprintf(buff, LBUF_SIZE, "%08X %08X", RxLevel(thing), TxLevel(thing) & andmask | ormask);
     atr_add_raw(thing, A_RLEVEL, buff);
     free_lbuf(buff);
@@ -455,9 +455,9 @@ void do_txlevel
  * * decompile_rlevels: Produce commands to set reality levels on target.
  */
 
-void decompile_rlevels(dbref player, dbref thing, char *thingname)
+void decompile_rlevels(dbref player, dbref thing, UTF8 *thingname)
 {
-    char *buf = rxlevel_description(player, thing);
+    UTF8 *buf = rxlevel_description(player, thing);
     notify(player, tprintf("@rxlevel %s=%s", thingname, buf));
     free_mbuf(buf);
 
@@ -508,16 +508,16 @@ void did_it_rlevel
     dbref player,
     dbref thing,
     int   what,
-    const char *def,
+    const UTF8 *def,
     int   owhat,
-    const char *odef,
+    const UTF8 *odef,
     int   awhat,
     int   ctrl_flags,
-    char *args[],
+    UTF8 *args[],
     int   nargs
 )
 {
-    char *d, *buff, *act, *charges, *bp, *str;
+    UTF8 *d, *buff, *act, *charges, *bp, *str;
     dbref loc, aowner;
     int num, aflags;
     int i, *desclist, found_a_desc;
@@ -567,7 +567,7 @@ void did_it_rlevel
                 if (  A_HTDESC == desclist[i]
                    && Html(player))
                 {
-                    safe_str("\r\n", buff, &bp);
+                    safe_str((UTF8 *)"\r\n", buff, &bp);
                     *bp = '\0';
                     notify_html(player, buff);
                 }
@@ -606,7 +606,7 @@ void did_it_rlevel
                 if (  A_HTDESC == what
                    && Html(player))
                 {
-                    safe_str("\r\n", buff, &bp);
+                    safe_str((UTF8 *)"\r\n", buff, &bp);
                     *bp = '\0';
                     notify_html(player, buff);
                 }
@@ -631,7 +631,7 @@ void did_it_rlevel
 
     if (isPlayer(thing))
     {
-       d = atr_pget(mudconf.master_room, get_atr("ASSET_DESC"), &aowner, &aflags);
+       d = atr_pget(mudconf.master_room, get_atr((UTF8 *)"ASSET_DESC"), &aowner, &aflags);
        if (*d)
        {
           if (!need_pres)

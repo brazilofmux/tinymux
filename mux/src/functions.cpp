@@ -4428,13 +4428,13 @@ static FUNCTION(fun_hasrxlevel)
     it = match_thing(executor, fargs[0]);
     if (!Good_obj(it))
     {
-        safe_str("#-1 NOT FOUND", buff, bufc);
+        safe_str((UTF8 *)"#-1 NOT FOUND", buff, bufc);
         return;
     }
     rl = find_rlevel(fargs[1]);
     if (!rl)
     {
-        safe_str("#-1 INVALID RLEVEL", buff, bufc);
+        safe_str((UTF8 *)"#-1 INVALID RLEVEL", buff, bufc);
         return;
     }
     if (Examinable(executor, it))
@@ -4450,7 +4450,7 @@ static FUNCTION(fun_hasrxlevel)
     }
     else
     {
-        safe_str("#-1 PERMISSION DENIED", buff, bufc);
+        safe_str((UTF8 *)"#-1 PERMISSION DENIED", buff, bufc);
     }
 }
 
@@ -4462,13 +4462,13 @@ static FUNCTION(fun_hastxlevel)
     it = match_thing(executor, fargs[0]);
     if (!Good_obj(it))
     {
-        safe_str("#-1 NOT FOUND", buff, bufc);
+        safe_str((UTF8 *)"#-1 NOT FOUND", buff, bufc);
         return;
     }
     rl = find_rlevel(fargs[1]);
     if (!rl)
     {
-        safe_str("#-1 INVALID RLEVEL", buff, bufc);
+        safe_str((UTF8 *)"#-1 INVALID RLEVEL", buff, bufc);
         return;
     }
     if (Examinable(executor, it))
@@ -4484,7 +4484,7 @@ static FUNCTION(fun_hastxlevel)
     }
     else
     {
-        safe_str("#-1 PERMISSION DENIED", buff, bufc);
+        safe_str((UTF8 *)"#-1 PERMISSION DENIED", buff, bufc);
     }
 }
 
@@ -4505,7 +4505,7 @@ static FUNCTION(fun_listrlevels)
     }
     if (mudconf.no_levels < 1)
     {
-        safe_str("#-1 NO REALITY LEVELS DEFINED", buff, bufc);
+        safe_str((UTF8 *)"#-1 NO REALITY LEVELS DEFINED", buff, bufc);
     }
     else
     {
@@ -4531,23 +4531,27 @@ static FUNCTION(fun_rxlevel)
     it = match_thing(executor, fargs[0]);
     if (!Good_obj(it))
     {
-        safe_str("#-1 NOT FOUND", buff, bufc);
+        safe_str((UTF8 *)"#-1 NOT FOUND", buff, bufc);
         return;
     }
     if (Examinable(executor, it))
     {
         lev = RxLevel(it);
         levelbuff[0]='\0';
-        for(i = 0; i < mudconf.no_levels; ++i)
-            if((lev & mudconf.reality_level[i].value) == mudconf.reality_level[i].value)
+        for (i = 0; i < mudconf.no_levels; ++i)
+        {
+            if ((lev & mudconf.reality_level[i].value) == mudconf.reality_level[i].value)
             {
-                strcat(levelbuff, mudconf.reality_level[i].name);
-                strcat(levelbuff, " ");
+                strcat((char *)levelbuff, (char *)mudconf.reality_level[i].name);
+                strcat((char *)levelbuff, " ");
             }
+        }
         safe_tprintf_str(buff, bufc, "%s", levelbuff);
     }
     else
-        safe_str("#-1 PERMISSION DENIED", buff, bufc);
+    {
+        safe_str((UTF8 *)"#-1 PERMISSION DENIED", buff, bufc);
+    }
 }
 
 static FUNCTION(fun_txlevel)
@@ -4560,7 +4564,7 @@ static FUNCTION(fun_txlevel)
     it = match_thing(executor, fargs[0]);
     if (!Good_obj(it))
     {
-        safe_str("#-1 NOT FOUND", buff, bufc);
+        safe_str((UTF8 *)"#-1 NOT FOUND", buff, bufc);
         return;
     }
     if (Examinable(executor, it))
@@ -4570,13 +4574,13 @@ static FUNCTION(fun_txlevel)
         for(i = 0; i < mudconf.no_levels; ++i)
             if((lev & mudconf.reality_level[i].value) == mudconf.reality_level[i].value)
             {
-                strcat(levelbuff, mudconf.reality_level[i].name);
-                strcat(levelbuff, " ");
+                strcat((char *)levelbuff, (char *)mudconf.reality_level[i].name);
+                strcat((char *)levelbuff, " ");
             }
         safe_tprintf_str(buff, bufc, "%s", levelbuff);
     }
     else
-        safe_str("#-1 PERMISSION DENIED", buff, bufc);
+        safe_str((UTF8 *)"#-1 PERMISSION DENIED", buff, bufc);
 }
 #endif // REALITY_LVLS
 

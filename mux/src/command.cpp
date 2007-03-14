@@ -3818,12 +3818,14 @@ static void list_process(dbref player)
 static void list_rlevels(dbref player)
 {
     int i;
-    raw_notify(player, "Reality levels:");
-    for(i = 0; i < mudconf.no_levels; ++i)
+    raw_notify(player, (UTF8 *)"Reality levels:");
+    for (i = 0; i < mudconf.no_levels; ++i)
+    {
         raw_notify(player, tprintf("    Level: %-20.20s    Value: 0x%08x     Desc: %s",
             mudconf.reality_level[i].name, mudconf.reality_level[i].value,
                 mudconf.reality_level[i].attr));
-    raw_notify(player, "--Completed.");
+    }
+    raw_notify(player, (UTF8 *)"--Completed.");
 }
 #endif // REALITY_LVLS
 

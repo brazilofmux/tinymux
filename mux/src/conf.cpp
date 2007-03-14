@@ -445,22 +445,40 @@ CF_HAND(cf_rlevel)
     CONFDATA *mc = (CONFDATA *)vp;
     int i;
 
-    if(mc->no_levels >= 32)
+    if (mc->no_levels >= 32)
+    {
         return 1;
-    for(i=0; *str && !mux_isspace[*str]; ++str)
-        if(i < 8)
+    }
+    for (i=0; *str && !mux_isspace[*str]; ++str)
+    {
+        if (i < 8)
+        {
             mc->reality_level[mc->no_levels].name[i++] = *str;
+        }
+    }
     mc->reality_level[mc->no_levels].name[i] = '\0';
     mc->reality_level[mc->no_levels].value = 1;
-    strcpy(mc->reality_level[mc->no_levels].attr, "DESC");
-    for(; *str && mux_isspace[*str]; ++str);
-    for(i=0; *str && mux_isdigit[*str]; ++str)
+    strcpy((char *)mc->reality_level[mc->no_levels].attr, "DESC");
+    for (; *str && mux_isspace[*str]; ++str)
+    {
+        ; // Nothing.
+    }
+    for (i=0; *str && mux_isdigit[*str]; ++str)
+    {
         i = i * 10 + (*str - '0');
-    if(i)
+    }
+    if (i)
+    {
         mc->reality_level[mc->no_levels].value = (RLEVEL) i;
-    for(; *str && mux_isspace[*str]; ++str);
-    if(*str)
-        strncpy(mc->reality_level[mc->no_levels].attr, str, 32);
+    }
+    for (; *str && mux_isspace[*str]; ++str)
+    {
+        ; // Nothing.
+    }
+    if (*str)
+    {
+        strncpy((char *)mc->reality_level[mc->no_levels].attr, (char *)str, 32);
+    }
     mc->no_levels++;
     return 0;
 }

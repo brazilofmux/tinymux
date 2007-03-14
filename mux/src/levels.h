@@ -17,24 +17,24 @@
 
 RLEVEL   RxLevel(dbref);
 RLEVEL   TxLevel(dbref);
-void     notify_except_rlevel(dbref, dbref, dbref, const char *, int);
-void     notify_except2_rlevel(dbref, dbref, dbref, dbref,const char *);
-void     notify_except2_rlevel2(dbref, dbref, dbref, dbref,const char *);
-char *   rxlevel_description(dbref, dbref);
-char *   txlevel_description(dbref, dbref);
-void     decompile_rlevels(dbref, dbref, char *);
-RLEVEL   find_rlevel(char *);
+void     notify_except_rlevel(dbref, dbref, dbref, const UTF8 *, int);
+void     notify_except2_rlevel(dbref, dbref, dbref, dbref,const UTF8 *);
+void     notify_except2_rlevel2(dbref, dbref, dbref, dbref,const UTF8 *);
+UTF8 *   rxlevel_description(dbref, dbref);
+UTF8 *   txlevel_description(dbref, dbref);
+void     decompile_rlevels(dbref, dbref, UTF8 *);
+RLEVEL   find_rlevel(UTF8 *);
 void did_it_rlevel
 (
     dbref player,
     dbref thing,
     int   what,
-    const char *def,
+    const UTF8 *def,
     int   owhat,
-    const char *odef,
+    const UTF8 *odef,
     int   awhat,
     int   ctrl_flags,
-    char *args[],
+    UTF8 *args[],
     int   nargs
 );
 
