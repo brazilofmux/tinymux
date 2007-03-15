@@ -4703,7 +4703,7 @@ CF_HAND(cf_art_rule)
 
 #if defined(FIRANMUX)
 
-UTF8 *linewrap_general(UTF8 *strret, int field, UTF8 *left, UTF8 *right)
+UTF8 *linewrap_general(UTF8 *strret, int field, const UTF8 *left, const UTF8 *right)
 {
     int tabsets[] =
     {
