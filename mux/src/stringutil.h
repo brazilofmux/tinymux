@@ -534,7 +534,6 @@ public:
     void import(const UTF8 *pStr);
     void import(const UTF8 *pStr, size_t nLen);
     size_t length(void) const;
-    void prepend(const UTF8 cChar);
     void prepend(dbref num);
     void prepend(INT64 iInt);
     void prepend(long lLong);
