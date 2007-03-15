@@ -184,7 +184,7 @@ extern const UTF8 *ColorTable[256];
 
 #if defined(FIRANMUX)
 UTF8 *linewrap_desc(UTF8 *);
-UTF8 *linewrap_general(UTF8 *, int, UTF8 *, UTF8 *);
+UTF8 *linewrap_general(UTF8 *, int, const UTF8 *, const UTF8 *);
 #endif // FIRANMUX
 
 /* From game.cpp */
