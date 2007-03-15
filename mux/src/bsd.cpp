@@ -2858,7 +2858,7 @@ int UsState(DESC *d, unsigned char chOption)
 
 void SendCharsetRequest(DESC *d)
 {
-    if (d->nvt_him_state[TELNET_CHARSET] == OPTION_YES)
+    if (OPTION_YES == d->nvt_him_state[(int)TELNET_CHARSET])
     {
         char aCharsets[26] =
         {
