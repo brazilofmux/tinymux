@@ -340,9 +340,9 @@ struct ANSI_In_Context
 
 struct ANSI_Out_Context
 {
-    bool            m_bNoBleed;
     ColorState      m_cs;
-    bool            m_bDone; // some constraint was met.
+    ColorState      m_csFinal;
+    bool            m_bDone;
     UTF8           *m_p;
     size_t          m_n;
     size_t          m_nMax;

@@ -1425,7 +1425,7 @@ static struct
 
 inline ColorState UpdateColorState(ColorState cs, int iColorCode)
 {
-    return (cs & csMasks[iColorCode].csClear) | csMasks[iColorCode].csSet;
+    return (cs & ~csMasks[iColorCode].csClear) | csMasks[iColorCode].csSet;
 }
 
 // Maximum binary transition length is:
@@ -1449,8 +1449,7 @@ static UTF8 *ANSI_TransitionColorBinary
 (
     ColorState csCurrent,
     ColorState csNext,
-    size_t *nTransition,
-    bool bNoBleed
+    size_t *nTransition
 )
 {
     static UTF8 Buffer[ANSI_MAXIMUM_BINARY_TRANSITION_LENGTH+1];
@@ -1462,15 +1461,6 @@ static UTF8 *ANSI_TransitionColorBinary
         return Buffer;
     }
     UTF8 *p = Buffer;
-
-    if (  bNoBleed
-       && CS_NORMAL == csNext)
-    {
-        // With NOBLEED, we can't stay in the normal mode. We must eventually
-        // use a white foreground.
-        //
-        csNext = CS_NOBLEED;
-    }
 
     // Do we need to go through the normal state?
     //
@@ -1526,7 +1516,7 @@ static UTF8 *ANSI_TransitionColorBinary
             (UTF8 *)COLOR_FG_CYAN,
             (UTF8 *)COLOR_FG_WHITE
         };
-        int iForeground = (CS_FOREGROUND & csCurrent);
+        int iForeground = (CS_FOREGROUND & csNext);
         memcpy(p, aForegrounds[iForeground], sizeof(COLOR_FG_BLACK)-1);
         p += sizeof(COLOR_FG_BLACK)-1;
     }
@@ -1544,7 +1534,7 @@ static UTF8 *ANSI_TransitionColorBinary
             (UTF8 *)COLOR_BG_CYAN,
             (UTF8 *)COLOR_BG_WHITE
         };
-        int iBackground = (CS_BACKGROUND & csCurrent) >> 4;
+        int iBackground = (CS_BACKGROUND & csNext) >> 4;
         memcpy(p, aBackgrounds[iBackground], sizeof(COLOR_BG_BLACK)-1);
         p += sizeof(COLOR_BG_BLACK)-1;
     }
@@ -1642,18 +1632,7 @@ static UTF8 *ANSI_TransitionColorEscape
 
     if (CS_FOREGROUND & tmp)
     {
-        UTF8 *aForegrounds[8] =
-        {
-            (UTF8 *)COLOR_FG_BLACK,
-            (UTF8 *)COLOR_FG_RED,
-            (UTF8 *)COLOR_FG_GREEN,
-            (UTF8 *)COLOR_FG_YELLOW,
-            (UTF8 *)COLOR_FG_BLUE,
-            (UTF8 *)COLOR_FG_MAGENTA,
-            (UTF8 *)COLOR_FG_CYAN,
-            (UTF8 *)COLOR_FG_WHITE
-        };
-        int iForeground = (CS_FOREGROUND & csCurrent);
+        int iForeground = (CS_FOREGROUND & csNext);
         Buffer[i  ] = '%';
         Buffer[i+1] = 'x';
         Buffer[i+2] = cForegroundColors[iForeground];
@@ -1662,18 +1641,7 @@ static UTF8 *ANSI_TransitionColorEscape
 
     if (CS_BACKGROUND & tmp)
     {
-        UTF8 *aBackgrounds[8] =
-        {
-            (UTF8 *)COLOR_BG_BLACK,
-            (UTF8 *)COLOR_BG_RED,
-            (UTF8 *)COLOR_BG_GREEN,
-            (UTF8 *)COLOR_BG_YELLOW,
-            (UTF8 *)COLOR_BG_BLUE,
-            (UTF8 *)COLOR_BG_MAGENTA,
-            (UTF8 *)COLOR_BG_CYAN,
-            (UTF8 *)COLOR_BG_WHITE
-        };
-        int iBackground = (CS_BACKGROUND & csCurrent) >> 4;
+        int iBackground = (CS_BACKGROUND & csNext) >> 4;
         Buffer[i  ] = '%';
         Buffer[i+1] = 'x';
         Buffer[i+2] = cBackgroundColors[iBackground];
@@ -1705,36 +1673,58 @@ void ANSI_String_Out_Init
     bool   bNoBleed
 )
 {
+    // Current and final ColorState.
+    //
     pacOut->m_cs       = CS_NORMAL;
-    pacOut->m_bDone    = false;
-    pacOut->m_bNoBleed = bNoBleed;
-    pacOut->m_n        = 0;
-    pacOut->m_nMax     = nField;
+    pacOut->m_csFinal  = bNoBleed ? CS_NOBLEED : CS_NORMAL;
+
+    // Physical field definition.
+    //
     pacOut->m_p        = pField;
-    pacOut->m_vw       = 0;
+    pacOut->m_nMax     = nField;
+
+    // Visual field definition.
+    //
     pacOut->m_vwMax    = vwMax;
+
+    // Current use of physical and visual resources.
+    //
+    pacOut->m_vw       = 0;
+    pacOut->m_n        = 0;
+
+    // Ready, set, go.
+    //
+    pacOut->m_bDone    = false;
 }
 
-// ANSI_String_Copy -- Copy characters into a buffer starting at
-// pField0 with maximum size of nField. Truncate the string if it would
-// overflow the buffer -or- if it would have a visual with of greater
-// than maxVisualWidth. Returns the number of ANSI-encoded characters
-// copied to. Also, the visual width produced by this is returned in
-// *pnVisualWidth.
+#define KBA_UNKNOWN           0
+#define KBA_ABOVE_MINIMUM     1
+#define KBA_NEED_TRANSITIONS  2
+#define KBA_NEED_CODEPOINT    3
+
+// ANSI_String_Copy
 //
-// There are three ANSI color states that we deal with in this routine:
+// Move as many visible code points as possible from In to Out until either
+// In is exhausted, Out physically fills up, or we reach the maximum visual
+// width allowed to Out.
 //
-// 1. csPrevious is the color state at the current end of the field.
-//    It has already been encoded into the field.
+// Color is optimized to maximize room for visual code points. Color must not
+// be allowed to bleed beyond the field boundaries. We are allowed to discard
+// the trailing visible code points if necessary to make things fit.
 //
-// 2. csCurrent is the color state that the current TEXT will be shown
-//    with. It hasn't been encoded into the field, yet, and if we don't
-//    have enough room for at least one character of TEXT, then it may
-//    never be encoded into the field.
+// Several calls from different sources of In may be made, but when Out
+// reaches one of its contraints, it's marked Done.
 //
-// 3. csFinal is the required color state at the end. This is usually
-//    the normal state or in the case of NOBLEED, it's a specific (and
-//    somewhate arbitrary) foreground/background combination.
+// pac->m_cs represents the ColorState of the code point at pacIn->m_p. In
+// order to copy that code point to Out, Out's pacOut->m_cs must first agree
+// or be made to agree.  The input contain pacIn->m_n bytes starting with
+// pacIn->m_p.
+//
+// Likewise, the ColorState of the next code point to be added at pacOut->m_p
+// is given by pacOut->m_cs. Out has many conflicting constraints.  Firstly,
+// the final color state to achieve is given by pacOut->m_csFinal.  Secondly,
+// We cannot add more visible character to Out than pacOut->m_vwMax.  Finally,
+// the physical space in Out is limited to pacOut->m_nMax bytes.
 //
 void ANSI_String_Copy
 (
@@ -1742,145 +1732,216 @@ void ANSI_String_Copy
     struct ANSI_In_Context  *pacIn
 )
 {
-    // Check whether we have previously struck the session limits (given
-    // by ANSI_String_Out_Init() for field size or visual width.
-    //
     if (pacOut->m_bDone)
     {
+        // Out is full already (either visually or physically).
+        //
         return;
     }
 
-    // What is the working limit for visual width.
+    // Knowledge of the binary transitions from pacIn->m_cs to pacOut->m_cs
+    // and the transition from pacOut->m_cs to pacOut->m_csFinal that must
+    // occur before any code points are added and when we are done,
+    // respectively.
     //
-    size_t vw = 0;
-    size_t vwMax = pacOut->m_vwMax;
+    bool   bKnowTransitions = false;
+    size_t nTransitionInitial;
+    size_t nTransitionFinal;
 
-    // What is the working limit for field size.
+    // Knowledge of how much physical room we have for code points.
     //
-    size_t nMax = pacOut->m_nMax;
+    bool   bKnowPhysical = false;
+    size_t nPhysicalAvailable;
+    size_t nPhysicalNeeded;
+    
+    // Increasing knowledge of how far away we are from the constraints.
+    //
+    // We assume the longest possible transitions for both initial and
+    // final (which is pessimisitic) plus a '\0' terminator.
+    //
+    int    iKnownAvailable = KBA_NEED_TRANSITIONS;
+    size_t nMinimumCodePoints;
+    size_t nNeededBytes = ANSI_MAXIMUM_BINARY_TRANSITION_LENGTH
+                        + ANSI_MAXIMUM_BINARY_TRANSITION_LENGTH + 1;
+    if (nNeededBytes + UTF8_SIZE4 - 1 < pacOut->m_nMax)
+    {
+        size_t nMinimumBytesAvailable = pacOut->m_nMax - nNeededBytes;
+        nMinimumCodePoints = nMinimumBytesAvailable/UTF8_SIZE4;
+        if (pacOut->m_vw < pacOut->m_vwMax)
+        {
+            size_t vwAvailable = pacOut->m_vwMax - pacOut->m_vw;
+            if (vwAvailable < nMinimumCodePoints)
+            {
+                nMinimumCodePoints = vwAvailable;
+            }
+            iKnownAvailable = KBA_ABOVE_MINIMUM;
+        }
+    }
 
-    UTF8 *pField = pacOut->m_p;
-    while (pacIn->m_n)
+    while (  '\0' != *pacIn->m_p
+          && !pacOut->m_bDone)
     {
         int iCode = mux_color(pacIn->m_p);
-        if (COLOR_NOTCOLOR == iCode)
+        if (COLOR_NOTCOLOR != iCode)
         {
-            size_t nPoints = 1;
-            size_t nBytes = utf8_FirstByte[(unsigned char)*pacIn->m_p];
-
-            // nFieldEffective is used to allocate and plan space for
-            // the rest of the physical field (given by the current
-            // nField length).
+            // With a run of color code points, we shouldn't recalculate the
+            // transitions because they are constantly changing.  We may in
+            // fact run out of input before we find anything visual to copy
+            // to Out.
             //
-            size_t nFieldAvailable = nMax - 1; // Leave room for '\0'.
-            size_t nFieldNeeded = 0;
-            size_t nTransitionFinal = 0;
+            bKnowTransitions = false;
+            pacIn->m_cs = UpdateColorState(pacIn->m_cs, iCode);
 
-            // If we lay down -any- of the TEXT part, we need to make
-            // sure we always leave enough room to get back to the
-            // required final color state.
-            //
-            if (pacIn->m_cs != (pacOut->m_bNoBleed ? CS_NOBLEED: CS_NORMAL))
-            {
-                // The color state of the TEXT isn't the final state,
-                // so how much room will the transition back to the
-                // final state take?
-                //
-                ANSI_TransitionColorBinary( pacIn->m_cs,
-                                            pacOut->m_bNoBleed ? CS_NOBLEED : CS_NORMAL,
-                                            &nTransitionFinal,
-                                            pacOut->m_bNoBleed);
-
-                nFieldNeeded += nTransitionFinal;
-            }
-
-            // If we lay down -any- of the TEXT part, it needs to be
-            // the right color.
-            //
-            size_t nTransition = 0;
-            UTF8 *pTransition =
-                ANSI_TransitionColorBinary( pacOut->m_cs,
-                                            pacIn->m_cs,
-                                            &nTransition,
-                                            pacOut->m_bNoBleed);
-            nFieldNeeded += nTransition;
-
-            // If we find that there is no room for any of the TEXT,
-            // then we're done.
-            //
-            // TODO: The visual width test can be done further up to save time.
-            //
-            if (  nFieldAvailable <= nBytes + nFieldNeeded
-               || vwMax < vw + nPoints)
-            {
-                // We have reached the limits of the field.
-                //
-                if (nFieldNeeded < nFieldAvailable)
-                {
-                    // There was enough physical room in the field, but
-                    // we would have exceeded the maximum visual width
-                    // if we used all the text.
-                    //
-                    if (nTransition)
-                    {
-                        // Encode the TEXT color.
-                        //
-                        memcpy(pField, pTransition, nTransition);
-                        pField += nTransition;
-                    }
-
-                    // Place just enough of the TEXT in the field.
-                    //
-                    size_t nTextToAdd = vwMax - vw;
-                    if (nFieldAvailable < nTextToAdd + nFieldNeeded)
-                    {
-                        nTextToAdd = nFieldAvailable - nFieldNeeded;
-                    }
-                    memcpy(pField, pacIn->m_p, nTextToAdd);
-                    pField += nTextToAdd;
-                    pacIn->m_p += nTextToAdd;
-                    pacIn->m_n -= nTextToAdd;
-                    vw += nTextToAdd;
-                    pacOut->m_cs = pacIn->m_cs;
-                }
-                else
-                {
-                    // Was size limit related to the session or the call?
-                    //
-                    pacOut->m_bDone = true;
-                }
-                pacOut->m_n += pField - pacOut->m_p;
-                pacOut->m_nMax -= pField - pacOut->m_p;
-                pacOut->m_p  = pField;
-                pacOut->m_vw += vw;
-                return;
-            }
-
-            if (nTransition)
-            {
-                memcpy(pField, pTransition, nTransition);
-                pField += nTransition;
-                nMax   -= nTransition;
-            }
-            memcpy(pField, pacIn->m_p, nBytes);
-            pField  += nBytes;
-            nMax    -= nBytes;
-            pacIn->m_p += nBytes;
-            pacIn->m_n -= nBytes;
-            vw += nPoints;
-            pacOut->m_cs = pacIn->m_cs;
+            size_t nInBytes = utf8_FirstByte[(unsigned char)*pacIn->m_p];
+            pacIn->m_n -= nInBytes;
+            pacIn->m_p += nInBytes;
         }
         else
         {
-            // Process ANSI
-            //
-            pacIn->m_cs = UpdateColorState(pacIn->m_cs, iCode);
+            do
+            {
+                size_t nCodePointBytes;
+                if (KBA_NEED_TRANSITIONS <= iKnownAvailable)
+                {
+                    // The transitions are easy to figure out and aren't affected by
+                    // visual code points.
+                    //
+                    if (!bKnowTransitions)
+                    {
+                        ANSI_TransitionColorBinary( pacIn->m_cs,
+                                                    pacOut->m_cs,
+                                                    &nTransitionInitial);
+                        ANSI_TransitionColorBinary( pacIn->m_cs,
+                                                    pacOut->m_csFinal,
+                                                    &nTransitionFinal);
+                        bKnowTransitions = true;
+                    }
+                }
+
+                if (KBA_NEED_CODEPOINT == iKnownAvailable)
+                {
+                    nCodePointBytes = utf8_FirstByte[(unsigned char)*pacIn->m_p];
+                    size_t nNeededBytes = nTransitionInitial + nTransitionFinal + nCodePointBytes + 1;
+                    if (  pacOut->m_nMax < nNeededBytes
+                       || pacOut->m_vwMax < pacOut->m_vw)
+                    {
+                        pacOut->m_bDone = true;
+                        break;
+                    }
+
+                    // Emit initial transition.
+                    //
+                    UTF8 *pTransitionInitial = 
+                        ANSI_TransitionColorBinary( pacOut->m_cs,
+                                                    pacIn->m_cs,
+                                                    &nTransitionInitial);
+
+                    if (0 < nTransitionInitial)
+                    {
+                        memcpy((char *)pacOut->m_p, (char *)pTransitionInitial, nTransitionInitial);
+                        pacOut->m_p    += nTransitionInitial;
+                        pacOut->m_n    += nTransitionInitial;
+                        pacOut->m_nMax -= nTransitionInitial;
+                        pacOut->m_cs = pacIn->m_cs;
+                    }
+
+                    // Handle single code point.
+                    //
+                    const UTF8 *p = utf8_NextCodePoint(pacIn->m_p);
+                    iCode = mux_color(p);
+                    pacOut->m_vw++;
+
+                    // Copy visual code point.
+                    //
+                    size_t nBytes = p - pacIn->m_p;
+                    memcpy((char *)pacOut->m_p, (char *)p, nBytes);
+                    pacIn->m_p     += nBytes;
+                    pacIn->m_n     -= nBytes;
+                    pacOut->m_p    += nBytes;
+                    pacOut->m_n    += nBytes;
+                    pacOut->m_nMax -= nBytes;
+                }
+                else if (KBA_ABOVE_MINIMUM == iKnownAvailable)
+                {
+                    // Emit initial transition.
+                    //
+                    UTF8 *pTransitionInitial = 
+                        ANSI_TransitionColorBinary( pacOut->m_cs,
+                                                    pacIn->m_cs,
+                                                    &nTransitionInitial);
+
+                    if (0 < nTransitionInitial)
+                    {
+                        memcpy((char *)pacOut->m_p, (char *)pTransitionInitial, nTransitionInitial);
+                        pacOut->m_p    += nTransitionInitial;
+                        pacOut->m_n    += nTransitionInitial;
+                        pacOut->m_nMax -= nTransitionInitial;
+                        pacOut->m_cs = pacIn->m_cs;
+                    }
+
+                    // Go into a tight loop and recognize code points until a
+                    // color code point is seen, we run out of input, or we
+                    // exhaust our best-case quota of code points.
+                    //
+                    const UTF8 *p = utf8_NextCodePoint(pacIn->m_p);
+                    nMinimumCodePoints--;
+                    pacOut->m_vw++;
+                    while (  '\0' != *p
+                          && 0 < nMinimumCodePoints)
+                    {
+                        iCode = mux_color(p);
+                        if (COLOR_NOTCOLOR != iCode)
+                        {
+                            break;
+                        }
+                        nMinimumCodePoints--;
+                        pacOut->m_vw++;
+                        p = utf8_NextCodePoint(p);
+                    }
+
+                    // Copy run of visual code points.
+                    //
+                    size_t nBytes = p - pacIn->m_p;
+                    memcpy((char *)pacOut->m_p, (char *)pacIn->m_p, nBytes);
+                    pacIn->m_p     += nBytes;
+                    pacIn->m_n     -= nBytes;
+                    pacOut->m_p    += nBytes;
+                    pacOut->m_n    += nBytes;
+                    pacOut->m_nMax -= nBytes;
+
+                    iKnownAvailable = KBA_NEED_TRANSITIONS;
+                }
+                else if (KBA_NEED_TRANSITIONS == iKnownAvailable)
+                {
+                    size_t nNeededBytes = nTransitionInitial + nTransitionFinal + 1;
+                    if (nNeededBytes + UTF8_SIZE4 - 1 < pacOut->m_nMax)
+                    {
+                        size_t nMinimumBytesAvailable = pacOut->m_nMax - nNeededBytes;
+                        nMinimumCodePoints = nMinimumBytesAvailable/UTF8_SIZE4;
+                        if (pacOut->m_vw < pacOut->m_vwMax)
+                        {
+                            size_t vwAvailable = pacOut->m_vwMax - pacOut->m_vw;
+                            if (vwAvailable < nMinimumCodePoints)
+                            {
+                                nMinimumCodePoints = vwAvailable;
+                            }
+                            iKnownAvailable = KBA_ABOVE_MINIMUM;
+                        }
+                        else
+                        {
+                            iKnownAvailable = KBA_NEED_CODEPOINT;
+                        }
+                    }
+                    else
+                    {
+                        iKnownAvailable = KBA_NEED_CODEPOINT;
+                    }
+                }
+            } while (  COLOR_NOTCOLOR == iCode
+                    && '\0' != *pacIn->m_p
+                    && !pacOut->m_bDone);
         }
     }
-    pacOut->m_n += pField - pacOut->m_p;
-    pacOut->m_nMax -= pField - pacOut->m_p;
-    pacOut->m_p  = pField;
-    pacOut->m_vw += vw;
 }
 
 size_t ANSI_String_Finalize
@@ -1893,8 +1954,8 @@ size_t ANSI_String_Finalize
     size_t nTransition = 0;
     UTF8 *pTransition =
         ANSI_TransitionColorBinary( pacOut->m_cs,
-                                    pacOut->m_bNoBleed ? CS_NOBLEED : CS_NORMAL,
-                                    &nTransition, pacOut->m_bNoBleed);
+                                    pacOut->m_csFinal,
+                                    &nTransition);
     if (nTransition)
     {
         memcpy(pField, pTransition, nTransition);
@@ -5382,7 +5443,7 @@ void mux_string::export_TextAnsi
             {
                 pTransition = ANSI_TransitionColorBinary( csPrev,
                                                           m_pcs[nPos],
-                                                          &nTransition, bNoBleed);
+                                                          &nTransition);
                 memcpy(*bufc, pTransition, nTransition * sizeof(pTransition[0]));
                 *bufc += nTransition;
                 csPrev = m_pcs[nPos];
@@ -5393,7 +5454,7 @@ void mux_string::export_TextAnsi
         if (csPrev != csEndGoal)
         {
             pTransition = ANSI_TransitionColorBinary( csPrev, csEndGoal,
-                                                      &nTransition, bNoBleed);
+                                                      &nTransition);
             memcpy(*bufc, pTransition, nTransition * sizeof(pTransition[0]));
             *bufc += nTransition;
         }
@@ -5410,7 +5471,7 @@ void mux_string::export_TextAnsi
         if (csPrev != m_pcs[nPos])
         {
             pTransition = ANSI_TransitionColorBinary( csPrev, m_pcs[nPos],
-                                                      &nTransition, bNoBleed);
+                                                      &nTransition);
         }
         else
         {
@@ -5422,7 +5483,7 @@ void mux_string::export_TextAnsi
                || nTransition)
             {
                 ANSI_TransitionColorBinary( m_pcs[nPos], csEndGoal,
-                                            &nNeededAfter, bNoBleed);
+                                            &nNeededAfter);
                 bNearEnd = true;
             }
             if (nBuffer < (*bufc-buff) + nTransition + 1 + nNeededAfter)
@@ -5442,8 +5503,7 @@ void mux_string::export_TextAnsi
         safe_copy_chr_ascii(m_ach[nPos], buff, bufc, nBuffer);
         nPos++;
     }
-    pTransition = ANSI_TransitionColorBinary( csPrev, csEndGoal,
-                                              &nTransition, bNoBleed);
+    pTransition = ANSI_TransitionColorBinary( csPrev, csEndGoal, &nTransition);
     if (  nTransition
        && (*bufc-buff) + nTransition <= nBuffer)
     {
@@ -5655,12 +5715,12 @@ void mux_string::import(const UTF8 *pStr, size_t nLen)
     size_t iPoint = 0;
     size_t iStr = 0;
     UTF8 *pch = m_ach;
-    while ('\0' == pStr[iStr])
+    while ('\0' != pStr[iStr])
     {
         unsigned int iCode = mux_color(pStr + iStr);
         if (COLOR_NOTCOLOR == iCode)
         {
-            safe_chr_utf8(pStr, m_ach, &pch);
+            safe_chr_utf8(pStr + iStr, m_ach, &pch);
             acsTemp[iPoint++] = cs;
             if (CS_NORMAL != cs)
             {
@@ -5674,6 +5734,7 @@ void mux_string::import(const UTF8 *pStr, size_t nLen)
         iStr += utf8_FirstByte[(unsigned char)pStr[iStr]];
     }
 
+    m_n = iStr;
     if (bColor)
     {
         realloc_m_pcs(m_n);
@@ -5683,7 +5744,6 @@ void mux_string::import(const UTF8 *pStr, size_t nLen)
     {
         realloc_m_pcs(0);
     }
-    m_n = iStr;
     m_ach[m_n] = '\0';
 }
 
