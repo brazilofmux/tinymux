@@ -1449,10 +1449,24 @@ static UTF8 *ANSI_TransitionColorBinary
 (
     ColorState csCurrent,
     ColorState csNext,
-    size_t *nTransition
+    size_t *nTransition,
+    bool bNoBleed = false
 )
 {
     static UTF8 Buffer[ANSI_MAXIMUM_BINARY_TRANSITION_LENGTH+1];
+
+    if (bNoBleed)
+    {
+        if ((csCurrent & CS_FOREGROUND) == CS_FG_DEFAULT)
+        {
+            csCurrent = (csCurrent & ~CS_FOREGROUND) | CS_FG_WHITE;
+        }
+
+        if ((csNext & CS_FOREGROUND) == CS_FG_DEFAULT)
+        {
+            csNext = (csNext & ~CS_FOREGROUND) | CS_FG_WHITE;
+        }
+    }
 
     if (csCurrent == csNext)
     {
@@ -1541,6 +1555,40 @@ static UTF8 *ANSI_TransitionColorBinary
     *p = '\0';
     *nTransition = p - Buffer;
     return Buffer;
+}
+
+// Maximum binary transition to normal is:
+//
+//   COLOR_RESET      "\xEE\x80\x80"
+// + COLOR_FG_WHITE   "\xEE\x88\x87"
+//
+// Each of the two codes is 3 bytes or 6 bytes total.
+//
+#define COLOR_MAXIMUM_BINARY_NORMAL 6
+
+// Generate the minimal color sequence that will transition from one color state
+// to the normal state.
+//
+static const UTF8 *ColorBinaryNormal
+(
+    ColorState csCurrent,
+    size_t *nTransition,
+    bool bNoBleed = false
+)
+{
+    static const UTF8 *aBleed = T(COLOR_RESET);
+    static const UTF8 *aNoBleed = T(COLOR_RESET COLOR_FG_WHITE);
+
+    if (  csCurrent == CS_NORMAL
+       || (  bNoBleed 
+          && csCurrent == CS_NOBLEED))
+    {
+        *nTransition = 0;
+        return T("");
+    }
+
+    *nTransition = (sizeof(COLOR_RESET)-1) + (bNoBleed ? sizeof(COLOR_FG_WHITE)-1 : 0);
+    return bNoBleed ? aNoBleed : aBleed;
 }
 
 // Maximum binary transition length is:
@@ -1655,11 +1703,10 @@ static UTF8 *ANSI_TransitionColorEscape
 void ANSI_String_In_Init
 (
     struct ANSI_In_Context *pacIn,
-    const UTF8 *szString,
-    bool       bNoBleed
+    const UTF8 *szString
 )
 {
-    pacIn->m_cs = bNoBleed ? CS_NOBLEED : CS_NORMAL;
+    pacIn->m_cs = CS_NORMAL;
     pacIn->m_p  = szString;
     pacIn->m_n  = strlen((char *)szString);
 }
@@ -1669,14 +1716,12 @@ void ANSI_String_Out_Init
     struct ANSI_Out_Context *pacOut,
     UTF8  *pField,
     size_t nField,
-    size_t vwMax,
-    bool   bNoBleed
+    size_t vwMax
 )
 {
-    // Current and final ColorState.
+    // Current ColorState.
     //
     pacOut->m_cs       = CS_NORMAL;
-    pacOut->m_csFinal  = bNoBleed ? CS_NOBLEED : CS_NORMAL;
 
     // Physical field definition.
     //
@@ -1762,7 +1807,7 @@ void ANSI_String_Copy
     int    iKnownAvailable = KBA_NEED_TRANSITIONS;
     size_t nMinimumCodePoints;
     size_t nNeededBytes = ANSI_MAXIMUM_BINARY_TRANSITION_LENGTH
-                        + ANSI_MAXIMUM_BINARY_TRANSITION_LENGTH + 1;
+                        + COLOR_MAXIMUM_BINARY_NORMAL + 1;
     if (nNeededBytes + UTF8_SIZE4 - 1 < pacOut->m_nMax)
     {
         size_t nMinimumBytesAvailable = pacOut->m_nMax - nNeededBytes;
@@ -1811,9 +1856,7 @@ void ANSI_String_Copy
                         ANSI_TransitionColorBinary( pacIn->m_cs,
                                                     pacOut->m_cs,
                                                     &nTransitionInitial);
-                        ANSI_TransitionColorBinary( pacIn->m_cs,
-                                                    pacOut->m_csFinal,
-                                                    &nTransitionFinal);
+                        ColorBinaryNormal(pacIn->m_cs, &nTransitionFinal);
                         bKnowTransitions = true;
                     }
                 }
@@ -1952,10 +1995,7 @@ size_t ANSI_String_Finalize
 {
     UTF8 *pField = pacOut->m_p;
     size_t nTransition = 0;
-    UTF8 *pTransition =
-        ANSI_TransitionColorBinary( pacOut->m_cs,
-                                    pacOut->m_csFinal,
-                                    &nTransition);
+    const UTF8 *pTransition = ColorBinaryNormal(pacOut->m_cs, &nTransition);
     if (nTransition)
     {
         memcpy(pField, pTransition, nTransition);
@@ -1978,8 +2018,7 @@ size_t ANSI_TruncateToField
     size_t nField,
     UTF8 *pField0,
     size_t maxVisualWidth,
-    size_t *pnVisualWidth,
-    bool bNoBleed
+    size_t *pnVisualWidth
 )
 {
     if (!szString)
@@ -1989,8 +2028,8 @@ size_t ANSI_TruncateToField
     }
     struct ANSI_In_Context aic;
     struct ANSI_Out_Context aoc;
-    ANSI_String_In_Init(&aic, szString, bNoBleed);
-    ANSI_String_Out_Init(&aoc, pField0, nField, maxVisualWidth, bNoBleed);
+    ANSI_String_In_Init(&aic, szString);
+    ANSI_String_Out_Init(&aoc, pField0, nField, maxVisualWidth);
     ANSI_String_Copy(&aoc, &aic);
     return ANSI_String_Finalize(&aoc, pnVisualWidth);
 }
@@ -2011,19 +2050,8 @@ UTF8 *ANSI_TruncateAndPad_sbuf(const UTF8 *pString, size_t nMaxVisualWidth, UTF8
     return pStringModified;
 }
 
-UTF8 *normal_to_white(const UTF8 *szString)
-{
-    static UTF8 Buffer[LBUF_SIZE];
-    size_t nVisualWidth;
-    ANSI_TruncateToField( szString,
-                          sizeof(Buffer),
-                          Buffer,
-                          sizeof(Buffer),
-                          &nVisualWidth,
-                          true
-                        );
-    return Buffer;
-}
+#define COLOR_CODE_NORMAL       1
+#define COLOR_CODE_FG_WHITE     13
 
 static struct
 {
@@ -2072,6 +2100,15 @@ UTF8 *convert_color(const UTF8 *pString, bool bNoBleed)
             pBuffer += aColorSequences[iCode].nAnsi;
         }
         pString = utf8_NextCodePoint(pString);
+
+        if (  bNoBleed
+           && COLOR_CODE_NORMAL == iCode
+           && COLOR_CODE_FG_WHITE != mux_color(pString))
+        {
+            memcpy(pBuffer, aColorSequences[COLOR_CODE_FG_WHITE].pAnsi,
+                    aColorSequences[COLOR_CODE_FG_WHITE].nAnsi);
+            pBuffer += aColorSequences[COLOR_CODE_FG_WHITE].nAnsi;
+        }
     }
     *pBuffer = '\0';
     return aBuffer;
@@ -2206,7 +2243,7 @@ UTF8 *translate_string(const UTF8 *pString, bool bConvert)
     ColorState csCurrent = CS_NOBLEED;
     ColorState csPrevious = csCurrent;
 
-    const UTF8*MU_EscapeChar = (bConvert)? MU_EscapeConvert : MU_EscapeNoConvert;
+    const UTF8 *MU_EscapeChar = (bConvert)? MU_EscapeConvert : MU_EscapeNoConvert;
     while ('\0' != *pString)
     {
         unsigned int iCode = mux_color(pString);
@@ -5358,12 +5395,12 @@ long mux_string::export_Long(void) const
  *
  * \param buff     Pointer to beginning of lbuf.
  * \param bufc     Pointer to current position. Defaults to NULL.
- * \param nStart   String position to begin copying from. Defaults to 0.
+ * \param iStart   String position to begin copying from. Defaults to 0.
  * \param nLen     Number of chars to copy. Defaults to LBUF_SIZE.
  * \param nBuffer  Size of buffer we're outputting into.
  *                 Defaults to LBUF_SIZE-1.
- * \param iEndGoal Which output mode to use: normal or nobleed.
- *                 Defaults to ANSI_ENDGOAL_NORMAL.
+ * \param bNoBleed Which output mode to use: normal or nobleed.
+ *                 Defaults to false (normal).
  * \return         None.
  */
 
@@ -5371,7 +5408,7 @@ void mux_string::export_TextAnsi
 (
     UTF8 *buff,
     UTF8 **bufc,
-    size_t nStart,
+    size_t iStart,
     size_t nLen,
     size_t nBuffer,
     bool bNoBleed
@@ -5397,13 +5434,13 @@ void mux_string::export_TextAnsi
     {
         return;
     }
-    if (  m_n <= nStart
+    if (  m_n <= iStart
        || 0 == nLen)
     {
         **bufc = '\0';
         return;
     }
-    size_t  nLeft   = (m_n - nStart);
+    size_t  nLeft   = (m_n - iStart);
     if (nLeft < nLen)
     {
         nLen = nLeft;
@@ -5424,37 +5461,37 @@ void mux_string::export_TextAnsi
     //
     if (0 == m_ncs)
     {
-        export_TextPlain(buff, bufc, nStart, nLen, nBuffer);
+        export_TextPlain(buff, bufc, iStart, nLen, nBuffer);
         return;
     }
-    size_t nPos = nStart;
+    size_t iPos = iStart;
     bool bPlentyOfRoom =
-        (nAvail > (nLen + 1) * (ANSI_MAXIMUM_BINARY_TRANSITION_LENGTH + 1));
-    ColorState csEndGoal = bNoBleed ? CS_NOBLEED : CS_NORMAL;
-    size_t nTransition = 0;
-    UTF8 *pTransition = NULL;
+        (nAvail > nLen * (ANSI_MAXIMUM_BINARY_TRANSITION_LENGTH + 1) + UTF8_SIZE4 + COLOR_MAXIMUM_BINARY_NORMAL);
+    size_t nTransition = 0, nChar = 0;
+    const UTF8 *pTransition = NULL;
+    ColorState csPrev = CS_NORMAL;
 
     if (bPlentyOfRoom)
     {
-        ColorState csPrev = csEndGoal;
-        while (nPos < nStart + nLen)
+        while (iPos < iStart + nLen)
         {
-            if (csPrev != m_pcs[nPos])
+            if (csPrev != m_pcs[iPos])
             {
                 pTransition = ANSI_TransitionColorBinary( csPrev,
-                                                          m_pcs[nPos],
-                                                          &nTransition);
+                                                          m_pcs[iPos],
+                                                          &nTransition,
+                                                          bNoBleed);
                 memcpy(*bufc, pTransition, nTransition * sizeof(pTransition[0]));
                 *bufc += nTransition;
-                csPrev = m_pcs[nPos];
+                csPrev = m_pcs[iPos];
             }
-            safe_copy_chr_ascii(m_ach[nPos], buff, bufc, nBuffer);
-            nPos++;
+            nChar = utf8_FirstByte[m_ach[iPos]];
+            memcpy(*bufc, m_ach + iPos, nChar * sizeof(m_ach[0]));
+            iPos += nChar;
         }
-        if (csPrev != csEndGoal)
+        if (csPrev != CS_NORMAL)
         {
-            pTransition = ANSI_TransitionColorBinary( csPrev, csEndGoal,
-                                                      &nTransition);
+            pTransition = ColorBinaryNormal(csPrev, &nTransition, bNoBleed);
             memcpy(*bufc, pTransition, nTransition * sizeof(pTransition[0]));
             *bufc += nTransition;
         }
@@ -5464,29 +5501,28 @@ void mux_string::export_TextAnsi
 
     // There's a chance we might hit the end of the buffer. Do it the hard way.
     size_t nNeededAfter = 0;
-    ColorState csPrev = csEndGoal;
     bool bNearEnd = false;
-    while (nPos < nStart + nLen)
+    while (iPos < iStart + nLen)
     {
-        if (csPrev != m_pcs[nPos])
+        if (csPrev != m_pcs[iPos])
         {
-            pTransition = ANSI_TransitionColorBinary( csPrev, m_pcs[nPos],
-                                                      &nTransition);
+            pTransition = ANSI_TransitionColorBinary( csPrev, m_pcs[iPos],
+                                                      &nTransition, bNoBleed);
         }
         else
         {
             nTransition = 0;
         }
-        if (nBuffer < (*bufc-buff) + nTransition + 1 + ANSI_MAXIMUM_BINARY_TRANSITION_LENGTH)
+        nChar = utf8_FirstByte[m_ach[iPos]];
+        if (nBuffer < (*bufc-buff) + nTransition + nChar + COLOR_MAXIMUM_BINARY_NORMAL)
         {
             if (  !bNearEnd
                || nTransition)
             {
-                ANSI_TransitionColorBinary( m_pcs[nPos], csEndGoal,
-                                            &nNeededAfter);
+                ColorBinaryNormal(m_pcs[iPos], &nNeededAfter, bNoBleed);
                 bNearEnd = true;
             }
-            if (nBuffer < (*bufc-buff) + nTransition + 1 + nNeededAfter)
+            if (nBuffer < (*bufc-buff) + nTransition + nChar + nNeededAfter)
             {
                 // There isn't enough room to add the color sequence,
                 // its character, and still get back to normal. Stop here.
@@ -5498,12 +5534,12 @@ void mux_string::export_TextAnsi
         {
             memcpy(*bufc, pTransition, nTransition * sizeof(pTransition[0]));
             *bufc += nTransition;
-            csPrev = m_pcs[nPos];
+            csPrev = m_pcs[iPos];
         }
-        safe_copy_chr_ascii(m_ach[nPos], buff, bufc, nBuffer);
-        nPos++;
+        memcpy(*bufc, m_ach + iPos, nChar * sizeof(m_ach[0]));
+        iPos += nChar;
     }
-    pTransition = ANSI_TransitionColorBinary( csPrev, csEndGoal, &nTransition);
+    pTransition = ColorBinaryNormal(csPrev, &nTransition, bNoBleed);
     if (  nTransition
        && (*bufc-buff) + nTransition <= nBuffer)
     {

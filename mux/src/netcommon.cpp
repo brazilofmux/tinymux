@@ -518,10 +518,8 @@ void queue_string(DESC *d, const mux_string &s)
     if (  (d->flags & DS_CONNECTED)
        && Ansi(d->player))
     {
-        // TODO: Passing NoBleed into both functions seems unnecessary?
-        //
         s.export_TextAnsi(Buffer, NULL, 0, s.length(), LBUF_SIZE-1, NoBleed(d->player));
-        p = convert_color(Buffer, NoBleed(d->player));
+        p = convert_color(Buffer);
     }
     else
     {

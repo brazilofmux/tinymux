@@ -341,7 +341,6 @@ struct ANSI_In_Context
 struct ANSI_Out_Context
 {
     ColorState      m_cs;
-    ColorState      m_csFinal;
     bool            m_bDone;
     UTF8           *m_p;
     size_t          m_n;
@@ -350,15 +349,14 @@ struct ANSI_Out_Context
     size_t          m_vwMax;
 };
 
-void ANSI_String_In_Init(struct ANSI_In_Context *pacIn, const UTF8 *szString, bool bNoBleed = false);
-void ANSI_String_Out_Init(struct ANSI_Out_Context *pacOut, UTF8 *pField, size_t nField, size_t vwMax, bool bNoBleed = false);
+void ANSI_String_In_Init(struct ANSI_In_Context *pacIn, const UTF8 *szString);
+void ANSI_String_Out_Init(struct ANSI_Out_Context *pacOut, UTF8 *pField, size_t nField, size_t vwMax);
 void ANSI_String_Copy(struct ANSI_Out_Context *pacOut, struct ANSI_In_Context *pacIn);
 size_t ANSI_String_Finalize(struct ANSI_Out_Context *pacOut, size_t *pnVisualWidth);
 UTF8 *ANSI_TruncateAndPad_sbuf(const UTF8 *pString, size_t nMaxVisualWidth, UTF8 fill = ' ');
-size_t ANSI_TruncateToField(const UTF8 *szString, size_t nField, UTF8 *pField, size_t maxVisual, size_t *nVisualWidth, bool bNoBleed = false);
-UTF8 *convert_color(const UTF8 *pString, bool bNoBleed);
+size_t ANSI_TruncateToField(const UTF8 *szString, size_t nField, UTF8 *pField, size_t maxVisual, size_t *nVisualWidth);
+UTF8 *convert_color(const UTF8 *pString, bool bNoBleed = false);
 UTF8 *strip_color(const UTF8 *pString, size_t *pnLength = 0, size_t *pnPoints = 0);
-UTF8 *normal_to_white(const UTF8 *);
 UTF8 *munge_space(const UTF8 *);
 UTF8 *trim_spaces(const UTF8 *);
 UTF8 *grabto(UTF8 **, UTF8);
