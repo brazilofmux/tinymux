@@ -1790,14 +1790,8 @@ void ANSI_String_Copy
     // respectively.
     //
     bool   bKnowTransitions = false;
-    size_t nTransitionInitial;
-    size_t nTransitionFinal;
-
-    // Knowledge of how much physical room we have for code points.
-    //
-    bool   bKnowPhysical = false;
-    size_t nPhysicalAvailable;
-    size_t nPhysicalNeeded;
+    size_t nTransitionInitial = 0;
+    size_t nTransitionFinal = 0;
 
     // Increasing knowledge of how far away we are from the constraints.
     //
@@ -1805,7 +1799,7 @@ void ANSI_String_Copy
     // final (which is pessimisitic) plus a '\0' terminator.
     //
     int    iKnownAvailable = KBA_NEED_TRANSITIONS;
-    size_t nMinimumCodePoints;
+    size_t nMinimumCodePoints = 0;
     size_t nNeededBytes = ANSI_MAXIMUM_BINARY_TRANSITION_LENGTH
                         + COLOR_MAXIMUM_BINARY_NORMAL + 1;
     if (nNeededBytes + UTF8_SIZE4 - 1 < pacOut->m_nMax)
