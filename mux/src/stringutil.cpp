@@ -3081,6 +3081,15 @@ UTF8 *ConvertToUTF8(const char *p, size_t *pn)
                         }
                         p = r + 1;
                     }
+
+                    // Eat trailing terminator.
+                    //
+                    p = q + 1;
+                }
+                else
+                {
+                    // Skip to end of mal-formed ANSI sequence.
+                    //
                     p = q;
                 }
             }
