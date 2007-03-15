@@ -1753,7 +1753,7 @@ void ANSI_String_Copy
     bool   bKnowPhysical = false;
     size_t nPhysicalAvailable;
     size_t nPhysicalNeeded;
-    
+
     // Increasing knowledge of how far away we are from the constraints.
     //
     // We assume the longest possible transitions for both initial and
@@ -1831,7 +1831,7 @@ void ANSI_String_Copy
 
                     // Emit initial transition.
                     //
-                    UTF8 *pTransitionInitial = 
+                    UTF8 *pTransitionInitial =
                         ANSI_TransitionColorBinary( pacOut->m_cs,
                                                     pacIn->m_cs,
                                                     &nTransitionInitial);
@@ -1865,7 +1865,7 @@ void ANSI_String_Copy
                 {
                     // Emit initial transition.
                     //
-                    UTF8 *pTransitionInitial = 
+                    UTF8 *pTransitionInitial =
                         ANSI_TransitionColorBinary( pacOut->m_cs,
                                                     pacIn->m_cs,
                                                     &nTransitionInitial);
