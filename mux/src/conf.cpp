@@ -36,6 +36,9 @@ typedef struct confparm
 //
 CONFDATA mudconf;
 STATEDATA mudstate;
+int cf_set(UTF8 *, UTF8 *, dbref);
+CF_HAND(cf_cf_access);
+
 
 // ---------------------------------------------------------------------------
 // cf_init: Initialize mudconf to default values.

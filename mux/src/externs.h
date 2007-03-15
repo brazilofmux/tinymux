@@ -24,7 +24,6 @@ void CleanUpSQLSlaveSocket(void);
 void CleanUpSQLSlaveProcess(void);
 #endif // QUERY_SLAVE
 #ifdef WIN32
-extern HANDLE CompletionPort;    // IOs are queued up on this port
 extern CRITICAL_SECTION csDescriptorList;
 #endif // WIN32
 
@@ -45,8 +44,6 @@ void cf_init(void);
 void cf_list(dbref, UTF8 *, UTF8 **);
 void cf_display(dbref, UTF8 *, UTF8 *, UTF8 **);
 void list_cf_access(dbref);
-int cf_set(UTF8 *, UTF8 *, dbref);
-CF_HAND(cf_cf_access);
 CF_HAND(cf_access);
 CF_HAND(cf_cmd_alias);
 CF_HAND(cf_acmd_access);
@@ -179,8 +176,6 @@ void save_global_regs(reg_ref *preserve[]);
 void save_and_clear_global_regs(reg_ref *preserve[]);
 void restore_global_regs(reg_ref *preserve[]);
 
-UTF8 **PushPointers(int nNeeded);
-void PopPointers(UTF8 **p, int nNeeded);
 reg_ref **PushRegisters(int nNeeded);
 void PopRegisters(reg_ref **p, int nNeeded);
 
@@ -363,7 +358,6 @@ bool bCanLockAttr(dbref executor, dbref target, ATTR *tattr);
 /* From set.cpp */
 bool parse_attrib(dbref, UTF8 *, dbref *, ATTR **);
 bool parse_attrib_wild(dbref, UTF8 *, dbref *, bool, bool, bool);
-void edit_string(UTF8 *, UTF8 **, UTF8 *, UTF8 *);
 dbref match_controlled_handler(dbref player, const UTF8 *name, bool bQuiet);
 #define match_controlled(player,name)       match_controlled_handler(player, name, false)
 #define match_controlled_quiet(player,name) match_controlled_handler(player, name, true)
