@@ -1587,7 +1587,7 @@ static const UTF8 *ColorBinaryNormal
         return T("");
     }
 
-    *nTransition = (sizeof(COLOR_RESET)-1) + (bNoBleed ? sizeof(COLOR_FG_WHITE)-1 : 0);
+    *nTransition = bNoBleed ? sizeof(aNoBleed)-1 : sizeof(aBleed)-1;
     return bNoBleed ? aNoBleed : aBleed;
 }
 
@@ -5486,7 +5486,12 @@ void mux_string::export_TextAnsi
                 csPrev = m_pcs[iPos];
             }
             nChar = utf8_FirstByte[m_ach[iPos]];
+            if (UTF8_CONTINUE <= nChar)
+            {
+                nChar = 1;
+            }
             memcpy(*bufc, m_ach + iPos, nChar * sizeof(m_ach[0]));
+            *bufc += nChar;
             iPos += nChar;
         }
         if (csPrev != CS_NORMAL)
@@ -5537,6 +5542,7 @@ void mux_string::export_TextAnsi
             csPrev = m_pcs[iPos];
         }
         memcpy(*bufc, m_ach + iPos, nChar * sizeof(m_ach[0]));
+        *bufc += nChar;
         iPos += nChar;
     }
     pTransition = ColorBinaryNormal(csPrev, &nTransition, bNoBleed);
@@ -5751,7 +5757,7 @@ void mux_string::import(const UTF8 *pStr, size_t nLen)
     size_t iPoint = 0;
     size_t iStr = 0;
     UTF8 *pch = m_ach;
-    while ('\0' != pStr[iStr])
+    while (iStr < nLen)
     {
         unsigned int iCode = mux_color(pStr + iStr);
         if (COLOR_NOTCOLOR == iCode)
@@ -5770,7 +5776,7 @@ void mux_string::import(const UTF8 *pStr, size_t nLen)
         iStr += utf8_FirstByte[(unsigned char)pStr[iStr]];
     }
 
-    m_n = iStr;
+    m_n = iPoint;
     if (bColor)
     {
         realloc_m_pcs(m_n);
