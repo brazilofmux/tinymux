@@ -1363,205 +1363,69 @@ const char *ConvertToAscii(const UTF8 *pString)
     return buffer;
 }
 
-// TODO: This doesn't work with UTF8 and should be removed.
-//
-// ANSI_lex - This function parses a string and returns two token types.
-// The type identifies the token type of length nLengthToken0. nLengthToken1
-// may also be present and is a token of the -other- type.
-//
-int ANSI_lex(size_t nString, const UTF8 *pString, size_t *nLengthToken0, size_t *nLengthToken1)
+#define CS_FOREGROUND ((UINT16)0x000F)
+#define CS_FG_BLACK   ((UINT16)0x0000)
+#define CS_FG_RED     ((UINT16)0x0001)
+#define CS_FG_GREEN   ((UINT16)0x0002)
+#define CS_FG_YELLOW  ((UINT16)0x0003)
+#define CS_FG_BLUE    ((UINT16)0x0004)
+#define CS_FG_MAGENTA ((UINT16)0x0005)
+#define CS_FG_CYAN    ((UINT16)0x0006)
+#define CS_FG_WHITE   ((UINT16)0x0007)
+#define CS_FG_DEFAULT ((UINT16)0x0008)
+#define CS_BACKGROUND ((UINT16)0x00F0)
+#define CS_BG_BLACK   ((UINT16)0x0000)
+#define CS_BG_RED     ((UINT16)0x0010)
+#define CS_BG_GREEN   ((UINT16)0x0020)
+#define CS_BG_YELLOW  ((UINT16)0x0030)
+#define CS_BG_BLUE    ((UINT16)0x0040)
+#define CS_BG_MAGENTA ((UINT16)0x0050)
+#define CS_BG_CYAN    ((UINT16)0x0060)
+#define CS_BG_WHITE   ((UINT16)0x0070)
+#define CS_BG_DEFAULT ((UINT16)0x0080)
+#define CS_INTENSE    ((UINT16)0x0100)
+#define CS_INVERSE    ((UINT16)0x0200)
+#define CS_UNDERLINE  ((UINT16)0x0400)
+#define CS_BLINK      ((UINT16)0x0800)
+#define CS_ATTRS      ((UINT16)0x0F00)
+#define CS_ALLBITS    ((UINT16)0xFFFF)
+
+#define CS_NORMAL     (CS_FG_DEFAULT|CS_BG_DEFAULT)
+#define CS_NOBLEED    (CS_FG_WHITE|CS_BG_DEFAULT)
+
+static struct
 {
-    *nLengthToken0 = 0;
-    *nLengthToken1 = 0;
-
-    const UTF8 *p = pString;
-
-    for (;;)
-    {
-        // Look for an ESC_CHAR
-        //
-        p = (UTF8 *)strchr((char *)p, ESC_CHAR);
-        if (!p)
-        {
-            // This is the most common case by far.
-            //
-            *nLengthToken0 = nString;
-            return TOKEN_TEXT_ANSI;
-        }
-
-        // We have an ESC_CHAR. Let's look at the next character.
-        //
-        if (p[1] != '[')
-        {
-            // Could be a '\0' or another non-'[' character.
-            // Move the pointer to position ourselves over it.
-            // And continue looking for an ESC_CHAR.
-            //
-            p = p + 1;
-            continue;
-        }
-
-        // We found the beginning of an ANSI sequence.
-        // Find the terminating character.
-        //
-        const UTF8 *q = p+2;
-        while (ANSI_TokenTerminatorTable[(unsigned char)*q] == 0)
-        {
-            q++;
-        }
-        if (q[0] == '\0')
-        {
-            // There was no good terminator. Treat everything like text.
-            // Also, we are at the end of the string, so just return.
-            //
-            *nLengthToken0 = q - pString;
-            return TOKEN_TEXT_ANSI;
-        }
-        else
-        {
-            // We found an ANSI sequence.
-            //
-            if (p == pString)
-            {
-                // The ANSI sequence started it.
-                //
-                *nLengthToken0 = q - pString + 1;
-                return TOKEN_ANSI;
-            }
-            else
-            {
-                // We have TEXT followed by an ANSI sequence.
-                //
-                *nLengthToken0 = p - pString;
-                *nLengthToken1 = q - p + 1;
-                return TOKEN_TEXT_ANSI;
-            }
-        }
-    }
-}
-
-#define ANSI_COLOR_INDEX_BLACK     0
-#define ANSI_COLOR_INDEX_RED       1
-#define ANSI_COLOR_INDEX_GREEN     2
-#define ANSI_COLOR_INDEX_YELLOW    3
-#define ANSI_COLOR_INDEX_BLUE      4
-#define ANSI_COLOR_INDEX_MAGENTA   5
-#define ANSI_COLOR_INDEX_CYAN      6
-#define ANSI_COLOR_INDEX_WHITE     7
-#define ANSI_COLOR_INDEX_DEFAULT   8
-
-static const ANSI_ColorState csNormal =
-    {true,  false, false, false, false, ANSI_COLOR_INDEX_DEFAULT, ANSI_COLOR_INDEX_DEFAULT};
-
-static const ANSI_ColorState csNoBleed =
-    {false, false, false, false, false, ANSI_COLOR_INDEX_WHITE,   ANSI_COLOR_INDEX_DEFAULT};
-
-static void ANSI_Parse_m(ANSI_ColorState *pacsCurrent, size_t nANSI, const UTF8 *pANSI)
+    ColorState csClear;
+    ColorState csSet;
+} csMasks[COLOR_LAST_CODE+1] =
 {
-    // If the last character isn't an 'm', then it's an ANSI sequence we
-    // don't support, yet. TODO: There should be a ANSI_Parse() function
-    // that calls into this one -only- if there's an 'm', but since 'm'
-    // is the only command this game understands at the moment, it's easier
-    // to put the test here.
-    //
-    if (pANSI[nANSI-1] != 'm')
-    {
-        return;
-    }
+    { 0, 0 },                         //  0 (Not used)
+    { CS_ALLBITS,    CS_NORMAL     }, //  1 (COLOR_RESET)
+    { 0,             CS_INTENSE    }, //  2 (COLOR_INTENSE)
+    { 0,             CS_UNDERLINE  }, //  3 (COLOR_UNDERLINE)
+    { 0,             CS_BLINK      }, //  4 (COLOR_BLINK)
+    { 0,             CS_INVERSE    }, //  5 (COLOR_INVERSE)
+    { CS_FOREGROUND, CS_FG_BLACK   }, //  6 (COLOR_FG_BLACK)
+    { CS_FOREGROUND, CS_FG_RED     }, //  7 (COLOR_FG_RED)
+    { CS_FOREGROUND, CS_FG_GREEN   }, //  8 (COLOR_FG_GREEN)
+    { CS_FOREGROUND, CS_FG_YELLOW  }, //  9 (COLOR_FG_YELLOW)
+    { CS_FOREGROUND, CS_FG_BLUE    }, // 10 (COLOR_FG_BLUE)
+    { CS_FOREGROUND, CS_FG_MAGENTA }, // 11 (COLOR_FG_MAGENTA)
+    { CS_FOREGROUND, CS_FG_CYAN    }, // 12 (COLOR_FG_CYAN)
+    { CS_FOREGROUND, CS_FG_WHITE   }, // 13 (COLOR_FG_WHITE)
+    { CS_BACKGROUND, CS_BG_BLACK   }, // 14 (COLOR_BG_BLACK)
+    { CS_BACKGROUND, CS_BG_RED     }, // 15 (COLOR_BG_RED)
+    { CS_BACKGROUND, CS_BG_GREEN   }, // 16 (COLOR_BG_GREEN)
+    { CS_BACKGROUND, CS_BG_YELLOW  }, // 17 (COLOR_BG_YELLOW)
+    { CS_BACKGROUND, CS_BG_BLUE    }, // 18 (COLOR_BG_BLUE)
+    { CS_BACKGROUND, CS_BG_MAGENTA }, // 19 (COLOR_BG_MAGENTA)
+    { CS_BACKGROUND, CS_BG_CYAN    }, // 20 (COLOR_BG_CYAN)
+    { CS_BACKGROUND, CS_BG_WHITE   }, // 21 (COLOR_BG_WHITE)
+};
 
-    // Process entire string and update the current color state structure.
-    //
-    while (nANSI)
-    {
-        // Process the next attribute phrase (terminated by ';' or 'm'
-        // typically).
-        //
-        const UTF8 *p = pANSI;
-        while (mux_isdigit(*p))
-        {
-            p++;
-        }
-        size_t nLen = p - pANSI + 1;
-        if (p[0] == 'm' || p[0] == ';')
-        {
-            // We have an attribute.
-            //
-            if (nLen == 2)
-            {
-                int iCode = pANSI[0] - '0';
-                switch (iCode)
-                {
-                case 0:
-                    // Normal.
-                    //
-                    *pacsCurrent = csNormal;
-                    break;
-
-                case 1:
-                    // High Intensity.
-                    //
-                    pacsCurrent->bHighlite = true;
-                    pacsCurrent->bNormal = false;
-                    break;
-
-                case 2:
-                    // Low Intensity.
-                    //
-                    pacsCurrent->bHighlite = false;
-                    pacsCurrent->bNormal = false;
-                    break;
-
-                case 4:
-                    // Underline.
-                    //
-                    pacsCurrent->bUnder = true;
-                    pacsCurrent->bNormal = false;
-                    break;
-
-                case 5:
-                    // Blinking.
-                    //
-                    pacsCurrent->bBlink = true;
-                    pacsCurrent->bNormal = false;
-                    break;
-
-                case 7:
-                    // Reverse Video
-                    //
-                    pacsCurrent->bInverse = true;
-                    pacsCurrent->bNormal = false;
-                    break;
-                }
-            }
-            else if (nLen == 3)
-            {
-                int iCode0 = pANSI[0] - '0';
-                int iCode1 = pANSI[1] - '0';
-                if (iCode0 == 3)
-                {
-                    // Foreground Color
-                    //
-                    if (iCode1 <= 7)
-                    {
-                        pacsCurrent->iForeground = iCode1;
-                        pacsCurrent->bNormal = false;
-                    }
-                }
-                else if (iCode0 == 4)
-                {
-                    // Background Color
-                    //
-                    if (iCode1 <= 7)
-                    {
-                        pacsCurrent->iBackground = iCode1;
-                        pacsCurrent->bNormal = false;
-                    }
-                }
-            }
-        }
-        pANSI += nLen;
-        nANSI -= nLen;
-    }
+inline ColorState UpdateColorState(ColorState cs, int iColorCode)
+{
+    return (cs & csMasks[iColorCode].csClear) | csMasks[iColorCode].csSet;
 }
 
 // Maximum binary transition length is:
@@ -1583,72 +1447,73 @@ static void ANSI_Parse_m(ANSI_ColorState *pacsCurrent, size_t nANSI, const UTF8 
 //
 static UTF8 *ANSI_TransitionColorBinary
 (
-    const ANSI_ColorState *acsCurrent,
-    const ANSI_ColorState *pcsNext,
+    ColorState csCurrent,
+    ColorState csNext,
     size_t *nTransition,
     bool bNoBleed
 )
 {
     static UTF8 Buffer[ANSI_MAXIMUM_BINARY_TRANSITION_LENGTH+1];
 
-    if (memcmp(acsCurrent, pcsNext, sizeof(ANSI_ColorState)) == 0)
+    if (csCurrent == csNext)
     {
         *nTransition = 0;
         Buffer[0] = '\0';
         return Buffer;
     }
-    ANSI_ColorState tmp = *acsCurrent;
     UTF8 *p = Buffer;
 
-    if (pcsNext->bNormal)
+    if (  bNoBleed
+       && CS_NORMAL == csNext)
     {
         // With NOBLEED, we can't stay in the normal mode. We must eventually
-        // be on a white foreground.
+        // use a white foreground.
         //
-        pcsNext = bNoBleed ? &csNoBleed : &csNormal;
+        csNext = CS_NOBLEED;
     }
 
     // Do we need to go through the normal state?
     //
-    if (  tmp.bHighlite && !pcsNext->bHighlite
-       || tmp.bUnder    && !pcsNext->bUnder
-       || tmp.bBlink    && !pcsNext->bBlink
-       || tmp.bInverse  && !pcsNext->bInverse
-       || (  tmp.iBackground != ANSI_COLOR_INDEX_DEFAULT
-          && pcsNext->iBackground == ANSI_COLOR_INDEX_DEFAULT)
-       || (  tmp.iForeground != ANSI_COLOR_INDEX_DEFAULT
-          && pcsNext->iForeground == ANSI_COLOR_INDEX_DEFAULT))
+    if (  ((csCurrent & ~csNext) & CS_ATTRS)
+       || (  (csNext & CS_BACKGROUND) == CS_BG_DEFAULT
+          && (csCurrent & CS_BACKGROUND) != CS_BG_DEFAULT)
+       || (  (csNext & CS_FOREGROUND) == CS_FG_DEFAULT
+          && (csCurrent & CS_FOREGROUND) != CS_FG_DEFAULT))
     {
         memcpy(p, COLOR_RESET, sizeof(COLOR_RESET)-1);
         p += sizeof(COLOR_RESET)-1;
-        tmp = csNormal;
+        csCurrent = CS_NORMAL;
     }
 
-    if (tmp.bHighlite != pcsNext->bHighlite)
+    UINT16 tmp = csCurrent ^ csNext;
+    if (CS_ATTRS & tmp)
     {
-        memcpy(p, COLOR_INTENSE, sizeof(COLOR_INTENSE)-1);
-        p += sizeof(COLOR_INTENSE)-1;
+        if (CS_INTENSE & tmp)
+        {
+            memcpy(p, COLOR_INTENSE, sizeof(COLOR_INTENSE)-1);
+            p += sizeof(COLOR_INTENSE)-1;
+        }
+
+        if (CS_UNDERLINE & tmp)
+        {
+            memcpy(p, COLOR_UNDERLINE, sizeof(COLOR_UNDERLINE)-1);
+            p += sizeof(COLOR_UNDERLINE)-1;
+        }
+
+        if (CS_BLINK & tmp)
+        {
+            memcpy(p, COLOR_BLINK, sizeof(COLOR_BLINK)-1);
+            p += sizeof(COLOR_BLINK)-1;
+        }
+
+        if (CS_INVERSE & tmp)
+        {
+            memcpy(p, COLOR_INVERSE, sizeof(COLOR_INVERSE)-1);
+            p += sizeof(COLOR_INVERSE)-1;
+        }
     }
 
-    if (tmp.bUnder != pcsNext->bUnder)
-    {
-        memcpy(p, COLOR_UNDERLINE, sizeof(COLOR_UNDERLINE)-1);
-        p += sizeof(COLOR_UNDERLINE)-1;
-    }
-
-    if (tmp.bBlink != pcsNext->bBlink)
-    {
-        memcpy(p, COLOR_BLINK, sizeof(COLOR_BLINK)-1);
-        p += sizeof(COLOR_BLINK)-1;
-    }
-
-    if (tmp.bInverse != pcsNext->bInverse)
-    {
-        memcpy(p, COLOR_INVERSE, sizeof(COLOR_INVERSE)-1);
-        p += sizeof(COLOR_INVERSE)-1;
-    }
-
-    if (tmp.iForeground != pcsNext->iForeground)
+    if (CS_FOREGROUND & tmp)
     {
         UTF8 *aForegrounds[8] =
         {
@@ -1661,12 +1526,12 @@ static UTF8 *ANSI_TransitionColorBinary
             (UTF8 *)COLOR_FG_CYAN,
             (UTF8 *)COLOR_FG_WHITE
         };
-
-        memcpy(p, aForegrounds[pcsNext->iForeground], sizeof(COLOR_FG_BLACK)-1);
+        int iForeground = (CS_FOREGROUND & csCurrent);
+        memcpy(p, aForegrounds[iForeground], sizeof(COLOR_FG_BLACK)-1);
         p += sizeof(COLOR_FG_BLACK)-1;
     }
 
-    if (tmp.iBackground != pcsNext->iBackground)
+    if (CS_BACKGROUND & tmp)
     {
         UTF8 *aBackgrounds[8] =
         {
@@ -1679,8 +1544,8 @@ static UTF8 *ANSI_TransitionColorBinary
             (UTF8 *)COLOR_BG_CYAN,
             (UTF8 *)COLOR_BG_WHITE
         };
-
-        memcpy(p, aBackgrounds[pcsNext->iBackground], sizeof(COLOR_BG_BLACK)-1);
+        int iBackground = (CS_BACKGROUND & csCurrent) >> 4;
+        memcpy(p, aBackgrounds[iBackground], sizeof(COLOR_BG_BLACK)-1);
         p += sizeof(COLOR_BG_BLACK)-1;
     }
     *p = '\0';
@@ -1707,8 +1572,8 @@ static UTF8 *ANSI_TransitionColorBinary
 //
 static UTF8 *ANSI_TransitionColorEscape
 (
-    ANSI_ColorState *acsCurrent,
-    ANSI_ColorState *acsNext,
+    ColorState csCurrent,
+    ColorState csNext,
     int *nTransition
 )
 {
@@ -1716,73 +1581,102 @@ static UTF8 *ANSI_TransitionColorEscape
     static const UTF8 cForegroundColors[9] = "xrgybmcw";
     static const UTF8 cBackgroundColors[9] = "XRGYBMCW";
 
-    if (memcmp(acsCurrent, acsNext, sizeof(ANSI_ColorState)) == 0)
+    if (csCurrent == csNext)
     {
         *nTransition = 0;
         Buffer[0] = '\0';
         return Buffer;
     }
-    ANSI_ColorState tmp = *acsCurrent;
     int  i = 0;
 
     // Do we need to go through the normal state?
     //
-    if (  tmp.bBlink    && !acsNext->bBlink
-       || tmp.bHighlite && !acsNext->bHighlite
-       || tmp.bInverse  && !acsNext->bInverse
-       || (  tmp.iBackground != ANSI_COLOR_INDEX_DEFAULT
-          && acsNext->iBackground == ANSI_COLOR_INDEX_DEFAULT)
-       || (  tmp.iForeground != ANSI_COLOR_INDEX_DEFAULT
-          && acsNext->iForeground == ANSI_COLOR_INDEX_DEFAULT))
+    if (  ((csCurrent & ~csNext) & CS_ATTRS)
+       || (  (csNext & CS_BACKGROUND) == CS_BG_DEFAULT
+          && (csCurrent & CS_BACKGROUND) != CS_BG_DEFAULT)
+       || (  (csNext & CS_FOREGROUND) == CS_FG_DEFAULT
+          && (csCurrent & CS_FOREGROUND) != CS_FG_DEFAULT))
     {
         Buffer[i  ] = '%';
         Buffer[i+1] = 'x';
         Buffer[i+2] = 'n';
         i = i + 3;
-        tmp = csNormal;
+        csCurrent = CS_NORMAL;
     }
-    if (tmp.bHighlite != acsNext->bHighlite)
+
+    UINT16 tmp = csCurrent ^ csNext;
+    if (CS_ATTRS & tmp)
     {
+        if (CS_INTENSE & tmp)
+        {
+            Buffer[i  ] = '%';
+            Buffer[i+1] = 'x';
+            Buffer[i+2] = 'h';
+            i = i + 3;
+        }
+
+        if (CS_UNDERLINE & tmp)
+        {
+            Buffer[i  ] = '%';
+            Buffer[i+1] = 'x';
+            Buffer[i+2] = 'u';
+            i = i + 3;
+        }
+
+        if (CS_BLINK & tmp)
+        {
+            Buffer[i  ] = '%';
+            Buffer[i+1] = 'x';
+            Buffer[i+2] = 'f';
+            i = i + 3;
+        }
+
+        if (CS_INVERSE & tmp)
+        {
+            Buffer[i  ] = '%';
+            Buffer[i+1] = 'x';
+            Buffer[i+2] = 'i';
+            i = i + 3;
+        }
+    }
+
+    if (CS_FOREGROUND & tmp)
+    {
+        UTF8 *aForegrounds[8] =
+        {
+            (UTF8 *)COLOR_FG_BLACK,
+            (UTF8 *)COLOR_FG_RED,
+            (UTF8 *)COLOR_FG_GREEN,
+            (UTF8 *)COLOR_FG_YELLOW,
+            (UTF8 *)COLOR_FG_BLUE,
+            (UTF8 *)COLOR_FG_MAGENTA,
+            (UTF8 *)COLOR_FG_CYAN,
+            (UTF8 *)COLOR_FG_WHITE
+        };
+        int iForeground = (CS_FOREGROUND & csCurrent);
         Buffer[i  ] = '%';
         Buffer[i+1] = 'x';
-        Buffer[i+2] = 'h';
+        Buffer[i+2] = cForegroundColors[iForeground];
         i = i + 3;
     }
-    if (tmp.bUnder != acsNext->bUnder)
+
+    if (CS_BACKGROUND & tmp)
     {
+        UTF8 *aBackgrounds[8] =
+        {
+            (UTF8 *)COLOR_BG_BLACK,
+            (UTF8 *)COLOR_BG_RED,
+            (UTF8 *)COLOR_BG_GREEN,
+            (UTF8 *)COLOR_BG_YELLOW,
+            (UTF8 *)COLOR_BG_BLUE,
+            (UTF8 *)COLOR_BG_MAGENTA,
+            (UTF8 *)COLOR_BG_CYAN,
+            (UTF8 *)COLOR_BG_WHITE
+        };
+        int iBackground = (CS_BACKGROUND & csCurrent) >> 4;
         Buffer[i  ] = '%';
         Buffer[i+1] = 'x';
-        Buffer[i+2] = 'u';
-        i = i + 3;
-    }
-    if (tmp.bBlink != acsNext->bBlink)
-    {
-        Buffer[i  ] = '%';
-        Buffer[i+1] = 'x';
-        Buffer[i+2] = 'f';
-        i = i + 3;
-    }
-    if (tmp.bInverse != acsNext->bInverse)
-    {
-        Buffer[i  ] = '%';
-        Buffer[i+1] = 'x';
-        Buffer[i+2] = 'i';
-        i = i + 3;
-    }
-    if (  tmp.iForeground != acsNext->iForeground
-       && acsNext->iForeground < ANSI_COLOR_INDEX_DEFAULT)
-    {
-        Buffer[i  ] = '%';
-        Buffer[i+1] = 'x';
-        Buffer[i+2] = cForegroundColors[acsNext->iForeground];
-        i = i + 3;
-    }
-    if (  tmp.iBackground != acsNext->iBackground
-       && acsNext->iBackground < ANSI_COLOR_INDEX_DEFAULT)
-    {
-        Buffer[i  ] = '%';
-        Buffer[i+1] = 'x';
-        Buffer[i+2] = cBackgroundColors[acsNext->iBackground];
+        Buffer[i+2] = cBackgroundColors[iBackground];
         i = i + 3;
     }
     Buffer[i] = '\0';
@@ -1797,7 +1691,7 @@ void ANSI_String_In_Init
     bool       bNoBleed
 )
 {
-    pacIn->m_cs = bNoBleed ? csNoBleed : csNormal;
+    pacIn->m_cs = bNoBleed ? CS_NOBLEED : CS_NORMAL;
     pacIn->m_p  = szString;
     pacIn->m_n  = strlen((char *)szString);
 }
@@ -1811,7 +1705,7 @@ void ANSI_String_Out_Init
     bool   bNoBleed
 )
 {
-    pacOut->m_cs       = csNormal;
+    pacOut->m_cs       = CS_NORMAL;
     pacOut->m_bDone    = false;
     pacOut->m_bNoBleed = bNoBleed;
     pacOut->m_n        = 0;
@@ -1821,8 +1715,6 @@ void ANSI_String_Out_Init
     pacOut->m_vwMax    = vwMax;
 }
 
-// TODO: Rework comment block.
-//
 // ANSI_String_Copy -- Copy characters into a buffer starting at
 // pField0 with maximum size of nField. Truncate the string if it would
 // overflow the buffer -or- if it would have a visual with of greater
@@ -1850,7 +1742,7 @@ void ANSI_String_Copy
     struct ANSI_In_Context  *pacIn
 )
 {
-    // Check whether we have previous struck the session limits (given
+    // Check whether we have previously struck the session limits (given
     // by ANSI_String_Out_Init() for field size or visual width.
     //
     if (pacOut->m_bDone)
@@ -1870,22 +1762,11 @@ void ANSI_String_Copy
     UTF8 *pField = pacOut->m_p;
     while (pacIn->m_n)
     {
-        size_t nTokenLength0;
-        size_t nTokenLength1;
-        int iType = ANSI_lex(pacIn->m_n, pacIn->m_p, &nTokenLength0,
-            &nTokenLength1);
-
-        if (iType == TOKEN_TEXT_ANSI)
+        int iCode = mux_color(pacIn->m_p);
+        if (COLOR_NOTCOLOR == iCode)
         {
-            // We have a TEXT+[ANSI] phrase. The text length is given
-            // by nTokenLength0, and the ANSI characters that follow
-            // (if present) are of length nTokenLength1.
-            //
-            // Process TEXT part first.
-            //
-            // TODO: If there is a maximum size for the transitions,
-            // and we have gobs of space, don't bother calculating
-            // sizes so carefully. It might be faster
+            size_t nPoints = 1;
+            size_t nBytes = utf8_FirstByte[(unsigned char)*pacIn->m_p];
 
             // nFieldEffective is used to allocate and plan space for
             // the rest of the physical field (given by the current
@@ -1893,35 +1774,33 @@ void ANSI_String_Copy
             //
             size_t nFieldAvailable = nMax - 1; // Leave room for '\0'.
             size_t nFieldNeeded = 0;
-
             size_t nTransitionFinal = 0;
+
             // If we lay down -any- of the TEXT part, we need to make
             // sure we always leave enough room to get back to the
-            // required final ANSI color state.
+            // required final color state.
             //
-            if (memcmp( &(pacIn->m_cs),
-                        pacOut->m_bNoBleed ? &csNoBleed : &csNormal,
-                        sizeof(ANSI_ColorState)) != 0)
+            if (pacIn->m_cs != (pacOut->m_bNoBleed ? CS_NOBLEED: CS_NORMAL))
             {
                 // The color state of the TEXT isn't the final state,
                 // so how much room will the transition back to the
                 // final state take?
                 //
-                ANSI_TransitionColorBinary( &(pacIn->m_cs),
-                                            pacOut->m_bNoBleed ? &csNoBleed : &csNormal,
+                ANSI_TransitionColorBinary( pacIn->m_cs,
+                                            pacOut->m_bNoBleed ? CS_NOBLEED : CS_NORMAL,
                                             &nTransitionFinal,
                                             pacOut->m_bNoBleed);
 
                 nFieldNeeded += nTransitionFinal;
-                }
+            }
 
             // If we lay down -any- of the TEXT part, it needs to be
             // the right color.
             //
             size_t nTransition = 0;
             UTF8 *pTransition =
-                ANSI_TransitionColorBinary( &(pacOut->m_cs),
-                                            &(pacIn->m_cs),
+                ANSI_TransitionColorBinary( pacOut->m_cs,
+                                            pacIn->m_cs,
                                             &nTransition,
                                             pacOut->m_bNoBleed);
             nFieldNeeded += nTransition;
@@ -1931,8 +1810,8 @@ void ANSI_String_Copy
             //
             // TODO: The visual width test can be done further up to save time.
             //
-            if (  nFieldAvailable <= nTokenLength0 + nFieldNeeded
-               || vwMax < vw + nTokenLength0)
+            if (  nFieldAvailable <= nBytes + nFieldNeeded
+               || vwMax < vw + nPoints)
             {
                 // We have reached the limits of the field.
                 //
@@ -1983,30 +1862,19 @@ void ANSI_String_Copy
                 pField += nTransition;
                 nMax   -= nTransition;
             }
-            memcpy(pField, pacIn->m_p, nTokenLength0);
-            pField  += nTokenLength0;
-            nMax    -= nTokenLength0;
-            pacIn->m_p += nTokenLength0;
-            pacIn->m_n -= nTokenLength0;
-            vw += nTokenLength0;
+            memcpy(pField, pacIn->m_p, nBytes);
+            pField  += nBytes;
+            nMax    -= nBytes;
+            pacIn->m_p += nBytes;
+            pacIn->m_n -= nBytes;
+            vw += nPoints;
             pacOut->m_cs = pacIn->m_cs;
-
-            if (nTokenLength1)
-            {
-                // Process ANSI
-                //
-                ANSI_Parse_m(&(pacIn->m_cs), nTokenLength1, pacIn->m_p);
-                pacIn->m_p += nTokenLength1;
-                pacIn->m_n -= nTokenLength1;
-            }
         }
         else
         {
             // Process ANSI
             //
-            ANSI_Parse_m(&(pacIn->m_cs), nTokenLength0, pacIn->m_p);
-            pacIn->m_n -= nTokenLength0;
-            pacIn->m_p += nTokenLength0;
+            pacIn->m_cs = UpdateColorState(pacIn->m_cs, iCode);
         }
     }
     pacOut->m_n += pField - pacOut->m_p;
@@ -2024,8 +1892,8 @@ size_t ANSI_String_Finalize
     UTF8 *pField = pacOut->m_p;
     size_t nTransition = 0;
     UTF8 *pTransition =
-        ANSI_TransitionColorBinary( &(pacOut->m_cs),
-                                    pacOut->m_bNoBleed ? &csNoBleed : &csNormal,
+        ANSI_TransitionColorBinary( pacOut->m_cs,
+                                    pacOut->m_bNoBleed ? CS_NOBLEED : CS_NORMAL,
                                     &nTransition, pacOut->m_bNoBleed);
     if (nTransition)
     {
@@ -2133,7 +2001,7 @@ UTF8 *convert_color(const UTF8 *pString, bool bNoBleed)
     while ('\0' != *pString)
     {
         unsigned int iCode = mux_color(pString);
-        if (COLOR_UNDEFINED == iCode)
+        if (COLOR_NOTCOLOR == iCode)
         {
             utf8_safe_chr(pString, aBuffer, &pBuffer);
         }
@@ -2170,7 +2038,7 @@ UTF8 *strip_color(const UTF8 *pString, size_t *pnBytes, size_t *pnPoints)
     size_t nPoints = 0;
     while ('\0' != *pString)
     {
-        if (COLOR_UNDEFINED == mux_color(pString))
+        if (COLOR_NOTCOLOR == mux_color(pString))
         {
             utf8_safe_chr(pString, aBuffer, &pBuffer);
             nPoints++;
@@ -2263,87 +2131,57 @@ const unsigned char MU_EscapeNoConvert[256] =
 // Convert raw character sequences into MUX substitutions (type = 1)
 // or strips them (type = 0).
 //
-UTF8 *translate_string(const UTF8 *szString, bool bConvert)
+UTF8 *translate_string(const UTF8 *pString, bool bConvert)
 {
     static UTF8 szTranslatedString[LBUF_SIZE];
     UTF8 *pTranslatedString = szTranslatedString;
 
-    const UTF8 *pString = szString;
-    if (!szString)
+    if (!pString)
     {
         *pTranslatedString = '\0';
         return szTranslatedString;
     }
-    size_t nString = strlen((char *)szString);
 
-    ANSI_ColorState csCurrent;
-    ANSI_ColorState csPrevious;
-    csCurrent = csNoBleed;
-    csPrevious = csCurrent;
+    ColorState csCurrent = CS_NOBLEED;
+    ColorState csPrevious = csCurrent;
+
     const UTF8*MU_EscapeChar = (bConvert)? MU_EscapeConvert : MU_EscapeNoConvert;
-    while (nString)
+    while ('\0' != *pString)
     {
-        size_t nTokenLength0;
-        size_t nTokenLength1;
-        int iType = ANSI_lex(nString, pString, &nTokenLength0, &nTokenLength1);
-
-        if (iType == TOKEN_TEXT_ANSI)
+        unsigned int iCode = mux_color(pString);
+        if (COLOR_NOTCOLOR == iCode)
         {
-            // Process TEXT
-            //
             int nTransition = 0;
             if (bConvert)
             {
-                UTF8 *pTransition = ANSI_TransitionColorEscape(&csPrevious, &csCurrent, &nTransition);
+                UTF8 *pTransition = ANSI_TransitionColorEscape(csPrevious, csCurrent, &nTransition);
                 safe_str(pTransition, szTranslatedString, &pTranslatedString);
+                csPrevious = csCurrent;
             }
-            nString -= nTokenLength0;
 
-            while (nTokenLength0--)
+            UTF8 ch = pString[0];
+            unsigned char code = MU_EscapeChar[ch];
+            if (  0 < code
+               && code < NUM_MU_SUBS)
             {
-                UTF8 ch = *pString++;
-                UTF8 code = MU_EscapeChar[ch];
-                if (  0 < code
-                   && code < NUM_MU_SUBS)
+                if (ch == ' ' && pString[0] == ' ')
                 {
-                    // The following can look one ahead off the end of the
-                    // current token (and even at the '\0' at the end of the
-                    // string, but this is acceptable. An extra look will
-                    // always see either ESC from the next ANSI sequence,
-                    // or the '\0' on the end of the string. No harm done.
-                    //
-                    if (ch == ' ' && pString[0] == ' ')
-                    {
-                        code = 5;
-                    }
-                    safe_copy_buf(MU_Substitutes[code].p,
-                        MU_Substitutes[code].len, szTranslatedString,
-                        &pTranslatedString);
+                    code = 5;
                 }
-                else
-                {
-                    safe_chr(ch, szTranslatedString, &pTranslatedString);
-                }
+                safe_copy_buf_ascii(MU_Substitutes[code].p,
+                    MU_Substitutes[code].len, szTranslatedString,
+                    &pTranslatedString);
             }
-            csPrevious = csCurrent;
-
-            if (nTokenLength1)
+            else
             {
-                // Process ANSI
-                //
-                ANSI_Parse_m(&csCurrent, nTokenLength1, pString);
-                pString += nTokenLength1;
-                nString -= nTokenLength1;
+                utf8_safe_chr(pString, szTranslatedString, &pTranslatedString);
             }
         }
         else
         {
-            // Process ANSI
-            //
-            ANSI_Parse_m(&csCurrent, nTokenLength0, pString);
-            nString -= nTokenLength0;
-            pString += nTokenLength0;
+            csCurrent = UpdateColorState(csCurrent, iCode);
         }
+        pString = utf8_NextCodePoint(pString);
     }
     *pTranslatedString = '\0';
     return szTranslatedString;
@@ -2611,7 +2449,7 @@ UTF8 *replace_string(const UTF8 *old, const UTF8 *new0, const UTF8 *s)
             size_t n = p - s;
             if (n)
             {
-                safe_copy_buf(s, n, result, &r);
+                safe_copy_buf_ascii(s, n, result, &r);
                 s += n;
             }
 
@@ -2673,7 +2511,7 @@ UTF8 *replace_tokens
             size_t n = p - s;
             if (n)
             {
-                safe_copy_buf(s, n, result, &r);
+                safe_copy_buf_ascii(s, n, result, &r);
                 s += n;
             }
 
@@ -2835,7 +2673,7 @@ void safe_copy_str_lbuf(const UTF8 *src, UTF8 *buff, UTF8 **bufp)
     *bufp = tp;
 }
 
-size_t safe_copy_buf(const UTF8 *src, size_t nLen, UTF8 *buff, UTF8 **bufc)
+size_t safe_copy_buf_ascii(const UTF8 *src, size_t nLen, UTF8 *buff, UTF8 **bufc)
 {
     size_t left = LBUF_SIZE - (*bufc - buff) - 1;
     if (left < nLen)
@@ -2997,8 +2835,8 @@ UTF32 ConvertFromUTF8(const UTF8 *pString)
     }
 }
 
-// Unlike ANSI_lex, we want to remove mal-formed ESC sequences completely and
-// convert the well-formed ones.
+// We want to remove mal-formed ESC sequences completely and convert the
+// well-formed ones.
 //
 UTF8 *ConvertToUTF8(const char *p, size_t *pn)
 {
@@ -3295,7 +3133,7 @@ void safe_ltoa(long val, UTF8 *buff, UTF8 **bufc)
 {
     static UTF8 temp[I32BUF_SIZE];
     size_t n = mux_ltoa(val, temp);
-    safe_copy_buf(temp, n, buff, bufc);
+    safe_copy_buf_ascii(temp, n, buff, bufc);
 }
 
 size_t mux_i64toa(INT64 val, UTF8 *buf)
@@ -3363,7 +3201,7 @@ void safe_i64toa(INT64 val, UTF8 *buff, UTF8 **bufc)
 {
     static UTF8 temp[I64BUF_SIZE];
     size_t n = mux_i64toa(val, temp);
-    safe_copy_buf(temp, n, buff, bufc);
+    safe_copy_buf_ascii(temp, n, buff, bufc);
 }
 
 const UTF8 TableATOI[16][10] =
@@ -5079,7 +4917,7 @@ void mux_string::append(const mux_string &sStr, size_t nStart, size_t nLen)
         realloc_m_pcs(m_n + nLen);
         for (size_t i = 0; i < m_n; i++)
         {
-            m_pcs[i] = csNormal;
+            m_pcs[i] = CS_NORMAL;
         }
     }
 
@@ -5091,7 +4929,7 @@ void mux_string::append(const mux_string &sStr, size_t nStart, size_t nLen)
     {
         for (size_t i = 0; i < nLen; i++)
         {
-            m_pcs[m_n+i] = csNormal;
+            m_pcs[m_n+i] = CS_NORMAL;
         }
     }
 
@@ -5180,7 +5018,7 @@ void mux_string::append_TextPlain(const UTF8 *pStr)
         realloc_m_pcs(m_n + nLen);
         for (size_t i = 0; i < nLen; i++)
         {
-            m_pcs[m_n+i] = csNormal;
+            m_pcs[m_n+i] = CS_NORMAL;
         }
     }
 
@@ -5211,7 +5049,7 @@ void mux_string::append_TextPlain(const UTF8 *pStr, size_t nLen)
         realloc_m_pcs(m_n + nLen);
         for (size_t i = 0; i < nLen; i++)
         {
-            m_pcs[m_n+i] = csNormal;
+            m_pcs[m_n+i] = CS_NORMAL;
         }
     }
 
@@ -5430,12 +5268,12 @@ LBUF_OFFSET mux_string::export_Char_UTF8(size_t iFirst, UTF8 *pBuffer) const
     return nBytes;
 }
 
-ANSI_ColorState mux_string::export_Color(size_t n) const
+ColorState mux_string::export_Color(size_t n) const
 {
     if (  m_n <= n
        || 0 == m_ncs)
     {
-        return csNormal;
+        return CS_NORMAL;
     }
     return m_pcs[n];
 }
@@ -5531,19 +5369,19 @@ void mux_string::export_TextAnsi
     size_t nPos = nStart;
     bool bPlentyOfRoom =
         (nAvail > (nLen + 1) * (ANSI_MAXIMUM_BINARY_TRANSITION_LENGTH + 1));
-    ANSI_ColorState csEndGoal = bNoBleed ? csNoBleed : csNormal;
+    ColorState csEndGoal = bNoBleed ? CS_NOBLEED : CS_NORMAL;
     size_t nTransition = 0;
     UTF8 *pTransition = NULL;
 
     if (bPlentyOfRoom)
     {
-        ANSI_ColorState csPrev = csEndGoal;
+        ColorState csPrev = csEndGoal;
         while (nPos < nStart + nLen)
         {
-            if (0 != memcmp(&csPrev, &m_pcs[nPos], sizeof(ANSI_ColorState)))
+            if (csPrev != m_pcs[nPos])
             {
-                pTransition = ANSI_TransitionColorBinary( &csPrev,
-                                                          &(m_pcs[nPos]),
+                pTransition = ANSI_TransitionColorBinary( csPrev,
+                                                          m_pcs[nPos],
                                                           &nTransition, bNoBleed);
                 memcpy(*bufc, pTransition, nTransition * sizeof(pTransition[0]));
                 *bufc += nTransition;
@@ -5552,9 +5390,9 @@ void mux_string::export_TextAnsi
             safe_copy_chr_ascii(m_ach[nPos], buff, bufc, nBuffer);
             nPos++;
         }
-        if (0 != memcmp(&csPrev, &csEndGoal, sizeof(ANSI_ColorState)))
+        if (csPrev != csEndGoal)
         {
-            pTransition = ANSI_TransitionColorBinary( &csPrev, &csEndGoal,
+            pTransition = ANSI_TransitionColorBinary( csPrev, csEndGoal,
                                                       &nTransition, bNoBleed);
             memcpy(*bufc, pTransition, nTransition * sizeof(pTransition[0]));
             *bufc += nTransition;
@@ -5565,13 +5403,13 @@ void mux_string::export_TextAnsi
 
     // There's a chance we might hit the end of the buffer. Do it the hard way.
     size_t nNeededAfter = 0;
-    ANSI_ColorState csPrev = csEndGoal;
+    ColorState csPrev = csEndGoal;
     bool bNearEnd = false;
     while (nPos < nStart + nLen)
     {
-        if (0 != memcmp(&csPrev, &(m_pcs[nPos]), sizeof(ANSI_ColorState)))
+        if (csPrev != m_pcs[nPos])
         {
-            pTransition = ANSI_TransitionColorBinary( &csPrev, &(m_pcs[nPos]),
+            pTransition = ANSI_TransitionColorBinary( csPrev, m_pcs[nPos],
                                                       &nTransition, bNoBleed);
         }
         else
@@ -5583,7 +5421,7 @@ void mux_string::export_TextAnsi
             if (  !bNearEnd
                || nTransition)
             {
-                ANSI_TransitionColorBinary( &(m_pcs[nPos]), &csEndGoal,
+                ANSI_TransitionColorBinary( m_pcs[nPos], csEndGoal,
                                             &nNeededAfter, bNoBleed);
                 bNearEnd = true;
             }
@@ -5604,7 +5442,7 @@ void mux_string::export_TextAnsi
         safe_copy_chr_ascii(m_ach[nPos], buff, bufc, nBuffer);
         nPos++;
     }
-    pTransition = ANSI_TransitionColorBinary( &csPrev, &csEndGoal,
+    pTransition = ANSI_TransitionColorBinary( csPrev, csEndGoal,
                                               &nTransition, bNoBleed);
     if (  nTransition
        && (*bufc-buff) + nTransition <= nBuffer)
@@ -5810,49 +5648,32 @@ void mux_string::import(const UTF8 *pStr, size_t nLen)
         nLen = LBUF_SIZE-1;
     }
 
-    size_t nPos = 0;
-    static ANSI_ColorState acsTemp[LBUF_SIZE];
-    ANSI_ColorState cs = csNormal;
-    size_t nAnsiLen = 0;
     bool bColor = false;
+    static ColorState acsTemp[LBUF_SIZE];
+    ColorState cs = CS_NORMAL;
 
-    while (nPos < nLen)
+    size_t iPoint = 0;
+    size_t iStr = 0;
+    UTF8 *pch = m_ach;
+    while ('\0' == pStr[iStr])
     {
-        size_t nTokenLength0;
-        size_t nTokenLength1;
-        int iType = ANSI_lex(nLen - nPos, pStr + nPos,
-                             &nTokenLength0, &nTokenLength1);
-
-        if (iType == TOKEN_TEXT_ANSI)
+        unsigned int iCode = mux_color(pStr + iStr);
+        if (COLOR_NOTCOLOR == iCode)
         {
-            // We always have room for the token since nLen (the total
-            // amount of input to parse) is limited to LBUF_SIZE-1 and we
-            // started this import with m_n = 0.
-            //
-            memcpy(m_ach + m_n, pStr + nPos, nTokenLength0 * sizeof(m_ach[0]));
-            for (size_t i = m_n; i < m_n + nTokenLength0; i++)
+            safe_chr_utf8(pStr, m_ach, &pch);
+            acsTemp[iPoint++] = cs;
+            if (CS_NORMAL != cs)
             {
-                acsTemp[i] = cs;
+                bColor = true;
             }
-
-            m_n += nTokenLength0;
-            nPos += nTokenLength0;
-
-            nAnsiLen = nTokenLength1;
         }
         else
         {
-            // TOKEN_ANSI
-            //
-            nAnsiLen = nTokenLength0;
+            cs = UpdateColorState(cs, iCode);
         }
-        ANSI_Parse_m(&cs, nAnsiLen, pStr+nPos);
-        if (0 != memcmp(&cs, &csNormal, sizeof(cs)))
-        {
-            bColor = true;
-        }
-        nPos += nAnsiLen;
+        iStr += utf8_FirstByte[(unsigned char)pStr[iStr]];
     }
+
     if (bColor)
     {
         realloc_m_pcs(m_n);
@@ -5862,6 +5683,7 @@ void mux_string::import(const UTF8 *pStr, size_t nLen)
     {
         realloc_m_pcs(0);
     }
+    m_n = iStr;
     m_ach[m_n] = '\0';
 }
 
@@ -5881,7 +5703,7 @@ void mux_string::prepend(const UTF8 cChar)
     {
         realloc_m_pcs(1 + nMove);
         memmove(m_pcs + 1, m_pcs, nMove * sizeof(m_pcs[0]));
-        m_pcs[0] = csNormal;
+        m_pcs[0] = CS_NORMAL;
     }
 
     m_n = 1 + nMove;
@@ -5970,11 +5792,11 @@ void mux_string::realloc_m_pcs(size_t ncs)
         ncs |= 0x7;
         ncs++;
 
-        ANSI_ColorState *pcsOld = m_pcs;
+        ColorState *pcsOld = m_pcs;
         m_pcs = NULL;
         try
         {
-            m_pcs = new ANSI_ColorState[ncs];
+            m_pcs = new ColorState[ncs];
         }
         catch (...)
         {
@@ -6040,11 +5862,11 @@ void mux_string::replace_Chars
             realloc_m_pcs(m_n);
             for (i = 0; i < nStart; i++)
             {
-                m_pcs[i] = csNormal;
+                m_pcs[i] = CS_NORMAL;
             }
             for (i = 0; i < nMove; i++)
             {
-                m_pcs[i+nStart+nTo] = csNormal;
+                m_pcs[i+nStart+nTo] = CS_NORMAL;
             }
         }
     }
@@ -6059,7 +5881,7 @@ void mux_string::replace_Chars
     {
         for (i = 0; i < nTo; i++)
         {
-            m_pcs[nStart + i] = csNormal;
+            m_pcs[nStart + i] = CS_NORMAL;
         }
     }
 
@@ -6197,19 +6019,19 @@ void mux_string::set_Char(size_t n, const UTF8 cChar)
     m_ach[n] = cChar;
 }
 
-void mux_string::set_Color(size_t n, ANSI_ColorState csColor)
+void mux_string::set_Color(size_t n, ColorState csColor)
 {
     if (m_n <= n)
     {
         return;
     }
     if (  0 == m_ncs
-       && 0 != memcmp(&csColor, &csNormal, sizeof(csColor)))
+       && csColor != CS_NORMAL)
     {
         realloc_m_pcs(m_n);
         for (LBUF_OFFSET i = 0; i < m_n; i++)
         {
-            m_pcs[i] = csNormal;
+            m_pcs[i] = CS_NORMAL;
         }
     }
     if (0 != m_ncs)

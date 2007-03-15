@@ -4198,7 +4198,7 @@ static FUNCTION(fun_escape)
     mux_string *sStr = new mux_string(fargs[0]);
     size_t nLen = sStr->length();
     UTF8 cChar;
-    ANSI_ColorState csColor;
+    ColorState csColor;
 
     mux_string *sOut = new mux_string;
     size_t iOut = 0;
