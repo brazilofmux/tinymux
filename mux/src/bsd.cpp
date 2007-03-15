@@ -2566,7 +2566,7 @@ void process_output(void *dvoid, int bHandleShutdown)
 {
     DESC *d = (DESC *)dvoid;
 
-    UTF8 *cmdsave = mudstate.debug_cmd;
+    const UTF8 *cmdsave = mudstate.debug_cmd;
     mudstate.debug_cmd = T("< process_output >");
 
     TBLOCK *tb = d->output_head;
