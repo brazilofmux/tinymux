@@ -603,6 +603,44 @@ private:
         return false;
     };
 
+    inline bool cursor_from_point(mux_string_cursor &c, size_t iPoint)
+    {
+        if (iPoint <= m_ncp)
+        {
+            if (m_ncp == m_nutf)
+            {
+                // Special case of ASCII.
+                //
+                c.iutf = iPoint;
+                c.icp = iPoint;
+            }
+            else if (iPoint < m_ncp/2)
+            {
+                // Start from the beginning.
+                //
+                cursor_start(c);
+                while (  c.icp < iPoint
+                      && cursor_next(c))
+                {
+                    ; // Nothing.
+                }
+            }
+            else
+            {
+                // Start from the end.
+                //
+                cursor_end(c);
+                while (  iPoint < c.icp
+                      && cursor_prev(c))
+                {
+                    ; // Nothing.
+                }
+            }
+            return true;
+        }
+        return false;
+    }
+
 #else
 private:
     // DEPRECATED INVARIANT
