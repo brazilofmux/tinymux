@@ -666,6 +666,7 @@ void load_comsystem_V0123(FILE *fp)
             // Get rid of trailing '\n'.
             //
             nChannel--;
+            temp[nChannel] = '\0';
         }
 
         // Convert entire line to UTF-8 including ANSI escapes.
@@ -690,6 +691,7 @@ void load_comsystem_V0123(FILE *fp)
             if (temp[nHeader-1] == '\n')
             {
                 nHeader--;
+                temp[nHeader] = '\0';
             }
 
             // Convert entire line to UTF-8 including ANSI escapes.
@@ -705,7 +707,7 @@ void load_comsystem_V0123(FILE *fp)
                 }
             }
 
-            memcpy(ch->header, temp, nHeader);
+            memcpy(ch->header, pBufferUnicode, nHeader);
             ch->header[nHeader] = '\0';
         }
 
