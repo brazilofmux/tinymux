@@ -39,7 +39,7 @@ extern const unsigned char mux_tolower_latin1[256];
 #define UTF8_CONTINUE  5
 #define UTF8_ILLEGAL   6
 extern const unsigned char utf8_FirstByte[256];
-extern const char *latin1_utf8[256];
+extern const UTF8 *latin1_utf8[256];
 #define latin1_utf8(x) ((const UTF8 *)latin1_utf8[(unsigned char)x])
 
 #define mux_isprint_ascii(x) (mux_isprint_ascii[(unsigned char)(x)])
