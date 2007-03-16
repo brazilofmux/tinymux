@@ -450,7 +450,7 @@ static int get_slave_result(void)
                     token, MAX_STRING, os, MAX_STRING, userid, MAX_STRING) != 5)
 #else
     if (sscanf((char *)ident, "%d , %d : %s : %s : %s", &remote_port, &local_port,
-                    token, os, userid, ) != 5)
+        token, os, userid) != 5)
 #endif
     {
         return 1;
