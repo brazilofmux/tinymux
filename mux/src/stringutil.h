@@ -461,6 +461,46 @@ extern bool ParseFloat(PARSE_FLOAT_RESULT *pfr, const UTF8 *str, bool bStrict = 
 class mux_string
 {
 private:
+#ifdef NEW_MUX_STRING
+    // PROPOSED INVARIANT (2007-MAR-16)
+    //
+    // m_nutf, m_ncs, m_autf, m_ncs, and m_pcs work together as follows:
+    //
+    // m_nutf is always between 0 and LBUF_SIZE-1 inclusively.  The first
+    // m_nutf bytes of m_atuf[] contain the non-color UTF-8-encoded code
+    // points.  In addition to this size, m_autf[] is terminated with '\0' at
+    // m_autf[m_nutf].  This is intentionally redundant.
+    //
+    // m_ncp is between 0 and LBUF_SIZE-1 inclusively and represents the
+    // number of non-color UTF-8-encoded code points stored in m_autf[].
+    // For our purposes, m_ncp does not include the terminating '\0' even
+    // though technically, '\0' is a UTF-8 code point.
+    //
+    // If color is associated with the above code points, m_pcs will point
+    // to an array of ColorStates, otherwise, it is NULL.  When m_pcs is NULL,
+    // it is equivalent to every code point having CS_NORMAL color.  Each
+    // color state corresponds with a UTF-8 code point in m_autf[].  There is
+    // no guaranteed association between a position in m_autf[] and a position
+    // in m_pcs because UTF-8 code points are variable length.
+    //
+    // Not all ColorStates in m_pcs may be used. m_ncs is between 0 and
+    // LBUF_SIZE-1 inclusively and represents how many ColorStates are
+    // allocated and available for use.  m_ncp is therefore always less than
+    // or equal to m_ncs.
+    //
+    // To recap, m_nutf has units of bytes while m_ncp and
+    // m_ncs are in units of code points.
+    //
+    size_t      m_nutf;
+    UTF8        m_autf[LBUF_SIZE];
+    size_t      m_ncp;
+    size_t      m_ncs;
+    ColorState *m_pcs;
+
+#else
+
+    // DEPRECATED INVARIANT
+    //
     // m_n, m_ach, m_ncs, and m_pcs work together as follows:
     //
     // m_n is always between 0 and LBUF_SIZE-1 inclusively.  The first m_n
@@ -480,6 +520,7 @@ private:
     size_t          m_ncs;
     ColorState     *m_pcs;
 
+#endif // NEW_MUX_STRING
     void realloc_m_pcs(size_t ncs);
 
 public:
