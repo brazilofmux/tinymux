@@ -4888,6 +4888,27 @@ UTF8 *linewrap_desc(UTF8 *str)
 
 #endif // FIRANMUX
 
+#ifdef NEW_MUX_STRING
+
+/*! \brief Constructs mux_string object.
+ *
+ * This constructor puts the mux_string object into an initial, reasonable,
+ * and empty state.
+ *
+ * \return         None.
+ */
+
+mux_string::mux_string(void)
+{
+    m_nutf = 0;
+    m_autf[0] = '\0';
+    m_ncp = 0;
+    m_ncs = 0;
+    m_pcs = NULL;
+}
+
+#else
+
 /*! \brief Constructs mux_string object.
  *
  * This constructor puts the mux_string object into an initial, reasonable,
@@ -4903,6 +4924,8 @@ mux_string::mux_string(void)
     m_ncs = 0;
     m_pcs = NULL;
 }
+
+#endif // NEW_MUX_STRING
 
 /*! \brief Constructs mux_string object.
  *
