@@ -2582,7 +2582,7 @@ Related Topics: @name.
     > @moniker object=99 [ansi(hr,Red)] Balloons
     Ansi string entered for 99 Red Balloons of '99 Red Balloons'.
 
-  Related Topics: accent(), ansi(), chr(), moniker(), @name, NOACCENT, ord(),
+  Related Topics: accent(), ansi(), chr(), moniker(), @name, ASCII, ord(),
                   stripaccents(), and stripansi().
 
 & @MOVE
@@ -4111,7 +4111,7 @@ ACCENT() (continued)
     > think accent(Khazad ai-menu!, Khaz^d ai-m^nu!)
     Khaz(a-with-^)d ai-m(e-with-^)nu!
 
-  Related Topics: NOACCENT, chr(), ord(), stripaccents().
+  Related Topics: ASCII, chr(), ord(), stripaccents().
 
 & ACOS()
 ACOS()
@@ -4443,6 +4443,21 @@ ART()
     You say, "an"
 
   Related Topics: article_rule.
+
+& ASCII
+ASCII
+
+  FLAG: ASCII(~)
+
+  When set on a player, it forces the client character set in all sessions to
+  be 7-bit ASCII.  All ISO 8859-1 and UTF-8 characters are then translated and
+  approximated with 7-bit ASCII characters.  Any character which cannot be
+  approximated are shown with a single '?'.
+
+  The default is for each client to negotiate its character set ability on a
+  per session basis.
+
+  Related Topics: stripaccents(), chr(), ord(), UNICODE.
 
 & ASIN()
 ASIN()
@@ -6724,7 +6739,8 @@ FLAG LIST
     p - PUPPET     |   q - TERSE      |   r - ROBOT      |   s - SAFE
     t - TRANSPARENT|   u - SUSPECT    |   v - VERBOSE    |   w - STAFF
     x - SLAVE      |   $ - SITEMON    |   z - CONTROL_OK |   ? - HEAD
-    - - NOBLEED    |   | - VACATION   |   ~ - NOACCENTS  |   ( - HTML
+    - - NOBLEED    |   | - VACATION   |   ~ - ASCII      |   ( - HTML
+                   |                  |       UNICODE    |           
   ------------------------------------------------------------------------
 
   (*) Note that these 'flags' are really types.  Also notice that THING
@@ -9739,8 +9755,8 @@ MONIKER()
   the accented/colorized name must match the normal name or the normal NAME
   attribute is returned instead of the decorated one.
 
-  Related Topics: @name, ansi(), @moniker, chr(), ord(), NOACCENT,
-                  stripaccent(), and stripansi().
+  Related Topics: @name, ansi(), @moniker, chr(), ord(), ASCII,
+                  stripaccent(), stripansi(), UNICODE.
 
 & MONITOR
 MONITOR
@@ -10014,18 +10030,6 @@ NEXT()
   that the object is in.  Otherwise, it returns a '#-1' string.
 
   Related Topics:
-
-& NOACCENTS
-NOACCENTS
-
-  FLAG: NOACCENTS(~)
-
-  When set on a player, it will disable a player from seeing the accent marks
-  above certain letters. The default is for the accent marks to be shown.
-
-  This flag has no associated letter.
-
-  Related Topics: stripaccents(), chr(), ord().
 
 & NOBLEED
 NOBLEED
@@ -13393,6 +13397,20 @@ UNFINDABLE
   in the room) cannot be found by loc()/room().
 
   Related Topics:
+
+& UNICODE
+UNICODE
+
+  FLAG: UNICODE(~)
+
+  When set on a player, it forces the client character set in all sessions to
+  be UTF-8.  This necessarily affects the encoding of bytes to the client.
+
+  The default is for each client to negotiate its character set ability on a
+  per session basis, but some clients which support UTF-8 do not support the
+  auto negotiation of it.
+
+  Related Topics: accent(), stripaccents(), chr(), ord(), ASCII.
 
 & UNINSPECTED
 UNINSPECTED
