@@ -480,37 +480,37 @@ public:
         m_point = point;
     };
 
-    inline bool operator <(const mux_cursor &a)
+    inline bool operator <(const mux_cursor &a) const
     {
         return m_byte < a.m_byte;
     };
 
-    inline bool operator >(const mux_cursor &a)
+    inline bool operator >(const mux_cursor &a) const
     {
         return m_byte > a.m_byte;
     };
 
-    inline bool operator <=(const mux_cursor &a)
+    inline bool operator <=(const mux_cursor &a) const
     {
         return m_byte <= a.m_byte;
     };
 
-    inline bool operator >=(const mux_cursor &a)
+    inline bool operator >=(const mux_cursor &a) const
     {
         return m_byte >= a.m_byte;
     };
 
-    inline bool operator ==(const mux_cursor &a)
+    inline bool operator ==(const mux_cursor &a) const
     {
         return (m_byte == a.m_byte) && (m_point == a.m_point);
     };
 
-    inline bool operator !=(const mux_cursor &a)
+    inline bool operator !=(const mux_cursor &a) const
     {
         return (m_byte != a.m_byte) || (m_point != a.m_point);
     };
 
-    inline mux_cursor operator -(const mux_cursor &a)
+    inline mux_cursor operator -(const mux_cursor &a) const
     {
         mux_cursor b;
         if (  a.m_byte  < m_byte
@@ -527,14 +527,25 @@ public:
         return b;
     };
 
-    inline mux_cursor operator +(const mux_cursor &a)
+    inline mux_cursor operator +(const mux_cursor &a) const
     {
         mux_cursor b;
         b.m_byte  = m_byte  + a.m_byte;
         b.m_point = m_point + a.m_point;
         return b;
     };
+
+    inline void operator +=(const mux_cursor &a)
+    {
+        m_byte  = m_byte + a.m_byte;
+        m_point = m_point + a.m_point;
+    };
 };
+
+static const mux_cursor CursorMin = {0,0};
+static const mux_cursor CursorMax = {LBUF_SIZE, LBUF_SIZE};
+
+#undef NEW_MUX_STRING
 
 class mux_string
 {
@@ -571,123 +582,10 @@ class mux_string
     // of code points.
     //
 private:
-    size_t      m_nutf;
+    mux_cursor  m_iLast;
     UTF8        m_autf[LBUF_SIZE];
-    size_t      m_ncp;
     size_t      m_ncs;
     ColorState *m_pcs;
-
-    // mux_string_cursor c;
-    // cursor_start(c);
-    // while (cursor_next(c))
-    // {
-    // }
-    //
-    inline void cursor_start(mux_cursor &c)
-    {
-        c.m_byte  = 0;
-        c.m_point = 0;
-    }
-
-    inline bool cursor_next(mux_cursor &c)
-    {
-        if ('\0' != m_autf[c.m_byte])
-        {
-#ifdef NEW_MUX_STRING_PARANOID
-            size_t n = utf8_FirstByte[m_autf[c.m_byte]];
-            mux_assert(n < UTF8_CONTINUE);
-            while (n--)
-            {
-                c.m_byte++;
-                mux_assert(UTF8_CONTINUE == utf8_FirstByte[m_autf[c.m_byte]]);
-            }
-            mux_assert(0 <= c.m_point && c.m_point < m_ncp);
-#else
-            c.m_byte += utf8_FirstByte[m_autf[c.m_byte]];
-#endif // NEW_MUX_STRING_PARANOID
-            c.m_point++;
-            return true;
-        }
-        return false;
-    };
-
-    // mux_cursor c;
-    // cursor_end(c);
-    // while (cursor_prev(c))
-    // {
-    // }
-    //
-    inline void cursor_end(mux_cursor &c)
-    {
-        c.m_byte  = m_nutf;
-        c.m_point = m_ncp;
-    }
-
-    inline bool cursor_prev(mux_cursor &c)
-    {
-        if (0 < c.m_byte)
-        {
-#ifdef NEW_MUX_STRING_PARANOID
-            size_t n = 1;
-            while (UTF8_CONTINUE == utf8_FirstByte[m_autf[c.m_byte - n]])
-            {
-                n++;
-                mux_assert(0 < c.m_byte - n);
-            }
-            mux_assert(utf8_FirstByte[m_autf[c.m_byte - n]] < UTF8_CONTINUE);
-            c.m_byte -= n;
-            mux_assert(0 < c.m_byte && c.m_byte <= m_ncp);
-#else
-            c.m_byte--;
-            while (UTF8_CONTINUE == utf8_FirstByte[m_autf[c.m_byte]])
-            {
-                c.m_byte--;
-            }
-#endif // NEW_MUX_STRING_PARANOID
-            c.m_point--;
-            return true;
-        }
-        return false;
-    };
-
-    inline bool cursor_from_point(mux_cursor &c, size_t iPoint)
-    {
-        if (iPoint <= m_ncp)
-        {
-            if (m_ncp == m_nutf)
-            {
-                // Special case of ASCII.
-                //
-                c.m_byte  = iPoint;
-                c.m_point = iPoint;
-            }
-            else if (iPoint < m_ncp/2)
-            {
-                // Start from the beginning.
-                //
-                cursor_start(c);
-                while (  c.m_point < iPoint
-                      && cursor_next(c))
-                {
-                    ; // Nothing.
-                }
-            }
-            else
-            {
-                // Start from the end.
-                //
-                cursor_end(c);
-                while (  iPoint < c.m_point
-                      && cursor_prev(c))
-                {
-                    ; // Nothing.
-                }
-            }
-            return true;
-        }
-        return false;
-    }
-
 #else
 private:
     // DEPRECATED INVARIANT
@@ -742,6 +640,16 @@ public:
     double export_Float(bool bStrict = true) const;
     INT64 export_I64(void) const;
     long export_Long(void) const;
+#ifdef NEW_MUX_STRING
+    LBUF_OFFSET export_TextAnsi
+    (
+        UTF8 *pBuffer,
+        mux_cursor iStart = CursorMin,
+        mux_cursor iEnd   = CursorMax,
+        size_t nMaxBytesMax = (LBUF_SIZE-1),
+        bool bNoBleed = false
+    ) const;
+#else
     void export_TextAnsi
     (
         UTF8 *buff,
@@ -751,6 +659,7 @@ public:
         size_t nBuffer = (LBUF_SIZE-1),
         bool bNoBleed = false
     ) const;
+#endif
     void export_TextPlain
     (
         UTF8 *buff,
@@ -762,9 +671,16 @@ public:
     void import(dbref num);
     void import(INT64 iInt);
     void import(long lLong);
+#ifdef NEW_MUX_STRING
+    void import(const mux_string &sStr, mux_cursor iStart = CursorMin);
+    void import(const UTF8 *pStr);
+    void import(const UTF8 *pStr, size_t nLen);
+    mux_cursor length_cursor(void) const;
+#else
     void import(const mux_string &sStr, size_t nStart = 0);
     void import(const UTF8 *pStr);
     void import(const UTF8 *pStr, size_t nLen);
+#endif
     size_t length(void) const;
     void prepend(dbref num);
     void prepend(INT64 iInt);
@@ -772,6 +688,22 @@ public:
     void prepend(const mux_string &sStr);
     void prepend(const UTF8 *pStr);
     void prepend(const UTF8 *pStr, size_t nLen);
+#ifdef NEW_MUX_STRING
+    void replace_Chars(const mux_string &pTo, mux_cursor iStart, LBUF_OFFSET nLen);
+    void reverse(void);
+    bool search
+    (
+        const UTF8 *pPattern,
+        mux_cursor *nPos = NULL,
+        mux_cursor nStart = CursorMin
+    ) const;
+    bool search
+    (
+        const mux_string &sPattern,
+        mux_cursor *nPos = NULL,
+        mux_cursor nStart = CursorMin
+    ) const;
+#else
     void replace_Chars(const mux_string &pTo, size_t nStart, size_t nLen);
     void reverse(void);
     bool search
@@ -786,6 +718,7 @@ public:
         size_t *nPos = NULL,
         size_t nStart = 0
     ) const;
+#endif // NEW_MUX_STRING
     void set_Char(size_t n, const UTF8 cChar);
     void set_Color(size_t n, ColorState csColor);
     void strip
@@ -816,7 +749,11 @@ public:
     void trim(const UTF8 ch = ' ', bool bLeft = true, bool bRight = true);
     void trim(const UTF8 *p, bool bLeft = true, bool bRight = true);
     void trim(const UTF8 *p, size_t n, bool bLeft = true, bool bRight = true);
+#ifdef NEW_MUX_STRING
+    void truncate(mux_cursor iEnd);
+#else
     void truncate(size_t nLen);
+#endif // NEW_MUX_STRING
 
     static void * operator new(size_t size)
     {
@@ -833,14 +770,152 @@ public:
     }
 
 #ifdef NEW_MUX_STRING
-#else
-    UTF8 operator [](size_t i) const
+    // mux_string_cursor c;
+    // cursor_start(c);
+    // while (cursor_next(c))
+    // {
+    // }
+    //
+    inline void cursor_start(mux_cursor &c) const
     {
-        if (m_n <= i)
+        c.m_byte  = 0;
+        c.m_point = 0;
+    }
+
+    inline bool cursor_next(mux_cursor &c) const
+    {
+        if ('\0' != m_autf[c.m_byte])
         {
-            return '\0';
+#ifdef NEW_MUX_STRING_PARANOID
+            size_t n = utf8_FirstByte[m_autf[c.m_byte]];
+            mux_assert(n < UTF8_CONTINUE);
+            while (n--)
+            {
+                c.m_byte++;
+                mux_assert(UTF8_CONTINUE == utf8_FirstByte[m_autf[c.m_byte]]);
+            }
+            mux_assert(0 <= c.m_point && c.m_point < m_ncp);
+#else
+            c.m_byte = (LBUF_OFFSET)(c.m_byte + utf8_FirstByte[m_autf[c.m_byte]]);
+#endif // NEW_MUX_STRING_PARANOID
+            c.m_point++;
+            return true;
         }
-        return m_ach[i];
+        return false;
+    };
+
+    // mux_cursor c;
+    // cursor_end(c);
+    // while (cursor_prev(c))
+    // {
+    // }
+    //
+    inline void cursor_end(mux_cursor &c) const
+    {
+        c = m_iLast;
+    }
+
+    inline bool cursor_prev(mux_cursor &c) const
+    {
+        if (0 < c.m_byte)
+        {
+#ifdef NEW_MUX_STRING_PARANOID
+            size_t n = 1;
+            while (UTF8_CONTINUE == utf8_FirstByte[m_autf[c.m_byte - n]])
+            {
+                n++;
+                mux_assert(0 < c.m_byte - n);
+            }
+            mux_assert(utf8_FirstByte[m_autf[c.m_byte - n]] < UTF8_CONTINUE);
+            c.m_byte -= n;
+            mux_assert(0 < c.m_byte && c.m_byte <= m_ncp);
+#else
+            c.m_byte--;
+            while (UTF8_CONTINUE == utf8_FirstByte[m_autf[c.m_byte]])
+            {
+                c.m_byte--;
+            }
+#endif // NEW_MUX_STRING_PARANOID
+            c.m_point--;
+            return true;
+        }
+        return false;
+    };
+
+    inline bool cursor_from_point(mux_cursor &c, LBUF_OFFSET iPoint) const
+    {
+        if (iPoint <= m_iLast.m_point)
+        {
+            if (m_iLast.m_point == m_iLast.m_byte)
+            {
+                // Special case of ASCII.
+                //
+                c.m_byte  = iPoint;
+                c.m_point = iPoint;
+            }
+            else if (iPoint < m_iLast.m_point/2)
+            {
+                // Start from the beginning.
+                //
+                cursor_start(c);
+                while (  c.m_point < iPoint
+                      && cursor_next(c))
+                {
+                    ; // Nothing.
+                }
+            }
+            else
+            {
+                // Start from the end.
+                //
+                cursor_end(c);
+                while (  iPoint < c.m_point
+                      && cursor_prev(c))
+                {
+                    ; // Nothing.
+                }
+            }
+            return true;
+        }
+        return false;
+    }
+
+    inline bool cursor_from_byte(mux_cursor &c, LBUF_OFFSET iByte) const
+    {
+        if (iByte <= m_iLast.m_byte)
+        {
+            if (m_iLast.m_point == m_iLast.m_byte)
+            {
+                // Special case of ASCII.
+                //
+                c.m_byte  = iByte;
+                c.m_point = iByte;
+            }
+            else if (iByte < m_iLast.m_byte/2)
+            {
+                // Start from the beginning.
+                //
+                cursor_start(c);
+                while (  c.m_byte < iByte
+                      && cursor_next(c))
+                {
+                    ; // Nothing.
+                }
+            }
+            else
+            {
+                // Start from the end.
+                //
+                cursor_end(c);
+                while (  iByte < c.m_byte
+                      && cursor_prev(c))
+                {
+                    ; // Nothing.
+                }
+            }
+            return true;
+        }
+        return false;
     }
 #endif // NEW_MUX_STRING
 

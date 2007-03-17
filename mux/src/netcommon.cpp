@@ -134,7 +134,12 @@ void raw_notify_html(dbref player, const mux_string &sMsg)
     if (  mudstate.inpipe
        && player == mudstate.poutobj)
     {
+#ifdef NEW_MUX_STRING
+        mudstate.poutbufc += sMsg.export_TextAnsi( mudstate.poutbufc, CursorMin,
+                                CursorMax, mudstate.poutnew + LBUF_SIZE - mudstate.poutbufc);
+#else
         sMsg.export_TextAnsi(mudstate.poutnew, &mudstate.poutbufc);
+#endif // NEW_MUX_STRING
         return;
     }
     if (  !Connected(player)
@@ -193,7 +198,12 @@ void raw_notify(dbref player, const mux_string &sMsg)
     if (  mudstate.inpipe
        && player == mudstate.poutobj)
     {
+#ifdef NEW_MUX_STRING
+        mudstate.poutbufc += sMsg.export_TextAnsi( mudstate.poutbufc, CursorMin,
+                                CursorMax, mudstate.poutnew + LBUF_SIZE - mudstate.poutbufc);
+#else
         sMsg.export_TextAnsi(mudstate.poutnew, &mudstate.poutbufc);
+#endif // NEW_MUX_STRING
         safe_str(T("\r\n"), mudstate.poutnew, &mudstate.poutbufc);
         return;
     }
@@ -518,7 +528,11 @@ void queue_string(DESC *d, const mux_string &s)
     if (  (d->flags & DS_CONNECTED)
        && Ansi(d->player))
     {
+#ifdef NEW_MUX_STRING
+        s.export_TextAnsi(Buffer, CursorMin, CursorMax, LBUF_SIZE-1, NoBleed(d->player));
+#else
         s.export_TextAnsi(Buffer, NULL, 0, s.length(), LBUF_SIZE-1, NoBleed(d->player));
+#endif // NEW_MUX_STRING
         p = convert_color(Buffer);
     }
     else
