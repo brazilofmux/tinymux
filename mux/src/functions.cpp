@@ -8658,40 +8658,29 @@ static UTF8 *expand_tabs(const UTF8 *str)
     if (str)
     {
         unsigned int n = 0;
-        bool ansi = false;
 
         for (unsigned int i = 0; str[i]; i++)
         {
-            switch (str[i])
+            if (utf8_FirstByte[str[i]] < UTF8_CONTINUE)
             {
-            case '\t':
-                safe_fill(tbuf1, &bp, ' ', 8 - n % 8);
-                n = 0;
-                continue;
-            case '\r':
-                // FALL THROUGH
-            case '\n':
-                n = 0;
-                break;
-            case ESC_CHAR:
-                ansi = true;
-                break;
-            case ANSI_ATTR_CMD:
-                if (ansi)
+                switch (str[i])
                 {
-                    ansi = false;
-                }
-                else
-                {
-                    n++;
-                }
-                break;
-            case BEEP_CHAR:
-                break;
-            default:
-                if (!ansi)
-                {
-                    n++;
+                case '\t':
+                    safe_fill(tbuf1, &bp, ' ', 8 - n % 8);
+                    n = 0;
+                    continue;
+                case '\r':
+                    // FALL THROUGH
+                case '\n':
+                    n = 0;
+                    break;
+                case BEEP_CHAR:
+                    break;
+                default:
+                    if (mux_isprint(str + i))
+                    {
+                        n++;
+                    }
                 }
             }
             safe_chr(str[i], tbuf1, &bp);
@@ -8701,6 +8690,70 @@ static UTF8 *expand_tabs(const UTF8 *str)
     return tbuf1;
 }
 
+#ifdef NEW_MUX_STRING
+static mux_cursor wraplen(UTF8 *str, const LBUF_OFFSET nWidth, bool &newline)
+{
+    mux_cursor nStr;
+    utf8_strlen(str, nStr);
+    newline = false;
+    mux_cursor i = CursorMin;
+    if (nStr.m_point <= nWidth)
+    {
+        /* Find the first return char
+        * so %r will not mess with any alignment
+        * functions.
+        */
+        while (i < nStr)
+        {
+            if (  str[i.m_byte] == '\n'
+               || str[i.m_byte] == '\r')
+            {
+                newline = true;
+                i(i.m_byte + 2, i.m_point + 2);
+                return i;
+            }
+            i(i.m_byte + utf8_FirstByte[str[i.m_byte]], i.m_point + 1);
+        }
+        return nStr;
+    }
+
+    /* Find the first return char
+    * so %r will not mess with any alignment
+    * functions.
+    */
+    for ( i = CursorMin;
+          i.m_point < nWidth;
+          i(i.m_byte + utf8_FirstByte[str[i.m_byte]],i.m_point + 1))
+    {
+        if (  str[i.m_byte] == '\n'
+           || str[i.m_byte] == '\r')
+        {
+            newline = true;
+            i(i.m_byte + 2, i.m_point + 2);
+            return i;
+        }
+    }
+
+    /* No return char was found. Now
+    * find the last space in str.
+    */
+    i = CursorMin;
+    mux_cursor iSpace = CursorMin;
+    while (i.m_point < nWidth)
+    {
+        if (str[i.m_byte] == ' ')
+        {
+            iSpace = i;
+        }
+        i(i.m_byte + utf8_FirstByte[str[i.m_byte]],i.m_point + 1);
+    }
+    if (str[i.m_byte] == ' ')
+    {
+        iSpace = i;
+    }
+    return iSpace;
+}
+#else
 static size_t wraplen(UTF8 *str, const size_t nWidth, bool &newline)
 {
     const size_t length = strlen((char *)str);
@@ -8751,6 +8804,7 @@ static size_t wraplen(UTF8 *str, const size_t nWidth, bool &newline)
     }
     return maxlen;
 }
+#endif
 
 static FUNCTION(fun_wrap)
 {
@@ -8864,20 +8918,18 @@ static FUNCTION(fun_wrap)
     UTF8 *pPlain = alloc_lbuf("fun_wrap.pPlain");
     UTF8 *pColor = alloc_lbuf("fun_wrap.pColor");
 
-    size_t nLength = 0;
     bool newline = false;
     UTF8 *jargs[2];
-    mux_cursor iPos = CursorMin, iStart, iEnd;
+    mux_cursor nLength = CursorMin, iPos = CursorMin, iEnd;
 
     while (iPos < nStr)
     {
         sStr->export_TextPlain(pPlain, iPos);
 
         nLength = wraplen(pPlain, iPos == CursorMin ? nFirstWidth : nWidth, newline);
-        iStart = iPos;
-        sStr->cursor_from_point(iEnd, nLength - (newline ? 2 : 0));
+        iEnd = iPos + nLength;
 
-        sStr->export_TextAnsi(pColor, iStart, iEnd);
+        sStr->export_TextAnsi(pColor, iPos, iEnd);
 
         if (CursorMin != iPos)
         {
@@ -8894,9 +8946,10 @@ static FUNCTION(fun_wrap)
         centerjustcombo(iJustKey, buff, bufc, jargs, 2, true);
         safe_str(pRight, buff, bufc);
 
-        sStr->cursor_from_point(iPos, iPos.m_point + nLength);
-        if (  pPlain[nLength] == ' '
-           && pPlain[nLength+1] != ' ')
+        iPos( iPos.m_byte  + nLength.m_byte  + (newline ? 2 : 0),
+              iPos.m_point + nLength.m_point + (newline ? 2 : 0));
+        if (  pPlain[nLength.m_byte] == ' '
+           && pPlain[nLength.m_byte+1] != ' ')
         {
             sStr->cursor_next(iPos);
         }
