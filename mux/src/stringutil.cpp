@@ -5703,7 +5703,7 @@ void mux_string::import(const mux_string &sStr, mux_cursor iStart)
         if (0 != sStr.m_ncs)
         {
             realloc_m_pcs(m_iLast.m_point);
-            memcpy(m_pcs, sStr.m_pcs + iStart.m_point, m_iLast.m_point);
+            memcpy(m_pcs, sStr.m_pcs + iStart.m_point, m_iLast.m_point * sizeof(m_pcs[0]));
         }
     }
     m_autf[m_iLast.m_byte] = '\0';
