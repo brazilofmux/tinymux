@@ -703,7 +703,7 @@ public:
     void prepend(const UTF8 *pStr);
     void prepend(const UTF8 *pStr, size_t nLen);
 #ifdef NEW_MUX_STRING
-    void replace_Chars(const mux_string &pTo, mux_cursor iStart, LBUF_OFFSET nLen);
+    void replace_Chars(const mux_string &pTo, mux_cursor iStart, mux_cursor nLen);
     void reverse(void);
     bool search
     (

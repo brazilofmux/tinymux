@@ -5343,10 +5343,10 @@ void mux_string::edit(mux_string &sFrom, const mux_string &sTo)
         while (bSucceeded)
         {
             iStart = iStart + iFound;
-            replace_Chars(sTo, iStart, nFrom.m_byte);
+            replace_Chars(sTo, iStart, nFrom);
             iStart = iStart + nTo;
 
-            if (iStart < CursorMax)
+            if (iStart < m_iLast)
             {
                 bSucceeded = search(sFrom, &iFound, iStart);
             }
@@ -5921,70 +5921,70 @@ void mux_string::replace_Chars
 (
     const mux_string &sTo,
     mux_cursor iStart,
-    LBUF_OFFSET nLen
+    mux_cursor nLen
 )
 {
-    size_t nTo = sTo.m_iLast.m_byte;
-    size_t nMove = 0;
-    size_t nCopy = nTo;
+    mux_cursor nTo = sTo.m_iLast;
+    mux_cursor nMove = CursorMin;
+    mux_cursor nCopy = nTo;
     size_t i;
 
     if (nLen != nTo)
     {
-        nMove = m_iLast.m_byte - (iStart.m_byte + nLen);
-        if (LBUF_SIZE-1 < m_iLast.m_byte + nTo - nLen)
+        nMove = m_iLast - (iStart + nLen);
+        if (CursorMax < m_iLast + nTo - nLen)
         {
-            if (LBUF_SIZE-1 < iStart.m_byte + nTo)
+            if (CursorMax < iStart + nTo)
             {
-                nCopy = (LBUF_SIZE-1) - iStart.m_byte;
-                nMove = 0;
+                nCopy = CursorMax - iStart;
+                nMove = CursorMin;
             }
             else
             {
-                nMove = (LBUF_SIZE-1) - (iStart.m_byte + nTo);
+                nMove = CursorMax - (iStart + nTo);
             }
         }
-        if (nMove)
+        if (CursorMin < nMove)
         {
-            memmove(m_autf + iStart.m_byte + nTo,
-                    m_autf + iStart.m_byte + nLen, nMove * sizeof(m_autf[0]));
+            memmove(m_autf + iStart.m_byte + nTo.m_byte,
+                    m_autf + iStart.m_byte + nLen.m_byte, nMove.m_byte * sizeof(m_autf[0]));
         }
-        m_iLast.m_byte = iStart.m_byte + nCopy + nMove;
+        m_iLast = iStart + nCopy + nMove;
 
         if (0 != m_ncs)
         {
-            realloc_m_pcs(m_iLast.m_byte);
-            if (nMove)
+            realloc_m_pcs(m_iLast.m_point);
+            if (CursorMin < nMove)
             {
-                memmove(m_pcs + iStart.m_byte + nTo,
-                        m_pcs + iStart.m_byte + nLen, nMove * sizeof(m_pcs[0]));
+                memmove(m_pcs + iStart.m_point + nTo.m_point,
+                        m_pcs + iStart.m_point + nLen.m_point, nMove.m_point * sizeof(m_pcs[0]));
             }
         }
         else if (0 != sTo.m_ncs)
         {
-            realloc_m_pcs(m_iLast.m_byte);
-            for (i = 0; i < iStart.m_byte; i++)
+            realloc_m_pcs(m_iLast.m_point);
+            for (i = 0; i < iStart.m_point; i++)
             {
                 m_pcs[i] = CS_NORMAL;
             }
-            for (i = 0; i < nMove; i++)
+            for (i = 0; i < nMove.m_point; i++)
             {
-                m_pcs[i+iStart.m_byte+nTo] = CS_NORMAL;
+                m_pcs[i+iStart.m_point+nTo.m_point] = CS_NORMAL;
             }
         }
     }
 
-    memcpy(m_autf + iStart.m_byte, sTo.m_autf, nCopy * sizeof(m_autf[0]));
+    memcpy(m_autf + iStart.m_byte, sTo.m_autf, nCopy.m_byte * sizeof(m_autf[0]));
 
     if (0 != sTo.m_ncs)
     {
-        memcpy(m_pcs + iStart.m_byte, sTo.m_pcs, nCopy * sizeof(m_pcs[0]));
+        memcpy(m_pcs + iStart.m_point, sTo.m_pcs, nCopy.m_point * sizeof(m_pcs[0]));
     }
     else if (0 != m_ncs)
     {
-        for (i = 0; i < nTo; i++)
+        for (i = 0; i < nTo.m_point; i++)
         {
-            m_pcs[iStart.m_byte + i] = CS_NORMAL;
+            m_pcs[iStart.m_point + i] = CS_NORMAL;
         }
     }
 
