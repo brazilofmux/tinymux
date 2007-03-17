@@ -16,6 +16,39 @@ static int g_version;
 static int g_format;
 static int g_flags;
 
+// The following mux_AttrNameInitialSet_latin1 is only used for converting
+// A_LOCK.
+//
+// The first character of an attribute name must be either alphabetic,
+// '_', '#', '.', or '~'. It's handled by the following table.
+//
+// Characters thereafter may be letters, numbers, and characters from
+// the set {'?!`/-_.@#$^&~=+<>()}. Lower-case letters are turned into
+// uppercase before being used, but lower-case letters are valid input.
+//
+static bool mux_AttrNameInitialSet_latin1[256] =
+{
+//  0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F
+//
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // 0
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // 1
+    0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0,  // 2
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // 3
+    0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,  // 4
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1,  // 5
+    0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,  // 6
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 1, 0,  // 7
+
+    0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 1, 0,  // 8
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 1, 1,  // 9
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0,  // A
+    0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0,  // B
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,  // C
+    1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1,  // D
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,  // E
+    1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 0   // F
+};
+
 /* ---------------------------------------------------------------------------
  * getboolexp1: Get boolean subexpression from file.
  *
@@ -124,7 +157,7 @@ static BOOLEXP *getboolexp1(FILE *f)
                 b->thing = b->thing * 10 + c - '0';
             }
         }
-        else if (mux_AttrNameInitialSet_latin1(c))
+        else if (mux_AttrNameInitialSet_latin1[(unsigned char)c])
         {
             buff = alloc_lbuf("getboolexp1.atr_name");
 
