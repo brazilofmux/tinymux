@@ -6242,7 +6242,7 @@ void mux_string::stripWithTable
             // We've hit the end of a string to be stripped.
             //
             delete_Chars(iStripStart, i);
-            iEnd = iEnd - (i - iStripStart);
+            iEnd -= (i - iStripStart);
             i = iStripStart;
             bInStrip = false;
         }

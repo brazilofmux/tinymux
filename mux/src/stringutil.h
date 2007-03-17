@@ -540,6 +540,21 @@ public:
         m_byte  = m_byte + a.m_byte;
         m_point = m_point + a.m_point;
     };
+
+    inline void operator -=(const mux_cursor &a)
+    {
+        if (  a.m_byte  < m_byte
+           && a.m_point < m_point)
+        {
+            m_byte  = m_byte - a.m_byte;
+            m_point = m_point - a.m_point;
+        }
+        else
+        {
+            m_byte  = 0;
+            m_point = 0;
+        }
+    };
 };
 
 static const mux_cursor CursorMin = {0,0};
