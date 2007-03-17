@@ -5477,7 +5477,7 @@ LBUF_OFFSET mux_string::export_TextAnsi
     //  try to copy, and has a value in the ranges (0, nLeft] and (0, nAvail].
     //
     LBUF_OFFSET nBytesWanted  = iEnd.m_byte - iStart.m_byte;
-    LBUF_OFFSET nPointsWanted = iEnd.m_point = iStart.m_point;
+    LBUF_OFFSET nPointsWanted = iEnd.m_point - iStart.m_point;
     if (0 == m_ncs)
     {
         return export_TextPlain(pBuffer, iStart, iEnd, nBytesMax);
@@ -5496,11 +5496,14 @@ LBUF_OFFSET mux_string::export_TextAnsi
         {
             if (csPrev != m_pcs[iPos.m_point])
             {
-                nCopy = iPos.m_byte - iCopy.m_byte;
-                memcpy(pBuffer, m_autf + iStart.m_byte + nDone, nCopy);
-                pBuffer += nCopy;
-                nDone += nCopy;
-                iCopy = iPos;
+                if (iCopy < iPos)
+                {
+                    nCopy = iPos.m_byte - iCopy.m_byte;
+                    memcpy(pBuffer, m_autf + iCopy.m_byte, nCopy);
+                    pBuffer += nCopy;
+                    nDone += nCopy;
+                    iCopy = iPos;
+                }
 
                 pTransition = ANSI_TransitionColorBinary( csPrev,
                                                           m_pcs[iPos.m_point],
@@ -5513,7 +5516,7 @@ LBUF_OFFSET mux_string::export_TextAnsi
             }
             cursor_next(iPos);
         }
-        if (iCopy != iPos)
+        if (iCopy < iPos)
         {
             nCopy = iPos.m_byte - iCopy.m_byte;
             memcpy(pBuffer, m_autf + iCopy.m_byte, nCopy);
