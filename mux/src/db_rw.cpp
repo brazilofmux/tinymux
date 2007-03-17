@@ -19,7 +19,7 @@ static int g_flags;
 /* ---------------------------------------------------------------------------
  * getboolexp1: Get boolean subexpression from file.
  *
- * This is only used to import v2 flatfile.
+ * This is only used to import v2 flatfiles.
  */
 
 static BOOLEXP *getboolexp1(FILE *f)
@@ -503,6 +503,13 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
                     g_flags = g_version & ~V_MASK;
                     g_version &= V_MASK;
 
+                    if (  g_version < MIN_SUPPORTED_VERSION
+                       || MAX_SUPPORTED_VERSION < g_version)
+                    {
+                        Log.tinyprintf(ENDLINE "Unsupported flatfile version: %d." ENDLINE, g_version);
+                        return -1;
+                    }
+
                     // Due to potential UTF-8 characters in attribute names,
                     // we do not support parsing A_LOCK from the header. After
                     // converting from v2 to v3, this should never be needed
@@ -518,18 +525,17 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
                     //
                     if (g_flags & V_DATABASE)
                     {
+                        if (  1 == g_version
+                           || 2 == g_version)
+                        {
+                            Log.tinyprintf(ENDLINE "Conversion to UTF-8 requires a flatfile." ENDLINE);
+                            return -1;
+                        }
                         read_attribs = false;
                         read_name = !(g_flags & V_ATRNAME);
                     }
                     read_key = !(g_flags & V_ATRKEY);
                     read_money = !(g_flags & V_ATRMONEY);
-
-                    if (  g_version < MIN_SUPPORTED_VERSION
-                       || MAX_SUPPORTED_VERSION < g_version)
-                    {
-                        Log.tinyprintf(ENDLINE "Unsupported flatfile version: %d." ENDLINE, g_version);
-                        return -1;
-                    }
                 }
             }
             else if (ch == 'S')
