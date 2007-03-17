@@ -2236,6 +2236,8 @@ static FUNCTION(fun_right)
     {
         sStr->cursor_from_point(iStart, (LBUF_OFFSET)(iEnd.m_point - nRight));
         *bufc += sStr->export_TextAnsi(*bufc, iStart, iEnd, buff + LBUF_SIZE - *bufc);
+    }
+    else
 #else
     size_t nLen = sStr->length();
 
