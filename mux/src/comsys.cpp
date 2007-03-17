@@ -1,6 +1,6 @@
 // comsys.cpp
 //
-// $Id: comsys.cpp,v 1.44 2006/11/03 19:38:18 sdennis Exp $
+// $Id: comsys.cpp,v 1.45 2007/03/17 04:25:08 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -94,6 +94,10 @@ void load_comsys(char *filename)
         else
         {
             Log.tinyprintf("Error: Couldn't find Begin CHANNELS in %s.", filename);
+            if (fclose(fp) == 0)
+            {
+                DebugTotalFiles--;
+            }
             return;
         }
 
@@ -104,6 +108,10 @@ void load_comsys(char *filename)
         else
         {
             Log.tinyprintf("Error: Couldn't find Begin COMSYS in %s.", filename);
+            if (fclose(fp) == 0)
+            {
+                DebugTotalFiles--;
+            }
             return;
         }
 

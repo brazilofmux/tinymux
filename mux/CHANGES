@@ -309,6 +309,7 @@ Bug Fixes:
     (Issue 294).
  -- HEIGHT() and WIDTH() returned least-idle port when given a port rather 
     than the specified port.
+ -- Fix handle leak in comsys.db if initial parsing fails.
 
 
 Performance Enhancements:
