@@ -2661,8 +2661,30 @@ FUNCTION(fun_scramble)
     UNUSED_PARAMETER(ncargs);
 
     mux_string *sStr = new mux_string(fargs[0]);
+#ifdef NEW_MUX_STRING
+    LBUF_OFFSET nPoints = sStr->length_cursor().m_point;
+#else
     size_t nLen = sStr->length();
+#endif
 
+#ifdef NEW_MUX_STRING
+    if (2 <= nPoints)
+    {
+        mux_string *sOut = new mux_string;
+        LBUF_OFFSET iPoint;
+        mux_cursor iStart, iEnd;
+        while (0 < nPoints)
+        {
+            iPoint = static_cast<LBUF_OFFSET>(RandomINT32(0, static_cast<INT32>(nPoints-1)));
+            sStr->cursor_from_point(iStart, iPoint);
+            sStr->cursor_from_point(iEnd, iPoint + 1);
+            sOut->append(*sStr, iStart, iEnd);
+            sStr->delete_Chars(iStart, iEnd);
+            nPoints--;
+        }
+        *bufc += sOut->export_TextAnsi(*bufc, CursorMin, CursorMax, buff + LBUF_SIZE - *bufc);
+        delete sOut;
+#else
     if (2 <= nLen)
     {
         for (size_t i = 0; i < nLen-1; i++)
@@ -2679,9 +2701,6 @@ FUNCTION(fun_scramble)
             sStr->set_Char(j, ch);
             sStr->set_Color(j, cs);
         }
-#ifdef NEW_MUX_STRING
-        *bufc += sStr->export_TextAnsi(*bufc, CursorMin, CursorMax, buff + LBUF_SIZE - *bufc);
-#else
         sStr->export_TextAnsi(buff, bufc, 0, nLen);
 #endif // NEW_MUX_STRING
     }
