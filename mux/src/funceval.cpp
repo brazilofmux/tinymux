@@ -1251,9 +1251,10 @@ FUNCTION(fun_columns)
     int nColumns = (78-nIndent)/nWidth;
     int iColumn = 0;
     int nLen = 0;
-    LBUF_OFFSET iWordStart = 0, iWordEnd = 0;
 #ifdef NEW_MUX_STRING
-    mux_cursor iStart, iEnd;
+    mux_cursor iStart, iEnd, iWordStart, iWordEnd;
+#else
+    LBUF_OFFSET iWordStart = 0, iWordEnd = 0;
 #endif // NEW_MUX_STRING
 
     size_t nBufferAvailable = LBUF_SIZE - (*bufc-buff) - 1;
@@ -1268,15 +1269,19 @@ FUNCTION(fun_columns)
         iWordStart = words->wordBegin(i);
         iWordEnd = words->wordEnd(i);
 
+#ifdef NEW_MUX_STRING
+        nLen = iWordEnd.m_point - iWordStart.m_point;
+#else
         nLen = iWordEnd - iWordStart;
+#endif
         if (nWidth < nLen)
         {
             nLen = nWidth;
         }
 
 #ifdef NEW_MUX_STRING
-        sStr->cursor_from_point(iStart, iWordStart);
-        sStr->cursor_from_point(iEnd, (LBUF_OFFSET)(iWordStart + nLen));
+        iStart = iWordStart;
+        sStr->cursor_from_point(iEnd, (LBUF_OFFSET)(iWordStart.m_point + nLen));
         *bufc += sStr->export_TextAnsi(*bufc, iStart, iEnd, buff + LBUF_SIZE - *bufc);
 #else
         sStr->export_TextAnsi(buff, bufc, iWordStart, nLen);
@@ -2736,8 +2741,8 @@ FUNCTION(fun_shuffle)
             sOut->append(osep.str, osep.n);
         }
         i = static_cast<LBUF_OFFSET>(RandomINT32(0, static_cast<INT32>(n-1)));
-        sIn->cursor_from_point(iStart, words->wordBegin(i));
-        sIn->cursor_from_point(iEnd, words->wordEnd(i));
+        iStart = words->wordBegin(i);
+        iEnd = words->wordEnd(i);
         sOut->append(*sIn, iStart, iEnd);
         words->ignore_Word(i);
         n--;

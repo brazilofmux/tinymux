@@ -983,8 +983,13 @@ class mux_words
 private:
     bool        m_aControl[UCHAR_MAX+1];
     LBUF_OFFSET m_nWords;
+#ifdef NEW_MUX_STRING
+    mux_cursor m_aiWordBegins[MAX_WORDS];
+    mux_cursor m_aiWordEnds[MAX_WORDS];
+#else
     LBUF_OFFSET m_aiWordBegins[MAX_WORDS];
     LBUF_OFFSET m_aiWordEnds[MAX_WORDS];
+#endif
     const mux_string *m_s;
 
 public:
@@ -996,8 +1001,13 @@ public:
     void ignore_Word(LBUF_OFFSET n);
     void set_Control(const UTF8 *pControlSet);
     void set_Control(const bool table[UCHAR_MAX+1]);
+#ifdef NEW_MUX_STRING
+    mux_cursor wordBegin(LBUF_OFFSET n) const;
+    mux_cursor wordEnd(LBUF_OFFSET n) const;
+#else
     LBUF_OFFSET wordBegin(LBUF_OFFSET n) const;
     LBUF_OFFSET wordEnd(LBUF_OFFSET n) const;
+#endif
 };
 
 #endif // STRINGUTIL_H

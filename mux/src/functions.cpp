@@ -4141,13 +4141,8 @@ static FUNCTION(fun_remove)
     bool bFirst = true, bFound = false;
     for (LBUF_OFFSET i = 0; i < nWords; i++)
     {
-#ifdef NEW_MUX_STRING
-        sStr->cursor_from_point(iStart, words->wordBegin(i));
-        sStr->cursor_from_point(iEnd, words->wordEnd(i));
-#else
         iStart = words->wordBegin(i);
         iEnd = words->wordEnd(i);
-#endif
 
         if (  !bFound
            && bSucceeded
@@ -4159,7 +4154,7 @@ static FUNCTION(fun_remove)
 
         if (  !bFound
 #ifdef NEW_MUX_STRING
-           && sWord->length() == iEnd.m_point - iStart.m_point
+           && sWord->length() == iEnd.m_byte - iStart.m_byte
 #else
            && sWord->length() == iEnd - iStart
 #endif
