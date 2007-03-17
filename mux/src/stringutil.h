@@ -20,7 +20,6 @@ extern const bool mux_isalnum[256];
 extern const bool mux_islower_latin1[256];
 extern const bool mux_isupper_latin1[256];
 extern const bool mux_isspace[256];
-extern bool mux_AttrNameSet[256];
 extern const bool mux_ObjectNameSet[256];
 extern bool mux_PlayerNameSet[256];
 extern const bool mux_issecure[256];
