@@ -5786,7 +5786,7 @@ void mux_string::import(const UTF8 *pStr, size_t nLen)
         iStr += utf8_FirstByte[(unsigned char)pStr[iStr]];
     }
 
-    m_iLast(iStr, iPoint);
+    m_iLast(pch - m_autf, iPoint);
     if (bColor)
     {
         realloc_m_pcs(m_iLast.m_point);
