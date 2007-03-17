@@ -543,9 +543,7 @@ public:
 };
 
 static const mux_cursor CursorMin = {0,0};
-static const mux_cursor CursorMax = {LBUF_SIZE, LBUF_SIZE};
-
-#undef NEW_MUX_STRING
+static const mux_cursor CursorMax = {LBUF_SIZE - 1, LBUF_SIZE - 1};
 
 class mux_string
 {
@@ -620,12 +618,21 @@ public:
     void append(dbref num);
     void append(INT64 iInt);
     void append(long lLong);
+#ifdef NEW_MUX_STRING
+    void append
+    (
+        const mux_string &sStr,
+        mux_cursor nStart = CursorMin,
+        mux_cursor iEnd   = CursorMax
+    );
+#else
     void append
     (
         const mux_string &sStr,
         size_t nStart = 0,
         size_t nLen = (LBUF_SIZE-1)
     );
+#endif
     void append(const UTF8 *pStr);
     void append(const UTF8 *pStr, size_t nLen);
     void append_TextPlain(const UTF8 *pStr);
@@ -646,8 +653,15 @@ public:
         UTF8 *pBuffer,
         mux_cursor iStart = CursorMin,
         mux_cursor iEnd   = CursorMax,
-        size_t nMaxBytesMax = (LBUF_SIZE-1),
+        size_t nBytesMax = (LBUF_SIZE-1),
         bool bNoBleed = false
+    ) const;
+    LBUF_OFFSET export_TextPlain
+    (
+        UTF8 *pBuffer,
+        mux_cursor iStart = CursorMin,
+        mux_cursor iEnd   = CursorMax,
+        size_t nBytesMax = (LBUF_SIZE-1)
     ) const;
 #else
     void export_TextAnsi
@@ -659,7 +673,6 @@ public:
         size_t nBuffer = (LBUF_SIZE-1),
         bool bNoBleed = false
     ) const;
-#endif
     void export_TextPlain
     (
         UTF8 *buff,
@@ -668,6 +681,7 @@ public:
         size_t nLen = LBUF_SIZE,
         size_t nBuffer = (LBUF_SIZE-1)
     ) const;
+#endif
     void import(dbref num);
     void import(INT64 iInt);
     void import(long lLong);

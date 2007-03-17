@@ -8136,7 +8136,7 @@ static void centerjustcombo
     //
     if (nWidth <= nStr.m_point)
     {
-        mux_cursor iEnd = CursorMax;
+        mux_cursor iEnd = nStr;
         if (bTrunc)
         {
             sStr->cursor_from_point(iEnd, nWidth);
@@ -8640,7 +8640,11 @@ static FUNCTION(fun_strip)
     {
         sStr->strip(strip_color(fargs[1]));
     }
+#ifdef NEW_MUX_STRING
+    *bufc += sStr->export_TextPlain(*bufc, CursorMin, CursorMax, buff + LBUF_SIZE - *bufc);
+#else
     sStr->export_TextPlain(buff, bufc);
+#endif
 
     delete sStr;
 }
@@ -8854,6 +8858,50 @@ static FUNCTION(fun_wrap)
     }
 
     mux_string *sStr = new mux_string(expand_tabs(fargs[0]));
+#ifdef NEW_MUX_STRING
+    mux_cursor nStr = sStr->length_cursor();
+
+    UTF8 *pPlain = alloc_lbuf("fun_wrap.pPlain");
+    UTF8 *pColor = alloc_lbuf("fun_wrap.pColor");
+
+    size_t nLength = 0;
+    bool newline = false;
+    UTF8 *jargs[2];
+    mux_cursor iPos = CursorMin, iStart, iEnd;
+
+    while (iPos < nStr)
+    {
+        sStr->export_TextPlain(pPlain, iPos);
+
+        nLength = wraplen(pPlain, iPos == CursorMin ? nFirstWidth : nWidth, newline);
+        iStart = iPos;
+        sStr->cursor_from_point(iEnd, nLength - (newline ? 2 : 0));
+
+        sStr->export_TextAnsi(pColor, iStart, iEnd);
+
+        if (CursorMin != iPos)
+        {
+            safe_str(pOSep, buff, bufc);
+            if (0 < nHanging)
+            {
+                safe_fill(buff, bufc, ' ', nHanging);
+            }
+        }
+
+        jargs[0] = pColor;
+        jargs[1] = mux_ltoa_t(iPos == CursorMin ? nFirstWidth : nWidth);
+        safe_str(pLeft, buff, bufc);
+        centerjustcombo(iJustKey, buff, bufc, jargs, 2, true);
+        safe_str(pRight, buff, bufc);
+
+        sStr->cursor_from_point(iPos, iPos.m_point + nLength);
+        if (  pPlain[nLength] == ' '
+           && pPlain[nLength+1] != ' ')
+        {
+            sStr->cursor_next(iPos);
+        }
+    }
+#else
     size_t nStr = sStr->length();
 
     UTF8 *pPlain = alloc_lbuf("fun_wrap.pPlain");
@@ -8863,19 +8911,6 @@ static FUNCTION(fun_wrap)
     bool newline = false;
     UTF8 *jargs[2];
     size_t nPos = 0;
-#ifdef NEW_MUX_STRING
-    mux_cursor iStart, iEnd;
-
-    while (nPos < nStr)
-    {
-        sStr->export_TextPlain(pPlain, NULL, nPos);
-
-        nLength = wraplen(pPlain, nPos == 0 ? nFirstWidth : nWidth, newline);
-        sStr->cursor_from_point(iStart, nPos);
-        sStr->cursor_from_point(iEnd, nLength - (newline ? 2 : 0));
-
-        sStr->export_TextAnsi(pColor, iStart, iEnd);
-#else
 
     while (nPos < nStr)
     {
@@ -8884,7 +8919,6 @@ static FUNCTION(fun_wrap)
         nLength = wraplen(pPlain, nPos == 0 ? nFirstWidth : nWidth, newline);
 
         sStr->export_TextAnsi(pColor, NULL, nPos, nLength - (newline ? 2 : 0));
-#endif
 
         if (0 != nPos)
         {
@@ -8908,6 +8942,7 @@ static FUNCTION(fun_wrap)
             nPos++;
         }
     }
+#endif
 
     free_lbuf(pColor);
     free_lbuf(pPlain);

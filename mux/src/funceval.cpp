@@ -2713,6 +2713,29 @@ FUNCTION(fun_shuffle)
     LBUF_OFFSET n = words->find_Words(sep.str);
     mux_string *sOut = new mux_string;
     bool bFirst = true;
+#ifdef NEW_MUX_STRING
+    LBUF_OFFSET i = 0;
+    mux_cursor iStart = CursorMin, iEnd = CursorMin;
+
+    while (n > 0)
+    {
+        if (bFirst)
+        {
+            bFirst = false;
+        }
+        else
+        {
+            sOut->append(osep.str, osep.n);
+        }
+        i = static_cast<LBUF_OFFSET>(RandomINT32(0, static_cast<INT32>(n-1)));
+        sIn->cursor_from_point(iStart, words->wordBegin(i));
+        sIn->cursor_from_point(iEnd, words->wordEnd(i));
+        sOut->append(*sIn, iStart, iEnd);
+        words->ignore_Word(i);
+        n--;
+    }
+    *bufc += sOut->export_TextAnsi(*bufc, CursorMin, CursorMax, buff + LBUF_SIZE - *bufc);
+#else
     LBUF_OFFSET i = 0, iStart = 0, nLen = 0;
 
     while (n > 0)
@@ -2732,9 +2755,6 @@ FUNCTION(fun_shuffle)
         words->ignore_Word(i);
         n--;
     }
-#ifdef NEW_MUX_STRING
-    *bufc += sOut->export_TextAnsi(*bufc, CursorMin, CursorMax, buff + LBUF_SIZE - *bufc);
-#else
     sOut->export_TextAnsi(buff, bufc);
 #endif // NEW_MUX_STRING
 

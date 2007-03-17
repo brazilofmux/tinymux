@@ -5002,37 +5002,40 @@ void mux_string::append(long lLong)
  * \return         None.
  */
 
-void mux_string::append(const mux_string &sStr, size_t nStart, size_t nLen)
+void mux_string::append(const mux_string &sStr, mux_cursor iStart, mux_cursor iEnd)
 {
-    if (  sStr.m_iLast.m_byte <= nStart
-       || 0 == nLen
-       || LBUF_SIZE-1 == sStr.m_iLast.m_byte)
+    if (  sStr.m_iLast <= iStart
+       || iEnd <= iStart
+       || CursorMax == m_iLast)
     {
         // The selection range is empty, or no buffer space is left.
         //
         return;
     }
 
-    if (sStr.m_iLast.m_byte - nStart < nLen)
+    if (sStr.m_iLast < iEnd)
     {
-        nLen = sStr.m_iLast.m_byte - nStart;
+        iEnd = sStr.m_iLast;
     }
 
-    if ((LBUF_SIZE-1)-m_iLast.m_byte < nLen)
+    if (CursorMax - m_iLast < iEnd - iStart)
     {
-        nLen = (LBUF_SIZE-1)-m_iLast.m_byte;
+        iEnd = iStart + CursorMax - m_iLast;
     }
 
-    memcpy(m_autf + m_iLast.m_byte, sStr.m_autf + nStart, nLen * sizeof(m_autf[0]));
+    LBUF_OFFSET nBytes = iEnd.m_byte - iStart.m_byte;
+    LBUF_OFFSET nPoints = iEnd.m_point - iStart.m_point;
+
+    memcpy(m_autf + m_iLast.m_byte, sStr.m_autf + iStart.m_byte, nBytes);
 
     if (0 != m_ncs)
     {
-        realloc_m_pcs(m_iLast.m_byte + nLen);
+        realloc_m_pcs(m_iLast.m_point + nPoints);
     }
     else if (0 != sStr.m_ncs)
     {
-        realloc_m_pcs(m_iLast.m_byte + nLen);
-        for (size_t i = 0; i < m_iLast.m_byte; i++)
+        realloc_m_pcs(m_iLast.m_point + nPoints);
+        for (size_t i = 0; i < m_iLast.m_point; i++)
         {
             m_pcs[i] = CS_NORMAL;
         }
@@ -5040,17 +5043,17 @@ void mux_string::append(const mux_string &sStr, size_t nStart, size_t nLen)
 
     if (0 != sStr.m_ncs)
     {
-        memcpy(m_pcs + m_iLast.m_byte, sStr.m_pcs + nStart, nLen * sizeof(m_pcs[0]));
+        memcpy(m_pcs + m_iLast.m_point, sStr.m_pcs + iStart.m_point, nPoints * sizeof(m_pcs[0]));
     }
     else if (0 != m_ncs)
     {
-        for (size_t i = 0; i < nLen; i++)
+        for (size_t i = 0; i < nPoints; i++)
         {
             m_pcs[m_iLast.m_byte + i] = CS_NORMAL;
         }
     }
 
-    m_iLast.m_byte += nLen;
+    m_iLast(m_iLast.m_byte + nBytes, m_iLast.m_point + nPoints);
     m_autf[m_iLast.m_byte] = '\0';
 }
 
@@ -5132,14 +5135,21 @@ void mux_string::append_TextPlain(const UTF8 *pStr)
 
     if (0 != m_ncs)
     {
-        realloc_m_pcs(m_iLast.m_byte + nLen);
+        realloc_m_pcs(m_iLast.m_point + nLen);
         for (size_t i = 0; i < nLen; i++)
         {
-            m_pcs[m_iLast.m_byte+i] = CS_NORMAL;
+            m_pcs[m_iLast.m_point + i] = CS_NORMAL;
         }
     }
 
-    m_iLast.m_byte += nLen;
+    mux_cursor i = m_iLast, j = i;
+    while (  cursor_next(i)
+          && i.m_byte <= m_iLast.m_byte + nLen)
+    {
+        j = i;
+    }
+
+    m_iLast = j;
     m_autf[m_iLast.m_byte] = '\0';
 }
 
@@ -5154,23 +5164,30 @@ void mux_string::append_TextPlain(const UTF8 *pStr, size_t nLen)
         return;
     }
 
-    if ((LBUF_SIZE-1)-m_iLast.m_byte < nLen)
+    if ((LBUF_SIZE-1) - m_iLast.m_byte < nLen)
     {
-        nLen = (LBUF_SIZE-1)-m_iLast.m_byte;
+        nLen = (LBUF_SIZE-1) - m_iLast.m_byte;
     }
 
     memcpy(m_autf + m_iLast.m_byte, pStr, nLen * sizeof(m_autf[0]));
 
     if (0 != m_ncs)
     {
-        realloc_m_pcs(m_iLast.m_byte + nLen);
+        realloc_m_pcs(m_iLast.m_point + nLen);
         for (size_t i = 0; i < nLen; i++)
         {
-            m_pcs[m_iLast.m_byte+i] = CS_NORMAL;
+            m_pcs[m_iLast.m_point + i] = CS_NORMAL;
         }
     }
 
-    m_iLast.m_byte += nLen;
+    mux_cursor i = m_iLast, j = i;
+    while (  cursor_next(i)
+          && i.m_byte <= m_iLast.m_byte + nLen)
+    {
+        j = i;
+    }
+
+    m_iLast = j;
     m_autf[m_iLast.m_byte] = '\0';
 }
 
@@ -5463,8 +5480,7 @@ LBUF_OFFSET mux_string::export_TextAnsi
     LBUF_OFFSET nPointsWanted = iEnd.m_point = iStart.m_point;
     if (0 == m_ncs)
     {
-        export_TextPlain(pBuffer, NULL, iStart.m_byte, iEnd.m_byte, nBytesMax);
-        return nBytesWanted;
+        return export_TextPlain(pBuffer, iStart, iEnd, nBytesMax);
     }
     bool bPlentyOfRoom = 
         (nBytesMax > nBytesWanted + (ANSI_MAXIMUM_BINARY_TRANSITION_LENGTH * nPointsWanted) + COLOR_MAXIMUM_BINARY_NORMAL + 1);
@@ -5481,7 +5497,7 @@ LBUF_OFFSET mux_string::export_TextAnsi
             if (csPrev != m_pcs[iPos.m_point])
             {
                 nCopy = iPos.m_byte - iCopy.m_byte;
-                memcpy(pBuffer, m_autf + nDone, nCopy);
+                memcpy(pBuffer, m_autf + iStart.m_byte + nDone, nCopy);
                 pBuffer += nCopy;
                 nDone += nCopy;
                 iCopy = iPos;
@@ -5500,7 +5516,7 @@ LBUF_OFFSET mux_string::export_TextAnsi
         if (iCopy != iPos)
         {
             nCopy = iPos.m_byte - iCopy.m_byte;
-            memcpy(pBuffer, m_autf + nDone, nCopy);
+            memcpy(pBuffer, m_autf + iStart.m_byte + nDone, nCopy);
             pBuffer += nCopy;
             nDone += nCopy;
         }
@@ -5582,62 +5598,37 @@ LBUF_OFFSET mux_string::export_TextAnsi
  * \return         None.
  */
 
-void mux_string::export_TextPlain
+LBUF_OFFSET mux_string::export_TextPlain
 (
-    UTF8 *buff,
-    UTF8 **bufc,
-    size_t nStart,
-    size_t nLen,
-    size_t nBuffer
+    UTF8 *pBuffer,
+    mux_cursor iStart,
+    mux_cursor iEnd,
+    size_t nBytesMax
 ) const
 {
     // Sanity check our arguments and find out how much room we have.
     // We assume we're outputting into an LBUF unless given a smaller nBuffer.
     //
-    UTF8 *bufctemp;
-    if (NULL == bufc)
+    if (  !pBuffer
+       || m_iLast <= iStart
+       || iEnd <= iStart
+       || 0 == nBytesMax)
     {
-        bufc = &bufctemp;
-        *bufc = buff;
+        return 0;
     }
-    if (  !buff
-       || !*bufc)
+    if (m_iLast < iEnd)
     {
-        return;
+        iEnd = m_iLast;
     }
-    size_t nAvail = buff + nBuffer - *bufc;
-    if (  nAvail < 1
-       || nBuffer < nAvail)
+    LBUF_OFFSET nBytes  = iEnd.m_byte - iStart.m_byte;
+    if (nBytesMax < nBytes)
     {
-        return;
-    }
-    if (  m_iLast.m_byte <= nStart
-       || 0 == nLen)
-    {
-        return;
-    }
-    size_t  nLeft   = (m_iLast.m_byte - nStart);
-    if (nLeft < nLen)
-    {
-        nLen = nLeft;
-    }
-    if (nAvail < nLen)
-    {
-        nLen = nAvail;
+        nBytes = nBytesMax;
     }
 
-    // nStart is the position in the source string where we will start
-    //  copying, and has a value in the range [0, m_iLast.m_byte).
-    // nAvail is the room left in the destination buffer,
-    //  and has a value in the range (0, nBuffer).
-    // nLeft is the length of the portion of the source string we'd
-    //  like to copy, and has a value in the range (0, m_iLast.m_byte].
-    // nLen is the length of the portion of the source string we will copy,
-    //  and has a value in the ranges (0, nLeft] and (0, nAvail].
-    //
-    memcpy(*bufc, m_autf+nStart, nLen * sizeof(m_autf[0]));
-    *bufc += nLen;
-    **bufc = '\0';
+    memcpy(pBuffer, m_autf + iStart.m_byte, nBytes);
+    pBuffer[nBytes] = '\0';
+    return nBytes;
 }
 
 /*! \brief Converts and Imports a dbref.
@@ -5651,11 +5642,12 @@ void mux_string::import(dbref num)
     realloc_m_pcs(0);
 
     m_autf[0] = '#';
-    m_iLast.m_byte = 1;
+    LBUF_OFFSET n = 1;
 
     // mux_ltoa() sets the '\0'.
     //
-    m_iLast.m_byte += mux_ltoa(num, m_autf + 1);
+    n += (LBUF_OFFSET)mux_ltoa(num, m_autf + 1);
+    m_iLast(n, n);
 }
 
 /*! \brief Converts and Imports an INT64.
@@ -5670,7 +5662,8 @@ void mux_string::import(INT64 iInt)
 
     // mux_i64toa() sets the '\0'.
     //
-    m_iLast.m_byte = mux_i64toa(iInt, m_autf);
+    LBUF_OFFSET n = (LBUF_OFFSET)mux_i64toa(iInt, m_autf);
+    m_iLast(n, n);
 }
 
 /*! \brief Converts and Imports an long integer.
@@ -5685,7 +5678,8 @@ void mux_string::import(long lLong)
 
     // mux_ltoa() sets the '\0'.
     //
-    m_iLast.m_byte = mux_ltoa(lLong, m_autf);
+    LBUF_OFFSET n = (LBUF_OFFSET)mux_ltoa(lLong, m_autf);
+    m_iLast(n, n);
 }
 
 /*! \brief Import a portion of another mux_string.
@@ -5699,7 +5693,7 @@ void mux_string::import(const mux_string &sStr, mux_cursor iStart)
 {
     if (sStr.m_iLast <= iStart)
     {
-        m_iLast.m_byte = 0;
+        m_iLast = CursorMin;
         realloc_m_pcs(0);
     }
     else
@@ -5708,7 +5702,7 @@ void mux_string::import(const mux_string &sStr, mux_cursor iStart)
         memcpy(m_autf, sStr.m_autf + iStart.m_byte, m_iLast.m_byte);
         if (0 != sStr.m_ncs)
         {
-            realloc_m_pcs(m_iLast.m_byte);
+            realloc_m_pcs(m_iLast.m_point);
             memcpy(m_pcs, sStr.m_pcs + iStart.m_point, m_iLast.m_point);
         }
     }
@@ -5726,7 +5720,7 @@ void mux_string::import(const mux_string &sStr, mux_cursor iStart)
 
 void mux_string::import(const UTF8 *pStr)
 {
-    m_iLast.m_byte = 0;
+    m_iLast = CursorMin;
     if (  NULL == pStr
        || '\0' == *pStr)
     {
@@ -5750,7 +5744,7 @@ void mux_string::import(const UTF8 *pStr)
 
 void mux_string::import(const UTF8 *pStr, size_t nLen)
 {
-    m_iLast.m_byte = 0;
+    m_iLast = CursorMin;
 
     if (  NULL == pStr
        || '\0' == *pStr
@@ -5792,11 +5786,11 @@ void mux_string::import(const UTF8 *pStr, size_t nLen)
         iStr += utf8_FirstByte[(unsigned char)pStr[iStr]];
     }
 
-    m_iLast.m_byte = iPoint;
+    m_iLast(iStr, iPoint);
     if (bColor)
     {
-        realloc_m_pcs(m_iLast.m_byte);
-        memcpy(m_pcs, acsTemp, m_iLast.m_byte*sizeof(m_pcs[0]));
+        realloc_m_pcs(m_iLast.m_point);
+        memcpy(m_pcs, acsTemp, m_iLast.m_point * sizeof(m_pcs[0]));
     }
     else
     {
@@ -6004,15 +5998,12 @@ void mux_string::reverse(void)
     mux_string *sTemp = new mux_string;
     sTemp->realloc_m_pcs(m_ncs);
 
-    size_t j = 0;
-    for (size_t i = 1; i <= m_iLast.m_byte; i++)
+    mux_cursor i = m_iLast, j = i;
+
+    while (cursor_prev(i))
     {
-        for (j = i; j <= m_iLast.m_byte && UTF8_CONTINUE == utf8_FirstByte[m_autf[m_iLast.m_byte - j]]; j++)
-        {
-            ; // Nothing.
-        }
-        sTemp->append(*this, m_iLast.m_byte - j, j + 1 - i);
-        i = j;
+        sTemp->append(*this, i, j);
+        j = i;
     }
     import(*sTemp);
     delete sTemp;
