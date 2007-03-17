@@ -142,6 +142,28 @@ inline bool mux_isattrname(const unsigned char *p)
     return ((iState - CL_ATTRNAME_ACCEPTING_STATES_START) == 1) ? true : false;
 }
 
+// utf/cl_Objectname.txt
+//
+// 209 included, 1113903 excluded, 0 errors.
+// 7 states, 16 columns, 368 bytes
+//
+#define CL_OBJECTNAME_START_STATE (0)
+#define CL_OBJECTNAME_ACCEPTING_STATES_START (7)
+extern const unsigned char cl_objectname_itt[256];
+extern const unsigned char cl_objectname_stt[7][16];
+
+inline bool mux_isobjectname(const unsigned char *p)
+{
+    int iState = CL_OBJECTNAME_START_STATE;
+    do
+    {
+        unsigned char ch = *p++;
+        iState = cl_objectname_stt[iState][cl_objectname_itt[(unsigned char)ch]];
+    } while (iState < CL_OBJECTNAME_ACCEPTING_STATES_START);
+    return ((iState - CL_OBJECTNAME_ACCEPTING_STATES_START) == 1) ? true : false;
+}
+
+
 // utf/cl_Upper.txt
 //
 // 56 included, 1114056 excluded, 0 errors.

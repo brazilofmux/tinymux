@@ -22,6 +22,7 @@ stringutil.txt: classify transform cl_Printable.txt cl_AttrNameInitial.txt cl_At
 	./classify cl_print cl_Printable.txt > stringutil.txt
 	./classify cl_attrnameinitial cl_AttrNameInitial.txt >> stringutil.txt
 	./classify cl_attrname cl_AttrName.txt >> stringutil.txt
+	./classify cl_objectname cl_ObjectName.txt >> stringutil.txt
 	./classify cl_upper cl_Upper.txt >> stringutil.txt
 	./classify cl_lower cl_Lower.txt >> stringutil.txt
 	./classify cl_privateuse cl_PrivateUse.txt >> stringutil.txt
