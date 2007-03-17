@@ -1102,6 +1102,17 @@ FUNCTION(fun_squish)
     }
 
     SEP sep;
+#ifdef NEW_MUX_STRING
+    if (!OPTIONAL_DELIM(2, sep, DELIM_DFLT|DELIM_STRING))
+    {
+        return;
+    }
+
+    mux_string *sStr = new mux_string(fargs[0]);
+
+    sStr->compress(sep.str);
+    *bufc += sStr->export_TextAnsi(*bufc, CursorMin, CursorMax, buff + LBUF_SIZE - *bufc);
+#else
     if (!OPTIONAL_DELIM(2, sep, DELIM_DFLT))
     {
         return;
@@ -1110,9 +1121,6 @@ FUNCTION(fun_squish)
     mux_string *sStr = new mux_string(fargs[0]);
 
     sStr->compress(sep.str[0]);
-#ifdef NEW_MUX_STRING
-    *bufc += sStr->export_TextAnsi(*bufc, CursorMin, CursorMax, buff + LBUF_SIZE - *bufc);
-#else
     sStr->export_TextAnsi(buff, bufc);
 #endif // NEW_MUX_STRING
 

@@ -4752,10 +4752,14 @@ static FUNCTION(fun_delete)
     //
     mux_string *sStr = new mux_string(fargs[0]);
 
-    sStr->delete_Chars(iStart, nDelete);
 #ifdef NEW_MUX_STRING
+    mux_cursor iStartCur, iEnd;
+    sStr->cursor_from_point(iStartCur, iStart);
+    sStr->cursor_from_point(iEnd, iStartCur.m_point + nDelete);
+    sStr->delete_Chars(iStartCur, iEnd);
     *bufc += sStr->export_TextAnsi(*bufc, CursorMin, CursorMax, buff + LBUF_SIZE - *bufc);
 #else
+    sStr->delete_Chars(iStart, nDelete);
     sStr->export_TextAnsi(buff, bufc);
 #endif // NEW_MUX_STRING
 

@@ -637,9 +637,15 @@ public:
     void append(const UTF8 *pStr, size_t nLen);
     void append_TextPlain(const UTF8 *pStr);
     void append_TextPlain(const UTF8 *pStr, size_t nLen);
+#ifdef NEW_MUX_STRING
+    void compress(const UTF8 *ch);
+    void compress_Spaces(void);
+    void delete_Chars(mux_cursor iStart, mux_cursor iEnd);
+#else
     void compress(const UTF8 ch);
     void compress_Spaces(void);
     void delete_Chars(size_t nStart, size_t nLen);
+#endif
     void edit(mux_string &sFrom, const mux_string &sTo);
     UTF8 export_Char(size_t n) const;
     LBUF_OFFSET export_Char_UTF8(size_t iFirst, UTF8 *pBuffer) const;
@@ -735,6 +741,20 @@ public:
 #endif // NEW_MUX_STRING
     void set_Char(size_t n, const UTF8 cChar);
     void set_Color(size_t n, ColorState csColor);
+#ifdef NEW_MUX_STRING
+    void strip
+    (
+        const UTF8 *pStripSet,
+        mux_cursor iStart = CursorMin,
+        mux_cursor iEnd = CursorMax
+    );
+    void stripWithTable
+    (
+        const bool strip_table[UCHAR_MAX+1],
+        mux_cursor iStart = CursorMin,
+        mux_cursor iEnd = CursorMax
+    );
+#else
     void strip
     (
         const UTF8 *pStripSet,
@@ -747,6 +767,7 @@ public:
         size_t nStart = 0,
         size_t nLen = (LBUF_SIZE-1)
     );
+#endif // NEW_MUX_STRING
     void transform
     (
         mux_string &sFromSet,
