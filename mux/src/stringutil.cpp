@@ -5006,7 +5006,7 @@ void mux_string::append(const mux_string &sStr, mux_cursor iStart, mux_cursor iE
 {
     if (  sStr.m_iLast <= iStart
        || iEnd <= iStart
-       || CursorMax == m_iLast)
+       || LBUF_SIZE-1 == m_iLast.m_byte)
     {
         // The selection range is empty, or no buffer space is left.
         //
@@ -5516,7 +5516,7 @@ LBUF_OFFSET mux_string::export_TextAnsi
         if (iCopy != iPos)
         {
             nCopy = iPos.m_byte - iCopy.m_byte;
-            memcpy(pBuffer, m_autf + iStart.m_byte + nDone, nCopy);
+            memcpy(pBuffer, m_autf + iCopy.m_byte, nCopy);
             pBuffer += nCopy;
             nDone += nCopy;
         }
