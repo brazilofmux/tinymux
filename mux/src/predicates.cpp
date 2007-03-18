@@ -338,12 +338,12 @@ UTF8 *MakeCanonicalObjectName(const UTF8 *pName, size_t *pnName, bool *pbValid)
     // Get the stripped version (Visible parts without color info).
     //
     size_t nStripped;
-    UTF8 *pStripped = strip_color(Buf, &nStripped);
+    const UTF8 *pStripped = strip_color(Buf, &nStripped);
 
     // Do not allow LOOKUP_TOKEN, NUMBER_TOKEN, NOT_TOKEN, or SPACE
     // as the first character, or SPACE as the last character
     //
-    if (  (UTF8 *)strchr((char *)"*!#", *pStripped)
+    if (  (UTF8 *)strchr((char *)"*!#", pStripped[0])
        || mux_isspace(pStripped[0])
        || mux_isspace(pStripped[nStripped-1]))
     {
@@ -353,9 +353,10 @@ UTF8 *MakeCanonicalObjectName(const UTF8 *pName, size_t *pnName, bool *pbValid)
     // Only printable characters besides ARG_DELIMITER, AND_TOKEN,
     // and OR_TOKEN are allowed.
     //
-    for (unsigned int i = 0; i < nStripped; i++)
+    const UTF8 *p = pStripped;
+    while ('\0' != *pStripped)
     {
-        if (!mux_ObjectNameSet(pStripped[i]))
+        if (!mux_isobjectname(p))
         {
             return NULL;
         }
