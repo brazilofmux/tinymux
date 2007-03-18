@@ -360,6 +360,7 @@ UTF8 *MakeCanonicalObjectName(const UTF8 *pName, size_t *pnName, bool *pbValid)
         {
             return NULL;
         }
+        p = utf8_NextCodePoint(p);
     }
 
     // Special names are specifically dis-allowed.
