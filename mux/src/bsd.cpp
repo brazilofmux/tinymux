@@ -298,7 +298,7 @@ static DWORD WINAPI SlaveProc(LPVOID lpParameter)
                                         bAllDone = true;
                                         break;
                                     }
-                                    if (mux_isprint_latin1(*p))
+                                    if (mux_isprint_ascii(*p))
                                     {
                                         szIdent[nIdent++] = *p;
                                     }
