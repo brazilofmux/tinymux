@@ -5656,7 +5656,7 @@ void mux_string::import(dbref num)
 
     // mux_ltoa() sets the '\0'.
     //
-    n += (LBUF_OFFSET)mux_ltoa(num, m_autf + 1);
+    n = static_cast<LBUF_OFFSET>(n + mux_ltoa(num, m_autf + 1));
     m_iLast(n, n);
 }
 
