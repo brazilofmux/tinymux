@@ -3872,7 +3872,7 @@ static FUNCTION(fun_lpos)
         {
             safe_chr(' ', buff, bufc);
         }
-        nStart = nStart + nPat;
+        nStart = nPat;
         safe_ltoa(static_cast<long>(nStart.m_point), buff, bufc);
         sStr->cursor_next(nStart);
 #else
@@ -4149,7 +4149,10 @@ static FUNCTION(fun_remove)
            && iPos < iStart)
         {
             bSucceeded = sStr->search(*sWord, &iPos, iStart);
+#ifdef NEW_MUX_STRING
+#else
             iPos += iStart;
+#endif
         }
 
         if (  !bFound
@@ -10070,7 +10073,7 @@ size_t transform_range(mux_string &sStr)
     bool bSucceeded = sStr.search(T("-"), &nPos, nStart);
     while (bSucceeded)
     {
-        nStart = nStart + nPos;
+        nStart = nPos;
         cBefore = sStr.export_Char(nStart.m_byte-1);
         cAfter = sStr.export_Char(nStart.m_byte+1);
         if ('\0' == cAfter)
