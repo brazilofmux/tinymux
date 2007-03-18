@@ -11,7 +11,7 @@
 #define CONFIG_H
 
 /* Compile time options */
-
+#define NEW_MUX_STRING          // To be removed after non-NEW_MUX_STRING code is removed.
 #define SIDE_EFFECT_FUNCTIONS   /* Those neat funcs that should be commands */
 
 #define PLAYER_NAME_LIMIT   22  /* Max length for player names */
