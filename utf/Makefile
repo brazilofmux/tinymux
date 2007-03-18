@@ -1,7 +1,13 @@
-all: classify transform stringutil.txt
+all: classify transform stringutil.txt SpecialCasing.txt cp1252.txt
 
 UnicodeData.txt:
 	wget http://www.unicode.org/Public/UNIDATA/UnicodeData.txt
+
+SpecialCasing.txt:
+	wget http://www.unicode.org/Public/UNIDATA/SpecialCasing.txt
+
+cp1252.txt:
+	wget http://www.unicode.org/Public/MAPPINGS/VENDORS/MICSFT/WINDOWS/CP1252.TXT -O cp1252.txt
 
 UnicodeDataNew.txt: UnicodeData.txt UnicodeHan.txt
 	perl buildUnicodeMaster.pl UnicodeData.txt UnicodeHan.txt > UnicodeDataNew.txt
