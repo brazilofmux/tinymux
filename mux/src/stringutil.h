@@ -161,6 +161,26 @@ inline bool mux_isobjectname(const unsigned char *p)
     return ((iState - CL_OBJECTNAME_ACCEPTING_STATES_START) == 1) ? true : false;
 }
 
+// utf/cl_PlayerName.txt
+//
+// 142 included, 1113970 excluded, 0 errors.
+// 5 states, 10 columns, 306 bytes
+//
+#define CL_PLAYERNAME_START_STATE (0)
+#define CL_PLAYERNAME_ACCEPTING_STATES_START (5)
+extern const unsigned char cl_playername_itt[256];
+extern const unsigned char cl_playername_stt[5][10];
+
+inline bool mux_isplayername(const unsigned char *p)
+{
+    int iState = CL_PLAYERNAME_START_STATE;
+    do
+    {
+        unsigned char ch = *p++;
+        iState = cl_playername_stt[iState][cl_playername_itt[(unsigned char)ch]];
+    } while (iState < CL_PLAYERNAME_ACCEPTING_STATES_START);
+    return ((iState - CL_PLAYERNAME_ACCEPTING_STATES_START) == 1) ? true : false;
+}
 
 // utf/cl_Upper.txt
 //
