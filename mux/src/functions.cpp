@@ -2186,7 +2186,6 @@ static FUNCTION(fun_mid)
     //
     mux_string *sStr = new mux_string(fargs[0]);
 
-#ifdef NEW_MUX_STRING
     mux_cursor iCurStart, iCurEnd;
     sStr->cursor_from_point(iCurStart, (LBUF_OFFSET)iStart);
     sStr->cursor_from_point(iCurEnd, (LBUF_OFFSET)(iStart + nMid));
@@ -2195,9 +2194,6 @@ static FUNCTION(fun_mid)
     {
         *bufc += sStr->export_TextAnsi(*bufc, iCurStart, iCurEnd, buff + LBUF_SIZE - *bufc);
     }
-#else
-    sStr->export_TextAnsi(buff, bufc, iStart, nMid);
-#endif
 
     delete sStr;
 }
@@ -2228,7 +2224,6 @@ static FUNCTION(fun_right)
     }
 
     mux_string *sStr = new mux_string(fargs[0]);
-#ifdef NEW_MUX_STRING
     mux_cursor iStart, iEnd;
     sStr->cursor_end(iEnd);
 
@@ -2238,15 +2233,6 @@ static FUNCTION(fun_right)
         *bufc += sStr->export_TextAnsi(*bufc, iStart, iEnd, buff + LBUF_SIZE - *bufc);
     }
     else
-#else
-    size_t nLen = sStr->length();
-
-    if (static_cast<size_t>(nRight) < nLen)
-    {
-        sStr->export_TextAnsi(buff, bufc, nLen - nRight, nRight);
-    }
-    else if (0 < nLen)
-#endif
     {
         safe_str(fargs[0], buff, bufc);
     }
@@ -3805,11 +3791,7 @@ static FUNCTION(fun_pos)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-#ifdef NEW_MUX_STRING
     mux_cursor nPat;
-#else
-    size_t nPat = 0;
-#endif
     mux_string *sPat = new mux_string(fargs[0]);
     mux_string *sStr = new mux_string(fargs[1]);
 
@@ -3817,11 +3799,7 @@ static FUNCTION(fun_pos)
 
     if (bSucceeded)
     {
-#ifdef NEW_MUX_STRING
         safe_ltoa(static_cast<long>(nPat.m_point + 1), buff, bufc);
-#else
-        safe_ltoa(static_cast<long>(nPat+1), buff, bufc);
-#endif
     }
     else
     {
@@ -3863,7 +3841,6 @@ static FUNCTION(fun_lpos)
         sPat->import(T(" "), 1);
     }
 
-#ifdef NEW_MUX_STRING
     mux_cursor nPat, nStart = CursorMin;
     bool bSucceeded = sStr->search(*sPat, &nPat);
     while (bSucceeded)
@@ -3875,19 +3852,6 @@ static FUNCTION(fun_lpos)
         nStart = nPat;
         safe_ltoa(static_cast<long>(nStart.m_point), buff, bufc);
         sStr->cursor_next(nStart);
-#else
-    size_t nPat = 0, nStart = 0;
-    bool bSucceeded = sStr->search(*sPat, &nPat);
-    while (bSucceeded)
-    {
-        if (0 < nStart)
-        {
-            safe_chr(' ', buff, bufc);
-        }
-        nStart += nPat;
-        safe_ltoa(static_cast<long>(nStart), buff, bufc);
-        nStart++;
-#endif
 
         bSucceeded = sStr->search(*sPat, &nPat, nStart);
     }
@@ -3930,11 +3894,7 @@ static void do_itemfuns(UTF8 *buff, UTF8 **bufc, mux_string *sList, int iWord,
     //
     if (iWord < 1)
     {
-#ifdef NEW_MUX_STRING
         *bufc += sList->export_TextAnsi(*bufc, CursorMin, CursorMax, buff + LBUF_SIZE - *bufc);
-#else
-        sList->export_TextAnsi(buff, bufc);
-#endif
         return;
     }
     iWord--;
@@ -3960,11 +3920,7 @@ static void do_itemfuns(UTF8 *buff, UTF8 **bufc, mux_string *sList, int iWord,
        && (  flag != IF_INSERT
           || nWords < iWord))
     {
-#ifdef NEW_MUX_STRING
         *bufc += sList->export_TextAnsi(*bufc, CursorMin, CursorMax, buff + LBUF_SIZE - *bufc);
-#else
-        sList->export_TextAnsi(buff, bufc);
-#endif
         delete words;
         return;
     }
@@ -3998,11 +3954,7 @@ static void do_itemfuns(UTF8 *buff, UTF8 **bufc, mux_string *sList, int iWord,
 
         if (sWord)
         {
-#ifdef NEW_MUX_STRING
             *bufc += sWord->export_TextAnsi(*bufc, CursorMin, CursorMax, buff + LBUF_SIZE - *bufc);
-#else
-            sWord->export_TextAnsi(buff, bufc);
-#endif
         }
 
         if (flag == IF_INSERT)
@@ -4128,11 +4080,7 @@ static FUNCTION(fun_remove)
     }
 
     LBUF_OFFSET nWords = words->find_Words(sep.str);
-#ifdef NEW_MUX_STRING
     mux_cursor iPos = CursorMin, iStart = CursorMin, iEnd = CursorMin;
-#else
-    size_t iPos = 0, iStart = 0, iEnd = 0;
-#endif
     bool bSucceeded = sStr->search(*sWord, &iPos);
 
     // Walk through the string copying words until (if ever) we get to
@@ -4149,18 +4097,10 @@ static FUNCTION(fun_remove)
            && iPos < iStart)
         {
             bSucceeded = sStr->search(*sWord, &iPos, iStart);
-#ifdef NEW_MUX_STRING
-#else
-            iPos += iStart;
-#endif
         }
 
         if (  !bFound
-#ifdef NEW_MUX_STRING
            && sWord->length_cursor() == iEnd - iStart
-#else
-           && sWord->length() == iEnd - iStart
-#endif
            && (  (  bSucceeded
                  && iPos == iStart)
               || sWord->length() == 0))
@@ -4232,7 +4172,6 @@ static FUNCTION(fun_secure)
     UNUSED_PARAMETER(ncargs);
 
     mux_string *sStr = new mux_string(fargs[0]);
-#ifdef NEW_MUX_STRING
     mux_cursor nLen = sStr->length_cursor();
 
     mux_string *sTo = new mux_string(T(" "));
@@ -4251,20 +4190,6 @@ static FUNCTION(fun_secure)
     *bufc += sStr->export_TextAnsi(*bufc, CursorMin, nLen, buff + LBUF_SIZE - *bufc);
 
     delete sTo;
-#else
-    size_t nLen = sStr->length();
-
-    for (size_t i = 0; i < nLen; i++)
-    {
-        if (mux_issecure(sStr->export_Char(i)))
-        {
-            sStr->set_Char(i, ' ');
-        }
-    }
-
-    sStr->export_TextAnsi(buff, bufc, 0, nLen);
-
-#endif
     delete sStr;
 }
 
@@ -4305,11 +4230,7 @@ static FUNCTION(fun_escape)
         sOut->append_TextPlain(&cChar, 1);
         sOut->set_Color(iOut++, csColor);
     }
-#ifdef NEW_MUX_STRING
     *bufc += sOut->export_TextAnsi(*bufc, CursorMin, CursorMax, buff + LBUF_SIZE - *bufc);
-#else
-    sOut->export_TextAnsi(buff, bufc);
-#endif
 
     delete sStr;
     delete sOut;
@@ -4750,16 +4671,11 @@ static FUNCTION(fun_delete)
     //
     mux_string *sStr = new mux_string(fargs[0]);
 
-#ifdef NEW_MUX_STRING
     mux_cursor iStartCur, iEnd;
     sStr->cursor_from_point(iStartCur, static_cast<LBUF_OFFSET>(iStart));
     sStr->cursor_from_point(iEnd, static_cast<LBUF_OFFSET>(iStartCur.m_point + nDelete));
     sStr->delete_Chars(iStartCur, iEnd);
     *bufc += sStr->export_TextAnsi(*bufc, CursorMin, CursorMax, buff + LBUF_SIZE - *bufc);
-#else
-    sStr->delete_Chars(iStart, nDelete);
-    sStr->export_TextAnsi(buff, bufc);
-#endif // NEW_MUX_STRING
 
     delete sStr;
 }
@@ -5550,11 +5466,7 @@ static FUNCTION(fun_reverse)
     mux_string *sStr = new mux_string(fargs[0]);
 
     sStr->reverse();
-#ifdef NEW_MUX_STRING
     *bufc += sStr->export_TextAnsi(*bufc, CursorMin, CursorMax, buff + LBUF_SIZE - *bufc);
-#else
-    sStr->export_TextAnsi(buff, bufc);
-#endif // NEW_MUX_STRING
 
     delete sStr;
 }
@@ -5632,7 +5544,6 @@ static FUNCTION(fun_after)
     UNUSED_PARAMETER(ncargs);
 
     mux_string *sPat = new mux_string;
-#ifdef NEW_MUX_STRING
 
     // Sanity-check arg1 and arg2.
     //
@@ -5664,41 +5575,6 @@ static FUNCTION(fun_after)
         // Yup, return what follows.
         //
         *bufc += sStr->export_TextAnsi(*bufc, i + nPat, CursorMax, buff + LBUF_SIZE - *bufc);
-#else
-    size_t nPat;
-
-    // Sanity-check arg1 and arg2.
-    //
-    UTF8 *bp = fargs[0];
-    if (nfargs > 1)
-    {
-        sPat->import(fargs[1]);
-        nPat = sPat->length();
-    }
-    else
-    {
-        sPat->import(T(" "), 1);
-        nPat = 1;
-    }
-
-    if (  1 == nPat
-       && ' ' == sPat->export_Char(0))
-    {
-        bp = trim_space_sep(bp, &sepSpace);
-    }
-
-    // Look for the target string.
-    //
-    mux_string *sStr = new mux_string(bp);
-    size_t i;
-
-    bool bSucceeded = sStr->search(*sPat, &i);
-    if (bSucceeded)
-    {
-        // Yup, return what follows.
-        //
-        sStr->export_TextAnsi(buff, bufc, i+nPat);
-#endif
     }
 
     delete sStr;
@@ -5740,7 +5616,6 @@ static FUNCTION(fun_before)
     // Look for the target string.
     //
     mux_string *sStr = new mux_string(bp);
-#ifdef NEW_MUX_STRING
     mux_cursor i;
 
     bool bSucceeded = sStr->search(*sPat, &i);
@@ -5755,22 +5630,6 @@ static FUNCTION(fun_before)
         // Ran off the end without finding it.
         //
         *bufc += sStr->export_TextAnsi(*bufc, CursorMin, CursorMax, buff + LBUF_SIZE - *bufc);
-#else
-    size_t i;
-
-    bool bSucceeded = sStr->search(*sPat, &i);
-    if (bSucceeded)
-    {
-        // Yup, return what follows.
-        //
-        sStr->export_TextAnsi(buff, bufc, 0, i);
-    }
-    else
-    {
-        // Ran off the end without finding it.
-        //
-        sStr->export_TextAnsi(buff, bufc);
-#endif // NEW_MUX_STRING
     }
 
     delete sStr;
@@ -5914,11 +5773,7 @@ static FUNCTION(fun_merge)
         }
     }
 
-#ifdef NEW_MUX_STRING
     *bufc += sStrA->export_TextAnsi(*bufc, CursorMin, CursorMax, buff + LBUF_SIZE - *bufc);
-#else
-    sStrA->export_TextAnsi(buff, bufc);
-#endif // NEW_MUX_STRING
 
     delete sStrA;
     delete sStrB;
@@ -6870,11 +6725,7 @@ static FUNCTION(fun_edit)
     mux_string *sTo   = new mux_string(fargs[2]);
 
     sStr->edit(*sFrom, *sTo);
-#ifdef NEW_MUX_STRING
     *bufc += sStr->export_TextAnsi(*bufc, CursorMin, CursorMax, buff + LBUF_SIZE - *bufc);
-#else
-    sStr->export_TextAnsi(buff, bufc);
-#endif // NEW_MUX_STRING
 
     delete sStr;
     delete sFrom;
@@ -8107,7 +7958,6 @@ static void centerjustcombo
     {
         return;
     }
-#ifdef NEW_MUX_STRING
     LBUF_OFFSET nWidth = (LBUF_OFFSET)mux_atol(strip_color(fargs[1]));
     if (0 == nWidth)
     {
@@ -8133,28 +7983,6 @@ static void centerjustcombo
             sStr->cursor_from_point(iEnd, nWidth);
         }
         *bufc += sStr->export_TextAnsi(*bufc, CursorMin, iEnd, buff + LBUF_SIZE - *bufc);
-#else
-    size_t nWidth = mux_atol(strip_color(fargs[1]));
-    if (0 == nWidth)
-    {
-        return;
-    }
-
-    if (LBUF_SIZE <= nWidth)
-    {
-        safe_range(buff, bufc);
-        return;
-    }
-
-    mux_string *sStr = new mux_string(fargs[0]);
-    size_t nStr = sStr->length();
-
-    // If there's no need to pad, then we are done.
-    //
-    if (nWidth <= nStr)
-    {
-        sStr->export_TextAnsi(buff, bufc, 0, bTrunc ? nWidth : LBUF_SIZE);
-#endif
         delete sStr;
         return;
     }
@@ -8167,18 +7995,13 @@ static void centerjustcombo
         sPad->import(fargs[2]);
         sPad->strip(T("\r\n\t"));
     }
-#ifdef NEW_MUX_STRING
     LBUF_OFFSET nPad = sPad->length_cursor().m_point;
-#else
-    size_t nPad = sPad->length();
-#endif
     if (0 == nPad)
     {
         sPad->import(T(" "), 1);
         nPad = 1;
     }
 
-#ifdef NEW_MUX_STRING
     LBUF_OFFSET nLeading = 0;
     if (iType == CJC_CENTER)
     {
@@ -8216,40 +8039,6 @@ static void centerjustcombo
         sPad->cursor_from_point(iStart, nPadPart);
         sPad->cursor_from_point(iEnd, nWidth-nPos);
         *bufc += sPad->export_TextAnsi(*bufc, iStart, iEnd, buff + LBUF_SIZE - *bufc);
-#else
-    size_t nLeading = 0;
-    if (iType == CJC_CENTER)
-    {
-        nLeading = (nWidth - nStr)/2;
-    }
-    else if (iType == CJC_RJUST)
-    {
-        nLeading = nWidth - nStr;
-    }
-    size_t nTrailing = nWidth - nLeading - nStr;
-    size_t nPos = 0;
-
-    // Output leading padding.
-    //
-    while (nPos < nLeading)
-    {
-        sPad->export_TextAnsi(buff, bufc, 0, nLeading-nPos);
-        nPos += nPad;
-    }
-    nPos = nLeading;
-
-    // Output string.
-    //
-    sStr->export_TextAnsi(buff, bufc, 0, nStr);
-    nPos += nStr;
-
-    // Output first part of trailing padding.
-    //
-    if (nTrailing)
-    {
-        size_t nPadPart = nPos % nPad;
-        sPad->export_TextAnsi(buff, bufc, nPadPart, nWidth-nPos);
-#endif
         nPos += nPad-nPadPart;
     }
 
@@ -8257,13 +8046,9 @@ static void centerjustcombo
     //
     while (nPos < nWidth)
     {
-#ifdef NEW_MUX_STRING
         mux_cursor iEnd;
         sPad->cursor_from_point(iEnd, nWidth-nPos);
         *bufc += sPad->export_TextAnsi(*bufc, CursorMin, iEnd, buff + LBUF_SIZE - *bufc);
-#else
-        sPad->export_TextAnsi(buff, bufc, 0, nWidth-nPos);
-#endif
         nPos += nPad;
     }
 
@@ -8494,11 +8279,7 @@ static FUNCTION(fun_trim)
         sStr->trim(p, n, bLeft, bRight);
     }
 
-#ifdef NEW_MUX_STRING
     *bufc += sStr->export_TextAnsi(*bufc, CursorMin, CursorMax, buff + LBUF_SIZE - *bufc);
-#else
-    sStr->export_TextAnsi(buff, bufc);
-#endif // NEW_MUX_STRING
     delete sStr;
 }
 
@@ -8634,11 +8415,7 @@ static FUNCTION(fun_strip)
     {
         sStr->strip(strip_color(fargs[1]));
     }
-#ifdef NEW_MUX_STRING
     *bufc += sStr->export_TextPlain(*bufc, CursorMin, CursorMax, buff + LBUF_SIZE - *bufc);
-#else
-    sStr->export_TextPlain(buff, bufc);
-#endif
 
     delete sStr;
 }
@@ -8684,7 +8461,6 @@ static UTF8 *expand_tabs(const UTF8 *str)
     return tbuf1;
 }
 
-#ifdef NEW_MUX_STRING
 static mux_cursor wraplen(UTF8 *str, const LBUF_OFFSET nWidth, bool &newline)
 {
     mux_cursor nStr;
@@ -8747,58 +8523,6 @@ static mux_cursor wraplen(UTF8 *str, const LBUF_OFFSET nWidth, bool &newline)
     }
     return iSpace;
 }
-#else
-static size_t wraplen(UTF8 *str, const size_t nWidth, bool &newline)
-{
-    const size_t length = strlen((char *)str);
-    newline = false;
-    if (length <= nWidth)
-    {
-        /* Find the first return char
-        * so %r will not mess with any alignment
-        * functions.
-        */
-        for (size_t i = 0; i < length; i++)
-        {
-            if (  str[i] == '\n'
-               || str[i] == '\r')
-            {
-                newline = true;
-                return i+2;
-            }
-        }
-        return length;
-    }
-
-    /* Find the first return char
-    * so %r will not mess with any alignment
-    * functions.
-    */
-    for (size_t i = 0; i < nWidth; i++)
-    {
-        if (  str[i] == '\n'
-           || str[i] == '\r')
-        {
-            newline = true;
-            return i+2;
-        }
-    }
-
-    /* No return char was found. Now
-    * find the last space in str.
-    */
-    size_t maxlen = nWidth;
-    while (str[maxlen] != ' ' && maxlen > 0)
-    {
-        maxlen--;
-    }
-    if (str[maxlen] != ' ')
-    {
-        maxlen = nWidth;
-    }
-    return maxlen;
-}
-#endif
 
 static FUNCTION(fun_wrap)
 {
@@ -8906,7 +8630,6 @@ static FUNCTION(fun_wrap)
     }
 
     mux_string *sStr = new mux_string(expand_tabs(fargs[0]));
-#ifdef NEW_MUX_STRING
     mux_cursor nStr = sStr->length_cursor();
 
     UTF8 *pPlain = alloc_lbuf("fun_wrap.pPlain");
@@ -8948,48 +8671,6 @@ static FUNCTION(fun_wrap)
             sStr->cursor_next(iPos);
         }
     }
-#else
-    size_t nStr = sStr->length();
-
-    UTF8 *pPlain = alloc_lbuf("fun_wrap.pPlain");
-    UTF8 *pColor = alloc_lbuf("fun_wrap.pColor");
-
-    size_t nLength = 0;
-    bool newline = false;
-    UTF8 *jargs[2];
-    size_t nPos = 0;
-
-    while (nPos < nStr)
-    {
-        sStr->export_TextPlain(pPlain, NULL, nPos);
-
-        nLength = wraplen(pPlain, nPos == 0 ? nFirstWidth : nWidth, newline);
-
-        sStr->export_TextAnsi(pColor, NULL, nPos, nLength - (newline ? 2 : 0));
-
-        if (0 != nPos)
-        {
-            safe_str(pOSep, buff, bufc);
-            if (0 < nHanging)
-            {
-                safe_fill(buff, bufc, ' ', nHanging);
-            }
-        }
-
-        jargs[0] = pColor;
-        jargs[1] = mux_ltoa_t(nPos == 0 ? nFirstWidth : nWidth);
-        safe_str(pLeft, buff, bufc);
-        centerjustcombo(iJustKey, buff, bufc, jargs, 2, true);
-        safe_str(pRight, buff, bufc);
-
-        nPos += nLength;
-        if (  pPlain[nLength] == ' '
-           && pPlain[nLength+1] != ' ')
-        {
-            nPos++;
-        }
-    }
-#endif
 
     free_lbuf(pColor);
     free_lbuf(pPlain);
@@ -10054,7 +9735,6 @@ size_t transform_range(mux_string &sStr)
     // Look for a-z type character ranges. Dashes that don't have another
     // character on each end of them are treated literally.
     //
-#ifdef NEW_MUX_STRING
     mux_cursor nPos, nStart;
     UTF8 cBefore, cAfter;
     mux_string *sTemp = new mux_string;
@@ -10077,28 +9757,6 @@ size_t transform_range(mux_string &sStr)
             // Character range.
             //
             sTemp->truncate(CursorMin);
-#else
-    size_t nPos = 0, nStart = 0;
-    UTF8 cBefore, cAfter;
-    mux_string *sTemp = new mux_string;
-
-    bool bSucceeded = sStr.search(T("-"), &nPos, 1);
-    while (bSucceeded)
-    {
-        nStart += nPos;
-        cBefore = sStr.export_Char(nStart-1);
-        cAfter = sStr.export_Char(nStart+1);
-        if ('\0' == cAfter)
-        {
-            break;
-        }
-        if (  mux_isazAZ(cBefore)
-           && mux_isazAZ(cAfter))
-        {
-            // Character range.
-            //
-            sTemp->truncate(0);
-#endif
             if (  mux_islower_latin1(cBefore)
                == mux_islower_latin1(cAfter))
             {
@@ -10108,12 +9766,8 @@ size_t transform_range(mux_string &sStr)
                     sTemp->append_TextPlain(&cBefore, 1);
                     cBefore++;
                 }
-#ifdef NEW_MUX_STRING
                 mux_cursor nReplace = {1, 1};
                 sStr.replace_Chars(*sTemp, nStart, nReplace);
-#else
-                sStr.replace_Chars(*sTemp, nStart, 1);
-#endif
             }
             else if (  mux_islower_latin1(cBefore)
                     && mux_isupper_latin1(cAfter))
@@ -10130,12 +9784,8 @@ size_t transform_range(mux_string &sStr)
                     sTemp->append_TextPlain(&cBefore, 1);
                     cBefore++;
                 }
-#ifdef NEW_MUX_STRING
                 mux_cursor nReplace = {1, 1};
                 sStr.replace_Chars(*sTemp, nStart, nReplace);
-#else
-                sStr.replace_Chars(*sTemp, nStart, 1);
-#endif
             }
         }
         else if (  mux_isdigit(cBefore)
@@ -10144,7 +9794,6 @@ size_t transform_range(mux_string &sStr)
             // Numeric range.
             //
             cBefore++;
-#ifdef NEW_MUX_STRING
             sTemp->truncate(CursorMin);
             while (cBefore < cAfter)
             {
@@ -10155,17 +9804,6 @@ size_t transform_range(mux_string &sStr)
             sStr.replace_Chars(*sTemp, nStart, nLen);
         }
         sStr.cursor_next(nStart);
-#else
-            sTemp->truncate(0);
-            while (cBefore < cAfter)
-            {
-                sTemp->append_TextPlain(&cBefore, 1);
-                cBefore++;
-            }
-            sStr.replace_Chars(*sTemp, nStart, 1);
-        }
-        nStart++;
-#endif
         bSucceeded = sStr.search(T("-"), &nPos, nStart);
     }
 
@@ -10209,11 +9847,7 @@ static FUNCTION(fun_tr)
     else
     {
         sStr->transform(*sFrom, *sTo);
-#ifdef NEW_MUX_STRING
         *bufc += sStr->export_TextAnsi(*bufc, CursorMin, CursorMax, buff + LBUF_SIZE - *bufc);
-#else
-        sStr->export_TextAnsi(buff, bufc);
-#endif // NEW_MUX_STRING
     }
 
     delete sStr;

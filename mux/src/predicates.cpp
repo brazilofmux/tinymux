@@ -637,11 +637,7 @@ void handle_ears(dbref thing, bool could_hear, bool can_hear)
         mux_string *sStr = new mux_string(Moniker(thing));
         if (isExit(thing))
         {
-#ifdef NEW_MUX_STRING
             mux_cursor iPos;
-#else
-            size_t iPos;
-#endif // NEW_MUX_STRING
             if (sStr->search(T(";"), &iPos))
             {
                 sStr->truncate(iPos);

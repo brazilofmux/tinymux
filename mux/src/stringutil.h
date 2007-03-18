@@ -597,8 +597,6 @@ bool utf8_strlen(const UTF8 *pString, mux_cursor &nString);
 static const mux_cursor CursorMin = {0,0};
 static const mux_cursor CursorMax = {LBUF_SIZE - 1, LBUF_SIZE - 1};
 
-#define NEW_MUX_STRING
-
 class mux_string
 {
     // m_nutf, m_ncs, m_autf, m_ncs, and m_pcs work together as follows:
