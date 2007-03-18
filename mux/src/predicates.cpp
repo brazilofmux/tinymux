@@ -354,7 +354,7 @@ UTF8 *MakeCanonicalObjectName(const UTF8 *pName, size_t *pnName, bool *pbValid)
     // and OR_TOKEN are allowed.
     //
     const UTF8 *p = pStripped;
-    while ('\0' != *pStripped)
+    while ('\0' != *p)
     {
         if (!mux_isobjectname(p))
         {
@@ -523,7 +523,7 @@ bool ValidatePlayerName(const UTF8 *pName)
        || mudconf.name_spaces)
     {
         const UTF8 *p = pName;
-        while ('\0' != p)
+        while ('\0' != *p)
         {
             if (  !mux_isplayername(p)
                && ' ' != *p)
