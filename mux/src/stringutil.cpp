@@ -4947,6 +4947,94 @@ mux_string::~mux_string(void)
     realloc_m_pcs(0);
 }
 
+/*! \brief Self-checks mux_string to validate the invariant.
+ *
+ * Used in debugging to validate that a string is internally consistent and maintains the described invariants.
+ *
+ * \return         None.
+ */
+
+void mux_string::Validate(void) const
+{
+    // m_iLast.m_byte is always between 0 and LBUF_SIZE-1 inclusively.
+    //
+    mux_assert(m_iLast.m_byte <= LBUF_SIZE-1);
+
+    // m_iLast.m_point is always between 0 and LBUF_SIZE-1 inclusively.
+    //
+    mux_assert(m_iLast.m_point <= LBUF_SIZE-1);
+
+    // m_iLast.m_point is always between 0 and LBUF_SIZE-1 inclusively.
+    //
+    mux_assert(m_ncs <= LBUF_SIZE-1);
+
+    // When m_pcs is NULL, m_ncs must be 0, and this is equivalent to every
+    // code point having CS_NORMAL color.  When m_pcs is not NULL, m_ncs
+    // must be between 1 and LBUF_SIZE-1, inclusively, and it must be large
+    // enough to contain colors for every code point.
+    //
+    mux_assert(  ( NULL == m_pcs
+                 && 0 == m_ncs)
+              || ( NULL != m_pcs
+                 && 1 <= m_ncs
+                 && m_ncs <= LBUF_SIZE-1
+                 && m_iLast.m_point <= m_ncs));
+
+    // m_iLast.m_byte bytes of m_atuf[] contain the non-color UTF-8-encoded
+    // code points.  A terminating '\0' at m_autf[m_iLast.m_byte] is not
+    // included in this size even though '\0' is a UTF-8 code point.  In this
+    // way, m_iLast.m_byte corresponds to strlen() in units of bytes.
+    //
+    // m_iLast.m_point represents the number of non-color UTF-8-encoded code
+    // points stored in m_autf[]. The terminating '\0' is not included in this
+    // size.  In this way, m_ncp corresponds to strlen() in units of code
+    // points.
+    //
+    size_t nbytes  = 0;
+    size_t npoints = 0;
+
+    const UTF8 *p = m_autf;
+    while (  p < (m_autf + LBUF_SIZE)
+          && '\0' != *p)
+    {
+        // Each code point must be valid encoding.
+        //
+        unsigned char iCode = utf8_FirstByte[*p];
+        mux_assert(iCode < UTF8_CONTINUE);
+
+        size_t j;
+        for (j = 1; j < iCode; j++)
+        {
+            mux_assert(UTF8_CONTINUE == utf8_FirstByte[p[j]]);
+        }
+
+        // All code points in m_autf[] must be non-color code points.
+        //
+        mux_assert(COLOR_NOTCOLOR == mux_color(p));
+
+        p += iCode;
+        nbytes += iCode;
+        npoints++;
+    }
+
+    mux_assert(nbytes == m_iLast.m_byte);
+    mux_assert(npoints == m_iLast.m_point);
+
+    if (NULL != m_pcs)
+    {
+        size_t i;
+        for (i = 0; i < m_iLast.m_point; i++)
+        {
+            // Every ColorState must be valid.
+            //
+            const ColorState Mask = ~(CS_FOREGROUND|CS_BACKGROUND|CS_ATTRS);
+            mux_assert((Mask & m_pcs[i]) == 0);
+            mux_assert((CS_FOREGROUND & m_pcs[i]) <= CS_FG_DEFAULT);
+            mux_assert((CS_BACKGROUND & m_pcs[i]) <= CS_BG_DEFAULT);
+        }
+    }
+}
+
 void mux_string::append(dbref num)
 {
     append_TextPlain(T("#"), 1);
@@ -6253,7 +6341,7 @@ void mux_string::transform
     {
         return;
     }
-    else if (m_iLast.m_byte - nStart < nLen)
+    else if (m_iLast.m_byte < nStart + nLen)
     {
         nLen = m_iLast.m_byte - nStart;
     }

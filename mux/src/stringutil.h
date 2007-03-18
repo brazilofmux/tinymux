@@ -601,9 +601,6 @@ static const mux_cursor CursorMax = {LBUF_SIZE - 1, LBUF_SIZE - 1};
 
 class mux_string
 {
-#ifdef NEW_MUX_STRING
-    // PROPOSED INVARIANT (2007-MAR-16)
-    //
     // m_nutf, m_ncs, m_autf, m_ncs, and m_pcs work together as follows:
     //
     // m_nutf is always between 0 and LBUF_SIZE-1 inclusively.  The first
@@ -638,30 +635,6 @@ private:
     UTF8        m_autf[LBUF_SIZE];
     size_t      m_ncs;
     ColorState *m_pcs;
-#else
-private:
-    // DEPRECATED INVARIANT
-    //
-    // m_n, m_ach, m_ncs, and m_pcs work together as follows:
-    //
-    // m_n is always between 0 and LBUF_SIZE-1 inclusively.  The first m_n
-    // characters of m_ach[] contain the non-ANSI portion of the string.
-    // In addition to a length, m_ach[] is also terminated with '\0' at
-    // m_ach[m_n].  This is intentionally redundant.
-    //
-    // m_ncs tracks the size of the array of color states pointed to
-    // by m_pcs.  If m_ncs is 0, there is no color in the string and
-    // m_pcs must not be dereferenced.  Otherwise each character in
-    // m_ach[] has a corresponding color encoded in m_pcs[].  The
-    // m_pcs[m_n] (which corresponds to '\0') is not guaranteed to
-    // exist or be valid.
-    //
-    size_t          m_n;
-    unsigned char   m_ach[LBUF_SIZE];
-    size_t          m_ncs;
-    ColorState     *m_pcs;
-
-#endif // NEW_MUX_STRING
     void realloc_m_pcs(size_t ncs);
 
 public:
@@ -669,37 +642,23 @@ public:
     mux_string(const mux_string &sStr);
     mux_string(const UTF8 *pStr);
     ~mux_string(void);
+    void Validate(void) const;
     void append(dbref num);
     void append(INT64 iInt);
     void append(long lLong);
-#ifdef NEW_MUX_STRING
     void append
     (
         const mux_string &sStr,
         mux_cursor nStart = CursorMin,
         mux_cursor iEnd   = CursorMax
     );
-#else
-    void append
-    (
-        const mux_string &sStr,
-        size_t nStart = 0,
-        size_t nLen = (LBUF_SIZE-1)
-    );
-#endif
     void append(const UTF8 *pStr);
     void append(const UTF8 *pStr, size_t nLen);
     void append_TextPlain(const UTF8 *pStr);
     void append_TextPlain(const UTF8 *pStr, size_t nLen);
-#ifdef NEW_MUX_STRING
     void compress(const UTF8 *ch);
     void compress_Spaces(void);
     void delete_Chars(mux_cursor iStart, mux_cursor iEnd);
-#else
-    void compress(const UTF8 ch);
-    void compress_Spaces(void);
-    void delete_Chars(size_t nStart, size_t nLen);
-#endif
     void edit(mux_string &sFrom, const mux_string &sTo);
     UTF8 export_Char(size_t n) const;
     LBUF_OFFSET export_Char_UTF8(size_t iFirst, UTF8 *pBuffer) const;
@@ -707,7 +666,6 @@ public:
     double export_Float(bool bStrict = true) const;
     INT64 export_I64(void) const;
     long export_Long(void) const;
-#ifdef NEW_MUX_STRING
     LBUF_OFFSET export_TextAnsi
     (
         UTF8 *pBuffer,
@@ -723,38 +681,13 @@ public:
         mux_cursor iEnd   = CursorMax,
         size_t nBytesMax = (LBUF_SIZE-1)
     ) const;
-#else
-    void export_TextAnsi
-    (
-        UTF8 *buff,
-        UTF8 **bufc = NULL,
-        size_t nStart = 0,
-        size_t nLen = LBUF_SIZE,
-        size_t nBuffer = (LBUF_SIZE-1),
-        bool bNoBleed = false
-    ) const;
-    void export_TextPlain
-    (
-        UTF8 *buff,
-        UTF8 **bufc = NULL,
-        size_t nStart = 0,
-        size_t nLen = LBUF_SIZE,
-        size_t nBuffer = (LBUF_SIZE-1)
-    ) const;
-#endif
     void import(dbref num);
     void import(INT64 iInt);
     void import(long lLong);
-#ifdef NEW_MUX_STRING
     void import(const mux_string &sStr, mux_cursor iStart = CursorMin);
     void import(const UTF8 *pStr);
     void import(const UTF8 *pStr, size_t nLen);
     mux_cursor length_cursor(void) const;
-#else
-    void import(const mux_string &sStr, size_t nStart = 0);
-    void import(const UTF8 *pStr);
-    void import(const UTF8 *pStr, size_t nLen);
-#endif
     size_t length(void) const;
     void prepend(dbref num);
     void prepend(INT64 iInt);
@@ -762,7 +695,6 @@ public:
     void prepend(const mux_string &sStr);
     void prepend(const UTF8 *pStr);
     void prepend(const UTF8 *pStr, size_t nLen);
-#ifdef NEW_MUX_STRING
     void replace_Chars(const mux_string &pTo, mux_cursor iStart, mux_cursor nLen);
     void reverse(void);
     bool search
@@ -777,25 +709,8 @@ public:
         mux_cursor *nPos = NULL,
         mux_cursor nStart = CursorMin
     ) const;
-#else
-    void replace_Chars(const mux_string &pTo, size_t nStart, size_t nLen);
-    void reverse(void);
-    bool search
-    (
-        const UTF8 *pPattern,
-        size_t *nPos = NULL,
-        size_t nStart = 0
-    ) const;
-    bool search
-    (
-        const mux_string &sPattern,
-        size_t *nPos = NULL,
-        size_t nStart = 0
-    ) const;
-#endif // NEW_MUX_STRING
     void set_Char(size_t n, const UTF8 cChar);
     void set_Color(size_t n, ColorState csColor);
-#ifdef NEW_MUX_STRING
     void strip
     (
         const UTF8 *pStripSet,
@@ -808,20 +723,6 @@ public:
         mux_cursor iStart = CursorMin,
         mux_cursor iEnd = CursorMax
     );
-#else
-    void strip
-    (
-        const UTF8 *pStripSet,
-        size_t nStart = 0,
-        size_t nLen = (LBUF_SIZE-1)
-    );
-    void stripWithTable
-    (
-        const bool strip_table[UCHAR_MAX+1],
-        size_t nStart = 0,
-        size_t nLen = (LBUF_SIZE-1)
-    );
-#endif // NEW_MUX_STRING
     void transform
     (
         mux_string &sFromSet,
@@ -838,11 +739,7 @@ public:
     void trim(const UTF8 ch = ' ', bool bLeft = true, bool bRight = true);
     void trim(const UTF8 *p, bool bLeft = true, bool bRight = true);
     void trim(const UTF8 *p, size_t n, bool bLeft = true, bool bRight = true);
-#ifdef NEW_MUX_STRING
     void truncate(mux_cursor iEnd);
-#else
-    void truncate(size_t nLen);
-#endif // NEW_MUX_STRING
 
     static void * operator new(size_t size)
     {
@@ -858,7 +755,6 @@ public:
         }
     }
 
-#ifdef NEW_MUX_STRING
     // mux_string_cursor c;
     // cursor_start(c);
     // while (cursor_next(c))
@@ -1006,7 +902,6 @@ public:
         }
         return false;
     }
-#endif // NEW_MUX_STRING
 
     friend class mux_words;
 };
@@ -1022,13 +917,8 @@ class mux_words
 private:
     bool        m_aControl[UCHAR_MAX+1];
     LBUF_OFFSET m_nWords;
-#ifdef NEW_MUX_STRING
     mux_cursor m_aiWordBegins[MAX_WORDS];
     mux_cursor m_aiWordEnds[MAX_WORDS];
-#else
-    LBUF_OFFSET m_aiWordBegins[MAX_WORDS];
-    LBUF_OFFSET m_aiWordEnds[MAX_WORDS];
-#endif
     const mux_string *m_s;
 
 public:
@@ -1040,13 +930,8 @@ public:
     void ignore_Word(LBUF_OFFSET n);
     void set_Control(const UTF8 *pControlSet);
     void set_Control(const bool table[UCHAR_MAX+1]);
-#ifdef NEW_MUX_STRING
     mux_cursor wordBegin(LBUF_OFFSET n) const;
     mux_cursor wordEnd(LBUF_OFFSET n) const;
-#else
-    LBUF_OFFSET wordBegin(LBUF_OFFSET n) const;
-    LBUF_OFFSET wordEnd(LBUF_OFFSET n) const;
-#endif
 };
 
 #endif // STRINGUTIL_H

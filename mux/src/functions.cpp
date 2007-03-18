@@ -5208,11 +5208,7 @@ static FUNCTION(fun_lcstr)
     mux_string *sStr = new mux_string(fargs[0]);
 
     sStr->transform_Ascii(mux_tolower_ascii);
-#ifdef NEW_MUX_STRING
     *bufc += sStr->export_TextAnsi(*bufc, CursorMin, CursorMax, buff + LBUF_SIZE - *bufc);
-#else
-    sStr->export_TextAnsi(buff, bufc);
-#endif // NEW_MUX_STRING
 
     delete sStr;
 }
@@ -5230,11 +5226,7 @@ static FUNCTION(fun_ucstr)
     mux_string *sStr = new mux_string(fargs[0]);
 
     sStr->transform_Ascii(mux_toupper_ascii);
-#ifdef NEW_MUX_STRING
     *bufc += sStr->export_TextAnsi(*bufc, CursorMin, CursorMax, buff + LBUF_SIZE - *bufc);
-#else
-    sStr->export_TextAnsi(buff, bufc);
-#endif // NEW_MUX_STRING
 
     delete sStr;
 }
@@ -5252,11 +5244,7 @@ static FUNCTION(fun_capstr)
     mux_string *sStr = new mux_string(fargs[0]);
 
     sStr->transform_Ascii(mux_toupper_ascii, 0, 1);
-#ifdef NEW_MUX_STRING
     *bufc += sStr->export_TextAnsi(*bufc, CursorMin, CursorMax, buff + LBUF_SIZE - *bufc);
-#else
-    sStr->export_TextAnsi(buff, bufc);
-#endif // NEW_MUX_STRING
 
     delete sStr;
 }
