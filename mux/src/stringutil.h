@@ -753,6 +753,10 @@ public:
         }
     }
 
+    void UpperCase(void);
+    void LowerCase(void);
+    void UpperCaseFirst(void);
+
     // mux_string_cursor c;
     // cursor_start(c);
     // while (cursor_next(c))

@@ -6562,6 +6562,61 @@ void mux_string::truncate(mux_cursor iEnd)
     m_autf[m_iLast.m_byte] = '\0';
 }
 
+void mux_string::UpperCase(void)
+{
+    for (mux_cursor i = CursorMin; i < m_iLast; cursor_next(i))
+    {
+        UTF8 *p = m_autf + i.m_byte;
+        if (mux_islower(p))
+        {
+            const UTF8 *qFlip = mux_upperflip(p);
+            size_t n = utf8_FirstByte[p[0]];
+            size_t j;
+            for (j = 0; j < n; j++)
+            {
+                p[j] ^= qFlip[j];
+            }
+        }
+    }
+}
+
+void mux_string::LowerCase(void)
+{
+    for (mux_cursor i = CursorMin; i < m_iLast; cursor_next(i))
+    {
+        UTF8 *p = m_autf + i.m_byte;
+        if (mux_isupper(p))
+        {
+            const UTF8 *qFlip = mux_lowerflip(p);
+            size_t n = utf8_FirstByte[p[0]];
+            size_t j;
+            for (j = 0; j < n; j++)
+            {
+                p[j] ^= qFlip[j];
+            }
+        }
+    }
+}
+
+void mux_string::UpperCaseFirst(void)
+{
+    mux_cursor i = CursorMin;
+    if (i < m_iLast)
+    {
+        UTF8 *p = m_autf + i.m_byte;
+        if (mux_islower(p))
+        {
+            const UTF8 *qFlip = mux_upperflip(p);
+            size_t n = utf8_FirstByte[p[0]];
+            size_t j;
+            for (j = 0; j < n; j++)
+            {
+                p[j] ^= qFlip[j];
+            }
+        }
+    }
+}
+
 mux_words::mux_words(const mux_string &sStr) : m_s(&sStr)
 {
     m_aiWordBegins[0] = CursorMin;

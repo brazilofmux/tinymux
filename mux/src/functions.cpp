@@ -5122,8 +5122,7 @@ static FUNCTION(fun_lcstr)
     UNUSED_PARAMETER(ncargs);
 
     mux_string *sStr = new mux_string(fargs[0]);
-
-    sStr->transform_Ascii(mux_tolower_ascii);
+    sStr->LowerCase();
     *bufc += sStr->export_TextAnsi(*bufc, CursorMin, CursorMax, buff + LBUF_SIZE - *bufc);
 
     delete sStr;
@@ -5140,8 +5139,7 @@ static FUNCTION(fun_ucstr)
     UNUSED_PARAMETER(ncargs);
 
     mux_string *sStr = new mux_string(fargs[0]);
-
-    sStr->transform_Ascii(mux_toupper_ascii);
+    sStr->UpperCase();
     *bufc += sStr->export_TextAnsi(*bufc, CursorMin, CursorMax, buff + LBUF_SIZE - *bufc);
 
     delete sStr;
@@ -5158,8 +5156,7 @@ static FUNCTION(fun_capstr)
     UNUSED_PARAMETER(ncargs);
 
     mux_string *sStr = new mux_string(fargs[0]);
-
-    sStr->transform_Ascii(mux_toupper_ascii, 0, 1);
+    sStr->UpperCaseFirst();
     *bufc += sStr->export_TextAnsi(*bufc, CursorMin, CursorMax, buff + LBUF_SIZE - *bufc);
 
     delete sStr;
