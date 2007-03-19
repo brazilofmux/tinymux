@@ -82,7 +82,7 @@ void VerifyTables(FILE *fp)
 
 StateMachine sm;
 
-struct
+static struct
 {
     UTF8 *p;
     size_t n;
