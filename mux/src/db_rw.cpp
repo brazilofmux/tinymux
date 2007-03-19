@@ -162,20 +162,13 @@ static BOOLEXP *getboolexp1(FILE *f)
             buff = alloc_lbuf("getboolexp1.atr_name");
 
             s = buff;
-            size_t n;
             while (   EOF != (c = getc(f))
                   && '\n' != c
                   && ':'  != c
                   && '/'  != c
-                  && (n = utf8_FirstByte[(unsigned char)c]) < UTF8_CONTINUE
-                  && s + n < buff + LBUF_SIZE)
+                  && s < buff + LBUF_SIZE - 1)
             {
                 *s++ = (UTF8)c;
-                while (--n)
-                {
-                    c = getc(f);
-                    *s++ = (UTF8)c;
-                }
             }
 
             if (EOF == c)
@@ -222,20 +215,14 @@ static BOOLEXP *getboolexp1(FILE *f)
 
             buff = alloc_lbuf("getboolexp1.attr_lock");
             s = buff;
-            size_t n;
             while (   EOF != (c = getc(f))
                   && '\n' != c
-                  && ':'  != c
-                  && '/'  != c
-                  && (n = utf8_FirstByte[(unsigned char)c]) < UTF8_CONTINUE
-                  && s + n < buff + LBUF_SIZE)
+                  && ')'  != c
+                  && OR_TOKEN != c
+                  && AND_TOKEN != c
+                  && s < buff + LBUF_SIZE - 1)
             {
                 *s++ = (UTF8)c;
-                while (--n)
-                {
-                    c = getc(f);
-                    *s++ = (UTF8)c;
-                }
             }
 
             if (EOF == c)
@@ -664,8 +651,7 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
                 // Only used when reading v2 format.
                 //
                 tempbool = getboolexp(f);
-                atr_add_raw(i, A_LOCK,
-                unparse_boolexp_quiet(1, tempbool));
+                atr_add_raw(i, A_LOCK, unparse_boolexp_quiet(1, tempbool));
                 free_boolexp(tempbool);
             }
 
