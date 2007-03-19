@@ -6148,7 +6148,7 @@ bool mux_string::search
 
     if (iPos)
     {
-        cursor_from_byte(*iPos, static_cast<LBUF_OFFSET>(i));
+        cursor_from_byte(*iPos, static_cast<LBUF_OFFSET>(i + iStart.m_byte));
     }
     return bSucceeded;
 }
