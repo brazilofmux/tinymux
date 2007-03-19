@@ -404,13 +404,13 @@ void BuildAndOutputTable(FILE *fp, char *UpperPrefix, char *LowerPrefix)
         return;
     }
 
-    printf("const unsigned char *%s_ott[%d] =\n", LowerPrefix, nOutputTable);
+    printf("const UTF8 *%s_ott[%d] =\n", LowerPrefix, nOutputTable);
     printf("{\n");
     int i;
     for (i = 0; i < nOutputTable; i++)
     {
         UTF8 *p = aOutputTable[i].p;
-        printf("    \"");
+        printf("    T(\"");
         size_t n = aOutputTable[i].n;
         while (n--)
         {
@@ -420,11 +420,11 @@ void BuildAndOutputTable(FILE *fp, char *UpperPrefix, char *LowerPrefix)
 
         if (i != nOutputTable - 1)
         {
-            printf("\",\n");
+            printf("\"),\n");
         }
         else
         {
-            printf("\"\n");
+            printf("\")\n");
         }
 
         delete aOutputTable[i].p;

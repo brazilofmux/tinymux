@@ -253,9 +253,9 @@ const char *ConvertToAscii(const UTF8 *pString);
 #define TR_TOLOWER_ACCEPTING_STATES_START (1)
 extern const unsigned char tr_tolower_itt[256];
 extern const unsigned char tr_tolower_stt[1][2];
-extern const char *tr_tolower_ott[2];
+extern const UTF8 *tr_tolower_ott[2];
 
-inline const unsigned char *mux_lowerflip(const unsigned char *p)
+inline const UTF8 *mux_lowerflip(const unsigned char *p)
 {
     int iState = TR_TOLOWER_START_STATE;
     do
@@ -275,9 +275,9 @@ inline const unsigned char *mux_lowerflip(const unsigned char *p)
 #define TR_TOUPPER_ACCEPTING_STATES_START (1)
 extern const unsigned char tr_toupper_itt[256];
 extern const unsigned char tr_toupper_stt[1][4];
-extern const char *tr_toupper_ott[3];
+extern const UTF8 *tr_toupper_ott[3];
 
-inline const unsigned char *mux_upperflip(const unsigned char *p)
+inline const UTF8 *mux_upperflip(const unsigned char *p)
 {
     int iState = TR_TOUPPER_START_STATE;
     do

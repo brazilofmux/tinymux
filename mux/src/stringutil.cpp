@@ -1118,6 +1118,9 @@ const unsigned char tr_ascii_stt[67][190] =
 // 56 code points.
 // 1 states, 2 columns, 258 bytes
 //
+#define TR_TOLOWER_START_STATE (0)
+#define TR_TOLOWER_ACCEPTING_STATES_START (1)
+
 const unsigned char tr_tolower_itt[256] =
 {
        0,   0,   0,   0,   0,   0,   0,   0,    0,   0,   0,   0,   0,   0,   0,   0,
@@ -1145,10 +1148,10 @@ const unsigned char tr_tolower_stt[1][2] =
     {   1,   2}
 };
 
-const char *tr_tolower_ott[2] =
+const UTF8 *tr_tolower_ott[2] =
 {
-    " ",
-    ""
+    T("\x20"),
+    T("\x00\x20")
 };
 
 // utf/tr_toupper.txt
@@ -1156,6 +1159,9 @@ const char *tr_tolower_ott[2] =
 // 57 code points.
 // 1 states, 4 columns, 260 bytes
 //
+#define TR_TOUPPER_START_STATE (0)
+#define TR_TOUPPER_ACCEPTING_STATES_START (1)
+
 const unsigned char tr_toupper_itt[256] =
 {
        0,   0,   0,   0,   0,   0,   0,   0,    0,   0,   0,   0,   0,   0,   0,   0,
@@ -1183,11 +1189,11 @@ const unsigned char tr_toupper_stt[1][4] =
     {   1,   2,   3,   0}
 };
 
-const char *tr_toupper_ott[3] =
+const UTF8 *tr_toupper_ott[3] =
 {
-    " ",
-    "",
-    "\x06\x07"
+    T("\x20"),
+    T("\x00\x20"),
+    T("\x06\x07")
 };
 
 // utf/tr_Color.txt
