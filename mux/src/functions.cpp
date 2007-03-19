@@ -2192,7 +2192,8 @@ static FUNCTION(fun_mid)
 
     if (iCurStart < iCurEnd)
     {
-        *bufc += sStr->export_TextAnsi(*bufc, iCurStart, iCurEnd, buff + LBUF_SIZE - *bufc);
+        size_t nMax = buff + (LBUF_SIZE-1) - *bufc;
+        *bufc += sStr->export_TextAnsi(*bufc, iCurStart, iCurEnd, nMax);
     }
 
     delete sStr;
@@ -2230,7 +2231,8 @@ static FUNCTION(fun_right)
     if (nRight < iEnd.m_point)
     {
         sStr->cursor_from_point(iStart, (LBUF_OFFSET)(iEnd.m_point - nRight));
-        *bufc += sStr->export_TextAnsi(*bufc, iStart, iEnd, buff + LBUF_SIZE - *bufc);
+        size_t nMax = buff + (LBUF_SIZE-1) - *bufc;
+        *bufc += sStr->export_TextAnsi(*bufc, iStart, iEnd, nMax);
     }
     else
     {
@@ -3894,7 +3896,8 @@ static void do_itemfuns(UTF8 *buff, UTF8 **bufc, mux_string *sList, int iWord,
     //
     if (iWord < 1)
     {
-        *bufc += sList->export_TextAnsi(*bufc, CursorMin, CursorMax, buff + LBUF_SIZE - *bufc);
+        size_t nMax = buff + (LBUF_SIZE-1) - *bufc;
+        *bufc += sList->export_TextAnsi(*bufc, CursorMin, CursorMax, nMax);
         return;
     }
     iWord--;
@@ -3920,7 +3923,8 @@ static void do_itemfuns(UTF8 *buff, UTF8 **bufc, mux_string *sList, int iWord,
        && (  flag != IF_INSERT
           || nWords < iWord))
     {
-        *bufc += sList->export_TextAnsi(*bufc, CursorMin, CursorMax, buff + LBUF_SIZE - *bufc);
+        size_t nMax = buff + (LBUF_SIZE-1) - *bufc;
+        *bufc += sList->export_TextAnsi(*bufc, CursorMin, CursorMax, nMax);
         delete words;
         return;
     }
@@ -3954,7 +3958,8 @@ static void do_itemfuns(UTF8 *buff, UTF8 **bufc, mux_string *sList, int iWord,
 
         if (sWord)
         {
-            *bufc += sWord->export_TextAnsi(*bufc, CursorMin, CursorMax, buff + LBUF_SIZE - *bufc);
+            size_t nMax = buff + (LBUF_SIZE-1) - *bufc;
+            *bufc += sWord->export_TextAnsi(*bufc, CursorMin, CursorMax, nMax);
         }
 
         if (flag == IF_INSERT)
@@ -4187,7 +4192,8 @@ static FUNCTION(fun_secure)
         }
     }
 
-    *bufc += sStr->export_TextAnsi(*bufc, CursorMin, nLen, buff + LBUF_SIZE - *bufc);
+    size_t nMax = buff + (LBUF_SIZE-1) - *bufc;
+    *bufc += sStr->export_TextAnsi(*bufc, CursorMin, nLen, nMax);
 
     delete sTo;
     delete sStr;
@@ -4230,7 +4236,8 @@ static FUNCTION(fun_escape)
         sOut->append_TextPlain(&cChar, 1);
         sOut->set_Color(iOut++, csColor);
     }
-    *bufc += sOut->export_TextAnsi(*bufc, CursorMin, CursorMax, buff + LBUF_SIZE - *bufc);
+    size_t nMax = buff + (LBUF_SIZE-1) - *bufc;
+    *bufc += sOut->export_TextAnsi(*bufc, CursorMin, CursorMax, nMax);
 
     delete sStr;
     delete sOut;
@@ -4675,7 +4682,8 @@ static FUNCTION(fun_delete)
     sStr->cursor_from_point(iStartCur, static_cast<LBUF_OFFSET>(iStart));
     sStr->cursor_from_point(iEnd, static_cast<LBUF_OFFSET>(iStartCur.m_point + nDelete));
     sStr->delete_Chars(iStartCur, iEnd);
-    *bufc += sStr->export_TextAnsi(*bufc, CursorMin, CursorMax, buff + LBUF_SIZE - *bufc);
+    size_t nMax = buff + (LBUF_SIZE-1) - *bufc;
+    *bufc += sStr->export_TextAnsi(*bufc, CursorMin, CursorMax, nMax);
 
     delete sStr;
 }
@@ -5123,7 +5131,8 @@ static FUNCTION(fun_lcstr)
 
     mux_string *sStr = new mux_string(fargs[0]);
     sStr->LowerCase();
-    *bufc += sStr->export_TextAnsi(*bufc, CursorMin, CursorMax, buff + LBUF_SIZE - *bufc);
+    size_t nMax = buff + (LBUF_SIZE-1) - *bufc;
+    *bufc += sStr->export_TextAnsi(*bufc, CursorMin, CursorMax, nMax);
 
     delete sStr;
 }
@@ -5140,7 +5149,8 @@ static FUNCTION(fun_ucstr)
 
     mux_string *sStr = new mux_string(fargs[0]);
     sStr->UpperCase();
-    *bufc += sStr->export_TextAnsi(*bufc, CursorMin, CursorMax, buff + LBUF_SIZE - *bufc);
+    size_t nMax = buff + (LBUF_SIZE-1) - *bufc;
+    *bufc += sStr->export_TextAnsi(*bufc, CursorMin, CursorMax, nMax);
 
     delete sStr;
 }
@@ -5157,7 +5167,8 @@ static FUNCTION(fun_capstr)
 
     mux_string *sStr = new mux_string(fargs[0]);
     sStr->UpperCaseFirst();
-    *bufc += sStr->export_TextAnsi(*bufc, CursorMin, CursorMax, buff + LBUF_SIZE - *bufc);
+    size_t nMax = buff + (LBUF_SIZE-1) - *bufc;
+    *bufc += sStr->export_TextAnsi(*bufc, CursorMin, CursorMax, nMax);
 
     delete sStr;
 }
@@ -5463,7 +5474,8 @@ static FUNCTION(fun_reverse)
     mux_string *sStr = new mux_string(fargs[0]);
 
     sStr->reverse();
-    *bufc += sStr->export_TextAnsi(*bufc, CursorMin, CursorMax, buff + LBUF_SIZE - *bufc);
+    size_t nMax = buff + (LBUF_SIZE-1) - *bufc;
+    *bufc += sStr->export_TextAnsi(*bufc, CursorMin, CursorMax, nMax);
 
     delete sStr;
 }
@@ -5571,7 +5583,8 @@ static FUNCTION(fun_after)
     {
         // Yup, return what follows.
         //
-        *bufc += sStr->export_TextAnsi(*bufc, i + nPat, CursorMax, buff + LBUF_SIZE - *bufc);
+        size_t nMax = buff + (LBUF_SIZE-1) - *bufc;
+        *bufc += sStr->export_TextAnsi(*bufc, i + nPat, CursorMax, nMax);
     }
 
     delete sStr;
@@ -5620,13 +5633,15 @@ static FUNCTION(fun_before)
     {
         // Yup, return what follows.
         //
-        *bufc += sStr->export_TextAnsi(*bufc, CursorMin, i, buff + LBUF_SIZE - *bufc);
+        size_t nMax = buff + (LBUF_SIZE-1) - *bufc;
+        *bufc += sStr->export_TextAnsi(*bufc, CursorMin, i, nMax);
     }
     else
     {
         // Ran off the end without finding it.
         //
-        *bufc += sStr->export_TextAnsi(*bufc, CursorMin, CursorMax, buff + LBUF_SIZE - *bufc);
+        size_t nMax = buff + (LBUF_SIZE-1) - *bufc;
+        *bufc += sStr->export_TextAnsi(*bufc, CursorMin, CursorMax, nMax);
     }
 
     delete sStr;
@@ -5770,7 +5785,8 @@ static FUNCTION(fun_merge)
         }
     }
 
-    *bufc += sStrA->export_TextAnsi(*bufc, CursorMin, CursorMax, buff + LBUF_SIZE - *bufc);
+    size_t nMax = buff + (LBUF_SIZE-1) - *bufc;
+    *bufc += sStrA->export_TextAnsi(*bufc, CursorMin, CursorMax, nMax);
 
     delete sStrA;
     delete sStrB;
@@ -6722,7 +6738,8 @@ static FUNCTION(fun_edit)
     mux_string *sTo   = new mux_string(fargs[2]);
 
     sStr->edit(*sFrom, *sTo);
-    *bufc += sStr->export_TextAnsi(*bufc, CursorMin, CursorMax, buff + LBUF_SIZE - *bufc);
+    size_t nMax = buff + (LBUF_SIZE-1) - *bufc;
+    *bufc += sStr->export_TextAnsi(*bufc, CursorMin, CursorMax, nMax);
 
     delete sStr;
     delete sFrom;
@@ -7979,7 +7996,8 @@ static void centerjustcombo
         {
             sStr->cursor_from_point(iEnd, nWidth);
         }
-        *bufc += sStr->export_TextAnsi(*bufc, CursorMin, iEnd, buff + LBUF_SIZE - *bufc);
+        size_t nMax = buff + (LBUF_SIZE-1) - *bufc;
+        *bufc += sStr->export_TextAnsi(*bufc, CursorMin, iEnd, nMax);
         delete sStr;
         return;
     }
@@ -8010,6 +8028,7 @@ static void centerjustcombo
     }
     LBUF_OFFSET nTrailing = nWidth - nLeading - nStr.m_point;
     LBUF_OFFSET nPos = 0;
+    size_t nMax;
 
     // Output leading padding.
     //
@@ -8017,14 +8036,16 @@ static void centerjustcombo
     {
         mux_cursor iEnd;
         sPad->cursor_from_point(iEnd, nLeading-nPos);
-        *bufc += sPad->export_TextAnsi(*bufc, CursorMin, iEnd, buff + LBUF_SIZE - *bufc);
+        nMax = buff + (LBUF_SIZE-1) - *bufc;
+        *bufc += sPad->export_TextAnsi(*bufc, CursorMin, iEnd, nMax);
         nPos += nPad;
     }
     nPos = nLeading;
 
     // Output string.
     //
-    *bufc += sStr->export_TextAnsi(*bufc, CursorMin, nStr, buff + LBUF_SIZE - *bufc);
+    nMax = buff + (LBUF_SIZE-1) - *bufc;
+    *bufc += sStr->export_TextAnsi(*bufc, CursorMin, nStr, nMax);
     nPos += nStr.m_point;
 
     // Output first part of trailing padding.
@@ -8035,7 +8056,8 @@ static void centerjustcombo
         mux_cursor iStart, iEnd;
         sPad->cursor_from_point(iStart, nPadPart);
         sPad->cursor_from_point(iEnd, nWidth-nPos);
-        *bufc += sPad->export_TextAnsi(*bufc, iStart, iEnd, buff + LBUF_SIZE - *bufc);
+        nMax = buff + (LBUF_SIZE-1) - *bufc;
+        *bufc += sPad->export_TextAnsi(*bufc, iStart, iEnd, nMax);
         nPos += nPad-nPadPart;
     }
 
@@ -8045,7 +8067,8 @@ static void centerjustcombo
     {
         mux_cursor iEnd;
         sPad->cursor_from_point(iEnd, nWidth-nPos);
-        *bufc += sPad->export_TextAnsi(*bufc, CursorMin, iEnd, buff + LBUF_SIZE - *bufc);
+        nMax = buff + (LBUF_SIZE-1) - *bufc;
+        *bufc += sPad->export_TextAnsi(*bufc, CursorMin, iEnd, nMax);
         nPos += nPad;
     }
 
@@ -8276,7 +8299,8 @@ static FUNCTION(fun_trim)
         sStr->trim(p, n, bLeft, bRight);
     }
 
-    *bufc += sStr->export_TextAnsi(*bufc, CursorMin, CursorMax, buff + LBUF_SIZE - *bufc);
+    size_t nMax = buff + (LBUF_SIZE-1) - *bufc;
+    *bufc += sStr->export_TextAnsi(*bufc, CursorMin, CursorMax, nMax);
     delete sStr;
 }
 
@@ -8412,7 +8436,8 @@ static FUNCTION(fun_strip)
     {
         sStr->strip(strip_color(fargs[1]));
     }
-    *bufc += sStr->export_TextPlain(*bufc, CursorMin, CursorMax, buff + LBUF_SIZE - *bufc);
+    size_t nMax = buff + (LBUF_SIZE-1) - *bufc;
+    *bufc += sStr->export_TextPlain(*bufc, CursorMin, CursorMax, nMax);
 
     delete sStr;
 }
@@ -9844,7 +9869,8 @@ static FUNCTION(fun_tr)
     else
     {
         sStr->transform(*sFrom, *sTo);
-        *bufc += sStr->export_TextAnsi(*bufc, CursorMin, CursorMax, buff + LBUF_SIZE - *bufc);
+        size_t nMax = buff + (LBUF_SIZE-1) - *bufc;
+        *bufc += sStr->export_TextAnsi(*bufc, CursorMin, CursorMax, nMax);
     }
 
     delete sStr;
