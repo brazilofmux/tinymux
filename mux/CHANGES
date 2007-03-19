@@ -6,6 +6,16 @@ Major changes that may affect performance and require softcode tweaks:
  -- Added mux_string and fixed many functions including EDIT(),
     EXTRACT(), REVERSE(), SQUISH(), WORDPOS(), and DELETE() (Issues
     14, 25, 52, 98, 100, and 232). Thanks Jake and Alierak.
+ -- Added Unicode support with the database using UTF-8 and
+    supporting ASCII, ISO 8859-1, and UTF-8 clients.  Earlier mail,
+    comsys, and flatfiles versions are converted.
+ -- NOACCENTS flag renamed to ASCII and used to force an ASCII encoding
+    for clients which do not properly negotiate or alternatively, out
+    of preference.
+ -- UNICODE flag added to force a UTF-8 encoding for clients which
+    support UTF-8 but do not negotiate it.
+ -- Added CHARSET and NEW-ENVIRON telnet negotiations which may affect
+    clients.
 
 
 Feature Additions:
@@ -30,6 +40,10 @@ Feature Additions:
  -- REVWORDS() now accepts multi-character input and output delimiters
     (Issue 21). Thanks Jake.
  -- Use mux_string in SCRAMBLE() and SECURE() to avoid stripping ANSI.
+ -- Added PennMUSH-compatible TERMINFO() to allow softcode access to
+    the client's capabilities.
+ -- Separated inline SQL supprt from Firan support so that it can be
+    enabled separately.
 
 
 Bug Fixes:
