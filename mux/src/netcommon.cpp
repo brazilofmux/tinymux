@@ -2012,21 +2012,11 @@ UTF8 *MakeCanonicalDoing(UTF8 *pDoing, size_t *pnValidDoing, bool *pbValidDoing)
         return NULL;
     }
 
-    // First, remove all '\r\n\t' from the string.
-    //
-    UTF8 *Buffer = RemoveSetOfCharacters(pDoing, T("\r\n\t"));
-
-    // Optimize/terminate any ANSI in the string.
-    //
-    size_t nVisualWidth;
     static UTF8 szFittedDoing[SIZEOF_DOING_STRING];
-    *pnValidDoing = ANSI_TruncateToField
-                    ( Buffer,
-                      SIZEOF_DOING_STRING,
-                      szFittedDoing,
-                      WIDTHOF_DOING_STRING,
-                      &nVisualWidth
-                    );
+    mux_cursor nDoing = StripTabsAndTruncate( pDoing, szFittedDoing,
+                                              SIZEOF_DOING_STRING, WIDTHOF_DOING_STRING);
+
+    *pnValidDoing = nDoing.m_byte;
     *pbValidDoing = true;
     return szFittedDoing;
 }

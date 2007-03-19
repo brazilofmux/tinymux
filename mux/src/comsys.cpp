@@ -3336,15 +3336,13 @@ void do_cheader(dbref player, UTF8 *channel, UTF8 *header)
         raw_notify(player, NOPERM_MESSAGE);
         return;
     }
-    UTF8 *p = RemoveSetOfCharacters(header, T("\r\n\t"));
 
     // Optimize/terminate any ANSI in the string.
     //
     UTF8 NewHeader_ANSI[MAX_HEADER_LEN+1];
-    size_t nVisualWidth;
-    size_t nLen = ANSI_TruncateToField(p, sizeof(NewHeader_ANSI),
-        NewHeader_ANSI, sizeof(NewHeader_ANSI), &nVisualWidth);
-    memcpy(ch->header, NewHeader_ANSI, nLen+1);
+    mux_cursor nLen = StripTabsAndTruncate( header, NewHeader_ANSI, 
+                                            MAX_HEADER_LEN, MAX_HEADER_LEN);
+    memcpy(ch->header, NewHeader_ANSI, nLen.m_byte + 1);
 }
 
 struct chanlist_node

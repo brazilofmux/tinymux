@@ -4130,6 +4130,88 @@ UTF8 *RemoveSetOfCharacters(UTF8 *pString, const UTF8 *pSetToRemove)
     return Buffer;
 }
 
+mux_cursor StripTabsAndTruncate(const UTF8 *pString, UTF8 *pBuffer, size_t nLength, LBUF_OFFSET nWidth, bool bStripTabs)
+{
+    mux_cursor iEnd;
+    if ( !pBuffer
+       || 0 == nLength
+       || 0 == nWidth)
+    {
+        return CursorMin;
+    }
+
+    if (  !pString
+       || '\0' == pString[0]
+       || !utf8_strlen(pString, iEnd)
+       || 0 == iEnd.m_point)
+    {
+        pBuffer[0] = '\0';
+        return CursorMin;
+    }
+
+    mux_cursor iPos;
+    bool bPrint = false;
+    LBUF_OFFSET nChar = 1, nCopied = 0;
+    const UTF8 *pTransition = NULL;
+    size_t nNormal = 0;
+    ColorState cs = CS_NORMAL;
+
+    for ( iPos = CursorMin;
+          iPos < iEnd;
+          iPos(iPos.m_byte + nChar, iPos.m_point + (bPrint ? 1 : 0)))
+    {
+        if (bStripTabs)
+        {
+            switch (pString[iPos.m_byte])
+            {
+            case '\r':
+            case '\n':
+            case '\t':
+                nChar = 1;
+                bPrint = false;
+                continue;
+            }
+        }
+
+        nChar = utf8_FirstByte[pString[iPos.m_byte]];
+        bPrint = mux_isprint(pString + iPos.m_byte);
+        if (!bPrint)
+        {
+            int iCode = mux_color(pString + iPos.m_byte);
+            cs = UpdateColorState(cs, iCode);
+            pTransition = ColorBinaryNormal(cs, &nNormal);
+        }
+        if (  nCopied + nChar + nNormal < nLength
+           && iPos.m_point < nWidth)
+        {
+            memcpy(pBuffer + nCopied, pString + iPos.m_byte, nChar);
+            nCopied += nChar;
+        }
+        else
+        {
+            if (  0 < nNormal
+               && nCopied + nNormal < nLength)
+            {
+                memcpy(pBuffer + nCopied, pTransition, nNormal);
+                nCopied += nNormal;
+            }
+            pBuffer[nCopied] = '\0';
+            iPos(nCopied, iPos.m_point);
+            return iPos;
+        }
+    }
+
+    if (  0 < nNormal
+       && nCopied + nNormal < nLength)
+    {
+        memcpy(pBuffer + nCopied, pTransition, nNormal);
+        nCopied += nNormal;
+    }
+    pBuffer[nCopied] = '\0';
+    iPos(nCopied, iPos.m_point);
+    return iPos;
+}
+
 void ItemToList_Init(ITL *p, UTF8 *arg_buff, UTF8 **arg_bufc,
     UTF8 arg_chPrefix, UTF8 arg_chSep)
 {
