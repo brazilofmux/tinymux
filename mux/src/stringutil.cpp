@@ -4100,36 +4100,6 @@ UTF8 *mux_strtok_parse(MUX_STRTOK_STATE *tts)
     return p;
 }
 
-// This function will filter out any characters in the the set from
-// the string.
-//
-UTF8 *RemoveSetOfCharacters(UTF8 *pString, const UTF8 *pSetToRemove)
-{
-    static UTF8 Buffer[LBUF_SIZE];
-    UTF8 *pBuffer = Buffer;
-
-    size_t nLen;
-    size_t nLeft = sizeof(Buffer) - 1;
-    UTF8 *p;
-    MUX_STRTOK_STATE tts;
-    mux_strtok_src(&tts, pString);
-    mux_strtok_ctl(&tts, pSetToRemove);
-    for ( p = mux_strtok_parseLEN(&tts, &nLen);
-          p && nLeft;
-          p = mux_strtok_parseLEN(&tts, &nLen))
-    {
-        if (nLeft < nLen)
-        {
-            nLen = nLeft;
-        }
-        memcpy(pBuffer, p, nLen);
-        pBuffer += nLen;
-        nLeft -= nLen;
-    }
-    *pBuffer = '\0';
-    return Buffer;
-}
-
 mux_cursor StripTabsAndTruncate(const UTF8 *pString, UTF8 *pBuffer, size_t nLength,
                                 LBUF_OFFSET nWidth, bool bStripTabs, bool bPad)
 {
@@ -4184,8 +4154,11 @@ mux_cursor StripTabsAndTruncate(const UTF8 *pString, UTF8 *pBuffer, size_t nLeng
         if (!bPrint)
         {
             int iCode = mux_color(pString + iPos.m_byte);
-            cs = UpdateColorState(cs, iCode);
-            pTransition = ColorBinaryNormal(cs, &nNormal);
+            if (COLOR_NOTCOLOR != iCode)
+            {
+                cs = UpdateColorState(cs, iCode);
+                pTransition = ColorBinaryNormal(cs, &nNormal);
+            }
         }
         if (  nCopied + nChar + nNormal < nLength
            && iPos.m_point < nWidth)

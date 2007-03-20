@@ -30,22 +30,16 @@ static comsys_t *comsys_table[NUM_COMSYS];
 #define DFLT_RECALL_REQUEST 10
 #define MAX_RECALL_REQUEST  200
 
-// Return value is a static buffer provided by RemoveSetOfCharacters.
+// Return value is a static buffer.
 //
 static UTF8 *RestrictTitleValue(UTF8 *pTitleRequest)
 {
-    // First, remove all '\r\n\t' from the string.
+    // Remove all '\r\n\t' from the string.
+    // Terminate any ANSI in the string.
     //
-    UTF8 *pNewTitle = RemoveSetOfCharacters(pTitleRequest, T("\r\n\t"));
-
-    // Optimize/terminate any ANSI in the string.
-    //
-    UTF8 NewTitle_ANSI[MAX_TITLE_LEN+1];
-    size_t nVisualWidth;
-    size_t nLen = ANSI_TruncateToField(pNewTitle, sizeof(NewTitle_ANSI),
-        NewTitle_ANSI, sizeof(NewTitle_ANSI), &nVisualWidth);
-    memcpy(pNewTitle, NewTitle_ANSI, nLen+1);
-    return pNewTitle;
+    static UTF8 NewTitle[MAX_TITLE_LEN+1];
+    StripTabsAndTruncate(pTitleRequest, NewTitle, MAX_TITLE_LEN, MAX_TITLE_LEN);
+    return NewTitle;
 }
 
 static void do_setcomtitlestatus(dbref player, struct channel *ch, bool status)
