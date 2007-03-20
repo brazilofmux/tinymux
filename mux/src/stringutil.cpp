@@ -4127,9 +4127,9 @@ mux_cursor StripTabsAndTruncate
     }
 
     mux_cursor iPos = CursorMin, iOutput = CursorMin;
-    mux_cursor iLimit  = { nLength, nWidth };
+    mux_cursor iLimit(nLength, nWidth);
 
-    const mux_cursor nAscii = { 1, 1 };
+    const mux_cursor nAscii(1, 1);
     mux_cursor nNormal = CursorMin;
     const UTF8 *pTransition = NULL;
     size_t nNormalBytes = 0;
@@ -4150,7 +4150,7 @@ mux_cursor StripTabsAndTruncate
             continue;
         }
 
-        mux_cursor use_point = { utf8_FirstByte[pString[iPos.m_byte]], COLOR_NOTCOLOR == iCode ? 1 : 0};
+        mux_cursor use_point(utf8_FirstByte[pString[iPos.m_byte]], COLOR_NOTCOLOR == iCode ? 1 : 0);
         if (iOutput + use_point + nNormal < iLimit)
         {
             size_t j;
@@ -5472,7 +5472,7 @@ void mux_string::edit(mux_string &sFrom, const mux_string &sTo)
               || '^' == sFrom.m_autf[1])
            && 2 == nFrom.m_byte)
         {
-            mux_cursor n = {1, 1};
+            mux_cursor n(1, 1);
             sFrom.delete_Chars(CursorMin, n);
             nFrom(nFrom.m_byte-1, nFrom.m_point-1);
         }

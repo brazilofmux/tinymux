@@ -3476,7 +3476,7 @@ void do_chanlist
                             (ch->type & (CHANNEL_PUBLIC)) ? 'P' : '-',
                             (ch->type & (CHANNEL_LOUD)) ? 'L' : '-',
                             (ch->type & (CHANNEL_SPOOF)) ? 'S' : '-');
-                        mux_cursor iPos = {4,4};
+                        mux_cursor iPos(4, 4);
                         iPos += StripTabsAndTruncate( ch->name,
                                                       temp + iPos.m_byte,
                                                       MBUF_SIZE - iPos.m_byte,

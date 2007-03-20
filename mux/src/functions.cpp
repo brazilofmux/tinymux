@@ -4187,7 +4187,7 @@ static FUNCTION(fun_secure)
         ch = sStr->export_Char(i.m_byte);
         if (mux_issecure(ch))
         {
-            mux_cursor nReplace = {utf8_FirstByte[ch], 1};
+            mux_cursor nReplace(utf8_FirstByte[ch], 1);
             sStr->replace_Chars(*sTo, i, nReplace);
         }
     }
@@ -9788,7 +9788,7 @@ size_t transform_range(mux_string &sStr)
                     sTemp->append_TextPlain(&cBefore, 1);
                     cBefore++;
                 }
-                mux_cursor nReplace = {1, 1};
+                mux_cursor nReplace(1, 1);
                 sStr.replace_Chars(*sTemp, nStart, nReplace);
             }
             else if (  mux_islower_latin1(cBefore)
@@ -9806,7 +9806,7 @@ size_t transform_range(mux_string &sStr)
                     sTemp->append_TextPlain(&cBefore, 1);
                     cBefore++;
                 }
-                mux_cursor nReplace = {1, 1};
+                mux_cursor nReplace(1, 1);
                 sStr.replace_Chars(*sTemp, nStart, nReplace);
             }
         }
@@ -9822,7 +9822,7 @@ size_t transform_range(mux_string &sStr)
                 sTemp->append_TextPlain(&cBefore, 1);
                 cBefore++;
             }
-            mux_cursor nLen = {1, 1};
+            mux_cursor nLen(1, 1);
             sStr.replace_Chars(*sTemp, nStart, nLen);
         }
         sStr.cursor_next(nStart);

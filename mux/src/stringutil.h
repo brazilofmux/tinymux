@@ -502,6 +502,18 @@ public:
     LBUF_OFFSET m_byte;
     LBUF_OFFSET m_point;
 
+    inline mux_cursor(void)
+    {
+        m_byte = 0;
+        m_point = 0;
+    };
+
+    inline mux_cursor(LBUF_OFFSET byte, LBUF_OFFSET point)
+    {
+        m_byte = byte;
+        m_point = point;
+    };
+
     inline void operator =(const mux_cursor &c)
     {
         m_byte = c.m_byte;
@@ -588,8 +600,8 @@ mux_cursor StripTabsAndTruncate(const UTF8 *pString, UTF8 *pBuffer,
     size_t nLength,LBUF_OFFSET nWidth, bool bPad = false,
     UTF8 uchFill = (UTF8)' ');
 
-static const mux_cursor CursorMin = {0,0};
-static const mux_cursor CursorMax = {LBUF_SIZE - 1, LBUF_SIZE - 1};
+static const mux_cursor CursorMin(0,0);
+static const mux_cursor CursorMax(LBUF_SIZE - 1, LBUF_SIZE - 1);
 
 class mux_string
 {
