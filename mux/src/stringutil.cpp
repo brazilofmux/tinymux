@@ -2018,19 +2018,10 @@ size_t ANSI_TruncateToField
     return ANSI_String_Finalize(&aoc, pnVisualWidth);
 }
 
-UTF8 *ANSI_TruncateAndPad_sbuf(const UTF8 *pString, size_t nMaxVisualWidth, UTF8 fill)
+UTF8 *ANSI_TruncateAndPad_sbuf(const UTF8 *pString, LBUF_OFFSET nMaxVisualWidth, UTF8 fill)
 {
     UTF8 *pStringModified = alloc_sbuf("ANSI_TruncateAndPad_sbuf");
-    size_t nAvailable = SBUF_SIZE - nMaxVisualWidth;
-    size_t nVisualWidth;
-    size_t nLen = ANSI_TruncateToField(pString, nAvailable,
-        pStringModified, nMaxVisualWidth, &nVisualWidth);
-    for (size_t i = nMaxVisualWidth - nVisualWidth; i > 0; i--)
-    {
-        pStringModified[nLen] = fill;
-        nLen++;
-    }
-    pStringModified[nLen] = '\0';
+    StripTabsAndTruncate(pString, pStringModified, SBUF_SIZE, nMaxVisualWidth, false, true, fill);
     return pStringModified;
 }
 
@@ -4101,7 +4092,8 @@ UTF8 *mux_strtok_parse(MUX_STRTOK_STATE *tts)
 }
 
 mux_cursor StripTabsAndTruncate(const UTF8 *pString, UTF8 *pBuffer, size_t nLength,
-                                LBUF_OFFSET nWidth, bool bStripTabs, bool bPad)
+                                LBUF_OFFSET nWidth, bool bStripTabs,
+                                bool bPad, UTF8 uchFill)
 {
     mux_cursor iEnd;
     if ( !pBuffer
@@ -4189,13 +4181,13 @@ mux_cursor StripTabsAndTruncate(const UTF8 *pString, UTF8 *pBuffer, size_t nLeng
     iPos(nCopied, iPos.m_point);
     if (bPad)
     {
-        LBUF_OFFSET nSpaces = 0;
+        LBUF_OFFSET nFill = 0;
         while (  nCopied < nLength
-              && iPos.m_point + nSpaces < nWidth)
+              && iPos.m_point + nFill < nWidth)
         {
-            pBuffer[nCopied] = ' ';
+            pBuffer[nCopied] = uchFill;
             nCopied++;
-            nSpaces++;
+            nFill++;
         }
     }
     pBuffer[nCopied] = '\0';
