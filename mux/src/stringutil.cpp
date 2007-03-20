@@ -1872,21 +1872,18 @@ void ANSI_String_Copy
                         pacOut->m_cs = pacIn->m_cs;
                     }
 
-                    // Handle single code point.
-                    //
-                    const UTF8 *p = utf8_NextCodePoint(pacIn->m_p);
-                    iCode = mux_color(p);
-                    pacOut->m_vw++;
-
                     // Copy visual code point.
                     //
-                    size_t nBytes = p - pacIn->m_p;
-                    memcpy((char *)pacOut->m_p, (char *)p, nBytes);
-                    pacIn->m_p     += nBytes;
-                    pacIn->m_n     -= nBytes;
-                    pacOut->m_p    += nBytes;
-                    pacOut->m_n    += nBytes;
-                    pacOut->m_nMax -= nBytes;
+                    pacOut->m_vw++;
+                    memcpy((char *)pacOut->m_p, (char *)pacIn->m_p, nCodePointBytes);
+                    pacIn->m_p     += nCodePointBytes;
+                    pacIn->m_n     -= nCodePointBytes;
+                    pacOut->m_p    += nCodePointBytes;
+                    pacOut->m_n    += nCodePointBytes;
+                    pacOut->m_nMax -= nCodePointBytes;
+
+                    const UTF8 *p = utf8_NextCodePoint(pacIn->m_p);
+                    iCode = mux_color(p);
                 }
                 else if (KBA_ABOVE_MINIMUM == iKnownAvailable)
                 {
