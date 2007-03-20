@@ -3380,9 +3380,6 @@ void do_chanlist
     dbref owner;
     struct channel *ch;
     int flags = 0;
-    UTF8 *atrstr;
-    UTF8 *temp = alloc_mbuf("do_chanlist_temp");
-    UTF8 *buf = alloc_mbuf("do_chanlist_buf");
 
     if (key & CLIST_HEADERS)
     {
@@ -3449,45 +3446,66 @@ void do_chanlist
                        || (ch->type & CHANNEL_PUBLIC)
                        || Controls(executor, ch->charge_who))
                     {
-                        UTF8 *pBuffer;
+                        const UTF8 *pBuffer = NULL;
+                        UTF8 *atrstr = NULL;
+
                         if (key & CLIST_HEADERS)
                         {
                             pBuffer = ch->header;
                         }
                         else
                         {
-                            atrstr = atr_pget(ch->chan_obj, A_DESC, &owner, &flags);
-                            if (  NOTHING == ch->chan_obj
-                               || !*atrstr)
+                            if (NOTHING != ch->chan_obj)
                             {
-                                mux_strncpy(buf, T("No description."), MBUF_SIZE-1);
+                                atrstr = atr_pget(ch->chan_obj, A_DESC, &owner, &flags);
+                            }
+
+                            if (  NULL != atrstr
+                               && '\0' != atrstr[0])
+                            {
+                                pBuffer = atrstr;
                             }
                             else
                             {
-                                mux_sprintf(buf, MBUF_SIZE, "%-54.54s", atrstr);
+                                pBuffer = T("No description.");
                             }
-                            free_lbuf(atrstr);
-
-                            pBuffer = buf;
                         }
 
-                        UTF8 *ownername_ansi = ANSI_TruncateAndPad_sbuf(Moniker(ch->charge_who), 15);
-                        mux_sprintf(temp, MBUF_SIZE, "%c%c%c %-13.13s %s %-45.45s",
+                        UTF8 *temp = alloc_mbuf("do_chanlist_temp");
+                        mux_sprintf(temp, MBUF_SIZE, "%c%c%c ",
                             (ch->type & (CHANNEL_PUBLIC)) ? 'P' : '-',
                             (ch->type & (CHANNEL_LOUD)) ? 'L' : '-',
-                            (ch->type & (CHANNEL_SPOOF)) ? 'S' : '-',
-                            ch->name, ownername_ansi, pBuffer);
-                        free_sbuf(ownername_ansi);
+                            (ch->type & (CHANNEL_SPOOF)) ? 'S' : '-');
+                        mux_cursor iPos = {4,4};
+                        iPos += StripTabsAndTruncate( ch->name,
+                                                      temp + iPos.m_byte,
+                                                      MBUF_SIZE - iPos.m_byte,
+                                                      13, false, true);
+                        temp[iPos.m_byte] = ' ';
+                        iPos(iPos.m_byte + 1, iPos.m_point + 1);
+                        iPos += StripTabsAndTruncate( Moniker(ch->charge_who),
+                                                      temp + iPos.m_byte,
+                                                      MBUF_SIZE - iPos.m_byte,
+                                                      15, false, true);
+                        temp[iPos.m_byte] = ' ';
+                        iPos(iPos.m_byte + 1, iPos.m_point + 1);
+                        iPos += StripTabsAndTruncate( pBuffer,
+                                                      temp + iPos.m_byte,
+                                                      MBUF_SIZE - iPos.m_byte,
+                                                      45, false, true);
 
                         raw_notify(executor, temp);
+                        free_mbuf(temp);
+                        if (NULL != atrstr)
+                        {
+                            free_lbuf(atrstr);
+                        }
                     }
                 }
             }
             MEMFREE(charray);
         }
     }
-    free_mbuf(temp);
-    free_mbuf(buf);
     raw_notify(executor, T("-- End of list of Channels --"));
 }
 
