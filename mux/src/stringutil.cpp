@@ -4153,7 +4153,11 @@ mux_cursor StripTabsAndTruncate
         mux_cursor use_point = { utf8_FirstByte[pString[iPos.m_byte]], COLOR_NOTCOLOR == iCode ? 1 : 0};
         if (iOutput + use_point + nNormal < iLimit)
         {
-            memcpy(pBuffer + iOutput.m_byte, pString + iPos.m_byte, use_point.m_byte);
+            size_t j;
+            for (j = 0; j < use_point.m_byte; j++);
+            {
+                pBuffer[iOutput.m_byte + j] = pString[iPos.m_byte + j];
+            }
             iOutput += use_point;
         }
         else

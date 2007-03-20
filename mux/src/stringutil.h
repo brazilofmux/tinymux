@@ -520,25 +520,11 @@ public:
                && m_point < a.m_point);
     };
 
-#if 0
-    inline bool operator >(const mux_cursor &a) const
-    {
-        return m_byte > a.m_byte;
-    };
-#endif
-
     inline bool operator <=(const mux_cursor &a) const
     {
         return (  m_byte <= a.m_byte
                && m_point <= a.m_point);
     };
-
-#if 0
-    inline bool operator >=(const mux_cursor &a) const
-    {
-        return m_byte >= a.m_byte;
-    };
-#endif
 
     inline bool operator ==(const mux_cursor &a) const
     {
