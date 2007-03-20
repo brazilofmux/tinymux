@@ -962,6 +962,7 @@ public:
             }
             return true;
         }
+        cursor_end(c);
         return false;
     }
 
