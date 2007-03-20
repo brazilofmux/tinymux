@@ -345,7 +345,6 @@ void mux_strtok_src(MUX_STRTOK_STATE *tts, UTF8 *pString);
 void mux_strtok_ctl(MUX_STRTOK_STATE *tts, const UTF8 *pControl);
 UTF8 *mux_strtok_parseLEN(MUX_STRTOK_STATE *tts, size_t *pnLen);
 UTF8 *mux_strtok_parse(MUX_STRTOK_STATE *tts);
-UTF8 *RemoveSetOfCharacters(UTF8 *pString, const UTF8 *pSetToRemove);
 
 size_t mux_ltoa(long val, UTF8 *buf);
 UTF8 *mux_ltoa_t(long val);
