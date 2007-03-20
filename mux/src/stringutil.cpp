@@ -1562,31 +1562,28 @@ static UTF8 *ANSI_TransitionColorBinary
 static const UTF8 *ColorBinaryNormal
 (
     ColorState csCurrent,
-    mux_cursor *nTransition,
+    size_t *nTransition,
     bool bNoBleed = false
 )
 {
-    static const UTF8 *aBleed        = T(COLOR_RESET);
-    static const UTF8 *aNoBleed      = T(COLOR_RESET COLOR_FG_WHITE);
-    static const mux_cursor iZero    = { 0, 0 };
-    static const mux_cursor iBleed   = { sizeof(aBleed) - 1, 1 };
-    static const mux_cursor iNoBleed = { sizeof(aNoBleed) - 1 , 2 };
+    static const UTF8 *aBleed   = T(COLOR_RESET);
+    static const UTF8 *aNoBleed = T(COLOR_RESET COLOR_FG_WHITE);
 
     if (  csCurrent == CS_NORMAL
        || (  bNoBleed 
           && csCurrent == CS_NOBLEED))
     {
-        *nTransition = iZero;
+        *nTransition = 0;
         return T("");
     }
     else if (bNoBleed)
     {
-        *nTransition = iNoBleed;
+        *nTransition = sizeof(aNoBleed) - 1;
         return aNoBleed;
     }
     else
     {
-        *nTransition = iBleed;
+        *nTransition = sizeof(aBleed) - 1;
         return aBleed;
     }
 }
@@ -1847,12 +1844,10 @@ void ANSI_String_Copy
                     //
                     if (!bKnowTransitions)
                     {
-                        mux_cursor t;
                         ANSI_TransitionColorBinary( pacIn->m_cs,
                                                     pacOut->m_cs,
                                                     &nTransitionInitial);
-                        ColorBinaryNormal(pacIn->m_cs, &t);
-                        nTransitionFinal = t.m_byte;
+                        ColorBinaryNormal(pacIn->m_cs, &nTransitionFinal);
                         bKnowTransitions = true;
                     }
                 }
@@ -1990,9 +1985,8 @@ size_t ANSI_String_Finalize
 )
 {
     UTF8 *pField = pacOut->m_p;
-    mux_cursor t;
-    const UTF8 *pTransition = ColorBinaryNormal(pacOut->m_cs, &t);
-    size_t nTransition = t.m_byte;
+    size_t nTransition = 0;
+    const UTF8 *pTransition = ColorBinaryNormal(pacOut->m_cs, &nTransition);
     if (nTransition)
     {
         memcpy(pField, pTransition, nTransition);
@@ -4132,54 +4126,47 @@ mux_cursor StripTabsAndTruncate
         nWidth = static_cast<LBUF_OFFSET>(nLength);
     }
 
+    mux_cursor iPos = CursorMin, iOutput = CursorMin;
     mux_cursor iLimit  = { nLength, nWidth };
-    mux_cursor iOutput = { 0, 0 };
+
+    const mux_cursor nAscii = { 1, 1 };
+    mux_cursor nNormal = CursorMin;
     const UTF8 *pTransition = NULL;
-    mux_cursor nNormal = { 0, 0 };
+    size_t nNormalBytes = 0;
     ColorState cs = CS_NORMAL;
 
-    const mux_cursor skip_ascii = { 1, 1 };
-    const mux_cursor copy_ascii = { 1, 1 };
-    const mux_cursor skip_color = { sizeof(COLOR_RESET), 1 };
-
-    mux_cursor iPos = CursorMin;
     while ('\0' != pString[iPos.m_byte])
     {
         int iCode = mux_color(pString + iPos.m_byte);
-        if (COLOR_NOTCOLOR == iCode)
+        if (COLOR_NOTCOLOR != iCode)
         {
-            if (NULL != strchr("\r\n\t", pString[iPos.m_byte]))
-            {
-                iPos += skip_ascii;
-            }
-            else
-            {
-                mux_cursor use_point = { 0, 1 };
-                use_point.m_byte = utf8_FirstByte[pString[iPos.m_byte]];
-                if (iOutput + use_point < iLimit)
-                {
-                    memcpy(pBuffer + iOutput.m_byte, pString + iPos.m_byte, use_point.m_byte);
-                    iOutput += use_point;
-                }
-                else
-                {
-                    break;
-                }
-                iPos += use_point;
-            }
+            cs = UpdateColorState(cs, iCode);
+            pTransition = ColorBinaryNormal(cs, &nNormalBytes);
+            nNormal(nNormalBytes, 0);
+        }
+        else if (NULL != strchr("\r\n\t", pString[iPos.m_byte]))
+        {
+            iPos += nAscii;
+            continue;
+        }
+
+        mux_cursor use_point = { utf8_FirstByte[pString[iPos.m_byte]], COLOR_NOTCOLOR == iCode ? 1 : 0};
+        if (iOutput + use_point + nNormal < iLimit)
+        {
+            memcpy(pBuffer + iOutput.m_byte, pString + iPos.m_byte, use_point.m_byte);
+            iOutput += use_point;
         }
         else
         {
-            cs = UpdateColorState(cs, iCode);
-            pTransition = ColorBinaryNormal(cs, &nNormal);
-            iPos += skip_color;
+            break;
         }
+        iPos += use_point;
     }
 
-    if (  0 < nNormal.m_byte
+    if (  0 < nNormalBytes
        && iOutput + nNormal < iLimit)
     {
-        memcpy(pBuffer + iOutput.m_byte, pTransition, nNormal.m_byte);
+        memcpy(pBuffer + iOutput.m_byte, pTransition, nNormalBytes);
         iOutput += nNormal;
     }
 
@@ -4188,7 +4175,7 @@ mux_cursor StripTabsAndTruncate
         while (iOutput < iLimit)
         {
             pBuffer[iOutput.m_byte] = uchFill;
-            iOutput += copy_ascii;
+            iOutput += nAscii;
         }
     }
     pBuffer[iOutput.m_byte] = '\0';
@@ -5674,9 +5661,7 @@ LBUF_OFFSET mux_string::export_TextAnsi
         }
         if (csPrev != CS_NORMAL)
         {
-            mux_cursor t;
-            pTransition = ColorBinaryNormal(csPrev, &t, bNoBleed);
-            nTransition = t.m_byte;
+            pTransition = ColorBinaryNormal(csPrev, &nTransition, bNoBleed);
             memcpy(pBuffer, pTransition, nTransition * sizeof(pTransition[0]));
             pBuffer += nTransition;
             nDone += nTransition;
@@ -5706,9 +5691,7 @@ LBUF_OFFSET mux_string::export_TextAnsi
             if (  !bNearEnd
                || nTransition)
             {
-                mux_cursor t;
-                ColorBinaryNormal(m_pcs[iPos.m_point], &t, bNoBleed);
-                nNeededAfter = t.m_byte;
+                ColorBinaryNormal(m_pcs[iPos.m_point], &nNeededAfter, bNoBleed);
                 bNearEnd = true;
             }
             if (nBytesMax < nDone + nTransition + nChar + nNeededAfter)
@@ -5731,9 +5714,7 @@ LBUF_OFFSET mux_string::export_TextAnsi
         nDone += nChar;
         cursor_next(iPos);
     }
-    mux_cursor t;
-    pTransition = ColorBinaryNormal(csPrev, &t, bNoBleed);
-    nTransition = t.m_byte;
+    pTransition = ColorBinaryNormal(csPrev, &nTransition, bNoBleed);
     if (  nTransition
        && nDone + nTransition <= nBytesMax)
     {
