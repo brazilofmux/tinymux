@@ -3480,19 +3480,19 @@ void do_chanlist
                         iPos += StripTabsAndTruncate( ch->name,
                                                       temp + iPos.m_byte,
                                                       MBUF_SIZE - iPos.m_byte,
-                                                      13, false, true);
+                                                      13, true);
                         temp[iPos.m_byte] = ' ';
                         iPos(iPos.m_byte + 1, iPos.m_point + 1);
                         iPos += StripTabsAndTruncate( Moniker(ch->charge_who),
                                                       temp + iPos.m_byte,
                                                       MBUF_SIZE - iPos.m_byte,
-                                                      15, false, true);
+                                                      15, true);
                         temp[iPos.m_byte] = ' ';
                         iPos(iPos.m_byte + 1, iPos.m_point + 1);
                         iPos += StripTabsAndTruncate( pBuffer,
                                                       temp + iPos.m_byte,
                                                       MBUF_SIZE - iPos.m_byte,
-                                                      45, false, true);
+                                                      45, true);
 
                         raw_notify(executor, temp);
                         free_mbuf(temp);

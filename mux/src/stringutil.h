@@ -516,23 +516,29 @@ public:
 
     inline bool operator <(const mux_cursor &a) const
     {
-        return m_byte < a.m_byte;
+        return (  m_byte < a.m_byte
+               && m_point < a.m_point);
     };
 
+#if 0
     inline bool operator >(const mux_cursor &a) const
     {
         return m_byte > a.m_byte;
     };
+#endif
 
     inline bool operator <=(const mux_cursor &a) const
     {
-        return m_byte <= a.m_byte;
+        return (  m_byte <= a.m_byte
+               && m_point <= a.m_point);
     };
 
+#if 0
     inline bool operator >=(const mux_cursor &a) const
     {
         return m_byte >= a.m_byte;
     };
+#endif
 
     inline bool operator ==(const mux_cursor &a) const
     {
@@ -592,9 +598,9 @@ public:
 };
 
 bool utf8_strlen(const UTF8 *pString, mux_cursor &nString);
-mux_cursor StripTabsAndTruncate(const UTF8 *pString, UTF8 *pBuffer, size_t nLength,
-                                LBUF_OFFSET nWidth, bool bStripTabs = true,
-                                bool bPad = false, UTF8 uchFill = (UTF8)' ');
+mux_cursor StripTabsAndTruncate(const UTF8 *pString, UTF8 *pBuffer,
+    size_t nLength,LBUF_OFFSET nWidth, bool bPad = false,
+    UTF8 uchFill = (UTF8)' ');
 
 static const mux_cursor CursorMin = {0,0};
 static const mux_cursor CursorMax = {LBUF_SIZE - 1, LBUF_SIZE - 1};

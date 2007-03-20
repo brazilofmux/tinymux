@@ -1594,7 +1594,6 @@ static const UTF8 *trimmed_name(dbref player, size_t *pvw)
                                              cbuff,
                                              MBUF_SIZE,
                                              MAX_TRIMMED_NAME_LENGTH,
-                                             false,
                                              true
                                            );
     *pvw = nName.m_point;
