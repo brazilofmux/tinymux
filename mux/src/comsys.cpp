@@ -3334,7 +3334,7 @@ void do_cheader(dbref player, UTF8 *channel, UTF8 *header)
     // Optimize/terminate any ANSI in the string.
     //
     UTF8 NewHeader_ANSI[MAX_HEADER_LEN+1];
-    mux_cursor nLen = StripTabsAndTruncate( header, NewHeader_ANSI, 
+    mux_field nLen = StripTabsAndTruncate( header, NewHeader_ANSI, 
                                             MAX_HEADER_LEN, MAX_HEADER_LEN);
     memcpy(ch->header, NewHeader_ANSI, nLen.m_byte + 1);
 }
@@ -3476,19 +3476,20 @@ void do_chanlist
                             (ch->type & (CHANNEL_PUBLIC)) ? 'P' : '-',
                             (ch->type & (CHANNEL_LOUD)) ? 'L' : '-',
                             (ch->type & (CHANNEL_SPOOF)) ? 'S' : '-');
-                        mux_cursor iPos(4, 4);
+                        mux_field iPos(4, 4);
+                        mux_field nAscii(1, 1);
                         iPos += StripTabsAndTruncate( ch->name,
                                                       temp + iPos.m_byte,
                                                       MBUF_SIZE - iPos.m_byte,
                                                       13, true);
                         temp[iPos.m_byte] = ' ';
-                        iPos(iPos.m_byte + 1, iPos.m_point + 1);
+                        iPos += nAscii;
                         iPos += StripTabsAndTruncate( Moniker(ch->charge_who),
                                                       temp + iPos.m_byte,
                                                       MBUF_SIZE - iPos.m_byte,
                                                       15, true);
                         temp[iPos.m_byte] = ' ';
-                        iPos(iPos.m_byte + 1, iPos.m_point + 1);
+                        iPos += nAscii;
                         iPos += StripTabsAndTruncate( pBuffer,
                                                       temp + iPos.m_byte,
                                                       MBUF_SIZE - iPos.m_byte,

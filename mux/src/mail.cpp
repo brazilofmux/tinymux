@@ -3063,7 +3063,7 @@ UTF8 *MakeCanonicalMailAliasDesc
     // Terminate any ANSI in the string.
     //
     static UTF8 szFittedMailAliasDesc[SIZEOF_MALIASDESC];
-    mux_cursor nValidMailAliasDesc = StripTabsAndTruncate
+    mux_field nValidMailAliasDesc = StripTabsAndTruncate
                                      ( pMailAliasDesc,
                                        szFittedMailAliasDesc,
                                        SIZEOF_MALIASDESC,
@@ -3071,7 +3071,7 @@ UTF8 *MakeCanonicalMailAliasDesc
                                      );
     *pnValidMailAliasDesc = nValidMailAliasDesc.m_byte;
     *pbValidMailAliasDesc = true;
-    *pnVisualWidth = nValidMailAliasDesc.m_point;
+    *pnVisualWidth = nValidMailAliasDesc.m_column;
     return szFittedMailAliasDesc;
 }
 

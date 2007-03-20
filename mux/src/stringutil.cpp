@@ -4098,7 +4098,7 @@ UTF8 *mux_strtok_parse(MUX_STRTOK_STATE *tts)
     return p;
 }
 
-mux_cursor StripTabsAndTruncate
+mux_field StripTabsAndTruncate
 (
     const UTF8 *pString,
     UTF8 *pBuffer,
@@ -4108,6 +4108,8 @@ mux_cursor StripTabsAndTruncate
     UTF8 uchFill
 )
 {
+    mux_field  fldOutput(0, 0);
+
     if (  NULL == pBuffer
        || NULL == pString
        || 0 == nLength
@@ -4118,7 +4120,7 @@ mux_cursor StripTabsAndTruncate
         {
             pBuffer[0] = '\0';
         }
-        return CursorMin;
+        return fldOutput;
     }
 
     if (nLength < nWidth)
@@ -4126,64 +4128,66 @@ mux_cursor StripTabsAndTruncate
         nWidth = static_cast<LBUF_OFFSET>(nLength);
     }
 
-    mux_cursor iPos = CursorMin, iOutput = CursorMin;
-    mux_cursor iLimit(nLength, nWidth);
+    mux_cursor curPos = CursorMin;
+    mux_field  fldLimit(nLength, nWidth);
 
-    const mux_cursor nAscii(1, 1);
-    mux_cursor nNormal = CursorMin;
+    const mux_field fldAscii(1, 1);
+    const mux_cursor curAscii(1, 1);
+    mux_field  fldTransition(0, 0);
     const UTF8 *pTransition = NULL;
     size_t nNormalBytes = 0;
     ColorState cs = CS_NORMAL;
 
-    while ('\0' != pString[iPos.m_byte])
+    while ('\0' != pString[curPos.m_byte])
     {
-        int iCode = mux_color(pString + iPos.m_byte);
+        int iCode = mux_color(pString + curPos.m_byte);
         if (COLOR_NOTCOLOR != iCode)
         {
             cs = UpdateColorState(cs, iCode);
             pTransition = ColorBinaryNormal(cs, &nNormalBytes);
-            nNormal(nNormalBytes, 0);
+            fldTransition(nNormalBytes, 0);
         }
-        else if (NULL != strchr("\r\n\t", pString[iPos.m_byte]))
+        else if (NULL != strchr("\r\n\t", pString[curPos.m_byte]))
         {
-            iPos += nAscii;
+            curPos += curAscii;
             continue;
         }
 
-        mux_cursor use_point(utf8_FirstByte[pString[iPos.m_byte]], COLOR_NOTCOLOR == iCode ? 1 : 0);
-        if (iOutput + use_point + nNormal < iLimit)
+        mux_cursor curPoint(utf8_FirstByte[pString[curPos.m_byte]], 1);
+        mux_field  fldPoint(utf8_FirstByte[pString[curPos.m_byte]], COLOR_NOTCOLOR == iCode ? 1 : 0);
+        if (fldOutput + fldPoint + fldTransition < fldLimit)
         {
             size_t j;
-            for (j = 0; j < use_point.m_byte; j++);
+            for (j = 0; j < fldPoint.m_byte; j++);
             {
-                pBuffer[iOutput.m_byte + j] = pString[iPos.m_byte + j];
+                pBuffer[fldOutput.m_byte + j] = pString[curPos.m_byte + j];
             }
-            iOutput += use_point;
+            fldOutput += fldPoint;
         }
         else
         {
             break;
         }
-        iPos += use_point;
+        curPos += curPoint;
     }
 
     if (  0 < nNormalBytes
-       && iOutput + nNormal < iLimit)
+       && fldOutput + fldTransition < fldLimit)
     {
-        memcpy(pBuffer + iOutput.m_byte, pTransition, nNormalBytes);
-        iOutput += nNormal;
+        memcpy(pBuffer + fldOutput.m_byte, pTransition, nNormalBytes);
+        fldOutput += fldTransition;
     }
 
     if (bPad)
     {
-        while (iOutput < iLimit)
+        while (fldOutput < fldLimit)
         {
-            pBuffer[iOutput.m_byte] = uchFill;
-            iOutput += nAscii;
+            pBuffer[fldOutput.m_byte] = uchFill;
+            fldOutput += fldAscii;
         }
     }
-    pBuffer[iOutput.m_byte] = '\0';
-    return iOutput;
+    pBuffer[fldOutput.m_byte] = '\0';
+    return fldOutput;
 }
 
 void ItemToList_Init(ITL *p, UTF8 *arg_buff, UTF8 **arg_bufc,

@@ -1589,14 +1589,14 @@ static const UTF8 *trimmed_name(dbref player, size_t *pvw)
 {
     static UTF8 cbuff[MBUF_SIZE];
 
-    mux_cursor nName = StripTabsAndTruncate(
+    mux_field nName = StripTabsAndTruncate(
                                              Moniker(player),
                                              cbuff,
                                              MBUF_SIZE,
                                              MAX_TRIMMED_NAME_LENGTH,
                                              true
                                            );
-    *pvw = nName.m_point;
+    *pvw = nName.m_column;
     return cbuff;
 }
 
@@ -1999,10 +1999,10 @@ UTF8 *MakeCanonicalDoing(UTF8 *pDoing, size_t *pnValidDoing, bool *pbValidDoing)
     }
 
     static UTF8 szFittedDoing[SIZEOF_DOING_STRING];
-    mux_cursor nDoing = StripTabsAndTruncate( pDoing, szFittedDoing,
+    mux_field nDoing = StripTabsAndTruncate( pDoing, szFittedDoing,
                                               SIZEOF_DOING_STRING, WIDTHOF_DOING_STRING);
 
-    *pnValidDoing = nDoing.m_byte;
+    *pnValidDoing = nDoing.m_column;
     *pbValidDoing = true;
     return szFittedDoing;
 }
