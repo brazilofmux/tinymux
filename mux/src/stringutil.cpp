@@ -4138,9 +4138,9 @@ mux_cursor StripTabsAndTruncate
     mux_cursor nNormal = { 0, 0 };
     ColorState cs = CS_NORMAL;
 
-    const mux_cursor skip_ascii = { 1, 0 };
+    const mux_cursor skip_ascii = { 1, 1 };
     const mux_cursor copy_ascii = { 1, 1 };
-    const mux_cursor skip_color = { sizeof(COLOR_RESET), 0};
+    const mux_cursor skip_color = { sizeof(COLOR_RESET), 1 };
 
     mux_cursor iPos = CursorMin;
     while ('\0' != pString[iPos.m_byte])
@@ -4151,7 +4151,6 @@ mux_cursor StripTabsAndTruncate
             if (NULL != strchr("\r\n\t", pString[iPos.m_byte]))
             {
                 iPos += skip_ascii;
-                continue;
             }
             else
             {
