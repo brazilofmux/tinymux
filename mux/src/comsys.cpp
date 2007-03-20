@@ -22,6 +22,10 @@
 #include "interface.h"
 #include "powers.h"
 
+#ifdef MUX_TABLE
+#include "table.h"
+#endif
+
 static int num_channels;
 static comsys_t *comsys_table[NUM_COMSYS];
 
@@ -3381,6 +3385,22 @@ void do_chanlist
     struct channel *ch;
     int flags = 0;
 
+#ifdef MUX_TABLE
+    mux_display_table *Table = new mux_display_table(executor);
+    Table->add_column(T("*"), 1, 0);
+    Table->add_column(T("*"), 1, 0);
+    Table->add_column(T("*"), 1);
+    Table->add_column(T("Channel"), 13);
+    Table->add_column(T("Owner"), 15);
+    if (key & CLIST_HEADERS)
+    {
+        Table->add_column(T("Header"), 45, 0);
+    }
+    else
+    {
+        Table->add_column(T("Description"), 45, 0);
+    }
+#else
     if (key & CLIST_HEADERS)
     {
         raw_notify(executor, T("*** Channel       Owner           Header"));
@@ -3389,6 +3409,7 @@ void do_chanlist
     {
         raw_notify(executor, T("*** Channel       Owner           Description"));
     }
+#endif
 
     bool bWild;
     if (  NULL != pattern
@@ -3470,7 +3491,16 @@ void do_chanlist
                                 pBuffer = T("No description.");
                             }
                         }
-
+#ifdef MUX_TABLE
+                        Table->row_begin();
+                        Table->cell_fill(T(((ch->type & (CHANNEL_PUBLIC)) ? "P" : "-")));
+                        Table->cell_fill(T(((ch->type & (CHANNEL_LOUD))   ? "L" : "-")));
+                        Table->cell_fill(T(((ch->type & (CHANNEL_SPOOF))  ? "S" : "-")));
+                        Table->cell_fill(ch->name);
+                        Table->cell_fill(Moniker(ch->charge_who));
+                        Table->cell_fill(pBuffer);
+                        Table->row_end();
+#else
                         UTF8 *temp = alloc_mbuf("do_chanlist_temp");
                         mux_sprintf(temp, MBUF_SIZE, "%c%c%c ",
                             (ch->type & (CHANNEL_PUBLIC)) ? 'P' : '-',
@@ -3497,6 +3527,7 @@ void do_chanlist
 
                         raw_notify(executor, temp);
                         free_mbuf(temp);
+#endif
                         if (NULL != atrstr)
                         {
                             free_lbuf(atrstr);
@@ -3507,6 +3538,9 @@ void do_chanlist
             MEMFREE(charray);
         }
     }
+#ifdef MUX_TABLE
+    delete Table;
+#endif
     raw_notify(executor, T("-- End of list of Channels --"));
 }
 
