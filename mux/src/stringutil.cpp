@@ -4143,32 +4143,21 @@ mux_cursor StripTabsAndTruncate(const UTF8 *pString, UTF8 *pBuffer, size_t nLeng
 
         nChar = utf8_FirstByte[pString[iPos.m_byte]];
         bPrint = mux_isprint(pString + iPos.m_byte);
-        if (!bPrint)
+        int iCode = mux_color(pString + iPos.m_byte);
+        if (COLOR_NOTCOLOR != iCode)
         {
-            int iCode = mux_color(pString + iPos.m_byte);
-            if (COLOR_NOTCOLOR != iCode)
-            {
-                cs = UpdateColorState(cs, iCode);
-                pTransition = ColorBinaryNormal(cs, &nNormal);
-            }
+            cs = UpdateColorState(cs, iCode);
+            pTransition = ColorBinaryNormal(cs, &nNormal);
         }
         if (  nCopied + nChar + nNormal < nLength
-           && iPos.m_point < nWidth)
+           && iPos.m_point + (bPrint ? 1 : 0) < nWidth)
         {
             memcpy(pBuffer + nCopied, pString + iPos.m_byte, nChar);
             nCopied += nChar;
         }
         else
         {
-            if (  0 < nNormal
-               && nCopied + nNormal < nLength)
-            {
-                memcpy(pBuffer + nCopied, pTransition, nNormal);
-                nCopied += nNormal;
-            }
-            pBuffer[nCopied] = '\0';
-            iPos(nCopied, iPos.m_point);
-            return iPos;
+            break;
         }
     }
 
