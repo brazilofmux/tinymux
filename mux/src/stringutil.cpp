@@ -4179,6 +4179,7 @@ mux_cursor StripTabsAndTruncate(const UTF8 *pString, UTF8 *pBuffer, size_t nLeng
             nFill++;
         }
     }
+    iPos(nCopied, iPos.m_point);
     pBuffer[nCopied] = '\0';
     return iPos;
 }
