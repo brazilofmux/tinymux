@@ -2025,13 +2025,6 @@ size_t ANSI_TruncateToField
     return ANSI_String_Finalize(&aoc, pnVisualWidth);
 }
 
-UTF8 *ANSI_TruncateAndPad_sbuf(const UTF8 *pString, LBUF_OFFSET nMaxVisualWidth, UTF8 fill)
-{
-    UTF8 *pStringModified = alloc_sbuf("ANSI_TruncateAndPad_sbuf");
-    StripTabsAndTruncate(pString, pStringModified, SBUF_SIZE, nMaxVisualWidth, true, fill);
-    return pStringModified;
-}
-
 #define COLOR_CODE_NORMAL       1
 #define COLOR_CODE_FG_WHITE     13
 

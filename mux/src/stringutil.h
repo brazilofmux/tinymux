@@ -387,7 +387,6 @@ void ANSI_String_In_Init(struct ANSI_In_Context *pacIn, const UTF8 *szString);
 void ANSI_String_Out_Init(struct ANSI_Out_Context *pacOut, UTF8 *pField, size_t nField, size_t vwMax);
 void ANSI_String_Copy(struct ANSI_Out_Context *pacOut, struct ANSI_In_Context *pacIn);
 size_t ANSI_String_Finalize(struct ANSI_Out_Context *pacOut, size_t *pnVisualWidth);
-UTF8 *ANSI_TruncateAndPad_sbuf(const UTF8 *pString, LBUF_OFFSET nMaxVisualWidth, UTF8 fill = ' ');
 size_t ANSI_TruncateToField(const UTF8 *szString, size_t nField, UTF8 *pField, size_t maxVisual, size_t *nVisualWidth);
 UTF8 *convert_color(const UTF8 *pString, bool bNoBleed = false);
 UTF8 *strip_color(const UTF8 *pString, size_t *pnLength = 0, size_t *pnPoints = 0);
