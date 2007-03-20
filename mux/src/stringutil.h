@@ -593,7 +593,8 @@ public:
 };
 
 bool utf8_strlen(const UTF8 *pString, mux_cursor &nString);
-mux_cursor StripTabsAndTruncate(const UTF8 *pString, UTF8 *pBuffer, size_t nLength, LBUF_OFFSET nWidth, bool bStripTabs = true);
+mux_cursor StripTabsAndTruncate(const UTF8 *pString, UTF8 *pBuffer, size_t nLength,
+                                LBUF_OFFSET nWidth, bool bStripTabs = true, bool bPad = false);
 
 static const mux_cursor CursorMin = {0,0};
 static const mux_cursor CursorMax = {LBUF_SIZE - 1, LBUF_SIZE - 1};

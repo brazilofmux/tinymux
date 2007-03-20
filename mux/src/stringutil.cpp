@@ -4130,7 +4130,8 @@ UTF8 *RemoveSetOfCharacters(UTF8 *pString, const UTF8 *pSetToRemove)
     return Buffer;
 }
 
-mux_cursor StripTabsAndTruncate(const UTF8 *pString, UTF8 *pBuffer, size_t nLength, LBUF_OFFSET nWidth, bool bStripTabs)
+mux_cursor StripTabsAndTruncate(const UTF8 *pString, UTF8 *pBuffer, size_t nLength,
+                                LBUF_OFFSET nWidth, bool bStripTabs, bool bPad)
 {
     mux_cursor iEnd;
     if ( !pBuffer
@@ -4147,6 +4148,11 @@ mux_cursor StripTabsAndTruncate(const UTF8 *pString, UTF8 *pBuffer, size_t nLeng
     {
         pBuffer[0] = '\0';
         return CursorMin;
+    }
+
+    if (nLength < nWidth)
+    {
+        nWidth = static_cast<LBUF_OFFSET>(nLength);
     }
 
     mux_cursor iPos;
@@ -4207,8 +4213,19 @@ mux_cursor StripTabsAndTruncate(const UTF8 *pString, UTF8 *pBuffer, size_t nLeng
         memcpy(pBuffer + nCopied, pTransition, nNormal);
         nCopied += nNormal;
     }
-    pBuffer[nCopied] = '\0';
     iPos(nCopied, iPos.m_point);
+    if (bPad)
+    {
+        LBUF_OFFSET nSpaces = 0;
+        while (  nCopied < nLength
+              && iPos.m_point + nSpaces < nWidth)
+        {
+            pBuffer[nCopied] = ' ';
+            nCopied++;
+            nSpaces++;
+        }
+    }
+    pBuffer[nCopied] = '\0';
     return iPos;
 }
 
