@@ -3525,7 +3525,7 @@ static void process_input_helper(DESC *d, char *pBytes, int nBytes)
                     {
                         if (d->ttype)
                         {
-                            free(d->ttype);
+                            MEMFREE(d->ttype);
                             d->ttype = NULL;
                         }
 
@@ -3533,7 +3533,7 @@ static void process_input_helper(DESC *d, char *pBytes, int nBytes)
                         //
                         size_t nTermType = m-2;
                         unsigned char *pTermType = &d->aOption[2];
-                        d->ttype = (UTF8 *)malloc(nTermType+1);
+                        d->ttype = (UTF8 *)MEMALLOC(nTermType+1);
                         memcpy(d->ttype, pTermType, nTermType);
                         d->ttype[nTermType] = '\0';
                     }
