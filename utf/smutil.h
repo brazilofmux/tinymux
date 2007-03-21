@@ -4,7 +4,6 @@
 #define UNI_EOF ((UTF32)-1)
 
 UTF32 DecodeCodePoint(char *p);
-UTF32 ReadCodePoint(FILE *fp, int *pValue, UTF32 *pOthercase);
 
 typedef struct State
 {
