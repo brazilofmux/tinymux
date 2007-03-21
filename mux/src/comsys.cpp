@@ -2466,7 +2466,15 @@ void do_comlist
         bWild = false;
     }
 
+#ifdef MUX_TABLE
+    mux_display_table *Table = new mux_display_table(executor);
+    Table->add_column(T("Alias"), 9);
+    Table->add_column(T("Channel"), 18);
+    Table->add_column(T("Status"), 8);
+    Table->add_column(T("Title"), LBUF_SIZE, false, 0);
+#else
     raw_notify(executor, T("Alias     Channel            Status   Title"));
+#endif
 
     comsys_t *c = get_comsys(executor);
     int i;
@@ -2478,6 +2486,16 @@ void do_comlist
             if (  !bWild
                || quick_wild(pattern,c->channels[i]))
             {
+#ifdef MUX_TABLE
+                Table->row_begin();
+                Table->cell_fill(c->alias + i * ALIAS_SIZE);
+                Table->cell_fill(c->channels[i]);
+                Table->cell_fill(tprintf("%s %s", 
+                                (user->bUserIsOn ? "on " : "off"),
+                                (user->ComTitleStatus ? "con " : "coff")));
+                Table->cell_fill(user->title);
+                Table->row_end();
+#else
                 UTF8 *p =
                     tprintf("%-9.9s %-18.18s %s %s %s",
                         c->alias + i * ALIAS_SIZE,
@@ -2486,6 +2504,7 @@ void do_comlist
                         (user->ComTitleStatus ? "con " : "coff"),
                         user->title);
                 raw_notify(executor, p);
+#endif
             }
         }
         else
@@ -2493,6 +2512,9 @@ void do_comlist
             raw_notify(executor, tprintf("Bad Comsys Alias: %s for Channel: %s", c->alias + i * ALIAS_SIZE, c->channels[i]));
         }
     }
+#ifdef MUX_TABLE
+    delete Table;
+#endif
     raw_notify(executor, T("-- End of comlist --"));
 }
 
@@ -3387,18 +3409,18 @@ void do_chanlist
 
 #ifdef MUX_TABLE
     mux_display_table *Table = new mux_display_table(executor);
-    Table->add_column(T("*"), 1, 0);
-    Table->add_column(T("*"), 1, 0);
-    Table->add_column(T("*"), 1);
+    Table->add_column(T("*"), 1, false, 0);
+    Table->add_column(T("*"), 1, false, 0);
+    Table->add_column(T("*"), 1, false);
     Table->add_column(T("Channel"), 13);
     Table->add_column(T("Owner"), 15);
     if (key & CLIST_HEADERS)
     {
-        Table->add_column(T("Header"), 45, 0);
+        Table->add_column(T("Header"), 45);
     }
     else
     {
-        Table->add_column(T("Description"), 45, 0);
+        Table->add_column(T("Description"), 45);
     }
 #else
     if (key & CLIST_HEADERS)

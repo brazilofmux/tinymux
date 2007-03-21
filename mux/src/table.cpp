@@ -10,12 +10,13 @@
 #include "interface.h"
 #include "table.h"
 
-mux_display_column::mux_display_column(const UTF8 *pHeader, UINT8 nWidth, UINT8 nPadTrailing, UTF8 uchFill)
+mux_display_column::mux_display_column(const UTF8 *pHeader, LBUF_OFFSET nWidth, bool bFill, LBUF_OFFSET nPadTrailing, UTF8 uchFill)
 {
     m_pHeader       = pHeader;
     m_nWidth        = nWidth;
     m_nPadTrailing  = nPadTrailing,
     m_uchFill       = uchFill;
+    m_bFill         = bFill;
 }
 
 mux_display_table::mux_display_table(dbref target)
@@ -37,9 +38,9 @@ mux_display_table::~mux_display_table(void)
     free_lbuf(m_puchRow);
 }
 
-void mux_display_table::add_column(const UTF8 *header, UINT8 nWidth, UINT8 nPadTrailing, UTF8 uchFill)
+void mux_display_table::add_column(const UTF8 *header, LBUF_OFFSET nWidth, bool bFill, LBUF_OFFSET nPadTrailing, UTF8 uchFill)
 {
-    m_aColumns[m_nColumns] = new mux_display_column(header, nWidth, nPadTrailing, uchFill);
+    m_aColumns[m_nColumns] = new mux_display_column(header, nWidth, bFill, nPadTrailing, uchFill);
     m_nColumns++;
 }
 
@@ -49,14 +50,15 @@ void mux_display_table::add_to_line(const UTF8 *pText)
                                        m_puchRow + m_fldRowPos.m_byte,
                                        (LBUF_SIZE-1) - m_fldRowPos.m_byte,
                                        m_aColumns[m_iColumn]->m_nWidth,
-                                       true);
+                                       m_aColumns[m_iColumn]->m_bFill);
 
     const mux_field fldAscii(1, 1);
-    for (UINT8 i = 0; i < m_aColumns[m_iColumn]->m_nPadTrailing; i++)
+    for (LBUF_OFFSET i = 0; i < m_aColumns[m_iColumn]->m_nPadTrailing; i++)
     {
         m_puchRow[m_fldRowPos.m_byte] = m_aColumns[m_iColumn]->m_uchFill;
         m_fldRowPos += fldAscii;
     }
+    m_puchRow[m_fldRowPos.m_byte] = '\0';
 }
 
 void mux_display_table::cell_fill(const UTF8 *pText)

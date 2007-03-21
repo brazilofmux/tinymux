@@ -17,11 +17,12 @@ class mux_display_column
 {
 public:
     const UTF8 *m_pHeader;
-    UINT8       m_nWidth;
-    size_t      m_nPadTrailing;
+    LBUF_OFFSET m_nWidth;
+    LBUF_OFFSET m_nPadTrailing;
     UTF8        m_uchFill;
+    bool        m_bFill;
 
-    mux_display_column(const UTF8 *header, UINT8 nWidth,UINT8 nPadTrailing = 1, UTF8 uchFill = (UTF8)' ');
+    mux_display_column(const UTF8 *header, LBUF_OFFSET nWidth, bool bFill = true, LBUF_OFFSET nPadTrailing = 1, UTF8 uchFill = (UTF8)' ');
 };
 
 class mux_display_table
@@ -42,7 +43,7 @@ private:
 public:
     mux_display_table(dbref target);
     ~mux_display_table(void);
-    void add_column(const UTF8 *header, UINT8 nWidth, UINT8 nPadTrailing = 1, UTF8 uchFill = (UTF8)' ');
+    void add_column(const UTF8 *header, LBUF_OFFSET nWidth, bool bFill = true, LBUF_OFFSET nPadTrailing = 1, UTF8 uchFill = (UTF8)' ');
     void cell_fill(const UTF8 *pText);
     void cell_skip(void);
     void row_begin(void);
