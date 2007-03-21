@@ -4150,7 +4150,13 @@ mux_field StripTabsAndTruncate
         mux_field  fldPoint(utf8_FirstByte[pString[curPos.m_byte]], COLOR_NOTCOLOR == iCode ? 1 : 0);
         if (fldOutput + fldPoint + fldTransition <= fldLimit)
         {
-            memcpy(pBuffer + fldOutput.m_byte, pString + curPos.m_byte, fldPoint.m_byte);
+            switch(fldPoint.m_byte)
+            {
+            case 4: pBuffer[fldOutput.m_byte + 3] = pString[curPos.m_byte + 3];
+            case 3: pBuffer[fldOutput.m_byte + 2] = pString[curPos.m_byte + 2];
+            case 2: pBuffer[fldOutput.m_byte + 1] = pString[curPos.m_byte + 1];
+            case 1: pBuffer[fldOutput.m_byte]     = pString[curPos.m_byte];
+            }
             fldOutput += fldPoint;
         }
         else
