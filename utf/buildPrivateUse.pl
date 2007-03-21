@@ -22,13 +22,13 @@ while ($line = <UNICODE>)
             for ($loop = $codeval1; $loop <= $codeval2; $loop++)
             {
                 my $temphex = sprintf("%04X", $loop);
-                $codepoints[$loop] = "$codename CHARACTER $temphex;So;0;ON;;;;N;;;;;";
+                $codepoints[$loop] = "$codename CHARACTER $temphex;Co;0;ON;;;;N;;;;;";
             }
         }
         else
         {
             my $codeval = hex $codepage;
-            $codepoints[$codeval] = "$codename CHARACTER $codepage;So;0;ON;;;;N;;;;;";
+            $codepoints[$codeval] = "$codename CHARACTER $codepage;Co;0;ON;;;;N;;;;;";
         }
     }
 }
