@@ -508,7 +508,6 @@ FLAGNAMEENT gen_flag_names[] =
     {(UTF8 *)"MONITOR",         true, &fbeMonitor        },
     {(UTF8 *)"MYOPIC",          true, &fbeMyopic         },
     {(UTF8 *)"NO_COMMAND",      true, &fbeNoCommand      },
-    {(UTF8 *)"NOACCENTS",       true, &fbeAscii          },
     {(UTF8 *)"NOBLEED",         true, &fbeNoBleed        },
     {(UTF8 *)"NOSPOOF",         true, &fbeNoSpoof        },
     {(UTF8 *)"OPAQUE",          true, &fbeOpaque         },
