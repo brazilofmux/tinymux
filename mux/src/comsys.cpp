@@ -24,7 +24,7 @@
 
 #ifdef MUX_TABLE
 #include "table.h"
-#endif
+#endif // MUX_TABLE
 
 static int num_channels;
 static comsys_t *comsys_table[NUM_COMSYS];
@@ -2468,13 +2468,16 @@ void do_comlist
 
 #ifdef MUX_TABLE
     mux_display_table *Table = new mux_display_table(executor);
-    Table->add_column(T("Alias"), 9);
-    Table->add_column(T("Channel"), 18);
-    Table->add_column(T("Status"), 8);
-    Table->add_column(T("Title"), LBUF_SIZE, false, 0);
-#else
+    Table->header_begin();
+    Table->column_add(T("Alias"), 9);
+    Table->column_add(T("Channel"), 18);
+    Table->column_add(T("Status"), 8);
+    Table->column_add(T("Title"), LBUF_SIZE, false, 0);
+    Table->header_end();
+    Table->body_begin();
+#else // MUX_TABLE
     raw_notify(executor, T("Alias     Channel            Status   Title"));
-#endif
+#endif // MUX_TABLE
 
     comsys_t *c = get_comsys(executor);
     int i;
@@ -2488,14 +2491,14 @@ void do_comlist
             {
 #ifdef MUX_TABLE
                 Table->row_begin();
-                Table->cell_fill(c->alias + i * ALIAS_SIZE);
-                Table->cell_fill(c->channels[i]);
-                Table->cell_fill(tprintf("%s %s", 
+                Table->cell_add(c->alias + i * ALIAS_SIZE);
+                Table->cell_add(c->channels[i]);
+                Table->cell_add(tprintf("%s %s", 
                                 (user->bUserIsOn ? "on " : "off"),
                                 (user->ComTitleStatus ? "con " : "coff")));
-                Table->cell_fill(user->title);
+                Table->cell_add(user->title);
                 Table->row_end();
-#else
+#else // MUX_TABLE
                 UTF8 *p =
                     tprintf("%-9.9s %-18.18s %s %s %s",
                         c->alias + i * ALIAS_SIZE,
@@ -2504,7 +2507,7 @@ void do_comlist
                         (user->ComTitleStatus ? "con " : "coff"),
                         user->title);
                 raw_notify(executor, p);
-#endif
+#endif // MUX_TABLE
             }
         }
         else
@@ -2513,8 +2516,9 @@ void do_comlist
         }
     }
 #ifdef MUX_TABLE
+    Table->body_end();
     delete Table;
-#endif
+#endif // MUX_TABLE
     raw_notify(executor, T("-- End of comlist --"));
 }
 
@@ -3409,20 +3413,22 @@ void do_chanlist
 
 #ifdef MUX_TABLE
     mux_display_table *Table = new mux_display_table(executor);
-    Table->add_column(T("*"), 1, false, 0);
-    Table->add_column(T("*"), 1, false, 0);
-    Table->add_column(T("*"), 1, false);
-    Table->add_column(T("Channel"), 13);
-    Table->add_column(T("Owner"), 15);
+    Table->header_begin();
+    Table->column_add(T("*"), 1, false, 0);
+    Table->column_add(T("*"), 1, false, 0);
+    Table->column_add(T("*"), 1, false);
+    Table->column_add(T("Channel"), 13);
+    Table->column_add(T("Owner"), 15);
     if (key & CLIST_HEADERS)
     {
-        Table->add_column(T("Header"), 45);
+        Table->column_add(T("Header"), 45);
     }
     else
     {
-        Table->add_column(T("Description"), 45);
+        Table->column_add(T("Description"), 45);
     }
-#else
+    Table->header_end();
+#else // MUX_TABLE
     if (key & CLIST_HEADERS)
     {
         raw_notify(executor, T("*** Channel       Owner           Header"));
@@ -3431,7 +3437,7 @@ void do_chanlist
     {
         raw_notify(executor, T("*** Channel       Owner           Description"));
     }
-#endif
+#endif // MUX_TABLE
 
     bool bWild;
     if (  NULL != pattern
@@ -3482,6 +3488,10 @@ void do_chanlist
             {
                 qsort(charray, actualEntries, sizeof(struct chanlist_node), chanlist_comp);
 
+#ifdef MUX_TABLE
+                Table->body_begin();
+#endif // MUX_TABLE
+
                 for (size_t i = 0; i < actualEntries; i++)
                 {
                     ch = charray[i].ptr;
@@ -3515,14 +3525,14 @@ void do_chanlist
                         }
 #ifdef MUX_TABLE
                         Table->row_begin();
-                        Table->cell_fill(T(((ch->type & (CHANNEL_PUBLIC)) ? "P" : "-")));
-                        Table->cell_fill(T(((ch->type & (CHANNEL_LOUD))   ? "L" : "-")));
-                        Table->cell_fill(T(((ch->type & (CHANNEL_SPOOF))  ? "S" : "-")));
-                        Table->cell_fill(ch->name);
-                        Table->cell_fill(Moniker(ch->charge_who));
-                        Table->cell_fill(pBuffer);
+                        Table->cell_add(T(((ch->type & (CHANNEL_PUBLIC)) ? "P" : "-")));
+                        Table->cell_add(T(((ch->type & (CHANNEL_LOUD))   ? "L" : "-")));
+                        Table->cell_add(T(((ch->type & (CHANNEL_SPOOF))  ? "S" : "-")));
+                        Table->cell_add(ch->name);
+                        Table->cell_add(Moniker(ch->charge_who));
+                        Table->cell_add(pBuffer);
                         Table->row_end();
-#else
+#else // MUX_TABLE
                         UTF8 *temp = alloc_mbuf("do_chanlist_temp");
                         mux_sprintf(temp, MBUF_SIZE, "%c%c%c ",
                             (ch->type & (CHANNEL_PUBLIC)) ? 'P' : '-',
@@ -3549,20 +3559,23 @@ void do_chanlist
 
                         raw_notify(executor, temp);
                         free_mbuf(temp);
-#endif
+#endif // MUX_TABLE
                         if (NULL != atrstr)
                         {
                             free_lbuf(atrstr);
                         }
                     }
                 }
+#ifdef MUX_TABLE
+                Table->body_end();
+#endif // MUX_TABLE
             }
             MEMFREE(charray);
         }
     }
 #ifdef MUX_TABLE
     delete Table;
-#endif
+#endif // MUX_TABLE
     raw_notify(executor, T("-- End of list of Channels --"));
 }
 

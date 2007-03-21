@@ -19,14 +19,28 @@ mux_display_column::mux_display_column(const UTF8 *pHeader, LBUF_OFFSET nWidth, 
     m_bFill         = bFill;
 }
 
-mux_display_table::mux_display_table(dbref target)
+mux_display_table::mux_display_table(dbref target, bool bRawNotify)
 {
-    m_target      = target;
+    // Table status.
+    //
+    m_bInHeader    = false;
+    m_bInBody      = false;
+    m_bHaveHeaders = false;
+
+    // Column status.
+    //
     m_nColumns    = 0;
     m_iColumn     = 0;
-    m_fldRowPos(0, 0);
-    m_bInitial    = true;
+
+    // Row status.
+    //
     m_puchRow     = alloc_lbuf("mux_table");
+    m_fldRowPos(0, 0);
+
+    // Output targets.
+    //
+    m_target      = target;
+    m_bRawNotify  = bRawNotify;
 }
 
 mux_display_table::~mux_display_table(void)
@@ -36,12 +50,6 @@ mux_display_table::~mux_display_table(void)
         delete m_aColumns[i];
     }
     free_lbuf(m_puchRow);
-}
-
-void mux_display_table::add_column(const UTF8 *header, LBUF_OFFSET nWidth, bool bFill, LBUF_OFFSET nPadTrailing, UTF8 uchFill)
-{
-    m_aColumns[m_nColumns] = new mux_display_column(header, nWidth, bFill, nPadTrailing, uchFill);
-    m_nColumns++;
 }
 
 void mux_display_table::add_to_line(const UTF8 *pText)
@@ -61,7 +69,17 @@ void mux_display_table::add_to_line(const UTF8 *pText)
     m_puchRow[m_fldRowPos.m_byte] = '\0';
 }
 
-void mux_display_table::cell_fill(const UTF8 *pText)
+void mux_display_table::body_begin(void)
+{
+    m_bInBody = true;
+}
+
+void mux_display_table::body_end(void)
+{
+    m_bInBody = false;
+}
+
+void mux_display_table::cell_add(const UTF8 *pText)
 {
     add_to_line(pText);
     m_iColumn++;
@@ -73,28 +91,45 @@ void mux_display_table::cell_skip(void)
     m_iColumn++;
 }
 
-void mux_display_table::output(void)
+void mux_display_table::column_add(const UTF8 *header, LBUF_OFFSET nWidth, bool bFill, LBUF_OFFSET nPadTrailing, UTF8 uchFill)
 {
-    raw_notify(m_target, m_puchRow);
+    m_aColumns[m_nColumns] = new mux_display_column(header, nWidth, bFill, nPadTrailing, uchFill);
+    m_nColumns++;
 }
 
-void mux_display_table::output_headers(void)
+void mux_display_table::output(void)
+{
+    if (m_bRawNotify)
+    {
+        raw_notify(m_target, m_puchRow);
+    }
+    else
+    {
+        notify(m_target, m_puchRow);
+    }
+}
+
+void mux_display_table::header_begin(void)
+{
+    m_fldRowPos(0, 0);
+    m_iColumn = 0;
+    m_bInHeader = true;
+}
+
+void mux_display_table::header_end(void)
 {
     m_fldRowPos(0, 0);
     for (m_iColumn = 0; m_iColumn < m_nColumns; m_iColumn++)
     {
         add_to_line(m_aColumns[m_iColumn]->m_pHeader);
     }
-    raw_notify(m_target, m_puchRow);
+    output();
+    m_bInHeader = false;
+    m_bHaveHeaders = true;
 }
 
 void mux_display_table::row_begin(void)
 {
-    if (m_bInitial)
-    {
-        m_bInitial = false;
-        output_headers();
-    }
     m_iColumn = 0;
     m_fldRowPos(0, 0);
 }
@@ -103,7 +138,7 @@ void mux_display_table::row_end(void)
 {
     while (m_iColumn < m_nColumns)
     {
-        cell_fill(Empty);
+        cell_add(Empty);
     }
     output();
 }
