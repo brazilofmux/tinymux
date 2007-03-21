@@ -3062,7 +3062,7 @@ UTF8 *MakeCanonicalMailAliasDesc
     // Remove all '\r\n\t' from the string.
     // Terminate any ANSI in the string.
     //
-    static UTF8 szFittedMailAliasDesc[SIZEOF_MALIASDESC];
+    static UTF8 szFittedMailAliasDesc[SIZEOF_MALIASDESC+1];
     mux_field nValidMailAliasDesc = StripTabsAndTruncate
                                      ( pMailAliasDesc,
                                        szFittedMailAliasDesc,

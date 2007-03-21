@@ -506,7 +506,7 @@ void do_lock
     }
 
     static UTF8 pRestrictedKeyText[LBUF_SIZE];
-    StripTabsAndTruncate(keytext, pRestrictedKeyText, LBUF_SIZE, LBUF_SIZE-1);
+    StripTabsAndTruncate(keytext, pRestrictedKeyText, LBUF_SIZE-1, LBUF_SIZE-1);
     struct boolexp *okey = parse_boolexp(executor, pRestrictedKeyText, false);
     if (okey == TRUE_BOOLEXP)
     {

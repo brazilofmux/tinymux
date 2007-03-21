@@ -45,7 +45,6 @@ public:
     void add_column(const UTF8 *header, UINT8 nWidth, UINT8 nPadTrailing = 1, UTF8 uchFill = (UTF8)' ');
     void cell_fill(const UTF8 *pText);
     void cell_skip(void);
-    void distribute_widths(void);
     void row_begin(void);
     void row_end(void);
 };

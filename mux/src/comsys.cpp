@@ -3510,19 +3510,19 @@ void do_chanlist
                         mux_field nAscii(1, 1);
                         iPos += StripTabsAndTruncate( ch->name,
                                                       temp + iPos.m_byte,
-                                                      MBUF_SIZE - iPos.m_byte,
+                                                      (MBUF_SIZE-1) - iPos.m_byte,
                                                       13, true);
                         temp[iPos.m_byte] = ' ';
                         iPos += nAscii;
                         iPos += StripTabsAndTruncate( Moniker(ch->charge_who),
                                                       temp + iPos.m_byte,
-                                                      MBUF_SIZE - iPos.m_byte,
+                                                      (MBUF_SIZE-1) - iPos.m_byte,
                                                       15, true);
                         temp[iPos.m_byte] = ' ';
                         iPos += nAscii;
                         iPos += StripTabsAndTruncate( pBuffer,
                                                       temp + iPos.m_byte,
-                                                      MBUF_SIZE - iPos.m_byte,
+                                                      (MBUF_SIZE-1) - iPos.m_byte,
                                                       45, true);
 
                         raw_notify(executor, temp);
