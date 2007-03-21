@@ -7,7 +7,7 @@
 #include "ConvertUTF.h"
 #include "smutil.h"
 
-static UTF32 DecodeCodePoint(char *p)
+UTF32 DecodeCodePoint(char *p)
 {
     if (!isxdigit(*p))
     {

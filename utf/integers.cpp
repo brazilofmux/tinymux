@@ -7,6 +7,111 @@
 #include "ConvertUTF.h"
 #include "smutil.h"
 
+UTF32 ReadCodePointAndValue(FILE *fp, int &Value)
+{
+    char buffer[1024];
+    char *p;
+
+    for (;;)
+    {
+        if (fgets(buffer, sizeof(buffer), fp) == NULL)
+        {
+            Value = -1;
+            return UNI_EOF;
+        }
+        p = strchr(buffer, '#');
+        if (NULL != p)
+        {
+            // Ignore comment.
+            //
+            *p = '\0';
+        }
+        p = buffer;
+
+        // Skip leading whitespace.
+        //
+        while (isspace(*p))
+        {
+            p++;
+        }
+
+        // Look for end of string or comment.
+        //
+        if ('\0' == *p)
+        {
+            // We skip blank lines.
+            //
+            continue;
+        }
+        break;
+    }
+
+#define MAX_FIELDS 2
+
+    int   nFields = 0;
+    char *aFields[MAX_FIELDS];
+    for (nFields = 0; nFields < MAX_FIELDS; )
+    {
+        // Skip leading whitespace.
+        //
+        while (isspace(*p))
+        {
+            p++;
+        }
+
+        aFields[nFields++] = p;
+        char *q = strchr(p, ';');
+        if (NULL == q)
+        {
+            // Trim trailing whitespace.
+            //
+            size_t i = strlen(p) - 1;
+            while (isspace(p[i]))
+            {
+                p[i] = '\0';
+            }
+            break;
+        }
+        else
+        {
+            *q = '\0';
+            p = q + 1;
+
+            // Trim trailing whitespace.
+            //
+            q--;
+            while (isspace(*q))
+            {
+                *q = '\0';
+                q--;
+            }
+        }
+    }
+
+    // Field #0 - Code Point (base 16)
+    //
+    int codepoint = DecodeCodePoint(aFields[0]);
+
+    // Field #1 - Integer (base 10)
+    //
+    p = aFields[1];
+    if (!isdigit(*p))
+    {
+        Value = -1;
+    }
+    else
+    {
+        Value = 0;
+        do
+        {
+            Value = Value * 10 + (*p - '0');
+            p++;
+        } while (isdigit(*p));
+    }
+
+    return codepoint;
+}
+
 #if 0
 // 270 code points.
 // 5 states, 42 columns, 466 bytes
@@ -33,8 +138,7 @@ void VerifyTables(FILE *fp)
     fprintf(stderr, "Testing final ITT and STT.\n");
     fseek(fp, 0, SEEK_SET);
     int Value;
-    UTF32 Othercase;
-    UTF32 nextcode = ReadCodePoint(fp, &Value, &Othercase);
+    UTF32 nextcode = ReadCodePointAndValue(fp, Value);
 
     // Value
     //
@@ -69,7 +173,7 @@ void VerifyTables(FILE *fp)
                 exit(0);
             }
         }
-        UTF32 nextcode2 = ReadCodePoint(fp, &Value, &Othercase);
+        UTF32 nextcode2 = ReadCodePointAndValue(fp, Value);
         if (nextcode2 < nextcode)
         {
             fprintf(stderr, "Codes in file are not in order.\n");
@@ -87,8 +191,7 @@ void TestTable(FILE *fp)
     fprintf(stderr, "Testing STT table.\n");
     fseek(fp, 0, SEEK_SET);
     int Value;
-    UTF32 Othercase;
-    UTF32 nextcode = ReadCodePoint(fp, &Value, &Othercase);
+    UTF32 nextcode = ReadCodePointAndValue(fp, Value);
 
     while (UNI_EOF != nextcode)
     {
@@ -108,7 +211,7 @@ void TestTable(FILE *fp)
             sm.TestString(Target, pTarget, Value);
         }
 
-        UTF32 nextcode2 = ReadCodePoint(fp, &Value, &Othercase);
+        UTF32 nextcode2 = ReadCodePointAndValue(fp, Value);
         if (nextcode2 < nextcode)
         {
             fprintf(stderr, "Codes in file are not in order.\n");
@@ -124,8 +227,7 @@ void LoadStrings(FILE *fp)
 
     fseek(fp, 0, SEEK_SET);
     int Value;
-    UTF32 Othercase;
-    UTF32 nextcode = ReadCodePoint(fp, &Value, &Othercase);
+    UTF32 nextcode = ReadCodePointAndValue(fp, Value);
     if (Value < 0)
     {
         fprintf(stderr, "Value missing from code U-%06X\n", nextcode);
@@ -151,7 +253,7 @@ void LoadStrings(FILE *fp)
             sm.RecordString(Target, pTarget, Value);
         }
 
-        UTF32 nextcode2 = ReadCodePoint(fp, &Value, &Othercase);
+        UTF32 nextcode2 = ReadCodePointAndValue(fp, Value);
         if (nextcode2 < nextcode)
         {
             fprintf(stderr, "Codes in file are not in order.\n");
