@@ -445,7 +445,7 @@ static int get_slave_result(void)
         }
     }
 
-#if (_MSC_VER >= 1400)
+#if !defined(__INTEL_COMPILER) && (_MSC_VER >= 1400)
     if (sscanf_s((char *)ident, "%d , %d : %s : %s : %s", &remote_port, &local_port, 
                     token, MAX_STRING, os, MAX_STRING, userid, MAX_STRING) != 5)
 #else
@@ -3525,7 +3525,7 @@ static void process_input_helper(DESC *d, char *pBytes, int nBytes)
                     {
                         if (d->ttype)
                         {
-                            free(d->ttype);
+                            MEMFREE(d->ttype);
                             d->ttype = NULL;
                         }
 
@@ -3533,7 +3533,7 @@ static void process_input_helper(DESC *d, char *pBytes, int nBytes)
                         //
                         size_t nTermType = m-2;
                         unsigned char *pTermType = &d->aOption[2];
-                        d->ttype = (UTF8 *)malloc(nTermType+1);
+                        d->ttype = (UTF8 *)MEMALLOC(nTermType+1);
                         memcpy(d->ttype, pTermType, nTermType);
                         d->ttype[nTermType] = '\0';
                     }

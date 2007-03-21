@@ -86,6 +86,7 @@ Bug Fixes:
  -- Fixed +glance softcode in SGP minimal database (Issue 291).
  -- Fix memory leak in @mail error code path.
  -- Fix memory leak in process_cmdent().
+ -- Allow Intel's EMT64 compiler to build the sources (Issue 308).
 
 
 Performance Enhancements:

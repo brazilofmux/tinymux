@@ -589,7 +589,7 @@ void freeqs(DESC *d)
     memset(d->nvt_us_state,OPTION_NO,256);
     if (d->ttype)
     {
-        free(d->ttype);
+        MEMFREE(d->ttype);
         d->ttype = NULL;
     }
     d->height = 24;

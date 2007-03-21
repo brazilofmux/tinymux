@@ -3564,7 +3564,8 @@ void load_restart_db(void)
             char *temp = (char *)getstring_noalloc(f, true, &nBuffer);
             if ('\0' != temp[0])
             {
-                d->ttype = alloc_lbuf("set_userstring");
+                d->ttype = (UTF8 *)MEMALLOC(nBuffer+1);
+                ISOUTOFMEMORY(d->ttype);
                 memcpy(d->ttype, temp, nBuffer + 1);
             }
 
