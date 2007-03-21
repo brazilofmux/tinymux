@@ -9,11 +9,11 @@ SpecialCasing.txt:
 cp1252.txt:
 	wget http://www.unicode.org/Public/MAPPINGS/VENDORS/MICSFT/WINDOWS/CP1252.TXT -O cp1252.txt
 
-UnicodeDataNew.txt: UnicodeData.txt UnicodeHan.txt
-	perl buildUnicodeMaster.pl UnicodeData.txt UnicodeHan.txt > UnicodeDataNew.txt
+UnicodeMaster.txt: UnicodeData.txt UnicodeHan.txt
+	perl buildUnicodeMaster.pl UnicodeData.txt UnicodeHan.txt > UnicodeMaster.txt
 
-cl_Printable.txt: UnicodeDataNew.txt StringprepProhibited.txt
-	perl buildStringprepPrintable.pl StringprepProhibited.txt UnicodeDataNew.txt > cl_Printable.txt
+cl_Printable.txt: UnicodeMaster.txt StringprepProhibited.txt
+	perl buildStringprepPrintable.pl StringprepProhibited.txt UnicodeMaster.txt > cl_Printable.txt
 
 cl_PrivateUse.txt: PrivateUse.txt
 	perl buildPrivateUse.pl PrivateUse.txt > cl_PrivateUse.txt
