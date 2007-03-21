@@ -7,79 +7,6 @@
 #include "ConvertUTF.h"
 #include "smutil.h"
 
-#if 0
-// 270 code points.
-// 5 states, 42 columns, 466 bytes
-//
-#define DIGIT_START_STATE (0)
-#define DIGIT_ACCEPTING_STATES_START (5)
-
-unsigned char digit_itt[256] =
-{
-     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 5, 10, 11, 12, 13, 14, 15, 12, 16, 3, 4, 5, 6, 7, 13, 14, 15, 12, 16, 17, 4, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 19, 20, 21, 22, 23, 24, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 29, 17, 39, 32, 33, 34, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 40, 41, 41, 41, 41, 41, 41, 41, 41, 41, 41, 41, 41, 41, 41, 39, 40, 41, 41, 41, 41, 41, 41, 41, 41, 41, 41, 41, 41, 41, 41, 41
-};
-
-unsigned char digit_stt[5][42] =
-{
-    {   5,   6,   7,   8,   9,  10,  11,  12,  13,  14,   6,   6,   6,  13,  14,   5,   7,   0,   4,   5,   6,   7,   8,   9,  10,  11,  12,  13,  14,   5,   6,   7,   8,   9,  10,  11,  12,  13,  14,   0,   1,   3},
-    {   9,   9,   9,   9,   9,   9,   5,   6,   7,   8,  10,  11,  12,  13,  14,   1,   0,   0,   0,   0,   2,   0,   2,   0,   2,   0,   2,   0,   2,   0,   2,   0,   2,   0,   2,   0,   0,   0,   0,   0,   0,   0},
-    {  13,   0,  13,   0,   0,   0,   9,   0,  11,   0,   0,   0,   0,  11,   0,  13,   0,   0,   0,   9,  10,  11,  12,  13,  14,   5,   6,   7,   8,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0},
-    {   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   1,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0},
-    {   7,   8,   7,  10,  11,  12,  13,  14,   5,   6,   8,   8,   8,   5,   6,   7,   9,  10,  12,  13,  14,   5,   6,   7,   8,   9,  10,  11,  12,   9,  10,  11,  12,  13,  14,   5,   6,   7,   8,  11,   0,   0}
-};
-
-void VerifyTables(FILE *fp)
-{
-    fprintf(stderr, "Testing final ITT and STT.\n");
-    fseek(fp, 0, SEEK_SET);
-    int Value;
-    UTF32 Othercase;
-    UTF32 nextcode = ReadCodePoint(fp, &Value, &Othercase);
-
-    // Value
-    //
-    while (UNI_EOF != nextcode)
-    {
-        UTF32 Source[2];
-        Source[0] = nextcode;
-        Source[1] = L'\0';
-        const UTF32 *pSource = Source;
-
-        UTF8 Target[5];
-        UTF8 *pTarget = Target;
-
-        ConversionResult cr;
-        cr = ConvertUTF32toUTF8(&pSource, pSource+1, &pTarget, pTarget+sizeof(Target)-1, lenientConversion);
-
-        if (conversionOK == cr)
-        {
-            int iState = DIGIT_START_STATE;
-            UTF8 *p = Target;
-            while (  p < pTarget
-                  && iState < DIGIT_ACCEPTING_STATES_START)
-            {
-                iState = digit_stt[iState][digit_itt[(unsigned char)*p]];
-                p++;
-            }
-
-            int j = iState - DIGIT_ACCEPTING_STATES_START;
-            if (j != Value)
-            {
-                printf("Input Translation Table and State Transition Table do not work.\n");
-                exit(0);
-            }
-        }
-        UTF32 nextcode2 = ReadCodePoint(fp, &Value, &Othercase);
-        if (nextcode2 < nextcode)
-        {
-            fprintf(stderr, "Codes in file are not in order.\n");
-            exit(0);
-        }
-        nextcode = nextcode2;
-    }
-}
-#endif
-
 StateMachine sm;
 
 static struct
@@ -172,37 +99,6 @@ void TestTable(FILE *fp)
                 }
 
                 sm.TestString(TargetA, pTargetA, i);
-            }
-
-            UTF32 nextcode2 = ReadCodePoint(fp, &Value, &Othercase);
-            if (nextcode2 < nextcode)
-            {
-                fprintf(stderr, "Codes in file are not in order.\n");
-                exit(0);
-            }
-            nextcode = nextcode2;
-        }
-    }
-    else
-    {
-        // Value
-        //
-        while (UNI_EOF != nextcode)
-        {
-            UTF32 Source[2];
-            Source[0] = nextcode;
-            Source[1] = L'\0';
-            const UTF32 *pSource = Source;
-
-            UTF8 Target[5];
-            UTF8 *pTarget = Target;
-
-            ConversionResult cr;
-            cr = ConvertUTF32toUTF8(&pSource, pSource+1, &pTarget, pTarget+sizeof(Target)-1, lenientConversion);
-
-            if (conversionOK == cr)
-            {
-                sm.TestString(Target, pTarget, Value);
             }
 
             UTF32 nextcode2 = ReadCodePoint(fp, &Value, &Othercase);
@@ -315,44 +211,6 @@ void LoadStrings(FILE *fp)
             nextcode = nextcode2;
         }
     }
-    else
-    {
-        // Value
-        //
-        while (UNI_EOF != nextcode)
-        {
-            UTF32 Source[2];
-            Source[0] = nextcode;
-            Source[1] = L'\0';
-            const UTF32 *pSource = Source;
-
-            UTF8 Target[5];
-            UTF8 *pTarget = Target;
-
-            ConversionResult cr;
-            cr = ConvertUTF32toUTF8(&pSource, pSource+1, &pTarget, pTarget+sizeof(Target)-1, lenientConversion);
-
-            if (conversionOK == cr)
-            {
-                cIncluded++;
-                sm.RecordString(Target, pTarget, Value);
-            }
-
-            UTF32 nextcode2 = ReadCodePoint(fp, &Value, &Othercase);
-            if (nextcode2 < nextcode)
-            {
-                fprintf(stderr, "Codes in file are not in order.\n");
-                exit(0);
-            }
-            else if (  UNI_EOF != nextcode2
-                    && Value < 0)
-            {
-                fprintf(stderr, "Value missing from code U-%06X\n", nextcode2);
-                exit(0);
-            }
-            nextcode = nextcode2;
-        }
-    }
     printf("// %d code points.\n", cIncluded);
     fprintf(stderr, "%d code points.\n", cIncluded);
     sm.ReportStatus();
@@ -398,11 +256,6 @@ void BuildAndOutputTable(FILE *fp, char *UpperPrefix, char *LowerPrefix)
     //
     sm.NumberStates();
     sm.OutputTables(UpperPrefix, LowerPrefix);
-
-    if (0 == nOutputTable)
-    {
-        return;
-    }
 
     printf("const UTF8 *%s_ott[%d] =\n", LowerPrefix, nOutputTable);
     printf("{\n");
