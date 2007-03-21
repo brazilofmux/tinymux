@@ -16,7 +16,7 @@ static struct
 } aOutputTable[5000];
 int   nOutputTable;
 
-UTF32 ReadCodePoint(FILE *fp, int *pValue, UTF32 *pOthercase)
+UTF32 ReadCodePointAndOthercase(FILE *fp, UTF32 &Othercase)
 {
     char buffer[1024];
     char *p;
@@ -25,8 +25,7 @@ UTF32 ReadCodePoint(FILE *fp, int *pValue, UTF32 *pOthercase)
     {
         if (fgets(buffer, sizeof(buffer), fp) == NULL)
         {
-            *pValue = -1;
-            *pOthercase = UNI_EOF;
+            Othercase = UNI_EOF;
             return UNI_EOF;
         }
         p = strchr(buffer, '#');
@@ -102,25 +101,6 @@ UTF32 ReadCodePoint(FILE *fp, int *pValue, UTF32 *pOthercase)
     //
     int codepoint = DecodeCodePoint(aFields[0]);
 
-    // Field #6 - Decimal Digit Property.
-    //
-    int Value;
-    p = aFields[6];
-    if (!isdigit(*p))
-    {
-        Value = -1;
-    }
-    else
-    {
-        Value = 0;
-        do
-        {
-            Value = Value * 10 + (*p - '0');
-            p++;
-        } while (isdigit(*p));
-    }
-    *pValue = Value;
-
     // Field #12 - Simple Uppercase Mapping.
     //
     int Uppercase = DecodeCodePoint(aFields[12]);
@@ -132,7 +112,7 @@ UTF32 ReadCodePoint(FILE *fp, int *pValue, UTF32 *pOthercase)
     if (  Uppercase < 0
        && Lowercase < 0)
     {
-        *pOthercase = UNI_EOF;
+        Othercase = UNI_EOF;
     }
     else
     {
@@ -147,11 +127,11 @@ UTF32 ReadCodePoint(FILE *fp, int *pValue, UTF32 *pOthercase)
 
         if (Lowercase == codepoint)
         {
-            *pOthercase = Uppercase;
+            Othercase = Uppercase;
         }
         else
         {
-            *pOthercase = Lowercase;
+            Othercase = Lowercase;
         }
     }
     return codepoint;
@@ -161,95 +141,91 @@ void TestTable(FILE *fp)
 {
     fprintf(stderr, "Testing STT table.\n");
     fseek(fp, 0, SEEK_SET);
-    int Value;
     UTF32 Othercase;
-    UTF32 nextcode = ReadCodePoint(fp, &Value, &Othercase);
+    UTF32 nextcode = ReadCodePointAndOthercase(fp, Othercase);
 
-    if (Value < 0)
+    // Othercase
+    //
+    while (UNI_EOF != nextcode)
     {
-        // Othercase
-        //
-        while (UNI_EOF != nextcode)
+        UTF32 SourceA[2];
+        SourceA[0] = nextcode;
+        SourceA[1] = L'\0';
+        const UTF32 *pSourceA = SourceA;
+
+        UTF8 TargetA[5];
+        UTF8 *pTargetA = TargetA;
+
+        ConversionResult cr;
+        cr = ConvertUTF32toUTF8(&pSourceA, pSourceA+1, &pTargetA, pTargetA+sizeof(TargetA)-1, lenientConversion);
+
+        if (conversionOK != cr)
         {
-            UTF32 SourceA[2];
-            SourceA[0] = nextcode;
-            SourceA[1] = L'\0';
-            const UTF32 *pSourceA = SourceA;
+            nextcode = ReadCodePointAndOthercase(fp, Othercase);
+            continue;
+        }
 
-            UTF8 TargetA[5];
-            UTF8 *pTargetA = TargetA;
+        UTF32 SourceB[2];
+        SourceB[0] = Othercase;
+        SourceB[1] = L'\0';
+        const UTF32 *pSourceB = SourceB;
 
-            ConversionResult cr;
-            cr = ConvertUTF32toUTF8(&pSourceA, pSourceA+1, &pTargetA, pTargetA+sizeof(TargetA)-1, lenientConversion);
+        UTF8 TargetB[5];
+        UTF8 *pTargetB = TargetB;
 
-            if (conversionOK != cr)
+        cr = ConvertUTF32toUTF8(&pSourceB, pSourceB+1, &pTargetB, pTargetB+sizeof(TargetB)-1, lenientConversion);
+
+        if (conversionOK == cr)
+        {
+            if (pTargetA - TargetA != pTargetB - TargetB)
             {
-                nextcode = ReadCodePoint(fp, &Value, &Othercase);
-                continue;
-            }
-
-            UTF32 SourceB[2];
-            SourceB[0] = Othercase;
-            SourceB[1] = L'\0';
-            const UTF32 *pSourceB = SourceB;
-
-            UTF8 TargetB[5];
-            UTF8 *pTargetB = TargetB;
-
-            cr = ConvertUTF32toUTF8(&pSourceB, pSourceB+1, &pTargetB, pTargetB+sizeof(TargetB)-1, lenientConversion);
-
-            if (conversionOK == cr)
-            {
-                if (pTargetA - TargetA != pTargetB - TargetB)
-                {
-                    fprintf(stderr, "Different UTF-8 length between cases is unsupported.\n");
-                    exit(0);
-                }
-
-                // Calculate XOR string.
-                //
-                UTF8 Xor[5];
-                UTF8 *pA = TargetA;
-                UTF8 *pB = TargetB;
-                UTF8 *pXor = Xor;
-
-                while (pA < pTargetA)
-                {
-                    *pXor = *pA ^ *pB;
-                    pA++;
-                    pB++;
-                    pXor++;
-                }
-                size_t nXor = pXor - Xor;
-
-                int i;
-                bool bFound = false;
-                for (i = 0; i < nOutputTable; i++)
-                {
-                    if (memcmp(aOutputTable[i].p, Xor, nXor) == 0)
-                    {
-                        bFound = true;
-                        break;
-                    }
-                }
-
-                if (!bFound)
-                {
-                    printf("Output String not found. This should not happen.\n");
-                    exit(0);
-                }
-
-                sm.TestString(TargetA, pTargetA, i);
-            }
-
-            UTF32 nextcode2 = ReadCodePoint(fp, &Value, &Othercase);
-            if (nextcode2 < nextcode)
-            {
-                fprintf(stderr, "Codes in file are not in order.\n");
+                fprintf(stderr, "Different UTF-8 length between cases is unsupported.\n");
                 exit(0);
             }
-            nextcode = nextcode2;
+
+            // Calculate XOR string.
+            //
+            UTF8 Xor[5];
+            UTF8 *pA = TargetA;
+            UTF8 *pB = TargetB;
+            UTF8 *pXor = Xor;
+
+            while (pA < pTargetA)
+            {
+                *pXor = *pA ^ *pB;
+                pA++;
+                pB++;
+                pXor++;
+            }
+            size_t nXor = pXor - Xor;
+
+            int i;
+            bool bFound = false;
+            for (i = 0; i < nOutputTable; i++)
+            {
+                if (memcmp(aOutputTable[i].p, Xor, nXor) == 0)
+                {
+                    bFound = true;
+                    break;
+                }
+            }
+
+            if (!bFound)
+            {
+                printf("Output String not found. This should not happen.\n");
+                exit(0);
+            }
+
+            sm.TestString(TargetA, pTargetA, i);
         }
+
+        UTF32 nextcode2 = ReadCodePointAndOthercase(fp, Othercase);
+        if (nextcode2 < nextcode)
+        {
+            fprintf(stderr, "Codes in file are not in order.\n");
+            exit(0);
+        }
+        nextcode = nextcode2;
     }
 }
 
@@ -258,99 +234,95 @@ void LoadStrings(FILE *fp)
     int cIncluded = 0;
 
     fseek(fp, 0, SEEK_SET);
-    int Value;
     UTF32 Othercase;
-    UTF32 nextcode = ReadCodePoint(fp, &Value, &Othercase);
+    UTF32 nextcode = ReadCodePointAndOthercase(fp, Othercase);
 
-    if (Value < 0)
+    // Othercase
+    //
+    nOutputTable = 0;
+    while (UNI_EOF != nextcode)
     {
-        // Othercase
-        //
-        nOutputTable = 0;
-        while (UNI_EOF != nextcode)
+        UTF32 SourceA[2];
+        SourceA[0] = nextcode;
+        SourceA[1] = L'\0';
+        const UTF32 *pSourceA = SourceA;
+
+        UTF8 TargetA[5];
+        UTF8 *pTargetA = TargetA;
+
+        ConversionResult cr;
+        cr = ConvertUTF32toUTF8(&pSourceA, pSourceA+1, &pTargetA, pTargetA+sizeof(TargetA)-1, lenientConversion);
+
+        if (conversionOK != cr)
         {
-            UTF32 SourceA[2];
-            SourceA[0] = nextcode;
-            SourceA[1] = L'\0';
-            const UTF32 *pSourceA = SourceA;
+            nextcode = ReadCodePointAndOthercase(fp, Othercase);
+            continue;
+        }
 
-            UTF8 TargetA[5];
-            UTF8 *pTargetA = TargetA;
+        UTF32 SourceB[2];
+        SourceB[0] = Othercase;
+        SourceB[1] = L'\0';
+        const UTF32 *pSourceB = SourceB;
 
-            ConversionResult cr;
-            cr = ConvertUTF32toUTF8(&pSourceA, pSourceA+1, &pTargetA, pTargetA+sizeof(TargetA)-1, lenientConversion);
+        UTF8 TargetB[5];
+        UTF8 *pTargetB = TargetB;
 
-            if (conversionOK != cr)
+        cr = ConvertUTF32toUTF8(&pSourceB, pSourceB+1, &pTargetB, pTargetB+sizeof(TargetB)-1, lenientConversion);
+
+        if (conversionOK == cr)
+        {
+            if (pTargetA - TargetA != pTargetB - TargetB)
             {
-                nextcode = ReadCodePoint(fp, &Value, &Othercase);
-                continue;
-            }
-
-            UTF32 SourceB[2];
-            SourceB[0] = Othercase;
-            SourceB[1] = L'\0';
-            const UTF32 *pSourceB = SourceB;
-
-            UTF8 TargetB[5];
-            UTF8 *pTargetB = TargetB;
-
-            cr = ConvertUTF32toUTF8(&pSourceB, pSourceB+1, &pTargetB, pTargetB+sizeof(TargetB)-1, lenientConversion);
-
-            if (conversionOK == cr)
-            {
-                if (pTargetA - TargetA != pTargetB - TargetB)
-                {
-                    fprintf(stderr, "Different UTF-8 length between cases is unsupported.\n");
-                    exit(0);
-                }
-
-                // Calculate XOR string.
-                //
-                UTF8 Xor[5];
-                UTF8 *pA = TargetA;
-                UTF8 *pB = TargetB;
-                UTF8 *pXor = Xor;
-
-                while (pA < pTargetA)
-                {
-                    *pXor = *pA ^ *pB;
-                    pA++;
-                    pB++;
-                    pXor++;
-                }
-                size_t nXor = pXor - Xor;
-
-                int i;
-                bool bFound = false;
-                for (i = 0; i < nOutputTable; i++)
-                {
-                    if (memcmp(aOutputTable[i].p, Xor, nXor) == 0)
-                    {
-                        bFound = true;
-                        break;
-                    }
-                }
-
-                if (!bFound)
-                {
-                    aOutputTable[nOutputTable].p = new UTF8[nXor];
-                    memcpy(aOutputTable[nOutputTable].p, Xor, nXor);
-                    aOutputTable[nOutputTable].n = nXor;
-                    i = nOutputTable++;
-                }
-
-                cIncluded++;
-                sm.RecordString(TargetA, pTargetA, i);
-            }
-
-            UTF32 nextcode2 = ReadCodePoint(fp, &Value, &Othercase);
-            if (nextcode2 < nextcode)
-            {
-                fprintf(stderr, "Codes in file are not in order.\n");
+                fprintf(stderr, "Different UTF-8 length between cases is unsupported.\n");
                 exit(0);
             }
-            nextcode = nextcode2;
+
+            // Calculate XOR string.
+            //
+            UTF8 Xor[5];
+            UTF8 *pA = TargetA;
+            UTF8 *pB = TargetB;
+            UTF8 *pXor = Xor;
+
+            while (pA < pTargetA)
+            {
+                *pXor = *pA ^ *pB;
+                pA++;
+                pB++;
+                pXor++;
+            }
+            size_t nXor = pXor - Xor;
+
+            int i;
+            bool bFound = false;
+            for (i = 0; i < nOutputTable; i++)
+            {
+                if (memcmp(aOutputTable[i].p, Xor, nXor) == 0)
+                {
+                    bFound = true;
+                    break;
+                }
+            }
+
+            if (!bFound)
+            {
+                aOutputTable[nOutputTable].p = new UTF8[nXor];
+                memcpy(aOutputTable[nOutputTable].p, Xor, nXor);
+                aOutputTable[nOutputTable].n = nXor;
+                i = nOutputTable++;
+            }
+
+            cIncluded++;
+            sm.RecordString(TargetA, pTargetA, i);
         }
+
+        UTF32 nextcode2 = ReadCodePointAndOthercase(fp, Othercase);
+        if (nextcode2 < nextcode)
+        {
+            fprintf(stderr, "Codes in file are not in order.\n");
+            exit(0);
+        }
+        nextcode = nextcode2;
     }
     printf("// %d code points.\n", cIncluded);
     fprintf(stderr, "%d code points.\n", cIncluded);
