@@ -2637,22 +2637,29 @@ void do_channelwho(dbref executor, dbref caller, dbref enactor, int eval, int ke
     }
 
     UTF8 channel[MAX_CHANNEL_LEN+1];
-    UTF8 *s = arg1;
-    UTF8 *t = channel;
-    while (*s && *s != '/' && ((t - channel) < MAX_CHANNEL_LEN))
+    size_t i = 0;
+    while (  '\0' != arg1[i]
+          && '/'  != arg1[i]
+          && i < MAX_CHANNEL_LEN)
     {
-        *t++ = *s++;
+        channel[i] = arg1[i];
+        i++;
     }
-    *t = 0;
+    channel[i] = '\0';
 
-    bool flag = false;
-    if (*s && *(s + 1))
+    bool bAll = false;
+    if (  '/' == arg1[i]
+       && 'a' == arg1[i + 1])
     {
-        flag = (*(s + 1) == 'a');
+        bAll = true;
     }
 
-    struct channel *ch = select_channel(channel);
-    if (!ch)
+    struct channel *ch = NULL;
+    if (i <= MAX_CHANNEL_LEN)
+    {
+        ch = select_channel(channel);
+    }
+    if (NULL == ch)
     {
         raw_notify(executor, tprintf("Unknown channel %s.", channel));
         return;
@@ -2663,16 +2670,16 @@ void do_channelwho(dbref executor, dbref caller, dbref enactor, int eval, int ke
         raw_notify(executor, NOPERM_MESSAGE);
         return;
     }
+
     raw_notify(executor, tprintf("-- %s --", ch->name));
     raw_notify(executor, tprintf("%-29.29s %-6.6s %-6.6s", "Name", "Status", "Player"));
     struct comuser *user;
     UTF8 *buff;
-    UTF8 temp[LBUF_SIZE];
-    int i;
-    for (i = 0; i < ch->num_users; i++)
+    static UTF8 temp[SBUF_SIZE];
+    for (int j = 0; j < ch->num_users; j++)
     {
-        user = ch->users[i];
-        if (  (  flag
+        user = ch->users[j];
+        if (  (  bAll
               || UNDEAD(user->who))
            && (  !Hidden(user->who)
               || Wizard_Who(executor)
