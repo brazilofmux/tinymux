@@ -4148,7 +4148,7 @@ mux_field StripTabsAndTruncate
         if (fldOutput + fldPoint + fldTransition < fldLimit)
         {
             size_t j;
-            for (j = 0; j < fldPoint.m_byte; j++);
+            for (j = 0; j < fldPoint.m_byte; j++)
             {
                 pBuffer[fldOutput.m_byte + j] = pString[curPos.m_byte + j];
             }
