@@ -1,7 +1,7 @@
 /*! \file table.h
  * \brief Table formatting and visual-width utilities.
  *
- * $Id: $
+ * $Id$
  */
 
 #ifndef TABLE_H
@@ -22,6 +22,8 @@
 //      Table->end()
 
 static const UTF8 *Empty = T("");
+static const mux_field fldAscii(1, 1);
+
 #define MAX_COLUMNS 255
 #define FIXED_COLUMNS 10
 
@@ -51,19 +53,20 @@ private:
     UTF8                *m_puchRow;
     mux_field            m_fldRowPos;
 
+    mux_field            m_fldCellPos;
+
     dbref                m_target;
     bool                 m_bRawNotify;
 
-    void add_to_line(const UTF8 *pText);
+    void add_to_line(const UTF8 *pText, bool bAdvance = true);
     void output(void);
-    void output_headers(void);
 
 public:
     mux_display_table(dbref target, bool bRawNotify = true);
     ~mux_display_table(void);
     void body_begin(void);
     void body_end(void);
-    void cell_add(const UTF8 *pText);
+    void cell_add(const UTF8 *pText, bool bAdvance = true);
     void cell_skip(void);
     void column_add(const UTF8 *header, LBUF_OFFSET nWidth, bool bFill = true, LBUF_OFFSET nPadTrailing = 1, UTF8 uchFill = (UTF8)' ');
     void header_begin(void);

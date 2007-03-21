@@ -4121,7 +4121,10 @@ mux_field StripTabsAndTruncate
     mux_cursor curPos = CursorMin;
     mux_field  fldLimit(nLength, nWidth);
 
+#ifdef MUX_TABLE
+#else // MUX_TABLE
     const mux_field fldAscii(1, 1);
+#endif // MUX_TABLE
     const mux_cursor curAscii(1, 1);
     mux_field  fldTransition(0, 0);
     const UTF8 *pTransition = NULL;

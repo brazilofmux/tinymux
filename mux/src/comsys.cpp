@@ -2493,9 +2493,8 @@ void do_comlist
                 Table->row_begin();
                 Table->cell_add(c->alias + i * ALIAS_SIZE);
                 Table->cell_add(c->channels[i]);
-                Table->cell_add(tprintf("%s %s", 
-                                (user->bUserIsOn ? "on " : "off"),
-                                (user->ComTitleStatus ? "con " : "coff")));
+                Table->cell_add(T((user->bUserIsOn ? "on  " : "off ")), false);
+                Table->cell_add(T((user->ComTitleStatus ? "con " : "coff")));
                 Table->cell_add(user->title);
                 Table->row_end();
 #else // MUX_TABLE
