@@ -15,19 +15,24 @@
  * second field.
  *
  * The constructed state machine associates the recognized code point with
- * one of potentially many accepting states.  Each accepting states
+ * one of potentially many accepting states.  Each accepting state
  * corresponds to an entry in an output table which contains enough
- * information of constructing the sequence of associated code points.
+ * information to construct the sequence of associated code points.
  * Potentially, several output tables (one for each method of constructing the
  * associated code point sequence) may be generated.
  *
- * For example, upper case and lower case character occur in runs.  It is
- * possible to construct all of the associated code points in a range by
- * flippping the same bits in the corresponding range of given code points.
- * Concretely, the ASCII range 'a-z' differ from 'A-Z' in one bit (0x20).
+ * For example, many times, upper case and lower case characters occur in
+ * runs.  It is possible to construct all of the associated code points in a
+ * range by flippping the same bits in the corresponding range of given code
+ * points.  Concretely, the ASCII range 'a-z' differ from 'A-Z' in one bit
+ * (0x20).
  *
- * On the other hand, sometimes, multiple corresponding code points are
- * associated, and they must be quoted explicitly.
+ * Another approach is to define a range and extract a portion of the given
+ * code point to be used as an index within that range to determine the
+ * associated code point.
+ *
+ * Sometimes, multiple corresponding code points are associated, and they must
+ * be quoted explicitly.
  *
  * It is not always necessary for the state machine to look at every byte
  * of a code point to determine the associated code point(s).  For this
