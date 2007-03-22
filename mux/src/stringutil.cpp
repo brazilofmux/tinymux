@@ -4125,49 +4125,68 @@ mux_field StripTabsAndTruncate
 #else // MUX_TABLE
     const mux_field fldAscii(1, 1);
 #endif // MUX_TABLE
-    const mux_cursor curAscii(1, 1);
     mux_field  fldTransition(0, 0);
-    const UTF8 *pTransition = NULL;
-    size_t nNormalBytes = 0;
-    ColorState cs = CS_NORMAL;
+    mux_field  fldNormal(0, 0);
+    const UTF8 *pTransition = NULL, *pNormal = NULL;
+    size_t nNormalBytes = 0, nTransition = 0;
+    ColorState csCurrent = CS_NORMAL, csNext = CS_NORMAL;
 
     while ('\0' != pString[curPos.m_byte])
     {
         int iCode = mux_color(pString + curPos.m_byte);
+        mux_cursor curPoint(utf8_FirstByte[pString[curPos.m_byte]], 1);
         if (COLOR_NOTCOLOR != iCode)
         {
-            cs = UpdateColorState(cs, iCode);
-            pTransition = ColorBinaryNormal(cs, &nNormalBytes);
-            fldTransition(nNormalBytes, 0);
+            csNext = UpdateColorState(csNext, iCode);
         }
-        else if (NULL != strchr("\r\n\t", pString[curPos.m_byte]))
+        else if (NULL == strchr("\r\n\t", pString[curPos.m_byte]))
         {
-            curPos += curAscii;
-            continue;
-        }
-
-        mux_cursor curPoint(utf8_FirstByte[pString[curPos.m_byte]], 1);
-        mux_field  fldPoint(utf8_FirstByte[pString[curPos.m_byte]], COLOR_NOTCOLOR == iCode ? 1 : 0);
-        if (fldOutput + fldPoint + fldTransition <= fldLimit)
-        {
-            for (size_t j = 0; j < fldPoint.m_byte; j++)
+            mux_field  fldPoint(utf8_FirstByte[pString[curPos.m_byte]], 1);
+            if (csCurrent != csNext)
             {
-                pBuffer[fldOutput.m_byte + j] = pString[curPos.m_byte + j];
+                pTransition = ANSI_TransitionColorBinary(csCurrent, csNext, &nTransition);
+                pNormal = ColorBinaryNormal(csNext, &nNormalBytes);
+                fldNormal(nNormalBytes, 0);
             }
-            fldOutput += fldPoint;
-        }
-        else
-        {
-            break;
+            else
+            {
+                nTransition = 0;
+            }
+            fldTransition(nTransition, 0);
+            if (fldOutput + fldTransition + fldPoint + fldNormal <= fldLimit)
+            {
+                if (0 < nTransition)
+                {
+                    memcpy(pBuffer + fldOutput.m_byte, pTransition, nTransition);
+                    csCurrent = csNext;
+                }
+                fldOutput += fldTransition;
+
+                for (size_t j = 0; j < fldPoint.m_byte; j++)
+                {
+                    pBuffer[fldOutput.m_byte + j] = pString[curPos.m_byte + j];
+                }
+                fldOutput += fldPoint;
+            }
+            else
+            {
+                break;
+            }
         }
         curPos += curPoint;
     }
 
-    if (  0 < nNormalBytes
-       && fldOutput + fldTransition <= fldLimit)
+    if (csCurrent != csNext)
     {
-        memcpy(pBuffer + fldOutput.m_byte, pTransition, nNormalBytes);
-        fldOutput += fldTransition;
+        pNormal = ColorBinaryNormal(csCurrent, &nNormalBytes);
+        fldNormal(nNormalBytes, 0);
+    }
+
+    if (  0 < nNormalBytes
+       && fldOutput + fldNormal <= fldLimit)
+    {
+        memcpy(pBuffer + fldOutput.m_byte, pNormal, nNormalBytes);
+        fldOutput += fldNormal;
     }
 
     if (bPad)
