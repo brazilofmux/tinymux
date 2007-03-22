@@ -1,3 +1,43 @@
+// The following does not yet agree with the behavior of strings.cpp.
+// Currently, strings.cpp looks at the upper and lower fields of
+// UnicodeData-style field and guesses whether to use the upper or lower case.
+// It does not yet support sequences of code points.
+//
+/*! \file strings.cpp
+ * \brief Top-level driver for building a state machine which recognizes a
+ * code point and indicates an associated sequence of code point(s) -- for
+ * example, upper case, lower case, title case, or possibly certain
+ * canonicalizations.
+ *
+ * The input file is composed of lines.  Each line is broken in
+ * semicolon-delimited fields.  The code point to recognize is taken from the
+ * first field.  The associated sequence of code points is taken from the
+ * second field.
+ *
+ * The constructed state machine associates the recognized code point with
+ * one of potentially many accepting states.  Each accepting states
+ * corresponds to an entry in an output table which contains enough
+ * information of constructing the sequence of associated code points.
+ * Potentially, several output tables (one for each method of constructing the
+ * associated code point sequence) may be generated.
+ *
+ * For example, upper case and lower case character occur in runs.  It is
+ * possible to construct all of the associated code points in a range by
+ * flippping the same bits in the corresponding range of given code points.
+ * Concretely, the ASCII range 'a-z' differ from 'A-Z' in one bit (0x20).
+ *
+ * On the other hand, sometimes, multiple corresponding code points are
+ * associated, and they must be quoted explicitly.
+ *
+ * It is not always necessary for the state machine to look at every byte
+ * of a code point to determine the associated code point(s).  For this
+ * reason, to advance to the next code requires a method separate from the
+ * state machine produced here.
+ *
+ * $Id$
+ *
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <memory.h>
