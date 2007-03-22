@@ -272,8 +272,8 @@ void LoadStrings(FILE *fp)
     sm.ReportStatus();
 }
 
-bool g_bReplacement = false;
-int  g_iReplacementState = '?';
+bool g_bDefault = false;
+int  g_iDefaultState = '?';
 
 void BuildAndOutputTable(FILE *fp, char *UpperPrefix, char *LowerPrefix)
 {
@@ -283,12 +283,15 @@ void BuildAndOutputTable(FILE *fp, char *UpperPrefix, char *LowerPrefix)
     LoadStrings(fp);
     TestTable(fp);
 
-    // Leaving states undefined leads to a smaller table.  On the other hand,
-    // do not make queries for code points outside the expected set.
+    // Leaving states undefined leads to a smaller table because row and
+    // column compression can take advantages of these 'don't care'
+    // posibilities, but queries to undefined code points will gives undefined
+    // answers.  Alternatively, a 'default' state can be give on the command
+    // line.
     //
-    if (g_bReplacement)
+    if (g_bDefault)
     {
-        sm.SetUndefinedStates(g_iReplacementState);
+        sm.SetUndefinedStates(g_iDefaultState);
         TestTable(fp);
     }
 
@@ -322,13 +325,13 @@ int main(int argc, char *argv[])
     if (argc < 3)
     {
 #if 0
-        fprintf(stderr, "Usage: %s [-c ch] prefix unicodedata.txt\n", argv[0]);
+        fprintf(stderr, "Usage: %s [-d ch] prefix unicodedata.txt\n", argv[0]);
         exit(0);
 #else
         pFilename = "NumericDecimal.txt";
         pPrefix   = "digit";
-        g_bReplacement = false;
-        g_iReplacementState = '?';
+        g_bDefault = false;
+        g_iDefaultState = '?';
 #endif
     }
     else
@@ -336,17 +339,17 @@ int main(int argc, char *argv[])
         int j;
         for (j = 1; j < argc; j++)
         {
-            if (0 == strcmp(argv[j], "-c"))
+            if (0 == strcmp(argv[j], "-d"))
             {
-                g_bReplacement = true;
+                g_bDefault = true;
                 if (j+1 < argc)
                 {
                     j++;
-                    g_iReplacementState = atoi(argv[j]);
+                    g_iDefaultState = atoi(argv[j]);
                 }
                 else
                 {
-                    g_iReplacementState = '?';
+                    g_iDefaultState = '?';
                 }
             }
             else
