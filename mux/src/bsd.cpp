@@ -2101,8 +2101,9 @@ static const UTF8 *disc_reasons[] =
     T("Login Retry Limit"),
     T("Logins Disabled"),
     T("Logout (Connection Not Dropped)"),
-    T("Too Many Connected Players")
-};
+    T("Too Many Connected Players"),
+    T("Restarted (SSL Connections Dropped)")
+ };
 
 // Disconnect reasons that get fed to A_ADISCONNECT via announce_disconnect
 //
