@@ -29,7 +29,7 @@ typedef struct confparm
     int *loc;               // where to store value
     void *pExtra;           // extra pointer for interpreter
     UINT32 nExtra;          // extra data for interpreter
-} CONF;
+} CONFPARM;
 
 // ---------------------------------------------------------------------------
 // External symbols.
@@ -1866,7 +1866,7 @@ static CF_HAND(cf_include)
 // ---------------------------------------------------------------------------
 // conftable: Table for parsing the configuration file.
 
-static CONF conftable[] =
+static CONFPARM conftable[] =
 {
     {T("access"),                    cf_access,      CA_GOD,    CA_DISABLED, NULL,                            access_nametab,     0},
     {T("alias"),                     cf_cmd_alias,   CA_GOD,    CA_DISABLED, (int *)&mudstate.command_htab,   0,                  0},
@@ -2113,7 +2113,7 @@ CF_HAND(cf_cf_access)
 {
     UNUSED_PARAMETER(vp);
 
-    CONF *tp;
+    CONFPARM *tp;
     UTF8 *ap;
 
     for (ap = str; *ap && !mux_isspace(*ap); ap++)
@@ -2154,7 +2154,7 @@ CF_HAND(cf_cf_access)
 //
 int cf_set(UTF8 *cp, UTF8 *ap, dbref player)
 {
-    CONF *tp;
+    CONFPARM *tp;
     UTF8 *buff = 0;
 
     // Search the config parameter table for the command. If we find
@@ -2329,7 +2329,7 @@ int cf_read(void)
 //
 void list_cf_access(dbref player)
 {
-    CONF *tp;
+    CONFPARM *tp;
     UTF8 *buff;
 
     buff = alloc_mbuf("list_cf_access");
@@ -2350,7 +2350,7 @@ void list_cf_access(dbref player)
 //
 void cf_display(dbref player, UTF8 *param_name, UTF8 *buff, UTF8 **bufc)
 {
-    CONF *tp;
+    CONFPARM *tp;
 
     for (tp = conftable; tp->pname; tp++)
     {
@@ -2419,7 +2419,7 @@ void cf_display(dbref player, UTF8 *param_name, UTF8 *buff, UTF8 **bufc)
 //
 void cf_list(dbref player, UTF8 *buff, UTF8 **bufc)
 {
-    CONF *tp;
+    CONFPARM *tp;
     ITL itl;
     ItemToList_Init(&itl, buff, bufc);
 
