@@ -123,7 +123,7 @@ AC_ARG_ENABLE(
       AC_MSG_RESULT(no)
     else
       INLINESQL="-DINLINESQL"
-      INLINESQL_LIBS="-lmysqlclient -lZ"
+      INLINESQL_LIBS="-lmysqlclient -lz"
       AC_MSG_RESULT(yes)
     fi
   ],

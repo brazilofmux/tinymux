@@ -1487,7 +1487,7 @@ if test "${enable_inlinesql+set}" = set; then
 echo "${ECHO_T}no" >&6
     else
       INLINESQL="-DINLINESQL"
-      INLINESQL_LIBS="-lmysqlclient -lZ"
+      INLINESQL_LIBS="-lmysqlclient -lz"
       echo "$as_me:$LINENO: result: yes" >&5
 echo "${ECHO_T}yes" >&6
     fi

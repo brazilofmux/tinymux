@@ -129,6 +129,7 @@ struct prog_data
 #define TELNET_OLDENV '\x24'
 #define TELNET_ENV '\x27'
 #define TELNET_CHARSET '\x2A'
+#define TELNET_STARTTLS '\x2E'
 
 // Telnet Option Negotiation States
 //
@@ -147,6 +148,7 @@ struct prog_data
 #define TELNETSB_REQUEST        1
 #define TELNETSB_SEND           1
 #define TELNETSB_VALUE          1
+#define TELNETSB_FOLLOWS        1
 #define TELNETSB_INFO           2
 #define TELNETSB_ACCEPT         2
 #define TELNETSB_REPLY          2

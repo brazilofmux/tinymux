@@ -3122,6 +3122,12 @@ static void SetHimState(DESC *d, unsigned char chOption, int iHimState)
         {
             SendCharsetRequest(d);
         }
+#ifdef SSL_ENABLED
+        else if (TELNET_STARTTLS == chOption)
+        {
+            SendSb(d,chOption,TELNETSB_FOLLOWS);
+        }
+#endif
     }
 }
 
@@ -3167,6 +3173,9 @@ static bool DesiredHimOption(DESC *d, unsigned char chOption)
        || TELNET_EOR     == chOption
        || TELNET_SGA     == chOption
        || TELNET_ENV     == chOption
+#ifdef SSL_ENABLED
+       || TELNET_STARTTLS== chOption
+#endif
        || TELNET_CHARSET == chOption)
     {
         return true;
@@ -3342,6 +3351,10 @@ void TelnetSetup(DESC *d)
     EnableHim(d, TELNET_ENV);
 //    EnableHim(d, TELNET_OLDENV);
     EnableHim(d, TELNET_CHARSET);
+#ifdef SSL_ENABLED
+    if (!d->ssl_session)
+        EnableHim(d, TELNET_STARTTLS);
+#endif
 }
 
 /*! \brief Parse raw data from network connection into command lines and
@@ -3743,6 +3756,16 @@ static void process_input_helper(DESC *d, char *pBytes, int nBytes)
                         d->height = (d->aOption[3] << 8 ) | d->aOption[4];
                     }
                     break;
+                    
+#ifdef SSL_ENABLED
+                case TELNET_STARTTLS:
+                    if (TELNETSB_FOLLOWS == d->aOption[1])
+                    {
+                       d->ssl_session = SSL_new(ssl_ctx);
+                       SSL_set_fd(d->ssl_session, d->descriptor);
+                       SSL_accept(d->ssl_session);
+                    }
+#endif
 
                 case TELNET_TTYPE:
                     if (TELNETSB_IS == d->aOption[1])
