@@ -1,3 +1,26 @@
+/*! \file integers.cpp
+ * \brief Top-level driver for building a state machine which recognizes a
+ * code point and indicates an associated integer (or accepting state).
+ *
+ * The input file is composed of lines.  Each line is broken in
+ * semicolon-delimited fields.  The code point to recognize is taken from the
+ * first field.  The associated integer (decimal base) is taken from the
+ * second field.
+ *
+ * The constructed state machine associates the recognized code point with
+ * the given value.  The integer value could be anything -- index into a
+ * separately constructed table as is the case with mux_color, or an 8-bit
+ * character as is the case with the UTF8-to-Latin1 and UTF8-to-ASCII down
+ * conversions.
+ *
+ * It is not always necessary for the state machine to look at every byte
+ * of a code point to determine the associated code point(s).  For this
+ * reason, to advance to the next code requires a method separate from the
+ * state machine produced here.
+ *
+ * $Id$
+ *
+ */
 #include <stdio.h>
 #include <stdlib.h>
 #include <memory.h>
