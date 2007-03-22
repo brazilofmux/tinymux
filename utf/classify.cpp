@@ -1,3 +1,20 @@
+/*! \file classify.cpp
+ * \brief Top-level driver for building a state machine which recognizes code
+ * points and indicates their membership or exclusion from a particular set of
+ * possible code points.
+ *
+ * Code points included are taken from first field (fields are delimited by
+ * semi-colons) of each line of a file.  The constructed state machine
+ * contains two accepting states: 0 and 1.  A 1 indicates membership.  Note
+ * that it is not always necessary for the state machine to look at every byte
+ * of a code point to determine membership.  For this reason, to advance to
+ * the next code requires a method separate from the state machine produced
+ * here.
+ *
+ * $Id$
+ *
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <memory.h>
