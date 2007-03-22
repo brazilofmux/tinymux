@@ -2118,7 +2118,7 @@ static const UTF8 *disc_messages[] =
     T("NoLogins"),
     T("Logout"),
     T("GameFull"),
-    T("Restart"),
+    T("Restart")
 };
 
 void shutdownsock(DESC *d, int reason)
