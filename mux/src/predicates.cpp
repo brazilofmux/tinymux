@@ -1566,14 +1566,14 @@ void do_restart(dbref executor, dbref caller, dbref enactor, int key)
 
 #else // WIN32
 
+#ifdef SSL_ENABLED
+    CleanUpSSLConnections();
+#endif
+
     dump_restart_db();
 
     CleanUpSlaveSocket();
     CleanUpSlaveProcess();
-
-#ifdef SSL_ENABLED
-    CleanUpSSLConnections();
-#endif
 
     Log.StopLogging();
 
