@@ -18,6 +18,12 @@ cl_Printable.txt: UnicodeMaster.txt StringprepProhibited.txt
 cl_PrivateUse.txt: PrivateUse.txt
 	perl buildPrivateUse.pl PrivateUse.txt > cl_PrivateUse.txt
 
+tr_tolower.txt: UnicodeMaster.txt
+	perl buildToLower.pl UnicodeMaster.txt > tr_tolower.txt
+
+tr_toupper.txt: UnicodeMaster.txt
+	perl buildToUpper.pl UnicodeMaster.txt > tr_toupper.txt
+
 classify: classify.cpp ConvertUTF.cpp ConvertUTF.h smutil.cpp smutil.h
 	g++ -O3 -g -o classify classify.cpp ConvertUTF.cpp smutil.cpp
 
@@ -27,7 +33,7 @@ integers: integers.cpp ConvertUTF.cpp ConvertUTF.h smutil.cpp smutil.h
 strings: strings.cpp ConvertUTF.cpp ConvertUTF.h smutil.cpp smutil.h
 	g++ -O3 -g -o strings strings.cpp ConvertUTF.cpp smutil.cpp
 
-stringutil.txt: classify integers strings cl_Printable.txt cl_AttrNameInitial.txt cl_AttrName.txt cl_PrivateUse.txt tr_utf8_latin1.txt tr_utf8_ascii.txt tr_Color.txt
+stringutil.txt: classify integers strings cl_Printable.txt cl_AttrNameInitial.txt cl_AttrName.txt cl_PrivateUse.txt tr_utf8_latin1.txt tr_utf8_ascii.txt tr_Color.txt tr_tolower.txt tr_toupper.txt
 	./classify cl_print cl_Printable.txt > stringutil.txt
 	./classify cl_attrnameinitial cl_AttrNameInitial.txt >> stringutil.txt
 	./classify cl_attrname cl_AttrName.txt >> stringutil.txt

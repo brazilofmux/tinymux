@@ -61,123 +61,52 @@ static struct
 } aOutputTable[5000];
 int   nOutputTable;
 
-UTF32 ReadCodePointAndOthercase(FILE *fp, UTF32 &Othercase)
+UTF32 ReadCodePointAndRelatedCodePoints(FILE *fp, int &nRelatedPoints, UTF32 aRelatedPoints[])
 {
+    nRelatedPoints = 0;
+
     char buffer[1024];
-    char *p;
-
-    for (;;)
+    char *p = ReadLine(fp, buffer, sizeof(buffer));
+    if (NULL == p)
     {
-        if (fgets(buffer, sizeof(buffer), fp) == NULL)
-        {
-            Othercase = UNI_EOF;
-            return UNI_EOF;
-        }
-        p = strchr(buffer, '#');
-        if (NULL != p)
-        {
-            // Ignore comment.
-            //
-            *p = '\0';
-        }
-        p = buffer;
-
-        // Skip leading whitespace.
-        //
-        while (isspace(*p))
-        {
-            p++;
-        }
-
-        // Look for end of string or comment.
-        //
-        if ('\0' == *p)
-        {
-            // We skip blank lines.
-            //
-            continue;
-        }
-        break;
+        return UNI_EOF;
     }
 
-#define MAX_FIELDS 15
-
-    int   nFields = 0;
-    char *aFields[MAX_FIELDS];
-    for (nFields = 0; nFields < MAX_FIELDS; )
+    int nFields;
+    char *aFields[2];
+    ParseFields(buffer, sizeof(aFields)/sizeof(aFields[0]), nFields, aFields);
+    if (nFields < 2)
     {
-        // Skip leading whitespace.
-        //
-        while (isspace(*p))
-        {
-            p++;
-        }
-
-        aFields[nFields++] = p;
-        char *q = strchr(p, ';');
-        if (NULL == q)
-        {
-            // Trim trailing whitespace.
-            //
-            size_t i = strlen(p) - 1;
-            while (isspace(p[i]))
-            {
-                p[i] = '\0';
-            }
-            break;
-        }
-        else
-        {
-            *q = '\0';
-            p = q + 1;
-
-            // Trim trailing whitespace.
-            //
-            q--;
-            while (isspace(*q))
-            {
-                *q = '\0';
-                q--;
-            }
-        }
+        return UNI_EOF;
     }
 
     // Field #0 - Code Point
     //
     int codepoint = DecodeCodePoint(aFields[0]);
 
-    // Field #12 - Simple Uppercase Mapping.
-    //
-    int Uppercase = DecodeCodePoint(aFields[12]);
 
-    // Field #13 = Simple Lowercase Mapping.
+    // Field #1 - Associated Code Points.
     //
-    int Lowercase = DecodeCodePoint(aFields[13]);
-
-    if (  Uppercase < 0
-       && Lowercase < 0)
+    int   nPoints;
+    char *aPoints[10];
+    ParsePoints(aFields[1], sizeof(aPoints)/sizeof(aPoints[0]), nPoints, aPoints);
+    if (nPoints < 1)
     {
-        Othercase = UNI_EOF;
+        fprintf(stderr, "At least one related code point is required.\n");
+        exit(0);
+        return UNI_EOF;
     }
-    else
-    {
-        if (Uppercase < 0)
-        {
-            Uppercase = codepoint;
-        }
-        if (Lowercase < 0)
-        {
-            Lowercase = codepoint;
-        }
 
-        if (Lowercase == codepoint)
-        {
-            Othercase = Uppercase;
-        }
-        else
-        {
-            Othercase = Lowercase;
-        }
+    for (int i = 0; i < nPoints; i++)
+    {
+        aRelatedPoints[i] = DecodeCodePoint(aPoints[i]);
+    }
+    nRelatedPoints = nPoints;
+
+    if (nRelatedPoints != 1)
+    {
+        fprintf(stderr, "Multiple, related code points not supported, yet.\n");
+        exit(0);
     }
     return codepoint;
 }
@@ -186,11 +115,11 @@ void TestTable(FILE *fp)
 {
     fprintf(stderr, "Testing STT table.\n");
     fseek(fp, 0, SEEK_SET);
-    UTF32 Othercase;
-    UTF32 nextcode = ReadCodePointAndOthercase(fp, Othercase);
 
-    // Othercase
-    //
+    int   nRelatedPoints;
+    UTF32 aRelatedPoints[10];
+    UTF32 nextcode = ReadCodePointAndRelatedCodePoints(fp, nRelatedPoints, aRelatedPoints);
+
     while (UNI_EOF != nextcode)
     {
         UTF32 SourceA[2];
@@ -206,12 +135,12 @@ void TestTable(FILE *fp)
 
         if (conversionOK != cr)
         {
-            nextcode = ReadCodePointAndOthercase(fp, Othercase);
+            nextcode = ReadCodePointAndRelatedCodePoints(fp, nRelatedPoints, aRelatedPoints);
             continue;
         }
 
         UTF32 SourceB[2];
-        SourceB[0] = Othercase;
+        SourceB[0] = aRelatedPoints[0];
         SourceB[1] = L'\0';
         const UTF32 *pSourceB = SourceB;
 
@@ -224,8 +153,9 @@ void TestTable(FILE *fp)
         {
             if (pTargetA - TargetA != pTargetB - TargetB)
             {
-                fprintf(stderr, "Different UTF-8 length between cases is unsupported.\n");
-                exit(0);
+                fprintf(stderr, "Different UTF-8 length between cases is unsupported (U+%04X).\n", nextcode);
+                nextcode = ReadCodePointAndRelatedCodePoints(fp, nRelatedPoints, aRelatedPoints);
+                continue;
             }
 
             // Calculate XOR string.
@@ -264,7 +194,7 @@ void TestTable(FILE *fp)
             sm.TestString(TargetA, pTargetA, i);
         }
 
-        UTF32 nextcode2 = ReadCodePointAndOthercase(fp, Othercase);
+        UTF32 nextcode2 = ReadCodePointAndRelatedCodePoints(fp, nRelatedPoints, aRelatedPoints);
         if (nextcode2 < nextcode)
         {
             fprintf(stderr, "Codes in file are not in order.\n");
@@ -279,11 +209,10 @@ void LoadStrings(FILE *fp)
     int cIncluded = 0;
 
     fseek(fp, 0, SEEK_SET);
-    UTF32 Othercase;
-    UTF32 nextcode = ReadCodePointAndOthercase(fp, Othercase);
+    int   nRelatedPoints;
+    UTF32 aRelatedPoints[10];
+    UTF32 nextcode = ReadCodePointAndRelatedCodePoints(fp, nRelatedPoints, aRelatedPoints);
 
-    // Othercase
-    //
     nOutputTable = 0;
     while (UNI_EOF != nextcode)
     {
@@ -300,12 +229,12 @@ void LoadStrings(FILE *fp)
 
         if (conversionOK != cr)
         {
-            nextcode = ReadCodePointAndOthercase(fp, Othercase);
+            nextcode = ReadCodePointAndRelatedCodePoints(fp, nRelatedPoints, aRelatedPoints);
             continue;
         }
 
         UTF32 SourceB[2];
-        SourceB[0] = Othercase;
+        SourceB[0] = aRelatedPoints[0];
         SourceB[1] = L'\0';
         const UTF32 *pSourceB = SourceB;
 
@@ -318,8 +247,9 @@ void LoadStrings(FILE *fp)
         {
             if (pTargetA - TargetA != pTargetB - TargetB)
             {
-                fprintf(stderr, "Different UTF-8 length between cases is unsupported.\n");
-                exit(0);
+                fprintf(stderr, "Different UTF-8 length between cases is unsupported (U+%04X).\n", nextcode);
+                nextcode = ReadCodePointAndRelatedCodePoints(fp, nRelatedPoints, aRelatedPoints);
+                continue;
             }
 
             // Calculate XOR string.
@@ -361,7 +291,7 @@ void LoadStrings(FILE *fp)
             sm.RecordString(TargetA, pTargetA, i);
         }
 
-        UTF32 nextcode2 = ReadCodePointAndOthercase(fp, Othercase);
+        UTF32 nextcode2 = ReadCodePointAndRelatedCodePoints(fp, nRelatedPoints, aRelatedPoints);
         if (nextcode2 < nextcode)
         {
             fprintf(stderr, "Codes in file are not in order.\n");
