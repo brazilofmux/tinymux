@@ -2538,6 +2538,7 @@ DESC *initializesock(SOCKET s, struct sockaddr_in *a)
     d->retries_left = mudconf.retry_limit;
     d->command_count = 0;
     d->timeout = mudconf.idle_timeout;
+    d->ssl_session = NULL;
 
     int AccessFlag = site_check((*a).sin_addr, mudstate.access_list);
     int SuspectFlag = site_check((*a).sin_addr, mudstate.suspect_list);
