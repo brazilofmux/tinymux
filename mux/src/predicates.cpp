@@ -1549,6 +1549,10 @@ void do_restart(dbref executor, dbref caller, dbref enactor, int key)
     log_name(executor);
     ENDLOG;
 
+#ifdef SSL_ENABLED
+    CleanUpSSLConnections();
+#endif
+
     local_presync_database();
 
 #ifndef MEMORY_BASED
@@ -1565,10 +1569,6 @@ void do_restart(dbref executor, dbref caller, dbref enactor, int key)
     exit(12345678);
 
 #else // WIN32
-
-#ifdef SSL_ENABLED
-    CleanUpSSLConnections();
-#endif
 
     dump_restart_db();
 
