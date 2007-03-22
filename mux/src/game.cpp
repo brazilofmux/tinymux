@@ -3124,6 +3124,13 @@ int DCL_CDECL main(int argc, char *argv[])
     init_sql();
 #endif // INLINESQL
 
+#ifdef SSL_ENABLED
+    if (!initialize_ssl()) {
+        // Do some extra handling?  
+        // We do log all errors in initialize_ssl, so it may be unneeded.
+    }
+#endif
+
     fcache_init();
     helpindex_init();
 
@@ -3223,7 +3230,11 @@ int DCL_CDECL main(int argc, char *argv[])
             DebugTotalFiles--;
         }
     }
-    SetupPorts(&nMainGamePorts, aMainGamePorts, &mudconf.ports);
+#ifdef SSL_ENABLED
+    SetupPorts(&nMainGamePorts, aMainGamePorts, &mudconf.ports, &mudconf.sslPorts);
+#else
+    SetupPorts(&nMainGamePorts, aMainGamePorts, &mudconf.ports, NULL);
+#endif
     boot_slave(GOD, GOD, GOD, 0);
 #ifdef QUERY_SLAVE
     boot_sqlslave(GOD, GOD, GOD, 0);
@@ -3300,6 +3311,10 @@ int DCL_CDECL main(int argc, char *argv[])
     }
     WSACleanup();
 #endif // WIN32
+
+#ifdef SSL_ENABLED
+    shutdown_ssl();
+#endif
 
     return 0;
 }

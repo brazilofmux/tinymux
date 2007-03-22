@@ -19,6 +19,10 @@
 #include <sys/wait.h>
 #endif // !WIN32
 
+#ifdef SSL_ENABLED
+#include <openssl/ssl.h>
+#endif
+
 #include <signal.h>
 
 #include "attrs.h"
@@ -31,7 +35,12 @@ extern const int _sys_nsig;
 #define NSIG _sys_nsig
 #endif // SOLARIS
 
+#ifdef SSL_ENABLED
+SSL_CTX  *ssl_ctx = NULL;
+PortInfo aMainGamePorts[MAX_LISTEN_PORTS * 2];
+#else
 PortInfo aMainGamePorts[MAX_LISTEN_PORTS];
+#endif
 int      nMainGamePorts = 0;
 
 unsigned int ndescriptors = 0;
@@ -921,6 +930,117 @@ Done:
 }
 #endif // WIN32
 
+#ifdef SSL_ENABLED
+int pem_passwd_callback(char *buf, int size, int rwflag, void *userdata)
+{
+    const char *passwd = (const char *)userdata;
+    int passwdLen = strlen(passwd);
+    strncpy(buf, passwd, size);
+    return ((passwdLen > size) ? size : passwdLen);
+}
+
+int initialize_ssl()
+{
+    SSL_load_error_strings();
+    OpenSSL_add_ssl_algorithms();
+    ssl_ctx = SSL_CTX_new (SSLv23_server_method());
+
+    if (!SSL_CTX_use_certificate_file (ssl_ctx, (char *)mudconf.ssl_certificate_file, SSL_FILETYPE_PEM)) {
+        STARTLOG(LOG_ALWAYS,"NET","SSL");
+        log_text(T("initialize_ssl: Unable to load SSL certificate file "));
+        log_text(mudconf.ssl_certificate_file);
+        ENDLOG;
+        SSL_CTX_free(ssl_ctx);
+        ssl_ctx = NULL;
+        return 0;
+    }
+    
+    SSL_CTX_set_default_passwd_cb(ssl_ctx,pem_passwd_callback);
+    SSL_CTX_set_default_passwd_cb_userdata(ssl_ctx,(void *)mudconf.ssl_certificate_password);
+    
+    if (!SSL_CTX_use_PrivateKey_file(ssl_ctx,(char *)mudconf.ssl_certificate_key, SSL_FILETYPE_PEM)) {
+        STARTLOG(LOG_ALWAYS,"NET","SSL");
+        log_text(T("initialize_ssl: Unable to load SSL private key: "));
+        log_text(mudconf.ssl_certificate_key);
+        ENDLOG;
+        SSL_CTX_free(ssl_ctx);
+        ssl_ctx = NULL;
+        return 0;
+    }
+    
+    if (!SSL_CTX_check_private_key(ssl_ctx)) {
+        STARTLOG(LOG_ALWAYS,"NET","SSL");
+        log_text(T("initialize_ssl: Key, certificate or password does not match."));
+        ENDLOG;
+        SSL_CTX_free(ssl_ctx);
+        ssl_ctx = NULL;
+        return 0;
+    }
+    
+    STARTLOG(LOG_ALWAYS,"NET","SSL");
+    log_text(T("initialize_ssl: SSL engine initialized successfully."));
+    ENDLOG;    
+    
+    return 1;
+}
+
+void shutdown_ssl()
+{
+    if (ssl_ctx) {
+        SSL_CTX_free(ssl_ctx);
+        ssl_ctx = NULL;
+    }
+}
+
+void CleanUpSSLConnections()
+{
+    DESC *d;
+    
+    DESC_ITER_ALL(d)
+    {
+        if (d->ssl_session) {
+            shutdownsock(d,R_RESTART);
+        }
+    }
+}
+
+#endif
+
+int mux_socket_write(DESC *d, const char *buffer, int nBytes, int flags)
+{
+    int result;
+    
+#ifdef SSL_ENABLED
+    if (d->ssl_session) {
+        result = SSL_write(d->ssl_session,buffer,nBytes);
+    }
+    else
+#endif
+    {
+        result = SOCKET_WRITE(d->descriptor,buffer,nBytes,flags);
+    }
+    
+    return result;
+}
+
+int mux_socket_read(DESC *d, char *buffer, int nBytes, int flags)
+{
+    int result;
+    
+#ifdef SSL_ENABLED
+    if (d->ssl_session) {
+        result = SSL_read(d->ssl_session,buffer,nBytes);
+    }
+    else
+#endif
+    {
+        result = SOCKET_READ(d->descriptor,buffer,nBytes,flags);
+    }
+    
+    return result;
+}
+
+
 static void make_socket(PortInfo *Port)
 {
     SOCKET s;
@@ -1058,7 +1178,11 @@ static void make_socket(PortInfo *Port)
 
     listen(s, SOMAXCONN);
     Port->socket = s;
+#ifdef SSL_ENABLED
+    Log.tinyprintf("Listening on port %d (%s)" ENDLINE, Port->port, Port->ssl ? "SSL" : "plaintext");
+#else
     Log.tinyprintf("Listening on port %d" ENDLINE, Port->port);
+#endif
 }
 
 #ifndef WIN32
@@ -1075,7 +1199,7 @@ bool ValidSocket(SOCKET s)
 
 #endif // WIN32
 
-void SetupPorts(int *pnPorts, PortInfo aPorts[], IntArray *pia)
+void SetupPorts(int *pnPorts, PortInfo aPorts[], IntArray *pia, IntArray *piaSSL)
 {
     // Any existing open port which does not appear in the requested set
     // should be closed.
@@ -1093,6 +1217,19 @@ void SetupPorts(int *pnPorts, PortInfo aPorts[], IntArray *pia)
                 break;
             }
         }
+
+#ifdef SSL_ENABLED
+        if (!bFound && piaSSL && ssl_ctx) {
+            for (j = 0; j < piaSSL->n; j++) {
+                if (aPorts[i].port == piaSSL->pi[j])
+                {
+                    bFound = true;
+                    break;
+                }
+            }
+        }
+#endif
+
 
         if (!bFound)
         {
@@ -1130,6 +1267,9 @@ void SetupPorts(int *pnPorts, PortInfo aPorts[], IntArray *pia)
         {
             k = *pnPorts;
             aPorts[k].port = pia->pi[j];
+#ifdef SSL_ENABLED
+            aPorts[k].ssl = 0;
+#endif
             make_socket(aPorts+k);
             if (  !IS_INVALID_SOCKET(aPorts[k].socket)
 #ifndef WIN32
@@ -1148,11 +1288,54 @@ void SetupPorts(int *pnPorts, PortInfo aPorts[], IntArray *pia)
         }
     }
 
+#ifdef SSL_ENABLED
+    if (piaSSL && ssl_ctx) {
+        for (j = 0; j < piaSSL->n; j++)
+        {
+            bFound = false;
+            for (i = 0; i < *pnPorts; i++)
+            {
+                if (aPorts[i].port == piaSSL->pi[j])
+                {
+                    bFound = true;
+                    break;
+                }
+            }
+    
+            if (!bFound)
+            {
+                k = *pnPorts;
+                aPorts[k].port = piaSSL->pi[j];
+                aPorts[k].ssl = 1;
+                make_socket(aPorts+k);
+                if (  !IS_INVALID_SOCKET(aPorts[k].socket)
+#ifndef WIN32
+                   && ValidSocket(aPorts[k].socket)
+#endif // WIN32
+                   )
+                {
+#ifndef WIN32
+                    if (maxd <= aPorts[k].socket)
+                    {
+                        maxd = aPorts[k].socket + 1;
+                    }
+#endif // WIN32
+                    (*pnPorts)++;
+                }
+            }
+        }
+    }
+#endif
+
     // If we were asked to listen on at least one port, but we aren't
     // listening to at least one port, we should bring the game down.
     //
-    if (  0 < pia->n
-       && 0 == *pnPorts)
+    if ( 0 == *pnPorts && 
+         (0 != pia->n  
+#ifdef SSL_ENABLED
+          || 0 != piaSSL->n   
+#endif
+         ))
     {
 #ifdef WIN32
         WSACleanup();
@@ -1857,7 +2040,39 @@ DESC *new_connection(PortInfo *Port, int *piSocketError)
         free_mbuf(pBuffM3);
         ENDLOG;
 
+#ifdef SSL_ENABLED
+        SSL *ssl_session = NULL;
+
+        if (Port->ssl && ssl_ctx) {
+            ssl_session = SSL_new(ssl_ctx);
+            SSL_set_fd(ssl_session, newsock);
+            int ssl_result = SSL_accept(ssl_session);
+            if (ssl_result != 1) {
+                // Something errored out.  We'll have to drop.
+                int ssl_err = SSL_get_error(ssl_session,ssl_result);
+                
+                SSL_free(ssl_session);
+                STARTLOG(LOG_ALWAYS,"NET","SSL");
+                log_text(T("SSL negotiation failed: "));
+                ENDLOG;
+                shutdown(newsock, SD_BOTH);
+                if (SOCKET_CLOSE(newsock) == 0)
+                {
+                    DebugTotalSockets--;
+                }
+                newsock = INVALID_SOCKET;
+                errno = 0;
+                return NULL;                
+            }
+        }
+#endif
+
         d = initializesock(newsock, &addr);
+
+#ifdef SSL_ENABLED
+        d->ssl_session = ssl_session;
+#endif
+        
         TelnetSetup(d);
 
         // Initalize everything before sending the sitemon info, so that we
@@ -1902,7 +2117,8 @@ static const UTF8 *disc_messages[] =
     T("BadLogin"),
     T("NoLogins"),
     T("Logout"),
-    T("GameFull")
+    T("GameFull"),
+    T("Restart"),
 };
 
 void shutdownsock(DESC *d, int reason)
@@ -2134,6 +2350,14 @@ void shutdownsock(DESC *d, int reason)
                     PRIORITY_SYSTEM, Task_DeferredClose, d, 0);
             }
             return;
+        }
+#endif
+
+#ifdef SSL_ENABLED
+        if (d->ssl_session) {
+            SSL_shutdown(d->ssl_session);
+            SSL_free(d->ssl_session);
+            d->ssl_session = NULL;
         }
 #endif
 
@@ -2414,7 +2638,7 @@ void process_output9x(void *dvoid, int bHandleShutdown)
     {
         while (tb->hdr.nchars > 0)
         {
-            cnt = SOCKET_WRITE(d->descriptor, (char *)tb->hdr.start, tb->hdr.nchars, 0);
+            cnt = mux_socket_write(d, (char *)tb->hdr.start, tb->hdr.nchars, 0);
             if (IS_SOCKET_ERROR(cnt))
             {
                 int iSocketError = SOCKET_LAST_ERROR;
@@ -2580,7 +2804,7 @@ void process_output(void *dvoid, int bHandleShutdown)
     {
         while (tb->hdr.nchars > 0)
         {
-            int cnt = SOCKET_WRITE(d->descriptor, tb->hdr.start, tb->hdr.nchars, 0);
+            int cnt = mux_socket_write(d, (const char *)tb->hdr.start, tb->hdr.nchars, 0);
             if (IS_SOCKET_ERROR(cnt))
             {
                 int iSocketError = SOCKET_LAST_ERROR;
@@ -3711,7 +3935,7 @@ bool process_input(DESC *d)
     mudstate.debug_cmd = T("< process_input >");
 
     char buf[LBUF_SIZE];
-    int got = SOCKET_READ(d->descriptor, buf, sizeof(buf), 0);
+    int got = mux_socket_read(d, buf, sizeof(buf), 0);
     if (IS_SOCKET_ERROR(got) || got == 0)
     {
         int iSocketError = SOCKET_LAST_ERROR;
@@ -3740,11 +3964,18 @@ void close_sockets(bool emergency, const UTF8 *message)
     {
         if (emergency)
         {
-            SOCKET_WRITE(d->descriptor, (const char *)message, strlen((const char *)message), 0);
+            mux_socket_write(d, (const char *)message, strlen((const char *)message), 0);
             if (IS_SOCKET_ERROR(shutdown(d->descriptor, SD_BOTH)))
             {
                 log_perror(T("NET"), T("FAIL"), NULL, T("shutdown"));
             }
+#ifdef SSL_ENABLED
+            if (d->ssl_session) {
+                SSL_shutdown(d->ssl_session);
+                SSL_free(d->ssl_session);
+                d->ssl_session = NULL;
+            }
+#endif
             if (SOCKET_CLOSE(d->descriptor) == 0)
             {
                 DebugTotalSockets--;

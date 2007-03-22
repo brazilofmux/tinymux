@@ -71,6 +71,14 @@ void cf_init(void)
     {
         ISOUTOFMEMORY(mudconf.ports.pi);
     }
+    
+#ifdef SSL_ENABLED
+    mudconf.sslPorts.n = 0;
+    mudconf.sslPorts.pi = NULL;
+    mudconf.ssl_certificate_file[0] = '\0';
+    mudconf.ssl_certificate_key[0] = '\0';
+    mudconf.ssl_certificate_password[0] = '\0';
+#endif
 
     mudconf.init_size = 1000;
     mudconf.guest_char = -1;
@@ -1998,6 +2006,9 @@ static CONF conftable[] =
     {T("player_starting_home"),      cf_dbref,       CA_GOD,    CA_PUBLIC,   &mudconf.start_home,             NULL,               0},
     {T("player_starting_room"),      cf_dbref,       CA_GOD,    CA_PUBLIC,   &mudconf.start_room,             NULL,               0},
     {T("port"),                      cf_int_array,   CA_STATIC, CA_PUBLIC,   (int *)&mudconf.ports,           NULL, MAX_LISTEN_PORTS},
+#ifdef SSL_ENABLED
+    {T("port_ssl"),                  cf_int_array,   CA_STATIC, CA_PUBLIC,   (int *)&mudconf.sslPorts,        NULL, MAX_LISTEN_PORTS},
+#endif
     {T("postdump_message"),          cf_string,      CA_GOD,    CA_WIZARD,   (int *)mudconf.postdump_msg,     NULL,             256},
     {T("power_alias"),               cf_poweralias,  CA_GOD,    CA_DISABLED, NULL,                            NULL,               0},
     {T("pcreate_per_hour"),          cf_int,         CA_STATIC, CA_PUBLIC,   (int *)&mudconf.pcreate_per_hour,NULL,               0},
@@ -2034,6 +2045,11 @@ static CONF conftable[] =
     {T("signal_action"),             cf_option,      CA_STATIC, CA_GOD,      &mudconf.sig_action,             sigactions_nametab, 0},
     {T("site_chars"),                cf_int,         CA_GOD,    CA_WIZARD,   (int *)&mudconf.site_chars,      NULL,               0},
     {T("space_compress"),            cf_bool,        CA_GOD,    CA_PUBLIC,   (int *)&mudconf.space_compress,  NULL,               0},
+#ifdef SSL_ENABLED
+    {T("ssl_certificate_file"),      cf_string,      CA_STATIC, CA_DISABLED, (int *)mudconf.ssl_certificate_file,NULL,          128},
+    {T("ssl_certificate_key"),       cf_string,      CA_STATIC, CA_DISABLED, (int *)mudconf.ssl_certificate_key, NULL,          128},
+    {T("ssl_certificate_password"),  cf_string,      CA_STATIC, CA_DISABLED, (int *)mudconf.ssl_certificate_password, NULL,     128},
+#endif
     {T("stack_limit"),               cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.stack_limit,            NULL,               0},
     {T("starting_money"),            cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.paystart,               NULL,               0},
     {T("starting_quota"),            cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.start_quota,            NULL,               0},

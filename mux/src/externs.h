@@ -23,6 +23,9 @@ void CleanUpSlaveProcess(void);
 void CleanUpSQLSlaveSocket(void);
 void CleanUpSQLSlaveProcess(void);
 #endif // QUERY_SLAVE
+#ifdef SSL_ENABLED
+void CleanUpSSLConnections(void);
+#endif
 #ifdef WIN32
 extern CRITICAL_SECTION csDescriptorList;
 #endif // WIN32
@@ -897,10 +900,20 @@ typedef struct
 {
     int    port;
     SOCKET socket;
+#ifdef SSL_ENABLED
+    int    ssl;
+#endif
 } PortInfo;
 
 #define MAX_LISTEN_PORTS 10
+#ifdef SSL_ENABLED
+extern int initialize_ssl();
+extern void shutdown_ssl();
+
+extern PortInfo aMainGamePorts[MAX_LISTEN_PORTS * 2];
+#else
 extern PortInfo aMainGamePorts[MAX_LISTEN_PORTS];
+#endif
 extern int      nMainGamePorts;
 
 #ifdef WIN32

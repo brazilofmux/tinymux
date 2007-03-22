@@ -79,6 +79,13 @@ INLINESQL         = @INLINESQL@
 INLINESQL_LIBS    = @INLINESQL_LIBPATH@ @INLINESQL_LIBS@
 INLINESQL_INCLUDE = @INLINESQL_INCLUDE@
 
+# SSL encryption support.  This provides a 'port_ssl' configuration directive
+# which adds SSL-enabled ports to the listening MUX ports.  It also enables the
+# 'ssl_certificate_file' and 'ssl_certificate_key' and 'ssl_certificate_password'
+# configuration options.
+SSL               = @SSL@
+SSL_LIBS          = @SSL_LIBS@
+
 # Deprecated Features. By default, this is off. This can be turned on by
 # running configure with --enable-deprecated. Features which are infrequently
 # used become deprecated and are eventually removed from the source.
@@ -156,7 +163,7 @@ MORELIBS	= -lm
 # Auxiliary source files: only used by offline utilities.
 #
 AUX_SRC	= unsplit.cpp
-ALLCXXFLAGS = $(CXXFLAGS) $(OPTIM) $(DEFS) $(MEMORY_BASED) $(WOD_REALMS) $(REALITY_LVLS) $(QUERY_SLAVE) $(FIRANMUX) $(FIRANMUX_CONVERT) $(DEPRECATED) $(INLINESQL) $(INLINESQL_INCLUDE)
+ALLCXXFLAGS = $(CXXFLAGS) $(OPTIM) $(DEFS) $(MEMORY_BASED) $(WOD_REALMS) $(REALITY_LVLS) $(QUERY_SLAVE) $(FIRANMUX) $(FIRANMUX_CONVERT) $(DEPRECATED) $(INLINESQL) $(INLINESQL_INCLUDE) $(SSL)
 
 # Compiliation source files.
 #
@@ -187,7 +194,7 @@ unsplit: unsplit.o
 netmux: $(OBJ) $(VER_SRC)
 	$(CXX) $(ALLCXXFLAGS) $(VER_FLG) -c $(VER_SRC)
 	( if [ -f netmux ]; then mv -f netmux netmux~ ; fi )
-	$(CXX) $(ALLCXXFLAGS) -o netmux $(OBJ) $(VER_OBJ) $(LIBS) $(MORELIBS) $(INLINESQL_LIBS)
+	$(CXX) $(ALLCXXFLAGS) -o netmux $(OBJ) $(VER_OBJ) $(LIBS) $(MORELIBS) $(INLINESQL_LIBS) $(SSL_LIBS)
 
 depend: $(ALLSRC) unsplit
 	for i in $(D_SRC) $(AUX_SRC) slave.cpp sqlslave.cpp sqlshared.cpp ; do $(CXXCPP) $(ALLCXXFLAGS) -M $$i; done | sed -e 's:/usr[^ ]*[ ]*::g' | ./unsplit > .depend~
