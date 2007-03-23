@@ -922,8 +922,7 @@ static void tcache_add(dbref player, UTF8 *orig, UTF8 *result)
             TCENT *xp = (TCENT *) alloc_sbuf("tcache_add.sbuf");
             UTF8 *tp = alloc_lbuf("tcache_add.lbuf");
 
-            size_t nvw;
-            ANSI_TruncateToField(result, LBUF_SIZE, tp, LBUF_SIZE, &nvw);
+            StripTabsAndTruncate(result, tp, LBUF_SIZE-1, LBUF_SIZE-1);
             xp->result = tp;
 
             xp->player = player;

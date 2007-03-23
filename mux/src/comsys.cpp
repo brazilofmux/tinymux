@@ -764,9 +764,7 @@ void load_comsystem_V0123(FILE *fp)
                     COLOR_FG_RED, ch->name, COLOR_RESET, COLOR_FG_MAGENTA,
                     COLOR_RESET);
             }
-            size_t vwVisual;
-            ANSI_TruncateToField(temp, MAX_HEADER_LEN+1, ch->header,
-                MAX_HEADER_LEN+1, &vwVisual);
+            StripTabsAndTruncate(temp, ch->header, MAX_HEADER_LEN, MAX_HEADER_LEN);
         }
 
         ch->num_users = 0;
@@ -1907,8 +1905,7 @@ void do_addcom
     UTF8 Buffer[MAX_CHANNEL_LEN+1];
     if (!ch)
     {
-        size_t nVisualWidth;
-        ANSI_TruncateToField(channel, sizeof(Buffer), Buffer, sizeof(Buffer), &nVisualWidth);
+        StripTabsAndTruncate(channel, Buffer, MAX_CHANNEL_LEN, MAX_CHANNEL_LEN);
         raw_notify(executor, tprintf("Channel %s does not exist yet.", Buffer));
         return;
     }
@@ -2122,20 +2119,20 @@ void do_createchannel(dbref executor, dbref caller, dbref enactor, int eval, int
         return;
     }
 
-    size_t vwChannel;
     size_t nNameNoANSI;
     UTF8 *pNameNoANSI;
-    UTF8 Buffer[MAX_HEADER_LEN];
-    size_t nChannel = ANSI_TruncateToField(channel, sizeof(Buffer),
-        Buffer, sizeof(Buffer), &vwChannel);
-    if (nChannel == vwChannel)
+    UTF8 Buffer[MAX_HEADER_LEN+1];
+    mux_field fldChannel = StripTabsAndTruncate( channel, Buffer, MAX_HEADER_LEN,
+                                                 MAX_HEADER_LEN);
+    if (fldChannel.m_byte == fldChannel.m_column)
     {
         // The channel name does not contain ANSI, so first, we add some to
         // get the header.
         //
         const size_t nMax = MAX_HEADER_LEN - (sizeof(COLOR_INTENSE)-1)
                           - (sizeof(COLOR_RESET)-1) - 2;
-        if (nChannel > nMax)
+        size_t nChannel = fldChannel.m_byte;
+        if (nMax < nChannel)
         {
             nChannel = nMax;
         }
@@ -2152,7 +2149,7 @@ void do_createchannel(dbref executor, dbref caller, dbref enactor, int eval, int
     {
         // The given channel name does contain color.
         //
-        memcpy(newchannel->header, Buffer, nChannel+1);
+        memcpy(newchannel->header, Buffer, fldChannel.m_byte + 1);
         pNameNoANSI = strip_color(Buffer, &nNameNoANSI);
     }
 
@@ -2188,7 +2185,7 @@ void do_createchannel(dbref executor, dbref caller, dbref enactor, int eval, int
 
     num_channels++;
 
-    hashaddLEN(newchannel->name, strlen((char *)newchannel->name), newchannel, &mudstate.channel_htab);
+    hashaddLEN(newchannel->name, nNameNoANSI, newchannel, &mudstate.channel_htab);
 
     // Report the channel creation using non-ANSI name.
     //
