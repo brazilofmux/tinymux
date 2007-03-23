@@ -589,7 +589,7 @@ void BuildAndOutputTable(FILE *fp, char *UpperPrefix, char *LowerPrefix)
         {
             printf("\") }");
         }
-        printf("// %d references\n", aXorTable[i].n_refs);
+        printf(" // %d references\n", aXorTable[i].n_refs);
 
         delete aXorTable[i].p;
         aXorTable[i].p = NULL;
