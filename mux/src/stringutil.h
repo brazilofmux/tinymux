@@ -263,7 +263,7 @@ inline const string_desc *mux_toupper(const unsigned char *p, bool &bXor)
         iState = tr_toupper_stt[iState][tr_toupper_itt[(unsigned char)ch]];
     } while (iState < TR_TOUPPER_ACCEPTING_STATES_START);
 
-    if (TR_TOUPPER_DEFAULT == iState - TR_TOLOWER_ACCEPTING_STATES_START)
+    if (TR_TOUPPER_DEFAULT == iState - TR_TOUPPER_ACCEPTING_STATES_START)
     {
         bXor = false;
         return NULL;
