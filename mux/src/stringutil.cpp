@@ -1370,9 +1370,6 @@ const string_desc tr_toupper_ott[98] =
 // 517 code points.
 // 5 states, 11 columns, 311 bytes
 //
-#define TR_COLOR_START_STATE (0)
-#define TR_COLOR_ACCEPTING_STATES_START (5)
-
 const unsigned char tr_color_itt[256] =
 {
        0,   0,   0,   0,   0,   0,   0,   0,    0,   0,   0,   0,   0,   0,   0,   0,
