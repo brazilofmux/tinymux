@@ -272,14 +272,14 @@ inline const string_desc *mux_tolower(const unsigned char *p, bool &bXor)
         iState = tr_tolower_stt[iState][tr_tolower_itt[(unsigned char)ch]];
     } while (iState < TR_TOLOWER_ACCEPTING_STATES_START);
 
-    if (TR_TOLOWER_DEFAULT == iState)
+    if (TR_TOLOWER_DEFAULT == iState - TR_TOLOWER_ACCEPTING_STATES_START)
     {
         bXor = false;
         return NULL;
     }
     else
     {
-        bXor = (TR_TOLOWER_XOR_START <= iState);
+        bXor = (TR_TOLOWER_XOR_START <= iState - TR_TOLOWER_ACCEPTING_STATES_START);
         return tr_tolower_ott + iState - TR_TOLOWER_ACCEPTING_STATES_START - 1;
     }
 }
@@ -307,14 +307,14 @@ inline const string_desc *mux_toupper(const unsigned char *p, bool &bXor)
         iState = tr_toupper_stt[iState][tr_toupper_itt[(unsigned char)ch]];
     } while (iState < TR_TOUPPER_ACCEPTING_STATES_START);
 
-    if (TR_TOUPPER_DEFAULT == iState)
+    if (TR_TOUPPER_DEFAULT == iState - TR_TOLOWER_ACCEPTING_STATES_START)
     {
         bXor = false;
         return NULL;
     }
     else
     {
-        bXor = (TR_TOUPPER_XOR_START <= iState);
+        bXor = (TR_TOUPPER_XOR_START <= iState - TR_TOUPPER_ACCEPTING_STATES_START);
         return tr_toupper_ott + iState - TR_TOUPPER_ACCEPTING_STATES_START - 1;
     }
 }
