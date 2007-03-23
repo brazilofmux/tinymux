@@ -174,7 +174,7 @@ const bool mux_isalnum[256] =
     1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 0   // F
 };
 
-const bool mux_isupper_latin1[256] =
+const bool mux_isupper_ascii[256] =
 {
 //  0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F
 //
@@ -187,17 +187,17 @@ const bool mux_isupper_latin1[256] =
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // 6
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // 7
 
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 1, 0,  // 8
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,  // 9
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // 8
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // 9
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // A
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // B
-    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,  // C
-    1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 0,  // D
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // C
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // D
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // E
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0   // F
 };
 
-const bool mux_islower_latin1[256] =
+const bool mux_islower_ascii[256] =
 {
 //  0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F
 //
@@ -210,14 +210,14 @@ const bool mux_islower_latin1[256] =
     0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,  // 6
     1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0,  // 7
 
-    0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // 8
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 1, 0,  // 9
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0,  // A
-    0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0,  // B
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // 8
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // 9
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // A
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // B
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // C
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,  // D
-    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,  // E
-    1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 0   // F
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // D
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // E
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0   // F
 };
 
 const bool mux_isspace[256] =
@@ -340,7 +340,7 @@ const unsigned char mux_hex2dec[256] =
     0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0   // F
 };
 
-const unsigned char mux_toupper_latin1[UCHAR_MAX+1] =
+const unsigned char mux_toupper_ascii[UCHAR_MAX+1] =
 {
 //   0     1     2     3     4     5     6     7     8     9     A     B     C     D     E     F
 //
@@ -354,16 +354,16 @@ const unsigned char mux_toupper_latin1[UCHAR_MAX+1] =
     0x50, 0x51, 0x52, 0x53, 0x54, 0x55, 0x56, 0x57, 0x58, 0x59, 0x5A, 0x7B, 0x7C, 0x7D, 0x7E, 0x7F, // 7
 
     0x80, 0x81, 0x82, 0x83, 0x84, 0x85, 0x86, 0x87, 0x88, 0x89, 0x8A, 0x8B, 0x8C, 0x8D, 0x8E, 0x8F, // 8
-    0x90, 0x91, 0x92, 0x93, 0x94, 0x95, 0x96, 0x97, 0x98, 0x99, 0x8A, 0x9B, 0x8C, 0x9D, 0x8E, 0x9F, // 9
-    0xA0, 0xA1, 0xA2, 0xA3, 0xA4, 0xA5, 0xA6, 0xA7, 0xA8, 0xA9, 0xAA, 0xAB, 0xAC, 0xAD, 0xAE, 0xAF, // A
-    0xB0, 0xB1, 0xB2, 0xB3, 0xB4, 0xB5, 0xB6, 0xB7, 0xB8, 0xB9, 0xBA, 0xBB, 0xBC, 0xBD, 0xBE, 0xBF, // B
-    0xC0, 0xC1, 0xC2, 0xC3, 0xC4, 0xC5, 0xC6, 0xC7, 0xC8, 0xC9, 0xCA, 0xCB, 0xCC, 0xCD, 0xCE, 0xCF, // C
-    0xD0, 0xD1, 0xD2, 0xD3, 0xD4, 0xD5, 0xD6, 0xD7, 0xD8, 0xD9, 0xDA, 0xDB, 0xDC, 0xDD, 0xDE, 0xDF, // D
-    0xC0, 0xC1, 0xC2, 0xC3, 0xC4, 0xC5, 0xC6, 0xC7, 0xC8, 0xC9, 0xCA, 0xCB, 0xCC, 0xCD, 0xCE, 0xCF, // E
-    0xD0, 0xD1, 0xD2, 0xD3, 0xD4, 0xD5, 0xD6, 0xF7, 0xD8, 0xD9, 0xDA, 0xDB, 0xDC, 0xDD, 0xDE, 0xFF  // F
+    0x90, 0x91, 0x92, 0x93, 0x94, 0x95, 0x96, 0x97, 0x99, 0x99, 0x9A, 0x9B, 0x9C, 0x9D, 0x9E, 0x9F, // 9
+    0xA0, 0xA1, 0xA2, 0xA3, 0xA4, 0xA5, 0xA6, 0xA7, 0xAA, 0xA9, 0xAA, 0xAB, 0xAC, 0xAD, 0xAE, 0xAF, // A
+    0xB0, 0xB1, 0xB2, 0xB3, 0xB4, 0xB5, 0xB6, 0xB7, 0xBB, 0xB9, 0xBA, 0xBB, 0xBC, 0xBD, 0xBE, 0xBF, // B
+    0xC0, 0xC1, 0xC2, 0xC3, 0xC4, 0xC5, 0xC6, 0xC7, 0xCC, 0xC9, 0xCA, 0xCB, 0xCC, 0xCD, 0xCE, 0xCF, // C
+    0xD0, 0xD1, 0xD2, 0xD3, 0xD4, 0xD5, 0xD6, 0xD7, 0xDD, 0xD9, 0xDA, 0xDB, 0xDC, 0xDD, 0xDE, 0xDF, // D
+    0xE0, 0xE1, 0xE2, 0xE3, 0xE4, 0xE5, 0xE6, 0xE7, 0xEE, 0xE9, 0xEA, 0xEB, 0xEC, 0xED, 0xEE, 0xEF, // E
+    0xF0, 0xF1, 0xF2, 0xF3, 0xF4, 0xF5, 0xF6, 0xF7, 0xFF, 0xF9, 0xFA, 0xFB, 0xFC, 0xFD, 0xFE, 0xFF  // F
 };
 
-const unsigned char mux_tolower_latin1[UCHAR_MAX+1] =
+const unsigned char mux_tolower_ascii[UCHAR_MAX+1] =
 {
 //   0     1     2     3     4     5     6     7     8     9     A     B     C     D     E     F
 //
@@ -376,14 +376,14 @@ const unsigned char mux_tolower_latin1[UCHAR_MAX+1] =
     0x60, 0x61, 0x62, 0x63, 0x64, 0x65, 0x66, 0x67, 0x68, 0x69, 0x6A, 0x6B, 0x6C, 0x6D, 0x6E, 0x6F, // 6
     0x70, 0x71, 0x72, 0x73, 0x74, 0x75, 0x76, 0x77, 0x78, 0x79, 0x7A, 0x7B, 0x7C, 0x7D, 0x7E, 0x7F, // 7
 
-    0x80, 0x81, 0x82, 0x83, 0x84, 0x85, 0x86, 0x87, 0x88, 0x89, 0x9A, 0x8B, 0x9C, 0x8D, 0x9E, 0x8F, // 8
-    0x90, 0x91, 0x92, 0x93, 0x94, 0x95, 0x96, 0x97, 0x98, 0x99, 0x9A, 0x9B, 0x9C, 0x9D, 0x9E, 0xFF, // 9
-    0xA0, 0xA1, 0xA2, 0xA3, 0xA4, 0xA5, 0xA6, 0xA7, 0xA8, 0xA9, 0xAA, 0xAB, 0xAC, 0xAD, 0xAE, 0xAF, // A
-    0xB0, 0xB1, 0xB2, 0xB3, 0xB4, 0xB5, 0xB6, 0xB7, 0xB8, 0xB9, 0xBA, 0xBB, 0xBC, 0xBD, 0xBE, 0xBF, // B
-    0xE0, 0xE1, 0xE2, 0xE3, 0xE4, 0xE5, 0xE6, 0xE7, 0xE8, 0xE9, 0xEA, 0xEB, 0xEC, 0xED, 0xEE, 0xEF, // C
-    0xF0, 0xF1, 0xF2, 0xF3, 0xF4, 0xF5, 0xF6, 0xD7, 0xF8, 0xF9, 0xFA, 0xFB, 0xFC, 0xFD, 0xFE, 0xDF, // D
-    0xE0, 0xE1, 0xE2, 0xE3, 0xE4, 0xE5, 0xE6, 0xE7, 0xE8, 0xE9, 0xEA, 0xEB, 0xEC, 0xED, 0xEE, 0xEF, // E
-    0xF0, 0xF1, 0xF2, 0xF3, 0xF4, 0xF5, 0xF6, 0xF7, 0xF8, 0xF9, 0xFA, 0xFB, 0xFC, 0xFD, 0xFE, 0xFF  // F
+    0x80, 0x81, 0x82, 0x83, 0x84, 0x85, 0x86, 0x87, 0x88, 0x89, 0x8A, 0x8B, 0x8C, 0x8D, 0x8E, 0x8F, // 8
+    0x90, 0x91, 0x92, 0x93, 0x94, 0x95, 0x96, 0x97, 0x99, 0x99, 0x9A, 0x9B, 0x9C, 0x9D, 0x9E, 0x9F, // 9
+    0xA0, 0xA1, 0xA2, 0xA3, 0xA4, 0xA5, 0xA6, 0xA7, 0xAA, 0xA9, 0xAA, 0xAB, 0xAC, 0xAD, 0xAE, 0xAF, // A
+    0xB0, 0xB1, 0xB2, 0xB3, 0xB4, 0xB5, 0xB6, 0xB7, 0xBB, 0xB9, 0xBA, 0xBB, 0xBC, 0xBD, 0xBE, 0xBF, // B
+    0xC0, 0xC1, 0xC2, 0xC3, 0xC4, 0xC5, 0xC6, 0xC7, 0xCC, 0xC9, 0xCA, 0xCB, 0xCC, 0xCD, 0xCE, 0xCF, // C
+    0xD0, 0xD1, 0xD2, 0xD3, 0xD4, 0xD5, 0xD6, 0xD7, 0xDD, 0xD9, 0xDA, 0xDB, 0xDC, 0xDD, 0xDE, 0xDF, // D
+    0xE0, 0xE1, 0xE2, 0xE3, 0xE4, 0xE5, 0xE6, 0xE7, 0xEE, 0xE9, 0xEA, 0xEB, 0xEC, 0xED, 0xEE, 0xEF, // E
+    0xF0, 0xF1, 0xF2, 0xF3, 0xF4, 0xF5, 0xF6, 0xF7, 0xFF, 0xF9, 0xFA, 0xFB, 0xFC, 0xFD, 0xFE, 0xFF  // F
 };
 
 // This will help decode UTF-8 sequences.
@@ -2547,7 +2547,7 @@ int string_compare(const UTF8 *s1, const UTF8 *s2)
         }
 
         while (  *s1 && *s2
-              && (  (mux_tolower_latin1(*s1) == mux_tolower_latin1(*s2))
+              && (  (mux_tolower_ascii(*s1) == mux_tolower_ascii(*s2))
                  || (mux_isspace(*s1) && mux_isspace(*s2))))
         {
             if (mux_isspace(*s1) && mux_isspace(*s2))
@@ -2610,7 +2610,7 @@ int string_prefix(const UTF8 *string, const UTF8 *prefix)
     int count = 0;
 
     while (*string && *prefix
-          && (mux_tolower_latin1(*string) == mux_tolower_latin1(*prefix)))
+          && (mux_tolower_ascii(*string) == mux_tolower_ascii(*prefix)))
     {
         string++, prefix++, count++;
     }
@@ -2802,7 +2802,7 @@ int prefix_match(const UTF8 *s1, const UTF8 *s2)
     int count = 0;
 
     while (*s1 && *s2
-          && (mux_tolower_latin1(*s1) == mux_tolower_latin1(*s2)))
+          && (mux_tolower_ascii(*s1) == mux_tolower_ascii(*s2)))
     {
         s1++, s2++, count++;
     }
@@ -2820,7 +2820,7 @@ int prefix_match(const UTF8 *s1, const UTF8 *s2)
 bool minmatch(const UTF8 *str, const UTF8 *target, int min)
 {
     while (*str && *target
-          && (mux_tolower_latin1(*str) == mux_tolower_latin1(*target)))
+          && (mux_tolower_ascii(*str) == mux_tolower_ascii(*target)))
     {
         str++;
         target++;
@@ -3268,7 +3268,7 @@ bool matches_exit_from_list(UTF8 *str, const UTF8 *pattern)
     {
         for (s = str;   // check out this one
              ( *s
-             && (mux_tolower_latin1(*s) == mux_tolower_latin1(*pattern))
+             && (mux_tolower_ascii(*s) == mux_tolower_ascii(*pattern))
              && *pattern
              && (*pattern != EXIT_DELIMITER));
              s++, pattern++) ;
@@ -3609,15 +3609,15 @@ bool ParseFloat(PARSE_FLOAT_RESULT *pfr, const UTF8 *str, bool bStrict)
         {
             // Look for three magic strings.
             //
-            ch = mux_toupper_latin1(str[0]);
+            ch = mux_toupper_ascii(str[0]);
             if (ch == 'I')
             {
                 // Could be 'Inf' or 'Ind'
                 //
-                ch = mux_toupper_latin1(str[1]);
+                ch = mux_toupper_ascii(str[1]);
                 if (ch == 'N')
                 {
-                    ch = mux_toupper_latin1(str[2]);
+                    ch = mux_toupper_ascii(str[2]);
                     if (ch == 'F')
                     {
                         // Inf
@@ -3647,10 +3647,10 @@ bool ParseFloat(PARSE_FLOAT_RESULT *pfr, const UTF8 *str, bool bStrict)
             {
                 // Could be 'Nan'
                 //
-                ch = mux_toupper_latin1(str[1]);
+                ch = mux_toupper_ascii(str[1]);
                 if (ch == 'A')
                 {
-                    ch = mux_toupper_latin1(str[2]);
+                    ch = mux_toupper_ascii(str[2]);
                     if (ch == 'N')
                     {
                         // Nan
@@ -3694,7 +3694,7 @@ bool ParseFloat(PARSE_FLOAT_RESULT *pfr, const UTF8 *str, bool bStrict)
         return false;
     }
 
-    ch = mux_toupper_latin1(*str);
+    ch = mux_toupper_ascii(*str);
     if (ch == 'E')
     {
         // There is an exponent portion.
@@ -4475,13 +4475,13 @@ int mux_stricmp(const UTF8 *a, const UTF8 *b)
 {
     while (  *a
           && *b
-          && mux_tolower_latin1(*a) == mux_tolower_latin1(*b))
+          && mux_tolower_ascii(*a) == mux_tolower_ascii(*b))
     {
         a++;
         b++;
     }
-    int c1 = mux_tolower_latin1(*a);
-    int c2 = mux_tolower_latin1(*b);
+    int c1 = mux_tolower_ascii(*a);
+    int c2 = mux_tolower_ascii(*b);
     if (c1 < c2)
     {
         return -1;
@@ -4503,7 +4503,7 @@ int mux_memicmp(const void *p1_arg, const void *p2_arg, size_t n)
     UTF8 *p1 = (UTF8 *)p1_arg;
     UTF8 *p2 = (UTF8 *)p2_arg;
     while (  n
-          && mux_tolower_latin1(*p1) == mux_tolower_latin1(*p2))
+          && mux_tolower_ascii(*p1) == mux_tolower_ascii(*p2))
     {
         n--;
         p1++;
@@ -4511,8 +4511,8 @@ int mux_memicmp(const void *p1_arg, const void *p2_arg, size_t n)
     }
     if (n)
     {
-        int c1 = mux_tolower_latin1(*p1);
-        int c2 = mux_tolower_latin1(*p2);
+        int c1 = mux_tolower_ascii(*p1);
+        int c2 = mux_tolower_ascii(*p2);
         if (c1 < c2)
         {
             return -1;
@@ -4531,7 +4531,7 @@ void mux_strlwr(UTF8 *a)
 {
     while (*a)
     {
-        *a = mux_tolower_latin1(*a);
+        *a = mux_tolower_ascii(*a);
         a++;
     }
 }
@@ -4542,7 +4542,7 @@ void mux_strupr(UTF8 *a)
 {
     while (*a)
     {
-        *a = mux_toupper_latin1(*a);
+        *a = mux_toupper_ascii(*a);
         a++;
     }
 }
@@ -4752,15 +4752,15 @@ void BMH_PrepareI(BMH_State *bmhs, size_t nPat, const UTF8 *pPat)
     bmhs->m_skip2 = nPat;
     for (k = 0; k < nPat - 1; k++)
     {
-        bmhs->m_d[mux_toupper_latin1(pPat[k])] = nPat - k - 1;
-        bmhs->m_d[mux_tolower_latin1(pPat[k])] = nPat - k - 1;
+        bmhs->m_d[mux_toupper_ascii(pPat[k])] = nPat - k - 1;
+        bmhs->m_d[mux_tolower_ascii(pPat[k])] = nPat - k - 1;
         if (pPat[k] == chLastPat)
         {
             bmhs->m_skip2 = nPat - k - 1;
         }
     }
-    bmhs->m_d[mux_toupper_latin1(chLastPat)] = BMH_LARGE;
-    bmhs->m_d[mux_tolower_latin1(chLastPat)] = BMH_LARGE;
+    bmhs->m_d[mux_toupper_ascii(chLastPat)] = BMH_LARGE;
+    bmhs->m_d[mux_tolower_ascii(chLastPat)] = BMH_LARGE;
 }
 
 bool BMH_ExecuteI(BMH_State *bmhs, size_t *pnMatched, size_t nPat, const UTF8 *pPat, size_t nSrc, const UTF8 *pSrc)
@@ -4783,7 +4783,7 @@ bool BMH_ExecuteI(BMH_State *bmhs, size_t *pnMatched, size_t nPat, const UTF8 *p
         int j = static_cast<int>(nPat - 1);
         const UTF8 *s = pSrc + (i - j);
         while (  --j >= 0
-              && mux_toupper_latin1(s[j]) == mux_toupper_latin1(pPat[j]))
+              && mux_toupper_ascii(s[j]) == mux_toupper_ascii(pPat[j]))
         {
             ; // Nothing.
         }
@@ -4837,9 +4837,11 @@ CF_HAND(cf_art_rule)
 
     if (pCurrent - pArticle <= 2)
     {
-        if (mux_tolower_latin1(pArticle[0]) == 'a')
+        if (  'a' == pArticle[0]
+           || 'A' == pArticle[0])
         {
-            if (mux_tolower_latin1(pArticle[1]) == 'n')
+            if (  'n' == pArticle[1]
+               || 'N' == pArticle[1])
             {
                 bUseAn = true;
                 bOkay = true;

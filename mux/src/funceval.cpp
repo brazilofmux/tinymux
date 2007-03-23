@@ -4029,24 +4029,28 @@ FUNCTION(fun_hastype)
         return;
     }
     bool bResult = false;
-    switch (mux_tolower_latin1(fargs[1][0]))
+    switch (fargs[1][0])
     {
     case 'r':
+    case 'R':
 
         bResult = isRoom(it);
         break;
 
     case 'e':
+    case 'E':
 
         bResult = isExit(it);
         break;
 
     case 'p':
+    case 'P':
 
         bResult = isPlayer(it);
         break;
 
     case 't':
+    case 'T':
 
         bResult = isThing(it);
         break;

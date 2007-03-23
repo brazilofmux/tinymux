@@ -1678,15 +1678,17 @@ FUNCTION(fun_e)
 
 static double ConvertRDG2R(double d, const UTF8 *szUnits)
 {
-    switch (mux_tolower_latin1(szUnits[0]))
+    switch (szUnits[0])
     {
     case 'd':
+    case 'D':
         // Degrees to Radians.
         //
         d *= 0.017453292519943295;
         break;
 
     case 'g':
+    case 'G':
         // Gradians to Radians.
         //
         d *= 0.015707963267948967;
@@ -1697,15 +1699,17 @@ static double ConvertRDG2R(double d, const UTF8 *szUnits)
 
 static double ConvertR2RDG(double d, const UTF8 *szUnits)
 {
-    switch (mux_tolower_latin1(szUnits[0]))
+    switch (szUnits[0])
     {
     case 'd':
+    case 'D':
         // Radians to Degrees.
         //
         d *= 57.29577951308232;
         break;
 
     case 'g':
+    case 'G':
         // Radians to Gradians.
         //
         d *= 63.66197723675813;

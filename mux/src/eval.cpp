@@ -864,16 +864,20 @@ int get_gender(dbref player)
     UTF8 *atr_gotten = atr_pget(player, A_SEX, &aowner, &aflags);
     UTF8 first = atr_gotten[0];
     free_lbuf(atr_gotten);
-    switch (mux_tolower_latin1(first))
+    switch (first)
     {
     case 'p':
+    case 'P':
         return 4;
 
     case 'm':
+    case 'M':
         return 3;
 
     case 'f':
+    case 'F':
     case 'w':
+    case 'W':
         return 2;
     }
     return 1;
@@ -1362,7 +1366,7 @@ void mux_exec( UTF8 *pdstr, UTF8 *buff, UTF8 **bufc, dbref executor,
             //
             for (size_t iFun = 0; iFun < nFun; iFun++)
             {
-                mux_scratch[iFun] = mux_tolower_latin1(oldp[iFun]);
+                mux_scratch[iFun] = mux_tolower_ascii(oldp[iFun]);
             }
             mux_scratch[nFun] = '\0';
 
@@ -1750,7 +1754,7 @@ void mux_exec( UTF8 *pdstr, UTF8 *buff, UTF8 **bufc, dbref executor,
                         pdstr++;
                         if (mux_isazAZ(*pdstr))
                         {
-                            i = A_VA + mux_toupper_latin1(*pdstr) - 'A';
+                            i = A_VA + mux_toupper_ascii(*pdstr) - 'A';
                             size_t nAttrGotten;
                             atr_pget_str_LEN(mux_scratch, executor, i,
                                 &aowner, &aflags, &nAttrGotten);
@@ -2012,7 +2016,7 @@ void mux_exec( UTF8 *pdstr, UTF8 *buff, UTF8 **bufc, dbref executor,
                 //
                 if (cType_L2 & 0x80)
                 {
-                    *TempPtr = mux_toupper_latin1(*TempPtr);
+                    *TempPtr = mux_toupper_ascii(*TempPtr);
                 }
             }
         }

@@ -1800,7 +1800,7 @@ void do_examine(dbref executor, dbref caller, dbref enactor, int eval, int key, 
         // Print owner, key, and value.
         //
         savec = mudconf.many_coins[0];
-        mudconf.many_coins[0] = mux_toupper_latin1(mudconf.many_coins[0]);
+        mudconf.many_coins[0] = mux_toupper_ascii(mudconf.many_coins[0]);
         buf2 = atr_get("do_examine.1803", thing, A_LOCK, &aowner, &aflags);
         pBoolExp = parse_boolexp(executor, buf2, true);
         buf = unparse_boolexp(executor, pBoolExp);

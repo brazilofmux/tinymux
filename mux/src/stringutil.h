@@ -17,14 +17,14 @@ extern const bool mux_isxdigit[256];
 extern const bool mux_isazAZ[256];
 extern const bool mux_isalpha[256];
 extern const bool mux_isalnum[256];
-extern const bool mux_islower_latin1[256];
-extern const bool mux_isupper_latin1[256];
+extern const bool mux_islower_ascii[256];
+extern const bool mux_isupper_ascii[256];
 extern const bool mux_isspace[256];
 extern const bool mux_issecure[256];
 extern const bool mux_isescape[256];
 extern const unsigned char mux_hex2dec[256];
-extern const unsigned char mux_toupper_latin1[256];
-extern const unsigned char mux_tolower_latin1[256];
+extern const unsigned char mux_toupper_ascii[256];
+extern const unsigned char mux_tolower_ascii[256];
 
 #define UTF8_SIZE1     1
 #define UTF8_SIZE2     2
@@ -43,12 +43,12 @@ extern const UTF8 *latin1_utf8[256];
 #define mux_isazAZ(x)  (mux_isazAZ[(unsigned char)(x)])
 #define mux_isalpha(x) (mux_isalpha[(unsigned char)(x)])
 #define mux_isalnum(x) (mux_isalnum[(unsigned char)(x)])
-#define mux_islower_latin1(x) (mux_islower_latin1[(unsigned char)(x)])
-#define mux_isupper_latin1(x) (mux_isupper_latin1[(unsigned char)(x)])
+#define mux_islower_ascii(x) (mux_islower_ascii[(unsigned char)(x)])
+#define mux_isupper_ascii(x) (mux_isupper_ascii[(unsigned char)(x)])
 #define mux_isspace(x) (mux_isspace[(unsigned char)(x)])
 #define mux_hex2dec(x) (mux_hex2dec[(unsigned char)(x)])
-#define mux_toupper_latin1(x) (mux_toupper_latin1[(unsigned char)(x)])
-#define mux_tolower_latin1(x) (mux_tolower_latin1[(unsigned char)(x)])
+#define mux_toupper_ascii(x) (mux_toupper_ascii[(unsigned char)(x)])
+#define mux_tolower_ascii(x) (mux_tolower_ascii[(unsigned char)(x)])
 
 #define mux_issecure(x)           (mux_issecure[(unsigned char)(x)])
 #define mux_isescape(x)           (mux_isescape[(unsigned char)(x)])
