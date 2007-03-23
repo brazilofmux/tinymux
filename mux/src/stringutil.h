@@ -178,48 +178,6 @@ inline bool mux_isplayername(const unsigned char *p)
     return ((iState - CL_PLAYERNAME_ACCEPTING_STATES_START) == 1) ? true : false;
 }
 
-// utf/cl_Upper.txt
-//
-// 56 included, 1114056 excluded, 0 errors.
-// 2 states, 4 columns, 264 bytes
-//
-#define CL_UPPER_START_STATE (0)
-#define CL_UPPER_ACCEPTING_STATES_START (2)
-extern const unsigned char cl_upper_itt[256];
-extern const unsigned char cl_upper_stt[2][4];
-
-inline bool mux_isupper(const unsigned char *p)
-{
-    int iState = CL_UPPER_START_STATE;
-    do
-    {
-        unsigned char ch = *p++;
-        iState = cl_upper_stt[iState][cl_upper_itt[(unsigned char)ch]];
-    } while (iState < CL_UPPER_ACCEPTING_STATES_START);
-    return ((iState - CL_UPPER_ACCEPTING_STATES_START) == 1) ? true : false;
-}
-
-// utf/cl_Lower.txt
-//
-// 58 included, 1114054 excluded, 0 errors.
-// 2 states, 4 columns, 264 bytes
-//
-#define CL_LOWER_START_STATE (0)
-#define CL_LOWER_ACCEPTING_STATES_START (2)
-extern const unsigned char cl_lower_itt[256];
-extern const unsigned char cl_lower_stt[2][4];
-
-inline bool mux_islower(const unsigned char *p)
-{
-    int iState = CL_LOWER_START_STATE;
-    do
-    {
-        unsigned char ch = *p++;
-        iState = cl_lower_stt[iState][cl_lower_itt[(unsigned char)ch]];
-    } while (iState < CL_LOWER_ACCEPTING_STATES_START);
-    return ((iState - CL_LOWER_ACCEPTING_STATES_START) == 1) ? true : false;
-}
-
 // utf/tr_utf8_latin1.txt
 //
 // 1535 code points.
