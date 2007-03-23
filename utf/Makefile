@@ -39,11 +39,9 @@ stringutil.txt: classify integers strings cl_Printable.txt cl_AttrNameInitial.tx
 	./classify cl_attrname cl_AttrName.txt >> stringutil.txt
 	./classify cl_objectname cl_ObjectName.txt >> stringutil.txt
 	./classify cl_playername cl_PlayerName.txt >> stringutil.txt
-	./classify cl_upper cl_Upper.txt >> stringutil.txt
-	./classify cl_lower cl_Lower.txt >> stringutil.txt
 	./classify cl_privateuse cl_PrivateUse.txt >> stringutil.txt
 	./integers -d 63 tr_latin1 tr_utf8_latin1.txt >> stringutil.txt
 	./integers -d 63 tr_ascii tr_utf8_ascii.txt >> stringutil.txt
-	./strings tr_tolower tr_tolower.txt >> stringutil.txt
-	./strings tr_toupper tr_toupper.txt >> stringutil.txt
+	./strings -d 0 tr_tolower tr_tolower.txt >> stringutil.txt
+	./strings -d 0 tr_toupper tr_toupper.txt >> stringutil.txt
 	./integers -d 0 tr_color tr_Color.txt >> stringutil.txt

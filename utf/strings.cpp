@@ -1,6 +1,4 @@
 // The following does not yet agree with the behavior of strings.cpp.
-// Currently, strings.cpp looks at the upper and lower fields of
-// UnicodeData-style field and guesses whether to use the upper or lower case.
 // It does not yet support sequences of code points.
 //
 /*! \file strings.cpp
@@ -60,6 +58,9 @@ static struct
     size_t n;
 } aOutputTable[5000];
 int   nOutputTable;
+
+bool g_bDefault = false;
+int  g_iDefaultState = 0;
 
 UTF32 ReadCodePointAndRelatedCodePoints(FILE *fp, int &nRelatedPoints, UTF32 aRelatedPoints[])
 {
@@ -178,6 +179,12 @@ void TestTable(FILE *fp)
             bool bFound = false;
             for (i = 0; i < nOutputTable; i++)
             {
+                if (  g_bDefault
+                   && g_iDefaultState == i)
+                {
+                    continue;
+                }
+
                 if (memcmp(aOutputTable[i].p, Xor, nXor) == 0)
                 {
                     bFound = true;
@@ -272,6 +279,12 @@ void LoadStrings(FILE *fp)
             bool bFound = false;
             for (i = 0; i < nOutputTable; i++)
             {
+                if (  g_bDefault
+                   && g_iDefaultState == i)
+                {
+                    continue;
+                }
+
                 if (memcmp(aOutputTable[i].p, Xor, nXor) == 0)
                 {
                     bFound = true;
@@ -281,6 +294,13 @@ void LoadStrings(FILE *fp)
 
             if (!bFound)
             {
+                if (  g_bDefault
+                   && g_iDefaultState == nOutputTable)
+                {
+                    aOutputTable[nOutputTable].p = NULL;
+                    aOutputTable[nOutputTable].n = 0;
+                    nOutputTable++;
+                }
                 aOutputTable[nOutputTable].p = new UTF8[nXor];
                 memcpy(aOutputTable[nOutputTable].p, Xor, nXor);
                 aOutputTable[nOutputTable].n = nXor;
@@ -304,9 +324,6 @@ void LoadStrings(FILE *fp)
     sm.ReportStatus();
 }
 
-bool g_bReplacement = false;
-int  g_iReplacementState = '?';
-
 void BuildAndOutputTable(FILE *fp, char *UpperPrefix, char *LowerPrefix)
 {
     // Construct State Transition Table.
@@ -318,9 +335,9 @@ void BuildAndOutputTable(FILE *fp, char *UpperPrefix, char *LowerPrefix)
     // Leaving states undefined leads to a smaller table.  On the other hand,
     // do not make queries for code points outside the expected set.
     //
-    if (g_bReplacement)
+    if (g_bDefault)
     {
-        sm.SetUndefinedStates(g_iReplacementState);
+        sm.SetUndefinedStates(g_iDefaultState);
         TestTable(fp);
     }
 
@@ -345,27 +362,46 @@ void BuildAndOutputTable(FILE *fp, char *UpperPrefix, char *LowerPrefix)
     sm.NumberStates();
     sm.OutputTables(UpperPrefix, LowerPrefix);
 
-    printf("const UTF8 *%s_ott[%d] =\n", LowerPrefix, nOutputTable);
+    if (g_bDefault)
+    {
+        printf("\n#define %s_DEFAULT (%d)", UpperPrefix, g_iDefaultState);
+    }
+
+    printf("\nconst UTF8 *%s_ott[%d] =\n", LowerPrefix, nOutputTable);
     printf("{\n");
     int i;
     for (i = 0; i < nOutputTable; i++)
     {
         UTF8 *p = aOutputTable[i].p;
-        printf("    T(\"");
-        size_t n = aOutputTable[i].n;
-        while (n--)
+        if (NULL != p)
         {
-            printf("\\x%02X", *p);
-            p++;
-        }
+            printf("    T(\"");
+            size_t n = aOutputTable[i].n;
+            while (n--)
+            {
+                printf("\\x%02X", *p);
+                p++;
+            }
 
-        if (i != nOutputTable - 1)
-        {
-            printf("\"),\n");
+            if (i != nOutputTable - 1)
+            {
+                printf("\"),\n");
+            }
+            else
+            {
+                printf("\")\n");
+            }
         }
         else
         {
-            printf("\")\n");
+            if (i != nOutputTable - 1)
+            {
+                printf("    NULL,\n");
+            }
+            else
+            {
+                printf("    NULL\n");
+            }
         }
 
         delete aOutputTable[i].p;
@@ -383,13 +419,13 @@ int main(int argc, char *argv[])
     if (argc < 3)
     {
 #if 0
-        fprintf(stderr, "Usage: %s [-c ch] prefix unicodedata.txt\n", argv[0]);
+        fprintf(stderr, "Usage: %s [-d ch] prefix unicodedata.txt\n", argv[0]);
         exit(0);
 #else
         pFilename = "NumericDecimal.txt";
         pPrefix   = "digit";
-        g_bReplacement = false;
-        g_iReplacementState = '?';
+        g_bDefault = false;
+        g_iDefaultState = '?';
 #endif
     }
     else
@@ -397,17 +433,17 @@ int main(int argc, char *argv[])
         int j;
         for (j = 1; j < argc; j++)
         {
-            if (0 == strcmp(argv[j], "-c"))
+            if (0 == strcmp(argv[j], "-d"))
             {
-                g_bReplacement = true;
+                g_bDefault = true;
                 if (j+1 < argc)
                 {
                     j++;
-                    g_iReplacementState = atoi(argv[j]);
+                    g_iDefaultState = atoi(argv[j]);
                 }
                 else
                 {
-                    g_iReplacementState = '?';
+                    g_iDefaultState = 0;
                 }
             }
             else
