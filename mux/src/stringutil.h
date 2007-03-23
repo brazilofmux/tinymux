@@ -222,24 +222,22 @@ inline bool mux_islower(const unsigned char *p)
 
 // utf/tr_utf8_latin1.txt
 //
-// 1503 code points.
-// 71 states, 190 columns, 27236 bytes
+// 1535 code points.
+// 73 states, 191 columns, 28142 bytes
 //
 #define TR_LATIN1_START_STATE (0)
-#define TR_LATIN1_ACCEPTING_STATES_START (71)
+#define TR_LATIN1_ACCEPTING_STATES_START (73)
 extern const unsigned char tr_latin1_itt[256];
-extern const unsigned short tr_latin1_stt[71][190];
+extern const unsigned short tr_latin1_stt[73][191];
 const char *ConvertToLatin(const UTF8 *pString);
 
-// utf/tr_utf8_ascii.txt
-//
-// 1446 code points.
-// 67 states, 190 columns, 12986 bytes
+// 1478 code points.
+// 69 states, 191 columns, 13435 bytes
 //
 #define TR_ASCII_START_STATE (0)
-#define TR_ASCII_ACCEPTING_STATES_START (67)
+#define TR_ASCII_ACCEPTING_STATES_START (69)
 extern const unsigned char tr_ascii_itt[256];
-extern const unsigned char tr_ascii_stt[67][190];
+extern const unsigned char tr_ascii_stt[69][191];
 const char *ConvertToAscii(const UTF8 *pString);
 
 typedef struct
