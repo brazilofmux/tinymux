@@ -997,7 +997,7 @@ static bool ParseThreeLetters(const UTF8 **pp, int *piHash)
         {
             return false;
         }
-        iHash = (iHash << 8) | mux_toupper(*q);
+        iHash = (iHash << 8) | mux_toupper_latin1(*q);
         q++;
     }
 

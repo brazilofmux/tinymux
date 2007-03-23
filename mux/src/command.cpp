@@ -2069,7 +2069,7 @@ UTF8 *process_command
           && !mux_isspace(pCommand[iPos])
           && nLowerCaseCommand < LBUF_SIZE - 1)
     {
-        LowerCaseCommand[nLowerCaseCommand] = mux_tolower(pCommand[iPos]);
+        LowerCaseCommand[nLowerCaseCommand] = mux_tolower_latin1(pCommand[iPos]);
         iPos++;
         nLowerCaseCommand++;
     }
@@ -4229,7 +4229,7 @@ void do_icmd(dbref player, dbref cause, dbref enactor, int eval, int key,
         while (  *pt1
               && pt2 < buff1 + LBUF_SIZE)
         {
-            *pt2++ = mux_tolower(*pt1++);
+            *pt2++ = mux_tolower_latin1(*pt1++);
         }
         *pt2 = '\0';
         if (  buff1[0] == '!'
@@ -4769,7 +4769,7 @@ void do_hook(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF
                 safe_sb_chr('@', cbuff, &p);
                 for (q = ap->name; *q; q++)
                 {
-                    safe_sb_chr(mux_tolower(*q), cbuff, &p);
+                    safe_sb_chr(mux_tolower_latin1(*q), cbuff, &p);
                 }
                 *p = '\0';
                 size_t ncbuff = p - cbuff;

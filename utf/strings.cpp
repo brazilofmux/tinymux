@@ -529,11 +529,12 @@ void BuildAndOutputTable(FILE *fp, char *UpperPrefix, char *LowerPrefix)
     printf("{\n");
     printf("    size_t n_bytes;\n");
     printf("    size_t n_points;\n");
-    printf("    UTF8   *p;\n");
+    printf("    const UTF8 *p;\n");
     printf("} string_desc;\n");
     printf("\n");
 
-    printf("const string_desc *%s_ott_literal[%d] =\n", LowerPrefix, nLiteralTable);
+    int nTotalSize = nLiteralTable + nXorTable;
+    printf("const string_desc *%s_ott[%d] =\n", LowerPrefix, nTotalSize);
     printf("{\n");
     int i;
     for (i = 0; i < nLiteralTable; i++)
@@ -549,7 +550,7 @@ void BuildAndOutputTable(FILE *fp, char *UpperPrefix, char *LowerPrefix)
             p++;
         }
 
-        if (i != nLiteralTable - 1)
+        if (i != nTotalSize - 1)
         {
             printf("\") },");
         }
@@ -563,11 +564,7 @@ void BuildAndOutputTable(FILE *fp, char *UpperPrefix, char *LowerPrefix)
         aLiteralTable[i].p = NULL;
     }
     nLiteralTable = 0;
-    printf("};\n");
-    printf("\n");
 
-    printf("const string_desc *%s_ott_xor[%d] =\n", LowerPrefix, nXorTable);
-    printf("{\n");
     for (i = 0; i < nXorTable; i++)
     {
         UTF8 *p = aXorTable[i].p;

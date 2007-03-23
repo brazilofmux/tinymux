@@ -1216,10 +1216,10 @@ static FUNCTION(fun_etimefmt)
         //
         bool bDoSuffix = false;
         bool bZeroIsBlank = false;
-        while (  'z' == mux_tolower(ch)
-              || 'x' == mux_tolower(ch))
+        while (  'z' == mux_tolower_latin1(ch)
+              || 'x' == mux_tolower_latin1(ch))
         {
-            switch (mux_tolower(ch))
+            switch (mux_tolower_latin1(ch))
             {
             case 'x':
                 bDoSuffix = true;
@@ -3604,7 +3604,7 @@ FUNCTION(fun_entrances)
     {
         for (p = fargs[1]; *p; p++)
         {
-            switch(mux_toupper(*p))
+            switch(mux_toupper_latin1(*p))
             {
             case 'A':
                 find_ex = find_th = find_pl = find_rm = true;
@@ -7490,7 +7490,7 @@ static FUNCTION(fun_sort)
     int sort_type = ASCII_LIST;
     if (2 <= nfargs)
     {
-        switch (mux_tolower(fargs[1][0]))
+        switch (mux_tolower_latin1(fargs[1][0]))
         {
         case 'd':
             sort_type = DBREF_LIST;
@@ -7598,7 +7598,7 @@ static void handle_sets
     int sort_type = ASCII_LIST;
     if (5 <= nfargs)
     {
-        switch (mux_tolower(fargs[4][0]))
+        switch (mux_tolower_latin1(fargs[4][0]))
         {
         case 'd':
             sort_type = DBREF_LIST;
@@ -8277,7 +8277,7 @@ static FUNCTION(fun_trim)
 
     if (nfargs >= 2)
     {
-        switch (mux_tolower(*fargs[1]))
+        switch (mux_tolower_latin1(*fargs[1]))
         {
         case 'l':
             bRight = false;
@@ -8583,7 +8583,7 @@ static FUNCTION(fun_wrap)
     if (  3 <= nfargs
        && '\0' != fargs[2][0])
     {
-        UTF8 cJust = mux_toupper(fargs[2][0]);
+        UTF8 cJust = mux_toupper_latin1(fargs[2][0]);
         switch (cJust)
         {
         case 'L':
@@ -10594,7 +10594,7 @@ CF_HAND(cf_func_access)
     UTF8 *ap;
     for (ap = str; *ap && !mux_isspace(*ap); ap++)
     {
-        *ap = mux_tolower(*ap); // Nothing.
+        *ap = mux_tolower_latin1(*ap); // Nothing.
     }
     size_t nstr = ap - str;
 

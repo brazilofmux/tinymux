@@ -319,7 +319,7 @@ static void add_folder_name(dbref player, int fld, UTF8 *name)
     UTF8 *p = name;
     while (*p)
     {
-        safe_chr(mux_toupper(*p), aNew, &q);
+        safe_chr(mux_toupper_latin1(*p), aNew, &q);
         p++;
     }
     safe_chr(':', aNew, &q);
@@ -471,7 +471,7 @@ static int get_folder_number(dbref player, UTF8 *name)
         UTF8 *p = name;
         while (*p)
         {
-            safe_chr(mux_toupper(*p), aPattern, &q);
+            safe_chr(mux_toupper_latin1(*p), aPattern, &q);
             p++;
         }
         safe_chr(':', aPattern, &q);
@@ -630,7 +630,7 @@ static bool parse_msglist(UTF8 *msglist, struct mail_selector *ms, dbref player)
     }
     else
     {
-        switch (mux_toupper(*p))
+        switch (mux_toupper_latin1(*p))
         {
         case '-':
 
@@ -748,7 +748,7 @@ static bool parse_msglist(UTF8 *msglist, struct mail_selector *ms, dbref player)
             // All messages, all folders
             //
             p++;
-            switch (mux_toupper(*p))
+            switch (mux_toupper_latin1(*p))
             {
             case '\0':
                 notify(player, T("MAIL: A isn't enough (all?)"));
@@ -759,7 +759,7 @@ static bool parse_msglist(UTF8 *msglist, struct mail_selector *ms, dbref player)
                 // All messages, all folders
                 //
                 p++;
-                switch (mux_toupper(*p))
+                switch (mux_toupper_latin1(*p))
                 {
                 case '\0':
                     notify(player, T("MAIL: AL isn't enough (all?)"));
@@ -809,7 +809,7 @@ static bool parse_msglist(UTF8 *msglist, struct mail_selector *ms, dbref player)
                 notify(player, T("MAIL: U is ambiguous (urgent or unread?)"));
                 return false;
             }
-            switch (mux_toupper(*p))
+            switch (mux_toupper_latin1(*p))
             {
             case 'R':
 
@@ -865,7 +865,7 @@ static bool parse_msglist(UTF8 *msglist, struct mail_selector *ms, dbref player)
                 notify(player, T("MAIL: M is ambiguous (mass or me?)"));
                 return false;
             }
-            switch (mux_toupper(*p))
+            switch (mux_toupper_latin1(*p))
             {
             case 'A':
 

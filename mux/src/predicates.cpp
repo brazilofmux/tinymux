@@ -828,7 +828,7 @@ void do_addcommand
     {
         mux_string *sName = new mux_string(name);
         sName->strip(T("\r\n\t "));
-        sName->transform_Ascii(mux_tolower_ascii);
+        sName->transform_Ascii(mux_tolower_latin1);
         sName->export_TextPlain(pName);
         delete sName;
     }

@@ -1678,7 +1678,7 @@ FUNCTION(fun_e)
 
 static double ConvertRDG2R(double d, const UTF8 *szUnits)
 {
-    switch (mux_tolower(szUnits[0]))
+    switch (mux_tolower_latin1(szUnits[0]))
     {
     case 'd':
         // Degrees to Radians.
@@ -1697,7 +1697,7 @@ static double ConvertRDG2R(double d, const UTF8 *szUnits)
 
 static double ConvertR2RDG(double d, const UTF8 *szUnits)
 {
-    switch (mux_tolower(szUnits[0]))
+    switch (mux_tolower_latin1(szUnits[0]))
     {
     case 'd':
         // Radians to Degrees.

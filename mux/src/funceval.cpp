@@ -4029,7 +4029,7 @@ FUNCTION(fun_hastype)
         return;
     }
     bool bResult = false;
-    switch (mux_tolower(fargs[1][0]))
+    switch (mux_tolower_latin1(fargs[1][0]))
     {
     case 'r':
 
