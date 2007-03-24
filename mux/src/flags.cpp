@@ -575,18 +575,14 @@ OBJENT object_types[8] =
 
 void init_flagtab(void)
 {
-    UTF8 *nbuf = alloc_sbuf("init_flagtab");
     for (FLAGNAMEENT *fp = gen_flag_names; fp->pOrigName; fp++)
     {
         fp->flagname = fp->pOrigName;
-        mux_strncpy(nbuf, fp->pOrigName, SBUF_SIZE-1);
-        mux_strlwr(nbuf);
-        if (!hashfindLEN(nbuf, strlen((char *)nbuf), &mudstate.flags_htab))
+        if (!hashfindLEN(fp->flagname, strlen((char *)fp->flagname), &mudstate.flags_htab))
         {
-            hashaddLEN(nbuf, strlen((char *)nbuf), fp, &mudstate.flags_htab);
+            hashaddLEN(fp->flagname, strlen((char *)fp->flagname), fp, &mudstate.flags_htab);
         }
     }
-    free_sbuf(nbuf);
 }
 
 /* ---------------------------------------------------------------------------
