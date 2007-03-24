@@ -1405,7 +1405,9 @@ static UTF8 *status_string(struct mail *mp)
 
 static void GetFromField(dbref target, UTF8 szFrom[MBUF_SIZE])
 {
-    StripTabsAndTruncate(Moniker(target), szFrom, MBUF_SIZE-1, 16, true);
+    mux_field fldPos = StripTabsAndTruncate( Moniker(target), szFrom,
+                                             MBUF_SIZE-1, 16);
+    PadField(szFrom, MBUF_SIZE-1, 16, fldPos);
 }
 
 static void do_mail_read(dbref player, UTF8 *msglist)

@@ -59,23 +59,31 @@ mux_display_table::~mux_display_table(void)
 
 void mux_display_table::add_to_line(const UTF8 *pText, bool bAdvance)
 {
-    bool bFill = bAdvance && m_aColumns[m_iColumn]->m_bFill;
-    LBUF_OFFSET nWidth = m_aColumns[m_iColumn]->m_nWidth - m_fldCellPos.m_column;
+    mux_display_column *pColumn = m_aColumns[m_iColumn];
+    LBUF_OFFSET nWidth = pColumn->m_nWidth - m_fldCellPos.m_column;
     m_fldCellPos += StripTabsAndTruncate( pText,
                                           m_puchRow + m_fldRowPos.m_byte,
                                           (LBUF_SIZE-1) - m_fldRowPos.m_byte,
-                                          nWidth,
-                                          bFill);
+                                          nWidth);
     m_fldRowPos += m_fldCellPos;
 
     if (bAdvance)
     {
-        for (LBUF_OFFSET i = 0; i < m_aColumns[m_iColumn]->m_nPadTrailing; i++)
+        LBUF_OFFSET nWidthNeeded;
+        if (pColumn->m_bFill)
         {
-            m_puchRow[m_fldRowPos.m_byte] = m_aColumns[m_iColumn]->m_uchFill;
-            m_fldRowPos += fldAscii;
+            nWidthNeeded = (m_fldRowPos - m_fldCellPos).m_column + pColumn->m_nWidth + pColumn->m_nPadTrailing;
         }
+        else
+        {
+            nWidthNeeded = m_fldRowPos.m_column + pColumn->m_nPadTrailing;
+        }
+
+        m_fldRowPos = PadField(m_puchRow, LBUF_SIZE-1,
+                                nWidthNeeded, m_fldRowPos,
+                                pColumn->m_uchFill);
     }
+
     m_puchRow[m_fldRowPos.m_byte] = '\0';
 }
 

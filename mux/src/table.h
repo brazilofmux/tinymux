@@ -22,7 +22,6 @@
 //      Table->end()
 
 static const UTF8 *Empty = T("");
-static const mux_field fldAscii(1, 1);
 
 #define MAX_COLUMNS 255
 #define FIXED_COLUMNS 10

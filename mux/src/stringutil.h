@@ -674,10 +674,15 @@ public:
     };
 };
 
+static const mux_field fldAscii(1, 1);
+static const mux_field fldMin(0, 0);
+
 bool utf8_strlen(const UTF8 *pString, mux_cursor &nString);
 mux_field StripTabsAndTruncate(const UTF8 *pString, UTF8 *pBuffer,
-    size_t nLength,LBUF_OFFSET nWidth, bool bPad = false,
-    UTF8 uchFill = (UTF8)' ');
+    size_t nLength, LBUF_OFFSET nWidth);
+mux_field PadField(UTF8 *pBuffer, size_t nMaxBytes, LBUF_OFFSET nMinWidth,
+                   mux_field fldOutput = fldMin, UTF8 uchFill = (UTF8)' ');
+
 
 static const mux_cursor CursorMin(0,0);
 static const mux_cursor CursorMax(LBUF_SIZE - 1, LBUF_SIZE - 1);

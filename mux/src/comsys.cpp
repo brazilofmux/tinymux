@@ -3542,23 +3542,22 @@ void do_chanlist
                             (ch->type & (CHANNEL_LOUD)) ? 'L' : '-',
                             (ch->type & (CHANNEL_SPOOF)) ? 'S' : '-');
                         mux_field iPos(4, 4);
-                        mux_field nAscii(1, 1);
+
                         iPos += StripTabsAndTruncate( ch->name,
                                                       temp + iPos.m_byte,
                                                       (MBUF_SIZE-1) - iPos.m_byte,
-                                                      13, true);
-                        temp[iPos.m_byte] = ' ';
-                        iPos += nAscii;
+                                                      13);
+                        iPos = PadField(temp, MBUF_SIZE-1, 18, iPos);
                         iPos += StripTabsAndTruncate( Moniker(ch->charge_who),
                                                       temp + iPos.m_byte,
                                                       (MBUF_SIZE-1) - iPos.m_byte,
-                                                      15, true);
-                        temp[iPos.m_byte] = ' ';
-                        iPos += nAscii;
+                                                      15);
+                        iPos = PadField(temp, MBUF_SIZE-1, 34, iPos);
                         iPos += StripTabsAndTruncate( pBuffer,
                                                       temp + iPos.m_byte,
                                                       (MBUF_SIZE-1) - iPos.m_byte,
-                                                      45, true);
+                                                      45);
+                        iPos = PadField(temp, MBUF_SIZE-1, 79, iPos);
 
                         raw_notify(executor, temp);
                         free_mbuf(temp);

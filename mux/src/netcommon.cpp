@@ -1593,9 +1593,12 @@ static const UTF8 *trimmed_name(dbref player, size_t *pvw)
                                              Moniker(player),
                                              cbuff,
                                              MBUF_SIZE-1,
-                                             MAX_TRIMMED_NAME_LENGTH,
-                                             true
+                                             MAX_TRIMMED_NAME_LENGTH
                                            );
+    nName = PadField( cbuff,
+                      MBUF_SIZE-1,
+                      nName.m_column <= 12 ? 13 : nName.m_column + 1,
+                      nName);
     *pvw = nName.m_column;
     return cbuff;
 }
@@ -1805,7 +1808,7 @@ static void dump_users(DESC *e, UTF8 *match, int key)
 
             // The width size allocated to the 'On For' field.
             //
-            size_t nOnFor = 25 - MAX_TRIMMED_NAME_LENGTH;
+            size_t nOnFor = 25 - vwNameField;
 
             const UTF8 *pTimeStamp1 = time_format_1(ltdConnected.ReturnSeconds(), nOnFor);
             const UTF8 *pTimeStamp2 = time_format_2(ltdLastTime.ReturnSeconds());
