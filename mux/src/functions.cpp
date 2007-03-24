@@ -2903,7 +2903,7 @@ static FUNCTION(fun_extract)
         return;
     }
 
-    mux_string *sStr = new mux_string(fargs[0]);
+    mux_string *sStr = new mux_string(trim_space_sep(fargs[0], &sep));
     mux_words *words = NULL;
     try
     {
