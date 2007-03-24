@@ -217,11 +217,9 @@ static POWERENT *find_power(dbref thing, UTF8 *powername)
 
     // Convert powername to canonical lowercase.
     //
-    UTF8 *buff = alloc_sbuf("find_power");
-    mux_strncpy(buff, powername, SBUF_SIZE-1);
-    mux_strlwr(buff);
-    POWERENT *p = (POWERENT *)hashfindLEN(buff, strlen((char *)buff), &mudstate.powers_htab);
-    free_sbuf(buff);
+    size_t nCased;
+    UTF8 *pCased = mux_strupr(powername, nCased);
+    POWERENT *p = (POWERENT *)hashfindLEN(pCased, nCased, &mudstate.powers_htab);
     return p;
 }
 
