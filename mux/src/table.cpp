@@ -12,13 +12,14 @@
 #include "interface.h"
 #include "table.h"
 
-mux_display_column::mux_display_column(const UTF8 *pHeader, LBUF_OFFSET nWidth, bool bFill, LBUF_OFFSET nPadTrailing, UTF8 uchFill)
+mux_display_column::mux_display_column(const UTF8 *pHeader, LBUF_OFFSET nWidthMin, LBUF_OFFSET nWidthMax,
+                                       LBUF_OFFSET nPadTrailing, UTF8 uchFill)
 {
     m_pHeader       = pHeader;
-    m_nWidth        = nWidth;
+    m_nWidthMin     = nWidthMin;
+    m_nWidthMax     = nWidthMax;
     m_nPadTrailing  = nPadTrailing,
     m_uchFill       = uchFill;
-    m_bFill         = bFill;
 }
 
 mux_display_table::mux_display_table(dbref target, bool bRawNotify)
@@ -60,19 +61,19 @@ mux_display_table::~mux_display_table(void)
 void mux_display_table::add_to_line(const UTF8 *pText, bool bAdvance)
 {
     mux_display_column *pColumn = m_aColumns[m_iColumn];
-    LBUF_OFFSET nWidth = pColumn->m_nWidth - m_fldCellPos.m_column;
+    LBUF_OFFSET nWidthMax = pColumn->m_nWidthMax - m_fldCellPos.m_column;
     m_fldCellPos += StripTabsAndTruncate( pText,
                                           m_puchRow + m_fldRowPos.m_byte,
                                           (LBUF_SIZE-1) - m_fldRowPos.m_byte,
-                                          nWidth);
+                                          nWidthMax);
     m_fldRowPos += m_fldCellPos;
 
     if (bAdvance)
     {
         LBUF_OFFSET nWidthNeeded;
-        if (pColumn->m_bFill)
+        if (m_fldCellPos.m_column < pColumn->m_nWidthMin)
         {
-            nWidthNeeded = (m_fldRowPos - m_fldCellPos).m_column + pColumn->m_nWidth + pColumn->m_nPadTrailing;
+            nWidthNeeded = (m_fldRowPos - m_fldCellPos).m_column + pColumn->m_nWidthMin + pColumn->m_nPadTrailing;
         }
         else
         {
@@ -114,9 +115,10 @@ void mux_display_table::cell_skip(void)
     m_fldCellPos(0,0);
 }
 
-void mux_display_table::column_add(const UTF8 *header, LBUF_OFFSET nWidth, bool bFill, LBUF_OFFSET nPadTrailing, UTF8 uchFill)
+void mux_display_table::column_add(const UTF8 *header, LBUF_OFFSET nWidthMin, LBUF_OFFSET nWidthMax,
+                                   LBUF_OFFSET nPadTrailing, UTF8 uchFill)
 {
-    m_aColumns[m_nColumns] = new mux_display_column(header, nWidth, bFill, nPadTrailing, uchFill);
+    m_aColumns[m_nColumns] = new mux_display_column(header, nWidthMin, nWidthMax, nPadTrailing, uchFill);
     m_nColumns++;
 }
 
