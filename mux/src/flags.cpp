@@ -15,7 +15,6 @@
 #if defined(FIRANMUX)
 #include "attrs.h"
 #endif // FIRANMUX
-#include "ansi.h"
 #include "interface.h"
 
 /* ---------------------------------------------------------------------------

@@ -14,7 +14,6 @@
 
 #include <sys/types.h>
 
-#include "ansi.h"
 #include "attrs.h"
 #include "command.h"
 #include "comsys.h"

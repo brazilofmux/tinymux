@@ -15,7 +15,6 @@
 #ifndef _ANSI_H
 #define _ANSI_H
 
-#define BEEP_CHAR     '\07'
 #define ESC_CHAR      '\033'
 #define ANSI_ATTR_CMD 'm'
 

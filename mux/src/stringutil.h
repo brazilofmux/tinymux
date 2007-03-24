@@ -320,6 +320,9 @@ inline int mux_color(const unsigned char *p)
 #define COLOR_BG_WHITE   "\xEE\x88\x87"    // 21
 #define COLOR_LAST_CODE  21
 
+#define BEEP_CHAR '\07'
+#define mux_haswidth(x) (mux_isprint(x) && *(x) != BEEP_CHAR)
+
 bool utf8_strlen(const UTF8 *pString, size_t &nString);
 
 typedef struct

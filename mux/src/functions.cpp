@@ -10,7 +10,6 @@
 #include "config.h"
 #include "externs.h"
 
-#include "ansi.h"
 #include "attrs.h"
 #include "command.h"
 #include "functions.h"
@@ -8491,10 +8490,8 @@ static UTF8 *expand_tabs(const UTF8 *str)
                 case '\n':
                     n = 0;
                     break;
-                case BEEP_CHAR:
-                    break;
                 default:
-                    if (mux_isprint(str + i))
+                    if (mux_haswidth(str + i))
                     {
                         n++;
                     }

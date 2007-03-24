@@ -16,7 +16,6 @@
 #include "config.h"
 #include "externs.h"
 
-#include "ansi.h"
 #include "attrs.h"
 #include "functions.h"
 
