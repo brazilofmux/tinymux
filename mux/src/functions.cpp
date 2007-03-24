@@ -10309,27 +10309,19 @@ static FUN builtin_function_list[] =
 
 void function_add(FUN *fp)
 {
-    UTF8 *buff = alloc_sbuf("init_functab");
-    UTF8 *bp = buff;
-    safe_sb_str(fp->name, buff, &bp);
-    *bp = '\0';
-    mux_strlwr(buff);
-    hashaddLEN(buff, strlen((char *)buff), fp, &mudstate.func_htab);
-    free_sbuf(buff);
+    size_t nCased;
+    UTF8 *pCased = mux_strupr(fp->name, nCased);
+    hashaddLEN(pCased, nCased, fp, &mudstate.func_htab);
 }
 
 void functions_add(FUN funlist[])
 {
-    UTF8 *buff = alloc_sbuf("init_functab");
     for (FUN *fp = funlist; fp->name; fp++)
     {
-        UTF8 *bp = buff;
-        safe_sb_str(fp->name, buff, &bp);
-        *bp = '\0';
-        mux_strlwr(buff);
-        hashaddLEN(buff, strlen((char *)buff), fp, &mudstate.func_htab);
+        size_t nCased;
+        UTF8 *pCased = mux_strupr(fp->name, nCased);
+        hashaddLEN(pCased, nCased, fp, &mudstate.func_htab);
     }
-    free_sbuf(buff);
 }
 
 void init_functab(void)
@@ -10614,7 +10606,7 @@ CF_HAND(cf_func_access)
     UTF8 *ap;
     for (ap = str; *ap && !mux_isspace(*ap); ap++)
     {
-        *ap = mux_tolower_ascii(*ap);
+        *ap = mux_toupper_ascii(*ap);
     }
     size_t nstr = ap - str;
 

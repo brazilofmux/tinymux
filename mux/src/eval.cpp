@@ -1365,7 +1365,7 @@ void mux_exec( UTF8 *pdstr, UTF8 *buff, UTF8 **bufc, dbref executor,
             //
             for (size_t iFun = 0; iFun < nFun; iFun++)
             {
-                mux_scratch[iFun] = mux_tolower_ascii(oldp[iFun]);
+                mux_scratch[iFun] = mux_toupper_ascii(oldp[iFun]);
             }
             mux_scratch[nFun] = '\0';
 
