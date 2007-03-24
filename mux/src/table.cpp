@@ -13,13 +13,12 @@
 #include "table.h"
 
 mux_display_column::mux_display_column(const UTF8 *pHeader, LBUF_OFFSET nWidthMin, LBUF_OFFSET nWidthMax,
-                                       LBUF_OFFSET nPadTrailing, UTF8 uchFill)
+                                       LBUF_OFFSET nPadTrailing)
 {
     m_pHeader       = pHeader;
     m_nWidthMin     = nWidthMin;
     m_nWidthMax     = nWidthMax;
-    m_nPadTrailing  = nPadTrailing,
-    m_uchFill       = uchFill;
+    m_nPadTrailing  = nPadTrailing;
 }
 
 mux_display_table::mux_display_table(dbref target, bool bRawNotify)
@@ -81,8 +80,7 @@ void mux_display_table::add_to_line(const UTF8 *pText, bool bAdvance)
         }
 
         m_fldRowPos = PadField(m_puchRow, LBUF_SIZE-1,
-                                nWidthNeeded, m_fldRowPos,
-                                pColumn->m_uchFill);
+                                nWidthNeeded, m_fldRowPos);
     }
 
     m_puchRow[m_fldRowPos.m_byte] = '\0';
@@ -116,9 +114,9 @@ void mux_display_table::cell_skip(void)
 }
 
 void mux_display_table::column_add(const UTF8 *header, LBUF_OFFSET nWidthMin, LBUF_OFFSET nWidthMax,
-                                   LBUF_OFFSET nPadTrailing, UTF8 uchFill)
+                                   LBUF_OFFSET nPadTrailing)
 {
-    m_aColumns[m_nColumns] = new mux_display_column(header, nWidthMin, nWidthMax, nPadTrailing, uchFill);
+    m_aColumns[m_nColumns] = new mux_display_column(header, nWidthMin, nWidthMax, nPadTrailing);
     m_nColumns++;
 }
 

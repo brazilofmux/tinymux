@@ -4356,7 +4356,7 @@ mux_field StripTabsAndTruncate
 }
 
 mux_field PadField( UTF8 *pBuffer, size_t nMaxBytes, LBUF_OFFSET nMinWidth,
-                    mux_field fldOutput, UTF8 uchFill)
+                    mux_field fldOutput)
 {
     if (NULL == pBuffer)
     {
@@ -4366,7 +4366,7 @@ mux_field PadField( UTF8 *pBuffer, size_t nMaxBytes, LBUF_OFFSET nMinWidth,
     while (  fldOutput.m_byte   < nMaxBytes
           && fldOutput.m_column < nMinWidth)
     {
-        pBuffer[fldOutput.m_byte] = uchFill;
+        pBuffer[fldOutput.m_byte] = (UTF8)' ';
         fldOutput += fldAscii;
     }
     pBuffer[fldOutput.m_byte] = '\0';
