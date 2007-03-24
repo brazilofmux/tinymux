@@ -167,19 +167,16 @@ static POWERENT gen_powers[] =
 void init_powertab(void)
 {
     POWERENT *fp;
-    UTF8 *nbuf = alloc_sbuf("init_powertab");
-
     for (fp = gen_powers; fp->powername; fp++)
     {
-        mux_strncpy(nbuf, fp->powername, SBUF_SIZE-1);
-        mux_strlwr(nbuf);
+        size_t nCased;
+        UTF8 *pCased = mux_strupr(fp->powername, nCased);
 
-        if (!hashfindLEN(nbuf, strlen((char *)nbuf), &mudstate.powers_htab))
+        if (!hashfindLEN(pCased, nCased, &mudstate.powers_htab))
         {
-            hashaddLEN(nbuf, strlen((char *)nbuf), fp, &mudstate.powers_htab);
+            hashaddLEN(pCased, nCased, fp, &mudstate.powers_htab);
         }
     }
-    free_sbuf(nbuf);
 }
 
 /* ---------------------------------------------------------------------------
