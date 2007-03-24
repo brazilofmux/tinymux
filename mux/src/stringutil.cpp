@@ -4259,7 +4259,8 @@ mux_field StripTabsAndTruncate
     const UTF8 *pString,
     UTF8 *pBuffer,
     size_t nLength,
-    LBUF_OFFSET nWidth
+    LBUF_OFFSET nWidth,
+    bool bStrip
 )
 {
     mux_field  fldOutput(0, 0);
@@ -4299,7 +4300,8 @@ mux_field StripTabsAndTruncate
         {
             csNext = UpdateColorState(csNext, iCode);
         }
-        else if (NULL == strchr("\r\n\t", pString[curPos.m_byte]))
+        else if (  !bStrip
+                || NULL == strchr("\r\n\t", pString[curPos.m_byte]))
         {
             mux_field  fldPoint(utf8_FirstByte[pString[curPos.m_byte]], 1);
             if (csCurrent != csNext)

@@ -679,7 +679,7 @@ static const mux_field fldMin(0, 0);
 
 bool utf8_strlen(const UTF8 *pString, mux_cursor &nString);
 mux_field StripTabsAndTruncate(const UTF8 *pString, UTF8 *pBuffer,
-    size_t nLength, LBUF_OFFSET nWidth);
+    size_t nLength, LBUF_OFFSET nWidth, bool bStrip = true);
 mux_field PadField(UTF8 *pBuffer, size_t nMaxBytes, LBUF_OFFSET nMinWidth,
                    mux_field fldOutput = fldMin, UTF8 uchFill = (UTF8)' ');
 
