@@ -918,26 +918,19 @@ static bool tcache_empty(void)
 
 static void tcache_add(dbref player, UTF8 *orig, UTF8 *result)
 {
-    if (strcmp((char *)orig, (char *)result))
+    if (  strcmp((char *)orig, (char *)result)
+       && (++tcache_count) <= mudconf.trace_limit)
     {
-        tcache_count++;
-        if (tcache_count <= mudconf.trace_limit)
-        {
-            TCENT *xp = (TCENT *) alloc_sbuf("tcache_add.sbuf");
-            UTF8 *tp = alloc_lbuf("tcache_add.lbuf");
+        TCENT *xp = (TCENT *) alloc_sbuf("tcache_add.sbuf");
+        UTF8 *tp = alloc_lbuf("tcache_add.lbuf");
 
-            StripTabsAndTruncate(result, tp, LBUF_SIZE-1, LBUF_SIZE-1);
-            xp->result = tp;
+        StripTabsAndTruncate(result, tp, LBUF_SIZE-1, LBUF_SIZE-1);
+        xp->result = tp;
 
-            xp->player = player;
-            xp->orig = orig;
-            xp->next = tcache_head;
-            tcache_head = xp;
-        }
-        else
-        {
-            free_lbuf(orig);
-        }
+        xp->player = player;
+        xp->orig = orig;
+        xp->next = tcache_head;
+        tcache_head = xp;
     }
     else
     {
