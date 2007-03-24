@@ -389,30 +389,6 @@ bool is_real(const UTF8 *str);
 // Color State
 //
 typedef UINT16 ColorState;
-
-struct ANSI_In_Context
-{
-    ColorState      m_cs;
-    const UTF8     *m_p;
-    size_t          m_n;
-};
-
-struct ANSI_Out_Context
-{
-    ColorState      m_cs;
-    bool            m_bDone;
-    UTF8           *m_p;
-    size_t          m_n;
-    size_t          m_nMax;
-    size_t          m_vw;
-    size_t          m_vwMax;
-};
-
-void ANSI_String_In_Init(struct ANSI_In_Context *pacIn, const UTF8 *szString);
-void ANSI_String_Out_Init(struct ANSI_Out_Context *pacOut, UTF8 *pField, size_t nField, size_t vwMax);
-void ANSI_String_Copy(struct ANSI_Out_Context *pacOut, struct ANSI_In_Context *pacIn);
-size_t ANSI_String_Finalize(struct ANSI_Out_Context *pacOut, size_t *pnVisualWidth);
-size_t ANSI_TruncateToField(const UTF8 *szString, size_t nField, UTF8 *pField, size_t maxVisual, size_t *nVisualWidth);
 UTF8 *convert_color(const UTF8 *pString, bool bNoBleed = false);
 UTF8 *strip_color(const UTF8 *pString, size_t *pnLength = 0, size_t *pnPoints = 0);
 UTF8 *munge_space(const UTF8 *);
@@ -718,10 +694,11 @@ static const mux_field fldMin(0, 0);
 
 bool utf8_strlen(const UTF8 *pString, mux_cursor &nString);
 mux_field StripTabsAndTruncate(const UTF8 *pString, UTF8 *pBuffer,
-    size_t nLength, LBUF_OFFSET nWidth, bool bStrip = true);
+    size_t nLength, LBUF_OFFSET nWidth);
 mux_field PadField(UTF8 *pBuffer, size_t nMaxBytes, LBUF_OFFSET nMinWidth,
                    mux_field fldOutput = fldMin);
 
+size_t TruncateToBuffer(const UTF8 *pString, UTF8 *pBuffer, size_t nBuffer);
 
 static const mux_cursor CursorMin(0,0);
 static const mux_cursor CursorMax(LBUF_SIZE - 1, LBUF_SIZE - 1);

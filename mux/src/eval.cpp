@@ -915,15 +915,15 @@ static bool tcache_empty(void)
     return false;
 }
 
-static void tcache_add(dbref player, UTF8 *orig, UTF8 *result)
+static void tcache_add(dbref player, UTF8 *orig, const UTF8 *result)
 {
-    if (  strcmp((char *)orig, (char *)result)
+    if (  strcmp((const char *)orig, (const char *)result)
        && (++tcache_count) <= mudconf.trace_limit)
     {
         TCENT *xp = (TCENT *) alloc_sbuf("tcache_add.sbuf");
         UTF8 *tp = alloc_lbuf("tcache_add.lbuf");
 
-        StripTabsAndTruncate(result, tp, LBUF_SIZE-1, LBUF_SIZE-1, false);
+        TruncateToBuffer(result, tp, LBUF_SIZE-1);
         xp->result = tp;
 
         xp->player = player;
@@ -2233,29 +2233,21 @@ void mux_exec( UTF8 *pdstr, UTF8 *buff, UTF8 **bufc, dbref executor,
     {
         // We need to transfer and/or ANSI optimize the result.
         //
-        static struct ANSI_In_Context aic;
-        static struct ANSI_Out_Context aoc;
-
-        ANSI_String_Out_Init(&aoc, mux_scratch, sizeof(mux_scratch),
-            sizeof(mux_scratch));
+        size_t nPos = 0;
         if (realbuff)
         {
             *realbp = '\0';
-            ANSI_String_In_Init(&aic, realbuff);
-            ANSI_String_Copy(&aoc, &aic);
+            nPos = TruncateToBuffer(realbuff, mux_scratch, LBUF_SIZE-1);
         }
-        ANSI_String_In_Init(&aic, buff);
-        ANSI_String_Copy(&aoc, &aic);
+        nPos += TruncateToBuffer(buff, mux_scratch + nPos, (LBUF_SIZE-1) - nPos);
         if (realbuff)
         {
             MEMFREE(buff);
             buff = realbuff;
         }
 
-        size_t nVisualWidth;
-        size_t nLen = ANSI_String_Finalize(&aoc, &nVisualWidth);
-        memcpy(buff, mux_scratch, nLen+1);
-        *bufc = buff + nLen;
+        memcpy(buff, mux_scratch, nPos + 1);
+        *bufc = buff + nPos;
     }
 
     // Restore Parser Mode.
