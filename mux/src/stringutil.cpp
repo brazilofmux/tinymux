@@ -4718,6 +4718,63 @@ int mux_memicmp(const void *p1_arg, const void *p2_arg, size_t n)
     return 0;
 }
 
+
+// mux_strlwr_utf8 - Convert string to all lower case.
+//
+UTF8 *mux_strlwr_utf8(const UTF8 *a, size_t &n)
+{
+    static UTF8 Buffer[LBUF_SIZE];
+
+    n = 0;
+    while ('\0' != *a)
+    {
+        size_t j;
+        size_t m;
+        bool bXor;
+        const string_desc *qDesc = mux_tolower(a, bXor);
+        if (NULL == qDesc)
+        {
+            m = utf8_FirstByte[Buffer[n]];
+            if (LBUF_SIZE-1 < n + m)
+            {
+                break;
+            }
+
+            for (j = 0; j < m; j++)
+            {
+                Buffer[n+j] = a[j];
+            }
+        }
+        else
+        {
+            m = qDesc->n_bytes;
+            if (LBUF_SIZE-1 < n + m)
+            {
+                break;
+            }
+
+            if (bXor)
+            {
+                for (j = 0; j < m; j++)
+                {
+                    Buffer[n+j] = a[j] ^ qDesc->p[j];
+                }
+            }
+            else
+            {
+                for (j = 0; j < m; j++)
+                {
+                    Buffer[n+j] = qDesc->p[j];
+                }
+            }
+        }
+        n += m;
+        a = utf8_NextCodePoint(a);
+    }
+    Buffer[n] = '\0';
+    return Buffer;
+}
+
 // mux_strlwr - Convert string to all lower case.
 //
 void mux_strlwr(UTF8 *a)
@@ -4727,6 +4784,62 @@ void mux_strlwr(UTF8 *a)
         *a = mux_tolower_ascii(*a);
         a++;
     }
+}
+
+// mux_strupr_utf8 - Convert string to all upper case.
+//
+UTF8 *mux_strupr_utf8(const UTF8 *a, size_t &n)
+{
+    static UTF8 Buffer[LBUF_SIZE];
+
+    n = 0;
+    while ('\0' != *a)
+    {
+        size_t j;
+        size_t m;
+        bool bXor;
+        const string_desc *qDesc = mux_toupper(a, bXor);
+        if (NULL == qDesc)
+        {
+            m = utf8_FirstByte[Buffer[n]];
+            if (LBUF_SIZE-1 < n + m)
+            {
+                break;
+            }
+
+            for (j = 0; j < m; j++)
+            {
+                Buffer[n+j] = a[j];
+            }
+        }
+        else
+        {
+            m = qDesc->n_bytes;
+            if (LBUF_SIZE-1 < n + m)
+            {
+                break;
+            }
+
+            if (bXor)
+            {
+                for (j = 0; j < m; j++)
+                {
+                    Buffer[n+j] = a[j] ^ qDesc->p[j];
+                }
+            }
+            else
+            {
+                for (j = 0; j < m; j++)
+                {
+                    Buffer[n+j] = qDesc->p[j];
+                }
+            }
+        }
+        n += m;
+        a = utf8_NextCodePoint(a);
+    }
+    Buffer[n] = '\0';
+    return Buffer;
 }
 
 // mux_strupr - Convert string to all upper case.
@@ -6991,7 +7104,7 @@ void mux_string::UpperCase(void)
                 // TODO: In future, the string may need to be expanded or contracted in terms of points.
                 //
                 size_t j;
-                for (j = 0; j < qDesc->n_bytes; j++)
+                for (j = 0; j < m; j++)
                 {
                     p[j] ^= qDesc->p[j];
                 }
@@ -7021,7 +7134,7 @@ void mux_string::LowerCase(void)
                 // TODO: In future, the string may need to be expanded or contracted in terms of points.
                 //
                 size_t j;
-                for (j = 0; j < qDesc->n_bytes; j++)
+                for (j = 0; j < m; j++)
                 {
                     p[j] ^= qDesc->p[j];
                 }
@@ -7052,7 +7165,7 @@ void mux_string::UpperCaseFirst(void)
                 // TODO: In future, the string may need to be expanded or contracted in terms of points.
                 //
                 size_t j;
-                for (j = 0; j < qDesc->n_bytes; j++)
+                for (j = 0; j < m; j++)
                 {
                     p[j] ^= qDesc->p[j];
                 }

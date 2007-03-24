@@ -448,7 +448,9 @@ bool matches_exit_from_list(UTF8 *, const UTF8 *);
 UTF8 *translate_string(const UTF8 *, bool);
 int mux_stricmp(const UTF8 *a, const UTF8 *b);
 int mux_memicmp(const void *p1_arg, const void *p2_arg, size_t n);
+UTF8 *mux_strlwr_utf8(const UTF8 *a, size_t &n);
 void mux_strlwr(UTF8 *tp);
+UTF8 *mux_strupr_utf8(const UTF8 *a, size_t &n);
 void mux_strupr(UTF8 *a);
 
 typedef struct tag_itl
