@@ -10357,6 +10357,7 @@ UTF8 *MakeCanonicalUserFunctionName(const UTF8 *pName, size_t *pnName, bool *pbV
 
     size_t nLen = 0;
     UTF8 *pNameStripped = strip_color(pName, &nLen);
+    UTF8 *pCased = mux_strupr(pNameStripped, nLen);
 
     // TODO: Fix truncation.
     //
@@ -10364,10 +10365,8 @@ UTF8 *MakeCanonicalUserFunctionName(const UTF8 *pName, size_t *pnName, bool *pbV
     {
         nLen = sizeof(Buffer)-1;
     }
-    memcpy(Buffer, pNameStripped, nLen);
+    memcpy(Buffer, pCased, nLen);
     Buffer[nLen] = '\0';
-
-    mux_strlwr(Buffer);
 
     *pnName = nLen;
     *pbValid = true;
@@ -10536,7 +10535,6 @@ void do_function
         }
 
         ufp->name = StringCloneLen(pName, nLen);
-        mux_strupr(ufp->name);
         ufp->obj = obj;
         ufp->atr = pattr->number;
         ufp->perms = CA_PUBLIC;

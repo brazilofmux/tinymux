@@ -641,7 +641,7 @@ UTF8 *MakeCanonicalFlagName
 
     while (*pName && nName < SBUF_SIZE)
     {
-        *p = mux_tolower_ascii(*pName);
+        *p = mux_toupper_ascii(*pName);
         p++;
         pName++;
         nName++;
@@ -1355,7 +1355,6 @@ static bool flag_rename(UTF8 *alias, UTF8 *newname)
             {
                 MEMFREE(flag1->flagname);
             }
-            mux_strupr(pNewName);
             flag1->flagname = StringCloneLen(pNewName, nNewName);
 
             free_sbuf(pAlias);

@@ -4786,9 +4786,9 @@ void mux_strlwr(UTF8 *a)
     }
 }
 
-// mux_strupr_utf8 - Convert string to all upper case.
+// mux_strupr - Convert string to all upper case.
 //
-UTF8 *mux_strupr_utf8(const UTF8 *a, size_t &n)
+UTF8 *mux_strupr(const UTF8 *a, size_t &n)
 {
     static UTF8 Buffer[LBUF_SIZE];
 
@@ -4841,18 +4841,6 @@ UTF8 *mux_strupr_utf8(const UTF8 *a, size_t &n)
     Buffer[n] = '\0';
     return Buffer;
 }
-
-// mux_strupr - Convert string to all upper case.
-//
-void mux_strupr(UTF8 *a)
-{
-    while (*a)
-    {
-        *a = mux_toupper_ascii(*a);
-        a++;
-    }
-}
-
 
 // mux_vsnprintf - Is an sprintf-like function that will not overflow
 // a buffer of specific size. The size is give by count, and count

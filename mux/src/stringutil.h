@@ -450,8 +450,7 @@ int mux_stricmp(const UTF8 *a, const UTF8 *b);
 int mux_memicmp(const void *p1_arg, const void *p2_arg, size_t n);
 UTF8 *mux_strlwr_utf8(const UTF8 *a, size_t &n);
 void mux_strlwr(UTF8 *tp);
-UTF8 *mux_strupr_utf8(const UTF8 *a, size_t &n);
-void mux_strupr(UTF8 *a);
+UTF8 *mux_strupr(const UTF8 *a, size_t &n);
 
 typedef struct tag_itl
 {
