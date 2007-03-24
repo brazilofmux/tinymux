@@ -12,8 +12,6 @@
 #include "config.h"
 #include "externs.h"
 
-#include <sys/types.h>
-
 #include "attrs.h"
 #include "command.h"
 #include "comsys.h"

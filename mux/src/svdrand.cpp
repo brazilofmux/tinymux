@@ -11,10 +11,6 @@
 #include "config.h"
 #include "externs.h"
 
-#include "timeutil.h"
-
-#include "svdhash.h"
-
 #ifdef WIN32
 #include <wincrypt.h>
 typedef BOOL WINAPI FCRYPTACQUIRECONTEXT(HCRYPTPROV *, LPCTSTR, LPCTSTR, DWORD, DWORD);

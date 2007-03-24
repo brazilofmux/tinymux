@@ -11,19 +11,12 @@
 #include "copyright.h"
 #include "autoconf.h"
 #include "config.h"
-
 #include "externs.h"
-#include "db.h"
+
 #include "attrs.h"
-#include "mudconf.h"
 #include "command.h"
 #include "powers.h"
-#include "alloc.h"
-#include "match.h"
 #include "levels.h"
-#include "stringutil.h"
-
-extern void cf_log_notfound(dbref, UTF8 *, const UTF8 *, UTF8 *);
 
 RLEVEL RxLevel(dbref thing)
 {

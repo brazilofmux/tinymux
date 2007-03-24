@@ -11,8 +11,9 @@
 #include "autoconf.h"
 #include "config.h"
 #include "externs.h"
-#include "functions.h"
+
 #include "command.h"
+#include "functions.h"
 
 // ----------------------------------------------------------------------------
 // local_funlist: List of existing functions in alphabetical order.

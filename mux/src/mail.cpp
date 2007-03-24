@@ -17,8 +17,8 @@
 
 #include "attrs.h"
 #include "command.h"
-#include "powers.h"
 #include "mail.h"
+#include "powers.h"
 
 #define SIZEOF_MALIAS 13
 #define WIDTHOF_MALIASDESC 40

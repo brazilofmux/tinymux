@@ -10,7 +10,6 @@
 #ifndef __HTAB_H
 #define __HTAB_H
 
-#include "db.h"
 #include "svdhash.h"
 
 typedef struct name_table NAMETAB;

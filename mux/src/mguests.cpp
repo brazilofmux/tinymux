@@ -17,9 +17,9 @@
 #include <stdlib.h>
 
 #include "attrs.h"
+#include "comsys.h"
 #include "mguests.h"
 #include "powers.h"
-#include "comsys.h"
 
 #define GUEST_HYSTERESIS 20
 

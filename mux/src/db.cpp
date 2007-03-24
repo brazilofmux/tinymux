@@ -20,13 +20,13 @@
 #include "config.h"
 #include "externs.h"
 
+#include "ansi.h"
 #include "attrs.h"
 #include "command.h"
 #include "comsys.h"
 #include "interface.h"
 #include "powers.h"
 #include "vattr.h"
-#include "ansi.h"
 
 #ifndef O_ACCMODE
 #define O_ACCMODE   (O_RDONLY|O_WRONLY|O_RDWR)

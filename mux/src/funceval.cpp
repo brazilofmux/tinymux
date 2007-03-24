@@ -24,9 +24,9 @@
 #include "comsys.h"
 #include "functions.h"
 #include "help.h"
+#include "mail.h"
 #include "misc.h"
 #include "pcre.h"
-#include "mail.h"
 #ifdef REALITY_LVLS
 #include "levels.h"
 #endif // REALITY_LVLS

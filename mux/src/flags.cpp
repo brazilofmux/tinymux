@@ -11,11 +11,11 @@
 #include "externs.h"
 
 #include "command.h"
+#include "interface.h"
 #include "powers.h"
 #if defined(FIRANMUX)
 #include "attrs.h"
 #endif // FIRANMUX
-#include "interface.h"
 
 /* ---------------------------------------------------------------------------
  * fh_any: set or clear indicated bit, no security checking

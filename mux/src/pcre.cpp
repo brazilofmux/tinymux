@@ -56,6 +56,7 @@ POSSIBILITY OF SUCH DAMAGE.
 
 #include "autoconf.h"
 #include "config.h"
+#include "externs.h"
 
 #include <limits.h>
 #include <string.h>
@@ -85,8 +86,6 @@ typedef unsigned char uschar;
 
 #include "pcre.h"
 
-#include "externs.h"
-#include "timeutil.h"
 
 /* Bits of PCRE's config.h */
 #define LINK_SIZE 2
