@@ -534,7 +534,7 @@ void BuildAndOutputTable(FILE *fp, char *UpperPrefix, char *LowerPrefix)
     printf("\n");
 
     int nTotalSize = nLiteralTable + nXorTable;
-    printf("const string_desc *%s_ott[%d] =\n", LowerPrefix, nTotalSize);
+    printf("const string_desc %s_ott[%d] =\n", LowerPrefix, nTotalSize);
     printf("{\n");
     int i;
     for (i = 0; i < nLiteralTable; i++)
