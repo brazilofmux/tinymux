@@ -6988,6 +6988,8 @@ void mux_string::UpperCase(void)
             size_t m = qDesc->n_bytes;
             if (bXor)
             {
+                // TODO: In future, the string may need to be expanded or contracted in terms of points.
+                //
                 size_t j;
                 for (j = 0; j < qDesc->n_bytes; j++)
                 {
@@ -6996,7 +6998,7 @@ void mux_string::UpperCase(void)
             }
             else
             {
-                // UNIMPLEMENTED
+                // TODO: The string must be expanded or contracted in terms of points and bytes.
                 //
             }
         }
@@ -7016,6 +7018,8 @@ void mux_string::LowerCase(void)
             size_t m = qDesc->n_bytes;
             if (bXor)
             {
+                // TODO: In future, the string may need to be expanded or contracted in terms of points.
+                //
                 size_t j;
                 for (j = 0; j < qDesc->n_bytes; j++)
                 {
@@ -7024,7 +7028,7 @@ void mux_string::LowerCase(void)
             }
             else
             {
-                // UNIMPLEMENTED
+                // TODO: The string must be expanded or contracted in terms of points and bytes.
                 //
             }
         }
@@ -7045,6 +7049,8 @@ void mux_string::UpperCaseFirst(void)
             size_t m = qDesc->n_bytes;
             if (bXor)
             {
+                // TODO: In future, the string may need to be expanded or contracted in terms of points.
+                //
                 size_t j;
                 for (j = 0; j < qDesc->n_bytes; j++)
                 {
@@ -7053,7 +7059,7 @@ void mux_string::UpperCaseFirst(void)
             }
             else
             {
-                // UNIMPLEMENTED
+                // TODO: The string must be expanded or contracted in terms of points and bytes.
                 //
             }
         }
