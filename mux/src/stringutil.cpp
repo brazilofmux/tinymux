@@ -5314,7 +5314,7 @@ void mux_string::Validate(void) const
         {
             // Every ColorState must be valid.
             //
-            const ColorState Mask = ~(CS_FOREGROUND|CS_BACKGROUND|CS_ATTRS);
+            const ColorState Mask = static_cast<ColorState>(~(CS_FOREGROUND|CS_BACKGROUND|CS_ATTRS));
             mux_assert((Mask & m_pcs[i]) == 0);
             mux_assert((CS_FOREGROUND & m_pcs[i]) <= CS_FG_DEFAULT);
             mux_assert((CS_BACKGROUND & m_pcs[i]) <= CS_BG_DEFAULT);

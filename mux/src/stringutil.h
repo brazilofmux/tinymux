@@ -499,10 +499,10 @@ public:
     LBUF_OFFSET m_byte;
     LBUF_OFFSET m_column;
 
-    inline mux_field(LBUF_OFFSET byte = 0, LBUF_OFFSET column = 0)
+    inline mux_field(size_t byte = 0, size_t column = 0)
     {
-        m_byte = byte;
-        m_column = column;
+        m_byte = static_cast<LBUF_OFFSET>(byte);
+        m_column = static_cast<LBUF_OFFSET>(column);
     };
 
     inline void operator =(const mux_field &c)
@@ -511,10 +511,10 @@ public:
         m_column = c.m_column;
     };
 
-    inline void operator ()(LBUF_OFFSET byte, LBUF_OFFSET column)
+    inline void operator ()(size_t byte, size_t column)
     {
-        m_byte = byte;
-        m_column = column;
+        m_byte = static_cast<LBUF_OFFSET>(byte);
+        m_column = static_cast<LBUF_OFFSET>(column);
     };
 
     inline bool operator <(const mux_field &a) const
@@ -596,16 +596,10 @@ public:
     LBUF_OFFSET m_byte;
     LBUF_OFFSET m_point;
 
-    inline mux_cursor(void)
+    inline mux_cursor(size_t byte = 0, size_t point = 0)
     {
-        m_byte = 0;
-        m_point = 0;
-    };
-
-    inline mux_cursor(LBUF_OFFSET byte, LBUF_OFFSET point)
-    {
-        m_byte = byte;
-        m_point = point;
+        m_byte = static_cast<LBUF_OFFSET>(byte);
+        m_point = static_cast<LBUF_OFFSET>(point);
     };
 
     inline void operator =(const mux_cursor &c)
@@ -614,10 +608,10 @@ public:
         m_point = c.m_point;
     };
 
-    inline void operator ()(LBUF_OFFSET byte, LBUF_OFFSET point)
+    inline void operator ()(size_t byte, size_t point)
     {
-        m_byte = byte;
-        m_point = point;
+        m_byte = static_cast<LBUF_OFFSET>(byte);
+        m_point = static_cast<LBUF_OFFSET>(point);
     };
 
     inline bool operator <(const mux_cursor &a) const
