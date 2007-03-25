@@ -389,6 +389,42 @@ bool is_real(const UTF8 *str);
 // Color State
 //
 typedef UINT16 ColorState;
+
+#define COLOR_INDEX_RESET       1
+#define COLOR_INDEX_INTENSE     2
+#define COLOR_INDEX_UNDERLINE   3
+#define COLOR_INDEX_BLINK       4
+#define COLOR_INDEX_INVERSE     5
+
+#define COLOR_INDEX_ATTR        2
+#define COLOR_INDEX_FG          6
+#define COLOR_INDEX_BG          14
+
+#define COLOR_INDEX_BLACK       0
+#define COLOR_INDEX_RED         1
+#define COLOR_INDEX_GREEN       2
+#define COLOR_INDEX_YELLOW      3
+#define COLOR_INDEX_BLUE        4
+#define COLOR_INDEX_MAGENTA     5
+#define COLOR_INDEX_CYAN        6
+#define COLOR_INDEX_WHITE       7
+
+#define COLOR_INDEX_FG_WHITE    (COLOR_INDEX_FG + COLOR_INDEX_WHITE)
+
+typedef struct
+{
+    ColorState  cs;
+    ColorState  csMask;
+    const char *pAnsi;
+    size_t      nAnsi;
+    const UTF8 *pUTF;
+    size_t      nUTF;
+    const UTF8 *pEscape;
+    size_t      nEscape;
+} MUX_COLOR_SET;
+
+extern const MUX_COLOR_SET aColors[];
+
 UTF8 *convert_color(const UTF8 *pString, bool bNoBleed = false);
 UTF8 *strip_color(const UTF8 *pString, size_t *pnLength = 0, size_t *pnPoints = 0);
 UTF8 *munge_space(const UTF8 *);

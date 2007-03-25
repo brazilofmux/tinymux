@@ -953,7 +953,7 @@ static void tcache_finish(void)
     tcache_count = 0;
 }
 
-const UTF8 *ColorTable[256] =
+const unsigned int ColorTable[256] =
 {
     0, 0, 0, 0, 0, 0, 0, 0,  0, 0, 0, 0, 0, 0, 0, 0,      // 0x00-0x0F
     0, 0, 0, 0, 0, 0, 0, 0,  0, 0, 0, 0, 0, 0, 0, 0,      // 0x10-0x1F
@@ -963,12 +963,12 @@ const UTF8 *ColorTable[256] =
     // 0x40-0x47
     0,
     0,
-    (UTF8 *)COLOR_BG_BLUE,
-    (UTF8 *)COLOR_BG_CYAN,
+    COLOR_INDEX_BG + COLOR_INDEX_BLUE,
+    COLOR_INDEX_BG + COLOR_INDEX_CYAN,
     0,
     0,
     0,
-    (UTF8 *)COLOR_BG_GREEN,
+    COLOR_INDEX_BG + COLOR_INDEX_GREEN,
 
     // 0x48-0x4F
     0,
@@ -976,7 +976,7 @@ const UTF8 *ColorTable[256] =
     0,
     0,
     0,
-    (UTF8 *)COLOR_BG_MAGENTA,
+    COLOR_INDEX_BG + COLOR_INDEX_MAGENTA,
     0,
     0,
 
@@ -984,17 +984,17 @@ const UTF8 *ColorTable[256] =
     //
     0,
     0,
-    (UTF8 *)COLOR_BG_RED,
+    COLOR_INDEX_BG + COLOR_INDEX_RED,
     0,
     0,
     0,
     0,
-    (UTF8 *)COLOR_BG_WHITE,
+    COLOR_INDEX_BG + COLOR_INDEX_WHITE,
     
     // 0x58-0x5F
     //
-    (UTF8 *)COLOR_BG_BLACK,
-    (UTF8 *)COLOR_BG_YELLOW,
+    COLOR_INDEX_BG + COLOR_INDEX_BLACK,
+    COLOR_INDEX_BG + COLOR_INDEX_YELLOW,
     0,
     0,
     0,
@@ -1005,39 +1005,39 @@ const UTF8 *ColorTable[256] =
     // 0x60-0x67
     0,
     0,
-    (UTF8 *)COLOR_FG_BLUE,
-    (UTF8 *)COLOR_FG_CYAN,
+    COLOR_INDEX_FG + COLOR_INDEX_BLUE,
+    COLOR_INDEX_FG + COLOR_INDEX_CYAN,
     0,
     0,
-    (UTF8 *)COLOR_BLINK,
-    (UTF8 *)COLOR_FG_GREEN,
+    COLOR_INDEX_BLINK,
+    COLOR_INDEX_FG + COLOR_INDEX_GREEN,
 
     // 0x68-0x6F
     //
-    (UTF8 *)COLOR_INTENSE,
-    (UTF8 *)COLOR_INVERSE,
+    COLOR_INDEX_INTENSE,
+    COLOR_INDEX_INVERSE,
     0,
     0,
     0,
-    (UTF8 *)COLOR_FG_MAGENTA,
-    (UTF8 *)COLOR_RESET,
+    COLOR_INDEX_FG + COLOR_INDEX_MAGENTA,
+    COLOR_INDEX_RESET,
     0,
 
     // 0x70-0x77
     //
     0,
     0,
-    (UTF8 *)COLOR_FG_RED,
+    COLOR_INDEX_FG + COLOR_INDEX_RED,
     0,
     0,
-    (UTF8 *)COLOR_UNDERLINE,
+    COLOR_INDEX_UNDERLINE,
     0,
-    (UTF8 *)COLOR_FG_WHITE,
+    COLOR_INDEX_FG + COLOR_INDEX_WHITE,
 
     // 0x78-0x7F
     //
-    (UTF8 *)COLOR_FG_BLACK,
-    (UTF8 *)COLOR_FG_YELLOW,
+    COLOR_INDEX_FG + COLOR_INDEX_BLACK,
+    COLOR_INDEX_FG + COLOR_INDEX_YELLOW,
     0,
     0,
     0,
@@ -1664,12 +1664,12 @@ void mux_exec( UTF8 *pdstr, UTF8 *buff, UTF8 **bufc, dbref executor,
                         //
                         // Color
                         //
-                        const UTF8 *pColor = ColorTable[(unsigned char)pdstr[1]];
-                        if (pColor)
+                        unsigned int iColor = ColorTable[pdstr[1]];
+                        if (iColor)
                         {
                             pdstr++;
                             ansi = true;
-                            safe_str(pColor, buff, bufc);
+                            safe_str(aColors[iColor].pUTF, buff, bufc);
                             nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
                         }
                         else if (pdstr[1] && nBufferAvailable)
