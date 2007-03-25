@@ -4261,6 +4261,7 @@ int mux_stricmp(const UTF8 *a, const UTF8 *b)
         a++;
         b++;
     }
+
     int c1 = mux_tolower_ascii(*a);
     int c2 = mux_tolower_ascii(*b);
     if (c1 < c2)
@@ -4307,9 +4308,9 @@ int mux_memicmp(const void *p1_arg, const void *p2_arg, size_t n)
 }
 
 
-// mux_strlwr_utf8 - Convert string to all lower case.
+// mux_strlwr - Convert string to all lower case.
 //
-UTF8 *mux_strlwr_utf8(const UTF8 *a, size_t &n)
+UTF8 *mux_strlwr(const UTF8 *a, size_t &n)
 {
     static UTF8 Buffer[LBUF_SIZE];
 
@@ -4361,17 +4362,6 @@ UTF8 *mux_strlwr_utf8(const UTF8 *a, size_t &n)
     }
     Buffer[n] = '\0';
     return Buffer;
-}
-
-// mux_strlwr - Convert string to all lower case.
-//
-void mux_strlwr(UTF8 *a)
-{
-    while (*a)
-    {
-        *a = mux_tolower_ascii(*a);
-        a++;
-    }
 }
 
 // mux_strupr - Convert string to all upper case.

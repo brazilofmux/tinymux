@@ -968,15 +968,13 @@ void do_destroy(dbref executor, dbref caller, dbref enactor, int eval, int key, 
         return;
     }
 
-    UTF8 *NameOfType = alloc_sbuf("do_destroy.NameOfType");
-    mux_strncpy(NameOfType, object_types[Typeof(thing)].name, SBUF_SIZE-1);
-    mux_strlwr(NameOfType);
+    size_t nCased;
+    UTF8  *pCased = mux_strlwr(object_types[Typeof(thing)].name, nCased);
     if (Going(thing))
     {
         if (!mudconf.destroy_going_now)
         {
-            notify_quiet(executor, tprintf("No sense beating a dead %s.", NameOfType));
-            free_sbuf(NameOfType);
+            notify_quiet(executor, tprintf("No sense beating a dead %s.", pCased));
             return;
         }
         key |= DEST_INSTANT;
@@ -1015,12 +1013,11 @@ void do_destroy(dbref executor, dbref caller, dbref enactor, int eval, int key, 
         case TYPE_EXIT:
         case TYPE_THING:
             notify(executor, tprintf("The %s shakes and begins to crumble.",
-                NameOfType));
+                pCased));
             break;
 
         default:
             notify(executor, T("Weird object type cannot be destroyed."));
-            free_sbuf(NameOfType);
             return;
         }
 
@@ -1033,7 +1030,6 @@ void do_destroy(dbref executor, dbref caller, dbref enactor, int eval, int key, 
                 Moniker(thing), thing));
         }
     }
-    free_sbuf(NameOfType);
 
     // Imperative Destruction emits.
     //

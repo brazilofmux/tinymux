@@ -531,10 +531,12 @@ FUNCTION(fun_textfile)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    mux_strlwr(fargs[0]);
+    size_t nCased;
+    UTF8  *pCased = mux_strlwr(fargs[0], nCased);
 
-    CMDENT_ONE_ARG *cmdp = (CMDENT_ONE_ARG *)hashfindLEN(fargs[0],
-        strlen((char *)fargs[0]), &mudstate.command_htab);
+    CMDENT_ONE_ARG *cmdp = (CMDENT_ONE_ARG *)hashfindLEN(pCased, nCased,
+        &mudstate.command_htab);
+
     if (  !cmdp
        || cmdp->handler != do_help)
     {
@@ -542,7 +544,7 @@ FUNCTION(fun_textfile)
         return;
     }
 
-    if (check_command(executor, fargs[0], buff, bufc))
+    if (check_command(executor, pCased, buff, bufc))
     {
         return;
     }

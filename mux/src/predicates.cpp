@@ -955,11 +955,12 @@ void do_listcommands(dbref player, dbref caller, dbref enactor, int eval,
 
     // Let's make this case insensitive...
     //
-    mux_strlwr(name);
+    size_t nCased;
+    UTF8  *pCased = mux_strlwr(name, nCased);
 
-    if (*name)
+    if (*pCased)
     {
-        old = (CMDENT *)hashfindLEN(name, strlen((char *)name), &mudstate.command_htab);
+        old = (CMDENT *)hashfindLEN(pCased, nCased, &mudstate.command_htab);
 
         if (  old
            && (old->callseq & CS_ADDED))
@@ -980,7 +981,7 @@ void do_listcommands(dbref player, dbref caller, dbref enactor, int eval,
         }
         else
         {
-            notify(player, tprintf("%s not found in command table.",name));
+            notify(player, tprintf("%s not found in command table.", pCased));
         }
         return;
     }
@@ -1064,17 +1065,17 @@ void do_delcommand
 
     // Let's make this case insensitive...
     //
-    mux_strlwr(name);
+    size_t nCased;
+    UTF8  *pCased = mux_strlwr(name, nCased);
 
     CMDENT *old, *cmd;
     ADDENT *prev = NULL, *nextp;
-    size_t nName = strlen((char *)name);
-    old = (CMDENT *)hashfindLEN(name, nName, &mudstate.command_htab);
+    old = (CMDENT *)hashfindLEN(pCased, nCased, &mudstate.command_htab);
 
     if (  old
        && (old->callseq & CS_ADDED))
     {
-        UTF8 *p__Name = tprintf("__%s", name);
+        UTF8 *p__Name = tprintf("__%s", pCased);
         size_t n__Name = strlen((char *)p__Name);
 
         if (command[0] == '\0')
@@ -1089,15 +1090,15 @@ void do_delcommand
                 MEMFREE(prev);
                 prev = NULL;
             }
-            hashdeleteLEN(name, nName, &mudstate.command_htab);
+            hashdeleteLEN(pCased, nCased, &mudstate.command_htab);
             cmd = (CMDENT *)hashfindLEN(p__Name, n__Name, &mudstate.command_htab);
             if (cmd)
             {
                 hashaddLEN(cmd->cmdname, strlen((char *)cmd->cmdname), cmd,
                     &mudstate.command_htab);
-                if (strcmp((char *)name, (char *)cmd->cmdname) != 0)
+                if (strcmp((char *)pCased, (char *)cmd->cmdname) != 0)
                 {
-                    hashaddLEN(name, nName, cmd, &mudstate.command_htab);
+                    hashaddLEN(pCased, nCased, cmd, &mudstate.command_htab);
                 }
 
                 hashdeleteLEN(p__Name, n__Name, &mudstate.command_htab);
@@ -1131,16 +1132,16 @@ void do_delcommand
                     {
                         if (!nextp->next)
                         {
-                            hashdeleteLEN(name, nName, &mudstate.command_htab);
+                            hashdeleteLEN(pCased, nCased, &mudstate.command_htab);
                             cmd = (CMDENT *)hashfindLEN(p__Name, n__Name,
                                 &mudstate.command_htab);
                             if (cmd)
                             {
                                 hashaddLEN(cmd->cmdname, strlen((char *)cmd->cmdname),
                                     cmd, &mudstate.command_htab);
-                                if (strcmp((char *)name, (char *)cmd->cmdname) != 0)
+                                if (strcmp((char *)pCased, (char *)cmd->cmdname) != 0)
                                 {
-                                    hashaddLEN(name, nName, cmd,
+                                    hashaddLEN(pCased, nCased, cmd,
                                         &mudstate.command_htab);
                                 }
 
