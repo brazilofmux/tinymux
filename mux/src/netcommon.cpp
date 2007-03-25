@@ -1596,7 +1596,7 @@ static const UTF8 *trimmed_name(dbref player, size_t *pvw)
                                            );
     nName = PadField( cbuff,
                       MBUF_SIZE-1,
-                      nName.m_column <= 12 ? 13 : nName.m_column + 1,
+                      nName.m_column <= 13 ? 14 : nName.m_column + 1,
                       nName);
     *pvw = nName.m_column;
     return cbuff;
