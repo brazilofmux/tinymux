@@ -4257,9 +4257,9 @@ size_t TruncateToBuffer
                 {
                     memcpy(pBuffer + nOutput, pTransition, nTransition);
                     csCurrent = csNext;
-                    bChange = false;
+                    nOutput += nTransition;
                 }
-                nOutput += nTransition;
+                bChange = false;
 
                 for (size_t j = 0; j < nPoint; j++)
                 {
