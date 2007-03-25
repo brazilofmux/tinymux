@@ -88,7 +88,7 @@ static UTF8 *parse_to_cleanup( int eval, int first, UTF8 *cstr, UTF8 *rstr,
 // 1 is 0x20 ' '  delim overridable (only done by parse_to, not parse_to_lite)
 // 2 is 0x5B '['  delim overridable
 // 3 is 0x28 '('  delim overridable
-// 4 is 0x25 '%', 0x5C '\\', or 0x1B ESC not overridable.
+// 4 is 0x25 '%' or 0x5C '\\' not overridable.
 // 5 is 0x29 ')' or 0x5D ']'  not overridable.
 // 6 is 0x7B '{' not overridable.
 // 7 is 0x00 '\0' not overridable.
@@ -100,7 +100,7 @@ static UTF8 *parse_to_cleanup( int eval, int first, UTF8 *cstr, UTF8 *rstr,
 static int isSpecial_L3[256] =
 {
     7, 0, 0, 0, 0, 0, 0, 0,  0, 0, 0, 0, 0, 0, 0, 0, // 0x00-0x0F
-    0, 0, 0, 0, 0, 0, 0, 0,  0, 0, 0, 4, 0, 0, 0, 0, // 0x10-0x1F
+    0, 0, 0, 0, 0, 0, 0, 0,  0, 0, 0, 0, 0, 0, 0, 0, // 0x10-0x1F
     0, 0, 0, 0, 0, 4, 0, 0,  3, 5, 0, 0, 0, 0, 0, 0, // 0x20-0x2F
     0, 0, 0, 0, 0, 0, 0, 0,  0, 0, 0, 0, 0, 0, 0, 0, // 0x30-0x3F
     0, 0, 0, 0, 0, 0, 0, 0,  0, 0, 0, 0, 0, 0, 0, 0, // 0x40-0x4F
@@ -120,7 +120,7 @@ static int isSpecial_L3[256] =
 static const char isSpecial_L4[256] =
 {
     4, 0, 0, 0, 0, 0, 0, 0,  0, 0, 0, 0, 0, 0, 0, 0, // 0x00-0x0F
-    0, 0, 0, 0, 0, 0, 0, 0,  0, 0, 0, 1, 0, 0, 0, 0, // 0x10-0x1F
+    0, 0, 0, 0, 0, 0, 0, 0,  0, 0, 0, 0, 0, 0, 0, 0, // 0x10-0x1F
     0, 0, 0, 0, 0, 1, 0, 0,  0, 0, 0, 0, 0, 0, 0, 0, // 0x20-0x2F
     0, 0, 0, 0, 0, 0, 0, 0,  0, 0, 0, 0, 0, 0, 0, 0, // 0x30-0x3F
     0, 0, 0, 0, 0, 0, 0, 0,  0, 0, 0, 0, 0, 0, 0, 0, // 0x40-0x4F
@@ -160,7 +160,7 @@ const signed char mux_RegisterSet[256] =
     -1,-1,-1,-1,-1,-1,-1,-1, -1,-1,-1,-1,-1,-1,-1,-1  // 0xF0-0xFF
 };
 
-// Stephen: Some silly compilers don't handle aliased pointers well. For these
+// Perhaps some compilers don't handle aliased pointers well. For these
 // compilers, we can't change this to just '*zstr++ = *cstr++'. However all
 // up-to-date compilers that I know about handle this correctly.
 //
@@ -244,7 +244,7 @@ TryAgain:
             // 1 is 0x20 ' '  delim overridable
             // 2 is 0x5B '['  delim overridable
             // 3 is 0x28 '('  delim overridable
-            // 4 is 0x25 '%', 0x5C '\\', or 0x1B ESC not overridable.
+            // 4 is 0x25 '%' or 0x5C '\\' not overridable.
             //
             if (iCode <= 2)
             {
@@ -285,7 +285,7 @@ TryAgain:
             else
             {
                 // 3 is 0x28 '('  delim overridable
-                // 4 is 0x25 '%', 0x5C '\\', or 0x1B ESC not overridable.
+                // 4 is 0x25 '%' or 0x5C '\\' not overridable.
                 //
                 if (iCode == 3)
                 {
@@ -298,7 +298,7 @@ TryAgain:
                 }
                 else
                 {
-                    // %, \, and ESC escapes.
+                    // % and \ escapes.
                     //
                     first = false;
                     NEXTCHAR
@@ -380,7 +380,7 @@ TryAgain:
 
                         if (iCodeL4 == 1)
                         {
-                            // %, \, and ESC escapes.
+                            // % and \ escapes.
                             //
                             if (cstr[1])
                             {
@@ -1058,7 +1058,7 @@ const unsigned int ColorTable[256] =
 static bool isSpecial_L1[256] =
 {
     1, 0, 0, 0, 0, 0, 0, 0,  0, 0, 0, 0, 0, 0, 0, 0, // 0x00-0x0F
-    0, 0, 0, 0, 0, 0, 0, 0,  0, 0, 0, 1, 0, 0, 0, 0, // 0x10-0x1F
+    0, 0, 0, 0, 0, 0, 0, 0,  0, 0, 0, 0, 0, 0, 0, 0, // 0x10-0x1F
     1, 0, 0, 0, 0, 1, 0, 0,  1, 0, 0, 0, 0, 0, 0, 0, // 0x20-0x2F
     0, 0, 0, 0, 0, 0, 0, 0,  0, 0, 0, 0, 0, 0, 0, 0, // 0x30-0x3F
     0, 0, 0, 0, 0, 0, 0, 0,  0, 0, 0, 0, 0, 0, 0, 0, // 0x40-0x4F
@@ -2144,7 +2144,7 @@ void mux_exec( UTF8 *pdstr, UTF8 *buff, UTF8 **bufc, dbref executor,
                 pdstr--;
             }
         }
-        else if (*pdstr == '\\')
+        else  // if (*pdstr == '\\')
         {
             // *pdstr must be \.
             //
@@ -2152,30 +2152,6 @@ void mux_exec( UTF8 *pdstr, UTF8 *buff, UTF8 **bufc, dbref executor,
             // processing.
             //
             at_space = 0;
-            pdstr++;
-            if (*pdstr)
-            {
-                if (nBufferAvailable)
-                {
-                    *(*bufc)++ = *pdstr;
-                    nBufferAvailable--;
-                }
-            }
-            else
-            {
-                pdstr--;
-            }
-        }
-        else
-        {
-            // *pdstr must be ESC.
-            //
-            at_space = 0;
-            if (nBufferAvailable)
-            {
-                *(*bufc)++ = *pdstr;
-                nBufferAvailable--;
-            }
             pdstr++;
             if (*pdstr)
             {
