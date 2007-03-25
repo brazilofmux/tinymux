@@ -41,7 +41,7 @@ extern const UTF8 *latin1_utf8[256];
 #define mux_isdigit(x) (mux_isdigit[(unsigned char)(x)])
 #define mux_isxdigit(x)(mux_isxdigit[(unsigned char)(x)])
 #define mux_isazAZ(x)  (mux_isazAZ[(unsigned char)(x)])
-#define mux_isalpha(x) (mux_isalpha[(unsigned char)(x)])
+#define mux_isalpha(x) (mux_isazAZ[(unsigned char)(x)])
 #define mux_isalnum(x) (mux_isalnum[(unsigned char)(x)])
 #define mux_islower_ascii(x) (mux_islower_ascii[(unsigned char)(x)])
 #define mux_isupper_ascii(x) (mux_isupper_ascii[(unsigned char)(x)])
