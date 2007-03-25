@@ -799,22 +799,18 @@ static CF_HAND(cf_alias)
     if (orig)
     {
         size_t nCased;
-        UTF8 *pCased = mux_strlwr_utf8(orig, nCased);
+        UTF8 *pCased = mux_strupr(orig, nCased);
         void *cp = hashfindLEN(pCased, nCased, (CHashTable *) vp);
-        if (cp == NULL)
+        if (NULL == cp)
         {
-            pCased = mux_strupr(orig, nCased);
-            cp = hashfindLEN(pCased, nCased, (CHashTable *) vp);
-            if (cp == NULL)
-            {
-                cf_log_notfound(player, cmd, T("Entry"), orig);
-                return -1;
-            }
+            cf_log_notfound(player, cmd, T("Entry"), orig);
+            return -1;
         }
 
-        if (!hashfindLEN(alias, strlen((char *)alias), (CHashTable *) vp))
+        pCased = mux_strupr(alias, nCased);
+        if (!hashfindLEN(pCased, nCased, (CHashTable *) vp))
         {
-            hashaddLEN(alias, strlen((char *)alias), cp, (CHashTable *) vp);
+            hashaddLEN(pCased, nCased, cp, (CHashTable *) vp);
         }
         return 0;
     }
