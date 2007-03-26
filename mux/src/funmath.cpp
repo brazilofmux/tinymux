@@ -1813,7 +1813,7 @@ FUNCTION(fun_asin)
 #ifndef HAVE_IEEE_FP_SNAN
     if ((val < -1.0) || (val > 1.0))
     {
-        safe_str("Ind", buff, bufc);
+        safe_str(T("Ind"), buff, bufc);
         return;
     }
 #endif
@@ -1841,7 +1841,7 @@ FUNCTION(fun_acos)
 #ifndef HAVE_IEEE_FP_SNAN
     if ((val < -1.0) || (val > 1.0))
     {
-        safe_str("Ind", buff, bufc);
+        safe_str(T("Ind"), buff, bufc);
         return;
     }
 #endif
@@ -1914,7 +1914,7 @@ FUNCTION(fun_power)
 #ifndef HAVE_IEEE_FP_SNAN
     if (val1 < 0.0)
     {
-        safe_str("Ind", buff, bufc);
+        safe_str(T("Ind"), buff, bufc);
     }
     else
     {
@@ -1948,7 +1948,7 @@ FUNCTION(fun_fmod)
 #ifndef HAVE_IEEE_FP_SNAN
     if (val1 == 0.0)
     {
-        safe_str("Ind", buff, bufc);
+        safe_str(T("Ind"), buff, bufc);
     }
     else
     {
@@ -1981,11 +1981,11 @@ FUNCTION(fun_ln)
 #ifndef HAVE_IEEE_FP_SNAN
     if (val < 0.0)
     {
-        safe_str("Ind", buff, bufc);
+        safe_str(T("Ind"), buff, bufc);
     }
     else if (val == 0.0)
     {
-        safe_str("-Inf", buff, bufc);
+        safe_str(T("-Inf"), buff, bufc);
     }
     else
     {
@@ -2017,11 +2017,11 @@ FUNCTION(fun_log)
 #ifndef HAVE_IEEE_FP_SNAN
     if (val < 0.0)
     {
-        safe_str("Ind", buff, bufc);
+        safe_str(T("Ind"), buff, bufc);
     }
     else if (val == 0.0)
     {
-        safe_str("-Inf", buff, bufc);
+        safe_str(T("-Inf"), buff, bufc);
     }
     else
     {
@@ -2053,7 +2053,7 @@ FUNCTION(fun_sqrt)
 #ifndef HAVE_IEEE_FP_SNAN
     if (val < 0.0)
     {
-        safe_str("Ind", buff, bufc);
+        safe_str(T("Ind"), buff, bufc);
     }
     else if (val == 0.0)
     {

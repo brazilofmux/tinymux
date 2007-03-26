@@ -476,7 +476,7 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
                             Log.tinyprintf("Renaming conflicting user attribute, %s, to FIRAN_%s." ENDLINE, pName, pName);
                             UTF8 *p = alloc_lbuf("db_read");
                             UTF8 *q = p;
-                            safe_str("FIRAN_", p, &q);
+                            safe_str(T("FIRAN_"), p, &q);
                             safe_str(pName, p, &q);
                             *q = '\0';
 
