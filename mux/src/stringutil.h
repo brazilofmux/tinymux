@@ -425,7 +425,7 @@ typedef struct
 
 extern const MUX_COLOR_SET aColors[];
 
-UTF8 *convert_color(const UTF8 *pString, bool bNoBleed = false);
+UTF8 *convert_color(const UTF8 *pString, bool bNoBleed);
 UTF8 *strip_color(const UTF8 *pString, size_t *pnLength = 0, size_t *pnPoints = 0);
 UTF8 *munge_space(const UTF8 *);
 UTF8 *trim_spaces(const UTF8 *);
@@ -805,7 +805,11 @@ public:
         UTF8 *pBuffer,
         mux_cursor iStart = CursorMin,
         mux_cursor iEnd   = CursorMax,
-        size_t nBytesMax = (LBUF_SIZE-1),
+        size_t nBytesMax = (LBUF_SIZE-1)
+    ) const;
+    UTF8 *export_TextConverted
+    (
+        bool bColor   = true,
         bool bNoBleed = false
     ) const;
     LBUF_OFFSET export_TextPlain

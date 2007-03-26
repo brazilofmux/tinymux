@@ -513,20 +513,7 @@ void queue_string(DESC *d, const UTF8 *s)
 
 void queue_string(DESC *d, const mux_string &s)
 {
-    static UTF8 Buffer[LBUF_SIZE];
-    const UTF8 *p;
-
-    if (  (d->flags & DS_CONNECTED)
-       && Ansi(d->player))
-    {
-        s.export_TextAnsi(Buffer, CursorMin, CursorMax, LBUF_SIZE-1, NoBleed(d->player));
-        p = convert_color(Buffer);
-    }
-    else
-    {
-        s.export_TextPlain(Buffer);
-        p = Buffer;
-    }
+    const UTF8 *p = s.export_TextConverted((d->flags & DS_CONNECTED) && Ansi(d->player), NoBleed(d->player));
 
     const char *q;
     if (CHARSET_UTF8 == d->encoding)
