@@ -107,6 +107,7 @@ void init_logout_cmdtab(void);
 void desc_reload(dbref);
 void make_portlist(dbref, dbref, UTF8 *, UTF8 **);
 UTF8 *MakeCanonicalDoing(UTF8 *pDoing, size_t *pnValidDoing, bool *pbValidDoing);
+LBUF_OFFSET trimmed_name(dbref player, UTF8 cbuff[MBUF_SIZE], LBUF_OFFSET nMin, LBUF_OFFSET nMax, LBUF_OFFSET nPad);
 
 /* From cque.cpp */
 int  nfy_que(dbref, int, int, int);

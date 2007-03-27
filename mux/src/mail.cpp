@@ -1402,14 +1402,6 @@ static UTF8 *status_string(struct mail *mp)
     return tbuf1;
 }
 
-
-static void GetFromField(dbref target, UTF8 szFrom[MBUF_SIZE])
-{
-    mux_field fldPos = StripTabsAndTruncate( Moniker(target), szFrom,
-                                             MBUF_SIZE-1, 16);
-    PadField(szFrom, MBUF_SIZE-1, 16, fldPos);
-}
-
 static void do_mail_read(dbref player, UTF8 *msglist)
 {
     struct mail_selector ms;
@@ -1445,7 +1437,7 @@ static void do_mail_read(dbref player, UTF8 *msglist)
                 names = make_namelist(player, mp->tolist);
 
                 UTF8 szFromName[MBUF_SIZE];
-                GetFromField(mp->from, szFromName);
+                trimmed_name(mp->from, szFromName, 16, 16, 0);
 
                 UTF8 szSubjectBuffer[MBUF_SIZE];
                 StripTabsAndTruncate(mp->subject, szSubjectBuffer, MBUF_SIZE-1, 65);
@@ -1514,11 +1506,13 @@ static void do_mail_review(dbref player, UTF8 *name, UTF8 *msglist)
     struct mail_selector ms;
     int i = 0, j = 0;
     UTF8 szSubjectBuffer[MBUF_SIZE];
+    UTF8 szFromName[MBUF_SIZE];
 
     if (  !msglist
        || !*msglist)
     {
-        notify(player, tprintf("--------------------   MAIL: %-25s   ------------------", Moniker(target)));
+        trimmed_name(target, szFromName, 25, 25, 0);
+        notify(player, tprintf("--------------------   MAIL: %s   ------------------", szFromName));
         MailList ml(target);
         for (mp = ml.FirstItem(); !ml.IsEnd(); mp = ml.NextItem())
         {
@@ -1526,8 +1520,7 @@ static void do_mail_review(dbref player, UTF8 *name, UTF8 *msglist)
             {
                 i++;
 
-                UTF8 szFromName[MBUF_SIZE];
-                GetFromField(mp->from, szFromName);
+                trimmed_name(mp->from, szFromName, 16, 16, 0);
 
                 StripTabsAndTruncate(mp->subject, szSubjectBuffer, MBUF_SIZE-1, 25);
                 size_t nSize = MessageFetchSize(mp->number);
@@ -1559,7 +1552,7 @@ static void do_mail_review(dbref player, UTF8 *name, UTF8 *msglist)
                     const UTF8 *str = MessageFetch(mp->number);
 
                     UTF8 szFromName[MBUF_SIZE];
-                    GetFromField(mp->from, szFromName);
+                    trimmed_name(mp->from, szFromName, 16, 16, 0);
 
                     StripTabsAndTruncate(mp->subject, szSubjectBuffer, MBUF_SIZE-1, 65);
 
@@ -1660,7 +1653,7 @@ static void do_mail_list(dbref player, UTF8 *msglist, bool sub)
                 size_t nSize = MessageFetchSize(mp->number);
 
                 UTF8 szFromName[MBUF_SIZE];
-                GetFromField(mp->from, szFromName);
+                trimmed_name(mp->from, szFromName, 16, 16, 0);
 
                 if (sub)
                 {
@@ -4148,7 +4141,7 @@ static void do_mail_proof(dbref player)
                           MBUF_SIZE-1, 35);
 
     UTF8 szFromName[MBUF_SIZE];
-    GetFromField(player, szFromName);
+    trimmed_name(player, szFromName, 16, 16, 0);
 
     notify(player, (UTF8 *)DASH_LINE);
     notify(player, tprintf("From:  %s  Subject: %s\nTo: %s",

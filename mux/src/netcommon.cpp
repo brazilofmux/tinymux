@@ -1571,22 +1571,19 @@ void check_events(void)
 }
 
 #define MAX_TRIMMED_NAME_LENGTH 16
-static const UTF8 *trimmed_name(dbref player, size_t *pvw)
+LBUF_OFFSET trimmed_name(dbref player, UTF8 cbuff[MBUF_SIZE], LBUF_OFFSET nMin, LBUF_OFFSET nMax, LBUF_OFFSET nPad)
 {
-    static UTF8 cbuff[MBUF_SIZE];
-
     mux_field nName = StripTabsAndTruncate(
                                              Moniker(player),
                                              cbuff,
                                              MBUF_SIZE-1,
-                                             MAX_TRIMMED_NAME_LENGTH
+                                             nMax
                                            );
     nName = PadField( cbuff,
                       MBUF_SIZE-1,
-                      nName.m_column <= 13 ? 14 : nName.m_column + 1,
+                      nName.m_column <= nMin ? nMin + nPad : nName.m_column + nPad,
                       nName);
-    *pvw = nName.m_column;
-    return cbuff;
+    return nName.m_column;
 }
 
 static UTF8 *trimmed_site(UTF8 *szName)
@@ -1785,11 +1782,12 @@ static void dump_users(DESC *e, UTF8 *match, int key)
             CLinearTimeDelta ltdConnected = ltaNow - d->connected_at;
             CLinearTimeDelta ltdLastTime  = ltaNow - d->last_time;
 
-            const UTF8 *pNameField = T("<Unconnected>");
+            static UTF8 pNameField[MBUF_SIZE];
+            mux_strncpy(pNameField, T("<Unconnected>"), MBUF_SIZE-1);
             size_t vwNameField = strlen((char *)pNameField);
             if (d->flags & DS_CONNECTED)
             {
-                pNameField = trimmed_name(d->player, &vwNameField);
+                vwNameField = trimmed_name(d->player, pNameField, 13, MAX_TRIMMED_NAME_LENGTH, 1);
             }
 
             // The width size allocated to the 'On For' field.
