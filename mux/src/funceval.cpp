@@ -1071,7 +1071,7 @@ FUNCTION(fun_squish)
 
     sStr->compress(sep.str);
     size_t nMax = buff + (LBUF_SIZE-1) - *bufc;
-    *bufc += sStr->export_TextAnsi(*bufc, CursorMin, CursorMax, nMax);
+    *bufc += sStr->export_TextColor(*bufc, CursorMin, CursorMax, nMax);
 
     delete sStr;
 }
@@ -1223,7 +1223,7 @@ FUNCTION(fun_columns)
         iStart = iWordStart;
         sStr->cursor_from_point(iEnd, (LBUF_OFFSET)(iWordStart.m_point + nLen));
         nBufferAvailable = LBUF_SIZE - (*bufc-buff) - 1;
-        *bufc += sStr->export_TextAnsi(*bufc, iStart, iEnd, nBufferAvailable);
+        *bufc += sStr->export_TextColor(*bufc, iStart, iEnd, nBufferAvailable);
 
         if (nColumns-1 <= iColumn)
         {
@@ -1689,7 +1689,7 @@ FUNCTION(fun_strtrunc)
         mux_cursor iEnd;
         sStr->cursor_from_point(iEnd, (LBUF_OFFSET)nLeft);
         size_t nMax = buff + (LBUF_SIZE-1) - *bufc;
-        *bufc += sStr->export_TextAnsi(*bufc, CursorMin, iEnd, nMax);
+        *bufc += sStr->export_TextColor(*bufc, CursorMin, iEnd, nMax);
     }
     else if (0 < nLen.m_point)
     {
@@ -2502,7 +2502,7 @@ FUNCTION(fun_elements)
             {
                 bFirst = false;
             }
-            words->export_WordAnsi(static_cast<LBUF_OFFSET>(cur), buff, bufc);
+            words->export_WordColor(static_cast<LBUF_OFFSET>(cur), buff, bufc);
         }
     } while (s);
 
@@ -2606,7 +2606,7 @@ FUNCTION(fun_scramble)
             sStr->delete_Chars(iStart, iEnd);
             nPoints--;
         }
-        *bufc += sOut->export_TextAnsi(*bufc, CursorMin, CursorMax, buff + (LBUF_SIZE-1) - *bufc);
+        *bufc += sOut->export_TextColor(*bufc, CursorMin, CursorMax, buff + (LBUF_SIZE-1) - *bufc);
         delete sOut;
     }
     else
@@ -2671,7 +2671,7 @@ FUNCTION(fun_shuffle)
         n--;
     }
     size_t nMax = buff + (LBUF_SIZE-1) - *bufc;
-    *bufc += sOut->export_TextAnsi(*bufc, CursorMin, CursorMax, nMax);
+    *bufc += sOut->export_TextColor(*bufc, CursorMin, CursorMax, nMax);
 
     delete words;
     delete sIn;
@@ -2722,7 +2722,7 @@ FUNCTION(fun_pickrand)
     if (0 < n)
     {
         LBUF_OFFSET w = static_cast<LBUF_OFFSET>(RandomINT32(0, n-1));
-        words->export_WordAnsi(w, buff, bufc);
+        words->export_WordColor(w, buff, bufc);
     }
     delete sStr;
     delete words;
@@ -2914,7 +2914,7 @@ FUNCTION(fun_last)
     }
 
     LBUF_OFFSET nWords = words->find_Words(sep.str);
-    words->export_WordAnsi(nWords-1, buff, bufc);
+    words->export_WordColor(nWords-1, buff, bufc);
 
     delete sStr;
     delete words;

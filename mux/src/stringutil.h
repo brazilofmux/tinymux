@@ -800,7 +800,7 @@ public:
     double export_Float(bool bStrict = true) const;
     INT64 export_I64(void) const;
     long export_Long(void) const;
-    LBUF_OFFSET export_TextAnsi
+    LBUF_OFFSET export_TextColor
     (
         UTF8 *pBuffer,
         mux_cursor iStart = CursorMin,
@@ -1067,7 +1067,7 @@ private:
 public:
 
     mux_words(const mux_string &sStr);
-    void export_WordAnsi(LBUF_OFFSET n, UTF8 *buff, UTF8 **bufc = NULL);
+    void export_WordColor(LBUF_OFFSET n, UTF8 *buff, UTF8 **bufc = NULL);
     LBUF_OFFSET find_Words(void);
     LBUF_OFFSET find_Words(const UTF8 *pDelim);
     void ignore_Word(LBUF_OFFSET n);

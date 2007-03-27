@@ -2194,7 +2194,7 @@ static FUNCTION(fun_mid)
     if (iCurStart < iCurEnd)
     {
         size_t nMax = buff + (LBUF_SIZE-1) - *bufc;
-        *bufc += sStr->export_TextAnsi(*bufc, iCurStart, iCurEnd, nMax);
+        *bufc += sStr->export_TextColor(*bufc, iCurStart, iCurEnd, nMax);
     }
 
     delete sStr;
@@ -2233,7 +2233,7 @@ static FUNCTION(fun_right)
     {
         sStr->cursor_from_point(iStart, (LBUF_OFFSET)(iEnd.m_point - nRight));
         size_t nMax = buff + (LBUF_SIZE-1) - *bufc;
-        *bufc += sStr->export_TextAnsi(*bufc, iStart, iEnd, nMax);
+        *bufc += sStr->export_TextColor(*bufc, iStart, iEnd, nMax);
     }
     else
     {
@@ -2944,7 +2944,7 @@ static FUNCTION(fun_extract)
             {
                 bFirst = false;
             }
-            words->export_WordAnsi(i, buff, bufc);
+            words->export_WordColor(i, buff, bufc);
         }
     }
 
@@ -3903,7 +3903,7 @@ static void do_itemfuns(UTF8 *buff, UTF8 **bufc, mux_string *sList, int iWord,
     if (iWord < 1)
     {
         size_t nMax = buff + (LBUF_SIZE-1) - *bufc;
-        *bufc += sList->export_TextAnsi(*bufc, CursorMin, CursorMax, nMax);
+        *bufc += sList->export_TextColor(*bufc, CursorMin, CursorMax, nMax);
         return;
     }
     iWord--;
@@ -3930,7 +3930,7 @@ static void do_itemfuns(UTF8 *buff, UTF8 **bufc, mux_string *sList, int iWord,
           || nWords < iWord))
     {
         size_t nMax = buff + (LBUF_SIZE-1) - *bufc;
-        *bufc += sList->export_TextAnsi(*bufc, CursorMin, CursorMax, nMax);
+        *bufc += sList->export_TextColor(*bufc, CursorMin, CursorMax, nMax);
         delete words;
         return;
     }
@@ -3948,7 +3948,7 @@ static void do_itemfuns(UTF8 *buff, UTF8 **bufc, mux_string *sList, int iWord,
         {
             bFirst = false;
         }
-        words->export_WordAnsi(i, buff, bufc);
+        words->export_WordColor(i, buff, bufc);
     }
 
     if (flag != IF_DELETE)
@@ -3965,13 +3965,13 @@ static void do_itemfuns(UTF8 *buff, UTF8 **bufc, mux_string *sList, int iWord,
         if (sWord)
         {
             size_t nMax = buff + (LBUF_SIZE-1) - *bufc;
-            *bufc += sWord->export_TextAnsi(*bufc, CursorMin, CursorMax, nMax);
+            *bufc += sWord->export_TextColor(*bufc, CursorMin, CursorMax, nMax);
         }
 
         if (flag == IF_INSERT)
         {
             print_sep(psep, buff, bufc);
-            words->export_WordAnsi(i, buff, bufc);
+            words->export_WordColor(i, buff, bufc);
         }
     }
 
@@ -3985,7 +3985,7 @@ static void do_itemfuns(UTF8 *buff, UTF8 **bufc, mux_string *sList, int iWord,
         {
             bFirst = false;
         }
-        words->export_WordAnsi(i, buff, bufc);
+        words->export_WordColor(i, buff, bufc);
     }
 
     delete words;
@@ -4128,7 +4128,7 @@ static FUNCTION(fun_remove)
             {
                 print_sep(&osep, buff, bufc);
             }
-            words->export_WordAnsi(i, buff, bufc);
+            words->export_WordColor(i, buff, bufc);
         }
     }
 
@@ -4199,7 +4199,7 @@ static FUNCTION(fun_secure)
     }
 
     size_t nMax = buff + (LBUF_SIZE-1) - *bufc;
-    *bufc += sStr->export_TextAnsi(*bufc, CursorMin, nLen, nMax);
+    *bufc += sStr->export_TextColor(*bufc, CursorMin, nLen, nMax);
 
     delete sTo;
     delete sStr;
@@ -4243,7 +4243,7 @@ static FUNCTION(fun_escape)
         sOut->set_Color(iOut++, csColor);
     }
     size_t nMax = buff + (LBUF_SIZE-1) - *bufc;
-    *bufc += sOut->export_TextAnsi(*bufc, CursorMin, CursorMax, nMax);
+    *bufc += sOut->export_TextColor(*bufc, CursorMin, CursorMax, nMax);
 
     delete sStr;
     delete sOut;
@@ -4689,7 +4689,7 @@ static FUNCTION(fun_delete)
     sStr->cursor_from_point(iEnd, static_cast<LBUF_OFFSET>(iStartCur.m_point + nDelete));
     sStr->delete_Chars(iStartCur, iEnd);
     size_t nMax = buff + (LBUF_SIZE-1) - *bufc;
-    *bufc += sStr->export_TextAnsi(*bufc, CursorMin, CursorMax, nMax);
+    *bufc += sStr->export_TextColor(*bufc, CursorMin, CursorMax, nMax);
 
     delete sStr;
 }
@@ -5138,7 +5138,7 @@ static FUNCTION(fun_lcstr)
     mux_string *sStr = new mux_string(fargs[0]);
     sStr->LowerCase();
     size_t nMax = buff + (LBUF_SIZE-1) - *bufc;
-    *bufc += sStr->export_TextAnsi(*bufc, CursorMin, CursorMax, nMax);
+    *bufc += sStr->export_TextColor(*bufc, CursorMin, CursorMax, nMax);
 
     delete sStr;
 }
@@ -5156,7 +5156,7 @@ static FUNCTION(fun_ucstr)
     mux_string *sStr = new mux_string(fargs[0]);
     sStr->UpperCase();
     size_t nMax = buff + (LBUF_SIZE-1) - *bufc;
-    *bufc += sStr->export_TextAnsi(*bufc, CursorMin, CursorMax, nMax);
+    *bufc += sStr->export_TextColor(*bufc, CursorMin, CursorMax, nMax);
 
     delete sStr;
 }
@@ -5174,7 +5174,7 @@ static FUNCTION(fun_capstr)
     mux_string *sStr = new mux_string(fargs[0]);
     sStr->UpperCaseFirst();
     size_t nMax = buff + (LBUF_SIZE-1) - *bufc;
-    *bufc += sStr->export_TextAnsi(*bufc, CursorMin, CursorMax, nMax);
+    *bufc += sStr->export_TextColor(*bufc, CursorMin, CursorMax, nMax);
 
     delete sStr;
 }
@@ -5481,7 +5481,7 @@ static FUNCTION(fun_reverse)
 
     sStr->reverse();
     size_t nMax = buff + (LBUF_SIZE-1) - *bufc;
-    *bufc += sStr->export_TextAnsi(*bufc, CursorMin, CursorMax, nMax);
+    *bufc += sStr->export_TextColor(*bufc, CursorMin, CursorMax, nMax);
 
     delete sStr;
 }
@@ -5537,7 +5537,7 @@ static FUNCTION(fun_revwords)
         {
             bFirst = false;
         }
-        words->export_WordAnsi(nWords-i-1, buff, bufc);
+        words->export_WordColor(nWords-i-1, buff, bufc);
     }
 
     delete sStr;
@@ -5590,7 +5590,7 @@ static FUNCTION(fun_after)
         // Yup, return what follows.
         //
         size_t nMax = buff + (LBUF_SIZE-1) - *bufc;
-        *bufc += sStr->export_TextAnsi(*bufc, i + nPat, CursorMax, nMax);
+        *bufc += sStr->export_TextColor(*bufc, i + nPat, CursorMax, nMax);
     }
 
     delete sStr;
@@ -5640,14 +5640,14 @@ static FUNCTION(fun_before)
         // Yup, return what follows.
         //
         size_t nMax = buff + (LBUF_SIZE-1) - *bufc;
-        *bufc += sStr->export_TextAnsi(*bufc, CursorMin, i, nMax);
+        *bufc += sStr->export_TextColor(*bufc, CursorMin, i, nMax);
     }
     else
     {
         // Ran off the end without finding it.
         //
         size_t nMax = buff + (LBUF_SIZE-1) - *bufc;
-        *bufc += sStr->export_TextAnsi(*bufc, CursorMin, CursorMax, nMax);
+        *bufc += sStr->export_TextColor(*bufc, CursorMin, CursorMax, nMax);
     }
 
     delete sStr;
@@ -5792,7 +5792,7 @@ static FUNCTION(fun_merge)
     }
 
     size_t nMax = buff + (LBUF_SIZE-1) - *bufc;
-    *bufc += sStrA->export_TextAnsi(*bufc, CursorMin, CursorMax, nMax);
+    *bufc += sStrA->export_TextColor(*bufc, CursorMin, CursorMax, nMax);
 
     delete sStrA;
     delete sStrB;
@@ -6745,7 +6745,7 @@ static FUNCTION(fun_edit)
 
     sStr->edit(*sFrom, *sTo);
     size_t nMax = buff + (LBUF_SIZE-1) - *bufc;
-    *bufc += sStr->export_TextAnsi(*bufc, CursorMin, CursorMax, nMax);
+    *bufc += sStr->export_TextColor(*bufc, CursorMin, CursorMax, nMax);
 
     delete sStr;
     delete sFrom;
@@ -8018,7 +8018,7 @@ static void centerjustcombo
             sStr->cursor_from_point(iEnd, nWidth);
         }
         size_t nMax = buff + (LBUF_SIZE-1) - *bufc;
-        *bufc += sStr->export_TextAnsi(*bufc, CursorMin, iEnd, nMax);
+        *bufc += sStr->export_TextColor(*bufc, CursorMin, iEnd, nMax);
         delete sStr;
         return;
     }
@@ -8058,7 +8058,7 @@ static void centerjustcombo
         mux_cursor iEnd;
         sPad->cursor_from_point(iEnd, nLeading-nPos);
         nMax = buff + (LBUF_SIZE-1) - *bufc;
-        *bufc += sPad->export_TextAnsi(*bufc, CursorMin, iEnd, nMax);
+        *bufc += sPad->export_TextColor(*bufc, CursorMin, iEnd, nMax);
         nPos += nPad;
     }
     nPos = nLeading;
@@ -8066,7 +8066,7 @@ static void centerjustcombo
     // Output string.
     //
     nMax = buff + (LBUF_SIZE-1) - *bufc;
-    *bufc += sStr->export_TextAnsi(*bufc, CursorMin, nStr, nMax);
+    *bufc += sStr->export_TextColor(*bufc, CursorMin, nStr, nMax);
     nPos += nStr.m_point;
 
     // Output first part of trailing padding.
@@ -8078,7 +8078,7 @@ static void centerjustcombo
         sPad->cursor_from_point(iStart, nPadPart);
         sPad->cursor_from_point(iEnd, nWidth-nPos);
         nMax = buff + (LBUF_SIZE-1) - *bufc;
-        *bufc += sPad->export_TextAnsi(*bufc, iStart, iEnd, nMax);
+        *bufc += sPad->export_TextColor(*bufc, iStart, iEnd, nMax);
         nPos += nPad-nPadPart;
     }
 
@@ -8089,7 +8089,7 @@ static void centerjustcombo
         mux_cursor iEnd;
         sPad->cursor_from_point(iEnd, nWidth-nPos);
         nMax = buff + (LBUF_SIZE-1) - *bufc;
-        *bufc += sPad->export_TextAnsi(*bufc, CursorMin, iEnd, nMax);
+        *bufc += sPad->export_TextColor(*bufc, CursorMin, iEnd, nMax);
         nPos += nPad;
     }
 
@@ -8323,7 +8323,7 @@ static FUNCTION(fun_trim)
     }
 
     size_t nMax = buff + (LBUF_SIZE-1) - *bufc;
-    *bufc += sStr->export_TextAnsi(*bufc, CursorMin, CursorMax, nMax);
+    *bufc += sStr->export_TextColor(*bufc, CursorMin, CursorMax, nMax);
     delete sStr;
 }
 
@@ -8695,7 +8695,7 @@ static FUNCTION(fun_wrap)
         nLength = wraplen(pPlain, static_cast<LBUF_OFFSET>(iPos == CursorMin ? nFirstWidth : nWidth), newline);
         iEnd = iPos + nLength;
 
-        sStr->export_TextAnsi(pColor, iPos, iEnd);
+        sStr->export_TextColor(pColor, iPos, iEnd);
 
         if (CursorMin != iPos)
         {
@@ -9896,7 +9896,7 @@ static FUNCTION(fun_tr)
     {
         sStr->transform(*sFrom, *sTo);
         size_t nMax = buff + (LBUF_SIZE-1) - *bufc;
-        *bufc += sStr->export_TextAnsi(*bufc, CursorMin, CursorMax, nMax);
+        *bufc += sStr->export_TextColor(*bufc, CursorMin, CursorMax, nMax);
     }
 
     delete sStr;

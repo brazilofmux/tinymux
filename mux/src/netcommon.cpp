@@ -133,7 +133,7 @@ void raw_notify_html(dbref player, const mux_string &sMsg)
     if (  mudstate.inpipe
        && player == mudstate.poutobj)
     {
-        mudstate.poutbufc += sMsg.export_TextAnsi( mudstate.poutbufc, CursorMin,
+        mudstate.poutbufc += sMsg.export_TextColor( mudstate.poutbufc, CursorMin,
                                 CursorMax, mudstate.poutnew + LBUF_SIZE - mudstate.poutbufc);
         return;
     }
@@ -193,7 +193,7 @@ void raw_notify(dbref player, const mux_string &sMsg)
     if (  mudstate.inpipe
        && player == mudstate.poutobj)
     {
-        mudstate.poutbufc += sMsg.export_TextAnsi( mudstate.poutbufc, CursorMin,
+        mudstate.poutbufc += sMsg.export_TextColor( mudstate.poutbufc, CursorMin,
                                 CursorMax, mudstate.poutnew + LBUF_SIZE - mudstate.poutbufc);
         safe_str(T("\r\n"), mudstate.poutnew, &mudstate.poutbufc);
         return;

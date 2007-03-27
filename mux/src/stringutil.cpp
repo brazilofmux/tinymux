@@ -5689,7 +5689,7 @@ long mux_string::export_Long(void) const
  * \return          Number of bytes copied.
  */
 
-LBUF_OFFSET mux_string::export_TextAnsi
+LBUF_OFFSET mux_string::export_TextColor
 (
     UTF8 *pBuffer,
     mux_cursor iStart,
@@ -6962,7 +6962,7 @@ mux_words::mux_words(const mux_string &sStr) : m_s(&sStr)
     m_nWords = 0;
 }
 
-void mux_words::export_WordAnsi(LBUF_OFFSET n, UTF8 *buff, UTF8 **bufc)
+void mux_words::export_WordColor(LBUF_OFFSET n, UTF8 *buff, UTF8 **bufc)
 {
     if (m_nWords <= n)
     {
@@ -6972,7 +6972,7 @@ void mux_words::export_WordAnsi(LBUF_OFFSET n, UTF8 *buff, UTF8 **bufc)
     mux_cursor iStart = m_aiWordBegins[n];
     mux_cursor iEnd = m_aiWordEnds[n];
     size_t nMax = buff + (LBUF_SIZE-1) - *bufc;
-    *bufc += m_s->export_TextAnsi(*bufc, iStart, iEnd, nMax);
+    *bufc += m_s->export_TextColor(*bufc, iStart, iEnd, nMax);
 }
 
 LBUF_OFFSET mux_words::find_Words(void)
