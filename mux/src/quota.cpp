@@ -134,24 +134,28 @@ static void mung_quotas(dbref player, int key, int value)
 static void show_quota(dbref player, dbref victim)
 {
     dbref aowner;
-    int aq, rq, aflags;
-    UTF8 *buff;
+    int aflags;
+    UTF8 *buff = alloc_lbuf("show_quota");
 
-    buff = atr_get("show_quota.140", victim, A_QUOTA, &aowner, &aflags);
-    aq = mux_atol(buff);
-    free_lbuf(buff);
-    buff = atr_get("show_quota.143", victim, A_RQUOTA, &aowner, &aflags);
-    rq = aq - mux_atol(buff);
-    free_lbuf(buff);
+    atr_get_str(buff, victim, A_QUOTA, &aowner, &aflags);
+    int aq = mux_atol(buff);
+    atr_get_str(buff, victim, A_RQUOTA, &aowner, &aflags);
+    int rq = aq - mux_atol(buff);
+
+    mux_field fldName = StripTabsAndTruncate(Name(victim), buff, LBUF_SIZE-1, 16);
+
     if (!Free_Quota(victim))
     {
-        buff = tprintf("%-16s Quota: %9d  Used: %9d", Name(victim), aq, rq);
+        mux_sprintf( buff + fldName.m_byte, LBUF_SIZE - fldName.m_byte,
+                    " Quota: %9d  Used: %9d", aq, rq);
     }
     else
     {
-        buff = tprintf("%-16s Quota: UNLIMITED  Used: %9d", Name(victim), rq);
+        mux_sprintf( buff + fldName.m_byte, LBUF_SIZE - fldName.m_byte,
+                     " Quota: UNLIMITED  Used: %9d", rq);
     }
     notify_quiet(player, buff);
+    free_lbuf(buff);
 }
 
 void do_quota
