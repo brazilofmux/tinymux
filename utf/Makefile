@@ -1,4 +1,4 @@
-all: classify integers strings stringutil.txt SpecialCasing.txt cp1252.txt CaseFolding.txt
+all: classify integers strings stringutil.txt SpecialCasing.txt cp1252.txt CaseFolding.txt Decompositions.txt
 
 UnicodeData.txt:
 	wget http://www.unicode.org/Public/UNIDATA/UnicodeData.txt
@@ -14,6 +14,9 @@ cp1252.txt:
 
 UnicodeMaster.txt: UnicodeData.txt UnicodeHan.txt
 	perl buildUnicodeMaster.pl UnicodeData.txt UnicodeHan.txt > UnicodeMaster.txt
+
+Decompositions.txt: UnicodeMaster.txt
+	perl buildDecompositions.pl UnicodeMaster.txt > Decompositions.txt
 
 cl_Printable.txt: UnicodeMaster.txt StringprepProhibited.txt
 	perl buildStringprepPrintable.pl StringprepProhibited.txt UnicodeMaster.txt > cl_Printable.txt
