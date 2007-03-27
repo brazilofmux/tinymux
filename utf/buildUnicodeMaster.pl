@@ -23,7 +23,6 @@ my $secondary = $ARGV[1];
 
 open(UNICODE,"< $unicodedata") || die("Eep, no UnicodeData.");
 
-
 while ($line = <UNICODE>)
 {
     if ($line =~ /^([0-9A-F]+);<(.*), First>;([^;]*;[^;];*[^;]*);([^;]*);(.*)/)
