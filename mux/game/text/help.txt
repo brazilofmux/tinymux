@@ -3350,7 +3350,7 @@ Related Topics: @name.
   is only setable by a Wizard.
 
   In fact, the server has three overlapping constraints for developing
-  an upper limit per player on the number of oustanding commands in the
+  an upper limit per player on the number of outstanding commands in the
   queue.  This attribute is part of just one of these constraints.  The
   rules (in priority order) are:
 
@@ -4331,7 +4331,7 @@ ANSI
 ANSI CODES
 
         f - flash                       i - inverse
-        h - hilite                      n - normal
+        h - highlight                   n - normal
         u - underline
 
         x - black foreground            X - black background
@@ -4343,7 +4343,7 @@ ANSI CODES
         c - cyan foreground             C - cyan background
         w - white foreground            W - white background
 
-  For example, "ansi(fc, Test)" would hilight "Test" in flashing cyan.
+  For example, "ansi(fc, Test)" would highlight "Test" in flashing cyan.
 
   Related Topics: ansi(), ANSI SUBSTITUTION.
 
@@ -7638,7 +7638,7 @@ HOST()
 
   FUNCTION: host(<player|port>)
 
-  Returns the hostname for <player|port> as seen on the SESSION report.
+  Returns the host name for <player|port> as seen on the SESSION report.
 
   If <player|port> is numeric, it's taken as a port number.  Otherwise, it's
   treated as a player name.  If the named player is connected more than once,
@@ -12434,10 +12434,10 @@ STEP()
   <list> is a <input delim>-separated list of strings (e.g., A B C).
 
   This is something of a cross between iter() and map() in that it breaks
-  the given <list> down into <step size> chunks and evalutes
+  the given <list> down into <step size> chunks and evaluates
   [<object>]/<attribute> passes these elements to <attribute> as arguments
   %0, %1, etc. The number of elements in <list> does not need to be
-  evenly-disible by <step size>.
+  evenly-divisible by <step size>.
 
   If no <input delim> is given, the default is a space. Likewise, if no
   <output delim> is given, the default is the <input delim>. The <step size>
@@ -12892,11 +12892,13 @@ TERMINFO()
 
   Other elements in the list describe client capabilities, and
   currently include:
+
   pueblo           present if the client is in Pueblo mode.
   telnet           present if the client understands the telnet protocol.
+  unicode          present if the client encoding is UTF-8.
 
-  Other fields may be added in the future; 'unicode' for clients that support
-  it, or 'mxp' for clients which support that, for instance.
+  Other fields may be added in the future; 'mxp' for clients which support
+  that, for instance.
 
   Players can use terminfo() on their own connections. Using it on
   other players is restricted to wizards.
@@ -12965,7 +12967,7 @@ THINK
   me=<message>", but with "think", there is no prepended text. One possible
   use: "@adesc me=think --> %n(%#[flags(%#)]) just looked at you."
 
-  Relatd Topics: @eval.
+  Related Topics: @eval.
 
 & THROW
 THROW
