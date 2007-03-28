@@ -426,7 +426,8 @@ bool search_setup(dbref player, UTF8 *searchfor, SEARCH *parm)
     }
     else
     {
-        mux_strlwr(pname);
+        size_t nCased;
+        pname = mux_strlwr(pname, nCased);
     }
 
     UTF8 *searchtype;

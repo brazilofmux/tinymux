@@ -161,20 +161,22 @@ static void helpindex_read(int iHelpfile)
         // we do not associate prefixes with this topic if they have already
         // been used on a previous topic.
         //
-        mux_strlwr(topic);
+        size_t nCased;
+        UTF8  *pCased = mux_strlwr(topic, nCased);
+
         bool bOriginal = true; // First is the longest.
 
-        for (size_t nTopic = nTopicOriginal; 0 < nTopic; nTopic--)
+        for (size_t nTopic = nCased; 0 < nTopic; nTopic--)
         {
             // Avoid adding any entries with a trailing space.
             //
-            if (mux_isspace(topic[nTopic-1]))
+            if (mux_isspace(pCased[nTopic-1]))
             {
                 continue;
             }
 
             struct help_entry *htab_entry =
-              (struct help_entry *)hashfindLEN(topic, nTopic, htab);
+              (struct help_entry *)hashfindLEN(pCased, nTopic, htab);
 
             if (htab_entry)
             {
@@ -183,14 +185,14 @@ static void helpindex_read(int iHelpfile)
                     continue;
                 }
 
-                hashdeleteLEN(topic, nTopic, htab);
+                hashdeleteLEN(pCased, nTopic, htab);
 
                 if (htab_entry->key)
                 {
                     MEMFREE(htab_entry->key);
                     htab_entry->key = NULL;
                     Log.tinyprintf("helpindex_read: duplicate %s entries for %s" ENDLINE,
-                        szTextFilename, topic);
+                        szTextFilename, pCased);
                 }
                 delete htab_entry;
                 htab_entry = NULL;
@@ -208,10 +210,10 @@ static void helpindex_read(int iHelpfile)
             if (htab_entry)
             {
                 htab_entry->pos = pos;
-                htab_entry->key = bOriginal ? StringCloneLen(topic, nTopic) : NULL;
+                htab_entry->key = bOriginal ? StringCloneLen(pCased, nTopic) : NULL;
                 bOriginal = false;
 
-                hashaddLEN(topic, nTopic, htab_entry, htab);
+                hashaddLEN(pCased, nTopic, htab_entry, htab);
             }
         }
     }
@@ -242,17 +244,21 @@ void helpindex_init(void)
     helpindex_load(NOTHING);
 }
 
-static const UTF8 *MakeCanonicalTopicName(UTF8 *topic_arg)
+static const UTF8 *MakeCanonicalTopicName(UTF8 *topic_arg, size_t &nTopic)
 {
+    static UTF8 Buffer[LBUF_SIZE];
+
     const UTF8 *topic;
     if (topic_arg[0] == '\0')
     {
         topic = T("help");
+        nTopic = 4;
     }
     else
     {
-        mux_strlwr(topic_arg);
-        topic = topic_arg;
+        topic = mux_strlwr(topic_arg, nTopic);
+        memcpy(Buffer, topic, nTopic+1);
+        topic = Buffer;
     }
     return topic;
 }
@@ -400,11 +406,13 @@ static bool ReportTopic(dbref executor, struct help_entry *htab_entry, int iHelp
 
 static void help_write(dbref executor, UTF8 *topic_arg, int iHelpfile)
 {
-    const UTF8 *topic = MakeCanonicalTopicName(topic_arg);
+    size_t nTopic;
+    const UTF8 *topic = MakeCanonicalTopicName(topic_arg, nTopic);
 
     CHashTable *htab = mudstate.aHelpDesc[iHelpfile].ht;
     struct help_entry *htab_entry =
-        (struct help_entry *)hashfindLEN(topic, strlen((char *)topic), htab);
+        (struct help_entry *)hashfindLEN(topic, nTopic, htab);
+
     if (htab_entry)
     {
         UTF8 *result = alloc_lbuf("help_write");
@@ -470,11 +478,13 @@ void help_helper(dbref executor, int iHelpfile, UTF8 *topic_arg,
         return;
     }
 
-    const UTF8 *topic = MakeCanonicalTopicName(topic_arg);
+    size_t nTopic;
+    const UTF8 *topic = MakeCanonicalTopicName(topic_arg, nTopic);
 
     CHashTable *htab = mudstate.aHelpDesc[iHelpfile].ht;
     struct help_entry *htab_entry =
-        (struct help_entry *)hashfindLEN(topic, strlen((char *)topic), htab);
+        (struct help_entry *)hashfindLEN(topic, nTopic, htab);
+
     if (htab_entry)
     {
         UTF8 *result = alloc_lbuf("help_helper");

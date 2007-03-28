@@ -707,25 +707,22 @@ void do_last(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF
 bool add_player_name(dbref player, const UTF8 *name)
 {
     bool stat = false;
-    UTF8 *temp, *tp;
 
     // Convert to all lowercase.
     //
-    tp = temp = alloc_lbuf("add_player_name");
-    safe_str(name, temp, &tp);
-    *tp = '\0';
-    mux_strlwr(temp);
+    size_t nCased;
+    UTF8  *pCased = mux_strlwr(name, nCased);
 
-    dbref *p = (int *)hashfindLEN(temp, strlen((char *)temp), &mudstate.player_htab);
+    dbref *p = (int *)hashfindLEN(pCased, nCased, &mudstate.player_htab);
     if (p)
     {
         // Entry found in the hashtable.  If a player, succeed if the
         // numbers match (already correctly in the hash table), fail
         // if they don't.
         //
-        if (Good_obj(*p) && isPlayer(*p))
+        if (  Good_obj(*p)
+           && isPlayer(*p))
         {
-            free_lbuf(temp);
             if (*p == player)
             {
                 return true;
@@ -753,13 +750,12 @@ bool add_player_name(dbref player, const UTF8 *name)
         if (NULL != p)
         {
             *p = player;
-            stat = hashreplLEN(temp, strlen((char *)temp), p, &mudstate.player_htab);
+            stat = hashreplLEN(pCased, nCased, p, &mudstate.player_htab);
         }
         else
         {
             ISOUTOFMEMORY(p);
         }
-        free_lbuf(temp);
     }
     else
     {
@@ -776,39 +772,32 @@ bool add_player_name(dbref player, const UTF8 *name)
         if (NULL != p)
         {
             *p = player;
-            stat = hashaddLEN(temp, strlen((char *)temp), p, &mudstate.player_htab);
+            stat = hashaddLEN(pCased, nCased, p, &mudstate.player_htab);
         }
         else
         {
             ISOUTOFMEMORY(p);
         }
-        free_lbuf(temp);
     }
     return stat;
 }
 
 bool delete_player_name(dbref player, const UTF8 *name)
 {
-    UTF8 *temp, *tp;
+    size_t nCased;
+    UTF8  *pCased = mux_strlwr(name, nCased);
 
-    tp = temp = alloc_lbuf("delete_player_name");
-    safe_str(name, temp, &tp);
-    *tp = '\0';
-    mux_strlwr(temp);
-
-    dbref *p = (int *)hashfindLEN(temp, strlen((char *)temp), &mudstate.player_htab);
+    dbref *p = (int *)hashfindLEN(pCased, nCased, &mudstate.player_htab);
     if (  !p
        || *p == NOTHING
        || (  player != NOTHING
           && *p != player))
     {
-        free_lbuf(temp);
         return false;
     }
     delete p;
     p = NULL;
-    hashdeleteLEN(temp, strlen((char *)temp), &mudstate.player_htab);
-    free_lbuf(temp);
+    hashdeleteLEN(pCased, nCased, &mudstate.player_htab);
     return true;
 }
 
@@ -843,13 +832,10 @@ dbref lookup_player(dbref doer, UTF8 *name, bool check_who)
         }
         return thing;
     }
-    UTF8 *temp, *tp;
-    tp = temp = alloc_lbuf("lookup_player");
-    safe_str(name, temp, &tp);
-    *tp = '\0';
-    mux_strlwr(temp);
-    dbref *p = (int *)hashfindLEN(temp, strlen((char *)temp), &mudstate.player_htab);
-    free_lbuf(temp);
+
+    size_t nCased;
+    UTF8  *pCased = mux_strlwr(name, nCased);
+    dbref *p = (int *)hashfindLEN(pCased, nCased, &mudstate.player_htab);
     if (!p)
     {
         if (check_who)

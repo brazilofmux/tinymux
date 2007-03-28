@@ -828,9 +828,9 @@ void load_comsystem_V0123(FILE *fp)
                 {
                     // Validate comtitle
                     //
-                    if (3 < nTitle && temp[0] == 't' && temp[1] == ':')
+                    if (3 < nTitle && pTitle[0] == 't' && pTitle[1] == ':')
                     {
-                        pTitle = temp+2;
+                        pTitle = pTitle+2;
                         nTitle -= 2;
                         if (pTitle[nTitle-1] == '\n')
                         {
@@ -838,7 +838,9 @@ void load_comsystem_V0123(FILE *fp)
                             //
                             nTitle--;
                         }
-                        if (nTitle <= 0 || MAX_TITLE_LEN < nTitle)
+
+                        if (  nTitle <= 0
+                           || MAX_TITLE_LEN < nTitle)
                         {
                             nTitle = 0;
                             pTitle = temp;

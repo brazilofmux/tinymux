@@ -9411,8 +9411,9 @@ static FUNCTION(fun_lcmds)
                             print_sep(&sep, buff, bufc);
                         }
 
-                        mux_strlwr(buf);
-                        safe_str(buf+1, buff, bufc);
+                        size_t nCased;
+                        UTF8  *pCased = mux_strlwr(buf, nCased);
+                        safe_str(pCased+1, buff, bufc);
 
                         isFirst = false;
                     }
@@ -9540,7 +9541,8 @@ static FUNCTION(fun_art)
 
     // Drop the input string into lower case.
     //
-    mux_strlwr(fargs[0]);
+    size_t nCased;
+    UTF8 *pCased = mux_strlwr(fargs[0], nCased);
 
     // Search for exceptions.
     //
@@ -9552,7 +9554,7 @@ static FUNCTION(fun_art)
         pcre_extra* reRuleStudy = (pcre_extra *) arRule->m_pRegexpStudy;
 
         if (  !MuxAlarm.bAlarmed
-           && pcre_exec(reRuleRegexp, reRuleStudy, (char *)fargs[0], static_cast<int>(strlen((char *)fargs[0])),
+           && pcre_exec(reRuleRegexp, reRuleStudy, (char *)pCased, static_cast<int>(nCased),
                 0, 0, ovec, ovecsize) > 0)
         {
             safe_str(arRule->m_bUseAn ? T("an") : T("a"), buff, bufc);

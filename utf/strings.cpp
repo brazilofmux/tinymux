@@ -49,13 +49,15 @@
 
 StateMachine sm;
 
+#define TABLESIZE 40000
+
 static struct
 {
     UTF8  *p;
     size_t n_bytes;
     size_t n_points;
     int    n_refs;
-} aLiteralTable[5000];
+} aLiteralTable[TABLESIZE];
 int nLiteralTable = 0;
 
 static struct
@@ -64,7 +66,7 @@ static struct
     size_t n_bytes;
     size_t n_points;
     int    n_refs;
-} aXorTable[5000];
+} aXorTable[TABLESIZE];
 int nXorTable = 0;
 
 bool g_bDefault = false;
@@ -187,6 +189,11 @@ void BuildOutputTable(FILE *fp)
                     aLiteralTable[nLiteralTable].n_points = nRelatedPoints;
                     aLiteralTable[nLiteralTable].n_refs   = 0;
                     nLiteralTable++;
+                    if (TABLESIZE <= nLiteralTable)
+                    {
+                        fprintf(stderr, "Literal Table full.\n");
+                        exit(0);
+                    }
                 }
             }
             else
@@ -225,6 +232,11 @@ void BuildOutputTable(FILE *fp)
                     aXorTable[nXorTable].n_points = nRelatedPoints;
                     aXorTable[nXorTable].n_refs   = 0;
                     nXorTable++;
+                    if (TABLESIZE <= nXorTable)
+                    {
+                        fprintf(stderr, "XOR Table full.\n");
+                        exit(0);
+                    }
                 }
             }
         }
@@ -237,6 +249,7 @@ void BuildOutputTable(FILE *fp)
         }
         nextcode = nextcode2;
     }
+    fprintf(stderr, "%d literals, %d xors\n", nLiteralTable, nXorTable);
 }
 
 void TestTable(FILE *fp)
@@ -305,6 +318,12 @@ void TestTable(FILE *fp)
                         break;
                     }
                 }
+
+                if (!bFound)
+                {
+                    printf("Output String not found in Literal Table. This should not happen.\n");
+                    exit(0);
+                }
             }
             else
             {
@@ -334,12 +353,12 @@ void TestTable(FILE *fp)
                         break;
                     }
                 }
-            }
 
-            if (!bFound)
-            {
-                printf("Output String not found. This should not happen.\n");
-                exit(0);
+                if (!bFound)
+                {
+                    printf("Output String not found in XOR Table. This should not happen.\n");
+                    exit(0);
+                }
             }
 
             sm.TestString(TargetA, pTargetA, iAcceptingState);
@@ -383,15 +402,20 @@ void LoadStrings(FILE *fp)
             continue;
         }
 
-        UTF32 SourceB[2];
-        SourceB[0] = aRelatedPoints[0];
-        SourceB[1] = L'\0';
+        UTF32 SourceB[MAX_POINTS+1];
+        int i;
+        for (i = 0; i < nRelatedPoints; i++)
+        {
+            SourceB[i] = aRelatedPoints[i];
+        }
+        SourceB[i] = L'\0';
         const UTF32 *pSourceB = SourceB;
 
-        UTF8 TargetB[5];
+        UTF8 TargetB[5*MAX_POINTS];
         UTF8 *pTargetB = TargetB;
 
-        cr = ConvertUTF32toUTF8(&pSourceB, pSourceB+1, &pTargetB, pTargetB+sizeof(TargetB)-1, lenientConversion);
+        cr = ConvertUTF32toUTF8(&pSourceB, pSourceB+nRelatedPoints, &pTargetB,
+            pTargetB+sizeof(TargetB)-1, lenientConversion);
 
         if (conversionOK == cr)
         {
@@ -415,6 +439,12 @@ void LoadStrings(FILE *fp)
                         aLiteralTable[i].n_refs++;
                         break;
                     }
+                }
+
+                if (!bFound)
+                {
+                    printf("Output String not found in Literal Table. This should not happen.\n");
+                    exit(0);
                 }
             }
             else
@@ -446,12 +476,12 @@ void LoadStrings(FILE *fp)
                         break;
                     }
                 }
-            }
 
-            if (!bFound)
-            {
-                printf("Output String not found. This should not happen.\n");
-                exit(0);
+                if (!bFound)
+                {
+                    printf("Output String not found in XOR Table. This should not happen.\n");
+                    exit(0);
+                }
             }
 
             cIncluded++;

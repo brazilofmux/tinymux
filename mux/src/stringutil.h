@@ -75,13 +75,13 @@ extern const UTF8 *latin1_utf8[256];
 
 // utf/cl_Printable.txt
 //
-// 95007 included, 1019105 excluded, 0 errors.
-// 149 states, 98 columns, 14858 bytes
+// 95311 included, 1018801 excluded, 0 errors.
+// 150 states, 99 columns, 15106 bytes
 //
 #define CL_PRINT_START_STATE (0)
-#define CL_PRINT_ACCEPTING_STATES_START (149)
+#define CL_PRINT_ACCEPTING_STATES_START (150)
 extern const unsigned char cl_print_itt[256];
-extern const unsigned char cl_print_stt[149][98];
+extern const unsigned char cl_print_stt[150][99];
 
 inline bool mux_isprint(const unsigned char *p)
 {
@@ -313,12 +313,12 @@ inline const string_desc *mux_totitle(const unsigned char *p, bool &bXor)
 // utf/tr_Color.txt
 //
 // 517 code points.
-// 5 states, 11 columns, 311 bytes
+// 5 states, 13 columns, 321 bytes
 //
 #define TR_COLOR_START_STATE (0)
 #define TR_COLOR_ACCEPTING_STATES_START (5)
 extern const unsigned char tr_color_itt[256];
-extern const unsigned char tr_color_stt[5][11];
+extern const unsigned char tr_color_stt[5][13];
 
 inline int mux_color(const unsigned char *p)
 {
@@ -332,27 +332,27 @@ inline int mux_color(const unsigned char *p)
 }
 
 #define COLOR_NOTCOLOR   0
-#define COLOR_RESET      "\xEE\x80\x80"    // 1
-#define COLOR_INTENSE    "\xEE\x80\x81"    // 2
-#define COLOR_UNDERLINE  "\xEE\x80\x84"    // 3
-#define COLOR_BLINK      "\xEE\x80\x85"    // 4
-#define COLOR_INVERSE    "\xEE\x80\x87"    // 5
-#define COLOR_FG_BLACK   "\xEE\x84\x80"    // 6
-#define COLOR_FG_RED     "\xEE\x84\x81"    // 7
-#define COLOR_FG_GREEN   "\xEE\x84\x82"    // 8
-#define COLOR_FG_YELLOW  "\xEE\x84\x83"    // 9
-#define COLOR_FG_BLUE    "\xEE\x84\x84"    // 10
-#define COLOR_FG_MAGENTA "\xEE\x84\x85"    // 11
-#define COLOR_FG_CYAN    "\xEE\x84\x86"    // 12
-#define COLOR_FG_WHITE   "\xEE\x84\x87"    // 13
-#define COLOR_BG_BLACK   "\xEE\x88\x80"    // 14
-#define COLOR_BG_RED     "\xEE\x88\x81"    // 15
-#define COLOR_BG_GREEN   "\xEE\x88\x82"    // 16
-#define COLOR_BG_YELLOW  "\xEE\x88\x83"    // 17
-#define COLOR_BG_BLUE    "\xEE\x88\x84"    // 18
-#define COLOR_BG_MAGENTA "\xEE\x88\x85"    // 19
-#define COLOR_BG_CYAN    "\xEE\x88\x86"    // 20
-#define COLOR_BG_WHITE   "\xEE\x88\x87"    // 21
+#define COLOR_RESET      "\xEF\x94\x80"    // 1
+#define COLOR_INTENSE    "\xEF\x94\x81"    // 2
+#define COLOR_UNDERLINE  "\xEF\x94\x84"    // 3
+#define COLOR_BLINK      "\xEF\x94\x85"    // 4
+#define COLOR_INVERSE    "\xEF\x94\x87"    // 5
+#define COLOR_FG_BLACK   "\xEF\x98\x80"    // 6
+#define COLOR_FG_RED     "\xEF\x98\x81"    // 7
+#define COLOR_FG_GREEN   "\xEF\x98\x82"    // 8
+#define COLOR_FG_YELLOW  "\xEF\x98\x83"    // 9
+#define COLOR_FG_BLUE    "\xEF\x98\x84"    // 10
+#define COLOR_FG_MAGENTA "\xEF\x98\x85"    // 11
+#define COLOR_FG_CYAN    "\xEF\x98\x86"    // 12
+#define COLOR_FG_WHITE   "\xEF\x98\x87"    // 13
+#define COLOR_BG_BLACK   "\xEF\x9C\x80"    // 14
+#define COLOR_BG_RED     "\xEF\x9C\x81"    // 15
+#define COLOR_BG_GREEN   "\xEF\x9C\x82"    // 16
+#define COLOR_BG_YELLOW  "\xEF\x9C\x83"    // 17
+#define COLOR_BG_BLUE    "\xEF\x9C\x84"    // 18
+#define COLOR_BG_MAGENTA "\xEF\x9C\x85"    // 19
+#define COLOR_BG_CYAN    "\xEF\x9C\x86"    // 20
+#define COLOR_BG_WHITE   "\xEF\x9C\x87"    // 21
 #define COLOR_LAST_CODE  21
 
 #define mux_haswidth(x) mux_isprint(x)
@@ -462,8 +462,7 @@ bool matches_exit_from_list(UTF8 *, const UTF8 *);
 UTF8 *translate_string(const UTF8 *, bool);
 int mux_stricmp(const UTF8 *a, const UTF8 *b);
 int mux_memicmp(const void *p1_arg, const void *p2_arg, size_t n);
-UTF8 *mux_strlwr_utf8(const UTF8 *a, size_t &n);
-void mux_strlwr(UTF8 *tp);
+UTF8 *mux_strlwr(const UTF8 *a, size_t &n);
 UTF8 *mux_strupr(const UTF8 *a, size_t &n);
 
 typedef struct tag_itl
