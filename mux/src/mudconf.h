@@ -184,7 +184,7 @@ struct confdata
     IntArray    ports;          // user ports.
 #ifdef SSL_ENABLED
     IntArray    sslPorts;       // SSL ports
-    
+
     // Due to OpenSSL requirements, these have to be char, NOT UTF8.  Sorry. :(
     UTF8    ssl_certificate_file[128];      // SSL certificate file (.pem format)
     UTF8    ssl_certificate_key[128];       // SSL certificate private key file (.pem format)

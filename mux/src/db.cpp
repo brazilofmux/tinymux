@@ -3464,7 +3464,7 @@ void dump_restart_db(void)
         putref(f, aMainGamePorts[i].ssl);
 #else
         putref(f, 0);
-#endif        
+#endif
     }
     putref(f, mudstate.start_time.ReturnSeconds());
     putstring(f, mudstate.doing_hdr);
@@ -3535,7 +3535,7 @@ void load_restart_db(void)
             {
                 maxd = aMainGamePorts[i].socket + 1;
             }
-#ifdef SSL_ENABLED            
+#ifdef SSL_ENABLED
             aMainGamePorts[i].ssl = getref(f);
 #else
             getref(f); // Eat meaningless field

@@ -71,7 +71,7 @@ void cf_init(void)
     {
         ISOUTOFMEMORY(mudconf.ports.pi);
     }
-    
+
 #ifdef SSL_ENABLED
     mudconf.sslPorts.n = 0;
     mudconf.sslPorts.pi = NULL;

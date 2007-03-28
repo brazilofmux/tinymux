@@ -1424,7 +1424,7 @@ return extra;
 
 /* If Unicode Property support is wanted, include a private copy of the
 function that does it, and the table that translates names to numbers. */
-  
+
 #ifdef SUPPORT_UCP
 /* ucp.c */
 #include "ucp.h"               /* Exported interface */
@@ -7050,7 +7050,7 @@ bool minimize;
 bool prev_is_word;
 
 unsigned long int original_ims;
-  
+
 #ifdef SUPPORT_UCP
 int prop_type;
 int prop_fail_result;

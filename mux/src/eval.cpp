@@ -990,7 +990,7 @@ const unsigned int ColorTable[256] =
     0,
     0,
     COLOR_INDEX_BG + COLOR_INDEX_WHITE,
-    
+
     // 0x58-0x5F
     //
     COLOR_INDEX_BG + COLOR_INDEX_BLACK,

@@ -442,8 +442,8 @@ UTF8 *MakeCanonicalFlagName
 #define Html(x)             ((Flags2(x) & HTML) != 0)
 #define s_Html(x)           s_Flags((x), FLAG_WORD2, Flags2(x) | HTML)
 
-#define Unicode(x)			((Flags3(x) & UNICODE) != 0)
-#define s_Unicode(x)		s_Flags((x), FLAG_WORD3, Flags3(x) | UNICODE)
+#define Unicode(x)          ((Flags3(x) & UNICODE) != 0)
+#define s_Unicode(x)        s_Flags((x), FLAG_WORD3, Flags3(x) | UNICODE)
 
 #if defined(FIRANMUX)
 #define Linewrap(x)   ((Flags3(x) & LINEWRAP) != 0)
