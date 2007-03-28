@@ -44,6 +44,7 @@ Feature Additions:
     the client's capabilities.
  -- Separated inline SQL supprt from Firan support so that it can be
     enabled separately.
+ -- Added @eval command.
 
 
 Bug Fixes:

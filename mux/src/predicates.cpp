@@ -1638,12 +1638,22 @@ void do_backup(dbref player, dbref caller, dbref enactor, int key)
  * do_comment: Implement the @@ (comment) command. Very cpu-intensive :-)
  */
 
-void do_comment(dbref player, dbref caller, dbref enactor, int key)
+void do_comment(dbref executor, dbref caller, dbref enactor, int key)
 {
-    UNUSED_PARAMETER(player);
+    UNUSED_PARAMETER(executor);
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
     UNUSED_PARAMETER(key);
+}
+
+void do_eval(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8 *str)
+{
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
+    UNUSED_PARAMETER(key);
+    UNUSED_PARAMETER(str);
 }
 
 static dbref promote_dflt(dbref old, dbref new0)

@@ -67,6 +67,7 @@ CMD_NO_ARG(do_dump);            /* Dump the database */
 CMD_TWO_ARG_ARGV(do_edit);      /* Edit one or more attributes */
 CMD_ONE_ARG(do_enter);          /* Enter an object */
 CMD_ONE_ARG(do_entrances);      /* List exits and links to loc */
+CMD_ONE_ARG(do_eval);           /* Evaluate argument and do nothing else */
 CMD_ONE_ARG(do_examine);        /* Examine an object */
 CMD_ONE_ARG(do_find);           /* Search for name in database */
 CMD_TWO_ARG(do_fixdb);          /* Database repair functions */
