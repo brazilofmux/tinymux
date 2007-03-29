@@ -72,6 +72,8 @@ typedef struct cmd_block
     UTF8    cmd[LBUF_SIZE - sizeof(CBLKHDR)];
 } CBLK;
 
+#define TBLK_FLAG_LOCKED    0x01
+
 typedef struct text_block TBLOCK;
 typedef struct text_block_hdr
 {
@@ -79,6 +81,7 @@ typedef struct text_block_hdr
     UTF8    *start;
     UTF8    *end;
     size_t   nchars;
+    int      flags;
 }   TBLOCKHDR;
 
 typedef struct text_block

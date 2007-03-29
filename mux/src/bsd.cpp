@@ -976,6 +976,10 @@ int initialize_ssl()
         ssl_ctx = NULL;
         return 0;
     }
+
+    SSL_CTX_set_mode(ssl_ctx,SSL_MODE_ENABLE_PARTIAL_WRITE);
+    SSL_CTX_set_mode(ssl_ctx,SSL_MODE_AUTO_RETRY);
+    SSL_CTX_set_mode(ssl_ctx,SSL_MODE_ACCEPT_MOVING_WRITE_BUFFER);
     
     STARTLOG(LOG_ALWAYS,"NET","SSL");
     log_text(T("initialize_ssl: SSL engine initialized successfully."));
@@ -2813,15 +2817,39 @@ void process_output(void *dvoid, int bHandleShutdown)
             int cnt = mux_socket_write(d, (const char *)tb->hdr.start, tb->hdr.nchars, 0);
             if (IS_SOCKET_ERROR(cnt))
             {
+#ifdef SSL_ENABLED
+                int iSocketError;
+                if (d->ssl_session) {
+                   iSocketError = SSL_get_error(d->ssl_session,cnt);
+                }
+                else {
+                   iSocketError = SOCKET_LAST_ERROR;
+                }
+#else
                 int iSocketError = SOCKET_LAST_ERROR;
-                mudstate.debug_cmd = cmdsave;
-                if (  iSocketError != SOCKET_EWOULDBLOCK
+#endif
+                int iBlocking = 0;
+
+                if (iSocketError == SOCKET_EWOULDBLOCK ||
 #ifdef SOCKET_EAGAIN
-                   && iSocketError != SOCKET_EAGAIN
-#endif // SOCKET_EAGAIN
-                   && bHandleShutdown)
+                    iSocketError == SOCKET_EAGAIN ||
+#endif
+#ifdef SSL_ENABLED
+                    iSocketError == SSL_ERROR_WANT_WRITE ||
+                    iSocketError == SSL_ERROR_WANT_READ 
+#endif
+                )
+                   iBlocking = 1;
+
+                mudstate.debug_cmd = cmdsave;
+                if ( !iBlocking && bHandleShutdown)
                 {
                     shutdownsock(d, R_SOCKDIED);
+                }
+
+                if (iBlocking)
+                {
+                    tb->hdr.flags |= TBLK_FLAG_LOCKED;
                 }
                 return;
             }

@@ -296,6 +296,7 @@ static void add_to_output_queue(DESC *d, const char *b, size_t n)
             tp->hdr.start = tp->data;
             tp->hdr.end = tp->data;
             tp->hdr.nchars = 0;
+            tp->hdr.flags = 0;
 
             d->output_head = tp;
             d->output_tail = tp;
@@ -319,7 +320,7 @@ static void add_to_output_queue(DESC *d, const char *b, size_t n)
         // string.  If so, copy it and update the pointers..
         //
         left = OUTPUT_BLOCK_SIZE - (tp->hdr.end - (UTF8 *)tp + 1);
-        if (n <= left)
+        if ((n <= left) && !(tp->hdr.flags & TBLK_FLAG_LOCKED))
         {
             memcpy(tp->hdr.end, b, n);
             tp->hdr.end += n;
@@ -331,6 +332,9 @@ static void add_to_output_queue(DESC *d, const char *b, size_t n)
             // It didn't fit.  Copy what will fit and then allocate
             // another buffer and retry.
             //
+            if (tp->hdr.flags & TBLK_FLAG_LOCKED)
+                left = 0;
+            
             if (left > 0)
             {
                 memcpy(tp->hdr.end, b, left);
@@ -347,6 +351,7 @@ static void add_to_output_queue(DESC *d, const char *b, size_t n)
                 tp->hdr.start = tp->data;
                 tp->hdr.end = tp->data;
                 tp->hdr.nchars = 0;
+                tp->hdr.flags = 0;
 
                 d->output_tail->hdr.nxt = tp;
                 d->output_tail = tp;
@@ -387,25 +392,34 @@ void queue_write_LEN(DESC *d, const char *b, size_t n)
         }
         else
         {
-            STARTLOG(LOG_NET, "NET", "WRITE");
-            UTF8 *buf = alloc_lbuf("queue_write.LOG");
-            mux_sprintf(buf, LBUF_SIZE, "[%u/%s] Output buffer overflow, %d chars discarded by ", d->descriptor, d->addr, tp->hdr.nchars);
-            log_text(buf);
-            free_lbuf(buf);
-            if (d->flags & DS_CONNECTED)
+#ifdef SSL_ENABLED
+            if (d->ssl_session)
             {
-                log_name(d->player);
+                tp->hdr.flags |= TBLK_FLAG_LOCKED;
             }
-            ENDLOG;
-            d->output_size -= tp->hdr.nchars;
-            d->output_head = tp->hdr.nxt;
-            d->output_lost += tp->hdr.nchars;
-            if (d->output_head == NULL)
-            {
-                d->output_tail = NULL;
+            else 
+#endif
+            if (!(tp->hdr.flags & TBLK_FLAG_LOCKED)) {
+                STARTLOG(LOG_NET, "NET", "WRITE");
+                UTF8 *buf = alloc_lbuf("queue_write.LOG");
+                mux_sprintf(buf, LBUF_SIZE, "[%u/%s] Output buffer overflow, %d chars discarded by ", d->descriptor, d->addr, tp->hdr.nchars);
+                log_text(buf);
+                free_lbuf(buf);
+                if (d->flags & DS_CONNECTED)
+                {
+                    log_name(d->player);
+                }
+                ENDLOG;
+                d->output_size -= tp->hdr.nchars;
+                d->output_head = tp->hdr.nxt;
+                d->output_lost += tp->hdr.nchars;
+                if (d->output_head == NULL)
+                {
+                    d->output_tail = NULL;
+                }
+                MEMFREE(tp);
+                tp = NULL;
             }
-            MEMFREE(tp);
-            tp = NULL;
         }
     }
 
