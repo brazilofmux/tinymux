@@ -1678,20 +1678,13 @@ UTF8 *process_command
     UTF8 *pOriginalCommand = arg_command;
     static UTF8 SpaceCompressCommand[LBUF_SIZE];
     static UTF8 LowerCaseCommand[LBUF_SIZE];
-    UTF8 *pCommand;
-    UTF8 *p, *q, *arg, *pSlash, *bp, check2[2];
-    const UTF8 *cmdsave;
-    int aflags;
-    dbref exit, aowner;
-    CMDENT *cmdp;
 
     // Robustify player.
     //
-    cmdsave = mudstate.debug_cmd;
+    const UTF8 *cmdsave = mudstate.debug_cmd;
     mudstate.debug_cmd = T("< process_command >");
     mudstate.nStackNest = 0;
     mudstate.bStackLimitReached = false;
-    *(check2 + 1) = '\0';
 
     mux_assert(pOriginalCommand);
 
@@ -1756,6 +1749,11 @@ UTF8 *process_command
     mudstate.debug_cmd = pOriginalCommand;
     mudstate.curr_cmd = preserve_cmd;
 
+    UTF8 *pCommand;
+    UTF8 *p, *q, *arg, *bp;
+    int aflags;
+    dbref exit, aowner;
+
     if (mudconf.space_compress)
     {
         // Compress out the spaces and use that as the command
@@ -1801,6 +1799,7 @@ UTF8 *process_command
     // HOME command.
     //
     UTF8 i = (UTF8)pCommand[0];
+    UTF8 check2[2] = {'\0', '\0'};
     int cval = 0;
     int hval = 0;
     bool bGoodHookObj = (Good_obj(mudconf.hook_obj) && !Going(mudconf.hook_obj));
@@ -1811,7 +1810,7 @@ UTF8 *process_command
         // Both from RhostMUSH.
         // cval/hval values: 0 normal, 1 disable, 2 ignore
         //
-        *check2 = i;
+        check2[0] = i;
         if (CmdCheck(executor))
         {
             cval = cmdtest(executor, check2);
@@ -1984,9 +1983,21 @@ UTF8 *process_command
             init_match_check_keys(executor, pCommand, TYPE_EXIT);
             match_exit_with_parents();
             exit = last_match_result();
+            bool bMaster = (NOTHING == exit);
+
+            if (bMaster)
+            {
+                // Check for an exit in the master room.
+                //
+                init_match_check_keys(executor, pCommand, TYPE_EXIT);
+                match_master_exit();
+                exit = last_match_result();
+            }
+
             if (exit != NOTHING)
             {
-                if (cval || hval)
+                if (  1 == cval
+                   || 1 == hval)
                 {
                     if (  goto_cmdp->hookmask & HOOK_AFAIL
                        && bGoodHookObj)
@@ -2001,19 +2012,29 @@ UTF8 *process_command
                     mudstate.debug_cmd = cmdsave;
                     return preserve_cmd;
                 }
-                move_exit(executor, exit, false, T("You can't go that way."), 0);
-                mudstate.debug_cmd = cmdsave;
-                return preserve_cmd;
-            }
 
-            // Check for an exit in the master room.
-            //
-            init_match_check_keys(executor, pCommand, TYPE_EXIT);
-            match_master_exit();
-            exit = last_match_result();
-            if (exit != NOTHING)
-            {
-                move_exit(executor, exit, true, NULL, 0);
+                if (  (goto_cmdp->hookmask & HOOK_BEFORE)
+                   && bGoodHookObj)
+                {
+                    ATTR *hk_ap2 = atr_str(hook_name(goto_cmdp->cmdname, HOOK_BEFORE));
+                    process_hook(executor, hk_ap2, false);
+                }
+
+                if (!bMaster)
+                {
+                    move_exit(executor, exit, false, T("You can't go that way."), 0);
+                }
+                else
+                {
+                    move_exit(executor, exit, true, NULL, 0);
+                }
+
+                if (  (goto_cmdp->hookmask & HOOK_AFTER)
+                    && bGoodHookObj)
+                {
+                    ATTR *hk_ap2 = atr_str(hook_name(goto_cmdp->cmdname, HOOK_AFTER));
+                    process_hook(executor, hk_ap2, false);
+                }
                 mudstate.debug_cmd = cmdsave;
                 return preserve_cmd;
             }
@@ -2053,7 +2074,7 @@ UTF8 *process_command
 
     // Strip off any command switches and save them.
     //
-    pSlash = (UTF8 *)strchr((char *)LowerCaseCommand, '/');
+    UTF8 *pSlash = (UTF8 *)strchr((char *)LowerCaseCommand, '/');
     if (pSlash)
     {
         nLowerCaseCommand = pSlash - LowerCaseCommand;
@@ -2062,7 +2083,7 @@ UTF8 *process_command
 
     // Check for a builtin command (or an alias of a builtin command)
     //
-    cmdp = (CMDENT *)hashfindLEN(LowerCaseCommand, nLowerCaseCommand, &mudstate.command_htab);
+    CMDENT *cmdp = (CMDENT *)hashfindLEN(LowerCaseCommand, nLowerCaseCommand, &mudstate.command_htab);
 
     /* If command is checked to ignore NONMATCHING switches, fall through */
     if (cmdp)
@@ -2278,7 +2299,23 @@ UTF8 *process_command
                         mudstate.debug_cmd = cmdsave;
                         return preserve_cmd;
                     }
+
+                    if (  (cmdp->hookmask & HOOK_BEFORE)
+                       && bGoodHookObj)
+                    {
+                        ATTR *hk_ap2 = atr_str(hook_name(cmdp->cmdname, HOOK_BEFORE));
+                        process_hook(executor, hk_ap2, false);
+                    }
+
                     do_leave(executor, caller, executor, 0);
+
+                    if (  (cmdp->hookmask & HOOK_AFTER)
+                        && bGoodHookObj)
+                    {
+                        ATTR *hk_ap2 = atr_str(hook_name(cmdp->cmdname, HOOK_AFTER));
+                        process_hook(executor, hk_ap2, false);
+                    }
+
                     mudstate.debug_cmd = cmdsave;
                     return preserve_cmd;
                 }
@@ -2350,7 +2387,22 @@ UTF8 *process_command
                             mudstate.debug_cmd = cmdsave;
                             return preserve_cmd;
                         }
+
+                        if (  (cmdp->hookmask & HOOK_BEFORE)
+                           && bGoodHookObj)
+                        {
+                            ATTR *hk_ap2 = atr_str(hook_name(cmdp->cmdname, HOOK_BEFORE));
+                            process_hook(executor, hk_ap2, false);
+                        }
+
                         do_enter_internal(executor, exit, false);
+
+                        if (  (cmdp->hookmask & HOOK_AFTER)
+                            && bGoodHookObj)
+                        {
+                            ATTR *hk_ap2 = atr_str(hook_name(cmdp->cmdname, HOOK_AFTER));
+                            process_hook(executor, hk_ap2, false);
+                        }
                         mudstate.debug_cmd = cmdsave;
                         return preserve_cmd;
                     }
