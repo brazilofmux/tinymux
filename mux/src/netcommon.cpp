@@ -447,14 +447,14 @@ void queue_write_LEN(DESC *d, const char *b, size_t n)
             //
             //   1) It breaks SSL,
             //
-            //   2) Eventually, we use this feature on the Win32 build to
-            //      handle asyncronous I/O, and for Win32 Async I/O, a program
-            //      is not allowed to read or write to a buffer involved in an
+            //   2) We use this feature on the Win32 build to handle
+            //      asyncronous I/O, and for Win32 Async I/O, a program is not
+            //      allowed to read or write to a buffer involved in an
             //      asyncronous I/O request, and
             //
-            //   3) It is more properly when given an EWOULDBLOCK error to
-            //      try the same exact write request later than to extend
-            //      the request to something larger.
+            //   3) It is more proper when given an EWOULDBLOCK error to try
+            //      the same exact write request later than to extend the
+            //      request to something larger.
             //
 #ifdef SSL_ENABLED
             if (d->ssl_session)
