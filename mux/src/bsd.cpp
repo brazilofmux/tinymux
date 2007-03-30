@@ -2737,7 +2737,7 @@ void process_output_ntio(void *dvoid, int bHandleShutdown)
             DWORD dwLastError = GetLastError();
             if (ERROR_IO_PENDING == dwLastError)
             {
-                // The WriteFile requestion will complete later. We must not
+                // The WriteFile request will complete later. We must not
                 // read or write to or from the buffer until it does. The
                 // d->OutboundOverlapped notification will be sent to
                 // ProcessWindowsTCP().
