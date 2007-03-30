@@ -257,14 +257,13 @@ extern void SetupPorts(int *pnPorts, PortInfo aPorts[], IntArray *pia, IntArray 
 #ifdef WIN32
 extern void shovechars9x(int nPorts, PortInfo aPorts[]);
 extern void shovecharsNT(int nPorts, PortInfo aPorts[]);
-void process_output9x(void *, int);
-void process_outputNT(void *, int);
-extern FTASK *process_output;
+void process_output_ntio(void *, int);
 #else // WIN32
 extern void shovechars(int nPorts, PortInfo aPorts[]);
-extern void process_output(void *, int);
 extern void dump_restart_db(void);
 #endif // WIN32
+extern FTASK *process_output;
+void process_output_unix(void *, int);
 
 extern void BuildSignalNamesTable(void);
 extern void set_signals(void);

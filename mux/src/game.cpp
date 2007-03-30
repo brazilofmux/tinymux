@@ -3250,15 +3250,16 @@ int DCL_CDECL main(int argc, char *argv[])
 #ifdef WIN32
     if (bUseCompletionPorts)
     {
-        process_output = process_outputNT;
+        process_output = process_output_ntio;
         shovecharsNT(nMainGamePorts, aMainGamePorts);
     }
     else
     {
-        process_output = process_output9x;
+        process_output = process_output_unix;
         shovechars9x(nMainGamePorts, aMainGamePorts);
     }
 #else // WIN32
+    process_output = process_output_unix;
     shovechars(nMainGamePorts, aMainGamePorts);
 #endif // WIN32
 

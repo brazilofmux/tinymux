@@ -1529,7 +1529,7 @@ void shovechars9x(int nPorts, PortInfo aPorts[])
             //
             if (CheckOutput(d->descriptor))
             {
-                process_output9x(d, true);
+                process_output(d, true);
             }
         }
     }
@@ -1651,7 +1651,7 @@ void shovecharsNT(int nPorts, PortInfo aPorts[])
             if (d->bCallProcessOutputLater)
             {
                 d->bCallProcessOutputLater = false;
-                process_outputNT(d, false);
+                process_output(d, false);
             }
         }
 
@@ -2631,88 +2631,9 @@ DESC *initializesock(SOCKET s, struct sockaddr_in *a)
     return d;
 }
 
+FTASK *process_output = NULL;
+
 #ifdef WIN32
-FTASK *process_output = 0;
-
-/*! \brief Service network request for more output to a specific descriptor.
- *
- * This function also must be called to kick-start output the the network, so
- * truthfully, the call can come from shovechars or the output routines.
- * Currently, this is not being called by the queue, but it is in a form that
- * is callable by the queue.
- *
- * \param dvoid             Network descriptor state.
- * \param bHandleShutdown   Whether the shutdownsock() call is being handled..
- * \return                  None.
- */
-
-void process_output9x(void *dvoid, int bHandleShutdown)
-{
-    DESC *d = (DESC *)dvoid;
-
-    const UTF8 *cmdsave = mudstate.debug_cmd;
-    mudstate.debug_cmd = T("< process_output >");
-    TBLOCK *tb = d->output_head;
-    while (NULL != tb)
-    {
-        while (0 < tb->hdr.nchars)
-        {
-            int cnt = mux_socket_write(d, (char *)tb->hdr.start, tb->hdr.nchars, 0);
-            if (IS_SOCKET_ERROR(cnt))
-            {
-#ifdef SSL_ENABLED
-                int iSocketError;
-                if (d->ssl_session)
-                {
-                   iSocketError = SSL_get_error(d->ssl_session,cnt);
-                }
-                else
-                {
-                   iSocketError = SOCKET_LAST_ERROR;
-                }
-#else
-                int iSocketError = SOCKET_LAST_ERROR;
-#endif
-                mudstate.debug_cmd = cmdsave;
-
-                if (  SOCKET_EWOULDBLOCK   == iSocketError
-#ifdef SOCKET_EAGAIN
-                   || SOCKET_EAGAIN        == iSocketError
-#endif
-#ifdef SSL_ENABLED
-                   || SSL_ERROR_WANT_WRITE == iSocketError
-                   || SSL_ERROR_WANT_READ  == iSocketError
-#endif
-                )
-                {
-                    // The call would have blocked, so we need to mark the
-                    // buffer we used as read-only and try again later with
-                    // the exactly same buffer.
-                    //
-                    tb->hdr.flags |= TBLK_FLAG_LOCKED;
-                }
-                else if (bHandleShutdown)
-                {
-                    shutdownsock(d, R_SOCKDIED);
-                }
-                return;
-            }
-            d->output_size -= cnt;
-            tb->hdr.nchars -= cnt;
-            tb->hdr.start += cnt;
-        }
-        TBLOCK *save = tb;
-        tb = tb->hdr.nxt;
-        MEMFREE(save);
-        save = NULL;
-        d->output_head = tb;
-        if (NULL == tb)
-        {
-            d->output_tail = NULL;
-        }
-    }
-    mudstate.debug_cmd = cmdsave;
-}
 
 static int AsyncSend(DESC *d, char *buf, size_t len)
 {
@@ -2779,7 +2700,7 @@ static int AsyncSend(DESC *d, char *buf, size_t len)
  * \return                  None.
  */
 
-void process_outputNT(void *dvoid, int bHandleShutdown)
+void process_output_ntio(void *dvoid, int bHandleShutdown)
 {
     UNUSED_PARAMETER(bHandleShutdown);
 
@@ -2847,7 +2768,7 @@ void process_outputNT(void *dvoid, int bHandleShutdown)
     mudstate.debug_cmd = cmdsave;
 }
 
-#else // WIN32
+#endif // WIN32
 
 /*! \brief Service network request for more output to a specific descriptor.
  *
@@ -2861,7 +2782,7 @@ void process_outputNT(void *dvoid, int bHandleShutdown)
  * \return                  None.
  */
 
-void process_output(void *dvoid, int bHandleShutdown)
+void process_output_unix(void *dvoid, int bHandleShutdown)
 {
     DESC *d = (DESC *)dvoid;
 
@@ -2930,7 +2851,6 @@ void process_output(void *dvoid, int bHandleShutdown)
 
     mudstate.debug_cmd = cmdsave;
 }
-#endif // WIN32
 
 /*! \brief Table to quickly classify characters recieved from the wire with
  * their Telnet meaning.
