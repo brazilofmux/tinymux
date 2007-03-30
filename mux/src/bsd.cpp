@@ -2636,10 +2636,11 @@ FTASK *process_output = NULL;
 
 /*! \brief Service network request for more output to a specific descriptor.
  *
- * This function also must be called to kick-start output the the network, so
- * truthfully, the call can come from shovechars or the output routines.
- * Currently, this is not being called by the queue, but it is in a form that
- * is callable by the queue.
+ * This function is called when the network wants to consume more data, but it
+ * must also be called to kick-start output to the network, so truthfully, the
+ * call can come from shovechars or the output routines.  Currently, this is
+ * not being called by the task queue, but it is in a form that is callable by
+ * the task queue.
  *
  * This function must either exhaust the output queue (nothing left to write),
  * queue a lpo_shutdown notification, or queue an OutboundOverlapped
@@ -2706,7 +2707,7 @@ void process_output_ntio(void *dvoid, int bHandleShutdown)
         // write request, however, the completion port notification
         // processing in ProcessWindowsTCP() for this write request still
         // occurs, and if we make another request with the same overlapped
-        // structures, ProcessWindowsTCP() is unable to distinquish them.
+        // structure, ProcessWindowsTCP() would be unable to distinquish them.
         //
         // Notifications occur later when we call WaitFor* or Sleep, so
         // the code is still single-threaded.
@@ -2714,23 +2715,16 @@ void process_output_ntio(void *dvoid, int bHandleShutdown)
         tb->hdr.flags |= TBLK_FLAG_LOCKED;
         d->OutboundOverlapped.Offset = 0;
         d->OutboundOverlapped.OffsetHigh = 0;
-        BOOL bResult = WriteFile((HANDLE) d->descriptor, tb->hdr.start, tb->hdr.nchars, NULL, &d->OutboundOverlapped);
+        BOOL bResult = WriteFile((HANDLE) d->descriptor, tb->hdr.start,
+            tb->hdr.nchars, NULL, &d->OutboundOverlapped);
         if (bResult)
         {
-            // The WriteFile request completed immediately, and we own the
-            // buffer again. The d->OutboundOverlapped notification is
-            // queued for ProcessWindowsTCP().
+            // The WriteFile request completed immediately, and technically,
+            // we own the buffer again. The d->OutboundOverlapped notification
+            // is queued for ProcessWindowsTCP().  To keep the code simple,
+            // we will let it free the TBLOCK.
             //
             d->output_size -= tb->hdr.nchars;
-            TBLOCK *save = tb;
-            tb = tb->hdr.nxt;
-            MEMFREE(save);
-            save = NULL;
-            d->output_head = tb;
-            if (NULL == tb)
-            {
-                d->output_tail = NULL;
-            }
         }
         else
         {
@@ -2771,10 +2765,11 @@ void process_output_ntio(void *dvoid, int bHandleShutdown)
 
 /*! \brief Service network request for more output to a specific descriptor.
  *
- * This function also must be called to kick-start output the the network, so
- * truthfully, the call can come from shovechars or the output routines.
- * Currently, this is not being called by the queue, but it is in a form that
- * is callable by the queue.
+ * This function is called when the network wants to consume more data, but it
+ * must also be called to kick-start output to the network, so truthfully, the
+ * call can come from shovechars or the output routines.  Currently, this is
+ * not being called by the task queue, but it is in a form that is callable by
+ * the task queue.
  *
  * \param dvoid             Network descriptor state.
  * \param bHandleShutdown   Whether the shutdownsock() call is being handled..
@@ -5027,6 +5022,8 @@ void ProcessWindowsTCP(DWORD dwTimeout)
             TBLOCK *tb = d->output_head;
             if (NULL != tb)
             {
+                mux_assert(tb->hdr.flags & TBLK_FLAG_LOCKED);
+
                 TBLOCK *save = tb;
                 tb = tb->hdr.nxt;
                 MEMFREE(save);
@@ -5100,7 +5097,6 @@ void ProcessWindowsTCP(DWORD dwTimeout)
             // completion port queue, so in order to avoid having two requests in the queue for the same buffer
             // (corruption problems), we act as if the IO is still pending.
             //
-
             if (!b)
             {
                 // ERROR_IO_PENDING is a normal way of saying, 'not done yet'. All other errors are serious errors.
