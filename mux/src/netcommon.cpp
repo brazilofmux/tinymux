@@ -273,12 +273,28 @@ void clearstrings(DESC *d)
         free_lbuf(d->output_prefix);
         d->output_prefix = NULL;
     }
+
     if (d->output_suffix)
     {
         free_lbuf(d->output_suffix);
         d->output_suffix = NULL;
     }
 }
+
+/*! \brief Add text to the output queue of the indicated network descriptor
+ *         without questions.
+ *
+ * This is private, lower-level helper function for adding a buffer to the
+ * output queue. Unlike queue_write_LEN(), it does not attempt to control or
+ * manage the output side of the network layer. It only changes the output
+ * queue to include the requested buffer.  The only function that should
+ * call this function is queue_write_LEN().
+ *
+ * \param d         Network descriptor state.
+ * \param b         buffer to add to the output queue.
+ * \param n         Number of bytes in buffer, b, to add to the output queue.
+ * \return          None.
+ */
 
 static void add_to_output_queue(DESC *d, const char *b, size_t n)
 {
@@ -287,7 +303,7 @@ static void add_to_output_queue(DESC *d, const char *b, size_t n)
 
     // Allocate an output buffer if needed.
     //
-    if (d->output_head == NULL)
+    if (NULL == d->output_head)
     {
         tp = (TBLOCK *)MEMALLOC(OUTPUT_BLOCK_SIZE);
         if (NULL != tp)
@@ -317,10 +333,14 @@ static void add_to_output_queue(DESC *d, const char *b, size_t n)
     do
     {
         // See if there is enough space in the buffer to hold the
-        // string.  If so, copy it and update the pointers..
+        // string.  If so, copy it and update the pointers.
+        //
+        // We cannot update a buffer marked TBLK_FLAG_LOCKED.  If fact, we
+        // should read or write to such a buffer in any fashion.
         //
         left = OUTPUT_BLOCK_SIZE - (tp->hdr.end - (UTF8 *)tp + 1);
-        if ((n <= left) && !(tp->hdr.flags & TBLK_FLAG_LOCKED))
+        if (  n <= left
+           && 0 == (tp->hdr.flags & TBLK_FLAG_LOCKED))
         {
             memcpy(tp->hdr.end, b, n);
             tp->hdr.end += n;
@@ -329,13 +349,11 @@ static void add_to_output_queue(DESC *d, const char *b, size_t n)
         }
         else
         {
-            // It didn't fit.  Copy what will fit and then allocate
-            // another buffer and retry.
+            // The buffer we have will not fit into the existing block.  Copy
+            // what will fit, allocate another buffer, and retry.
             //
-            if (tp->hdr.flags & TBLK_FLAG_LOCKED)
-                left = 0;
-            
-            if (left > 0)
+            if (  0 < left
+               && 0 == (tp->hdr.flags & TBLK_FLAG_LOCKED))
             {
                 memcpy(tp->hdr.end, b, left);
                 tp->hdr.end += left;
@@ -382,7 +400,7 @@ static void add_to_output_queue(DESC *d, const char *b, size_t n)
  * \param d         Network descriptor state.
  * \param b         buffer to add to the output queue.
  * \param n         Number of bytes in buffer, b, to add to the output queue.
- * \return          true for valid, false for invalid.
+ * \return          None.
  */
 
 void queue_write_LEN(DESC *d, const char *b, size_t n)
