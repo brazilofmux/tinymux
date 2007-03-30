@@ -175,10 +175,8 @@ struct descriptor_data
   // these are for the Windows NT TCP/IO
 #define SIZEOF_OVERLAPPED_BUFFERS 512
   char input_buffer[SIZEOF_OVERLAPPED_BUFFERS];         // buffer for reading
-  char output_buffer[SIZEOF_OVERLAPPED_BUFFERS];        // buffer for writing
   OVERLAPPED InboundOverlapped;   // for asynchronous reading
   OVERLAPPED OutboundOverlapped;  // for asynchronous writing
-  bool bWritePending;             // true if in process of writing
   bool bConnectionDropped;        // true if we cannot send to player
   bool bConnectionShutdown;       // true if connection has been shutdown
   bool bCallProcessOutputLater;   // Does the socket need priming for output.

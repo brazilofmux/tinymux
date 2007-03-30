@@ -502,8 +502,9 @@ void queue_write_LEN(DESC *d, const char *b, size_t n)
     // descriptor.
     //
     if (  bUseCompletionPorts
-       && !d->bWritePending
-       && !d->bConnectionDropped)
+       && !d->bConnectionDropped
+       && NULL != d->output_head
+       && 0 == (d->output_head->hdr.flags & TBLK_FLAG_LOCKED))
     {
         d->bCallProcessOutputLater = true;
     }

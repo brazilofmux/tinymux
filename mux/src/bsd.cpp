@@ -2622,7 +2622,6 @@ DESC *initializesock(SOCKET s, struct sockaddr_in *a)
         d->InboundOverlapped.hEvent = NULL;
         d->InboundOverlapped.Offset = 0;
         d->InboundOverlapped.OffsetHigh = 0;
-        d->bWritePending = false;   // no write pending yet
         d->bConnectionShutdown = false; // not shutdown yet
         d->bConnectionDropped = false; // not dropped yet
         d->bCallProcessOutputLater = false;
@@ -2635,65 +2634,19 @@ FTASK *process_output = NULL;
 
 #ifdef WIN32
 
-static int AsyncSend(DESC *d, char *buf, size_t len)
-{
-    DWORD nBytes;
-
-    // Move data from one buffer to another.
-    //
-    if (len <= SIZEOF_OVERLAPPED_BUFFERS)
-    {
-        // We can consume this buffer.
-        //
-        nBytes = static_cast<DWORD>(len);
-    }
-    else
-    {
-        // Use the entire bufer and leave the remaining data in the queue.
-        //
-        nBytes = SIZEOF_OVERLAPPED_BUFFERS;
-    }
-    memcpy(d->output_buffer, buf, nBytes);
-
-    d->OutboundOverlapped.Offset = 0;
-    d->OutboundOverlapped.OffsetHigh = 0;
-
-    BOOL bResult = WriteFile((HANDLE) d->descriptor, d->output_buffer, nBytes, NULL, &d->OutboundOverlapped);
-
-    d->bWritePending = false;
-
-    if (!bResult)
-    {
-        DWORD dwLastError = GetLastError();
-        if (dwLastError == ERROR_IO_PENDING)
-        {
-            d->bWritePending = true;
-        }
-        else
-        {
-            if (!(d->bConnectionDropped))
-            {
-                // Do no more writes and post a notification that the descriptor should be shutdown.
-                //
-                d->bConnectionDropped = true;
-                Log.tinyprintf("AsyncSend(%d) failed with error %ld. Requesting port shutdown." ENDLINE, d->descriptor, dwLastError);
-                if (!PostQueuedCompletionStatus(CompletionPort, 0, (MUX_ULONG_PTR) d, &lpo_shutdown))
-                {
-                    Log.tinyprintf("Error %ld on PostQueuedCompletionStatus in AsyncSend" ENDLINE, GetLastError());
-                }
-            }
-            return 0;
-        }
-    }
-    return nBytes;
-}
-
 /*! \brief Service network request for more output to a specific descriptor.
  *
  * This function also must be called to kick-start output the the network, so
  * truthfully, the call can come from shovechars or the output routines.
  * Currently, this is not being called by the queue, but it is in a form that
  * is callable by the queue.
+ *
+ * This function must either exhaust the output queue (nothing left to write),
+ * queue a lpo_shutdown notification, or queue an OutboundOverlapped
+ * notification. The latter will be handled by ProcessWindowsTCP() by calling
+ * again. This function cannot leave with unwritten output in the output queue
+ * without any expected notifications as this will cause network output to
+ * stall.
  *
  * \param dvoid             Network descriptor state.
  * \param bHandleShutdown   Whether the shutdownsock() call is being handled..
@@ -2704,27 +2657,72 @@ void process_output_ntio(void *dvoid, int bHandleShutdown)
 {
     UNUSED_PARAMETER(bHandleShutdown);
 
-    DESC *d = (DESC *)dvoid;
-
-    // Don't write if connection dropped or a write is pending.
-    //
-    if (  d->bConnectionDropped
-       || d->bWritePending)
-    {
-        return;
-    }
-
     const UTF8 *cmdsave = mudstate.debug_cmd;
     mudstate.debug_cmd = T("< process_output >");
 
+    DESC *d = (DESC *)dvoid;
     TBLOCK *tb = d->output_head;
-    TBLOCK *save;
 
-    if (NULL != tb)
+    // Don't write if connection dropped, there is nothing to write, or a
+    // write is pending.
+    //
+    if (d->bConnectionDropped)
     {
-        while (0 == tb->hdr.nchars)
+        mudstate.debug_cmd = cmdsave;
+        return;
+    }
+
+    // Because it is so important to avoid leaving output in the queue
+    // without also leaving a pending notification, traverse the output queue
+    // freeing empty blocks. These shouldn't occur, but we cannot afford to
+    // assume.
+    //
+    while (  NULL != tb
+          && 0 == (tb->hdr.flags & TBLK_FLAG_LOCKED)
+          && 0 == tb->hdr.nchars)
+    {
+        TBLOCK *save = tb;
+        tb = tb->hdr.nxt;
+        MEMFREE(save);
+        save = NULL;
+        d->output_head = tb;
+        if (NULL == tb)
         {
-            save = tb;
+            d->output_tail = NULL;
+        }
+    }
+
+    if (  NULL != tb
+       && 0 == (tb->hdr.flags & TBLK_FLAG_LOCKED)
+       && 0 < tb->hdr.nchars)
+    {
+        // In attempting an asyncronous write operation, we mark the
+        // TBLOCK as read-only, and it will remain that way until the
+        // asyncronous operation completes.
+        //
+        // WriteFile may return an immediate indication that the
+        // operation completed.  This gives us control of the buffer
+        // and the OVERLAPPED structure, which we can use for the next
+        // write request, however, the completion port notification
+        // processing in ProcessWindowsTCP() for this write request still
+        // occurs, and if we make another request with the same overlapped
+        // structures, ProcessWindowsTCP() is unable to distinquish them.
+        //
+        // Notifications occur later when we call WaitFor* or Sleep, so
+        // the code is still single-threaded.
+        //
+        tb->hdr.flags |= TBLK_FLAG_LOCKED;
+        d->OutboundOverlapped.Offset = 0;
+        d->OutboundOverlapped.OffsetHigh = 0;
+        BOOL bResult = WriteFile((HANDLE) d->descriptor, tb->hdr.start, tb->hdr.nchars, NULL, &d->OutboundOverlapped);
+        if (bResult)
+        {
+            // The WriteFile request completed immediately, and we own the
+            // buffer again. The d->OutboundOverlapped notification is
+            // queued for ProcessWindowsTCP().
+            //
+            d->output_size -= tb->hdr.nchars;
+            TBLOCK *save = tb;
             tb = tb->hdr.nxt;
             MEMFREE(save);
             save = NULL;
@@ -2732,35 +2730,36 @@ void process_output_ntio(void *dvoid, int bHandleShutdown)
             if (NULL == tb)
             {
                 d->output_tail = NULL;
-                break;
             }
         }
-
-        if (NULL != tb)
+        else
         {
-            if (0 < tb->hdr.nchars)
+            DWORD dwLastError = GetLastError();
+            if (ERROR_IO_PENDING == dwLastError)
             {
-                int cnt = AsyncSend(d, (char *)tb->hdr.start, tb->hdr.nchars);
-                if (cnt <= 0)
-                {
-                    mudstate.debug_cmd = cmdsave;
-                    return;
-                }
-                d->output_size -= cnt;
-                tb->hdr.nchars -= cnt;
-                tb->hdr.start += cnt;
+                // The WriteFile requestion will complete later. We must not
+                // read or write to or from the buffer until it does. The
+                // d->OutboundOverlapped notification will be sent to
+                // ProcessWindowsTCP().
+                //
+                d->output_size -= tb->hdr.nchars;
             }
-
-            if (tb->hdr.nchars <= 0)
+            else
             {
-                save = tb;
-                tb = tb->hdr.nxt;
-                MEMFREE(save);
-                save = NULL;
-                d->output_head = tb;
-                if (NULL == tb)
+                // An error occured, and we own the buffer again. Request that
+                // the port be shutdown.
+                //
+                tb->hdr.flags &= ~TBLK_FLAG_LOCKED;
+                if (!(d->bConnectionDropped))
                 {
-                    d->output_tail = NULL;
+                    // Do no more writes and post a notification that the descriptor should be shutdown.
+                    //
+                    d->bConnectionDropped = true;
+                    Log.tinyprintf("WriteFile(%d) failed with error %ld. Requesting port shutdown." ENDLINE, d->descriptor, dwLastError);
+                    if (!PostQueuedCompletionStatus(CompletionPort, 0, (MUX_ULONG_PTR) d, &lpo_shutdown))
+                    {
+                        Log.tinyprintf("Error %ld on PostQueuedCompletionStatus() in process_output_ntio()." ENDLINE, GetLastError());
+                    }
                 }
             }
         }
@@ -5018,103 +5017,38 @@ void ProcessWindowsTCP(DWORD dwTimeout)
                 }
             }
         }
-        else if (lpo == &d->OutboundOverlapped && !d->bConnectionDropped)
+        else if (  lpo == &d->OutboundOverlapped
+                && !d->bConnectionDropped)
         {
             //Log.tinyprintf("Write(%d bytes)." ENDLINE, nbytes);
 
-            // Write completed
+            // Write completed. We own the buffer again.
             //
-            TBLOCK *tp;
-            DWORD nBytes;
-
-            bool bNothingToWrite;
-            do
+            TBLOCK *tb = d->output_head;
+            if (NULL != tb)
             {
-                bNothingToWrite = true;
-                tp = d->output_head;
-                if (tp == NULL)
+                TBLOCK *save = tb;
+                tb = tb->hdr.nxt;
+                MEMFREE(save);
+                save = NULL;
+                d->output_head = tb;
+                if (NULL == tb)
                 {
-                    d->bWritePending = false;
-                    break;
+                    d->output_tail = NULL;
                 }
-                bNothingToWrite = true;
-
-                // Move data from one buffer to another.
-                //
-                if (tp->hdr.nchars <= SIZEOF_OVERLAPPED_BUFFERS)
-                {
-                    // We can consume this buffer.
-                    //
-                    nBytes = static_cast<DWORD>(tp->hdr.nchars);
-                    memcpy(d->output_buffer, tp->hdr.start, nBytes);
-                    TBLOCK *save = tp;
-                    tp = tp->hdr.nxt;
-                    MEMFREE(save);
-                    save = NULL;
-                    d->output_head = tp;
-                    if (tp == NULL)
-                    {
-                        //Log.tinyprintf("Write...%d bytes taken from a queue of %d bytes...Empty Queue, now." ENDLINE, nBytes, d->output_size);
-                        d->output_tail = NULL;
-                    }
-                    else
-                    {
-                        //Log.tinyprintf("Write...%d bytes taken from a queue of %d bytes...more buffers in Queue" ENDLINE, nBytes, d->output_size);
-                    }
-                }
-                else
-                {
-                    // Use the entire bufer and leave the remaining data in the queue.
-                    //
-                    nBytes = SIZEOF_OVERLAPPED_BUFFERS;
-                    memcpy(d->output_buffer, tp->hdr.start, nBytes);
-                    tp->hdr.nchars -= nBytes;
-                    tp->hdr.start += nBytes;
-                    //Log.tinyprintf("Write...%d bytes taken from a queue of %d bytes...buffer still has bytes" ENDLINE, nBytes, d->output_size);
-                }
-                d->output_size -= nBytes;
-
-                d->OutboundOverlapped.Offset = 0;
-                d->OutboundOverlapped.OffsetHigh = 0;
-
-                // We do allow more than one complete write request in the IO
-                // completion port queue. The reason is that if WriteFile
-                // returns true, we -can- re-used the output_buffer -and-
-                // redundant queue entries just cause us to try to write more
-                // often. There is no possibility of corruption.
-                //
-                // It then becomes a trade off between the costs. I find that
-                // keeping the TCP/IP full of data is more important.
-                //
-                DWORD nWritten;
-                b = WriteFile((HANDLE) d->descriptor, d->output_buffer,
-                    nBytes, &nWritten, &d->OutboundOverlapped);
-
-            } while (b);
-
-            if (bNothingToWrite)
-            {
-                if (d->bConnectionShutdown)
-                {
-                    scheduler.CancelTask(Task_DeferredClose, d, 0);
-                    scheduler.DeferImmediateTask(PRIORITY_SYSTEM, Task_DeferredClose, d, 0);
-                }
-                continue;
             }
+            process_output(d, false);
+            tb = d->output_head;
 
-            d->bWritePending = true;
-            DWORD dwLastError = GetLastError();
-            if (dwLastError != ERROR_IO_PENDING)
+            if (  NULL == tb
+               && d->bConnectionShutdown)
             {
-                // Post a notification that the descriptor should be shutdown
+                // We generated all the disconnection output, and have waited
+                // for it make it out of the output queue. Now, it's time to
+                // close the connection.
                 //
-                d->bWritePending = false;
-                d->bConnectionDropped = true;
-                Log.tinyprintf("ProcessWindowsTCP(%d) cannot queue write request with error %ld. Requesting port shutdown." ENDLINE, d->descriptor, dwLastError);
-                if (!PostQueuedCompletionStatus(CompletionPort, 0, (MUX_ULONG_PTR) d, &lpo_shutdown))
-                {
-                    Log.tinyprintf("Error %ld on PostQueuedCompletionStatus in ProcessWindowsTCP (write)" ENDLINE, GetLastError());
-                }
+                scheduler.CancelTask(Task_DeferredClose, d, 0);
+                scheduler.DeferImmediateTask(PRIORITY_SYSTEM, Task_DeferredClose, d, 0);
             }
         }
         else if (lpo == &d->InboundOverlapped && !d->bConnectionDropped)
