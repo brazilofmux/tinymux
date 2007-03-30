@@ -954,10 +954,10 @@ int initialize_ssl()
         ssl_ctx = NULL;
         return 0;
     }
-    
+
     SSL_CTX_set_default_passwd_cb(ssl_ctx,pem_passwd_callback);
     SSL_CTX_set_default_passwd_cb_userdata(ssl_ctx,(void *)mudconf.ssl_certificate_password);
-    
+
     if (!SSL_CTX_use_PrivateKey_file(ssl_ctx,(char *)mudconf.ssl_certificate_key, SSL_FILETYPE_PEM)) {
         STARTLOG(LOG_ALWAYS,"NET","SSL");
         log_text(T("initialize_ssl: Unable to load SSL private key: "));
@@ -967,7 +967,7 @@ int initialize_ssl()
         ssl_ctx = NULL;
         return 0;
     }
-    
+
     if (!SSL_CTX_check_private_key(ssl_ctx)) {
         STARTLOG(LOG_ALWAYS,"NET","SSL");
         log_text(T("initialize_ssl: Key, certificate or password does not match."));
@@ -980,11 +980,11 @@ int initialize_ssl()
     SSL_CTX_set_mode(ssl_ctx,SSL_MODE_ENABLE_PARTIAL_WRITE);
     SSL_CTX_set_mode(ssl_ctx,SSL_MODE_AUTO_RETRY);
     SSL_CTX_set_mode(ssl_ctx,SSL_MODE_ACCEPT_MOVING_WRITE_BUFFER);
-    
+
     STARTLOG(LOG_ALWAYS,"NET","SSL");
     log_text(T("initialize_ssl: SSL engine initialized successfully."));
-    ENDLOG;    
-    
+    ENDLOG;
+
     return 1;
 }
 
@@ -999,7 +999,7 @@ void shutdown_ssl()
 void CleanUpSSLConnections()
 {
     DESC *d;
-    
+
     DESC_ITER_ALL(d)
     {
         if (d->ssl_session) {
@@ -1013,7 +1013,7 @@ void CleanUpSSLConnections()
 int mux_socket_write(DESC *d, const char *buffer, size_t nBytes, int flags)
 {
     int result;
-    
+
 #ifdef SSL_ENABLED
     if (d->ssl_session) {
         result = SSL_write(d->ssl_session,buffer,nBytes);
@@ -1023,14 +1023,14 @@ int mux_socket_write(DESC *d, const char *buffer, size_t nBytes, int flags)
     {
         result = SOCKET_WRITE(d->descriptor,buffer,nBytes,flags);
     }
-    
+
     return result;
 }
 
 int mux_socket_read(DESC *d, char *buffer, size_t nBytes, int flags)
 {
     int result;
-    
+
 #ifdef SSL_ENABLED
     if (d->ssl_session) {
         result = SSL_read(d->ssl_session,buffer,nBytes);
@@ -1040,7 +1040,7 @@ int mux_socket_read(DESC *d, char *buffer, size_t nBytes, int flags)
     {
         result = SOCKET_READ(d->descriptor,buffer,nBytes,flags);
     }
-    
+
     return result;
 }
 
@@ -1307,7 +1307,7 @@ void SetupPorts(int *pnPorts, PortInfo aPorts[], IntArray *pia, IntArray *piaSSL
                     break;
                 }
             }
-    
+
             if (!bFound)
             {
                 k = *pnPorts;
@@ -1336,10 +1336,10 @@ void SetupPorts(int *pnPorts, PortInfo aPorts[], IntArray *pia, IntArray *piaSSL
     // If we were asked to listen on at least one port, but we aren't
     // listening to at least one port, we should bring the game down.
     //
-    if ( 0 == *pnPorts && 
-         (0 != pia->n  
+    if (  0 == *pnPorts
+       && (  0 != pia->n  
 #ifdef SSL_ENABLED
-          || 0 != piaSSL->n   
+          || 0 != piaSSL->n
 #endif
          ))
     {
@@ -1633,17 +1633,16 @@ void shovecharsNT(int nPorts, PortInfo aPorts[])
             ltaWakeUp = ltaCurrent;
         }
 
-        // The following gets Asyncronous writes to the sockets going
-        // if they are not already going. Doing it this way is better
-        // than:
+        // The following kick-starts Asyncronous writes to the sockets going
+        // if they are not already going. Doing it this way is better than:
         //
-        //   1) starting an asyncronous write after a single addition
-        //      to the socket's output queue,
+        //   1) Starting an asyncronous write after a single addition
+        //      to the socket's output queue, or
         //
-        //   2) scheduling a task to do it (because we would need to
+        //   2) Scheduling a task to do it (because we would need to
         //      either maintain the task's uniqueness in the
         //      scheduler's queue, or endure many redudant calls to
-        //      process_output for the same descriptor.
+        //      process_output for the same descriptor).
         //
         DESC *d, *dnext;
         DESC_SAFEITER_ALL(d, dnext)
@@ -1656,7 +1655,9 @@ void shovecharsNT(int nPorts, PortInfo aPorts[])
         }
 
         if (mudstate.shutdown_flag)
+        {
             break;
+        }
 
         CLinearTimeDelta ltdTimeOut = ltaWakeUp - ltaCurrent;
         unsigned int iTimeout = ltdTimeOut.ReturnMilliseconds();
@@ -2056,7 +2057,7 @@ DESC *new_connection(PortInfo *Port, int *piSocketError)
             if (ssl_result != 1) {
                 // Something errored out.  We'll have to drop.
                 int ssl_err = SSL_get_error(ssl_session,ssl_result);
-                
+
                 SSL_free(ssl_session);
                 STARTLOG(LOG_ALWAYS,"NET","SSL");
                 log_text(T("SSL negotiation failed: "));
@@ -2068,7 +2069,7 @@ DESC *new_connection(PortInfo *Port, int *piSocketError)
                 }
                 newsock = INVALID_SOCKET;
                 errno = 0;
-                return NULL;                
+                return NULL;
             }
         }
 #endif
@@ -2078,7 +2079,7 @@ DESC *new_connection(PortInfo *Port, int *piSocketError)
 #ifdef SSL_ENABLED
         d->ssl_session = ssl_session;
 #endif
-        
+
         TelnetSetup(d);
 
         // Initalize everything before sending the sitemon info, so that we
@@ -3764,7 +3765,7 @@ static void process_input_helper(DESC *d, char *pBytes, int nBytes)
                         d->height = (d->aOption[3] << 8 ) | d->aOption[4];
                     }
                     break;
-                    
+
 #ifdef SSL_ENABLED
                 case TELNET_STARTTLS:
                     if (TELNETSB_FOLLOWS == d->aOption[1])
