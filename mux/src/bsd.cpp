@@ -2634,33 +2634,67 @@ DESC *initializesock(SOCKET s, struct sockaddr_in *a)
 #ifdef WIN32
 FTASK *process_output = 0;
 
+/*! \brief Service network request for more output to a specific descriptor.
+ *
+ * This function also must be called to kick-start output the the network, so
+ * truthfully, the call can come from shovechars or the output routines.
+ * Currently, this is not being called by the queue, but it is in a form that
+ * is callable by the queue.
+ *
+ * \param dvoid             Network descriptor state.
+ * \param bHandleShutdown   Whether the shutdownsock() call is being handled..
+ * \return                  None.
+ */
+
 void process_output9x(void *dvoid, int bHandleShutdown)
 {
     DESC *d = (DESC *)dvoid;
-    int cnt;
 
     const UTF8 *cmdsave = mudstate.debug_cmd;
     mudstate.debug_cmd = T("< process_output >");
-
     TBLOCK *tb = d->output_head;
-
-    while (tb != NULL)
+    while (NULL != tb)
     {
-        while (tb->hdr.nchars > 0)
+        while (0 < tb->hdr.nchars)
         {
-            cnt = mux_socket_write(d, (char *)tb->hdr.start, tb->hdr.nchars, 0);
+            int cnt = mux_socket_write(d, (char *)tb->hdr.start, tb->hdr.nchars, 0);
             if (IS_SOCKET_ERROR(cnt))
             {
+#ifdef SSL_ENABLED
+                int iSocketError;
+                if (d->ssl_session)
+                {
+                   iSocketError = SSL_get_error(d->ssl_session,cnt);
+                }
+                else
+                {
+                   iSocketError = SOCKET_LAST_ERROR;
+                }
+#else
                 int iSocketError = SOCKET_LAST_ERROR;
-                if (  iSocketError != SOCKET_EWOULDBLOCK
+#endif
+                mudstate.debug_cmd = cmdsave;
+
+                if (  SOCKET_EWOULDBLOCK   == iSocketError
 #ifdef SOCKET_EAGAIN
-                   && iSocketError != SOCKET_EAGAIN
-#endif // SOCKET_EAGAIN
-                   && bHandleShutdown)
+                   || SOCKET_EAGAIN        == iSocketError
+#endif
+#ifdef SSL_ENABLED
+                   || SSL_ERROR_WANT_WRITE == iSocketError
+                   || SSL_ERROR_WANT_READ  == iSocketError
+#endif
+                )
+                {
+                    // The call would have blocked, so we need to mark the
+                    // buffer we used as read-only and try again later with
+                    // the exactly same buffer.
+                    //
+                    tb->hdr.flags |= TBLK_FLAG_LOCKED;
+                }
+                else if (bHandleShutdown)
                 {
                     shutdownsock(d, R_SOCKDIED);
                 }
-                mudstate.debug_cmd = cmdsave;
                 return;
             }
             d->output_size -= cnt;
@@ -2672,7 +2706,7 @@ void process_output9x(void *dvoid, int bHandleShutdown)
         MEMFREE(save);
         save = NULL;
         d->output_head = tb;
-        if (tb == NULL)
+        if (NULL == tb)
         {
             d->output_tail = NULL;
         }
@@ -2733,6 +2767,18 @@ static int AsyncSend(DESC *d, char *buf, size_t len)
     return nBytes;
 }
 
+/*! \brief Service network request for more output to a specific descriptor.
+ *
+ * This function also must be called to kick-start output the the network, so
+ * truthfully, the call can come from shovechars or the output routines.
+ * Currently, this is not being called by the queue, but it is in a form that
+ * is callable by the queue.
+ *
+ * \param dvoid             Network descriptor state.
+ * \param bHandleShutdown   Whether the shutdownsock() call is being handled..
+ * \return                  None.
+ */
+
 void process_outputNT(void *dvoid, int bHandleShutdown)
 {
     UNUSED_PARAMETER(bHandleShutdown);
@@ -2741,7 +2787,8 @@ void process_outputNT(void *dvoid, int bHandleShutdown)
 
     // Don't write if connection dropped or a write is pending.
     //
-    if (d->bConnectionDropped || d->bWritePending)
+    if (  d->bConnectionDropped
+       || d->bWritePending)
     {
         return;
     }
@@ -2751,29 +2798,28 @@ void process_outputNT(void *dvoid, int bHandleShutdown)
 
     TBLOCK *tb = d->output_head;
     TBLOCK *save;
-    int cnt;
 
-    if (tb != NULL)
+    if (NULL != tb)
     {
-        while (tb->hdr.nchars == 0)
+        while (0 == tb->hdr.nchars)
         {
             save = tb;
             tb = tb->hdr.nxt;
             MEMFREE(save);
             save = NULL;
             d->output_head = tb;
-            if (tb == NULL)
+            if (NULL == tb)
             {
                 d->output_tail = NULL;
                 break;
             }
         }
 
-        if (tb != NULL)
+        if (NULL != tb)
         {
-            if (tb->hdr.nchars > 0)
+            if (0 < tb->hdr.nchars)
             {
-                cnt = AsyncSend(d, (char *)tb->hdr.start, tb->hdr.nchars);
+                int cnt = AsyncSend(d, (char *)tb->hdr.start, tb->hdr.nchars);
                 if (cnt <= 0)
                 {
                     mudstate.debug_cmd = cmdsave;
@@ -2783,6 +2829,7 @@ void process_outputNT(void *dvoid, int bHandleShutdown)
                 tb->hdr.nchars -= cnt;
                 tb->hdr.start += cnt;
             }
+
             if (tb->hdr.nchars <= 0)
             {
                 save = tb;
@@ -2790,7 +2837,7 @@ void process_outputNT(void *dvoid, int bHandleShutdown)
                 MEMFREE(save);
                 save = NULL;
                 d->output_head = tb;
-                if (tb == NULL)
+                if (NULL == tb)
                 {
                     d->output_tail = NULL;
                 }
@@ -2802,6 +2849,18 @@ void process_outputNT(void *dvoid, int bHandleShutdown)
 
 #else // WIN32
 
+/*! \brief Service network request for more output to a specific descriptor.
+ *
+ * This function also must be called to kick-start output the the network, so
+ * truthfully, the call can come from shovechars or the output routines.
+ * Currently, this is not being called by the queue, but it is in a form that
+ * is callable by the queue.
+ *
+ * \param dvoid             Network descriptor state.
+ * \param bHandleShutdown   Whether the shutdownsock() call is being handled..
+ * \return                  None.
+ */
+
 void process_output(void *dvoid, int bHandleShutdown)
 {
     DESC *d = (DESC *)dvoid;
@@ -2810,46 +2869,47 @@ void process_output(void *dvoid, int bHandleShutdown)
     mudstate.debug_cmd = T("< process_output >");
 
     TBLOCK *tb = d->output_head;
-    while (tb != NULL)
+    while (NULL != tb)
     {
-        while (tb->hdr.nchars > 0)
+        while (0 < tb->hdr.nchars)
         {
-            int cnt = mux_socket_write(d, (const char *)tb->hdr.start, tb->hdr.nchars, 0);
+            int cnt = mux_socket_write(d, (char *)tb->hdr.start, tb->hdr.nchars, 0);
             if (IS_SOCKET_ERROR(cnt))
             {
 #ifdef SSL_ENABLED
                 int iSocketError;
-                if (d->ssl_session) {
+                if (d->ssl_session)
+                {
                    iSocketError = SSL_get_error(d->ssl_session,cnt);
                 }
-                else {
+                else
+                {
                    iSocketError = SOCKET_LAST_ERROR;
                 }
 #else
                 int iSocketError = SOCKET_LAST_ERROR;
 #endif
-                int iBlocking = 0;
+                mudstate.debug_cmd = cmdsave;
 
-                if (iSocketError == SOCKET_EWOULDBLOCK ||
+                if (  SOCKET_EWOULDBLOCK   == iSocketError
 #ifdef SOCKET_EAGAIN
-                    iSocketError == SOCKET_EAGAIN ||
+                   || SOCKET_EAGAIN        == iSocketError
 #endif
 #ifdef SSL_ENABLED
-                    iSocketError == SSL_ERROR_WANT_WRITE ||
-                    iSocketError == SSL_ERROR_WANT_READ 
+                   || SSL_ERROR_WANT_WRITE == iSocketError
+                   || SSL_ERROR_WANT_READ  == iSocketError
 #endif
                 )
-                   iBlocking = 1;
-
-                mudstate.debug_cmd = cmdsave;
-                if ( !iBlocking && bHandleShutdown)
+                {
+                    // The call would have blocked, so we need to mark the
+                    // buffer we used as read-only and try again later with
+                    // the exactly same buffer.
+                    //
+                    tb->hdr.flags |= TBLK_FLAG_LOCKED;
+                }
+                else if (bHandleShutdown)
                 {
                     shutdownsock(d, R_SOCKDIED);
-                }
-
-                if (iBlocking)
-                {
-                    tb->hdr.flags |= TBLK_FLAG_LOCKED;
                 }
                 return;
             }

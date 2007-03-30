@@ -336,7 +336,7 @@ static void add_to_output_queue(DESC *d, const char *b, size_t n)
         // string.  If so, copy it and update the pointers.
         //
         // We cannot update a buffer marked TBLK_FLAG_LOCKED.  If fact, we
-        // should read or write to such a buffer in any fashion.
+        // should not read or write to such a buffer in any fashion.
         //
         left = OUTPUT_BLOCK_SIZE - (tp->hdr.end - (UTF8 *)tp + 1);
         if (  n <= left
