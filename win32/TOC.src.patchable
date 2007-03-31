@@ -27,6 +27,7 @@ README
 readme.txt
 SGP
 SQL
+SSL
 src/alloc.cpp
 src/alloc.h
 src/ansi.h
