@@ -12896,6 +12896,7 @@ TERMINFO()
   pueblo           present if the client is in Pueblo mode.
   telnet           present if the client understands the telnet protocol.
   unicode          present if the client encoding is UTF-8.
+  ssl              present if the client connection is SSL encrypted.
 
   Other fields may be added in the future; 'mxp' for clients which support
   that, for instance.

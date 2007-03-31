@@ -16,6 +16,11 @@ Major changes that may affect performance and require softcode tweaks:
     support UTF-8 but do not negotiate it.
  -- Added CHARSET and NEW-ENVIRON telnet negotiations which may affect
     clients.
+ -- Add SSL encryption support including ssl_certificate_file,
+    port_ssl, ssl_certificate_key, and ssl_certificate_password
+    configuration options.  This is enabled with --enable-ssl.
+ -- Add Telnet option STARTTLS to support secure connections.
+    This is enabled with --enable-ssl.
 
 
 Feature Additions:
@@ -44,6 +49,9 @@ Feature Additions:
     the client's capabilities.
  -- Separated inline SQL supprt from Firan support so that it can be
     enabled separately.
+ -- Feature complete for UTF-8 string layer.
+ -- Turned on private use code points for Tengwar and Klingon even
+    though these code point assignments are not official.
  -- Added @eval command.
 
 
@@ -91,6 +99,7 @@ Bug Fixes:
  -- Fix 'think [search(eval=hasattr(##,foo))]' by clearing the []-ness from
     causing mux_exec() to complain about 'eval=hasattr()' not being a
     function.
+ -- v3 comtitles were not being converted to v4 color code points.
 
 
 Performance Enhancements:
