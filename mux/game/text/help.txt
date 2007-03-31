@@ -12296,7 +12296,7 @@ SQL()
   code doing 700 large SQL queries in a row, the game will almost certainly
   lag.
 
-  The function is only available if FIRANMUX is enabled.
+  The function is only available if the INLINESQL feature is enabled.
 
   Related Topics:
 
@@ -12896,6 +12896,7 @@ TERMINFO()
   pueblo           present if the client is in Pueblo mode.
   telnet           present if the client understands the telnet protocol.
   unicode          present if the client encoding is UTF-8.
+  ssl              present if the client is using an encrypted connection.
 
   Other fields may be added in the future; 'mxp' for clients which support
   that, for instance.
