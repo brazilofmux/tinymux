@@ -1,0 +1,54 @@
+TinyMUX 2.7:  SSL
+Last Update:  March 2007
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+1) To compile TinyMUX 2.7 with support for SSL and TLS, you will need to
+   use the --enable-ssl option.  This option requires OpenSSL 0.9.6 or later,
+   and 0.9.7 is highly recommended if possible.
+
+2) Once the game has been compiled you will need to create an SSL 
+   certificate.  You can create a self-signed certificate using the
+   included muxssl.cnf file and the OpenSSL certificate generation commands,
+   but it is important to note that not all MU* clients that support
+   SSL and TLS encryption will accept self-signed certificates.  
+
+   For a production game, it is recommended to get a certificate from 
+   one of the acknowledged and accepted 'root' certificate authorities,
+   such as Verisign.
+
+3) Once you have your certificate, you need to add a few options to your
+   game's .conf file:
+
+        ssl_certificate_file <PEM file>
+        ssl_certificate_key <PEM file>
+        ssl_certificate_password <passphrase>
+
+   The certificate and key can be included in the same PEM file, or in
+   two separate ones.  If your passphrase is blank/empty, you can omit
+   that configuration option.
+
+4) If you only want to support TLS connections, for clients that support
+   the Telnet STARTTLS extension (such as Trebuchet), you're now done.
+   If you wish to support SSL-only connections on a separate port, for
+   TinyFugue and other clients that support SSL, you will also need to
+   add a directive with the SSL-specific ports.
+
+        port_ssl <port> [<port> [<port> ...]]
+
+   Just like the 'port' directive, 'port_ssl' builds a list of ports that
+   the game should listen on.
+
+5) When you start the game, you should see a line along the lines of:
+
+        NET/SSL  : initialize_ssl: SSL engine initialized successfully.
+
+   If you do not see this line, look for SSL error messages in the log.
+   A likely cause is an improper certificate passphrase.  
+   
+   If MUX 2.7 cannot initialize the SSL engine, the game will still run 
+   but the SSL ports will not be opened and the TLS option will be 
+   disabled.
+
+6) When users are connected via SSL ports or the TLS extension, their
+   terminfo() output will reflect this by adding 'ssl' to the list of
+   client features.
