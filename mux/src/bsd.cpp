@@ -2717,7 +2717,7 @@ void process_output_ntio(void *dvoid, int bHandleShutdown)
         d->OutboundOverlapped.Offset = 0;
         d->OutboundOverlapped.OffsetHigh = 0;
         BOOL bResult = WriteFile((HANDLE) d->descriptor, tb->hdr.start,
-            tb->hdr.nchars, NULL, &d->OutboundOverlapped);
+            static_cast<DWORD>(tb->hdr.nchars), NULL, &d->OutboundOverlapped);
         if (bResult)
         {
             // The WriteFile request completed immediately, and technically,
