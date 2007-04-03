@@ -1433,6 +1433,152 @@ static FUNCTION(fun_etimefmt)
     safe_str(p, buff, bufc);
 }
 
+static UTF8 *expand_tabs(const UTF8 *str)
+{
+    static UTF8 tbuf1[LBUF_SIZE];
+    UTF8 *bp = tbuf1;
+
+    if (str)
+    {
+        unsigned int n = 0;
+
+        for (unsigned int i = 0; str[i]; i++)
+        {
+            if (utf8_FirstByte[str[i]] < UTF8_CONTINUE)
+            {
+                switch (str[i])
+                {
+                case '\t':
+                    safe_fill(tbuf1, &bp, ' ', 8 - n % 8);
+                    n = 0;
+                    continue;
+                case '\r':
+                    // FALL THROUGH
+                case '\n':
+                    n = 0;
+                    break;
+                default:
+                    if (mux_haswidth(str + i))
+                    {
+                        n++;
+                    }
+                }
+            }
+            safe_chr(str[i], tbuf1, &bp);
+        }
+    }
+    *bp = '\0';
+    return tbuf1;
+}
+
+void linewrap_general(const UTF8 *pStr,     LBUF_OFFSET nWidth,
+                            UTF8 *pBuffer,  size_t      nBuffer,
+                      const UTF8 *pLeft,    LBUF_OFFSET nLeft,
+                      const UTF8 *pRight,   LBUF_OFFSET nRight,
+                            int   iJustKey, LBUF_OFFSET nHanging,
+                      const UTF8 *pOSep,    mux_cursor  curOSep,
+                      LBUF_OFFSET nWidth0)
+{
+    mux_string *sStr = new mux_string(expand_tabs(pStr));
+    mux_cursor nStr = sStr->length_cursor();
+    bool bFirst = true, bNewline = false;
+    mux_field fldLine, fldTemp, fldPad;
+    mux_cursor curStr, curEnd, iPos;
+    LBUF_OFFSET nLineWidth = (0 < nWidth0 ? nWidth0 : nWidth);
+
+    while (  curStr < nStr
+          && fldLine.m_byte < nBuffer)
+    {
+        if (!bFirst)
+        {
+            mux_strncpy(pBuffer + fldLine.m_byte, pOSep, nBuffer - fldLine.m_byte);
+            fldLine(fldLine.m_byte + curOSep.m_byte, fldLine.m_column + curOSep.m_point);
+            if (0 < nHanging)
+            {
+                fldLine = PadField(pBuffer, nBuffer, fldLine.m_column + nHanging, fldLine);
+            }
+            nLineWidth = nWidth;
+        }
+        else
+        {
+            bFirst = false;
+        }
+        fldLine += StripTabsAndTruncate( pLeft, pBuffer + fldLine.m_byte,
+                                         nBuffer - fldLine.m_byte, nLeft);
+
+        if (!sStr->search(T("\r"), &iPos, curStr))
+        {
+            iPos = nStr;
+        }
+        while (  mux_isspace(sStr->export_Char(curStr.m_byte))
+              && curStr < iPos)
+        {
+            curStr(curStr.m_byte + 1, curStr.m_point + 1);
+        }
+        sStr->cursor_from_point(curEnd, static_cast<LBUF_OFFSET>(curStr.m_point + nLineWidth));
+        if (iPos < curEnd)
+        {
+            curEnd = iPos;
+            bNewline = true;
+        }
+        else
+        {
+            bNewline = false;
+        }
+        if (mux_isspace(sStr->export_Char(curEnd.m_byte)))
+        {
+            mux_cursor curSpace = curEnd;
+            while (  mux_isspace(sStr->export_Char(curSpace.m_byte))
+                  && curStr < curSpace)
+            {
+                curSpace(curSpace.m_byte - 1, curSpace.m_point - 1);
+            }
+            if (curSpace < curEnd)
+            {
+                curEnd(curSpace.m_byte + 1, curSpace.m_point + 1);
+            }
+        }
+        fldTemp(curEnd.m_byte - curStr.m_byte, curEnd.m_point - curStr.m_point);
+        if (  fldTemp.m_column < nLineWidth
+           && CJC_LJUST != iJustKey)
+        {
+            if (CJC_CENTER == iJustKey)
+            {
+                fldPad = PadField(pBuffer, nBuffer, fldLine.m_column + (nLineWidth - fldTemp.m_column)/2, fldLine);
+            }
+            else // if (CJC_RJUST == iJustKey)
+            {
+                fldPad = PadField(pBuffer, nBuffer, fldLine.m_column + nLineWidth - fldTemp.m_column, fldLine);
+            }
+        }
+        else
+        {
+            fldPad = fldLine;
+        }
+        sStr->export_TextColor(pBuffer + fldPad.m_byte, curStr, curEnd, nBuffer - fldPad.m_byte);
+        if (CJC_RJUST == iJustKey)
+        {
+            fldLine = fldPad + fldTemp;
+        }
+        else
+        {
+            fldLine = PadField(pBuffer, nBuffer, fldLine.m_column + nLineWidth, fldPad + fldTemp);
+        }
+        if (bNewline)
+        {
+            curStr(curEnd.m_byte + 2, curEnd.m_point + 2);
+        }
+        else
+        {
+            curStr = curEnd;
+        }
+
+        fldLine += StripTabsAndTruncate( pRight, pBuffer + fldLine.m_byte,
+                                         nBuffer - fldLine.m_byte, nRight);
+    }
+    delete sStr;
+}
+
 #if defined(FIRANMUX)
 
 /*
@@ -1442,6 +1588,14 @@ static FUNCTION(fun_etimefmt)
 
 FUNCTION(fun_format)
 {
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     int fieldsize = mux_atol(fargs[1]);
     if (  fieldsize < 1
        || 80 < fieldsize)
@@ -1451,17 +1605,19 @@ FUNCTION(fun_format)
     }
 
     size_t n2, n3;
-    strip_color(fargs[2], &n2);
-    strip_color(fargs[3], &n3);
-    if (fieldsize + n2 + n3 > 79)
+    strip_color(fargs[2], NULL, &n2);
+    strip_color(fargs[3], NULL, &n3);
+    if (79 < fieldsize + n2 + n3)
     {
         safe_str(T("#-1 COMBINED FIELD TOO LARGE"), buff, bufc);
         return;
     }
 
     UTF8 *buf = alloc_lbuf("fun_format");
-    mux_strncpy(buf, fargs[0], LBUF_SIZE-1);
-    linewrap_general(buf, fieldsize, fargs[2], fargs[3]);
+    linewrap_general( fargs[0], static_cast<LBUF_OFFSET>(fieldsize),
+                      buf,      LBUF_SIZE-1,
+                      fargs[2], static_cast<LBUF_OFFSET>(n2),
+                      fargs[3], static_cast<LBUF_OFFSET>(n3));
     safe_str(buf, buff, bufc);
     free_lbuf(buf);
 }
@@ -7973,10 +8129,6 @@ static FUNCTION(fun_setinter)
 /* ---------------------------------------------------------------------------
  * rjust, ljust, center: Justify or center text, specifying fill character.
  */
-#define CJC_CENTER 0
-#define CJC_LJUST  1
-#define CJC_RJUST  2
-
 static void centerjustcombo
 (
     int iType,
@@ -8466,106 +8618,6 @@ static FUNCTION(fun_strip)
 }
 
 #define DEFAULT_WIDTH 78
-static UTF8 *expand_tabs(const UTF8 *str)
-{
-    static UTF8 tbuf1[LBUF_SIZE];
-    UTF8 *bp = tbuf1;
-
-    if (str)
-    {
-        unsigned int n = 0;
-
-        for (unsigned int i = 0; str[i]; i++)
-        {
-            if (utf8_FirstByte[str[i]] < UTF8_CONTINUE)
-            {
-                switch (str[i])
-                {
-                case '\t':
-                    safe_fill(tbuf1, &bp, ' ', 8 - n % 8);
-                    n = 0;
-                    continue;
-                case '\r':
-                    // FALL THROUGH
-                case '\n':
-                    n = 0;
-                    break;
-                default:
-                    if (mux_haswidth(str + i))
-                    {
-                        n++;
-                    }
-                }
-            }
-            safe_chr(str[i], tbuf1, &bp);
-        }
-    }
-    *bp = '\0';
-    return tbuf1;
-}
-
-static mux_cursor wraplen(UTF8 *str, const LBUF_OFFSET nWidth, bool &newline)
-{
-    mux_cursor nStr;
-    utf8_strlen(str, nStr);
-    newline = false;
-    mux_cursor i = CursorMin;
-    if (nStr.m_point <= nWidth)
-    {
-        /* Find the first return char
-        * so %r will not mess with any alignment
-        * functions.
-        */
-        while (i < nStr)
-        {
-            if (  str[i.m_byte] == '\n'
-               || str[i.m_byte] == '\r')
-            {
-                newline = true;
-                i(i.m_byte + 2, i.m_point + 2);
-                return i;
-            }
-            i(i.m_byte + utf8_FirstByte[str[i.m_byte]], i.m_point + 1);
-        }
-        return nStr;
-    }
-
-    /* Find the first return char
-    * so %r will not mess with any alignment
-    * functions.
-    */
-    for ( i = CursorMin;
-          i.m_point < nWidth;
-          i(i.m_byte + utf8_FirstByte[str[i.m_byte]],i.m_point + 1))
-    {
-        if (  str[i.m_byte] == '\n'
-           || str[i.m_byte] == '\r')
-        {
-            newline = true;
-            i(i.m_byte + 2, i.m_point + 2);
-            return i;
-        }
-    }
-
-    /* No return char was found. Now
-    * find the last space in str.
-    */
-    i = CursorMin;
-    mux_cursor iSpace = CursorMin;
-    while (i.m_point < nWidth)
-    {
-        if (str[i.m_byte] == ' ')
-        {
-            iSpace = i;
-        }
-        i(i.m_byte + utf8_FirstByte[str[i.m_byte]],i.m_point + 1);
-    }
-    if (str[i.m_byte] == ' ')
-    {
-        iSpace = i;
-    }
-    return iSpace;
-}
 
 static FUNCTION(fun_wrap)
 {
@@ -8624,19 +8676,23 @@ static FUNCTION(fun_wrap)
     // ARG 4: Left padding. Default: blank.
     //
     UTF8 *pLeft = NULL;
+    size_t nLeft = 0;
     if (  4 <= nfargs
        && '\0' != fargs[3][0])
     {
         pLeft = fargs[3];
+        strip_color(pLeft, NULL, &nLeft);
     }
 
     // ARG 5: Right padding. Default: blank.
     //
     UTF8 *pRight = NULL;
+    size_t nRight = 0;
     if (  5 <= nfargs
        && '\0' != fargs[4][0])
     {
         pRight = fargs[4];
+        strip_color(pRight, NULL, &nRight);
     }
 
     // ARG 6: Hanging indent. Default: 0.
@@ -8650,18 +8706,20 @@ static FUNCTION(fun_wrap)
 
     // ARG 7: Output separator. Default: line break.
     //
-    UTF8 *pOSep = (UTF8 *)"\r\n";
+    const UTF8 *pOSep = T("\r\n");
+    mux_cursor curOSep(2, 2);
     if (  7 <= nfargs
        && '\0' != fargs[6][0])
     {
         if (!strcmp((char *)fargs[6], "@@"))
         {
-            pOSep = NULL;
+            pOSep = T("");
         }
         else
         {
             pOSep = fargs[6];
         }
+        utf8_strlen(pOSep, curOSep);
     }
 
     // ARG 8: First line width. Default: same as arg 2.
@@ -8678,52 +8736,15 @@ static FUNCTION(fun_wrap)
         }
     }
 
-    mux_string *sStr = new mux_string(expand_tabs(fargs[0]));
-    mux_cursor nStr = sStr->length_cursor();
-
-    UTF8 *pPlain = alloc_lbuf("fun_wrap.pPlain");
-    UTF8 *pColor = alloc_lbuf("fun_wrap.pColor");
-
-    bool newline = false;
-    UTF8 *jargs[2];
-    mux_cursor nLength = CursorMin, iPos = CursorMin, iEnd;
-
-    while (iPos < nStr)
-    {
-        sStr->export_TextPlain(pPlain, iPos);
-
-        nLength = wraplen(pPlain, static_cast<LBUF_OFFSET>(iPos == CursorMin ? nFirstWidth : nWidth), newline);
-        iEnd = iPos + nLength;
-
-        sStr->export_TextColor(pColor, iPos, iEnd);
-
-        if (CursorMin != iPos)
-        {
-            safe_str(pOSep, buff, bufc);
-            if (0 < nHanging)
-            {
-                safe_fill(buff, bufc, ' ', nHanging);
-            }
-        }
-
-        jargs[0] = pColor;
-        jargs[1] = mux_ltoa_t(iPos == CursorMin ? nFirstWidth : nWidth);
-        safe_str(pLeft, buff, bufc);
-        centerjustcombo(iJustKey, buff, bufc, jargs, 2, true);
-        safe_str(pRight, buff, bufc);
-
-        iPos( iPos.m_byte  + nLength.m_byte  + (newline ? 2 : 0),
-              iPos.m_point + nLength.m_point + (newline ? 2 : 0));
-        if (  pPlain[nLength.m_byte] == ' '
-           && pPlain[nLength.m_byte+1] != ' ')
-        {
-            sStr->cursor_next(iPos);
-        }
-    }
-
-    free_lbuf(pColor);
-    free_lbuf(pPlain);
-    delete sStr;
+    UTF8 *pBuffer = alloc_lbuf("fun_wrap");
+    linewrap_general( fargs[0], static_cast<LBUF_OFFSET>(nWidth),
+                      pBuffer, LBUF_SIZE-1,
+                      pLeft, static_cast<LBUF_OFFSET>(nLeft),
+                      pRight, static_cast<LBUF_OFFSET>(nRight),
+                      iJustKey, static_cast<LBUF_OFFSET>(nHanging),
+                      pOSep, curOSep, static_cast<LBUF_OFFSET>(nFirstWidth));
+    safe_str(pBuffer, buff, bufc);
+    free_lbuf(pBuffer);
 }
 
 typedef struct

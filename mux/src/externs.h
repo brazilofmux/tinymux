@@ -186,10 +186,23 @@ void PopRegisters(reg_ref **p, int nNeeded);
 extern const signed char mux_RegisterSet[256];
 extern const unsigned int ColorTable[256];
 
-#if defined(FIRANMUX)
-UTF8 *linewrap_desc(UTF8 *);
-UTF8 *linewrap_general(UTF8 *, int, const UTF8 *, const UTF8 *);
-#endif // FIRANMUX
+#define CJC_CENTER 0
+#define CJC_LJUST  1
+#define CJC_RJUST  2
+
+static const mux_cursor curNewline(2, 2);
+
+void linewrap_general(const UTF8 *pStr,     LBUF_OFFSET nWidth,
+                            UTF8 *pBuffer,  size_t      nBuffer,
+                      const UTF8 *pLeft = T(""),
+                      LBUF_OFFSET nLeft = 0,
+                      const UTF8 *pRight = T(""),
+                      LBUF_OFFSET nRight = 0,
+                      int   iJustKey = CJC_LJUST,
+                      LBUF_OFFSET nHanging = 0,
+                      const UTF8 *pOSep = T("\r\n"),
+                      mux_cursor curOSep = curNewline,
+                      LBUF_OFFSET nWidth0 = 0);
 
 /* From game.cpp */
 #define notify(p,m)                         notify_check(p,p,m, MSG_PUP_ALWAYS|MSG_ME_ALL|MSG_F_DOWN)

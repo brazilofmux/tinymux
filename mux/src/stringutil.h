@@ -722,7 +722,7 @@ static const mux_field fldMin(0, 0);
 
 bool utf8_strlen(const UTF8 *pString, mux_cursor &nString);
 mux_field StripTabsAndTruncate(const UTF8 *pString, UTF8 *pBuffer,
-    size_t nLength, LBUF_OFFSET nWidth);
+    size_t nLength, size_t nWidth);
 mux_field PadField(UTF8 *pBuffer, size_t nMaxBytes, LBUF_OFFSET nMinWidth,
                    mux_field fldOutput = fldMin);
 
@@ -836,14 +836,16 @@ public:
     bool search
     (
         const UTF8 *pPattern,
-        mux_cursor *nPos = NULL,
-        mux_cursor nStart = CursorMin
+        mux_cursor *iPos = NULL,
+        mux_cursor iStart = CursorMin,
+        mux_cursor iEnd = CursorMax
     ) const;
     bool search
     (
         const mux_string &sPattern,
-        mux_cursor *nPos = NULL,
-        mux_cursor nStart = CursorMin
+        mux_cursor *iPos = NULL,
+        mux_cursor iStart = CursorMin,
+        mux_cursor iEnd = CursorMax
     ) const;
     void set_Char(size_t n, const UTF8 cChar);
     void set_Color(size_t n, ColorState csColor);
