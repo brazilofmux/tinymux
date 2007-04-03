@@ -2984,15 +2984,22 @@ UTF8 *ConvertToUTF8(const char *p, size_t *pn)
 //
 void mux_strncpy(UTF8 *dest, const UTF8 *src, size_t nSizeOfBuffer)
 {
-    if (src == NULL) return;
-
-    UTF8 *tp = dest;
-    UTF8 *maxtp = dest + nSizeOfBuffer;
-    while (tp < maxtp && *src)
+    if (NULL == src)
     {
-        *tp++ = *src++;
+        return;
     }
-    *tp = '\0';
+
+    size_t i = 0;
+    while (  i < nSizeOfBuffer
+          && '\0' != src[i])
+    {
+        dest[i] = src[i];
+        i++;
+    }
+    if (i <= nSizeOfBuffer)
+    {
+        dest[i] = '\0';
+    }
 }
 
 bool matches_exit_from_list(UTF8 *str, const UTF8 *pattern)
@@ -4005,7 +4012,8 @@ mux_field StripTabsAndTruncate
        || 0 == nWidth0
        || '\0' == pString[0])
     {
-        if (NULL != pBuffer)
+        if (  NULL != pBuffer
+           && 0 < nLength)
         {
             pBuffer[0] = '\0';
         }
@@ -4192,7 +4200,10 @@ mux_field PadField( UTF8 *pBuffer, size_t nMaxBytes, LBUF_OFFSET nMinWidth,
         pBuffer[fldOutput.m_byte] = (UTF8)' ';
         fldOutput += fldAscii;
     }
-    pBuffer[fldOutput.m_byte] = '\0';
+    if (fldOutput.m_byte <= nMaxBytes)
+    {
+        pBuffer[fldOutput.m_byte] = '\0';
+    }
     return fldOutput;
 }
 

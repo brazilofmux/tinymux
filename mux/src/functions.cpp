@@ -1487,7 +1487,7 @@ LBUF_OFFSET linewrap_general(const UTF8 *pStr,     LBUF_OFFSET nWidth,
     LBUF_OFFSET nLineWidth = (0 < nWidth0 ? nWidth0 : nWidth);
 
     while (  curStr < nStr
-          && fldLine.m_byte < nBuffer)
+          && fldLine.m_byte + curOSep.m_byte < nBuffer)
     {
         if (!bFirst)
         {
