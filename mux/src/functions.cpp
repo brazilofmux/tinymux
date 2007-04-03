@@ -1491,11 +1491,14 @@ void linewrap_general(const UTF8 *pStr,     LBUF_OFFSET nWidth,
     {
         if (!bFirst)
         {
-            mux_strncpy(pBuffer + fldLine.m_byte, pOSep, nBuffer - fldLine.m_byte);
-            fldLine(fldLine.m_byte + curOSep.m_byte, fldLine.m_column + curOSep.m_point);
+            mux_strncpy( pBuffer + fldLine.m_byte, pOSep,
+                         nBuffer - fldLine.m_byte);
+            fldLine( fldLine.m_byte + curOSep.m_byte,
+                     fldLine.m_column + curOSep.m_point);
             if (0 < nHanging)
             {
-                fldLine = PadField(pBuffer, nBuffer, fldLine.m_column + nHanging, fldLine);
+                fldLine = PadField( pBuffer, nBuffer,
+                                    fldLine.m_column + nHanging, fldLine);
             }
             nLineWidth = nWidth;
         }
@@ -1515,7 +1518,7 @@ void linewrap_general(const UTF8 *pStr,     LBUF_OFFSET nWidth,
         {
             curStr(curStr.m_byte + 1, curStr.m_point + 1);
         }
-        sStr->cursor_from_point(curEnd, static_cast<LBUF_OFFSET>(curStr.m_point + nLineWidth));
+        sStr->cursor_from_point(curEnd, curStr.m_point + nLineWidth);
         if (iPos < curEnd)
         {
             curEnd = iPos;
@@ -1542,20 +1545,24 @@ void linewrap_general(const UTF8 *pStr,     LBUF_OFFSET nWidth,
         if (  fldTemp.m_column < nLineWidth
            && CJC_LJUST != iJustKey)
         {
+            LBUF_OFFSET nPadWidth;
             if (CJC_CENTER == iJustKey)
             {
-                fldPad = PadField(pBuffer, nBuffer, fldLine.m_column + (nLineWidth - fldTemp.m_column)/2, fldLine);
+                nPadWidth = fldLine.m_column + (nLineWidth - fldTemp.m_column)/2;
             }
             else // if (CJC_RJUST == iJustKey)
             {
-                fldPad = PadField(pBuffer, nBuffer, fldLine.m_column + nLineWidth - fldTemp.m_column, fldLine);
+                nPadWidth = fldLine.m_column + nLineWidth - fldTemp.m_column;
             }
+            fldPad = PadField(pBuffer, nBuffer, nPadWidth, fldLine);
         }
         else
         {
             fldPad = fldLine;
         }
-        LBUF_OFFSET nBytes = sStr->export_TextColor(pBuffer + fldPad.m_byte, curStr, curEnd, nBuffer - fldPad.m_byte);
+        LBUF_OFFSET nBytes = sStr->export_TextColor( pBuffer + fldPad.m_byte,
+                                                     curStr, curEnd,
+                                                     nBuffer - fldPad.m_byte);
         fldTemp(nBytes, fldTemp.m_column);
         if (CJC_RJUST == iJustKey)
         {
@@ -1563,7 +1570,8 @@ void linewrap_general(const UTF8 *pStr,     LBUF_OFFSET nWidth,
         }
         else
         {
-            fldLine = PadField(pBuffer, nBuffer, fldLine.m_column + nLineWidth, fldPad + fldTemp);
+            fldLine = PadField( pBuffer, nBuffer, fldLine.m_column + nLineWidth,
+                                fldPad + fldTemp);
         }
         if (bNewline)
         {
