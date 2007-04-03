@@ -192,17 +192,14 @@ extern const unsigned int ColorTable[256];
 
 static const mux_cursor curNewline(2, 2);
 
-void linewrap_general(const UTF8 *pStr,     LBUF_OFFSET nWidth,
-                            UTF8 *pBuffer,  size_t      nBuffer,
-                      const UTF8 *pLeft = T(""),
-                      LBUF_OFFSET nLeft = 0,
-                      const UTF8 *pRight = T(""),
-                      LBUF_OFFSET nRight = 0,
-                      int   iJustKey = CJC_LJUST,
-                      LBUF_OFFSET nHanging = 0,
-                      const UTF8 *pOSep = T("\r\n"),
-                      mux_cursor curOSep = curNewline,
-                      LBUF_OFFSET nWidth0 = 0);
+LBUF_OFFSET linewrap_general(const UTF8 *pStr, LBUF_OFFSET nWidth,
+                             UTF8 *pBuffer, size_t nBuffer,
+                             const UTF8 *pLeft = T(""), LBUF_OFFSET nLeft = 0,
+                             const UTF8 *pRight = T(""), LBUF_OFFSET nRight = 0,
+                             int iJustKey = CJC_LJUST, LBUF_OFFSET nHanging = 0,
+                             const UTF8 *pOSep = T("\r\n"),
+                             mux_cursor curOSep = curNewline,
+                             LBUF_OFFSET nWidth0 = 0);
 
 /* From game.cpp */
 #define notify(p,m)                         notify_check(p,p,m, MSG_PUP_ALWAYS|MSG_ME_ALL|MSG_F_DOWN)

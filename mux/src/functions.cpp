@@ -1471,13 +1471,13 @@ static UTF8 *expand_tabs(const UTF8 *str)
     return tbuf1;
 }
 
-void linewrap_general(const UTF8 *pStr,     LBUF_OFFSET nWidth,
-                            UTF8 *pBuffer,  size_t      nBuffer,
-                      const UTF8 *pLeft,    LBUF_OFFSET nLeft,
-                      const UTF8 *pRight,   LBUF_OFFSET nRight,
-                            int   iJustKey, LBUF_OFFSET nHanging,
-                      const UTF8 *pOSep,    mux_cursor  curOSep,
-                      LBUF_OFFSET nWidth0)
+LBUF_OFFSET linewrap_general(const UTF8 *pStr,     LBUF_OFFSET nWidth,
+                                   UTF8 *pBuffer,  size_t      nBuffer,
+                             const UTF8 *pLeft,    LBUF_OFFSET nLeft,
+                             const UTF8 *pRight,   LBUF_OFFSET nRight,
+                                   int   iJustKey, LBUF_OFFSET nHanging,
+                             const UTF8 *pOSep,    mux_cursor  curOSep,
+                             LBUF_OFFSET nWidth0)
 {
     mux_string *sStr = new mux_string(expand_tabs(pStr));
     mux_cursor nStr = sStr->length_cursor();
@@ -1586,6 +1586,7 @@ void linewrap_general(const UTF8 *pStr,     LBUF_OFFSET nWidth,
                                          nBuffer - fldLine.m_byte, nRight);
     }
     delete sStr;
+    return fldLine.m_byte;
 }
 
 #if defined(FIRANMUX)
@@ -1622,13 +1623,10 @@ FUNCTION(fun_format)
         return;
     }
 
-    UTF8 *buf = alloc_lbuf("fun_format");
-    linewrap_general( fargs[0], static_cast<LBUF_OFFSET>(fieldsize),
-                      buf,      LBUF_SIZE-1,
-                      fargs[2], static_cast<LBUF_OFFSET>(n2),
-                      fargs[3], static_cast<LBUF_OFFSET>(n3));
-    safe_str(buf, buff, bufc);
-    free_lbuf(buf);
+    *bufc += linewrap_general( fargs[0], static_cast<LBUF_OFFSET>(fieldsize),
+                               *bufc,    LBUF_SIZE - (*bufc - buff) - 1,
+                               fargs[2], static_cast<LBUF_OFFSET>(n2),
+                               fargs[3], static_cast<LBUF_OFFSET>(n3));
 }
 
 /*
@@ -8745,15 +8743,12 @@ static FUNCTION(fun_wrap)
         }
     }
 
-    UTF8 *pBuffer = alloc_lbuf("fun_wrap");
-    linewrap_general( fargs[0], static_cast<LBUF_OFFSET>(nWidth),
-                      pBuffer, LBUF_SIZE-1,
-                      pLeft, static_cast<LBUF_OFFSET>(nLeft),
-                      pRight, static_cast<LBUF_OFFSET>(nRight),
-                      iJustKey, static_cast<LBUF_OFFSET>(nHanging),
-                      pOSep, curOSep, static_cast<LBUF_OFFSET>(nFirstWidth));
-    safe_str(pBuffer, buff, bufc);
-    free_lbuf(pBuffer);
+    *bufc += linewrap_general( fargs[0], static_cast<LBUF_OFFSET>(nWidth),
+                               *bufc, LBUF_SIZE - (*bufc - buff) - 1,
+                               pLeft, static_cast<LBUF_OFFSET>(nLeft),
+                               pRight, static_cast<LBUF_OFFSET>(nRight),
+                               iJustKey, static_cast<LBUF_OFFSET>(nHanging),
+                               pOSep, curOSep, static_cast<LBUF_OFFSET>(nFirstWidth));
 }
 
 typedef struct
