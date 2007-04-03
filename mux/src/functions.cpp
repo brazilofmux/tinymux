@@ -1555,7 +1555,8 @@ void linewrap_general(const UTF8 *pStr,     LBUF_OFFSET nWidth,
         {
             fldPad = fldLine;
         }
-        sStr->export_TextColor(pBuffer + fldPad.m_byte, curStr, curEnd, nBuffer - fldPad.m_byte);
+        LBUF_OFFSET nBytes = sStr->export_TextColor(pBuffer + fldPad.m_byte, curStr, curEnd, nBuffer - fldPad.m_byte);
+        fldTemp(nBytes, fldTemp.m_column);
         if (CJC_RJUST == iJustKey)
         {
             fldLine = fldPad + fldTemp;
