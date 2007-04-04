@@ -13,9 +13,13 @@
 #include <sys/stat.h>
 #include <signal.h>
 #ifndef WIN32
+#ifdef HAVE_LOCALE_H
 #include <locale.h>
+#endif // HAVE_LOCALE_H
+#ifdef HAVE_LANGINFO_H
 #include <langinfo.h>
-eEncoding g_eEncoding;
+#endif // HAVE_LANGINFO_H
+eEncoding g_eEncoding = eASCII;
 #endif
 
 #include "attrs.h"
@@ -2903,13 +2907,16 @@ int DCL_CDECL main(int argc, char *argv[])
     cpu_init();
 #endif
 
-#ifndef WIN32
-    // TODO: Some autoconf work is still needed.
+#if !defined(WIN32) && defined(HAVE_LOCALE_H) && defined(HAVE_LANGINFO_H)
+    // TODO: More autoconf work is needed.
     //
     // Configuration files and databases use UTF-8 reguardless of the system's
     // locale, but the system's locale affects the platform interface in terms
     // of command-line format, filename encoding, and certain other library
     // calls.
+    //
+    // Because of this, we must determine the locale before interpreting the
+    // command-line.
     //
     setlocale(LC_CTYPE, "");
     char *pCodeSet = nl_langinfo(CODESET);
@@ -2932,7 +2939,7 @@ int DCL_CDECL main(int argc, char *argv[])
         fprintf(stderr, "Unsupported locale." ENDLINE);
         return 1;
     }
-#endif
+#endif // !WIN32 HAVE_LOCALE_H HAVE_LANGINFO_H
 
     build_version();
 

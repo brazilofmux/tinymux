@@ -70,6 +70,10 @@
 #undef HAVE_SYS_WAIT_H
 /* Define if sys/select.h exists */
 #undef HAVE_SYS_SELECT_H
+/* Define if locale.h exists */
+#undef HAVE_LOCALE_H
+/* Define if langinfo.h exists */
+#undef HAVE_LANGINFO_H
 /* Define if sys/rusage.h exists */
 #undef HAVE_SYS_RUSAGE_H
 /* Define if Big Endian */
