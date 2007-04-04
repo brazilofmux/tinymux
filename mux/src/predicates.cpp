@@ -2393,9 +2393,10 @@ void did_it(dbref player, dbref thing, int what, const UTF8 *def, int owhat,
                     && (  !Linewrap(thing)
                        || isPlayer(thing)))
             {
-                static UTF8 Buffer[LBUF_SIZE];
-                linewrap_general(buff, 70, Buffer, sizeof(Buffer)-1, T("     "), 5);
-                notify(player, Buffer);
+                UTF8 *p = alloc_lbuf("did_it.2");
+                linewrap_general(buff, 70, p, LBUF_SIZE-1, T("     "), 5);
+                notify(player, p);
+                free_lbuf(p);
             }
 #endif // FIRANMUX
             else
