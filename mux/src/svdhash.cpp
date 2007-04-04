@@ -1475,12 +1475,18 @@ bool CHashFile::CreateFileSet(const UTF8 *szDirFile, const UTF8 *szPageFile)
 {
     CloseAll();
 
-    bool bSuccess;
+    bool bSuccess = false;
 #ifdef WIN32
-    m_hPageFile = CreateFile((char *)szPageFile, GENERIC_READ | GENERIC_WRITE,
-        FILE_SHARE_READ, 0, CREATE_ALWAYS,
-        FILE_ATTRIBUTE_NORMAL + FILE_FLAG_RANDOM_ACCESS, NULL);
-    bSuccess = (INVALID_HANDLE_VALUE != m_hPageFile);
+    size_t nFilename;
+    UTF16 *pFilename;
+    pFilename = ConvertFromUTF8ToUTF16(szPageFile, &nFilename);
+    if (NULL != pFilename)
+    {
+        m_hPageFile = CreateFile(pFilename, GENERIC_READ | GENERIC_WRITE,
+            FILE_SHARE_READ, 0, CREATE_ALWAYS,
+            FILE_ATTRIBUTE_NORMAL + FILE_FLAG_RANDOM_ACCESS, NULL);
+        bSuccess = (INVALID_HANDLE_VALUE != m_hPageFile);
+    }
 #else // WIN32
     bSuccess = mux_open(&m_hPageFile, szPageFile, O_RDWR|O_BINARY|O_CREAT|O_TRUNC);
 #endif // WIN32
@@ -1491,10 +1497,15 @@ bool CHashFile::CreateFileSet(const UTF8 *szDirFile, const UTF8 *szPageFile)
     }
 
 #ifdef WIN32
-    m_hDirFile = CreateFile((char *)szDirFile, GENERIC_READ | GENERIC_WRITE,
-        FILE_SHARE_READ, 0, CREATE_ALWAYS,
-        FILE_ATTRIBUTE_NORMAL + FILE_FLAG_SEQUENTIAL_SCAN, NULL);
-    bSuccess = (INVALID_HANDLE_VALUE != m_hDirFile);
+    bSuccess = false;
+    pFilename = ConvertFromUTF8ToUTF16(szDirFile, &nFilename);
+    if (NULL != pFilename)
+    {
+        m_hDirFile = CreateFile(pFilename, GENERIC_READ | GENERIC_WRITE,
+            FILE_SHARE_READ, 0, CREATE_ALWAYS,
+            FILE_ATTRIBUTE_NORMAL + FILE_FLAG_SEQUENTIAL_SCAN, NULL);
+        bSuccess = (INVALID_HANDLE_VALUE != m_hDirFile);
+    }
 #else // WIN32
     bSuccess = mux_open(&m_hDirFile, szDirFile, O_RDWR|O_BINARY|O_CREAT|O_TRUNC);
 #endif // WIN32
@@ -1665,12 +1676,18 @@ int CHashFile::Open(const UTF8 *szDirFile, const UTF8 *szPageFile, int nCachePag
 
     // First let's try to open the page file. This is the more important file.
     //
-    bool bSuccess;
+    bool bSuccess = false;
 #ifdef WIN32
-    m_hPageFile = CreateFile((char *)szPageFile, GENERIC_READ | GENERIC_WRITE,
-        FILE_SHARE_READ, 0, OPEN_EXISTING,
-        FILE_ATTRIBUTE_NORMAL + FILE_FLAG_RANDOM_ACCESS, NULL);
-    bSuccess = (INVALID_HANDLE_VALUE != m_hPageFile);
+    size_t nFilename;
+    UTF16 *pFilename;
+    pFilename = ConvertFromUTF8ToUTF16(szPageFile, &nFilename);
+    if (NULL != pFilename)
+    {
+        m_hPageFile = CreateFile(pFilename, GENERIC_READ | GENERIC_WRITE,
+            FILE_SHARE_READ, 0, OPEN_EXISTING,
+            FILE_ATTRIBUTE_NORMAL + FILE_FLAG_RANDOM_ACCESS, NULL);
+        bSuccess = (INVALID_HANDLE_VALUE != m_hPageFile);
+    }
 #else // WIN32
     bSuccess = mux_open(&m_hPageFile, szPageFile, O_RDWR|O_BINARY);
 #endif // WIN32
@@ -1726,19 +1743,25 @@ int CHashFile::Open(const UTF8 *szDirFile, const UTF8 *szPageFile, int nCachePag
     // However, having it helps us to open faster.
     //
 #ifdef WIN32
-    m_hDirFile = CreateFile((char *)szDirFile, GENERIC_READ | GENERIC_WRITE,
-        FILE_SHARE_READ, 0, OPEN_EXISTING,
-        FILE_ATTRIBUTE_NORMAL + FILE_FLAG_SEQUENTIAL_SCAN, NULL);
-    bSuccess = (INVALID_HANDLE_VALUE != m_hDirFile);
+    bSuccess = false;
+    pFilename = ConvertFromUTF8ToUTF16(szDirFile, &nFilename);
+    if (NULL != pFilename)
+    {
+        m_hDirFile = CreateFile(pFilename, GENERIC_READ | GENERIC_WRITE,
+            FILE_SHARE_READ, 0, OPEN_EXISTING,
+            FILE_ATTRIBUTE_NORMAL + FILE_FLAG_SEQUENTIAL_SCAN, NULL);
+        bSuccess = (INVALID_HANDLE_VALUE != m_hDirFile);
+    }
 #else // WIN32
     bSuccess = mux_open(&m_hDirFile, szDirFile, O_RDWR|O_BINARY);
 #endif // WIN32
-    if (!bSuccess)
+    if (  NULL != pFilename
+       && !bSuccess)
     {
         // The Directory doesn't exist, so we create it anew, and rebuild the
         // index.
 #ifdef WIN32
-        m_hDirFile = CreateFile((char *)szDirFile, GENERIC_READ | GENERIC_WRITE,
+        m_hDirFile = CreateFile(pFilename, GENERIC_READ | GENERIC_WRITE,
             FILE_SHARE_READ, 0, CREATE_ALWAYS,
             FILE_ATTRIBUTE_NORMAL + FILE_FLAG_SEQUENTIAL_SCAN, NULL);
         bSuccess = (INVALID_HANDLE_VALUE != m_hDirFile);
@@ -2816,12 +2839,17 @@ bool CLogFile::CreateLogFile(void)
 
     m_nSize = 0;
 
-    bool bSuccess;
+    bool bSuccess = false;
 #ifdef WIN32
-    m_hFile = CreateFile((char *)m_szFilename, GENERIC_READ | GENERIC_WRITE,
-        FILE_SHARE_READ, 0, CREATE_ALWAYS,
-        FILE_ATTRIBUTE_NORMAL + FILE_FLAG_SEQUENTIAL_SCAN, NULL);
-    bSuccess = (INVALID_HANDLE_VALUE != m_hFile);
+    size_t nFilename;
+    UTF16 *pFilename = ConvertFromUTF8ToUTF16(m_szFilename, &nFilename);
+    if (NULL != pFilename)
+    {
+        m_hFile = CreateFile(pFilename, GENERIC_READ | GENERIC_WRITE,
+            FILE_SHARE_READ, 0, CREATE_ALWAYS,
+            FILE_ATTRIBUTE_NORMAL + FILE_FLAG_SEQUENTIAL_SCAN, NULL);
+        bSuccess = (INVALID_HANDLE_VALUE != m_hFile);
+    }
 #else // WIN32
     bSuccess = mux_open(&m_fdFile, m_szFilename, O_RDWR|O_BINARY|O_CREAT|O_TRUNC);
 #endif // WIN32
@@ -2832,12 +2860,17 @@ void CLogFile::AppendLogFile(void)
 {
     CloseLogFile();
 
-    bool bSuccess;
+    bool bSuccess = false;
 #ifdef WIN32
-    m_hFile = CreateFile((char *)m_szFilename, GENERIC_READ | GENERIC_WRITE,
-        FILE_SHARE_READ, 0, OPEN_ALWAYS,
-        FILE_ATTRIBUTE_NORMAL + FILE_FLAG_SEQUENTIAL_SCAN, NULL);
-    bSuccess = (INVALID_HANDLE_VALUE != m_hFile);
+    size_t nFilename;
+    UTF16 *pFilename = ConvertFromUTF8ToUTF16(m_szFilename, &nFilename);
+    if (NULL != pFilename)
+    {
+        m_hFile = CreateFile(pFilename, GENERIC_READ | GENERIC_WRITE,
+            FILE_SHARE_READ, 0, OPEN_ALWAYS,
+            FILE_ATTRIBUTE_NORMAL + FILE_FLAG_SEQUENTIAL_SCAN, NULL);
+        bSuccess = (INVALID_HANDLE_VALUE != m_hFile);
+    }
 #else // WIN32
     bSuccess = mux_open(&m_fdFile, m_szFilename, O_RDWR|O_BINARY);
 #endif // WIN32

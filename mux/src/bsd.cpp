@@ -1558,7 +1558,7 @@ static LRESULT WINAPI mux_WindowProc
     return DefWindowProc(hWin, msg, wParam, lParam);
 }
 
-const char *szApp = "MUX2";
+const UTF16 *szApp = L"MUX2";
 
 static DWORD WINAPI ListenForCloseProc(LPVOID lpParameter)
 {
