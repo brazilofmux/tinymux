@@ -318,9 +318,4 @@ extern "C" unsigned int __intel_cpu_indicator;
 void init_rlimit(void);
 #endif // HAVE_SETRLIMIT RLIMIT_NOFILE
 
-#ifndef WIN32
-typedef enum { eUTF8, eISO88591, eASCII } eEncoding;
-extern eEncoding g_eEncoding;
-#endif // WIN32
-
 #endif // !CONFIG_H
