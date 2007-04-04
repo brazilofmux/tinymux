@@ -2984,7 +2984,8 @@ UTF8 *ConvertToUTF8(const char *p, size_t *pn)
 //
 void mux_strncpy(UTF8 *dest, const UTF8 *src, size_t nSizeOfBuffer)
 {
-    if (NULL == src)
+    if (  NULL == src
+       || 0 == nSizeOfBuffer)
     {
         return;
     }
@@ -2996,10 +2997,7 @@ void mux_strncpy(UTF8 *dest, const UTF8 *src, size_t nSizeOfBuffer)
         dest[i] = src[i];
         i++;
     }
-    if (i <= nSizeOfBuffer)
-    {
-        dest[i] = '\0';
-    }
+    dest[i] = '\0';
 }
 
 bool matches_exit_from_list(UTF8 *str, const UTF8 *pattern)
