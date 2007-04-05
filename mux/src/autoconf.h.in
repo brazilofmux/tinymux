@@ -170,6 +170,8 @@
 #undef HAVE_PREAD
 /* Define if pwrite exists */
 #undef HAVE_PWRITE
+/* Define if dlopen exists */
+#undef HAVE_DLOPEN
 
 /* ---------------------------------------------------------------------------
  * Setup section:
