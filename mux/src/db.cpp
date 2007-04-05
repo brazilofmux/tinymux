@@ -3535,11 +3535,13 @@ void load_restart_db(void)
             {
                 maxd = aMainGamePorts[i].socket + 1;
             }
+            if (version >= 3) {
 #ifdef SSL_ENABLED
-            aMainGamePorts[i].ssl = getref(f);
+                aMainGamePorts[i].ssl = getref(f);
 #else
-            getref(f); // Eat meaningless field
+                getref(f); // Eat meaningless field
 #endif
+            }
         }
     }
     else
