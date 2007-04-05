@@ -3589,6 +3589,7 @@ void load_restart_db(void)
         memset(d->nvt_us_state, OPTION_NO, 256);
         d->raw_codepoint_length = 0;
         d->ttype = NULL;
+        d->encoding = CHARSET_LATIN1;
 #ifdef SSL_ENABLED
         d->ssl_session = NULL;
 #endif
