@@ -37,6 +37,7 @@ extern const int _sys_nsig;
 
 #ifdef SSL_ENABLED
 SSL_CTX  *ssl_ctx = NULL;
+SSL_CTX  *tls_ctx = NULL;
 PortInfo aMainGamePorts[MAX_LISTEN_PORTS * 2];
 #else
 PortInfo aMainGamePorts[MAX_LISTEN_PORTS];
@@ -944,6 +945,7 @@ int initialize_ssl()
     SSL_load_error_strings();
     OpenSSL_add_ssl_algorithms();
     ssl_ctx = SSL_CTX_new (SSLv23_server_method());
+    tls_ctx = SSL_CTX_new (TLSv1_server_method());
 
     if (!SSL_CTX_use_certificate_file (ssl_ctx, (char *)mudconf.ssl_certificate_file, SSL_FILETYPE_PEM)) {
         STARTLOG(LOG_ALWAYS,"NET","SSL");
@@ -951,12 +953,27 @@ int initialize_ssl()
         log_text(mudconf.ssl_certificate_file);
         ENDLOG;
         SSL_CTX_free(ssl_ctx);
+	SSL_CTX_free(tls_ctx);
         ssl_ctx = NULL;
+	tls_ctx = NULL;
+        return 0;
+    }
+    if (!SSL_CTX_use_certificate_file (tls_ctx, (char *)mudconf.ssl_certificate_file, SSL_FILETYPE_PEM)) {
+        STARTLOG(LOG_ALWAYS,"NET","SSL");
+        log_text(T("initialize_ssl: Unable to load SSL certificate file "));
+        log_text(mudconf.ssl_certificate_file);
+        ENDLOG;
+        SSL_CTX_free(ssl_ctx);
+	SSL_CTX_free(tls_ctx);
+        ssl_ctx = NULL;
+	tls_ctx = NULL;
         return 0;
     }
 
     SSL_CTX_set_default_passwd_cb(ssl_ctx,pem_passwd_callback);
     SSL_CTX_set_default_passwd_cb_userdata(ssl_ctx,(void *)mudconf.ssl_certificate_password);
+    SSL_CTX_set_default_passwd_cb(tls_ctx,pem_passwd_callback);
+    SSL_CTX_set_default_passwd_cb_userdata(tls_ctx,(void *)mudconf.ssl_certificate_password);
 
     if (!SSL_CTX_use_PrivateKey_file(ssl_ctx,(char *)mudconf.ssl_certificate_key, SSL_FILETYPE_PEM)) {
         STARTLOG(LOG_ALWAYS,"NET","SSL");
@@ -964,10 +981,14 @@ int initialize_ssl()
         log_text(mudconf.ssl_certificate_key);
         ENDLOG;
         SSL_CTX_free(ssl_ctx);
+	SSL_CTX_free(tls_ctx);
         ssl_ctx = NULL;
+	tls_ctx = NULL;
         return 0;
     }
 
+    /* Since we're reusing settings, we only need to check the key once.
+     * We'll use the SSL ctx for that. */
     if (!SSL_CTX_check_private_key(ssl_ctx)) {
         STARTLOG(LOG_ALWAYS,"NET","SSL");
         log_text(T("initialize_ssl: Key, certificate or password does not match."));
@@ -977,9 +998,14 @@ int initialize_ssl()
         return 0;
     }
 
+
     SSL_CTX_set_mode(ssl_ctx,SSL_MODE_ENABLE_PARTIAL_WRITE);
     SSL_CTX_set_mode(ssl_ctx,SSL_MODE_AUTO_RETRY);
     SSL_CTX_set_mode(ssl_ctx,SSL_MODE_ACCEPT_MOVING_WRITE_BUFFER);
+
+    SSL_CTX_set_mode(tls_ctx,SSL_MODE_ENABLE_PARTIAL_WRITE);
+    SSL_CTX_set_mode(tls_ctx,SSL_MODE_AUTO_RETRY);
+    SSL_CTX_set_mode(tls_ctx,SSL_MODE_ACCEPT_MOVING_WRITE_BUFFER);
 
     STARTLOG(LOG_ALWAYS,"NET","SSL");
     log_text(T("initialize_ssl: SSL engine initialized successfully."));
@@ -993,6 +1019,10 @@ void shutdown_ssl()
     if (ssl_ctx) {
         SSL_CTX_free(ssl_ctx);
         ssl_ctx = NULL;
+    }
+    if (tls_ctx) {
+        SSL_CTX_free(tls_ctx);
+        tls_ctx = NULL;
     }
 }
 
@@ -3770,7 +3800,7 @@ static void process_input_helper(DESC *d, char *pBytes, int nBytes)
                 case TELNET_STARTTLS:
                     if (TELNETSB_FOLLOWS == d->aOption[1])
                     {
-                       d->ssl_session = SSL_new(ssl_ctx);
+                       d->ssl_session = SSL_new(tls_ctx);
                        SSL_set_fd(d->ssl_session, d->descriptor);
                        SSL_accept(d->ssl_session);
                     }
