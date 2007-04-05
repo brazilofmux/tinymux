@@ -384,6 +384,7 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
     bool size_gotten = false;
     bool nextattr_gotten = false;
 
+    bool convert_values = false;
     bool read_attribs = true;
     bool read_name = true;
     bool read_key = true;
@@ -399,6 +400,7 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
         Log.WriteString(T("Reading "));
         Log.Flush();
     }
+
     db_free();
     for (i = 0;; i++)
     {
@@ -547,8 +549,10 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
                         if (  1 == g_version
                            || 2 == g_version)
                         {
-                            Log.tinyprintf(ENDLINE "Conversion to UTF-8 requires a flatfile." ENDLINE);
-                            return -1;
+                            // We'll convert the external database from
+                            // Latin-1 to UTF-8 at the end.
+                            //
+                            convert_values = true;
                         }
                         read_attribs = false;
                         read_name = !(g_flags & V_ATRNAME);
@@ -755,6 +759,36 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
                         Log.tinyprintf(ENDLINE "Info: +N<next free attr> can be safely adjusted down.");
                     }
                     mudstate.attr_next = max_atr + 1;
+                }
+
+                if (convert_values)
+                {
+                    Log.WriteString(T("Converting external database to UTF-8 " ENDLINE));
+                    Log.Flush();
+
+                    // Convert every attribute on every object in the external database.
+                    //
+                    dbref iObject;
+                    atr_push();
+                    DO_WHOLE_DB(iObject)
+                    {
+                        unsigned char *as;
+                        for (int iAttr = atr_head(iObject, &as); iAttr; iAttr = atr_next(&as))
+                        {
+                            if (  0 < iAttr
+                               && iAttr <= anum_alc_top)
+                            {
+                                const char *pLatin1 = (char *)atr_get_raw(iObject, iAttr);
+                                if (NULL != pLatin1)
+                                {
+                                    size_t nUnicode;
+                                    const UTF8 *pUnicode = ConvertToUTF8(pLatin1, &nUnicode);
+                                    atr_add_raw_LEN(iObject, iAttr, pUnicode, nUnicode);
+                                }
+                            }
+                        }
+                    }
+                    atr_pop();
                 }
 
                 *db_version = g_version;
