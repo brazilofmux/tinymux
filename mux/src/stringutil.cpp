@@ -5441,7 +5441,7 @@ LBUF_OFFSET mux_string::export_Char_UTF8(size_t iFirst, UTF8 *pBuffer) const
 
     LBUF_OFFSET nBytes = utf8_FirstByte[m_autf[iFirst]];
 
-    if (UTF8_CONTINUE <= iFirst)
+    if (UTF8_CONTINUE <= nBytes)
     {
         if (NULL != pBuffer)
         {

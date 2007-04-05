@@ -1433,44 +1433,6 @@ static FUNCTION(fun_etimefmt)
     safe_str(p, buff, bufc);
 }
 
-static UTF8 *expand_tabs(const UTF8 *str)
-{
-    static UTF8 tbuf1[LBUF_SIZE];
-    UTF8 *bp = tbuf1;
-
-    if (str)
-    {
-        unsigned int n = 0;
-
-        for (unsigned int i = 0; str[i]; i++)
-        {
-            if (utf8_FirstByte[str[i]] < UTF8_CONTINUE)
-            {
-                switch (str[i])
-                {
-                case '\t':
-                    safe_fill(tbuf1, &bp, ' ', 8 - n % 8);
-                    n = 0;
-                    continue;
-                case '\r':
-                    // FALL THROUGH
-                case '\n':
-                    n = 0;
-                    break;
-                default:
-                    if (mux_haswidth(str + i))
-                    {
-                        n++;
-                    }
-                }
-            }
-            safe_chr(str[i], tbuf1, &bp);
-        }
-    }
-    *bp = '\0';
-    return tbuf1;
-}
-
 LBUF_OFFSET linewrap_general(const UTF8 *pStr,     LBUF_OFFSET nWidth,
                                    UTF8 *pBuffer,  size_t      nBuffer,
                              const UTF8 *pLeft,    LBUF_OFFSET nLeft,
@@ -1479,11 +1441,11 @@ LBUF_OFFSET linewrap_general(const UTF8 *pStr,     LBUF_OFFSET nWidth,
                              const UTF8 *pOSep,    mux_cursor  curOSep,
                              LBUF_OFFSET nWidth0)
 {
-    mux_string *sStr = new mux_string(expand_tabs(pStr));
+    mux_string *sStr = new mux_string(pStr);
     mux_cursor nStr = sStr->length_cursor();
     bool bFirst = true, bNewline = false;
     mux_field fldLine, fldTemp, fldPad;
-    mux_cursor curStr, curEnd, iPos;
+    mux_cursor curStr, curEnd, curTab, iPos, curNext;
     LBUF_OFFSET nLineWidth = (0 < nWidth0 ? nWidth0 : nWidth);
 
     while (  curStr < nStr
@@ -1513,34 +1475,91 @@ LBUF_OFFSET linewrap_general(const UTF8 *pStr,     LBUF_OFFSET nWidth,
         {
             iPos = nStr;
         }
-        while (  mux_isspace(sStr->export_Char(curStr.m_byte))
-              && curStr < iPos)
-        {
-            curStr(curStr.m_byte + 1, curStr.m_point + 1);
-        }
         sStr->cursor_from_point(curEnd, curStr.m_point + nLineWidth);
         if (iPos < curEnd)
         {
             curEnd = iPos;
+            curNext = curEnd + curNewline;
             bNewline = true;
         }
         else
         {
+            curNext = curEnd;
             bNewline = false;
         }
-        if (mux_isspace(sStr->export_Char(curEnd.m_byte)))
+        while (sStr->search(T("\t"), &curTab, curStr, curEnd))
         {
+            mux_string *sSpaces = new mux_string(T("        "));
+            LBUF_OFFSET nSpaces = 8 - ((curTab.m_point - curStr.m_point) % 8);
+            mux_cursor curSpaces(nSpaces, nSpaces);
+            sSpaces->truncate(curSpaces);
+            sStr->replace_Chars(*sSpaces, curTab, curAscii);
+            delete sSpaces;
+            nStr = sStr->length_cursor();
+            curNext = curTab + curSpaces;
+
+            // We have to recalculate the end of the line and whether the
+            // newline is within it now.
+            //
+            if (!sStr->search(T("\r"), &iPos, curStr))
+            {
+                iPos = nStr;
+            }
+            sStr->cursor_from_point(curEnd, curStr.m_point + nLineWidth);
+            if (iPos < curEnd)
+            {
+                curEnd = iPos;
+                curNext = curEnd + curNewline;
+                bNewline = true;
+            }
+            else
+            {
+                curNext = curEnd;
+                bNewline = false;
+            }
+            if (curNext < curEnd)
+            {
+                curNext = curEnd;
+            }
+        }
+        if (  curEnd == nStr
+           || mux_isspace(sStr->export_Char(curEnd.m_byte)))
+        {
+            // We already know where the line ends. Now we trim off trailing
+            // spaces so that right and center justifications come out right.
+            //
             mux_cursor curSpace = curEnd;
             while (  mux_isspace(sStr->export_Char(curSpace.m_byte))
                   && curStr < curSpace)
             {
-                curSpace(curSpace.m_byte - 1, curSpace.m_point - 1);
-            }
-            if (curSpace < curEnd)
-            {
-                curEnd(curSpace.m_byte + 1, curSpace.m_point + 1);
+                curEnd = curSpace;
+                sStr->cursor_prev(curSpace);
             }
         }
+        else
+        {
+            // We want to backtrack to the last space, so that we can do a nice
+            // line break between words.
+            //
+            mux_cursor curSpace = curEnd;
+            while (  !mux_isspace(sStr->export_Char(curSpace.m_byte))
+                  && curStr < curSpace)
+            {
+                sStr->cursor_prev(curSpace);
+            }
+            if (curStr < curSpace)
+            {
+                curNext = curSpace;
+                sStr->cursor_next(curNext);
+                while (  mux_isspace(sStr->export_Char(curSpace.m_byte))
+                      && curStr < curSpace)
+                {
+                    curEnd = curSpace;
+                    sStr->cursor_prev(curSpace);
+                }
+            }
+        }
+
         fldTemp(curEnd.m_byte - curStr.m_byte, curEnd.m_point - curStr.m_point);
         if (  fldTemp.m_column < nLineWidth
            && CJC_LJUST != iJustKey)
@@ -1573,14 +1592,7 @@ LBUF_OFFSET linewrap_general(const UTF8 *pStr,     LBUF_OFFSET nWidth,
             fldLine = PadField( pBuffer, nBuffer, fldLine.m_column + nLineWidth,
                                 fldPad + fldTemp);
         }
-        if (bNewline)
-        {
-            curStr(curEnd.m_byte + 2, curEnd.m_point + 2);
-        }
-        else
-        {
-            curStr = curEnd;
-        }
+        curStr = curNext;
 
         fldLine += StripTabsAndTruncate( pRight, pBuffer + fldLine.m_byte,
                                          nBuffer - fldLine.m_byte, nRight);

@@ -731,6 +731,8 @@ size_t TruncateToBuffer(const UTF8 *pString, UTF8 *pBuffer, size_t nBuffer);
 static const mux_cursor CursorMin(0,0);
 static const mux_cursor CursorMax(LBUF_SIZE - 1, LBUF_SIZE - 1);
 
+static const mux_cursor curAscii(1, 1);
+
 class mux_string
 {
     // m_nutf, m_ncs, m_autf, m_ncs, and m_pcs work together as follows:
