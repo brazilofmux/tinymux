@@ -25,6 +25,7 @@ look.o: look.cpp copyright.h autoconf.h config.h externs.h db.h attrcache.h flag
 mail.o: mail.cpp copyright.h autoconf.h config.h externs.h db.h attrcache.h flags.h timeutil.h match.h mudconf.h alloc.h htab.h svdhash.h stringutil.h svdrand.h attrs.h command.h mail.h powers.h
 match.o: match.cpp copyright.h autoconf.h config.h externs.h db.h attrcache.h flags.h timeutil.h match.h mudconf.h alloc.h htab.h svdhash.h stringutil.h svdrand.h attrs.h powers.h
 mguests.o: mguests.cpp copyright.h autoconf.h config.h externs.h db.h attrcache.h flags.h timeutil.h match.h mudconf.h alloc.h htab.h svdhash.h stringutil.h svdrand.h attrs.h comsys.h mguests.h interface.h powers.h
+modules.o: modules.cpp copyright.h autoconf.h config.h externs.h db.h attrcache.h flags.h timeutil.h match.h mudconf.h alloc.h htab.h svdhash.h stringutil.h svdrand.h modules.h
 move.o: move.cpp copyright.h autoconf.h config.h externs.h db.h attrcache.h flags.h timeutil.h match.h mudconf.h alloc.h htab.h svdhash.h stringutil.h svdrand.h attrs.h command.h interface.h powers.h
 muxcli.o: muxcli.cpp copyright.h muxcli.h
 netcommon.o: netcommon.cpp copyright.h autoconf.h config.h externs.h db.h attrcache.h flags.h timeutil.h match.h mudconf.h alloc.h htab.h svdhash.h stringutil.h svdrand.h attrs.h command.h comsys.h file_c.h interface.h functions.h mguests.h powers.h svdreport.h
