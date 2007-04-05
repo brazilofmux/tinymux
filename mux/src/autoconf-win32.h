@@ -170,6 +170,8 @@
 #undef HAVE_LIBCRYPT
 /* Define if crypt exists */
 #undef HAVE_CRYPT
+/* Define if dlopen exists */
+#undef HAVE_DLOPEN
 
 /* ---------------------------------------------------------------------------
  * Setup section:
