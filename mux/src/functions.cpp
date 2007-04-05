@@ -1448,10 +1448,17 @@ LBUF_OFFSET linewrap_general(const UTF8 *pStr,     LBUF_OFFSET nWidth,
     mux_cursor curStr, curEnd, curTab, iPos, curNext;
     LBUF_OFFSET nLineWidth = (0 < nWidth0 ? nWidth0 : nWidth);
 
-    while (  curStr < nStr
-          && fldLine.m_byte + curOSep.m_byte < nBuffer)
+    while (curStr < nStr)
     {
-        if (!bFirst)
+        if (bFirst)
+        {
+            bFirst = false;
+        }
+        else if (nBuffer < static_cast<size_t>(fldLine.m_byte + curOSep.m_byte))
+        {
+            break;
+        }
+        else
         {
             mux_strncpy( pBuffer + fldLine.m_byte, pOSep,
                          nBuffer - fldLine.m_byte);
@@ -1463,10 +1470,6 @@ LBUF_OFFSET linewrap_general(const UTF8 *pStr,     LBUF_OFFSET nWidth,
                                     fldLine.m_column + nHanging, fldLine);
             }
             nLineWidth = nWidth;
-        }
-        else
-        {
-            bFirst = false;
         }
         fldLine += StripTabsAndTruncate( pLeft, pBuffer + fldLine.m_byte,
                                          nBuffer - fldLine.m_byte, nLeft);
