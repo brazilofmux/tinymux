@@ -3535,7 +3535,7 @@ void load_restart_db(void)
             {
                 maxd = aMainGamePorts[i].socket + 1;
             }
-            if (version >= 3) {
+            if (3 <= version) {
 #ifdef SSL_ENABLED
                 aMainGamePorts[i].ssl = getref(f);
 #else
