@@ -33,7 +33,7 @@ public:
     virtual int Add(int a, int b);
 
     CSample(void);
-    ~CSample();
+    virtual ~CSample();
 
 private:
     UINT32 m_cRef;
@@ -54,7 +54,7 @@ public:
     virtual MUX_RESULT LockServer(bool bLock);
 
     CSampleFactory(void);
-    ~CSampleFactory();
+    virtual ~CSampleFactory();
 
 private:
     UINT32 m_cRef;
