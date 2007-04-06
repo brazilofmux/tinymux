@@ -1,7 +1,7 @@
 /*! \file modules.cpp
  * \brief Module support
  *
- * $Id: game.cpp 1831 2007-04-04 18:50:05Z brazilofmux $
+ * $Id$
  *
  */
 

@@ -1,7 +1,7 @@
 /*! \file sample.h
  * \brief Sample Module
  *
- * $Id: game.cpp 1831 2007-04-04 18:50:05Z brazilofmux $
+ * $Id$
  *
  */
 
