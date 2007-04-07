@@ -281,8 +281,9 @@ Bug Fixes:
     than the specified port.
  -- Fix doing header across @restart.
  -- Fix handle leak in comsys.db if initial parsing fails.
- -- Fix type-punning bug in mux_fpclass() that broke when compiled with gcc
-    4.1 or later with -O2 (which turns on -fstrict-aliasing) (Issue 322).
+ -- Fix type-punning bug in mux_fpclass() that broke when compiled with
+    gcc 4.1 or later with -O2 (which turns on -fstrict-aliasing) (Issue
+    322).
 
 Performance Enhancements:
 ~~~~~~~~~~~~~~~~~~~~~~~~
