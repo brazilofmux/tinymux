@@ -17,7 +17,7 @@ static INT32 g_cServerLocks = 0;
 
 // The following two functions are for access by dlopen.
 //
-extern "C" MUX_RESULT mux_CanUnloadNow(void)
+extern "C" DCL_EXPORT MUX_RESULT mux_CanUnloadNow(void)
 {
     if (  0 == g_cComponents
        && 0 == g_cServerLocks)
@@ -30,7 +30,7 @@ extern "C" MUX_RESULT mux_CanUnloadNow(void)
     }
 }
 
-extern "C" MUX_RESULT mux_GetClassObject(UINT64 cid, UINT64 iid, void **ppv)
+extern "C" DCL_EXPORT MUX_RESULT mux_GetClassObject(UINT64 cid, UINT64 iid, void **ppv)
 {
     MUX_RESULT mr = MUX_E_CLASSNOTAVAILABLE;
 
