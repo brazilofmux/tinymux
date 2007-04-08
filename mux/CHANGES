@@ -1,5 +1,5 @@
 TinyMUX 2.7:  CHANGES
-Last Update:  March 2007
+Last Update:  April 2007
 
 Major changes that may affect performance and require softcode tweaks:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -100,6 +100,9 @@ Bug Fixes:
     causing mux_exec() to complain about 'eval=hasattr()' not being a
     function.
  -- v3 comtitles were not being converted to v4 color code points.
+ -- Fix type-punning bug in mux_fpclass() that broke when compiled with
+    gcc 4.1 or later with -O2 (which turns on -fstrict-aliasing) (Issue
+    322).
 
 
 Performance Enhancements:
