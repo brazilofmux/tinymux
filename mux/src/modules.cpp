@@ -16,12 +16,23 @@
 
 #include "modules.h"
 
+// TODO:
+//
+//  - Add export for netmux to pass in it's component ids and its factory
+//    method.
+//  - Start lists for bookeeping modules for something like @list modules.
+//  - Add export for all the mux_CanUnloadNow() for every module to be called
+//    during @dbck.
+//  - When module is loaded, call export to get its component id list and add
+//    them to the master list.
+//  - When module is unloaded, remove its component ids from the master list.
+
 extern "C"
 {
     typedef MUX_RESULT FPGETCLASSOBJECT(UINT64 cid, UINT64 iid, void **ppv);
 };
 
-MUX_RESULT mux_CreateInstance(UINT64 cid, UINT64 iid, void **ppv)
+extern "C" DCL_EXPORT MUX_RESULT mux_CreateInstance(UINT64 cid, UINT64 iid, void **ppv)
 {
 #ifdef WIN32
     HINSTANCE hInst = LoadLibrary(L"bin\\sample.dll");

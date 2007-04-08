@@ -15,6 +15,11 @@
 static INT32 g_cComponents  = 0;
 static INT32 g_cServerLocks = 0;
 
+// TODO:
+//
+// - Link against libmux.so
+// - Export registration function to pass list of supported component ids.
+
 // The following two functions are for access by dlopen.
 //
 extern "C" DCL_EXPORT MUX_RESULT mux_CanUnloadNow(void)

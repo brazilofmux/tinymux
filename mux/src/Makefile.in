@@ -188,6 +188,7 @@ links: netmux slave $(SQLSLAVE)
 	cd ../game/bin ; rm -f netmux ; ln -s ../../src/netmux netmux
 	cd ../game/bin ; rm -f slave ; ln -s ../../src/slave slave
 	( if [ -f sqlslave ]; then cd ../game/bin ; rm -f sqlslave; ln -s ../../src/sqlslave sqlslave ; fi )
+	( if [ -f libmux.so ]; then cd ../game/bin ; rm -f libmux.so; ln -s ../../src/libmux.so libmux.so ; fi )
 
 sqlslave: sqlslave.o sqlshared.o
 	$(CXX) $(ALLCXXFLAGS) $(LIBS) $(QUERYLIBS) -o sqlslave sqlslave.o sqlshared.o
@@ -204,6 +205,7 @@ netmux: $(NETMUX_OBJ) $(VER_SRC)
 	$(CXX) $(ALLCXXFLAGS) -o netmux $(NETMUX_OBJ) $(VER_OBJ) -L. $(LIBS) $(MORELIBS) $(INLINESQL_LIBS) $(SSL_LIBS) $(SHARED_LIBS)
 
 libmux.so: $(LIBMUX_BASE_OBJ)
+	( if [ -f libmux.so ]; then mv -f libmux.so libmux.so~ ; fi )
 	$(CXX) $(ALLCXXFLAGS) -shared -fPIC -o libmux.so $(LIBMUX_BASE_OBJ) $(LIBS) $(MORELIBS) $(INLINESQL_LIBS) $(SSL_LIBS)
 
 depend: $(ALLSRC) unsplit

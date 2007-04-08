@@ -47,4 +47,4 @@ public:
     virtual MUX_RESULT LockServer(bool bLock) = 0;
 };
 
-MUX_RESULT mux_CreateInstance(UINT64 cid, UINT64 iid, void **ppv);
+extern "C" DCL_EXPORT MUX_RESULT mux_CreateInstance(UINT64 cid, UINT64 iid, void **ppv);
