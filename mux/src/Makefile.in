@@ -92,27 +92,34 @@ SSL_LIBS          = @SSL_LIBS@
 #
 DEPRECATED = @DEPRECATED@
 
-# Distribution source files
-D_SRC	= _build.cpp alloc.cpp attrcache.cpp boolexp.cpp bsd.cpp command.cpp \
-	comsys.cpp conf.cpp cque.cpp create.cpp db.cpp db_rw.cpp eval.cpp \
-	file_c.cpp flags.cpp funceval.cpp functions.cpp funmath.cpp game.cpp \
-	help.cpp htab.cpp local.cpp log.cpp look.cpp mail.cpp match.cpp \
-	mguests.cpp modules.cpp move.cpp muxcli.cpp netcommon.cpp object.cpp \
-	predicates.cpp player.cpp player_c.cpp plusemail.cpp powers.cpp \
-	quota.cpp rob.cpp pcre.cpp set.cpp sha1.cpp speech.cpp sqlshared.cpp \
-	stringutil.cpp strtod.cpp svdrand.cpp svdhash.cpp svdreport.cpp \
-	timer.cpp timeutil.cpp unparse.cpp vattr.cpp walkdb.cpp wild.cpp \
-	wiz.cpp
-D_OBJ	= _build.o alloc.o attrcache.o boolexp.o bsd.o command.o comsys.o \
-	conf.o cque.o create.o db.o db_rw.o eval.o file_c.o flags.o \
+# Base source and object files for building netmux
+#
+NETMUX_BASE_SRC = _build.cpp alloc.cpp attrcache.cpp boolexp.cpp bsd.cpp \
+    command.cpp comsys.cpp conf.cpp cque.cpp create.cpp db.cpp db_rw.cpp \
+	eval.cpp file_c.cpp flags.cpp funceval.cpp functions.cpp funmath.cpp \
+	game.cpp help.cpp htab.cpp local.cpp log.cpp look.cpp mail.cpp match.cpp \
+	mguests.cpp move.cpp muxcli.cpp netcommon.cpp object.cpp predicates.cpp \
+	player.cpp player_c.cpp plusemail.cpp powers.cpp quota.cpp rob.cpp \
+	pcre.cpp set.cpp sha1.cpp speech.cpp sqlshared.cpp stringutil.cpp \
+	strtod.cpp svdrand.cpp svdhash.cpp svdreport.cpp timer.cpp timeutil.cpp \
+	unparse.cpp vattr.cpp walkdb.cpp wild.cpp wiz.cpp
+NETMUX_BASE_OBJ = _build.o alloc.o attrcache.o boolexp.o bsd.o command.o \
+	comsys.o conf.o cque.o create.o db.o db_rw.o eval.o file_c.o flags.o \
 	funceval.o functions.o funmath.o game.o help.o htab.o local.o log.o \
-	look.o mail.o match.o mguests.o modules.o move.o muxcli.o netcommon.o \
-	object.o predicates.o player.o player_c.o plusemail.o powers.o quota.o \
-	rob.o pcre.o set.o sha1.o speech.o sqlshared.o stringutil.o strtod.o \
-	svdrand.o svdhash.o svdreport.o timer.o timeutil.o unparse.o vattr.o \
-	walkdb.o wild.o wiz.o
+	look.o mail.o match.o mguests.o move.o muxcli.o netcommon.o object.o \
+	predicates.o player.o player_c.o plusemail.o powers.o quota.o rob.o \
+	pcre.o set.o sha1.o speech.o sqlshared.o stringutil.o strtod.o svdrand.o \
+	svdhash.o svdreport.o timer.o timeutil.o unparse.o vattr.o walkdb.o \
+	wild.o wiz.o
 
-# Version number routine
+# Base sources and object files for building libmux.so
+#
+LIBMUX_BASE_SRC = modules.cpp
+LIBMUX_BASE_OBJ = modules.o
+SHARED_LIBS = @SHARED_LIBS@
+
+# Version number routines
+#
 VER_SRC	= version.cpp
 VER_OBJ	= version.o
 VER_FLG	= -DMUX_BUILD_DATE="\"`date`\"" \
@@ -167,14 +174,14 @@ ALLCXXFLAGS = $(CXXFLAGS) $(OPTIM) $(DEFS) $(MEMORY_BASED) $(WOD_REALMS) $(REALI
 
 # Compiliation source files.
 #
-ALLSRC	= $(D_SRC) $(REALITY_SRC) $(VER_SRC) $(AUX_SRC)
-SRC	= $(D_SRC) $(REALITY_SRC)
-OBJ	= $(D_OBJ) $(REALITY_OBJ)
+ALLSRC	= $(NETMUX_BASE_SRC) $(REALITY_SRC) $(VER_SRC) $(AUX_SRC)
+NETMUX_SRC = $(NETMUX_BASE_SRC) $(REALITY_SRC)
+NETMUX_OBJ = $(NETMUX_BASE_OBJ) $(REALITY_OBJ)
 
 .cpp.o:
 	$(CXX) $(ALLCXXFLAGS) -c $<
 
-all: netmux slave $(SQLSLAVE) links
+all: @SHARED_TARGETS@ netmux slave $(SQLSLAVE) links
 
 links: netmux slave $(SQLSLAVE)
 	cd ../game/bin ; rm -f dbconvert ; ln -s ../../src/netmux dbconvert
@@ -191,17 +198,20 @@ slave: slave.o
 unsplit: unsplit.o
 	$(CXX) $(ALLCXXFLAGS) -o unsplit unsplit.o
 
-netmux: $(OBJ) $(VER_SRC)
+netmux: $(NETMUX_OBJ) $(VER_SRC)
 	$(CXX) $(ALLCXXFLAGS) $(VER_FLG) -c $(VER_SRC)
 	( if [ -f netmux ]; then mv -f netmux netmux~ ; fi )
-	$(CXX) $(ALLCXXFLAGS) -o netmux $(OBJ) $(VER_OBJ) $(LIBS) $(MORELIBS) $(INLINESQL_LIBS) $(SSL_LIBS)
+	$(CXX) $(ALLCXXFLAGS) -o netmux $(NETMUX_OBJ) $(VER_OBJ) -L. $(LIBS) $(MORELIBS) $(INLINESQL_LIBS) $(SSL_LIBS) $(SHARED_LIBS)
+
+libmux.so: $(LIBMUX_BASE_OBJ)
+	$(CXX) $(ALLCXXFLAGS) -shared -fPIC -o libmux.so $(LIBMUX_BASE_OBJ) $(LIBS) $(MORELIBS) $(INLINESQL_LIBS) $(SSL_LIBS)
 
 depend: $(ALLSRC) unsplit
-	for i in $(D_SRC) $(AUX_SRC) slave.cpp sqlslave.cpp sqlshared.cpp ; do $(CXXCPP) $(ALLCXXFLAGS) -M $$i; done | sed -e 's:/usr[^ ]*[ ]*::g' | ./unsplit > .depend~
+	for i in $(NETMUX_SRC) $(AUX_SRC) slave.cpp sqlslave.cpp sqlshared.cpp ; do $(CXXCPP) $(ALLCXXFLAGS) -M $$i; done | sed -e 's:/usr[^ ]*[ ]*::g' | ./unsplit > .depend~
 	mv .depend~ .depend
 
 realclean:
-	-rm -f *.o a.out core gmon.out dbconvert config.status config.log netmux netmux~ slave sqlslave Makefile
+	-rm -f *.o a.out core gmon.out dbconvert config.status config.log netmux netmux~ libmux.so slave sqlslave Makefile
 
 clean:
 	-rm -f *.o a.out core gmon.out warn.log config.status config.log netmux~

@@ -689,7 +689,8 @@ CXXCPP
 CPP
 GREP
 EGREP
-def_force_c_compiler
+SHARED_TARGETS
+SHARED_LIBS
 LIBOBJS
 LTLIBOBJS'
 ac_subst_files=''
@@ -5714,9 +5715,13 @@ eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
 	 test ! -s conftest.err
        } && test -s conftest$ac_exeext &&
        $as_test_x conftest$ac_exeext; then
-  cat >>confdefs.h <<\_ACEOF
+
+    cat >>confdefs.h <<\_ACEOF
 #define HAVE_DLOPEN 1
 _ACEOF
+
+    SHARED_TARGETS="libmux.so"
+    SHARED_LIBS="-lmux"
 
 else
   echo "$as_me: failed program was:" >&5
@@ -5727,6 +5732,8 @@ fi
 
 rm -f core conftest.err conftest.$ac_objext conftest_ipa8_conftest.oo \
       conftest$ac_exeext conftest.$ac_ext
+
+
 { echo "$as_me:$LINENO: checking for sys_errlist decl..." >&5
 echo "$as_me: checking for sys_errlist decl..." >&6;}
 if test $ac_cv_header_errno_h = no; then
@@ -11761,7 +11768,6 @@ echo "${ECHO_T}no" >&6; }
 fi
 
 rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-
 ac_config_files="$ac_config_files Makefile"
 
 cat >confcache <<\_ACEOF
@@ -12455,12 +12461,13 @@ CXXCPP!$CXXCPP$ac_delim
 CPP!$CPP$ac_delim
 GREP!$GREP$ac_delim
 EGREP!$EGREP$ac_delim
-def_force_c_compiler!$def_force_c_compiler$ac_delim
+SHARED_TARGETS!$SHARED_TARGETS$ac_delim
+SHARED_LIBS!$SHARED_LIBS$ac_delim
 LIBOBJS!$LIBOBJS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 79; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 80; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5

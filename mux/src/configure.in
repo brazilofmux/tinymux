@@ -248,7 +248,13 @@ AC_TRY_LINK([
     void *fp = dlsym(mh, "bar");
     void *pe = dlerror();
     int   cc = dlclose(mh);
-    ],AC_DEFINE(HAVE_DLOPEN))
+    ],[
+    AC_DEFINE(HAVE_DLOPEN)
+    SHARED_TARGETS="libmux.so"
+    SHARED_LIBS="-lmux"
+    ])
+AC_SUBST(SHARED_TARGETS)
+AC_SUBST(SHARED_LIBS)
 AC_CHECKING(for sys_errlist decl)
 if test $ac_cv_header_errno_h = no; then
 	AC_DEFINE(NEED_SYS_ERRLIST_DCL)
@@ -511,5 +517,4 @@ AC_TRY_COMPILE([#include <sys/types.h>
   [AC_DEFINE([HAVE_IN_ADDR_T])
    AC_MSG_RESULT(yes)],
   [AC_MSG_RESULT(no)])
-AC_SUBST(def_force_c_compiler)
 AC_OUTPUT(Makefile)

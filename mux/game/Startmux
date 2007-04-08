@@ -52,5 +52,6 @@ fi
 #
 #	Kick off MUX
 #
+LD_LIBRARY_PATH=./bin; export LD_LIBRARY_PATH
 (nohup $BIN/netmux -c $GAMENAME.conf -p $PIDFILE >/dev/null 2>&1 &)
 
