@@ -1157,11 +1157,11 @@ void PopRegisters(reg_ref **p, int nNeeded)
     pRefsFrame->nrefs += nNeeded;
 }
 
-void mux_exec( UTF8 *pdstr, UTF8 *buff, UTF8 **bufc, dbref executor,
+void mux_exec( UTF8 *pStr, UTF8 *buff, UTF8 **bufc, dbref executor,
                dbref caller, dbref enactor, int eval, UTF8 *cargs[], int ncargs)
 {
-    if (  pdstr == NULL
-       || *pdstr == '\0'
+    if (  NULL == pStr
+       || '\0' == pStr[0]
        || MuxAlarm.bAlarmed)
     {
         return;
@@ -1252,7 +1252,7 @@ void mux_exec( UTF8 *pdstr, UTF8 *buff, UTF8 **bufc, dbref executor,
     {
         is_top = tcache_empty();
         savestr = alloc_lbuf("exec.save");
-        mux_strncpy(savestr, pdstr, LBUF_SIZE-1);
+        mux_strncpy(savestr, pStr, LBUF_SIZE-1);
     }
 
     // Save Parser Mode.
@@ -1269,32 +1269,33 @@ void mux_exec( UTF8 *pdstr, UTF8 *buff, UTF8 **bufc, dbref executor,
     isSpecial(L1, '[') = (eval & EV_NOFCHECK) == 0;
 
     size_t nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
+    size_t iStr = 0;
     for (;;)
     {
         // Handle mundane characters specially. There are usually a lot of them.
         // Just copy them.
         //
-        if (!isSpecial(L1, *pdstr))
+        if (!isSpecial(L1, pStr[iStr]))
         {
-            UTF8 *p = pdstr + 1;
-            while (!isSpecial(L1, *p++))
+            size_t iNormal = iStr + 1;
+            while (!isSpecial(L1, pStr[iNormal++]))
             {
                 ; // Nothing.
             }
-            n = p - pdstr - 1;
+            n = iNormal - iStr - 1;
             if (nBufferAvailable < n)
             {
                 n = nBufferAvailable;
             }
-            memcpy(*bufc, pdstr, n);
+            memcpy(*bufc, pStr + iStr, n);
             nBufferAvailable -= n;
             *bufc += n;
             at_space = 0;
-            pdstr = p - 1;
+            iStr += n;
         }
 
 
-        // At this point, **dstr must be one of the following characters:
+        // At this point, pStr[iStr] must be one of the following characters:
         //
         // 0x00 0x20 0x25 0x28 0x5B 0x5C 0x7B
         // NULL  SP   %    (     [    \   {
@@ -1307,13 +1308,13 @@ void mux_exec( UTF8 *pdstr, UTF8 *buff, UTF8 **bufc, dbref executor,
         //   [  occurs   7618 times
         //  SP  occurs   1323 times
         //
-        if (*pdstr == '\0')
+        if (pStr[iStr] == '\0')
         {
             break;
         }
-        else if (*pdstr == '(')
+        else if (pStr[iStr] == '(')
         {
-            // *pdstr == '('
+            // pStr[iStr] == '('
             //
             // Arglist start.  See if what precedes is a function. If so,
             // execute it if we should.
@@ -1393,7 +1394,6 @@ void mux_exec( UTF8 *pdstr, UTF8 *buff, UTF8 **bufc, dbref executor,
                     nfargs = fp->maxArgsParsed;
                 }
 
-                tstr = pdstr;
                 if (  fp
                    && (fp->flags & FN_NOEVAL))
                 {
@@ -1405,25 +1405,24 @@ void mux_exec( UTF8 *pdstr, UTF8 *buff, UTF8 **bufc, dbref executor,
                 }
 
                 UTF8 **fargs = PushPointers(MAX_ARG);
-                pdstr = parse_arglist_lite(executor, caller, enactor,
-                      pdstr + 1, feval, fargs, nfargs, cargs, ncargs,
+                tstr = parse_arglist_lite(executor, caller, enactor,
+                      pStr + iStr + 1, feval, fargs, nfargs, cargs, ncargs,
                       &nfargs);
 
 
                 // If no closing delim, just insert the '(' and continue normally.
                 //
-                if (!pdstr)
+                if (!tstr)
                 {
-                    pdstr = tstr;
                     if (nBufferAvailable)
                     {
-                        *(*bufc)++ = *pdstr;
+                        *(*bufc)++ = pStr[iStr];
                         nBufferAvailable--;
                     }
                 }
                 else
                 {
-                    pdstr--;
+                    iStr = tstr - pStr - 1;
 
                     // If it's a user-defined function, perform it now.
                     //
@@ -1536,7 +1535,7 @@ void mux_exec( UTF8 *pdstr, UTF8 *buff, UTF8 **bufc, dbref executor,
             eval &= ~EV_FCHECK;
             isSpecial(L1, '(') = false;
         }
-        else if (*pdstr == '%')
+        else if (pStr[iStr] == '%')
         {
             // Percent-replace start.  Evaluate the chars following and
             // perform the appropriate substitution.
@@ -1549,17 +1548,17 @@ void mux_exec( UTF8 *pdstr, UTF8 *buff, UTF8 **bufc, dbref executor,
                     *(*bufc)++ = '%';
                     nBufferAvailable--;
                 }
-                pdstr++;
+                iStr++;
                 if (nBufferAvailable)
                 {
-                    *(*bufc)++ = *pdstr;
+                    *(*bufc)++ = pStr[iStr];
                     nBufferAvailable--;
                 }
             }
             else
             {
-                pdstr++;
-                ch = *pdstr;
+                iStr++;
+                ch = pStr[iStr];
                 unsigned char cType_L2 = isSpecial(L2, ch);
                 TempPtr = *bufc;
                 int iCode = cType_L2 & 0x7F;
@@ -1583,8 +1582,8 @@ void mux_exec( UTF8 *pdstr, UTF8 *buff, UTF8 **bufc, dbref executor,
                     // 51
                     // Q
                     //
-                    pdstr++;
-                    i = mux_RegisterSet[(unsigned char)*pdstr];
+                    iStr++;
+                    i = mux_RegisterSet[pStr[iStr]];
                     if (  0 <= i
                        && i < MAX_GLOBAL_REGS)
                     {
@@ -1596,9 +1595,9 @@ void mux_exec( UTF8 *pdstr, UTF8 *buff, UTF8 **bufc, dbref executor,
                             nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
                         }
                     }
-                    else if (*pdstr == '\0')
+                    else if (pStr[iStr] == '\0')
                     {
-                        pdstr--;
+                        iStr--;
                     }
                 }
                 else if (iCode <= 4)
@@ -1650,17 +1649,17 @@ void mux_exec( UTF8 *pdstr, UTF8 *buff, UTF8 **bufc, dbref executor,
                         //
                         // Color
                         //
-                        unsigned int iColor = ColorTable[pdstr[1]];
+                        unsigned int iColor = ColorTable[pStr[iStr + 1]];
                         if (iColor)
                         {
-                            pdstr++;
+                            iStr++;
                             ansi = true;
                             safe_str(aColors[iColor].pUTF, buff, bufc);
                             nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
                         }
-                        else if (pdstr[1] && nBufferAvailable)
+                        else if (pStr[iStr + 1] && nBufferAvailable)
                         {
-                            *(*bufc)++ = *pdstr;
+                            *(*bufc)++ = pStr[iStr];
                             nBufferAvailable--;
                         }
                     }
@@ -1728,10 +1727,10 @@ void mux_exec( UTF8 *pdstr, UTF8 *buff, UTF8 **bufc, dbref executor,
                         //
                         // Variable attribute.
                         //
-                        pdstr++;
-                        if (mux_isazAZ(*pdstr))
+                        iStr++;
+                        if (mux_isazAZ(pStr[iStr]))
                         {
-                            i = A_VA + mux_toupper_ascii(*pdstr) - 'A';
+                            i = A_VA + mux_toupper_ascii(pStr[iStr]) - 'A';
                             size_t nAttrGotten;
                             atr_pget_str_LEN(mux_scratch, executor, i,
                                 &aowner, &aflags, &nAttrGotten);
@@ -1746,9 +1745,9 @@ void mux_exec( UTF8 *pdstr, UTF8 *buff, UTF8 **bufc, dbref executor,
                                 nBufferAvailable -= nAttrGotten;
                             }
                         }
-                        else if ('\0' == *pdstr)
+                        else if ('\0' == pStr[iStr])
                         {
-                            pdstr--;
+                            iStr--;
                         }
                     }
                 }
@@ -1909,7 +1908,7 @@ void mux_exec( UTF8 *pdstr, UTF8 *buff, UTF8 **bufc, dbref executor,
                             //
                             // All done.
                             //
-                            pdstr--;
+                            iStr--;
                         }
                     }
                     else if (iCode <= 20)
@@ -1944,20 +1943,20 @@ void mux_exec( UTF8 *pdstr, UTF8 *buff, UTF8 **bufc, dbref executor,
                         //
                         // %=<attr> like v(attr).
                         //
-                        pdstr++;
-                        if ('<' == pdstr[0])
+                        iStr++;
+                        if ('<' == pStr[iStr])
                         {
-                            pdstr++;
+                            iStr++;
 
                             UTF8 *p2 = mux_scratch;
-                            while (  pdstr[0]
-                                  && '>' != pdstr[0])
+                            while (  pStr[iStr]
+                                  && '>' != pStr[iStr])
                             {
-                                safe_chr(pdstr[0], mux_scratch, &p2);
-                                pdstr++;
+                                safe_chr(pStr[iStr], mux_scratch, &p2);
+                                iStr++;
                             }
                             *p2 = '\0';
-                            if ('>' == pdstr[0])
+                            if ('>' == pStr[iStr])
                             {
                                 if (  mux_isattrnameinitial(mux_scratch)
                                    && '\0' != *utf8_NextCodePoint(mux_scratch))
@@ -1977,12 +1976,12 @@ void mux_exec( UTF8 *pdstr, UTF8 *buff, UTF8 **bufc, dbref executor,
                             }
                             else
                             {
-                                pdstr--;
+                                iStr--;
                             }
                         }
-                        else if ('\0' == pdstr[0])
+                        else if ('\0' == pStr[iStr])
                         {
-                            pdstr--;
+                            iStr--;
                         }
                     }
                 }
@@ -1997,27 +1996,28 @@ void mux_exec( UTF8 *pdstr, UTF8 *buff, UTF8 **bufc, dbref executor,
                 }
             }
         }
-        else if (*pdstr == '[')
+        else if (pStr[iStr] == '[')
         {
             // Function start.  Evaluate the contents of the square brackets
             // as a function. If no closing bracket, insert the '[' and
             // continue.
             //
-            tstr = pdstr++;
+            tstr = pStr + iStr + 1;
             mudstate.nStackNest++;
-            tbuf = parse_to_lite(&pdstr, ']', '\0', &n, &at_space);
+            tbuf = parse_to_lite(&tstr, ']', '\0', &n, &at_space);
             at_space = 0;
-            if (pdstr == NULL)
+            if (tstr == NULL)
             {
                 if (nBufferAvailable)
                 {
                     *(*bufc)++ = '[';
                     nBufferAvailable--;
                 }
-                pdstr = tstr;
             }
             else
             {
+                iStr = tstr - pStr;
+
                 // Prevent evaluation beyond the closing square bracket.
                 //
                 ch = tbuf[n];
@@ -2028,18 +2028,18 @@ void mux_exec( UTF8 *pdstr, UTF8 *buff, UTF8 **bufc, dbref executor,
                     (eval | EV_FCHECK | EV_FMAND) & ~EV_TOP, cargs,
                     ncargs);
                 nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
-                pdstr--;
+                iStr--;
 
                 tbuf[n] = ch;
             }
         }
 
-        // At this point, *pdstr must be one of the following characters:
+        // At this point, pStr[iStr] must be one of the following characters:
         //
         // 0x20 0x5C 0x7B
         // SP    \    {
         //
-        else if (*pdstr == ' ')
+        else if (pStr[iStr] == ' ')
         {
             // A space. Add a space if not compressing or if previous char was
             // not a space.
@@ -2054,29 +2054,29 @@ void mux_exec( UTF8 *pdstr, UTF8 *buff, UTF8 **bufc, dbref executor,
                 at_space = 1;
             }
         }
-        else if (*pdstr == '{')
+        else if (pStr[iStr] == '{')
         {
-            // *pdstr == '{'
+            // pStr[iStr] == '{'
             //
             // Literal start.  Insert everything up to the terminating '}'
             // without parsing. If no closing brace, insert the '{' and
             // continue.
             //
-            tstr = pdstr++;
+            tstr = pStr + iStr + 1;
             mudstate.nStackNest++;
-            tbuf = parse_to_lite(&pdstr, '}', '\0', &n, &at_space);
+            tbuf = parse_to_lite(&tstr, '}', '\0', &n, &at_space);
             at_space = 0;
-            if (NULL == pdstr)
+            if (NULL == tstr)
             {
                 if (nBufferAvailable)
                 {
                     *(*bufc)++ = '{';
                     nBufferAvailable--;
                 }
-                pdstr = tstr;
             }
             else
             {
+                iStr = tstr - pStr;
                 mudstate.nStackNest--;
                 if (!(eval & EV_STRIP_CURLY))
                 {
@@ -2127,32 +2127,32 @@ void mux_exec( UTF8 *pdstr, UTF8 *buff, UTF8 **bufc, dbref executor,
                         nBufferAvailable--;
                     }
                 }
-                pdstr--;
+                iStr--;
             }
         }
-        else  // if (*pdstr == '\\')
+        else  // if (pStr[iStr] == '\\')
         {
-            // *pdstr must be \.
+            // pStr[iStr] must be \.
             //
             // General escape. Add the following char without special
             // processing.
             //
             at_space = 0;
-            pdstr++;
-            if (*pdstr)
+            iStr++;
+            if (pStr[iStr])
             {
                 if (nBufferAvailable)
                 {
-                    *(*bufc)++ = *pdstr;
+                    *(*bufc)++ = pStr[iStr];
                     nBufferAvailable--;
                 }
             }
             else
             {
-                pdstr--;
+                iStr--;
             }
         }
-        pdstr++;
+        iStr++;
     }
 
     // If we're eating spaces, and the last thing was a space, eat it up.
