@@ -469,28 +469,22 @@ TryAgain:
 // It's useful with mux_exec which will be copying the characters to another
 // buffer anyway and is more than able to perform the escapes and trimming.
 //
-static UTF8 *parse_to_lite(UTF8 **dstr, UTF8 delim1, UTF8 delim2, size_t *nLen, int *iWhichDelim)
+static UTF8 *parse_to_lite(UTF8 *dstr, UTF8 delim1, UTF8 delim2, size_t *nLen, int *iWhichDelim)
 {
-#define stacklim 32
-    UTF8 stack[stacklim];
-    int sp, tp, bracketlev;
-
-    if (  dstr == NULL
-       || *dstr == NULL)
+    if (  NULL == dstr
+       || '\0' == dstr[0])
     {
         *nLen = 0;
         return NULL;
     }
 
-    UTF8 *rstr = *dstr;
-    if (**dstr == '\0')
-    {
-        *dstr = NULL;
-        *nLen = 0;
-        return rstr;
-    }
+#define stacklim 32
+    UTF8 stack[stacklim];
+    int sp, tp, bracketlev;
+
     sp = 0;
-    UTF8 *cstr = rstr;
+    UTF8 *rstr = dstr;
+    UTF8 *cstr = dstr;
     int iOriginalCode1 = isSpecial(L3, delim1);
     int iOriginalCode2 = isSpecial(L3, delim2);
     if (iOriginalCode1 <= 3)
@@ -592,8 +586,8 @@ TryAgain:
                         {
                             *iWhichDelim = 2;
                         }
-                        *nLen = (cstr - rstr);
-                        *dstr = ++cstr;
+                        *nLen = (cstr - dstr);
+                        rstr = ++cstr;
                         isSpecial(L3, delim1) = iOriginalCode1;
                         isSpecial(L3, delim2) = iOriginalCode2;
                         return rstr;
@@ -688,8 +682,8 @@ TryAgain:
                         {
                             *iWhichDelim = 2;
                         }
-                        *nLen = (cstr - rstr);
-                        *dstr = ++cstr;
+                        *nLen = (cstr - dstr);
+                        rstr = ++cstr;
                         isSpecial(L3, delim1) = iOriginalCode1;
                         isSpecial(L3, delim2) = iOriginalCode2;
                         return rstr;
@@ -711,8 +705,8 @@ TryAgain:
         }
     }
     *iWhichDelim = 0;
-    *nLen = (cstr - rstr);
-    *dstr = NULL;
+    *nLen = (cstr - dstr);
+    rstr = NULL;
     return rstr;
 }
 
@@ -785,23 +779,26 @@ static UTF8 *parse_arglist_lite( dbref executor, dbref caller, dbref enactor,
         peval = ((eval & ~EV_FCHECK)|EV_NOFCHECK);
     }
 
-    UTF8 *tstr, *bp;
+    UTF8 *pCurr = dstr;
+    UTF8 *pNext = dstr;
+    UTF8 *bp;
     size_t nLen;
     int  arg = 0;
     int  iWhichDelim = 0;
     UTF8 chSave = '\0';
 
     while (  arg < nfargs
-          && dstr
+          && pNext
           && iWhichDelim != 2)
     {
+        pCurr = pNext;
         if (arg < nfargs - 1)
         {
-            tstr = parse_to_lite(&dstr, ',', ')', &nLen, &iWhichDelim);
+            pNext = parse_to_lite(pCurr, ',', ')', &nLen, &iWhichDelim);
         }
         else
         {
-            tstr = parse_to_lite(&dstr, '\0', ')', &nLen, &iWhichDelim);
+            pNext = parse_to_lite(pCurr, '\0', ')', &nLen, &iWhichDelim);
         }
 
         // The following recognizes and returns zero arguments. We avoid
@@ -814,19 +811,19 @@ static UTF8 *parse_arglist_lite( dbref executor, dbref caller, dbref enactor,
             break;
         }
 
-        if (tstr)
+        if (0 < nLen)
         {
             // Prevent evaluation beyond the end of the argument (either at
             // the comma or at the closing parenthesis).
             //
-            chSave = tstr[nLen];
-            tstr[nLen] = '\0';
+            chSave = pCurr[nLen];
+            pCurr[nLen] = '\0';
 
             bp = fargs[arg] = alloc_lbuf("parse_arglist");
-            mux_exec(tstr, fargs[arg], &bp, executor, caller, enactor, peval,
+            mux_exec(pCurr, fargs[arg], &bp, executor, caller, enactor, peval,
                      cargs, ncargs);
 
-            tstr[nLen] = chSave;
+            pCurr[nLen] = chSave;
         }
         else
         {
@@ -836,7 +833,7 @@ static UTF8 *parse_arglist_lite( dbref executor, dbref caller, dbref enactor,
         arg++;
     }
     *nArgsParsed = arg;
-    return dstr;
+    return pNext;
 }
 
 //-----------------------------------------------------------------------------
@@ -1943,45 +1940,40 @@ void mux_exec( UTF8 *pStr, UTF8 *buff, UTF8 **bufc, dbref executor,
                         //
                         // %=<attr> like v(attr).
                         //
-                        iStr++;
-                        if ('<' == pStr[iStr])
+                        n = 1;
+                        if ('<' == pStr[iStr + n])
                         {
-                            iStr++;
+                            n++;
 
-                            UTF8 *p2 = mux_scratch;
-                            while (  pStr[iStr]
-                                  && '>' != pStr[iStr])
+                            while (  '\0' != pStr[iStr + n]
+                                  && '>' != pStr[iStr + n])
                             {
-                                safe_chr(pStr[iStr], mux_scratch, &p2);
-                                iStr++;
+                                n++;
                             }
-                            *p2 = '\0';
-                            if ('>' == pStr[iStr])
+                            if ('>' == pStr[iStr + n])
                             {
+                                // Adjust for the =< at the beginning.
+                                //
+                                iStr += 2;
+                                n -= 2;
+
+                                memcpy(mux_scratch, pStr + iStr, n);
+                                mux_scratch[n] = '\0';
+
                                 if (  mux_isattrnameinitial(mux_scratch)
                                    && '\0' != *utf8_NextCodePoint(mux_scratch))
                                 {
                                     ATTR *ap = atr_str(mux_scratch);
-                                    if (ap)
+                                    if (  ap
+                                       && See_attr(executor, executor, ap))
                                     {
                                         size_t nLen;
-                                        tbuf = atr_pget_LEN(executor, ap->number, &aowner, &aflags, &nLen);
-                                        if (See_attr(executor, executor, ap))
-                                        {
-                                            safe_copy_buf(tbuf, nLen, buff, bufc);
-                                        }
-                                        free_lbuf(tbuf);
+                                        atr_pget_str_LEN(mux_scratch, executor, ap->number, &aowner, &aflags, &nLen);
+                                        safe_copy_buf(mux_scratch, nLen, buff, bufc);
                                     }
                                 }
+                                iStr += n;
                             }
-                            else
-                            {
-                                iStr--;
-                            }
-                        }
-                        else if ('\0' == pStr[iStr])
-                        {
-                            iStr--;
                         }
                     }
                 }
@@ -2002,9 +1994,8 @@ void mux_exec( UTF8 *pStr, UTF8 *buff, UTF8 **bufc, dbref executor,
             // as a function. If no closing bracket, insert the '[' and
             // continue.
             //
-            tstr = pStr + iStr + 1;
             mudstate.nStackNest++;
-            tbuf = parse_to_lite(&tstr, ']', '\0', &n, &at_space);
+            tstr = parse_to_lite(pStr + iStr + 1, ']', '\0', &n, &at_space);
             at_space = 0;
             if (tstr == NULL)
             {
@@ -2016,21 +2007,20 @@ void mux_exec( UTF8 *pStr, UTF8 *buff, UTF8 **bufc, dbref executor,
             }
             else
             {
-                iStr = tstr - pStr;
-
+                iStr++;
                 // Prevent evaluation beyond the closing square bracket.
                 //
-                ch = tbuf[n];
-                tbuf[n] = '\0';
+                ch = pStr[iStr + n];
+                pStr[iStr + n] = '\0';
 
                 mudstate.nStackNest--;
-                mux_exec(tbuf, buff, bufc, executor, caller, enactor,
+                mux_exec(pStr + iStr, buff, bufc, executor, caller, enactor,
                     (eval | EV_FCHECK | EV_FMAND) & ~EV_TOP, cargs,
                     ncargs);
                 nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
-                iStr--;
 
-                tbuf[n] = ch;
+                pStr[iStr + n] = ch;
+                iStr = tstr - pStr - 1;
             }
         }
 
@@ -2062,9 +2052,8 @@ void mux_exec( UTF8 *pStr, UTF8 *buff, UTF8 **bufc, dbref executor,
             // without parsing. If no closing brace, insert the '{' and
             // continue.
             //
-            tstr = pStr + iStr + 1;
             mudstate.nStackNest++;
-            tbuf = parse_to_lite(&tstr, '}', '\0', &n, &at_space);
+            tstr = parse_to_lite(pStr + iStr + 1, '}', '\0', &n, &at_space);
             at_space = 0;
             if (NULL == tstr)
             {
@@ -2076,7 +2065,7 @@ void mux_exec( UTF8 *pStr, UTF8 *buff, UTF8 **bufc, dbref executor,
             }
             else
             {
-                iStr = tstr - pStr;
+                iStr++;
                 mudstate.nStackNest--;
                 if (!(eval & EV_STRIP_CURLY))
                 {
@@ -2089,15 +2078,15 @@ void mux_exec( UTF8 *pStr, UTF8 *buff, UTF8 **bufc, dbref executor,
 
                 // Prevent evaluation beyond closing brace.
                 //
-                ch = tbuf[n];
-                tbuf[n] = '\0';
+                ch = pStr[iStr + n];
+                pStr[iStr + n] = '\0';
 
                 if (eval & EV_EVAL)
                 {
                     // Preserve leading spaces (Felan)
                     //
                     i = 0;
-                    if (' ' == tbuf[0])
+                    if (' ' == pStr[iStr])
                     {
                         if (nBufferAvailable)
                         {
@@ -2107,16 +2096,16 @@ void mux_exec( UTF8 *pStr, UTF8 *buff, UTF8 **bufc, dbref executor,
                         i = 1;
                     }
 
-                    mux_exec(tbuf+i, buff, bufc, executor, caller, enactor,
+                    mux_exec(pStr + iStr + i, buff, bufc, executor, caller, enactor,
                         (eval & ~(EV_STRIP_CURLY | EV_FCHECK | EV_FMAND | EV_TOP)),
                         cargs, ncargs);
                 }
                 else
                 {
-                    mux_exec(tbuf, buff, bufc, executor, caller, enactor,
+                    mux_exec(pStr + iStr, buff, bufc, executor, caller, enactor,
                         eval & ~(EV_TOP | EV_FMAND), cargs, ncargs);
                 }
-                tbuf[n] = ch;
+                pStr[iStr + n] = ch;
                 nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
 
                 if (!(eval & EV_STRIP_CURLY))
@@ -2127,7 +2116,7 @@ void mux_exec( UTF8 *pStr, UTF8 *buff, UTF8 **bufc, dbref executor,
                         nBufferAvailable--;
                     }
                 }
-                iStr--;
+                iStr = tstr - pStr - 1;
             }
         }
         else  // if (pStr[iStr] == '\\')
