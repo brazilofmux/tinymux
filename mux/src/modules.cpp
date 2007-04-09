@@ -16,74 +16,177 @@
 
 #include "modules.h"
 
-// TODO:
-//
-//  - Start lists for bookeeping modules for something like @list modules.
-//  - Add export for all the mux_CanUnloadNow() for every module to be called
-//    during @dbck.
-//  - When module is loaded, call export to get its component id list and add
-//    them to the master list.
-
 extern "C"
 {
     typedef MUX_RESULT FPGETCLASSOBJECT(UINT64 cid, UINT64 iid, void **ppv);
+    typedef MUX_RESULT FPCANUNLOADNOW(void);
+    typedef MUX_RESULT FPREGISTERSERVER(void);
+    typedef MUX_RESULT FPUNREGISTERSERVER(void);
 };
 
-/*! \brief Creates an instance of the given class with the given interface.
+#ifdef WIN32
+typedef HINSTANCE MODULE_HANDLE;
+#else
+typedef void     *MODULE_HANDLE;
+#endif
+
+typedef struct
+{
+    FPGETCLASSOBJECT *fpGetClassObject;
+    FPCANUNLOADNOW   *fpCanUnloadNow;
+    MODULE_HANDLE    hInst;
+    UTF8            *pFilename;
+    bool             bLoaded;
+} MODULE_INFO;
+
+typedef struct
+{
+    UINT64           cid;
+    MODULE_INFO     *pModule;
+} CLASS_INFO;
+
+int          nModules = 0;
+MODULE_INFO *pModules = NULL;
+
+int          nClasses = 0;
+CLASS_INFO  *pClasses = NULL;
+
+/*! \brief Loads a known module.
  *
- * \param UINT64    Class ID
- * \param UINT64    Interface ID
- * \return          MUX_RESULT
+ * \param pModule   Module context record.
  */
 
-extern "C" DCL_EXPORT MUX_RESULT mux_CreateInstance(UINT64 cid, UINT64 iid, void **ppv)
+static void ModuleLoad(MODULE_INFO *pModule)
 {
-#ifdef WIN32
-    HINSTANCE hInst = LoadLibrary(L"bin\\sample.dll");
-    if (hInst)
+    if (pModule->bLoaded)
     {
-        FPGETCLASSOBJECT *fpGetClassObject = (FPGETCLASSOBJECT *)GetProcAddress(hInst, "mux_GetClassObject");
-        if (NULL != fpGetClassObject)
+        // Module is already in loaded state.
+        //
+        return;
+    }
+
+#ifdef WIN32
+    pModule->hInst = LoadLibrary(pModule->pFilename);
+    if (NULL != pModule->hInst)
+    {
+        pModule->fpGetClassObject = (FPGETCLASSOBJECT *)GetProcAddress(pModule->hInst, "mux_GetClassObject");
+        pModule->fpCanUnloadNow   = (FPCANUNLOADNOW *)GetProcAddress(pModule->hInst, "mux_CanUnloadNow");
+        if (  NULL != pModule->fpGetClassObject
+           && NULL != pModule->fpCanUnloadNow)
         {
-            mux_IClassFactory *pIClassFactory = NULL;
-            MUX_RESULT mr = fpGetClassObject(cid, mux_IID_IClassFactory, (void **)&pIClassFactory);
-            if (  MUX_SUCCEEDED(mr)
-               && NULL != pIClassFactory)
-            {
-                mr = pIClassFactory->CreateInstance(iid, ppv);
-                pIClassFactory->Release();
-            }
-            return mr;
+            pModule->bLoaded = true;
+        }
+        else
+        {
+            FreeLibrary(pModule->hInst);
         }
     }
 #else // !WIN32
 #ifdef HAVE_DLOPEN
-    void *mh = dlopen("bin/sample.so", RTLD_LAZY);
-    if (NULL != mh)
+    pModule->hInst = dlopen((char *)pModule->pFilename, RTLD_LAZY);
+    if (NULL != pModule->hInst)
     {
-        FPGETCLASSOBJECT *fpGetClassObject = (FPGETCLASSOBJECT *)dlsym(mh, "mux_GetClassObject");
-        if (NULL != fpGetClassObject)
+        pModule->fpGetClassObject = (FPGETCLASSOBJECT *)dlsym(pModule->hInst, "mux_GetClassObject");
+        pModule->fpCanUnloadNow = (FPCANUNLOADNOW *)dlsym(pModule->hInst, "mux_CanUnloadNow");
+        if (  NULL != pModule->fpGetClassObject
+           && NULL != pModule->fpCanUnloadNow)
         {
-            mux_IClassFactory *pIClassFactory = NULL;
-            MUX_RESULT mr = fpGetClassObject(cid, mux_IID_IClassFactory, (void **)&pIClassFactory);
-            if (  MUX_SUCCEEDED(mr)
-               && NULL != pIClassFactory)
-            {
-                mr = pIClassFactory->CreateInstance(iid, ppv);
-                pIClassFactory->Release();
-            }
-            return mr;
+            pModule->bLoaded = true;
+        }
+        else
+        {
+            dlclose(pModule->hInst);
         }
     }
 #endif // HAVE_DLOPEN
 #endif // !WIN32
+}
+
+/*! \brief Unloads a known module.
+ *
+ * \param pModule   Module context record.
+ */
+
+static void ModuleUnload(MODULE_INFO *pModule)
+{
+    if (!pModule->bLoaded)
+    {
+        // Module is already in unloaded state.
+        //
+        return;
+    }
+
+#ifdef WIN32
+    FreeLibrary(pModule->hInst);
+#else
+#ifdef HAVE_DLOPEN
+    dlclose(pModule->hInst);
+#endif
+#endif
+    pModule->hInst = NULL;
+    pModule->fpGetClassObject = NULL;
+    pModule->fpCanUnloadNow = NULL;
+    pModule->bLoaded = false;
+}
+
+/*! \brief Find which module implements a particular class id.
+ *
+ * \param  UINT64   Class ID.
+ * \return          Pointer to module.
+ */
+
+static MODULE_INFO *ModuleFindFromCID(UINT64 cid)
+{
+    int i;
+    for (i = 0; i < nClasses; i++)
+    {
+        if (pClasses->cid == cid)
+        {
+            return pClasses->pModule;
+        }
+    }
+    return NULL;
+}
+
+/*! \brief Creates an instance of the given class with the given interface.
+ *
+ * \param  UINT64    Class ID
+ * \param  UINT64    Interface ID
+ * \return           MUX_RESULT
+ */
+
+extern "C" DCL_EXPORT MUX_RESULT mux_CreateInstance(UINT64 cid, UINT64 iid, void **ppv)
+{
+    MODULE_INFO *pModule = ModuleFindFromCID(cid);
+    if (NULL != pModule)
+    {
+        if (!pModule->bLoaded)
+        {
+            ModuleLoad(pModule);
+            if (!pModule->bLoaded)
+            {
+                return MUX_E_CLASSNOTAVAILABLE;
+            }
+        }
+
+        mux_IClassFactory *pIClassFactory = NULL;
+        MUX_RESULT mr = pModule->fpGetClassObject(cid, mux_IID_IClassFactory, (void **)&pIClassFactory);
+        if (  MUX_SUCCEEDED(mr)
+           && NULL != pIClassFactory)
+        {
+            mr = pIClassFactory->CreateInstance(iid, ppv);
+            pIClassFactory->Release();
+        }
+        return mr;
+    }
     return MUX_E_CLASSNOTAVAILABLE;
 }
 
 /*! \brief Register component ids and factory implemented by the process binary.
  *
- * Modules do not use this. There is a separate mechanism for obtaining and their
- * component ids which occurs when the module is loaded.
+ * Modules must pass NULL for pFactory, but netmux must pass a non-NULL
+ * pFactory.  For modules, the factory is obtained by using the
+ * mux_GetClassObject export.
  *
  * \param int                   Number of component ids to register
  * \param UINT64[]              Component ID table.
@@ -98,8 +201,6 @@ extern "C" DCL_EXPORT MUX_RESULT mux_RegisterClassObjects(int ncid, UINT64 acid[
 }
 
 /*! \brief Register component ids and factory implemented by the process binary.
- *
- * Modules do not use this. There is a separate mechanism for obtaining their component ids.
  *
  * \param int                   Number of component ids to register
  * \param UINT64[]              Component ID table.
@@ -142,13 +243,21 @@ extern "C" DCL_EXPORT MUX_RESULT mux_RemoveModule(UTF8 aModuleFileName[])
  * Modules do not use this.
  *
  * \param UTF8     Filename of dynamic module to remove.
- * \param void **  This will eventually be a module information structure.
+ * \param void **  External module info structure.
  * \return         MUX_RESULT
  */
 
-extern "C" DCL_EXPORT MUX_RESULT mux_ModuleInfo(int iModule, void **pv)
+extern "C" DCL_EXPORT MUX_RESULT mux_ModuleInfo(int iModule, MUX_MODULE_INFO *pModuleInfo)
 {
-    return MUX_E_NOTIMPLEMENTED;
+    if (  0 <= iModule
+       && iModule < nModules
+       && NULL != pModuleInfo)
+    {
+        pModuleInfo->bLoaded = pModules[iModule].bLoaded;
+        pModuleInfo->pName   = pModules[iModule].pFilename;
+        return MUX_S_OK;
+    }
+    return MUX_E_FAIL;
 }
 
 /*! \brief Periodic service tick for modules.
@@ -162,5 +271,15 @@ extern "C" DCL_EXPORT MUX_RESULT mux_ModuleTick(void)
 {
     // We can query each loaded module and unload the ones that are unloadable.
     //
+    int i;
+    for (i = 0; i < nModules; i++)
+    {
+        MODULE_INFO *p = &pModules[i];
+        if (  p->bLoaded
+           && p->fpCanUnloadNow())
+        {
+            ModuleUnload(p);
+        }
+    }
     return MUX_S_OK;
 }
