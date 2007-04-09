@@ -300,10 +300,9 @@ void *hash_nextkey(CHashTable *htab, int *nKeyLength, UTF8 **pKey)
  * * search_nametab: Search a name table for a match and return the flag value.
  */
 
-bool search_nametab(dbref player, NAMETAB *ntab, UTF8 *flagname, int *pflag)
+bool search_nametab(dbref player, NAMETAB *ntab, const UTF8 *flagname, int *pflag)
 {
-    NAMETAB *nt;
-    for (nt = ntab; nt->name; nt++)
+    for (NAMETAB *nt = ntab; nt->name; nt++)
     {
         if (minmatch(flagname, nt->name, nt->minlen))
         {
@@ -330,9 +329,7 @@ bool search_nametab(dbref player, NAMETAB *ntab, UTF8 *flagname, int *pflag)
 
 NAMETAB *find_nametab_ent(dbref player, NAMETAB *ntab, const UTF8 *flagname)
 {
-    NAMETAB *nt;
-
-    for (nt = ntab; nt->name; nt++)
+    for (NAMETAB *nt = ntab; nt->name; nt++)
     {
         if (minmatch(flagname, nt->name, nt->minlen))
         {
