@@ -466,7 +466,7 @@ void atr_chown(dbref);
 void atr_clr(dbref, int);
 void atr_add_raw_LEN(dbref thing, int atr, const UTF8 *szValue, size_t nValue);
 void atr_add_raw(dbref, int, const UTF8 *);
-void atr_add(dbref, int, UTF8 *, dbref, int);
+void atr_add(dbref, int, const UTF8 *, dbref, int);
 void atr_set_flags(dbref, int, int);
 const UTF8 *atr_get_raw_LEN(dbref, int, size_t *);
 const UTF8 *atr_get_raw(dbref, int);

@@ -1056,7 +1056,7 @@ void do_chown
  * * do_set: Set flags or attributes on objects, or flags on attributes.
  */
 
-static void set_attr_internal(dbref player, dbref thing, int attrnum, UTF8 *attrtext, int key)
+static void set_attr_internal(dbref player, dbref thing, int attrnum, const UTF8 *attrtext, int key)
 {
     dbref aowner;
     int aflags;
@@ -1222,38 +1222,39 @@ void do_set
             notify_quiet(executor, NOPERM_MESSAGE);
             return;
         }
-        UTF8 *buff = alloc_lbuf("do_set");
 
         // Check for _
         //
         if (*p == '_')
         {
+            p++;
             ATTR *pattr2;
             dbref thing2;
 
-            mux_strncpy(buff, p + 1, LBUF_SIZE-1);
-            if (!( parse_attrib(executor, p + 1, &thing2, &pattr2)
+            if (!( parse_attrib(executor, p, &thing2, &pattr2)
                 && pattr2))
             {
                 notify_quiet(executor, T("No match."));
-                free_lbuf(buff);
                 return;
             }
-            p = buff;
+            UTF8 *buff = alloc_lbuf("do_set");
             atr_pget_str(buff, thing2, pattr2->number, &aowner, &aflags);
 
             if (!See_attr(executor, thing2, pattr2))
             {
                 notify_quiet(executor, NOPERM_MESSAGE);
-                free_lbuf(buff);
-                return;
             }
+            else
+            {
+                set_attr_internal(executor, thing, atr, buff, key);
+            }
+            free_lbuf(buff);
+            return;
         }
 
         // Go set it.
         //
         set_attr_internal(executor, thing, atr, p, key);
-        free_lbuf(buff);
         return;
     }
 

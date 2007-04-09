@@ -710,38 +710,39 @@ FUNCTION(fun_set)
             safe_noperm(buff, bufc);
             return;
         }
-        UTF8 *buff2 = alloc_lbuf("fun_set");
 
         // Check for _
         //
         if (*p == '_')
         {
+            p++;
             ATTR *pattr2;
             dbref thing2;
 
-            mux_strncpy(buff2, p + 1, LBUF_SIZE-1);
-            if (!( parse_attrib(executor, p + 1, &thing2, &pattr2)
+            if (!( parse_attrib(executor, p, &thing2, &pattr2)
                 && pattr2))
             {
-                free_lbuf(buff2);
                 safe_nomatch(buff, bufc);
                 return;
             }
-            p = buff2;
+            UTF8 *buff2 = alloc_lbuf("fun_set");
             atr_pget_str(buff2, thing2, pattr2->number, &aowner, &aflags);
 
             if (!See_attr(executor, thing2, pattr2))
             {
-                free_lbuf(buff2);
                 safe_noperm(buff, bufc);
-                return;
             }
+            else
+            {
+                set_attr_internal(executor, thing, atr, buff2, 0, buff, bufc);
+            }
+            free_lbuf(buff2);
+            return;
         }
 
         // Go set it.
         //
         set_attr_internal(executor, thing, atr, p, 0, buff, bufc);
-        free_lbuf(buff2);
         return;
     }
 
