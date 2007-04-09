@@ -215,7 +215,7 @@ static int add_mail_message(dbref player, UTF8 *message)
     UTF8 *bp = alloc_lbuf("add_mail_message");
     UTF8 *atrstr = atr_get("add_mail_message.216", player, A_SIGNATURE, &aowner, &aflags);
     UTF8 *execstr = bp;
-    mux_exec(atrstr, execstr, &bp, player, player, player,
+    mux_exec(atrstr, LBUF_SIZE-1, execstr, &bp, player, player, player,
          AttrTrace(aflags, EV_STRIP_CURLY|EV_FCHECK|EV_EVAL),
          NULL, 0);
     *bp = '\0';
@@ -2115,7 +2115,7 @@ static void mail_return(dbref player, dbref target)
     {
         UTF8 *str2, *bp;
         str2 = bp = alloc_lbuf("mail_return");
-        mux_exec(str, str2, &bp, target, player, player,
+        mux_exec(str, LBUF_SIZE-1, str2, &bp, target, player, player,
              AttrTrace(aflags, EV_FCHECK|EV_EVAL|EV_TOP|EV_NO_LOCATION),
              NULL, 0);
         *bp = '\0';
@@ -4002,7 +4002,7 @@ void do_prepend(dbref executor, dbref caller, dbref enactor, int eval, int key, 
 
         UTF8 *bufText = alloc_lbuf("do_prepend");
         UTF8 *bpText = bufText;
-        mux_exec(text+1, bufText, &bpText, executor, caller, enactor,
+        mux_exec(text+1, LBUF_SIZE-1, bufText, &bpText, executor, caller, enactor,
                  eval|EV_STRIP_CURLY|EV_FCHECK|EV_EVAL, NULL, 0);
         *bpText = '\0';
 
@@ -4065,7 +4065,7 @@ void do_postpend(dbref executor, dbref caller, dbref enactor, int eval, int key,
 
         UTF8 *bufText = alloc_lbuf("do_prepend");
         UTF8 *bpText = bufText;
-        mux_exec(text+1, bufText, &bpText, executor, caller, enactor,
+        mux_exec(text+1, LBUF_SIZE-1, bufText, &bpText, executor, caller, enactor,
                  eval|EV_STRIP_CURLY|EV_FCHECK|EV_EVAL, NULL, 0);
         *bpText = '\0';
 

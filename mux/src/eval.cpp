@@ -469,7 +469,7 @@ TryAgain:
 // It's useful with mux_exec which will be copying the characters to another
 // buffer anyway and is more than able to perform the escapes and trimming.
 //
-static UTF8 *parse_to_lite(UTF8 *dstr, UTF8 delim1, UTF8 delim2, size_t *nLen, int *iWhichDelim)
+static const UTF8 *parse_to_lite(const UTF8 *dstr, UTF8 delim1, UTF8 delim2, size_t *nLen, int *iWhichDelim)
 {
     if (  NULL == dstr
        || '\0' == dstr[0])
@@ -483,8 +483,8 @@ static UTF8 *parse_to_lite(UTF8 *dstr, UTF8 delim1, UTF8 delim2, size_t *nLen, i
     int sp, tp, bracketlev;
 
     sp = 0;
-    UTF8 *rstr = dstr;
-    UTF8 *cstr = dstr;
+    const UTF8 *rstr = dstr;
+    const UTF8 *cstr = dstr;
     int iOriginalCode1 = isSpecial(L3, delim1);
     int iOriginalCode2 = isSpecial(L3, delim2);
     if (iOriginalCode1 <= 3)
@@ -745,7 +745,7 @@ void parse_arglist( dbref executor, dbref caller, dbref enactor, UTF8 *dstr,
         bp = fargs[iArg] = alloc_lbuf("parse_arglist");
         if (eval & EV_EVAL)
         {
-            mux_exec(tstr, fargs[iArg], &bp, executor, caller, enactor,
+            mux_exec(tstr, LBUF_SIZE-1, fargs[iArg], &bp, executor, caller, enactor,
                      eval | EV_FCHECK, cargs, ncargs);
             *bp = '\0';
         }
@@ -758,8 +758,8 @@ void parse_arglist( dbref executor, dbref caller, dbref enactor, UTF8 *dstr,
     *nArgsParsed = iArg;
 }
 
-static UTF8 *parse_arglist_lite( dbref executor, dbref caller, dbref enactor,
-                          UTF8 *dstr, int eval, UTF8 *fargs[],
+static const UTF8 *parse_arglist_lite( dbref executor, dbref caller, dbref enactor,
+                          const UTF8 *dstr, int eval, UTF8 *fargs[],
                           int nfargs, UTF8 *cargs[], int ncargs,
                           int *nArgsParsed)
 {
@@ -779,13 +779,12 @@ static UTF8 *parse_arglist_lite( dbref executor, dbref caller, dbref enactor,
         peval = ((eval & ~EV_FCHECK)|EV_NOFCHECK);
     }
 
-    UTF8 *pCurr = dstr;
-    UTF8 *pNext = dstr;
+    const UTF8 *pCurr = dstr;
+    const UTF8 *pNext = dstr;
     UTF8 *bp;
     size_t nLen;
     int  arg = 0;
     int  iWhichDelim = 0;
-    UTF8 chSave = '\0';
 
     while (  arg < nfargs
           && pNext
@@ -813,17 +812,9 @@ static UTF8 *parse_arglist_lite( dbref executor, dbref caller, dbref enactor,
 
         if (0 < nLen)
         {
-            // Prevent evaluation beyond the end of the argument (either at
-            // the comma or at the closing parenthesis).
-            //
-            chSave = pCurr[nLen];
-            pCurr[nLen] = '\0';
-
             bp = fargs[arg] = alloc_lbuf("parse_arglist");
-            mux_exec(pCurr, fargs[arg], &bp, executor, caller, enactor, peval,
+            mux_exec(pCurr, nLen, fargs[arg], &bp, executor, caller, enactor, peval,
                      cargs, ncargs);
-
-            pCurr[nLen] = chSave;
         }
         else
         {
@@ -1154,7 +1145,7 @@ void PopRegisters(reg_ref **p, int nNeeded)
     pRefsFrame->nrefs += nNeeded;
 }
 
-void mux_exec( UTF8 *pStr, UTF8 *buff, UTF8 **bufc, dbref executor,
+void mux_exec( const UTF8 *pStr, size_t nStr, UTF8 *buff, UTF8 **bufc, dbref executor,
                dbref caller, dbref enactor, int eval, UTF8 *cargs[], int ncargs)
 {
     if (  NULL == pStr
@@ -1173,7 +1164,7 @@ void mux_exec( UTF8 *pStr, UTF8 *buff, UTF8 **bufc, dbref executor,
     }
 
     UTF8 *TempPtr;
-    UTF8 *tstr, *tbuf, *start, *oldp, *savestr;
+    UTF8 *start, *oldp, *savestr;
     const UTF8 *constbuf;
     UTF8 ch;
     UTF8 *realbuff = NULL, *realbp = NULL;
@@ -1183,6 +1174,7 @@ void mux_exec( UTF8 *pStr, UTF8 *buff, UTF8 **bufc, dbref executor,
     bool ansi = false;
     FUN *fp;
     UFUN *ufp;
+    const UTF8 *tstr;
 
     static const UTF8 *subj[5] =
     {
@@ -1249,7 +1241,7 @@ void mux_exec( UTF8 *pStr, UTF8 *buff, UTF8 **bufc, dbref executor,
     {
         is_top = tcache_empty();
         savestr = alloc_lbuf("exec.save");
-        mux_strncpy(savestr, pStr, LBUF_SIZE-1);
+        mux_strncpy(savestr, pStr, nStr);
     }
 
     // Save Parser Mode.
@@ -1267,7 +1259,9 @@ void mux_exec( UTF8 *pStr, UTF8 *buff, UTF8 **bufc, dbref executor,
 
     size_t nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
     size_t iStr = 0;
-    for (;;)
+    bool bBreak = false;
+
+    while (iStr < nStr)
     {
         // Handle mundane characters specially. There are usually a lot of them.
         // Just copy them.
@@ -1279,7 +1273,15 @@ void mux_exec( UTF8 *pStr, UTF8 *buff, UTF8 **bufc, dbref executor,
             {
                 ; // Nothing.
             }
-            n = iNormal - iStr - 1;
+            if (nStr <= iNormal)
+            {
+                n = nStr - iStr;
+                bBreak = true;
+            }
+            else
+            {
+                n = iNormal - iStr - 1;
+            }
             if (nBufferAvailable < n)
             {
                 n = nBufferAvailable;
@@ -1289,6 +1291,10 @@ void mux_exec( UTF8 *pStr, UTF8 *buff, UTF8 **bufc, dbref executor,
             *bufc += n;
             at_space = 0;
             iStr += n;
+            if (bBreak)
+            {
+                break;
+            }
         }
 
 
@@ -1465,7 +1471,7 @@ void mux_exec( UTF8 *pStr, UTF8 *buff, UTF8 **bufc, dbref executor,
                             save_global_regs(preserve);
                         }
 
-                        mux_exec(tstr, buff, &oldp, i, executor, enactor,
+                        mux_exec(tstr, LBUF_SIZE-1, buff, &oldp, i, executor, enactor,
                             AttrTrace(aflags, feval), fargs, nfargs);
 
                         if (ufp->flags & FN_PRES)
@@ -1950,6 +1956,10 @@ void mux_exec( UTF8 *pStr, UTF8 *buff, UTF8 **bufc, dbref executor,
                             {
                                 n++;
                             }
+                            if (nStr < iStr + n)
+                            {
+                                n = nStr - iStr;
+                            }
                             if ('>' == pStr[iStr + n])
                             {
                                 // Adjust for the =< at the beginning.
@@ -2008,18 +2018,15 @@ void mux_exec( UTF8 *pStr, UTF8 *buff, UTF8 **bufc, dbref executor,
             else
             {
                 iStr++;
-                // Prevent evaluation beyond the closing square bracket.
-                //
-                ch = pStr[iStr + n];
-                pStr[iStr + n] = '\0';
-
+                if (nStr < iStr + n)
+                {
+                    n = nStr - iStr;
+                }
                 mudstate.nStackNest--;
-                mux_exec(pStr + iStr, buff, bufc, executor, caller, enactor,
+                mux_exec(pStr + iStr, n, buff, bufc, executor, caller, enactor,
                     (eval | EV_FCHECK | EV_FMAND) & ~EV_TOP, cargs,
                     ncargs);
                 nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
-
-                pStr[iStr + n] = ch;
                 iStr = tstr - pStr - 1;
             }
         }
@@ -2076,11 +2083,6 @@ void mux_exec( UTF8 *pStr, UTF8 *buff, UTF8 **bufc, dbref executor,
                     }
                 }
 
-                // Prevent evaluation beyond closing brace.
-                //
-                ch = pStr[iStr + n];
-                pStr[iStr + n] = '\0';
-
                 if (eval & EV_EVAL)
                 {
                     // Preserve leading spaces (Felan)
@@ -2095,17 +2097,20 @@ void mux_exec( UTF8 *pStr, UTF8 *buff, UTF8 **bufc, dbref executor,
                         }
                         i = 1;
                     }
+                    if (nStr < iStr + n)
+                    {
+                        n = nStr - iStr;
+                    }
 
-                    mux_exec(pStr + iStr + i, buff, bufc, executor, caller, enactor,
+                    mux_exec(pStr + iStr + i, n - i, buff, bufc, executor, caller, enactor,
                         (eval & ~(EV_STRIP_CURLY | EV_FCHECK | EV_FMAND | EV_TOP)),
                         cargs, ncargs);
                 }
                 else
                 {
-                    mux_exec(pStr + iStr, buff, bufc, executor, caller, enactor,
+                    mux_exec(pStr + iStr, nStr - iStr, buff, bufc, executor, caller, enactor,
                         eval & ~(EV_TOP | EV_FMAND), cargs, ncargs);
                 }
-                pStr[iStr + n] = ch;
                 nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
 
                 if (!(eval & EV_STRIP_CURLY))
@@ -2170,7 +2175,7 @@ void mux_exec( UTF8 *pStr, UTF8 *buff, UTF8 **bufc, dbref executor,
         if (  is_top
            && 0 < tcache_count - mudconf.trace_limit)
         {
-            tbuf = alloc_mbuf("exec.trace_diag");
+            UTF8 *tbuf = alloc_mbuf("exec.trace_diag");
             mux_sprintf(tbuf, MBUF_SIZE, "%d lines of trace output discarded.", tcache_count
                 - mudconf.trace_limit);
             notify(executor, tbuf);

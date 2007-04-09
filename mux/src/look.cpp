@@ -478,7 +478,7 @@ static void look_exits(dbref player, dbref loc, const UTF8 *exit_name)
         preserve = PushRegisters(MAX_GLOBAL_REGS);
         save_and_clear_global_regs(preserve);
 
-        mux_exec(ExitFormat, FormatOutput, &tPtr, loc, player, player,
+        mux_exec(ExitFormat, LBUF_SIZE-1, FormatOutput, &tPtr, loc, player, player,
             AttrTrace(aflags, EV_FCHECK|EV_EVAL|EV_TOP),
             &VisibleObjectList, 1);
 
@@ -654,7 +654,7 @@ static void look_contents(dbref player, dbref loc, const UTF8 *contents_name, in
         preserve = PushRegisters(MAX_GLOBAL_REGS);
         save_and_clear_global_regs(preserve);
 
-        mux_exec(ContentsFormat, FormatOutput, &tPtr, loc, player, player,
+        mux_exec(ContentsFormat, LBUF_SIZE-1, FormatOutput, &tPtr, loc, player, player,
             AttrTrace(aflags, EV_FCHECK|EV_EVAL|EV_TOP),
             ParameterList, 2);
 
@@ -1034,7 +1034,7 @@ static bool show_a_desc(dbref player, dbref loc)
         UTF8 *tbuf1 = atr_pget(loc, iDescDefault, &aowner2, &aflags2);
         UTF8 *temp = alloc_lbuf("look_description.ET");
         UTF8 *bp = temp;
-        mux_exec(tbuf1, temp, &bp, loc, player, player,
+        mux_exec(tbuf1, LBUF_SIZE-1, temp, &bp, loc, player, player,
             AttrTrace(aflags2, EV_FCHECK|EV_EVAL|EV_TOP),
             NULL, 0);
         *bp = '\0';
@@ -1047,7 +1047,7 @@ static bool show_a_desc(dbref player, dbref loc)
         UTF8* ParameterList[] =
             { temp, attrname };
 
-        mux_exec(DescFormat, FormatOutput, &tPtr, loc, player, player,
+        mux_exec(DescFormat, LBUF_SIZE-1, FormatOutput, &tPtr, loc, player, player,
             AttrTrace(aflags1, EV_FCHECK|EV_EVAL|EV_TOP),
             ParameterList, 2);
 
@@ -1266,7 +1266,7 @@ void look_in(dbref player, dbref loc, int key)
         preserve = PushRegisters(MAX_GLOBAL_REGS);
         save_and_clear_global_regs(preserve);
 
-        mux_exec(NameFormat, FormatOutput, &tPtr, loc, player, player,
+        mux_exec(NameFormat, LBUF_SIZE-1, FormatOutput, &tPtr, loc, player, player,
             AttrTrace(aflags, EV_FCHECK|EV_EVAL|EV_TOP),
             0, 0);
 

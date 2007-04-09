@@ -126,7 +126,7 @@ UTF8 *parse_to(UTF8 **, UTF8, int);
 void parse_arglist(dbref executor, dbref caller, dbref enactor, UTF8 *,
                     int, UTF8 *[], int, UTF8*[], int, int *);
 int get_gender(dbref);
-void mux_exec(UTF8 *pdstr, UTF8 *buff, UTF8 **bufc, dbref executor,
+void mux_exec(const UTF8 *pdstr, size_t nStr, UTF8 *buff, UTF8 **bufc, dbref executor,
               dbref caller, dbref enactor, int eval, UTF8 *cargs[], int ncargs);
 
 DCL_INLINE void BufAddRef(lbuf_ref *lbufref)

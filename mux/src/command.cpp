@@ -1065,7 +1065,7 @@ static bool process_hook(dbref executor, ATTR *hk_attr, bool save_flg)
             }
             UTF8 *buff, *bufc;
             bufc = buff = alloc_lbuf("process_hook");
-            mux_exec(atext, buff, &bufc, mudconf.hook_obj, executor, executor,
+            mux_exec(atext, LBUF_SIZE-1, buff, &bufc, mudconf.hook_obj, executor, executor,
                 AttrTrace(aflags, EV_FCHECK|EV_EVAL), NULL, 0);
             *bufc = '\0';
             if (save_flg)
@@ -1317,7 +1317,7 @@ static void process_cmdent(CMDENT *cmdp, UTF8 *switchp, dbref executor, dbref ca
             {
                 *bp++ = *str++;
             }
-            mux_exec(str, buf1, &bp, executor, caller, enactor,
+            mux_exec(str, LBUF_SIZE-1, buf1, &bp, executor, caller, enactor,
                 eval|interp|EV_FCHECK|EV_TOP, cargs, ncargs);
             *bp = '\0';
         }
@@ -1483,7 +1483,7 @@ static void process_cmdent(CMDENT *cmdp, UTF8 *switchp, dbref executor, dbref ca
             *arg = '\0';
         }
         buf1 = bp = alloc_lbuf("process_cmdent.2");
-        mux_exec(buf2, buf1, &bp, executor, caller, enactor,
+        mux_exec(buf2, LBUF_SIZE-1, buf1, &bp, executor, caller, enactor,
             eval|EV_STRIP_CURLY|EV_FCHECK|EV_EVAL|EV_TOP, cargs, ncargs);
         *bp = '\0';
 
@@ -1522,7 +1522,7 @@ static void process_cmdent(CMDENT *cmdp, UTF8 *switchp, dbref executor, dbref ca
             if (interp & EV_EVAL)
             {
                 buf2 = bp = alloc_lbuf("process_cmdent.3");
-                mux_exec(arg, buf2, &bp, executor, caller, enactor,
+                mux_exec(arg, LBUF_SIZE-1, buf2, &bp, executor, caller, enactor,
                     eval|interp|EV_FCHECK|EV_TOP, cargs, ncargs);
                 *bp = '\0';
             }
@@ -2229,7 +2229,7 @@ UTF8 *process_command
     // to work.
     //
     bp = LowerCaseCommand;
-    mux_exec(pCommand, LowerCaseCommand, &bp, executor, caller, enactor,
+    mux_exec(pCommand, LBUF_SIZE-1, LowerCaseCommand, &bp, executor, caller, enactor,
         eval|EV_EVAL|EV_FCHECK|EV_STRIP_CURLY|EV_TOP, args, nargs);
     *bp = '\0';
     bool succ = false;
@@ -2541,7 +2541,7 @@ UTF8 *process_command
             UTF8 *errtext = atr_get("process_command.2491", mudconf.global_error_obj, A_VA, &aowner, &aflags);
             UTF8 *errbuff = alloc_lbuf("process_command.error_msg");
             UTF8 *errbufc = errbuff;
-            mux_exec(errtext, errbuff, &errbufc, mudconf.global_error_obj, caller, enactor,
+            mux_exec(errtext, LBUF_SIZE-1, errbuff, &errbufc, mudconf.global_error_obj, caller, enactor,
                 AttrTrace(aflags, EV_EVAL|EV_FCHECK|EV_STRIP_CURLY|EV_TOP),
                 &pCommand, 1);
             notify(executor, errbuff);
