@@ -1515,7 +1515,7 @@ void do_mvattr(dbref executor, dbref caller, dbref enactor, int eval, int key,
  * * parse_attrib, parse_attrib_wild: parse <obj>/<attr> tokens.
  */
 
-bool parse_attrib(dbref player, UTF8 *str, dbref *thing, ATTR **attr)
+bool parse_attrib(dbref player, const UTF8 *str, dbref *thing, ATTR **attr)
 {
     ATTR *tattr = NULL;
     *thing = NOTHING;
@@ -1528,10 +1528,8 @@ bool parse_attrib(dbref player, UTF8 *str, dbref *thing, ATTR **attr)
 
     // Break apart string into obj and attr.
     //
-    UTF8 *buff = alloc_lbuf("parse_attrib");
-    mux_strncpy(buff, str, LBUF_SIZE-1);
-    UTF8 *AttrName;
-    bool retval = parse_thing_slash(player, buff, &AttrName, thing);
+    const UTF8 *AttrName;
+    bool retval = parse_thing_slash(player, str, &AttrName, thing);
 
     // Get the named attribute from the object if we can.
     //
@@ -1540,12 +1538,11 @@ bool parse_attrib(dbref player, UTF8 *str, dbref *thing, ATTR **attr)
         tattr = atr_str(AttrName);
     }
 
-    free_lbuf(buff);
     *attr = tattr;
     return retval;
 }
 
-static void find_wild_attrs(dbref player, dbref thing, UTF8 *str, bool check_exclude, bool hash_insert, bool get_locks)
+static void find_wild_attrs(dbref player, dbref thing, const UTF8 *str, bool check_exclude, bool hash_insert, bool get_locks)
 {
     ATTR *pattr;
     dbref aowner;
@@ -1606,7 +1603,7 @@ static void find_wild_attrs(dbref player, dbref thing, UTF8 *str, bool check_exc
     atr_pop();
 }
 
-bool parse_attrib_wild(dbref player, UTF8 *str, dbref *thing,
+bool parse_attrib_wild(dbref player, const UTF8 *str, dbref *thing,
     bool check_parents, bool get_locks, bool df_star)
 {
     if (!str)
@@ -1617,33 +1614,30 @@ bool parse_attrib_wild(dbref player, UTF8 *str, dbref *thing,
     dbref parent;
     int lev;
     bool check_exclude, hash_insert;
-    UTF8 *buff = alloc_lbuf("parse_attrib_wild");
-    mux_strncpy(buff, str, LBUF_SIZE-1);
+    const UTF8 *after = str;
 
     // Separate name and attr portions at the first /.
     //
-    if (!parse_thing_slash(player, buff, &str, thing))
+    if (!parse_thing_slash(player, str, &after, thing))
     {
         // Not in obj/attr format, return if not defaulting to.
         //
         if (!df_star)
         {
-            free_lbuf(buff);
             return false;
         }
 
         // Look for the object, return failure if not found.
         //
-        init_match(player, buff, NOTYPE);
+        init_match(player, str, NOTYPE);
         match_everything(MAT_EXIT_PARENTS);
         *thing = match_result();
 
         if (!Good_obj(*thing))
         {
-            free_lbuf(buff);
             return false;
         }
-        str = (UTF8 *)"*";
+        after = T("*");
     }
 
     // Check the object (and optionally all parents) for attributes.
@@ -1659,15 +1653,14 @@ bool parse_attrib_wild(dbref player, UTF8 *str, dbref *thing,
             {
                 hash_insert = false;
             }
-            find_wild_attrs(player, parent, str, check_exclude, hash_insert, get_locks);
+            find_wild_attrs(player, parent, after, check_exclude, hash_insert, get_locks);
             check_exclude = true;
         }
     }
     else
     {
-        find_wild_attrs(player, *thing, str, false, false, get_locks);
+        find_wild_attrs(player, *thing, after, false, false, get_locks);
     }
-    free_lbuf(buff);
     return true;
 }
 

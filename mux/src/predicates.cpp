@@ -1862,31 +1862,30 @@ void parse_range(UTF8 **name, dbref *low_bound, dbref *high_bound)
     }
 }
 
-bool parse_thing_slash(dbref player, UTF8 *thing, UTF8 **after, dbref *it)
+bool parse_thing_slash(dbref player, const UTF8 *thing, const UTF8 **after, dbref *it)
 {
     // Get name up to '/'.
     //
-    UTF8 *str = thing;
-    while (  *str != '\0'
-          && *str != '/')
+    size_t i = 0;
+    while (  thing[i] != '\0'
+          && thing[i] != '/')
     {
-        str++;
+        i++;
     }
 
     // If no '/' in string, return failure.
     //
-    if (*str == '\0')
+    if (thing[i] == '\0')
     {
         *after = NULL;
         *it = NOTHING;
         return false;
     }
-    *str++ = '\0';
-    *after = str;
+    *after = thing + i + 1;
 
     // Look for the object.
     //
-    init_match(player, thing, NOTYPE);
+    init_match(player, thing, i, NOTYPE);
     match_everything(MAT_EXIT_PARENTS);
     *it = match_result();
 

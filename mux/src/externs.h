@@ -354,7 +354,7 @@ bool ok_password(const UTF8 *szPassword, const UTF8 **pmsg);
 void handle_ears(dbref, bool, bool);
 dbref match_possessed(dbref, dbref, UTF8 *, dbref, bool);
 void parse_range(UTF8 **, dbref *, dbref *);
-bool parse_thing_slash(dbref, UTF8 *, UTF8 **, dbref *);
+bool parse_thing_slash(dbref, const UTF8 *, const UTF8 **, dbref *);
 bool get_obj_and_lock(dbref, const UTF8 *, dbref *, ATTR **, UTF8 *, UTF8 **);
 dbref where_is(dbref);
 dbref where_room(dbref);
@@ -370,8 +370,8 @@ bool bCanSetAttr(dbref executor, dbref target, ATTR *tattr);
 bool bCanLockAttr(dbref executor, dbref target, ATTR *tattr);
 
 /* From set.cpp */
-bool parse_attrib(dbref, UTF8 *, dbref *, ATTR **);
-bool parse_attrib_wild(dbref, UTF8 *, dbref *, bool, bool, bool);
+bool parse_attrib(dbref, const UTF8 *, dbref *, ATTR **);
+bool parse_attrib_wild(dbref, const UTF8 *, dbref *, bool, bool, bool);
 dbref match_controlled_handler(dbref player, const UTF8 *name, bool bQuiet);
 #define match_controlled(player,name)       match_controlled_handler(player, name, false)
 #define match_controlled_quiet(player,name) match_controlled_handler(player, name, true)
