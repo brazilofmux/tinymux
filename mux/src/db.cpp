@@ -3803,27 +3803,28 @@ void load_restart_db(void)
 
 int ReplaceFile(UTF8 *old_name, UTF8 *new_name)
 {
-    size_t nOldName;
     size_t nNewName;
-    UTF16 *pOldName;
     UTF16 *pNewName = ConvertFromUTF8ToUTF16(new_name, &nNewName);
-    if (NULL != pNewName)
+    if (NULL == pNewName)
     {
-        size_t n = (nNewName+1)*sizeof(UTF16);
-        UTF16 *p = (UTF16 *)MEMALLOC(n);
-        if (NULL == p)
-        {
-            return -1;
-        }
-        memcpy(p, pNewName, n);
-        pNewName = p;
+        return -1;
+    }
 
-        pOldName = ConvertFromUTF8ToUTF16(old_name, &nOldName);
-        if (NULL == pOldName)
-        {
-            MEMFREE(pNewName);
-            return -1;
-        }
+    size_t n = (nNewName+1) * sizeof(UTF16);
+    UTF16 *p = (UTF16 *)MEMALLOC(n);
+    if (NULL == p)
+    {
+        return -1;
+    }
+    memcpy(p, pNewName, n);
+    pNewName = p;
+
+    size_t nOldName;
+    UTF16 *pOldName = ConvertFromUTF8ToUTF16(old_name, &nOldName);
+    if (NULL == pOldName)
+    {
+        MEMFREE(pNewName);
+        return -1;
     }
 
     DeleteFile(pNewName);
