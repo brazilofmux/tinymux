@@ -722,57 +722,46 @@ TryAgain:
 // is unterminated, a NULL is returned.  The original arglist is destructively
 // modified.
 //
-UTF8 *parse_arglist( dbref executor, dbref caller, dbref enactor, UTF8 *dstr,
-                     UTF8 delim, int eval, UTF8 *fargs[], int nfargs,
+void parse_arglist( dbref executor, dbref caller, dbref enactor, UTF8 *dstr,
+                     int eval, UTF8 *fargs[], int nfargs,
                      UTF8 *cargs[], int ncargs, int *nArgsParsed )
 {
-    UTF8 *rstr, *tstr, *bp;
-    int arg, peval;
-
     if (dstr == NULL)
     {
         *nArgsParsed = 0;
-        return NULL;
+        return;
     }
 
-    size_t nLen;
-    int iWhichDelim;
-    rstr = parse_to_lite(&dstr, delim, '\0', &nLen, &iWhichDelim);
-    if (rstr)
-    {
-        rstr[nLen] = '\0';
-    }
-    arg = 0;
+    int iArg = 0;
+    UTF8 *tstr, *bp;
+    int peval = (eval & ~EV_EVAL);
 
-    peval = (eval & ~EV_EVAL);
-
-    while (  arg < nfargs
-          && rstr)
+    while (  iArg < nfargs
+          && dstr)
     {
-        if (arg < nfargs - 1)
+        if (iArg < nfargs - 1)
         {
-            tstr = parse_to(&rstr, ',', peval);
+            tstr = parse_to(&dstr, ',', peval);
         }
         else
         {
-            tstr = parse_to(&rstr, '\0', peval);
+            tstr = parse_to(&dstr, '\0', peval);
         }
 
-        bp = fargs[arg] = alloc_lbuf("parse_arglist");
+        bp = fargs[iArg] = alloc_lbuf("parse_arglist");
         if (eval & EV_EVAL)
         {
-            mux_exec(tstr, fargs[arg], &bp, executor, caller, enactor,
+            mux_exec(tstr, fargs[iArg], &bp, executor, caller, enactor,
                      eval | EV_FCHECK, cargs, ncargs);
             *bp = '\0';
         }
         else
         {
-            mux_strncpy(fargs[arg], tstr, LBUF_SIZE-1);
+            mux_strncpy(fargs[iArg], tstr, LBUF_SIZE-1);
         }
-        arg++;
+        iArg++;
     }
-    *nArgsParsed = arg;
-    return dstr;
+    *nArgsParsed = iArg;
 }
 
 static UTF8 *parse_arglist_lite( dbref executor, dbref caller, dbref enactor,

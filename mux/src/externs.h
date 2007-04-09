@@ -123,8 +123,8 @@ extern bool break_called;
 /* From eval.cpp */
 void tcache_init(void);
 UTF8 *parse_to(UTF8 **, UTF8, int);
-UTF8 *parse_arglist(dbref executor, dbref caller, dbref enactor, UTF8 *,
-                    UTF8, int, UTF8 *[], int, UTF8*[], int, int *);
+void parse_arglist(dbref executor, dbref caller, dbref enactor, UTF8 *,
+                    int, UTF8 *[], int, UTF8*[], int, int *);
 int get_gender(dbref);
 void mux_exec(UTF8 *pdstr, UTF8 *buff, UTF8 **bufc, dbref executor,
               dbref caller, dbref enactor, int eval, UTF8 *cargs[], int ncargs);

@@ -1491,7 +1491,7 @@ static void process_cmdent(CMDENT *cmdp, UTF8 *switchp, dbref executor, dbref ca
         {
             // Arg2 is ARGV style.  Go get the args.
             //
-            parse_arglist(executor, caller, enactor, arg, '\0',
+            parse_arglist(executor, caller, enactor, arg,
                 eval|interp|EV_STRIP_LS|EV_STRIP_TS, args, MAX_ARG, cargs,
                 ncargs, &nargs);
 

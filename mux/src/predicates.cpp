@@ -2652,7 +2652,7 @@ void do_verb(dbref executor, dbref caller, dbref enactor, int eval, int key,
     case 7:
         // Get arguments.
         //
-        parse_arglist(victim, actor, actor, args[6], '\0',
+        parse_arglist(victim, actor, actor, args[6],
             EV_STRIP_LS | EV_STRIP_TS, xargs, 10, NULL, 0, &nxargs);
 
     case 6:
