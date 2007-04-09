@@ -1542,7 +1542,7 @@ bool parse_attrib(dbref player, const UTF8 *str, dbref *thing, ATTR **attr)
     return retval;
 }
 
-static void find_wild_attrs(dbref player, dbref thing, const UTF8 *str, bool check_exclude, bool hash_insert, bool get_locks)
+void find_wild_attrs(dbref player, dbref thing, const UTF8 *str, bool check_exclude, bool hash_insert, bool get_locks)
 {
     ATTR *pattr;
     dbref aowner;

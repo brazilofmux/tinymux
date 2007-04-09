@@ -372,6 +372,8 @@ bool bCanLockAttr(dbref executor, dbref target, ATTR *tattr);
 /* From set.cpp */
 bool parse_attrib(dbref, const UTF8 *, dbref *, ATTR **);
 bool parse_attrib_wild(dbref, const UTF8 *, dbref *, bool, bool, bool);
+void find_wild_attrs(dbref player, dbref thing, const UTF8 *str,
+                     bool check_exclude, bool hash_insert, bool get_locks);
 dbref match_controlled_handler(dbref player, const UTF8 *name, bool bQuiet);
 #define match_controlled(player,name)       match_controlled_handler(player, name, false)
 #define match_controlled_quiet(player,name) match_controlled_handler(player, name, true)
