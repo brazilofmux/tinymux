@@ -341,6 +341,7 @@ static MODULE_INFO *ModuleAdd(const UTF8 aModuleName[], const UTF8 aFileName[])
                 g_pModuleLast->pNext = pModule;
                 g_pModuleLast = pModule;
             }
+            return pModule;
         }
         else
         {

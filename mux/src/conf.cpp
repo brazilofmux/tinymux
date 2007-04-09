@@ -15,6 +15,7 @@
 #include "attrs.h"
 #include "command.h"
 #include "interface.h"
+#include "modules.h"
 
 // ---------------------------------------------------------------------------
 // CONFPARM: Data used to find fields in CONFDATA.
@@ -1756,6 +1757,41 @@ static CF_HAND(cf_hook)
     return retval;
 }
 
+static CF_HAND(cf_module)
+{
+    UNUSED_PARAMETER(vp);
+    UNUSED_PARAMETER(pExtra);
+    UNUSED_PARAMETER(nExtra);
+    UNUSED_PARAMETER(player);
+    UNUSED_PARAMETER(cmd);
+
+    MUX_RESULT mr;
+    if ('!' == str[0])
+    {
+        mr = mux_RemoveModule(str+1);
+    }
+    else
+    {
+        UTF8 *filename = alloc_lbuf("cf_module");
+#ifdef WIN32
+        mux_sprintf(filename, LBUF_SIZE, ".\\bin\\%s", str);
+#else
+        mux_sprintf(filename, LBUF_SIZE, "./bin/%s", str);
+#endif
+        mr = mux_AddModule(str, filename);
+        free_lbuf(filename);
+    }
+
+    if (MUX_FAILED(mr))
+    {
+        return -1;
+    }
+    else
+    {
+        return 0;
+    }
+}
+
 // ---------------------------------------------------------------------------
 // cf_include: Read another config file.  Only valid during startup.
 //
@@ -1985,6 +2021,7 @@ static CONFPARM conftable[] =
     {T("money_name_singular"),       cf_string,      CA_GOD,    CA_PUBLIC,   (int *)mudconf.one_coin,         NULL,              32},
     {T("motd_file"),                 cf_string_dyn,  CA_STATIC, CA_GOD,      (int *)&mudconf.motd_file,       NULL, SIZEOF_PATHNAME},
     {T("motd_message"),              cf_string,      CA_GOD,    CA_WIZARD,   (int *)mudconf.motd_msg,         NULL,       GBUF_SIZE},
+    {T("module"),                    cf_module,      CA_GOD,    CA_WIZARD,   (int *)NULL,                     NULL,               0},
     {T("mud_name"),                  cf_string,      CA_GOD,    CA_PUBLIC,   (int *)mudconf.mud_name,         NULL,              32},
     {T("newuser_file"),              cf_string_dyn,  CA_STATIC, CA_GOD,      (int *)&mudconf.crea_file,       NULL, SIZEOF_PATHNAME},
     {T("nositemon_site"),            cf_site,        CA_GOD,    CA_DISABLED, (int *)&mudstate.access_list,    NULL,     H_NOSITEMON},

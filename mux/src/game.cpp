@@ -3135,20 +3135,6 @@ int DCL_CDECL main(int argc, char *argv[])
     mudconf.config_file = StringClone(conffile);
     cf_read();
 
-#if defined(INLINESQL)
-    init_sql();
-#endif // INLINESQL
-
-#ifdef SSL_ENABLED
-    if (!initialize_ssl()) {
-        // Do some extra handling?  
-        // We do log all errors in initialize_ssl, so it may be unneeded.
-    }
-#endif
-
-    fcache_init();
-    helpindex_init();
-
 #if 0
     // Use of sample module.
     //
@@ -3165,6 +3151,21 @@ int DCL_CDECL main(int argc, char *argv[])
         Log.tinyprintf("Sample Module failed to create with %d" ENDLINE, mr);
     }
 #endif
+
+
+#if defined(INLINESQL)
+    init_sql();
+#endif // INLINESQL
+
+#ifdef SSL_ENABLED
+    if (!initialize_ssl()) {
+        // Do some extra handling?  
+        // We do log all errors in initialize_ssl, so it may be unneeded.
+    }
+#endif
+
+    fcache_init();
+    helpindex_init();
 
 #ifdef MEMORY_BASED
     db_free();
