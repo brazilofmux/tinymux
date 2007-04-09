@@ -765,21 +765,16 @@ void parse_arglist( dbref executor, dbref caller, dbref enactor, UTF8 *dstr,
 }
 
 static UTF8 *parse_arglist_lite( dbref executor, dbref caller, dbref enactor,
-                          UTF8 *dstr, UTF8 delim, int eval, UTF8 *fargs[],
+                          UTF8 *dstr, int eval, UTF8 *fargs[],
                           int nfargs, UTF8 *cargs[], int ncargs,
                           int *nArgsParsed)
 {
-    UNUSED_PARAMETER(delim);
-
-    UTF8 *tstr, *bp;
-
     if (NULL == dstr)
     {
         *nArgsParsed = 0;
         return NULL;
     }
 
-    size_t nLen;
     int peval = eval;
     if (eval & EV_EVAL)
     {
@@ -790,6 +785,8 @@ static UTF8 *parse_arglist_lite( dbref executor, dbref caller, dbref enactor,
         peval = ((eval & ~EV_FCHECK)|EV_NOFCHECK);
     }
 
+    UTF8 *tstr, *bp;
+    size_t nLen;
     int  arg = 0;
     int  iWhichDelim = 0;
     UTF8 chSave = '\0';
@@ -1409,7 +1406,7 @@ void mux_exec( UTF8 *pdstr, UTF8 *buff, UTF8 **bufc, dbref executor,
 
                 UTF8 **fargs = PushPointers(MAX_ARG);
                 pdstr = parse_arglist_lite(executor, caller, enactor,
-                      pdstr + 1, ')', feval, fargs, nfargs, cargs, ncargs,
+                      pdstr + 1, feval, fargs, nfargs, cargs, ncargs,
                       &nfargs);
 
 
