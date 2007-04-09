@@ -77,6 +77,8 @@ src/match.h
 src/mguests.cpp
 src/mguests.h
 src/misc.h
+src/modules/sample.cpp
+src/modules/sample.h
 src/modules.cpp
 src/modules.h
 src/move.cpp

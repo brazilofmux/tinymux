@@ -92,6 +92,7 @@
 #ifdef WIN32
 #define DCL_CDECL __cdecl
 #define DCL_INLINE __inline
+#define DCL_EXPORT __declspec(dllexport)
 
 typedef __int64          INT64;
 typedef unsigned __int64 UINT64;
@@ -139,6 +140,8 @@ typedef unsigned __int64 UINT64;
 
 #define DCL_CDECL
 #define DCL_INLINE inline
+#define DCL_EXPORT
+
 #ifndef O_BINARY
 #define O_BINARY 0
 #endif // O_BINARY

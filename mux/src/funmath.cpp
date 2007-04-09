@@ -95,40 +95,44 @@ double MakeSpecialFloat(int iWhich)
 
 static int mux_fpclass(double result)
 {
-    UINT64 i64;
-
-    *((double *)&i64) = result;
-
-    if ((i64 & IEEE_MASK_EXPONENT) == 0)
+    union
     {
-        if (i64 & IEEE_MASK_MANTISSA)
+        UINT64 i64;
+        double d;
+    } u;
+
+    u.d = result;
+  
+    if ((u.i64 & IEEE_MASK_EXPONENT) == 0)
+    {
+        if (u.i64 & IEEE_MASK_MANTISSA)
         {
-            if (i64 & IEEE_MASK_SIGN) return MUX_FPCLASS_ND;
-            else                      return MUX_FPCLASS_PD;
+            if (u.i64 & IEEE_MASK_SIGN) return MUX_FPCLASS_ND;
+            else                        return MUX_FPCLASS_PD;
         }
         else
         {
-            if (i64 & IEEE_MASK_SIGN) return MUX_FPCLASS_NZ;
-            else                      return MUX_FPCLASS_PZ;
+            if (u.i64 & IEEE_MASK_SIGN) return MUX_FPCLASS_NZ;
+            else                        return MUX_FPCLASS_PZ;
         }
     }
-    else if ((i64 & IEEE_MASK_EXPONENT) == IEEE_MASK_EXPONENT)
+    else if ((u.i64 & IEEE_MASK_EXPONENT) == IEEE_MASK_EXPONENT)
     {
-        if (i64 & IEEE_MASK_MANTISSA)
+        if (u.i64 & IEEE_MASK_MANTISSA)
         {
-            if (i64 & IEEE_MASK_QNAN) return MUX_FPCLASS_QNAN;
-            else                      return MUX_FPCLASS_SNAN;
+            if (u.i64 & IEEE_MASK_QNAN) return MUX_FPCLASS_QNAN;
+            else                        return MUX_FPCLASS_SNAN;
         }
         else
         {
-            if (i64 & IEEE_MASK_SIGN) return MUX_FPCLASS_NINF;
-            else                      return MUX_FPCLASS_PINF;
+            if (u.i64 & IEEE_MASK_SIGN) return MUX_FPCLASS_NINF;
+            else                        return MUX_FPCLASS_PINF;
         }
     }
     else
     {
-        if (i64 & IEEE_MASK_SIGN)     return MUX_FPCLASS_NN;
-        else                          return MUX_FPCLASS_PN;
+        if (u.i64 & IEEE_MASK_SIGN)     return MUX_FPCLASS_NN;
+        else                            return MUX_FPCLASS_PN;
     }
 }
 #endif // HAVE_IEEE_FP_FORMAT

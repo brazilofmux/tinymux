@@ -1,2 +1,2 @@
 sample.so: sample.cpp sample.h
-	g++ -shared -o sample.so sample.cpp
+	g++ -shared -fPIC -o sample.so sample.cpp
