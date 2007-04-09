@@ -48,21 +48,26 @@ public:
     virtual MUX_RESULT LockServer(bool bLock) = 0;
 };
 
+extern "C"
+{
+    typedef MUX_RESULT FPGETCLASSOBJECT(UINT64 cid, UINT64 iid, void **ppv);
+}
+
 // APIs available to netmux and dynamic modules.
 //
 extern "C" DCL_EXPORT MUX_RESULT mux_CreateInstance(UINT64 cid, UINT64 iid, void **ppv);
-extern "C" DCL_EXPORT MUX_RESULT mux_RegisterClassObjects(int ncid, UINT64 acid[], mux_IClassFactory *pFactory);
+extern "C" DCL_EXPORT MUX_RESULT mux_RegisterClassObjects(int ncid, UINT64 acid[], FPGETCLASSOBJECT *pfGetClassObject);
 extern "C" DCL_EXPORT MUX_RESULT mux_RevokeClassObjects(int ncid, UINT64 acid[]);
 
 typedef struct
 {
-    UTF8            *pName;
-    bool             bLoaded;
+    const UTF8 *pName;
+    bool       bLoaded;
 } MUX_MODULE_INFO;
 
 // APIs intended only for use by netmux.
 //
-extern "C" DCL_EXPORT MUX_RESULT mux_AddModule(UTF8 aModuleFileName[]);
-extern "C" DCL_EXPORT MUX_RESULT mux_RemoveModule(UTF8 aModuleFileName[]);
+extern "C" DCL_EXPORT MUX_RESULT mux_AddModule(const UTF8 aModuleName[], const UTF8 aFileName[]);
+extern "C" DCL_EXPORT MUX_RESULT mux_RemoveModule(const UTF8 aModuleName[]);
 extern "C" DCL_EXPORT MUX_RESULT mux_ModuleInfo(int iModule, MUX_MODULE_INFO *pModuleInfo);
 extern "C" DCL_EXPORT MUX_RESULT mux_ModuleTick(void);
