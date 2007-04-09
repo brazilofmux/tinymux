@@ -718,7 +718,7 @@ TryAgain:
 //
 void parse_arglist( dbref executor, dbref caller, dbref enactor, UTF8 *dstr,
                      int eval, UTF8 *fargs[], int nfargs,
-                     UTF8 *cargs[], int ncargs, int *nArgsParsed )
+                     const UTF8 *cargs[], int ncargs, int *nArgsParsed )
 {
     if (dstr == NULL)
     {
@@ -760,7 +760,7 @@ void parse_arglist( dbref executor, dbref caller, dbref enactor, UTF8 *dstr,
 
 static const UTF8 *parse_arglist_lite( dbref executor, dbref caller, dbref enactor,
                           const UTF8 *dstr, int eval, UTF8 *fargs[],
-                          int nfargs, UTF8 *cargs[], int ncargs,
+                          int nfargs, const UTF8 *cargs[], int ncargs,
                           int *nArgsParsed)
 {
     if (NULL == dstr)
@@ -1146,7 +1146,7 @@ void PopRegisters(reg_ref **p, int nNeeded)
 }
 
 void mux_exec( const UTF8 *pStr, size_t nStr, UTF8 *buff, UTF8 **bufc, dbref executor,
-               dbref caller, dbref enactor, int eval, UTF8 *cargs[], int ncargs)
+               dbref caller, dbref enactor, int eval, const UTF8 *cargs[], int ncargs)
 {
     if (  NULL == pStr
        || '\0' == pStr[0]
@@ -1472,7 +1472,7 @@ void mux_exec( const UTF8 *pStr, size_t nStr, UTF8 *buff, UTF8 **bufc, dbref exe
                         }
 
                         mux_exec(tstr, LBUF_SIZE-1, buff, &oldp, i, executor, enactor,
-                            AttrTrace(aflags, feval), fargs, nfargs);
+                            AttrTrace(aflags, feval), (const UTF8 **)fargs, nfargs);
 
                         if (ufp->flags & FN_PRES)
                         {

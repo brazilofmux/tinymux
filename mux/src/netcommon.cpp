@@ -1189,8 +1189,6 @@ void announce_disconnect(dbref player, DESC *d, const UTF8 *reason)
         dbref aowner, zone, obj;
         int aflags;
         size_t nLen;
-        UTF8 *argv[1];
-        argv[0] = (UTF8 *)reason;
         CLinearTimeAbsolute lta;
         atr_pget_str_LEN(buf, player, A_ADISCONNECT, &aowner, &aflags, &nLen);
         if (nLen)
@@ -1199,13 +1197,13 @@ void announce_disconnect(dbref player, DESC *d, const UTF8 *reason)
             wait_que(player, player, mudstate.curr_enactor,
                 AttrTrace(aflags, 0), false, lta, NOTHING, 0,
                 buf,
-                1, argv,
+                1, &reason,
                 NULL);
 #else
             wait_que(player, player, player, AttrTrace(aflags, 0), false,
                 lta, NOTHING, 0,
                 buf,
-                1, argv,
+                1, &reason,
                 NULL);
 #endif // FIRANMUX
         }

@@ -340,7 +340,7 @@ bool delim_check
     dbref executor, dbref caller, dbref enactor,
     int   eval,
     UTF8 *fargs[], int nfargs,
-    UTF8 *cargs[], int ncargs,
+    const UTF8 *cargs[], int ncargs,
     int sep_arg, SEP *sep, int dflags
 )
 {
@@ -2231,7 +2231,7 @@ static FUNCTION(fun_eval)
 static void do_ufun(UTF8 *buff, UTF8 **bufc, dbref executor, dbref caller,
             dbref enactor,
             UTF8 *fargs[], int nfargs,
-            UTF8 *cargs[], int ncargs,
+            const UTF8 *cargs[], int ncargs,
             bool is_local)
 {
     UNUSED_PARAMETER(caller);
@@ -2260,7 +2260,7 @@ static void do_ufun(UTF8 *buff, UTF8 **bufc, dbref executor, dbref caller,
     //
     mux_exec(atext, LBUF_SIZE-1, buff, bufc, thing, executor, enactor,
         AttrTrace(aflags, EV_FCHECK|EV_EVAL),
-        &(fargs[1]), nfargs - 1);
+        (const UTF8 **)&(fargs[1]), nfargs - 1);
     free_lbuf(atext);
 
     // If we're evaluating locally, restore the preserved registers.
@@ -6341,7 +6341,8 @@ static FUNCTION(fun_fold)
     //
     UTF8 *curr = fargs[1];
     UTF8 *cp = curr;
-    UTF8 *result, *bp, *clist[2];
+    UTF8 *result, *bp;
+    const UTF8 *clist[2];
 
     // May as well handle first case now.
     //
@@ -6760,7 +6761,7 @@ static void filter_handler(UTF8 *buff, UTF8 **bufc, dbref executor, dbref enacto
 
     // Process optional arguments %1-%9.
     //
-    UTF8 *filter_args[10];
+    const UTF8 *filter_args[NUM_ENV_VARS];
     int   filter_nargs = 1;
     for (int iArg = 4; iArg < nfargs; iArg++)
     {
@@ -6870,7 +6871,7 @@ static FUNCTION(fun_map)
 
     // Process optional arguments %1-%9.
     //
-    UTF8 *map_args[10];
+    const UTF8 *map_args[NUM_ENV_VARS];
     int   map_nargs = 1;
     for (int iArg = 4; iArg < nfargs; iArg++)
     {
@@ -7068,7 +7069,7 @@ static void switch_handler
     dbref executor, dbref caller, dbref enactor,
     int   eval,
     UTF8 *fargs[], int nfargs,
-    UTF8 *cargs[], int ncargs,
+    const UTF8 *cargs[], int ncargs,
     bool bSwitch
 )
 {
@@ -8593,7 +8594,7 @@ static FUNCTION(fun_error)
         UTF8 *errbufc = errbuff;
         if (nfargs == 1)
         {
-            UTF8 *arg = fargs[0];
+            const UTF8 *arg = fargs[0];
             mux_exec(errtext, LBUF_SIZE-1, errbuff, &errbufc, mudconf.global_error_obj, caller, enactor,
                 AttrTrace(aflags, EV_EVAL|EV_FCHECK|EV_STRIP_CURLY), &arg, 1);
         }

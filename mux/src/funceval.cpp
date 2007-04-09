@@ -1135,7 +1135,7 @@ FUNCTION(fun_zfun)
     }
     mux_exec(tbuf1, LBUF_SIZE-1, buff, bufc, zone, executor, enactor,
        AttrTrace(aflags, EV_EVAL|EV_STRIP_CURLY|EV_FCHECK),
-        &(fargs[1]), nfargs - 1);
+        (const UTF8 **)fargs + 1, nfargs - 1);
     free_lbuf(tbuf1);
 }
 
@@ -2198,7 +2198,7 @@ FUNCTION(fun_hasattrp)
 
 static void default_handler(UTF8 *buff, UTF8 **bufc, dbref executor,
                             dbref caller, dbref enactor, int eval,
-                            UTF8 *fargs[], int nfargs, UTF8 *cargs[],
+                            UTF8 *fargs[], int nfargs, const UTF8 *cargs[],
                             int ncargs, int key)
 {
     // Evaluating the first argument.
@@ -2258,7 +2258,7 @@ static void default_handler(UTF8 *buff, UTF8 **bufc, dbref executor,
                     }
 
                     mux_exec(atr_gotten, LBUF_SIZE-1, buff, bufc, thing, caller, enactor,
-                        AttrTrace(aflags, EV_FCHECK|EV_EVAL), xargs,
+                        AttrTrace(aflags, EV_FCHECK|EV_EVAL), (const UTF8 **)xargs,
                         nxargs);
 
                     for (i = 0; i < nxargs; i++)
@@ -2751,7 +2751,7 @@ static int u_comp(ucomp_context *pctx, const void *s1, const void *s2)
         return 0;
     }
 
-    UTF8 *elems[2] = { (UTF8 *)s1, (UTF8 *)s2 };
+    const UTF8 *elems[2] = { T(s1), T(s2) };
 
     UTF8 *tbuf = alloc_lbuf("u_comp");
     mux_strncpy(tbuf, pctx->buff, LBUF_SIZE-1);
@@ -3054,8 +3054,7 @@ FUNCTION(fun_mix)
         }
     }
 
-    UTF8 empty[1] = "";
-    UTF8 *os[NUM_ENV_VARS];
+    const UTF8 *os[NUM_ENV_VARS];
     bool bFirst = true;
     for (  int wc = 0;
            wc < nwords
@@ -3077,7 +3076,7 @@ FUNCTION(fun_mix)
             os[i] = split_token(&cp[i], &sep);
             if (NULL == os[i])
             {
-                os[i] = empty;
+                os[i] = T("");
             }
         }
         mux_exec(atext, LBUF_SIZE-1, buff, bufc, thing, executor, enactor,
@@ -3130,7 +3129,7 @@ FUNCTION(fun_step)
 
     UTF8 *cp = trim_space_sep(fargs[1], &isep);
 
-    UTF8 *os[NUM_ENV_VARS];
+    const UTF8 *os[NUM_ENV_VARS];
     bool bFirst = true;
     while (  cp
           && mudstate.func_invk_ctr < mudconf.func_invk_lim
@@ -3186,7 +3185,7 @@ FUNCTION(fun_foreach)
     }
 
     UTF8 cbuf[5] = {'\0', '\0', '\0', '\0', '\0'};
-    UTF8 *bp = cbuf;
+    const UTF8 *bp = cbuf;
     mux_string *sStr = new mux_string(fargs[1]);
     sStr->trim();
     size_t nStr = sStr->length();
@@ -3380,7 +3379,7 @@ FUNCTION(fun_munge)
     // Call the u-function with the first list as %0.
     //
     UTF8 *rlist, *bp;
-    UTF8 *uargs[2];
+    const UTF8 *uargs[2];
 
     bp = rlist = alloc_lbuf("fun_munge");
     uargs[0] = list1;

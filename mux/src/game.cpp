@@ -319,7 +319,7 @@ static int atr_match1
             wait_que(thing, player, player, AttrTrace(aflags, 0), false, lta,
                 NOTHING, 0,
                 s,
-                NUM_ENV_VARS, args,
+                NUM_ENV_VARS, (const UTF8 **)args,
                 mudstate.global_regs);
 
             for (int i = 0; i < NUM_ENV_VARS; i++)
@@ -657,7 +657,6 @@ void notify_check(dbref target, dbref sender, const mux_string &msg, int key)
     mux_string *msgFinal = new mux_string;
     UTF8 *tp;
     UTF8 *prefix;
-    UTF8 *args[NUM_ENV_VARS];
     dbref aowner,  recip, obj;
     int i, nargs, aflags;
     FWDLIST *fp;
@@ -785,6 +784,7 @@ void notify_check(dbref target, dbref sender, const mux_string &msg, int key)
         UTF8 *msgPlain = alloc_lbuf("notify_check.plain");
         msg.export_TextPlain(msgPlain);
         bool pass_listen = false;
+        UTF8 *args[NUM_ENV_VARS];
         nargs = 0;
         if (  check_listens
            && (key & (MSG_ME | MSG_INV_L))
@@ -824,14 +824,16 @@ void notify_check(dbref target, dbref sender, const mux_string &msg, int key)
             mudstate.nHearNest++;
             if (sender != target)
             {
-                did_it(sender, target, 0, NULL, 0, NULL, A_AHEAR, 0, args, nargs);
+                did_it( sender, target, 0, NULL, 0, NULL, A_AHEAR, 0,
+                        (const UTF8 **)args, nargs);
             }
             else
             {
-                did_it(sender, target, 0, NULL, 0, NULL, A_AMHEAR, 0, args,
-                    nargs);
+                did_it( sender, target, 0, NULL, 0, NULL, A_AMHEAR, 0,
+                        (const UTF8 **)args, nargs);
             }
-            did_it(sender, target, 0, NULL, 0, NULL, A_AAHEAR, 0, args, nargs);
+            did_it( sender, target, 0, NULL, 0, NULL, A_AAHEAR, 0,
+                    (const UTF8 **)args, nargs);
             mudstate.nHearNest--;
         }
 

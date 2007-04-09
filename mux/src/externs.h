@@ -113,7 +113,7 @@ LBUF_OFFSET trimmed_name(dbref player, UTF8 cbuff[MBUF_SIZE], LBUF_OFFSET nMin, 
 int  nfy_que(dbref, int, int, int);
 int  halt_que(dbref, dbref);
 void wait_que(dbref executor, dbref caller, dbref enactor, int, bool,
-    CLinearTimeAbsolute&, dbref, int, UTF8 *, int, UTF8 *[], reg_ref *[]);
+    CLinearTimeAbsolute&, dbref, int, UTF8 *, int, const UTF8 *[], reg_ref *[]);
 
 #ifndef WIN32
 extern "C" char *crypt(const char *inptr, const char *inkey);
@@ -124,10 +124,10 @@ extern bool break_called;
 void tcache_init(void);
 UTF8 *parse_to(UTF8 **, UTF8, int);
 void parse_arglist(dbref executor, dbref caller, dbref enactor, UTF8 *,
-                    int, UTF8 *[], int, UTF8*[], int, int *);
+                    int, UTF8 *[], int, const UTF8*[], int, int *);
 int get_gender(dbref);
 void mux_exec(const UTF8 *pdstr, size_t nStr, UTF8 *buff, UTF8 **bufc, dbref executor,
-              dbref caller, dbref enactor, int eval, UTF8 *cargs[], int ncargs);
+              dbref caller, dbref enactor, int eval, const UTF8 *cargs[], int ncargs);
 
 DCL_INLINE void BufAddRef(lbuf_ref *lbufref)
 {
@@ -364,7 +364,7 @@ bool exit_visible(dbref, dbref, int);
 bool exit_displayable(dbref, dbref, int);
 void did_it(dbref player, dbref thing, int what, const UTF8 *def, int owhat,
             const UTF8 *odef, int awhat, int ctrl_flags,
-            UTF8 *args[], int nargs);
+            const UTF8 *args[], int nargs);
 bool bCanReadAttr(dbref executor, dbref target, ATTR *tattr, bool bParentCheck);
 bool bCanSetAttr(dbref executor, dbref target, ATTR *tattr);
 bool bCanLockAttr(dbref executor, dbref target, ATTR *tattr);
@@ -432,7 +432,7 @@ bool quick_wild(const UTF8 *, const UTF8 *);
 bool check_access(dbref player, int mask);
 void set_prefix_cmds(void);
 UTF8 *process_command(dbref executor, dbref caller, dbref enactor, int, bool,
-    UTF8 *, UTF8 *[], int);
+    UTF8 *, const UTF8 *[], int);
 size_t LeftJustifyString(UTF8 *field, size_t nWidth, const UTF8 *value);
 size_t RightJustifyNumber(UTF8 *field, size_t nWidth, INT64 value, UTF8 chFill);
 

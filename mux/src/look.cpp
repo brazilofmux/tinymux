@@ -480,7 +480,7 @@ static void look_exits(dbref player, dbref loc, const UTF8 *exit_name)
 
         mux_exec(ExitFormat, LBUF_SIZE-1, FormatOutput, &tPtr, loc, player, player,
             AttrTrace(aflags, EV_FCHECK|EV_EVAL|EV_TOP),
-            &VisibleObjectList, 1);
+            (const UTF8 **)&VisibleObjectList, 1);
 
         restore_global_regs(preserve);
         PopRegisters(preserve, MAX_GLOBAL_REGS);
@@ -647,7 +647,7 @@ static void look_contents(dbref player, dbref loc, const UTF8 *contents_name, in
         UTF8 *FormatOutput = alloc_lbuf("look_contents.FO");
         tPtr = FormatOutput;
 
-        UTF8* ParameterList[] =
+        const UTF8 *ParameterList[] =
             { VisibleObjectList, ContentsNameScratch };
 
         reg_ref **preserve = NULL;
@@ -1044,7 +1044,7 @@ static bool show_a_desc(dbref player, dbref loc)
 
         safe_str(cattr->name, attrname, &cp);
         *cp = '\0';
-        UTF8* ParameterList[] =
+        const UTF8 *ParameterList[] =
             { temp, attrname };
 
         mux_exec(DescFormat, LBUF_SIZE-1, FormatOutput, &tPtr, loc, player, player,

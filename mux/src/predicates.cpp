@@ -662,16 +662,11 @@ void handle_ears(dbref thing, bool could_hear, bool can_hear)
 //
 void do_switch
 (
-    dbref executor,
-    dbref caller,
-    dbref enactor,
-    int   eval,
-    int   key,
+    dbref executor, dbref caller, dbref enactor,
+    int eval, int key,
     UTF8 *expr,
-    UTF8 *args[],
-    int   nargs,
-    UTF8 *cargs[],
-    int   ncargs
+    UTF8 *args[], int nargs,
+    const UTF8 *cargs[], int ncargs
 )
 {
     if (  !expr
@@ -765,16 +760,11 @@ void do_switch
 //
 void do_if
 (
-    dbref player,
-    dbref caller,
-    dbref enactor,
-    int   eval,
-    int   key,
+    dbref player, dbref caller, dbref enactor,
+    int eval, int key,
     UTF8 *expr,
-    UTF8 *args[],
-    int   nargs,
-    UTF8 *cargs[],
-    int   ncargs
+    UTF8 *args[], int nargs,
+    const UTF8 *cargs[], int ncargs
 )
 {
     UNUSED_PARAMETER(key);
@@ -1228,7 +1218,7 @@ void handle_prog(DESC *d, UTF8 *message)
     wait_que(d->program_data->wait_enactor, d->player, d->player,
         AttrTrace(aflags, 0), false, lta, NOTHING, 0,
         cmd,
-        1, &message,
+        1, (const UTF8 **)&message,
         d->program_data->wait_regs);
 
     // First, set 'all' to a descriptor we find for this player.
@@ -2341,7 +2331,7 @@ bool exit_displayable(dbref exit, dbref player, int key)
 
 void did_it(dbref player, dbref thing, int what, const UTF8 *def, int owhat,
             const UTF8 *odef, int awhat, int ctrl_flags,
-            UTF8 *args[], int nargs)
+            const UTF8 *args[], int nargs)
 {
     if (MuxAlarm.bAlarmed)
     {
@@ -2741,7 +2731,7 @@ void do_verb(dbref executor, dbref caller, dbref enactor, int eval, int key,
     // Go do it.
     //
     did_it(actor, victim, what, whatd, owhat, owhatd, awhat,
-        key & VERB_NONAME, xargs, nxargs);
+        key & VERB_NONAME, (const UTF8 **)xargs, nxargs);
 
     // Free user args.
     //

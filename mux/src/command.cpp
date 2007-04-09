@@ -1131,7 +1131,7 @@ static UTF8 *hook_name(const UTF8 *pCommand, int key)
 
 static void process_cmdent(CMDENT *cmdp, UTF8 *switchp, dbref executor, dbref caller,
             dbref enactor, int eval, bool interactive, UTF8 *arg, UTF8 *unp_command,
-            UTF8 *cargs[], int ncargs)
+            const UTF8 *cargs[], int ncargs)
 {
     // Perform object type checks.
     //
@@ -1168,7 +1168,6 @@ static void process_cmdent(CMDENT *cmdp, UTF8 *switchp, dbref executor, dbref ca
     UTF8 *args[MAX_ARG];
     int nargs, i, interp, key, xkey, aflags;
     dbref aowner;
-    UTF8 *aargs[NUM_ENV_VARS];
     ADDENT *add;
     ATTR *hk_ap2;
 
@@ -1283,6 +1282,7 @@ static void process_cmdent(CMDENT *cmdp, UTF8 *switchp, dbref executor, dbref ca
         interp = 0;
     }
 
+    UTF8 *aargs[NUM_ENV_VARS];
     int nargs2;
     switch (cmdp->callseq & CS_NARG_MASK)
     {
@@ -1427,7 +1427,7 @@ static void process_cmdent(CMDENT *cmdp, UTF8 *switchp, dbref executor, dbref ca
                     wait_que(add->thing, caller, executor,
                         AttrTrace(aflags, 0), false, lta, NOTHING, 0,
                         buff + iBuff,
-                        NUM_ENV_VARS, aargs,
+                        NUM_ENV_VARS, (const UTF8 **)aargs,
                         mudstate.global_regs);
 
                     for (i = 0; i < NUM_ENV_VARS; i++)
@@ -1671,7 +1671,7 @@ UTF8 *process_command
     int   eval,
     bool  interactive,
     UTF8 *arg_command,
-    UTF8 *args[],
+    const UTF8 *args[],
     int   nargs
 )
 {
@@ -2543,7 +2543,7 @@ UTF8 *process_command
             UTF8 *errbufc = errbuff;
             mux_exec(errtext, LBUF_SIZE-1, errbuff, &errbufc, mudconf.global_error_obj, caller, enactor,
                 AttrTrace(aflags, EV_EVAL|EV_FCHECK|EV_STRIP_CURLY|EV_TOP),
-                &pCommand, 1);
+                (const UTF8 **)&pCommand, 1);
             notify(executor, errbuff);
             free_lbuf(errtext);
             free_lbuf(errbuff);
@@ -3973,7 +3973,7 @@ void do_list(dbref executor, dbref caller, dbref enactor, int eval, int extra,
 }
 
 void do_assert(dbref executor, dbref caller, dbref enactor, int eval, int key,
-               UTF8 *arg1, UTF8 *command, UTF8 *cargs[], int ncargs)
+               UTF8 *arg1, UTF8 *command, const UTF8 *cargs[], int ncargs)
 {
     UNUSED_PARAMETER(key);
 
@@ -3993,7 +3993,7 @@ void do_assert(dbref executor, dbref caller, dbref enactor, int eval, int key,
 }
 
 void do_break(dbref executor, dbref caller, dbref enactor, int eval, int key,
-              UTF8 *arg1, UTF8 *command, UTF8 *cargs[], int ncargs)
+              UTF8 *arg1, UTF8 *command, const UTF8 *cargs[], int ncargs)
 {
     UNUSED_PARAMETER(key);
 

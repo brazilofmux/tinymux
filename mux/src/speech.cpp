@@ -34,7 +34,7 @@ UTF8 *modSpeech(dbref player, UTF8 *message, bool bWhich, UTF8 *command)
 
     UTF8 *new_message = alloc_lbuf("modspeech");
     UTF8 *t_ptr = new_message;
-    UTF8 *args[2];
+    const UTF8 *args[2];
     args[0] = message;
     args[1] = command;
     mux_exec(mod, LBUF_SIZE-1, new_message, &t_ptr, player, player, player,
