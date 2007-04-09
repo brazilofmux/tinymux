@@ -18,6 +18,7 @@ typedef int MUX_RESULT;
 #define MUX_E_OUTOFMEMORY       (-2)
 #define MUX_E_CLASSNOTAVAILABLE (-3)
 #define MUX_E_NOINTERFACE       (-4)
+#define MUX_E_NOTIMPLEMENTED    (-5)
 
 #define MUX_FAILED(x)    ((MUX_RESULT)(x) < 0)
 #define MUX_SUCCEEDED(x) (0 <= (MUX_RESULT)(x))
@@ -47,4 +48,15 @@ public:
     virtual MUX_RESULT LockServer(bool bLock) = 0;
 };
 
+// APIs available to netmux and dynamic modules.
+//
 extern "C" DCL_EXPORT MUX_RESULT mux_CreateInstance(UINT64 cid, UINT64 iid, void **ppv);
+extern "C" DCL_EXPORT MUX_RESULT mux_RegisterClassObjects(int ncid, UINT64 acid[], mux_IClassFactory *pFactory);
+extern "C" DCL_EXPORT MUX_RESULT mux_RevokeClassObjects(int ncid, UINT64 acid[]);
+
+// APIs intended only for use by netmux.
+//
+extern "C" DCL_EXPORT MUX_RESULT mux_AddModule(UTF8 aModuleFileName[]);
+extern "C" DCL_EXPORT MUX_RESULT mux_RemoveModule(UTF8 aModuleFileName[]);
+extern "C" DCL_EXPORT MUX_RESULT mux_ModuleInfo(int iModule, void **pv);
+extern "C" DCL_EXPORT MUX_RESULT mux_ModuleTick(void);

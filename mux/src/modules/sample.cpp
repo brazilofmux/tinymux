@@ -15,12 +15,18 @@
 static INT32 g_cComponents  = 0;
 static INT32 g_cServerLocks = 0;
 
+#define NUM_CIDS 1
+static UINT64 cids[NUM_CIDS] =
+{
+    CID_Sample
+};
+
 // TODO:
 //
 // - Link against libmux.so
 // - Export registration function to pass list of supported component ids.
 
-// The following two functions are for access by dlopen.
+// The following four functions are for access by dlopen.
 //
 extern "C" DCL_EXPORT MUX_RESULT mux_CanUnloadNow(void)
 {
@@ -60,6 +66,16 @@ extern "C" DCL_EXPORT MUX_RESULT mux_GetClassObject(UINT64 cid, UINT64 iid, void
         pSampleFactory->Release();
     }
     return mr;
+}
+
+extern "C" DCL_EXPORT MUX_RESULT mux_RegisterServer(void)
+{
+    return mux_RegisterClassObjects(NUM_CIDS, cids, NULL);
+}
+
+extern "C" DCL_EXPORT MUX_RESULT mux_UnregisterServer(void)
+{
+    return mux_RevokeClassObjects(NUM_CIDS, cids);
 }
 
 // Sample component which is not directly accessible.
