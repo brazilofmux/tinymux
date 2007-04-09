@@ -355,7 +355,7 @@ void handle_ears(dbref, bool, bool);
 dbref match_possessed(dbref, dbref, UTF8 *, dbref, bool);
 void parse_range(UTF8 **, dbref *, dbref *);
 bool parse_thing_slash(dbref, UTF8 *, UTF8 **, dbref *);
-bool get_obj_and_lock(dbref, UTF8 *, dbref *, ATTR **, UTF8 *, UTF8 **);
+bool get_obj_and_lock(dbref, const UTF8 *, dbref *, ATTR **, UTF8 *, UTF8 **);
 dbref where_is(dbref);
 dbref where_room(dbref);
 bool locatable(dbref, dbref, dbref);

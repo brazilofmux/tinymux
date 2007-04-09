@@ -1895,20 +1895,31 @@ bool parse_thing_slash(dbref player, UTF8 *thing, UTF8 **after, dbref *it)
     return Good_obj(*it);
 }
 
-bool get_obj_and_lock(dbref player, UTF8 *what, dbref *it, ATTR **attr, UTF8 *errmsg, UTF8 **bufc)
+bool get_obj_and_lock(dbref player, const UTF8 *what, dbref *it, ATTR **attr, UTF8 *errmsg, UTF8 **bufc)
 {
-    UTF8 *str, *tbuf;
-    int anum;
+    // Get name up to '/'.
+    //
+    size_t i = 0;
+    while (  what[i] != '\0'
+          && what[i] != '/')
+    {
+        i++;
+    }
 
-    tbuf = alloc_lbuf("get_obj_and_lock");
-    mux_strncpy(tbuf, what, LBUF_SIZE-1);
-    if (parse_thing_slash(player, tbuf, &str, it))
+    *it = match_thing_quiet(player, what, i);
+    if (!Good_obj(*it))
+    {
+        safe_match_result(*it, errmsg, bufc);
+        return false;
+    }
+
+    int anum;
+    if (what[i] == '/')
     {
         // <obj>/<lock> syntax, use the named lock.
         //
-        if (!search_nametab(player, lock_sw, str, &anum))
+        if (!search_nametab(player, lock_sw, what + i + 1, &anum))
         {
-            free_lbuf(tbuf);
             safe_str(T("#-1 LOCK NOT FOUND"), errmsg, bufc);
             return false;
         }
@@ -1917,21 +1928,13 @@ bool get_obj_and_lock(dbref player, UTF8 *what, dbref *it, ATTR **attr, UTF8 *er
     {
         // Not <obj>/<lock>, do a normal get of the default lock.
         //
-        *it = match_thing_quiet(player, what);
-        if (!Good_obj(*it))
-        {
-            free_lbuf(tbuf);
-            safe_match_result(*it, errmsg, bufc);
-            return false;
-        }
         anum = A_LOCK;
     }
 
     // Get the attribute definition, fail if not found.
     //
-    free_lbuf(tbuf);
     *attr = atr_num(anum);
-    if (!(*attr))
+    if (NULL == *attr)
     {
         safe_str(T("#-1 LOCK NOT FOUND"), errmsg, bufc);
         return false;
