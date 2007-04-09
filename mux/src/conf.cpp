@@ -2332,19 +2332,13 @@ int cf_read(void)
 //
 void list_cf_access(dbref player)
 {
-    CONFPARM *tp;
-    UTF8 *buff;
-
-    buff = alloc_mbuf("list_cf_access");
-    for (tp = conftable; tp->pname; tp++)
+    for (CONFPARM *tp = conftable; tp->pname; tp++)
     {
         if (God(player) || check_access(player, tp->flags))
         {
-            mux_sprintf(buff, MBUF_SIZE, "%s:", tp->pname);
-            listset_nametab(player, access_nametab, tp->flags, buff, true);
+            listset_nametab(player, access_nametab, tp->flags, tp->pname, true);
         }
     }
-    free_mbuf(buff);
 }
 
 // ---------------------------------------------------------------------------

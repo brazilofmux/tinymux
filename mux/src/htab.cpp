@@ -349,13 +349,13 @@ NAMETAB *find_nametab_ent(dbref player, NAMETAB *ntab, const UTF8 *flagname)
 
 void display_nametab(dbref player, NAMETAB *ntab, const UTF8 *prefix, bool list_if_none)
 {
-    NAMETAB *nt;
     bool got_one = false;
     UTF8 *buf = alloc_lbuf("display_nametab");
     UTF8 *bp = buf;
 
     safe_str(prefix, buf, &bp);
-    for (nt = ntab; nt->name; nt++)
+    safe_chr(':', buf, &bp);
+    for (NAMETAB *nt = ntab; nt->name; nt++)
     {
         if (  God(player)
            || check_access(player, nt->perm))
@@ -418,16 +418,16 @@ void interp_nametab(dbref player, NAMETAB *ntab, int flagword,
  * listset_nametab: Print values for flags defined in name table.
  */
 
-void listset_nametab(dbref player, NAMETAB *ntab, int flagword, UTF8 *prefix, bool list_if_none)
+void listset_nametab(dbref player, NAMETAB *ntab, int flagword, const UTF8 *prefix, bool list_if_none)
 {
     UTF8 *buf = alloc_lbuf("listset_nametab");
     UTF8 *bp = buf;
 
     safe_str(prefix, buf, &bp);
+    safe_chr(':', buf, &bp);
 
-    NAMETAB *nt = ntab;
     bool got_one = false;
-    while (nt->name)
+    for (NAMETAB *nt = ntab; nt->name; nt++)
     {
         if (  ((flagword & nt->flag) != 0)
            && (  God(player)
@@ -437,7 +437,6 @@ void listset_nametab(dbref player, NAMETAB *ntab, int flagword, UTF8 *prefix, bo
             safe_str(nt->name, buf, &bp);
             got_one = true;
         }
-        nt++;
     }
     *bp = '\0';
     if (  got_one
