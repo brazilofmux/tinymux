@@ -1692,7 +1692,7 @@ static UTF8 *trimmed_site(UTF8 *szName)
     return buff;
 }
 
-static void dump_users(DESC *e, UTF8 *match, int key)
+static void dump_users(DESC *e, const UTF8 *match, int key)
 {
     DESC *d;
     int count;
@@ -2583,7 +2583,7 @@ static bool check_connect(DESC *d, UTF8 *msg)
     return true;
 }
 
-static void do_logged_out_internal(DESC *d, int key, UTF8 *arg)
+static void do_logged_out_internal(DESC *d, int key, const UTF8 *arg)
 {
     switch (key)
     {
@@ -2723,30 +2723,20 @@ void do_command(DESC *d, UTF8 *command)
 
     // Split off the command from the arguments.
     //
-    UTF8 *arg = command;
-    while (*arg && !mux_isspace(*arg))
+    size_t iArg = 0;
+    while (  '\0' != command[iArg]
+          && !mux_isspace(command[iArg]))
     {
-        arg++;
-    }
-
-    if (*arg)
-    {
-        *arg++ = '\0';
+        iArg++;
     }
 
     // Look up the command in the logged-out command table.
     //
-    NAMETAB *cp = (NAMETAB *)hashfindLEN(command, strlen((char *)command), &mudstate.logout_cmd_htab);
+    NAMETAB *cp = (NAMETAB *)hashfindLEN(command, iArg, &mudstate.logout_cmd_htab);
     if (cp == NULL)
     {
         // Not in the logged-out command table, so maybe a connect attempt.
         //
-        if (*arg)
-        {
-            // Restore nullified space
-            //
-            *--arg = ' ';
-        }
         mudstate.curr_executor = NOTHING;
         mudstate.curr_enactor = NOTHING;
         mudstate.debug_cmd = cmdsave;
@@ -2774,7 +2764,7 @@ void do_command(DESC *d, UTF8 *command)
     else
     {
         mudstate.debug_cmd = cp->name;
-        do_logged_out_internal(d, cp->flag & CMD_MASK, arg);
+        do_logged_out_internal(d, cp->flag & CMD_MASK, command + iArg + 1);
     }
     // QUIT or LOGOUT will close the connection and cause the
     // descriptor to be freed!
