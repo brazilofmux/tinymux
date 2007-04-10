@@ -1175,6 +1175,7 @@ void mux_exec( const UTF8 *pStr, size_t nStr, UTF8 *buff, UTF8 **bufc, dbref exe
     FUN *fp;
     UFUN *ufp;
     const UTF8 *tstr;
+    UTF8 *attrstr;
 
     static const UTF8 *subj[5] =
     {
@@ -1317,6 +1318,7 @@ void mux_exec( const UTF8 *pStr, size_t nStr, UTF8 *buff, UTF8 **bufc, dbref exe
         }
         else if (pStr[iStr] == '(')
         {
+            iStr++;
             // pStr[iStr] == '('
             //
             // Arglist start.  See if what precedes is a function. If so,
@@ -1409,7 +1411,7 @@ void mux_exec( const UTF8 *pStr, size_t nStr, UTF8 *buff, UTF8 **bufc, dbref exe
 
                 UTF8 **fargs = PushPointers(MAX_ARG);
                 tstr = parse_arglist_lite(executor, caller, enactor,
-                      pStr + iStr + 1, feval, fargs, nfargs, cargs, ncargs,
+                      pStr + iStr, feval, fargs, nfargs, cargs, ncargs,
                       &nfargs);
 
 
@@ -1419,7 +1421,7 @@ void mux_exec( const UTF8 *pStr, size_t nStr, UTF8 *buff, UTF8 **bufc, dbref exe
                 {
                     if (nBufferAvailable)
                     {
-                        *(*bufc)++ = pStr[iStr];
+                        *(*bufc)++ = '(';
                         nBufferAvailable--;
                     }
                 }
@@ -1453,7 +1455,7 @@ void mux_exec( const UTF8 *pStr, size_t nStr, UTF8 *buff, UTF8 **bufc, dbref exe
                     }
                     else if (ufp)
                     {
-                        tstr = atr_get("mux_exec.1374", ufp->obj, ufp->atr, &aowner, &aflags);
+                        attrstr = atr_get("mux_exec.1374", ufp->obj, ufp->atr, &aowner, &aflags);
                         if (ufp->flags & FN_PRIV)
                         {
                             i = ufp->obj;
@@ -1471,7 +1473,7 @@ void mux_exec( const UTF8 *pStr, size_t nStr, UTF8 *buff, UTF8 **bufc, dbref exe
                             save_global_regs(preserve);
                         }
 
-                        mux_exec(tstr, LBUF_SIZE-1, buff, &oldp, i, executor, enactor,
+                        mux_exec(attrstr, LBUF_SIZE-1, buff, &oldp, i, executor, enactor,
                             AttrTrace(aflags, feval), (const UTF8 **)fargs, nfargs);
 
                         if (ufp->flags & FN_PRES)
@@ -1480,7 +1482,7 @@ void mux_exec( const UTF8 *pStr, size_t nStr, UTF8 *buff, UTF8 **bufc, dbref exe
                             PopRegisters(preserve, MAX_GLOBAL_REGS);
                             preserve = NULL;
                         }
-                        free_lbuf(tstr);
+                        free_lbuf(attrstr);
                     }
                     else
                     {
@@ -2053,6 +2055,7 @@ void mux_exec( const UTF8 *pStr, size_t nStr, UTF8 *buff, UTF8 **bufc, dbref exe
         }
         else if (pStr[iStr] == '{')
         {
+            iStr++;
             // pStr[iStr] == '{'
             //
             // Literal start.  Insert everything up to the terminating '}'
@@ -2060,7 +2063,7 @@ void mux_exec( const UTF8 *pStr, size_t nStr, UTF8 *buff, UTF8 **bufc, dbref exe
             // continue.
             //
             mudstate.nStackNest++;
-            tstr = parse_to_lite(pStr + iStr + 1, '}', '\0', &n, &at_space);
+            tstr = parse_to_lite(pStr + iStr, '}', '\0', &n, &at_space);
             at_space = 0;
             if (NULL == tstr)
             {
@@ -2072,7 +2075,6 @@ void mux_exec( const UTF8 *pStr, size_t nStr, UTF8 *buff, UTF8 **bufc, dbref exe
             }
             else
             {
-                iStr++;
                 mudstate.nStackNest--;
                 if (!(eval & EV_STRIP_CURLY))
                 {
@@ -2108,7 +2110,12 @@ void mux_exec( const UTF8 *pStr, size_t nStr, UTF8 *buff, UTF8 **bufc, dbref exe
                 }
                 else
                 {
-                    mux_exec(pStr + iStr, nStr - iStr, buff, bufc, executor, caller, enactor,
+                    if (nStr < iStr + n)
+                    {
+                        n = nStr - iStr;
+                    }
+
+                    mux_exec(pStr + iStr, n, buff, bufc, executor, caller, enactor,
                         eval & ~(EV_TOP | EV_FMAND), cargs, ncargs);
                 }
                 nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
