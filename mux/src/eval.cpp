@@ -1163,7 +1163,7 @@ void mux_exec( const UTF8 *pStr, size_t nStr, UTF8 *buff, UTF8 **bufc, dbref exe
         return;
     }
 
-    UTF8 *TempPtr;
+    UTF8 *TempPtr, *tbuf;
     UTF8 *start, *oldp, *savestr;
     const UTF8 *constbuf;
     UTF8 ch;
@@ -1175,7 +1175,6 @@ void mux_exec( const UTF8 *pStr, size_t nStr, UTF8 *buff, UTF8 **bufc, dbref exe
     FUN *fp;
     UFUN *ufp;
     const UTF8 *tstr;
-    UTF8 *attrstr;
 
     static const UTF8 *subj[5] =
     {
@@ -1455,7 +1454,7 @@ void mux_exec( const UTF8 *pStr, size_t nStr, UTF8 *buff, UTF8 **bufc, dbref exe
                     }
                     else if (ufp)
                     {
-                        attrstr = atr_get("mux_exec.1374", ufp->obj, ufp->atr, &aowner, &aflags);
+                        tbuf = atr_get("mux_exec.1374", ufp->obj, ufp->atr, &aowner, &aflags);
                         if (ufp->flags & FN_PRIV)
                         {
                             i = ufp->obj;
@@ -1473,7 +1472,7 @@ void mux_exec( const UTF8 *pStr, size_t nStr, UTF8 *buff, UTF8 **bufc, dbref exe
                             save_global_regs(preserve);
                         }
 
-                        mux_exec(attrstr, LBUF_SIZE-1, buff, &oldp, i, executor, enactor,
+                        mux_exec(tbuf, LBUF_SIZE-1, buff, &oldp, i, executor, enactor,
                             AttrTrace(aflags, feval), (const UTF8 **)fargs, nfargs);
 
                         if (ufp->flags & FN_PRES)
@@ -1482,7 +1481,7 @@ void mux_exec( const UTF8 *pStr, size_t nStr, UTF8 *buff, UTF8 **bufc, dbref exe
                             PopRegisters(preserve, MAX_GLOBAL_REGS);
                             preserve = NULL;
                         }
-                        free_lbuf(attrstr);
+                        free_lbuf(tbuf);
                     }
                     else
                     {
@@ -2182,7 +2181,7 @@ void mux_exec( const UTF8 *pStr, size_t nStr, UTF8 *buff, UTF8 **bufc, dbref exe
         if (  is_top
            && 0 < tcache_count - mudconf.trace_limit)
         {
-            UTF8 *tbuf = alloc_mbuf("exec.trace_diag");
+            tbuf = alloc_mbuf("exec.trace_diag");
             mux_sprintf(tbuf, MBUF_SIZE, "%d lines of trace output discarded.", tcache_count
                 - mudconf.trace_limit);
             notify(executor, tbuf);
