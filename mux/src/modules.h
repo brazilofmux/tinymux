@@ -12,13 +12,17 @@
 
 typedef int MUX_RESULT;
 
-#define MUX_S_FALSE              (0)
-#define MUX_S_OK                 (1)
+#define MUX_S_OK                 (0)
+#define MUX_S_FALSE              (1)
 #define MUX_E_FAIL              (-1)
 #define MUX_E_OUTOFMEMORY       (-2)
 #define MUX_E_CLASSNOTAVAILABLE (-3)
 #define MUX_E_NOINTERFACE       (-4)
 #define MUX_E_NOTIMPLEMENTED    (-5)
+#define MUX_E_INVALIDARG        (-6)
+#define MUX_E_UNEXPECTED        (-7)
+#define MUX_E_NOTREADY          (-8)
+#define MUX_E_NOTFOUND          (-9)
 
 #define MUX_FAILED(x)    ((MUX_RESULT)(x) < 0)
 #define MUX_SUCCEEDED(x) (0 <= (MUX_RESULT)(x))

@@ -284,7 +284,8 @@ static void ClassRemove(UINT64 cid)
 /*! \brief Adds a module.
  *
  * \param aModuleName[]  Filename of Module
- * \return               Module context record.
+ * \return               Module context record, NULL if out of memory or
+ *                       duplicate found.
  */
 
 static MODULE_INFO *ModuleAdd(const UTF8 aModuleName[], const UTF8 aFileName[])
@@ -474,6 +475,8 @@ static void ModuleUnload(MODULE_INFO *pModule)
         pModule->hInst = NULL;
         pModule->fpGetClassObject = NULL;
         pModule->fpCanUnloadNow = NULL;
+        pModule->fpRegister = NULL;
+        pModule->fpUnregister = NULL;
         pModule->bLoaded = false;
     }
 }
@@ -536,7 +539,7 @@ extern "C" DCL_EXPORT MUX_RESULT mux_RegisterClassObjects(int ncid, UINT64 acid[
 {
     if (ncid <= 0)
     {
-        return MUX_E_FAIL;
+        return MUX_E_INVALIDARG;
     }
 
     // Modules export a mux_GetClassObject handler, but netmux must pass its
@@ -549,7 +552,7 @@ extern "C" DCL_EXPORT MUX_RESULT mux_RegisterClassObjects(int ncid, UINT64 acid[
        || (  NULL == g_pModule
           && NULL == fpGetClassObject))
     {
-        return MUX_E_FAIL;
+        return MUX_E_INVALIDARG;
     }
 
     // Verify that the requested class ids are not already registered.
@@ -561,7 +564,7 @@ extern "C" DCL_EXPORT MUX_RESULT mux_RegisterClassObjects(int ncid, UINT64 acid[
         pModule = ModuleFindFromCID(acid[i]);
         if (NULL != pModule)
         {
-            return MUX_E_FAIL;
+            return MUX_E_INVALIDARG;
         }
     }
 
@@ -639,7 +642,7 @@ extern "C" DCL_EXPORT MUX_RESULT mux_RevokeClassObjects(int ncid, UINT64 acid[])
 {
     if (ncid <= 0)
     {
-        return MUX_E_FAIL;
+        return MUX_E_INVALIDARG;
     }
 
     // Verify that all class ids in this request are handled by the same module.
@@ -651,9 +654,9 @@ extern "C" DCL_EXPORT MUX_RESULT mux_RevokeClassObjects(int ncid, UINT64 acid[])
         MODULE_INFO *q = ModuleFindFromCID(acid[i]);
         if (NULL == q)
         {
-            // Attempt to revoke a class ids which was never registered.
+            // Attempt to revoke a class ids which were never registered.
             //
-            return MUX_E_FAIL;
+            return MUX_E_INVALIDARG;
         }
         else if (NULL == pModule)
         {
@@ -663,7 +666,7 @@ extern "C" DCL_EXPORT MUX_RESULT mux_RevokeClassObjects(int ncid, UINT64 acid[])
         {
             // Attempt to revoke class ids from more than one module.
             //
-            return MUX_E_FAIL;
+            return MUX_E_INVALIDARG;
         }
     }
 
@@ -695,7 +698,7 @@ extern "C" DCL_EXPORT MUX_RESULT mux_RevokeClassObjects(int ncid, UINT64 acid[])
 
 extern "C" DCL_EXPORT MUX_RESULT mux_AddModule(const UTF8 aModuleName[], const UTF8 aFileName[])
 {
-    MUX_RESULT mr = MUX_E_FAIL;
+    MUX_RESULT mr;
     if (NULL == g_pModule)
     {
         // Create new MODULE_INFO.
@@ -712,7 +715,19 @@ extern "C" DCL_EXPORT MUX_RESULT mux_AddModule(const UTF8 aModuleName[], const U
                 mr = pModule->fpRegister();
                 g_pModule = NULL;
             }
+            else
+            {
+                mr = MUX_E_FAIL;
+            }
         }
+        else
+        {
+            mr = MUX_E_OUTOFMEMORY;
+        }
+    }
+    else
+    {
+        mr = MUX_E_NOTREADY;
     }
     return mr;
 }
@@ -727,8 +742,7 @@ extern "C" DCL_EXPORT MUX_RESULT mux_AddModule(const UTF8 aModuleName[], const U
 
 extern "C" DCL_EXPORT MUX_RESULT mux_RemoveModule(const UTF8 aModuleName[])
 {
-    MUX_RESULT mr = MUX_E_FAIL;
-
+    MUX_RESULT mr;
     if (NULL == g_pModule)
     {
         MODULE_INFO *pModule = ModuleFindFromName(aModuleName);
@@ -753,18 +767,31 @@ extern "C" DCL_EXPORT MUX_RESULT mux_RemoveModule(const UTF8 aModuleName[])
 
                 if (MUX_SUCCEEDED(mr))
                 {
-                    // Unload module.
+                    // Attempt to unload module.
                     //
-                    mr = MUX_E_FAIL;
-                    ModuleUnload(pModule);
-                    if (!pModule->bLoaded)
+                    mr = pModule->fpCanUnloadNow();
+                    if (  MUX_SUCCEEDED(mr)
+                       && MUX_S_FALSE != mr)
                     {
+                        ModuleUnload(pModule);
                         ModuleRemove(pModule);
                         mr = MUX_S_OK;
                     }
                 }
             }
+            else
+            {
+                mr = MUX_E_FAIL;
+            }
         }
+        else
+        {
+            mr = MUX_E_NOTFOUND;
+        }
+    }
+    else
+    {
+        mr = MUX_E_NOTREADY;
     }
     return mr;
 }
@@ -776,14 +803,14 @@ extern "C" DCL_EXPORT MUX_RESULT mux_RemoveModule(const UTF8 aModuleName[])
  * \param UTF8     Filename of dynamic module to remove.
  * \param void **  External module info structure.
  * \return         MUX_S_OK if found, MUX_S_FALSE if at end of list,
- *                 MUX_E_FAIL for invalid parameters.
+ *                 MUX_E_INVALIDARG for invalid arguments.
  */
 
 extern "C" DCL_EXPORT MUX_RESULT mux_ModuleInfo(int iModule, MUX_MODULE_INFO *pModuleInfo)
 {
     if (iModule < 0)
     {
-        return MUX_E_FAIL;
+        return MUX_E_INVALIDARG;
     }
 
     MODULE_INFO *pModule = g_pModuleList;
@@ -815,10 +842,14 @@ extern "C" DCL_EXPORT MUX_RESULT mux_ModuleTick(void)
     MODULE_INFO *pModule = g_pModuleList;
     while (NULL != pModule)
     {
-        if (  pModule->bLoaded
-           && pModule->fpCanUnloadNow())
+        if (pModule->bLoaded)
         {
-            ModuleUnload(pModule);
+            MUX_RESULT mr = pModule->fpCanUnloadNow();
+            if (  MUX_SUCCEEDED(mr)
+               && MUX_S_FALSE != mr)
+            {
+                ModuleUnload(pModule);
+            }
         }
         pModule = pModule->pNext;
     }

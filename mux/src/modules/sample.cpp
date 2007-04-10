@@ -21,11 +21,6 @@ static UINT64 cids[NUM_CIDS] =
     CID_Sample
 };
 
-// TODO:
-//
-// - Link against libmux.so
-// - Export registration function to pass list of supported component ids.
-
 // The following four functions are for access by dlopen.
 //
 extern "C" DCL_EXPORT MUX_RESULT mux_CanUnloadNow(void)
