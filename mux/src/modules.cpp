@@ -8,7 +8,6 @@
 #include "copyright.h"
 #include "autoconf.h"
 #include "config.h"
-#include "externs.h"
 
 #ifdef HAVE_DLOPEN
 #include <dlfcn.h>
@@ -43,8 +42,12 @@ typedef struct mod_info
     FPREGISTER       *fpRegister;
     FPUNREGISTER     *fpUnregister;
     MODULE_HANDLE    hInst;
-    UTF8            *pModuleName;
-    UTF8            *pFileName;
+    UTF8             *pModuleName;
+#ifdef WIN32
+    UTF16            *pFileName;
+#else
+    UTF8             *pFileName;
+#endif
     bool             bLoaded;
 } MODULE_INFO;
 
@@ -94,7 +97,7 @@ static MODULE_INFO *g_pModule = NULL;
  * \return          Pointer to private copy of string.
  */
 
-static UTF8 *CopyString(const UTF8 *pString)
+static UTF8 *CopyUTF8(const UTF8 *pString)
 {
     size_t n = strlen((const char *)pString);
     UTF8 *p = NULL;
@@ -114,6 +117,29 @@ static UTF8 *CopyString(const UTF8 *pString)
     }
     return p;
 }
+
+#ifdef WIN32
+static UTF16 *CopyUTF16(const UTF16 *pString)
+{
+    size_t n = wcslen(pString);
+    UTF16 *p = NULL;
+
+    try
+    {
+        p = new UTF16[n+1];
+    }
+    catch (...)
+    {
+        ; // Nothing.
+    }
+
+    if (NULL != p)
+    {
+        memcpy(p, pString, (n+1) * sizeof(UTF16));
+    }
+    return p;
+}
+#endif // WIN32
 
 /*! \brief Find the first class ID not less than the requested class id.
  *
@@ -200,7 +226,11 @@ static MODULE_INFO *ModuleFindFromName(const UTF8 aModuleName[])
  * \return           Corresponding module record or NULL if not found.
  */
 
+#ifdef WIN32
+static MODULE_INFO *ModuleFindFromFileName(const UTF16 aFileName[])
+#else
 static MODULE_INFO *ModuleFindFromFileName(const UTF8 aFileName[])
+#endif
 {
     MODULE_INFO *pModule = g_pModuleList;
     while (NULL != pModule)
@@ -288,7 +318,11 @@ static void ClassRemove(UINT64 cid)
  *                       duplicate found.
  */
 
+#ifdef WIN32
+static MODULE_INFO *ModuleAdd(const UTF8 aModuleName[], const UTF16 aFileName[])
+#else
 static MODULE_INFO *ModuleAdd(const UTF8 aModuleName[], const UTF8 aFileName[])
+#endif
 {
     // If the module name or file name is already being used, we won't add it
     // again.  This does not handle file-system links, but that will be caught
@@ -323,8 +357,12 @@ static MODULE_INFO *ModuleAdd(const UTF8 aModuleName[], const UTF8 aFileName[])
         pModule->fpRegister = NULL;
         pModule->fpUnregister = NULL;
         pModule->hInst = NULL;
-        pModule->pModuleName = CopyString(aModuleName);
-        pModule->pFileName = CopyString(aFileName);
+        pModule->pModuleName = CopyUTF8(aModuleName);
+#ifdef WIN32
+        pModule->pFileName = CopyUTF16(aFileName);
+#else
+        pModule->pFileName = CopyUTF8(aFileName);
+#endif // WIN32
         pModule->bLoaded = false;
 
         if (  NULL != pModule->pModuleName
@@ -441,13 +479,7 @@ static void ModuleLoad(MODULE_INFO *pModule)
         return;
     }
 
-#ifdef WIN32
-    size_t   nExternalName;
-    wchar_t *pExternalName = ConvertFromUTF8ToUTF16(pModule->pFileName, &nExternalName);
-#else
-    char *pExternalName = pModule->pFileName;
-#endif
-    pModule->hInst = MOD_OPEN(pExternalName);
+    pModule->hInst = MOD_OPEN(pModule->pFileName);
     if (NULL != pModule->hInst)
     {
         pModule->fpGetClassObject = (FPGETCLASSOBJECT *)MOD_SYM(pModule->hInst, "mux_GetClassObject");
@@ -702,7 +734,11 @@ extern "C" DCL_EXPORT MUX_RESULT mux_RevokeClassObjects(int ncid, UINT64 acid[])
  * \return         MUX_RESULT
  */
 
+#ifdef WIN32
+extern "C" DCL_EXPORT MUX_RESULT mux_AddModule(const UTF8 aModuleName[], const UTF16 aFileName[])
+#else
 extern "C" DCL_EXPORT MUX_RESULT mux_AddModule(const UTF8 aModuleName[], const UTF8 aFileName[])
+#endif // WIN32
 {
     MUX_RESULT mr;
     if (NULL == g_pModule)

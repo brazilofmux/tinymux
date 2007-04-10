@@ -201,10 +201,6 @@ SOURCE=.\mguests.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=.\modules.cpp
-# End Source File
-# Begin Source File
-
 SOURCE=.\move.cpp
 # End Source File
 # Begin Source File
@@ -410,10 +406,6 @@ SOURCE=.\mguests.h
 # Begin Source File
 
 SOURCE=.\misc.h
-# End Source File
-# Begin Source File
-
-SOURCE=.\modules.h
 # End Source File
 # Begin Source File
 

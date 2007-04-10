@@ -1772,11 +1772,14 @@ static CF_HAND(cf_module)
     }
     else
     {
-        UTF8 *filename = alloc_lbuf("cf_module");
+        UTF8 *buffer = alloc_lbuf("cf_module");
 #ifdef WIN32
-        mux_sprintf(filename, LBUF_SIZE, ".\\bin\\%s.so", str);
+        size_t n;
+        mux_sprintf(buffer, LBUF_SIZE, ".\\bin\\%s.so", str);
+        UTF16 *filename = ConvertFromUTF8ToUTF16(buffer, &n);
 #else
-        mux_sprintf(filename, LBUF_SIZE, "./bin/%s.so", str);
+        mux_sprintf(buffer, LBUF_SIZE, "./bin/%s.so", str);
+        UTF8 *filename = buffer;
 #endif
         mr = mux_AddModule(str, filename);
         free_lbuf(filename);

@@ -71,7 +71,11 @@ typedef struct
 
 // APIs intended only for use by netmux.
 //
+#ifdef WIN32
+extern "C" DCL_EXPORT MUX_RESULT mux_AddModule(const UTF8 aModuleName[], const UTF16 aFileName[]);
+#else
 extern "C" DCL_EXPORT MUX_RESULT mux_AddModule(const UTF8 aModuleName[], const UTF8 aFileName[]);
+#endif // WIN32
 extern "C" DCL_EXPORT MUX_RESULT mux_RemoveModule(const UTF8 aModuleName[]);
 extern "C" DCL_EXPORT MUX_RESULT mux_ModuleInfo(int iModule, MUX_MODULE_INFO *pModuleInfo);
 extern "C" DCL_EXPORT MUX_RESULT mux_ModuleTick(void);
