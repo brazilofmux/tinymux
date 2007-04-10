@@ -794,12 +794,12 @@ void decode_attr_flag_names(int aflags, UTF8 *buf, UTF8 **bufc)
     {
         if (aflags & pEntry->mask)
         {
-            safe_str(pEntry->name, buf, bufc);
             if (!bFirst)
             {
                 safe_chr(' ', buf, bufc);
             }
             bFirst = false;
+            safe_str(pEntry->name, buf, bufc);
         }
     }
 }
@@ -809,13 +809,13 @@ static void view_atr
     dbref player,
     dbref thing,
     ATTR *ap,
-    UTF8 *text,
+    const UTF8 *text,
     dbref aowner,
     int aflags,
     bool skip_tag
 )
 {
-    UTF8 *buf;
+    const UTF8 *buf;
 
     if (ap->flags & AF_IS_LOCK)
     {
