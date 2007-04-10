@@ -1317,7 +1317,6 @@ void mux_exec( const UTF8 *pStr, size_t nStr, UTF8 *buff, UTF8 **bufc, dbref exe
         }
         else if (pStr[iStr] == '(')
         {
-            iStr++;
             // pStr[iStr] == '('
             //
             // Arglist start.  See if what precedes is a function. If so,
@@ -1410,7 +1409,7 @@ void mux_exec( const UTF8 *pStr, size_t nStr, UTF8 *buff, UTF8 **bufc, dbref exe
 
                 UTF8 **fargs = PushPointers(MAX_ARG);
                 tstr = parse_arglist_lite(executor, caller, enactor,
-                      pStr + iStr, feval, fargs, nfargs, cargs, ncargs,
+                      pStr + iStr + 1, feval, fargs, nfargs, cargs, ncargs,
                       &nfargs);
 
 
@@ -1418,6 +1417,7 @@ void mux_exec( const UTF8 *pStr, size_t nStr, UTF8 *buff, UTF8 **bufc, dbref exe
                 //
                 if (!tstr)
                 {
+                    iStr++;
                     if (nBufferAvailable)
                     {
                         *(*bufc)++ = '(';
