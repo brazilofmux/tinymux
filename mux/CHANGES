@@ -104,6 +104,7 @@ Bug Fixes:
  -- Fix type-punning bug in mux_fpclass() that broke when compiled with
     gcc 4.1 or later with -O2 (which turns on -fstrict-aliasing) (Issue
     322).
+ -- Fix hang in MUNGE() if given zero words (Issues 324).
 
 
 Performance Enhancements:

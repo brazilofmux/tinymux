@@ -3301,6 +3301,12 @@ FUNCTION(fun_munge)
     // elements of list1 to corresponding elements of list2.
     //
     int nWords = countwords(fargs[1], &sep);
+    if (0 == nWords)
+    {
+        free_lbuf(atext);
+        free_lbuf(list1);
+        return;
+    }
 
     munge_htab_rec *htab = NULL;
     UINT16 *tails = NULL;
