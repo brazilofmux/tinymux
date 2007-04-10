@@ -1774,9 +1774,9 @@ static CF_HAND(cf_module)
     {
         UTF8 *filename = alloc_lbuf("cf_module");
 #ifdef WIN32
-        mux_sprintf(filename, LBUF_SIZE, ".\\bin\\%s", str);
+        mux_sprintf(filename, LBUF_SIZE, ".\\bin\\%s.so", str);
 #else
-        mux_sprintf(filename, LBUF_SIZE, "./bin/%s", str);
+        mux_sprintf(filename, LBUF_SIZE, "./bin/%s.so", str);
 #endif
         mr = mux_AddModule(str, filename);
         free_lbuf(filename);
