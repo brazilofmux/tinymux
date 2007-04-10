@@ -274,7 +274,11 @@ typedef UINT32 in_addr_t;
 #endif
 
 typedef UINT8  UTF8;
+#ifdef WIN32
+typedef wchar_t UTF16;
+#else
 typedef UINT16 UTF16;
+#endif // WIN32
 typedef UINT32 UTF32;
 
 #ifndef SMALLEST_INT_GTE_NEG_QUOTIENT
