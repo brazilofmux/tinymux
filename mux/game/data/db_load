@@ -1,7 +1,8 @@
 #!/bin/sh
+LD_LIBRARY_PATH=../bin; export LD_LIBRARY_PATH
 PATH=/bin:/usr/bin:
 #
-#	Load MUX V2 flatfile into MUX V2 database.
+#	Load MUX V2 or V3 flatfile into MUX V3 database.
 #
 case $# in
 	3)	../bin/netmux -d$1 -l -i$2 -o$3 ;;

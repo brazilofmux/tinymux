@@ -1,4 +1,5 @@
 #!/bin/sh
+LD_LIBRARY_PATH=../bin; export LD_LIBRARY_PATH
 PATH=/bin:/usr/bin:
 #
 #	Validate MUX V2 flatfile.

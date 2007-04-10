@@ -1,7 +1,8 @@
 #!/bin/sh
+LD_LIBRARY_PATH=../bin; export LD_LIBRARY_PATH
 PATH=/bin:/usr/bin:
 #
-#	Unload a MUX V2 flatfile from MUX V2 database.
+#	Unload a MUX V3 flatfile from MUX V3 database.
 #
 echo NOTE: Make sure the MUX is NOT running before you make a flatfile. 
 case $# in
