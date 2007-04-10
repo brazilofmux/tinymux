@@ -441,7 +441,13 @@ static void ModuleLoad(MODULE_INFO *pModule)
         return;
     }
 
-    pModule->hInst = MOD_OPEN(pModule->pFileName);
+#ifdef WIN32
+    size_t   nExternalName;
+    wchar_t *pExternalName = ConvertFromUTF8ToUTF16(pModule->pFileName, &nExternalName);
+#else
+    char *pExternalName = pModule->pFileName;
+#endif
+    pModule->hInst = MOD_OPEN(pExternalName);
     if (NULL != pModule->hInst)
     {
         pModule->fpGetClassObject = (FPGETCLASSOBJECT *)MOD_SYM(pModule->hInst, "mux_GetClassObject");
