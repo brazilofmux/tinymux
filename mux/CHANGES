@@ -54,6 +54,9 @@ Feature Additions:
  -- Turned on private use code points for Tengwar and Klingon even
     though these code point assignments are not official.
  -- Added @eval command.
+ -- Support Unicode in filenames on Unix and Win32.
+ -- Allow @hook to work on exits, enter aliases, and leave aliases.
+    (Issue 235)
 
 
 Bug Fixes:
@@ -105,6 +108,12 @@ Bug Fixes:
     gcc 4.1 or later with -O2 (which turns on -fstrict-aliasing) (Issue
     322).
  -- Fix hang in MUNGE() if given zero words (Issues 324).
+ -- Fix output bug in lflags, where no space was output between the first two
+    flag names. (Issue 323)
+ -- Fix various @restart scenarios between SSL and non-SSL and from
+    2.6 to 2.7.
+ -- Rework SSL/TLS engine to use a TLS-specific context for STARTTLS,
+    rather than reusing the SSLv3 context.
 
 
 Performance Enhancements:
@@ -123,6 +132,8 @@ Performance Enhancements:
     string twice (Issue 281).
  -- Make parse_arglist_lite() and mux_exec() non-destructive.
  -- Make mux_exec() take a char *pdstr instead of char **dstr.
+ -- Various things made const and/or consolidated.
+ -- Merge fun_wrap and linewrap_general.
 
 
 Cosmetic Changes:
@@ -140,3 +151,4 @@ Miscellaneous:
  -- Fixed dangling reference to 'help @version' (Issue 277).
  -- Corrected documentation of E() and PI() to reflect actual precision
     (Issue 283).  Thanks Jake.
+ -- Document @restart dropping SSL connections up front.
