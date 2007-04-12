@@ -103,7 +103,7 @@ CLEAN :
     if not exist "$(INTDIR)/$(NULL)" mkdir "$(INTDIR)"
 
 CPP=icl.exe
-CPP_PROJ=/nologo /MT /W3 /GX /Ot /Oa /Og /Oi /Ob2 /Gy /D "NDEBUG" /D "WIN32" /D "WIN64" /D "_CONSOLE" /D "UNICODE" /D "WOD_REALMS" /FR"$(INTDIR)\\" /Fp"$(INTDIR)\netmux.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /G7 /GF /O3 /Qprec_div /Qipo2 /Qsfalign8 /Qparallel /Qpar_threshold50 /Qunroll /Qprof_use /c 
+CPP_PROJ=/nologo /MT /W3 /GX /Ot /Oa /Og /Oi /Ob2 /Gy /D "NDEBUG" /D "WIN32" /D "WIN64" /D "_CONSOLE" /D "UNICODE" /D "WOD_REALMS" /FR"$(INTDIR)\\" /Fp"$(INTDIR)\netmux.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /G7 /GF /O3 /Qprec_div /Qipo2 /Qsfalign8 /c 
 
 .c{$(INTDIR)}.obj::
    $(CPP) @<<
@@ -121,7 +121,7 @@ CPP_PROJ=/nologo /MT /W3 /GX /Ot /Oa /Og /Oi /Ob2 /Gy /D "NDEBUG" /D "WIN32" /D 
 <<
 
 LINK32=xilink.exe
-LINK32_FLAGS=kernel32.lib user32.lib gdi32.lib wsock32.lib /nologo /version:2.4 /subsystem:console /incremental:no /pdb:"$(OUTDIR)\netmux.pdb" /machine:amd64 /out:"$(OUTDIR)\netmux.exe" 
+LINK32_FLAGS=kernel32.lib user32.lib gdi32.lib wsock32.lib "$(OUTDIR)\libmux.lib" /nologo /version:2.4 /subsystem:console /incremental:no /pdb:"$(OUTDIR)\netmux.pdb" /machine:amd64 /out:"$(OUTDIR)\netmux.exe" 
 LINK32_OBJS= \
 	"$(INTDIR)\_build.obj" \
 	"$(INTDIR)\alloc.obj" \
@@ -285,7 +285,7 @@ CPP_PROJ=/nologo /MTd /W3 /GX /Zi /Od /D "_DEBUG" /D "WIN32" /D "WIN64" /D "_CON
 <<
 
 LINK32=xilink.exe
-LINK32_FLAGS=kernel32.lib user32.lib gdi32.lib wsock32.lib /nologo /subsystem:console /incremental:yes /pdb:"$(OUTDIR)\netmux.pdb" /debug /machine:amd64 /out:"$(OUTDIR)\netmux.exe" /pdbtype:sept 
+LINK32_FLAGS=kernel32.lib user32.lib gdi32.lib wsock32.lib "$(OUTDIR)\libmux.lib" /nologo /subsystem:console /incremental:yes /pdb:"$(OUTDIR)\netmux.pdb" /debug /machine:amd64 /out:"$(OUTDIR)\netmux.exe" /pdbtype:sept 
 LINK32_OBJS= \
 	"$(INTDIR)\_build.obj" \
 	"$(INTDIR)\alloc.obj" \
