@@ -1,0 +1,48 @@
+Proposed Interfaces.
+
+INTERFACE: Low-level File I/O
+
+    Open/Seek/Read/Write/Close/Move/Delete.
+
+The value of this seems really low. These interfaces are already typically in
+a shared library.  Perhaps the gloss for VS2005 is becoming substantial enough
+that this begins to make sense, but other interfaces should be tackled first.
+
+
+INTERFACE: Low-level Attribute Access.
+
+This is roughly at the level of CHashFile.  A low-level cach of CHashPages is
+included here.
+
+
+INTERFACE: Attribute Cache.
+
+This is roughly at the attrcache.cpp level.  A higher-level LRU attribute
+list is included here, but otherwise the upper and lower interfaces of this
+layer is the same.
+
+
+INTERFACE: High-Level Attribute Access.
+
+This is roughly at the db.cpp level and is also where memory-based access
+interjects itself.
+
+
+INTERFACE: Compression.
+
+Self-evident.
+
+
+INTERFACE: Managing (add/remove/query) softcode function table.
+
+
+INTERFACE: Managing (add/remove/query) softcode command table.
+
+
+INTERFACE: Managing (add/remove/query) softcode powers table.
+
+
+INTERFACE: Managing (add/remove/query) softcode flags table.
+
+
+INTERFACE: Managing (add/remove/query) INFO.
