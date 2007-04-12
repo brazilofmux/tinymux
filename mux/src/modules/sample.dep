@@ -1,0 +1,8 @@
+# Microsoft Developer Studio Generated Dependency File, included by sample.mak
+
+.\sample.cpp : \
+	"..\autoconf.h"\
+	"..\config.h"\
+	"..\copyright.h"\
+	"..\modules.h"\
+	".\sample.h"\
