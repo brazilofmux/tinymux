@@ -58,3 +58,27 @@ INTERFACE: Interface to query, schedule, and cancel lower-level tasks.
 
 
 INTERFACE: Task callback interface used by the lower-level queue routines.
+
+
+INTERFACE: Access to logging routines, the log file, and control of the log file.
+
+
+INTERFACE: Access to basic conversions and utility functions.
+
+
+INTERFACE: Access to time handling.
+
+
+INTERFACE: Access to floating point.
+
+
+INTERFACE: Access to PCRE and string matching.
+
+
+INTERFACE: Access to alloc_lbuf/free_lbuf and friends.
+
+
+INTERFACE: Access to the parsers.
+
+
+INTERFACE: Access to the object array and attribute tables.
