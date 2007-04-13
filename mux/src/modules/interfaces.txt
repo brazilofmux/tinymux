@@ -11,8 +11,8 @@ that this begins to make sense, but other interfaces should be tackled first.
 
 INTERFACE: Low-level Attribute Access.
 
-This is roughly at the level of CHashFile.  A low-level cach of CHashPages is
-included here.
+This is roughly at the level of CHashFile.  A low-level cache of CHashPages
+is included here.
 
 
 INTERFACE: Attribute Cache.
@@ -46,3 +46,15 @@ INTERFACE: Managing (add/remove/query) softcode flags table.
 
 
 INTERFACE: Managing (add/remove/query) INFO.
+
+
+INTERFACE: FUNCTION interface.
+
+
+INTERFACE: Various CMD_ interfaces.
+
+
+INTERFACE: Interface to query, schedule, and cancel lower-level tasks.
+
+
+INTERFACE: Task callback interface used by the lower-level queue routines.
