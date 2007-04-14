@@ -2250,7 +2250,7 @@ static void default_handler(char *buff, char **bufc, dbref executor,
 
                         mux_exec(xargs[i], &bp2,
                             thing, caller, enactor,
-                            eval|EV_STRIP_CURLY|EV_FCHECK|EV_EVAL,
+                            eval|EV_TOP|EV_STRIP_CURLY|EV_FCHECK|EV_EVAL,
                             &str, cargs, ncargs);
                         *bp2 = '\0';
                     }
