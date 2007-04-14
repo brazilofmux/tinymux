@@ -6244,7 +6244,9 @@ static FUNCTION(fun_list)
     UTF8 *curr = alloc_lbuf("fun_list");
     UTF8 *dp   = curr;
     mux_exec(fargs[0], LBUF_SIZE-1, curr, &dp, executor, caller, enactor,
-        eval|EV_STRIP_CURLY|EV_FCHECK|EV_EVAL, cargs, ncargs);
+        eval|EV_TOP|EV_STRIP_CURLY|EV_FCHECK|EV_EVAL, cargs, ncargs);
+    *dp = '\0';
+
     size_t ncp;
     UTF8 *cp = trim_space_sep_LEN(curr, dp-curr, &sep, &ncp);
     if (!*cp)
@@ -8585,7 +8587,7 @@ static FUNCTION(fun_error)
     UNUSED_PARAMETER(ncargs);
 
     if (  Good_obj(mudconf.global_error_obj)
-        && !Going(mudconf.global_error_obj) )
+       && !Going(mudconf.global_error_obj))
     {
         dbref aowner;
         int aflags;
@@ -8596,13 +8598,15 @@ static FUNCTION(fun_error)
         {
             const UTF8 *arg = fargs[0];
             mux_exec(errtext, LBUF_SIZE-1, errbuff, &errbufc, mudconf.global_error_obj, caller, enactor,
-                AttrTrace(aflags, EV_EVAL|EV_FCHECK|EV_STRIP_CURLY), &arg, 1);
+                AttrTrace(aflags, EV_TOP|EV_EVAL|EV_FCHECK|EV_STRIP_CURLY), &arg, 1);
+            *errbufc = '\0';
         }
         else
         {
             mux_exec(errtext, LBUF_SIZE-1, errbuff, &errbufc, mudconf.global_error_obj, caller, enactor,
-                AttrTrace(aflags, EV_EVAL|EV_FCHECK|EV_STRIP_CURLY),
+                AttrTrace(aflags, EV_TOP|EV_EVAL|EV_FCHECK|EV_STRIP_CURLY),
                 NULL, 0);
+            *errbufc = '\0';
         }
         safe_str(errbuff, buff, bufc);
         free_lbuf(errtext);
