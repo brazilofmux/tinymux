@@ -4284,7 +4284,7 @@ AND()
   Takes one or more BOOLEAN-Z values, and returns 1 (TRUE) if all arguments
   are TRUE.
 
-  Related Topics: andbool(), BOOLEAN VALUES, or(), not(), t(), xor().
+  Related Topics: andbool(), BOOLEAN VALUES, cand(), or(), not(), t(), xor().
 
 & ANDBOOL()
 ANDBOOL()
