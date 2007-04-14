@@ -480,6 +480,7 @@ static void look_exits(dbref player, dbref loc, const char *exit_name)
         mux_exec(FormatOutput, &tPtr, loc, player, player,
             AttrTrace(aflags, EV_FCHECK|EV_EVAL|EV_TOP),
             &ExitFormat, &VisibleObjectList, 1);
+        *tPtr = '\0';
 
         restore_global_regs(preserve);
         PopRegisters(preserve, MAX_GLOBAL_REGS);
@@ -657,6 +658,7 @@ static void look_contents(dbref player, dbref loc, const char *contents_name, in
         mux_exec(FormatOutput, &tPtr, loc, player, player,
             AttrTrace(aflags, EV_FCHECK|EV_EVAL|EV_TOP),
             &ContentsFormat, ParameterList, 2);
+        *tPtr = '\0';
 
         restore_global_regs(preserve);
         PopRegisters(preserve, MAX_GLOBAL_REGS);
@@ -1052,6 +1054,7 @@ static bool show_a_desc(dbref player, dbref loc)
         mux_exec(FormatOutput, &tPtr, loc, player, player,
             AttrTrace(aflags1, EV_FCHECK|EV_EVAL|EV_TOP),
             &DescFormat, ParameterList, 2);
+        *tPtr = '\0';
 
         notify(player, FormatOutput);
 #ifdef REALITY_LVLS
@@ -1272,6 +1275,7 @@ void look_in(dbref player, dbref loc, int key)
         mux_exec(FormatOutput, &tPtr, loc, player, player,
             AttrTrace(aflags, EV_FCHECK|EV_EVAL|EV_TOP),
             &NameFormat, 0, 0);
+        *tPtr = '\0';
 
         restore_global_regs(preserve);
         PopRegisters(preserve, MAX_GLOBAL_REGS);

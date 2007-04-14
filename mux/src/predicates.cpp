@@ -779,6 +779,8 @@ void do_if
 
     mux_exec(buff, &bp, player, caller, enactor, eval|EV_FCHECK|EV_EVAL|EV_TOP,
         &expr, cargs, ncargs);
+    *bp = '\0';
+
     int a = !xlate(buff);
     free_lbuf(buff);
 

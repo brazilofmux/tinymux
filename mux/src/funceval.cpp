@@ -2252,6 +2252,7 @@ static void default_handler(char *buff, char **bufc, dbref executor,
                             thing, caller, enactor,
                             eval|EV_STRIP_CURLY|EV_FCHECK|EV_EVAL,
                             &str, cargs, ncargs);
+                        *bp2 = '\0';
                     }
 
                     str = atr_gotten;

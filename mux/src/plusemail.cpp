@@ -538,8 +538,8 @@ void do_plusemail(dbref executor, dbref cause, dbref enactor, int key,
     char *bodyptr = body;
     char *bodysrc = arg2;
     mux_exec(body, &bodyptr, executor, executor, executor,
-        EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &bodysrc, NULL, 0);
-    *bodyptr = 0;
+        EV_TOP | EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &bodysrc, NULL, 0);
+    *bodyptr = '\0';
 
     do
     {

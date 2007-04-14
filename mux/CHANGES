@@ -284,6 +284,8 @@ Bug Fixes:
  -- Fix type-punning bug in mux_fpclass() that broke when compiled with
     gcc 4.1 or later with -O2 (which turns on -fstrict-aliasing) (Issue
     322).
+ -- Properly terminate uses of mux_exec().  Most of these are protected by
+    EV_TOP or something else.
 
 Performance Enhancements:
 ~~~~~~~~~~~~~~~~~~~~~~~~

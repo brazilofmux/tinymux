@@ -2506,6 +2506,7 @@ char *process_command
             mux_exec(errbuff, &errbufc, mudconf.global_error_obj, caller, enactor,
                 AttrTrace(aflags, EV_EVAL|EV_FCHECK|EV_STRIP_CURLY|EV_TOP), &str,
                 &pCommand, 1);
+            *errbufc = '\0';
             notify(executor, errbuff);
             free_lbuf(errtext);
             free_lbuf(errbuff);

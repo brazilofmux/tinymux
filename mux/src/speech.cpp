@@ -38,6 +38,7 @@ char *modSpeech(dbref player, char *message, bool bWhich, char *command)
     args[1] = command;
     mux_exec(new_message, &t_ptr, player, player, player,
         AttrTrace(aflags, EV_FCHECK|EV_EVAL|EV_TOP), &mod, args, 2);
+    *t_ptr = '\0';
     free_lbuf(mod_orig);
     return new_message;
 }
