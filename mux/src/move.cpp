@@ -1,6 +1,6 @@
 // move.cpp -- Routines for moving about.
 //
-// $Id: move.cpp,v 1.7 2006/01/07 18:29:14 sdennis Exp $
+// $Id: move.cpp,v 1.8 2007/04/14 04:57:05 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -450,9 +450,10 @@ static dbref get_exit_dest(dbref executor, dbref exit)
     char *result = alloc_lbuf("get_exit_dest");
     char *ref = result;
     char *str = atr_gotten;
-    mux_exec(result, &ref, exit, executor, executor, EV_FCHECK | EV_EVAL,
+    mux_exec(result, &ref, exit, executor, executor, EV_TOP | EV_FCHECK | EV_EVAL,
                 &str, (char **)NULL, 0);
     free_lbuf(atr_gotten);
+    *ref = '\0';
 
     dbref dest = NOTHING;
     if (*result == NUMBER_TOKEN)

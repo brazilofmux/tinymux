@@ -1,6 +1,6 @@
 // predicates.cpp
 //
-// $Id: predicates.cpp,v 1.77 2006/01/07 08:50:53 sdennis Exp $
+// $Id: predicates.cpp,v 1.78 2007/04/14 04:57:05 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -752,6 +752,8 @@ void do_if
 
     mux_exec(buff, &bp, player, caller, enactor, EV_FCHECK | EV_EVAL | EV_TOP,
         &expr, cargs, ncargs);
+    *bp = '\0';
+
     int a = !xlate(buff);
     free_lbuf(buff);
 

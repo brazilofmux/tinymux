@@ -1,6 +1,6 @@
 // look.cpp -- Commands which look at things.
 //
-// $Id: look.cpp,v 1.46 2006/11/17 06:05:52 sdennis Exp $
+// $Id: look.cpp,v 1.47 2007/04/14 04:57:05 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -484,6 +484,7 @@ static void look_exits(dbref player, dbref loc, const char *exit_name)
         mux_exec(FormatOutput, &tPtr, loc, player, player,
                 EV_FCHECK | EV_EVAL | EV_TOP,
                 &ExitFormat, &VisibleObjectList, 1);
+        *tPtr = '\0';
 
         restore_global_regs("look_exits_restore", preserve, preserve_len);
         notify(player, FormatOutput);
@@ -660,6 +661,7 @@ static void look_contents(dbref player, dbref loc, const char *contents_name, in
         mux_exec(FormatOutput, &tPtr, loc, player, player,
                 EV_FCHECK | EV_EVAL | EV_TOP,
                 &ContentsFormat, ParameterList, 2);
+        *tPtr = '\0';
 
         restore_global_regs("look_contents_restore", preserve, preserve_len);
         notify(player, FormatOutput);
@@ -1026,6 +1028,7 @@ static bool show_a_desc(dbref player, dbref loc)
         mux_exec(FormatOutput, &tPtr, loc, player, player,
                 EV_FCHECK | EV_EVAL | EV_TOP,
                 &DescFormat, ParameterList, 2);
+        *tPtr = '\0';
 
         notify(player, FormatOutput);
 #ifdef REALITY_LVLS
@@ -1231,6 +1234,7 @@ void look_in(dbref player, dbref loc, int key)
         mux_exec(FormatOutput, &tPtr, loc, player, player,
                 EV_FCHECK | EV_EVAL | EV_TOP,
                 &NameFormat, 0, 0);
+        *tPtr = '\0';
 
         restore_global_regs("look_in_restore", preserve, preserve_len);
         notify(player, FormatOutput);

@@ -1,6 +1,6 @@
 // speech.cpp -- Commands which involve speaking.
 //
-// $Id: speech.cpp,v 1.23 2007/01/01 19:19:29 sdennis Exp $
+// $Id: speech.cpp,v 1.24 2007/04/14 04:57:05 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -38,6 +38,7 @@ char *modSpeech(dbref player, char *message, bool bWhich, char *command)
     args[1] = command;
     mux_exec(new_message, &t_ptr, player, player, player,
         EV_FCHECK | EV_EVAL | EV_TOP, &mod, args, 2);
+    *t_ptr = '\0';
     free_lbuf(mod_orig);
     return new_message;
 }

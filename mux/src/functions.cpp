@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.172 2007/03/10 17:01:24 sdennis Exp $
+// $Id: functions.cpp,v 1.173 2007/04/14 04:57:05 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2005 Solid Vertical Domains, Ltd. All
@@ -5303,7 +5303,9 @@ static FUNCTION(fun_list)
     char *dp   = curr;
     str = fargs[0];
     mux_exec(curr, &dp, executor, caller, enactor,
-        EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, cargs, ncargs);
+        EV_TOP | EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, cargs, ncargs);
+    *dp = '\0';
+
     int ncp;
     char *cp = trim_space_sep_LEN(curr, dp-curr, &sep, &ncp);
     if (!*cp)
@@ -7210,7 +7212,7 @@ static FUNCTION(fun_error)
     UNUSED_PARAMETER(ncargs);
 
     if (  Good_obj(mudconf.global_error_obj)
-        && !Going(mudconf.global_error_obj) )
+       && !Going(mudconf.global_error_obj))
     {
         dbref aowner;
         int aflags;
@@ -7222,12 +7224,14 @@ static FUNCTION(fun_error)
         {
             char *arg = fargs[0];
             mux_exec(errbuff, &errbufc, mudconf.global_error_obj, caller, enactor,
-                EV_EVAL | EV_FCHECK | EV_STRIP_CURLY, &str, &arg, 1);
+                EV_TOP | EV_EVAL | EV_FCHECK | EV_STRIP_CURLY, &str, &arg, 1);
+            *errbufc = '\0';
         }
         else
         {
             mux_exec(errbuff, &errbufc, mudconf.global_error_obj, caller, enactor,
-                EV_EVAL | EV_FCHECK | EV_STRIP_CURLY, &str, (char **)NULL, 0);
+                EV_TOP | EV_EVAL | EV_FCHECK | EV_STRIP_CURLY, &str, (char **)NULL, 0);
+            *errbufc = '\0';
         }
         safe_str(errbuff, buff, bufc);
         free_lbuf(errtext);

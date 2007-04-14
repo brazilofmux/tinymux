@@ -1,6 +1,6 @@
 // funceval.cpp -- MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.105 2006/09/11 21:13:47 sdennis Exp $
+// $Id: funceval.cpp,v 1.106 2007/04/14 04:57:05 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -1951,8 +1951,9 @@ static void default_handler(char *buff, char **bufc, dbref executor, dbref calle
 
                         mux_exec(xargs[i], &bp2,
                             thing, caller, enactor,
-                            EV_STRIP_CURLY | EV_FCHECK | EV_EVAL,
+                            EV_TOP | EV_STRIP_CURLY | EV_FCHECK | EV_EVAL,
                             &str, cargs, ncargs);
+                        *bp2 = '\0';
                     }
 
                     str = atr_gotten;

@@ -1,6 +1,6 @@
 // command.cpp -- command parser and support routines.
 //
-// $Id: command.cpp,v 1.80 2007/03/08 21:49:28 sdennis Exp $
+// $Id: command.cpp,v 1.81 2007/04/14 04:57:05 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -2447,6 +2447,7 @@ char *process_command
             mux_exec(errbuff, &errbufc, mudconf.global_error_obj, caller, enactor,
                 EV_EVAL | EV_FCHECK | EV_STRIP_CURLY | EV_TOP, &str,
                 &pCommand, 1);
+            *errbufc = '\0';
             notify(executor, errbuff);
             free_lbuf(errtext);
             free_lbuf(errbuff);
