@@ -2537,7 +2537,7 @@ UTF8 *process_command
             mux_exec(errtext, LBUF_SIZE-1, errbuff, &errbufc, mudconf.global_error_obj, caller, enactor,
                 AttrTrace(aflags, EV_EVAL|EV_FCHECK|EV_STRIP_CURLY|EV_TOP),
                 (const UTF8 **)&pCommand, 1);
-            *errbuff = '\0';
+            *errbufc = '\0';
             notify(executor, errbuff);
             free_lbuf(errtext);
             free_lbuf(errbuff);
