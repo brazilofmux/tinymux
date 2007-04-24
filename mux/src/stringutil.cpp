@@ -1802,15 +1802,21 @@ static UTF8 *ColorTransitionBinary
     if (CS_FOREGROUND & tmp)
     {
         unsigned int iForeground = COLOR_INDEX_FG + (CS_FOREGROUND & csNext);
-        memcpy(Buffer + i, aColors[iForeground].pUTF, aColors[iForeground].nUTF);
-        i += aColors[iForeground].nUTF;
+        if (iForeground < COLOR_INDEX_FG + COLOR_INDEX_DEFAULT)
+        {
+            memcpy(Buffer + i, aColors[iForeground].pUTF, aColors[iForeground].nUTF);
+            i += aColors[iForeground].nUTF;
+        }
     }
 
     if (CS_BACKGROUND & tmp)
     {
         unsigned int iBackground = COLOR_INDEX_BG + ((CS_BACKGROUND & csNext) >> 4);
-        memcpy(Buffer + i, aColors[iBackground].pUTF, aColors[iBackground].nUTF);
-        i += aColors[iBackground].nUTF;
+        if (iBackground < COLOR_INDEX_BG + COLOR_INDEX_DEFAULT)
+        {
+            memcpy(Buffer + i, aColors[iBackground].pUTF, aColors[iBackground].nUTF);
+            i += aColors[iBackground].nUTF;
+        }
     }
     Buffer[i] = '\0';
     *nTransition = i;
@@ -1909,15 +1915,21 @@ static UTF8 *ColorTransitionEscape
     if (CS_FOREGROUND & tmp)
     {
         unsigned int iForeground = COLOR_INDEX_FG + (CS_FOREGROUND & csNext);
-        memcpy(Buffer + i, aColors[iForeground].pEscape, aColors[iForeground].nEscape);
-        i += aColors[iForeground].nEscape;
+        if (iForeground < COLOR_INDEX_FG + COLOR_INDEX_DEFAULT)
+        {
+            memcpy(Buffer + i, aColors[iForeground].pEscape, aColors[iForeground].nEscape);
+            i += aColors[iForeground].nEscape;
+        }
     }
 
     if (CS_BACKGROUND & tmp)
     {
         unsigned int iBackground = COLOR_INDEX_BG + ((CS_BACKGROUND & csNext) >> 4);
-        memcpy(Buffer + i, aColors[iBackground].pEscape, aColors[iBackground].nEscape);
-        i += aColors[iBackground].nEscape;
+        if (iBackground < COLOR_INDEX_BG + COLOR_INDEX_DEFAULT)
+        {
+            memcpy(Buffer + i, aColors[iBackground].pEscape, aColors[iBackground].nEscape);
+            i += aColors[iBackground].nEscape;
+        }
     }
     Buffer[i] = '\0';
     *nTransition = i;
@@ -2001,15 +2013,21 @@ static UTF8 *ColorTransitionANSI
     if (CS_FOREGROUND & tmp)
     {
         unsigned int iForeground = COLOR_INDEX_FG + (CS_FOREGROUND & csNext);
-        memcpy(Buffer + i, aColors[iForeground].pAnsi, aColors[iForeground].nAnsi);
-        i += aColors[iForeground].nAnsi;
+        if (iForeground < COLOR_INDEX_FG + COLOR_INDEX_DEFAULT)
+        {
+            memcpy(Buffer + i, aColors[iForeground].pAnsi, aColors[iForeground].nAnsi);
+            i += aColors[iForeground].nAnsi;
+        }
     }
 
     if (CS_BACKGROUND & tmp)
     {
         unsigned int iBackground = COLOR_INDEX_BG + ((CS_BACKGROUND & csNext) >> 4);
-        memcpy(Buffer + i, aColors[iBackground].pAnsi, aColors[iBackground].nAnsi);
-        i += aColors[iBackground].nAnsi;
+        if (iBackground < COLOR_INDEX_BG + COLOR_INDEX_DEFAULT)
+        {
+            memcpy(Buffer + i, aColors[iBackground].pAnsi, aColors[iBackground].nAnsi);
+            i += aColors[iBackground].nAnsi;
+        }
     }
     Buffer[i] = '\0';
     *nTransition = i;

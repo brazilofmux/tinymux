@@ -409,6 +409,7 @@ typedef UINT16 ColorState;
 #define COLOR_INDEX_MAGENTA     5
 #define COLOR_INDEX_CYAN        6
 #define COLOR_INDEX_WHITE       7
+#define COLOR_INDEX_DEFAULT     8
 
 #define COLOR_INDEX_FG_WHITE    (COLOR_INDEX_FG + COLOR_INDEX_WHITE)
 
