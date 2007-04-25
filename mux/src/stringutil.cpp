@@ -1781,6 +1781,9 @@ static UTF8 *ColorTransitionBinary
     size_t *nTransition
 )
 {
+    ValidateColorState(csCurrent);
+    ValidateColorState(csNext);
+
     static UTF8 Buffer[COLOR_MAXIMUM_BINARY_TRANSITION_LENGTH+1];
 
     if (csCurrent == csNext)
@@ -1852,6 +1855,8 @@ static const UTF8 *ColorBinaryNormal
     size_t *nTransition
 )
 {
+    ValidateColorState(csCurrent);
+
     if (csCurrent == CS_NORMAL)
     {
         *nTransition = 0;
@@ -1888,6 +1893,9 @@ static UTF8 *ColorTransitionEscape
     size_t *nTransition
 )
 {
+    ValidateColorState(csCurrent);
+    ValidateColorState(csNext);
+
     static UTF8 Buffer[COLOR_MAXIMUM_ESCAPE_TRANSITION_LENGTH+1];
 
     if (csCurrent == csNext)
@@ -1967,6 +1975,9 @@ static UTF8 *ColorTransitionANSI
     bool bNoBleed = false
 )
 {
+    ValidateColorState(csCurrent);
+    ValidateColorState(csNext);
+
     static UTF8 Buffer[COLOR_MAXIMUM_ANSI_TRANSITION_LENGTH+1];
 
     if (bNoBleed)
@@ -5578,6 +5589,7 @@ ColorState mux_string::export_Color(size_t n) const
     {
         return CS_NORMAL;
     }
+    ValidateColorState(m_pcs[n]);
     return m_pcs[n];
 }
 
@@ -5790,6 +5802,7 @@ UTF8 *mux_string::export_TextConverted
         while (curIn < m_iLast)
         {
             csCurrent = m_pcs[curIn.m_point];
+            ValidateColorState(csCurrent);
             if (csPrev != csCurrent)
             {
                 if (iCopy < curIn)
@@ -5833,6 +5846,7 @@ UTF8 *mux_string::export_TextConverted
     while (curIn < m_iLast)
     {
         csCurrent = m_pcs[curIn.m_point];
+        ValidateColorState(csCurrent);
         if (csPrev != csCurrent)
         {
             pTransition = ColorTransitionANSI( csPrev, csCurrent,
@@ -6438,6 +6452,8 @@ void mux_string::set_Char(size_t n, const UTF8 cChar)
 
 void mux_string::set_Color(size_t n, ColorState csColor)
 {
+    ValidateColorState(csColor);
+
     if (m_iLast.m_point <= n)
     {
         return;
