@@ -997,7 +997,7 @@ static bool AcquireColor(dbref player, dbref target, UTF8 SimplifiedCodes[8])
     {
         UTF8 *AnsiCodes = alloc_lbuf("AcquireColor.2");
         UTF8 *ac = AnsiCodes;
-        mux_exec(color_attr, AnsiCodes, &ac, player, target, target,
+        mux_exec(color_attr, LBUF_SIZE-1, AnsiCodes, &ac, player, target, target,
                 AttrTrace(aflags, EV_EVAL|EV_TOP|EV_FCHECK), NULL, 0);
         *ac = '\0';
         free_lbuf(color_attr);
