@@ -1734,6 +1734,24 @@ const MUX_COLOR_SET aColors[COLOR_LAST_CODE+1] =
     { CS_BG_WHITE,   CS_BACKGROUND, ANSI_BWHITE,   sizeof(ANSI_BWHITE)-1,   T(COLOR_BG_WHITE),   3, T("%xW"), 3}  // COLOR_LAST_CODE
 };
 
+/*! \brief Validate ColorState.
+ *
+ * Checks (with assertions) that the given ColorState is valid.  This is
+ * useful during development and debugging, but if any of the assertions are
+ * false, the process ends.
+ *
+ * \param cs       ColorState.
+ * \return         None.
+ */
+
+inline void ValidateColorState(ColorState cs)
+{
+    const ColorState Mask = static_cast<ColorState>(~(CS_FOREGROUND|CS_BACKGROUND|CS_ATTRS));
+    mux_assert((Mask & cs) == 0);
+    mux_assert((CS_FOREGROUND & cs) <= CS_FG_DEFAULT);
+    mux_assert((CS_BACKGROUND & cs) <= CS_BG_DEFAULT);
+}
+
 inline ColorState UpdateColorState(ColorState cs, int iColorCode)
 {
     return (cs & ~aColors[iColorCode].csMask) | aColors[iColorCode].cs;
@@ -5096,15 +5114,12 @@ void mux_string::Validate(void) const
 
     if (NULL != m_pcs)
     {
+        // Every ColorState must be valid.
+        //
         size_t i;
         for (i = 0; i < m_iLast.m_point; i++)
         {
-            // Every ColorState must be valid.
-            //
-            const ColorState Mask = static_cast<ColorState>(~(CS_FOREGROUND|CS_BACKGROUND|CS_ATTRS));
-            mux_assert((Mask & m_pcs[i]) == 0);
-            mux_assert((CS_FOREGROUND & m_pcs[i]) <= CS_FG_DEFAULT);
-            mux_assert((CS_BACKGROUND & m_pcs[i]) <= CS_BG_DEFAULT);
+            ValidateColorState(m_pcs[i]);
         }
     }
 }
