@@ -1081,6 +1081,31 @@ static void set_attr_internal(dbref player, dbref thing, int attrnum, const UTF8
     }
 }
 
+bool copy_attr(dbref executor, attr_info &src, attr_info &dest, int key)
+{
+    if (  !Good_obj(src.m_object)
+       || !Good_obj(dest.m_object)
+       || NULL == src.m_attr)
+    {
+        notify_quiet(executor, T("No match."));
+        return false;
+    }
+    if (  NULL == dest.m_attr
+       || !See_attr(executor, src.m_object, src.m_attr)
+       || !bCanSetAttr(executor, dest.m_object, dest.m_attr))
+    {
+        notify_quiet(executor, NOPERM_MESSAGE);
+        return false;
+    }
+    UTF8 *buff = alloc_lbuf("copy_attr");
+    atr_pget_str(buff, src.m_object, src.m_attr->number, &src.m_aowner, &src.m_aflags);
+    src.m_bHaveInfo = true;
+
+    set_attr_internal(executor, dest.m_object, dest.m_attr->number, buff, key);
+    free_lbuf(buff);
+    return true;
+}
+
 void do_set
 (
     dbref executor,
@@ -1228,27 +1253,10 @@ void do_set
         if (*p == '_')
         {
             p++;
-            ATTR *pattr2;
-            dbref thing2;
 
-            if (!( parse_attrib(executor, p, &thing2, &pattr2)
-                && pattr2))
-            {
-                notify_quiet(executor, T("No match."));
-                return;
-            }
-            UTF8 *buff = alloc_lbuf("do_set");
-            atr_pget_str(buff, thing2, pattr2->number, &aowner, &aflags);
-
-            if (!See_attr(executor, thing2, pattr2))
-            {
-                notify_quiet(executor, NOPERM_MESSAGE);
-            }
-            else
-            {
-                set_attr_internal(executor, thing, atr, buff, key);
-            }
-            free_lbuf(buff);
+            attr_info *src = new attr_info(thing, pattr);
+            attr_info *dest = new attr_info(executor, p, false, false);
+            copy_attr(executor, *src, *dest, key);
             return;
         }
 
@@ -1325,57 +1333,41 @@ void do_cpattr(dbref executor, dbref caller, dbref enactor, int eval, int key,
                UTF8 *oldpair, UTF8 *newpair[], int nargs)
 {
     UNUSED_PARAMETER(eval);
-    UNUSED_PARAMETER(key);
 
-    int i;
-    UTF8 *oldthing, *oldattr, *newthing, *newattr;
-
-    if (  !*oldpair
-       || !**newpair
-       || !oldpair
-       || !*newpair
+    if (  isEmpty(oldpair)
+       || isEmpty(newpair[0])
        || nargs < 1)
     {
         return;
     }
 
-    oldattr = oldpair;
-    oldthing = parse_to(&oldattr, '/', 1);
-
-    for (i = 0; i < nargs; i++)
+    attr_info *src = new attr_info(executor, oldpair, false, true);
+    if (src->m_bValid)
     {
-        newattr = newpair[i];
-        newthing = parse_to(&newattr, '/', 1);
-
-        if (!oldattr)
+        for (int i = 0; i < nargs; i++)
         {
-            if (!newattr)
+            attr_info *dest = new attr_info(executor, newpair[i], true, false);
+            if (!dest->m_bValid)
             {
-                do_set(executor, caller, enactor, 0, 2, newthing,
-                    tprintf("%s:_%s/%s", oldthing, "me", oldthing));
+                if (Good_obj(dest->m_object))
+                {
+                    dest->m_attr = src->m_attr;
+                    dest->m_bValid = true;
+                }
             }
-            else
+            if (dest->m_bValid)
             {
-                do_set(executor, caller, enactor, 0, 2, newthing,
-                    tprintf("%s:_%s/%s", newattr, "me", oldthing));
+                copy_attr(executor, *src, *dest, key);
             }
-        }
-        else
-        {
-            if (!newattr)
-            {
-                do_set(executor, caller, enactor, 0, 2, newthing,
-                    tprintf("%s:_%s/%s", oldattr, oldthing, oldattr));
-            }
-            else
-            {
-                do_set(executor, caller, enactor, 0, 2, newthing,
-                    tprintf("%s:_%s/%s", newattr, oldthing, oldattr));
-            }
+            delete dest;
         }
     }
+    else
+    {
+        notify_quiet(executor, T("No match."));
+    }
+    delete src;
 }
-
 
 void do_mvattr(dbref executor, dbref caller, dbref enactor, int eval, int key,
                UTF8 *what, UTF8 *args[], int nargs)
