@@ -1734,6 +1734,24 @@ const MUX_COLOR_SET aColors[COLOR_LAST_CODE+1] =
     { CS_BG_WHITE,   CS_BACKGROUND, ANSI_BWHITE,   sizeof(ANSI_BWHITE)-1,   T(COLOR_BG_WHITE),   3, T("%xW"), 3}  // COLOR_LAST_CODE
 };
 
+/*! \brief Validate ColorState.
+ *
+ * Checks (with assertions) that the given ColorState is valid.  This is
+ * useful during development and debugging, but if any of the assertions are
+ * false, the process ends.
+ *
+ * \param cs       ColorState.
+ * \return         None.
+ */
+
+inline void ValidateColorState(ColorState cs)
+{
+    const ColorState Mask = static_cast<ColorState>(~(CS_FOREGROUND|CS_BACKGROUND|CS_ATTRS));
+    mux_assert((Mask & cs) == 0);
+    mux_assert((CS_FOREGROUND & cs) <= CS_FG_DEFAULT);
+    mux_assert((CS_BACKGROUND & cs) <= CS_BG_DEFAULT);
+}
+
 inline ColorState UpdateColorState(ColorState cs, int iColorCode)
 {
     return (cs & ~aColors[iColorCode].csMask) | aColors[iColorCode].cs;
@@ -1763,6 +1781,9 @@ static UTF8 *ColorTransitionBinary
     size_t *nTransition
 )
 {
+    ValidateColorState(csCurrent);
+    ValidateColorState(csNext);
+
     static UTF8 Buffer[COLOR_MAXIMUM_BINARY_TRANSITION_LENGTH+1];
 
     if (csCurrent == csNext)
@@ -1834,6 +1855,8 @@ static const UTF8 *ColorBinaryNormal
     size_t *nTransition
 )
 {
+    ValidateColorState(csCurrent);
+
     if (csCurrent == CS_NORMAL)
     {
         *nTransition = 0;
@@ -1870,6 +1893,9 @@ static UTF8 *ColorTransitionEscape
     size_t *nTransition
 )
 {
+    ValidateColorState(csCurrent);
+    ValidateColorState(csNext);
+
     static UTF8 Buffer[COLOR_MAXIMUM_ESCAPE_TRANSITION_LENGTH+1];
 
     if (csCurrent == csNext)
@@ -1949,6 +1975,9 @@ static UTF8 *ColorTransitionANSI
     bool bNoBleed = false
 )
 {
+    ValidateColorState(csCurrent);
+    ValidateColorState(csNext);
+
     static UTF8 Buffer[COLOR_MAXIMUM_ANSI_TRANSITION_LENGTH+1];
 
     if (bNoBleed)
@@ -5096,15 +5125,12 @@ void mux_string::Validate(void) const
 
     if (NULL != m_pcs)
     {
+        // Every ColorState must be valid.
+        //
         size_t i;
         for (i = 0; i < m_iLast.m_point; i++)
         {
-            // Every ColorState must be valid.
-            //
-            const ColorState Mask = static_cast<ColorState>(~(CS_FOREGROUND|CS_BACKGROUND|CS_ATTRS));
-            mux_assert((Mask & m_pcs[i]) == 0);
-            mux_assert((CS_FOREGROUND & m_pcs[i]) <= CS_FG_DEFAULT);
-            mux_assert((CS_BACKGROUND & m_pcs[i]) <= CS_BG_DEFAULT);
+            ValidateColorState(m_pcs[i]);
         }
     }
 }
@@ -5563,6 +5589,7 @@ ColorState mux_string::export_Color(size_t n) const
     {
         return CS_NORMAL;
     }
+    ValidateColorState(m_pcs[n]);
     return m_pcs[n];
 }
 
@@ -5775,6 +5802,7 @@ UTF8 *mux_string::export_TextConverted
         while (curIn < m_iLast)
         {
             csCurrent = m_pcs[curIn.m_point];
+            ValidateColorState(csCurrent);
             if (csPrev != csCurrent)
             {
                 if (iCopy < curIn)
@@ -5818,6 +5846,7 @@ UTF8 *mux_string::export_TextConverted
     while (curIn < m_iLast)
     {
         csCurrent = m_pcs[curIn.m_point];
+        ValidateColorState(csCurrent);
         if (csPrev != csCurrent)
         {
             pTransition = ColorTransitionANSI( csPrev, csCurrent,
@@ -6423,6 +6452,8 @@ void mux_string::set_Char(size_t n, const UTF8 cChar)
 
 void mux_string::set_Color(size_t n, ColorState csColor)
 {
+    ValidateColorState(csColor);
+
     if (m_iLast.m_point <= n)
     {
         return;
