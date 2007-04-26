@@ -7249,10 +7249,11 @@ GIVE
 
   COMMAND: give <player>=<amount/object>
 
-  Gives player the specified amount of money or <object>. You can't give
+  Gives player the specified amount of money or <object>.  You can't give
   someone money if their new total would be greater than 10000 (No reason to
-  get greedy).  You may also give players objects, but the other player must
-  be set ENTER_OK to receive something you give.
+  get greedy).  Giving money requires the giver to pass the player's use @lock
+  because @apay may evaluate.  You may also give players objects, but the
+  other player must be set ENTER_OK to receive something you give.
 
   Related Topics: @apay, @cost, @opay, @pay, ENTER_OK.
 

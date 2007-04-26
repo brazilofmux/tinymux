@@ -285,23 +285,6 @@ static bool get_list(FILE *f, dbref i)
             atr = getref(f);
             if (atr > 0)
             {
-#if defined(FIRANMUX_CONVERT)
-                switch (atr)
-                {
-                case A_COLOR_OLD:
-                    atr = A_COLOR;
-                    break;
-
-                case A_ALEAD_OLD:
-                    atr = A_ALEAD;
-                    break;
-
-                case A_EXITFORMAT_OLD:
-                    atr = A_EXITFORMAT;
-                    break;
-                }
-#endif // FIRANMUX_CONVERT
-
                 // Maximum attribute number across all objects.
                 //
                 if (g_max_obj_atr < atr)
@@ -468,43 +451,14 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
                 pName = MakeCanonicalAttributeName(tstr, &nName, &bValid);
                 if (bValid)
                 {
-#if defined(FIRANMUX_CONVERT)
+                    // Maximum attribute number across all names.
+                    //
+                    if (g_max_nam_atr < anum)
                     {
-                        // Does this user attribute conflict with any built-in attribute names?
-                        //
-                        ATTR *a = (ATTR *)hashfindLEN(pName, nName, &mudstate.attr_name_htab);
-                        if (a)
-                        {
-                            Log.tinyprintf("Renaming conflicting user attribute, %s, to FIRAN_%s." ENDLINE, pName, pName);
-                            UTF8 *p = alloc_lbuf("db_read");
-                            UTF8 *q = p;
-                            safe_str(T("FIRAN_"), p, &q);
-                            safe_str(pName, p, &q);
-                            *q = '\0';
-
-                            pName = MakeCanonicalAttributeName(p, &nName, &bValid);
-                            free_lbuf(p);
-
-                            a = vattr_find_LEN(pName, nName);
-                            if (a)
-                            {
-                                Log.tinyprintf("ERROR: Renamed user attribute, %s, already exists." ENDLINE, pName);
-                            }
-                        }
+                        g_max_nam_atr = anum;
                     }
 
-                    if (bValid)
-#endif // FIRANMUX_CONVERT
-                    {
-                        // Maximum attribute number across all names.
-                        //
-                        if (g_max_nam_atr < anum)
-                        {
-                            g_max_nam_atr = anum;
-                        }
-
-                        vattr_define_LEN(pName, nName, anum, aflags);
-                    }
+                    vattr_define_LEN(pName, nName, anum, aflags);
                 }
             }
             else if (ch == 'X')

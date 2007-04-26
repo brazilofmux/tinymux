@@ -239,12 +239,6 @@
 #define A_STRUCT    254
 #define A_TEMP      255
 
-#if defined(FIRANMUX_CONVERT)
-#define A_ALEAD_OLD      240  // Conflicts with A_IDLETMOUT
-#define A_COLOR_OLD      241  // Conflicts with A_EXITFORMAT
-#define A_EXITFORMAT_OLD 243  // Conflicts with A_NAMEFORMAT
-#endif // FIRANMUX_CONVERT
-
 #define A_USER_START    256     // Start of user-named attributes.
 
 #define ATR_BUF_CHUNK   100 /* Min size to allocate for attribute buffer */
