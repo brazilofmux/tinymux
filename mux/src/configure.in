@@ -97,23 +97,6 @@ AC_ARG_ENABLE(
 AC_SUBST(FIRANMUX)
 AC_SUBST(FIRANLIBS)
 
-AC_MSG_CHECKING(whether to enable Firan MUX Conversion)
-AC_ARG_ENABLE(
-  [firanmuxconvert],
-  AC_HELP_STRING([--enable-firanmuxconvert], [enable Firan MUX Conversion (default is NO)]),
-  [
-    if test "x$enableval" = "xno"; then
-      AC_MSG_RESULT(no)
-    else
-      FIRANMUX_CONVERT="-DFIRANMUX_CONVERT"
-      AC_MSG_RESULT(yes)
-    fi
-  ],
-  [
-    AC_MSG_RESULT(no)
-  ])
-AC_SUBST(FIRANMUX_CONVERT)
-
 AC_MSG_CHECKING(whether to enable inline MySQL)
 AC_ARG_ENABLE(
   [inlinesql],
@@ -250,11 +233,22 @@ AC_TRY_LINK([
     int   cc = dlclose(mh);
     ],[
     AC_DEFINE(HAVE_DLOPEN)
-    SHARED_TARGETS="libmux.so"
-    SHARED_LIBS="-lmux"
+    case "$host" in
+    *darwin*) DYNAMICLIB_EXT="dylib"
+              DYNAMICLIB_TARGET="libmux.dylib"
+              DYNAMICLIB_CPPFLAGS="-dynamiclib"
+              ;;
+    *)        DYNAMICLIB_EXT="so"
+              DYNAMICLIB_TARGET="libmux.so"
+              DYNAMICLIB_CPPFLAGS="-shared -fPIC"
+              ;;
+    esac
+    MUX_LIBS="-lmux"
     ])
-AC_SUBST(SHARED_TARGETS)
-AC_SUBST(SHARED_LIBS)
+AC_SUBST(DYNAMICLIB_EXT)
+AC_SUBST(DYNAMICLIB_CPPFLAGS)
+AC_SUBST(DYNAMICLIB_TARGET)
+AC_SUBST(MUX_LIBS)
 AC_CHECKING(for sys_errlist decl)
 if test $ac_cv_header_errno_h = no; then
 	AC_DEFINE(NEED_SYS_ERRLIST_DCL)

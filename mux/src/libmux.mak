@@ -38,7 +38,7 @@ ALL : "$(OUTDIR)\libmux.dll"
 
 
 CLEAN :
-	-@erase "$(INTDIR)\modules.obj"
+	-@erase "$(INTDIR)\libmux.obj"
 	-@erase "$(OUTDIR)\libmux.dll"
 
 "$(OUTDIR)" :
@@ -68,7 +68,7 @@ CPP_PROJ=/nologo /MT /W3 /GX /Ot /Oa /Og /Oi /Ob2 /Gy /D "NDEBUG" /D "WIN32" /D 
 LINK32=xilink.exe
 LINK32_FLAGS=kernel32.lib user32.lib gdi32.lib wsock32.lib /nologo /version:2.4 /subsystem:console /dll /incremental:no /pdb:"$(OUTDIR)\libmux.pdb" /machine:amd64 /out:"$(OUTDIR)\libmux.dll" 
 LINK32_OBJS= \
-	"$(INTDIR)\modules.obj"
+	"$(INTDIR)\libmux.obj"
 
 "$(OUTDIR)\libmux.dll" : "$(OUTDIR)" $(DEF_FILE) $(LINK32_OBJS)
     $(LINK32) @<<
@@ -87,7 +87,7 @@ ALL : "$(OUTDIR)\libmux.dll" "$(OUTDIR)\libmux.bsc"
 
 
 CLEAN :
-	-@erase "$(INTDIR)\modules.obj"
+	-@erase "$(INTDIR)\libmux.obj"
 	-@erase "$(OUTDIR)\libmux.dll"
 	-@erase "$(OUTDIR)\libmux.ilk"
 	-@erase "$(OUTDIR)\libmux.pdb"
@@ -119,7 +119,7 @@ CPP_PROJ=/nologo /MTd /W3 /GX /Zi /Od /D "_DEBUG" /D "WIN32" /D "WIN64" /D "_CON
 LINK32=xilink.exe
 LINK32_FLAGS=kernel32.lib user32.lib gdi32.lib wsock32.lib /nologo /subsystem:console /dll /incremental:yes /pdb:"$(OUTDIR)\libmux.pdb" /debug /machine:amd64 /out:"$(OUTDIR)\libmux.dll" /pdbtype:sept 
 LINK32_OBJS= \
-	"$(INTDIR)\modules.obj"
+	"$(INTDIR)\libmux.obj"
 
 "$(OUTDIR)\libmux.dll" : "$(OUTDIR)" $(DEF_FILE) $(LINK32_OBJS)
     $(LINK32) @<<
@@ -139,9 +139,9 @@ LINK32_OBJS= \
 
 
 !IF "$(CFG)" == "libmux - Win64 Release" || "$(CFG)" == "libmux - Win64 Debug"
-SOURCE=.\modules.cpp
+SOURCE=.\libmux.cpp
 
-"$(INTDIR)\modules.obj": $(SOURCE) "$(INTDIR)"
+"$(INTDIR)\libmux.obj": $(SOURCE) "$(INTDIR)"
 
 
 !ENDIF 

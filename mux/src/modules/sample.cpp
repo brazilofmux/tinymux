@@ -5,10 +5,9 @@
  *
  */
 
-#include "../copyright.h"
 #include "../autoconf.h"
 #include "../config.h"
-
+#include "../libmux.h"
 #include "../modules.h"
 #include "sample.h"
 

@@ -116,6 +116,7 @@ Bug Fixes:
     rather than reusing the SSLv3 context.
  -- Properly terminate uses of mux_exec().  Most of these are protected by
     EV_TOP or something else.
+ -- Attempt to make modules work on OS X (Darwin).
 
 
 Performance Enhancements:

@@ -1,0 +1,46 @@
+dnl Process this file with autoconf to produce a configure script.
+AC_INIT(../mudconf.h)
+AC_CONFIG_HEADER(autoconf.h)
+
+AC_CANONICAL_HOST
+AC_PROG_CC
+AC_PROG_CXX
+AC_PROG_CXXCPP
+AC_PROG_CPP
+case "$host" in
+*irix*) LIBS="-lm" ;;
+esac
+AC_ISC_POSIX
+AC_AIX
+AC_MINIX
+AC_HEADER_DIRENT
+AC_HEADER_STDC
+AC_HEADER_TIME
+AC_MSG_CHECKING(for dlopen)
+AC_CHECK_LIB(dl,dlopen)
+AC_TRY_LINK([
+    #include <dlfcn.h>
+    ],[
+    void *mh = dlopen("foo", RTLD_LAZY);
+    void *fp = dlsym(mh, "bar");
+    void *pe = dlerror();
+    int   cc = dlclose(mh);
+    ],[
+    AC_DEFINE(HAVE_DLOPEN)
+    case "$host" in
+    *darwin*) MODULE_EXT="so"
+              MODULE_TARGET="sample.so"
+              MODULE_CPPFLAGS="-bundle"
+              ;;
+    *)        MODULE_EXT="so"
+              MODULE_TARGET="sample.so"
+              MODULE_CPPFLAGS="-shared -fPIC"
+              ;;
+    esac
+    MUX_LIBS="-lmux"
+    ])
+AC_SUBST(MODULE_EXT)
+AC_SUBST(MODULE_CPPFLAGS)
+AC_SUBST(MODULE_TARGET)
+AC_SUBST(MUX_LIBS)
+AC_OUTPUT(Makefile)

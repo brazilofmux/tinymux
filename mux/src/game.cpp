@@ -23,7 +23,7 @@
 #include "muxcli.h"
 #include "pcre.h"
 #include "powers.h"
-#include "modules.h"
+#include "libmux.h"
 #if 0
 #include "modules/sample.h"
 #endif

@@ -583,6 +583,13 @@
 	".\timeutil.h"\
 	
 
+.\modules.cpp : \
+	".\autoconf.h"\
+	".\config.h"\
+	".\copyright.h"\
+	".\externs.h"\
+
+
 .\move.cpp : \
 	".\alloc.h"\
 	".\attrcache.h"\

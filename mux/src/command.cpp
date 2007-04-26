@@ -22,7 +22,7 @@
 #include "powers.h"
 #include "vattr.h"
 #include "pcre.h"
-#include "modules.h"
+#include "libmux.h"
 
 // Switch tables for the various commands.
 //
