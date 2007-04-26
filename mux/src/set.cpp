@@ -1254,9 +1254,9 @@ void do_set
         {
             p++;
 
-            attr_info *src = new attr_info(thing, pattr);
-            attr_info *dest = new attr_info(executor, p, false, false);
-            copy_attr(executor, *src, *dest, key);
+            attr_info src(thing, pattr);
+            attr_info dest(executor, p, false, false);
+            copy_attr(executor, src, dest, key);
             return;
         }
 
@@ -1341,32 +1341,30 @@ void do_cpattr(dbref executor, dbref caller, dbref enactor, int eval, int key,
         return;
     }
 
-    attr_info *src = new attr_info(executor, oldpair, false, true);
-    if (src->m_bValid)
+    attr_info src(executor, oldpair, false, true);
+    if (src.m_bValid)
     {
         for (int i = 0; i < nargs; i++)
         {
-            attr_info *dest = new attr_info(executor, newpair[i], true, false);
-            if (!dest->m_bValid)
+            attr_info dest(executor, newpair[i], true, false);
+            if (!dest.m_bValid)
             {
-                if (Good_obj(dest->m_object))
+                if (Good_obj(dest.m_object))
                 {
-                    dest->m_attr = src->m_attr;
-                    dest->m_bValid = true;
+                    dest.m_attr = src.m_attr;
+                    dest.m_bValid = true;
                 }
             }
-            if (dest->m_bValid)
+            if (dest.m_bValid)
             {
-                copy_attr(executor, *src, *dest, key);
+                copy_attr(executor, src, dest, key);
             }
-            delete dest;
         }
     }
     else
     {
         notify_quiet(executor, T("No match."));
     }
-    delete src;
 }
 
 void do_mvattr(dbref executor, dbref caller, dbref enactor, int eval, int key,
