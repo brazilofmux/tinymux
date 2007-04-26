@@ -1954,9 +1954,6 @@ static const UTF8 *DumpInfoTable[] =
 #if defined(FIRANMUX)
     T("FIRANMUX"),
 #endif
-#if defined(FIRANMUX_CONVERT)
-    T("FIRANMUX_CONVERT"),
-#endif
 #if defined(MEMORY_BASED)
     T("MEMORY_BASED"),
 #endif

@@ -64,14 +64,6 @@ SQLSLAVE    = @SQLSLAVE@
 #
 FIRANMUX    = @FIRANMUX@
 
-# Firan MUX Conversion. By default, this is off. This can be turned on by
-# running configure with --enable-firanmuxconvert. Firan MUX modifications
-# are necessary in order convert Firan's old database.  This should only
-# be done once. Typically, --enable-memorybased and --enable-firanmux are
-# also necessary.
-#
-FIRANMUX_CONVERT = @FIRANMUX_CONVERT@
-
 # Inline SQL support.  This provides an inline sql() function which links
 # to a MySQL database, providing softcode compatibility with the SQL support
 # in TinyMUSH 3.x and PennMUSH.
@@ -170,7 +162,7 @@ MORELIBS	= -lm
 # Auxiliary source files: only used by offline utilities.
 #
 AUX_SRC	= unsplit.cpp
-ALLCXXFLAGS = $(CXXFLAGS) $(OPTIM) $(DEFS) $(MEMORY_BASED) $(WOD_REALMS) $(REALITY_LVLS) $(QUERY_SLAVE) $(FIRANMUX) $(FIRANMUX_CONVERT) $(DEPRECATED) $(INLINESQL) $(INLINESQL_INCLUDE) $(SSL)
+ALLCXXFLAGS = $(CXXFLAGS) $(OPTIM) $(DEFS) $(MEMORY_BASED) $(WOD_REALMS) $(REALITY_LVLS) $(QUERY_SLAVE) $(FIRANMUX) $(DEPRECATED) $(INLINESQL) $(INLINESQL_INCLUDE) $(SSL)
 
 # Compiliation source files.
 #
