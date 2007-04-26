@@ -397,10 +397,6 @@ SOURCE=.\interface.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\levels.h
-# End Source File
-# Begin Source File
-
 SOURCE=.\mail.h
 # End Source File
 # Begin Source File
