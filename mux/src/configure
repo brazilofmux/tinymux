@@ -688,8 +688,10 @@ CXXCPP
 CPP
 GREP
 EGREP
-SHARED_TARGETS
-SHARED_LIBS
+DYNAMICLIB_EXT
+DYNAMICLIB_CPPFLAGS
+DYNAMICLIB_TARGET
+MUX_LIBS
 LIBOBJS
 LTLIBOBJS'
 ac_subst_files=''
@@ -5694,8 +5696,17 @@ eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
 #define HAVE_DLOPEN 1
 _ACEOF
 
-    SHARED_TARGETS="libmux.so"
-    SHARED_LIBS="-lmux"
+    case "$host" in
+    *darwin*) DYNAMICLIB_EXT="dylib"
+              DYNAMICLIB_TARGET="libmux.dylib"
+              DYNAMICLIB_CPPFLAGS="-dynamiclib"
+              ;;
+    *)        DYNAMICLIB_EXT="so"
+              DYNAMICLIB_TARGET="libmux.so"
+              DYNAMICLIB_CPPFLAGS="-shared -fPIC"
+              ;;
+    esac
+    MUX_LIBS="-lmux"
 
 else
   echo "$as_me: failed program was:" >&5
@@ -5706,6 +5717,8 @@ fi
 
 rm -f core conftest.err conftest.$ac_objext conftest_ipa8_conftest.oo \
       conftest$ac_exeext conftest.$ac_ext
+
+
 
 
 { echo "$as_me:$LINENO: checking for sys_errlist decl..." >&5
@@ -12434,13 +12447,15 @@ CXXCPP!$CXXCPP$ac_delim
 CPP!$CPP$ac_delim
 GREP!$GREP$ac_delim
 EGREP!$EGREP$ac_delim
-SHARED_TARGETS!$SHARED_TARGETS$ac_delim
-SHARED_LIBS!$SHARED_LIBS$ac_delim
+DYNAMICLIB_EXT!$DYNAMICLIB_EXT$ac_delim
+DYNAMICLIB_CPPFLAGS!$DYNAMICLIB_CPPFLAGS$ac_delim
+DYNAMICLIB_TARGET!$DYNAMICLIB_TARGET$ac_delim
+MUX_LIBS!$MUX_LIBS$ac_delim
 LIBOBJS!$LIBOBJS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 79; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 81; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5

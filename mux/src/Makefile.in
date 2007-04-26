@@ -2,6 +2,7 @@
 #
 # Search for the text 'CONFIGURATION SECTION' and make any changes needed
 # there.
+#
 
 SHELL=/bin/sh
 srcdir = @srcdir@
@@ -104,11 +105,11 @@ NETMUX_BASE_OBJ = _build.o alloc.o attrcache.o boolexp.o bsd.o command.o \
 	svdhash.o svdreport.o timer.o timeutil.o unparse.o vattr.o walkdb.o \
 	wild.o wiz.o
 
-# Base sources and object files for building libmux.so
+# Base sources and object files for building @DYNAMICLIB_TARGET@
 #
 LIBMUX_BASE_SRC = modules.cpp
 LIBMUX_BASE_OBJ = modules.o
-SHARED_LIBS = @SHARED_LIBS@
+MUX_LIBS = @MUX_LIBS@
 
 # Version number routines
 #
@@ -173,14 +174,14 @@ NETMUX_OBJ = $(NETMUX_BASE_OBJ) $(REALITY_OBJ)
 .cpp.o:
 	$(CXX) $(ALLCXXFLAGS) -c $<
 
-all: @SHARED_TARGETS@ netmux slave $(SQLSLAVE) links
+all: @DYNAMICLIB_TARGET@ netmux slave $(SQLSLAVE) links
 
 links: netmux slave $(SQLSLAVE)
 	cd ../game/bin ; rm -f dbconvert ; ln -s ../../src/netmux dbconvert
 	cd ../game/bin ; rm -f netmux ; ln -s ../../src/netmux netmux
 	cd ../game/bin ; rm -f slave ; ln -s ../../src/slave slave
 	( if [ -f sqlslave ]; then cd ../game/bin ; rm -f sqlslave; ln -s ../../src/sqlslave sqlslave ; fi )
-	( if [ -f libmux.so ]; then cd ../game/bin ; rm -f libmux.so; ln -s ../../src/libmux.so libmux.so ; fi )
+	( if [ -f @DYNAMICLIB_TARGET@ ]; then cd ../game/bin ; rm -f @DYNAMICLIB_TARGET@; ln -s ../../src/@DYNAMICLIB_TARGET@ @DYNAMICLIB_TARGET@ ; fi )
 
 sqlslave: sqlslave.o sqlshared.o
 	$(CXX) $(ALLCXXFLAGS) $(LIBS) $(QUERYLIBS) -o sqlslave sqlslave.o sqlshared.o
@@ -194,18 +195,18 @@ unsplit: unsplit.o
 netmux: $(NETMUX_OBJ) $(VER_SRC)
 	$(CXX) $(ALLCXXFLAGS) $(VER_FLG) -c $(VER_SRC)
 	( if [ -f netmux ]; then mv -f netmux netmux~ ; fi )
-	$(CXX) $(ALLCXXFLAGS) -o netmux $(NETMUX_OBJ) $(VER_OBJ) -L. $(LIBS) $(MORELIBS) $(INLINESQL_LIBS) $(SSL_LIBS) $(SHARED_LIBS)
+	$(CXX) $(ALLCXXFLAGS) -o netmux $(NETMUX_OBJ) $(VER_OBJ) -L. $(LIBS) $(MORELIBS) $(INLINESQL_LIBS) $(SSL_LIBS) $(MUX_LIBS)
 
-libmux.so: $(LIBMUX_BASE_SRC)
-	( if [ -f libmux.so ]; then mv -f libmux.so libmux.so~ ; fi )
-	$(CXX) $(ALLCXXFLAGS) -shared -fPIC -o libmux.so $(LIBMUX_BASE_SRC) $(LIBS) $(MORELIBS) $(INLINESQL_LIBS) $(SSL_LIBS)
+@DYNAMICLIB_TARGET@: $(LIBMUX_BASE_SRC)
+	( if [ -f @DYNAMICLIB_TARGET@ ]; then mv -f @DYNAMICLIB_TARGET@ @DYNAMICLIB_TARGET@~ ; fi )
+	$(CXX) $(ALLCXXFLAGS) @DYNAMICLIB_CPPFLAGS@ -o @DYNAMICLIB_TARGET@ $(LIBMUX_BASE_SRC) $(LIBS) $(MORELIBS) $(INLINESQL_LIBS) $(SSL_LIBS)
 
 depend: $(ALLSRC) unsplit
 	for i in $(NETMUX_SRC) $(AUX_SRC) slave.cpp sqlslave.cpp sqlshared.cpp ; do $(CXXCPP) $(ALLCXXFLAGS) -M $$i; done | sed -e 's:/usr[^ ]*[ ]*::g' | ./unsplit > .depend~
 	mv .depend~ .depend
 
 realclean:
-	-rm -f *.o a.out core gmon.out dbconvert config.status config.log netmux netmux~ libmux.so slave sqlslave Makefile
+	-rm -f *.o a.out core gmon.out dbconvert config.status config.log netmux netmux~ @DYNAMICLIB_TARGET@ slave sqlslave Makefile
 
 clean:
 	-rm -f *.o a.out core gmon.out warn.log config.status config.log netmux~
