@@ -8,8 +8,6 @@
 #ifndef STRINGUTIL_H
 #define STRINGUTIL_H
 
-#define T(x)    ((const UTF8 *)x)
-
 extern const bool mux_isprint_ascii[256];
 extern const bool mux_isprint_latin1[256];
 extern const bool mux_isdigit[256];
