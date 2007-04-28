@@ -8,6 +8,13 @@
 #ifndef STRINGUTIL_H
 #define STRINGUTIL_H
 
+#define mux_strlen(x)   strlen((const char *)x)
+
+inline bool isEmpty(const UTF8 *p)
+{
+    return ((NULL == p) || ('\0' == p[0]));
+}
+
 extern const bool mux_isprint_ascii[256];
 extern const bool mux_isprint_latin1[256];
 extern const bool mux_isdigit[256];
@@ -407,6 +414,7 @@ typedef UINT16 ColorState;
 #define COLOR_INDEX_MAGENTA     5
 #define COLOR_INDEX_CYAN        6
 #define COLOR_INDEX_WHITE       7
+#define COLOR_INDEX_DEFAULT     8
 
 #define COLOR_INDEX_FG_WHITE    (COLOR_INDEX_FG + COLOR_INDEX_WHITE)
 
@@ -1054,6 +1062,11 @@ public:
 
     friend class mux_words;
 };
+
+inline bool isEmpty(const mux_string *p)
+{
+    return ((NULL == p) || (0 == p->length()));
+}
 
 // String buffers are LBUF_SIZE, so maximum string length is LBUF_SIZE-1.
 // That means the longest possible list can consist of LBUF_SIZE-1 copies
