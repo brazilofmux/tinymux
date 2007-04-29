@@ -6676,7 +6676,7 @@ FUNCTION(fun_sql)
 
     UTF8 *curr = alloc_lbuf("fun_sql");
     UTF8 *dp = curr;
-    mux_exec(fargs[0], curr, &dp, executor, caller, enactor,
+    mux_exec(fargs[0], LBUF_SIZE-1, curr, &dp, executor, caller, enactor,
         eval|EV_STRIP_CURLY|EV_FCHECK|EV_EVAL, cargs, ncargs);
     *dp = '\0';
 
