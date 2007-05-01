@@ -13,9 +13,11 @@
 #include "config.h"
 #include "externs.h"
 
-#ifdef HAVE_DLOPEN
+#if defined(HAVE_DLOPEN) || defined(WIN32)
 
+#ifdef HAVE_DLOPEN
 #include <dlfcn.h>
+#endif // HAVE_DLOPEN
 
 #include "libmux.h"
 #include "modules.h"
@@ -264,4 +266,4 @@ MUX_RESULT CLogFactory::LockServer(bool bLock)
     return MUX_S_OK;
 }
 
-#endif // HAVE_DLOPEN
+#endif

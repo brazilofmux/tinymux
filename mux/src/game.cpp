@@ -23,7 +23,7 @@
 #include "muxcli.h"
 #include "pcre.h"
 #include "powers.h"
-#ifdef HAVE_DLOPEN
+#if defined(HAVE_DLOPEN) || defined(WIN32)
 #include "libmux.h"
 #include "modules.h"
 #endif

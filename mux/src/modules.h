@@ -10,7 +10,7 @@
 
 #ifndef MODULES_H
 #define MODULES_H
-#ifdef HAVE_DLOPEN
+#if defined(HAVE_DLOPEN) || defined(WIN32)
 
 #ifdef WIN32
 const UINT64 CID_Log        = 0x000000020CE18E7Ai64;
@@ -88,5 +88,5 @@ private:
 extern void init_modules(void);
 extern void final_modules(void);
 
-#endif // HAVE_DLOPEN
+#endif
 #endif // MODULES_H
