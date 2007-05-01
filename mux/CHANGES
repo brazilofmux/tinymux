@@ -286,6 +286,9 @@ Bug Fixes:
     322).
  -- Properly terminate uses of mux_exec().  Most of these are protected by
     EV_TOP or something else.
+ -- CLog::AppendLog() does not actually position log at end of existing
+    log file. Net result is only that first two lines (Containing to
+    INI/LOAD entries) are lost.
 
 
 Performance Enhancements:
