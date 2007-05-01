@@ -64,7 +64,26 @@ extern "C" DCL_EXPORT MUX_RESULT mux_GetClassObject(UINT64 cid, UINT64 iid, void
 
 extern "C" DCL_EXPORT MUX_RESULT mux_Register(void)
 {
-    return mux_RegisterClassObjects(NUM_CIDS, cids, NULL);
+    MUX_RESULT mrRegister = mux_RegisterClassObjects(NUM_CIDS, cids, NULL);
+
+    // Use of CLog provided by netmux.
+    //
+    ILog *pILog = NULL;
+    MUX_RESULT mr = mux_CreateInstance(CID_Log, IID_ILog, (void **)&pILog);
+    if (MUX_SUCCEEDED(mr))
+    {
+#define LOG_ALWAYS      0x80000000  /* Always log it */
+        if (pILog->start_log(LOG_ALWAYS, T("INI"), T("INFO")))
+        {
+            pILog->log_printf("Sample module Registered." ENDLINE);
+            pILog->end_log();
+        }
+
+        pILog->Release();
+        pILog = NULL;
+    }
+
+    return mrRegister;
 }
 
 extern "C" DCL_EXPORT MUX_RESULT mux_Unregister(void)
