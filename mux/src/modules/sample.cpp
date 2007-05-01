@@ -15,7 +15,7 @@ static INT32 g_cComponents  = 0;
 static INT32 g_cServerLocks = 0;
 
 #define NUM_CIDS 1
-static UINT64 cids[NUM_CIDS] =
+static UINT64 sample_cids[NUM_CIDS] =
 {
     CID_Sample
 };
@@ -64,7 +64,7 @@ extern "C" DCL_EXPORT MUX_RESULT mux_GetClassObject(UINT64 cid, UINT64 iid, void
 
 extern "C" DCL_EXPORT MUX_RESULT mux_Register(void)
 {
-    MUX_RESULT mrRegister = mux_RegisterClassObjects(NUM_CIDS, cids, NULL);
+    MUX_RESULT mrRegister = mux_RegisterClassObjects(NUM_CIDS, sample_cids, NULL);
 
     // Use of CLog provided by netmux.
     //
@@ -88,7 +88,7 @@ extern "C" DCL_EXPORT MUX_RESULT mux_Register(void)
 
 extern "C" DCL_EXPORT MUX_RESULT mux_Unregister(void)
 {
-    return mux_RevokeClassObjects(NUM_CIDS, cids);
+    return mux_RevokeClassObjects(NUM_CIDS, sample_cids);
 }
 
 // Sample component which is not directly accessible.

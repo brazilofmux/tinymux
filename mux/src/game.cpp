@@ -3134,7 +3134,6 @@ int DCL_CDECL main(int argc, char *argv[])
     init_attrtab();
     init_version();
 #ifdef HAVE_DLOPEN
-    Log.tinyprintf("%d" ENDLINE, __LINE__);
     init_modules();
 #endif
 
@@ -3300,6 +3299,7 @@ int DCL_CDECL main(int argc, char *argv[])
     // local extensions.
     //
     local_shutdown();
+    final_modules();
     CLOSE;
 
 #ifndef WIN32

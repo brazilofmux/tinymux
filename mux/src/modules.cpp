@@ -21,7 +21,7 @@
 #include "modules.h"
 
 #define NUM_CIDS 1
-static UINT64 cids[NUM_CIDS] =
+static UINT64 netmux_cids[NUM_CIDS] =
 {
     CID_Log
 };
@@ -59,7 +59,7 @@ extern "C" MUX_RESULT netmux_GetClassObject(UINT64 cid, UINT64 iid, void **ppv)
 
 void init_modules(void)
 {
-    MUX_RESULT mr = mux_RegisterClassObjects(NUM_CIDS, cids, netmux_GetClassObject);
+    MUX_RESULT mr = mux_RegisterClassObjects(NUM_CIDS, netmux_cids, netmux_GetClassObject);
     if (MUX_FAILED(mr))
     {
         STARTLOG(LOG_ALWAYS, "INI", "LOAD");
@@ -70,6 +70,23 @@ void init_modules(void)
     {
         STARTLOG(LOG_ALWAYS, "INI", "LOAD");
         log_printf("Registered netmux modules (%d)" ENDLINE, mr);
+        ENDLOG;
+    }
+}
+
+void final_modules(void)
+{
+    MUX_RESULT mr = mux_RevokeClassObjects(NUM_CIDS, netmux_cids);
+    if (MUX_FAILED(mr))
+    {
+        STARTLOG(LOG_ALWAYS, "INI", "LOAD");
+        log_printf("Failed to revoke netmux modules (%d)" ENDLINE, mr);
+        ENDLOG;
+    }
+    else
+    {
+        STARTLOG(LOG_ALWAYS, "INI", "LOAD");
+        log_printf("Revoked netmux modules (%d)" ENDLINE, mr);
         ENDLOG;
     }
 }

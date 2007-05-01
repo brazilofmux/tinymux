@@ -91,6 +91,7 @@ private:
 };
 
 extern void init_modules(void);
+extern void final_modules(void);
 
 #endif // HAVE_DLOPEN
 #endif // MODULES_H
