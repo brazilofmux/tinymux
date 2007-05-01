@@ -1,6 +1,6 @@
 // svdhash.cpp -- CHashPage, CHashFile, CHashTable modules.
 //
-// $Id: svdhash.cpp,v 1.44 2006/08/07 05:49:48 sdennis Exp $
+// $Id: svdhash.cpp,v 1.45 2007/05/01 03:54:30 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
@@ -2681,7 +2681,7 @@ void CLogFile::AppendLogFile(void)
 #ifdef WIN32
         SetFilePointer(m_hFile, 0, 0, FILE_END);
 #else // WIN32
-        lseek(m_hFile, 0, SEEK_SET);
+        lseek(m_hFile, 0, SEEK_END);
 #endif // WIN32
     }
 }
