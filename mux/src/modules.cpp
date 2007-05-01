@@ -28,10 +28,6 @@ static UINT64 netmux_cids[NUM_CIDS] =
 
 extern "C" MUX_RESULT netmux_GetClassObject(UINT64 cid, UINT64 iid, void **ppv)
 {
-    STARTLOG(LOG_ALWAYS, "INI", "LOAD");
-    ::log_printf("netmux_GetClassObject(%d, %d)" ENDLINE, cid, iid);
-    ENDLOG;
-
     MUX_RESULT mr = MUX_E_CLASSNOTAVAILABLE;
 
     if (CID_Log == cid)
@@ -152,17 +148,17 @@ bool CLog::start_log(int key, const UTF8 *primary, const UTF8 *secondary)
 
 void CLog::log_perror(const UTF8 *primary, const UTF8 *secondary, const UTF8 *extra, const UTF8 *failing_object)
 {
-    log_perror(primary, secondary, extra, failing_object);
+    ::log_perror(primary, secondary, extra, failing_object);
 }
 
 void CLog::log_text(const UTF8 *text)
 {
-    log_text(text);
+    ::log_text(text);
 }
 
 void CLog::log_number(int num)
 {
-    log_number(num);
+    ::log_number(num);
 }
 
 void DCL_CDECL CLog::log_printf(const char *fmt, ...)
@@ -177,32 +173,22 @@ void DCL_CDECL CLog::log_printf(const char *fmt, ...)
 
 void CLog::log_name(dbref target)
 {
-    log_name(target);
+    ::log_name(target);
 }
 
 void CLog::log_name_and_loc(dbref player)
 {
-    log_name_and_loc(player);
+    ::log_name_and_loc(player);
 }
 
 void CLog::log_type_and_name(dbref thing)
 {
-    log_type_and_name(thing);
-}
-
-void CLog::do_log(dbref executor, dbref caller, dbref enactor, int key, int nargs, UTF8 *whichlog, UTF8 *logtext)
-{
-    do_log(executor, caller, enactor, key, nargs, whichlog, logtext);
-}
-
-void CLog::log_flush(void)
-{
-    log_flush();
+    ::log_type_and_name(thing);
 }
 
 void CLog::end_log(void)
 {
-    end_log();
+    ::end_log();
 }
 
 // Factory for Log component which is not directly accessible.

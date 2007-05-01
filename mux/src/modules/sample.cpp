@@ -75,7 +75,7 @@ extern "C" DCL_EXPORT MUX_RESULT mux_Register(void)
 #define LOG_ALWAYS      0x80000000  /* Always log it */
         if (pILog->start_log(LOG_ALWAYS, T("INI"), T("INFO")))
         {
-            pILog->log_printf("Sample module Registered." ENDLINE);
+            pILog->log_printf("Sample module registered.");
             pILog->end_log();
         }
 

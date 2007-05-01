@@ -60,7 +60,28 @@ INTERFACE: Interface to query, schedule, and cancel lower-level tasks.
 INTERFACE: Task callback interface used by the lower-level queue routines.
 
 
-INTERFACE: Access to logging routines, the log file, and control of the log file.
+
+INTERFACE: Access to logging routines, the log file, and control of the log file (Done).
+
+const UINT64 CID_Log        = 0x000000020CE18E7Aull;
+const UINT64 IID_ILog       = 0x000000028B9DC13Aull;
+
+interface ILog : public mux_IUnknown
+{
+public:
+    virtual bool start_log(int key, const UTF8 *primary, const UTF8 *secondary) = 0;
+
+    virtual void log_perror(const UTF8 *primary, const UTF8 *secondary, const UTF8 *extra, const UTF8 *failing_object) = 0;
+    virtual void log_text(const UTF8 *text) = 0;
+    virtual void log_number(int num) = 0;
+    virtual void DCL_CDECL log_printf(const char *fmt, ...) = 0;
+    virtual void log_name(dbref target) = 0;
+    virtual void log_name_and_loc(dbref player) = 0;
+    virtual void log_type_and_name(dbref thing) = 0;
+
+    virtual void end_log(void) = 0;
+};
+
 
 
 INTERFACE: Access to basic conversions and utility functions.

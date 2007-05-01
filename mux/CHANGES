@@ -57,6 +57,7 @@ Feature Additions:
  -- Support Unicode in filenames on Unix and Win32.
  -- Allow @hook to work on exits, enter aliases, and leave aliases.
     (Issue 235)
+ -- Provide CLog module interface from netmux.
 
 
 Bug Fixes:

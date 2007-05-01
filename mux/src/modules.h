@@ -32,9 +32,6 @@ public:
     virtual void log_name(dbref target) = 0;
     virtual void log_name_and_loc(dbref player) = 0;
     virtual void log_type_and_name(dbref thing) = 0;
-    virtual void do_log(dbref executor, dbref caller, dbref enactor, int key, int nargs, UTF8 *whichlog, UTF8 *logtext) = 0;
-
-    virtual void log_flush(void) = 0;
 
     virtual void end_log(void) = 0;
 };
@@ -58,8 +55,6 @@ public:
     virtual void log_name(dbref target);
     virtual void log_name_and_loc(dbref player);
     virtual void log_type_and_name(dbref thing);
-    virtual void do_log(dbref executor, dbref caller, dbref enactor, int key, int nargs, UTF8 *whichlog, UTF8 *logtext);
-    virtual void log_flush(void);
     virtual void end_log(void);
 
     CLog(void);
