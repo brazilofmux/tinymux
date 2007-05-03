@@ -1,0 +1,60 @@
+
+#!/bin/sh
+#
+#	Startmux - Kick off the netmux process.
+#
+PATH=/usr/ucb:/bin:/usr/bin:.; export PATH
+#
+. mux.config
+#
+#	Make sure there isn't aready a MUX running.
+#
+nmux=`ps ux | egrep netmux | wc -l`
+if [ $nmux -gt 1 ]; then
+	exit 0
+fi
+#
+#	Make sure the indexes are up-to-date.
+#
+$BIN/mkindx $TEXT/news.txt $TEXT/news.indx
+$BIN/mkindx $TEXT/help.txt $TEXT/help.indx
+$BIN/mkindx $TEXT/wizhelp.txt $TEXT/wizhelp.indx
+$BIN/mkindx $TEXT/plushelp.txt $TEXT/plushelp.indx
+$BIN/mkindx $TEXT/wiznews.txt $TEXT/wiznews.indx
+#
+#	Save a copy of the previous input database and log.
+#
+if [ -r $DATA/$INPUT_DB ]; then
+	mv -f $DATA/$INPUT_DB $DATA/$SAVE_DB
+fi
+mv -f $LOGNAME $LOGNAME.old
+#
+#	If we have a good checkpoint database, make it the input database.
+#	If not, use the backup of the input database.
+#
+if [ -r $DATA/$NEW_DB ]; then
+	mv $DATA/$NEW_DB $DATA/$INPUT_DB
+else
+	cp $DATA/$SAVE_DB $DATA/$INPUT_DB
+fi
+#
+#	Remove the restart db if there is one.
+#
+if [ -r restart.db ]; then
+	rm restart.db
+fi
+
+#
+#	Refuse to start if CORRUPT or KILLED databases are present.
+#
+if [ -r $DATA/$INPUT_DB.KILLED -o -r $DATA/$INPUT_DB.CORRUPT -o -r $DATA/$INPUT_DB.CRASH ]; then
+	echo "There is a CORRUPT, KILLED or CRASH database present." 
+	echo "You should salvage what you can before continuing."
+	exit 1
+fi
+
+#
+#	Kick off MUX
+#
+(nohup $BIN/netmux $GAMENAME.conf >$LOGNAME 2>&1 &)
+

@@ -1,0 +1,583 @@
+These are the changes to TinyMUX since TinyMUSH 2.0.10 patchlevel 6 (which
+is documented in the file NOTES).  Refer to the online help for more
+information about new features or commands.
+
+Bugs and patches should be sent to:
+	lauren@sneakers.org
+
+TinyMUX 1.0 patchlevel 4:
+
+User level changes:
+- New switches to commands:
+    @pemit: /list
+    @teleport: /quiet
+    @dump: /optimize
+    @wall: /admin
+- New attributes:
+    @amail @atofail @mailsucc @otfail @signature @tofail
+- New commands: 
+    @cpattr @startslave think wiznews +help brief
+- New functions:
+    alphamax() alphamin() andflags() ansi() art() beep() children() columns()
+    cwho() dec() decrypt() default() die() edefault() elements() encrypt()
+    eval() findable() foreach() grab() grep() grepi() hasattr() hasattrp()
+    haspower() hastype() ifelse() inc() inzone() isword() last() list() lit()
+    lparent() matchall() mix() munge() objeval() objmem() orflags() playmem()
+    pmatch() ports() scramble() shl() shr() shuffle() sortby() strcat()
+    strtrunc() udefault() ulocal() vadd() vdim() vmag() vmul() vsub() vunit()
+    visible() zwho()
+- Side effect functions:
+    create() link() pemit() set() tel()
+- New flags:
+    AUDITORIUM: Enables SpeechLock checking.
+    ROYALTY: Can see things like a wizard, but can't modify.
+    FIXED: Can't teleport or go home.
+    UNINSPECTED: A marker flag for things which haven't passed inspection.
+    NO_COMMAND: Objects with this flag aren't checked for $-commands.
+    HEAD: Marker flag for group heads.
+    NOBLEED: Prevents color bleeding on systems where ANSI_NORMAL does not
+             work.
+    TRANSPARENT: Displays exits in a room in a long format.
+    STAFF: Marker flag for staff (no powers come with the flag).
+    MONITOR: When set on a player, shows MUSHwide connects and disconnects.
+    ANSI: When set on a player, enables output of ANSI color codes.
+- New config parameters
+    commac_database guest_nuker guest_prefix have_comsys have_ident 
+    have_macros have_mailer have_zones have_plushelp ident_timeout
+    mail_database mail_expiration number_guests parent_recursion_limit
+    plushelp_file plushelp_index wiznews_file wiznews_index
+    zone_recursion_limit
+- New search classes:
+    POWER ZONE
+- @list powers added.
+- @decompile now shows zones, and parents.
+- ANSI color support has been introduced. Names of things, rooms, and exits
+  may include ANSI color, and in most cases name checks will be matched as
+  if the name did not have color.
+- In addition to the ansi() function, the %c substitution may be used for
+  ANSI color. ANSI_NORMAL will be appended to any string that contains ANSI.
+- A channel system/comsystem has been added.
+- Comsystem commands:
+    @cboot @ccharge @ccheck @cchown @ccreate @cdestroy @cdiscover @cemit
+    @clist @coflags @cpflags @csec @cset @csweep @cundiscover @cusersec
+    @cwho addcom allcom comlist comtitle clearcom delcom tapcom
+- A new mail system has been introduced.
+- Mailer commands:
+    @mail @malias
+- Mailer manages a linked list for each player, hashed table of player
+  dbrefs in use.
+- Reviewing and retraction of mail sent to players added.
+- Mail sending rewritten to be more like Brandy@CrystalMUSH's +mailer.
+- A new macro system has been added.
+- Macro commands:
+    .add .chmod .create .CLEAR .def .del .desc .edit .ex .gex .list .undef
+    .status 
+- Support for multiple guests characters added, similar to old system, 
+  Guests are locked, set ANSI and NO_COMMAND, and inherit the zone,
+  parent, money, @desc, @aconnect and @disconnect of the prototype guest
+  character.
+- Zones have been implemented. Control of a zone object gives a player
+  control of all objects zoned to that object. Commands set on a zone object
+  will be inherited by all objects in that zone. @aconnects and @disconnects
+  are also inherited. @chzone is the command to change zones.
+- @aconnects and @adisconnects set on the master room are global.
+- Powers have been introduced, granting certain aspects of wizard power to
+  individual characters using @power.
+- Page command modified to take a list of players, in the format
+      page [<player-list>] = <message>
+  The last paged player or list of players can be paged with just
+      page <message>
+- Wizards may now 'cd' at the login screen to connect DARK.
+- Two new indexed files, for +help and wiznews. The file for +help may
+  include percent substitutions for color.
+- BUILDER is no longer a flag, converted to a power.
+- Wizards no longer obey any kind of lock.
+- RWHO code has been removed.
+- iter(), parse(), and @dolist now use #@ as a marker to show the position
+  within the list.
+- @edit now hilites the changed text.
+- Log now shows exact failed connect string.
+- #1 can no longer @newpassword itself.
+- Updated to read flat file databases up to PennMUSH 1.50 p13, will also
+  read DarkZone variant of PennMUSH database.
+- Speechlocks are now implemented, depends on the AUDITORIUM flag.
+- OUTPUT_BLOCK_SIZE defined in config.h, tune for your memory needs.
+- The commands SESSION, DOING, WHO, QUIT, LOGOUT, OUTPUTPREFIX, and
+  OUTPUTSUFFIX are no longer case sensitive after login.
+- The flags wizard, and hidden may now be @set on attributes.
+- Mail expiration checking added. Mail is automatically deleted after a
+  certain number of days. 
+- Minor bug in setinter() fixed, ex: setinter(a a a b b b, a a b b) 
+
+Internal code changes:
+- New functions nhash_firstentry and nhash_nextentry for numbered hashtables.
+- search_nametab now returns -2 if permission is not given.
+- Logged out commands no longer checked when player is connected, and have
+  been included in regular command table. SESSION, DOING, WHO, QUIT, LOGOUT,
+  OUTPUTPREFIX, and OUTPUTSUFFIX, when connected, affect all of the player's
+  logged in descriptors.
+- Username and hostname lookups now done by a slave process, to prevent lag
+  when a nameserver or ident server is locked up. Ident processing is done
+  much more reliably, with a 5 minute timeout.
+- functions.c split into functions.c and funceval.c. Most new functions are
+  in funceval.c.
+- The GNU database manager is required for use.
+- Attribute caching has been eliminated, object caching always used.
+- Beta port concentrator code introduced, not recommended.
+- When a switch is used, the permission for that command will no longer be
+  checked before the permission for the switch.
+- MOTD message length extended to 4096 bytes.
+- GOING objects are no longer saved, blank spaces are filled with GOING
+  objects when the database is loaded.
+- A bug which permits overflow of certain buffers from the connect screen
+  has been fixed.
+- @readcache memory leaks fixed, as well as possible buffer corruption in
+  decode_flags and flag_describe.
+- @alias now checks to see if the alias is a valid player name.
+- 'Three message' bug in @destroy, when two objects of the same name are
+  nearby, is fixed.
+- Many notify()'s in @list changed to raw_notify().
+
+TinyMUX 1.0 patchlevel 5:
+
+- New config parameters
+  fixed_home_message fixed_tel_message wizard_pass_locks
+- Code made clean to work with 64-bit systems.
+- @cpattr bugs fixed.
+- @aconnects and @adisconnects are now checked for every object in the
+  master room.
+- zfun crash bug with no arguments fixed.
+- Now loads parents from Penn systems correctly.
+- Problems with locks on Penn 1.50 p13 and p14 fixed.
+- Now able to load databases from TinyMUSH 2.2.1.
+- strcpy, strncmp rewritten as StringCopy, and StringCopyTrunc and made
+  inline (tested for future version).
+- Quota and RQuota attribute conversion from 2.2 done correctly now.
+- @set object/attribute=hidden|wizard works correctly.
+- New attribute flags displayed: M (mortal dark) W (wizard only)
+- Problems with attribute names of exactly 32 characters fixed.
+- Division by zero problem in COLUMNS() fixed.
+
+TinyMUX 1.0 patchlevel 6:
+
+- @cpattr modified to be more flexible.
+- Database compression works.
+- Events checking system added, only @daily implemented at the moment.
+  'eventchecking' parameter added to @enable/@disable.
+- Config parameter signal_action altered. On a fatal signal, the MUX either
+  dumps a crash database, attempts to dump core, and reloads the last
+  checkpointed database, or attempts to dump core and exits.
+- New attributes:
+  @daily
+- New commands:
+  @program @quitprogram @restart
+- New functions:
+  empty items peek pop push
+- New powers:
+  prog
+- New switches:
+  @mail - /cc
+- New config parameters:
+  cache_trim events_daily_hour guests_channel public_channel site_chars
+  stack_limit
+- Config parameters removed:
+  abort_on_bug cache_steal_dirty garbage_chunk gdbm_cache_size have_ident 
+  have_plushelp ident_timeout recycling
+- Logged out commands (WHO, QUIT, etc) now only work for the descriptor that
+  executes them.
+- Both memory based and disk based (default) database handling are available
+  via options in the Makefile.
+- Radix string compression is now available via options in the Makefile
+  (Andrew Molitor)
+- @mail/fwd now allows you to edit a message before sending.
+- @mail/read now includes a To: field which shows multiple recipients of a
+  message.
+- You may now place quotes around a multiple word name when using @mail.
+- You may now mix player names, mail aliases, and mail numbers to be replied
+  to in any @mail player list.
+- Channel usage now costs a set amount of money, specifiable by the channel
+  owner or a wizard.
+- @nuke of any object (players, exits, things, and rooms) sets an object
+  GOING, and destroys the object during the next database check. This is the
+  way rooms were destroyed in earlier patchlevels.
+
+Internal code changes:
+- Wildcard routines modified slightly for speed.
+- Hashing is smart: often used keys are looked up faster.
+- Bugs in @malias fixed, mortals can no longer delete global aliases.
+- Attribute and evaluation locks are written out using attribute names
+  instead of numbers, to be friendlier to database filters. (Andrew Molitor)
+- Attributes are looked up on an object using a binary search. (Andrew
+  Molitor)
+- Database chunk code reworked to make the allocation strategy of large
+  continuously growing objects better. (Andrew Molitor)
+- An empty third argument to fold() is treated as an empty base case.
+- M_READ in mail.h changed to M_ISREAD for Solaris compatibility.
+- Floating point exceptions under Linux fixed (Darrin Wilson)
+- squish() no longer squishes newlines and tabs.
+- Under Linux, optimized versions of string functions are used.
+- ToUpper() and ToLower() are now simple macros.
+- @mail/stats now works correctly.
+- Comsys bug involving large numbers of players on a channel fixed.
+- New style of management for mail messages prevents duplicated copies of
+  messages to multiple recipients.
+- Channel owners may use cwho().
+- Fixed memory leaks involving queue overflows.
+- Improved malloc debugging, with makefile options.
+- Garbage objects are now of type TYPE_GARBAGE, instead of TYPE_THING.
+- Minor bug with zone control fixed.
+- Fixed memory leaks in sortby, foreach, and zfun.
+- Fixed memory leaks in sortby, foreach, and zfun.
+
+TinyMUX 1.1 patchlevel 0:
+
+- New config parameters:
+  use_http concentrator_port
+- New flags:
+  VACATION - set only by wizards, reset when player connects. Helps mark
+  inactive players who will eventually return.
+- WWW support, in conjunction with 'muxcgi' external CGI program.
+  (to be enabled in patchlevel 1)
+- Concentrator integrated and made part of MUX distribution.
+  (to be enabled in patchlevel 1)
+- Fixed bug in @mail/quick.
+- Fixed bug with names and pennies of cloned objects disappearing.
+- Parser changed for speed, and all functions modified to support the new
+  parser changes. (idea by T. Alexander Popiel)
+- Guests are no longer set ANSI and NO_COMMAND by default, they follow
+  the player_flags parameter.
+- Names in page and mail lists are now seperated by commas.
+- When given a dbref number, pmatch() will evaluate identically to num().
+- Fixed bad names bug which allowed multiple players of the same name.
+- Fixed bug that corrupted database on disk-based databases when LBUF_SIZE
+  was changed. Buffer lengths may be freely changed.
+- Buffer lengths doubled.
+- WHO now shows the record number of players connected since startup, and
+  the maximum number of players allowed online.
+- @mail bugs that caused random seg faults fixed.
+- Fixed crash bug with push() used with no arguments.
+- If an object or it's owner is set DESTROY_OK, it is destroyed with no
+  delay when @destroy'ed.
+- Added a 3rd flag word.
+- Problems loading some Penn 1.50.p15 databases fixed.
+- @list process now shows number of descriptors available to the process.
+- pemit() args are now only evaluated once.
+
+TinyMUX 1.1 patchlevel 1:
+
+- New functions:
+  setr
+- New switches:
+  @function/preserve: Preserves registers across user defined functions.
+- New exec() option: EV_NO_LOCATION, surpresses use of %l in an expression.
+- The enactor for Idle, Away, and Reject messages is now the paging player.
+  Messages are not sent if they evaluate to nothing. %l surpressed.
+- 'GARGAGE' type added to search classes.
+- Problem with @daily attributes fixed.
+- pemit() and @pemit/list check for permission.
+- @decompile now works with obj/attr, and takes wildcards for the attr.
+- Database strings are now encapsulated using quotation marks, ala PennMUSH.
+- queue_write now uses MBUFs to store output, instead of malloc.
+- Record number of players is now stored permanently in the database, using
+  tag of '-R<number>'.
+- @malias/add and @malias/remove may now take dbrefs as arguments.
+- MBUF_SIZE reduced to 200 bytes.
+- Dark players leaving/joining a channel do not emit messages on the
+  channel.
+- Fixed problem with name() on exits without aliases.
+- @restart now works consistently along with database checkpointing, and is
+  more reliable.
+- Database consistency checking introduced, using checksums. Checks are made
+  on strings in memory, as well as disk-based strings. When corruption is
+  found, <gamename>.db.CORRUPT is dumped and the process exits. This is
+  designed to detect unknown modification of strings in memory and on disk.
+  Note that it will not fix corruption, only keep it from going unnoticed.
+  Regular backups are the only way to ensure data integrity.
+- A termination signal will cause the MUX to dump to the flatfile
+  <gamename>.db.KILLED instead of dumping normally.
+- The 'Startmux' script will refuse to start if either <gamename>.db.KILLED
+  or <gamename>.db.CORRUPT are present, in case they are unnoticed.
+
+TinyMUX 1.2 patchlevel 0:
+
+- Changed LBUF allocs that preserve global registers around user define
+  functions to malloc()'s, to reduce the amount of buffers built up
+  by recursion.
+- Eliminated obsolete next_timer(). (Mars@SolMUX)
+- Fixed bug that causes output buffer overflows.
+- Fixed bad malias errors.
+- Fixed @mail to work properly with radix compression.
+- Players with expanded_who can see dark wizards on channels.
+- Configuration parameter 'wizard_pass_locks' removed, power 'pass_locks'
+  added.
+- Appending and prepending mail text shows number of characters
+  written/maximum.
+- Non-MUX specific db code is now only compiled into the dbconvert
+  executable. Removed support for old PernMUSH databases.
+- Buffer pools are reset at database check time.
+- A cache of names that have been stripped of ANSI codes is kept, if
+  cache_names is on, for faster matching.
+- You can use mail alias numbers with @malias/delete.
+- Fixed V_ATRMONEY database flag and reinstituted it as a database flag.
+- @malias/delete now takes an alias prefixed with *.
+- Fixed memory leaks in the @mail code.
+- Fixed @program memory leaks.
+- Swapped around some malloc/buffer pool allocations.
+- @malloc/add and remove work with names again.
+- Fixed a very, very obsure problem that crashes the MUX when you output
+  exactly 16,384 characters. (Mars@SolMUX)
+- Fixed mail() to work with radix compression.
+- Fixed @program crashes when a player who was logged in more than once and
+  in an @program disconnected.
+- No longer goes into an infinite db saving loop when it detects corruption.
+  Simply exits.
+- Objects may listen on channels.
+- When a player who is already in an @program reconnects, the new connection
+  is dropped to the @program prompt.
+- ports() works properly when a player is logged in more than once.
+- Mail errors are sent correctly when using radix compression.
+
+TinyMUX 1.3 patchlevel 0:
+- New flags:
+  GAGGED
+- New functions:
+  lstack()
+- @wait command syntax modified to allow blocking on attributes other than
+  'Semaphore'.
+- Vattr code rewritten to use standard hashing code, redundant code
+  optimized.
+- Code REALLY made clean for 64-bit systems (IE, Alpha running Digital
+  UNIX :)
+- Removed database consistency checking.
+- New command @dbclean, removes stale attribute names from the database.
+- Default cache size reduced to 20x10.
+- Pueblo support integrated into the distribution, see "help pueblo".
+- Fixed @clone/cost bug that allowed players to get arbitrary amounts of money.
+- set() and create() now return #-1 PERMISSION DENIED.
+- after() crash bug with invalid arguments fixed.
+- idle_wiz_dark config parameter now applies to all players with the Idle
+  power.
+- Zone bug when enterlock is using an attribute key fixed.
+- Fixed builder power to enable a player to build when global building is
+  turned off... expected behavior, but never worked.
+- .ex or .gex on a macro longer than 192 characters no longer crashes the
+  MUX.
+- @decompiling an attribute on an exit now returns a string using the exit's
+  first alias.
+- New switch for @decompile: /dbref, which uses an object dbref instead of
+  the object's name in the output.
+- You may now specify @pemit/list/contents, or @remit/list.
+- New command: @addcommand. See 'wizhelp @addcommand'. God only.
+
+TinyMUX 1.3 patchlevel 1:
+- Fixed wizhelp entry for @addcommand.
+- Fixed grep() and grepi() behavior.
+- Fixed slave.c for Solaris 2.5.
+- Makes @addcommand god only.
+
+TinyMUX 1.3 patchlevel 2:
+- Fixed a bug with zone checking involving using an evaluation lock in the
+  EnterLock for a zone.
+
+TinyMUX 1.3 patchlevel 3:
+- Fixed a bug where the MUX would not save the mail or comsystem
+  databases when restarting, or dumping a crash/killed database. It also
+  enables the use of command switches for commands added by @addcommand to the
+  global built-in table.
+
+TinyMUX 1.3 patchlevel 4:
+- New command: @mail/safe
+- DARK wizards are no longer visable on the @cwho
+- Permissions for @cboot work correctly
+- The boot message @cboot generates is now correct
+- @wait/<number> no longer crashes the game
+- columns() with a field argument >78 is no longer allowed
+- lcon() no longer has a leading space
+- before() now works properly
+- Some log errors recognize type GARBAGE now
+- 'go home' is now bound by the FIXED flag
+- Lookups on an incomplete player name when the player is DARK fails...
+  it was possible to use this to see if a DARK player was connected
+- You cannot restart while the game is dumping
+- configuration for the radix library no longer looks for gawk, which is
+  broken
+- A small memory leak in help fixed
+- Numerous memory leaks in the disk based database code fixed
+
+TinyMUX 1.4 patchlevel 0:
+- New commands:
+  @delcommand @listcommands
+- New config paramater 'indent_desc' will automatically put a space before
+  and after object, room, and exit descriptions when being looked at.
+- The built-in macro system has been removed. You MUST change your config
+  file parameter 'commac_database' to 'comsys_database'!
+- Fixed bugs causing problems with '#-1 PERMISSION DENIED' in function
+  return values.
+- @decompile now includes ansi codes when printing names which have ansi
+  color imbedded.
+- Fixed zone problem that would crash the MUX periodically when a object was
+  examined.
+- You can no longer use objeval on #1.
+- ifelse() only evaluates the necessary arguments.
+- foreach() now takes two additional arguments: one to begin parsing, and 
+  one to end parsing.
+- strcat() now takes 1 to n arguments.
+- Range checking in delete() fixed.
+- New function: case() is like switch(), but does no wildcard matching.
+- 'news' now understands ANSI substitutions much like '+help' does.
+- Sets guest characters DARK when they disconnect, so they'll not emit
+  messages when a new guest connects.
+- The new mail check now always occurs upon login.
+- @addcommand now renames replaces built-in commands to '__<command name>'.
+- @wait <n>=@restart will no longer crash the MUX.
+- @oemit now works as described in the help, no longer only in the executing 
+  player's location.
+
+TinyMUX 1.4 patchlevel 1:
+- This fixed a problem with the help for mail(), a crashing problem with
+  repeat(), and a compiling problem with patchlevel.h.
+
+TinyMUX 1.4 patchlevel 2:
+- This patch fixes a problem with patchlevel.h, as well as a problem with
+  @delcommand where restoring a built-in command was not functioning properly.
+
+TinyMUX 1.4 patchlevel 3:
+- Fixed problems with zone recursion, as well as a problem with examining a
+  zoned object and seeing all attributes as the same name.
+- All semaphores are now cleared on objects when they are destroyed.
+- @clone now creates object with the correct cost.
+- Fixed problem with @oemit that crept in 1.4p0.
+
+TinyMUX 1.4 patchlevel 4:
+- Fixed problems with makefile
+
+TinyMUX 1.4 patchlevel 5:
+- Fixed player-only permission for @doing
+- Fixed queue problem in cque.c
+- Fixed zone recursion problem
+- Control in zwho() and inzone() now handled properly
+- Fixed buffer problems with columns(), center(), and @mail
+
+TinyMUX 1.4 patchlevel 6:
+- addcommand now properly evaluates input
+- null pointer bug in queue code fixed (Myrrdin)
+- name can no longer be just ansi characters (Marlek)
+- length checking in do_attribute and atr_str fixed (Robby Griffin)
+- permissions in zwho, inzone, and objeval fixed (Geoff Gerrietts, Marlek)
+- @daily attribute now properly cleared (Peter Clements)
+
+TinyMUX 1.4 patchlevel 7:
+- Fixed more command queue problems
+
+TinyMUX 1.4 patchlevel 8:
+- Fixed a naming bug in @create.
+
+TinyMUX 1.4 patchlevel 9:
+- Fixed @addcommand problems
+- A problem with halting an object with commands still in the queue
+- A string trunction problem with mail alias names
+- A problem when mudconf.createmin == mudconf.createmax
+- hastype() no longer requires examinable
+
+TinyMUX 1.4 patchlevel 10:
+- Fixed more @addcommand problems
+- Fixed problem with ifelse() involving a misplaced pointer and conditional
+
+TinyMUX 1.4 patchlevel 11:
+- Fixed segv bug in do_mvattr cause by lack of a pointer check
+- A bind_and_queue call in walkdb.c was missing an argument
+
+TinyMUX 1.4 patchlevel 12:
+- Munged queue code
+- Fixed 'restrict' variable which is a keyword in Linux 2.0.30
+
+TinyMUX 1.4 patchlevel 13:
+- Fixes single-letter leadin support for @addcommand
+- Fixes buffer overflow problem with addcom
+  Reported by StormBringer <sb@cygnus.ImagingA.com>
+
+TinyMUX 1.4 patchlevel 14:
+- Fixed flag functions to not report dark and connected to non-wizards
+  (Soruk@AuroraMUSH)
+- Fixed help for inc() and dec() (Jeff Gostin)
+- Names of objects may not exceed MBUF_SIZE
+- @program help fixed (Kevin@FiranMUX)
+- trunc() and round() now behave correctly with floating point and negative
+  arguments (Robby Griffin)
+- Many buffer overflows fixed (Robby Griffin)
+- Only players can be added to mail aliases, and array overflow problem with
+  @malias fixed (Robby Griffin)
+- Other minor bugfixes
+
+TinyMUX 1.4 patchlevel 15:
+- safe_tprintf_str now NULL terminates its output
+
+
+TinyMUX 1.5 patchlevel 0:
+- New functions:
+  regmatch() translate()
+- Regular expressions may now be used in command patterns and listen patterns
+  with the addition of a 'regexp' attribute flag. See 'help REGEXPS'.
+- Piping of command output has been implemented. See 'help piping'. This
+  may break some code... have to write conversion script.
+- @addcommand now works with single letter commands (". :, ;, etc) however
+  the original commands may *not* be accessed by prefixing with __.
+
+TinyMUX 1.5 patchlevel 1:
+- Fixed new command queue problem introduced by piping, where a current
+  queue entry could be overwritten while executing. Reported by Robby Griffin.
+
+TinyMUX 1.5 patchlevel 2:
+- NOTE: This patch REQUIRES a reload from flatfile. Please backup your
+  database before you install this patch.
+- Integrated 1.4p11 fixes
+- Fixed 'help PIPING'
+- Removed redundant queue checking code in cque.c
+- Added set_prefix_cmds() declaration
+- Added translate() and regmatch() declarations :)
+- Removed old 'fix_ansi()' code
+- Database chunk code reworked to store all object text directly in the
+  GDBM database, rather than the old method of storing an index in the GDBM
+  database that pointed into a 'chunk file'. The <gamename>.gdbm.db
+  'chunk file' is no longer needed.
+
+TinyMUX 1.5 patchlevel 3:
+- Fixed problem with dbconvert that prevented loading from flatfile
+- Changed CHARBITS in regexp code to CHARMASK since some systems define
+  CHARBITS
+- Integrated 1.4p12 fixes
+- Change to @addcommand code to allow for ':' and ';' to be replaced
+
+TinyMUX 1.5 patchlevel 4:
+- Integrated 1.4p13 fixes
+- Adds missing argument to fn_range_check in regmatch()
+
+TinyMUX 1.5 patchlevel 5:
+- Memory leaks in the database code fixed
+- Integrated 1.4p14 fixes
+
+TinyMUX 1.5 patchlevel 6:
+- Integrated 1.4p15 fix
+
+TinyMUX 1.5 patchlevel 7:
+- Integrated 1.4p16 fixes
+
+TinyMUX 1.6 patchlevel 0:
+- Finally fixed remaining database memory leaks
+- Fixed out of range error in mid() (Xidus@Empire2710)
+- No embedded newlines in channel titles (Reported by Robby Griffin)
+- @clone may not be used to create an object with an ANSI code as its name
+  (Reported by Robby Griffin)
+- name() no longer causes problems on exit names which lack semicolons
+  (Reported by Robby Griffin)
+- No spurious prompts from @program after a @quitprogram (Kurt Fitzner)
+- lexits() no longer leaves a leading space (Kurt Fitzner)
+- o-messages (@odrop, @osucc) will no longer generate any messages if the
+  attribute evaluates to a null string (Kurt Fitzner)
+- @notify <object>/<attr> no longer incorrectly returns "Permission Denied"
+  on some platforms (Reported by Robby Griffin)
+- Extending a number past the end of a buffer with certain floating point
+  functions no longer causes crashes (Reported by Robby Griffin)
+- Fixed @cdestroy permissions (Reported by Robby Griffin)
+- Fixed problem with stripping spaces after function names when
+  space_compress is turned on. (Robby Griffin)

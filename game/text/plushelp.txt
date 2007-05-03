@@ -1,0 +1,6 @@
+& help
+This is the indexed +help file, like help and news. This is the ONLY text
+file that may include the ansi color substitutions, like \%ch and \%cn.
+It handles these on a line by line basis.
+
+

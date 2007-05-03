@@ -1,0 +1,38 @@
+Using multiple guests is easy, and after you set it up, you'll never have to
+worry about it again. Here are the steps needed to implement multiple
+guests:
+
+1. @pcreate a prototype guest character. Name it whatever you want (altho
+you should use a descriptive name like 'Guest'), and use any password you
+want (it doesn't really matter, as the prototype guest can never connect).
+Set guest_char_num to the database number of the prototype guest character.
+
+2. You may want to set the following things on the prototype guest
+character, which are inherited by every guest character: the amount of
+money, the zone, the parent, the basic lock, the enter lock, and all
+attributes. (NOTE: Guests always start off in the room specified by the
+player_starting_room).
+
+3. Set the config parameter 'guest_prefix' to whatever you want your guests
+to be named (this defaults to 'Guest'). MUX keeps track of multiple guests
+by naming them using a numbering system: <prefix><number>. For example,
+Guest1, Guest2, Guest3, etc. People who wish to connect as a guest will have
+to use this prefix, for example, if 'guest_prefix' was set to 'Visitor', one
+would have to type 'connect visitor' to log in as a guest.
+
+4. Set 'number_guests' to the maximum number of guests you wish to support.
+This number can be as small or as large as you wish.
+
+5. Optionally, set 'guest_nuker' to a wizard's database number, if you wish
+to have a wizard other than #1 to nuke the guests.
+
+
+Miscellaneous information:
+-------------------------
+
+The file specified by the config parameter 'guest_file' is shown to every
+guest when they connect. You may wish to use the 'access' config parameter
+to bar guests from using certain commands, using the 'no_guest' permission.
+All guests have the 'Guest' power, which is a marker you may use to test
+whether a player is a guest or not. Guests are also set ANSI and NO_COMMAND.
+

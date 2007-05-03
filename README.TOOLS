@@ -1,0 +1,29 @@
+
+	To generate the tools in the src/tools directory, change to that
+directory, and do a 'configure', and then a 'make'. Some of the tools here
+require awk. You can ftp GNU awk from ftp.gnu.ai.mit.edu. The tools
+currently only support a disk-based database.
+--------------------------------------------------------------------------
+	There's a binary here, in rawreport.c which walks your gdbm
+database and runs out a raw report of the form:
+
+Object 214 resides at offset 31488 and takes 312 bytes
+Object 17 resides at offset 4352 and takes 7125 bytes
+etc..
+
+	There's also a shell script, report.sh and an awk script useful
+for generating histograms from input. The basic plan is that you find
+your gdbm database, for example if your database lives in files:
+
+foo.gdbm.db
+foo.gdbm
+
+	then your database is named 'foo.gdbm'. Then you can 'report.sh
+foo.gdbm' to get pretty pictures of stuff. Since the shell script wants to
+find both the raw reporter 'rawreport' and the awk script 'histogrammer' in
+the path, it's probably best to run this in the tools subdirectory, and point
+it at the database file with an explicit path. For example:
+
+report.sh ../../game/data/tinymush.gdbm
+
+	or something.

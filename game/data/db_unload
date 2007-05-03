@@ -1,0 +1,14 @@
+#!/bin/sh
+PATH=/bin:/usr/bin:
+#
+#	Convert from arbitrary format to MUX V2 flat file format.
+#
+echo NOTE: Make sure the MUX is NOT running before you make a flatfile. 
+case $# in
+	1)	../bin/dbconvert $1 x ;;
+	2)	../bin/dbconvert $1 x <$2 ;;
+	3)	../bin/dbconvert $1 x <$2 >$3 ;;
+	*)	echo Usage: $0 'gdbm_file [source_file [dest_file]]'; exit 1 ;;
+esac
+
+exit 0

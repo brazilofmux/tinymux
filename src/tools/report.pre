@@ -1,0 +1,51 @@
+#
+# Generates a raw report of the database and generate some reports from it.
+#
+
+RAWREPORT=raw.report.$$
+if [ $# != 1 ]; then
+	echo "Usage: $0 <tinymush database name>"
+	exit 1;
+fi
+
+if rawdump $1 > $RAWREPORT; then
+	rm -f $RAWREPORT;
+	exit 1;
+fi
+
+#
+# Generate a list of the top ten
+#
+echo ""
+echo "		Top 20 objects in order by size"
+echo ""
+echo ""
+# CONFIG: Too see more or fewer objects, make the argument to 'head' bigger
+# CONFIG: or smaller. The default is 'head -20' which shows you the top 20.
+sort -r -n +8 -9 $RAWREPORT | head -20
+#
+# Generate a histogram of object sizes.
+#
+echo ""
+echo "		Object sizes present in database"
+echo ""
+echo ""
+# CONFIG: change the value of 'squash', smaller yields more fine grained
+# CONFIG: detail, larger gives less. If you want to see detail on
+# CONFIG: objects bigger than 25000 or you'd like to suppress information
+# CONFIG: at a cut-off point lower than that, change the value of cutoff.
+cat $RAWREPORT | $AWK -f histogrammer col=9 squash=100 cutoff=25000
+#
+# Generate a histogram of where in the database things live
+#
+echo ""
+echo "		Object locations in database"
+echo ""
+echo ""
+# CONFIG: change the value of 'squash', smaller yields more fine grained
+# CONFIG: detail, larger gives less.
+cat $RAWREPORT | $AWK -f histogrammer col=6 squash=100000
+#
+# Cleanup
+#
+rm -f $RAWREPORT

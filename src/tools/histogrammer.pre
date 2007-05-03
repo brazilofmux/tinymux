@@ -1,0 +1,108 @@
+#
+# Generate a histogram from a mess of input numbers.
+# It's configurable:
+#   squash -- an amount to divide the number by on input
+#   col -- the column of input having the numbers to histogram
+#   screenwidth -- width of your screen, in characters
+#   screenheight -- height of your screen, in characters
+#   vertical -- set it to 1 if you want a continuous histogram with
+#               horizontal bars, or 0 if you want a horizontal histogram
+#               with multiple pages of output (if necessary) and vertical
+#               bars.
+#   hex -- set it to one to accept hexadecimal input numbers, otherwise it
+#               does decimal
+#
+BEGIN {
+	# CONFIGURATION SECTION
+
+	screenwidth = 75;
+	screenheight = 23;
+
+	# END CONFIGURATION SECTION
+
+	# If the cutoff hasn't been configured, set it to more-or-less infinity
+	if(cutoff == 0)
+		cutoff = 1000000000;
+
+	min = 1000000000;
+	max = 0;
+}
+
+END {
+	horizontal_display();
+}
+
+# For every input line, record the value in the col'th column
+# in the 'raw' array.
+
+{
+	if(NF < col)
+		next;
+
+	val = $col;
+	if(val > cutoff)
+		val = cutoff;
+
+	val = int(val / squash);
+	raw[val]++;
+	if(min > val)
+		min = val;
+	if(max < val)
+		max = val;
+}
+
+function horizontal_display()
+{
+	maxcount = 0;
+	for(i = min; i <= max; i++) {
+		if(raw[i] > maxcount)
+			maxcount = raw[i];
+	}
+
+	width = screenwidth - 10;
+	height = screenheight - 3;
+	pages = int(max / width) + 1;
+
+	for(i = 0; i < pages; i++) {
+		# Do a page, line by line
+		for(j = height; j > 0; j--) {
+			if(j == height) {
+				printf("%8d |", maxcount);
+			} else if(j == 1) {
+				printf("%8d |", 0);
+			} else {
+				printf("         |");
+			}
+			# Do a line, a character at a time
+			for(k = 0; k < width; k++) {
+				idx = (i * width) + k;
+				stars = (raw[idx] * height) / maxcount;
+				if(stars > j || (j == 1 && raw[idx] > 0))
+					printf("*");
+				else
+					printf(" ");
+			}
+			printf("\n");
+		}
+		# Put out a scale
+		printf("          ");
+		for(k = 0; k < width; k++)
+			printf("-");
+		printf("\n");
+		printf("          ");
+		for(k = 0; k < (width - 15);) {
+			if(k % 20 == 0) {
+				label = (k + (i * width)) * squash;
+				if(hex)
+					printf("0x%x",label);
+				else
+					printf("%d", label);
+				k += length(label "");
+			} else {
+				printf(" ");
+				k++;
+			}
+		}
+		printf("\n\014");
+	}
+}

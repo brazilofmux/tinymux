@@ -1,0 +1,23 @@
+TinyMUX 1.2.0 is available from:
+	ftp://ranger.range.orst.edu/pub/cota/source/tinymux-1.2.0.tar.gz
+
+TinyMUX 1.2 is the first TinyMUX package using a new, more flexible
+method of beta testing and distribution. Starting with 1.2, TinyMUX will
+split into two versions which will be maintained at the same time. The minor
+version number (1.x) will indicate which type the package is. If you are
+familiar with the distribution method for Linux kernels, they are very
+similar.
+
+Even numbered versions, beginning with 1.2, will be know as the 'stable'
+distributions. The only changes and patches to these distributions will be
+bug fixes. No new features will be added.
+
+Odd numbered versions, beginning with 1.3, will be 'beta' distributions.
+These will be under constant development, and while bug fixes will be
+distributed for them, new bugs will likely crop up with changes and new
+features.
+
+When the beta distribution finally moves towards relative stability, the
+cycle will begin anew, and version numbers will be incremented. Databases
+between the stable and beta distributions will be interchangable, so users
+are encouraged to try out the beta versions.
