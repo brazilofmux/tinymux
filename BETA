@@ -1,0 +1,59 @@
+TinyMUX 2.0:  BETA 6
+Last Update:  March 2000
+
+General Cautions During the Beta Period:
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+TinyMUX 2.0 has been tested in various situations and stress loads from 
+games like Pacifica for nearly a year.  It has been running working 
+production games for as long under close watch from the devteam.  We've 
+thrown trashy ansi and nightmarish databases at it, made it do 
+terrible things that made it choke, turn blue, and crash.  We even let
+Ashen-Shugar beat on it a while.  
+
+As a result of this abuse, 283 bugs have been fixed. Even though there are
+28 bugs still left to fix, these are mostly feature requests. There are no
+known crashing bugs. There are no known priority 1 bugs left.  These stats
+don't make the server bug free, but we are confident enough to put the
+code into Beta release to see what others might show up along the way.
+However, it is our belief, that this is the best and most stable version
+of TinyMUX available.
+
+Please take the time to read the expanded and updated README.  These files 
+should be helpful.  If there are problems with them, please report it as a
+documentation bug and we'll make sure it gets fixed.
+
+If you port an existing game to this beta:
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+    - Make frequent backups.  We cannot stress this enough.  The included 
+      Backup script is your friend and should make this process effortless. 
+    
+    - Make complete backups of all of your config, text, mail, and 
+      comsystems.
+    
+    - Store your backups offsite.  This was always prudent anyway.
+    
+    - Run your game as usual.
+    
+    - Report Bugs to sdennis@svdltd.com following the prcedure in README.
+
+
+If you start a new game to this beta:
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+    - Make frequent backups.  We cannot stress this enough.  The included 
+      Backup script is your friend and should make this process effortless. 
+    
+    - Make complete backups of all of your config, text, mail, and 
+      comsystems.
+    
+    - Store your backups offsite.  This was always prudent anyway.
+    
+    - Keep decompiles of anything really big, unique, or irreplaceable 
+      softcode.  This is good coding practice, anyway.
+    
+    - Run your game as usual.
+    
+    - Report Bugs to sdennis@svdltd.com following the prcedure in README.
+

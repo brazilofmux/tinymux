@@ -1,0 +1,114 @@
+version.cpp        Not in-sync. (TODO)
+
+_build.cpp         Win32-only file.
+_build.h           Win32-only file.
+alloc.cpp          Syncronized. Unix cvs is master version.
+alloc.h            Syncronized. Unix cvs is master version.
+ansi.h             Syncronized. Unix cvs is master version.
+attrs.h            Syncronized. Unix cvs is master version.
+boolexp.cpp        Syncronized. Unix cvs is master version.
+bsd.cpp            Syncronized. Unix cvs is master version.
+commac.cpp         Unused file.
+commac.h           Unused file.
+command.cpp        Syncronized. Unix cvs is master version.
+command.h          Syncronized. Unix cvs is master version.
+compat.cpp         Unix-only file.
+comsys.cpp         Syncronized. Unix cvs is master version.
+comsys.h           Syncronized. Unix cvs is master version.
+conf.cpp           Syncronized. Unix cvs is master version.
+config.h           Syncronized. Unix cvs is master version.
+copyright.h        Syncronized. Unix cvs is master version.
+cque.cpp           Syncronized. Unix cvs is master version.
+create.cpp         Syncronized. Unix cvs is master version.
+db.cpp             Syncronized. Unix cvs is master version.
+db.h               Syncronized. Unix cvs is master version.
+db_rw.cpp          Syncronized. Unix cvs is master version.
+dbconvert.cpp      Syncronized. Unix cvs is master version.
+dspace.cpp         Unix-only file.
+dspace.h           Unix-only file.
+eval.cpp           Syncronized. Unix cvs is master version.
+externs.h          Syncronized. Unix cvs is master version.
+file_c.cpp         Syncronized. Unix cvs is master version.
+file_c.h           Syncronized. Unix cvs is master version.
+flags.cpp          Syncronized. Unix cvs is master version.
+flags.h            Syncronized. Unix cvs is master version.
+funceval.cpp       Syncronized. Unix cvs is master version.
+functions.cpp      Syncronized. Unix cvs is master version.
+functions.h        Syncronized. Unix cvs is master version.
+game.cpp           Syncronized. Unix cvs is master version.
+getpagesize.h      Unix-only file.
+help.cpp           Syncronized. Unix cvs is master version.
+help.h             Syncronized. Unix cvs is master version.
+htab.cpp           Syncronized. Unix cvs is master version.
+htab.h             Syncronized. Unix cvs is master version.
+interface.h        Syncronized. Unix cvs is master version.
+log.cpp            Syncronized. Unix cvs is master version.
+look.cpp           Syncronized. Unix cvs is master version.
+macro.cpp          Unix-only file.
+macro.h            Syncronized. Unix cvs is master version.
+mail.cpp           Syncronized. Unix cvs is master version.
+mail.h             Syncronized. Unix cvs is master version.
+malloc.cpp         Unix-only file.
+malloc.h           Unix-only file.
+match.cpp          Syncronized. Unix cvs is master version.
+match.h            Syncronized. Unix cvs is master version.
+mcheck.cpp         Unix-only file.
+mguests.cpp        Syncronized. Unix cvs is master version.
+mguests.h          Syncronized. Unix cvs is master version.
+misc.h             Syncronized. Unix cvs is master version.
+mkindx.cpp         Syncronized. Unix cvs is master version.
+move.cpp           Syncronized. Unix cvs is master version.
+mstats.cpp         Unix-only file.
+mtrace.cpp         Unix-only file.
+mudconf.h          Syncronized. Unix cvs is master version.
+netcommon.cpp      Syncronized. Unix cvs is master version.
+newconc.cpp        Unix-only file.
+object.cpp         Syncronized. Unix cvs is master version.
+patchlevel.h       Syncronized. Unix cvs is master version.
+player.cpp         Syncronized. Unix cvs is master version.
+player_c.cpp       Syncronized. Unix cvs is master version.
+portconc.cpp       Unix-only file.
+powers.cpp         Syncronized. Unix cvs is master version.
+powers.h           Syncronized. Unix cvs is master version.
+predicates.cpp     Syncronized. Unix cvs is master version.
+regexp.cpp         Syncronized. Unix cvs is master version.
+regexp.h           Syncronized. Unix cvs is master version.
+rob.cpp            Syncronized. Unix cvs is master version.
+sa-boolexp.cpp     Unix-only file.
+sa-conf.cpp        Unix-only file.
+sa-db.cpp          Unix-only file.
+sa-db_rw.cpp       Unix-only file.
+sa-flags.cpp       Unix-only file.
+sa-htab.cpp        Unix-only file.
+sa-log.cpp         Unix-only file.
+sa-object.cpp      Unix-only file.
+sa-player_c.cpp    Unix-only file.
+sa-pred.cpp        Unix-only file.
+sa-stringu.cpp     Unix-only file.
+sa-svdhash.cpp     Unix-only file.
+sa-svdocache.cpp   Unix-only file.
+sa-svdrand.cpp     Unix-only file.
+sa-unparse.cpp     Unix-only file.
+sa-vattr.cpp       Unix-only file.
+set.cpp            Syncronized. Unix cvs is master version.
+slave.cpp          Unix-only file.
+slave.h            Unix-only file.
+speech.cpp         Syncronized. Unix cvs is master version.
+strdup.cpp         Unix-only file.
+stringutil.cpp     Syncronized. Unix cvs is master version.
+svdhash.cpp        Syncronized. Unix cvs is master version.
+svdhash.h          Syncronized. Unix cvs is master version.
+svdocache.cpp      Syncronized. Unix cvs is master version.
+svdrand.cpp        Syncronized. Unix cvs is master version.
+svdrand.h          Syncronized. Unix cvs is master version.
+svdreport.cpp      Syncronized. Unix cvs is master version.
+svdreport.h        Syncronized. Unix cvs is master version.
+timer.cpp          Syncronized. Unix cvs is master version.
+udb.h              Syncronized. Unix cvs is master version.
+unparse.cpp        Syncronized. Unix cvs is master version.
+unsplit.cpp        Syncronized. Unix cvs is master version.
+vattr.cpp          Syncronized. Unix csv is master version.
+vattr.h            Syncronized. Unix csv is master version.
+walkdb.cpp         Syncronized. Unix cvs is master version.
+wild.cpp           Syncronized. Unix cvs is master version.
+wiz.cpp            Syncronized. Unix cvs is master version.
