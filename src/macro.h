@@ -1,5 +1,5 @@
 /* macro.h */
-/* $Id: macro.h,v 1.1.1.1 1997/04/16 03:36:52 dpassmor Exp $ */
+/* $Id: macro.h,v 1.1 2000-04-11 07:14:45 sdennis Exp $ */
 
 #ifndef __MACRO_H
 #define __MACRO_H
@@ -19,8 +19,8 @@
 
 typedef struct macroentry MACENT;
 struct macroentry {
-	char *cmdname;
-	void (*handler)();
+    char *cmdname;
+    void (*handler)();
 };
 
 struct macros
@@ -30,8 +30,8 @@ struct macros
     char *desc;
     int nummacros;
     int maxmacros;
-    char *alias;	/* Chopped into 5 byte sections.  Macro can have  */
-    char **string;	/* at most a 4 letter alias 			  */
+    char *alias;    /* Chopped into 5 byte sections.  Macro can have  */
+    char **string;  /* at most a 4 letter alias               */
 };
 
 int nummacros;

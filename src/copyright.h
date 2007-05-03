@@ -1,6 +1,6 @@
 /* copyright.h */
 /* -*-C-*- */
-/* $Id: copyright.h,v 1.2 1997/04/16 06:00:49 dpassmor Exp $ */
+/* $Id: copyright.h,v 1.1 2000-04-11 07:14:43 sdennis Exp $ */
 
 /*
  * TinyMUX 1.0, 1.1 and 1.2 Source code is maintained by David Passmore

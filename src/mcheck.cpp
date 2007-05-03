@@ -23,8 +23,8 @@
  * * or (US mail) as Mike Haertel c/o Free Software Foundation.  
  */
 
-#ifndef	_MALLOC_INTERNAL
-#define	_MALLOC_INTERNAL
+#ifndef _MALLOC_INTERNAL
+#define _MALLOC_INTERNAL
 #include <stdio.h>
 #endif
 
@@ -48,23 +48,23 @@ static void (*abortfunc) __P((enum mcheck_status));
 /*
  * Arbitrary magical numbers.  
  */
-#define MAGICWORD	0xfedabeeb
-#define MAGICFREE	0xd8675309
-#define MAGICBYTE	((char) 0xd7)
-#define MALLOCFLOOD	((char) 0x93)
-#define FREEFLOOD	((char) 0x95)
+#define MAGICWORD   0xfedabeeb
+#define MAGICFREE   0xd8675309
+#define MAGICBYTE   ((char) 0xd7)
+#define MALLOCFLOOD ((char) 0x93)
+#define FREEFLOOD   ((char) 0x95)
 
 struct hdr {
-	__malloc_size_t size;	/*
-				 * Exact size requested by user.  
-				 */
-	unsigned long int magic;	/*
-					 * Magic number to check header * *
-					 * integrity.  
-					 */
+    __malloc_size_t size;   /*
+                 * Exact size requested by user.  
+                 */
+    unsigned long int magic;    /*
+                     * Magic number to check header * *
+                     * integrity.  
+                     */
 };
 
-#if	defined(_LIBC) || defined(STDC_HEADERS) || defined(USG)
+#if defined(_LIBC) || defined(STDC_HEADERS) || defined(USG)
 #define flood memset
 #else
 static void flood __P((__ptr_t, int, __malloc_size_t));
@@ -73,10 +73,10 @@ __ptr_t ptr;
 int val;
 __malloc_size_t size;
 {
-	char *cp = ptr;
+    char *cp = ptr;
 
-	while (size--)
-		*cp++ = val;
+    while (size--)
+        *cp++ = val;
 }
 #endif
 
@@ -84,39 +84,39 @@ static enum mcheck_status checkhdr __P((const struct hdr *));
 static enum mcheck_status checkhdr(hdr)
 const struct hdr *hdr;
 {
-	enum mcheck_status status;
+    enum mcheck_status status;
 
-	switch (hdr->magic) {
-	default:
-		status = MCHECK_HEAD;
-		break;
-	case MAGICFREE:
-		status = MCHECK_FREE;
-		break;
-	case MAGICWORD:
-		if (((char *)&hdr[1])[hdr->size] != MAGICBYTE)
-			status = MCHECK_TAIL;
-		else
-			status = MCHECK_OK;
-		break;
-	}
-	if (status != MCHECK_OK)
-		(*abortfunc) (status);
-	return status;
+    switch (hdr->magic) {
+    default:
+        status = MCHECK_HEAD;
+        break;
+    case MAGICFREE:
+        status = MCHECK_FREE;
+        break;
+    case MAGICWORD:
+        if (((char *)&hdr[1])[hdr->size] != MAGICBYTE)
+            status = MCHECK_TAIL;
+        else
+            status = MCHECK_OK;
+        break;
+    }
+    if (status != MCHECK_OK)
+        (*abortfunc) (status);
+    return status;
 }
 
 static void freehook __P((__ptr_t));
 static void freehook(ptr)
 __ptr_t ptr;
 {
-	struct hdr *hdr = ((struct hdr *)ptr) - 1;
+    struct hdr *hdr = ((struct hdr *)ptr) - 1;
 
-	checkhdr(hdr);
-	hdr->magic = MAGICFREE;
-	flood(ptr, FREEFLOOD, hdr->size);
-	__free_hook = old_free_hook;
-	free(hdr);
-	__free_hook = freehook;
+    checkhdr(hdr);
+    hdr->magic = MAGICFREE;
+    flood(ptr, FREEFLOOD, hdr->size);
+    __free_hook = old_free_hook;
+    free(hdr);
+    __free_hook = freehook;
 }
 
 static __ptr_t mallochook __P((__malloc_size_t));
@@ -124,20 +124,20 @@ static __ptr_t
  mallochook(size)
 __malloc_size_t size;
 {
-	struct hdr *hdr;
+    struct hdr *hdr;
 
-	__malloc_hook = old_malloc_hook;
-	hdr = (struct hdr *)malloc(sizeof(struct hdr) + size + 1);
+    __malloc_hook = old_malloc_hook;
+    hdr = (struct hdr *)malloc(sizeof(struct hdr) + size + 1);
 
-	__malloc_hook = mallochook;
-	if (hdr == NULL)
-		return NULL;
+    __malloc_hook = mallochook;
+    if (hdr == NULL)
+        return NULL;
 
-	hdr->size = size;
-	hdr->magic = MAGICWORD;
-	((char *)&hdr[1])[size] = MAGICBYTE;
-	flood((__ptr_t) (hdr + 1), MALLOCFLOOD, size);
-	return (__ptr_t) (hdr + 1);
+    hdr->size = size;
+    hdr->magic = MAGICWORD;
+    ((char *)&hdr[1])[size] = MAGICBYTE;
+    flood((__ptr_t) (hdr + 1), MALLOCFLOOD, size);
+    return (__ptr_t) (hdr + 1);
 }
 
 static __ptr_t reallochook __P((__ptr_t, __malloc_size_t));
@@ -146,82 +146,82 @@ static __ptr_t
 __ptr_t ptr;
 __malloc_size_t size;
 {
-	struct hdr *hdr = ((struct hdr *)ptr) - 1;
-	__malloc_size_t osize = hdr->size;
+    struct hdr *hdr = ((struct hdr *)ptr) - 1;
+    __malloc_size_t osize = hdr->size;
 
-	checkhdr(hdr);
-	if (size < osize)
-		flood((char *)ptr + size, FREEFLOOD, osize - size);
-	__free_hook = old_free_hook;
-	__malloc_hook = old_malloc_hook;
-	__realloc_hook = old_realloc_hook;
-	hdr = (struct hdr *)realloc((__ptr_t) hdr, sizeof(struct hdr) + size + 1);
+    checkhdr(hdr);
+    if (size < osize)
+        flood((char *)ptr + size, FREEFLOOD, osize - size);
+    __free_hook = old_free_hook;
+    __malloc_hook = old_malloc_hook;
+    __realloc_hook = old_realloc_hook;
+    hdr = (struct hdr *)realloc((__ptr_t) hdr, sizeof(struct hdr) + size + 1);
 
-	__free_hook = freehook;
-	__malloc_hook = mallochook;
-	__realloc_hook = reallochook;
-	if (hdr == NULL)
-		return NULL;
+    __free_hook = freehook;
+    __malloc_hook = mallochook;
+    __realloc_hook = reallochook;
+    if (hdr == NULL)
+        return NULL;
 
-	hdr->size = size;
-	hdr->magic = MAGICWORD;
-	((char *)&hdr[1])[size] = MAGICBYTE;
-	if (size > osize)
-		flood((char *)(hdr + 1) + osize, MALLOCFLOOD, size - osize);
-	return (__ptr_t) (hdr + 1);
+    hdr->size = size;
+    hdr->magic = MAGICWORD;
+    ((char *)&hdr[1])[size] = MAGICBYTE;
+    if (size > osize)
+        flood((char *)(hdr + 1) + osize, MALLOCFLOOD, size - osize);
+    return (__ptr_t) (hdr + 1);
 }
 
 static void mabort(status)
 enum mcheck_status status;
 {
-	const char *msg;
+    const char *msg;
 
-	switch (status) {
-	case MCHECK_OK:
-		msg = "memory is consistent, library is buggy";
-		break;
-	case MCHECK_HEAD:
-		msg = "memory clobbered before allocated block";
-		break;
-	case MCHECK_TAIL:
-		msg = "memory clobbered past end of allocated block";
-		break;
-	case MCHECK_FREE:
-		msg = "block freed twice";
-		break;
-	default:
-		msg = "bogus mcheck_status, library is buggy";
-		break;
-	}
+    switch (status) {
+    case MCHECK_OK:
+        msg = "memory is consistent, library is buggy";
+        break;
+    case MCHECK_HEAD:
+        msg = "memory clobbered before allocated block";
+        break;
+    case MCHECK_TAIL:
+        msg = "memory clobbered past end of allocated block";
+        break;
+    case MCHECK_FREE:
+        msg = "block freed twice";
+        break;
+    default:
+        msg = "bogus mcheck_status, library is buggy";
+        break;
+    }
 
-	STARTLOG(LOG_ALWAYS, "BUG", "MLLOC")
-		log_text(tprintf("mcheck: %s\n", msg));
-	ENDLOG
+    STARTLOG(LOG_ALWAYS, "BUG", "MLLOC")
+        log_text(tprintf("mcheck: %s\n", msg));
+    ENDLOG
 }
 
 static int mcheck_used = 0;
 
 int mcheck(void)
 {
-	abortfunc = &mabort;
+    abortfunc = &mabort;
 
-	/*
-	 * These hooks may not be safely inserted if malloc is already in * * 
-	 * use.  
-	 */
-	if (!__malloc_initialized && !mcheck_used) {
-		old_free_hook = __free_hook;
-		__free_hook = freehook;
-		old_malloc_hook = __malloc_hook;
-		__malloc_hook = mallochook;
-		old_realloc_hook = __realloc_hook;
-		__realloc_hook = reallochook;
-		mcheck_used = 1;
-	}
-	return mcheck_used ? 0 : -1;
+    /*
+     * These hooks may not be safely inserted if malloc is already in * * 
+     * use.  
+     */
+    if (!__malloc_initialized && !mcheck_used) {
+        old_free_hook = __free_hook;
+        __free_hook = freehook;
+        old_malloc_hook = __malloc_hook;
+        __malloc_hook = mallochook;
+        old_realloc_hook = __realloc_hook;
+        __realloc_hook = reallochook;
+        mcheck_used = 1;
+    }
+    return mcheck_used ? 0 : -1;
 }
 
 enum mcheck_status mprobe(__ptr_t ptr)
 {
-	return mcheck_used ? checkhdr(ptr) : MCHECK_DISABLED;
+    return mcheck_used ? checkhdr(ptr) : MCHECK_DISABLED;
 }

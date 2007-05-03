@@ -1,10 +1,10 @@
 /*
- * Standalone db_rw.c 
+ * Standalone db_rw.cpp
  */
 /*
- * $Id: sa-db_rw.c,v 1.2 1997/04/16 06:01:39 dpassmor Exp $ 
+ * $Id: sa-db_rw.cpp,v 1.1 2000-04-11 07:14:47 sdennis Exp $ 
  */
 
 #undef MEMORY_BASED
 #define STANDALONE
-#include "db_rw.c"
+#include "db_rw.cpp"

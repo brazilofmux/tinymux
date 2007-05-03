@@ -1,5 +1,5 @@
 /* commac.h */
-/* $Id: commac.h,v 1.1.1.1 1997/04/16 03:36:51 dpassmor Exp $ */
+/* $Id: commac.h,v 1.1 2000-04-11 07:14:43 sdennis Exp $ */
 
 #ifndef __COMMAC_H__
 #define __COMMAC_H__
@@ -35,5 +35,5 @@ char *destroy_commac ();
 char *add_commac ();
 char *del_commac ();
 char *save_comsys_and_macros ();
-char *load_comsys_and_macros ();
+void load_comsys_and_macros ();
 #endif /* __COMMAC_H__ */

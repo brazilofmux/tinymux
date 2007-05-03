@@ -58,14 +58,14 @@
   @atport      @aufail      @ause        @away        @charges     @cost
   @daily       @describe    @dfail       @drop        @ealias      @efail
   @enter       @fail        @filter      @forwardlist @gfail       @idesc
-  @idle        @infilter    @inprefix    @kill        @lalias      @leave
-  @lfail       @listen      @mailsucc    @move        @odescribe   @odfail
-  @odrop       @oefail      @oenter      @ofail       @ogfail      @okill
-  @oleave      @olfail      @omove       @opay        @orfail      @osuccess
-  @otfail      @otofail     @otport      @oufail      @ouse        @oxenter
-  @oxleave     @oxtport     @pay         @prefix      @reject      @rfail
-  @runout      @sex         @signature   @startup     @success     @tfail
-  @tofail      @tport       @ufail       @use
+  @idle        @idletimeout @infilter    @inprefix    @kill        @lalias
+  @leave       @lfail       @listen      @mailsucc    @move        @odescribe
+  @odfail      @odrop       @oefail      @oenter      @ofail       @ogfail
+  @okill       @oleave      @olfail      @omove       @opay        @orfail
+  @osuccess    @otfail      @otofail     @otport      @oufail      @ouse
+  @oxenter     @oxleave     @oxtport     @pay         @prefix      @reject
+  @rfail       @runout      @sex         @signature   @startup     @success
+  @tfail       @tofail      @tport       @ufail       @use
 
 & topics
 
@@ -79,7 +79,7 @@
   HERE                HOMES               LINKING             LISTENING
   LISTS               LOOPING             ME                  MONEY
   MOVING              OBJECT STACK        OBJECT TYPES        PARENT OBJECTS
-  PARENT ROOMS        PIPING		  POWERS LIST         PUEBLO
+  PARENT ROOMS        PIPING              POWERS LIST         PUEBLO
   PUPPETS             REGEXPS             ROBBERY             SEARCH CLASSES
   SEMAPHORES          SPOOFING            STACK               SUBSTITUTIONS
   SUCCESS             SWITCHES            VERBS               WIZARDS
@@ -424,15 +424,19 @@
 & @cset
 
   Command: @cset/<option> <channel>
-  Changes the way a channel behaves.  <option> can be one of the following:
-  public, private, loud, mute, quiet, object. Public makes it show up on
-  everyone's @clist, private hides it. Loud makes it announce
-  connects/disconnects.  Mute/quiet, shuts them off.
+  Changes the way a channel behaves.  <option> can be one of the
+  following: public, private, loud, mute, quiet, object, spoof, anon
+  or nospoof. Public makes it show up on everyone's @clist, private
+  hides it. Loud makes it announce connects/disconnects. Mute/quiet,
+  shuts them off. Spoof/anon allows the comtitle to replace the
+  player's name. Nospoof makes it prepend the comtitle to the player's
+  name.
 
   The object switch sets the channel object to whatever you specify.
-  It will allow you to set a description for the @clist, by @descing the
-  object.  Also, the lock will be used to check to see if people should be
-  able to join the channel or not.  See help channel object for more.
+  It will allow you to set a description for the @clist, by @descing
+  the object.  Also, the lock will be used to check to see if people
+  should be able to join the channel or not. See help channel object
+  for more.
 
 & channel object
  
@@ -452,6 +456,7 @@
   The description of a channel is the @desc of the channel object.
  
 & cwho()
+
   Function: cwho(<channel>)
  
   Returns a list of dbrefs who are connected, and on that channel. 
@@ -800,7 +805,8 @@
  
   This will work until you page another player or list of players.  
  
-  See also: pose, say, whisper, :, ;, ", @pemit, @away, @idle, @reject.
+  See also: pose, say, whisper, :, ;, ", @pemit, @away, @idle,
+            @idletimeout, @reject.
  
 & pose
 
@@ -1762,8 +1768,8 @@
         Player names (names with spaces in them should be put in double
                       quotes, ex: "Foo Bar")
         Player dbref #'s
-	Message numbers to be replied to.
-	A mix of the above, and mail aliases (see @malias)
+        Message numbers to be replied to.
+        A mix of the above, and mail aliases (see @malias)
  
   A <msg-list> is one of the following:
         A single msg # (ex: 3)
@@ -1781,13 +1787,13 @@
 & mail-reviewing
    
   @mail/review <player>
-	Reviews the messages you have sent to <player>.
+        Reviews the messages you have sent to <player>.
  
   @mail/review <player>=<msglist>
-	Reads the messages you have sent to <player>.
+        Reads the messages you have sent to <player>.
  
   @mail/retract <player>=<msglist>
-	Retracts (deletes) unread messages you have sent to <player>.
+        Retracts (deletes) unread messages you have sent to <player>.
  
 & mail-reading
  
@@ -1815,16 +1821,16 @@
 & mail-sending
 
   @mail[/switch] <player-list> = <subject>
-	This begins a message to all players in <player-list>.
-	-<text> adds text to the message in progress, for example
-		-This is a test
-	would add the text 'This is a test' to the end of your @mail
-	message, likewise, ~<text> prepends the text.
-	
+        This begins a message to all players in <player-list>.
+        -<text> adds text to the message in progress, for example
+            -This is a test
+        would add the text 'This is a test' to the end of your @mail
+        message, likewise, ~<text> prepends the text.
+    
   @mail/send
-	This sends the message that is currently in progress.
-	-- is the equivalent of @mail/send. @mail/urgent sends
-	the message as urgent, and should not be used often.
+        This sends the message that is currently in progress.
+        -- is the equivalent of @mail/send. @mail/urgent sends
+        the message as urgent, and should not be used often.
  
   @mail/cc <player-list>
         This replaces the currect player list with a new one for carbon
@@ -1835,40 +1841,42 @@
 & mail-sending2
  
   @mail/proof
-	This shows you the message that is currently in progress, as
-	it would be read by whomever received it.
+        This shows you the message that is currently in progress, as
+        it would be read by whomever received it.
   
   @mail/edit <old text> = <new text>
-	Like @edit, but edits the message in process.
+        Like @edit, but edits the message in process.
  
   @mail/abort
-	This aborts the message currently in progress, allowing you
-	to start a new one.
+        This aborts the message currently in progress, allowing you
+        to start a new one.
  
   @mail/fwd <msg> = <player-list>
         This sends a copy of <msg> to all the players in <player-list>.
         The copy will appear to have been sent by you (not the original
-        sender), and its status will be "Forwarded". Note that this places
-        the message to be forwarded into your mail buffer, where you can
-        edit it with @mail/edit, add text with '-', or prepend text with
-        '~'. You have to use '--' or @mail/send to send the message.
+        sender), and its status will be "Forwarded". Note that this
+        places the message to be forwarded into your mail buffer, where
+        you can edit it with @mail/edit, add text with '-', or prepend
+        text with '~'. You have to use '--' or @mail/send to send the
+        message.
  
   @mail/quick <player-list>/<subject> = <message>
-	Sends <message> to the list of players.
+        Sends <message> to the list of players.
   
 & mail-other
 
   @mail/clear [<msg-list | all>]
   @mail/unclear [<msg-list> | all>]
-        These commands mark mail in the current folder as cleared or uncleared.
-        Mail marked for clearing is deleted when you disconnect, or
-        if you use @mail/purge. If no msg-list is specified, all
-        mail in your current folder is cleared. If "all" is given instead
-        of a msg-list, all mail in *all* folders is cleared/uncleared.
+        These commands mark mail in the current folder as cleared or
+        uncleared. Mail marked for clearing is deleted when you
+        disconnect, or if you use @mail/purge. If no msg-list is
+        specified, all mail in your current folder is cleared. If "all"
+        is given instead of a msg-list, all mail in *all* folders is
+        cleared/uncleared.
  
   @mail/purge
-        Actually deletes all messages marked for clearing with @mail/clear.
-        This is done automatically when you log out.
+        Actually deletes all messages marked for clearing with
+        @mail/clear. This is done automatically when you log out.
  
   @mail/tag [<msg-list | all>]
   @mail/untag [<msg-list> | all>]
@@ -1878,8 +1886,9 @@
         afterward). If no msg-list is specified, all messages in the
         current folder are tagged/untagged. If "all" is given as the
         msg-list, all mail in *all* folders is tagged/untagged.
-        (Ex: To clear all mail from Lauren and Crusade, @mail/tag *lauren,
-        @mail/tag *crusade, @mail/clear tagged, @mail/untag all).
+        (Ex: To clear all mail from Lauren and Crusade,
+        @mail/tag *lauren, @mail/tag *crusade, @mail/clear tagged,
+        @mail/untag all).
  
 { 'help mail-other2' for more }
 & mail-other2
@@ -2073,6 +2082,7 @@
 & @pemit
 
   Command: @pemit[/switches] <what>=<message>
+
   Emits <message> only to <what>, or to <what>'s contents of the /contents
   switch is given.  <what> must be either in the same location as you or
   be something you own.  You can also @pemit to distant players if
@@ -2080,22 +2090,28 @@
   <This feature is not present in all MUXes>.  You cannot @pemit to the
   contents of something you don't own.
  
-  The following switches are available:
-    /contents - Send the message to the contents of the named object.
-    /object   - Send the message to the named object.
-    /list     - Send the message to a list of objects.
+  The /list switch to this command allows you to @pemit a message to
+  a list:  @pemit/list <object 1> [<object 2> <object N>] = <message>
+  There can be any number of objects in the list. The objects must be
+  specified by dbref number. This can be combined with other switches.
 
-  You may specify any combination of these switches.
- 
+  The following switches are also available:
+    /contents - Send the message to the contents of the named object.
+    /html     - Send the message in HTML format (Pueblo).
+    /noeval   - Do not parse the message.
+    /object   - Send the message to the named object.
+
   See also: page, @remit, @emit, @oemit, SPOOFING.
 
 & @npemit
 
   Command: @npemit[/switches] <what>=<message>
-  No parse @pemit. Exactly like @pemit, takes the same switches, except it
-  does not evaluate <message>. 
+
+  Almost exactly like @pemit and it takes the same switches. However,
+  it does not evaluate <message> at all. So, @npemit differs from
+  @npemit/noeval in that no space compression is done.
  
-  See also: page, @pemit, @remit, @emit, @oemit, SPOOFING.
+  See also: @pemit
  
 & @power
 
@@ -2108,36 +2124,36 @@
   
 & powers list
 
-  announce		Can use the @wall command.
-  boot			Can use the @boot command.
-  builder		Can build, if the builder power is enabled.
-  chown_anything	Can @chown anything to anyone.
-  comm_all		Like a wizard with respect to channels.
-  control_all		Can modify any object in the database.
-  expanded_who		Sees the wizard WHO, and SESSION commands.
-  find_unfindable	Can locate unfindable people.
-  free_money		Unlimited money.
-  free_quota		Unlimited quota.
-  guest			Is this a guest character?
-  halt			Can @halt anything, and @halt/all.
-  hide			Can set themselves DARK.
-  idle			No idle timeout.
-  long_fingers		Can get, look, whisper, etc from a distance.
+  announce          Can use the @wall command.
+  boot              Can use the @boot command.
+  builder           Can build, if the builder power is enabled.
+  chown_anything    Can @chown anything to anyone.
+  comm_all          Like a wizard with respect to channels.
+  control_all       Can modify any object in the database.
+  expanded_who      Sees the wizard WHO, and SESSION commands.
+  find_unfindable   Can locate unfindable people.
+  free_money        Unlimited money.
+  free_quota        Unlimited quota.
+  guest             Is this a guest character?
+  halt              Can @halt anything, and @halt/all.
+  hide              Can set themselves DARK.
+  idle              No idle timeout.
+  long_fingers      Can get, look, whisper, etc from a distance.
  
 { 'help powers list2' for more }
  
 & powers list2
-  monitor		Can set or reset monitor flag.
-  poll			Can set the @poll.
-  prog			Can use @program on players other than themself.
-  search		Can @search anyone.
-  see_all		Can examine and see attributes like a wizard.
-  see_queue		Can @ps/all or @ps any player.
-  stat_any		Can @stat any player.
-  steal_money		Can give negative money.
-  tel_anywhere		Can teleport anywhere.
-  tel_anything		Can teleport anything (includes tel_anywhere)
-  unkillable		Cannot be killed with the 'kill' command.
+  monitor           Can set or reset monitor flag.
+  poll              Can set the @poll.
+  prog              Can use @program on players other than themself.
+  search            Can @search anyone.
+  see_all           Can examine and see attributes like a wizard.
+  see_queue         Can @ps/all or @ps any player.
+  stat_any          Can @stat any player.
+  steal_money       Can give negative money.
+  tel_anywhere      Can teleport anywhere.
+  tel_anything      Can teleport anything (includes tel_anywhere)
+  unkillable        Cannot be killed with the 'kill' command.
  
   See also: @power
  
@@ -2157,8 +2173,7 @@
  
   > start
   Please enter a word:
-  > foobar			(Note that @program literally gives you a '>'
-                                 prompt.)
+  > foobar       (Note that @program literally gives you a '>' prompt.)
   You entered foobar!
   Please enter another word:
   > hoopla
@@ -2374,7 +2389,7 @@
      /quiet - Teleports without setting off success or failure messages.
  
   See also: JUMP_OK, @lock (tport and telout), @tfail, @otfail, @atfail,
-	@tofail, @otofail, @atofail.
+            @tofail, @otofail, @atofail.
 
 & @trigger 
 
@@ -2928,7 +2943,7 @@
   automatically referenced on other object types.
  
   Example: @away me = Hey, I'm not even connected.  So why are you paging me?
-  See also: @idle, @reject, page.
+  See also: @idle, @idletimeout, @reject, page.
 
 & @charges
 
@@ -3201,8 +3216,30 @@
   This attribute is only meaningful for players, and will never be
   automatically referenced on other object types.
  
+  If an @idletimeout is set on the person being paged, you will only see
+  the @idle message if that person is more idle than the specified amount
+  of time.
+ 
   Example: @idle me = At dinner.  Back about 7PM.
-  See also: @away, @reject, page.
+  See also: @away, @idletimeout, @reject, page.
+
+& @idletimeout
+
+  Command: @idletimeout <object> = <seconds>
+  Attribute: IdleTimeout
+ 
+  This attribute is used to determine if your @idle message is sent to
+  a player who successfully pages you.
+  If you're online and working at the same time, you can set the minimum
+  idle time to allow your message to show. so whilst you're not idle your
+  @idle message will not show without you having to delete it to hide it. 
+ 
+  This attribute is only meaningful for players, and will never be
+  automatically referenced on other object types.
+ 
+  Example: @idle me = Working IRL. Monitoring this window from time to time.
+           @idletimeout me = 60
+  See also: @away, @idle, @reject, page.
 
 & @infilter
 
@@ -4950,6 +4987,11 @@ We would like to thank the following people:
     v - VERBOSE    |   w - STAFF      |   x - SLAVE      |   
     z - CONTROL_OK |   ? - HEAD       |   - - NOBLEED    |   | - VACATION
   ------------------------------------------------------------------------
+  Realms Patch Flags:
+    o - OBF        |   k - HSS        |   y - UMBRA      |   $ - SHROUD
+    / - MATRIX     |   ^ - MEDIUM     |   _ - DEAD       |   0 - FAE
+    1 - CHIMERA    |   2 - PEERING    |                  |
+  ------------------------------------------------------------------------
   For information on a particular flag, type 'help <flagname>'.
   Some flags may be disabled at the MUX you are located.
 
@@ -4983,42 +5025,44 @@ We would like to thank the following people:
     ABS()       ACOS()      ADD()       AFTER()     ALPHAMAX()  ALPHAMIN()
     AND()       ANDFLAGS()  ANSI()      APOSS()     ART()       ASIN()
     ATAN()      BEEP()      BEFORE()    CAPSTR()    CASE()      CAT()
-    CEIL()      CENTER()    CHILDREN()  COLUMNS()   COMP()      CON()
-    CONN()      CONTROLS()  CONVSECS()  CONVTIME()  COS()       CREATE()
-    CWHO()      DEC()       DECRYPT()   DEFAULT()   DELETE()    DIE()
-    DIST2D()    DIST3D()    DIV()       E()         EDEFAULT()  EDIT()
-    ELEMENTS()  ELOCK()     EMPTY()     ENCRYPT()   EQ()        ESCAPE()
-    EXIT()      EXP()       EXTRACT()   EVAL()      FDIV()      FILTER()
-    FINDABLE()  FIRST()     FLAGS()     FLOOR()     FOLD()      FOREACH()
-    FULLNAME()  GET()       GET_EVAL()  GRAB()      GREP()      GREPI()
-    GT()        GTE()       HASATTR()   HASATTRP()  HASFLAG()   HASPOWER()
-    HASTYPE()   HOME()      IDLE()      IFELSE()    INC()       INDEX()
-    INSERT()    INZONE()    ISDBREF()   ISNUM()     ISWORD()    ITER()
-    ITEMS()     LAST()      LATTR()     LCON()      LCSTR()     LDELETE()
-    LEXITS()    LIST()      LIT()       LJUST()     LN()        LNUM()
-    LPARENT()   LOC()       LOCATE()    LOCK()      LOG()       LSTACK()
-    LT()        LTE()       LWHO()      MAIL()      MAILFROM()  MAP()
-    MATCH()     MATCHALL()  MAX()       MEMBER()    MERGE()     MID()
+    CEIL()      CENTER()    CHANNELS()  CHILDREN()  COLUMNS()   COMALIAS()
+    COMP()      COMTITLE()  CON()       CONN()      CONTROLS()  CONVSECS()
+    CONVTIME()  COS()       CREATE()    CWHO()      DEC()       DECRYPT()
+    DEFAULT()   DELETE()    DIE()       DIST2D()    DIST3D()    DIV()
+    DOING()     E()         EDEFAULT()  EDIT()      ELEMENTS()  ELOCK()
+    EMPTY()     ENCRYPT()   EQ()        ESCAPE()    EXIT()      EXP()
+    EXTRACT()   EVAL()      FDIV()      FILTER()    FINDABLE()  FIRST()
+    FLAGS()     FLOOR()     FOLD()      FOREACH()   FULLNAME()  GET()
+    GET_EVAL()  GRAB()      GREP()      GREPI()     GT()        GTE()
+    HASATTR()   HASATTRP()  HASFLAG()   HASPOWER()  HASTYPE()   HOME()
+    IADD()      IDIV()      IDLE()      IFELSE()    IMUL()      INC()
+    INDEX()     INSERT()    INZONE()    ISDBREF()   ISNUM()     ISUB()
+    ISWORD()    ITER()      ITEMS()     LAST()      LATTR()     LCON()
+    LCSTR()     LDELETE()   LEXITS()    LIST()      LIT()       LJUST()
+    LN()        LNUM()      LPARENT()   LOC()       LOCATE()    LOCK()
+    LOG()       LSTACK()    LT()        LTE()       LWHO()      MAIL()
 
 ("help function list2" for more)
 
 & FUNCTION LIST2
  
-    MIN()       MIX()       MOD()       MONEY()     MUDNAME()   MUL()
-    MUNGE()     NAME()      NEARBY()    NEQ()       NEXT()      NOT()
-    NUM()       OBJ()       OBJEVAL()   OBJMEM()    OR()        ORFLAGS()
-    OWNER()     PARENT()    PARSE()     PEEK()      PEMIT()     PI()
-    PLAYMEM()   PMATCH()    POP()       PORTS()     POS()       POSS()
-    POWER()     PUSH()      R()         RAND()      REGMATCH()  REMOVE()
-    REPEAT()    REPLACE()   REST()      REVERSE()   REVWORDS()  RJUST()
-    RLOC()      ROOM()      ROUND()     S()         SCRAMBLE()  SEARCH()
-    SECS()      SECURE()    SET()       SETDIFF()   SETINTER()  SETQ()
-    SETR()      SETUNION()  SHL()       SHR()       SHUFFLE()   SIGN()
-    SIN()       SORT()      SORTBY()    SPACE()     SPLICE()    SQRT()
-    SQUISH()    STARTTIME() STATS()     STRCAT()    STRIPANSI() STRLEN()
-    STRMATCH()  STRTRUNC()  SUB()       SUBJ()      SWITCH()    TAN()
-    TIME()      TRANSLATE() TRIM()      TRUNC()     TYPE()      U()
-    ULOCAL()    UCSTR()     UDEFAULT()  V()         VADD()      VDIM()
+    MAILFROM()  MAP()       MATCH()     MATCHALL()  MAX()       MEMBER()
+    MERGE()     MID()       MIN()       MIX()       MOD()       MONEY()
+    MOTD()      MUDNAME()   MUL()       MUNGE()     NAME()      NEARBY()
+    NEQ()       NEXT()      NOT()       NUM()       OBJ()       OBJEVAL()
+    OBJMEM()    OR()        ORFLAGS()   OWNER()     PARENT()    PARSE()
+    PEEK()      PEMIT()     PI()        PLAYMEM()   PMATCH()    POLL()
+    POP()       PORTS()     POS()       POSS()      POWER()     PUSH()
+    R()         RAND()      REGMATCH()  REMOVE()    REPEAT()    REPLACE()
+    REST()      REVERSE()   REVWORDS()  RJUST()     RLOC()      ROOM()
+    ROUND()     S()         SCRAMBLE()  SEARCH()    SECS()      SECURE()
+    SET()       SETDIFF()   SETINTER()  SETQ()      SETR()      SETUNION()
+    SHL()       SHR()       SHUFFLE()   SIGN()      SIN()       SORT()
+    SORTBY()    SPACE()     SPLICE()    SQRT()      SQUISH()    STARTTIME()
+    STATS()     STRCAT()    STRIPANSI() STRLEN()    STRMATCH()  STRTRUNC()
+    SUB()       SUBJ()      SWITCH()    TAN()       TIME()      TRANSLATE()
+    TRIM()      TRUNC()     TYPE()      U()         ULOCAL()    UCSTR()
+    UDEFAULT()  V()         VADD()      VCROSS()    VDIM()      VDOT()
     VERSION()   VISIBLE()   VMAG()      VMUL()      VSUB()      VUNIT()
     WHERE()     WORDPOS()   WORDS()     XGET()      XOR()       ZONE()
     ZWHO()
@@ -5027,13 +5071,13 @@ We would like to thank the following people:
 
   Topic: FUNCTION CLASSES
  
-  Arithmetic:                ABS ADD DEC DIE DIV FDIV INC MOD MUL POWER RAND
-                             SHL SHR SIGN
-                             SUB SQRT
+  Arithmetic:                ABS ADD DEC DIE DIV FDIV IADD IDIV IMUL INC
+                             ISUB MOD MUL POWER RAND SHL SHR SIGN SUB SQRT
+  Comsystem Information:     CHANNELS COMALIAS COMTITLE CWHO
   Database Information:      EXIT INZONE LOC LOCATE NEARBY NEXT NUM RLOC ROOM
                              SEARCH STATS WHERE MAIL ZONE ZWHO
   Floating Point Conversion: FLOOR ROUND TRUNC
-  Game Information:          MUDNAME VERSION CWHO
+  Game Information:          CWHO MOTD MUDNAME POLL VERSION
   Lists:                     COLUMNS EXTRACT ELEMENTS FOREACH FILTER FIRST
                              FOLD GRAB INDEX ITER LAST LNUM MAP MATCH MATCHALL
                              MEMBER MIX MUNGE PARSE REMOVE REST REVWORDS
@@ -5043,18 +5087,18 @@ We would like to thank the following people:
   Logical:                   AND NOT OR XOR
   Miscellaneous:             ART R SETQ ANSI BEEP CREATE ISDBREF ISNUM ISWORD
                              LIT SETR
+ 
+{ 'help function classes2' for more }
+ 
+& FUNCTION CLASSES2
+
   Object Information:        ANDFLAGS APOSS CONTROLS DEFAULT EDEFAULT ELOCK
                              FLAGS GET GET_EVAL GREP GREPI HASATTR HASATTRP
                              HASFLAG HASPOWER HASTYPE HOME LATTR LCON LEXITS
                              LPARENT LOCK MONEY NAME OBJ OBJEVAL
                              OBJMEM ORFLAGS OWNER PARENT PMATCH POSS S SUBJ
                              TYPE U UDEFAULT ULOCAL V VISIBLE
- 
-{ 'help function classes2' for more }
- 
-& FUNCTION CLASSES2
-
-  Player Information:        CONN FINDABLE IDLE LWHO PLAYMEM PORTS
+  Player Information:        CONN DOING FINDABLE IDLE LWHO PLAYMEM PORTS
   Relational:                EQ GT GTE LT LTE MAX MIN NEQ SORT
   Strings:                   AFTER ALPHAMAX ALPHAMIN BEFORE CAPSTR CAT COMP
                              DELETE EDIT ESCAPE IFELSE LCSTR MERGE MID POS
@@ -5063,7 +5107,7 @@ We would like to thank the following people:
                              STRTRUNC SWITCH UCSTR ENCRYPT DECRYPT
   Time:                      CONVSECS CONVTIME SECS STARTTIME TIME
   Trigonometry:              ACOS ASIN ATAN COS DIST2D DIST3D PI SIN TAN
-                             VADD VDIM VMAG VMUL VSUB VUNIT
+                             VADD VCROSS VDIM VDOT VMAG VMUL VSUB VUNIT
 & GENDER
 
   Topic: GENDER
@@ -5792,57 +5836,79 @@ We would like to thank the following people:
   Performs a rightwards bit-shift on <number>, shifting it <count> times.
   This is equivalent to div(<number>,pow(2,<count>), but much faster.
 & VADD()
-  vadd(<vector>,<vector>[,<delimiter>])
-
+  vadd(<vector>,<vector>[,<delim>][,<output delim>])
+ 
   Returns the sum of two vectors. A vector is a list of numbers
-  separated by spaces or a delimiter, and may be up to 20-dimensional.
-
-  > think vadd(1 2 3,4 5 6)
+  separated by spaces or a delimiter, and may have up to 20 dimensions.
+ 
+  > @pemit me=vadd(1 2 3,4 5 6)
   5 7 9
-  > think vadd(0|0|0,1|2|3,|)
-  1|2|3
+  > @pemit me=vadd(0|0|0,1|2|3,|,-)
+  1-2-3
+& VCROSS()
+  vcross(<vector>,<vector>[,<delim>][,<output delim>])
+ 
+  Returns the cross product of two vectors. The cross product of two
+  vectors is a vector.
+                          | a b c |
+  (a,b,c) X (d,e,f) = det | d e f | = i(bf-ce) + j(cd-af) + k(ae-bd)
+                          | i j k |
+
+  where i, j, and k are taken as unit vectors in cartisian space.
+   
+  > @pemit me=vcross(1 2 3,2 3 4)
+  -1 2 -1
 & VDIM()
-  vdim(<vector>[,<delimiter>])
-
-  Returns the dimensionality of a vector.
-
-  > think vdim(1 2 3 4)
+  vdim(<vector>[,<delim>])
+ 
+  Returns the dimensions of a vector.
+ 
+  > @pemit me=vdim(1 2 3 4)
   4
+& VDOT()
+  vdot(<vector>,<vector>[,<delim>][,<output delim>])
+ 
+  Returns the dot product of two vectors. The dot product of two
+  vectors is a scalar. (a,b,c) * (x,y,z) = aw + bx + cz
+ 
+  > @pemit me=vdot(1 2 3,2 3 4)
+  20
 & VMAG()
-  vmag(<vector>[,<delimiter>]
-
-  Returns the magnitude of a vector, using a euclidean distance metric.
+  vmag(<vector>[,<delim>]
+ 
+  Returns the magnitude of a vector using a euclidean distance metric.
   That is, for vector a b c d, returns sqrt(a^2+b^2+c^2+d^2).
-
-  > think vmag(3 4) 
+  
+  > @pemit me=vmag(3 4) 
   5
 & VMUL()
-  vmul(<vector|number>,<vector|number>[,<delimiter>])
-
-  Returns the result of either multiplying a vector by a number,
-  or the "dot product" (elementwise product) of two vectors.
-  The dot product of a b c by w x z is aw bx cz
-
-  > think vmul(1 2 3,2)
+  vmul(<vector|number>,<vector|number>[,<delim>][,<output delim>])
+ 
+  Returns the result of either multiplying a vector by a number (scalar
+  multiplication), or an elementwise multiplication of two vectors.
+ 
+  > @pemit me=vmul(1 2 3,2)
   2 4 6
-  > think vmul(1 2 3,2 3 4)
+  > @pemit me=vmul(1 2 3,2 3 4)
   2 6 12
 & VSUB()
-  vsub(<vector>,<vector>[,<delimiter>])
-
+  vsub(<vector>,<vector>[,<delim>][,<output delim>])
+ 
   Returns the difference between two vectors.
-
-  > think vsub(3 4 5,3 2 1)
+ 
+  > @pemit me=vsub(3 4 5,3 2 1)
   0 2 4
+  > @pemit me=vsub(6-4-2,5-2-0,-)
+  1-2-2
 & VUNIT()
-  vunit(<vector>[,<delimiter>]
-
-  Returns the unit vector (a vector of magnitude 1), which points
+  vunit(<vector>[,<delim>][,<output delim>])
+ 
+  Returns the unit vector (a vector of magnitude 1) which points
   in the same direction as the given vector.
-
-  > think vunit(2 0 0)
+ 
+  > @pemit me=vunit(2 0 0)
   1 0 0
-  > think vmul(vunit(5 6 7),vmag(5 6 7))
+  > @pemit me=vmul(vunit(5 6 7),vmag(5 6 7))
   5 6 7
 & NEARBY()
 
@@ -6017,7 +6083,26 @@ We would like to thank the following people:
     You say "6"
     > say add(5,3,7,-4)
     You say "11"
-  See also: inc(), dec(), div(), mod(), mul(), sub().
+
+  See also: dec(), div(), iadd(), idiv(), imul(), inc(), isub(), mod(),
+            mul(), sub().
+
+& IADD()
+
+  Function: iadd(<number1>,<number2>[,<numberN>]...)
+ 
+  Returns the result of adding its integer arguments together.
+  You may add up to 30 numbers in one add() call. Similiar to add()
+  except that the addition is done with faster integer math.
+ 
+  Example:
+    > say iadd(2,4)
+    You say "6"
+    > say iadd(5,3,7,-4)
+    You say "11"
+
+  See also: add(), dec(), div(), idiv(), imul(), inc(), isub(), mod(),
+            mul(), sub().
 
 & INC()
 
@@ -6026,7 +6111,7 @@ We would like to thank the following people:
   Returns <number> plus 1. Much faster and more efficient than
   add(<number>,1). Decimal places will be truncated.
  
-  See also: add(), sub(), dec().
+  See also: add(), dec(), iadd(), isub(), sub().
  
 & DEC()
 
@@ -6035,8 +6120,8 @@ We would like to thank the following people:
   Returns <number> minus 1. Much faster and more efficient than
   sub(<number>,1). Decimal places will be truncated.
  
-  See also: sub(), add(), inc().
- 
+  See also: add(), iadd(), inc(), isub(), sub().
+
 & SUB()
 
   Function: sub(<number1>,<number2>)
@@ -6048,7 +6133,24 @@ We would like to thank the following people:
   Example:
     > say sub(5,2)
     You say "3"
-  See also: inc(), dec(), add(), div(), mod(), mul().
+
+  See also: add(), dec(), div(), iadd(), idiv(), imul(), inc(), isub(),
+            mod(), mul().
+
+& ISUB()
+
+  Function: isub(<number1>,<number2>)
+ 
+  Returns the result of subtracting integer <number2> from integer
+  <number1>. Similiar to sub() except that the addition is done with
+  faster integer math.
+ 
+  Example:
+    > say isub(5,2)
+    You say "3"
+
+  See also: add(), dec(), div(), iadd(), idiv(), imul(), inc(), mod(),
+            mul(), sub().
 
 & MUL()
 
@@ -6063,16 +6165,34 @@ We would like to thank the following people:
     You say "15"
     > say mul(3,5,-2)
     You say "-30"
-  See also: add(), div(), fdiv(), mod() round(), sub(), trunc().
+
+  See also: add(), div(), fdiv(), iadd(), imul(), isub(), mod(),
+            round(), sub(), trunc().
+
+& IMUL()
+
+  Function: imul(<number1>,<number2>[,<numberN>]...)
+ 
+  Returns the result of multiplying its integer arguments together.
+  Similiar to mul() except that the mulitplication is done with
+  faster integer math.
+ 
+  Examples:
+    > say imul(3,5)
+    You say "15"
+    > say imul(3,5,-2)
+    You say "-30"
+
+  See also: add(), div(), fdiv(), iadd(), isub(), mod(), mul(),
+            round(), sub(), trunc().
 
 & DIV()
 
   Function: div(<number1>,<number2>)
  
   Returns the integer quotient from dividing <number1> by <number2>.
-  <numberN> may be a floating point number, and an integer result is returned.
  
-  Example:
+  Examples:
     > say div(15,3)
     You say "5"
     > say div(16,3)
@@ -6082,9 +6202,31 @@ We would like to thank the following people:
     > say div(18,3)
     You say "6"
     > say div(-17,3)
-    You say XXXXX
-  This function may also be called as idiv().
-  See also: add(), fdiv(), mod(), mul(), round(), sub(), trunc().
+    You say "-5"
+
+  See also: add(), div(), fdiv(), iadd(), imul(), isub(), mod(), mul(),
+            round(), sub(), trunc().
+
+& IDIV()
+
+  Function: idiv(<number1>,<number2>)
+ 
+  Returns the integer quotient from dividing <number1> by <number2>.
+ 
+  Examples:
+    > say idiv(15,3)
+    You say "5"
+    > say idiv(16,3)
+    You say "5"
+    > say idiv(17,3)
+    You say "5"
+    > say idiv(18,3)
+    You say "6"
+    > say idiv(-17,3)
+    You say "-5"
+
+  See also: add(), div(), fdiv(), iadd(), imul(), isub(), mod(), mul(),
+            round(), sub(), trunc().
 
 & FDIV()
 
@@ -6094,7 +6236,7 @@ We would like to thank the following people:
   <number> may be a floating point number, and a floating point result is
   returned.
  
-  Results:
+  Examples:
     > say fdiv(15,3)
     You say "5"
     > say fdiv(16,3)
@@ -6107,7 +6249,8 @@ We would like to thank the following people:
     You say "-5.666667"
     > say fdiv(10,3.5)
     You say "2.857143"
-  See also:   See also: add(), div(), mod(), mul(), round(), sub(), trunc().
+
+    See also: add(), div(), mod(), mul(), round(), sub(), trunc().
  
 & MOD()
 
@@ -6915,7 +7058,8 @@ We would like to thank the following people:
 
   Function: lcon(<object>)
  
-  Returns a space-separated list of the contents of <object>.
+  Returns a space-separated list of the contents of <object> which are
+  visible to the person running the function.
  
   Example:
     > i
@@ -7077,7 +7221,7 @@ We would like to thank the following people:
   Function: reverse(<string>)
  
   Reverses the order of the characters of <string>.
- 
+
   Examples:
     > say reverse(This is a test)
     You say "tset a si sihT"
@@ -7098,7 +7242,7 @@ We would like to thank the following people:
   <delim> may be used to specify a delimiter other than a space.
  
   Examples:
-    > say revwords(This is a test, Really...)
+    > say revwords(This is a test. Really...)
     You say "Really... test, a is This"
     > say revwords(Was it a cat I saw?)
     You say "saw? I cat a it Was"
@@ -7107,29 +7251,33 @@ We would like to thank the following people:
 & BEFORE()
 
   Function: before(<string1>, <string2>)
- 
+
   Returns the portion of <string1> that occurs before <string2>.  If <string2>
   does not occur in <string1>, the entire string is returned.
   If you want to return the portion of the string after the first space,
   use the first() function instead.
  
+  This function is case sensitive.
+
   Examples:
     > say before(This is a test,a)
     You say "This is "
     > say before(This is a test,is)
     You say "Th"
-    > say before(This is a test, nope) 
+    > say before(This is a test, nope)
     You say "This is a test"
   See also: after(), first(), rest().
 
 & AFTER()
 
   Function: after(<string1>, <string2>)
- 
+
   Returns the portion of <string1> that occurs after <string2>.  If <string2>
   does not occur in <string1>, a null string is returned.
   If you want to return the portion of the string after the first space,
   use the rest() function instead.
+ 
+  This function is case sensitive.
  
   Examples:
     > say after(This is a test,a)
@@ -8503,7 +8651,8 @@ We would like to thank the following people:
  
   Returns 1 if <object> can locate <victim>, or 0 otherwise. This checks
   wizard status of <object>, UNFINDABLE status of <victim>, and other
-  related factors.
+  related factors. If <object> would not be able to see <victim> were 
+  they in the same location a 0 will be returned.
  
 & VISIBLE()
 
@@ -8668,6 +8817,53 @@ We would like to thank the following people:
  
   See also: lstack(), empty(), items(), peek(), pop(), OBJECT STACK.
  
+& COMALIAS()
+ 
+  Function: comalias(<player>, <channel>)
+ 
+  comalias() returns the alias the player uses to access the named channel.
+  Non-wizards can only use it to return their own alias.
+ 
+  See also: comtitle()
+ 
+& CHANNELS()
+ 
+  Function: channels()
+ 
+  This function lists all the channels known to the MUX (that you can see).
+ 
+& COMTITLE()
+ 
+  Function: comtitle(<player>, <channel>)
+
+  comtitle() returns the comtitle the player has set on the named channel.
+  Non-wizards can only use it to return their own comtitles.
+ 
+  See also: comalias()
+ 
+& DOING()
+ 
+  Function: doing(<player>)
+ 
+  doing() returns the connected player's @doing entry.
+ 
+  See also: poll()
+ 
+& MOTD()
+ 
+  Function: motd(<player>)
+ 
+  motd() returns the current MOTD as set using @motd.
+ 
+& POLL()
+ 
+  Function: poll()
+ 
+  poll() returns the current poll (the top of the @doing column in WHO) as
+  set with the @poll command.
+ 
+  See also: doing()
+
 & OBJECT STACK
  
   NOTE: The object stack is completely different from the command stack
@@ -8701,3 +8897,84 @@ We would like to thank the following people:
  
   See also: lstack(), empty(), items(), push(), peek(), pop().
  
+& OBF
+
+  The OBF Flag is used to denote someone using a form of invisibility,
+  most commonly the vampiric discipline of Obfuscate. They must also have 
+  an attribute set on them, OBF_LEVEL, which denotes the level of
+  invisibility they posses. When this attribute is present and the flag is
+  set on them they do not show up in the contents list of rooms. If a
+  player moves through an exit and has OBF_LEVEL of 1 then they will no
+  longer be invisible and will trigger the exit message. OBF_LEVEL of 2 or
+  higher will no longer do this. At OBF_LEVEL is 3 or higher they can set
+  their true desc in the attribute OBFDESC so that it will only be seen by
+  those with the ability to see through their disguise.
+  See also: HSS
+
+& HSS
+
+  The HSS flag denotes someone who can see through certain levels of 
+  invisibility. They must have the HSS_LEVEL attribute set. If they have
+  this flag and attribute set they will see anyone with a lower OBF_LEVEL
+  then their HSS_LEVEL attribute, they will also see the OBFDESC if it
+  is present, showing the invisible character's true appearance. However,
+  if HSS_LEVEL is equal to OBF_LEVEL then there is a random chance that 
+  they will see through the invisibility.
+  See also: OBF
+
+& UMBRA
+ 
+  The UMBRA flag is used to denote an object which is in the umbra. They
+  will see the room's UMBRADESC if it is present and will not see or be
+  seen by those not set UMBRA.
+
+& SHROUD
+
+  The SHROUD flag is used to denote an object who is in the shroud. They
+  can be heard by those set MEDIUM but not seen. They see the WRAITHDESC
+  of the room if it is present and they see anything set SHROUD as
+  well as other normally visible objects.
+
+& MEDIUM
+
+  The MEDIUM flag denotes a player who is a medium. With this flag set
+  they can hear what is said by those set SHROUD but not see them. They
+  can see those who are visible normally only.
+
+& MATRIX
+
+  The MATRIX flag is used to denote an object who is in the Matrix or
+  Digital Web. Rooms will list contents as |Icons| and will only list
+  players and objects also set MATRIX. MATRIXDESC can be set on a
+  player or object as the description of their icon.
+
+& FAE
+
+  The FAE flag is used to denote an object which is visible to others with
+  a regular description but see's FAEDESC's and those set CHIMERA. Most
+  commonly used for Changelings and those who have been Enchanted by one.
+
+& CHIMERA
+
+  The CHIMERA flag is used to denote an object who is invisible to all but
+  those set CHIMERA and FAE.
+
+& PEERING
+
+  The PEERING flag is used to denote an object which is looking into
+  another realm but is not visible there. It requires the attribute
+  PEERING_REALM be set with a value of the realm being watched. The
+  value MUST be in all uppercase letters.
+
+& CANSEE()
+
+  Syntax: CANSEE(looker, lookee[,lookee_action])
+
+  This is useful for wizard code in the master room, help it decide
+  who/what should be able to see who/what, and saves the softcoders the hassle of
+  duplicating these rules in softcode. The third parameter is optional,
+  but if present should be 0 for standing still, 1 for moving, and 2 for
+  talking. CANSEE returns 1 or 0 depending on whether it's possible or not
+  to see, respectively. 
+
+  

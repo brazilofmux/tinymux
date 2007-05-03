@@ -28,10 +28,10 @@
   @dbclean       @delcommand    @destroy       @disable       @doing
   @dump          @enable        @fixdb         @function      @halt
   @kick          @list          @listcommands  @list_file     @listmotd
-  @lock          @mark          @mark_all      @motd          @newpassword
-  @pcreate       @poor          @ps            @quota         @readcache
-  @restart       @shutdown      @startslave    @timewarp      @toad
-  @wall
+  @lock          @log           @mark          @mark_all      @motd
+  @newpassword   @pcreate       @poor          @ps            @quota
+  @readcache     @restart       @shutdown      @startslave    @timewarp
+  @toad          @wall
  
   @allowance     @comment       @timeout
 
@@ -209,7 +209,7 @@
   Command: @attribute[/<switch>] <attrib>[=<value>]
   Performs operations on user-named attributes depending on the switch used.
   The following switches are available:
-     /access   - Changes mthejkk access to the named attribute.  <value> is a
+     /access   - Changes the access to the named attribute.  <value> is a
                  space-separated list of permissions to add or remove from
                  the attribute's access permissions.
      /delete   - Removes the named attribute from the attribute table.
@@ -323,11 +323,8 @@
      structure  - Dump the structure portion of the database to a flat file.
      text       - Ensure that all changes to the text portion of the
                   database are written out to disk.
-     optimize   - Rewrites the gdbm hash table out to disk, compressing
-                  unused space. Should be used sparingly, and only when
-                  there has been a lot of shuffling in the database.
  
-  Note that the structure and text options will cause your database and
+  Note that these structure and text options will cause your database and
   certain caches to be out of sync. They should NOT be used in the course
   of normal operation.
  
@@ -371,30 +368,38 @@
 
 & @function
   Command: @function[/<switches>] <function>=<object>/<attr>
- 
-  This command creates a global function named <function>.  When invoked,
-  the arguments to the function are loaded into %0-%9, the <attr> attribute
-  from <object> is fetched, and substitution is performed on the resulting
-  text.  The result of that substitution is returned as the function result.
 
-  If the /privileged switch is given, then the function is evaluated as if
-  the evaluation were being performed by the object on which it is stored,
-  instead of as if it were being performed by the invoker of the function.
-  This may be used to allow access to information normally available only
-  to wizards.
+  This command displays a list of currently-defined global functions or
+  adds a new global function named <function>.  When invoked, the
+  arguments to the function are loaded into %0-%9, the <attr> attribute
+  from <object> is fetched, and substitution is performed on the
+  resulting text.  The result of that substitution is returned as the
+  function result.
+
+  If no arguments are given, or if the /list switch is given, the command
+  displays a list of the currently-defined global functions. /priviledged
+  functions are indicated with a 'W' and /preserve functions are indicated
+  with a 'p'.
+
+  If the /privileged switch is given, then the new global function is
+  evaluated as if the evaluation were being performed by the object on
+  which it is stored, instead of as if it were being performed by the
+  invoker of the function.  This may be used to allow access to
+  information normally available only to wizards.
  
-  The /preserve switch causes r-registers to be preserved across the defined
-  function, so you can feel free to use registers in the code without
-  worrying about them overwriting previous definitions.
+  The /preserve switch causes r-registers to be preserved across the
+  defined function, so you can feel free to use registers in the code
+  without worrying about them overwriting previous definitions.
  
-  The function definitions created by @function are not stored in the database
-  so they need to be re-created each time the MUX is started.  It is
-  recommended that the Startup attribute for player #1 include code to
-  set up all global functions.
+  The function definitions created by @function are not stored in the
+  database so they need to be re-created each time the MUX is started.
+  It is recommended that the Startup attribute for player #1 include
+  code to set up all global functions.
  
   Function definitions may not be removed (aside from shutting down and
-  restarting the MUX, but they may be redefined so that they point to an
-  unused attribute.  This command may normally only be invoked by player #1.
+  restarting the MUX, but they may be redefined so that they point to
+  an unused attribute.  This command may normally only be invoked by
+  player #1.
  
 & @halt
   Command: @halt[/<switches>] [<object>]
@@ -730,6 +735,14 @@
   Player #1 may also make attribute locks of the form <attr-num>:<value>
   Note that if <attr-num> is not a valid attribute number, the lock will
   never succeed.
+
+& @log
+  Command: @log <file>=<message>
+  This logs the message (without timestamp) to the named file. Pathnames
+  are stripped, and the file resides in mux2.0/game/logs/
+ 
+  The file must already exist for the @log request to succeed, and can only
+  be created at the MUX account shell.
 
 & @mark
   Command: @mark[/<switches>] [<player>] [<class>=<restriction>]

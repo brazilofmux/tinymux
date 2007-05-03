@@ -20,6 +20,8 @@ Cambridge, MA 02139, USA.
    The author may be reached (Email) at the address mike@ai.mit.edu,
    or (US mail) as Mike Haertel c/o Free Software Foundation.  */
 
+#if 0
+
 #ifndef MALLOC_H
 
 #define MALLOC_H	1
@@ -242,7 +244,7 @@ enum mcheck_status
    before `malloc' is ever called.  ABORTFUNC is called with an error code
    (see enum above) when an inconsistency is detected.  If ABORTFUNC is
    null, the standard function prints on stderr and then calls `abort'.  */
-extern int mcheck __P ((void));
+// extern int mcheck __P ((void));
 
 /* Check for aberrations in a particular malloc'd block.  You must have
    called `mcheck' already.  These are the same checks that `mcheck' does
@@ -254,14 +256,15 @@ extern void mtrace __P ((void));
 extern void muntrace __P ((void));
 
 /* Statistics available to the user.  */
-struct mstats
-  {
-    __malloc_size_t bytes_total; /* Total size of the heap. */
-    __malloc_size_t chunks_used; /* Chunks allocated by the user. */
-    __malloc_size_t bytes_used;	/* Byte total of user-allocated chunks. */
-    __malloc_size_t chunks_free; /* Chunks in the free list. */
-    __malloc_size_t bytes_free;	/* Byte total of chunks in the free list. */
-  };
+
+// struct mstats
+//  {
+//    __malloc_size_t bytes_total; /* Total size of the heap. */
+//    __malloc_size_t chunks_used; /* Chunks allocated by the user. */
+//    __malloc_size_t bytes_used;	/* Byte total of user-allocated chunks. */
+//    __malloc_size_t chunks_free; /* Chunks in the free list. */
+//    __malloc_size_t bytes_free;	/* Byte total of chunks in the free list. */
+//  }; 
 
 /* Pick up the current statistics. */
 extern struct mstats mstats __P ((void));
@@ -288,3 +291,5 @@ extern __ptr_t r_re_alloc __P ((__ptr_t *__handleptr, __malloc_size_t __size));
 #endif
 
 #endif /* malloc.h  */
+
+#endif /* 0 */

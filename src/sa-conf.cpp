@@ -1,10 +1,10 @@
 /*
- * Standalone conf.c 
+ * Standalone conf.cpp
  */
 /*
- * $Id: sa-conf.c,v 1.2 1997/04/16 06:01:37 dpassmor Exp $ 
+ * $Id: sa-conf.cpp,v 1.1 2000-04-11 07:14:47 sdennis Exp $ 
  */
 
 #undef MEMORY_BASED
 #define STANDALONE
-#include "conf.c"
+#include "conf.cpp"

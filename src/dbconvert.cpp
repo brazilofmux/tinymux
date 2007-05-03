@@ -2,223 +2,292 @@
  * dbconvert.c - Convert databases to various MUX formats 
  */
 /*
- * $Id: dbconvert.c,v 1.2 1997/04/16 06:00:55 dpassmor Exp $ 
+ * $Id: dbconvert.cpp,v 1.1 2000-04-11 07:14:44 sdennis Exp $ 
  */
 
-#undef MEMORY_BASED
 #include "copyright.h"
 #include "autoconf.h"
-
 #include "config.h"
-#include "db.h"
+#undef MEMORY_BASED
 #include "externs.h"
+
+#include "db.h"
+#include "vattr.h"
+#ifdef WIN32
+#include "_build.h"
+#endif // WIN32
+
+#ifdef RADIX_COMPRESSION
+#ifndef COMPRESSOR
+#define COMPRESSOR
+#endif
+#include "radix.h"
+#endif
 
 extern void NDECL(cf_init);
 extern void FDECL(do_dbck, (dbref, dbref, int));
-extern void NDECL(vattr_init);
+extern void NDECL(init_attrtab);
+
 /*
  * ---------------------------------------------------------------------------
  * * info: display info about the file being read or written.
  */
 
-void info(fmt, flags, ver)
-int fmt, flags, ver;
+void info(int fmt, int flags, int ver)
 {
-	const char *cp;
+    const char *cp;
 
-	switch (fmt) {
-	case F_MUX:
-		cp = "TinyMUX";
-		break;
-	case F_MUSH:
-		cp = "TinyMUSH";
-		break;
-	case F_MUSE:
-		cp = "TinyMUSE";
-		break;
-	case F_MUD:
-		cp = "TinyMUD";
-		break;
-	case F_MUCK:
-		cp = "TinyMUCK";
-		break;
-	default:
-		cp = "*unknown*";
-		break;
-	}
-	fprintf(stderr, "%s version %d:", cp, ver);
-	if (flags & V_ZONE)
-		fprintf(stderr, " Zone");
-	if (flags & V_LINK)
-		fprintf(stderr, " Link");
-	if (flags & V_GDBM)
-		fprintf(stderr, " GDBM");
-	if (flags & V_ATRNAME)
-		fprintf(stderr, " AtrName");
-	if (flags & V_ATRKEY) {
-		if ((fmt == F_MUSH) && (ver == 2))
-			fprintf(stderr, " ExtLocks");
-		else
-			fprintf(stderr, " AtrKey");
-	}
-	if (flags & V_PARENT)
-		fprintf(stderr, " Parent");
-	if (flags & V_COMM)
-		fprintf(stderr, " Comm");
-	if (flags & V_ATRMONEY)
-		fprintf(stderr, " AtrMoney");
-	if (flags & V_XFLAGS)
-		fprintf(stderr, " ExtFlags");
-	fprintf(stderr, "\n");
+    switch (fmt) {
+    case F_MUX:
+        cp = "TinyMUX";
+        break;
+    case F_MUSH:
+        cp = "TinyMUSH";
+        break;
+    case F_MUSE:
+        cp = "TinyMUSE";
+        break;
+    case F_MUD:
+        cp = "TinyMUD";
+        break;
+    case F_MUCK:
+        cp = "TinyMUCK";
+        break;
+    default:
+        cp = "*unknown*";
+        break;
+    }
+    Log.printf("%s version %d:", cp, ver);
+    if (flags & V_ZONE)
+        Log.WriteString(" Zone");
+    if (flags & V_LINK)
+        Log.WriteString(" Link");
+    if (flags & V_GDBM)
+        Log.WriteString(" GDBM");
+    if (flags & V_ATRNAME)
+        Log.WriteString(" AtrName");
+    if (flags & V_ATRKEY) {
+        if ((fmt == F_MUSH) && (ver == 2))
+            Log.WriteString(" ExtLocks");
+        else
+            Log.WriteString(" AtrKey");
+    }
+    if (flags & V_PARENT)
+        Log.WriteString(" Parent");
+    if (flags & V_COMM)
+        Log.WriteString(" Comm");
+    if (flags & V_ATRMONEY)
+        Log.WriteString(" AtrMoney");
+    if (flags & V_XFLAGS)
+        Log.WriteString(" ExtFlags");
+    Log.WriteString("\n");
 }
 
-void usage(prog)
-char *prog;
+void usage(char *prog)
 {
-	fprintf(stderr, "Usage: %s gdbm-file [flags] [<in-file] [>out-file]\n", prog);
-	fprintf(stderr, "   Available flags are:\n");
-	fprintf(stderr, "      C - Perform consistency check\n");
-	fprintf(stderr, "      G - Write in gdbm format        g - Write in flat file format\n");
-	fprintf(stderr, "      K - Store key as an attribute   k - Store key in the header\n");
-	fprintf(stderr, "      L - Include link information    l - Don't include link information\n");
-	fprintf(stderr, "      M - Store attr map if GDBM      m - Don't store attr map if GDBM\n");
-	fprintf(stderr, "      N - Store name as an attribute  n - Store name in the header\n");
-	fprintf(stderr, "      P - Include parent information  p - Don't include parent information\n");
-	fprintf(stderr, "      W - Write the output file  b    w - Don't write the output file.\n");
-	fprintf(stderr, "      X - Create a default GDBM db    x - Create a default flat file db\n");
-	fprintf(stderr, "      Z - Include zone information    z - Don't include zone information\n");
-	fprintf(stderr, "      <number> - Set output version number\n");
+#ifdef WIN32
+    Log.printf("%s %s #%s\n", prog, szBuildDate, szBuildNum);
+#endif // WIN32
+    Log.printf("Usage: %s gamedb-basename [flags] [<in-file] [>out-file]\n", prog);
+    Log.WriteString("   Available flags are:\n");
+    Log.WriteString("      C - Perform consistency check\n");
+    Log.WriteString("      G - Write in dir/pag format     g - Write in flat file format\n");
+    Log.WriteString("      K - Store key as an attribute   k - Store key in the header\n");
+    Log.WriteString("      L - Include link information    l - Don't include link information\n");
+    Log.WriteString("      M - Store attr map if DIRPAG    m - Don't store attr map if DIRPAG\n");
+    Log.WriteString("      N - Store name as an attribute  n - Store name in the header\n");
+    Log.WriteString("      P - Include parent information  p - Don't include parent information\n");
+    Log.WriteString("      W - Write the output file  b    w - Don't write the output file.\n");
+    Log.WriteString("      X - Create a default DIRPAG db  x - Create a default flat file db\n");
+    Log.WriteString("      Z - Include zone information    z - Don't include zone information\n");
+    Log.WriteString("      <number> - Set output version number\n");
 }
 
-void main(argc, argv)
-int argc;
-char *argv[];
-{
-	int setflags, clrflags, ver;
-	int db_ver, db_format, db_flags, do_check, do_write;
-	char *fp;
+long DebugTotalFiles = 3;
+long DebugTotalThreads = 1;
+long DebugTotalSemaphores = 0;
+long DebugTotalSockets = 0;
 
-	if ((argc < 2) || (argc > 3)) {
-		usage(argv[0]);
-		exit(1);
-	}
-	cf_init();
+int DCL_CDECL main(int argc, char *argv[])
+{
+    int setflags, clrflags, ver;
+    int db_ver, db_format, db_flags, do_check, do_write;
+    char *fp;
+
+    if ((argc < 2) || (argc > 3))
+    {
+        usage(argv[0]);
+        exit(1);
+    }
+
+    SeedRandomNumberGenerator();
+
+    cf_init();
 #ifdef RADIX_COMPRESSION
-	init_string_compress();
+    init_string_compress();
 #endif
-	/*
-	 * Decide what conversions to do and how to format the output file 
-	 */
 
-	setflags = clrflags = ver = do_check = 0;
-	do_write = 1;
+    // Decide what conversions to do and how to format the output file.
+    //
+    setflags = clrflags = ver = do_check = 0;
+    do_write = 1;
+    int do_redirect = 0;
 
-	if (argc == 3) {
-		for (fp = argv[2]; *fp; fp++) {
-			switch (*fp) {
-			case 'C':
-				do_check = 1;
-				break;
-			case 'G':
-				setflags |= V_GDBM;
-				break;
-			case 'g':
-				clrflags |= V_GDBM;
-				break;
-			case 'Z':
-				setflags |= V_ZONE;
-				break;
-			case 'z':
-				clrflags |= V_ZONE;
-				break;
-			case 'L':
-				setflags |= V_LINK;
-				break;
-			case 'l':
-				clrflags |= V_LINK;
-				break;
-			case 'N':
-				setflags |= V_ATRNAME;
-				break;
-			case 'n':
-				clrflags |= V_ATRNAME;
-				break;
-			case 'K':
-				setflags |= V_ATRKEY;
-				break;
-			case 'k':
-				clrflags |= V_ATRKEY;
-				break;
-			case 'P':
-				setflags |= V_PARENT;
-				break;
-			case 'p':
-				clrflags |= V_PARENT;
-				break;
-			case 'W':
-				do_write = 1;
-				break;
-			case 'w':
-				do_write = 0;
-				break;
-			case 'X':
-				clrflags = 0xffffffff;
-				setflags = OUTPUT_FLAGS;
-				ver = OUTPUT_VERSION;
-				break;
-			case 'x':
-				clrflags = 0xffffffff;
-				setflags = UNLOAD_OUTFLAGS;
-				ver = UNLOAD_VERSION;
-				break;
-			case '0':
-			case '1':
-			case '2':
-			case '3':
-			case '4':
-			case '5':
-			case '6':
-			case '7':
-			case '8':
-			case '9':
-				ver = ver * 10 + (*fp - '0');
-				break;
-			default:
-				fprintf(stderr, "Unknown flag: '%c'\n", *fp);
-				usage(argv[0]);
-				exit(1);
-			}
-		}
-	}
-	/*
-	 * Open the gdbm file 
-	 */
+    if (argc >= 3)
+    {
+        for (fp = argv[2]; *fp; fp++)
+        {
+            switch (*fp)
+            {
+            case 'C':
+                do_check = 1;
+                break;
+            case 'G':
+                setflags |= V_GDBM;
+                break;
+            case 'g':
+                clrflags |= V_GDBM;
+                break;
+            case 'Z':
+                setflags |= V_ZONE;
+                break;
+            case 'z':
+                clrflags |= V_ZONE;
+                break;
+            case 'L':
+                setflags |= V_LINK;
+                break;
+            case 'l':
+                clrflags |= V_LINK;
+                break;
+            case 'N':
+                setflags |= V_ATRNAME;
+                break;
+            case 'n':
+                clrflags |= V_ATRNAME;
+                break;
+            case 'K':
+                setflags |= V_ATRKEY;
+                break;
+            case 'k':
+                clrflags |= V_ATRKEY;
+                break;
+            case 'P':
+                setflags |= V_PARENT;
+                break;
+            case 'p':
+                clrflags |= V_PARENT;
+                break;
+            case 'W':
+                do_write = 1;
+                break;
+            case 'w':
+                do_write = 0;
+                break;
+            case 'X':
+                clrflags = 0xffffffff;
+                setflags = OUTPUT_FLAGS;
+                ver = OUTPUT_VERSION;
+                do_redirect = 1;
+                break;
+            case 'x':
+                clrflags = 0xffffffff;
+                setflags = UNLOAD_OUTFLAGS;
+                ver = UNLOAD_VERSION;
+                break;
+            case '0':
+            case '1':
+            case '2':
+            case '3':
+            case '4':
+            case '5':
+            case '6':
+            case '7':
+            case '8':
+            case '9':
+                ver = ver * 10 + (*fp - '0');
+                break;
+            default:
+                Log.printf("Unknown flag: '%c'\n", *fp);
+                usage(argv[0]);
+                exit(1);
+            }
+        }
+    }
+#ifdef WIN32
+    _setmode(fileno(stdin),O_BINARY);
+    _setmode(fileno(stdout),O_BINARY);
+#endif // WIN32
 
-	vattr_init();
-	if (init_gdbm_db(argv[1]) < 0) {
-		fprintf(stderr, "Can't open GDBM file\n");
-		exit(1);
-	}
-	/*
-	 * Go do it 
-	 */
+    // Open the database
+    //
+    init_attrtab();
+    vattr_init();
 
-	db_read(stdin, &db_format, &db_ver, &db_flags);
-	fprintf(stderr, "Input: ");
-	info(db_format, db_flags, db_ver);
+    char dirfile[SIZEOF_PATHNAME];
+    char pagfile[SIZEOF_PATHNAME];
+    strcpy(dirfile, argv[1]);
+    strcat(dirfile, ".dir");
+    strcpy(pagfile, argv[1]);
+    strcat(pagfile, ".pag");
 
-	if (do_check)
-		do_dbck(NOTHING, NOTHING, DBCK_FULL);
+    int cc = init_dbfile(dirfile, pagfile);
+    if (cc == HF_OPEN_STATUS_ERROR)
+    {
+        Log.printf("Can't open database in (%s, %s) files\n", dirfile, pagfile);
+        exit(1);
+    }
+    else if (cc == HF_OPEN_STATUS_OLD)
+    {
+        if (setflags == OUTPUT_FLAGS)
+        {
+            Log.printf("Would overwrite existing database (%s, %s)\n", dirfile, pagfile);
+            CLOSE;
+            exit(1);
+        }
+    }
+    else if (cc == HF_OPEN_STATUS_NEW)
+    {
+        if (setflags == UNLOAD_OUTFLAGS)
+        {
+            Log.printf("Database (%s, %s) is empty.\n", dirfile, pagfile);
+            CLOSE;
+            exit(1);
+        }
+    }
 
-	if (do_write) {
-		db_flags = (db_flags & ~clrflags) | setflags;
-		if (db_format != F_MUX)
-			db_ver = 3;
-		if (ver != 0)
-			db_ver = ver;
-		fprintf(stderr, "Output: ");
-		info(F_MUX, db_flags, db_ver);
-		db_write(stdout, F_MUX, db_ver | db_flags);
-	}
-	CLOSE;
+    // Go do it.
+    //
+    if (do_redirect)
+    {
+        extern void cache_redirect(void);
+        cache_redirect();
+    }
+    setvbuf(stdin, NULL, _IOFBF, 16384);
+    db_read(stdin, &db_format, &db_ver, &db_flags);
+    if (do_redirect)
+    {
+        extern void cache_pass2(void);
+        cache_pass2();
+    }
+    Log.WriteString("Input: ");
+    info(db_format, db_flags, db_ver);
+
+    if (do_check)
+        do_dbck(NOTHING, NOTHING, DBCK_FULL);
+
+    if (do_write) {
+        db_flags = (db_flags & ~clrflags) | setflags;
+        if (db_format != F_MUX)
+            db_ver = 3;
+        if (ver != 0)
+            db_ver = ver;
+        Log.WriteString("Output: ");
+        info(F_MUX, db_flags, db_ver);
+        setvbuf(stdout, NULL, _IOFBF, 16384);
+        db_write(stdout, F_MUX, db_ver | db_flags);
+    }
+    CLOSE;
+    db_free();
+    return 0;
 }

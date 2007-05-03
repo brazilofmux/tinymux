@@ -1,10 +1,10 @@
 /*
- * Standalone vattr.c 
+ * Standalone vattr.cpp
  */
 /*
- * $Id: sa-vattr.c,v 1.2 1997/04/16 06:01:49 dpassmor Exp $ 
+ * $Id: sa-vattr.cpp,v 1.1 2000-04-11 07:14:47 sdennis Exp $ 
  */
 
 #undef MEMORY_BASED
 #define STANDALONE
-#include "vattr.c"
+#include "vattr.cpp"

@@ -110,6 +110,8 @@
 #undef EXTENDED_STDIO_DCLS
 /* Define if sys/socket.h defines lots of extra functions */
 #undef EXTENDED_SOCKET_DCLS
+/* Define if socklen_t is defined */
+#undef SOCKLEN_T_DCL
 /* Define if sys/wait.h defines union wait. */
 #undef HAVE_UNION_WAIT
 /* Define if we have system-supplied ndbm routines */
@@ -130,6 +132,10 @@
 #undef NEED_RANDOM_DCL
 /* Define if you need to declare getpagesize yourself */
 #undef NEED_GETPAGESIZE_DCL
+/* Define if you have IEEE floating-point formatted numbers */
+#undef HAVE_IEEE_FP_FORMAT
+/* Define if your IEEE floating-point library can generate NaN */
+#undef HAVE_IEEE_FP_SNAN
 
 /* ---------------------------------------------------------------------------
  * Setup section:
@@ -184,7 +190,6 @@ extern int	FDECL(qsort, (char *, int, int, int (*)()));
 #endif
 #else
 #include <strings.h>
-extern char *	FDECL(strtok, (char *, char *));
 extern char *	FDECL(strchr, (char *, char));
 extern void	FDECL(bcopy, (char *, char *, int));
 extern int      FDECL(bcmp, (char *, char *, int));
@@ -285,12 +290,6 @@ extern int	NDECL(getpagesize);
 
 #ifdef HAVE_ERRNO_H
 #include <errno.h>
-#ifdef NEED_PERROR_DCL
-extern void	FDECL(perror, (const char *));
-#endif
-#else
-extern int errno;
-extern void	FDECL(perror, (const char *));
 #endif
 
 #ifdef HAVE_MALLOC_H
@@ -317,13 +316,6 @@ extern time_t	FDECL(timelocal, (struct tm *));
 #endif /* HAVE_MKTIME */
 
 #endif /* HAVE_TIMELOCAL */
-
-#ifndef tolower
-extern int	FDECL(tolower, (int));
-#endif
-#ifndef toupper
-extern int	FDECL(toupper, (int));
-#endif
 
 #ifdef HAVE_VFORK_H
 #include <vfork.h>
@@ -389,12 +381,6 @@ extern int	FDECL(setsockopt, (int, int, int, void *, int));
 extern int	FDECL(shutdown, (int, int));
 extern int	FDECL(socket, (int, int, int));
 extern int	FDECL(select, (int, fd_set *, fd_set *, fd_set *, struct timeval *));
-#endif
-
-/* Under linux, use the optimized string functions */
-#ifdef __linux__
-extern char *___strtok;
-#include <asm/string.h>
 #endif
 
 typedef int	dbref;

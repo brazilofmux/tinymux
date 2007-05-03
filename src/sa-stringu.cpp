@@ -1,10 +1,10 @@
 /*
- * Standalone stringutil.c 
+ * Standalone stringutil.cpp
  */
 /*
- * $Id: sa-stringu.c,v 1.2 1997/04/16 06:01:44 dpassmor Exp $ 
+ * $Id: sa-stringu.cpp,v 1.1 2000-04-11 07:14:47 sdennis Exp $ 
  */
 
 #undef MEMORY_BASED
 #define STANDALONE
-#include "stringutil.c"
+#include "stringutil.cpp"

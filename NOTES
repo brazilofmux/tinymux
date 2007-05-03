@@ -1,774 +1,133 @@
-This is the NOTES file for TinyMUX version 1.0, detailing the patches to
-TinyMUSH 2.0 to the 2.0.10 patchlevel 6, on which TinyMUX is based.
-
-TinyMUSH 2.0 patchlevel 1:
-
-- Replaced the dynahash database layer with Marcus Ranum's untermud
-  database layer.  This fixes the 'attribute-eating' bug (aka the 'nothing'
-  bug.)
-- New switches to commands:
-    @clone: /inherit /preserve.
-- New commands: SESSION @last.
-- New functions: AFTER BEFORE ROOM REVERSE REVWORDS.
-- Last successful connect displayed when you log in.
-- Notice of any failed connects when you log in.
-- Players with the BUILDER flag set are no longer sent home when their
-  container teleports.
-- Corrected a problem with wizards @destroying exits in another room.
-- @dolist now runs the commands in the intuitive order.
-- examine and @edit now support wildcard attribute names.
-- @lock/unlock <obj>/<attr> only affects the locked flag of the attribute.
-- @set <obj>/<attr> = [!]no_command now sets/clears the no_command flag on an
-  attribute.
-- You may overwrite/clear unlocked attributes owned by others on your objects.
-- Locked attributes may not be changed at all.
-- TinyMUD database files up to version 1.5.5 may be read in.
-
-TinyMUSH 2.0 patchlevel 2a:
-
-- Players and things may now have exits from them.
-- @clone can now clone rooms and things.
-- @decompile can decompile any object type.
-- New locks (set by switches to @lock and @unlock commands):
-    drop enter give leave page receive tport use
-- Owned-by lock qualifier (matches anything owned by the owner of the object)
-- Enter/leave aliases.
-- You can get and drop exits.
-- If the home or dropto of an object/room is destroyed, the home or dropto 
-  is reset before the object is re-allocated.
-- New functions: MAX MIN
-- New switches to commands:
-    @open: /inventory /location
-    @clone: /inventory /location
-- New attributes:
-    @away @idle @reject: Page-return messages.
-    @ealias @lalias: Enter aliases and leave aliases.
-    @alias: An alternate name for a player (for paging, *-lookup, etc)
-    @efail/@oefail/@aefail: for when you fail to ENTER somewhere.
-    @lfail/@olfail/@alfail: for when you fail to LEAVE somewhere.
-    @tport/@otport/@oxtport/@atport: for when you @teleport.
-    Lastsite: the host from which you last logged in.
-- You no longer get 'has left' and 'has arrived' when you drop or pick up
-  hearing objects.  Others in the room (or in your inventory) still see them.
-- You now always get the 'You get your xx penny deposit...' message when one
-  of your objects is destroyed - even if it was automatically destroyed
-  (say because it was an exit that was in a destroyed room).
-- All objects that enter or look around in a location trigger the adesc and
-  (if a room) asucc attributes.
-- Whispering to faraway players (ala @pemitting to faraway players) is no
-  longer allowed for nonnwizards.
-- The HAVEN flag no longer blocks pages.  Use the new page lock for that.
-- Fixed a couple of memory leaks.
-- @decompile now takes a 'target name' and produces code to set attributes on
-  the named target (if specified).
-
-TinyMUSH 2.0 patchlevel 2b:
-
-- New functions: SEARCH STATS.
-- New flags: SAFE MONITOR.
-- New switches to commands:
-    @destroy: /override
-- If you put a space after the colon in a colon-pose command (ie ': test'),
-  then the space between your name and the message will be omitted.
-  This makes ': test' equivalent to ';test'.
-- Fixed a money leak in the @halt command.
-
-TinyMUSH 2.0 patchlevel 2c:
-
-- New functions: GET_EVAL ITER.
-- Multiple @listens: Attributes of the form ^<pattern>:<commands> are checked
-  when the object hears something if the MONITOR flag is set.  If the pattern
-  matches, the commands are executed.
-
-TinyMUSH 2.0 patchlevel 3:
-
-- New functions: EDIT LOCATE SPACE SWITCH U.
-- New command: @verb.
-- New flag: AUDIBLE.
-- New switches for commands:
-  @boot: /port /quiet
-  @sweep: /exits
-  @toad: /no_chown
-- New option for @list: db_stats.
-- New attributes: @filter @infilter @inprefix @prefix.
-- New locks: linklock teloutlock.
-- Non-hearing objects no longer trigger adesc/asucc when they enter or look
-  around in a location.  (Non-hearing objects looking is pointless).
-- SESSION now displays user port number (really the internal file_id number)
-- When invoked by wizards, WHO displays the player flags DARK, UNFINDABLE,
-  and SUSPECT, and the site flags REGISTRATION, FORBIDDEN, and SUSPECT.
-- When invoked by wizards, DOING displays the player flags DARK, UNFINDABLE,
-  and SUSPECT.
-- PernMUSH databases up to version 1.18.03 and TinyMUSE databases up to
-  database version 7 may now be read.
-- If a robot is @chowned as part of chowning all of a user's objects
-  (via @destroy, @toad, or @chownall), the robot then owns itself and is
-  not owned by the target player.
-
-TinyMUSH 2.0 patchlevel 4:
-
-- Dark wizards no longer generate '...has connected.' and
-  '...has disconnected.' to those in the same room as them when they connect
-  and disconnect.  Messages to their inventory are unaffected.
-- Dark wizards no longer trigger OSUCC/ODROP/ASUCC/ADROP when traversing exits.
-- If you connect to an already-connected character, others in the same room
-  (and in your inventory) see the message '...has reconnected.'.
-- If you QUIT from one session of a multiply-connected character, others in the
-  room see '...has partially disconnected.'.
-- @clone now lets you specify a different name for the new object
-  (@clone <what>=<newname>)
-- New switches for commands:
-  @clone: /cost
-- New option for @list: process
-- Bug fixes:
-  o Players may no longer name themselves to illegal names.
-  o Infinite recursion with u() is no longer possible.
-  o The inherit bit on players now works correctly.
-  o Getting an unknown attribute (via get(obj/attr)) returns an empty string
-    instead of "#-1 UNKNOWN ATTRIBUTE"
-  o @search now correctly handles object-type-specific flags.
-- The value of %# (and %n, etc) is now the object producing the message, rather
-  than the object that ran the command that produced the message.  (Best
-  example: A does '@tel B=#C', %# was A but is now B)
-
-TinyMUSH 2.0 patchlevel 5:
-
-- New commands: @parent @@.
-- New functions: PARENT SIGN.
-- New config directives: full_file full_motd_message function_invocation_limit
-    function_recursion_limit idle_wiz_dark lock_recursion_limit max_players
-    notify_recursion_limit status_file 
-- New switches for commands:
-  @clone: /parent
-  @motd: /full
-  drop enter get leave move: /quiet
-  examine: /parent
-- New attributes: @forwardlist
-- New option for the @list command: bad_names
-- New option for the @list_file command: full
-- @pcreate now only requires wizard privs to run.
-- @shutdown now takes an argument, which is written to the file named by the
-  status_file config directive.
-- IMMORTAL players and objects no longer consume money.
-- There is now a runtime-configurable maximum number of users.
-- DESTROY_OK things now show off their db-number and flags.
-- examine/brief now always reports just the owner (or owner+name if so 
-  configured)
-- Teleporting through exits no longer generates the '...attempts to push you
-  from the room.' messages.
-- There are now function recursion and invoction limits enforced on each
-  command (to stop runaway recursion)
-- Setting something audible now generates the '...grows ears...' message.
-- The HALTED flag no longer gets cleared on each startup.
-- Dark wizards no longer trigger OFAIL/AFAIL on exits.
-- @drain now refunds money for canceled commands.
-- Message forwarding filters are now evaluated before performing the compare.
-- The argument to @doing is no longer evaluated.
-- Parent objects: provide defaults for attributes, exits, and $-commands.
-- Wizards idle for longer than the default timeout are automatically set DARK.
-  This is undone when they type a command.
-- Formatting for '@list costs' and '@list options' improved.
-- Disallowed playernames may now include wildcard characters.
-
-TinyMUSH 2.0 patchlevel 6:
-
-- The u() function can now look up attributes on other objects.
-- The CONNECTED flag of dark wizards is no longer visible to nonwizards.
-- Bug fixes:
-    You must now pass the default lock of an object in order to take it from
-       someone else, not the give lock.
-    Wizards no longer accumulate money.
-    examine/parent now works.
-    Players may now clear their alias.
-    Aleave/Oleave are now handled properly again.
-    The parent field of each object is now properly initialized if the source
-       database does not have parent information.
-    You can no longer inadvertantly create a character with a null name.
-    @search keywords 'eplayer', 'eroom', 'eobject', and 'eexit' now match
-       the help file.
-- Robots may only be created by players and INHERIT objects.
-- %p/%o/%s now return 'its' or 'it' as appropriate for neuter objects.
-- @clone now copies the parent of the original object unless you
-  specify /parent
-
-TinyMUSH 2.0 patchlevel 7:
-
-- New functions: CONN IDLE STRMATCH SETDIFF SETINTER SETUNION SORT.
-- New attribute flag: VISUAL.
-- New flags: MYOPIC TERSE ZONE.
-- New locks: ControlLock UserLock.
-- New attributes: Adfail Agfail Arfail Atfail Dfail Gfail Odfail Ogfail Orfail
-    Otfail Rfail Tfail.
-- New config parameters: cache_steal_dirty cache_trim fascist_teleport
-    function_access good_name look_obeys_terse parentable_control_lock
-    terse_shows_contents terse_shows_exits terse_shows_move_messages
-    unowned_safe
-- New switches for commands:
-  look: /outside
-- Function aliases added: CONNSECS -> CONN, FLIP -> REVERSE, IDLESECS -> IDLE,
-    SEARCH -> LSEARCH, WHO -> LWHO.
-- The match() function no longer matches the entire string (undocumented
-  feature).  Use strmatch() for this functionality instead.
-- The name() function can now return the name of nearby dark exits.
-- @entrances now reports @Forwardlist references.
-- Destroyed locations are now automatically removed from @Forwardlist lists.
-- The victim of a teleport is no longer sent the message 'Teleported.'
-- You can no longer give yourself away.
-- New percent-substitution/v() argument: L (dbref location of invoker)
-- Functions add(), mul(), and(), or(), and xor() now take up to 30 args.
-- Commands on the wait queue or timed-semaphore queues should no longer
-  lose time.
-- Config file 'compat.conf' defines aliases and parameters like MUSH 1.x
-  Useful for including in your site-specific .conf file.
-- Objects inside a location with a @listen attribute no longer receive doubled
-  output when there is noise generated inside the location.
-- Names may be removed from the disallowed player name list while the mush
-  is running.
-- Access to functions may be restricted in a manner similar to that used
-  to restrict access to commands.
-- 'Special' objects in the database (such as the master room, default arrival
-  and home locations) may not be @destroyed.
-- @switch and switch() no longer evaluate arguments that need not be evaluated.
-- The second argument to iter() need no longer be escaped to prevent it from
-  being evaluated too soon.
-- @shutdown notifies connected players who shut the game down.
-- Added server support for Howard's Info-Serv remote page/who service.
-
-NOTE: The ZONE flag and the USER and CONTROL locks don't do anything
-at the moment.
-
-TinyMUSH 2.0 patchlevel 8:
-
-- Signal handling: SIGHUP performs a database dump, SIGQUIT, SIGTERM, and
-  SIGXCPU perform a graceful shutdown, SIGINT is logged but ignored.
-  SIGILL, SIGTRAP, SIGEMT, SIGFPE, SIGBUS, SIGSEGV, SIGSYS, and SIGXFSZ
-  may be optionally caught, resulting in a log entry and a panic dump.
-  If you catch these signals you may not get usable coredumps.
-- New config directive: signal_action
-- New function: MERGE REPEAT SPLICE
-- exam/parent now works with wildcarded attributes or no attribute
-  specification.
-- Many bug fixes.
-
-TinyMUSH 2.0.8 (10/08/92)
-
-- Changed version numbering scheme to better reflect releases.
-- Increased number of open descriptors on systems that support setrlimit().
-  This must be configured via the Makefile.
-- AUDIBLE/LISTEN forwarding should _finally_ be working correctly.
-- New flag: UNFINDABLE(room)
-- New attribute flag: NO_INHERIT
-- New functions:
-  ACOS ASIN ATAN COS SIN TAN: Trigonometric
-  EXP LN LOG POWER SQRT: Logarithms and Exponentation
-  FDIV: Floating point division
-  E PI: Arithmetic constants
-  SEARCH: Supports range limits ala @search.
-- Changed functions:
-  ABS ADD EQ GT GTE LT LTE MAX MIN MUL NEQ SIGN SUB: Floating point support
-  LOC RLOC ROOM: Obey UNFINDABLE flag on rooms
-  CONN IDLE: No longer crash the server when given a bad playername
-- Changed commands:
-  @quota: Now takes a playername, not an objectname.
-  @entrances @find @search: Support range limits.
-  @verb now works if you don't control the victim, but the victim doesn't
-  run the AWHAT attribute and you only retrieve the WHAT and OWHAT attributes
-  if you have permission to read them.
-- New help screen 'help function classes' lists functions by class.
-- When checking for $-commands or ^-listens, HALTed objects are skipped
-  entirely.  _IN THIS CASE ONLY_ attributes present on HALTed objects do not
-  block out attributes on the parent of the HALTed object.
-  POSS OBJ SUBJ - now can return information about faraway players.
-
-TinyMUSH 2.0.8 patchlevel 1 (10/12/92)
-
-- @sweep no longer shows nothing when given no arguments.
-- @dolist now works as it used to in 2.0.p8 (attempted bugfix removed).
-
-TinyMUSH 2.0.8 patchlevel 2 (10/21/92)
-
-- Fixed @dolist to do the 'right' thing with curly braces: curly braces are
-  only removed if they completely surround an argument (ie:
-  '@dolist foo={bar}', but not '@dolist foo={b;a}r'.  Fixed @apply_marked and
-  @wait in the same manner.  Note that the command to be run may remove braces
-  also.
-- Changed curly brace handling for @edit, @switch, and @verb so that only
-  curly braces that completely surround arguments are removed (ie:
-  'xxx, {arg}, yyy' but not 'xxx, {a,r}g, yyy'.
-- div() is now strictly integer division again.
-- Cleaned up signal handling somewhat, particularly the 'panicking' code.
-- Corrected code for determining whether or not a PennMUSH database uses
-  the builtin chat system.
-- ^-listens no longer check output from the object itself.
-- Removed all references to XENIX code.
-- The internal RWHO now uses a much bigger buffer for reading.
-- Changed RWHO defaults so they point to an operating mudwho server.
-- @listmotd for wizards now shows the motd and wizmotd files.
-- Never auto@destroy sacrificed players.
-
-  [ Note: This new functionality is considered experimental and is not
-    documented in the help file.  Please test it out and report bugs,
-    omissions, and inconsistencies to mushbugs@caisr2.caisr.cwru.edu ]
-
-- Absolute possesive substitution (%a, [v(a)]), returns its/hers/his/theirs.
-- Partial support for plural gender: %s/%p/%o/%a return they/their/them/theirs
-  when the Sex attribute starts with a p.  _NO_ other changes have been made
-  (as in ... has/have arrived/connected/etc) so as to not break @listen/@ahear
-  matching.
-- New functions:
-  APOSS(<obj>) - Absolute possesive, just like SUBJ/OBJ/POSS.
-- Changes to functions:
-  OWNER() - <obj>/<attr> syntax retrieves the owner of an attribute.
-  LOCK() - <obj>/<lock> syntax retrieves the named lock from <obj>.
-  ELOCK() - <obj>/<lock> syntax tests the named lock on <obj>.  If <lock> is
-    not the default lock you must control <obj> or it must be set VISIBLE.
-  LATTR() - <obj>/<wild-attr> returns attrs whose name matches <wild-attr>
-- Evaluation locks:  @lock <what> = <attr>/<value>
-  The contents of the <attr> attribute on <what> are evaluated substituting
-  %#/%N/etc for the player or thing that is attempting to pass the lock.
-  If the result of evaluating is equal to <value> (no wildcarding done, case
-  does not matter), then the player passes the lock.
-
-TinyMUSH 2.0.8 patchlevel 3 (10/23/92)
-
-- Connect and disconnect messages are no longer broadcast to nearby audible
-  rooms that are not linked via audible exits.
-- Poses inside an audible object now deliver the PREFIX message to those
-  outside the object.
-- Non-$command attributes now block out $command attributes on parent objects.
-- The output of the " command is now '... says "<whatever>"' again.  Oop.
-
-TinyMUSH 2.0.8 patchlevel 4 (10/27/92)
-
-- The USE lock now prevents $-command and ^-pattern matching from proceeding
-  further up the parent tree.
-- The server no longer dies if the very first match attempt is an
-  indirect lock check.
-- Players may delete their aliases.
-- Players are notified when they log in if their page lock is set.
-- Wizards are notified when they log in if logins are disabled.
-- Removed the getrusage() call from vattr_find() and vattr_nfind().
-- Converted Flags/Owner/etc to macros.
-- Hash tables now use bitmask-and to get the hash value instead of modulus.
-- vattr_hash and vattr_nhash are now macros, not one-line procedures.
-
-TinyMUSH 2.0.8 patchlevel 5 (10/29/92)
-
-- Object names are now cached by the server instead of in the attribute cache.
-- Lock evaluation for previously stored locks no longer does a full object
-  match when looking up objects.
-- No further match attempts are made when an exact match is made for a #number,
-  'me', or 'here'.
-- Text read over the network interface is processed faster.
-- New configuration options:
-  cache_depth cache_width
-- New lock primitives:
-  = (is) and + (carries) modifiers to attribute locks.
-- Fixed a problem with indirected evaluation locks.
-- 'Notified.' and 'Drained.' feelgood messages for @notify and @drain.
-
-TinyMUSH 2.0.8 patchlevel 6 (11/24/92)
-
-- Cleaned up declarations in many places.
-- Added switches for commands:
-    @motd/brief
-    @listmotd/brief
-- Removed commands:
-    @cat @note gripe
-- Added config option:
-    cache_names
-- Added functions:
-    ceil()
-- Added search class to @search/search()/@mark:
-    parent=<object>
-    things=<what> (alias of 'objects=<what>')
-    ething=<what> (alias of 'eobject=<what>')
-    type=things (alias of 'type=objects')
-- Removed config options:
-    gdbm_cache_size
-- Functions lt() lte() eq() gte() gt() ne() now accept floating point args.
-- Config options cache_width and cache_depth now affect the cache size
-  but only when used in the config file.
-- QUIET no longer checks the object's owner, only the object and the enactor.
-- Players who do not own themselves may no longer set the INHERIT flag.
-- convtime() is now more robust.
-- trunc() now returns the correct value.
-- Wizards may now locate() from #1's perspective.
-- The HALT flag no longer prevents objects from picking up $-commands and
-  ^-listens from a (HALTed) parent.
-- Audible/forwardlist prefix generation has been tweaked (again!)
-- Targeted message commands (whisper, @pemit, et al) no longer look for
-  exits before nearby objects.
-- Players may now build things that cost no quota when they are over quota.
-- @doing now evaluates its argument when run from an actionlist.
-- @sweep now tells you if your location is a PUPPET room.
-- Several @quota fixes:
-  @quota/fix now works
-  @chownall now correctly adjusts quotas
-  @link now correctly adjusts quotas when you steal an unlinked exit.
-- You may now @link a linked exit that you control.
-
-TinyMUSH 2.0.8 patchlevel 7 (12/02/92)
-
-- You may now make a dropto to HOME.
-- setunion now correctly handles setunion(3,4 4 4 4).
-- @startup works once more.
-- Help entry for @password corrected.
-- Object cacheing routines now compile again.
-- @search t=<type> now works again.
-- The ^ and $ (prefix and suffix) special characters for @edit and edit()
-  may be escaped to replace a literal ^ or $.
-
-TinyMUSH 2.0.8 patchlevel 8 (12/09/92)
-
-- Fixed several memory leaks. (Thanks Amberyl)
-- Fixed the 'disappearing name on #0' bug.
-- Removed the @whereis command.
-- Added support for Linux (thanks to bob@inmos.co.uk).
-
-TinyMUSH 2.0.8 patchlevel 9 (12/12/92)
-
-- dbconvert no longer aborts referencing the (nonexistent) name cache.
-- New function: index().
-- repeat() now returns a null string if the repeat count is zero or
-  non-numeric.
-- The default database has been renamed to tinymush.db in netmush.conf
-
-TinyMUSH 2.0.8 patchlevel 10 (12/18/92)
-
-- Fixed a bug that causes the db to eat itself if you use object name cacheing
-  and add more than 1000 objects between reboots.
-
-  ** DO NOT RUN versions 2.0.8.p6 through 2.0.8.p9 with object name cacheing
-  ** turned on.  If you do, your database will be eaten if you add more than
-  ** 1000 objects between reboots.
-
-TinyMUSH 2.0.9 (12/21/92)
-
-- Fixed a problem with indirect eval locks.
-- Removed command: rob
-- Changed the default uncompress program to "/usr/ucb/zcat -c"
-- Fixed a problem with reading compressed structure databases.
-- New flag: JUMP_OK for things.
-- The 'loses its ears and becomes deaf' is now gender-specific.
-- New functions:
-  fullname(): like name() but returns the complete name of exits.
-  index(): like extract() but lets you specify a separator character.
-  where(): like loc() but returns the source for exits and #-1 for rooms.
-- Changed functions:
-  repeat(): returns a zero length string instead of an error message if its
-    argument is zero, negative, or non-numeric.
-  space(): returns a null string if its argument is '0'.
-- Non-dark wizards are no longer treated like dark wizards when in a dark
-  location.
-- Connect and disconnect messages no longer report an (invalid) enactor to
-  those nearby with their NOSPOOF flag set.
-- A carriage return (\r) is sent following every cached file (login banner,
-  motd file, etc)
-- Player names may now have spaces.  Enclose the name in double quotes where
-  the name is expected to be folloed by the player's password. (connect/create
-  commands from the login screen, @name command when renaming a player).
-
-TinyMUSH 2.0.9 patchlevel 1 (03/15/93)
-
-- The build procedure now uses autoconf to determine system-dependent features.
-- New switches for commands:
-  @dolist: /delimit /space.
-  @femit: /here /room.
-- New arguments for commands:
-  @entrances: location to search.
-  @sweep: location to sweep.
-- New configuration directives:
-  player_name_spaces.
-- New functions: CONTROLS ELEMS FILTER FINDELEM FOLD LJUST PARSE R RJUST SETQ
-- The following functions now take an optional delimiter parameter: EXTRACT
-  FIRST INSERT ITER LDELETE MATCH MEMBER REPLACE REST REVWORDS SETDIFF
-  SETINTER SETUNION SPLICE SORT WORDPOS
-- New thing-specific flag: TRACE
-- cat(): now takes up to 30 arguments.
-- round(): no longer returns -0 for small (>  -1) negative numbers.
-- sort(): now takes an optional sort type parameter, default is to autodetect
-  the sort type (alphanum, numeric, or dbref).
-- u(): When performing a cross-object call, %# refers to the original enactor
-  but 'me' refers to the object supplying the attribute.
-- @clone: /parent is now ignored if you don't control the object.
-- @clone: the IMMORTAL flag is now stripped unless /inherit is given.
-- @clone: eval locks are now copied correctly.
-- @decompile: dumps a @parent command if the object has a parent.
-- @link: now accepts more forms of the object being linked to.
-- @lock: now accepts more forms when specifying a direct lock.
-- @lock: is now disabled when the global building flag is turned off.
-- @mvattr: should now work properly.
-- @name: no longer requires a password to change a player's name.
-- @name: player names are now checked more rigorously for illegal characters.
-- @quota: may now be useed by objects.
-- @set: Any INHERIT object may now grant INHERIT flags.
-- @set: Players that do not own themselves may no longer grant INHERIT flags.
-- @shutdown: The shutdown status file is no longer created with mode 0.
-- @wait: Timed semaphore waits where the semaphore is negative now execute
-  immediately.
-- @wait: Semaphore waits where the semaphore is negative no longer increment
-  the semaphore count by 1.
-- look: You can now look at exits inherited from your location's parents or
-  the master room.
-- There are now 10 global registers, set with setq() and read with r().
-- Objects may no longer execute commands inappropriate for their object type.
-- The \\, #, :/;, &, and " commands may now have their access set via the
-  access config directive.
-- Unlocked exits are now always selected over locked exits when trying to
-  traverse an exit.
-- Players are now reimbursed for commands in the queue at the last database
-  dump (according to their QUEUE attribute).
-- References to object numbers may no longer have trailing non-numeric
-  characters. (#123abc is no longer considered a legal dbref)
-- Fixed two memory allocation bugs in name cache setup.
-- Eval locks are now read correctly from flat files.
-- Trailing spaces are now stripped from evaluated strings if space compression
-  is turned on.
-- Messages generated inside a non-AUDIBLE object are no longer forwarded to
-  AUDIBLE exits in the same location as the object.
-- Text file messages now send CRLF as the end-of-line marked.
-
-TinyMUSH 2.0.9 patchlevel 2 (05/27/93)
-
-  User-Visible Changes:
-
-- Global registers (manipulated with setq()/r() are now preserved across the
-  queue.
-- TRACE output is now displayed top-first, not bottom-first. [Amberyl]
-- TRACE now displays both the object name and dbref in trace output. [Amberyl]
-- Leading spaces are now preserved within curly braces {}/  (One leading
-  space if space compression is enabled) [Felan]
-- abs(): now works with floating point numbers. [Joshua]
-- first(): returns a null string if passed a null string. [Jerrod]
-- index(): now works properly when the list contains an element containing
-  exactly one space.
-- ldelete(): now works properly when the list contains exactly one element.
-  [Ambar]
-- remove(): no longer strips the first word when called with a null second
-  argument. [Felan]
-- remove(): now allows an optional delimiter.
-- rest(): returns a null string if passed a null string. [Jerrod]
-- words(): now allows an optional delimiter.
-- words(): when called with no arguments returns "0". [Andrew]
-- @link: now performs an @unlink if you don't tell it what to link to. [Talek]
-- @verb: no longer discards the default WHAT and OWHAT messages if no source
-  attribute for them is specified. [Amberyl]
-- @unlink: can now unlink 'here'.
-- LINK_OK locations now advertise their dbref and flags again. [Michele]
-
-  Wizard-Visible Changes:
-
-- New command: @function [Amberyl]
-- New config directives: postdump_message [Ambar]
-- @clone now only copies attributes that the @cloner could write. [Ambar]
-- WHO no longer shows dark wizards if location #0 has been left WIZARD.
-- WHO for wizards now reports players in an unfindable location with the
-  'u' flag.
-- The QUOTA and RQUOTA attributes are now readable by wizards. [Michele]
-- The LASTSITE attribute is no longer updated by a failed login attempt.
-  [Ambar]
-
-  Performance/Maintainability Changes:
-
-- Autoconf now tests for problems with calling signal(SIGCHLD,...) from within
-  a signal handler.
-- The select() timeout is now set to the time that the next queued command
-  will execute, not one second.
-- The alarm() timeout is now set to the time the next scheduled event
-  (dump, db-check, idle check, etc) will be performed, not one second.
-- The attribute cache is now reset as part of running each command.
-- Queue entries now use much less memory.
-- Sorting (as performed by the SORT() and SETxxxx() functions should be much
-  faster.  You may now specify a 'f'loating-point sort. [Amberyl, Glenn]
-- Halted objects are no longer checked for LISTEN matching.
-- The maximum number of open file descriptors is now increased to the highest
-  number allowed, if the target system supports the setrlimit() call. [Ambar]
-- The text file database is now accessed via the stdio calls for both object
-  and attribute cacheing.
-- The text file database bitmap is now properly initialized when it grows.
-
-TinyMUSH 2.0.10 (08/10/93)
-
-  User-Visible Changes:
-
-- New command: @wipe
-- New flags: LIGHT PARENT_OK
-- New lock: ParentLock
-- The TEMPLE flag has been removed.
-- All flags are now valid (but not necessarily useful) for all object types.
-- after() and before() no longer fail when called without arguments.
-- center() no longer fails when asked to center within an overly-large field.
-- lexits() no longer fails if a parent of the target is a an object type that
-  does not support exits.
-- trim() no longer fails when called with one argument.
-
-  Wizard-Visible Changes:
-
-- New attribute: QueueMax
-
-  Performance/Maintainability Changes:
-
-- TinyMUSH 2.0.10 uses a slightly different flatfile and struct database
-  format than 2.0.9.p2.  MUSH will transparently convert your database to the
-  new format when it is read for the first time.  It is recommended that you
-  back up your database before running TinyMUSH 2.0.10.
-- There is now a second word of flags in the database.
-- Money is now stored on a (hidden) attribute.  Money for active players
-  is cached.
-- Changes to players' Timeout attributes now take effect immediately.
-- Players' pending queue sizes are no longer stored on an attribute, but are
-  cached for active players.
-- Attribute number lookups are now performed directly, instead of via a hash
-  table.
-- There are now separate MUSH-maintained flags for the presence of the
-  LISTEN, FORWARDLIST, and STARTUP attributes.
-
-TinyMUSH 2.0.10 patchlevel 1 (08/20/93)
-
-- The @verb command no crashes the server if given a bad attribute name.
-- Automatic datatype checking for sort() is now stricter (and more accurate).
-- Player money is now saved correctly (2.0.10-specific bug)
-- replace() now works correctly on a one-element list.
-- The privilege requirement for the 'goto' command now also applies to using
-  exits.
-- extract() now works properly when using an alternate delimiter.
-- index() now works when using space as a delimiter.
-- parse() no longer requires a separator arg, it uses space by default.
-
-TinyMUSH 2.0.10 patchlevel 2 (08/27/93)
-
-- Renamed t_xx routines to tf_xx to avoid future clashes with TLI.
-- The alias config directive no longer crashes the game if given only
-  one argument.
-- Removed config directive: destroy_sacrifice.
-- New config directive: trace_topdown.
-- TRACE output may now be displayed top-down or bottom-up, the choice is made
-  via a config directive.
-- Setting or clearing the LISTEN or FORWARDLIST attributes no longer affects
-  the DARK or JUMP_OK flags.
-- db_unload now writes all attributes to the flatfile.
-- elock() now works if you either control or are near both objects.
-- has_flag() now correctly reports flags that reside in the extended flags
-  word.
-- iter() now returns a space-separated list instead of a delimter-separated
-  list.
-- wild.c has been updated to Talek's latest version.
-- Several declarations were changed to avoid header conflicts on various
-  platforms.
-- Updated the configure script for autoconf 1.5.
-
-TinyMUSH 2.0.10 patchlevel 3 (09/08/93)
-
-- Local RWHO support now compiles correctly.
-- CONNECTED flags on players are now cleared at startup.
-- Rooms may now be used as a home location again.
-- @clone no longer crashes the game.
-- @readcache now displays the sizes of the files read in.
-- give now supports the wizard-only /quiet switch to suppress
-  '.. gave you ..' and 'You give ..' messages.
-- The following functions now work correctly with multiple spaces between
-  words (treated as one separator) and null words in non-space-delimited lists:
-  extract() filter() first() insert() iter() ldelete() map() match() member()
-  parse() remove() replace() rest() revwords() setdiff() setinter() setunion()
-  splice() wordpos() words()
-
-TinyMUSH 2.0.10 patchlevel 4 (10/26/93)
-
-- New config directive: trace_output_limit.
-- The default object matching code now checks for literal and quick-to-resolve
-  matches ('me', 'here', #dbref, *player, etc) before checking nearby objects
-  and exits.  If a literal match succeeds, the check for nearby objects and
-  exits is not performed.
-- Player names are now truncated to 16 characters in the WHO display.
-- Original (Classic) TinyMUD databases may now be read in again.
-- The following functions now trim their input lists if using a space as the
-  delimiter: after() before() extract() filter() first() insert() iter()
-  ldelete() map() match() member() parse() replace() rest() setdiff()
-  setinter() setunion() sort() words()
-- A memory allocation error in extending the user-defined attribute table
-  has been corrected.
-- @pcreate no longer crashes the game.
-- Top-down TRACE output from complex functions can no longer consume
-  arbitrarily large amounts of memory.
-- All modified attributes are now written when a database dump is performed,
-  not just ones that haven't been referred to recently.
-- When using object-level cacheing, the cache is now periodically trimmed
-  of unreferenced entries.
-- TinyMUSH can now be compiled by non-ANSI (K&R) cc compilers.
-
-TinyMUSH 2.0.10 patchlevel 5 (11/03/93)
-
-- A memory leak in the parse() and iter() functions has been corrected.
-- A memory leak in the @alias and @verb commands has been corrected.
-- The words() function now returns 0 when presented an empty list.
-- The isnum() function no longer considers an empty string (along with certain
-  other 'degenarate' numbers like '-.' to be numeric.
-- sort() now performs an alphabetic sort on lists consisting of only numeric
-  values and empty strings, not a numeric sort.  (The empty strings are no
-  longer considered numeric)
-- Spoken messages are now forwarded through audible exits when spoken inside
-  an audible object in the location containing the exits.
-- Messages sent through audible exits when generated from inside an audible
-  object in the location containing the exits are now prefixed by the @prefix
-  strings of both the object and the exit.
-- @lock/tport now works correctly.
-- When you try to teleport an object you control and the teleport fails, the
-  failure messages are now displayed from the point of view of the victim
-  object, not you.  You are still notified that the teleport failed.
-- lexits() no longer returns dark exits in locations you don't control.
-- @robot now works properly again.
-- @list default_flags now reports the correct flags.
-- Wizards may now @chown faraway objects.
-
-TinyMUSH 2.0.10 patchlevel 6 (04/20/94)
-
-- iter() and parse() now evaluate their delimiter argument.
-- Database damage of the form where next(<obj>) equals <obj> is now corrected.
-- STICKY droptos no longer consider connected players as non-hearing objects.
-- MYOPIC now works properly for wizards.
-- Attributes owned by you on objects owned by others are now visible to you.
-- get(), get_eval(), and u() now retrieve public attributes (other than the
-  description) for all objects regardless of the state of read_remote_desc.
-- exit(), lexits(), and next() now return only exits visible to or examinable
-  by you.
-- home() now returns the origin of exits().
-- elock() now requires you to control or be near either the lock object or the
-  victim, not both.
-- lattr() now return "#-1 NO MATCH" if it can't find the object to search.
-- @function no longer crashes the game if given a nonexistent attribute.
-- Forwardlists are now set up correctly on game startup.
-- Name matching now works properly when there is a partial match in a class
-  checked before a class containing an exact match.
-- Partial and possessive name matching should be more consistent now.
-- locate() also reflects the previous two changes.
-- @verb no longer fails if you provide an invoker-default but no
-  others-attribute or others-default.
-- @verb now obeys attribute visibility restrictions imposed by the
-  read_remote_desc config option.
-- @alias now removes an existing alias when an attempt is made to set it to
-  an invalid name, and returns the message "That name is already in use or is
-  illegal, alias cleared."
-- lattr() and other commands that use or return attribute lists now obey
-  the attribute visibility restrictions imposed by the read_remote_desc
-  config option.
-- Corrected helptext errors regarding UseLock inheritance and attribute hiding
-  when searching parents for $-commands.
-- Players may now @destroy exits that they are carrying.
-- '@destroy me' will no longer match a carried object starting with 'Me'.
-- @destroy now consistently validates the type of things to be destroyed.
-- @set now supports the /quiet switch.
-- @trigger now supports the /quiet switch.
-- New substitution: %q<number>: get setq/r register <number> (0-9)
-- locate() now accepts the locator key X, which means to randomly pick from
-  multiple matches instead of returning #-2.
-- Specifying a switch on an attribute-setting command (such as @afail) can
-  no longer crash the mush.
-- The cache is now periodically reset when loading player names into the
-  player name lookup table.
-- The cache_trim configuration parameter has been removed.
-- @list options now reports that status of the player_match_own_commands
-  config directive.
-- insert() can now append to a list by using a position of one more than
-  the number of elements in the list.
-- @clone now copies locks.
+TinyMUX 2.0: NOTES
+Last Update: February 2000
+
+This is a list of information that never seems to be handy enough when you 
+need it.
+
+Handy Stuff:
+~~~~~~~~~~~
+ - The default password for Wizard(#1) is 'potrzebie'.
+ 
+ - For new games, change the password to #1 first thing and *write it down* 
+   in a safe place offline.  
+ 
+ - It is worth noting that keeping a record of changes in this password 
+   might save you some flatfile hacking for forgotten passwords.
+ 
+ - The default port has been changed to 2860.  Change this in the 
+   netmux.conf or GAMENAME.conf file.
+ 
+ - Always be sure to ftp files in 'binary' mode.  Otherwise, you can expect 
+   your data to be unusable.
+ 
+ - Default GAMENAME will be netmux. If you changed the GAMENAME in 
+   mux.config, be sure to change the filenames in GAMENAME.conf as well.  
+   The MUX won't be able to find your DB otherwise.
+ 
+ - Read 'wizhelp config parameters' when you get the MUX started. If you 
+   are upgrading from PennMUSH, for example where the master room is set 
+   as #2, you would have to place the config parameter 'master_room 2' in 
+   your configuration file.
+ 
+ - Database numbers in GAMENAME.conf should NEVER have '#' in front of
+   them, only the number itself is necessary.  '#' actually comments out 
+   what follows it and makes it invisible to the game.
+ 
+ - If you had a mail database previously, remember to adjust 
+   mail_expiration accordingly, or else ALL @mail older than the default 
+   value of 14 days will be deleted.
+ 
+ - If you do not want to use the built-in +help command, redefine 
+   PLUSHELP_COMMAND in config.h to be something else.
+
+Changes to dbconvert:
+~~~~~~~~~~~~~~~~~~~~
+ - One of the major and important changes to MUX 2.0 is the use of CHash 
+   in the place of GDBM.  You will notice the changes primarily in the way 
+   dbconvert and the db_unload and db_load scripts work.  
+ 
+ - dbconvert is the means by which the binary game data is converted to 
+   flatfile format and back again.  The db_load and db_unload scripts 
+   simplify the process for the user. 
+ 
+ - The syntax of the scripts is:
+   
+   - './db_load netmux netmux.flat netmux.db'
+     
+     This converts flatfiled database to binary for use by the server and 
+     would be done with dbconvert thus:
+     
+     ../bin/dbconvert netmux X < netmux.flat > netmux.db
+   
+   - './db_unload netmux netmux.db.new netmux.flat'
+     
+     This converts binary data to flatfile for would be done with dbconvert 
+     thus:
+     
+     ../bin/dbconvert netmux x < netmux.db.new > netmux.flat
+
+
+On Flatfiles:
+~~~~~~~~~~~~
+ - You MUST unload to flatfile if you are using a disk-based database when
+   you move to a new machine, no matter what platform; only the flatfile is
+   portable!
+ 
+ - When you unload the database to flatfile format it is important to 
+   use your original db_unload/dbconvert.  *We cannot stress this enough.* 
+   Data loss is possible, especially since db_unload/dbconvert sometimes 
+   changes between releases.
+ 
+ - Flatfiles are the most stable format to store and move your data in.  
+   Yes, the occasional miracle happens to let someone bring a game back 
+   up from binary data moved from the nether regions of the net.  However, 
+   this isn't the place for beginners or the faint of heart.  As always, 
+   store backups in a remote location. 
+ 
+On Making Backups:
+~~~~~~~~~~~~~~~~~
+ - MUX 2.0 has included a TinyMUSH-style backup script.  This is a new 
+   feature added to make backing up your data as easy as it has been for
+   TinyMUSH users.  It produces a flatfile with the name 
+   GAMENAME.DATE.tar.gz that contains both the mail.db and comsys.db which 
+   will appear in the game directory. To make use of the Backup script:
+     
+     - @shutdown the game.
+     
+     - cd to the game directory.
+     
+     - Type './Backup'
+     
+     - Restart the game using ./Startmux
+     
+     - Move the backup to onsite and offsite storage locations.
+   
+On Tools:
+~~~~~~~~
+ - announce.c sits and listens on a specified port.  Whenever anyone 
+   connects, it announces a message and disconnects them.
+ 
+ - You should create a message and call the file 'message_file'.  This will 
+   server as your announcement to people trying to connect.
+ 
+ - Compile announce.c by typing 'gcc announce.c'.  If you are not using the 
+   GNU compiler, substitute the C compiler in use on your system.  This 
+   will create a file called 'a.out', which you should rename 'announce'
+ 
+ - Type 'announce port < message_file' and the port announcer will take 
+   over from there.
+ 
+On Other Platforms:
+~~~~~~~~~~~~~~~~~~
+
+We are trying hard to conquer build issues on various platforms.  Current 
+attention has been devoted to various flavors of Linux, HPUX, IRIX, 
+and others.  Listed below are OS which we have managed to get MUX 2.0 to 
+run and the modifications needed to make it run.
+
+- FreeBSD:  You have to define DONT_USE_UNION_WAIT in the Makefile.
+
+- OpenBSD:  You have to define DONT_USE_UNION_WAIT in the Makefile.
+
+- RH 5.2:   edit ./configure, search for 'errno.h' and immediately after 
+  it add 'errnos.h'.(From Soruk)

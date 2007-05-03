@@ -1,4 +1,4 @@
-/* $Id: udb.h,v 1.4 1997/06/18 02:39:56 dpassmor Exp $ */
+/* $Id: udb.h,v 1.1 2000-04-11 07:14:48 sdennis Exp $ */
 
 #ifndef _UDB_H
 #define _UDB_H
@@ -30,48 +30,51 @@
  * We hand around attribute identifiers in the last things.
  */
 
-typedef	char		Attr;
+typedef char Attr;
 
-typedef	unsigned int	Objname;
-#define ATTR_SIZE(a)	(strlen((a)) + 1)
+typedef unsigned int    Objname;
+#define ATTR_SIZE(a)    (strlen((a)) + 1)
 
-typedef struct Aname {
-	unsigned int	object;
-	unsigned int	attrnum;
+typedef struct Aname
+{
+    unsigned int    object;
+    unsigned int    attrnum;
 } Aname;
   
 /* In general, we want binary attributes, so we do this. */
 
-typedef struct Attrib {
-	int	attrnum;	/* MUX specific identifier */
-	int	size;
-	char	*data;
+typedef struct Attrib
+{
+    unsigned int attrnum;   /* MUX specific identifier */
+    int          size;
+    char        *data;
 } Attrib;
 
 /* An object is a name, an attribute count, and a vector of attributes */
 /* which Attr's are stowed in a contiguous array pointed at by atrs.   */
 
-typedef struct Obj {
-	Objname	name;
-	int	at_count;
-	Attrib	*atrs;
+typedef struct Obj
+{
+    Objname name;
+    int at_count;
+    Attrib  *atrs;
 } Obj;
 
-#define	ONULL	((Obj *)0)
-#define ANULL	((Attr *)0)
-#define ATNULL	((Attrib *)0)
-#define NNULL	((Aname *)0)
-#define CNULL	((Cache *)0)
+#define ONULL   ((Obj *)0)
+#define ANULL   ((Attr *)0)
+#define ATNULL  ((Attrib *)0)
+#define NNULL   ((Aname *)0)
+#define CNULL   ((Cache *)0)
 
-extern Attr *cache_get();
-extern int cache_put();
-extern int cache_check();
-extern int cache_init();
-extern void cache_reset();
-extern int cache_sync();
-extern void cache_del();
-
-extern Obj *	FDECL(objfromFILE, (char *));
-extern int	FDECL(objtoFILE, (Obj *, char *));
+Attr *cache_get(Aname *nam, int *pLen);
+int cache_put(Aname *nam, Attr *obj, int len);
+extern int cache_check(void);
+extern int cache_init(const char *game_dir_file, const char *game_pag_file);
+extern void cache_close(void);
+extern int  cache_optimize(void);
+extern void cache_reset(int trim);
+extern void cache_tick(void);
+extern int cache_sync(void);
+extern void cache_del(Aname *nam);
 
 #endif

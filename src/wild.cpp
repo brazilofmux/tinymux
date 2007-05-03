@@ -1,453 +1,468 @@
-/*
- * wild.c - wildcard routines
- * *
- * * Written by T. Alexander Popiel, 24 June 1993
- * * Last modified by T. Alexander Popiel, 19 August 1993
- * *
- * * Thanks go to Andrew Molitor for debugging
- * * Thanks also go to Rich $alz for code to benchmark against
- * *
- * * Copyright (c) 1993 by T. Alexander Popiel
- * * This code is hereby placed under GNU copyleft,
- * * see copyright.h for details.
- * *
- * * $Id: wild.c,v 1.2 1997/04/16 06:02:08 dpassmor Exp $
- */
+// wild.c - wildcard routines
+//
+// Written by T. Alexander Popiel, 24 June 1993
+// Last modified by T. Alexander Popiel, 19 August 1993
+//
+// Thanks go to Andrew Molitor for debugging
+// Thanks also go to Rich $alz for code to benchmark against
+//
+// Copyright (c) 1993 by T. Alexander Popiel
+// This code is hereby placed under GNU copyleft,
+// see copyright.h for details.
+//
+// $Id: wild.cpp,v 1.1 2000-04-11 07:14:48 sdennis Exp $
+//
 #include "copyright.h"
 #include "autoconf.h"
-
 #include "config.h"
+#include "externs.h"
+
 #include "db.h"
 #include "mudconf.h"
-#include "externs.h"
 #include "alloc.h"
 
-#define FIXCASE(a) (ToLower(a))
-#define EQUAL(a,b) ((a == b) || (FIXCASE(a) == FIXCASE(b)))
-#define NOTEQUAL(a,b) ((a != b) && (FIXCASE(a) != FIXCASE(b)))
+#define EQUAL(a,b) ((a == b) || (Tiny_ToLower[(unsigned char)a] == Tiny_ToLower[(unsigned char)b]))
+#define NOTEQUAL(a,b) ((a != b) && (Tiny_ToLower[(unsigned char)a] != Tiny_ToLower[(unsigned char)b]))
 
-static char **arglist;		/*
+// Argument return space and size.
+//
+static char **arglist;
+static int numargs;
 
-				 * argument return space 
-				 */
-static int numargs;		/*
-
-				 * argument return size 
-				 */
-
-/*
- * ---------------------------------------------------------------------------
- * * quick_wild: do a wildcard match, without remembering the wild data.
- * *
- * * This routine will cause crashes if fed NULLs instead of strings.
- */
-int quick_wild(tstr, dstr)
-char *tstr, *dstr;
+//
+// ---------------------------------------------------------------------------
+// quick_wild: do a wildcard match, without remembering the wild data.
+//
+// This routine will cause crashes if fed NULLs instead of strings.
+//
+int quick_wild(char *tstr, char *dstr)
 {
-	while (*tstr != '*') {
-		switch (*tstr) {
-		case '?':
-			/*
-			 * Single character match.  Return false if at * end
-			 * * * * of data. 
-			 */
-			if (!*dstr)
-				return 0;
-			break;
-		case '\\':
-			/*
-			 * Escape character.  Move up, and force literal * *
-			 * * * match of next character. 
-			 */
-			tstr++;
-			/*
-			 * FALL THROUGH 
-			 */
-		default:
-			/*
-			 * Literal character.  Check for a match. * If * * *
-			 * matching end of data, return true. 
-			 */
-			if (NOTEQUAL(*dstr, *tstr))
-				return 0;
-			if (!*dstr)
-				return 1;
-		}
-		tstr++;
-		dstr++;
-	}
+    while (*tstr != '*')
+    {
+        switch (*tstr)
+        {
+        case '?':
 
-	/*
-	 * Skip over '*'. 
-	 */
+            // Single character match.  Return false if at end of data.
+            //
+            if (!*dstr)
+            {
+                return 0;
+            }
+            break;
 
-	tstr++;
+        case '\\':
 
-	/*
-	 * Return true on trailing '*'. 
-	 */
+            // Escape character.  Move up, and force literal match of next
+            // character.
+            //
+            tstr++;
 
-	if (!*tstr)
-		return 1;
+            // FALL THROUGH
 
-	/*
-	 * Skip over wildcards. 
-	 */
+        default:
 
-	while ((*tstr == '?') || (*tstr == '*')) {
-		if (*tstr == '?') {
-			if (!*dstr)
-				return 0;
-			dstr++;
-		}
-		tstr++;
-	}
+            // Literal character.  Check for a match. If matching end of data,
+            // return true.
+            //
+            if (NOTEQUAL(*dstr, *tstr))
+            {
+                return 0;
+            }
+            if (!*dstr)
+            {
+                return 1;
+            }
+        }
+        tstr++;
+        dstr++;
+    }
 
-	/*
-	 * Skip over a backslash in the pattern string if it is there. 
-	 */
+    // Skip over '*'.
+    //
+    tstr++;
 
-	if (*tstr == '\\')
-		tstr++;
+    // Return true on trailing '*'.
+    //
+    if (!*tstr)
+    {
+        return 1;
+    }
 
-	/*
-	 * Return true on trailing '*'. 
-	 */
+    // Skip over wildcards.
+    //
+    while ((*tstr == '?') || (*tstr == '*'))
+    {
+        if (*tstr == '?')
+        {
+            if (!*dstr)
+            {
+                return 0;
+            }
+            dstr++;
+        }
+        tstr++;
+    }
 
-	if (!*tstr)
-		return 1;
+    // Skip over a backslash in the pattern string if it is there.
+    //
+    if (*tstr == '\\')
+    {
+        tstr++;
+    }
 
-	/*
-	 * Scan for possible matches. 
-	 */
+    // Return true on trailing '*'.
+    //
+    if (!*tstr)
+    {
+        return 1;
+    }
 
-	while (*dstr) {
-		if (EQUAL(*dstr, *tstr) &&
-		    quick_wild(tstr + 1, dstr + 1))
-			return 1;
-		dstr++;
-	}
-	return 0;
+    // Scan for possible matches.
+    //
+    while (*dstr)
+    {
+        if (  EQUAL(*dstr, *tstr)
+           && quick_wild(tstr + 1, dstr + 1))
+        {
+            return 1;
+        }
+        dstr++;
+    }
+    return 0;
 }
 
-/*
- * ---------------------------------------------------------------------------
- * * wild1: INTERNAL: do a wildcard match, remembering the wild data.
- * *
- * * DO NOT CALL THIS FUNCTION DIRECTLY - DOING SO MAY RESULT IN
- * * SERVER CRASHES AND IMPROPER ARGUMENT RETURN.
- * *
- * * Side Effect: this routine modifies the 'arglist' static global
- * * variable.
- */
-int wild1(tstr, dstr, arg)
-char *tstr, *dstr;
-int arg;
+// ---------------------------------------------------------------------------
+// wild1: INTERNAL: do a wildcard match, remembering the wild data.
+//
+// DO NOT CALL THIS FUNCTION DIRECTLY - DOING SO MAY RESULT IN SERVER CRASHES
+// AND IMPROPER ARGUMENT RETURN.
+//
+// Side Effect: this routine modifies the 'arglist' static global variable.
+//
+int wild1(char *tstr, char *dstr, int arg)
 {
-	char *datapos;
-	int argpos, numextra;
+    char *datapos;
+    int argpos, numextra;
 
-	while (*tstr != '*') {
-		switch (*tstr) {
-		case '?':
-			/*
-			 * Single character match.  Return false if at * end
-			 * * * * of data. 
-			 */
-			if (!*dstr)
-				return 0;
-			arglist[arg][0] = *dstr;
-			arglist[arg][1] = '\0';
-			arg++;
+    while (*tstr != '*')
+    {
+        switch (*tstr)
+        {
+        case '?':
 
-			/*
-			 * Jump to the fast routine if we can. 
-			 */
+            // Single character match.  Return false if at end of data.
+            //
+            if (!*dstr)
+            {
+                return 0;
+            }
+            arglist[arg][0] = *dstr;
+            arglist[arg][1] = '\0';
+            arg++;
 
-			if (arg >= numargs)
-				return quick_wild(tstr + 1, dstr + 1);
-			break;
-		case '\\':
-			/*
-			 * Escape character.  Move up, and force literal * *
-			 * * * match of next character. 
-			 */
-			tstr++;
-			/*
-			 * FALL THROUGH 
-			 */
-		default:
-			/*
-			 * Literal character.  Check for a match. * If * * *
-			 * matching end of data, return true. 
-			 */
-			if (NOTEQUAL(*dstr, *tstr))
-				return 0;
-			if (!*dstr)
-				return 1;
-		}
-		tstr++;
-		dstr++;
-	}
+            // Jump to the fast routine if we can.
+            //
+            if (arg >= numargs)
+            {
+                return quick_wild(tstr + 1, dstr + 1);
+            }
+            break;
 
-	/*
-	 * If at end of pattern, slurp the rest, and leave. 
-	 */
+        case '\\':
 
-	if (!tstr[1]) {
-		StringCopyTrunc(arglist[arg], dstr, LBUF_SIZE - 1);
-		arglist[arg][LBUF_SIZE - 1] = '\0';
-		return 1;
-	}
-	/*
-	 * Remember current position for filling in the '*' return. 
-	 */
+            // Escape character.  Move up, and force literal match of next
+            // character.
+            //
+            tstr++;
 
-	datapos = dstr;
-	argpos = arg;
+            // FALL THROUGH
 
-	/*
-	 * Scan forward until we find a non-wildcard. 
-	 */
+        default:
 
-	do {
-		if (argpos < arg) {
-			/*
-			 * Fill in arguments if someone put another '*' * * * 
-			 * 
-			 * * before a fixed string. 
-			 */
-			arglist[argpos][0] = '\0';
-			argpos++;
+            // Literal character.  Check for a match. If matching end of data,
+            // return true.
+            //
+            if (NOTEQUAL(*dstr, *tstr))
+            {
+                return 0;
+            }
+            if (!*dstr)
+            {
+                return 1;
+            }
+        }
+        tstr++;
+        dstr++;
+    }
 
-			/*
-			 * Jump to the fast routine if we can. 
-			 */
+    // If at end of pattern, slurp the rest, and leave.
+    //
+    if (!tstr[1])
+    {
+        StringCopyTrunc(arglist[arg], dstr, LBUF_SIZE - 1);
+        arglist[arg][LBUF_SIZE - 1] = '\0';
+        return 1;
+    }
 
-			if (argpos >= numargs)
-				return quick_wild(tstr, dstr);
+    // Remember current position for filling in the '*' return.
+    //
+    datapos = dstr;
+    argpos = arg;
 
-			/*
-			 * Fill in any intervening '?'s 
-			 */
+    // Scan forward until we find a non-wildcard.
+    //
+    do
+    {
+        if (argpos < arg)
+        {
+            // Fill in arguments if someone put another '*' before a fixed
+            // string. 
+            //
+            arglist[argpos][0] = '\0';
+            argpos++;
 
-			while (argpos < arg) {
-				arglist[argpos][0] = *datapos;
-				arglist[argpos][1] = '\0';
-				datapos++;
-				argpos++;
+            // Jump to the fast routine if we can.
+            //
+            if (argpos >= numargs)
+            {
+                return quick_wild(tstr, dstr);
+            }
 
-				/*
-				 * Jump to the fast routine if we can. 
-				 */
+            // Fill in any intervening '?'s
+            //
+            while (argpos < arg)
+            {
+                arglist[argpos][0] = *datapos;
+                arglist[argpos][1] = '\0';
+                datapos++;
+                argpos++;
 
-				if (argpos >= numargs)
-					return quick_wild(tstr, dstr);
-			}
-		}
-		/*
-		 * Skip over the '*' for now... 
-		 */
+                // Jump to the fast routine if we can.
+                //
+                if (argpos >= numargs)
+                {
+                    return quick_wild(tstr, dstr);
+                }
+            }
+        }
 
-		tstr++;
-		arg++;
+        // Skip over the '*' for now...
+        //
+        tstr++;
+        arg++;
 
-		/*
-		 * Skip over '?'s for now... 
-		 */
+        // Skip over '?'s for now...
+        //
+        numextra = 0;
+        while (*tstr == '?')
+        {
+            if (!*dstr)
+            {
+                return 0;
+            }
+            tstr++;
+            dstr++;
+            arg++;
+            numextra++;
+        }
+    } while (*tstr == '*');
 
-		numextra = 0;
-		while (*tstr == '?') {
-			if (!*dstr)
-				return 0;
-			tstr++;
-			dstr++;
-			arg++;
-			numextra++;
-		}
-	} while (*tstr == '*');
+    // Skip over a backslash in the pattern string if it is there.
+    //
+    if (*tstr == '\\')
+    {
+        tstr++;
+    }
 
-	/*
-	 * Skip over a backslash in the pattern string if it is there. 
-	 */
+    // Check for possible matches.  This loop terminates either at end of data
+    // (resulting in failure), or at a successful match.
+    //
+    while (1)
+    {
+        // Scan forward until first character matches.
+        //
+        if (*tstr)
+        {
+            while (NOTEQUAL(*dstr, *tstr))
+            {
+                if (!*dstr)
+                {
+                    return 0;
+                }
+                dstr++;
+            }
+        }
+        else
+        {
+            while (*dstr)
+            {
+                dstr++;
+            }
+        }
 
-	if (*tstr == '\\')
-		tstr++;
+        // The first character matches, now.  Check if the rest does, using
+        // the fastest method, as usual.
+        //
+        if (  !*dstr
+           || ((arg < numargs) ? wild1(tstr + 1, dstr + 1, arg)
+                               : quick_wild(tstr + 1, dstr + 1)))
+        {
+            // Found a match!  Fill in all remaining arguments. First do the
+            // '*'...
+            //
+            StringCopyTrunc(arglist[argpos], datapos,
+                            (dstr - datapos) - numextra);
+            arglist[argpos][(dstr - datapos) - numextra] = '\0';
+            datapos = dstr - numextra;
+            argpos++;
 
-	/*
-	 * Check for possible matches.  This loop terminates either at * end
-	 * * * * of data (resulting in failure), or at a successful match. 
-	 */
-	while (1) {
+            // Fill in any trailing '?'s that are left.
+            //
+            while (numextra)
+            {
+                if (argpos >= numargs)
+                {
+                    return 1;
+                }
+                arglist[argpos][0] = *datapos;
+                arglist[argpos][1] = '\0';
+                datapos++;
+                argpos++;
+                numextra--;
+            }
 
-		/*
-		 * Scan forward until first character matches. 
-		 */
-
-		if (*tstr)
-			while (NOTEQUAL(*dstr, *tstr)) {
-				if (!*dstr)
-					return 0;
-				dstr++;
-		} else
-			while (*dstr)
-				dstr++;
-
-		/*
-		 * The first character matches, now.  Check if the rest * * * 
-		 * 
-		 * * does, using the fastest method, as usual. 
-		 */
-		if (!*dstr ||
-		    ((arg < numargs) ? wild1(tstr + 1, dstr + 1, arg)
-		     : quick_wild(tstr + 1, dstr + 1))) {
-
-			/*
-			 * Found a match!  Fill in all remaining arguments. * 
-			 * 
-			 * *  * *  * * First do the '*'... 
-			 */
-			StringCopyTrunc(arglist[argpos], datapos,
-					(dstr - datapos) - numextra);
-			arglist[argpos][(dstr - datapos) - numextra] = '\0';
-			datapos = dstr - numextra;
-			argpos++;
-
-			/*
-			 * Fill in any trailing '?'s that are left. 
-			 */
-
-			while (numextra) {
-				if (argpos >= numargs)
-					return 1;
-				arglist[argpos][0] = *datapos;
-				arglist[argpos][1] = '\0';
-				datapos++;
-				argpos++;
-				numextra--;
-			}
-
-			/*
-			 * It's done! 
-			 */
-
-			return 1;
-		} else {
-			dstr++;
-		}
-	}
+            // It's done!
+            //
+            return 1;
+        }
+        else
+        {
+            dstr++;
+        }
+    }
 }
 
-/*
- * ---------------------------------------------------------------------------
- * * wild: do a wildcard match, remembering the wild data.
- * *
- * * This routine will cause crashes if fed NULLs instead of strings.
- * *
- * * This function may crash if alloc_lbuf() fails.
- * *
- * * Side Effect: this routine modifies the 'arglist' and 'numargs'
- * * static global variables.
- */
-int wild(tstr, dstr, args, nargs)
-char *tstr, *dstr, *args[];
-int nargs;
+// ---------------------------------------------------------------------------
+// wild: do a wildcard match, remembering the wild data.
+//
+// This routine will cause crashes if fed NULLs instead of strings.
+//
+// This function may crash if alloc_lbuf() fails.
+//
+// Side Effect: this routine modifies the 'arglist' and 'numargs' static
+// global variables.
+//
+int wild(char *tstr, char *dstr, char *args[], int nargs)
 {
-	int i, value;
-	char *scan;
+    int i, value;
+    char *scan;
 
-	/*
-	 * Initialize the return array. 
-	 */
+    // Initialize the return array.
+    //
+    for (i = 0; i < nargs; i++)
+    {
+        args[i] = NULL;
+    }
 
-	for (i = 0; i < nargs; i++)
-		args[i] = NULL;
+    // Do fast match.
+    //
+    while ((*tstr != '*') && (*tstr != '?'))
+    {
+        if (*tstr == '\\')
+        {
+            tstr++;
+        }
+        if (NOTEQUAL(*dstr, *tstr))
+        {
+            return 0;
+        }
+        if (!*dstr)
+        {
+            return 1;
+        }
+        tstr++;
+        dstr++;
+    }
 
-	/*
-	 * Do fast match. 
-	 */
+    // Allocate space for the return args.
+    //
+    i = 0;
+    scan = tstr;
+    while (*scan && (i < nargs))
+    {
+        switch (*scan)
+        {
+        case '?':
 
-	while ((*tstr != '*') && (*tstr != '?')) {
-		if (*tstr == '\\')
-			tstr++;
-		if (NOTEQUAL(*dstr, *tstr))
-			return 0;
-		if (!*dstr)
-			return 1;
-		tstr++;
-		dstr++;
-	}
+            args[i] = alloc_lbuf("wild.?");
+            i++;
+            break;
 
-	/*
-	 * Allocate space for the return args. 
-	 */
+        case '*':
 
-	i = 0;
-	scan = tstr;
-	while (*scan && (i < nargs)) {
-		switch (*scan) {
-		case '?':
-			args[i] = alloc_lbuf("wild.?");
-			i++;
-			break;
-		case '*':
-			args[i] = alloc_lbuf("wild.*");
-			i++;
-		}
-		scan++;
-	}
+            args[i] = alloc_lbuf("wild.*");
+            i++;
+        }
+        scan++;
+    }
 
-	/*
-	 * Put stuff in globals for quick recursion. 
-	 */
+    // Put stuff in globals for quick recursion.
+    //
+    arglist = args;
+    numargs = nargs;
 
-	arglist = args;
-	numargs = nargs;
+    // Do the match.
+    //
+    value = nargs ? wild1(tstr, dstr, 0) : quick_wild(tstr, dstr);
 
-	/*
-	 * Do the match. 
-	 */
-
-	value = nargs ? wild1(tstr, dstr, 0) : quick_wild(tstr, dstr);
-
-	/*
-	 * Clean out any fake match data left by wild1. 
-	 */
-
-	for (i = 0; i < nargs; i++)
-		if ((args[i] != NULL) && (!*args[i] || !value)) {
-			free_lbuf(args[i]);
-			args[i] = NULL;
-		}
-	return value;
+    // Clean out any fake match data left by wild1.
+    //
+    for (i = 0; i < nargs; i++)
+    {
+        if ((args[i] != NULL) && (!*args[i] || !value))
+        {
+            free_lbuf(args[i]);
+            args[i] = NULL;
+        }
+    }
+    return value;
 }
 
-/*
- * ---------------------------------------------------------------------------
- * * wild_match: do either an order comparison or a wildcard match,
- * * remembering the wild data, if wildcard match is done.
- * *
- * * This routine will cause crashes if fed NULLs instead of strings.
- */
-int wild_match(tstr, dstr)
-char *tstr, *dstr;
+// ---------------------------------------------------------------------------
+// wild_match: do either an order comparison or a wildcard match, remembering
+// the wild data, if wildcard match is done.
+//
+// This routine will cause crashes if fed NULLs instead of strings.
+//
+int wild_match(char *tstr, char *dstr)
 {
-	int i;
+    switch (*tstr)
+    {
+    case '>':
 
-	switch (*tstr) {
-	case '>':
-		tstr++;
-		if (isdigit(*tstr) || (*tstr == '-'))
-			return (atoi(tstr) < atoi(dstr));
-		else
-			return (strcmp(tstr, dstr) < 0);
-	case '<':
-		tstr++;
-		if (isdigit(*tstr) || (*tstr == '-'))
-			return (atoi(tstr) > atoi(dstr));
-		else
-			return (strcmp(tstr, dstr) > 0);
-	}
+        tstr++;
+        if (Tiny_IsDigit[(unsigned char)*tstr] || (*tstr == '-'))
+        {
+            return (Tiny_atol(tstr) < Tiny_atol(dstr));
+        }
+        else
+        {
+            return (strcmp(tstr, dstr) < 0);
+        }
 
-	return quick_wild(tstr, dstr);
+    case '<':
+
+        tstr++;
+        if (Tiny_IsDigit[(unsigned char)*tstr] || (*tstr == '-'))
+        {
+            return (Tiny_atol(tstr) > Tiny_atol(dstr));
+        }
+        else
+        {
+            return (strcmp(tstr, dstr) > 0);
+        }
+    }
+
+    return quick_wild(tstr, dstr);
 }

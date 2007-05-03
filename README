@@ -1,301 +1,174 @@
-This is the README file for TinyMUX 1.6.
+TinyMUX 2.0:  README (Unix based)
+Last Update:  February 2000
 
-*** When you unload the database to flat file format it is important to use
-    your original db_unload/dbconvert.
-*** You MUST unload to flatfile if you are using a disk-based database when
-    you move to a new machine, no matter what platform; only the flatfile is
-    portable!
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+Congratulations and welcome to the README file for TinyMUX 2.0.  That 
+you have chosen to actually read the file is a sign of bravery equal to 
+that of Beowulf in the face of Grendel or anyone who has ever faced the 
+garden variety behemoth.  We know that README files are often turgid and 
+vague, filled with techno-babble that ties the reader up in corundrums, 
+to often ending in countless hours of someone having to help someone else 
+type a few lines that were there the whole time, buried beyond view.
+  
+In the past, this has resulted in README becoming tossed aside, unread, 
+unwanted, unloved, and probably bitter from the experience.  However, 
+because we want you to succeed, we are happy to provide a file that will, 
+in our sincerest hopes, provide you with enough information to make that 
+possible.  If not, it should be at least an entertaining read....
 
-Refer to the file CHANGES for information about new features, commands,
-and bug fixes.
+The TinyMUX 2.0 README and supplemental documentation has been divided into 
+multiple files.  For discussion and instructions on how to do various 
+things associated with the care and feeding of your MUX, please refer to 
+the following files:
 
-TinyMUX is currently being developed under SunOS 4.1.4 and IRIX 6.3.
+  README              General information on the distribution, platforms it
+                      has been proven to run under out of the box, how to
+                      report bugs.
+
+  CHANGES             New features, commands, and bug fixes.
+
+  INSTALL             How to compile your game, step by step.
+
+  NOTES               All kinds of tidbits made much easier to find.  
+                      Known compiling issues and known fixes are located 
+                      here. Known OS that TinyMUX 2.0 will run on and 
+                      compiling issues.  Contains basic conversion 
+                      information. 
+  
+  docs/COMPRESSION    How to set up and run your game under RADIX 
+                      compression.
+  
+  docs/CONFIGURATION  How to set up your MUX, including an explanation of 
+                      the common configuration items, as well as how to set 
+                      up your game so that your db files so that they are
+                      customized for your GAMENAME.
+  
+  docs/CONVERSION     How to convert a game from another type of server to
+                      TinyMUX.
+  
+  docs/CREDITS        The people who helped make this server possible.
+  
+  docs/GUESTS         How the current guest implementation works and how to
+                      set it up.
+  
+  docs/MEMORY         Explanations about how to set up disk and 
+                      memory-based operation plus tips on saving memory.
+  
+  docs/NEWBIES        A file created just for those who have never run a 
+                      game server before and who probably haven't been told 
+                      all the stuff that the dinosaurs know.
+===========================================================================
+        
+General Information:
+~~~~~~~~~~~~~~~~~~~
+TinyMUX 2.0 is currently being developed in parallel under Win32 and 
+RedHat 6.0 and is written in C and C++.  It is a continuation of the 
+TinyMUX 1.x line of servers and consists largely of bugfixes and a number 
+of performance enhancements.  Features have been added in this release, 
+but they were not the primary focus.  
 
 The latest version of this code can generally be found running at:
-From the Ashes: ashes.sneakers.org 5000
+
+childsplay.net 2100
+svdltd.com 6250 
+
+Refer to the file CHANGES for information about new features, commands, 
+and bug fixes.  NOTES now contains a LOT of small bits of info related 
+to running the server, as well as reminders about how to flatfile the 
+database for conversions and moving from site to site.
+
+Changes to dbconvert:
+~~~~~~~~~~~~~~~~~~~~
+ - One of the major and important changes to MUX 2.0 is the use of CHash 
+   in the place of GDBM.  You will notice the changes primarily in the way 
+   dbconvert and the db_unload and db_load scripts work.  
+ 
+ - dbconvert is the means by which the binary game data is converted to 
+   flatfile format and back again.  The db_load and db_unload scripts 
+   simplify the process for the user. 
+ 
+ - The syntax of the scripts is:
+   
+   - './db_load netmux netmux.flat netmux.db'
+     
+     This converts flatfiled database to binary for use by the server and 
+     would be done with dbconvert thus:
+     
+     ../bin/dbconvert netmux X < netmux.flat > netmux.db
+   
+   - './db_unload netmux netmux.db.new netmux.flat'
+     
+     This converts binary data to flatfile for would be done with dbconvert 
+     thus:
+     
+     ../bin/dbconvert netmux x < netmux.db.new > netmux.flat
+
 
 Conversions from Other Database Formats:
----------------------------------------
-
-TinyMUX 1.6 has been proven to read the following database formats:
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+TinyMUX 2.0 has been proven to read the following database formats:
+   TinyMUX 1.4, 1.5, 1.6 (not beta)
+   TinyMUX(Win32Beta) 1.5, 1.6, 2.0
    TinyMUSH 2.0 (all versions)
-   TinyMUSH 2.2.0 or 2.2.1 release version (not beta)
-   PennMUSH 1.50 patchlevel 8-15.
-   PennMUSH DarkZone 1.50.
+   TinyMUSH 2.2.2, 2.2.3, 2.2.4 release version (not beta)
+   TinyMUSH 2.2.4U1 release version (not beta)
 
-Instructions for Building:
--------------------------
+The Care and Feeding of Bugs When You Find Them:
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+First things first....  Bugs happen in any large and complex piece of 
+code.  The important thing to understand is that the dev team has worked 
+very hard to ferret out and fix as many of the crashing/corrupting bugs 
+in the server as possible.  As part of the process, we also fixed a lot 
+of the legacy bugs from MUX 1.6 and before.  We intend to keep doing it.
 
-[NOTE: It is HIGHLY recommended that you preserve a previous setup if you
-had one while converting, and make sure the conversion process has completed
-successfully before you delete your old distribution.]
+As for the cases where you do find bugs, we would like you to take the 
+time to send an email with as much data as possible about the bug.  Each 
+bug report we receive will be assigned a number from 1 to 4 according to
+severity (how much pain it causes) and prioritized from 1 to 3 according to
+how beneficial it would be to fix it relative to other bugs on the list.
 
-1.  cd to the src/gdbm-1.7.3 directory. Run 'configure', then 'make'.
+-- Please double check to be sure it really is a bug and not a new 
+   feature or design decision.  This is important to the process, as it  
+   may mean that something was missed in the documentation and needs to 
+   be made clearer.  This simple test is that if the server crashes, 
+   it's a bug and if you can't tell, consider it one.
 
-2.  cd .. back to the source directory. Run 'configure'.  This will customize
-    autoconf.h and Makefile for your system.
+-- Try to reproduce and document the sequence of events that will 
+   demonstrate the bug.  This will help the dev team identify the problem 
+   sooner.  The 'log' configuration parameter may be very helpful in this
+   process.
 
-3.  Edit the Configuration section of the Makefile.  Most likely, all you will
-    need to change are any C flags needed by your particular C compiler,
-    (in particular -fpcc-struct-return), and any esoteric libraries needed by
-    your system. Also, there are some #defines in config.h that you may want
-    to change, but in general, the defaults should not be changed.
-
-    Within the Makefile, you can also enable:
-	- Memory based database handling (as opposed to the default disk
-	  based handling, see README.MEMORY)
-	- Radix string compression (see README.COMPRESSION)
-
-4.  Run make depend, then make.  This will produce netmux, mkindx, slave,
-    and dbconvert.
-
-5.  Here are some hints to remember if you are installing for a previously
-    existing setup:
-       - All databases go in game/data. All text files go in game/text.
-       - The scripts db_load, db_unload, and db_check may be found in the
-         game/data directory.
-       - If you change the GAMENAME in mux.config, be sure to change the
-         filenames in <gamename>.conf as well.
-       - You should NEVER need to modify anything in the bin directory.
-       - You should ALWAYS unload to flatfile, and reload when you change
-         or upgrade distributions. 
-       - Read 'wizhelp config parameters' when you get the MUX started.
-         If you are upgrading from PennMUSH, for example where the master
-         room is set as #2, you would have to place the config parameter
-         'master_room 2' in your configuration file.
-       - Database numbers in <gamename>.conf should NEVER have '#' in front of
-         them, only the number itself is necessary.
-       - If you had a mail database previously, remember to adjust
-         mail_expiration accordingly, or else ALL @mail older than the
-         default value of 14 days will be deleted.
-       - If you do not want to use the built-in +help command, redefine
-         PLUSHELP_COMMAND in config.h to be something else.
-
-5a. If you are starting from scratch, do the following:
-       - cd to the game directory.
-       - Make your configuration file, as described later in this file under
-         the heading 'Making a New Configuration File'
-       - [csh] bin/netmux -s <your-mud-name>.conf >& <your-mud-name>.log &
-         [sh]  bin/netmux -s <your-mud-name>.conf > <your-mud-name>.log 2>&1 &
-       - Log in to the mud as player wizard (password potrzebie), and shut it
-         down.
-
-5b. If you are converting an existing TinyMUSH 2.0 database created by
-    patchlevel 0 (database version 3), do the following:
-       - cd to the game directory.
-       - Log in to the mud and shut it down.  If you are running a script
-         to automatically restart the mush if it goes down, also kill that
-         script.
-       - Unload the database with the command:
-            o db_unload <mud-name>.gdbm <mud-name>.db.new <mud-name>.db.FULL
-       - cd to the source directory.
-       - Run make install.
-       - cd back to the game directory.
-       - Delete the files <mud-name>.gdbm, <mud-name>.db, and <mud-name>.db.new
-       - Reload the database with the command:
-            o db_load <mud-name>.gdbm <mud-name>.db.FULL <mud-name>.db.new
-
-5c. If you are converting an existing TinyMUSH 2.0 database created by
-    patchlevels 1 through 4 (database version 4) or patchlevels 5 or 6
-    (database version 5) do the following:
-       - cd to the game directory.
-       - Log in to the mud and shut it down.  If you are running a script
-         to automatically restart the mush if it goes down, also kill that
-         script.
-       - Unload the database with the command:
-            o db_unload <mud-name>.gdbm <mud-name>.db.new <mud-name>.db.FULL
-       - cd to the source directory.
-       - Run make install.
-       - cd back to the game directory.
-       - Delete the files <mud-name>.gdbm.db, <mud-name>.gdbm.dir,
-         <mud-name>.gdbm.pag, <mud-name>.db, and <mud-name>.db.new
-       - If you are running on an HP-UX system, create the database files:
-            o touch <mud-name>.gdbm.db <mud-name>.gdbm.dir <mud-name>.gdbm.pag
-            o chmod 600 <mud-name>.gdbm.*
-       - Type 'head <mud-name>.db.FULL'.  If the first line is '+V8710',
-         do the following:
-            o mv <mud-name>.db.FULL <mud-name>.db.FULL1
-            o echo '+V8709' | cat - <mud-name>.db.FULL1 > <mud-name>.db.FULL
-            o In the next step, ignore the error
-              'Duplicate MUSH version header entry  ...'
-       - Reload the database with the command:
-            o db_load <mud-name>.gdbm <mud-name>.db.FULL <mud-name>.db.new
-
-5d. If you are converting a PennMUSH 1.50 database:
-       - Copy the database to the MUX directory, and rename it to
-         <mud-name>.db.new.
-       - Copy the mail database to the MUX directory and rename it to
-         mail.db, or whatever your mail_database configuration option is
-         set to.
-       - Run 'Startmux', log in to the MUX as a wizard and shut it down.
-       - NOTE: If you are experiencing conversion problems with your Penn
-         database, reload your old Penn setup, and do a @dump/paranoid.
-         This should eliminate hard newlines that mess up the conversion
-         process.
-
-5e. If you are converting a PennMUSH DarkZone database:
-       - Copy the database to the MUX directory, and rename it to
-         <mud-name>.db.
-       - Append your mail alias database to the end of your mail database,
-         using cat or a similar utility.
-       - Copy the mail database to the MUX directory and rename it to
-         mail.db, or whatever your mail_database configuration option is
-         set to.
-       - Copy the COMMAC.DB to the MUX directory and rename it to commac.db,
-         or whatever your commac_database configuration option is set to.
-       - Run 'Startmux', log in to the MUX as a wizard and shut it down.
-       - NOTE: If you are experiencing conversion problems with your DZ
-         database, reload your old DZ setup, and do a @dump/paranoid.
-         This should eliminate hard newlines that mess up the conversion
-         process.
-
-5f. If you are converting a database from TinyMUSH 2.0.10 or Tinymush 2.2:
-       - cd to the game directory.
-       - Log in to the mud and shut it down.  If you are running a script
-         to automatically restart the mush if it goes down, also kill that
-         script.
-       - Unload the database with the command, making sure to use your
-         ORIGINAL dbconvert:
-            o db_unload <mud-name>.gdbm <mud-name>.db.new <mud-name>.db.FULL
-       - Copy <mud-name>.db.FULL to the MUX directory.
-       - Reload the database with the command, using your new dbconvert:
-            o db_load <mud-name>.gdbm <mud-name>.db.FULL <mud-name>.db.new
-
-6.  Edit the .txt files to your liking, in particular connect.txt and motd.txt.
-    This is not necessary if you are reinstalling TinyMUX 1.6.
-
-7.  Start up TinyMUX 1.6 by running Startmux.
-
-8.  @ccreate a channel named 'Public', and a channel named 'Guests' from
-    within the MUX. Created players will automatically be joined to 'Public'
-    with alias 'pub', guests will automatically join 'Guests' with alias 'g'.
-
-Making a New Configuration File:
--------------------------------
-
-  TinyMUX 1.6 gets the information it needs to operate the game (aside from
-  the database itself) from a configuration file that is read in at startup.
-  The configuration file contains various parameters, such as where to find
-  the database, what port to listen for connects, and many other things.
-
-  Follow these instructions to make a configuration file for your mush from
-  the supplied template configuration file:
-
-    In your game directory, copy the file netmux.conf to <your-mud-name>.conf
-    and edit it as follows:
-
-    - Replace netmux.<whatever> in the 'xxx_database' lines with
-      <your-mud-name>.<whatever>.
-    - Set the port number on the 'port' line to the correct port.
-    - Set the mud name on the 'mud_name' line to the name of your mud.
-    - Make any other configuration changes you want to make at this time.
-      Here are some of the common ones to change:
-         o money_name_singular <text>  The name of one coin (penny)
-         o money_name_plural <text>    The name of several coins (pennies)
-         o fork_dump no           Do this if you have little swap space.
-         o paycheck <amount>      Players get this much money each day
-                                  they connect.
-         o paystart <amount>      Players start out with this much money.
-         o payfind <chance>       Each time a player moves, he has a
-                                  1 in <chance> chance of finding a penny.
-         o player_starting_room <roomno>  The room that new players are
-                                  created in.
-
-  There are many more configuration directives available. Information
-  on individual directives can be obtained with the WIZHELP <directive>
-  command within the mush.
-
-Tuning the Database Cache:
--------------------------
-
-Hi. Andrew Molitor here. I am not exactly an expert on cache tuning, but
-then, nobody is. It's something of a black art. The basic tradeoff here is
-this: If you make your cache larger, it will consume more memory, but you
-will have to make disk accesses less often to get data. This sounds great,
-until you remember that if you consume *enough* memory, the operating system
-will begin to page random bits of your game on and off of disk -- you are
-better off staying small enough to not have that happen, and do your own
-getting data on and off disk.
-
-So, you want your cache as large as possible until it gets Too Large, which
-is usually when you begin to page too much (more hard page faults in the
-output on @list process than I/O in the read column on @list db_stats is a
-reasonable guideline. Ideally many fewer page faults), or when your sysadmin
-comes pounding on your door wondering what that ENORMOUS process is you have.
-
-What about depth and width? Well, the wider it is, the faster you'll look
-things up in it, but the shallower it is, the more it will tend to 'stretch'
-outside the specified size. As a guideline, a depth of 9 or 10 seems to be
-minimal, and for a few hundred wide, make it at least 15 deep. That's for
-object level caching (recommended). For attribute level cacheing, make it,
-oh, 50 percent deeper?
-
-There are some statistics you should be aware of:
-
-   - paging -- the hard page faults field of @list process cache hit
-     ratio. The percentage of total reads (ignore writes, they rarely
-     amount to anything) which require I/O. See @list db_stats for these
-     numbers, the 2nd column is where to look. Total calls and I/O are the
-     numbers to be looking at.
-
-   - cache size -- this is right at the bottom of the output from @list
-     db_stats.
-
-If your cache size is, after running a bit, larger than the original depth X
-original width, your cache is 'stretching', and is probably too shallow, and
-possibly too small.
-
-If you are making a lot of page faults, your process size is too large, try
-shrinking the cache, or filtering out unused attributes, or both, to shrink
-process size.
-
-If your cache hit ratio is under about 95-97 percent, your cache is probably
-too small, and it should grow. Either wider or deeper, wider is preferable
-unless your cache tends to stretch, see above.
-
-It's a careful dance you need to do, so watch the statistics, and don't be
-afraid to try tinkering with the cache size this way and that. Note that
-under SunOS (and SysV?) doing I/O will tend to generate page faults as well,
-so shrinking your cache may force the database to do more reading and writing
-of the disk, and actually increase the number of page faults! So don't just
-twiddle a parameter and call it done, watch those numbers!
-
-Good luck ;)
-
-What to do if you find a bug:
-----------------------------
-
-- Make sure it really is a bug and not a new feature or design decision.
-  (If it crashes the mux, it's a bug)  If you can't tell, consider it a bug.
-- Try to come up with an easily-reproducible sequence of events that will
-  demonstrate the bug.
-- Send us mail about it at: lauren@sneakers.org
-  If the bug crashes the mush, try to include the following information 
-  from running dbx (or gdb) on the resulting core file:
+-- Send mail about it to: sdennis@svdltd.com
+   If the bug crashes the mux, try to include the following information 
+   from running dbx (or gdb) on the resulting core file:
      - Output of the 'where' command.
-     - Output of the 'dump' command for each procdeure level.
-- To use gdb or dbx, make sure you are in the game/ directory, and type
+     - Output of the 'dump' command for each procedure level.
 
-	gdb bin/netmux core	OR	dbx bin/netmux core
+-- To use gdb or dbx, make sure you are in the game/ directory, and type
 
-- From there, simply type 'help' for help, or 'quit' to exit.
+        gdb bin/netmux core     OR      dbx bin/netmux core
+
+-- From there, simply type 'help' for help, or 'quit' to exit.
 
 Environment:
------------
+~~~~~~~~~~~
+TinyMUX 2.0 should run on most Unixes with BSD-style sockets and a C++ 
+compiler that groks function prototypes. It is 64-bit 'clean' code.  It 
+has been compiled and run successfully 'out of the box' on the following 
+platforms:
 
-TinyMUX 1.6 should run on must Unixes with BSD-style sockets and a C compiler
-that groks function prototypes. It is 64-bit 'clean' code.  It has been run
-successfully on the following platforms:
+RedHat 6.0
+Slackware 3.6, 4.0
+Solaris 2.4, 2.5, 2.6
+Mandrake 6.0
+Linux Kernels 2.0.35, 2.0.36, 2.2.13
+RedHat 5.1
 
-SunOS 4.1.3, 4.1.4
-Linux kernels 1.2.3 - 2.1.x (Alpha, Intel, and Sparc)
-NeXTStep version 2.0, 3.3, OpenStep 4.0
-FreeBSD 2.0.5R, 2.1
-Solaris 2.4, 2.5, 2.5.1
-Ultrix 4.2
-AIX 4.0
-Digital UNIX 3.2, 4.0.
-IRIX 5.3, 6.2, 6.4
+TinyMUX 2.0 has been compiled and successfully run on the following with 
+minor changes(see NOTES):
 
-If you get TinyMUX 1.6 working on another platform, please let us know
+FreeBSD 
+RedHat 5.2
+
+If you get TinyMUX 2.0 working on another platform, please let us know
 about it!

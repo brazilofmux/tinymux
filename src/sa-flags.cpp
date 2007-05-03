@@ -1,10 +1,10 @@
 /*
- * Standalone flags.c 
+ * Standalone flags.cpp
  */
 /*
- * $Id: sa-flags.c,v 1.2 1997/04/16 06:01:39 dpassmor Exp $ 
+ * $Id: sa-flags.cpp,v 1.1 2000-04-11 07:14:47 sdennis Exp $ 
  */
 
 #undef MEMORY_BASED
 #define STANDALONE
-#include "flags.c"
+#include "flags.cpp"

@@ -1,231 +1,1220 @@
-/*
- * stringutil.c -- string utilities 
- */
-/*
- * $Id: stringutil.c,v 1.2 1997/04/16 06:01:56 dpassmor Exp $ 
- */
-
+// stringutil.cpp -- string utilities
+//
+// $Id: stringutil.cpp,v 1.1 2000-04-11 07:14:47 sdennis Exp $
+//
+// MUX 2.0
+// Portions are derived from MUX 1.6. Portions are original work.
+//
+// Copyright (C) 1998 through 2000 Solid Vertical Domains, Ltd. All
+// rights not explicitly given are reserved. Permission is given to
+// use this code for building and hosting text-based game servers.
+// Permission is given to use this code for other non-commercial
+// purposes. To use this code for commercial purposes other than
+// building/hosting text-based game servers, contact the author at
+// Stephen Dennis <sdennis@svdltd.com> for another license.
+//
 #include "copyright.h"
 #include "autoconf.h"
-
-#include "mudconf.h"
 #include "config.h"
 #include "externs.h"
+
+#include "mudconf.h"
 #include "alloc.h"
 #include "ansi.h"
 
-#ifdef __linux__
-char *___strtok;
+char Tiny_IsDigit[256] =
+{
+//  0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F
+//
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // 0
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // 1
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // 2
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0,  // 3
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // 4
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // 5
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // 6
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // 7
 
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // 8
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // 9
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // A
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // B
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // C
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // D
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // E
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0   // F
+};
+
+char Tiny_IsAlphaNumeric[256] =
+{
+//  0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F
+//
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // 0
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // 1
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // 2
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0,  // 3
+    0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,  // 4
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0,  // 5
+    0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,  // 6
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0,  // 7
+
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // 8
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // 9
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // A
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // B
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // C
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // D
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // E
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0   // F
+};
+
+char Tiny_IsUpper[256] =
+{
+//  0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F
+//
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // 0
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // 1
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // 2
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // 3
+    0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,  // 4
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0,  // 5
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // 6
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // 7
+
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // 8
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // 9
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // A
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // B
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // C
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // D
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // E
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0   // F
+};
+
+char Tiny_IsLower[256] =
+{
+//  0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F
+//
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // 0
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // 1
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // 2
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // 3
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // 4
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // 5
+    0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,  // 6
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0,  // 7
+
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // 8
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // 9
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // A
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // B
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // C
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // D
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // E
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0   // F
+};
+
+char Tiny_IsSpace[256] =
+{
+//  0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F
+//
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0,  // 0
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // 1
+    1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // 2
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // 3
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // 4
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // 5
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // 6
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // 7
+
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // 8
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // 9
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // A
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // B
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // C
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // D
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // E
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0   // F
+};
+
+char ANSI_TokenTerminatorTable[256] =
+{
+//  0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F
+//
+    1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // 0
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // 1
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // 2
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // 3
+    0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,  // 4
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0,  // 5
+    0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,  // 6
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0,  // 7
+
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // 8
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // 9
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // A
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // B
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // C
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // D
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // E
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0   // F
+};
+
+unsigned char Tiny_ToUpper[256] =
+{
+//   0     1     2     3     4     5     6     7     8     9     A     B     C     D     E     F
+//
+    0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F, // 0
+    0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x1A, 0x1B, 0x1C, 0x1D, 0x1E, 0x1F, // 1
+    0x20, 0x21, 0x22, 0x23, 0x24, 0x25, 0x26, 0x27, 0x28, 0x29, 0x2A, 0x2B, 0x2C, 0x2D, 0x2E, 0x2F, // 2
+    0x30, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38, 0x39, 0x3A, 0x3B, 0x3C, 0x3D, 0x3E, 0x3F, // 3
+    0x40, 0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47, 0x48, 0x49, 0x4A, 0x4B, 0x4C, 0x4D, 0x4E, 0x4F, // 4
+    0x50, 0x51, 0x52, 0x53, 0x54, 0x55, 0x56, 0x57, 0x58, 0x59, 0x5A, 0x5B, 0x5C, 0x5D, 0x5E, 0x5F, // 5
+    0x60, 0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47, 0x48, 0x49, 0x4A, 0x4B, 0x4C, 0x4D, 0x4E, 0x4F, // 6
+    0x50, 0x51, 0x52, 0x53, 0x54, 0x55, 0x56, 0x57, 0x58, 0x59, 0x5A, 0x7B, 0x7C, 0x7D, 0x7E, 0x7F, // 7
+    0x80, 0x81, 0x82, 0x83, 0x84, 0x85, 0x86, 0x87, 0x88, 0x89, 0x8A, 0x8B, 0x8C, 0x8D, 0x8E, 0x8F, // 8
+    0x90, 0x91, 0x92, 0x93, 0x94, 0x95, 0x96, 0x97, 0x98, 0x99, 0x9A, 0x9B, 0x9C, 0x9D, 0x9E, 0x9F, // 9
+    0xA0, 0xA1, 0xA2, 0xA3, 0xA4, 0xA5, 0xA6, 0xA7, 0xA8, 0xA9, 0xAA, 0xAB, 0xAC, 0xAD, 0xAE, 0xAF, // A
+    0xB0, 0xB1, 0xB2, 0xB3, 0xB4, 0xB5, 0xB6, 0xB7, 0xB8, 0xB9, 0xBA, 0xBB, 0xBC, 0xBD, 0xBE, 0xBF, // B
+    0xC0, 0xC1, 0xC2, 0xC3, 0xC4, 0xC5, 0xC6, 0xC7, 0xC8, 0xC9, 0xCA, 0xCB, 0xCC, 0xCD, 0xCE, 0xCF, // C
+    0xD0, 0xD1, 0xD2, 0xD3, 0xD4, 0xD5, 0xD6, 0xD7, 0xD8, 0xD9, 0xDA, 0xDB, 0xDC, 0xDD, 0xDE, 0xDF, // D
+    0xE0, 0xE1, 0xE2, 0xE3, 0xE4, 0xE5, 0xE6, 0xE7, 0xE8, 0xE9, 0xEA, 0xEB, 0xEC, 0xED, 0xEE, 0xEF, // E
+    0xF0, 0xF1, 0xF2, 0xF3, 0xF4, 0xF5, 0xF6, 0xF7, 0xF8, 0xF9, 0xFA, 0xFB, 0xFC, 0xFD, 0xFE, 0xFF  // F
+};
+
+unsigned char Tiny_ToLower[256] =
+{
+//   0     1     2     3     4     5     6     7     8     9     A     B     C     D     E     F
+//
+    0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F, // 0
+    0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x1A, 0x1B, 0x1C, 0x1D, 0x1E, 0x1F, // 1
+    0x20, 0x21, 0x22, 0x23, 0x24, 0x25, 0x26, 0x27, 0x28, 0x29, 0x2A, 0x2B, 0x2C, 0x2D, 0x2E, 0x2F, // 2
+    0x30, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38, 0x39, 0x3A, 0x3B, 0x3C, 0x3D, 0x3E, 0x3F, // 3
+    0x40, 0x61, 0x62, 0x63, 0x64, 0x65, 0x66, 0x67, 0x68, 0x69, 0x6A, 0x6B, 0x6C, 0x6D, 0x6E, 0x6F, // 4
+    0x70, 0x71, 0x72, 0x73, 0x74, 0x75, 0x76, 0x77, 0x78, 0x79, 0x7A, 0x5B, 0x5C, 0x5D, 0x5E, 0x5F, // 5
+    0x60, 0x61, 0x62, 0x63, 0x64, 0x65, 0x66, 0x67, 0x68, 0x69, 0x6A, 0x6B, 0x6C, 0x6D, 0x6E, 0x6F, // 6
+    0x70, 0x71, 0x72, 0x73, 0x74, 0x75, 0x76, 0x77, 0x78, 0x79, 0x7A, 0x7B, 0x7C, 0x7D, 0x7E, 0x7F, // 7
+    0x80, 0x81, 0x82, 0x83, 0x84, 0x85, 0x86, 0x87, 0x88, 0x89, 0x8A, 0x8B, 0x8C, 0x8D, 0x8E, 0x8F, // 8
+    0x90, 0x91, 0x92, 0x93, 0x94, 0x95, 0x96, 0x97, 0x98, 0x99, 0x9A, 0x9B, 0x9C, 0x9D, 0x9E, 0x9F, // 9
+    0xA0, 0xA1, 0xA2, 0xA3, 0xA4, 0xA5, 0xA6, 0xA7, 0xA8, 0xA9, 0xAA, 0xAB, 0xAC, 0xAD, 0xAE, 0xAF, // A
+    0xB0, 0xB1, 0xB2, 0xB3, 0xB4, 0xB5, 0xB6, 0xB7, 0xB8, 0xB9, 0xBA, 0xBB, 0xBC, 0xBD, 0xBE, 0xBF, // B
+    0xC0, 0xC1, 0xC2, 0xC3, 0xC4, 0xC5, 0xC6, 0xC7, 0xC8, 0xC9, 0xCA, 0xCB, 0xCC, 0xCD, 0xCE, 0xCF, // C
+    0xD0, 0xD1, 0xD2, 0xD3, 0xD4, 0xD5, 0xD6, 0xD7, 0xD8, 0xD9, 0xDA, 0xDB, 0xDC, 0xDD, 0xDE, 0xDF, // D
+    0xE0, 0xE1, 0xE2, 0xE3, 0xE4, 0xE5, 0xE6, 0xE7, 0xE8, 0xE9, 0xEA, 0xEB, 0xEC, 0xED, 0xEE, 0xEF, // E
+    0xF0, 0xF1, 0xF2, 0xF3, 0xF4, 0xF5, 0xF6, 0xF7, 0xF8, 0xF9, 0xFA, 0xFB, 0xFC, 0xFD, 0xFE, 0xFF  // F
+};
+
+// ANSI_lex - This function parses a string and returns two token types.
+// The type identifies the token type of length nLengthToken0. nLengthToken1
+// may also be present and is a token of the -other- type.
+//
+int ANSI_lex(int nString, const char *pString, int *nLengthToken0, int *nLengthToken1)
+{
+    *nLengthToken0 = 0;
+    *nLengthToken1 = 0;
+
+    const char *p = pString;
+
+    for (;;)
+    {
+        // Look for an ESC_CHAR
+        //
+        p = strchr(p, ESC_CHAR);
+        if (!p)
+        {
+            // This is the most common case by far.
+            //
+            *nLengthToken0 = nString;
+            return TOKEN_TEXT_ANSI;
+        }
+
+        // We have an ESC_CHAR. Let's look at the next character.
+        //
+        if (p[1] != '[')
+        {
+            // Could be a '\0' or another non-'[' character.
+            // Move the pointer to position ourselves over it.
+            // And continue looking for an ESC_CHAR.
+            //
+            p = p + 1;
+            continue;
+        }
+
+        // We found the beginning of an ANSI sequence.
+        // Find the terminating character.
+        //
+        const char *q = p+2;
+        while (ANSI_TokenTerminatorTable[*q] == 0)
+        {
+            q++;
+        }
+        if (q[0] == '\0')
+        {
+            // There was no good terminator. Treat everything like text.
+            // Also, we are at the end of the string, so just return.
+            //
+            *nLengthToken0 = q - pString;
+            return TOKEN_TEXT_ANSI;
+        }
+        else
+        {
+            // We found an ANSI sequence.
+            //
+            if (p == pString)
+            {
+                // The ANSI sequence started it.
+                //
+                *nLengthToken0 = q - pString + 1;
+                return TOKEN_ANSI;
+            }
+            else
+            {
+                // We have TEXT followed by an ANSI sequence.
+                //
+                *nLengthToken0 = p - pString;
+                *nLengthToken1 = q - p + 1;
+                return TOKEN_TEXT_ANSI;
+            }
+        }
+    }
+}
+
+char *strip_ansi(const char *szString)
+{
+    static char Buffer[LBUF_SIZE];
+    char *pBuffer = Buffer;
+
+    const char *pString = szString;
+    if (!pString)
+    {
+        *pBuffer = '\0';
+        return Buffer;
+    }
+    int   nString = strlen(szString);
+
+    while (nString)
+    {
+        int nTokenLength0;
+        int nTokenLength1;
+        int iType = ANSI_lex(nString, pString, &nTokenLength0, &nTokenLength1);
+
+        if (iType == TOKEN_TEXT_ANSI)
+        {
+            memcpy(pBuffer, pString, nTokenLength0);
+            pBuffer += nTokenLength0;
+
+            int nSkipLength = nTokenLength0 + nTokenLength1;
+            nString -= nSkipLength;
+            pString += nSkipLength;
+        }
+        else
+        {
+            // TOKEN_ANSI
+            //
+            nString -= nTokenLength0;
+            pString += nTokenLength0;
+        }
+    }
+    *pBuffer = '\0';
+    return Buffer;
+}
+#define ANSI_COLOR_INDEX_BLACK     0
+#define ANSI_COLOR_INDEX_RED       1
+#define ANSI_COLOR_INDEX_GREEN     2
+#define ANSI_COLOR_INDEX_YELLOW    3
+#define ANSI_COLOR_INDEX_BLUE      4
+#define ANSI_COLOR_INDEX_MAGENTA   5
+#define ANSI_COLOR_INDEX_CYAN      6
+#define ANSI_COLOR_INDEX_WHITE     7
+#define ANSI_COLOR_INDEX_DEFAULT   9
+
+ANSI_ColorState acsRestingStates[2] =
+{
+    {TRUE,  FALSE, FALSE, FALSE, FALSE, ANSI_COLOR_INDEX_DEFAULT, ANSI_COLOR_INDEX_DEFAULT},
+    {FALSE, FALSE, FALSE, FALSE, FALSE, ANSI_COLOR_INDEX_WHITE,   ANSI_COLOR_INDEX_DEFAULT}
+};
+
+void ANSI_InitColorState(ANSI_ColorState *acsCurrent, BOOL bNoBleed)
+{
+    int iRestingState = bNoBleed ? 1 : 0;
+    memcpy(acsCurrent, acsRestingStates + iRestingState, sizeof(ANSI_ColorState));
+}
+
+void ANSI_Parse_m(ANSI_ColorState *pacsCurrent, int nANSI, const char *pANSI,
+                  BOOL *pbSawNormal)
+{
+    // if the last character isn't an 'm', then it's an ANSI sequence we
+    // don't support, yet. TODO: There should be a ANSI_Parse() function
+    // that calls into this one -only- if there's an 'm', but since 'm'
+    // is the only command this game understands at the moment, it's easier
+    // to put the test here.
+    //
+    if (pANSI[nANSI-1] != 'm')
+    {
+        return;
+    }
+
+    // Process entire string and update the current color state structure.
+    //
+    while (nANSI)
+    {
+        // Process the next attribute phrase (terminated by ';' or 'm'
+        // typically).
+        //
+        const char *p = pANSI;
+        while (Tiny_IsDigit[(unsigned int)*p] == 1)
+        {
+            p++;
+        }
+        int nLen = p - pANSI + 1;
+        if (p[0] == 'm' || p[0] == ';')
+        {
+            // We have an attribute.
+            //
+            if (nLen == 2)
+            {
+                int iCode = pANSI[0] - '0';
+                switch (iCode)
+                {
+                case 0:
+                    // Normal.
+                    //
+                    ANSI_InitColorState(pacsCurrent, FALSE);
+                    *pbSawNormal = TRUE;
+                    break;
+
+                case 1:
+                    // High Intensity.
+                    //
+                    pacsCurrent->bHighlite = TRUE;
+                    pacsCurrent->bNormal = FALSE;
+                    break;
+
+                case 2:
+                    // Low Intensity.
+                    //
+                    pacsCurrent->bHighlite = FALSE;
+                    pacsCurrent->bNormal = FALSE;
+                    break;
+
+                case 4:
+                    // Underline.
+                    //
+                    pacsCurrent->bUnder = TRUE;
+                    pacsCurrent->bNormal = FALSE;
+                    break;
+
+                case 5:
+                    // Blinking.
+                    //
+                    pacsCurrent->bBlink = TRUE;
+                    pacsCurrent->bNormal = FALSE;
+                    break;
+
+                case 7:
+                    // Reverse Video
+                    //
+                    pacsCurrent->bInverse = TRUE;
+                    pacsCurrent->bNormal = FALSE;
+                    break;
+                }
+            }
+            else if (nLen == 3)
+            {
+                int iCode0 = pANSI[0] - '0';
+                int iCode1 = pANSI[1] - '0';
+                if (iCode0 == 3)
+                {
+                    // Foreground Color
+                    //
+                    if (iCode1 <= 7)
+                    {
+                        pacsCurrent->iForeground = iCode1;
+                        pacsCurrent->bNormal = FALSE;
+                    }
+                }
+                else if (iCode0 == 4)
+                {
+                    // Background Color
+                    //
+                    if (iCode1 <= 7)
+                    {
+                        pacsCurrent->iBackground = iCode1;
+                        pacsCurrent->bNormal = FALSE;
+                    }
+                }
+            }
+        }
+        pANSI += nLen;
+        nANSI -= nLen;
+    }
+}
+
+// The following is really 30 (E[0mE[1mE[4mE[5mE[7mE[33mE[43m) but we are being conservative
+//
+#define ANSI_MAXIMUM_BINARY_TRANSITION_LENGTH 60
+
+// Generate the minimal ANSI sequence that will transition from one color state
+// to another.
+//
+char *ANSI_TransitionColorBinary(ANSI_ColorState *acsCurrent, ANSI_ColorState *acsNext, int *nTransition, BOOL bNoBleed)
+{
+    static char Buffer[ANSI_MAXIMUM_BINARY_TRANSITION_LENGTH+1];
+
+    if (memcmp(acsCurrent, acsNext, sizeof(ANSI_ColorState)) == 0)
+    {
+        *nTransition = 0;
+        Buffer[0] = '\0';
+        return Buffer;
+    }
+    ANSI_ColorState tmp = *acsCurrent;
+    char *p = Buffer;
+
+    if (acsNext->bNormal && bNoBleed)
+    {
+        // We can't really go back to normal. We have'ta go to a white
+        // foreground.
+        //
+        ANSI_InitColorState(acsNext, TRUE);
+    }
+
+    // Do we need to go through the normal state?
+    //
+    if (  tmp.bHighlite && !acsNext->bHighlite
+       || tmp.bUnder    && !acsNext->bUnder
+       || tmp.bBlink    && !acsNext->bBlink
+       || tmp.bInverse  && !acsNext->bInverse
+       || (  tmp.iBackground != ANSI_COLOR_INDEX_DEFAULT
+          && acsNext->iBackground == ANSI_COLOR_INDEX_DEFAULT)
+       || (  tmp.iForeground != ANSI_COLOR_INDEX_DEFAULT
+          && acsNext->iForeground == ANSI_COLOR_INDEX_DEFAULT))
+    {
+        memcpy(p, ANSI_NORMAL, sizeof(ANSI_NORMAL)-1);
+        p += sizeof(ANSI_NORMAL)-1;
+        ANSI_InitColorState(&tmp, FALSE);
+    }
+    if (tmp.bHighlite != acsNext->bHighlite)
+    {
+        memcpy(p, ANSI_HILITE, sizeof(ANSI_HILITE)-1);
+        p += sizeof(ANSI_HILITE)-1;
+    }
+    if (tmp.bUnder != acsNext->bUnder)
+    {
+        memcpy(p, ANSI_UNDER, sizeof(ANSI_UNDER)-1);
+        p += sizeof(ANSI_UNDER)-1;
+    }
+    if (tmp.bBlink != acsNext->bBlink)
+    {
+        memcpy(p, ANSI_BLINK, sizeof(ANSI_BLINK)-1);
+        p += sizeof(ANSI_BLINK)-1;
+    }
+    if (tmp.bInverse != acsNext->bInverse)
+    {
+        memcpy(p, ANSI_INVERSE, sizeof(ANSI_INVERSE)-1);
+        p += sizeof(ANSI_INVERSE)-1;
+    }
+    if (tmp.iForeground != acsNext->iForeground)
+    {
+        memcpy(p, ANSI_FOREGROUND, sizeof(ANSI_FOREGROUND)-1);
+        p += sizeof(ANSI_FOREGROUND)-1;
+        *p++ = acsNext->iForeground + '0';
+        *p++ =  ANSI_ATTR_CMD;
+    }
+    if (tmp.iBackground != acsNext->iBackground)
+    {
+        memcpy(p, ANSI_BACKGROUND, sizeof(ANSI_BACKGROUND)-1);
+        p += sizeof(ANSI_BACKGROUND)-1;
+        *p++ = acsNext->iBackground + '0';
+        *p++ = ANSI_ATTR_CMD;
+    }
+    *p = '\0';
+    *nTransition = p - Buffer;
+    return Buffer;
+}
+
+// The following is really 21 (%cn%ch%cu%ci%cf%cR%cr) but we are being conservative
+//
+#define ANSI_MAXIMUM_ESCAPE_TRANSITION_LENGTH 42
+
+// Generate the minimal MU ANSI %-sequence that will transition from one color state
+// to another.
+//
+char *ANSI_TransitionColorEscape(ANSI_ColorState *acsCurrent, ANSI_ColorState *acsNext, int *nTransition)
+{
+    static char Buffer[ANSI_MAXIMUM_ESCAPE_TRANSITION_LENGTH+1];
+    static char cForegroundColors[9] = "xrgybmcw";
+    static char cBackgroundColors[9] = "XRGYBMCW";
+
+    if (memcmp(acsCurrent, acsNext, sizeof(ANSI_ColorState)) == 0)
+    {
+        *nTransition = 0;
+        Buffer[0] = '\0';
+        return Buffer;
+    }
+    ANSI_ColorState tmp = *acsCurrent;
+    char *p = Buffer;
+
+    // Do we need to go through the normal state?
+    //
+    if (  tmp.bBlink    && !acsNext->bBlink
+       || tmp.bHighlite && !acsNext->bHighlite
+       || tmp.bInverse  && !acsNext->bInverse
+       || (  tmp.iBackground != ANSI_COLOR_INDEX_DEFAULT
+          && acsNext->iBackground == ANSI_COLOR_INDEX_DEFAULT)
+       || (  tmp.iForeground != ANSI_COLOR_INDEX_DEFAULT
+          && acsNext->iForeground == ANSI_COLOR_INDEX_DEFAULT))
+    {
+        memcpy(p, "%cn", 3); p += 3;
+        ANSI_InitColorState(&tmp, FALSE);
+    }
+    if (tmp.bHighlite != acsNext->bHighlite)
+    {
+        memcpy(p, "%ch", 3); p += 3;
+    }
+    if (tmp.bUnder != acsNext->bUnder)
+    {
+        memcpy(p, "%cu", 3); p += 3;
+    }
+    if (tmp.bBlink != acsNext->bBlink)
+    {
+        memcpy(p, "%cf", 3); p += 3;
+    }
+    if (tmp.bInverse != acsNext->bInverse)
+    {
+        memcpy(p, "%ci", 3); p += 3;
+    }
+    if (tmp.iForeground != acsNext->iForeground)
+    {
+        memcpy(p, "%c", 2); p += 2;
+        *p++ = cForegroundColors[acsNext->iForeground];
+    }
+    if (tmp.iBackground != acsNext->iBackground)
+    {
+        memcpy(p, "%c", 2); p += 2;
+        *p++ = cBackgroundColors[acsNext->iBackground];
+    }
+    *p = '\0';
+    *nTransition = p - Buffer;
+    return Buffer;
+}
+
+void ANSI_String_Init(struct ANSI_Context *pContext, const char *szString, BOOL bNoBleed)
+{
+    ANSI_InitColorState(&(pContext->acsCurrent), bNoBleed);
+    pContext->acsPrevious = pContext->acsCurrent;
+    pContext->acsFinal = pContext->acsCurrent;
+    pContext->pString = szString;
+    pContext->nString = strlen(szString);
+    pContext->bNoBleed = bNoBleed;
+    pContext->bSawNormal = FALSE;
+}
+
+void ANSI_String_Skip(struct ANSI_Context *pContext, int maxVisualWidth, int *pnVisualWidth)
+{
+    *pnVisualWidth = 0;
+    while (pContext->nString)
+    {
+        int nTokenLength0;
+        int nTokenLength1;
+        int iType = ANSI_lex(pContext->nString, pContext->pString, &nTokenLength0, &nTokenLength1);
+
+        if (iType == TOKEN_TEXT_ANSI)
+        {
+            // Process TEXT
+            //
+            int nTextToSkip = maxVisualWidth - *pnVisualWidth;
+            if (nTokenLength0 > nTextToSkip)
+            {
+                // We have reached the limits of the field
+                //
+                *pnVisualWidth += nTextToSkip;
+                pContext->pString += nTextToSkip;
+                pContext->nString -= nTextToSkip;
+                return;
+            }
+
+            pContext->pString += nTokenLength0;
+            pContext->nString -= nTokenLength0;
+            *pnVisualWidth += nTokenLength0;
+            pContext->acsPrevious = pContext->acsCurrent;
+
+            if (nTokenLength1)
+            {
+                // Process ANSI
+                //
+                ANSI_Parse_m(&(pContext->acsCurrent), nTokenLength1, pContext->pString, &(pContext->bSawNormal));
+                pContext->pString += nTokenLength1;
+                pContext->nString -= nTokenLength1;
+            }
+        }
+        else
+        {
+            // Process ANSI
+            //
+            ANSI_Parse_m(&(pContext->acsCurrent), nTokenLength0, pContext->pString, &(pContext->bSawNormal));
+            pContext->nString -= nTokenLength0;
+            pContext->pString += nTokenLength0;
+        }
+    }
+}
+
+// ANSI_String_Copy -- Copy characters into a buffer starting at
+// pField0 with maximum size of nField. Truncate the string if it would
+// overflow the buffer -or- if it would have a visual with of greater
+// than maxVisualWidth. Returns the number of ANSI-encoded characters
+// copied to. Also, the visual width produced by this is returned in
+// *pnVisualWidth.
+//
+// There are three ANSI color states that we deal with in this routine:
+//
+// 1. acsPrevious is the color state at the current end of the field.
+//    It has already been encoded into the field.
+//
+// 2. acsCurrent is the color state that the current TEXT will be shown
+//    with. It hasn't been encoded into the field, yet, and if we don't
+//    have enough room for at least one character of TEXT, then it may
+//    never be encoded into the field.
+//
+// 3. acsFinal is the required color state at the end. This is usually
+//    the normal state or in the case of NOBLEED, it's a specific (and
+//    somewhate arbitrary) foreground/background combination.
+// 
+int ANSI_String_Copy
+(
+    struct ANSI_Context *pC,
+    int nField,
+    char *pField0,
+    int maxVisualWidth,
+    int *pnVisualWidth
+)
+{
+    *pnVisualWidth = 0;
+    char *pField = pField0;
+    while (pC->nString)
+    {
+        int nTokenLength0;
+        int nTokenLength1;
+        int iType = ANSI_lex(pC->nString, pC->pString,
+                             &nTokenLength0, &nTokenLength1);
+
+        if (iType == TOKEN_TEXT_ANSI)
+        {
+            // We have a TEXT+[ANSI] phrase. The text length is given
+            // by nTokenLength0, and the ANSI characters that follow
+            // (if present) are of length nTokenLength1.
+            //
+            // Process TEXT part first.
+            //
+            // TODO: If there is a maximum size for the transitions,
+            // and we have gobs of space, don't bother calculating
+            // sizes so carefully. It might be faster
+
+            // nFieldEffective is used to allocate and plan space for
+            // the rest of the physical field (given by the current
+            // nField length).
+            //
+            int nFieldEffective = nField - 1; // Leave room for '\0'.
+
+            // If we lay down -any- of the TEXT part, we need to make
+            // sure we always leave enough room to get back to the
+            // required final ANSI color state.
+            //
+            int nTransitionFinal = 0;
+            if (memcmp(&(pC->acsCurrent), &(pC->acsFinal), sizeof(ANSI_ColorState)) != 0)
+            {
+                // The color state of the TEXT isn't the final state,
+                // so how much room will the transition back to the
+                // final state take?
+                //
+                ANSI_TransitionColorBinary(&(pC->acsCurrent), &(pC->acsFinal), &nTransitionFinal, pC->bNoBleed);
+                nFieldEffective -= nTransitionFinal;
+            }
+
+            // If we lay down -any- of the TEXT part, it needs to be
+            // the right color.
+            //
+            int nTransition = 0;
+            char *pTransition = ANSI_TransitionColorBinary(&(pC->acsPrevious), &(pC->acsCurrent), &nTransition, pC->bNoBleed);
+            nFieldEffective -= nTransition;
+
+            // If we find that there is no room for any of the TEXT,
+            // then we're done.
+            //
+            // TODO: The visual width test can be done further up to save time.
+            //
+            if (nFieldEffective <= nTokenLength0 || *pnVisualWidth + nTokenLength0 > maxVisualWidth)
+            {
+                // We have reached the limits of the field.
+                //
+                if (nFieldEffective > 0)
+                {
+                    // There was enough physical room in the field, but
+                    // we would have exceeded the maximum visual width
+                    // if we used all the text.
+                    //
+                    if (nTransition)
+                    {
+                        // Encode the TEXT color.
+                        //
+                        memcpy(pField, pTransition, nTransition);
+                        pField += nTransition;
+                    }
+
+                    // Place just enough of the TEXT in the field.
+                    //
+                    int nTextToAdd = maxVisualWidth - *pnVisualWidth;
+                    if (nTextToAdd < nFieldEffective)
+                    {
+                        nFieldEffective = nTextToAdd;
+                    }
+                    memcpy(pField, pC->pString, nFieldEffective);
+                    pField += nFieldEffective;
+                    pC->pString += nFieldEffective;
+                    pC->nString -= nFieldEffective;
+                    *pnVisualWidth += nFieldEffective;
+                    pC->acsPrevious = pC->acsCurrent;
+                }
+                if (nTransitionFinal)
+                {
+                    char *pTransitionFinal = ANSI_TransitionColorBinary(&(pC->acsPrevious),
+                        &(pC->acsFinal), &nTransitionFinal, pC->bNoBleed);
+
+                    memcpy(pField, pTransitionFinal, nTransitionFinal);
+                    pField += nTransitionFinal;
+                }
+                *pField = '\0';
+                return pField - pField0;
+            }
+
+            if (nTransition)
+            {
+                memcpy(pField, pTransition, nTransition);
+                pField += nTransition;
+                nField -= nTransition;
+            }
+            memcpy(pField, pC->pString, nTokenLength0);
+            pField  += nTokenLength0;
+            nField  -= nTokenLength0;
+            pC->pString += nTokenLength0;
+            pC->nString -= nTokenLength0;
+            *pnVisualWidth += nTokenLength0;
+            pC->acsPrevious = pC->acsCurrent;
+
+            if (nTokenLength1)
+            {
+                // Process ANSI
+                //
+                ANSI_Parse_m(&(pC->acsCurrent), nTokenLength1, pC->pString, &(pC->bSawNormal));
+                pC->pString += nTokenLength1;
+                pC->nString -= nTokenLength1;
+            }
+        }
+        else
+        {
+            // Process ANSI
+            //
+            ANSI_Parse_m(&(pC->acsCurrent), nTokenLength0, pC->pString, &(pC->bSawNormal));
+            pC->nString -= nTokenLength0;
+            pC->pString += nTokenLength0;
+        }
+    }
+
+    int nTransition = 0;
+    char *pTransition = ANSI_TransitionColorBinary(&(pC->acsPrevious), &(pC->acsFinal), &nTransition, pC->bNoBleed);
+    if (nTransition)
+    {
+        memcpy(pField, pTransition, nTransition);
+        pField += nTransition;
+    }
+    *pField = '\0';
+    return pField - pField0;
+}
+
+// Take an ANSI string and fit as much of the information as possible
+// into a field of size nField. Truncate text. Also make sure that no color
+// leaks out of the field.
+//
+#if 1
+int ANSI_TruncateToField(const char *szString, int nField, char *pField0, int maxVisualWidth, int *pnVisualWidth, BOOL bNoBleed)
+{
+    if (!szString)
+    {
+        pField0[0] = '\0';
+        return 0;
+    }
+    struct ANSI_Context state;
+    ANSI_String_Init(&state, szString, bNoBleed);
+    return ANSI_String_Copy(&state, nField, pField0, maxVisualWidth, pnVisualWidth);
+}
+#else
+int ANSI_TruncateToField(const char *szString, int nField, char *pField0, int maxVisualWidth, int *pnVisualWidth, BOOL bNoBleed)
+{
+    *pnVisualWidth = 0;
+    char *pField = pField0;
+    const char *pString = szString;
+    if (!pString)
+    {
+        pField0[0] = '\0';
+        return 0;
+    }
+    int nString = strlen(szString);
+
+    ANSI_ColorState acsCurrent;
+    ANSI_ColorState acsPrevious;
+    ANSI_ColorState acsFinal;
+    ANSI_InitColorState(&acsCurrent, bNoBleed);
+    acsPrevious = acsCurrent;
+    acsFinal    = acsCurrent;
+    BOOL bSawNormal = FALSE;
+    while (nString)
+    {
+        int nTokenLength0;
+        int nTokenLength1;
+        int iType = ANSI_lex(nString, pString, &nTokenLength0, &nTokenLength1);
+
+        if (iType == TOKEN_TEXT_ANSI)
+        {
+            // Process TEXT
+            //
+            int nFieldEffective = nField - 1; // Leave room for '\0'.
+
+            int nTransitionFinal = 0;
+            if (memcmp(&acsCurrent, &acsFinal, sizeof(ANSI_ColorState)) != 0)
+            {
+                char *pTransitionFinal = ANSI_TransitionColorBinary(&acsCurrent, &acsFinal, &nTransitionFinal, bNoBleed);
+                nFieldEffective -= nTransitionFinal;
+            }
+
+            int nTransition = 0;
+            char *pTransition = ANSI_TransitionColorBinary(&acsPrevious, &acsCurrent, &nTransition, bNoBleed);
+            nFieldEffective -= nTransition;
+
+            if (nFieldEffective <= nTokenLength0 || *pnVisualWidth + nTokenLength0 > maxVisualWidth)
+            {
+                // We have reached the limits of the field
+                //
+                if (nFieldEffective > 0)
+                {
+                    if (nTransition)
+                    {
+                        memcpy(pField, pTransition, nTransition);
+                        pField += nTransition;
+                    }
+                    int nTextToAdd = maxVisualWidth - *pnVisualWidth;
+                    if (nTextToAdd < nFieldEffective)
+                    {
+                        nFieldEffective = nTextToAdd;
+                    }
+                    memcpy(pField, pString, nFieldEffective);
+                    pField += nFieldEffective;
+                    *pnVisualWidth += nFieldEffective;
+                }
+                if (nTransitionFinal)
+                {
+                    char *pTransitionFinal = ANSI_TransitionColorBinary(&acsCurrent,
+                        &acsFinal, &nTransitionFinal, bNoBleed);
+
+                    memcpy(pField, pTransitionFinal, nTransitionFinal);
+                    pField += nTransitionFinal;
+                }
+                *pField = '\0';
+                return pField - pField0;
+            }
+
+            if (nTransition)
+            {
+                memcpy(pField, pTransition, nTransition);
+                pField += nTransition;
+                nField -= nTransition;
+            }
+            memcpy(pField, pString, nTokenLength0);
+            pField  += nTokenLength0;
+            nField  -= nTokenLength0;
+            pString += nTokenLength0;
+            nString -= nTokenLength0;
+            *pnVisualWidth += nTokenLength0;
+            acsPrevious = acsCurrent;
+
+            if (nTokenLength1)
+            {
+                // Process ANSI
+                //
+                ANSI_Parse_m(&acsCurrent, nTokenLength1, pString, &bSawNormal);
+                pString += nTokenLength1;
+                nString -= nTokenLength1;
+            }
+        }
+        else
+        {
+            // Process ANSI
+            //
+            ANSI_Parse_m(&acsCurrent, nTokenLength0, pString, &bSawNormal);
+            nString -= nTokenLength0;
+            pString += nTokenLength0;
+        }
+    }
+
+    int nTransition = 0;
+    char *pTransition = ANSI_TransitionColorBinary(&acsPrevious, &acsFinal, &nTransition, bNoBleed);
+    if (nTransition)
+    {
+        memcpy(pField, pTransition, nTransition);
+        pField += nTransition;
+    }
+    *pField = '\0';
+    return pField - pField0;
+}
 #endif
 
-/* Convert raw character sequences into MUX substitutions (type = 1)
- * or strips them (type = 0). */
-
-char *translate_string(str, type)
-const char *str;
-int type;
+char *normal_to_white(const char *szString)
 {
-	char old[LBUF_SIZE];
-	static char new[LBUF_SIZE];
-	char *j, *c, *bp;
-	int i;
+    static char Buffer[LBUF_SIZE];
+    int nVisualWidth;
+    ANSI_TruncateToField(szString, sizeof(Buffer), Buffer, sizeof(Buffer), &nVisualWidth, TRUE);
+    return Buffer;
+}
 
-	bp = new;
-	StringCopy(old, str);
-		
-	for (j = old; *j != '\0'; j++) {
-		switch (*j) {
-		case ESC_CHAR:
-			c = strchr(j, 'm');
-			if (c) {
-				if (!type) {
-					j = c;
-					break;
-				}
-				
-				*c = '\0';
-				i = atoi(j + 2);
-				switch (i) {
-				case 0:
-					safe_str("%cn", new, &bp);
-					break;
-				case 1:
-					safe_str("%ch", new, &bp);
-					break;
-				case 5:
-					safe_str("%cf", new, &bp);
-					break;
-				case 7:
-					safe_str("%ci", new, &bp);
-					break;
-				case 30:
-					safe_str("%cx", new, &bp);
-					break;
-				case 31:
-					safe_str("%cr", new, &bp);
-					break;
-				case 32:
-					safe_str("%cg", new, &bp);
-					break;
-				case 33:
-					safe_str("%cy", new, &bp);
-					break;
-				case 34:
-					safe_str("%cb", new, &bp);
-					break;
-				case 35:
-					safe_str("%cm", new, &bp);
-					break;
-				case 36:
-					safe_str("%cc", new, &bp);
-					break;
-				case 37:
-					safe_str("%cw", new, &bp);
-					break;
-				case 40:
-					safe_str("%cX", new, &bp);
-					break;
-				case 41:
-					safe_str("%cR", new, &bp);
-					break;
-				case 42:
-					safe_str("%cG", new, &bp);
-					break;
-				case 43:
-					safe_str("%cY", new, &bp);
-					break;
-				case 44:
-					safe_str("%cB", new, &bp);
-					break;
-				case 45:
-					safe_str("%cM", new, &bp);
-					break;
-				case 46:
-					safe_str("%cC", new, &bp);
-					break;
-				case 47:
-					safe_str("%cW", new, &bp);
-					break;
-				}
-				j = c;
-			} else {
-				safe_chr(*j, new, &bp);
-			}
-			break;
-		case ' ':
-			if ((*(j+1) == ' ') && type)
-				safe_str("%b", new, &bp);
-			else 
-				safe_chr(' ', new, &bp);
-			break;
-		case '\\':
-			if (type)
-				safe_str("\\", new, &bp);
-			else
-				safe_chr('\\', new, &bp);
-			break;
-		case '%':
-			if (type)
-				safe_str("%%", new, &bp);
-			else
-				safe_chr('%', new, &bp);
-			break;
-		case '[':
-			if (type)
-				safe_str("%[", new, &bp);
-			else
-				safe_chr('[', new, &bp);
-			break;
-		case ']':
-			if (type)
-				safe_str("%]", new, &bp);
-			else
-				safe_chr(']', new, &bp);
-			break;
-		case '{':
-			if (type)
-				safe_str("%{", new, &bp);
-			else
-				safe_chr('{', new, &bp);
-			break;
-		case '}':
-			if (type)
-				safe_str("%}", new, &bp);
-			else
-				safe_chr('}', new, &bp);
-			break;
-		case '(':
-			if (type)
-				safe_str("%(", new, &bp);
-			else
-				safe_chr('(', new, &bp);
-			break;
-		case ')':
-			if (type)
-				safe_str("%)", new, &bp);
-			else
-				safe_chr(')', new, &bp);
-			break;
-		case '\r':
-			break;
-		case '\n':
-			if (type)
-				safe_str("%r", new, &bp);
-			else
-				safe_chr(' ', new, &bp);
-			break;
-		default:
-			safe_chr(*j, new, &bp);
-		}
-	}
-	*bp = '\0';
-	return new;
+char MU_EscapeChar[256] =
+{
+//  0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F
+//
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0,  // 0
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // 1
+    1, 0, 0, 0, 0, 1, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0,  // 2
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // 3
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // 4
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0,  // 5
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // 6
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0,  // 7
+
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // 8
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // 9
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // A
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // B
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // C
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // D
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // E
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0   // F
+};
+
+// Convert raw character sequences into MUX substitutions (type = 1)
+// or strips them (type = 0).
+//
+char *translate_string(const char *szString, int bConvert)
+{
+    static char szTranslatedString[LBUF_SIZE];
+    char *pTranslatedString = szTranslatedString;
+
+    const char *pString = szString;
+    if (!szString)
+    {
+        *pTranslatedString = '\0';
+        return szTranslatedString;
+    }
+    int   nString = strlen(szString);
+
+    ANSI_ColorState acsCurrent;
+    ANSI_ColorState acsPrevious;
+    ANSI_InitColorState(&acsCurrent, FALSE);
+    acsPrevious = acsCurrent;
+    BOOL bSawNormal = FALSE;
+    while (nString)
+    {
+        int nTokenLength0;
+        int nTokenLength1;
+        int iType = ANSI_lex(nString, pString, &nTokenLength0, &nTokenLength1);
+
+        if (iType == TOKEN_TEXT_ANSI)
+        {
+            // Process TEXT
+            //
+            int nTransition = 0;
+            if (bConvert)
+            {
+                char *pTransition = ANSI_TransitionColorEscape(&acsPrevious, &acsCurrent, &nTransition);
+                safe_str(pTransition, szTranslatedString, &pTranslatedString);
+            }
+            nString -= nTokenLength0;
+
+            while (nTokenLength0--)
+            {
+                int ch = *pString++;
+                if (MU_EscapeChar[ch] == 0)
+                {
+                    // Common case: mudane character.
+                    //
+                    safe_chr(ch, szTranslatedString, &pTranslatedString);
+                    continue;
+                }
+
+                // Handle special characters. '\0' doesn't occur because
+                // nLengthToken0 controls us.
+                //
+                if (ch <= '(')
+                {
+                    // LF, CR, SP, %, (
+                    //
+                    if (ch <= '\r')
+                    {
+                        // LF CR
+                        //
+                        if (ch == '\n')
+                        {
+                            if (bConvert)
+                                safe_str("%r", szTranslatedString, &pTranslatedString);
+                            else
+                                safe_chr(' ', szTranslatedString, &pTranslatedString);
+                        }
+
+                        // Ignore CR on purpose.
+                        //
+                    }
+                    else
+                    {
+                        // SP % (
+                        //
+                        if (ch == ' ')
+                        {
+                            // The following can look one ahead off the end of the
+                            // current token (and even at the '\0' at the end of the
+                            // string, but this is acceptable. An extra look will
+                            // always see either ESC from the next ANSI sequence,
+                            // or the '\0' on the end of the string. No harm done.
+                            //
+                            if (pString[0] == ' ' && bConvert)
+                                safe_str("%b", szTranslatedString, &pTranslatedString);
+                            else 
+                                safe_chr(' ', szTranslatedString, &pTranslatedString);
+                        }
+                        else if (ch == '%')
+                        {
+                            if (bConvert)
+                                safe_str("%%", szTranslatedString, &pTranslatedString);
+                            else
+                                safe_chr('%', szTranslatedString, &pTranslatedString);
+                        }
+                        else
+                        {
+                            // (
+                            //
+                            if (bConvert)
+                                safe_str("%(", szTranslatedString, &pTranslatedString);
+                            else
+                                safe_chr('(', szTranslatedString, &pTranslatedString);
+                        }
+                    }
+                }
+                else
+                {
+                    // ) [ \ ] { }
+                    //
+                    if (ch <= '\\')
+                    {
+                        // ) [ \ 
+                        //
+                        if (ch == ')')
+                        {
+                            if (bConvert)
+                                safe_str("%)", szTranslatedString, &pTranslatedString);
+                            else
+                                safe_chr(')', szTranslatedString, &pTranslatedString);
+                        }
+                        else if (ch == '[')
+                        {
+                            if (bConvert)
+                                safe_str("%[", szTranslatedString, &pTranslatedString);
+                            else
+                                safe_chr('[', szTranslatedString, &pTranslatedString);
+                        }
+                        else
+                        {
+                            // \ 
+                            //
+                            if (bConvert)
+                                safe_str("\\\\", szTranslatedString, &pTranslatedString);
+                            else
+                                safe_chr('\\', szTranslatedString, &pTranslatedString);
+                        }
+                    }
+                    else
+                    {
+                        // ] { }
+                        //
+                        if (ch == ']')
+                        {
+                            if (bConvert)
+                                safe_str("%]", szTranslatedString, &pTranslatedString);
+                            else
+                                safe_chr(']', szTranslatedString, &pTranslatedString);
+                        }
+                        else if (ch == '{')
+                        {
+                            if (bConvert)
+                                safe_str("%{", szTranslatedString, &pTranslatedString);
+                            else
+                                safe_chr('{', szTranslatedString, &pTranslatedString);
+                        }
+                        else
+                        {
+                            // }
+                            //
+                            if (bConvert)
+                                safe_str("%}", szTranslatedString, &pTranslatedString);
+                            else
+                                safe_chr('}', szTranslatedString, &pTranslatedString);
+                        }
+                    }
+                }
+            }
+            acsPrevious = acsCurrent;
+
+            if (nTokenLength1)
+            {
+                // Process ANSI
+                //
+                ANSI_Parse_m(&acsCurrent, nTokenLength1, pString, &bSawNormal);
+                pString += nTokenLength1;
+                nString -= nTokenLength1;
+            }
+        }
+        else
+        {
+            // Process ANSI
+            //
+            ANSI_Parse_m(&acsCurrent, nTokenLength0, pString, &bSawNormal);
+            nString -= nTokenLength0;
+            pString += nTokenLength0;
+        }
+    }
+    *pTranslatedString = '\0';
+    return szTranslatedString;
 }
 
 /*
  * capitalizes an entire string
  */
 
-char *upcasestr(s)
-char *s;
+char *upcasestr(char *s)
 {
-	char *p;
-
-	for (p = s; p && *p; p++)
-		*p = ToUpper(*p);
-	return s;
-}
-
-/*
- * returns a pointer to the non-space character in s, or a NULL if s == NULL
- * or *s == NULL or s has only spaces.
- */
-char *skip_space(s)
-const char *s;
-{
-	char *cp;
-
-	cp = (char *)s;
-	while (cp && *cp && isspace(*cp))
-		cp++;
-	return (cp);
+    if (s)
+    {
+        _strupr(s);
+    }
+    return s;
 }
 
 /*
  * returns a pointer to the next character in s matching c, or a pointer to
  * the \0 at the end of s.  Yes, this is a lot like index, but not exactly.
  */
-char *seek_char(s, c)
-const char *s;
-char c;
+char *seek_char(const char *s, char c)
 {
-	char *cp;
+    char *cp;
 
-	cp = (char *)s;
-	while (cp && *cp && (*cp != c))
-		cp++;
-	return (cp);
+    cp = (char *)s;
+    while (cp && *cp && (*cp != c))
+        cp++;
+    return (cp);
 }
 
 /*
@@ -233,69 +1222,85 @@ char c;
  * * munge_space: Compress multiple spaces to one space, also remove leading and
  * * trailing spaces.
  */
-
-char *munge_space(string)
-char *string;
+char *munge_space(char *string)
 {
-	char *buffer, *p, *q;
+    char *buffer, *p, *q;
 
-	buffer = alloc_lbuf("munge_space");
-	p = string;
-	q = buffer;
-	while (p && *p && isspace(*p))
-		p++;		/*
-				 * remove inital spaces 
-				 */
-	while (p && *p) {
-		while (*p && !isspace(*p))
-			*q++ = *p++;
-		while (*p && isspace(*++p)) ;
-		if (*p)
-			*q++ = ' ';
-	}
-	*q = '\0';		/*
-				 * remove terminal spaces and terminate * * * 
-				 * 
-				 * * string 
-				 */
-	return (buffer);
+    buffer = alloc_lbuf("munge_space");
+    p = string;
+    q = buffer;
+
+    if (p)
+    {
+        // Remove initial spaces.
+        //
+        while (Tiny_IsSpace[(unsigned char)*p])
+            p++;
+
+        while (*p)
+        {
+            while (*p && !Tiny_IsSpace[(unsigned char)*p])
+                *q++ = *p++;
+
+            while (Tiny_IsSpace[(unsigned char)*p])
+            {
+                p++;
+            }
+
+            if (*p)
+                *q++ = ' ';
+        }
+    }
+
+    // Remove terminal spaces and terminate string.
+    //
+    *q = '\0';
+    return buffer;
 }
 
 /*
  * ---------------------------------------------------------------------------
  * * trim_spaces: Remove leading and trailing spaces.
  */
-
-char *trim_spaces(string)
-char *string;
+char *trim_spaces(char *string)
 {
-	char *buffer, *p, *q;
+    char *buffer, *p, *q;
+    buffer = alloc_lbuf("trim_spaces");
+    p = string;
+    q = buffer;
 
-	buffer = alloc_lbuf("trim_spaces");
-	p = string;
-	q = buffer;
-	while (p && *p && isspace(*p))	/*
-					 * remove inital spaces 
-					 */
-		p++;
-	while (p && *p) {
-		while (*p && !isspace(*p))	/*
-						 * copy nonspace chars 
-						 */
-			*q++ = *p++;
-		while (*p && isspace(*p))	/*
-						 * compress spaces 
-						 */
-			p++;
-		if (*p)
-			*q++ = ' ';	/*
-					 * leave one space 
-					 */
-	}
-	*q = '\0';		/*
-				 * terminate string 
-				 */
-	return (buffer);
+    if (p)
+    {
+        // Remove initial spaces.
+        //
+        while (Tiny_IsSpace[(unsigned char)*p])
+            p++;
+
+        while (*p)
+        {
+            // Copy non-space characters.
+            //
+            while (*p && !Tiny_IsSpace[(unsigned char)*p])
+                *q++ = *p++;
+
+            // Compress spaces.
+            //
+            while (Tiny_IsSpace[(unsigned char)*p])
+                p++;
+
+            // Leave one space.
+            //
+            if (*p)
+            {
+                *q++ = ' ';
+            }
+        }
+    }
+
+    // Terminate string.
+    //
+    *q = '\0';
+    return buffer;
 }
 
 /*
@@ -304,112 +1309,135 @@ char *string;
  * * returns a modified pointer to the string ready for another call.
  */
 
-char *grabto(str, targ)
-char **str, targ;
+char *grabto(char **str, char targ)
 {
-	char *savec, *cp;
+    char *savec, *cp;
 
-	if (!str || !*str || !**str)
-		return NULL;
+    if (!str || !*str || !**str)
+        return NULL;
 
-	savec = cp = *str;
-	while (*cp && *cp != targ)
-		cp++;
-	if (*cp)
-		*cp++ = '\0';
-	*str = cp;
-	return savec;
+    savec = cp = *str;
+    while (*cp && *cp != targ)
+        cp++;
+    if (*cp)
+        *cp++ = '\0';
+    *str = cp;
+    return savec;
 }
 
-int string_compare(s1, s2)
-const char *s1, *s2;
+int string_compare(const char *s1, const char *s2)
 {
 #ifndef STANDALONE
-	if (!mudconf.space_compress) {
-		while (*s1 && *s2 && ToLower(*s1) == ToLower(*s2))
-			s1++, s2++;
-
-		return (ToLower(*s1) - ToLower(*s2));
-	} else {
+    if (!mudconf.space_compress)
+    {
+        return _stricmp(s1, s2);
+    }
+    else
+    {
 #endif
-		while (isspace(*s1))
-			s1++;
-		while (isspace(*s2))
-			s2++;
-		while (*s1 && *s2 && ((ToLower(*s1) == ToLower(*s2)) ||
-				      (isspace(*s1) && isspace(*s2)))) {
-			if (isspace(*s1) && isspace(*s2)) {	/*
-								 * skip all * 
-								 * 
-								 * *  * *
-								 * other * *
-								 * * spaces 
-								 */
-				while (isspace(*s1))
-					s1++;
-				while (isspace(*s2))
-					s2++;
-			} else {
-				s1++;
-				s2++;
-			}
-		}
-		if ((*s1) && (*s2))
-			return (1);
-		if (isspace(*s1)) {
-			while (isspace(*s1))
-				s1++;
-			return (*s1);
-		}
-		if (isspace(*s2)) {
-			while (isspace(*s2))
-				s2++;
-			return (*s2);
-		}
-		if ((*s1) || (*s2))
-			return (1);
-		return (0);
+        while (Tiny_IsSpace[(unsigned char)*s1])
+            s1++;
+        while (Tiny_IsSpace[(unsigned char)*s2])
+            s2++;
+
+        while (*s1 && *s2
+              && (  (Tiny_ToLower[(unsigned char)*s1] == Tiny_ToLower[(unsigned char)*s2])
+                 || (Tiny_IsSpace[(unsigned char)*s1] && Tiny_IsSpace[(unsigned char)*s2])))
+        {
+            if (Tiny_IsSpace[(unsigned char)*s1] && Tiny_IsSpace[(unsigned char)*s2])
+            {
+                // skip all other spaces.
+                //
+                do
+                {
+                    s1++;
+                } while (Tiny_IsSpace[(unsigned char)*s1]);
+
+                do
+                {
+                    s2++;
+                } while (Tiny_IsSpace[(unsigned char)*s2]);
+            }
+            else
+            {
+                s1++;
+                s2++;
+            }
+        }
+        if ((*s1) && (*s2))
+            return 1;
+
+        if (Tiny_IsSpace[(unsigned char)*s1])
+        {
+            while (Tiny_IsSpace[(unsigned char)*s1])
+                s1++;
+
+            return *s1;
+        }
+        if (Tiny_IsSpace[(unsigned char)*s2])
+        {
+            while (Tiny_IsSpace[(unsigned char)*s2])
+                s2++;
+
+            return *s2;
+        }
+        if ((*s1) || (*s2))
+            return 1;
+        return 0;
 #ifndef STANDALONE
-	}
+    }
 #endif
 }
 
-int string_prefix(string, prefix)
-const char *string, *prefix;
+int string_prefix(const char *string, const char *prefix)
 {
-	int count = 0;
+    int count = 0;
 
-	while (*string && *prefix && ToLower(*string) == ToLower(*prefix))
-		string++, prefix++, count++;
-	if (*prefix == '\0')	/*
-				 * Matched all of prefix 
-				 */
-		return (count);
-	else
-		return (0);
+    while (*string && *prefix
+          && (Tiny_ToLower[(unsigned char)*string] == Tiny_ToLower[(unsigned char)*prefix]))
+    {
+        string++, prefix++, count++;
+    }
+    if (*prefix == '\0')
+    {
+        // Matched all of prefix.
+        //
+        return count;
+    }
+    else
+    {
+        return 0;
+    }
 }
 
 /*
  * accepts only nonempty matches starting at the beginning of a word 
  */
 
-const char *string_match(src, sub)
-const char *src, *sub;
+const char *string_match(const char *src, const char *sub)
 {
-	if ((*sub != '\0') && (src)) {
-		while (*src) {
-			if (string_prefix(src, sub))
-				return src;
-			/*
-			 * else scan to beginning of next word 
-			 */
-			while (*src && isalnum(*src))
-				src++;
-			while (*src && !isalnum(*src))
-				src++;
-		}
-	}
-	return 0;
+    if ((*sub != '\0') && (src))
+    {
+        while (*src)
+        {
+            if (string_prefix(src, sub))
+            {
+                return src;
+            }
+
+            // else scan to beginning of next word
+            //
+            while (Tiny_IsAlphaNumeric[(unsigned char)*src])
+            {
+                src++;
+            }
+            while (*src && !Tiny_IsAlphaNumeric[(unsigned char)*src])
+            {
+                src++;
+            }
+        }
+    }
+    return 0;
 }
 
 /*
@@ -419,47 +1447,60 @@ const char *src, *sub;
  * * (mitch 1 feb 91)
  */
 
-char *replace_string(old, new, string)
-const char *old, *new, *string;
+char *replace_string(const char *old, const char *new0, const char *string)
 {
-	char *result, *r, *s;
-	int olen;
+    char *result, *r, *s;
+    int olen;
 
-	if (string == NULL)
-		return NULL;
-	s = (char *)string;
-	olen = strlen(old);
-	r = result = alloc_lbuf("replace_string");
-	while (*s) {
+    if (!string)
+    {
+        return NULL;
+    }
+    s = (char *)string;
+    olen = strlen(old);
+    r = result = alloc_lbuf("replace_string");
+    while (*s)
+    {
+        // Find next occurrence of the first character of OLD string.
+        //
+        char *p = strchr(s, old[0]);
+        if (p)
+        {
+            // Copy up to the next occurrence of the first char of OLD.
+            //
+            int n = p - s;
+            if (n)
+            {
+                safe_copy_buf(s, n, result, &r, LBUF_SIZE-1);
+                s += n;
+            }
 
-		/*
-		 * Copy up to the next occurrence of the first char of OLD 
-		 */
-
-		while (*s && *s != *old) {
-			safe_chr(*s, result, &r);
-			s++;
-		}
-
-		/*
-		 * If we are really at an OLD, append NEW to the result and * 
-		 * 
-		 * *  * *  * * bump the input string past the occurrence of
-		 * OLD. *  * * * Otherwise, copy the char and try again. 
-		 */
-
-		if (*s) {
-			if (!strncmp(old, s, olen)) {
-				safe_str((char *)new, result, &r);
-				s += olen;
-			} else {
-				safe_chr(*s, result, &r);
-				s++;
-			}
-		}
-	}
-	*r = '\0';
-	return result;
+            // If we are really at an complete OLD, append NEW to the result
+            // and bump the input string past the occurrence of OLD.
+            // Otherwise, copy the character and try matching again.
+            //
+            if (!strncmp(old, s, olen))
+            {
+                safe_str((char *)new0, result, &r);
+                s += olen;
+            }
+            else
+            {
+                safe_chr(*s, result, &r);
+                s++;
+            }
+        }
+        else
+        {
+            // Finish copying source string. No matches. No further
+            // work to perform.
+            //
+            safe_str(s, result, &r);
+            break;
+        }
+    }
+    *r = '\0';
+    return result;
 }
 
 /*
@@ -468,78 +1509,84 @@ const char *old, *new, *string;
  * already be allocated large enough to handle the new size. (mitch 1 feb 91)
  */
 
-char *replace_string_inplace(old, new, string)
-const char *old, *new;
-char *string;
+char *replace_string_inplace(const char *old, const char *new0, char *string)
 {
-	char *s;
+    char *s;
 
-	s = replace_string(old, new, string);
-	StringCopy(string, s);
-	free_lbuf(s);
-	return string;
+    s = replace_string(old, new0, string);
+    StringCopy(string, s);
+    free_lbuf(s);
+    return string;
 }
 
 /*
  * Counts occurances of C in STR. - mnp 7 feb 91 
  */
 
-int count_chars(str, c)
-const char *str, c;
+int count_chars(const char *str, const char c)
 {
-	register out = 0;
-	register const char *p = str;
+    int out = 0;
+    const char *p = str;
 
-	if (p)
-		while (*p != '\0')
-			if (*p++ == c)
-				out++;
-	return out;
+    if (p)
+    {
+        while (*p != '\0')
+        {
+            if (*p++ == c)
+            {
+                out++;
+            }
+        }
+    }
+    return out;
 }
 
 /*
  * returns the number of identical characters in the two strings 
  */
-int prefix_match(s1, s2)
-const char *s1, *s2;
+int prefix_match(const char *s1, const char *s2)
 {
-	int count = 0;
+    int count = 0;
 
-	while (*s1 && *s2 && (ToLower(*s1) == ToLower(*s2)))
-		s1++, s2++, count++;
-	/*
-	 * If the whole string matched, count the null.  (Yes really.) 
-	 */
-	if (!*s1 && !*s2)
-		count++;
-	return count;
+    while (*s1 && *s2
+          && (Tiny_ToLower[(unsigned char)*s1] == Tiny_ToLower[(unsigned char)*s2]))
+    {
+        s1++, s2++, count++;
+    }
+
+    // If the whole string matched, count the null.  (Yes really.)
+    //
+    if (!*s1 && !*s2)
+    {
+        count++;
+    }
+    return count;
 }
 
-int minmatch(str, target, min)
-char *str, *target;
-int min;
+int minmatch(char *str, char *target, int min)
 {
-	while (*str && *target && (ToLower(*str) == ToLower(*target))) {
-		str++;
-		target++;
-		min--;
-	}
-	if (*str)
-		return 0;
-	if (!*target)
-		return 1;
-	return ((min <= 0) ? 1 : 0);
+    while (*str && *target
+          && (Tiny_ToLower[(unsigned char)*str] == Tiny_ToLower[(unsigned char)*target]))
+    {
+        str++;
+        target++;
+        min--;
+    }
+    if (*str)
+        return 0;
+    if (!*target)
+        return 1;
+    return ((min <= 0) ? 1 : 0);
 }
 
-char *strsave(s)
-const char *s;
+char *strsave(const char *s)
 {
-	char *p;
-	p = (char *)XMALLOC(sizeof(char) * (strlen(s) + 1), "strsave");
+    char *p;
+    p = (char *)MEMALLOC(sizeof(char) * (strlen(s) + 1), __FILE__, __LINE__);
 
-	if (p)
-		StringCopy(p, s);
-	return p;
+    if (p)
+        StringCopy(p, s);
+    return p;
 }
 
 /*
@@ -547,79 +1594,409 @@ const char *s;
  * * safe_copy_str, safe_copy_chr - Copy buffers, watching for overflows.
  */
 
-int safe_copy_str(src, buff, bufp, max)
-char *src, *buff, **bufp;
-int max;
+void safe_copy_str(const char *src, char *buff, char **bufp, int nSizeOfBuffer)
 {
-	char *tp;
+    if (src == NULL) return;
 
-	tp = *bufp;
-	if (src == NULL)
-		return 0;
-	while (*src && ((tp - buff) < max))
-		*tp++ = *src++;
-	*bufp = tp;
-	return strlen(src);
+    char *tp = *bufp;
+    int left = (buff + nSizeOfBuffer) - tp;
+    while (*src && left > 0)
+    {
+        *tp++ = *src++;
+        left--;
+    }
+    *bufp = tp;
 }
 
-int safe_copy_chr(src, buff, bufp, max)
-char src, *buff, **bufp;
-int max;
+int safe_copy_buf(const char *src, int nLen, char *buff, char **bufp, int nSizeOfBuffer)
 {
-	char *tp;
-	int retval;
-
-	tp = *bufp;
-	retval = 0;
-	if ((tp - buff) < max) {
-		*tp++ = src;
-	} else {
-		retval = 1;
-	}
-	*bufp = tp;
-	return retval;
+    int left = (buff + nSizeOfBuffer) - *bufp;
+    if (left < nLen)
+    {
+        nLen = left;
+    }
+    memcpy(*bufp, src, nLen);
+    *bufp += nLen;
+    return nLen;
 }
 
-int matches_exit_from_list(str, pattern)
-char *str, *pattern;
+int matches_exit_from_list(char *str, char *pattern)
 {
-	char *s;
+    char *s;
 
-	while (*pattern) {
-		for (s = str;	/*
-				 * check out this one 
-				 */
-		     (*s && (ToLower(*s) == ToLower(*pattern)) &&
-		      *pattern && (*pattern != EXIT_DELIMITER));
-		     s++, pattern++) ;
+    while (*pattern) {
+        for (s = str;   /*
+                 * check out this one 
+                 */
+             ( *s
+             && (Tiny_ToLower[(unsigned char)*s] == Tiny_ToLower[(unsigned char)*pattern])
+             && *pattern
+             && (*pattern != EXIT_DELIMITER));
+             s++, pattern++) ;
 
-		/*
-		 * Did we match it all? 
-		 */
+        /*
+         * Did we match it all? 
+         */
 
-		if (*s == '\0') {
+        if (*s == '\0') {
 
-			/*
-			 * Make sure nothing afterwards 
-			 */
+            /*
+             * Make sure nothing afterwards 
+             */
 
-			while (*pattern && isspace(*pattern))
-				pattern++;
+            while (Tiny_IsSpace[(unsigned char)*pattern])
+                pattern++;
 
-			/*
-			 * Did we get it? 
-			 */
+            /*
+             * Did we get it? 
+             */
 
-			if (!*pattern || (*pattern == EXIT_DELIMITER))
-				return 1;
-		}
-		/*
-		 * We didn't get it, find next string to test 
-		 */
+            if (!*pattern || (*pattern == EXIT_DELIMITER))
+                return 1;
+        }
+        /*
+         * We didn't get it, find next string to test 
+         */
 
-		while (*pattern && *pattern++ != EXIT_DELIMITER) ;
-		while (isspace(*pattern))
-			pattern++;
-	}
-	return 0;
+        while (*pattern && *pattern++ != EXIT_DELIMITER) ;
+        while (Tiny_IsSpace[(unsigned char)*pattern])
+            pattern++;
+    }
+    return 0;
 }
+
+char Digits100[201] =
+"001020304050607080900111213141516171819102122232425262728292\
+031323334353637383930414243444546474849405152535455565758595\
+061626364656667686960717273747576777879708182838485868788898\
+09192939495969798999";
+
+int Tiny_ltoa(long val, char *buf)
+{
+    char *p = buf;
+    
+    if (val < 0)
+    {
+        *p++ = '-';
+        val = -val;
+    }
+    unsigned int uval = (unsigned int)val;
+    
+    char *q = p;
+    
+    char *z;
+    while (uval > 99)
+    {
+        z = Digits100 + ((uval % 100) << 1);
+        uval /= 100;
+        *p++ = *z;
+        *p++ = *(z+1);
+    }
+    z = Digits100 + (uval << 1);
+    *p++ = *z;
+    if (uval > 9)
+    {
+        *p++ = *(z+1);
+    }
+
+    int nLength = p - buf;
+    *p-- = '\0';
+
+    // The digits are in reverse order with a possible leading '-'
+    // if the value was negative. q points to the first digit,
+    // and p points to the last digit.
+    //
+    while (q < p)
+    {
+        // Swap characters are *p and *q
+        //
+        char temp = *p;
+        *p = *q;
+        *q = temp;
+
+        // Move p and first digit towards the middle.
+        //
+        --p;
+        ++q;
+
+        // Stop when we reach or pass the middle.
+        //
+    }
+    return nLength;
+}
+
+char *Tiny_ltoa_t(long val)
+{
+    static char buff[12];
+    Tiny_ltoa(val, buff);
+    return buff;
+}
+
+int Tiny_i64toa(INT64 val, char *buf)
+{
+    char *p = buf;
+    
+    if (val < 0)
+    {
+        *p++ = '-';
+        val = -val;
+    }
+    
+    char *q = p;
+    
+    char *z;
+    while (val > 99)
+    {
+        z = Digits100 + ((val % 100) << 1);
+        val /= 100;
+        *p++ = *z;
+        *p++ = *(z+1);
+    }
+    z = Digits100 + (val << 1);
+    *p++ = *z;
+    if (val > 9)
+    {
+        *p++ = *(z+1);
+    }
+
+    int nLength = p - buf;
+    *p-- = '\0';
+
+    // The digits are in reverse order with a possible leading '-'
+    // if the value was negative. q points to the first digit,
+    // and p points to the last digit.
+    //
+    while (q < p)
+    {
+        // Swap characters are *p and *q
+        //
+        char temp = *p;
+        *p = *q;
+        *q = temp;
+
+        // Move p and first digit towards the middle.
+        //
+        --p;
+        ++q;
+
+        // Stop when we reach or pass the middle.
+        //
+    }
+    return nLength;
+}
+
+char *Tiny_i64toa_t(INT64 val)
+{
+    static char buff[22];
+    Tiny_i64toa(val, buff);
+    return buff;
+}
+
+long Tiny_atol(const char *pString)
+{
+    long sum;
+    int c;
+    int LeadingCharacter;
+    
+    // Leading whitespace
+    //
+    while (Tiny_IsSpace[(unsigned char)*pString])
+        pString++;
+
+    // Possible sign
+    //
+    LeadingCharacter = c = *pString++;
+    if (c == '-' || c == '+')
+    {
+        c = *pString++;
+    }
+    
+    sum = 0;
+    
+    // Convert ASCII digits
+    //
+    while (Tiny_IsDigit[(unsigned int)c])
+    {
+        sum = 10 * sum + (c - '0');
+        c = *pString++;
+    }
+    
+    // Interpret sign
+    //
+    if (LeadingCharacter == '-')
+    {
+        sum = -sum;
+    }
+    return sum;
+}
+
+INT64 Tiny_atoi64(const char *pString)
+{
+    INT64 sum;
+    int c;
+    int LeadingCharacter;
+    
+    // Leading whitespace
+    //
+    while (Tiny_IsSpace[(unsigned char)*pString])
+        pString++;
+
+    // Possible sign
+    //
+    LeadingCharacter = c = *pString++;
+    if (c == '-' || c == '+')
+    {
+        c = *pString++;
+    }
+    
+    sum = 0;
+    
+    // Convert ASCII digits
+    //
+    while (Tiny_IsDigit[(unsigned int)c])
+    {
+        sum = 10 * sum + (c - '0');
+        c = *pString++;
+    }
+    
+    // Interpret sign
+    //
+    if (LeadingCharacter == '-')
+    {
+        sum = -sum;
+    }
+    return sum;
+}
+
+// Tiny_StrTokString, Tiny_StrTokControl, Tiny_StrTokParse.
+//
+// These three functions work together to replace the functionality of the
+// strtok() C runtime library function. Call Tiny_StrTokString() first with
+// the string to parse, then Tiny_StrTokControl() with the control
+// characters, and finally Tiny_StrTokParse() to parse out the tokens.
+//
+// You may call Tiny_StrTokControl() to change the set of control characters
+// between Tiny_StrTokParse() calls, however keep in mind that the parsing
+// may not occur how you intend it to as Tiny_StrTokParse() does not
+// consume -all- of the controlling delimiters that seperate two tokens.
+// It consumes only the first one.
+//
+void Tiny_StrTokString(TINY_STRTOK_STATE *tts, char *arg_pString)
+{
+    if (!tts || !arg_pString) return;
+
+    // Remember the string to parse.
+    //
+    tts->pString = arg_pString;
+}
+
+void Tiny_StrTokControl(TINY_STRTOK_STATE *tts, char *pControl)
+{
+    if (!tts || !pControl) return;
+
+    // No character is a control character.
+    //
+    memset(tts->aControl, 0, sizeof(tts->aControl));
+
+    // The NUL character is always a control character.
+    //
+    tts->aControl[0] = 1;
+
+    // Record the user-specified control characters.
+    //
+    while (*pControl)
+    {
+        tts->aControl[(unsigned char)*pControl] = 1;
+        pControl++;
+    }
+}
+
+char *Tiny_StrTokParse(TINY_STRTOK_STATE *tts)
+{
+    char *p = tts->pString;
+    if (!tts || !p) return NULL;
+
+    // Skip over leading control characters except for the NUL character.
+    //
+    while (tts->aControl[(unsigned char)*p] && *p)
+    {
+        p++;
+    }
+
+    char *pReturn = p;
+
+
+    // Skip over non-control characters.
+    //
+    while (tts->aControl[(unsigned char)*p] == 0)
+    {
+        p++;
+    }
+
+    // Terminate the token with a NUL.
+    //
+    if (p[0])
+    {
+        // We found a non-NUL delimiter, so the next call will begin parsing
+        // on the character after this one.
+        //
+        p[0] = '\0';
+        tts->pString = p+1;
+    }
+    else
+    {
+        // We hit the end of the string, so the end of the string is where
+        // the next call will begin.
+        //
+        tts->pString = p;
+    }
+
+    // Did we find a token?
+    //
+    if (pReturn != p)
+    {
+        return pReturn;
+    }
+    else
+    {
+        return NULL;
+    }
+}
+
+#ifndef WIN32
+// _stricmp - Compare two strings ignoring case.
+//
+int _stricmp(const char *a, const char *b)
+{
+    return strcasecmp(a,b);
+}
+ 
+// _stricmp - Compare two strings ignoring case.
+//
+int _strnicmp(const char *a, const char *b, int n)
+{
+    return strncasecmp(a,b,n);
+}
+
+// _strlwr - Convert string to all lower case.
+//
+void _strlwr(char *a)
+{
+    while (*a)
+    {
+        *a = Tiny_ToLower[(unsigned char)*a];
+        a++;
+    }
+}
+
+// _strupr - Convert string to all upper case.
+//
+void _strupr(char *a)
+{
+    while (*a)
+    {
+        *a = Tiny_ToUpper[(unsigned char)*a];
+        a++;
+    }
+}
+#endif // WIN32

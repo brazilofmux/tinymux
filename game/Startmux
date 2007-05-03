@@ -1,4 +1,3 @@
-
 #!/bin/sh
 #
 #	Startmux - Kick off the netmux process.
@@ -21,20 +20,23 @@ $BIN/mkindx $TEXT/help.txt $TEXT/help.indx
 $BIN/mkindx $TEXT/wizhelp.txt $TEXT/wizhelp.indx
 $BIN/mkindx $TEXT/plushelp.txt $TEXT/plushelp.indx
 $BIN/mkindx $TEXT/wiznews.txt $TEXT/wiznews.indx
+$BIN/mkindx $TEXT/staffhelp.txt $TEXT/staffhelp.indx
 #
 #	Save a copy of the previous input database and log.
 #
 if [ -r $DATA/$INPUT_DB ]; then
 	mv -f $DATA/$INPUT_DB $DATA/$SAVE_DB
 fi
-mv -f $LOGNAME $LOGNAME.old
+if [ -f $LOGNAME ]; then
+	mv -f $LOGNAME $LOGNAME.old
+fi
 #
 #	If we have a good checkpoint database, make it the input database.
 #	If not, use the backup of the input database.
 #
 if [ -r $DATA/$NEW_DB ]; then
 	mv $DATA/$NEW_DB $DATA/$INPUT_DB
-else
+elif [ -r $DATA/$SAVE_DB ]; then
 	cp $DATA/$SAVE_DB $DATA/$INPUT_DB
 fi
 #

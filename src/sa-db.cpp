@@ -1,10 +1,10 @@
 /*
- * Standalone db.c 
+ * Standalone db.cpp
  */
 /*
- * $Id: sa-db.c,v 1.2 1997/04/16 06:01:38 dpassmor Exp $ 
+ * $Id: sa-db.cpp,v 1.1 2000-04-11 07:14:47 sdennis Exp $ 
  */
 
 #undef MEMORY_BASED
 #define STANDALONE
-#include "db.c"
+#include "db.cpp"

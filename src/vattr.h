@@ -1,26 +1,25 @@
-/*
- *  Definitions for user-defined attributes
- *
- *  $Id: vattr.h,v 1.2 1997/04/16 06:02:05 dpassmor Exp $
- */
-
-#define VNAME_SIZE	32
+// Definitions for user-defined attributes.
+//
+// $Id: vattr.h,v 1.1 2000-04-11 07:14:48 sdennis Exp $
+//
+#define MAX_VNAME_LENGTH (SBUF_SIZE-1)
 
 typedef struct user_attribute VATTR;
-struct user_attribute {
-	char	*name; /* Name of user attribute */
-	int	number;		/* Assigned attribute number */
-	int	flags;		/* Attribute flags */
+struct user_attribute
+{
+    char *name;    // Name of user attribute
+    int  number;   // Assigned attribute number
+    int  flags;    // Attribute flags
 };
 
-extern void	NDECL(vattr_init);
-extern VATTR *	FDECL(vattr_rename, (char *, char *));
-extern VATTR *	FDECL(vattr_find, (char *));
-extern VATTR *	FDECL(vattr_nfind, (int));
-extern VATTR *	FDECL(vattr_alloc, (char *, int));
-extern VATTR *	FDECL(vattr_define, (char *, int, int));
-extern void	FDECL(vattr_delete, (char *));
-extern VATTR *	FDECL(attr_rename, (char *, char *));
-extern VATTR *	NDECL(vattr_first);
-extern VATTR *	FDECL(vattr_next, (VATTR *));
-extern void	FDECL(list_vhashstats, (dbref));
+extern void  vattr_init(void);
+extern VATTR *vattr_rename(char *, char *);
+extern VATTR *vattr_findLEN(char *, int);
+extern VATTR *vattr_nfind(int);
+extern VATTR *vattr_alloc(char *, int);
+extern VATTR *vattr_define(char *, int, int);
+extern void  vattr_delete(char *);
+extern VATTR *attr_rename(char *, char *);
+extern VATTR *vattr_first(void);
+extern VATTR *vattr_next(VATTR *);
+extern void  list_vhashstats(dbref);
