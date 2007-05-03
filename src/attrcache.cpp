@@ -81,12 +81,7 @@ void cache_redirect(void)
         char TempFileName[20];
         sprintf(TempFileName, "$convtemp.%d", i);
         TempFiles[i] = fopen(TempFileName, "wb+");
-        if (TempFiles[i] == NULL)
-        {
-            Log.printf("Cannot create %s.\n", TempFileName);
-            Log.Flush();
-            abort();
-        }
+        Tiny_Assert(TempFiles[i]);
         setvbuf(TempFiles[i], NULL, _IOFBF, 16384);
     }
     cache_redirected = TRUE;
@@ -253,7 +248,7 @@ char *cache_get(Aname *nam, int *pLen)
 #ifdef DO_CACHEING
             // Add this information to the cache.
             //
-            pCacheEntry = (PCENT_HDR)MEMALLOC(sizeof(CENT_HDR)+nLength, __FILE__, __LINE__);
+            pCacheEntry = (PCENT_HDR)MEMALLOC(sizeof(CENT_HDR)+nLength);
             if (pCacheEntry)
             {
                 pCacheEntry->attrKey = *nam;
@@ -369,7 +364,7 @@ BOOL cache_put(Aname *nam, char *value, int len)
 
     // Add information about the new entry back into the cache.
     //
-    pCacheEntry = (PCENT_HDR)MEMALLOC(sizeof(CENT_HDR)+len, __FILE__, __LINE__);
+    pCacheEntry = (PCENT_HDR)MEMALLOC(sizeof(CENT_HDR)+len);
     if (pCacheEntry)
     {
         pCacheEntry->attrKey = *nam;
