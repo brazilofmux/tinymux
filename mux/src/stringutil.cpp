@@ -3820,7 +3820,7 @@ void mux_string::import(size_t n, const char *str)
             // Copy text and replicate corresponding color state.
             //
             memcpy(m_ach, str, nTextToLoad);
-            for (int i = 0; i < nTextToLoad; i++)
+            for (size_t i = 0; i < nTextToLoad; i++)
             {
                 m_acs[m_n+i] = acs;
             }

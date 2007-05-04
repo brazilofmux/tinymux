@@ -1504,28 +1504,43 @@ static int add_helpfile(dbref player, char *cmd, char *str, bool bRaw)
 
     // Build up Command Entry.
     //
-    CMDENT_ONE_ARG *cmdp = (CMDENT_ONE_ARG *)MEMALLOC(sizeof(CMDENT_ONE_ARG));
-    ISOUTOFMEMORY(cmdp);
+    CMDENT_ONE_ARG *cmdp = NULL;
+    try
+    {
+        cmdp = new CMDENT_ONE_ARG;
+    }
+    catch (...)
+    {
+        ; // Nothing.
+    }
 
-    cmdp->callseq = CS_ONE_ARG;
-    cmdp->cmdname = StringClone(pCmdName);
-    cmdp->extra = mudstate.nHelpDesc;
-    cmdp->handler = do_help;
-    cmdp->hookmask = 0;
-    cmdp->perms = CA_PUBLIC;
-    cmdp->switches = NULL;
+    if (NULL != cmdp)
+    {
+        cmdp->callseq = CS_ONE_ARG;
+        cmdp->cmdname = StringClone(pCmdName);
+        cmdp->extra = mudstate.nHelpDesc;
+        cmdp->handler = do_help;
+        cmdp->hookmask = 0;
+        cmdp->perms = CA_PUBLIC;
+        cmdp->switches = NULL;
 
-    // TODO: If a command is deleted with one or both of the two
-    // hashdeleteLEN() calls below, what guarantee do we have that parts of
-    // the command weren't dynamically allocated.  This might leak memory.
-    //
-    char *p = cmdp->cmdname;
-    hashdeleteLEN(p, strlen(p), &mudstate.command_htab);
-    hashaddLEN(p, strlen(p), cmdp, &mudstate.command_htab);
+        // TODO: If a command is deleted with one or both of the two
+        // hashdeleteLEN() calls below, what guarantee do we have that parts
+        // of the command weren't dynamically allocated.  This might leak
+        // memory.
+        //
+        char *p = cmdp->cmdname;
+        hashdeleteLEN(p, strlen(p), &mudstate.command_htab);
+        hashaddLEN(p, strlen(p), cmdp, &mudstate.command_htab);
 
-    p = tprintf("__%s", cmdp->cmdname);
-    hashdeleteLEN(p, strlen(p), &mudstate.command_htab);
-    hashaddLEN(p, strlen(p), cmdp, &mudstate.command_htab);
+        p = tprintf("__%s", cmdp->cmdname);
+        hashdeleteLEN(p, strlen(p), &mudstate.command_htab);
+        hashaddLEN(p, strlen(p), cmdp, &mudstate.command_htab);
+    }
+    else
+    {
+        ISOUTOFMEMORY(cmdp);
+    }
 
     mudstate.nHelpDesc++;
 
@@ -1958,13 +1973,12 @@ static CONF conftable[] =
     {"sql_user",                  cf_string,      CA_STATIC, CA_DISABLED, (int *)mudconf.sql_user,         NULL,             128},
     {"sql_password",              cf_string,      CA_STATIC, CA_DISABLED, (int *)mudconf.sql_password,     NULL,             128},
     {"sql_database",              cf_string,      CA_STATIC, CA_DISABLED, (int *)mudconf.sql_database,     NULL,             128},
+#endif // FIRANMUX
     {"mail_server",               cf_string,      CA_STATIC, CA_DISABLED, (int *)mudconf.mail_server,      NULL,             128},
     {"mail_ehlo",                 cf_string,      CA_STATIC, CA_DISABLED, (int *)mudconf.mail_ehlo,        NULL,             128},
     {"mail_sendaddr",             cf_string,      CA_STATIC, CA_DISABLED, (int *)mudconf.mail_sendaddr,    NULL,             128},
     {"mail_sendname",             cf_string,      CA_STATIC, CA_DISABLED, (int *)mudconf.mail_sendname,    NULL,             128},
     {"mail_subject",              cf_string,      CA_STATIC, CA_DISABLED, (int *)mudconf.mail_subject,     NULL,             128},
-#endif // FIRANMUX
-
     { NULL,                       NULL,           0,         0,           NULL,                            NULL,               0}
 };
 

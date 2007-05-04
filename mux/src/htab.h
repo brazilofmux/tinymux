@@ -62,7 +62,7 @@ public:
 
 void hashreset(CHashTable *);
 void *hashfindLEN(const void *pKey, size_t nKey, CHashTable *htab);
-int  hashaddLEN(const void *pKey, size_t nKey, void *pData,
+bool hashaddLEN(const void *pKey, size_t nKey, void *pData,
                 CHashTable *htab);
 void hashdeleteLEN(const void *Str, size_t nStr, CHashTable *htab);
 void hashflush(CHashTable *);

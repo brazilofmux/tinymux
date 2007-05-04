@@ -37,7 +37,6 @@ Feature Additions:
     may eventually be enabled in the default build:
 
     Attributes:  @alead, @lead, @olead, and @color
-    Commands:    @email
     Permissions: no_immobile, no_restricted
     Options:     immobile_message, sql_server, sql_user, sql_password,
                  sql_database, mail_server, mail_ehlo, mail_sendaddr,
@@ -47,6 +46,7 @@ Feature Additions:
                  mailsubj(), mailj(), text(), successes(), and
                  distribute().
 
+ -- Added @email command from Firan MUX to the default build.
  -- Added --enable-firanmuxconvert which turns on code to remap three
     conflicting attribute numbers. The first database load requires
     this switch, and then it should be turned off.
@@ -170,6 +170,18 @@ Bug Fixes:
     the command did not execute any sooner (Issue 172).
  -- Protect qsort() from invalid arguments that should not happen
     (Issue 125 and 159).
+ -- Add 'GameFull' reason which should never be referenced, but it
+    suppresses a compiler warning (Issue 148).
+ -- Remove arbitrary constant, 1000, and re-work @forwardlist codepaths
+    (Issue 168 and 175).
+ -- Suppress compiler warning in anum_extend() and compact code
+    (Issues 169 and 170).
+ -- Suppress compiler warning in add_helpfile() (Issue 165).
+ -- Corrected 'shutodnw' typo in 'wizhelp signals' (Issue 177).
+ -- Add checking and warning messages for next free attribute, range of
+    numbers used with names, and range of numbers used with objects
+    (Issues 176, 180, and 181).
+
 
 
 Performance Enhancements:

@@ -1398,8 +1398,8 @@ Related Topics: @name.
   is controller by the mail_subject configuration option, but <subject>, if
   given, overrides the default.
 
-  This command is only available if FIRANMUX is enabled, and will not work
-  unless configured properly.  See configuration options in wizhelp.
+  This command will not work unless configured properly.  See configuration
+  options in wizhelp.
 
   Related Topics: mail_server, mail_ehlo, mail_sendaddr, mail_sendname,
                   mail_subject
@@ -8048,7 +8048,18 @@ KEY
 
   FLAG: KEY(K)  ()
 
-  When set on an object prevents puppets from picking it up.
+  When an object (of any type) is KEYed, non-player objects (e.g., puppets)
+  fail any locks that would have been tested.  This could affect many kinds of
+  actions including the ability to pick up, give, enter, or pemit.
+
+  It is equivalent to the following @lock:
+
+    &ISPLAYER obj=hastype(%#,PLAYER)
+    @lock/... obj=ISPLAYER/1
+
+  Because locks are not always tested (e.g., if there is a controlling
+  relationship), and they are not necessarily tested at predictable times,
+  the use of KEY can make softcode difficult to debug.
 
   Related Topics:
 

@@ -717,9 +717,7 @@ static CMDENT_TWO_ARG command_table_two_arg[] =
     {"@txlevel",     NULL,       CA_WIZARD,                                        0,           CS_TWO_ARG|CS_INTERP, 0, do_txlevel},
 #endif
     {"@toad",        toad_sw,    CA_WIZARD,                                        0,           CS_TWO_ARG|CS_INTERP, 0, do_toad},
-#if defined(FIRANMUX)
     {"@email",       NULL,       CA_WIZARD,                                        0,           CS_TWO_ARG,           0, do_plusemail},
-#endif // FIRANMUX
     {"addcom",       NULL,       CA_NO_SLAVE,                                      0,           CS_TWO_ARG,           0, do_addcom},
     {"comtitle",     comtitle_sw,CA_NO_SLAVE,                                      0,           CS_TWO_ARG,           0, do_comtitle},
     {"give",         give_sw,    CA_LOCATION|CA_NO_GUEST,                          0,           CS_TWO_ARG|CS_INTERP, 0, do_give},

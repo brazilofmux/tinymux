@@ -23,6 +23,8 @@
 
 /* Disconnection reason codes */
 
+#define R_MIN       0
+#define R_UNKNOWN   0   /* Unknown/unexpected */
 #define R_QUIT      1   /* User quit */
 #define R_TIMEOUT   2   /* Inactivity timeout */
 #define R_BOOT      3   /* Victim of @boot, @toad, or @destroy */
@@ -32,6 +34,7 @@
 #define R_GAMEDOWN  7   /* Not admitting users now */
 #define R_LOGOUT    8   /* Logged out w/o disconnecting */
 #define R_GAMEFULL  9   /* Too many players logged in */
+#define R_MAX       9
 
 /* Logged out command table definitions */
 
