@@ -181,6 +181,8 @@ Bug Fixes:
  -- Add checking and warning messages for next free attribute, range of
     numbers used with names, and range of numbers used with objects
     (Issues 176, 180, and 181).
+ -- Require flagnames to be at least 1 character (Issue 183).
+ -- Fix @flag wizhelp topic (Issue 182).
 
 
 Performance Enhancements:

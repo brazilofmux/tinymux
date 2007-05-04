@@ -2996,8 +2996,8 @@ static void load_malias(FILE *fp)
     char buffer[200];
 
     getref(fp);
-    if (  fscanf(fp, "*** Begin %s ***\n", buffer) == 1
-       && !strcmp(buffer, "MALIAS"))
+    if (  fgets(buffer, sizeof(buffer), fp)
+       && strcmp(buffer, "*** Begin MALIAS ***\n") == 0)
     {
         malias_read(fp);
     }

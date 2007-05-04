@@ -188,6 +188,7 @@ void dump_database_internal(int);
 void fork_and_dump(int key);
 
 bool mux_fopen(FILE **pFile, const char *filename, const char *mode);
+bool mux_open(int *pfh, const char *filename, int oflag);
 
 /* From help.cpp */
 void helpindex_clean(int);
