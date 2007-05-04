@@ -1,6 +1,6 @@
 // command.cpp -- command parser and support routines.
 //
-// $Id: command.cpp,v 1.65 2005-11-24 03:19:52 sdennis Exp $
+// $Id: command.cpp,v 1.65 2005/11/24 03:19:52 sdennis Exp $
 //
 
 #include "copyright.h"

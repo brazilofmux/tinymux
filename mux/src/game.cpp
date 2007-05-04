@@ -1,6 +1,6 @@
 // game.cpp
 //
-// $Id: game.cpp,v 1.84 2005-12-29 18:00:25 sdennis Exp $
+// $Id: game.cpp,v 1.84 2005/12/29 18:00:25 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"

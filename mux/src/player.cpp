@@ -1,6 +1,6 @@
 // player.cpp
 //
-// $Id: player.cpp,v 1.33 2005-07-23 16:24:26 rmg Exp $
+// $Id: player.cpp,v 1.33 2005/07/23 16:24:26 rmg Exp $
 //
 
 #include "copyright.h"

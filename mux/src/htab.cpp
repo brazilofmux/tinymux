@@ -1,7 +1,7 @@
 /*! \file htab.cpp
  *  Table hashing routines.
  *
- * $Id: htab.cpp,v 1.29 2005-11-27 04:03:38 sdennis Exp $
+ * $Id: htab.cpp,v 1.29 2005/11/27 04:03:38 sdennis Exp $
  *
  * The functions here outsource most of their work to CHashTable.  There are
  * several reasons to use the functions here instead of using CHashTable

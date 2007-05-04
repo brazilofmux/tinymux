@@ -1,6 +1,6 @@
 // db_rw.cpp
 //
-// $Id: db_rw.cpp,v 1.17 2005-06-02 04:09:05 sdennis Exp $
+// $Id: db_rw.cpp,v 1.17 2005/06/02 04:09:05 sdennis Exp $
 //
 
 #include "copyright.h"

@@ -1,6 +1,6 @@
 // look.cpp -- Commands which look at things.
 //
-// $Id: look.cpp,v 1.41 2005-11-27 04:03:38 sdennis Exp $
+// $Id: look.cpp,v 1.41 2005/11/27 04:03:38 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All

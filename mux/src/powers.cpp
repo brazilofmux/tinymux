@@ -1,6 +1,6 @@
 // powers.cpp -- Power manipulation routines.
 //
-// $Id: powers.cpp,v 1.14 2005-11-27 04:03:38 sdennis Exp $
+// $Id: powers.cpp,v 1.14 2005/11/27 04:03:38 sdennis Exp $
 //
 
 #include "copyright.h"

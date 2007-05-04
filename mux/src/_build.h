@@ -1,6 +1,6 @@
 // _build.h
 //
-// $Id: _build.h,v 1.51 2005-12-31 20:07:04 sdennis Exp $
+// $Id: _build.h,v 1.51 2005/12/31 20:07:04 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 2005 Stephen Dennis.

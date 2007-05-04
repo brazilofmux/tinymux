@@ -1,6 +1,6 @@
 // comsys.cpp
 //
-// $Id: comsys.cpp,v 1.38 2005-10-16 03:01:21 sdennis Exp $
+// $Id: comsys.cpp,v 1.38 2005/10/16 03:01:21 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"

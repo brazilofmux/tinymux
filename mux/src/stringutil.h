@@ -1,6 +1,6 @@
 // stringutil.h -- string utilities.
 //
-// $Id: stringutil.h,v 1.42 2005-08-05 17:11:07 sdennis Exp $
+// $Id: stringutil.h,v 1.42 2005/08/05 17:11:07 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All

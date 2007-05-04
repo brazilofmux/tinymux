@@ -1,6 +1,6 @@
 // stringutil.cpp -- string utilities.
 //
-// $Id: stringutil.cpp,v 1.72 2005-11-08 18:31:45 sdennis Exp $
+// $Id: stringutil.cpp,v 1.72 2005/11/08 18:31:45 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All

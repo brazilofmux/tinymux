@@ -2,7 +2,7 @@
 // Multiguest code rewritten by Matthew J. Leavitt (zenty).
 // Idea for @list guest from Ashen-Shugar and the great team of RhostMUSH
 //
-// $Id: mguests.cpp,v 1.16 2004-09-21 04:22:18 sdennis Exp $
+// $Id: mguests.cpp,v 1.16 2004/09/21 04:22:18 sdennis Exp $
 //
 
 #include "copyright.h"

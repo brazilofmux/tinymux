@@ -1,6 +1,6 @@
 // mail.h
 //
-// $Id: mail.h,v 1.6 2005-06-25 19:48:13 sdennis Exp $
+// $Id: mail.h,v 1.6 2005/06/25 19:48:13 sdennis Exp $
 //
 
 #ifndef _MAIL_H

@@ -2,7 +2,7 @@
  * File for most TCP socket-related code. Some socket-related code also exists
  * in netcommon.cpp, but most of it is here.
  *
- * $Id: bsd.cpp,v 1.73 2005-12-31 21:45:01 sdennis Exp $
+ * $Id: bsd.cpp,v 1.73 2005/12/31 21:45:01 sdennis Exp $
  */
 
 #include "copyright.h"

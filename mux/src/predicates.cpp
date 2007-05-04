@@ -1,6 +1,6 @@
 // predicates.cpp
 //
-// $Id: predicates.cpp,v 1.76 2005-11-13 10:18:42 rmg Exp $
+// $Id: predicates.cpp,v 1.76 2005/11/13 10:18:42 rmg Exp $
 //
 
 #include "copyright.h"

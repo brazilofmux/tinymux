@@ -1,6 +1,6 @@
 // svdocache.cpp -- Attribute caching module.
 //
-// $Id: attrcache.cpp,v 1.18 2005-10-13 14:58:48 sdennis Exp $
+// $Id: attrcache.cpp,v 1.18 2005/10/13 14:58:48 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All

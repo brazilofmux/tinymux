@@ -1,6 +1,6 @@
 // eval.cpp -- Command evaluation and cracking.
 //
-// $Id: eval.cpp,v 1.29 2005-12-28 16:47:58 sdennis Exp $
+// $Id: eval.cpp,v 1.29 2005/12/28 16:47:58 sdennis Exp $
 //
 // MUX 2.4
 // Copyright (C) 1998 through 2004 Solid Vertical Domains, Ltd. All
