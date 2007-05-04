@@ -1729,6 +1729,7 @@ void do_dbck(dbref executor, dbref caller, dbref enactor, int key)
     }
     purge_going();
     make_freelist();
+    scheduler.Shrink();
 
     // Allow the local extensions to do data checks.
     //

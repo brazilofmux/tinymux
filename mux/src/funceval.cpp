@@ -1852,8 +1852,7 @@ FUNCTION(fun_mailsize)
         struct mail *mp;
         for (mp = ml.FirstItem(); !ml.IsEnd(); mp = ml.NextItem())
         {
-            const char *msgbuff = MessageFetch(mp->number);
-            totalsize += strlen(msgbuff) + 1;
+            totalsize += MessageFetchSize(mp->number) + 1;
         }
         safe_ltoa(totalsize, buff, bufc);
     }
