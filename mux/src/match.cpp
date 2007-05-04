@@ -1,6 +1,6 @@
 // match.cpp -- Routines for parsing arguments.
 //
-// $Id: match.cpp,v 1.1 2003-01-22 19:58:25 sdennis Exp $
+// $Id: match.cpp,v 1.1 2003/01/22 19:58:25 sdennis Exp $
 //
 
 #include "copyright.h"

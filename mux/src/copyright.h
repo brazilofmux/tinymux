@@ -1,6 +1,6 @@
 /* copyright.h */
 /* -*-C-*- */
-/* $Id: copyright.h,v 1.1 2003-01-22 19:58:25 sdennis Exp $ */
+/* $Id: copyright.h,v 1.1 2003/01/22 19:58:25 sdennis Exp $ */
 
 /*
  * TinyMUX 2.2 Source Code.
