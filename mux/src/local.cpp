@@ -188,3 +188,13 @@ void local_data_free(dbref object)
 {
     UNUSED_PARAMETER(object);
 }
+
+static const char *LocalDumpInfoTable[] =
+{
+    NULL
+};
+
+const char **local_get_info_table(void)
+{
+    return LocalDumpInfoTable;
+}

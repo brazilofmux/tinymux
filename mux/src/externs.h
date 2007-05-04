@@ -68,6 +68,7 @@ void local_disconnect(dbref, int);
 void local_data_create(dbref);
 void local_data_clone(dbref, dbref);
 void local_data_free(dbref);
+const char **local_get_info_table(void);
 
 // From mail.cpp.
 //
