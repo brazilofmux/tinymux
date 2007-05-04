@@ -2026,9 +2026,7 @@ static void process_preload(void)
     dbref thing, parent, aowner;
     int aflags, lev;
     char *tstr;
-    FWDLIST *fp;
 
-    fp = (FWDLIST *) alloc_lbuf("process_preload.fwdlist");
     tstr = alloc_lbuf("process_preload.string");
     DO_WHOLE_DB(thing)
     {
@@ -2067,15 +2065,21 @@ static void process_preload(void)
             atr_get_str(tstr, thing, A_FORWARDLIST, &aowner, &aflags);
             if (*tstr)
             {
-                fwdlist_load(fp, GOD, tstr);
-                if (fp->count > 0)
+                FWDLIST *fp = fwdlist_load(GOD, tstr);
+                if (NULL != fp)
                 {
                     fwdlist_set(thing, fp);
+
+                    if (fp->data)
+                    {
+                        delete [] fp->data;
+                    }
+                    delete fp;
+                    fp = NULL;
                 }
             }
         }
     }
-    free_lbuf(fp);
     free_lbuf(tstr);
 }
 

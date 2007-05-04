@@ -16,8 +16,6 @@
 #include "config.h"
 #include "_build.h"
 
-#if defined(FIRANMUX)
-
 #ifndef WIN32
 #include <netdb.h>
 #endif
@@ -719,5 +717,3 @@ void do_plusemail(dbref executor, dbref cause, dbref enactor, int key,
     free_lbuf(body);
     free_lbuf(addy);
 }
-
-#endif // FIRANMUX

@@ -1888,7 +1888,8 @@ static const char *disc_messages[] =
     "Shutdown",
     "BadLogin",
     "NoLogins",
-    "Logout"
+    "Logout",
+    "GameFull"
 };
 
 void shutdownsock(DESC *d, int reason)
@@ -1913,7 +1914,7 @@ void shutdownsock(DESC *d, int reason)
 
         // Reason: attribute (disconnect reason)
         //
-        atr_add_raw(d->player, A_REASON, (char *)disc_messages[reason]);
+        atr_add_raw(d->player, A_REASON, disc_messages[reason]);
 
         // Update the A_CONNINFO attribute.
         //
