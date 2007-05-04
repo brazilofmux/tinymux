@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.188 2003-07-24 00:23:39 sdennis Exp $
+// $Id: functions.cpp,v 1.1 2002-05-24 06:53:15 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -2069,15 +2069,14 @@ FUNCTION(fun_next)
 
 FUNCTION(fun_loc)
 {
-    dbref it = match_thing(player, fargs[0]);
+    dbref it;
+
+    it = match_thing(player, fargs[0]);
     if (locatable(player, it, cause))
-    {
         safe_tprintf_str(buff, bufc, "#%d", Location(it));
-    }
     else
-    {
         safe_nothing(buff, bufc);
-    }
+    return;
 }
 
 /*
@@ -2087,15 +2086,14 @@ FUNCTION(fun_loc)
 
 FUNCTION(fun_where)
 {
-    dbref it = match_thing(player, fargs[0]);
+    dbref it;
+
+    it = match_thing(player, fargs[0]);
     if (locatable(player, it, cause))
-    {
         safe_tprintf_str(buff, bufc, "#%d", where_is(it));
-    }
     else
-    {
         safe_nothing(buff, bufc);
-    }
+    return;
 }
 
 /*
@@ -2105,27 +2103,19 @@ FUNCTION(fun_where)
 
 FUNCTION(fun_rloc)
 {
-    int levels = Tiny_atol(fargs[1]);
-    if (levels > mudconf.ntfy_nest_lim)
-    {
-        levels = mudconf.ntfy_nest_lim;
-    }
+    int i, levels;
+    dbref it;
 
-    dbref it = match_thing(player, fargs[0]);
-    if (locatable(player, it, cause))
-    {
-        for (int i = 0; i < levels; i++)
-        {
-            if (  Good_obj(it)
-               && (  isExit(it)
-                  || Has_location(it)))
-            {
-                it = Location(it);
-            }
-            else
-            {
+    levels = Tiny_atol(fargs[1]);
+    if (levels > mudconf.ntfy_nest_lim)
+        levels = mudconf.ntfy_nest_lim;
+
+    it = match_thing(player, fargs[0]);
+    if (locatable(player, it, cause)) {
+        for (i = 0; i < levels; i++) {
+            if (!Good_obj(it) || !Has_location(it))
                 break;
-            }
+            it = Location(it);
         }
         safe_tprintf_str(buff, bufc, "#%d", it);
         return;
@@ -2287,7 +2277,6 @@ FUNCTION(fun_match)
     char *s = trim_space_sep(fargs[0], sep);
     do {
         char *r = split_token(&s, sep);
-        mudstate.wild_invk_ctr = 0;
         if (quick_wild(fargs[1], r))
         {
             safe_ltoa(wcount, buff, bufc);
@@ -2302,7 +2291,6 @@ FUNCTION(fun_strmatch)
 {
     // Check if we match the whole string.  If so, return 1.
     //
-    mudstate.wild_invk_ctr = 0;
     int cc = quick_wild(fargs[1], fargs[0]);
     safe_chr(cc ? '1' : '0', buff, bufc);
 }
@@ -2498,7 +2486,7 @@ FUNCTION(fun_version)
 
 FUNCTION(fun_strlen)
 {
-    size_t n = 0;
+    unsigned int n = 0;
     if (nfargs >= 1)
     {
         strip_ansi(fargs[0], &n);
@@ -3136,7 +3124,7 @@ static double ConvertRDG2R(double d, const char *szUnits)
     case 'g':
         // Gradians to Radians.
         //
-        d *= 0.015707963267948967;
+        d *= 0.011570796326794896;
         break;
     }
     return d;
@@ -3371,15 +3359,16 @@ static void handle_vectors
     // It's okay to have vmul() be passed a scalar first or second arg,
     // but everything else has to be same-dimensional.
     //
-    if (  n != m
-       && !(  flag == VMUL_F
-           && (n == 1 || m == 1)))
+    if (  (n != m)
+       && (  (flag != VMUL_F)
+          || ((n != 1) && (m != 1))
+          )
+       )
     {
         safe_str("#-1 VECTORS MUST BE SAME DIMENSIONS", buff, bufc);
         return;
     }
-    if (  MAXDIM < n
-       || MAXDIM < m)
+    if (n > MAXDIM)
     {
         safe_str("#-1 TOO MANY DIMENSIONS ON VECTORS", buff, bufc);
         return;
@@ -3871,14 +3860,13 @@ FUNCTION(fun_pos)
     // instead of the source because the the pattern will tend to be
     // smaller (i.e., on average, fewer bytes to move).
     //
-    size_t nPat;
+    unsigned int nPat = 0;
     char aPatBuf[LBUF_SIZE];
-    char *pPatBuf = strip_ansi(fargs[0], &nPat);
-    memcpy(aPatBuf, pPatBuf, nPat);
+    memcpy(aPatBuf, strip_ansi(fargs[0], &nPat), nPat);
 
     // Strip ANSI from source.
     //
-    size_t nSrc;
+    unsigned int nSrc;
     char *pSrc = strip_ansi(fargs[1], &nSrc);
 
     // Search for pattern string inside source string.
@@ -5204,8 +5192,12 @@ FUNCTION(fun_min)
 
 FUNCTION(fun_search)
 {
-    char *pArg = NULL;
-    if (nfargs != 0)
+    char *pArg;
+    if (nfargs == 0)
+    {
+        pArg = "me";
+    }
+    else
     {
         pArg = fargs[0];
     }
@@ -5823,13 +5815,12 @@ FUNCTION(fun_filter)
         TinyExec(result, &bp, 0, player, cause,
             EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &str, &objstring, 1);
         *bp = '\0';
-        if (  result[0] == '1'
-           && result[1] == '\0')
+        if (!first && *result == '1')
         {
-            if (!first)
-            {
-                safe_chr(sep, buff, bufc);
-            }
+            safe_chr(sep, buff, bufc);
+        }
+        if (*result == '1')
+        {
             safe_str(objstring, buff, bufc);
             first = FALSE;
         }
@@ -6158,7 +6149,7 @@ FUNCTION(fun_space)
     // Validate request.
     //
     int num;
-    if (nfargs == 0 || *fargs[0] == '\0')
+    if (*fargs[0] == '\0')
     {
         num = 1;
     }
@@ -6327,7 +6318,7 @@ static void do_asort(char *s[], int n, int sort_type)
         for (i = 0; i < n; i++)
         {
             fp[i].str = s[i];
-            fp[i].data = Tiny_atof(s[i], FALSE);
+            fp[i].data = Tiny_atof(s[i]);
         }
         qsort((void *)fp, n, sizeof(f_rec), f_comp);
         for (i = 0; i < n; i++)
@@ -7266,7 +7257,7 @@ FUN flist[] =
     {"SINGLETIME", fun_singletime, MAX_ARG, 1, 1,    0, CA_PUBLIC},
     {"SORT",     fun_sort,     MAX_ARG, 1,  4,       0, CA_PUBLIC},
     {"SORTBY",   fun_sortby,   MAX_ARG, 2,  3,       0, CA_PUBLIC},
-    {"SPACE",    fun_space,    MAX_ARG, 0,  1,       0, CA_PUBLIC},
+    {"SPACE",    fun_space,    MAX_ARG, 1,  1,       0, CA_PUBLIC},
     {"SPLICE",   fun_splice,   MAX_ARG, 3,  4,       0, CA_PUBLIC},
     {"SQRT",     fun_sqrt,     MAX_ARG, 1,  1,       0, CA_PUBLIC},
     {"SQUISH",   fun_squish,   MAX_ARG, 0,  2,       0, CA_PUBLIC},
@@ -7327,9 +7318,8 @@ void NDECL(init_functab)
     char *buff = alloc_sbuf("init_functab");
     for (FUN *fp = flist; fp->name; fp++)
     {
-        char *bp = buff;
-        safe_sb_str(fp->name, buff, &bp);
-        *bp = '\0';
+        memcpy(buff, fp->name, SBUF_SIZE);
+        buff[SBUF_SIZE-1] = '\0';
         _strlwr(buff);
         hashaddLEN(buff, strlen(buff), (int *)fp, &mudstate.func_htab);
     }

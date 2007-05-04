@@ -1,6 +1,6 @@
 // eval.cpp -- Command evaluation and cracking.
 //
-// $Id: eval.cpp,v 1.41 2003-03-13 15:42:07 sdennis Exp $
+// $Id: eval.cpp,v 1.1 2002-05-24 06:53:15 sdennis Exp $
 //
 
 // MUX 2.1
@@ -1027,7 +1027,7 @@ static DCL_INLINE int *PushIntegers(int nNeeded)
     if (  !pIntsFrame
        || nNeeded > pIntsFrame->nints)
     {
-        IntsFrame *p = (IntsFrame *)alloc_lbuf("PushIntegers");
+        IntsFrame *p = (IntsFrame *)alloc_lbuf("PushPointers");
         p->next = pIntsFrame;
         p->nints = INTS_PER_FRAME;
         pIntsFrame = p;
@@ -1326,7 +1326,8 @@ void TinyExec( char *buff, char **bufc, int tflags, dbref player, dbref cause,
                     else
                     {
                         // If the number of args is right, perform the func. Otherwise
-                        // return an error message.
+                        // return an error message. Note that parse_arglist returns zero
+                        // args as one null arg, so we have to handle that case specially.
                         //
                         if (  fp->minArgs <= nfargs
                            && nfargs <= fp->maxArgs)
@@ -1560,7 +1561,7 @@ void TinyExec( char *buff, char **bufc, int tflags, dbref player, dbref cause,
                         pdstr++;
                         if (Tiny_IsAlpha[(unsigned char)(*pdstr)])
                         {
-                            i = A_VA + Tiny_ToUpper[(unsigned char)(*pdstr)] - 'A';
+                            i = 100 + Tiny_ToUpper[(unsigned char)(*pdstr)] - 'A';
                             int nAttrGotten;
                             atr_pget_str_LEN(TinyExec_scratch, player, i,
                                 &aowner, &aflags, &nAttrGotten);
@@ -1957,8 +1958,11 @@ void TinyExec( char *buff, char **bufc, int tflags, dbref player, dbref cause,
         int nLen = ANSI_TruncateToField(buff, sizeof(TinyExec_scratch),
             TinyExec_scratch, sizeof(TinyExec_scratch), &nVisualWidth,
             ANSI_ENDGOAL_NORMAL);
-        memcpy(buff, TinyExec_scratch, nLen+1);
-        *bufc = buff + nLen;
+        if (nLen != nVisualWidth)
+        {
+            memcpy(buff, TinyExec_scratch, nLen+1);
+            *bufc = buff + nLen;
+        }
     }
 
     // Report trace information.

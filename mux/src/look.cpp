@@ -1,6 +1,6 @@
 // look.cpp -- Commands which look at things.
 //
-// $Id: look.cpp,v 1.48 2003-09-08 01:40:25 sdennis Exp $
+// $Id: look.cpp,v 1.1 2002-05-24 06:53:15 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. The WOD_REALMS portion is original work.
@@ -2023,7 +2023,7 @@ static void sweep_check(dbref player, dbref what, int key, int is_loc)
             isconnected = 1;
         }
     }
-    if ((key & SWEEP_PLAYER) || isconnected)
+    if (key & SWEEP_PLAYER || isconnected)
     {
         if (isPlayer(what))
         {
@@ -2296,9 +2296,8 @@ void do_decomp
     // Strip out ANSI in one place rather than have it done in
     // several places.
     //
-    size_t len = 0;
-    char *p = strip_ansi(thingname, &len);
-    memcpy(thingname, p, len+1);
+    unsigned int len = 0;
+    memcpy(thingname, strip_ansi(thingname, &len), len+1);
 
     // Report the lock (if any).
     //

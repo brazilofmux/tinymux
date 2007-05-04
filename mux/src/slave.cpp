@@ -1,6 +1,6 @@
 // slave.cpp -- This slave does iptoname conversions, and identquery lookups.
 //
-// $Id: slave.cpp,v 1.13 2003-01-31 02:38:26 sdennis Exp $
+// $Id: slave.cpp,v 1.1 2002-05-24 06:53:16 sdennis Exp $
 //
 // The philosophy is to keep this program as simple/small as possible.  It
 // routinely performs non-vfork forks()s, so the conventional wisdom is that
@@ -9,7 +9,6 @@
 // not the issue it once was.
 //
 #include "autoconf.h"
-#include "config.h"
 
 #include <netdb.h>
 #include <netinet/in.h>
@@ -28,11 +27,11 @@
 
 pid_t parent_pid;
 
-#define MAX_STRING 1000
+#define MAX_STRING 8000
 char *arg_for_errors;
 
 #ifndef INADDR_NONE
-#define INADDR_NONE ((in_addr_t)-1)
+#define INADDR_NONE ((unsigned long)-1)
 #endif
 
 char *format_inet_addr(char *dest, long addr)
@@ -72,23 +71,22 @@ int query(char *ip, char *orig_arg)
     int s;
     FILE *f;
     char result[MAX_STRING];
-    char buf[MAX_STRING * 2];
-    char buf2[MAX_STRING * 2];
-    char buf3[MAX_STRING * 4];
+    char buf[MAX_STRING];
+    char buf2[MAX_STRING];
+    char buf3[MAX_STRING*2];
     char arg[MAX_STRING];
     size_t len;
     char *p;
-    in_addr_t addr;
+    long addr;
 
     addr = inet_addr(ip);
-    if (addr == INADDR_NONE)
+    if (addr == -1)
     {
         return -1;
     }
     const char *pHName = ip;
     hp = gethostbyaddr((char *)&addr, sizeof(addr), AF_INET);
-    if (  hp
-       && strlen(hp->h_name) < MAX_STRING)
+    if (hp)
     {
         pHName = hp->h_name;
     }
@@ -120,7 +118,7 @@ int query(char *ip, char *orig_arg)
         static struct hostent def;
         static struct in_addr defaddr;
         static char *alist[1];
-        static char namebuf[MAX_STRING];
+        static char namebuf[128];
 
         defaddr.s_addr = inet_addr(arg);
         if (defaddr.s_addr == INADDR_NONE)
@@ -242,7 +240,7 @@ RETSIGTYPE alarm_signal(int iSig)
 
 int main(int argc, char *argv[])
 {
-    char arg[MAX_STRING];
+    char arg[MAX_STRING + 1];
     char *p;
     int len;
 
@@ -257,7 +255,7 @@ int main(int argc, char *argv[])
 
     for (;;)
     {
-        len = read(0, arg, MAX_STRING - 1);
+        len = read(0, arg, MAX_STRING);
         if (len == 0)
         {
             break;

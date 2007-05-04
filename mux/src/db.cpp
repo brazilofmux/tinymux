@@ -1,6 +1,6 @@
 // db.cpp
 //
-// $Id: db.cpp,v 1.72 2003-02-16 20:50:15 sdennis Exp $
+// $Id: db.cpp,v 1.1 2002-05-24 06:53:15 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -1452,7 +1452,7 @@ static const char *atr_decode_flags_owner(const char *iattr, dbref *owner, int *
     }
     int tmp_owner = 0;
     unsigned int ch = *cp;
-    while (Tiny_IsDigit[(unsigned char)ch])
+    while (Tiny_IsDigit[ch])
     {
         cp++;
         tmp_owner = 10*tmp_owner + (ch-'0');
@@ -1474,7 +1474,7 @@ static const char *atr_decode_flags_owner(const char *iattr, dbref *owner, int *
     //
     int tmp_flags = 0;
     ch = *cp;
-    while (Tiny_IsDigit[(unsigned char)ch])
+    while (Tiny_IsDigit[ch])
     {
         cp++;
         tmp_flags = 10*tmp_flags + (ch-'0');

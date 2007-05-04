@@ -1,6 +1,6 @@
 // attrs.h -- Attribute definitions.
 //
-// $Id: attrs.h,v 1.17 2002-01-31 12:29:29 sdennis Exp $
+// $Id: attrs.h,v 1.1 2002-05-24 06:53:14 sdennis Exp $
 //
 
 #ifndef _ATTRS_H

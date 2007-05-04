@@ -1,6 +1,6 @@
 // match.h
 //
-// $Id: match.h,v 1.4 2001-11-19 19:28:57 sdennis Exp $
+// $Id: match.h,v 1.1 2002-05-24 06:53:15 sdennis Exp $
 //
 
 #include "copyright.h"

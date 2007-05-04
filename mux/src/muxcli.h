@@ -1,6 +1,6 @@
 // muxcli.h
 //
-// $Id: muxcli.h,v 1.2 2001-09-08 19:25:47 sdennis Exp $
+// $Id: muxcli.h,v 1.1 2002-05-24 06:53:15 sdennis Exp $
 //
 // MUX 2.0
 // Copyright (C) 1998 through 2001 Solid Vertical Domains, Ltd. All

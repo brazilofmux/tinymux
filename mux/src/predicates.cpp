@@ -1,6 +1,6 @@
 // predicates.cpp
 //
-// $Id: predicates.cpp,v 1.56 2003-02-18 04:34:00 sdennis Exp $
+// $Id: predicates.cpp,v 1.1 2002-05-24 06:53:15 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -273,7 +273,7 @@ void giveto(dbref who, int pennies)
 }
 
 // The following function validates that the object names (which will be
-// used for things and rooms, but not for players or exits) and generates
+// used for things, exits, and rooms, but not for players) and generates
 // a canonical form of that name (with optimized ANSI).
 //
 char *MakeCanonicalObjectName(const char *pName, int *pnName, BOOL *pbValid)
@@ -304,7 +304,7 @@ char *MakeCanonicalObjectName(const char *pName, int *pnName, BOOL *pbValid)
 
     // Get the stripped version (Visible parts without color info).
     //
-    size_t nStripped;
+    unsigned int nStripped;
     char *pStripped = strip_ansi(Buf, &nStripped);
 
     // Do not allow LOOKUP_TOKEN, NUMBER_TOKEN, NOT_TOKEN, or SPACE
@@ -340,116 +340,6 @@ char *MakeCanonicalObjectName(const char *pName, int *pnName, BOOL *pbValid)
     *pnName = nBuf;
     *pbValid = TRUE;
     return Buf;
-}
-
-// The following function validates exit names.
-//
-char *MakeCanonicalExitName(const char *pName, int *pnName, BOOL *pbValid)
-{
-    static char Buf[MBUF_SIZE];
-    static char Out[MBUF_SIZE];
-
-    *pnName = 0;
-    *pbValid = FALSE;
-
-    if (!pName)
-    {
-        return NULL;
-    }
-
-    // Build the non-ANSI version so that we can parse for semicolons
-    // safely.
-    //
-    char *pStripped = strip_ansi(pName);
-    char *pBuf = Buf;
-    safe_mb_str(pStripped, Buf, &pBuf);
-    *pBuf = '\0';
-
-    int nBuf = pBuf - Buf;
-    pBuf = Buf;
-
-    BOOL bHaveDisplay = FALSE;
-
-    char *pOut = Out;
-
-    for (; nBuf;)
-    {
-        // Build (q,n) as the next segment.  Leave the the remaining segments as
-        // (pBuf,nBuf).
-        //
-        char *q = strchr(pBuf, ';');
-        size_t n;
-        if (q)
-        {
-            *q = '\0';
-            n = q - pBuf;
-            q = pBuf;
-            pBuf += n + 1;
-            nBuf -= n + 1;
-        }
-        else
-        {
-            n = nBuf;
-            q = pBuf;
-            pBuf += nBuf;
-            nBuf = 0;
-        }
-
-        if (bHaveDisplay)
-        {
-            // We already have the displayable name. We don't allow ANSI in
-            // any segment but the first, so we can pull them directly from
-            // the stripped buffer.
-            //
-            int  nN;
-            BOOL bN;
-            char *pN = MakeCanonicalObjectName(q, &nN, &bN);
-            if (  bN
-               && nN < MBUF_SIZE - (pOut - Out) - 1)
-            {
-                safe_mb_chr(';', Out, &pOut);
-                safe_mb_str(pN, Out, &pOut);
-            }
-        }
-        else
-        {
-            // We don't have the displayable name, yet. We know where the next
-            // semicolon occurs, so we limit the visible width of the
-            // truncation to that.  We should be picking up all the visible
-            // characters leading up to the semicolon, but not including the
-            // semi-colon.
-            //
-            int vw;
-            int nN = ANSI_TruncateToField(pName, sizeof(Out), Out, n, &vw,
-                ANSI_ENDGOAL_NORMAL);
-
-            // vw should always be equal to n, but we'll just make sure.
-            //
-            if (vw == n)
-            {
-                int  nN;
-                BOOL bN;
-                char *pN = MakeCanonicalObjectName(Out, &nN, &bN);
-                if (  bN
-                   && nN <= MBUF_SIZE - 1)
-                {
-                    safe_mb_str(pN, Out, &pOut);
-                    bHaveDisplay = TRUE;
-                }
-            }
-        }
-    }
-    if (bHaveDisplay)
-    {
-        *pnName = pOut - Out;
-        *pbValid = TRUE;
-        *pOut = '\0';
-        return Out;
-    }
-    else
-    {
-        return NULL;
-    }
 }
 
 // The following function validates the player name. ANSI is not
@@ -497,7 +387,7 @@ BOOL ValidatePlayerName(const char *pName)
     //
     for (unsigned int i = 0; i < nName; i++)
     {
-        if (!Tiny_IsPlayerNameCharacter[(unsigned char)pName[i]])
+        if (!Tiny_IsObjectNameCharacter[(unsigned char)pName[i]])
         {
             return FALSE;
         }
@@ -810,6 +700,8 @@ void do_listcommands(dbref player, dbref cause, int key, char *name)
     ADDENT *nextp;
     int didit = 0;
 
+    char *keyname;
+
     // Let's make this case insensitive...
     //
     _strlwr(name);
@@ -842,18 +734,18 @@ void do_listcommands(dbref player, dbref cause, int key, char *name)
     }
     else
     {
-        char *pKeyName;
-        int  nKeyName;
-        for (old = (CMDENT *)hash_firstkey(&mudstate.command_htab, &nKeyName, &pKeyName);
-             old != NULL;
-             old = (CMDENT *)hash_nextkey(&mudstate.command_htab, &nKeyName, &pKeyName))
+        int nKeyLength;
+        for (keyname = hash_firstkey(&mudstate.command_htab, &nKeyLength); keyname != NULL;
+             keyname = hash_nextkey(&mudstate.command_htab, &nKeyLength))
         {
-            if (old->callseq & CS_ADDED)
+
+            old = (CMDENT *)hashfindLEN(keyname, nKeyLength, &mudstate.command_htab);
+
+            if (old && (old->callseq & CS_ADDED))
             {
-                pKeyName[nKeyName] = '\0';
                 for (nextp = (ADDENT *)old->handler; nextp != NULL; nextp = nextp->next)
                 {
-                    if (strcmp(pKeyName, nextp->name) != 0)
+                    if (strncmp(keyname, nextp->name, nKeyLength))
                     {
                         continue;
                     }
@@ -1286,9 +1178,9 @@ extern SOCKET slave_socket;
     slave_pid = 0;
     dump_restart_db();
 #ifdef GAME_DOOFERMUX
-    execl("bin/netmux", mudconf.mud_name, "-c", mudconf.config_file, NULL);
+    execl("bin/netmux", mudconf.mud_name, mudconf.config_file, NULL);
 #else
-    execl("bin/netmux", "netmux", "-c", mudconf.config_file, NULL);
+    execl("bin/netmux", "netmux", mudconf.config_file, NULL);
 #endif // GAME_DOOFERMUX
 #endif // !WIN32
 }
@@ -2137,11 +2029,11 @@ BOOL OutOfMemory(const char *SourceFile, unsigned int LineNo)
 #else // STANDALONE
     if (mudstate.bCanRestart)
     {
-        do_restart(GOD, GOD, 0);
+        abort();
     }
     else
     {
-        abort();
+        do_restart(GOD, GOD, 0);
     }
 #endif // STANDALONE
     return TRUE;
@@ -2159,11 +2051,11 @@ BOOL AssertionFailed(const char *SourceFile, unsigned int LineNo)
 #else // STANDALONE
     if (mudstate.bCanRestart)
     {
-        do_restart(GOD, GOD, 0);
+        abort();
     }
     else
     {
-        abort();
+        do_restart(GOD, GOD, 0);
     }
 #endif // STANDALONE
     return FALSE;

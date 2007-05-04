@@ -1,6 +1,6 @@
 // timeutil.cpp -- CLinearTimeAbsolute and CLinearTimeDelta modules.
 //
-// $Id: timeutil.cpp,v 1.28 2003-10-09 01:59:20 sdennis Exp $
+// $Id: timeutil.cpp,v 1.1 2002-05-24 06:53:16 sdennis Exp $
 //
 // Date/Time code based on algorithms presented in "Calendrical Calculations",
 // Cambridge Press, 1998.
@@ -895,7 +895,7 @@ BOOL ParseThreeLetters(const char **pp, int *piHash)
         p++;
     }
 
-    // Parse space-separate token.
+    // Parse space-seperate token.
     //
     const char *q = p;
     int iHash = 0;
@@ -1233,9 +1233,9 @@ BOOL LinearTimeToFieldedTime(INT64 lt, FIELDEDTIME *ft)
     ft->iSecond = (int)(ns100 / FACTOR_100NS_PER_SECOND);
     ns100 = ns100 % FACTOR_100NS_PER_SECOND;
 
-    ft->iMillisecond = (int)(ns100 / FACTOR_100NS_PER_MILLISECOND);
+    ft->iMillisecond = (int)(ns100 % FACTOR_100NS_PER_MILLISECOND);
     ns100 = ns100 % FACTOR_100NS_PER_MILLISECOND;
-    ft->iMicrosecond = (int)(ns100 / FACTOR_100NS_PER_MICROSECOND);
+    ft->iMicrosecond = (int)(ns100 % FACTOR_100NS_PER_MICROSECOND);
     ns100 = ns100 % FACTOR_100NS_PER_MICROSECOND;
     ft->iNanosecond = (int)(ns100 * FACTOR_NANOSECONDS_PER_100NS);
 
@@ -1374,10 +1374,10 @@ static CLinearTimeDelta    ltdTimeZoneStandard;
 // Because of signed-ness and -LONG_MAX overflowing, we need to be
 // particularly careful with finding the mid-point.
 //
-time_t time_t_midpoint(time_t tLower, time_t tUpper)
+time_t time_t_midpoint(time_t ulLower, time_t ulUpper)
 {
-    time_t tDiff = (tUpper-2) - tLower;
-    return tLower+tDiff/2+1;
+    time_t ulDiff = (ulUpper-2) - ulLower;
+    return ulLower+ulDiff/2+1;
 }
 
 // This determines the valid range of time_t and finds a 'standard'
@@ -1385,56 +1385,48 @@ time_t time_t_midpoint(time_t tLower, time_t tUpper)
 //
 void test_time_t(void)
 {
-    // Determine the range of the time_t datatype.  This code assumes a
-    // 2's-complement format.
-    //
-    const int nbits = sizeof(time_t)*8;
-    const time_t tOne = 1;
-    const time_t min_time_t = tOne << (nbits-1);
-    const time_t max_time_t = ~min_time_t;
-
     // Search for the highest supported value of time_t.
     //
-    time_t tUpper = max_time_t;
-    time_t tLower = 0;
-    time_t tMid;
-    while (tLower < tUpper)
+    time_t ulUpper = LONG_MAX;
+    time_t ulLower = 0;
+    time_t ulMid;
+    while (ulLower < ulUpper)
     {
-        tMid = time_t_midpoint(tLower+1, tUpper);
-        if (localtime(&tMid))
+        ulMid = time_t_midpoint(ulLower+1, ulUpper);
+        if (localtime(&ulMid))
         {
-            tLower = tMid;
+            ulLower = ulMid;
         }
         else
         {
-            tUpper = tMid-1;
+            ulUpper = ulMid-1;
         }
     }
-    ltaUpperBound.SetSeconds(tLower);
+    ltaUpperBound.SetSeconds(ulLower);
 
     // Search for the lowest supported value of time_t.
     //
-    tUpper = 0;
-    tLower = min_time_t;
-    while (tLower < tUpper)
+    ulUpper = 0;
+    ulLower = LONG_MIN;
+    while (ulLower < ulUpper)
     {
-        tMid = time_t_midpoint(tLower, tUpper-1);
-        if (localtime(&tMid))
+        ulMid = time_t_midpoint(ulLower, ulUpper-1);
+        if (localtime(&ulMid))
         {
-            tUpper = tMid;
+            ulUpper = ulMid;
         }
         else
         {
-            tLower = tMid+1;
+            ulLower = ulMid+1;
         }
     }
-    ltaLowerBound.SetSeconds(tUpper);
+    ltaLowerBound.SetSeconds(ulUpper);
 
-    // Find a time near tLower for which DST is not in affect.
+    // Find a time near ulLower for which DST is not in affect.
     //
     for (;;)
     {
-        struct tm *ptm = localtime(&tLower);
+        struct tm *ptm = localtime(&ulLower);
 
         if (ptm->tm_isdst <= 0)
         {
@@ -1451,14 +1443,14 @@ void test_time_t(void)
             CLinearTimeAbsolute ltaLocal;
             CLinearTimeAbsolute ltaUTC;
             ltaLocal.SetFields(&ft);
-            ltaUTC.SetSeconds(tLower);
+            ltaUTC.SetSeconds(ulLower);
             ltdTimeZoneStandard = ltaLocal - ltaUTC;
             break;
         }
 
         // Advance the time by 1 month (expressed as seconds).
         //
-        tLower += 30*24*60*60;
+        ulLower += 30*24*60*60;
     }
 }
 
@@ -1691,7 +1683,7 @@ Again:
             int nSize = sizeof(OffsetEntry)*(nOffsetTable-iMinTouched-1);
             memmove(OffsetTable+iMinTouched, OffsetTable+iMinTouched+1, nSize);
             nOffsetTable--;
-            if (iMinTouched <= i)
+            if (iMinTouched < i)
             {
                 i--;
             }
@@ -2543,7 +2535,7 @@ PD_Node *PD_NewNode(void)
     {
         return Nodes+(nNodes++);
     }
-    return NULL;
+    return 0;
 }
 
 PD_Node *PD_FirstNode(void)
@@ -2661,20 +2653,20 @@ PD_Node *PD_ScanNextToken(char **ppString)
     int ch = *p;
     if (ch == 0)
     {
-        return NULL;
+        return 0;
     }
     PD_Node *pNode;
     int iType = LexTable[ch];
     if (iType == PD_LEX_EOS || iType == PD_LEX_INVALID)
     {
-        return NULL;
+        return 0;
     }
     else if (iType == PD_LEX_SYMBOL)
     {
         pNode = PD_NewNode();
         if (!pNode)
         {
-            return NULL;
+            return 0;
         }
         pNode->pNextNode = 0;
         pNode->pPrevNode = 0;
@@ -2719,10 +2711,6 @@ PD_Node *PD_ScanNextToken(char **ppString)
         } while (iType == LexTable[ch]);
 
         pNode = PD_NewNode();
-        if (!pNode)
-        {
-            return NULL;
-        }
         pNode->pNextNode = 0;
         pNode->pPrevNode = 0;
         unsigned int nLen = p - pSave;
@@ -2771,7 +2759,7 @@ PD_Node *PD_ScanNextToken(char **ppString)
             }
             if (!bFound)
             {
-                return NULL;
+                return 0;
             }
         }
     }

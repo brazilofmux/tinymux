@@ -2,15 +2,15 @@
 ------------------------------------------------------------------------------
 Index 
 
-  This is the index of staff helpfiles, V1.0b(17JUL00)
+  This is the index of staff helpfiles, V1.0 (1 AUG 00)
 
   +accept        +cnotes        +commands      +contents      +duty          
   +join          +motd          +register      +rjoin         +rsummon       
-  +stnotes       +summon        +timestamp     +version       BACKGROUNDS    
-  CONFIGURE      DEFAULTS       FUNCTIONS      PROJECT
+  +stnotes       +summon        +timestamp     BACKGROUNDS    CONFIGURE      
+  DEFAULTS       FUNCTIONS      PROJECT
 
   To get help on any of the listed topics, type '+shelp <topic>'
-------------------------------------------------------------------------------
+-----------------------------------------------------------------------------
 
 & +accept
 ------------------------------------------------------------------------------
@@ -206,12 +206,7 @@ Softcoded Functions:
 
     Returns a string as a comma separated list with 'and' between second to 
     last and last elements.
-    
-             mmm-dd-yyyy()
-    
-    Returns time() output in terms of MMM DD YYYY.
-    
-------------------------------------------------------------------------------
+-----------------------------------------------------------------------------
 
 & +motd
 ------------------------------------------------------------------------------
@@ -220,7 +215,6 @@ Softcoded Functions:
   SYNTAX: +motd/list
           +motd/set <type>=<message>
           +motd/del <type>=<MOTD #>
-          +motd/clear <type>
           +motd/reset   
 
   This code allows for easier manipulation of the @motd command and the use of 
@@ -233,20 +227,16 @@ Softcoded Functions:
   The second command sets an MOTD attribute to the global parent.  You select 
   the type from the above list and set the message of your choosing.  
         
-  > +motd/set general=This is an MOTD.
+  >     +motd/set general=This is an MOTD.
 
   The third command removes a selected MOTD # from a given MOTD listing.  In 
   the above example, the message number is 1 in the general list. 
 
   > +motd/del general=1 
-
-  The fourth command clears all the MOTD of a given type.
-
-  > +motd/clear general 
   
   The last command resets the +motd system so that the game will read the 
   MOTDs appropriately.  This code is called as part of the @startup for the 
-  object.
+  object. 
 ------------------------------------------------------------------------------
 
 & +join
@@ -310,20 +300,6 @@ Project Status Tracker Help
   See Also: +summon
 -----------------------------------------------------------------------------
 
-& +staff
-------------------------------------------------------------------------------
-Notes on +staff:
- 
-  SYNTAX: +staff/add <player>
-          +staff/remove <player>
- 
-  These two commands modify the contents of &STAFF-LIST on the global parent 
-  and affect whether or not a given person appears on the +staff and 
-  +staff/all listings.  Where isstaff() checks against flags, STAFF-LIST and 
-  ostaff() are explicitly set and checked by code.
-   
-------------------------------------------------------------------------------
-
 & +stnotes
 ------------------------------------------------------------------------------
 STNOTES
@@ -371,43 +347,4 @@ STNOTES
            +timestamp/showall                - Shows all currently set 
                                                timestamps.  Can be spammy.
 -----------------------------------------------------------------------------
-
-& +version
-------------------------------------------------------------------------------
-+version
-
-  SYNTAX:  +version   
-           +version <dbref>
-
-  This code is in place to aid the user in the tracking of version history of
-  SGP objects.  The first form of this command returns a list of all SGP and 
-  additional tracked objects, their version numbers, dbrefs, most recent 
-  applied patches, and the date the last upgrade was done.  SGP installers 
-  update this information automatically.
-  
-  The second form of this command looks up a specific tracked object and 
-  returns information on what was applied to the object when.
-  
-  See Also: +version2  
-------------------------------------------------------------------------------
-&
-
-& +version2
-------------------------------------------------------------------------------
-+version (continued)
-
-  SYNTAX:  +version/add <dbref>   
-           +version/remove <dbref>
-           +version/update <dbref>/<field>=<data>
-           
-  The first form of this command adds new objects to the +version listing.  
-  The second form removes an object from +version. The third form edits 
-  various parts of the +version display. Fields include 'version', 
-  'patchlevel' and 'history'.  The 'Last Update' field is updated by the first 
-  two uses of this command.
-  
-  Updating the 'history' field adds detailed information to the object's 
-  UPDATE-HISTORY attribute and includes a date with every entry. 
-------------------------------------------------------------------------------
-&
 

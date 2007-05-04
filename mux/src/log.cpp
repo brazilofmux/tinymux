@@ -1,6 +1,6 @@
 // log.cpp -- Logging routines.
 //
-// $Id: log.cpp,v 1.17 2003-01-31 03:51:17 sdennis Exp $
+// $Id: log.cpp,v 1.1 2002-05-24 06:53:15 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -210,8 +210,7 @@ void log_name_and_loc(dbref player)
 
 char *OBJTYP(dbref thing)
 {
-    if (!Good_dbref(thing))
-    {
+    if (!Good_obj(thing)) {
         return (char *)"??OUT-OF-RANGE??";
     }
     switch (Typeof(thing)) {
@@ -306,8 +305,8 @@ void do_log
         }
     }
 
-    char *pFullName = NULL;
-    char *pMessage = "";
+    char *pFullName = 0;
+    char *pMessage;
     if (bValid)
     {
         pFullName = alloc_lbuf("do_log_filename");

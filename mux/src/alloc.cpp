@@ -1,6 +1,6 @@
 // alloc.cpp -- Memory Allocation Subsystem.
 //
-// $Id: alloc.cpp,v 1.17 2002-09-23 14:48:10 sdennis Exp $
+// $Id: alloc.cpp,v 1.1 2002-05-24 06:53:14 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -148,11 +148,12 @@ static void pool_vfy(int poolnum, const char *tag)
 
 void pool_check(const char *tag)
 {
-    int i;
-    for (i = 0; i < NUM_POOLS; i++)
-    {
-        pool_vfy(i, tag);
-    }
+    pool_vfy(POOL_LBUF, tag);
+    pool_vfy(POOL_MBUF, tag);
+    pool_vfy(POOL_SBUF, tag);
+    pool_vfy(POOL_BOOL, tag);
+    pool_vfy(POOL_DESC, tag);
+    pool_vfy(POOL_QENTRY, tag);
 }
 
 char *pool_alloc(int poolnum, const char *tag)

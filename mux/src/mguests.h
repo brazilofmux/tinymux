@@ -1,6 +1,6 @@
 // mguests.h
 //
-// $Id: mguests.h,v 1.9 2002-02-25 19:26:46 sdennis Exp $
+// $Id: mguests.h,v 1.1 2002-05-24 06:53:15 sdennis Exp $
 //
 
 #ifndef  __MGUESTS_H

@@ -1,6 +1,6 @@
 // regexp.h -- Definitions etc. for regexp(3) routines.
 //
-// $Id: regexp.h,v 1.2 2001-11-18 21:48:14 sdennis Exp $
+// $Id: regexp.h,v 1.1 2002-05-24 06:53:15 sdennis Exp $
 //
 
 #ifndef __REGEXP_H

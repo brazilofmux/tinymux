@@ -1,6 +1,6 @@
 /* copyright.h */
 /* -*-C-*- */
-/* $Id: copyright.h,v 1.4 2002-01-31 23:59:48 sdennis Exp $ */
+/* $Id: copyright.h,v 1.1 2002-05-24 06:53:15 sdennis Exp $ */
 
 /*
  * TinyMUX 2.0 and 2.1 maintained by Stephen Dennis (AKA Brazil)

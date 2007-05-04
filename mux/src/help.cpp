@@ -1,6 +1,6 @@
 // help.cpp -- Commands for giving help.
 //
-// $Id: help.cpp,v 1.14 2002-08-22 01:12:09 sdennis Exp $
+// $Id: help.cpp,v 1.1 2002-05-24 06:53:15 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -154,7 +154,6 @@ void help_write(dbref player, char *topic, CHashTable *htab, char *filename, int
         for (htab_entry = (struct help_entry *)hash_firstentry(htab);
              htab_entry != NULL;
            htab_entry = (struct help_entry *)hash_nextentry(htab)) {
-            mudstate.wild_invk_ctr = 0;
             if (htab_entry->original &&
                 quick_wild(topic, htab_entry->key)) {
                 if (matched == 0) {

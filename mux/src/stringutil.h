@@ -1,6 +1,6 @@
 // stringutil.h -- string utilities.
 //
-// $Id: stringutil.h,v 1.42 2003-01-31 16:36:49 sdennis Exp $
+// $Id: stringutil.h,v 1.1 2002-05-24 06:53:16 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -57,7 +57,7 @@ char *Tiny_i64toa_t(INT64 val);
 void safe_i64toa(INT64 val, char *buff, char **bufc);
 long Tiny_atol(const char *pString);
 INT64 Tiny_atoi64(const char *pString);
-double Tiny_atof(char *szString, BOOL bStrict = TRUE);
+double Tiny_atof(char *szString);
 char *Tiny_ftoa(double r, BOOL bRounded, int frac);
 
 BOOL is_integer(char *, int *);
@@ -108,7 +108,7 @@ void ANSI_String_Skip(struct ANSI_In_Context *pacIn, int maxVisualWidth, int *pn
 void ANSI_String_Copy(struct ANSI_Out_Context *pacOut, struct ANSI_In_Context *pacIn, int nField, int vwMax);
 int ANSI_String_Finalize(struct ANSI_Out_Context *pacOut, int *pnVisualWidth);
 int ANSI_TruncateToField(const char *szString, int nField, char *pField, int maxVisual, int *nVisualWidth, int iEndGoal);
-extern char *strip_ansi(const char *szString, size_t *pnString = 0);
+extern char *strip_ansi(const char *szString, unsigned int *pnString = 0);
 extern char *normal_to_white(const char *);
 extern char *munge_space(char *);
 extern char *trim_spaces(char *);
@@ -127,7 +127,7 @@ extern char *replace_tokens
 );
 extern int  FDECL(prefix_match, (const char *, const char *));
 extern int  FDECL(minmatch, (char *, char *, int));
-extern char *StringCloneLen(const char *str, size_t nStr);
+extern char *StringCloneLen(const char *str, unsigned int nStr);
 extern char *StringClone(const char *str);
 extern char *BufferCloneLen(const char *pBuffer, unsigned int nBuffer);
 void safe_copy_str(const char *src, char *buff, char **bufp, int max);

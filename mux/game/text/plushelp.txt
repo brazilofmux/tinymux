@@ -95,7 +95,7 @@ Credits
     Brazil@Everywhere    --MUX 2.0 issues
     Talek, Javelin, Raevnos, David,
     Vexon@M*U*S*H        --Penn Issues
-    Ashen-Shugar         --RhostMUSH Issues, +motd
+    Ashen-Shugar         --RhostMUSH Issues
     Lilith@Sandbox       --Debugging, @register 
     Hunger@Pacifica      --Debugging, Aesthetics
     Jeff@TSC             --+version, @crontab 

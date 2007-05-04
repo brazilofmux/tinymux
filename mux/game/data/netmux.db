@@ -1,7 +1,7 @@
 +X992001
-+S12
++S11
 +N451
--R1
+-R2
 +A256
 "1:DB"
 +A257
@@ -396,7 +396,7 @@
 "Limbo"
 -1
 -1
--1
+1
 -1
 -1
 -1
@@ -412,7 +412,7 @@
 <
 !1
 "Wizard"
-11
+0
 -1
 -1
 -1
@@ -427,32 +427,22 @@
 0
 0
 0
->218
-"Thu Aug 22 22:30:37 2002"
->30
-"Thu Aug 22 22:31:08 2002"
 >49
 "20"
 >38
 "20"
 >5
 "XXNHc95o0HhAc"
->88
-"sdennis5.svdltd.com"
->144
-"4.23.75.99"
->84
-"#2;sdennis5.svdltd.com;Thu Aug 22 22:31:08 2002;sdennis5.svdltd.com;Thu Aug 22 22:30:46 2002;;;;;0;0;;;;;;;"
 >222
 "Shutdown"
 >224
-"1624 1624 1624 1 1030082292"
+"110 110 110 1 988266934"
 <
 !2
 "Master Room"
 -1
 -1
-9
+10
 -1
 -1
 -1
@@ -465,67 +455,58 @@
 0
 0
 0
->218
-"Thu Aug 22 22:30:54 2002"
 <
 !3
 "Storage"
-11
+2
 -1
 -1
 -1
 0
-4
-(=3
-)
+-1
+
 3
 -1
 150
 19
-8192
 0
 0
 0
->218
-"Thu Aug 22 22:32:28 2002"
->30
-"Thu Aug 22 22:32:28 2002"
+0
 >49
 "20"
 >38
 "20"
 >5
 "XX6..GR5mMOzM"
->62
-"=(#3)"
->59
-"=(#3)"
+>222
+"Shutdown"
+>224
+"565 565 565 1 988267619"
 <
 !4
 "SGP - Global Parent Object"
-11
+2
 -1
 -1
 -1
 2
-10
+3
 
 3
 -1
 1
 268435457
-8192
 0
 0
 0
->218
-"Thu Aug 22 22:32:45 2002"
+0
 >257
 "#4|#8|#6|#7|#5|#9|#10"
 >258
-"1.0|RPPack|Aug 22 2002"
+"1.0|RPPack|Apr 26 2001"
 >259
-"Base Install 042501 [elements(time(),2 3 5)]|Aug 22 2002 |Aug 22 2002 RPPack added"
+"Base Install 042501 [elements(time(),2 3 5)]|Apr 26 2001 |Apr 26 2001 RPPack added"
 >6
 "This is the global data object for SGP. All the main global objects read data and write from this object and their code will -not- work without it. Non-command attributes for globals that you add to any of the globals objects should be placed here.%R%R[iter(setdiff(lattr(me),Desc),ljust(##,18))]"
 >260
@@ -629,25 +610,23 @@
 <
 !5
 "SGP - Global Functions"
-11
+2
 -1
 -1
 -1
 2
-1
+4
 
 3
 -1
 1
 306184193
-8192
 0
 0
 0
->218
-"Thu Aug 22 22:32:45 2002"
+0
 >258
-"1.0|Base 121600|Aug 22 2002"
+"1.0|Base 121600|Apr 26 2001"
 >259
 "Base Install 121600 [elements(time(),2 3 5)]"
 >6
@@ -684,7 +663,7 @@
 -1
 -1
 2
--1
+5
 
 3
 -1
@@ -694,14 +673,12 @@
 0
 0
 0
->218
-"Thu Aug 22 22:32:45 2002"
 >256
 "#4"
 >258
-"1.0|RPPack|Aug 22 2002"
+"1.0|RPPack|Apr 26 2001"
 >259
-"Base Install 121600 [elements(time(),2 3 5)]|Aug 22 2002 |Aug 22 2002 RPPack added"
+"Base Install 121600 [elements(time(),2 3 5)]|Apr 26 2001 |Apr 26 2001 RPPack added"
 >6
 "This is the main globals object for SGP. These are global commands that every player will have access to and use.%R%R[iter(setdiff(lattr(me),Desc),ljust(##,18))]"
 >317
@@ -779,11 +756,11 @@
 >390
 "$+cnoteview *:@switch [hasattr(%#,CNOTE-%0)]=0,{@pemit %#=[Name(%#)] has no such cnote. +cnotelist [name(%#)] to view their cnotes.},1,{@pemit %#=[name(%#)]'s '%0' reads:%r[u(v(db)/footer)]%r[u(num(%#)/CNOTE-%0)]%r[u(v(db)/footer)]%r}"
 >400
-"$+resume:@dolist lcon(loc(%#))=@switch/first and(strmatch(first(name(##)),TIMESTOP:*),isdbref(get(##/SGP-CREATOR)))=1,{@set [get(##/SGP-CREATOR)]=SGP-HASTIMESTOP:;@destroy/override ##;@destroy/override ##}"
+"$+resume:@dolist lcon(loc(%#))=@switch/first and(strmatch(first(name(##)),TIMESTOP:*),controls(%#,##))=1,{@destroy/override ##;@destroy/override ##}"
 >401
-"$+timestop:@switch 0=and(isdbref(get(owner(%#)/SGP-HASTIMESTOP)),andflags(owner(owner(%#)/SGP-HASTIMESTOP),W)),{@remit [loc(%#)]=JUDGE : %N calls a Timestop![setq(0,TIMESTOP: Created by %N [time()] at [name(loc(%#))]<[loc(%#)]>)];@create %q0;@lock [setq(1,locate(me,%q0,iT))]%q1=#0;@set %q1=enter_ok;@set %q1=!opaque;@set %q1=commands;@set %q1=unfindable;&SGP-CREATOR %q1=[owner(%#)];&SGP-HASTIMESTOP [owner(%#)]=%q1;@set %#/SGP-HASTIMESTOP=wizard;@set %#/SGP-HASTIMESTOP=hidden;@tel %q1=[loc(%#)];@dolist lwho()=@switch isstaff(##)=1,@pemit ##=>> %q0 <<},{@pemit %#=You may only have one timestop in play at a time.}"
+"$+timestop:@remit [loc(%#)]=JUDGE : %N calls a Timestop![setq(0,TIMESTOP: Created by %N [time()] at [name(loc(%#))]<[loc(%#)]>)];@create %q0;@lock [setq(1,locate(me,%q0,iT))]%q1=#0;@set %q1=enter_ok;@set %q1=!opaque;@set %q1=commands;@set %q1=unfindable;@tel %q1=[loc(%#)];@dolist lwho()=@switch isstaff(##)=1,@pemit ##=>> %q0 <<"
 >402
-"$+warn *:@switch [loc(*%0)]=#-1,{@pemit %#=[capstr(%0)] is not a valid player name or alias.},[loc(%#)],{@pemit %#=You issue an OOC warning to [name(*%0)].;@pemit *%0=[u(line)]OOC WARNING : You are in a potentially dangerous situation. Willfully initiating or entering combat or continuing with this RP could result in either injury, some other harm, or death for your character. By continuing this situation you accept the consequences of your IC actions.%r[u(line)]; @pemit/list get(v(db)/staff-list)=ALERT: %N has just used +warn on [name(*%0)] to alert [obj(*%0)] about a potentially dangerous IC situation.},{@pemit %#=That person is not in the same location as you are.}"
+"$+warn *:@switch [loc(*%0)]=#-1,{@pemit %#=[capstr(%0)] is not a valid player name or alias.},[loc(%#)],{@pemit %#=You issue an OOC warning to [name(*%0)].;@pemit *%0=[u(line)]OOC WARNING : You are in a potentially dangerous situation. Willfully initiating or entering combat or continuing with this RP could result in either injury, some other harm, or death for your character. By continuing this situation you accept the consequences of your IC actions.%r[u(line)]},{@pemit %#=That person is not in the same location as you are.}"
 <
 !7
 "SGP - Wizard Globals"
@@ -802,14 +779,12 @@
 0
 0
 0
->218
-"Thu Aug 22 22:32:45 2002"
 >256
 "#4"
 >258
-"1.0|RPPack|Aug 22 2002"
+"1.0|RPPack|Apr 26 2001"
 >259
-"Base Install 042501 [elements(time(),2 3 5)]|Aug 22 2002 |Aug 22 2002 RPPack added"
+"Base Install 042501 [elements(time(),2 3 5)]|Apr 26 2001 |Apr 26 2001 RPPack added"
 >6
 "This is the wizard globals object for SGP. These are global commands that only wizards will have access to.%R%R[iter(setdiff(lattr(me),Desc),ljust(##,18))]"
 >345
@@ -874,14 +849,12 @@
 0
 0
 0
->218
-"Thu Aug 22 22:32:45 2002"
 >256
 "#4"
 >258
-"1.0|RPPack|Aug 22 2002"
+"1.0|RPPack|Apr 26 2001"
 >259
-"Base Install 121600 [elements(time(),2 3 5)]|Aug 22 2002 |Aug 22 2002 RPPack added"
+"Base Install 121600 [elements(time(),2 3 5)]|Apr 26 2001 |Apr 26 2001 RPPack added"
 >6
 "This is the staff globals object for SGP. These are global commands that only staff, as defined in the isstaff() on the global functions object, will have access to. You may substitute ostaff() for isstaff() in the lock setting.%R%R[iter(setdiff(lattr(me),Desc),ljust(##,18))]"
 >362
@@ -950,14 +923,12 @@
 0
 0
 0
->218
-"Thu Aug 22 22:49:33 2002"
 >6
 "The Places Code. Tables, rugs, beds, ladders, etc."
 >403
 "#10"
 >258
-"SGP-Y2K|Base|Aug 22 2002"
+"SGP-Y2K|Base|Apr 26 2001"
 >259
 "Y2K"
 >404
@@ -981,7 +952,7 @@
 >413
 "$sit *: @switch/first [not(ulocal(WHICHPLACE,%l,%#))] [lcstr(%0)]=0 *, {@pemit %#=Don't you think you should 'depart' first?},1 at #*, {@trig me/PLACEFUNCTION=%l,%#,[delete(rest(%0),0,1)]},1 at *, {@trig me/PLACEFUNCTION=%l,%#,[rest(%0)]},1 #*, {@trig me/PLACEFUNCTION=%l,%#,[delete(%0,0,1)]},1 with *, {@pemit[setq(1,locate(%#,rest(%0),niPT))][setq(0,ulocal(WHICHPLACE,%l,r(1)))]%#=switch(r(0),0,There isn't anyone named '[capstr(rest(%0))]' at a special place.,You go over to join [name(r(1))].);@trig me/[switch(r(0),0,-,PLACEFUNCTION)]=%l,%#,[r(0)]},{@switch [isnum(%0)][setq(1,locate(%#,%0,niPT))][setq(0,ulocal(WHICHPLACE,%l,r(1)))]=1,{@trig me/PLACEFUNCTION=%l,%#,%0},{@pemit %#=switch(r(0),0,There isn't anyone named '[capstr(rest(%0))]' at a special place.,You go over to join [name(r(1))].);@trig me/[switch(r(0),0,-,PLACEFUNCTION)]=%l,%#,[r(0)]}}"
 >414
-"@switch/first 0=[lte(%2, get(%0/PLACESMAX))], @pemit %1=Invalid Place Number '%2'.,[setq(1, extract(get(%0/PLACENUMS), %2, 1, |))][gt(ulocal(GETINFO, %0, %2, CURPLACES), words(r(1)))], {@pemit %1=There aren't any free spaces there.},{@verb %1=[setq(0,ulocal(getinfo,%0,%2,NAME))]%1,eval_msg,[edit([U(GETINFO, %0, %2, JOIN)] [r(0)].,%,,%%%,)],oeval_mesg,[edit([U(GETINFO, %0, %2, OJOIN)] [r(0)].,%,,%%%,)];@pemit/list [r(1)]= [name(%1)] joins you. ;&PLACENUMS %0=[replace(get(%0/PLACENUMS), %2, [r(1)]%1%b, |)]}"
+"@switch/first 0=[lte(%2, get(%0/PLACESMAX))], @pemit %1=Invalid Place Number '%2'.,[setq(1, extract(get(%0/PLACENUMS), %2, 1, |))][gt(ulocal(GETINFO, %0, %2, CURPLACES), words(r(1)))], {@pemit %1=There aren't any free spaces there.},{@verb %1=[setq(0,ulocal(getinfo,%0,%2,NAME))]%1,eval_msg,[edit([U(GETINFO, %0, %2, JOIN)] [r(0)].,%,,%%%,)],oeval_mesg,[edit([U(GETINFO, %0, %2, OJOIN)] [r(0)].,%,,%%%,)]};@pemit/list [r(1)]= [name(%1)] joins you. ;&PLACENUMS %0=[replace(get(%0/PLACENUMS), %2, [r(1)]%1%b, |)]"
 >415
 "$depart:@switch [setq(1, U(WHICHPLACE, %l, %#))][setq(0,U(GETINFO,%l,r(1),NAME))][r(1)]=0, {@pemit %#=You aren't placed anywhere.},{&PLACENUMS %l=[replace(get(%l/PLACENUMS), r(1), [remove(extract(get(%l/PLACENUMS), r(1), 1, |), %#)], |)];@pemit/list [extract(get(%l/PLACENUMS), r(1), 1, |)]=%N has departed.;@pemit %#=[edit([U(GETINFO, %l, r(1), DEPART)] [r(0)].,%,,%%%,)];@pemit/list [ldelete(lcon(%L),match(lcon(%L),%#))]=%N [edit([U(GETINFO, %l, r(1), ODEPART)] [r(0)].,%,,%%%,)]}"
 >416
@@ -1041,25 +1012,23 @@
 <
 !10
 "Places_function_object"
-11
+2
 -1
 -1
 -1
 2
-5
+9
 
 3
 -1
 1
 268435457
-8192
 0
 0
 0
->218
-"Thu Aug 22 22:49:34 2002"
+0
 >258
-"SGP-Y2K|Base|Aug 22 2002"
+"SGP-Y2K|Base|Apr 26 2001"
 >259
 "Y2K"
 >6
@@ -1082,25 +1051,5 @@
 "[switch([rand(3)]%0,0,,1,,2,,0*,%0,...)]"
 >450
 "#1"
-<
-!11
-"Auxilary Room"
--1
--1
-3
--1
--1
--1
-
-3
--1
-0
-0
-8196
-0
-0
-0
->218
-"Thu Aug 22 22:53:28 2002"
 <
 ***END OF DUMP***

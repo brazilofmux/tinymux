@@ -1,6 +1,6 @@
 // wild.cpp -- Wildcard routines.
 //
-// $Id: wild.cpp,v 1.4 2002-08-22 01:12:09 sdennis Exp $
+// $Id: wild.cpp,v 1.1 2002-05-24 06:53:16 sdennis Exp $
 //
 // Written by T. Alexander Popiel, 24 June 1993
 // Last modified by T. Alexander Popiel, 19 August 1993
@@ -34,12 +34,6 @@ static int numargs;
 //
 int quick_wild(char *tstr, char *dstr)
 {
-    if (mudstate.wild_invk_ctr >= mudconf.wild_invk_lim)
-    {
-        return FALSE;
-    }
-    mudstate.wild_invk_ctr++;
-
     while (*tstr != '*')
     {
         switch (*tstr)
@@ -145,12 +139,6 @@ int quick_wild(char *tstr, char *dstr)
 //
 int wild1(char *tstr, char *dstr, int arg)
 {
-    if (mudstate.wild_invk_ctr >= mudconf.wild_invk_lim)
-    {
-        return FALSE;
-    }
-    mudstate.wild_invk_ctr++;
-
     char *datapos;
     int argpos, numextra;
 
@@ -364,8 +352,6 @@ int wild1(char *tstr, char *dstr, int arg)
 //
 int wild(char *tstr, char *dstr, char *args[], int nargs)
 {
-    mudstate.wild_invk_ctr = 0;
-
     int i, value;
     char *scan;
 
@@ -475,6 +461,5 @@ int wild_match(char *tstr, char *dstr)
         }
     }
 
-    mudstate.wild_invk_ctr = 0;
     return quick_wild(tstr, dstr);
 }

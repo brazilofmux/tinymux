@@ -1,6 +1,6 @@
 // command.cpp -- command parser and support routines.
 //
-// $Id: command.cpp,v 1.76 2003-10-09 01:59:20 sdennis Exp $
+// $Id: command.cpp,v 1.1 2002-05-24 06:53:14 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -46,7 +46,6 @@ NAMETAB comtitle_sw[] =
 {
     {"off",             2,  CA_PUBLIC,  COMTITLE_OFF},
     {"on",              2,  CA_PUBLIC,  COMTITLE_ON},
-    { NULL,             0,          0,  0}
 };
 
 NAMETAB cemit_sw[] =
@@ -1392,8 +1391,7 @@ char *process_command
 
     // Check for the HOME command.
     //
-    if (  Has_location(player)
-       && string_compare(pCommand, "home") == 0)
+    if (string_compare(pCommand, "home") == 0)
     {
         if (((Fixed(player)) || (Fixed(Owner(player)))) &&
             !(WizRoy(player)))
@@ -2463,31 +2461,21 @@ static void list_costs(dbref player)
            tprintf("Creating a robot costs %d %s%s.",
                mudconf.robotcost, coin_name(mudconf.robotcost),
                buff));
-    if (mudconf.killmin == mudconf.killmax)
-    {
-        int chance = 100;
-        if (0 < mudconf.killguarantee)
-        {
-            chance = (mudconf.killmin * 100) / mudconf.killguarantee;
-        }
-        raw_notify(player, tprintf("Killing costs %d %s, with a %d%% chance of success.",
-            mudconf.killmin, coin_name(mudconf.digcost), chance));
-    }
-    else
-    {
-        int cost_surething;
-        raw_notify(player, tprintf("Killing costs between %d and %d %s.",
-            mudconf.killmin, mudconf.killmax, mudconf.many_coins));
-        if (0 < mudconf.killguarantee)
-        {
-            cost_surething = mudconf.killguarantee;
-        }
-        else
-        {
-            cost_surething = mudconf.killmin;
-        }
-        raw_notify(player, tprintf("You must spend %d %s to guarantee success.",
-            cost_surething, coin_name(cost_surething)));
+    if (mudconf.killmin == mudconf.killmax) {
+        raw_notify(player,
+               tprintf("Killing costs %d %s, with a %d%% chance of success.",
+                mudconf.killmin, coin_name(mudconf.digcost),
+                   (mudconf.killmin * 100) /
+                   mudconf.killguarantee));
+    } else {
+        raw_notify(player,
+               tprintf("Killing costs between %d and %d %s.",
+                   mudconf.killmin, mudconf.killmax,
+                   mudconf.many_coins));
+        raw_notify(player,
+               tprintf("You must spend %d %s to guarantee success.",
+                   mudconf.killguarantee,
+                   coin_name(mudconf.killguarantee)));
     }
     raw_notify(player,
            tprintf("Computationally expensive commands and functions (ie: @entrances, @find, @search, @stats (with an argument or switch), search(), and stats()) cost %d %s.",
@@ -2628,7 +2616,7 @@ static void list_options(dbref player)
     if (mudconf.paranoid_alloc)
         raw_notify(player, "The buffer pools are checked for consistency on each allocate or free.");
     if (mudconf.cache_names)
-        raw_notify(player, "A separate name cache is used.");
+        raw_notify(player, "A seperate name cache is used.");
 #ifndef WIN32
     if (mudconf.fork_dump)
     {
@@ -2722,10 +2710,7 @@ static void list_vattrs(dbref player, char *s_mask, int wild_mtch)
             //
             if (wild_mtch)
             {
-                mudstate.wild_invk_ctr = 0;
-                if (  s_mask
-                   && *s_mask
-                   && !quick_wild(s_mask, va->name))
+                if (s_mask && *s_mask && !quick_wild(s_mask, va->name))
                 {
                    continue;
                 }

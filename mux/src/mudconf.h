@@ -1,6 +1,6 @@
 // mudconf.h
 //
-// $Id: mudconf.h,v 1.41 2002-08-22 01:12:09 sdennis Exp $
+// $Id: mudconf.h,v 1.1 2002-05-24 06:53:15 sdennis Exp $
 //
 
 #ifndef __CONF_H
@@ -140,7 +140,6 @@ struct confdata
     int     log_info;   /* Info that goes into log entries */
     int     func_nest_lim;  /* Max nesting of functions */
     int     func_invk_lim;  /* Max funcs invoked by a command */
-    int     wild_invk_lim;  // Max Regular Expression function calls.
     int     ntfy_nest_lim;  /* Max nesting of notifys */
     int     lock_nest_lim;  /* Max nesting of lock evals */
     int     parent_nest_lim;/* Max levels of parents */
@@ -348,7 +347,6 @@ struct statedata
     MARKBUF *markbits;      /* temp storage for marking/unmarking */
     int     func_nest_lev;  /* Current nesting of functions */
     int     func_invk_ctr;  /* Functions invoked so far by this command */
-    int     wild_invk_ctr;  // Regular Expression function calls.
     int     ntfy_nest_lev;  /* Current nesting of notifys */
     int     lock_nest_lev;  /* Current nesting of lock evals */
     char    *global_regs[MAX_GLOBAL_REGS];  /* Global registers */

@@ -1,6 +1,6 @@
 // player.cpp
 //
-// $Id: player.cpp,v 1.18 2002-08-22 01:12:09 sdennis Exp $
+// $Id: player.cpp,v 1.1 2002-05-24 06:53:15 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -651,7 +651,6 @@ int badname_check(char *bad_name)
     //
     for (bp = mudstate.badname_head; bp; bp = bp->next)
     {
-        mudstate.wild_invk_ctr = 0;
         if (quick_wild(bp->name, bad_name))
         {
             return 0;

@@ -1,6 +1,6 @@
 // comsys.cpp
 //
-// $Id: comsys.cpp,v 1.72 2003-03-05 23:11:45 sdennis Exp $
+// $Id: comsys.cpp,v 1.1 2002-05-24 06:53:15 sdennis Exp $
 //
 #include "copyright.h"
 #include "autoconf.h"
@@ -177,7 +177,7 @@ char *MakeCanonicalComAlias
     *q = '\0';
     if (n < 1 || 5 < n)
     {
-        return NULL;
+        return FALSE;
     }
     *nValidAlias = n;
     *bValidAlias = TRUE;
@@ -1508,7 +1508,7 @@ void do_createchannel(dbref player, dbref cause, int key, char *channel)
     (void)ISOUTOFMEMORY(newchannel);
 
     int   vwChannel;
-    size_t nNameNoANSI;
+    unsigned int nNameNoANSI;
     char *pNameNoANSI;
     char Buffer[MAX_HEADER_LEN];
     int nChannel = ANSI_TruncateToField(channel, sizeof(Buffer),
@@ -2513,7 +2513,7 @@ void do_chboot
     struct comuser *vu = select_user(ch, thing);
     if (!vu)
     {
-        raw_notify(player, tprintf("@cboot: %s is not on the channel.", Name(thing)));
+        raw_notify(player, tprintf("@cboot: %s in not on the channel.", Name(thing)));
         return;
     }
 
@@ -2779,7 +2779,9 @@ FUNCTION(fun_channels)
         return;
     }
 
-    BOOL bFirst = TRUE;
+    char *outbuff = alloc_lbuf("fun_comlist_outbuff");
+    *outbuff='\0';
+
     struct channel *chn;
     for (chn = (struct channel *)hash_firstentry(&mudstate.channel_htab);
          chn;
@@ -2789,15 +2791,10 @@ FUNCTION(fun_channels)
            || (chn->type & CHANNEL_PUBLIC)
            || chn->charge_who == player)
         {
-            if (bFirst)
-            {
-                bFirst = FALSE;
-            }
-            else
-            {
-                safe_chr(' ', buff, bufc);
-            }
-            safe_str(chn->name, buff, bufc);
+            strcat(outbuff, chn->name);
+            strcat(outbuff, " ");
         }
     }
+    safe_str(outbuff, buff, bufc);
+    free_lbuf(outbuff);
 }

@@ -3,7 +3,7 @@
   This is the MUX online help facility for wizard commands and topics.
   The information provided by this command is generally not useful for
   anyone other than wizards and game maintainers, as the features described
-  here are only accessible to characters whose WIZARD bit is set, or to those
+  here are only accessable to characters whose WIZARD bit is set, or to those
   who have access to the directory where the MUX data files reside.
 
   Syntax of help command:
@@ -124,22 +124,6 @@
 
   Related Topics: attribute permissions
 
-& @BACKUP
-@BACKUP
-
-  COMMAND: @backup
-
-  This command will dump a flatfile of the database to the data directory.
-  The flatfile will be named dump.<date>.tgz. IE, dump.0219-1613.tgz where
-  0219-1613 stands for February 19, 4:13pm.
-
-  This file is tarred and gziped. It includes the game flatfile, and the
-  mail and comsys databases. It does not include any of the text files, the
-  .conf files or the mux.config file. Those would need to be backed up 
-  separately.
-
-  Related Topics: 
-
 & @BOOT
 @BOOT
 
@@ -207,7 +191,7 @@
   Cuts off the object or exit list for the current location at the indicated
   object or exit by setting [next(thing)] to NOTHING.  Objects or exits that
   follow in the chain are not moved or otherwise changed, and are only
-  accessible by object number.  This command is intended for performing
+  accessable by object number.  This command is intended for performing
   database repair, and should be used only with extreme caution.
 
 & @DBCK
@@ -574,7 +558,7 @@
   @disable commands.  The following parameters are displayed.
 
     building      - Indicates whether or not commands that alter the
-                    structure of the database are allowed.
+                    stricture of the database are allowed.
     checkpointing - Indicates whether or not the database is to be
                     periodically written to disk.
     cleaning      - Indicates whether or not the database is to be
@@ -604,7 +588,7 @@
 
   COMMAND: @list guests
 
-  Lists all the guests currently on the MUX, the name and dbref, if they are
+  Lists all the guests currently on the mux, the name and dbref, if they are
   connected or not, and the lastsite of the guest. A * before the entry
   denotes that the guest will NOT be destroyed on an @dbck.
 
@@ -1038,7 +1022,7 @@
   document. This warning does not apply if you remake the binary in your
   game's source directory.
 
-  Sending the MUX process a SIGUSR1 from the shell account will also cause a
+  Sending the MUX process a SIGUSR1 from the shell account wil also cause a
   @restart.
 
 & @SHUTDOWN
@@ -1152,7 +1136,7 @@
   described effects:
 
      /emit      - Format the message as an emit (ie send just <message>).
-     /pose      - Format the message as a pose (ie <yourname> <message>).
+     /pose      - Format the message as a pose (ie <youname> <message>).
      /wizard    - Only send the message to connected wizards.
      /admin     - Send the message to connected wizards and royalty.
      /no_prefix - Don't prepend 'Announcement:' or 'Broadcast:' to the message.
@@ -1182,7 +1166,7 @@ ALIAS
 
   Defines the command <new> to be an alias of the command <old>.
 
-  Related Topics: function_alias, flag_alias.
+  Releated Topics:
 
 & ALLOW_GUEST_FROM_REGISTERED_SITE
 ALLOW_GUEST_FROM_REGISTERED_SITE
@@ -1241,15 +1225,6 @@ ATTRIBUTE PERMISSIONS
 
     const dark deleted god hidden ignore is_lock locked no_command no_inherit
     private visual wizard.
-
-
-  NOTE: There is a simple way to create attributes that are both 'wizard'
-  and 'hidden'. Prefix the attribute name with an underscore (_) and the
-  attribute can only be seen or edited by Wizards.
-
-  Example:
-    &_myattribute <player>=Only a Wizard can see or change this attribute.
-
 
   Related Topics: @attribute.
 
@@ -1410,15 +1385,15 @@ COMMANDS
   DOING          examine        give           SESSION        slay
   WHO            wizhelp
 
-  @addcommand    @admin         @apply_marked  @attribute     @backup
-  @boot          @chown         @chownall      @clone         @cut
-  @dbck          @dbclean       @delcommand    @destroy       @disable
-  @doing         @dump          @enable        @fixdb         @function  
-  @halt          @kick          @list          @listcommands  @list_file 
-  @listmotd      @lock          @log           @mark          @mark_all 
-  @motd          @newpassword   @pcreate       @poor          @ps    
-  @quota         @readcache     @restart       @shutdown      @startslave  
-  @timecheck     @timewarp      @toad          @wall
+  @addcommand    @admin         @apply_marked  @attribute     @boot
+  @chown         @chownall      @clone         @cut           @dbck
+  @dbclean       @delcommand    @destroy       @disable       @doing
+  @dump          @enable        @fixdb         @function      @halt
+  @kick          @list          @listcommands  @list_file     @listmotd
+  @lock          @log           @mark          @mark_all      @motd
+  @newpassword   @pcreate       @poor          @ps            @quota
+  @readcache     @restart       @shutdown      @startslave    @timecheck
+  @timewarp      @toad          @wall
 
   @allowance     @comment       @timeout
 
@@ -1471,7 +1446,7 @@ COMPRESS_PROGRAM
   written.  If database file compression is enabled, database dumps are piped
   through this program on their way out to disk.
 
-  Related Topics: compression, uncompress_program.
+  Related Topics: compresion, uncompress_program.
 
 & COMSYS_DATABASE
 COMSYS_DATABASE
@@ -1502,7 +1477,7 @@ CONFIG PARAMETERS
   earn_limit  examine_flags  examine_public_attrs  exit_flags  exit_quota
   eval_comtitle  events_daily_hour  fascist_teleport  find_money_chance
   fixed_home_message  fixed_tel_message  flag_access  flag_alias  forbid_site
-  fork_dump  full_file  full_motd_message  function_access
+  fork_dump fork_vfork full_file  full_motd_message  function_access
   function_invocation_limit  function_recursion_limit  game_dir_file
   game_page_file  good_name  guest_char_num  guest_file  guest_nuker
   guest_prefix  guest_site  guests_channel  have_comsys  have_macros
@@ -1666,7 +1641,7 @@ DESTROY_GOING_NOW
   second @destroy on a previously queued request causes the destruction to
   occur immediately.
 
-  This behavior is for compatibility with PennMUSH.
+  This behavior is for compatbility with PennMUSH.
 
 & DIG_COST
 DIG_COST
@@ -1879,7 +1854,7 @@ FILES
 FILES (continued)
 
   guest.txt:      Displayed to whoever connects to the guest character
-                  specified by the guest_character config parameter.
+                  specifiedby the guest_character config parameter.
   motd.txt:       Displayed after someone connects to an existing character.
   netmux.conf:    Configuration directives read at startup.
   news.indx:      Index for the news.txt file, produced by the mkindx program.
@@ -1972,8 +1947,6 @@ FLAG_ALIAS
 
   Defines <alias> as a synonym for the flag <flagname>.
 
-  Related Topics: alias, function_alias.
-
 & FORBID_SITE
 FORBID_SITE
 
@@ -2000,7 +1973,7 @@ FORK_DUMP
   the amount of time needed to perform the dump, it requires that the system
   have enough free swap space to hold a second copy of the running game.
 
-  Related Topics:
+  Related Topics: fork_vfork.
 
 & FULL_FILE
 FULL_FILE
@@ -2018,7 +1991,7 @@ FULL_FILE
 FULL_MOTD_MESSAGE
 
   CONFIG PARAMETER: full_motd_message <message>
-  DEFAULT: blank
+  DEfAULT: blank
 
   Sets the message that is displayed when a player attempts to connect to a
   non-wizard character when the number of connected players is not less than
@@ -2038,15 +2011,6 @@ FUNCTION_ACCESS
   would normally return.
 
   Related Topics: @list functions, FUNCTION LIST, PERMISSIONS.
-
-& FUNCTION_ALIAS
-FUNCTION_ALIAS
-
-  CONFIG PARAMETER: function_alias <alias> <funcname>
-
-  Defines <alias> as a synonym for the function <funcname>.
-
-  Related Topics: alias, flag_alias.
 
 & FUNCTION_INVOCATION_LIMIT
 FUNCTION_INVOCATION_LIMIT
@@ -2182,7 +2146,7 @@ GUEST_NUKER
 &GUEST_PREFIX
 GUEST_PREFIX
 
-  CONFIG PARAMETER: guest_prefix <name>
+  CONFIG PARAMETER: guest_preifx <name>
   DEFAULT: Guest
 
   Specifies the prefix for all guests. This will be what is put before the #
@@ -2217,7 +2181,7 @@ HAVE_COMSYS
 HAVE_MAILER
 
   CONFIG PARAMETER: have_mailer <yes/no>
-  DEFAULT: yes
+  DEfAULT: yes
 
   Specifies whether @mail and mail aliases should be active.
 
@@ -2794,7 +2758,7 @@ OUTPUT_LIMIT
   CONFIG PARAMETER: output_limit <amount>
   DEFAULT: 16384
 
-  Specifies how many bytes should be output before the output is flushed
+  Specifies how many bytes should be output before the output is flushed,
   and characters are lost.
 
 & PAGE_COST
@@ -2831,7 +2795,7 @@ PARENT_RECURSION_LIMIT
 & PAYCHECK
 PAYCHECK
 
-  CONFIG PARAMETER: paycheck <amount>
+  CONFIG PARAMETEr: paycheck <amount>
   DEFAULT: 0
 
   Specifies the default amount of money that players receive each day they
@@ -2873,63 +2837,44 @@ PERMISSIONS
   There are three different senses of Wizard:
 
     1) 'WIZARD' means the WIZARD flag,
-
     2) 'Wizard' means Wizard-level authority which can be achieved either by
        being set WIZARD or by inheriting that authority from a WIZARD-owned
        object with the INHERIT flag, and
+    3) Wizard(#1) who is always set WIZARD and has other special priviledges.
 
-    3) Wizard(#1) who is always set WIZARD and has other special privileges.
-
-
-  The following list uses two of those senses: 'Wizard' and Wizard(#1).
+  The follow uses two of those senses: 'Wizard' and Wizard(#1).
 
   This is a list of the valid permissions and their meanings:
 
-    builder        - Must be Wizard, ROYALTY, or have the BUILDER power.
-    dark           - Feature is not shown but is still available.
-    disabled       - No one can use this feature.
+    builder       - Must be Wizard, ROYALTY, or have the BUILDER power.
+    dark          - Feature is not shown but is still available.
+    disabled      - No one can use this feature.
+    global_build  - Requires the BUILDER power, Wizard/ROYALTY, or for
+                    building to be allowed game-wide.
+    global_interp - Requires that global interpretation be turned on.
+    god           - Only #1 may use this feature.
+    head          - Must be set HEAD to use this feature.
+    immortal      - Must be set IMMORTAL or set INHERIT with IMMORTAL owner.
 
 { 'wizhelp permissions2' for more }
 
 & PERMISSIONS2
 PERMISSIONS (continued)
 
-    global_build   - Requires the BUILDER power, Wizard/ROYALTY, or for
-                     building to be allowed game-wide.
-    global_interp  - Requires that global interpretation be turned on.
-    god            - Only #1 may use this feature.
-    head           - Must be set HEAD to use this feature.
-    immortal       - Must be set IMMORTAL or set INHERIT with IMMORTAL owner.
-
-
-    need_contents  - Only players, things, and rooms may use this feature.
-    need_location  - Only players and things may use this feature.
-    need_player    - Only players may use this feature.
-    no_haven       - Non-Wizard players with owners set HAVEN may not use this
-                     feature.
-    no_robot       - Non-Wizard players set ROBOT may not use this feature.
-    no_slave       - Non-Wizard players with owners set SLAVE may not use this
-                     feature.
-    no_suspect     - Non-Wizard players with owners set SUSPECT may not use
-                     this feature.
-    no_guest       - Non-Wizards must not possess the GUEST power in order to
-                     use this feature.
-
-{ 'wizhelp permissions3' for more }
-
-& PERMISSIONS3
-PERMISSIONS (continued)
-
-    no_uninspected - Only things which have been inspected can use this
-                     feature.
-    robot          - Only players set ROBOT can use this feature.
-    staff          - Only STAFF/ROYALTY/IMMORTAL players can use this feature.
-    static         - Nothing is allowed to use this feature after the server
-                     starts.  This is useful for controlling something in the
-                     configuration file that you do not want to be
-                     controllable via the @admin command.
-    uninspected    - Only things marked uninspected can use this feature.
-    wizard         - Only Wizards may use this feature.
+    need_contents - Only players, things, and rooms may use this feature.
+    need_location - Only players and things may use this feature.
+    need_player   - Only players may use this feature.
+    no_haven      - Non-Wizard players with owners set HAVEN may not use this
+                    feature.
+    no_robot      - Non-Wizard players set ROBOT may not use this feature.
+    no_slave      - Non-Wizard players with owners set SLAVE may not use this
+                    feature.
+    no_suspect    - Non-Wizard players with owners set SUSPECT may not use
+                    this feature.
+    no_guest      - Non-Wizards must not possess the GUEST power in order to
+                    use this feature.
+    robot         - Only players set ROBOT can use this feature.
+    wizard        - Only Wizards may use this feature.
 
 & PERMIT_SITE
 PERMIT_SITE
@@ -3407,12 +3352,12 @@ SESSION
 
   This command can be used to help identify network problems as follows:
 
-    - A nonzero Input Pending count can indicate typeahead or a
+    - A nonzero Input Pending count can indicate indicate typeahead or a
       client program dumping commands faster than the command scheduling
       parameters let them be executed.  Telnet sessions in character mode also
       show up with positive Input Pending counts when the player is in the
       middle of typing a command.
-    - A nonzero Input Lost count means that the player has typed a line longer
+    - A nozero Input Lost count means that the player has typed a line longer
       than what the MUX can handle.  This usually indicates a problem with
       the player's client or terminal (a stuck key).
     - A persistently large Output Pending count can indicate netlag between
@@ -3475,7 +3420,7 @@ SITE LISTS (continued)
   forbid_site    135.246.4.0  255.255.255.0    <- Disallow a class C subnet
   permit_site    135.246.0.0  255.255.0.0      <- Permit a class B network
   register_site  195.3.17.1   255.255.255.255  <- Permit this site w/reg.
-  forbid_site    0.0.0.0      0.0.0.0          <- Disallow everyone else
+  forbid_site    0.0.0.0      0.0.0.0          <- DIsallow everyone else
  
   These directives only allow access from 135.346.*.* and 195.3.17.1, except
   that all hosts in the 135.246.4 subnet except for 135.246.4.40 are also
@@ -3521,8 +3466,8 @@ SITE NOTATION (continued)
  from 65536, etc. The 8.8.8.8 form is the most common. The latter three
  originated on BSD.
 
- Furthermore, the integer can be expressed in decimal, octal, or hexadecimal
- notation. Hexadecimal numbers have a '0x' prefix. Octal numbers have a '0'
+ Furthermore, the integer can be expressed in decimal, octal, or hexidecimal
+ notation. Hexidecimal numbers have a '0x' prefix. Octal numbers have a '0'
  prefix.
 
  Examples:
@@ -3844,7 +3789,7 @@ UNCOMPRESS_PROGRAM
   Specifies the program to be run to uncompress compressed database files when
   reading them in at startup.
 
-  Related Topics: compress_program, compression.
+  Related Topics: compress_program, compresion.
 
 & UNOWNED_SAFE
 UNOWNED_SAFE
@@ -3899,7 +3844,7 @@ WHO
      Room         - The room that the player is in.
      Commands     - The number of commands that the player has entered during
                     this session (not counting machine commands).
-     Host flags   - located between the Commands and Host fields:
+     Host flags   - located bwtween the Commands and Host fields:
                     F(forbidden), R(registration), +(suspect).
      Host         - The Internet host name or address from where the player has
                     connected.

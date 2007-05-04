@@ -1,6 +1,6 @@
 // flags.h -- Object flags.
 //
-// $Id: flags.h,v 1.19 2003-01-31 04:17:54 sdennis Exp $
+// $Id: flags.h,v 1.1 2002-05-24 06:53:15 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -68,7 +68,7 @@
 #define FIXED        0x00000800
 #define UNINSPECTED  0x00001000
 #define NO_COMMAND   0x00002000
-#define CKEEPALIVE   0x00004000  /* User receives keepalives from the MUX */
+#define DYNAMIC      0x00004000
 #define NOBLEED      0x00008000
 #define STAFF        0x00010000
 #define HAS_DAILY    0x00020000
@@ -76,8 +76,8 @@
 
 #define VACATION     0x01000000
 #define PLAYER_MAILS 0x02000000
-#define HTML         0x04000000  /* Player supports HTML */
-#define BLIND        0x08000000  /* Suppress has arrived / left messages. */
+#define HTML         0x04000000      /* Player supports HTML */
+#define BLIND        0x08000000  // Surpress has arrived / left messages.
 #define SUSPECT      0x10000000  /* Report some activities to wizards */
 #define CONNECTED    0x40000000  /* Player is connected */
 #define SLAVE        0x80000000  /* Disallow most commands */
@@ -206,7 +206,6 @@ extern char *MakeCanonicalFlagName
 /* Has_location(X)  - Is X something with a location (ie plyr or obj) */
 /* Has_home(X)      - Is X something with a home (ie plyr or obj) */
 /* Has_contents(X)  - Is X something with contents (ie plyr/obj/room) */
-/* Good_dbref(X)    - Is X inside the DB? */
 /* Good_obj(X)      - Is X inside the DB and have a valid type? */
 /* Good_owner(X)    - Is X a good owner value? */
 /* Going(X)     - Is X marked GOING? */
@@ -225,7 +224,6 @@ extern char *MakeCanonicalFlagName
 /* Set_attr(P,X,A,F)    - Can P set/change text attr A (with flags F) on X */
 /* Read_attr(P,X,A,O,F) - Can P see attr A on X if attr has owner O */
 /* Write_attr(P,X,A,F)  - Can P set/change attr A (with flags F) on X */
-/* KeepAlive(x)     - Does the user want keepalives? */
 
 #define IS(thing,type,flag) ((Typeof(thing)==(type)) && (Flags(thing) & (flag)))
 #define Typeof(x)   (Flags(x) & TYPE_MASK)
@@ -246,8 +244,8 @@ extern char *MakeCanonicalFlagName
 #define isThing(x)  (Typeof(x) == TYPE_THING)
 #define isGarbage(x)    (Typeof(x) == TYPE_GARBAGE)
 
-#define Good_dbref(x)   (((x) >= 0) && ((x) < mudstate.db_top))
-#define Good_obj(x)     (Good_dbref(x) && (Typeof(x) < NOTYPE))
+#define Good_obj(x) (((x) >= 0) && ((x) < mudstate.db_top) && \
+             (Typeof(x) < NOTYPE))
 #define Good_owner(x)   (Good_obj(x) && OwnsOthers(x))
 
 #define Staff(x)    (Wizard(x) || Royalty(x) || ((Flags2(x) & STAFF) != 0))
@@ -261,7 +259,6 @@ extern char *MakeCanonicalFlagName
 #define Ansi(x)         ((Flags2(x) & ANSI) != 0)
 #define No_Command(x)   ((Flags2(x) & NO_COMMAND) != 0)
 #define NoBleed(x)      ((Flags2(x) & NOBLEED) != 0)
-#define KeepAlive(x)    ((Flags2(x) & CKEEPALIVE) != 0)
 
 #define Transparent(x)  ((Flags(x) & SEETHRU) != 0)
 #define Link_ok(x)  (((Flags(x) & LINK_OK) != 0) && Has_contents(x))

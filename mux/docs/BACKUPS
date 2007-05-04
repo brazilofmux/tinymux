@@ -1,5 +1,5 @@
-TinyMUX 2.1:  BACKUPS
-Last Update:  May 2002
+TinyMUX 2.0:  BACKUPS
+Last Update:  April 2000
 
 The importance of good backups:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -14,13 +14,13 @@ occur and entire games have disappeared forever because of it.
 Making a backup:
 ~~~~~~~~~~~~~~~
 
-In pre-2.0 versions of TinyMUX, the way to make backups was to use 
+In pre 2.0 versions of TinyMUX, the way to make backups was to use 
 db_unload to create a flatfile of the database.  Making a backup by this 
 method is detailed in several places, including NOTES under the heading 
 'Changes to dbconvert'.
 
-The other method, which has been provided with TinyMUX 2.1, is the use 
-of the included Backup script, which is located in the mux2.1/game 
+The other method, which has been provided with TinyMUX 2.0, is the use 
+of the included Backup script, which is located in the mux2.0/game 
 directory.  This runs the db_unload script for you, collects copies of 
 text files, configuration files, mail and comsystem databases, and then 
 then creates a dated tar.gz file.

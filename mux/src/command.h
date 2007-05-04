@@ -1,6 +1,6 @@
 // command.h -- declarations used by the command processor.
 //
-// $Id: command.h,v 1.10 2001-11-19 19:40:50 sdennis Exp $
+// $Id: command.h,v 1.1 2002-05-24 06:53:15 sdennis Exp $
 //
 
 #ifndef __COMMAND_H

@@ -1,6 +1,6 @@
 // mail.cpp
 //
-// $Id: mail.cpp,v 1.39 2003-04-27 04:20:30 sdennis Exp $
+// $Id: mail.cpp,v 1.1 2002-05-24 06:53:15 sdennis Exp $
 //
 // This code was taken from Kalkin's DarkZone code, which was
 // originally taken from PennMUSH 1.50 p10, and has been heavily modified
@@ -2135,8 +2135,7 @@ static int get_folder_number(dbref player, char *name)
     }
     res += 2 + strlen(name);
     p = res;
-    while (  *p
-          && !Tiny_IsSpace[(unsigned char)*p])
+    while (!Tiny_IsSpace[(unsigned char)*p])
     {
         p++;
     }
@@ -2175,8 +2174,7 @@ static char *get_folder_name(dbref player, int fld)
     if (old)
     {
         r = old + strlen(pat);
-        while (  *r
-              && *r != ':')
+        while (*r != ':')
         {
             r++;
         }
@@ -2226,8 +2224,7 @@ void add_folder_name(dbref player, int fld, char *name)
     {
         strcpy(tbuf, str);
         r = old;
-        while (  *r
-              && !Tiny_IsSpace[(unsigned char)*r])
+        while (!Tiny_IsSpace[(unsigned char)*r])
         {
             r++;
         }
@@ -2951,35 +2948,36 @@ char *MakeCanonicalMailAlias
 )
 {
     static char Buffer[SIZEOF_MALIAS];
-    size_t nLeft = sizeof(Buffer)-1;
-    char *q = Buffer;
-    char *p = pMailAlias;
 
-    if (  !p
-       || !Tiny_IsAlpha[(unsigned char)*p])
+    *pnValidMailAlias = 0;
+    *pbValidMailAlias = FALSE;
+
+    if (  !pMailAlias
+       || !Tiny_IsAlpha[(unsigned char)pMailAlias[0]])
     {
-        *pnValidMailAlias = 0;
-        *pbValidMailAlias = FALSE;
         return NULL;
     }
-    *q++ = *p++;
-    nLeft--;
+    char *p = Buffer;
 
-    while (  *p
-          && nLeft)
+    *p++ = pMailAlias[0];
+    pMailAlias += 1;
+    int nLeft = (sizeof(Buffer)-1) - 1;
+
+    while (*pMailAlias && nLeft)
     {
-        if (  !Tiny_IsAlpha[(unsigned char)*p]
-           && !Tiny_IsDigit[(unsigned char)*p]
-           && *p != '_')
+        if (  !Tiny_IsAlpha[(unsigned char)*pMailAlias]
+           && !Tiny_IsDigit[(unsigned char)*pMailAlias])
         {
-            break;
+            return Buffer;
         }
-        *q++ = *p++;
+        *p = *pMailAlias;
+        p++;
+        pMailAlias++;
         nLeft--;
     }
-    *q = '\0';
+    *p = '\0';
 
-    *pnValidMailAlias = q - Buffer;
+    *pnValidMailAlias = p - Buffer;
     *pbValidMailAlias = TRUE;
     return Buffer;
 }

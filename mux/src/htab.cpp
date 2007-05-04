@@ -1,6 +1,6 @@
 // htab.cpp -- Table hashing routines.
 //
-// $Id: htab.cpp,v 1.10 2002-09-22 21:08:30 sdennis Exp $
+// $Id: htab.cpp,v 1.1 2002-05-24 06:53:15 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -206,33 +206,29 @@ int *hash_nextentry(CHashTable *htab)
     return NULL;
 }
 
-int *hash_firstkey(CHashTable *htab, int *nKeyLength, char **pKey)
+char *hash_firstkey(CHashTable *htab, int *nKeyLength)
 {
     HP_HEAPLENGTH nRecord;
     HP_DIRINDEX iDir = htab->FindFirst(&nRecord, &htab_rec);
     if (iDir != HF_FIND_END)
     {
         *nKeyLength = nRecord-sizeof(int *);
-        *pKey = htab_rec.aTarget;
-        return htab_rec.hashdata;
+        return htab_rec.aTarget;
     }
     *nKeyLength = 0;
-    *pKey = NULL;
     return NULL;
 }
 
-int *hash_nextkey(CHashTable *htab, int *nKeyLength, char **pKey)
+char *hash_nextkey(CHashTable *htab, int *nKeyLength)
 {
     HP_HEAPLENGTH nRecord;
     HP_DIRINDEX iDir = htab->FindNext(&nRecord, &htab_rec);
     if (iDir != HF_FIND_END)
     {
         *nKeyLength = nRecord-sizeof(int *);
-        *pKey = htab_rec.aTarget;
-        return htab_rec.hashdata;
+        return htab_rec.aTarget;
     }
     *nKeyLength = 0;
-    *pKey = NULL;
     return NULL;
 }
 

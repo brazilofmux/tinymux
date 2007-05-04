@@ -1,6 +1,6 @@
 // funceval.cpp -- MUX function handlers.
 //
-// $Id: funceval.cpp,v 1.111 2003-01-31 22:44:44 sdennis Exp $
+// $Id: funceval.cpp,v 1.1 2002-05-24 06:53:15 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -102,41 +102,30 @@ FUNCTION(fun_ansi)
 {
     extern const char *ColorTable[256];
 
-    char aTemp[LBUF_SIZE];
-    size_t nTemp = LBUF_SIZE-1;
-    char *pTemp = aTemp;
- 
-    const char *s = fargs[0];
-    while (*s) 
+    char *s = fargs[0];
+    char *bufc_save = *bufc;
+
+    while (*s)
     {
-        const char *pColor = ColorTable[*s];
+        const char *pColor = ColorTable[(unsigned char)*s];
         if (pColor)
         {
-            size_t n = strlen(pColor);
-            if (n < nTemp)
-            {
-                memcpy(pTemp, pColor, n);
-                pTemp += n;
-                nTemp -= n;
-            }
-            else
-            {
-                break;
-            }
+            safe_str(pColor, buff, bufc);
         }
         s++;
     }
-    safe_str(fargs[1], aTemp, &pTemp);
-    *pTemp = '\0';
-    nTemp = pTemp - aTemp;
+    safe_str(fargs[1], buff, bufc);
+    **bufc = '\0';
 
     // ANSI_NORMAL is guaranteed to be written on the end.
     //
+    char Temp[LBUF_SIZE];
     int nVisualWidth;
     int nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
-    int nLen = ANSI_TruncateToField(aTemp, nBufferAvailable, *bufc,
-        nBufferAvailable, &nVisualWidth, ANSI_ENDGOAL_NORMAL);
-    *bufc += nLen;
+    int nLen = ANSI_TruncateToField(bufc_save, nBufferAvailable, Temp, sizeof(Temp),
+        &nVisualWidth, ANSI_ENDGOAL_NORMAL);
+    memcpy(bufc_save, Temp, nLen);
+    *bufc = bufc_save + nLen;
 }
 
 FUNCTION(fun_zone)
@@ -376,16 +365,15 @@ FUNCTION(fun_set)
             // Are we clearing?
             //
             clear = 0;
-            p = fargs[1];
-            if (p[0] == NOT_TOKEN)
+            if (*fargs[0] == NOT_TOKEN)
             {
-                p++;
+                fargs[0]++;
                 clear = 1;
             }
 
             // valid attribute flag?
             //
-            flagvalue = search_nametab(player, indiv_attraccess_nametab, p);
+            flagvalue = search_nametab(player, indiv_attraccess_nametab, fargs[1]);
             if (flagvalue < 0)
             {
                 safe_str("#-1 CAN NOT SET", buff, bufc);
@@ -505,7 +493,7 @@ static unsigned int GenCode(char *pCode, const char *pCodeASCII)
 {
     // Strip out the ANSI.
     //
-    size_t nIn;
+    unsigned int nIn;
     char *pIn = strip_ansi(pCodeASCII, &nIn);
 
     // Process the printable characters.
@@ -542,7 +530,8 @@ static char *crypt_code(char *code, char *text, int type)
     }
 
     static char textbuff[LBUF_SIZE];
-    char *p = strip_ansi(text);
+    unsigned int nText;
+    char *p = strip_ansi(text, &nText);
     char *q = codebuff;
     char *r = textbuff;
 
@@ -608,22 +597,18 @@ void scan_zone
     char **bufc
 )
 {
-    if (!mudconf.have_zones)
-    {
-        safe_str("#-1 ZONES DISABLED", buff, bufc);
-        return;
-    }
+    dbref it;
 
-    dbref it = match_thing_quiet(player, szZone);
-    if (!Good_obj(it))
-    {
-        safe_nomatch(buff, bufc);
-        return;
-    }
-    else if (!(  WizRoy(player)
-              || Controls(player, it)))
+    if (  !mudconf.have_zones
+       || (  !Controls(player, it = match_thing_quiet(player, szZone))
+          && !WizRoy(player)))
     {
         safe_noperm(buff, bufc);
+        return;
+    }
+    else if (!Good_obj(it))
+    {
+        safe_nomatch(buff, bufc);
         return;
     }
 
@@ -657,13 +642,7 @@ FUNCTION(fun_inzone)
 FUNCTION(fun_children)
 {
     dbref it = match_thing(player, fargs[0]);
-    if (!Good_obj(it))
-    {
-        safe_nomatch(buff, bufc);
-        return;
-    }
-    else if (!(  WizRoy(player)
-              || Controls(player, it)))
+    if (!(WizRoy(player) || Controls(player, it)))
     {
         safe_noperm(buff, bufc);
         return;
@@ -1468,29 +1447,25 @@ FUNCTION(fun_mailfrom)
 
 FUNCTION(fun_hasattr)
 {
-    dbref thing = match_thing(player, fargs[0]);
-    if (thing == NOTHING) 
-    {
+    dbref thing, aowner;
+    int aflags;
+    ATTR *attr;
+    char *tbuf;
+
+    thing = match_thing(player, fargs[0]);
+    if (thing == NOTHING) {
         safe_nomatch(buff, bufc);
         return;
+    } else if (!Examinable(player, thing)) {
+        safe_noperm(buff, bufc);
+        return;
     }
-
-    dbref aowner;
-    int aflags;
-    ATTR *attr = atr_str(fargs[1]);
-    char *tbuf;
+    attr = atr_str(fargs[1]);
     int ch = '0';
-
     if (attr)
     {
         atr_get_info(thing, attr->number, &aowner, &aflags);
-        if (   !Examinable(player, thing) 
-            && !Read_attr(player, thing, attr, aowner, aflags))
-        {
-            safe_noperm(buff, bufc);
-            return;
-        }
-        else if (See_attr(player, thing, attr, aowner, aflags))
+        if (See_attr(player, thing, attr, aowner, aflags))
         {
             tbuf = atr_get(thing, attr->number, &aowner, &aflags);
             if (*tbuf)
@@ -1505,29 +1480,25 @@ FUNCTION(fun_hasattr)
 
 FUNCTION(fun_hasattrp)
 {
-    dbref thing = match_thing(player, fargs[0]);
-    if (thing == NOTHING) 
-    {
+    dbref thing, aowner;
+    int aflags;
+    ATTR *attr;
+    char *tbuf;
+
+    thing = match_thing(player, fargs[0]);
+    if (thing == NOTHING) {
         safe_nomatch(buff, bufc);
         return;
+    } else if (!Examinable(player, thing)) {
+        safe_noperm(buff, bufc);
+        return;
     }
-
-    dbref aowner;
-    int aflags;
-    ATTR *attr = atr_str(fargs[1]);
-    char *tbuf;
+    attr = atr_str(fargs[1]);
     int ch = '0';
-
     if (attr)
     {
         atr_pget_info(thing, attr->number, &aowner, &aflags);
-        if (   !Examinable(player, thing) 
-            && !Read_attr(player, thing, attr, aowner, aflags))
-        {
-            safe_noperm(buff, bufc);
-            return;
-        }
-        else if (See_attr(player, thing, attr, aowner, aflags))
+        if (See_attr(player, thing, attr, aowner, aflags))
         {
             tbuf = atr_pget(thing, attr->number, &aowner, &aflags);
             if (*tbuf)
@@ -1674,7 +1645,7 @@ FUNCTION(fun_udefault)
                     check_read_perms(player, thing, ap, aowner, aflags,
                              buff, bufc)) {
                     str = atext;
-                    TinyExec(buff, bufc, 0, thing, cause, EV_FCHECK | EV_EVAL, &str, &(fargs[2]), nfargs - 2);
+                    TinyExec(buff, bufc, 0, thing, cause, EV_FCHECK | EV_EVAL, &str, &(fargs[2]), nfargs - 1);
                     free_lbuf(atext);
                     free_lbuf(objname);
                     return;
@@ -1848,7 +1819,6 @@ FUNCTION(fun_grab)
     do
     {
         char *r = split_token(&s, sep);
-        mudstate.wild_invk_ctr = 0;
         if (quick_wild(fargs[1], r))
         {
             safe_str(r, buff, bufc);
@@ -1863,21 +1833,23 @@ FUNCTION(fun_grab)
  */
 FUNCTION(fun_scramble)
 {
-    size_t n;
-    char *old = strip_ansi(fargs[0], &n);
-
-    if (2 <= n)
+    if (fargs[0][0] == '\0')
     {
-        unsigned int i;
-        for (i = 0; i < n-1; i++)
-        {
-            int j = RandomINT32(i, n-1);
-            char c = old[i];
-            old[i] = old[j];
-            old[j] = c;
-        }
+        return;
     }
-    safe_str(old, buff, bufc);
+    char *old = *bufc;
+
+    unsigned int n;
+    safe_str(strip_ansi(fargs[0], &n), buff, bufc);
+
+    unsigned int i;
+    for (i = 0; i < n-1; i++)
+    {
+        int j = RandomINT32(i, n-1);
+        char c = old[i];
+        old[i] = old[j];
+        old[j] = c;
+    }
 }
 
 /* ---------------------------------------------------------------------------
@@ -2150,7 +2122,6 @@ FUNCTION(fun_matchall)
     do
     {
         r = split_token(&s, sep);
-        mudstate.wild_invk_ctr = 0;
         if (quick_wild(fargs[1], r))
         {
             Tiny_ltoa(wcount, tbuf);
@@ -2776,7 +2747,8 @@ FUNCTION(fun_pack)
 FUNCTION(fun_strcat)
 {
     int i;
-    for (i = 0; i < nfargs; i++)
+    safe_str(fargs[0], buff, bufc);
+    for (i = 1; i < nfargs; i++)
     {
         safe_str(fargs[i], buff, bufc);
     }
@@ -3450,15 +3422,12 @@ public:
     BOOL IsSet(unsigned int i);
 };
 
-// Construct a CBitField to hold (nMaximum_arg+1) bits numbered 0 through
-// nMaximum_arg.
-//
 CBitField::CBitField(unsigned int nMaximum_arg)
 {
     nInts  = 0;
     pInts  = NULL;
     pMasks = NULL;
-    if (0 < nMaximum_arg)
+    if (0 < nMaximum)
     {
         nMaximum = nMaximum_arg;
         nBitsPer = sizeof(UINT32)*8;
@@ -3479,7 +3448,7 @@ CBitField::CBitField(unsigned int nMaximum_arg)
 
         // Allocate array of UINT32s.
         //
-        nInts    = (nMaximum+nBitsPer) >> nShift;
+        nInts    = (nMaximum+nBitsPer-1) >> nShift;
         pMasks   = (UINT32 *)MEMALLOC((nInts+nBitsPer)*sizeof(UINT32));
         (void)ISOUTOFMEMORY(pMasks);
         pInts    = pMasks + nBitsPer;
@@ -3510,7 +3479,7 @@ void CBitField::ClearAll(void)
 
 void CBitField::Set(unsigned int i)
 {
-    if (i <= nMaximum)
+    if (i < nMaximum)
     {
         pInts[i>>nShift] |= pMasks[i&nMask];
     }
@@ -3518,7 +3487,7 @@ void CBitField::Set(unsigned int i)
 
 void CBitField::Clear(unsigned int i)
 {
-    if (i <= nMaximum)
+    if (i < nMaximum)
     {
         pInts[i>>nShift] &= ~pMasks[i&nMask];
     }
@@ -3526,7 +3495,7 @@ void CBitField::Clear(unsigned int i)
 
 BOOL CBitField::IsSet(unsigned int i)
 {
-    if (i <= nMaximum)
+    if (i < nMaximum)
     {
         if (pInts[i>>nShift] & pMasks[i&nMask])
         {

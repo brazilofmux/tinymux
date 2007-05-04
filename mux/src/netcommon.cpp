@@ -1,6 +1,6 @@
 // netcommon.cpp
 //
-// $Id: netcommon.cpp,v 1.72 2003-10-09 01:59:20 sdennis Exp $
+// $Id: netcommon.cpp,v 1.1 2002-05-24 06:53:15 sdennis Exp $
 //
 // This file contains routines used by the networking code that do not
 // depend on the implementation of the networking code.  The network-specific
@@ -114,9 +114,7 @@ void raw_notify_html(dbref player, const char *msg)
     DESC *d;
 
     if (!msg || !*msg)
-    {
         return;
-    }
 
     if (mudstate.inpipe && (player == mudstate.poutobj))
     {
@@ -124,9 +122,7 @@ void raw_notify_html(dbref player, const char *msg)
         return;
     }
     if (!Connected(player))
-    {
         return;
-    }
 
     DESC_ITER_PLAYER(player, d)
     {
@@ -193,10 +189,9 @@ void DCL_CDECL raw_broadcast(int inflags, char *fmt, ...)
         return;
     }
 
-    char buff[LBUF_SIZE];
-
     va_list ap;
     va_start(ap, fmt);
+    char *buff = alloc_lbuf("raw_broadcast");
     Tiny_vsnprintf(buff, LBUF_SIZE, fmt, ap);
     va_end(ap);
 
@@ -210,6 +205,7 @@ void DCL_CDECL raw_broadcast(int inflags, char *fmt, ...)
             process_output(d, FALSE);
         }
     }
+    free_lbuf(buff);
 }
 
 /*
@@ -921,7 +917,6 @@ void announce_disconnect(dbref player, DESC *d, const char *reason)
         if (Guest(player))
         {
             db[player].fs.word[FLAG_WORD1] |= DARK;
-            halt_que(NOTHING, player);
         }
     }
     else
@@ -1114,13 +1109,6 @@ void check_idle(void)
 
     DESC_SAFEITER_ALL(d, dnext)
     {
-        if (KeepAlive(d->player))
-        {
-            // Send a Telnet NOP code - creates traffic to keep NAT routers
-            // happy.  Hopefully this only runs once a minute.
-            //
-            queue_string(d, "\377\361");
-        }
         if (d->flags & DS_AUTODARK)
         {
             continue;
@@ -1539,7 +1527,7 @@ void do_doing(dbref player, dbref cause, int key, char *arg)
     static char *Empty = "";
     char *szValidDoing = Empty;
     BOOL bValidDoing;
-    int nValidDoing = 0;
+    int nValidDoing;
     if (arg)
     {
         szValidDoing = MakeCanonicalDoing(arg, &nValidDoing, &bValidDoing);
@@ -1701,7 +1689,7 @@ static int check_connect(DESC *d, char *msg)
                 // character by other means and then fail this
                 // connection.
                 //
-                // The guest 'power' is handled separately further
+                // The guest 'power' is handled seperately further
                 // down.
                 //
                 failconn("CONN", "Connect", "Guest Site Forbidden", d,
@@ -2153,7 +2141,7 @@ int do_command(DESC *d, char *command, int first)
     }
     if (!(cp->flag & CMD_NOxFIX))
     {
-        if (d->output_suffix)
+        if (d->output_prefix)
         {
             queue_string(d, d->output_suffix);
             queue_write(d, "\r\n", 2);

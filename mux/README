@@ -1,7 +1,7 @@
-TinyMUX 2.1:  README (Unix-based)
-Last Update:  August 2002
+TinyMUX 2.0:  README (Unix-based)
+Last Update:  January 2001
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
-Congratulations and welcome to the README file for TinyMUX 2.1.  That 
+Congratulations and welcome to the README file for TinyMUX 2.0.  That 
 you have chosen to actually read the file is a sign of bravery equal to 
 that of Beowulf facing Grendel or anyone who has ever faced the garden
 variety lumbering behemoth.  
@@ -18,7 +18,7 @@ because we want you to succeed, we are happy to provide a file that will,
 in our sincerest hopes, provide you with enough information to make that 
 possible.  If not, it should be at least an entertaining read....
 
-The TinyMUX 2.1 README and supplemental documentation has been divided into 
+The TinyMUX 2.0 README and supplemental documentation has been divided into 
 multiple files.  For discussion and instructions on how to do various 
 things associated with the care and feeding of your MUX, please refer to 
 the following files:
@@ -33,11 +33,11 @@ the following files:
 
   NOTES               All kinds of tidbits made much easier to find.  
                       Known compiling issues and known fixes are located 
-                      here. Known OS that TinyMUX 2.1 will run on and 
+                      here. Known OS that TinyMUX 2.0 will run on and 
                       compiling issues.  Contains basic conversion 
                       information. 
   
-  docs/BACKUP         A file about the MUX 2.1 Backup script.
+  docs/BACKUP         A file about the MUX 2.0 Backup script.
   
   docs/COMPRESSION    How to set up and run your game under RADIX 
                       compression.
@@ -64,25 +64,24 @@ the following files:
         
 General Information:
 ~~~~~~~~~~~~~~~~~~~
-TinyMUX 2.1 is currently being developed in parallel under Win32 and SuSE 7.1
+TinyMUX 2.0 is currently being developed in parallel under Win32 and SuSE 7.0
 and is written in C and C++.  It is a continuation of the TinyMUX 1.x line of
-servers, and while the primary focus on TinyMUX 2.0 was bug fixes and
-performance enhancements with some new features, TinyMUX 2.1 has been
-somewhat more focused on features with some new performance enhancements.
+servers and consists largely of bug fixes and a number of performance
+enhancements.  Features have been added in this release, but they were not the
+primary focus.  
 
 The latest version of this code can generally be found running at:
 
-  brazilmux.svdltd.com 6250 
+svdltd.com 6250 
 
 Refer to the file CHANGES for information about new features, commands, 
 and bug fixes.  NOTES now contains a LOT of small bits of info related 
 to running the server, as well as reminders about how to flatfile the 
 database for conversions and moving from site to site.
 
-Reminder of changes to dbconvert from MUX 1.x:
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
- - One of the major and important changes from MUX 1.x is the use of CHash
+Changes to dbconvert:
+~~~~~~~~~~~~~~~~~~~~
+ - One of the major and important changes to MUX 2.0 is the use of CHash 
    in the place of GDBM.  You will notice the changes primarily in the way 
    dbconvert and the db_unload and db_load scripts work.  
  
@@ -109,9 +108,7 @@ Reminder of changes to dbconvert from MUX 1.x:
 
 Conversions from Other Database Formats:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Support for other database formats has been removed from MUX 2.1. To import
-one of the following formats, you must first use dbconvert from TinyMUX 2.0
-before using the resulting flatfile with MUX 2.1.
+TinyMUX 2.0 has been shown to read the following database formats:
 
    TinyMUX 1.4, 1.5, 1.6 (not beta)
    TinyMUX(Win32Beta) 1.5, 1.6, 2.0
@@ -127,11 +124,6 @@ code.  The important thing to understand is that the dev team has worked
 very hard to ferret out and fix as many of the crashing/corrupting bugs 
 in the server as possible.  As part of the process, we also fixed a lot 
 of the legacy bugs from MUX 1.6 and before.  We intend to keep doing it.
-
-As you might expect, the complexion of the bug finds has changed over the
-years. We are finding much fewer crashing/corrupting bugs than before,
-and at the same time, the bugs we find are now more likely to be our own
-than legacy issues.
 
 As for the cases where you do find bugs, we would like you to take the 
 time to send an email with as much data as possible about the bug.  Each 
@@ -164,7 +156,7 @@ how beneficial it would be to fix it relative to other bugs on the list.
 
 Environment:
 ~~~~~~~~~~~
-TinyMUX 2.1 should run on most Unixes with BSD-style sockets and a C++ 
+TinyMUX 2.0 should run on most Unixes with BSD-style sockets and a C++ 
 compiler that groks function prototypes. It is 64-bit 'clean' code.  It 
 has been compiled and run successfully 'out of the box' on the following 
 platforms:
@@ -180,9 +172,11 @@ FreeBSD
 OpenBSD
 SuSE 6.2
 AIX 4.3
-Mac OS X.
 
-In fact, the only platform that we know won't work is HP-UX.
+TinyMUX 2.0 has been compiled and successfully run on the following with 
+minor changes(see NOTES):
 
-If you get TinyMUX 2.1 working on another platform, please let us know
+RedHat 5.2
+
+If you get TinyMUX 2.0 working on another platform, please let us know
 about it!

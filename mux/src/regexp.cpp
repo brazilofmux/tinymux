@@ -1,6 +1,6 @@
 // regexp.cpp
 //
-// $Id: regexp.cpp,v 1.3 2001-11-20 04:50:18 sdennis Exp $
+// $Id: regexp.cpp,v 1.1 2002-05-24 06:53:15 sdennis Exp $
 // 
 // regcomp and regexec -- regsub and regerror are elsewhere
 // @(#)regexp.c 1.3 of 18 April 87

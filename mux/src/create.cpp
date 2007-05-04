@@ -1,6 +1,6 @@
 // create.cpp -- Commands that create new objects.
 //
-// $Id: create.cpp,v 1.28 2002-06-29 21:38:42 sdennis Exp $
+// $Id: create.cpp,v 1.1 2002-05-24 06:53:15 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -96,12 +96,11 @@ static void open_exit(dbref player, dbref loc, char *direction, char *linkto)
     }
 
     loc = parse_linkable_room(player, linkto);
-    if (Good_obj(loc) || loc == HOME)
+    if (loc != NOTHING)
     {
         // Make sure the player passes the link lock
         //
-        if (  loc != HOME
-           && !could_doit(player, loc, A_LLINK))
+        if (!could_doit(player, loc, A_LLINK))
         {
             notify_quiet(player, "You can't link to there.");
             return;
@@ -148,7 +147,7 @@ void do_open(dbref player, dbref cause, int key, char *direction, char *links[],
     if (nlinks >= 2)
     {
         destnum = parse_linkable_room(player, dest);
-        if (Good_obj(destnum) || destnum == HOME)
+        if (destnum != NOTHING)
         {
             char buff[12];
             Tiny_ltoa(loc, buff);
@@ -250,12 +249,9 @@ void do_link
         // Set destination
         //
         room = parse_linkable_room(player, where);
-        if (Good_obj(room) || room == HOME)
-        {
+        if (room != NOTHING)
             link_exit(player, thing, room);
-        }
         break;
-
     case TYPE_PLAYER:
     case TYPE_THING:
 

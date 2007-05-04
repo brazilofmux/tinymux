@@ -1,6 +1,6 @@
 // macro.h -- Obsoleted.
 //
-// $Id: macro.h,v 1.2 2001-11-19 19:36:49 sdennis Exp $
+// $Id: macro.h,v 1.1 2002-05-24 06:53:15 sdennis Exp $
 //
 
 #ifndef __MACRO_H

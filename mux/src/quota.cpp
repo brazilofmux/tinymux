@@ -1,6 +1,6 @@
 // quota.cpp -- Quota Management Commands.
 //
-// $Id: quota.cpp,v 1.6 2002-06-24 15:52:52 sdennis Exp $
+// $Id: quota.cpp,v 1.1 2002-05-24 06:53:15 sdennis Exp $
 //
 
 #include "copyright.h"
@@ -296,5 +296,5 @@ FUNCTION(fun_hasquota)
         int rq = Tiny_atol(atr_get(who, A_RQUOTA, &aowner, &aflags));
         bResult = (rq >= Tiny_atol(fargs[1]));
     }
-    safe_chr(bResult ? '1' : '0', buff, bufc);
+    safe_ltoa(bResult ? '1' : '0', buff, bufc);
 }

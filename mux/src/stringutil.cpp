@@ -1,6 +1,6 @@
 // stringutil.cpp -- string utilities.
 //
-// $Id: stringutil.cpp,v 1.87 2003-10-09 01:59:20 sdennis Exp $
+// $Id: stringutil.cpp,v 1.1 2002-05-24 06:53:16 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6. Portions are original work.
@@ -504,7 +504,7 @@ int ANSI_lex(int nString, const char *pString, int *nLengthToken0, int *nLengthT
     }
 }
 
-char *strip_ansi(const char *szString, size_t *pnString)
+char *strip_ansi(const char *szString, unsigned int *pnString)
 {
     static char Buffer[LBUF_SIZE];
     char *pBuffer = Buffer;
@@ -590,7 +590,7 @@ void ANSI_Parse_m(ANSI_ColorState *pacsCurrent, int nANSI, const char *pANSI,
         // typically).
         //
         const char *p = pANSI;
-        while (Tiny_IsDigit[(unsigned char)*p])
+        while (Tiny_IsDigit[(unsigned int)*p])
         {
             p++;
         }
@@ -1095,7 +1095,6 @@ void ANSI_String_Copy
                     }
                 }
                 pacOut->m_n += pField - pacOut->m_p;
-                pacOut->m_nMax -= pField - pacOut->m_p;
                 pacOut->m_p  = pField;
                 pacOut->m_vw += vw;
                 return;
@@ -1134,7 +1133,6 @@ void ANSI_String_Copy
         }
     }
     pacOut->m_n += pField - pacOut->m_p;
-    pacOut->m_nMax -= pField - pacOut->m_p;
     pacOut->m_p  = pField;
     pacOut->m_vw += vw;
 }
@@ -1231,7 +1229,7 @@ LITERAL_STRING_STRUCT MU_Substitutes[] =
     { 2, "\\\\" } // 13
 };
 
-const unsigned char MU_EscapeConvert[256] =
+const char MU_EscapeConvert[256] =
 {
 //  0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F
 //
@@ -1254,7 +1252,7 @@ const unsigned char MU_EscapeConvert[256] =
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0   // F
 };
 
-const unsigned char MU_EscapeNoConvert[256] =
+const char MU_EscapeNoConvert[256] =
 {
 //  0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F
 //
@@ -1298,7 +1296,7 @@ char *translate_string(const char *szString, int bConvert)
     acsCurrent = acsRestingStates[ANSI_ENDGOAL_NOBLEED];
     acsPrevious = acsCurrent;
     BOOL bSawNormal = FALSE;
-    const unsigned char *MU_EscapeChar = (bConvert)? MU_EscapeConvert : MU_EscapeNoConvert;
+    const char *MU_EscapeChar = (bConvert)? MU_EscapeConvert : MU_EscapeNoConvert;
     while (nString)
     {
         int nTokenLength0;
@@ -1319,8 +1317,8 @@ char *translate_string(const char *szString, int bConvert)
 
             while (nTokenLength0--)
             {
-                unsigned char ch = *pString++;
-                unsigned char code = MU_EscapeChar[ch];
+                int ch = *pString++;
+                int code = MU_EscapeChar[ch];
                 if (code)
                 {
                     // The following can look one ahead off the end of the
@@ -1780,7 +1778,7 @@ int minmatch(char *str, char *target, int min)
 // --------------------------------------------------------------------------
 // StringCloneLen: allocate memory and copy string
 //
-char *StringCloneLen(const char *str, size_t nStr)
+char *StringCloneLen(const char *str, unsigned int nStr)
 {
     char *buff = (char *)MEMALLOC(nStr+1);
     if (ISOUTOFMEMORY(buff))
@@ -2002,21 +2000,20 @@ int Tiny_i64toa(INT64 val, char *buf)
         *p++ = '-';
         val = -val;
     }
-    UINT64 uval = (UINT64)val;
 
     char *q = p;
 
     const char *z;
-    while (uval > 99)
+    while (val > 99)
     {
-        z = Digits100 + ((uval % 100) << 1);
-        uval /= 100;
+        z = Digits100 + ((val % 100) << 1);
+        val /= 100;
         *p++ = *z;
         *p++ = *(z+1);
     }
-    z = Digits100 + (uval << 1);
+    z = Digits100 + (val << 1);
     *p++ = *z;
-    if (uval > 9)
+    if (val > 9)
     {
         *p++ = *(z+1);
     }
@@ -2084,7 +2081,7 @@ long Tiny_atol(const char *pString)
     //
     unsigned c1;
     unsigned c0 = pString[0];
-    if (!Tiny_IsDigit[(unsigned char)c0])
+    if (!Tiny_IsDigit[c0])
     {
         while (Tiny_IsSpace[(unsigned char)pString[0]])
         {
@@ -2097,7 +2094,7 @@ long Tiny_atol(const char *pString)
             pString++;
         }
         c0 = pString[0];
-        if (!Tiny_IsDigit[(unsigned char)c0])
+        if (!Tiny_IsDigit[c0])
         {
             return 0;
         }
@@ -2106,7 +2103,7 @@ long Tiny_atol(const char *pString)
     do
     {
         c1 = pString[1];
-        if (Tiny_IsDigit[(unsigned char)c1])
+        if (Tiny_IsDigit[c1])
         {
             sum = 100 * sum + TableATOI[c0-'0'][c1-'0'];
             pString += 2;
@@ -2116,7 +2113,7 @@ long Tiny_atol(const char *pString)
             sum = 10 * sum + (c0-'0');
             break;
         }
-    } while (Tiny_IsDigit[(unsigned char)(c0 = pString[0])]);
+    } while (Tiny_IsDigit[c0 = pString[0]]);
 
     // Interpret sign
     //
@@ -2136,7 +2133,7 @@ INT64 Tiny_atoi64(const char *pString)
     //
     unsigned c1;
     unsigned c0 = pString[0];
-    if (!Tiny_IsDigit[(unsigned char)c0])
+    if (!Tiny_IsDigit[c0])
     {
         while (Tiny_IsSpace[(unsigned char)pString[0]])
         {
@@ -2149,7 +2146,7 @@ INT64 Tiny_atoi64(const char *pString)
             pString++;
         }
         c0 = pString[0];
-        if (!Tiny_IsDigit[(unsigned char)c0])
+        if (!Tiny_IsDigit[c0])
         {
             return 0;
         }
@@ -2158,7 +2155,7 @@ INT64 Tiny_atoi64(const char *pString)
     do
     {
         c1 = pString[1];
-        if (Tiny_IsDigit[(unsigned char)c1])
+        if (Tiny_IsDigit[c1])
         {
             sum = 100 * sum + TableATOI[c0-'0'][c1-'0'];
             pString += 2;
@@ -2168,7 +2165,7 @@ INT64 Tiny_atoi64(const char *pString)
             sum = 10 * sum + (c0-'0');
             break;
         }
-    } while (Tiny_IsDigit[(unsigned char)(c0 = pString[0])]);
+    } while (Tiny_IsDigit[c0 = pString[0]]);
 
     // Interpret sign
     //
@@ -2206,7 +2203,7 @@ typedef struct
 
 } PARSE_FLOAT_RESULT;
 
-BOOL ParseFloat(PARSE_FLOAT_RESULT *pfr, char *str, BOOL bStrict)
+BOOL ParseFloat(PARSE_FLOAT_RESULT *pfr, char *str)
 {
     // Parse Input
     //
@@ -2362,14 +2359,7 @@ LastSpaces:
         str++;
     }
 
-    if (bStrict)
-    {
-        return (!*str);
-    }
-    else
-    {
-        return TRUE;
-    }
+    return (*str ? FALSE : TRUE);
 }
 
 #define ATOF_LIMIT 100
@@ -2387,14 +2377,14 @@ static const double powerstab[10] =
    1000000000.0
 };
 
-double Tiny_atof(char *szString, BOOL bStrict)
+double Tiny_atof(char *szString)
 {
     // Initialize structure.
     //
     PARSE_FLOAT_RESULT pfr;
     memset(&pfr, 0, sizeof(PARSE_FLOAT_RESULT));
 
-    if (!ParseFloat(&pfr, szString, bStrict))
+    if (!ParseFloat(&pfr, szString))
     {
         return 0.0;
     }
@@ -2468,129 +2458,119 @@ double Tiny_atof(char *szString, BOOL bStrict)
     return ret;
 }
 
-extern char *Tiny_dtoa(double d, int mode, int nRequest, int *iDecimalPoint,
-                       int *sign, char **rve);
+extern char *Tiny_dtoa(double d, int mode, int ndigits, int *decpt, int *sign,
+                       char **rve);
 
 char *Tiny_ftoa(double r, BOOL bRounded, int frac)
 {
     static char buffer[100];
     char *q = buffer;
     char *rve = NULL;
-    int iDecimalPoint = 0;
+    int decpt = 0;
     int bNegative = 0;
     int mode = 0;
-    int nRequest = 50;
+    int ndigits = 50;
 
     if (bRounded)
     {
         mode = 3;
-        nRequest = frac;
-        if (50 < nRequest)
+        ndigits = frac;
+        if (50 < ndigits)
         {
-            nRequest = 50;
+            ndigits = 50;
         }
-        else if (nRequest < -20)
+        else if (ndigits < -20)
         {
-            nRequest = -20;
+            ndigits = -20;
         }
     }
-    char *p = Tiny_dtoa(r, mode, nRequest, &iDecimalPoint, &bNegative, &rve);
-    int nSize = rve - p;
-    if (nSize > 50)
+    char *p = Tiny_dtoa(r, mode, ndigits, &decpt, &bNegative, &rve);
+    int nDigits = rve - p;
+    if (nDigits > 50)
     {
-        nSize = 50;
+        nDigits = 50;
     }
     if (bNegative)
     {
         *q++ = '-';
     }
-    if (iDecimalPoint == 9999)
+    int nPad = ndigits - (nDigits - decpt);
+    if (decpt == 9999)
     {
         // Inf or NaN
         //
-        memcpy(q, p, nSize);
-        q += nSize;
+        memcpy(q, p, nDigits);
+        q += nDigits;
     }
-    else if (nSize <= 0)
+    else if (nDigits <= 0)
     {
-        // Zero
-        //
         *q++ = '0';
         if (  bRounded
-           && 0 < nRequest)
+           && 0 < nPad)
         {
             *q++ = '.';
-            memset(q, '0', nRequest);
-            q += nRequest;
+            memset(q, '0', nPad);
+            q += nPad;
         }
     }
-    else if (  iDecimalPoint <= -6
-            || 18 <= iDecimalPoint)
+    else if (decpt <= -6 || 18 <= decpt)
     {
         *q++ = *p++;
-        if (1 < nSize)
+        if (1 < nDigits)
         {
             *q++ = '.';
-            memcpy(q, p, nSize-1);
-            q += nSize-1;
+            memcpy(q, p, nDigits-1);
+            q += nDigits-1;
         }
         *q++ = 'E';
-        q += Tiny_ltoa(iDecimalPoint-1, q);
+        q += Tiny_ltoa(decpt-1, q);
     }
-    else if (iDecimalPoint <= 0)
+    else if (decpt <= 0)
     {
-        // iDecimalPoint = -5 to 0
+        // decpt = -5 to 0
         //
         *q++ = '0';
         *q++ = '.';
-        memset(q, '0', -iDecimalPoint);
-        q += -iDecimalPoint;
-        memcpy(q, p, nSize);
-        q += nSize;
-        if (bRounded)
+        memset(q, '0', -decpt);
+        q += -decpt;
+        memcpy(q, p, nDigits);
+        q += nDigits;
+        if (  bRounded
+           && 0 < nPad)
         {
-            int nPad = nRequest - (nSize - iDecimalPoint);
-            if (0 < nPad)
+            memset(q, '0', nPad);
+            q += nPad;
+        }
+    }
+    else // 0 < decpt
+    {
+        if (nDigits <= decpt)
+        {
+            memcpy(q, p, nDigits);
+            q += nDigits;
+            memset(q, '0', decpt-nDigits);
+            q += decpt-nDigits;
+            if (  bRounded
+               && 0 < nPad)
             {
+                *q++ = '.';
                 memset(q, '0', nPad);
                 q += nPad;
             }
         }
-    }
-    else
-    {
-        // iDecimalPoint = 1 to 17
-        //
-        if (nSize <= iDecimalPoint)
-        {
-            memcpy(q, p, nSize);
-            q += nSize;
-            memset(q, '0', iDecimalPoint - nSize);
-            q += iDecimalPoint - nSize;
-            if (  bRounded
-               && 0 < nRequest)
-            {
-                *q++ = '.';
-                memset(q, '0', nRequest);
-                q += nRequest;
-            }
-        }
         else
         {
-            memcpy(q, p, iDecimalPoint);
-            q += iDecimalPoint;
-            p += iDecimalPoint;
+            memcpy(q, p, decpt);
+            q += decpt;
+            p += decpt;
             *q++ = '.';
-            memcpy(q, p, nSize - iDecimalPoint);
-            q += nSize - iDecimalPoint;
-            if (bRounded)
+            memcpy(q, p, nDigits-decpt);
+            q += nDigits-decpt;
+            if (  bRounded
+               && 0 < nPad)
             {
-                int nPad = nRequest - (nSize - iDecimalPoint);
-                if (0 < nPad)
-                {
-                    memset(q, '0', nPad);
-                    q += nPad;
-                }
+                memset(q, '0', nPad);
+                q += nPad;
             }
         }
     }
@@ -2736,8 +2716,7 @@ BOOL is_rational(char *str)
 BOOL is_real(char *str)
 {
     PARSE_FLOAT_RESULT pfr;
-    memset(&pfr, 0, sizeof(PARSE_FLOAT_RESULT));
-    return ParseFloat(&pfr, str, TRUE);
+    return ParseFloat(&pfr, str);
 }
 
 #endif
@@ -2752,7 +2731,7 @@ BOOL is_real(char *str)
 // You may call Tiny_StrTokControl() to change the set of control characters
 // between Tiny_StrTokParse() calls, however keep in mind that the parsing
 // may not occur how you intend it to as Tiny_StrTokParse() does not
-// consume -all- of the controlling delimiters that separate two tokens.
+// consume -all- of the controlling delimiters that seperate two tokens.
 // It consumes only the first one.
 //
 void Tiny_StrTokString(TINY_STRTOK_STATE *tts, char *arg_pString)
@@ -3116,10 +3095,6 @@ int GetLineTrunc(char *Buffer, size_t nBuffer, FILE *fp)
 #define BMH_LARGE 32767
 void BMH_Prepare(BMH_State *bmhs, int nPat, char *pPat)
 {
-    if (nPat <= 0)
-    {
-        return;
-    }
     int k;
     for (k = 0; k < 128; k++)
     {
@@ -3141,10 +3116,6 @@ void BMH_Prepare(BMH_State *bmhs, int nPat, char *pPat)
 
 int BMH_Execute(BMH_State *bmhs, int nPat, char *pPat, int nSrc, char *pSrc)
 {
-    if (nPat <= 0)
-    {
-        return -1;
-    }
     for (int i = nPat-1; i < nSrc; i += bmhs->m_skip2)
     {
         while ((i += bmhs->m_d[(unsigned char)(pSrc[i])]) < nSrc)
@@ -3179,10 +3150,6 @@ int BMH_StringSearch(int nPat, char *pPat, int nSrc, char *pSrc)
 
 void BMH_PrepareI(BMH_State *bmhs, int nPat, char *pPat)
 {
-    if (nPat <= 0)
-    {
-        return;
-    }
     int k;
     for (k = 0; k < 128; k++)
     {
@@ -3206,10 +3173,6 @@ void BMH_PrepareI(BMH_State *bmhs, int nPat, char *pPat)
 
 int BMH_ExecuteI(BMH_State *bmhs, int nPat, char *pPat, int nSrc, char *pSrc)
 {
-    if (nPat <= 0)
-    {
-        return -1;
-    }
     for (int i = nPat-1; i < nSrc; i += bmhs->m_skip2)
     {
         while ((i += bmhs->m_d[(unsigned char)(pSrc[i])]) < nSrc)

@@ -1,6 +1,6 @@
 // a.cpp
 //
-// $Id: a.cpp,v 1.9 2001-11-22 07:05:49 sdennis Exp $
+// $Id: a.cpp,v 1.1 2002-05-24 06:53:14 sdennis Exp $
 //
 // Analyse a MUX database, we chew it in on stdin, extract
 // attributes, and stuff them into a radix tree. We accept a single

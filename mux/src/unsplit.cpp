@@ -1,6 +1,6 @@
 // unsplit.cpp -- Filter for re-combining continuation lines.
 //
-// $Id: unsplit.cpp,v 1.3 2001-11-18 20:48:08 sdennis Exp $
+// $Id: unsplit.cpp,v 1.1 2002-05-24 06:53:16 sdennis Exp $
 //
 
 #include "copyright.h"

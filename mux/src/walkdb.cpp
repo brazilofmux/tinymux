@@ -1,6 +1,6 @@
 // walkdb.cpp -- Support for commands that walk the entire db.
 //
-// $Id: walkdb.cpp,v 1.21 2002-04-10 23:08:29 sdennis Exp $
+// $Id: walkdb.cpp,v 1.1 2002-05-24 06:53:16 sdennis Exp $
 //
 
 #include "copyright.h"

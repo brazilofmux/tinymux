@@ -1,6 +1,6 @@
 // bsd.cpp
 //
-// $Id: bsd.cpp,v 1.67 2003-03-01 23:17:23 sdennis Exp $
+// $Id: bsd.cpp,v 1.1 2002-05-24 06:53:14 sdennis Exp $
 //
 // MUX 2.1
 // Portions are derived from MUX 1.6 and Nick Gammon's NT IO Completion port
@@ -94,12 +94,12 @@ static HANDLE hSlaveRequestStackSemaphore;
 #define SLAVE_REQUEST_STACK_SIZE 50
 static SLAVE_REQUEST SlaveRequests[SLAVE_REQUEST_STACK_SIZE];
 static int iSlaveRequest = 0;
-#define MAX_STRING 514
+
 typedef struct
 {
-    char host[MAX_STRING];
-    char token[MAX_STRING];
-    char ident[MAX_STRING];
+    char host[128];
+    char token[128];
+    char ident[128];
 } SLAVE_RESULT;
 
 static HANDLE hSlaveResultStackSemaphore;
@@ -211,14 +211,13 @@ DWORD WINAPI SlaveProc(LPVOID lpParameter)
             addr = req.sa_in.sin_addr.S_un.S_addr;
             hp = gethostbyaddr((char *)&addr, sizeof(addr), AF_INET);
 
-            if (  hp
-               && strlen(hp->h_name) < MAX_STRING)
+            if (hp)
             {
                 SlaveThreadInfo[iSlave].iDoing = __LINE__;
 
-                char host[MAX_STRING];
-                char token[MAX_STRING];
-                char szIdent[MAX_STRING];
+                char host[128];
+                char token[128];
+                char szIdent[128];
                 struct sockaddr_in sin;
                 memset(&sin, 0, sizeof(sin));
                 SOCKET s;
@@ -275,7 +274,7 @@ DWORD WINAPI SlaveProc(LPVOID lpParameter)
                             int nIdent = 0;
                             int cc;
 
-                            char szIdentBuffer[MAX_STRING];
+                            char szIdentBuffer[128];
                             szIdentBuffer[0] = 0;
                             BOOL bAllDone = FALSE;
 
@@ -291,30 +290,25 @@ DWORD WINAPI SlaveProc(LPVOID lpParameter)
 
                                 int nIdentBuffer = cc;
                                 szIdentBuffer[nIdentBuffer] = 0;
-
-                                char *p = szIdentBuffer;
-                                for (;;)
+                                char *p = strrchr(szIdentBuffer, '\r');
+                                if (p != NULL)
                                 {
-                                    if (  *p == '\0'
-                                       || *p == '\r'
-                                       || *p == '\n')
-                                    {
-                                        bAllDone = TRUE;
-                                        break;
-                                    }
-                                    if (Tiny_IsPrint[(unsigned char)*p])
-                                    {
-                                        szIdent[nIdent++] = *p;
-                                        if (sizeof(szIdent) - 1 <= nIdent)
-                                        {
-                                            bAllDone = TRUE;
-                                            break;
-                                        }
-                                    }
-                                    p++;
+                                    // We found a '\r', so only copy characters up to but not including the '\r'.
+                                    //
+                                    nIdentBuffer = p - szIdentBuffer;
+                                    bAllDone = TRUE;
                                 }
-                                szIdent[nIdent] = '\0';
-
+                                if (nIdent + nIdentBuffer >= sizeof(szIdent))
+                                {
+                                    nIdentBuffer = sizeof(szIdent) - nIdent - 1;
+                                    bAllDone = TRUE;
+                                }
+                                if (nIdentBuffer)
+                                {
+                                    memcpy(szIdent + nIdent, szIdentBuffer, nIdentBuffer);
+                                    nIdent += nIdentBuffer;
+                                    szIdent[nIdent] = 0;
+                                }
                                 ltaCurrent.GetUTC();
                             }
                         }
@@ -904,35 +898,14 @@ void SetupPorts(int *pnPorts, PortInfo aPorts[], IntArray *pia)
 }
 
 #ifdef WIN32
-// Private version of FD_ISSET:
-//
-// The following routine is only used on Win9x. Ordinarily, FD_ISSET
-// maps to a __WSAFDIsSet call, however, the Intel compiler encounters
-// an internal error at link time when some of the higher-order
-// optimizations are requested (-Qipo). Including this function is a
-// workaround.
-//
-DCL_INLINE BOOL FD_ISSET_priv(SOCKET fd, fd_set *set)
-{
-    unsigned int i;
-    for (i = 0; i < set->fd_count; i++)
-    {
-        if (set->fd_array[i] == fd)
-        {
-            return TRUE;
-        } 
-    }
-    return FALSE;
-}
-
 void shovechars9x(int nPorts, PortInfo aPorts[])
 {
     fd_set input_set, output_set;
     int found;
     DESC *d, *dnext, *newd;
 
-#define CheckInput(x)   FD_ISSET_priv(x, &input_set)
-#define CheckOutput(x)  FD_ISSET_priv(x, &output_set)
+#define CheckInput(x)   FD_ISSET(x, &input_set)
+#define CheckOutput(x)  FD_ISSET(x, &output_set)
 
     mudstate.debug_cmd = "< shovechars >";
 
@@ -1758,28 +1731,6 @@ void shutdownsock(DESC *d, int reason)
 
     if (reason == R_LOGOUT)
     {
-        // Is this desc still in interactive mode?
-        //
-        if (d->program_data != NULL)
-        {
-            num = 0;
-            DESC_ITER_PLAYER(d->player, dtemp) num++;
-
-            if (num == 0)
-            {
-                for (i = 0; i < MAX_GLOBAL_REGS; i++)
-                {
-                    if (d->program_data->wait_regs[i])
-                    {
-                        free_lbuf(d->program_data->wait_regs[i]);
-                        d->program_data->wait_regs[i] = NULL;
-                    }
-                }
-                MEMFREE(d->program_data);
-                d->program_data = NULL;
-                atr_clr(d->player, A_PROGCMD);
-            }
-        }
         d->connected_at.GetUTC();
         d->retries_left = mudconf.retry_limit;
         d->command_count = 0;
@@ -1858,7 +1809,6 @@ void shutdownsock(DESC *d, int reason)
                 }
                 MEMFREE(d->program_data);
                 d->program_data = NULL;
-                atr_clr(d->player, A_PROGCMD);
             }
         }
 
@@ -1955,8 +1905,8 @@ void shutdownsock_brief(DESC *d)
 void make_nonblocking(SOCKET s)
 {
 #ifdef WIN32
-    unsigned long arg_on = 1;
-    if (IS_SOCKET_ERROR(ioctlsocket(s, FIONBIO, &arg_on)))
+    unsigned long arg;
+    if (ioctlsocket(s, FIONBIO, &arg) == SOCKET_ERROR)
     {
         log_perror("NET", "FAIL", "make_nonblocking", "ioctlsocket");
     }
@@ -2493,11 +2443,7 @@ static void unset_signals(void)
 #define CAST_SIGNAL_FUNC
 #endif // _SGI_SOURCE
 
-#if defined(HAVE_SYS_SIGNAME)
-#define signames sys_signame
-#elif defined(SYS_SIGLIST_DECLARED)
-#define signames sys_siglist
-#else // HAVE_SYS_SIGNAME
+#ifndef SYS_SIGLIST_DECLARED
 
 // The purpose of the following code is support the case where sys_siglist is
 // is not part of the environment. This is the case for some Unix platforms
@@ -2728,7 +2674,9 @@ void BuildSignalNamesTable(void)
         }
     }
 }
-#endif // HAVE_SYS_SIGNAME
+#else // SYS_SIGLIST_DECLARED
+#define signames sys_siglist
+#endif // SYS_SIGLIST_DECLARED
 
 RETSIGTYPE DCL_CDECL sighandler(int sig)
 {
@@ -2766,7 +2714,8 @@ RETSIGTYPE DCL_CDECL sighandler(int sig)
         // Drop a flatfile.
         //
         log_signal(signames[sig]);
-        raw_broadcast(0, "Caught signal %s requesting a flatfile @dump. Please wait.", signames[sig]);
+        sprintf(buff, "Caught signal %s requesting a flatfile @dump. Please wait.", signames[sig]);
+        raw_broadcast(0, buff);
         dump_database_internal(DUMP_I_SIGNAL);
         break;
 
@@ -2788,7 +2737,7 @@ RETSIGTYPE DCL_CDECL sighandler(int sig)
         {
             exit(0);
         }
-        mudstate.dumping = FALSE;
+        mudstate.dumping = 0;
         break;
 
     case SIGHUP:
@@ -2899,9 +2848,9 @@ RETSIGTYPE DCL_CDECL sighandler(int sig)
             //
             dump_restart_db();
 #ifdef GAME_DOOFERMUX
-            execl("bin/netmux", mudconf.mud_name, "-c", mudconf.config_file, NULL);
+            execl("bin/netmux", mudconf.mud_name, mudconf.config_file, NULL);
 #else // GAME_DOOFERMUX
-            execl("bin/netmux", "netmux", "-c", mudconf.config_file, NULL);
+            execl("bin/netmux", "netmux", mudconf.config_file, NULL);
 #endif // GAME_DOOFERMUX
             break;
 #endif // WIN32
