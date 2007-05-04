@@ -250,6 +250,7 @@ Bug Fixes:
  -- Disallow negative charge for channels (Issue 222).  Found by
     Alierak.
  -- Fixed cases of look and @idesc interaction (Issue 45).
+ -- Updated 'wizhelp @attribute' for clarity (Issue 190).
 
 
 Performance Enhancements:
