@@ -1,6 +1,6 @@
 // htab.cpp -- Table hashing routines.
 //
-// $Id: htab.cpp,v 1.8 2003-01-05 19:13:02 sdennis Exp $
+// $Id: htab.cpp,v 1.1 2003-01-22 19:58:25 sdennis Exp $
 //
 // MUX 2.2
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All

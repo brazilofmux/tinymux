@@ -1,6 +1,6 @@
 // ansi.h
 //
-// $Id: ansi.h,v 1.4 2002-07-23 05:36:12 jake Exp $ */
+// $Id: ansi.h,v 1.1 2003-01-22 19:58:25 sdennis Exp $ */
 //
 // ANSI control codes for various neat-o terminal effects
 //

@@ -1,6 +1,6 @@
 // mail.cpp
 //
-// $Id: mail.cpp,v 1.58 2003-01-04 05:07:32 sdennis Exp $
+// $Id: mail.cpp,v 1.1 2003-01-22 19:58:25 sdennis Exp $
 //
 // This code was taken from Kalkin's DarkZone code, which was
 // originally taken from PennMUSH 1.50 p10, and has been heavily modified

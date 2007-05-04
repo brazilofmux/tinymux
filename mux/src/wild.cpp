@@ -1,6 +1,6 @@
 // wild.cpp -- Wildcard routines.
 //
-// $Id: wild.cpp,v 1.7 2003-01-05 19:10:55 sdennis Exp $
+// $Id: wild.cpp,v 1.1 2003-01-22 19:58:26 sdennis Exp $
 //
 // Written by T. Alexander Popiel, 24 June 1993
 // Last modified by T. Alexander Popiel, 19 August 1993

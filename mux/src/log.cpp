@@ -1,6 +1,6 @@
 // log.cpp -- Logging routines.
 //
-// $Id: log.cpp,v 1.13 2002-07-23 14:04:16 jake Exp $
+// $Id: log.cpp,v 1.1 2003-01-22 19:58:25 sdennis Exp $
 //
 
 #include "copyright.h"

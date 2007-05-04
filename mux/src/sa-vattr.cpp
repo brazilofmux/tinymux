@@ -1,6 +1,6 @@
 // sa-vattr.cpp -- Standalone vattr.cpp
 //
-// $Id: sa-vattr.cpp,v 1.1 2002-05-24 06:53:15 sdennis Exp $
+// $Id: sa-vattr.cpp,v 1.1 2003-01-22 19:58:26 sdennis Exp $
 //
 
 #undef MEMORY_BASED

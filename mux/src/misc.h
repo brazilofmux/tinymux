@@ -1,6 +1,6 @@
 // misc.h -- miscellaneous structures that are needed in more than one file.
 //
-// $Id: misc.h,v 1.6 2002-07-23 05:36:13 jake Exp $
+// $Id: misc.h,v 1.1 2003-01-22 19:58:25 sdennis Exp $
 //
 
 #include "copyright.h"

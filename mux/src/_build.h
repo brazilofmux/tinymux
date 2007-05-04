@@ -1,6 +1,6 @@
 // _build.h
 //
-// $Id: _build.h,v 1.52 2003-01-20 08:01:06 sdennis Exp $
+// $Id: _build.h,v 1.1 2003-01-22 19:58:25 sdennis Exp $
 //
 // MUX 2.2
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All

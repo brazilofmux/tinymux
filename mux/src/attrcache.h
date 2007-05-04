@@ -1,6 +1,6 @@
 // attrcache.h
 //
-// $Id: attrcache.h,v 1.5 2002-08-03 18:50:17 sdennis Exp $
+// $Id: attrcache.h,v 1.1 2003-01-22 19:58:25 sdennis Exp $
 //
 
 #ifndef _ATTRCACHE_H

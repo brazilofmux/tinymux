@@ -1,6 +1,6 @@
 // speech.cpp -- Commands which involve speaking.
 //
-// $Id: speech.cpp,v 1.36 2003-01-08 12:11:58 sdennis Exp $
+// $Id: speech.cpp,v 1.1 2003-01-22 19:58:26 sdennis Exp $
 //
 
 #include "copyright.h"

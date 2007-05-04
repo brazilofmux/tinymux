@@ -1,6 +1,6 @@
 // netcommon.cpp
 //
-// $Id: netcommon.cpp,v 1.40 2003-01-10 05:14:26 sdennis Exp $
+// $Id: netcommon.cpp,v 1.1 2003-01-22 19:58:26 sdennis Exp $
 //
 // This file contains routines used by the networking code that do not
 // depend on the implementation of the networking code.  The network-specific

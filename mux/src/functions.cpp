@@ -1,6 +1,6 @@
 // functions.cpp -- MUX function handlers.
 //
-// $Id: functions.cpp,v 1.128 2003-01-21 01:33:51 sdennis Exp $
+// $Id: functions.cpp,v 1.1 2003-01-22 19:58:25 sdennis Exp $
 //
 // MUX 2.2
 // Copyright (C) 1998 through 2003 Solid Vertical Domains, Ltd. All

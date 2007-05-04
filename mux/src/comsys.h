@@ -1,6 +1,6 @@
 // comsys.h
 //
-// $Id: comsys.h,v 1.18 2002-09-25 08:30:44 jake Exp $
+// $Id: comsys.h,v 1.1 2003-01-22 19:58:25 sdennis Exp $
 //
 
 #ifndef __COMSYS_H__

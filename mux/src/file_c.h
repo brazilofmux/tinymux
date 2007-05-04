@@ -1,6 +1,6 @@
 // file_c.h -- File cache header file.
 //
-// $Id: file_c.h,v 1.4 2002-07-23 05:36:13 jake Exp $
+// $Id: file_c.h,v 1.1 2003-01-22 19:58:25 sdennis Exp $
 //
 
 #include "copyright.h"
