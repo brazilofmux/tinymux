@@ -1904,14 +1904,17 @@ void shutdownsock(DESC *d, int reason)
         reason = R_QUIT;
     }
 
+    if (  reason < R_MIN
+       || R_MAX < reason)
+    {
+        reason = R_UNKNOWN;
+    }
+
     CLinearTimeAbsolute ltaNow;
     ltaNow.GetUTC();
 
     if (d->flags & DS_CONNECTED)
     {
-        // Added by D.Piper (del@doofer.org) 1997 & 2000-APR
-        //
-
         // Reason: attribute (disconnect reason)
         //
         atr_add_raw(d->player, A_REASON, disc_messages[reason]);

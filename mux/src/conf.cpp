@@ -1973,13 +1973,12 @@ static CONF conftable[] =
     {"sql_user",                  cf_string,      CA_STATIC, CA_DISABLED, (int *)mudconf.sql_user,         NULL,             128},
     {"sql_password",              cf_string,      CA_STATIC, CA_DISABLED, (int *)mudconf.sql_password,     NULL,             128},
     {"sql_database",              cf_string,      CA_STATIC, CA_DISABLED, (int *)mudconf.sql_database,     NULL,             128},
+#endif // FIRANMUX
     {"mail_server",               cf_string,      CA_STATIC, CA_DISABLED, (int *)mudconf.mail_server,      NULL,             128},
     {"mail_ehlo",                 cf_string,      CA_STATIC, CA_DISABLED, (int *)mudconf.mail_ehlo,        NULL,             128},
     {"mail_sendaddr",             cf_string,      CA_STATIC, CA_DISABLED, (int *)mudconf.mail_sendaddr,    NULL,             128},
     {"mail_sendname",             cf_string,      CA_STATIC, CA_DISABLED, (int *)mudconf.mail_sendname,    NULL,             128},
     {"mail_subject",              cf_string,      CA_STATIC, CA_DISABLED, (int *)mudconf.mail_subject,     NULL,             128},
-#endif // FIRANMUX
-
     { NULL,                       NULL,           0,         0,           NULL,                            NULL,               0}
 };
 
