@@ -359,7 +359,10 @@ void AutoDetect::ExamineList(int nitems, char *ptrs[])
     {
         m_CouldBe = DBREF_LIST;
     }
-    m_CouldBe = ASCII_LIST;
+    else
+    {
+        m_CouldBe = ASCII_LIST;
+    }
 }
 
 int AutoDetect::GetType(void)

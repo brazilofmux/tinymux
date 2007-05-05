@@ -1515,7 +1515,7 @@ struct comuser *select_user(struct channel *ch, dbref player)
     }
 }
 
-#define MAX_ALIASES_PER_PLAYER 50
+#define MAX_ALIASES_PER_PLAYER 100
 
 void do_addcom
 (
