@@ -38,6 +38,8 @@ typedef struct ufun {
 
 #define FN_LIST     1   // Corresponds to /list switch. -not- used in
                         // UFUN structure.
+#define FN_DELETE   16  // Corresponds to /delete switch. Not used in
+                        // UFUN structure.
 
 void init_functab(void);
 void list_functable(dbref);

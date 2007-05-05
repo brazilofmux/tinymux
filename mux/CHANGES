@@ -1,5 +1,5 @@
 TinyMUX 2.7:  CHANGES
-Last Update:  December 2006
+Last Update:  January 2007
 
 Major changes that may affect performance and require softcode tweaks:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -14,6 +14,10 @@ Feature Additions:
     consecutive &FOO lines refer to the same content (Issue 238).
  -- Add lpad(), cpad(), and rpad() functions to duplicate previous
     non-truncating ljust(), center(), and rjust functionality (Issue 13).
+ -- Add /delete switch to @function and allow removal of user-defined
+    functions (Issue 250).
+ -- Added fifth, sort-type argument to setinter(), setunion(), and
+    setdiff() (Issue 3).
 
 
 Bug Fixes:
@@ -27,6 +31,10 @@ Bug Fixes:
  -- @wall evaluated a speechmod before processing the message (Issue 16).
  -- @wall's switches did not interact properly (Issue 30).
  -- Corrected error messages for failed guest logins (Issue 246).
+ -- @function did not strip ansi from or properly truncate user-defined
+    function names. (Issue 249).
+ -- Fix typo in do_say() which left a bit-wise instead of a logical
+    AND operation (Issue 245).
 
 
 Performance Enhancements:
@@ -35,6 +43,8 @@ Performance Enhancements:
     Issue 238 comments).
  -- munge() translates results through a hash table instead of
     repeated linear searching (Issue 247).
+ -- VMAG(), VUNIT, and SHUFFLE() only need LBUF_SIZE/2 elements instead
+    of LBUF_SIZE elements.
 
 
 Cosmetic Changes:

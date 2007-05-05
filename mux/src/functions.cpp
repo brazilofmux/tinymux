@@ -302,83 +302,72 @@ char *split_token(char **sp, SEP *psep)
 #define CI_ASCII_LIST   16
 #define ALL_LIST        (ASCII_LIST|NUMERIC_LIST|DBREF_LIST|FLOAT_LIST)
 
-static int autodetect_list(char *ptrs[], int nitems)
+class AutoDetect
 {
-    int could_be = ALL_LIST;
-    for (int i = 0; i < nitems; i++)
+private:
+    int    m_CouldBe;
+
+public:
+    AutoDetect(void);
+    void ExamineList(int nitems, char *ptrs[]);
+    int GetType(void);
+};
+
+AutoDetect::AutoDetect(void)
+{
+    m_CouldBe = ALL_LIST;
+}
+
+void AutoDetect::ExamineList(int nitems, char *ptrs[])
+{
+    for (int i = 0; i < nitems && ASCII_LIST != m_CouldBe; i++)
     {
         char *p = ptrs[i];
         if (p[0] != NUMBER_TOKEN)
         {
-            could_be &= ~DBREF_LIST;
+            m_CouldBe &= ~DBREF_LIST;
         }
-        if (  (could_be & DBREF_LIST)
+
+        if (  (m_CouldBe & DBREF_LIST)
            && !is_integer(p+1, NULL))
         {
-            could_be &= ~(DBREF_LIST|NUMERIC_LIST|FLOAT_LIST);
+            m_CouldBe &= ~(DBREF_LIST|NUMERIC_LIST|FLOAT_LIST);
         }
-        if (  (could_be & FLOAT_LIST)
+
+        if (  (m_CouldBe & FLOAT_LIST)
            && !is_real(p))
         {
-            could_be &= ~(NUMERIC_LIST|FLOAT_LIST);
+            m_CouldBe &= ~(NUMERIC_LIST|FLOAT_LIST);
         }
-        if (  (could_be & NUMERIC_LIST)
+
+        if (  (m_CouldBe & NUMERIC_LIST)
            && !is_integer(p, NULL))
         {
-            could_be &= ~NUMERIC_LIST;
+            m_CouldBe &= ~NUMERIC_LIST;
         }
+    }
 
-        if (could_be == ASCII_LIST)
-        {
-            return ASCII_LIST;
-        }
-    }
-    if (could_be & NUMERIC_LIST)
+    if (m_CouldBe & NUMERIC_LIST)
     {
-        return NUMERIC_LIST;
+        m_CouldBe = NUMERIC_LIST;
     }
-    else if (could_be & FLOAT_LIST)
+    else if (m_CouldBe & FLOAT_LIST)
     {
-        return FLOAT_LIST;
+        m_CouldBe = FLOAT_LIST;
     }
-    else if (could_be & DBREF_LIST)
+    else if (m_CouldBe & DBREF_LIST)
     {
-        return DBREF_LIST;
+        m_CouldBe = DBREF_LIST;
     }
-    return ASCII_LIST;
+    m_CouldBe = ASCII_LIST;
 }
 
-static int get_list_type
-(
-    char *fargs[],
-    int nfargs,
-    int type_pos,
-    char *ptrs[],
-    int nitems
-)
+int AutoDetect::GetType(void)
 {
-    if (nfargs >= type_pos)
-    {
-        switch (mux_tolower(*fargs[type_pos - 1]))
-        {
-        case 'd':
-            return DBREF_LIST;
-        case 'n':
-            return NUMERIC_LIST;
-        case 'f':
-            return FLOAT_LIST;
-        case 'i':
-            return CI_ASCII_LIST;
-        case '\0':
-            return autodetect_list(ptrs, nitems);
-        default:
-            return ASCII_LIST;
-        }
-    }
-    return autodetect_list(ptrs, nitems);
+    return m_CouldBe;
 }
 
-int list2arr(char *arr[], int maxlen, char *list, SEP *psep)
+int list2arr(char *arr[], int maxcount, char *list, SEP *psep)
 {
     list = trim_space_sep(list, psep);
     if (list[0] == '\0')
@@ -387,7 +376,7 @@ int list2arr(char *arr[], int maxlen, char *list, SEP *psep)
     }
     char *p = split_token(&list, psep);
     int i;
-    for (i = 0; p && i < maxlen; i++, p = split_token(&list, psep))
+    for (i = 0; p && i < maxcount; i++, p = split_token(&list, psep))
     {
         arr[i] = p;
     }
@@ -410,7 +399,8 @@ void arr2list(char *arr[], int alen, char *list, char **bufc, SEP *psep)
 
 static int dbnum(char *dbr)
 {
-    if (dbr[0] != '#' || dbr[1] == '\0')
+    if (  '#'  != dbr[0]
+       || '\0' == dbr[1])
     {
         return 0;
     }
@@ -426,14 +416,17 @@ static int dbnum(char *dbr)
 
 static bool nearby_or_control(dbref player, dbref thing)
 {
-    if (!Good_obj(player) || !Good_obj(thing))
+    if (  !Good_obj(player)
+       || !Good_obj(thing))
     {
         return false;
     }
+
     if (Controls(player, thing))
     {
         return true;
     }
+
     if (!nearby(player, thing))
     {
         return false;
@@ -466,6 +459,7 @@ bool delim_check
         {
             dflags &= ~DELIM_EVAL;
         }
+
         if (dflags & DELIM_EVAL)
         {
             char *str = tstr;
@@ -7450,41 +7444,36 @@ static FUNCTION(fun_conn)
  * * fun_sort: Sort lists.
  */
 
-typedef struct f_record
+typedef struct qsort_record
 {
-    double data;
+    union
+    {
+        double d;
+        long   l;
+        INT64  i64;
+    } u;
     char *str;
-} f_rec;
+} q_rec;
 
-typedef struct i_record
-{
-    long data;
-    char *str;
-} i_rec;
-
-typedef struct i64_record
-{
-    INT64 data;
-    char *str;
-} i64_rec;
+typedef int DCL_CDECL CompareFunction(const void *s1, const void *s2);
 
 static int DCL_CDECL a_comp(const void *s1, const void *s2)
 {
-    return strcmp(*(char **)s1, *(char **)s2);
+    return strcmp(((q_rec *)s1)->str, ((q_rec *)s2)->str);
 }
 
 static int DCL_CDECL a_casecomp(const void *s1, const void *s2)
 {
-    return mux_stricmp(*(char **)s1, *(char **)s2);
+    return mux_stricmp(((q_rec *)s1)->str, ((q_rec *)s2)->str);
 }
 
 static int DCL_CDECL f_comp(const void *s1, const void *s2)
 {
-    if (((f_rec *) s1)->data > ((f_rec *) s2)->data)
+    if (((q_rec *) s1)->u.d > ((q_rec *) s2)->u.d)
     {
         return 1;
     }
-    else if (((f_rec *) s1)->data < ((f_rec *) s2)->data)
+    else if (((q_rec *) s1)->u.d < ((q_rec *) s2)->u.d)
     {
         return -1;
     }
@@ -7493,11 +7482,11 @@ static int DCL_CDECL f_comp(const void *s1, const void *s2)
 
 static int DCL_CDECL i_comp(const void *s1, const void *s2)
 {
-    if (((i_rec *) s1)->data > ((i_rec *) s2)->data)
+    if (((q_rec *) s1)->u.l > ((q_rec *) s2)->u.l)
     {
         return 1;
     }
-    else if (((i_rec *) s1)->data < ((i_rec *) s2)->data)
+    else if (((q_rec *) s1)->u.l < ((q_rec *) s2)->u.l)
     {
         return -1;
     }
@@ -7506,96 +7495,110 @@ static int DCL_CDECL i_comp(const void *s1, const void *s2)
 
 static int DCL_CDECL i64_comp(const void *s1, const void *s2)
 {
-    if (((i64_rec *) s1)->data > ((i64_rec *) s2)->data)
+    if (((q_rec *) s1)->u.i64 > ((q_rec *) s2)->u.i64)
     {
         return 1;
     }
-    else if (((i64_rec *) s1)->data < ((i64_rec *) s2)->data)
+    else if (((q_rec *) s1)->u.i64 < ((q_rec *) s2)->u.i64)
     {
         return -1;
     }
     return 0;
 }
 
-static void do_asort(char *s[], int n, int sort_type)
+typedef struct
 {
-    if (  n <= 0
+    char **m_s;
+    int    m_n;
+    int    m_iSortType;
+    q_rec *m_ptrs;
+
+} SortContext;
+
+static bool do_asort_start(SortContext *psc, int n, char *s[], int sort_type)
+{
+    if (  n < 0
        || LBUF_SIZE <= n)
     {
-        return;
+        return false;
+    }
+
+    psc->m_s = s;
+    psc->m_n  = n;
+    psc->m_iSortType = sort_type;
+    psc->m_ptrs = NULL;
+
+    if (0 == n)
+    {
+        return true;
     }
 
     int i;
-    f_rec *fp;
-    i_rec *ip;
-    i64_rec *i64p;
 
-    switch (sort_type)
+    psc->m_ptrs = (q_rec *) MEMALLOC(n * sizeof(q_rec));
+    if (NULL != psc->m_ptrs)
     {
-    case ASCII_LIST:
-        qsort(s, n, sizeof(char *), a_comp);
-        break;
-
-    case NUMERIC_LIST:
-        i64p = (i64_rec *) MEMALLOC(n * sizeof(i64_rec));
-        if (NULL != i64p)
+        switch (sort_type)
         {
+        case ASCII_LIST:
             for (i = 0; i < n; i++)
             {
-                i64p[i].str = s[i];
-                i64p[i].data = mux_atoi64(s[i]);
+                psc->m_ptrs[i].str = s[i];
             }
-            qsort(i64p, n, sizeof(i64_rec), i64_comp);
-            for (i = 0; i < n; i++)
-            {
-                s[i] = i64p[i].str;
-            }
-            MEMFREE(i64p);
-            i64p = NULL;
-        }
-        break;
+            qsort(psc->m_ptrs, n, sizeof(q_rec), a_comp);
+            break;
 
-    case DBREF_LIST:
-        ip = (i_rec *) MEMALLOC(n * sizeof(i_rec));
-        if (NULL != ip)
+        case NUMERIC_LIST:
+            for (i = 0; i < n; i++)
+            {
+                psc->m_ptrs[i].str = s[i];
+                psc->m_ptrs[i].u.i64 = mux_atoi64(s[i]);
+            }
+            qsort(psc->m_ptrs, n, sizeof(q_rec), i64_comp);
+            break;
+
+        case DBREF_LIST:
+            for (i = 0; i < n; i++)
+            {
+                psc->m_ptrs[i].str = s[i];
+                psc->m_ptrs[i].u.l = dbnum(s[i]);
+            }
+            qsort(psc->m_ptrs, n, sizeof(q_rec), i_comp);
+            break;
+
+        case FLOAT_LIST:
+            for (i = 0; i < n; i++)
+            {
+                psc->m_ptrs[i].str = s[i];
+                psc->m_ptrs[i].u.d = mux_atof(s[i], false);
+            }
+            qsort(psc->m_ptrs, n, sizeof(q_rec), f_comp);
+            break;
+
+        case CI_ASCII_LIST:
+            for (i = 0; i < n; i++)
+            {
+                psc->m_ptrs[i].str = s[i];
+            }
+            qsort(psc->m_ptrs, n, sizeof(q_rec), a_casecomp);
+            break;
+        }
+
+        for (i = 0; i < n; i++)
         {
-            for (i = 0; i < n; i++)
-            {
-                ip[i].str = s[i];
-                ip[i].data = dbnum(s[i]);
-            }
-            qsort(ip, n, sizeof(i_rec), i_comp);
-            for (i = 0; i < n; i++)
-            {
-                s[i] = ip[i].str;
-            }
-            MEMFREE(ip);
-            ip = NULL;
+            s[i] = psc->m_ptrs[i].str;
         }
-        break;
+        return true;
+    }
+    return false;
+}
 
-    case FLOAT_LIST:
-        fp = (f_rec *) MEMALLOC(n * sizeof(f_rec));
-        if (NULL != fp)
-        {
-            for (i = 0; i < n; i++)
-            {
-                fp[i].str = s[i];
-                fp[i].data = mux_atof(s[i], false);
-            }
-            qsort(fp, n, sizeof(f_rec), f_comp);
-            for (i = 0; i < n; i++)
-            {
-                s[i] = fp[i].str;
-            }
-            MEMFREE(fp);
-            fp = NULL;
-        }
-        break;
-
-    case CI_ASCII_LIST:
-        qsort(s, n, sizeof(char *), a_casecomp);
-        break;
+static void do_asort_finish(SortContext *psc)
+{
+    if (NULL != psc->m_ptrs)
+    {
+        MEMFREE(psc->m_ptrs);
+        psc->m_ptrs = NULL;
     }
 }
 
@@ -7620,8 +7623,51 @@ static FUNCTION(fun_sort)
     char *list = alloc_lbuf("fun_sort");
     mux_strncpy(list, fargs[0], LBUF_SIZE-1);
     int nitems = list2arr(ptrs, LBUF_SIZE / 2, list, &sep);
-    int sort_type = get_list_type(fargs, nfargs, 2, ptrs, nitems);
-    do_asort(ptrs, nitems, sort_type);
+
+    int sort_type = ASCII_LIST;
+    if (2 <= nfargs)
+    {
+        switch (mux_tolower(fargs[1][0]))
+        {
+        case 'd':
+            sort_type = DBREF_LIST;
+            break;
+
+        case 'n':
+            sort_type = NUMERIC_LIST;
+            break;
+
+        case 'f':
+            sort_type = FLOAT_LIST;
+            break;
+
+        case 'i':
+            sort_type = CI_ASCII_LIST;
+            break;
+
+        case '?':
+        case '\0':
+            {
+                AutoDetect ad;
+                ad.ExamineList(nitems, ptrs);
+                sort_type = ad.GetType();
+            }
+            break;
+        }
+    }
+    else
+    {
+        AutoDetect ad;
+        ad.ExamineList(nitems, ptrs);
+        sort_type = ad.GetType();
+    }
+
+    SortContext sc;
+    if (do_asort_start(&sc, nitems, ptrs, sort_type))
+    {
+        do_asort_finish(&sc);
+    }
+
     arr2list(ptrs, nitems, buff, bufc, &osep);
     free_lbuf(list);
 }
@@ -7636,18 +7682,19 @@ static FUNCTION(fun_sort)
 
 static void handle_sets
 (
-    char *fargs[],
-    char *buff,
+    int    nfargs,
+    char  *fargs[],
+    char  *buff,
     char **bufc,
-    int  oper,
-    SEP  *psep,
-    SEP  *posep
+    int    oper,
+    SEP   *psep,
+    SEP   *posep
 )
 {
     char **ptrs1 = NULL;
     try
     {
-        ptrs1 = new char *[LBUF_SIZE];
+        ptrs1 = new char *[LBUF_SIZE/2];
     }
     catch (...)
     {
@@ -7662,7 +7709,7 @@ static void handle_sets
     char **ptrs2 = NULL;
     try
     {
-        ptrs2 = new char *[LBUF_SIZE];
+        ptrs2 = new char *[LBUF_SIZE/2];
     }
     catch (...)
     {
@@ -7679,17 +7726,93 @@ static void handle_sets
 
     char *list1 = alloc_lbuf("fun_setunion.1");
     mux_strncpy(list1, fargs[0], LBUF_SIZE-1);
-    int n1 = list2arr(ptrs1, LBUF_SIZE, list1, psep);
-    do_asort(ptrs1, n1, ASCII_LIST);
+    int n1 = list2arr(ptrs1, LBUF_SIZE/2, list1, psep);
 
     char *list2 = alloc_lbuf("fun_setunion.2");
     mux_strncpy(list2, fargs[1], LBUF_SIZE-1);
-    int n2 = list2arr(ptrs2, LBUF_SIZE, list2, psep);
-    do_asort(ptrs2, n2, ASCII_LIST);
+    int n2 = list2arr(ptrs2, LBUF_SIZE/2, list2, psep);
+
+    int sort_type = ASCII_LIST;
+    if (5 <= nfargs)
+    {
+        switch (mux_tolower(fargs[4][0]))
+        {
+        case 'd':
+            sort_type = DBREF_LIST;
+            break;
+
+        case 'n':
+            sort_type = NUMERIC_LIST;
+            break;
+
+        case 'f':
+            sort_type = FLOAT_LIST;
+            break;
+
+        case 'i':
+            sort_type = CI_ASCII_LIST;
+            break;
+
+        case '?':
+        case '\0':
+            {
+                AutoDetect ad;
+                ad.ExamineList(n1, ptrs1);
+                ad.ExamineList(n2, ptrs2);
+                sort_type = ad.GetType();
+            }
+            break;
+        }
+    }
+
+    SortContext sc1;
+    if (!do_asort_start(&sc1, n1, ptrs1, sort_type))
+    {
+        free_lbuf(list1);
+        free_lbuf(list2);
+        delete [] ptrs1;
+        delete [] ptrs2;
+        return;
+    }
+
+    SortContext sc2;
+    if (!do_asort_start(&sc2, n2, ptrs2, sort_type))
+    {
+        do_asort_finish(&sc1);
+        free_lbuf(list1);
+        free_lbuf(list2);
+        delete [] ptrs1;
+        delete [] ptrs2;
+        return;
+    }
+
+    CompareFunction *cf = NULL;
+    switch (sort_type)
+    {
+    case ASCII_LIST:
+        cf = a_comp;
+        break;
+
+    case NUMERIC_LIST:
+        cf = i64_comp;
+        break;
+
+    case DBREF_LIST:
+        cf = i_comp;
+        break;
+
+    case FLOAT_LIST:
+        cf = f_comp;
+        break;
+
+    case CI_ASCII_LIST:
+        cf = a_casecomp;
+        break;
+    }
 
     int i1 = 0;
     int i2 = 0;
-    char *oldp = NULL;
+    q_rec *oldp = NULL;
     bool bFirst = true;
 
     switch (oper)
@@ -7702,9 +7825,9 @@ static void handle_sets
         //
         if (  n1 == 1
            && n2 == 1
-           && strcmp(ptrs1[0], ptrs2[0]) == 0)
+           && cf(&sc1.m_ptrs[0], &sc2.m_ptrs[0]) == 0)
         {
-            safe_str(ptrs1[0], buff, bufc);
+            safe_str(sc1.m_ptrs[0].str, buff, bufc);
             break;
         }
 
@@ -7715,18 +7838,19 @@ static void handle_sets
         {
             // Skip over duplicates.
             //
-            if (  i1 > 0
-               || i2 > 0)
+            if (  0 < i1
+               || 0 < i2)
             {
                 while (  i1 < n1
                       && oldp
-                      && strcmp(ptrs1[i1], oldp) == 0)
+                      && cf(&sc1.m_ptrs[i1], oldp) == 0)
                 {
                     i1++;
                 }
+
                 while (  i2 < n2
                       && oldp
-                      && strcmp(ptrs2[i2], oldp) == 0)
+                      && cf(&sc2.m_ptrs[i2], oldp) == 0)
                 {
                     i2++;
                 }
@@ -7741,17 +7865,18 @@ static void handle_sets
                 {
                     print_sep(posep, buff, bufc);
                 }
+
                 bFirst = false;
-                if (strcmp(ptrs1[i1], ptrs2[i2]) < 0)
+                if (cf(&sc1.m_ptrs[i1], &sc2.m_ptrs[i2]) < 0)
                 {
-                    oldp = ptrs1[i1];
-                    safe_str(ptrs1[i1], buff, bufc);
+                    oldp = &sc1.m_ptrs[i1];
+                    safe_str(sc1.m_ptrs[i1].str, buff, bufc);
                     i1++;
                 }
                 else
                 {
-                    oldp = ptrs2[i2];
-                    safe_str(ptrs2[i2], buff, bufc);
+                    oldp = &sc2.m_ptrs[i2];
+                    safe_str(sc2.m_ptrs[i2].str, buff, bufc);
                     i2++;
                 }
             }
@@ -7762,29 +7887,30 @@ static void handle_sets
         for (; i1 < n1; i1++)
         {
             if (  !oldp
-               || strcmp(oldp, ptrs1[i1]) != 0)
+               || cf(oldp, &sc1.m_ptrs[i1]) != 0)
             {
                 if (!bFirst)
                 {
                     print_sep(posep, buff, bufc);
                 }
                 bFirst = false;
-                oldp = ptrs1[i1];
-                safe_str(ptrs1[i1], buff, bufc);
+                oldp = &sc1.m_ptrs[i1];
+                safe_str(sc1.m_ptrs[i1].str, buff, bufc);
             }
         }
+
         for (; i2 < n2; i2++)
         {
             if (  !oldp
-               || strcmp(oldp, ptrs2[i2]) != 0)
+               || cf(oldp, &sc2.m_ptrs[i2]) != 0)
             {
                 if (!bFirst)
                 {
                     print_sep(posep, buff, bufc);
                 }
                 bFirst = false;
-                oldp = ptrs2[i2];
-                safe_str(ptrs2[i2], buff, bufc);
+                oldp = &sc2.m_ptrs[i2];
+                safe_str(sc2.m_ptrs[i2].str, buff, bufc);
             }
         }
         break;
@@ -7796,7 +7922,7 @@ static void handle_sets
         while (  i1 < n1
               && i2 < n2)
         {
-            val = strcmp(ptrs1[i1], ptrs2[i2]);
+            val = cf(&sc1.m_ptrs[i1], &sc2.m_ptrs[i2]);
             if (!val)
             {
                 // Got a match, copy it.
@@ -7806,17 +7932,17 @@ static void handle_sets
                     print_sep(posep, buff, bufc);
                 }
                 bFirst = false;
-                oldp = ptrs1[i1];
-                safe_str(ptrs1[i1], buff, bufc);
+                oldp = &sc1.m_ptrs[i1];
+                safe_str(sc1.m_ptrs[i1].str, buff, bufc);
                 i1++;
                 i2++;
                 while (  i1 < n1
-                      && strcmp(ptrs1[i1], oldp) == 0)
+                      && cf(&sc1.m_ptrs[i1], oldp) == 0)
                 {
                     i1++;
                 }
                 while (  i2 < n2
-                      && strcmp(ptrs2[i2], oldp) == 0)
+                      && cf(&sc2.m_ptrs[i2], oldp) == 0)
                 {
                     i2++;
                 }
@@ -7839,19 +7965,19 @@ static void handle_sets
         while (  i1 < n1
               && i2 < n2)
         {
-            val = strcmp(ptrs1[i1], ptrs2[i2]);
+            val = cf(&sc1.m_ptrs[i1], &sc2.m_ptrs[i2]);
             if (!val)
             {
                 // Got a match, increment pointers.
                 //
-                oldp = ptrs1[i1];
+                oldp = &sc1.m_ptrs[i1];
                 while (  i1 < n1
-                      && strcmp(ptrs1[i1], oldp) == 0)
+                      && cf(&sc1.m_ptrs[i1], oldp) == 0)
                 {
                     i1++;
                 }
                 while (  i2 < n2
-                      && strcmp(ptrs2[i2], oldp) == 0)
+                      && cf(&sc2.m_ptrs[i2], oldp) == 0)
                 {
                     i2++;
                 }
@@ -7865,11 +7991,11 @@ static void handle_sets
                     print_sep(posep, buff, bufc);
                 }
                 bFirst = false;
-                safe_str(ptrs1[i1], buff, bufc);
-                oldp = ptrs1[i1];
+                safe_str(sc1.m_ptrs[i1].str, buff, bufc);
+                oldp = &sc1.m_ptrs[i1];
                 i1++;
                 while (  i1 < n1
-                      && strcmp(ptrs1[i1], oldp) == 0)
+                      && cf(&sc1.m_ptrs[i1], oldp) == 0)
                 {
                     i1++;
                 }
@@ -7878,10 +8004,10 @@ static void handle_sets
             {
                 // Item in list2 but not in list1, discard.
                 //
-                oldp = ptrs2[i2];
+                oldp = &sc2.m_ptrs[i2];
                 i2++;
                 while (  i2 < n2
-                      && strcmp(ptrs2[i2], oldp) == 0)
+                      && cf(&sc2.m_ptrs[i2], oldp) == 0)
                 {
                     i2++;
                 }
@@ -7897,16 +8023,19 @@ static void handle_sets
                 print_sep(posep, buff, bufc);
             }
             bFirst = false;
-            safe_str(ptrs1[i1], buff, bufc);
-            oldp = ptrs1[i1];
+            safe_str(sc1.m_ptrs[i1].str, buff, bufc);
+            oldp = &sc1.m_ptrs[i1];
             i1++;
             while (  i1 < n1
-                  && strcmp(ptrs1[i1], oldp) == 0)
+                  && cf(&sc1.m_ptrs[i1], oldp) == 0)
             {
                 i1++;
             }
         }
     }
+
+    do_asort_finish(&sc1);
+    do_asort_finish(&sc2);
     free_lbuf(list1);
     free_lbuf(list2);
     delete [] ptrs1;
@@ -7926,7 +8055,8 @@ static FUNCTION(fun_setunion)
     {
         return;
     }
-    handle_sets(fargs, buff, bufc, SET_UNION, &sep, &osep);
+
+    handle_sets(nfargs, fargs, buff, bufc, SET_UNION, &sep, &osep);
 }
 
 static FUNCTION(fun_setdiff)
@@ -7942,7 +8072,8 @@ static FUNCTION(fun_setdiff)
     {
         return;
     }
-    handle_sets(fargs, buff, bufc, SET_DIFF, &sep, &osep);
+
+    handle_sets(nfargs, fargs, buff, bufc, SET_DIFF, &sep, &osep);
 }
 
 static FUNCTION(fun_setinter)
@@ -7958,7 +8089,8 @@ static FUNCTION(fun_setinter)
     {
         return;
     }
-    handle_sets(fargs, buff, bufc, SET_INTERSECT, &sep, &osep);
+
+    handle_sets(nfargs, fargs, buff, bufc, SET_INTERSECT, &sep, &osep);
 }
 
 /* ---------------------------------------------------------------------------
@@ -10228,8 +10360,8 @@ static FUN builtin_function_list[] =
     {"SECS",        fun_secs,       MAX_ARG, 0,       2,         0, CA_PUBLIC},
     {"SECURE",      fun_secure,           1, 1,       1,         0, CA_PUBLIC},
     {"SET",         fun_set,        MAX_ARG, 2,       2,         0, CA_PUBLIC},
-    {"SETDIFF",     fun_setdiff,    MAX_ARG, 2,       4,         0, CA_PUBLIC},
-    {"SETINTER",    fun_setinter,   MAX_ARG, 2,       4,         0, CA_PUBLIC},
+    {"SETDIFF",     fun_setdiff,    MAX_ARG, 2,       5,         0, CA_PUBLIC},
+    {"SETINTER",    fun_setinter,   MAX_ARG, 2,       5,         0, CA_PUBLIC},
 #if defined(FIRANMUX)
     {"SETPARENT",   fun_setparent,  MAX_ARG, 2,       2,         0, CA_PUBLIC},
 #endif // FIRANMUX
@@ -10239,7 +10371,7 @@ static FUN builtin_function_list[] =
     {"SETNAME",     fun_setname,    MAX_ARG, 2,       2,         0, CA_PUBLIC},
     {"TRIGGER",     fun_trigger,    MAX_ARG, 1, MAX_ARG,         0, CA_PUBLIC},
 #endif // FIRANMUX
-    {"SETUNION",    fun_setunion,   MAX_ARG, 2,       4,         0, CA_PUBLIC},
+    {"SETUNION",    fun_setunion,   MAX_ARG, 2,       5,         0, CA_PUBLIC},
     {"SHA1",        fun_sha1,             1, 0,       1,         0, CA_PUBLIC},
     {"SHL",         fun_shl,        MAX_ARG, 2,       2,         0, CA_PUBLIC},
     {"SHR",         fun_shr,        MAX_ARG, 2,       2,         0, CA_PUBLIC},
@@ -10354,6 +10486,41 @@ void init_functab(void)
     ufun_head = NULL;
 }
 
+#define MAX_UFUN_NAME_LEN (SBUF_SIZE-1)
+
+// MakeCanonicalUserFunctionName
+//
+// We truncate the name to a length of MAX_UFUN_NAME_LEN, if
+// necessary. ANSI is stripped.
+//
+char *MakeCanonicalUserFunctionName(const char *pName, size_t *pnName, bool *pbValid)
+{
+    static char Buffer[MAX_UFUN_NAME_LEN+1];
+
+    if (  NULL == pName
+       || '\0' == pName[0])
+    {
+        *pnName = 0;
+        *pbValid = false;
+        return NULL;
+    }
+
+    size_t nLen = 0;
+    char *pNameStripped = strip_ansi(pName, &nLen);
+    if (sizeof(Buffer)-1 < nLen)
+    {
+        nLen = sizeof(Buffer)-1;
+    }
+    memcpy(Buffer, pNameStripped, nLen);
+    Buffer[nLen] = '\0';
+
+    mux_strlwr(Buffer);
+
+    *pnName = nLen;
+    *pbValid = true;
+    return Buffer;
+}
+
 void do_function
 (
     dbref executor,
@@ -10372,7 +10539,9 @@ void do_function
     UFUN *ufp, *ufp2;
     ATTR *ap;
 
-    if ((key & FN_LIST) || !fname || *fname == '\0')
+    if (  (key & FN_LIST)
+       || NULL == fname
+       || '\0' == fname[0])
     {
         notify(executor, tprintf("%-28s   %-8s  %-30s Flgs",
             "Function Name", "DBref#", "Attribute"));
@@ -10403,23 +10572,60 @@ void do_function
         return;
     }
 
-    char *np, *bp;
     ATTR *pattr;
     dbref obj;
 
-    // Make a local uppercase copy of the function name.
+    // Canonicalize function name.
     //
-    bp = np = alloc_sbuf("add_user_func");
-    safe_sb_str(fname, np, &bp);
-    *bp = '\0';
-    mux_strlwr(np);
+    size_t nLen;
+    bool bValid;
+    char *pName = MakeCanonicalUserFunctionName(fname, &nLen, &bValid);
+    if (!bValid)
+    {
+        notify_quiet(executor, "Function name is not valid.");
+        return;
+    }
 
     // Verify that the function doesn't exist in the builtin table.
     //
-    if (hashfindLEN(np, strlen(np), &mudstate.func_htab) != NULL)
+    if (hashfindLEN(pName, nLen, &mudstate.func_htab) != NULL)
     {
         notify_quiet(executor, "Function already defined in builtin function table.");
-        free_sbuf(np);
+        return;
+    }
+
+    // Check if we're removing a function.
+    //
+    if (  (key & FN_DELETE)
+       || (  2 == nargs
+          && '\0' == target[0]))
+    {
+        ufp = (UFUN *) hashfindLEN(pName, nLen, &mudstate.ufunc_htab);
+        if (NULL == ufp)
+        {
+            notify_quiet(executor, tprintf("Function %s not found.", pName));
+        }
+        else
+        {
+            if (ufp == ufun_head)
+            {
+                ufun_head = ufun_head->next;
+            }
+            else
+            {
+                for (ufp2 = ufun_head; ufp2->next; ufp2 = ufp2->next)
+                {
+                    if (ufp2->next == ufp)
+                    {
+                        ufp2->next = ufp->next;
+                        break;
+                    }
+                }
+            }
+            hashdeleteLEN(pName, nLen, &mudstate.ufunc_htab);
+            delete ufp;
+            notify_quiet(executor, tprintf("Function %s deleted.", pName));
+        }
         return;
     }
 
@@ -10428,17 +10634,14 @@ void do_function
     if (!parse_attrib(executor, target, &obj, &pattr))
     {
         notify_quiet(executor, NOMATCH_MESSAGE);
-        free_sbuf(np);
         return;
     }
-
 
     // Make sure the attribute exists.
     //
     if (!pattr)
     {
         notify_quiet(executor, "No such attribute.");
-        free_sbuf(np);
         return;
     }
 
@@ -10447,7 +10650,6 @@ void do_function
     if (!See_attr(executor, obj, pattr))
     {
         notify_quiet(executor, NOPERM_MESSAGE);
-        free_sbuf(np);
         return;
     }
 
@@ -10456,13 +10658,12 @@ void do_function
     if ((key & FN_PRIV) && !Controls(executor, obj))
     {
         notify_quiet(executor, NOPERM_MESSAGE);
-        free_sbuf(np);
         return;
     }
 
     // See if function already exists.  If so, redefine it.
     //
-    ufp = (UFUN *) hashfindLEN(np, strlen(np), &mudstate.ufunc_htab);
+    ufp = (UFUN *) hashfindLEN(pName, nLen, &mudstate.ufunc_htab);
 
     if (!ufp)
     {
@@ -10478,11 +10679,10 @@ void do_function
 
         if (NULL == ufp)
         {
-            free_sbuf(np);
             return;
         }
 
-        ufp->name = StringClone(np);
+        ufp->name = StringCloneLen(pName, nLen);
         mux_strupr(ufp->name);
         ufp->obj = obj;
         ufp->atr = pattr->number;
@@ -10501,15 +10701,14 @@ void do_function
             }
             ufp2->next = ufp;
         }
-        hashaddLEN(np, strlen(np), ufp, &mudstate.ufunc_htab);
+        hashaddLEN(pName, nLen, ufp, &mudstate.ufunc_htab);
     }
     ufp->obj = obj;
     ufp->atr = pattr->number;
     ufp->flags = key;
-    free_sbuf(np);
     if (!Quiet(executor))
     {
-        notify_quiet(executor, tprintf("Function %s defined.", fname));
+        notify_quiet(executor, tprintf("Function %s defined.", pName));
     }
 }
 

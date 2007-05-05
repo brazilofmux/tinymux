@@ -2472,26 +2472,24 @@ FUNCTION(fun_elements)
         return;
     }
 
-    int nwords, cur;
     char *ptrs[LBUF_SIZE / 2];
-    char *wordlist, *s, *r;
     bool bFirst = true;
 
     // Turn the first list into an array.
     //
-    wordlist = alloc_lbuf("fun_elements.wordlist");
+    char *wordlist = alloc_lbuf("fun_elements.wordlist");
     mux_strncpy(wordlist, fargs[0], LBUF_SIZE-1);
-    nwords = list2arr(ptrs, LBUF_SIZE / 2, wordlist, &sep);
+    int nwords = list2arr(ptrs, LBUF_SIZE / 2, wordlist, &sep);
 
-    s = trim_space_sep(fargs[1], &sepSpace);
+    char *s = trim_space_sep(fargs[1], &sepSpace);
 
     // Go through the second list, grabbing the numbers and finding the
     // corresponding elements.
     //
     do {
-        r = split_token(&s, &sepSpace);
-        cur = mux_atol(r) - 1;
-        if (  cur >= 0
+        char *r = split_token(&s, &sepSpace);
+        int cur = mux_atol(r) - 1;
+        if (  0 <= cur
            && cur < nwords
            && ptrs[cur])
         {
@@ -2624,24 +2622,33 @@ FUNCTION(fun_shuffle)
         return;
     }
 
-    char **words = new char *[LBUF_SIZE];
-    ISOUTOFMEMORY(words);
-    int n, i, j;
-
-    n = list2arr(words, LBUF_SIZE, fargs[0], &sep);
-
-    for (i = 0; i < n-1; i++)
+    char **words = NULL;
+    try
     {
-        j = RandomINT32(i, n-1);
-
-        // Swap words[i] with words[j]
-        //
-        char *temp = words[i];
-        words[i] = words[j];
-        words[j] = temp;
+        words = new char *[LBUF_SIZE/2];
     }
-    arr2list(words, n, buff, bufc, &osep);
-    delete [] words;
+    catch (...)
+    {
+        ; // Nothing.
+    }
+
+    if (NULL != words)
+    {
+        int n = list2arr(words, LBUF_SIZE/2, fargs[0], &sep);
+
+        for (int i = 0; i < n-1; i++)
+        {
+            int j = RandomINT32(i, n-1);
+
+            // Swap words[i] with words[j]
+            //
+            char *temp = words[i];
+            words[i] = words[j];
+            words[j] = temp;
+        }
+        arr2list(words, n, buff, bufc, &osep);
+        delete [] words;
+    }
 }
 
 // pickrand -- choose a random item from a list.
