@@ -16,6 +16,7 @@
 #include "command.h"
 #include "comsys.h"
 #include "functions.h"
+#include "help.h"
 #include "misc.h"
 #include "pcre.h"
 #include "mail.h"

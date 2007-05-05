@@ -658,6 +658,9 @@
     Descs    - Network descriptors, one is used for each connected player.
     Qentries - Queue entries, one is used for each command placed on the
                queue. (@wait, @trigger, @switch, @dolist, etc).
+    Lbufrefs - Reference counting structures for the lbufs that hold global
+               r-register contents.
+    Regrefs  - Reference counting structures for global r-registers.
 
   Related Topics: @list buffers.
 
@@ -4670,19 +4673,6 @@ SWITCH_DEFAULT_ALL
   Indicates whether the @switch command should perform the commands for all
   targets that match or just the first one that matches if you don't specify
   either /all or /first as a command switch.
-
-& TERSE_SHOWS_CONTENTS
-TERSE_SHOWS_CONTENTS
-
-  CONFIG PARAMETER: terse_shows_contents <yes/no>
-  DEFAULT: yes
-
-  Indicates whether or not to suppress the listing of a location's contents
-  when producing TERSE output (whether from an automatic look or a 'real'
-  look if look_obey_terse is turned on.
-
-  Related Topics: look_obey_terse, terse_shows_exits,
-                  terse_shows_move_messages.
 
 & TERSE_SHOWS_CONTENTS
 TERSE_SHOWS_CONTENTS

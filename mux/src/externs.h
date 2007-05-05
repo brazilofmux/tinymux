@@ -260,12 +260,6 @@ bool mux_fopen(FILE **pFile, const char *filename, const char *mode);
 bool mux_open(int *pfh, const char *filename, int oflag);
 const char *mux_strerror(int errnum);
 
-/* From help.cpp */
-void helpindex_clean(int);
-void helpindex_load(dbref);
-void helpindex_init(void);
-void help_helper(dbref executor, int iHelpfile, char *topic_arg, char *buff, char **bufc);
-
 /* From htab.cpp */
 int  cf_ntab_access(int *, char *, void *, UINT32, dbref, char *);
 
