@@ -362,7 +362,6 @@ typedef int   POWER;
 typedef unsigned int RLEVEL;
 #endif // REALITY_LVLS
 typedef char  boolexp_type;
-typedef char  IBUF[16];
 
 #define UNUSED_PARAMETER(x) ((void)(x))
 

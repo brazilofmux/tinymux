@@ -598,7 +598,7 @@ static void look_contents(dbref player, dbref loc, const char *contents_name, in
     dbref thing;
     char *buff;
     char *html_buff, *html_cp;
-    char remote_num[32];
+    char remote_num[I32BUF_SIZE+1];
 
     // Check to see if he can see the location.
     //

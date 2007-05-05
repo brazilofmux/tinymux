@@ -70,7 +70,7 @@ static int add_to(dbref executor, int am, int attrnum)
     free_lbuf(atr_gotten);
     num += am;
 
-    char buff[20];
+    char buff[I32BUF_SIZE];
     size_t nlen = 0;
     *buff = '\0';
     if (num)
