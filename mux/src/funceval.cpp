@@ -3291,19 +3291,25 @@ FUNCTION(fun_munge)
     }
 
     // Convert lists into a hash table mapping elements of list1
-    // to list indices (to be used to index list2 later). Indices
-    // are incremented to avoid ambiguity of storing 0.
+    // to corresponding elements of list2.
     CHashTable *htab = new CHashTable;
     ISOUTOFMEMORY(htab);
+
+    extern struct
+    {
+        void *pData;
+        char  aKey[LBUF_SIZE+125];
+    } htab_rec;
 
     int i, len;
     for (i = 0; i < nptrs1; i++)
     {
         len = strlen(ptrs1[i]);
-        if (!hashfindLEN(ptrs1[i], len, htab))
-        {
-            hashaddLEN(ptrs1[i], len, (void *) (i + 1), htab);
-        }
+        UINT32 nHash = HASH_ProcessBuffer(0, ptrs1[i], len);
+        htab_rec.pData = (void *) ptrs2[i];
+        memcpy(htab_rec.aKey, ptrs1[i], len);
+        size_t nRecord = len + sizeof(void *);
+        htab->Insert((HP_HEAPLENGTH)nRecord, nHash, &htab_rec);
     }
     free_lbuf(list1);
     delete [] ptrs1;
@@ -3331,9 +3337,24 @@ FUNCTION(fun_munge)
     bool bFirst = true;
     for (i = 0; i < nresults; i++)
     {
-        int j = (int) hashfindLEN(results[i], strlen(results[i]), htab);
-        if (  0 != j
-           && NULL != ptrs2[--j])
+        len = strlen(results[i]);
+        UINT32 nHash = HASH_ProcessBuffer(0, results[i], len);
+        UINT32 iDir = htab->FindFirstKey(nHash);
+	while (iDir != HF_FIND_END)
+        {
+            HP_HEAPLENGTH nRecord;
+            htab->Copy(iDir, &nRecord, &htab_rec);
+            size_t nTarget = nRecord - sizeof(int *);
+
+            if (  nTarget == len
+               && memcmp(results[i], htab_rec.aKey, len) == 0)
+            {
+                break;
+            }
+            iDir = htab->FindNextKey(iDir, nHash);
+        }
+
+        if (iDir != HF_FIND_END)
         {
             if (!bFirst)
             {
@@ -3343,8 +3364,8 @@ FUNCTION(fun_munge)
             {
                 bFirst = false;
             }
-            safe_str(ptrs2[j], buff, bufc);
-            ptrs2[j] = NULL;
+            safe_str((char *) htab_rec.pData, buff, bufc);
+            htab->Remove(iDir);
         }
     }
     free_lbuf(atext);
