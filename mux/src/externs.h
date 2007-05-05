@@ -1,7 +1,9 @@
-// externs.h -- Prototypes for externs not defined elsewhere.
-//
-// $Id$
-//
+/*! \file externs.h
+ * \brief Prototypes for externs not defined elsewhere.
+ *
+ * $Id$
+ *
+ */
 
 #ifndef EXTERNS_H
 #define EXTERNS_H

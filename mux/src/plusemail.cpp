@@ -1,16 +1,19 @@
-// plusmail.cpp -- Quicky module implementing Firan-like @email function.
-//
-// $Id$
-//
-// Rachel Blackman <sparks@noderunner.net>
-//
-// Config options:
-//     mail_server               SMTP server to use (mail.bar.com)
-//     mail_ehlo                 ehlo server (my.baz.com)
-//     mail_sendaddr             return address (foo@bar.com)
-//     mail_sendname             RFC822 'name' (FooMUSH)
-//     mail_subject              Defaults subject link (FooMUSH Mail)
-//
+/*! \file plusemail.cpp
+ * \brief Quicky module implementing Firan-like \@email function.
+ *
+ * $Id$
+ *
+ * \author Rachel Blackman <sparks@noderunner.net>
+ *
+ * \verbatim
+ * Config options:
+ *     mail_server               SMTP server to use (mail.bar.com)
+ *     mail_ehlo                 ehlo server (my.baz.com)
+ *     mail_sendaddr             return address (foo@bar.com)
+ *     mail_sendname             RFC822 'name' (FooMUSH)
+ *     mail_subject              Defaults subject link (FooMUSH Mail)
+ * \endverbatim
+ */
 
 #include "autoconf.h"
 #include "config.h"

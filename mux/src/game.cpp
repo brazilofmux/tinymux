@@ -1,7 +1,10 @@
-// game.cpp
-//
-// $Id$
-//
+/*! \file game.cpp
+ * \brief Main program and misc functions.
+ *
+ * $Id$
+ *
+ */
+
 #include "copyright.h"
 #include "autoconf.h"
 #include "config.h"

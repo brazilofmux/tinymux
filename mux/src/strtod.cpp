@@ -1,4 +1,10 @@
-/****************************************************************
+/*! \file strtod.cpp
+ * \brief String to double conversion.
+ *
+ * $Id$
+ *
+ * \verbatim
+ ****************************************************************
  *
  * The author of this software is David M. Gay.
  *
@@ -15,15 +21,16 @@
  * REPRESENTATION OR WARRANTY OF ANY KIND CONCERNING THE MERCHANTABILITY
  * OF THIS SOFTWARE OR ITS FITNESS FOR ANY PARTICULAR PURPOSE.
  *
- ***************************************************************/
+ ***************************************************************
 
-/* Please send bug reports to
+ Please send bug reports to
     David M. Gay
     Bell Laboratories, Room 2C-463
     600 Mountain Avenue
     Murray Hill, NJ 07974-0636
     U.S.A.
     dmg@bell-labs.com
+\endverbatim
  */
 
 /* On a machine with IEEE extended-precision registers, it is

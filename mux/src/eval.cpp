@@ -1,7 +1,16 @@
-// eval.cpp -- Command evaluation and cracking.
-//
-// $Id$
-//
+/*! \file eval.cpp
+ * \brief Expression and function evaluation.
+ *
+ * $Id$
+ *
+ * The functions here crack expressions into function calls and arguments,
+ * perform %-substitutions, locate matching close-parens and so forth.
+ * This is one of the three parsers in the server.  The other two parsers
+ * are for commands (see command.cpp) and locks (boolexp.cpp).
+ *
+ * This file also contains routines to manage the global r-registers.
+ */
+
 #include "copyright.h"
 #include "autoconf.h"
 #include "config.h"

@@ -1,7 +1,10 @@
-// sqlslave.cpp -- This slave does SQL queries.
-//
-// $Id$
-//
+/*! \file sqlslave.cpp
+ * \brief This slave does SQL queries.
+ *
+ * $Id$
+ *
+ */
+
 #include "autoconf.h"
 #include "config.h"
 #include <dbi/dbi.h>

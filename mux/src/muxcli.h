@@ -1,7 +1,10 @@
-// muxcli.h
-//
-// $Id$
-//
+/*! \file muxcli.h
+ * \brief MUX command-line option system.
+ *
+ * $Id$
+ *
+ */
+
 #define CLI_USER 0
 
 // The following control whether an option is allowed/required.

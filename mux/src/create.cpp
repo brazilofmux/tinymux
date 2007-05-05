@@ -1,5 +1,5 @@
 /*! \file create.cpp
- *  Commands that create new objects.
+ * \brief Commands that create new objects.
  *
  * $Id$
  *

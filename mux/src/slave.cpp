@@ -1,13 +1,15 @@
-// slave.cpp -- This slave does iptoname conversions, and identquery lookups.
-//
-// $Id$
-//
-// The philosophy is to keep this program as simple/small as possible.  It
-// routinely performs non-vfork forks()s, so the conventional wisdom is that
-// the smaller it is, the faster it goes.  However, with modern memory
-// management support (including copy on reference paging), size is probably
-// not the issue it once was.
-//
+/*! \file slave.cpp
+ * \brief This slave does iptoname conversions, and identquery lookups.
+ *
+ * $Id$
+ *
+ * The philosophy is to keep this program as simple/small as possible.  It
+ * routinely performs non-vfork forks()s, so the conventional wisdom is that
+ * the smaller it is, the faster it goes.  However, with modern memory
+ * management support (including copy on reference paging), size is probably
+ * not the issue it once was.
+ */
+
 #include "autoconf.h"
 #include "config.h"
 

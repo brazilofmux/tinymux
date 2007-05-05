@@ -1,5 +1,5 @@
 /*! \file bsd.cpp
- * Low-level TCP socket-related code.
+ * \brief Low-level TCP socket-related code.
  *
  * $Id$
  *

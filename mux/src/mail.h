@@ -1,7 +1,9 @@
-// mail.h
-//
-// $Id$
-//
+/*! \file mail.h
+ * \brief In-game \@mail system.
+ *
+ * $Id$
+ *
+ */
 
 #ifndef _MAIL_H
 #define _MAIL_H

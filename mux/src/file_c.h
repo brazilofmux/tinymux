@@ -1,7 +1,9 @@
-// file_c.h -- File cache header file.
-//
-// $Id$
-//
+/*! \file file_c.h
+ * \brief File cache header file.
+ *
+ * $Id$
+ *
+ */
 
 #include "copyright.h"
 #ifndef __FILE_C
@@ -9,7 +11,7 @@
 
 #include "interface.h"
 
-/* File caches.  These _must_ track the fcache array in file_c.c */
+/* File caches.  These _must_ track the fcache array in file_c.cpp */
 
 #define FC_CONN     0
 #define FC_CONN_SITE    1

@@ -1,4 +1,10 @@
-/* autoconf.h.in -- System-dependent configuration information */
+/*! \file autoconf.h.in
+ * \brief System-dependent configuration information
+ *
+ * $Id$
+ *
+ * Run ./configure to generate autoconf.h from this file.
+ */
 
 #ifndef AUTOCONF_H
 #define AUTOCONF_H

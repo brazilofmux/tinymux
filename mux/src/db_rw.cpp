@@ -1,7 +1,8 @@
-// db_rw.cpp
-//
-// $Id$
-//
+/*! \file db_rw.cpp
+ * \brief Flatfile implementation.
+ *
+ * $Id$
+ */
 
 #include "copyright.h"
 #include "autoconf.h"

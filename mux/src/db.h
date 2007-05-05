@@ -1,7 +1,9 @@
-// db.h
-//
-// $Id$
-//
+/*! \file db.h
+ * \brief Attribute interface, some flatfile and object declarations.
+ *
+ * $Id$
+ *
+ */
 
 #ifndef __DB_H
 #define __DB_H

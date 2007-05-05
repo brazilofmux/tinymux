@@ -1,7 +1,10 @@
-// vattr.cpp -- Manages the user-defined attributes.
-//
-// $Id$
-//
+/*! \file vattr.cpp
+ * \brief Manages the user-defined attributes.
+ *
+ * $Id$
+ *
+ */
+
 #include "copyright.h"
 #include "autoconf.h"
 #include "config.h"

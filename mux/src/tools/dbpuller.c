@@ -1,12 +1,20 @@
-/**************************************************************************************************
- * Db puller - used to pull data from a MUX flatfile and dump it into a file in @decompile format *
- * Version: 1.01                                                                                  *
- * By: Ashen-Shugar (08/16/2005)                                                                  *
- * Modifications: List modifications below                                                        *
- *     11/02/05 : filenames are now saved with _<dbref> extensions.                               *
- *                the name of the object starts the file with a '@@' comment prefix.              *
- *                                                                                                *
- **************************************************************************************************/
+/*! \file dbpuller.c
+ * \brief Offline flatfile-to-softcode converter.
+ *
+ * $Id$
+ *
+ * Db puller - used to pull data from a MUX flatfile and dump it
+ * into a file in \@decompile format.
+ *
+ * \version 1.01
+ * \author Ashen-Shugar (08/16/2005)
+ *
+ * \verbatim
+ * Modifications: List modifications below
+ *     11/02/05 : filenames are now saved with _<dbref> extensions.
+ *                the name of the object starts the file with a '@@' comment prefix.
+ * \endverbatim
+ */
 
 #include <stdio.h>
 #include <stdlib.h>

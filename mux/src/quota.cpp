@@ -1,7 +1,9 @@
-// quota.cpp -- Quota Management Commands.
-//
-// $Id$
-//
+/*! \file quota.cpp
+ * \brief Quota Management Commands.
+ *
+ * $Id$
+ *
+ */
 
 #include "copyright.h"
 #include "autoconf.h"
