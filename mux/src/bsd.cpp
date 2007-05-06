@@ -116,9 +116,12 @@ static DWORD WINAPI SlaveProc(LPVOID lpParameter)
     SLAVE_REQUEST req;
     unsigned long addr;
     struct hostent *hp;
-    DWORD iSlave = reinterpret_cast<DWORD>(lpParameter);
+    size_t iSlave = reinterpret_cast<size_t>(lpParameter);
 
-    if (NUM_SLAVE_THREADS <= iSlave) return 1;
+    if (NUM_SLAVE_THREADS <= iSlave)
+    {
+        return 1;
+    }
 
     SlaveThreadInfo[iSlave].iDoing = __LINE__;
     for (;;)
@@ -362,15 +365,16 @@ void boot_slave(dbref executor, dbref caller, dbref enactor, int)
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
 
-    int iSlave;
-
-    if (bSlaveBooted) return;
+    if (bSlaveBooted)
+    {
+        return;
+    }
 
     hSlaveThreadsSemaphore = CreateSemaphore(NULL, 0, NUM_SLAVE_THREADS, NULL);
     hSlaveRequestStackSemaphore = CreateSemaphore(NULL, 1, 1, NULL);
     hSlaveResultStackSemaphore = CreateSemaphore(NULL, 1, 1, NULL);
     DebugTotalSemaphores += 3;
-    for (iSlave = 0; iSlave < NUM_SLAVE_THREADS; iSlave++)
+    for (size_t iSlave = 0; iSlave < NUM_SLAVE_THREADS; iSlave++)
     {
         SlaveThreadInfo[iSlave].iDoing = 0;
         SlaveThreadInfo[iSlave].iError = 0;
