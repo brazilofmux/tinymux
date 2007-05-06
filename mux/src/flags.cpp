@@ -1233,8 +1233,7 @@ void decompile_flags(dbref player, dbref thing, char *thingname)
 
         // Report this flag.
         //
-        notify(player, tprintf("@set %s=%s", strip_ansi(thingname),
-            fp->flagname));
+        notify(player, tprintf("@set %s=%s", thingname, fp->flagname));
     }
 }
 

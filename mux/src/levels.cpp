@@ -458,11 +458,11 @@ void do_txlevel
 void decompile_rlevels(dbref player, dbref thing, char *thingname)
 {
     char *buf = rxlevel_description(player, thing);
-    notify(player, tprintf("@rxlevel %s=%s", strip_ansi(thingname), buf));
+    notify(player, tprintf("@rxlevel %s=%s", thingname, buf));
     free_mbuf(buf);
 
     buf = txlevel_description(player, thing);
-    notify(player, tprintf("@txlevel %s=%s", strip_ansi(thingname), buf));
+    notify(player, tprintf("@txlevel %s=%s", thingname, buf));
     free_mbuf(buf);
 }
 
