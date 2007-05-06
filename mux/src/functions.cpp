@@ -9833,6 +9833,128 @@ static FUNCTION(fun_accent)
     }
 }
 
+size_t transform_range(mux_string &sStr)
+{
+    // Look for a-z type character ranges. Dashes that don't have another 
+    // character on each end of them are treated literally.
+    size_t nPos = 0, nStart = 0;
+    char cBefore, cAfter;
+    mux_string *sTemp = new mux_string;
+    bool bSucceeded = sStr.search("-", &nPos, 1);
+    while (bSucceeded)
+    {
+        nStart += nPos;
+        cBefore = sStr.export_Char(nStart-1);
+        cAfter = sStr.export_Char(nStart+1);
+        if ('\0' == cAfter)
+        {
+            break;
+        }
+        if (  mux_isazAZ(cBefore)
+           && mux_isazAZ(cAfter))
+        {
+            // Character range.
+            //
+            sTemp->truncate(0);
+            if (  mux_islower(cBefore)
+               == mux_islower(cAfter))
+            {
+                cBefore++;
+                while (cBefore < cAfter)
+                {
+                    sTemp->append(cBefore);
+                    cBefore++;
+                }
+                sStr.replace_Chars(sTemp, nStart, 1);
+            }
+            else if (  mux_islower(cBefore)
+                    && mux_isupper(cAfter))
+            {
+                cBefore++;
+                while (cBefore <= 'z')
+                {
+                    sTemp->append(cBefore);
+                    cBefore++;
+                }
+                cBefore = 'A';
+                while (cBefore < cAfter)
+                {
+                    sTemp->append(cBefore);
+                    cBefore++;
+                }
+                sStr.replace_Chars(sTemp, nStart, 1);
+            }
+        }
+        else if (  mux_isdigit(cBefore)
+                && mux_isdigit(cAfter))
+        {
+            // Numeric range.
+            //
+            cBefore++;
+            sTemp->truncate(0);
+            while (cBefore < cAfter)
+            {
+                sTemp->append(cBefore);
+                cBefore++;
+            }
+            sStr.replace_Chars(sTemp, nStart, 1);
+        }
+        nStart++;
+        bSucceeded = sStr.search("-", &nPos, nStart);
+    }
+    delete sTemp;
+    return sStr.length();
+}
+
+static FUNCTION(fun_tr)
+{
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
+    mux_string *sStr = new mux_string;
+    sStr->import(fargs[0]);
+    size_t nStr = sStr->length();
+
+    if (0 == nStr)
+    {
+        // Nothing to do.
+        //
+        delete sStr;
+        return;
+    }
+
+    // Process character ranges.
+    //
+    mux_string *sFrom = new mux_string;
+    sFrom->import(fargs[1]);
+    size_t nFrom = transform_range(*sFrom);
+
+    mux_string *sTo = new mux_string;
+    sTo->import(fargs[2]);
+    size_t nTo = transform_range(*sTo);
+
+    if (nFrom != nTo)
+    {
+        safe_str("#-1 STRING LENGTHS MUST BE EQUAL", buff, bufc);
+        delete sStr;
+        delete sFrom;
+        delete sTo;
+        return;
+    }
+
+    sStr->transform(*sFrom, *sTo);
+    sStr->export_TextAnsi(buff, bufc);
+
+    delete sStr;
+    delete sFrom;
+    delete sTo;
+}
+
 // ----------------------------------------------------------------------------
 // flist: List of existing functions in alphabetical order.
 //
@@ -10193,6 +10315,7 @@ static FUN builtin_function_list[] =
     {"TEXTFILE",    fun_textfile,   MAX_ARG, 2,       2,         0, CA_PUBLIC},
     {"TIME",        fun_time,       MAX_ARG, 0,       2,         0, CA_PUBLIC},
     {"TIMEFMT",     fun_timefmt,    MAX_ARG, 1,       2,         0, CA_PUBLIC},
+    {"TR",          fun_tr,         MAX_ARG, 1,       3,         0, CA_PUBLIC},
     {"TRANSLATE",   fun_translate,  MAX_ARG, 2,       2,         0, CA_PUBLIC},
     {"TRIM",        fun_trim,       MAX_ARG, 1,       3,         0, CA_PUBLIC},
     {"TRUNC",       fun_trunc,      MAX_ARG, 1,       1,         0, CA_PUBLIC},

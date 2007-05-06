@@ -7006,7 +7006,7 @@ FUNCTION CLASSES (continued)
                              REVERSE RIGHT RJUST ROMAN RPAD SCRAMBLE SECURE
                              SPACE SPELLNUM SQUISH STRCAT STRIP STRIPACCENTS
                              STRIPANSI STRLEN STRMATCH STRMEM STRTRUNC SWITCH
-                             TRANSLATE TRIM UCSTR WORDPOS WRAP
+                             TR TRANSLATE TRIM UCSTR WORDPOS WRAP
 
   Time:                      CONVSECS CONVTIME DIGITTIME ETIMEFMT EXPTIME SECS
                              SINGLETIME STARTSECS STARTTIME TIME TIMEFMT
@@ -7088,13 +7088,13 @@ FUNCTION LIST (continued)
     STRCAT()    STRIP()     STRIPACCENTS()          STRIPANSI() STRLEN()
     STRMATCH()  STRMEM()    STRTRUNC()  SUB()       SUBEVAL()   SUBJ()
     SUCCESSES() SWITCH()    T()         TABLE()     TAN()       TEL()
-    TEXT()      TEXTFILE()  TIME()      TIMEFMT()   TRANSLATE() TRIGGER()
-    TRIM()      TRUNC()     TXLEVEL()   TYPE()      U()         UCSTR()
-    UDEFAULT()  ULOCAL()    UNPACK()    V()         VADD()      VALID()
-    VCROSS()    VDIM()      VDOT()      VERSION()   VISIBLE()   VMAG()
-    VMUL()      VSUB()      VUNIT()     WHERE()     WIDTH()     WORDPOS()
-    WORDS()     WRAP()      WRITETIME() XGET()      XOR()       ZFUN()
-    ZONE()      ZWHO()
+    TEXT()      TEXTFILE()  TIME()      TIMEFMT()   TRANSLATE() TR
+    TRIGGER()   TRIM()      TRUNC()     TXLEVEL()   TYPE()      U()
+    UCSTR()     UDEFAULT()  ULOCAL()    UNPACK()    V()         VADD()
+    VALID()     VCROSS()    VDIM()      VDOT()      VERSION()   VISIBLE()
+    VMAG()      VMUL()      VSUB()      VUNIT()     WHERE()     WIDTH()
+    WORDPOS()   WORDS()     WRAP()      WRITETIME() XGET()      XOR()
+    ZFUN()      ZONE()      ZWHO()
 
 & FUNCTIONS
 FUNCTIONS
@@ -13118,6 +13118,32 @@ TRANSPARENT
   exits, including their destinations.
 
   Related Topics:
+
+& TR()
+TR()
+
+  FUNCTION: tr(<string>, <find>, <replace>)
+
+  This function translates every character in <string> that exists in
+  <find> to the character at an identical position in <replace>. Ranges of
+  characters separated by -'s are accepted. <find> and <replace> must be the
+  same length after expansion of ranges. If a character exists more than
+  once in <find>, only the last instance will be counted. The example
+  below is the common ROT-13 algorithm for lower case strings, demonstrated
+  with every letter explicitly listed, and with the equivalent but briefer 
+  character ranges. Literal -'s can be in <find> and <replace> if they are not
+  part of valid ranges. Valid ranges are of the forms a-z, A-Z, a-Z, and 0-9.
+
+   Examples:
+      > say tr(hello,abcdefghijklmnopqrstuvwxyz,nopqrstuvwxyzabcdefghijklm)
+       You say, "uryyb"
+      > say tr(uryyb, a-z, n-za-m)
+       You say, "hello"
+      > say tr(This is an example, a-Z, n-za-mN-ZA-M)
+       You say, "Guvf vf na rknzcyr."
+
+  Related Topics: edit(), foreach(), merge(), replace().
+
 
 & TRIGGER()
 TRIGGER()
