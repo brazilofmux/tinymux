@@ -116,7 +116,7 @@ static DWORD WINAPI SlaveProc(LPVOID lpParameter)
     SLAVE_REQUEST req;
     unsigned long addr;
     struct hostent *hp;
-    DWORD iSlave = (DWORD)lpParameter;
+    DWORD iSlave = reinterpret_cast<DWORD>(lpParameter);
 
     if (NUM_SLAVE_THREADS <= iSlave) return 1;
 
@@ -374,7 +374,8 @@ void boot_slave(dbref executor, dbref caller, dbref enactor, int)
     {
         SlaveThreadInfo[iSlave].iDoing = 0;
         SlaveThreadInfo[iSlave].iError = 0;
-        CreateThread(NULL, 0, SlaveProc, (LPVOID)iSlave, 0, &SlaveThreadInfo[iSlave].hThreadId);
+        CreateThread(NULL, 0, SlaveProc, reinterpret_cast<LPVOID>(iSlave), 0,
+            &SlaveThreadInfo[iSlave].hThreadId);
         DebugTotalThreads++;
     }
     bSlaveBooted = true;
