@@ -3,7 +3,8 @@ Last Update:  January 2007
 
 Major changes that may affect performance and require softcode tweaks:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
- -- Placeholder.
+ -- Added mux_string and fixed many functions including EDIT(),
+    REVERSE(), and DELETE() (Issues 14, 52, 100, and 232).
 
 
 Feature Additions:
@@ -45,6 +46,8 @@ Bug Fixes:
  -- Fix trailing padding in CENTER() (Issue 253).
  -- Added mux_string and fixed many functions including EDIT(),
     REVERSE(), and DELETE() (14, 52, 100, and 232).
+ -- mid(abc,-1,2) now returns a, not ab. mid(abc,1,-2) now returns
+    ab, not a.  This is the documented behavior.
 
 
 Performance Enhancements:
@@ -67,3 +70,4 @@ Miscellaneous:
  -- Documented Lbufref and Regref pools in 'wizhelp @list alloc'.
  -- Documented use of a single backslash as a proper shortcut to
     @emit (Issue 219).
+ -- Removed unnecessary global pos variable from help.cpp (Issue 265).

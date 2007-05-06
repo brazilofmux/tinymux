@@ -2255,28 +2255,37 @@ static FUNCTION(fun_mid)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    // Initial checks for iPosition0 [0,LBUF_SIZE), nLength [0,LBUF_SIZE),
-    // and iPosition1 [0,LBUF_SIZE).
-    //
     int iPosition0 = mux_atol(fargs[1]);
     int nLength    = mux_atol(fargs[2]);
+
     if (nLength < 0)
     {
-        iPosition0 += nLength;
+        // The range should end at iPosition0, inclusive.
+        //
+        iPosition0 += 1 + nLength;
         nLength = -nLength;
     }
 
     if (iPosition0 < 0)
     {
+        // Start at the beginning of the string,
+        // but end at the same place the range would end
+        // if negative starting positions were valid.
+        //
+        nLength += iPosition0;
         iPosition0 = 0;
     }
-    else if (LBUF_SIZE-1 < iPosition0)
+
+    if (  nLength <= 0
+       || LBUF_SIZE <= iPosition0)
     {
-        iPosition0 = LBUF_SIZE-1;
+        // The range doesn't select any characters.
+        //
+        return;
     }
 
-    // At this point, iPosition0, nLength are reasonable numbers which may
-    // -still- not refer to valid data in the string.
+    // At this point, iPosition0 and nLength are nonnegative numbers
+    // which may -still- not refer to valid data in the string. 
     //
     mux_string *sStr = new mux_string;
     sStr->import(fargs[0]);
@@ -4292,8 +4301,8 @@ static FUNCTION(fun_secure)
 
 // fun_escape: This function prepends a '\' to the beginning of a
 // string and before any character which occurs in the set '%\[]{};,()^$'.
-// It handles ANSI by not treating the '[' character within an ANSI
-// sequence as a special character.
+// It handles ANSI by computing and preserving the color of each
+// visual character in the string.
 //
 static FUNCTION(fun_escape)
 {
@@ -4309,20 +4318,29 @@ static FUNCTION(fun_escape)
     mux_string *sStr = new mux_string;
     sStr->import(fargs[0]);
 
-    size_t nString = sStr->length();
-    char cChar = '\0';
+    size_t nLen = sStr->length();
+    char cChar;
+    ANSI_ColorState csColor;
 
-    for (size_t i = 0; i < nString; i++)
+    mux_string *sOut = new mux_string;
+    size_t iOut = 0;
+
+    for (size_t i = 0; i < nLen; i++)
     {
-        cChar = sStr->export_Char(i);
+        cChar   = sStr->export_Char(i);
+        csColor = sStr->export_Color(i);
         if (  mux_isescape(cChar)
            || 0 == i)
         {
-            safe_chr('\\', buff, bufc);
+            sOut->append('\\');
+            sOut->set_Color(iOut++, csColor);
         }
-        safe_chr(cChar, buff, bufc);
+        sOut->append(cChar);
+        sOut->set_Color(iOut++, csColor);
     }
+    sOut->export_TextAnsi(buff, bufc);
     delete sStr;
+    delete sOut;
 }
 
 /*
@@ -5875,7 +5893,8 @@ static FUNCTION(fun_merge)
 
     // Do length checks first.
     //
-    if (sStrA->length() != sStrB->length())
+    size_t nLen = sStrA->length();
+    if (nLen != sStrB->length())
     {
         safe_str("#-1 STRING LENGTHS MUST BE EQUAL", buff, bufc);
         delete sStrA;
@@ -5888,7 +5907,7 @@ static FUNCTION(fun_merge)
     //
     const char cFill = *fargs[2] ? *fargs[2] : ' ';
 
-    for (size_t i = 0; i < sStrA->length(); i++)
+    for (size_t i = 0; i < nLen; i++)
     {
         if (sStrA->export_Char(i) == cFill)
         {

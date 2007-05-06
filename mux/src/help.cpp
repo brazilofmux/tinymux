@@ -49,7 +49,6 @@ void helpindex_clean(int iHelpfile)
     mudstate.aHelpDesc[iHelpfile].ht = NULL;
 }
 
-static size_t pos;
 static int lineno;
 static int ntopics;
 static FILE *rfp;
@@ -58,7 +57,6 @@ static char Line[LBUF_SIZE];
 
 static void HelpIndex_Start(FILE *fp)
 {
-    pos = 0L;
     lineno = 0;
     ntopics = 0;
     rfp = fp;
@@ -80,7 +78,7 @@ static bool HelpIndex_Read(size_t *pPos, size_t *nTopic, char pTopic[TOPIC_NAME_
         ++lineno;
 
         nLine = strlen(Line);
-        pos += nLine;
+        *pPos += nLine;
         if (  0 < nLine
            && '\n' != Line[nLine - 1])
         {
@@ -114,13 +112,11 @@ static bool HelpIndex_Read(size_t *pPos, size_t *nTopic, char pTopic[TOPIC_NAME_
     }
     *nTopic = i;
     pTopic[i] = '\0';
-    *pPos = pos;
     return true;
 }
 
 static void HelpIndex_End(void)
 {
-    pos = 0L;
     lineno = 0;
     ntopics = 0;
     rfp = NULL;
