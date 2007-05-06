@@ -1938,7 +1938,7 @@ char *BufferCloneLen(const char *pBuffer, unsigned int nBuffer)
  * safe_copy_str, safe_copy_chr - Copy buffers, watching for overflows.
  */
 
-void safe_copy_str(const char *src, char *buff, char **bufp, int nSizeOfBuffer)
+void safe_copy_str(const char *src, char *buff, char **bufp, size_t nSizeOfBuffer)
 {
     if (src == NULL) return;
 
@@ -3832,27 +3832,41 @@ void mux_string::append(long lLong)
     append_TextPlain(mux_ltoa_t(lLong));
 }
 
+/*! \brief Extract and append a range of characters.
+ *
+ * TODO: Eventually, sStr needs to be (const mux_string &)
+ *
+ * \param sStr     mux_string from which to extract characters.
+ * \param nStart   Beginning of range to extract and apend.
+ * \param nLen     Length of range to extract and append.
+ * \return         None.
+ */
+
 void mux_string::append(mux_string *sStr, size_t nStart, size_t nLen)
 {
-    if (sStr->m_n <= nStart)
+    if (  sStr->m_n <= nStart
+       || 0 == nLen)
     {
+        // The selection range is empty.
+        //
         return;
     }
-    if (nLen > LBUF_SIZE-1)
+
+    if (sStr->m_n - nStart < nLen)
     {
-        nLen = LBUF_SIZE-1;
+        nLen = sStr->m_n - nStart;
     }
 
-    size_t i = 0; 
-    while (  i < m_n + sStr->m_n - nStart
-          && i < nLen)
+    if ((LBUF_SIZE-1)-m_n < nLen)
     {
-        m_ach[m_n+i] = sStr->m_ach[nStart+i];
-        m_acs[m_n+i] = sStr->m_acs[nStart+i];
-        i++;
+        nLen = (LBUF_SIZE-1)-m_n;
     }
-    m_n += i;
-    truncate(m_n);
+
+    memcpy(m_ach + m_n, sStr->m_ach + nStart, nLen * sizeof(m_ach[0]));
+    memcpy(m_acs + m_n, sStr->m_acs + nStart, nLen * sizeof(m_acs[0]));
+
+    m_n += nLen;
+    m_ach[m_n] = '\0';
 }
 
 void mux_string::append_TextAnsi(const char *pStr, size_t n)
@@ -3884,26 +3898,38 @@ void mux_string::append_TextPlain(const char *pStr, size_t n)
     truncate(m_n);
 }
 
+/*! \brief Delete a range of characters.
+ *
+ * \param nStart   Beginning of range to delete.
+ * \param nLen     Length of range.
+ * \return         None.
+ */
+
 void mux_string::delete_Chars(size_t nStart, size_t nLen)
 {
-    if (m_n <= nStart)
+    if (  m_n <= nStart
+       || 0 == nLen)
     {
+        // The range does not select any characters.
+        //
         return;
     }
-    if (m_n <= nStart + nLen)
+
+    size_t nEnd = nStart + nLen;
+    if (m_n <= nEnd)
     {
-        truncate(nStart);
+        // The range extends beyond the end, so we can simply truncate.
+        //
+        m_n = nStart;
+        m_ach[m_n] = '\0';
         return;
     }
-    size_t i = 0;
-    while (i < m_n)
-    {
-        m_ach[nStart+i] = m_ach[nStart+i+nLen];
-        m_acs[nStart+i] = m_acs[nStart+i+nLen];
-        i++;
-    }
+
+    size_t nMove = m_n - nEnd;
+    memmove(m_ach+nStart, m_ach+nEnd, nMove * sizeof(m_ach[0]));
+    memmove(m_acs+nStart, m_acs+nEnd, nMove * sizeof(m_acs[0]));
     m_n -= nLen;
-    truncate(m_n);
+    m_ach[m_n] = '\0';
 }
 
 void mux_string::edit(char *pFrom, char *pTo)
@@ -4158,58 +4184,84 @@ void mux_string::export_TextPlain(char *buff, char **bufc, size_t nStart, size_t
     safe_copy_str(m_ach+nStart, buff, bufc, *bufc-buff+nLen);
 }
 
-void mux_string::import(const char cIn)
+/*! \brief Imports a single normal-colored character.
+ *
+ * \param chIn     Normal character.
+ * \return         None.
+ */
+
+void mux_string::import(const char chIn)
 {
-    m_n = 0;
-    if (ESC_CHAR != cIn)
+    if (  ESC_CHAR != chIn
+       && '\0' != chIn)
     {
-        m_ach[0] = cIn;
+        m_ach[0] = chIn;
         m_acs[0] = acsRestingStates[ANSI_ENDGOAL_NORMAL];
         m_n = 1;
     }
-    truncate(m_n);
+    else
+    {
+        m_n = 0;
+    }
+    m_ach[m_n] = '\0';
 }
+
+/*! \brief Converts and Imports an INT64.
+ *
+ * \param iInt     INT64 to convert and import.
+ * \return         None.
+ */
 
 void mux_string::import(INT64 iInt)
 {
-    m_n = 0;
-    char *pStr = mux_i64toa_t(iInt);
-    m_n = strlen(pStr);
-    mux_strncpy(m_ach, pStr, m_n);
-
+    // mux_i64toa() sets the '\0'.
+    //
+    m_n = mux_i64toa(iInt, m_ach);
     for (size_t i = 0; i < m_n; i++)
     {
         m_acs[i] = acsRestingStates[ANSI_ENDGOAL_NORMAL];
     }
-    truncate(m_n);
 }
+
+/*! \brief Converts and Imports an long integer.
+ *
+ * \param lLong     long integer to convert and import.
+ * \return         None.
+ */
 
 void mux_string::import(long lLong)
 {
-    m_n = 0;
-    char *pStr = mux_ltoa_t(lLong);
-    m_n = strlen(pStr);
-    mux_strncpy(m_ach, pStr, m_n);
-
+    // mux_ltoa() sets the '\0'.
+    //
+    m_n = mux_ltoa(lLong, m_ach);
     for (size_t i = 0; i < m_n; i++)
     {
         m_acs[i] = acsRestingStates[ANSI_ENDGOAL_NORMAL];
     }
-    truncate(m_n);
 }
+
+/*! \brief Import a portion of another mux_string.
+ *
+ * TODO: Eventually, sStr needs to be (const mux_string &)
+ *
+ * \param sStr     mux_string to import.
+ * \param nStart   Where to begin importing.
+ * \return         None.
+ */
 
 void mux_string::import(mux_string *sStr, size_t nStart)
 {
-    m_n = 0;
-    size_t i = nStart; 
-    while (  i < sStr->m_n
-          && i < LBUF_SIZE-1)
+    if (sStr->m_n <= nStart)
     {
-        m_ach[m_n] = sStr->m_ach[i];
-        m_acs[m_n] = sStr->m_acs[i];
-        m_n++;
+        m_n = 0;
     }
-    truncate(m_n);
+    else
+    {
+        m_n = sStr->m_n - nStart;
+        memcpy(m_ach, sStr->m_ach + nStart, m_n*sizeof(m_ach[0]));
+        memcpy(m_acs, sStr->m_acs + nStart, m_n*sizeof(m_acs[0]));
+    }
+    m_ach[m_n] = '\0';
 }
 
 /*! \brief Import ANSI string.
@@ -4225,27 +4277,61 @@ void mux_string::import(mux_string *sStr, size_t nStart)
 void mux_string::import_TextAnsi(const char *pStr, size_t n)
 {
     m_n = 0;
+    if (NULL == pStr)
+    {
+        m_ach[m_n] = '\0';
+        return;
+    }
+
+    // TODO: This works, but it isn't exactly the way to do it. If the user
+    // gives the length, we should use that information to avoid calling
+    // strlen().  Given that we are always calling strlen(), there is no
+    // reason to have a second argument.  It needs to be one or the other.
+    // 
     size_t nStr = strlen(pStr);
     if (nStr < n)
     {
         n = nStr;
     }
-    size_t nVisual = 0;
-    mux_strncpy(m_ach, strip_ansi(pStr, &nVisual), n);
-    m_n = nVisual;
 
-    if (nVisual < nStr)
+    if (LBUF_SIZE-1 < n)
     {
-        process(pStr, n);
+        n = LBUF_SIZE-1;
     }
-    else
+
+    size_t nPos = 0;
+    ANSI_ColorState acs = acsRestingStates[ANSI_ENDGOAL_NORMAL];
+    size_t nAnsiLen = 0;
+
+    while (nPos < n)
     {
-        for (size_t i = 0; i < m_n; i++)
+        size_t nTokenLength0;
+        size_t nTokenLength1;
+        int iType = ANSI_lex(n-nPos, pStr+nPos, &nTokenLength0, &nTokenLength1);
+
+        if (iType == TOKEN_TEXT_ANSI)
         {
-            m_acs[i] = acsRestingStates[ANSI_ENDGOAL_NORMAL];
+            memcpy(m_ach + m_n, pStr + nPos, nTokenLength0);
+            for (size_t i = m_n; i < m_n+nTokenLength0 && i < LBUF_SIZE-1; i++)
+            {
+                memcpy(m_acs+i, &acs, sizeof(acs));
+            }
+
+            m_n += nTokenLength0;
+            nPos += nTokenLength0;
+
+            nAnsiLen = nTokenLength1;
         }
+        else
+        {
+            // TOKEN_ANSI
+            //
+            nAnsiLen = nTokenLength0;
+        }
+        ANSI_Parse_m(&acs, nAnsiLen, pStr+nPos);
+        nPos += nAnsiLen;
     }
-    truncate(m_n);
+    m_ach[m_n] = '\0';
 }
 
 size_t mux_string::length(void)
@@ -4318,83 +4404,23 @@ void mux_string::prepend_TextAnsi(const char *pStr, size_t n)
     delete sStore;
 }
 
-void mux_string::process(const char *pStr, size_t n)
-{
-    size_t nPos = 0, nPosV = 0;
-    ANSI_ColorState acs = acsRestingStates[ANSI_ENDGOAL_NORMAL];
-
-    while (nPos < n)
-    {
-        if (ESC_CHAR == pStr[nPos])
-        {
-            // We have an ESC_CHAR. Let's look at the next character.
-            //
-            if (pStr[nPos+1] != '[')
-            {
-                // Could be a '\0' or another non-'[' character.
-                // Move the pointer to position ourselves over it.
-                // And continue looking for an ESC_CHAR.
-                //
-                nPos++;
-                continue;
-            }
-
-            // We found the beginning of an ANSI sequence.
-            // Find the terminating character.
-            //
-            const char *pEsc = pStr + nPos;
-            const char *q = pEsc + 2;
-            while (ANSI_TokenTerminatorTable[(unsigned char)*q] == 0)
-            {
-                q++;
-            }
-            if (q[0] == '\0')
-            {
-                // There was no good terminator. Treat everything like text.
-                // Also, we are at the end of the string, so we're done looking.
-                //
-                for (size_t i = nPosV; i < (size_t)(q-pStr) && i < LBUF_SIZE-1; i++)
-                {
-                    set_Color(i, acs);
-                }
-                return;
-            }
-            else
-            {
-                // We found an ANSI sequence.
-                //
-                size_t nAnsiLen = q - pEsc + 1;
-                nPos += nAnsiLen;
-                ANSI_Parse_m(&acs, nAnsiLen, pEsc);
-            }
-        }
-        else
-        {
-            set_Color(nPosV, acs);
-            nPosV++;
-            nPos++;
-        }
-    }
-
-    for (size_t i = nPosV; i < nPos+1 && i < LBUF_SIZE; i++)
-    {
-        set_Color(i, acs);
-    }
-}
+/*! \brief Reverses the string.
+ *
+ * \return         None.
+ */
 
 void mux_string::reverse(void)
 {
-    mux_string *sTemp = new mux_string;
-
-    for (size_t i = 0; i < m_n; i++)
+    for (size_t i = 0, j = m_n-1; i < j; i++, j++)
     {
-        sTemp->m_ach[i] = m_ach[(m_n-1)-i];
-        sTemp->m_acs[i] = m_acs[(m_n-1)-i];
-    }
-    sTemp->m_n = m_n;
+        char ch = m_ach[j];
+        m_ach[j] = m_ach[i];
+        m_ach[i] = ch;
 
-    import(sTemp);
-    delete sTemp;
+        ANSI_ColorState cs = m_acs[j];
+        m_acs[j] = m_acs[i];
+        m_acs[i] = cs;
+    }
 }
 
 /*! \brief Searches text for a specified pattern.
