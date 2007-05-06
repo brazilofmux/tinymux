@@ -148,7 +148,7 @@ char *BufferCloneLen(const char *pBuffer, unsigned int nBuffer);
 bool minmatch(char *str, char *target, int min);
 char *StringCloneLen(const char *str, size_t nStr);
 char *StringClone(const char *str);
-void safe_copy_str(const char *src, char *buff, char **bufp, int max);
+void safe_copy_str(const char *src, char *buff, char **bufp, size_t nSizeOfBuffer);
 void safe_copy_str_lbuf(const char *src, char *buff, char **bufp);
 size_t safe_copy_buf(const char *src, size_t nLen, char *buff, char **bufp);
 size_t safe_fill(char *buff, char **bufc, char chFile, size_t nSpaces);
@@ -225,11 +225,21 @@ extern bool ParseFloat(PARSE_FLOAT_RESULT *pfr, const char *str, bool bStrict = 
 class mux_string
 {
 private:
+    // m_n, m_ach, and m_acs work together as follows:
+    //
+    // m_n is always between 0 and LBUF_SIZE-1 inclusively.  The first m_n
+    // characters of m_ach[] contain the non-ANSI portion of the string.
+    // In addition to a length, m_ach[] is also terminated with '\0' at
+    // m_ach[m_n].  This is intentional redudant.  Each character in m_ach[]
+    // has a corresponding color encoded in m_acs[].  The m_acs[m_n]
+    // (which corresponds to '\0') is not guaranteed to be valid.
+    //
+    // TODO: m_acs[LBUF_SIZE] can and should eventually be changed to
+    // m_acs[LBUF_SIZE-1] because the last position will never be used.
+    //
     size_t          m_n;
     char            m_ach[LBUF_SIZE];
     ANSI_ColorState m_acs[LBUF_SIZE];
-
-    void process(const char *pStr, size_t n);
 
 public:
     mux_string(void);
@@ -237,31 +247,31 @@ public:
     void append(INT64 iInt);
     void append(long lLong);
     void append(mux_string *sStr, size_t nStart = 0, size_t nLen = (LBUF_SIZE-1));
-    void append_TextAnsi(const char *pStr, size_t n = LBUF_SIZE);
-    void append_TextPlain(const char *pStr, size_t n = LBUF_SIZE);
-    void delete_Chars(size_t nStart = 0, size_t nLen = LBUF_SIZE);
+    void append_TextAnsi(const char *pStr, size_t n = (LBUF_SIZE-1));
+    void append_TextPlain(const char *pStr, size_t n = (LBUF_SIZE-1));
+    void delete_Chars(size_t nStart = 0, size_t nLen = (LBUF_SIZE-1));
     void edit(char *pFrom, char *pTo);
     char export_Char(size_t n = 0);
     ANSI_ColorState export_Color(size_t n = 0);
     void export_TextAnsi(char *buff, char **bufc, size_t nStart = 0, size_t nLen = LBUF_SIZE, size_t nBuffer = (LBUF_SIZE-1));
     void export_TextPlain(char *buff, char **bufc, size_t nStart = 0, size_t nLen = LBUF_SIZE, size_t nBuffer = (LBUF_SIZE-1));
-    void import(const char cIn);
+    void import(const char chIn);
     void import(INT64 iInt);
     void import(long lLong);
     void import(mux_string *sStr, size_t nStart = 0);
-    void import_TextAnsi(const char *pStr, size_t n = LBUF_SIZE);
+    void import_TextAnsi(const char *pStr, size_t n = (LBUF_SIZE-1));
     size_t length(void);
     void prepend(const char cChar);
     void prepend(INT64 iInt);
     void prepend(long lLong);
     void prepend(mux_string *sStr);
-    void prepend_TextAnsi(const char *pStr, size_t n = LBUF_SIZE);
+    void prepend_TextAnsi(const char *pStr, size_t n = (LBUF_SIZE-1));
     void reverse(void);
     bool search(char *pPattern, size_t *nPos = NULL, size_t nStart = 0);
     bool search(const mux_string &sPattern, size_t *nPos = NULL, size_t nStart = 0);
     void set_Char(size_t n, const char cChar);
     void set_Color(size_t n, ANSI_ColorState acsColor);
-    void transformWithTable(const unsigned char xfrmTable[256], size_t nStart = 0, size_t nLen = LBUF_SIZE);
+    void transformWithTable(const unsigned char xfrmTable[256], size_t nStart = 0, size_t nLen = (LBUF_SIZE-1));
     void truncate(size_t n);
 };
 
