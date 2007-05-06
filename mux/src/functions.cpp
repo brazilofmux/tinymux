@@ -5747,6 +5747,7 @@ static FUNCTION(fun_before)
         // Yup, return what follows.
         //
         sStr->export_TextAnsi(buff, bufc, 0, i);
+        delete sStr;
         return;
     }
     // Ran off the end without finding it.
