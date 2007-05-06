@@ -8629,8 +8629,8 @@ static FUNCTION(fun_wrap)
     // ARG 2: Width. Default: 78.
     //
     int nWidth = DEFAULT_WIDTH;
-    if (  nfargs >= 2
-       && fargs[1][0])
+    if (  2 <= nfargs
+       && '\0' != fargs[1][0])
     {
         nWidth = mux_atol(fargs[1]);
         if (  nWidth < 1
@@ -8644,8 +8644,8 @@ static FUNCTION(fun_wrap)
     // ARG 3: Justification. Default: Left.
     //
     int iJustKey = CJC_LJUST;
-    if (  nfargs >= 3
-       && fargs[2][0])
+    if (  3 <= nfargs
+       && '\0' != fargs[2][0])
     {
         char cJust = mux_toupper(fargs[2][0]);
         switch (cJust)
@@ -8668,8 +8668,8 @@ static FUNCTION(fun_wrap)
     // ARG 4: Left padding. Default: blank.
     //
     char *pLeft = NULL;
-    if (  nfargs >= 4
-       && fargs[3][0])
+    if (  4 <= nfargs
+       && '\0' != fargs[3][0])
     {
         pLeft = fargs[3];
     }
@@ -8677,8 +8677,8 @@ static FUNCTION(fun_wrap)
     // ARG 5: Right padding. Default: blank.
     //
     char *pRight = NULL;
-    if (  nfargs >= 5
-       && fargs[4][0])
+    if (  5 <= nfargs
+       && '\0' != fargs[4][0])
     {
         pRight = fargs[4];
     }
@@ -8686,8 +8686,8 @@ static FUNCTION(fun_wrap)
     // ARG 6: Hanging indent. Default: 0.
     //
     int nHanging = 0;
-    if (  nfargs >= 6
-       && fargs[5][0])
+    if (  6 <= nfargs
+       && '\0' != fargs[5][0])
     {
         nHanging = mux_atol(fargs[5]);
     }
@@ -8695,8 +8695,8 @@ static FUNCTION(fun_wrap)
     // ARG 7: Output separator. Default: line break.
     //
     char *pOSep = "\r\n";
-    if (  nfargs >= 7
-       && fargs[6][0])
+    if (  7 <= nfargs
+       && '\0' != fargs[6][0])
     {
         if (!strcmp(fargs[6], "@@"))
         {
@@ -8710,8 +8710,8 @@ static FUNCTION(fun_wrap)
 
     // ARG 8: First line width. Default: same as arg 2.
     int nFirstWidth = nWidth;
-    if (  nfargs >= 8
-       && fargs[7][0])
+    if (  8 <= nfargs
+       && '\0' != fargs[7][0])
     {
         nFirstWidth = mux_atol(fargs[7]);
         if (  nFirstWidth < 1
@@ -8722,61 +8722,56 @@ static FUNCTION(fun_wrap)
         }
     }
 
-    char *str = alloc_lbuf("fun_mywrap.str");
-    char *tstr = alloc_lbuf("fun_mywrap.str2");
-    mux_strncpy(tstr, expand_tabs(fargs[0]), LBUF_SIZE-1);
-    mux_strncpy(str,strip_ansi(tstr), LBUF_SIZE-1);
+    mux_string *sStr = new mux_string;
+    sStr->import(expand_tabs(fargs[0]));
+    size_t nStr = sStr->length();
+
+    char *pPlain = alloc_lbuf("fun_wrap.pPlain");
+    char *pcPlain = pPlain;
+
+    char *pColor = alloc_lbuf("fun_wrap.pColor");
+    char *pcColor = pColor;
+
     size_t nLength = 0;
     bool newline = false;
     char *jargs[2];
-    struct ANSI_In_Context aic;
-    struct ANSI_Out_Context aoc;
-    char *mbufc;
-    char *mbuf = mbufc = alloc_lbuf("fun_mywrap.out");
-    size_t nBufferAvailable, nSize;
-    size_t nDone;
-    size_t i = 0;
+    size_t nPos = 0;
 
-    while (str[i])
+    while (nPos < nStr)
     {
-        nLength = wraplen(str + i, i == 0 ? nFirstWidth : nWidth, newline);
-        mbufc = mbuf;
+        pcPlain = pPlain;
+        sStr->export_TextPlain(pPlain, &pcPlain, nPos);
 
-        ANSI_String_In_Init(&aic, tstr, ANSI_ENDGOAL_NORMAL);
-        ANSI_String_Skip(&aic, i, &nDone);
-        if (nDone < i || nLength <= 0)
-        {
-            break;
-        }
-        if (i > 0)
+        nLength = wraplen(pPlain, nPos == 0 ? nFirstWidth : nWidth, newline);
+
+        pcColor = pColor;
+        sStr->export_TextAnsi(pColor, &pcColor, nPos, nLength);
+
+        if (0 != nPos)
         {
             safe_str(pOSep, buff, bufc);
-            if (nHanging > 0)
+            if (0 < nHanging)
             {
                 safe_fill(buff, bufc, ' ', nHanging);
             }
         }
-        nBufferAvailable = LBUF_SIZE - (mbufc - mbuf) - 1;
-        ANSI_String_Out_Init(&aoc, mbufc, nBufferAvailable, nLength-(newline ? 2 : 0), ANSI_ENDGOAL_NORMAL);
-        ANSI_String_Copy(&aoc, &aic, nLength-(newline ? 2 : 0));
-        nSize = ANSI_String_Finalize(&aoc, &nDone);
-        mbufc += nSize;
 
-        jargs[0] = mbuf;
-        jargs[1] = mux_ltoa_t(i == 0 ? nFirstWidth : nWidth);
-        safe_str(pLeft,buff,bufc);
+        jargs[0] = pColor;
+        jargs[1] = mux_ltoa_t(nPos == 0 ? nFirstWidth : nWidth);
+        safe_str(pLeft, buff, bufc);
         centerjustcombo(iJustKey, buff, bufc, jargs, 2, true);
         safe_str(pRight, buff, bufc);
 
-        i += nLength;
-        if (str[i] == ' ' && str[i+1] != ' ')
+        nPos += nLength;
+        if (  pPlain[nLength] == ' ' 
+           && pPlain[nLength+1] != ' ')
         {
-            i++;
+            nPos++;
         }
     }
-    free_lbuf(mbuf);
-    free_lbuf(str);
-    free_lbuf(tstr);
+    free_lbuf(pColor);
+    free_lbuf(pPlain);
+    delete sStr;
 }
 
 typedef struct
