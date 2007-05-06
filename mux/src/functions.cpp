@@ -2279,7 +2279,7 @@ static FUNCTION(fun_mid)
     // -still- not refer to valid data in the string.
     //
     mux_string *sStr = new mux_string;
-    sStr->import_TextAnsi(fargs[0]);
+    sStr->import(fargs[0]);
     sStr->export_TextAnsi(buff, bufc, iPosition0, nLength);
     delete sStr;
 }
@@ -2317,7 +2317,7 @@ static FUNCTION(fun_right)
     }
 
     mux_string *sStr = new mux_string;
-    sStr->import_TextAnsi(fargs[0]);
+    sStr->import(fargs[0]);
 
     // iPosition1 on [0,LBUF_SIZE)
     //
@@ -3885,9 +3885,9 @@ static FUNCTION(fun_pos)
     size_t nPat = 0;
 
     mux_string *sPat = new mux_string;
-    sPat->import_TextAnsi(fargs[0]);
+    sPat->import(fargs[0]);
     mux_string *sStr = new mux_string;
-    sStr->import_TextAnsi(fargs[1]);
+    sStr->import(fargs[1]);
 
     bool bSucceeded = sStr->search(*sPat, &nPat);
 
@@ -3920,7 +3920,7 @@ static FUNCTION(fun_lpos)
     UNUSED_PARAMETER(ncargs);
 
     mux_string *sStr = new mux_string;
-    sStr->import_TextAnsi(fargs[0]);
+    sStr->import(fargs[0]);
 
     if (0 == sStr->length())
     {
@@ -3929,7 +3929,7 @@ static FUNCTION(fun_lpos)
     }
 
     mux_string *sPat = new mux_string;
-    sPat->import_TextAnsi(fargs[1]);
+    sPat->import(fargs[1]);
     if (0 == sPat->length())
     {
         sPat->import(' ');
@@ -4270,7 +4270,7 @@ static FUNCTION(fun_secure)
     UNUSED_PARAMETER(ncargs);
 
     mux_string *sStr = new mux_string;
-    sStr->import_TextAnsi(fargs[0]);
+    sStr->import(fargs[0]);
 
     size_t nString = sStr->length();
     char cChar = '\0';
@@ -4307,7 +4307,7 @@ static FUNCTION(fun_escape)
     UNUSED_PARAMETER(ncargs);
 
     mux_string *sStr = new mux_string;
-    sStr->import_TextAnsi(fargs[0]);
+    sStr->import(fargs[0]);
 
     size_t nString = sStr->length();
     char cChar = '\0';
@@ -4752,7 +4752,7 @@ static FUNCTION(fun_delete)
     }
 
     mux_string *sStr = new mux_string;
-    sStr->import_TextAnsi(fargs[0]);
+    sStr->import(fargs[0]);
 
     sStr->delete_Chars(nStart, nChars);
     sStr->export_TextAnsi(buff, bufc);
@@ -5279,7 +5279,7 @@ static FUNCTION(fun_lcstr)
     UNUSED_PARAMETER(ncargs);
 
     mux_string *sStr = new mux_string;
-    sStr->import_TextAnsi(fargs[0]);
+    sStr->import(fargs[0]);
     sStr->transformWithTable(mux_tolower);
     sStr->export_TextAnsi(buff, bufc);
     delete sStr;
@@ -5296,7 +5296,7 @@ static FUNCTION(fun_ucstr)
     UNUSED_PARAMETER(ncargs);
 
     mux_string *sStr = new mux_string;
-    sStr->import_TextAnsi(fargs[0]);
+    sStr->import(fargs[0]);
     sStr->transformWithTable(mux_toupper);
     sStr->export_TextAnsi(buff, bufc);
     delete sStr;
@@ -5313,7 +5313,7 @@ static FUNCTION(fun_capstr)
     UNUSED_PARAMETER(ncargs);
 
     mux_string *sStr = new mux_string;
-    sStr->import_TextAnsi(fargs[0]);
+    sStr->import(fargs[0]);
     sStr->transformWithTable(mux_toupper, 0, 1);
     sStr->export_TextAnsi(buff, bufc);
     delete sStr;
@@ -5592,7 +5592,7 @@ static FUNCTION(fun_reverse)
     UNUSED_PARAMETER(ncargs);
 
     mux_string *sStr = new mux_string;
-    sStr->import_TextAnsi(fargs[0]);
+    sStr->import(fargs[0]);
     sStr->reverse();
     sStr->export_TextAnsi(buff, bufc);
     delete sStr;
@@ -5687,7 +5687,7 @@ static FUNCTION(fun_after)
     }
 
     mux_string *sStr = new mux_string;
-    sStr->import_TextAnsi(bp);
+    sStr->import(bp);
     size_t i;
 
     // Look for the target string.
@@ -5740,7 +5740,7 @@ static FUNCTION(fun_before)
     //
     size_t i;
     mux_string *sStr = new mux_string;
-    sStr->import_TextAnsi(bp);
+    sStr->import(bp);
     bool bSucceeded = sStr->search(mp, &i);
     if (bSucceeded)
     {
@@ -5865,9 +5865,9 @@ static FUNCTION(fun_merge)
     }
 
     mux_string *sStrA = new mux_string;
-    sStrA->import_TextAnsi(fargs[0]);
+    sStrA->import(fargs[0]);
     mux_string *sStrB = new mux_string;
-    sStrB->import_TextAnsi(fargs[1]);
+    sStrB->import(fargs[1]);
 
     // Do length checks first.
     //
@@ -6862,10 +6862,17 @@ static FUNCTION(fun_edit)
     UNUSED_PARAMETER(ncargs);
 
     mux_string *sStr = new mux_string;
-    sStr->import_TextAnsi(fargs[0]);
-    sStr->edit(fargs[1], fargs[2]);
+    sStr->import(fargs[0]);
+    mux_string *sFrom = new mux_string;
+    sFrom->import(fargs[1]);
+    mux_string *sTo = new mux_string;
+    sTo->import(fargs[2]);
+
+    sStr->edit(sFrom, sTo);
     sStr->export_TextAnsi(buff, bufc);
     delete sStr;
+    delete sFrom;
+    delete sTo;
 }
 
 /* ---------------------------------------------------------------------------
@@ -8034,7 +8041,7 @@ static void centerjustcombo
     }
 
     mux_string *sStr = new mux_string;
-    sStr->import_TextAnsi(fargs[0]);
+    sStr->import(fargs[0]);
     size_t nStr = sStr->length();
 
     // If there's no need to pad, then we are done.
@@ -8053,7 +8060,7 @@ static void centerjustcombo
     if (nfargs == 3 && *fargs[2])
     {
         char *p = RemoveSetOfCharacters(fargs[2], "\r\n\t");
-        sPad->import_TextAnsi(p);
+        sPad->import(p);
     }
     nPad = sPad->length();
     if (0 == nPad)
