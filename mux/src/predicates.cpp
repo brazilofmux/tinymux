@@ -213,7 +213,7 @@ static bool pay_quota(dbref who, int cost)
 
     // Dock the quota.
     //
-    char buf[20];
+    char buf[I32BUF_SIZE];
     mux_ltoa(quota, buf);
     atr_add_raw(Owner(who), A_RQUOTA, buf);
 
@@ -283,7 +283,7 @@ void add_quota(dbref who, int payment)
 {
     dbref aowner;
     int aflags;
-    char buf[20];
+    char buf[I32BUF_SIZE];
 
     char *quota = atr_get(who, A_RQUOTA, &aowner, &aflags);
     mux_ltoa(mux_atol(quota) + payment, buf);
@@ -1006,6 +1006,7 @@ void do_listcommands(dbref player, dbref caller, dbref enactor, int eval,
             }
         }
     }
+
     if (!didit)
     {
         notify(player, "No added commands found in command table.");

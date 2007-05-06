@@ -2163,6 +2163,7 @@ static void dbconvert(void)
     pool_init(POOL_MBUF, MBUF_SIZE);
     pool_init(POOL_SBUF, SBUF_SIZE);
     pool_init(POOL_BOOL, sizeof(struct boolexp));
+    pool_init(POOL_STRING, sizeof(mux_string));
 
     cf_init();
 
@@ -3085,6 +3086,7 @@ int DCL_CDECL main(int argc, char *argv[])
     pool_init(POOL_QENTRY, sizeof(BQUE));
     pool_init(POOL_LBUFREF, sizeof(lbuf_ref));
     pool_init(POOL_REGREF, sizeof(reg_ref));
+    pool_init(POOL_STRING, sizeof(mux_string));
     tcache_init();
     pcache_init();
     cf_init();

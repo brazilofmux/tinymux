@@ -1938,7 +1938,7 @@ char *BufferCloneLen(const char *pBuffer, unsigned int nBuffer)
  * safe_copy_str, safe_copy_chr - Copy buffers, watching for overflows.
  */
 
-void safe_copy_str(const char *src, char *buff, char **bufp, int nSizeOfBuffer)
+void safe_copy_str(const char *src, char *buff, char **bufp, size_t nSizeOfBuffer)
 {
     if (src == NULL) return;
 
@@ -2121,14 +2121,14 @@ size_t mux_ltoa(long val, char *buf)
 
 char *mux_ltoa_t(long val)
 {
-    static char buff[12];
+    static char buff[I32BUF_SIZE];
     mux_ltoa(val, buff);
     return buff;
 }
 
 void safe_ltoa(long val, char *buff, char **bufc)
 {
-    static char temp[12];
+    static char temp[I32BUF_SIZE];
     size_t n = mux_ltoa(val, temp);
     safe_copy_buf(temp, n, buff, bufc);
 }
@@ -2189,14 +2189,14 @@ size_t mux_i64toa(INT64 val, char *buf)
 
 char *mux_i64toa_t(INT64 val)
 {
-    static char buff[22];
+    static char buff[I64BUF_SIZE];
     mux_i64toa(val, buff);
     return buff;
 }
 
 void safe_i64toa(INT64 val, char *buff, char **bufc)
 {
-    static char temp[22];
+    static char temp[I64BUF_SIZE];
     size_t n = mux_i64toa(val, temp);
     safe_copy_buf(temp, n, buff, bufc);
 }
@@ -3807,6 +3807,520 @@ char *linewrap_desc(char *str)
 mux_string::mux_string(void)
 {
     m_n = 0;
+    m_ach[0] = '\0';
+}
+
+/*! \brief Constructs mux_string object.
+ *
+ * This is a deep copy constructor.
+ *
+ * TODO: Eventually, sStr needs to be (const mux_string &)
+ *
+ * \param sStr     mux_string to be copied.
+ * \return         None.
+ */
+
+mux_string::mux_string(mux_string *sStr)
+{
+    import(sStr);
+}
+
+void mux_string::append(const char cChar)
+{
+    if (m_n < LBUF_SIZE-1)
+    {
+        m_ach[m_n] = cChar;
+        m_acs[m_n] = acsRestingStates[ANSI_ENDGOAL_NORMAL];
+        m_n++;
+        m_ach[m_n] = '\0';
+    }
+}
+
+void mux_string::append(INT64 iInt)
+{
+    append_TextPlain(mux_i64toa_t(iInt));
+}
+
+void mux_string::append(long lLong)
+{
+    append_TextPlain(mux_ltoa_t(lLong));
+}
+
+/*! \brief Extract and append a range of characters.
+ *
+ * TODO: Eventually, sStr needs to be (const mux_string &)
+ *
+ * \param sStr     mux_string from which to extract characters.
+ * \param nStart   Beginning of range to extract and apend.
+ * \param nLen     Length of range to extract and append.
+ * \return         None.
+ */
+
+void mux_string::append(mux_string *sStr, size_t nStart, size_t nLen)
+{
+    if (  sStr->m_n <= nStart
+       || 0 == nLen
+       || LBUF_SIZE-1 == m_n)
+    {
+        // The selection range is empty, or no buffer space is left.
+        //
+        return;
+    }
+
+    if (sStr->m_n - nStart < nLen)
+    {
+        nLen = sStr->m_n - nStart;
+    }
+
+    if ((LBUF_SIZE-1)-m_n < nLen)
+    {
+        nLen = (LBUF_SIZE-1)-m_n;
+    }
+
+    memcpy(m_ach + m_n, sStr->m_ach + nStart, nLen * sizeof(m_ach[0]));
+    memcpy(m_acs + m_n, sStr->m_acs + nStart, nLen * sizeof(m_acs[0]));
+
+    m_n += nLen;
+    m_ach[m_n] = '\0';
+}
+
+void mux_string::append(const char *pStr)
+{
+    mux_string *sNew = new mux_string;
+
+    sNew->import(pStr);
+    append(sNew);
+    delete sNew;
+}
+
+void mux_string::append(const char *pStr, size_t nLen)
+{
+    mux_string *sNew = new mux_string;
+
+    sNew->import(pStr, nLen);
+    append(sNew);
+    delete sNew;
+}
+
+void mux_string::append_TextPlain(const char *pStr)
+{
+    if (  '\0' == *pStr
+       || LBUF_SIZE-1 <= m_n)
+    {
+        // The selection range is empty, or no buffer space is left.
+        //
+        return;
+    }
+
+    size_t nLen = strlen(pStr);
+
+    if ((LBUF_SIZE-1)-m_n < nLen)
+    {
+        nLen = (LBUF_SIZE-1)-m_n;
+    }
+
+    memcpy(m_ach + m_n, pStr, nLen * sizeof(m_ach[0]));
+
+    for (size_t i = 0; i < nLen; i++)
+    {
+        m_acs[m_n+i] = acsRestingStates[ANSI_ENDGOAL_NORMAL];
+    }
+
+    m_n += nLen;
+    m_ach[m_n] = '\0';
+}
+
+void mux_string::append_TextPlain(const char *pStr, size_t nLen)
+{
+    if (  '\0' == *pStr
+       || 0 == nLen
+       || LBUF_SIZE-1 == m_n)
+    {
+        // The selection range is empty, or no buffer space is left.
+        //
+        return;
+    }
+
+    if ((LBUF_SIZE-1)-m_n < nLen)
+    {
+        nLen = (LBUF_SIZE-1)-m_n;
+    }
+
+    memcpy(m_ach + m_n, pStr, nLen * sizeof(m_ach[0]));
+
+    for (size_t i = 0; i < nLen; i++)
+    {
+        m_acs[m_n+i] = acsRestingStates[ANSI_ENDGOAL_NORMAL];
+    }
+
+    m_n += nLen;
+    m_ach[m_n] = '\0';
+}
+
+/*! \brief Delete a range of characters.
+ *
+ * \param nStart   Beginning of range to delete.
+ * \param nLen     Length of range.
+ * \return         None.
+ */
+
+void mux_string::delete_Chars(size_t nStart, size_t nLen)
+{
+    if (  m_n <= nStart
+       || 0 == nLen)
+    {
+        // The range does not select any characters.
+        //
+        return;
+    }
+
+    size_t nEnd = nStart + nLen;
+    if (m_n <= nEnd)
+    {
+        // The range extends beyond the end, so we can simply truncate.
+        //
+        m_n = nStart;
+        m_ach[m_n] = '\0';
+        return;
+    }
+
+    size_t nMove = m_n - nEnd;
+    memmove(m_ach+nStart, m_ach+nEnd, nMove * sizeof(m_ach[0]));
+    memmove(m_acs+nStart, m_acs+nEnd, nMove * sizeof(m_acs[0]));
+    m_n -= nLen;
+    m_ach[m_n] = '\0';
+}
+
+void mux_string::edit(mux_string *sFrom, mux_string *sTo)
+{
+    // Do the substitution.  Idea for prefix/suffix from R'nice@TinyTIM.
+    //
+    const char chFrom0 = sFrom->export_Char(0);
+    size_t nFrom = sFrom->length();
+    if (  1 == nFrom
+       && '^' == chFrom0)
+    {
+        // Prepend 'to' to string.
+        //
+        prepend(sTo);
+    }
+    else if (  1 == nFrom
+            && '$' == chFrom0)
+    {
+        // Append 'to' to string.
+        //
+        append(sTo);
+    }
+    else
+    {
+        const char chFrom1 = sFrom->export_Char(1);
+        // Replace all occurances of 'from' with 'to'. Handle the special
+        // cases of from = \$ and \^.
+        //
+        if (  (  '\\' == chFrom0
+              || '%' == chFrom0)
+           && (  '$' == chFrom1
+              || '^' == chFrom1)
+           && 2 == nFrom)
+        {
+            sFrom->delete_Chars(0,1);
+            nFrom--;
+        }
+
+        size_t nStart = 0;
+        size_t nFound = 0;
+        size_t nTo = sTo->length();
+        bool bSucceeded = search(*sFrom, &nFound);
+        while (bSucceeded)
+        {
+            nStart += nFound;
+            replace_Chars(sTo, nStart, nFrom);
+            nStart += nTo;
+
+            if (nStart < LBUF_SIZE-1)
+            {
+                bSucceeded = search(*sFrom, &nFound, nStart);
+            }
+            else
+            {
+                bSucceeded = false;
+            }
+        }
+    }
+}
+
+char mux_string::export_Char(size_t n)
+{
+    if (m_n <= n)
+    {
+        return '\0';
+    }
+    return m_ach[n];
+}
+
+ANSI_ColorState mux_string::export_Color(size_t n)
+{
+    if (m_n <= n)
+    {
+        return acsRestingStates[ANSI_ENDGOAL_NORMAL];
+    }
+    return m_acs[n];
+}
+
+/*! \brief Generates ANSI string from internal form.
+ *
+ * \param buff     Pointer to beginning of lbuf.
+ * \param bufc     Pointer to current position.
+ * \param nStart   String position to begin copying from. Defaults to 0.
+ * \param nLen     Number of chars to copy. Defaults to LBUF_SIZE.
+ * \param nBuffer  Size of buffer we're outputting into. Defaults to LBUF_SIZE-1.
+ * \return         None.
+ */
+
+void mux_string::export_TextAnsi(char *buff, char **bufc, size_t nStart, size_t nLen, size_t nBuffer)
+{
+    // Sanity check our arguments and find out how much room we have.
+    // We assume we're outputting into an LBUF unless given a smaller nBuffer.
+    //
+    if (  !buff
+       || !*bufc)
+    {
+        return;
+    }
+    size_t nAvail = buff + nBuffer - *bufc;
+    if (  nAvail < 1
+       || nBuffer < nAvail)
+    {
+        return;
+    }
+    if (  m_n <= nStart
+       || 0 == nLen)
+    {
+        return;
+    }
+    size_t  nLeft   = (m_n - nStart);
+    if (nLeft < nLen)
+    {
+        nLen = nLeft;
+    }
+    if (nAvail < nLen)
+    {
+        nLen = nAvail;
+    }
+
+    // nStart is the position in the source string where we will start copying,
+    //  and has a value in the range [0, m_n).
+    // nAvail is the room left in the destination buffer,
+    //  and has a value in the range (0, nBuffer).
+    // nLeft is the length of the portion of the source string we'd like to copy,
+    //  and has a value in the range (0, m_n].
+    // nLen is the length of the portion of the source string we will try to copy,
+    //  and has a value in the ranges (0, nLeft] and (0, nAvail].
+    //
+    size_t nPos = nStart;
+    bool bPlentyOfRoom = nAvail > (nLen + 1) * (ANSI_MAXIMUM_BINARY_TRANSITION_LENGTH + 1);
+    ANSI_ColorState acs_normal = acsRestingStates[ANSI_ENDGOAL_NORMAL];
+    size_t nCopied = 0;
+
+    if (bPlentyOfRoom)
+    {
+        ANSI_ColorState acs_prev = acs_normal;
+        while (nPos < nStart + nLen)
+        {
+            if (0 != memcmp(&acs_prev, &m_acs[nPos], sizeof(ANSI_ColorState)))
+            {
+                safe_copy_str(ANSI_TransitionColorBinary(&acs_prev, &(m_acs[nPos]),
+                                                &nCopied, ANSI_ENDGOAL_NORMAL), buff, bufc, nBuffer);
+                acs_prev = m_acs[nPos];
+            }
+            safe_copy_chr(m_ach[nPos], buff, bufc, nBuffer);
+            nPos++;
+        }
+        if (0 != memcmp(&acs_prev, &acs_normal, sizeof(ANSI_ColorState)))
+        {
+            safe_copy_str(ANSI_TransitionColorBinary(&acs_prev, &acs_normal, &nCopied, ANSI_ENDGOAL_NORMAL), buff, bufc, nBuffer);
+        }
+        **bufc = '\0';
+        return;
+    }
+
+    // There's a chance we might hit the end of the buffer. Do it the hard way.
+    size_t nNeededBefore = 0, nNeededAfter = 0;
+    ANSI_ColorState acs_prev = acs_normal;
+    while (nPos < nStart + nLen)
+    {
+        if (0 != memcmp(&acs_prev, &m_acs[nPos], sizeof(ANSI_ColorState)))
+        {
+            if (0 != memcmp(&acs_normal, &m_acs[nPos], sizeof(ANSI_ColorState)))
+            {
+                nNeededBefore = nNeededAfter;
+                ANSI_TransitionColorBinary(&(m_acs[nPos]), &acs_normal, &nCopied, ANSI_ENDGOAL_NORMAL);
+                nNeededAfter = nCopied;
+                char *pTransition = ANSI_TransitionColorBinary(&acs_prev, &(m_acs[nPos]), &nCopied, ANSI_ENDGOAL_NORMAL);
+                if (nBuffer < (*bufc-buff) + nCopied + 1 + nNeededAfter)
+                {
+                    // There isn't enough room to add the color sequence,
+                    // its character, and still get back to normal. Stop here.
+                    //
+                    nNeededAfter = nNeededBefore;
+                    break;
+                }
+                safe_copy_str(pTransition, buff, bufc, nBuffer);
+            }
+            else
+            {
+                safe_copy_str(ANSI_TransitionColorBinary(&acs_prev, &(m_acs[nPos]),
+                                            &nCopied, ANSI_ENDGOAL_NORMAL), buff, bufc, nBuffer);
+                nNeededAfter = 0;
+            }
+            acs_prev = m_acs[nPos];
+        }
+        if (nBuffer < (*bufc-buff) + 1 + nNeededAfter)
+        {
+            break;
+        }
+        safe_copy_chr(m_ach[nPos], buff, bufc, nBuffer);
+        nPos++;
+    }
+    if (nNeededAfter)
+    {
+       safe_copy_str(ANSI_TransitionColorBinary(&acs_prev, &acs_normal, &nCopied, ANSI_ENDGOAL_NORMAL), buff, bufc, nBuffer);
+    }
+    **bufc = '\0';
+    return;
+}
+
+/*! \brief Outputs ANSI-stripped string from internal form.
+ *
+ * \param buff     Pointer to beginning of lbuf.
+ * \param bufc     Pointer to current position.
+ * \param nStart   String position to begin copying from. Defaults to 0.
+ * \param nLen     Number of chars to copy. Defaults to LBUF_SIZE.
+ * \param nBuffer  Size of buffer we're outputting into. Defaults to LBUF_SIZE-1.
+ * \return         None.
+ */
+
+void mux_string::export_TextPlain(char *buff, char **bufc, size_t nStart, size_t nLen, size_t nBuffer)
+{
+    // Sanity check our arguments and find out how much room we have.
+    // We assume we're outputting into an LBUF unless given a smaller nBuffer.
+    //
+    if (  !buff
+       || !*bufc)
+    {
+        return;
+    }
+    size_t nAvail = buff + nBuffer - *bufc;
+    if (  nAvail < 1
+       || nBuffer < nAvail)
+    {
+        return;
+    }
+    if (  m_n <= nStart
+       || 0 == nLen)
+    {
+        return;
+    }
+    size_t  nLeft   = (m_n - nStart);
+    if (nLeft < nLen)
+    {
+        nLen = nLeft;
+    }
+    if (nAvail < nLen)
+    {
+        nLen = nAvail;
+    }
+
+    // nStart is the position in the source string where we will start copying,
+    //  and has a value in the range [0, m_n).
+    // nAvail is the room left in the destination buffer,
+    //  and has a value in the range (0, nBuffer).
+    // nLeft is the length of the portion of the source string we'd like to copy,
+    //  and has a value in the range (0, m_n].
+    // nLen is the length of the portion of the source string we will copy,
+    //  and has a value in the ranges (0, nLeft] and (0, nAvail].
+    //
+    safe_copy_str(m_ach+nStart, buff, bufc, *bufc-buff+nLen);
+}
+
+/*! \brief Imports a single normal-colored character.
+ *
+ * \param chIn     Normal character.
+ * \return         None.
+ */
+
+void mux_string::import(const char chIn)
+{
+    if (  ESC_CHAR != chIn
+       && '\0' != chIn)
+    {
+        m_ach[0] = chIn;
+        m_acs[0] = acsRestingStates[ANSI_ENDGOAL_NORMAL];
+        m_n = 1;
+    }
+    else
+    {
+        m_n = 0;
+    }
+    m_ach[m_n] = '\0';
+}
+
+/*! \brief Converts and Imports an INT64.
+ *
+ * \param iInt     INT64 to convert and import.
+ * \return         None.
+ */
+
+void mux_string::import(INT64 iInt)
+{
+    // mux_i64toa() sets the '\0'.
+    //
+    m_n = mux_i64toa(iInt, m_ach);
+    for (size_t i = 0; i < m_n; i++)
+    {
+        m_acs[i] = acsRestingStates[ANSI_ENDGOAL_NORMAL];
+    }
+}
+
+/*! \brief Converts and Imports an long integer.
+ *
+ * \param lLong     long integer to convert and import.
+ * \return         None.
+ */
+
+void mux_string::import(long lLong)
+{
+    // mux_ltoa() sets the '\0'.
+    //
+    m_n = mux_ltoa(lLong, m_ach);
+    for (size_t i = 0; i < m_n; i++)
+    {
+        m_acs[i] = acsRestingStates[ANSI_ENDGOAL_NORMAL];
+    }
+}
+
+/*! \brief Import a portion of another mux_string.
+ *
+ * TODO: Eventually, sStr needs to be (const mux_string &)
+ *
+ * \param sStr     mux_string to import.
+ * \param nStart   Where to begin importing.
+ * \return         None.
+ */
+
+void mux_string::import(mux_string *sStr, size_t nStart)
+{
+    if (sStr->m_n <= nStart)
+    {
+        m_n = 0;
+    }
+    else
+    {
+        m_n = sStr->m_n - nStart;
+        memcpy(m_ach, sStr->m_ach + nStart, m_n*sizeof(m_ach[0]));
+        memcpy(m_acs, sStr->m_acs + nStart, m_n*sizeof(m_acs[0]));
+    }
+    m_ach[m_n] = '\0';
 }
 
 /*! \brief Import ANSI string.
@@ -3814,67 +4328,418 @@ mux_string::mux_string(void)
  * Parses the given ANSI string into a form which can be more-easily
  * navigated.
  *
- * \param n        Length of string, str.
  * \param str      ANSI-color encoded string to import.
  * \return         None.
  */
 
-void mux_string::import(size_t n, const char *str)
+void mux_string::import(const char *pStr)
 {
     m_n = 0;
-
-    while (n)
+    if (  NULL == pStr
+       || '\0' == *pStr)
     {
-        ANSI_ColorState acs = acsRestingStates[ANSI_ENDGOAL_NORMAL];
-        size_t nToken0;
-        size_t nToken1;
-        int iType = ANSI_lex(n, str, &nToken0, &nToken1);
+        m_ach[m_n] = '\0';
+        return;
+    }
+
+    size_t nLen = strlen(pStr);
+    import(pStr, nLen);
+}
+
+/*! \brief Import ANSI string.
+ *
+ * Parses the given ANSI string into a form which can be more-easily
+ * navigated.
+ *
+ * \param str      ANSI-color encoded string to import.
+ * \param nLen     Length of portion of string, str, to import.
+ * \return         None.
+ */
+
+void mux_string::import(const char *pStr, size_t nLen)
+{
+    m_n = 0;
+    if (  NULL == pStr
+       || '\0' == *pStr
+       || 0 == nLen)
+    {
+        m_ach[m_n] = '\0';
+        return;
+    }
+
+    if (LBUF_SIZE-1 < nLen)
+    {
+        nLen = LBUF_SIZE-1;
+    }
+
+    size_t nPos = 0;
+    ANSI_ColorState acs = acsRestingStates[ANSI_ENDGOAL_NORMAL];
+    size_t nAnsiLen = 0;
+
+    while (nPos < nLen)
+    {
+        size_t nTokenLength0;
+        size_t nTokenLength1;
+        int iType = ANSI_lex(nLen - nPos, pStr + nPos,
+                             &nTokenLength0, &nTokenLength1);
 
         if (iType == TOKEN_TEXT_ANSI)
         {
-            // Process TEXT
+            // We always have room for the token since nLen (the total
+            // amount of input to parse) is limited to LBUF_SIZE-1 and we
+            // started this import with m_n = 0.
             //
-            size_t nTextToLoad = nToken0;
-            if (sizeof(m_ach) - m_n - 1 < nTextToLoad)
+            memcpy(m_ach + m_n, pStr + nPos, nTokenLength0 * sizeof(m_ach[0]));
+            for (size_t i = m_n; i < m_n + nTokenLength0; i++)
             {
-                nTextToLoad = sizeof(m_ach) - 1;
+                m_acs[i] = acs;
             }
 
-            // Copy text and replicate corresponding color state.
-            //
-            memcpy(m_ach, str, nTextToLoad);
-            for (size_t i = 0; i < nTextToLoad; i++)
-            {
-                m_acs[m_n+i] = acs;
-            }
+            m_n += nTokenLength0;
+            nPos += nTokenLength0;
 
-            m_n += nTextToLoad;
-            str += nToken0;
-            n   -= nToken0;
-
-            nToken0 = nToken1;
+            nAnsiLen = nTokenLength1;
         }
-
-        if (nToken0)
+        else
         {
-            // Process ANSI
+            // TOKEN_ANSI
             //
-            ANSI_Parse_m(&acs, nToken0, str);
-            str += nToken0;
-            n   -= nToken0;
+            nAnsiLen = nTokenLength0;
         }
+        ANSI_Parse_m(&acs, nAnsiLen, pStr+nPos);
+        nPos += nAnsiLen;
     }
     m_ach[m_n] = '\0';
 }
 
-/*! \brief Generates ANSI string from internal form.
+size_t mux_string::length(void)
+{
+    return m_n;
+}
+
+void mux_string::prepend(char cChar)
+{
+    mux_string *sStore = new mux_string(this);
+
+    import(cChar);
+    append(sStore);
+    delete sStore;
+}
+
+void mux_string::prepend(long lLong)
+{
+    mux_string *sStore = new mux_string(this);
+
+    import(lLong);
+    append(sStore);
+    delete sStore;
+}
+
+void mux_string::prepend(INT64 iInt)
+{
+    mux_string *sStore = new mux_string(this);
+
+    import(iInt);
+    append(sStore);
+    delete sStore;
+}
+
+void mux_string::prepend(mux_string *sStr)
+{
+    mux_string *sStore = new mux_string(this);
+
+    import(sStr);
+    append(sStore);
+    delete sStore;
+}
+
+void mux_string::prepend(const char *pStr)
+{
+    mux_string *sStore = new mux_string(this);
+
+    import(pStr);
+    append(sStore);
+    delete sStore;
+}
+
+void mux_string::prepend(const char *pStr, size_t n)
+{
+    mux_string *sStore = new mux_string(this);
+
+    import(pStr, n);
+    append(sStore);
+    delete sStore;
+}
+
+void mux_string::replace_Chars(mux_string *sTo, size_t nStart, size_t nLen)
+{
+    size_t nTo = sTo->length();
+    size_t nMove = 0;
+    size_t nCopy = nTo;
+    if (nLen != nTo)
+    {
+        nMove = m_n-(nStart+nLen);
+        if (LBUF_SIZE-1 < m_n + nTo - nLen)
+        {
+            if (LBUF_SIZE-1 < nStart + nTo)
+            {
+                nCopy = (LBUF_SIZE-1)-nStart;
+                nMove = 0;
+            }
+            else
+            {
+                nMove = (LBUF_SIZE-1)-(nStart+nTo);
+            }
+        }
+        if (nMove)
+        {
+            memmove(m_ach+nStart+nTo, m_ach+nStart + nLen, nMove * sizeof(m_ach[0]));
+            memmove(m_acs+nStart+nTo, m_acs+nStart + nLen, nMove * sizeof(m_acs[0]));
+        }
+        m_n = nStart+nCopy+nMove;
+    }
+    memcpy(m_ach+nStart, sTo->m_ach, nCopy * sizeof(m_ach[0]));
+    memcpy(m_acs+nStart, sTo->m_acs, nCopy * sizeof(m_acs[0]));
+    m_ach[m_n] = '\0';
+}
+
+/*! \brief Reverses the string.
  *
- * \param buff     Pointer to beginning of lbuf.
- * \param bufc     Pointer to current position.
  * \return         None.
  */
 
-void mux_string::copy(char *buff, char **bufc)
+void mux_string::reverse(void)
 {
+    for (size_t i = 0, j = m_n-1; i < j; i++, j--)
+    {
+        char ch = m_ach[j];
+        m_ach[j] = m_ach[i];
+        m_ach[i] = ch;
+
+        ANSI_ColorState cs = m_acs[j];
+        m_acs[j] = m_acs[i];
+        m_acs[i] = cs;
+    }
 }
 
+/*! \brief Searches text for a specified pattern.
+ *
+ * \param pPattern Pointer to pattern to search for.
+ * \param nPos     Pointer to value of position in string where pattern is found.
+ * \param nStart   Position in string to begin looking at. Defaults to 0.
+ * \return         True if found, false if not.
+ */
+
+bool mux_string::search(char *pPattern, size_t *nPos, size_t nStart)
+{
+    // Strip ANSI from pattern.
+    //
+    size_t nPat = 0;
+    char *pPatBuf = strip_ansi(pPattern, &nPat);
+    char *pTarget = m_ach + nStart;
+
+    size_t i = 0;
+    bool bSucceeded = false;
+    if (nPat == 1)
+    {
+        // We can optimize the single-character case.
+        //
+        char *p = strchr(pTarget, pPatBuf[0]);
+        if (p)
+        {
+            i = p - pTarget;
+            bSucceeded = true;
+        }
+    }
+    else if (nPat > 1)
+    {
+        // We have a multi-byte pattern.
+        //
+        bSucceeded = BMH_StringSearch(&i, nPat, pPatBuf, m_n - nStart, pTarget);
+    }
+
+    if (nPos)
+    {
+        *nPos = i;
+    }
+    return bSucceeded;
+}
+
+/*! \brief Searches text for a specified pattern.
+ *
+ * \param sPattern Reference to string to search for.
+ * \param nPos     Pointer to value of position in string where pattern is found.
+ * \param nStart   Position in string to begin looking at. Defaults to 0.
+ * \return         True if found, false if not.
+ */
+
+bool mux_string::search(const mux_string &sPattern, size_t *nPos, size_t nStart)
+{
+    // Strip ANSI from pattern.
+    //
+    char *pTarget = m_ach + nStart;
+
+    size_t i = 0;
+    bool bSucceeded = false;
+    if (1 == sPattern.m_n)
+    {
+        // We can optimize the single-character case.
+        //
+        char *p = strchr(pTarget, sPattern.m_ach[0]);
+        if (p)
+        {
+            i = p - pTarget;
+            bSucceeded = true;
+        }
+    }
+    else
+    {
+        // We have a multi-byte pattern.
+        //
+        bSucceeded = BMH_StringSearch(&i, sPattern.m_n, sPattern.m_ach, m_n - nStart, pTarget);
+    }
+
+    if (nPos)
+    {
+        *nPos = i;
+    }
+    return bSucceeded;
+}
+
+void mux_string::set_Char(size_t n, const char cChar)
+{
+    if (m_n <= n)
+    {
+        return;
+    }
+    m_ach[n] = cChar;
+}
+
+void mux_string::set_Color(size_t n, ANSI_ColorState acsColor)
+{
+    if (m_n <= n)
+    {
+        return;
+    }
+    m_acs[n] = acsColor;
+}
+
+/*! \brief Removes a specified set of characters from string.
+ *
+ * \param pStripSet Pointer to string of characters to remove.
+ * \param nStart    Position in string to begin checking. Defaults to 0.
+ * \param nLen      Number of characters in string to check. Defaults to LBUF_SIZE-1.
+ * \return          None.
+ */
+
+void mux_string::strip(const char *pStripSet, size_t nStart, size_t nLen)
+{
+    static unsigned char strip_table[UCHAR_MAX+1];
+
+    if (  NULL == pStripSet
+       || '\0' == pStripSet[0]
+       || m_n <= nStart
+       || 0 == nLen)
+    {
+        // Nothing to do.
+        //
+        return;
+    }
+
+    if (m_n-nStart < nLen)
+    {
+        nLen = m_n-nStart;
+    }
+
+    // Load set of characters to strip.
+    //
+    memset(strip_table, 0, sizeof(strip_table));
+    while (*pStripSet)
+    {
+        strip_table[(unsigned char)*pStripSet] = 1;
+        pStripSet++;
+    }
+    stripWithTable(strip_table, nStart, nLen);
+}
+
+void mux_string::stripWithTable(const unsigned char strip_table[UCHAR_MAX+1], size_t nStart, size_t nLen)
+{
+    if (  m_n <= nStart
+       || 0 == nLen)
+    {
+        // Nothing to do.
+        //
+        return;
+    }
+
+    if (m_n-nStart < nLen)
+    {
+        nLen = m_n-nStart;
+    }
+
+    bool bInStrip = false;
+    size_t nStripStart = nStart;
+    for (size_t i = nStart; i < nStart + nLen; i++)
+    {
+        if (  !bInStrip
+           && 0 != strip_table[(unsigned char)m_ach[i]])
+        {
+            bInStrip = true;
+            nStripStart = i;
+        }
+        else if (  bInStrip
+                && 0 != strip_table[(unsigned char)m_ach[i]])
+        {
+            // We've hit the end of a string to be stripped.
+            //
+            size_t nStrip = i - nStripStart;
+            delete_Chars(nStripStart, nStrip);
+            i -= nStrip;
+            bInStrip = false;
+        }
+    }
+
+    if (bInStrip)
+    {
+        if (m_n == nStart+nLen)
+        {
+            // We found chars to strip at the end of the string.
+            // We can just truncate.
+            //
+            m_ach[nStripStart] = '\0';
+            m_n = nStripStart;
+        }
+        else
+        {
+            size_t nStrip = nStart + nLen - nStripStart;
+            delete_Chars(nStripStart, nStrip);
+        }
+    }
+}
+
+void mux_string::transformWithTable(const unsigned char xfrmTable[256], size_t nStart, size_t nLen)
+{
+    if (m_n <= nStart)
+    {
+        return;
+    }
+    else if (m_n - nStart < nLen)
+    {
+        nLen = m_n - nStart;
+    }
+
+    for (size_t i = nStart; i < nStart + nLen; i++)
+    {
+        m_ach[i] = xfrmTable[(unsigned char)m_ach[i]];
+    }
+}
+
+void mux_string::truncate(size_t nLen)
+{
+    if (m_n <= nLen)
+    {
+        return;
+    }
+    m_n = nLen;
+    m_ach[m_n] = '\0';
+}

@@ -143,6 +143,33 @@ UINT32 CRC32_ProcessInteger2(UINT32 nInteger1, UINT32 nInteger2)
 #define DO8(buf,i)  DO4(buf,i); DO4(buf,i+4);
 #define DO16(buf)   DO8(buf,0); DO8(buf,8);
 
+/*! \brief Calculate hash from string of given length.
+ *
+ * HASH_ProcesBuffer() uses a combination of CRC-32 and Adler-32.  For strings
+ * up to 16 bytes long, it uses CRC-32 to preserve most of the string's
+ * information.  For medium-sized strings, it switches to Adler-32 which is
+ * much faster than CRC-32 for strings that size but does not preserve as
+ * much information as CRC-32.  Medium-sized strings have more information
+ * than small strings anyway, so losing a little is not an issue.  Adler-32
+ * will eventually overflow, so CRC-32 is again used to squeeze the sums down
+ * without performing the very costly division/modulus normally part of
+ * Adler-32.
+ *
+ * This outperforms Adler-32 for small, medium, and long strings.  It also
+ * outperforms all other tested hashes for medium and long strings.  For short
+ * strings, it is still fast, but not as fast as some quick-and-dirty hashes.
+ * The tradeoff is that the time spent gleaning information from small strings
+ * pays for itself with fewer probes into any hash table.
+ *
+ * The cost for shorter strings is somewhat compensated by using
+ * CRC32_ProcessInteger() and CRC32_ProcessInteger2() instead.
+ *
+ * \param ulHash       Hash previously returned or zero (0) if first call.
+ * \param arg_pBuffer  String to be hashed.
+ * \param nBuffer      Size (in bytes) of the above buffer.
+ * \return             Resulting hash value.
+ */
+
 UINT32 HASH_ProcessBuffer
 (
     UINT32       ulHash,
@@ -272,6 +299,16 @@ UINT32 HASH_ProcessBuffer
     ulHash  = CRC32_Table[(UINT8)ulHash] ^ (ulHash >> 8);
     ulHash  = CRC32_Table[(UINT8)ulHash] ^ (ulHash >> 8);
     return ~ulHash;
+}
+
+UINT32 munge_hash(const char *pBuffer)
+{
+    UINT32 h = 0;
+    while (*pBuffer)
+    {
+        h ^= (h << 5) + (h >> 2) + CRC32_Table[(unsigned char)*pBuffer++];
+    }
+    return h;
 }
 
 #define NUMBER_OF_PRIMES 177
@@ -2685,7 +2722,7 @@ void CHashTable::GetStats
 CLogFile Log;
 void CLogFile::WriteInteger(int iNumber)
 {
-    char aTempBuffer[20];
+    char aTempBuffer[I32BUF_SIZE];
     size_t nTempBuffer = mux_ltoa(iNumber, aTempBuffer);
     WriteBuffer(nTempBuffer, aTempBuffer);
 }

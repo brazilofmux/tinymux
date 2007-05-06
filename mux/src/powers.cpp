@@ -472,6 +472,6 @@ void decompile_powers(dbref player, dbref thing, char *thingname)
 
         // We made it this far, report this power.
         //
-        notify(player, tprintf("@power %s=%s", strip_ansi(thingname), fp->powername));
+        notify(player, tprintf("@power %s=%s", thingname, fp->powername));
     }
 }

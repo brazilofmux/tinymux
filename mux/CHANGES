@@ -3,46 +3,60 @@ Last Update:  January 2007
 
 Major changes that may affect performance and require softcode tweaks:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
- -- Placeholder.
+ -- Added mux_string and fixed many functions including EDIT(),
+    REVERSE(), and DELETE() (Issues 14, 52, 100, and 232).
+    Thanks Jake and Alierak.
 
 
 Feature Additions:
 ~~~~~~~~~~~~~~~~~
  -- Support optional action list with @break.  Add corresponding
     @assert command. (Issue 36).
- -- Help files support PennMUSH-style multiple topics for each help entry;
-    consecutive &FOO lines refer to the same content (Issue 238).
- -- Add lpad(), cpad(), and rpad() functions to duplicate previous
-    non-truncating ljust(), center(), and rjust functionality (Issue 13).
- -- Add /delete switch to @function and allow removal of user-defined
-    functions (Issue 250).
- -- Added fifth, sort-type argument to setinter(), setunion(), and
-    setdiff() (Issue 3).
+ -- Help files support PennMUSH-style multiple topics for each help
+    entry; consecutive &FOO lines refer to the same content
+    (Issue 238).  Thanks Alierak.
+ -- Added LPAD(), CPAD(), and RPAD() functions to duplicate previous
+    non-truncating LJUST(), CENTER(), and RJUST() functionality
+    (Issue 13).  Thanks Jake.
+ -- Added /delete switch to @function and allow removal of user-defined
+    functions (Issue 250).  Thanks Jake.
+ -- Added fifth, sort-type argument to SETINTER(), SETUNION(), and
+    SETDIFF() (Issue 3).
+ -- Added @comjoin, @comleave, @comon, and @comoff for use with channel
+    objects.  Each evaluates to a message shown to the channel member
+    at the corresponding event (Issue 9).
 
 
 Bug Fixes:
 ~~~~~~~~~
  -- INFO should show 'Patches' or 'INFO 1', but not both (Issue 236).
  -- @dolist and @trig were not passing TRACE bit through (Issue 237).
- -- Using \ as a shortcut to @emit no longer causes the beginning of the
-    message to be escaped (Issue 219).
- -- @verb/no_name used unterminated verb_sw table (Issued 243).
+ -- Using \ as a shortcut to @emit no longer causes the beginning of
+    the message to be escaped (Issue 219).  Thanks Alierak.
+ -- @verb/no_name used unterminated verb_sw table (Issued 243).  Thanks
+    Jake.
  -- Guest objects left DARK through announcement code (Issue 244).
- -- @wall evaluated a speechmod before processing the message (Issue 16).
- -- @wall's switches did not interact properly (Issue 30).
+ -- @wall evaluated a speechmod before processing the message
+    (Issue 16).  Thanks Jake.
+ -- @wall's switches did not interact properly (Issue 30).  Thanks
+    Jake.
  -- Corrected error messages for failed guest logins (Issue 246).
  -- @function did not strip ansi from or properly truncate user-defined
-    function names. (Issue 249).
+    function names. (Issue 249).  Thanks Jake.
  -- Fix typo in do_say() which left a bit-wise instead of a logical
     AND operation (Issue 245).
+ -- Fix SORT(2 100) --> '100 2' bug introduced in 2.7.0.1 (Issue 251).
+ -- Fix trailing padding in CENTER() (Issue 253).
+ -- mid(abc,-1,2) now returns a, not ab. mid(abc,1,-2) now returns
+    ab, not a.  This is the documented behavior.
 
 
 Performance Enhancements:
 ~~~~~~~~~~~~~~~~~~~~~~~~
  -- Help entries use less memory (specific improvements described in
-    Issue 238 comments).
- -- munge() translates results through a hash table instead of
-    repeated linear searching (Issue 247).
+    Issue 238 comments).  Thanks Alierak.
+ -- MUNGE() translates results through a hash table instead of
+    repeated linear searching (Issue 247).  Thanks Alierak and Ian.
  -- VMAG(), VUNIT, and SHUFFLE() only need LBUF_SIZE/2 elements instead
     of LBUF_SIZE elements.
 
@@ -55,5 +69,7 @@ Cosmetic Changes:
 Miscellaneous:
 ~~~~~~~~~~~~~
  -- Documented Lbufref and Regref pools in 'wizhelp @list alloc'.
+    Thanks Alierak.
  -- Documented use of a single backslash as a proper shortcut to
-    @emit (Issue 219).
+    @emit (Issue 219).  Thanks Alierak.
+ -- Removed unnecessary global pos variable from help.cpp (Issue 265).
