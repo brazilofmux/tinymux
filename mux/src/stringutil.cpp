@@ -4524,7 +4524,7 @@ void mux_string::reverse(void)
 
 /*! \brief Searches text for a specified pattern.
  *
- * \param pattern  Pointer to pattern to search for.
+ * \param pPattern Pointer to pattern to search for.
  * \param nPos     Pointer to value of position in string where pattern is found.
  * \param nStart   Position in string to begin looking at. Defaults to 0.
  * \return         True if found, false if not.
@@ -4567,7 +4567,7 @@ bool mux_string::search(char *pPattern, size_t *nPos, size_t nStart)
 
 /*! \brief Searches text for a specified pattern.
  *
- * \param pattern  Pointer to pattern to search for.
+ * \param sPattern Reference to string to search for.
  * \param nPos     Pointer to value of position in string where pattern is found.
  * \param nStart   Position in string to begin looking at. Defaults to 0.
  * \return         True if found, false if not.
