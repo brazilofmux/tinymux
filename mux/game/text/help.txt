@@ -1036,7 +1036,7 @@ Related Topics: @name.
   Sets the message that is shown to the player who turns on the channel
   corresponding to <object>.
 
-  Related Topics: alias, CHANNEL OBJECT, @comjoin,@comleave, @comoff.
+  Related Topics: alias, CHANNEL OBJECT, @comjoin, @comleave, @comoff.
 
 & @COLOR
 @COLOR
@@ -7862,7 +7862,7 @@ INFO
     Patches: WOD_REALMS
     ### End INFO
 
-  Related Topics: QUIT, WHO, @version.
+  Related Topics: QUIT, WHO, version.
 
 & INHERIT
 INHERIT
@@ -13572,6 +13572,7 @@ VERBS
   @adrop.
 
 & VERSION
+& @VERSION
 VERSION
 
   COMMAND: version

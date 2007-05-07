@@ -52,7 +52,8 @@ Bug Fixes:
  -- mid(abc,-1,2) now returns a, not ab. mid(abc,1,-2) now returns
     ab, not a.  This is the documented behavior.
  -- wordpos() did not strip ansi before counting characters.
-
+ -- Fix signed / unsigned warning in dump_info() (Issue 276).
+ -- Corrected minor typo in @comon section of help.txt. (Issue 275)
 
 Performance Enhancements:
 ~~~~~~~~~~~~~~~~~~~~~~~~
@@ -76,3 +77,4 @@ Miscellaneous:
  -- Documented use of a single backslash as a proper shortcut to
     @emit (Issue 219).  Thanks Alierak.
  -- Removed unnecessary global pos variable from help.cpp (Issue 265).
+ -- Fixed dangling reference to 'help @version' (Issue 277).
