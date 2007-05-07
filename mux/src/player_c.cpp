@@ -287,7 +287,7 @@ int QueueMax(dbref player)
     return m;
 }
 
-/*! \brief Returns how many coins are in a player's purse.
+/*! \brief Returns how many coins are in a player's or things's purse.
  *
  * \param obj      dbref of player object.
  * \return         None.
@@ -295,24 +295,28 @@ int QueueMax(dbref player)
 
 int Pennies(dbref obj)
 {
-    if (mudstate.bStandAlone)
+    if (Good_obj(obj))
     {
-        const char *cp = atr_get_raw(obj, A_MONEY);
-        if (cp)
+        if (  !mudstate.bStandAlone
+           && OwnsOthers(obj))
         {
-            return mux_atol(cp);
+            PCACHE *pp = pcache_find(obj);
+            return pp->money;
         }
-    }
-    else if (  Good_obj(obj)
-            && OwnsOthers(obj))
-    {
-        PCACHE *pp = pcache_find(obj);
-        return pp->money;
+        else
+        {
+            const char *cp = atr_get_raw(obj, A_MONEY);
+            if (cp)
+            {
+                return mux_atol(cp);
+            }
+        }
     }
     return 0;
 }
 
-/*! \brief Sets the number of coins in a player's purse.
+
+/*! \brief Sets the number of coins in a player's or thing's purse.
  *
  * This changes the number of coins a player holds and sets this attribute
  * as dirty so that it will be updated in the attribute database later.
@@ -324,17 +328,44 @@ int Pennies(dbref obj)
 
 void s_Pennies(dbref obj, int howfew)
 {
-    if (mudstate.bStandAlone)
+    if (Good_obj(obj))
     {
-        char tbuf[I32BUF_SIZE];
-        mux_ltoa(howfew, tbuf);
-        atr_add_raw(obj, A_MONEY, tbuf);
+        if (  !mudstate.bStandAlone
+           && OwnsOthers(obj))
+        {
+            PCACHE *pp = pcache_find(obj);
+            pp->money = howfew;
+            pp->cflags |= PF_MONEY_CH;
+        }
+        else
+        {
+            char tbuf[I32BUF_SIZE];
+            mux_ltoa(howfew, tbuf);
+            atr_add_raw(obj, A_MONEY, tbuf);
+        }
     }
-    else if (  Good_obj(obj)
-            && OwnsOthers(obj))
-    {
-        PCACHE *pp = pcache_find(obj);
-        pp->money = howfew;
-        pp->cflags |= PF_MONEY_CH;
-    }
+}
+
+/*! \brief A shortcut method of initializing the coins in a object's purse.
+ *
+ * This function should only be called from db_rw.cpp for loading the
+ * database.  From there, objects are in an in-between state, the object type
+ * is not yet known, but on the other hand, the dbref has just been allocated,
+ * so the player cache will not need flushing or updated.  In fact, using a
+ * the player cache during database load is ineffect because it causes a read
+ * request for A_MONEY which will most likely fail and return a value of zero
+ * coins.  Any value it does return, we immediate change anyway.  Furthermore,
+ * The cache consumes increasing memory during the load without any trims or
+ * saves.
+ *
+ * \param obj      dbref of object.
+ * \param howfew   Number of coins
+ * \return         None.
+ */
+
+void s_PenniesDirect(dbref obj, int howfew)
+{
+    char tbuf[I32BUF_SIZE];
+    mux_ltoa(howfew, tbuf);
+    atr_add_raw(obj, A_MONEY, tbuf);
 }

@@ -820,7 +820,7 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
             //
             if (read_money)
             {
-                s_Pennies(i, getref(f));
+                s_PenniesDirect(i, getref(f));
             }
 
             // FLAGS
@@ -1009,6 +1009,7 @@ static bool db_write_object(FILE *f, dbref i, int db_format, int flags)
                 }
                 j = a->number;
             }
+
             if (j < A_USER_START)
             {
                 switch (j)
@@ -1032,6 +1033,7 @@ static bool db_write_object(FILE *f, dbref i, int db_format, int flags)
                     continue;
                 }
             }
+
             // Format is: ">%d\n", j
             //
             const char *p = atr_get_raw(i, j);
