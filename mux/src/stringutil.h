@@ -119,7 +119,6 @@ struct ANSI_Out_Context
 
 void ANSI_String_In_Init(struct ANSI_In_Context *pacIn, const char *szString, int iEndGoal);
 void ANSI_String_Out_Init(struct ANSI_Out_Context *pacOut, char *pField, size_t nField, size_t vwMax, int iEndGoal);
-void ANSI_String_Skip(struct ANSI_In_Context *pacIn, size_t maxVisualWidth, size_t *pnVisualWidth);
 void ANSI_String_Copy(struct ANSI_Out_Context *pacOut, struct ANSI_In_Context *pacIn, size_t vwMax);
 size_t ANSI_String_Finalize(struct ANSI_Out_Context *pacOut, size_t *pnVisualWidth);
 char *ANSI_TruncateAndPad_sbuf(const char *pString, size_t nMaxVisualWidth, char fill = ' ');
