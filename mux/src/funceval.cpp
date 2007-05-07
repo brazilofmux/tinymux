@@ -1215,44 +1215,77 @@ FUNCTION(fun_columns)
         return;
     }
 
+    mux_string *sStr = new mux_string(cp);
+    mux_words *words = NULL;
+    try
+    {
+        words = new mux_words(*sStr);
+    }
+    catch (...)
+    {
+        ; // Nothing.
+    }
+    if (NULL == words)
+    {
+        ISOUTOFMEMORY(words);
+        delete sStr;
+        return;
+    }
+
+    LBUF_OFFSET nWords = words->find_Words(sep.str);
+
+    if (0 == nWords)
+    {
+        delete sStr;
+        delete words;
+        return;
+    }
+
     int nColumns = (78-nIndent)/nWidth;
     int iColumn = 0;
+    int nLen = 0;
+    LBUF_OFFSET iWordStart = 0, iWordEnd = 0;
 
     size_t nBufferAvailable = LBUF_SIZE - (*bufc-buff) - 1;
     bool bNeedCRLF = false;
-    while (  cp
-          && 0 < nBufferAvailable)
+    for (LBUF_OFFSET i = 0; i < nWords && 0 < nBufferAvailable; i++)
     {
         if (iColumn == 0)
         {
-            nBufferAvailable -= safe_fill(buff, bufc, ' ', nIndent);
+            safe_fill(buff, bufc, ' ', nIndent);
         }
 
-        char *objstring = split_token(&cp, &sep);
-        size_t nVisualWidth;
-        size_t nLen = ANSI_TruncateToField(objstring, nBufferAvailable, *bufc,
-            nWidth, &nVisualWidth, ANSI_ENDGOAL_NORMAL);
-        *bufc += nLen;
-        nBufferAvailable -= nLen;
+        iWordStart = words->wordBegin(i);
+        iWordEnd = words->wordEnd(i);
+
+        nLen = iWordEnd - iWordStart;
+        if (nWidth < nLen)
+        {
+            nLen = nWidth;
+        }
+
+        sStr->export_TextAnsi(buff, bufc, iWordStart, nLen);
 
         if (nColumns-1 <= iColumn)
         {
             iColumn = 0;
-            nBufferAvailable -= safe_copy_buf("\r\n", 2, buff, bufc);
+            safe_copy_buf("\r\n", 2, buff, bufc);
             bNeedCRLF = false;
         }
         else
         {
             iColumn++;
-            nBufferAvailable -= safe_fill(buff, bufc, ' ',
-                nWidth - nVisualWidth);
+            safe_fill(buff, bufc, ' ', nWidth - nLen);
             bNeedCRLF = true;
         }
+        nBufferAvailable = LBUF_SIZE - (*bufc-buff) - 1;
     }
     if (bNeedCRLF)
     {
         safe_copy_buf("\r\n", 2, buff, bufc);
     }
+    delete sStr;
+    delete words;
 }
 
 // table(<list>,<field width>,<line length>,<delimiter>,<output separator>, <padding>)
