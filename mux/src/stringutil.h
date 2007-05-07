@@ -283,8 +283,18 @@ public:
     void prepend(const char *pStr, size_t nLen);
     void replace_Chars(const mux_string &pTo, size_t nStart, size_t nLen);
     void reverse(void);
-    bool search(const char *pPattern, size_t *nPos = NULL, size_t nStart = 0);
-    bool search(const mux_string &sPattern, size_t *nPos = NULL, size_t nStart = 0);
+    bool search
+    (
+        const char *pPattern,
+        size_t *nPos = NULL,
+        size_t nStart = 0
+    ) const;
+    bool search
+    (
+        const mux_string &sPattern,
+        size_t *nPos = NULL,
+        size_t nStart = 0
+    ) const;
     void set_Char(size_t n, const char cChar);
     void set_Color(size_t n, ANSI_ColorState csColor);
     void strip(const char *pStripSet, size_t nStart = 0, size_t nLen = (LBUF_SIZE-1));
