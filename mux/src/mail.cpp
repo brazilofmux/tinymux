@@ -215,9 +215,8 @@ static int add_mail_message(dbref player, char *message)
     char *bp = alloc_lbuf("add_mail_message");
     char *atrstr = atr_get(player, A_SIGNATURE, &aowner, &aflags);
     char *execstr = bp;
-    char *str = atrstr;
-    mux_exec(execstr, &bp, player, player, player,
-         AttrTrace(aflags, EV_STRIP_CURLY|EV_FCHECK|EV_EVAL), &str,
+    mux_exec(atrstr, execstr, &bp, player, player, player,
+         AttrTrace(aflags, EV_STRIP_CURLY|EV_FCHECK|EV_EVAL),
          NULL, 0);
     *bp = '\0';
 
@@ -2124,11 +2123,10 @@ static void mail_return(dbref player, dbref target)
     char *str = atr_pget(target, A_MFAIL, &aowner, &aflags);
     if (*str)
     {
-        char *str2, *buf, *bp;
+        char *str2, *bp;
         str2 = bp = alloc_lbuf("mail_return");
-        buf = str;
-        mux_exec(str2, &bp, target, player, player,
-             AttrTrace(aflags, EV_FCHECK|EV_EVAL|EV_TOP|EV_NO_LOCATION), &buf,
+        mux_exec(str, str2, &bp, target, player, player,
+             AttrTrace(aflags, EV_FCHECK|EV_EVAL|EV_TOP|EV_NO_LOCATION),
              NULL, 0);
         *bp = '\0';
         if (*str2)
@@ -3907,9 +3905,8 @@ void do_prepend(dbref executor, dbref caller, dbref enactor, int eval, int key, 
 
         char *bufText = alloc_lbuf("do_prepend");
         char *bpText = bufText;
-        char *strText = text+1;
-        mux_exec(bufText, &bpText, executor, caller, enactor,
-                 eval|EV_STRIP_CURLY|EV_FCHECK|EV_EVAL, &strText, NULL, 0);
+        mux_exec(text+1, bufText, &bpText, executor, caller, enactor,
+                 eval|EV_STRIP_CURLY|EV_FCHECK|EV_EVAL, NULL, 0);
         *bpText = '\0';
 
         dbref aowner;
@@ -3971,9 +3968,8 @@ void do_postpend(dbref executor, dbref caller, dbref enactor, int eval, int key,
 
         char *bufText = alloc_lbuf("do_prepend");
         char *bpText = bufText;
-        char *strText = text+1;
-        mux_exec(bufText, &bpText, executor, caller, enactor,
-                 eval|EV_STRIP_CURLY|EV_FCHECK|EV_EVAL, &strText, NULL, 0);
+        mux_exec(text+1, bufText, &bpText, executor, caller, enactor,
+                 eval|EV_STRIP_CURLY|EV_FCHECK|EV_EVAL, NULL, 0);
         *bpText = '\0';
 
         dbref aowner;

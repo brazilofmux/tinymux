@@ -64,7 +64,7 @@ bool eval_boolexp(dbref player, dbref thing, dbref from, BOOLEXP *b)
 
     dbref aowner, obj, source;
     int aflags;
-    char *key, *buff, *buff2, *bp, *str;
+    char *key, *buff, *buff2, *bp;
     ATTR *a;
     bool bCheck, c;
 
@@ -198,9 +198,8 @@ bool eval_boolexp(dbref player, dbref thing, dbref from, BOOLEXP *b)
             save_global_regs(preserve);
 
             buff2 = bp = alloc_lbuf("eval_boolexp");
-            str = buff;
-            mux_exec(buff2, &bp, source, player, player,
-                AttrTrace(aflags, EV_FIGNORE|EV_EVAL|EV_FCHECK|EV_TOP), &str,
+            mux_exec(buff, buff2, &bp, source, player, player,
+                AttrTrace(aflags, EV_FIGNORE|EV_EVAL|EV_FCHECK|EV_TOP),
                 NULL, 0);
             *bp = '\0';
 

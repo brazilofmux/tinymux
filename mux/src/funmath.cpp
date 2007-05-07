@@ -254,8 +254,7 @@ static const long nMaximums[10] =
     0, 9, 99, 999, 9999, 99999, 999999, 9999999, 99999999, 999999999
 };
 
-static double g_aDoubles[LBUF_SIZE];
-int const g_nDoubles = sizeof(g_aDoubles)/sizeof(double);
+static double g_aDoubles[MAX_WORDS];
 
 FUNCTION(fun_add)
 {
@@ -267,9 +266,9 @@ FUNCTION(fun_add)
     UNUSED_PARAMETER(ncargs);
 
     int nArgs = nfargs;
-    if (g_nDoubles < nArgs)
+    if (MAX_WORDS < nArgs)
     {
-        nArgs = g_nDoubles;
+        nArgs = MAX_WORDS;
     }
 
     int i;
@@ -323,7 +322,7 @@ FUNCTION(fun_ladd)
 
         char *cp = trim_space_sep(fargs[0], &sep);
         while (  cp
-              && n < g_nDoubles)
+              && n < MAX_WORDS)
         {
             char *curr = split_token(&cp, &sep);
             g_aDoubles[n++] = mux_atof(curr);
@@ -2186,9 +2185,8 @@ FUNCTION(fun_cand)
     for (int i = 0; i < nfargs && val && !MuxAlarm.bAlarmed; i++)
     {
         char *bp = temp;
-        char *str = fargs[i];
-        mux_exec(temp, &bp, executor, caller, enactor,
-            eval|EV_STRIP_CURLY|EV_FCHECK|EV_EVAL, &str, cargs, ncargs);
+        mux_exec(fargs[i], temp, &bp, executor, caller, enactor,
+            eval|EV_STRIP_CURLY|EV_FCHECK|EV_EVAL, cargs, ncargs);
         *bp = '\0';
         val = isTRUE(mux_atol(temp));
     }
@@ -2203,9 +2201,8 @@ FUNCTION(fun_cor)
     for (int i = 0; i < nfargs && !val && !MuxAlarm.bAlarmed; i++)
     {
         char *bp = temp;
-        char *str = fargs[i];
-        mux_exec(temp, &bp, executor, caller, enactor,
-            eval|EV_STRIP_CURLY|EV_FCHECK|EV_EVAL, &str, cargs, ncargs);
+        mux_exec(fargs[i], temp, &bp, executor, caller, enactor,
+            eval|EV_STRIP_CURLY|EV_FCHECK|EV_EVAL, cargs, ncargs);
         *bp = '\0';
         val = isTRUE(mux_atol(temp));
     }
@@ -2220,9 +2217,8 @@ FUNCTION(fun_candbool)
     for (int i = 0; i < nfargs && val && !MuxAlarm.bAlarmed; i++)
     {
         char *bp = temp;
-        char *str = fargs[i];
-        mux_exec(temp, &bp, executor, caller, enactor,
-            eval|EV_STRIP_CURLY|EV_FCHECK|EV_EVAL, &str, cargs, ncargs);
+        mux_exec(fargs[i], temp, &bp, executor, caller, enactor,
+            eval|EV_STRIP_CURLY|EV_FCHECK|EV_EVAL, cargs, ncargs);
         *bp = '\0';
         val = xlate(temp);
     }
@@ -2237,9 +2233,8 @@ FUNCTION(fun_corbool)
     for (int i = 0; i < nfargs && !val && !MuxAlarm.bAlarmed; i++)
     {
         char *bp = temp;
-        char *str = fargs[i];
-        mux_exec(temp, &bp, executor, caller, enactor,
-            eval|EV_STRIP_CURLY|EV_FCHECK|EV_EVAL, &str, cargs, ncargs);
+        mux_exec(fargs[i], temp, &bp, executor, caller, enactor,
+            eval|EV_STRIP_CURLY|EV_FCHECK|EV_EVAL, cargs, ncargs);
         *bp = '\0';
         val = xlate(temp);
     }

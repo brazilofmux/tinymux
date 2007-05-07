@@ -539,9 +539,8 @@ void do_plusemail(dbref executor, dbref cause, dbref enactor, int key,
 
     char *body = alloc_lbuf("mod_email_do_email.body");
     char *bodyptr = body;
-    char *bodysrc = arg2;
-    mux_exec(body, &bodyptr, executor, executor, executor,
-        EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, &bodysrc, NULL, 0);
+    mux_exec(arg2, body, &bodyptr, executor, executor, executor,
+        EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, NULL, 0);
     *bodyptr = 0;
 
     do

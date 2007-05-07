@@ -32,15 +32,14 @@ char *modSpeech(dbref player, char *message, bool bWhich, char *command)
         return NULL;
     }
 
-    char *mod_orig = mod;
     char *new_message = alloc_lbuf("modspeech");
     char *t_ptr = new_message;
     char *args[2];
     args[0] = message;
     args[1] = command;
-    mux_exec(new_message, &t_ptr, player, player, player,
-        AttrTrace(aflags, EV_FCHECK|EV_EVAL|EV_TOP), &mod, args, 2);
-    free_lbuf(mod_orig);
+    mux_exec(mod, new_message, &t_ptr, player, player, player,
+        AttrTrace(aflags, EV_FCHECK|EV_EVAL|EV_TOP), args, 2);
+    free_lbuf(mod);
     return new_message;
 }
 
@@ -90,12 +89,11 @@ void do_think(dbref executor, dbref caller, dbref enactor, int eval, int key,
 {
     UNUSED_PARAMETER(key);
 
-    char *str, *buf, *bp;
+    char *buf, *bp;
 
     buf = bp = alloc_lbuf("do_think");
-    str = message;
-    mux_exec(buf, &bp, executor, caller, enactor, eval|EV_FCHECK|EV_EVAL|EV_TOP,
-         &str, NULL, 0);
+    mux_exec(message, buf, &bp, executor, caller, enactor, eval|EV_FCHECK|EV_EVAL|EV_TOP,
+         NULL, 0);
     *bp = '\0';
     notify(executor, buf);
     free_lbuf(buf);
@@ -455,16 +453,15 @@ static void page_return(dbref player, dbref target, const char *tag,
 
     dbref aowner;
     int aflags;
-    char *str, *str2, *buf, *bp;
+    char *str, *str2, *bp;
 
     str = atr_pget(target, anum, &aowner, &aflags);
     if (*str)
     {
         str2 = bp = alloc_lbuf("page_return");
-        buf = str;
-        mux_exec(str2, &bp, target, player, player,
+        mux_exec(str, str2, &bp, target, player, player,
              AttrTrace(aflags, EV_FCHECK|EV_EVAL|EV_TOP|EV_NO_LOCATION),
-             &buf, NULL, 0);
+             NULL, 0);
         *bp = '\0';
         if (*str2)
         {

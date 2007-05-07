@@ -537,6 +537,45 @@ const unsigned char mux_utf8[256] =
     4,  4,  4,  4,  4,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0   // F
 };
 
+// The following table maps existing 8-bit characters to UTF-16 which can
+// then be encoded into UTF-8.
+//
+const UINT16 mux_ch2utf16[256] =
+{
+    0x0000, 0x0001, 0x0002, 0x0003, 0x0004, 0x0005, 0x0006, 0x0007,
+    0x0008, 0x0009, 0x000A, 0x000B, 0x000C, 0x000D, 0x000E, 0x000F,
+    0x0010, 0x0011, 0x0012, 0x0013, 0x0014, 0x0015, 0x0016, 0x0017,
+    0x0018, 0x0019, 0x001A, 0x001B, 0x001C, 0x001D, 0x001E, 0x001F,
+    0x0020, 0x0021, 0x0022, 0x0023, 0x0024, 0x0025, 0x0026, 0x0027,
+    0x0028, 0x0029, 0x002A, 0x002B, 0x002C, 0x002D, 0x002E, 0x002F,
+    0x0030, 0x0031, 0x0032, 0x0033, 0x0034, 0x0035, 0x0036, 0x0037,
+    0x0038, 0x0039, 0x003A, 0x003B, 0x003C, 0x003D, 0x003E, 0x003F,
+    0x0040, 0x0041, 0x0042, 0x0043, 0x0044, 0x0045, 0x0046, 0x0047,
+    0x0048, 0x0049, 0x004A, 0x004B, 0x004C, 0x004D, 0x004E, 0x004F,
+    0x0050, 0x0051, 0x0052, 0x0053, 0x0054, 0x0055, 0x0056, 0x0057,
+    0x0058, 0x0059, 0x005A, 0x005B, 0x005C, 0x005D, 0x005E, 0x005F,
+    0x0060, 0x0061, 0x0062, 0x0063, 0x0064, 0x0065, 0x0066, 0x0067,
+    0x0068, 0x0069, 0x006A, 0x006B, 0x006C, 0x006D, 0x006E, 0x006F,
+    0x0070, 0x0071, 0x0072, 0x0073, 0x0074, 0x0075, 0x0076, 0x0077,
+    0x0078, 0x0079, 0x007A, 0x007B, 0x007C, 0x007D, 0x007E, 0x007F,
+    0x20AC, 0xFFFD, 0x201A, 0x0192, 0x201E, 0x2026, 0x2020, 0x2021,
+    0x02C6, 0x2030, 0x0160, 0x2039, 0x0152, 0xFFFD, 0x017D, 0xFFFD,
+    0xFFFD, 0x2018, 0x2019, 0x201C, 0x201D, 0x2022, 0x2013, 0x2014,
+    0x02DC, 0x2122, 0x0161, 0x203A, 0x0153, 0xFFFD, 0x017E, 0x0178,
+    0x00A0, 0x00A1, 0x00A2, 0x00A3, 0x00A4, 0x00A5, 0x00A6, 0x00A7,
+    0x00A8, 0x00A9, 0x00AA, 0x00AB, 0x00AC, 0x00AD, 0x00AE, 0x00AF,
+    0x00B0, 0x00B1, 0x00B2, 0x00B3, 0x00B4, 0x00B5, 0x00B6, 0x00B7,
+    0x00B8, 0x00B9, 0x00BA, 0x00BB, 0x00BC, 0x00BD, 0x00BE, 0x00BF,
+    0x00C0, 0x00C1, 0x00C2, 0x00C3, 0x00C4, 0x00C5, 0x00C6, 0x00C7,
+    0x00C8, 0x00C9, 0x00CA, 0x00CB, 0x00CC, 0x00CD, 0x00CE, 0x00CF,
+    0x00D0, 0x00D1, 0x00D2, 0x00D3, 0x00D4, 0x00D5, 0x00D6, 0x00D7,
+    0x00D8, 0x00D9, 0x00DA, 0x00DB, 0x00DC, 0x00DD, 0x00DE, 0x00DF,
+    0x00E0, 0x00E1, 0x00E2, 0x00E3, 0x00E4, 0x00E5, 0x00E6, 0x00E7,
+    0x00E8, 0x00E9, 0x00EA, 0x00EB, 0x00EC, 0x00ED, 0x00EE, 0x00EF,
+    0x00F0, 0x00F1, 0x00F2, 0x00F3, 0x00F4, 0x00F5, 0x00F6, 0x00F7,
+    0x00F8, 0x00F9, 0x00FA, 0x00FB, 0x00FC, 0x00FD, 0x00FE, 0x00FF
+};
+
 // ANSI_lex - This function parses a string and returns two token types.
 // The type identifies the token type of length nLengthToken0. nLengthToken1
 // may also be present and is a token of the -other- type.
@@ -3804,6 +3843,7 @@ mux_string::mux_string(void)
 {
     m_n = 0;
     m_ach[0] = '\0';
+    m_pcs = NULL;
 }
 
 /*! \brief Constructs mux_string object.
@@ -3816,6 +3856,7 @@ mux_string::mux_string(void)
 
 mux_string::mux_string(const mux_string &sStr)
 {
+    m_pcs = NULL;
     import(sStr);
 }
 
@@ -3830,6 +3871,7 @@ mux_string::mux_string(const mux_string &sStr)
 
 mux_string::mux_string(const char *pStr)
 {
+    m_pcs = NULL;
     import(pStr);
 }
 
@@ -3838,7 +3880,28 @@ void mux_string::append(const char cChar)
     if (m_n < LBUF_SIZE-1)
     {
         m_ach[m_n] = cChar;
-        m_acs[m_n] = acsRestingStates[ANSI_ENDGOAL_NORMAL];
+        if (NULL != m_pcs)
+        {
+            ANSI_ColorState *pcsOld = m_pcs;
+            m_pcs = NULL;
+            try
+            {
+                m_pcs = new ANSI_ColorState[m_n + 1];
+            }
+            catch (...)
+            {
+                ; // Nothing.
+            }
+            if (NULL == m_pcs)
+            {
+                ISOUTOFMEMORY(m_pcs);
+                return;
+            }
+
+            memcpy(m_pcs, pcsOld, m_n * sizeof(m_pcs[0]));
+            delete pcsOld;
+            m_pcs[m_n] = acsRestingStates[ANSI_ENDGOAL_NORMAL];
+        }
         m_n++;
         m_ach[m_n] = '\0';
     }
@@ -3890,7 +3953,51 @@ void mux_string::append(const mux_string &sStr, size_t nStart, size_t nLen)
     }
 
     memcpy(m_ach + m_n, sStr.m_ach + nStart, nLen * sizeof(m_ach[0]));
-    memcpy(m_acs + m_n, sStr.m_acs + nStart, nLen * sizeof(m_acs[0]));
+
+    if (  NULL != m_pcs
+       || NULL != sStr.m_pcs)
+    {
+        ANSI_ColorState *pcsOld = m_pcs;
+        m_pcs = NULL;
+        try
+        {
+            m_pcs = new ANSI_ColorState[m_n + nLen];
+        }
+        catch (...)
+        {
+            ; // Nothing.
+        }
+        if (NULL == m_pcs)
+        {
+            ISOUTOFMEMORY(m_pcs);
+            return;
+        }
+
+        if (NULL != pcsOld)
+        {
+            memcpy(m_pcs, pcsOld, m_n * sizeof(m_pcs[0]));
+            delete pcsOld;
+        }
+        else
+        {
+            for (size_t i = 0; i < m_n; i++)
+            {
+                m_pcs[i] = acsRestingStates[ANSI_ENDGOAL_NORMAL];
+            }
+        }
+
+        if (NULL != sStr.m_pcs)
+        {
+            memcpy(m_pcs + m_n, sStr.m_pcs + nStart, nLen * sizeof(m_pcs[0]));
+        }
+        else
+        {
+            for (size_t i = 0; i < nLen; i++)
+            {
+                m_pcs[m_n+i] = acsRestingStates[ANSI_ENDGOAL_NORMAL];
+            }
+        }
+    }
 
     m_n += nLen;
     m_ach[m_n] = '\0';
@@ -3972,9 +4079,30 @@ void mux_string::append_TextPlain(const char *pStr)
 
     memcpy(m_ach + m_n, pStr, nLen * sizeof(m_ach[0]));
 
-    for (size_t i = 0; i < nLen; i++)
+    if (NULL != m_pcs)
     {
-        m_acs[m_n+i] = acsRestingStates[ANSI_ENDGOAL_NORMAL];
+        ANSI_ColorState *pcsOld = m_pcs;
+        m_pcs = NULL;
+        try
+        {
+            m_pcs = new ANSI_ColorState[m_n + nLen];
+        }
+        catch (...)
+        {
+            ; // Nothing.
+        }
+        if (NULL == m_pcs)
+        {
+            ISOUTOFMEMORY(m_pcs);
+            return;
+        }
+
+        memcpy(m_pcs, pcsOld, m_n * sizeof(m_pcs[0]));
+        delete pcsOld;
+        for (size_t i = 0; i < nLen; i++)
+        {
+            m_pcs[m_n+i] = acsRestingStates[ANSI_ENDGOAL_NORMAL];
+        }
     }
 
     m_n += nLen;
@@ -3999,9 +4127,30 @@ void mux_string::append_TextPlain(const char *pStr, size_t nLen)
 
     memcpy(m_ach + m_n, pStr, nLen * sizeof(m_ach[0]));
 
-    for (size_t i = 0; i < nLen; i++)
+    if (NULL != m_pcs)
     {
-        m_acs[m_n+i] = acsRestingStates[ANSI_ENDGOAL_NORMAL];
+        ANSI_ColorState *pcsOld = m_pcs;
+        m_pcs = NULL;
+        try
+        {
+            m_pcs = new ANSI_ColorState[m_n + nLen];
+        }
+        catch (...)
+        {
+            ; // Nothing.
+        }
+        if (NULL == m_pcs)
+        {
+            ISOUTOFMEMORY(m_pcs);
+            return;
+        }
+
+        memcpy(m_pcs, pcsOld, m_n * sizeof(m_pcs[0]));
+        delete pcsOld;
+        for (size_t i = 0; i < nLen; i++)
+        {
+            m_pcs[m_n+i] = acsRestingStates[ANSI_ENDGOAL_NORMAL];
+        }
     }
 
     m_n += nLen;
@@ -4096,7 +4245,10 @@ void mux_string::delete_Chars(size_t nStart, size_t nLen)
 
     size_t nMove = m_n - nEnd;
     memmove(m_ach + nStart, m_ach + nEnd, nMove * sizeof(m_ach[0]));
-    memmove(m_acs + nStart, m_acs + nEnd, nMove * sizeof(m_acs[0]));
+    if (NULL != m_pcs)
+    {
+        memmove(m_pcs + nStart, m_pcs + nEnd, nMove * sizeof(m_pcs[0]));
+    }
     m_n -= nLen;
     m_ach[m_n] = '\0';
 }
@@ -4184,11 +4336,12 @@ char mux_string::export_Char(size_t n) const
 
 ANSI_ColorState mux_string::export_Color(size_t n) const
 {
-    if (m_n <= n)
+    if (  m_n <= n
+       || NULL == m_pcs)
     {
         return acsRestingStates[ANSI_ENDGOAL_NORMAL];
     }
-    return m_acs[n];
+    return m_pcs[n];
 }
 
 double mux_string::export_Float(bool bStrict) const
@@ -4271,6 +4424,11 @@ void mux_string::export_TextAnsi
     // nLen is the length of the portion of the source string we will
     //  try to copy, and has a value in the ranges (0, nLeft] and (0, nAvail].
     //
+    if (NULL == m_pcs)
+    {
+        export_TextPlain(buff, bufc, nStart, nLen, nBuffer);
+        return;
+    }
     size_t nPos = nStart;
     bool bPlentyOfRoom =
         (nAvail > (nLen + 1) * (ANSI_MAXIMUM_BINARY_TRANSITION_LENGTH + 1));
@@ -4282,13 +4440,13 @@ void mux_string::export_TextAnsi
         ANSI_ColorState csPrev = csEndGoal;
         while (nPos < nStart + nLen)
         {
-            if (0 != memcmp(&csPrev, &m_acs[nPos], sizeof(ANSI_ColorState)))
+            if (0 != memcmp(&csPrev, &m_pcs[nPos], sizeof(ANSI_ColorState)))
             {
                 safe_copy_str(ANSI_TransitionColorBinary( &csPrev,
-                                                          &(m_acs[nPos]),
+                                                          &(m_pcs[nPos]),
                                                           &nCopied, iEndGoal),
                               buff, bufc, nBuffer);
-                csPrev = m_acs[nPos];
+                csPrev = m_pcs[nPos];
             }
             safe_copy_chr(m_ach[nPos], buff, bufc, nBuffer);
             nPos++;
@@ -4308,16 +4466,16 @@ void mux_string::export_TextAnsi
     ANSI_ColorState csPrev = csEndGoal;
     while (nPos < nStart + nLen)
     {
-        if (0 != memcmp(&csPrev, &m_acs[nPos], sizeof(ANSI_ColorState)))
+        if (0 != memcmp(&csPrev, &m_pcs[nPos], sizeof(ANSI_ColorState)))
         {
-            if (0 != memcmp(&csEndGoal, &m_acs[nPos], sizeof(ANSI_ColorState)))
+            if (0 != memcmp(&csEndGoal, &m_pcs[nPos], sizeof(ANSI_ColorState)))
             {
                 nNeededBefore = nNeededAfter;
-                ANSI_TransitionColorBinary( &(m_acs[nPos]), &csEndGoal,
+                ANSI_TransitionColorBinary( &(m_pcs[nPos]), &csEndGoal,
                                             &nCopied, iEndGoal);
                 nNeededAfter = nCopied;
                 char *pTransition =
-                    ANSI_TransitionColorBinary( &csPrev, &(m_acs[nPos]),
+                    ANSI_TransitionColorBinary( &csPrev, &(m_pcs[nPos]),
                                                 &nCopied, iEndGoal);
                 if (nBuffer < (*bufc-buff) + nCopied + 1 + nNeededAfter)
                 {
@@ -4332,12 +4490,12 @@ void mux_string::export_TextAnsi
             else
             {
                 safe_copy_str(ANSI_TransitionColorBinary( &csPrev,
-                                                          &(m_acs[nPos]),
+                                                          &(m_pcs[nPos]),
                                                           &nCopied, iEndGoal),
                               buff, bufc, nBuffer);
                 nNeededAfter = 0;
             }
-            csPrev = m_acs[nPos];
+            csPrev = m_pcs[nPos];
         }
         if (nBuffer < (*bufc-buff) + 1 + nNeededAfter)
         {
@@ -4418,7 +4576,8 @@ void mux_string::export_TextPlain
     // nLen is the length of the portion of the source string we will copy,
     //  and has a value in the ranges (0, nLeft] and (0, nAvail].
     //
-    safe_copy_str(m_ach+nStart, buff, bufc, *bufc-buff+nLen);
+    memcpy(*bufc, m_ach+nStart, nLen * sizeof(m_ach[0]));
+    *bufc += nLen;
     **bufc = '\0';
 }
 
@@ -4433,11 +4592,16 @@ void mux_string::export_TextPlain
 
 void mux_string::import(const char chIn)
 {
+    if (NULL != m_pcs)
+    {
+        delete m_pcs;
+        m_pcs = NULL;
+    }
+
     if (  ESC_CHAR != chIn
        && '\0' != chIn)
     {
         m_ach[0] = chIn;
-        m_acs[0] = acsRestingStates[ANSI_ENDGOAL_NORMAL];
         m_n = 1;
     }
     else
@@ -4455,16 +4619,18 @@ void mux_string::import(const char chIn)
 
 void mux_string::import(dbref num)
 {
+    if (NULL != m_pcs)
+    {
+        delete m_pcs;
+        m_pcs = NULL;
+    }
+
     m_ach[0] = '#';
     m_n = 1;
 
     // mux_ltoa() sets the '\0'.
     //
     m_n += mux_ltoa(num, m_ach + 1);
-    for (size_t i = 0; i < m_n; i++)
-    {
-        m_acs[i] = acsRestingStates[ANSI_ENDGOAL_NORMAL];
-    }
 }
 
 /*! \brief Converts and Imports an INT64.
@@ -4475,13 +4641,15 @@ void mux_string::import(dbref num)
 
 void mux_string::import(INT64 iInt)
 {
+    if (NULL != m_pcs)
+    {
+        delete m_pcs;
+        m_pcs = NULL;
+    }
+
     // mux_i64toa() sets the '\0'.
     //
     m_n = mux_i64toa(iInt, m_ach);
-    for (size_t i = 0; i < m_n; i++)
-    {
-        m_acs[i] = acsRestingStates[ANSI_ENDGOAL_NORMAL];
-    }
 }
 
 /*! \brief Converts and Imports an long integer.
@@ -4492,13 +4660,15 @@ void mux_string::import(INT64 iInt)
 
 void mux_string::import(long lLong)
 {
+    if (NULL != m_pcs)
+    {
+        delete m_pcs;
+        m_pcs = NULL;
+    }
+
     // mux_ltoa() sets the '\0'.
     //
     m_n = mux_ltoa(lLong, m_ach);
-    for (size_t i = 0; i < m_n; i++)
-    {
-        m_acs[i] = acsRestingStates[ANSI_ENDGOAL_NORMAL];
-    }
 }
 
 /*! \brief Import a portion of another mux_string.
@@ -4510,6 +4680,12 @@ void mux_string::import(long lLong)
 
 void mux_string::import(const mux_string &sStr, size_t nStart)
 {
+    if (NULL != m_pcs)
+    {
+        delete m_pcs;
+        m_pcs = NULL;
+    }
+
     if (sStr.m_n <= nStart)
     {
         m_n = 0;
@@ -4518,7 +4694,23 @@ void mux_string::import(const mux_string &sStr, size_t nStart)
     {
         m_n = sStr.m_n - nStart;
         memcpy(m_ach, sStr.m_ach + nStart, m_n*sizeof(m_ach[0]));
-        memcpy(m_acs, sStr.m_acs + nStart, m_n*sizeof(m_acs[0]));
+        if (NULL != sStr.m_pcs)
+        {
+            try
+            {
+                m_pcs = new ANSI_ColorState[m_n];
+            }
+            catch (...)
+            {
+                ; // Nothing.
+            }
+            if (NULL == m_pcs)
+            {
+                ISOUTOFMEMORY(m_pcs);
+                return;
+            }
+            memcpy(m_pcs, sStr.m_pcs + nStart, m_n*sizeof(m_pcs[0]));
+        }
     }
     m_ach[m_n] = '\0';
 }
@@ -4559,6 +4751,12 @@ void mux_string::import(const char *pStr)
 void mux_string::import(const char *pStr, size_t nLen)
 {
     m_n = 0;
+
+    if (NULL != m_pcs)
+    {
+        delete m_pcs;
+        m_pcs = NULL;
+    }
     if (  NULL == pStr
        || '\0' == *pStr
        || 0 == nLen)
@@ -4573,8 +4771,10 @@ void mux_string::import(const char *pStr, size_t nLen)
     }
 
     size_t nPos = 0;
+    static ANSI_ColorState acsTemp[LBUF_SIZE];
     ANSI_ColorState cs = acsRestingStates[ANSI_ENDGOAL_NORMAL];
     size_t nAnsiLen = 0;
+    bool bColor = false;
 
     while (nPos < nLen)
     {
@@ -4592,7 +4792,7 @@ void mux_string::import(const char *pStr, size_t nLen)
             memcpy(m_ach + m_n, pStr + nPos, nTokenLength0 * sizeof(m_ach[0]));
             for (size_t i = m_n; i < m_n + nTokenLength0; i++)
             {
-                m_acs[i] = cs;
+                acsTemp[i] = cs;
             }
 
             m_n += nTokenLength0;
@@ -4607,7 +4807,28 @@ void mux_string::import(const char *pStr, size_t nLen)
             nAnsiLen = nTokenLength0;
         }
         ANSI_Parse_m(&cs, nAnsiLen, pStr+nPos);
+        if (0 != memcmp(&cs, &acsRestingStates[ANSI_ENDGOAL_NORMAL], sizeof(cs)))
+        {
+            bColor = true;
+        }
         nPos += nAnsiLen;
+    }
+    if (bColor)
+    {
+        try
+        {
+            m_pcs = new ANSI_ColorState[m_n];
+        }
+        catch (...)
+        {
+            ; // Nothing.
+        }
+        if (NULL == m_pcs)
+        {
+            ISOUTOFMEMORY(m_pcs);
+            return;
+        }
+        memcpy(m_pcs, acsTemp, m_n*sizeof(m_pcs[0]));
     }
     m_ach[m_n] = '\0';
 }
@@ -4622,16 +4843,34 @@ void mux_string::prepend(const char cChar)
     size_t nMove = (m_n < LBUF_SIZE-1) ? m_n : LBUF_SIZE-2;
 
     memmove(m_ach + 1, m_ach, nMove * sizeof(m_ach[0]));
-    memmove(m_acs + 1, m_acs, nMove * sizeof(m_acs[0]));
-
     m_ach[0] = cChar;
-    m_acs[0] = acsRestingStates[ANSI_ENDGOAL_NORMAL];
-
     if (m_n < LBUF_SIZE-1)
     {
         m_n++;
     }
     m_ach[m_n] = '\0';
+
+    if (NULL != m_pcs)
+    {
+        ANSI_ColorState *pcsOld = m_pcs;
+        m_pcs = NULL;
+        try
+        {
+            m_pcs = new ANSI_ColorState[m_n];
+        }
+        catch (...)
+        {
+            ; // Nothing.
+        }
+        if (NULL == m_pcs)
+        {
+            ISOUTOFMEMORY(m_pcs);
+            return;
+        }
+        m_pcs[0] = acsRestingStates[ANSI_ENDGOAL_NORMAL];
+        memcpy(m_pcs + 1, pcsOld, nMove * sizeof(m_pcs[0]));
+        delete pcsOld;
+    }
 }
 
 void mux_string::prepend(dbref num)
@@ -4717,13 +4956,80 @@ void mux_string::replace_Chars
         {
             memmove(m_ach + nStart + nTo,
                     m_ach + nStart + nLen, nMove * sizeof(m_ach[0]));
-            memmove(m_acs + nStart + nTo,
-                    m_acs + nStart + nLen, nMove * sizeof(m_acs[0]));
         }
         m_n = nStart + nCopy + nMove;
+
+        if (  NULL != m_pcs
+           || NULL != sTo.m_pcs)
+        {
+            ANSI_ColorState *pcsOld = m_pcs;
+            m_pcs = NULL;
+            try
+            {
+                m_pcs = new ANSI_ColorState[m_n];
+            }
+            catch (...)
+            {
+                ; // Nothing.
+            }
+            if (NULL == m_pcs)
+            {
+                ISOUTOFMEMORY(m_pcs);
+                return;
+            }
+            if (NULL != pcsOld)
+            {
+                memcpy(m_pcs, pcsOld, nStart * sizeof(m_pcs[0]));
+                memcpy(m_pcs + nStart + nTo,
+                       pcsOld + nStart + nLen, nMove * sizeof(m_pcs[0]));
+                delete pcsOld;
+            }
+            else
+            {
+                for (size_t i = 0; i < m_n; i++)
+                {
+                    m_pcs[i] = acsRestingStates[ANSI_ENDGOAL_NORMAL];
+                }
+            }
+        }
     }
     memcpy(m_ach + nStart, sTo.m_ach, nCopy * sizeof(m_ach[0]));
-    memcpy(m_acs + nStart, sTo.m_acs, nCopy * sizeof(m_acs[0]));
+    if (NULL != sTo.m_pcs)
+    {
+        if (NULL == m_pcs)
+        {
+            try
+            {
+                m_pcs = new ANSI_ColorState[m_n];
+            }
+            catch (...)
+            {
+                ; // Nothing.
+            }
+            if (NULL == m_pcs)
+            {
+                ISOUTOFMEMORY(m_pcs);
+                return;
+            }
+
+            for (size_t i = 0; i < m_n; i++)
+            {
+                m_pcs[i] = acsRestingStates[ANSI_ENDGOAL_NORMAL];
+            }
+        }
+        memcpy(m_pcs + nStart, sTo.m_pcs, nCopy * sizeof(m_pcs[0]));
+    }
+    else
+    {
+        if (NULL != m_pcs)
+        {
+            for (size_t i = 0; i < nTo; i++)
+            {
+                m_pcs[nStart + i] = acsRestingStates[ANSI_ENDGOAL_NORMAL];
+            }
+        }
+    }
+
     m_ach[m_n] = '\0';
 }
 
@@ -4740,9 +5046,12 @@ void mux_string::reverse(void)
         m_ach[j] = m_ach[i];
         m_ach[i] = ch;
 
-        ANSI_ColorState cs = m_acs[j];
-        m_acs[j] = m_acs[i];
-        m_acs[i] = cs;
+        if (NULL != m_pcs)
+        {
+            ANSI_ColorState cs = m_pcs[j];
+            m_pcs[j] = m_pcs[i];
+            m_pcs[i] = cs;
+        }
     }
 }
 
@@ -4859,7 +5168,32 @@ void mux_string::set_Color(size_t n, ANSI_ColorState csColor)
     {
         return;
     }
-    m_acs[n] = csColor;
+    if (  NULL == m_pcs
+       && 0 != memcmp(&csColor, &acsRestingStates[ANSI_ENDGOAL_NORMAL], sizeof(csColor)))
+    {
+        try
+        {
+            m_pcs = new ANSI_ColorState[m_n];
+        }
+        catch (...)
+        {
+            ; // Nothing.
+        }
+        if (NULL == m_pcs)
+        {
+            ISOUTOFMEMORY(m_pcs);
+            return;
+        }
+
+        for (LBUF_OFFSET i = 0; i < m_n; i++)
+        {
+            m_pcs[i] = acsRestingStates[ANSI_ENDGOAL_NORMAL];
+        }
+    }
+    if (NULL != m_pcs)
+    {
+        m_pcs[n] = csColor;
+    }
 }
 
 /*! \brief Removes a specified set of characters from string.

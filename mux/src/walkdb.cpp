@@ -770,7 +770,7 @@ bool search_setup(dbref player, char *searchfor, SEARCH *parm)
 void search_perform(dbref executor, dbref caller, dbref enactor, SEARCH *parm)
 {
     POWER thing1powers, thing2powers;
-    char *result, *bp, *str;
+    char *result, *bp;
 
     char *buff = alloc_sbuf("search_perform.num");
     int save_invk_ctr = mudstate.func_invk_ctr;
@@ -865,9 +865,8 @@ void search_perform(dbref executor, dbref caller, dbref enactor, SEARCH *parm)
             mux_ltoa(thing, buff+1);
             char *buff2 = replace_tokens(parm->s_rst_eval, buff, NULL, NULL);
             result = bp = alloc_lbuf("search_perform");
-            str = buff2;
-            mux_exec(result, &bp, executor, caller, enactor,
-                EV_FCHECK | EV_EVAL | EV_NOTRACE, &str, NULL, 0);
+            mux_exec(buff2, result, &bp, executor, caller, enactor,
+                EV_FCHECK | EV_EVAL | EV_NOTRACE, NULL, 0);
             *bp = '\0';
             free_lbuf(buff2);
             if (!*result || !xlate(result))
