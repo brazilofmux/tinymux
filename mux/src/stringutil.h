@@ -248,7 +248,12 @@ public:
     void append(dbref num);
     void append(INT64 iInt);
     void append(long lLong);
-    void append(const mux_string &sStr, size_t nStart = 0, size_t nLen = (LBUF_SIZE-1));
+    void append
+    (
+        const mux_string &sStr,
+        size_t nStart = 0,
+        size_t nLen = (LBUF_SIZE-1)
+    );
     void append(const char *pStr);
     void append(const char *pStr, size_t nLen);
     void append_TextPlain(const char *pStr);
@@ -262,10 +267,23 @@ public:
     double export_Float(bool bStrict = true) const;
     INT64 export_I64(void) const;
     long export_Long(void) const;
-    void export_TextAnsi(char *buff, char **bufc = NULL, size_t nStart = 0, size_t nLen = LBUF_SIZE,
-                            size_t nBuffer = (LBUF_SIZE-1), int iEndGoal = ANSI_ENDGOAL_NORMAL) const;
-    void export_TextPlain(char *buff, char **bufc = NULL, size_t nStart = 0, size_t nLen = LBUF_SIZE,
-                            size_t nBuffer = (LBUF_SIZE-1)) const;
+    void export_TextAnsi
+    (
+        char *buff,
+        char **bufc = NULL,
+        size_t nStart = 0,
+        size_t nLen = LBUF_SIZE,
+        size_t nBuffer = (LBUF_SIZE-1),
+        int iEndGoal = ANSI_ENDGOAL_NORMAL
+    ) const;
+    void export_TextPlain
+    (
+        char *buff,
+        char **bufc = NULL,
+        size_t nStart = 0,
+        size_t nLen = LBUF_SIZE,
+        size_t nBuffer = (LBUF_SIZE-1)
+    ) const;
     void import(const char chIn);
     void import(dbref num);
     void import(INT64 iInt);
@@ -297,10 +315,31 @@ public:
     ) const;
     void set_Char(size_t n, const char cChar);
     void set_Color(size_t n, ANSI_ColorState csColor);
-    void strip(const char *pStripSet, size_t nStart = 0, size_t nLen = (LBUF_SIZE-1));
-    void stripWithTable(const bool strip_table[UCHAR_MAX+1], size_t nStart = 0, size_t nLen = (LBUF_SIZE-1));
-    void transform(mux_string &sFromSet, mux_string &sToSet, size_t nStart = 0, size_t nLen = (LBUF_SIZE-1));
-    void transformWithTable(const unsigned char xfrmTable[256], size_t nStart = 0, size_t nLen = (LBUF_SIZE-1));
+    void strip
+    (
+        const char *pStripSet,
+        size_t nStart = 0,
+        size_t nLen = (LBUF_SIZE-1)
+    );
+    void stripWithTable
+    (
+        const bool strip_table[UCHAR_MAX+1],
+        size_t nStart = 0,
+        size_t nLen = (LBUF_SIZE-1)
+    );
+    void transform
+    (
+        mux_string &sFromSet,
+        mux_string &sToSet,
+        size_t nStart = 0,
+        size_t nLen = (LBUF_SIZE-1)
+    );
+    void transformWithTable
+    (
+        const unsigned char xfrmTable[256],
+        size_t nStart = 0,
+        size_t nLen = (LBUF_SIZE-1)
+    );
     void trim(const char ch = ' ', bool bLeft = true, bool bRight = true); 
     void trim(const char *p, bool bLeft = true, bool bRight = true); 
     void trim(const char *p, size_t n, bool bLeft = true, bool bRight = true); 
