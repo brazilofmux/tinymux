@@ -434,7 +434,7 @@ static int mod_email_sock_readline(SOCKET sock, char *buffer, int maxlen)
 
 // Open a socket to a specific host/port.
 //
-static int mod_email_sock_open(const char *conhostname, int port, SOCKET *sock)
+static int mod_email_sock_open(const char *conhostname, u_short port, SOCKET *sock)
 {
     struct hostent *conhost;
     struct sockaddr_in name;
