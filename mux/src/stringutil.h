@@ -323,17 +323,24 @@ public:
     friend class mux_words;
 };
 
+// String buffers are LBUF_SIZE, so maximum string length is LBUF_SIZE-1.
+// That means the longest possible list can consist of LBUF_SIZE-1 copies
+// of the delimiter, making for LBUF_SIZE words in the list.
+// 
+#define MAX_WORDS LBUF_SIZE
+
 class mux_words
 {
 private:
     bool        m_aControl[UCHAR_MAX+1];
     LBUF_OFFSET m_nWords;
+    LBUF_OFFSET m_aiWordBegins[MAX_WORDS];
+    LBUF_OFFSET m_aiWordEnds[MAX_WORDS];
+    const mux_string *m_s;
 
 public:
-    LBUF_OFFSET m_aiWords[LBUF_SIZE];
-    mux_string *m_s;
 
-    mux_words(void);
+    mux_words(const mux_string &sStr);
     void export_WordAnsi(LBUF_OFFSET n, char *buff, char **bufc = NULL);
     LBUF_OFFSET find_Words(void);
     LBUF_OFFSET find_Words(const char *pDelim, size_t nDelim);

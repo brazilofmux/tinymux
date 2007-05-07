@@ -2481,7 +2481,7 @@ FUNCTION(fun_elements)
     mux_words *words = NULL;
     try
     {
-        words = new mux_words;
+        words = new mux_words(*sStr);
     }
     catch (...)
     {
@@ -2492,8 +2492,6 @@ FUNCTION(fun_elements)
         ISOUTOFMEMORY(words);
         return;
     }
-
-    words->m_s = sStr;
 
     size_t nDelim = 0;
     char *pDelim = strip_ansi(sep.str, &nDelim);
