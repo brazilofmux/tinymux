@@ -9570,9 +9570,8 @@ static FUNCTION(fun_stripaccents)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    size_t nLen;
-    char *p = strip_accents(fargs[0], &nLen);
-    safe_copy_buf(p, nLen, buff, bufc);
+    const char *p = ConvertToAscii((UTF8 *)fargs[0]);
+    safe_str(p, buff, bufc);
 }
 
 // Base Letter: AaCcEeIiNnOoUuYy?!<>sPpD
