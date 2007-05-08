@@ -1084,12 +1084,12 @@ char *unparse_object(dbref player, dbref target, bool obey_myopic, bool bAddColo
             }
             else
             {
-                safe_str(ANSI_HILITE, buf2, &bp2);
+                safe_str(COLOR_INTENSE, buf2, &bp2);
             }
 
             *bp = '\0';
             safe_str(buf, buf2, &bp2);
-            safe_str(ANSI_NORMAL, buf2, &bp2);
+            safe_str(COLOR_RESET, buf2, &bp2);
 
             // Swap buffers.
             //

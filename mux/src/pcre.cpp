@@ -929,7 +929,7 @@ pcre_maketables(void)
 
     for (i = 0; i < 256; i++)
     {
-        *p++ = mux_islower(i)? mux_toupper(i) : mux_tolower(i);
+        *p++ = mux_islower_latin1(i)? mux_toupper(i) : mux_tolower(i);
     }
 
     /* Then the character class tables. Don't try to be clever and save effort
@@ -945,12 +945,12 @@ pcre_maketables(void)
             p[cbit_digit  + i/8] |= 1 << (i&7);
             p[cbit_word   + i/8] |= 1 << (i&7);
         }
-        if (mux_isupper(i))
+        if (mux_isupper_latin1(i))
         {
             p[cbit_upper  + i/8] |= 1 << (i&7);
             p[cbit_word   + i/8] |= 1 << (i&7);
         }
-        if (mux_islower(i))
+        if (mux_islower_latin1(i))
         {
             p[cbit_lower  + i/8] |= 1 << (i&7);
             p[cbit_word   + i/8] |= 1 << (i&7);

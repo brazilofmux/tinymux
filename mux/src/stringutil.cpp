@@ -174,7 +174,7 @@ const bool mux_isalnum[256] =
     1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 0   // F
 };
 
-const bool mux_isupper[256] =
+const bool mux_isupper_latin1[256] =
 {
 //  0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F
 //
@@ -197,7 +197,7 @@ const bool mux_isupper[256] =
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0   // F
 };
 
-const bool mux_islower[256] =
+const bool mux_islower_latin1[256] =
 {
 //  0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F
 //
@@ -250,7 +250,7 @@ const bool mux_isspace[256] =
 // the set {'?!`/-_.@#$^&~=+<>()}. Lower-case letters are turned into
 // uppercase before being used, but lower-case letters are valid input.
 //
-bool mux_AttrNameInitialSet[256] =
+bool mux_AttrNameInitialSet_latin1[256] =
 {
 //  0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F
 //
@@ -261,29 +261,6 @@ bool mux_AttrNameInitialSet[256] =
     0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,  // 4
     1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1,  // 5
     0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,  // 6
-    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 1, 0,  // 7
-
-    0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 1, 0,  // 8
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 1, 1,  // 9
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0,  // A
-    0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0,  // B
-    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,  // C
-    1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1,  // D
-    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,  // E
-    1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 0   // F
-};
-
-bool mux_AttrNameSet[256] =
-{
-//  0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F
-//
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // 0
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // 1
-    0, 1, 0, 1, 1, 0, 1, 1, 1, 1, 0, 1, 0, 1, 1, 1,  // 2
-    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1,  // 3
-    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,  // 4
-    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 1, 1,  // 5
-    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,  // 6
     1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 1, 0,  // 7
 
     0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 1, 0,  // 8
@@ -888,14 +865,77 @@ const unsigned char cl_attrname_stt[5][10] =
     {   5,   5,   5,   6,   5,   5,   5,   5,   5,   5}
 };
 
+// utf/cl_Upper.txt
+//
+// 56 included, 1114056 excluded, 0 errors.
+// 2 states, 4 columns, 264 bytes
+//
+const unsigned char cl_upper_itt[256] =
+{
+       0,   0,   0,   0,   0,   0,   0,   0,    0,   0,   0,   0,   0,   0,   0,   0,
+       0,   0,   0,   0,   0,   0,   0,   0,    0,   0,   0,   0,   0,   0,   0,   0,
+       0,   0,   0,   0,   0,   0,   0,   0,    0,   0,   0,   0,   0,   0,   0,   0,
+       0,   0,   0,   0,   0,   0,   0,   0,    0,   0,   0,   0,   0,   0,   0,   0,
+       0,   1,   1,   1,   1,   1,   1,   1,    1,   1,   1,   1,   1,   1,   1,   1,
+       1,   1,   1,   1,   1,   1,   1,   1,    1,   1,   1,   0,   0,   0,   0,   0,
+       0,   0,   0,   0,   0,   0,   0,   0,    0,   0,   0,   0,   0,   0,   0,   0,
+       0,   0,   0,   0,   0,   0,   0,   0,    0,   0,   0,   0,   0,   0,   0,   0,
+
+       2,   2,   2,   2,   2,   2,   2,   2,    2,   2,   2,   2,   2,   2,   2,   2,
+       2,   2,   2,   2,   2,   2,   2,   0,    2,   2,   2,   2,   2,   2,   2,   0,
+       0,   0,   0,   0,   0,   0,   0,   0,    0,   0,   0,   0,   0,   0,   0,   0,
+       0,   0,   0,   0,   0,   0,   0,   0,    0,   0,   0,   0,   0,   0,   0,   0,
+       0,   0,   0,   3,   0,   0,   0,   0,    0,   0,   0,   0,   0,   0,   0,   0,
+       0,   0,   0,   0,   0,   0,   0,   0,    0,   0,   0,   0,   0,   0,   0,   0,
+       0,   0,   0,   0,   0,   0,   0,   0,    0,   0,   0,   0,   0,   0,   0,   0,
+       0,   0,   0,   0,   0,   0,   0,   0,    0,   0,   0,   0,   0,   0,   0,   0
+
+};
+
+const unsigned char cl_upper_stt[2][4] =
+{
+    {   2,   3,   2,   1},
+    {   2,   2,   3,   2}
+};
+
+// utf/cl_Lower.txt
+//
+// 58 included, 1114054 excluded, 0 errors.
+// 2 states, 4 columns, 264 bytes
+//
+const unsigned char cl_lower_itt[256] =
+{
+       0,   0,   0,   0,   0,   0,   0,   0,    0,   0,   0,   0,   0,   0,   0,   0,
+       0,   0,   0,   0,   0,   0,   0,   0,    0,   0,   0,   0,   0,   0,   0,   0,
+       0,   0,   0,   0,   0,   0,   0,   0,    0,   0,   0,   0,   0,   0,   0,   0,
+       0,   0,   0,   0,   0,   0,   0,   0,    0,   0,   0,   0,   0,   0,   0,   0,
+       0,   0,   0,   0,   0,   0,   0,   0,    0,   0,   0,   0,   0,   0,   0,   0,
+       0,   0,   0,   0,   0,   0,   0,   0,    0,   0,   0,   0,   0,   0,   0,   0,
+       0,   1,   1,   1,   1,   1,   1,   1,    1,   1,   1,   1,   1,   1,   1,   1,
+       1,   1,   1,   1,   1,   1,   1,   1,    1,   1,   1,   0,   0,   0,   0,   0,
+
+       0,   0,   0,   0,   0,   0,   0,   0,    0,   0,   0,   0,   0,   0,   0,   0,
+       0,   0,   0,   0,   0,   0,   0,   0,    0,   0,   0,   0,   0,   0,   0,   2,
+       2,   2,   2,   2,   2,   2,   2,   2,    2,   2,   2,   2,   2,   2,   2,   2,
+       2,   2,   2,   2,   2,   2,   2,   0,    2,   2,   2,   2,   2,   2,   2,   2,
+       0,   0,   0,   3,   0,   0,   0,   0,    0,   0,   0,   0,   0,   0,   0,   0,
+       0,   0,   0,   0,   0,   0,   0,   0,    0,   0,   0,   0,   0,   0,   0,   0,
+       0,   0,   0,   0,   0,   0,   0,   0,    0,   0,   0,   0,   0,   0,   0,   0,
+       0,   0,   0,   0,   0,   0,   0,   0,    0,   0,   0,   0,   0,   0,   0,   0
+
+};
+
+const unsigned char cl_lower_stt[2][4] =
+{
+    {   2,   3,   2,   1},
+    {   2,   2,   3,   2}
+};
+
 // utf/tr_utf8_latin1.txt
 //
 // 1503 code points.
 // 71 states, 190 columns, 27236 bytes
 //
-#define TR_LATIN1_START_STATE (0)
-#define TR_LATIN1_ACCEPTING_STATES_START (71)
-
 const unsigned char tr_latin1_itt[256] =
 {
        0,   0,   0,   0,   0,   0,   0,   1,    2,   3,   4,   0,   0,   5,   0,   0,
@@ -998,9 +1038,6 @@ const unsigned short tr_latin1_stt[71][190] =
 // 1446 code points.
 // 67 states, 190 columns, 12986 bytes
 //
-#define TR_ASCII_START_STATE (0)
-#define TR_ASCII_ACCEPTING_STATES_START (67)
-
 const unsigned char tr_ascii_itt[256] =
 {
        0,   0,   0,   0,   0,   0,   0,   1,    2,   3,   4,   0,   0,   5,   0,   0,
@@ -1094,6 +1131,121 @@ const unsigned char tr_ascii_stt[67][190] =
     { 130, 130, 130, 130, 130, 130, 130, 130, 130, 130, 130, 130, 130, 130, 130, 130, 130, 130, 130, 130, 130, 130, 130, 130, 130, 130, 130, 130, 130, 130, 130, 130, 130, 130, 130, 130, 130, 130, 130, 130, 130, 130, 130, 130, 130, 130, 130, 130, 130, 130, 130, 130, 130, 130, 130, 130, 130, 130, 130, 130, 130, 130, 130, 130, 130, 130, 130, 130, 130, 130, 130, 130, 130, 130, 130, 130, 130, 130, 130, 130, 130, 130, 130, 130, 130, 130, 130, 130, 130, 130, 130, 130, 130, 130, 130, 130, 130, 130, 130, 130, 130, 130, 132, 133, 134, 135, 136, 137, 138, 139, 140, 141, 142, 143, 144, 145, 146, 147, 148, 149, 150, 151, 152, 153, 154, 155, 156, 157, 130, 130, 130, 130, 130, 130, 164, 165, 166, 167, 168, 169, 170, 171, 172, 173, 174, 175, 176, 177, 178, 179, 180, 181, 182, 183, 184, 185, 186, 187, 188, 189, 130, 130, 130, 130, 130, 130, 130, 130, 130, 130, 130, 130, 130, 130, 130, 130, 130, 130, 130, 130, 130, 130, 130, 130, 130, 130, 130, 130, 130, 130}
 };
 
+// utf/tr_tolower.txt
+//
+// 56 code points.
+// 1 states, 2 columns, 258 bytes
+//
+const unsigned char tr_tolower_itt[256] =
+{
+       0,   0,   0,   0,   0,   0,   0,   0,    0,   0,   0,   0,   0,   0,   0,   0,
+       0,   0,   0,   0,   0,   0,   0,   0,    0,   0,   0,   0,   0,   0,   0,   0,
+       0,   0,   0,   0,   0,   0,   0,   0,    0,   0,   0,   0,   0,   0,   0,   0,
+       0,   0,   0,   0,   0,   0,   0,   0,    0,   0,   0,   0,   0,   0,   0,   0,
+       0,   0,   0,   0,   0,   0,   0,   0,    0,   0,   0,   0,   0,   0,   0,   0,
+       0,   0,   0,   0,   0,   0,   0,   0,    0,   0,   0,   0,   0,   0,   0,   0,
+       0,   0,   0,   0,   0,   0,   0,   0,    0,   0,   0,   0,   0,   0,   0,   0,
+       0,   0,   0,   0,   0,   0,   0,   0,    0,   0,   0,   0,   0,   0,   0,   0,
+
+       0,   0,   0,   0,   0,   0,   0,   0,    0,   0,   0,   0,   0,   0,   0,   0,
+       0,   0,   0,   0,   0,   0,   0,   0,    0,   0,   0,   0,   0,   0,   0,   0,
+       0,   0,   0,   0,   0,   0,   0,   0,    0,   0,   0,   0,   0,   0,   0,   0,
+       0,   0,   0,   0,   0,   0,   0,   0,    0,   0,   0,   0,   0,   0,   0,   0,
+       0,   0,   0,   1,   1,   1,   1,   1,    1,   1,   1,   1,   1,   1,   1,   1,
+       1,   1,   1,   1,   1,   1,   1,   1,    1,   1,   1,   1,   1,   1,   1,   1,
+       1,   1,   1,   1,   1,   1,   1,   1,    1,   1,   1,   1,   1,   1,   1,   1,
+       1,   1,   1,   1,   1,   1,   1,   1,    1,   1,   1,   1,   1,   1,   1,   1
+
+};
+
+const unsigned char tr_tolower_stt[1][2] =
+{
+    {   1,   2}
+};
+
+const char *tr_tolower_ott[2] =
+{
+    " ",
+    ""
+};
+
+// utf/tr_toupper.txt
+//
+// 57 code points.
+// 1 states, 4 columns, 260 bytes
+//
+const unsigned char tr_toupper_itt[256] =
+{
+       0,   0,   0,   0,   0,   0,   0,   0,    0,   0,   0,   0,   0,   0,   0,   0,
+       0,   0,   0,   0,   0,   0,   0,   0,    0,   0,   0,   0,   0,   0,   0,   0,
+       0,   0,   0,   0,   0,   0,   0,   0,    0,   0,   0,   0,   0,   0,   0,   0,
+       0,   0,   0,   0,   0,   0,   0,   0,    0,   0,   0,   0,   0,   0,   0,   0,
+       0,   0,   0,   0,   0,   0,   0,   0,    0,   0,   0,   0,   0,   0,   0,   0,
+       0,   0,   0,   0,   0,   0,   0,   0,    0,   0,   0,   0,   0,   0,   0,   0,
+       0,   0,   0,   0,   0,   0,   0,   0,    0,   0,   0,   0,   0,   0,   0,   0,
+       0,   0,   0,   0,   0,   0,   0,   0,    0,   0,   0,   0,   0,   0,   0,   0,
+
+       0,   0,   0,   0,   0,   0,   0,   0,    0,   0,   0,   0,   0,   0,   0,   0,
+       0,   0,   0,   0,   0,   0,   0,   0,    0,   0,   0,   0,   0,   0,   0,   0,
+       1,   1,   1,   1,   1,   1,   1,   1,    1,   1,   1,   1,   1,   1,   1,   1,
+       1,   1,   1,   1,   1,   1,   1,   1,    1,   1,   1,   1,   1,   1,   1,   2,
+       2,   2,   2,   3,   3,   3,   3,   3,    3,   3,   3,   3,   3,   3,   3,   3,
+       3,   3,   3,   3,   3,   3,   3,   3,    3,   3,   3,   3,   3,   3,   3,   3,
+       3,   3,   3,   3,   3,   3,   3,   3,    3,   3,   3,   3,   3,   3,   3,   3,
+       3,   3,   3,   3,   3,   3,   3,   3,    3,   3,   3,   3,   3,   3,   3,   3
+
+};
+
+const unsigned char tr_toupper_stt[1][4] =
+{
+    {   1,   2,   3,   0}
+};
+
+const char *tr_toupper_ott[3] =
+{
+    " ",
+    "",
+    "\x06\x07"
+};
+
+// utf/tr_Color.txt
+//
+// 517 code points.
+// 5 states, 11 columns, 311 bytes
+//
+#define TR_COLOR_START_STATE (0)
+#define TR_COLOR_ACCEPTING_STATES_START (5)
+
+const unsigned char tr_color_itt[256] =
+{
+       0,   0,   0,   0,   0,   0,   0,   0,    0,   0,   0,   0,   0,   0,   0,   0,
+       0,   0,   0,   0,   0,   0,   0,   0,    0,   0,   0,   0,   0,   0,   0,   0,
+       0,   0,   0,   0,   0,   0,   0,   0,    0,   0,   0,   0,   0,   0,   0,   0,
+       0,   0,   0,   0,   0,   0,   0,   0,    0,   0,   0,   0,   0,   0,   0,   0,
+       0,   0,   0,   0,   0,   0,   0,   0,    0,   0,   0,   0,   0,   0,   0,   0,
+       0,   0,   0,   0,   0,   0,   0,   0,    0,   0,   0,   0,   0,   0,   0,   0,
+       0,   0,   0,   0,   0,   0,   0,   0,    0,   0,   0,   0,   0,   0,   0,   0,
+       0,   0,   0,   0,   0,   0,   0,   0,    0,   0,   0,   0,   0,   0,   0,   0,
+
+       1,   2,   3,   4,   5,   6,   7,   8,    9,   0,   0,   0,   0,   0,   0,   0,
+       0,   0,   0,   0,   0,   0,   0,   0,    0,   0,   0,   0,   0,   0,   0,   0,
+       0,   0,   0,   0,   0,   0,   0,   0,    0,   0,   0,   0,   0,   0,   0,   0,
+       0,   0,   0,   0,   0,   0,   0,   0,    0,   0,   0,   0,   0,   0,   0,   0,
+       0,   0,   0,   0,   0,   0,   0,   0,    0,   0,   0,   0,   0,   0,   0,   0,
+       0,   0,   0,   0,   0,   0,   0,   0,    0,   0,   0,   0,   0,   0,   0,   0,
+       0,   0,   0,   0,   0,   0,   0,   0,    0,   0,   0,   0,   0,   0,  10,   0,
+       0,   0,   0,   0,   0,   0,   0,   0,    0,   0,   0,   0,   0,   0,   0,   0
+
+};
+
+const unsigned char tr_color_stt[5][11] =
+{
+    {   5,   5,   5,   5,   5,   5,   5,   5,   5,   5,   1},
+    {   5,   2,   5,   5,   5,   3,   5,   5,   5,   4,   5},
+    {   5,   6,   7,   5,   5,   8,   9,   5,  10,   5,   5},
+    {   5,  11,  12,  13,  14,  15,  16,  17,  18,   5,   5},
+    {   5,  19,  20,  21,  22,  23,  24,  25,  26,   5,   5}
+};
 
 /*! \brief Validates UTF8 string and returns number of code points contained therein.
  *
@@ -1453,10 +1605,19 @@ static void ANSI_Parse_m(ANSI_ColorState *pacsCurrent, size_t nANSI, const char 
     }
 }
 
-// The following is really 30 (E[0mE[1mE[4mE[5mE[7mE[33mE[43m) but we are
-// being conservative.
+// Maximum binary transition length is:
 //
-#define ANSI_MAXIMUM_BINARY_TRANSITION_LENGTH 60
+//   COLOR_RESET      "\xEE\x80\x80"
+// + COLOR_INTENSE    "\xEE\x80\x81"
+// + COLOR_UNDERLINE  "\xEE\x80\x84"
+// + COLOR_BLINK      "\xEE\x80\x85"
+// + COLOR_INVERSE    "\xEE\x80\x87"
+// + COLOR_FG_RED     "\xEE\x84\x81"
+// + COLOR_BG_WHITE   "\xEE\x88\x87"
+//
+// Each of the seven codes is 3 bytes or 21 bytes total.
+//
+#define ANSI_MAXIMUM_BINARY_TRANSITION_LENGTH 21
 
 // Generate the minimal ANSI sequence that will transition from one color state
 // to another.
@@ -1499,43 +1660,69 @@ static char *ANSI_TransitionColorBinary
        || (  tmp.iForeground != ANSI_COLOR_INDEX_DEFAULT
           && pcsNext->iForeground == ANSI_COLOR_INDEX_DEFAULT))
     {
-        memcpy(p, ANSI_NORMAL, sizeof(ANSI_NORMAL)-1);
-        p += sizeof(ANSI_NORMAL)-1;
+        memcpy(p, COLOR_RESET, sizeof(COLOR_RESET)-1);
+        p += sizeof(COLOR_RESET)-1;
         tmp = csNormal;
     }
+
     if (tmp.bHighlite != pcsNext->bHighlite)
     {
-        memcpy(p, ANSI_HILITE, sizeof(ANSI_HILITE)-1);
-        p += sizeof(ANSI_HILITE)-1;
+        memcpy(p, COLOR_INTENSE, sizeof(COLOR_INTENSE)-1);
+        p += sizeof(COLOR_INTENSE)-1;
     }
+
     if (tmp.bUnder != pcsNext->bUnder)
     {
-        memcpy(p, ANSI_UNDER, sizeof(ANSI_UNDER)-1);
-        p += sizeof(ANSI_UNDER)-1;
+        memcpy(p, COLOR_UNDERLINE, sizeof(COLOR_UNDERLINE)-1);
+        p += sizeof(COLOR_UNDERLINE)-1;
     }
+
     if (tmp.bBlink != pcsNext->bBlink)
     {
-        memcpy(p, ANSI_BLINK, sizeof(ANSI_BLINK)-1);
-        p += sizeof(ANSI_BLINK)-1;
+        memcpy(p, COLOR_BLINK, sizeof(COLOR_BLINK)-1);
+        p += sizeof(COLOR_BLINK)-1;
     }
+
     if (tmp.bInverse != pcsNext->bInverse)
     {
-        memcpy(p, ANSI_INVERSE, sizeof(ANSI_INVERSE)-1);
-        p += sizeof(ANSI_INVERSE)-1;
+        memcpy(p, COLOR_INVERSE, sizeof(COLOR_INVERSE)-1);
+        p += sizeof(COLOR_INVERSE)-1;
     }
+
     if (tmp.iForeground != pcsNext->iForeground)
     {
-        memcpy(p, ANSI_FOREGROUND, sizeof(ANSI_FOREGROUND)-1);
-        p += sizeof(ANSI_FOREGROUND)-1;
-        *p++ = static_cast<char>(pcsNext->iForeground + '0');
-        *p++ = ANSI_ATTR_CMD;
+        char *aForegrounds[8] =
+        {
+            COLOR_FG_BLACK,
+            COLOR_FG_RED,
+            COLOR_FG_GREEN,
+            COLOR_FG_YELLOW,
+            COLOR_FG_BLUE,
+            COLOR_FG_MAGENTA,
+            COLOR_FG_CYAN,
+            COLOR_FG_WHITE
+        };
+
+        memcpy(p, aForegrounds[pcsNext->iForeground], sizeof(COLOR_FG_BLACK)-1);
+        p += sizeof(COLOR_FG_BLACK)-1;
     }
+
     if (tmp.iBackground != pcsNext->iBackground)
     {
-        memcpy(p, ANSI_BACKGROUND, sizeof(ANSI_BACKGROUND)-1);
-        p += sizeof(ANSI_BACKGROUND)-1;
-        *p++ = static_cast<char>(pcsNext->iBackground + '0');
-        *p++ = ANSI_ATTR_CMD;
+        char *aForegrounds[8] =
+        {
+            COLOR_BG_BLACK,
+            COLOR_BG_RED,
+            COLOR_BG_GREEN,
+            COLOR_BG_YELLOW,
+            COLOR_BG_BLUE,
+            COLOR_BG_MAGENTA,
+            COLOR_BG_CYAN,
+            COLOR_BG_WHITE
+        };
+
+        memcpy(p, aForegrounds[pcsNext->iBackground], sizeof(COLOR_BG_BLACK)-1);
+        p += sizeof(COLOR_BG_BLACK)-1;
     }
     *p = '\0';
     *nTransition = p - Buffer;
@@ -1938,6 +2125,77 @@ char *normal_to_white(const char *szString)
                           true
                         );
     return Buffer;
+}
+
+static struct
+{
+    UTF8   *pAnsi;
+    size_t  nAnsi;
+} aColorSequences[COLOR_LAST_CODE+1] =
+{
+    {  NULL, 0 },
+    { (UTF8 *)ANSI_NORMAL,   sizeof(ANSI_NORMAL) - 1   },
+    { (UTF8 *)ANSI_HILITE,   sizeof(ANSI_HILITE) - 1   },
+    { (UTF8 *)ANSI_UNDER,    sizeof(ANSI_UNDER) - 1    },
+    { (UTF8 *)ANSI_BLINK,    sizeof(ANSI_BLINK) - 1    },
+    { (UTF8 *)ANSI_INVERSE,  sizeof(ANSI_INVERSE) - 1  },
+    { (UTF8 *)ANSI_BLACK,    sizeof(ANSI_BLACK) - 1    },
+    { (UTF8 *)ANSI_RED,      sizeof(ANSI_RED) - 1      },
+    { (UTF8 *)ANSI_GREEN,    sizeof(ANSI_GREEN) - 1    },
+    { (UTF8 *)ANSI_YELLOW,   sizeof(ANSI_YELLOW) - 1   },
+    { (UTF8 *)ANSI_BLUE,     sizeof(ANSI_BLUE) - 1     },
+    { (UTF8 *)ANSI_MAGENTA,  sizeof(ANSI_MAGENTA) - 1  },
+    { (UTF8 *)ANSI_CYAN,     sizeof(ANSI_CYAN) - 1     },
+    { (UTF8 *)ANSI_WHITE,    sizeof(ANSI_WHITE) - 1    },
+    { (UTF8 *)ANSI_BBLACK,   sizeof(ANSI_BBLACK) - 1   },
+    { (UTF8 *)ANSI_BRED,     sizeof(ANSI_BRED) - 1     },
+    { (UTF8 *)ANSI_BGREEN,   sizeof(ANSI_BGREEN) - 1   },
+    { (UTF8 *)ANSI_BYELLOW,  sizeof(ANSI_BYELLOW) - 1  },
+    { (UTF8 *)ANSI_BBLUE,    sizeof(ANSI_BBLUE) - 1    },
+    { (UTF8 *)ANSI_BMAGENTA, sizeof(ANSI_BMAGENTA) - 1 },
+    { (UTF8 *)ANSI_BCYAN,    sizeof(ANSI_BCYAN) - 1    },
+    { (UTF8 *)ANSI_BWHITE,   sizeof(ANSI_BWHITE) - 1   }
+};
+
+UTF8 *convert_color(const UTF8 *pString, bool bNoBleed)
+{
+    static UTF8 aBuffer[2*LBUF_SIZE];
+    UTF8 *pBuffer = aBuffer;
+    while ('\0' != *pString)
+    {
+        unsigned int iCode = mux_color(pString);
+        if (iCode <= COLOR_LAST_CODE)
+        {
+            if (COLOR_UNDEFINED == iCode)
+            {
+                utf8_safe_chr(pString, aBuffer, &pBuffer);
+            }
+            else
+            {
+                memcpy(pBuffer, aColorSequences[iCode].pAnsi, aColorSequences[iCode].nAnsi);
+                pBuffer += aColorSequences[iCode].nAnsi;
+            }
+        }
+        pString = utf8_NextCodePoint(pString);
+    }
+    *pBuffer = '\0';
+    return aBuffer;
+}
+
+UTF8 *strip_color(const UTF8 *pString)
+{
+    static UTF8 aBuffer[LBUF_SIZE];
+    UTF8 *pBuffer = aBuffer;
+    while ('\0' != *pString)
+    {
+        if (COLOR_UNDEFINED == mux_color(pString))
+        {
+            utf8_safe_chr(pString, aBuffer, &pBuffer);
+        }
+        pString = utf8_NextCodePoint(pString);
+    }
+    *pBuffer = '\0';
+    return aBuffer;
 }
 
 typedef struct
@@ -2615,7 +2873,7 @@ size_t safe_fill(char *buff, char **bufc, char chFill, size_t nSpaces)
     return nSpaces;
 }
 
-void utf8_safe_chr(const UTF8 *src, char *buff, char **bufc)
+void utf8_safe_chr(const UTF8 *src, UTF8 *buff, UTF8 **bufc)
 {
     size_t nLen;
     size_t nLeft;
@@ -2746,6 +3004,21 @@ UTF32 ConvertFromUTF8(const UTF8 *pString)
     {
         return UNI_REPLACEMENT_CHAR;
     }
+}
+
+UTF8 *ConvertToUTF8(const char *p)
+{
+    static UTF8 aBuffer[LBUF_SIZE];
+    UTF8 *pBuffer = aBuffer;
+
+    while ('\0' != *p)
+    {
+        UTF8 *q = ConvertToUTF8(*p);
+        utf8_safe_chr(q, aBuffer, &pBuffer);
+        p++;
+    }
+    *pBuffer = '\0';
+    return aBuffer;
 }
 
 // mux_strncpy: Copies up to specified number of chars from source.

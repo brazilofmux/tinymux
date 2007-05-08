@@ -270,7 +270,7 @@ extern void raw_notify_newline(dbref);
 extern void clearstrings(DESC *);
 extern void queue_write_LEN(DESC *, const char *, size_t n);
 extern void queue_write(DESC *, const char *);
-extern void queue_string(DESC *, const char *);
+extern void queue_string(DESC *, const UTF8 *);
 extern void queue_string(DESC *d, const mux_string &s);
 extern void freeqs(DESC *);
 extern void welcome_user(DESC *);

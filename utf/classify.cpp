@@ -67,15 +67,7 @@ void VerifyTables(FILE *fp)
         bool bMember;
         if (i == nextcode)
         {
-            if (!isPrivateUse(i))
-            {
-                bMember = true;
-            }
-            else
-            {
-                bMember = false;
-            }
-
+            bMember = true;
             if (UNI_EOF != nextcode)
             {
                 nextcode = ReadCodePoint(fp, &Value, &Othercase);
@@ -139,15 +131,7 @@ void TestTable(FILE *fp)
         bool bMember;
         if (i == nextcode)
         {
-            if (!isPrivateUse(i))
-            {
-                bMember = true;
-            }
-            else
-            {
-                bMember = false;
-            }
-
+            bMember = true;
             if (UNI_EOF != nextcode)
             {
                 nextcode = ReadCodePoint(fp, &Value, &Othercase);
@@ -198,17 +182,8 @@ void LoadStrings(FILE *fp)
         bool bMember;
         if (i == nextcode)
         {
-            if (!isPrivateUse(i))
-            {
-                bMember = true;
-                cIncluded++;
-            }
-            else
-            {
-                bMember = false;
-                cExcluded++;
-            }
-
+            bMember = true;
+            cIncluded++;
             if (UNI_EOF != nextcode)
             {
                 nextcode = ReadCodePoint(fp, &Value, &Othercase);
@@ -267,6 +242,10 @@ void BuildAndOutputTable(FILE *fp, char *UpperPrefix, char *LowerPrefix)
     sm.MergeAcceptingStates();
     TestTable(fp);
     sm.MergeAcceptingStates();
+    TestTable(fp);
+    sm.RemoveDuplicateRows();
+    TestTable(fp);
+    sm.RemoveDuplicateRows();
     TestTable(fp);
     sm.RemoveDuplicateRows();
     TestTable(fp);

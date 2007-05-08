@@ -523,7 +523,7 @@ void move_exit(dbref player, dbref exit, bool divest, const char *failmsg, int h
         if (isShroud(player))
         {
             bDoit = true;
-            int iShroudWarded = get_atr("SHROUD_WARDED");
+            int iShroudWarded = get_atr((UTF8 *)"SHROUD_WARDED");
             if (iShroudWarded > 0)
             {
                 int owner, flags;
@@ -542,7 +542,7 @@ void move_exit(dbref player, dbref exit, bool divest, const char *failmsg, int h
         if (!bDoit && isUmbra(player))
         {
             bDoit = true;
-            int iUmbraWarded = get_atr("UMBRA_WARDED");
+            int iUmbraWarded = get_atr((UTF8 *)"UMBRA_WARDED");
             if (iUmbraWarded > 0)
             {
                 int owner, flags;

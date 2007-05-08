@@ -7,16 +7,6 @@
 #include "ConvertUTF.h"
 #include "smutil.h"
 
-bool isPrivateUse(int ch)
-{
-    return (  (  UNI_PU1_START <= ch
-              && ch <= UNI_PU1_END)
-           || (  UNI_PU2_START <= ch
-              && ch <= UNI_PU2_END)
-           || (  UNI_PU3_START <= ch
-              && ch <= UNI_PU3_END));
-}
-
 static UTF32 DecodeCodePoint(char *p)
 {
     if (!isxdigit(*p))

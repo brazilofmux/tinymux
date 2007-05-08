@@ -15,7 +15,7 @@
 #include "functions.h"
 #include "vattr.h"
 
-static char *store_string(char *);
+static UTF8 *store_string(const UTF8 *);
 
 // Allocate space for strings in lumps this big.
 //
@@ -23,13 +23,13 @@ static char *store_string(char *);
 
 // Current block we're putting stuff in
 //
-static char *stringblock = (char *)NULL;
+static UTF8 *stringblock = NULL;
 
 // High water mark.
 //
 static size_t stringblock_hwm = 0;
 
-ATTR *vattr_find_LEN(const char *pAttrName, size_t nAttrName)
+ATTR *vattr_find_LEN(const UTF8 *pAttrName, size_t nAttrName)
 {
     UINT32 nHash = HASH_ProcessBuffer(0, pAttrName, nAttrName);
 
@@ -41,7 +41,7 @@ ATTR *vattr_find_LEN(const char *pAttrName, size_t nAttrName)
         int anum;
         pht->Copy(iDir, &nRecord, &anum);
         ATTR *va = (ATTR *)anum_table[anum];
-        if (strcmp(pAttrName, va->name) == 0)
+        if (strcmp((char *)pAttrName, (char *)va->name) == 0)
         {
             return va;
         }
@@ -50,14 +50,14 @@ ATTR *vattr_find_LEN(const char *pAttrName, size_t nAttrName)
     return NULL;
 }
 
-ATTR *vattr_alloc_LEN(char *pName, size_t nName, int flags)
+ATTR *vattr_alloc_LEN(const UTF8 *pName, size_t nName, int flags)
 {
     int number = mudstate.attr_next++;
     anum_extend(number);
     return vattr_define_LEN(pName, nName, number, flags);
 }
 
-ATTR *vattr_define_LEN(char *pName, size_t nName, int number, int flags)
+ATTR *vattr_define_LEN(const UTF8 *pName, size_t nName, int number, int flags)
 {
     ATTR *vp = vattr_find_LEN(pName, nName);
     if (vp)
@@ -198,7 +198,7 @@ static void dbclean_CheckATtoANH(dbref executor)
                 // Convert name to upper case.
                 //
                 char Buffer[SBUF_SIZE];
-                mux_strncpy(Buffer, pa->name, SBUF_SIZE-1);
+                mux_strncpy(Buffer, (char *)pa->name, SBUF_SIZE-1);
                 mux_strupr(Buffer);
 
                 // Fetch the attribute structure pointer -- which should match the one
@@ -222,7 +222,7 @@ static void dbclean_CheckATtoANH(dbref executor)
             {
                 nUserDefined++;
                 nAttributes++;
-                ATTR *vb = vattr_find_LEN(va->name, strlen(va->name));
+                ATTR *vb = vattr_find_LEN(va->name, strlen((char *)va->name));
                 if (vb != va)
                 {
                     nInvalid++;
@@ -289,7 +289,7 @@ static void dbclean_CheckALISTtoAT(dbref executor)
                         // call MakeCanonicalAttributeName.
                         //
                         char *p = tprintf("DANGLINGATTR-%08d", iAttr);
-                        vattr_define_LEN(p, strlen(p), iAttr, 0);
+                        vattr_define_LEN((UTF8 *)p, strlen(p), iAttr, 0);
                         nDangle++;
                     }
                     else
@@ -417,7 +417,7 @@ static int dbclean_RemoveStaleAttributeNames(void)
 
                 // Delete from hashtable.
                 //
-                UINT32 nHash = HASH_ProcessBuffer(0, va->name, strlen(va->name));
+                UINT32 nHash = HASH_ProcessBuffer(0, (char *)va->name, strlen((char *)va->name));
                 CHashTable *pht = &mudstate.vattr_name_htab;
                 UINT32 iDir = pht->FindFirstKey(nHash);
                 while (iDir != HF_FIND_END)
@@ -482,7 +482,7 @@ static void dbclean_RenumberAttributes(int cVAttributes)
             // Change vattr_name_htab mapping as well to point to
             // iAllocated instead of iAttr.
             //
-            UINT32 nHash = HASH_ProcessBuffer(0, va->name, strlen(va->name));
+            UINT32 nHash = HASH_ProcessBuffer(0, (char *)va->name, strlen((char *)va->name));
             CHashTable *pht = &mudstate.vattr_name_htab;
             UINT32 iDir = pht->FindFirstKey(nHash);
             while (iDir != HF_FIND_END)
@@ -625,7 +625,7 @@ void do_dbclean(dbref executor, dbref caller, dbref enactor, int key)
     notify(executor, "@dbclean completed..");
 }
 
-void vattr_delete_LEN(char *pName, size_t nName)
+void vattr_delete_LEN(UTF8 *pName, size_t nName)
 {
     // Delete from hashtable.
     //
@@ -637,7 +637,7 @@ void vattr_delete_LEN(char *pName, size_t nName)
         HP_HEAPLENGTH nRecord;
         int anum;
         pht->Copy(iDir, &nRecord, &anum);
-        if (strcmp(pName, anum_table[anum]->name) == 0)
+        if (strcmp((char *)pName, (char *)anum_table[anum]->name) == 0)
         {
             ATTR *vp = (ATTR *)anum_table[anum];
             anum_set(anum, NULL);
@@ -649,7 +649,7 @@ void vattr_delete_LEN(char *pName, size_t nName)
     }
 }
 
-ATTR *vattr_rename_LEN(char *pOldName, size_t nOldName, char *pNewName, size_t nNewName)
+ATTR *vattr_rename_LEN(UTF8 *pOldName, size_t nOldName, UTF8 *pNewName, size_t nNewName)
 {
     // Find and Delete old name from hashtable.
     //
@@ -662,7 +662,7 @@ ATTR *vattr_rename_LEN(char *pOldName, size_t nOldName, char *pNewName, size_t n
         int anum;
         pht->Copy(iDir, &nRecord, &anum);
         ATTR *vp = (ATTR *)anum_table[anum];
-        if (strcmp(pOldName, vp->name) == 0)
+        if (strcmp((char *)pOldName, (char *)vp->name) == 0)
         {
             pht->Remove(iDir);
 
@@ -710,9 +710,9 @@ ATTR *vattr_next(ATTR *vp)
 // Some goop for efficiently storing strings we expect to keep forever. There
 // is no freeing mechanism.
 //
-static char *store_string(char *str)
+static UTF8 *store_string(const UTF8 *str)
 {
-    size_t nSize = strlen(str) + 1;
+    size_t nSize = strlen((char *)str) + 1;
 
     // If we have no block, or there's not enough room left in the
     // current one, get a new one.
@@ -723,11 +723,11 @@ static char *store_string(char *str)
         // NOTE: These allocations are -never- freed, and this is
         // intentional.
         //
-        stringblock = (char *)MEMALLOC(STRINGBLOCK);
+        stringblock = (UTF8 *)MEMALLOC(STRINGBLOCK);
         ISOUTOFMEMORY(stringblock);
         stringblock_hwm = 0;
     }
-    char *ret = stringblock + stringblock_hwm;
+    UTF8 *ret = stringblock + stringblock_hwm;
     memcpy(ret, str, nSize);
     stringblock_hwm += nSize;
     return ret;

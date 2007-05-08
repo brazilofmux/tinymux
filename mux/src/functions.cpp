@@ -2300,16 +2300,17 @@ static FUNCTION(fun_v)
 
     dbref aowner;
     int aflags;
-    char *sbuf, *sbufc, *tbuf;
+    char *sbuf, *sbufc;
     ATTR *ap;
 
-    tbuf = fargs[0];
-    if (mux_AttrNameInitialSet(tbuf[0]) && tbuf[1])
+    UTF8 *tbuf = (UTF8 *)fargs[0];
+    if (  mux_isattrnameinitial(tbuf)
+       && '\0' != *utf8_NextCodePoint(tbuf))
     {
         // Fetch an attribute from me. First see if it exists,
         // returning a null string if it does not.
         //
-        ap = atr_str(fargs[0]);
+        ap = atr_str((UTF8 *)fargs[0]);
         if (!ap)
         {
             return;
@@ -2319,10 +2320,10 @@ static FUNCTION(fun_v)
         // string.
         //
         size_t nLen;
-        tbuf = atr_pget_LEN(executor, ap->number, &aowner, &aflags, &nLen);
+        tbuf = (UTF8 *)atr_pget_LEN(executor, ap->number, &aowner, &aflags, &nLen);
         if (See_attr(executor, executor, ap))
         {
-            safe_copy_buf(tbuf, nLen, buff, bufc);
+            safe_copy_buf((char *)tbuf, nLen, buff, bufc);
         }
         free_lbuf(tbuf);
         return;
@@ -5245,7 +5246,7 @@ static void lattr_handler(char *buff, char **bufc, dbref executor, char *fargs[]
                     safe_chr(' ', buff, bufc);
                 }
                 bFirst = false;
-                safe_str(pattr->name, buff, bufc);
+                safe_str((char *)pattr->name, buff, bufc);
             }
         }
     }
@@ -9231,7 +9232,7 @@ static FUNCTION(fun_lattrcmds)
                         safe_chr(' ', buff, bufc);
                     }
                     isFirst = false;
-                    safe_str(pattr->name, buff, bufc);
+                    safe_str((char *)pattr->name, buff, bufc);
                 }
             }
         }
@@ -9548,7 +9549,7 @@ static FUNCTION(fun_chr)
     UTF8 *p = ConvertToUTF8(ch);
     if (mux_isprint(p))
     {
-        safe_str((char *)(p), buff, bufc);
+        utf8_safe_chr(p, (UTF8 *)buff, (UTF8 **)bufc);
     }
     else
     {
@@ -9686,11 +9687,11 @@ static FUNCTION(fun_accent)
         const UTF8 *t = latin1_utf8(ch);
         if (mux_isprint(t))
         {
-            utf8_safe_chr(t, buff, bufc);
+            utf8_safe_chr(t, (UTF8 *)buff, (UTF8 **)bufc);
         }
         else
         {
-            utf8_safe_chr(p, buff, bufc);
+            utf8_safe_chr(p, (UTF8 *)buff, (UTF8 **)bufc);
         }
 
         p = utf8_NextCodePoint(p);
@@ -9723,8 +9724,8 @@ size_t transform_range(mux_string &sStr)
             // Character range.
             //
             sTemp->truncate(0);
-            if (  mux_islower(cBefore)
-               == mux_islower(cAfter))
+            if (  mux_islower_latin1(cBefore)
+               == mux_islower_latin1(cAfter))
             {
                 cBefore++;
                 while (cBefore < cAfter)
@@ -9734,8 +9735,8 @@ size_t transform_range(mux_string &sStr)
                 }
                 sStr.replace_Chars(*sTemp, nStart, 1);
             }
-            else if (  mux_islower(cBefore)
-                    && mux_isupper(cAfter))
+            else if (  mux_islower_latin1(cBefore)
+                    && mux_isupper_latin1(cAfter))
             {
                 cBefore++;
                 while (cBefore <= 'z')
@@ -10313,7 +10314,7 @@ void do_function
         int count = 0;
         for (ufp2 = ufun_head; ufp2; ufp2 = ufp2->next)
         {
-            const char *pName = "(WARNING: Bad Attribute Number)";
+            const UTF8 *pName = (UTF8 *)"(WARNING: Bad Attribute Number)";
             ap = atr_num(ufp2->atr);
             if (ap)
             {

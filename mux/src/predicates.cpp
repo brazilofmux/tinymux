@@ -569,11 +569,11 @@ bool ok_password(const char *password, const char **pmsg)
             *pmsg = "Illegal character in password.";
             return false;
         }
-        if (mux_isupper(*scan))
+        if (mux_isupper_latin1(*scan))
         {
             num_upper++;
         }
-        else if (mux_islower(*scan))
+        else if (mux_islower_latin1(*scan))
         {
             num_lower++;
         }
@@ -954,7 +954,7 @@ void do_listcommands(dbref player, dbref caller, dbref enactor, int eval,
             for (nextp = old->addent; nextp != NULL; nextp = nextp->next)
             {
                 ATTR *ap = (ATTR *)atr_num(nextp->atr);
-                const char *pName = "(WARNING: Bad Attribute Number)";
+                const UTF8 *pName = (UTF8 *)"(WARNING: Bad Attribute Number)";
                 if (ap)
                 {
                     pName = ap->name;
@@ -986,7 +986,7 @@ void do_listcommands(dbref player, dbref caller, dbref enactor, int eval,
                         continue;
                     }
                     ATTR *ap = (ATTR *)atr_num(nextp->atr);
-                    const char *pName = "(WARNING: Bad Attribute Number)";
+                    const UTF8 *pName = (UTF8 *)"(WARNING: Bad Attribute Number)";
                     if (ap)
                     {
                         pName = ap->name;
@@ -1185,7 +1185,7 @@ void handle_prog(DESC *d, char *message)
 
         if (d->program_data != NULL)
         {
-            queue_string(d, tprintf("%s>%s ", ANSI_HILITE, ANSI_NORMAL));
+            queue_string(d, tprintf("%s>%s ", COLOR_INTENSE, COLOR_RESET));
 
             if (OPTION_YES == UsState(d, TELNET_EOR))
             {
@@ -1462,7 +1462,7 @@ void do_prog
     {
         d->program_data = program;
 
-        queue_string(d, tprintf("%s>%s ", ANSI_HILITE, ANSI_NORMAL));
+        queue_string(d, tprintf("%s>%s ", COLOR_INTENSE, COLOR_RESET));
 
         if (OPTION_YES == UsState(d, TELNET_EOR))
         {
@@ -2618,7 +2618,7 @@ void do_verb(dbref executor, dbref caller, dbref enactor, int eval, int key,
     case 6:
         // Get action attribute.
         //
-        ap = atr_str(args[5]);
+        ap = atr_str((UTF8 *)args[5]);
         if (ap)
         {
             awhat = ap->number;
@@ -2635,7 +2635,7 @@ void do_verb(dbref executor, dbref caller, dbref enactor, int eval, int key,
     case 4:
         // Get others message attribute.
         //
-        ap = atr_str(args[3]);
+        ap = atr_str((UTF8 *)args[3]);
         if (ap && (ap->number > 0))
         {
             owhat = ap->number;
@@ -2652,7 +2652,7 @@ void do_verb(dbref executor, dbref caller, dbref enactor, int eval, int key,
     case 2:
         // Get enactor message attribute.
         //
-        ap = atr_str(args[1]);
+        ap = atr_str((UTF8 *)args[1]);
         if (ap && (ap->number > 0))
         {
             what = ap->number;
