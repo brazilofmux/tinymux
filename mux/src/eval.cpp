@@ -1259,17 +1259,18 @@ void mux_exec( char *pdstr, char *buff, char **bufc, dbref executor,
             ufp = NULL;
 
             size_t nFun = pEnd - oldp + 1;
+
+            // _strlwr();
+            //
+            for (size_t iFun = 0; iFun < nFun; iFun++)
+            {
+                mux_scratch[iFun] = mux_tolower(oldp[iFun]);
+            }
+            mux_scratch[nFun] = '\0';
+
             if (  0 < nFun
                && nFun <= MAX_UFUN_NAME_LEN)
             {
-                // _strlwr();
-                //
-                for (size_t iFun = 0; iFun < nFun; iFun++)
-                {
-                    mux_scratch[iFun] = mux_tolower(oldp[iFun]);
-                }
-                mux_scratch[nFun] = '\0';
-
                 fp = (FUN *)hashfindLEN(mux_scratch, nFun, &mudstate.func_htab);
 
                 // If not a builtin func, check for global func.

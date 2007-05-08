@@ -1,5 +1,5 @@
 TinyMUX 2.7:  CHANGES
-Last Update:  February 2007
+Last Update:  March 2007
 
 Major changes that may affect performance and require softcode tweaks:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -70,6 +70,8 @@ Bug Fixes:
     memory-based) (Issue 224).
  -- Fix Firan build break in fun_trigger() (Issue 288).
  -- Fixed +glance softcode in SGP minimal database (Issue 291).
+ -- Fix memory leak in @mail error code path.
+ -- Fix memory leak in process_cmdent().
 
 
 Performance Enhancements:
