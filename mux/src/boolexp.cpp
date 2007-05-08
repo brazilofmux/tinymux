@@ -304,14 +304,14 @@ static void skip_whitespace(void)
 //
 static BOOLEXP *parse_boolexp_E(void);
 
-static BOOLEXP *test_atr(char *s)
+static BOOLEXP *test_atr(UTF8 *s)
 {
-    char *s1;
+    UTF8 *s1;
     int anum;
     boolexp_type locktype;
 
-    char *buff = alloc_lbuf("test_atr");
-    mux_strncpy(buff, s, LBUF_SIZE-1);
+    UTF8 *buff = (UTF8 *)alloc_lbuf("test_atr");
+    mux_strncpy((char *)buff, (char *)s, LBUF_SIZE-1);
     for (s = buff; *s && (*s != ':') && (*s != '/'); s++)
     {
         ; // Nothing.
@@ -355,7 +355,7 @@ static BOOLEXP *test_atr(char *s)
             free_lbuf(buff);
             return TRUE_BOOLEXP;
         }
-        anum = mux_atol(buff);
+        anum = mux_atol((char *)buff);
         if (anum <= 0)
         {
             free_lbuf(buff);
@@ -372,7 +372,7 @@ static BOOLEXP *test_atr(char *s)
     BOOLEXP *b = alloc_bool("test_str");
     b->type = locktype;
     b->thing = (dbref) anum;
-    b->sub1 = (BOOLEXP *) StringClone(s);
+    b->sub1 = (BOOLEXP *) StringClone((char *)s);
     free_lbuf(buff);
     return b;
 }
@@ -382,8 +382,8 @@ static BOOLEXP *test_atr(char *s)
 static BOOLEXP *parse_boolexp_L(void)
 {
     BOOLEXP *b;
-    char    *p;
-    char    *buf;
+    UTF8    *p;
+    UTF8    *buf;
     MSTATE  mstate;
 
     buf = NULL;
@@ -406,7 +406,7 @@ static BOOLEXP *parse_boolexp_L(void)
 
         // Must have hit an object ref.  Load the name into our buffer.
         //
-        buf = alloc_lbuf("parse_boolexp_L");
+        buf = (UTF8 *)alloc_lbuf("parse_boolexp_L");
         p = buf;
         while (  *parsebuf
               && *parsebuf != AND_TOKEN
@@ -452,7 +452,7 @@ static BOOLEXP *parse_boolexp_L(void)
                     free_bool(b);
                     return TRUE_BOOLEXP;
                 }
-                b->thing = mux_atol(&buf[1]);
+                b->thing = mux_atol((char *)&buf[1]);
                 if (!Good_dbref(b->thing))
                 {
                     free_lbuf(buf);
@@ -463,7 +463,7 @@ static BOOLEXP *parse_boolexp_L(void)
             else
             {
                 save_match_state(&mstate);
-                init_match(parse_player, buf, TYPE_THING);
+                init_match(parse_player, (char *)buf, TYPE_THING);
                 match_everything(MAT_EXIT_PARENTS);
                 b->thing = match_result();
                 restore_match_state(&mstate);
@@ -495,7 +495,7 @@ static BOOLEXP *parse_boolexp_L(void)
                 free_bool(b);
                 return TRUE_BOOLEXP;
             }
-            b->thing = mux_atol(&buf[1]);
+            b->thing = mux_atol((char *)&buf[1]);
             if (b->thing < 0)
             {
                 free_lbuf(buf);

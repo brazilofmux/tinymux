@@ -19,5 +19,9 @@ stringutil.txt: classify transform cl_Printable.txt cl_AttrNameInitial.txt cl_At
 	./classify cl_print cl_Printable.txt > stringutil.txt
 	./classify cl_attrnameinitial cl_AttrNameInitial.txt >> stringutil.txt
 	./classify cl_attrname cl_AttrName.txt >> stringutil.txt
+	./classify cl_upper cl_Upper.txt >> stringutil.txt
+	./classify cl_lower cl_Lower.txt >> stringutil.txt
 	./transform -c tr_latin1 tr_utf8_latin1.txt >> stringutil.txt
 	./transform -c tr_ascii tr_utf8_ascii.txt >> stringutil.txt
+	./transform tr_tolower tr_tolower.txt >> stringutil.txt
+	./transform tr_toupper tr_toupper.txt >> stringutil.txt

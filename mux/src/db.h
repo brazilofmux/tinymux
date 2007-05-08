@@ -25,12 +25,12 @@
                       ((l) < mudconf.parent_nest_lim)); \
                      (p)=Parent(p), (l)++)
 
-int get_atr(char *name);
+int get_atr(UTF8 *name);
 
 typedef struct attr ATTR;
 struct attr
 {
-    const char *name;   // This has to be first.  braindeath.
+    const UTF8 *name;   // This has to be first.  braindeath.
     int number;         // attr number
     int flags;
 };
@@ -45,8 +45,8 @@ struct atrlist
 };
 #endif // MEMORY_BASED
 
-char *MakeCanonicalAttributeName(const char *pName, size_t *pnName, bool *pbValid);
-char *MakeCanonicalAttributeCommand(const char *pName, size_t *pnName, bool *pbValid);
+UTF8 *MakeCanonicalAttributeName(const UTF8 *pName, size_t *pnName, bool *pbValid);
+UTF8 *MakeCanonicalAttributeCommand(const UTF8 *pName, size_t *pnName, bool *pbValid);
 
 typedef struct stack STACK;
 struct stack
@@ -56,7 +56,7 @@ struct stack
 };
 
 extern ATTR *atr_num(int anum);
-extern ATTR *atr_str(char *s);
+extern ATTR *atr_str(const UTF8 *s);
 
 extern ATTR AttrTable[];
 
@@ -239,7 +239,7 @@ dbref    parse_dbref(const char *);
 bool ThrottleMail(dbref executor);
 bool ThrottleAttributeNames(dbref executor);
 bool ThrottlePlayerCreate(void);
-int  mkattr(dbref executor, char *);
+int  mkattr(dbref executor, const UTF8 *);
 void al_store(void);
 void db_grow(dbref);
 void db_free(void);

@@ -2134,7 +2134,16 @@ static void info(int fmt, int flags, int ver)
         cp = "*unknown*";
     }
     Log.tinyprintf("%s version %d:", cp, ver);
-    if ((flags & MANDFLAGS) != MANDFLAGS)
+    if (  ver < MIN_SUPPORTED_VERSION
+       || MAX_SUPPORTED_VERSION < ver)
+    {
+        Log.WriteString(" Unsupported version");
+    }
+    else if (  (  (  1 == ver
+                  || 2 == ver)
+               && (flags & MANDFLAGS_V2) != MANDFLAGS_V2)
+            || (  3 == ver
+               && (flags & MANDFLAGS_V3) != MANDFLAGS_V3))
     {
         Log.WriteString(" Unsupported flags");
     }

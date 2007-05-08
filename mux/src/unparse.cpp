@@ -186,7 +186,7 @@ static void unparse_boolexp1(dbref player, BOOLEXP *b, char outer_type, int form
         {
             // Use the attribute name if the attribute exists.
             //
-            safe_str(ap->name, boolexp_buf, &buftop);
+            safe_str((char *)ap->name, boolexp_buf, &buftop);
         }
         else
         {

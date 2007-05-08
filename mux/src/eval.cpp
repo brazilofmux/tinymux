@@ -1880,9 +1880,10 @@ void mux_exec( char *pdstr, char *buff, char **bufc, dbref executor,
                             *p2 = '\0';
                             if ('>' == pdstr[0])
                             {
-                                if (mux_AttrNameInitialSet(mux_scratch[0]) && mux_scratch[1])
+                                if (  mux_isattrnameinitial((UTF8 *)mux_scratch)
+                                   && '\0' != *utf8_NextCodePoint(mux_scratch))
                                 {
-                                    ATTR *ap = atr_str(mux_scratch);
+                                    ATTR *ap = atr_str((UTF8 *)mux_scratch);
                                     if (ap)
                                     {
                                         size_t nLen;

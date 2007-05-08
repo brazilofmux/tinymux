@@ -384,6 +384,10 @@ void BuildAndOutputTable(FILE *fp, char *UpperPrefix, char *LowerPrefix)
     TestTable(fp);
     sm.RemoveDuplicateRows();
     TestTable(fp);
+    sm.RemoveDuplicateRows();
+    TestTable(fp);
+    sm.RemoveDuplicateRows();
+    TestTable(fp);
     sm.DetectDuplicateColumns();
 
     // Output State Transition Table.
@@ -396,7 +400,7 @@ void BuildAndOutputTable(FILE *fp, char *UpperPrefix, char *LowerPrefix)
         return;
     }
 
-    printf("unsigned char ott[%d] =\n", nOutputTable);
+    printf("const char *%s_ott[%d] =\n", LowerPrefix, nOutputTable);
     printf("{\n");
     int i;
     for (i = 0; i < nOutputTable; i++)
