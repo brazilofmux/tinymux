@@ -272,37 +272,89 @@ static bool fh_staff
     return (fh_any(target, player, flag, fflags, reset));
 }
 
+
+/* External reference to our telnet routine to resynch charset */
+extern void SendCharsetRequest(DESC* d);
+
 /*
  * ---------------------------------------------------------------------------
  * * fh_unicode: only players may set or clear this bit.
  */
- 
-extern void SendCharsetRequest(DESC* d);
 
 static bool fh_unicode(dbref target, dbref player, FLAG flag, int fflags, bool reset)
 {
-	bool result;
-	
+    if (!isPlayer(target))
+    {
+        return false;
+    }
+
+    if (fh_any(target, player, flag, fflags, reset))
+    {
+        DESC *dtemp;
+
+        DESC_ITER_PLAYER(target, dtemp)
+        {
+            if (!reset)
+            {
+                if (CHARSET_UTF8 != dtemp->encoding)
+                {
+                    // Since we are changing to the UTF-8 character set, the
+                    // printable state machine needs to be initialized.
+                    //
+                    dtemp->encoding = CHARSET_UTF8;
+                    dtemp->raw_codepoint_state = CL_PRINT_START_STATE;
+                }
+            }
+            else
+            {
+                dtemp->encoding = CHARSET_LATIN1;
+            }
+
+            if (  reset
+               && OPTION_YES == dtemp->nvt_him_state[TELNET_CHARSET])
+            {
+                SendCharsetRequest(dtemp);
+            }
+        }
+        return true;
+    }
+    return false;
+}
+
+/*
+ * ---------------------------------------------------------------------------
+ * * fh_ascii: only players may set or clear this bit.
+ */
+
+static bool fh_ascii(dbref target, dbref player, FLAG flag, int fflags, bool reset)
+{
+    bool result;
+
     if (!isPlayer(target))
     {
         return false;
     }
     result = fh_any(target, player, flag, fflags, reset);
-    
-    if (result) 
+
+    if (result)
     {
-    	DESC *dtemp;
-    	
-	    DESC_ITER_PLAYER(target, dtemp)
-    	{
-        	dtemp->nvt_charset_utf8 = !reset;
-        	if (reset && (dtemp->nvt_charset_him_state == OPTION_YES)) 
-        	{
-        		SendCharsetRequest(dtemp);
-        	}
-	    } 	    	
+        DESC *dtemp;
+
+        DESC_ITER_PLAYER(target, dtemp)
+        {
+            if (!reset)
+                dtemp->encoding = CHARSET_ASCII;
+            else
+                dtemp->encoding = CHARSET_LATIN1;
+
+            if (  reset
+               && OPTION_YES == dtemp->nvt_him_state[TELNET_CHARSET])
+            {
+                SendCharsetRequest(dtemp);
+            }
+        }
     }
-    
+
     return result;
 }
 
@@ -340,7 +392,7 @@ static FLAGBITENT fbeLinkOk         = { LINK_OK,      'L',    FLAG_WORD1, 0,    
 static FLAGBITENT fbeMonitor        = { MONITOR,      'M',    FLAG_WORD1, 0,                    fh_hear_bit};
 static FLAGBITENT fbeMyopic         = { MYOPIC,       'm',    FLAG_WORD1, 0,                    fh_any};
 static FLAGBITENT fbeNoCommand      = { NO_COMMAND,   'n',    FLAG_WORD2, 0,                    fh_any};
-static FLAGBITENT fbeNoAccents      = { NOACCENTS,    '~',    FLAG_WORD2, 0,                    fh_any};
+static FLAGBITENT fbeAscii          = { ASCII    ,    '~',    FLAG_WORD2, 0,                    fh_ascii};
 static FLAGBITENT fbeNoBleed        = { NOBLEED,      '-',    FLAG_WORD2, 0,                    fh_any};
 static FLAGBITENT fbeNoSpoof        = { NOSPOOF,      'N',    FLAG_WORD1, 0,                    fh_any};
 static FLAGBITENT fbeOpaque         = { TM_OPAQUE,    'O',    FLAG_WORD1, 0,                    fh_any};
@@ -360,7 +412,7 @@ static FLAGBITENT fbeTerse          = { TERSE,        'q',    FLAG_WORD1, 0,    
 static FLAGBITENT fbeTrace          = { TRACE,        'T',    FLAG_WORD1, 0,                    fh_any};
 static FLAGBITENT fbeTransparent    = { SEETHRU,      't',    FLAG_WORD1, 0,                    fh_any};
 static FLAGBITENT fbeUnfindable     = { UNFINDABLE,   'U',    FLAG_WORD2, 0,                    fh_any};
-static FLAGBITENT fbeUnicode		= { UNICODE,	  ' ',	  FLAG_WORD3, CA_NO_DECOMP,			fh_unicode};
+static FLAGBITENT fbeUnicode        = { UNICODE,      ' ',    FLAG_WORD3, CA_NO_DECOMP,         fh_unicode};
 static FLAGBITENT fbeUninspected    = { UNINSPECTED,  'g',    FLAG_WORD2, 0,                    fh_wizroy};
 static FLAGBITENT fbeVacation       = { VACATION,     '|',    FLAG_WORD2, 0,                    fh_restrict_player};
 static FLAGBITENT fbeVerbose        = { VERBOSE,      'v',    FLAG_WORD1, 0,                    fh_any};
@@ -411,8 +463,9 @@ static FLAGBITENT fbeParent         = { PARENT,       '+',    FLAG_WORD3, 0,    
 FLAGNAMEENT gen_flag_names[] =
 {
     {"ABODE",           true, &fbeAbode          },
-    {"ACCENTS",        false, &fbeNoAccents      },
+    {"ACCENTS",        false, &fbeAscii          },
     {"ANSI",            true, &fbeAnsi           },
+    {"ASCII",           true, &fbeAscii          },
     {"AUDIBLE",         true, &fbeAudible        },
     {"AUDITORIUM",      true, &fbeAuditorium     },
     {"BLEED",          false, &fbeNoBleed        },
@@ -455,7 +508,8 @@ FLAGNAMEENT gen_flag_names[] =
     {"MONITOR",         true, &fbeMonitor        },
     {"MYOPIC",          true, &fbeMyopic         },
     {"NO_COMMAND",      true, &fbeNoCommand      },
-    {"NOACCENTS",       true, &fbeNoAccents      },
+    {"NOACCENTS",       true, &fbeAscii          },
+    {"NOASCII",        false, &fbeAscii          },
     {"NOBLEED",         true, &fbeNoBleed        },
     {"NOSPOOF",         true, &fbeNoSpoof        },
     {"OPAQUE",          true, &fbeOpaque         },
@@ -477,7 +531,7 @@ FLAGNAMEENT gen_flag_names[] =
     {"TRACE",           true, &fbeTrace          },
     {"TRANSPARENT",     true, &fbeTransparent    },
     {"UNFINDABLE",      true, &fbeUnfindable     },
-    {"UNICODE",			true, &fbeUnicode		 },
+    {"UNICODE",         true, &fbeUnicode        },
     {"UNINSPECTED",     true, &fbeUninspected    },
     {"VACATION",        true, &fbeVacation       },
     {"VERBOSE",         true, &fbeVerbose        },

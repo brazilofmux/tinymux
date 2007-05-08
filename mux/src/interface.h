@@ -138,18 +138,21 @@ struct prog_data
 // Multiple meanings, depending on TELOPT
 //
 #define TELNETSB_IS             0
-#define TELNETSB_VAR			0
+#define TELNETSB_VAR            0
 #define TELNETSB_REQUEST        1
 #define TELNETSB_SEND           1
-#define TELNETSB_VALUE			1
-#define TELNETSB_INFO			2
+#define TELNETSB_VALUE          1
+#define TELNETSB_INFO           2
 #define TELNETSB_ACCEPT         2
 #define TELNETSB_REPLY          2
-#define TELNETSB_ESC			2
+#define TELNETSB_ESC            2
 #define TELNETSB_REJECT         3
 #define TELNETSB_NAME           3
-#define TELNETSB_USERVAR		3
+#define TELNETSB_USERVAR        3
 
+#define CHARSET_ASCII           0
+#define CHARSET_LATIN1          1
+#define CHARSET_UTF8            2
 
 typedef struct descriptor_data DESC;
 struct descriptor_data
@@ -196,22 +199,10 @@ struct descriptor_data
   int raw_input_state;
   int raw_codepoint_state;
   size_t raw_codepoint_length;
-  int nvt_sga_him_state;
-  int nvt_sga_us_state;
-  int nvt_eor_him_state;
-  int nvt_eor_us_state;
-  int nvt_naws_him_state;
-  int nvt_naws_us_state;
-  int nvt_ttype_him_state;
-  int nvt_ttype_us_state;
-  char *nvt_ttype_him_value;
-  int nvt_charset_him_state;
-  int nvt_charset_us_state;
-  bool nvt_charset_utf8;
-  int nvt_env_him_state;
-  int nvt_env_us_state;
-  int nvt_oldenv_him_state;
-  int nvt_oldenv_us_state;
+  int nvt_him_state[256];
+  int nvt_us_state[256];
+  char *ttype;
+  int encoding;
   int width;
   int height;
   int quota;
