@@ -27,11 +27,11 @@
 #include "levels.h"
 #endif // REALITY_LVLS
 
-#if defined(FIRANMUX)
+#if defined(INLINESQL)
 #include <mysql.h>
 
 MYSQL *mush_database = NULL;
-#endif // FIRANMUX
+#endif // INLINESQL
 
 void do_dump(dbref executor, dbref caller, dbref enactor, int key)
 {
@@ -2316,7 +2316,7 @@ static void write_pidfile(const char *pFilename)
     }
 }
 
-#ifdef FIRANMUX
+#ifdef INLINESQL
 static void init_sql(void)
 {
     if ('\0' != mudconf.sql_server[0])
@@ -2360,7 +2360,7 @@ static void init_sql(void)
     }
 }
 
-#endif // FIRANMUX
+#endif // INLINESQL
 long DebugTotalFiles = 3;
 long DebugTotalSockets = 0;
 #ifdef WIN32
@@ -3111,9 +3111,9 @@ int DCL_CDECL main(int argc, char *argv[])
     mudconf.config_file = StringClone(conffile);
     cf_read();
 
-#if defined(FIRANMUX)
+#if defined(INLINESQL)
     init_sql();
-#endif // FIRANMUX
+#endif // INLINESQL
 
     fcache_init();
     helpindex_init();
@@ -3242,7 +3242,7 @@ int DCL_CDECL main(int argc, char *argv[])
     shovechars(nMainGamePorts, aMainGamePorts);
 #endif // WIN32
 
-#ifdef FIRANMUX
+#ifdef INLINESQL
      if (mush_database)
      {
          mysql_close(mush_database);
@@ -3251,7 +3251,7 @@ int DCL_CDECL main(int argc, char *argv[])
          log_text("SQL shut down");
          ENDLOG;
      }
-#endif // FIRANMUX
+#endif // INLINESQL
 
     close_sockets(false, "Going down - Bye");
     dump_database();

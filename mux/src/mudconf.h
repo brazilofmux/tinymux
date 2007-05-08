@@ -198,12 +198,12 @@ struct confdata
 #ifdef FIRANMUX
     char    immobile_msg[128];  /* Message displayed to immobile players */
 #endif // FIRANMUX
-#ifdef FIRANMUX
+#ifdef INLINESQL
     char    sql_server[128];
     char    sql_user[128];
     char    sql_password[128];
     char    sql_database[128];
-#endif // FIRANMUX
+#endif // INLINESQL
 
     char    mail_server[128];
     char    mail_ehlo[128];
