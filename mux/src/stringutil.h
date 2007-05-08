@@ -365,6 +365,15 @@ public:
         }
     }
 
+    char operator [](size_t i) const
+    {
+        if (m_n <= i)
+        {
+            return '\0';
+        }
+        return m_ach[i];
+    }
+
     friend class mux_words;
 };
 
