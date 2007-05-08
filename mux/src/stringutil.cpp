@@ -5667,19 +5667,21 @@ void mux_string::replace_Chars
 
 void mux_string::reverse(void)
 {
-    for (size_t i = 0, j = m_n-1; i < j; i++, j--)
-    {
-        char ch = m_ach[j];
-        m_ach[j] = m_ach[i];
-        m_ach[i] = ch;
+    mux_string *sTemp = new mux_string;
+    sTemp->realloc_m_pcs(m_ncs);
 
-        if (0 != m_ncs)
+    size_t j = 0;
+    for (size_t i = 1; i <= m_n; i++)
+    {
+        for (j = i; j <= m_n && UTF8_CONTINUE == utf8_FirstByte[m_ach[m_n - j]]; j++)
         {
-            ANSI_ColorState cs = m_pcs[j];
-            m_pcs[j] = m_pcs[i];
-            m_pcs[i] = cs;
+            ; // Nothing.
         }
+        sTemp->append(*this, m_n - j, j + 1 - i);
+        i = j;
     }
+    import(*sTemp);
+    delete sTemp;
 }
 
 /*! \brief Searches text for a specified pattern.
