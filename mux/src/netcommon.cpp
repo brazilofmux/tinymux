@@ -513,33 +513,29 @@ void queue_string(DESC *d, const char *s)
 
 void queue_string(DESC *d, const mux_string &s)
 {
-    char *pBuff = alloc_lbuf("queue_string");
-    const char *pFinal = pBuff;
+    static char Buffer[LBUF_SIZE];
+    const char *pFinal = Buffer;
 
     if (d->flags & DS_CONNECTED)
     {
         if (!Ansi(d->player))
         {
-            s.export_TextPlain(pBuff);
-        }
-        else if (NoBleed(d->player))
-        {
-            s.export_TextAnsi(pBuff, NULL, 0, s.length(), LBUF_SIZE-1, ANSI_ENDGOAL_NOBLEED);
+            s.export_TextPlain(Buffer);
         }
         else
         {
-            s.export_TextAnsi(pBuff);
+            s.export_TextAnsi(Buffer, NULL, 0, s.length(), LBUF_SIZE-1, NoBleed(d->player));
         }
 
         if (NoAccents(d->player))
         {
-            pFinal = strip_accents(pBuff);
+            pFinal = strip_accents(Buffer);
         }
     }
     else
     {
-        s.export_TextPlain(pBuff);
-        pFinal = strip_accents(pBuff);
+        s.export_TextPlain(Buffer);
+        pFinal = strip_accents(Buffer);
     }
 
     // TODO: This needs to be gated on the client's ability to handle UTF8.
@@ -548,7 +544,6 @@ void queue_string(DESC *d, const mux_string &s)
     //pFinal = ConvertToLatin((UTF8 *)pFinal);
     pFinal = encode_iac(pFinal);
     queue_write(d, pFinal);
-    free_lbuf(pBuff);
 }
 
 void freeqs(DESC *d)
@@ -1574,8 +1569,7 @@ static const char *trimmed_name(dbref player, size_t *pvw)
         sizeof(cbuff),
         cbuff,
         MAX_TRIMMED_NAME_LENGTH,
-        pvw,
-        ANSI_ENDGOAL_NORMAL
+        pvw
     );
     return cbuff;
 }
@@ -2006,8 +2000,7 @@ char *MakeCanonicalDoing(char *pDoing, size_t *pnValidDoing, bool *pbValidDoing)
                       SIZEOF_DOING_STRING,
                       szFittedDoing,
                       WIDTHOF_DOING_STRING,
-                      &nVisualWidth,
-                      ANSI_ENDGOAL_NORMAL
+                      &nVisualWidth
                     );
     *pbValidDoing = true;
     return szFittedDoing;

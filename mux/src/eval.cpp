@@ -923,8 +923,7 @@ static void tcache_add(dbref player, char *orig, char *result)
             char *tp = alloc_lbuf("tcache_add.lbuf");
 
             size_t nvw;
-            ANSI_TruncateToField(result, LBUF_SIZE, tp, LBUF_SIZE,
-                &nvw, ANSI_ENDGOAL_NORMAL);
+            ANSI_TruncateToField(result, LBUF_SIZE, tp, LBUF_SIZE, &nvw);
             xp->result = tp;
 
             xp->player = player;
@@ -2143,15 +2142,15 @@ void mux_exec( char *pdstr, char *buff, char **bufc, dbref executor,
         static struct ANSI_Out_Context aoc;
 
         ANSI_String_Out_Init(&aoc, mux_scratch, sizeof(mux_scratch),
-            sizeof(mux_scratch), ANSI_ENDGOAL_NORMAL);
+            sizeof(mux_scratch));
         if (realbuff)
         {
             *realbp = '\0';
-            ANSI_String_In_Init(&aic, realbuff, ANSI_ENDGOAL_NORMAL);
-            ANSI_String_Copy(&aoc, &aic, sizeof(mux_scratch));
+            ANSI_String_In_Init(&aic, realbuff);
+            ANSI_String_Copy(&aoc, &aic);
         }
-        ANSI_String_In_Init(&aic, buff, ANSI_ENDGOAL_NORMAL);
-        ANSI_String_Copy(&aoc, &aic, sizeof(mux_scratch));
+        ANSI_String_In_Init(&aic, buff);
+        ANSI_String_Copy(&aoc, &aic);
         if (realbuff)
         {
             MEMFREE(buff);

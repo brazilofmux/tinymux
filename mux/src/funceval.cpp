@@ -262,7 +262,7 @@ FUNCTION(fun_ansi)
         size_t nVisualWidth;
         size_t nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
         size_t nLen = ANSI_TruncateToField(tmp, nBufferAvailable, *bufc,
-            LBUF_SIZE, &nVisualWidth, ANSI_ENDGOAL_NORMAL);
+            LBUF_SIZE, &nVisualWidth);
         *bufc += nLen;
     }
 }
@@ -1395,7 +1395,7 @@ FUNCTION(fun_table)
         size_t nVisibleLength, nPaddingLength;
         size_t nStringLength =
             ANSI_TruncateToField( pCurrent, nBufferAvailable, *bufc,
-                                  nFieldWidth, &nVisibleLength, ANSI_ENDGOAL_NORMAL);
+                                  nFieldWidth, &nVisibleLength);
 
         *bufc += nStringLength;
         nBufferAvailable -= nStringLength;
