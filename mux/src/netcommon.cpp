@@ -582,6 +582,12 @@ void freeqs(DESC *d)
     d->nvt_eor_us_state   = OPTION_NO;
     d->nvt_naws_him_state = OPTION_NO;
     d->nvt_naws_us_state  = OPTION_NO;
+    d->nvt_ttype_him_state = OPTION_NO;
+    d->nvt_ttype_us_state = OPTION_NO;
+    if (d->nvt_ttype_him_value) {
+        free(d->nvt_ttype_him_value);
+        d->nvt_ttype_him_value = NULL;
+    }
     d->height = 24;
     d->width = 78;
 }

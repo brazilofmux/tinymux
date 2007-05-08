@@ -22,11 +22,11 @@
 #include "levels.h"
 #endif // REALITY_LVLS
 
-#if defined(FIRANMUX)
+#if defined(INLINESQL)
 #include <mysql.h>
 
 extern MYSQL *mush_database;
-#endif // FIRANMUX
+#endif // INLINESQL
 
 UFUN *ufun_head;
 
@@ -6427,9 +6427,9 @@ FUNCTION(fun_distribute)
     }
 }
 
-#if defined(FIRANMUX)
+#if defined(INLINESQL)
 
-/* sql() function -- Rachel 'Jeanne' Blackman
+/* sql() function -- Rachel 'Sparks' Blackman
  *                   2003/09/30
  *
  * A more-or-less functionally equivalent version of
@@ -6515,7 +6515,7 @@ FUNCTION(fun_sql)
      mysql_free_result(result);
 }
 
-#endif // FIRANMUX
+#endif // INLINESQL
 
 /* ---------------------------------------------------------------------------
  * fun_filter: Iteratively perform a function with a list of arguments and
@@ -7185,6 +7185,86 @@ static FUNCTION(fun_conn)
     }
     safe_ltoa(nConnected, buff, bufc);
 }
+
+static FUNCTION(fun_terminfo)
+{
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
+    long nConnected = -1;
+    DESC *d = NULL;
+    if (is_rational(fargs[0]))
+    {
+        SOCKET s = mux_atol(fargs[0]);
+        bool bFound = false;
+        DESC *d;
+        CLinearTimeAbsolute ltaNow;
+        ltaNow.GetUTC();
+        DESC_ITER_CONN(d)
+        {
+            if (d->descriptor == s)
+            {
+                bFound = true;
+                break;
+            }
+        }
+        if (  bFound
+           && !(  d->player == executor
+              || Wizard_Who(executor)))
+        {
+            safe_str("#-1 PERMISSION DENIED",buff, bufc);
+            return;
+        }
+    }
+    else
+    {
+        char *pTargetName = fargs[0];
+        if (*pTargetName == '*')
+        {
+            pTargetName++;
+        }
+        dbref target = lookup_player(executor, pTargetName, true);
+        if (  Good_obj(target)
+           && !(  !Hidden(target)
+              || See_Hidden(executor)))
+        {
+            safe_str("#-1 PERMISSION DENIED", buff, bufc);
+            return;
+        }
+        DESC_ITER_CONN(d)
+        {
+            if (d->player == target)
+            {
+                break;
+            }
+        }
+    }
+    
+    if (!d) {
+        safe_str("#-1 NOT CONNECTED", buff, bufc);
+        return;
+    }
+    
+    if (d->nvt_ttype_him_value) {
+        safe_str(d->nvt_ttype_him_value, buff, bufc);
+        safe_str(" telnet", buff, bufc);
+    }
+    else {
+        safe_str("unknown", buff, bufc);
+        if (d->nvt_naws_him_state || d->nvt_sga_him_state || d->nvt_eor_him_state) {
+            safe_str(" telnet", buff, bufc);
+        }
+    }
+    
+    if (Html(d->player)) {
+        safe_str(" pueblo", buff, bufc);
+    }
+}
+
 
 /*
  * ---------------------------------------------------------------------------
@@ -10070,9 +10150,9 @@ static FUN builtin_function_list[] =
     {"SPACE",       fun_space,      MAX_ARG, 0,       1,         0, CA_PUBLIC},
     {"SPELLNUM",    fun_spellnum,   MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {"SPLICE",      fun_splice,     MAX_ARG, 3,       5,         0, CA_PUBLIC},
-#if defined(FIRANMUX)
+#if defined(INLINESQL)
     {"SQL",         fun_sql,        MAX_ARG, 1,       3,         0, CA_WIZARD},
-#endif // FIRANMUX
+#endif // INLINESQL
     {"SQRT",        fun_sqrt,       MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {"SQUISH",      fun_squish,     MAX_ARG, 0,       2,         0, CA_PUBLIC},
     {"STARTSECS",   fun_startsecs,  MAX_ARG, 0,       0,         0, CA_PUBLIC},
@@ -10096,6 +10176,7 @@ static FUN builtin_function_list[] =
     {"TABLE",       fun_table,      MAX_ARG, 1,       6,         0, CA_PUBLIC},
     {"TAN",         fun_tan,        MAX_ARG, 1,       2,         0, CA_PUBLIC},
     {"TEL",         fun_tel,        MAX_ARG, 2,       2,         0, CA_PUBLIC},
+    {"TERMINFO",    fun_terminfo,         1, 1, MAX_ARG,         0, CA_PUBLIC},
 #if defined(FIRANMUX)
     {"TEXT",        fun_text,       MAX_ARG, 2,       2,         0, CA_PUBLIC},
 #endif // FIRANMUX

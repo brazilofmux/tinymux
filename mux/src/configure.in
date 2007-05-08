@@ -87,7 +87,7 @@ AC_ARG_ENABLE(
       AC_MSG_RESULT(no)
     else
       FIRANMUX="-DFIRANMUX"
-      FIRANLIBS="-lmysqlclient"
+      FIRANLIBS=""
       AC_MSG_RESULT(yes)
     fi
   ],
@@ -113,6 +113,77 @@ AC_ARG_ENABLE(
     AC_MSG_RESULT(no)
   ])
 AC_SUBST(FIRANMUX_CONVERT)
+
+AC_MSG_CHECKING(whether to enable inline MySQL)
+AC_ARG_ENABLE(
+  [inlinesql],
+  AC_HELP_STRING([--enable-inlinesql], [enable inline MySQL support compatible with PennMUSH and TinyMUSH 3.x (default is NO)]),
+  [
+    if test "x$enableval" = "xno"; then
+      AC_MSG_RESULT(no)
+    else
+      INLINESQL="-DINLINESQL"
+      INLINESQL_LIBS="-lmysqlclient -lZ"
+      AC_MSG_RESULT(yes)
+    fi
+  ],
+  [
+    AC_MSG_RESULT(no)
+  ])
+AC_SUBST(INLINESQL)
+AC_SUBST(INLINESQL_LIBS)
+
+AC_MSG_CHECKING(for location of SQL header files)
+AC_ARG_WITH(
+  [mysql-include],
+  AC_HELP_STRING([--with-mysql-include=PATH],[set the include path for SQL header files]),
+  [
+      if test "x$enable_inlinesql" = "xno"; then
+        AC_MSG_RESULT(none)
+      elif test "x$enable_inlinesql" = "x"; then
+        AC_MSG_RESULT(none)
+      else
+        INLINESQL_INCLUDE="-I$withval"
+        AC_MSG_RESULT($withval)
+      fi
+  ],
+  [
+      if test "x$enable_inlinesql" = "xno"; then
+        AC_MSG_RESULT(none)
+      elif test "x$enable_inlinesql" = "x"; then
+        AC_MSG_RESULT(none)
+      else
+        INLINESQL_INCLUDE="-I/usr/include/mysql"
+        AC_MSG_RESULT(/usr/include/mysql)
+      fi
+  ])
+AC_SUBST(INLINESQL_INCLUDE)
+
+AC_MSG_CHECKING(for location of SQL library files)
+AC_ARG_WITH(
+  [mysql-libs],
+  AC_HELP_STRING([--with-mysql-libs=PATH],[set the library path for SQL library files]),
+  [
+      if test "x$enable_inlinesql" = "xno"; then
+        AC_MSG_RESULT(none)
+      elif test "x$enable_inlinesql" = "x"; then
+        AC_MSG_RESULT(none)
+      else
+        INLINESQL_LIBPATH="-L$withval"
+        AC_MSG_RESULT($withval)
+      fi
+  ],
+  [
+      if test "x$enable_inlinesql" = "xno"; then
+        AC_MSG_RESULT(none)
+      elif test "x$enable_inlinesql" = "x"; then
+        AC_MSG_RESULT(none)
+      else
+        INLINESQL_LIBPATH="-L/usr/lib/mysql"
+        AC_MSG_RESULT(/usr/lib/mysql)
+      fi
+  ])
+AC_SUBST(INLINESQL_LIBPATH)
 
 AC_MSG_CHECKING(whether to enable deprecated features)
 AC_ARG_ENABLE(
