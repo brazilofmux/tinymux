@@ -509,7 +509,6 @@ FLAGNAMEENT gen_flag_names[] =
     {"MYOPIC",          true, &fbeMyopic         },
     {"NO_COMMAND",      true, &fbeNoCommand      },
     {"NOACCENTS",       true, &fbeAscii          },
-    {"NOASCII",        false, &fbeAscii          },
     {"NOBLEED",         true, &fbeNoBleed        },
     {"NOSPOOF",         true, &fbeNoSpoof        },
     {"OPAQUE",          true, &fbeOpaque         },

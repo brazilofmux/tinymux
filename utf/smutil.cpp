@@ -203,6 +203,7 @@ State *StateMachine::AllocateState(void)
     for (i = 0; i < 256; i++)
     {
         p->next[i] = &m_Undefined;
+        ValidateStatePointer(p->next[i], __LINE__);
     }
     p->merged = NULL;
     return p;
@@ -266,6 +267,13 @@ StateMachine::~StateMachine()
 
 void StateMachine::RecordString(UTF8 *pStart, UTF8 *pEnd, int AcceptingState)
 {
+    if (  AcceptingState < 0
+       || NUM_ACCEPTING_STATES < AcceptingState)
+    {
+        fprintf(stderr, "Accepting state exceeds supported range.\n");
+        exit(0);
+    }
+
     if (m_nLargestAcceptingState < AcceptingState)
     {
         m_nLargestAcceptingState = AcceptingState;
@@ -275,10 +283,17 @@ void StateMachine::RecordString(UTF8 *pStart, UTF8 *pEnd, int AcceptingState)
     while (pStart < pEnd-1)
     {
         UTF8 ch = *pStart;
+        ValidateStatePointer(pState, __LINE__);
+        ValidateStatePointer(pState->next[ch], __LINE__);
         if (&m_Undefined == pState->next[ch])
         {
             State *p = AllocateState();
             m_stt[m_nStates++] = p;
+            if (NUM_STATES <= m_nStates)
+            {
+                fprintf(stderr, "Limit of %d states exceeded.\n", NUM_STATES);
+                exit(0);
+            }
             pState->next[ch] = p;
             pState = p;
         }
@@ -298,9 +313,12 @@ void StateMachine::RecordString(UTF8 *pStart, UTF8 *pEnd, int AcceptingState)
     if (pStart < pEnd)
     {
         UTF8 ch = *pStart;
+        ValidateStatePointer(pState, __LINE__);
+        ValidateStatePointer(pState->next[ch], __LINE__);
         if (&m_Undefined == pState->next[ch])
         {
             pState->next[ch] = (State *)(m_aAcceptingStates + AcceptingState);
+            ValidateStatePointer(pState->next[ch], __LINE__);
         }
         else if (  (State *)(m_aAcceptingStates) <= pState->next[ch]
                 && pState->next[ch] < (State *)(m_aAcceptingStates + sizeof(m_aAcceptingStates)))
@@ -327,6 +345,9 @@ void StateMachine::ReportStatus(void)
 
 bool StateMachine::RowsEqual(State *p, State *q)
 {
+    ValidateStatePointer(p, __LINE__);
+    ValidateStatePointer(q, __LINE__);
+
     if (p == q)
     {
         return true;
@@ -340,6 +361,8 @@ bool StateMachine::RowsEqual(State *p, State *q)
     int i;
     for (i = 0; i < 256; i++)
     {
+        ValidateStatePointer(p->next[i], __LINE__);
+        ValidateStatePointer(q->next[i], __LINE__);
         if (  &m_Undefined == p->next[i]
            || &m_Undefined == q->next[i])
         {
@@ -361,7 +384,9 @@ bool StateMachine::ColumnsEqual(int iColumn, int jColumn)
     for (i = 0; i < m_nStates; i++)
     {
         State *p = m_stt[i];
-#if 1
+        ValidateStatePointer(p, __LINE__);
+        ValidateStatePointer(p->next[iColumn], __LINE__);
+        ValidateStatePointer(p->next[jColumn], __LINE__);
         if (  &m_Undefined == p->next[iColumn]
            || &m_Undefined == p->next[jColumn])
         {
@@ -370,7 +395,6 @@ bool StateMachine::ColumnsEqual(int iColumn, int jColumn)
             continue;
         }
         else
-#endif
         if (p->next[iColumn] != p->next[jColumn])
         {
             return false;
@@ -391,6 +415,7 @@ void StateMachine::MergeAcceptingStates(void)
     for (i = 0; i < m_nStates; i++)
     {
         State *pi = m_stt[i];
+        ValidateStatePointer(pi, __LINE__);
         if (m_StartingState == pi)
         {
             // We can't remove the starting state.
@@ -403,6 +428,7 @@ void StateMachine::MergeAcceptingStates(void)
         int k;
         for (k = 0; k < 256; k++)
         {
+            ValidateStatePointer(pi->next[k], __LINE__);
             if (&m_Undefined == pi->next[k])
             {
                 // Undefined State will match everything.
@@ -428,6 +454,7 @@ void StateMachine::MergeAcceptingStates(void)
                 bMatched = false;
                 break;
             }
+            ValidateStatePointer(pLastState, __LINE__);
         }
 
         if (bMatched)
@@ -435,6 +462,7 @@ void StateMachine::MergeAcceptingStates(void)
             // Prune (i)th row so as to arrive at the accepting state one transition earlier.
             //
             pi->merged = pLastState;
+            ValidateStatePointer(pi->merged, __LINE__);
         }
     }
 
@@ -443,15 +471,19 @@ void StateMachine::MergeAcceptingStates(void)
     for (i = 0; i < m_nStates; i++)
     {
         State *pi = m_stt[i];
+        ValidateStatePointer(pi, __LINE__);
         if (NULL == pi->merged)
         {
             int j;
             for (j = 0; j < 256; j++)
             {
                 State *pj = pi->next[j];
+                ValidateStatePointer(pj, __LINE__);
                 if (NULL != pj->merged)
                 {
+                    ValidateStatePointer(pj->merged, __LINE__);
                     pi->next[j] = pj->merged;
+                    ValidateStatePointer(pi->next[j], __LINE__);
                 }
             }
         }
@@ -462,12 +494,14 @@ void StateMachine::MergeAcceptingStates(void)
     for (i = 0; i < m_nStates;)
     {
         State *pi = m_stt[i];
+        ValidateStatePointer(pi, __LINE__);
         if (NULL == pi->merged)
         {
             i++;
         }
         else
         {
+            ValidateStatePointer(pi->merged, __LINE__);
             FreeState(pi);
             m_stt[i] = NULL;
 
@@ -496,11 +530,13 @@ void StateMachine::RemoveDuplicateRows(void)
     for (i = 0; i < m_nStates; i++)
     {
         State *pi = m_stt[i];
+        ValidateStatePointer(pi, __LINE__);
         if (NULL == pi->merged)
         {
             for (j = i+1; j < m_nStates; j++)
             {
                 State *pj = m_stt[j];
+                ValidateStatePointer(pj, __LINE__);
                 if (NULL == pj->merged)
                 {
                     if (RowsEqual(pi, pj))
@@ -508,6 +544,7 @@ void StateMachine::RemoveDuplicateRows(void)
                         // Merge (j)th row into (i)th row.
                         //
                         pj->merged = pi;
+                        ValidateStatePointer(pj, __LINE__);
 
                         // Let (j)th row defined transitions override (i)th
                         // row undefined transitions.
@@ -515,9 +552,11 @@ void StateMachine::RemoveDuplicateRows(void)
                         int u;
                         for (u = 0; u < 256; u++)
                         {
+                            ValidateStatePointer(pi->next[u], __LINE__);
                             if (&m_Undefined == pi->next[u])
                             {
                                 pi->next[u] = pj->next[u];
+                                ValidateStatePointer(pi->next[u], __LINE__);
                             }
                         }
                     }
@@ -531,14 +570,18 @@ void StateMachine::RemoveDuplicateRows(void)
     for (i = 0; i < m_nStates; i++)
     {
         State *pi = m_stt[i];
+        ValidateStatePointer(pi, __LINE__);
         if (NULL == pi->merged)
         {
             for (j = 0; j < 256; j++)
             {
                 State *pj = pi->next[j];
+                ValidateStatePointer(pj, __LINE__);
                 if (NULL != pj->merged)
                 {
+                    ValidateStatePointer(pj->merged, __LINE__);
                     pi->next[j] = pj->merged;
+                    ValidateStatePointer(pi->next[j], __LINE__);
                 }
             }
         }
@@ -549,12 +592,14 @@ void StateMachine::RemoveDuplicateRows(void)
     for (i = 0; i < m_nStates;)
     {
         State *pi = m_stt[i];
+        ValidateStatePointer(pi, __LINE__);
         if (NULL == pi->merged)
         {
             i++;
         }
         else
         {
+            ValidateStatePointer(pi->merged, __LINE__);
             FreeState(pi);
             m_stt[i] = NULL;
 
@@ -600,9 +645,12 @@ void StateMachine::DetectDuplicateColumns(void)
                 int u;
                 for (u = 0; u < m_nStates; u++)
                 {
+                    ValidateStatePointer(m_stt[u]->next[i], __LINE__);
                     if (&m_Undefined == m_stt[u]->next[i])
                     {
+                        ValidateStatePointer(m_stt[u]->next[j], __LINE__);
                         m_stt[u]->next[i] = m_stt[u]->next[j];
+                        ValidateStatePointer(m_stt[u]->next[i], __LINE__);
                     }
                 }
             }
@@ -634,9 +682,11 @@ void StateMachine::SetUndefinedStates(int AcceptingState)
         int j;
         for (j = 0; j < 256; j++)
         {
+            ValidateStatePointer(m_stt[i]->next[j], __LINE__);
             if (&m_Undefined == m_stt[i]->next[j])
             {
                 m_stt[i]->next[j] = (State *)(m_aAcceptingStates + AcceptingState);
+                ValidateStatePointer(m_stt[i]->next[j], __LINE__);
             }
         }
     }
@@ -669,6 +719,36 @@ void StateMachine::MinimumMachineSize(int *pSizeOfState, int *pSizeOfMachine)
     }
     *pSizeOfState = SizeOfState;
     *pSizeOfMachine = m_nStates*SizeOfState*m_nColumns + 256;
+}
+
+void StateMachine::ValidateStatePointer(State *pState, int iLine)
+{
+#if 0
+    char *p = reinterpret_cast<char *>(pState);
+    if (  m_aAcceptingStates <= p
+       && p < m_aAcceptingStates + sizeof(m_aAcceptingStates))
+    {
+        return;
+    }
+    else if (&m_Undefined == pState)
+    {
+        return;
+    }
+    else
+    {
+        int i;
+        for (i = 0; i < m_nStates; i++)
+        {
+            if (m_stt[i] == pState)
+            {
+                return;
+            }
+        }
+    }
+
+    fprintf(stderr, "Invalid state pointer. This should not happen. Line %d\n", iLine);
+    exit(0);
+#endif
 }
 
 void StateMachine::OutputTables(char *UpperPrefix, char *LowerPrefix)
@@ -749,6 +829,7 @@ void StateMachine::OutputTables(char *UpperPrefix, char *LowerPrefix)
             }
 
             State *pj = pi->next[j];
+            ValidateStatePointer(pj, __LINE__);
 
             int k;
             char *p = reinterpret_cast<char *>(pj);
