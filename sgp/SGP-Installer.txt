@@ -1,0 +1,398 @@
+@@		SGP V1.0 - 1 August 2000 (updated 042501)
+@@
+@@ ----  SGP - Main Object Installer  ----
+@@
+@@      NOTE 1: Due to the way that MUSH and MUX operate, you need to have 
+@@      #1 @admin player_queue_limit=1000 and then @restart the MUSH after
+@@      so that the file quotes cleanly.  It is recommended that if using 
+@@      TinyFugue, that you /quote with a 1 second delay between commands,
+@@      so that the queue has time to catch up before it becomes overloaded.
+@@
+@@      NOTE 2: Make sure that you either allow wizards to use @function or
+@@      be prepared to set up a long @startup on #1.
+@@
+@@      NOTE 3: Either quote these objects in the master room or @tel them  
+@@      to that location after they are quoted.
+@@
+@@      NOTE 4: This code is compatible with PennMUSH, TinyMUSH 2.2.x, 
+@@      MUX 2.0, and RhostMUSH.  There are no known changes required
+@@
+@@
+@@      This file current as of 25 April 2001 and includes version 
+@@      monitoring code, and replaces the previous +motd implementation with 
+@@      new code provided by Ashen-Shugar.
+@@
+
+@pemit me=Creating the SGP data and commands objects and setting up version history.  Moment....
+
+@@  Creating SGP objects.
+
+@create SGP - Global Parent Object
+@create SGP - Global Functions
+@create SGP - Main Globals
+@create SGP - Wizard Globals
+@create SGP - Staff Globals
+
+@@  Writing &DB to the command objects.
+
+@wait 0=&DB SGP - Main Globals=num(SGP - Global Parent Object)
+@wait 0=&DB SGP - Wizard Globals=num(SGP - Global Parent Object)
+@wait 0=&DB SGP - Staff Globals=num(SGP - Global Parent Object)
+
+@@  Writing &SGP-OBJECTS to the SGP objects.
+
+@wait 0=&SGP-OBJECTS SGP - Global Parent Object=[num(SGP - Global Parent Object)]
+@wait 0=&SGP-OBJECTS SGP - Global Parent Object=[get(SGP - Global Parent Object/SGP-OBJECTS)]|[num(SGP - Staff Globals)]
+@wait 0=&SGP-OBJECTS SGP - Global Parent Object=[get(SGP - Global Parent Object/SGP-OBJECTS)]|[num(SGP - Main Globals)]
+@wait 0=&SGP-OBJECTS SGP - Global Parent Object=[get(SGP - Global Parent Object/SGP-OBJECTS)]|[num(SGP - Wizard Globals)]
+@wait 0=&SGP-OBJECTS SGP - Global Parent Object=[get(SGP - Global Parent Object/SGP-OBJECTS)]|[num(SGP - Global Functions)]
+
+
+@@  Writing &SGP-VERSION to the SGP objects.
+
+@wait 0=&SGP-VERSION SGP - Global Parent Object=1.0|Base 042501|[elements(time(),2 3 5)]
+@wait 0=&SGP-VERSION SGP - Staff Globals=1.0|Base 121600|[elements(time(),2 3 5)]
+@wait 0=&SGP-VERSION SGP - Main Globals=1.0|Base 121600|[elements(time(),2 3 5)]
+@wait 0=&SGP-VERSION SGP - Wizard Globals=1.0|Base 042501|[elements(time(),2 3 5)]
+@wait 0=&SGP-VERSION SGP - Global Functions=1.0|Base 121600|[elements(time(),2 3 5)]
+
+@@  Writing &UPDATE-HISTORY to the SGP objects.
+
+&UPDATE-HISTORY SGP - Main Globals=Base Install 121600 [elements(time(),2 3 5)]
+&UPDATE-HISTORY SGP - Staff Globals=Base Install 121600 [elements(time(),2 3 5)]
+&UPDATE-HISTORY SGP - Wizard Globals=Base Install 042501 [elements(time(),2 3 5)]
+&UPDATE-HISTORY SGP - Global Functions=Base Install 121600 [elements(time(),2 3 5)]
+&UPDATE-HISTORY SGP - Global Parent Object=Base Install 042501 [elements(time(),2 3 5)]
+
+@@
+@@  Global Parent Object.  This is the home of all the non-command attributes.
+@@  This object can collect the non-command attributes that will slow down 
+@@  the MUSH.  
+@@  
+
+@pemit me=Writing to SGP - Global Parent Object.... Moment. 
+
+@desc SGP - Global Parent Object=This is the global data object for SGP.  All the main global objects read data and write from this object and their code will -not- work without it.  Non-command attributes for globals that you add to any of the globals objects should be placed here.%R%R[iter(setdiff(lattr(me),Desc),ljust(##,18))]
+
+&BAR SGP - Global Parent Object=[repeat(^,78)]
+
+&CANSEE SGP - Global Parent Object=[switch(type(%0),P*,[sign(conn(%0))],[andflags(%0,!D)])]
+
+&CANFIND SGP - Global Parent Object=[and(not(hasflag(%0,unfindable)),not(hasflag(%0,dark)),not(hasflag(loc(%0),unfindable)))]
+
+&COLDISP_FN SGP - Global Parent Object=[fold(%!/COLDISP_FLD, %0, %r%b%b, %1)]
+
+&COLDISP_FLD SGP - Global Parent Object=%0[switch(1, gt(setq(1, sub(mul(setq(2, add(div(strlen(%1), 18), 1))%q2, 18), 1))%q1, sub(76, mul(%q0, 18))), %r%b%b%b[ljust(edit(%1, _, %b), %q1)][setq(0, %q2)], %b[ljust(edit(%1, _, %b), %q1)][setq(0, add(%q2, %q0))])]
+
+@@
+@@  Credits...veddy important
+@@
+
+&CREDITS-CNOTES SGP - Global Parent Object=Angel@Heaven.Gofast.Net
+&CREDITS-LWHO SGP - Global Parent Object=Angel@Heaven.Gofast.Net
+&CREDITS-+where SGP - Global Parent Object=Audumla@Granite
+&CREDITS-+UPTIME SGP - Global Parent Object=Orion@Granite
+&CREDITS-+finger SGP - Global Parent Object=Miateila@Granite
+&CREDITS-REGISTER SGP - Global Parent Object=Cheetara@Granite
+&CREDITS-+timestamp SGP - Global Parent Object=BEM@Granite
+&CREDITS-+3who SGP - Global Parent Object=Ian@BrazilMUX
+&CREDITS-+MOTD SGP - Global Parent Object=Created from scratch by Ashen-Shugar (c) 2001, All rights reserved. This code, with permission, belongs to the SGP code development. All issues with credibility, ownership, or code herein should be brought to the distributors of SGP. This code is original and is not based (other than syntax and attribute compatability) off any other code.
+&CREDITS-OOC SGP - Global Parent Object=Audumla@Granite
+&CREDITS-BACKGROUNDS SGP - Global Parent Object=BEM@Granite
+&CREDITS-+BEGINNER SGP - Global Parent Object=Audumla@Granite
+
+&DARKEX SGP - Global Parent Object=[orflags(%0,!D)]
+
+&FIL-LWHO SGP - Global Parent Object=[match(loc(%0),%l)]
+
+&FINGER_LIST_LONG SGP - Global Parent Object=Full Name|Age|Fame|Position|Apparent Age|Plan|RP-Prefs|Alts|Theme Song|Quote|Office-hours|Temperment|Vacation|Homepage
+
+&FINGER_LIST SGP - Global Parent Object=fullname|age|fame|position|app-age|plan|rp-prefs|alts|themesong|quote|off-hours|temperment|vacation|url
+
+@@
+@@       Sample footers to pick from for select for general globals.
+@@
+
+&footer SGP - Global Parent Object=[repeat(==,39)]
+&footer-dash SGP - Global Parent Object=[repeat(--,39)]
+&footer-eq-o SGP - Global Parent Object=[repeat(=o,39)]
+&footer-dash-percent-1 SGP - Global Parent Object=[repeat(-%%-!,15)]
+&footer-dash-percent-2 SGP - Global Parent Object=[repeat(-%%,26)]
+&footer-dash-percent-3 SGP - Global Parent Object=[repeat(%%-!-,15)]
+&footer-o-eq SGP - Global Parent Object=[repeat(o-o=o ,15)-o]
+&footer-ozz SGP - Global Parent Object=[repeat(ozz,26)]
+&footer-oz SGP - Global Parent Object=[repeat(oz,39)]
+&footer-xcomplex SGP - Global Parent Object=x[repeat(x-==-,15)]xx
+&footer-ocomplex SGP - Global Parent Object=[repeat(o-==-o,15)]
+&footer-complex SGP - Global Parent Object=--oo[repeat(%B-==-%B,12)]oo--
+
+&FN_SCANOBJ SGP - Global Parent Object=[setq(6,%0)][iter(filter(FIL_IS$,lattr(%q6)),##)]
+
+&FN_SCAN SGP - Global Parent Object=%r[name(%0)]%(%0[flags(%0)]%)[iter(u(FN_SCANOBJ,%0),%r[space(4)][ljust(##,40)]%[[mid(get(%0/##),1,sub(pos(:,get(%0/##)),2))]%])]
+
+@@
+@@  Headers section:
+@@  This is where you need to makes some choices, my children!  
+@@
+
+&HEADER SGP - Global Parent Object=[center(>%B%B[mudname()]%B%B<,78,=)]%R
+&HEADER-STAFF SGP - Global Parent Object=[center(>%B%B[mudname()] Staff%B%B<,78,=)]
+&HEADER-STAFFCON SGP - Global Parent Object=[center(>%B%B[mudname()] Connected Staff%B%B<,78,=)]
+
+@@
+@@  Softcoded helpfiles for the U1/Old style TinyMUSH variants
+@@  MUX has a textfile.  Please check server documentation for how to 
+@@  use it.
+@@
+
+&IDLETIME SGP - Global Parent Object=switch(1,lt(%0,60),%0s,lt(%0,3600),div(%0,60)m,lt(%0,86400),div(%0,3600)h,div(%0,86400)d)
+
+&LASTCONN SGP - Global Parent Object=[setq(9,sub(convtime(%1),convtime(%0)))][ulocal(secs2hrs,%q9)]
+
+&LIST-SAMPLE SGP - Global Parent Object=Sample|Audumla|Done and Installed on Global
+
+&LOCSORT SGP - Global Parent Object=[comp(name(loc(%0)),name(loc(%1)))]
+
+&NAMESORT SGP - Global Parent Object=[comp(name(%0),name(%1))]
+
+&SORTLOC SGP - Global Parent Object=[comp(loc(%0),loc(%1))]
+
+&SECS2HRS SGP - Global Parent Object=[switch(1,lte(%0,60),%0s,lte(%0,3600),{[div(%0,60)]m},lte(%0,86400),{[div(%0,3600)]h [rjust(div(mod(%0,3600),60),2)]m},{[div(%0,86400)]d [rjust(div(mod(%0,86400),3600),2)]h})]
+
+&STAFF-LIST SGP - Global Parent Object=#0
+
+&STARTING_IC_LOC SGP - Global Parent Object=#0
+
+&TWODIGCONN SGP - Global Parent Object=switch(1,lt(%0,60),rjust(%0s,7),lt(%0,3600),rjust(div(%0,60)m,3)[rjust(mod(%0,60)m,4)],lt(%0,86400),rjust(div(%0,3600)h,3)[rjust(div(mod(%0,3600),60)m,4)],rjust(div(%0,86400)d,3)[rjust(div(mod(%0,3600),3600)h,4)])
+
+@pemit me=Setting Flags on SGP - Global Parent Object.... Moment.
+
+@set SGP - Global Parent Object=SAFE
+
+@switch version()=RhostMUSH*,{@set SGP - Global Parent Object=INHERIT},{}
+
+@@
+@@  Global Functions Object.  Place this in a storage location.
+@@
+
+@pemit me=Writing to SGP - Global Functions.... Moment.
+
+@desc SGP - Global Functions=This is the global function object for SGP.  The startup on this object must be triggered at every startup of the server.  As such, the #1 startup on #1 must include the appropriate trigger or the server must be configured so that wizards can use @function.  This decision is a matter of preference.%R%R[iter(setdiff(lattr(me),Desc),ljust(##,18))]
+
+&FN_OSTAFF SGP - Global Functions=[gt(member(get(v(DB)/staff-list),%0),0)]
+
+@pemit me=Setting @startup on SGP - Global Functions.... Moment.
+
+@switch version()=PennMUSH*,{@Startup SGP - Global Functions=@dolist lattr(me/fn_*)=@function after(##,FN_)=me,##\;@dolist lattr(me/fnp_*)=@function after(##,FNP_)=me,##},{@Startup SGP - Global Functions=@dolist lattr(me/fn_*)=@function after(##,FN_)=me/##\;@dolist lattr(me/fnp_*)=@function after(##,FNP_)=me/##}
+
+@switch version()=MUX*,{},{&COLUMNS2 SGP - Global Functions=%[setq(0,div(75,%%1))%]%[setq(1,switch(mod(words(%%0,%%2),%%q0),0,div(words(%%0,%%2),%%q0),add(div(words(%%0,%%2),%%q0),1)))%]%[iter(lnum(%%q1),%%r%[u(COLUMNS3,extract(%%0,add(mul(##,%%q0),1),%%q0,%%2),%%1,%%2)%])%]}
+
+@switch version()=MUX*,{},{&COLUMNS3 SGP - Global Functions=%[iter(%%0,ljust(##,%%1),%%2)%]}
+
+&FIL_IS$ SGP - Global Functions=[not(comp(mid(get(%q6/%0),0,1),$))]
+
+&FN_ANDLIST SGP - Global Functions=iter(ldelete(%0,words(%0,%1),%1),##%,,%1) and [last(%0,%1)]
+
+@switch version()=MUX*,{},RhostMUSH,{},{&FN_COLUMNS SGP - Global Functions=%[ulocal(SGP - Global Functions/COLUMNS2,%%0,%%1,%%2)%]}
+
+&FN_DASH SGP - Global Functions=edit(%0,%B,-)
+
+&FN_DICE SGP - Global Functions=[switch(1,gt(%0,24),#-1,lt(%0,1),#-1,iter(lnum(%0),add(1,rand(10))))]
+
+&FN_FINDPC SGP - Global Functions=[setq(6,locate(%0,%1,aimnpP))][switch(r(6),#-*,locate(%0,*%1,p),r(6))]
+
+@switch version()=TinyMUSH version 2.2.*,{&FN_ISSTAFF SGP - Global Functions=orflags%(%%0,Wi%)},MUX*,{&FN_ISSTAFF SGP - Global Functions=orflags%(%%0,WZw%)},PennMUSH*,{&FN_ISSTAFF SGP - Global Functions=orflags%(%%0,Wr%)},{&FN_ISSTAFF SGP - Global Functions=orflags%(%%0,iWaBg%)}
+
+&FN_MMM-DD-YYYY SGP - Global Functions=[elements(time(),2 3 5)]
+
+&FN_ROLL SGP - Global Functions=[switch(1,gt(%0,24),#-1,lt(%0,1),#-1,[setq(0,dice(%0))][setq(1,words(iter(%q0,switch(1,gte(##,%1),##))))][setq(2,words(iter(%q0,switch(##,1,##))))][sub(%q1,%q2)])]
+
+&FN_SCANOBJ SGP - Global Functions=[setq(6,%0)][iter(filter(FIL_IS$,lattr(%q6)),##)]
+
+&FN_SCAN SGP - Global Functions=%r[name(%0)]%(%0[flags(%0)]%)[iter(u(FN_SCANOBJ,%0),%r[space(4)][ljust(##,40)]%[[mid(get(%0/##),1,sub(pos(:,get(%0/##)),2))]%])]
+
+@pemit me=Setting flags on SGP - Global Functions.... Moment.
+
+@switch version()=TinyMUSH version 2.2.*,{@set SGP - Global Functions=INHERIT;@set SGP - Global Functions=SAFE},PennMUSH*,{@set SGP - Global Functions=WIZARD},MUX*,{@set SGP - Global Functions=INHERIT;@set SGP - Global Functions=SAFE},RhostMUSH*,{@set SGP - Global Functions=INHERIT;@set SGP - Global Functions=SAFE}
+
+@@
+@@  The Main Globals Command object.  Place this in the master room.
+@@
+
+@pemit me=Writing to SGP - Main Globals.... Moment.
+
+@Desc SGP - Main Globals=This is the main globals object for SGP. These are global commands that every player will have access to and use.%R%R[iter(setdiff(lattr(me),Desc),ljust(##,18))]
+
+&CMD-ACCEPT SGP - Main Globals=$+accept:&accept-conditions %#=time(); @pemit %#=You have acknowledged the Acceptable Use Policy as of [get(%#/accept-conditions)].
+
+&CMD-BEGINNER SGP - Main Globals=$+beginner:@pemit %#=[center(Commands for Beginning MUSHers,78, )]%R%RMUSH is new to some of you and probably a little daunting. To ease your feelings of panic, we offer a very basic list of commands that will get you looking around and using the various features of the game.%R%R"<message>[space(16)]You say <message>%RSay <message> [space(12)]See above.%Rooc <message>[space(13)]Makes an OOC statement or pose.%Rpage <person>=<message>[space(3)]Pages <person> with <message>%Rlook[space(22)]Shows you the room you are standing in.%Rlook <object or person>[space(3)]Shows the desc for that object or person%Rpose <message>[space(12)]You pose <message> EX: pose grins.->John Doe grins.%R:<message>[space(16)]See 'pose" above%RWHO[space(23)]Shows a list of who is connected to the MUSH%R+who[space(22)]Shows a modified WHO.%R+help[space(21)]The global +help system.%R+staff[space(20)]Shows connected Staff%R+staff/all[space(16)]Shows the staff roster.%R%RNOTE: MUSH commands may be case sensitive. You can always page a staffer for help.%R%r"+beginner" recalls this file%R
+
+&CMD-FINGER SGP - Main Globals=$+finger *:[setq(0,switch([type(num(%0))],PLAYER,[num(*%0)],[switch([type(num(*%0))],PLAYER,[Num(*%0)],[locate(%#,%0,mp)])]))][setq(9,and(not(and(hasflag(%q0,Dark),not(IsStaff(%#)))),switch(member(lwho(),%q0),0,0,1)))][setq(8,idle(%q0))]; @switch %q0= #-1,@pemit %#=That is not a player.,#-2,@pemit %#=There is more than one %0.,{@pemit %#=[center(---<@%B%B[name(%q0)[switch(isstaff(%#),0,,(%q0) [flags(%q0)])]]%B%B@>---,78,=)]%r[ljust(Alias:%B%B[switch(hasattr(%q0,alias),1,[u(%q0/Alias)],)]%B[switch(hasflag(%q0,Wizard),0,switch(hasflag(%q0,Immortal),0,switch(hasflag(%q0,Builder),0,,(Builder)),(Immortal)),(Wizard))],39)]|[ljust([switch(%q9,0,Last on: [get(%q0/last)],1,On for: [u(v(db)/secs2hrs,conn(%q0))][space(10)]Idle: [u(v(db)/secs2hrs,%q8)])],38)]%R[ljust(Sex: %B%B%B[switch(strlen(get(%q0/sex)),0,None Set,get(%q0/sex))],39)]|[ljust(Mail:%B%B[extract(mail(%q0),2,1)] unread / [extract(mail(%q0),1,1)] total.,38)]%R[ljust([switch(hasattr(%q0,email),1,E-Mail:%B[get(%q0/email)],E-Mail:%B(unlisted))],39)]|[ljust(,38)]%R[u(v(db)/footer)]%R[switch(findable(%#,%q0),1,Location:[space(7)][name(loc(%q0))],[switch(isstaff(%#),1,Location:[space(7)][name(loc(%q0))] (unfindable),Location:[space(7)](unfindable))])][setq(7,[u(v(db)/finger_list)])][iter(%q7,{[switch(1,hasattr(%q0,##),{%r[ljust([index([u(v(db)/finger_list_long)],|,[member(%q7,##,|)],1)]:,16)][u(%q0/##)]})]},|)][iter(lattr(%q0/finger*),%r[ljust(capstr(lcstr(edit(edit(##,FINGER_,),FINGER-,))):,15)]%t[u(%q0/##)])]; @pemit %#=[switch(hasflag(%#,wizard),0,,[repeat(-,78)]%RRegistration:%t%t[get(%q0/registration)]%rLast online from:%t[get(%q0/lastsite)]%r[switch(%q9,0,,Currently online from:%t[get(%q0/lastsite)]%r)])][u(v(db)/footer)];@switch hasflag(%#,DARK)=1,{},{@verb %q0=%#,,,,,afinger,}}
+
+@@
+@@  If you are running an older TinyMUSH with Fluff's Mailer, then use the code below
+@@
+
+@@ &CMD-FINGER-AMBY SGP - Main Globals=$+finger *:[setq(0,switch([type(num(%0))],PLAYER,[num(*%0)],[switch([type(num(*%0))],PLAYER,[Num(*%0)],[locate(%#,%0,mp)])]))][setq(9,and(not(and(hasflag(%q0,Dark),not(IsStaff(%#)))),switch(member(lwho(),%q0),0,0,1)))][setq(8,idle(%q0))];@pemit %#=[switch(%q0,#-1,That is not a player.,#-2,There is more than one %0.,[center(---<@%B%B[name(%q0)[switch(isstaff(%#),0,,(%q0) [flags(%q0)])]]%B%B@>---,78,=)]%r[ljust(Alias:%B%B[switch(hasattr(%q0,alias),1,[u(%q0/Alias)],)]%B[switch(hasflag(%q0,Wizard),0,switch(hasflag(%q0,Immortal),0,switch(hasflag(%q0,Builder),0,,(Builder)),(Immortal)),(Wizard))],39)]|[ljust([switch(%q9,0,Last on: [get(%q0/last)],1,On for: [u(v(db)/secs2hrs,conn(%q0))][space(10)]Idle: [u(v(db)/secs2hrs,%q8)])],38)]%R[ljust(Sex: %B%B%B[switch(strlen(get(%q0/sex)),0,None Set,get(%q0/sex))],39)]|[setq(1,get(%q0/mbox))][ljust(Mail:%B%B[switch(hasattr(%q0,mbox),1,{[words(get(%q1/NEW_LIST))] unread / [words(get(%q1/RECV_LIST))] total.},{0 unread / 0 total.})],38)]%R[ljust([switch(hasattr(%q0,email),1,E-Mail:%B[get(%q0/email)],E-Mail:%B(unlisted))],39)]|[ljust(,38)]%R[u(v(db)/footer)]%R[switch(findable(%#,%q0),1,Location:[space(7)][name(loc(%q0))],[switch(isstaff(%#),1,Location:[space(7)][name(loc(%q0))] (unfindable),Location:[space(7)](unfindable))])][setq(7,[get(v(db)/finger_list)])][iter(%q7,{[switch(1,hasattr(%q0,##),{%r[ljust([index([get(v(db)/finger_list_long)],|,[member(%q7,##,|)],1)]:,16)][u(%q0/##)]})]},|)][iter(lattr(%q0/finger*),%r[ljust(capstr(lcstr(edit(edit(##,FINGER_,),FINGER-,))):,15)]%t[u(%q0/##)])])];; @pemit %#=[switch(hasflag(%#,wizard),0,,[repeat(-,78)]%RRegistration:%t%t[get(%q0/registration)]%rLast online from:%t[get(%q0/lastsite)]%r[switch(%q9,0,,Currently online from:%t[get(%q0/lastsite)]%r)])][u(v(db)/footer)];@verb %q0=%#,,,,,afinger,
+
+&CMD-GLANCE SGP - Main Globals=$+glance:@pemit %#=[center(%B%BAt a glance around [name(%l)%B%B],78,-)][iter(filter(v(DB)/cansee, lcon(%l)), %r[ljust(mid(name(##),0,20),21)]%B[switch(type(##),player,rjust(elements(u(v(DB)/secs2hrs,idle(##)),1),3))] %b[mid(get(##/short-desc),0,50)])]%r[u(v(db)/footer)]
+
+&CMD-IC SGP - Main Globals=$+ic:@switch get(%#/approved)=,{@pemit %#=You must have your stats approved before you can join the IC play.},{@tel %#=switch(get(%#/last_ic),,v(starting_ic_loc),get(%#/last_ic));@pemit %#=You are now on the IC grid.;&last_ic %#}
+
+&CMD-INFO SGP - Main Globals=$+info:@pemit %#=[center(%bYour Info%b,78,=)]%rGeneral: [switch(hasattr(%#,info-general),0,Unset. Type '&info-general me=Text' to set it.,get(%#/info-general))][iter(edit(lattr(%#/info-*),INFO-GENERAL,),%r[capstr(lcstr(after(##,INFO-)))]: [get(%#/##)])]%r[u(v(db)/footer)]
+
+&CMD-INFO-SEE SGP - Main Globals=$+info *:@pemit %#=[switch(num(*%0),#-1,That is not a player.,{[center(%b[capstr(%0)]'s Info%b,78,=)]%rGeneral: [switch(hasattr(*%0,info-general),0,Unset.,get(*%0/info-general))][iter(edit(lattr(*%0/info-*),INFO-GENERAL,),[switch(or(match(squish(edit([string(%#,race)] [string(%#,tradition)] [string(%#,tribe)] [string(%#,clan)] [string(%#,faction)],NOT SET,)),after(##,INFO-)),isstaff(%#)),0,,%r[capstr(lcstr(edit(##,INFO-,)))]: [get(*%0/##)])])]%r[repeat(=,78)]})]
+
+&CMD-KNOCK SGP - Main Globals=$+knock *:@switch setq(0,locate(%#,%0,e))%q0=#-1, {@pemit %#=I don't see %0 here.}, #-2, {@pemit %#=Which %0?}, {@pemit/contents [loc(%q0)]=There is a knocking upon the door, coming from the direction of [name(loc(%#))].; @pemit/contents [loc(%#)]=%N knocks on the door marked '[name(%q0)]'.}
+
+@switch version()=TinyMUSH version 2.2.*,{@pemit me=Since this is TinyMUSH 2.2, I will add multipaging code for you.},{}
+
+&CMD-MULTIPAGE SGP - Main Globals=$mp *=*:@pemit %#={[setq(2,iter(%0,num(*##)))][setq(2,setunion(%q2,%q2))][setq(4,iter(%q2,switch(type(*##),PLAYER,space(0),##)))][setq(5,iter(%q2,switch(hasflag(*##,connected),1,space(0),##)))][setq(2,setdiff(%q2,%q4))][setq(2,setdiff(%q2,%q5))][setq(2,iter(%q2,switch(elock(##/page,%#),0,,##)))][setq(3,iter(%q2,name(##)))]You page ([%q3]) with: [switch(mid(%1,0,1),:,%N [mid(%1,1,sub(strlen(%1),1))],;,%N[mid(%1,1,sub(strlen(%1),1))],%1)]};&lastpaged %#=[%q3];@pemit %#=[switch(words(%q5),0,,Could not reach: [iter(%q5,name(*##))])];[setq(9,iter(%q2,switch(words(get(##/idle)),0,,Idle from [name(##)]: [get(##/idle)]%r)))];@switch words(%q9)=0,,@pemit %#=%q9;@pemit/list [%q2]={%N multipages (%q3): [switch(mid(%1,0,1),:,%N [mid(%1,1,sub(strlen(%1),1))],;,%N[mid(%1,1,sub(strlen(%1),1))],%1)]}
+
+&CMD-MULTIPAGE2 SGP - Main Globals=$mp *:@switch %0={*=*},{},{@pemit %#={[setq(2,iter([get(%#/lastpaged)],num(*##)))][setq(2,setunion(%q2,%q2))][setq(4,iter(%q2,switch(type(*##),PLAYER,space(0),##)))][setq(5,iter(%q2,switch(hasflag(*##,connected),1,space(0),##)))][setq(2,setdiff(%q2,%q4))][setq(2,setdiff(%q2,%q5))][setq(2,iter(%q2,switch(elock(##/page,%#),0,,##)))][setq(3,iter(%q2,name(##)))]You page ([%q3]) with: [switch(mid(%0,0,1),:,%N [mid(%0,1,sub(strlen(%0),1))],;,%N[mid(%0,1,sub(strlen(%0),1))],%0)]};&lastpaged %#=[%q3];@pemit %#=[switch(words(%q5),0,,Could not reach: [iter(%q5,name(*##))])];[setq(9,iter(%q2,switch(words(get(##/idle)),0,,Idle from [name(##)]: [get(##/idle)]%r)))];@switch words(%q9)=0,,@pemit %#=%q9;@pemit/list [%q2]={%N multipages (%q3): [switch(mid(%0,0,1),:,%N [mid(%0,1,sub(strlen(%0),1))],;,%N[mid(%0,1,sub(strlen(%0),1))],%0)]}}
+
+@switch version()=TinyMUSH version 2.2.*,{},{@pemit me=Since this server has native multipaging, I won't add it.;&CMD-MULTIPAGE SGP - Main Globals;&CMD-MULTIPAGE2 SGP - Main Globals}
+
+&CMD-ALT-OOC_EMIT SGP - Main Globals=$'*: @pemit/contents %l=<OOC> %N[switch(mid(%0,0,1),:,%b[delete(%0,0,1)],;,[delete(%0,0,1)],%bsays\, "%0")]
+
+&CMD-OOC_EMIT SGP - Main Globals=$ooc *: @pemit/contents %l=<OOC> %N[switch(mid(%0,0,1),:,%b[delete(%0,0,1)],;,[delete(%0,0,1)],%bsays\, "%0")]
+
+&CMD-PLUS-3WHO SGP - Main Globals=$+3who:@pemit %#=setq(0,v(db))[setq(7,0)][u(v(db)/header)]%B[repeat(|NAME[space(9)]On for Idle,3)]|%r%b|----------- ------- ----|----------- ------- ----|----------- ------- ----[setq(1,0)][setq(8,iter(lwho(),switch(hasflag(##,dark),1,,setq(9,%q9[setq(1,add(%q1,1))][switch(mod(%q1,3),1,|%r%b)]|[ljust(mid(name(##),0,12),12)][u(%q0/twodigconn,conn(##))][rjust(mid(u(%q0/idletime,idle(##)),0,5),5)]))[setq(7,add(%q7,1))]))]%q9%r%b|[repeat(-,74)]|%r%b%b%q7 players connected.%R[u(v(db)/footer)]
+
+&CMD-PLUS-LWHO SGP - Main Globals=$+lwho: @pemit %#=setq(0,0)[u(v(db)/header)][ljust(Player,15,)] [ljust(Sex,3)] [ljust(Alias,5)][rjust(Idle,6)] [ljust(mid(Location,0,28),28,)] [ljust(dbref,6)]%R[u(v(db)/footer)][iter(filter(v(db)/fil-LWHO,lwho()),switch(and(hasflag(##,dark),not(isstaff(%#))),1,,%R[ljust(name(##),15,.)] [ljust(mid(u(##/sex),0,1),3)] [ljust(mid(u(##/alias),0,5),5)][rjust(mid(u(v(db)/secs2hrs,idle(##)),0,6),6)] [ljust(switch(and(or(hasflag(##,unfindable),hasflag(loc(##),unfindable)),not(or(hasflag(%#,wizard),hasflag(%#,immortal)))),1,,mid(name(room(##)),0,28)),28,.)] [ljust(switch(or(isstaff(%#),and(hasflag(loc(##),JUMP_OK),not(hasflag(##,UNFINDABLE)),not(hasflag(loc(##),UNFINDABLE)))),0,,mid(room(##),0,5)),6,.)][ljust(switch(1,ostaff(##),Staff),6)])[setq(0,add(%q0,not(hasflag(##,dark))))])]%r[u(v(db)/footer)]%RThere are %q0 players connected in location [name(%L)]%R[u(v(db)/footer)]
+
+&CMD-PLUS-WHERE SGP - Main Globals=$+where: @pemit %#=setq(0,0)[u(v(db)/header)][ljust(mid(Location,0,28),28,)][ljust(Player,15,)][rjust(Idle,6)] %R[u(v(db)/footer)][iter(setq(9,sortby(v(db)/locsort,filter(v(db)/canfind,lwho())))%q9,%r[ljust(mid(name(loc(##)),0,27),27,.)]%b[ljust(name(##),16)] [rjust(mid(u(v(db)/secs2hrs,idle(##)),0,6),6)])]%r[u(v(db)/footer)]%RThere are [words(%q9)] findable players connected.%R[u(v(db)/footer)]
+
+&CMD-PLUS-WHO SGP - Main Globals=$+who: @pemit %#=[u(v(db)/header)][ljust(Player,15,)] [ljust(Sex,3)] [ljust(Alias,5)][rjust(Idle,6)] [ljust(mid(Location,0,28),28,)] [ljust(dbref,6)]%R[u(v(db)/footer)][iter(lwho(),switch(and(hasflag(##,dark),not(isstaff(%#))),1,,%R[ljust(name(##),15,.)] [ljust(mid(u(##/sex),0,1),3)] [ljust(mid(u(##/alias),0,5),5)][rjust(mid(u(v(db)/secs2hrs,idle(##)),0,6),6)] [ljust(switch(and(or(hasflag(##,unfindable),hasflag(loc(##),unfindable)),not(or(hasflag(%#,wizard),hasflag(%#,immortal)))),1,,mid(name(room(##)),0,28)),28,.)] [ljust(switch(or(isstaff(%#),and(hasflag(loc(##),JUMP_OK),not(hasflag(##,UNFINDABLE)),not(hasflag(loc(##),UNFINDABLE)))),0,,mid(room(##),0,5)),6,.)][ljust(switch(1,ostaff(##),Staff),6)]))]%r[u(v(db)/footer)]%RThere are [words(sortby(v(db)/cansee,lwho()))] players connected%R[u(v(db)/footer)]
+
+&CMD-PLUS-WHO-SORTED SGP - Main Globals=$+who *: @pemit %#=[u(v(db)/header)][ljust(Player,15,)] [ljust(Sex,3)] [ljust(Alias,5)][rjust(Idle,6)] [ljust(mid(Location,0,28),28,)] [ljust(dbref,6)]%R[u(v(db)/footer)][setq(1, iter(lwho(),switch(strmatch(name(##),%0*),0,,##)))][iter(sortby(v(db)/namesort,%q1),switch(and(hasflag(##,dark),not(isstaff(%#))),1,,%R[ljust(name(##),15,.)] [ljust(mid(u(##/sex),0,1),3)] [ljust(mid(u(##/alias),0,5),5)][rjust(mid(u(v(db)/secs2hrs,idle(##)),0,6),6)] [ljust(switch(and(or(hasflag(##,unfindable),hasflag(loc(##),unfindable)),not(or(hasflag(%#,wizard),hasflag(%#,immortal)))),1,,mid(name(room(##)),0,28)),28,.)] [ljust(switch(or(isstaff(%#),and(hasflag(loc(##),JUMP_OK),not(hasflag(##,UNFINDABLE)),not(hasflag(loc(##),UNFINDABLE)))),0,,mid(room(##),0,5)),6,.)][ljust(switch(1,ostaff(##),Staff),6)]))]%r[u(v(db)/footer)]%RThere are [words(sortby(v(db)/cansee,lwho()))] players connected%R[u(v(db)/footer)]
+
+&CMD-REGISTER SGP - Main Globals=$@register *=*=*:@swi/f [hasattr(%#,registration)]/[match(Player,type(%#))]/[gte(words(%0),2)]/[match(%1,*@*.*)]/[gte(words(%2),1)]=1/*/*/*/*,{@pemit %#=You may not re-register once you have set your registration. If you have made an error, please contact Staff to correct it.},0/0/*/*/*,{@pemit %#=Only Players may use this command.},0/1/1/1/1,{&REGISTRATION %#=%0|%1|%2|[time()]|@register;@pemit %#=You have completed registration.},0/1/*/*/*,{@pemit %#=You must provide a full RL name, both first and last, a valid email address, and at least one alt character or None to complete registration. Please see 'news registration', '+help @register' or a member of staff for further assistance.}
+
+&CMD-REGISTER-HELP SGP - Main Globals=$@register: @pemit %#=%R%R@register <RL Name>=<email>=<alts>%r%r%tAll players must be registered and read and accept the conditions found in 'news AUP' before they are allowed out of the Registration room. Unregistered character objects become subject to nuking at any time.%R%R
+
+&CMD_SCAN SGP - Main Globals=$+scan *:@pemit %#=[setq(9,locate(%#,%0,*))][switch(1,strmatch(%q9,#-1),{I don't see that here.},strmatch(%q9,#-2),{I don't know which one you mean!},not(or(controls(%#,%q9),hasflag(%q9,VISUAL))),{[name(%q9)] is owned by [name(owner(%q9))]},{[u(v(db)/FN_SCAN,%q9)]})]
+
+&CMD-SELFBOOT SGP - Main Globals=$+selfboot:@dol rest(ports(%N))=@boot/port ##;@pemit %#=You booted your frozen connections.
+
+&CMD-SHOUT SGP - Main Globals=$+shout *:@dol lexits(%l)={@select 0=[comp(%l,loc(##))],,[neq(get(##/no_shout),1)],,[not(and(hasflag(%l,AUDIBLE),hasflag(##,AUDIBLE)))],, {@remit [loc(##)]=[switch(get(%#/sex),m*,A man,f*,A woman,w*,A woman,Someone)] shouts from nearby, "%0"}}; @remit %l=%N shouts, "%0"
+
+&CMD-STAFF SGP - Main Globals=$+staff:@pemit %#=[setq(0,setinter(lwho(),u(v(db)/staff-list)))][u(v(db)/header-staffcon)]%r[ljust(Name,14)][ljust(Alias,6,)][ljust(Position,35,)][ljust(Status,10,)][rjust(Idle,6,)]%r[u(v(db)/footer)][iter(get(v(DB)/staff-list),switch( and(hasflag(##,connected),not(hasflag(##,dark))),1,%r[setq(1,match(%q0,##))][ljust(name(##),14)][ljust(get(##/alias),6)][ljust(get(##/position),35)][ljust(switch(hasflag(##,transparent),1,off-duty,ON-DUTY),10)][rjust(u(v(db)/secs2hrs,idle(##)),6)]))]%r[u(v(db)/footer)]
+
+&CMD-STAFF-ALL SGP - Main Globals=$+staff/all:@pemit %#=[setq(0,setinter(lwho(),u(v(db)/staff-list)))][u(v(db)/header-staff)]%r[ljust(Name,12)]%B[ljust(Alias,7,)][ljust(Position,34,)][ljust(Last,20)]%r[u(v(db)/footer)][iter(u(v(db)/staff-list),%r[setq(1,match(%q0,##))][ljust(name(##),12)]%B[ljust(get(##/alias),6)]%B[ljust(get(##/position),34)][ljust(switch(and(hasflag(##,connected),not(hasflag(##,dark))),1,Connected,get(##/last)),20)])]%r[u(v(db)/footer)]
+
+&CMD-TIMESTAMP-READ-PLAYER SGP - Main Globals=$+timestamp:@switch [words(lattr(%#/timestamp-*))]=0,{@pemit %#=You don't have any timestamps set on you.},{@pemit %#=Timestamps on you:%R[iter(lattr(%#/timestamp-*),%R##%B-%B[get(%#/##)])]}
+
+&CMD-UPTIME SGP - Main Globals=$+uptime:@pemit %#=[mudname()] runtime stats:%r%tMUSH boot time.......: [starttime()]%r%tCurrent time.........: [time()]%r%tIn operation for.....: [div(sub(convtime(time()),convtime(starttime())),86400)] days, [div(mod(sub(convtime(time()),convtime(starttime())),86400),3600)] hours, [div(mod(sub(convtime(time()),convtime(starttime())),3600),60)] minutes, [mod(sub(convtime(time()),convtime(starttime())),60)] seconds.
+
+&CMD-VIEW SGP - Main Globals=$+view:@pemit %#=[switch(words(lattr(loc(%#)/view-*)),0,There are no views set on your location.,The following views are set on your location:%R[iter(lattr(loc(%#)/view-*),%b%b[edit(lcstr(after(##,VIEW-)),~,%b)])])][setq(0,iter(lcon(loc(%#)),switch([gte(words(lattr(##/view-*)),1)]:[strmatch(type(##),PLAYER)][not(hasflag(##,connected))],1:10,##,1:0?,##)))][switch(words(%q0),0,,%RThe following objects have views set on them:%R[iter(%q0,%b%b[name(##)])])]
+
+&CMD-VIEW-ITEM SGP - Main Globals=$+view *:@swi/first [pos(/,%0)]:[setq(0,locate(%#,before(%0,/),*))]%q0=#-1:#-?,{@pemit %#=I can't find that here!},#-1:*,{@pemit %#=[switch(words(lattr(%q0/view-*)),0,There are no views set on that item.,The following views are set on that item:%R[iter(lattr(%q0/view-*),%b%b[edit(lcstr(after(##,VIEW-)),~,%b)])])]},{@verb %q0=%#,view-[setq(1,edit(after(%0,/),%b,~))]%q1,There is no such view on that item,oview-%q1,,aview-%q1}
+
+@pemit me=Setting flags on SGP - Main Globals.... Moment.
+
+@switch version()=TinyMUSH version 2.2.*,{@set SGP - Main Globals=INHERIT;@set SGP - Main Globals=COMMANDS;@set SGP - Main Globals=STOP;@set SGP - Main Globals=SAFE},PennMUSH*,{@set SGP - Main Globals=!NO_COMMAND;@set SGP - Main Globals=WIZARD},MUX*,{@set SGP - Main Globals=INHERIT;@set SGP - Main Globals=!NO_COMMAND;@set SGP - Main Globals=SAFE},RhostMUSH*,{@set SGP - Main Globals=INHERIT;@set SGP - Main Globals=!NOCOMMAND;@set SGP - Main Globals=SAFE;@set SGP - Staff Globals=STOP}
+
+@@  Wiz-only commands.  The lock on this object can be set to ISSTAFF/1 for games
+@@  where more access than just wizards is desired.
+
+@Desc SGP - Wizard Globals=This is the wizard globals object for SGP. These are global commands that only wizards will have access to.%R%R[iter(setdiff(lattr(me),Desc),ljust(##,18))]
+
+&ISWIZARD SGP - WIZARD Globals=[hasflag(%#,WIZARD)]
+
+@lock/use SGP - WIZARD Globals=ISWIZARD/1
+
+&CMD-MOTD_SET SGP - Wizard Globals=$+motd/set *=*:@pemit %#=[setq(0,[match(general wizard full down,%0)][setq(9,isstaff(%#))][r(9)])][setq(6,mid(r(0),0,1))][switch(r(0),?0,Permission denied.,0?,+Motd: ERROR - '[secure(%0)]' not a valid MOTD type.,1?,+Motd: General MOTD set.,2?,+Motd: Wizard MOTD set.,3?,+Motd: Full MOTD set.,4?,+Motd: Down MOTD set.)];&MOTD-[setq(1,extract(GEN_LIST WIZ_LIST FULL DOWN,r(6),1))][r(1)] [switch([r(9)][setq(3,gt(r(6),0))][r(3)],11,v(DB),#-1)]=[setunion(get([v(DB)]/MOTD-[r(1)]),secs())];&MOTD-[switch([setq(4,lt(r(6),3))][r(4)],1,[secs()],extract(X X FULL DOWN,r(6),1))] [switch([r(3)][r(9)],11,v(DB),#-1)]=[secure(%1)];@swi [r(0)]=11,{@motd [iter(get([v(DB)]/MOTD-GEN_LIST),%r[get([v(DB)]/MOTD-##)]%r)];@pemit/list lwho()=+Motd: [name(%#)] has set a new general MOTD.},21,{@motd/wizard [iter(get([v(DB)]/MOTD-WIZ_LIST),%r[get([v(DB)]/MOTD-##)]%r)]},31,{@motd/full %1},41,{@motd/down %1}
+
+&CMD-MOTD_DEL SGP - Wizard Globals=$+motd/del *=*:@pemit %#=[setq(0,[match(general wizard full down,%0)][setq(9,isstaff(%#))][r(9)])][setq(6,mid(r(0),0,1))][switch(r(0),?0,Permission denied.,0?,+Motd: ERROR - '[secure(%0)]' not a valid MOTD type.,1?,+Motd: [setq(8,and(lte(%1,words(get([v(DB)]/motd-gen_list))),gt(%1,0)))][switch(r(8),0,Invalid general MOTD number,You remove MOTD #[add(0,%1)] from general)],2?,+Motd: [setq(8,and(lte(%1,words(get([v(DB)]/motd-wiz_list))),gt(%1,0)))][switch(r(8),0,Invalid wizard MOTD number,You remove MOTD #[add(0,%1)] from wizard)],3?,+Motd: You remove the full MOTD,4?,+Motd: You remove the down MOTD)];&MOTD-[setq(1,extract(GEN_LIST WIZ_LIST FULL DOWN,r(6),1))][r(1)] [switch([r(9)][setq(3,gt(r(6),0))][r(3)],11,v(DB),#-1)]=[setdiff(get([v(DB)]/MOTD-[r(1)]),[setq(7,extract(get([v(DB)]/MOTD-[r(1)]),%1,1))][r(7)])];&MOTD-[switch([setq(4,lt(r(6),3))][r(4)],1,[r(7)],extract(X X FULL DOWN,r(6),1))] [switch([r(3)][r(9)],11,v(DB),#-1)];@swi [r(0)]=11,{@motd [iter(get([v(DB)]/motd-gen_list),%r[get([v(DB)]/MOTD-##)]%r)]},21,{@motd/wizard [iter(get([v(DB)]/motd-wiz_list),%r[get([v(DB)]/MOTD-##)]%r)]},31,{@motd/full;@wipe [v(DB)]/MOTD-FULL},41,{@motd/down;@wipe [v(DB)]/MOTD-DOWN}
+
+&CMD-MOTD_LIST SGP - Wizard Globals=$+motd/list:@pemit %#=[center(Currently Set MOTD,78,=)]%rGeneral:[iter(get([v(DB)]/motd-gen_list),%r[member(get([v(DB)]/motd-gen_list),##)]> [get([v(DB)]/motd-##)]%r)]%rWizard:[iter(get([v(DB)]/motd-wiz_list),%r[member(get([v(DB)]/motd-wiz_list),##)]> [get([v(DB)]/motd-##)]%r)]%rFull:%r[get([v(DB)]/motd-full)]%r%rDown:%r[get([v(DB)]/motd-down)]%r[u(v(db)/footer)]
+
+&CMD-MOTD_RESET SGP - Wizard Globals=$+motd/reset:@motd [iter(get([v(DB)]/motd-gen_list),%r[get([v(DB)]/MOTD-##)]%r)];@motd/wizard [iter(get([v(DB)]/motd-wiz_list),%r[get([v(DB)]/MOTD-##)]%r)];@motd/down [get([v(DB)]/motd-down)];@motd/full [get([v(DB)]/motd-full)]
+
+&CMD-MOTD_CLEAR SGP - Wizard Globals=$+motd/clear *:@swi/first [match(general wizard full down all,%0)][isstaff(%#)]=?0,{@pemit %#=Permission denied.},0?,{@pemit %#=+Motd: ERROR - Invalid MOTD type},1?,{@pemit %#=+Motd: You have cleared the general MOTD;@dolist [get([v(DB)]/motd-gen_list)]=@wipe [v(DB)]/MOTD-##;@wipe [v(DB)]/motd-gen_list;@motd},2?,{@pemit %#=+Motd: You have cleared the wizard MOTD;@dolist [get([v(DB)]/motd-wiz_list)]=@wipe [v(DB)]/MOTD-##;@wipe [v(DB)]/motd-wiz_list;@motd/wizard},3?,{@pemit %#=+Motd: You have cleared the full MOTD;@wipe [v(DB)]/motd-full;@motd/full},4?,{@pemit %#=+Motd: You have cleared the down MOTD;@wipe [v(DB)]/motd-down;@motd/down},5?,{@pemit %#=+Motd: You have cleared ALL of the MOTD's.;@motd;@motd/full;@motd/down;@motd/wizard}
+
+&CMD-STAFF-ADD SGP - Wizard Globals=$+staff/add *:[setq(0,switch(isdbref(%0),1,%0,num(*%0)))];@switch/first 1=not(strmatch(type(%q0),PLAYER)),{@pemit %#=%0 is not a player!},match(get(v(db)/STAFF-LIST),%q0),{@pemit %#=That player is already listed in +staff.},{@wait 0=&STAFF-LIST [v(db)]=[get(v(db)/STAFF-LIST)]%B%q0;@pemit %#=You have added [name(%q0)] to the +staff listing.}
+
+&CMD-STAFF-REMOVE SGP - Wizard Globals=$+staff/remove *:[setq(0,switch(isdbref(%0),1,%0,num(*%0)))];@switch/first 1=not(strmatch(type(%q0),PLAYER)),{@pemit %#=%0 is not a player!},not(match(get(v(db)/STAFF-LIST),%q0)),{@pemit %#=That player is not listed in +staff.},{&STAFF-LIST [v(db)]=remove(get(v(db)/STAFF-LIST),%q0);@pemit %#=You have removed [name(%q0)] from the +staff listing.}
+
+&CMD-TIMESTAMP-SET SGP - Wizard Globals=$+timestamp */*=*:;@switch hasflag(%#,wizard)[isdbref(num(*%0))]=0*,{@pemit %#=Huh?%B%B(Type "help" for help.)},10,{@pemit %#=You can only set timestamps on players.},{&timestamp-%1 *%0=Set by [name(%#)] on [time()]. %2;@lock *%0/timestamp-%1;@pemit %#=You have set the following timestamp on [name(*%0)]:%B%B[get(*%0/timestamp-%1)]}
+
+&CMD-TIMESTAMP-READ-STAFF SGP - Wizard Globals=$+timestamp/read *:@switch isstaff(%#)[isdbref(num(*%0))][words(lattr(*%0/timestamp*))]=0*,{@pemit %#=Huh?%B%B(Type "help" for help.)},10*,{@pemit %#=That is not a player.},110,{@pemit %#=[name(*%0)] has no timestamps.},{@pemit %#=center(name(*%0),78,=)[iter(lattr(*%0/timestamp-*),%R##%B-%B[get(*%0/##)])]}
+
+&CMD-TIMESTAMP-REMOVE SGP - Wizard Globals=$+timestamp/rem */*:;@switch hasflag(%#,wizard)[isdbref(num(*%0))]=0*,{@pemit %#=Huh?%B%B(Type "help" for help.)},10,{@pemit %#=You can only set timestamps on players.},{@unlock *%0/timestamp-%1;@pemit %#=You have removed the following timestamp on [name(*%0)]:%B%B[get(*%0/timestamp-%1)];&timestamp-%1 *%0}
+
+&CMD-TIMESTAMP-SHOWALL SGP - Wizard Globals=$+timestamp/showall:@dolist search(type=players)=@switch gt(words(lattr(##/timestamp*)),0)=1,@force %#=+timestamp/read [name(##)]
+
+&CMD-VERSION SGP - Wizard Globals=$+version:@pemit %#=[ljust(===< Version Status for SGP >===,78,=)]%RObject[space(22)]Version[space(3)]dbref%BPatch[space(9)]Last Update%R[repeat(-,78)][iter(get(v(db)/SGP-OBJECTS),%R[mid(ljust(name(##),28),0,29)][mid(ljust(extract(get(##/SGP-VERSION),1,1,|),10),0,11)][ljust(##,6)][mid(ljust(extract(get(##/SGP-VERSION),2,1,|),14),0,15)][ljust(extract(get(##/SGP-VERSION),3,1,|),20)],|)%R][repeat(=,78)]
+
+&CMD-VERSION-HISTORY SGP - Wizard Globals=$+version *:@switch match(get(v(db)/SGP-OBJECTS),%0,|)=0,{@pemit %#=That is not an object tracked by +version.},{@pemit %#=[ljust(===< Version Status for SGP >===,78,=)]%RObject[space(22)]Version[space(3)]dbref%BPatch[space(9)]Last Update%R[repeat(-,78)]%R[mid(ljust(name(%0),28),0,29)][mid(ljust(extract(get(%0/SGP-VERSION),1,1,|),10),0,11)][ljust(%0,6)][mid(ljust(extract(get(%0/SGP-VERSION),2,1,|),14),0,15)][ljust(extract(get(%0/SGP-VERSION),3,1,|),20)]%R[ljust(---< Object History >---,78,-)]%R[get(%0/UPDATE-HISTORY)]%R[repeat(=,78)]}
+
+&CMD-VERSION-ADD SGP - Wizard Globals=$+version/add *:@switch match(get(v(db)/SGP-OBJECTS),%0,|)=1,{@pemit %#=That object is already listed in +version.},{@edit v(db)/SGP-OBJECTS=$,|%0;&SGP-VERSION %0=1.0|Base|[elements(time(),2 3 5)];&UPDATE-HISTORY %0=Base [elements(time(),2 3 5)];@pemit %#=You have added [name(%0)] to the +version listing.}
+
+&CMD-VERSION-REMOVE SGP - Wizard Globals=$+version/remove *:@switch match(get(v(db)/SGP-OBJECTS),%0,|)=0,{@pemit %#=That object is not listed in +version.},{&SGP-OBJECTS [v(db)]=remove(get(v(db)/SGP-OBJECTS),%0,|);&SGP-VERSION %0;&UPDATE-HISTORY %0;@pemit %#=You have removed [name(%0)] from the +version listing.}
+
+&CMD-VERSION-UPDATE SGP - Wizard Globals=$+version/update */*=*:@switch/first 0=match(get(v(db)/SGP-OBJECTS),%0,|),{@pemit %#=That object is not listed in +version.},setr(0,match(version patchlevel history,%1)),{@pemit %#=Invalid field. Valid entries are version, patchlevel history.},{&SGP-VERSION %0=setr(1,replace(extract(get(%0/SGP-VERSION),1,2,|),%q0,edit(%2,|,),|)|[extract(time(),2,2)] [last(time())]);&UPDATE-HISTORY %0=get(%0/UPDATE-HISTORY)|[edit(extract(%q1,3,1,|),|,%b)] [switch(%q0,3,edit(%2,|,))];@pemit %#=You have updated [name(%0)]'s [extract(version patchlevel history,%q0,1)] field to '%2'.}
+
+
+@pemit me=Setting @startup on SGP - Wizard Globals.... Moment.
+
+@startup SGP - Wizard Globals=+motd/reset
+
+@pemit me=Setting flags on SGP - Wizard Globals.... Moment.
+
+@switch version()=TinyMUSH version 2.2.*,{@set SGP - Wizard Globals=INHERIT;@set SGP - Wizard Globals=COMMANDS;@set SGP - Wizard Globals=STOP;@set SGP - Wizard Globals=SAFE},PennMUSH*,{@set SGP - Wizard Globals=!NO_COMMAND;@set SGP - Wizard Globals=WIZARD},MUX*,{@set SGP - Wizard Globals=INHERIT;@set SGP - Wizard Globals=!NO_COMMAND;@set SGP - Wizard Globals=SAFE},RhostMUSH*,{@set SGP - Wizard Globals=INHERIT;@set SGP - Wizard Globals=!NOCOMMAND;@set SGP - Wizard Globals=SAFE;@set SGP - Staff Globals=STOP}
+
+@@  Staff Globals. 
+
+@pemit me=Writing to SGP - Staff Globals.... Moment.
+
+@Desc SGP - Staff Globals=This is the staff globals object for SGP. These are global commands that only staff, as defined in the isstaff() on the global functions object, will have access to. You may substitute ostaff() for isstaff() in the lock setting.%R%R[iter(setdiff(lattr(me),Desc),ljust(##,18))]
+
+&CAN_USE SGP - Staff Globals=[isstaff(%#)]
+
+&CMD-COMMANDS SGP - Staff Globals=$+commands *:@pemit %#=switch(setq(0,locate(%#,%0,*))%q0,#-*,Cant find that object.,name(%q0) (%q0) has the following command attributes:[iter(lattr(%q0), switch(strmatch(setq(1,get(%q0/##))%q1,$*),1,%r%t##: [mid(%q1,1,sub(pos(:,%q1),2))]))])
+
+&CMD-CONTENTS SGP - Staff Globals=$+contents *:@pemit %#=switch(setq(0,locate(%#,%0,*))%q0,#-*,Cant find that.,switch(words(lcon(%q0)),0,name(%q0) (%q0) contains nothing,name(%q0) (%q0) contains:[iter(lcon(%q0),%r%t[name(##)] (##))]))
+
+&CMD-DUTY SGP - Staff Globals=$+duty:@switch [hasflag(%#,transparent)]=1,{@set %#=!transparent;@pemit %#=Done. You are now on duty.},{@set %#=transparent;@pemit %#=Done. You are now off duty.}
+
+&CMD-JOIN SGP - Staff Globals=$+join *:@switch locate(me,*%0,p)=#-*,{@pemit %#=Sorry, %0 is not a valid player name.},{&join-from %#=loc(%#); @tel %#=loc(*%0)}
+
+&CMD-PROJECT-DELETE SGP - Staff Globals=$+deleteproject *: @switch hasattr(v(db),setq(0,list-[edit(%0,%B,_)])%q0)=0, @pemit %#=No project '%0' listed., {&%q0 [v(db)]; @pemit %#=Project '%0' deleted.}
+
+&CMD-PROJECT-EDIT SGP - Staff Globals=$+editproject */*=*: @switch hasattr(v(db),setq(0,list-[edit(%0,%B,_)])%q0)=0, @pemit %#=No project '%0' listed., {@switch %1=who, {&%q0 [v(db)]=replace(get(v(db)/%q0),2,%2,|); @pemit %#=Who set to '%2'.},status, {&%q0 [v(db)]=replace(get(v(db)/%q0),3,%2,|); @pemit %#=Status set to '%2'.},@pemit %#=Field should be /who or /status.}
+
+&CMD-PROJECT-SET SGP - Staff Globals=$+setproject */*/*:@switch hasattr(v(db),setq(0,list-[edit(secure(%0),%B,_)])%q0)=1, @pemit %#=Project '%0' already exists., {&%q0 [v(db)]=secure(%0)|%1|%2; @pemit %#=Entry for '%0' created.}
+
+&CMD-PROJECTS-VIEW SGP - Staff Globals=$+viewprojects: @pemit %#=repeat(=,78)%R[ljust(Project,25)] [ljust(Coder,20)] [ljust(STATUS,26)]%R[repeat(=,78)]; @dolist lattr(v(db)/list-*)=@pemit %#=ljust(extract(get(v(db)/##),1,1,|),25) [ljust(extract(get(v(db)/##),2,1,|),20)] [ljust(extract(get(v(db)/##),3,1,|),26)];@wait 1=@pemit %#=repeat(=,78)%r
+
+&CMD-TRACKER-HELP SGP - Staff Globals=$+trackerhelp:@pemit %#=[repeat(=,78)]%R[center(Project Tracker Help,78, )]%R%T+setproject <project name>/<coder name>/<status>%R%T+viewprojects%R%T+editproject <project name>/who=<coder name>%R%T+editproject <project name>/status=<status>%R%T+deleteproject <project name>%R%T+trackerhelp -- Gets this screen.%R%RThe project name, and the other fields, can have spaces in them.%R%Rby BEM@Granite%R[repeat(=,78)]
+
+&CMD-REGISTER-STAFF SGP - Staff Globals=$+register *=*=*=*:@switch/first [setq(0,findpc(%#,%0))][r(0)]/[hasattr(%q0,REGISTRATION)]=#-1/*,{@pemit %#=Cannot find %0.},#-2/*,{@pemit %#=Which %0?},*/0,{&REGISTRATION %q0=%1|%2|%3|[time()]|%#;@pemit %#=You have registered [name(%q0)]: Character [name(%q0)] played by [extract(get(%q0/REGISTRATION),1,1,|)] with email address [extract(get(%q0/REGISTRATION),2,1,|)] and alts [extract(get(%q0/REGISTRATION),3,1,|)] as registered on [extract(get(%q0/REGISTRATION),4,1,|)] by [extract(get(%q0/REGISTRATION),5,1,|)].},*/1,{@pemit %#=[name(%q0)] has already been registered: Character [name(%q0)] played by [extract(get(%q0/REGISTRATION),1,1,|)] with email address [extract(get(%q0/REGISTRATION),2,1,|)] and alts [extract(get(%q0/REGISTRATION),3,1,|)] was registered on [extract(get(%q0/REGISTRATION),4,1,|)] by [extract(get(%q0/REGISTRATION),5,1,|)].%r%rIf there is an error with the registration, please +mail Staff for correction.}
+
+&CMD-REGISTER-SHELP SGP - Staff Globals=$+register: @pemit %#=%R%R+register <character>=<RL name>=<email>=<alts>%r%rThe RL name must be their FULL name, first and last. Alts can be none.%R%R
+
+&CMD-RJOIN SGP - Staff Globals=$+rjoin:@switch setq(0,get(%#/join-from))%q0=,{@pemit %#=Sorry, you don't have a return destination.},{@tel %#=%q0; &join-from %#}
+
+&CMD-RSUMMON SGP - Staff Globals=$+rsummon *:@switch locate(me,*%0,p)=#-*,{@pemit %#=Sorry, %0 is not a valid player name.},{@switch setq(0,get(*%0/summon))%q0=,@pemit %#=name(%0) doesn't have a return location,{@oemit *%0=JUDGE: %N sends [name(*%0)] back to [poss(*%0)] former location.;@pemit *%0=JUDGE: %N sends you back to your former location.;@tel *%0=%q0;&summon *%0;@oemit *%0=JUDGE: %N returns [name(*%0)].;&summon *%0.}}
+
+&CMD-SUMMON SGP - Staff Globals=$+summon *:@switch locate(me,*%0,p)=#-*,{@pemit %#=Sorry, %0 is not a valid player name.},{&summon *%0=loc(*%0);@oemit *%0=JUDGE: %N summons [name(*%0)] away.;@pemit *%0=JUDGE: %N summons you away.;@remit %#=%N summons [name(*%0)].;@tel *%0=loc(%#)}
+
+@lock/use SGP - Staff Globals=CAN_USE/1
+
+@pemit me=Setting flags on SGP - Staff Globals.... Moment.
+
+@switch version()=TinyMUSH version 2.2.*,{@set SGP - Staff Globals=INHERIT;@set SGP - Staff Globals=COMMANDS;@set SGP - Staff Globals=STOP;@set SGP - Staff Globals=SAFE},PennMUSH*,{@set SGP - Staff Globals=!NO_COMMAND;@set SGP - Staff Globals=WIZARD},MUX*,{@set SGP - Staff Globals=INHERIT;@set SGP - Staff Globals=!NO_COMMAND;@set SGP - Staff Globals=SAFE},RhostMUSH*,{@set SGP - Staff Globals=INHERIT;@set SGP - Staff Globals=!NOCOMMAND;@set SGP - Staff Globals=SAFE;@set SGP - Staff Globals=STOP}
+
+@pemit me=Triggering @startup on SGP - Global Functions....Moment
+
+@tri SGP - Global Functions/startup
+
+drop SGP - Global Parent Object
+drop SGP - Global Functions
+drop SGP - Main Globals
+drop SGP - Wizard Globals
+drop SGP - Staff Globals
+
+@pemit me=SGP Base Globals installation complete.  Make sure all command objects are placed in the master room.  If not futher installations are needed, you may want to put the parent object and function object in either a library room, or store them inside one of the SGP globals objects.%R%RIf you run PennMUSH, TinyMUSH 2.2.x, or RhostMUSH server, then you will want to get the file "SGP-+help.txt" and quote in the +helpfiles for the system.  Otherwise, download SGP-plushelp.txt and SGP-staffhelp.txt, place them in game/text/ and @readcache from within MUX.

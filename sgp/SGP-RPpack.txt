@@ -1,0 +1,106 @@
+@@ ######################################################################
+@@
+@@  SGP - RP Pack
+@@
+@@  This file current as of 1 August 00 and includes bugfixes through
+@@  11 June 01.
+@@
+@@  This is a collection of utility code for roleplaying MUSHes.  It has
+@@  been set up to quote to existing SGP objects in the master room of
+@@  the game.
+@@
+@@  This file contains CNOTES code from Angel@heaven.gofast.net, STNOTES
+@@  and background setting code by BEM@Granite, along with +warn, 
+@@  +timestop, and +resume code for judging purposes.
+@@
+@@  Updated to fix problems with +resume in Penn.  Thanks to 
+@@  Trispis@M*U*S*H for the patch
+@@
+@@  11 Jun 01 Updated +warn to notify staff when the command has 
+@@  been used.  Thanks to Raevnos for the fix.
+@@
+@@ ######################################################################
+
+@pemit me=Adding new code to the Global Parent Object...moment.
+
+&U_DBREFCHECK SGP - Global Parent Object=[switch(1,match(%0,me),setq(0,%#),isdbref(%0),setq(0,%0),isdbref(num(%0)),setq(0,num(%0)),isdbref(num(*%0)),setq(0,num(*%0)),setq(0,#-1))][%q0]
+
+@pemit me=Adding Background code to SGP - Main Globals...moment.
+
+&CMD-BG_ADD SGP - Main Globals=$+bgadd *=*:@switch isnum(%0)=0,@pemit %#=Invalid section number.,{@switch hasattr(%#,BACKGROUND_%0)=1,{&BACKGROUND_%0 %#=get(%#/BACKGROUND_%0) %1;@pemit %#=get(%#/BACKGROUND_%0)},{&BACKGROUND_%0 %#=%1;@pemit %#=get(%#/BACKGROUND_%0)}}
+
+&CMD-BG_CLEAR SGP - Main Globals=$+bgclear *:@switch and(isnum(%0),hasattr(%#,BACKGROUND_%0))=0,@pemit %#=Invalid section number.,{&BACKGROUND_%0 %#;@pemit %#=Background section %0 cleared.}
+
+&CMD-BG_HELP SGP - Main Globals=$+bghelp:@pemit %#=[center(Commands for Setting your Background,78, )]%R%R+bg <#>[space(23)]- Read a background section.%R+bglist[space(23)]- List out sections that have been created%R+bgadd <#>=<text>[space(13)]- Add to a background section.%R+bgrem <#>=<text>[space(13)]- Removes text from a background section.%R+bgrep <#>=<old>/<new>[space(8)]- Replaces text in a background section.%R+bgclear <#>[space(18)]- Clears a background section.%R+bglock <#>[space(19)]- Locks a background section when finished.%R%R[center(Staff Commands,78, )]%R%R+bgview <name>[space(19)]- Shows the number of sections for player.%R+bgcheck <name>/<#>[space(14)]- Locks a background section when finished.%R%RThe '<#>' sign in the BG help stands for the number of the section you are%Rworking on. The BG commands allows for multiple sections so that your background can be broken up into reasonably sized pieces of text.%R
+
+&CMD-BG_LIST SGP - Main Globals=$+bglist:@pemit %#=You have the following background sections: [iter(lattr(%#/BACKGROUND_*),after(##,BACKGROUND_))]
+
+&CMD-BG_LOCK SGP - Main Globals=$+bglock *:@switch and(isnum(%0),hasattr(%#,BACKGROUND_%0))=0,@pemit %#=Invalid section number.,{@lock %#/BACKGROUND_%0;@pemit %#=Background section %0 locked.}
+
+&CMD-BG_READ SGP - Main Globals=$+bg *:@switch and(isnum(%0),hasattr(%#,BACKGROUND_%0))=0,@pemit %#=Invalid section number.,{@pemit %#=[repeat(-=,39)]%R%BThis is section %0 of [words(lattr(%#/BACKGROUND_*))] sections.%R[repeat(=-,39)]%R[get_eval(%#/BACKGROUND_%0)]%R[repeat(-=,39)]}
+
+&CMD-BG_REMOVE SGP - Main Globals=$+bgrem *=*:@switch and(isnum(%0),hasattr(%#,BACKGROUND_%0))=0,@pemit %#=Invalid section number.,{@edit %#/BACKGROUND_%0={%1},{}; @pemit %#=get(%#/BACKGROUND_%0)}
+
+&CMD-BG_REPLACE SGP - Main Globals=$+bgrep *=*/*:@switch and(isnum(%0),hasattr(%#,BACKGROUND_%0))=0,@pemit %#=Invalid section number.,{@edit %#/BACKGROUND_%0={%1},{%2}; @pemit %#=get(%#/BACKGROUND_%0)}
+
+@pemit me=Adding Background commands to SGP - Staff Globals...moment.
+
+&CMD-BG_CHECK SGP - Staff Globals=$+bgcheck */*:@switch 0=isstaff(%#),{@pemit %#=Only staff can use this command},{@switch setq(0,num(*%0))%q0=#-1,@pemit %#=Cant find player named %0,{@switch and(isnum(%1),hasattr(%q0,BACKGROUND_%1))=0,@pemit %#=Invalid section number.,{@pemit %#=[repeat(-=,39)]%R%BThis is section %1 of [words(lattr(*%0/BACKGROUND_*))] sections for [name(*%0)].%R[repeat(=-,39)]%R[get_eval(%q0/BACKGROUND_%1)]%R[repeat(-=,39)]}}}
+
+&CMD-BG_VIEW SGP - Staff Globals=$+bgview *:@switch 0=isstaff(%#),{@pemit %#=Only staff can use this command},{@switch setq(0,num(*%0))%q0=#-1,@pemit %#=Cant find player named %0,@pemit %#=name(%q0) has the following background sections: [iter(lattr(%q0/BACKGROUND_*),after(##,BACKGROUND_))]}
+
+@pemit me=Adding CNOTES to SGP - Main Globals...moment.
+
+&CMD-CNOTE SGP - Main Globals=$+cnote *=*:&cnote-%0 %#=Set by %N on date [time()]:%r%1
+
+&CMD_CNOTE-LIST SGP - Main Globals=$+cnotelist:@pemit %#=[name(%#)] contains the following cnotes:%r[u(v(db)/footer)]%r[edit(lattr(%#/cnote-*),CNOTE-,%b)]%r[u(v(db)/footer)]%rTo view each cnote, type +cnoteview <cnoteofchoice>
+
+&CMD_CNOTE-VIEW SGP - Main Globals=$+cnoteview *:@switch [hasattr(%#,CNOTE-%0)]=0,{@pemit %#=[Name(%#)] has no such cnote. +cnotelist [name(%#)] to view their cnotes.},1,{@pemit %#=[name(%#)]'s '%0' reads:%r[u(v(db)/footer)]%r[u(num(%#)/CNOTE-%0)]%r[u(v(db)/footer)]%r}
+
+
+@pemit me=Adding CNOTES to SGP - Wizard Globals...moment.
+
+
+&CMD-+CNOTE SGP - Wizard Globals=$+cnote/* *=*:@switch 1=[setq(0,u(v(db)/u_dbrefcheck,%1))][isdbref(%q0)],{&cnote-%0 %q0=Set by %N on date [time()]:%r%2 ; @set %q0/cnote-%0=wizard ; @chown %q0/cnote-%0=%# ; @pemit %#=Setting %1/CNOTE-%0 to %2},{@pemit %#=Sorry, I can't find %1 as a DB object.}
+
+&CMD_CNOTEAPPROVE SGP - Wizard Globals=$+cnoteapp* * *:@switch [setq(0,u(v(db)/u_dbrefcheck,%1))][hasattr(%q0,CNOTE-%2)]=0,{@pemit %#=[Name(%q0)] has no such cnote. +cnotelist [name(%q0)] to view their cnotes.},1,{@chown %q0/CNOTE-%2=%# ; @set %q0/CNOTE-%2=wizard ; @set %q0=CNOTE-%2:Approved by [name(%#)] on date [time()]%r[get(%q0/CNOTE-%2)] ; @pemit %#=[name(%q0)]'s '%2' now reads:%r[u(v(db)/footer)]%r[u(num(%q0)/CNOTE-%2)]%r[u(v(db)/footer))]%r}
+
+&CMD_CNOTEDELETE SGP - Wizard Globals=$+cnotedel* * *:@switch [setq(0,u(v(db)/u_dbrefcheck,%1))][hasattr(%q0,CNOTE-%2)]=0,{@pemit %#=[Name(%q0)] has no such cnote. +cnotelist [name(%q0)] to view their cnotes.},1,{@pemit %#=[name(%q0)]'s '%2' reads:%r[u(v(db)/footer)]%r[u([num(%q0)]/CNOTE-%2)]%r[u(v(db)/footer)]%r ; @wipe %q0/CNOTE-%2 ; @pemit %#=[name(%q0)]'s '%2' now wiped.}
+
+
+@pemit me=Adding CNOTES to SGP - Staff Globals...moment.
+
+
+&CMD_CNOTELIST SGP - Staff Globals=$+cnotelist *:@switch 1=[setq(0,u(v(db)/u_dbrefcheck,%0))][isdbref(%q0)],{@pemit %#=[name(%q0)] contains the following cnotes:%r[u(v(db)/footer)]%r[edit(lattr(%q0/cnote-*),CNOTE-,%b)]%r[u(v(db)/footer)]%rTo view each cnote, type +cnoteview %0 <cnoteofchoice>},{@pemit %#=I can't find %0 as a player or object.}
+
+&CMD_CNOTEVIEW SGP - Staff Globals=$+cnoteview * *:@switch [setq(0,u(v(db)/u_dbrefcheck,%0))][hasattr(%q0,CNOTE-%1)]=0,{@pemit %#=[Name(%q0)] has no such cnote. +cnotelist [name(%q0)] to view their cnotes.},1,{@pemit %#=[name(%q0)]'s '%1' reads:%r[u(v(db)/footer)]%r[u([num(%q0)]/CNOTE-%1)]%r[u(v(db)/footer)]%r}
+
+@pemit me=Adding STNOTES to SGP - Staff Globals...moment.
+
+&CMD-STNOTE-AREA SGP - Staff Globals=$+stnotes:@dolist lcon(loc(%#)) [lexits(loc(%#))] [loc(%#)]=@switch words(setq(0,u(notes,##))%q0)=0,,@pemit %#=name(##) has ST notes: [edit(%q0,STNOTE-,)]
+
+&CMD-STNOTE-OBJECT SGP - Staff Globals=$+stnotes *:@switch setq(0,locate(%#,%0,*))%q0=#-*,{@pemit %#=I can't find %0.},{@switch words(setq(1,u(notes,%q0))%q1)=0,{@pemit %#=name(%q0) doesn't have any valid ST notes.},{@pemit %#=name(%q0) has the following ST notes:[iter(%q1,%R%T[after(##,STNOTE-)]---[get(%q0/##)])]}}
+
+&CMD-STNOTE-SET SGP - Staff Globals=$+setnote */*=*:@switch 1=strmatch(setq(0,locate(%#,%0,*))%q0,#-*),{@pemit %#=Cannot locate %0},neq(1,words(%1)),{@pemit %#=%1 is not a valid ST note tag.},{@unlock %q0/STNOTE-%1;&STNOTE-%1 %q0=%2;@set %q0/STNOTE-%1=hidden;@set %q0/STNOTE-%1=no_command;@lock %q0/STNOTE-%1}
+
+&CMD-STNOTE-SET-VIS SGP - Staff Globals=$+setnote/vis */*=*:@switch 1=strmatch(setq(0,locate(%#,%0,*))%q0,#-*),{@pemit %#=Cannot locate %0},neq(1,words(%1)),{@pemit %#=%1 is not a valid ST note tag.},{@unlock %q0/STNOTE-%1;&STNOTE-%1 %q0=%2;@set %q0/STNOTE-%1=no_command;@set %q0/STNOTE-%1=!hidden;@lock %q0/STNOTE-%1}
+
+&CMD-RESUME SGP - Main Globals=$+resume:@dolist lcon(loc(%#))=@switch/first and(strmatch(first(name(##)),TIMESTOP:*),isdbref(get(##/SGP-CREATOR)))=1,{@set [get(##/SGP-CREATOR)]=SGP-HASTIMESTOP:;@destroy/override ##;@destroy/override ##}
+
+&CMD-TIMESTOP SGP - Main Globals=$+timestop:@switch 0=and(isdbref(get(owner(%#)/SGP-HASTIMESTOP)),andflags(owner(owner(%#)/SGP-HASTIMESTOP),W)),{@remit [loc(%#)]=JUDGE : %N calls a Timestop![setq(0,TIMESTOP: Created by %N [time()] at [name(loc(%#))]<[loc(%#)]>)];@create %q0;@lock [setq(1,locate(me,%q0,iT))]%q1=#0;@set %q1=enter_ok;@set %q1=!opaque;@set %q1=commands;@set %q1=unfindable;&SGP-CREATOR %q1=[owner(%#)];&SGP-HASTIMESTOP [owner(%#)]=%q1;@set %#/SGP-HASTIMESTOP=wizard;@set %#/SGP-HASTIMESTOP=hidden;@tel %q1=[loc(%#)];@dolist lwho()=@switch isstaff(##)=1,@pemit ##=>> %q0 <<},{@pemit %#=You may only have one timestop in play at a time.}
+
+&CMD-WARN SGP - Main Globals=$+warn *:@switch [loc(*%0)]=#-1,{@pemit %#=[capstr(%0)] is not a valid player name or alias.},[loc(%#)],{@pemit %#=You issue an OOC warning to [name(*%0)].;@pemit *%0=[u(line)]OOC WARNING : You are in a potentially dangerous situation. Willfully initiating or entering combat or continuing with this RP could result in either injury, some other harm, or death for your character. By continuing this situation you accept the consequences of your IC actions.%r[u(line)]; @pemit/list get(v(db)/staff-list)=ALERT: %N has just used +warn on [name(*%0)] to alert [obj(*%0)] about a potentially dangerous IC situation.},{@pemit %#=That person is not in the same location as you are.}
+
+@pemit me=Updating +version info.  Moment....
+
++version/update [num(SGP - Main Globals)]/patchlevel=RPPack
++version/update [num(SGP - Staff Globals)]/patchlevel=RPPack
++version/update [num(SGP - Wizard Globals)]/patchlevel=RPPack
++version/update [num(SGP - Global Parent Object)]/patchlevel=RPPack
++version/update [num(SGP - Main Globals)]/history=RPPack added
++version/update [num(SGP - Staff Globals)]/history=RPPack added
++version/update [num(SGP - Wizard Globals)]/history=RPPack added
++version/update [num(SGP - Global Parent Object)]/history=RPPack added
+
+@pemit me=Quote of RPpack code completed.  Commands were added to existing objects, so nothing further is required.
+

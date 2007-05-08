@@ -1,0 +1,247 @@
+@@      SGP CGEN V1.0 BETA - 27 November 2001 BUILD 
+@@
+@@ ----  SGP - Trinity/Aeon Library Object and Sheet Code  ----
+@@
+@@      NOTE 1: Due to the way that MUSH and MUX operate, you need to have 
+@@      #1 @admin player_queue_limit=1000 and then @restart the MUSH after
+@@      so that the file quotes cleanly.  It is recommended that if using 
+@@      TinyFugue, that you /quote with a 1 second delay between commands,
+@@      so that the queue has time to catch up before it becomes overloaded.
+@@
+@@      NOTE 2: Make sure that you either allow wizards to use @function 
+@@      and @attribute or be prepared to set up a long @startup on #1.
+@@
+@@      NOTE 3: Either quote these objects in the master room or @tel them  
+@@      to that location after they are loaded into your game.
+@@
+@@      NOTE 4: This code is compatible with TinyMUSH 2.2.4U1 and RhostMUSH, 
+@@      with the addition of a softcoded table() as found in Penn.  It worked 
+@@      on MUX and passed basic tests on PennMUSH.  There may be other problems  
+@@      problems on PennMUSH, so report bugs as you find them. TM3?  Hell if I 
+@@      know.
+@@
+@@      NOTE 5: This is file quotes the genre library code -only-.  Functions 
+@@      to generate sheet code are part of it, but the cgen engine needs to be 
+@@      installed FIRST.  Walkthrough rooms are not within the scope of this file.  
+@@
+@@      NOTE 6: If you are using this system to replace an existing one, or you 
+@@      are working on a new library from scratch, then you will need to find a 
+@@      competent coder and bribe them to do the work for you.  This is hard 
+@@      work, so don't treat them badly for their trouble.  We DO suggest that 
+@@      you take a backup of the DB before you try any of it. MAKE SURE THAT 
+@@      SAID CODER IS EMOTIONALLY STABLE AND COMPETENT, OR YOUR EXPERIENCE MAY 
+@@      END BADLY. 
+@@
+@@      NOTE 7: Audumla's Axiom reads "Psychocoder == psychopath.  Get it?"
+@@
+@@      NOTE 8: This code is best installed at the same time as the rest of 
+@@      the SGP globals packages.  Successful installation requires that global
+@@      functions and global parent objects are in the same place as the wizard
+@@      installing the code.  Otherwise,  You will need to update several pieces 
+@@      of information in the system and do a manual trigger of the startup on 
+@@      the global functions object(note that this is something that you need 
+@@      some patience and skill to accomplish without pulling your hair out). 
+@@
+@@      ----------
+@@
+@@      Bugs:
+@@
+@@      The SGP team has gone to some trouble to knock the bugs out of this 
+@@      puppy.  INVARIABLY, there are probably one or two still left, so 
+@@      report them and offer patches if you fix them before we get to them.  
+@@      Makes everything better for everyone. :)
+@@
+@@      Check for typos and omissions.
+@@
+@@      ----------
+@@
+@@      CREDITS:
+@@
+@@      List Object data compiled and donated by Taurus@Karroo.  He made 
+@@      it and gave it away, so say 'thank you' by keeping the credits on the 
+@@      code.  If you don't like the way it's done, then do one yourself.  No 
+@@      one will stop you.
+@@
+@@      General and Trinity-specific sheet code by Audumla and BEM@Granite, 
+@@      copyright 2000-2001.  They made it and then just gave it away, so keep the 
+@@      credits on the code when you use it.  The folks at Bloody Roses helped 
+@@      a lot with final debugging, as did Jeff@Sandbox.  Thanks go out to the 
+@@      remaining members of the SGP Battlegroup** for putting up with the 
+@@      pre-release neurosis. ;)
+@@
+@@      *  Trinity and terms from the game are copyrighted by White Wolf Games.
+@@      Nothing done here is meant to infringe on White Wolf IP and hopefully 
+@@      will generate from interest in the game by new folks.
+@@
+@@      ** (The SGP Battlegroup: BEM, Audumla, Jeff, Hilikiradi, Brazil, Talek, 
+@@      Raevnos, Ronan, and Ashen-Shugar, in a reprise of his role as 'The Dark 
+@@      One'. Javelin@M*U*S*H returned for a cameo as 'The Angel of Light and
+@@      Goodness'.)
+@@
+@@      ----------
+@@
+@@      This installer writes code to 5 objects and requires that startups be 
+@@      triggered at the end of the process.  It does lots of things by itself, 
+@@      but you need to use +stathide to run @attribute.  People using PennMUSH 
+@@      have to use it everytime.
+@@
+@@      ----------  
+@@
+@@      To do List:
+@@       - Check for omissions and typos.
+@@       - Add sheets for qin, chromatics and abberants.
+@@       - see about local hacks for test games.
+@@
+@@      ----------
+@@
+@@      To install this code:
+@@
+@@      1.  Install and make appropriate edits to the main cgen installer.  
+@@      Without it, this library is meaningless.
+@@      2.  From a WIZARD or equivalent level character, quote the file into 
+@@      the game.  You need to know how your client works for this part.
+@@      3.  @edit the Support Code object, replacing all occurances of #140 
+@@      with the dbref of the object itself.  The installation will be useless 
+@@      otherwise.
+@@      4.  Run +create-db
+@@      5.  Stat a test character and see what happens. 
+@@
+
+
+@pemit me=Renaming the List Object and Support Code Objects to reflect the genre.  Moment....
+
+@name SGP Cgen: List Object=SGP Cgen: Trinity List Object
+@name SGP Cgen: Support Code=SGP Cgen: Trinity Support Code
+
+@pemit me=Done!
+
+
+@pemit me=Quoting the Trinity List Object to the existing object.  Moment....
+
+&CREDITS SGP Cgen: Trinity List Object=Taurus@Karroo
+
+&LIST-APPEARANCE-ABILS SGP Cgen: Trinity List Object=intimidation|style
+
+&LIST-APTITUDES SGP Cgen: Trinity List Object=biokinesis|clairsentience|electrokinesis|psychokinesis|telepathy|vitakinesis
+
+&LIST-ATTRIBUTES SGP Cgen: Trinity List Object=appearance|charisma|dexterity|intelligence|manipulation|perception|stamina|strength|wits
+
+&LIST-BACKGROUNDS SGP Cgen: Trinity List Object=allies|cipher|citizenship|contacts|devices|followers|influence|resources
+
+&LIST-CHARISMA-ABILS SGP Cgen: Trinity List Object=etiquette|perform|savvy
+
+&LIST-DEMEANOR SGP Cgen: Trinity List Object=autist|bravo|caregiver|child|competitor|confidant|conformist|conniver|curmudgeon|deviant|director|fanatic|gallant|jester|judge|loner|maker|martyr|masochist|penitent|rebel|reveler|show-off|survivor|traditionalist|visionary
+
+&LIST-DEXTERITY-ABILS SGP Cgen: Trinity List Object=athletics|drive|firearms|legerdemain|martial_arts|melee|pilot|stealth
+
+&LIST-FACTION SGP Cgen: Trinity List Object=aesculapian|isra|the legions|the ministry|norca|orgotek|aeon trinity|qin|chromatics|abberants
+
+&LIST-INTELLIGENCE-ABILS SGP Cgen: Trinity List Object=academics|bureaucracy|engineering|intrusion|linguistics|medicine|science|survival
+
+&LIST-LISTS SGP Cgen: Trinity List Object=flaws|merits|gear
+
+&LIST-MANIPULATION-ABILS SGP Cgen: Trinity List Object=command|interrogation|subterfuge
+
+&LIST-NATURE SGP Cgen: Trinity List Object=autist|bravo|caregiver|child|competitor|confidant|conformist|conniver|curmudgeon|deviant|director|fanatic|gallant|jester|judge|loner|maker|martyr|masochist|penitent|rebel|reveler|show-off|survivor|traditionalist|visionary
+
+&LIST-PERCEPTION-ABILS SGP Cgen: Trinity List Object=awareness|investigation
+
+&LIST-POOLS SGP Cgen: Trinity List Object=psi|willpower|xp|initiative
+
+&LIST-POWERS SGP Cgen: Trinity List Object=adaptation|psychomorphing|transmogrify|psychometry|psyconavigation|telesthesia|electromanipulation|photokinesis|technokinesis|cryokinesis|pyrokinesis|telekinesis|empathy|mindshare|psychbending|iatrosis|mentatis|algesis
+
+&LIST-RACE SGP Cgen: Trinity List Object=psion|normal|qin|abberant|chromatic
+
+&LIST-STAMINA-ABILS SGP Cgen: Trinity List Object=endurance|resistance
+
+&LIST-STATS SGP Cgen: Trinity List Object=ATTRIBUTES|STRENGTH-ABILS|DEXTERITY-ABILS|STAMINA-ABILS|PERCEPTION-ABILS|INTELLIGENCE-ABILS|WITS-ABILS|APPEARANCE-ABILS|MANIPULATION-ABILS|CHARISMA-ABILS|POOLS|BACKGROUNDS|APTITUDES|POWERS
+
+&LIST-STRENGTH-ABILS SGP Cgen: Trinity List Object=brawl|might
+
+&LIST-STRINGS SGP Cgen: Trinity List Object=fullname|origin|aptitude|birthday|changeday|concept|demeanor|allegiance|nature|race
+
+&LIST-WITS-ABILS SGP Cgen: Trinity List Object=arts|meditation|rapport
+
+@pemit me=Done!
+
+@pemit me=Setting +stats commands on main and staff globals objects.  If they need to be somewhere else, you need to move them yourself.  If they don't set properly, you need to add and edit them manually.  Moment......
+
+&CMD-STATS SGP - Main Globals=$+stats:@switch [or(hasattr(%#,string-race),member(statlist(race),get(%#/string-race),|))]=0,{@pemit %#=You need to have someone set your race to something.},{@trigger #140/SHEET-[get(%#/string-race)]=%#,%#}
+
+&CMD-STAT-STAFF SGP - Staff Globals=$+stats *:@switch setq(0,num(*%0))%q0:[or(hasattr(%q0,string-race),member(statlist(race),get(%q0/string-race),|))]=#-1*,@pemit %#=Are you sure that's a player?,#-2*,@pemit %#=There seems to be more than one. I don't know which one you mean!,*:0,{@pemit %#=[name(%q0)] does not appear to have stats. It may be that %p STRING-RACE is unset, or invalid.},{@trigger #140/SHEET-[get(*%0/string-race)]=%q0,%#}
+
+@pemit me=Done!
+
+@pemit me=Setting generic sheet support code.  Moment......
+
+&CREDITS SGP Cgen: Trinity Support Code=Audumla and BEM@Granite
+
+&FN-DISPLAY-LIST SGP Cgen: Trinity Support Code=%R[center(>%B[capstr(%0)]%B<,78,-)]%R[table(get(%1/list-%0),38,78,|,%b)]
+
+&FN-DISPLAY-LISTS SGP Cgen: Trinity Support Code=iter(filter(fn-haslist,%1[setq(9,%0)]), [u(fn-display-list,##,%0)])
+
+&FN-DISPLAY-STRINGS SGP Cgen: Trinity Support Code=table(iter(%1,before(##,:):%B%B[capstr(get(%0/[after(##,:)]))],|,|),38,78,|,)
+
+&FN-HASLIST SGP Cgen: Trinity Support Code=hasattr(%q9,list-%0)
+
+&FN_3LISTSCOL SGP Cgen: Trinity Support Code=table(iter(lnum(max(words(%0,|),words(%1,|),words(%2,|)))[setq(0,sort(%0,a,|))][setq(1,sort(%1,a,|))][setq(2,sort(%2,a,|))],u(me/fn_format,extract(%q0,#@,1,|))|[u(me/fn_format,extract(%q1,#@,1,|))]|[u(me/fn_format,extract(%q2,#@,1,|))],,|),25,78,|,%b)
+
+&FN_3VCOL SGP Cgen: Trinity Support Code=table(iter(lnum(setq(8,add(1,div(sub(words(%0,|),1),3)))%q8),u(me/fn_format,extract(%0,#@,1,|))|[u(me/fn_format,extract(%0,add(#@,%q8),1,|))]|[u(me/fn_format,extract(%0,add(#@,%q8,%q8),1,|))],,|),25,78,|,%b)
+
+&FN_COMMON-LISTS SGP Cgen: Trinity Support Code=[u(fn-display-lists, %0,specialties merits flaws equipment)]
+
+&FN_FORMAT SGP Cgen: Trinity Support Code=setq(9,switch(strmatch(extract(%0,2,1,:),extract(%0,3,1,:)),1,extract(%0,3,1,:),([extract(%0,3,1,:)])%B[extract(%0,2,1,:)]))[ljust(capstr(extract(%0,1,1,:)),sub(24,strlen(%q9)))]%q9
+
+@pemit me=Done!
+
+@pemit me=Now we will set functions that are Trinity specific.
+
+&FN_ABILITIES1 SGP Cgen: Trinity Support Code=%r[u(#140/FN_3LISTSCOL,sgptrim(get(%0/statlist-STRENGTH-ABILS)|[get(%0/statlist-SEC-STRENGTH-ABILS)],b,|),sgptrim(get(%0/statlist-CHARISMA-ABILS)|[get(%0/statlist-SEC-CHARISMA-ABILS)],b,|),sgptrim(get(%0/statlist-PERCEPTION-ABILS)|[get(%0/statlist-SEC-PERCEPTION-ABILS)],b,|))]
+
+&FN_ABILITIES2 SGP Cgen: Trinity Support Code=%r[u(#140/FN_3LISTSCOL,sgptrim(get(%0/statlist-DEXTERITY-ABILS)|[get(%0/statlist-SEC-DEXTERITY-ABILS)],b,|),sgptrim(get(%0/statlist-MANIPULATION-ABILS)|[get(%0/statlist-SEC-MANIPULATION-ABILS)],b,|),sgptrim(get(%0/statlist-INTELLIGENCE-ABILS)|[get(%0/statlist-SEC-INTELLIGENCE-ABILS)],b,|))]
+
+&FN_ABILITIES3 SGP Cgen: Trinity Support Code=%r[u(#140/FN_3LISTSCOL,sgptrim(get(%0/statlist-STAMINA-ABILS)|[get(%0/statlist-SEC-STAMINA-ABILS)],b,|),sgptrim(get(%0/statlist-APPEARANCE-ABILS)|[get(%0/statlist-SEC-APPEARANCE-ABILS)],b,|),sgptrim(get(%0/statlist-WITS-ABILS)|[get(%0/statlist-SEC-WITS-ABILS)],b,|))]
+
+&FN_HEALTH SGP Cgen: Trinity Support Code=[center(>%bHealth%b<,78,=)]%r[center(Bashing Wounds: [stat(name(*%0),bashing)]%B%B Lethal Wounds: [stat(name(*%0),lethal)]%B%BAggravated Wounds : [stat(name(*%0),agg_wounds)],78)]
+
+@pemit me=Done!
+
+@pemit me=Now we'll set the sheet attributes themselves.  If you want qin, abberants or chromatics, you need to build them for your game.
+
+&SHEET-NORMAL SGP Cgen: Trinity Support Code=@pemit %1=[center(<%b%b[name(%0)]%b%b>,78,=)]%R[u(#140/fn-display-strings,%0,Full Name:FULLNAME|Race:STRING-RACE|Allegiance:STRING-ALLEGIANCE|Occupation:STRING-OCCUPATION|Nature:STRING-NATURE|Demeanor:STRING-DEMEANOR|Date of Birth:STRING-BIRTHDAY|Origin:STRING-ORIGIN|Concept:STRING-CONCEPT|XP:XP)]%R[center(>%bAttributes and Abilities%b<,78,=)]%r[u(#140/fn_3vcol,iter(strength charisma perception,grab(get(%0/statlist-attributes),##:*,|),,|))]%R[repeat(-,78)][u(#140/fn_abilities1,*%0)]%R[repeat(-,78)]%R[u(#140/fn_3vcol,iter(dexterity manipulation intelligence,grab(get(%0/statlist-attributes),##:*,|),,|))]%R[repeat(-,78)][u(#140/fn_abilities2,*%0)]%R[repeat(-,78)]%R[u(#140/fn_3vcol,iter(stamina appearance wits,grab(get(%0/statlist-attributes),##:*,|),,|))]%R[repeat(-,78)][u(#140/fn_abilities3,*%0)]%R[center(>%bMiscellaneous%b<,78,=)]%r[u(#140/FN_3LISTSCOL,get(*%0/statlist-backgrounds),,get(*%0/statlist-pools))];@pemit %1=[u(#140/fn_common-lists,*%0)]%R[u(#140/FN_HEALTH,%0)]%R[repeat(=,78)]
+
+&SHEET-PSION SGP Cgen: Trinity Support Code=@pemit %1=[center(<%b%b[name(%0)]%b%b>,78,=)]%R[u(#140/fn-display-strings,%0,Full Name:FULLNAME|Race:STRING-RACE|Allegiance:STRING-ALLEGIANCE|Occupation:STRING-OCCUPATION|Nature:STRING-NATURE|Demeanor:STRING-DEMEANOR|Date of Birth:STRING-BIRTHDAY|Origin:STRING-ORIGIN|Concept:STRING-CONCEPT|XP:XP)]%R[center(>%bAttributes and Abilities%b<,78,=)]%r[u(#140/fn_3vcol,iter(strength charisma perception,grab(get(%0/statlist-attributes),##:*,|),,|))]%R[repeat(-,78)][u(#140/fn_abilities1,*%0)]%R[repeat(-,78)]%R[u(#140/fn_3vcol,iter(dexterity manipulation intelligence,grab(get(%0/statlist-attributes),##:*,|),,|))]%R[repeat(-,78)][u(#140/fn_abilities2,*%0)]%R[repeat(-,78)]%R[u(#140/fn_3vcol,iter(stamina appearance wits,grab(get(%0/statlist-attributes),##:*,|),,|))]%R[repeat(-,78)][u(#140/fn_abilities3,*%0)]%R[center(>%bMiscellaneous%b<,78,=)]%r[u(#140/FN_3LISTSCOL,get(*%0/statlist-backgrounds),get(*%0/statlist-powers),get(*%0/statlist-pools))];@pemit %1=[u(#140/fn_common-lists,*%0)]%R[u(#140/FN_HEALTH,%0)]%R[repeat(=,78)]
+
+@pemit me=Done!
+@pemit me=Setting the flags.
+
+@switch version()=TinyMUSH version 2.2.*,{@set SGP Cgen: Trinity Support Code=INHERIT;@set SGP Cgen: Trinity Support Code=COMMANDS;@set SGP Cgen: Trinity Support Code=STOP;@set SGP Cgen: Trinity Support Code=SAFE},PennMUSH*,{@set SGP Cgen: Trinity Support Code=!NO_COMMAND;@set SGP Cgen: Trinity Support Code=WIZARD},MUX*,{@set SGP Cgen: Trinity Support Code=INHERIT;@set SGP Cgen: Trinity Support Code=!NO_COMMAND;@set SGP Cgen: Trinity Support Code=SAFE},RhostMUSH*,{@set SGP Cgen: Trinity Support Code=INHERIT;@set SGP Cgen: Trinity Support Code=!NOCOMMAND;@set SGP Cgen: Trinity Support Code=SAFE;@set SGP Cgen: Trinity Support Code=STOP}
+
+@pemit me=Done!
+
+@pemit me=Now we set the explicit references to the correct value.  If you and the various code objects aren't all in the same place, you will get errors.  Moment....
+
+@force me=@edit SGP Cgen: Trinity Support Code/*=#140,[num(SGP Cgen: Trinity Support Code)]
+@force me=@edit SGP - Main Globals/CMD-STATS=#140,[num(SGP Cgen: Trinity Support Code)]
+@force me=@edit SGP - Staff Globals/CMD-STAT-STAFF=#140,[num(SGP Cgen: Trinity Support Code)]
+
+@pemit me=Done!
+
+@pemit me=Setting up +version on the objects.  If you and the objects aren't in the same place, then you will get a bunch of errors.  Moment....
+
+@wait 0=&SGP-OBJECTS SGP - Global Parent Object=[get(SGP - Global Parent Object/SGP-OBJECTS)]|[num(SGP Cgen: Trinity List Object)]
+@wait 0=&SGP-OBJECTS SGP - Global Parent Object=[get(SGP - Global Parent Object/SGP-OBJECTS)]|[num(SGP Cgen: Trinity Support Code)]
+
++version/update [num(SGP Cgen: Trinity List Object)]/version=BETA
++version/update [num(SGP Cgen: Trinity List Object)]/Patchlevel=112401
++version/update [num(SGP Cgen: Trinity List Object)]/History=Base
+
++version/update [num(SGP Cgen: Trinity Support Code)]/version=BETA
++version/update [num(SGP Cgen: Trinity Support Code)]/Patchlevel=112401
++version/update [num(SGP Cgen: Trinity Support Code)]/History=Base
+
+@pemit me=Done!
+
+@pemit me=Creating the stats db.  This takes about a minute.
+
++create-db

@@ -1,0 +1,69 @@
+@@  This is a sample of an /quotable file for statting characters using SGP 
+@@  Cgen.  The main purpose of the file is to test your installation on WoD. 
+
++setstat <name>/strength=2
++setstat <name>/dexterity=2
++setstat <name>/stamina=2
++setstat <name>/charisma=2
++setstat <name>/manipulation=2
++setstat <name>/appearance=2
++setstat <name>/perception=2
++setstat <name>/intelligence=2
++setstat <name>/wits=4
+
++setstat <name>/acting=2
++setstat <name>/alertness=2
++setstat <name>/athletics=2
++setstat <name>/brawl=2
++setstat <name>/dodge=2
++setstat <name>/animal ken=2
++setstat <name>/drive=2
++setstat <name>/etiquette=2
++setstat <name>/bureaucracy=2
++setstat <name>/computer=8
++setstat <name>/finance=4
++setstat <name>/investigation=2
++setstat <name>/science=3
+
++setstat <name>/drinking=3
++setstat <name>/poetry=4
+
++setstat <name>/resources=5
++setstat <name>/fame=2
++setstat <name>/contacts=4
+
++setstat <name>/self_control=3
++setstat <name>/courage=3
++setstat <name>/conscience=4
+
++setstat <name>/humanity=8
++setstat <name>/willpower=7
+
+@@  Permanent Blood Pool Value
+
++setstat <name>/blood=10
+
+@@ Banality 
+
++setstat <name>/banality=7
+
+@@ Check for exact format on race-names
+
++setstring <name>/race=mortal
++setstring <name>/nature=test
++setstring <name>/demeanor=test
++setstring <name>/birthday=test
++setstring <name>/concept=test
+
+@@ The setting of specialties is optional and are here 
+@@ for convenience in loading advanced characters.
+
++setspecialty <name>/computer=Godlike Programming Skill
+
+@@ list attributes are in the form of | separated lists.
+@@
+@@ ex:  &list-merits <name>=Ambidextrous|Nightclub|Catlike Balance
+
+&list-merits *<name>=stuff|and stuff
+&list-flaws *<name>=stuffed
+
