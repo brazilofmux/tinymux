@@ -497,7 +497,6 @@ void queue_string(DESC *d, const char *s)
         }
     }
 
-
     if (CHARSET_UTF8 != d->encoding)
     {
         if (CHARSET_LATIN1 == d->encoding)
@@ -546,6 +545,7 @@ void queue_string(DESC *d, const mux_string &s)
             pFinal = ConvertToAscii((UTF8 *)pFinal);
         }
     }
+
     pFinal = encode_iac(pFinal);
     queue_write(d, pFinal);
 }
