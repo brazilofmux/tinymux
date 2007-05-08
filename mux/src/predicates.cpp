@@ -561,7 +561,7 @@ bool ok_password(const char *password, const char **pmsg)
     int num_lower = 0;
 
     const unsigned char *scan = (const unsigned char *)(password);
-    for ( ; *scan; scan = mux_NextCodePoint(scan))
+    for ( ; *scan; scan = utf8_NextCodePoint(scan))
     {
         if (  !mux_isprint(scan)
            || mux_isspace(*scan))

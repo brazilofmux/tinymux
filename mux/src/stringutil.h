@@ -31,7 +31,15 @@ extern const unsigned char mux_hex2dec[256];
 extern const unsigned char mux_toupper[256];
 extern const unsigned char mux_tolower[256];
 extern const unsigned char mux_StripAccents[256];
+
+#define UTF8_SIZE1     1
+#define UTF8_SIZE2     2
+#define UTF8_SIZE3     3
+#define UTF8_SIZE4     4
+#define UTF8_CONTINUE  5
+#define UTF8_ILLEGAL   6
 extern const unsigned char mux_utf8[256];
+
 extern const UTF16 mux_ch2utf16[256];
 
 #define mux_isprint_old(x) (mux_isprint_old[(unsigned char)(x)])
@@ -55,6 +63,8 @@ extern const UTF16 mux_ch2utf16[256];
 #define mux_isescape(x)           (mux_isescape[(unsigned char)(x)])
 #define mux_StripAccents(x)       (mux_StripAccents[(unsigned char)(x)])
 
+#define UNI_EOF ((UTF32)-1)
+
 #define UNI_REPLACEMENT_CHAR ((UTF32)0x0000FFFDUL)
 #define UNI_MAX_BMP          ((UTF32)0x0000FFFFUL)
 #define UNI_MAX_UTF16        ((UTF32)0x0010FFFFUL)
@@ -71,7 +81,7 @@ extern const UTF16 mux_ch2utf16[256];
 #define UNI_PU3_START        ((UTF32)0x00100000UL)
 #define UNI_PU3_END          ((UTF32)0x0010FFFDUL)
 
-#define mux_NextCodePoint(x)      (x + mux_utf8[(unsigned char)*x])
+#define utf8_NextCodePoint(x)      (x + mux_utf8[(unsigned char)*x])
 
 // 219 included, 1113893 excluded, 0 errors.
 // 12 states, 26 columns, 568 bytes
@@ -91,6 +101,7 @@ inline bool mux_isprint(const unsigned char *p)
     } while (iState < PRINT_ACCEPTING_STATES_START);
     return ((iState - PRINT_ACCEPTING_STATES_START) == 1) ? true : false;
 }
+bool utf8_strlen(const UTF8 *pString, size_t &nString);
 
 int ANSI_lex(size_t nString, const char *pString, size_t *nLengthToken0, size_t *nLengthToken1);
 #define TOKEN_TEXT_ANSI 0 // Text sequence + optional ANSI sequence.
@@ -190,7 +201,9 @@ void safe_copy_str(const char *src, char *buff, char **bufp, size_t nSizeOfBuffe
 void safe_copy_str_lbuf(const char *src, char *buff, char **bufp);
 size_t safe_copy_buf(const char *src, size_t nLen, char *buff, char **bufp);
 size_t safe_fill(char *buff, char **bufc, char chFile, size_t nSpaces);
+void utf8_safe_chr(const UTF8 *src, char *buff, char **bufp);
 UTF8 *ConvertToUTF8(UTF32 ch);
+UTF32 ConvertFromUTF8(const UTF8 *p);
 void mux_strncpy(char *dest, const char *src, size_t nSizeOfBuffer);
 bool matches_exit_from_list(char *, const char *);
 char *translate_string(const char *, bool);

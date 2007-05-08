@@ -61,7 +61,7 @@ void VerifyTables(FILE *fp)
     int Value;
     UTF32 Othercase;
     UTF32 nextcode = ReadCodePoint(fp, &Value, &Othercase);
-    int i;
+    UTF32 i;
     for (i = 0; i <= UNI_MAX_LEGAL_UTF32; i++)
     {
         bool bMember;
@@ -79,6 +79,11 @@ void VerifyTables(FILE *fp)
             if (UNI_EOF != nextcode)
             {
                 nextcode = ReadCodePoint(fp, &Value, &Othercase);
+                if (nextcode <= i)
+                {
+                    fprintf(stderr, "Codes in file are not in order.\n");
+                    exit(0);
+                }
             }
         }
         else
@@ -128,7 +133,7 @@ void TestTable(FILE *fp)
     int Value;
     UTF32 Othercase;
     UTF32 nextcode = ReadCodePoint(fp, &Value, &Othercase);
-    int i;
+    UTF32 i;
     for (i = 0; i <= UNI_MAX_LEGAL_UTF32; i++)
     {
         bool bMember;
@@ -146,6 +151,11 @@ void TestTable(FILE *fp)
             if (UNI_EOF != nextcode)
             {
                 nextcode = ReadCodePoint(fp, &Value, &Othercase);
+                if (nextcode <= i)
+                {
+                    fprintf(stderr, "Codes in file are not in order.\n");
+                    exit(0);
+                }
             }
         }
         else
@@ -182,7 +192,7 @@ void LoadStrings(FILE *fp)
     UTF32 Othercase;
     UTF32 nextcode = ReadCodePoint(fp, &Value, &Othercase);
 
-    int i;
+    UTF32 i;
     for (i = 0; i <= UNI_MAX_LEGAL_UTF32; i++)
     {
         bool bMember;
@@ -202,6 +212,11 @@ void LoadStrings(FILE *fp)
             if (UNI_EOF != nextcode)
             {
                 nextcode = ReadCodePoint(fp, &Value, &Othercase);
+                if (nextcode <= i)
+                {
+                    fprintf(stderr, "Codes in file are not in order.\n");
+                    exit(0);
+                }
             }
         }
         else
