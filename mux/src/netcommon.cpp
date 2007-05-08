@@ -473,81 +473,81 @@ static const char *encode_iac(const char *szString)
     return Buffer;
 }
 
-void queue_string(DESC *d, const char *s)
+void queue_string(DESC *d, const UTF8 *s)
 {
-    const char *p = s;
-
-    if (d->flags & DS_CONNECTED)
+    // TODO: It should be possible to combine some of these conversion into a
+    // single pass over the data.
+    //
+    const UTF8 *p;
+    if (  (d->flags & DS_CONNECTED)
+       && Ansi(d->player))
     {
-        if (  !Ansi(d->player)
-           && strchr(s, ESC_CHAR))
-        {
-            p = strip_ansi(p);
-        }
-        else if (NoBleed(d->player))
-        {
-            p = normal_to_white(p);
-        }
+        p = convert_color(s, NoBleed(d->player));
     }
     else
     {
-        if (strchr(s, ESC_CHAR))
-        {
-            p = strip_ansi(p);
-        }
+        p = strip_color(s);
     }
 
-    if (CHARSET_UTF8 != d->encoding)
+    const char *q;
+    if (CHARSET_UTF8 == d->encoding)
+    {
+        q = (char *)p;
+    }
+    else
     {
         if (CHARSET_LATIN1 == d->encoding)
         {
-            p = ConvertToLatin((UTF8 *)p);
+            q = ConvertToLatin(p);
         }
         else // if (CHARSET_ASCII == d->encoding)
         {
-            p = ConvertToAscii((UTF8 *)p);
+            q = ConvertToAscii(p);
         }
     }
 
-    p = encode_iac(p);
-    queue_write(d, p);
+    q = encode_iac(q);
+    queue_write(d, q);
 }
 
 void queue_string(DESC *d, const mux_string &s)
 {
-    static char Buffer[LBUF_SIZE];
-    const char *pFinal = Buffer;
+    static UTF8 Buffer[LBUF_SIZE];
+    const UTF8 *p;
 
-    if (d->flags & DS_CONNECTED)
+    if (  (d->flags & DS_CONNECTED)
+       && Ansi(d->player))
     {
-        if (!Ansi(d->player))
-        {
-            s.export_TextPlain(Buffer);
-        }
-        else
-        {
-            s.export_TextAnsi(Buffer, NULL, 0, s.length(), LBUF_SIZE-1, NoBleed(d->player));
-        }
+        // TODO: Passing NoBleed into both functions seems unnecessary?
+        //
+        s.export_TextAnsi((char *)Buffer, NULL, 0, s.length(), LBUF_SIZE-1, NoBleed(d->player));
+        p = convert_color(Buffer, NoBleed(d->player));
     }
     else
     {
-        s.export_TextPlain(Buffer);
+        s.export_TextPlain((char *)Buffer);
+        p = Buffer;
     }
 
-    if (CHARSET_UTF8 != d->encoding)
+    const char *q;
+    if (CHARSET_UTF8 == d->encoding)
+    {
+        q = (char *)p;
+    }
+    else
     {
         if (CHARSET_LATIN1 == d->encoding)
         {
-            pFinal = ConvertToLatin((UTF8 *)pFinal);
+            q = ConvertToLatin(p);
         }
         else // if (CHARSET_ASCII == d->encoding)
         {
-            pFinal = ConvertToAscii((UTF8 *)pFinal);
+            q = ConvertToAscii(p);
         }
     }
 
-    pFinal = encode_iac(pFinal);
-    queue_write(d, pFinal);
+    q = encode_iac(q);
+    queue_write(d, q);
 }
 
 void freeqs(DESC *d)
@@ -844,13 +844,13 @@ static void announce_connect(dbref player, DESC *d)
         s_Html(player);
     }
 
-    raw_notify( player, tprintf("\n%sMOTD:%s %s\n", ANSI_HILITE,
-                ANSI_NORMAL, mudconf.motd_msg));
+    raw_notify( player, tprintf("\n%sMOTD:%s %s\n", COLOR_INTENSE,
+                COLOR_RESET, mudconf.motd_msg));
 
     if (Wizard(player))
     {
-        raw_notify(player, tprintf("%sWIZMOTD:%s %s\n", ANSI_HILITE,
-            ANSI_NORMAL, mudconf.wizmotd_msg));
+        raw_notify(player, tprintf("%sWIZMOTD:%s %s\n", COLOR_INTENSE,
+            COLOR_RESET, mudconf.wizmotd_msg));
 
         if (!(mudconf.control_flags & CF_LOGIN))
         {

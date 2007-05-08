@@ -251,6 +251,51 @@ inline const unsigned char *mux_upperflip(const unsigned char *p)
     return (const unsigned char *)tr_toupper_ott[iState - TR_TOUPPER_ACCEPTING_STATES_START];
 }
 
+// utf/tr_Color.txt
+//
+// 517 code points.
+// 5 states, 11 columns, 311 bytes
+//
+#define TR_COLOR_START_STATE (0)
+#define TR_COLOR_ACCEPTING_STATES_START (5)
+extern const unsigned char tr_color_itt[256];
+extern const unsigned char tr_color_stt[5][11];
+
+inline int mux_color(const unsigned char *p)
+{
+    int iState = TR_COLOR_START_STATE;
+    do
+    {
+        unsigned char ch = *p++;
+        iState = tr_color_stt[iState][tr_color_itt[(unsigned char)ch]];
+    } while (iState < TR_COLOR_ACCEPTING_STATES_START);
+    return iState - TR_COLOR_ACCEPTING_STATES_START;
+}
+
+#define COLOR_UNDEFINED  0
+#define COLOR_RESET      "\xEE\x80\x80"    // 1
+#define COLOR_INTENSE    "\xEE\x80\x81"    // 2
+#define COLOR_UNDERLINE  "\xEE\x80\x84"    // 3
+#define COLOR_BLINK      "\xEE\x80\x85"    // 4
+#define COLOR_INVERSE    "\xEE\x80\x87"    // 5
+#define COLOR_FG_BLACK   "\xEE\x84\x80"    // 6
+#define COLOR_FG_RED     "\xEE\x84\x81"    // 7
+#define COLOR_FG_GREEN   "\xEE\x84\x82"    // 8
+#define COLOR_FG_YELLOW  "\xEE\x84\x83"    // 9
+#define COLOR_FG_BLUE    "\xEE\x84\x84"    // 10
+#define COLOR_FG_MAGENTA "\xEE\x84\x85"    // 11
+#define COLOR_FG_CYAN    "\xEE\x84\x86"    // 12
+#define COLOR_FG_WHITE   "\xEE\x84\x87"    // 13
+#define COLOR_BG_BLACK   "\xEE\x88\x80"    // 14
+#define COLOR_BG_RED     "\xEE\x88\x81"    // 15
+#define COLOR_BG_GREEN   "\xEE\x88\x82"    // 16
+#define COLOR_BG_YELLOW  "\xEE\x88\x83"    // 17
+#define COLOR_BG_BLUE    "\xEE\x88\x84"    // 18
+#define COLOR_BG_MAGENTA "\xEE\x88\x85"    // 19
+#define COLOR_BG_CYAN    "\xEE\x88\x86"    // 20
+#define COLOR_BG_WHITE   "\xEE\x88\x87"    // 21
+#define COLOR_LAST_CODE  21
+
 bool utf8_strlen(const UTF8 *pString, size_t &nString);
 
 int ANSI_lex(size_t nString, const char *pString, size_t *nLengthToken0, size_t *nLengthToken1);
@@ -325,6 +370,8 @@ char *ANSI_TruncateAndPad_sbuf(const char *pString, size_t nMaxVisualWidth, char
 size_t ANSI_TruncateToField(const char *szString, size_t nField, char *pField, size_t maxVisual, size_t *nVisualWidth, bool bNoBleed = false);
 char *strip_ansi(const char *szString, size_t *pnString = 0);
 char *strip_accents(const char *szString, size_t *pnString = 0);
+UTF8 *convert_color(const UTF8 *pString, bool bNoBleed);
+UTF8 *strip_color(const UTF8 *pString);
 char *normal_to_white(const char *);
 char *munge_space(const char *);
 char *trim_spaces(char *);

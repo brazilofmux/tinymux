@@ -356,6 +356,7 @@ void LoadStrings(FILE *fp)
 }
 
 bool g_bReplacement = false;
+int  g_iReplacementState = '?';
 
 void BuildAndOutputTable(FILE *fp, char *UpperPrefix, char *LowerPrefix)
 {
@@ -370,7 +371,7 @@ void BuildAndOutputTable(FILE *fp, char *UpperPrefix, char *LowerPrefix)
     //
     if (g_bReplacement)
     {
-        sm.SetUndefinedStates('?');
+        sm.SetUndefinedStates(g_iReplacementState);
         TestTable(fp);
     }
 
@@ -444,12 +445,13 @@ int main(int argc, char *argv[])
     if (argc < 3)
     {
 #if 0
-        fprintf(stderr, "Usage: %s [-c] prefix unicodedata.txt\n", argv[0]);
+        fprintf(stderr, "Usage: %s [-c ch] prefix unicodedata.txt\n", argv[0]);
         exit(0);
 #else
         pFilename = "NumericDecimal.txt";
         pPrefix   = "digit";
         g_bReplacement = false;
+        g_iReplacementState = '?';
 #endif
     }
     else
@@ -460,6 +462,15 @@ int main(int argc, char *argv[])
             if (0 == strcmp(argv[j], "-c"))
             {
                 g_bReplacement = true;
+                if (j+1 < argc)
+                {
+                    j++;
+                    g_iReplacementState = atoi(argv[j]);
+                }
+                else
+                {
+                    g_iReplacementState = '?';
+                }
             }
             else
             {
