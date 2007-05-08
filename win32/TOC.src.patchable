@@ -33,7 +33,6 @@ src/ansi.h
 src/attrcache.cpp
 src/attrcache.h
 src/attrs.h
-src/autoconf.h
 src/boolexp.cpp
 src/bsd.cpp
 src/command.cpp
