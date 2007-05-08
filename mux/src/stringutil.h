@@ -25,9 +25,10 @@ extern bool mux_PlayerNameSet[256];
 extern const bool mux_issecure[256];
 extern const bool mux_isescape[256];
 extern const unsigned char mux_hex2dec[256];
-extern const unsigned char mux_toupper[256];
-extern const unsigned char mux_tolower[256];
-extern const unsigned char mux_StripAccents[256];
+extern const unsigned char mux_toupper_ascii[SCHAR_MAX+1];
+extern const unsigned char mux_tolower_ascii[SCHAR_MAX+1];
+extern const unsigned char mux_toupper_latin1[256];
+extern const unsigned char mux_tolower_latin1[256];
 
 #define UTF8_SIZE1     1
 #define UTF8_SIZE2     2
@@ -50,15 +51,14 @@ extern const char *latin1_utf8[256];
 #define mux_isupper_latin1(x) (mux_isupper_latin1[(unsigned char)(x)])
 #define mux_isspace(x) (mux_isspace[(unsigned char)(x)])
 #define mux_hex2dec(x) (mux_hex2dec[(unsigned char)(x)])
-#define mux_toupper(x) (mux_toupper[(unsigned char)(x)])
-#define mux_tolower(x) (mux_tolower[(unsigned char)(x)])
+#define mux_toupper(x) (mux_toupper_latin1[(unsigned char)(x)])
+#define mux_tolower(x) (mux_tolower_latin1[(unsigned char)(x)])
 
 #define mux_AttrNameInitialSet_latin1(x) (mux_AttrNameInitialSet_latin1[(unsigned char)(x)])
 #define mux_ObjectNameSet(x)      (mux_ObjectNameSet[(unsigned char)(x)])
 #define mux_PlayerNameSet(x)      (mux_PlayerNameSet[(unsigned char)(x)])
 #define mux_issecure(x)           (mux_issecure[(unsigned char)(x)])
 #define mux_isescape(x)           (mux_isescape[(unsigned char)(x)])
-#define mux_StripAccents(x)       (mux_StripAccents[(unsigned char)(x)])
 
 #define UNI_EOF ((UTF32)-1)
 
@@ -369,7 +369,6 @@ size_t ANSI_String_Finalize(struct ANSI_Out_Context *pacOut, size_t *pnVisualWid
 UTF8 *ANSI_TruncateAndPad_sbuf(const UTF8 *pString, size_t nMaxVisualWidth, UTF8 fill = ' ');
 size_t ANSI_TruncateToField(const UTF8 *szString, size_t nField, UTF8 *pField, size_t maxVisual, size_t *nVisualWidth, bool bNoBleed = false);
 UTF8 *strip_ansi(const UTF8 *szString, size_t *pnString = 0);
-UTF8 *strip_accents(const UTF8 *szString, size_t *pnString = 0);
 UTF8 *convert_color(const UTF8 *pString, bool bNoBleed);
 UTF8 *strip_color(const UTF8 *pString);
 UTF8 *normal_to_white(const UTF8 *);
@@ -592,9 +591,9 @@ public:
         size_t nStart = 0,
         size_t nLen = (LBUF_SIZE-1)
     );
-    void transformWithTable
+    void transform_Ascii
     (
-        const UTF8 xfrmTable[256],
+        const UTF8 asciiTable[SCHAR_MAX+1],
         size_t nStart = 0,
         size_t nLen = (LBUF_SIZE-1)
     );

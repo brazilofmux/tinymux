@@ -812,15 +812,17 @@ void do_addcommand
 
     // Validate command name.
     //
-    UTF8 *pName = NULL;
+    static UTF8 pName[LBUF_SIZE];
     if (1 <= nargs)
     {
-        UTF8 *pStripped = strip_ansi(name);
-        pName = RemoveSetOfCharacters(pStripped, (UTF8 *)"\r\n\t ");
-        mux_strlwr(pName);
+        mux_string *sName = new mux_string(name);
+        sName->strip((UTF8 *)"\r\n\t ");
+        sName->transform_Ascii(mux_tolower_ascii);
+        sName->export_TextPlain(pName);
+        delete sName;
     }
-    if (  !pName
-       || pName[0] == '\0'
+    if (  0 == nargs
+       || '\0' == pName[0]
        || (  pName[0] == '_'
           && pName[1] == '_'))
     {
