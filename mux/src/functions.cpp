@@ -4682,7 +4682,7 @@ static FUNCTION(fun_lock)
 
     // Get the attribute and decode it if we can read it
     //
-    char *tbuf = atr_get(it, pattr->number, &aowner, &aflags);
+    char *tbuf = atr_get("fun_lock.4685", it, pattr->number, &aowner, &aflags);
     if (bCanReadAttr(executor, it, pattr, false))
     {
         pBoolExp = parse_boolexp(executor, tbuf, true);
@@ -4735,7 +4735,7 @@ static FUNCTION(fun_elock)
     else if (  nearby_or_control(executor, victim)
             || nearby_or_control(executor, it))
     {
-        char *tbuf = atr_get(it, pattr->number, &aowner, &aflags);
+        char *tbuf = atr_get("fun_elock.4738", it, pattr->number, &aowner, &aflags);
         if (  pattr->number == A_LOCK
            || bCanReadAttr(executor, it, pattr, false))
         {
@@ -8355,7 +8355,7 @@ static FUNCTION(fun_error)
     {
         dbref aowner;
         int aflags;
-        char *errtext = atr_get(mudconf.global_error_obj, A_VA, &aowner, &aflags);
+        char *errtext = atr_get("fun_error.8353", mudconf.global_error_obj, A_VA, &aowner, &aflags);
         char *errbuff = alloc_lbuf("process_command.error_msg");
         char *errbufc = errbuff;
         if (nfargs == 1)

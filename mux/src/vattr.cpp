@@ -531,7 +531,7 @@ static void dbclean_RenumberAttributes(int cVAttributes)
                 {
                     dbref iOwner;
                     int   iFlag;
-                    char *pRecord = atr_get(iObject, iAttr, &iOwner, &iFlag);
+                    char *pRecord = atr_get("dbclean_RenumberAttributes.534", iObject, iAttr, &iOwner, &iFlag);
                     atr_add_raw(iObject, iNew, pRecord);
                     free_lbuf(pRecord);
                     atr_add_raw(iObject, iAttr, NULL);

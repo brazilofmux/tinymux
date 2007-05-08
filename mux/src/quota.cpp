@@ -76,14 +76,14 @@ static void mung_quotas(dbref player, int key, int value)
         xq = count_quota(player);
         if (key & QUOTA_TOT)
         {
-            buff = atr_get(player, A_RQUOTA, &aowner, &aflags);
+            buff = atr_get("mung_quotas.79", player, A_RQUOTA, &aowner, &aflags);
             aq = mux_atol(buff) + xq;
             atr_add_raw(player, A_QUOTA, mux_ltoa_t(aq));
             free_lbuf(buff);
         }
         else
         {
-            buff = atr_get(player, A_QUOTA, &aowner, &aflags);
+            buff = atr_get("mung_quotas.86", player, A_QUOTA, &aowner, &aflags);
             rq = mux_atol(buff) - xq;
             atr_add_raw(player, A_RQUOTA, mux_ltoa_t(rq));
             free_lbuf(buff);
@@ -93,11 +93,11 @@ static void mung_quotas(dbref player, int key, int value)
     {
         // Obtain (or calculate) current relative and absolute quota.
         //
-        buff = atr_get(player, A_QUOTA, &aowner, &aflags);
+        buff = atr_get("mung_quotas.96", player, A_QUOTA, &aowner, &aflags);
         if (!*buff)
         {
             free_lbuf(buff);
-            buff = atr_get(player, A_RQUOTA, &aowner, &aflags);
+            buff = atr_get("mung_quotas.100", player, A_RQUOTA, &aowner, &aflags);
             rq = mux_atol(buff);
             free_lbuf(buff);
             aq = rq + count_quota(player);
@@ -106,7 +106,7 @@ static void mung_quotas(dbref player, int key, int value)
         {
             aq = mux_atol(buff);
             free_lbuf(buff);
-            buff = atr_get(player, A_RQUOTA, &aowner, &aflags);
+            buff = atr_get("mung_quotas.109", player, A_RQUOTA, &aowner, &aflags);
             rq = mux_atol(buff);
             free_lbuf(buff);
         }
@@ -137,10 +137,10 @@ static void show_quota(dbref player, dbref victim)
     int aq, rq, aflags;
     char *buff;
 
-    buff = atr_get(victim, A_QUOTA, &aowner, &aflags);
+    buff = atr_get("show_quota.140", victim, A_QUOTA, &aowner, &aflags);
     aq = mux_atol(buff);
     free_lbuf(buff);
-    buff = atr_get(victim, A_RQUOTA, &aowner, &aflags);
+    buff = atr_get("show_quota.143", victim, A_RQUOTA, &aowner, &aflags);
     rq = aq - mux_atol(buff);
     free_lbuf(buff);
     if (!Free_Quota(victim))
@@ -310,7 +310,7 @@ FUNCTION(fun_hasquota)
     {
         int aflags;
         dbref aowner;
-        char *quota = atr_get(who, A_RQUOTA, &aowner, &aflags);
+        char *quota = atr_get("fun_hasquota.313", who, A_RQUOTA, &aowner, &aflags);
         int rq = mux_atol(quota);
         free_lbuf(quota);
         bResult = (rq >= mux_atol(fargs[1]));

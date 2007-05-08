@@ -96,7 +96,7 @@ static int WhichRealm(dbref what, bool bPeering)
         int iPeeringRealm = get_atr("PEERING_REALM");
         if (0 < iPeeringRealm)
         {
-            buff = atr_get(what, iPeeringRealm, &owner, &flags);
+            buff = atr_get("WhichRealm.99", what, iPeeringRealm, &owner, &flags);
             if (*buff)
             {
                 if      (mux_stricmp(buff, "FAE") == 0)     realm = FAE_REALM;
@@ -123,7 +123,7 @@ static int HandleObfuscation(dbref looker, dbref lookee, int threshhold)
         int iObfuscateLevel = 0;
         dbref owner;
         int flags;
-        buff = atr_get(lookee, get_atr("OBF_LEVEL"), &owner, &flags);
+        buff = atr_get("HandleObfuscation.126", lookee, get_atr("OBF_LEVEL"), &owner, &flags);
         if (*buff)
         {
             iObfuscateLevel = mux_atol(buff);
@@ -142,7 +142,7 @@ static int HandleObfuscation(dbref looker, dbref lookee, int threshhold)
             int iHeightenSensesLevel = 0;
             if (isHeightenedSenses(looker))
             {
-                buff = atr_get(looker, get_atr("HSS_LEVEL"), &owner, &flags);
+                buff = atr_get("HandleObfuscation.145", looker, get_atr("HSS_LEVEL"), &owner, &flags);
                 if (*buff)
                 {
                     iHeightenSensesLevel = mux_atol(buff);
@@ -913,7 +913,7 @@ static void look_atrs1
 
         int   aflags;
         dbref aowner;
-        char *buf = atr_get(thing, ca, &aowner, &aflags);
+        char *buf = atr_get("look_atrs1.916", thing, ca, &aowner, &aflags);
 
         if (!(aflags & AF_NOPROG))
         {
@@ -1527,7 +1527,7 @@ static void debug_examine(dbref player, dbref thing)
     notify(player, tprintf("TxLevel = %s", buf));
     free_lbuf(buf);
 #endif // REALITY_LVLS
-    buf = atr_get(thing, A_LOCK, &aowner, &aflags);
+    buf = atr_get("debug_examine.1530", thing, A_LOCK, &aowner, &aflags);
     pBoolExp = parse_boolexp(player, buf, true);
     free_lbuf(buf);
     notify(player, tprintf("Lock    = %s", unparse_boolexp(player, pBoolExp)));
@@ -1573,7 +1573,7 @@ static void debug_examine(dbref player, dbref thing)
             continue;
         }
 
-        buf = atr_get(thing, ca, &aowner, &aflags);
+        buf = atr_get("debug_examine.1576", thing, ca, &aowner, &aflags);
         if (bCanReadAttr(player, thing, pattr, false))
         {
             view_atr(player, thing, pattr, buf, aowner, aflags, 0);
@@ -1608,7 +1608,7 @@ static void exam_wildattrs
         }
         else
         {
-            buf = atr_get(thing, atr, &aowner, &aflags);
+            buf = atr_get("exam_wildattrs.1611", thing, atr, &aowner, &aflags);
         }
 
         // Decide if the player should see the attr: If obj is
@@ -1800,7 +1800,7 @@ void do_examine(dbref executor, dbref caller, dbref enactor, int eval, int key, 
         //
         savec = mudconf.many_coins[0];
         mudconf.many_coins[0] = mux_toupper(mudconf.many_coins[0]);
-        buf2 = atr_get(thing, A_LOCK, &aowner, &aflags);
+        buf2 = atr_get("do_examine.1803", thing, A_LOCK, &aowner, &aflags);
         pBoolExp = parse_boolexp(executor, buf2, true);
         buf = unparse_boolexp(executor, pBoolExp);
         free_boolexp(pBoolExp);
@@ -2548,7 +2548,7 @@ void do_decomp
         return;
     }
 
-    thingname = atr_get(thing, A_LOCK, &aowner, &aflags);
+    thingname = atr_get("do_decomp.2551", thing, A_LOCK, &aowner, &aflags);
     pBoolExp = parse_boolexp(executor, thingname, true);
 
     // Determine the name of the thing to use in reporting and then
@@ -2650,7 +2650,7 @@ void do_decomp
             continue;
         }
 
-        got = atr_get(thing, ca, &aowner, &aflags);
+        got = atr_get("do_decomp.2653", thing, ca, &aowner, &aflags);
         if (bCanReadAttr(executor, thing, pattr, false))
         {
             if (pattr->flags & AF_IS_LOCK)

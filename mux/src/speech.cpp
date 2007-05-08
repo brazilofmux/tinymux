@@ -22,7 +22,7 @@ char *modSpeech(dbref player, char *message, bool bWhich, char *command)
 {
     dbref aowner;
     int aflags;
-    char *mod = atr_get(player, bWhich ? A_SPEECHMOD : A_SAYSTRING,
+    char *mod = atr_get("modSpeech.25", player, bWhich ? A_SPEECHMOD : A_SAYSTRING,
         &aowner, &aflags);
 
     if (  mod[0] == '\0'
@@ -50,7 +50,7 @@ static int idle_timeout_val(dbref player)
     //
     dbref aowner;
     int aflags;
-    char *ITbuffer = atr_get(player, A_IDLETMOUT, &aowner, &aflags);
+    char *ITbuffer = atr_get("idle_timeout_val.53", player, A_IDLETMOUT, &aowner, &aflags);
     int idle_timeout = mux_atol(ITbuffer);
     free_lbuf(ITbuffer);
     return idle_timeout;
@@ -642,7 +642,7 @@ void do_page
         //
         dbref aowner;
         int   aflags;
-        char *pLastPage = atr_get(executor, A_LASTPAGE, &aowner, &aflags);
+        char *pLastPage = atr_get("do_page.645", executor, A_LASTPAGE, &aowner, &aflags);
 
         MUX_STRTOK_STATE tts;
         mux_strtok_src(&tts, pLastPage);

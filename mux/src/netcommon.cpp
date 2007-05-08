@@ -2370,7 +2370,7 @@ static bool check_connect(DESC *d, char *msg)
             }
             else
             {
-                buff = atr_get(player, A_LAST, &aowner, &aflags);
+                buff = atr_get("check_connect.2375", player, A_LAST, &aowner, &aflags);
                 if (*buff == '\0')
                     fcache_dump(d, FC_CREA_NEW);
                 else
@@ -3258,7 +3258,7 @@ void fetch_ConnectionInfoFields(dbref target, long anFields[4])
 {
     dbref aowner;
     int   aflags;
-    char *pConnInfo = atr_get(target, A_CONNINFO, &aowner, &aflags);
+    char *pConnInfo = atr_get("fetch_ConnectionInfoFields.3263", target, A_CONNINFO, &aowner, &aflags);
     char *aFields[5];
     ParseConnectionInfoString(pConnInfo, aFields);
 
@@ -3300,7 +3300,7 @@ long fetch_ConnectionInfoField(dbref target, int iField)
 {
     dbref aowner;
     int   aflags;
-    char *pConnInfo = atr_get(target, A_CONNINFO, &aowner, &aflags);
+    char *pConnInfo = atr_get("fetch_ConnectionInfoField.3305", target, A_CONNINFO, &aowner, &aflags);
     char *aFields[5];
     ParseConnectionInfoString(pConnInfo, aFields);
 
@@ -3320,7 +3320,7 @@ CLinearTimeAbsolute fetch_logouttime(dbref target)
 {
     dbref aowner;
     int   aflags;
-    char *pConnInfo = atr_get(target, A_CONNINFO, &aowner, &aflags);
+    char *pConnInfo = atr_get("fetch_logouttime.3325", target, A_CONNINFO, &aowner, &aflags);
     char *aFields[5];
     ParseConnectionInfoString(pConnInfo, aFields);
 

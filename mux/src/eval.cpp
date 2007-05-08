@@ -1372,7 +1372,7 @@ void mux_exec( char *pdstr, char *buff, char **bufc, dbref executor,
                     }
                     else if (ufp)
                     {
-                        tstr = atr_get(ufp->obj, ufp->atr, &aowner, &aflags);
+                        tstr = atr_get("mux_exec.1374", ufp->obj, ufp->atr, &aowner, &aflags);
                         if (ufp->flags & FN_PRIV)
                         {
                             i = ufp->obj;
