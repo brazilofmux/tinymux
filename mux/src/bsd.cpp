@@ -2860,15 +2860,15 @@ void SendCharsetRequest(DESC *d)
 {
     if (d->nvt_him_state[TELNET_CHARSET] == OPTION_YES)
     {
-        char aCharsets[27] =
+        char aCharsets[26] =
         {
-            '\0',
-            'U', 'T', 'F', '-', '8', '\0',
-            'I', 'S', 'O', '-', '8', '8', '5', '9', '-', '1', '\0',
-            'U', 'S', '-', 'A', 'S', 'C', 'I', 'I', '\0'
+            ';',
+            'U', 'T', 'F', '-', '8', ';',
+            'I', 'S', 'O', '-', '8', '8', '5', '9', '-', '1', ';',
+            'U', 'S', '-', 'A', 'S', 'C', 'I', 'I'
         };
 
-        SendSb(d, TELNET_CHARSET, TELNETSB_REQUEST, &aCharsets[0], 27);
+        SendSb(d, TELNET_CHARSET, TELNETSB_REQUEST, &aCharsets[0], 26);
     }
 }
 
