@@ -83,7 +83,7 @@ UTF32 ReadCodePoint(FILE *fp, int *pValue, UTF32 *pOthercase)
         {
             p++;
         }
-    
+
         // Look for end of string or comment.
         //
         if ('\0' == *p)

@@ -505,7 +505,9 @@ void queue_string(DESC *d, const char *s)
 
 
     if (!d->nvt_charset_utf8)
-    	p = ConvertToLatin((UTF8 *)p);
+    {
+        p = ConvertToLatin((UTF8 *)p);
+    }
 
     p = encode_iac(p);
     queue_write(d, p);
@@ -539,7 +541,9 @@ void queue_string(DESC *d, const mux_string &s)
     }
 
     if (!d->nvt_charset_utf8)
-	    pFinal = ConvertToLatin((UTF8 *)pFinal);
+    {
+        pFinal = ConvertToLatin((UTF8 *)pFinal);
+    }
     pFinal = encode_iac(pFinal);
     queue_write(d, pFinal);
 }
@@ -865,6 +869,15 @@ static void announce_connect(dbref player, DESC *d)
     DESC_ITER_PLAYER(player, dtemp)
     {
         num++;
+    }
+    
+    // Check for UNICODE forced on
+    //
+    if (Unicode(player)) {
+	    DESC_ITER_PLAYER(player, dtemp)
+    	{
+        	dtemp->nvt_charset_utf8 = true;
+	    } 	
     }
 
     // Reset vacation flag.
