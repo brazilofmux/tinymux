@@ -1102,7 +1102,6 @@ FUNCTION(fun_squish)
     }
 
     SEP sep;
-#ifdef NEW_MUX_STRING
     if (!OPTIONAL_DELIM(2, sep, DELIM_DFLT|DELIM_STRING))
     {
         return;
@@ -1112,17 +1111,6 @@ FUNCTION(fun_squish)
 
     sStr->compress(sep.str);
     *bufc += sStr->export_TextAnsi(*bufc, CursorMin, CursorMax, buff + LBUF_SIZE - *bufc);
-#else
-    if (!OPTIONAL_DELIM(2, sep, DELIM_DFLT))
-    {
-        return;
-    }
-
-    mux_string *sStr = new mux_string(fargs[0]);
-
-    sStr->compress(sep.str[0]);
-    sStr->export_TextAnsi(buff, bufc);
-#endif // NEW_MUX_STRING
 
     delete sStr;
 }
@@ -1251,11 +1239,7 @@ FUNCTION(fun_columns)
     int nColumns = (78-nIndent)/nWidth;
     int iColumn = 0;
     int nLen = 0;
-#ifdef NEW_MUX_STRING
     mux_cursor iStart, iEnd, iWordStart, iWordEnd;
-#else
-    LBUF_OFFSET iWordStart = 0, iWordEnd = 0;
-#endif // NEW_MUX_STRING
 
     size_t nBufferAvailable = LBUF_SIZE - (*bufc-buff) - 1;
     bool bNeedCRLF = false;
@@ -1269,23 +1253,15 @@ FUNCTION(fun_columns)
         iWordStart = words->wordBegin(i);
         iWordEnd = words->wordEnd(i);
 
-#ifdef NEW_MUX_STRING
         nLen = iWordEnd.m_point - iWordStart.m_point;
-#else
-        nLen = iWordEnd - iWordStart;
-#endif
         if (nWidth < nLen)
         {
             nLen = nWidth;
         }
 
-#ifdef NEW_MUX_STRING
         iStart = iWordStart;
         sStr->cursor_from_point(iEnd, (LBUF_OFFSET)(iWordStart.m_point + nLen));
         *bufc += sStr->export_TextAnsi(*bufc, iStart, iEnd, buff + LBUF_SIZE - *bufc);
-#else
-        sStr->export_TextAnsi(buff, bufc, iWordStart, nLen);
-#endif // NEW_MUX_STRING
 
         if (nColumns-1 <= iColumn)
         {
@@ -1744,7 +1720,6 @@ FUNCTION(fun_strtrunc)
     }
 
     mux_string *sStr = new mux_string(fargs[0]);
-#ifdef NEW_MUX_STRING
     mux_cursor nLen = sStr->length_cursor();
 
     if (nLeft < nLen.m_point)
@@ -1754,15 +1729,6 @@ FUNCTION(fun_strtrunc)
         *bufc += sStr->export_TextAnsi(*bufc, CursorMin, iEnd, buff + LBUF_SIZE - *bufc);
     }
     else if (0 < nLen.m_point)
-#else
-    size_t nLen = sStr->length();
-
-    if (static_cast<size_t>(nLeft) < nLen)
-    {
-        sStr->export_TextAnsi(buff, bufc, 0, nLeft);
-    }
-    else if (0 < nLen)
-#endif // NEW_MUX_STRING
     {
         safe_str(fargs[0], buff, bufc);
     }
@@ -2661,13 +2627,8 @@ FUNCTION(fun_scramble)
     UNUSED_PARAMETER(ncargs);
 
     mux_string *sStr = new mux_string(fargs[0]);
-#ifdef NEW_MUX_STRING
     LBUF_OFFSET nPoints = sStr->length_cursor().m_point;
-#else
-    size_t nLen = sStr->length();
-#endif
 
-#ifdef NEW_MUX_STRING
     if (2 <= nPoints)
     {
         mux_string *sOut = new mux_string;
@@ -2684,25 +2645,6 @@ FUNCTION(fun_scramble)
         }
         *bufc += sOut->export_TextAnsi(*bufc, CursorMin, CursorMax, buff + LBUF_SIZE - *bufc);
         delete sOut;
-#else
-    if (2 <= nLen)
-    {
-        for (size_t i = 0; i < nLen-1; i++)
-        {
-            size_t j = static_cast<size_t>(RandomINT32(static_cast<INT32>(i),
-                static_cast<INT32>(nLen-1)));
-
-            UTF8 ch = sStr->export_Char(i);
-            ColorState cs = sStr->export_Color(i);
-
-            sStr->set_Char(i, sStr->export_Char(j));
-            sStr->set_Color(i, sStr->export_Color(j));
-
-            sStr->set_Char(j, ch);
-            sStr->set_Color(j, cs);
-        }
-        sStr->export_TextAnsi(buff, bufc, 0, nLen);
-#endif // NEW_MUX_STRING
     }
     else
     {
@@ -2745,7 +2687,6 @@ FUNCTION(fun_shuffle)
     LBUF_OFFSET n = words->find_Words(sep.str);
     mux_string *sOut = new mux_string;
     bool bFirst = true;
-#ifdef NEW_MUX_STRING
     LBUF_OFFSET i = 0;
     mux_cursor iStart = CursorMin, iEnd = CursorMin;
 
@@ -2767,28 +2708,6 @@ FUNCTION(fun_shuffle)
         n--;
     }
     *bufc += sOut->export_TextAnsi(*bufc, CursorMin, CursorMax, buff + LBUF_SIZE - *bufc);
-#else
-    LBUF_OFFSET i = 0, iStart = 0, nLen = 0;
-
-    while (n > 0)
-    {
-        if (bFirst)
-        {
-            bFirst = false;
-        }
-        else
-        {
-            sOut->append(osep.str, osep.n);
-        }
-        i = static_cast<LBUF_OFFSET>(RandomINT32(0, static_cast<INT32>(n-1)));
-        iStart = words->wordBegin(i);
-        nLen = words->wordEnd(i) - iStart;
-        sOut->append(*sIn, iStart, nLen);
-        words->ignore_Word(i);
-        n--;
-    }
-    sOut->export_TextAnsi(buff, bufc);
-#endif // NEW_MUX_STRING
 
     delete words;
     delete sIn;

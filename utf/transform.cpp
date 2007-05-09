@@ -82,7 +82,11 @@ void VerifyTables(FILE *fp)
 
 StateMachine sm;
 
-UTF8 *aOutputTable[5000];
+static struct
+{
+    UTF8 *p;
+    size_t n;
+} aOutputTable[5000];
 int   nOutputTable;
 
 void TestTable(FILE *fp)
@@ -148,14 +152,13 @@ void TestTable(FILE *fp)
                     pB++;
                     pXor++;
                 }
-                *pXor = '\0';
-                size_t nXor = pXor - Xor + 1;
+                size_t nXor = pXor - Xor;
 
                 int i;
                 bool bFound = false;
                 for (i = 0; i < nOutputTable; i++)
                 {
-                    if (memcmp(aOutputTable[i], Xor, nXor) == 0)
+                    if (memcmp(aOutputTable[i].p, Xor, nXor) == 0)
                     {
                         bFound = true;
                         break;
@@ -278,14 +281,13 @@ void LoadStrings(FILE *fp)
                     pB++;
                     pXor++;
                 }
-                *pXor = '\0';
-                size_t nXor = pXor - Xor + 1;
+                size_t nXor = pXor - Xor;
 
                 int i;
                 bool bFound = false;
                 for (i = 0; i < nOutputTable; i++)
                 {
-                    if (memcmp(aOutputTable[i], Xor, nXor) == 0)
+                    if (memcmp(aOutputTable[i].p, Xor, nXor) == 0)
                     {
                         bFound = true;
                         break;
@@ -294,8 +296,9 @@ void LoadStrings(FILE *fp)
 
                 if (!bFound)
                 {
-                    aOutputTable[nOutputTable] = new UTF8[nXor];
-                    memcpy(aOutputTable[nOutputTable], Xor, nXor);
+                    aOutputTable[nOutputTable].p = new UTF8[nXor];
+                    memcpy(aOutputTable[nOutputTable].p, Xor, nXor);
+                    aOutputTable[nOutputTable].n = nXor;
                     i = nOutputTable++;
                 }
 
@@ -401,37 +404,31 @@ void BuildAndOutputTable(FILE *fp, char *UpperPrefix, char *LowerPrefix)
         return;
     }
 
-    printf("const char *%s_ott[%d] =\n", LowerPrefix, nOutputTable);
+    printf("const UTF8 *%s_ott[%d] =\n", LowerPrefix, nOutputTable);
     printf("{\n");
     int i;
     for (i = 0; i < nOutputTable; i++)
     {
-        UTF8 *p = aOutputTable[i];
-        printf("    \"");
-        while ('\0' != *p)
+        UTF8 *p = aOutputTable[i].p;
+        printf("    T(\"");
+        size_t n = aOutputTable[i].n;
+        while (n--)
         {
-            if (isprint(*p))
-            {
-                printf("%c", *p);
-            }
-            else
-            {
-                printf("\\x%02X", *p);
-            }
+            printf("\\x%02X", *p);
             p++;
         }
 
         if (i != nOutputTable - 1)
         {
-            printf("\",\n");
+            printf("\"),\n");
         }
         else
         {
-            printf("\"\n");
+            printf("\")\n");
         }
 
-        delete aOutputTable[i];
-        aOutputTable[i] = NULL;
+        delete aOutputTable[i].p;
+        aOutputTable[i].p = NULL;
     }
     nOutputTable = 0;
     printf("};\n");
