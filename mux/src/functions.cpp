@@ -465,7 +465,7 @@ static FUNCTION(fun_words)
         return;
     }
 
-    safe_ltoa(countwords(strip_ansi(fargs[0]), &sep), buff, bufc);
+    safe_ltoa(countwords(strip_color(fargs[0]), &sep), buff, bufc);
 }
 
 /* ---------------------------------------------------------------------------
@@ -1450,8 +1450,8 @@ FUNCTION(fun_format)
     }
 
     size_t n2, n3;
-    strip_ansi(fargs[2], &n2);
-    strip_ansi(fargs[3], &n3);
+    strip_color(fargs[2], &n2);
+    strip_color(fargs[3], &n3);
     if (fieldsize + n2 + n3 > 79)
     {
         safe_str((UTF8 *)"#-1 COMBINED FIELD TOO LARGE", buff, bufc);
@@ -3135,7 +3135,7 @@ static FUNCTION(fun_strlen)
     size_t n = 0;
     if (nfargs >= 1)
     {
-        strip_ansi(fargs[0], &n);
+        strip_color(fargs[0], 0, &n);
     }
     safe_ltoa(static_cast<long>(n), buff, bufc);
 }
@@ -4235,7 +4235,7 @@ static FUNCTION(fun_wordpos)
     }
 
     size_t ncp;
-    UTF8 *cp = strip_ansi(fargs[0], &ncp);
+    UTF8 *cp = strip_color(fargs[0], 0, &ncp);
     unsigned int charpos = mux_atol(fargs[1]);
 
     if (  charpos > 0
@@ -4842,7 +4842,7 @@ static FUNCTION(fun_nearby)
 
 static void process_sex(dbref player, UTF8 *what, UTF8 *token, UTF8 *buff, UTF8 **bufc)
 {
-    dbref it = match_thing_quiet(player, strip_ansi(what));
+    dbref it = match_thing_quiet(player, strip_color(what));
     if (!Good_obj(it))
     {
         safe_match_result(it, buff, bufc);
@@ -7943,7 +7943,7 @@ static void centerjustcombo
     {
         return;
     }
-    size_t nWidth = mux_atol(strip_ansi(fargs[1]));
+    size_t nWidth = mux_atol(strip_color(fargs[1]));
     if (0 == nWidth)
     {
         return;
@@ -8387,7 +8387,7 @@ static FUNCTION(fun_strip)
     if (  1 < nfargs
        && '\0' != fargs[1][0])
     {
-        sStr->strip(strip_ansi(fargs[1]));
+        sStr->strip(strip_color(fargs[1]));
     }
     sStr->export_TextPlain(buff, bufc);
 
@@ -9507,7 +9507,7 @@ static FUNCTION(fun_ord)
     UNUSED_PARAMETER(ncargs);
 
     size_t n;
-    UTF8 *p  = strip_ansi(fargs[0]);
+    UTF8 *p  = strip_color(fargs[0]);
     if (utf8_strlen(p, n))
     {
         if (1 == n)
@@ -10271,7 +10271,10 @@ UTF8 *MakeCanonicalUserFunctionName(const UTF8 *pName, size_t *pnName, bool *pbV
     }
 
     size_t nLen = 0;
-    UTF8 *pNameStripped = strip_ansi(pName, &nLen);
+    UTF8 *pNameStripped = strip_color(pName, &nLen);
+
+    // TODO: Fix truncation.
+    //
     if (sizeof(Buffer)-1 < nLen)
     {
         nLen = sizeof(Buffer)-1;

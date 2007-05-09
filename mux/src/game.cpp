@@ -381,11 +381,10 @@ bool atr_match
     //
     if (AMATCH_LISTEN == type)
     {
-        // Remember, strip_ansi returns a pointer to a static buffer
+        // Remember, strip_color returns a pointer to a static buffer
         // within itself.
         //
-        size_t junk;
-        str = strip_ansi(str, &junk);
+        str = strip_color(str);
     }
 
     // If not checking parents, just check the thing

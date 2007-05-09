@@ -465,7 +465,7 @@ static const char *encode_iac(const char *szString)
 
                 // Add another IAC.
                 //
-                safe_copy_chr(NVT_IAC, Buffer, &pBuffer, sizeof(Buffer)-1);
+                safe_copy_chr_ascii(NVT_IAC, Buffer, &pBuffer, sizeof(Buffer)-1);
             }
         }
     }
@@ -727,7 +727,7 @@ static void parse_connect(const UTF8 *msg, UTF8 command[LBUF_SIZE], UTF8 user[LB
     while (  i < nmsg
           && !mux_isspace(msg[i]))
     {
-        safe_copy_chr(msg[i], command, &p, LBUF_SIZE-1);
+        safe_copy_chr_ascii(msg[i], command, &p, LBUF_SIZE-1);
         i++;
     }
     *p = '\0';
@@ -753,7 +753,7 @@ static void parse_connect(const UTF8 *msg, UTF8 command[LBUF_SIZE], UTF8 user[LB
                   && !mux_isspace(msg[i])
                   && msg[i] != '\"')
             {
-                safe_copy_chr(msg[i], user, &p, LBUF_SIZE-1);
+                safe_copy_chr_ascii(msg[i], user, &p, LBUF_SIZE-1);
                 i++;
             }
 
@@ -772,7 +772,7 @@ static void parse_connect(const UTF8 *msg, UTF8 command[LBUF_SIZE], UTF8 user[LB
             if (  i < nmsg
                && msg[i] != '\"')
             {
-                safe_copy_chr(' ', user, &p, LBUF_SIZE-1);
+                safe_copy_chr_ascii(' ', user, &p, LBUF_SIZE-1);
             }
         }
         while (  i < nmsg
@@ -786,7 +786,7 @@ static void parse_connect(const UTF8 *msg, UTF8 command[LBUF_SIZE], UTF8 user[LB
         while (  i < nmsg
               && !mux_isspace(msg[i]))
         {
-            safe_copy_chr(msg[i], user, &p, LBUF_SIZE-1);
+            safe_copy_chr_ascii(msg[i], user, &p, LBUF_SIZE-1);
             i++;
         }
     }
@@ -800,7 +800,7 @@ static void parse_connect(const UTF8 *msg, UTF8 command[LBUF_SIZE], UTF8 user[LB
     while (  i < nmsg
           && !mux_isspace(msg[i]))
     {
-        safe_copy_chr(msg[i], pass, &p, LBUF_SIZE-1);
+        safe_copy_chr_ascii(msg[i], pass, &p, LBUF_SIZE-1);
         i++;
     }
     *p = '\0';
@@ -1724,18 +1724,18 @@ static void dump_users(DESC *e, UTF8 *match, int key)
                 {
                     if (d->flags & DS_AUTODARK)
                     {
-                        safe_copy_chr('d', flist, &fp, sizeof(flist)-1);
+                        safe_copy_chr_ascii('d', flist, &fp, sizeof(flist)-1);
                     }
                     else
                     {
-                        safe_copy_chr('D', flist, &fp, sizeof(flist)-1);
+                        safe_copy_chr_ascii('D', flist, &fp, sizeof(flist)-1);
                     }
                 }
                 if (d->flags & DS_CONNECTED)
                 {
                     if (Hideout(d->player))
                     {
-                        safe_copy_chr('U', flist, &fp, sizeof(flist)-1);
+                        safe_copy_chr_ascii('U', flist, &fp, sizeof(flist)-1);
                     }
                     else
                     {
@@ -1744,35 +1744,35 @@ static void dump_users(DESC *e, UTF8 *match, int key)
                         {
                             if (Hideout(room_it))
                             {
-                                safe_copy_chr('u', flist, &fp, sizeof(flist)-1);
+                                safe_copy_chr_ascii('u', flist, &fp, sizeof(flist)-1);
                             }
                         }
                         else
                         {
-                            safe_copy_chr('u', flist, &fp, sizeof(flist)-1);
+                            safe_copy_chr_ascii('u', flist, &fp, sizeof(flist)-1);
                         }
                     }
 
                     if (Suspect(d->player))
                     {
-                        safe_copy_chr('+', flist, &fp, sizeof(flist)-1);
+                        safe_copy_chr_ascii('+', flist, &fp, sizeof(flist)-1);
                     }
                 }
                 if (d->host_info & H_FORBIDDEN)
                 {
-                    safe_copy_chr('F', slist, &sp, sizeof(slist)-1);
+                    safe_copy_chr_ascii('F', slist, &sp, sizeof(slist)-1);
                 }
                 if (d->host_info & H_REGISTRATION)
                 {
-                    safe_copy_chr('R', slist, &sp, sizeof(slist)-1);
+                    safe_copy_chr_ascii('R', slist, &sp, sizeof(slist)-1);
                 }
                 if (d->host_info & H_SUSPECT)
                 {
-                    safe_copy_chr('+', slist, &sp, sizeof(slist)-1);
+                    safe_copy_chr_ascii('+', slist, &sp, sizeof(slist)-1);
                 }
                 if (d->host_info & H_GUEST)
                 {
-                    safe_copy_chr('G', slist, &sp, sizeof(slist)-1);
+                    safe_copy_chr_ascii('G', slist, &sp, sizeof(slist)-1);
                 }
             }
             else if (  (e->flags & DS_CONNECTED)
@@ -1782,11 +1782,11 @@ static void dump_users(DESC *e, UTF8 *match, int key)
             {
                 if (d->flags & DS_AUTODARK)
                 {
-                    safe_copy_chr('d', flist, &fp, sizeof(flist)-1);
+                    safe_copy_chr_ascii('d', flist, &fp, sizeof(flist)-1);
                 }
                 else
                 {
-                    safe_copy_chr('D', flist, &fp, sizeof(flist)-1);
+                    safe_copy_chr_ascii('D', flist, &fp, sizeof(flist)-1);
                 }
             }
             *fp = '\0';

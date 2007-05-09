@@ -453,9 +453,6 @@ extern STATEDATA mudstate;
 #define CF_GUEST        0x0040      /* Allow guest logins to the mux */
 /* empty        0x0080 */
 #define CF_DEQUEUE      0x0100      /* Remove entries from the queue */
-#ifdef MUSH3
-#define CF_GODMONITOR   0x0200      // Display commands to the god.
-#endif // MUSH3
 #define CF_EVENTCHECK   0x0400      // Allow events checking.
 
 // Host information codes
@@ -489,9 +486,6 @@ extern STATEDATA mudstate;
 #define LOG_ALLOCATE    0x00004000  /* Log alloc/free from buffer pools */
 #define LOG_PROBLEMS    0x00008000  /* Log runtime problems */
 #define LOG_SUSPECTCMDS 0x00020000  // Log SUSPECT player keyboard commands.
-#ifdef MUSH3
-#define LOG_KBCOMMANDS  0x00010000  // Log keyboard commands.
-#endif // MUSH3
 #define LOG_TIMEUSE     0x00040000  // Log CPU time usage.
 #define LOG_ALWAYS      0x80000000  /* Always log it */
 

@@ -2615,7 +2615,7 @@ void do_decomp
     // several places.
     //
     size_t len;
-    UTF8 *p = strip_ansi(thingname, &len);
+    UTF8 *p = strip_color(thingname, &len);
     memcpy(thingname, p, len+1);
 
     // Report the lock (if any).

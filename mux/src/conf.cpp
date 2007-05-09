@@ -710,7 +710,7 @@ static CF_HAND(cf_string)
         //
         UTF8 *buff = alloc_sbuf("cf_string.prefix");
         UTF8 *p = buff;
-        UTF8 *q = strip_ansi(mudconf.mud_name);
+        UTF8 *q = strip_color(mudconf.mud_name);
         size_t nLen = 0;
         while (  *q
               && nLen < SBUF_SIZE)
