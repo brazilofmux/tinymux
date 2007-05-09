@@ -1,3 +1,20 @@
+/*! \file classify.cpp
+ * \brief Top-level driver for building a state machine which recognizes code
+ * points and indicates their membership or exclusion from a particular set of
+ * possible code points.
+ *
+ * Code points included are taken from first field (fields are delimited by
+ * semi-colons) of each line of a file.  The constructed state machine
+ * contains two accepting states: 0 and 1.  A 1 indicates membership.  Note
+ * that it is not always necessary for the state machine to look at every byte
+ * of a code point to determine membership.  For this reason, to advance to
+ * the next code requires a method separate from the state machine produced
+ * here.
+ *
+ * $Id$
+ *
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <memory.h>
@@ -12,44 +29,15 @@
 UTF32 ReadCodePoint(FILE *fp)
 {
     char buffer[1024];
-    char *p;
-
-    for (;;)
+    char *p = ReadLine(fp, buffer, sizeof(buffer));
+    if (NULL == p)
     {
-        if (fgets(buffer, sizeof(buffer), fp) == NULL)
-        {
-            return UNI_EOF;
-        }
-        p = strchr(buffer, '#');
-        if (NULL != p)
-        {
-            // Ignore comment.
-            //
-            *p = '\0';
-        }
-        p = buffer;
-
-        // Skip leading whitespace.
-        //
-        while (isspace(*p))
-        {
-            p++;
-        }
-
-        // Look for end of string or comment.
-        //
-        if ('\0' == *p)
-        {
-            // We skip blank lines.
-            //
-            continue;
-        }
-        break;
+        return UNI_EOF;
     }
 
     // Field #0 - Code Point
     //
-    return DecodeCodePoint(buffer);
+    return DecodeCodePoint(p);
 }
 
 #ifdef  VERIFY
@@ -115,7 +103,7 @@ void VerifyTables(FILE *fp)
                 nextcode = ReadCodePoint(fp);
                 if (nextcode <= i)
                 {
-                    fprintf(stderr, "Codes in file are not in order.\n");
+                    fprintf(stderr, "Codes in file are not in order (U+%04X).\n", nextcode);
                     exit(0);
                 }
             }
@@ -178,7 +166,7 @@ void TestTable(FILE *fp)
                 nextcode = ReadCodePoint(fp);
                 if (nextcode <= i)
                 {
-                    fprintf(stderr, "Codes in file are not in order.\n");
+                    fprintf(stderr, "Codes in file are not in order (U+%04X).\n", nextcode);
                     exit(0);
                 }
             }
@@ -229,7 +217,7 @@ void LoadStrings(FILE *fp)
                 nextcode = ReadCodePoint(fp);
                 if (nextcode <= i)
                 {
-                    fprintf(stderr, "Codes in file are not in order.\n");
+                    fprintf(stderr, "Codes in file are not in order (U+%04X).\n", nextcode);
                     exit(0);
                 }
             }

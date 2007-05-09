@@ -1,3 +1,26 @@
+/*! \file integers.cpp
+ * \brief Top-level driver for building a state machine which recognizes a
+ * code point and indicates an associated integer (or accepting state).
+ *
+ * The input file is composed of lines.  Each line is broken in
+ * semicolon-delimited fields.  The code point to recognize is taken from the
+ * first field.  The associated integer (decimal base) is taken from the
+ * second field.
+ *
+ * The constructed state machine associates the recognized code point with
+ * the given value.  The integer value could be anything -- index into a
+ * separately constructed table as is the case with mux_color, or an 8-bit
+ * character as is the case with the UTF8-to-Latin1 and UTF8-to-ASCII down
+ * conversions.
+ *
+ * It is not always necessary for the state machine to look at every byte
+ * of a code point to determine the associated code point(s).  For this
+ * reason, to advance to the next code requires a method separate from the
+ * state machine produced here.
+ *
+ * $Id$
+ *
+ */
 #include <stdio.h>
 #include <stdlib.h>
 #include <memory.h>
@@ -10,82 +33,19 @@
 UTF32 ReadCodePointAndValue(FILE *fp, int &Value)
 {
     char buffer[1024];
-    char *p;
-
-    for (;;)
+    char *p = ReadLine(fp, buffer, sizeof(buffer));
+    if (NULL == p)
     {
-        if (fgets(buffer, sizeof(buffer), fp) == NULL)
-        {
-            Value = -1;
-            return UNI_EOF;
-        }
-        p = strchr(buffer, '#');
-        if (NULL != p)
-        {
-            // Ignore comment.
-            //
-            *p = '\0';
-        }
-        p = buffer;
-
-        // Skip leading whitespace.
-        //
-        while (isspace(*p))
-        {
-            p++;
-        }
-
-        // Look for end of string or comment.
-        //
-        if ('\0' == *p)
-        {
-            // We skip blank lines.
-            //
-            continue;
-        }
-        break;
+        Value = -1;
+        return UNI_EOF;
     }
 
-#define MAX_FIELDS 2
-
-    int   nFields = 0;
-    char *aFields[MAX_FIELDS];
-    for (nFields = 0; nFields < MAX_FIELDS; )
+    int nFields;
+    char *aFields[2];
+    ParseFields(p, 2, nFields, aFields);
+    if (nFields < 2)
     {
-        // Skip leading whitespace.
-        //
-        while (isspace(*p))
-        {
-            p++;
-        }
-
-        aFields[nFields++] = p;
-        char *q = strchr(p, ';');
-        if (NULL == q)
-        {
-            // Trim trailing whitespace.
-            //
-            size_t i = strlen(p) - 1;
-            while (isspace(p[i]))
-            {
-                p[i] = '\0';
-            }
-            break;
-        }
-        else
-        {
-            *q = '\0';
-            p = q + 1;
-
-            // Trim trailing whitespace.
-            //
-            q--;
-            while (isspace(*q))
-            {
-                *q = '\0';
-                q--;
-            }
-        }
+        return UNI_EOF;
     }
 
     // Field #0 - Code Point (base 16)

@@ -641,7 +641,7 @@ UTF8 *MakeCanonicalFlagName
 
     while (*pName && nName < SBUF_SIZE)
     {
-        *p = mux_tolower(*pName);
+        *p = mux_tolower_ascii(*pName);
         p++;
         pName++;
         nName++;

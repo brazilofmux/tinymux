@@ -319,7 +319,7 @@ static void add_folder_name(dbref player, int fld, UTF8 *name)
     UTF8 *p = name;
     while (*p)
     {
-        safe_chr(mux_toupper(*p), aNew, &q);
+        safe_chr(mux_toupper_ascii(*p), aNew, &q);
         p++;
     }
     safe_chr(':', aNew, &q);
@@ -471,7 +471,7 @@ static int get_folder_number(dbref player, UTF8 *name)
         UTF8 *p = name;
         while (*p)
         {
-            safe_chr(mux_toupper(*p), aPattern, &q);
+            safe_chr(mux_toupper_ascii(*p), aPattern, &q);
             p++;
         }
         safe_chr(':', aPattern, &q);
@@ -630,7 +630,7 @@ static bool parse_msglist(UTF8 *msglist, struct mail_selector *ms, dbref player)
     }
     else
     {
-        switch (mux_toupper(*p))
+        switch (*p)
         {
         case '-':
 
@@ -743,28 +743,31 @@ static bool parse_msglist(UTF8 *msglist, struct mail_selector *ms, dbref player)
             }
             break;
 
+        case 'a':
         case 'A':
 
             // All messages, all folders
             //
             p++;
-            switch (mux_toupper(*p))
+            switch (*p)
             {
             case '\0':
                 notify(player, T("MAIL: A isn't enough (all?)"));
                 return false;
 
+            case 'l':
             case 'L':
 
                 // All messages, all folders
                 //
                 p++;
-                switch (mux_toupper(*p))
+                switch (*p)
                 {
                 case '\0':
                     notify(player, T("MAIL: AL isn't enough (all?)"));
                     return false;
 
+                case 'l':
                 case 'L':
 
                     // All messages, all folders
@@ -799,6 +802,7 @@ static bool parse_msglist(UTF8 *msglist, struct mail_selector *ms, dbref player)
             }
             break;
 
+        case 'u':
         case 'U':
 
             // Urgent, Unread
@@ -809,8 +813,10 @@ static bool parse_msglist(UTF8 *msglist, struct mail_selector *ms, dbref player)
                 notify(player, T("MAIL: U is ambiguous (urgent or unread?)"));
                 return false;
             }
-            switch (mux_toupper(*p))
+
+            switch (*p)
             {
+            case 'r':
             case 'R':
 
                 // Urgent
@@ -818,6 +824,7 @@ static bool parse_msglist(UTF8 *msglist, struct mail_selector *ms, dbref player)
                 ms->flags = M_URGENT;
                 break;
 
+            case 'n':
             case 'N':
 
                 // Unread
@@ -834,6 +841,7 @@ static bool parse_msglist(UTF8 *msglist, struct mail_selector *ms, dbref player)
             }
             break;
 
+        case 'r':
         case 'R':
 
             // Read
@@ -841,6 +849,7 @@ static bool parse_msglist(UTF8 *msglist, struct mail_selector *ms, dbref player)
             ms->flags = M_ISREAD;
             break;
 
+        case 'c':
         case 'C':
 
             // Cleared.
@@ -848,6 +857,7 @@ static bool parse_msglist(UTF8 *msglist, struct mail_selector *ms, dbref player)
             ms->flags = M_CLEARED;
             break;
 
+        case 't':
         case 'T':
 
             // Tagged.
@@ -855,6 +865,7 @@ static bool parse_msglist(UTF8 *msglist, struct mail_selector *ms, dbref player)
             ms->flags = M_TAG;
             break;
 
+        case 'm':
         case 'M':
 
             // Mass, me.
@@ -865,13 +876,16 @@ static bool parse_msglist(UTF8 *msglist, struct mail_selector *ms, dbref player)
                 notify(player, T("MAIL: M is ambiguous (mass or me?)"));
                 return false;
             }
-            switch (mux_toupper(*p))
+
+            switch (*p)
             {
+            case 'a':
             case 'A':
 
                 ms->flags = M_MASS;
                 break;
 
+            case 'e':
             case 'E':
 
                 ms->player = player;

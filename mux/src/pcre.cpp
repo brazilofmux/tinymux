@@ -922,14 +922,14 @@ pcre_maketables(void)
 
     for (i = 0; i < 256; i++)
     {
-        *p++ = mux_tolower(i);
+        *p++ = mux_tolower_ascii(i);
     }
 
     /* Next the case-flipping table */
 
     for (i = 0; i < 256; i++)
     {
-        *p++ = mux_islower_latin1(i)? mux_toupper(i) : mux_tolower(i);
+        *p++ = mux_islower_ascii(i)? mux_toupper_ascii(i) : mux_tolower_ascii(i);
     }
 
     /* Then the character class tables. Don't try to be clever and save effort
@@ -945,12 +945,12 @@ pcre_maketables(void)
             p[cbit_digit  + i/8] |= 1 << (i&7);
             p[cbit_word   + i/8] |= 1 << (i&7);
         }
-        if (mux_isupper_latin1(i))
+        if (mux_isupper_ascii(i))
         {
             p[cbit_upper  + i/8] |= 1 << (i&7);
             p[cbit_word   + i/8] |= 1 << (i&7);
         }
-        if (mux_islower_latin1(i))
+        if (mux_islower_ascii(i))
         {
             p[cbit_lower  + i/8] |= 1 << (i&7);
             p[cbit_word   + i/8] |= 1 << (i&7);

@@ -578,11 +578,11 @@ bool ok_password(const UTF8 *password, const UTF8 **pmsg)
             *pmsg = T("Illegal character in password.");
             return false;
         }
-        if (mux_isupper_latin1(*scan))
+        if (mux_isupper_ascii(*scan))
         {
             num_upper++;
         }
-        else if (mux_islower_latin1(*scan))
+        else if (mux_islower_ascii(*scan))
         {
             num_lower++;
         }
