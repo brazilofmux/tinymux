@@ -1104,19 +1104,32 @@ UTF8 *MakeCanonicalAttributeName(const UTF8 *pName_arg, size_t *pnName, bool *pb
         }
 
         nLeft -= n;
-        if (mux_islower(pName))
-        {
-            const UTF8 *qFlip = mux_upperflip(pName);
-            while (n--)
-            {
-                *p++ = *pName++ ^ *qFlip++;
-            }
-        }
-        else
+        bool bXor;
+        const string_desc *qDesc = mux_toupper(pName, bXor);
+        if (NULL == qDesc)
         {
             while (n--)
             {
                 *p++ = *pName++;
+            }
+        }
+        else
+        {
+            size_t m = qDesc->n_bytes;
+            const UTF8 *q = qDesc->p;
+            if (bXor)
+            {
+                while (m--)
+                {
+                    *p++ = *pName++ ^ *q++;
+                }
+            }
+            else
+            {
+                while (m--)
+                {
+                    *p++ = *q++;
+                }
             }
         }
     }
@@ -1168,19 +1181,32 @@ UTF8 *MakeCanonicalAttributeCommand(const UTF8 *pName, size_t *pnName, bool *pbV
           && n <= nLeft)
     {
         nLeft -= n;
-        if (mux_isupper(pName))
-        {
-            const UTF8 *qFlip = mux_lowerflip(pName);
-            while (n--)
-            {
-                *p++ = *pName++ ^ *qFlip++;
-            }
-        }
-        else
+        bool bXor;
+        const string_desc *qDesc = mux_tolower(pName, bXor);
+        if (NULL == qDesc)
         {
             while (n--)
             {
                 *p++ = *pName++;
+            }
+        }
+        else
+        {
+            size_t m = qDesc->n_bytes;
+            const UTF8 *q = qDesc->p;
+            if (bXor)
+            {
+                while (m--)
+                {
+                    *p++ = *pName++ ^ *q++;
+                }
+            }
+            else
+            {
+                while (m--)
+                {
+                    *p++ = *q++;
+                }
             }
         }
     }

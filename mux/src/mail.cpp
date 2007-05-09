@@ -319,7 +319,7 @@ static void add_folder_name(dbref player, int fld, UTF8 *name)
     UTF8 *p = name;
     while (*p)
     {
-        safe_chr(mux_toupper(*p), aNew, &q);
+        safe_chr(mux_toupper_ascii(*p), aNew, &q);
         p++;
     }
     safe_chr(':', aNew, &q);
@@ -471,7 +471,7 @@ static int get_folder_number(dbref player, UTF8 *name)
         UTF8 *p = name;
         while (*p)
         {
-            safe_chr(mux_toupper(*p), aPattern, &q);
+            safe_chr(mux_toupper_ascii(*p), aPattern, &q);
             p++;
         }
         safe_chr(':', aPattern, &q);
@@ -630,7 +630,7 @@ static bool parse_msglist(UTF8 *msglist, struct mail_selector *ms, dbref player)
     }
     else
     {
-        switch (mux_toupper(*p))
+        switch (*p)
         {
         case '-':
 
@@ -743,28 +743,31 @@ static bool parse_msglist(UTF8 *msglist, struct mail_selector *ms, dbref player)
             }
             break;
 
+        case 'a':
         case 'A':
 
             // All messages, all folders
             //
             p++;
-            switch (mux_toupper(*p))
+            switch (*p)
             {
             case '\0':
                 notify(player, T("MAIL: A isn't enough (all?)"));
                 return false;
 
+            case 'l':
             case 'L':
 
                 // All messages, all folders
                 //
                 p++;
-                switch (mux_toupper(*p))
+                switch (*p)
                 {
                 case '\0':
                     notify(player, T("MAIL: AL isn't enough (all?)"));
                     return false;
 
+                case 'l':
                 case 'L':
 
                     // All messages, all folders
@@ -799,6 +802,7 @@ static bool parse_msglist(UTF8 *msglist, struct mail_selector *ms, dbref player)
             }
             break;
 
+        case 'u':
         case 'U':
 
             // Urgent, Unread
@@ -809,8 +813,10 @@ static bool parse_msglist(UTF8 *msglist, struct mail_selector *ms, dbref player)
                 notify(player, T("MAIL: U is ambiguous (urgent or unread?)"));
                 return false;
             }
-            switch (mux_toupper(*p))
+
+            switch (*p)
             {
+            case 'r':
             case 'R':
 
                 // Urgent
@@ -818,6 +824,7 @@ static bool parse_msglist(UTF8 *msglist, struct mail_selector *ms, dbref player)
                 ms->flags = M_URGENT;
                 break;
 
+            case 'n':
             case 'N':
 
                 // Unread
@@ -834,6 +841,7 @@ static bool parse_msglist(UTF8 *msglist, struct mail_selector *ms, dbref player)
             }
             break;
 
+        case 'r':
         case 'R':
 
             // Read
@@ -841,6 +849,7 @@ static bool parse_msglist(UTF8 *msglist, struct mail_selector *ms, dbref player)
             ms->flags = M_ISREAD;
             break;
 
+        case 'c':
         case 'C':
 
             // Cleared.
@@ -848,6 +857,7 @@ static bool parse_msglist(UTF8 *msglist, struct mail_selector *ms, dbref player)
             ms->flags = M_CLEARED;
             break;
 
+        case 't':
         case 'T':
 
             // Tagged.
@@ -855,6 +865,7 @@ static bool parse_msglist(UTF8 *msglist, struct mail_selector *ms, dbref player)
             ms->flags = M_TAG;
             break;
 
+        case 'm':
         case 'M':
 
             // Mass, me.
@@ -865,13 +876,16 @@ static bool parse_msglist(UTF8 *msglist, struct mail_selector *ms, dbref player)
                 notify(player, T("MAIL: M is ambiguous (mass or me?)"));
                 return false;
             }
-            switch (mux_toupper(*p))
+
+            switch (*p)
             {
+            case 'a':
             case 'A':
 
                 ms->flags = M_MASS;
                 break;
 
+            case 'e':
             case 'E':
 
                 ms->player = player;
@@ -1391,20 +1405,8 @@ static UTF8 *status_string(struct mail *mp)
 
 static void GetFromField(dbref target, UTF8 szFrom[MBUF_SIZE])
 {
-    size_t vw = 0;
-    size_t nFrom = ANSI_TruncateToField(Moniker(target), sizeof(szFrom)-16,
-        szFrom, 16, &vw);
-
-    while (  vw < 16
-          && nFrom < MBUF_SIZE)
-    {
-        szFrom[nFrom] = ' ';
-        nFrom++;
-        vw++;
-    }
-    szFrom[nFrom] = '\0';
+    StripTabsAndTruncate(Moniker(target), szFrom, MBUF_SIZE-1, 16, true);
 }
-
 
 static void do_mail_read(dbref player, UTF8 *msglist)
 {
@@ -1444,9 +1446,7 @@ static void do_mail_read(dbref player, UTF8 *msglist)
                 GetFromField(mp->from, szFromName);
 
                 UTF8 szSubjectBuffer[MBUF_SIZE];
-                size_t iRealVisibleWidth;
-                ANSI_TruncateToField(mp->subject, sizeof(szSubjectBuffer),
-                    szSubjectBuffer, 65, &iRealVisibleWidth);
+                StripTabsAndTruncate(mp->subject, szSubjectBuffer, MBUF_SIZE-1, 65);
 
                 notify(player, tprintf("%-3d         From:  %s  At: %-25s  %s\r\nFldr   : %-2d Status: %s\r\nTo     : %-65s\r\nSubject: %s",
                                i, szFromName,
@@ -1511,7 +1511,6 @@ static void do_mail_review(dbref player, UTF8 *name, UTF8 *msglist)
     struct mail *mp;
     struct mail_selector ms;
     int i = 0, j = 0;
-    size_t iRealVisibleWidth;
     UTF8 szSubjectBuffer[MBUF_SIZE];
 
     if (  !msglist
@@ -1528,8 +1527,7 @@ static void do_mail_review(dbref player, UTF8 *name, UTF8 *msglist)
                 UTF8 szFromName[MBUF_SIZE];
                 GetFromField(mp->from, szFromName);
 
-                ANSI_TruncateToField(mp->subject, sizeof(szSubjectBuffer),
-                    szSubjectBuffer, 25, &iRealVisibleWidth);
+                StripTabsAndTruncate(mp->subject, szSubjectBuffer, MBUF_SIZE-1, 25);
                 size_t nSize = MessageFetchSize(mp->number);
                 notify(player, tprintf("[%s] %-3d (%4d) From: %s Sub: %s",
                                status_chars(mp),
@@ -1561,8 +1559,7 @@ static void do_mail_review(dbref player, UTF8 *name, UTF8 *msglist)
                     UTF8 szFromName[MBUF_SIZE];
                     GetFromField(mp->from, szFromName);
 
-                    ANSI_TruncateToField(mp->subject, sizeof(szSubjectBuffer),
-                        szSubjectBuffer, 65, &iRealVisibleWidth);
+                    StripTabsAndTruncate(mp->subject, szSubjectBuffer, MBUF_SIZE-1, 65);
 
                     notify(player, (UTF8 *)DASH_LINE);
                     notify(player, tprintf("%-3d         From:  %s  At: %-25s  %s\r\nFldr   : %-2d Status: %s\r\nSubject: %s",
@@ -1642,7 +1639,6 @@ static void do_mail_list(dbref player, UTF8 *msglist, bool sub)
     }
     int i = 0;
     UTF8 *time;
-    size_t iRealVisibleWidth;
     UTF8 szSubjectBuffer[MBUF_SIZE];
     int folder = player_folder(player);
 
@@ -1666,8 +1662,7 @@ static void do_mail_list(dbref player, UTF8 *msglist, bool sub)
 
                 if (sub)
                 {
-                    ANSI_TruncateToField(mp->subject, sizeof(szSubjectBuffer),
-                        szSubjectBuffer, 25, &iRealVisibleWidth);
+                    StripTabsAndTruncate(mp->subject, szSubjectBuffer, MBUF_SIZE-1, 25);
 
                     notify(player, tprintf("[%s] %-3d (%4d) From: %s Sub: %s",
                         status_chars(mp), i, nSize, szFromName, szSubjectBuffer));
@@ -4146,11 +4141,9 @@ static void do_mail_proof(dbref player)
     UTF8 *pMailMsg = atr_get("do_mail_proof.4039", player, A_MAILMSG, &aowner, &aflags);
     UTF8 *names    = make_namelist(player, mailto);
 
-    size_t iRealVisibleWidth;
     UTF8 szSubjectBuffer[MBUF_SIZE];
-    ANSI_TruncateToField(atr_get_raw(player, A_MAILSUB),
-        sizeof(szSubjectBuffer), szSubjectBuffer, 35,
-        &iRealVisibleWidth);
+    StripTabsAndTruncate( atr_get_raw(player, A_MAILSUB), szSubjectBuffer,
+                          MBUF_SIZE-1, 35);
 
     UTF8 szFromName[MBUF_SIZE];
     GetFromField(player, szFromName);

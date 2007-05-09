@@ -1,3 +1,43 @@
+/*! \file strings.cpp
+ * \brief Top-level driver for building a state machine which recognizes a
+ * code point and indicates an associated sequence of code point(s) -- for
+ * example, upper case, lower case, title case, or possibly certain
+ * canonicalizations.
+ *
+ * The input file is composed of lines.  Each line is broken in
+ * semicolon-delimited fields.  The code point to recognize is taken from the
+ * first field.  The associated sequence of code points is taken from the
+ * second field.
+ *
+ * The constructed state machine associates the recognized code point with
+ * one of potentially many accepting states.  Each accepting state
+ * corresponds to an entry in an output table which contains enough
+ * information to construct the sequence of associated code points.
+ * Potentially, several output tables (one for each method of constructing the
+ * associated code point sequence) may be generated.
+ *
+ * For example, many times, upper case and lower case characters occur in
+ * runs.  It is possible to construct all of the associated code points in a
+ * range by flippping the same bits in the corresponding range of given code
+ * points.  Concretely, the ASCII range 'a-z' differ from 'A-Z' in one bit
+ * (0x20).
+ *
+ * Another approach is to define a range and extract a portion of the given
+ * code point to be used as an index within that range to determine the
+ * associated code point.
+ *
+ * Sometimes, multiple corresponding code points are associated, and they must
+ * be quoted explicitly.
+ *
+ * It is not always necessary for the state machine to look at every byte
+ * of a code point to determine the associated code point(s).  For this
+ * reason, to advance to the next code requires a method separate from the
+ * state machine produced here.
+ *
+ * $Id$
+ *
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <memory.h>
@@ -11,141 +51,79 @@ StateMachine sm;
 
 static struct
 {
-    UTF8 *p;
-    size_t n;
-} aOutputTable[5000];
-int   nOutputTable;
+    UTF8  *p;
+    size_t n_bytes;
+    size_t n_points;
+    int    n_refs;
+} aLiteralTable[5000];
+int nLiteralTable = 0;
 
-UTF32 ReadCodePointAndOthercase(FILE *fp, UTF32 &Othercase)
+static struct
 {
+    UTF8  *p;
+    size_t n_bytes;
+    size_t n_points;
+    int    n_refs;
+} aXorTable[5000];
+int nXorTable = 0;
+
+bool g_bDefault = false;
+int  g_iDefaultState = 0;
+
+#define MAX_POINTS 10
+UTF32 ReadCodePointAndRelatedCodePoints(FILE *fp, int &nRelatedPoints, UTF32 aRelatedPoints[])
+{
+    nRelatedPoints = 0;
+
     char buffer[1024];
-    char *p;
-
-    for (;;)
+    char *p = ReadLine(fp, buffer, sizeof(buffer));
+    if (NULL == p)
     {
-        if (fgets(buffer, sizeof(buffer), fp) == NULL)
-        {
-            Othercase = UNI_EOF;
-            return UNI_EOF;
-        }
-        p = strchr(buffer, '#');
-        if (NULL != p)
-        {
-            // Ignore comment.
-            //
-            *p = '\0';
-        }
-        p = buffer;
-
-        // Skip leading whitespace.
-        //
-        while (isspace(*p))
-        {
-            p++;
-        }
-
-        // Look for end of string or comment.
-        //
-        if ('\0' == *p)
-        {
-            // We skip blank lines.
-            //
-            continue;
-        }
-        break;
+        return UNI_EOF;
     }
 
-#define MAX_FIELDS 15
-
-    int   nFields = 0;
-    char *aFields[MAX_FIELDS];
-    for (nFields = 0; nFields < MAX_FIELDS; )
+    int nFields;
+    char *aFields[2];
+    ParseFields(buffer, sizeof(aFields)/sizeof(aFields[0]), nFields, aFields);
+    if (nFields < 2)
     {
-        // Skip leading whitespace.
-        //
-        while (isspace(*p))
-        {
-            p++;
-        }
-
-        aFields[nFields++] = p;
-        char *q = strchr(p, ';');
-        if (NULL == q)
-        {
-            // Trim trailing whitespace.
-            //
-            size_t i = strlen(p) - 1;
-            while (isspace(p[i]))
-            {
-                p[i] = '\0';
-            }
-            break;
-        }
-        else
-        {
-            *q = '\0';
-            p = q + 1;
-
-            // Trim trailing whitespace.
-            //
-            q--;
-            while (isspace(*q))
-            {
-                *q = '\0';
-                q--;
-            }
-        }
+        return UNI_EOF;
     }
 
     // Field #0 - Code Point
     //
     int codepoint = DecodeCodePoint(aFields[0]);
 
-    // Field #12 - Simple Uppercase Mapping.
+
+    // Field #1 - Associated Code Points.
     //
-    int Uppercase = DecodeCodePoint(aFields[12]);
-
-    // Field #13 = Simple Lowercase Mapping.
-    //
-    int Lowercase = DecodeCodePoint(aFields[13]);
-
-    if (  Uppercase < 0
-       && Lowercase < 0)
+    int   nPoints;
+    char *aPoints[MAX_POINTS];
+    ParsePoints(aFields[1], sizeof(aPoints)/sizeof(aPoints[0]), nPoints, aPoints);
+    if (nPoints < 1)
     {
-        Othercase = UNI_EOF;
+        fprintf(stderr, "At least one related code point is required.\n");
+        exit(0);
+        return UNI_EOF;
     }
-    else
-    {
-        if (Uppercase < 0)
-        {
-            Uppercase = codepoint;
-        }
-        if (Lowercase < 0)
-        {
-            Lowercase = codepoint;
-        }
 
-        if (Lowercase == codepoint)
-        {
-            Othercase = Uppercase;
-        }
-        else
-        {
-            Othercase = Lowercase;
-        }
+    for (int i = 0; i < nPoints; i++)
+    {
+        aRelatedPoints[i] = DecodeCodePoint(aPoints[i]);
     }
+    nRelatedPoints = nPoints;
     return codepoint;
 }
 
-void TestTable(FILE *fp)
+void BuildOutputTable(FILE *fp)
 {
-    fprintf(stderr, "Testing STT table.\n");
+    fprintf(stderr, "Building Output Table.\n");
     fseek(fp, 0, SEEK_SET);
-    UTF32 Othercase;
-    UTF32 nextcode = ReadCodePointAndOthercase(fp, Othercase);
 
-    // Othercase
-    //
+    int   nRelatedPoints;
+    UTF32 aRelatedPoints[MAX_POINTS];
+    UTF32 nextcode = ReadCodePointAndRelatedCodePoints(fp, nRelatedPoints, aRelatedPoints);
+
     while (UNI_EOF != nextcode)
     {
         UTF32 SourceA[2];
@@ -157,56 +135,204 @@ void TestTable(FILE *fp)
         UTF8 *pTargetA = TargetA;
 
         ConversionResult cr;
-        cr = ConvertUTF32toUTF8(&pSourceA, pSourceA+1, &pTargetA, pTargetA+sizeof(TargetA)-1, lenientConversion);
+        cr = ConvertUTF32toUTF8(&pSourceA, pSourceA+1, &pTargetA,
+            pTargetA+sizeof(TargetA)-1, lenientConversion);
 
         if (conversionOK != cr)
         {
-            nextcode = ReadCodePointAndOthercase(fp, Othercase);
+            nextcode = ReadCodePointAndRelatedCodePoints(fp, nRelatedPoints, aRelatedPoints);
             continue;
         }
 
-        UTF32 SourceB[2];
-        SourceB[0] = Othercase;
-        SourceB[1] = L'\0';
+        UTF32 SourceB[MAX_POINTS+1];
+        int i;
+        for (i = 0; i < nRelatedPoints; i++)
+        {
+            SourceB[i] = aRelatedPoints[i];
+        }
+        SourceB[i] = L'\0';
         const UTF32 *pSourceB = SourceB;
 
-        UTF8 TargetB[5];
+        UTF8 TargetB[5*MAX_POINTS];
         UTF8 *pTargetB = TargetB;
 
-        cr = ConvertUTF32toUTF8(&pSourceB, pSourceB+1, &pTargetB, pTargetB+sizeof(TargetB)-1, lenientConversion);
+        cr = ConvertUTF32toUTF8(&pSourceB, pSourceB+nRelatedPoints, &pTargetB,
+            pTargetB+sizeof(TargetB)-1, lenientConversion);
 
         if (conversionOK == cr)
         {
+            bool bFound = false;
             if (pTargetA - TargetA != pTargetB - TargetB)
             {
-                fprintf(stderr, "Different UTF-8 length between cases is unsupported.\n");
-                exit(0);
-            }
+                // Build Literal entry.
+                //
+                UTF8 *pLiteral  = TargetB;
+                size_t nLiteral = pTargetB - TargetB;
 
-            // Calculate XOR string.
-            //
-            UTF8 Xor[5];
-            UTF8 *pA = TargetA;
-            UTF8 *pB = TargetB;
-            UTF8 *pXor = Xor;
-
-            while (pA < pTargetA)
-            {
-                *pXor = *pA ^ *pB;
-                pA++;
-                pB++;
-                pXor++;
-            }
-            size_t nXor = pXor - Xor;
-
-            int i;
-            bool bFound = false;
-            for (i = 0; i < nOutputTable; i++)
-            {
-                if (memcmp(aOutputTable[i].p, Xor, nXor) == 0)
+                for (i = 0; i < nLiteralTable; i++)
                 {
-                    bFound = true;
-                    break;
+                    if (  aLiteralTable[i].n_bytes == nLiteral
+                       && memcmp(aLiteralTable[i].p, pLiteral, nLiteral) == 0)
+                    {
+                        bFound = true;
+                        break;
+                    }
+                }
+    
+                if (!bFound)
+                {
+                    aLiteralTable[nLiteralTable].p = new UTF8[nLiteral];
+                    memcpy(aLiteralTable[nLiteralTable].p, pLiteral, nLiteral);
+                    aLiteralTable[nLiteralTable].n_bytes = nLiteral;
+                    aLiteralTable[nLiteralTable].n_points = nRelatedPoints;
+                    aLiteralTable[nLiteralTable].n_refs   = 0;
+                    nLiteralTable++;
+                }
+            }
+            else
+            {
+                // Build XOR entry.
+                //
+                UTF8 Xor[5];
+                UTF8 *pA = TargetA;
+                UTF8 *pB = TargetB;
+                UTF8 *pXor = Xor;
+    
+                while (pA < pTargetA)
+                {
+                    *pXor = *pA ^ *pB;
+                    pA++;
+                    pB++;
+                    pXor++;
+                }
+                size_t nXor = pXor - Xor;
+    
+                for (i = 0; i < nXorTable; i++)
+                {
+                    if (  aXorTable[i].n_bytes == nXor
+                       && memcmp(aXorTable[i].p, Xor, nXor) == 0)
+                    {
+                        bFound = true;
+                        break;
+                    }
+                }
+    
+                if (!bFound)
+                {
+                    aXorTable[nXorTable].p = new UTF8[nXor];
+                    memcpy(aXorTable[nXorTable].p, Xor, nXor);
+                    aXorTable[nXorTable].n_bytes  = nXor;
+                    aXorTable[nXorTable].n_points = nRelatedPoints;
+                    aXorTable[nXorTable].n_refs   = 0;
+                    nXorTable++;
+                }
+            }
+        }
+
+        UTF32 nextcode2 = ReadCodePointAndRelatedCodePoints(fp, nRelatedPoints, aRelatedPoints);
+        if (nextcode2 < nextcode)
+        {
+            fprintf(stderr, "Codes in file are not in order.\n");
+            exit(0);
+        }
+        nextcode = nextcode2;
+    }
+}
+
+void TestTable(FILE *fp)
+{
+    fprintf(stderr, "Testing STT table.\n");
+    fseek(fp, 0, SEEK_SET);
+
+    int   nRelatedPoints;
+    UTF32 aRelatedPoints[MAX_POINTS];
+    UTF32 nextcode = ReadCodePointAndRelatedCodePoints(fp, nRelatedPoints, aRelatedPoints);
+
+    while (UNI_EOF != nextcode)
+    {
+        UTF32 SourceA[2];
+        SourceA[0] = nextcode;
+        SourceA[1] = L'\0';
+        const UTF32 *pSourceA = SourceA;
+
+        UTF8 TargetA[5];
+        UTF8 *pTargetA = TargetA;
+
+        ConversionResult cr;
+        cr = ConvertUTF32toUTF8(&pSourceA, pSourceA+1, &pTargetA,
+            pTargetA+sizeof(TargetA)-1, lenientConversion);
+
+        if (conversionOK != cr)
+        {
+            nextcode = ReadCodePointAndRelatedCodePoints(fp, nRelatedPoints, aRelatedPoints);
+            continue;
+        }
+
+        UTF32 SourceB[MAX_POINTS+1];
+        int i;
+        for (i = 0; i < nRelatedPoints; i++)
+        {
+            SourceB[i] = aRelatedPoints[i];
+        }
+        SourceB[i] = L'\0';
+        const UTF32 *pSourceB = SourceB;
+
+        UTF8 TargetB[5*MAX_POINTS];
+        UTF8 *pTargetB = TargetB;
+
+        cr = ConvertUTF32toUTF8(&pSourceB, pSourceB+nRelatedPoints, &pTargetB,
+            pTargetB+sizeof(TargetB)-1, lenientConversion);
+
+        if (conversionOK == cr)
+        {
+            int iAcceptingState = g_bDefault ? 1 : 0;
+
+            bool bFound = false;
+            if (pTargetA - TargetA != pTargetB - TargetB)
+            {
+                // Build Literal entry.
+                //
+                UTF8 *pLiteral  = TargetB;
+                size_t nLiteral = pTargetB - TargetB;
+
+                for (i = 0; i < nLiteralTable; i++)
+                {
+                    if (  aLiteralTable[i].n_bytes == nLiteral
+                       && memcmp(aLiteralTable[i].p, pLiteral, nLiteral) == 0)
+                    {
+                        bFound = true;
+                        iAcceptingState += i;
+                        break;
+                    }
+                }
+            }
+            else
+            {
+                // Build XOR entry.
+                //
+                UTF8 Xor[5];
+                UTF8 *pA = TargetA;
+                UTF8 *pB = TargetB;
+                UTF8 *pXor = Xor;
+    
+                while (pA < pTargetA)
+                {
+                    *pXor = *pA ^ *pB;
+                    pA++;
+                    pB++;
+                    pXor++;
+                }
+                size_t nXor = pXor - Xor;
+    
+                for (i = 0; i < nXorTable; i++)
+                {
+                    if (  aXorTable[i].n_bytes == nXor
+                       && memcmp(aXorTable[i].p, Xor, nXor) == 0)
+                    {
+                        bFound = true;
+                        iAcceptingState += nLiteralTable + i;
+                        break;
+                    }
                 }
             }
 
@@ -216,10 +342,10 @@ void TestTable(FILE *fp)
                 exit(0);
             }
 
-            sm.TestString(TargetA, pTargetA, i);
+            sm.TestString(TargetA, pTargetA, iAcceptingState);
         }
 
-        UTF32 nextcode2 = ReadCodePointAndOthercase(fp, Othercase);
+        UTF32 nextcode2 = ReadCodePointAndRelatedCodePoints(fp, nRelatedPoints, aRelatedPoints);
         if (nextcode2 < nextcode)
         {
             fprintf(stderr, "Codes in file are not in order.\n");
@@ -234,12 +360,10 @@ void LoadStrings(FILE *fp)
     int cIncluded = 0;
 
     fseek(fp, 0, SEEK_SET);
-    UTF32 Othercase;
-    UTF32 nextcode = ReadCodePointAndOthercase(fp, Othercase);
+    int   nRelatedPoints;
+    UTF32 aRelatedPoints[MAX_POINTS];
+    UTF32 nextcode = ReadCodePointAndRelatedCodePoints(fp, nRelatedPoints, aRelatedPoints);
 
-    // Othercase
-    //
-    nOutputTable = 0;
     while (UNI_EOF != nextcode)
     {
         UTF32 SourceA[2];
@@ -255,12 +379,12 @@ void LoadStrings(FILE *fp)
 
         if (conversionOK != cr)
         {
-            nextcode = ReadCodePointAndOthercase(fp, Othercase);
+            nextcode = ReadCodePointAndRelatedCodePoints(fp, nRelatedPoints, aRelatedPoints);
             continue;
         }
 
         UTF32 SourceB[2];
-        SourceB[0] = Othercase;
+        SourceB[0] = aRelatedPoints[0];
         SourceB[1] = L'\0';
         const UTF32 *pSourceB = SourceB;
 
@@ -271,52 +395,70 @@ void LoadStrings(FILE *fp)
 
         if (conversionOK == cr)
         {
+            int iAcceptingState = g_bDefault ? 1 : 0;
+
+            bool bFound = false;
             if (pTargetA - TargetA != pTargetB - TargetB)
             {
-                fprintf(stderr, "Different UTF-8 length between cases is unsupported.\n");
-                exit(0);
-            }
+                // Build Literal entry.
+                //
+                UTF8 *pLiteral  = TargetB;
+                size_t nLiteral = pTargetB - TargetB;
 
-            // Calculate XOR string.
-            //
-            UTF8 Xor[5];
-            UTF8 *pA = TargetA;
-            UTF8 *pB = TargetB;
-            UTF8 *pXor = Xor;
-
-            while (pA < pTargetA)
-            {
-                *pXor = *pA ^ *pB;
-                pA++;
-                pB++;
-                pXor++;
-            }
-            size_t nXor = pXor - Xor;
-
-            int i;
-            bool bFound = false;
-            for (i = 0; i < nOutputTable; i++)
-            {
-                if (memcmp(aOutputTable[i].p, Xor, nXor) == 0)
+                for (int i = 0; i < nLiteralTable; i++)
                 {
-                    bFound = true;
-                    break;
+                    if (  aLiteralTable[i].n_bytes == nLiteral
+                       && memcmp(aLiteralTable[i].p, pLiteral, nLiteral) == 0)
+                    {
+                        bFound = true;
+                        iAcceptingState += i;
+                        aLiteralTable[i].n_refs++;
+                        break;
+                    }
+                }
+            }
+            else
+            {
+                // Build XOR entry.
+                //
+                UTF8 Xor[5];
+                UTF8 *pA = TargetA;
+                UTF8 *pB = TargetB;
+                UTF8 *pXor = Xor;
+    
+                while (pA < pTargetA)
+                {
+                    *pXor = *pA ^ *pB;
+                    pA++;
+                    pB++;
+                    pXor++;
+                }
+                size_t nXor = pXor - Xor;
+    
+                for (int i = 0; i < nXorTable; i++)
+                {
+                    if (  aXorTable[i].n_bytes == nXor
+                       && memcmp(aXorTable[i].p, Xor, nXor) == 0)
+                    {
+                        bFound = true;
+                        iAcceptingState += nLiteralTable + i;
+                        aXorTable[i].n_refs++;
+                        break;
+                    }
                 }
             }
 
             if (!bFound)
             {
-                aOutputTable[nOutputTable].p = new UTF8[nXor];
-                memcpy(aOutputTable[nOutputTable].p, Xor, nXor);
-                aOutputTable[nOutputTable].n = nXor;
-                i = nOutputTable++;
+                printf("Output String not found. This should not happen.\n");
+                exit(0);
             }
 
             cIncluded++;
-            sm.RecordString(TargetA, pTargetA, i);
+            sm.RecordString(TargetA, pTargetA, iAcceptingState);
         }
 
-        UTF32 nextcode2 = ReadCodePointAndOthercase(fp, Othercase);
+        UTF32 nextcode2 = ReadCodePointAndRelatedCodePoints(fp, nRelatedPoints, aRelatedPoints);
         if (nextcode2 < nextcode)
         {
             fprintf(stderr, "Codes in file are not in order.\n");
@@ -329,11 +471,10 @@ void LoadStrings(FILE *fp)
     sm.ReportStatus();
 }
 
-bool g_bReplacement = false;
-int  g_iReplacementState = '?';
-
 void BuildAndOutputTable(FILE *fp, char *UpperPrefix, char *LowerPrefix)
 {
+    BuildOutputTable(fp);
+
     // Construct State Transition Table.
     //
     sm.Init();
@@ -343,9 +484,9 @@ void BuildAndOutputTable(FILE *fp, char *UpperPrefix, char *LowerPrefix)
     // Leaving states undefined leads to a smaller table.  On the other hand,
     // do not make queries for code points outside the expected set.
     //
-    if (g_bReplacement)
+    if (g_bDefault)
     {
-        sm.SetUndefinedStates(g_iReplacementState);
+        sm.SetUndefinedStates(g_iDefaultState);
         TestTable(fp);
     }
 
@@ -370,33 +511,87 @@ void BuildAndOutputTable(FILE *fp, char *UpperPrefix, char *LowerPrefix)
     sm.NumberStates();
     sm.OutputTables(UpperPrefix, LowerPrefix);
 
-    printf("const UTF8 *%s_ott[%d] =\n", LowerPrefix, nOutputTable);
+    printf("\n");
+
+    int iLiteralStart = 0;
+    int iXorStart = nLiteralTable;
+    if (g_bDefault)
+    {
+        printf("#define %s_DEFAULT (%d)\n", UpperPrefix, g_iDefaultState);
+        iLiteralStart++;
+        iXorStart++;
+    }
+    printf("#define %s_LITERAL_START (%d)\n", UpperPrefix, iLiteralStart);
+    printf("#define %s_XOR_START (%d)\n", UpperPrefix, iXorStart);
+
+    printf("\n");
+    printf("typedef struct\n");
+    printf("{\n");
+    printf("    size_t n_bytes;\n");
+    printf("    size_t n_points;\n");
+    printf("    const UTF8 *p;\n");
+    printf("} string_desc;\n");
+    printf("\n");
+
+    int nTotalSize = nLiteralTable + nXorTable;
+    printf("const string_desc *%s_ott[%d] =\n", LowerPrefix, nTotalSize);
     printf("{\n");
     int i;
-    for (i = 0; i < nOutputTable; i++)
+    for (i = 0; i < nLiteralTable; i++)
     {
-        UTF8 *p = aOutputTable[i].p;
-        printf("    T(\"");
-        size_t n = aOutputTable[i].n;
+        UTF8 *p = aLiteralTable[i].p;
+        printf("    { %2d, %2d, ", aLiteralTable[i].n_bytes, aLiteralTable[i].n_points);
+
+        printf("T(\"");
+        size_t n = aLiteralTable[i].n_bytes;
         while (n--)
         {
             printf("\\x%02X", *p);
             p++;
         }
 
-        if (i != nOutputTable - 1)
+        if (i != nTotalSize - 1)
         {
-            printf("\"),\n");
+            printf("\") },");
         }
         else
         {
-            printf("\")\n");
+            printf("\") }");
+        }
+        printf(" // %d references\n", aLiteralTable[i].n_refs);
+
+        delete aLiteralTable[i].p;
+        aLiteralTable[i].p = NULL;
+    }
+    nLiteralTable = 0;
+
+    for (i = 0; i < nXorTable; i++)
+    {
+        UTF8 *p = aXorTable[i].p;
+        printf("    { %2d, %2d, ", aXorTable[i].n_bytes, aXorTable[i].n_points);
+
+        printf("T(\"");
+        size_t n = aXorTable[i].n_bytes;
+        while (n--)
+        {
+            printf("\\x%02X", *p);
+            p++;
         }
 
-        delete aOutputTable[i].p;
-        aOutputTable[i].p = NULL;
+        if (i != nXorTable - 1)
+        {
+            printf("\") },");
+        }
+        else
+        {
+            printf("\") }");
+        }
+        printf(" // %d references\n", aXorTable[i].n_refs);
+
+        delete aXorTable[i].p;
+        aXorTable[i].p = NULL;
     }
-    nOutputTable = 0;
+    nXorTable = 0;
     printf("};\n");
 }
 
@@ -408,13 +603,13 @@ int main(int argc, char *argv[])
     if (argc < 3)
     {
 #if 0
-        fprintf(stderr, "Usage: %s [-c ch] prefix unicodedata.txt\n", argv[0]);
+        fprintf(stderr, "Usage: %s [-d] prefix unicodedata.txt\n", argv[0]);
         exit(0);
 #else
         pFilename = "NumericDecimal.txt";
         pPrefix   = "digit";
-        g_bReplacement = false;
-        g_iReplacementState = '?';
+        g_bDefault = false;
+        g_iDefaultState = 0;
 #endif
     }
     else
@@ -422,18 +617,10 @@ int main(int argc, char *argv[])
         int j;
         for (j = 1; j < argc; j++)
         {
-            if (0 == strcmp(argv[j], "-c"))
+            if (0 == strcmp(argv[j], "-d"))
             {
-                g_bReplacement = true;
-                if (j+1 < argc)
-                {
-                    j++;
-                    g_iReplacementState = atoi(argv[j]);
-                }
-                else
-                {
-                    g_iReplacementState = '?';
-                }
+                g_bDefault = true;
+                g_iDefaultState = 0;
             }
             else
             {

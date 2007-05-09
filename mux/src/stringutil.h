@@ -17,16 +17,14 @@ extern const bool mux_isxdigit[256];
 extern const bool mux_isazAZ[256];
 extern const bool mux_isalpha[256];
 extern const bool mux_isalnum[256];
-extern const bool mux_islower_latin1[256];
-extern const bool mux_isupper_latin1[256];
+extern const bool mux_islower_ascii[256];
+extern const bool mux_isupper_ascii[256];
 extern const bool mux_isspace[256];
 extern const bool mux_issecure[256];
 extern const bool mux_isescape[256];
 extern const unsigned char mux_hex2dec[256];
-extern const unsigned char mux_toupper_ascii[SCHAR_MAX+1];
-extern const unsigned char mux_tolower_ascii[SCHAR_MAX+1];
-extern const unsigned char mux_toupper_latin1[256];
-extern const unsigned char mux_tolower_latin1[256];
+extern const unsigned char mux_toupper_ascii[256];
+extern const unsigned char mux_tolower_ascii[256];
 
 #define UTF8_SIZE1     1
 #define UTF8_SIZE2     2
@@ -45,12 +43,12 @@ extern const UTF8 *latin1_utf8[256];
 #define mux_isazAZ(x)  (mux_isazAZ[(unsigned char)(x)])
 #define mux_isalpha(x) (mux_isalpha[(unsigned char)(x)])
 #define mux_isalnum(x) (mux_isalnum[(unsigned char)(x)])
-#define mux_islower_latin1(x) (mux_islower_latin1[(unsigned char)(x)])
-#define mux_isupper_latin1(x) (mux_isupper_latin1[(unsigned char)(x)])
+#define mux_islower_ascii(x) (mux_islower_ascii[(unsigned char)(x)])
+#define mux_isupper_ascii(x) (mux_isupper_ascii[(unsigned char)(x)])
 #define mux_isspace(x) (mux_isspace[(unsigned char)(x)])
 #define mux_hex2dec(x) (mux_hex2dec[(unsigned char)(x)])
-#define mux_toupper(x) (mux_toupper_latin1[(unsigned char)(x)])
-#define mux_tolower(x) (mux_tolower_latin1[(unsigned char)(x)])
+#define mux_toupper_ascii(x) (mux_toupper_ascii[(unsigned char)(x)])
+#define mux_tolower_ascii(x) (mux_tolower_ascii[(unsigned char)(x)])
 
 #define mux_issecure(x)           (mux_issecure[(unsigned char)(x)])
 #define mux_isescape(x)           (mux_isescape[(unsigned char)(x)])
@@ -180,82 +178,48 @@ inline bool mux_isplayername(const unsigned char *p)
     return ((iState - CL_PLAYERNAME_ACCEPTING_STATES_START) == 1) ? true : false;
 }
 
-// utf/cl_Upper.txt
-//
-// 56 included, 1114056 excluded, 0 errors.
-// 2 states, 4 columns, 264 bytes
-//
-#define CL_UPPER_START_STATE (0)
-#define CL_UPPER_ACCEPTING_STATES_START (2)
-extern const unsigned char cl_upper_itt[256];
-extern const unsigned char cl_upper_stt[2][4];
-
-inline bool mux_isupper(const unsigned char *p)
-{
-    int iState = CL_UPPER_START_STATE;
-    do
-    {
-        unsigned char ch = *p++;
-        iState = cl_upper_stt[iState][cl_upper_itt[(unsigned char)ch]];
-    } while (iState < CL_UPPER_ACCEPTING_STATES_START);
-    return ((iState - CL_UPPER_ACCEPTING_STATES_START) == 1) ? true : false;
-}
-
-// utf/cl_Lower.txt
-//
-// 58 included, 1114054 excluded, 0 errors.
-// 2 states, 4 columns, 264 bytes
-//
-#define CL_LOWER_START_STATE (0)
-#define CL_LOWER_ACCEPTING_STATES_START (2)
-extern const unsigned char cl_lower_itt[256];
-extern const unsigned char cl_lower_stt[2][4];
-
-inline bool mux_islower(const unsigned char *p)
-{
-    int iState = CL_LOWER_START_STATE;
-    do
-    {
-        unsigned char ch = *p++;
-        iState = cl_lower_stt[iState][cl_lower_itt[(unsigned char)ch]];
-    } while (iState < CL_LOWER_ACCEPTING_STATES_START);
-    return ((iState - CL_LOWER_ACCEPTING_STATES_START) == 1) ? true : false;
-}
-
 // utf/tr_utf8_latin1.txt
 //
-// 1503 code points.
-// 71 states, 190 columns, 27236 bytes
+// 1535 code points.
+// 73 states, 191 columns, 28142 bytes
 //
 #define TR_LATIN1_START_STATE (0)
-#define TR_LATIN1_ACCEPTING_STATES_START (71)
+#define TR_LATIN1_ACCEPTING_STATES_START (73)
 extern const unsigned char tr_latin1_itt[256];
-extern const unsigned short tr_latin1_stt[71][190];
+extern const unsigned short tr_latin1_stt[73][191];
 const char *ConvertToLatin(const UTF8 *pString);
 
-// utf/tr_utf8_ascii.txt
-//
-// 1446 code points.
-// 67 states, 190 columns, 12986 bytes
+// 1478 code points.
+// 69 states, 191 columns, 13435 bytes
 //
 #define TR_ASCII_START_STATE (0)
-#define TR_ASCII_ACCEPTING_STATES_START (67)
+#define TR_ASCII_ACCEPTING_STATES_START (69)
 extern const unsigned char tr_ascii_itt[256];
-extern const unsigned char tr_ascii_stt[67][190];
+extern const unsigned char tr_ascii_stt[69][191];
 const char *ConvertToAscii(const UTF8 *pString);
+
+typedef struct
+{
+    size_t n_bytes;
+    size_t n_points;
+    const UTF8 *p;
+} string_desc;
 
 // utf/tr_tolower.txt
 //
-// 56 code points.
-// 1 states, 2 columns, 258 bytes
+// 922 code points.
+// 40 states, 84 columns, 3616 bytes
 //
 #define TR_TOLOWER_START_STATE (0)
-#define TR_TOLOWER_ACCEPTING_STATES_START (1)
+#define TR_TOLOWER_ACCEPTING_STATES_START (40)
+#define TR_TOLOWER_DEFAULT (0)
+#define TR_TOLOWER_LITERAL_START (1)
+#define TR_TOLOWER_XOR_START (9)
 extern const unsigned char tr_tolower_itt[256];
-extern const unsigned char tr_tolower_stt[1][2];
-extern const UTF8 *tr_tolower_ott[2];
+extern const unsigned char tr_tolower_stt[40][84];
+extern const string_desc tr_tolower_ott[91];
 
-inline const UTF8 *mux_lowerflip(const unsigned char *p)
+inline const string_desc *mux_tolower(const unsigned char *p, bool &bXor)
 {
     int iState = TR_TOLOWER_START_STATE;
     do
@@ -263,21 +227,34 @@ inline const UTF8 *mux_lowerflip(const unsigned char *p)
         unsigned char ch = *p++;
         iState = tr_tolower_stt[iState][tr_tolower_itt[(unsigned char)ch]];
     } while (iState < TR_TOLOWER_ACCEPTING_STATES_START);
-    return (const unsigned char *)tr_tolower_ott[iState - TR_TOLOWER_ACCEPTING_STATES_START];
+
+    if (TR_TOLOWER_DEFAULT == iState - TR_TOLOWER_ACCEPTING_STATES_START)
+    {
+        bXor = false;
+        return NULL;
+    }
+    else
+    {
+        bXor = (TR_TOLOWER_XOR_START <= iState - TR_TOLOWER_ACCEPTING_STATES_START);
+        return tr_tolower_ott + iState - TR_TOLOWER_ACCEPTING_STATES_START - 1;
+    }
 }
 
-// utf/tr_toupper.txt
+// utf/to_upper.txt
 //
-// 57 code points.
-// 1 states, 4 columns, 260 bytes
+// 931 code points.
+// 43 states, 89 columns, 4083 bytes
 //
 #define TR_TOUPPER_START_STATE (0)
-#define TR_TOUPPER_ACCEPTING_STATES_START (1)
+#define TR_TOUPPER_ACCEPTING_STATES_START (43)
+#define TR_TOUPPER_DEFAULT (0)
+#define TR_TOUPPER_LITERAL_START (1)
+#define TR_TOUPPER_XOR_START (8)
 extern const unsigned char tr_toupper_itt[256];
-extern const unsigned char tr_toupper_stt[1][4];
-extern const UTF8 *tr_toupper_ott[3];
+extern const unsigned char tr_toupper_stt[43][89];
+extern const string_desc tr_toupper_ott[98];
 
-inline const UTF8 *mux_upperflip(const unsigned char *p)
+inline const string_desc *mux_toupper(const unsigned char *p, bool &bXor)
 {
     int iState = TR_TOUPPER_START_STATE;
     do
@@ -285,7 +262,17 @@ inline const UTF8 *mux_upperflip(const unsigned char *p)
         unsigned char ch = *p++;
         iState = tr_toupper_stt[iState][tr_toupper_itt[(unsigned char)ch]];
     } while (iState < TR_TOUPPER_ACCEPTING_STATES_START);
-    return (const unsigned char *)tr_toupper_ott[iState - TR_TOUPPER_ACCEPTING_STATES_START];
+
+    if (TR_TOUPPER_DEFAULT == iState - TR_TOLOWER_ACCEPTING_STATES_START)
+    {
+        bXor = false;
+        return NULL;
+    }
+    else
+    {
+        bXor = (TR_TOUPPER_XOR_START <= iState - TR_TOUPPER_ACCEPTING_STATES_START);
+        return tr_toupper_ott + iState - TR_TOUPPER_ACCEPTING_STATES_START - 1;
+    }
 }
 
 // utf/tr_Color.txt

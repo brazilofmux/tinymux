@@ -1162,7 +1162,8 @@ static bool DecodeN(int nType, size_t len, const UTF8 *p, in_addr_t *pu32)
     in_addr_t ul2;
     if (  len >= 3
        && p[0] == '0'
-       && mux_tolower(p[1]) == 'x')
+       && (  'x' == p[1]
+          || 'X' == p[1]))
     {
         // Hexadecimal Path
         //
@@ -1181,7 +1182,7 @@ static bool DecodeN(int nType, size_t len, const UTF8 *p, in_addr_t *pu32)
         }
         while (len)
         {
-            UTF8 ch = mux_tolower(*p);
+            UTF8 ch = *p;
             ul2 = ul;
             ul  = (ul << 4) & 0xFFFFFFFFUL;
             if (ul < ul2)
@@ -1193,6 +1194,10 @@ static bool DecodeN(int nType, size_t len, const UTF8 *p, in_addr_t *pu32)
             if ('0' <= ch && ch <= '9')
             {
                 ul |= ch - '0';
+            }
+            else if ('A' <= ch && ch <= 'F')
+            {
+                ul |= ch - 'A';
             }
             else if ('a' <= ch && ch <= 'f')
             {

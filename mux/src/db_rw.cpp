@@ -371,7 +371,6 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
     int aflags;
     BOOLEXP *tempbool;
     UTF8 *buff;
-    size_t nVisualWidth;
     size_t nBuffer;
 
     g_format = F_UNKNOWN;
@@ -607,11 +606,10 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
                     size_t nBuffer;
                     tstr = ConvertToUTF8((char *)tstr, &nBuffer);
                 }
-                buff = alloc_lbuf("dbread.s_Name");
-                (void)ANSI_TruncateToField(tstr, MBUF_SIZE, buff, MBUF_SIZE,
-                    &nVisualWidth);
+                buff = alloc_mbuf("dbread.s_Name");
+                StripTabsAndTruncate(tstr, buff, MBUF_SIZE-1, MBUF_SIZE-1);
                 s_Name(i, buff);
-                free_lbuf(buff);
+                free_mbuf(buff);
 
                 s_Location(i, getref(f));
             }

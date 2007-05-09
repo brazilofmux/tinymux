@@ -323,14 +323,12 @@ UTF8 *MakeCanonicalObjectName(const UTF8 *pName, size_t *pnName, bool *pbValid)
     // Build up what the real name would be. If we pass all the
     // checks, this is what we will return as a result.
     //
-    size_t nVisualWidth;
-    size_t nBuf = ANSI_TruncateToField(pName, sizeof(Buf), Buf, MBUF_SIZE,
-        &nVisualWidth);
+    mux_field fldLen = StripTabsAndTruncate(pName, Buf, MBUF_SIZE-1, MBUF_SIZE-1);
 
     // Disallow pure ANSI names. There must be at least -something-
     // visible.
     //
-    if (nVisualWidth <= 0)
+    if (0 == fldLen.m_column)
     {
         return NULL;
     }
@@ -372,7 +370,7 @@ UTF8 *MakeCanonicalObjectName(const UTF8 *pName, size_t *pnName, bool *pbValid)
         return NULL;
     }
 
-    *pnName = nBuf;
+    *pnName = fldLen.m_byte;
     *pbValid = true;
     return Buf;
 }
@@ -454,12 +452,12 @@ UTF8 *MakeCanonicalExitName(const UTF8 *pName, size_t *pnName, bool *pbValid)
             // characters leading up to the semicolon, but not including the
             // semi-colon.
             //
-            size_t vw;
-            ANSI_TruncateToField(pName, sizeof(Out), Out, n, &vw);
+            mux_field fldLen = StripTabsAndTruncate( pName, Out, MBUF_SIZE-1,
+                                                     static_cast<LBUF_OFFSET>(n));
 
             // vw should always be equal to n, but we'll just make sure.
             //
-            if (vw == n)
+            if (fldLen.m_column == n)
             {
                 size_t nN;
                 bool   bN;
@@ -580,11 +578,11 @@ bool ok_password(const UTF8 *password, const UTF8 **pmsg)
             *pmsg = T("Illegal character in password.");
             return false;
         }
-        if (mux_isupper_latin1(*scan))
+        if (mux_isupper_ascii(*scan))
         {
             num_upper++;
         }
-        else if (mux_islower_latin1(*scan))
+        else if (mux_islower_ascii(*scan))
         {
             num_lower++;
         }

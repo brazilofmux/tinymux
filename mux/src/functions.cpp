@@ -1216,16 +1216,18 @@ static FUNCTION(fun_etimefmt)
         //
         bool bDoSuffix = false;
         bool bZeroIsBlank = false;
-        while (  'z' == mux_tolower(ch)
-              || 'x' == mux_tolower(ch))
+        while (  'z' == mux_tolower_ascii(ch)
+              || 'x' == mux_tolower_ascii(ch))
         {
-            switch (mux_tolower(ch))
+            switch (ch)
             {
             case 'x':
+            case 'X':
                 bDoSuffix = true;
                 break;
 
             case 'z':
+            case 'Z':
                 bZeroIsBlank = true;
                 break;
             }
@@ -3604,24 +3606,29 @@ FUNCTION(fun_entrances)
     {
         for (p = fargs[1]; *p; p++)
         {
-            switch(mux_toupper(*p))
+            switch(*p)
             {
+            case 'a':
             case 'A':
                 find_ex = find_th = find_pl = find_rm = true;
                 break;
 
+            case 'e':
             case 'E':
                 find_ex = true;
                 break;
 
+            case 't':
             case 'T':
                 find_th = true;
                 break;
 
+            case 'p':
             case 'P':
                 find_pl = true;
                 break;
 
+            case 'r':
             case 'R':
                 find_rm = true;
                 break;
@@ -7490,21 +7497,25 @@ static FUNCTION(fun_sort)
     int sort_type = ASCII_LIST;
     if (2 <= nfargs)
     {
-        switch (mux_tolower(fargs[1][0]))
+        switch (fargs[1][0])
         {
         case 'd':
+        case 'D':
             sort_type = DBREF_LIST;
             break;
 
         case 'n':
+        case 'N':
             sort_type = NUMERIC_LIST;
             break;
 
         case 'f':
+        case 'F':
             sort_type = FLOAT_LIST;
             break;
 
         case 'i':
+        case 'I':
             sort_type = CI_ASCII_LIST;
             break;
 
@@ -7598,21 +7609,25 @@ static void handle_sets
     int sort_type = ASCII_LIST;
     if (5 <= nfargs)
     {
-        switch (mux_tolower(fargs[4][0]))
+        switch (fargs[4][0])
         {
         case 'd':
+        case 'D':
             sort_type = DBREF_LIST;
             break;
 
         case 'n':
+        case 'N':
             sort_type = NUMERIC_LIST;
             break;
 
         case 'f':
+        case 'F':
             sort_type = FLOAT_LIST;
             break;
 
         case 'i':
+        case 'I':
             sort_type = CI_ASCII_LIST;
             break;
 
@@ -8277,13 +8292,15 @@ static FUNCTION(fun_trim)
 
     if (nfargs >= 2)
     {
-        switch (mux_tolower(*fargs[1]))
+        switch (*fargs[1])
         {
         case 'l':
+        case 'L':
             bRight = false;
             break;
 
         case 'r':
+        case 'R':
             bLeft = false;
             break;
         }
@@ -8583,18 +8600,24 @@ static FUNCTION(fun_wrap)
     if (  3 <= nfargs
        && '\0' != fargs[2][0])
     {
-        UTF8 cJust = mux_toupper(fargs[2][0]);
+        UTF8 cJust = fargs[2][0];
         switch (cJust)
         {
+        case 'l':
         case 'L':
             iJustKey = CJC_LJUST;
             break;
+
+        case 'r':
         case 'R':
             iJustKey = CJC_RJUST;
             break;
+
+        case 'c':
         case 'C':
             iJustKey = CJC_CENTER;
             break;
+
         default:
             safe_str(T("#-1 INVALID JUSTIFICATION SPECIFIED"), buff, bufc);
             return;
@@ -9786,8 +9809,7 @@ size_t transform_range(mux_string &sStr)
             // Character range.
             //
             sTemp->truncate(CursorMin);
-            if (  mux_islower_latin1(cBefore)
-               == mux_islower_latin1(cAfter))
+            if (mux_islower_ascii(cBefore) == mux_islower_ascii(cAfter))
             {
                 cBefore++;
                 while (cBefore < cAfter)
@@ -9798,8 +9820,8 @@ size_t transform_range(mux_string &sStr)
                 mux_cursor nReplace(1, 1);
                 sStr.replace_Chars(*sTemp, nStart, nReplace);
             }
-            else if (  mux_islower_latin1(cBefore)
-                    && mux_isupper_latin1(cAfter))
+            else if (  mux_islower_ascii(cBefore)
+                    && mux_isupper_ascii(cAfter))
             {
                 cBefore++;
                 while (cBefore <= 'z')
@@ -10594,7 +10616,7 @@ CF_HAND(cf_func_access)
     UTF8 *ap;
     for (ap = str; *ap && !mux_isspace(*ap); ap++)
     {
-        *ap = mux_tolower(*ap); // Nothing.
+        *ap = mux_tolower_ascii(*ap);
     }
     size_t nstr = ap - str;
 

@@ -864,16 +864,20 @@ int get_gender(dbref player)
     UTF8 *atr_gotten = atr_pget(player, A_SEX, &aowner, &aflags);
     UTF8 first = atr_gotten[0];
     free_lbuf(atr_gotten);
-    switch (mux_tolower(first))
+    switch (first)
     {
     case 'p':
+    case 'P':
         return 4;
 
     case 'm':
+    case 'M':
         return 3;
 
     case 'f':
+    case 'F':
     case 'w':
+    case 'W':
         return 2;
     }
     return 1;
@@ -922,8 +926,7 @@ static void tcache_add(dbref player, UTF8 *orig, UTF8 *result)
             TCENT *xp = (TCENT *) alloc_sbuf("tcache_add.sbuf");
             UTF8 *tp = alloc_lbuf("tcache_add.lbuf");
 
-            size_t nvw;
-            ANSI_TruncateToField(result, LBUF_SIZE, tp, LBUF_SIZE, &nvw);
+            StripTabsAndTruncate(result, tp, LBUF_SIZE-1, LBUF_SIZE-1);
             xp->result = tp;
 
             xp->player = player;
@@ -1362,7 +1365,7 @@ void mux_exec( UTF8 *pdstr, UTF8 *buff, UTF8 **bufc, dbref executor,
             //
             for (size_t iFun = 0; iFun < nFun; iFun++)
             {
-                mux_scratch[iFun] = mux_tolower(oldp[iFun]);
+                mux_scratch[iFun] = mux_tolower_ascii(oldp[iFun]);
             }
             mux_scratch[nFun] = '\0';
 
@@ -1750,7 +1753,7 @@ void mux_exec( UTF8 *pdstr, UTF8 *buff, UTF8 **bufc, dbref executor,
                         pdstr++;
                         if (mux_isazAZ(*pdstr))
                         {
-                            i = A_VA + mux_toupper(*pdstr) - 'A';
+                            i = A_VA + mux_toupper_ascii(*pdstr) - 'A';
                             size_t nAttrGotten;
                             atr_pget_str_LEN(mux_scratch, executor, i,
                                 &aowner, &aflags, &nAttrGotten);
@@ -2012,7 +2015,7 @@ void mux_exec( UTF8 *pdstr, UTF8 *buff, UTF8 **bufc, dbref executor,
                 //
                 if (cType_L2 & 0x80)
                 {
-                    *TempPtr = mux_toupper(*TempPtr);
+                    *TempPtr = mux_toupper_ascii(*TempPtr);
                 }
             }
         }

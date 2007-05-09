@@ -7,6 +7,112 @@
 #include "ConvertUTF.h"
 #include "smutil.h"
 
+char *ReadLine(FILE *fp, char *buffer, size_t bufsize)
+{
+    for (;;)
+    {
+        if (NULL == fgets(buffer, bufsize, fp))
+        {
+            return NULL;
+        }
+        char *p = strchr(buffer, '#');
+        if (NULL != p)
+        {
+            // Ignore comment.
+            //
+            *p = '\0';
+        }
+        p = buffer;
+
+        // Skip leading whitespace.
+        //
+        while (isspace(*p))
+        {
+            p++;
+        }
+
+        // Look for end of string or comment.
+        //
+        if ('\0' != *p)
+        {
+            return p;
+        }
+    }
+}
+
+void ParseFields(char *buffer, int max_fields, int &nFields, char *aFields[])
+{
+    nFields = 0;
+    char *p = buffer;
+    while (  '\0' != p[0]
+          && nFields < max_fields)
+    {
+        // Skip leading whitespace.
+        //
+        while (isspace(*p))
+        {
+            p++;
+        }
+
+        aFields[nFields++] = p;
+        char *q = strchr(p, ';');
+        if (NULL == q)
+        {
+            // Trim trailing whitespace.
+            //
+            size_t i = strlen(p) - 1;
+            while (isspace(p[i]))
+            {
+                p[i] = '\0';
+            }
+            break;
+        }
+        else
+        {
+            *q = '\0';
+            p = q + 1;
+
+            // Trim trailing whitespace.
+            //
+            q--;
+            while (isspace(*q))
+            {
+                *q = '\0';
+                q--;
+            }
+        }
+    }
+}
+
+void ParsePoints(char *buffer, int max_points, int &nPoints, char *aPoints[])
+{
+    nPoints = 0;
+
+    char *p = buffer;
+    while (  '\0' != p[0]
+          && nPoints < max_points)
+    {
+        // Skip leading whitespace.
+        //
+        while (isspace(*p))
+        {
+            p++;
+        }
+
+        aPoints[nPoints++] = p;
+        char *q = strchr(p, ' ');
+        if (NULL == q)
+        {
+            break;
+        }
+        else
+        {
+            *q = '\0';
+            p = q + 1;
+        }
+    }
+}
+
 UTF32 DecodeCodePoint(char *p)
 {
     if (!isxdigit(*p))

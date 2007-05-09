@@ -19,8 +19,8 @@
 #include "config.h"
 #include "externs.h"
 
-#define EQUAL(a,b) (mux_tolower(a) == mux_tolower(b))
-#define NOTEQUAL(a,b) (mux_tolower(a) != mux_tolower(b))
+#define EQUAL(a,b) (mux_tolower_ascii(a) == mux_tolower_ascii(b))
+#define NOTEQUAL(a,b) (mux_tolower_ascii(a) != mux_tolower_ascii(b))
 
 // Argument return space and size.
 //
