@@ -9,6 +9,49 @@
 
 //#define VERIFY
 
+UTF32 ReadCodePoint(FILE *fp)
+{
+    char buffer[1024];
+    char *p;
+
+    for (;;)
+    {
+        if (fgets(buffer, sizeof(buffer), fp) == NULL)
+        {
+            return UNI_EOF;
+        }
+        p = strchr(buffer, '#');
+        if (NULL != p)
+        {
+            // Ignore comment.
+            //
+            *p = '\0';
+        }
+        p = buffer;
+
+        // Skip leading whitespace.
+        //
+        while (isspace(*p))
+        {
+            p++;
+        }
+
+        // Look for end of string or comment.
+        //
+        if ('\0' == *p)
+        {
+            // We skip blank lines.
+            //
+            continue;
+        }
+        break;
+    }
+
+    // Field #0 - Code Point
+    //
+    return DecodeCodePoint(buffer);
+}
+
 #ifdef  VERIFY
 // 219 included, 1113893 excluded, 0 errors.
 // 12 states, 26 columns, 568 bytes
@@ -59,8 +102,7 @@ void VerifyTables(FILE *fp)
     fprintf(stderr, "Testing final ITT and STT.\n");
     fseek(fp, 0, SEEK_SET);
     int Value;
-    UTF32 Othercase;
-    UTF32 nextcode = ReadCodePoint(fp, &Value, &Othercase);
+    UTF32 nextcode = ReadCodePoint(fp);
     UTF32 i;
     for (i = 0; i <= UNI_MAX_LEGAL_UTF32; i++)
     {
@@ -70,7 +112,7 @@ void VerifyTables(FILE *fp)
             bMember = true;
             if (UNI_EOF != nextcode)
             {
-                nextcode = ReadCodePoint(fp, &Value, &Othercase);
+                nextcode = ReadCodePoint(fp);
                 if (nextcode <= i)
                 {
                     fprintf(stderr, "Codes in file are not in order.\n");
@@ -123,8 +165,7 @@ void TestTable(FILE *fp)
     fprintf(stderr, "Testing STT table.\n");
     fseek(fp, 0, SEEK_SET);
     int Value;
-    UTF32 Othercase;
-    UTF32 nextcode = ReadCodePoint(fp, &Value, &Othercase);
+    UTF32 nextcode = ReadCodePoint(fp);
     UTF32 i;
     for (i = 0; i <= UNI_MAX_LEGAL_UTF32; i++)
     {
@@ -134,7 +175,7 @@ void TestTable(FILE *fp)
             bMember = true;
             if (UNI_EOF != nextcode)
             {
-                nextcode = ReadCodePoint(fp, &Value, &Othercase);
+                nextcode = ReadCodePoint(fp);
                 if (nextcode <= i)
                 {
                     fprintf(stderr, "Codes in file are not in order.\n");
@@ -173,8 +214,7 @@ void LoadStrings(FILE *fp)
 
     fseek(fp, 0, SEEK_SET);
     int Value;
-    UTF32 Othercase;
-    UTF32 nextcode = ReadCodePoint(fp, &Value, &Othercase);
+    UTF32 nextcode = ReadCodePoint(fp);
 
     UTF32 i;
     for (i = 0; i <= UNI_MAX_LEGAL_UTF32; i++)
@@ -186,7 +226,7 @@ void LoadStrings(FILE *fp)
             cIncluded++;
             if (UNI_EOF != nextcode)
             {
-                nextcode = ReadCodePoint(fp, &Value, &Othercase);
+                nextcode = ReadCodePoint(fp);
                 if (nextcode <= i)
                 {
                     fprintf(stderr, "Codes in file are not in order.\n");
