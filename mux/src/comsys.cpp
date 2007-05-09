@@ -118,7 +118,7 @@ UTF8 *MakeCanonicalComAlias
     size_t n = 0;
     while (pAlias[n])
     {
-        if (  !mux_isprint_latin1(pAlias[n])
+        if (  !mux_isprint_ascii(pAlias[n])
            || ' ' == pAlias[n])
         {
             return NULL;

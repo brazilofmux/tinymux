@@ -793,7 +793,7 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
             return -1;
 
         default:
-            if (mux_isprint_latin1(ch))
+            if (mux_isprint_ascii(ch))
             {
                 Log.tinyprintf(ENDLINE "Illegal character '%c' near object #%d" ENDLINE, ch, i);
             }
