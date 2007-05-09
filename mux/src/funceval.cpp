@@ -1110,7 +1110,8 @@ FUNCTION(fun_squish)
     mux_string *sStr = new mux_string(fargs[0]);
 
     sStr->compress(sep.str);
-    *bufc += sStr->export_TextAnsi(*bufc, CursorMin, CursorMax, buff + LBUF_SIZE - *bufc);
+    size_t nMax = buff + (LBUF_SIZE-1) - *bufc;
+    *bufc += sStr->export_TextAnsi(*bufc, CursorMin, CursorMax, nMax);
 
     delete sStr;
 }
@@ -1261,7 +1262,8 @@ FUNCTION(fun_columns)
 
         iStart = iWordStart;
         sStr->cursor_from_point(iEnd, (LBUF_OFFSET)(iWordStart.m_point + nLen));
-        *bufc += sStr->export_TextAnsi(*bufc, iStart, iEnd, buff + LBUF_SIZE - *bufc);
+        nBufferAvailable = LBUF_SIZE - (*bufc-buff) - 1;
+        *bufc += sStr->export_TextAnsi(*bufc, iStart, iEnd, nBufferAvailable);
 
         if (nColumns-1 <= iColumn)
         {
@@ -1726,7 +1728,8 @@ FUNCTION(fun_strtrunc)
     {
         mux_cursor iEnd;
         sStr->cursor_from_point(iEnd, (LBUF_OFFSET)nLeft);
-        *bufc += sStr->export_TextAnsi(*bufc, CursorMin, iEnd, buff + LBUF_SIZE - *bufc);
+        size_t nMax = buff + (LBUF_SIZE-1) - *bufc;
+        *bufc += sStr->export_TextAnsi(*bufc, CursorMin, iEnd, nMax);
     }
     else if (0 < nLen.m_point)
     {
@@ -2643,7 +2646,7 @@ FUNCTION(fun_scramble)
             sStr->delete_Chars(iStart, iEnd);
             nPoints--;
         }
-        *bufc += sOut->export_TextAnsi(*bufc, CursorMin, CursorMax, buff + LBUF_SIZE - *bufc);
+        *bufc += sOut->export_TextAnsi(*bufc, CursorMin, CursorMax, buff + (LBUF_SIZE-1) - *bufc);
         delete sOut;
     }
     else
@@ -2707,7 +2710,8 @@ FUNCTION(fun_shuffle)
         words->ignore_Word(i);
         n--;
     }
-    *bufc += sOut->export_TextAnsi(*bufc, CursorMin, CursorMax, buff + LBUF_SIZE - *bufc);
+    size_t nMax = buff + (LBUF_SIZE-1) - *bufc;
+    *bufc += sOut->export_TextAnsi(*bufc, CursorMin, CursorMax, nMax);
 
     delete words;
     delete sIn;

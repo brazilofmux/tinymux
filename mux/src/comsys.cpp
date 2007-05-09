@@ -30,22 +30,16 @@ static comsys_t *comsys_table[NUM_COMSYS];
 #define DFLT_RECALL_REQUEST 10
 #define MAX_RECALL_REQUEST  200
 
-// Return value is a static buffer provided by RemoveSetOfCharacters.
+// Return value is a static buffer.
 //
 static UTF8 *RestrictTitleValue(UTF8 *pTitleRequest)
 {
-    // First, remove all '\r\n\t' from the string.
+    // Remove all '\r\n\t' from the string.
+    // Terminate any ANSI in the string.
     //
-    UTF8 *pNewTitle = RemoveSetOfCharacters(pTitleRequest, T("\r\n\t"));
-
-    // Optimize/terminate any ANSI in the string.
-    //
-    UTF8 NewTitle_ANSI[MAX_TITLE_LEN+1];
-    size_t nVisualWidth;
-    size_t nLen = ANSI_TruncateToField(pNewTitle, sizeof(NewTitle_ANSI),
-        NewTitle_ANSI, sizeof(NewTitle_ANSI), &nVisualWidth);
-    memcpy(pNewTitle, NewTitle_ANSI, nLen+1);
-    return pNewTitle;
+    static UTF8 NewTitle[MAX_TITLE_LEN+1];
+    StripTabsAndTruncate(pTitleRequest, NewTitle, MAX_TITLE_LEN, MAX_TITLE_LEN);
+    return NewTitle;
 }
 
 static void do_setcomtitlestatus(dbref player, struct channel *ch, bool status)
@@ -3336,15 +3330,13 @@ void do_cheader(dbref player, UTF8 *channel, UTF8 *header)
         raw_notify(player, NOPERM_MESSAGE);
         return;
     }
-    UTF8 *p = RemoveSetOfCharacters(header, T("\r\n\t"));
 
     // Optimize/terminate any ANSI in the string.
     //
     UTF8 NewHeader_ANSI[MAX_HEADER_LEN+1];
-    size_t nVisualWidth;
-    size_t nLen = ANSI_TruncateToField(p, sizeof(NewHeader_ANSI),
-        NewHeader_ANSI, sizeof(NewHeader_ANSI), &nVisualWidth);
-    memcpy(ch->header, NewHeader_ANSI, nLen+1);
+    mux_field nLen = StripTabsAndTruncate( header, NewHeader_ANSI, 
+                                            MAX_HEADER_LEN, MAX_HEADER_LEN);
+    memcpy(ch->header, NewHeader_ANSI, nLen.m_byte + 1);
 }
 
 struct chanlist_node
@@ -3388,9 +3380,6 @@ void do_chanlist
     dbref owner;
     struct channel *ch;
     int flags = 0;
-    UTF8 *atrstr;
-    UTF8 *temp = alloc_mbuf("do_chanlist_temp");
-    UTF8 *buf = alloc_mbuf("do_chanlist_buf");
 
     if (key & CLIST_HEADERS)
     {
@@ -3457,45 +3446,67 @@ void do_chanlist
                        || (ch->type & CHANNEL_PUBLIC)
                        || Controls(executor, ch->charge_who))
                     {
-                        UTF8 *pBuffer;
+                        const UTF8 *pBuffer = NULL;
+                        UTF8 *atrstr = NULL;
+
                         if (key & CLIST_HEADERS)
                         {
                             pBuffer = ch->header;
                         }
                         else
                         {
-                            atrstr = atr_pget(ch->chan_obj, A_DESC, &owner, &flags);
-                            if (  NOTHING == ch->chan_obj
-                               || !*atrstr)
+                            if (NOTHING != ch->chan_obj)
                             {
-                                mux_strncpy(buf, T("No description."), MBUF_SIZE-1);
+                                atrstr = atr_pget(ch->chan_obj, A_DESC, &owner, &flags);
+                            }
+
+                            if (  NULL != atrstr
+                               && '\0' != atrstr[0])
+                            {
+                                pBuffer = atrstr;
                             }
                             else
                             {
-                                mux_sprintf(buf, MBUF_SIZE, "%-54.54s", atrstr);
+                                pBuffer = T("No description.");
                             }
-                            free_lbuf(atrstr);
-
-                            pBuffer = buf;
                         }
 
-                        UTF8 *ownername_ansi = ANSI_TruncateAndPad_sbuf(Moniker(ch->charge_who), 15);
-                        mux_sprintf(temp, MBUF_SIZE, "%c%c%c %-13.13s %s %-45.45s",
+                        UTF8 *temp = alloc_mbuf("do_chanlist_temp");
+                        mux_sprintf(temp, MBUF_SIZE, "%c%c%c ",
                             (ch->type & (CHANNEL_PUBLIC)) ? 'P' : '-',
                             (ch->type & (CHANNEL_LOUD)) ? 'L' : '-',
-                            (ch->type & (CHANNEL_SPOOF)) ? 'S' : '-',
-                            ch->name, ownername_ansi, pBuffer);
-                        free_sbuf(ownername_ansi);
+                            (ch->type & (CHANNEL_SPOOF)) ? 'S' : '-');
+                        mux_field iPos(4, 4);
+                        mux_field nAscii(1, 1);
+                        iPos += StripTabsAndTruncate( ch->name,
+                                                      temp + iPos.m_byte,
+                                                      MBUF_SIZE - iPos.m_byte,
+                                                      13, true);
+                        temp[iPos.m_byte] = ' ';
+                        iPos += nAscii;
+                        iPos += StripTabsAndTruncate( Moniker(ch->charge_who),
+                                                      temp + iPos.m_byte,
+                                                      MBUF_SIZE - iPos.m_byte,
+                                                      15, true);
+                        temp[iPos.m_byte] = ' ';
+                        iPos += nAscii;
+                        iPos += StripTabsAndTruncate( pBuffer,
+                                                      temp + iPos.m_byte,
+                                                      MBUF_SIZE - iPos.m_byte,
+                                                      45, true);
 
                         raw_notify(executor, temp);
+                        free_mbuf(temp);
+                        if (NULL != atrstr)
+                        {
+                            free_lbuf(atrstr);
+                        }
                     }
                 }
             }
             MEMFREE(charray);
         }
     }
-    free_mbuf(temp);
-    free_mbuf(buf);
     raw_notify(executor, T("-- End of list of Channels --"));
 }
 

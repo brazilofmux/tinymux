@@ -1589,13 +1589,14 @@ static const UTF8 *trimmed_name(dbref player, size_t *pvw)
 {
     static UTF8 cbuff[MBUF_SIZE];
 
-    ANSI_TruncateToField(
-        Moniker(player),
-        sizeof(cbuff),
-        cbuff,
-        MAX_TRIMMED_NAME_LENGTH,
-        pvw
-    );
+    mux_field nName = StripTabsAndTruncate(
+                                             Moniker(player),
+                                             cbuff,
+                                             MBUF_SIZE,
+                                             MAX_TRIMMED_NAME_LENGTH,
+                                             true
+                                           );
+    *pvw = nName.m_column;
     return cbuff;
 }
 
@@ -1802,24 +1803,9 @@ static void dump_users(DESC *e, UTF8 *match, int key)
                 pNameField = trimmed_name(d->player, &vwNameField);
             }
 
-            // How many spaces between the name field and the 'On For' field.
-            //
-            size_t nFill;
-            if (13 <= vwNameField)
-            {
-                nFill = 1;
-            }
-            else
-            {
-                nFill = 14-vwNameField;
-            }
-            UTF8 aFill[15];
-            memset(aFill, ' ', nFill);
-            aFill[nFill] = '\0';
-
             // The width size allocated to the 'On For' field.
             //
-            size_t nOnFor = 25 - nFill - vwNameField;
+            size_t nOnFor = 25 - MAX_TRIMMED_NAME_LENGTH;
 
             const UTF8 *pTimeStamp1 = time_format_1(ltdConnected.ReturnSeconds(), nOnFor);
             const UTF8 *pTimeStamp2 = time_format_2(ltdLastTime.ReturnSeconds());
@@ -1828,8 +1814,8 @@ static void dump_users(DESC *e, UTF8 *match, int key)
                && Wizard_Who(e->player)
                && key == CMD_WHO)
             {
-                mux_sprintf(buf, MBUF_SIZE, "%s%s%s %4s%-3s#%-6d%5d%3s%s\r\n",
-                    pNameField, aFill,
+                mux_sprintf(buf, MBUF_SIZE, "%s%s %4s%-3s#%-6d%5d%3s%s\r\n",
+                    pNameField,
                     pTimeStamp1,
                     pTimeStamp2,
                     flist,
@@ -1840,8 +1826,8 @@ static void dump_users(DESC *e, UTF8 *match, int key)
             }
             else if (key == CMD_SESSION)
             {
-                mux_sprintf(buf, MBUF_SIZE, "%s%s%s %4s%5u%5d%6d%10d%6d%6d%10d\r\n",
-                    pNameField, aFill,
+                mux_sprintf(buf, MBUF_SIZE, "%s%s %4s%5u%5d%6d%10d%6d%6d%10d\r\n",
+                    pNameField,
                     pTimeStamp1,
                     pTimeStamp2,
                     d->descriptor,
@@ -1853,8 +1839,8 @@ static void dump_users(DESC *e, UTF8 *match, int key)
             else if (  Wizard_Who(e->player)
                     || See_Hidden(e->player))
             {
-                mux_sprintf(buf, MBUF_SIZE, "%s%s%s %4s%-3s%s\r\n",
-                    pNameField, aFill,
+                mux_sprintf(buf, MBUF_SIZE, "%s%s %4s%-3s%s\r\n",
+                    pNameField,
                     pTimeStamp1,
                     pTimeStamp2,
                     flist,
@@ -1862,8 +1848,8 @@ static void dump_users(DESC *e, UTF8 *match, int key)
             }
             else
             {
-                mux_sprintf(buf, MBUF_SIZE, "%s%s%s %4s  %s\r\n",
-                    pNameField, aFill,
+                mux_sprintf(buf, MBUF_SIZE, "%s%s %4s  %s\r\n",
+                    pNameField,
                     pTimeStamp1,
                     pTimeStamp2,
                     d->doing);
@@ -2012,21 +1998,11 @@ UTF8 *MakeCanonicalDoing(UTF8 *pDoing, size_t *pnValidDoing, bool *pbValidDoing)
         return NULL;
     }
 
-    // First, remove all '\r\n\t' from the string.
-    //
-    UTF8 *Buffer = RemoveSetOfCharacters(pDoing, T("\r\n\t"));
-
-    // Optimize/terminate any ANSI in the string.
-    //
-    size_t nVisualWidth;
     static UTF8 szFittedDoing[SIZEOF_DOING_STRING];
-    *pnValidDoing = ANSI_TruncateToField
-                    ( Buffer,
-                      SIZEOF_DOING_STRING,
-                      szFittedDoing,
-                      WIDTHOF_DOING_STRING,
-                      &nVisualWidth
-                    );
+    mux_field nDoing = StripTabsAndTruncate( pDoing, szFittedDoing,
+                                              SIZEOF_DOING_STRING, WIDTHOF_DOING_STRING);
+
+    *pnValidDoing = nDoing.m_column;
     *pbValidDoing = true;
     return szFittedDoing;
 }

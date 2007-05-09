@@ -3051,27 +3051,27 @@ UTF8 *MakeCanonicalMailAliasDesc
     size_t *pnVisualWidth
 )
 {
+    *pnValidMailAliasDesc = 0;
+    *pbValidMailAliasDesc = false;
+    *pnVisualWidth = 0;
     if (!pMailAliasDesc)
     {
         return NULL;
     }
 
-    // First, remove all '\r\n\t' from the string.
+    // Remove all '\r\n\t' from the string.
+    // Terminate any ANSI in the string.
     //
-    UTF8 *Buffer = RemoveSetOfCharacters(pMailAliasDesc, T("\r\n\t"));
-
-    // Optimize/terminate any ANSI in the string.
-    //
-    *pnVisualWidth = 0;
     static UTF8 szFittedMailAliasDesc[SIZEOF_MALIASDESC];
-    *pnValidMailAliasDesc = ANSI_TruncateToField
-                            ( Buffer,
-                              SIZEOF_MALIASDESC,
-                              szFittedMailAliasDesc,
-                              WIDTHOF_MALIASDESC,
-                              pnVisualWidth
-                             );
+    mux_field nValidMailAliasDesc = StripTabsAndTruncate
+                                     ( pMailAliasDesc,
+                                       szFittedMailAliasDesc,
+                                       SIZEOF_MALIASDESC,
+                                       WIDTHOF_MALIASDESC
+                                     );
+    *pnValidMailAliasDesc = nValidMailAliasDesc.m_byte;
     *pbValidMailAliasDesc = true;
+    *pnVisualWidth = nValidMailAliasDesc.m_column;
     return szFittedMailAliasDesc;
 }
 
@@ -3666,17 +3666,18 @@ static void do_malias_list(dbref player, UTF8 *alias)
     free_lbuf(buff);
 }
 
-static UTF8 *Spaces(size_t n)
+static const UTF8 *Spaces(size_t n)
 {
-    static UTF8 buffer[42] = "                                         ";
-    static size_t nLast = 0;
-    buffer[nLast] = ' ';
+    static const UTF8 buffer[42] = "                                         ";
+
     if (n < sizeof(buffer)-1)
     {
-        buffer[n] = '\0';
-        nLast = n;
+        return buffer + (sizeof(buffer)-1) - n;
     }
-    return buffer;
+    else
+    {
+        return T("");
+    }
 }
 
 static void do_malias_list_all(dbref player)
@@ -3694,7 +3695,7 @@ static void do_malias_list_all(dbref player)
                 notify(player, T("Name         Description                              Owner"));
                 notified = true;
             }
-            UTF8 *pSpaces = Spaces(40 - m->desc_width);
+            const UTF8 *pSpaces = Spaces(40 - m->desc_width);
             UTF8 *p = tprintf( "%-12s %s%s %-15.15s",
                                m->name,
                                m->desc,
@@ -4468,7 +4469,7 @@ static void do_malias_adminlist(dbref player)
     for (i = 0; i < ma_top; i++)
     {
         m = malias[i];
-        UTF8 *pSpaces = Spaces(40 - m->desc_width);
+        const UTF8 *pSpaces = Spaces(40 - m->desc_width);
         notify(player, tprintf("%-4d %-12s %s%s %-15.15s",
                        i, m->name, m->desc, pSpaces,
                        Moniker(m->owner)));

@@ -345,7 +345,6 @@ void mux_strtok_src(MUX_STRTOK_STATE *tts, UTF8 *pString);
 void mux_strtok_ctl(MUX_STRTOK_STATE *tts, const UTF8 *pControl);
 UTF8 *mux_strtok_parseLEN(MUX_STRTOK_STATE *tts, size_t *pnLen);
 UTF8 *mux_strtok_parse(MUX_STRTOK_STATE *tts);
-UTF8 *RemoveSetOfCharacters(UTF8 *pString, const UTF8 *pSetToRemove);
 
 size_t mux_ltoa(long val, UTF8 *buf);
 UTF8 *mux_ltoa_t(long val);
@@ -388,7 +387,6 @@ void ANSI_String_In_Init(struct ANSI_In_Context *pacIn, const UTF8 *szString);
 void ANSI_String_Out_Init(struct ANSI_Out_Context *pacOut, UTF8 *pField, size_t nField, size_t vwMax);
 void ANSI_String_Copy(struct ANSI_Out_Context *pacOut, struct ANSI_In_Context *pacIn);
 size_t ANSI_String_Finalize(struct ANSI_Out_Context *pacOut, size_t *pnVisualWidth);
-UTF8 *ANSI_TruncateAndPad_sbuf(const UTF8 *pString, size_t nMaxVisualWidth, UTF8 fill = ' ');
 size_t ANSI_TruncateToField(const UTF8 *szString, size_t nField, UTF8 *pField, size_t maxVisual, size_t *nVisualWidth);
 UTF8 *convert_color(const UTF8 *pString, bool bNoBleed = false);
 UTF8 *strip_color(const UTF8 *pString, size_t *pnLength = 0, size_t *pnPoints = 0);
@@ -493,15 +491,120 @@ typedef struct
 
 extern bool ParseFloat(PARSE_FLOAT_RESULT *pfr, const UTF8 *str, bool bStrict = true);
 
-// mux_string cursors and segments are used for iterators and substr lengths
-// internally.  They should not be used externally, as the external view is
-// always that an index refers to a code point.
+class mux_field
+{
+public:
+    LBUF_OFFSET m_byte;
+    LBUF_OFFSET m_column;
+
+    inline mux_field(LBUF_OFFSET byte = 0, LBUF_OFFSET column = 0)
+    {
+        m_byte = byte;
+        m_column = column;
+    };
+
+    inline void operator =(const mux_field &c)
+    {
+        m_byte = c.m_byte;
+        m_column = c.m_column;
+    };
+
+    inline void operator ()(LBUF_OFFSET byte, LBUF_OFFSET column)
+    {
+        m_byte = byte;
+        m_column = column;
+    };
+
+    inline bool operator <(const mux_field &a) const
+    {
+        return (  m_byte < a.m_byte
+               && m_column < a.m_column);
+    };
+
+    inline bool operator <=(const mux_field &a) const
+    {
+        return (  m_byte <= a.m_byte
+               && m_column <= a.m_column);
+    };
+
+    inline bool operator ==(const mux_field &a) const
+    {
+        return (m_byte == a.m_byte) && (m_column == a.m_column);
+    };
+
+    inline bool operator !=(const mux_field &a) const
+    {
+        return (m_byte != a.m_byte) || (m_column != a.m_column);
+    };
+
+    inline mux_field operator -(const mux_field &a) const
+    {
+        mux_field b;
+        if (  a.m_byte  < m_byte
+           && a.m_column < m_column)
+        {
+            b.m_byte  = m_byte  - a.m_byte;
+            b.m_column = m_column - a.m_column;
+        }
+        else
+        {
+            b.m_byte  = 0;
+            b.m_column = 0;
+        }
+        return b;
+    };
+
+    inline mux_field operator +(const mux_field &a) const
+    {
+        mux_field b;
+        b.m_byte  = m_byte  + a.m_byte;
+        b.m_column = m_column + a.m_column;
+        return b;
+    };
+
+    inline void operator +=(const mux_field &a)
+    {
+        m_byte  = m_byte + a.m_byte;
+        m_column = m_column + a.m_column;
+    };
+
+    inline void operator -=(const mux_field &a)
+    {
+        if (  a.m_byte  < m_byte
+           && a.m_column < m_column)
+        {
+            m_byte  = m_byte - a.m_byte;
+            m_column = m_column - a.m_column;
+        }
+        else
+        {
+            m_byte  = 0;
+            m_column = 0;
+        }
+    };
+};
+
+// mux_string cursors are used for iterators internally.  They should not be
+// used externally, as the external view is always that an index refers to a
+// code point.
 //
 class mux_cursor
 {
 public:
     LBUF_OFFSET m_byte;
     LBUF_OFFSET m_point;
+
+    inline mux_cursor(void)
+    {
+        m_byte = 0;
+        m_point = 0;
+    };
+
+    inline mux_cursor(LBUF_OFFSET byte, LBUF_OFFSET point)
+    {
+        m_byte = byte;
+        m_point = point;
+    };
 
     inline void operator =(const mux_cursor &c)
     {
@@ -517,22 +620,14 @@ public:
 
     inline bool operator <(const mux_cursor &a) const
     {
-        return m_byte < a.m_byte;
-    };
-
-    inline bool operator >(const mux_cursor &a) const
-    {
-        return m_byte > a.m_byte;
+        return (  m_byte < a.m_byte
+               && m_point < a.m_point);
     };
 
     inline bool operator <=(const mux_cursor &a) const
     {
-        return m_byte <= a.m_byte;
-    };
-
-    inline bool operator >=(const mux_cursor &a) const
-    {
-        return m_byte >= a.m_byte;
+        return (  m_byte <= a.m_byte
+               && m_point <= a.m_point);
     };
 
     inline bool operator ==(const mux_cursor &a) const
@@ -593,9 +688,12 @@ public:
 };
 
 bool utf8_strlen(const UTF8 *pString, mux_cursor &nString);
+mux_field StripTabsAndTruncate(const UTF8 *pString, UTF8 *pBuffer,
+    size_t nLength,LBUF_OFFSET nWidth, bool bPad = false,
+    UTF8 uchFill = (UTF8)' ');
 
-static const mux_cursor CursorMin = {0,0};
-static const mux_cursor CursorMax = {LBUF_SIZE - 1, LBUF_SIZE - 1};
+static const mux_cursor CursorMin(0,0);
+static const mux_cursor CursorMax(LBUF_SIZE - 1, LBUF_SIZE - 1);
 
 class mux_string
 {

@@ -1566,7 +1566,7 @@ static const UTF8 *ColorBinaryNormal
     bool bNoBleed = false
 )
 {
-    static const UTF8 *aBleed = T(COLOR_RESET);
+    static const UTF8 *aBleed   = T(COLOR_RESET);
     static const UTF8 *aNoBleed = T(COLOR_RESET COLOR_FG_WHITE);
 
     if (  csCurrent == CS_NORMAL
@@ -1576,9 +1576,16 @@ static const UTF8 *ColorBinaryNormal
         *nTransition = 0;
         return T("");
     }
-
-    *nTransition = bNoBleed ? sizeof(aNoBleed)-1 : sizeof(aBleed)-1;
-    return bNoBleed ? aNoBleed : aBleed;
+    else if (bNoBleed)
+    {
+        *nTransition = sizeof(aNoBleed) - 1;
+        return aNoBleed;
+    }
+    else
+    {
+        *nTransition = sizeof(aBleed) - 1;
+        return aBleed;
+    }
 }
 
 // Maximum binary transition length is:
@@ -2013,22 +2020,6 @@ size_t ANSI_TruncateToField
     ANSI_String_Out_Init(&aoc, pField0, nField, maxVisualWidth);
     ANSI_String_Copy(&aoc, &aic);
     return ANSI_String_Finalize(&aoc, pnVisualWidth);
-}
-
-UTF8 *ANSI_TruncateAndPad_sbuf(const UTF8 *pString, size_t nMaxVisualWidth, UTF8 fill)
-{
-    UTF8 *pStringModified = alloc_sbuf("ANSI_TruncateAndPad_sbuf");
-    size_t nAvailable = SBUF_SIZE - nMaxVisualWidth;
-    size_t nVisualWidth;
-    size_t nLen = ANSI_TruncateToField(pString, nAvailable,
-        pStringModified, nMaxVisualWidth, &nVisualWidth);
-    for (size_t i = nMaxVisualWidth - nVisualWidth; i > 0; i--)
-    {
-        pStringModified[nLen] = fill;
-        nLen++;
-    }
-    pStringModified[nLen] = '\0';
-    return pStringModified;
 }
 
 #define COLOR_CODE_NORMAL       1
@@ -4097,34 +4088,96 @@ UTF8 *mux_strtok_parse(MUX_STRTOK_STATE *tts)
     return p;
 }
 
-// This function will filter out any characters in the the set from
-// the string.
-//
-UTF8 *RemoveSetOfCharacters(UTF8 *pString, const UTF8 *pSetToRemove)
+mux_field StripTabsAndTruncate
+(
+    const UTF8 *pString,
+    UTF8 *pBuffer,
+    size_t nLength,
+    LBUF_OFFSET nWidth,
+    bool bPad,
+    UTF8 uchFill
+)
 {
-    static UTF8 Buffer[LBUF_SIZE];
-    UTF8 *pBuffer = Buffer;
+    mux_field  fldOutput(0, 0);
 
-    size_t nLen;
-    size_t nLeft = sizeof(Buffer) - 1;
-    UTF8 *p;
-    MUX_STRTOK_STATE tts;
-    mux_strtok_src(&tts, pString);
-    mux_strtok_ctl(&tts, pSetToRemove);
-    for ( p = mux_strtok_parseLEN(&tts, &nLen);
-          p && nLeft;
-          p = mux_strtok_parseLEN(&tts, &nLen))
+    if (  NULL == pBuffer
+       || NULL == pString
+       || 0 == nLength
+       || 0 == nWidth
+       || '\0' == pString[0])
     {
-        if (nLeft < nLen)
+        if (NULL != pBuffer)
         {
-            nLen = nLeft;
+            pBuffer[0] = '\0';
         }
-        memcpy(pBuffer, p, nLen);
-        pBuffer += nLen;
-        nLeft -= nLen;
+        return fldOutput;
     }
-    *pBuffer = '\0';
-    return Buffer;
+
+    if (nLength < nWidth)
+    {
+        nWidth = static_cast<LBUF_OFFSET>(nLength);
+    }
+
+    mux_cursor curPos = CursorMin;
+    mux_field  fldLimit(nLength, nWidth);
+
+    const mux_field fldAscii(1, 1);
+    const mux_cursor curAscii(1, 1);
+    mux_field  fldTransition(0, 0);
+    const UTF8 *pTransition = NULL;
+    size_t nNormalBytes = 0;
+    ColorState cs = CS_NORMAL;
+
+    while ('\0' != pString[curPos.m_byte])
+    {
+        int iCode = mux_color(pString + curPos.m_byte);
+        if (COLOR_NOTCOLOR != iCode)
+        {
+            cs = UpdateColorState(cs, iCode);
+            pTransition = ColorBinaryNormal(cs, &nNormalBytes);
+            fldTransition(nNormalBytes, 0);
+        }
+        else if (NULL != strchr("\r\n\t", pString[curPos.m_byte]))
+        {
+            curPos += curAscii;
+            continue;
+        }
+
+        mux_cursor curPoint(utf8_FirstByte[pString[curPos.m_byte]], 1);
+        mux_field  fldPoint(utf8_FirstByte[pString[curPos.m_byte]], COLOR_NOTCOLOR == iCode ? 1 : 0);
+        if (fldOutput + fldPoint + fldTransition < fldLimit)
+        {
+            size_t j;
+            for (j = 0; j < fldPoint.m_byte; j++);
+            {
+                pBuffer[fldOutput.m_byte + j] = pString[curPos.m_byte + j];
+            }
+            fldOutput += fldPoint;
+        }
+        else
+        {
+            break;
+        }
+        curPos += curPoint;
+    }
+
+    if (  0 < nNormalBytes
+       && fldOutput + fldTransition < fldLimit)
+    {
+        memcpy(pBuffer + fldOutput.m_byte, pTransition, nNormalBytes);
+        fldOutput += fldTransition;
+    }
+
+    if (bPad)
+    {
+        while (fldOutput < fldLimit)
+        {
+            pBuffer[fldOutput.m_byte] = uchFill;
+            fldOutput += fldAscii;
+        }
+    }
+    pBuffer[fldOutput.m_byte] = '\0';
+    return fldOutput;
 }
 
 void ItemToList_Init(ITL *p, UTF8 *arg_buff, UTF8 **arg_bufc,
@@ -5413,7 +5466,7 @@ void mux_string::edit(mux_string &sFrom, const mux_string &sTo)
               || '^' == sFrom.m_autf[1])
            && 2 == nFrom.m_byte)
         {
-            mux_cursor n = {1, 1};
+            mux_cursor n(1, 1);
             sFrom.delete_Chars(CursorMin, n);
             nFrom(nFrom.m_byte-1, nFrom.m_point-1);
         }
@@ -6145,7 +6198,7 @@ bool mux_string::search
 
     if (iPos)
     {
-        cursor_from_byte(*iPos, static_cast<LBUF_OFFSET>(i));
+        cursor_from_byte(*iPos, static_cast<LBUF_OFFSET>(i + iStart.m_byte));
     }
     return bSucceeded;
 }
@@ -6630,7 +6683,8 @@ void mux_words::export_WordAnsi(LBUF_OFFSET n, UTF8 *buff, UTF8 **bufc)
 
     mux_cursor iStart = m_aiWordBegins[n];
     mux_cursor iEnd = m_aiWordEnds[n];
-    *bufc += m_s->export_TextAnsi(*bufc, iStart, iEnd, buff + LBUF_SIZE - *bufc);
+    size_t nMax = buff + (LBUF_SIZE-1) - *bufc;
+    *bufc += m_s->export_TextAnsi(*bufc, iStart, iEnd, nMax);
 }
 
 LBUF_OFFSET mux_words::find_Words(void)
