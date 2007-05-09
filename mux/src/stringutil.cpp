@@ -5297,17 +5297,16 @@ void mux_string::edit(mux_string &sFrom, const mux_string &sTo)
 {
     // Do the substitution.  Idea for prefix/suffix from R'nice@TinyTIM.
     //
-    const UTF8 chFrom0 = sFrom.export_Char(0);
-    mux_cursor nFrom = sFrom.length_cursor();
+    mux_cursor nFrom = sFrom.m_iLast;
     if (  1 == nFrom.m_byte
-       && '^' == chFrom0)
+       && '^' == sFrom.m_autf[0])
     {
         // Prepend 'to' to string.
         //
         prepend(sTo);
     }
     else if (  1 == nFrom.m_byte
-            && '$' == chFrom0)
+            && '$' == sFrom.m_autf[0])
     {
         // Append 'to' to string.
         //
@@ -5315,14 +5314,13 @@ void mux_string::edit(mux_string &sFrom, const mux_string &sTo)
     }
     else
     {
-        const UTF8 chFrom1 = sFrom.export_Char(1);
         // Replace all occurances of 'from' with 'to'. Handle the special
         // cases of from = \$ and \^.
         //
-        if (  (  '\\' == chFrom0
-              || '%' == chFrom0)
-           && (  '$' == chFrom1
-              || '^' == chFrom1)
+        if (  (  '\\' == sFrom.m_autf[0]
+              || '%' == sFrom.m_autf[0])
+           && (  '$' == sFrom.m_autf[1]
+              || '^' == sFrom.m_autf[1])
            && 2 == nFrom.m_byte)
         {
             mux_cursor n = {1, 1};
@@ -5335,7 +5333,7 @@ void mux_string::edit(mux_string &sFrom, const mux_string &sTo)
         bool bSucceeded = search(sFrom, &iFound);
         while (bSucceeded)
         {
-            iStart = iStart + iFound;
+            iStart = iFound;
             replace_Chars(sTo, iStart, nFrom);
             iStart = iStart + nTo;
 
@@ -5642,7 +5640,7 @@ void mux_string::import(dbref num)
 
     // mux_ltoa() sets the '\0'.
     //
-    n += (LBUF_OFFSET)mux_ltoa(num, m_autf + 1);
+    n = static_cast<LBUF_OFFSET>(n + mux_ltoa(num, m_autf + 1));
     m_iLast(n, n);
 }
 
@@ -5929,17 +5927,24 @@ void mux_string::replace_Chars
         {
             if (CursorMax < iStart + nTo)
             {
-                nCopy = CursorMax - iStart;
-                nMove = CursorMin;
+                while (  sTo.cursor_prev(nCopy)
+                      && CursorMax.m_byte - iStart.m_byte < nCopy.m_byte)
+                {
+                    ; // Nothing.
+                }
             }
             else
             {
-                nMove = CursorMax - (iStart + nTo);
+                while (  cursor_prev(nMove)
+                      && CursorMax.m_byte - (iStart.m_byte + nCopy.m_byte) < nMove.m_byte)
+                {
+                    ; // Nothing.
+                }
             }
         }
         if (CursorMin < nMove)
         {
-            memmove(m_autf + iStart.m_byte + nTo.m_byte,
+            memmove(m_autf + iStart.m_byte + nCopy.m_byte,
                     m_autf + iStart.m_byte + nLen.m_byte, nMove.m_byte * sizeof(m_autf[0]));
         }
         m_iLast = iStart + nCopy + nMove;
@@ -5949,7 +5954,7 @@ void mux_string::replace_Chars
             realloc_m_pcs(m_iLast.m_point);
             if (CursorMin < nMove)
             {
-                memmove(m_pcs + iStart.m_point + nTo.m_point,
+                memmove(m_pcs + iStart.m_point + nCopy.m_point,
                         m_pcs + iStart.m_point + nLen.m_point, nMove.m_point * sizeof(m_pcs[0]));
             }
         }
@@ -5975,7 +5980,7 @@ void mux_string::replace_Chars
     }
     else if (0 != m_ncs)
     {
-        for (i = 0; i < nTo.m_point; i++)
+        for (i = 0; i < nCopy.m_point; i++)
         {
             m_pcs[iStart.m_point + i] = CS_NORMAL;
         }
@@ -6098,7 +6103,7 @@ bool mux_string::search
 
     if (iPos)
     {
-        cursor_from_byte(*iPos, static_cast<LBUF_OFFSET>(i));
+        cursor_from_byte(*iPos, static_cast<LBUF_OFFSET>(i + iStart.m_byte));
     }
     return bSucceeded;
 }
@@ -6528,10 +6533,9 @@ LBUF_OFFSET mux_words::find_Words(const UTF8 *pDelim)
           && nWords + 1 < MAX_WORDS)
     {
         m_aiWordBegins[nWords] = iStart;
-        iStart += iPos;
-        m_aiWordEnds[nWords] = iStart;
+        m_aiWordEnds[nWords] = iPos;
         nWords++;
-        iStart = iStart + nDelim;
+        iStart = iPos + nDelim;
         bSucceeded = m_s->search(pDelim, &iPos, iStart);
     }
     m_aiWordBegins[nWords] = iStart;

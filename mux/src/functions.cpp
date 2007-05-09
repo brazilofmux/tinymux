@@ -3872,7 +3872,7 @@ static FUNCTION(fun_lpos)
         {
             safe_chr(' ', buff, bufc);
         }
-        nStart = nStart + nPat;
+        nStart = nPat;
         safe_ltoa(static_cast<long>(nStart.m_point), buff, bufc);
         sStr->cursor_next(nStart);
 #else
@@ -4149,12 +4149,15 @@ static FUNCTION(fun_remove)
            && iPos < iStart)
         {
             bSucceeded = sStr->search(*sWord, &iPos, iStart);
+#ifdef NEW_MUX_STRING
+#else
             iPos += iStart;
+#endif
         }
 
         if (  !bFound
 #ifdef NEW_MUX_STRING
-           && sWord->length() == iEnd.m_byte - iStart.m_byte
+           && sWord->length_cursor() == iEnd - iStart
 #else
            && sWord->length() == iEnd - iStart
 #endif
@@ -4749,8 +4752,8 @@ static FUNCTION(fun_delete)
 
 #ifdef NEW_MUX_STRING
     mux_cursor iStartCur, iEnd;
-    sStr->cursor_from_point(iStartCur, iStart);
-    sStr->cursor_from_point(iEnd, iStartCur.m_point + nDelete);
+    sStr->cursor_from_point(iStartCur, static_cast<LBUF_OFFSET>(iStart));
+    sStr->cursor_from_point(iEnd, static_cast<LBUF_OFFSET>(iStartCur.m_point + nDelete));
     sStr->delete_Chars(iStartCur, iEnd);
     *bufc += sStr->export_TextAnsi(*bufc, CursorMin, CursorMax, buff + LBUF_SIZE - *bufc);
 #else
@@ -8171,13 +8174,16 @@ static void centerjustcombo
     // Determine string to pad with.
     //
     mux_string *sPad = new mux_string;
-    size_t nPad = 0;
     if (nfargs == 3 && *fargs[2])
     {
         sPad->import(fargs[2]);
         sPad->strip(T("\r\n\t"));
     }
-    nPad = sPad->length();
+#ifdef NEW_MUX_STRING
+    LBUF_OFFSET nPad = sPad->length_cursor().m_point;
+#else
+    size_t nPad = sPad->length();
+#endif
     if (0 == nPad)
     {
         sPad->import(T(" "), 1);
@@ -8926,7 +8932,7 @@ static FUNCTION(fun_wrap)
     {
         sStr->export_TextPlain(pPlain, iPos);
 
-        nLength = wraplen(pPlain, iPos == CursorMin ? nFirstWidth : nWidth, newline);
+        nLength = wraplen(pPlain, static_cast<LBUF_OFFSET>(iPos == CursorMin ? nFirstWidth : nWidth), newline);
         iEnd = iPos + nLength;
 
         sStr->export_TextAnsi(pColor, iPos, iEnd);
@@ -10070,7 +10076,7 @@ size_t transform_range(mux_string &sStr)
     bool bSucceeded = sStr.search(T("-"), &nPos, nStart);
     while (bSucceeded)
     {
-        nStart = nStart + nPos;
+        nStart = nPos;
         cBefore = sStr.export_Char(nStart.m_byte-1);
         cAfter = sStr.export_Char(nStart.m_byte+1);
         if ('\0' == cAfter)
