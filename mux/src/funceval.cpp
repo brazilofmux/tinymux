@@ -2633,7 +2633,7 @@ FUNCTION(fun_scramble)
                 static_cast<INT32>(nLen-1)));
 
             UTF8 ch = sStr->export_Char(i);
-            ANSI_ColorState cs = sStr->export_Color(i);
+            ColorState cs = sStr->export_Color(i);
 
             sStr->set_Char(i, sStr->export_Char(j));
             sStr->set_Color(i, sStr->export_Color(j));

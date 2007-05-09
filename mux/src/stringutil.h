@@ -274,7 +274,7 @@ inline int mux_color(const unsigned char *p)
     return iState - TR_COLOR_ACCEPTING_STATES_START;
 }
 
-#define COLOR_UNDEFINED  0
+#define COLOR_NOTCOLOR   0
 #define COLOR_RESET      "\xEE\x80\x80"    // 1
 #define COLOR_INTENSE    "\xEE\x80\x81"    // 2
 #define COLOR_UNDERLINE  "\xEE\x80\x84"    // 3
@@ -299,10 +299,6 @@ inline int mux_color(const unsigned char *p)
 #define COLOR_LAST_CODE  21
 
 bool utf8_strlen(const UTF8 *pString, size_t &nString);
-
-int ANSI_lex(size_t nString, const UTF8 *pString, size_t *nLengthToken0, size_t *nLengthToken1);
-#define TOKEN_TEXT_ANSI 0 // Text sequence + optional ANSI sequence.
-#define TOKEN_ANSI      1 // ANSI sequence.
 
 typedef struct
 {
@@ -331,32 +327,22 @@ bool is_integer(const UTF8 *str, int *pDigits = NULL);
 bool is_rational(const UTF8 *str);
 bool is_real(const UTF8 *str);
 
-#pragma pack(1)
-typedef struct
-{
-    unsigned char bNormal:1;
-    unsigned char bBlink:1;
-    unsigned char bHighlite:1;
-    unsigned char bInverse:1;
-    unsigned char bUnder:1;
-
-    unsigned char iForeground:4;
-    unsigned char iBackground:4;
-} ANSI_ColorState;
-#pragma pack()
+// Color State
+//
+typedef UINT16 ColorState;
 
 struct ANSI_In_Context
 {
-    ANSI_ColorState m_cs;
+    ColorState      m_cs;
     const UTF8     *m_p;
     size_t          m_n;
 };
 
 struct ANSI_Out_Context
 {
-    bool            m_bNoBleed;
-    ANSI_ColorState m_cs;
-    bool            m_bDone; // some constraint was met.
+    ColorState      m_cs;
+    ColorState      m_csFinal;
+    bool            m_bDone;
     UTF8           *m_p;
     size_t          m_n;
     size_t          m_nMax;
@@ -396,7 +382,8 @@ UTF8 *StringCloneLen(const UTF8 *str, size_t nStr);
 UTF8 *StringClone(const UTF8 *str);
 void safe_copy_str(const UTF8 *src, UTF8 *buff, UTF8 **bufp, size_t nSizeOfBuffer);
 void safe_copy_str_lbuf(const UTF8 *src, UTF8 *buff, UTF8 **bufp);
-size_t safe_copy_buf(const UTF8 *src, size_t nLen, UTF8 *buff, UTF8 **bufp);
+size_t safe_copy_buf_ascii(const UTF8 *src, size_t nLen, UTF8 *buff, UTF8 **bufp);
+#define safe_copy_buf safe_copy_buf_ascii
 size_t safe_fill(UTF8 *buff, UTF8 **bufc, UTF8 chFile, size_t nSpaces);
 void safe_chr_utf8(const UTF8 *src, UTF8 *buff, UTF8 **bufp);
 #define utf8_safe_chr safe_chr_utf8
@@ -493,7 +480,7 @@ private:
     size_t          m_n;
     unsigned char   m_ach[LBUF_SIZE];
     size_t          m_ncs;
-    ANSI_ColorState *m_pcs;
+    ColorState     *m_pcs;
 
     void realloc_m_pcs(size_t ncs);
 
@@ -521,7 +508,7 @@ public:
     void edit(mux_string &sFrom, const mux_string &sTo);
     UTF8 export_Char(size_t n) const;
     LBUF_OFFSET export_Char_UTF8(size_t iFirst, UTF8 *pBuffer) const;
-    ANSI_ColorState export_Color(size_t n) const;
+    ColorState export_Color(size_t n) const;
     double export_Float(bool bStrict = true) const;
     INT64 export_I64(void) const;
     long export_Long(void) const;
@@ -571,7 +558,7 @@ public:
         size_t nStart = 0
     ) const;
     void set_Char(size_t n, const UTF8 cChar);
-    void set_Color(size_t n, ANSI_ColorState csColor);
+    void set_Color(size_t n, ColorState csColor);
     void strip
     (
         const UTF8 *pStripSet,
