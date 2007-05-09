@@ -85,12 +85,12 @@ extern const UTF8 *latin1_utf8[256];
 // utf/cl_Printable.txt
 //
 // 95007 included, 1019105 excluded, 0 errors.
-// 164 states, 103 columns, 17148 bytes
+// 149 states, 98 columns, 14858 bytes
 //
 #define CL_PRINT_START_STATE (0)
-#define CL_PRINT_ACCEPTING_STATES_START (164)
+#define CL_PRINT_ACCEPTING_STATES_START (149)
 extern const unsigned char cl_print_itt[256];
-extern const unsigned char cl_print_stt[164][103];
+extern const unsigned char cl_print_stt[149][98];
 
 inline bool mux_isprint(const unsigned char *p)
 {
@@ -458,9 +458,136 @@ typedef struct
 
 extern bool ParseFloat(PARSE_FLOAT_RESULT *pfr, const UTF8 *str, bool bStrict = true);
 
+// mux_string cursors and segments are used for iterators and substr lengths
+// internally.  They should not be used externally, as the external view is
+// always that an index refers to a code point.
+//
+class mux_cursor
+{
+public:
+    LBUF_OFFSET m_byte;
+    LBUF_OFFSET m_point;
+
+    inline void operator =(const mux_cursor &c)
+    {
+        m_byte = c.m_byte;
+        m_point = c.m_point;
+    };
+
+    inline void operator ()(LBUF_OFFSET byte, LBUF_OFFSET point)
+    {
+        m_byte = byte;
+        m_point = point;
+    };
+
+    inline bool operator <(const mux_cursor &a) const
+    {
+        return m_byte < a.m_byte;
+    };
+
+    inline bool operator >(const mux_cursor &a) const
+    {
+        return m_byte > a.m_byte;
+    };
+
+    inline bool operator <=(const mux_cursor &a) const
+    {
+        return m_byte <= a.m_byte;
+    };
+
+    inline bool operator >=(const mux_cursor &a) const
+    {
+        return m_byte >= a.m_byte;
+    };
+
+    inline bool operator ==(const mux_cursor &a) const
+    {
+        return (m_byte == a.m_byte) && (m_point == a.m_point);
+    };
+
+    inline bool operator !=(const mux_cursor &a) const
+    {
+        return (m_byte != a.m_byte) || (m_point != a.m_point);
+    };
+
+    inline mux_cursor operator -(const mux_cursor &a) const
+    {
+        mux_cursor b;
+        if (  a.m_byte  < m_byte
+           && a.m_point < m_point)
+        {
+            b.m_byte  = m_byte  - a.m_byte;
+            b.m_point = m_point - a.m_point;
+        }
+        else
+        {
+            b.m_byte  = 0;
+            b.m_point = 0;
+        }
+        return b;
+    };
+
+    inline mux_cursor operator +(const mux_cursor &a) const
+    {
+        mux_cursor b;
+        b.m_byte  = m_byte  + a.m_byte;
+        b.m_point = m_point + a.m_point;
+        return b;
+    };
+
+    inline void operator +=(const mux_cursor &a)
+    {
+        m_byte  = m_byte + a.m_byte;
+        m_point = m_point + a.m_point;
+    };
+};
+
+static const mux_cursor CursorMin = {0,0};
+static const mux_cursor CursorMax = {LBUF_SIZE - 1, LBUF_SIZE - 1};
+
 class mux_string
 {
+#ifdef NEW_MUX_STRING
+    // PROPOSED INVARIANT (2007-MAR-16)
+    //
+    // m_nutf, m_ncs, m_autf, m_ncs, and m_pcs work together as follows:
+    //
+    // m_nutf is always between 0 and LBUF_SIZE-1 inclusively.  The first
+    // m_nutf bytes of m_atuf[] contain the non-color UTF-8-encoded code
+    // points.  A terminating '\0' at m_autf[m_nutf] is not included in this
+    // size even though '\0' is a UTF-8 code point.  In this way, m_nutf
+    // corresponds to strlen() in units of bytes.  The use of both a length
+    // and a terminating '\0' is intentionally redundant.
+    //
+    // m_ncp is between 0 and LBUF_SIZE-1 inclusively and represents the
+    // number of non-color UTF-8-encoded code points stored in m_autf[].
+    // The terminating '\0' is not included in this size.  In this way, m_ncp
+    // corresponds to strlen() in units of code points.
+    //
+    // If color is associated with the above code points, m_pcs will point
+    // to an array of ColorStates, otherwise, it is NULL.  When m_pcs is NULL,
+    // it is equivalent to every code point having CS_NORMAL color.  Each
+    // color state corresponds with a UTF-8 code point in m_autf[].  There is
+    // no guaranteed association between a position in m_autf[] and a position
+    // in m_pcs because UTF-8 code points are variable length.
+    //
+    // Not all ColorStates in m_pcs may be used. m_ncs is between 0 and
+    // LBUF_SIZE-1 inclusively and represents how many ColorStates are
+    // allocated and available for use.  m_ncp is always less than or equal to
+    // m_ncs.
+    //
+    // To recap, m_nutf has units of bytes while m_ncp and m_ncs are in units
+    // of code points.
+    //
 private:
+    mux_cursor  m_iLast;
+    UTF8        m_autf[LBUF_SIZE];
+    size_t      m_ncs;
+    ColorState *m_pcs;
+#else
+private:
+    // DEPRECATED INVARIANT
+    //
     // m_n, m_ach, m_ncs, and m_pcs work together as follows:
     //
     // m_n is always between 0 and LBUF_SIZE-1 inclusively.  The first m_n
@@ -480,6 +607,7 @@ private:
     size_t          m_ncs;
     ColorState     *m_pcs;
 
+#endif // NEW_MUX_STRING
     void realloc_m_pcs(size_t ncs);
 
 public:
@@ -490,12 +618,21 @@ public:
     void append(dbref num);
     void append(INT64 iInt);
     void append(long lLong);
+#ifdef NEW_MUX_STRING
+    void append
+    (
+        const mux_string &sStr,
+        mux_cursor nStart = CursorMin,
+        mux_cursor iEnd   = CursorMax
+    );
+#else
     void append
     (
         const mux_string &sStr,
         size_t nStart = 0,
         size_t nLen = (LBUF_SIZE-1)
     );
+#endif
     void append(const UTF8 *pStr);
     void append(const UTF8 *pStr, size_t nLen);
     void append_TextPlain(const UTF8 *pStr);
@@ -510,6 +647,23 @@ public:
     double export_Float(bool bStrict = true) const;
     INT64 export_I64(void) const;
     long export_Long(void) const;
+#ifdef NEW_MUX_STRING
+    LBUF_OFFSET export_TextAnsi
+    (
+        UTF8 *pBuffer,
+        mux_cursor iStart = CursorMin,
+        mux_cursor iEnd   = CursorMax,
+        size_t nBytesMax = (LBUF_SIZE-1),
+        bool bNoBleed = false
+    ) const;
+    LBUF_OFFSET export_TextPlain
+    (
+        UTF8 *pBuffer,
+        mux_cursor iStart = CursorMin,
+        mux_cursor iEnd   = CursorMax,
+        size_t nBytesMax = (LBUF_SIZE-1)
+    ) const;
+#else
     void export_TextAnsi
     (
         UTF8 *buff,
@@ -527,12 +681,20 @@ public:
         size_t nLen = LBUF_SIZE,
         size_t nBuffer = (LBUF_SIZE-1)
     ) const;
+#endif
     void import(dbref num);
     void import(INT64 iInt);
     void import(long lLong);
+#ifdef NEW_MUX_STRING
+    void import(const mux_string &sStr, mux_cursor iStart = CursorMin);
+    void import(const UTF8 *pStr);
+    void import(const UTF8 *pStr, size_t nLen);
+    mux_cursor length_cursor(void) const;
+#else
     void import(const mux_string &sStr, size_t nStart = 0);
     void import(const UTF8 *pStr);
     void import(const UTF8 *pStr, size_t nLen);
+#endif
     size_t length(void) const;
     void prepend(dbref num);
     void prepend(INT64 iInt);
@@ -540,6 +702,22 @@ public:
     void prepend(const mux_string &sStr);
     void prepend(const UTF8 *pStr);
     void prepend(const UTF8 *pStr, size_t nLen);
+#ifdef NEW_MUX_STRING
+    void replace_Chars(const mux_string &pTo, mux_cursor iStart, LBUF_OFFSET nLen);
+    void reverse(void);
+    bool search
+    (
+        const UTF8 *pPattern,
+        mux_cursor *nPos = NULL,
+        mux_cursor nStart = CursorMin
+    ) const;
+    bool search
+    (
+        const mux_string &sPattern,
+        mux_cursor *nPos = NULL,
+        mux_cursor nStart = CursorMin
+    ) const;
+#else
     void replace_Chars(const mux_string &pTo, size_t nStart, size_t nLen);
     void reverse(void);
     bool search
@@ -554,6 +732,7 @@ public:
         size_t *nPos = NULL,
         size_t nStart = 0
     ) const;
+#endif // NEW_MUX_STRING
     void set_Char(size_t n, const UTF8 cChar);
     void set_Color(size_t n, ColorState csColor);
     void strip
@@ -584,7 +763,11 @@ public:
     void trim(const UTF8 ch = ' ', bool bLeft = true, bool bRight = true);
     void trim(const UTF8 *p, bool bLeft = true, bool bRight = true);
     void trim(const UTF8 *p, size_t n, bool bLeft = true, bool bRight = true);
+#ifdef NEW_MUX_STRING
+    void truncate(mux_cursor iEnd);
+#else
     void truncate(size_t nLen);
+#endif // NEW_MUX_STRING
 
     static void * operator new(size_t size)
     {
@@ -600,14 +783,155 @@ public:
         }
     }
 
-    UTF8 operator [](size_t i) const
+#ifdef NEW_MUX_STRING
+    // mux_string_cursor c;
+    // cursor_start(c);
+    // while (cursor_next(c))
+    // {
+    // }
+    //
+    inline void cursor_start(mux_cursor &c) const
     {
-        if (m_n <= i)
-        {
-            return '\0';
-        }
-        return m_ach[i];
+        c.m_byte  = 0;
+        c.m_point = 0;
     }
+
+    inline bool cursor_next(mux_cursor &c) const
+    {
+        if ('\0' != m_autf[c.m_byte])
+        {
+#ifdef NEW_MUX_STRING_PARANOID
+            size_t n = utf8_FirstByte[m_autf[c.m_byte]];
+            mux_assert(n < UTF8_CONTINUE);
+            while (n--)
+            {
+                c.m_byte++;
+                mux_assert(UTF8_CONTINUE == utf8_FirstByte[m_autf[c.m_byte]]);
+            }
+            mux_assert(0 <= c.m_point && c.m_point < m_ncp);
+#else
+            c.m_byte = (LBUF_OFFSET)(c.m_byte + utf8_FirstByte[m_autf[c.m_byte]]);
+#endif // NEW_MUX_STRING_PARANOID
+            c.m_point++;
+            return true;
+        }
+        return false;
+    };
+
+    // mux_cursor c;
+    // cursor_end(c);
+    // while (cursor_prev(c))
+    // {
+    // }
+    //
+    inline void cursor_end(mux_cursor &c) const
+    {
+        c = m_iLast;
+    }
+
+    inline bool cursor_prev(mux_cursor &c) const
+    {
+        if (0 < c.m_byte)
+        {
+#ifdef NEW_MUX_STRING_PARANOID
+            size_t n = 1;
+            while (UTF8_CONTINUE == utf8_FirstByte[m_autf[c.m_byte - n]])
+            {
+                n++;
+                mux_assert(0 < c.m_byte - n);
+            }
+            mux_assert(utf8_FirstByte[m_autf[c.m_byte - n]] < UTF8_CONTINUE);
+            c.m_byte -= n;
+            mux_assert(0 < c.m_byte && c.m_byte <= m_ncp);
+#else
+            c.m_byte--;
+            while (UTF8_CONTINUE == utf8_FirstByte[m_autf[c.m_byte]])
+            {
+                c.m_byte--;
+            }
+#endif // NEW_MUX_STRING_PARANOID
+            c.m_point--;
+            return true;
+        }
+        return false;
+    };
+
+    inline bool cursor_from_point(mux_cursor &c, LBUF_OFFSET iPoint) const
+    {
+        if (iPoint <= m_iLast.m_point)
+        {
+            if (m_iLast.m_point == m_iLast.m_byte)
+            {
+                // Special case of ASCII.
+                //
+                c.m_byte  = iPoint;
+                c.m_point = iPoint;
+            }
+            else if (iPoint < m_iLast.m_point/2)
+            {
+                // Start from the beginning.
+                //
+                cursor_start(c);
+                while (  c.m_point < iPoint
+                      && cursor_next(c))
+                {
+                    ; // Nothing.
+                }
+            }
+            else
+            {
+                // Start from the end.
+                //
+                cursor_end(c);
+                while (  iPoint < c.m_point
+                      && cursor_prev(c))
+                {
+                    ; // Nothing.
+                }
+            }
+            return true;
+        }
+        return false;
+    }
+
+    inline bool cursor_from_byte(mux_cursor &c, LBUF_OFFSET iByte) const
+    {
+        if (iByte <= m_iLast.m_byte)
+        {
+            if (m_iLast.m_point == m_iLast.m_byte)
+            {
+                // Special case of ASCII.
+                //
+                c.m_byte  = iByte;
+                c.m_point = iByte;
+            }
+            else if (iByte < m_iLast.m_byte/2)
+            {
+                // Start from the beginning.
+                //
+                cursor_start(c);
+                while (  c.m_byte < iByte
+                      && cursor_next(c))
+                {
+                    ; // Nothing.
+                }
+            }
+            else
+            {
+                // Start from the end.
+                //
+                cursor_end(c);
+                while (  iByte < c.m_byte
+                      && cursor_prev(c))
+                {
+                    ; // Nothing.
+                }
+            }
+            return true;
+        }
+        return false;
+    }
+#endif // NEW_MUX_STRING
 
     friend class mux_words;
 };
