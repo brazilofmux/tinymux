@@ -445,7 +445,7 @@ static int get_slave_result(void)
         }
     }
 
-#if (_MSC_VER >= 1400)
+#if !defined(__INTEL_COMPILER) && (_MSC_VER >= 1400)
     if (sscanf_s((char *)ident, "%d , %d : %s : %s : %s", &remote_port, &local_port, 
                     token, MAX_STRING, os, MAX_STRING, userid, MAX_STRING) != 5)
 #else

@@ -1566,7 +1566,7 @@ static const UTF8 *ColorBinaryNormal
     bool bNoBleed = false
 )
 {
-    static const UTF8 *aBleed = T(COLOR_RESET);
+    static const UTF8 *aBleed   = T(COLOR_RESET);
     static const UTF8 *aNoBleed = T(COLOR_RESET COLOR_FG_WHITE);
 
     if (  csCurrent == CS_NORMAL
@@ -1576,9 +1576,16 @@ static const UTF8 *ColorBinaryNormal
         *nTransition = 0;
         return T("");
     }
-
-    *nTransition = bNoBleed ? sizeof(aNoBleed)-1 : sizeof(aBleed)-1;
-    return bNoBleed ? aNoBleed : aBleed;
+    else if (bNoBleed)
+    {
+        *nTransition = sizeof(aNoBleed) - 1;
+        return aNoBleed;
+    }
+    else
+    {
+        *nTransition = sizeof(aBleed) - 1;
+        return aBleed;
+    }
 }
 
 // Maximum binary transition length is:
@@ -1872,21 +1879,18 @@ void ANSI_String_Copy
                         pacOut->m_cs = pacIn->m_cs;
                     }
 
-                    // Handle single code point.
-                    //
-                    const UTF8 *p = utf8_NextCodePoint(pacIn->m_p);
-                    iCode = mux_color(p);
-                    pacOut->m_vw++;
-
                     // Copy visual code point.
                     //
-                    size_t nBytes = p - pacIn->m_p;
-                    memcpy((char *)pacOut->m_p, (char *)p, nBytes);
-                    pacIn->m_p     += nBytes;
-                    pacIn->m_n     -= nBytes;
-                    pacOut->m_p    += nBytes;
-                    pacOut->m_n    += nBytes;
-                    pacOut->m_nMax -= nBytes;
+                    pacOut->m_vw++;
+                    memcpy((char *)pacOut->m_p, (char *)pacIn->m_p, nCodePointBytes);
+                    pacIn->m_p     += nCodePointBytes;
+                    pacIn->m_n     -= nCodePointBytes;
+                    pacOut->m_p    += nCodePointBytes;
+                    pacOut->m_n    += nCodePointBytes;
+                    pacOut->m_nMax -= nCodePointBytes;
+
+                    const UTF8 *p = utf8_NextCodePoint(pacIn->m_p);
+                    iCode = mux_color(p);
                 }
                 else if (KBA_ABOVE_MINIMUM == iKnownAvailable)
                 {
@@ -2016,22 +2020,6 @@ size_t ANSI_TruncateToField
     ANSI_String_Out_Init(&aoc, pField0, nField, maxVisualWidth);
     ANSI_String_Copy(&aoc, &aic);
     return ANSI_String_Finalize(&aoc, pnVisualWidth);
-}
-
-UTF8 *ANSI_TruncateAndPad_sbuf(const UTF8 *pString, size_t nMaxVisualWidth, UTF8 fill)
-{
-    UTF8 *pStringModified = alloc_sbuf("ANSI_TruncateAndPad_sbuf");
-    size_t nAvailable = SBUF_SIZE - nMaxVisualWidth;
-    size_t nVisualWidth;
-    size_t nLen = ANSI_TruncateToField(pString, nAvailable,
-        pStringModified, nMaxVisualWidth, &nVisualWidth);
-    for (size_t i = nMaxVisualWidth - nVisualWidth; i > 0; i--)
-    {
-        pStringModified[nLen] = fill;
-        nLen++;
-    }
-    pStringModified[nLen] = '\0';
-    return pStringModified;
 }
 
 #define COLOR_CODE_NORMAL       1
@@ -4100,116 +4088,96 @@ UTF8 *mux_strtok_parse(MUX_STRTOK_STATE *tts)
     return p;
 }
 
-// This function will filter out any characters in the the set from
-// the string.
-//
-UTF8 *RemoveSetOfCharacters(UTF8 *pString, const UTF8 *pSetToRemove)
+mux_field StripTabsAndTruncate
+(
+    const UTF8 *pString,
+    UTF8 *pBuffer,
+    size_t nLength,
+    LBUF_OFFSET nWidth,
+    bool bPad,
+    UTF8 uchFill
+)
 {
-    static UTF8 Buffer[LBUF_SIZE];
-    UTF8 *pBuffer = Buffer;
+    mux_field  fldOutput(0, 0);
 
-    size_t nLen;
-    size_t nLeft = sizeof(Buffer) - 1;
-    UTF8 *p;
-    MUX_STRTOK_STATE tts;
-    mux_strtok_src(&tts, pString);
-    mux_strtok_ctl(&tts, pSetToRemove);
-    for ( p = mux_strtok_parseLEN(&tts, &nLen);
-          p && nLeft;
-          p = mux_strtok_parseLEN(&tts, &nLen))
-    {
-        if (nLeft < nLen)
-        {
-            nLen = nLeft;
-        }
-        memcpy(pBuffer, p, nLen);
-        pBuffer += nLen;
-        nLeft -= nLen;
-    }
-    *pBuffer = '\0';
-    return Buffer;
-}
-
-mux_cursor StripTabsAndTruncate(const UTF8 *pString, UTF8 *pBuffer, size_t nLength, LBUF_OFFSET nWidth, bool bStripTabs)
-{
-    mux_cursor iEnd;
-    if ( !pBuffer
+    if (  NULL == pBuffer
+       || NULL == pString
        || 0 == nLength
-       || 0 == nWidth)
+       || 0 == nWidth
+       || '\0' == pString[0])
     {
-        return CursorMin;
+        if (NULL != pBuffer)
+        {
+            pBuffer[0] = '\0';
+        }
+        return fldOutput;
     }
 
-    if (  !pString
-       || '\0' == pString[0]
-       || !utf8_strlen(pString, iEnd)
-       || 0 == iEnd.m_point)
+    if (nLength < nWidth)
     {
-        pBuffer[0] = '\0';
-        return CursorMin;
+        nWidth = static_cast<LBUF_OFFSET>(nLength);
     }
 
-    mux_cursor iPos;
-    bool bPrint = false;
-    LBUF_OFFSET nChar = 1, nCopied = 0;
+    mux_cursor curPos = CursorMin;
+    mux_field  fldLimit(nLength, nWidth);
+
+    const mux_field fldAscii(1, 1);
+    const mux_cursor curAscii(1, 1);
+    mux_field  fldTransition(0, 0);
     const UTF8 *pTransition = NULL;
-    size_t nNormal = 0;
+    size_t nNormalBytes = 0;
     ColorState cs = CS_NORMAL;
 
-    for ( iPos = CursorMin;
-          iPos < iEnd;
-          iPos(iPos.m_byte + nChar, iPos.m_point + (bPrint ? 1 : 0)))
+    while ('\0' != pString[curPos.m_byte])
     {
-        if (bStripTabs)
+        int iCode = mux_color(pString + curPos.m_byte);
+        if (COLOR_NOTCOLOR != iCode)
         {
-            switch (pString[iPos.m_byte])
-            {
-            case '\r':
-            case '\n':
-            case '\t':
-                nChar = 1;
-                bPrint = false;
-                continue;
-            }
+            cs = UpdateColorState(cs, iCode);
+            pTransition = ColorBinaryNormal(cs, &nNormalBytes);
+            fldTransition(nNormalBytes, 0);
+        }
+        else if (NULL != strchr("\r\n\t", pString[curPos.m_byte]))
+        {
+            curPos += curAscii;
+            continue;
         }
 
-        nChar = utf8_FirstByte[pString[iPos.m_byte]];
-        bPrint = mux_isprint(pString + iPos.m_byte);
-        if (!bPrint)
+        mux_cursor curPoint(utf8_FirstByte[pString[curPos.m_byte]], 1);
+        mux_field  fldPoint(utf8_FirstByte[pString[curPos.m_byte]], COLOR_NOTCOLOR == iCode ? 1 : 0);
+        if (fldOutput + fldPoint + fldTransition < fldLimit)
         {
-            int iCode = mux_color(pString + iPos.m_byte);
-            cs = UpdateColorState(cs, iCode);
-            pTransition = ColorBinaryNormal(cs, &nNormal);
-        }
-        if (  nCopied + nChar + nNormal < nLength
-           && iPos.m_point < nWidth)
-        {
-            memcpy(pBuffer + nCopied, pString + iPos.m_byte, nChar);
-            nCopied += nChar;
+            size_t j;
+            for (j = 0; j < fldPoint.m_byte; j++);
+            {
+                pBuffer[fldOutput.m_byte + j] = pString[curPos.m_byte + j];
+            }
+            fldOutput += fldPoint;
         }
         else
         {
-            if (  0 < nNormal
-               && nCopied + nNormal < nLength)
-            {
-                memcpy(pBuffer + nCopied, pTransition, nNormal);
-                nCopied += nNormal;
-            }
-            pBuffer[nCopied] = '\0';
-            iPos(nCopied, iPos.m_point);
-            return iPos;
+            break;
         }
+        curPos += curPoint;
     }
 
-    if (  0 < nNormal
-       && nCopied + nNormal < nLength)
+    if (  0 < nNormalBytes
+       && fldOutput + fldTransition < fldLimit)
     {
-        memcpy(pBuffer + nCopied, pTransition, nNormal);
-        nCopied += nNormal;
+        memcpy(pBuffer + fldOutput.m_byte, pTransition, nNormalBytes);
+        fldOutput += fldTransition;
     }
-    pBuffer[nCopied] = '\0';
-    iPos(nCopied, iPos.m_point);
-    return iPos;
+
+    if (bPad)
+    {
+        while (fldOutput < fldLimit)
+        {
+            pBuffer[fldOutput.m_byte] = uchFill;
+            fldOutput += fldAscii;
+        }
+    }
+    pBuffer[fldOutput.m_byte] = '\0';
+    return fldOutput;
 }
 
 void ItemToList_Init(ITL *p, UTF8 *arg_buff, UTF8 **arg_bufc,
@@ -5498,7 +5466,7 @@ void mux_string::edit(mux_string &sFrom, const mux_string &sTo)
               || '^' == sFrom.m_autf[1])
            && 2 == nFrom.m_byte)
         {
-            mux_cursor n = {1, 1};
+            mux_cursor n(1, 1);
             sFrom.delete_Chars(CursorMin, n);
             nFrom(nFrom.m_byte-1, nFrom.m_point-1);
         }
