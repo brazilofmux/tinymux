@@ -1539,7 +1539,11 @@ void do_restart(dbref executor, dbref caller, dbref enactor, int key)
         return;
     }
 
+#ifdef SSL_ENABLED
+    raw_broadcast(0, "GAME: Restart by %s, please wait.  (All SSL connections will be dropped.)", Moniker(Owner(executor)));
+#else
     raw_broadcast(0, "GAME: Restart by %s, please wait.", Moniker(Owner(executor)));
+#endif
     STARTLOG(LOG_ALWAYS, "WIZ", "RSTRT");
     log_text(T("Restart by "));
     log_name(executor);
@@ -1566,6 +1570,10 @@ void do_restart(dbref executor, dbref caller, dbref enactor, int key)
 
     CleanUpSlaveSocket();
     CleanUpSlaveProcess();
+
+#ifdef SSL_ENABLED
+    CleanUpSSLConnections();
+#endif
 
     Log.StopLogging();
 

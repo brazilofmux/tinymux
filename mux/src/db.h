@@ -48,11 +48,11 @@ struct atrlist
 UTF8 *MakeCanonicalAttributeName(const UTF8 *pName, size_t *pnName, bool *pbValid);
 UTF8 *MakeCanonicalAttributeCommand(const UTF8 *pName, size_t *pnName, bool *pbValid);
 
-typedef struct stack STACK;
+typedef struct stack MUX_STACK;
 struct stack
  {
     char *data;
-    STACK *next;
+    MUX_STACK *next;
 };
 
 extern ATTR *atr_num(int anum);
@@ -154,7 +154,7 @@ struct object
     POWER   powers2;    /* ALL: even more powers */
 
 #ifdef DEPRECATED
-    STACK   *stackhead; /* Every object has a stack. */
+    MUX_STACK   *stackhead; /* Every object has a stack. */
 #endif // DEPRECATED
 
     CLinearTimeDelta cpu_time_used; /* ALL: CPU time eaten */

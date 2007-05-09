@@ -4115,7 +4115,7 @@ FUNCTION(fun_lparent)
 static int stacksize(dbref doer)
 {
     int i;
-    STACK *sp;
+    MUX_STACK *sp;
     for (i = 0, sp = Stack(doer); sp != NULL; sp = sp->next, i++)
     {
         // Nothing
@@ -4131,7 +4131,7 @@ FUNCTION(fun_lstack)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    STACK *sp;
+    MUX_STACK *sp;
     dbref doer;
 
     if (nfargs == 0 || !*fargs[0])
@@ -4169,7 +4169,7 @@ void stack_clr(dbref obj)
 {
     // Clear the stack.
     //
-    STACK *sp, *next;
+    MUX_STACK *sp, *next;
     for (sp = Stack(obj); sp != NULL; sp = next)
     {
         next = sp->next;
@@ -4249,7 +4249,7 @@ FUNCTION(fun_peek)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    STACK *sp;
+    MUX_STACK *sp;
     dbref doer;
     int count, pos;
 
@@ -4352,8 +4352,8 @@ FUNCTION(fun_pop)
         return;
     }
 
-    STACK *sp = Stack(doer);
-    STACK *prev = NULL;
+    MUX_STACK *sp = Stack(doer);
+    MUX_STACK *prev = NULL;
     int count = 0;
     while (count != pos)
     {
@@ -4416,10 +4416,10 @@ FUNCTION(fun_push)
     }
     if (stacksize(doer) >= mudconf.stack_limit)
     {
-        safe_str("#-1 STACK SIZE EXCEEDED", buff, bufc);
+        safe_str("#-1 MUX_STACK SIZE EXCEEDED", buff, bufc);
         return;
     }
-    STACK *sp = (STACK *)MEMALLOC(sizeof(STACK));
+    MUX_STACK *sp = (MUX_STACK *)MEMALLOC(sizeof(MUX_STACK));
     ISOUTOFMEMORY(sp);
     sp->next = Stack(doer);
     sp->data = alloc_lbuf("push");

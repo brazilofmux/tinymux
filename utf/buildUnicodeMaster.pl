@@ -13,7 +13,33 @@ open(UNICODE,"< $unicodedata") || die("Eep, no UnicodeData.");
 
 while ($line = <UNICODE>)
 {
-    if ($line =~ /^([0-9A-F]+);(.*)/)
+    if ($line =~ /^([0-9A-F]+);<(.*), First>;(.*)/)
+    {
+        $range_point1 = $1;
+        $range_desc1 = $2;
+        $range_fields1 = $3;
+    }
+    elsif ($line =~ /^([0-9A-F]+);<(.*), Last>;(.*)/)
+    {
+        my $range_point2 = $1;
+        my $range_desc2 = $2;
+        my $range_fields2 = $3;
+        if (  $range_desc1 eq $range_desc2
+           && $range_fields1 eq $range_fields2)
+        {
+            my $codeval1 = hex $range_point1;
+            my $codeval2 = hex $range_point2;
+            for ($loop = $codeval1; $loop <= $codeval2; $loop++)
+            {
+                $codepoints[$loop] = "$range_desc1;$range_fields1";
+            }
+        }
+        else
+        {
+            print "***ERROR: $range_point1 does not agree with $range_point2\n";
+        }
+    }
+    elsif ($line =~ /^([0-9A-F]+);(.*)/)
     {
         $unicodeval = hex $1;
         $codepoints[$unicodeval] = $2;

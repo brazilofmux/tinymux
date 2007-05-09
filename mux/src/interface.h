@@ -21,6 +21,10 @@
 #endif // HAVE_SYS_SELECT_H
 #endif // !WIN32
 
+#ifdef SSL_ENABLED
+#include <openssl/ssl.h>
+#endif
+
 /* these symbols must be defined by the interface */
 
 /* Disconnection reason codes */
@@ -36,7 +40,8 @@
 #define R_GAMEDOWN  7   /* Not admitting users now */
 #define R_LOGOUT    8   /* Logged out w/o disconnecting */
 #define R_GAMEFULL  9   /* Too many players logged in */
-#define R_MAX       9
+#define R_RESTART   10  /* Restarting, and this socket cannot be preserved */
+#define R_MAX       10
 
 /* Logged out command table definitions */
 
@@ -124,6 +129,7 @@ struct prog_data
 #define TELNET_OLDENV '\x24'
 #define TELNET_ENV '\x27'
 #define TELNET_CHARSET '\x2A'
+#define TELNET_STARTTLS '\x2E'
 
 // Telnet Option Negotiation States
 //
@@ -142,6 +148,7 @@ struct prog_data
 #define TELNETSB_REQUEST        1
 #define TELNETSB_SEND           1
 #define TELNETSB_VALUE          1
+#define TELNETSB_FOLLOWS        1
 #define TELNETSB_INFO           2
 #define TELNETSB_ACCEPT         2
 #define TELNETSB_REPLY          2
@@ -216,6 +223,10 @@ struct descriptor_data
   UTF8 addr[51];
   UTF8 username[11];
   UTF8 doing[SIZEOF_DOING_STRING];
+
+#ifdef SSL_ENABLED
+  SSL *ssl_session;
+#endif
 };
 
 int HimState(DESC *d, unsigned char chOption);
@@ -234,9 +245,12 @@ extern DESC *descriptor_list;
 
 /* from the net interface */
 
+extern int mux_socket_write(DESC *d, const char* buffer, int nBytes, int flags);
+extern int mux_socket_read(DESC *d, char* buffer, int nBytes, int flags);
+
 extern void emergency_shutdown(void);
 extern void shutdownsock(DESC *, int);
-extern void SetupPorts(int *pnPorts, PortInfo aPorts[], IntArray *pia);
+extern void SetupPorts(int *pnPorts, PortInfo aPorts[], IntArray *pia, IntArray *piaSSL);
 #ifdef WIN32
 extern void shovechars9x(int nPorts, PortInfo aPorts[]);
 extern void shovecharsNT(int nPorts, PortInfo aPorts[]);
@@ -295,6 +309,7 @@ extern void handle_prog(DESC *d, UTF8 *message);
 //
 void record_login(dbref, bool, UTF8 *, UTF8 *, UTF8 *, UTF8 *);
 extern dbref connect_player(UTF8 *, UTF8 *, UTF8 *, UTF8 *, UTF8 *);
+
 
 #define DESC_ITER_PLAYER(p,d) \
     for (d=(DESC *)hashfindLEN(&(p), sizeof(p), &mudstate.desc_htab); d; d = d->hashnext)

@@ -182,6 +182,14 @@ struct confdata
     unsigned int    site_chars; // where to truncate site name.
 
     IntArray    ports;          // user ports.
+#ifdef SSL_ENABLED
+    IntArray    sslPorts;       // SSL ports
+    
+    // Due to OpenSSL requirements, these have to be char, NOT UTF8.  Sorry. :(
+    UTF8    ssl_certificate_file[128];      // SSL certificate file (.pem format)
+    UTF8    ssl_certificate_key[128];       // SSL certificate private key file (.pem format)
+    UTF8    ssl_certificate_password[128];  // SSL certificate private key password
+#endif
 
     UTF8    guest_prefix[32];   /* Prefix for the guest char's name */
     UTF8    guests_channel[32]; /* Name of guests channel */
