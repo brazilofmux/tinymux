@@ -1790,8 +1790,8 @@ void ANSI_String_Copy
     // respectively.
     //
     bool   bKnowTransitions = false;
-    size_t nTransitionInitial;
-    size_t nTransitionFinal;
+    size_t nTransitionInitial = 0;
+    size_t nTransitionFinal = 0;
 
     // Increasing knowledge of how far away we are from the constraints.
     //
@@ -5786,24 +5786,6 @@ void mux_string::import(const UTF8 *pStr, size_t nLen)
 size_t mux_string::length(void) const
 {
     return m_n;
-}
-
-void mux_string::prepend(const UTF8 cChar)
-{
-    size_t nMove = (m_n < LBUF_SIZE-1) ? m_n : LBUF_SIZE-2;
-
-    memmove(m_ach + 1, m_ach, nMove * sizeof(m_ach[0]));
-    m_ach[0] = cChar;
-
-    if (0 != m_ncs)
-    {
-        realloc_m_pcs(1 + nMove);
-        memmove(m_pcs + 1, m_pcs, nMove * sizeof(m_pcs[0]));
-        m_pcs[0] = CS_NORMAL;
-    }
-
-    m_n = 1 + nMove;
-    m_ach[m_n] = '\0';
 }
 
 void mux_string::prepend(dbref num)
