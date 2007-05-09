@@ -574,18 +574,14 @@ OBJENT object_types[8] =
 
 void init_flagtab(void)
 {
-    UTF8 *nbuf = alloc_sbuf("init_flagtab");
     for (FLAGNAMEENT *fp = gen_flag_names; fp->pOrigName; fp++)
     {
         fp->flagname = fp->pOrigName;
-        mux_strncpy(nbuf, fp->pOrigName, SBUF_SIZE-1);
-        mux_strlwr(nbuf);
-        if (!hashfindLEN(nbuf, strlen((char *)nbuf), &mudstate.flags_htab))
+        if (!hashfindLEN(fp->flagname, strlen((char *)fp->flagname), &mudstate.flags_htab))
         {
-            hashaddLEN(nbuf, strlen((char *)nbuf), fp, &mudstate.flags_htab);
+            hashaddLEN(fp->flagname, strlen((char *)fp->flagname), fp, &mudstate.flags_htab);
         }
     }
-    free_sbuf(nbuf);
 }
 
 /* ---------------------------------------------------------------------------
@@ -640,7 +636,7 @@ UTF8 *MakeCanonicalFlagName
 
     while (*pName && nName < SBUF_SIZE)
     {
-        *p = mux_tolower_ascii(*pName);
+        *p = mux_toupper_ascii(*pName);
         p++;
         pName++;
         nName++;
@@ -1354,7 +1350,6 @@ static bool flag_rename(UTF8 *alias, UTF8 *newname)
             {
                 MEMFREE(flag1->flagname);
             }
-            mux_strupr(pNewName);
             flag1->flagname = StringCloneLen(pNewName, nNewName);
 
             free_sbuf(pAlias);
