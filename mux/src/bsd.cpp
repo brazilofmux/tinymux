@@ -1006,7 +1006,7 @@ void CleanUpSSLConnections()
 
 #endif
 
-int mux_socket_write(DESC *d, const char *buffer, int nBytes, int flags)
+int mux_socket_write(DESC *d, const char *buffer, size_t nBytes, int flags)
 {
     int result;
     
@@ -1023,7 +1023,7 @@ int mux_socket_write(DESC *d, const char *buffer, int nBytes, int flags)
     return result;
 }
 
-int mux_socket_read(DESC *d, char *buffer, int nBytes, int flags)
+int mux_socket_read(DESC *d, char *buffer, size_t nBytes, int flags)
 {
     int result;
     

@@ -2002,7 +2002,7 @@ UTF8 *MakeCanonicalDoing(UTF8 *pDoing, size_t *pnValidDoing, bool *pbValidDoing)
     mux_field nDoing = StripTabsAndTruncate( pDoing, szFittedDoing,
                                               SIZEOF_DOING_STRING, WIDTHOF_DOING_STRING);
 
-    *pnValidDoing = nDoing.m_column;
+    *pnValidDoing = nDoing.m_byte;
     *pbValidDoing = true;
     return szFittedDoing;
 }

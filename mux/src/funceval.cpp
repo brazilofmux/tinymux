@@ -259,11 +259,11 @@ FUNCTION(fun_ansi)
         }
         safe_str(fargs[iArg0+1], tmp, &bp);
         *bp = '\0';
-        size_t nVisualWidth;
+
         size_t nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
-        size_t nLen = ANSI_TruncateToField(tmp, nBufferAvailable, *bufc,
-            LBUF_SIZE, &nVisualWidth);
-        *bufc += nLen;
+        mux_field fldLen = StripTabsAndTruncate( tmp, *bufc, nBufferAvailable,
+                                                 LBUF_SIZE);
+        *bufc += fldLen.m_byte;
     }
 }
 
@@ -1395,15 +1395,15 @@ FUNCTION(fun_table)
     size_t nCurrentCol = nNumCols - 1;
     for (;;)
     {
-        size_t nVisibleLength, nPaddingLength;
-        size_t nStringLength =
-            ANSI_TruncateToField( pCurrent, nBufferAvailable, *bufc,
-                                  nFieldWidth, &nVisibleLength);
+        mux_field fldLength = StripTabsAndTruncate( pCurrent, *bufc, nBufferAvailable,
+                                                    static_cast<LBUF_OFFSET>(nFieldWidth));
+        size_t nVisibleLength = fldLength.m_column;
+        size_t nStringLength = fldLength.m_byte;
 
         *bufc += nStringLength;
         nBufferAvailable -= nStringLength;
 
-        nPaddingLength = nFieldWidth - nVisibleLength;
+        size_t nPaddingLength = nFieldWidth - nVisibleLength;
         if (nPaddingLength > nBufferAvailable)
         {
             nPaddingLength = nBufferAvailable;
