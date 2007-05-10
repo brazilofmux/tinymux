@@ -22,6 +22,7 @@
 #include "powers.h"
 #include "vattr.h"
 #include "pcre.h"
+#include "modules.h"
 
 // Switch tables for the various commands.
 //
@@ -3776,9 +3777,34 @@ static void list_process(dbref player)
 }
 
 //----------------------------------------------------------------------------
+// list_modules
+//
+//
+static void list_modules(dbref executor)
+{
+#if defined(HAVE_DLOPEN) || defined(WIN32)
+    raw_notify(executor, T("Modules:"));
+    int i;
+    for (i = 0; ; i++)
+    {
+        MUX_MODULE_INFO ModuleInfo;
+        MUX_RESULT mr = mux_ModuleInfo(i, &ModuleInfo);
+        if (  MUX_FAILED(mr)
+           || MUX_S_FALSE == mr)
+        {
+            break;
+        }
+
+        raw_notify(executor, tprintf("%s (%s)", ModuleInfo.pName, ModuleInfo.bLoaded ? T("loaded") : T("unloaded")));
+    }
+#else
+    raw_notify(executor, T("Modules not enabled."));
+#endif
+}
+
+//----------------------------------------------------------------------------
 // list_rlevels
 //
-
 
 #ifdef REALITY_LVLS
 static void list_rlevels(dbref player)
@@ -3822,8 +3848,9 @@ static void list_rlevels(dbref player)
 #define LIST_BADNAMES   22
 #define LIST_RESOURCES  23
 #define LIST_GUESTS     24
+#define LIST_MODULES    25
 #ifdef REALITY_LVLS
-#define LIST_RLEVELS    25
+#define LIST_RLEVELS    26
 #endif
 
 NAMETAB list_names[] =
@@ -3843,6 +3870,7 @@ NAMETAB list_names[] =
     {T("globals"),            2,  CA_WIZARD,  LIST_GLOBALS},
     {T("hashstats"),          1,  CA_WIZARD,  LIST_HASHSTATS},
     {T("logging"),            1,  CA_GOD,     LIST_LOGGING},
+    {T("modules"),            1,  CA_WIZARD,  LIST_MODULES},
     {T("options"),            1,  CA_PUBLIC,  LIST_OPTIONS},
     {T("permissions"),        2,  CA_WIZARD,  LIST_PERMS},
     {T("powers"),             2,  CA_WIZARD,  LIST_POWERS},
@@ -3963,6 +3991,9 @@ void do_list(dbref executor, dbref caller, dbref enactor, int eval, int extra,
         break;
     case LIST_GUESTS:
         Guest.ListAll(executor);
+        break;
+    case LIST_MODULES:
+        list_modules(executor);
         break;
 #ifdef REALITY_LVLS
     case LIST_RLEVELS:

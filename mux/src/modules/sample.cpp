@@ -15,7 +15,13 @@
 static INT32 g_cComponents  = 0;
 static INT32 g_cServerLocks = 0;
 
-// The following two functions are for access by dlopen.
+#define NUM_CIDS 1
+static UINT64 cids[NUM_CIDS] =
+{
+    CID_Sample
+};
+
+// The following four functions are for access by dlopen.
 //
 extern "C" DCL_EXPORT MUX_RESULT mux_CanUnloadNow(void)
 {
@@ -55,6 +61,16 @@ extern "C" DCL_EXPORT MUX_RESULT mux_GetClassObject(UINT64 cid, UINT64 iid, void
         pSampleFactory->Release();
     }
     return mr;
+}
+
+extern "C" DCL_EXPORT MUX_RESULT mux_Register(void)
+{
+    return mux_RegisterClassObjects(NUM_CIDS, cids, NULL);
+}
+
+extern "C" DCL_EXPORT MUX_RESULT mux_Unregister(void)
+{
+    return mux_RevokeClassObjects(NUM_CIDS, cids);
 }
 
 // Sample component which is not directly accessible.

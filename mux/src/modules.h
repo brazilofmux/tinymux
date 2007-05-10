@@ -12,12 +12,17 @@
 
 typedef int MUX_RESULT;
 
-#define MUX_S_FALSE              (0)
-#define MUX_S_OK                 (1)
+#define MUX_S_OK                 (0)
+#define MUX_S_FALSE              (1)
 #define MUX_E_FAIL              (-1)
 #define MUX_E_OUTOFMEMORY       (-2)
 #define MUX_E_CLASSNOTAVAILABLE (-3)
 #define MUX_E_NOINTERFACE       (-4)
+#define MUX_E_NOTIMPLEMENTED    (-5)
+#define MUX_E_INVALIDARG        (-6)
+#define MUX_E_UNEXPECTED        (-7)
+#define MUX_E_NOTREADY          (-8)
+#define MUX_E_NOTFOUND          (-9)
 
 #define MUX_FAILED(x)    ((MUX_RESULT)(x) < 0)
 #define MUX_SUCCEEDED(x) (0 <= (MUX_RESULT)(x))
@@ -47,4 +52,30 @@ public:
     virtual MUX_RESULT LockServer(bool bLock) = 0;
 };
 
-MUX_RESULT mux_CreateInstance(UINT64 cid, UINT64 iid, void **ppv);
+extern "C"
+{
+    typedef MUX_RESULT FPGETCLASSOBJECT(UINT64 cid, UINT64 iid, void **ppv);
+}
+
+// APIs available to netmux and dynamic modules.
+//
+extern "C" DCL_EXPORT MUX_RESULT mux_CreateInstance(UINT64 cid, UINT64 iid, void **ppv);
+extern "C" DCL_EXPORT MUX_RESULT mux_RegisterClassObjects(int ncid, UINT64 acid[], FPGETCLASSOBJECT *pfGetClassObject);
+extern "C" DCL_EXPORT MUX_RESULT mux_RevokeClassObjects(int ncid, UINT64 acid[]);
+
+typedef struct
+{
+    const UTF8 *pName;
+    bool       bLoaded;
+} MUX_MODULE_INFO;
+
+// APIs intended only for use by netmux.
+//
+#ifdef WIN32
+extern "C" DCL_EXPORT MUX_RESULT mux_AddModule(const UTF8 aModuleName[], const UTF16 aFileName[]);
+#else
+extern "C" DCL_EXPORT MUX_RESULT mux_AddModule(const UTF8 aModuleName[], const UTF8 aFileName[]);
+#endif // WIN32
+extern "C" DCL_EXPORT MUX_RESULT mux_RemoveModule(const UTF8 aModuleName[]);
+extern "C" DCL_EXPORT MUX_RESULT mux_ModuleInfo(int iModule, MUX_MODULE_INFO *pModuleInfo);
+extern "C" DCL_EXPORT MUX_RESULT mux_ModuleTick(void);

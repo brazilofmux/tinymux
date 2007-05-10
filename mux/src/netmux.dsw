@@ -3,7 +3,7 @@ Microsoft Developer Studio Workspace File, Format Version 6.00
 
 ###############################################################################
 
-Project: "modmux"=.\modmux\modmux.dsp - Package Owner=<4>
+Project: "libmux"=.\libmux.dsp - Package Owner=<4>
 
 Package=<5>
 {{{
@@ -23,6 +23,9 @@ Package=<5>
 
 Package=<4>
 {{{
+    Begin Project Dependency
+    Project_Dep_Name libmux
+    End Project Dependency
 }}}
 
 ###############################################################################
@@ -35,6 +38,9 @@ Package=<5>
 
 Package=<4>
 {{{
+    Begin Project Dependency
+    Project_Dep_Name libmux
+    End Project Dependency
 }}}
 
 ###############################################################################

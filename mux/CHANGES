@@ -21,6 +21,7 @@ Major changes that may affect performance and require softcode tweaks:
     configuration options.  This is enabled with --enable-ssl.
  -- Add Telnet option STARTTLS to support secure connections.
     This is enabled with --enable-ssl.
+ -- Added infrastructure for dynamically-loadable modules.
 
 
 Feature Additions:
