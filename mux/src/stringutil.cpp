@@ -3070,15 +3070,20 @@ UTF8 *ConvertToUTF8(const char *p, size_t *pn)
 //
 void mux_strncpy(UTF8 *dest, const UTF8 *src, size_t nSizeOfBuffer)
 {
-    if (src == NULL) return;
-
-    UTF8 *tp = dest;
-    UTF8 *maxtp = dest + nSizeOfBuffer;
-    while (tp < maxtp && *src)
+    if (  NULL == src
+       || 0 == nSizeOfBuffer)
     {
-        *tp++ = *src++;
+        return;
     }
-    *tp = '\0';
+
+    size_t i = 0;
+    while (  i < nSizeOfBuffer
+          && '\0' != src[i])
+    {
+        dest[i] = src[i];
+        i++;
+    }
+    dest[i] = '\0';
 }
 
 bool matches_exit_from_list(UTF8 *str, const UTF8 *pattern)
@@ -4080,7 +4085,7 @@ mux_field StripTabsAndTruncate
     const UTF8 *pString,
     UTF8 *pBuffer,
     size_t nLength,
-    LBUF_OFFSET nWidth
+    size_t nWidth0
 )
 {
     mux_field  fldOutput(0, 0);
@@ -4088,16 +4093,18 @@ mux_field StripTabsAndTruncate
     if (  NULL == pBuffer
        || NULL == pString
        || 0 == nLength
-       || 0 == nWidth
+       || 0 == nWidth0
        || '\0' == pString[0])
     {
-        if (NULL != pBuffer)
+        if (  NULL != pBuffer
+           && 0 < nLength)
         {
             pBuffer[0] = '\0';
         }
         return fldOutput;
     }
 
+    LBUF_OFFSET nWidth = static_cast<LBUF_OFFSET>(nWidth0);
     if (nLength < nWidth)
     {
         nWidth = static_cast<LBUF_OFFSET>(nLength);
@@ -4277,7 +4284,10 @@ mux_field PadField( UTF8 *pBuffer, size_t nMaxBytes, LBUF_OFFSET nMinWidth,
         pBuffer[fldOutput.m_byte] = (UTF8)' ';
         fldOutput += fldAscii;
     }
-    pBuffer[fldOutput.m_byte] = '\0';
+    if (fldOutput.m_byte <= nMaxBytes)
+    {
+        pBuffer[fldOutput.m_byte] = '\0';
+    }
     return fldOutput;
 }
 
@@ -4944,199 +4954,6 @@ CF_HAND(cf_art_rule)
     return 0;
 }
 
-#if defined(FIRANMUX)
-
-UTF8 *linewrap_general(UTF8 *strret, int field, const UTF8 *left, const UTF8 *right)
-{
-    int tabsets[] =
-    {
-        1, 9, 17, 25, 33, 41, 49, 57, 65, 73, 81
-    };
-
-    int leftmargin = 1;
-    int rightmargin = 1+field;
-
-    int position = 1;
-    int index1 = 0;
-    int spacesleft;
-    bool space_eaten = true;
-    bool line_indented = false;
-    bool skip_out = false;
-
-    UTF8 *str = alloc_lbuf("linewrap_desc");
-    UTF8 *ostr = str;
-
-    const UTF8 *original = strret;
-
-    for (;;)
-    {
-        if (!original[index1])
-        {
-            break;
-        }
-
-        if (position == rightmargin)
-        {
-            line_indented = false;
-            space_eaten = false;
-            position = leftmargin;
-
-            safe_str(right, str, &ostr);
-            safe_str(T("\r\n"), str, &ostr);
-            continue;
-        }
-
-        if (position == leftmargin)
-        {
-            if (!line_indented)
-            {
-                safe_str(left, str, &ostr);
-                line_indented = true;
-            }
-
-            if (!space_eaten)
-            {
-                if (' ' == original[index1])
-                {
-                    index1++;
-                    space_eaten = true;
-                    continue;
-                }
-            }
-        }
-
-        spacesleft = rightmargin - position;
-        int index3 = index1;
-        while (original[index3])
-        {
-            if (ESC_CHAR == original[index3])
-            {
-                while (  original[index3]
-                      && original[index3++] != 'm')
-                {
-                    ; // Nothing.
-                }
-                continue;
-            }
-
-            if (mux_isspace(original[index3]))
-            {
-                break;
-            }
-            spacesleft--;
-            index3++;
-        }
-
-        if ((index3 - index1) > field)
-        {
-            skip_out = true;
-        }
-
-        if (mux_isspace(original[index1]))
-        {
-            skip_out = false;
-        }
-
-        if (!skip_out)
-        {
-            if (spacesleft < 0)
-            {
-                int loop;
-                for (loop = rightmargin - position; loop; loop--)
-                {
-                    safe_chr(' ', str, &ostr);
-                }
-                position = rightmargin;
-                continue;
-            }
-        }
-
-        switch (original[index1])
-        {
-        case ESC_CHAR:
-            do {
-                safe_chr(original[index1], str, &ostr);
-            } while (  original[index1++] != 'm'
-                    && original[index1]);
-            break;
-
-        case '\r':
-            {
-                int loop;
-                for (loop = rightmargin-position; loop; loop--)
-                {
-                    safe_chr(' ', str, &ostr);
-                }
-            }
-            position = rightmargin;
-            index1 = index1 + 2;
-            break;
-
-        case '\t':
-            {
-                int index3 = 0;
-                int difference = 0;
-
-                index1++;
-
-                for (;;)
-                {
-                    if (position < tabsets[index3])
-                    {
-                        break;
-                    }
-                    index3++;
-                }
-
-                difference = (rightmargin < tabsets[index3]) ?
-                    rightmargin - position : tabsets[index3] - position;
-
-                position = (rightmargin < tabsets[index3]) ?
-                    rightmargin : tabsets[index3];
-
-                for (; difference; difference--)
-                {
-                    safe_chr(' ', str, &ostr);
-                }
-
-                if (position == rightmargin)
-                {
-                    continue;
-                }
-                break;
-            }
-        default:
-            safe_chr(original[index1], str, &ostr);
-            index1++;
-            position++;
-            break;
-        }
-    }
-
-    int loop;
-    for (loop = rightmargin - position; loop; loop--)
-    {
-        safe_chr(' ', str, &ostr);
-    }
-
-    safe_str(right, str, &ostr);
-    *ostr = '\0';
-
-    UTF8 *bp = strret;
-    safe_str(str, strret, &bp);
-    *bp = '\0';
-
-    free_lbuf(str);
-    return strret;
-}
-
-UTF8 *linewrap_desc(UTF8 *str)
-{
-    return linewrap_general(str, 70, T("     "), T(""));
-}
-
-#endif // FIRANMUX
-
 /*! \brief Constructs mux_string object.
  *
  * This constructor puts the mux_string object into an initial, reasonable,
@@ -5710,7 +5527,7 @@ LBUF_OFFSET mux_string::export_Char_UTF8(size_t iFirst, UTF8 *pBuffer) const
 
     LBUF_OFFSET nBytes = utf8_FirstByte[m_autf[iFirst]];
 
-    if (UTF8_CONTINUE <= iFirst)
+    if (UTF8_CONTINUE <= nBytes)
     {
         if (NULL != pBuffer)
         {
@@ -6491,7 +6308,8 @@ bool mux_string::search
 (
     const UTF8 *pPattern,
     mux_cursor *iPos,
-    mux_cursor iStart
+    mux_cursor iStart,
+    mux_cursor iEnd
 ) const
 {
     // Strip ANSI from pattern.
@@ -6500,13 +6318,18 @@ bool mux_string::search
     UTF8 *pPatBuf = strip_color(pPattern, &nPat);
     const UTF8 *pTarget = m_autf + iStart.m_byte;
 
+    if (m_iLast < iEnd)
+    {
+        iEnd = m_iLast;
+    }
+
     size_t i = 0;
     bool bSucceeded = false;
     if (nPat == 1)
     {
         // We can optimize the single-character case.
         //
-        const unsigned char *p = (const unsigned char *)memchr(pTarget, pPatBuf[0], m_iLast.m_byte - iStart.m_byte);
+        const unsigned char *p = (const unsigned char *)memchr(pTarget, pPatBuf[0], iEnd.m_byte - iStart.m_byte);
         if (p)
         {
             i = p - pTarget;
@@ -6518,7 +6341,7 @@ bool mux_string::search
         // We have a multi-byte pattern.
         //
         bSucceeded = BMH_StringSearch(&i, nPat, pPatBuf,
-                                      m_iLast.m_byte - iStart.m_byte, pTarget);
+                                      iEnd.m_byte - iStart.m_byte, pTarget);
     }
 
     if (iPos)
@@ -6541,7 +6364,8 @@ bool mux_string::search
 (
     const mux_string &sPattern,
     mux_cursor *iPos,
-    mux_cursor iStart
+    mux_cursor iStart,
+    mux_cursor iEnd
 ) const
 {
     // Strip ANSI from pattern.
@@ -6550,11 +6374,15 @@ bool mux_string::search
 
     size_t i = 0;
     bool bSucceeded = false;
+    if (m_iLast < iEnd)
+    {
+        iEnd = m_iLast;
+    }
     if (1 == sPattern.m_iLast.m_byte)
     {
         // We can optimize the single-character case.
         //
-        const unsigned char *p = (const unsigned char *)memchr(pTarget, sPattern.m_autf[0], m_iLast.m_byte - iStart.m_byte);
+        const unsigned char *p = (const unsigned char *)memchr(pTarget, sPattern.m_autf[0], iEnd.m_byte - iStart.m_byte);
         if (p)
         {
             i = p - pTarget;
@@ -6566,7 +6394,7 @@ bool mux_string::search
         // We have a multi-byte pattern.
         //
         bSucceeded = BMH_StringSearch(&i, sPattern.m_iLast.m_byte, sPattern.m_autf,
-                                      m_iLast.m_byte - iStart.m_byte, pTarget);
+                                      iEnd.m_byte - iStart.m_byte, pTarget);
     }
 
     if (iPos)

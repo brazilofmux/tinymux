@@ -3535,11 +3535,13 @@ void load_restart_db(void)
             {
                 maxd = aMainGamePorts[i].socket + 1;
             }
+            if (3 <= version) {
 #ifdef SSL_ENABLED
-            aMainGamePorts[i].ssl = getref(f);
+                aMainGamePorts[i].ssl = getref(f);
 #else
-            getref(f); // Eat meaningless field
+                getref(f); // Eat meaningless field
 #endif
+            }
         }
     }
     else
@@ -3589,6 +3591,7 @@ void load_restart_db(void)
         memset(d->nvt_us_state, OPTION_NO, 256);
         d->raw_codepoint_length = 0;
         d->ttype = NULL;
+        d->encoding = CHARSET_LATIN1;
 #ifdef SSL_ENABLED
         d->ssl_session = NULL;
 #endif
