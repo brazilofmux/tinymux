@@ -4253,7 +4253,7 @@ FUNCTION(fun_peek)
     }
     if (pos > (stacksize(doer) - 1))
     {
-        safe_str("#-1 POSITION TOO LARGE", buff, bufc);
+        safe_str(T("#-1 POSITION TOO LARGE"), buff, bufc);
         return;
     }
     count = 0;
@@ -4314,7 +4314,7 @@ FUNCTION(fun_pop)
     }
     if (pos > (stacksize(doer) - 1))
     {
-        safe_str("#-1 POSITION TOO LARGE", buff, bufc);
+        safe_str(T("#-1 POSITION TOO LARGE"), buff, bufc);
         return;
     }
 
@@ -4382,7 +4382,7 @@ FUNCTION(fun_push)
     }
     if (stacksize(doer) >= mudconf.stack_limit)
     {
-        safe_str("#-1 MUX_STACK SIZE EXCEEDED", buff, bufc);
+        safe_str(T("#-1 STACK SIZE EXCEEDED"), buff, bufc);
         return;
     }
     MUX_STACK *sp = (MUX_STACK *)MEMALLOC(sizeof(MUX_STACK));
