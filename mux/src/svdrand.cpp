@@ -65,7 +65,7 @@ void SeedRandomNumberGenerator(void)
     // Win95.
     //
     bCryptoAPI = false;
-    HINSTANCE hAdvAPI32 = LoadLibrary("advapi32");
+    HINSTANCE hAdvAPI32 = LoadLibrary(L"advapi32");
     if (hAdvAPI32)
     {
         FCRYPTACQUIRECONTEXT *fpCryptAcquireContext;

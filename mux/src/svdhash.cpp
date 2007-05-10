@@ -1477,7 +1477,15 @@ bool CHashFile::CreateFileSet(const UTF8 *szDirFile, const UTF8 *szPageFile)
 
     bool bSuccess;
 #ifdef WIN32
-    m_hPageFile = CreateFile((char *)szPageFile, GENERIC_READ | GENERIC_WRITE,
+    size_t nFilename;
+    UTF16 *pFilename;
+    pFilename = ConvertFromUTF8ToUTF16(szPageFile, &nFilename);
+    if (NULL == pFilename)
+    {
+        return false;
+    }
+
+    m_hPageFile = CreateFile(pFilename, GENERIC_READ | GENERIC_WRITE,
         FILE_SHARE_READ, 0, CREATE_ALWAYS,
         FILE_ATTRIBUTE_NORMAL + FILE_FLAG_RANDOM_ACCESS, NULL);
     bSuccess = (INVALID_HANDLE_VALUE != m_hPageFile);
@@ -1491,7 +1499,13 @@ bool CHashFile::CreateFileSet(const UTF8 *szDirFile, const UTF8 *szPageFile)
     }
 
 #ifdef WIN32
-    m_hDirFile = CreateFile((char *)szDirFile, GENERIC_READ | GENERIC_WRITE,
+    pFilename = ConvertFromUTF8ToUTF16(szDirFile, &nFilename);
+    if (NULL == pFilename)
+    {
+        return false;
+    }
+
+    m_hDirFile = CreateFile(pFilename, GENERIC_READ | GENERIC_WRITE,
         FILE_SHARE_READ, 0, CREATE_ALWAYS,
         FILE_ATTRIBUTE_NORMAL + FILE_FLAG_SEQUENTIAL_SCAN, NULL);
     bSuccess = (INVALID_HANDLE_VALUE != m_hDirFile);
@@ -1667,7 +1681,15 @@ int CHashFile::Open(const UTF8 *szDirFile, const UTF8 *szPageFile, int nCachePag
     //
     bool bSuccess;
 #ifdef WIN32
-    m_hPageFile = CreateFile((char *)szPageFile, GENERIC_READ | GENERIC_WRITE,
+    size_t nFilename;
+    UTF16 *pFilename;
+    pFilename = ConvertFromUTF8ToUTF16(szPageFile, &nFilename);
+    if (NULL == pFilename)
+    {
+        return HF_OPEN_STATUS_ERROR;
+    }
+
+    m_hPageFile = CreateFile(pFilename, GENERIC_READ | GENERIC_WRITE,
         FILE_SHARE_READ, 0, OPEN_EXISTING,
         FILE_ATTRIBUTE_NORMAL + FILE_FLAG_RANDOM_ACCESS, NULL);
     bSuccess = (INVALID_HANDLE_VALUE != m_hPageFile);
@@ -1726,7 +1748,14 @@ int CHashFile::Open(const UTF8 *szDirFile, const UTF8 *szPageFile, int nCachePag
     // However, having it helps us to open faster.
     //
 #ifdef WIN32
-    m_hDirFile = CreateFile((char *)szDirFile, GENERIC_READ | GENERIC_WRITE,
+    bSuccess;
+    pFilename = ConvertFromUTF8ToUTF16(szDirFile, &nFilename);
+    if (NULL == pFilename)
+    {
+        return HF_OPEN_STATUS_ERROR;
+    }
+
+    m_hDirFile = CreateFile(pFilename, GENERIC_READ | GENERIC_WRITE,
         FILE_SHARE_READ, 0, OPEN_EXISTING,
         FILE_ATTRIBUTE_NORMAL + FILE_FLAG_SEQUENTIAL_SCAN, NULL);
     bSuccess = (INVALID_HANDLE_VALUE != m_hDirFile);
@@ -1738,7 +1767,7 @@ int CHashFile::Open(const UTF8 *szDirFile, const UTF8 *szPageFile, int nCachePag
         // The Directory doesn't exist, so we create it anew, and rebuild the
         // index.
 #ifdef WIN32
-        m_hDirFile = CreateFile((char *)szDirFile, GENERIC_READ | GENERIC_WRITE,
+        m_hDirFile = CreateFile(pFilename, GENERIC_READ | GENERIC_WRITE,
             FILE_SHARE_READ, 0, CREATE_ALWAYS,
             FILE_ATTRIBUTE_NORMAL + FILE_FLAG_SEQUENTIAL_SCAN, NULL);
         bSuccess = (INVALID_HANDLE_VALUE != m_hDirFile);
@@ -2818,7 +2847,14 @@ bool CLogFile::CreateLogFile(void)
 
     bool bSuccess;
 #ifdef WIN32
-    m_hFile = CreateFile((char *)m_szFilename, GENERIC_READ | GENERIC_WRITE,
+    size_t nFilename;
+    UTF16 *pFilename = ConvertFromUTF8ToUTF16(m_szFilename, &nFilename);
+    if (NULL == pFilename)
+    {
+        return false;
+    }
+
+    m_hFile = CreateFile(pFilename, GENERIC_READ | GENERIC_WRITE,
         FILE_SHARE_READ, 0, CREATE_ALWAYS,
         FILE_ATTRIBUTE_NORMAL + FILE_FLAG_SEQUENTIAL_SCAN, NULL);
     bSuccess = (INVALID_HANDLE_VALUE != m_hFile);
@@ -2834,7 +2870,14 @@ void CLogFile::AppendLogFile(void)
 
     bool bSuccess;
 #ifdef WIN32
-    m_hFile = CreateFile((char *)m_szFilename, GENERIC_READ | GENERIC_WRITE,
+    size_t nFilename;
+    UTF16 *pFilename = ConvertFromUTF8ToUTF16(m_szFilename, &nFilename);
+    if (NULL == pFilename)
+    {
+        return;
+    }
+
+    m_hFile = CreateFile(pFilename, GENERIC_READ | GENERIC_WRITE,
         FILE_SHARE_READ, 0, OPEN_ALWAYS,
         FILE_ATTRIBUTE_NORMAL + FILE_FLAG_SEQUENTIAL_SCAN, NULL);
     bSuccess = (INVALID_HANDLE_VALUE != m_hFile);

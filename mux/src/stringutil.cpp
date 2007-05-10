@@ -2745,13 +2745,6 @@ UTF8 *ConvertToUTF8
 )
 {
     static UTF8 buffer[6];
-    if (  UNI_SUR_HIGH_START <= ch
-       && ch <= UNI_SUR_LOW_END)
-    {
-        buffer[0] = '\0';
-        return buffer;
-    }
-
     const UTF32 byteMask = 0xBF;
     const UTF32 byteMark = 0x80;
 
@@ -2771,6 +2764,12 @@ UTF8 *ConvertToUTF8
     }
     else if (ch < (UTF32)0x10000)
     {
+        if (  UNI_SUR_HIGH_START <= ch
+           && ch <= UNI_SUR_LOW_END)
+        {
+            buffer[0] = '\0';
+            return buffer;
+        }
         buffer[3] = '\0';
         buffer[2] =static_cast<char>((ch | byteMark) & byteMask);
         ch >>= 6;
@@ -2788,6 +2787,38 @@ UTF8 *ConvertToUTF8
         buffer[1] = static_cast<char>((ch | byteMark) & byteMask);
         ch >>= 6;
         buffer[0] = static_cast<char>(0xF8 | ch);
+    }
+    return buffer;
+}
+
+UTF16 *ConvertToUTF16(UTF32 ch)
+{
+    static UTF16 buffer[3];
+    if (  ch < UNI_SUR_HIGH_START
+       || UNI_SUR_LOW_END < ch)
+    {
+        // This is the common case.
+        //
+        buffer[0] = (UTF16)ch;
+        buffer[1] = 0x0000;
+        return buffer;
+    }
+    else if (ch <= UNI_MAX_LEGAL_UTF32)
+    {
+        const int halfShift  = 10;
+        const UTF32 halfBase = 0x0010000UL;
+        const UTF32 halfMask = 0x3FFUL;
+
+        ch -= halfBase;
+        buffer[0] = (UTF16)((ch >> halfShift) + UNI_SUR_HIGH_START);
+        buffer[1] = (UTF16)((ch & halfMask) + UNI_SUR_LOW_START);
+        buffer[2] = 0x0000;
+        
+    }
+    else
+    {
+        buffer[0] = UNI_REPLACEMENT_CHAR;
+        buffer[1] = 0x0000;
     }
     return buffer;
 }
@@ -2856,6 +2887,61 @@ UTF32 ConvertFromUTF8(const UTF8 *pString)
     {
         return UNI_REPLACEMENT_CHAR;
     }
+}
+
+size_t ConvertFromUTF16(UTF16 *pString, UTF32 &ch)
+{
+    ch = pString[0];
+    if (  ch < UNI_SUR_HIGH_START
+       || UNI_SUR_LOW_END < ch)
+    {
+        // This is the most-common case.
+        //
+        return 1;
+    }
+    else if (ch <= UNI_SUR_HIGH_END) 
+    {
+        UTF32 ch2 = pString[1];
+        if (  UNI_SUR_LOW_START <= ch2
+           && ch2 <= UNI_SUR_LOW_END)
+        {
+            const int halfShift  = 10;
+            const UTF32 halfBase = 0x0010000UL;
+
+            ch = ((ch - UNI_SUR_HIGH_START) << halfShift)
+               + (ch2 - UNI_SUR_LOW_START)
+               + halfBase;
+            return 2;
+        }
+    }
+    ch = UNI_EOF;
+    return 0;
+}
+
+UTF16 *ConvertFromUTF8ToUTF16(const UTF8 *pString, size_t *pnString)
+{
+    static UTF16 buffer[2*LBUF_SIZE];
+    UTF16 *p = buffer;
+
+    *pnString = 0;
+    while ('\0' != *pString)
+    {
+        UTF32 ch = ConvertFromUTF8(pString);
+        if (UNI_EOF == ch)
+        {
+            return NULL;
+        }
+
+        UTF16 *q = ConvertToUTF16(ch);
+        while (0x0000 != *q)
+        {
+            *p++ = *q++;
+        }
+        pString = utf8_NextCodePoint(pString);
+    }
+    *p = '\0';
+    *pnString = p - buffer;
+    return buffer;
 }
 
 // We want to remove mal-formed ESC sequences completely and convert the

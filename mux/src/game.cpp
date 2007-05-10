@@ -3023,7 +3023,7 @@ int DCL_CDECL main(int argc, char *argv[])
 
     // Get a handle to the kernel32 DLL
     //
-    HINSTANCE hInstKernel32 = LoadLibrary("kernel32");
+    HINSTANCE hInstKernel32 = LoadLibrary(L"kernel32");
     if (!hInstKernel32)
     {
         Log.WriteString(T("LoadLibrary of kernel32 failed. Cannot use completion ports." ENDLINE));

@@ -1,8 +1,8 @@
 TinyMUX 2.7:  SQL
-Last Update:  March 2007
+Last Update:  April 2007
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-1) As of the present writing, TinyMUX 2.7's SQL support only encompasses 
+1) As of the present writing, TinyMUX 2.7's SQL support only encompasses
    the inline SQL functionality that PennMUSH and TinyMUSH 3.0 have, namely
    the sql() function.
 
@@ -12,7 +12,7 @@ Last Update:  March 2007
    tell configure where to find the headers and libraries with the
    --with-mysql-include and --with-mysql-libs options.  For instance:
 
-   ./configure --enable-inlinesql 
+   ./configure --enable-inlinesql
                --with-mysql-include=/usr/local/mysql/include
                --with-mysql-libs=/usr/local/mysql/lib
 

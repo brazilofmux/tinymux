@@ -46,7 +46,7 @@
 #define VISUAL       0x00100000  /* Everyone can see properties */
 #define IMMORTAL     0x00200000  /* Object can't be killed */
 #define HAS_STARTUP  0x00400000  /* Load some attrs at startup */
-#define TM_OPAQUE    0x00800000  /* Can't see inside */
+#define MUX_OPAQUE   0x00800000  /* Can't see inside */
 #define VERBOSE      0x01000000  /* Tells owner everything it does. */
 #define INHERIT      0x02000000  /* Gets owner's privs. (i.e. Wiz) */
 #define NOSPOOF      0x04000000  /* Report originator of all actions. */
@@ -116,7 +116,7 @@
 
 #define SITEMON      0x00000400      // Sitemonitor Flag
 #define CMDCHECK     0x00000800      // Has @icmd set
-#define UNICODE      0x00001000      // UTF-8 override flag
+#define MUX_UNICODE  0x00001000      // UTF-8 override flag
 #define MARK_0       0x00400000      // User-defined flags.
 #define MARK_1       0x00800000
 #define MARK_2       0x01000000
@@ -346,7 +346,7 @@ UTF8 *MakeCanonicalFlagName
                             Has_location(x) && Has_contents(x))
 #define Immortal(x)         ((Flags(x) & IMMORTAL) || \
                             ((Flags(Owner(x)) & IMMORTAL) && Inherits(x)))
-#define Opaque(x)           ((Flags(x) & TM_OPAQUE) != 0)
+#define Opaque(x)           ((Flags(x) & MUX_OPAQUE) != 0)
 #define Verbose(x)          ((Flags(x) & VERBOSE) != 0)
 #define Inherits(x)         (((Flags(x) & INHERIT) != 0) || \
                             ((Flags(Owner(x)) & INHERIT) != 0) || \
@@ -442,8 +442,8 @@ UTF8 *MakeCanonicalFlagName
 #define Html(x)             ((Flags2(x) & HTML) != 0)
 #define s_Html(x)           s_Flags((x), FLAG_WORD2, Flags2(x) | HTML)
 
-#define Unicode(x)          ((Flags3(x) & UNICODE) != 0)
-#define s_Unicode(x)        s_Flags((x), FLAG_WORD3, Flags3(x) | UNICODE)
+#define Unicode(x)          ((Flags3(x) & MUX_UNICODE) != 0)
+#define s_Unicode(x)        s_Flags((x), FLAG_WORD3, Flags3(x) | MUX_UNICODE)
 
 #if defined(FIRANMUX)
 #define Linewrap(x)   ((Flags3(x) & LINEWRAP) != 0)
