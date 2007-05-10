@@ -52,3 +52,8 @@ Last Update:  March 2007
 6) When users are connected via SSL ports or the TLS extension, their
    terminfo() output will reflect this by adding 'ssl' to the list of
    client features.
+
+7) Unfortunately, all SSL and TLS connections will be dropped whenever
+   the game is restarted with @restart, the SIGUSR1 signal, or by any
+   other means.  Restarting the game creates a new process that doesn't
+   have any of the OpenSSL state needed to continue encryption.
