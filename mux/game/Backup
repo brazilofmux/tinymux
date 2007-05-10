@@ -49,6 +49,7 @@ if [ $VERSION_LINE = "+X996099" ]; then
     cp $RECENT_DB $GAME_DB
 else
     if [ $VERSION_LINE = "+X1031939" ]; then
+        LD_LIBRARY_PATH=./bin; export LD_LIBRARY_PATH
         $BIN/dbconvert -d$DATA/$GDBM_DB -u -i$RECENT_DB -o$GAME_DB
     else
         echo "Unrecognized header in $RECENT_DB."
