@@ -661,6 +661,13 @@ extern "C" DCL_EXPORT MUX_RESULT mux_RegisterClassObjects(int ncid, UINT64 acid[
         g_nClassesAllocated = nAllocate;
     }
 
+    // If these classes are implemented in netmux, save the private GetClassObject method.
+    //
+    if (&g_NetmuxModule == pModule)
+    {
+        pModule->fpGetClassObject = fpGetClassObject;
+    }
+
     for (i = 0; i < ncid; i++)
     {
         ClassAdd(acid[i], pModule);
