@@ -2750,6 +2750,88 @@ int atr_head(dbref thing, unsigned char **attrp)
 #endif // MEMORY_BASED
 }
 
+attr_info::attr_info(void)
+{
+    m_object    = NOTHING;
+    m_attr      = NULL;
+    m_bValid    = false;
+    m_aowner    = NOTHING;
+    m_aflags    = 0;
+    m_bHaveInfo = false;
+}
+
+attr_info::attr_info(dbref object, ATTR *attr)
+{
+    m_aowner    = NOTHING;
+    m_aflags    = 0;
+    m_bHaveInfo = false;
+
+    m_object    = object;
+    m_attr      = attr;
+    m_bValid    = (Good_obj(object) && (NULL != attr));
+}
+
+attr_info::attr_info(dbref executor, const UTF8 *pTarget, bool bCreate, bool bDefaultMe)
+{
+    m_object    = NOTHING;
+    m_attr      = NULL;
+    m_bValid    = false;
+    m_aowner    = NOTHING;
+    m_aflags    = 0;
+    m_bHaveInfo = false;
+
+    if (isEmpty(pTarget))
+    {
+        return;
+    }
+    const UTF8 *pAttrName = NULL;
+    bool bHaveObject = parse_thing_slash(executor, pTarget, &pAttrName, &m_object);
+    if (!bHaveObject)
+    {
+        if (bDefaultMe)
+        {
+            m_object = executor;
+            pAttrName = pTarget;
+        }
+        else
+        {
+            m_object = match_thing(executor, pTarget);
+            return;
+        }
+    }
+    if (!isEmpty(pAttrName))
+    {
+        if (bCreate)
+        {
+            m_attr = atr_num(mkattr(executor, pAttrName));
+        }
+        else
+        {
+            m_attr = atr_str(pAttrName);
+        }
+        m_bValid = (m_attr != NULL);
+    }
+}
+
+bool attr_info::get_info(bool bParent)
+{
+    if (!m_bValid)
+    {
+        return false;
+    }
+
+    bool bHasAttr = false;
+    if (bParent)
+    {
+        bHasAttr = atr_pget_info(m_object, m_attr->number, &m_aowner, &m_aflags);
+    }
+    else
+    {
+        bHasAttr = atr_get_info(m_object, m_attr->number, &m_aowner, &m_aflags);
+    }
+    m_bHaveInfo = true;
+    return bHasAttr;
+}
 
 /* ---------------------------------------------------------------------------
  * db_grow: Extend the struct database.

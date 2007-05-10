@@ -91,7 +91,7 @@ LINK32=link.exe
 # PROP Default_Filter "cpp;c;cxx;rc;def;r;odl;idl;hpj;bat"
 # Begin Source File
 
-SOURCE=.\modules.cpp
+SOURCE=.\libmux.cpp
 # End Source File
 # End Group
 # Begin Group "Header Files"
@@ -99,7 +99,7 @@ SOURCE=.\modules.cpp
 # PROP Default_Filter "h;hpp;hxx;hm;inl"
 # Begin Source File
 
-SOURCE=.\modules.h
+SOURCE=.\libmux.h
 # End Source File
 # End Group
 # Begin Group "Resource Files"

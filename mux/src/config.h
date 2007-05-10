@@ -281,6 +281,8 @@ typedef UINT16 UTF16;
 #endif // WIN32
 typedef UINT32 UTF32;
 
+#define T(x)    ((const UTF8 *)x)
+
 #ifndef SMALLEST_INT_GTE_NEG_QUOTIENT
 #define LARGEST_INT_LTE_NEG_QUOTIENT
 #endif // !SMALLEST_INT_GTE_NEG_QUOTIENT
@@ -324,5 +326,11 @@ extern "C" unsigned int __intel_cpu_indicator;
 #if defined(HAVE_SETRLIMIT) && defined(RLIMIT_NOFILE)
 void init_rlimit(void);
 #endif // HAVE_SETRLIMIT RLIMIT_NOFILE
+
+#ifdef WIN32
+#define ENDLINE "\r\n"
+#else // WIN32
+#define ENDLINE "\n"
+#endif // WIN32
 
 #endif // !CONFIG_H

@@ -14,7 +14,7 @@
 #include "command.h"
 #include "mguests.h"
 #include "powers.h"
-#include "modules.h"
+#include "libmux.h"
 
 #define IS_CLEAN(i) (isGarbage(i) && Going(i) && \
              ((i) >= 0) && ((i) < mudstate.db_top) && \

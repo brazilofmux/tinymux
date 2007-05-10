@@ -79,6 +79,8 @@ src/install-sh
 src/interface.h
 src/levels.cpp
 src/levels.h
+src/libmux.cpp
+src/libmux.h
 src/local.cpp
 src/log.cpp
 src/look.cpp

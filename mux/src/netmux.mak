@@ -66,6 +66,7 @@ CLEAN :
 	-@erase "$(INTDIR)\mail.obj"
 	-@erase "$(INTDIR)\match.obj"
 	-@erase "$(INTDIR)\mguests.obj"
+	-@erase "$(INTDIR)\modules.obj"
 	-@erase "$(INTDIR)\move.obj"
 	-@erase "$(INTDIR)\muxcli.obj"
 	-@erase "$(INTDIR)\netcommon.obj"
@@ -151,6 +152,7 @@ LINK32_OBJS= \
 	"$(INTDIR)\mail.obj" \
 	"$(INTDIR)\match.obj" \
 	"$(INTDIR)\mguests.obj" \
+	"$(INTDIR)\modules.obj" \
 	"$(INTDIR)\move.obj" \
 	"$(INTDIR)\muxcli.obj" \
 	"$(INTDIR)\netcommon.obj" \
@@ -225,6 +227,7 @@ CLEAN :
 	-@erase "$(INTDIR)\mail.obj"
 	-@erase "$(INTDIR)\match.obj"
 	-@erase "$(INTDIR)\mguests.obj"
+	-@erase "$(INTDIR)\modules.obj"
 	-@erase "$(INTDIR)\move.obj"
 	-@erase "$(INTDIR)\muxcli.obj"
 	-@erase "$(INTDIR)\netcommon.obj"
@@ -315,6 +318,7 @@ LINK32_OBJS= \
 	"$(INTDIR)\mail.obj" \
 	"$(INTDIR)\match.obj" \
 	"$(INTDIR)\mguests.obj" \
+	"$(INTDIR)\modules.obj" \
 	"$(INTDIR)\move.obj" \
 	"$(INTDIR)\muxcli.obj" \
 	"$(INTDIR)\netcommon.obj" \
@@ -500,6 +504,11 @@ SOURCE=.\match.cpp
 SOURCE=.\mguests.cpp
 
 "$(INTDIR)\mguests.obj": $(SOURCE) "$(INTDIR)"
+
+
+SOURCE=.\modules.cpp
+
+"$(INTDIR)\modules.obj": $(SOURCE) "$(INTDIR)"
 
 
 SOURCE=.\move.cpp
