@@ -1109,13 +1109,13 @@ void do_query
         if (!( parse_attrib(executor, dbref_attr, &thing, &pattr)
             && pattr))
         {
-            notify_quiet(executor, "No match.");
+            notify_quiet(executor, T("No match."));
             return;
         }
 
         if (!Controls(executor, thing))
         {
-            notify_quiet(executor, NOPERM_MESSAGE);
+            notify_quiet(executor, T(NOPERM_MESSAGE));
             return;
         }
 
@@ -1124,7 +1124,7 @@ void do_query
 
         if (NULL == pQuery)
         {
-            notify(executor, "QUERY: No Query.");
+            notify(executor, T("QUERY: No Query."));
             return;
         }
 
@@ -1134,7 +1134,7 @@ void do_query
     }
     else
     {
-        notify_quiet(executor, "At least one query option is required.");
+        notify_quiet(executor, T("At least one query option is required."));
     }
 }
 #endif // QUERY_SLAVE
@@ -1317,7 +1317,7 @@ int CallBack_ShowSQLQueries(PTASK_RECORD p)
         }
         if (Show_bFirstLine)
         {
-            notify(Show_Player, "----- SQL Queries -----");
+            notify(Show_Player, T("----- SQL Queries -----"));
             Show_bFirstLine = false;
         }
         ShowPsLine(tmp);
