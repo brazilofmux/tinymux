@@ -273,12 +273,28 @@ void clearstrings(DESC *d)
         free_lbuf(d->output_prefix);
         d->output_prefix = NULL;
     }
+
     if (d->output_suffix)
     {
         free_lbuf(d->output_suffix);
         d->output_suffix = NULL;
     }
 }
+
+/*! \brief Add text to the output queue of the indicated network descriptor
+ *         without questions.
+ *
+ * This is private, lower-level helper function for adding a buffer to the
+ * output queue. Unlike queue_write_LEN(), it does not attempt to control or
+ * manage the output side of the network layer. It only changes the output
+ * queue to include the requested buffer.  The only function that should
+ * call this function is queue_write_LEN().
+ *
+ * \param d         Network descriptor state.
+ * \param b         buffer to add to the output queue.
+ * \param n         Number of bytes in buffer, b, to add to the output queue.
+ * \return          None.
+ */
 
 static void add_to_output_queue(DESC *d, const char *b, size_t n)
 {
@@ -287,7 +303,7 @@ static void add_to_output_queue(DESC *d, const char *b, size_t n)
 
     // Allocate an output buffer if needed.
     //
-    if (d->output_head == NULL)
+    if (NULL == d->output_head)
     {
         tp = (TBLOCK *)MEMALLOC(OUTPUT_BLOCK_SIZE);
         if (NULL != tp)
@@ -296,6 +312,7 @@ static void add_to_output_queue(DESC *d, const char *b, size_t n)
             tp->hdr.start = tp->data;
             tp->hdr.end = tp->data;
             tp->hdr.nchars = 0;
+            tp->hdr.flags = 0;
 
             d->output_head = tp;
             d->output_tail = tp;
@@ -316,10 +333,14 @@ static void add_to_output_queue(DESC *d, const char *b, size_t n)
     do
     {
         // See if there is enough space in the buffer to hold the
-        // string.  If so, copy it and update the pointers..
+        // string.  If so, copy it and update the pointers.
+        //
+        // We cannot update a buffer marked TBLK_FLAG_LOCKED.  If fact, we
+        // should not read or write to such a buffer in any fashion.
         //
         left = OUTPUT_BLOCK_SIZE - (tp->hdr.end - (UTF8 *)tp + 1);
-        if (n <= left)
+        if (  n <= left
+           && 0 == (tp->hdr.flags & TBLK_FLAG_LOCKED))
         {
             memcpy(tp->hdr.end, b, n);
             tp->hdr.end += n;
@@ -328,10 +349,11 @@ static void add_to_output_queue(DESC *d, const char *b, size_t n)
         }
         else
         {
-            // It didn't fit.  Copy what will fit and then allocate
-            // another buffer and retry.
+            // The buffer we have will not fit into the existing block.  Copy
+            // what will fit, allocate another buffer, and retry.
             //
-            if (left > 0)
+            if (  0 < left
+               && 0 == (tp->hdr.flags & TBLK_FLAG_LOCKED))
             {
                 memcpy(tp->hdr.end, b, left);
                 tp->hdr.end += left;
@@ -347,6 +369,7 @@ static void add_to_output_queue(DESC *d, const char *b, size_t n)
                 tp->hdr.start = tp->data;
                 tp->hdr.end = tp->data;
                 tp->hdr.nchars = 0;
+                tp->hdr.flags = 0;
 
                 d->output_tail->hdr.nxt = tp;
                 d->output_tail = tp;
@@ -360,17 +383,46 @@ static void add_to_output_queue(DESC *d, const char *b, size_t n)
     } while (n > 0);
 }
 
-/* ---------------------------------------------------------------------------
- * queue_write: Add text to the output queue for the indicated descriptor.
+/*! \brief Add text to the output queue of the indicated network descriptor.
+ *
+ * This is the network output interface available to the rest of the server.
+ * Above this point, we would typically find the Telnet negotiation, encoding,
+ * and parsing layer.  Below this point, there exists only input and output
+ * byte streams which may or may not use multi-threaded access to the network,
+ * may or may not use SSL, and must be resilient to platform interface
+ * concerns, abuse from the network, and the mis-match in flow rates between
+ * inside and outside.
+ *
+ * Since the network layer is necessarily dealing intimately with the outside,
+ * it necessarily has some hysteresis built into it so that on average, it's
+ * attention is spent on useful things, and postponable things are postponed.
+ *
+ * \param d         Network descriptor state.
+ * \param b         buffer to add to the output queue.
+ * \param n         Number of bytes in buffer, b, to add to the output queue.
+ * \return          None.
  */
 
 void queue_write_LEN(DESC *d, const char *b, size_t n)
 {
-    if (n <= 0)
+    if (0 == n)
     {
         return;
     }
 
+    // If the output queue has grown enough that it needs to be chopped, spend
+    // some time attempting to push at least some of it out. It may be that
+    // writes are already flowing out to the network, but we check anyway.
+    //
+    // TODO: The threshold for this should perhaps be lowered, but we should
+    // not lower it to the point that process_output is called on every call
+    // to queue_write_LEN(). Also, there may be an interaction with
+    // TBLK_FLAG_LOCKED in that part of the queue cannot be thrown away.  We
+    // should be carefull to avoid a state where process_output() is
+    // inadvertantly called on every queue_write_LEN() call. Finally, if we
+    // could know somehow that process_output() would be unproductive, then
+    // we wouldn't make even the following call.
+    //
     if (static_cast<size_t>(mudconf.output_limit) < d->output_size + n)
     {
         process_output(d, false);
@@ -378,8 +430,12 @@ void queue_write_LEN(DESC *d, const char *b, size_t n)
 
     if (static_cast<size_t>(mudconf.output_limit) < d->output_size + n)
     {
+        // If possible, some of the output queue needs to be thrown away in
+        // order to limit the output queue to the output_limit configuration
+        // option.
+        //
         TBLOCK *tp = d->output_head;
-        if (tp == NULL)
+        if (NULL == tp)
         {
             STARTLOG(LOG_PROBLEMS, "QUE", "WRITE");
             log_text(T("Flushing when output_head is null!"));
@@ -387,36 +443,68 @@ void queue_write_LEN(DESC *d, const char *b, size_t n)
         }
         else
         {
-            STARTLOG(LOG_NET, "NET", "WRITE");
-            UTF8 *buf = alloc_lbuf("queue_write.LOG");
-            mux_sprintf(buf, LBUF_SIZE, "[%u/%s] Output buffer overflow, %d chars discarded by ", d->descriptor, d->addr, tp->hdr.nchars);
-            log_text(buf);
-            free_lbuf(buf);
-            if (d->flags & DS_CONNECTED)
+            // We cannot modify TBLK_FLAG_LOCKED buffers for three reasons:
+            //
+            //   1) It breaks SSL,
+            //
+            //   2) We use this feature on the Win32 build to handle
+            //      asyncronous I/O, and for Win32 Async I/O, a program is not
+            //      allowed to read or write to a buffer involved in an
+            //      asyncronous I/O request, and
+            //
+            //   3) It is more proper when given an EWOULDBLOCK error to try
+            //      the same exact write request later than to extend the
+            //      request to something larger.
+            //
+#ifdef SSL_ENABLED
+            if (d->ssl_session)
             {
-                log_name(d->player);
+                tp->hdr.flags |= TBLK_FLAG_LOCKED;
             }
-            ENDLOG;
-            d->output_size -= tp->hdr.nchars;
-            d->output_head = tp->hdr.nxt;
-            d->output_lost += tp->hdr.nchars;
-            if (d->output_head == NULL)
+            else 
+#endif
+            if (0 == (tp->hdr.flags & TBLK_FLAG_LOCKED))
             {
-                d->output_tail = NULL;
+                STARTLOG(LOG_NET, "NET", "WRITE");
+                UTF8 *buf = alloc_lbuf("queue_write.LOG");
+                mux_sprintf(buf, LBUF_SIZE, "[%u/%s] Output buffer overflow, %d chars discarded by ",
+                    d->descriptor, d->addr, tp->hdr.nchars);
+                log_text(buf);
+                free_lbuf(buf);
+                if (d->flags & DS_CONNECTED)
+                {
+                    log_name(d->player);
+                }
+                ENDLOG;
+                d->output_size -= tp->hdr.nchars;
+                d->output_head = tp->hdr.nxt;
+                d->output_lost += tp->hdr.nchars;
+                if (d->output_head == NULL)
+                {
+                    d->output_tail = NULL;
+                }
+                MEMFREE(tp);
+                tp = NULL;
             }
-            MEMFREE(tp);
-            tp = NULL;
         }
     }
 
+    // Append the request to the end of the output queue for later transmission.
+    //
     add_to_output_queue(d, b, n);
     d->output_size += n;
     d->output_tot += n;
 
 #ifdef WIN32
+    // As part of the heuristics for good performance, we may not call
+    // process_output now, but if output is not flowing, we mark that output
+    // should be kick-started the next time shovechars() is looking at this
+    // descriptor.
+    //
     if (  bUseCompletionPorts
-       && !d->bWritePending
-       && !d->bConnectionDropped)
+       && !d->bConnectionDropped
+       && NULL != d->output_head
+       && 0 == (d->output_head->hdr.flags & TBLK_FLAG_LOCKED))
     {
         d->bCallProcessOutputLater = true;
     }

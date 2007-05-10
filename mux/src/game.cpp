@@ -3089,6 +3089,17 @@ int DCL_CDECL main(int argc, char *argv[])
     {
         Log.WriteString(T("Crypto API unavailable.\r\n"));
     }
+
+    if (bUseCompletionPorts)
+    {
+        process_output = process_output_ntio;
+    }
+    else
+    {
+        process_output = process_output_unix;
+    }
+#else // WIN32
+    process_output = process_output_unix;
 #endif // WIN32
 
     mudstate.start_time.GetLocal();
@@ -3250,12 +3261,10 @@ int DCL_CDECL main(int argc, char *argv[])
 #ifdef WIN32
     if (bUseCompletionPorts)
     {
-        process_output = process_outputNT;
         shovecharsNT(nMainGamePorts, aMainGamePorts);
     }
     else
     {
-        process_output = process_output9x;
         shovechars9x(nMainGamePorts, aMainGamePorts);
     }
 #else // WIN32
