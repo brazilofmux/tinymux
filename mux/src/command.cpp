@@ -1046,18 +1046,15 @@ bool check_access(dbref player, int mask)
  * Idea taken from TinyMUSH3, code from RhostMUSH, ported by Jake Nelson.
  * Hooks processed:  before, after, ignore, permit, fail
  *****************************************************************************/
-static bool process_hook(dbref executor, dbref thing, UTF8 *s_uselock, ATTR *hk_attr,
-                  bool save_flg)
+static bool process_hook(dbref executor, ATTR *hk_attr, bool save_flg)
 {
-    UNUSED_PARAMETER(s_uselock);
-
     bool retval = true;
     if (hk_attr)
     {
         dbref aowner;
         int aflags;
         int anum = hk_attr->number;
-        UTF8 *atext = atr_get("process_hook.1060", thing, anum, &aowner, &aflags);
+        UTF8 *atext = atr_get("process_hook.1060", mudconf.hook_obj, anum, &aowner, &aflags);
         if (atext[0] && !(aflags & AF_NOPROG))
         {
             reg_ref **preserve = NULL;
@@ -1068,7 +1065,7 @@ static bool process_hook(dbref executor, dbref thing, UTF8 *s_uselock, ATTR *hk_
             }
             UTF8 *buff, *bufc;
             bufc = buff = alloc_lbuf("process_hook");
-            mux_exec(atext, buff, &bufc, thing, executor, executor,
+            mux_exec(atext, buff, &bufc, mudconf.hook_obj, executor, executor,
                 AttrTrace(aflags, EV_FCHECK|EV_EVAL), NULL, 0);
             *bufc = '\0';
             if (save_flg)
@@ -1125,9 +1122,7 @@ static UTF8 *hook_name(const UTF8 *pCommand, int key)
         }
     }
 
-    UTF8 *s_uselock = alloc_sbuf("command_hook.hookname");
-    mux_sprintf(s_uselock, SBUF_SIZE, "%s_%s", keylet, cmdName);
-    return s_uselock;
+    return tprintf("%s_%s", keylet, cmdName);
 }
 
 /* ---------------------------------------------------------------------------
@@ -1169,7 +1164,6 @@ static void process_cmdent(CMDENT *cmdp, UTF8 *switchp, dbref executor, dbref ca
         return;
     }
 
-    UTF8 *s_uselock;
     UTF8 *buf1, *buf2, tchar, *bp, *str, *buff, *j, *new0;
     UTF8 *args[MAX_ARG];
     int nargs, i, interp, key, xkey, aflags;
@@ -1242,17 +1236,16 @@ static void process_cmdent(CMDENT *cmdp, UTF8 *switchp, dbref executor, dbref ca
         return;
     }
 
+    bool bGoodHookObj = (Good_obj(mudconf.hook_obj) && !Going(mudconf.hook_obj));
+
     // 'Before' hooks.
     // @hook idea from TinyMUSH 3, code from RhostMUSH. Ported by Jake Nelson.
     //
     if (  (cmdp->hookmask & HOOK_BEFORE)
-       && Good_obj(mudconf.hook_obj)
-       && !Going(mudconf.hook_obj))
+       && bGoodHookObj)
     {
-        s_uselock = hook_name(cmdp->cmdname, HOOK_BEFORE);
-        hk_ap2 = atr_str(s_uselock);
-        process_hook(executor, mudconf.hook_obj, s_uselock, hk_ap2, false);
-        free_sbuf(s_uselock);
+        hk_ap2 = atr_str(hook_name(cmdp->cmdname, HOOK_BEFORE));
+        process_hook(executor, hk_ap2, false);
     }
 
     // We are allowed to run the command.  Now, call the handler using
@@ -1573,15 +1566,11 @@ static void process_cmdent(CMDENT *cmdp, UTF8 *switchp, dbref executor, dbref ca
     // @hook idea from TinyMUSH 3, code from RhostMUSH. Ported by Jake Nelson.
     //
     if (  (cmdp->hookmask & HOOK_AFTER)
-        && Good_obj(mudconf.hook_obj)
-        && !Going(mudconf.hook_obj))
+        && bGoodHookObj)
     {
-        s_uselock = hook_name(cmdp->cmdname, HOOK_AFTER);
-        hk_ap2 = atr_str(s_uselock);
-        (void)process_hook(executor, mudconf.hook_obj, s_uselock, hk_ap2, false);
-        free_sbuf(s_uselock);
+        hk_ap2 = atr_str(hook_name(cmdp->cmdname, HOOK_AFTER));
+        process_hook(executor, hk_ap2, false);
     }
-    return;
 }
 
 static int cmdtest(dbref player, const UTF8 *cmd)
@@ -1646,59 +1635,29 @@ static int zonecmdtest(dbref player, const UTF8 *cmd)
     return i_ret;
 }
 
-static int higcheck(dbref executor, dbref caller, dbref enactor, CMDENT *cmdp,
-             const UTF8 *pCommand)
+static int higcheck(dbref executor, CMDENT *cmdp)
 {
-    UNUSED_PARAMETER(caller);
-    UNUSED_PARAMETER(enactor);
-    UNUSED_PARAMETER(pCommand);
-
-    if (  Good_obj(mudconf.hook_obj)
-       && !Going(mudconf.hook_obj))
+    ATTR *checkattr;
+    bool bResult;
+    if (cmdp->hookmask & HOOK_IGNORE)
     {
-        UTF8 *s_uselock;
-        ATTR *checkattr;
-        bool bResult;
-        if (cmdp->hookmask & HOOK_IGNORE)
+        checkattr = atr_str(hook_name(cmdp->cmdname, HOOK_IGNORE));
+        bResult = process_hook(executor, checkattr, true);
+        if (!bResult)
         {
-            s_uselock = hook_name(cmdp->cmdname, HOOK_IGNORE);
-            checkattr = atr_str(s_uselock);
-            bResult = process_hook(executor, mudconf.hook_obj, s_uselock,
-                checkattr, true);
-            free_sbuf(s_uselock);
-            if (!bResult)
-            {
-                return 2;
-            }
+            return 2;
         }
-        if (cmdp->hookmask & HOOK_PERMIT)
+    }
+    if (cmdp->hookmask & HOOK_PERMIT)
+    {
+        checkattr = atr_str(hook_name(cmdp->cmdname, HOOK_PERMIT));
+        bResult = process_hook(executor, checkattr, true);
+        if (!bResult)
         {
-            s_uselock = hook_name(cmdp->cmdname, HOOK_PERMIT);
-            checkattr = atr_str(s_uselock);
-            bResult = process_hook(executor, mudconf.hook_obj, s_uselock,
-                checkattr, true);
-            free_sbuf(s_uselock);
-            if (!bResult)
-            {
-                return 1;
-            }
+            return 1;
         }
     }
     return 0;
-}
-
-static void hook_fail(dbref executor, CMDENT *cmdp, const UTF8 *pCommand)
-{
-    UNUSED_PARAMETER(pCommand);
-
-    if (  Good_obj(mudconf.hook_obj)
-       && !Going(mudconf.hook_obj))
-    {
-        UTF8 *s_uselock = hook_name(cmdp->cmdname, HOOK_AFAIL);
-        ATTR *hk_ap2 = atr_str(s_uselock);
-        process_hook(executor, mudconf.hook_obj, s_uselock, hk_ap2, false);
-        free_sbuf(s_uselock);
-    }
 }
 
 // ---------------------------------------------------------------------------
@@ -1720,20 +1679,13 @@ UTF8 *process_command
     UTF8 *pOriginalCommand = arg_command;
     static UTF8 SpaceCompressCommand[LBUF_SIZE];
     static UTF8 LowerCaseCommand[LBUF_SIZE];
-    UTF8 *pCommand;
-    UTF8 *p, *q, *arg, *pSlash, *bp, check2[2];
-    const UTF8 *cmdsave;
-    int aflags;
-    dbref exit, aowner;
-    CMDENT *cmdp;
 
     // Robustify player.
     //
-    cmdsave = mudstate.debug_cmd;
+    const UTF8 *cmdsave = mudstate.debug_cmd;
     mudstate.debug_cmd = T("< process_command >");
     mudstate.nStackNest = 0;
     mudstate.bStackLimitReached = false;
-    *(check2 + 1) = '\0';
 
     mux_assert(pOriginalCommand);
 
@@ -1798,6 +1750,11 @@ UTF8 *process_command
     mudstate.debug_cmd = pOriginalCommand;
     mudstate.curr_cmd = preserve_cmd;
 
+    UTF8 *pCommand;
+    UTF8 *p, *q, *arg, *bp;
+    int aflags;
+    dbref exit, aowner;
+
     if (mudconf.space_compress)
     {
         // Compress out the spaces and use that as the command
@@ -1843,8 +1800,10 @@ UTF8 *process_command
     // HOME command.
     //
     UTF8 i = (UTF8)pCommand[0];
+    UTF8 check2[2] = {'\0', '\0'};
     int cval = 0;
     int hval = 0;
+    bool bGoodHookObj = (Good_obj(mudconf.hook_obj) && !Going(mudconf.hook_obj));
     if (  '\0' != i
        && NULL != prefix_cmds[i])
     {
@@ -1852,7 +1811,7 @@ UTF8 *process_command
         // Both from RhostMUSH.
         // cval/hval values: 0 normal, 1 disable, 2 ignore
         //
-        *check2 = i;
+        check2[0] = i;
         if (CmdCheck(executor))
         {
             cval = cmdtest(executor, check2);
@@ -1871,9 +1830,10 @@ UTF8 *process_command
             cval = zonecmdtest(executor, check2);
         }
 
-        if (prefix_cmds[i]->hookmask & (HOOK_IGNORE|HOOK_PERMIT))
+        if (  prefix_cmds[i]->hookmask & (HOOK_IGNORE|HOOK_PERMIT)
+           && bGoodHookObj)
         {
-            hval = higcheck(executor, caller, enactor, prefix_cmds[i], pCommand);
+            hval = higcheck(executor, prefix_cmds[i]);
         }
         else
         {
@@ -1886,9 +1846,11 @@ UTF8 *process_command
             if (  cval == 1
                || hval == 1)
             {
-                if (prefix_cmds[i]->hookmask & HOOK_AFAIL)
+                if (  prefix_cmds[i]->hookmask & HOOK_AFAIL
+                   && bGoodHookObj)
                 {
-                    hook_fail(executor, prefix_cmds[i], pCommand);
+                    ATTR *hk_ap2 = atr_str(hook_name(prefix_cmds[i]->cmdname, HOOK_AFAIL));
+                    process_hook(executor, hk_ap2, false);
                 }
                 else
                 {
@@ -2004,9 +1966,10 @@ UTF8 *process_command
             cval = zonecmdtest(executor, T("goto"));
         }
 
-        if (goto_cmdp->hookmask & (HOOK_IGNORE|HOOK_PERMIT))
+        if (  goto_cmdp->hookmask & (HOOK_IGNORE|HOOK_PERMIT)
+           && bGoodHookObj)
         {
-            hval = higcheck(executor, caller, enactor, goto_cmdp, T("goto"));
+            hval = higcheck(executor, goto_cmdp);
         }
         else
         {
@@ -2021,13 +1984,27 @@ UTF8 *process_command
             init_match_check_keys(executor, pCommand, TYPE_EXIT);
             match_exit_with_parents();
             exit = last_match_result();
+            bool bMaster = (NOTHING == exit);
+
+            if (bMaster)
+            {
+                // Check for an exit in the master room.
+                //
+                init_match_check_keys(executor, pCommand, TYPE_EXIT);
+                match_master_exit();
+                exit = last_match_result();
+            }
+
             if (exit != NOTHING)
             {
-                if (cval || hval)
+                if (  1 == cval
+                   || 1 == hval)
                 {
-                    if (goto_cmdp->hookmask & HOOK_AFAIL)
+                    if (  goto_cmdp->hookmask & HOOK_AFAIL
+                       && bGoodHookObj)
                     {
-                        hook_fail(executor, goto_cmdp, T("goto"));
+                        ATTR *hk_ap2 = atr_str(hook_name(goto_cmdp->cmdname, HOOK_AFAIL));
+                        process_hook(executor, hk_ap2, false);
                     }
                     else
                     {
@@ -2036,19 +2013,29 @@ UTF8 *process_command
                     mudstate.debug_cmd = cmdsave;
                     return preserve_cmd;
                 }
-                move_exit(executor, exit, false, T("You can't go that way."), 0);
-                mudstate.debug_cmd = cmdsave;
-                return preserve_cmd;
-            }
 
-            // Check for an exit in the master room.
-            //
-            init_match_check_keys(executor, pCommand, TYPE_EXIT);
-            match_master_exit();
-            exit = last_match_result();
-            if (exit != NOTHING)
-            {
-                move_exit(executor, exit, true, NULL, 0);
+                if (  (goto_cmdp->hookmask & HOOK_BEFORE)
+                   && bGoodHookObj)
+                {
+                    ATTR *hk_ap2 = atr_str(hook_name(goto_cmdp->cmdname, HOOK_BEFORE));
+                    process_hook(executor, hk_ap2, false);
+                }
+
+                if (!bMaster)
+                {
+                    move_exit(executor, exit, false, T("You can't go that way."), 0);
+                }
+                else
+                {
+                    move_exit(executor, exit, true, NULL, 0);
+                }
+
+                if (  (goto_cmdp->hookmask & HOOK_AFTER)
+                    && bGoodHookObj)
+                {
+                    ATTR *hk_ap2 = atr_str(hook_name(goto_cmdp->cmdname, HOOK_AFTER));
+                    process_hook(executor, hk_ap2, false);
+                }
                 mudstate.debug_cmd = cmdsave;
                 return preserve_cmd;
             }
@@ -2088,7 +2075,7 @@ UTF8 *process_command
 
     // Strip off any command switches and save them.
     //
-    pSlash = (UTF8 *)strchr((char *)LowerCaseCommand, '/');
+    UTF8 *pSlash = (UTF8 *)strchr((char *)LowerCaseCommand, '/');
     if (pSlash)
     {
         nLowerCaseCommand = pSlash - LowerCaseCommand;
@@ -2097,7 +2084,7 @@ UTF8 *process_command
 
     // Check for a builtin command (or an alias of a builtin command)
     //
-    cmdp = (CMDENT *)hashfindLEN(LowerCaseCommand, nLowerCaseCommand, &mudstate.command_htab);
+    CMDENT *cmdp = (CMDENT *)hashfindLEN(LowerCaseCommand, nLowerCaseCommand, &mudstate.command_htab);
 
     /* If command is checked to ignore NONMATCHING switches, fall through */
     if (cmdp)
@@ -2124,9 +2111,10 @@ UTF8 *process_command
             cval = zonecmdtest(executor, cmdp->cmdname);
         }
 
-        if (cmdp->hookmask & (HOOK_IGNORE|HOOK_PERMIT))
+        if (  cmdp->hookmask & (HOOK_IGNORE|HOOK_PERMIT)
+           && bGoodHookObj)
         {
-            hval = higcheck(executor, caller, enactor, cmdp, LowerCaseCommand);
+            hval = higcheck(executor, cmdp);
         }
         else
         {
@@ -2185,9 +2173,11 @@ UTF8 *process_command
             if (  cval == 1
                || hval == 1)
             {
-                if (cmdp->hookmask & HOOK_AFAIL)
+                if (  cmdp->hookmask & HOOK_AFAIL
+                   && bGoodHookObj)
                 {
-                    hook_fail(executor, cmdp, LowerCaseCommand);
+                    ATTR *hk_ap2 = atr_str(hook_name(cmdp->cmdname, HOOK_AFAIL));
+                    process_hook(executor, hk_ap2, false);
                 }
                 else
                 {
@@ -2281,9 +2271,10 @@ UTF8 *process_command
 
                 cmdp = (CMDENT *)hashfindLEN("leave", strlen("leave"), &mudstate.command_htab);
 
-                if (cmdp->hookmask & (HOOK_IGNORE|HOOK_PERMIT))
+                if (  cmdp->hookmask & (HOOK_IGNORE|HOOK_PERMIT)
+                   && bGoodHookObj)
                 {
-                    hval = higcheck(executor, caller, enactor, cmdp, T("leave"));
+                    hval = higcheck(executor, cmdp);
                 }
                 else
                 {
@@ -2296,9 +2287,11 @@ UTF8 *process_command
                     if (  cval == 1
                        || hval == 1)
                     {
-                        if (cmdp->hookmask & HOOK_AFAIL)
+                        if (  cmdp->hookmask & HOOK_AFAIL
+                           && bGoodHookObj)
                         {
-                            hook_fail(executor, cmdp, T("leave"));
+                            ATTR *hk_ap2 = atr_str(hook_name(cmdp->cmdname, HOOK_AFAIL));
+                            process_hook(executor, hk_ap2, false);
                         }
                         else
                         {
@@ -2307,7 +2300,23 @@ UTF8 *process_command
                         mudstate.debug_cmd = cmdsave;
                         return preserve_cmd;
                     }
+
+                    if (  (cmdp->hookmask & HOOK_BEFORE)
+                       && bGoodHookObj)
+                    {
+                        ATTR *hk_ap2 = atr_str(hook_name(cmdp->cmdname, HOOK_BEFORE));
+                        process_hook(executor, hk_ap2, false);
+                    }
+
                     do_leave(executor, caller, executor, 0);
+
+                    if (  (cmdp->hookmask & HOOK_AFTER)
+                        && bGoodHookObj)
+                    {
+                        ATTR *hk_ap2 = atr_str(hook_name(cmdp->cmdname, HOOK_AFTER));
+                        process_hook(executor, hk_ap2, false);
+                    }
+
                     mudstate.debug_cmd = cmdsave;
                     return preserve_cmd;
                 }
@@ -2350,9 +2359,10 @@ UTF8 *process_command
 
                     cmdp = (CMDENT *)hashfindLEN("enter", strlen("enter"), &mudstate.command_htab);
 
-                    if (cmdp->hookmask & (HOOK_IGNORE|HOOK_PERMIT))
+                    if (  cmdp->hookmask & (HOOK_IGNORE|HOOK_PERMIT)
+                       && bGoodHookObj)
                     {
-                        hval = higcheck(executor, caller, enactor, cmdp, T("enter"));
+                        hval = higcheck(executor, cmdp);
                     }
                     else
                     {
@@ -2365,9 +2375,11 @@ UTF8 *process_command
                         if (  cval == 1
                            || hval == 1)
                         {
-                            if (cmdp->hookmask & HOOK_AFAIL)
+                            if (  cmdp->hookmask & HOOK_AFAIL
+                               && bGoodHookObj)
                             {
-                                hook_fail(executor, cmdp, T("enter"));
+                               ATTR *hk_ap2 = atr_str(hook_name(cmdp->cmdname, HOOK_AFAIL));
+                               process_hook(executor, hk_ap2, false);
                             }
                             else
                             {
@@ -2376,7 +2388,22 @@ UTF8 *process_command
                             mudstate.debug_cmd = cmdsave;
                             return preserve_cmd;
                         }
+
+                        if (  (cmdp->hookmask & HOOK_BEFORE)
+                           && bGoodHookObj)
+                        {
+                            ATTR *hk_ap2 = atr_str(hook_name(cmdp->cmdname, HOOK_BEFORE));
+                            process_hook(executor, hk_ap2, false);
+                        }
+
                         do_enter_internal(executor, exit, false);
+
+                        if (  (cmdp->hookmask & HOOK_AFTER)
+                            && bGoodHookObj)
+                        {
+                            ATTR *hk_ap2 = atr_str(hook_name(cmdp->cmdname, HOOK_AFTER));
+                            process_hook(executor, hk_ap2, false);
+                        }
                         mudstate.debug_cmd = cmdsave;
                         return preserve_cmd;
                     }
