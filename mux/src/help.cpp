@@ -371,13 +371,13 @@ static bool ReportTopic(dbref executor, struct help_entry *htab_entry, int iHelp
         {
             line[len-1] = '\r';
             line[len  ] = '\n';
-            line[len+1] = '\0';
+            line[++len] = '\0';
         }
 
         bool bEval = mudstate.aHelpDesc[iHelpfile].bEval;
         if (bEval)
         {
-            mux_exec(line, result, &bp, executor, executor, executor,
+            mux_exec(line, len, result, &bp, executor, executor, executor,
                 EV_NO_COMPRESS | EV_FIGNORE | EV_EVAL, NULL, 0);
         }
         else

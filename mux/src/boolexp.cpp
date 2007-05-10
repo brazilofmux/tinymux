@@ -199,7 +199,7 @@ bool eval_boolexp(dbref player, dbref thing, dbref from, BOOLEXP *b)
             save_global_regs(preserve);
 
             buff2 = bp = alloc_lbuf("eval_boolexp");
-            mux_exec(buff, buff2, &bp, source, player, player,
+            mux_exec(buff, LBUF_SIZE-1, buff2, &bp, source, player, player,
                 AttrTrace(aflags, EV_FIGNORE|EV_EVAL|EV_FCHECK|EV_TOP),
                 NULL, 0);
             *bp = '\0';

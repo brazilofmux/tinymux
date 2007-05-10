@@ -478,9 +478,9 @@ static void look_exits(dbref player, dbref loc, const UTF8 *exit_name)
         preserve = PushRegisters(MAX_GLOBAL_REGS);
         save_and_clear_global_regs(preserve);
 
-        mux_exec(ExitFormat, FormatOutput, &tPtr, loc, player, player,
+        mux_exec(ExitFormat, LBUF_SIZE-1, FormatOutput, &tPtr, loc, player, player,
             AttrTrace(aflags, EV_FCHECK|EV_EVAL|EV_TOP),
-            &VisibleObjectList, 1);
+            (const UTF8 **)&VisibleObjectList, 1);
 
         restore_global_regs(preserve);
         PopRegisters(preserve, MAX_GLOBAL_REGS);
@@ -647,14 +647,14 @@ static void look_contents(dbref player, dbref loc, const UTF8 *contents_name, in
         UTF8 *FormatOutput = alloc_lbuf("look_contents.FO");
         tPtr = FormatOutput;
 
-        UTF8* ParameterList[] =
+        const UTF8 *ParameterList[] =
             { VisibleObjectList, ContentsNameScratch };
 
         reg_ref **preserve = NULL;
         preserve = PushRegisters(MAX_GLOBAL_REGS);
         save_and_clear_global_regs(preserve);
 
-        mux_exec(ContentsFormat, FormatOutput, &tPtr, loc, player, player,
+        mux_exec(ContentsFormat, LBUF_SIZE-1, FormatOutput, &tPtr, loc, player, player,
             AttrTrace(aflags, EV_FCHECK|EV_EVAL|EV_TOP),
             ParameterList, 2);
 
@@ -794,12 +794,12 @@ void decode_attr_flag_names(int aflags, UTF8 *buf, UTF8 **bufc)
     {
         if (aflags & pEntry->mask)
         {
-            safe_str(pEntry->name, buf, bufc);
             if (!bFirst)
             {
                 safe_chr(' ', buf, bufc);
             }
             bFirst = false;
+            safe_str(pEntry->name, buf, bufc);
         }
     }
 }
@@ -809,13 +809,13 @@ static void view_atr
     dbref player,
     dbref thing,
     ATTR *ap,
-    UTF8 *text,
+    const UTF8 *text,
     dbref aowner,
     int aflags,
     bool skip_tag
 )
 {
-    UTF8 *buf;
+    const UTF8 *buf;
 
     if (ap->flags & AF_IS_LOCK)
     {
@@ -1034,7 +1034,7 @@ static bool show_a_desc(dbref player, dbref loc)
         UTF8 *tbuf1 = atr_pget(loc, iDescDefault, &aowner2, &aflags2);
         UTF8 *temp = alloc_lbuf("look_description.ET");
         UTF8 *bp = temp;
-        mux_exec(tbuf1, temp, &bp, loc, player, player,
+        mux_exec(tbuf1, LBUF_SIZE-1, temp, &bp, loc, player, player,
             AttrTrace(aflags2, EV_FCHECK|EV_EVAL|EV_TOP),
             NULL, 0);
         *bp = '\0';
@@ -1044,10 +1044,10 @@ static bool show_a_desc(dbref player, dbref loc)
 
         safe_str(cattr->name, attrname, &cp);
         *cp = '\0';
-        UTF8* ParameterList[] =
+        const UTF8 *ParameterList[] =
             { temp, attrname };
 
-        mux_exec(DescFormat, FormatOutput, &tPtr, loc, player, player,
+        mux_exec(DescFormat, LBUF_SIZE-1, FormatOutput, &tPtr, loc, player, player,
             AttrTrace(aflags1, EV_FCHECK|EV_EVAL|EV_TOP),
             ParameterList, 2);
 
@@ -1266,7 +1266,7 @@ void look_in(dbref player, dbref loc, int key)
         preserve = PushRegisters(MAX_GLOBAL_REGS);
         save_and_clear_global_regs(preserve);
 
-        mux_exec(NameFormat, FormatOutput, &tPtr, loc, player, player,
+        mux_exec(NameFormat, LBUF_SIZE-1, FormatOutput, &tPtr, loc, player, player,
             AttrTrace(aflags, EV_FCHECK|EV_EVAL|EV_TOP),
             0, 0);
 

@@ -159,7 +159,7 @@ static void Task_RunQueueEntry(void *pEntry, int iUnused)
                     CLinearTimeDelta ltdUsageBegin = GetProcessorUsage();
 
                     UTF8 *log_cmdbuf = process_command(executor, point->caller,
-                        point->enactor, point->eval, false, cp, point->env,
+                        point->enactor, point->eval, false, cp, (const UTF8 **)point->env,
                         point->nargs);
 
                     CLinearTimeAbsolute ltaEnd;
@@ -693,7 +693,7 @@ static BQUE *setup_que
     int      eval,
     UTF8    *command,
     int      nargs,
-    UTF8    *args[],
+    const UTF8 *args[],
     reg_ref *sargs[]
 )
 {
@@ -845,7 +845,7 @@ void wait_que
     int      attr,
     UTF8    *command,
     int      nargs,
-    UTF8    *args[],
+    const UTF8 *args[],
     reg_ref *sargs[]
 )
 {
@@ -976,7 +976,7 @@ void do_wait
     int key,
     UTF8 *event,
     UTF8 *cmd,
-    UTF8 *cargs[],
+    const UTF8 *cargs[],
     int ncargs
 )
 {

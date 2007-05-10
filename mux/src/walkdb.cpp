@@ -18,8 +18,8 @@
 // Cmds run in low-prio Q after a 1 sec delay for the first one.
 //
 static void bind_and_queue(dbref executor, dbref caller, dbref enactor,
-                           int eval, UTF8 *action, UTF8 *argstr, UTF8 *cargs[],
-                           int ncargs, int number)
+                           int eval, UTF8 *action, UTF8 *argstr,
+                           const UTF8 *cargs[], int ncargs, int number)
 {
     UTF8 *command = replace_tokens(action, argstr, mux_ltoa_t(number), NULL);
     CLinearTimeAbsolute lta;
@@ -37,7 +37,7 @@ static void bind_and_queue(dbref executor, dbref caller, dbref enactor,
 // and /delimit allows specification of a delimiter.
 //
 void do_dolist(dbref executor, dbref caller, dbref enactor, int eval, int key,
-               UTF8 *list, UTF8 *command, UTF8 *cargs[], int ncargs)
+               UTF8 *list, UTF8 *command, const UTF8 *cargs[], int ncargs)
 {
     if (!list || *list == '\0')
     {
@@ -866,7 +866,7 @@ void search_perform(dbref executor, dbref caller, dbref enactor, SEARCH *parm)
             mux_ltoa(thing, buff+1);
             UTF8 *buff2 = replace_tokens(parm->s_rst_eval, buff, NULL, NULL);
             result = bp = alloc_lbuf("search_perform");
-            mux_exec(buff2, result, &bp, executor, caller, enactor,
+            mux_exec(buff2, LBUF_SIZE-1, result, &bp, executor, caller, enactor,
                 EV_FCHECK | EV_EVAL | EV_NOTRACE, NULL, 0);
             *bp = '\0';
             free_lbuf(buff2);
@@ -1149,7 +1149,7 @@ void do_markall(dbref executor, dbref caller, dbref enactor, int key)
 // do_apply_marked: Perform a command for each marked obj in the db.
 //
 void do_apply_marked( dbref executor, dbref caller, dbref enactor, int eval,
-                      int key, UTF8 *command, UTF8 *cargs[], int ncargs)
+                      int key, UTF8 *command, const UTF8 *cargs[], int ncargs)
 {
     UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(key);

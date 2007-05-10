@@ -34,10 +34,10 @@ UTF8 *modSpeech(dbref player, UTF8 *message, bool bWhich, UTF8 *command)
 
     UTF8 *new_message = alloc_lbuf("modspeech");
     UTF8 *t_ptr = new_message;
-    UTF8 *args[2];
+    const UTF8 *args[2];
     args[0] = message;
     args[1] = command;
-    mux_exec(mod, new_message, &t_ptr, player, player, player,
+    mux_exec(mod, LBUF_SIZE-1, new_message, &t_ptr, player, player, player,
         AttrTrace(aflags, EV_FCHECK|EV_EVAL|EV_TOP), args, 2);
     free_lbuf(mod);
     return new_message;
@@ -92,7 +92,7 @@ void do_think(dbref executor, dbref caller, dbref enactor, int eval, int key,
     UTF8 *buf, *bp;
 
     buf = bp = alloc_lbuf("do_think");
-    mux_exec(message, buf, &bp, executor, caller, enactor, eval|EV_FCHECK|EV_EVAL|EV_TOP,
+    mux_exec(message, LBUF_SIZE-1, buf, &bp, executor, caller, enactor, eval|EV_FCHECK|EV_EVAL|EV_TOP,
          NULL, 0);
     *bp = '\0';
     notify(executor, buf);
@@ -459,7 +459,7 @@ static void page_return(dbref player, dbref target, const UTF8 *tag,
     if (*str)
     {
         str2 = bp = alloc_lbuf("page_return");
-        mux_exec(str, str2, &bp, target, player, player,
+        mux_exec(str, LBUF_SIZE-1, str2, &bp, target, player, player,
              AttrTrace(aflags, EV_FCHECK|EV_EVAL|EV_TOP|EV_NO_LOCATION),
              NULL, 0);
         *bp = '\0';

@@ -1951,7 +1951,7 @@ void do_trigger(dbref executor, dbref caller, dbref enactor, int eval, int key,
         notify_quiet(executor, NOPERM_MESSAGE);
         return;
     }
-    did_it(executor, thing, 0, NULL, 0, NULL, pattr->number, 0, argv, nargs);
+    did_it(executor, thing, 0, NULL, 0, NULL, pattr->number, 0, (const UTF8 **)argv, nargs);
 
     if (key & TRIG_NOTIFY)
     {

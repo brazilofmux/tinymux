@@ -266,7 +266,7 @@ void do_teleport
 // do_force_prefixed: Interlude to do_force for the # command
 //
 void do_force_prefixed( dbref executor, dbref caller, dbref enactor, int eval,
-                        int key, UTF8 *command, UTF8 *args[], int nargs )
+                        int key, UTF8 *command, const UTF8 *args[], int nargs )
 {
     UTF8 *cp = parse_to(&command, ' ', 0);
     if (!command)
@@ -287,7 +287,7 @@ void do_force_prefixed( dbref executor, dbref caller, dbref enactor, int eval,
 // do_force: Force an object to do something.
 //
 void do_force( dbref executor, dbref caller, dbref enactor, int eval, int key,
-               UTF8 *what, UTF8 *command, UTF8 *args[], int nargs )
+               UTF8 *what, UTF8 *command, const UTF8 *args[], int nargs )
 {
     UNUSED_PARAMETER(enactor);
     UNUSED_PARAMETER(key);

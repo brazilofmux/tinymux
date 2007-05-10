@@ -14,8 +14,8 @@ typedef struct tagFun
 {
     const UTF8 *name;     // function name
     void (*fun)(UTF8 *buff, UTF8 **bufc, dbref executor, dbref caller,
-        dbref enactor, int eval, UTF8 *fargs[], int nfargs, UTF8 *cargs[],
-        int ncargs);  // handler
+        dbref enactor, int eval, UTF8 *fargs[], int nfargs,
+        const UTF8 *cargs[], int ncargs);  // handler
     int maxArgsParsed;// Maximum number of arguments parsed.
     int minArgs;      // Minimum number of args needed or expected
     int maxArgs;      // Maximum number of arguments permitted
@@ -75,7 +75,7 @@ bool delim_check
     dbref executor, dbref caller, dbref enactor,
     int   eval,
     UTF8 *fargs[], int nfargs,
-    UTF8 *cargs[], int ncargs,
+    const UTF8 *cargs[], int ncargs,
     int sep_arg, SEP *sep, int dflags
 );
 
@@ -92,7 +92,7 @@ int countwords(UTF8 *str, SEP *psep);
 #define FUNCTION(x) \
     void x(UTF8 *buff, UTF8 **bufc, dbref executor, dbref caller,     \
         dbref enactor, int eval, UTF8 *fargs[], int nfargs,           \
-        UTF8 *cargs[], int ncargs)
+        const UTF8 *cargs[], int ncargs)
 
 // This is for functions that take an optional delimiter character.
 //
@@ -102,7 +102,7 @@ int countwords(UTF8 *str, SEP *psep);
 
 #define XFUNCTION(x) void x(UTF8 *buff, UTF8 **bufc, dbref executor,    \
  dbref caller, dbref enactor, int eval, UTF8 *fargs[], int nfargs,      \
- UTF8 *cargs[], int ncargs)
+ const UTF8 *cargs[], int ncargs)
 
 // Interface for adding additional hardcode functions.
 //
