@@ -1700,7 +1700,7 @@ const char *ConvertToAscii(const UTF8 *pString)
 #define CS_NORMAL     (CS_FG_DEFAULT|CS_BG_DEFAULT)
 #define CS_NOBLEED    (CS_FG_WHITE|CS_BG_DEFAULT)
 
-const MUX_COLOR_SET aColors[COLOR_LAST_CODE+1] = 
+const MUX_COLOR_SET aColors[COLOR_LAST_CODE+1] =
 {
     { 0,             0,             "",            0,                       T(""),               0, T(""),    0}, // COLOR_NOTCOLOR
     { CS_NORMAL,     CS_ALLBITS,    ANSI_NORMAL,   sizeof(ANSI_NORMAL)-1,   T(COLOR_RESET),      3, T("%xn"), 3}, // COLOR_INDEX_RESET
@@ -5723,7 +5723,7 @@ LBUF_OFFSET mux_string::export_TextColor
     {
         return export_TextPlain(pBuffer, iStart, iEnd, nBytesMax);
     }
-    bool bPlentyOfRoom = (nBytesMax > 
+    bool bPlentyOfRoom = (nBytesMax >
         static_cast<size_t>(nBytesWanted + (COLOR_MAXIMUM_BINARY_TRANSITION_LENGTH * nPointsWanted) + COLOR_MAXIMUM_BINARY_NORMAL + 1));
     mux_cursor iPos = iStart, iCopy = iStart;
     size_t nTransition = 0;
@@ -5872,7 +5872,7 @@ UTF8 *mux_string::export_TextConverted
                     memcpy(Buffer + iOut, m_autf + iCopy.m_byte, nCopy);
                     iOut += nCopy;
                     iCopy = curIn;
-                }            
+                }
                 pTransition = ColorTransitionANSI( csPrev, csCurrent,
                                                    &nTransition, bNoBleed);
                 if (nTransition)

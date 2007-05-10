@@ -3366,7 +3366,7 @@ void do_cheader(dbref player, UTF8 *channel, UTF8 *header)
     // Optimize/terminate any ANSI in the string.
     //
     UTF8 NewHeader_ANSI[MAX_HEADER_LEN+1];
-    mux_field nLen = StripTabsAndTruncate( header, NewHeader_ANSI, 
+    mux_field nLen = StripTabsAndTruncate( header, NewHeader_ANSI,
                                             MAX_HEADER_LEN, MAX_HEADER_LEN);
     memcpy(ch->header, NewHeader_ANSI, nLen.m_byte + 1);
 }

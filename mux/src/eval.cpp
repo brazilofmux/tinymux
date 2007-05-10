@@ -990,7 +990,7 @@ const unsigned int ColorTable[256] =
     0,
     0,
     COLOR_INDEX_BG + COLOR_INDEX_WHITE,
-    
+
     // 0x58-0x5F
     //
     COLOR_INDEX_BG + COLOR_INDEX_BLACK,
@@ -1411,11 +1411,11 @@ void mux_exec( UTF8 *pdstr, UTF8 *buff, UTF8 **bufc, dbref executor,
                 if (  fp
                    && (fp->flags & FN_NOEVAL))
                 {
-                    feval = eval & ~(EV_EVAL|EV_TOP|EV_STRIP_CURLY);
+                    feval = eval & ~(EV_EVAL|EV_TOP|EV_FMAND|EV_STRIP_CURLY);
                 }
                 else
                 {
-                    feval = eval & ~EV_TOP;
+                    feval = eval & ~(EV_TOP|EV_FMAND);
                 }
 
                 UTF8 **fargs = PushPointers(MAX_ARG);
@@ -2122,13 +2122,13 @@ void mux_exec( UTF8 *pdstr, UTF8 *buff, UTF8 **bufc, dbref executor,
                     }
 
                     mux_exec(tbuf+i, buff, bufc, executor, caller, enactor,
-                        (eval & ~(EV_STRIP_CURLY | EV_FCHECK | EV_TOP)),
+                        (eval & ~(EV_STRIP_CURLY | EV_FCHECK | EV_FMAND | EV_TOP)),
                         cargs, ncargs);
                 }
                 else
                 {
                     mux_exec(tbuf, buff, bufc, executor, caller, enactor,
-                        eval & ~EV_TOP, cargs, ncargs);
+                        eval & ~(EV_TOP | EV_FMAND), cargs, ncargs);
                 }
                 tbuf[n] = ch;
                 nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;

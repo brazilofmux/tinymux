@@ -1576,6 +1576,17 @@ Related Topics: @name.
 
   Related Topics: @link, @unlink.
 
+& @EVAL
+@EVAL
+
+  COMMAND: @eval <arg>
+
+  This command does nothing other than evaluate <arg> which makes it useful
+  for side-effects functions.  It is unlike think in that the result is not
+  treated as a message and ^-listens are not matched on the result.
+
+  Related Topics: @@, think.
+
 & @EXITFORMAT
 @EXITFORMAT
 
@@ -3339,7 +3350,7 @@ Related Topics: @name.
   is only setable by a Wizard.
 
   In fact, the server has three overlapping constraints for developing
-  an upper limit per player on the number of oustanding commands in the
+  an upper limit per player on the number of outstanding commands in the
   queue.  This attribute is part of just one of these constraints.  The
   rules (in priority order) are:
 
@@ -4320,7 +4331,7 @@ ANSI
 ANSI CODES
 
         f - flash                       i - inverse
-        h - hilite                      n - normal
+        h - highlight                   n - normal
         u - underline
 
         x - black foreground            X - black background
@@ -4332,7 +4343,7 @@ ANSI CODES
         c - cyan foreground             C - cyan background
         w - white foreground            W - white background
 
-  For example, "ansi(fc, Test)" would hilight "Test" in flashing cyan.
+  For example, "ansi(fc, Test)" would highlight "Test" in flashing cyan.
 
   Related Topics: ansi(), ANSI SUBSTITUTION.
 
@@ -5290,14 +5301,14 @@ COMMANDS
   @@           @assert      @backup      @break       @cemit       @chown
   @chzone      @clone       @cpattr      @create      @decompile   @destroy
   @dig         @doing       @dolist      @drain       @edit        @email
-  @emit        @entrances   @femit       @find        @force       @fpose
-  @fsay        @halt        @htdesc      @if          @last        @link
-  @list        @listmotd    @lock        @mail        @mvattr      @name
-  @nemit       @notify      @npemit      @oemit       @open        @parent
-  @password    @pemit       @power       @program     @ps          @quitprogram
-  @quota       @remit       @robot       @search      @set         @stats
-  @sweep       @switch      @teleport    @timecheck   @trigger     @unlink
-  @unlock      @verb        @vrml_url    @wait        @wipe
+  @emit        @entrances   @eval        @femit       @find        @force
+  @fpose       @fsay        @halt        @htdesc      @if          @last
+  @link        @list        @listmotd    @lock        @mail        @mvattr
+  @name        @nemit       @notify      @npemit      @oemit       @open
+  @parent      @password    @pemit       @power       @program     @ps
+  @quitprogram @quota       @remit       @robot       @search      @set
+  @stats       @sweep       @switch      @teleport    @timecheck   @trigger
+  @unlink      @unlock      @verb        @vrml_url    @wait        @wipe
 
 { 'help commands2' for more }
 
@@ -6740,7 +6751,7 @@ FLAG LIST
     t - TRANSPARENT|   u - SUSPECT    |   v - VERBOSE    |   w - STAFF
     x - SLAVE      |   $ - SITEMON    |   z - CONTROL_OK |   ? - HEAD
     - - NOBLEED    |   | - VACATION   |   ~ - ASCII      |   ( - HTML
-                   |                  |       UNICODE    |           
+                   |                  |       UNICODE    |
   ------------------------------------------------------------------------
 
   (*) Note that these 'flags' are really types.  Also notice that THING
@@ -7104,7 +7115,7 @@ FUNCTION LIST (continued)
     STRCAT()    STRIP()     STRIPACCENTS()          STRIPANSI() STRLEN()
     STRMATCH()  STRMEM()    STRTRUNC()  SUB()       SUBEVAL()   SUBJ()
     SUCCESSES() SWITCH()    T()         TABLE()     TAN()       TEL()
-    TERMINFO()  TEXT()      TEXTFILE()  TIME()      TIMEFMT()   TRANSLATE() 
+    TERMINFO()  TEXT()      TEXTFILE()  TIME()      TIMEFMT()   TRANSLATE()
     TR()        TRIGGER()   TRIM()      TRUNC()     TXLEVEL()   TYPE()
     U()         UCSTR()     UDEFAULT()  ULOCAL()    UNPACK()    V()
     VADD()      VALID()     VCROSS()    VDIM()      VDOT()      VERSION()
@@ -7627,7 +7638,7 @@ HOST()
 
   FUNCTION: host(<player|port>)
 
-  Returns the hostname for <player|port> as seen on the SESSION report.
+  Returns the host name for <player|port> as seen on the SESSION report.
 
   If <player|port> is numeric, it's taken as a port number.  Otherwise, it's
   treated as a player name.  If the named player is connected more than once,
@@ -12423,10 +12434,10 @@ STEP()
   <list> is a <input delim>-separated list of strings (e.g., A B C).
 
   This is something of a cross between iter() and map() in that it breaks
-  the given <list> down into <step size> chunks and evalutes
+  the given <list> down into <step size> chunks and evaluates
   [<object>]/<attribute> passes these elements to <attribute> as arguments
   %0, %1, etc. The number of elements in <list> does not need to be
-  evenly-disible by <step size>.
+  evenly-divisible by <step size>.
 
   If no <input delim> is given, the default is a space. Likewise, if no
   <output delim> is given, the default is the <input delim>. The <step size>
@@ -12877,18 +12888,20 @@ TERMINFO()
 
   Returns a list with at least one element - the type of client used
   by the player, or "unknown" if the client being used doesn't support
-  being asked to identify itself using RFC 1091. 
-  
+  being asked to identify itself using RFC 1091.
+
   Other elements in the list describe client capabilities, and
   currently include:
+
   pueblo           present if the client is in Pueblo mode.
   telnet           present if the client understands the telnet protocol.
+  unicode          present if the client encoding is UTF-8.
 
-  Other fields may be added in the future; 'unicode' for clients that support
-  it, or 'mxp' for clients which support that, for instance.
+  Other fields may be added in the future; 'mxp' for clients which support
+  that, for instance.
 
   Players can use terminfo() on their own connections. Using it on
-  other players is restricted to wizards.  
+  other players is restricted to wizards.
 
 & TERSE
 TERSE
@@ -12953,6 +12966,8 @@ THINK
   substitution is performed. This is essentially equivalent to "@pemit
   me=<message>", but with "think", there is no prepended text. One possible
   use: "@adesc me=think --> %n(%#[flags(%#)]) just looked at you."
+
+  Related Topics: @eval.
 
 & THROW
 THROW
@@ -13156,7 +13171,7 @@ TR()
   same length after expansion of ranges. If a character exists more than
   once in <find>, only the last instance will be counted. The example
   below is the common ROT-13 algorithm for lower case strings, demonstrated
-  with every letter explicitly listed, and with the equivalent but briefer 
+  with every letter explicitly listed, and with the equivalent but briefer
   character ranges. Literal -'s can be in <find> and <replace> if they are not
   part of valid ranges. Valid ranges are of the forms a-z, A-Z, a-Z, and 0-9.
 

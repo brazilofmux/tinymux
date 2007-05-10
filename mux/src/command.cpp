@@ -607,6 +607,7 @@ static CMDENT_ONE_ARG command_table_one_arg[] =
     {T("@emit"),         emit_sw,    CA_LOCATION|CA_NO_GUEST|CA_NO_SLAVE,  SAY_EMIT,   CS_ONE_ARG|CS_INTERP,   0, do_say},
     {T("@enable"),       NULL,       CA_WIZARD,        GLOB_ENABLE,  CS_ONE_ARG,           0, do_global},
     {T("@entrances"),    NULL,       CA_NO_GUEST,                0,  CS_ONE_ARG|CS_INTERP, 0, do_entrances},
+    {T("@eval"),         NULL,       CA_NO_SLAVE,                0,  CS_ONE_ARG|CS_INTERP, 0, do_eval},
     {T("@find"),         NULL,       CA_PUBLIC,                  0,  CS_ONE_ARG|CS_INTERP, 0, do_find},
     {T("@halt"),         halt_sw,    CA_NO_SLAVE,                0,  CS_ONE_ARG|CS_INTERP, 0, do_halt},
     {T("@hook"),         hook_sw,    CA_GOD,                     0,  CS_ONE_ARG|CS_INTERP, 0, do_hook},
