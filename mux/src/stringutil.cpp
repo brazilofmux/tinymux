@@ -5431,7 +5431,7 @@ void mux_string::compress(const UTF8 *ch)
     LBUF_OFFSET nChar = utf8_FirstByte[ch[0]];
     LBUF_OFFSET k;
 
-    do
+    while (i < m_iLast)
     {
         if (m_autf[i.m_byte] == ch[0])
         {
@@ -5457,7 +5457,8 @@ void mux_string::compress(const UTF8 *ch)
                 delete_Chars(i, j);
             }
         }
-    } while (cursor_next(i));
+        cursor_next(i);
+    }
 }
 
 /*! \brief Compress each run of consecutive whitespace characters to a
@@ -5472,7 +5473,7 @@ void mux_string::compress(const UTF8 *ch)
 void mux_string::compress_Spaces(void)
 {
     mux_cursor i = CursorMin, j = CursorMin;
-    do
+    while (i < m_iLast)
     {
         if (mux_isspace(m_autf[i.m_byte]))
         {
@@ -5490,7 +5491,8 @@ void mux_string::compress_Spaces(void)
                 delete_Chars(i, j);
             }
         }
-    } while (cursor_next(i));
+    }
+    cursor_next(i);
 }
 
 /*! \brief Delete a range of characters.
@@ -5859,7 +5861,7 @@ UTF8 *mux_string::export_TextConverted
 
     if (bPlentyOfRoom)
     {
-        do
+        while (curIn < m_iLast)
         {
             csCurrent = m_pcs[curIn.m_point];
             if (csPrev != csCurrent)
@@ -5880,7 +5882,8 @@ UTF8 *mux_string::export_TextConverted
                 }
                 csPrev = csCurrent;
             }
-        } while (cursor_next(curIn));
+            cursor_next(curIn);
+        }
 
         if (iCopy < curIn)
         {
@@ -5901,7 +5904,7 @@ UTF8 *mux_string::export_TextConverted
     size_t nNeededAfter = 0;
     bool bNearEnd = false;
     LBUF_OFFSET nChar = 0;
-    do
+    while (curIn < m_iLast)
     {
         csCurrent = m_pcs[curIn.m_point];
         if (csPrev != csCurrent)
@@ -5947,7 +5950,8 @@ UTF8 *mux_string::export_TextConverted
         }
         memcpy(Buffer + iOut, m_autf + curIn.m_byte, nChar);
         iOut += nChar;
-    } while (cursor_next(curIn));
+        cursor_next(curIn);
+    }
 
     if (  csPrev != CS_NORMAL
        && iOut + nNormal < sizeof(Buffer))
