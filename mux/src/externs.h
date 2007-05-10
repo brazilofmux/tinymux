@@ -275,11 +275,6 @@ const UTF8 *mux_strerror(int errnum);
 int  cf_ntab_access(int *, UTF8 *, void *, UINT32, dbref, UTF8 *);
 
 /* From log.cpp */
-#ifdef WIN32
-#define ENDLINE "\r\n"
-#else // WIN32
-#define ENDLINE "\n"
-#endif // WIN32
 bool start_log(const UTF8 *primary, const UTF8 *secondary);
 void end_log(void);
 void log_perror(const UTF8 *, const UTF8 *,const UTF8 *,

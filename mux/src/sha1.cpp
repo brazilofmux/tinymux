@@ -154,22 +154,46 @@ void SHA1_Final(SHA1_CONTEXT *p)
 
 #if 0
 
-//#define TEST_STRING "abc"
-#define TEST_STRING "abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq"
+typedef struct
+{
+    const UTF8 *p;
+    UINT32   H[5];
+} sha1_test_vector;
+
+#define NUM_VECTORS 2
+sha1_test_vector vectors[NUM_VECTORS] =
+{
+    {
+        T("abc"),
+        { 0xA9993E36, 0x4706816A, 0xBA3E2571, 0x7850C26C, 0x9CD0D89D }
+    },
+    {
+        T("abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq"),
+        { 0x84983E44, 0x1C3BD26E, 0xBAAE4AA1, 0xF95129E5, 0xE54670F1 }
+    }
+};
+
 int main(int argc, char *argv[])
 {
-    char buffer[] = TEST_STRING;
-
-    SHA1_CONTEXT shac;
-    SHA1_Init(&shac);
-    SHA1_Compute(&shac, strlen(TEST_STRING), buffer);
-    SHA1_Final(&shac);
-
     int i;
-    for (i = 0; i < 5; i++)
+    for (i = 0; i < NUM_VECTORS; i++)
     {
-        printf("%08X", shac.H[i]);
+        SHA1_CONTEXT shac;
+        SHA1_Init(&shac);
+        SHA1_Compute(&shac, strlen((const char *)vectors[i].p), vectors[i].p);
+        SHA1_Final(&shac);
+
+        int j;
+        for (j = 0; j < 5; j++)
+        {
+            if (shac.H[j] != vectors[i].H[j])
+            {
+                printf("%s", T("Failed." ENDLINE));
+                return 0;
+            }
+        }
     }
+    printf("%s", T("Passed." ENDLINE));
     return 1;
 }
 

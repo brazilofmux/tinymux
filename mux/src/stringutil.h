@@ -8,7 +8,6 @@
 #ifndef STRINGUTIL_H
 #define STRINGUTIL_H
 
-#define T(x)            ((const UTF8 *)x)
 #define mux_strlen(x)   strlen((const char *)x)
 
 inline bool isEmpty(const UTF8 *p)

@@ -1,4 +1,4 @@
-sample.so: sample.cpp sample.h
+sample.so: sample.cpp sample.h ../autoconf.h ../config.h ../libmux.h ../modules.h
 	( if [ -f @MODULE_TARGET@ ]; then mv -f @MODULE_TARGET@ @MODULE_TARGET@~ ; fi )
 	g++ @MODULE_CPPFLAGS@ -o @MODULE_TARGET@ sample.cpp -L.. @MUX_LIBS@
 	( if [ -f @MODULE_TARGET@ ]; then cd ../../game/bin ; rm -f @MODULE_TARGET@ ; ln -s ../../src/modules/@MODULE_TARGET@ @MODULE_TARGET@ ; fi )

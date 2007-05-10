@@ -15,7 +15,7 @@
 #include "attrs.h"
 #include "command.h"
 #include "interface.h"
-#include "modules.h"
+#include "libmux.h"
 
 // ---------------------------------------------------------------------------
 // CONFPARM: Data used to find fields in CONFDATA.
