@@ -114,6 +114,8 @@ Bug Fixes:
     2.6 to 2.7.
  -- Rework SSL/TLS engine to use a TLS-specific context for STARTTLS,
     rather than reusing the SSLv3 context.
+ -- Properly terminate uses of mux_exec().  Most of these are protected by
+    EV_TOP or something else.
 
 
 Performance Enhancements:

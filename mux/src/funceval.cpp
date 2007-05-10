@@ -2253,8 +2253,9 @@ static void default_handler(UTF8 *buff, UTF8 **bufc, dbref executor,
 
                         mux_exec(fargs[i+2], LBUF_SIZE-1, xargs[i], &bp2,
                             thing, caller, enactor,
-                            eval|EV_STRIP_CURLY|EV_FCHECK|EV_EVAL,
+                            eval|EV_TOP|EV_STRIP_CURLY|EV_FCHECK|EV_EVAL,
                             cargs, ncargs);
+                        *bp2 = '\0';
                     }
 
                     mux_exec(atr_gotten, LBUF_SIZE-1, buff, bufc, thing, caller, enactor,

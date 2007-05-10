@@ -39,6 +39,7 @@ UTF8 *modSpeech(dbref player, UTF8 *message, bool bWhich, UTF8 *command)
     args[1] = command;
     mux_exec(mod, LBUF_SIZE-1, new_message, &t_ptr, player, player, player,
         AttrTrace(aflags, EV_FCHECK|EV_EVAL|EV_TOP), args, 2);
+    *t_ptr = '\0';
     free_lbuf(mod);
     return new_message;
 }

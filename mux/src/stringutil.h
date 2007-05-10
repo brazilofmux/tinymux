@@ -180,22 +180,24 @@ inline bool mux_isplayername(const unsigned char *p)
 
 // utf/tr_utf8_latin1.txt
 //
-// 1535 code points.
-// 73 states, 191 columns, 28142 bytes
+// 1596 code points.
+// 74 states, 191 columns, 28524 bytes
 //
 #define TR_LATIN1_START_STATE (0)
-#define TR_LATIN1_ACCEPTING_STATES_START (73)
+#define TR_LATIN1_ACCEPTING_STATES_START (74)
 extern const unsigned char tr_latin1_itt[256];
-extern const unsigned short tr_latin1_stt[73][191];
+extern const unsigned short tr_latin1_stt[74][191];
 const char *ConvertToLatin(const UTF8 *pString);
 
-// 1478 code points.
-// 69 states, 191 columns, 13435 bytes
+// utf/tr_utf8_ascii.txt
+//
+// 1541 code points.
+// 70 states, 191 columns, 13626 bytes
 //
 #define TR_ASCII_START_STATE (0)
-#define TR_ASCII_ACCEPTING_STATES_START (69)
+#define TR_ASCII_ACCEPTING_STATES_START (70)
 extern const unsigned char tr_ascii_itt[256];
-extern const unsigned char tr_ascii_stt[69][191];
+extern const unsigned char tr_ascii_stt[70][191];
 const char *ConvertToAscii(const UTF8 *pString);
 
 typedef struct
