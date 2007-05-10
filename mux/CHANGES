@@ -1,5 +1,5 @@
 TinyMUX 2.7:  CHANGES
-Last Update:  April 2007
+Last Update:  May 2007
 
 Major changes that may affect performance and require softcode tweaks:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -58,6 +58,8 @@ Feature Additions:
  -- Allow @hook to work on exits, enter aliases, and leave aliases.
     (Issue 235)
  -- Provide CLog module interface from netmux.
+ -- Pass log file sub-direction, LOGDIR, option in mux.config (and
+    muxconfig.vbs) through as a command-line option.
 
 
 Bug Fixes:
