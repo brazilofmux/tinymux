@@ -266,4 +266,21 @@ int GrowFiftyPercent(int x, int low, int high);
 #define DO_WHOLE_DB_BACKWARDS(thing) \
     for ((thing)=mudstate.db_top-1; (thing)>=0; (thing)--)
 
+class attr_info
+{
+public:
+    dbref   m_object;       // Object on which the attribute is stored
+    ATTR   *m_attr;         // Attribute this is an instance of
+    bool    m_bValid;       // Is this a valid object / attribute pair?
+
+    dbref   m_aowner;       // Attribute owner
+    int     m_aflags;       // Attribute flags
+    bool    m_bHaveInfo;    // Have we retrieved aowner and aflags yet?
+
+    attr_info(void);
+    attr_info(dbref object, ATTR *attr);
+    attr_info(dbref executor, const UTF8 *pTarget, bool bCreate = false, bool bDefaultMe = true);
+    bool get_info(bool bParent);
+};
+
 #endif // !__DB_H
