@@ -33,7 +33,9 @@ struct match_state
  */
 
 extern void init_match(dbref, const UTF8 *, int);
+extern void init_match(dbref, const UTF8 *, size_t, int);
 extern void init_match_check_keys(dbref, const UTF8 *, int);
+extern void init_match_check_keys(dbref, const UTF8 *, size_t, int);
 extern void match_player(void);
 extern void match_absolute(void);
 extern void match_me(void);
@@ -53,8 +55,9 @@ extern dbref noisy_match_result(void);
 extern void save_match_state(MSTATE *);
 extern void restore_match_state(MSTATE *);
 extern void match_zone_exit(void);
-extern dbref match_thing(dbref player, UTF8 *name);
-extern dbref match_thing_quiet(dbref player, UTF8 *name);
+extern dbref match_thing(dbref player, const UTF8 *name);
+extern dbref match_thing_quiet(dbref player, const UTF8 *name);
+extern dbref match_thing_quiet(dbref player, const UTF8 *name, size_t n);
 extern void safe_match_result(dbref it, UTF8 *buff, UTF8 **bufc);
 
 #define MAT_NO_EXITS        1   /* Don't check for exits */

@@ -1848,7 +1848,7 @@ static DCL_INLINE void makekey(dbref thing, int atr, Aname *abuff)
  * atr_encode: Encode an attribute string.
  */
 
-static UTF8 *atr_encode(UTF8 *iattr, dbref thing, dbref owner, int flags, int atr)
+static const UTF8 *atr_encode(const UTF8 *iattr, dbref thing, dbref owner, int flags, int atr)
 {
     UNUSED_PARAMETER(atr);
 
@@ -2246,7 +2246,7 @@ void atr_add_raw(dbref thing, int atr, const UTF8 *szValue)
     atr_add_raw_LEN(thing, atr, szValue, szValue ? strlen((char *)szValue) : 0);
 }
 
-void atr_add(dbref thing, int atr, UTF8 *buff, dbref owner, int flags)
+void atr_add(dbref thing, int atr, const UTF8 *buff, dbref owner, int flags)
 {
     set_modified(thing);
 
@@ -2281,7 +2281,7 @@ void atr_add(dbref thing, int atr, UTF8 *buff, dbref owner, int flags)
         mudstate.bfListens.Clear(thing);
         mudstate.bfCommands.Clear(thing);
 
-        UTF8 *tbuff = atr_encode(buff, thing, owner, flags, atr);
+        const UTF8 *tbuff = atr_encode(buff, thing, owner, flags, atr);
         atr_add_raw(thing, atr, tbuff);
     }
 }
@@ -3803,27 +3803,28 @@ void load_restart_db(void)
 
 int ReplaceFile(UTF8 *old_name, UTF8 *new_name)
 {
-    size_t nOldName;
     size_t nNewName;
-    UTF16 *pOldName;
     UTF16 *pNewName = ConvertFromUTF8ToUTF16(new_name, &nNewName);
-    if (NULL != pNewName)
+    if (NULL == pNewName)
     {
-        size_t n = (nNewName+1)*sizeof(UTF16);
-        UTF16 *p = (UTF16 *)MEMALLOC(n);
-        if (NULL == p)
-        {
-            return -1;
-        }
-        memcpy(p, pNewName, n);
-        pNewName = p;
+        return -1;
+    }
 
-        pOldName = ConvertFromUTF8ToUTF16(old_name, &nOldName);
-        if (NULL == pOldName)
-        {
-            MEMFREE(pNewName);
-            return -1;
-        }
+    size_t n = (nNewName+1) * sizeof(UTF16);
+    UTF16 *p = (UTF16 *)MEMALLOC(n);
+    if (NULL == p)
+    {
+        return -1;
+    }
+    memcpy(p, pNewName, n);
+    pNewName = p;
+
+    size_t nOldName;
+    UTF16 *pOldName = ConvertFromUTF8ToUTF16(old_name, &nOldName);
+    if (NULL == pOldName)
+    {
+        MEMFREE(pNewName);
+        return -1;
     }
 
     DeleteFile(pNewName);

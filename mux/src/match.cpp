@@ -113,37 +113,37 @@ static void promote_match(dbref what, int confidence)
  * * names are being matched.  It also removes inital and terminal spaces.
  */
 
-static UTF8 *munge_space_for_match(const UTF8 *name)
+static UTF8 *munge_space_for_match(const UTF8 *name, size_t n)
 {
     static UTF8 buffer[LBUF_SIZE];
 
-    const UTF8 *p = name;
+    size_t i = 0;
     UTF8 *q = buffer;
 
-    if (p)
+    if (NULL != name)
     {
         // Remove Initial spaces.
         //
-        while (mux_isspace(*p))
+        while (mux_isspace(name[i]))
         {
-            p++;
+            i++;
         }
 
-        while (*p)
+        while (i < n)
         {
-            while (  *p
-                  && !mux_isspace(*p))
+            while (  i < n
+                  && !mux_isspace(name[i]))
             {
-                safe_chr(*p, buffer, &q);
-                p++;
+                safe_chr(name[i], buffer, &q);
+                i++;
             }
 
-            while (mux_isspace(*p))
+            while (mux_isspace(name[i]))
             {
-                p++;
+                i++;
             }
 
-            if (*p)
+            if (i < n)
             {
                 safe_chr(' ', buffer, &q);
             }
@@ -620,7 +620,19 @@ void init_match(dbref player, const UTF8 *name, int type)
     md.pref_type = type;
     md.match = NOTHING;
     md.player = player;
-    md.string = munge_space_for_match(name);
+    md.string = munge_space_for_match(name, strlen((const char *)name));
+    md.absolute_form = absolute_name(true);
+}
+
+void init_match(dbref player, const UTF8 *name, size_t n, int type)
+{
+    md.confidence = -1;
+    md.count = 0;
+    md.check_keys = false;
+    md.pref_type = type;
+    md.match = NOTHING;
+    md.player = player;
+    md.string = munge_space_for_match(name, n);
     md.absolute_form = absolute_name(true);
 }
 
@@ -630,16 +642,29 @@ void init_match_check_keys(dbref player, const UTF8 *name, int type)
     md.check_keys = true;
 }
 
-dbref match_thing(dbref player, UTF8 *name)
+void init_match_check_keys(dbref player, const UTF8 *name, size_t n, int type)
+{
+    init_match(player, name, n, type);
+    md.check_keys = true;
+}
+
+dbref match_thing(dbref player, const UTF8 *name)
 {
     init_match(player, name, NOTYPE);
     match_everything(MAT_EXIT_PARENTS);
     return noisy_match_result();
 }
 
-dbref match_thing_quiet(dbref player, UTF8 *name)
+dbref match_thing_quiet(dbref player, const UTF8 *name)
 {
     init_match(player, name, NOTYPE);
+    match_everything(MAT_EXIT_PARENTS);
+    return match_result();
+}
+
+dbref match_thing_quiet(dbref player, const UTF8 *name, size_t n)
+{
+    init_match(player, name, n, NOTYPE);
     match_everything(MAT_EXIT_PARENTS);
     return match_result();
 }

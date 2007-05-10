@@ -81,7 +81,7 @@ void do_list_file(dbref executor, dbref caller, dbref enactor, int eval, int ext
     int flagvalue;
     if (!search_nametab(executor, list_files, arg, &flagvalue))
     {
-        display_nametab(executor, list_files, T("Unknown file.  Use one of:"), true);
+        display_nametab(executor, list_files, T("Unknown file.  Use one of"), true);
         return;
     }
     fcache_send(executor, flagvalue);
