@@ -4,10 +4,14 @@
  * $Id$
  *
  * To support loadable modules, we implement a poor man's COM. There is no
- * support for appartments, multiple threads, out of process servers, remote
- * servers, registry, or marshalling.  There is no RPC or sockets, and
- * most-likely, no opportunity to use any existing RPC tools for building
- * interfaces either.
+ * support for appartments, remote servers, registry.  There is no RPC or
+ * sockets, and most-likely, no opportunity to use any existing RPC tools for
+ * building interfaces either.
+ *
+ * There is currently no support for out of process servers or marshalling.
+ *
+ * There is no support for multiple threads, but methods are expected to be
+ * re-entrant.
  */
 
 typedef int MUX_RESULT;
