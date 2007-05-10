@@ -1,6 +1,7 @@
 game/data/netmux.db
 game/mux.config
 game/netmux.conf
+game/muxssl.conf
 game/text/badsite.txt
 game/text/connect.txt
 game/text/create_reg.txt
