@@ -13,7 +13,6 @@
 #include "config.h"
 #include "externs.h"
 
-#include "ansi.h"
 #include "attrs.h"
 #include "command.h"
 #include "powers.h"

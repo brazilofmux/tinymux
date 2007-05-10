@@ -17,13 +17,13 @@
 
 #include "autoconf.h"
 #include "config.h"
-#include "_build.h"
+#include "externs.h"
 
 #ifndef WIN32
 #include <netdb.h>
 #endif
 
-#include "externs.h"
+#include "_build.h"
 
 // Encode mail body such that CRLF.CRLF only appears at the end of the
 // message.  Here are some example transforms.

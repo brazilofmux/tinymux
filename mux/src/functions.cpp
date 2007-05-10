@@ -10,7 +10,6 @@
 #include "config.h"
 #include "externs.h"
 
-#include "ansi.h"
 #include "attrs.h"
 #include "command.h"
 #include "functions.h"
@@ -2904,7 +2903,7 @@ static FUNCTION(fun_extract)
         return;
     }
 
-    mux_string *sStr = new mux_string(fargs[0]);
+    mux_string *sStr = new mux_string(trim_space_sep(fargs[0], &sep));
     mux_words *words = NULL;
     try
     {
@@ -8491,10 +8490,8 @@ static UTF8 *expand_tabs(const UTF8 *str)
                 case '\n':
                     n = 0;
                     break;
-                case BEEP_CHAR:
-                    break;
                 default:
-                    if (mux_isprint(str + i))
+                    if (mux_haswidth(str + i))
                     {
                         n++;
                     }
@@ -10309,27 +10306,19 @@ static FUN builtin_function_list[] =
 
 void function_add(FUN *fp)
 {
-    UTF8 *buff = alloc_sbuf("init_functab");
-    UTF8 *bp = buff;
-    safe_sb_str(fp->name, buff, &bp);
-    *bp = '\0';
-    mux_strlwr(buff);
-    hashaddLEN(buff, strlen((char *)buff), fp, &mudstate.func_htab);
-    free_sbuf(buff);
+    size_t nCased;
+    UTF8 *pCased = mux_strupr(fp->name, nCased);
+    hashaddLEN(pCased, nCased, fp, &mudstate.func_htab);
 }
 
 void functions_add(FUN funlist[])
 {
-    UTF8 *buff = alloc_sbuf("init_functab");
     for (FUN *fp = funlist; fp->name; fp++)
     {
-        UTF8 *bp = buff;
-        safe_sb_str(fp->name, buff, &bp);
-        *bp = '\0';
-        mux_strlwr(buff);
-        hashaddLEN(buff, strlen((char *)buff), fp, &mudstate.func_htab);
+        size_t nCased;
+        UTF8 *pCased = mux_strupr(fp->name, nCased);
+        hashaddLEN(pCased, nCased, fp, &mudstate.func_htab);
     }
-    free_sbuf(buff);
 }
 
 void init_functab(void)
@@ -10357,6 +10346,7 @@ UTF8 *MakeCanonicalUserFunctionName(const UTF8 *pName, size_t *pnName, bool *pbV
 
     size_t nLen = 0;
     UTF8 *pNameStripped = strip_color(pName, &nLen);
+    UTF8 *pCased = mux_strupr(pNameStripped, nLen);
 
     // TODO: Fix truncation.
     //
@@ -10364,10 +10354,8 @@ UTF8 *MakeCanonicalUserFunctionName(const UTF8 *pName, size_t *pnName, bool *pbV
     {
         nLen = sizeof(Buffer)-1;
     }
-    memcpy(Buffer, pNameStripped, nLen);
+    memcpy(Buffer, pCased, nLen);
     Buffer[nLen] = '\0';
-
-    mux_strlwr(Buffer);
 
     *pnName = nLen;
     *pbValid = true;
@@ -10536,7 +10524,6 @@ void do_function
         }
 
         ufp->name = StringCloneLen(pName, nLen);
-        mux_strupr(ufp->name);
         ufp->obj = obj;
         ufp->atr = pattr->number;
         ufp->perms = CA_PUBLIC;
@@ -10616,7 +10603,7 @@ CF_HAND(cf_func_access)
     UTF8 *ap;
     for (ap = str; *ap && !mux_isspace(*ap); ap++)
     {
-        *ap = mux_tolower_ascii(*ap);
+        *ap = mux_toupper_ascii(*ap);
     }
     size_t nstr = ap - str;
 

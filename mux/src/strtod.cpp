@@ -138,7 +138,6 @@
 #include "autoconf.h"
 #include "config.h"
 #include "externs.h"
-#include "stringutil.h"
 
 #if   defined(HAVE_FPU_CONTROL_H)
 #include <fpu_control.h>

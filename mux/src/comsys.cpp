@@ -12,9 +12,6 @@
 #include "config.h"
 #include "externs.h"
 
-#include <sys/types.h>
-
-#include "ansi.h"
 #include "attrs.h"
 #include "command.h"
 #include "comsys.h"
@@ -2466,10 +2463,10 @@ void do_comlist
 #ifdef MUX_TABLE
     mux_display_table *Table = new mux_display_table(executor);
     Table->header_begin();
-    Table->column_add(T("Alias"), 9);
-    Table->column_add(T("Channel"), 18);
-    Table->column_add(T("Status"), 8);
-    Table->column_add(T("Title"), LBUF_SIZE, false, 0);
+    Table->column_add(T("Alias"), 9, 9);
+    Table->column_add(T("Channel"), 18, 18);
+    Table->column_add(T("Status"), 8, 8);
+    Table->column_add(T("Title"), 5, LBUF_SIZE, 0);
     Table->header_end();
     Table->body_begin();
 #else // MUX_TABLE
@@ -3417,18 +3414,18 @@ void do_chanlist
 #ifdef MUX_TABLE
     mux_display_table *Table = new mux_display_table(executor);
     Table->header_begin();
-    Table->column_add(T("*"), 1, false, 0);
-    Table->column_add(T("*"), 1, false, 0);
-    Table->column_add(T("*"), 1, false);
-    Table->column_add(T("Channel"), 13);
-    Table->column_add(T("Owner"), 15);
+    Table->column_add(T("*"), 1, 1, 0);
+    Table->column_add(T("*"), 1, 1, 0);
+    Table->column_add(T("*"), 1, 1);
+    Table->column_add(T("Channel"), 13, 13);
+    Table->column_add(T("Owner"), 15, 15);
     if (key & CLIST_HEADERS)
     {
-        Table->column_add(T("Header"), 45);
+        Table->column_add(T("Header"), 45, 45);
     }
     else
     {
-        Table->column_add(T("Description"), 45);
+        Table->column_add(T("Description"), 45, 45);
     }
     Table->header_end();
 #else // MUX_TABLE
@@ -3542,23 +3539,22 @@ void do_chanlist
                             (ch->type & (CHANNEL_LOUD)) ? 'L' : '-',
                             (ch->type & (CHANNEL_SPOOF)) ? 'S' : '-');
                         mux_field iPos(4, 4);
-                        mux_field nAscii(1, 1);
+
                         iPos += StripTabsAndTruncate( ch->name,
                                                       temp + iPos.m_byte,
                                                       (MBUF_SIZE-1) - iPos.m_byte,
-                                                      13, true);
-                        temp[iPos.m_byte] = ' ';
-                        iPos += nAscii;
+                                                      13);
+                        iPos = PadField(temp, MBUF_SIZE-1, 18, iPos);
                         iPos += StripTabsAndTruncate( Moniker(ch->charge_who),
                                                       temp + iPos.m_byte,
                                                       (MBUF_SIZE-1) - iPos.m_byte,
-                                                      15, true);
-                        temp[iPos.m_byte] = ' ';
-                        iPos += nAscii;
+                                                      15);
+                        iPos = PadField(temp, MBUF_SIZE-1, 34, iPos);
                         iPos += StripTabsAndTruncate( pBuffer,
                                                       temp + iPos.m_byte,
                                                       (MBUF_SIZE-1) - iPos.m_byte,
-                                                      45, true);
+                                                      45);
+                        iPos = PadField(temp, MBUF_SIZE-1, 79, iPos);
 
                         raw_notify(executor, temp);
                         free_mbuf(temp);

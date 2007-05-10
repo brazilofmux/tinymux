@@ -20,13 +20,13 @@
 #include "config.h"
 #include "externs.h"
 
+#include "ansi.h"
 #include "attrs.h"
 #include "command.h"
 #include "comsys.h"
 #include "interface.h"
 #include "powers.h"
 #include "vattr.h"
-#include "ansi.h"
 
 #ifndef O_ACCMODE
 #define O_ACCMODE   (O_RDONLY|O_WRONLY|O_RDWR)
@@ -838,6 +838,9 @@ void do_attribute
     UTF8 *sp;
     ATTR *va2;
     bool negate, success;
+    MUX_STRTOK_STATE tts;
+    size_t nCased;
+    UTF8 *pCased;
 
     switch (key)
     {
@@ -845,9 +848,9 @@ void do_attribute
 
         // Modify access to user-named attribute
         //
-        mux_strupr(value);
-        MUX_STRTOK_STATE tts;
-        mux_strtok_src(&tts, value);
+        pCased = mux_strupr(value, nCased);
+
+        mux_strtok_src(&tts, pCased);
         mux_strtok_ctl(&tts, T(" "));
         sp = mux_strtok_parse(&tts);
         success = false;
@@ -885,8 +888,11 @@ void do_attribute
             //
             sp = mux_strtok_parse(&tts);
         }
+
         if (success && !Quiet(executor))
+        {
             notify(executor, T("Attribute access changed."));
+        }
         break;
 
     case ATTRIB_RENAME:

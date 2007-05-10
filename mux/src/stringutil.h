@@ -240,7 +240,7 @@ inline const string_desc *mux_tolower(const unsigned char *p, bool &bXor)
     }
 }
 
-// utf/to_upper.txt
+// utf/tr_toupper.txt
 //
 // 931 code points.
 // 43 states, 89 columns, 4083 bytes
@@ -272,6 +272,41 @@ inline const string_desc *mux_toupper(const unsigned char *p, bool &bXor)
     {
         bXor = (TR_TOUPPER_XOR_START <= iState - TR_TOUPPER_ACCEPTING_STATES_START);
         return tr_toupper_ott + iState - TR_TOUPPER_ACCEPTING_STATES_START - 1;
+    }
+}
+
+// utf/tr_totitle.txt
+//
+// 935 code points.
+// 43 states, 89 columns, 4083 bytes
+//
+#define TR_TOTITLE_START_STATE (0)
+#define TR_TOTITLE_ACCEPTING_STATES_START (43)
+#define TR_TOTITLE_DEFAULT (0)
+#define TR_TOTITLE_LITERAL_START (1)
+#define TR_TOTITLE_XOR_START (8)
+extern const unsigned char tr_totitle_itt[256];
+extern const unsigned char tr_totitle_stt[43][89];
+extern const string_desc tr_totitle_ott[96];
+
+inline const string_desc *mux_totitle(const unsigned char *p, bool &bXor)
+{
+    int iState = TR_TOTITLE_START_STATE;
+    do
+    {
+        unsigned char ch = *p++;
+        iState = tr_totitle_stt[iState][tr_totitle_itt[(unsigned char)ch]];
+    } while (iState < TR_TOTITLE_ACCEPTING_STATES_START);
+
+    if (TR_TOTITLE_DEFAULT == iState - TR_TOTITLE_ACCEPTING_STATES_START)
+    {
+        bXor = false;
+        return NULL;
+    }
+    else
+    {
+        bXor = (TR_TOTITLE_XOR_START <= iState - TR_TOTITLE_ACCEPTING_STATES_START);
+        return tr_totitle_ott + iState - TR_TOTITLE_ACCEPTING_STATES_START - 1;
     }
 }
 
@@ -319,6 +354,9 @@ inline int mux_color(const unsigned char *p)
 #define COLOR_BG_CYAN    "\xEE\x88\x86"    // 20
 #define COLOR_BG_WHITE   "\xEE\x88\x87"    // 21
 #define COLOR_LAST_CODE  21
+
+#define BEEP_CHAR '\07'
+#define mux_haswidth(x) (mux_isprint(x) && *(x) != BEEP_CHAR)
 
 bool utf8_strlen(const UTF8 *pString, size_t &nString);
 
@@ -413,8 +451,9 @@ bool matches_exit_from_list(UTF8 *, const UTF8 *);
 UTF8 *translate_string(const UTF8 *, bool);
 int mux_stricmp(const UTF8 *a, const UTF8 *b);
 int mux_memicmp(const void *p1_arg, const void *p2_arg, size_t n);
+UTF8 *mux_strlwr_utf8(const UTF8 *a, size_t &n);
 void mux_strlwr(UTF8 *tp);
-void mux_strupr(UTF8 *a);
+UTF8 *mux_strupr(const UTF8 *a, size_t &n);
 
 typedef struct tag_itl
 {
@@ -674,10 +713,15 @@ public:
     };
 };
 
+static const mux_field fldAscii(1, 1);
+static const mux_field fldMin(0, 0);
+
 bool utf8_strlen(const UTF8 *pString, mux_cursor &nString);
 mux_field StripTabsAndTruncate(const UTF8 *pString, UTF8 *pBuffer,
-    size_t nLength,LBUF_OFFSET nWidth, bool bPad = false,
-    UTF8 uchFill = (UTF8)' ');
+    size_t nLength, LBUF_OFFSET nWidth, bool bStrip = true);
+mux_field PadField(UTF8 *pBuffer, size_t nMaxBytes, LBUF_OFFSET nMinWidth,
+                   mux_field fldOutput = fldMin);
+
 
 static const mux_cursor CursorMin(0,0);
 static const mux_cursor CursorMax(LBUF_SIZE - 1, LBUF_SIZE - 1);

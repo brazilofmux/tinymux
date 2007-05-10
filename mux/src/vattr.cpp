@@ -197,14 +197,13 @@ static void dbclean_CheckATtoANH(dbref executor)
 
                 // Convert name to upper case.
                 //
-                UTF8 Buffer[SBUF_SIZE];
-                mux_strncpy(Buffer, pa->name, SBUF_SIZE-1);
-                mux_strupr(Buffer);
+                size_t nCased;
+                UTF8 *pCased = mux_strupr(pa->name, nCased);
 
                 // Fetch the attribute structure pointer -- which should match the one
                 // from the corresponding table entry.
                 //
-                ATTR *pb = (ATTR *) hashfindLEN(Buffer, strlen((char *)Buffer), &mudstate.attr_name_htab);
+                ATTR *pb = (ATTR *) hashfindLEN(pCased, nCased, &mudstate.attr_name_htab);
                 if (pb != pa)
                 {
                     nInvalid++;
