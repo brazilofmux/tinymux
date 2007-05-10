@@ -659,7 +659,6 @@ QUERY_SLAVE
 SQLSLAVE
 FIRANMUX
 FIRANLIBS
-FIRANMUX_CONVERT
 INLINESQL
 INLINESQL_LIBS
 INLINESQL_INCLUDE
@@ -689,8 +688,10 @@ CXXCPP
 CPP
 GREP
 EGREP
-SHARED_TARGETS
-SHARED_LIBS
+DYNAMICLIB_EXT
+DYNAMICLIB_CPPFLAGS
+DYNAMICLIB_TARGET
+MUX_LIBS
 LIBOBJS
 LTLIBOBJS'
 ac_subst_files=''
@@ -1284,8 +1285,6 @@ Optional Features:
   --enable-memorybased    enable Memory-Based Database (default is NO)
   --enable-queryslave     enable Query Slave (default is NO)
   --enable-firanmux       enable Firan MUX (default is NO)
-  --enable-firanmuxconvert
-                          enable Firan MUX Conversion (default is NO)
   --enable-inlinesql      enable inline MySQL support compatible with PennMUSH
                           and TinyMUSH 3.x (default is NO)
   --enable-ssl            enable SSL encryption support (default is NO)
@@ -1858,29 +1857,6 @@ echo "${ECHO_T}no" >&6; }
 
 fi
 
-
-
-
-{ echo "$as_me:$LINENO: checking whether to enable Firan MUX Conversion" >&5
-echo $ECHO_N "checking whether to enable Firan MUX Conversion... $ECHO_C" >&6; }
-# Check whether --enable-firanmuxconvert was given.
-if test "${enable_firanmuxconvert+set}" = set; then
-  enableval=$enable_firanmuxconvert;
-    if test "x$enableval" = "xno"; then
-      { echo "$as_me:$LINENO: result: no" >&5
-echo "${ECHO_T}no" >&6; }
-    else
-      FIRANMUX_CONVERT="-DFIRANMUX_CONVERT"
-      { echo "$as_me:$LINENO: result: yes" >&5
-echo "${ECHO_T}yes" >&6; }
-    fi
-
-else
-
-    { echo "$as_me:$LINENO: result: no" >&5
-echo "${ECHO_T}no" >&6; }
-
-fi
 
 
 
@@ -5720,8 +5696,17 @@ eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
 #define HAVE_DLOPEN 1
 _ACEOF
 
-    SHARED_TARGETS="libmux.so"
-    SHARED_LIBS="-lmux"
+    case "$host" in
+    *darwin*) DYNAMICLIB_EXT="dylib"
+              DYNAMICLIB_TARGET="libmux.dylib"
+              DYNAMICLIB_CPPFLAGS="-dynamiclib"
+              ;;
+    *)        DYNAMICLIB_EXT="so"
+              DYNAMICLIB_TARGET="libmux.so"
+              DYNAMICLIB_CPPFLAGS="-shared -fPIC"
+              ;;
+    esac
+    MUX_LIBS="-lmux"
 
 else
   echo "$as_me: failed program was:" >&5
@@ -5732,6 +5717,8 @@ fi
 
 rm -f core conftest.err conftest.$ac_objext conftest_ipa8_conftest.oo \
       conftest$ac_exeext conftest.$ac_ext
+
+
 
 
 { echo "$as_me:$LINENO: checking for sys_errlist decl..." >&5
@@ -12431,7 +12418,6 @@ QUERY_SLAVE!$QUERY_SLAVE$ac_delim
 SQLSLAVE!$SQLSLAVE$ac_delim
 FIRANMUX!$FIRANMUX$ac_delim
 FIRANLIBS!$FIRANLIBS$ac_delim
-FIRANMUX_CONVERT!$FIRANMUX_CONVERT$ac_delim
 INLINESQL!$INLINESQL$ac_delim
 INLINESQL_LIBS!$INLINESQL_LIBS$ac_delim
 INLINESQL_INCLUDE!$INLINESQL_INCLUDE$ac_delim
@@ -12461,13 +12447,15 @@ CXXCPP!$CXXCPP$ac_delim
 CPP!$CPP$ac_delim
 GREP!$GREP$ac_delim
 EGREP!$EGREP$ac_delim
-SHARED_TARGETS!$SHARED_TARGETS$ac_delim
-SHARED_LIBS!$SHARED_LIBS$ac_delim
+DYNAMICLIB_EXT!$DYNAMICLIB_EXT$ac_delim
+DYNAMICLIB_CPPFLAGS!$DYNAMICLIB_CPPFLAGS$ac_delim
+DYNAMICLIB_TARGET!$DYNAMICLIB_TARGET$ac_delim
+MUX_LIBS!$MUX_LIBS$ac_delim
 LIBOBJS!$LIBOBJS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 80; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 81; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5

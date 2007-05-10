@@ -5,6 +5,9 @@
  *
  */
 
+#ifndef SAMPLE_H
+#define SAMPLE_H
+
 #ifdef WIN32
 const UINT64 CID_Sample        = 0x0000000265E759EFi64;
 const UINT64 IID_ISample       = 0x00000002462F47F3i64;
@@ -59,3 +62,5 @@ public:
 private:
     UINT32 m_cRef;
 };
+
+#endif // SAMPLE_H

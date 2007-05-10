@@ -1,0 +1,36 @@
+/*! \file autoconf.h.in
+ * \brief System-dependent configuration information
+ *
+ * $Id$
+ *
+ * Run ./configure to generate autoconf.h from this file.
+ */
+
+#ifndef AUTOCONF_H
+#define AUTOCONF_H
+
+#include "../copyright.h"
+
+/* ---------------------------------------------------------------------------
+ * Configuration section:
+ *
+ * These defines are written by the configure script.
+ * Change them if need be
+ */
+
+/* Define if dlopen exists */
+#undef HAVE_DLOPEN
+
+/* ---------------------------------------------------------------------------
+ * Setup section:
+ *
+ * Load system-dependent header files.
+ */
+
+#ifndef _GNU_SOURCE
+#define _GNU_SOURCE
+#endif
+
+#define UNUSED_PARAMETER(x) ((void)(x))
+
+#endif // AUTOCONF_H

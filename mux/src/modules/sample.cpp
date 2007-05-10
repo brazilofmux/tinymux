@@ -5,10 +5,8 @@
  *
  */
 
-#include "../copyright.h"
 #include "../autoconf.h"
 #include "../config.h"
-
 #include "../modules.h"
 #include "sample.h"
 
