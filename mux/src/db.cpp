@@ -3803,9 +3803,33 @@ void load_restart_db(void)
 
 int ReplaceFile(UTF8 *old_name, UTF8 *new_name)
 {
-    DeleteFile((char *)new_name);
-    if (MoveFile((char *)old_name, (char *)new_name))
+    size_t nOldName;
+    size_t nNewName;
+    UTF16 *pOldName;
+    UTF16 *pNewName = ConvertFromUTF8ToUTF16(new_name, &nNewName);
+    if (NULL != pNewName)
     {
+        size_t n = (nNewName+1)*sizeof(UTF16);
+        UTF16 *p = (UTF16 *)MEMALLOC(n);
+        if (NULL == p)
+        {
+            return -1;
+        }
+        memcpy(p, pNewName, n);
+        pNewName = p;
+
+        pOldName = ConvertFromUTF8ToUTF16(old_name, &nOldName);
+        if (NULL == pOldName)
+        {
+            MEMFREE(pNewName);
+            return -1;
+        }
+    }
+
+    DeleteFile(pNewName);
+    if (MoveFile(pOldName, pNewName))
+    {
+        MEMFREE(pNewName);
         return 0;
     }
     else
@@ -3813,12 +3837,18 @@ int ReplaceFile(UTF8 *old_name, UTF8 *new_name)
         Log.tinyprintf("MoveFile %s to %s fails with GetLastError() of %d" ENDLINE,
             old_name, new_name, GetLastError());
     }
+    MEMFREE(pNewName);
     return -1;
 }
 
 void RemoveFile(UTF8 *name)
 {
-    DeleteFile((char *)name);
+    size_t nNewName;
+    UTF16 *pFileToDelete = ConvertFromUTF8ToUTF16(name, &nNewName);
+    if (NULL != pFileToDelete)
+    {
+        DeleteFile(pFileToDelete);
+    }
 }
 
 #else // WIN32
