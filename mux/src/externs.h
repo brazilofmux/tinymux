@@ -123,8 +123,8 @@ extern bool break_called;
 /* From eval.cpp */
 void tcache_init(void);
 UTF8 *parse_to(UTF8 **, UTF8, int);
-UTF8 *parse_arglist(dbref executor, dbref caller, dbref enactor, UTF8 *,
-                    UTF8, int, UTF8 *[], int, UTF8*[], int, int *);
+void parse_arglist(dbref executor, dbref caller, dbref enactor, UTF8 *,
+                    int, UTF8 *[], int, UTF8*[], int, int *);
 int get_gender(dbref);
 void mux_exec(UTF8 *pdstr, UTF8 *buff, UTF8 **bufc, dbref executor,
               dbref caller, dbref enactor, int eval, UTF8 *cargs[], int ncargs);
@@ -354,8 +354,8 @@ bool ok_password(const UTF8 *szPassword, const UTF8 **pmsg);
 void handle_ears(dbref, bool, bool);
 dbref match_possessed(dbref, dbref, UTF8 *, dbref, bool);
 void parse_range(UTF8 **, dbref *, dbref *);
-bool parse_thing_slash(dbref, UTF8 *, UTF8 **, dbref *);
-bool get_obj_and_lock(dbref, UTF8 *, dbref *, ATTR **, UTF8 *, UTF8 **);
+bool parse_thing_slash(dbref, const UTF8 *, const UTF8 **, dbref *);
+bool get_obj_and_lock(dbref, const UTF8 *, dbref *, ATTR **, UTF8 *, UTF8 **);
 dbref where_is(dbref);
 dbref where_room(dbref);
 bool locatable(dbref, dbref, dbref);
@@ -370,8 +370,10 @@ bool bCanSetAttr(dbref executor, dbref target, ATTR *tattr);
 bool bCanLockAttr(dbref executor, dbref target, ATTR *tattr);
 
 /* From set.cpp */
-bool parse_attrib(dbref, UTF8 *, dbref *, ATTR **);
-bool parse_attrib_wild(dbref, UTF8 *, dbref *, bool, bool, bool);
+bool parse_attrib(dbref, const UTF8 *, dbref *, ATTR **);
+bool parse_attrib_wild(dbref, const UTF8 *, dbref *, bool, bool, bool);
+void find_wild_attrs(dbref player, dbref thing, const UTF8 *str,
+                     bool check_exclude, bool hash_insert, bool get_locks);
 dbref match_controlled_handler(dbref player, const UTF8 *name, bool bQuiet);
 #define match_controlled(player,name)       match_controlled_handler(player, name, false)
 #define match_controlled_quiet(player,name) match_controlled_handler(player, name, true)
@@ -464,7 +466,7 @@ void atr_chown(dbref);
 void atr_clr(dbref, int);
 void atr_add_raw_LEN(dbref thing, int atr, const UTF8 *szValue, size_t nValue);
 void atr_add_raw(dbref, int, const UTF8 *);
-void atr_add(dbref, int, UTF8 *, dbref, int);
+void atr_add(dbref, int, const UTF8 *, dbref, int);
 void atr_set_flags(dbref, int, int);
 const UTF8 *atr_get_raw_LEN(dbref, int, size_t *);
 const UTF8 *atr_get_raw(dbref, int);

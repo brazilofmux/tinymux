@@ -710,38 +710,39 @@ FUNCTION(fun_set)
             safe_noperm(buff, bufc);
             return;
         }
-        UTF8 *buff2 = alloc_lbuf("fun_set");
 
         // Check for _
         //
         if (*p == '_')
         {
+            p++;
             ATTR *pattr2;
             dbref thing2;
 
-            mux_strncpy(buff2, p + 1, LBUF_SIZE-1);
-            if (!( parse_attrib(executor, p + 1, &thing2, &pattr2)
+            if (!( parse_attrib(executor, p, &thing2, &pattr2)
                 && pattr2))
             {
-                free_lbuf(buff2);
                 safe_nomatch(buff, bufc);
                 return;
             }
-            p = buff2;
+            UTF8 *buff2 = alloc_lbuf("fun_set");
             atr_pget_str(buff2, thing2, pattr2->number, &aowner, &aflags);
 
             if (!See_attr(executor, thing2, pattr2))
             {
-                free_lbuf(buff2);
                 safe_noperm(buff, bufc);
-                return;
             }
+            else
+            {
+                set_attr_internal(executor, thing, atr, buff2, 0, buff, bufc);
+            }
+            free_lbuf(buff2);
+            return;
         }
 
         // Go set it.
         //
         set_attr_internal(executor, thing, atr, p, 0, buff, bufc);
-        free_lbuf(buff2);
         return;
     }
 
@@ -3741,65 +3742,58 @@ FUNCTION(fun_strcat)
 
 // grep() and grepi() code borrowed from PennMUSH 1.50
 //
-static UTF8 *grep_util(dbref player, dbref thing, UTF8 *pattern, UTF8 *lookfor, size_t len, bool insensitive)
+static UTF8 *grep_util(dbref player, dbref thing, const UTF8 *pattern, const UTF8 *lookfor, size_t len, bool insensitive)
 {
     // Returns a list of attributes which match <pattern> on <thing>
     // whose contents have <lookfor>.
     //
-    dbref aowner;
-    UTF8 *tbuf1, *buf;
-    UTF8 *bp, *bufc;
-    int ca, aflags;
-
-    tbuf1 = alloc_lbuf("grep_util");
-    bufc = buf = alloc_lbuf("grep_util.parse_attrib");
-    bp = tbuf1;
-    safe_tprintf_str(buf, &bufc, "#%d/%s", thing, pattern);
     olist_push();
-    if (parse_attrib_wild(player, buf, &thing, false, false, true))
+    find_wild_attrs(player, thing, pattern, false, false, false);
+    BMH_State bmhs;
+    if (insensitive)
     {
-        BMH_State bmhs;
+        BMH_PrepareI(&bmhs, len, lookfor);
+    }
+    else
+    {
+        BMH_Prepare(&bmhs, len, lookfor);
+    }
+
+    UTF8 *tbuf1 = alloc_lbuf("grep_util");
+    UTF8 *bp = tbuf1;
+
+    dbref aowner;
+    int aflags;
+    for (int ca = olist_first(); ca != NOTHING && !MuxAlarm.bAlarmed; ca = olist_next())
+    {
+        size_t nText;
+        UTF8 *attrib = atr_get_LEN(thing, ca, &aowner, &aflags, &nText);
+        size_t i;
+        bool bSucceeded;
         if (insensitive)
         {
-            BMH_PrepareI(&bmhs, len, lookfor);
+            bSucceeded = BMH_ExecuteI(&bmhs, &i, len, lookfor, nText, attrib);
         }
         else
         {
-            BMH_Prepare(&bmhs, len, lookfor);
+            bSucceeded = BMH_Execute(&bmhs, &i, len, lookfor, nText, attrib);
         }
-
-        for (ca = olist_first(); ca != NOTHING && !MuxAlarm.bAlarmed; ca = olist_next())
+        if (bSucceeded)
         {
-            size_t nText;
-            UTF8 *attrib = atr_get_LEN(thing, ca, &aowner, &aflags, &nText);
-            size_t i;
-            bool bSucceeded;
-            if (insensitive)
+            if (bp != tbuf1)
             {
-                bSucceeded = BMH_ExecuteI(&bmhs, &i, len, lookfor, nText, attrib);
+                safe_chr(' ', tbuf1, &bp);
             }
-            else
+            ATTR *ap = atr_num(ca);
+            const UTF8 *pName = T("(WARNING: Bad Attribute Number)");
+            if (ap)
             {
-                bSucceeded = BMH_Execute(&bmhs, &i, len, lookfor, nText, attrib);
+                pName = ap->name;
             }
-            if (bSucceeded)
-            {
-                if (bp != tbuf1)
-                {
-                    safe_chr(' ', tbuf1, &bp);
-                }
-                ATTR *ap = atr_num(ca);
-                const UTF8 *pName = T("(WARNING: Bad Attribute Number)");
-                if (ap)
-                {
-                    pName = ap->name;
-                }
-                safe_str(pName, tbuf1, &bp);
-            }
-            free_lbuf(attrib);
+            safe_str(pName, tbuf1, &bp);
         }
+        free_lbuf(attrib);
     }
-    free_lbuf(buf);
     *bp = '\0';
     olist_pop();
     return tbuf1;
