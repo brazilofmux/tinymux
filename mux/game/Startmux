@@ -54,8 +54,10 @@ fi
 #       the current directory.
 #
 if [ -z "$LOGDIR" -o ! -d "$LOGDIR" -o ! -x "$LOGDIR" ]; then 
+    if [ ! -z "$LOGDIR" ]; then
 	echo "Log directory '$LOGDIR' is invalid, using game directory."
-	LOGDIR=.
+    fi
+    LOGDIR=.
 fi
 #
 #	Kick off MUX
