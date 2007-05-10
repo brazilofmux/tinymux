@@ -781,6 +781,8 @@ void do_if
 
     mux_exec(expr, LBUF_SIZE-1, buff, &bp, player, caller, enactor, eval|EV_FCHECK|EV_EVAL|EV_TOP,
         cargs, ncargs);
+    *bp = '\0';
+
     int a = !xlate(buff);
     free_lbuf(buff);
 

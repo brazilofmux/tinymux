@@ -488,8 +488,9 @@ static dbref get_exit_dest(dbref executor, dbref exit)
     UTF8 *result = alloc_lbuf("get_exit_dest");
     UTF8 *ref = result;
     mux_exec(atr_gotten, LBUF_SIZE-1, result, &ref, exit, executor, executor,
-        AttrTrace(aflags, EV_FCHECK|EV_EVAL), NULL, 0);
+        AttrTrace(aflags, EV_TOP|EV_FCHECK|EV_EVAL), NULL, 0);
     free_lbuf(atr_gotten);
+    *ref = '\0';
 
     dbref dest = NOTHING;
     if (*result == NUMBER_TOKEN)
