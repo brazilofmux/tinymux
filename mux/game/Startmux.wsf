@@ -204,9 +204,16 @@ Do
         Exit Do
     End If
 
+
+    ' Validate Log Directory.
+    '
+    If not fso.FolderExists(logdir) Then
+        logdir = ".";
+    End If
+
     ' Kick off the MUX
     '
-    ret = shell.run(bin & "\netmux -c " & gamename & ".conf" & " -p " & pidfile, SW_HIDE, True)
+    ret = shell.run(bin & "\netmux -c " & gamename & ".conf" & " -p " & pidfile & " -e " & logdir, SW_HIDE, True)
 Loop While ret = 12345678
 
 ]]>
