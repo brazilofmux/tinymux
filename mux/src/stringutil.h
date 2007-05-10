@@ -41,7 +41,7 @@ extern const UTF8 *latin1_utf8[256];
 #define mux_isdigit(x) (mux_isdigit[(unsigned char)(x)])
 #define mux_isxdigit(x)(mux_isxdigit[(unsigned char)(x)])
 #define mux_isazAZ(x)  (mux_isazAZ[(unsigned char)(x)])
-#define mux_isalpha(x) (mux_isalpha[(unsigned char)(x)])
+#define mux_isalpha(x) (mux_isazAZ[(unsigned char)(x)])
 #define mux_isalnum(x) (mux_isalnum[(unsigned char)(x)])
 #define mux_islower_ascii(x) (mux_islower_ascii[(unsigned char)(x)])
 #define mux_isupper_ascii(x) (mux_isupper_ascii[(unsigned char)(x)])
@@ -390,29 +390,41 @@ bool is_real(const UTF8 *str);
 //
 typedef UINT16 ColorState;
 
-struct ANSI_In_Context
-{
-    ColorState      m_cs;
-    const UTF8     *m_p;
-    size_t          m_n;
-};
+#define COLOR_INDEX_RESET       1
+#define COLOR_INDEX_INTENSE     2
+#define COLOR_INDEX_UNDERLINE   3
+#define COLOR_INDEX_BLINK       4
+#define COLOR_INDEX_INVERSE     5
 
-struct ANSI_Out_Context
-{
-    ColorState      m_cs;
-    bool            m_bDone;
-    UTF8           *m_p;
-    size_t          m_n;
-    size_t          m_nMax;
-    size_t          m_vw;
-    size_t          m_vwMax;
-};
+#define COLOR_INDEX_ATTR        2
+#define COLOR_INDEX_FG          6
+#define COLOR_INDEX_BG          14
 
-void ANSI_String_In_Init(struct ANSI_In_Context *pacIn, const UTF8 *szString);
-void ANSI_String_Out_Init(struct ANSI_Out_Context *pacOut, UTF8 *pField, size_t nField, size_t vwMax);
-void ANSI_String_Copy(struct ANSI_Out_Context *pacOut, struct ANSI_In_Context *pacIn);
-size_t ANSI_String_Finalize(struct ANSI_Out_Context *pacOut, size_t *pnVisualWidth);
-size_t ANSI_TruncateToField(const UTF8 *szString, size_t nField, UTF8 *pField, size_t maxVisual, size_t *nVisualWidth);
+#define COLOR_INDEX_BLACK       0
+#define COLOR_INDEX_RED         1
+#define COLOR_INDEX_GREEN       2
+#define COLOR_INDEX_YELLOW      3
+#define COLOR_INDEX_BLUE        4
+#define COLOR_INDEX_MAGENTA     5
+#define COLOR_INDEX_CYAN        6
+#define COLOR_INDEX_WHITE       7
+
+#define COLOR_INDEX_FG_WHITE    (COLOR_INDEX_FG + COLOR_INDEX_WHITE)
+
+typedef struct
+{
+    ColorState  cs;
+    ColorState  csMask;
+    const char *pAnsi;
+    size_t      nAnsi;
+    const UTF8 *pUTF;
+    size_t      nUTF;
+    const UTF8 *pEscape;
+    size_t      nEscape;
+} MUX_COLOR_SET;
+
+extern const MUX_COLOR_SET aColors[];
+
 UTF8 *convert_color(const UTF8 *pString, bool bNoBleed = false);
 UTF8 *strip_color(const UTF8 *pString, size_t *pnLength = 0, size_t *pnPoints = 0);
 UTF8 *munge_space(const UTF8 *);
@@ -523,10 +535,10 @@ public:
     LBUF_OFFSET m_byte;
     LBUF_OFFSET m_column;
 
-    inline mux_field(LBUF_OFFSET byte = 0, LBUF_OFFSET column = 0)
+    inline mux_field(size_t byte = 0, size_t column = 0)
     {
-        m_byte = byte;
-        m_column = column;
+        m_byte = static_cast<LBUF_OFFSET>(byte);
+        m_column = static_cast<LBUF_OFFSET>(column);
     };
 
     inline void operator =(const mux_field &c)
@@ -535,10 +547,10 @@ public:
         m_column = c.m_column;
     };
 
-    inline void operator ()(LBUF_OFFSET byte, LBUF_OFFSET column)
+    inline void operator ()(size_t byte, size_t column)
     {
-        m_byte = byte;
-        m_column = column;
+        m_byte = static_cast<LBUF_OFFSET>(byte);
+        m_column = static_cast<LBUF_OFFSET>(column);
     };
 
     inline bool operator <(const mux_field &a) const
@@ -620,16 +632,10 @@ public:
     LBUF_OFFSET m_byte;
     LBUF_OFFSET m_point;
 
-    inline mux_cursor(void)
+    inline mux_cursor(size_t byte = 0, size_t point = 0)
     {
-        m_byte = 0;
-        m_point = 0;
-    };
-
-    inline mux_cursor(LBUF_OFFSET byte, LBUF_OFFSET point)
-    {
-        m_byte = byte;
-        m_point = point;
+        m_byte = static_cast<LBUF_OFFSET>(byte);
+        m_point = static_cast<LBUF_OFFSET>(point);
     };
 
     inline void operator =(const mux_cursor &c)
@@ -638,10 +644,10 @@ public:
         m_point = c.m_point;
     };
 
-    inline void operator ()(LBUF_OFFSET byte, LBUF_OFFSET point)
+    inline void operator ()(size_t byte, size_t point)
     {
-        m_byte = byte;
-        m_point = point;
+        m_byte = static_cast<LBUF_OFFSET>(byte);
+        m_point = static_cast<LBUF_OFFSET>(point);
     };
 
     inline bool operator <(const mux_cursor &a) const
@@ -718,10 +724,11 @@ static const mux_field fldMin(0, 0);
 
 bool utf8_strlen(const UTF8 *pString, mux_cursor &nString);
 mux_field StripTabsAndTruncate(const UTF8 *pString, UTF8 *pBuffer,
-    size_t nLength, LBUF_OFFSET nWidth, bool bStrip = true);
+    size_t nLength, LBUF_OFFSET nWidth);
 mux_field PadField(UTF8 *pBuffer, size_t nMaxBytes, LBUF_OFFSET nMinWidth,
                    mux_field fldOutput = fldMin);
 
+size_t TruncateToBuffer(const UTF8 *pString, UTF8 *pBuffer, size_t nBuffer);
 
 static const mux_cursor CursorMin(0,0);
 static const mux_cursor CursorMax(LBUF_SIZE - 1, LBUF_SIZE - 1);

@@ -8946,7 +8946,7 @@ const UTF8 *time_format_1(int Seconds, size_t maxWidth)
     }
 
     if (  maxWidth < 8
-       || 12 < maxWidth)
+       || 11 < maxWidth)
     {
         mux_strncpy(TimeBuffer80, T("???"), sizeof(TimeBuffer80)-1);
         return TimeBuffer80;

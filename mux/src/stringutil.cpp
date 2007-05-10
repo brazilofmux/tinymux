@@ -128,29 +128,6 @@ const bool mux_isazAZ[256] =
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0   // F
 };
 
-const bool mux_isalpha[256] =
-{
-//  0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F
-//
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // 0
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // 1
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // 2
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // 3
-    0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,  // 4
-    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0,  // 5
-    0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,  // 6
-    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0,  // 7
-
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // 8
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // 9
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // A
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // B
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // C
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // D
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // E
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0   // F
-};
-
 const bool mux_isalnum[256] =
 {
 //  0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F
@@ -354,13 +331,13 @@ const unsigned char mux_toupper_ascii[UCHAR_MAX+1] =
     0x50, 0x51, 0x52, 0x53, 0x54, 0x55, 0x56, 0x57, 0x58, 0x59, 0x5A, 0x7B, 0x7C, 0x7D, 0x7E, 0x7F, // 7
 
     0x80, 0x81, 0x82, 0x83, 0x84, 0x85, 0x86, 0x87, 0x88, 0x89, 0x8A, 0x8B, 0x8C, 0x8D, 0x8E, 0x8F, // 8
-    0x90, 0x91, 0x92, 0x93, 0x94, 0x95, 0x96, 0x97, 0x99, 0x99, 0x9A, 0x9B, 0x9C, 0x9D, 0x9E, 0x9F, // 9
-    0xA0, 0xA1, 0xA2, 0xA3, 0xA4, 0xA5, 0xA6, 0xA7, 0xAA, 0xA9, 0xAA, 0xAB, 0xAC, 0xAD, 0xAE, 0xAF, // A
-    0xB0, 0xB1, 0xB2, 0xB3, 0xB4, 0xB5, 0xB6, 0xB7, 0xBB, 0xB9, 0xBA, 0xBB, 0xBC, 0xBD, 0xBE, 0xBF, // B
-    0xC0, 0xC1, 0xC2, 0xC3, 0xC4, 0xC5, 0xC6, 0xC7, 0xCC, 0xC9, 0xCA, 0xCB, 0xCC, 0xCD, 0xCE, 0xCF, // C
-    0xD0, 0xD1, 0xD2, 0xD3, 0xD4, 0xD5, 0xD6, 0xD7, 0xDD, 0xD9, 0xDA, 0xDB, 0xDC, 0xDD, 0xDE, 0xDF, // D
-    0xE0, 0xE1, 0xE2, 0xE3, 0xE4, 0xE5, 0xE6, 0xE7, 0xEE, 0xE9, 0xEA, 0xEB, 0xEC, 0xED, 0xEE, 0xEF, // E
-    0xF0, 0xF1, 0xF2, 0xF3, 0xF4, 0xF5, 0xF6, 0xF7, 0xFF, 0xF9, 0xFA, 0xFB, 0xFC, 0xFD, 0xFE, 0xFF  // F
+    0x90, 0x91, 0x92, 0x93, 0x94, 0x95, 0x96, 0x97, 0x98, 0x99, 0x9A, 0x9B, 0x9C, 0x9D, 0x9E, 0x9F, // 9
+    0xA0, 0xA1, 0xA2, 0xA3, 0xA4, 0xA5, 0xA6, 0xA7, 0xA8, 0xA9, 0xAA, 0xAB, 0xAC, 0xAD, 0xAE, 0xAF, // A
+    0xB0, 0xB1, 0xB2, 0xB3, 0xB4, 0xB5, 0xB6, 0xB7, 0xB8, 0xB9, 0xBA, 0xBB, 0xBC, 0xBD, 0xBE, 0xBF, // B
+    0xC0, 0xC1, 0xC2, 0xC3, 0xC4, 0xC5, 0xC6, 0xC7, 0xC8, 0xC9, 0xCA, 0xCB, 0xCC, 0xCD, 0xCE, 0xCF, // C
+    0xD0, 0xD1, 0xD2, 0xD3, 0xD4, 0xD5, 0xD6, 0xD7, 0xD8, 0xD9, 0xDA, 0xDB, 0xDC, 0xDD, 0xDE, 0xDF, // D
+    0xE0, 0xE1, 0xE2, 0xE3, 0xE4, 0xE5, 0xE6, 0xE7, 0xE8, 0xE9, 0xEA, 0xEB, 0xEC, 0xED, 0xEE, 0xEF, // E
+    0xF0, 0xF1, 0xF2, 0xF3, 0xF4, 0xF5, 0xF6, 0xF7, 0xF8, 0xF9, 0xFA, 0xFB, 0xFC, 0xFD, 0xFE, 0xFF  // F
 };
 
 const unsigned char mux_tolower_ascii[UCHAR_MAX+1] =
@@ -377,13 +354,13 @@ const unsigned char mux_tolower_ascii[UCHAR_MAX+1] =
     0x70, 0x71, 0x72, 0x73, 0x74, 0x75, 0x76, 0x77, 0x78, 0x79, 0x7A, 0x7B, 0x7C, 0x7D, 0x7E, 0x7F, // 7
 
     0x80, 0x81, 0x82, 0x83, 0x84, 0x85, 0x86, 0x87, 0x88, 0x89, 0x8A, 0x8B, 0x8C, 0x8D, 0x8E, 0x8F, // 8
-    0x90, 0x91, 0x92, 0x93, 0x94, 0x95, 0x96, 0x97, 0x99, 0x99, 0x9A, 0x9B, 0x9C, 0x9D, 0x9E, 0x9F, // 9
-    0xA0, 0xA1, 0xA2, 0xA3, 0xA4, 0xA5, 0xA6, 0xA7, 0xAA, 0xA9, 0xAA, 0xAB, 0xAC, 0xAD, 0xAE, 0xAF, // A
-    0xB0, 0xB1, 0xB2, 0xB3, 0xB4, 0xB5, 0xB6, 0xB7, 0xBB, 0xB9, 0xBA, 0xBB, 0xBC, 0xBD, 0xBE, 0xBF, // B
-    0xC0, 0xC1, 0xC2, 0xC3, 0xC4, 0xC5, 0xC6, 0xC7, 0xCC, 0xC9, 0xCA, 0xCB, 0xCC, 0xCD, 0xCE, 0xCF, // C
-    0xD0, 0xD1, 0xD2, 0xD3, 0xD4, 0xD5, 0xD6, 0xD7, 0xDD, 0xD9, 0xDA, 0xDB, 0xDC, 0xDD, 0xDE, 0xDF, // D
-    0xE0, 0xE1, 0xE2, 0xE3, 0xE4, 0xE5, 0xE6, 0xE7, 0xEE, 0xE9, 0xEA, 0xEB, 0xEC, 0xED, 0xEE, 0xEF, // E
-    0xF0, 0xF1, 0xF2, 0xF3, 0xF4, 0xF5, 0xF6, 0xF7, 0xFF, 0xF9, 0xFA, 0xFB, 0xFC, 0xFD, 0xFE, 0xFF  // F
+    0x90, 0x91, 0x92, 0x93, 0x94, 0x95, 0x96, 0x97, 0x98, 0x99, 0x9A, 0x9B, 0x9C, 0x9D, 0x9E, 0x9F, // 9
+    0xA0, 0xA1, 0xA2, 0xA3, 0xA4, 0xA5, 0xA6, 0xA7, 0xA8, 0xA9, 0xAA, 0xAB, 0xAC, 0xAD, 0xAE, 0xAF, // A
+    0xB0, 0xB1, 0xB2, 0xB3, 0xB4, 0xB5, 0xB6, 0xB7, 0xB8, 0xB9, 0xBA, 0xBB, 0xBC, 0xBD, 0xBE, 0xBF, // B
+    0xC0, 0xC1, 0xC2, 0xC3, 0xC4, 0xC5, 0xC6, 0xC7, 0xC8, 0xC9, 0xCA, 0xCB, 0xCC, 0xCD, 0xCE, 0xCF, // C
+    0xD0, 0xD1, 0xD2, 0xD3, 0xD4, 0xD5, 0xD6, 0xD7, 0xD8, 0xD9, 0xDA, 0xDB, 0xDC, 0xDD, 0xDE, 0xDF, // D
+    0xE0, 0xE1, 0xE2, 0xE3, 0xE4, 0xE5, 0xE6, 0xE7, 0xE8, 0xE9, 0xEA, 0xEB, 0xEC, 0xED, 0xEE, 0xEF, // E
+    0xF0, 0xF1, 0xF2, 0xF3, 0xF4, 0xF5, 0xF6, 0xF7, 0xF8, 0xF9, 0xFA, 0xFB, 0xFC, 0xFD, 0xFE, 0xFF  // F
 };
 
 // This will help decode UTF-8 sequences.
@@ -1723,39 +1700,35 @@ const char *ConvertToAscii(const UTF8 *pString)
 #define CS_NORMAL     (CS_FG_DEFAULT|CS_BG_DEFAULT)
 #define CS_NOBLEED    (CS_FG_WHITE|CS_BG_DEFAULT)
 
-static struct
+const MUX_COLOR_SET aColors[COLOR_LAST_CODE+1] = 
 {
-    ColorState csClear;
-    ColorState csSet;
-} csMasks[COLOR_LAST_CODE+1] =
-{
-    { 0, 0 },                         //  0 (Not used)
-    { CS_ALLBITS,    CS_NORMAL     }, //  1 (COLOR_RESET)
-    { 0,             CS_INTENSE    }, //  2 (COLOR_INTENSE)
-    { 0,             CS_UNDERLINE  }, //  3 (COLOR_UNDERLINE)
-    { 0,             CS_BLINK      }, //  4 (COLOR_BLINK)
-    { 0,             CS_INVERSE    }, //  5 (COLOR_INVERSE)
-    { CS_FOREGROUND, CS_FG_BLACK   }, //  6 (COLOR_FG_BLACK)
-    { CS_FOREGROUND, CS_FG_RED     }, //  7 (COLOR_FG_RED)
-    { CS_FOREGROUND, CS_FG_GREEN   }, //  8 (COLOR_FG_GREEN)
-    { CS_FOREGROUND, CS_FG_YELLOW  }, //  9 (COLOR_FG_YELLOW)
-    { CS_FOREGROUND, CS_FG_BLUE    }, // 10 (COLOR_FG_BLUE)
-    { CS_FOREGROUND, CS_FG_MAGENTA }, // 11 (COLOR_FG_MAGENTA)
-    { CS_FOREGROUND, CS_FG_CYAN    }, // 12 (COLOR_FG_CYAN)
-    { CS_FOREGROUND, CS_FG_WHITE   }, // 13 (COLOR_FG_WHITE)
-    { CS_BACKGROUND, CS_BG_BLACK   }, // 14 (COLOR_BG_BLACK)
-    { CS_BACKGROUND, CS_BG_RED     }, // 15 (COLOR_BG_RED)
-    { CS_BACKGROUND, CS_BG_GREEN   }, // 16 (COLOR_BG_GREEN)
-    { CS_BACKGROUND, CS_BG_YELLOW  }, // 17 (COLOR_BG_YELLOW)
-    { CS_BACKGROUND, CS_BG_BLUE    }, // 18 (COLOR_BG_BLUE)
-    { CS_BACKGROUND, CS_BG_MAGENTA }, // 19 (COLOR_BG_MAGENTA)
-    { CS_BACKGROUND, CS_BG_CYAN    }, // 20 (COLOR_BG_CYAN)
-    { CS_BACKGROUND, CS_BG_WHITE   }, // 21 (COLOR_BG_WHITE)
+    { 0,             0,             "",            0,                       T(""),               0, T(""),    0}, // COLOR_NOTCOLOR
+    { CS_NORMAL,     CS_ALLBITS,    ANSI_NORMAL,   sizeof(ANSI_NORMAL)-1,   T(COLOR_RESET),      3, T("%xn"), 3}, // COLOR_INDEX_RESET
+    { CS_INTENSE,    CS_INTENSE,    ANSI_HILITE,   sizeof(ANSI_HILITE)-1,   T(COLOR_INTENSE),    3, T("%xh"), 3}, // COLOR_INDEX_ATTR, COLOR_INDEX_INTENSE
+    { CS_UNDERLINE,  CS_UNDERLINE,  ANSI_UNDER,    sizeof(ANSI_UNDER)-1,    T(COLOR_UNDERLINE),  3, T("%xu"), 3}, // COLOR_INDEX_UNDERLINE
+    { CS_BLINK,      CS_BLINK,      ANSI_BLINK,    sizeof(ANSI_BLINK)-1,    T(COLOR_BLINK),      3, T("%xf"), 3}, // COLOR_INDEX_BLINK
+    { CS_INVERSE,    CS_INVERSE,    ANSI_INVERSE,  sizeof(ANSI_INVERSE)-1,  T(COLOR_INVERSE),    3, T("%xi"), 3}, // COLOR_INDEX_INVERSE
+    { CS_FG_BLACK,   CS_FOREGROUND, ANSI_BLACK,    sizeof(ANSI_BLACK)-1,    T(COLOR_FG_BLACK),   3, T("%xx"), 3}, // COLOR_INDEX_FG
+    { CS_FG_RED,     CS_FOREGROUND, ANSI_RED,      sizeof(ANSI_RED)-1,      T(COLOR_FG_RED),     3, T("%xr"), 3},
+    { CS_FG_GREEN,   CS_FOREGROUND, ANSI_GREEN,    sizeof(ANSI_GREEN)-1,    T(COLOR_FG_GREEN),   3, T("%xg"), 3},
+    { CS_FG_YELLOW,  CS_FOREGROUND, ANSI_YELLOW,   sizeof(ANSI_YELLOW)-1,   T(COLOR_FG_YELLOW),  3, T("%xy"), 3},
+    { CS_FG_BLUE,    CS_FOREGROUND, ANSI_BLUE,     sizeof(ANSI_BLUE)-1,     T(COLOR_FG_BLUE),    3, T("%xb"), 3},
+    { CS_FG_MAGENTA, CS_FOREGROUND, ANSI_MAGENTA,  sizeof(ANSI_MAGENTA)-1,  T(COLOR_FG_MAGENTA), 3, T("%xm"), 3},
+    { CS_FG_CYAN,    CS_FOREGROUND, ANSI_CYAN,     sizeof(ANSI_CYAN)-1,     T(COLOR_FG_CYAN),    3, T("%xc"), 3},
+    { CS_FG_WHITE,   CS_FOREGROUND, ANSI_WHITE,    sizeof(ANSI_WHITE)-1,    T(COLOR_FG_WHITE),   3, T("%xw"), 3}, // COLOR_INDEX_FG_WHITE
+    { CS_BG_BLACK,   CS_BACKGROUND, ANSI_BBLACK,   sizeof(ANSI_BBLACK)-1,   T(COLOR_BG_BLACK),   3, T("%xX"), 3}, // COLOR_INDEX_BG
+    { CS_BG_RED,     CS_BACKGROUND, ANSI_BRED,     sizeof(ANSI_BRED)-1,     T(COLOR_BG_RED),     3, T("%xR"), 3},
+    { CS_BG_GREEN,   CS_BACKGROUND, ANSI_BGREEN,   sizeof(ANSI_BGREEN)-1,   T(COLOR_BG_GREEN),   3, T("%xG"), 3},
+    { CS_BG_YELLOW,  CS_BACKGROUND, ANSI_BYELLOW,  sizeof(ANSI_BYELLOW)-1,  T(COLOR_BG_YELLOW),  3, T("%xY"), 3},
+    { CS_BG_BLUE,    CS_BACKGROUND, ANSI_BBLUE,    sizeof(ANSI_BBLUE)-1,    T(COLOR_BG_BLUE),    3, T("%xB"), 3},
+    { CS_BG_MAGENTA, CS_BACKGROUND, ANSI_BMAGENTA, sizeof(ANSI_BMAGENTA)-1, T(COLOR_BG_MAGENTA), 3, T("%xM"), 3},
+    { CS_BG_CYAN,    CS_BACKGROUND, ANSI_BCYAN,    sizeof(ANSI_BCYAN)-1,    T(COLOR_BG_CYAN),    3, T("%xC"), 3},
+    { CS_BG_WHITE,   CS_BACKGROUND, ANSI_BWHITE,   sizeof(ANSI_BWHITE)-1,   T(COLOR_BG_WHITE),   3, T("%xW"), 3}  // COLOR_LAST_CODE
 };
 
 inline ColorState UpdateColorState(ColorState cs, int iColorCode)
 {
-    return (cs & ~csMasks[iColorCode].csClear) | csMasks[iColorCode].csSet;
+    return (cs & ~aColors[iColorCode].csMask) | aColors[iColorCode].cs;
 }
 
 // Maximum binary transition length is:
@@ -1770,12 +1743,12 @@ inline ColorState UpdateColorState(ColorState cs, int iColorCode)
 //
 // Each of the seven codes is 3 bytes or 21 bytes total.
 //
-#define ANSI_MAXIMUM_BINARY_TRANSITION_LENGTH 21
+#define COLOR_MAXIMUM_BINARY_TRANSITION_LENGTH 21
 
 // Generate the minimal ANSI sequence that will transition from one color state
 // to another.
 //
-static UTF8 *ANSI_TransitionColorBinary
+static UTF8 *ColorTransitionBinary
 (
     ColorState csCurrent,
     ColorState csNext,
@@ -1783,7 +1756,7 @@ static UTF8 *ANSI_TransitionColorBinary
     bool bNoBleed = false
 )
 {
-    static UTF8 Buffer[ANSI_MAXIMUM_BINARY_TRANSITION_LENGTH+1];
+    static UTF8 Buffer[COLOR_MAXIMUM_BINARY_TRANSITION_LENGTH+1];
 
     if (bNoBleed)
     {
@@ -1804,7 +1777,7 @@ static UTF8 *ANSI_TransitionColorBinary
         Buffer[0] = '\0';
         return Buffer;
     }
-    UTF8 *p = Buffer;
+    size_t i = 0;
 
     // Do we need to go through the normal state?
     //
@@ -1814,76 +1787,39 @@ static UTF8 *ANSI_TransitionColorBinary
        || (  (csNext & CS_FOREGROUND) == CS_FG_DEFAULT
           && (csCurrent & CS_FOREGROUND) != CS_FG_DEFAULT))
     {
-        memcpy(p, COLOR_RESET, sizeof(COLOR_RESET)-1);
-        p += sizeof(COLOR_RESET)-1;
+        memcpy(Buffer + i, COLOR_RESET, sizeof(COLOR_RESET)-1);
+        i += sizeof(COLOR_RESET)-1;
         csCurrent = CS_NORMAL;
     }
 
     UINT16 tmp = csCurrent ^ csNext;
     if (CS_ATTRS & tmp)
     {
-        if (CS_INTENSE & tmp)
+        for (unsigned int iAttr = COLOR_INDEX_ATTR; iAttr < COLOR_INDEX_FG; iAttr++)
         {
-            memcpy(p, COLOR_INTENSE, sizeof(COLOR_INTENSE)-1);
-            p += sizeof(COLOR_INTENSE)-1;
-        }
-
-        if (CS_UNDERLINE & tmp)
-        {
-            memcpy(p, COLOR_UNDERLINE, sizeof(COLOR_UNDERLINE)-1);
-            p += sizeof(COLOR_UNDERLINE)-1;
-        }
-
-        if (CS_BLINK & tmp)
-        {
-            memcpy(p, COLOR_BLINK, sizeof(COLOR_BLINK)-1);
-            p += sizeof(COLOR_BLINK)-1;
-        }
-
-        if (CS_INVERSE & tmp)
-        {
-            memcpy(p, COLOR_INVERSE, sizeof(COLOR_INVERSE)-1);
-            p += sizeof(COLOR_INVERSE)-1;
+            if (aColors[iAttr].cs == (aColors[iAttr].csMask & tmp))
+            {
+                memcpy(Buffer + i, aColors[iAttr].pUTF, aColors[iAttr].nUTF);
+                i += aColors[iAttr].nUTF;
+            }
         }
     }
 
     if (CS_FOREGROUND & tmp)
     {
-        UTF8 *aForegrounds[8] =
-        {
-            (UTF8 *)COLOR_FG_BLACK,
-            (UTF8 *)COLOR_FG_RED,
-            (UTF8 *)COLOR_FG_GREEN,
-            (UTF8 *)COLOR_FG_YELLOW,
-            (UTF8 *)COLOR_FG_BLUE,
-            (UTF8 *)COLOR_FG_MAGENTA,
-            (UTF8 *)COLOR_FG_CYAN,
-            (UTF8 *)COLOR_FG_WHITE
-        };
-        int iForeground = (CS_FOREGROUND & csNext);
-        memcpy(p, aForegrounds[iForeground], sizeof(COLOR_FG_BLACK)-1);
-        p += sizeof(COLOR_FG_BLACK)-1;
+        unsigned int iForeground = COLOR_INDEX_FG + (CS_FOREGROUND & csNext);
+        memcpy(Buffer + i, aColors[iForeground].pUTF, aColors[iForeground].nUTF);
+        i += aColors[iForeground].nUTF;
     }
 
     if (CS_BACKGROUND & tmp)
     {
-        UTF8 *aBackgrounds[8] =
-        {
-            (UTF8 *)COLOR_BG_BLACK,
-            (UTF8 *)COLOR_BG_RED,
-            (UTF8 *)COLOR_BG_GREEN,
-            (UTF8 *)COLOR_BG_YELLOW,
-            (UTF8 *)COLOR_BG_BLUE,
-            (UTF8 *)COLOR_BG_MAGENTA,
-            (UTF8 *)COLOR_BG_CYAN,
-            (UTF8 *)COLOR_BG_WHITE
-        };
-        int iBackground = (CS_BACKGROUND & csNext) >> 4;
-        memcpy(p, aBackgrounds[iBackground], sizeof(COLOR_BG_BLACK)-1);
-        p += sizeof(COLOR_BG_BLACK)-1;
+        unsigned int iBackground = COLOR_INDEX_BG + ((CS_BACKGROUND & csNext) >> 4);
+        memcpy(Buffer + i, aColors[iBackground].pUTF, aColors[iBackground].nUTF);
+        i += aColors[iBackground].nUTF;
     }
-    *p = '\0';
-    *nTransition = p - Buffer;
+    Buffer[i] = '\0';
+    *nTransition = i;
     return Buffer;
 }
 
@@ -1928,7 +1864,7 @@ static const UTF8 *ColorBinaryNormal
     }
 }
 
-// Maximum binary transition length is:
+// Maximum escape transition length is:
 //
 //   COLOR_RESET      "%xn"
 // + COLOR_INTENSE    "%xh"
@@ -1940,21 +1876,19 @@ static const UTF8 *ColorBinaryNormal
 //
 // Each of the seven codes is 3 bytes or 21 bytes total.
 //
-#define ANSI_MAXIMUM_ESCAPE_TRANSITION_LENGTH 21
+#define COLOR_MAXIMUM_ESCAPE_TRANSITION_LENGTH 21
 
 // Generate the minimal color %-sequence that will transition from one color state
 // to another.
 //
-static UTF8 *ANSI_TransitionColorEscape
+static UTF8 *ColorTransitionEscape
 (
     ColorState csCurrent,
     ColorState csNext,
-    int *nTransition
+    size_t *nTransition
 )
 {
-    static UTF8 Buffer[ANSI_MAXIMUM_ESCAPE_TRANSITION_LENGTH+1];
-    static const UTF8 cForegroundColors[9] = "xrgybmcw";
-    static const UTF8 cBackgroundColors[9] = "XRGYBMCW";
+    static UTF8 Buffer[COLOR_MAXIMUM_ESCAPE_TRANSITION_LENGTH+1];
 
     if (csCurrent == csNext)
     {
@@ -1962,7 +1896,7 @@ static UTF8 *ANSI_TransitionColorEscape
         Buffer[0] = '\0';
         return Buffer;
     }
-    int  i = 0;
+    size_t i = 0;
 
     // Do we need to go through the normal state?
     //
@@ -1972,428 +1906,41 @@ static UTF8 *ANSI_TransitionColorEscape
        || (  (csNext & CS_FOREGROUND) == CS_FG_DEFAULT
           && (csCurrent & CS_FOREGROUND) != CS_FG_DEFAULT))
     {
-        Buffer[i  ] = '%';
-        Buffer[i+1] = 'x';
-        Buffer[i+2] = 'n';
-        i = i + 3;
+        memcpy(Buffer + i, aColors[COLOR_INDEX_RESET].pEscape, aColors[COLOR_INDEX_RESET].nEscape);
+        i += aColors[COLOR_INDEX_RESET].nEscape;
         csCurrent = CS_NORMAL;
     }
 
     UINT16 tmp = csCurrent ^ csNext;
     if (CS_ATTRS & tmp)
     {
-        if (CS_INTENSE & tmp)
+        for (unsigned int iAttr = COLOR_INDEX_ATTR; iAttr < COLOR_INDEX_FG; iAttr++)
         {
-            Buffer[i  ] = '%';
-            Buffer[i+1] = 'x';
-            Buffer[i+2] = 'h';
-            i = i + 3;
-        }
-
-        if (CS_UNDERLINE & tmp)
-        {
-            Buffer[i  ] = '%';
-            Buffer[i+1] = 'x';
-            Buffer[i+2] = 'u';
-            i = i + 3;
-        }
-
-        if (CS_BLINK & tmp)
-        {
-            Buffer[i  ] = '%';
-            Buffer[i+1] = 'x';
-            Buffer[i+2] = 'f';
-            i = i + 3;
-        }
-
-        if (CS_INVERSE & tmp)
-        {
-            Buffer[i  ] = '%';
-            Buffer[i+1] = 'x';
-            Buffer[i+2] = 'i';
-            i = i + 3;
+            if (aColors[iAttr].cs == (aColors[iAttr].csMask & tmp))
+            {
+                memcpy(Buffer + i, aColors[iAttr].pEscape, aColors[iAttr].nEscape);
+                i += aColors[iAttr].nEscape;
+            }
         }
     }
 
     if (CS_FOREGROUND & tmp)
     {
-        int iForeground = (CS_FOREGROUND & csNext);
-        Buffer[i  ] = '%';
-        Buffer[i+1] = 'x';
-        Buffer[i+2] = cForegroundColors[iForeground];
-        i = i + 3;
+        unsigned int iForeground = COLOR_INDEX_FG + (CS_FOREGROUND & csNext);
+        memcpy(Buffer + i, aColors[iForeground].pEscape, aColors[iForeground].nEscape);
+        i += aColors[iForeground].nEscape;
     }
 
     if (CS_BACKGROUND & tmp)
     {
-        int iBackground = (CS_BACKGROUND & csNext) >> 4;
-        Buffer[i  ] = '%';
-        Buffer[i+1] = 'x';
-        Buffer[i+2] = cBackgroundColors[iBackground];
-        i = i + 3;
+        unsigned int iBackground = COLOR_INDEX_BG + ((CS_BACKGROUND & csNext) >> 4);
+        memcpy(Buffer + i, aColors[iBackground].pEscape, aColors[iBackground].nEscape);
+        i += aColors[iBackground].nEscape;
     }
     Buffer[i] = '\0';
     *nTransition = i;
     return Buffer;
 }
-
-void ANSI_String_In_Init
-(
-    struct ANSI_In_Context *pacIn,
-    const UTF8 *szString
-)
-{
-    pacIn->m_cs = CS_NORMAL;
-    pacIn->m_p  = szString;
-    pacIn->m_n  = strlen((char *)szString);
-}
-
-void ANSI_String_Out_Init
-(
-    struct ANSI_Out_Context *pacOut,
-    UTF8  *pField,
-    size_t nField,
-    size_t vwMax
-)
-{
-    // Current ColorState.
-    //
-    pacOut->m_cs       = CS_NORMAL;
-
-    // Physical field definition.
-    //
-    pacOut->m_p        = pField;
-    pacOut->m_nMax     = nField;
-
-    // Visual field definition.
-    //
-    pacOut->m_vwMax    = vwMax;
-
-    // Current use of physical and visual resources.
-    //
-    pacOut->m_vw       = 0;
-    pacOut->m_n        = 0;
-
-    // Ready, set, go.
-    //
-    pacOut->m_bDone    = false;
-}
-
-#define KBA_UNKNOWN           0
-#define KBA_ABOVE_MINIMUM     1
-#define KBA_NEED_TRANSITIONS  2
-#define KBA_NEED_CODEPOINT    3
-
-// ANSI_String_Copy
-//
-// Move as many visible code points as possible from In to Out until either
-// In is exhausted, Out physically fills up, or we reach the maximum visual
-// width allowed to Out.
-//
-// Color is optimized to maximize room for visual code points. Color must not
-// be allowed to bleed beyond the field boundaries. We are allowed to discard
-// the trailing visible code points if necessary to make things fit.
-//
-// Several calls from different sources of In may be made, but when Out
-// reaches one of its contraints, it's marked Done.
-//
-// pac->m_cs represents the ColorState of the code point at pacIn->m_p. In
-// order to copy that code point to Out, Out's pacOut->m_cs must first agree
-// or be made to agree.  The input contain pacIn->m_n bytes starting with
-// pacIn->m_p.
-//
-// Likewise, the ColorState of the next code point to be added at pacOut->m_p
-// is given by pacOut->m_cs. Out has many conflicting constraints.  Firstly,
-// the final color state to achieve is given by pacOut->m_csFinal.  Secondly,
-// We cannot add more visible character to Out than pacOut->m_vwMax.  Finally,
-// the physical space in Out is limited to pacOut->m_nMax bytes.
-//
-void ANSI_String_Copy
-(
-    struct ANSI_Out_Context *pacOut,
-    struct ANSI_In_Context  *pacIn
-)
-{
-    if (pacOut->m_bDone)
-    {
-        // Out is full already (either visually or physically).
-        //
-        return;
-    }
-
-    // Knowledge of the binary transitions from pacIn->m_cs to pacOut->m_cs
-    // and the transition from pacOut->m_cs to pacOut->m_csFinal that must
-    // occur before any code points are added and when we are done,
-    // respectively.
-    //
-    bool   bKnowTransitions = false;
-    size_t nTransitionInitial = 0;
-    size_t nTransitionFinal = 0;
-
-    // Increasing knowledge of how far away we are from the constraints.
-    //
-    // We assume the longest possible transitions for both initial and
-    // final (which is pessimisitic) plus a '\0' terminator.
-    //
-    int    iKnownAvailable = KBA_NEED_TRANSITIONS;
-    size_t nMinimumCodePoints = 0;
-    size_t nNeededBytes = ANSI_MAXIMUM_BINARY_TRANSITION_LENGTH
-                        + COLOR_MAXIMUM_BINARY_NORMAL + 1;
-    if (nNeededBytes + UTF8_SIZE4 - 1 < pacOut->m_nMax)
-    {
-        size_t nMinimumBytesAvailable = pacOut->m_nMax - nNeededBytes;
-        nMinimumCodePoints = nMinimumBytesAvailable/UTF8_SIZE4;
-        if (pacOut->m_vw < pacOut->m_vwMax)
-        {
-            size_t vwAvailable = pacOut->m_vwMax - pacOut->m_vw;
-            if (vwAvailable < nMinimumCodePoints)
-            {
-                nMinimumCodePoints = vwAvailable;
-            }
-            iKnownAvailable = KBA_ABOVE_MINIMUM;
-        }
-    }
-
-    while (  '\0' != *pacIn->m_p
-          && !pacOut->m_bDone)
-    {
-        int iCode = mux_color(pacIn->m_p);
-        if (COLOR_NOTCOLOR != iCode)
-        {
-            // With a run of color code points, we shouldn't recalculate the
-            // transitions because they are constantly changing.  We may in
-            // fact run out of input before we find anything visual to copy
-            // to Out.
-            //
-            bKnowTransitions = false;
-            pacIn->m_cs = UpdateColorState(pacIn->m_cs, iCode);
-
-            size_t nInBytes = utf8_FirstByte[(unsigned char)*pacIn->m_p];
-            pacIn->m_n -= nInBytes;
-            pacIn->m_p += nInBytes;
-        }
-        else
-        {
-            do
-            {
-                size_t nCodePointBytes;
-                if (KBA_NEED_TRANSITIONS <= iKnownAvailable)
-                {
-                    // The transitions are easy to figure out and aren't affected by
-                    // visual code points.
-                    //
-                    if (!bKnowTransitions)
-                    {
-                        ANSI_TransitionColorBinary( pacIn->m_cs,
-                                                    pacOut->m_cs,
-                                                    &nTransitionInitial);
-                        ColorBinaryNormal(pacIn->m_cs, &nTransitionFinal);
-                        bKnowTransitions = true;
-                    }
-                }
-
-                if (KBA_NEED_CODEPOINT == iKnownAvailable)
-                {
-                    nCodePointBytes = utf8_FirstByte[(unsigned char)*pacIn->m_p];
-                    size_t nNeededBytes = nTransitionInitial + nTransitionFinal + nCodePointBytes + 1;
-                    if (  pacOut->m_nMax < nNeededBytes
-                       || pacOut->m_vwMax < pacOut->m_vw)
-                    {
-                        pacOut->m_bDone = true;
-                        break;
-                    }
-
-                    // Emit initial transition.
-                    //
-                    UTF8 *pTransitionInitial =
-                        ANSI_TransitionColorBinary( pacOut->m_cs,
-                                                    pacIn->m_cs,
-                                                    &nTransitionInitial);
-
-                    if (0 < nTransitionInitial)
-                    {
-                        memcpy((char *)pacOut->m_p, (char *)pTransitionInitial, nTransitionInitial);
-                        pacOut->m_p    += nTransitionInitial;
-                        pacOut->m_n    += nTransitionInitial;
-                        pacOut->m_nMax -= nTransitionInitial;
-                        pacOut->m_cs = pacIn->m_cs;
-                    }
-
-                    // Copy visual code point.
-                    //
-                    pacOut->m_vw++;
-                    memcpy((char *)pacOut->m_p, (char *)pacIn->m_p, nCodePointBytes);
-                    pacIn->m_p     += nCodePointBytes;
-                    pacIn->m_n     -= nCodePointBytes;
-                    pacOut->m_p    += nCodePointBytes;
-                    pacOut->m_n    += nCodePointBytes;
-                    pacOut->m_nMax -= nCodePointBytes;
-
-                    const UTF8 *p = utf8_NextCodePoint(pacIn->m_p);
-                    iCode = mux_color(p);
-                }
-                else if (KBA_ABOVE_MINIMUM == iKnownAvailable)
-                {
-                    // Emit initial transition.
-                    //
-                    UTF8 *pTransitionInitial =
-                        ANSI_TransitionColorBinary( pacOut->m_cs,
-                                                    pacIn->m_cs,
-                                                    &nTransitionInitial);
-
-                    if (0 < nTransitionInitial)
-                    {
-                        memcpy((char *)pacOut->m_p, (char *)pTransitionInitial, nTransitionInitial);
-                        pacOut->m_p    += nTransitionInitial;
-                        pacOut->m_n    += nTransitionInitial;
-                        pacOut->m_nMax -= nTransitionInitial;
-                        pacOut->m_cs = pacIn->m_cs;
-                    }
-
-                    // Go into a tight loop and recognize code points until a
-                    // color code point is seen, we run out of input, or we
-                    // exhaust our best-case quota of code points.
-                    //
-                    const UTF8 *p = utf8_NextCodePoint(pacIn->m_p);
-                    nMinimumCodePoints--;
-                    pacOut->m_vw++;
-                    while (  '\0' != *p
-                          && 0 < nMinimumCodePoints)
-                    {
-                        iCode = mux_color(p);
-                        if (COLOR_NOTCOLOR != iCode)
-                        {
-                            break;
-                        }
-                        nMinimumCodePoints--;
-                        pacOut->m_vw++;
-                        p = utf8_NextCodePoint(p);
-                    }
-
-                    // Copy run of visual code points.
-                    //
-                    size_t nBytes = p - pacIn->m_p;
-                    memcpy((char *)pacOut->m_p, (char *)pacIn->m_p, nBytes);
-                    pacIn->m_p     += nBytes;
-                    pacIn->m_n     -= nBytes;
-                    pacOut->m_p    += nBytes;
-                    pacOut->m_n    += nBytes;
-                    pacOut->m_nMax -= nBytes;
-
-                    iKnownAvailable = KBA_NEED_TRANSITIONS;
-                }
-                else if (KBA_NEED_TRANSITIONS == iKnownAvailable)
-                {
-                    size_t nNeededBytes = nTransitionInitial + nTransitionFinal + 1;
-                    if (nNeededBytes + UTF8_SIZE4 - 1 < pacOut->m_nMax)
-                    {
-                        size_t nMinimumBytesAvailable = pacOut->m_nMax - nNeededBytes;
-                        nMinimumCodePoints = nMinimumBytesAvailable/UTF8_SIZE4;
-                        if (pacOut->m_vw < pacOut->m_vwMax)
-                        {
-                            size_t vwAvailable = pacOut->m_vwMax - pacOut->m_vw;
-                            if (vwAvailable < nMinimumCodePoints)
-                            {
-                                nMinimumCodePoints = vwAvailable;
-                            }
-                            iKnownAvailable = KBA_ABOVE_MINIMUM;
-                        }
-                        else
-                        {
-                            iKnownAvailable = KBA_NEED_CODEPOINT;
-                        }
-                    }
-                    else
-                    {
-                        iKnownAvailable = KBA_NEED_CODEPOINT;
-                    }
-                }
-            } while (  COLOR_NOTCOLOR == iCode
-                    && '\0' != *pacIn->m_p
-                    && !pacOut->m_bDone);
-        }
-    }
-}
-
-size_t ANSI_String_Finalize
-(
-    struct ANSI_Out_Context *pacOut,
-    size_t *pnVisualWidth
-)
-{
-    UTF8 *pField = pacOut->m_p;
-    size_t nTransition = 0;
-    const UTF8 *pTransition = ColorBinaryNormal(pacOut->m_cs, &nTransition);
-    if (nTransition)
-    {
-        memcpy(pField, pTransition, nTransition);
-        pField += nTransition;
-    }
-    *pField = '\0';
-    pacOut->m_n += pField - pacOut->m_p;
-    pacOut->m_p  = pField;
-    *pnVisualWidth = pacOut->m_vw;
-    return pacOut->m_n;
-}
-
-// Take an ANSI string and fit as much of the information as possible
-// into a field of size nField. Truncate text. Also make sure that no color
-// leaks out of the field.
-//
-size_t ANSI_TruncateToField
-(
-    const UTF8 *szString,
-    size_t nField,
-    UTF8 *pField0,
-    size_t maxVisualWidth,
-    size_t *pnVisualWidth
-)
-{
-    if (!szString)
-    {
-        pField0[0] = '\0';
-        return 0;
-    }
-    struct ANSI_In_Context aic;
-    struct ANSI_Out_Context aoc;
-    ANSI_String_In_Init(&aic, szString);
-    ANSI_String_Out_Init(&aoc, pField0, nField, maxVisualWidth);
-    ANSI_String_Copy(&aoc, &aic);
-    return ANSI_String_Finalize(&aoc, pnVisualWidth);
-}
-
-#define COLOR_CODE_NORMAL       1
-#define COLOR_CODE_FG_WHITE     13
-
-static struct
-{
-    UTF8   *pAnsi;
-    size_t  nAnsi;
-} aColorSequences[COLOR_LAST_CODE+1] =
-{
-    {  NULL, 0 },
-    { (UTF8 *)ANSI_NORMAL,   sizeof(ANSI_NORMAL) - 1   },
-    { (UTF8 *)ANSI_HILITE,   sizeof(ANSI_HILITE) - 1   },
-    { (UTF8 *)ANSI_UNDER,    sizeof(ANSI_UNDER) - 1    },
-    { (UTF8 *)ANSI_BLINK,    sizeof(ANSI_BLINK) - 1    },
-    { (UTF8 *)ANSI_INVERSE,  sizeof(ANSI_INVERSE) - 1  },
-    { (UTF8 *)ANSI_BLACK,    sizeof(ANSI_BLACK) - 1    },
-    { (UTF8 *)ANSI_RED,      sizeof(ANSI_RED) - 1      },
-    { (UTF8 *)ANSI_GREEN,    sizeof(ANSI_GREEN) - 1    },
-    { (UTF8 *)ANSI_YELLOW,   sizeof(ANSI_YELLOW) - 1   },
-    { (UTF8 *)ANSI_BLUE,     sizeof(ANSI_BLUE) - 1     },
-    { (UTF8 *)ANSI_MAGENTA,  sizeof(ANSI_MAGENTA) - 1  },
-    { (UTF8 *)ANSI_CYAN,     sizeof(ANSI_CYAN) - 1     },
-    { (UTF8 *)ANSI_WHITE,    sizeof(ANSI_WHITE) - 1    },
-    { (UTF8 *)ANSI_BBLACK,   sizeof(ANSI_BBLACK) - 1   },
-    { (UTF8 *)ANSI_BRED,     sizeof(ANSI_BRED) - 1     },
-    { (UTF8 *)ANSI_BGREEN,   sizeof(ANSI_BGREEN) - 1   },
-    { (UTF8 *)ANSI_BYELLOW,  sizeof(ANSI_BYELLOW) - 1  },
-    { (UTF8 *)ANSI_BBLUE,    sizeof(ANSI_BBLUE) - 1    },
-    { (UTF8 *)ANSI_BMAGENTA, sizeof(ANSI_BMAGENTA) - 1 },
-    { (UTF8 *)ANSI_BCYAN,    sizeof(ANSI_BCYAN) - 1    },
-    { (UTF8 *)ANSI_BWHITE,   sizeof(ANSI_BWHITE) - 1   }
-};
 
 UTF8 *convert_color(const UTF8 *pString, bool bNoBleed)
 {
@@ -2408,18 +1955,18 @@ UTF8 *convert_color(const UTF8 *pString, bool bNoBleed)
         }
         else
         {
-            memcpy(pBuffer, aColorSequences[iCode].pAnsi, aColorSequences[iCode].nAnsi);
-            pBuffer += aColorSequences[iCode].nAnsi;
+            memcpy(pBuffer, aColors[iCode].pAnsi, aColors[iCode].nAnsi);
+            pBuffer += aColors[iCode].nAnsi;
         }
         pString = utf8_NextCodePoint(pString);
 
         if (  bNoBleed
-           && COLOR_CODE_NORMAL == iCode
-           && COLOR_CODE_FG_WHITE != mux_color(pString))
+           && COLOR_INDEX_RESET == iCode
+           && COLOR_INDEX_FG_WHITE != mux_color(pString))
         {
-            memcpy(pBuffer, aColorSequences[COLOR_CODE_FG_WHITE].pAnsi,
-                    aColorSequences[COLOR_CODE_FG_WHITE].nAnsi);
-            pBuffer += aColorSequences[COLOR_CODE_FG_WHITE].nAnsi;
+            memcpy(pBuffer, aColors[COLOR_INDEX_FG_WHITE].pAnsi,
+                            aColors[COLOR_INDEX_FG_WHITE].nAnsi);
+            pBuffer += aColors[COLOR_INDEX_FG_WHITE].nAnsi;
         }
     }
     *pBuffer = '\0';
@@ -2561,10 +2108,10 @@ UTF8 *translate_string(const UTF8 *pString, bool bConvert)
         unsigned int iCode = mux_color(pString);
         if (COLOR_NOTCOLOR == iCode)
         {
-            int nTransition = 0;
+            size_t nTransition = 0;
             if (bConvert)
             {
-                UTF8 *pTransition = ANSI_TransitionColorEscape(csPrevious, csCurrent, &nTransition);
+                UTF8 *pTransition = ColorTransitionEscape(csPrevious, csCurrent, &nTransition);
                 safe_str(pTransition, szTranslatedString, &pTranslatedString);
                 csPrevious = csCurrent;
             }
@@ -3299,95 +2846,43 @@ UTF8 *ConvertToUTF8(const char *p, size_t *pn)
                         case 1:
                             if ('0' == *p)
                             {
-                                s = (UTF8 *)COLOR_RESET;
+                                s = aColors[COLOR_INDEX_RESET].pUTF;
                             }
                             else if ('1' == *p)
                             {
-                                s = (UTF8 *)COLOR_INTENSE;
+                                s = aColors[COLOR_INDEX_INTENSE].pUTF;
                             }
                             else if ('4' == *p)
                             {
-                                s = (UTF8 *)COLOR_UNDERLINE;
+                                s = aColors[COLOR_INDEX_UNDERLINE].pUTF;
                             }
                             else if ('5' == *p)
                             {
-                                s = (UTF8 *)COLOR_BLINK;
+                                s = aColors[COLOR_INDEX_BLINK].pUTF;
                             }
                             else if ('7' == *p)
                             {
-                                s = (UTF8 *)COLOR_INVERSE;
+                                s = aColors[COLOR_INDEX_INVERSE].pUTF;
                             }
                             break;
 
                         case 2:
                             if ('3' == *p)
                             {
-                                if ('0' == p[1])
+                                unsigned int iCode = COLOR_INDEX_FG + (p[1] - '0');
+                                if (  COLOR_INDEX_FG <= iCode
+                                   && iCode < COLOR_INDEX_BG)
                                 {
-                                    s = (UTF8 *)COLOR_FG_BLACK;
-                                }
-                                else if ('1' == p[1])
-                                {
-                                    s = (UTF8 *)COLOR_FG_RED;
-                                }
-                                else if ('2' == p[1])
-                                {
-                                    s = (UTF8 *)COLOR_FG_GREEN;
-                                }
-                                else if ('3' == p[1])
-                                {
-                                    s = (UTF8 *)COLOR_FG_YELLOW;
-                                }
-                                else if ('4' == p[1])
-                                {
-                                    s = (UTF8 *)COLOR_FG_BLUE;
-                                }
-                                else if ('5' == p[1])
-                                {
-                                    s = (UTF8 *)COLOR_FG_MAGENTA;
-                                }
-                                else if ('6' == p[1])
-                                {
-                                    s = (UTF8 *)COLOR_FG_CYAN;
-                                }
-                                else if ('7' == p[1])
-                                {
-                                    s = (UTF8 *)COLOR_FG_WHITE;
+                                    s = aColors[iCode].pUTF;
                                 }
                             }
                             else if ('4' == *p)
                             {
-                                if ('0' == p[1])
+                                unsigned int iCode = COLOR_INDEX_BG + (p[1] - '0');
+                                if (  COLOR_INDEX_BG <= iCode
+                                   && iCode <= COLOR_LAST_CODE)
                                 {
-                                    s = (UTF8 *)COLOR_BG_BLACK;
-                                }
-                                else if ('1' == p[1])
-                                {
-                                    s = (UTF8 *)COLOR_BG_RED;
-                                }
-                                else if ('2' == p[1])
-                                {
-                                    s = (UTF8 *)COLOR_BG_GREEN;
-                                }
-                                else if ('3' == p[1])
-                                {
-                                    s = (UTF8 *)COLOR_BG_YELLOW;
-                                }
-                                else if ('4' == p[1])
-                                {
-                                    s = (UTF8 *)COLOR_BG_BLUE;
-                                }
-                                else if ('5' == p[1])
-                                {
-                                    s = (UTF8 *)COLOR_BG_MAGENTA;
-                                }
-                                else if ('6' == p[1])
-                                {
-                                    s = (UTF8 *)COLOR_BG_CYAN;
-                                }
-                                else if ('7' == p[1])
-                                {
-                                    s = (UTF8 *)COLOR_BG_WHITE;
+                                    s = aColors[iCode].pUTF;
                                 }
                             }
                             break;
@@ -4433,8 +3928,7 @@ mux_field StripTabsAndTruncate
     const UTF8 *pString,
     UTF8 *pBuffer,
     size_t nLength,
-    LBUF_OFFSET nWidth,
-    bool bStrip
+    LBUF_OFFSET nWidth
 )
 {
     mux_field  fldOutput(0, 0);
@@ -4474,13 +3968,12 @@ mux_field StripTabsAndTruncate
         {
             csNext = UpdateColorState(csNext, iCode);
         }
-        else if (  !bStrip
-                || NULL == strchr("\r\n\t", pString[curPos.m_byte]))
+        else if (NULL == strchr("\r\n\t", pString[curPos.m_byte]))
         {
             mux_field  fldPoint(utf8_FirstByte[pString[curPos.m_byte]], 1);
             if (csCurrent != csNext)
             {
-                pTransition = ANSI_TransitionColorBinary(csCurrent, csNext, &nTransition);
+                pTransition = ColorTransitionBinary(csCurrent, csNext, &nTransition);
                 pNormal = ColorBinaryNormal(csNext, &nNormalBytes);
                 fldNormal(nNormalBytes, 0);
             }
@@ -4527,6 +4020,95 @@ mux_field StripTabsAndTruncate
 
     pBuffer[fldOutput.m_byte] = '\0';
     return fldOutput;
+}
+
+size_t TruncateToBuffer
+(
+    const UTF8 *pString,
+    UTF8 *pBuffer,
+    size_t nBuffer
+)
+{
+    size_t nOutput = 0;
+
+    if (  NULL == pBuffer
+       || NULL == pString
+       || 0 == nBuffer
+       || '\0' == pString[0])
+    {
+        if (NULL != pBuffer)
+        {
+            pBuffer[0] = '\0';
+        }
+        return nOutput;
+    }
+
+    mux_cursor curPos = CursorMin;
+
+    const UTF8 *pTransition = NULL, *pNormal = NULL;
+    size_t nNormal = 0, nTransition = 0;
+    ColorState csCurrent = CS_NORMAL, csNext = CS_NORMAL;
+    bool bChange = false;
+
+    while ('\0' != pString[curPos.m_byte])
+    {
+        int iCode = mux_color(pString + curPos.m_byte);
+        size_t nPoint = utf8_FirstByte[pString[curPos.m_byte]];
+        mux_cursor curPoint(nPoint, 1);
+        if (COLOR_NOTCOLOR != iCode)
+        {
+            csNext = UpdateColorState(csNext, iCode);
+            bChange = true;
+        }
+        else
+        {
+            if (bChange)
+            {
+                pTransition = ColorTransitionBinary(csCurrent, csNext, &nTransition);
+                pNormal = ColorBinaryNormal(csNext, &nNormal);
+            }
+            else
+            {
+                nTransition = 0;
+            }
+            if (nOutput + nTransition + nPoint + nNormal <= nBuffer)
+            {
+                if (0 < nTransition)
+                {
+                    memcpy(pBuffer + nOutput, pTransition, nTransition);
+                    csCurrent = csNext;
+                    nOutput += nTransition;
+                }
+                bChange = false;
+
+                for (size_t j = 0; j < nPoint; j++)
+                {
+                    pBuffer[nOutput + j] = pString[curPos.m_byte + j];
+                }
+                nOutput += nPoint;
+            }
+            else
+            {
+                break;
+            }
+        }
+        curPos += curPoint;
+    }
+
+    if (bChange)
+    {
+        pNormal = ColorBinaryNormal(csCurrent, &nNormal);
+    }
+
+    if (  0 < nNormal
+       && nOutput + nNormal <= nBuffer)
+    {
+        memcpy(pBuffer + nOutput, pNormal, nNormal);
+        nOutput += nNormal;
+    }
+
+    pBuffer[nOutput] = '\0';
+    return nOutput;
 }
 
 mux_field PadField( UTF8 *pBuffer, size_t nMaxBytes, LBUF_OFFSET nMinWidth,
@@ -5552,7 +5134,7 @@ void mux_string::Validate(void) const
         {
             // Every ColorState must be valid.
             //
-            const ColorState Mask = ~(CS_FOREGROUND|CS_BACKGROUND|CS_ATTRS);
+            const ColorState Mask = static_cast<ColorState>(~(CS_FOREGROUND|CS_BACKGROUND|CS_ATTRS));
             mux_assert((Mask & m_pcs[i]) == 0);
             mux_assert((CS_FOREGROUND & m_pcs[i]) <= CS_FG_DEFAULT);
             mux_assert((CS_BACKGROUND & m_pcs[i]) <= CS_BG_DEFAULT);
@@ -6087,7 +5669,7 @@ LBUF_OFFSET mux_string::export_TextAnsi
         return export_TextPlain(pBuffer, iStart, iEnd, nBytesMax);
     }
     bool bPlentyOfRoom = (nBytesMax > 
-        static_cast<size_t>(nBytesWanted + (ANSI_MAXIMUM_BINARY_TRANSITION_LENGTH * nPointsWanted) + COLOR_MAXIMUM_BINARY_NORMAL + 1));
+        static_cast<size_t>(nBytesWanted + (COLOR_MAXIMUM_BINARY_TRANSITION_LENGTH * nPointsWanted) + COLOR_MAXIMUM_BINARY_NORMAL + 1));
     mux_cursor iPos = iStart, iCopy = iStart;
     size_t nTransition = 0;
     const UTF8 *pTransition = NULL;
@@ -6109,10 +5691,10 @@ LBUF_OFFSET mux_string::export_TextAnsi
                     iCopy = iPos;
                 }
 
-                pTransition = ANSI_TransitionColorBinary( csPrev,
-                                                          m_pcs[iPos.m_point],
-                                                          &nTransition,
-                                                          bNoBleed);
+                pTransition = ColorTransitionBinary( csPrev,
+                                                     m_pcs[iPos.m_point],
+                                                     &nTransition,
+                                                     bNoBleed);
                 memcpy(pBuffer, pTransition, nTransition * sizeof(pTransition[0]));
                 pBuffer += nTransition;
                 nDone += nTransition;
@@ -6146,8 +5728,8 @@ LBUF_OFFSET mux_string::export_TextAnsi
     {
         if (csPrev != m_pcs[iPos.m_point])
         {
-            pTransition = ANSI_TransitionColorBinary( csPrev, m_pcs[iPos.m_point],
-                                                      &nTransition, bNoBleed);
+            pTransition = ColorTransitionBinary( csPrev, m_pcs[iPos.m_point],
+                                                 &nTransition, bNoBleed);
         }
         else
         {

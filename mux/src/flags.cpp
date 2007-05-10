@@ -1057,7 +1057,7 @@ UTF8 *unparse_object(dbref player, dbref target, bool obey_myopic, bool bAddColo
             {
                 for (int i = 0; SimplifiedCodes[i]; i++)
                 {
-                    const UTF8 *pColor = ColorTable[(unsigned char)SimplifiedCodes[i]];
+                    const UTF8 *pColor = aColors[ColorTable[SimplifiedCodes[i]]].pUTF;
                     if (pColor)
                     {
                         safe_str(pColor, buf2, &bp2);

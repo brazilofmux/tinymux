@@ -166,45 +166,6 @@ FUNCTION(fun_beep)
     safe_chr(BEEP_CHAR, buff, bufc);
 }
 
-#define ANSI_F  0x00000001
-#define ANSI_H  0x00000002
-#define ANSI_U  0x00000004
-#define ANSI_I  0x00000008
-#define ANSI_FC 0x00000010
-#define ANSI_BC 0x00000020
-
-static const unsigned char ansi_have_table[256] =
-{
-    0, 0, 0, 0, 0, 0, 0, 0,  0, 0, 0, 0, 0, 0, 0, 0,      // 0x00-0x0F
-    0, 0, 0, 0, 0, 0, 0, 0,  0, 0, 0, 0, 0, 0, 0, 0,      // 0x10-0x1F
-    0, 0, 0, 0, 0, 0, 0, 0,  0, 0, 0, 0, 0, 0, 0, 0,      // 0x20-0x2F
-    0, 0, 0, 0, 0, 0, 0, 0,  0, 0, 0, 0, 0, 0, 0, 0,      // 0x30-0x3F
-    0,           0,             ANSI_BC,     ANSI_BC,     // 0x40-0x43
-    0,           0,             0,           ANSI_BC,     // 0x44-0x47
-    0,           0,             0,           0,           // 0x48-0x4B
-    0,           ANSI_BC,       0,           0,           // 0x4B-0x4F
-    0,           0,             ANSI_BC,     0,           // 0x50-0x53
-    0,           0,             0,           ANSI_BC,     // 0x54-0x57
-    ANSI_BC,     ANSI_BC,       0,           0,           // 0x58-0x5B
-    0,           0,             0,           0,           // 0x5B-0x5F
-    0,           0,             ANSI_FC,     ANSI_FC,     // 0x60-0x63
-    0,           0,             ANSI_F,      ANSI_FC,     // 0x64-0x67
-    ANSI_H,      ANSI_I,        0,           0,           // 0x68-0x6B
-    0,           ANSI_FC,       0,           0,           // 0x6C-0x6F
-    0,           0,             ANSI_FC,     0,           // 0x70-0x73
-    0,           ANSI_U,        0,           ANSI_FC,     // 0x74-0x77
-    ANSI_FC,     ANSI_FC,       0,           0,           // 0x78-0x7B
-    0,           0,             0,           0,           // 0x7B-0x7F
-    0, 0, 0, 0, 0, 0, 0, 0,  0, 0, 0, 0, 0, 0, 0, 0,      // 0x80-0x8F
-    0, 0, 0, 0, 0, 0, 0, 0,  0, 0, 0, 0, 0, 0, 0, 0,      // 0x90-0x9F
-    0, 0, 0, 0, 0, 0, 0, 0,  0, 0, 0, 0, 0, 0, 0, 0,      // 0xA0-0xAF
-    0, 0, 0, 0, 0, 0, 0, 0,  0, 0, 0, 0, 0, 0, 0, 0,      // 0xB0-0xBF
-    0, 0, 0, 0, 0, 0, 0, 0,  0, 0, 0, 0, 0, 0, 0, 0,      // 0xC0-0xCF
-    0, 0, 0, 0, 0, 0, 0, 0,  0, 0, 0, 0, 0, 0, 0, 0,      // 0xD0-0xDF
-    0, 0, 0, 0, 0, 0, 0, 0,  0, 0, 0, 0, 0, 0, 0, 0,      // 0xE0-0xEF
-    0, 0, 0, 0, 0, 0, 0, 0,  0, 0, 0, 0, 0, 0, 0, 0       // 0xF0-0xFF
-};
-
 void SimplifyColorLetters(UTF8 Out[8], UTF8 *pIn)
 {
     UTF8 *pOut = Out;
@@ -215,16 +176,15 @@ void SimplifyColorLetters(UTF8 Out[8], UTF8 *pIn)
         pOut[1] = '\0';
         return;
     }
-    UTF8 *p;
-    int have = 0;
+    ColorState have = 0;
     size_t nIn = strlen((char *)pIn);
-    for (p = pIn + nIn - 1; p >= pIn && *p != 'n'; p--)
+    for (size_t i = 1; i <= nIn && pIn[nIn - i] != 'n'; i++)
     {
-        int mask = ansi_have_table[(unsigned char)*p];
+        ColorState mask = aColors[ColorTable[pIn[nIn - i]]].csMask;
         if (  mask
            && (have & mask) == 0)
         {
-            *pOut++ = *p;
+            *pOut++ = pIn[nIn - i];
             have |= mask;
         }
     }
@@ -250,23 +210,20 @@ FUNCTION(fun_ansi)
         UTF8 tmp[LBUF_SIZE];
         UTF8 *bp = tmp;
 
-        UTF8 *s = pOut;
-        while (*s)
+        for (size_t i = 0; '\0' != pOut[i]; i++)
         {
-            const UTF8 *pColor = ColorTable[(unsigned char)*s];
-            if (pColor)
+            unsigned int iColor = ColorTable[pOut[i]];
+            if (0 < iColor)
             {
-                safe_str(pColor, tmp, &bp);
+                safe_str(aColors[iColor].pUTF, tmp, &bp);
             }
-            s++;
         }
         safe_str(fargs[iArg0+1], tmp, &bp);
         *bp = '\0';
 
         size_t nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
-        mux_field fldLen = StripTabsAndTruncate( tmp, *bufc, nBufferAvailable,
-                                                 LBUF_SIZE);
-        *bufc += fldLen.m_byte;
+        size_t nLen = TruncateToBuffer(tmp, *bufc, nBufferAvailable);
+        *bufc += nLen;
     }
 }
 

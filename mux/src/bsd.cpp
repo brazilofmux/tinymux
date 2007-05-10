@@ -1228,6 +1228,8 @@ void SetupPorts(int *pnPorts, PortInfo aPorts[], IntArray *pia, IntArray *piaSSL
                 }
             }
         }
+#else
+        UNUSED_PARAMETER(piaSSL);
 #endif
 
 

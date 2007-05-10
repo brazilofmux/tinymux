@@ -183,7 +183,7 @@ reg_ref **PushRegisters(int nNeeded);
 void PopRegisters(reg_ref **p, int nNeeded);
 
 extern const signed char mux_RegisterSet[256];
-extern const UTF8 *ColorTable[256];
+extern const unsigned int ColorTable[256];
 
 #if defined(FIRANMUX)
 UTF8 *linewrap_desc(UTF8 *);
