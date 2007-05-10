@@ -27,6 +27,13 @@ typedef int MUX_RESULT;
 #define MUX_FAILED(x)    ((MUX_RESULT)(x) < 0)
 #define MUX_SUCCEEDED(x) (0 <= (MUX_RESULT)(x))
 
+typedef enum
+{
+    InProcessServer = 1,
+    LocalServer     = 2,
+    AllContexts     = 3
+} mod_context;
+
 #ifdef WIN32
 const UINT64 mux_IID_IUnknown      = 0x0000000100000010i64;
 const UINT64 mux_IID_IClassFactory = 0x0000000100000011i64;
@@ -59,7 +66,7 @@ extern "C"
 
 // APIs available to netmux and dynamic modules.
 //
-extern "C" DCL_EXPORT MUX_RESULT mux_CreateInstance(UINT64 cid, UINT64 iid, void **ppv);
+extern "C" DCL_EXPORT MUX_RESULT mux_CreateInstance(UINT64 cid, mod_context ctx, UINT64 iid, void **ppv);
 extern "C" DCL_EXPORT MUX_RESULT mux_RegisterClassObjects(int ncid, UINT64 acid[], FPGETCLASSOBJECT *pfGetClassObject);
 extern "C" DCL_EXPORT MUX_RESULT mux_RevokeClassObjects(int ncid, UINT64 acid[]);
 

@@ -526,8 +526,13 @@ static void ModuleUnload(MODULE_INFO *pModule)
  * \return           MUX_RESULT
  */
 
-extern "C" DCL_EXPORT MUX_RESULT mux_CreateInstance(UINT64 cid, UINT64 iid, void **ppv)
+extern "C" DCL_EXPORT MUX_RESULT mux_CreateInstance(UINT64 cid, mod_context ctx, UINT64 iid, void **ppv)
 {
+    if (0 == (InProcessServer & ctx))
+    {
+        return MUX_E_CLASSNOTAVAILABLE;
+    }
+
     MODULE_INFO *pModule = ModuleFindFromCID(cid);
     if (NULL != pModule)
     {
