@@ -12,8 +12,8 @@
 
 #include <fcntl.h>
 
-#include "help.h"
 #include "command.h"
+#include "help.h"
 
 // Pointers to this struct is what gets stored in the help_htab's.
 //

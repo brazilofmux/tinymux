@@ -638,7 +638,7 @@ void boot_sqlslave(dbref executor, dbref caller, dbref enactor, int)
     }
 
     STARTLOG(LOG_ALWAYS, "NET", "QUERY");
-    log_text("SQL slave started on fd ");
+    log_text(T("SQL slave started on fd "));
     log_number(sqlslave_socket);
     ENDLOG;
 
@@ -649,7 +649,7 @@ failure:
 
     CleanUpSQLSlaveProcess();
     STARTLOG(LOG_ALWAYS, "NET", "SQL");
-    log_text(pFailedFunc);
+    log_text(T(pFailedFunc));
     log_number(errno);
     ENDLOG;
 }
@@ -815,7 +815,7 @@ static int get_sqlslave_result(void)
     buf[len] = '\0';
 
     STARTLOG(LOG_ALWAYS, "NET", "QUERY");
-    log_text(buf);
+    log_text(T(buf));
     ENDLOG;
 
     return 0;

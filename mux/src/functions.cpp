@@ -10,7 +10,6 @@
 #include "config.h"
 #include "externs.h"
 
-#include "ansi.h"
 #include "attrs.h"
 #include "command.h"
 #include "functions.h"
@@ -2904,7 +2903,7 @@ static FUNCTION(fun_extract)
         return;
     }
 
-    mux_string *sStr = new mux_string(fargs[0]);
+    mux_string *sStr = new mux_string(trim_space_sep(fargs[0], &sep));
     mux_words *words = NULL;
     try
     {
@@ -8491,10 +8490,8 @@ static UTF8 *expand_tabs(const UTF8 *str)
                 case '\n':
                     n = 0;
                     break;
-                case BEEP_CHAR:
-                    break;
                 default:
-                    if (mux_isprint(str + i))
+                    if (mux_haswidth(str + i))
                     {
                         n++;
                     }

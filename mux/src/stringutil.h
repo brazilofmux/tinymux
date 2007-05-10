@@ -355,6 +355,9 @@ inline int mux_color(const unsigned char *p)
 #define COLOR_BG_WHITE   "\xEE\x88\x87"    // 21
 #define COLOR_LAST_CODE  21
 
+#define BEEP_CHAR '\07'
+#define mux_haswidth(x) (mux_isprint(x) && *(x) != BEEP_CHAR)
+
 bool utf8_strlen(const UTF8 *pString, size_t &nString);
 
 typedef struct
@@ -710,10 +713,15 @@ public:
     };
 };
 
+static const mux_field fldAscii(1, 1);
+static const mux_field fldMin(0, 0);
+
 bool utf8_strlen(const UTF8 *pString, mux_cursor &nString);
 mux_field StripTabsAndTruncate(const UTF8 *pString, UTF8 *pBuffer,
-    size_t nLength,LBUF_OFFSET nWidth, bool bPad = false,
-    UTF8 uchFill = (UTF8)' ');
+    size_t nLength, LBUF_OFFSET nWidth, bool bStrip = true);
+mux_field PadField(UTF8 *pBuffer, size_t nMaxBytes, LBUF_OFFSET nMinWidth,
+                   mux_field fldOutput = fldMin);
+
 
 static const mux_cursor CursorMin(0,0);
 static const mux_cursor CursorMax(LBUF_SIZE - 1, LBUF_SIZE - 1);

@@ -19,15 +19,14 @@
 #include <limits.h>
 #include <math.h>
 
-#include "ansi.h"
 #include "attrs.h"
 #include "command.h"
 #include "comsys.h"
 #include "functions.h"
 #include "help.h"
+#include "mail.h"
 #include "misc.h"
 #include "pcre.h"
-#include "mail.h"
 #ifdef REALITY_LVLS
 #include "levels.h"
 #endif // REALITY_LVLS
@@ -148,6 +147,10 @@ FUNCTION(fun_cwho)
     }
     ItemToList_Final(&pContext);
 }
+
+#ifndef BEEP_CHAR
+#define BEEP_CHAR '\07'
+#endif
 
 FUNCTION(fun_beep)
 {

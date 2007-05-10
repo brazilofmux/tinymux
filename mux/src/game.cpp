@@ -15,14 +15,14 @@
 
 #include "attrs.h"
 #include "command.h"
-#include "functions.h"
 #include "comsys.h"
 #include "file_c.h"
+#include "functions.h"
+#include "help.h"
 #include "mguests.h"
 #include "muxcli.h"
 #include "pcre.h"
 #include "powers.h"
-#include "help.h"
 #ifdef REALITY_LVLS
 #include "levels.h"
 #endif // REALITY_LVLS

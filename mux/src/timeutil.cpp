@@ -23,9 +23,6 @@
 //
 #include <time.h>
 
-#include "timeutil.h"
-#include "stringutil.h"
-
 CMuxAlarm MuxAlarm;
 
 #ifdef SMALLEST_INT_GTE_NEG_QUOTIENT

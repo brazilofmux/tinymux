@@ -7,7 +7,7 @@
 
 #include "autoconf.h"
 #include "config.h"
-#include <dbi/dbi.h>
+//#include <dbi/dbi.h>
 
 #define MAX_STRING 1000
 
@@ -22,8 +22,8 @@ int main(int argc, char *argv[])
         return 1;
     }
 
-    dbi_conn conn;
-    dbi_initialize(NULL);
+//    dbi_conn conn;
+//    dbi_initialize(NULL);
 
     for (;;)
     {
@@ -49,6 +49,6 @@ int main(int argc, char *argv[])
         write(1, "OK", 2);
     }
 
-    dbi_shutdown();
+//    dbi_shutdown();
     return 0;
 }

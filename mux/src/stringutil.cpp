@@ -4434,8 +4434,7 @@ mux_field StripTabsAndTruncate
     UTF8 *pBuffer,
     size_t nLength,
     LBUF_OFFSET nWidth,
-    bool bPad,
-    UTF8 uchFill
+    bool bStrip
 )
 {
     mux_field  fldOutput(0, 0);
@@ -4461,10 +4460,6 @@ mux_field StripTabsAndTruncate
     mux_cursor curPos = CursorMin;
     mux_field  fldLimit(nLength, nWidth);
 
-#ifdef MUX_TABLE
-#else // MUX_TABLE
-    const mux_field fldAscii(1, 1);
-#endif // MUX_TABLE
     mux_field  fldTransition(0, 0);
     mux_field  fldNormal(0, 0);
     const UTF8 *pTransition = NULL, *pNormal = NULL;
@@ -4479,7 +4474,8 @@ mux_field StripTabsAndTruncate
         {
             csNext = UpdateColorState(csNext, iCode);
         }
-        else if (NULL == strchr("\r\n\t", pString[curPos.m_byte]))
+        else if (  !bStrip
+                || NULL == strchr("\r\n\t", pString[curPos.m_byte]))
         {
             mux_field  fldPoint(utf8_FirstByte[pString[curPos.m_byte]], 1);
             if (csCurrent != csNext)
@@ -4529,13 +4525,23 @@ mux_field StripTabsAndTruncate
         fldOutput += fldNormal;
     }
 
-    if (bPad)
+    pBuffer[fldOutput.m_byte] = '\0';
+    return fldOutput;
+}
+
+mux_field PadField( UTF8 *pBuffer, size_t nMaxBytes, LBUF_OFFSET nMinWidth,
+                    mux_field fldOutput)
+{
+    if (NULL == pBuffer)
     {
-        while (fldOutput < fldLimit)
-        {
-            pBuffer[fldOutput.m_byte] = uchFill;
-            fldOutput += fldAscii;
-        }
+        return fldMin;
+    }
+
+    while (  fldOutput.m_byte   < nMaxBytes
+          && fldOutput.m_column < nMinWidth)
+    {
+        pBuffer[fldOutput.m_byte] = (UTF8)' ';
+        fldOutput += fldAscii;
     }
     pBuffer[fldOutput.m_byte] = '\0';
     return fldOutput;

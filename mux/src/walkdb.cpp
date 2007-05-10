@@ -10,9 +10,9 @@
 #include "config.h"
 #include "externs.h"
 
-#include "misc.h"
 #include "attrs.h"
 #include "command.h"
+#include "misc.h"
 
 // Bind occurances of the universal var in ACTION to ARG, then run ACTION.
 // Cmds run in low-prio Q after a 1 sec delay for the first one.

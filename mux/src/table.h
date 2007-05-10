@@ -22,7 +22,6 @@
 //      Table->end()
 
 static const UTF8 *Empty = T("");
-static const mux_field fldAscii(1, 1);
 
 #define MAX_COLUMNS 255
 #define FIXED_COLUMNS 10
@@ -31,12 +30,12 @@ class mux_display_column
 {
 public:
     const UTF8 *m_pHeader;
-    LBUF_OFFSET m_nWidth;
+    LBUF_OFFSET m_nWidthMin;
+    LBUF_OFFSET m_nWidthMax;
     LBUF_OFFSET m_nPadTrailing;
-    UTF8        m_uchFill;
-    bool        m_bFill;
 
-    mux_display_column(const UTF8 *header, LBUF_OFFSET nWidth, bool bFill = true, LBUF_OFFSET nPadTrailing = 1, UTF8 uchFill = (UTF8)' ');
+    mux_display_column( const UTF8 *header, LBUF_OFFSET nWidthMin, LBUF_OFFSET nWidthMax,
+                        LBUF_OFFSET nPadTrailing = 1);
 };
 
 class mux_display_table
@@ -68,7 +67,8 @@ public:
     void body_end(void);
     void cell_add(const UTF8 *pText, bool bAdvance = true);
     void cell_skip(void);
-    void column_add(const UTF8 *header, LBUF_OFFSET nWidth, bool bFill = true, LBUF_OFFSET nPadTrailing = 1, UTF8 uchFill = (UTF8)' ');
+    void column_add( const UTF8 *header, LBUF_OFFSET nWidthMin, LBUF_OFFSET nWidthMax,
+                     LBUF_OFFSET nPadTrailing = 1);
     void header_begin(void);
     void header_end(void);
     void row_begin(void);
