@@ -123,6 +123,7 @@ Bug Fixes:
  -- CLog::AppendLog() does not actually position log at end of existing
     log file. Net result is only that first two lines (Containing to
     INI/LOAD entries) are lost.
+ -- ConvertToUTF8() converted code points above 0x10000 incorrectly.
 
 
 Performance Enhancements:

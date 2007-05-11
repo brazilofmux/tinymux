@@ -2841,7 +2841,7 @@ UTF8 *ConvertToUTF8
         ch >>= 6;
         buffer[1] = static_cast<char>((ch | byteMark) & byteMask);
         ch >>= 6;
-        buffer[0] = static_cast<char>(0xF8 | ch);
+        buffer[0] = static_cast<char>(0xF0 | ch);
     }
     return buffer;
 }
