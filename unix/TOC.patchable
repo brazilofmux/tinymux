@@ -91,7 +91,13 @@ src/match.h
 src/mguests.cpp
 src/mguests.h
 src/misc.h
-src/modules/Makefile
+src/modules/Makefile.in
+src/modules/autoconf.h.in
+src/modules/config.guess
+src/modules/config.sub
+src/modules/configure
+src/modules/configure.in
+src/modules/install-sh
 src/modules/sample.cpp
 src/modules/sample.h
 src/modules.cpp
