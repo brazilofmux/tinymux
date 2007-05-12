@@ -22,7 +22,7 @@ static UINT64 sample_cids[NUM_CIDS] =
 
 // The following four functions are for access by dlopen.
 //
-extern "C" MUX_RESULT DCL_EXPORT mux_CanUnloadNow(void)
+extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_CanUnloadNow(void)
 {
     if (  0 == g_cComponents
        && 0 == g_cServerLocks)
@@ -35,7 +35,7 @@ extern "C" MUX_RESULT DCL_EXPORT mux_CanUnloadNow(void)
     }
 }
 
-extern "C" MUX_RESULT DCL_EXPORT mux_GetClassObject(UINT64 cid, UINT64 iid, void **ppv)
+extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_GetClassObject(UINT64 cid, UINT64 iid, void **ppv)
 {
     MUX_RESULT mr = MUX_E_CLASSNOTAVAILABLE;
 
@@ -62,7 +62,7 @@ extern "C" MUX_RESULT DCL_EXPORT mux_GetClassObject(UINT64 cid, UINT64 iid, void
     return mr;
 }
 
-extern "C" MUX_RESULT DCL_EXPORT mux_Register(void)
+extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_Register(void)
 {
     MUX_RESULT mrRegister = mux_RegisterClassObjects(NUM_CIDS, sample_cids, NULL);
 
@@ -86,7 +86,7 @@ extern "C" MUX_RESULT DCL_EXPORT mux_Register(void)
     return mrRegister;
 }
 
-extern "C" MUX_RESULT DCL_EXPORT mux_Unregister(void)
+extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_Unregister(void)
 {
     return mux_RevokeClassObjects(NUM_CIDS, sample_cids);
 }

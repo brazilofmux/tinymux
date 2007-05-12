@@ -66,14 +66,14 @@ public:
 
 extern "C"
 {
-    typedef MUX_RESULT FPGETCLASSOBJECT(UINT64 cid, UINT64 iid, void **ppv);
+    typedef MUX_RESULT DCL_API FPGETCLASSOBJECT(UINT64 cid, UINT64 iid, void **ppv);
 }
 
 // APIs available to netmux and dynamic modules.
 //
-extern "C" MUX_RESULT DCL_EXPORT mux_CreateInstance(UINT64 cid, mux_IUnknown *pUnknownOuter, mod_context ctx, UINT64 iid, void **ppv);
-extern "C" MUX_RESULT DCL_EXPORT mux_RegisterClassObjects(int ncid, UINT64 acid[], FPGETCLASSOBJECT *pfGetClassObject);
-extern "C" MUX_RESULT DCL_EXPORT mux_RevokeClassObjects(int ncid, UINT64 acid[]);
+extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_CreateInstance(UINT64 cid, mux_IUnknown *pUnknownOuter, mod_context ctx, UINT64 iid, void **ppv);
+extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_RegisterClassObjects(int ncid, UINT64 acid[], FPGETCLASSOBJECT *pfGetClassObject);
+extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_RevokeClassObjects(int ncid, UINT64 acid[]);
 
 typedef struct
 {
@@ -84,10 +84,10 @@ typedef struct
 // APIs intended only for use by netmux.
 //
 #ifdef WIN32
-extern "C" MUX_RESULT DCL_EXPORT mux_AddModule(const UTF8 aModuleName[], const UTF16 aFileName[]);
+extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_AddModule(const UTF8 aModuleName[], const UTF16 aFileName[]);
 #else
-extern "C" MUX_RESULT DCL_EXPORT mux_AddModule(const UTF8 aModuleName[], const UTF8 aFileName[]);
+extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_AddModule(const UTF8 aModuleName[], const UTF8 aFileName[]);
 #endif // WIN32
-extern "C" MUX_RESULT DCL_EXPORT mux_RemoveModule(const UTF8 aModuleName[]);
-extern "C" MUX_RESULT DCL_EXPORT mux_ModuleInfo(int iModule, MUX_MODULE_INFO *pModuleInfo);
-extern "C" MUX_RESULT DCL_EXPORT mux_ModuleTick(void);
+extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_RemoveModule(const UTF8 aModuleName[]);
+extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_ModuleInfo(int iModule, MUX_MODULE_INFO *pModuleInfo);
+extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_ModuleTick(void);
