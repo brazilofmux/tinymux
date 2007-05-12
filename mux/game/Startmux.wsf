@@ -208,7 +208,7 @@ Do
     ' Validate Log Directory.
     '
     If not fso.FolderExists(logdir) Then
-        logdir = ".";
+        logdir = "."
     End If
 
     ' Kick off the MUX
