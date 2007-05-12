@@ -1782,7 +1782,7 @@ static CF_HAND(cf_module)
         UTF8 *filename = buffer;
 #endif
         mr = mux_AddModule(str, filename);
-        free_lbuf(filename);
+        free_lbuf(buffer);
     }
 
     if (MUX_FAILED(mr))
