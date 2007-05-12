@@ -239,8 +239,15 @@ UINT32 CLogFactory::Release(void)
     return m_cRef;
 }
 
-MUX_RESULT CLogFactory::CreateInstance(UINT64 iid, void **ppv)
+MUX_RESULT CLogFactory::CreateInstance(mux_IUnknown *pUnknownOuter, UINT64 iid, void **ppv)
 {
+    // Disallow attempts to aggregate this component.
+    //
+    if (NULL != pUnknownOuter)
+    {
+        return MUX_E_NOAGGREGATION;
+    }
+
     CLog *pLog = NULL;
     try
     {

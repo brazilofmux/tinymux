@@ -27,6 +27,7 @@ typedef int MUX_RESULT;
 #define MUX_E_UNEXPECTED        (-7)
 #define MUX_E_NOTREADY          (-8)
 #define MUX_E_NOTFOUND          (-9)
+#define MUX_E_NOAGGREGATION     (-10)
 
 #define MUX_FAILED(x)    ((MUX_RESULT)(x) < 0)
 #define MUX_SUCCEEDED(x) (0 <= (MUX_RESULT)(x))
@@ -59,7 +60,7 @@ public:
 interface mux_IClassFactory : public mux_IUnknown
 {
 public:
-    virtual MUX_RESULT CreateInstance(UINT64 iid, void **ppv) = 0;
+    virtual MUX_RESULT CreateInstance(mux_IUnknown *pUnknownOuter, UINT64 iid, void **ppv) = 0;
     virtual MUX_RESULT LockServer(bool bLock) = 0;
 };
 
@@ -70,7 +71,7 @@ extern "C"
 
 // APIs available to netmux and dynamic modules.
 //
-extern "C" DCL_EXPORT MUX_RESULT mux_CreateInstance(UINT64 cid, mod_context ctx, UINT64 iid, void **ppv);
+extern "C" DCL_EXPORT MUX_RESULT mux_CreateInstance(UINT64 cid, mux_IUnknown *pUnknownOuter, mod_context ctx, UINT64 iid, void **ppv);
 extern "C" DCL_EXPORT MUX_RESULT mux_RegisterClassObjects(int ncid, UINT64 acid[], FPGETCLASSOBJECT *pfGetClassObject);
 extern "C" DCL_EXPORT MUX_RESULT mux_RevokeClassObjects(int ncid, UINT64 acid[]);
 
