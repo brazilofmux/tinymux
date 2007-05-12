@@ -526,7 +526,7 @@ static void ModuleUnload(MODULE_INFO *pModule)
  * \return           MUX_RESULT
  */
 
-extern "C" DCL_EXPORT MUX_RESULT mux_CreateInstance(UINT64 cid, mod_context ctx, UINT64 iid, void **ppv)
+extern "C" DCL_EXPORT MUX_RESULT mux_CreateInstance(UINT64 cid, mux_IUnknown *pUnknownOuter, mod_context ctx, UINT64 iid, void **ppv)
 {
     if (0 == (InProcessServer & ctx))
     {
@@ -557,7 +557,7 @@ extern "C" DCL_EXPORT MUX_RESULT mux_CreateInstance(UINT64 cid, mod_context ctx,
         if (  MUX_SUCCEEDED(mr)
            && NULL != pIClassFactory)
         {
-            mr = pIClassFactory->CreateInstance(iid, ppv);
+            mr = pIClassFactory->CreateInstance(pUnknownOuter, iid, ppv);
             pIClassFactory->Release();
         }
         return mr;
