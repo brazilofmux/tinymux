@@ -3133,7 +3133,7 @@ int DCL_CDECL main(int argc, char *argv[])
     init_functab();
     init_attrtab();
     init_version();
-#ifdef HAVE_DLOPEN
+#if defined(HAVE_DLOPEN) || defined(WIN32)
     init_modules();
 #endif
 
@@ -3299,7 +3299,9 @@ int DCL_CDECL main(int argc, char *argv[])
     // local extensions.
     //
     local_shutdown();
+#if defined(HAVE_DLOPEN) || defined(WIN32)
     final_modules();
+#endif
     CLOSE;
 
 #ifndef WIN32
