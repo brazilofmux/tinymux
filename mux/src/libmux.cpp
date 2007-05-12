@@ -526,7 +526,7 @@ static void ModuleUnload(MODULE_INFO *pModule)
  * \return           MUX_RESULT
  */
 
-extern "C" DCL_EXPORT MUX_RESULT mux_CreateInstance(UINT64 cid, mux_IUnknown *pUnknownOuter, mod_context ctx, UINT64 iid, void **ppv)
+extern "C" MUX_RESULT DCL_EXPORT mux_CreateInstance(UINT64 cid, mux_IUnknown *pUnknownOuter, mod_context ctx, UINT64 iid, void **ppv)
 {
     if (0 == (InProcessServer & ctx))
     {
@@ -578,7 +578,7 @@ extern "C" DCL_EXPORT MUX_RESULT mux_CreateInstance(UINT64 cid, mux_IUnknown *pU
  * \return                      MUX_RESULT
  */
 
-extern "C" DCL_EXPORT MUX_RESULT mux_RegisterClassObjects(int ncid, UINT64 acid[], FPGETCLASSOBJECT *fpGetClassObject)
+extern "C" MUX_RESULT DCL_EXPORT mux_RegisterClassObjects(int ncid, UINT64 acid[], FPGETCLASSOBJECT *fpGetClassObject)
 {
     if (ncid <= 0)
     {
@@ -688,7 +688,7 @@ extern "C" DCL_EXPORT MUX_RESULT mux_RegisterClassObjects(int ncid, UINT64 acid[
  * \return                      MUX_RESULT
  */
 
-extern "C" DCL_EXPORT MUX_RESULT mux_RevokeClassObjects(int ncid, UINT64 acid[])
+extern "C" MUX_RESULT DCL_EXPORT mux_RevokeClassObjects(int ncid, UINT64 acid[])
 {
     if (ncid <= 0)
     {
@@ -747,9 +747,9 @@ extern "C" DCL_EXPORT MUX_RESULT mux_RevokeClassObjects(int ncid, UINT64 acid[])
  */
 
 #ifdef WIN32
-extern "C" DCL_EXPORT MUX_RESULT mux_AddModule(const UTF8 aModuleName[], const UTF16 aFileName[])
+extern "C" MUX_RESULT DCL_EXPORT mux_AddModule(const UTF8 aModuleName[], const UTF16 aFileName[])
 #else
-extern "C" DCL_EXPORT MUX_RESULT mux_AddModule(const UTF8 aModuleName[], const UTF8 aFileName[])
+extern "C" MUX_RESULT DCL_EXPORT mux_AddModule(const UTF8 aModuleName[], const UTF8 aFileName[])
 #endif // WIN32
 {
     MUX_RESULT mr;
@@ -794,7 +794,7 @@ extern "C" DCL_EXPORT MUX_RESULT mux_AddModule(const UTF8 aModuleName[], const U
  * \return         MUX_RESULT
  */
 
-extern "C" DCL_EXPORT MUX_RESULT mux_RemoveModule(const UTF8 aModuleName[])
+extern "C" MUX_RESULT DCL_EXPORT mux_RemoveModule(const UTF8 aModuleName[])
 {
     MUX_RESULT mr;
     if (NULL == g_pModule)
@@ -860,7 +860,7 @@ extern "C" DCL_EXPORT MUX_RESULT mux_RemoveModule(const UTF8 aModuleName[])
  *                 MUX_E_INVALIDARG for invalid arguments.
  */
 
-extern "C" DCL_EXPORT MUX_RESULT mux_ModuleInfo(int iModule, MUX_MODULE_INFO *pModuleInfo)
+extern "C" MUX_RESULT DCL_EXPORT mux_ModuleInfo(int iModule, MUX_MODULE_INFO *pModuleInfo)
 {
     if (iModule < 0)
     {
@@ -889,7 +889,7 @@ extern "C" DCL_EXPORT MUX_RESULT mux_ModuleInfo(int iModule, MUX_MODULE_INFO *pM
  * \return         MUX_RESULT
  */
 
-extern "C" DCL_EXPORT MUX_RESULT mux_ModuleTick(void)
+extern "C" MUX_RESULT DCL_EXPORT mux_ModuleTick(void)
 {
     // We can query each loaded module and unload the ones that are unloadable.
     //
