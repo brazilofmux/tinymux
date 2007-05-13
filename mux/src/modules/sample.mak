@@ -39,7 +39,10 @@ ALL : "$(OUTDIR)\sample.dll"
 
 CLEAN :
 	-@erase "$(INTDIR)\sample.obj"
+	-@erase "$(INTDIR)\vc60.idb"
 	-@erase "$(OUTDIR)\sample.dll"
+	-@erase "$(INTDIR)\sample.exp"
+	-@erase "$(INTDIR)\sample.lib"
 
 "$(OUTDIR)" :
     if not exist "$(OUTDIR)/$(NULL)" mkdir "$(OUTDIR)"
@@ -66,9 +69,12 @@ CPP_PROJ=/nologo /MT /W3 /GX /Ot /Oa /Og /Oi /Ob2 /Gy /D "NDEBUG" /D "WIN32" /D 
 <<
 
 LINK32=xilink.exe
-LINK32_FLAGS=kernel32.lib user32.lib gdi32.lib wsock32.lib "..\bin_release\libmux.lib" /nologo /version:2.4 /subsystem:console /dll /incremental:no /pdb:"$(OUTDIR)\sample.pdb" /machine:amd64 /out:"$(OUTDIR)\sample.dll" 
+LINK32_FLAGS=kernel32.lib user32.lib gdi32.lib wsock32.lib "..\bin_release\libmux.lib" /nologo /version:2.7 /subsystem:console /dll /incremental:no /pdb:"$(OUTDIR)\sample.pdb" /machine:amd64 /def:".\sample.def" /out:"$(OUTDIR)\sample.dll"
+DEF_FILE= \
+	".\sample.def"
 LINK32_OBJS= \
-	"$(INTDIR)\sample.obj"
+	"$(INTDIR)\sample.obj" \
+	"..\bin_release\libmux.lib"
 
 "$(OUTDIR)\sample.dll" : "$(OUTDIR)" $(DEF_FILE) $(LINK32_OBJS)
     $(LINK32) @<<
@@ -83,13 +89,17 @@ INTDIR=.\bin_debug_sample
 OutDir=.\bin_debug
 # End Custom Macros
 
-ALL : "$(OUTDIR)\sample.dll" "$(OUTDIR)\sample.bsc"
+ALL : "$(OUTDIR)\sample.dll"
 
 
 CLEAN :
 	-@erase "$(INTDIR)\sample.obj"
+	-@erase "$(INTDIR)\vc60.idb"
+	-@erase "$(INTDIR)\vc60.pdb"
 	-@erase "$(OUTDIR)\sample.dll"
+	-@erase "$(OUTDIR)\sample.exp"
 	-@erase "$(OUTDIR)\sample.ilk"
+	-@erase "$(OUTDIR)\sample.lib"
 	-@erase "$(OUTDIR)\sample.pdb"
 
 "$(OUTDIR)" :
@@ -115,11 +125,14 @@ CPP_PROJ=/nologo /MTd /W3 /GX /Zi /Od /D "_DEBUG" /D "WIN32" /D "WIN64" /D "_CON
    $(CPP) @<<
    $(CPP_PROJ) $< 
 <<
-
+	
 LINK32=xilink.exe
-LINK32_FLAGS=kernel32.lib user32.lib gdi32.lib wsock32.lib "..\bin_release\libmux.lib" /nologo /subsystem:console /dll /incremental:yes /pdb:"$(OUTDIR)\sample.pdb" /debug /machine:amd64 /out:"$(OUTDIR)\sample.dll" /pdbtype:sept 
+LINK32_FLAGS=kernel32.lib user32.lib gdi32.lib wsock32.lib "..\bin_debug\libmux.lib" /nologo /subsystem:console /dll /incremental:yes /pdb:"$(OUTDIR)\sample.pdb" /debug /machine:amd64 /def:".\sample.def" /out:"$(OUTDIR)\sample.dll" /pdbtype:sept 
+DEF_FILE= \
+	".\sample.def"
 LINK32_OBJS= \
-	"$(INTDIR)\sample.obj"
+	"$(INTDIR)\sample.obj" \
+	"..\bin_debug\libmux.lib"
 
 "$(OUTDIR)\sample.dll" : "$(OUTDIR)" $(DEF_FILE) $(LINK32_OBJS)
     $(LINK32) @<<
@@ -141,7 +154,7 @@ LINK32_OBJS= \
 !IF "$(CFG)" == "sample - Win64 Release" || "$(CFG)" == "sample - Win64 Debug"
 SOURCE=.\sample.cpp
 
-"$(INTDIR)\sample.obj": $(SOURCE) "$(INTDIR)"
+"$(INTDIR)\sample.obj" : $(SOURCE) "$(INTDIR)"
 
 
 !ENDIF 
