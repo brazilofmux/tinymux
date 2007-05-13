@@ -23,9 +23,9 @@
 #include "muxcli.h"
 #include "pcre.h"
 #include "powers.h"
+#if defined(HAVE_DLOPEN) || defined(WIN32)
 #include "libmux.h"
-#if 0
-#include "modules/sample.h"
+#include "modules.h"
 #endif
 #ifdef REALITY_LVLS
 #include "levels.h"
@@ -3133,35 +3133,21 @@ int DCL_CDECL main(int argc, char *argv[])
     init_functab();
     init_attrtab();
     init_version();
+#if defined(HAVE_DLOPEN) || defined(WIN32)
+    init_modules();
+#endif
 
     mudconf.config_file = StringClone(conffile);
     cf_read();
-
-#if 0
-    // Use of sample module.
-    //
-    ISample * pISample = NULL;
-    MUX_RESULT mr = mux_CreateInstance(CID_Sample, IID_ISample, (void **)&pISample);
-    if (MUX_SUCCEEDED(mr))
-    {
-        Log.tinyprintf("Sample Module returned %d" ENDLINE, pISample->Add(1, 1));
-        pISample->Release();
-        pISample = NULL;
-    }
-    else
-    {
-        Log.tinyprintf("Sample Module failed to create with %d" ENDLINE, mr);
-    }
-#endif
-
 
 #if defined(INLINESQL)
     init_sql();
 #endif // INLINESQL
 
 #ifdef SSL_ENABLED
-    if (!initialize_ssl()) {
-        // Do some extra handling?  
+    if (!initialize_ssl())
+    {
+        // Do some extra handling?
         // We do log all errors in initialize_ssl, so it may be unneeded.
     }
 #endif
@@ -3313,6 +3299,9 @@ int DCL_CDECL main(int argc, char *argv[])
     // local extensions.
     //
     local_shutdown();
+#if defined(HAVE_DLOPEN) || defined(WIN32)
+    final_modules();
+#endif
     CLOSE;
 
 #ifndef WIN32

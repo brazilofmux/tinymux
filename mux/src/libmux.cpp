@@ -526,8 +526,13 @@ static void ModuleUnload(MODULE_INFO *pModule)
  * \return           MUX_RESULT
  */
 
-extern "C" DCL_EXPORT MUX_RESULT mux_CreateInstance(UINT64 cid, UINT64 iid, void **ppv)
+extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_CreateInstance(UINT64 cid, mux_IUnknown *pUnknownOuter, mod_context ctx, UINT64 iid, void **ppv)
 {
+    if (0 == (InProcessServer & ctx))
+    {
+        return MUX_E_CLASSNOTAVAILABLE;
+    }
+
     MODULE_INFO *pModule = ModuleFindFromCID(cid);
     if (NULL != pModule)
     {
@@ -552,7 +557,7 @@ extern "C" DCL_EXPORT MUX_RESULT mux_CreateInstance(UINT64 cid, UINT64 iid, void
         if (  MUX_SUCCEEDED(mr)
            && NULL != pIClassFactory)
         {
-            mr = pIClassFactory->CreateInstance(iid, ppv);
+            mr = pIClassFactory->CreateInstance(pUnknownOuter, iid, ppv);
             pIClassFactory->Release();
         }
         return mr;
@@ -573,7 +578,7 @@ extern "C" DCL_EXPORT MUX_RESULT mux_CreateInstance(UINT64 cid, UINT64 iid, void
  * \return                      MUX_RESULT
  */
 
-extern "C" DCL_EXPORT MUX_RESULT mux_RegisterClassObjects(int ncid, UINT64 acid[], FPGETCLASSOBJECT *fpGetClassObject)
+extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_RegisterClassObjects(int ncid, UINT64 acid[], FPGETCLASSOBJECT *fpGetClassObject)
 {
     if (ncid <= 0)
     {
@@ -661,6 +666,13 @@ extern "C" DCL_EXPORT MUX_RESULT mux_RegisterClassObjects(int ncid, UINT64 acid[
         g_nClassesAllocated = nAllocate;
     }
 
+    // If these classes are implemented in netmux, save the private GetClassObject method.
+    //
+    if (&g_NetmuxModule == pModule)
+    {
+        pModule->fpGetClassObject = fpGetClassObject;
+    }
+
     for (i = 0; i < ncid; i++)
     {
         ClassAdd(acid[i], pModule);
@@ -676,7 +688,7 @@ extern "C" DCL_EXPORT MUX_RESULT mux_RegisterClassObjects(int ncid, UINT64 acid[
  * \return                      MUX_RESULT
  */
 
-extern "C" DCL_EXPORT MUX_RESULT mux_RevokeClassObjects(int ncid, UINT64 acid[])
+extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_RevokeClassObjects(int ncid, UINT64 acid[])
 {
     if (ncid <= 0)
     {
@@ -735,9 +747,9 @@ extern "C" DCL_EXPORT MUX_RESULT mux_RevokeClassObjects(int ncid, UINT64 acid[])
  */
 
 #ifdef WIN32
-extern "C" DCL_EXPORT MUX_RESULT mux_AddModule(const UTF8 aModuleName[], const UTF16 aFileName[])
+extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_AddModule(const UTF8 aModuleName[], const UTF16 aFileName[])
 #else
-extern "C" DCL_EXPORT MUX_RESULT mux_AddModule(const UTF8 aModuleName[], const UTF8 aFileName[])
+extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_AddModule(const UTF8 aModuleName[], const UTF8 aFileName[])
 #endif // WIN32
 {
     MUX_RESULT mr;
@@ -782,7 +794,7 @@ extern "C" DCL_EXPORT MUX_RESULT mux_AddModule(const UTF8 aModuleName[], const U
  * \return         MUX_RESULT
  */
 
-extern "C" DCL_EXPORT MUX_RESULT mux_RemoveModule(const UTF8 aModuleName[])
+extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_RemoveModule(const UTF8 aModuleName[])
 {
     MUX_RESULT mr;
     if (NULL == g_pModule)
@@ -848,7 +860,7 @@ extern "C" DCL_EXPORT MUX_RESULT mux_RemoveModule(const UTF8 aModuleName[])
  *                 MUX_E_INVALIDARG for invalid arguments.
  */
 
-extern "C" DCL_EXPORT MUX_RESULT mux_ModuleInfo(int iModule, MUX_MODULE_INFO *pModuleInfo)
+extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_ModuleInfo(int iModule, MUX_MODULE_INFO *pModuleInfo)
 {
     if (iModule < 0)
     {
@@ -877,7 +889,7 @@ extern "C" DCL_EXPORT MUX_RESULT mux_ModuleInfo(int iModule, MUX_MODULE_INFO *pM
  * \return         MUX_RESULT
  */
 
-extern "C" DCL_EXPORT MUX_RESULT mux_ModuleTick(void)
+extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_ModuleTick(void)
 {
     // We can query each loaded module and unload the ones that are unloadable.
     //

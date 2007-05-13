@@ -68,6 +68,9 @@ src/interface.h
 src/levels.cpp
 src/levels.h
 src/libmux.cpp
+src/libmux.dep
+src/libmux.dsp
+src/libmux.mak
 src/libmux.h
 src/local.cpp
 src/log.cpp
@@ -80,7 +83,11 @@ src/mguests.cpp
 src/mguests.h
 src/misc.h
 src/modules/sample.cpp
+src/modules/sample.def
+src/modules/sample.dep
+src/modules/sample.dsp
 src/modules/sample.h
+src/modules/sample.mak
 src/modules.cpp
 src/modules.h
 src/move.cpp

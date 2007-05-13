@@ -53,7 +53,7 @@ public:
 
     // mux_IClassFactory
     //
-    virtual MUX_RESULT CreateInstance(UINT64 iid, void **ppv);
+    virtual MUX_RESULT CreateInstance(mux_IUnknown *pUnknownOuter, UINT64 iid, void **ppv);
     virtual MUX_RESULT LockServer(bool bLock);
 
     CSampleFactory(void);

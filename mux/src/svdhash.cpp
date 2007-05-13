@@ -2890,7 +2890,7 @@ void CLogFile::AppendLogFile(void)
 #ifdef WIN32
         SetFilePointer(m_hFile, 0, 0, FILE_END);
 #else // WIN32
-        mux_lseek(m_fdFile, 0, SEEK_SET);
+        mux_lseek(m_fdFile, 0, SEEK_END);
 #endif // WIN32
     }
 }

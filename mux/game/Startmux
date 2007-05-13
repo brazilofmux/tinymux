@@ -50,8 +50,18 @@ if [ -r $DATA/$INPUT_DB.CRASH ]; then
 fi
 
 #
+#       Check if the log directory is defined and is valid. If not, use
+#       the current directory.
+#
+if [ -z "$LOGDIR" -o ! -d "$LOGDIR" -o ! -x "$LOGDIR" ]; then 
+    if [ ! -z "$LOGDIR" ]; then
+	echo "Log directory '$LOGDIR' is invalid, using game directory."
+    fi
+    LOGDIR=.
+fi
+#
 #	Kick off MUX
 #
 LD_LIBRARY_PATH=./bin; export LD_LIBRARY_PATH
-(nohup $BIN/netmux -c $GAMENAME.conf -p $PIDFILE >/dev/null 2>&1 &)
+(nohup $BIN/netmux -c $GAMENAME.conf -p $PIDFILE -e $LOGDIR >/dev/null 2>&1 &)
 

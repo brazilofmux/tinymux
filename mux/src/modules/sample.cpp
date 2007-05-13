@@ -15,14 +15,14 @@ static INT32 g_cComponents  = 0;
 static INT32 g_cServerLocks = 0;
 
 #define NUM_CIDS 1
-static UINT64 cids[NUM_CIDS] =
+static UINT64 sample_cids[NUM_CIDS] =
 {
     CID_Sample
 };
 
 // The following four functions are for access by dlopen.
 //
-extern "C" DCL_EXPORT MUX_RESULT mux_CanUnloadNow(void)
+extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_CanUnloadNow(void)
 {
     if (  0 == g_cComponents
        && 0 == g_cServerLocks)
@@ -35,7 +35,7 @@ extern "C" DCL_EXPORT MUX_RESULT mux_CanUnloadNow(void)
     }
 }
 
-extern "C" DCL_EXPORT MUX_RESULT mux_GetClassObject(UINT64 cid, UINT64 iid, void **ppv)
+extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_GetClassObject(UINT64 cid, UINT64 iid, void **ppv)
 {
     MUX_RESULT mr = MUX_E_CLASSNOTAVAILABLE;
 
@@ -62,14 +62,33 @@ extern "C" DCL_EXPORT MUX_RESULT mux_GetClassObject(UINT64 cid, UINT64 iid, void
     return mr;
 }
 
-extern "C" DCL_EXPORT MUX_RESULT mux_Register(void)
+extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_Register(void)
 {
-    return mux_RegisterClassObjects(NUM_CIDS, cids, NULL);
+    MUX_RESULT mrRegister = mux_RegisterClassObjects(NUM_CIDS, sample_cids, NULL);
+
+    // Use of CLog provided by netmux.
+    //
+    ILog *pILog = NULL;
+    MUX_RESULT mr = mux_CreateInstance(CID_Log, NULL, InProcessServer, IID_ILog, (void **)&pILog);
+    if (MUX_SUCCEEDED(mr))
+    {
+#define LOG_ALWAYS      0x80000000  /* Always log it */
+        if (pILog->start_log(LOG_ALWAYS, T("INI"), T("INFO")))
+        {
+            pILog->log_printf("Sample module registered.");
+            pILog->end_log();
+        }
+
+        pILog->Release();
+        pILog = NULL;
+    }
+
+    return mrRegister;
 }
 
-extern "C" DCL_EXPORT MUX_RESULT mux_Unregister(void)
+extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_Unregister(void)
 {
-    return mux_RevokeClassObjects(NUM_CIDS, cids);
+    return mux_RevokeClassObjects(NUM_CIDS, sample_cids);
 }
 
 // Sample component which is not directly accessible.
@@ -171,8 +190,15 @@ UINT32 CSampleFactory::Release(void)
     return m_cRef;
 }
 
-MUX_RESULT CSampleFactory::CreateInstance(UINT64 iid, void **ppv)
+MUX_RESULT CSampleFactory::CreateInstance(mux_IUnknown *pUnknownOuter, UINT64 iid, void **ppv)
 {
+    // Disallow attempts to aggregate this component.
+    //
+    if (NULL != pUnknownOuter)
+    {
+        return MUX_E_NOAGGREGATION;
+    }
+
     CSample *pSample = NULL;
     try
     {

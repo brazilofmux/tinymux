@@ -4,10 +4,14 @@
  * $Id$
  *
  * To support loadable modules, we implement a poor man's COM. There is no
- * support for appartments, multiple threads, out of process servers, remote
- * servers, registry, or marshalling.  There is no RPC or sockets, and
- * most-likely, no opportunity to use any existing RPC tools for building
- * interfaces either.
+ * support for appartments, remote servers, registry.  There is no RPC or
+ * sockets, and most-likely, no opportunity to use any existing RPC tools for
+ * building interfaces either.
+ *
+ * There is currently no support for out of process servers or marshalling.
+ *
+ * There is no support for multiple threads, but methods are expected to be
+ * re-entrant.
  */
 
 typedef int MUX_RESULT;
@@ -23,9 +27,17 @@ typedef int MUX_RESULT;
 #define MUX_E_UNEXPECTED        (-7)
 #define MUX_E_NOTREADY          (-8)
 #define MUX_E_NOTFOUND          (-9)
+#define MUX_E_NOAGGREGATION     (-10)
 
 #define MUX_FAILED(x)    ((MUX_RESULT)(x) < 0)
 #define MUX_SUCCEEDED(x) (0 <= (MUX_RESULT)(x))
+
+typedef enum
+{
+    InProcessServer = 1,
+    LocalServer     = 2,
+    AllContexts     = 3
+} mod_context;
 
 #ifdef WIN32
 const UINT64 mux_IID_IUnknown      = 0x0000000100000010i64;
@@ -48,20 +60,20 @@ public:
 interface mux_IClassFactory : public mux_IUnknown
 {
 public:
-    virtual MUX_RESULT CreateInstance(UINT64 iid, void **ppv) = 0;
+    virtual MUX_RESULT CreateInstance(mux_IUnknown *pUnknownOuter, UINT64 iid, void **ppv) = 0;
     virtual MUX_RESULT LockServer(bool bLock) = 0;
 };
 
 extern "C"
 {
-    typedef MUX_RESULT FPGETCLASSOBJECT(UINT64 cid, UINT64 iid, void **ppv);
+    typedef MUX_RESULT DCL_API FPGETCLASSOBJECT(UINT64 cid, UINT64 iid, void **ppv);
 }
 
 // APIs available to netmux and dynamic modules.
 //
-extern "C" DCL_EXPORT MUX_RESULT mux_CreateInstance(UINT64 cid, UINT64 iid, void **ppv);
-extern "C" DCL_EXPORT MUX_RESULT mux_RegisterClassObjects(int ncid, UINT64 acid[], FPGETCLASSOBJECT *pfGetClassObject);
-extern "C" DCL_EXPORT MUX_RESULT mux_RevokeClassObjects(int ncid, UINT64 acid[]);
+extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_CreateInstance(UINT64 cid, mux_IUnknown *pUnknownOuter, mod_context ctx, UINT64 iid, void **ppv);
+extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_RegisterClassObjects(int ncid, UINT64 acid[], FPGETCLASSOBJECT *pfGetClassObject);
+extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_RevokeClassObjects(int ncid, UINT64 acid[]);
 
 typedef struct
 {
@@ -72,10 +84,10 @@ typedef struct
 // APIs intended only for use by netmux.
 //
 #ifdef WIN32
-extern "C" DCL_EXPORT MUX_RESULT mux_AddModule(const UTF8 aModuleName[], const UTF16 aFileName[]);
+extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_AddModule(const UTF8 aModuleName[], const UTF16 aFileName[]);
 #else
-extern "C" DCL_EXPORT MUX_RESULT mux_AddModule(const UTF8 aModuleName[], const UTF8 aFileName[]);
+extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_AddModule(const UTF8 aModuleName[], const UTF8 aFileName[]);
 #endif // WIN32
-extern "C" DCL_EXPORT MUX_RESULT mux_RemoveModule(const UTF8 aModuleName[]);
-extern "C" DCL_EXPORT MUX_RESULT mux_ModuleInfo(int iModule, MUX_MODULE_INFO *pModuleInfo);
-extern "C" DCL_EXPORT MUX_RESULT mux_ModuleTick(void);
+extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_RemoveModule(const UTF8 aModuleName[]);
+extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_ModuleInfo(int iModule, MUX_MODULE_INFO *pModuleInfo);
+extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_ModuleTick(void);
