@@ -5,6 +5,7 @@
 bin      = ".\bin"
 text     = ".\text"
 data     = ".\data"
+logdir   = "."
 gamename = "netmux"
 owner    = "mux_admin@your_site.your_domain"
 '

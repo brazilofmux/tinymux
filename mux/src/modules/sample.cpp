@@ -22,7 +22,7 @@ static UINT64 sample_cids[NUM_CIDS] =
 
 // The following four functions are for access by dlopen.
 //
-extern "C" DCL_EXPORT MUX_RESULT mux_CanUnloadNow(void)
+extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_CanUnloadNow(void)
 {
     if (  0 == g_cComponents
        && 0 == g_cServerLocks)
@@ -35,7 +35,7 @@ extern "C" DCL_EXPORT MUX_RESULT mux_CanUnloadNow(void)
     }
 }
 
-extern "C" DCL_EXPORT MUX_RESULT mux_GetClassObject(UINT64 cid, UINT64 iid, void **ppv)
+extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_GetClassObject(UINT64 cid, UINT64 iid, void **ppv)
 {
     MUX_RESULT mr = MUX_E_CLASSNOTAVAILABLE;
 
@@ -62,14 +62,14 @@ extern "C" DCL_EXPORT MUX_RESULT mux_GetClassObject(UINT64 cid, UINT64 iid, void
     return mr;
 }
 
-extern "C" DCL_EXPORT MUX_RESULT mux_Register(void)
+extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_Register(void)
 {
     MUX_RESULT mrRegister = mux_RegisterClassObjects(NUM_CIDS, sample_cids, NULL);
 
     // Use of CLog provided by netmux.
     //
     ILog *pILog = NULL;
-    MUX_RESULT mr = mux_CreateInstance(CID_Log, IID_ILog, (void **)&pILog);
+    MUX_RESULT mr = mux_CreateInstance(CID_Log, NULL, InProcessServer, IID_ILog, (void **)&pILog);
     if (MUX_SUCCEEDED(mr))
     {
 #define LOG_ALWAYS      0x80000000  /* Always log it */
@@ -86,7 +86,7 @@ extern "C" DCL_EXPORT MUX_RESULT mux_Register(void)
     return mrRegister;
 }
 
-extern "C" DCL_EXPORT MUX_RESULT mux_Unregister(void)
+extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_Unregister(void)
 {
     return mux_RevokeClassObjects(NUM_CIDS, sample_cids);
 }
@@ -190,8 +190,15 @@ UINT32 CSampleFactory::Release(void)
     return m_cRef;
 }
 
-MUX_RESULT CSampleFactory::CreateInstance(UINT64 iid, void **ppv)
+MUX_RESULT CSampleFactory::CreateInstance(mux_IUnknown *pUnknownOuter, UINT64 iid, void **ppv)
 {
+    // Disallow attempts to aggregate this component.
+    //
+    if (NULL != pUnknownOuter)
+    {
+        return MUX_E_NOAGGREGATION;
+    }
+
     CSample *pSample = NULL;
     try
     {

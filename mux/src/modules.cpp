@@ -28,7 +28,7 @@ static UINT64 netmux_cids[NUM_CIDS] =
     CID_Log
 };
 
-extern "C" MUX_RESULT netmux_GetClassObject(UINT64 cid, UINT64 iid, void **ppv)
+extern "C" MUX_RESULT DCL_API netmux_GetClassObject(UINT64 cid, UINT64 iid, void **ppv)
 {
     MUX_RESULT mr = MUX_E_CLASSNOTAVAILABLE;
 
@@ -239,8 +239,15 @@ UINT32 CLogFactory::Release(void)
     return m_cRef;
 }
 
-MUX_RESULT CLogFactory::CreateInstance(UINT64 iid, void **ppv)
+MUX_RESULT CLogFactory::CreateInstance(mux_IUnknown *pUnknownOuter, UINT64 iid, void **ppv)
 {
+    // Disallow attempts to aggregate this component.
+    //
+    if (NULL != pUnknownOuter)
+    {
+        return MUX_E_NOAGGREGATION;
+    }
+
     CLog *pLog = NULL;
     try
     {

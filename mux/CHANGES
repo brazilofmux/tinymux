@@ -1,5 +1,5 @@
 TinyMUX 2.7:  CHANGES
-Last Update:  April 2007
+Last Update:  May 2007
 
 Major changes that may affect performance and require softcode tweaks:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -58,6 +58,10 @@ Feature Additions:
  -- Allow @hook to work on exits, enter aliases, and leave aliases.
     (Issue 235)
  -- Provide CLog module interface from netmux.
+ -- Pass log file sub-direction, LOGDIR, option in mux.config (and
+    muxconfig.vbs) through as a command-line option.
+ -- Add pOuterUnknown parameter to CreateInstance to allow aggregation
+    to be used later. The proxy for marshalling appears to require it.
 
 
 Bug Fixes:
@@ -121,6 +125,7 @@ Bug Fixes:
  -- CLog::AppendLog() does not actually position log at end of existing
     log file. Net result is only that first two lines (Containing to
     INI/LOAD entries) are lost.
+ -- ConvertToUTF8() converted code points above 0x10000 incorrectly.
 
 
 Performance Enhancements:

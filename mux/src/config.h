@@ -90,9 +90,10 @@
 #define I64BUF_SIZE LONGEST_I64
 
 #ifdef WIN32
-#define DCL_CDECL __cdecl
+#define DCL_CDECL  __cdecl
 #define DCL_INLINE __inline
 #define DCL_EXPORT __declspec(dllexport)
+#define DCL_API    __stdcall
 
 typedef __int64          INT64;
 typedef unsigned __int64 UINT64;
@@ -141,6 +142,7 @@ typedef unsigned __int64 UINT64;
 #define DCL_CDECL
 #define DCL_INLINE inline
 #define DCL_EXPORT
+#define DCL_API
 
 #ifndef O_BINARY
 #define O_BINARY 0
