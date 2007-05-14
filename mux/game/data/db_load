@@ -1,5 +1,24 @@
 #!/bin/sh
-LD_LIBRARY_PATH=../bin; export LD_LIBRARY_PATH
+#
+
+BIN=../bin
+
+# Linux/Solaris
+LD_LIBRARY_PATH=$BIN
+export LD_LIBRARY_PATH
+
+# Mac OS X / NeXTStep / Mach
+DYLD_LIBRARY_PATH=$BIN
+export DYLD_LIBRARY_PATH
+
+# AIX
+LIBPATH=$BIN
+export LIBPATH
+
+# HP-UX
+SHLIB_PATH=$BIN
+export SHLIB_PATH
+
 PATH=/bin:/usr/bin:
 #
 #	Load MUX V2 or V3 flatfile into MUX V3 database.
