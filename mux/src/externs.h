@@ -19,10 +19,10 @@ void boot_slave(dbref executor, dbref caller, dbref enactor, int key);
 void close_sockets(bool emergency, const UTF8 *message);
 void CleanUpSlaveSocket(void);
 void CleanUpSlaveProcess(void);
-#ifdef QUERY_SLAVE
-void CleanUpSQLSlaveSocket(void);
-void CleanUpSQLSlaveProcess(void);
-#endif // QUERY_SLAVE
+#ifdef STUB_SLAVE
+void CleanUpStubSlaveSocket(void);
+void CleanUpStubSlaveProcess(void);
+#endif // STUB_SLAVE
 #ifdef SSL_ENABLED
 void CleanUpSSLConnections(void);
 #endif
@@ -30,9 +30,9 @@ void CleanUpSSLConnections(void);
 extern CRITICAL_SECTION csDescriptorList;
 #endif // WIN32
 
-#ifdef QUERY_SLAVE
-void boot_sqlslave(dbref executor, dbref caller, dbref enactor, int key);
-#endif // QUERY_SLAVE
+#ifdef STUB_SLAVE
+void boot_stubslave(dbref executor, dbref caller, dbref enactor, int key);
+#endif // STUB_SLAVE
 
 extern NAMETAB sigactions_nametab[];
 

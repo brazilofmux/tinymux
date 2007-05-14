@@ -3260,9 +3260,9 @@ int DCL_CDECL main(int argc, char *argv[])
     SetupPorts(&nMainGamePorts, aMainGamePorts, &mudconf.ports, NULL);
 #endif
     boot_slave(GOD, GOD, GOD, 0);
-#ifdef QUERY_SLAVE
-    boot_sqlslave(GOD, GOD, GOD, 0);
-#endif // QUERY_SLAVE
+#ifdef STUB_SLAVE
+    boot_stubslave(GOD, GOD, GOD, 0);
+#endif // STUB_SLAVE
 
     // All intialization should be complete, allow the local
     // extensions to configure themselves.
@@ -3311,9 +3311,9 @@ int DCL_CDECL main(int argc, char *argv[])
     CleanUpSlaveSocket();
     CleanUpSlaveProcess();
 #endif
-#ifdef QUERY_SLAVE
-    CleanUpSQLSlaveSocket();
-    CleanUpSQLSlaveProcess();
+#ifdef STUB_SLAVE
+    CleanUpStubSlaveSocket();
+    CleanUpStubSlaveProcess();
 #endif
 
     // Go ahead and explicitly free the memory for these things so

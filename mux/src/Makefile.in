@@ -10,7 +10,7 @@ VPATH = @srcdir@
 BIN = ../game/bin
 CC = @CC@
 CXX = @CXX@
-#CXXCPP = @CXXCPP@	# This is broken in autoconf.  Sigh.
+#CXXCPP = @CXXCPP@  # This is broken in autoconf.  Sigh.
 CXXCPP = $(CXX) -E
 LIBS = @LIBS@ @FIRANLIBS@
 
@@ -50,13 +50,12 @@ WOD_REALMS = @WOD_REALMS@
 #
 MEMORY_BASED = @MEMORY_BASED@
 
-# Query Slave. By default, this is off. This can be turned on by running
-# configure with --enable-sqlquery. The Query Slave is how to support
-# queries to foriegn data sources such as SQL servers.
+# Stub Slave. By default, this is off. This can be turned on by running
+# configure with --enable-stubslave. The Stub Slave is how to load modules in
+# a separate process including support for asyncronous SQL.
 #
-QUERY_SLAVE = @QUERY_SLAVE@
-QUERYLIBS   = -ldbi
-SQLSLAVE    = @SQLSLAVE@
+STUB_SLAVE = @STUB_SLAVE@
+STUBLIBS   =  # -ldbi
 
 # Firan MUX. By default, this is off. This can be turned on by running
 # configure with --enable-firanmux. Firan MUX modifications are necessary
@@ -68,6 +67,7 @@ FIRANMUX    = @FIRANMUX@
 # Inline SQL support.  This provides an inline sql() function which links
 # to a MySQL database, providing softcode compatibility with the SQL support
 # in TinyMUSH 3.x and PennMUSH.
+#
 INLINESQL         = @INLINESQL@
 INLINESQL_LIBS    = @INLINESQL_LIBPATH@ @INLINESQL_LIBS@
 INLINESQL_INCLUDE = @INLINESQL_INCLUDE@
@@ -76,6 +76,7 @@ INLINESQL_INCLUDE = @INLINESQL_INCLUDE@
 # which adds SSL-enabled ports to the listening MUX ports.  It also enables the
 # 'ssl_certificate_file' and 'ssl_certificate_key' and 'ssl_certificate_password'
 # configuration options.
+#
 SSL               = @SSL@
 SSL_LIBS          = @SSL_LIBS@
 
@@ -93,7 +94,7 @@ NETMUX_BASE_SRC = _build.cpp alloc.cpp attrcache.cpp boolexp.cpp bsd.cpp \
     game.cpp help.cpp htab.cpp local.cpp log.cpp look.cpp mail.cpp match.cpp \
     mguests.cpp modules.cpp move.cpp muxcli.cpp netcommon.cpp object.cpp \
     predicates.cpp player.cpp player_c.cpp plusemail.cpp powers.cpp \
-    quota.cpp rob.cpp pcre.cpp set.cpp sha1.cpp speech.cpp sqlshared.cpp stringutil.cpp \
+    quota.cpp rob.cpp pcre.cpp set.cpp sha1.cpp speech.cpp stringutil.cpp \
     strtod.cpp svdrand.cpp svdhash.cpp timer.cpp timeutil.cpp unparse.cpp \
     vattr.cpp walkdb.cpp wild.cpp wiz.cpp
 NETMUX_BASE_OBJ = _build.o alloc.o attrcache.o boolexp.o bsd.o command.o \
@@ -101,7 +102,7 @@ NETMUX_BASE_OBJ = _build.o alloc.o attrcache.o boolexp.o bsd.o command.o \
     funceval.o functions.o funmath.o game.o help.o htab.o local.o log.o \
     look.o mail.o match.o mguests.o modules.o move.o muxcli.o netcommon.o \
     object.o predicates.o player.o player_c.o plusemail.o powers.o quota.o \
-    rob.o pcre.o set.o sha1.o speech.o sqlshared.o stringutil.o strtod.o svdrand.o \
+    rob.o pcre.o set.o sha1.o speech.o stringutil.o strtod.o svdrand.o \
     svdhash.o timer.o timeutil.o unparse.o vattr.o walkdb.o wild.o wiz.o
 
 # Base sources and object files for building @DYNAMICLIB_TARGET@
@@ -112,10 +113,10 @@ MUX_LIBS = @MUX_LIBS@
 
 # Version number routines
 #
-VER_SRC	= version.cpp
-VER_OBJ	= version.o
-VER_FLG	= -DMUX_BUILD_DATE="\"`date`\"" \
-	  -DMUX_BUILD_NUM="\"`sh ./buildnum.sh`\""
+VER_SRC = version.cpp
+VER_OBJ = version.o
+VER_FLG = -DMUX_BUILD_DATE="\"`date`\"" \
+          -DMUX_BUILD_NUM="\"`sh ./buildnum.sh`\""
 
 # ===================== CONFIGURATION SECTION ====================
 #
@@ -154,39 +155,39 @@ DEFS =
 # people try to login from distant sites.  Use the third line if you're running
 # on a SysV-ish system and BSD support isn't built in to the standard libc.
 #
-MORELIBS	= -lm
-#MORELIBS	= -lm -lnsl -lsocket -L/usr/ucblib -lucb	# Mips
+MORELIBS  = -lm
+#MORELIBS = -lm -lnsl -lsocket -L/usr/ucblib -lucb  # Mips
 
 # ================== END OF CONFIGURATION SECTION =================
 
 # Auxiliary source files: only used by offline utilities.
 #
-AUX_SRC	= unsplit.cpp
+AUX_SRC = unsplit.cpp
 ALLCXXFLAGS = $(CXXFLAGS) $(OPTIM) $(DEFS) $(MEMORY_BASED) $(WOD_REALMS) $(REALITY_LVLS) $(QUERY_SLAVE) $(FIRANMUX) $(DEPRECATED) $(INLINESQL) $(INLINESQL_INCLUDE) $(SSL)
 
 # Compiliation source files.
 #
-ALLSRC	= $(NETMUX_BASE_SRC) $(REALITY_SRC) $(VER_SRC) $(AUX_SRC)
+ALLSRC     = $(NETMUX_BASE_SRC) $(REALITY_SRC) $(VER_SRC) $(AUX_SRC)
 NETMUX_SRC = $(NETMUX_BASE_SRC) $(REALITY_SRC)
 NETMUX_OBJ = $(NETMUX_BASE_OBJ) $(REALITY_OBJ)
 
 .cpp.o:
 	$(CXX) $(ALLCXXFLAGS) -c $<
 
-all: @DYNAMICLIB_TARGET@ netmux slave $(SQLSLAVE) links
+all: @DYNAMICLIB_TARGET@ netmux slave @STUBSLAVE_TARGET@ links
 
-links: netmux slave $(SQLSLAVE)
+links: netmux slave @STUBSLAVE_TARGET@
 	cd ../game/bin ; rm -f dbconvert ; ln -s ../../src/netmux dbconvert
 	cd ../game/bin ; rm -f netmux ; ln -s ../../src/netmux netmux
 	cd ../game/bin ; rm -f slave ; ln -s ../../src/slave slave
-	( if [ -f sqlslave ]; then cd ../game/bin ; rm -f sqlslave; ln -s ../../src/sqlslave sqlslave ; fi )
-	( if [ -f @DYNAMICLIB_TARGET@ ]; then cd ../game/bin ; rm -f @DYNAMICLIB_TARGET@; ln -s ../../src/@DYNAMICLIB_TARGET@ @DYNAMICLIB_TARGET@ ; fi )
+	( if [ ! -z "@STUBSLAVE_TARGET@" -a -f "@STUBSLAVE_TARGET@" ]; then cd ../game/bin ; rm -f @STUBSLAVE_TARGET@; ln -s ../../src/@STUBSLAVE_TARGET@ @STUBSLAVE_TARGET@ ; fi )
+	( if [ ! -z "@DYNAMICLIB_TARGET@" -a -f "@DYNAMICLIB_TARGET@" ]; then cd ../game/bin ; rm -f @DYNAMICLIB_TARGET@; ln -s ../../src/@DYNAMICLIB_TARGET@ @DYNAMICLIB_TARGET@ ; fi )
 
-sqlslave: sqlslave.o sqlshared.o
-	$(CXX) $(ALLCXXFLAGS) $(LIBS) $(QUERYLIBS) -o sqlslave sqlslave.o sqlshared.o
+stubslave: stubslave.o
+	$(CXX) $(ALLCXXFLAGS) -o stubslave stubslave.o -L. $(LIBS) $(MUX_LIBS) $(STUBLIBS)
 
 slave: slave.o
-	$(CXX) $(ALLCXXFLAGS) $(LIBS) -o slave slave.o
+	$(CXX) $(ALLCXXFLAGS) -o slave slave.o $(LIBS)
 
 unsplit: unsplit.o
 	$(CXX) $(ALLCXXFLAGS) -o unsplit unsplit.o
@@ -201,11 +202,11 @@ netmux: $(NETMUX_OBJ) $(VER_SRC)
 	$(CXX) $(ALLCXXFLAGS) @DYNAMICLIB_CPPFLAGS@ -o @DYNAMICLIB_TARGET@ $(LIBMUX_BASE_SRC) $(LIBS) $(MORELIBS) $(INLINESQL_LIBS) $(SSL_LIBS)
 
 depend: $(ALLSRC) unsplit
-	for i in $(NETMUX_SRC) $(AUX_SRC) slave.cpp sqlslave.cpp sqlshared.cpp ; do $(CXXCPP) $(ALLCXXFLAGS) -M $$i; done | sed -e 's:/usr[^ ]*[ ]*::g' | ./unsplit > .depend~
+	for i in $(NETMUX_SRC) $(AUX_SRC) slave.cpp stubslave.cpp ; do $(CXXCPP) $(ALLCXXFLAGS) -M $$i; done | sed -e 's:/usr[^ ]*[ ]*::g' | ./unsplit > .depend~
 	mv .depend~ .depend
 
 realclean:
-	-rm -f *.o a.out core gmon.out dbconvert config.status config.log netmux netmux~ @DYNAMICLIB_TARGET@ slave sqlslave Makefile libmux.so
+	-rm -f *.o a.out core gmon.out dbconvert config.status config.log netmux netmux~ @DYNAMICLIB_TARGET@ slave @STUBSLAVE_TARGET@ Makefile libmux.so
 
 clean:
 	-rm -f *.o a.out core gmon.out warn.log config.status config.log netmux~

@@ -62,10 +62,10 @@ int maxd = 0;
 pid_t slave_pid = 0;
 int slave_socket = INVALID_SOCKET;
 pid_t game_pid;
-#ifdef QUERY_SLAVE
-pid_t sqlslave_pid = 0;
-int sqlslave_socket = INVALID_SOCKET;
-#endif // QUERY_SLAVE
+#ifdef STUB_SLAVE
+pid_t stubslave_pid = 0;
+int stubslave_socket = INVALID_SOCKET;
+#endif // STUB_SLAVE
 #endif // WIN32
 
 #ifdef WIN32
@@ -506,28 +506,28 @@ void CleanUpSlaveProcess(void)
     slave_pid = 0;
 }
 
-#ifdef QUERY_SLAVE
-void CleanUpSQLSlaveSocket(void)
+#ifdef STUB_SLAVE
+void CleanUpStubSlaveSocket(void)
 {
-    if (!IS_INVALID_SOCKET(sqlslave_socket))
+    if (!IS_INVALID_SOCKET(stubslave_socket))
     {
-        shutdown(sqlslave_socket, SD_BOTH);
-        if (SOCKET_CLOSE(sqlslave_socket) == 0)
+        shutdown(stubslave_socket, SD_BOTH);
+        if (SOCKET_CLOSE(stubslave_socket) == 0)
         {
             DebugTotalSockets--;
         }
-        sqlslave_socket = INVALID_SOCKET;
+        stubslave_socket = INVALID_SOCKET;
     }
 }
 
-void CleanUpSQLSlaveProcess(void)
+void CleanUpStubSlaveProcess(void)
 {
-    if (sqlslave_pid > 0)
+    if (stubslave_pid > 0)
     {
-        kill(sqlslave_pid, SIGKILL);
-        waitpid(sqlslave_pid, NULL, 0);
+        kill(stubslave_pid, SIGKILL);
+        waitpid(stubslave_pid, NULL, 0);
     }
-    sqlslave_pid = 0;
+    stubslave_pid = 0;
 }
 
 /*! \brief Lauch query slave process.
@@ -542,7 +542,7 @@ void CleanUpSQLSlaveProcess(void)
  * \return         None.
  */
 
-void boot_sqlslave(dbref executor, dbref caller, dbref enactor, int)
+void boot_stubslave(dbref executor, dbref caller, dbref enactor, int)
 {
     char *pFailedFunc = 0;
     int sv[2];
@@ -555,8 +555,8 @@ void boot_sqlslave(dbref executor, dbref caller, dbref enactor, int)
     maxfds = sysconf(_SC_OPEN_MAX);
 #endif // HAVE_GETDTABLESIZE
 
-    CleanUpSQLSlaveSocket();
-    CleanUpSQLSlaveProcess();
+    CleanUpStubSlaveSocket();
+    CleanUpStubSlaveProcess();
 
     if (socketpair(AF_UNIX, SOCK_DGRAM, 0, sv) < 0)
     {
@@ -574,8 +574,8 @@ void boot_sqlslave(dbref executor, dbref caller, dbref enactor, int)
         goto failure;
     }
 
-    sqlslave_pid = fork();
-    switch (sqlslave_pid)
+    stubslave_pid = fork();
+    switch (stubslave_pid)
     {
     case -1:
 
@@ -619,42 +619,42 @@ void boot_sqlslave(dbref executor, dbref caller, dbref enactor, int)
         {
             mux_close(i);
         }
-        execlp("bin/sqlslave", "sqlslave", NULL);
+        execlp("bin/stubslave", "stubslave", NULL);
         _exit(1);
     }
     mux_close(sv[1]);
 
-    sqlslave_socket = sv[0];
+    stubslave_socket = sv[0];
     DebugTotalSockets++;
-    if (make_nonblocking(sqlslave_socket) < 0)
+    if (make_nonblocking(stubslave_socket) < 0)
     {
         pFailedFunc = "make_nonblocking() error: ";
-        CleanUpSQLSlaveSocket();
+        CleanUpStubSlaveSocket();
         goto failure;
     }
-    if (  !IS_INVALID_SOCKET(sqlslave_socket)
-       && maxd <= sqlslave_socket)
+    if (  !IS_INVALID_SOCKET(stubslave_socket)
+       && maxd <= stubslave_socket)
     {
-        maxd = sqlslave_socket + 1;
+        maxd = stubslave_socket + 1;
     }
 
-    STARTLOG(LOG_ALWAYS, "NET", "QUERY");
-    log_text(T("SQL slave started on fd "));
-    log_number(sqlslave_socket);
+    STARTLOG(LOG_ALWAYS, "NET", "STUB");
+    log_text(T("Stub slave started on fd "));
+    log_number(stubslave_socket);
     ENDLOG;
 
-    mux_write(sqlslave_socket, "PING", 4);
+    mux_write(stubslave_socket, "PING", 4);
     return;
 
 failure:
 
-    CleanUpSQLSlaveProcess();
-    STARTLOG(LOG_ALWAYS, "NET", "SQL");
+    CleanUpStubSlaveProcess();
+    STARTLOG(LOG_ALWAYS, "NET", "STUB");
     log_text(T(pFailedFunc));
     log_number(errno);
     ENDLOG;
 }
-#endif // QUERY_SLAVE
+#endif // STUB_SLAVE
 
 /*! \brief Lauch reverse-DNS slave process.
  *
@@ -778,20 +778,20 @@ failure:
     ENDLOG;
 }
 
-#ifdef QUERY_SLAVE
+#ifdef STUB_SLAVE
 
-/*! \brief Get results from the SQL query slave.
+/*! \brief Get results from the Stub query slave.
  *
- * Any communication from the SQL query slave is logged.
+ * Any communication from the Stub query slave is logged.
  *
  * \return         -1 for failure and 0 for success.
  */
 
-static int get_sqlslave_result(void)
+static int get_stubslave_result(void)
 {
     char buf[LBUF_SIZE];
 
-    int len = mux_read(sqlslave_socket, buf, sizeof(buf)-1);
+    int len = mux_read(stubslave_socket, buf, sizeof(buf)-1);
     if (len < 0)
     {
         int iSocketError = SOCKET_LAST_ERROR;
@@ -800,10 +800,10 @@ static int get_sqlslave_result(void)
         {
             return -1;
         }
-        CleanUpSQLSlaveSocket();
-        CleanUpSQLSlaveProcess();
+        CleanUpStubSlaveSocket();
+        CleanUpStubSlaveProcess();
 
-        STARTLOG(LOG_ALWAYS, "NET", "QUERY");
+        STARTLOG(LOG_ALWAYS, "NET", "STUB");
         log_text(T("read() of query slave failed. Query Slave stopped."));
         ENDLOG;
 
@@ -815,14 +815,14 @@ static int get_sqlslave_result(void)
     }
     buf[len] = '\0';
 
-    STARTLOG(LOG_ALWAYS, "NET", "QUERY");
+    STARTLOG(LOG_ALWAYS, "NET", "STUB");
     log_text(T(buf));
     ENDLOG;
 
     return 0;
 }
 
-#endif // QUERY_SLAVE
+#endif // STUB_SLAVE
 
 // Get a result from the slave
 //
@@ -1770,14 +1770,14 @@ void shovechars(int nPorts, PortInfo aPorts[])
             FD_SET(slave_socket, &input_set);
         }
 
-#ifdef QUERY_SLAVE
-        // Listen for replies from the sqlslave socket.
+#ifdef STUB_SLAVE
+        // Listen for replies from the stubslave socket.
         //
-        if (!IS_INVALID_SOCKET(sqlslave_socket))
+        if (!IS_INVALID_SOCKET(stubslave_socket))
         {
-            FD_SET(sqlslave_socket, &input_set);
+            FD_SET(stubslave_socket, &input_set);
         }
-#endif // QUERY_SLAVE
+#endif // STUB_SLAVE
 
         // Mark sockets that we want to test for change in status.
         //
@@ -1838,13 +1838,13 @@ void shovechars(int nPorts, PortInfo aPorts[])
                     boot_slave(GOD, GOD, GOD, 0);
                 }
 
-#ifdef QUERY_SLAVE
-                if (  !IS_INVALID_SOCKET(sqlslave_socket)
-                   && !ValidSocket(sqlslave_socket))
+#ifdef STUB_SLAVE
+                if (  !IS_INVALID_SOCKET(stubslave_socket)
+                   && !ValidSocket(stubslave_socket))
                 {
-                    CleanUpSQLSlaveSocket();
+                    CleanUpStubSlaveSocket();
                 }
-#endif // QUERY_SLAVE
+#endif // STUB_SLAVE
 
                 for (i = 0; i < nPorts; i++)
                 {
@@ -1878,18 +1878,18 @@ void shovechars(int nPorts, PortInfo aPorts[])
             }
         }
 
-#ifdef QUERY_SLAVE
-        // Get result sets from sqlslave.
+#ifdef STUB_SLAVE
+        // Get result sets from stubslave.
         //
-        if (  !IS_INVALID_SOCKET(sqlslave_socket)
-           && CheckInput(sqlslave_socket))
+        if (  !IS_INVALID_SOCKET(stubslave_socket)
+           && CheckInput(stubslave_socket))
         {
-            while (get_sqlslave_result() == 0)
+            while (get_stubslave_result() == 0)
             {
                 ; // Nothing.
             }
         }
-#endif // QUERY_SLAVE
+#endif // STUB_SLAVE
 
         // Check for new connection requests.
         //
@@ -4486,19 +4486,19 @@ static RETSIGTYPE DCL_CDECL sighandler(int sig)
 
                     continue;
                 }
-#ifdef QUERY_SLAVE
-                else if (child == sqlslave_pid)
+#ifdef STUB_SLAVE
+                else if (child == stubslave_pid)
                 {
-                    // The SQL slave process ended unexpectedly.
+                    // The Stub slave process ended unexpectedly.
                     //
-                    CleanUpSQLSlaveSocket();
-                    sqlslave_pid = 0;
+                    CleanUpStubSlaveSocket();
+                    stubslave_pid = 0;
 
-                    LogStatBuf(stat_buf, "QUERY");
+                    LogStatBuf(stat_buf, "STUB");
 
                     continue;
                 }
-#endif // QUERY_SLAVE
+#endif // STUB_SLAVE
                 else if (  mudconf.fork_dump
                         && mudstate.dumping)
                 {
@@ -4527,13 +4527,13 @@ static RETSIGTYPE DCL_CDECL sighandler(int sig)
             LogStatBuf(stat_buf, "UKNWN");
 
             STARTLOG(LOG_PROBLEMS, "SIG", "DEBUG");
-#ifdef QUERY_SLAVE
-            Log.tinyprintf("mudstate.dumper=%d, child=%d, slave_pid=%d, sqlslave_pid=%d" ENDLINE,
-                mudstate.dumper, child, slave_pid, sqlslave_pid);
+#ifdef STUB_SLAVE
+            Log.tinyprintf("mudstate.dumper=%d, child=%d, slave_pid=%d, stubslave_pid=%d" ENDLINE,
+                mudstate.dumper, child, slave_pid, stubslave_pid);
 #else
             Log.tinyprintf("mudstate.dumper=%d, child=%d, slave_pid=%d" ENDLINE,
                 mudstate.dumper, child, slave_pid);
-#endif // QUERY_SLAVE
+#endif // STUB_SLAVE
             ENDLOG;
         }
         break;
