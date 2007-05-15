@@ -312,7 +312,7 @@ MUX_RESULT CSampleModule::FinalConstruct(void)
 {
     // Use of CLog provided by netmux.
     //
-    MUX_RESULT mr = mux_CreateInstance(CID_Log, NULL, InProcessServer, IID_ILog, (void **)&pILog);
+    MUX_RESULT mr = mux_CreateInstance(CID_Log, NULL, UseSameProcess, IID_ILog, (void **)&pILog);
     if (MUX_SUCCEEDED(mr))
     {
         if (pILog->start_log(LOG_ALWAYS, T("INI"), T("INFO")))

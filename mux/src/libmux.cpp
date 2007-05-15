@@ -79,6 +79,8 @@ static CLASS_INFO  *g_pClasses = NULL;
 
 static MODULE_INFO *g_pModule = NULL;
 
+static process_context g_ProcessContext = IsUninitialized;
+
 // TODO: The uniqueness tests are probably too strong.  It may be desireable
 // for several modules to offer an implementation for the same classes.  If
 // so, the conflict could be determined by the order the modules are loaded.
@@ -526,9 +528,9 @@ static void ModuleUnload(MODULE_INFO *pModule)
  * \return           MUX_RESULT
  */
 
-extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_CreateInstance(UINT64 cid, mux_IUnknown *pUnknownOuter, mod_context ctx, UINT64 iid, void **ppv)
+extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_CreateInstance(UINT64 cid, mux_IUnknown *pUnknownOuter, create_context ctx, UINT64 iid, void **ppv)
 {
-    if (0 == (InProcessServer & ctx))
+    if (0 == (UseSameProcess & ctx))
     {
         return MUX_E_CLASSNOTAVAILABLE;
     }
@@ -907,5 +909,24 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_ModuleTick(void)
         }
         pModule = pModule->pNext;
     }
+    return MUX_S_OK;
+}
+
+extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_InitModuleLibrary(process_context ctx)
+{
+    if (IsUninitialized == g_ProcessContext)
+    {
+        g_ProcessContext = ctx;
+        return MUX_S_OK;
+    }
+    else
+    {
+        return MUX_E_FAIL;
+    }
+}
+
+extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_FinalizeModuleLibrary(void)
+{
+    g_ProcessContext = IsUninitialized;
     return MUX_S_OK;
 }
