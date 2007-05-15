@@ -56,9 +56,11 @@ typedef enum
 #ifdef WIN32
 const UINT64 mux_IID_IUnknown      = 0x0000000100000010i64;
 const UINT64 mux_IID_IClassFactory = 0x0000000100000011i64;
+const UINT64 mux_IID_IMarshal      = 0x0000000100000012i64;
 #else
 const UINT64 mux_IID_IUnknown      = 0x0000000100000010ull;
 const UINT64 mux_IID_IClassFactory = 0x0000000100000011ull;
+const UINT64 mux_IID_IMarshal      = 0x0000000100000012ull;
 #endif
 
 #define interface class
@@ -76,6 +78,16 @@ interface mux_IClassFactory : public mux_IUnknown
 public:
     virtual MUX_RESULT CreateInstance(mux_IUnknown *pUnknownOuter, UINT64 iid, void **ppv) = 0;
     virtual MUX_RESULT LockServer(bool bLock) = 0;
+};
+
+interface mux_IMarshal : public mux_IUnknown
+{
+public:
+    virtual MUX_RESULT GetUnmarshalClass(UINT64 riid, marshal_context ctx, UINT64 *pcid) = 0;
+    virtual MUX_RESULT MarshalInterface(size_t *pnBuffer, char **pBuffer, UINT64 riid, marshal_context ctx) = 0;
+    virtual MUX_RESULT UnmarshalInterface(size_t nBuffer, char *pBuffer, UINT64 riid, void **ppv) = 0;
+    virtual MUX_RESULT ReleaseMarshalData(char *pBuffer) = 0;
+    virtual MUX_RESULT DisconnectObject(void) = 0;
 };
 
 extern "C"

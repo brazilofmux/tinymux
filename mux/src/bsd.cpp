@@ -530,10 +530,10 @@ void CleanUpStubSlaveProcess(void)
     stubslave_pid = 0;
 }
 
-/*! \brief Lauch query slave process.
+/*! \brief Lauch stub slave process.
  *
- * This spawns the query slave process and creates a socket-oriented,
- * bi-directional communiocation path between that process and this
+ * This spawns the stub slave process and creates a socket-oriented,
+ * bi-directional communication path between that process and this
  * process. Any existing slave process is killed.
  *
  * \param executor dbref of Executor.
