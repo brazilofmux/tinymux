@@ -60,7 +60,7 @@ typedef struct
 static MODULE_INFO *g_pModuleList = NULL;
 static MODULE_INFO *g_pModuleLast = NULL;
 
-static MODULE_INFO  g_NetmuxModule =
+static MODULE_INFO  g_MainModule =
 {
     NULL,
     NULL,
@@ -180,7 +180,7 @@ static int ClassFind(UINT64 cid)
 
 /*! \brief Find which module implements a particular class id.
  *
- * Note that callers may need to test for NetmuxModule and cannot assume the
+ * Note that callers may need to test for MainModule and cannot assume the
  * returned module record is implemented in a module.
  *
  * \param  UINT64   Class ID.
@@ -200,7 +200,8 @@ static MODULE_INFO *ModuleFindFromCID(UINT64 cid)
 
 /*! \brief Find module given its module name.
  *
- * Note that it is not possible to find the 'netmux' module this way.
+ * Note that it is not possible to find the special-case module for the main
+ * program (netmux or stubslave) this way.
  *
  * \param  UTF8[]    Module name.
  * \return           Corresponding module record or NULL if not found.
@@ -222,7 +223,8 @@ static MODULE_INFO *ModuleFindFromName(const UTF8 aModuleName[])
 
 /*! \brief Find module given its filename.
  *
- * Note that it is not possible to find the 'netmux' module this way.
+ * Note that it is not possible to find the special-case module for the main
+ * program (netmux or stubslave) this way.
  *
  * \param  UTF8[]    File name.
  * \return           Corresponding module record or NULL if not found.
@@ -538,7 +540,7 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_CreateInstance(UINT64 cid, mux_IUnk
     MODULE_INFO *pModule = ModuleFindFromCID(cid);
     if (NULL != pModule)
     {
-        if (pModule == &g_NetmuxModule)
+        if (pModule == &g_MainModule)
         {
             if (NULL == pModule->fpGetClassObject)
             {
@@ -569,9 +571,9 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_CreateInstance(UINT64 cid, mux_IUnk
 
 /*! \brief Register class ids and factory implemented by the process binary.
  *
- * Modules must pass NULL for pfGetClassObject, but netmux must pass a
- * non-NULL pfGetClassObject.  For modules, the class factory is obtained by
- * using the mux_GetClassObject export.
+ * Modules must pass NULL for pfGetClassObject, but the main program (netmux
+ * or stubslave) must pass a non-NULL pfGetClassObject.  For modules, the
+ * class factory is obtained by using the mux_GetClassObject export.
  *
  * \param int                   Number of class ids to register
  * \param UINT64[]              Class ID table.
@@ -587,10 +589,11 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_RegisterClassObjects(int ncid, UINT
         return MUX_E_INVALIDARG;
     }
 
-    // Modules export a mux_GetClassObject handler, but netmux must pass its
-    // handler in here. Also, it doesn't make sense to load and unload netmux.
-    // But, we want to allow netmux to provide module interfaces, so some
-    // special-casing is done to allow that.
+    // Modules export a mux_GetClassObject handler, but the main program
+    // (netmux or stubslave) must pass its handler in here. Also, it doesn't
+    // make sense to load and unload netmux.  But, we want to allow the main
+    // program to provide module interfaces, so some special-casing is done to
+    // allow that.
     //
     if (  (  NULL != g_pModule
           && NULL != fpGetClassObject)
@@ -619,12 +622,13 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_RegisterClassObjects(int ncid, UINT
     pModule = g_pModule;
     if (NULL == pModule)
     {
-        // These classes are implemented in netmux.
+        // These classes are implemented in the main program (netmux or
+        // stubslave).
         //
-        pModule = &g_NetmuxModule;
+        pModule = &g_MainModule;
         if (NULL != pModule->fpGetClassObject)
         {
-            // Netmux is attempting to register another handler.
+            // The main program is attempting to register another handler.
             //
             return MUX_E_FAIL;
         }
@@ -668,9 +672,10 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_RegisterClassObjects(int ncid, UINT
         g_nClassesAllocated = nAllocate;
     }
 
-    // If these classes are implemented in netmux, save the private GetClassObject method.
+    // If these classes are implemented in the main program (netmux or
+    // stubslave), save the private GetClassObject method.
     //
-    if (&g_NetmuxModule == pModule)
+    if (&g_MainModule == pModule)
     {
         pModule->fpGetClassObject = fpGetClassObject;
     }
@@ -722,10 +727,10 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_RevokeClassObjects(int ncid, UINT64
         }
     }
 
-    // If these classes are implemented by netmux, we need to clear the
-    // handler as well.
+    // If these classes are implemented by the main program (netmux or
+    // stubslave), we need to clear the handler as well.
     //
-    if (pModule == &g_NetmuxModule)
+    if (pModule == &g_MainModule)
     {
         pModule->fpGetClassObject = NULL;
     }
@@ -854,7 +859,8 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_RemoveModule(const UTF8 aModuleName
 
 /*! \brief Return information about a particular module.
  *
- * Modules do not use this.  Notice that the 'netmux' module is not included.
+ * Modules do not use this.  Notice that the main program module (netmux or
+ * stubslave) is not included.
  *
  * \param UTF8     Filename of dynamic module to remove.
  * \param void **  External module info structure.
@@ -886,7 +892,8 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_ModuleInfo(int iModule, MUX_MODULE_
 
 /*! \brief Periodic service tick for modules.
  *
- * Modules do not use this.  Notice that the 'netmux' module is not unloaded.
+ * Modules do not use this.  Notice that the main program module (netmux or
+ * stubslave) is not included.
  *
  * \return         MUX_RESULT
  */

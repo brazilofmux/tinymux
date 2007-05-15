@@ -95,7 +95,7 @@ extern "C"
     typedef MUX_RESULT DCL_API FPGETCLASSOBJECT(UINT64 cid, UINT64 iid, void **ppv);
 }
 
-// APIs available to netmux and dynamic modules.
+// APIs available to main program (netmux or stubslave) and dynamic modules.
 //
 extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_CreateInstance(UINT64 cid, mux_IUnknown *pUnknownOuter, create_context ctx, UINT64 iid, void **ppv);
 extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_RegisterClassObjects(int ncid, UINT64 acid[], FPGETCLASSOBJECT *pfGetClassObject);
@@ -107,7 +107,7 @@ typedef struct
     bool       bLoaded;
 } MUX_MODULE_INFO;
 
-// APIs intended only for use by netmux.
+// APIs intended only for use by main program (netmux or stubslave).
 //
 #ifdef WIN32
 extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_AddModule(const UTF8 aModuleName[], const UTF16 aFileName[]);
