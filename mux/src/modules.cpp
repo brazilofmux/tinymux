@@ -15,10 +15,6 @@
 
 #if defined(HAVE_DLOPEN) || defined(WIN32)
 
-#ifdef HAVE_DLOPEN
-#include <dlfcn.h>
-#endif // HAVE_DLOPEN
-
 #include "libmux.h"
 #include "modules.h"
 

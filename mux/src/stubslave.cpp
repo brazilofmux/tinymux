@@ -1,13 +1,18 @@
-/*! \file sqlslave.cpp
- * \brief This slave does SQL queries.
+/*! \file stubslave.cpp
+ * \brief This slave hosts modules in a separate process.
  *
  * $Id$
  *
  */
 
+#include "copyright.h"
 #include "autoconf.h"
 #include "config.h"
-//#include <dbi/dbi.h>
+
+#if defined(HAVE_DLOPEN) || defined(WIN32)
+
+#include "libmux.h"
+#include "modules.h"
 
 #define MAX_STRING 1000
 
@@ -22,9 +27,7 @@ int main(int argc, char *argv[])
         return 1;
     }
 
-//    dbi_conn conn;
-//    dbi_initialize(NULL);
-
+    mux_InitModuleLibrary(IsSlaveProcess);
     for (;;)
     {
         char arg[MAX_STRING];
@@ -48,7 +51,8 @@ int main(int argc, char *argv[])
 
         write(1, "OK", 2);
     }
-
-//    dbi_shutdown();
+    mux_FinalizeModuleLibrary();
     return 0;
 }
+
+#endif
