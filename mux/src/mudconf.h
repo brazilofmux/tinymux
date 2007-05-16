@@ -337,7 +337,7 @@ struct statedata
     bool bStackLimitReached;    // Was stack slammed?
     bool bStandAlone;           // Are we running in dbconvert mode.
     bool panicking;             // are we in the middle of dying horribly?
-    bool shutdown_flag;         /* Should interface be shut down? */
+    bool shutdown_flag;         // Should interface be shut down?
     bool inpipe;                // Are we collecting output for a pipe?
 #ifndef WIN32
     bool          restarting;   // Are we restarting?

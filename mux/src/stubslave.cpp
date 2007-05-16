@@ -27,7 +27,9 @@ int main(int argc, char *argv[])
         return 1;
     }
 
-    mux_InitModuleLibrary(IsSlaveProcess);
+    // TODO: Should we pass in a pipepump function here or not?
+    //
+    mux_InitModuleLibrary(IsSlaveProcess, NULL);
     for (;;)
     {
         char arg[MAX_STRING];

@@ -919,10 +919,14 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_ModuleTick(void)
     return MUX_S_OK;
 }
 
-extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_InitModuleLibrary(process_context ctx)
+extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_InitModuleLibrary(process_context ctx, PipePump *fpPipePump)
 {
     if (IsUninitialized == g_ProcessContext)
     {
+#if defined(STUB_SLAVE)
+        // TODO: Save a copy of the pipepump.
+        //
+#endif
         g_ProcessContext = ctx;
         return MUX_S_OK;
     }
@@ -936,4 +940,19 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_FinalizeModuleLibrary(void)
 {
     g_ProcessContext = IsUninitialized;
     return MUX_S_OK;
+}
+
+/*! \brief Receive and parse data stream from stubslave
+ *
+ * Called from both the main shovechars() loop as well as the pipepump loop(),
+ * this function parses data from the stubslave.  Some potential actions
+ * include unblocking the return of a RPC to the other side as well as calls
+ * from the other side which may ultimate cause other RPC calls to the stubslave.
+ *
+ * \return         bool    An indication of whether to continue probably.
+ */
+
+extern "C" bool DCL_EXPORT DCL_API mux_ReceiveData(size_t nBuffer, const void *pBuffer)
+{
+    return false;
 }

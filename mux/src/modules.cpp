@@ -53,7 +53,11 @@ extern "C" MUX_RESULT DCL_API netmux_GetClassObject(UINT64 cid, UINT64 iid, void
 
 void init_modules(void)
 {
-    MUX_RESULT mr = mux_InitModuleLibrary(IsMainProcess);
+#ifdef STUB_SLAVE
+    MUX_RESULT mr = mux_InitModuleLibrary(IsMainProcess, pipepump);
+#else
+    MUX_RESULT mr = mux_InitModuleLibrary(IsMainProcess, NULL);
+#endif
     if (MUX_SUCCEEDED(mr))
     {
         mr = mux_RegisterClassObjects(NUM_CIDS, netmux_cids, netmux_GetClassObject);

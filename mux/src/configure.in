@@ -59,7 +59,7 @@ AC_ARG_ENABLE(
   ])
 AC_SUBST(MEMORY_BASED)
 
-AC_MSG_CHECKING(whether to enable Query Slave)
+AC_MSG_CHECKING(whether to enable Stub Slave)
 AC_ARG_ENABLE(
   [stubslave],
   AC_HELP_STRING([--enable-stubslave], [enable Stub Slave (default is NO)]),

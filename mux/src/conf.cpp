@@ -1787,6 +1787,10 @@ static CF_HAND(cf_module)
         UTF8 *filename = buffer;
 #endif
         mr = mux_AddModule(str, filename);
+#if defined(STUB_SLAVE)
+        // TODO: Send instructions to stubslave to add the same module.
+        //
+#endif
         free_lbuf(buffer);
     }
 

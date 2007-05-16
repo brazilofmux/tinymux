@@ -30,6 +30,10 @@
 #include "file_c.h"
 #include "slave.h"
 
+#if defined(HAVE_DLOPEN) && defined(STUB_SLAVE)
+#include "libmux.h"
+#endif
+
 #ifdef SOLARIS
 extern const int _sys_nsig;
 #define NSIG _sys_nsig
@@ -253,7 +257,7 @@ static DWORD WINAPI SlaveProc(LPVOID lpParameter)
                         SlaveThreadInfo[iSlave].iDoing = __LINE__;
                         shutdown(s, SD_BOTH);
                         SlaveThreadInfo[iSlave].iDoing = __LINE__;
-                        if (closesocket(s) == 0)
+                        if (0 == closesocket(s))
                         {
                             DebugTotalSockets--;
                         }
@@ -322,7 +326,7 @@ static DWORD WINAPI SlaveProc(LPVOID lpParameter)
                         SlaveThreadInfo[iSlave].iDoing = __LINE__;
                         shutdown(s, SD_BOTH);
                         SlaveThreadInfo[iSlave].iDoing = __LINE__;
-                        if (closesocket(s) == 0)
+                        if (0 == closesocket(s))
                         {
                             DebugTotalSockets--;
                         }
@@ -488,7 +492,7 @@ void CleanUpSlaveSocket(void)
     if (!IS_INVALID_SOCKET(slave_socket))
     {
         shutdown(slave_socket, SD_BOTH);
-        if (SOCKET_CLOSE(slave_socket) == 0)
+        if (0 == SOCKET_CLOSE(slave_socket))
         {
             DebugTotalSockets--;
         }
@@ -512,7 +516,7 @@ void CleanUpStubSlaveSocket(void)
     if (!IS_INVALID_SOCKET(stubslave_socket))
     {
         shutdown(stubslave_socket, SD_BOTH);
-        if (SOCKET_CLOSE(stubslave_socket) == 0)
+        if (0 == SOCKET_CLOSE(stubslave_socket))
         {
             DebugTotalSockets--;
         }
@@ -643,7 +647,9 @@ void boot_stubslave(dbref executor, dbref caller, dbref enactor, int)
     log_number(stubslave_socket);
     ENDLOG;
 
-    mux_write(stubslave_socket, "PING", 4);
+    // TODO: Send instructions to stubslave to add the existing list of
+    //  modules.
+    //
     return;
 
 failure:
@@ -780,9 +786,9 @@ failure:
 
 #ifdef STUB_SLAVE
 
-/*! \brief Get results from the Stub query slave.
+/*! \brief Get results from the Stubslave.
  *
- * Any communication from the Stub query slave is logged.
+ * Any communication from the Stub slave passed to the module library.
  *
  * \return         -1 for failure and 0 for success.
  */
@@ -791,12 +797,12 @@ static int get_stubslave_result(void)
 {
     char buf[LBUF_SIZE];
 
-    int len = mux_read(stubslave_socket, buf, sizeof(buf)-1);
+    int len = mux_read(stubslave_socket, buf, sizeof(buf));
     if (len < 0)
     {
         int iSocketError = SOCKET_LAST_ERROR;
-        if (  iSocketError == SOCKET_EAGAIN
-           || iSocketError == SOCKET_EWOULDBLOCK)
+        if (  SOCKET_EAGAIN == iSocketError
+           || SOCKET_EWOULDBLOCK == iSocketError)
         {
             return -1;
         }
@@ -804,21 +810,22 @@ static int get_stubslave_result(void)
         CleanUpStubSlaveProcess();
 
         STARTLOG(LOG_ALWAYS, "NET", "STUB");
-        log_text(T("read() of query slave failed. Query Slave stopped."));
+        log_text(T("read() of stubslave failed. Stubslave stopped."));
         ENDLOG;
 
         return -1;
     }
-    else if (len == 0)
+    else if (0 == len)
     {
         return -1;
     }
-    buf[len] = '\0';
 
-    STARTLOG(LOG_ALWAYS, "NET", "STUB");
-    log_text(T(buf));
-    ENDLOG;
-
+    // TODO: Pay attention to return value and control whether to continue
+    // pumping the pipe.
+    //
+    if (mux_ReceiveData(len, buf))
+    {
+    }
     return 0;
 }
 
@@ -853,7 +860,7 @@ static int get_slave_result(void)
 
         return -1;
     }
-    else if (len == 0)
+    else if (0 == len)
     {
         free_lbuf(buf);
         return -1;
@@ -1138,7 +1145,7 @@ static void make_socket(PortInfo *Port)
         if (IS_SOCKET_ERROR(nRet))
         {
             Log.tinyprintf("Error %ld on bind" ENDLINE, SOCKET_LAST_ERROR);
-            if (SOCKET_CLOSE(s) == 0)
+            if (0 == SOCKET_CLOSE(s))
             {
                 DebugTotalSockets--;
             }
@@ -1153,7 +1160,7 @@ static void make_socket(PortInfo *Port)
         if (nRet)
         {
             Log.tinyprintf("Error %ld on listen" ENDLINE, SOCKET_LAST_ERROR);
-            if (SOCKET_CLOSE(s) == 0)
+            if (0 == SOCKET_CLOSE(s))
             {
                 DebugTotalSockets--;
             }
@@ -1167,7 +1174,7 @@ static void make_socket(PortInfo *Port)
         if (NULL == hThread)
         {
             log_perror(T("NET"), T("FAIL"), T("CreateThread"), T("setsockopt"));
-            if (SOCKET_CLOSE(s) == 0)
+            if (0 == SOCKET_CLOSE(s))
             {
                 DebugTotalSockets--;
             }
@@ -1202,7 +1209,7 @@ static void make_socket(PortInfo *Port)
     if (IS_SOCKET_ERROR(cc))
     {
         log_perror(T("NET"), T("FAIL"), NULL, T("bind"));
-        if (SOCKET_CLOSE(s) == 0)
+        if (0 == SOCKET_CLOSE(s))
         {
             DebugTotalSockets--;
         }
@@ -1269,7 +1276,7 @@ void SetupPorts(int *pnPorts, PortInfo aPorts[], IntArray *pia, IntArray *piaSSL
 
         if (!bFound)
         {
-            if (SOCKET_CLOSE(aPorts[i].socket) == 0)
+            if (0 == SOCKET_CLOSE(aPorts[i].socket))
             {
                 DebugTotalSockets--;
                 (*pnPorts)--;
@@ -1415,21 +1422,21 @@ DCL_INLINE void FD_SET_priv(SOCKET fd, fd_set *set)
     }
 }
 
+#define CheckInput(x)   FD_ISSET_priv(x, &input_set)
+#define CheckOutput(x)  FD_ISSET_priv(x, &output_set)
+
 void shovechars9x(int nPorts, PortInfo aPorts[])
 {
     fd_set input_set, output_set;
     int found;
     DESC *d, *dnext, *newd;
 
-#define CheckInput(x)   FD_ISSET_priv(x, &input_set)
-#define CheckOutput(x)  FD_ISSET_priv(x, &output_set)
-
     mudstate.debug_cmd = T("< shovechars >");
 
     CLinearTimeAbsolute ltaLastSlice;
     ltaLastSlice.GetUTC();
 
-    while (mudstate.shutdown_flag == 0)
+    while (!mudstate.shutdown_flag)
     {
         CLinearTimeAbsolute ltaCurrent;
         ltaCurrent.GetUTC();
@@ -1697,6 +1704,9 @@ void shovecharsNT(int nPorts, PortInfo aPorts[])
 
 #else // WIN32
 
+#define CheckInput(x)     FD_ISSET(x, &input_set)
+#define CheckOutput(x)    FD_ISSET(x, &output_set)
+
 void shovechars(int nPorts, PortInfo aPorts[])
 {
     fd_set input_set, output_set;
@@ -1705,9 +1715,6 @@ void shovechars(int nPorts, PortInfo aPorts[])
     unsigned int avail_descriptors;
     int maxfds;
     int i;
-
-#define CheckInput(x)     FD_ISSET(x, &input_set)
-#define CheckOutput(x)    FD_ISSET(x, &output_set)
 
     mudstate.debug_cmd = T("< shovechars >");
 
@@ -1722,7 +1729,7 @@ void shovechars(int nPorts, PortInfo aPorts[])
 
     avail_descriptors = maxfds - 7;
 
-    while (mudstate.shutdown_flag == 0)
+    while (!mudstate.shutdown_flag)
     {
         CLinearTimeAbsolute ltaCurrent;
         ltaCurrent.GetUTC();
@@ -1776,6 +1783,7 @@ void shovechars(int nPorts, PortInfo aPorts[])
         if (!IS_INVALID_SOCKET(stubslave_socket))
         {
             FD_SET(stubslave_socket, &input_set);
+            FD_SET(stubslave_socket, &output_set);
         }
 #endif // STUB_SLAVE
 
@@ -1872,21 +1880,28 @@ void shovechars(int nPorts, PortInfo aPorts[])
         if (  !IS_INVALID_SOCKET(slave_socket)
            && CheckInput(slave_socket))
         {
-            while (get_slave_result() == 0)
+            while (0 == get_slave_result())
             {
                 ; // Nothing.
             }
         }
 
 #ifdef STUB_SLAVE
-        // Get result sets from stubslave.
+        // Get data from stubslave.
         //
-        if (  !IS_INVALID_SOCKET(stubslave_socket)
-           && CheckInput(stubslave_socket))
+        if (!IS_INVALID_SOCKET(stubslave_socket))
         {
-            while (get_stubslave_result() == 0)
+            if (CheckInput(stubslave_socket))
             {
-                ; // Nothing.
+                while (0 == get_stubslave_result())
+                {
+                    ; // Nothing.
+                }
+            }
+
+            if (CheckOutput(stubslave_socket))
+            {
+                // TODO: Push stuff out.
             }
         }
 #endif // STUB_SLAVE
@@ -1956,6 +1971,81 @@ void shovechars(int nPorts, PortInfo aPorts[])
     }
 }
 
+#ifdef STUB_SLAVE
+extern "C" void DCL_API pipepump(void)
+{
+    fd_set input_set, output_set;
+    int found;
+    DESC *d, *dnext, *newd;
+    int i;
+
+    mudstate.debug_cmd = T("< pipepump >");
+
+    while (  !mudstate.shutdown_flag
+          && !IS_INVALID_SOCKET(stubslave_socket))
+    {
+        FD_ZERO(&input_set);
+        FD_ZERO(&output_set);
+
+        // Listen for replies from the stubslave socket.
+        //
+        FD_SET(stubslave_socket, &input_set);
+
+#if 0
+        // TODO: This will become necessary because we could be blocked on a
+        // call to the slave at the same time it makes a call to us.
+        //
+        if ()
+        {
+            FD_SET(stubslave_socket, &output_set);
+        }
+#endif
+
+        // Wait for something to happen.
+        //
+        found = select(maxd, &input_set, &output_set, (fd_set *) NULL, NULL);
+
+        if (IS_SOCKET_ERROR(found))
+        {
+            int iSocketError = SOCKET_LAST_ERROR;
+            if (SOCKET_EBADF == iSocketError)
+            {
+                // The socket became invalid.
+                //
+                log_perror(T("NET"), T("FAIL"), T("checking for activity"), T("select"));
+
+                if (  !IS_INVALID_SOCKET(stubslave_socket)
+                   && !ValidSocket(stubslave_socket))
+                {
+                    CleanUpStubSlaveSocket();
+                    return;
+                }
+            }
+            else if (iSocketError != SOCKET_EINTR)
+            {
+                log_perror(T("NET"), T("FAIL"), T("checking for activity"), T("select"));
+            }
+            continue;
+        }
+
+        // Get data from from stubslave.
+        //
+        if (CheckInput(stubslave_socket))
+        {
+            while (0 == get_stubslave_result())
+            {
+                ; // Nothing.
+            }
+        }
+
+        if (CheckOutput(stubslave_socket))
+        {
+            // TODO: Push stuff out.
+        }
+    }
+}
+#endif // STUB_SLAVE
+
 #endif // WIN32
 
 DESC *new_connection(PortInfo *Port, int *piSocketError)
@@ -2005,7 +2095,7 @@ DESC *new_connection(PortInfo *Port, int *piSocketError)
 
         fcache_rawdump(newsock, FC_CONN_SITE);
         shutdown(newsock, SD_BOTH);
-        if (SOCKET_CLOSE(newsock) == 0)
+        if (0 == SOCKET_CLOSE(newsock))
         {
             DebugTotalSockets--;
         }
@@ -2093,7 +2183,7 @@ DESC *new_connection(PortInfo *Port, int *piSocketError)
                 log_text(T("SSL negotiation failed: "));
                 ENDLOG;
                 shutdown(newsock, SD_BOTH);
-                if (SOCKET_CLOSE(newsock) == 0)
+                if (0 == SOCKET_CLOSE(newsock))
                 {
                     DebugTotalSockets--;
                 }
@@ -2400,7 +2490,7 @@ void shutdownsock(DESC *d, int reason)
 #endif
 
         shutdown(d->descriptor, SD_BOTH);
-        if (SOCKET_CLOSE(d->descriptor) == 0)
+        if (0 == SOCKET_CLOSE(d->descriptor))
         {
             DebugTotalSockets--;
         }
@@ -2449,7 +2539,7 @@ static void shutdownsock_brief(DESC *d)
     }
 
     shutdown(d->descriptor, SD_BOTH);
-    if (closesocket(d->descriptor) == 0)
+    if (0 == closesocket(d->descriptor))
     {
         DebugTotalSockets--;
     }
@@ -3998,7 +4088,8 @@ bool process_input(DESC *d)
 
     char buf[LBUF_SIZE];
     int got = mux_socket_read(d, buf, sizeof(buf), 0);
-    if (IS_SOCKET_ERROR(got) || got == 0)
+    if (  IS_SOCKET_ERROR(got)
+       || 0 == got)
     {
         int iSocketError = SOCKET_LAST_ERROR;
         mudstate.debug_cmd = cmdsave;
@@ -4038,7 +4129,7 @@ void close_sockets(bool emergency, const UTF8 *message)
                 d->ssl_session = NULL;
             }
 #endif
-            if (SOCKET_CLOSE(d->descriptor) == 0)
+            if (0 == SOCKET_CLOSE(d->descriptor))
             {
                 DebugTotalSockets--;
             }
@@ -4052,7 +4143,7 @@ void close_sockets(bool emergency, const UTF8 *message)
     }
     for (int i = 0; i < nMainGamePorts; i++)
     {
-        if (SOCKET_CLOSE(aMainGamePorts[i].socket) == 0)
+        if (0 == SOCKET_CLOSE(aMainGamePorts[i].socket))
         {
             DebugTotalSockets--;
         }
@@ -4848,7 +4939,7 @@ static DWORD WINAPI MUDListenThread(LPVOID pVoid)
             //fcache_rawdump(socketClient, FC_CONN_SITE);
 
             shutdown(socketClient, SD_BOTH);
-            if (closesocket(socketClient) == 0)
+            if (0 == closesocket(socketClient))
             {
                 DebugTotalSockets--;
             }
@@ -4959,7 +5050,7 @@ void Task_DeferredClose(void *arg_voidptr, int arg_Integer)
         }
 
         shutdown(d->descriptor, SD_BOTH);
-        if (SOCKET_CLOSE(d->descriptor) == 0)
+        if (0 == SOCKET_CLOSE(d->descriptor))
         {
             DebugTotalSockets--;
         }
@@ -5084,7 +5175,7 @@ void ProcessWindowsTCP(DWORD dwTimeout)
             //Log.tinyprintf("Read(%d bytes)." ENDLINE, nbytes);
             // The read operation completed
             //
-            if (nbytes == 0)
+            if (0 == nbytes)
             {
                 // A zero-length IO completion means that the connection was dropped by the client.
                 //
