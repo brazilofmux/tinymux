@@ -532,39 +532,51 @@ static void ModuleUnload(MODULE_INFO *pModule)
 
 extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_CreateInstance(UINT64 cid, mux_IUnknown *pUnknownOuter, create_context ctx, UINT64 iid, void **ppv)
 {
-    if (0 == (UseSameProcess & ctx))
+    if (  (UseSameProcess & ctx)
+       || (  g_ProcessContext == IsMainProcess
+          && (UseMainProcess & ctx))
+       || (  g_ProcessContext == IsSlaveProcess
+          && (UseSlaveProcess & ctx)))
     {
-        return MUX_E_CLASSNOTAVAILABLE;
+        MODULE_INFO *pModule = ModuleFindFromCID(cid);
+        if (NULL != pModule)
+        {
+            if (pModule == &g_MainModule)
+            {
+                if (NULL == pModule->fpGetClassObject)
+                {
+                    return MUX_E_CLASSNOTAVAILABLE;
+                }
+            }
+            else if (!pModule->bLoaded)
+            {
+                ModuleLoad(pModule);
+                if (!pModule->bLoaded)
+                {
+                    return MUX_E_CLASSNOTAVAILABLE;
+                }
+            }
+
+            mux_IClassFactory *pIClassFactory = NULL;
+            MUX_RESULT mr = pModule->fpGetClassObject(cid, mux_IID_IClassFactory, (void **)&pIClassFactory);
+            if (  MUX_SUCCEEDED(mr)
+               && NULL != pIClassFactory)
+            {
+                mr = pIClassFactory->CreateInstance(pUnknownOuter, iid, ppv);
+                pIClassFactory->Release();
+            }
+            return mr;
+        }
     }
-
-    MODULE_INFO *pModule = ModuleFindFromCID(cid);
-    if (NULL != pModule)
+    else
     {
-        if (pModule == &g_MainModule)
-        {
-            if (NULL == pModule->fpGetClassObject)
-            {
-                return MUX_E_CLASSNOTAVAILABLE;
-            }
-        }
-        else if (!pModule->bLoaded)
-        {
-            ModuleLoad(pModule);
-            if (!pModule->bLoaded)
-            {
-                return MUX_E_CLASSNOTAVAILABLE;
-            }
-        }
-
-        mux_IClassFactory *pIClassFactory = NULL;
-        MUX_RESULT mr = pModule->fpGetClassObject(cid, mux_IID_IClassFactory, (void **)&pIClassFactory);
-        if (  MUX_SUCCEEDED(mr)
-           && NULL != pIClassFactory)
-        {
-            mr = pIClassFactory->CreateInstance(pUnknownOuter, iid, ppv);
-            pIClassFactory->Release();
-        }
-        return mr;
+        // TODO: Implement the out-of-proc case.
+        //
+        // 1. Send cid, pUnknownOuter, and iid to special endpoint '1' on the other side.
+        // 2. Block in pipepump() routine waiting for a proxy cid and marshal packet.
+        // 3. Open IMarhsal interface on local proxy and pass it the marshal packet.
+        // 4. Proxy returns interface pointer which we can then return to our caller.
+        //
     }
     return MUX_E_CLASSNOTAVAILABLE;
 }
@@ -944,10 +956,11 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_FinalizeModuleLibrary(void)
 
 /*! \brief Receive and parse data stream from stubslave
  *
- * Called from both the main shovechars() loop as well as the pipepump loop(),
+ * Called from both the main shovechars() loop as well as the pipepump() loop,
  * this function parses data from the stubslave.  Some potential actions
  * include unblocking the return of a RPC to the other side as well as calls
- * from the other side which may ultimate cause other RPC calls to the stubslave.
+ * from the other side which may ultimate cause other RPC calls to the
+ * stubslave.
  *
  * \return         bool    An indication of whether to continue probably.
  */

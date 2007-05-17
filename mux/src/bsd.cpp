@@ -648,7 +648,7 @@ void boot_stubslave(dbref executor, dbref caller, dbref enactor, int)
     ENDLOG;
 
     // TODO: Send instructions to stubslave to add the existing list of
-    //  modules.
+    // modules.
     //
     return;
 
