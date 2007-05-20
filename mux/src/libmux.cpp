@@ -935,11 +935,25 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_InitModuleLibrary(process_context c
 {
     if (IsUninitialized == g_ProcessContext)
     {
-#if defined(STUB_SLAVE)
-        // TODO: Save a copy of the pipepump.
-        //
-#endif
         g_ProcessContext = ctx;
+#if defined(STUB_SLAVE)
+        if (NULL != fpPipePump)
+        {
+            // Save pipepump callback. We need to design in a FIFO write
+            // callback to netmux.  netmux should provide incoming and
+            // outgoing streams.  The pipepump, write, and read packet
+            // handlers need to talk to each other in terms of call-level.
+            // pipepump will block until a certain call-level is handled by a
+            // return. The read packet handler should return the current call
+            // level so that pipepump can determine whether that level has
+            // been achieved.
+            //
+            // The module library should deal with packets, call levels, and
+            // disconnection clean. The main program (stub or netmux) can
+            // handle file descriptors, process spawning, and errors.
+            //
+        }
+#endif
         return MUX_S_OK;
     }
     else

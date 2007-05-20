@@ -788,7 +788,23 @@ failure:
 
 /*! \brief Get results from the Stubslave.
  *
- * Any communication from the Stub slave passed to the module library.
+ * Any communication from the stub slave passed to the module library.
+ *
+ * There needs to be a FIFO from the stub that is maintained by netmux.  Each
+ * packet from the other side should be passed to mux_ReceiveData separately
+ * because the next packet may be handled by this same routine at a lower call
+ * level.  A packet may contain a call, a return, or a message.  If the packet
+ * is a call or a message, it may result in a remote call to the other side
+ * which will then block waiting on a return from the other side.  Any return
+ * will generally cause us to unblock, however, the returns should be matched
+ * with the calls. Without a match, some sort of error has probably occured.
+ *
+ * Once we have a return, there is a choice as to whether to process the
+ * remaining packets in the incoming FIFO (which should be calls or meessages)
+ * or whether to return and let the top-level shovechars() loop do it.
+ *
+ * This function is potentially highly reentrant, so any data passed to the
+ * module library must first be removed cleanly from the FIFO.
  *
  * \return         -1 for failure and 0 for success.
  */
