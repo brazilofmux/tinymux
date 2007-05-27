@@ -270,6 +270,7 @@ MUX_RESULT CLogFactory::CreateInstance(mux_IUnknown *pUnknownOuter, UINT64 iid, 
 
 MUX_RESULT CLogFactory::LockServer(bool bLock)
 {
+    UNUSED_PARAMETER(bLock);
     return MUX_S_OK;
 }
 

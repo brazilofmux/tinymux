@@ -1332,6 +1332,8 @@ void do_setattr
 void do_cpattr(dbref executor, dbref caller, dbref enactor, int eval, int key,
                UTF8 *oldpair, UTF8 *newpair[], int nargs)
 {
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(eval);
 
     if (  isEmpty(oldpair)
