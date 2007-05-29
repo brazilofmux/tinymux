@@ -1551,7 +1551,6 @@ static void do_mail_review(dbref player, UTF8 *name, UTF8 *msglist)
                     UTF8 *status = status_string(mp);
                     const UTF8 *str = MessageFetch(mp->number);
 
-                    UTF8 szFromName[MBUF_SIZE];
                     trimmed_name(mp->from, szFromName, 16, 16, 0);
 
                     StripTabsAndTruncate(mp->subject, szSubjectBuffer, MBUF_SIZE-1, 65);
