@@ -5227,7 +5227,7 @@ void mux_string::append(const mux_string &sStr, mux_cursor iStart, mux_cursor iE
     {
         for (size_t i = 0; i < nPoints; i++)
         {
-            m_pcs[m_iLast.m_byte + i] = CS_NORMAL;
+            m_pcs[m_iLast.m_point + i] = CS_NORMAL;
         }
     }
 
