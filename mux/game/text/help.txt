@@ -12469,8 +12469,11 @@ SUBSTITUTIONS (continued)
 
     %|      A string piped from the previous command in a pipe.
 
-  Note that %va-%vz and %=<name> above are equivalent to [v(a)]-[v(z)]
-  and [v(<name>)], respectively, but are more efficient.
+  Note that %va-%vz is equivalent to [get(%!/a)-[get(%!/z)], and %=<name> is
+  equivalent to [get(%!/name)].  The substitutions forms are more efficient.
+  Note that %=<name> supports single-letter attributes names while [v(name)]
+  does not. For attribute names longer than one character, %=<name>,
+  [get(%!/name], and v(name) are equilvalent.
 
   Related Topics: ANSI(), ANSI CODES, ANSI SUBSTITUTION, GENDER, V().
 

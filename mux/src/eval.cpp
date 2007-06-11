@@ -1851,7 +1851,7 @@ void mux_exec( char *buff, char **bufc, dbref executor, dbref caller,
                             *p2 = '\0';
                             if ('>' == pdstr[0])
                             {
-                                if (mux_AttrNameInitialSet(mux_scratch[0]) && mux_scratch[1])
+                                if (mux_AttrNameInitialSet(mux_scratch[0]))
                                 {
                                     ATTR *ap = atr_str(mux_scratch);
                                     if (ap)

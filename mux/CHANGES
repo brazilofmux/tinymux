@@ -1,5 +1,5 @@
 TinyMUX 2.6:  CHANGES
-Last Update:  April 2007
+Last Update:  June 2007
 
 Major changes that may affect performance and require softcode tweaks:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -289,6 +289,8 @@ Bug Fixes:
  -- CLog::AppendLog() does not actually position log at end of existing
     log file. Net result is only that first two lines (Containing to
     INI/LOAD entries) are lost.
+ -- Allow %=<name> to support single-letter attribute names and
+    document. Issue 341.
 
 
 Performance Enhancements:
