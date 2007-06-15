@@ -54,4 +54,4 @@ wild.o: wild.cpp copyright.h autoconf.h config.h externs.h db.h attrcache.h flag
 wiz.o: wiz.cpp copyright.h autoconf.h config.h externs.h db.h attrcache.h flags.h timeutil.h match.h mudconf.h alloc.h htab.h svdhash.h stringutil.h svdrand.h attrs.h command.h file_c.h interface.h powers.h
 unsplit.o: unsplit.cpp copyright.h 
 slave.o: slave.cpp autoconf.h copyright.h config.h slave.h 
-stubslave.o: stubslave.cpp autoconf.h copyright.h config.h
+stubslave.o: stubslave.cpp copyright.h autoconf.h config.h libmux.h modules.h
