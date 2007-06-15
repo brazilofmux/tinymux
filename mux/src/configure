@@ -1810,8 +1810,8 @@ fi
 
 
 
-{ echo "$as_me:$LINENO: checking whether to enable Query Slave" >&5
-echo $ECHO_N "checking whether to enable Query Slave... $ECHO_C" >&6; }
+{ echo "$as_me:$LINENO: checking whether to enable Stub Slave" >&5
+echo $ECHO_N "checking whether to enable Stub Slave... $ECHO_C" >&6; }
 # Check whether --enable-stubslave was given.
 if test "${enable_stubslave+set}" = set; then
   enableval=$enable_stubslave;
