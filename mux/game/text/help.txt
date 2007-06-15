@@ -5103,8 +5103,7 @@ CHILDREN()
 
   FUNCTION: children(<object>)
 
-  Returns a list of objects that are parented to <object>. Currently a
-  wizard/royalty only function.
+  Returns a list of objects that are parented to <object>.
 
   Related Topics:
 
@@ -7998,7 +7997,7 @@ ISDBREF()
      > say isdbref(This is not a dbref)
      You say, "0"
 
-  Related Topics: BOOLEAN VALUES, isint, isnum(), israt(), isword().
+  Related Topics: BOOLEAN VALUES, isint(), isnum(), israt(), isword().
 
 & ISIGN()
 ISIGN()
@@ -8037,7 +8036,7 @@ ISINT()
      > say isint(22 L)
      You say, "0"
 
-  Related Topics: BOOLEAN VALUES, isdbref, isnum(), israt(), isword().
+  Related Topics: BOOLEAN VALUES, isdbref(), isnum(), israt(), isword().
 
 & ISNUM()
 ISNUM()
@@ -12694,8 +12693,11 @@ SUBSTITUTIONS (continued)
 
     %|      A string piped from the previous command in a pipe.
 
-  Note that %va-%vz and %=<name> above are equivalent to [v(a)]-[v(z)]
-  and [v(<name>)], respectively, but are more efficient.
+  Note that %va-%vz is equivalent to [get(%!/a)-[get(%!/z)], and %=<name> is
+  equivalent to [get(%!/name)].  The substitutions forms are more efficient.
+  Note that %=<name> supports single-letter attributes names while [v(name)]
+  does not. For attribute names longer than one character, %=<name>,
+  [get(%!/name], and v(name) are equilvalent.
 
   Related Topics: ANSI(), ANSI CODES, ANSI SUBSTITUTION, GENDER, V().
 

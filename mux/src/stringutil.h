@@ -972,7 +972,8 @@ public:
             mux_assert(0 < c.m_byte && c.m_byte <= m_ncp);
 #else
             c.m_byte--;
-            while (UTF8_CONTINUE == utf8_FirstByte[m_autf[c.m_byte]])
+            while (  0 < c.m_byte
+                  && UTF8_CONTINUE == utf8_FirstByte[m_autf[c.m_byte]])
             {
                 c.m_byte--;
             }

@@ -1,5 +1,5 @@
 TinyMUX 2.7:  CHANGES
-Last Update:  May 2007
+Last Update:  June 2007
 
 Major changes that may affect performance and require softcode tweaks:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -9,9 +9,9 @@ Major changes that may affect performance and require softcode tweaks:
  -- Added Unicode support with the database using UTF-8 and
     supporting ASCII, ISO 8859-1, and UTF-8 clients.  Earlier mail,
     comsys, and flatfiles versions are converted.
- -- NOACCENTS flag renamed to ASCII and used to force an ASCII encoding
-    for clients which do not properly negotiate or alternatively, out
-    of preference.
+ -- NOACCENTS flag renamed to ASCII and used to force an ASCII
+    encoding for clients which do not properly negotiate or
+    alternatively, out of preference.
  -- UNICODE flag added to force a UTF-8 encoding for clients which
     support UTF-8 but do not negotiate it.
  -- Added CHARSET and NEW-ENVIRON telnet negotiations which may affect
@@ -34,13 +34,13 @@ Feature Additions:
  -- Added LPAD(), CPAD(), and RPAD() functions to duplicate previous
     non-truncating LJUST(), CENTER(), and RJUST() functionality
     (Issue 13).  Thanks Jake.
- -- Added /delete switch to @function and allow removal of user-defined
-    functions (Issue 250).  Thanks Jake.
+ -- Added /delete switch to @function and allow removal of
+    user-defined functions (Issue 250).  Thanks Jake.
  -- Added fifth, sort-type argument to SETINTER(), SETUNION(), and
     SETDIFF() (Issue 3).
- -- Added @comjoin, @comleave, @comon, and @comoff for use with channel
-    objects.  Each evaluates to a message shown to the channel member
-    at the corresponding event (Issue 9).
+ -- Added @comjoin, @comleave, @comon, and @comoff for use with
+    channel objects.  Each evaluates to a message shown to the channel
+    member at the corresponding event (Issue 9).
  -- Added TR() function to allow transforming strings according to a
     specified pattern (Issue 262). Thanks Jake.
  -- REVWORDS() now accepts multi-character input and output delimiters
@@ -70,16 +70,16 @@ Bug Fixes:
  -- @dolist and @trig were not passing TRACE bit through (Issue 237).
  -- Using \ as a shortcut to @emit no longer causes the beginning of
     the message to be escaped (Issue 219).  Thanks Alierak.
- -- @verb/no_name used unterminated verb_sw table (Issued 243).  Thanks
-    Jake.
+ -- @verb/no_name used unterminated verb_sw table (Issued 243).
+    Thanks Jake.
  -- Guest objects left DARK through announcement code (Issue 244).
  -- @wall evaluated a speechmod before processing the message
     (Issue 16).  Thanks Jake.
  -- @wall's switches did not interact properly (Issue 30).  Thanks
     Jake.
  -- Corrected error messages for failed guest logins (Issue 246).
- -- @function did not strip ansi from or properly truncate user-defined
-    function names. (Issue 249).  Thanks Jake.
+ -- @function did not strip ansi from or properly truncate
+    user-defined function names. (Issue 249).  Thanks Jake.
  -- Fix typo in do_say() which left a bit-wise instead of a logical
     AND operation (Issue 245).
  -- Fix SORT(2 100) --> '100 2' bug introduced in 2.7.0.1 (Issue 251).
@@ -105,27 +105,29 @@ Bug Fixes:
  -- Fix memory leak in @mail error code path.
  -- Fix memory leak in process_cmdent().
  -- Allow Intel's EMT64 compiler to build the sources (Issue 308).
- -- Fix 'think [search(eval=hasattr(##,foo))]' by clearing the []-ness from
-    causing mux_exec() to complain about 'eval=hasattr()' not being a
-    function.
+ -- Fix 'think [search(eval=hasattr(##,foo))]' by clearing the []-ness
+    from causing mux_exec() to complain about 'eval=hasattr()' not
+    being a function.
  -- v3 comtitles were not being converted to v4 color code points.
- -- Fix type-punning bug in mux_fpclass() that broke when compiled with
-    gcc 4.1 or later with -O2 (which turns on -fstrict-aliasing) (Issue
-    322).
+ -- Fix type-punning bug in mux_fpclass() that broke when compiled
+    with gcc 4.1 or later with -O2 (which turns on -fstrict-aliasing)
+    (Issue 322).
  -- Fix hang in MUNGE() if given zero words (Issues 324).
- -- Fix output bug in lflags, where no space was output between the first two
-    flag names. (Issue 323)
+ -- Fix output bug in lflags, where no space was output between the
+    first two flag names. (Issue 323)
  -- Fix various @restart scenarios between SSL and non-SSL and from
     2.6 to 2.7.
  -- Rework SSL/TLS engine to use a TLS-specific context for STARTTLS,
     rather than reusing the SSLv3 context.
- -- Properly terminate uses of mux_exec().  Most of these are protected by
-    EV_TOP or something else.
+ -- Properly terminate uses of mux_exec().  Most of these are
+    protected by EV_TOP or something else.
  -- Attempt to make modules work on OS X (Darwin).
- -- CLog::AppendLog() does not actually position log at end of existing
-    log file. Net result is only that first two lines (Containing to
-    INI/LOAD entries) are lost.
+ -- CLogFile::AppendLog() does not actually position log at end of
+    existing log file. Net result is only that first two lines
+    (Containing to INI/LOAD entries) are lost.
  -- ConvertToUTF8() converted code points above 0x10000 incorrectly.
+ -- Allow %=<name> to support single-letter attribute names and
+    document. Issue 341.
 
 
 Performance Enhancements:
@@ -134,8 +136,8 @@ Performance Enhancements:
     Issue 238 comments).  Thanks Alierak.
  -- MUNGE() translates results through a hash table instead of
     repeated linear searching (Issue 247).  Thanks Alierak and Ian.
- -- VMAG(), VUNIT, and SHUFFLE() only need LBUF_SIZE/2 elements instead
-    of LBUF_SIZE elements.
+ -- VMAG(), VUNIT, and SHUFFLE() only need LBUF_SIZE/2 elements
+    instead of LBUF_SIZE elements.
  -- Prepending a single char to a mux_string no longer copies the
     string twice (Issue 281).
  -- Make mux_exec() not check function names that are too long to be
@@ -161,6 +163,6 @@ Miscellaneous:
     @emit (Issue 219).  Thanks Alierak.
  -- Removed unnecessary global pos variable from help.cpp (Issue 265).
  -- Fixed dangling reference to 'help @version' (Issue 277).
- -- Corrected documentation of E() and PI() to reflect actual precision
-    (Issue 283).  Thanks Jake.
+ -- Corrected documentation of E() and PI() to reflect actual
+    precision (Issue 283).  Thanks Jake.
  -- Document @restart dropping SSL connections up front.
