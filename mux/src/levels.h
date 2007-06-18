@@ -18,8 +18,8 @@
 RLEVEL   RxLevel(dbref);
 RLEVEL   TxLevel(dbref);
 void     notify_except_rlevel(dbref, dbref, dbref, const UTF8 *, int);
-void     notify_except2_rlevel(dbref, dbref, dbref, dbref,const UTF8 *);
-void     notify_except2_rlevel2(dbref, dbref, dbref, dbref,const UTF8 *);
+void     notify_except2_rlevel(dbref, dbref, dbref, dbref, const UTF8 *);
+void     notify_except2_rlevel2(dbref, dbref, dbref, dbref, const UTF8 *);
 UTF8 *   rxlevel_description(dbref, dbref);
 UTF8 *   txlevel_description(dbref, dbref);
 void     decompile_rlevels(dbref, dbref, UTF8 *);
@@ -34,7 +34,7 @@ void did_it_rlevel
     const UTF8 *odef,
     int   awhat,
     int   ctrl_flags,
-    UTF8 *args[],
+    const UTF8 *args[],
     int   nargs
 );
 
