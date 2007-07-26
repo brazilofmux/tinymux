@@ -1055,9 +1055,9 @@ static const unsigned char isSpecial_L2[256] =
       0,  0,  0,  0,  0,  0,  0,  0,   0,  0,  0,  0,  0,  0,  0,  0, // 0x10-0x1F
       0,  4,  0,  3,  0, 11,  0,  0,   0,  0,  0,  0,  0,  0,  0,  0, // 0x20-0x2F
       1,  1,  1,  1,  1,  1,  1,  1,   1,  1,  0,  0,  0, 21,  0,  0, // 0x30-0x3F
-     20,145,  7,  6,  0,  0,  0,  0,   0,  0,  0,  0,  9,147,140,144, // 0x40-0x4F
+     20,145,  7,  6,  0,  0,  0,  0,   0,  0,  0, 22,  9,147,140,144, // 0x40-0x4F
     143,130,  5,142,  8,  0,138,  0,   6,  0,  0,  0,  0,  0,  0,  0, // 0x50-0x5F
-     20, 17,  7,  6,  0,  0,  0,  0,   0,  0,  0,  0,  9, 19, 12, 16, // 0x60-0x6F
+     20, 17,  7,  6,  0,  0,  0,  0,   0,  0,  0, 22,  9, 19, 12, 16, // 0x60-0x6F
      15,  2,  5, 14,  8,  0, 10,  0,   6,  0,  0,  0, 13,  0,  0,  0, // 0x70-0x7F
       0,  0,  0,  0,  0,  0,  0,  0,   0,  0,  0,  0,  0,  0,  0,  0, // 0x80-0x8F
       0,  0,  0,  0,  0,  0,  0,  0,   0,  0,  0,  0,  0,  0,  0,  0, // 0x90-0x9F
@@ -1939,7 +1939,7 @@ void mux_exec( const UTF8 *pStr, size_t nStr, UTF8 *buff, UTF8 **bufc, dbref exe
                             nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
                         }
                     }
-                    else // if (iCode == 21)
+                    else if (iCode == 21)
                     {
                         // 3D
                         // =
@@ -1984,6 +1984,16 @@ void mux_exec( const UTF8 *pStr, size_t nStr, UTF8 *buff, UTF8 **bufc, dbref exe
                                 iStr += n;
                             }
                         }
+                    }
+                    else if (iCode == 22)
+                    {
+                        // 4B or 6B
+                        // k or K
+                        //
+                        // Moniker substitution
+                        //
+                        safe_str(Moniker(enactor), buff, bufc);
+                        nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
                     }
                 }
 

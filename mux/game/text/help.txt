@@ -12661,6 +12661,7 @@ SUBSTITUTIONS (continued)
   Database substitutions:
 
     %n, %N   Enactor's name.  See name(%#).
+    %k, %K   Enactor's moniker.  See moniker(%#).
     %va-%vz  Contents of attribute va through vz
     %=<attr> Equivalent to v(attr).
 
