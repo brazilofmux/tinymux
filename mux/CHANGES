@@ -1,5 +1,5 @@
 TinyMUX 2.7:  CHANGES
-Last Update:  June 2007
+Last Update:  July 2007
 
 Major changes that may affect performance and require softcode tweaks:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -62,6 +62,8 @@ Feature Additions:
     muxconfig.vbs) through as a command-line option.
  -- Add pOuterUnknown parameter to CreateInstance to allow aggregation
     to be used later. The proxy for marshalling appears to require it.
+ -- Add moniker (%k) substitution (Issue 350).
+ -- Added config option for initial parents (Issue 48).
 
 
 Bug Fixes:
