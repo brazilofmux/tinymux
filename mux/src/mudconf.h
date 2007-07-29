@@ -86,14 +86,19 @@ struct confdata
     bool    use_hostname;       /* true = use machine NAME rather than quad */
     bool    use_http;           /* Should we allow http access? */
     dbref   default_home;       // HOME when home is inaccessable.
+    dbref   exit_parent;        // Default parent for new exit objects
     dbref   global_error_obj;   // Object that is used to generate error messages.
     dbref   guest_char;         // player num of prototype GUEST character.
     dbref   guest_nuker;        // Wiz who nukes the GUEST characters.
     dbref   hook_obj;           // Object with @hook data.
     dbref   master_room;        // Room containing default cmds/exits/etc.
+    dbref   player_parent;      // Default parent for new player objects
+    dbref   room_parent;        // Default parent for new room objects
     dbref   start_home;         // initial HOME for players.
     dbref   start_room;         // initial location and home for players.
+    dbref   thing_parent;       // Default parent for new thing objects
     dbref   toad_recipient;     /* Default @toad recipient. */
+
     int     active_q_chunk;     /* # cmds to run from queue when active */
     int     cache_pages;        // Size of hash page cache (in pages).
     int     check_interval;     /* interval between db check/cleans in secs */

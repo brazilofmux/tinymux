@@ -239,6 +239,11 @@ void cf_init(void)
     mudconf.default_home = NOTHING;
     mudconf.master_room = NOTHING;
 
+    mudconf.exit_parent = NOTHING;
+    mudconf.player_parent = NOTHING;
+    mudconf.room_parent = NOTHING;
+    mudconf.thing_parent = NOTHING;
+
     for (i = FLAG_WORD1; i <= FLAG_WORD3; i++)
     {
         mudconf.player_flags.word[i] = 0;
@@ -1955,6 +1960,7 @@ static CONFPARM conftable[] =
     {T("examine_public_attrs"),      cf_bool,        CA_GOD,    CA_PUBLIC,   (int *)&mudconf.exam_public,     NULL,               0},
     {T("exit_flags"),                cf_set_flags,   CA_GOD,    CA_DISABLED, (int *)&mudconf.exit_flags,      NULL,               0},
     {T("exit_quota"),                cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.exit_quota,             NULL,               0},
+    {T("exit_parent"),               cf_dbref,       CA_GOD,    CA_PUBLIC,   &mudconf.exit_parent,            NULL,               0},
     {T("fascist_teleport"),          cf_bool,        CA_GOD,    CA_PUBLIC,   (int *)&mudconf.fascist_tport,   NULL,               0},
     {T("find_money_chance"),         cf_int,         CA_GOD,    CA_WIZARD,   &mudconf.payfind,                NULL,               0},
     {T("fixed_home_message"),        cf_string,      CA_STATIC, CA_PUBLIC,   (int *)mudconf.fixed_home_msg,   NULL,             128},
@@ -2032,7 +2038,7 @@ static CONFPARM conftable[] =
     {T("number_guests"),             cf_int,         CA_STATIC, CA_WIZARD,   &mudconf.number_guests,          NULL,               0},
     {T("open_cost"),                 cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.opencost,               NULL,               0},
     {T("output_database"),           cf_string_dyn,  CA_STATIC, CA_GOD,      (int *)&mudconf.outdb,           NULL, SIZEOF_PATHNAME},
-    {T("output_limit"),              cf_int,         CA_GOD,    CA_WIZARD,   (int *)&mudconf.output_limit,           NULL,               0},
+    {T("output_limit"),              cf_int,         CA_GOD,    CA_WIZARD,   (int *)&mudconf.output_limit,    NULL,               0},
     {T("page_cost"),                 cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.pagecost,               NULL,               0},
     {T("paranoid_allocate"),         cf_bool,        CA_GOD,    CA_WIZARD,   (int *)&mudconf.paranoid_alloc,  NULL,               0},
     {T("parent_recursion_limit"),    cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.parent_nest_lim,        NULL,               0},
@@ -2044,6 +2050,7 @@ static CONFPARM conftable[] =
     {T("player_listen"),             cf_bool,        CA_GOD,    CA_PUBLIC,   (int *)&mudconf.player_listen,   NULL,               0},
     {T("player_match_own_commands"), cf_bool,        CA_GOD,    CA_PUBLIC,   (int *)&mudconf.match_mine_pl,   NULL,               0},
     {T("player_name_spaces"),        cf_bool,        CA_GOD,    CA_PUBLIC,   (int *)&mudconf.name_spaces,     NULL,               0},
+    {T("player_parent"),             cf_dbref,       CA_GOD,    CA_PUBLIC,   &mudconf.player_parent,          NULL,               0},
     {T("player_queue_limit"),        cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.queuemax,               NULL,               0},
     {T("player_quota"),              cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.player_quota,           NULL,               0},
     {T("player_starting_home"),      cf_dbref,       CA_GOD,    CA_PUBLIC,   &mudconf.start_home,             NULL,               0},
@@ -2077,6 +2084,7 @@ static CONFPARM conftable[] =
     {T("robot_flags"),               cf_set_flags,   CA_GOD,    CA_DISABLED, (int *)&mudconf.robot_flags,     NULL,               0},
     {T("robot_speech"),              cf_bool,        CA_GOD,    CA_PUBLIC,   (int *)&mudconf.robot_speak,     NULL,               0},
     {T("room_flags"),                cf_set_flags,   CA_GOD,    CA_DISABLED, (int *)&mudconf.room_flags,      NULL,               0},
+    {T("room_parent"),               cf_dbref,       CA_GOD,    CA_PUBLIC,   &mudconf.room_parent,            NULL,               0},
     {T("room_quota"),                cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.room_quota,             NULL,               0},
     {T("run_startup"),               cf_bool,        CA_STATIC, CA_WIZARD,   (int *)&mudconf.run_startup,     NULL,               0},
     {T("sacrifice_adjust"),          cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.sacadjust,              NULL,               0},
@@ -2105,6 +2113,7 @@ static CONFPARM conftable[] =
     {T("terse_shows_exits"),         cf_bool,        CA_GOD,    CA_PUBLIC,   (int *)&mudconf.terse_exits,     NULL,               0},
     {T("terse_shows_move_messages"), cf_bool,        CA_GOD,    CA_PUBLIC,   (int *)&mudconf.terse_movemsg,   NULL,               0},
     {T("thing_flags"),               cf_set_flags,   CA_GOD,    CA_DISABLED, (int *)&mudconf.thing_flags,     NULL,               0},
+    {T("thing_parent"),              cf_dbref,       CA_GOD,    CA_PUBLIC,   &mudconf.thing_parent,           NULL,               0},
     {T("thing_quota"),               cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.thing_quota,            NULL,               0},
     {T("timeslice"),                 cf_seconds,     CA_GOD,    CA_PUBLIC,   (int *)&mudconf.timeslice,       NULL,               0},
     {T("toad_recipient"),            cf_dbref,       CA_GOD,    CA_WIZARD,   &mudconf.toad_recipient,         NULL,               0},
@@ -2146,7 +2155,7 @@ static CONFPARM conftable[] =
     {T("mail_sendaddr"),             cf_string,      CA_STATIC, CA_DISABLED, (int *)mudconf.mail_sendaddr,    NULL,             128},
     {T("mail_sendname"),             cf_string,      CA_STATIC, CA_DISABLED, (int *)mudconf.mail_sendname,    NULL,             128},
     {T("mail_subject"),              cf_string,      CA_STATIC, CA_DISABLED, (int *)mudconf.mail_subject,     NULL,             128},
-    {(UTF8 *) NULL,                       NULL,           0,         0,           NULL,                            NULL,               0}
+    {(UTF8 *) NULL,                       NULL,           0,         0,           NULL,                       NULL,               0}
 };
 
 // ---------------------------------------------------------------------------

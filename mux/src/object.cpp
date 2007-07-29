@@ -185,6 +185,7 @@ dbref clone_home(dbref player, dbref thing)
 dbref create_obj(dbref player, int objtype, const UTF8 *name, int cost)
 {
     dbref obj, owner;
+    dbref target_parent  = NOTHING;
     int quota = 0, value = 0;
     size_t nValidName;
     FLAGSET f;
@@ -200,6 +201,7 @@ dbref create_obj(dbref player, int objtype, const UTF8 *name, int cost)
         cost = mudconf.digcost;
         quota = mudconf.room_quota;
         f = mudconf.room_flags;
+        target_parent = mudconf.room_parent;
         pValidName = MakeCanonicalObjectName(name, &nValidName, &okname);
         tname = T("a room");
         break;
@@ -212,6 +214,7 @@ dbref create_obj(dbref player, int objtype, const UTF8 *name, int cost)
             cost = mudconf.createmax;
         quota = mudconf.thing_quota;
         f = mudconf.thing_flags;
+        target_parent = mudconf.thing_parent;
         value = OBJECT_ENDOWMENT(cost);
         pValidName = MakeCanonicalObjectName(name, &nValidName, &okname);
         tname = T("a thing");
@@ -222,6 +225,7 @@ dbref create_obj(dbref player, int objtype, const UTF8 *name, int cost)
         cost = mudconf.opencost;
         quota = mudconf.exit_quota;
         f = mudconf.exit_flags;
+        target_parent = mudconf.exit_parent;
         pValidName = MakeCanonicalExitName(name, &nValidName, &okname);
         tname = T("an exit");
         break;
@@ -247,6 +251,7 @@ dbref create_obj(dbref player, int objtype, const UTF8 *name, int cost)
             self_owned = true;
             tname = T("a player");
         }
+        target_parent = mudconf.player_parent;
         buff = munge_space(name);
         pValidName = name;
         if (!badname_check(buff))
@@ -354,7 +359,15 @@ dbref create_obj(dbref player, int objtype, const UTF8 *name, int cost)
     s_Exits(obj, NOTHING);
     s_Next(obj, NOTHING);
     s_Link(obj, NOTHING);
-    s_Parent(obj, NOTHING);
+
+    if (Good_obj(target_parent))
+    {
+        s_Parent(obj, target_parent);
+    }
+    else
+    {
+        s_Parent(obj, NOTHING);
+    }
 
     if (mudconf.autozone && player != NOTHING)
     {

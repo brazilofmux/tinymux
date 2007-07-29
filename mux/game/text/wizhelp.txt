@@ -127,7 +127,7 @@
 
   Note that changes to user-named attributes performed by this command
   are permanent and do not need to be performed each time the MUX is
-  restarted. Further this also only affects user-named attributes. 
+  restarted. Further this also only affects user-named attributes.
 
   Related Topics: attribute permissions, attr_access
 
@@ -189,7 +189,7 @@
   stripped_flags configuration option, and all @powers are stripped.  Also,
   HALT is set.  With /nostrip, ROYALTY and INHERIT are preserved.  #1 can use
   /nostrip to further preserve WIZARD and @powers.
-  
+
   By default, stripped_flags includes: BLIND, CONNECTED, GAGGED, HEAD_FLAG,
   IMMORTAL, INHERIT, ROYALTY, SLAVE, STAFF, SUSPECT, UNINSPECTED, and WIZARD.
 
@@ -1794,55 +1794,56 @@ CONFIG PARAMETERS
   default_home  destroy_going_now  dig_cost  down_file  down_motd_message
   dump_interval  dump_message  dump_offset  earn_limit  eval_comtitle
   events_daily_hour  examine_flags  examine_public_attrs  exit_flags
-  exit_quota  fascist_teleport  find_money_chance  fixed_home_message
-  fixed_tel_message  flag_access  flag_alias  flag_name  float_precision
-  forbid_site  fork_dump  full_file  full_motd_message  function_access
-  function_alias  function_invocation_limit  function_recursion_limit
-  game_dir_file  game_pag_file  global_error_obj  good_name  guest_char_num
+  exit_parent  exit_quota  fascist_teleport  find_money_chance
+  fixed_home_message  fixed_tel_message  flag_access  flag_alias  flag_name
+  float_precision forbid_site  fork_dump  full_file  full_motd_message
+  function_access  function_alias  function_invocation_limit
+  function_recursion_limit  game_dir_file  game_pag_file  global_error_obj
 
 { 'wizhelp config parameters2' for more }
 
 & CONFIG PARAMETERS2
 CONFIG PARAMETERS (continued)
 
-  guest_file  guest_nuker  guest_prefix  guest_site  guests_channel
-  guests_channel_alias  have_comsys  have_mailer  have_zones  helpfile
-  hook_cmd  hook_obj  hostnames  idle_interval  idle_timeout  idle_wiz_dark
-  immobile_message  include  indent_desc  initial_size  input_database
-  kill_guarantee_cost  kill_max_cost  kill_min_cost  lag_limit  lag_maximum
-  lbuf_size  link_cost  list_access  lock_recursion_limit  log  log_options
-  logout_cmd_access  logout_cmd_alias  look_obey_terse  machine_command_cost
-  mail_database  mail_ehlo  mail_expiration  mail_per_hour  mail_sendaddr
-  mail_sendname  mail_server  mail_subject  master_room  match_own_commands
-  max_cache_size  max_players  min_guests  money_name_plural
-  money_name_singular  motd_file  motd_message  mud_name  newuser_file
-  nositemon_site  notify_recursion_limit  number_guests  open_cost
-  output_database  output_limit  page_cost  paranoid_allocate
+  good_name  guest_char_num  guest_file  guest_nuker  guest_prefix  guest_site
+  guests_channel guests_channel_alias  have_comsys  have_mailer  have_zones
+  helpfile  hook_cmd  hook_obj  hostnames  idle_interval  idle_timeout
+  idle_wiz_dark  immobile_message  include  indent_desc  initial_size
+  input_database  kill_guarantee_cost  kill_max_cost  kill_min_cost  lag_limit
+  lag_maximum  lbuf_size  link_cost  list_access  lock_recursion_limit  log
+  log_options  logout_cmd_access  logout_cmd_alias  look_obey_terse
+  machine_command_cost  mail_database  mail_ehlo  mail_expiration
+  mail_per_hour  mail_sendaddr  mail_sendname  mail_server  mail_subject
+  master_room  match_own_commands  max_cache_size  max_players  min_guests
+  money_name_plural  money_name_singular  motd_file  motd_message  mud_name
+  newuser_file  nositemon_site  notify_recursion_limit  number_guests
+  open_cost  output_database  output_limit  page_cost  paranoid_allocate
   parent_recursion_limit  paycheck  pcreate_per_hour  pemit_any_object
-  pemit_far_players  permit_site  player_flags  player_listen
+  pemit_far_players  permit_site  player_flags  player_parent  player_listen
   player_match_own_commands  player_name_spaces  player_queue_limit
   player_quota  player_starting_home  player_starting_room  port
   postdump_message  power_alias  public_channel  public_channel_alias
   public_flags  pueblo_message  queue_active_chunk  queue_idle_chunk
   quiet_look  quiet_whisper  quit_file  quotas  raw_helpfile  read_remote_desc
-  read_remote_name  reality_level  register_create_file  register_site
 
 { 'wizhelp config parameters3' for more }
 
 & CONFIG PARAMETERS3
 CONFIG PARAMETERS (continued)
 
+  read_remote_name  reality_level  register_create_file  register_site
   reset_players  restrict_home  retry_limit  robot_cost  robot_flags
-  robot_speech  room_flags  room_quota  run_startup  sacrifice_adjust
-  sacrifice_factor  safe_wipe  safer_passwords  search_cost  see_owned_dark
-  signal_action  site_chars  space_compress  sql_database  sql_password
-  sql_server  sql_user  stack_limit  starting_money  starting_quota
-  status_file  stripped_flags  suspect_site  sweep_dark  switch_default_all
-  terse_shows_contents  terse_shows_exits  terse_shows_move_messages
-  thing_flags  thing_quota  timeslice  toad_recipient  trace_output_limit
-  trace_topdown  trust_site  uncompress_program  unowned_safe  use_http
-  user_attr_access  user_attr_per_hour  wait_cost  wiz_always_real
-  wizard_motd_file  wizard_motd_message  zone_recursion_limit
+  robot_speech  room_flags  room_parent  room_quota  run_startup
+  sacrifice_adjust  sacrifice_factor  safe_wipe  safer_passwords  search_cost
+  see_owned_dark  signal_action  site_chars  space_compress  sql_database
+  sql_password  sql_server  sql_user  stack_limit  starting_money
+  starting_quota  status_file  stripped_flags  suspect_site  sweep_dark
+  switch_default_all  terse_shows_contents  terse_shows_exits
+  terse_shows_move_messages  thing_flags  thing_parent  thing_quota  timeslice
+  toad_recipient  trace_output_limit  trace_topdown  trust_site
+  uncompress_program  unowned_safe  use_http  user_attr_access
+  user_attr_per_hour  wait_cost  wiz_always_real wizard_motd_file
+  wizard_motd_message  zone_recursion_limit
 
 & CONFIG_ACCESS
 CONFIG_ACCESS
@@ -1987,7 +1988,7 @@ DEF_EXIT_RX
 
   Sets the default Rx level for a newly created exit.
 
-  NOTE: This feature is not available unless reality levels was enabled at 
+  NOTE: This feature is not available unless reality levels was enabled at
   compile-time.
 
 & DEF_EXIT_TX
@@ -1998,7 +1999,7 @@ DEF_EXIT_TX
 
   Sets the default Tx level for a newly created exit.
 
-  NOTE: This feature is not available unless reality levels was enabled at 
+  NOTE: This feature is not available unless reality levels was enabled at
   compile-time.
 
 & DEF_PLAYER_RX
@@ -2009,7 +2010,7 @@ DEF_PLAYER_RX
 
   Sets the default Rx level for a newly created player.
 
-  NOTE: This feature is not available unless reality levels was enabled at 
+  NOTE: This feature is not available unless reality levels was enabled at
   compile-time.
 
 & DEF_PLAYER_TX
@@ -2020,7 +2021,7 @@ DEF_PLAYER_TX
 
   Sets the default Tx level for a newly created player.
 
-  NOTE: This feature is not available unless reality levels was enabled at 
+  NOTE: This feature is not available unless reality levels was enabled at
   compile-time.
 
 & DEF_ROOM_RX
@@ -2031,7 +2032,7 @@ DEF_ROOM_RX
 
   Sets the default Rx level for a newly created room.
 
-  NOTE: This feature is not available unless reality levels was enabled at 
+  NOTE: This feature is not available unless reality levels was enabled at
   compile-time.
 
 & DEF_ROOM_TX
@@ -2042,7 +2043,7 @@ DEF_ROOM_TX
 
   Sets the default Tx level for a newly created exit.
 
-  NOTE: This feature is not available unless reality levels was enabled at 
+  NOTE: This feature is not available unless reality levels was enabled at
   compile-time.
 
 & DEF_THING_RX
@@ -2051,7 +2052,7 @@ DEF_THING_RX
   CONFIG PARAMETER: def_thing_rx <value>
   DEFAULT: 1
 
-  NOTE: This feature is not available unless reality levels was enabled at 
+  NOTE: This feature is not available unless reality levels was enabled at
   compile-time.
 
 & DEF_THING_TX
@@ -2062,7 +2063,7 @@ DEF_THING_TX
 
   Sets the default Tx level for a newly created object.
 
-  NOTE: This feature is not available unless reality levels was enabled at 
+  NOTE: This feature is not available unless reality levels was enabled at
   compile-time.
 
 & DESTROY_GOING_NOW
@@ -2244,6 +2245,18 @@ EXIT_FLAGS
 
   Related Topics: @list, player_flags, robot_flags, room_flags, thing_flags.
 
+& EXIT_PARENT
+EXIT_PARENT
+
+  CONFIG PARAMETER: exit_parent <dbref>
+  DEFAULT:  NOTHING
+
+  Sets the parent object for all newly created exits on the game.   Existing
+  exits in the game database are not effected.   If <dbref> is not a valid
+  object, the setting is ignored.
+
+  Related Topics: player_parent, room_parent, thing_parent
+
 & EXIT_QUOTA
 EXIT_QUOTA
 
@@ -2407,7 +2420,7 @@ FLOAT_PRECISION
   When enabled (by setting to a non-negative number), TinyMUX uses the useful
   subset approach for floating-point results, and the precision of these
   results are limited to the specified number of <places>. For compatibility
-  with existing softcode, a value of 6 may be necessary. 
+  with existing softcode, a value of 6 may be necessary.
 
   By default, this option is disabled, and TinyMUX uses the full set approach
   for floating-point results.
@@ -3818,6 +3831,18 @@ PLAYER_NAME_SPACES
 
   Specifies whether or not player names are permitted to contain spaces.
 
+& PLAYER_PARENT
+PLAYER_PARENT
+
+  CONFIG PARAMETER: player_parent <dbref>
+  DEFAULT:  NOTHING
+
+  Sets the parent object for all newly created players on the game.   Existing
+  players in the game database are not effected.   If <dbref> is not a valid
+  object, the setting is ignored.
+
+  Related Topics: exit_parent, room_parent, thing_parent
+
 & PLAYER_QUEUE_LIMIT
 PLAYER_QUEUE_LIMIT
 
@@ -4063,7 +4088,7 @@ REALITY LEVELS
   to define new reality levels.  You can only have a total of 32 reality
   levels defined.
 
-  NOTE: This feature is not available unless reality levels was enabled at 
+  NOTE: This feature is not available unless reality levels was enabled at
   compile-time.
 
   Related topics: @rxlevel, @txlevel, def_player_rx, def_player_tx,
@@ -4083,7 +4108,7 @@ REALITY_LEVEL
   keeps a tally of those defined.  You can currently only have 32 total
   reality levels defined.
 
-  NOTE: This feature is not available unless reality levels was enabled at 
+  NOTE: This feature is not available unless reality levels was enabled at
   compile-time.
 
   Example:
@@ -4198,6 +4223,18 @@ ROOM_FLAGS
   Flags prefixed by a ! remove the indicated flag from the set.
 
   Related Topics: @list, exit_flags, player_flags, robot_flags, thing_flags.
+
+& ROOM_PARENT
+ROOM_PARENT
+
+  CONFIG PARAMETER: room_parent <dbref>
+  DEFAULT:  NOTHING
+
+  Sets the parent object for all newly created rooms on the game.   Existing
+  rooms in the game database are not effected.   If <dbref> is not a valid
+  object, the setting is ignored.
+
+  Related Topics: exit_parent, player_parent, thing_parent
 
 & ROOM_QUOTA
 ROOM_QUOTA
@@ -4724,6 +4761,18 @@ THING_FLAGS
 
   Related Topics: @list, exit_flags, player_flags, robot_flags, room_flags.
 
+& THING_PARENT
+THING_PARENT
+
+  CONFIG PARAMETER: thing_parent <dbref>
+  DEFAULT:  NOTHING
+
+  Sets the parent object for all newly created things on the game.   Existing
+  things in the game database are not effected.   If <dbref> is not a valid
+  object, the setting is ignored.
+
+  Related Topics: exit_parent, player_parent, room_parent
+
 & THING_QUOTA
 THING_QUOTA
 
@@ -4989,7 +5038,7 @@ WIZ_ALWAYS_REAL
   If 1, then players flagged royalty and above are always real for
   everything and everything is real for them.
 
-  NOTE: This feature is not available unless reality levels was enabled at 
+  NOTE: This feature is not available unless reality levels was enabled at
   compile-time.
 
 & ZONE_RECURSION_LIMIT
