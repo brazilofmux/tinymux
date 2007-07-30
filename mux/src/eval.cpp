@@ -1259,7 +1259,6 @@ void mux_exec( const UTF8 *pStr, size_t nStr, UTF8 *buff, UTF8 **bufc, dbref exe
 
     size_t nBufferAvailable = LBUF_SIZE - (*bufc - buff) - 1;
     size_t iStr = 0;
-    bool bBreak = false;
 
     while (iStr < nStr)
     {
@@ -1269,34 +1268,29 @@ void mux_exec( const UTF8 *pStr, size_t nStr, UTF8 *buff, UTF8 **bufc, dbref exe
         if (!isSpecial(L1, pStr[iStr]))
         {
             size_t iNormal = iStr + 1;
-            while (!isSpecial(L1, pStr[iNormal++]))
+            while (  iNormal < nStr
+                  && !isSpecial(L1, pStr[iNormal]))
             {
-                ; // Nothing.
+                iNormal++;
             }
-            if (nStr <= iNormal)
-            {
-                n = nStr - iStr;
-                bBreak = true;
-            }
-            else
-            {
-                n = iNormal - iStr - 1;
-            }
+
+            n = iNormal - iStr;
             if (nBufferAvailable < n)
             {
                 n = nBufferAvailable;
             }
+
             memcpy(*bufc, pStr + iStr, n);
             nBufferAvailable -= n;
             *bufc += n;
             at_space = 0;
             iStr += n;
-            if (bBreak)
+
+            if (nStr <= iStr)
             {
                 break;
             }
         }
-
 
         // At this point, pStr[iStr] must be one of the following characters:
         //
