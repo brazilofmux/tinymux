@@ -2254,8 +2254,10 @@ bool exit_visible(dbref exit, dbref player, int key)
 #ifdef REALITY_LVLS
     if (!mudstate.bStandAlone)
     {
-    if (!IsReal(player, exit))
-       return 0;
+        if (!IsReal(player, exit))
+        {
+            return false;
+        }
     }
 #endif // REALITY_LVLS
 
@@ -2285,7 +2287,7 @@ bool exit_visible(dbref exit, dbref player, int key)
 //
 bool exit_displayable(dbref exit, dbref player, int key)
 {
-#ifndef WOD_REALMS
+#if !defined(WOD_REALMS) && !defined(REALITY_LVLS)
     UNUSED_PARAMETER(player);
 #endif // WOD_REALMS
 
@@ -2307,6 +2309,16 @@ bool exit_displayable(dbref exit, dbref player, int key)
         }
     }
 #endif // WOD_REALMS
+
+#ifdef REALITY_LVLS
+    if (!mudstate.bStandAlone)
+    {
+        if (!IsReal(player, exit))
+        {
+            return false;
+        }
+    }
+#endif // REALITY_LVLS
 
     // Light exit
     //
