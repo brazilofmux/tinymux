@@ -281,10 +281,6 @@ SOURCE=.\svdrand.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=.\svdreport.cpp
-# End Source File
-# Begin Source File
-
 SOURCE=.\timer.cpp
 # End Source File
 # Begin Source File
@@ -454,10 +450,6 @@ SOURCE=.\svdhash.h
 # Begin Source File
 
 SOURCE=.\svdrand.h
-# End Source File
-# Begin Source File
-
-SOURCE=.\svdreport.h
 # End Source File
 # Begin Source File
 

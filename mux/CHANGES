@@ -169,3 +169,4 @@ Miscellaneous:
  -- Corrected documentation of E() and PI() to reflect actual
     precision (Issue 283).  Thanks Jake.
  -- Document @restart dropping SSL connections up front.
+ -- Document report and move into walkdb.cpp (Issue 293).

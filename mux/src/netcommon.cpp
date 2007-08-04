@@ -22,7 +22,6 @@
 #include "functions.h"
 #include "mguests.h"
 #include "powers.h"
-#include "svdreport.h"
 #ifdef REALITY_LVLS
 #include "levels.h"
 #endif // REALITY_LVLS

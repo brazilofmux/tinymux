@@ -19,7 +19,6 @@
 #include "interface.h"
 #include "powers.h"
 #include "sha1.h"
-#include "svdreport.h"
 
 #define NUM_GOOD    4   // # of successful logins to save data for.
 #define NUM_BAD     3   // # of failed logins to save data for.

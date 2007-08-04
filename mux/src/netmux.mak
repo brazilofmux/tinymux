@@ -86,7 +86,6 @@ CLEAN :
 	-@erase "$(INTDIR)\strtod.obj"
 	-@erase "$(INTDIR)\svdhash.obj"
 	-@erase "$(INTDIR)\svdrand.obj"
-	-@erase "$(INTDIR)\svdreport.obj"
 	-@erase "$(INTDIR)\timer.obj"
 	-@erase "$(INTDIR)\timeutil.obj"
 	-@erase "$(INTDIR)\unparse.obj"
@@ -172,7 +171,6 @@ LINK32_OBJS= \
 	"$(INTDIR)\strtod.obj" \
 	"$(INTDIR)\svdhash.obj" \
 	"$(INTDIR)\svdrand.obj" \
-	"$(INTDIR)\svdreport.obj" \
 	"$(INTDIR)\timer.obj" \
 	"$(INTDIR)\timeutil.obj" \
 	"$(INTDIR)\unparse.obj" \
@@ -247,7 +245,6 @@ CLEAN :
 	-@erase "$(INTDIR)\strtod.obj"
 	-@erase "$(INTDIR)\svdhash.obj"
 	-@erase "$(INTDIR)\svdrand.obj"
-	-@erase "$(INTDIR)\svdreport.obj"
 	-@erase "$(INTDIR)\timer.obj"
 	-@erase "$(INTDIR)\timeutil.obj"
 	-@erase "$(INTDIR)\unparse.obj"
@@ -338,7 +335,6 @@ LINK32_OBJS= \
 	"$(INTDIR)\strtod.obj" \
 	"$(INTDIR)\svdhash.obj" \
 	"$(INTDIR)\svdrand.obj" \
-	"$(INTDIR)\svdreport.obj" \
 	"$(INTDIR)\timer.obj" \
 	"$(INTDIR)\timeutil.obj" \
 	"$(INTDIR)\unparse.obj" \
@@ -604,11 +600,6 @@ SOURCE=.\svdhash.cpp
 SOURCE=.\svdrand.cpp
 
 "$(INTDIR)\svdrand.obj": $(SOURCE) "$(INTDIR)"
-
-
-SOURCE=.\svdreport.cpp
-
-"$(INTDIR)\svdreport.obj": $(SOURCE) "$(INTDIR)"
 
 
 SOURCE=.\timer.cpp

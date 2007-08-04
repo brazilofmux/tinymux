@@ -643,7 +643,6 @@
 	".\stringutil.h"\
 	".\svdhash.h"\
 	".\svdrand.h"\
-	".\svdreport.h"\
 	".\timeutil.h"\
 	
 
@@ -711,7 +710,6 @@
 	".\stringutil.h"\
 	".\svdhash.h"\
 	".\svdrand.h"\
-	".\svdreport.h"\
 	".\timeutil.h"\
 	
 
@@ -965,26 +963,6 @@
 	".\alloc.h"\
 	".\attrcache.h"\
 	".\autoconf.h"\
-	".\config.h"\
-	".\copyright.h"\
-	".\db.h"\
-	".\externs.h"\
-	".\flags.h"\
-	".\htab.h"\
-	".\match.h"\
-	".\mudconf.h"\
-	".\stringutil.h"\
-	".\svdhash.h"\
-	".\svdrand.h"\
-	".\timeutil.h"\
-	
-
-.\svdreport.cpp : \
-	".\alloc.h"\
-	".\attrcache.h"\
-	".\attrs.h"\
-	".\autoconf.h"\
-	".\command.h"\
 	".\config.h"\
 	".\copyright.h"\
 	".\db.h"\

@@ -121,8 +121,6 @@ src/svdhash.cpp
 src/svdhash.h
 src/svdrand.cpp
 src/svdrand.h
-src/svdreport.cpp
-src/svdreport.h
 src/table.cpp
 src/table.h
 src/timer.cpp
