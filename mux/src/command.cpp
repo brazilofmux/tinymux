@@ -99,6 +99,7 @@ static NAMETAB cset_sw[] =
     {T("public"),          2,  CA_PUBLIC,  CSET_PUBLIC},
     {T("quiet"),           1,  CA_PUBLIC,  CSET_QUIET},
     {T("spoof"),           1,  CA_PUBLIC,  CSET_SPOOF},
+    {T("timestamp_logs"),  1,  CA_PUBLIC,  CSET_LOG_TIME},
     {(UTF8 *) NULL,             0,          0,  0}
 };
 

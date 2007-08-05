@@ -525,6 +525,7 @@ extern int anum_alc_top;
 #define CSET_NOSPOOF    7   /* Sets the channel non-spoofable */
 #define CSET_HEADER     8   /* Sets the channel header, like "[Public]" */
 #define CSET_LOG        9   // Set maximum number of messages to log.
+#define CSET_LOG_TIME  10   // Add timestamps to logs
 #define DBCK_DEFAULT    1   /* Get default tests too */
 #define DBCK_FULL       2   /* Do all tests */
 #define DECOMP_DBREF    1   /* decompile by dbref */

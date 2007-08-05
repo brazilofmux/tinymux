@@ -1537,7 +1537,27 @@ void SendChannelMessage
             int atr = mkattr(GOD, p);
             if (0 < atr)
             {
-                atr_add(ch->chan_obj, atr, msgNormal, GOD, AF_CONST|AF_NOPROG|AF_NOPARSE);
+                dbref aowner;
+                int aflags;
+                ATTR *pattr = atr_str(T("LOG_TIMESTAMPS"));
+                if (  pattr
+                        && (atr_get_info(obj, pattr->number, &aowner, &aflags)))
+                {
+                    CLinearTimeAbsolute ltaNow;
+                    ltaNow.GetLocal();
+
+                    // I question if this is correct -- MAH - 8/5/07
+                    // This used to be AF_CONST|AF_NOPROG|AF_NOPARSE
+                    atr_add(ch->chan_obj, atr,
+                            tprintf("[%s] %s", ltaNow.ReturnDateString(0), 
+                                msgNormal), GOD, 0); 
+                }
+                else
+                {
+                    atr_add(ch->chan_obj, atr, msgNormal, GOD, 
+                            AF_CONST|AF_NOPROG|AF_NOPARSE);
+                }
+
             }
         }
     }
@@ -1839,6 +1859,64 @@ void do_comlast(dbref player, struct channel *ch, int arg)
     }
 
     raw_notify(player, tprintf("%s -- End Comsys Recall --", ch->header));
+}
+
+// Turn channel history timestamping on or off for the given channel.
+//
+static bool do_chanlog_timestamps(dbref player, UTF8 *channel, UTF8 *arg)
+{
+    UNUSED_PARAMETER(player);
+
+    int value = 0;
+    if (!*arg || !is_integer(arg, NULL) || 
+            (value = mux_atol(arg)) > MAX_RECALL_REQUEST)
+    {
+        return false;
+    }
+
+    if(value < 0)
+    {
+        value = 0;
+    }
+    else if(value > 1)
+    {
+        value = 1;
+    }
+
+    struct channel *ch = select_channel(channel);
+    if (!Good_obj(ch->chan_obj))
+    {
+        // No channel object has been set.
+        //
+        return false;
+    }
+
+    dbref aowner;
+    int aflags;
+    ATTR *pattr = atr_str(T("MAX_LOG"));
+    if (  NULL == pattr || 
+       false == (atr_get_info(ch->chan_obj, pattr->number, &aowner, &aflags)))
+    {
+        return false; // Logging isn't enabled
+    }
+ 
+    int atr = mkattr(GOD, T("LOG_TIMESTAMPS"));
+    if (atr <= 0)
+    {
+        return false;
+    }
+   
+    if(value)
+    {
+        atr_add(ch->chan_obj, atr, mux_ltoa_t(value), GOD,
+                AF_CONST|AF_NOPROG|AF_NOPARSE);
+    }
+    else
+    {
+        atr_clr(ch->chan_obj, atr);
+    }
+
+    return true;
 }
 
 // Set number of entries for channel logging.
@@ -3284,6 +3362,16 @@ void do_chopen
             msg = tprintf("@cset: Maximum history must be a number less than or equal to %d.", MAX_RECALL_REQUEST);
         }
         break;
+
+    case CSET_LOG_TIME:
+        if(do_chanlog_timestamps(executor, chan, value))
+        {
+            msg = tprintf("@cset: Channel %s timestamp logging set.", chan);
+        }
+        else
+        {
+            msg = tprintf("@cset: Failed.  Is logging enabled for %s?", chan);
+        }
     }
     raw_notify(executor, msg);
 }
