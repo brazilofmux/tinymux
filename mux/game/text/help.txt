@@ -1171,6 +1171,8 @@ Related Topics: @name.
               before associating a channel with it.
     log     - Sets the maximum number of channel messages to log.
               The channel must have an object.
+    timestamp_logs - [0/1] Indicates if log messages are prepended with a
+            - timestamp.   Channel must have an object and logging enabled.
 
   You can set a description for the channel by changing the description
   of the channel object. Also, the channel object's lock will be used
