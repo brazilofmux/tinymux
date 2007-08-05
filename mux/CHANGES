@@ -1,5 +1,5 @@
 TinyMUX 2.7:  CHANGES
-Last Update:  July 2007
+Last Update:  August 2007
 
 Major changes that may affect performance and require softcode tweaks:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -130,6 +130,7 @@ Bug Fixes:
  -- ConvertToUTF8() converted code points above 0x10000 incorrectly.
  -- Allow %=<name> to support single-letter attribute names and
     document. Issue 341.
+ -- Fixed escape() which used #92 instead of backslash (Issue 353).
 
 
 Performance Enhancements:

@@ -4414,7 +4414,7 @@ static FUNCTION(fun_escape)
         if (  mux_isescape(cChar)
            || 0 == i)
         {
-            sOut->append('\\');
+            sOut->append(T("\\"));
             sOut->set_Color(iOut++, csColor);
         }
         sOut->append_TextPlain(&cChar, 1);
