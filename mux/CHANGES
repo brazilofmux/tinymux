@@ -151,6 +151,7 @@ Performance Enhancements:
  -- Make mux_exec() take a char *pdstr instead of char **dstr.
  -- Various things made const and/or consolidated.
  -- Merge fun_wrap and linewrap_general.
+ -- Update sortby algorithm to minimize comparisons (Issue 22).
 
 
 Cosmetic Changes:

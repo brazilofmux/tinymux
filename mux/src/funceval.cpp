@@ -2732,7 +2732,7 @@ FUNCTION(fun_pickrand)
     delete words;
 }
 
-// sortby() code borrowed from TinyMUSH 2.2
+// sortby()
 //
 typedef struct
 {
@@ -2767,72 +2767,46 @@ static int u_comp(ucomp_context *pctx, const void *s1, const void *s2)
     return n;
 }
 
-static void sane_qsort(ucomp_context *pctx, void *array[], int left, int right)
+inline int ucomp_bsearch(ucomp_context* pctx, void* arr[], int sz, void* ndl)
 {
-    // Andrew Molitor's qsort, which doesn't require transitivity between
-    // comparisons (essential for preventing crashes due to boneheads
-    // who write comparison functions where a > b doesn't mean b < a).
-    //
-    int i, last;
-    void *tmp;
+    int l = 0;
+    int r = sz;
+    while (l < r)
+    {
+        int m = (l + r) >> 1;
+        if (m == sz)
+        {
+            return sz;
+        }
 
-loop:
+        if (u_comp(pctx, ndl, arr[m]) < 0)
+        {
+            r = m;
+        }
+        else
+        {
+            l = m + 1;
+        }
+    }
+    return l;
+}
 
-    if (  left < 0
-       || right <= left)
+static void mincomp_sort(ucomp_context* pctx, void* arr[], int sz)
+{
+    if (sz <= 1)
     {
         return;
     }
 
-    // Pick something at random at swap it into the leftmost slot
-    // This is the pivot, we'll put it back in the right spot later.
-    //
-    i = RandomINT32(0, right - left);
-    tmp = array[left + i];
-    array[left + i] = array[left];
-    array[left] = tmp;
-
-    last = left;
-    for (i = left + 1; i <= right; i++)
+    for (int i = 1; i < sz; i++)
     {
-        // Walk the array, looking for stuff that's less than our
-        // pivot. If it is, swap it with the next thing along
-        //
-        if (u_comp(pctx, array[i], array[left]) < 0)
+        void* t = arr[i];
+        int n = ucomp_bsearch(pctx, arr, i, t);
+        for (int j = i; j > n; j--)
         {
-            last++;
-            if (last == i)
-            {
-                continue;
-            }
-
-            tmp = array[last];
-            array[last] = array[i];
-            array[i] = tmp;
+            arr[j] = arr[j-1];
         }
-    }
-
-    // Now we put the pivot back, it's now in the right spot, we never
-    // need to look at it again, trust me.
-    //
-    tmp = array[last];
-    array[last] = array[left];
-    array[left] = tmp;
-
-    // At this point everything underneath the 'last' index is < the
-    // entry at 'last' and everything above it is not < it.
-    //
-    if (last - left < right - last)
-    {
-        sane_qsort(pctx, array, left, last - 1);
-        left = last + 1;
-        goto loop;
-    }
-    else
-    {
-        sane_qsort(pctx, array, last + 1, right);
-        right = last - 1;
-        goto loop;
+        arr[n] = t;
     }
 }
 
@@ -2874,7 +2848,7 @@ FUNCTION(fun_sortby)
 
     if (nptrs > 1)
     {
-        sane_qsort(&ctx, (void **)ptrs, 0, nptrs - 1);
+        mincomp_sort(&ctx, (void**)ptrs, nptrs);
     }
 
     arr2list(ptrs, nptrs, buff, bufc, &osep);
