@@ -7251,7 +7251,7 @@ static FUNCTION(fun_width)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    long nWidth = 24;
+    long nWidth = 78;
     if (is_rational(fargs[0]))
     {
         SOCKET s = mux_atol(fargs[0]);
