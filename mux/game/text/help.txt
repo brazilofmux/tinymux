@@ -877,7 +877,7 @@ Related Topics: @name.
 & @CLIST
 @CLIST
 
-  COMMAND: @clist[/<option>]
+  COMMAND: @clist[/<option>] [pattern]
 
   Without any switches, it will display the list of public channels with
   their owner and description. It will also display all channels you own.
@@ -890,10 +890,22 @@ Related Topics: @name.
     headers - Shows the @clist report with the description column
               replaced by the a column of the channel headers.
 
+  [pattern] can be used to match particular channel names for any given
+  option.
+
+  { 'help @clist2' for more }
+
+& @CLIST2
+@CLIST
+
   Examples:
     >@clist
     *** Channel Owner Description
     --- Public God No description.
+    --- Staff God No description.
+
+    >@clist S*
+    *** Channel Owner Description
     --- Staff God No description.
 
     >@clist/full
