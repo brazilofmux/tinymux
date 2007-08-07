@@ -103,11 +103,11 @@ MUX_RESULT CLog::QueryInterface(UINT64 iid, void **ppv)
 {
     if (mux_IID_IUnknown == iid)
     {
-        *ppv = static_cast<ILog *>(this);
+        *ppv = static_cast<mux_ILog *>(this);
     }
     else if (IID_ILog == iid)
     {
-        *ppv = static_cast<ILog *>(this);
+        *ppv = static_cast<mux_ILog *>(this);
     }
     else
     {

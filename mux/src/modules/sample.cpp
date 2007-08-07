@@ -68,7 +68,7 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_Register(void)
 
     // Use of CLog provided by netmux.
     //
-    ILog *pILog = NULL;
+    mux_ILog *pILog = NULL;
     MUX_RESULT mr = mux_CreateInstance(CID_Log, NULL, InProcessServer, IID_ILog, (void **)&pILog);
     if (MUX_SUCCEEDED(mr))
     {
