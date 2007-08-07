@@ -132,6 +132,7 @@ Bug Fixes:
     document. Issue 341.
  -- Fixed escape() which used #92 instead of backslash (Issue 353).
  -- Fix WIDTH() to default to 78 instead of 24 (Issue 354).
+ -- Open permissions on WIDTH() and HEIGHT() (Issue 356).
 
 
 Performance Enhancements:
