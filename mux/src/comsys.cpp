@@ -2410,7 +2410,7 @@ void do_destroychannel(dbref executor, dbref caller, dbref enactor, int eval, in
 }
 
 
-static void do_listchannels(dbref player)
+static void do_listchannels(dbref player, UTF8 *pattern)
 {
     struct channel *ch;
     UTF8 temp[LBUF_SIZE];
@@ -2420,6 +2420,19 @@ static void do_listchannels(dbref player)
     {
         raw_notify(player, T("Warning: Only public channels and your channels will be shown."));
     }
+
+    bool bWild;
+    if (  NULL != pattern
+       && '\0' != *pattern)
+    {
+        bWild = true;
+    }
+    else
+    {
+        bWild = false;
+    }
+
+
     raw_notify(player, T("*** Channel      --Flags--    Obj     Own   Charge  Balance  Users   Messages"));
 
     for (ch = (struct channel *)hash_firstentry(&mudstate.channel_htab);
@@ -2429,20 +2442,28 @@ static void do_listchannels(dbref player)
            || (ch->type & CHANNEL_PUBLIC)
            || Controls(player, ch->charge_who))
         {
-            mux_sprintf(temp, sizeof(temp), "%c%c%c %-13.13s %c%c%c/%c%c%c %7d %7d %8d %8d %6d %10d",
-                (ch->type & CHANNEL_PUBLIC) ? 'P' : '-',
-                (ch->type & CHANNEL_LOUD) ? 'L' : '-',
-                (ch->type & CHANNEL_SPOOF) ? 'S' : '-',
-                ch->name,
-                (ch->type & CHANNEL_PLAYER_JOIN) ? 'J' : '-',
-                (ch->type & CHANNEL_PLAYER_TRANSMIT) ? 'X' : '-',
-                (ch->type & CHANNEL_PLAYER_RECEIVE) ? 'R' : '-',
-                (ch->type & CHANNEL_OBJECT_JOIN) ? 'j' : '-',
-                (ch->type & CHANNEL_OBJECT_TRANSMIT) ? 'x' : '-',
-                (ch->type & CHANNEL_OBJECT_RECEIVE) ? 'r' : '-',
-                (ch->chan_obj != NOTHING) ? ch->chan_obj : -1,
-                ch->charge_who, ch->charge, ch->amount_col, ch->num_users, ch->num_messages);
-            raw_notify(player, temp);
+
+            if (  !bWild
+               || quick_wild(pattern,ch->name))
+            {
+
+                mux_sprintf(temp, sizeof(temp), 
+                        "%c%c%c %-13.13s %c%c%c/%c%c%c %7d %7d %8d %8d %6d %10d",
+                        (ch->type & CHANNEL_PUBLIC) ? 'P' : '-',
+                        (ch->type & CHANNEL_LOUD) ? 'L' : '-',
+                        (ch->type & CHANNEL_SPOOF) ? 'S' : '-',
+                        ch->name,
+                        (ch->type & CHANNEL_PLAYER_JOIN) ? 'J' : '-',
+                        (ch->type & CHANNEL_PLAYER_TRANSMIT) ? 'X' : '-',
+                        (ch->type & CHANNEL_PLAYER_RECEIVE) ? 'R' : '-',
+                        (ch->type & CHANNEL_OBJECT_JOIN) ? 'j' : '-',
+                        (ch->type & CHANNEL_OBJECT_TRANSMIT) ? 'x' : '-',
+                        (ch->type & CHANNEL_OBJECT_RECEIVE) ? 'r' : '-',
+                        (ch->chan_obj != NOTHING) ? ch->chan_obj : -1,
+                        ch->charge_who, ch->charge, ch->amount_col, 
+                        ch->num_users, ch->num_messages);
+                raw_notify(player, temp);
+            }
         }
     }
     raw_notify(player, T("-- End of list of Channels --"));
@@ -3538,7 +3559,7 @@ void do_chanlist
     }
     if (key & CLIST_FULL)
     {
-        do_listchannels(executor);
+        do_listchannels(executor, pattern);
         return;
     }
 
