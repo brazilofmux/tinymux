@@ -172,3 +172,5 @@ Miscellaneous:
     precision (Issue 283).  Thanks Jake.
  -- Document @restart dropping SSL connections up front.
  -- Document report and move into walkdb.cpp (Issue 293).
+ -- Raised the default function invocation limit to 25,000 and the
+    default function recursion limit to 500 (Issue 357).
