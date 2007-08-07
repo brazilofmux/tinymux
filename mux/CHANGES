@@ -292,6 +292,7 @@ Bug Fixes:
  -- Allow %=<name> to support single-letter attribute names and
     document. Issue 341.
  -- Fix WIDTH() to default to 78 instead of 24 (Issue 354).
+ -- Open permissions on WIDTH() and HEIGHT() (Issue 356).
 
 
 Performance Enhancements:

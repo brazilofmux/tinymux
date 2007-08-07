@@ -7272,11 +7272,7 @@ static FUNCTION(fun_height)
         dbref target = lookup_player(executor, pTargetName, true);
         if (Good_obj(target))
         {
-            if (  executor == target
-               || See_All(executor))
-            {
-                nHeight = fetch_height(target);
-            }
+            nHeight = fetch_height(target);
         }
     }
     safe_ltoa(nHeight, buff, bufc);
@@ -7316,11 +7312,7 @@ static FUNCTION(fun_width)
         dbref target = lookup_player(executor, pTargetName, true);
         if (Good_obj(target))
         {
-            if (  executor == target
-               || See_All(executor))
-            {
-                nWidth = fetch_width(target);
-            }
+            nWidth = fetch_width(target);
         }
     }
     safe_ltoa(nWidth, buff, bufc);
