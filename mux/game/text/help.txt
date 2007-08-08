@@ -7034,9 +7034,9 @@ FUNCTION CLASSES (continued)
                              STRIPANSI STRLEN STRMATCH STRMEM STRTRUNC SWITCH
                              TR TRANSLATE TRIM UCSTR WORDPOS WRAP
 
-  Time:                      CONVSECS CONVTIME DIGITTIME ETIMEFMT EXPTIME SECS
-                             SINGLETIME STARTSECS STARTTIME TIME TIMEFMT
-                             WRITETIME
+  Time:                      CONVSECS CONVTIME DIGITTIME ETIMEFMT EXPTIME 
+                             RESTARTSECS RESTARTTIME SECS SINGLETIME STARTSECS 
+                             STARTTIME TIME TIMEFMT WRITETIME
 
   Trigonometric:             ACOS ASIN ATAN COS CTU DIST2D DIST3D PI SIN TAN
                              VADD VCROSS VDIM VDOT VMAG VMUL VSUB VUNIT
@@ -7104,23 +7104,24 @@ FUNCTION LIST (continued)
     POS()       POSS()      POWER()     POWERS()    R()         RAND()
     REGMATCH()  REGMATCHI() REGRAB()    REGRABALL() REGRABALLI()REGRABI()
     REMAINDER() REMIT()     REMOVE()    REPEAT()    REPLACE()   REST()
-    REVERSE()   REVWORDS()  RIGHT()     RJUST()     RLOC()      ROMAN()
-    ROOM()      ROUND()     RPAD()      RXLEVEL()   S()         SCRAMBLE()
-    SEARCH()    SECS()      SECURE()    SET()       SETDIFF()   SETINTER()
-    SETNAME()   SETPARENT() SETQ()      SETR()      SETUNION()  SHA1()
-    SHL()       SHR()       SHUFFLE()   SIGN()      SIN()       SINGLETIME()
-    SORT()      SORTBY()    SPACE()     SPELLNUM()  SPLICE()    SQL()
-    SQRT()      SQUISH()    STARTSECS() STARTTIME() STATS()     STEP()
-    STRCAT()    STRIP()     STRIPACCENTS()          STRIPANSI() STRLEN()
-    STRMATCH()  STRMEM()    STRTRUNC()  SUB()       SUBEVAL()   SUBJ()
-    SUCCESSES() SWITCH()    T()         TABLE()     TAN()       TEL()
-    TERMINFO()  TEXT()      TEXTFILE()  TIME()      TIMEFMT()   TRANSLATE()
-    TR()        TRIGGER()   TRIM()      TRUNC()     TXLEVEL()   TYPE()
-    U()         UCSTR()     UDEFAULT()  ULOCAL()    UNPACK()    V()
-    VADD()      VALID()     VCROSS()    VDIM()      VDOT()      VERSION()
-    VISIBLE()   VMAG()      VMUL()      VSUB()      VUNIT()     WHERE()
-    WIDTH()     WORDPOS()   WORDS()     WRAP()      WRITETIME() XGET()
-    XOR()       ZFUN()      ZONE()      ZWHO()
+    RESTARTSECS()           RESTARTTIME()           REVERSE()   REVWORDS()  
+    RIGHT()     RJUST()     RLOC()      ROMAN()     ROOM()      ROUND()     
+    RPAD()      RXLEVEL()   S()         SCRAMBLE()  SEARCH()    SECS()      
+    SECURE()    SET()       SETDIFF()   SETINTER()  SETNAME()   SETPARENT() 
+    SETQ()      SETR()      SETUNION()  SHA1()      SHL()       SHR()       
+    SHUFFLE()   SIGN()      SIN()       SINGLETIME()            SORT()      
+    SORTBY()    SPACE()     SPELLNUM()  SPLICE()    SQL()       SQRT()      
+    SQUISH()    STARTSECS() STARTTIME() STATS()     STEP()      STRCAT()    
+    STRIP()     STRIPACCENTS()          STRIPANSI() STRLEN()    STRMATCH()  
+    STRMEM()    STRTRUNC()  SUB()       SUBEVAL()   SUBJ()      SUCCESSES() 
+    SWITCH()    T()         TABLE()     TAN()       TEL()       TERMINFO()  
+    TEXT()      TEXTFILE()  TIME()      TIMEFMT()   TRANSLATE() TR()        
+    TRIGGER()   TRIM()      TRUNC()     TXLEVEL()   TYPE()      U()         
+    UCSTR()     UDEFAULT()  ULOCAL()    UNPACK()    V()         VADD()      
+    VALID()     VCROSS()    VDIM()      VDOT()      VERSION()   VISIBLE()   
+    VMAG()      VMUL()      VSUB()      VUNIT()     WHERE()     WIDTH()     
+    WORDPOS()   WORDS()     WRAP()      WRITETIME() XGET()      XOR()       
+    ZFUN()      ZONE()      ZWHO()
 
 & FUNCTIONS
 FUNCTIONS
@@ -11286,6 +11287,38 @@ REST()
     You say, "with!different!delimiters"
 
   Related Topics: first().
+
+& RESTARTSECS()
+RESTARTSECS()
+
+  FUNCTION: restartsecs()
+
+  Returns the number of seconds that represents the time since the MUX was 
+  restarted or the startup time if no @restart has occured. The time is 
+  measured in the same way as the secs() function. This is easier and 
+  more efficient than using convtime(restarttime()).
+
+  Example:
+    > say restartsecs()
+    You say, "959093815"
+
+  Related Topics: restarttime(), secs().
+
+
+& RESTARTTIME()
+RESTARTTIME()
+
+  FUNCTION: restarttime()
+
+  Returns a string which is the time the MUX last restarted.  The time
+  is in the same format as the TIME() function returns. If no @restart
+  has been performed, restarttime() returns the same value as starttime().
+
+  Example:
+    > say restarttime()
+    You say, "Sat Dec  7 00:09:13 1991
+
+  Related Topics: starttime(), convtime().
 
 & RESTRICTED
 RESTRICTED
