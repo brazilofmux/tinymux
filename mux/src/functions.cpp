@@ -769,6 +769,27 @@ static FUNCTION(fun_starttime)
     safe_str(temp, buff, bufc);
 }
 
+/*
+ * ---------------------------------------------------------------------------
+ * * fun_restarttime: Time at which the last @restart occured or original 
+ * *   starttime if no @restart has occured. 
+ */
+
+static FUNCTION(fun_restarttime)
+{
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
+    UNUSED_PARAMETER(fargs);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
+    UTF8 *temp = mudstate.restart_time.ReturnDateString();
+    safe_str(temp, buff, bufc);
+}
+
 
 // fun_timefmt
 //
@@ -9180,6 +9201,27 @@ static FUNCTION(fun_startsecs)
     safe_str(lta.ReturnSecondsString(), buff, bufc);
 }
 
+// restartsecs - Time the MUX was @restarted in seconds or the the original
+//               starttime.
+//
+static FUNCTION(fun_restartsecs)
+{
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
+    UNUSED_PARAMETER(fargs);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
+    CLinearTimeAbsolute lta;
+    lta = mudstate.restart_time;
+    lta.Local2UTC();
+    safe_str(lta.ReturnSecondsString(), buff, bufc);
+}
+
+
 // conntotal - Return player's total online time to the MUX
 // (including their current connection). D.Piper - May 1997
 //
@@ -10228,6 +10270,8 @@ static FUN builtin_function_list[] =
     {T("REPEAT"),      fun_repeat,     MAX_ARG, 2,       2,         0, CA_PUBLIC},
     {T("REPLACE"),     fun_replace,    MAX_ARG, 3,       4,         0, CA_PUBLIC},
     {T("REST"),        fun_rest,       MAX_ARG, 0,       2,         0, CA_PUBLIC},
+    {T("RESTARTSECS"), fun_restartsecs, MAX_ARG, 0,      0,         0, CA_PUBLIC},
+    {T("RESTARTTIME"), fun_restarttime, MAX_ARG, 0,      0,         0, CA_PUBLIC},
     {T("REVERSE"),     fun_reverse,          1, 1,       1,         0, CA_PUBLIC},
     {T("REVWORDS"),    fun_revwords,   MAX_ARG, 0,       3,         0, CA_PUBLIC},
     {T("RIGHT"),       fun_right,      MAX_ARG, 2,       2,         0, CA_PUBLIC},

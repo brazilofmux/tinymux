@@ -415,6 +415,7 @@ struct statedata
     CLinearTimeAbsolute events_counter; /* Countdown to next events check */
     CLinearTimeAbsolute idle_counter;   /* Countdown to next idle check */
     CLinearTimeAbsolute start_time;     /* When was MUX started */
+    CLinearTimeAbsolute restart_time;   /* When was MUX restarted */
     CLinearTimeAbsolute tThrottleExpired; // How much time is left in this hour of throttling.
 
 #if !defined(MEMORY_BASED)
