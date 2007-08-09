@@ -765,8 +765,10 @@ static FUNCTION(fun_starttime)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    UTF8 *temp = mudstate.start_time.ReturnDateString();
-    safe_str(temp, buff, bufc);
+    CLinearTimeAbsolute lta;
+    lta = mudstate.start_time;
+    lta.UTC2Local();
+    safe_str(lta.ReturnDateString(), buff, bufc);
 }
 
 /*
@@ -786,8 +788,10 @@ static FUNCTION(fun_restarttime)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    UTF8 *temp = mudstate.restart_time.ReturnDateString();
-    safe_str(temp, buff, bufc);
+    CLinearTimeAbsolute lta;
+    lta = mudstate.restart_time;
+    lta.UTC2Local();
+    safe_str(lta.ReturnDateString(), buff, bufc);
 }
 
 // fun_timefmt
@@ -9194,10 +9198,7 @@ static FUNCTION(fun_startsecs)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    CLinearTimeAbsolute lta;
-    lta = mudstate.start_time;
-    lta.Local2UTC();
-    safe_str(lta.ReturnSecondsString(), buff, bufc);
+    safe_str(mudstate.start_time.ReturnSecondsString(), buff, bufc);
 }
 
 // restartsecs - Time the MUX was @restarted in seconds or the the original
@@ -9214,10 +9215,7 @@ static FUNCTION(fun_restartsecs)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    CLinearTimeAbsolute lta;
-    lta = mudstate.restart_time;
-    lta.Local2UTC();
-    safe_str(lta.ReturnSecondsString(), buff, bufc);
+    safe_str(mudstate.restart_time.ReturnSecondsString(), buff, bufc);
 }
 
 

@@ -1993,7 +1993,9 @@ static void dump_info(DESC *arg_desc)
 
     queue_string(arg_desc, tprintf("Name: %s\r\n", mudconf.mud_name));
 
-    UTF8 *temp = mudstate.start_time.ReturnDateString();
+    CLinearTimeAbsolute lta = mudstate.start_time;
+    lta.UTC2Local();
+    UTF8 *temp = lta.ReturnDateString();
     queue_write(arg_desc, (char *)tprintf("Uptime: %s\r\n", temp));
 
     DESC *d;
