@@ -771,8 +771,8 @@ static FUNCTION(fun_starttime)
 
 /*
  * ---------------------------------------------------------------------------
- * * fun_restarttime: Time at which the last @restart occured or original 
- * *   starttime if no @restart has occured. 
+ * * fun_restarttime: Time at which the last @restart occured or original
+ * *   starttime if no @restart has occured.
  */
 
 static FUNCTION(fun_restarttime)
@@ -789,7 +789,6 @@ static FUNCTION(fun_restarttime)
     UTF8 *temp = mudstate.restart_time.ReturnDateString();
     safe_str(temp, buff, bufc);
 }
-
 
 // fun_timefmt
 //

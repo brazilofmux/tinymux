@@ -3637,13 +3637,6 @@ void load_restart_db(void)
     DebugTotalSockets += nMainGamePorts;
 
     mudstate.start_time.SetSeconds(getref(f));
-    mudstate.restart_time = mudstate.start_time;
-
-    // Set restart time 
-    if(true == mudstate.restarting)
-    {
-        mudstate.restart_time.GetLocal();
-    }
 
     size_t nBuffer;
     UTF8 *pBuffer = (UTF8 *)getstring_noalloc(f, true, &nBuffer);

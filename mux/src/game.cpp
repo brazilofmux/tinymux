@@ -3108,8 +3108,9 @@ int DCL_CDECL main(int argc, char *argv[])
     process_output = process_output_unix;
 #endif // WIN32
 
-    mudstate.start_time.GetLocal();
-    mudstate.restart_time = mudstate.start_time;
+    mudstate.restart_time.GetLocal();
+    mudstate.start_time = mudstate.restart_time;
+
     mudstate.cpu_count_from.GetUTC();
     pool_init(POOL_LBUF, LBUF_SIZE);
     pool_init(POOL_MBUF, MBUF_SIZE);
