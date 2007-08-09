@@ -1,3 +1,6 @@
 BETA
+src/sqlshared.cpp
+src/sqlshared.h
+src/sqlslave.cpp
 src/svdreport.cpp
 src/svdreport.h
