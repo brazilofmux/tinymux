@@ -282,8 +282,8 @@ void cf_init(void)
     mudconf.markdata[5] = 0x20;
     mudconf.markdata[6] = 0x40;
     mudconf.markdata[7] = 0x80;
-    mudconf.func_nest_lim = 50;
-    mudconf.func_invk_lim = 2500;
+    mudconf.func_nest_lim = 500;
+    mudconf.func_invk_lim = 25000;
     mudconf.wild_invk_lim = 100000;
     mudconf.ntfy_nest_lim = 20;
     mudconf.lock_nest_lim = 20;

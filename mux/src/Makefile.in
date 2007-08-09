@@ -205,7 +205,7 @@ depend: $(ALLSRC) unsplit
 	mv .depend~ .depend
 
 realclean:
-	-rm -f *.o a.out core gmon.out dbconvert config.status config.log netmux netmux~ @DYNAMICLIB_TARGET@ slave sqlslave Makefile
+	-rm -f *.o a.out core gmon.out dbconvert config.status config.log netmux netmux~ @DYNAMICLIB_TARGET@ slave sqlslave Makefile libmux.so
 
 clean:
 	-rm -f *.o a.out core gmon.out warn.log config.status config.log netmux~

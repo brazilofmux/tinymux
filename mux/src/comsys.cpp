@@ -1740,7 +1740,7 @@ void do_comlast(dbref player, struct channel *ch, int arg)
     UTF8 *message;
     int histnum = ch->num_messages - arg;
 
-    raw_notify(player, T("-- Begin Comsys Recall --"));
+    raw_notify(player, tprintf("%s -- Begin Comsys Recall --", ch->header));
     for (int count = 0; count < arg; count++)
     {
         histnum++;
@@ -1752,7 +1752,7 @@ void do_comlast(dbref player, struct channel *ch, int arg)
             free_lbuf(message);
         }
     }
-    raw_notify(player, T("-- End Comsys Recall --"));
+    raw_notify(player, tprintf("%s -- End Comsys Recall --", ch->header));
 }
 
 static bool do_chanlog(dbref player, UTF8 *channel, UTF8 *arg)

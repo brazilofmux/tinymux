@@ -20,7 +20,7 @@ const UINT64 CID_Log        = 0x000000020CE18E7Aull;
 const UINT64 IID_ILog       = 0x000000028B9DC13Aull;
 #endif
 
-interface ILog : public mux_IUnknown
+interface mux_ILog : public mux_IUnknown
 {
 public:
     virtual bool start_log(int key, const UTF8 *primary, const UTF8 *secondary) = 0;
@@ -36,7 +36,7 @@ public:
     virtual void end_log(void) = 0;
 };
 
-class CLog : public ILog
+class CLog : public mux_ILog
 {
 public:
     // mux_IUnknown
@@ -45,7 +45,7 @@ public:
     virtual UINT32     AddRef(void);
     virtual UINT32     Release(void);
 
-    // ILog
+    // mux_ILog
     //
     virtual bool start_log(int key, const UTF8 *primary, const UTF8 *secondary);
     virtual void log_perror(const UTF8 *primary, const UTF8 *secondary, const UTF8 *extra, const UTF8 *failing_object);
