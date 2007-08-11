@@ -45,7 +45,7 @@ static UTF8 *RestrictTitleValue(UTF8 *pTitleRequest)
 
 static void do_setcomtitlestatus(dbref player, struct channel *ch, bool status)
 {
-    struct comuser *user = select_user(ch,player);
+    struct comuser *user = select_user(ch, player);
     if (ch && user)
     {
         user->ComTitleStatus = status;
@@ -466,7 +466,7 @@ static UTF8 *get_channel_from_alias(dbref player, UTF8 *alias)
     while (dir && (first <= last))
     {
         current = (first + last) / 2;
-        dir = strcmp((char *)alias,(char *) c->alias + ALIAS_SIZE * current);
+        dir = strcmp((char *)alias, (char *) c->alias + ALIAS_SIZE * current);
         if (dir < 0)
             last = current - 1;
         else
@@ -2444,7 +2444,7 @@ static void do_listchannels(dbref player, UTF8 *pattern)
         {
 
             if (  !bWild
-               || quick_wild(pattern,ch->name))
+               || quick_wild(pattern, ch->name))
             {
 
                 mux_sprintf(temp, sizeof(temp),
@@ -2593,7 +2593,7 @@ void do_comlist
         if (user)
         {
             if (  !bWild
-               || quick_wild(pattern,c->channels[i]))
+               || quick_wild(pattern, c->channels[i]))
             {
 #ifdef MUX_TABLE
                 Table->row_begin();
@@ -2773,7 +2773,7 @@ void do_channelwho(dbref executor, dbref caller, dbref enactor, int eval, int ke
         return;
     }
     if ( !(  Comm_All(executor)
-          || Controls(executor,ch->charge_who)))
+          || Controls(executor, ch->charge_who)))
     {
         raw_notify(executor, NOPERM_MESSAGE);
         return;
@@ -3323,7 +3323,7 @@ void do_chopen
 
     case CSET_PRIVATE:
         ch->type &= ~CHANNEL_PUBLIC;
-        msg = tprintf("@cset: Channel %s taken off the public listings." ,chan);
+        msg = tprintf("@cset: Channel %s taken off the public listings." , chan);
         break;
 
     case CSET_LOUD:
