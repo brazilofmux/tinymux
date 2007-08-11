@@ -970,7 +970,7 @@ static void do_mail_change_folder(dbref player, UTF8 *fld, UTF8 *newname)
         }
 
         add_folder_name(player, pfld, newname);
-        raw_notify(player, tprintf("MAIL: Folder %d now named '%s'", pfld, 
+        raw_notify(player, tprintf("MAIL: Folder %d now named '%s'", pfld,
                     newname));
     }
     else
@@ -1087,7 +1087,7 @@ static void do_mail_flags(dbref player, UTF8 *msglist, mail_flag flag, bool nega
                 switch (flag)
                 {
                 case M_TAG:
-                    raw_notify(player, tprintf("MAIL: Msg #%d %s.", i, 
+                    raw_notify(player, tprintf("MAIL: Msg #%d %s.", i,
                                 negate ? "untagged" : "tagged"));
                     break;
 
@@ -1177,7 +1177,7 @@ static void do_mail_file(dbref player, UTF8 *msglist, UTF8 *folder)
                 //
                 mp->read &= M_FMASK;
                 mp->read |= FolderBit(foldernum);
-                raw_notify(player, tprintf("MAIL: Msg %d filed in folder %d", i, 
+                raw_notify(player, tprintf("MAIL: Msg %d filed in folder %d", i,
                             foldernum));
             }
         }
@@ -1474,7 +1474,7 @@ static void do_mail_read(dbref player, UTF8 *msglist)
     {
         // Ran off the end of the list without finding anything.
         //
-        raw_notify(player, 
+        raw_notify(player,
                 T("MAIL: You don't have that many matching messages!"));
     }
 }
@@ -1579,7 +1579,7 @@ static void do_mail_review(dbref player, UTF8 *name, UTF8 *msglist)
         {
             // Ran off the end of the list without finding anything.
             //
-            raw_notify(player, 
+            raw_notify(player,
                     T("MAIL: You don't have that many matching messages!"));
         }
     }
@@ -1746,13 +1746,13 @@ static UTF8 *make_numlist(dbref player, UTF8 *arg, bool bBlind)
             m = get_malias(player, head, &nResult);
             if (nResult == GMA_NOTFOUND)
             {
-                notify(player, 
+                notify(player,
                         tprintf("MAIL: Alias '%s' does not exist.", head));
                 return NULL;
             }
             else if (nResult == GMA_INVALIDFORM)
             {
-                notify(player, 
+                notify(player,
                         tprintf("MAIL: '%s' is a badly-formed alias.", head));
                 return NULL;
             }
@@ -2265,11 +2265,11 @@ static void send_mail
     //
     if (!silent)
     {
-        raw_notify(player, 
+        raw_notify(player,
                 tprintf("MAIL: You sent your message to %s.", Moniker(target)));
     }
 
-    raw_notify(target, 
+    raw_notify(target,
             tprintf("MAIL: You have a new message from %s.", Moniker(player)));
     did_it(player, target, A_MAIL, NULL, 0, NULL, A_AMAIL, 0, NULL, NOTHING);
 }
@@ -2278,7 +2278,7 @@ static void do_mail_nuke(dbref player)
 {
     if (!God(player))
     {
-        raw_notify(player, 
+        raw_notify(player,
                 T("The postal service issues a warrant for your arrest."));
         return;
     }
@@ -3344,7 +3344,7 @@ void check_mail(dbref player, int folder, bool silent)
 #else // MAIL_ALL_FOLDERS
     if (rc + uc > 0)
     {
-       raw_notify(player, tprintf("MAIL: %d messages in folder %d [%s] (%d unread, %d cleared).", rc + uc, folder, get_folder_name(player, folder), uc, cc));
+        raw_notify(player, tprintf("MAIL: %d messages in folder %d [%s] (%d unread, %d cleared).", rc + uc, folder, get_folder_name(player, folder), uc, cc));
     }
     else if (!silent)
     {
@@ -3421,7 +3421,7 @@ static void do_malias_create(dbref player, UTF8 *alias, UTF8 *tolist)
     }
     else if (nResult == GMA_FOUND)
     {
-        raw_notify(player, 
+        raw_notify(player,
                 tprintf("MAIL: Mail Alias '%s' already exists.", alias));
         return;
     }
@@ -3559,7 +3559,7 @@ static void do_malias_create(dbref player, UTF8 *alias, UTF8 *tolist)
         else
         {
             buff = unparse_object(player, target, false);
-            raw_notify(player, 
+            raw_notify(player,
                     tprintf("MAIL: %s added to alias %s", buff, alias));
             malias[ma_top]->list[i] = target;
             i++;
