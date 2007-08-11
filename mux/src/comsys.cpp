@@ -1886,6 +1886,7 @@ static bool do_chanlog_timestamps(dbref player, UTF8 *channel, UTF8 *arg)
     if (!Good_obj(ch->chan_obj))
     {
         // No channel object has been set.
+        //
         return false;
     }
 
@@ -1899,7 +1900,7 @@ static bool do_chanlog_timestamps(dbref player, UTF8 *channel, UTF8 *arg)
         //
         return false;
     }
- 
+
     int atr = mkattr(GOD, T("LOG_TIMESTAMPS"));
     if (atr <= 0)
     {
@@ -1942,6 +1943,7 @@ static bool do_chanlog(dbref player, UTF8 *channel, UTF8 *arg)
     if (!Good_obj(ch->chan_obj))
     {
         // No channel object has been set.
+        //
         return false;
     }
 
@@ -2445,7 +2447,7 @@ static void do_listchannels(dbref player, UTF8 *pattern)
                || quick_wild(pattern,ch->name))
             {
 
-                mux_sprintf(temp, sizeof(temp), 
+                mux_sprintf(temp, sizeof(temp),
                         "%c%c%c %-13.13s %c%c%c/%c%c%c %7d %7d %8d %8d %6d %10d",
                         (ch->type & CHANNEL_PUBLIC) ? 'P' : '-',
                         (ch->type & CHANNEL_LOUD) ? 'L' : '-',
@@ -2458,7 +2460,7 @@ static void do_listchannels(dbref player, UTF8 *pattern)
                         (ch->type & CHANNEL_OBJECT_TRANSMIT) ? 'x' : '-',
                         (ch->type & CHANNEL_OBJECT_RECEIVE) ? 'r' : '-',
                         (ch->chan_obj != NOTHING) ? ch->chan_obj : -1,
-                        ch->charge_who, ch->charge, ch->amount_col, 
+                        ch->charge_who, ch->charge, ch->amount_col,
                         ch->num_users, ch->num_messages);
                 raw_notify(player, temp);
             }
