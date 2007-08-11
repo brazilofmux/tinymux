@@ -1525,7 +1525,7 @@ void SendChannelMessage
             free_lbuf(maxbuf);
         }
 
-        if (logmax > 0)
+        if (0 < logmax)
         {
             if (logmax > MAX_RECALL_REQUEST)
             {
@@ -1541,20 +1541,22 @@ void SendChannelMessage
                 int aflags;
                 ATTR *pattr = atr_str(T("LOG_TIMESTAMPS"));
                 if (  pattr
-                        && (atr_get_info(obj, pattr->number, &aowner, &aflags)))
+                   && atr_get_info(obj, pattr->number, &aowner, &aflags))
                 {
                     CLinearTimeAbsolute ltaNow;
                     ltaNow.GetLocal();
 
-                    // I question if this is correct -- MAH - 8/5/07
-                    // This used to be AF_CONST|AF_NOPROG|AF_NOPARSE
+                    // Save message in history with timestamp.
+                    //
                     atr_add(ch->chan_obj, atr,
-                            tprintf("[%s] %s", ltaNow.ReturnDateString(0), 
-                                msgNormal), GOD, 0); 
+                            tprintf("[%s] %s", ltaNow.ReturnDateString(0),
+                                msgNormal), GOD, AF_CONST|AF_NOPROG|AF_NOPARSE);
                 }
                 else
                 {
-                    atr_add(ch->chan_obj, atr, msgNormal, GOD, 
+                    // Save message in history without timestamp.
+                    //
+                    atr_add(ch->chan_obj, atr, msgNormal, GOD,
                             AF_CONST|AF_NOPROG|AF_NOPARSE);
                 }
 
@@ -1867,20 +1869,17 @@ static bool do_chanlog_timestamps(dbref player, UTF8 *channel, UTF8 *arg)
 {
     UNUSED_PARAMETER(player);
 
+    // Validate arg.
+    //
     int value = 0;
-    if (!*arg || !is_integer(arg, NULL) || 
-            (value = mux_atol(arg)) > MAX_RECALL_REQUEST)
+    if (  NULL == arg
+       || !is_integer(arg, NULL)
+       || (  (value = mux_atol(arg)) != 0
+          && value != 1))
     {
+        // arg is not "0" and not "1".
+        //
         return false;
-    }
-
-    if(value < 0)
-    {
-        value = 0;
-    }
-    else if(value > 1)
-    {
-        value = 1;
     }
 
     struct channel *ch = select_channel(channel);
@@ -1894,10 +1893,12 @@ static bool do_chanlog_timestamps(dbref player, UTF8 *channel, UTF8 *arg)
     dbref aowner;
     int aflags;
     ATTR *pattr = atr_str(T("MAX_LOG"));
-    if (  NULL == pattr || 
-       false == (atr_get_info(ch->chan_obj, pattr->number, &aowner, &aflags)))
+    if (  NULL == pattr
+       || !atr_get_info(ch->chan_obj, pattr->number, &aowner, &aflags))
     {
-        return false; // Logging isn't enabled
+        // Logging isn't enabled.
+        //
+        return false;
     }
  
     int atr = mkattr(GOD, T("LOG_TIMESTAMPS"));
@@ -1905,8 +1906,8 @@ static bool do_chanlog_timestamps(dbref player, UTF8 *channel, UTF8 *arg)
     {
         return false;
     }
-   
-    if(value)
+
+    if (value)
     {
         atr_add(ch->chan_obj, atr, mux_ltoa_t(value), GOD,
                 AF_CONST|AF_NOPROG|AF_NOPARSE);
@@ -3364,7 +3365,7 @@ void do_chopen
         break;
 
     case CSET_LOG_TIME:
-        if(do_chanlog_timestamps(executor, chan, value))
+        if (do_chanlog_timestamps(executor, chan, value))
         {
             msg = tprintf("@cset: Channel %s timestamp logging set.", chan);
         }
