@@ -1886,7 +1886,6 @@ static bool do_chanlog_timestamps(dbref player, UTF8 *channel, UTF8 *arg)
     if (!Good_obj(ch->chan_obj))
     {
         // No channel object has been set.
-        //
         return false;
     }
 
@@ -1943,7 +1942,6 @@ static bool do_chanlog(dbref player, UTF8 *channel, UTF8 *arg)
     if (!Good_obj(ch->chan_obj))
     {
         // No channel object has been set.
-        //
         return false;
     }
 
