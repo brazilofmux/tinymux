@@ -3533,7 +3533,7 @@ void dump_restart_db(void)
 {
     FILE *f;
     DESC *d;
-    int version = 3;
+    int version = 4;
 
     mux_assert(mux_fopen(&f, T("restart.db"), T("wb")));
     fprintf(f, "+V%d\n", version);
@@ -3551,6 +3551,7 @@ void dump_restart_db(void)
     putref(f, mudstate.start_time.ReturnSeconds());
     putstring(f, mudstate.doing_hdr);
     putref(f, mudstate.record_players);
+    putref(f, mudstate.restart_count);
     DESC_ITER_ALL(d)
     {
         putref(f, d->descriptor);
@@ -3601,11 +3602,13 @@ void load_restart_db(void)
     int version = getref(f);
     if (  1 == version
        || 2 == version
-       || 3 == version)
+       || 3 == version
+       || 4 == version)
     {
         // Version 1 started on 2001-DEC-03
         // Version 2 started on 2005-NOV-08
         // Version 3 started on 2007-MAR-09
+        // Version 4 started on 2007-AUG-12
         //
         nMainGamePorts = getref(f);
         for (int i = 0; i < nMainGamePorts; i++)
@@ -3654,6 +3657,11 @@ void load_restart_db(void)
         mudstate.record_players = 0;
     }
 
+    if(version >= 4)
+    {
+        mudstate.restart_count = getref(f) + 1;
+    }
+
     int val;
     DESC *d;
     while ((val = getref(f)) != 0)
@@ -3677,7 +3685,7 @@ void load_restart_db(void)
 #ifdef SSL_ENABLED
         d->ssl_session = NULL;
 #endif
-        if (3 == version)
+        if (3 <= version)
         {
             d->raw_input_state              = getref(f);
             d->raw_codepoint_state          = getref(f);
@@ -3722,7 +3730,7 @@ void load_restart_db(void)
             d->width = 78;
         }
 
-        if (3 == version)
+        if (3 <= version)
         {
             // Output Prefix.
             //

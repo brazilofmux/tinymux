@@ -388,6 +388,7 @@ struct statedata
     int     *guest_free;        /* Table to keep track of free guests */
     size_t  mod_alist_len;      /* Length of mod_alist */
     size_t  mod_size;           /* Length of modified buffer */
+    unsigned int restart_count; // Number of @restarts since initial startup
 
     UTF8    short_ver[64];      /* Short version number (for INFO) */
     UTF8    doing_hdr[SIZEOF_DOING_STRING];  /* Doing column header in the WHO display */
