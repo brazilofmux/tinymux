@@ -5844,7 +5844,7 @@ CREATE()
   default. This is a side effect function, and should only be
   used when necessary.
 
-  Related Topics:
+  Related Topics: destroy()
 
 & CREDITS
 
@@ -6007,6 +6007,17 @@ DELETE()
     You say, "Would you like tea?"
 
   Related Topics:
+
+& DESTROY()
+DESTROY()
+
+  FUNCTION: destroy(<object>)
+
+  Works the same as @destroy <object>. The destroy() function has no 
+  return value.  This is a side effect function, and should only be
+  used when necessary.
+
+  Related Topics: create()
 
 & DESTROY_OK
 DESTROY_OK
@@ -7027,8 +7038,8 @@ FUNCTION CLASSES (continued)
 
   Relational:                EQ GT GTE LT LTE MAX MIN NEQ
 
-  Side-Effect Functions:     CREATE EMIT LINK OEMIT PEMIT REMIT SET SETNAME
-                             SETPARENT TEL TRIGGER
+  Side-Effect Functions:     CREATE DESTROY EMIT LINK OEMIT PEMIT REMIT SET 
+                             SETNAME SETPARENT TEL TRIGGER
 
   SQL:                       SQL
 
@@ -7075,12 +7086,13 @@ FUNCTION LIST
     CONNRECORD()CONNTOTAL() CONTROLS()  CONVSECS()  CONVTIME()  COR()
     CORBOOL()   COS()       CPAD()      CRC32()     CREATE()    CTIME()
     CTU()       CWHO()      DEC()       DECRYPT()   DEFAULT()   DELETE()
-    DIE()       DIGITTIME() DIST2D()    DIST3D()    DISTRIBUTE()DOING()
-    DUMPING()   E()         EDEFAULT()  EDIT()      ELEMENTS()  ELOCK()
-    EMIT()      ENCRYPT()   ENTRANCES() EQ()        ERROR()     ESCAPE()
-    ETIMEFMT()  EVAL()      EXIT()      EXP()       EXPTIME()   EXTRACT()
-    FCOUNT()    FDEPTH()    FDIV()      FILTER()    FILTERBOOL()FINDABLE()
-    FIRST()     FLAGS()     FLOOR()     FLOORDIV()  FMOD()      FOLD()
+    DESTROY()   DIE()       DIGITTIME() DIST2D()    DIST3D()    DISTRIBUTE()
+    DOING()     DUMPING()   E()         EDEFAULT()  EDIT()      ELEMENTS()  
+    ELOCK()     EMIT()      ENCRYPT()   ENTRANCES() EQ()        ERROR()     
+    ESCAPE()    ETIMEFMT()  EVAL()      EXIT()      EXP()       EXPTIME()   
+    EXTRACT()   FCOUNT()    FDEPTH()    FDIV()      FILTER()    FILTERBOOL()
+    FINDABLE()  FIRST()     FLAGS()     FLOOR()     FLOORDIV()  FMOD()      
+    FOLD()
 
 ("help function list2" for more)
 
