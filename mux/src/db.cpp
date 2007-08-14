@@ -3657,7 +3657,7 @@ void load_restart_db(void)
         mudstate.record_players = 0;
     }
 
-    if(version >= 4)
+    if (4 <= version)
     {
         mudstate.restart_count = getref(f) + 1;
     }
