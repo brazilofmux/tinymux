@@ -10078,6 +10078,7 @@ static FUN builtin_function_list[] =
     {T("DECRYPT"),     fun_decrypt,    MAX_ARG, 2,       2,         0, CA_PUBLIC},
     {T("DEFAULT"),     fun_default,    MAX_ARG, 2,       2, FN_NOEVAL, CA_PUBLIC},
     {T("DELETE"),      fun_delete,     MAX_ARG, 3,       3,         0, CA_PUBLIC},
+    {T("DESTROY"),     fun_destroy,    MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {T("DIE"),         fun_die,        MAX_ARG, 2,       3,         0, CA_PUBLIC},
     {T("DIGITTIME"),   fun_digittime,  MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {T("DIST2D"),      fun_dist2d,     MAX_ARG, 4,       4,         0, CA_PUBLIC},

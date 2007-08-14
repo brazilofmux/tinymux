@@ -522,6 +522,21 @@ FUNCTION(fun_create)
     safe_tprintf_str(buff, bufc, "#%d", thing);
 }
 
+FUNCTION(fun_destroy)
+{
+    UNUSED_PARAMETER(eval);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
+    if (check_command(executor, T("@destroy"), buff, bufc))
+    {
+        return;
+    }
+    do_destroy(executor, caller, enactor, 0, 1, fargs[0]);
+
+}
+
 FUNCTION(fun_textfile)
 {
     UNUSED_PARAMETER(caller);

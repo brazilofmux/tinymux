@@ -206,6 +206,7 @@ XFUNCTION(fun_push);
 
 #ifdef SIDE_EFFECT_FUNCTIONS
 XFUNCTION(fun_create);
+XFUNCTION(fun_destroy);
 XFUNCTION(fun_emit);
 XFUNCTION(fun_link);
 XFUNCTION(fun_oemit);
