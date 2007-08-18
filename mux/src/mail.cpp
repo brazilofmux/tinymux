@@ -1405,8 +1405,32 @@ static UTF8 *status_string(struct mail *mp)
     return tbuf1;
 }
 
-static void do_mail_read(dbref player, UTF8 *msglist)
+static void do_mail_read(dbref player, UTF8 *arg1, UTF8 *arg2)
 {
+    UTF8 *msglist;
+    int folder = player_folder(player);
+    int original_folder = folder;
+
+    // Check the argument list, if arg2 is present and valid, then lookup 
+    // mail in the arg1 folder rather than the default folder.
+    //
+    if('\0' == arg2 || '\0' == arg2[0])
+    {
+        msglist = arg1;
+    }
+    else
+    {
+        folder = parse_folder(player, arg1);
+
+        if(-1 == folder)
+        {
+            raw_notify(player, T("MAIL: No such folder."));
+            return;
+        }
+        set_player_folder(player, folder);
+        msglist = arg2;
+    }
+
     struct mail_selector ms;
     if (!parse_msglist(msglist, &ms, player))
     {
@@ -1416,7 +1440,6 @@ static void do_mail_read(dbref player, UTF8 *msglist)
     UTF8 *status, *names;
     int i = 0, j = 0;
     UTF8 *buff = alloc_lbuf("do_mail_read.1");
-    int folder = player_folder(player);
 
     MailList ml(player);
     struct mail *mp;
@@ -1469,6 +1492,13 @@ static void do_mail_read(dbref player, UTF8 *msglist)
         }
     }
     free_lbuf(buff);
+
+    // If the folder was changed, restore the original folder setting
+    //
+    if(folder != original_folder)
+    {
+        set_player_folder(player, original_folder);
+    }
 
     if (!j)
     {
@@ -2818,10 +2848,10 @@ static void do_mail_stub(dbref player, UTF8 *arg1, UTF8 *arg2)
     {
         // Must be reading or listing mail - no arg2
         //
-        if (  mux_isdigit(*arg1)
+        if ( mux_isdigit(*arg1)
            && !strchr((char *)arg1, '-'))
         {
-            do_mail_read(player, arg1);
+            do_mail_read(player, arg1, NULL);
         }
         else
         {
@@ -4719,7 +4749,7 @@ void do_mail
         do_mail_list(executor, arg1, false);
         break;
     case MAIL_READ:
-        do_mail_read(executor, arg1);
+        do_mail_read(executor, arg1, arg2);
         break;
     case MAIL_CLEAR:
         do_mail_clear(executor, arg1);
