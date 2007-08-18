@@ -9308,9 +9308,10 @@ MAIL-OTHER (continued)
 MAIL-READING
 
   @mail <msg #>
-  @mail/read <msg-list>
+  @mail/read [<folder>=]<msg-list>
         This displays messages which match the msg# or msg-list from
-        your current folder.
+        your current folder. If <folder> is specified, mail is read from
+        that folder without changing the current folder.
 
   @mail
   @mail <msg-list, but not a single msg #>
