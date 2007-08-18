@@ -3442,22 +3442,30 @@ Related Topics: @name.
 @SET (continued)
 
   The following flags may be set using the fourth form of the @set command:
+
+     case       - $-command matching will not be case-sensitive.
+                  Non-functional unless the 'R' flag is also set.
      no_command - Prevent $-commands and ^-patterns defined in the attribute
                   from being performed.
      no_inherit - Prevents children of the object from obtaining the
-                  attribute.  From their perspective the attribute does not
+                  attribute.  From their perspective, the attribute does not
                   exist.
+     no_name    - If set on an @o-attr, don't prepend the name of the
+                  enactor.  This also affects @verb behavior.
      visual     - Anyone may see the attribute when they examine you, and
                   may get the attribute with get().
      hidden     - The attribute is only visible to wizards.
+     html       - Emits from attr, oattr, aattr are not HTML-escaped.
      regexp     - When $-commands are matched, treat the pattern as a
                   regular expression rather than a wildcard glob pattern.
+     trace      - The attribute will generate trace output.
      wizard     - The attribute may only be changed by wizards.
 
   The @set command takes the following switch:
+
      quiet      - Inhibit 'Set.' acknowledgement messages.
 
-  Related Topics: @lock, @lock, examine, FLAGS, &.
+  Related Topics: ATTRIBUTE FLAGS, @lock, @lock, examine, FLAGS, &.
 
 & @SEX
 @SEX
@@ -4476,7 +4484,8 @@ ATTRIBUTE FLAGS
 ATTRIBUTE FLAGS (continued)
 
     no_inherit (I) - This attribute is not inherited by children of the
-                     object.
+                     object.  From their perspective, the attribute does not
+                     exist.
 
     locked (+)     - The attribute is locked, it does not change
                      ownership when the object is @chowned and may not
@@ -4494,7 +4503,7 @@ ATTRIBUTE FLAGS (continued)
     regexp (R)     - $-command matching on this attribute uses
                      PCRE-style regular expressions.
 
-    trace (T)      - The attribute will return trace output.
+    trace (T)      - The attribute will generate trace output.
 
 { 'help attribute flags3' for more }
 
