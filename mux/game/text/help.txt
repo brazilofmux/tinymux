@@ -7480,8 +7480,8 @@ HASFLAG()
 
   When an <attribute> is given, the following <flag> values can be used:
 
-    const, no_command, dark, god, hidden, html, no_inherit, locked, no_parse,
-    regexp, visual, and wizard.
+    const, dark, god, hidden, html, locked, no_command, no_inherit, no_name,
+    no_parse, regexp, visual, and wizard.
 
   Example:
     > say hasflag(me, wizard)
