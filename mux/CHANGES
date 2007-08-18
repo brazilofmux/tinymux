@@ -1,5 +1,5 @@
 TinyMUX 2.6:  CHANGES
-Last Update:  June 2007
+Last Update:  August 2007
 
 Major changes that may affect performance and require softcode tweaks:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -293,6 +293,7 @@ Bug Fixes:
     document. Issue 341.
  -- Fix WIDTH() to default to 78 instead of 24 (Issue 354).
  -- Open permissions on WIDTH() and HEIGHT() (Issue 356).
+ -- hasflag() would not check for no_name (Issue 360).
 
 
 Performance Enhancements:
