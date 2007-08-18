@@ -1525,9 +1525,8 @@ void do_pemit_whisper
     {
         if(Good_obj(aPlayers[i]))
         {
-            // converting back to a name seems rather inefficient but works
             do_pemit_single(executor, key, false, pemit_flags, 
-                    tprintf("%s", Name(aPlayers[i])), chPoseType, message);
+                    tprintf("#%d", aPlayers[i]), chPoseType, message);
         }
     }
 
