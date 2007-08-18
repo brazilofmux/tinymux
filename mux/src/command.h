@@ -178,7 +178,7 @@ typedef struct
     int     extra;
     int     callseq;
     int     hookmask;
-    void    (*handler)(dbref executor, dbref caller, dbref enactor, int eval, int, UTF8 *);
+    void    (*handler)(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8 *);
 } CMDENT_ONE_ARG;
 
 typedef struct

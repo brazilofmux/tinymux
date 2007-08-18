@@ -6013,7 +6013,7 @@ DESTROY()
 
   FUNCTION: destroy(<object>)
 
-  Works the same as @destroy <object>. The destroy() function has no 
+  Works the same as @destroy <object>. The destroy() function has no
   return value.  This is a side effect function, and should only be
   used when necessary.
 
@@ -7038,7 +7038,7 @@ FUNCTION CLASSES (continued)
 
   Relational:                EQ GT GTE LT LTE MAX MIN NEQ
 
-  Side-Effect Functions:     CREATE DESTROY EMIT LINK OEMIT PEMIT REMIT SET 
+  Side-Effect Functions:     CREATE DESTROY EMIT LINK OEMIT PEMIT REMIT SET
                              SETNAME SETPARENT TEL TRIGGER
 
   SQL:                       SQL
@@ -7087,11 +7087,11 @@ FUNCTION LIST
     CORBOOL()   COS()       CPAD()      CRC32()     CREATE()    CTIME()
     CTU()       CWHO()      DEC()       DECRYPT()   DEFAULT()   DELETE()
     DESTROY()   DIE()       DIGITTIME() DIST2D()    DIST3D()    DISTRIBUTE()
-    DOING()     DUMPING()   E()         EDEFAULT()  EDIT()      ELEMENTS()  
-    ELOCK()     EMIT()      ENCRYPT()   ENTRANCES() EQ()        ERROR()     
-    ESCAPE()    ETIMEFMT()  EVAL()      EXIT()      EXP()       EXPTIME()   
+    DOING()     DUMPING()   E()         EDEFAULT()  EDIT()      ELEMENTS()
+    ELOCK()     EMIT()      ENCRYPT()   ENTRANCES() EQ()        ERROR()
+    ESCAPE()    ETIMEFMT()  EVAL()      EXIT()      EXP()       EXPTIME()
     EXTRACT()   FCOUNT()    FDEPTH()    FDIV()      FILTER()    FILTERBOOL()
-    FINDABLE()  FIRST()     FLAGS()     FLOOR()     FLOORDIV()  FMOD()      
+    FINDABLE()  FIRST()     FLAGS()     FLOOR()     FLOORDIV()  FMOD()
     FOLD()
 
 ("help function list2" for more)
@@ -7478,7 +7478,7 @@ HASFLAG()
   Returns true if object <object> has the flag named <flag> set on it. You
   may not be able to retrieve information for objects that you do not own.
 
-  When an <attribute> is given, the following <flag> values can be used.
+  When an <attribute> is given, the following <flag> values can be used:
 
     const, no_command, dark, god, hidden, html, no_inherit, locked, no_parse,
     regexp, visual, and wizard.

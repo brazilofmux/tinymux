@@ -533,8 +533,7 @@ FUNCTION(fun_destroy)
     {
         return;
     }
-    do_destroy(executor, caller, enactor, 0, 1, fargs[0]);
-
+    do_destroy(executor, caller, enactor, 0, DEST_ONE, fargs[0]);
 }
 
 FUNCTION(fun_textfile)
