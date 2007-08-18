@@ -3594,24 +3594,8 @@ static void do_malias_create(dbref player, UTF8 *alias, UTF8 *tolist)
     // of the Mail Alias Description becomes more restrictive at some
     // future time.
     //
-#if 0
-    int  nValidMailAliasDesc;
-    bool bValidMailAliasDesc;
-    UTF8 *pValidMailAliasDesc = MakeCanonicalMailAliasDesc
-                                (   alias+1,
-                                    &nValidMailAliasDesc,
-                                    &bValidMailAliasDesc
-                                );
-
-    if (!bValidMailAliasDesc)
-    {
-        notify(player, "MAIL: Invalid mail alias description.");
-        break;
-    }
-#else
     UTF8 *pValidMailAliasDesc = pValidMailAlias;
     size_t nValidMailAliasDesc = nValidMailAlias;
-#endif
 
     malias[ma_top]->list[i] = NOTHING;
     malias[ma_top]->name = StringCloneLen(pValidMailAlias, nValidMailAlias);
@@ -3681,9 +3665,21 @@ static const UTF8 *Spaces(size_t n)
     }
 }
 
+static int DCL_CDECL malias_compare(const void *first, const void *second)
+{
+    malias_t* alias1 = (malias_t*)first;
+    malias_t* alias2 = (malias_t*)second;
+
+    return mux_stricmp(alias1->name, alias2->name);
+}
+
 static void do_malias_list_all(dbref player)
 {
     bool notified = false;
+
+    malias_t* alias_array = (malias_t*)MEMALLOC(sizeof(malias_t)*ma_top);
+    size_t actual_entries = 0;
+
     for (int i = 0; i < ma_top; i++)
     {
         malias_t *m = malias[i];
@@ -3691,21 +3687,32 @@ static void do_malias_list_all(dbref player)
            || m->owner == player
            || God(player))
         {
-            if (!notified)
-            {
-                raw_notify(player, T("Name         Description                              Owner"));
-                notified = true;
-            }
-            const UTF8 *pSpaces = Spaces(40 - m->desc_width);
-            UTF8 *p = tprintf( "%-12s %s%s %-15.15s",
-                               m->name,
-                               m->desc,
-                               pSpaces,
-                               Moniker(m->owner));
-            raw_notify(player, p);
+            alias_array[actual_entries].name = m->name;
+            alias_array[actual_entries].desc = m->desc;
+            alias_array[actual_entries].desc_width = m->desc_width;
+            alias_array[actual_entries].owner = m->owner;
+            ++actual_entries;
         }
     }
+    qsort(alias_array, actual_entries, sizeof(malias_t), malias_compare);
+
+    for (int i = 0; i < actual_entries; i++)
+    {
+        malias_t *m = &alias_array[i];
+        if (!notified)
+        {
+            raw_notify(player, T("Name         Description                              Owner"));
+            notified = true;
+        }
+
+        const UTF8 *pSpaces = Spaces(40 - m->desc_width);
+        
+        UTF8 *p = tprintf( "%-12s %s%s %-15.15s",
+                m->name, m->desc, pSpaces, Moniker(m->owner));
+        raw_notify(player, p);
+    }
     raw_notify(player, T("*****  End of Mail Aliases *****"));
+    MEMFREE(alias_array);
 }
 
 static void do_malias_switch(dbref player, UTF8 *a1, UTF8 *a2)
