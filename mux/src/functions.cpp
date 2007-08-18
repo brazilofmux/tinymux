@@ -4557,6 +4557,7 @@ static ATR_HAS_FLAG_ENTRY atr_has_flag_table[] =
     { T("html"),       AF_HTML    },
     { T("locked"),     AF_LOCK    },
     { T("no_command"), AF_NOPROG  },
+    { T("no_name"),    AF_NONAME  },
     { T("no_parse"),   AF_NOPARSE },
     { T("regexp"),     AF_REGEXP  },
     { T("god"),        AF_GOD     },
