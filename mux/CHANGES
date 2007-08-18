@@ -294,6 +294,7 @@ Bug Fixes:
  -- Fix WIDTH() to default to 78 instead of 24 (Issue 354).
  -- Open permissions on WIDTH() and HEIGHT() (Issue 356).
  -- hasflag() would not check for no_name (Issue 360).
+ --  Fix the attribute flag names returned by lflags() (Issue 362).
 
 
 Performance Enhancements:
