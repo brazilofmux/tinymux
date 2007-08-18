@@ -7480,7 +7480,7 @@ HASFLAG()
 
   When an <attribute> is given, the following <flag> values can be used:
 
-    const, dark, god, hidden, html, locked, no_command, no_inherit, no_name,  
+    const, dark, god, hidden, html, locked, no_command, no_inherit, no_name,
     no_parse, regexp, visual, and wizard.
 
   Example:
