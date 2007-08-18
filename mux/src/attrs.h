@@ -212,8 +212,9 @@
                         // connections, time of logout.
 #define A_LMAIL     225 // Lock who may @mail you
 #define A_LOPEN     226 // Lock for controlling OPEN_OK locations
+#define A_LASTWHISPER 227  // Last set of people whisper'd too
 
-// 227 - 235 unused
+// 228 - 235 unused
 
 #if defined(FIRANMUX)
 #define A_COLOR      236 /* Color of name of object in look commands */
