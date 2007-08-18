@@ -758,18 +758,18 @@ typedef struct
 
 static ATTR_DECODE_ENTRY attr_decode_table[NUM_ATTRIBUTE_CODES+1] =
 {
-    { AF_LOCK,    '+', T("LOCK")    },
-    { AF_NOPROG,  '$', T("NOPROG")  },
-    { AF_CASE,    'C', T("CASE")    },
-    { AF_HTML,    'H', T("HTML")    },
-    { AF_PRIVATE, 'I', T("PRIVATE") },
-    { AF_NONAME,  'N', T("NONAME")  },
-    { AF_NOPARSE, 'P', T("NOPARSE") },
-    { AF_REGEXP,  'R', T("REGEXP")  },
-    { AF_TRACE,   'T', T("TRACE")   },
-    { AF_VISUAL,  'V', T("VISUAL")  },
-    { AF_MDARK,   'M', T("DARK")    },
-    { AF_WIZARD,  'W', T("WIZARD")  },
+    { AF_LOCK,    '+', T("LOCK")       },
+    { AF_NOPROG,  '$', T("NO_COMMAND") },
+    { AF_CASE,    'C', T("CASE")       },
+    { AF_HTML,    'H', T("HTML")       },
+    { AF_PRIVATE, 'I', T("NO_INHERIT") },
+    { AF_NONAME,  'N', T("NO_NAME")    },
+    { AF_NOPARSE, 'P', T("NO_PARSE")   },
+    { AF_REGEXP,  'R', T("REGEXP")     },
+    { AF_TRACE,   'T', T("TRACE")      },
+    { AF_VISUAL,  'V', T("VISUAL")     },
+    { AF_MDARK,   'M', T("DARK")       },
+    { AF_WIZARD,  'W', T("WIZARD")     },
     { 0, 0, NULL }
 };
 
