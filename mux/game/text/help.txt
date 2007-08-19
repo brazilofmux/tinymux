@@ -9318,9 +9318,10 @@ MAIL-READING
         This gives a brief list of all mail in the current folder,
         with sender name, a list of receiving players, subject, and
         message status.
-  @mail/list [<msg-list>]
-        This gives the same list, but with time sent instead of subject.
-        The status field is a set of characters (ex: NC-UF+) which mean:
+  @mail/list [<folder>=][<msg-list>]
+        Without <folder>, this gives the same list, but with time sent instead 
+        of subject.  The status field is a set of characters (ex: NC-UF+) which 
+        mean:
                 N = New (unread) message
                 C = Cleared message
                 U = Urgent message
@@ -9328,6 +9329,9 @@ MAIL-READING
                 + = Tagged message
         The opposites of these (read messages, etc.) are indicated with a
         '-' in the status field in that position.
+
+        If <folder> is specified, <msg-list> must be present.  To list all 
+        messages in the folder, an asterick (*) can be used instead.
 
 & MAIL-REVIEWING
 MAIL-REVIEWING
