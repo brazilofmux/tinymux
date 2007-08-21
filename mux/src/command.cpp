@@ -216,6 +216,14 @@ static NAMETAB flag_sw[] =
     {(UTF8 *) NULL,             0,          0,  0}
 };
 
+static NAMETAB folder_sw[] =
+{
+    {T("file"),             1,    CA_PUBLIC, FOLDER_FILE},
+    {T("list"),             1,    CA_PUBLIC, FOLDER_LIST}, 
+    {T("read"),             1,    CA_PUBLIC, FOLDER_READ}, 
+    {T("set"),              1,    CA_PUBLIC, FOLDER_SET},
+    {(UTF8 *) NULL,             0,          0,  0}
+};
 static NAMETAB fpose_sw[] =
 {
     {T("default"),         1,  CA_PUBLIC,  0},
@@ -698,6 +706,7 @@ static CMDENT_TWO_ARG command_table_two_arg[] =
     {T("@femit"),       femit_sw,   CA_LOCATION|CA_NO_GUEST|CA_NO_SLAVE,              PEMIT_FEMIT, CS_TWO_ARG|CS_INTERP, 0, do_pemit},
     {T("@fixdb"),       fixdb_sw,   CA_GOD,                                           0,           CS_TWO_ARG|CS_INTERP, 0, do_fixdb},
     {T("@flag"),        flag_sw,    CA_GOD,                                           0,           CS_TWO_ARG,           0, do_flag},
+    {T("@folder"),      folder_sw,    CA_NO_SLAVE|CA_NO_GUEST,                          0,           CS_TWO_ARG|CS_INTERP, 0, do_folder},
     {T("@forwardlist"), NULL,       CA_NO_SLAVE|CA_NO_GUEST,                          0,           CS_TWO_ARG,           0, do_forwardlist},
     {T("@fpose"),       fpose_sw,   CA_LOCATION|CA_NO_SLAVE,                          PEMIT_FPOSE, CS_TWO_ARG|CS_INTERP, 0, do_pemit},
     {T("@fsay"),        NULL,       CA_LOCATION|CA_NO_SLAVE,                          PEMIT_FSAY,  CS_TWO_ARG|CS_INTERP, 0, do_pemit},

@@ -927,6 +927,23 @@ static int player_folder(dbref player)
     return number;
 }
 
+
+// List mail stats for all current folders
+//
+static void DoListMailBrief(dbref player)
+{
+    for(int folder = 0; folder < MAX_FOLDERS; ++folder)
+    {
+        check_mail(player, folder, true);
+    }
+
+    int current_folder = player_folder(player);
+
+    raw_notify(player, tprintf("MAIL: Current folder is %d [%s].",
+                current_folder, get_folder_name(player, current_folder)));
+}
+
+
 // Change or rename a folder
 //
 static void do_mail_change_folder(dbref player, UTF8 *fld, UTF8 *newname)
@@ -937,15 +954,10 @@ static void do_mail_change_folder(dbref player, UTF8 *fld, UTF8 *newname)
     {
         // Check mail in all folders
         //
-        for (pfld = 0; pfld <= MAX_FOLDERS; pfld++)
-        {
-            check_mail(player, pfld, true);
-        }
-        pfld = player_folder(player);
-        raw_notify(player, tprintf("MAIL: Current folder is %d [%s].",
-                       pfld, get_folder_name(player, pfld)));
+        DoListMailBrief(player);
         return;
     }
+
     pfld = parse_folder(player, fld);
     if (pfld < 0)
     {
@@ -4992,4 +5004,118 @@ void MailList::RemoveAll(void)
         delete mi;
     }
     m_mi = NULL;
+}
+
+static void ListMailInFolderNumber(dbref player, int folder_num, UTF8 *msglist)
+{
+    int original_folder = player_folder(player);
+    set_player_folder(player, folder_num);
+
+    struct mail_selector ms;
+
+    if (!parse_msglist(msglist, &ms, player))
+    {
+        return;
+    }
+    int i = 0;
+    UTF8 *time;
+    UTF8 szSubjectBuffer[MBUF_SIZE];
+
+    notify(player,
+        tprintf("---------------------------   MAIL: Folder %d   ----------------------------", folder_num));
+
+    MailList ml(player);
+    struct mail *mp;
+    for (mp = ml.FirstItem(); !ml.IsEnd(); mp = ml.NextItem())
+    {
+        if (Folder(mp) == folder_num)
+        {
+            i++;
+            if (mail_match(mp, ms, i))
+            {
+                time = mail_list_time(mp->time);
+                size_t nSize = MessageFetchSize(mp->number);
+
+                UTF8 szFromName[MBUF_SIZE];
+                trimmed_name(mp->from, szFromName, 16, 16, 0);
+
+                StripTabsAndTruncate(mp->subject, szSubjectBuffer, 
+                        MBUF_SIZE-1, 25);
+
+                notify(player, tprintf("[%s] %-3d (%4d) From: %s Sub: %s",
+                            status_chars(mp), i, nSize, szFromName, 
+                            szSubjectBuffer));
+                free_lbuf(time);
+            }
+        }
+    }
+    notify(player, (UTF8 *)DASH_LINE);
+
+    set_player_folder(player, original_folder);
+
+}
+
+static void ListMailInFolder(dbref player, UTF8 *folder_name, UTF8 *msglist)
+{
+    int folder = 0;
+
+    if(!folder_name && !*folder_name)
+    {
+        folder = player_folder(player);
+    }
+    else
+    {
+        folder = parse_folder(player, folder_name);
+    }
+
+    if(-1 == folder)
+    {
+        raw_notify(player, T("MAIL: No such folder."));
+        return;
+    }
+    ListMailInFolderNumber(player, folder, msglist);
+}
+
+void do_folder
+(
+    dbref executor,
+    dbref caller,
+    dbref enactor,
+    int   key,
+    int   nargs,
+    UTF8 *arg1,
+    UTF8 *arg2
+)
+{
+
+    switch(key)
+    {
+        case FOLDER_FILE:
+            do_mail_file(executor, arg1, arg2);
+            break;
+        case FOLDER_LIST:
+            ListMailInFolder(executor, arg1, arg2);
+            break;
+        case FOLDER_READ:
+            do_mail_read(executor, arg1, arg2);
+            break;
+        case FOLDER_SET:
+            do_mail_change_folder(executor, arg1, arg2);
+            break;
+
+        default:
+            if('\0' == arg1 && '\0' == *arg1)
+            {
+                DoListMailBrief(executor);
+            }
+            else if(nargs == 2)
+            {
+                do_mail_read(executor, arg1, arg2);
+            }
+            else
+            {
+                do_mail_change_folder(executor, arg1, arg2);
+            }
+            break;
+    };
 }

@@ -565,6 +565,10 @@ extern int anum_alc_top;
 #define FIXDB_LINK      128 /* Fix LINK field */
 #define FIXDB_PARENT    256 /* Fix PARENT field */
 #define FIXDB_NAME      2048 /* Set NAME attribute */
+#define FOLDER_SET      1   /* Tweak folder settings -- e.g., name */
+#define FOLDER_READ     2   /* Read a message in the given folder */
+#define FOLDER_FILE     4   /* Move message(s) to a folder */
+#define FOLDER_LIST     8   /* List the contents of a folder */
 #define FLAG_REMOVE     1   // Remove a flag alias
 #define GET_QUIET       1   /* Don't do osucc/asucc if control */
 #define GIVE_QUIET      64  /* Inhibit give messages */
