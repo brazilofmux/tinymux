@@ -10359,7 +10359,7 @@ static FUN builtin_function_list[] =
     {T("T"),           fun_t,                1, 0,       1,         0, CA_PUBLIC},
     {T("TABLE"),       fun_table,      MAX_ARG, 1,       6,         0, CA_PUBLIC},
     {T("TAN"),         fun_tan,        MAX_ARG, 1,       2,         0, CA_PUBLIC},
-    {T("TEL"),         fun_tel,        MAX_ARG, 2,       2,         0, CA_PUBLIC},
+    {T("TEL"),         fun_tel,        MAX_ARG, 2,       3,         0, CA_PUBLIC},
     {T("TERMINFO"),    fun_terminfo,         1, 1, MAX_ARG,         0, CA_PUBLIC},
 #if defined(FIRANMUX)
     {T("TEXT"),        fun_text,       MAX_ARG, 2,       2,         0, CA_PUBLIC},

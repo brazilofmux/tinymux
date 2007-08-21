@@ -343,15 +343,30 @@ FUNCTION(fun_trigger)
 FUNCTION(fun_tel)
 {
     UNUSED_PARAMETER(eval);
-    UNUSED_PARAMETER(nfargs);
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
+
+    int key = 0;
 
     if (check_command(executor, T("@teleport"), buff, bufc))
     {
         return;
     }
-    do_teleport(executor, caller, enactor, 0, 2, fargs[0], fargs[1]);
+
+    if (nfargs >= 3 && *fargs[2])
+    {
+        if(strchr( (char*) fargs[2], 'q'))
+        {
+            key |= TELEPORT_QUIET;
+        }
+
+        if(strchr( (char*) fargs[2], 'l'))
+        {
+            key |= TELEPORT_LIST;
+        }
+    }
+
+    do_teleport(executor, caller, enactor, key, 2, fargs[0], fargs[1]);
 }
 
 FUNCTION(fun_pemit)
