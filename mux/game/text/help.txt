@@ -1734,6 +1734,31 @@ Related Topics: @name.
 
   Related Topics: @search.
 
+& @FOLDER
+@FOLDER
+  
+  COMMAND:  @folder[/<switch>] [arg1]=[arg2]
+
+  @folder operates on @mail folders to view, set, and read mail messages
+  within folders.   The available switches are /file, /list, /read and /set.
+  
+  Usage:
+
+  @folder                         - Lists mail stats for all @mail folders.
+  @folder <folder>                - Sets the active folder to <folder>.
+  @folder <folder>=<message list> - Reads the <message list> in folder.
+  @folder/file <folder>=<msgs>    - Files <msgs> in <folder> like @mail/file.
+  @folder/list <folder>[=<msgs>]  - Lists <msgs> if provided from <folder> or
+                                    all messages in <folder>.
+  @folder/read <folder>=<mgs>     - Display <msgs> in <folder>
+  @folder/set  <folder>[=<name>]  - Set the active folder number if no name is
+                                    given or give <folder> <name>.
+
+  Other than @folder/set or @folder <folder>, the @folder command does not
+  change the active folder for @mail.   
+
+  Related Topics:  @mail, mail-folders
+
 & @FORCE
 @FORCE
 
@@ -2507,6 +2532,7 @@ Related Topics: @name.
   Related Topics:
     mail-sending    mail-reading     mail-folders      mail-other
     mail-admin      @malias          mail-reviewing    mail-examples
+    @folder
 
 & @MAILSUCC
 @MAILSUCC
@@ -9329,9 +9355,6 @@ MAIL-READING
                 + = Tagged message
         The opposites of these (read messages, etc.) are indicated with a
         '-' in the status field in that position.
-
-        If <folder> is specified, <msg-list> must be present.  To list all 
-        messages in the folder, an asterick (*) can be used instead.
 
 & MAIL-REVIEWING
 MAIL-REVIEWING
