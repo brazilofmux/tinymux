@@ -1265,7 +1265,7 @@ void do_pemit_whisper
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
 
-    int nObjects = 0;
+    int   nObjects = 0;
     dbref aObjects[(LBUF_SIZE+1)/2];
 
     // If the argument count is not 2, pull recipients from A_LASTWHISPER.
@@ -1450,24 +1450,24 @@ void do_pemit_whisper
     if (  1 == nPlayers
        && Good_obj(aPlayers[0]))
     {
-        switch(chPoseType)
+        switch (chPoseType)
         {
-            case ';':
-                ++message;
-                notify(executor, tprintf("%s senses \"%s%s\"",
-                    Moniker(executor), Moniker(aPlayers[0]), message));
-                break;
+        case ';':
+            ++message;
+            notify(executor, tprintf("%s senses \"%s%s\"",
+                Moniker(executor), Moniker(aPlayers[0]), message));
+            break;
 
-            case ':':
-                ++message;
-                notify(executor, tprintf("%s senses \"%s %s\"", 
-                    Moniker(executor), Moniker(aPlayers[0]), message));
-                break;
+        case ':':
+            ++message;
+            notify(executor, tprintf("%s senses \"%s %s\"", 
+                Moniker(executor), Moniker(aPlayers[0]), message));
+            break;
 
-            default:
-                notify(executor, tprintf("You whisper \"%s\" to %s.", message,
-                    Moniker(aPlayers[0])));
-                break;
+        default:
+            notify(executor, tprintf("You whisper \"%s\" to %s.", message,
+                Moniker(aPlayers[0])));
+            break;
         }
 
     }
@@ -1507,20 +1507,20 @@ void do_pemit_whisper
 
         switch (chPoseType)
         {
-            case ';':
-                notify(executor, tprintf("%s sense \"%s%s\"", 
-                    aFriendly, Moniker(aPlayers[0]), message));
-                break;
+        case ';':
+            notify(executor, tprintf("%s sense \"%s%s\"", 
+                aFriendly, Moniker(aPlayers[0]), message));
+            break;
 
-            case ':':
-                notify(executor, tprintf("%s sense \"%s %s\"", 
-                    aFriendly, Moniker(aPlayers[0]), message));
-                break;
+        case ':':
+            notify(executor, tprintf("%s sense \"%s %s\"", 
+                aFriendly, Moniker(aPlayers[0]), message));
+            break;
 
-            default:
-                notify(executor, tprintf("You whisper \"%s\" to %s.", message,
-                    aFriendly));
-                break;
+        default:
+            notify(executor, tprintf("You whisper \"%s\" to %s.", message,
+                aFriendly));
+            break;
         }
 
         free_lbuf(aFriendly);
@@ -1563,7 +1563,7 @@ void do_pemit
         return;
     }
 
-    // Decode PEMIT_CONENTS and PEMIT_LIST and remove from key.
+    // Decode PEMIT_CONTENTS and PEMIT_LIST and remove from key.
     //
     bool bDoContents = false;
     if (key & PEMIT_CONTENTS)
