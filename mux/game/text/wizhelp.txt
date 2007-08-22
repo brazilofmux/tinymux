@@ -1788,7 +1788,7 @@ CONFIG PARAMETERS
   cache_pages  cache_tick_period  check_interval  check_offset
   clone_copies_cost  command_quota_increment  command_quota_max
   compress_program  compression  comsys_database  config_access  conn_timeout
-  connect_file  connect_reg_file  crash_database  create_max_cost
+  connect_file  connect_reg_file  crash_database  crash_message  create_max_cost
   create_min_cost  dark_sleepers  def_exit_rx  def_exit_tx  def_player_rx
   def_player_tx  def_room_rx  def_room_tx  def_thing_rx  def_thing_tx
   default_home  destroy_going_now  dig_cost  down_file  down_motd_message
@@ -1928,6 +1928,17 @@ CRASH_DATABASE
 
   This configuration option cannot be changed after the server starts.  It
   can only be changed via the configuration file.
+
+& CRASH_MESSAGE
+CRASH_MESSAGE
+  
+  CONFIG PARAMETER: crash_message <message>
+  DEFAULT:  NOTHING
+
+  Specifies the message sent to all connected players when the server
+  encounters an unexpected error.  The message is sent even if the server can
+  reasonably recover from the error just in case the situation is
+  non-recoverable.   The message is prefixed with 'GAME:'.
 
 & CREATE_MAX_COST
 CREATE_MAX_COST
