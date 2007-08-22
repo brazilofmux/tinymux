@@ -1229,6 +1229,7 @@ static void BuildChannelMessage
     bool bSpoof,
     const UTF8 *pHeader,
     struct comuser *user,
+    dbref ch_obj,
     UTF8 *pPose,
     UTF8 **messNormal,
     UTF8 **messNoComtitle
@@ -1293,6 +1294,30 @@ static void BuildChannelMessage
         }
     }
 
+    bool bChannelSayString = false;
+    bool bChannelSpeechMod = false;
+
+    if(true == Good_obj(ch_obj))
+    {
+        dbref aowner;
+        int aflags;
+        UTF8* test_attr = atr_get("BuildChannelMessage.1302", ch_obj,
+                A_SAYSTRING, &aowner, &aflags);
+
+        if('\0' != test_attr[0])
+        {
+            bChannelSayString = true;
+        }
+
+        test_attr = atr_get("BuildChannelMessage.1302", ch_obj,
+                A_SPEECHMOD, &aowner, &aflags);
+
+        if('\0' != test_attr[0])
+        {
+            bChannelSpeechMod = true;
+        }
+    }
+
     UTF8 *saystring = NULL;
     UTF8 *newPose = NULL;
 
@@ -1300,7 +1325,8 @@ static void BuildChannelMessage
     {
     case ':':
         pPose++;
-        newPose = modSpeech(user->who, pPose, true, (UTF8 *)"channel/pose");
+        newPose = modSpeech(bChannelSpeechMod ? ch_obj : user->who, pPose, true,
+                (UTF8 *)"channel/pose");
         if (newPose)
         {
             pPose = newPose;
@@ -1316,7 +1342,8 @@ static void BuildChannelMessage
 
     case ';':
         pPose++;
-        newPose = modSpeech(user->who, pPose, true, (UTF8 *)"channel/pose");
+        newPose = modSpeech(bChannelSpeechMod ? ch_obj : user->who, pPose, true,
+                (UTF8 *)"channel/pose");
         if (newPose)
         {
             pPose = newPose;
@@ -1329,12 +1356,14 @@ static void BuildChannelMessage
         break;
 
     default:
-        newPose = modSpeech(user->who, pPose, true, (UTF8 *)"channel");
+        newPose = modSpeech(bChannelSpeechMod ? ch_obj : user->who, pPose, true,
+                (UTF8 *)"channel");
         if (newPose)
         {
             pPose = newPose;
         }
-        saystring = modSpeech(user->who, pPose, false, (UTF8 *)"channel");
+        saystring = modSpeech(bChannelSayString ? ch_obj : user->who, pPose,
+                false, (UTF8 *)"channel");
         if (saystring)
         {
             safe_chr(' ', *messNormal, &mnptr);
@@ -1467,7 +1496,7 @@ static void do_processcom(dbref player, UTF8 *arg1, UTF8 *arg2)
         UTF8 *messNormal;
         UTF8 *messNoComtitle;
         BuildChannelMessage((ch->type & CHANNEL_SPOOF) != 0, ch->header, user,
-            arg2, &messNormal, &messNoComtitle);
+            ch->chan_obj, arg2, &messNormal, &messNoComtitle);
         SendChannelMessage(player, ch, messNormal, messNoComtitle);
     }
 }
@@ -1677,7 +1706,8 @@ void do_joinchannel(dbref player, struct channel *ch)
     {
         UTF8 *messNormal, *messNoComtitle;
         BuildChannelMessage((ch->type & CHANNEL_SPOOF) != 0, ch->header, user,
-            (UTF8 *)":has joined this channel.", &messNormal, &messNoComtitle);
+            ch->chan_obj, (UTF8 *)":has joined this channel.", &messNormal,
+            &messNoComtitle);
         SendChannelMessage(player, ch, messNormal, messNoComtitle);
     }
     ChannelMOTD(ch->chan_obj, user->who, attr);
@@ -1696,7 +1726,8 @@ void do_leavechannel(dbref player, struct channel *ch)
         {
             UTF8 *messNormal, *messNoComtitle;
             BuildChannelMessage((ch->type & CHANNEL_SPOOF) != 0, ch->header, user,
-                (UTF8 *)":has left this channel.", &messNormal, &messNoComtitle);
+                ch->chan_obj, (UTF8 *)":has left this channel.", &messNormal,
+                &messNoComtitle);
             SendChannelMessage(player, ch, messNormal, messNoComtitle);
         }
         ChannelMOTD(ch->chan_obj, user->who, A_COMOFF);
@@ -2235,8 +2266,9 @@ void do_delcomchannel(dbref player, UTF8 *channel, bool bQuiet)
                     {
                         UTF8 *messNormal, *messNoComtitle;
                         BuildChannelMessage((ch->type & CHANNEL_SPOOF) != 0,
-                            ch->header, user, (UTF8 *)":has left this channel.",
-                            &messNormal, &messNoComtitle);
+                            ch->header, user, ch->chan_obj,
+                            (UTF8 *)":has left this channel.", &messNormal,
+                            &messNoComtitle);
                         SendChannelMessage(player, ch, messNormal, messNoComtitle);
                     }
                     raw_notify(player, tprintf("You have left channel %s.",
@@ -2821,7 +2853,8 @@ static void do_comdisconnectraw_notify(dbref player, UTF8 *chan)
     {
         UTF8 *messNormal, *messNoComtitle;
         BuildChannelMessage((ch->type & CHANNEL_SPOOF) != 0, ch->header, cu,
-            (UTF8 *)":has disconnected.", &messNormal, &messNoComtitle);
+            ch->chan_obj, (UTF8 *)":has disconnected.", &messNormal,
+            &messNoComtitle);
         SendChannelMessage(player, ch, messNormal, messNoComtitle);
     }
 }
@@ -2842,7 +2875,8 @@ static void do_comconnectraw_notify(dbref player, UTF8 *chan)
     {
         UTF8 *messNormal, *messNoComtitle;
         BuildChannelMessage((ch->type & CHANNEL_SPOOF) != 0, ch->header, cu,
-            (UTF8 *)":has connected.", &messNormal, &messNoComtitle);
+            ch->chan_obj, (UTF8 *)":has connected.", &messNormal,
+            &messNoComtitle);
         SendChannelMessage(player, ch, messNormal, messNoComtitle);
     }
 }
@@ -3462,9 +3496,10 @@ void do_chboot
         UTF8 *mess1, *mess1nct;
         UTF8 *mess2, *mess2nct;
         BuildChannelMessage((ch->type & CHANNEL_SPOOF) != 0, ch->header, user,
-                            (UTF8 *)":boots", &mess1, &mess1nct);
+                            ch->chan_obj, (UTF8 *)":boots", &mess1, &mess1nct);
         BuildChannelMessage((ch->type & CHANNEL_SPOOF) != 0, 0, vu,
-                            (UTF8 *)":off the channel.", &mess2, &mess2nct);
+                            ch->chan_obj, (UTF8 *)":off the channel.", &mess2,
+                            &mess2nct);
         UTF8 *messNormal = alloc_lbuf("do_chboot.messnormal");
         UTF8 *messNoComtitle = alloc_lbuf("do_chboot.messnocomtitle");
         UTF8 *mnp = messNormal;
