@@ -3691,7 +3691,8 @@ static void do_malias_list_all(dbref player)
         return;
     }
 
-    for (int i = 0; i < ma_top; i++)
+    int i;
+    for (i = 0; i < ma_top; i++)
     {
         malias_t *m = malias[i];
         if (  GOD == m->owner
