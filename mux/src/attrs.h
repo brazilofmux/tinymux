@@ -212,7 +212,7 @@
                         // connections, time of logout.
 #define A_LMAIL     225 // Lock who may @mail you
 #define A_LOPEN     226 // Lock for controlling OPEN_OK locations
-#define A_LASTWHISPER 227  // Last set of people whisper'd too
+#define A_LASTWHISPER 227 // Last set of people whispered to
 
 // 228 - 235 unused
 

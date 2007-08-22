@@ -13836,10 +13836,10 @@ WHERE()
 & WHISPER
 WHISPER
 
-  COMMAND: whisper <player>[,<player2>]=<message>
+  COMMAND: whisper [<player>[,<player2>[, ...]]]=<message>
 
-  Whispers the message to the named person, if they are in the same room as
-  you. No one else can see the message that you whisper.
+  Whispers the message to one or more players in the same room.  No one else
+  can see the message that you whisper.
 
   You can format the message one of several ways by specifying ':', ';', or
   '"' as the first character of the message.  ':' and ';' format the message
@@ -13847,16 +13847,11 @@ WHISPER
   <player> and <message>.  '"' formats the message in normal whisper format
   (this is the default).
 
-  You can also whisper to many players at one time, where all the players you
-  whisper too will see the message.
-
-  You only need to type the player-list once, then the next time you whisper
-  to that player or set of players, you can abbreviate it with:
+  Like the page command, the last list of players is used again if the
+  following short-hand is used:
 
     "w :waves."  or,
     "w I'm back."
-
-  This will work until you whisper to another player or list of players.
 
   Related Topics: page, pose, say, :, ;, ".
 
