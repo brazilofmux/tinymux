@@ -4699,6 +4699,10 @@ static RETSIGTYPE DCL_CDECL sighandler(int sig)
         check_panicking(sig);
         log_signal(sig);
         raw_broadcast(0, "GAME: Caught signal %s, exiting.", SignalDesc(sig));
+        if('\0' != mudconf.crash_msg[0]) 
+        {
+            raw_broadcast(0, (char *) tprintf("GAME: %s", mudconf.crash_msg));
+        }
         mudstate.shutdown_flag = true;
         break;
 
@@ -4748,11 +4752,13 @@ static RETSIGTYPE DCL_CDECL sighandler(int sig)
         if (  mudconf.sig_action != SA_EXIT
            && mudstate.bCanRestart)
         {
-            raw_broadcast
-            (  0,
-               "GAME: Fatal signal %s caught, restarting.",
-               SignalDesc(sig)
-            );
+            raw_broadcast(0,
+                    "GAME: Fatal signal %s caught, restarting.", SignalDesc(sig));
+
+            if('\0' != mudconf.crash_msg[0]) 
+            {
+                raw_broadcast(0, (char *) tprintf("GAME: %s", mudconf.crash_msg));
+            }
 
             // There is no older DB. It's a fiction. Our only choice is
             // between unamed attributes and named ones. We go with what we

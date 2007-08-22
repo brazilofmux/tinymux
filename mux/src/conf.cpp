@@ -98,6 +98,7 @@ void cf_init(void)
     mudconf.full_file      = StringClone(T("text/full.txt"));
     mudconf.site_file      = StringClone(T("text/badsite.txt"));
     mudconf.crea_file      = StringClone(T("text/newuser.txt"));
+    mudconf.crash_msg[0] = '\0';
     mudconf.motd_msg[0] = '\0';
     mudconf.wizmotd_msg[0] = '\0';
     mudconf.downmotd_msg[0] = '\0';
@@ -1946,6 +1947,7 @@ static CONFPARM conftable[] =
     {T("connect_reg_file"),          cf_string_dyn,  CA_STATIC, CA_GOD,      (int *)&mudconf.creg_file,       NULL, SIZEOF_PATHNAME},
     {T("lag_limit"),                 cf_seconds,     CA_GOD,    CA_WIZARD,   (int *)&mudconf.max_cmdsecs,     NULL,               0},
     {T("crash_database"),            cf_string_dyn,  CA_STATIC, CA_GOD,      (int *)&mudconf.crashdb,         NULL, SIZEOF_PATHNAME},
+    {T("crash_message"),         cf_string,      CA_GOD,    CA_WIZARD,   (int *)mudconf.crash_msg,     NULL,       GBUF_SIZE},
     {T("create_max_cost"),           cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.createmax,              NULL,               0},
     {T("create_min_cost"),           cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.createmin,              NULL,               0},
     {T("dark_sleepers"),             cf_bool,        CA_GOD,    CA_WIZARD,   (int *)&mudconf.dark_sleepers,   NULL,               0},
