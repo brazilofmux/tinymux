@@ -5124,8 +5124,11 @@ CHANNEL OBJECT
   The receive lock for a channel is an enter @lock on the channel object.
   The description of a channel is the @desc of the channel object.
 
+  If the channel object has @speechmod or @saystring set, those settings 
+  will override the player settings.
+
   Related Topics: @comjoin, @comleave, @comoff, @comon, @ccreate, @create,
-                  @cset.
+                  @cset, @speechmod, @saystring.
 
 & CHANNELS()
 CHANNELS()
