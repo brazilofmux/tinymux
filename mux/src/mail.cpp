@@ -3667,23 +3667,34 @@ static const UTF8 *Spaces(size_t n)
 
 static int DCL_CDECL malias_compare(const void *first, const void *second)
 {
-    malias_t* alias1 = (malias_t*)first;
-    malias_t* alias2 = (malias_t*)second;
+    const malias_t* alias1 = (const malias_t*)first;
+    const malias_t* alias2 = (const malias_t*)second;
 
     return mux_stricmp(alias1->name, alias2->name);
 }
 
 static void do_malias_list_all(dbref player)
 {
-    bool notified = false;
-
-    malias_t* alias_array = (malias_t*)MEMALLOC(sizeof(malias_t)*ma_top);
     size_t actual_entries = 0;
+    malias_t* alias_array = NULL;
+    try
+    {
+        alias_array = (malias_t*)MEMALLOC(sizeof(malias_t)*ma_top);
+    }
+    catch (...)
+    {
+        ; // Nothing.
+    }
+
+    if (NULL == alias_array)
+    {
+        return;
+    }
 
     for (int i = 0; i < ma_top; i++)
     {
         malias_t *m = malias[i];
-        if (  m->owner == GOD
+        if (  GOD == m->owner
            || m->owner == player
            || God(player))
         {
@@ -3696,7 +3707,8 @@ static void do_malias_list_all(dbref player)
     }
     qsort(alias_array, actual_entries, sizeof(malias_t), malias_compare);
 
-    for (int i = 0; i < actual_entries; i++)
+    bool notified = false;
+    for (i = 0; i < actual_entries; i++)
     {
         malias_t *m = &alias_array[i];
         if (!notified)
@@ -3708,7 +3720,7 @@ static void do_malias_list_all(dbref player)
         const UTF8 *pSpaces = Spaces(40 - m->desc_width);
         
         UTF8 *p = tprintf( "%-12s %s%s %-15.15s",
-                m->name, m->desc, pSpaces, Moniker(m->owner));
+            m->name, m->desc, pSpaces, Moniker(m->owner));
         raw_notify(player, p);
     }
     raw_notify(player, T("*****  End of Mail Aliases *****"));
