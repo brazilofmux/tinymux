@@ -346,23 +346,29 @@ FUNCTION(fun_tel)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    int key = 0;
-
     if (check_command(executor, T("@teleport"), buff, bufc))
     {
         return;
     }
 
-    if (nfargs >= 3 && *fargs[2])
+    int key = 0;
+    if (3 <= nfargs)
     {
-        if(strchr( (char*) fargs[2], 'q'))
+        const UTF8 *p = fargs[2];
+        for (int i = 0; '\0' != p[i] && key != (TELEPORT_QUIET|TELEPORT_LIST); i++)
         {
-            key |= TELEPORT_QUIET;
-        }
+            switch (p[i])
+            {
+            case 'q':
+            case 'Q':
+                key |= TELEPORT_QUIET;
+                break;
 
-        if(strchr( (char*) fargs[2], 'l'))
-        {
-            key |= TELEPORT_LIST;
+            case 'l':
+            case 'L':
+                key |= TELEPORT_LIST;
+                break;
+            }
         }
     }
 

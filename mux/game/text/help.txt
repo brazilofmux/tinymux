@@ -12960,7 +12960,7 @@ TEL()
   effect function, and should only be used when necessary.
 
   The <flags> argument can contain 'q' and/or 'l' to allow the behavior of 
-  @teleport/quiet and @teleport/list.   
+  @teleport/quiet and @teleport/list, respectively.   
 
   Related Topics: @teleport
 
