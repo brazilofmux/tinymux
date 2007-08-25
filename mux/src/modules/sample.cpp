@@ -14,6 +14,19 @@
 static INT32 g_cComponents  = 0;
 static INT32 g_cServerLocks = 0;
 
+class CSampleModule
+{
+private:
+    mux_ILog *pILog;
+
+public:
+    CSampleModule(void);
+    MUX_RESULT FinalConstruct(void);
+    virtual ~CSampleModule();
+};
+
+static CSampleModule *pModule = NULL;
+
 #define NUM_CIDS 1
 static UINT64 sample_cids[NUM_CIDS] =
 {
@@ -64,30 +77,71 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_GetClassObject(UINT64 cid, UINT64 i
 
 extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_Register(void)
 {
-    MUX_RESULT mrRegister = mux_RegisterClassObjects(NUM_CIDS, sample_cids, NULL);
+    MUX_RESULT mr = MUX_E_UNEXPECTED;
 
-    // Use of CLog provided by netmux.
-    //
-    mux_ILog *pILog = NULL;
-    MUX_RESULT mr = mux_CreateInstance(CID_Log, NULL, InProcessServer, IID_ILog, (void **)&pILog);
-    if (MUX_SUCCEEDED(mr))
+    if (NULL == pModule)
     {
-#define LOG_ALWAYS      0x80000000  /* Always log it */
-        if (pILog->start_log(LOG_ALWAYS, T("INI"), T("INFO")))
+        // Advertise our components.
+        //
+        mr = mux_RegisterClassObjects(NUM_CIDS, sample_cids, NULL);
+        if (MUX_FAILED(mr))
         {
-            pILog->log_printf("Sample module registered.");
-            pILog->end_log();
+            return mr;
         }
 
-        pILog->Release();
-        pILog = NULL;
-    }
+        try
+        {
+            pModule = new CSampleModule;
+        }
+        catch (...)
+        {
+            ; // Nothing.
+        }
 
-    return mrRegister;
+        if (NULL == pModule)
+        {
+            // If we can't allocate a module object, revoke our other
+            // components as well. This is also what happens if the
+            // constructor throws an exception.
+            //
+            (void)mux_RevokeClassObjects(NUM_CIDS, sample_cids);
+            mr = MUX_E_OUTOFMEMORY;
+        }
+        else
+        {
+            // FinalConstruct may throw an exception, but it may return
+            // failure as well.
+            //
+            try
+            {
+                mr = pModule->FinalConstruct();
+            }
+            catch (...)
+            {
+                mr = MUX_E_FAIL;
+            }
+
+            if (MUX_FAILED(mr))
+            {
+                delete pModule;
+                pModule = NULL;
+                (void)mux_RevokeClassObjects(NUM_CIDS, sample_cids);
+            }
+        }
+    }
+    return mr;
 }
 
 extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_Unregister(void)
 {
+    // Destroy our Module object.
+    //
+    if (NULL != pModule)
+    {
+        delete pModule;
+        pModule = NULL;
+    }
+
     return mux_RevokeClassObjects(NUM_CIDS, sample_cids);
 }
 
@@ -230,4 +284,41 @@ MUX_RESULT CSampleFactory::LockServer(bool bLock)
         g_cServerLocks--;
     }
     return MUX_S_OK;
+}
+
+#define LOG_ALWAYS      0x80000000  /* Always log it */
+
+CSampleModule::CSampleModule(void)
+{
+    pILog = NULL;
+}
+
+CSampleModule::~CSampleModule()
+{
+    if (NULL != pILog)
+    {
+        if (pILog->start_log(LOG_ALWAYS, T("INI"), T("INFO")))
+        {
+            pILog->log_printf("~CSampleModule::CSampleModule().");
+            pILog->end_log();
+        }
+
+        pILog->Release();
+        pILog = NULL;
+    }
+}
+
+MUX_RESULT CSampleModule::FinalConstruct(void)
+{
+    // Use of CLog provided by netmux.
+    //
+    MUX_RESULT mr = mux_CreateInstance(CID_Log, NULL, InProcessServer, IID_ILog, (void **)&pILog);
+    if (MUX_SUCCEEDED(mr))
+    {
+        if (pILog->start_log(LOG_ALWAYS, T("INI"), T("INFO")))
+        {
+            pILog->log_printf("CSampleModule::FinalConstruct().");
+            pILog->end_log();
+        }
+    }
 }
