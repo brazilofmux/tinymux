@@ -109,6 +109,8 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_Register(void)
         }
         else
         {
+            g_cComponents++;
+
             // FinalConstruct may throw an exception, but it may return
             // failure as well.
             //
@@ -125,6 +127,8 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_Register(void)
             {
                 delete pModule;
                 pModule = NULL;
+                g_cComponents--;
+
                 (void)mux_RevokeClassObjects(NUM_CIDS, sample_cids);
             }
         }
@@ -140,6 +144,7 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_Unregister(void)
     {
         delete pModule;
         pModule = NULL;
+        g_cComponents--;
     }
 
     return mux_RevokeClassObjects(NUM_CIDS, sample_cids);
