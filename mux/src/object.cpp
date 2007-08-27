@@ -1747,7 +1747,7 @@ void do_dbck(dbref executor, dbref caller, dbref enactor, int key)
     make_freelist();
     scheduler.Shrink();
 #if defined(HAVE_DLOPEN) || defined(WIN32)
-    mux_ModuleTick();
+    mux_ModuleMaintenance();
 #endif
 
     // Allow the local extensions to do data checks.

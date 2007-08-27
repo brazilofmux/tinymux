@@ -910,7 +910,7 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_ModuleInfo(int iModule, MUX_MODULE_
  * \return         MUX_RESULT
  */
 
-extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_ModuleTick(void)
+extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_ModuleMaintenance(void)
 {
     // We can query each loaded module and unload the ones that are unloadable.
     //
