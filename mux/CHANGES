@@ -63,7 +63,14 @@ Feature Additions:
  -- Add pOuterUnknown parameter to CreateInstance to allow aggregation
     to be used later. The proxy for marshalling appears to require it.
  -- Add moniker (%k) substitution (Issue 350).
- -- Added config option for initial parents (Issue 48).
+ -- Add config option for initial parents (Issue 48).
+ -- Add restarttime(), restartsecs(), and restarts() (Issue 346).
+ -- Add channel timestamps (Issue 20).
+ -- Add @clist/full pattern matching (Issue 53).
+ -- Add destroy() side-effect function (Issue 19).
+ -- Add multi-whisper and last whisper (Issue 18 and 28).
+ -- Sort @malias/list.
+ -- Add third argument to tel() (Issue 153).
 
 
 Bug Fixes:
@@ -133,6 +140,10 @@ Bug Fixes:
  -- Fixed escape() which used #92 instead of backslash (Issue 353).
  -- Fix WIDTH() to default to 78 instead of 24 (Issue 354).
  -- Open permissions on WIDTH() and HEIGHT() (Issue 356).
+ -- Fix special characters in names with @decompile (Issue 292).
+ -- Add no_name to HASFLAG() list (Issue 360).
+ -- Fix the attribute flag names returned by lflags() (Issue 362).
+ -- Add missing attribute flag names to @set2 topic (Issue 361).
 
 
 Performance Enhancements:
@@ -159,6 +170,7 @@ Performance Enhancements:
 Cosmetic Changes:
 ~~~~~~~~~~~~~~~~
  -- Added Doxygen file headers (Issue 102).
+ -- Prepend channel header to comsys recall lines (Issue 335).
 
 
 Miscellaneous:
@@ -175,3 +187,4 @@ Miscellaneous:
  -- Document report and move into walkdb.cpp (Issue 293).
  -- Raised the default function invocation limit to 25,000 and the
     default function recursion limit to 500 (Issue 357).
+ -- Add alias @haven for @reject.
