@@ -95,7 +95,7 @@ void final_modules(void)
     mux_FinalizeModuleLibrary();
 }
 
-// Log component which is not directly accessible.
+// CLog component which is not directly accessible.
 //
 CLog::CLog(void) : m_cRef(1)
 {
@@ -199,7 +199,7 @@ void CLog::end_log(void)
     ::end_log();
 }
 
-// Factory for Log component which is not directly accessible.
+// Factory for CLog component which is not directly accessible.
 //
 CLogFactory::CLogFactory(void) : m_cRef(1)
 {

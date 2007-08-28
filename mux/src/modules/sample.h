@@ -22,14 +22,32 @@ public:
     virtual int Add(int a, int b) = 0;
 };
 
-class CSample : public ISample
+class CSample : public ISample, public mux_ISpectator
 {
+private:
+    mux_ILog *m_pILog;
+
 public:
     // mux_IUnknown
     //
     virtual MUX_RESULT QueryInterface(UINT64 iid, void **ppv);
     virtual UINT32     AddRef(void);
     virtual UINT32     Release(void);
+
+    // mux_ISpectator
+    //
+    virtual void startup(void);
+    virtual void presync_database(void);
+    virtual void presync_database_sigsegv(void);
+    virtual void dump_database(int dump_type);
+    virtual void dump_complete_signal(void);
+    virtual void local_shutdown(void);
+    virtual void local_dbck(void);
+    virtual void local_connect(dbref player, int isnew, int num);
+    virtual void local_disconnect(dbref player, int num);
+    virtual void local_data_create(dbref object);
+    virtual void local_data_clone(dbref clone, dbref source);
+    virtual void local_data_free(dbref object);
 
     // ISample
     //

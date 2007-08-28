@@ -66,7 +66,7 @@ static CMDENT_TWO_ARG_ARGV_CMDARG local_command_table_two_argv_cmdarg[] =
     {NULL,          NULL,       0,           0,          0,          0, NULL}
 };
 
-// Called after all normal MUX initialization is complete
+// Called after all normal MUX initialization is complete.
 //
 void local_startup(void)
 {

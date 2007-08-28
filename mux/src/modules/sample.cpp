@@ -14,18 +14,7 @@
 static INT32 g_cComponents  = 0;
 static INT32 g_cServerLocks = 0;
 
-class CSampleModule
-{
-private:
-    mux_ILog *pILog;
-
-public:
-    CSampleModule(void);
-    MUX_RESULT FinalConstruct(void);
-    virtual ~CSampleModule();
-};
-
-static CSampleModule *pModule = NULL;
+static ISample *g_pISample = NULL;
 
 #define NUM_CIDS 1
 static UINT64 sample_cids[NUM_CIDS] =
@@ -79,7 +68,7 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_Register(void)
 {
     MUX_RESULT mr = MUX_E_UNEXPECTED;
 
-    if (NULL == pModule)
+    if (NULL == g_pISample)
     {
         // Advertise our components.
         //
@@ -89,48 +78,19 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_Register(void)
             return mr;
         }
 
-        try
+        // Create an instance of our CSample component.
+        //
+        ISample *pISample = NULL;
+        mr = mux_CreateInstance(CID_Sample, NULL, UseSameProcess, IID_ISample, (void **)&pISample);
+        if (MUX_SUCCEEDED(mr))
         {
-            pModule = new CSampleModule;
-        }
-        catch (...)
-        {
-            ; // Nothing.
-        }
-
-        if (NULL == pModule)
-        {
-            // If we can't allocate a module object, revoke our other
-            // components as well. This is also what happens if the
-            // constructor throws an exception.
-            //
-            (void)mux_RevokeClassObjects(NUM_CIDS, sample_cids);
-            mr = MUX_E_OUTOFMEMORY;
+            g_pISample = pISample;
+            pISample = NULL;
         }
         else
         {
-            g_cComponents++;
-
-            // FinalConstruct may throw an exception, but it may return
-            // failure as well.
-            //
-            try
-            {
-                mr = pModule->FinalConstruct();
-            }
-            catch (...)
-            {
-                mr = MUX_E_FAIL;
-            }
-
-            if (MUX_FAILED(mr))
-            {
-                delete pModule;
-                pModule = NULL;
-                g_cComponents--;
-
-                (void)mux_RevokeClassObjects(NUM_CIDS, sample_cids);
-            }
+            (void)mux_RevokeClassObjects(NUM_CIDS, sample_cids);
+            mr = MUX_E_OUTOFMEMORY;
         }
     }
     return mr;
@@ -138,27 +98,54 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_Register(void)
 
 extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_Unregister(void)
 {
-    // Destroy our Module object.
+    // Destroy our CSample component.
     //
-    if (NULL != pModule)
+    if (NULL != g_pISample)
     {
-        delete pModule;
-        pModule = NULL;
-        g_cComponents--;
+        g_pISample->Release();
+        g_pISample = NULL;
     }
 
     return mux_RevokeClassObjects(NUM_CIDS, sample_cids);
 }
+
+#define LOG_ALWAYS      0x80000000  /* Always log it */
 
 // Sample component which is not directly accessible.
 //
 CSample::CSample(void) : m_cRef(1)
 {
     g_cComponents++;
+
+    m_pILog = NULL;
+
+    // Use of CLog provided by netmux.
+    //
+    MUX_RESULT mr = mux_CreateInstance(CID_Log, NULL, UseSameProcess, IID_ILog, (void **)&m_pILog);
+    if (MUX_SUCCEEDED(mr))
+    {
+        if (m_pILog->start_log(LOG_ALWAYS, T("INI"), T("INFO")))
+        {
+            m_pILog->log_printf("CSample::CSample().");
+            m_pILog->end_log();
+        }
+    }
 }
 
 CSample::~CSample()
 {
+    if (NULL != m_pILog)
+    {
+        if (m_pILog->start_log(LOG_ALWAYS, T("INI"), T("INFO")))
+        {
+            m_pILog->log_printf("CSample::~CSample().");
+            m_pILog->end_log();
+        }
+
+        m_pILog->Release();
+        m_pILog = NULL;
+    }
+
     g_cComponents--;
 }
 
@@ -291,39 +278,107 @@ MUX_RESULT CSampleFactory::LockServer(bool bLock)
     return MUX_S_OK;
 }
 
-#define LOG_ALWAYS      0x80000000  /* Always log it */
-
-CSampleModule::CSampleModule(void)
+// Called after all normal MUX initialization is complete.
+//
+void CSample::startup(void)
 {
-    pILog = NULL;
+    m_pILog->log_printf("Sample module sees CSample::startup event.");
 }
 
-CSampleModule::~CSampleModule()
+// This is called prior to the game syncronizing its own state to its own
+// database.  If you depend on the the core database to store your data,
+// you need to checkpoint your changes here. The write-protection
+// mechanism in MUX is not turned on at this point.  You are guaranteed
+// to not be a fork()-ed dumping process.
+//
+void CSample::presync_database(void)
 {
-    if (NULL != pILog)
-    {
-        if (pILog->start_log(LOG_ALWAYS, T("INI"), T("INFO")))
-        {
-            pILog->log_printf("~CSampleModule::CSampleModule().");
-            pILog->end_log();
-        }
-
-        pILog->Release();
-        pILog = NULL;
-    }
 }
 
-MUX_RESULT CSampleModule::FinalConstruct(void)
+// Like the above routine except that it called from the SIGSEGV handler.
+// At this point, your choices are limited. You can attempt to use the core
+// database. The core won't stop you, but it is risky.
+//
+void CSample::presync_database_sigsegv(void)
 {
-    // Use of CLog provided by netmux.
-    //
-    MUX_RESULT mr = mux_CreateInstance(CID_Log, NULL, UseSameProcess, IID_ILog, (void **)&pILog);
-    if (MUX_SUCCEEDED(mr))
-    {
-        if (pILog->start_log(LOG_ALWAYS, T("INI"), T("INFO")))
-        {
-            pILog->log_printf("CSampleModule::FinalConstruct().");
-            pILog->end_log();
-        }
-    }
+}
+
+// This is called prior to the game database writing out it's own
+// database.  This is typically only called from the fork()-ed process so
+// write-protection is in force and you will be unable to modify the
+// game's database for you own needs.  You can however, use this point to
+// maintain your own dump file.
+//
+// The caveat is that it is possible the game will crash while you are
+// doing this, or it is already in the process of crashing.  You may be
+// called reentrantly.  Therefore, it is recommended that you follow the
+// pattern in dump_database_internal() and write your database to a
+// temporary file, and then if completed successfully, move your temporary
+// over the top of your old database.
+//
+// The argument dump_type is one of the 5 DUMP_I_x defines declared in
+// externs.h
+//
+void CSample::dump_database(int dump_type)
+{
+}
+
+// The function is called when the dumping process has completed.
+// Typically, this will be called from within a signal handler. Your
+// ability to do anything interesting from within a signal handler is
+// severly limited.  This is also called at the end of the dumping process
+// if either no dumping child was created or if the child finished
+// quickly. In fact, this may be called twice at the end of the same dump.
+//
+void CSample::dump_complete_signal(void)
+{
+}
+
+// Called when the game is shutting down, after the game database has
+// been saved but prior to the logfiles being closed.
+//
+void CSample::local_shutdown(void)
+{
+}
+
+// Called after the database consistency check is completed.   Add
+// checks for local data consistency here.
+//
+void CSample::local_dbck(void)
+{
+}
+
+// Called when a player connects or creates at the connection screen.
+// isnew of 1 indicates it was a creation, 0 is for a connection.
+// num indicates the number of current connections for player.
+//
+void CSample::local_connect(dbref player, int isnew, int num)
+{
+}
+
+// Called when player disconnects from the game.  The parameter 'num' is
+// the number of connections the player had upon being disconnected.
+// Any value greater than 1 indicates multiple connections.
+//
+void CSample::local_disconnect(dbref player, int num)
+{
+}
+
+// Called after any object type is created.
+//
+void CSample::local_data_create(dbref object)
+{
+}
+
+// Called when an object is cloned.  clone is the new object created
+// from source.
+//
+void CSample::local_data_clone(dbref clone, dbref source)
+{
+}
+
+// Called when the object is truly destroyed, not just set GOING
+//
+void CSample::local_data_free(dbref object)
+{
 }
