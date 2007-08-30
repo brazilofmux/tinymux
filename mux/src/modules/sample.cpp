@@ -159,9 +159,9 @@ MUX_RESULT CSample::QueryInterface(UINT64 iid, void **ppv)
     {
         *ppv = static_cast<ISample *>(this);
     }
-    else if (IID_ISpectator == iid)
+    else if (IID_IServerEventsSink == iid)
     {
-        *ppv = static_cast<mux_ISpectator *>(this);
+        *ppv = static_cast<mux_IServerEventsSink *>(this);
     }
     else
     {

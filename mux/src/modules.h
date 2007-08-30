@@ -13,15 +13,17 @@
 #if defined(HAVE_DLOPEN) || defined(WIN32)
 
 #ifdef WIN32
-const UINT64 CID_Log                = 0x000000020CE18E7Ai64;
-const UINT64 IID_ILog               = 0x000000028B9DC13Ai64;
-const UINT64 CID_Spectator          = 0x00000002A5080812i64;
-const UINT64 IID_ISpectator         = 0x00000002F0F2753Fi64;
+const UINT64 CID_Log                   = 0x000000020CE18E7Ai64;
+const UINT64 IID_ILog                  = 0x000000028B9DC13Ai64;
+const UINT64 CID_ServerEventsSource    = 0x00000002A5080812i64;
+const UINT64 IID_IServerEventsSink     = 0x00000002F0F2753Fi64;
+const UINT64 IID_IServerEventsControl  = 0x000000026EE5256Ei64;
 #else
-const UINT64 CID_Log                = 0x000000020CE18E7Aull;
-const UINT64 IID_ILog               = 0x000000028B9DC13Aull;
-const UINT64 CID_Spectator          = 0x00000002A5080812ull;
-const UINT64 IID_ISpectator         = 0x00000002F0F2753Full;
+const UINT64 CID_Log                   = 0x000000020CE18E7Aull;
+const UINT64 IID_ILog                  = 0x000000028B9DC13Aull;
+const UINT64 CID_ServerEventsSource    = 0x00000002A5080812ull;
+const UINT64 IID_IServerEventsSink     = 0x00000002F0F2753Full;
+const UINT64 IID_IServerEventsControl  = 0x000000026EE5256Eull;
 #endif
 
 interface mux_ILog : public mux_IUnknown
@@ -89,7 +91,7 @@ private:
     UINT32 m_cRef;
 };
 
-interface mux_ISpectator : public mux_IUnknown
+interface mux_IServerEventsSink : public mux_IUnknown
 {
 public:
     // Called after all normal MUX initialization is complete.
@@ -171,6 +173,19 @@ public:
     // Called when the object is truly destroyed, not just set GOING
     //
     virtual void local_data_free(dbref object) = 0;
+};
+
+typedef struct
+{
+    void  *p;
+    size_t i;
+} COOKIE;
+
+interface mux_IServerEventsControl : public mux_IUnknown
+{
+public:
+    virtual MUX_RESULT Advise(mux_IServerEventsSink *pIServerEvents, COOKIE *ppCookie) = 0;
+    virtual MUX_RESULT Unadvise(COOKIE Cookie) = 0;
 };
 
 extern void init_modules(void);

@@ -22,7 +22,7 @@ public:
     virtual int Add(int a, int b) = 0;
 };
 
-class CSample : public ISample, public mux_ISpectator
+class CSample : public ISample, public mux_IServerEventsSink
 {
 private:
     mux_ILog *m_pILog;
@@ -34,7 +34,7 @@ public:
     virtual UINT32     AddRef(void);
     virtual UINT32     Release(void);
 
-    // mux_ISpectator
+    // mux_IServerEventsSink
     //
     virtual void startup(void);
     virtual void presync_database(void);
