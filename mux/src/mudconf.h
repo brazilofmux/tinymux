@@ -227,6 +227,7 @@ struct confdata
     char    *game_pag;          /* use this game CHashFile PAG file if we need one */
     char    *guest_file;        /* display if guest connects */
     char    *indb;              /* database file name */
+    char    *log_dir;           /* directory for logging from the cmd line */
     char    *mail_db;           /* name of the @mail database */
     char    *motd_file;         /* display this file on login */
     char    *outdb;             /* checkpoint the database to here */

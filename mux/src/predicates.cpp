@@ -1554,9 +1554,9 @@ void do_restart(dbref executor, dbref caller, dbref enactor, int key)
     Log.StopLogging();
 
 #ifdef GAME_DOOFERMUX
-    execl("bin/netmux", mudconf.mud_name, "-c", mudconf.config_file, "-p", mudconf.pid_file, NULL);
+    execl("bin/netmux", mudconf.mud_name, "-c", mudconf.config_file, "-p", mudconf.pid_file, "-e", mudconf.log_dir, NULL);
 #else
-    execl("bin/netmux", "netmux", "-c", mudconf.config_file, "-p", mudconf.pid_file, NULL);
+    execl("bin/netmux", "netmux", "-c", mudconf.config_file, "-p", mudconf.pid_file, "-e", mudconf.log_dir, NULL);
 #endif // GAME_DOOFERMUX
 #endif // !WIN32
 }

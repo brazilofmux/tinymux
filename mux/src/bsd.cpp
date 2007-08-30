@@ -4030,9 +4030,9 @@ static RETSIGTYPE DCL_CDECL sighandler(int sig)
             //
             dump_restart_db();
 #ifdef GAME_DOOFERMUX
-            execl("bin/netmux", mudconf.mud_name, "-c", mudconf.config_file, "-p", mudconf.pid_file, NULL);
+            execl("bin/netmux", mudconf.mud_name, "-c", mudconf.config_file, "-p", mudconf.pid_file, "-e", mudconf.log_dir, NULL);
 #else // GAME_DOOFERMUX
-            execl("bin/netmux", "netmux", "-c", mudconf.config_file, "-p", mudconf.pid_file, NULL);
+            execl("bin/netmux", "netmux", "-c", mudconf.config_file, "-p", mudconf.pid_file, "-e", mudconf.log_dir, NULL);
 #endif // GAME_DOOFERMUX
             break;
 #endif // WIN32
