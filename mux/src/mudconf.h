@@ -243,6 +243,7 @@ struct confdata
     UTF8    *game_pag;          /* use this game CHashFile PAG file if we need one */
     UTF8    *guest_file;        /* display if guest connects */
     UTF8    *indb;              /* database file name */
+    UTF8    *log_dir;           /* directory for logging from the cmd line */
     UTF8    *mail_db;           /* name of the @mail database */
     UTF8    *motd_file;         /* display this file on login */
     UTF8    *outdb;             /* checkpoint the database to here */
