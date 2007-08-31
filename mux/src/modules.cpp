@@ -18,10 +18,11 @@
 #include "libmux.h"
 #include "modules.h"
 
-#define NUM_CIDS 1
+#define NUM_CIDS 2
 static UINT64 netmux_cids[NUM_CIDS] =
 {
-    CID_Log
+    CID_Log,
+    CID_ServerEventsSource
 };
 
 extern "C" MUX_RESULT DCL_API netmux_GetClassObject(UINT64 cid, UINT64 iid, void **ppv)
@@ -47,6 +48,26 @@ extern "C" MUX_RESULT DCL_API netmux_GetClassObject(UINT64 cid, UINT64 iid, void
 
         mr = pLogFactory->QueryInterface(iid, ppv);
         pLogFactory->Release();
+    }
+    else if (CID_ServerEventsSource == cid)
+    {
+        CServerEventsSourceFactory *pServerEventsSourceFactory = NULL;
+        try
+        {
+            pServerEventsSourceFactory = new CServerEventsSourceFactory;
+        }
+        catch (...)
+        {
+            ; // Nothing.
+        }
+        
+        if (NULL == pServerEventsSourceFactory)
+        {
+            return MUX_E_OUTOFMEMORY;
+        }
+
+        mr = pServerEventsSourceFactory->QueryInterface(iid, ppv);
+        pServerEventsSourceFactory->Release();
     }
     return mr;
 }
@@ -275,6 +296,138 @@ MUX_RESULT CLogFactory::CreateInstance(mux_IUnknown *pUnknownOuter, UINT64 iid, 
 }
 
 MUX_RESULT CLogFactory::LockServer(bool bLock)
+{
+    UNUSED_PARAMETER(bLock);
+    return MUX_S_OK;
+}
+
+// CServerEventsSource component which is not directly accessible.
+//
+CServerEventsSource::CServerEventsSource(void) : m_cRef(1)
+{
+}
+
+CServerEventsSource::~CServerEventsSource()
+{
+}
+
+MUX_RESULT CServerEventsSource::QueryInterface(UINT64 iid, void **ppv)
+{
+    if (mux_IID_IUnknown == iid)
+    {
+        *ppv = static_cast<mux_IServerEventsControl *>(this);
+    }
+    else if (IID_IServerEventsControl == iid)
+    {
+        *ppv = static_cast<mux_IServerEventsControl *>(this);
+    }
+    else
+    {
+        *ppv = NULL;
+        return MUX_E_NOINTERFACE;
+    }
+    reinterpret_cast<mux_IUnknown *>(*ppv)->AddRef();
+    return MUX_S_OK;
+}
+
+UINT32 CServerEventsSource::AddRef(void)
+{
+    m_cRef++;
+    return m_cRef;
+}
+
+UINT32 CServerEventsSource::Release(void)
+{
+    m_cRef--;
+    if (0 == m_cRef)
+    {
+        delete this;
+        return 0;
+    }
+    return m_cRef;
+}
+
+MUX_RESULT CServerEventsSource::Advise(mux_IServerEventsSink *pIServerEventsSink)
+{
+    return MUX_E_NOTIMPLEMENTED;
+}
+
+// Factory for CServerEventsSource component which is not directly accessible.
+//
+CServerEventsSourceFactory::CServerEventsSourceFactory(void) : m_cRef(1)
+{
+}
+
+CServerEventsSourceFactory::~CServerEventsSourceFactory()
+{
+}
+
+MUX_RESULT CServerEventsSourceFactory::QueryInterface(UINT64 iid, void **ppv)
+{
+    if (mux_IID_IUnknown == iid)
+    {
+        *ppv = static_cast<mux_IClassFactory *>(this);
+    }
+    else if (mux_IID_IClassFactory == iid)
+    {
+        *ppv = static_cast<mux_IClassFactory *>(this);
+    }
+    else
+    {
+        *ppv = NULL;
+        return MUX_E_NOINTERFACE;
+    }
+    reinterpret_cast<mux_IUnknown *>(*ppv)->AddRef();
+    return MUX_S_OK;
+}
+
+UINT32 CServerEventsSourceFactory::AddRef(void)
+{
+    m_cRef++;
+    return m_cRef;
+}
+
+UINT32 CServerEventsSourceFactory::Release(void)
+{
+    m_cRef--;
+    if (0 == m_cRef)
+    {
+        delete this;
+        return 0;
+    }
+    return m_cRef;
+}
+
+MUX_RESULT CServerEventsSourceFactory::CreateInstance(mux_IUnknown *pUnknownOuter, UINT64 iid, void **ppv)
+{
+    // Disallow attempts to aggregate this component.
+    //
+    if (NULL != pUnknownOuter)
+    {
+        return MUX_E_NOAGGREGATION;
+    }
+
+    CServerEventsSource *pServerEventsSource = NULL;
+    try
+    {
+        pServerEventsSource = new CServerEventsSource;
+    }
+    catch (...)
+    {
+        ; // Nothing.
+    }
+
+    if (NULL == pServerEventsSource)
+    {
+        return MUX_E_OUTOFMEMORY;
+    }
+
+    MUX_RESULT mr = pServerEventsSource->QueryInterface(iid, ppv);
+    pServerEventsSource->Release();
+    return mr;
+}
+
+MUX_RESULT CServerEventsSourceFactory::LockServer(bool bLock)
 {
     UNUSED_PARAMETER(bLock);
     return MUX_S_OK;

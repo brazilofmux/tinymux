@@ -181,6 +181,47 @@ public:
     virtual MUX_RESULT Advise(mux_IServerEventsSink *pIServerEvents) = 0;
 };
 
+class CServerEventsSource : public mux_IServerEventsControl
+{
+public:
+    // mux_IUnknown
+    //
+    virtual MUX_RESULT QueryInterface(UINT64 iid, void **ppv);
+    virtual UINT32     AddRef(void);
+    virtual UINT32     Release(void);
+
+    // mux_IServerEventsControl
+    //
+    virtual MUX_RESULT Advise(mux_IServerEventsSink *pIServerEvents);
+
+    CServerEventsSource(void);
+    virtual ~CServerEventsSource();
+
+private:
+    UINT32 m_cRef;
+};
+
+class CServerEventsSourceFactory : public mux_IClassFactory
+{
+public:
+    // mux_IUnknown
+    //
+    virtual MUX_RESULT QueryInterface(UINT64 iid, void **ppv);
+    virtual UINT32     AddRef(void);
+    virtual UINT32     Release(void);
+
+    // mux_IClassFactory
+    //
+    virtual MUX_RESULT CreateInstance(mux_IUnknown *pUnknownOuter, UINT64 iid, void **ppv);
+    virtual MUX_RESULT LockServer(bool bLock);
+
+    CServerEventsSourceFactory(void);
+    virtual ~CServerEventsSourceFactory();
+
+private:
+    UINT32 m_cRef;
+};
+
 extern void init_modules(void);
 extern void final_modules(void);
 
