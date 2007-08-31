@@ -142,37 +142,37 @@ public:
     // Called when the game is shutting down, after the game database has
     // been saved but prior to the logfiles being closed.
     //
-    virtual void local_shutdown(void) = 0;
+    virtual void shutdown(void) = 0;
     
     // Called after the database consistency check is completed.   Add
     // checks for local data consistency here.
     //
-    virtual void local_dbck(void) = 0;
+    virtual void dbck(void) = 0;
 
     // Called when a player connects or creates at the connection screen.
     // isnew of 1 indicates it was a creation, 0 is for a connection.
     // num indicates the number of current connections for player.
     //
-    virtual void local_connect(dbref player, int isnew, int num) = 0;
+    virtual void connect(dbref player, int isnew, int num) = 0;
 
     // Called when player disconnects from the game.  The parameter 'num' is
     // the number of connections the player had upon being disconnected.
     // Any value greater than 1 indicates multiple connections.
     //
-    virtual void local_disconnect(dbref player, int num) = 0;
+    virtual void disconnect(dbref player, int num) = 0;
 
     // Called after any object type is created.
     //
-    virtual void local_data_create(dbref object) = 0;
+    virtual void data_create(dbref object) = 0;
 
     // Called when an object is cloned.  clone is the new object created
     // from source.
     //
-    virtual void local_data_clone(dbref clone, dbref source) = 0;
+    virtual void data_clone(dbref clone, dbref source) = 0;
 
     // Called when the object is truly destroyed, not just set GOING
     //
-    virtual void local_data_free(dbref object) = 0;
+    virtual void data_free(dbref object) = 0;
 };
 
 interface mux_IServerEventsControl : public mux_IUnknown

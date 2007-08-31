@@ -381,55 +381,55 @@ void CSample::dump_complete_signal(void)
 // Called when the game is shutting down, after the game database has
 // been saved but prior to the logfiles being closed.
 //
-void CSample::local_shutdown(void)
+void CSample::shutdown(void)
 {
-    m_pILog->log_printf("Sample module sees CSample::local_shutdown event.");
+    m_pILog->log_printf("Sample module sees CSample::shutdown event.");
 }
 
 // Called after the database consistency check is completed.   Add
 // checks for local data consistency here.
 //
-void CSample::local_dbck(void)
+void CSample::dbck(void)
 {
-    m_pILog->log_printf("Sample module sees CSample::local_dbck event.");
+    m_pILog->log_printf("Sample module sees CSample::dbck event.");
 }
 
 // Called when a player connects or creates at the connection screen.
 // isnew of 1 indicates it was a creation, 0 is for a connection.
 // num indicates the number of current connections for player.
 //
-void CSample::local_connect(dbref player, int isnew, int num)
+void CSample::connect(dbref player, int isnew, int num)
 {
-    m_pILog->log_printf("Sample module sees CSample::local_connect event.");
+    m_pILog->log_printf("Sample module sees CSample::connect event.");
 }
 
 // Called when player disconnects from the game.  The parameter 'num' is
 // the number of connections the player had upon being disconnected.
 // Any value greater than 1 indicates multiple connections.
 //
-void CSample::local_disconnect(dbref player, int num)
+void CSample::disconnect(dbref player, int num)
 {
-    m_pILog->log_printf("Sample module sees CSample::local_disconnect event.");
+    m_pILog->log_printf("Sample module sees CSample::disconnect event.");
 }
 
 // Called after any object type is created.
 //
-void CSample::local_data_create(dbref object)
+void CSample::data_create(dbref object)
 {
-    m_pILog->log_printf("Sample module sees CSample::local_data_create event.");
+    m_pILog->log_printf("Sample module sees CSample::data_create event.");
 }
 
 // Called when an object is cloned.  clone is the new object created
 // from source.
 //
-void CSample::local_data_clone(dbref clone, dbref source)
+void CSample::data_clone(dbref clone, dbref source)
 {
-    m_pILog->log_printf("Sample module sees CSample::local_data_clone event.");
+    m_pILog->log_printf("Sample module sees CSample::data_clone event.");
 }
 
 // Called when the object is truly destroyed, not just set GOING
 //
-void CSample::local_data_free(dbref object)
+void CSample::data_free(dbref object)
 {
-    m_pILog->log_printf("Sample module sees CSample::local_data_free event.");
+    m_pILog->log_printf("Sample module sees CSample::data_free event.");
 }
