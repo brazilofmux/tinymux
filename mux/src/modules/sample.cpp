@@ -297,6 +297,7 @@ void CSample::startup(void)
 //
 void CSample::presync_database(void)
 {
+    m_pILog->log_printf("Sample module sees CSample::presync_database event.");
 }
 
 // Like the above routine except that it called from the SIGSEGV handler.
@@ -305,6 +306,7 @@ void CSample::presync_database(void)
 //
 void CSample::presync_database_sigsegv(void)
 {
+    m_pILog->log_printf("Sample module sees CSample::presync_database_sigsegv event.");
 }
 
 // This is called prior to the game database writing out it's own
@@ -325,6 +327,7 @@ void CSample::presync_database_sigsegv(void)
 //
 void CSample::dump_database(int dump_type)
 {
+    m_pILog->log_printf("Sample module sees CSample::dump_database event.");
 }
 
 // The function is called when the dumping process has completed.
@@ -336,6 +339,7 @@ void CSample::dump_database(int dump_type)
 //
 void CSample::dump_complete_signal(void)
 {
+    m_pILog->log_printf("Sample module sees CSample::dump_complete_signal event.");
 }
 
 // Called when the game is shutting down, after the game database has
@@ -343,6 +347,7 @@ void CSample::dump_complete_signal(void)
 //
 void CSample::local_shutdown(void)
 {
+    m_pILog->log_printf("Sample module sees CSample::local_shutdown event.");
 }
 
 // Called after the database consistency check is completed.   Add
@@ -350,6 +355,7 @@ void CSample::local_shutdown(void)
 //
 void CSample::local_dbck(void)
 {
+    m_pILog->log_printf("Sample module sees CSample::local_dbck event.");
 }
 
 // Called when a player connects or creates at the connection screen.
@@ -358,6 +364,7 @@ void CSample::local_dbck(void)
 //
 void CSample::local_connect(dbref player, int isnew, int num)
 {
+    m_pILog->log_printf("Sample module sees CSample::local_connect event.");
 }
 
 // Called when player disconnects from the game.  The parameter 'num' is
@@ -366,12 +373,14 @@ void CSample::local_connect(dbref player, int isnew, int num)
 //
 void CSample::local_disconnect(dbref player, int num)
 {
+    m_pILog->log_printf("Sample module sees CSample::local_disconnect event.");
 }
 
 // Called after any object type is created.
 //
 void CSample::local_data_create(dbref object)
 {
+    m_pILog->log_printf("Sample module sees CSample::local_data_create event.");
 }
 
 // Called when an object is cloned.  clone is the new object created
@@ -379,10 +388,12 @@ void CSample::local_data_create(dbref object)
 //
 void CSample::local_data_clone(dbref clone, dbref source)
 {
+    m_pILog->log_printf("Sample module sees CSample::local_data_clone event.");
 }
 
 // Called when the object is truly destroyed, not just set GOING
 //
 void CSample::local_data_free(dbref object)
 {
+    m_pILog->log_printf("Sample module sees CSample::local_data_free event.");
 }

@@ -175,17 +175,10 @@ public:
     virtual void local_data_free(dbref object) = 0;
 };
 
-typedef struct
-{
-    void  *p;
-    size_t i;
-} COOKIE;
-
 interface mux_IServerEventsControl : public mux_IUnknown
 {
 public:
-    virtual MUX_RESULT Advise(mux_IServerEventsSink *pIServerEvents, COOKIE *ppCookie) = 0;
-    virtual MUX_RESULT Unadvise(COOKIE Cookie) = 0;
+    virtual MUX_RESULT Advise(mux_IServerEventsSink *pIServerEvents) = 0;
 };
 
 extern void init_modules(void);
