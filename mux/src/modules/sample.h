@@ -25,7 +25,8 @@ public:
 class CSample : public ISample, public mux_IServerEventsSink
 {
 private:
-    mux_ILog *m_pILog;
+    mux_ILog                 *m_pILog;
+    mux_IServerEventsControl *m_pIServerEventsControl;
 
 public:
     // mux_IUnknown
@@ -54,6 +55,7 @@ public:
     virtual int Add(int a, int b);
 
     CSample(void);
+    MUX_RESULT FinalConstruct(void);
     virtual ~CSample();
 
 private:

@@ -52,7 +52,7 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_GetClassObject(UINT64 cid, UINT64 i
         {
             ; // Nothing.
         }
-        
+
         if (NULL == pSampleFactory)
         {
             return MUX_E_OUTOFMEMORY;
@@ -109,19 +109,24 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_Unregister(void)
     return mux_RevokeClassObjects(NUM_CIDS, sample_cids);
 }
 
-#define LOG_ALWAYS      0x80000000  /* Always log it */
-
 // Sample component which is not directly accessible.
 //
 CSample::CSample(void) : m_cRef(1)
 {
     g_cComponents++;
-
     m_pILog = NULL;
+    m_pIServerEventsControl = NULL;
+}
 
-    // Use of CLog provided by netmux.
+#define LOG_ALWAYS      0x80000000  /* Always log it */
+
+MUX_RESULT CSample::FinalConstruct(void)
+{
+    MUX_RESULT mr;
+
+    // Use CLog provided by netmux.
     //
-    MUX_RESULT mr = mux_CreateInstance(CID_Log, NULL, UseSameProcess, IID_ILog, (void **)&m_pILog);
+    mr = mux_CreateInstance(CID_Log, NULL, UseSameProcess, IID_ILog, (void **)&m_pILog);
     if (MUX_SUCCEEDED(mr))
     {
         if (m_pILog->start_log(LOG_ALWAYS, T("INI"), T("INFO")))
@@ -130,6 +135,21 @@ CSample::CSample(void) : m_cRef(1)
             m_pILog->end_log();
         }
     }
+
+    // Use CServerEventsSource to hook up our IServerEventsSink callback interface.
+    //
+    mux_IServerEventsSink *pIServerEventsSink = NULL;
+    mr = QueryInterface(IID_IServerEventsSink, (void **)&pIServerEventsSink);
+    if (MUX_SUCCEEDED(mr))
+    {
+        mr = mux_CreateInstance(CID_ServerEventsSource, NULL, UseSameProcess, IID_IServerEventsControl, (void **)&m_pIServerEventsControl);
+        if (MUX_SUCCEEDED(mr))
+        {
+            m_pIServerEventsControl->Advise(pIServerEventsSink);
+        }
+        pIServerEventsSink->Release();
+    }
+    return mr;
 }
 
 CSample::~CSample()
@@ -144,6 +164,12 @@ CSample::~CSample()
 
         m_pILog->Release();
         m_pILog = NULL;
+    }
+
+    if (NULL != m_pIServerEventsControl)
+    {
+        m_pIServerEventsControl->Release();
+        m_pIServerEventsControl = NULL;
     }
 
     g_cComponents--;
@@ -259,12 +285,22 @@ MUX_RESULT CSampleFactory::CreateInstance(mux_IUnknown *pUnknownOuter, UINT64 ii
         ; // Nothing.
     }
 
+    MUX_RESULT mr;
     if (NULL == pSample)
     {
         return MUX_E_OUTOFMEMORY;
     }
+    else
+    {
+        mr = pSample->FinalConstruct();
+        if (MUX_FAILED(mr))
+        {
+            pSample->Release();
+            return mr;
+        }
+    }
 
-    MUX_RESULT mr = pSample->QueryInterface(iid, ppv);
+    mr = pSample->QueryInterface(iid, ppv);
     pSample->Release();
     return mr;
 }
