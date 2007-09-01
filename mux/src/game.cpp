@@ -1280,6 +1280,14 @@ void do_shutdown
         emergency_shutdown();
 
         local_presync_database();
+#if defined(HAVE_DLOPEN) || defined(WIN32)
+        ServerEventsSinkNode *p = g_pServerEventsSinkListHead;
+        while (NULL != p)
+        {
+            p->pSink->presync_database();
+            p = p->pNext;
+        }
+#endif
 
         // Close the attribute text db and dump the header db.
         //
@@ -1383,6 +1391,14 @@ void dump_database_internal(int dump_type)
     // in progress.
     //
     local_dump_database(dump_type);
+#if defined(HAVE_DLOPEN) || defined(WIN32)
+    ServerEventsSinkNode *p = g_pServerEventsSinkListHead;
+    while (NULL != p)
+    {
+        p->pSink->dump_database(dump_type);
+        p = p->pNext;
+    }
+#endif
 
     if (0 < dump_type)
     {
@@ -1555,6 +1571,14 @@ static void dump_database(void)
     ENDLOG;
 
     local_presync_database();
+#if defined(HAVE_DLOPEN) || defined(WIN32)
+    ServerEventsSinkNode *p = g_pServerEventsSinkListHead;
+    while (NULL != p)
+    {
+        p->pSink->presync_database();
+        p = p->pNext;
+    }
+#endif
 
 #ifndef MEMORY_BASED
     // Save cached modified attribute list
@@ -1579,6 +1603,14 @@ static void dump_database(void)
     //
     mudstate.dumping = false;
     local_dump_complete_signal();
+#if defined(HAVE_DLOPEN) || defined(WIN32)
+    p = g_pServerEventsSinkListHead;
+    while (NULL != p)
+    {
+        p->pSink->dump_complete_signal();
+        p = p->pNext;
+    }
+#endif
 #endif
 }
 
@@ -1642,6 +1674,14 @@ void fork_and_dump(int key)
     free_lbuf(buff);
 
     local_presync_database();
+#if defined(HAVE_DLOPEN) || defined(WIN32)
+    ServerEventsSinkNode *p = g_pServerEventsSinkListHead;
+    while (NULL != p)
+    {
+        p->pSink->presync_database();
+        p = p->pNext;
+    }
+#endif
 
 #ifndef MEMORY_BASED
     // Save cached modified attribute list
@@ -1740,6 +1780,14 @@ void fork_and_dump(int key)
         mudstate.dumper = 0;
         mudstate.dumping = false;
         local_dump_complete_signal();
+#if defined(HAVE_DLOPEN) || defined(WIN32)
+        ServerEventsSinkNode *p = g_pServerEventsSinkListHead;
+        while (NULL != p)
+        {
+            p->pSink->dump_complete_signal();
+            p = p->pNext;
+        }
+#endif
     }
     bRequestAccepted = false;
 #endif
@@ -3274,6 +3322,14 @@ int DCL_CDECL main(int argc, char *argv[])
     // extensions to configure themselves.
     //
     local_startup();
+#if defined(HAVE_DLOPEN) || defined(WIN32)
+    ServerEventsSinkNode *p = g_pServerEventsSinkListHead;
+    while (NULL != p)
+    {
+        p->pSink->startup();
+        p = p->pNext;
+    }
+#endif
 
     init_timer();
 
@@ -3308,6 +3364,14 @@ int DCL_CDECL main(int argc, char *argv[])
     // local extensions.
     //
     local_shutdown();
+#if defined(HAVE_DLOPEN) || defined(WIN32)
+    p = g_pServerEventsSinkListHead;
+    while (NULL != p)
+    {
+        p->pSink->shutdown();
+        p = p->pNext;
+    }
+#endif
 #if defined(HAVE_DLOPEN) || defined(WIN32)
     final_modules();
 #endif

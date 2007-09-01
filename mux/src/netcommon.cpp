@@ -22,6 +22,10 @@
 #include "functions.h"
 #include "mguests.h"
 #include "powers.h"
+#if defined(HAVE_DLOPEN) || defined(WIN32)
+#include "libmux.h"
+#include "modules.h"
+#endif
 #ifdef REALITY_LVLS
 #include "levels.h"
 #endif // REALITY_LVLS
@@ -1325,6 +1329,14 @@ void announce_disconnect(dbref player, DESC *d, const UTF8 *reason)
     desc_delhash(d);
 
     local_disconnect(player, num);
+#if defined(HAVE_DLOPEN) || defined(WIN32)
+    ServerEventsSinkNode *p = g_pServerEventsSinkListHead;
+    while (NULL != p)
+    {
+        p->pSink->disconnect(player, num);
+        p = p->pNext;
+    }
+#endif
 }
 
 int boot_off(dbref player, const UTF8 *message)
@@ -2462,6 +2474,14 @@ static bool check_connect(DESC *d, UTF8 *msg)
                 num_con++;
             }
             local_connect(player, 0, num_con);
+#if defined(HAVE_DLOPEN) || defined(WIN32)
+            ServerEventsSinkNode *p = g_pServerEventsSinkListHead;
+            while (NULL != p)
+            {
+                p->pSink->connect(player, 0, num_con);
+                p = p->pNext;
+            }
+#endif
 
             // If stuck in an @prog, show the prompt.
             //
@@ -2559,6 +2579,14 @@ static bool check_connect(DESC *d, UTF8 *msg)
                 // is 0 and indicate the connect is a new character.
                 //
                 local_connect(player, 1, 0);
+#if defined(HAVE_DLOPEN) || defined(WIN32)
+                ServerEventsSinkNode *p = g_pServerEventsSinkListHead;
+                while (NULL != p)
+                {
+                    p->pSink->connect(player, 1, 0);
+                    p = p->pNext;
+                }
+#endif
             }
         }
     }

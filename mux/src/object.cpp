@@ -14,7 +14,10 @@
 #include "command.h"
 #include "mguests.h"
 #include "powers.h"
+#if defined(HAVE_DLOPEN) || defined(WIN32)
 #include "libmux.h"
+#include "modules.h"
+#endif
 
 #define IS_CLEAN(i) (isGarbage(i) && Going(i) && \
              ((i) >= 0) && ((i) < mudstate.db_top) && \
@@ -568,6 +571,14 @@ void destroy_obj(dbref obj)
     s_Zone(obj, NOTHING);
 
     local_data_free(obj);
+#if defined(HAVE_DLOPEN) || defined(WIN32)
+    ServerEventsSinkNode *p = g_pServerEventsSinkListHead;
+    while (NULL != p)
+    {
+        p->pSink->data_free(obj);
+        p = p->pNext;
+    }
+#endif
 }
 
 /*
@@ -1753,6 +1764,14 @@ void do_dbck(dbref executor, dbref caller, dbref enactor, int key)
     // Allow the local extensions to do data checks.
     //
     local_dbck();
+#if defined(HAVE_DLOPEN) || defined(WIN32)
+    ServerEventsSinkNode *p = g_pServerEventsSinkListHead;
+    while (NULL != p)
+    {
+        p->pSink->dbck();
+        p = p->pNext;
+    }
+#endif
 
     if (  !mudstate.bStandAlone
        && executor != NOTHING

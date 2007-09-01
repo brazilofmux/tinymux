@@ -20,6 +20,10 @@
 #include "command.h"
 #include "interface.h"
 #include "powers.h"
+#if defined(HAVE_DLOPEN) || defined(WIN32)
+#include "libmux.h"
+#include "modules.h"
+#endif
 #ifdef REALITY_LVLS
 #include "levels.h"
 #endif // REALITY_LVLS
@@ -1544,6 +1548,14 @@ void do_restart(dbref executor, dbref caller, dbref enactor, int key)
 #endif
 
     local_presync_database();
+#if defined(HAVE_DLOPEN) || defined(WIN32)
+    ServerEventsSinkNode *p = g_pServerEventsSinkListHead;
+    while (NULL != p)
+    {
+        p->pSink->presync_database();
+        p = p->pNext;
+    }
+#endif
 
 #ifndef MEMORY_BASED
     al_store();

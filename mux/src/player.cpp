@@ -19,6 +19,10 @@
 #include "interface.h"
 #include "powers.h"
 #include "sha1.h"
+#if defined(HAVE_DLOPEN) || defined(WIN32)
+#include "libmux.h"
+#include "modules.h"
+#endif
 
 #define NUM_GOOD    4   // # of successful logins to save data for.
 #define NUM_BAD     3   // # of failed logins to save data for.
@@ -589,6 +593,14 @@ dbref create_player
     s_Home(player, start_home());
     free_lbuf(pbuf);
     local_data_create(player);
+#if defined(HAVE_DLOPEN) || defined(WIN32)
+    ServerEventsSinkNode *p = g_pServerEventsSinkListHead;
+    while (NULL != p)
+    {
+        p->pSink->data_create(player);
+        p = p->pNext;
+    }
+#endif
     return player;
 }
 

@@ -181,6 +181,14 @@ public:
     virtual MUX_RESULT Advise(mux_IServerEventsSink *pIServerEvents) = 0;
 };
 
+typedef struct ServerEventsSinkNode
+{
+    mux_IServerEventsSink        *pSink;
+    struct ServerEventsSinkNode  *pNext;
+} ServerEventsSinkNode;
+
+extern ServerEventsSinkNode *g_pServerEventsSinkListHead;
+
 class CServerEventsSource : public mux_IServerEventsControl
 {
 public:
@@ -199,6 +207,7 @@ public:
 
 private:
     UINT32 m_cRef;
+    mux_IServerEventsSink *m_pSink;
 };
 
 class CServerEventsSourceFactory : public mux_IClassFactory

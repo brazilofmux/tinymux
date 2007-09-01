@@ -15,6 +15,10 @@
 #include "attrs.h"
 #include "command.h"
 #include "powers.h"
+#if defined(HAVE_DLOPEN) || defined(WIN32)
+#include "libmux.h"
+#include "modules.h"
+#endif
 
 // ---------------------------------------------------------------------------
 // parse_linkable_room: Get a location to link to.
@@ -85,6 +89,14 @@ static void open_exit(dbref player, dbref loc, UTF8 *direction, UTF8 *linkto)
     s_Next(exit, Exits(loc));
     s_Exits(loc, exit);
     local_data_create(exit);
+#if defined(HAVE_DLOPEN) || defined(WIN32)
+    ServerEventsSinkNode *p = g_pServerEventsSinkListHead;
+    while (NULL != p)
+    {
+        p->pSink->data_create(exit);
+        p = p->pNext;
+    }
+#endif
 
     // and we're done
     //
@@ -511,6 +523,14 @@ void do_dig(dbref executor, dbref caller, dbref enactor, int eval, int key,
     }
 
     local_data_create(room);
+#if defined(HAVE_DLOPEN) || defined(WIN32)
+    ServerEventsSinkNode *p = g_pServerEventsSinkListHead;
+    while (NULL != p)
+    {
+        p->pSink->data_create(room);
+        p = p->pNext;
+    }
+#endif
     notify(executor, tprintf("%s created as room #%d.", name, room));
 
     UTF8 *buff = alloc_sbuf("do_dig");
@@ -579,6 +599,14 @@ void do_create
     }
 
     local_data_create(thing);
+#if defined(HAVE_DLOPEN) || defined(WIN32)
+    ServerEventsSinkNode *p = g_pServerEventsSinkListHead;
+    while (NULL != p)
+    {
+        p->pSink->data_create(thing);
+        p = p->pNext;
+    }
+#endif
 }
 
 
@@ -804,6 +832,14 @@ void do_clone
     }
 
     local_data_clone(clone, thing);
+#if defined(HAVE_DLOPEN) || defined(WIN32)
+    ServerEventsSinkNode *p = g_pServerEventsSinkListHead;
+    while (NULL != p)
+    {
+        p->pSink->data_clone(clone, thing);
+        p = p->pNext;
+    }
+#endif
 }
 
 // ---------------------------------------------------------------------------

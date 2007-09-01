@@ -30,6 +30,11 @@
 #include "file_c.h"
 #include "slave.h"
 
+#if defined(HAVE_DLOPEN) || defined(WIN32)
+#include "libmux.h"
+#include "modules.h"
+#endif
+
 #if defined(HAVE_DLOPEN) && defined(STUB_SLAVE)
 #include "libmux.h"
 #endif
@@ -4625,7 +4630,14 @@ static RETSIGTYPE DCL_CDECL sighandler(int sig)
                     }
                     mudstate.dumping = false;
                     local_dump_complete_signal();
-
+#if defined(HAVE_DLOPEN) || defined(WIN32)
+                    ServerEventsSinkNode *p = g_pServerEventsSinkListHead;
+                    while (NULL != p)
+                    {
+                        p->pSink->dump_complete_signal();
+                        p = p->pNext;
+                    }
+#endif
                     continue;
                 }
             }
@@ -4717,6 +4729,16 @@ static RETSIGTYPE DCL_CDECL sighandler(int sig)
         report();
 
         local_presync_database_sigsegv();
+#if defined(HAVE_DLOPEN) || defined(WIN32)
+        {
+            ServerEventsSinkNode *p = g_pServerEventsSinkListHead;
+            while (NULL != p)
+            {
+                p->pSink->presync_database_sigsegv();
+                p = p->pNext;
+            }
+        }
+#endif
 #ifndef MEMORY_BASED
         al_store();
 #endif

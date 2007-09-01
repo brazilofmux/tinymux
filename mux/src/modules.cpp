@@ -40,7 +40,7 @@ extern "C" MUX_RESULT DCL_API netmux_GetClassObject(UINT64 cid, UINT64 iid, void
         {
             ; // Nothing.
         }
-        
+
         if (NULL == pLogFactory)
         {
             return MUX_E_OUTOFMEMORY;
@@ -60,7 +60,7 @@ extern "C" MUX_RESULT DCL_API netmux_GetClassObject(UINT64 cid, UINT64 iid, void
         {
             ; // Nothing.
         }
-        
+
         if (NULL == pServerEventsSourceFactory)
         {
             return MUX_E_OUTOFMEMORY;
@@ -303,12 +303,48 @@ MUX_RESULT CLogFactory::LockServer(bool bLock)
 
 // CServerEventsSource component which is not directly accessible.
 //
-CServerEventsSource::CServerEventsSource(void) : m_cRef(1)
+CServerEventsSource::CServerEventsSource(void) : m_cRef(1), m_pSink(NULL)
 {
 }
 
+ServerEventsSinkNode *g_pServerEventsSinkListHead = NULL;
+
 CServerEventsSource::~CServerEventsSource()
 {
+    if (NULL != m_pSink)
+    {
+        ServerEventsSinkNode *p = g_pServerEventsSinkListHead;
+        ServerEventsSinkNode *q = NULL;
+        while (NULL != p)
+        {
+            if (p->pSink == m_pSink)
+            {
+                // Unlink node p from list.
+                //
+                if (NULL == q)
+                {
+                    g_pServerEventsSinkListHead = p->pNext;
+                }
+                else
+                {
+                    q->pNext = p->pNext;
+                }
+                p->pNext = NULL;
+
+                // Free sink and node.
+                //
+                p->pSink->Release();
+                p->pSink = NULL;
+                delete p;
+                break;
+            }
+            q = p;
+            p = p->pNext;
+        }
+
+        m_pSink->Release();
+        m_pSink = NULL;
+    }
 }
 
 MUX_RESULT CServerEventsSource::QueryInterface(UINT64 iid, void **ppv)
@@ -349,7 +385,48 @@ UINT32 CServerEventsSource::Release(void)
 
 MUX_RESULT CServerEventsSource::Advise(mux_IServerEventsSink *pIServerEventsSink)
 {
-    return MUX_E_NOTIMPLEMENTED;
+    if (NULL == pIServerEventsSink)
+    {
+        return MUX_E_INVALIDARG;
+    }
+
+    // If this pointer is already in the list, we will prevent it from being
+    // added again.
+    //
+    ServerEventsSinkNode *p = g_pServerEventsSinkListHead;
+    while (NULL != p)
+    {
+        if (p->pSink == pIServerEventsSink)
+        {
+            return MUX_E_FAIL;
+        }
+    }
+
+    // Allocate a list node.
+    //
+    p = NULL;
+    try
+    {
+        p = new ServerEventsSinkNode;
+    }
+    catch (...)
+    {
+        ; // Nothing.
+    }
+
+    if (NULL == p)
+    {
+        return MUX_E_OUTOFMEMORY;
+    }
+
+    // Add the pointer to the list.
+    //
+    p->pNext = g_pServerEventsSinkListHead;
+    p->pSink = pIServerEventsSink;
+    p->pSink->AddRef();
+    g_pServerEventsSinkListHead = p;
+
+    return MUX_S_OK;
 }
 
 // Factory for CServerEventsSource component which is not directly accessible.
