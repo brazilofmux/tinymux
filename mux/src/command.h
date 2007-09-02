@@ -8,16 +8,16 @@
 #ifndef __COMMAND_H
 #define __COMMAND_H
 
-#define CMD_NO_ARG(name)              extern void name(dbref executor, dbref caller, dbref enactor, int)
-#define CMD_ONE_ARG(name)             extern void name(dbref executor, dbref caller, dbref enactor, int eval, int, UTF8 *)
-#define CMD_ONE_ARG_CMDARG(name)      extern void name(dbref executor, dbref caller, dbref enactor, int eval, int, UTF8 *, const UTF8 *[], int)
-#define CMD_TWO_ARG(name)             extern void name(dbref executor, dbref caller, dbref enactor, int, int, UTF8 *, UTF8 *)
-#define CMD_TWO_ARG_CMDARG(name)      extern void name(dbref executor, dbref caller, dbref enactor, int eval, int, UTF8 *, UTF8 *, const UTF8*[], int)
-#define CMD_TWO_ARG_ARGV(name)        extern void name(dbref executor, dbref caller, dbref enactor, int eval, int, UTF8 *, UTF8 *[], int)
-#define CMD_TWO_ARG_ARGV_CMDARG(name) extern void name(dbref executor, dbref caller, dbref enactor, int eval, int, UTF8 *, UTF8 *[], int, const UTF8*[], int)
+#define CMD_NO_ARG(name)              extern void name(dbref executor, dbref caller, dbref enactor, int key)
+#define CMD_ONE_ARG(name)             extern void name(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8 *arg)
+#define CMD_ONE_ARG_CMDARG(name)      extern void name(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8 *cmd, const UTF8 *args[], int nargs)
+#define CMD_TWO_ARG(name)             extern void name(dbref executor, dbref caller, dbref enactor, int key, int nargs, UTF8 *arg1, UTF8 *arg2)
+#define CMD_TWO_ARG_CMDARG(name)      extern void name(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8 *arg1, UTF8 *arg2, const UTF8 *cargs[], int ncargs)
+#define CMD_TWO_ARG_ARGV(name)        extern void name(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8 *cmd, UTF8 *args[], int nargs)
+#define CMD_TWO_ARG_ARGV_CMDARG(name) extern void name(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8 *cmd, UTF8 *args[], int nargs, const UTF8 *cargs[], int ncargs)
 
 /* Command function handlers */
-/* from comsys.c */
+/* from comsys.cpp */
 
 CMD_TWO_ARG(do_cemit);          /* channel emit */
 CMD_TWO_ARG(do_chboot);         /* channel boot */
@@ -26,17 +26,17 @@ CMD_ONE_ARG(do_checkchannel);   /* check a channel */
 CMD_ONE_ARG(do_createchannel);  /* create a channel */
 CMD_ONE_ARG(do_destroychannel); /* destroy a channel */
 CMD_TWO_ARG(do_edituser);       /* edit a channel user */
-CMD_ONE_ARG(do_chanlist);        /* gives a channel listing */
+CMD_ONE_ARG(do_chanlist);       /* gives a channel listing */
 CMD_TWO_ARG(do_chopen);         /* opens a channel */
 CMD_ONE_ARG(do_channelwho);     /* who's on a channel */
 CMD_TWO_ARG(do_addcom);         /* adds a comalias */
 CMD_ONE_ARG(do_allcom);         /* on, off, who, all aliases */
-CMD_ONE_ARG(do_comlist);         /* channel who by alias */
+CMD_ONE_ARG(do_comlist);        /* channel who by alias */
 CMD_TWO_ARG(do_comtitle);       /* sets a title on a channel */
 //CMD_NO_ARG(do_clearcom);      /* clears all comaliases */
 CMD_ONE_ARG(do_delcom);         /* deletes a comalias */
 
-/* from mail.c */
+/* from mail.cpp */
 
 CMD_TWO_ARG(do_mail);           /* mail command */
 CMD_TWO_ARG(do_folder);         /* mail folder commands */
@@ -168,7 +168,7 @@ typedef struct
     int     extra;
     int     callseq;
     int     hookmask;
-    void    (*handler)(dbref executor, dbref caller, dbref enactor, int);
+    void    (*handler)(dbref executor, dbref caller, dbref enactor, int key);
 } CMDENT_NO_ARG;
 
 typedef struct
@@ -179,7 +179,7 @@ typedef struct
     int     extra;
     int     callseq;
     int     hookmask;
-    void    (*handler)(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8 *);
+    void    (*handler)(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8 *arg);
 } CMDENT_ONE_ARG;
 
 typedef struct
@@ -190,7 +190,7 @@ typedef struct
     int     extra;
     int     callseq;
     int     hookmask;
-    void    (*handler)(dbref executor, dbref caller, dbref enactor, int eval, int, UTF8 *, const UTF8 *[], int);
+    void    (*handler)(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8 *cmd, const UTF8 *args[], int nargs);
 } CMDENT_ONE_ARG_CMDARG;
 
 typedef struct
@@ -201,7 +201,7 @@ typedef struct
     int     extra;
     int     callseq;
     int     hookmask;
-    void    (*handler)(dbref executor, dbref caller, dbref enactor, int, int, UTF8 *, UTF8 *);
+    void    (*handler)(dbref executor, dbref caller, dbref enactor, int key, int nargs, UTF8 *arg1, UTF8 *arg2);
 } CMDENT_TWO_ARG;
 
 typedef struct
@@ -212,7 +212,7 @@ typedef struct
     int     extra;
     int     callseq;
     int     hookmask;
-    void    (*handler)(dbref executor, dbref caller, dbref enactor, int, int, UTF8 *, UTF8 *, const UTF8*[], int);
+    void    (*handler)(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8 *arg1, UTF8 *arg2, const UTF8 *cargs[], int ncargs);
 } CMDENT_TWO_ARG_CMDARG;
 
 typedef struct
@@ -223,7 +223,7 @@ typedef struct
     int     extra;
     int     callseq;
     int     hookmask;
-    void    (*handler)(dbref executor, dbref caller, dbref enactor, int eval, int, UTF8 *, UTF8 *[], int);
+    void    (*handler)(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8 *cmd, UTF8 *args[], int nargs);
 } CMDENT_TWO_ARG_ARGV;
 
 typedef struct
@@ -234,8 +234,8 @@ typedef struct
     int     extra;
     int     callseq;
     int     hookmask;
-    void    (*handler)(dbref executor, dbref caller, dbref enactor, int eval, int,
-                       UTF8 *, UTF8 *[], int, const UTF8*[], int);
+    void    (*handler)(dbref executor, dbref caller, dbref enactor, int eval, int key,
+                       UTF8 *cmd, UTF8 *args[], int nargs, const UTF8 *cargs[], int ncargs);
 } CMDENT_TWO_ARG_ARGV_CMDARG;
 
 typedef struct addedentry ADDENT;
