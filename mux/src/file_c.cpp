@@ -71,12 +71,14 @@ static NAMETAB list_files[] =
     {(UTF8 *) NULL,              0,  0,          0}
 };
 
-void do_list_file(dbref executor, dbref caller, dbref enactor, int eval, int extra, UTF8 *arg)
+void do_list_file(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8 *arg, const UTF8 *cargs[], int ncargs)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
     UNUSED_PARAMETER(eval);
-    UNUSED_PARAMETER(extra);
+    UNUSED_PARAMETER(key);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
 
     int flagvalue;
     if (!search_nametab(executor, list_files, arg, &flagvalue))

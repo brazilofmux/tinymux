@@ -940,12 +940,14 @@ void do_addcommand
 }
 
 void do_listcommands(dbref player, dbref caller, dbref enactor, int eval,
-                     int key, UTF8 *name)
+                     int key, UTF8 *name, const UTF8 *cargs[], int ncargs)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
     UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(key);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
 
     CMDENT *old;
     ADDENT *nextp;
@@ -1262,12 +1264,14 @@ void handle_prog(DESC *d, UTF8 *message)
     free_lbuf(cmd);
 }
 
-void do_quitprog(dbref player, dbref caller, dbref enactor, int eval, int key, UTF8 *name)
+void do_quitprog(dbref player, dbref caller, dbref enactor, int eval, int key, UTF8 *name, const UTF8 *cargs[], int ncargs)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
     UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(key);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
 
     dbref doer;
 
@@ -1664,14 +1668,16 @@ void do_comment(dbref executor, dbref caller, dbref enactor, int eval, int key)
     UNUSED_PARAMETER(key);
 }
 
-void do_eval(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8 *str)
+void do_eval(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8 *arg1, const UTF8 *cargs[], int ncargs)
 {
     UNUSED_PARAMETER(executor);
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
     UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(key);
-    UNUSED_PARAMETER(str);
+    UNUSED_PARAMETER(arg1);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
 }
 
 static dbref promote_dflt(dbref old, dbref new0)

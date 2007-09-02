@@ -626,11 +626,13 @@ void move_exit(dbref player, dbref exit, bool divest, const UTF8 *failmsg, int h
  * do_move: Move from one place to another via exits or 'home'.
  */
 
-void do_move(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8 *direction)
+void do_move(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8 *direction, const UTF8 *cargs[], int ncargs)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
     UNUSED_PARAMETER(eval);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
 
     dbref exit, loc;
     int i, quiet;
@@ -707,11 +709,13 @@ void do_move(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF
  * do_get: Get an object.
  */
 
-void do_get(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8 *what)
+void do_get(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8 *what, const UTF8 *cargs[], int ncargs)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
     UNUSED_PARAMETER(eval);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
 
     dbref playerloc;
     if (  !Has_location(executor)
@@ -866,11 +870,13 @@ void do_get(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8
  * do_drop: Drop an object.
  */
 
-void do_drop(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8 *name)
+void do_drop(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8 *name, const UTF8 *cargs[], int ncargs)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
     UNUSED_PARAMETER(eval);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
 
     dbref loc = Location(executor);
     if (!Good_obj(loc))
@@ -997,11 +1003,13 @@ void do_enter_internal(dbref player, dbref thing, bool quiet)
     }
 }
 
-void do_enter(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8 *what)
+void do_enter(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8 *what, const UTF8 *cargs[], int ncargs)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
     UNUSED_PARAMETER(eval);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
 
     init_match(executor, what, TYPE_THING);
     match_neighbor();

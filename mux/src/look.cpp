@@ -1391,11 +1391,13 @@ static void look_here
     }
 }
 
-void do_look(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8 *name)
+void do_look(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8 *name, const UTF8 *cargs[], int ncargs)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
     UNUSED_PARAMETER(eval);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
 
     int look_key = LK_SHOWATTR | LK_SHOWEXIT;
     if (!mudconf.terse_look)
@@ -1658,11 +1660,13 @@ static void exam_wildattrs
     }
 }
 
-void do_examine(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8 *name)
+void do_examine(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8 *name, const UTF8 *cargs[], int ncargs)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
     UNUSED_PARAMETER(eval);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
 
     // This command is pointless if the player can't hear.
     //
@@ -2057,12 +2061,14 @@ void do_inventory(dbref executor, dbref caller, dbref enactor, int eval, int key
     do_score(executor, caller, executor, 0, 0);
 }
 
-void do_entrances(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8 *name)
+void do_entrances(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8 *name, const UTF8 *cargs[], int ncargs)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
     UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(key);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
 
     dbref thing, i, j;
     UTF8 *exit, *message;
@@ -2387,11 +2393,13 @@ static void sweep_check(dbref player, dbref what, int key, bool is_loc)
     }
 }
 
-void do_sweep(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8 *where)
+void do_sweep(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8 *where, const UTF8 *cargs[], int ncargs)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
     UNUSED_PARAMETER(eval);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
 
     dbref here, sweeploc;
     int where_key, what_key;

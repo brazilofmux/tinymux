@@ -420,7 +420,7 @@ FUNCTION(fun_emit)
     {
         return;
     }
-    do_say(executor, caller, enactor, 0, SAY_EMIT, fargs[0]);
+    do_say(executor, caller, enactor, 0, SAY_EMIT, fargs[0], NULL, 0);
 }
 
 FUNCTION(fun_remit)
@@ -579,7 +579,7 @@ FUNCTION(fun_destroy)
     {
         return;
     }
-    do_destroy(executor, caller, enactor, 0, DEST_ONE, fargs[0]);
+    do_destroy(executor, caller, enactor, 0, DEST_ONE, fargs[0], NULL, 0);
 }
 
 FUNCTION(fun_textfile)

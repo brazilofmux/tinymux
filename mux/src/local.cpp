@@ -41,11 +41,6 @@ static CMDENT_ONE_ARG local_command_table_one_arg[] =
     {NULL,          NULL,       0,           0,          0,          0, NULL}
 };
 
-static CMDENT_ONE_ARG_CMDARG local_command_table_one_arg_cmdarg[] =
-{
-    {NULL,          NULL,       0,           0,          0,          0, NULL}
-};
-
 static CMDENT_TWO_ARG local_command_table_two_arg[] =
 {
     {NULL,          NULL,       0,           0,          0,          0, NULL}
@@ -78,7 +73,6 @@ void local_startup(void)
     //
     commands_no_arg_add(local_command_table_no_arg);
     commands_one_arg_add(local_command_table_one_arg);
-    commands_one_arg_cmdarg_add(local_command_table_one_arg_cmdarg);
     commands_two_arg_add(local_command_table_two_arg);
     commands_two_arg_cmdarg_add(local_command_table_two_arg_cmdarg);
     commands_two_arg_argv_add(local_command_table_two_arg_argv);

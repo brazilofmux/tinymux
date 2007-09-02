@@ -9,8 +9,7 @@
 #define __COMMAND_H
 
 #define CMD_NO_ARG(name)              extern void name(dbref executor, dbref caller, dbref enactor, int eval, int key)
-#define CMD_ONE_ARG(name)             extern void name(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8 *arg1)
-#define CMD_ONE_ARG_CMDARG(name)      extern void name(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8 *arg1, const UTF8 *cargs[], int ncargs)
+#define CMD_ONE_ARG(name)             extern void name(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8 *arg1, const UTF8 *cargs[], int ncargs)
 #define CMD_TWO_ARG(name)             extern void name(dbref executor, dbref caller, dbref enactor, int eval, int key, int nargs, UTF8 *arg1, UTF8 *arg2)
 #define CMD_TWO_ARG_CMDARG(name)      extern void name(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8 *arg1, UTF8 *arg2, const UTF8 *cargs[], int ncargs)
 #define CMD_TWO_ARG_ARGV(name)        extern void name(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8 *arg1, UTF8 *args[], int nargs)
@@ -44,7 +43,7 @@ CMD_TWO_ARG(do_malias);         /* mail alias command */
 CMD_ONE_ARG(do_prepend);
 CMD_ONE_ARG(do_postpend);
 
-CMD_ONE_ARG_CMDARG(do_apply_marked);    /* Apply command to marked objects */
+CMD_ONE_ARG(do_apply_marked);   /* Apply command to marked objects */
 CMD_TWO_ARG(do_admin);          /* Change config parameters */
 CMD_TWO_ARG(do_alias);          /* Change the alias of something */
 CMD_TWO_ARG(do_attribute);      /* Manage user-named attributes */
@@ -73,7 +72,7 @@ CMD_ONE_ARG(do_examine);        /* Examine an object */
 CMD_ONE_ARG(do_find);           /* Search for name in database */
 CMD_TWO_ARG(do_fixdb);          /* Database repair functions */
 CMD_TWO_ARG_CMDARG(do_force);   /* Force someone to do something */
-CMD_ONE_ARG_CMDARG(do_force_prefixed);  /* #<num> <cmd> variant of FORCE */
+CMD_ONE_ARG(do_force_prefixed); /* #<num> <cmd> variant of FORCE */
 CMD_TWO_ARG(do_forwardlist);    // Set a forwardlist on something
 CMD_TWO_ARG(do_function);       /* Make user-def global function */
 CMD_ONE_ARG(do_get);            /* Get an object */
@@ -179,19 +178,8 @@ typedef struct
     int     extra;
     int     callseq;
     int     hookmask;
-    void    (*handler)(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8 *arg1);
-} CMDENT_ONE_ARG;
-
-typedef struct
-{
-    const UTF8 *cmdname;
-    NAMETAB *switches;
-    int     perms;
-    int     extra;
-    int     callseq;
-    int     hookmask;
     void    (*handler)(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8 *arg1, const UTF8 *cargs[], int ncargs);
-} CMDENT_ONE_ARG_CMDARG;
+} CMDENT_ONE_ARG;
 
 typedef struct
 {
@@ -264,7 +252,7 @@ typedef struct
 
 void commands_no_arg_add(CMDENT_NO_ARG cmdent[]);
 void commands_one_arg_add(CMDENT_ONE_ARG cmdent[]);
-void commands_one_arg_cmdarg_add(CMDENT_ONE_ARG_CMDARG cmdent[]);
+void commands_one_arg_cmdarg_add(CMDENT_ONE_ARG cmdent[]);
 void commands_two_arg_add(CMDENT_TWO_ARG cmdent[]);
 void commands_two_arg_cmdarg_add(CMDENT_TWO_ARG_CMDARG cmdent[]);
 void commands_two_arg_argv_add(CMDENT_TWO_ARG_ARGV cmdent[]);

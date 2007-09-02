@@ -512,11 +512,13 @@ void do_newpassword
     free_lbuf(buf);
 }
 
-void do_boot(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8 *name)
+void do_boot(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8 *name, const UTF8 *cargs[], int ncargs)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
     UNUSED_PARAMETER(eval);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
 
     if (!Can_Boot(executor))
     {
@@ -598,13 +600,15 @@ void do_boot(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF
 // ---------------------------------------------------------------------------
 // do_poor: Reduce the wealth of anyone over a specified amount.
 //
-void do_poor(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8 *arg1)
+void do_poor(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8 *arg1, const UTF8 *cargs[], int ncargs)
 {
     UNUSED_PARAMETER(executor);
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
     UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(key);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
 
     if (!is_rational(arg1))
     {
@@ -630,12 +634,14 @@ void do_poor(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF
 // ---------------------------------------------------------------------------
 // do_cut: Chop off a contents or exits chain after the named item.
 //
-void do_cut(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8 *thing)
+void do_cut(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8 *thing, const UTF8 *cargs[], int ncargs)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
     UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(key);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
 
     dbref object = match_controlled(executor, thing);
     if (Good_obj(object))
@@ -648,11 +654,13 @@ void do_cut(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8
 // --------------------------------------------------------------------------
 // do_motd: Wizard-settable message of the day (displayed on connect)
 //
-void do_motd(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8 *message)
+void do_motd(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8 *message, const UTF8 *cargs[], int ncargs)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
     UNUSED_PARAMETER(eval);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
 
     bool is_brief = false;
 
@@ -760,11 +768,13 @@ NAMETAB enable_names[] =
     {(UTF8 *) NULL,             0,  0,          0}
 };
 
-void do_global(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8 *flag)
+void do_global(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8 *flag, const UTF8 *cargs[], int ncargs)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
     UNUSED_PARAMETER(eval);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
 
     // Set or clear the indicated flag.
     //

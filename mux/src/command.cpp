@@ -605,6 +605,7 @@ static CMDENT_NO_ARG command_table_no_arg[] =
 
 static CMDENT_ONE_ARG command_table_one_arg[] =
 {
+    {T("@apply_marked"), NULL,       CA_WIZARD|CA_GBL_INTERP,    0,  CS_ONE_ARG|CS_CMDARG|CS_NOINTERP|CS_STRIP_AROUND,   0, do_apply_marked},
     {T("@boot"),         boot_sw,    CA_NO_GUEST|CA_NO_SLAVE,    0,  CS_ONE_ARG|CS_INTERP, 0, do_boot},
     {T("@ccreate"),      NULL,       CA_NO_SLAVE|CA_NO_GUEST,    0,  CS_ONE_ARG,           0, do_createchannel},
     {T("@cdestroy"),     NULL,       CA_NO_SLAVE|CA_NO_GUEST,    0,  CS_ONE_ARG,           0, do_destroychannel},
@@ -672,14 +673,8 @@ static CMDENT_ONE_ARG command_table_one_arg[] =
     {T("\""),            NULL,       CA_LOCATION|CF_DARK|CA_NO_SLAVE,  SAY_PREFIX, CS_ONE_ARG|CS_INTERP|CS_LEADIN, 0, do_say},
     {T("-"),             NULL,       CA_NO_GUEST|CA_NO_SLAVE|CF_DARK,  0,  CS_ONE_ARG|CS_LEADIN,   0, do_postpend},
     {T("~"),             NULL,       CA_NO_GUEST|CA_NO_SLAVE|CF_DARK,  0,  CS_ONE_ARG|CS_LEADIN,   0, do_prepend},
+    {T("#"),             NULL,       CA_NO_SLAVE|CA_GBL_INTERP|CF_DARK, 0, CS_ONE_ARG|CS_INTERP|CS_CMDARG, 0, do_force_prefixed},
     {(UTF8 *)NULL,            NULL,       0,                          0,    0,                  0, NULL}
-};
-
-static CMDENT_ONE_ARG_CMDARG command_table_one_arg_cmdarg[] =
-{
-    {T("@apply_marked"), NULL,       CA_WIZARD|CA_GBL_INTERP,    0,      CS_ONE_ARG|CS_CMDARG|CS_NOINTERP|CS_STRIP_AROUND,   0, do_apply_marked},
-    {T("#"),             NULL,       CA_NO_SLAVE|CA_GBL_INTERP|CF_DARK,    0,      CS_ONE_ARG|CS_INTERP|CS_CMDARG, 0, do_force_prefixed},
-    {(UTF8 *)NULL,            NULL,       0,     0,      0,             0,  NULL}
 };
 
 static CMDENT_TWO_ARG command_table_two_arg[] =
@@ -816,20 +811,6 @@ void commands_one_arg_add(CMDENT_ONE_ARG cmdent[])
     }
 }
 
-void commands_one_arg_cmdarg_add(CMDENT_ONE_ARG_CMDARG cmdent[])
-{
-    CMDENT_ONE_ARG_CMDARG *cp1ac;
-    for (cp1ac = cmdent; cp1ac->cmdname; cp1ac++)
-    {
-        if (!hashfindLEN(cp1ac->cmdname, strlen((char *)cp1ac->cmdname),
-                         &mudstate.command_htab))
-        {
-            hashaddLEN(cp1ac->cmdname, strlen((char *)cp1ac->cmdname), cp1ac,
-                       &mudstate.command_htab);
-        }
-    }
-}
-
 void commands_two_arg_add(CMDENT_TWO_ARG cmdent[])
 {
     CMDENT_TWO_ARG *cp2a;
@@ -942,7 +923,6 @@ void init_cmdtab(void)
     //
     commands_no_arg_add(command_table_no_arg);
     commands_one_arg_add(command_table_one_arg);
-    commands_one_arg_cmdarg_add(command_table_one_arg_cmdarg);
     commands_two_arg_add(command_table_two_arg);
     commands_two_arg_argv_add(command_table_two_arg_argv);
     commands_two_arg_cmdarg_add(command_table_two_arg_cmdarg);
@@ -1339,12 +1319,7 @@ static void process_cmdent(CMDENT *cmdp, UTF8 *switchp, dbref executor, dbref ca
 
         // Call the correct handler.
         //
-        if (cmdp->callseq & CS_CMDARG)
-        {
-            (*(((CMDENT_ONE_ARG_CMDARG *)cmdp)->handler))(executor, caller,
-                enactor, eval, key, buf1, cargs, ncargs);
-        }
-        else if (cmdp->callseq & CS_ADDED)
+        if (cmdp->callseq & CS_ADDED)
         {
             for (add = cmdp->addent; add != NULL; add = add->next)
             {
@@ -1455,7 +1430,7 @@ static void process_cmdent(CMDENT *cmdp, UTF8 *switchp, dbref executor, dbref ca
         else
         {
             (*(((CMDENT_ONE_ARG *)cmdp)->handler))(executor, caller,
-                enactor, eval, key, buf1);
+                enactor, eval, key, buf1, cargs, ncargs);
         }
 
         // Free the buffer if one was allocated.
@@ -1922,7 +1897,7 @@ UTF8 *process_command
                 mudstate.debug_cmd = cmdsave;
                 return preserve_cmd;
             }
-            do_move(executor, caller, enactor, eval, 0, (UTF8 *)"home");
+            do_move(executor, caller, enactor, eval, 0, (UTF8 *)"home", NULL, 0);
             mudstate.debug_cmd = cmdsave;
             return preserve_cmd;
         }
@@ -2601,17 +2576,6 @@ static void list_cmdtable(dbref player)
         }
     }
 
-    for ( CMDENT_ONE_ARG_CMDARG *cmdp1ac = command_table_one_arg_cmdarg;
-          cmdp1ac->cmdname;
-          cmdp1ac++)
-    {
-        if (  check_access(player, cmdp1ac->perms)
-            && !(cmdp1ac->perms & CF_DARK))
-        {
-            ItemToList_AddString(&itl, cmdp1ac->cmdname);
-        }
-    }
-
     for ( CMDENT_TWO_ARG *cmdp2a = command_table_two_arg;
           cmdp2a->cmdname;
           cmdp2a++)
@@ -2758,17 +2722,6 @@ static void list_cmdaccess(dbref player)
         }
     }
 
-    for ( CMDENT_ONE_ARG_CMDARG *cmdp1ac = command_table_one_arg_cmdarg;
-          cmdp1ac->cmdname;
-          cmdp1ac++)
-    {
-        if (  check_access(player, cmdp1ac->perms)
-           && !(cmdp1ac->perms & CF_DARK))
-        {
-            listset_nametab(player, access_nametab, cmdp1ac->perms, cmdp1ac->cmdname, true);
-        }
-    }
-
     for ( CMDENT_TWO_ARG *cmdp2a = command_table_two_arg;
           cmdp2a->cmdname;
           cmdp2a++)
@@ -2864,18 +2817,6 @@ static void list_cmdswitches(dbref player)
            && !(cmdp1a->perms & CF_DARK))
         {
             display_nametab(player, cmdp1a->switches, cmdp1a->cmdname, false);
-        }
-    }
-
-    for ( CMDENT_ONE_ARG_CMDARG *cmdp1ac = command_table_one_arg_cmdarg;
-          cmdp1ac->cmdname;
-          cmdp1ac++)
-    {
-        if (  cmdp1ac->switches
-           && check_access(player, cmdp1ac->perms)
-           && !(cmdp1ac->perms & CF_DARK))
-        {
-            display_nametab(player, cmdp1ac->switches, cmdp1ac->cmdname, false);
         }
     }
 
@@ -3889,13 +3830,15 @@ NAMETAB list_names[] =
     {(UTF8 *) NULL,                0,  0,          0}
 };
 
-void do_list(dbref executor, dbref caller, dbref enactor, int eval, int extra,
-             UTF8 *arg)
+void do_list(dbref executor, dbref caller, dbref enactor, int eval, int key,
+    UTF8 *arg, const UTF8 *cargs[], int ncargs)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
     UNUSED_PARAMETER(eval);
-    UNUSED_PARAMETER(extra);
+    UNUSED_PARAMETER(key);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
 
     MUX_STRTOK_STATE tts;
     mux_strtok_src(&tts, arg);
@@ -4419,9 +4362,11 @@ void do_icmd(dbref player, dbref cause, dbref enactor, int eval, int key,
 // do_train: show someone else in the same room what code you're entering and the result
 // From RhostMUSH, changed to use notify_all_from_inside.
 //
-void do_train(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8 *string)
+void do_train(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8 *string, const UTF8 *cargs[], int ncargs)
 {
     UNUSED_PARAMETER(key);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
 
     if (0 < mudstate.train_nest_lev)
     {
@@ -4558,11 +4503,13 @@ static void hook_loop(dbref executor, CMDENT *cmdp, UTF8 *s_ptr, UTF8 *s_ptrbuff
     notify(executor, tprintf(pFmt, pCmd, s_ptrbuff));
 }
 
-void do_hook(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8 *name)
+void do_hook(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8 *name, const UTF8 *cargs[], int ncargs)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
     UNUSED_PARAMETER(eval);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
 
     bool negate, found;
     UTF8 *s_ptr, *s_ptrbuff, *cbuff, *p;
@@ -4666,19 +4613,6 @@ void do_hook(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF
             {
                 CMDENT_ONE_ARG *cmdp2;
                 for (cmdp2 = command_table_one_arg; cmdp2->cmdname; cmdp2++)
-                {
-                    s_ptrbuff[0] = '\0';
-                    s_ptr = s_ptrbuff;
-                    if (cmdp2->hookmask)
-                    {
-                        found = true;
-                        hook_loop(executor, (CMDENT *)cmdp2, s_ptr, s_ptrbuff);
-                    }
-                }
-            }
-            {
-                CMDENT_ONE_ARG_CMDARG *cmdp2;
-                for (cmdp2 = command_table_one_arg_cmdarg; cmdp2->cmdname; cmdp2++)
                 {
                     s_ptrbuff[0] = '\0';
                     s_ptr = s_ptrbuff;

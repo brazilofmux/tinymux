@@ -1235,12 +1235,16 @@ void do_shutdown
     dbref enactor,
     int   eval,
     int   key,
-    UTF8 *message
+    UTF8 *message,
+    const UTF8 *cargs[],
+    int ncargs
 )
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
     UNUSED_PARAMETER(eval);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
 
     if (!Can_SiteAdmin(executor))
     {

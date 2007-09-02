@@ -2180,12 +2180,14 @@ void do_addcom
     raw_notify(executor, tprintf("Channel %s added with alias %s.", channel, pValidAlias));
 }
 
-void do_delcom(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8 *arg1)
+void do_delcom(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8 *arg1, const UTF8 *cargs[], int ncargs)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
     UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(key);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
 
     if (!mudconf.have_comsys)
     {
@@ -2301,12 +2303,14 @@ void do_delcomchannel(dbref player, UTF8 *channel, bool bQuiet)
     }
 }
 
-void do_createchannel(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8 *channel)
+void do_createchannel(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8 *channel, const UTF8 *cargs[], int ncargs)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
     UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(key);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
 
     if ('\0' == channel[0])
     {
@@ -2400,12 +2404,14 @@ void do_createchannel(dbref executor, dbref caller, dbref enactor, int eval, int
     raw_notify(executor, tprintf("Channel %s created.", newchannel->name));
 }
 
-void do_destroychannel(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8 *channel)
+void do_destroychannel(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8 *channel, const UTF8 *cargs[], int ncargs)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
     UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(key);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
 
     struct channel *ch;
     int j;
@@ -2583,13 +2589,17 @@ void do_comlist
     dbref enactor,
     int   eval,
     int key,
-    UTF8* pattern
+    UTF8* pattern,
+    const UTF8 *cargs[],
+    int ncargs
 )
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
     UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(key);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
 
     if (!mudconf.have_comsys)
     {
@@ -2709,16 +2719,18 @@ void do_clearcom(dbref executor, dbref caller, dbref enactor, int eval, int key)
     int i;
     for (i = (c->numchannels) - 1; i > -1; --i)
     {
-        do_delcom(executor, caller, enactor, 0, 0, c->alias + i * ALIAS_SIZE);
+        do_delcom(executor, caller, enactor, 0, 0, c->alias + i * ALIAS_SIZE, NULL, 0);
     }
 }
 
-void do_allcom(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8 *arg1)
+void do_allcom(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8 *arg1, const UTF8 *cargs[], int ncargs)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
     UNUSED_PARAMETER(key);
     UNUSED_PARAMETER(eval);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
 
     if (!mudconf.have_comsys)
     {
@@ -2768,12 +2780,14 @@ void sort_users(struct channel *ch)
     }
 }
 
-void do_channelwho(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8 *arg1)
+void do_channelwho(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8 *arg1, const UTF8 *cargs[], int ncargs)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
     UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(key);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
 
     if (!mudconf.have_comsys)
     {
@@ -3338,7 +3352,7 @@ void do_chopen
     }
     if (key == CSET_LIST)
     {
-        do_chanlist(executor, caller, enactor, 0, 1, NULL);
+        do_chanlist(executor, caller, enactor, 0, 1, NULL, NULL, 0);
         return;
     }
 
@@ -3593,12 +3607,16 @@ void do_chanlist
     dbref enactor,
     int   eval,
     int   key,
-    UTF8 *pattern
+    UTF8 *pattern,
+    const UTF8 *cargs[],
+    int  ncargs
 )
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
     UNUSED_PARAMETER(eval);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
 
     if (!mudconf.have_comsys)
     {

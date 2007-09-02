@@ -2094,11 +2094,13 @@ UTF8 *MakeCanonicalDoing(UTF8 *pDoing, size_t *pnValidDoing, bool *pbValidDoing)
 // do_doing: Set the doing string that appears in the WHO report.
 // Idea from R'nice@TinyTIM.
 //
-void do_doing(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8 *arg)
+void do_doing(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8 *arg, const UTF8 *cargs[], int ncargs)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
     UNUSED_PARAMETER(eval);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
 
     // Make sure there can be no embedded newlines from %r
     //
@@ -2808,11 +2810,13 @@ void do_command(DESC *d, UTF8 *command)
     mudstate.debug_cmd = cmdsave;
 }
 
-void logged_out1(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8 *arg)
+void logged_out1(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8 *arg, const UTF8 *cargs[], int ncargs)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
     UNUSED_PARAMETER(eval);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
 
     // PUEBLOCLIENT affects all the player's connections.
     //
@@ -2852,7 +2856,7 @@ void logged_out0(dbref executor, dbref caller, dbref enactor, int eval, int key)
 {
     UNUSED_PARAMETER(eval);
 
-    logged_out1(executor, caller, enactor, 0, key, (UTF8 *)"");
+    logged_out1(executor, caller, enactor, 0, key, (UTF8 *)"", NULL, 0);
 }
 
 void Task_ProcessCommand(void *arg_voidptr, int arg_iInteger)

@@ -86,9 +86,11 @@ static bool sp_ok(dbref player)
 }
 
 void do_think(dbref executor, dbref caller, dbref enactor, int eval, int key,
-    UTF8 *message)
+    UTF8 *message, const UTF8 *cargs[], int ncargs)
 {
     UNUSED_PARAMETER(key);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
 
     UTF8 *buf, *bp;
 
@@ -100,11 +102,13 @@ void do_think(dbref executor, dbref caller, dbref enactor, int eval, int key,
     free_lbuf(buf);
 }
 
-void do_say(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8 *message)
+void do_say(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8 *message, const UTF8 *cargs[], int ncargs)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
     UNUSED_PARAMETER(eval);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
 
     // Make sure speaker is somewhere if speaking in a place
     //
@@ -329,11 +333,13 @@ static const UTF8 *broadcast_msg = T("Broadcast: ");
 static const UTF8 *admin_msg = T("Admin: ");
 
 void do_shout(dbref executor, dbref caller, dbref enactor, int eval, int key,
-    UTF8 *message)
+    UTF8 *message, const UTF8 *cargs[], int ncargs)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
     UNUSED_PARAMETER(eval);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
 
     UTF8 *p = NULL, *messageNew = NULL, *buf2 = NULL, *bp = NULL;
     bool bNoTag = (key & SHOUT_NOTAG)   ? true : false;

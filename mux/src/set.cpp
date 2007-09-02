@@ -544,11 +544,13 @@ void do_lock
  * * Remove a lock from an object of attribute.
  */
 
-void do_unlock(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8 *name)
+void do_unlock(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8 *name, const UTF8 *cargs[], int ncargs)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
     UNUSED_PARAMETER(eval);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
 
     dbref thing;
     ATTR *ap;
@@ -606,12 +608,14 @@ void do_unlock(dbref executor, dbref caller, dbref enactor, int eval, int key, U
  * * do_unlink: Unlink an exit from its destination or remove a dropto.
  */
 
-void do_unlink(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8 *name)
+void do_unlink(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8 *name, const UTF8 *cargs[], int ncargs)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
     UNUSED_PARAMETER(key);
     UNUSED_PARAMETER(eval);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
 
     dbref exit;
 
@@ -1879,12 +1883,14 @@ void do_edit(dbref executor, dbref caller, dbref enactor, int eval, int key,
     }
 }
 
-void do_wipe(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8 *it)
+void do_wipe(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8 *it, const UTF8 *cargs[], int ncargs)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
     UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(key);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
 
     dbref thing;
 
@@ -1982,12 +1988,14 @@ void do_trigger(dbref executor, dbref caller, dbref enactor, int eval, int key,
     }
 }
 
-void do_use(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8 *object)
+void do_use(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8 *object, const UTF8 *cargs[], int ncargs)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
     UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(key);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
 
     UTF8 *df_use, *df_ouse, *temp;
     dbref thing, aowner;

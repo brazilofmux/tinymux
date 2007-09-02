@@ -89,12 +89,14 @@ void do_dolist(dbref executor, dbref caller, dbref enactor, int eval, int key,
 
 // Regular @find command
 //
-void do_find(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8 *name)
+void do_find(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8 *name, const UTF8 *cargs[], int ncargs)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
     UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(key);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
 
     UTF8 *buff;
 
@@ -192,11 +194,13 @@ bool get_stats(dbref player, dbref who, STATS *info)
 
 // Reworked by R'nice
 //
-void do_stats(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8 *name)
+void do_stats(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8 *name, const UTF8 *cargs[], int ncargs)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
     UNUSED_PARAMETER(eval);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
 
     dbref owner;
 
@@ -925,9 +929,11 @@ static void search_mark(dbref player, int key)
     return;
 }
 
-void do_search(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8 *arg)
+void do_search(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8 *arg, const UTF8 *cargs[], int ncargs)
 {
     UNUSED_PARAMETER(eval);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
 
     UTF8 *buff, *outbuf, *bp;
     dbref thing, from, to;

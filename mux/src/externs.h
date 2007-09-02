@@ -103,7 +103,7 @@ size_t MessageFetchSize(int number);
 void DCL_CDECL raw_broadcast(int, char *, ...);
 void list_siteinfo(dbref);
 void logged_out0(dbref executor, dbref caller, dbref enactor, int eval, int key);
-void logged_out1(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8 *arg);
+void logged_out1(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8 *arg, const UTF8 *cargs[], int ncargs);
 void init_logout_cmdtab(void);
 void desc_reload(dbref);
 void make_portlist(dbref, dbref, UTF8 *, UTF8 **);
@@ -874,7 +874,7 @@ void do_pemit_single
     UTF8 *message
 );
 void do_say(dbref executor, dbref caller, dbref enactor, int eval, int key,
-                   UTF8 *message);
+                   UTF8 *message, const UTF8 *cargs[], int ncargs);
 
 int  boot_off(dbref player, const UTF8 *message);
 void do_mail_clear(dbref player, UTF8 *msglist);

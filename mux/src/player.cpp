@@ -660,12 +660,14 @@ static void disp_from_on(dbref player, UTF8 *dtm_str, UTF8 *host_str)
     }
 }
 
-void do_last(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8 *who)
+void do_last(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8 *who, const UTF8 *cargs[], int ncargs)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
     UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(key);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
 
     dbref target, aowner;
     int i, aflags;

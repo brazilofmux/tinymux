@@ -4091,9 +4091,11 @@ static void do_expmail_abort(dbref player)
     raw_notify(player, T("MAIL: Message aborted."));
 }
 
-void do_prepend(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8 *text)
+void do_prepend(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8 *text, const UTF8 *cargs[], int ncargs)
 {
     UNUSED_PARAMETER(key);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
 
     if (!mudconf.have_mailer)
     {
@@ -4148,9 +4150,11 @@ void do_prepend(dbref executor, dbref caller, dbref enactor, int eval, int key, 
     }
 }
 
-void do_postpend(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8 *text)
+void do_postpend(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8 *text, const UTF8 *cargs[], int ncargs)
 {
     UNUSED_PARAMETER(key);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
 
     if (!mudconf.have_mailer)
     {
