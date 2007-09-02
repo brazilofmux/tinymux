@@ -588,10 +588,11 @@ static void dbclean_RenumberAttributes(int cVAttributes)
     aMap = NULL;
 }
 
-void do_dbclean(dbref executor, dbref caller, dbref enactor, int key)
+void do_dbclean(dbref executor, dbref caller, dbref enactor, int eval, int key)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(key);
 
 #ifndef WIN32

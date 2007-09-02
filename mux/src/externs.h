@@ -15,7 +15,7 @@
 
 // From bsd.cpp.
 //
-void boot_slave(dbref executor, dbref caller, dbref enactor, int key);
+void boot_slave(dbref executor, dbref caller, dbref enactor, int eval, int key);
 void close_sockets(bool emergency, const UTF8 *message);
 void CleanUpSlaveSocket(void);
 void CleanUpSlaveProcess(void);
@@ -102,7 +102,7 @@ size_t MessageFetchSize(int number);
 //
 void DCL_CDECL raw_broadcast(int, char *, ...);
 void list_siteinfo(dbref);
-void logged_out0(dbref executor, dbref caller, dbref enactor, int key);
+void logged_out0(dbref executor, dbref caller, dbref enactor, int eval, int key);
 void logged_out1(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8 *arg);
 void init_logout_cmdtab(void);
 void desc_reload(dbref);

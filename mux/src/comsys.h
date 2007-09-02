@@ -173,7 +173,7 @@ void do_leavechannel(dbref player, struct channel *ch);
 void do_delcomchannel(dbref player, UTF8 *channel, bool bQuiet);
 
 //! \brief Clear all channel subscriptions for the enactor ("clearcom")
-void do_clearcom(dbref executor, dbref caller, dbref enactor, int unused2);
+void do_clearcom(dbref executor, dbref caller, dbref enactor, int eval, int key);
 
 //! \brief Add a new channel subscription/alias for the enactor
 void do_addcom(dbref executor, dbref caller, dbref enactor, int eval, int key, int nargs,

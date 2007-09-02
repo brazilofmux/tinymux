@@ -28,7 +28,7 @@ void dispatch_FreeListReconstruction(void *pUnused, int iUnused)
     {
         const UTF8 *cmdsave = mudstate.debug_cmd;
         mudstate.debug_cmd = T("< dbck >");
-        do_dbck(NOTHING, NOTHING, NOTHING, 0);
+        do_dbck(NOTHING, NOTHING, NOTHING, 0, 0);
         Guest.CleanUp();
         pcache_trim();
         pool_reset();

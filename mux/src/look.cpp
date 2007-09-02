@@ -1997,10 +1997,11 @@ void do_examine(dbref executor, dbref caller, dbref enactor, int eval, int key, 
     }
 }
 
-void do_score(dbref executor, dbref caller, dbref enactor, int key)
+void do_score(dbref executor, dbref caller, dbref enactor, int eval, int key)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(key);
 
     int nPennies = Pennies(executor);
@@ -2008,9 +2009,10 @@ void do_score(dbref executor, dbref caller, dbref enactor, int key)
         (1 == nPennies) ?  mudconf.one_coin : mudconf.many_coins));
 }
 
-void do_inventory(dbref executor, dbref caller, dbref enactor, int key)
+void do_inventory(dbref executor, dbref caller, dbref enactor, int eval, int key)
 {
     UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(key);
 
     dbref thing;
@@ -2052,7 +2054,7 @@ void do_inventory(dbref executor, dbref caller, dbref enactor, int key)
         notify(executor, buff);
         free_lbuf(buff);
     }
-    do_score(executor, caller, executor, 0);
+    do_score(executor, caller, executor, 0, 0);
 }
 
 void do_entrances(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8 *name)

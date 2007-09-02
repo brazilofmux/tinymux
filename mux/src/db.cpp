@@ -3517,7 +3517,7 @@ void ReleaseAllResources(dbref obj)
     if (mudconf.have_comsys)
     {
         do_comdisconnect(obj);
-        do_clearcom(obj, obj, obj, 0);
+        do_clearcom(obj, obj, obj, 0, 0);
         do_channelnuke(obj);
         del_comsys(obj);
     }

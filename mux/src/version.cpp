@@ -13,11 +13,12 @@
 #include "_build.h"
 #include "command.h"
 
-void do_version(dbref executor, dbref caller, dbref enactor, int extra)
+void do_version(dbref executor, dbref caller, dbref enactor, int eval, int key)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
-    UNUSED_PARAMETER(extra);
+    UNUSED_PARAMETER(eval);
+    UNUSED_PARAMETER(key);
 
     notify(executor, mudstate.version);
     UTF8 *buff = alloc_mbuf("do_version");

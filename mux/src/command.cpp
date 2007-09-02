@@ -1297,7 +1297,7 @@ static void process_cmdent(CMDENT *cmdp, UTF8 *switchp, dbref executor, dbref ca
     switch (cmdp->callseq & CS_NARG_MASK)
     {
     case CS_NO_ARGS: // <cmd>   (no args)
-        (*(((CMDENT_NO_ARG *)cmdp)->handler))(executor, caller, enactor, key);
+        (*(((CMDENT_NO_ARG *)cmdp)->handler))(executor, caller, enactor, eval, key);
         break;
 
     case CS_ONE_ARG:    // <cmd> <arg>
@@ -2309,7 +2309,7 @@ UTF8 *process_command
                         process_hook(executor, cmdp, HOOK_BEFORE, false);
                     }
 
-                    do_leave(executor, caller, executor, 0);
+                    do_leave(executor, caller, executor, 0, 0);
 
                     if (  (cmdp->hookmask & HOOK_AFTER)
                         && bGoodHookObj)

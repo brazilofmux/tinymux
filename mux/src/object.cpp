@@ -1739,10 +1739,11 @@ static void check_floating(void)
  * * do_dbck: Perform a database consistency check and clean up damage.
  */
 
-void do_dbck(dbref executor, dbref caller, dbref enactor, int key)
+void do_dbck(dbref executor, dbref caller, dbref enactor, int eval, int key)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
 
     check_type = key;
     check_dead_refs();

@@ -1028,10 +1028,11 @@ void do_enter(dbref executor, dbref caller, dbref enactor, int eval, int key, UT
     return;
 }
 
-void do_leave(dbref executor, dbref caller, dbref enactor, int key)
+void do_leave(dbref executor, dbref caller, dbref enactor, int eval, int key)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
 
     dbref loc = Location(executor);
     dbref newLoc = loc;

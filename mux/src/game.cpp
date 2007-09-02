@@ -37,10 +37,11 @@
 MYSQL *mush_database = NULL;
 #endif // INLINESQL
 
-void do_dump(dbref executor, dbref caller, dbref enactor, int key)
+void do_dump(dbref executor, dbref caller, dbref enactor, int eval, int key)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
 
 #ifndef WIN32
     if (mudstate.dumping)
@@ -1192,10 +1193,11 @@ static void report_timecheck
     }
 }
 
-void do_timecheck(dbref executor, dbref caller, dbref enactor, int key)
+void do_timecheck(dbref executor, dbref caller, dbref enactor, int eval, int key)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
 
     bool yes_screen, yes_log, yes_clear;
 
@@ -2095,10 +2097,11 @@ bool Hearer(dbref thing)
     return false;
 }
 
-void do_readcache(dbref executor, dbref caller, dbref enactor, int key)
+void do_readcache(dbref executor, dbref caller, dbref enactor, int eval, int key)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(key);
 
     helpindex_load(executor);
@@ -2324,7 +2327,7 @@ static void dbconvert(void)
 
     if (standalone_check)
     {
-        do_dbck(NOTHING, NOTHING, NOTHING, DBCK_FULL);
+        do_dbck(NOTHING, NOTHING, NOTHING, 0, DBCK_FULL);
     }
     fclose(fpIn);
 
@@ -3280,7 +3283,7 @@ int DCL_CDECL main(int argc, char *argv[])
 
     // Do a consistency check and set up the freelist
     //
-    do_dbck(NOTHING, NOTHING, NOTHING, 0);
+    do_dbck(NOTHING, NOTHING, NOTHING, 0, 0);
 
     // Reset all the hash stats
     //
@@ -3317,7 +3320,7 @@ int DCL_CDECL main(int argc, char *argv[])
 #else
     SetupPorts(&nMainGamePorts, aMainGamePorts, &mudconf.ports, NULL);
 #endif
-    boot_slave(GOD, GOD, GOD, 0);
+    boot_slave(GOD, GOD, GOD, 0, 0);
 
     // All intialization should be complete, allow the local
     // extensions to configure themselves.

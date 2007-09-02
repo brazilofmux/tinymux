@@ -378,11 +378,13 @@ static DWORD WINAPI SlaveProc(LPVOID lpParameter)
 }
 
 static bool bSlaveBooted = false;
-void boot_slave(dbref executor, dbref caller, dbref enactor, int)
+void boot_slave(dbref executor, dbref caller, dbref enactor, int eval, int key)
 {
     UNUSED_PARAMETER(executor);
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
+    UNUSED_PARAMETER(key);
 
     if (bSlaveBooted)
     {
@@ -679,8 +681,14 @@ failure:
  * \return         None.
  */
 
-void boot_slave(dbref executor, dbref caller, dbref enactor, int)
+void boot_slave(dbref executor, dbref caller, dbref enactor, int eval, int key)
 {
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
+    UNUSED_PARAMETER(key);
+
     char *pFailedFunc = 0;
     int sv[2];
     int i;
@@ -1864,7 +1872,7 @@ void shovechars(int nPorts, PortInfo aPorts[])
                     log_text(T("Bad slave descriptor "));
                     log_number(slave_socket);
                     ENDLOG;
-                    boot_slave(GOD, GOD, GOD, 0);
+                    boot_slave(GOD, GOD, GOD, 0, 0);
                 }
 
 #ifdef STUB_SLAVE
@@ -4557,7 +4565,7 @@ static RETSIGTYPE DCL_CDECL sighandler(int sig)
         if (mudstate.bCanRestart)
         {
             log_signal(sig);
-            do_restart(GOD, GOD, GOD, 0);
+            do_restart(GOD, GOD, GOD, 0, 0);
         }
         else
         {

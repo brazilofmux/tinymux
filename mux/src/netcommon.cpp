@@ -2848,8 +2848,10 @@ void logged_out1(dbref executor, dbref caller, dbref enactor, int eval, int key,
     }
 }
 
-void logged_out0(dbref executor, dbref caller, dbref enactor, int key)
+void logged_out0(dbref executor, dbref caller, dbref enactor, int eval, int key)
 {
+    UNUSED_PARAMETER(eval);
+
     logged_out1(executor, caller, enactor, 0, key, (UTF8 *)"");
 }
 

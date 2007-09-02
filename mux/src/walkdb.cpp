@@ -1121,10 +1121,11 @@ void do_search(dbref executor, dbref caller, dbref enactor, int eval, int key, U
 // ---------------------------------------------------------------------------
 // do_markall: set or clear the mark bits of all objects in the db.
 //
-void do_markall(dbref executor, dbref caller, dbref enactor, int key)
+void do_markall(dbref executor, dbref caller, dbref enactor, int eval, int key)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
 
     int i;
 
@@ -1300,11 +1301,12 @@ dbref olist_next(void)
 }
 
 #define NPERIODS 24
-void do_report(dbref executor, dbref caller, dbref enactor, int extra)
+void do_report(dbref executor, dbref caller, dbref enactor, int eval, int key)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
-    UNUSED_PARAMETER(extra);
+    UNUSED_PARAMETER(eval);
+    UNUSED_PARAMETER(key);
 
     UTF8 *buff = alloc_mbuf("do_report");
     int nBin[NPERIODS];

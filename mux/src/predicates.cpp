@@ -1503,10 +1503,11 @@ void do_prog
 /* ---------------------------------------------------------------------------
  * do_restart: Restarts the game.
  */
-void do_restart(dbref executor, dbref caller, dbref enactor, int key)
+void do_restart(dbref executor, dbref caller, dbref enactor, int eval, int key)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(key);
 
     if (!Can_SiteAdmin(executor))
@@ -1601,10 +1602,11 @@ void do_restart(dbref executor, dbref caller, dbref enactor, int key)
 
 #ifdef WIN32
 
-void do_backup(dbref player, dbref caller, dbref enactor, int key)
+void do_backup(dbref player, dbref caller, dbref enactor, int eval, int key)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(key);
 
     notify(player, T("This feature is not yet available on Win32-hosted MUX."));
@@ -1612,19 +1614,24 @@ void do_backup(dbref player, dbref caller, dbref enactor, int key)
 
 #else // WIN32
 
-void do_backup(dbref player, dbref caller, dbref enactor, int key)
+void do_backup(dbref executor, dbref caller, dbref enactor, int eval, int key)
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
+    UNUSED_PARAMETER(key);
+
 #ifndef WIN32
     if (mudstate.dumping)
     {
-        notify(player, T("Dumping. Please try again later."));
+        notify(executor, T("Dumping. Please try again later."));
     }
 #endif // !WIN32
 
     raw_broadcast(0, "GAME: Backing up database. Please wait.");
     STARTLOG(LOG_ALWAYS, "WIZ", "BACK");
     log_text(T("Backup by "));
-    log_name(player);
+    log_name(executor);
     ENDLOG;
 
 #ifdef MEMORY_BASED
@@ -1648,11 +1655,12 @@ void do_backup(dbref player, dbref caller, dbref enactor, int key)
  * do_comment: Implement the @@ (comment) command. Very cpu-intensive :-)
  */
 
-void do_comment(dbref executor, dbref caller, dbref enactor, int key)
+void do_comment(dbref executor, dbref caller, dbref enactor, int eval, int key)
 {
     UNUSED_PARAMETER(executor);
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(key);
 }
 
@@ -2783,7 +2791,7 @@ void OutOfMemory(const UTF8 *SourceFile, unsigned int LineNo)
     if (  !mudstate.bStandAlone
        && mudstate.bCanRestart)
     {
-        do_restart(GOD, GOD, GOD, 0);
+        do_restart(GOD, GOD, GOD, 0, 0);
     }
     else
     {
@@ -2801,7 +2809,7 @@ bool AssertionFailed(const UTF8 *SourceFile, unsigned int LineNo)
     if (  !mudstate.bStandAlone
        && mudstate.bCanRestart)
     {
-        do_restart(GOD, GOD, GOD, 0);
+        do_restart(GOD, GOD, GOD, 0, 0);
     }
     else
     {

@@ -2694,9 +2694,10 @@ void do_channelnuke(dbref player)
     }
 }
 
-void do_clearcom(dbref executor, dbref caller, dbref enactor, int unused2)
+void do_clearcom(dbref executor, dbref caller, dbref enactor, int eval, int key)
 {
-    UNUSED_PARAMETER(unused2);
+    UNUSED_PARAMETER(eval);
+    UNUSED_PARAMETER(key);
 
     if (!mudconf.have_comsys)
     {
