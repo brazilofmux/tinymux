@@ -2503,6 +2503,7 @@ void do_decomp
     dbref executor,
     dbref caller,
     dbref enactor,
+    int   eval,
     int   key,
     int   nargs,
     UTF8 *name,
@@ -2511,6 +2512,7 @@ void do_decomp
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(nargs);
 
     BOOLEXP *pBoolExp;

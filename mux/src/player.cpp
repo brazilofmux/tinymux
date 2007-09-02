@@ -540,7 +540,7 @@ void AddToPublicChannel(dbref player)
     if (  mudconf.public_channel[0] != '\0'
        && mudconf.public_channel_alias[0] != '\0')
     {
-        do_addcom(player, player, player, 0, 2,
+        do_addcom(player, player, player, 0, 0, 2,
             mudconf.public_channel_alias, mudconf.public_channel);
     }
 }
@@ -613,6 +613,7 @@ void do_password
     dbref executor,
     dbref caller,
     dbref enactor,
+    int   eval,
     int   key,
     int   nargs,
     UTF8 *oldpass,
@@ -621,6 +622,7 @@ void do_password
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(key);
     UNUSED_PARAMETER(nargs);
 

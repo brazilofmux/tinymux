@@ -11,7 +11,7 @@
 #define CMD_NO_ARG(name)              extern void name(dbref executor, dbref caller, dbref enactor, int key)
 #define CMD_ONE_ARG(name)             extern void name(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8 *arg1)
 #define CMD_ONE_ARG_CMDARG(name)      extern void name(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8 *arg1, const UTF8 *cargs[], int ncargs)
-#define CMD_TWO_ARG(name)             extern void name(dbref executor, dbref caller, dbref enactor, int key, int nargs, UTF8 *arg1, UTF8 *arg2)
+#define CMD_TWO_ARG(name)             extern void name(dbref executor, dbref caller, dbref enactor, int eval, int key, int nargs, UTF8 *arg1, UTF8 *arg2)
 #define CMD_TWO_ARG_CMDARG(name)      extern void name(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8 *arg1, UTF8 *arg2, const UTF8 *cargs[], int ncargs)
 #define CMD_TWO_ARG_ARGV(name)        extern void name(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8 *arg1, UTF8 *args[], int nargs)
 #define CMD_TWO_ARG_ARGV_CMDARG(name) extern void name(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8 *arg1, UTF8 *args[], int nargs, const UTF8 *cargs[], int ncargs)
@@ -201,7 +201,7 @@ typedef struct
     int     extra;
     int     callseq;
     int     hookmask;
-    void    (*handler)(dbref executor, dbref caller, dbref enactor, int key, int nargs, UTF8 *arg1, UTF8 *arg2);
+    void    (*handler)(dbref executor, dbref caller, dbref enactor, int eval, int key, int nargs, UTF8 *arg1, UTF8 *arg2);
 } CMDENT_TWO_ARG;
 
 typedef struct

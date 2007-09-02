@@ -350,6 +350,7 @@ void do_chownall
     dbref executor,
     dbref caller,
     dbref enactor,
+    int   eval,
     int   key,
     int   nargs,
     UTF8 *from,
@@ -358,6 +359,7 @@ void do_chownall
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(nargs);
 
     init_match(executor, from, TYPE_PLAYER);

@@ -1555,7 +1555,7 @@ static void process_cmdent(CMDENT *cmdp, UTF8 *switchp, dbref executor, dbref ca
             else
             {
                 (*(((CMDENT_TWO_ARG *)cmdp)->handler))(executor, caller,
-                    enactor, key, nargs2, buf1, buf2);
+                    enactor, eval, key, nargs2, buf1, buf2);
             }
 
             // Free the buffer, if needed.
@@ -4450,11 +4450,12 @@ void do_train(dbref executor, dbref caller, dbref enactor, int eval, int key, UT
     mudstate.train_nest_lev--;
 }
 
-void do_moniker(dbref executor, dbref caller, dbref enactor, int key,
+void do_moniker(dbref executor, dbref caller, dbref enactor, int eval, int key,
                  int nfargs, UTF8 *name, UTF8 *instr)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(key);
     UNUSED_PARAMETER(nfargs);
 

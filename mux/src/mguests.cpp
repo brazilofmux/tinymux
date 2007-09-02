@@ -351,8 +351,8 @@ dbref CGuests::MakeGuestChar(void)
 
     // Lock em!
     //
-    do_lock(player, player, player, A_LOCK, 2, tprintf("#%d", player), (UTF8 *)"=me");
-    do_lock(player, player, player, A_LENTER, 2, tprintf("#%d", player), (UTF8 *)"=me");
+    do_lock(player, player, player, 0, A_LOCK, 2, tprintf("#%d", player), (UTF8 *)"=me");
+    do_lock(player, player, player, 0, A_LENTER, 2, tprintf("#%d", player), (UTF8 *)"=me");
 
     // return em!
     //
@@ -453,7 +453,7 @@ void CGuests::AddToGuestChannel(dbref player)
     if (  mudconf.guests_channel[0] != '\0'
        && mudconf.guests_channel_alias[0] != '\0')
     {
-        do_addcom(player, player, player, 0, 2,
+        do_addcom(player, player, player, 0, 0, 2,
             mudconf.guests_channel_alias, mudconf.guests_channel);
     }
 }

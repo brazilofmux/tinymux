@@ -1362,11 +1362,12 @@ static bool flag_rename(UTF8 *alias, UTF8 *newname)
     return false;
 }
 
-void do_flag(dbref executor, dbref caller, dbref enactor, int key, int nargs,
+void do_flag(dbref executor, dbref caller, dbref enactor, int eval, int key, int nargs,
              UTF8 *flag1, UTF8 *flag2)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
 
     if (key & FLAG_REMOVE)
     {

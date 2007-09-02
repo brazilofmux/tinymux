@@ -2069,6 +2069,7 @@ void do_addcom
     dbref executor,
     dbref caller,
     dbref enactor,
+    int   eval,
     int   key,
     int   nargs,
     UTF8 *arg1,
@@ -2077,6 +2078,7 @@ void do_addcom
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(key);
     UNUSED_PARAMETER(nargs);
 
@@ -2506,6 +2508,7 @@ void do_comtitle
     dbref executor,
     dbref caller,
     dbref enactor,
+    int   eval,
     int   key,
     int   nargs,
     UTF8 *arg1,
@@ -2514,6 +2517,7 @@ void do_comtitle
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(nargs);
 
     if (!mudconf.have_comsys)
@@ -3028,6 +3032,7 @@ void do_editchannel
     dbref executor,
     dbref caller,
     dbref enactor,
+    int   eval,
     int   flag,
     int   nargs,
     UTF8 *arg1,
@@ -3036,6 +3041,7 @@ void do_editchannel
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(nargs);
 
     if (!mudconf.have_comsys)
@@ -3268,6 +3274,7 @@ void do_cemit
     dbref executor,
     dbref caller,
     dbref enactor,
+    int   eval,
     int   key,
     int   nargs,
     UTF8 *chan,
@@ -3276,6 +3283,7 @@ void do_cemit
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(nargs);
 
     if (!mudconf.have_comsys)
@@ -3312,12 +3320,14 @@ void do_chopen
     dbref executor,
     dbref caller,
     dbref enactor,
+    int   eval,
     int   key,
     int   nargs,
     UTF8 *chan,
     UTF8 *value
 )
 {
+    UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(nargs);
 
     if (!mudconf.have_comsys)
@@ -3437,6 +3447,7 @@ void do_chboot
     dbref executor,
     dbref caller,
     dbref enactor,
+    int   eval,
     int   key,
     int   nargs,
     UTF8 *channel,
@@ -3445,6 +3456,7 @@ void do_chboot
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(nargs);
 
     // I sure hope it's not going to be that long.

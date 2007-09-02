@@ -807,6 +807,7 @@ void do_attribute
     dbref executor,
     dbref caller,
     dbref enactor,
+    int   eval,
     int   key,
     int   nargs,
     UTF8 *aname,
@@ -815,6 +816,7 @@ void do_attribute
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(nargs);
 
     // Look up the user-named attribute we want to play with.
@@ -947,6 +949,7 @@ void do_fixdb
     dbref executor,
     dbref caller,
     dbref enactor,
+    int   eval,
     int   key,
     int   nargs,
     UTF8 *arg1,
@@ -955,6 +958,7 @@ void do_fixdb
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(nargs);
 
     init_match(executor, arg1, NOTYPE);

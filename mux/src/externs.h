@@ -886,7 +886,7 @@ void check_mail(dbref player, int folder, bool silent);
 const UTF8 *mail_fetch_message(dbref player, int num);
 int  mail_fetch_from(dbref player, int num);
 void raw_notify_html(dbref player, const mux_string &sMsg);
-void do_lock(dbref executor, dbref caller, dbref enactor, int key,
+void do_lock(dbref executor, dbref caller, dbref enactor, int eval, int key,
                     int nargs, UTF8 *name, UTF8 *keytext);
 void check_events(void);
 void list_system_resources(dbref player);

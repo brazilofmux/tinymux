@@ -10469,6 +10469,7 @@ void do_function
     dbref executor,
     dbref caller,
     dbref enactor,
+    int   eval,
     int   key,
     int   nargs,
     UTF8 *fname,
@@ -10477,6 +10478,7 @@ void do_function
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(nargs);
 
     UFUN *ufp, *ufp2;

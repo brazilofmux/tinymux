@@ -176,7 +176,7 @@ void do_delcomchannel(dbref player, UTF8 *channel, bool bQuiet);
 void do_clearcom(dbref executor, dbref caller, dbref enactor, int unused2);
 
 //! \brief Add a new channel subscription/alias for the enactor
-void do_addcom(dbref executor, dbref caller, dbref enactor, int key, int nargs,
+void do_addcom(dbref executor, dbref caller, dbref enactor, int eval, int key, int nargs,
     UTF8 *arg1, UTF8 *arg2);
 
 //! \brief Process a request to set a channel header

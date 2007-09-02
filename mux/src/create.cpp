@@ -247,12 +247,14 @@ void do_link
     dbref executor,
     dbref caller,
     dbref enactor,
+    int   eval,
     int   key,
     int   nargs,
     UTF8 *what,
     UTF8 *where
 )
 {
+    UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(nargs);
 
     // Find the thing to link
@@ -421,6 +423,7 @@ void do_parent
     dbref executor,
     dbref caller,
     dbref enactor,
+    int   eval,
     int   key,
     int   nargs,
     UTF8 *tname,
@@ -429,6 +432,7 @@ void do_parent
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(key);
     UNUSED_PARAMETER(nargs);
 
@@ -563,6 +567,7 @@ void do_create
     dbref executor,
     dbref caller,
     dbref enactor,
+    int   eval,
     int   key,
     int   nargs,
     UTF8 *name,
@@ -571,6 +576,7 @@ void do_create
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(key);
 
     int cost = 0;
@@ -618,6 +624,7 @@ void do_clone
     dbref executor,
     dbref caller,
     dbref enactor,
+    int   eval,
     int   key,
     int   nargs,
     UTF8 *name,
@@ -626,6 +633,7 @@ void do_clone
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(nargs);
 
     dbref clone, thing, new_owner, loc;
@@ -850,6 +858,7 @@ void do_pcreate
     dbref executor,
     dbref caller,
     dbref enactor,
+    int   eval,
     int   key,
     int   nargs,
     UTF8 *name,
@@ -858,6 +867,7 @@ void do_pcreate
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(nargs);
 
     const UTF8 *pmsg;

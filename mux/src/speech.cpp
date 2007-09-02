@@ -550,6 +550,7 @@ void do_page
     dbref executor,
     dbref caller,
     dbref enactor,
+    int   eval,
     int   key,
     int   nargs,
     UTF8 *arg1,
@@ -558,6 +559,7 @@ void do_page
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(key);
 
     int   nPlayers = 0;
@@ -1542,6 +1544,7 @@ void do_pemit
     dbref executor,
     dbref caller,
     dbref enactor,
+    int   eval,
     int   key,
     int   nargs,
     UTF8 *recipient,
@@ -1550,6 +1553,7 @@ void do_pemit
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
 
     if (  nargs < 2
        && key != PEMIT_WHISPER)

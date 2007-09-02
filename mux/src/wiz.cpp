@@ -200,12 +200,15 @@ void do_teleport
     dbref executor,
     dbref caller,
     dbref enactor,
+    int   eval,
     int   key,
     int   nargs,
     UTF8 *arg1,
     UTF8 *arg2
 )
 {
+    UNUSED_PARAMETER(eval);
+
     if (  (  Fixed(executor)
           || Fixed(Owner(executor)))
        && !Tel_Anywhere(executor))
@@ -313,6 +316,7 @@ void do_toad
     dbref executor,
     dbref caller,
     dbref enactor,
+    int   eval,
     int   key,
     int   nargs,
     UTF8 *toad,
@@ -321,6 +325,7 @@ void do_toad
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
 
     dbref victim, recipient, loc, aowner;
     UTF8 *buf;
@@ -436,6 +441,7 @@ void do_newpassword
     dbref executor,
     dbref caller,
     dbref enactor,
+    int   eval,
     int   key,
     int   nargs,
     UTF8 *name,
@@ -444,6 +450,7 @@ void do_newpassword
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(key);
     UNUSED_PARAMETER(nargs);
 

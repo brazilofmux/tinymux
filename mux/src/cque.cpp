@@ -604,6 +604,7 @@ void do_notify
     dbref executor,
     dbref caller,
     dbref enactor,
+    int   eval,
     int   key,
     int   nargs,
     UTF8 *what,
@@ -612,6 +613,7 @@ void do_notify
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(nargs);
 
     UTF8 *obj = parse_to(&what, '/', 0);

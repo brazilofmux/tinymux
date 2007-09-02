@@ -163,6 +163,7 @@ void do_quota
     dbref executor,
     dbref caller,
     dbref enactor,
+    int   eval,
     int   key,
     int   nargs,
     UTF8 *arg1,
@@ -171,6 +172,7 @@ void do_quota
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(nargs);
 
     if (!(mudconf.quotas || Quota(executor)))

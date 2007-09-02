@@ -58,6 +58,7 @@ void do_chzone
     dbref executor,
     dbref caller,
     dbref enactor,
+    int   eval,
     int   key,
     int   nargs,
     UTF8 *name,
@@ -66,6 +67,7 @@ void do_chzone
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(key);
     UNUSED_PARAMETER(nargs);
 
@@ -159,6 +161,7 @@ void do_name
     dbref executor,
     dbref caller,
     dbref enactor,
+    int   eval,
     int   key,
     int   nargs,
     UTF8 *name,
@@ -167,6 +170,7 @@ void do_name
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(key);
 
     dbref thing = match_controlled(executor, name);
@@ -270,6 +274,7 @@ void do_alias
     dbref executor,
     dbref caller,
     dbref enactor,
+    int   eval,
     int   key,
     int   nargs,
     UTF8 *name,
@@ -278,6 +283,7 @@ void do_alias
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(key);
     UNUSED_PARAMETER(nargs);
 
@@ -382,6 +388,7 @@ void do_forwardlist
     dbref executor,
     dbref caller,
     dbref enactor,
+    int   eval,
     int   key,
     int   nargs,
     UTF8 *target,
@@ -390,6 +397,7 @@ void do_forwardlist
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(key);
     UNUSED_PARAMETER(nargs);
 
@@ -442,6 +450,7 @@ void do_lock
     dbref executor,
     dbref caller,
     dbref enactor,
+    int   eval,
     int   key,
     int   nargs,
     UTF8 *name,
@@ -450,6 +459,7 @@ void do_lock
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(nargs);
 
     dbref thing;
@@ -780,6 +790,7 @@ void do_chown
     dbref executor,
     dbref caller,
     dbref enactor,
+    int   eval,
     int   key,
     int   nargs,
     UTF8 *name,
@@ -788,6 +799,7 @@ void do_chown
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(nargs);
 
     dbref nOwnerOrig, nOwnerNew, thing;
@@ -1111,6 +1123,7 @@ void do_set
     dbref executor,
     dbref caller,
     dbref enactor,
+    int   eval,
     int   key,
     int   nargs,
     UTF8 *name,
@@ -1119,6 +1132,7 @@ void do_set
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(nargs);
 
     dbref thing, aowner;
@@ -1276,6 +1290,7 @@ void do_power
     dbref executor,
     dbref caller,
     dbref enactor,
+    int   eval,
     int   key,
     int   nargs,
     UTF8 *name,
@@ -1284,6 +1299,7 @@ void do_power
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(nargs);
 
     if (  !flag
@@ -1308,6 +1324,7 @@ void do_setattr
     dbref executor,
     dbref caller,
     dbref enactor,
+    int   eval,
     int   attrnum,
     int   nargs,
     UTF8 *name,
@@ -1316,6 +1333,7 @@ void do_setattr
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(nargs);
 
     init_match(executor, name, NOTYPE);
@@ -2041,12 +2059,14 @@ void do_setvattr
     dbref executor,
     dbref caller,
     dbref enactor,
+    int   eval,
     int   key,
     int   nargs,
     UTF8 *arg1,
     UTF8 *arg2
 )
 {
+    UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(key);
     UNUSED_PARAMETER(nargs);
 
@@ -2080,5 +2100,5 @@ void do_setvattr
         notify_quiet(executor, T("That's not a good name for an attribute."));
         return;
     }
-    do_setattr(executor, caller, enactor, anum, 2, s, arg2);
+    do_setattr(executor, caller, enactor, 0, anum, 2, s, arg2);
 }
