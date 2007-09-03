@@ -560,13 +560,17 @@ void do_page
     int   key,
     int   nargs,
     UTF8 *arg1,
-    UTF8 *arg2
+    UTF8 *arg2,
+    const UTF8 *cargs[],
+    int   ncargs
 )
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
     UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(key);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
 
     int   nPlayers = 0;
     dbref aPlayers[(LBUF_SIZE+1)/2];
@@ -1554,12 +1558,16 @@ void do_pemit
     int   key,
     int   nargs,
     UTF8 *recipient,
-    UTF8 *message
+    UTF8 *message,
+    const UTF8 *cargs[],
+    int   ncargs
 )
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
     UNUSED_PARAMETER(eval);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
 
     if (  nargs < 2
        && key != PEMIT_WHISPER)

@@ -3404,11 +3404,11 @@ static FUNCTION(fun_num)
 
 static void internalPlayerFind
 (
-    UTF8* buff,
-    UTF8** bufc,
-    dbref player,
-    UTF8* name,
-    int bVerifyPlayer
+    UTF8  *buff,
+    UTF8 **bufc,
+    dbref  player,
+    UTF8  *name,
+    int    bVerifyPlayer
 )
 {
     dbref thing;
@@ -10473,13 +10473,17 @@ void do_function
     int   key,
     int   nargs,
     UTF8 *fname,
-    UTF8 *target
+    UTF8 *target,
+    const UTF8 *cargs[],
+    int   ncargs
 )
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
     UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(nargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
 
     UFUN *ufp, *ufp2;
     ATTR *ap;

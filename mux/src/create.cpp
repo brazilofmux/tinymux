@@ -251,11 +251,15 @@ void do_link
     int   key,
     int   nargs,
     UTF8 *what,
-    UTF8 *where
+    UTF8 *where,
+    const UTF8 *cargs[],
+    int   ncargs
 )
 {
     UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(nargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
 
     // Find the thing to link
     //
@@ -427,7 +431,9 @@ void do_parent
     int   key,
     int   nargs,
     UTF8 *tname,
-    UTF8 *pname
+    UTF8 *pname,
+    const UTF8 *cargs[],
+    int   ncargs
 )
 {
     UNUSED_PARAMETER(caller);
@@ -435,6 +441,8 @@ void do_parent
     UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(key);
     UNUSED_PARAMETER(nargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
 
     dbref thing, parent, curr;
     int lev;
@@ -571,13 +579,17 @@ void do_create
     int   key,
     int   nargs,
     UTF8 *name,
-    UTF8 *coststr
+    UTF8 *coststr,
+    const UTF8 *cargs[],
+    int   ncargs
 )
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
     UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(key);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
 
     int cost = 0;
     if (!name || !*name)
@@ -628,13 +640,17 @@ void do_clone
     int   key,
     int   nargs,
     UTF8 *name,
-    UTF8 *arg2
+    UTF8 *arg2,
+    const UTF8 *cargs[],
+    int   ncargs
 )
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
     UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(nargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
 
     dbref clone, thing, new_owner, loc;
     int cost;
@@ -862,13 +878,17 @@ void do_pcreate
     int   key,
     int   nargs,
     UTF8 *name,
-    UTF8 *pass
+    UTF8 *pass,
+    const UTF8 *cargs[],
+    int   ncargs
 )
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
     UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(nargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
 
     const UTF8 *pmsg;
     bool isrobot = (key == PCRE_ROBOT);

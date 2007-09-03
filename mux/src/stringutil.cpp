@@ -4903,13 +4903,13 @@ CF_HAND(cf_art_rule)
     UNUSED_PARAMETER(pExtra);
     UNUSED_PARAMETER(nExtra);
 
-    UTF8* pCurrent = str;
+    UTF8 *pCurrent = str;
 
     while (mux_isspace(*pCurrent))
     {
         pCurrent++;
     }
-    UTF8* pArticle = pCurrent;
+    UTF8 *pArticle = pCurrent;
     while (  !mux_isspace(*pCurrent)
           && *pCurrent != '\0')
     {

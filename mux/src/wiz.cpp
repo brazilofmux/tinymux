@@ -204,10 +204,14 @@ void do_teleport
     int   key,
     int   nargs,
     UTF8 *arg1,
-    UTF8 *arg2
+    UTF8 *arg2,
+    const UTF8 *cargs[],
+    int   ncargs
 )
 {
     UNUSED_PARAMETER(eval);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
 
     if (  (  Fixed(executor)
           || Fixed(Owner(executor)))
@@ -268,8 +272,17 @@ void do_teleport
 // ---------------------------------------------------------------------------
 // do_force_prefixed: Interlude to do_force for the # command
 //
-void do_force_prefixed( dbref executor, dbref caller, dbref enactor, int eval,
-                        int key, UTF8 *command, const UTF8 *args[], int nargs )
+void do_force_prefixed
+(
+    dbref executor,
+    dbref caller,
+    dbref enactor,
+    int   eval,
+    int   key,
+    UTF8 *command,
+    const UTF8 *cargs[],
+    int ncargs
+)
 {
     UTF8 *cp = parse_to(&command, ' ', 0);
     if (!command)
@@ -282,28 +295,40 @@ void do_force_prefixed( dbref executor, dbref caller, dbref enactor, int eval,
     }
     if (*command)
     {
-        do_force(executor, caller, enactor, eval, key, cp, command, args, nargs);
+        do_force(executor, caller, enactor, eval, key, 2, cp, command, cargs, ncargs);
     }
 }
 
 // ---------------------------------------------------------------------------
 // do_force: Force an object to do something.
 //
-void do_force( dbref executor, dbref caller, dbref enactor, int eval, int key,
-               UTF8 *what, UTF8 *command, const UTF8 *args[], int nargs )
+void do_force
+(
+    dbref executor,
+    dbref caller,
+    dbref enactor,
+    int   eval,
+    int   key,
+    int   nargs,
+    UTF8 *arg1,
+    UTF8 *arg2,
+    const UTF8 *cargs[],
+    int ncargs
+)
 {
     UNUSED_PARAMETER(enactor);
     UNUSED_PARAMETER(key);
+    UNUSED_PARAMETER(nargs);
 
-    dbref victim = match_controlled(executor, what);
+    dbref victim = match_controlled(executor, arg1);
     if (victim != NOTHING)
     {
         // Force victim to do command.
         //
         CLinearTimeAbsolute lta;
         wait_que(victim, caller, executor, eval, false, lta, NOTHING, 0,
-            command,
-            nargs, args,
+            arg2,
+            ncargs, cargs,
             mudstate.global_regs);
     }
 }
@@ -320,12 +345,16 @@ void do_toad
     int   key,
     int   nargs,
     UTF8 *toad,
-    UTF8 *newowner
+    UTF8 *newowner,
+    const UTF8 *cargs[],
+    int   ncargs
 )
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
     UNUSED_PARAMETER(eval);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
 
     dbref victim, recipient, loc, aowner;
     UTF8 *buf;
@@ -445,7 +474,9 @@ void do_newpassword
     int   key,
     int   nargs,
     UTF8 *name,
-    UTF8 *password
+    UTF8 *password,
+    const UTF8 *cargs[],
+    int   ncargs
 )
 {
     UNUSED_PARAMETER(caller);
@@ -453,6 +484,8 @@ void do_newpassword
     UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(key);
     UNUSED_PARAMETER(nargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
 
     dbref victim = lookup_player(executor, name, false);
     if (victim == NOTHING)

@@ -37,8 +37,10 @@ static void bind_and_queue(dbref executor, dbref caller, dbref enactor,
 // and /delimit allows specification of a delimiter.
 //
 void do_dolist(dbref executor, dbref caller, dbref enactor, int eval, int key,
-               UTF8 *list, UTF8 *command, const UTF8 *cargs[], int ncargs)
+               int nargs, UTF8 *list, UTF8 *command, const UTF8 *cargs[], int ncargs)
 {
+    UNUSED_PARAMETER(nargs);
+
     if (!list || *list == '\0')
     {
         notify(executor, T("That's terrific, but what should I do with the list?"));
@@ -358,13 +360,17 @@ void do_chownall
     int   key,
     int   nargs,
     UTF8 *from,
-    UTF8 *to
+    UTF8 *to,
+    const UTF8 *cargs[],
+    int   ncargs
 )
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
     UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(nargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
 
     init_match(executor, from, TYPE_PLAYER);
     match_neighbor();

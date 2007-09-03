@@ -1363,11 +1363,13 @@ static bool flag_rename(UTF8 *alias, UTF8 *newname)
 }
 
 void do_flag(dbref executor, dbref caller, dbref enactor, int eval, int key, int nargs,
-             UTF8 *flag1, UTF8 *flag2)
+             UTF8 *flag1, UTF8 *flag2, const UTF8 *cargs[], int ncargs)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
     UNUSED_PARAMETER(eval);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
 
     if (key & FLAG_REMOVE)
     {

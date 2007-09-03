@@ -610,13 +610,17 @@ void do_notify
     int   key,
     int   nargs,
     UTF8 *what,
-    UTF8 *count
+    UTF8 *count,
+    const UTF8 *cargs[],
+    int   ncargs
 )
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
     UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(nargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
 
     UTF8 *obj = parse_to(&what, '/', 0);
     init_match(executor, obj, NOTYPE);
@@ -977,13 +981,16 @@ void do_wait
     dbref caller,
     dbref enactor,
     int   eval,
-    int key,
+    int   key,
+    int   nargs,
     UTF8 *event,
     UTF8 *cmd,
     const UTF8 *cargs[],
-    int ncargs
+    int   ncargs
 )
 {
+    UNUSED_PARAMETER(nargs);
+
     CLinearTimeAbsolute ltaWhen;
     CLinearTimeDelta    ltd;
 

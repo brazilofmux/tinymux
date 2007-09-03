@@ -541,7 +541,7 @@ void AddToPublicChannel(dbref player)
        && mudconf.public_channel_alias[0] != '\0')
     {
         do_addcom(player, player, player, 0, 0, 2,
-            mudconf.public_channel_alias, mudconf.public_channel);
+            mudconf.public_channel_alias, mudconf.public_channel, NULL, 0);
     }
 }
 
@@ -617,7 +617,9 @@ void do_password
     int   key,
     int   nargs,
     UTF8 *oldpass,
-    UTF8 *newpass
+    UTF8 *newpass,
+    const UTF8 *cargs[],
+    int   ncargs
 )
 {
     UNUSED_PARAMETER(caller);
@@ -625,6 +627,8 @@ void do_password
     UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(key);
     UNUSED_PARAMETER(nargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
 
     dbref aowner;
     int   aflags;

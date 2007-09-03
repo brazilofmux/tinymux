@@ -23,13 +23,17 @@ void do_kill
     int   key,
     int   nargs,
     UTF8 *what,
-    UTF8 *costchar
+    UTF8 *costchar,
+    const UTF8 *cargs[],
+    int   ncargs
 )
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
     UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(nargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
 
     UTF8 *buf1, *buf2;
 
@@ -394,13 +398,17 @@ void do_give
     int   key,
     int   nargs,
     UTF8 *who,
-    UTF8 *amnt
+    UTF8 *amnt,
+    const UTF8 *cargs[],
+    int   ncargs
 )
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
     UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(nargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
 
     // Check recipient.
     //

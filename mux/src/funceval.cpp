@@ -294,7 +294,7 @@ FUNCTION(fun_link)
     {
         return;
     }
-    do_link(executor, caller, enactor, eval, 0, 2, fargs[0], fargs[1]);
+    do_link(executor, caller, enactor, eval, 0, 2, fargs[0], fargs[1], NULL, 0);
 }
 
 #if defined(FIRANMUX)
@@ -374,7 +374,7 @@ FUNCTION(fun_tel)
         }
     }
 
-    do_teleport(executor, caller, enactor, eval, key, 2, fargs[0], fargs[1]);
+    do_teleport(executor, caller, enactor, eval, key, 2, fargs[0], fargs[1], NULL, 0);
 }
 
 FUNCTION(fun_pemit)
@@ -448,7 +448,7 @@ FUNCTION(fun_cemit)
     {
         return;
     }
-    do_cemit(executor, caller, enactor, eval, 0, nfargs, fargs[0], fargs[1]);
+    do_cemit(executor, caller, enactor, eval, 0, nfargs, fargs[0], fargs[1], NULL, 0);
 }
 
 // ------------------------------------------------------------------------

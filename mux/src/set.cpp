@@ -62,7 +62,9 @@ void do_chzone
     int   key,
     int   nargs,
     UTF8 *name,
-    UTF8 *newobj
+    UTF8 *newobj,
+    const UTF8 *cargs[],
+    int   ncargs
 )
 {
     UNUSED_PARAMETER(caller);
@@ -70,6 +72,8 @@ void do_chzone
     UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(key);
     UNUSED_PARAMETER(nargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
 
     if (!mudconf.have_zones)
     {
@@ -165,13 +169,17 @@ void do_name
     int   key,
     int   nargs,
     UTF8 *name,
-    UTF8 *newname
+    UTF8 *newname,
+    const UTF8 *cargs[],
+    int   ncargs
 )
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
     UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(key);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
 
     dbref thing = match_controlled(executor, name);
     if (thing == NOTHING)
@@ -278,7 +286,9 @@ void do_alias
     int   key,
     int   nargs,
     UTF8 *name,
-    UTF8 *alias
+    UTF8 *alias,
+    const UTF8 *cargs[],
+    int   ncargs
 )
 {
     UNUSED_PARAMETER(caller);
@@ -286,6 +296,8 @@ void do_alias
     UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(key);
     UNUSED_PARAMETER(nargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
 
     dbref thing = match_controlled(executor, name);
     if (thing == NOTHING)
@@ -392,7 +404,9 @@ void do_forwardlist
     int   key,
     int   nargs,
     UTF8 *target,
-    UTF8 *newlist
+    UTF8 *newlist,
+    const UTF8 *cargs[],
+    int   ncargs
 )
 {
     UNUSED_PARAMETER(caller);
@@ -400,6 +414,8 @@ void do_forwardlist
     UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(key);
     UNUSED_PARAMETER(nargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
 
     dbref thing = match_controlled(executor, target);
     if (thing == NOTHING)
@@ -454,13 +470,17 @@ void do_lock
     int   key,
     int   nargs,
     UTF8 *name,
-    UTF8 *keytext
+    UTF8 *keytext,
+    const UTF8 *cargs[],
+    int   ncargs
 )
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
     UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(nargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
 
     dbref thing;
     ATTR *ap;
@@ -798,13 +818,17 @@ void do_chown
     int   key,
     int   nargs,
     UTF8 *name,
-    UTF8 *newown
+    UTF8 *newown,
+    const UTF8 *cargs[],
+    int   ncargs
 )
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
     UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(nargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
 
     dbref nOwnerOrig, nOwnerNew, thing;
     bool bDoit;
@@ -1131,13 +1155,17 @@ void do_set
     int   key,
     int   nargs,
     UTF8 *name,
-    UTF8 *flagname
+    UTF8 *flagname,
+    const UTF8 *cargs[],
+    int   ncargs
 )
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
     UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(nargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
 
     dbref thing, aowner;
     int aflags;
@@ -1298,13 +1326,17 @@ void do_power
     int   key,
     int   nargs,
     UTF8 *name,
-    UTF8 *flag
+    UTF8 *flag,
+    const UTF8 *cargs[],
+    int   ncargs
 )
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
     UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(nargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
 
     if (  !flag
        || !*flag)
@@ -1332,13 +1364,17 @@ void do_setattr
     int   attrnum,
     int   nargs,
     UTF8 *name,
-    UTF8 *attrtext
+    UTF8 *attrtext,
+    const UTF8 *cargs[],
+    int   ncargs
 )
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
     UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(nargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
 
     init_match(executor, name, NOTYPE);
     match_everything(MAT_EXIT_PARENTS);
@@ -2071,12 +2107,16 @@ void do_setvattr
     int   key,
     int   nargs,
     UTF8 *arg1,
-    UTF8 *arg2
+    UTF8 *arg2,
+    const UTF8 *cargs[],
+    int   ncargs
 )
 {
     UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(key);
     UNUSED_PARAMETER(nargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
 
     UTF8 *s;
     int anum;
@@ -2108,5 +2148,5 @@ void do_setvattr
         notify_quiet(executor, T("That's not a good name for an attribute."));
         return;
     }
-    do_setattr(executor, caller, enactor, 0, anum, 2, s, arg2);
+    do_setattr(executor, caller, enactor, 0, anum, 2, s, arg2, NULL, 0);
 }

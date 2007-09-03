@@ -259,7 +259,9 @@ void do_log
     int   key,
     int   nargs,
     UTF8 *whichlog,
-    UTF8 *logtext
+    UTF8 *logtext,
+    const UTF8 *cargs[],
+    int   ncargs
 )
 {
     UNUSED_PARAMETER(caller);
@@ -267,6 +269,8 @@ void do_log
     UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(key);
     UNUSED_PARAMETER(nargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
 
     bool bValid = true;
 

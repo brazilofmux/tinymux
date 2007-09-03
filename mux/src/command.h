@@ -10,8 +10,7 @@
 
 #define CMD_NO_ARG(name)              extern void name(dbref executor, dbref caller, dbref enactor, int eval, int key)
 #define CMD_ONE_ARG(name)             extern void name(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8 *arg1, const UTF8 *cargs[], int ncargs)
-#define CMD_TWO_ARG(name)             extern void name(dbref executor, dbref caller, dbref enactor, int eval, int key, int nargs, UTF8 *arg1, UTF8 *arg2)
-#define CMD_TWO_ARG_CMDARG(name)      extern void name(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8 *arg1, UTF8 *arg2, const UTF8 *cargs[], int ncargs)
+#define CMD_TWO_ARG(name)             extern void name(dbref executor, dbref caller, dbref enactor, int eval, int key, int nargs, UTF8 *arg1, UTF8 *arg2, const UTF8 *cargs[], int ncargs)
 #define CMD_TWO_ARG_ARGV(name)        extern void name(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8 *arg1, UTF8 *args[], int nargs)
 #define CMD_TWO_ARG_ARGV_CMDARG(name) extern void name(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8 *arg1, UTF8 *args[], int nargs, const UTF8 *cargs[], int ncargs)
 
@@ -61,7 +60,7 @@ CMD_TWO_ARG(do_decomp);         /* Reproduce commands to recreate obj */
 CMD_ONE_ARG(do_destroy);        /* Destroy an object */
 CMD_TWO_ARG_ARGV(do_dig);       /* Dig a new room */
 CMD_ONE_ARG(do_doing);          /* Set doing string in WHO report */
-CMD_TWO_ARG_CMDARG(do_dolist);  /* Iterate command on list members */
+CMD_TWO_ARG(do_dolist);         /* Iterate command on list members */
 CMD_ONE_ARG(do_drop);           /* Drop an object */
 CMD_NO_ARG(do_dump);            /* Dump the database */
 CMD_TWO_ARG_ARGV(do_edit);      /* Edit one or more attributes */
@@ -71,7 +70,7 @@ CMD_ONE_ARG(do_eval);           /* Evaluate argument and do nothing else */
 CMD_ONE_ARG(do_examine);        /* Examine an object */
 CMD_ONE_ARG(do_find);           /* Search for name in database */
 CMD_TWO_ARG(do_fixdb);          /* Database repair functions */
-CMD_TWO_ARG_CMDARG(do_force);   /* Force someone to do something */
+CMD_TWO_ARG(do_force);          /* Force someone to do something */
 CMD_ONE_ARG(do_force_prefixed); /* #<num> <cmd> variant of FORCE */
 CMD_TWO_ARG(do_forwardlist);    // Set a forwardlist on something
 CMD_TWO_ARG(do_function);       /* Make user-def global function */
@@ -137,17 +136,17 @@ CMD_ONE_ARG(do_use);            /* Use object */
 CMD_NO_ARG(do_version);         /* List MUX version number */
 CMD_NO_ARG(do_report);          /* Do player/game statistics report */
 CMD_TWO_ARG_ARGV(do_verb);      /* Execute a user-created verb */
-CMD_TWO_ARG_CMDARG(do_wait);    /* Perform command after a wait */
+CMD_TWO_ARG(do_wait);           /* Perform command after a wait */
 #ifdef QUERY_SLAVE
-CMD_TWO_ARG_CMDARG(do_query);   /* Generic external queries (e.g., SQL) */
+CMD_TWO_ARG(do_query);          /* Generic external queries (e.g., SQL) */
 #endif // QUERY_SLAVE
 CMD_ONE_ARG(do_wipe);           /* Mass-remove attrs from obj */
 CMD_NO_ARG(do_dbclean);         /* Remove stale vattr entries */
 CMD_TWO_ARG(do_addcommand);     /* Add or replace a global command */
 CMD_TWO_ARG(do_delcommand);     /* Delete an added global command */
 CMD_ONE_ARG(do_listcommands);   /* List added global commands */
-CMD_TWO_ARG_CMDARG(do_assert);  /* Stop evaluating an action list */
-CMD_TWO_ARG_CMDARG(do_break);   /* Stop evaluating an action list */
+CMD_TWO_ARG(do_assert);         /* Stop evaluating an action list */
+CMD_TWO_ARG(do_break);          /* Stop evaluating an action list */
 #ifdef REALITY_LVLS
 CMD_TWO_ARG(do_rxlevel);        /* set Rx Levels */
 CMD_TWO_ARG(do_txlevel);        /* set Tx Levels */
@@ -189,19 +188,8 @@ typedef struct
     int     extra;
     int     callseq;
     int     hookmask;
-    void    (*handler)(dbref executor, dbref caller, dbref enactor, int eval, int key, int nargs, UTF8 *arg1, UTF8 *arg2);
+    void    (*handler)(dbref executor, dbref caller, dbref enactor, int eval, int key, int nargs, UTF8 *arg1, UTF8 *arg2, const UTF8 *cargs[], int ncargs);
 } CMDENT_TWO_ARG;
-
-typedef struct
-{
-    const UTF8 *cmdname;
-    NAMETAB *switches;
-    int     perms;
-    int     extra;
-    int     callseq;
-    int     hookmask;
-    void    (*handler)(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8 *arg1, UTF8 *arg2, const UTF8 *cargs[], int ncargs);
-} CMDENT_TWO_ARG_CMDARG;
 
 typedef struct
 {
@@ -254,7 +242,6 @@ void commands_no_arg_add(CMDENT_NO_ARG cmdent[]);
 void commands_one_arg_add(CMDENT_ONE_ARG cmdent[]);
 void commands_one_arg_cmdarg_add(CMDENT_ONE_ARG cmdent[]);
 void commands_two_arg_add(CMDENT_TWO_ARG cmdent[]);
-void commands_two_arg_cmdarg_add(CMDENT_TWO_ARG_CMDARG cmdent[]);
 void commands_two_arg_argv_add(CMDENT_TWO_ARG_ARGV cmdent[]);
 void commands_two_arg_argv_cmdarg_add(CMDENT_TWO_ARG_ARGV_CMDARG cmdent[]);
 void init_cmdtab(void);

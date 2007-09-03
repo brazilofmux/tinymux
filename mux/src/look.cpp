@@ -2517,13 +2517,17 @@ void do_decomp
     int   key,
     int   nargs,
     UTF8 *name,
-    UTF8 *qual
+    UTF8 *qual,
+    const UTF8 *cargs[],
+    int   ncargs
 )
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
     UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(nargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
 
     BOOLEXP *pBoolExp;
     UTF8 *got, *thingname, *ltext, *buff;

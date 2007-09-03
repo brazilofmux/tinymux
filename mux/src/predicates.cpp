@@ -808,13 +808,17 @@ void do_addcommand
     int   key,
     int   nargs,
     UTF8 *name,
-    UTF8 *command
+    UTF8 *command,
+    const UTF8 *cargs[],
+    int   ncargs
 )
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
     UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(key);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
 
     // Validate command name.
     //
@@ -1031,7 +1035,9 @@ void do_delcommand
     int   key,
     int   nargs,
     UTF8 *name,
-    UTF8 *command
+    UTF8 *command,
+    const UTF8 *cargs[],
+    int  ncargs
 )
 {
     UNUSED_PARAMETER(caller);
@@ -1039,6 +1045,8 @@ void do_delcommand
     UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(key);
     UNUSED_PARAMETER(nargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
 
     if (!*name)
     {
@@ -1359,7 +1367,9 @@ void do_prog
     int   key,
     int   nargs,
     UTF8 *name,
-    UTF8 *command
+    UTF8 *command,
+    const UTF8 *cargs[],
+    int   ncargs
 )
 {
     UNUSED_PARAMETER(caller);
@@ -1367,6 +1377,8 @@ void do_prog
     UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(key);
     UNUSED_PARAMETER(nargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
 
     if (  !name
        || !*name)
