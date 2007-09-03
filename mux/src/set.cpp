@@ -1388,11 +1388,13 @@ void do_setattr
 }
 
 void do_cpattr(dbref executor, dbref caller, dbref enactor, int eval, int key,
-               UTF8 *oldpair, UTF8 *newpair[], int nargs)
+    UTF8 *oldpair, UTF8 *newpair[], int nargs, const UTF8 *cargs[], int ncargs)
 {
     UNUSED_PARAMETER(enactor);
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(eval);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
 
     if (  isEmpty(oldpair)
        || isEmpty(newpair[0])
@@ -1428,12 +1430,14 @@ void do_cpattr(dbref executor, dbref caller, dbref enactor, int eval, int key,
 }
 
 void do_mvattr(dbref executor, dbref caller, dbref enactor, int eval, int key,
-               UTF8 *what, UTF8 *args[], int nargs)
+               UTF8 *what, UTF8 *args[], int nargs, const UTF8 *cargs[], int ncargs)
 {
     UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
     UNUSED_PARAMETER(key);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
 
     // Make sure we have something to do.
     //
@@ -1830,12 +1834,14 @@ static void edit_string_ansi(UTF8 *src, UTF8 **dst, UTF8 **returnstr, UTF8 *from
 }
 
 void do_edit(dbref executor, dbref caller, dbref enactor, int eval, int key,
-             UTF8 *it, UTF8 *args[], int nargs)
+             UTF8 *it, UTF8 *args[], int nargs, const UTF8 *cargs[], int ncargs)
 {
     UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
     UNUSED_PARAMETER(key);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
 
     dbref thing, aowner;
     int atr, aflags;
@@ -1986,8 +1992,11 @@ void do_wipe(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF
 }
 
 void do_trigger(dbref executor, dbref caller, dbref enactor, int eval, int key,
-                UTF8 *object, UTF8 *argv[], int nargs)
+                UTF8 *object, UTF8 *argv[], int nargs, const UTF8 *cargs[], int ncargs)
 {
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
     dbref thing;
     ATTR *pattr;
 

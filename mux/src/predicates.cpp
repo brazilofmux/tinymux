@@ -2625,11 +2625,13 @@ void did_it(dbref player, dbref thing, int what, const UTF8 *def, int owhat,
  */
 
 void do_verb(dbref executor, dbref caller, dbref enactor, int eval, int key,
-             UTF8 *victim_str, UTF8 *args[], int nargs)
+             UTF8 *victim_str, UTF8 *args[], int nargs, const UTF8 *cargs[], int ncargs)
 {
     UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(key);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
 
     // Look for the victim.
     //

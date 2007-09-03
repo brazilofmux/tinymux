@@ -51,11 +51,6 @@ static CMDENT_TWO_ARG_ARGV local_command_table_two_arg_argv[] =
     {NULL,          NULL,       0,           0,          0,          0, NULL}
 };
 
-static CMDENT_TWO_ARG_ARGV_CMDARG local_command_table_two_argv_cmdarg[] =
-{
-    {NULL,          NULL,       0,           0,          0,          0, NULL}
-};
-
 // Called after all normal MUX initialization is complete.
 //
 void local_startup(void)
@@ -70,7 +65,6 @@ void local_startup(void)
     commands_one_arg_add(local_command_table_one_arg);
     commands_two_arg_add(local_command_table_two_arg);
     commands_two_arg_argv_add(local_command_table_two_arg_argv);
-    commands_two_arg_argv_cmdarg_add(local_command_table_two_argv_cmdarg);
 }
 
 // This is called prior to the game syncronizing its own state to its own

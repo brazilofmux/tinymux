@@ -8,11 +8,10 @@
 #ifndef __COMMAND_H
 #define __COMMAND_H
 
-#define CMD_NO_ARG(name)              extern void name(dbref executor, dbref caller, dbref enactor, int eval, int key)
-#define CMD_ONE_ARG(name)             extern void name(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8 *arg1, const UTF8 *cargs[], int ncargs)
-#define CMD_TWO_ARG(name)             extern void name(dbref executor, dbref caller, dbref enactor, int eval, int key, int nargs, UTF8 *arg1, UTF8 *arg2, const UTF8 *cargs[], int ncargs)
-#define CMD_TWO_ARG_ARGV(name)        extern void name(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8 *arg1, UTF8 *args[], int nargs)
-#define CMD_TWO_ARG_ARGV_CMDARG(name) extern void name(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8 *arg1, UTF8 *args[], int nargs, const UTF8 *cargs[], int ncargs)
+#define CMD_NO_ARG(name)       extern void name(dbref executor, dbref caller, dbref enactor, int eval, int key)
+#define CMD_ONE_ARG(name)      extern void name(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8 *arg1, const UTF8 *cargs[], int ncargs)
+#define CMD_TWO_ARG(name)      extern void name(dbref executor, dbref caller, dbref enactor, int eval, int key, int nargs, UTF8 *arg1, UTF8 *arg2, const UTF8 *cargs[], int ncargs)
+#define CMD_TWO_ARG_ARGV(name) extern void name(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8 *arg1, UTF8 *args[], int nargs, const UTF8 *cargs[], int ncargs)
 
 /* Command function handlers */
 /* from comsys.cpp */
@@ -79,7 +78,7 @@ CMD_TWO_ARG(do_give);           /* Give something away */
 CMD_ONE_ARG(do_global);         /* Enable/disable global flags */
 CMD_ONE_ARG(do_halt);           /* Remove commands from the queue */
 CMD_ONE_ARG(do_help);           /* Print info from help files */
-CMD_TWO_ARG_ARGV_CMDARG(do_if); // Execute cmd based on truth of expression
+CMD_TWO_ARG_ARGV(do_if);        // Execute cmd based on truth of expression
 CMD_NO_ARG(do_inventory);       /* Print what I am carrying */
 CMD_TWO_ARG(do_prog);           /* Interactive input */
 CMD_ONE_ARG(do_quitprog);       /* Quits @prog */
@@ -123,7 +122,7 @@ CMD_ONE_ARG(do_shout);          /* Messages to all */
 CMD_ONE_ARG(do_shutdown);       /* Stop the game */
 CMD_ONE_ARG(do_stats);          /* Display object type breakdown */
 CMD_ONE_ARG(do_sweep);          /* Check for listeners */
-CMD_TWO_ARG_ARGV_CMDARG(do_switch); /* Execute cmd based on match */
+CMD_TWO_ARG_ARGV(do_switch);    /* Execute cmd based on match */
 CMD_TWO_ARG(do_teleport);       /* Teleport elsewhere */
 CMD_ONE_ARG(do_think);          /* Think command */
 CMD_NO_ARG(do_timecheck);       /* Check time used by objects */
@@ -199,20 +198,8 @@ typedef struct
     int     extra;
     int     callseq;
     int     hookmask;
-    void    (*handler)(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8 *arg1, UTF8 *args[], int nargs);
+    void    (*handler)(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8 *arg1, UTF8 *args[], int nargs, const UTF8 *cargs[], int ncargs);
 } CMDENT_TWO_ARG_ARGV;
-
-typedef struct
-{
-    const UTF8 *cmdname;
-    NAMETAB *switches;
-    int     perms;
-    int     extra;
-    int     callseq;
-    int     hookmask;
-    void    (*handler)(dbref executor, dbref caller, dbref enactor, int eval, int key,
-                       UTF8 *arg1, UTF8 *args[], int nargs, const UTF8 *cargs[], int ncargs);
-} CMDENT_TWO_ARG_ARGV_CMDARG;
 
 typedef struct addedentry ADDENT;
 struct addedentry
@@ -243,7 +230,6 @@ void commands_one_arg_add(CMDENT_ONE_ARG cmdent[]);
 void commands_one_arg_cmdarg_add(CMDENT_ONE_ARG cmdent[]);
 void commands_two_arg_add(CMDENT_TWO_ARG cmdent[]);
 void commands_two_arg_argv_add(CMDENT_TWO_ARG_ARGV cmdent[]);
-void commands_two_arg_argv_cmdarg_add(CMDENT_TWO_ARG_ARGV_CMDARG cmdent[]);
 void init_cmdtab(void);
 
 extern NAMETAB access_nametab[];
