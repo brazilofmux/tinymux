@@ -5101,24 +5101,35 @@ void do_folder
     dbref executor,
     dbref caller,
     dbref enactor,
+    int   eval,
     int   key,
     int   nargs,
     UTF8 *arg1,
-    UTF8 *arg2
+    UTF8 *arg2,
+    const UTF8 *cargs[],
+    int   ncargs
 )
 {
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
 
-    switch(key)
+    switch (key)
     {
     case FOLDER_FILE:
         do_mail_file(executor, arg1, arg2);
         break;
+
     case FOLDER_LIST:
         ListMailInFolder(executor, arg1, arg2);
         break;
+
     case FOLDER_READ:
         do_mail_read(executor, arg1, arg2);
         break;
+
     case FOLDER_SET:
         do_mail_change_folder(executor, arg1, arg2);
         break;
