@@ -1736,12 +1736,12 @@ Related Topics: @name.
 
 & @FOLDER
 @FOLDER
-  
+
   COMMAND:  @folder[/<switch>] [arg1]=[arg2]
 
   @folder operates on @mail folders to view, set, and read mail messages
-  within folders.   The available switches are /file, /list, /read and /set.
-  
+  within folders.  The available switches are /file, /list, /read, and /set.
+
   Usage:
 
   @folder                         - Lists mail stats for all @mail folders.
@@ -1752,10 +1752,10 @@ Related Topics: @name.
                                     all messages in <folder>.
   @folder/read <folder>=<mgs>     - Display <msgs> in <folder>
   @folder/set  <folder>[=<name>]  - Set the active folder number if no name is
-                                    given or give <folder> <name>.
+                                    given, or give <folder> <name>.
 
   Other than @folder/set or @folder <folder>, the @folder command does not
-  change the active folder for @mail.   
+  change the active folder for @mail.
 
   Related Topics:  @mail, mail-folders
 
@@ -9307,7 +9307,7 @@ MAIL-OTHER
 
   @mail/purge
         Actually deletes all messages marked for clearing with
-        @mail/clear. This is done automatically when you log out.
+        @mail/clear.  This is done automatically when you log out.
 
   @mail/tag [<msg-list | all>]
   @mail/untag [<msg-list> | all>]
@@ -9345,8 +9345,8 @@ MAIL-READING
         with sender name, a list of receiving players, subject, and
         message status.
   @mail/list [<folder>=][<msg-list>]
-        Without <folder>, this gives the same list, but with time sent instead 
-        of subject.  The status field is a set of characters (ex: NC-UF+) which 
+        Without <folder>, this gives the same list, but with time sent instead
+        of subject.  The status field is a set of characters (ex: NC-UF+) which
         mean:
                 N = New (unread) message
                 C = Cleared message
@@ -12996,8 +12996,8 @@ TEL()
   comes before and after the '=' sign. Returns nothing. This is a side
   effect function, and should only be used when necessary.
 
-  The <flags> argument can contain 'q' and/or 'l' to allow the behavior of 
-  @teleport/quiet and @teleport/list, respectively.   
+  The <flags> argument can contain 'q' and/or 'l' to allow the behavior of
+  @teleport/quiet and @teleport/list, respectively.
 
   Related Topics: @teleport
 
