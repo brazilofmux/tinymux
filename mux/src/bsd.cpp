@@ -983,26 +983,28 @@ int initialize_ssl()
     ssl_ctx = SSL_CTX_new (SSLv23_server_method());
     tls_ctx = SSL_CTX_new (TLSv1_server_method());
 
-    if (!SSL_CTX_use_certificate_file (ssl_ctx, (char *)mudconf.ssl_certificate_file, SSL_FILETYPE_PEM)) {
+    if (!SSL_CTX_use_certificate_file (ssl_ctx, (char *)mudconf.ssl_certificate_file, SSL_FILETYPE_PEM))
+    {
         STARTLOG(LOG_ALWAYS,"NET","SSL");
         log_text(T("initialize_ssl: Unable to load SSL certificate file "));
         log_text(mudconf.ssl_certificate_file);
         ENDLOG;
         SSL_CTX_free(ssl_ctx);
-	SSL_CTX_free(tls_ctx);
+        SSL_CTX_free(tls_ctx);
         ssl_ctx = NULL;
-	tls_ctx = NULL;
+        tls_ctx = NULL;
         return 0;
     }
-    if (!SSL_CTX_use_certificate_file (tls_ctx, (char *)mudconf.ssl_certificate_file, SSL_FILETYPE_PEM)) {
+    if (!SSL_CTX_use_certificate_file (tls_ctx, (char *)mudconf.ssl_certificate_file, SSL_FILETYPE_PEM))
+    {
         STARTLOG(LOG_ALWAYS,"NET","SSL");
         log_text(T("initialize_ssl: Unable to load SSL certificate file "));
         log_text(mudconf.ssl_certificate_file);
         ENDLOG;
         SSL_CTX_free(ssl_ctx);
-	SSL_CTX_free(tls_ctx);
+        SSL_CTX_free(tls_ctx);
         ssl_ctx = NULL;
-	tls_ctx = NULL;
+        tls_ctx = NULL;
         return 0;
     }
 
@@ -1011,21 +1013,23 @@ int initialize_ssl()
     SSL_CTX_set_default_passwd_cb(tls_ctx,pem_passwd_callback);
     SSL_CTX_set_default_passwd_cb_userdata(tls_ctx,(void *)mudconf.ssl_certificate_password);
 
-    if (!SSL_CTX_use_PrivateKey_file(ssl_ctx,(char *)mudconf.ssl_certificate_key, SSL_FILETYPE_PEM)) {
+    if (!SSL_CTX_use_PrivateKey_file(ssl_ctx,(char *)mudconf.ssl_certificate_key, SSL_FILETYPE_PEM))
+    {
         STARTLOG(LOG_ALWAYS,"NET","SSL");
         log_text(T("initialize_ssl: Unable to load SSL private key: "));
         log_text(mudconf.ssl_certificate_key);
         ENDLOG;
         SSL_CTX_free(ssl_ctx);
-	SSL_CTX_free(tls_ctx);
+        SSL_CTX_free(tls_ctx);
         ssl_ctx = NULL;
-	tls_ctx = NULL;
+        tls_ctx = NULL;
         return 0;
     }
 
     /* Since we're reusing settings, we only need to check the key once.
      * We'll use the SSL ctx for that. */
-    if (!SSL_CTX_check_private_key(ssl_ctx)) {
+    if (!SSL_CTX_check_private_key(ssl_ctx))
+    {
         STARTLOG(LOG_ALWAYS,"NET","SSL");
         log_text(T("initialize_ssl: Key, certificate or password does not match."));
         ENDLOG;
@@ -1052,11 +1056,13 @@ int initialize_ssl()
 
 void shutdown_ssl()
 {
-    if (ssl_ctx) {
+    if (ssl_ctx)
+    {
         SSL_CTX_free(ssl_ctx);
         ssl_ctx = NULL;
     }
-    if (tls_ctx) {
+    if (tls_ctx)
+    {
         SSL_CTX_free(tls_ctx);
         tls_ctx = NULL;
     }
@@ -1068,7 +1074,8 @@ void CleanUpSSLConnections()
 
     DESC_ITER_ALL(d)
     {
-        if (d->ssl_session) {
+        if (d->ssl_session)
+        {
             shutdownsock(d,R_RESTART);
         }
     }
@@ -1081,7 +1088,8 @@ int mux_socket_write(DESC *d, const char *buffer, size_t nBytes, int flags)
     int result;
 
 #ifdef SSL_ENABLED
-    if (d->ssl_session) {
+    if (d->ssl_session)
+    {
         result = SSL_write(d->ssl_session,buffer,nBytes);
     }
     else
@@ -1098,7 +1106,8 @@ int mux_socket_read(DESC *d, char *buffer, size_t nBytes, int flags)
     int result;
 
 #ifdef SSL_ENABLED
-    if (d->ssl_session) {
+    if (d->ssl_session)
+    {
         result = SSL_read(d->ssl_session,buffer,nBytes);
     }
     else
@@ -1289,8 +1298,10 @@ void SetupPorts(int *pnPorts, PortInfo aPorts[], IntArray *pia, IntArray *piaSSL
         }
 
 #ifdef SSL_ENABLED
-        if (!bFound && piaSSL && ssl_ctx) {
-            for (j = 0; j < piaSSL->n; j++) {
+        if (!bFound && piaSSL && ssl_ctx)
+        {
+            for (j = 0; j < piaSSL->n; j++)
+            {
                 if (aPorts[i].port == piaSSL->pi[j])
                 {
                     bFound = true;
@@ -1361,7 +1372,8 @@ void SetupPorts(int *pnPorts, PortInfo aPorts[], IntArray *pia, IntArray *piaSSL
     }
 
 #ifdef SSL_ENABLED
-    if (piaSSL && ssl_ctx) {
+    if (piaSSL && ssl_ctx)
+    {
         for (j = 0; j < piaSSL->n; j++)
         {
             bFound = false;
@@ -1403,7 +1415,7 @@ void SetupPorts(int *pnPorts, PortInfo aPorts[], IntArray *pia, IntArray *piaSSL
     // listening to at least one port, we should bring the game down.
     //
     if (  0 == *pnPorts
-       && (  0 != pia->n  
+       && (  0 != pia->n
 #ifdef SSL_ENABLED
           || 0 != piaSSL->n
 #endif
@@ -2199,11 +2211,13 @@ DESC *new_connection(PortInfo *Port, int *piSocketError)
 #ifdef SSL_ENABLED
         SSL *ssl_session = NULL;
 
-        if (Port->ssl && ssl_ctx) {
+        if (Port->ssl && ssl_ctx)
+        {
             ssl_session = SSL_new(ssl_ctx);
             SSL_set_fd(ssl_session, newsock);
             int ssl_result = SSL_accept(ssl_session);
-            if (ssl_result != 1) {
+            if (ssl_result != 1)
+            {
                 // Something errored out.  We'll have to drop.
                 int ssl_err = SSL_get_error(ssl_session,ssl_result);
 
@@ -2511,7 +2525,8 @@ void shutdownsock(DESC *d, int reason)
 #endif
 
 #ifdef SSL_ENABLED
-        if (d->ssl_session) {
+        if (d->ssl_session)
+        {
             SSL_shutdown(d->ssl_session);
             SSL_free(d->ssl_session);
             d->ssl_session = NULL;
@@ -3264,7 +3279,8 @@ static void SetHimState(DESC *d, unsigned char chOption, int iHimState)
 {
     d->nvt_him_state[chOption] = iHimState;
 
-    if (OPTION_YES == iHimState) {
+    if (OPTION_YES == iHimState)
+    {
         if (TELNET_TTYPE == chOption)
         {
             SendSb(d, chOption, TELNETSB_SEND);
@@ -4152,7 +4168,8 @@ void close_sockets(bool emergency, const UTF8 *message)
                 log_perror(T("NET"), T("FAIL"), NULL, T("shutdown"));
             }
 #ifdef SSL_ENABLED
-            if (d->ssl_session) {
+            if (d->ssl_session)
+            {
                 SSL_shutdown(d->ssl_session);
                 SSL_free(d->ssl_session);
                 d->ssl_session = NULL;

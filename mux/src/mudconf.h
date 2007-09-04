@@ -135,7 +135,8 @@ struct confdata
     int     nStackLimit;        // Current stack limit.
 #ifdef REALITY_LVLS
     int     no_levels;          /* Number of reality levels */
-    struct  rlevel_def {
+    struct  rlevel_def
+    {
         UTF8 name[9];           /* Rlevel name */
         RLEVEL value;           /* Rlevel bitmask */
         UTF8 attr[33];          /* desc attribute */
