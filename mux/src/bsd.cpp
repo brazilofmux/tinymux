@@ -4699,7 +4699,7 @@ static RETSIGTYPE DCL_CDECL sighandler(int sig)
         check_panicking(sig);
         log_signal(sig);
         raw_broadcast(0, "GAME: Caught signal %s, exiting.", SignalDesc(sig));
-        if('\0' != mudconf.crash_msg[0]) 
+        if ('\0' != mudconf.crash_msg[0])
         {
             raw_broadcast(0, (char *) tprintf("GAME: %s", mudconf.crash_msg));
         }
@@ -4755,7 +4755,7 @@ static RETSIGTYPE DCL_CDECL sighandler(int sig)
             raw_broadcast(0,
                     "GAME: Fatal signal %s caught, restarting.", SignalDesc(sig));
 
-            if('\0' != mudconf.crash_msg[0]) 
+            if ('\0' != mudconf.crash_msg[0])
             {
                 raw_broadcast(0, (char *) tprintf("GAME: %s", mudconf.crash_msg));
             }
