@@ -1,5 +1,5 @@
 TinyMUX 2.7:  CHANGES
-Last Update:  August 2007
+Last Update:  September 2007
 
 Major changes that may affect performance and require softcode tweaks:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -71,6 +71,10 @@ Feature Additions:
  -- Add multi-whisper and last whisper (Issue 18 and 28).
  -- Sort @malias/list.
  -- Add third argument to tel() (Issue 153).
+ -- Add @folder and update @mail/list for mail folders (Issue 256).
+ -- Add CServerEventsSource, IServerEventsControl, and
+    IServerEventsSink so modules can catch server events.
+ -- Add crash_message configuration option (Issue 223).
 
 
 Bug Fixes:
