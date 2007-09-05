@@ -1,5 +1,5 @@
 TinyMUX 2.4:  CHANGES
-Last Update:  August 2007
+Last Update:  September 2007
 
 Major changes that may affect performance and require softcode tweaks:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -320,6 +320,7 @@ Bug Fixes:
     INI/LOAD entries) are lost.
  -- Fix WIDTH() to default to 78 instead of 24 (Issue 354).
  -- Open permissions on WIDTH() and HEIGHT() (Issue 356).
+ -- Drop dependency on QueryPerformanceCounter() (Issue 369).
 
 
 Performance Enhancements:
