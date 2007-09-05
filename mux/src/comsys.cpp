@@ -1297,14 +1297,14 @@ static void BuildChannelMessage
     bool bChannelSayString = false;
     bool bChannelSpeechMod = false;
 
-    if(true == Good_obj(ch_obj))
+    if (Good_obj(ch_obj))
     {
         dbref aowner;
         int aflags;
         UTF8* test_attr = atr_get("BuildChannelMessage.1302", ch_obj,
                 A_SAYSTRING, &aowner, &aflags);
 
-        if('\0' != test_attr[0])
+        if ('\0' != test_attr[0])
         {
             bChannelSayString = true;
         }
@@ -1312,7 +1312,7 @@ static void BuildChannelMessage
         test_attr = atr_get("BuildChannelMessage.1302", ch_obj,
                 A_SPEECHMOD, &aowner, &aflags);
 
-        if('\0' != test_attr[0])
+        if ('\0' != test_attr[0])
         {
             bChannelSpeechMod = true;
         }
