@@ -1,5 +1,5 @@
 TinyMUX 2.6:  CHANGES
-Last Update:  August 2007
+Last Update:  September 2007
 
 Major changes that may affect performance and require softcode tweaks:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -297,6 +297,7 @@ Bug Fixes:
  -- Fix the attribute flag names returned by lflags() (Issue 362).
  -- @set2 help topic does not mention case, trace, or no_name
     attribute flags (Issue 361).
+ -- Fix LOG_DIR across @restarts (Issue 46).
 
 
 Performance Enhancements:
