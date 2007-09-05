@@ -897,7 +897,7 @@ void init_cmdtab(void)
  *
  * Command entries for known prefix commands (<code>" : ; \ # & - ~</code>)
  * are copied from the regular command table. Entries for all other starting
- * characters are set to \c NULL.
+ * characters are set to NULL.
  *
  * \return         None.
  */
