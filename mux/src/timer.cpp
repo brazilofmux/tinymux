@@ -185,25 +185,6 @@ static void dispatch_CanRestart(void *pUnused, int iUnused)
     mudstate.bCanRestart = true;
 }
 
-#ifdef WIN32
-static void dispatch_CalibrateQueryPerformance(void *pUnused, int iUnused)
-{
-    UNUSED_PARAMETER(pUnused);
-    UNUSED_PARAMETER(iUnused);
-
-    CLinearTimeAbsolute ltaNextTime;
-    ltaNextTime.GetUTC();
-    CLinearTimeDelta ltd = time_30s;
-    ltaNextTime += ltd;
-
-    if (CalibrateQueryPerformance())
-    {
-        scheduler.DeferTask(ltaNextTime, PRIORITY_SYSTEM,
-            dispatch_CalibrateQueryPerformance, 0, 0);
-    }
-}
-#endif // WIN32
-
 void init_timer(void)
 {
     CLinearTimeAbsolute ltaNow;
@@ -258,14 +239,6 @@ void init_timer(void)
     // Setup one-shot task to enable restarting 10 seconds after startmux.
     //
     scheduler.DeferTask(ltaNow+time_15s, PRIORITY_OBJECT, dispatch_CanRestart, 0, 0);
-
-#ifdef WIN32
-    // Setup Periodic QueryPerformance Calibration.
-    //
-    scheduler.DeferTask(ltaNow+time_30s, PRIORITY_SYSTEM,
-        dispatch_CalibrateQueryPerformance, 0, 0);
-
-#endif // WIN32
 }
 
 /*
