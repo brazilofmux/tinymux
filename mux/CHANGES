@@ -298,6 +298,7 @@ Bug Fixes:
  -- @set2 help topic does not mention case, trace, or no_name
     attribute flags (Issue 361).
  -- Fix LOG_DIR across @restarts (Issue 46).
+ -- Drop dependency on QueryPerformanceCounter() (Issue 369).
 
 
 Performance Enhancements:
