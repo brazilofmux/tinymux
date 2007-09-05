@@ -75,6 +75,7 @@ Feature Additions:
  -- Add CServerEventsSource, IServerEventsControl, and
     IServerEventsSink so modules can catch server events.
  -- Add crash_message configuration option (Issue 223).
+ -- Add channel @saystring and @speechmod (Issue 67).
 
 
 Bug Fixes:
@@ -148,6 +149,7 @@ Bug Fixes:
  -- Add no_name to HASFLAG() list (Issue 360).
  -- Fix the attribute flag names returned by lflags() (Issue 362).
  -- Add missing attribute flag names to @set2 topic (Issue 361).
+ -- Fix LOG_DIR across @restarts (Issue 46).
 
 
 Performance Enhancements:
