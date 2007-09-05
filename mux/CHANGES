@@ -150,6 +150,7 @@ Bug Fixes:
  -- Fix the attribute flag names returned by lflags() (Issue 362).
  -- Add missing attribute flag names to @set2 topic (Issue 361).
  -- Fix LOG_DIR across @restarts (Issue 46).
+ -- Drop dependency on QueryPerformanceCounter() (Issue 369).
 
 
 Performance Enhancements:
