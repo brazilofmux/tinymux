@@ -185,9 +185,6 @@ const CLinearTimeDelta time_30m   = 30*FACTOR_100NS_PER_MINUTE;
 const CLinearTimeDelta time_1w    = FACTOR_100NS_PER_WEEK;
 
 extern void TIME_Initialize(void);
-#ifdef WIN32
-extern bool CalibrateQueryPerformance(void);
-#endif
 
 #ifdef SMALLEST_INT_GTE_NEG_QUOTIENT
 INT64 i64Mod(INT64 x, INT64 y);
