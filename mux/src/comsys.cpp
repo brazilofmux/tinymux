@@ -1577,9 +1577,9 @@ void SendChannelMessage
 
                     // Save message in history with timestamp.
                     //
-                    atr_add(ch->chan_obj, atr,
-                            tprintf("[%s] %s", ltaNow.ReturnDateString(0),
-                                msgNormal), GOD, AF_CONST|AF_NOPROG|AF_NOPARSE);
+                    UTF8 temp[LBUF_SIZE];
+                    mux_sprintf(temp, sizeof(temp), "[%s] %s", ltaNow.ReturnDateString(0), msgNormal);
+                    atr_add(ch->chan_obj, atr, temp, GOD, AF_CONST|AF_NOPROG|AF_NOPARSE);
                 }
                 else
                 {
@@ -2475,7 +2475,6 @@ static void do_listchannels(dbref player, UTF8 *pattern)
     {
         bWild = false;
     }
-
 
     raw_notify(player, T("*** Channel      --Flags--    Obj     Own   Charge  Balance  Users   Messages"));
 

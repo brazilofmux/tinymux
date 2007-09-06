@@ -151,6 +151,7 @@ Bug Fixes:
  -- Add missing attribute flag names to @set2 topic (Issue 361).
  -- Fix LOG_DIR across @restarts (Issue 46).
  -- Drop dependency on QueryPerformanceCounter() (Issue 369).
+ -- Fix channel timestamps (Issue 370).
 
 
 Performance Enhancements:
