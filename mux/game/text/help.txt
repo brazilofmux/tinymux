@@ -14186,8 +14186,9 @@ ZWHO()
 
   FUNCTION: zwho(<object>)
 
-  Returns a list of players who are a member of the zone defined by
-  <object>. Currently a wizard/royalty only function.
+  Returns a list of players who are a member of the zone defined by <object>.
+  Inzone requires the executor to either own/control the <object> or possess
+  wizard/royalty permissions.
 
   Related Topics: inzone(), ZONES.
 
