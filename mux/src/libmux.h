@@ -54,13 +54,21 @@ typedef enum
 } process_context;
 
 #ifdef WIN32
-const UINT64 mux_IID_IUnknown      = 0x0000000100000010i64;
-const UINT64 mux_IID_IClassFactory = 0x0000000100000011i64;
-const UINT64 mux_IID_IMarshal      = 0x0000000100000012i64;
+const UINT64 mux_IID_IUnknown          = 0x0000000100000010i64;
+const UINT64 mux_IID_IClassFactory     = 0x0000000100000011i64;
+const UINT64 mux_IID_IRpcChannelBuffer = 0x0000000100000012i64;
+const UINT64 mux_IID_IRpcProxyBuffer   = 0x0000000100000013i64;
+const UINT64 mux_IID_IRpcStubBuffer    = 0x0000000100000014i64;
+const UINT64 mux_IID_IPSFactoryBuffer  = 0x0000000100000015i64;
+const UINT64 mux_IID_IMarshal          = 0x0000000100000016i64;
 #else
-const UINT64 mux_IID_IUnknown      = 0x0000000100000010ull;
-const UINT64 mux_IID_IClassFactory = 0x0000000100000011ull;
-const UINT64 mux_IID_IMarshal      = 0x0000000100000012ull;
+const UINT64 mux_IID_IUnknown          = 0x0000000100000010ull;
+const UINT64 mux_IID_IClassFactory     = 0x0000000100000011ull;
+const UINT64 mux_IID_IRpcChannelBuffer = 0x0000000100000012ull;
+const UINT64 mux_IID_IRpcProxyBuffer   = 0x0000000100000013ull;
+const UINT64 mux_IID_IRpcStubBuffer    = 0x0000000100000014ull;
+const UINT64 mux_IID_IPSFactoryBuffer  = 0x0000000100000015ull;
+const UINT64 mux_IID_IMarshal          = 0x0000000100000016ull;
 #endif
 
 #define interface class
@@ -78,6 +86,47 @@ interface mux_IClassFactory : public mux_IUnknown
 public:
     virtual MUX_RESULT CreateInstance(mux_IUnknown *pUnknownOuter, UINT64 iid, void **ppv) = 0;
     virtual MUX_RESULT LockServer(bool bLock) = 0;
+};
+
+typedef struct
+{
+    void   *pBuffer;
+    size_t cbBuffer;
+    UINT32 iMethod;
+} MUX_RPCMESSAGE;
+
+interface mux_IRpcChannelBuffer : public mux_IUnknown
+{
+public:
+    virtual MUX_RESULT GetBuffer(MUX_RPCMESSAGE *pMessage, UINT64 riid) = 0;
+    virtual MUX_RESULT SendReceive(MUX_RPCMESSAGE *pMessage, UINT32 *pStatus) = 0;
+    virtual MUX_RESULT FreeBuffer(MUX_RPCMESSAGE *pMessage) = 0;
+    virtual marshal_context GetMarshalContext(void) = 0;
+    virtual MUX_RESULT IsConnected(void) = 0;
+};
+
+interface mux_IRpcProxyBuffer : public mux_IUnknown
+{
+public:
+    virtual MUX_RESULT Connect(mux_IRpcChannelBuffer *pRpcChannelBuffer) = 0;
+    virtual void       Disconnect(void);
+};
+
+interface mux_IRpcStubBuffer : public mux_IUnknown
+{
+public:
+    virtual MUX_RESULT Connect(mux_IUnknown *pUnknownServer) = 0;
+    virtual void       Disconnect(void) = 0;
+    virtual MUX_RESULT Invoke(MUX_RPCMESSAGE *pMessage, mux_IRpcChannelBuffer *pRpcChannelBuffer) = 0;
+    virtual MUX_RESULT IsSupported(UINT64 riid) = 0;
+    virtual UINT32     CountRefs(void) = 0;
+};
+
+interface mux_IPSFactoryBuffer : public mux_IUnknown
+{
+public:
+    virtual MUX_RESULT CreateProxy(mux_IUnknown *pUnknownOuter, UINT64 riid, mux_IRpcProxyBuffer **ppProxy, void **ppv) = 0;
+    virtual MUX_RESULT CreateStub(UINT64 riid, mux_IUnknown *pUnknownOuter, mux_IRpcStubBuffer *ppStub) = 0;
 };
 
 interface mux_IMarshal : public mux_IUnknown
