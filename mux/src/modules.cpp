@@ -18,11 +18,11 @@
 #include "libmux.h"
 #include "modules.h"
 
-#define NUM_CIDS 2
-static MUX_CID netmux_cids[NUM_CIDS] =
+#define NUM_CLASSES 2
+static CLASS_INFO netmux_classes[NUM_CLASSES] =
 {
-    CID_Log,
-    CID_ServerEventsSource
+    { CID_Log                },
+    { CID_ServerEventsSource }
 };
 
 extern "C" MUX_RESULT DCL_API netmux_GetClassObject(MUX_CID cid, MUX_IID iid, void **ppv)
@@ -81,7 +81,7 @@ void init_modules(void)
 #endif
     if (MUX_SUCCEEDED(mr))
     {
-        mr = mux_RegisterClassObjects(NUM_CIDS, netmux_cids, netmux_GetClassObject);
+        mr = mux_RegisterClassObjects(NUM_CLASSES, netmux_classes, netmux_GetClassObject);
     }
 
     if (MUX_FAILED(mr))
@@ -100,7 +100,7 @@ void init_modules(void)
 
 void final_modules(void)
 {
-    MUX_RESULT mr = mux_RevokeClassObjects(NUM_CIDS, netmux_cids);
+    MUX_RESULT mr = mux_RevokeClassObjects(NUM_CLASSES, netmux_classes);
     if (MUX_FAILED(mr))
     {
         STARTLOG(LOG_ALWAYS, "INI", "LOAD");

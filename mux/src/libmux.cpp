@@ -53,9 +53,9 @@ typedef struct mod_info
 
 typedef struct
 {
-    MUX_CID       cid;
+    CLASS_INFO    ci;
     MODULE_INFO  *pModule;
-} CLASS_INFO;
+} CLASS_INFO_PRIVATE;
 
 static MODULE_INFO *g_pModuleList = NULL;
 static MODULE_INFO *g_pModuleLast = NULL;
@@ -73,9 +73,9 @@ static MODULE_INFO  g_MainModule =
     false
 };
 
-static int          g_nClasses = 0;
-static int          g_nClassesAllocated = 0;
-static CLASS_INFO  *g_pClasses = NULL;
+static int                  g_nClasses = 0;
+static int                  g_nClassesAllocated = 0;
+static CLASS_INFO_PRIVATE  *g_pClasses = NULL;
 
 static MODULE_INFO *g_pModule = NULL;
 
@@ -161,15 +161,15 @@ static int ClassFind(MUX_CID cid)
     while (lo <= hi)
     {
         mid = ((hi - lo) >> 1) + lo;
-        if (cid < g_pClasses[mid].cid)
+        if (cid < g_pClasses[mid].ci.cid)
         {
             hi = mid - 1;
         }
-        else if (g_pClasses[mid].cid < cid)
+        else if (g_pClasses[mid].ci.cid < cid)
         {
             lo = mid + 1;
         }
-        else // (g_pClasses[mid].cid == cid)
+        else // (g_pClasses[mid].ci.cid == cid)
         {
             return mid;
         }
@@ -191,7 +191,7 @@ static MODULE_INFO *ModuleFindFromCID(MUX_CID cid)
 {
     int i = ClassFind(cid);
     if (  i < g_nClasses
-       && g_pClasses[i].cid == cid)
+       && g_pClasses[i].ci.cid == cid)
    {
         return g_pClasses[i].pModule;
     }
@@ -271,11 +271,11 @@ static int GrowByFactor(int i)
  * \return           None.
  */
 
-static void ClassAdd(MUX_CID cid, MODULE_INFO *pModule)
+static void ClassAdd(CLASS_INFO *pci, MODULE_INFO *pModule)
 {
-    int i = ClassFind(cid);
+    int i = ClassFind(pci->cid);
     if (  i < g_nClasses
-       && g_pClasses[i].cid == cid)
+       && g_pClasses[i].ci.cid == pci->cid)
     {
         return;
     }
@@ -284,11 +284,11 @@ static void ClassAdd(MUX_CID cid, MODULE_INFO *pModule)
     {
         memmove( g_pClasses + i + 1,
                  g_pClasses + i,
-                 (g_nClasses - i) * sizeof(CLASS_INFO));
+                 (g_nClasses - i) * sizeof(CLASS_INFO_PRIVATE));
     }
     g_nClasses++;
 
-    g_pClasses[i].cid = cid;
+    g_pClasses[i].ci = *pci;
     g_pClasses[i].pModule = pModule;
 }
 
@@ -302,14 +302,14 @@ static void ClassRemove(MUX_CID cid)
 {
     int i = ClassFind(cid);
     if (  i < g_nClasses
-       && g_pClasses[i].cid == cid)
+       && g_pClasses[i].ci.cid == cid)
     {
         g_nClasses--;
         if (i != g_nClasses)
         {
             memmove( g_pClasses + i,
                      g_pClasses + i + 1,
-                     (g_nClasses - i) * sizeof(CLASS_INFO));
+                     (g_nClasses - i) * sizeof(CLASS_INFO_PRIVATE));
         }
     }
 }
@@ -441,7 +441,7 @@ static void ModuleRemove(MODULE_INFO *pModule)
             {
                 if (g_pClasses[i].pModule == pModule)
                 {
-                    ClassRemove(g_pClasses[i].cid);
+                    ClassRemove(g_pClasses[i].ci.cid);
                 }
             }
 
@@ -586,16 +586,16 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_CreateInstance(MUX_CID cid, mux_IUn
  * or stubslave) must pass a non-NULL pfGetClassObject.  For modules, the
  * class factory is obtained by using the mux_GetClassObject export.
  *
- * \param ncid                  Number of class ids to register
- * \param acid                  Class ID table.
- * \param fpGetClassObject      Pointer to Factory capable of creating
- *                              instances of the given components.
- * \return                      MUX_RESULT
+ * \param nci                  Number of components to register.
+ * \param aci                  Table of component-related info.
+ * \param fpGetClassObject     Pointer to Factory capable of creating
+ *                             instances of the given components.
+ * \return                     MUX_RESULT
  */
 
-extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_RegisterClassObjects(int ncid, MUX_CID acid[], FPGETCLASSOBJECT *fpGetClassObject)
+extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_RegisterClassObjects(int nci, CLASS_INFO aci[], FPGETCLASSOBJECT *fpGetClassObject)
 {
-    if (ncid <= 0)
+    if (nci <= 0)
     {
         return MUX_E_INVALIDARG;
     }
@@ -618,9 +618,9 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_RegisterClassObjects(int ncid, MUX_
     //
     MODULE_INFO *pModule = NULL;
     int i;
-    for (i = 0; i < ncid; i++)
+    for (i = 0; i < nci; i++)
     {
-        pModule = ModuleFindFromCID(acid[i]);
+        pModule = ModuleFindFromCID(aci[i].cid);
         if (NULL != pModule)
         {
             return MUX_E_INVALIDARG;
@@ -648,14 +648,14 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_RegisterClassObjects(int ncid, MUX_
     // Make sure there is enough room in the class table for additional class
     // ids.
     //
-    if (g_nClassesAllocated < g_nClasses + ncid)
+    if (g_nClassesAllocated < g_nClasses + nci)
     {
-        int nAllocate = GrowByFactor(g_nClasses + ncid);
+        int nAllocate = GrowByFactor(g_nClasses + nci);
 
-        CLASS_INFO *pNewClasses = NULL;
+        CLASS_INFO_PRIVATE *pNewClasses = NULL;
         try
         {
-            pNewClasses = new CLASS_INFO[nAllocate];
+            pNewClasses = new CLASS_INFO_PRIVATE[nAllocate];
         }
         catch (...)
         {
@@ -691,9 +691,9 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_RegisterClassObjects(int ncid, MUX_
         pModule->fpGetClassObject = fpGetClassObject;
     }
 
-    for (i = 0; i < ncid; i++)
+    for (i = 0; i < nci; i++)
     {
-        ClassAdd(acid[i], pModule);
+        ClassAdd(&(aci[i]), pModule);
     }
     return MUX_S_OK;
 }
@@ -701,14 +701,14 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_RegisterClassObjects(int ncid, MUX_
 /*! \brief De-register class ids and possibly the handler implemented by the
  *         process binary.
  *
- * \param ncid    Number of component ids to register
- * \param acid    Component ID table.
- * \return        MUX_RESULT
+ * \param nci    Number of components to revoke
+ * \param aci    Table of component-related info.
+ * \return       MUX_RESULT
  */
 
-extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_RevokeClassObjects(int ncid, MUX_CID acid[])
+extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_RevokeClassObjects(int nci, CLASS_INFO aci[])
 {
-    if (ncid <= 0)
+    if (nci <= 0)
     {
         return MUX_E_INVALIDARG;
     }
@@ -717,9 +717,9 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_RevokeClassObjects(int ncid, MUX_CI
     //
     MODULE_INFO *pModule = NULL;
     int i;
-    for (i = 0; i < ncid; i++)
+    for (i = 0; i < nci; i++)
     {
-        MODULE_INFO *q = ModuleFindFromCID(acid[i]);
+        MODULE_INFO *q = ModuleFindFromCID(aci[i].cid);
         if (NULL == q)
         {
             // Attempt to revoke a class ids which were never registered.
@@ -748,9 +748,9 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_RevokeClassObjects(int ncid, MUX_CI
 
     // Remove the requested class ids.
     //
-    for (i = 0; i < ncid; i++)
+    for (i = 0; i < nci; i++)
     {
-        ClassRemove(acid[i]);
+        ClassRemove(aci[i].cid);
     }
     return MUX_S_OK;
 }

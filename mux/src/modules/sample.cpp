@@ -16,10 +16,10 @@ static INT32 g_cServerLocks = 0;
 
 static ISample *g_pISample = NULL;
 
-#define NUM_CIDS 1
-static MUX_CID sample_cids[NUM_CIDS] =
+#define NUM_CLASSES 1
+static CLASS_INFO sample_classes[NUM_CLASSES] =
 {
-    CID_Sample
+    { CID_Sample }
 };
 
 // The following four functions are for access by dlopen.
@@ -72,7 +72,7 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_Register(void)
     {
         // Advertise our components.
         //
-        mr = mux_RegisterClassObjects(NUM_CIDS, sample_cids, NULL);
+        mr = mux_RegisterClassObjects(NUM_CLASSES, sample_classes, NULL);
         if (MUX_FAILED(mr))
         {
             return mr;
@@ -89,7 +89,7 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_Register(void)
         }
         else
         {
-            (void)mux_RevokeClassObjects(NUM_CIDS, sample_cids);
+            (void)mux_RevokeClassObjects(NUM_CLASSES, sample_classes);
             mr = MUX_E_OUTOFMEMORY;
         }
     }
@@ -106,7 +106,7 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_Unregister(void)
         g_pISample = NULL;
     }
 
-    return mux_RevokeClassObjects(NUM_CIDS, sample_cids);
+    return mux_RevokeClassObjects(NUM_CLASSES, sample_classes);
 }
 
 // Sample component which is not directly accessible.

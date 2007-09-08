@@ -152,7 +152,7 @@ extern "C"
 typedef struct
 {
     MUX_CID cid;
-} COMPONENT_INFO;
+} CLASS_INFO;
 
 typedef struct
 {
@@ -163,8 +163,8 @@ typedef struct
 // APIs available to main program (netmux or stubslave) and dynamic modules.
 //
 extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_CreateInstance(MUX_CID cid, mux_IUnknown *pUnknownOuter, create_context ctx, MUX_IID iid, void **ppv);
-extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_RegisterClassObjects(int ncid, MUX_CID acid[], FPGETCLASSOBJECT *pfGetClassObject);
-extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_RevokeClassObjects(int ncid, MUX_CID acid[]);
+extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_RegisterClassObjects(int nci, CLASS_INFO aci[], FPGETCLASSOBJECT *pfGetClassObject);
+extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_RevokeClassObjects(int nci, CLASS_INFO aci[]);
 
 typedef struct
 {
