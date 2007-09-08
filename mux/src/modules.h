@@ -13,17 +13,17 @@
 #if defined(HAVE_DLOPEN) || defined(WIN32)
 
 #ifdef WIN32
-const UINT64 CID_Log                   = 0x000000020CE18E7Ai64;
-const UINT64 IID_ILog                  = 0x000000028B9DC13Ai64;
-const UINT64 CID_ServerEventsSource    = 0x00000002A5080812i64;
-const UINT64 IID_IServerEventsSink     = 0x00000002F0F2753Fi64;
-const UINT64 IID_IServerEventsControl  = 0x000000026EE5256Ei64;
+const MUX_CID CID_Log                   = 0x000000020CE18E7Ai64;
+const MUX_IID IID_ILog                  = 0x000000028B9DC13Ai64;
+const MUX_CID CID_ServerEventsSource    = 0x00000002A5080812i64;
+const MUX_IID IID_IServerEventsSink     = 0x00000002F0F2753Fi64;
+const MUX_IID IID_IServerEventsControl  = 0x000000026EE5256Ei64;
 #else
-const UINT64 CID_Log                   = 0x000000020CE18E7Aull;
-const UINT64 IID_ILog                  = 0x000000028B9DC13Aull;
-const UINT64 CID_ServerEventsSource    = 0x00000002A5080812ull;
-const UINT64 IID_IServerEventsSink     = 0x00000002F0F2753Full;
-const UINT64 IID_IServerEventsControl  = 0x000000026EE5256Eull;
+const MUX_CID CID_Log                   = 0x000000020CE18E7Aull;
+const MUX_IID IID_ILog                  = 0x000000028B9DC13Aull;
+const MUX_CID CID_ServerEventsSource    = 0x00000002A5080812ull;
+const MUX_IID IID_IServerEventsSink     = 0x00000002F0F2753Full;
+const MUX_IID IID_IServerEventsControl  = 0x000000026EE5256Eull;
 #endif
 
 interface mux_ILog : public mux_IUnknown
@@ -47,7 +47,7 @@ class CLog : public mux_ILog
 public:
     // mux_IUnknown
     //
-    virtual MUX_RESULT QueryInterface(UINT64 iid, void **ppv);
+    virtual MUX_RESULT QueryInterface(MUX_IID iid, void **ppv);
     virtual UINT32     AddRef(void);
     virtual UINT32     Release(void);
 
@@ -75,13 +75,13 @@ class CLogFactory : public mux_IClassFactory
 public:
     // mux_IUnknown
     //
-    virtual MUX_RESULT QueryInterface(UINT64 iid, void **ppv);
+    virtual MUX_RESULT QueryInterface(MUX_IID iid, void **ppv);
     virtual UINT32     AddRef(void);
     virtual UINT32     Release(void);
 
     // mux_IClassFactory
     //
-    virtual MUX_RESULT CreateInstance(mux_IUnknown *pUnknownOuter, UINT64 iid, void **ppv);
+    virtual MUX_RESULT CreateInstance(mux_IUnknown *pUnknownOuter, MUX_IID iid, void **ppv);
     virtual MUX_RESULT LockServer(bool bLock);
 
     CLogFactory(void);
@@ -194,7 +194,7 @@ class CServerEventsSource : public mux_IServerEventsControl
 public:
     // mux_IUnknown
     //
-    virtual MUX_RESULT QueryInterface(UINT64 iid, void **ppv);
+    virtual MUX_RESULT QueryInterface(MUX_IID iid, void **ppv);
     virtual UINT32     AddRef(void);
     virtual UINT32     Release(void);
 
@@ -215,13 +215,13 @@ class CServerEventsSourceFactory : public mux_IClassFactory
 public:
     // mux_IUnknown
     //
-    virtual MUX_RESULT QueryInterface(UINT64 iid, void **ppv);
+    virtual MUX_RESULT QueryInterface(MUX_IID iid, void **ppv);
     virtual UINT32     AddRef(void);
     virtual UINT32     Release(void);
 
     // mux_IClassFactory
     //
-    virtual MUX_RESULT CreateInstance(mux_IUnknown *pUnknownOuter, UINT64 iid, void **ppv);
+    virtual MUX_RESULT CreateInstance(mux_IUnknown *pUnknownOuter, MUX_IID iid, void **ppv);
     virtual MUX_RESULT LockServer(bool bLock);
 
     CServerEventsSourceFactory(void);

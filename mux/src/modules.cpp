@@ -19,13 +19,13 @@
 #include "modules.h"
 
 #define NUM_CIDS 2
-static UINT64 netmux_cids[NUM_CIDS] =
+static MUX_CID netmux_cids[NUM_CIDS] =
 {
     CID_Log,
     CID_ServerEventsSource
 };
 
-extern "C" MUX_RESULT DCL_API netmux_GetClassObject(UINT64 cid, UINT64 iid, void **ppv)
+extern "C" MUX_RESULT DCL_API netmux_GetClassObject(MUX_CID cid, MUX_IID iid, void **ppv)
 {
     MUX_RESULT mr = MUX_E_CLASSNOTAVAILABLE;
 
@@ -126,7 +126,7 @@ CLog::~CLog()
 {
 }
 
-MUX_RESULT CLog::QueryInterface(UINT64 iid, void **ppv)
+MUX_RESULT CLog::QueryInterface(MUX_IID iid, void **ppv)
 {
     if (mux_IID_IUnknown == iid)
     {
@@ -230,7 +230,7 @@ CLogFactory::~CLogFactory()
 {
 }
 
-MUX_RESULT CLogFactory::QueryInterface(UINT64 iid, void **ppv)
+MUX_RESULT CLogFactory::QueryInterface(MUX_IID iid, void **ppv)
 {
     if (mux_IID_IUnknown == iid)
     {
@@ -266,7 +266,7 @@ UINT32 CLogFactory::Release(void)
     return m_cRef;
 }
 
-MUX_RESULT CLogFactory::CreateInstance(mux_IUnknown *pUnknownOuter, UINT64 iid, void **ppv)
+MUX_RESULT CLogFactory::CreateInstance(mux_IUnknown *pUnknownOuter, MUX_IID iid, void **ppv)
 {
     // Disallow attempts to aggregate this component.
     //
@@ -347,7 +347,7 @@ CServerEventsSource::~CServerEventsSource()
     }
 }
 
-MUX_RESULT CServerEventsSource::QueryInterface(UINT64 iid, void **ppv)
+MUX_RESULT CServerEventsSource::QueryInterface(MUX_IID iid, void **ppv)
 {
     if (mux_IID_IUnknown == iid)
     {
@@ -439,7 +439,7 @@ CServerEventsSourceFactory::~CServerEventsSourceFactory()
 {
 }
 
-MUX_RESULT CServerEventsSourceFactory::QueryInterface(UINT64 iid, void **ppv)
+MUX_RESULT CServerEventsSourceFactory::QueryInterface(MUX_IID iid, void **ppv)
 {
     if (mux_IID_IUnknown == iid)
     {
@@ -475,7 +475,7 @@ UINT32 CServerEventsSourceFactory::Release(void)
     return m_cRef;
 }
 
-MUX_RESULT CServerEventsSourceFactory::CreateInstance(mux_IUnknown *pUnknownOuter, UINT64 iid, void **ppv)
+MUX_RESULT CServerEventsSourceFactory::CreateInstance(mux_IUnknown *pUnknownOuter, MUX_IID iid, void **ppv)
 {
     // Disallow attempts to aggregate this component.
     //

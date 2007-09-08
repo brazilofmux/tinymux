@@ -53,8 +53,8 @@ typedef struct mod_info
 
 typedef struct
 {
-    UINT64           cid;
-    MODULE_INFO     *pModule;
+    MUX_CID       cid;
+    MODULE_INFO  *pModule;
 } CLASS_INFO;
 
 static MODULE_INFO *g_pModuleList = NULL;
@@ -147,11 +147,11 @@ static UTF16 *CopyUTF16(const UTF16 *pString)
  *
  * The return value may be beyond the end of the array, so callers should check bounds.
  *
- * \param  UINT64   Class ID.
- * \return          Index into g_pClasses.
+ * \param  cid  Class ID.
+ * \return      Index into g_pClasses.
  */
 
-static int ClassFind(UINT64 cid)
+static int ClassFind(MUX_CID cid)
 {
     // Binary search for the class id.
     //
@@ -183,11 +183,11 @@ static int ClassFind(UINT64 cid)
  * Note that callers may need to test for MainModule and cannot assume the
  * returned module record is implemented in a module.
  *
- * \param  UINT64   Class ID.
- * \return          Pointer to module.
+ * \param  cid  Class ID.
+ * \return      Pointer to module.
  */
 
-static MODULE_INFO *ModuleFindFromCID(UINT64 cid)
+static MODULE_INFO *ModuleFindFromCID(MUX_CID cid)
 {
     int i = ClassFind(cid);
     if (  i < g_nClasses
@@ -266,12 +266,12 @@ static int GrowByFactor(int i)
  *
  * This routine assumes the array is large enough to hold the addition.
  *
- * \param UINT64         Class ID
- * \param pModule        Module that implements it.
- * \return               None.
+ * \param cid        Class ID
+ * \param pModule    Module that implements it.
+ * \return           None.
  */
 
-static void ClassAdd(UINT64 cid, MODULE_INFO *pModule)
+static void ClassAdd(MUX_CID cid, MODULE_INFO *pModule)
 {
     int i = ClassFind(cid);
     if (  i < g_nClasses
@@ -294,12 +294,11 @@ static void ClassAdd(UINT64 cid, MODULE_INFO *pModule)
 
 /*! \brief Removes a class id from the table while maintaining order.
  *
- * \param UINT64         Class ID
- * \param pModule        Module that implements it.
- * \return               None.
+ * \param cid       Class ID
+ * \return          None.
  */
 
-static void ClassRemove(UINT64 cid)
+static void ClassRemove(MUX_CID cid)
 {
     int i = ClassFind(cid);
     if (  i < g_nClasses
@@ -525,12 +524,12 @@ static void ModuleUnload(MODULE_INFO *pModule)
 
 /*! \brief Creates an instance of the given class with the given interface.
  *
- * \param  UINT64    Class ID
- * \param  UINT64    Interface ID
- * \return           MUX_RESULT
+ * \param  cid   Class ID
+ * \param  iid   Interface ID
+ * \return       MUX_RESULT
  */
 
-extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_CreateInstance(UINT64 cid, mux_IUnknown *pUnknownOuter, create_context ctx, UINT64 iid, void **ppv)
+extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_CreateInstance(MUX_CID cid, mux_IUnknown *pUnknownOuter, create_context ctx, MUX_IID iid, void **ppv)
 {
     if (  (UseSameProcess & ctx)
        || (  g_ProcessContext == IsMainProcess
@@ -587,14 +586,14 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_CreateInstance(UINT64 cid, mux_IUnk
  * or stubslave) must pass a non-NULL pfGetClassObject.  For modules, the
  * class factory is obtained by using the mux_GetClassObject export.
  *
- * \param int                   Number of class ids to register
- * \param UINT64[]              Class ID table.
- * \param mux_IClassFactory     Pointer to Factory capable of creating
+ * \param ncid                  Number of class ids to register
+ * \param acid                  Class ID table.
+ * \param fpGetClassObject      Pointer to Factory capable of creating
  *                              instances of the given components.
  * \return                      MUX_RESULT
  */
 
-extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_RegisterClassObjects(int ncid, UINT64 acid[], FPGETCLASSOBJECT *fpGetClassObject)
+extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_RegisterClassObjects(int ncid, MUX_CID acid[], FPGETCLASSOBJECT *fpGetClassObject)
 {
     if (ncid <= 0)
     {
@@ -702,12 +701,12 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_RegisterClassObjects(int ncid, UINT
 /*! \brief De-register class ids and possibly the handler implemented by the
  *         process binary.
  *
- * \param int                   Number of component ids to register
- * \param UINT64[]              Component ID table.
- * \return                      MUX_RESULT
+ * \param ncid    Number of component ids to register
+ * \param acid    Component ID table.
+ * \return        MUX_RESULT
  */
 
-extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_RevokeClassObjects(int ncid, UINT64 acid[])
+extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_RevokeClassObjects(int ncid, MUX_CID acid[])
 {
     if (ncid <= 0)
     {

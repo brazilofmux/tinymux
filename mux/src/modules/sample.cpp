@@ -17,7 +17,7 @@ static INT32 g_cServerLocks = 0;
 static ISample *g_pISample = NULL;
 
 #define NUM_CIDS 1
-static UINT64 sample_cids[NUM_CIDS] =
+static MUX_CID sample_cids[NUM_CIDS] =
 {
     CID_Sample
 };
@@ -37,7 +37,7 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_CanUnloadNow(void)
     }
 }
 
-extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_GetClassObject(UINT64 cid, UINT64 iid, void **ppv)
+extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_GetClassObject(MUX_CID cid, MUX_IID iid, void **ppv)
 {
     MUX_RESULT mr = MUX_E_CLASSNOTAVAILABLE;
 
@@ -175,7 +175,7 @@ CSample::~CSample()
     g_cComponents--;
 }
 
-MUX_RESULT CSample::QueryInterface(UINT64 iid, void **ppv)
+MUX_RESULT CSample::QueryInterface(MUX_IID iid, void **ppv)
 {
     if (mux_IID_IUnknown == iid)
     {
@@ -230,7 +230,7 @@ CSampleFactory::~CSampleFactory()
 {
 }
 
-MUX_RESULT CSampleFactory::QueryInterface(UINT64 iid, void **ppv)
+MUX_RESULT CSampleFactory::QueryInterface(MUX_IID iid, void **ppv)
 {
     if (mux_IID_IUnknown == iid)
     {
@@ -266,7 +266,7 @@ UINT32 CSampleFactory::Release(void)
     return m_cRef;
 }
 
-MUX_RESULT CSampleFactory::CreateInstance(mux_IUnknown *pUnknownOuter, UINT64 iid, void **ppv)
+MUX_RESULT CSampleFactory::CreateInstance(mux_IUnknown *pUnknownOuter, MUX_IID iid, void **ppv)
 {
     // Disallow attempts to aggregate this component.
     //

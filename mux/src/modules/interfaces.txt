@@ -63,8 +63,8 @@ INTERFACE: Task callback interface used by the lower-level queue routines.
 
 INTERFACE: Access to logging routines, the log file, and control of the log file (Done).
 
-const UINT64 CID_Log        = 0x000000020CE18E7Aull;
-const UINT64 IID_ILog       = 0x000000028B9DC13Aull;
+const MUX_CID CID_Log        = 0x000000020CE18E7Aull;
+const MUX_IID IID_ILog       = 0x000000028B9DC13Aull;
 
 interface ILog : public mux_IUnknown
 {
