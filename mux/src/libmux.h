@@ -14,6 +14,9 @@
  * re-entrant.
  */
 
+#ifndef LIBMUX_H
+#define LIBMUX_H
+
 typedef int MUX_RESULT;
 
 #define MUX_S_OK                 (0)
@@ -173,3 +176,5 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_ModuleInfo(int iModule, MUX_MODULE_
 extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_ModuleMaintenance(void);
 
 extern "C" bool DCL_EXPORT DCL_API mux_ReceiveData(size_t nBuffer, const void *pBuffer);
+
+#endif // LIBMUX_H
