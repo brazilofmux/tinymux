@@ -300,7 +300,6 @@ FUNCTION(fun_link)
 #if defined(FIRANMUX)
 FUNCTION(fun_setparent)
 {
-    UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(nfargs);
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
@@ -309,12 +308,11 @@ FUNCTION(fun_setparent)
     {
         return;
     }
-    do_parent(executor, caller, enactor, 0, 2, fargs[0], fargs[1]);
+    do_parent(executor, caller, enactor, eval, 0, 2, fargs[0], fargs[1], NULL, 0);
 }
 
 FUNCTION(fun_setname)
 {
-    UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(nfargs);
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
@@ -325,12 +323,11 @@ FUNCTION(fun_setname)
     {
         return;
     }
-    do_name(executor, caller, enactor, 0, 2, fargs[0], fargs[1]);
+    do_name(executor, caller, enactor, eval, 0, 2, fargs[0], fargs[1], NULL, 0);
 }
 
 FUNCTION(fun_trigger)
 {
-    UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(nfargs);
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
@@ -339,7 +336,7 @@ FUNCTION(fun_trigger)
     {
         return;
     }
-    do_trigger(executor, caller, enactor, eval, 0, fargs[0], fargs+1, nfargs-1);
+    do_trigger(executor, caller, enactor, eval, 0, fargs[0], fargs+1, nfargs-1, NULL, 0);
 }
 #endif // FIRANMUX
 

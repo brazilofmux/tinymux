@@ -3296,12 +3296,10 @@ static void SetHimState(DESC *d, unsigned char chOption, int iHimState)
         {
             SendCharsetRequest(d);
         }
-#ifdef SSL_ENABLED
         else if (TELNET_STARTTLS == chOption)
         {
-            SendSb(d,chOption,TELNETSB_FOLLOWS);
+            SendSb(d,TELNET_STARTTLS,TELNETSB_FOLLOWS);
         }
-#endif
     }
 }
 
