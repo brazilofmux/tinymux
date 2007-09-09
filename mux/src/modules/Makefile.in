@@ -1,4 +1,17 @@
+all: sample.so sum.so
+
 sample.so: sample.cpp sample.h ../autoconf.h ../config.h ../libmux.h ../modules.h
-	( if [ -f @MODULE_TARGET@ ]; then mv -f @MODULE_TARGET@ @MODULE_TARGET@~ ; fi )
-	g++ @MODULE_CPPFLAGS@ -o @MODULE_TARGET@ sample.cpp -L.. @MUX_LIBS@
-	( if [ -f @MODULE_TARGET@ ]; then cd ../../game/bin ; rm -f @MODULE_TARGET@ ; ln -s ../../src/modules/@MODULE_TARGET@ @MODULE_TARGET@ ; fi )
+	( if [ -f sample.so ]; then mv -f sample.so sample.so~ ; fi )
+	g++ @MODULE_CPPFLAGS@ -o sample.so sample.cpp -L.. @MUX_LIBS@
+	( if [ -f sample.so ]; then cd ../../game/bin ; rm -f sample.so ; ln -s ../../src/modules/sample.so sample.so ; fi )
+
+sum.so: sum.cpp sum.h ../autoconf.h ../config.h ../libmux.h ../modules.h
+	( if [ -f sum.so ]; then mv -f sum.so sum.so~ ; fi )
+	g++ @MODULE_CPPFLAGS@ -o sum.so sum.cpp -L.. @MUX_LIBS@
+	( if [ -f sum.so ]; then cd ../../game/bin ; rm -f sum.so ; ln -s ../../src/modules/sum.so sum.so ; fi )
+
+clean:
+	-rm -f *.o a.out core gmon.out warn.log config.status config.log sample.so~ sum.so~
+
+realclean:
+	-rm -f *.o a.out core gmon.out warn.log config.status config.log sample.so sample.so~ sum.so sum.so~ autoconf.h

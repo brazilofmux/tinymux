@@ -29,11 +29,9 @@ AC_TRY_LINK([
     AC_DEFINE(HAVE_DLOPEN)
     case "$host" in
     *darwin*) MODULE_EXT="so"
-              MODULE_TARGET="sample.so"
               MODULE_CPPFLAGS="-bundle"
               ;;
     *)        MODULE_EXT="so"
-              MODULE_TARGET="sample.so"
               MODULE_CPPFLAGS="-shared -fPIC"
               ;;
     esac
@@ -41,6 +39,5 @@ AC_TRY_LINK([
     ])
 AC_SUBST(MODULE_EXT)
 AC_SUBST(MODULE_CPPFLAGS)
-AC_SUBST(MODULE_TARGET)
 AC_SUBST(MUX_LIBS)
 AC_OUTPUT(Makefile)

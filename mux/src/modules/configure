@@ -674,7 +674,6 @@ GREP
 EGREP
 MODULE_EXT
 MODULE_CPPFLAGS
-MODULE_TARGET
 MUX_LIBS
 LIBOBJS
 LTLIBOBJS'
@@ -4820,11 +4819,9 @@ _ACEOF
 
     case "$host" in
     *darwin*) MODULE_EXT="so"
-              MODULE_TARGET="sample.so"
               MODULE_CPPFLAGS="-bundle"
               ;;
     *)        MODULE_EXT="so"
-              MODULE_TARGET="sample.so"
               MODULE_CPPFLAGS="-shared -fPIC"
               ;;
     esac
@@ -4839,7 +4836,6 @@ fi
 
 rm -f core conftest.err conftest.$ac_objext conftest_ipa8_conftest.oo \
       conftest$ac_exeext conftest.$ac_ext
-
 
 
 
@@ -5521,13 +5517,12 @@ GREP!$GREP$ac_delim
 EGREP!$EGREP$ac_delim
 MODULE_EXT!$MODULE_EXT$ac_delim
 MODULE_CPPFLAGS!$MODULE_CPPFLAGS$ac_delim
-MODULE_TARGET!$MODULE_TARGET$ac_delim
 MUX_LIBS!$MUX_LIBS$ac_delim
 LIBOBJS!$LIBOBJS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 65; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 64; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5

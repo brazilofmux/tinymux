@@ -88,6 +88,12 @@ src/modules/sample.dep
 src/modules/sample.dsp
 src/modules/sample.h
 src/modules/sample.mak
+src/modules/sum.cpp
+src/modules/sum.def
+src/modules/sum.dep
+src/modules/sum.dsp
+src/modules/sum.h
+src/modules/sum.mak
 src/modules.cpp
 src/modules.h
 src/move.cpp

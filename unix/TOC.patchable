@@ -100,6 +100,8 @@ src/modules/configure.in
 src/modules/install-sh
 src/modules/sample.cpp
 src/modules/sample.h
+src/modules/sum.cpp
+src/modules/sum.h
 src/modules.cpp
 src/modules.h
 src/move.cpp

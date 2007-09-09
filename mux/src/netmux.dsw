@@ -45,6 +45,21 @@ Package=<4>
 
 ###############################################################################
 
+Project: "sum"=.\modules\sum.dsp - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+    Begin Project Dependency
+    Project_Dep_Name libmux
+    End Project Dependency
+}}}
+
+###############################################################################
+
 Global:
 
 Package=<5>

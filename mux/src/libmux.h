@@ -93,6 +93,8 @@ public:
     virtual MUX_RESULT LockServer(bool bLock) = 0;
 };
 
+// The following is  part of what is called 'Standard Marshaling'.
+//
 typedef struct
 {
     void   *pBuffer;
@@ -134,6 +136,8 @@ public:
     virtual MUX_RESULT CreateStub(MUX_IID riid, mux_IUnknown *pUnknownOuter, mux_IRpcStubBuffer *ppStub) = 0;
 };
 
+// The following is part of what is called 'Custom Marshaling'.
+//
 interface mux_IMarshal : public mux_IUnknown
 {
 public:
