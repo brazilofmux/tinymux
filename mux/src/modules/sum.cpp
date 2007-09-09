@@ -190,7 +190,7 @@ MUX_RESULT CSum::GetUnmarshalClass(MUX_IID riid, marshal_context ctx, MUX_CID *p
 
 MUX_RESULT CSum::MarshalInterface(size_t *pnBuffer, char **pBuffer, MUX_IID riid, marshal_context ctx)
 {
-    // We must construct a packet sufficient to allow the proxy to communicate with us.
+    // TODO: We must construct a packet sufficient to allow the proxy to communicate with us.
     //
     return MUX_E_NOTIMPLEMENTED;
 }

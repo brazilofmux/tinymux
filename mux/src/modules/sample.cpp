@@ -524,12 +524,14 @@ MUX_RESULT CSumProxy::MarshalInterface(size_t *pnBuffer, char **pBuffer, MUX_IID
 
 MUX_RESULT CSumProxy::UnmarshalInterface(size_t nBuffer, char *pBuffer, MUX_IID riid, void **ppv)
 {
-    return MUX_E_NOTIMPLEMENTED;
+    // TODO: Given a marshal packet from the remote component, we should be able to connect and provide a proxy ISum.
+    //
+    return QueryInterface(riid, ppv);
 }
 
 MUX_RESULT CSumProxy::ReleaseMarshalData(char *pBuffer)
 {
-    return MUX_E_NOTIMPLEMENTED;
+    return MUX_S_OK;
 }
 
 MUX_RESULT CSumProxy::DisconnectObject(void)
@@ -539,6 +541,8 @@ MUX_RESULT CSumProxy::DisconnectObject(void)
 
 MUX_RESULT CSumProxy::Add(int a, int b, int *sum)
 {
+    // TODO: Communicate with the remote component to service this request.
+    //
     return MUX_E_NOTIMPLEMENTED;
 }
 
