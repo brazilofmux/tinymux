@@ -135,6 +135,7 @@ ATTR AttrTable[] =
     {T("Move"),        A_MOVE,     AF_ODARK | AF_NOPROG},
     {T("Name"),        A_NAME,     AF_DARK | AF_NOPROG | AF_NOCMD | AF_INTERNAL},
     {T("NameFormat"),  A_NAMEFORMAT, AF_ODARK | AF_NOPROG | AF_WIZARD},
+    {T("NewObjects"),  A_NEWOBJS,  AF_WIZARD | AF_NOCMD | AF_NOPROG | AF_NOCLONE},
     {T("Odesc"),       A_ODESC,    AF_ODARK | AF_NOPROG},
     {T("Odfail"),      A_ODFAIL,   AF_ODARK | AF_NOPROG},
     {T("Odrop"),       A_ODROP,    AF_ODARK | AF_NOPROG},

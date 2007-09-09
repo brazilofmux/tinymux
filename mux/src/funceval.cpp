@@ -2955,6 +2955,118 @@ FUNCTION(fun_last)
     delete words;
 }
 
+
+// Find the last created object by type for a player, optionally by type
+//
+FUNCTION(fun_lastcreate)
+{
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+
+    SEP sep;
+    if (!OPTIONAL_DELIM(2, sep, DELIM_DFLT))
+    {
+        return;
+    }
+
+
+    dbref target;
+    sep.str[0] = ' ';
+
+    if(nfargs == 0 || !*fargs[0])
+    {
+        target = executor;
+    }
+    else if(nfargs > 0 && *fargs[0])
+    {
+        UTF8 *name = fargs[0];
+        target = match_thing_quiet(executor, name);
+
+        if(!Good_obj(target))
+        {
+            safe_nomatch(buff, bufc);
+            return;
+        }
+    }
+
+    if(!WizRoy(executor) && !Controls(executor, target))
+    {
+        safe_noperm(buff, bufc);
+        return;
+    }
+
+    if(nfargs > 1 && *fargs[1])
+    {
+        sep.str[0] = *fargs[1];
+    }
+
+    int aowner;
+    int aflags;
+
+    UTF8* newobject_string = atr_get("fun_lastcreate.2998", target,
+            A_NEWOBJS, &aowner, &aflags);
+
+    if(!newobject_string || !*newobject_string)
+    {
+        safe_str(T("-1"), buff, bufc);
+        return;
+    }
+    
+    dbref object_list[5];
+    int i = 0;
+
+    // Init array for safety
+    for(i=0; i < 5; ++i)
+    {
+        object_list[i] = -1;
+    }
+
+    UTF8* ptr;
+
+    MUX_STRTOK_STATE tts;
+    mux_strtok_src(&tts, newobject_string);
+    mux_strtok_ctl(&tts, T(" "));
+
+    for(ptr = mux_strtok_parse(&tts), i=0; ptr; 
+            ptr = mux_strtok_parse(&tts), ++i)
+    {
+        object_list[i] = mux_atol(ptr);
+
+        if(i > 4)
+        {
+            break;
+        }
+    }
+
+    free_lbuf(newobject_string);
+
+    switch(sep.str[0])
+    {
+        case 'R':
+        case 'r':
+            safe_tprintf_str(buff, bufc, "#%d", object_list[0]);
+            break;
+        case 'T':
+        case 't':
+            safe_tprintf_str(buff, bufc, "#%d", object_list[1]);
+            break;
+        case 'E':
+        case 'e':
+            safe_tprintf_str(buff, bufc, "#%d", object_list[2]);
+            break;
+        case 'P':
+        case 'p':
+            safe_tprintf_str(buff, bufc, "#%d", object_list[3]);
+            break;
+        default:
+            safe_tprintf_str(buff, bufc, "#%d", object_list[4]);
+            break;
+    }
+
+    free_lbuf(newobject_string);
+}
+
+
 // Borrowed from TinyMUSH 2.2
 //
 FUNCTION(fun_matchall)
