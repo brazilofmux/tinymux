@@ -871,7 +871,7 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_RegisterInterfaces(int nii, INTERFA
     {
         InterfaceAdd(&aii[i]);
     }
-    MUX_S_OK;
+    return MUX_S_OK;
 }
 
 extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_RevokeInterfaces(int nii, INTERFACE_INFO aii[])
@@ -886,7 +886,7 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_RevokeInterfaces(int nii, INTERFACE
     {
         InterfaceRemove(aii[i].iid);
     }
-    MUX_S_OK;
+    return MUX_S_OK;
 }
 
 /*! \brief Add module to the set of available modules.
