@@ -149,11 +149,17 @@ extern "C"
     typedef MUX_RESULT DCL_API FPGETCLASSOBJECT(MUX_CID cid, MUX_IID iid, void **ppv);
 }
 
+// All components must be registered.  Currently, only the id is required.
+//
 typedef struct
 {
     MUX_CID cid;
 } CLASS_INFO;
 
+// It is not required that all interfaces be registered.  However, if an
+// interface needs to be marshalled, it must have an associated proxy-stub
+// component and therefore must be registered.
+//
 typedef struct
 {
     MUX_IID iid;
@@ -165,6 +171,8 @@ typedef struct
 extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_CreateInstance(MUX_CID cid, mux_IUnknown *pUnknownOuter, create_context ctx, MUX_IID iid, void **ppv);
 extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_RegisterClassObjects(int nci, CLASS_INFO aci[], FPGETCLASSOBJECT *pfGetClassObject);
 extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_RevokeClassObjects(int nci, CLASS_INFO aci[]);
+extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_RegisterInterfaces(int nii, INTERFACE_INFO aii[]);
+extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_RevokeInterfaces(int nii, INTERFACE_INFO aii[]);
 
 typedef struct
 {
