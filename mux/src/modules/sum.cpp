@@ -139,6 +139,10 @@ MUX_RESULT CSum::QueryInterface(MUX_IID iid, void **ppv)
     {
         *ppv = static_cast<ISum *>(this);
     }
+    else if (mux_IID_IMarshal == iid)
+    {
+        *ppv = static_cast<mux_IMarshal *>(this);
+    }
     else
     {
         *ppv = NULL;
@@ -165,9 +169,62 @@ UINT32 CSum::Release(void)
     return m_cRef;
 }
 
-int CSum::Add(int a, int b)
+MUX_RESULT CSum::GetUnmarshalClass(MUX_IID riid, marshal_context ctx, MUX_CID *pcid)
 {
-    return a + b;
+    UNUSED_PARAMETER(ctx);
+
+    if (NULL == pcid)
+    {
+        return MUX_E_INVALIDARG;
+    }
+    else if (  IID_ISum == riid
+            && CrossProcess == ctx)
+    {
+        // We only support cross-process at the moment.
+        //
+        *pcid = CID_SumProxy;
+        return MUX_S_OK;
+    }
+    return MUX_E_NOTIMPLEMENTED;
+}
+
+MUX_RESULT CSum::MarshalInterface(size_t *pnBuffer, char **pBuffer, MUX_IID riid, marshal_context ctx)
+{
+    // We must construct a packet sufficient to allow the proxy to communicate with us.
+    //
+    return MUX_E_NOTIMPLEMENTED;
+}
+
+MUX_RESULT CSum::UnmarshalInterface(size_t nBuffer, char *pBuffer, MUX_IID riid, void **ppv)
+{
+    return MUX_E_UNEXPECTED;
+}
+
+MUX_RESULT CSum::ReleaseMarshalData(char *pBuffer)
+{
+    if (NULL != pBuffer)
+    {
+        delete pBuffer;
+    }
+    return MUX_S_OK;
+}
+
+MUX_RESULT CSum::DisconnectObject(void)
+{
+    // Tear down our side of the communication.
+    //
+    return MUX_E_NOTIMPLEMENTED;
+}
+
+MUX_RESULT CSum::Add(int a, int b, int *pSum)
+{
+    if (NULL == pSum)
+    {
+        return MUX_E_INVALIDARG;
+    }
+
+    *pSum = a + b;
+    return MUX_S_OK;
 }
 
 // Factory for Sum component which is not directly accessible.

@@ -10,19 +10,21 @@
 
 #ifdef WIN32
 const MUX_CID CID_Sum        = 0x0000000214D47B2Ai64;
+const MUX_CID CID_SumProxy   = 0x00000002FA46961Ei64;
 const MUX_IID IID_ISum       = 0x00000002BAB94F6Di64;
 #else
 const MUX_CID CID_Sum        = 0x0000000214D47B2Aull;
+const MUX_CID CID_SumProxy   = 0x00000002FA46961Eull;
 const MUX_IID IID_ISum       = 0x00000002BAB94F6Dull;
 #endif
 
 interface ISum : public mux_IUnknown
 {
 public:
-    virtual int Add(int a, int b) = 0;
+    virtual MUX_RESULT Add(int a, int b, int *psum) = 0;
 };
 
-class CSum : public ISum
+class CSum : public ISum, public mux_IMarshal
 {
 public:
     // mux_IUnknown
@@ -31,9 +33,17 @@ public:
     virtual UINT32     AddRef(void);
     virtual UINT32     Release(void);
 
+    // mux_IMarshal
+    //
+    virtual MUX_RESULT GetUnmarshalClass(MUX_IID riid, marshal_context ctx, MUX_CID *pcid);
+    virtual MUX_RESULT MarshalInterface(size_t *pnBuffer, char **pBuffer, MUX_IID riid, marshal_context ctx);
+    virtual MUX_RESULT UnmarshalInterface(size_t nBuffer, char *pBuffer, MUX_IID riid, void **ppv);
+    virtual MUX_RESULT ReleaseMarshalData(char *pBuffer);
+    virtual MUX_RESULT DisconnectObject(void);
+
     // ISum
     //
-    virtual int Add(int a, int b);
+    virtual MUX_RESULT Add(int a, int b, int *sum);
 
     CSum(void);
     MUX_RESULT FinalConstruct(void);

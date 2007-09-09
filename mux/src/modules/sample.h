@@ -10,10 +10,14 @@
 
 #ifdef WIN32
 const MUX_CID CID_Sample        = 0x0000000265E759EFi64;
+const MUX_CID CID_SumProxy      = 0x00000002FA46961Ei64;
 const MUX_IID IID_ISample       = 0x00000002462F47F3i64;
+const MUX_IID IID_ISum          = 0x00000002BAB94F6Di64;
 #else
 const MUX_CID CID_Sample        = 0x0000000265E759EFull;
+const MUX_CID CID_SumProxy      = 0x00000002FA46961Eull;
 const MUX_IID IID_ISample       = 0x00000002462F47F3ull;
+const MUX_IID IID_ISum          = 0x00000002BAB94F6Dull;
 #endif
 
 interface ISample : public mux_IUnknown
@@ -78,6 +82,62 @@ public:
 
     CSampleFactory(void);
     virtual ~CSampleFactory();
+
+private:
+    UINT32 m_cRef;
+};
+
+interface ISum : public mux_IUnknown
+{
+public:
+    virtual MUX_RESULT Add(int a, int b, int *psum) = 0;
+};
+
+class CSumProxy : public ISum, public mux_IMarshal
+{
+public:
+    // mux_IUnknown
+    //
+    virtual MUX_RESULT QueryInterface(MUX_IID iid, void **ppv);
+    virtual UINT32     AddRef(void);
+    virtual UINT32     Release(void);
+
+    // mux_IMarshal
+    //
+    virtual MUX_RESULT GetUnmarshalClass(MUX_IID riid, marshal_context ctx, MUX_CID *pcid);
+    virtual MUX_RESULT MarshalInterface(size_t *pnBuffer, char **pBuffer, MUX_IID riid, marshal_context ctx);
+    virtual MUX_RESULT UnmarshalInterface(size_t nBuffer, char *pBuffer, MUX_IID riid, void **ppv);
+    virtual MUX_RESULT ReleaseMarshalData(char *pBuffer);
+    virtual MUX_RESULT DisconnectObject(void);
+
+    // ISumProxy
+    //
+    virtual MUX_RESULT Add(int a, int b, int *sum);
+
+    CSumProxy(void);
+    MUX_RESULT FinalConstruct(void);
+    virtual ~CSumProxy();
+
+private:
+    UINT32 m_cRef;
+};
+
+class CSumProxyFactory : public mux_IClassFactory
+{
+public:
+    // mux_IUnknown
+    //
+    virtual MUX_RESULT QueryInterface(MUX_IID iid, void **ppv);
+    virtual UINT32     AddRef(void);
+    virtual UINT32     Release(void);
+
+    // mux_IClassFactory
+    //
+    virtual MUX_RESULT CreateInstance(mux_IUnknown *pUnknownOuter, MUX_IID iid, void **ppv);
+    virtual MUX_RESULT LockServer(bool bLock);
+
+    CSumProxyFactory(void);
+    virtual ~CSumProxyFactory();
 
 private:
     UINT32 m_cRef;
