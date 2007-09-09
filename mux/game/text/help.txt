@@ -7144,18 +7144,19 @@ FUNCTION LIST (continued)
     IDLE()      IF()        IFELSE()    ILEV()      IMUL()      INC()
     INDEX()     INSERT()    INZONE()    ISDBREF()   ISIGN()     ISINT()
     ISNUM()     ISRAT()     ISUB()      ISWORD()    ITEMIZE()   ITEMS()
-    ITER()      LADD()      LAND()      LAST()      LATTR()     LATTRCMDS()
-    LATTRP()    LCMDS()     LCON()      LCSTR()     LDELETE()   LEXITS()
-    LFLAGS()    LINK()      LIST()      LISTRLEVELS() LIT()     LJUST()
-    LN()        LNUM()      LOC()       LOCALIZE()  LOCATE()    LOCK()
-    LOG()       LOR()       LPAD()      LPARENT()   LPORTS()    LPOS()
-    LRAND()     LROOMS()    LT()        LTE()       LWHO()      MAIL()
-    MAILFROM()  MAILSIZE()  MAILJ()     MAILSUBJ()  MAP()       MATCH()
-    MATCHALL()  MAX()       MEMBER()    MERGE()     MID()       MIN()
-    MIX()       MOD()       MONEY()     MONIKER()   MOTD()      MTIME()
-    MUDNAME()   MUL()       MUNGE()     NAME()      NEARBY()    NEQ()
-    NEXT()      NOT()       NULL()      NUM()       OBJ()       OBJEVAL()
-    OBJMEM()    OEMIT()     OR()        ORBOOL()    ORD()       ORFLAGS()
+    ITER()      LADD()      LAND()      LAST()      LASTCREATE() 
+    LATTR()     LATTRCMDS() LATTRP()    LCMDS()     LCON()      LCSTR()     
+    LDELETE()   LEXITS()    LFLAGS()    LINK()      LIST()      LISTRLEVELS() 
+    LIT()     LJUST()       LN()        LNUM()      LOC()       LOCALIZE()  
+    LOCATE()    LOCK()      LOG()       LOR()       LPAD()      LPARENT()   
+    LPORTS()    LPOS()      LRAND()     LROOMS()    LT()        LTE()       
+    LWHO()      MAIL()      MAILFROM()  MAILSIZE()  MAILJ()     MAILSUBJ()  
+    MAP()       MATCH()     MATCHALL()  MAX()       MEMBER()    MERGE()     
+    MID()       MIN()       MIX()       MOD()       MONEY()     MONIKER()   
+    MOTD()      MTIME()     MUDNAME()   MUL()       MUNGE()     NAME()      
+    NEARBY()    NEQ()       NEXT()      NOT()       NULL()      NUM()       
+    OBJ()       OBJEVAL()   OBJMEM()    OEMIT()     OR()        ORBOOL()    
+    ORD()       ORFLAGS()
 
 ("help function list3" for more)
 
@@ -8379,6 +8380,23 @@ LAST()
     You say, "Thing"
 
   Related Topics: first(), rest().
+
+& LASTCREATE()
+LASTCREATE()
+
+  FUNCTION: lastcreate([<object>, [,<type>]])
+
+  Returns the dbref of the last created object for <object>.  If object is not
+  specified, the dbref of the executor is used.   The optional argument,
+  <type>, returns the dbref of the last created object of the given type.
+  Type may be 'r', 'e', 't', or 'p' for room, exit, thing, or player,
+  respectively. 
+
+  Examples:
+    > say lastcreate(me)
+    You say, "#2047"
+    > say lastcreate(me, r)
+    You say, "#836"
 
 & LATTR()
 LATTR()
