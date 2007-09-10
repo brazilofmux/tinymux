@@ -61,15 +61,26 @@ II. Design Increments.
       attribute.
     - The allocated channel number is included in the Custom Marshal Data.
     - A return frame is constructed which includes the proxy CID and the new
-      channel number.
+      channel number.  The ToChannel of this return frame is 0.  The new
+      channel number is contained in the Custom Marshaled Data.
     - mux_CreateInstance the proxy with the proxy CID.
     - Call mux_IMarshal::UnmarshalInterface with the new channel number.
+    - Depending on how the low-level transport is implemented, it may need the
+      new channel number.  The proxy would inform the lower-level of the new
+      channel at this time.
     - The proxy is now able to communicate with its component.
 
     Notice that the receiver assigns the channel number.  The sender and
-    receiver always use the receiver-assigned channel number.  Also notice
-    that unlikely other channels, channel 0 can receive Return Frames without
-    first having made a Call.
+    receiver always use the receiver-assigned channel number.  The two
+    processes maintain their channel numbers indepdendently.  For example,
+    they could both assign channel 10 to different associations.  Channel 10
+    in netmux would have nothing to do with channel 10 in the stubslave.
+
+    A return frame should necessarily match the last outstanding call frame.
+
+    This design does not support Message Frames to callers.  There's no
+    associated function to handle an unexpected incoming frame.  Only callees
+    can receive Message Frames.
 
 III. Packet Format.
 
