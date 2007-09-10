@@ -82,6 +82,30 @@ II. Design Increments.
     associated function to handle an unexpected incoming frame.  Only callees
     can receive Message Frames.
 
+  C. Standard Marshaling.
+
+     As discussed above, while custom marshaling leaves the transport details
+     out, a minimum implementation across a Unix pipe requires channels and a
+     callback function on the callee side.
+
+     We can implement standard marshaling on top of this using one callback
+     function for the stub manager, and there needs to be only one stub
+     manager.  The stub manager is part of the standard marshaling, there is
+     only one, and it isn't used by anyone else directly.
+
+     One could argue that either type of marshaling can be built on top of the
+     other, but it is helpful at this stage of development to see that our
+     implementation of custom marshaling supports interfaces while depending
+     only on transport-related function calls.  Likewise, our implementation
+     of standard marshaling provides a transport-independent framework while
+     depending on an internal instance of custom marshaling.
+
+     In other words, we enable others to marshal their interfaces with our
+     custom or standard marshaling interfaces, but we are using custom marshaled
+     interfaces ourselves to provide standard marshaling, we can't share it,
+     and we don't need to share it.
+
+
 III. Packet Format.
 
   A. Call Frame.
