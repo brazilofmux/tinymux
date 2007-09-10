@@ -1,9 +1,9 @@
 I. Summary.
 
 Custom marshaling uses mux_IMarshal to turn an interface pointer in one
-process into a buffer that another process can use to create a proxy.  In the
-process, this creates a new association between the proxy and the first
-interface.
+process into a buffer that another process can use to create a proxy.  As a
+side-effect of doing this, a new association between proxy and server is
+created.
 
 How the request to create a server is propagated from client to server, the
 communication mechanism, and how new associations are created is much less
@@ -15,8 +15,9 @@ Our approach to the design will take two steps:
      marshaling steps within the same process.  The interfaces for doing this
      must use only fundamental data types -- no interface pointers.
 
-  2. Assume when the communication channel is first established an instance of
-     these components an all the associations between them exist a priori.
+  2. Assume when the communication channel is first established, an instance
+     of these components and all the associations between them exist a priori.
+     This first connection is not created.  It simply exists.
 
 
 II. Design Increments.
@@ -47,9 +48,12 @@ II. Design Increments.
 
     i. Sequence.
 
-    - Setup channel 0 to listen for call frames.
-    - With (cid, iid) from call frame, create object, and get mux_IMarshal
-      interface.
+    - Setup channel 0 to listen for call frames.  This is the a priori
+      channel.
+    - When a call frame to channel 0 is received, it will contain cid and iid.
+      Create the requested object, and get its mux_IMarshal interface.  Since
+      we are using customer marshalling, we assume the mux_IMarshal interface
+      must exist.
     - Get the proxy CID.
     - mux_IMarshal::MarshalInterface() allocates a new channel (e.g., 1)
       and sets up a callback function to receive data from that channel.
@@ -62,6 +66,10 @@ II. Design Increments.
     - Call mux_IMarshal::UnmarshalInterface with the new channel number.
     - The proxy is now able to communicate with its component.
 
+    Notice that the receiver assigns the channel number.  The sender and
+    receiver always use the receiver-assigned channel number.  Also notice
+    that unlikely other channels, channel 0 can receive Return Frames without
+    first having made a Call.
 
 III. Packet Format.
 
