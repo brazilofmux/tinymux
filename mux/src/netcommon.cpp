@@ -2752,10 +2752,12 @@ void do_command(DESC *d, UTF8 *command)
     // Split off the command from the arguments.
     //
     size_t iArg = 0;
+    UTF8* cmd_argument = command;
     while (  '\0' != command[iArg]
           && !mux_isspace(command[iArg]))
     {
         iArg++;
+        cmd_argument++;
     }
 
     // Look up the command in the logged-out command table.
@@ -2792,7 +2794,7 @@ void do_command(DESC *d, UTF8 *command)
     else
     {
         mudstate.debug_cmd = cp->name;
-        do_logged_out_internal(d, cp->flag & CMD_MASK, command + iArg + 1);
+        do_logged_out_internal(d, cp->flag & CMD_MASK, cmd_argument);
     }
     // QUIT or LOGOUT will close the connection and cause the
     // descriptor to be freed!
