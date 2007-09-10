@@ -1,0 +1,96 @@
+I. Summary.
+
+Custom marshaling uses mux_IMarshal to turn an interface pointer in one
+process into a buffer that another process can use to create a proxy.  In the
+process, this creates a new association between the proxy and the first
+interface.
+
+How the request to create a server is propagated from client to server, the
+communication mechanism, and how new associations are created is much less
+specified.  These could be anything, but our design needs to be more specific.
+
+Our approach to the design will take two steps:
+
+  1. Ignore the communication channel for a moment by going through the
+     marshaling steps within the same process.  The interfaces for doing this
+     must use only fundamental data types -- no interface pointers.
+
+  2. Assume when the communication channel is first established an instance of
+     these components an all the associations between them exist a priori.
+
+
+II. Design Increments.
+
+ A. Ignore the real channel.
+
+    i. Sequence.
+
+    - Call QueryInterface() and get the object's mux_IMarshal interface.
+    - Call mux_IMarshal::GetUnmarshalClass() to get the proxy CID.
+    - Call mux_IMarshal::MarshalInterface().
+    - This allocates a buffer and sets up a callback function. A pointer to
+      both are included in the marshaled interface packet.
+    - mux_CreateInstance the proxy with the proxy CID.
+    - Get the proxy's mux_IMarshal interface.
+    - Call mux_IMarshal::UnmarshalInterface to obtain the proxy interface.
+    - The proxy places parameters as necessary in the buffer and calls the
+      'SendReceive' callback function.
+
+    ii. Interfaces.
+
+    interface mux_IBootstrap : public mux_IUknown
+    {
+        (MUX_CID cidProxy, Custom Marshal Data) RemoteCreateInstance(MUX_CID cid, MUX_IID iid);
+    };
+
+ B. A priori setup.
+
+    i. Sequence.
+
+    - Setup channel 0 to listen for call frames.
+    - With (cid, iid) from call frame, create object, and get mux_IMarshal
+      interface.
+    - Get the proxy CID.
+    - mux_IMarshal::MarshalInterface() allocates a new channel (e.g., 1)
+      and sets up a callback function to receive data from that channel.
+    - The interface pointer for the created object is saved as a channel
+      attribute.
+    - The allocated channel number is included in the Custom Marshal Data.
+    - A return frame is constructed which includes the proxy CID and the new
+      channel number.
+    - mux_CreateInstance the proxy with the proxy CID.
+    - Call mux_IMarshal::UnmarshalInterface with the new channel number.
+    - The proxy is now able to communicate with its component.
+
+
+III. Packet Format.
+
+  A. Call Frame.
+
+     CallMagic   0x359771F9
+     Length      0x--------
+     ToChannel   0x--------
+     Data..................
+     ......................
+     ......................
+     EndMagic    0x27118B26
+
+  B. Return Frame.
+
+     ReturnMagic 0x35972DD0
+     Length      0x--------
+     ToChannel   0x--------
+     Data..................
+     ......................
+     ......................
+     EndMagic    0x27118B26
+
+  C. Message Frame (non-blocking).
+
+     ReturnMagic 0x35971836
+     Length      0x--------
+     ToChannel   0x--------
+     Data..................
+     ......................
+     ......................
+     EndMagic    0x27118B26
