@@ -517,12 +517,12 @@ MUX_RESULT CSumProxy::GetUnmarshalClass(MUX_IID riid, marshal_context ctx, MUX_C
     return MUX_E_NOTIMPLEMENTED;
 }
 
-MUX_RESULT CSumProxy::MarshalInterface(size_t *pnBuffer, char **pBuffer, MUX_IID riid, marshal_context ctx)
+MUX_RESULT CSumProxy::MarshalInterface(size_t *pnBuffer, void **pBuffer, MUX_IID riid, marshal_context ctx)
 {
     return MUX_E_NOTIMPLEMENTED;
 }
 
-MUX_RESULT CSumProxy::UnmarshalInterface(size_t nBuffer, char *pBuffer, MUX_IID riid, void **ppv)
+MUX_RESULT CSumProxy::UnmarshalInterface(size_t nBuffer, void *pBuffer, MUX_IID riid, void **ppv)
 {
     // TODO: Given a marshal packet from the remote component, we should be able to connect and provide a proxy ISum.
     //

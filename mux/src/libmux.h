@@ -136,14 +136,30 @@ public:
     virtual MUX_RESULT CreateStub(MUX_IID riid, mux_IUnknown *pUnknownOuter, mux_IRpcStubBuffer *ppStub) = 0;
 };
 
+typedef MUX_RESULT FCALL(struct channel_info *pci, size_t nBuffer, void *pBuffer);
+typedef MUX_RESULT FMSG(struct channel_info *pci, size_t nBuffer, void *pBuffer);
+typedef MUX_RESULT FDISC(struct channel_info *pci);
+
+typedef struct channel_info
+{
+     UINT32    nChannel;
+     FCALL    *pfCall;
+     FMSG     *pfMsg;
+     FDISC    *pfDisc;
+     void     *pInterface;
+} CHANNEL_INFO;
+
+CHANNEL_INFO *Pipe_AllocateChannel(FCALL *pfCall, FMSG *pfMsg, FDISC *pfDisc);
+void Pipe_FreeChannel(CHANNEL_INFO *pci);
+
 // The following is part of what is called 'Custom Marshaling'.
 //
 interface mux_IMarshal : public mux_IUnknown
 {
 public:
     virtual MUX_RESULT GetUnmarshalClass(MUX_IID riid, marshal_context ctx, MUX_CID *pcid) = 0;
-    virtual MUX_RESULT MarshalInterface(size_t *pnBuffer, char **pBuffer, MUX_IID riid, marshal_context ctx) = 0;
-    virtual MUX_RESULT UnmarshalInterface(size_t nBuffer, char *pBuffer, MUX_IID riid, void **ppv) = 0;
+    virtual MUX_RESULT MarshalInterface(size_t *pnBuffer, void **pBuffer, MUX_IID riid, marshal_context ctx) = 0;
+    virtual MUX_RESULT UnmarshalInterface(size_t nBuffer, void *pBuffer, MUX_IID riid, void **ppv) = 0;
     virtual MUX_RESULT ReleaseMarshalData(char *pBuffer) = 0;
     virtual MUX_RESULT DisconnectObject(void) = 0;
 };
