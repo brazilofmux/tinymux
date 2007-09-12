@@ -971,6 +971,63 @@ static bool can_destroy_player(dbref player, dbref victim)
     return true;
 }
 
+static void ProcessMasterRoomADestroy(dbref thing)
+{
+    int nxargs = 2;
+    UTF8 *xargs[2];
+    xargs[0] = (UTF8*) MEMALLOC(sizeof(SBUF_SIZE));
+    xargs[1] = (UTF8*) MEMALLOC(sizeof(SBUF_SIZE));
+
+    switch(Typeof(thing))
+    {
+    case TYPE_ROOM:
+        mux_sprintf(xargs[1], SBUF_SIZE, "%s", T("ROOM"));
+        break;
+    case TYPE_EXIT:
+        mux_sprintf(xargs[1], SBUF_SIZE, "%s", T("EXIT"));
+        break;
+    case TYPE_PLAYER:
+        mux_sprintf(xargs[1], SBUF_SIZE, "%s", T("PLAYER"));
+        break;
+    case TYPE_THING:
+        mux_sprintf(xargs[1], SBUF_SIZE, "%s", T("THING"));
+        break;
+    default:
+        mux_sprintf(xargs[1], SBUF_SIZE, "%s", T("#-1"));
+    }
+
+
+    dbref master_room_obj = -1;
+    DOLIST(master_room_obj, Contents(mudconf.master_room))
+    {
+        if(thing == master_room_obj)
+        {
+            break;
+        }
+
+        if(Controls(master_room_obj, thing))
+        {
+            UTF8* act;
+            int aowner, aflags;
+            CLinearTimeAbsolute lta;
+            if( *(act = atr_pget(master_room_obj, A_ADESTROY, &aowner, &aflags)))
+            {
+                mux_sprintf(xargs[0], SBUF_SIZE, "#%d", thing);
+                wait_que(master_room_obj, master_room_obj, master_room_obj,
+                        AttrTrace(aflags, 0), false, lta, NOTHING, 0, act, nxargs,
+                        (const UTF8 **) xargs, mudstate.global_regs);
+
+            }
+            free_lbuf(act);
+        }
+        else
+        {
+            continue;
+        }
+    }
+
+}
+
 void do_destroy(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8 *what, const UTF8 *cargs[], int ncargs)
 {
     UNUSED_PARAMETER(caller);
@@ -1132,6 +1189,8 @@ void do_destroy(dbref executor, dbref caller, dbref enactor, int eval, int key, 
             }
         }
     }
+
+    ProcessMasterRoomADestroy(thing);
 
     if (bInstant)
     {
