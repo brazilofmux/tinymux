@@ -60,6 +60,24 @@
 
   Related Topics: @delcommand, @listcommands.
 
+& @ADESTROY
+@ADESTROY
+
+  COMMAND: @adestroy <object>=<commands>
+
+  Sets the @adestroy attribute on <object>.   @adestroy is only valid 
+  for objects within the master room.   Upon destruction of any object,
+  the @adestroy attribute on all relevant objects in the master room is 
+  invoked.   Arguments passed are %# as the dbref of the destroying object,
+  %0 dbref of the object being destroyed, and %1 with the type of the object
+  being destroyed.
+
+  If the dbref of the destroyer and the destroyed are the same, the ADESTROY
+  attribute is not executed.  
+
+  Note: The destroyed object may already be GARBAGE upon execution of the 
+  ADESTROY.
+
 & @ADMIN
 @ADMIN
 
@@ -1695,18 +1713,18 @@ COMMANDS
   DOING          examine        give           SESSION        slay
   WHO            wizhelp
 
-  @addcommand    @admin         @apply_marked  @attribute     @backup
-  @boot          @chown         @chownall      @clone         @cut
-  @dbck          @dbclean       @delcommand    @destroy       @disable
-  @doing         @dump          @enable        @fixdb         @flag
-  @function      @halt          @hook          @icmd          @kick
-  @list          @listcommands  @list_file     @listmotd      @lock
-  @log           @mark          @mark_all      @motd          @newpassword
-  @pcreate       @poor          @ps            @quota         @readcache
-  @restart       @shutdown      @startslave    @timecheck     @timewarp
-  @toad          @wall
+  @addcommand    @adestroy      @admin         @allowance     @apply_marked  
+  @attribute     @backup        @boot          @chown         @chownall      
+  @clone         @comment       @cut           @dbck          @dbclean       
+  @delcommand    @destroy       @disable       @doing         @dump          
+  @enable        @fixdb         @flag          @function      @halt          
+  @hook          @icmd          @kick          @list          @listcommands  
+  @list_file     @listmotd      @lock          @log           @mark          
+  @mark_all      @motd          @newpassword   @pcreate       @poor          
+  @ps            @quota         @readcache     @restart       @shutdown      
+  @startslave    @timecheck     @timeout       @timewarp      @toad          
+  @wall
 
-  @allowance     @comment       @timeout
 
 & COMMAND_QUOTA_INCREMENT
 COMMAND_QUOTA_INCREMENT
