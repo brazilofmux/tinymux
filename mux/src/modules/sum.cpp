@@ -190,12 +190,6 @@ MUX_RESULT CSum::GetUnmarshalClass(MUX_IID riid, marshal_context ctx, MUX_CID *p
 
 typedef struct
 {
-    UINT32 iMethod;
-} PKTMETHOD;
-
-typedef struct
-{
-    UINT32 iMethod;
     int a;
     int b;
 } PKTADDCALL;
@@ -205,8 +199,10 @@ typedef struct
     int sum;
 } PKTADDRETURN;
 
-MUX_RESULT CSum_Disconnect(CHANNEL_INFO *pci)
+MUX_RESULT CSum_Disconnect(CHANNEL_INFO *pci, QUEUE_INFO *pqi)
 {
+    UNUSED_PARAMETER(pqi);
+
     ISum *pISum = static_cast<ISum *>(pci->pInterface);
     if (NULL == pISum)
     {
@@ -223,7 +219,7 @@ MUX_RESULT CSum_Disconnect(CHANNEL_INFO *pci)
     return mr;
 }
 
-MUX_RESULT CSum_Call(CHANNEL_INFO *pci, size_t nBuffer, void *pBuffer)
+MUX_RESULT CSum_Call(CHANNEL_INFO *pci, QUEUE_INFO *pqi)
 {
     ISum *pISum = static_cast<ISum *>(pci->pInterface);
     if (NULL == pISum)
@@ -231,34 +227,44 @@ MUX_RESULT CSum_Call(CHANNEL_INFO *pci, size_t nBuffer, void *pBuffer)
         return MUX_E_NOINTERFACE;
     }
 
-    if (nBuffer < sizeof(PKTMETHOD))
+    UINT32 iMethod;
+    size_t nWanted = sizeof(iMethod);
+    if (  !Pipe_GetBytes(pqi, &nWanted, (UINT8 *)&iMethod)
+       || nWanted != sizeof(iMethod))
     {
         return MUX_E_INVALIDARG;
     }
-    PKTMETHOD *pMethod = static_cast<PKTMETHOD *>(pBuffer);
 
     // The IUnknown methods (0, 1, and 2) do not make it across, so we don't
     // attempt to handle them here.  Instead, when the reference count on
     // CSumProxy goes to zero, it drops the connection and destroys itself.
     // We see that as a call to CSum_Disconnect.
     //
-    switch (pMethod->iMethod)
+    switch (iMethod)
     {
     case 3:  // Add()
         {
-            if (nBuffer != sizeof(PKTADDCALL))
+            int a;
+            nWanted = sizeof(a);
+            if (  !Pipe_GetBytes(pqi, &nWanted, (UINT8 *)&a)
+               || nWanted != sizeof(a))
             {
                 return MUX_E_INVALIDARG;
             }
 
-            PKTADDCALL *pCallFrame = static_cast<PKTADDCALL *>(pBuffer);
-            int a = pCallFrame->a;
-            int b = pCallFrame->b;
+            int b;
+            nWanted = sizeof(b);
+            if (  !Pipe_GetBytes(pqi, &nWanted, (UINT8 *)&b)
+               || nWanted != sizeof(b))
+            {
+                return MUX_E_INVALIDARG;
+            }
+
             int sum = 0;
             pISum->Add(a, b, &sum);
-            PKTADDRETURN *pReturnFrame = static_cast<PKTADDRETURN *>(pBuffer);
-            pReturnFrame->sum = sum;
-            // TODO: The API doesn't support telling the caller the size of the return frame.
+
+            Pipe_EmptyQueue(pqi);
+            Pipe_AppendBytes(pqi, sizeof(sum), (UINT8 *)&sum);
             return MUX_S_OK;
         }
         break;

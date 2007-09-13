@@ -1116,3 +1116,186 @@ extern "C" bool DCL_EXPORT DCL_API mux_ReceiveData(size_t nBuffer, const void *p
 {
     return false;
 }
+
+void Pipe_InitializeQueueInfo(QUEUE_INFO *pqi)
+{
+    pqi->pHead = NULL;
+    pqi->pTail = NULL;
+}
+
+void Pipe_AppendBytes(QUEUE_INFO *pqi, size_t n, const UINT8 *p)
+{
+    if (  0 != n
+       || NULL != p)
+    {
+        // Continue copying data to the end of the queue until it is all consumed.
+        //
+        QUEUE_BLOCK *pBlock = NULL;
+        while (0 < n)
+        {
+            // We need an empty or partially filled QUEUE_BLOCK.
+            //
+            if (  NULL == pqi->pTail
+               || pqi->pTail->aBuffer + QUEUE_BLOCK_SIZE <= pqi->pTail->pBuffer + pqi->pTail->nBuffer)
+            {
+                // The last block is full or not there, so allocate a new QUEUE_BLOCK.
+                //
+                try
+                {
+                    pBlock = new QUEUE_BLOCK;
+                }
+                catch (...)
+                {
+                    ; // Nothing.
+                }
+
+                if (NULL != pBlock)
+                {
+                    pBlock->pNext   = NULL;
+                    pBlock->pPrev   = NULL;
+                    pBlock->pBuffer = pBlock->aBuffer;
+                    pBlock->nBuffer = 0;
+                }
+
+                // Append the newly allocated block to the end of the queue.
+                //
+                if (NULL == pqi->pTail)
+                {
+                    pqi->pHead = pBlock;
+                    pqi->pTail = pBlock;
+                }
+                else
+                {
+                    pBlock->pPrev = pqi->pTail;
+                    pqi->pTail->pNext = pBlock;
+                    pqi->pTail = pBlock;
+                }
+            }
+            else
+            {
+                pBlock = pqi->pTail;
+            }
+        }
+
+        // Allocate space out of last QUEUE_BLOCK
+        //
+        char  *pFree = pBlock->pBuffer + pBlock->nBuffer;
+        size_t nFree = QUEUE_BLOCK_SIZE - pBlock->nBuffer - (pBlock->pBuffer - pBlock->aBuffer);
+        size_t nCopy = nFree;
+        if (n < nCopy)
+        {
+            nCopy = n;
+        }
+
+        memcpy(pFree, p, nCopy);
+        n -= nCopy;
+        pBlock->nBuffer += nCopy;
+    }
+}
+
+void Pipe_EmptyQueue(QUEUE_INFO *pqi)
+{
+    if (NULL != pqi)
+    {
+        QUEUE_BLOCK *pBlock = pqi->pHead;
+
+        // Free all the QUEUE_BLOCKs finally the owning QUEUE_INFO structure.
+        //
+        while (NULL != pBlock)
+        {
+            QUEUE_BLOCK *qBlock = pBlock->pNext;
+            delete pBlock;
+            pBlock = qBlock;
+        }
+
+        pqi->pHead = NULL;
+        pqi->pTail = NULL;
+    }
+}
+
+bool Pipe_GetByte(QUEUE_INFO *pqi, UINT8 ach[0])
+{
+    QUEUE_BLOCK *pBlock;
+
+    if (  NULL != pqi
+       && NULL != (pBlock = pqi->pHead))
+    {
+        // Advance over empty blocks.
+        //
+        while (  0 == pBlock->nBuffer
+              && NULL != pBlock->pNext)
+        {
+            pqi->pHead = pBlock->pNext;
+            if (NULL == pqi->pHead)
+            {
+                pqi->pTail = NULL;
+            }
+            delete pBlock;
+            pBlock = pqi->pHead;
+        }
+
+        // If there is a block left on the list, it will have something.
+        //
+        if (NULL != pBlock)
+        {
+            ach[0] = pBlock->pBuffer[0];
+            pBlock->pBuffer++;
+            pBlock->nBuffer--;
+
+            return true;
+        }
+    }
+    return false;
+}
+
+bool Pipe_GetBytes(QUEUE_INFO *pqi, size_t *pn, UINT8 *pch)
+{
+    size_t nCopied = 0;
+    QUEUE_BLOCK *pBlock;
+
+    if (  NULL != pqi
+       && NULL != pn)
+    {
+        size_t nWantedBytes = *pn;
+        pBlock = pqi->pHead;
+        while (  NULL != pBlock
+              && 0 < nWantedBytes)
+        {
+            // Advance over empty blocks.
+            //
+            while (  0 == pBlock->nBuffer
+                  && NULL != pBlock->pNext)
+            {
+                pqi->pHead = pBlock->pNext;
+                if (NULL == pqi->pHead)
+                {
+                    pqi->pTail = NULL;
+                }
+                delete pBlock;
+                pBlock = pqi->pHead;
+            }
+
+            // If there is a block left on the list, it will have something.
+            //
+            if (NULL != pBlock)
+            {
+                size_t nCopy = pBlock->nBuffer;
+                if (nWantedBytes < nCopy)
+                {
+                    nCopy = nWantedBytes;
+                }
+                memcpy(pch, pBlock->pBuffer, nCopy);
+
+                pBlock->pBuffer += nCopy;
+                pBlock->nBuffer -= nCopy;
+                nWantedBytes -= nCopy;
+                pch += nCopy;
+                nCopied += nCopy;
+            }
+        }
+
+        *pn = nCopied;
+        return true;
+    }
+    return false;
+}

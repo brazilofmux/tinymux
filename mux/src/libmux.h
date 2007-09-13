@@ -136,9 +136,32 @@ public:
     virtual MUX_RESULT CreateStub(MUX_IID riid, mux_IUnknown *pUnknownOuter, mux_IRpcStubBuffer *ppStub) = 0;
 };
 
-typedef MUX_RESULT FCALL(struct channel_info *pci, size_t nBuffer, void *pBuffer);
-typedef MUX_RESULT FMSG(struct channel_info *pci, size_t nBuffer, void *pBuffer);
-typedef MUX_RESULT FDISC(struct channel_info *pci);
+#define QUEUE_BLOCK_SIZE 32768
+
+typedef struct QueueBlock
+{
+    struct QueueBlock *pNext;
+    struct QueueBlock *pPrev;
+    char  *pBuffer;
+    size_t nBuffer;
+    char   aBuffer[QUEUE_BLOCK_SIZE];
+} QUEUE_BLOCK;
+
+typedef struct
+{
+    QUEUE_BLOCK *pHead;
+    QUEUE_BLOCK *pTail;
+} QUEUE_INFO;
+
+void Pipe_InitializeQueueInfo(QUEUE_INFO *pqi);
+void Pipe_AppendBytes(QUEUE_INFO *pqi, size_t n, const UINT8 *p);
+void Pipe_EmptyQueue(QUEUE_INFO *pqi);
+bool Pipe_GetByte(QUEUE_INFO *pqi, UINT8 ach[0]);
+bool Pipe_GetBytes(QUEUE_INFO *pqi, size_t *pn, UINT8 *pch);
+
+typedef MUX_RESULT FCALL(struct channel_info *pci, QUEUE_INFO *pqi);
+typedef MUX_RESULT FMSG(struct channel_info *pci, QUEUE_INFO *pqi);
+typedef MUX_RESULT FDISC(struct channel_info *pci, QUEUE_INFO *pqi);
 
 typedef struct channel_info
 {

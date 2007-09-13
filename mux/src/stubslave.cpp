@@ -14,31 +14,24 @@
 #include "libmux.h"
 #include "modules.h"
 
-#define QUEUE_BLOCK_SIZE 32768
-
-typedef struct QueueBlock
-{
-    struct QueueBlock *pNext;
-    struct QueueBlock *pPrev;
-    char  *pBuffer;
-    size_t nBuffer;
-    char   aBuffer[QUEUE_BLOCK_SIZE];
-} QUEUE_BLOCK;
-
-typedef struct
-{
-    QUEUE_BLOCK *pHead;
-    QUEUE_BLOCK *pTail;
-} QUEUE_INFO;
-
 QUEUE_INFO    Queue_In;
 QUEUE_INFO    Queue_Out;
 QUEUE_INFO    Queue_Frame;
 
+typedef enum
+{
+    eUnknown = 0,
+    eCall,
+    eReturn,
+    eMessage,
+    eDisconnect
+} FrameType;
+
 // Decoder
 //
 int           iState = 0;
-size_t        nLength = 0;
+FrameType     eType = eUnknown;
+UINT32        nLength = 0;
 UINT32        nChannel = 0;
 size_t        nLengthRemaining = 0;
 
@@ -72,191 +65,6 @@ void Pipe_InitializeChannelZero(FCALL *pfCall0, FMSG *pfMsg0, FDISC *pfDisc0)
     }
 }
 
-MUX_RESULT Channel0_Call(CHANNEL_INFO *pci, size_t nBuffer, void *pBuffer)
-{
-    return MUX_E_NOTIMPLEMENTED;
-}
-
-void Pipe_InitializeQueueInfo(QUEUE_INFO *pqi)
-{
-    pqi->pHead = NULL;
-    pqi->pTail = NULL;
-}
-
-void Pipe_AppendToQueue(QUEUE_INFO *pqi, size_t n, const char *p)
-{
-    if (  0 != n
-       || NULL != p)
-    {
-        // Continue copying data to the end of the queue until it is all consumed.
-        //
-        QUEUE_BLOCK *pBlock = NULL;
-        while (0 < n)
-        {
-            // We need an empty or partially filled QUEUE_BLOCK.
-            //
-            if (  NULL == pqi->pTail
-               || pqi->pTail->aBuffer + QUEUE_BLOCK_SIZE <= pqi->pTail->pBuffer + pqi->pTail->nBuffer)
-            {
-                // The last block is full or not there, so allocate a new QUEUE_BLOCK.
-                //
-                try
-                {
-                    pBlock = new QUEUE_BLOCK;
-                }
-                catch (...)
-                {
-                    ; // Nothing.
-                }
-
-                if (NULL != pBlock)
-                {
-                    pBlock->pNext   = NULL;
-                    pBlock->pPrev   = NULL;
-                    pBlock->pBuffer = pBlock->aBuffer;
-                    pBlock->nBuffer = 0;
-                }
-
-                // Append the newly allocated block to the end of the queue.
-                //
-                if (NULL == pqi->pTail)
-                {
-                    pqi->pHead = pBlock;
-                    pqi->pTail = pBlock;
-                }
-                else
-                {
-                    pBlock->pPrev = pqi->pTail;
-                    pqi->pTail->pNext = pBlock;
-                    pqi->pTail = pBlock;
-                }
-            }
-            else
-            {
-                pBlock = pqi->pTail;
-            }
-        }
-
-        // Allocate space out of last QUEUE_BLOCK
-        //
-        char  *pFree = pBlock->pBuffer + pBlock->nBuffer;
-        size_t nFree = QUEUE_BLOCK_SIZE - pBlock->nBuffer - (pBlock->pBuffer - pBlock->aBuffer);
-        size_t nCopy = nFree;
-        if (n < nCopy)
-        {
-            nCopy = n;
-        }
-
-        memcpy(pFree, p, nCopy);
-        n -= nCopy;
-        pBlock->nBuffer += nCopy;
-    }
-}
-
-void Pipe_FreeQueue(QUEUE_INFO *pqi)
-{
-    if (NULL != pqi)
-    {
-        QUEUE_BLOCK *pBlock = pqi->pHead;
-
-        // Free all the QUEUE_BLOCKs finally the owning QUEUE_INFO structure.
-        //
-        while (NULL != pBlock)
-        {
-            QUEUE_BLOCK *qBlock = pBlock->pNext;
-            delete pBlock;
-            pBlock = qBlock;
-        }
-        delete pqi;
-    }
-}
-
-bool Pipe_GetByte(QUEUE_INFO *pqi, char ach[0])
-{
-    QUEUE_BLOCK *pBlock;
-
-    if (  NULL != pqi
-       && NULL != (pBlock = pqi->pHead))
-    {
-        // Advance over empty blocks.
-        //
-        while (  0 == pBlock->nBuffer
-              && NULL != pBlock->pNext)
-        {
-            pqi->pHead = pBlock->pNext;
-            if (NULL == pqi->pHead)
-            {
-                pqi->pTail = NULL;
-            }
-            delete pBlock;
-            pBlock = pqi->pHead;
-        }
-
-        // If there is a block left on the list, it will have something.
-        //
-        if (NULL != pBlock)
-        {
-            ach[0] = pBlock->pBuffer[0];
-            pBlock->pBuffer++;
-            pBlock->nBuffer--;
-
-            return true;
-        }
-    }
-    return false;
-}
-
-bool Pipe_GetBytes(QUEUE_INFO *pqi, size_t *pn, char *pch)
-{
-    size_t nCopied = 0;
-    QUEUE_BLOCK *pBlock;
-
-    if (  NULL != pqi
-       && NULL != pn)
-    {
-        size_t nWantedBytes = *pn;
-        pBlock = pqi->pHead;
-        while (  NULL != pBlock
-              && 0 < nWantedBytes)
-        {
-            // Advance over empty blocks.
-            //
-            while (  0 == pBlock->nBuffer
-                  && NULL != pBlock->pNext)
-            {
-                pqi->pHead = pBlock->pNext;
-                if (NULL == pqi->pHead)
-                {
-                    pqi->pTail = NULL;
-                }
-                delete pBlock;
-                pBlock = pqi->pHead;
-            }
-
-            // If there is a block left on the list, it will have something.
-            //
-            if (NULL != pBlock)
-            {
-                size_t nCopy = pBlock->nBuffer;
-                if (nWantedBytes < nCopy)
-                {
-                    nCopy = nWantedBytes;
-                }
-                memcpy(pch, pBlock->pBuffer, nCopy);
-
-                pBlock->pBuffer += nCopy;
-                pBlock->nBuffer -= nCopy;
-                nWantedBytes -= nCopy;
-                pch += nCopy;
-                nCopied += nCopy;
-            }
-        }
-
-        *pn = nCopied;
-        return true;
-    }
-    return false;
-}
 
 // CallMagic   0xC39B71F9 - 17, 14,  9, 20
 // ReturnMagic 0x35972DD0 -  7, 13,  6, 18
@@ -321,9 +129,147 @@ const UINT8 decoder_stt[23][21] =
 //
 void Pipe_DecodeFrames(void)
 {
-}
+    UINT8 buffer[QUEUE_BLOCK_SIZE];
 
-#define MAX_STRING 1024
+    if (8 == iState)
+    {
+        // We must remain in the Length3 state until we have consumed all of the expected data.
+        //
+        while (0 < nLengthRemaining)
+        {
+            size_t nWanted = nLengthRemaining;
+            if (QUEUE_BLOCK_SIZE < nWanted)
+            {
+                nWanted = QUEUE_BLOCK_SIZE;
+            }
+
+            if (  !Pipe_GetBytes(&Queue_In, &nWanted, buffer)
+               || 0 == nWanted)
+            {
+                return;
+            }
+            Pipe_AppendBytes(&Queue_Frame, nWanted, buffer);
+            nLengthRemaining -= nWanted;
+        }
+    }
+
+    UINT8 ch;
+    while (Pipe_GetByte(&Queue_In, &ch))
+    {
+        iState = decoder_stt[iState][decoder_itt[ch]];
+        switch (iState)
+        {
+        case 3: // Call2
+            eType = eCall;
+            break;
+
+        case 16: // Return2
+            eType = eReturn;
+            break;
+
+        case 19: // Msg2
+            eType = eMessage;
+            break;
+
+        case 22: // Disc2
+            eType = eDisconnect;
+            break;
+
+        case 5: // Length0
+            nLength = ((UINT32)ch) << 24;
+            break;
+
+        case 6: // Length1
+            nLength = nLength | (((UINT32)ch) << 16);
+            break;
+
+        case 7: // Length2
+            nLength = nLength | (((UINT32)ch) << 8);
+            break;
+
+        case 8: // Length3
+            nLength = nLength | ((UINT32)ch);
+            nLengthRemaining = nLength;
+              
+            // We've been told how long to expect the packet to be.
+            //
+            while (0 < nLengthRemaining)
+            {
+                size_t nWanted = nLengthRemaining;
+                if (QUEUE_BLOCK_SIZE < nWanted)
+                {
+                    nWanted = QUEUE_BLOCK_SIZE;
+                }
+
+                if (  !Pipe_GetBytes(&Queue_In, &nWanted, buffer)
+                   || 0 == nWanted)
+                {
+                    // We'll leave the state machine and try to pick up again at the same place later.
+                    //
+                    return;
+                }
+                Pipe_AppendBytes(&Queue_Frame, nWanted, buffer);
+                nLengthRemaining -= nWanted;
+            }
+            break;
+
+        case 12: // Cleanup
+
+            // Something went wrong. Re-initialize all the decoding variables.
+            //
+            eType   = eUnknown;
+            nLength = 0;
+            nChannel = 0;
+            Pipe_EmptyQueue(&Queue_Frame);
+            break;
+
+        case 13: // Accept
+            if (4 <= nLength)
+            {
+                UINT8 ach[4];
+                if (  Pipe_GetByte(&Queue_Frame, &ach[0])
+                   && Pipe_GetByte(&Queue_Frame, &ach[1])
+                   && Pipe_GetByte(&Queue_Frame, &ach[2])
+                   && Pipe_GetByte(&Queue_Frame, &ach[3]))
+                {
+                    nChannel = ((UINT32)ach[0]) << 24
+                             | ((UINT32)ach[1]) << 16
+                             | ((UINT32)ach[2]) << 8
+                             | ((UINT32)ch);
+
+                    if (  0 <= nChannel 
+                       && nChannel < nChannels)
+                    {
+                        switch (eType)
+                        {
+                        case eCall:
+                            aChannels[nChannel].pfCall(&aChannels[nChannel], &Queue_Frame);
+                            break;
+
+                        case eMessage:
+                            aChannels[nChannel].pfMsg(&aChannels[nChannel], &Queue_Frame);
+                            break;
+
+                        case eDisconnect:
+                            aChannels[nChannel].pfDisc(&aChannels[nChannel], &Queue_Frame);
+                            break;
+                        }
+                    }
+                }
+            }
+
+
+            // The packet was too short to contain a channel number, the
+            // channel did not exist, or the call completed successfully.
+            //
+            eType    = eUnknown;
+            nLength  = 0;
+            nChannel = 0;
+            Pipe_EmptyQueue(&Queue_Frame);
+            break;
+        }
+    }
+}
 
 void Stub_ShoveChars(int fdServer)
 {
@@ -333,7 +279,7 @@ void Stub_ShoveChars(int fdServer)
 
     for (;;)
     {
-        char arg[MAX_STRING];
+        UINT8 arg[QUEUE_BLOCK_SIZE];
         int len = read(fdServer, arg, sizeof(arg));
         if (len == 0)
         {
@@ -350,9 +296,14 @@ void Stub_ShoveChars(int fdServer)
             break;
         }
 
-        Pipe_AppendToQueue(&Queue_In, len, arg);
+        Pipe_AppendBytes(&Queue_In, len, arg);
         Pipe_DecodeFrames();
     }
+}
+
+MUX_RESULT Channel0_Call(CHANNEL_INFO *pci, QUEUE_INFO *pqi)
+{
+    return MUX_E_NOTIMPLEMENTED;
 }
 
 int main(int argc, char *argv[])
