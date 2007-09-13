@@ -149,6 +149,7 @@ void Pipe_AppendToQueue(QUEUE_INFO *pqi, size_t n, const char *p)
 
         memcpy(pFree, p, nCopy);
         n -= nCopy;
+        pBlock->nBuffer += nCopy;
     }
 }
 
@@ -168,6 +169,93 @@ void Pipe_FreeQueue(QUEUE_INFO *pqi)
         }
         delete pqi;
     }
+}
+
+bool Pipe_GetByte(QUEUE_INFO *pqi, char ach[0])
+{
+    QUEUE_BLOCK *pBlock;
+
+    if (  NULL != pqi
+       && NULL != (pBlock = pqi->pHead))
+    {
+        // Advance over empty blocks.
+        //
+        while (  0 == pBlock->nBuffer
+              && NULL != pBlock->pNext)
+        {
+            pqi->pHead = pBlock->pNext;
+            if (NULL == pqi->pHead)
+            {
+                pqi->pTail = NULL;
+            }
+            delete pBlock;
+            pBlock = pqi->pHead;
+        }
+
+        // If there is a block left on the list, it will have something.
+        //
+        if (NULL != pBlock)
+        {
+            ach[0] = pBlock->pBuffer[0];
+            pBlock->pBuffer++;
+            pBlock->nBuffer--;
+
+            return true;
+        }
+    }
+    return false;
+}
+
+bool Pipe_GetBytes(QUEUE_INFO *pqi, size_t *pn, char *pch)
+{
+    size_t nCopied = 0;
+    QUEUE_BLOCK *pBlock;
+
+    if (  NULL != pqi
+       && NULL != pn)
+    {
+        size_t nWantedBytes = *pn;
+        pBlock = pqi->pHead;
+        while (  NULL != pBlock
+              && 0 < nWantedBytes)
+        {
+            // Advance over empty blocks.
+            //
+            while (  0 == pBlock->nBuffer
+                  && NULL != pBlock->pNext)
+            {
+                pqi->pHead = pBlock->pNext;
+                if (NULL == pqi->pHead)
+                {
+                    pqi->pTail = NULL;
+                }
+                delete pBlock;
+                pBlock = pqi->pHead;
+            }
+
+            // If there is a block left on the list, it will have something.
+            //
+            if (NULL != pBlock)
+            {
+                size_t nCopy = pBlock->nBuffer;
+                if (nWantedBytes < nCopy)
+                {
+                    nCopy = nWantedBytes;
+                }
+                memcpy(pch, pBlock->pBuffer, nCopy);
+
+                pBlock->pBuffer += nCopy;
+                pBlock->nBuffer -= nCopy;
+                nWantedBytes -= nCopy;
+                pch += nCopy;
+                nCopied += nCopy;
+            }
+        }
+
+        *pn = nCopied;
+        return true;
+    }
+    return false;
 }
 
 // CallMagic   0xC39B71F9 - 17, 14,  9, 20
@@ -200,7 +288,7 @@ const UINT8 decoder_itt[256] =
     0,  0,  0,  0,  0,  0, 19,  0,  0, 20,  0,  0,  0,  0,  0,  0   // F
 };
 
-const UINT8 decoder_stt[21][23] =
+const UINT8 decoder_stt[23][21] =
 {
 //     0   1   2   3   4   5   6   7   8   9  10  11  12  13  14  15  16  17  18  19  20
 //
@@ -239,9 +327,9 @@ void Pipe_DecodeFrames(void)
 
 void Stub_ShoveChars(int fdServer)
 {
-    Pipe_InitializeQueueInfo(Queue_In);
-    Pipe_InitializeQueueInfo(Queue_Out);
-    Pipe_InitializeQueueInfo(Queue_Frame);
+    Pipe_InitializeQueueInfo(&Queue_In);
+    Pipe_InitializeQueueInfo(&Queue_Out);
+    Pipe_InitializeQueueInfo(&Queue_Frame);
 
     for (;;)
     {
@@ -262,8 +350,8 @@ void Stub_ShoveChars(int fdServer)
             break;
         }
 
-        Pipe_AppendToQueue(Queue_In, len, arg);
-        Pipe_DecodeFrames(Queue_In);
+        Pipe_AppendToQueue(&Queue_In, len, arg);
+        Pipe_DecodeFrames();
     }
 }
 
