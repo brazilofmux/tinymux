@@ -110,7 +110,7 @@ III. Packet Format.
 
   A. Call Frame.
 
-     CallMagic   0x359771F9
+     CallMagic   0xC39B71F9
      Length      0x--------
      ToChannel   0x--------
      Data..................
@@ -130,7 +130,7 @@ III. Packet Format.
 
   C. Message Frame (non-blocking).
 
-     ReturnMagic 0x35971836
+     MsgMagic    0xF69E1836
      Length      0x--------
      ToChannel   0x--------
      Data..................
