@@ -14,12 +14,15 @@
 #include "libmux.h"
 #include "modules.h"
 
+#define QUEUE_BLOCK_SIZE 32768
+
 typedef struct QueueBlock
 {
-    void  *pBuffer;
+    struct QueueBlock *pNext;
+    struct QueueBlock *pPrev;
+    char  *pBuffer;
     size_t nBuffer;
-    struct QueueBlock *qbNext;
-    struct QueueBlock *qbPrev;
+    char   aBuffer[QUEUE_BLOCK_SIZE];
 } QUEUE_BLOCK;
 
 typedef struct
@@ -66,22 +69,87 @@ MUX_RESULT Channel0_Call(CHANNEL_INFO *pci, size_t nBuffer, void *pBuffer)
     return MUX_E_NOTIMPLEMENTED;
 }
 
-void Pipe_AddToQueue(QUEUE_INFO *pqi, size_t nBuffer, void *pBuffer)
+void Pipe_AppendToQueue(QUEUE_INFO *pqi, size_t n, const char *p)
 {
+    if (  0 != n
+       || NULL != p)
+    {
+        // Continue copying data to the end of the queue until it is all consumed.
+        //
+        QUEUE_BLOCK *pBlock = NULL;
+        while (0 < n)
+        {
+            // We need an empty or partially filled QUEUE_BLOCK.
+            //
+            if (  NULL == pqi->pTail
+               || pqi->pTail->aBuffer + QUEUE_BLOCK_SIZE <= pqi->pTail->pBuffer + pqi->pTail->nBuffer)
+            {
+                // The last block is full or not there, so allocate a new QUEUE_BLOCK.
+                //
+                try
+                {
+                    pBlock = new QUEUE_BLOCK;
+                }
+                catch (...)
+                {
+                    ; // Nothing.
+                }
+
+                if (NULL != pBlock)
+                {
+                    pBlock->pNext   = NULL;
+                    pBlock->pPrev   = NULL;
+                    pBlock->pBuffer = pBlock->aBuffer;
+                    pBlock->nBuffer = 0;
+                }
+
+                // Append the newly allocated block to the end of the queue.
+                //
+                if (NULL == pqi->pTail)
+                {
+                    pqi->pHead = pBlock;
+                    pqi->pTail = pBlock;
+                }
+                else
+                {
+                    pBlock->pPrev = pqi->pTail;
+                    pqi->pTail->pNext = pBlock;
+                    pqi->pTail = pBlock;
+                }
+            }
+            else
+            {
+                pBlock = pqi->pTail;
+            }
+        }
+
+        // Allocate space out of last QUEUE_BLOCK
+        //
+        char  *pFree = pBlock->pBuffer + pBlock->nBuffer;
+        size_t nFree = QUEUE_BLOCK_SIZE - pBlock->nBuffer - (pBlock->pBuffer - pBlock->aBuffer);
+        size_t nCopy = nFree;
+        if (n < nCopy)
+        {
+            nCopy = n;
+        }
+
+        memcpy(pFree, p, nCopy);
+        n -= nCopy;
+    }
 }
 
 void Pipe_ParseQueue(QUEUE_INFO *pqi)
 {
 }
 
-#define MAX_STRING 1000
+#define MAX_STRING 1024
 
 void Stub_ShoveChars(int fdServer)
 {
     for (;;)
     {
         char arg[MAX_STRING];
-        int len = read(0, arg, sizeof(arg)-1);
+        int len = read(fdServer, arg, sizeof(arg));
         if (len == 0)
         {
             break;
@@ -97,7 +165,7 @@ void Stub_ShoveChars(int fdServer)
             break;
         }
 
-        Pipe_AddToQueue(pQueue_In, len, arg);
+        Pipe_AppendToQueue(pQueue_In, len, arg);
         Pipe_ParseQueue(pQueue_In);
     }
 }
