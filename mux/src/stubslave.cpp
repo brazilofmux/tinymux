@@ -244,6 +244,11 @@ void Pipe_DecodeFrames(void)
                         {
                         case eCall:
                             aChannels[nChannel].pfCall(&aChannels[nChannel], &Queue_Frame);
+
+                            // TODO: The Queue_Frame now contains the return
+                            // paramters. We need to copy these to Queue_Out
+                            // and let them propogate to the other side.
+                            //
                             break;
 
                         case eMessage:
