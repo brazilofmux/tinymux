@@ -1120,7 +1120,10 @@ CF_HAND(cf_flag_access)
     UTF8 *fstr = mux_strtok_parse(&tts);
     UTF8 *permstr = mux_strtok_parse(&tts);
 
-    if (!fstr || !*fstr)
+    if (  NULL == fstr
+       || '\0' == fstr[0]
+       || NULL == permstr
+       || '\0' == permstr[0])
     {
         return -1;
     }
