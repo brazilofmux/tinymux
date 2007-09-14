@@ -299,6 +299,8 @@ Bug Fixes:
     attribute flags (Issue 361).
  -- Fix LOG_DIR across @restarts (Issue 46).
  -- Drop dependency on QueryPerformanceCounter() (Issue 369).
+ -- The flag_access configuration handler would SIGSEGV if a flagname was
+    given without an permissions.
 
 
 Performance Enhancements:
