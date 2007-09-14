@@ -801,6 +801,14 @@ static CF_HAND(cf_flagalias)
     char *alias = mux_strtok_parse(&tts);
     char *orig = mux_strtok_parse(&tts);
 
+    if (  NULL == alias
+       || '\0' == alias[0]
+       || NULL == orig
+       || '\0' == orig[0])
+    {
+        return -1;
+    }
+
     bool success = false;
     int  nName;
     bool bValid;
@@ -843,6 +851,14 @@ static CF_HAND(cf_poweralias)
     mux_strtok_ctl(&tts, " \t=,");
     char *alias = mux_strtok_parse(&tts);
     char *orig = mux_strtok_parse(&tts);
+
+    if (  NULL == alias
+       || '\0' == alias[0]
+       || NULL == orig
+       || '\0' == orig[0])
+    {
+        return -1;
+    }
 
     bool success = false;
     int  nName;
