@@ -999,7 +999,7 @@ bool check_access(dbref player, int mask)
  *****************************************************************************/
 static UTF8 *hook_name(const UTF8 *pCommand, int key)
 {
-    char *keylet;
+    const char *keylet;
     switch (key)
     {
     case HOOK_AFAIL:

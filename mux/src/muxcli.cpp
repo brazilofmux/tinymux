@@ -95,7 +95,7 @@ void CLI_Process
             continue;
         }
 
-        char *p = pArgv+iType;
+        const char *p = pArgv+iType;
 
         if (iType == 2)
         {

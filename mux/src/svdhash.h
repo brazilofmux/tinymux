@@ -323,7 +323,7 @@ public:
     void WriteBuffer(size_t nString, const UTF8 *pString);
     void WriteString(const UTF8 *pString);
     void WriteInteger(int iNumber);
-    void DCL_CDECL tinyprintf(char *pFormatSpec, ...);
+    void DCL_CDECL tinyprintf(const char *pFormatSpec, ...);
     void Flush(void);
     void SetPrefix(const UTF8 *pPrefix);
     void SetBasename(const UTF8 *pBasename);

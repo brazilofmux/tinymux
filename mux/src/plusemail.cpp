@@ -324,7 +324,7 @@ UTF8 *ConvertCRLFtoSpace(const UTF8 *pString)
 
 // Write a formatted string to a socket.
 //
-static int DCL_CDECL mod_email_sock_printf(SOCKET sock, char *format, ...)
+static int DCL_CDECL mod_email_sock_printf(SOCKET sock, const char *format, ...)
 {
     va_list vargs;
     UTF8 mybuf[2*LBUF_SIZE];

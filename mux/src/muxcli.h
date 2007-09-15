@@ -15,12 +15,12 @@
 
 typedef struct
 {
-    char *m_Flag;
-    int  m_ArgControl;
-    int  m_Unique;
+    const char *m_Flag;
+    int         m_ArgControl;
+    int         m_Unique;
 } CLI_OptionEntry;
 
-typedef void CLI_CALLBACKFUNC(CLI_OptionEntry *pOption, char *Value);
+typedef void CLI_CALLBACKFUNC(CLI_OptionEntry *pOption, const char *Value);
 
 void CLI_Process
 (

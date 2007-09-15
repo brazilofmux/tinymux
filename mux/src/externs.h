@@ -100,7 +100,7 @@ size_t MessageFetchSize(int number);
 
 // From netcommon.cpp.
 //
-void DCL_CDECL raw_broadcast(int, char *, ...);
+void DCL_CDECL raw_broadcast(int, const char *, ...);
 void list_siteinfo(dbref);
 void logged_out0(dbref executor, dbref caller, dbref enactor, int eval, int key);
 void logged_out1(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8 *arg, const UTF8 *cargs[], int ncargs);

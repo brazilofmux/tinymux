@@ -2489,7 +2489,7 @@ static CLI_OptionEntry OptionTable[NUM_CLI_OPTIONS] =
     { "e", CLI_REQUIRED, CLI_DO_ERRORPATH   }
 };
 
-static void CLI_CallBack(CLI_OptionEntry *p, char *pValue)
+static void CLI_CallBack(CLI_OptionEntry *p, const char *pValue)
 {
     if (p)
     {

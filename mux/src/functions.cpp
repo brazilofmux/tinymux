@@ -8997,8 +8997,8 @@ static int tf1_width_table[4][3] =
 
 static struct
 {
-    char *specs[4];
-    int  div[3];
+    const char *specs[4];
+    int         div[3];
 } tf1_case_table[4] =
 {
     {

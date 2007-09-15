@@ -2802,7 +2802,7 @@ void CLogFile::WriteString(const UTF8 *pString)
     WriteBuffer(nString, pString);
 }
 
-void DCL_CDECL CLogFile::tinyprintf(char *fmt, ...)
+void DCL_CDECL CLogFile::tinyprintf(const char *fmt, ...)
 {
     va_list ap;
     va_start(ap, fmt);

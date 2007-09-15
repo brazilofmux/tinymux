@@ -555,7 +555,7 @@ void CleanUpStubSlaveProcess(void)
 
 void boot_stubslave(dbref executor, dbref caller, dbref enactor, int)
 {
-    char *pFailedFunc = 0;
+    const char *pFailedFunc = NULL;
     int sv[2];
     int i;
     int maxfds;
@@ -689,7 +689,7 @@ void boot_slave(dbref executor, dbref caller, dbref enactor, int eval, int key)
     UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(key);
 
-    char *pFailedFunc = 0;
+    const char *pFailedFunc = NULL;
     int sv[2];
     int i;
     int maxfds;
