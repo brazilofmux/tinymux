@@ -180,59 +180,62 @@ dbref clone_home(dbref player, dbref thing)
 }
 
 
-// Manage A_NEWOBJS stored on each player recording the newest object of 
+// Manage A_NEWOBJS stored on each player recording the newest object of
 // each type created.  Data is ROOM, THING, EXIT, PLAYER, and the Latest
 //
 static void update_newobjects(dbref player, dbref object_num, int object_type)
 {
     int aowner;
     int aflags;
-    UTF8* newobject_string;
-    int i = 0;
 
-    dbref object_list[4];  // Room, Thing, Exit, Player
-
-    newobject_string = atr_get("update_newobjs.189", player, A_NEWOBJS,
+    UTF8 *newobject_string = atr_get("update_newobjs.189", player, A_NEWOBJS,
             &aowner, &aflags);
 
-    if(!newobject_string || !*newobject_string)
+    // This leaves room for Room, Thing, Exit, and Player.
+    //
+    int i;
+    dbref object_list[4];
+    if (  NULL == newobject_string
+       || '\0' == newobject_string[0])
     {
-        for(i=0; i < 4; ++i)
+        for (i = 0; i < 4; i++)
         {
             object_list[i] = -1;
         }
     }
     else
     {
-        UTF8* ptr;
         MUX_STRTOK_STATE tts;
         mux_strtok_src(&tts, newobject_string);
         mux_strtok_ctl(&tts, T(" "));
-        for(ptr = mux_strtok_parse(&tts), i=0; ptr; 
-                ptr = mux_strtok_parse(&tts), ++i)
-        {
-            dbref thing = mux_atol(ptr);
 
-            object_list[i] = thing;
+        UTF8* ptr;
+        for (ptr = mux_strtok_parse(&tts), i = 0; ptr;
+             ptr = mux_strtok_parse(&tts), i++)
+        {
+            object_list[i] = mux_atol(ptr);
         }
     }
 
     free_lbuf(newobject_string);
 
-    switch(object_type)
+    switch (object_type)
     {
-        case TYPE_ROOM:
-            object_list[0] = object_num;
-            break;
-        case TYPE_THING:
-            object_list[1] = object_num;
-            break;
-        case TYPE_EXIT:
-            object_list[2] = object_num;
-            break;
-        case TYPE_PLAYER:
-            object_list[3] = object_num;
-            break;
+    case TYPE_ROOM:
+        object_list[0] = object_num;
+        break;
+
+    case TYPE_THING:
+        object_list[1] = object_num;
+        break;
+
+    case TYPE_EXIT:
+        object_list[2] = object_num;
+        break;
+
+    case TYPE_PLAYER:
+        object_list[3] = object_num;
+        break;
     }
 
     UTF8 tbuf[SBUF_SIZE];
@@ -475,7 +478,7 @@ dbref create_obj(dbref player, int objtype, const UTF8 *name, int cost)
         s_Zone(obj, NOTHING);
     }
 
-    if(Good_obj(player))
+    if (Good_obj(player))
     {
         update_newobjects(player, obj, objtype);
     }
@@ -892,7 +895,7 @@ static void check_pennies(dbref thing, int limit, const UTF8 *qual)
     }
     else
     {
-        if(isPlayer(thing) || isThing(thing))
+        if (isPlayer(thing) || isThing(thing))
         {
             Log_header_err(thing, NOTHING, j, false, qual, T("is zero."));
         }

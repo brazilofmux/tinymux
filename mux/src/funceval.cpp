@@ -2956,48 +2956,66 @@ FUNCTION(fun_last)
 }
 
 
-// Find the last created object by type for a player, optionally by type
+// For an named object, or the executor, find the last created object
+// (optionally qualified by type).
 //
 FUNCTION(fun_lastcreate)
 {
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
 
-    SEP sep;
-    if (!OPTIONAL_DELIM(2, sep, DELIM_DFLT))
+    // Determine the target by name, or use the executor if no name is given.
+    //
+    dbref target = executor;
+    if (  0 < nfargs
+       && '\0' != fargs[0][0])
     {
-        return;
-    }
-
-
-    dbref target;
-    sep.str[0] = ' ';
-
-    if(nfargs == 0 || !*fargs[0])
-    {
-        target = executor;
-    }
-    else if(nfargs > 0 && *fargs[0])
-    {
-        UTF8 *name = fargs[0];
-        target = match_thing_quiet(executor, name);
-
-        if(!Good_obj(target))
+        target = match_thing_quiet(executor, fargs[0]);
+        if (!Good_obj(target))
         {
             safe_nomatch(buff, bufc);
             return;
         }
+
+        // Verify that the executor has access to the named object.  Notice
+        // that an executor always has access to itself.
+        //
+        if (  !WizRoy(executor)
+           && !Controls(executor, target))
+        {
+            safe_noperm(buff, bufc);
+            return;
+        }
     }
 
-    if(!WizRoy(executor) && !Controls(executor, target))
+    // If a type is given, qualify the result.
+    //
+    int iObjectPosition = 4;
+    if (  1 < nfargs
+       && '\0' != fargs[1][0])
     {
-        safe_noperm(buff, bufc);
-        return;
-    }
-
-    if(nfargs > 1 && *fargs[1])
-    {
-        sep.str[0] = *fargs[1];
+        switch (fargs[1][0])
+        {
+        case 'R':
+        case 'r':
+            iObjectPosition = 0;
+            break;
+    
+        case 'T':
+        case 't':
+            iObjectPosition = 1;
+            break;
+    
+        case 'E':
+        case 'e':
+            iObjectPosition = 2;
+            break;
+    
+        case 'P':
+        case 'p':
+            iObjectPosition = 3;
+            break;
+        }
     }
 
     int aowner;
@@ -3006,66 +3024,31 @@ FUNCTION(fun_lastcreate)
     UTF8* newobject_string = atr_get("fun_lastcreate.2998", target,
             A_NEWOBJS, &aowner, &aflags);
 
-    if(!newobject_string || !*newobject_string)
+    if (  NULL == newobject_string
+       || '\0' == newobject_string)
     {
-        safe_str(T("-1"), buff, bufc);
+        safe_str(T("#-1"), buff, bufc);
         return;
     }
-    
-    dbref object_list[5];
-    int i = 0;
-
-    // Init array for safety
-    for(i=0; i < 5; ++i)
-    {
-        object_list[i] = -1;
-    }
-
-    UTF8* ptr;
 
     MUX_STRTOK_STATE tts;
     mux_strtok_src(&tts, newobject_string);
     mux_strtok_ctl(&tts, T(" "));
 
-    for(ptr = mux_strtok_parse(&tts), i=0; ptr; 
-            ptr = mux_strtok_parse(&tts), ++i)
+    int i;
+    UTF8* ptr;
+    for (ptr = mux_strtok_parse(&tts), i = 0; ptr && i < 5;
+         ptr = mux_strtok_parse(&tts), i++)
     {
-        object_list[i] = mux_atol(ptr);
-
-        if(i > 4)
+        if (i == iObjectPosition)
         {
+            dbref jLastCreated = mux_atol(ptr);
+            safe_tprintf_str(buff, bufc, "#%d", jLastCreated);
             break;
         }
     }
-
-    free_lbuf(newobject_string);
-
-    switch(sep.str[0])
-    {
-        case 'R':
-        case 'r':
-            safe_tprintf_str(buff, bufc, "#%d", object_list[0]);
-            break;
-        case 'T':
-        case 't':
-            safe_tprintf_str(buff, bufc, "#%d", object_list[1]);
-            break;
-        case 'E':
-        case 'e':
-            safe_tprintf_str(buff, bufc, "#%d", object_list[2]);
-            break;
-        case 'P':
-        case 'p':
-            safe_tprintf_str(buff, bufc, "#%d", object_list[3]);
-            break;
-        default:
-            safe_tprintf_str(buff, bufc, "#%d", object_list[4]);
-            break;
-    }
-
     free_lbuf(newobject_string);
 }
-
 
 // Borrowed from TinyMUSH 2.2
 //
