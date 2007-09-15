@@ -464,7 +464,7 @@ void queue_write_LEN(DESC *d, const char *b, size_t n)
             {
                 tp->hdr.flags |= TBLK_FLAG_LOCKED;
             }
-            else 
+            else
 #endif
             if (0 == (tp->hdr.flags & TBLK_FLAG_LOCKED))
             {

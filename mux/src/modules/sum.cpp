@@ -111,7 +111,7 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_Unregister(void)
 
 // Sum component which is not directly accessible.
 //
-CSum::CSum(void) : m_cRef(1)
+CSum::CSum(void) : m_cRef(1), m_pChannel(NULL)
 {
     g_cComponents++;
 }
@@ -188,14 +188,140 @@ MUX_RESULT CSum::GetUnmarshalClass(MUX_IID riid, marshal_context ctx, MUX_CID *p
     return MUX_E_NOTIMPLEMENTED;
 }
 
-MUX_RESULT CSum::MarshalInterface(size_t *pnBuffer, char **pBuffer, MUX_IID riid, marshal_context ctx)
+typedef struct
 {
-    // TODO: We must construct a packet sufficient to allow the proxy to communicate with us.
+    int a;
+    int b;
+} PKTADDCALL;
+
+typedef struct
+{
+    int sum;
+} PKTADDRETURN;
+
+MUX_RESULT CSum_Disconnect(CHANNEL_INFO *pci, QUEUE_INFO *pqi)
+{
+    UNUSED_PARAMETER(pqi);
+
+    ISum *pISum = static_cast<ISum *>(pci->pInterface);
+    if (NULL == pISum)
+    {
+        return MUX_E_NOINTERFACE;
+    }
+
+    mux_IMarshal *pIMarshal = NULL;
+    MUX_RESULT mr = pISum->QueryInterface(mux_IID_IMarshal, (void **)&pIMarshal);
+    if (MUX_SUCCEEDED(mr))
+    {
+        mr = pIMarshal->DisconnectObject();
+        pIMarshal->Release();
+    }
+    return mr;
+}
+
+MUX_RESULT CSum_Call(CHANNEL_INFO *pci, QUEUE_INFO *pqi)
+{
+    ISum *pISum = static_cast<ISum *>(pci->pInterface);
+    if (NULL == pISum)
+    {
+        return MUX_E_NOINTERFACE;
+    }
+
+    UINT32 iMethod;
+    size_t nWanted = sizeof(iMethod);
+    if (  !Pipe_GetBytes(pqi, &nWanted, (UINT8 *)&iMethod)
+       || nWanted != sizeof(iMethod))
+    {
+        return MUX_E_INVALIDARG;
+    }
+
+    // The IUnknown methods (0, 1, and 2) do not make it across, so we don't
+    // attempt to handle them here.  Instead, when the reference count on
+    // CSumProxy goes to zero, it drops the connection and destroys itself.
+    // We see that as a call to CSum_Disconnect.
     //
+    switch (iMethod)
+    {
+    case 3:  // Add()
+        {
+            int a;
+            nWanted = sizeof(a);
+            if (  !Pipe_GetBytes(pqi, &nWanted, (UINT8 *)&a)
+               || nWanted != sizeof(a))
+            {
+                return MUX_E_INVALIDARG;
+            }
+
+            int b;
+            nWanted = sizeof(b);
+            if (  !Pipe_GetBytes(pqi, &nWanted, (UINT8 *)&b)
+               || nWanted != sizeof(b))
+            {
+                return MUX_E_INVALIDARG;
+            }
+
+            int sum = 0;
+            pISum->Add(a, b, &sum);
+
+            Pipe_EmptyQueue(pqi);
+            Pipe_AppendBytes(pqi, sizeof(sum), (UINT8 *)&sum);
+            return MUX_S_OK;
+        }
+        break;
+    }
     return MUX_E_NOTIMPLEMENTED;
 }
 
-MUX_RESULT CSum::UnmarshalInterface(size_t nBuffer, char *pBuffer, MUX_IID riid, void **ppv)
+MUX_RESULT CSum::MarshalInterface(size_t *pnBuffer, void **pBuffer, MUX_IID riid, marshal_context ctx)
+{
+    // Parameter validation and initialization.
+    //
+    MUX_RESULT mr = MUX_S_OK;
+    if (NULL == pnBuffer)
+    {
+        mr = MUX_E_INVALIDARG;
+    }
+    *pnBuffer = 0;
+
+    if (  NULL == pBuffer
+       || NULL == *pBuffer)
+    {
+        mr = MUX_E_INVALIDARG;
+    }
+    *pBuffer = NULL;
+
+    if (MUX_FAILED(mr))
+    {
+        return mr;
+    }
+
+    if (IID_ISum != riid)
+    {
+       return MUX_E_FAIL;
+    }
+
+    if (CrossProcess != ctx)
+    {
+        return MUX_E_NOTIMPLEMENTED;
+    }
+
+    // Construct a packet sufficient to allow the proxy to communicate with us.
+    //
+    m_pChannel = Pipe_AllocateChannel(CSum_Call, NULL, CSum_Disconnect);
+
+    ISum *pISum = NULL;
+    mr = QueryInterface(IID_ISum, (void **)&pISum);
+    if (MUX_SUCCEEDED(mr))
+    {
+        m_pChannel->pInterface = pISum;
+        m_mipkt.nChannel = m_pChannel->nChannel;
+        *pBuffer = &m_mipkt;
+        *pnBuffer = sizeof(m_mipkt);
+    }
+    return mr;
+}
+
+MUX_RESULT CSum::UnmarshalInterface(size_t nBuffer, void *pBuffer, MUX_IID riid, void **ppv)
 {
     return MUX_E_UNEXPECTED;
 }
@@ -211,9 +337,19 @@ MUX_RESULT CSum::ReleaseMarshalData(char *pBuffer)
 
 MUX_RESULT CSum::DisconnectObject(void)
 {
-    // Tear down our side of the communication.
+    // Get our interface pointer from the channel.
     //
-    return MUX_E_NOTIMPLEMENTED;
+    ISum *pISum = static_cast<ISum *>(m_pChannel->pInterface);
+    m_pChannel->pInterface = NULL;
+
+    // Tear down our side of the communication.  Our callback functions will
+    // no longer be called.
+    //
+    Pipe_FreeChannel(m_pChannel);
+    m_pChannel = NULL;
+
+    pISum->Release();
+    return MUX_S_OK;
 }
 
 MUX_RESULT CSum::Add(int a, int b, int *pSum)
