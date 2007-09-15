@@ -1277,9 +1277,6 @@ void do_pemit_whisper
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
 
-    int   nObjects = 0;
-    dbref aObjects[(LBUF_SIZE+1)/2];
-
     // If the argument count is not 2, pull recipients from A_LASTWHISPER.
     //
     if (nargs < 2)

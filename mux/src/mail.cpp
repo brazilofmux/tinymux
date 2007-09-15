@@ -3753,7 +3753,7 @@ static int DCL_CDECL malias_compare(const void *first, const void *second)
 
 static void do_malias_list_all(dbref player)
 {
-    size_t actual_entries = 0;
+    int actual_entries = 0;
     malias_t* alias_array = NULL;
     try
     {
